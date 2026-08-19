@@ -1,0 +1,86 @@
+name: 实测语料提交
+description: 提交一条真实器件的实测数据，作为 LDA 实证大数据锚的事实地基（对抗纯 AI 互证）
+title: "[实测语料] "
+labels: ["empirical-corpus", "data-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢贡献实证语料！LDA 把「真实测量」当作信任地基，求解器输出必须对照真实数据，而不是另一套 AI 意见。
+        提交后会进入 `lda/lda_harness/seed_empirical.json` 的 `corpus`，并可被确定性裁判当作 golden 来源之一。
+  - type: input
+    id: id
+    attributes:
+      label: 语料 ID（唯一）
+      description: 建议格式 E-<器件>-<指标>，如 E-SOI-NEFF-220
+      placeholder: E-SOI-NEFF-220
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: 器件描述
+      placeholder: SOI strip waveguide 500x220 nm
+    validations:
+      required: true
+  - type: input
+    id: metric
+    attributes:
+      label: 指标名
+      description: 如 n_eff / split_loss_dB / FSR_nm / coupling_eff / bend_loss_dB
+      placeholder: n_eff
+    validations:
+      required: true
+  - type: input
+    id: measured_value
+    attributes:
+      label: 实测值（数值）
+      placeholder: "2.63"
+    validations:
+      required: true
+  - type: input
+    id: uncertainty_abs
+    attributes:
+      label: 绝对不确定度 σ
+      description: 测量误差范围，将作为默认容差 tol
+      placeholder: "0.02"
+    validations:
+      required: true
+  - type: input
+    id: fab_source
+    attributes:
+      label: 来源（fab / 文献 / PDK）
+      placeholder: IMEC iSiPP50G 公开 PDK
+    validations:
+      required: true
+  - type: input
+    id: citation
+    attributes:
+      label: 引用（必填，可追溯）
+      description: 论文 / 数据表 / 报告链接或编号；无引用不予收录
+      placeholder: iSiPP50G PDK published specs
+    validations:
+      required: true
+  - type: input
+    id: method
+    attributes:
+      label: 测量方法（可选）
+      placeholder: propagation-constant extraction
+    validations:
+      required: false
+  - type: textarea
+    id: geometry
+    attributes:
+      label: 几何与材料参数字典（JSON，可选）
+      description: 与 EmpiricalMeasurement.geometry 同构
+      render: json
+      placeholder: |
+        {"w_core_um": 0.5, "h_core_um": 0.22, "n_si": 3.48, "n_clad": 1.44, "wl_um": 1.55}
+    validations:
+      required: false
+  - type: textarea
+    id: note
+    attributes:
+      label: 备注（工艺条件 / 测试环境等）
+    validations:
+      required: false

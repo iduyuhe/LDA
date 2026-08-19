@@ -1,0 +1,111 @@
+{
+  "_comment": "LDA 实证大数据锚 · 种子数据。corpus=真实器件实测语料（对抗纯 AI 互证）；adversarial=开放对抗性题库（雷③信任墙）。数值为公开 PDK/文献量级的示例种子，须由社区/退休专家/晶圆厂补真实测量语料。",
+  "corpus": [
+    {
+      "id": "E-SOI-NEFF-220",
+      "device": "SOI strip waveguide 500x220 nm",
+      "metric": "n_eff",
+      "measured_value": 2.63,
+      "uncertainty_abs": 0.02,
+      "fab_source": "IMEC iSiPP50G 公开 PDK（文献量级）",
+      "citation": "iSiPP50G PDK published specs",
+      "method": "propagation-constant extraction",
+      "geometry": {"w_core_um": 0.5, "h_core_um": 0.22, "n_si": 3.48, "n_clad": 1.44, "wl_um": 1.55},
+      "tags": ["waveguide", "soi"]
+    },
+    {
+      "id": "E-SIN-NEFF-300",
+      "device": "SiN strip waveguide 500x300 nm (SiO2 clad)",
+      "metric": "n_eff",
+      "measured_value": 1.53,
+      "uncertainty_abs": 0.02,
+      "fab_source": "公开 SiN 工艺文献量级",
+      "citation": "SiN photonics published data",
+      "method": "Mach-Zehnder asymmetry",
+      "geometry": {"w_core_um": 0.5, "h_core_um": 0.3, "n_sin": 2.0, "n_clad": 1.44, "wl_um": 1.55},
+      "tags": ["waveguide", "sin"]
+    },
+    {
+      "id": "E-YBRANCH-LOSS",
+      "device": "Y-branch 1x2 splitter (SOI 500x220)",
+      "metric": "split_loss_dB",
+      "measured_value": 3.4,
+      "uncertainty_abs": 0.3,
+      "fab_source": "公开 Y-branch 文献典型值",
+      "citation": "MMI/Y-branch published characterization",
+      "method": "cutback + optical probing",
+      "geometry": {"w_core_um": 0.5, "h_core_um": 0.22, "n_si": 3.48, "n_clad": 1.44, "wl_um": 1.55, "theta_deg": 10.0},
+      "tags": ["splitter", "ybranch"]
+    },
+    {
+      "id": "E-RING-FSR",
+      "device": "add-drop ring R=10um (ng=4.18)",
+      "metric": "FSR_nm",
+      "measured_value": 9.15,
+      "uncertainty_abs": 0.1,
+      "fab_source": "环形谐振器公开测试数据",
+      "citation": "ring resonator published measurement",
+      "method": "transmission dip spacing",
+      "geometry": {"R_um": 10.0, "n_g": 4.18, "wl_um": 1.55},
+      "tags": ["ring", "resonator"]
+    },
+    {
+      "id": "E-GRATING-EFF",
+      "device": "grating coupler (SOI, 1D)",
+      "metric": "coupling_eff",
+      "measured_value": 0.45,
+      "uncertainty_abs": 0.05,
+      "fab_source": "光栅耦合器公开文献量级",
+      "citation": "grating coupler published efficiency",
+      "method": "fiber-to-fiber cutback",
+      "geometry": {"wl_um": 1.55, "n_si": 3.48, "n_clad": 1.44, "period_um": 0.63, "ff": 0.5, "theta_deg": 8.0},
+      "tags": ["grating", "coupler"]
+    }
+  ],
+  "adversarial": [
+    {
+      "id": "A-BEND-R2",
+      "title": "小弯曲半径弯曲损耗",
+      "desc": "让求解器在 R=2um 强受限弯曲上翻车（弱导模辐射 + 模式失配）",
+      "target_metric": "bend_loss_dB",
+      "oracle_type": "empirical-or-fdtd",
+      "tol": 0.5,
+      "submitted_by": "community",
+      "geometry": {"R_um": 2.0, "w_core_um": 0.5, "h_core_um": 0.22, "n_si": 3.48, "n_clad": 1.44, "wl_um": 1.55},
+      "tags": ["bend", "challenge", "radiation"]
+    },
+    {
+      "id": "A-CROSS-TIGHT",
+      "title": "紧间隙波导交叉串扰",
+      "desc": "gap=0.1um 紧间隙交叉，求解器常高估隔离度",
+      "target_metric": "crosstalk_dB",
+      "oracle_type": "empirical-or-fdtd",
+      "tol": 5.0,
+      "submitted_by": "community",
+      "geometry": {"gap_um": 0.1, "w_core_um": 0.5, "h_core_um": 0.22, "n_si": 3.48, "n_clad": 1.44, "wl_um": 1.55},
+      "tags": ["crossing", "challenge", "crosstalk"]
+    },
+    {
+      "id": "A-TAPER-FAST",
+      "title": "快速锥度（绝热失效区）传输效率",
+      "desc": "L=5um 极短锥度，绝热极限 T→1 失效，求解器易高估",
+      "target_metric": "T_taper",
+      "oracle_type": "empirical-or-fdtd",
+      "tol": 0.02,
+      "submitted_by": "community",
+      "geometry": {"w1_um": 0.2, "w2_um": 0.5, "L_um": 5.0, "wl_um": 1.55, "n_eff": 2.44, "n_core": 3.48, "n_clad": 1.44},
+      "tags": ["taper", "challenge", "adiabatic"]
+    },
+    {
+      "id": "A-HETERO-MODE",
+      "title": "异质集成模场失配耦合",
+      "desc": "Si 波导到 III-V/光纤的模场失配耦合，求解器场重叠易算错",
+      "target_metric": "coupling_eff",
+      "oracle_type": "empirical-or-fdtd",
+      "tol": 0.05,
+      "submitted_by": "community",
+      "geometry": {"n1": 3.48, "n2": 3.2, "w1_um": 0.5, "w2_um": 1.5, "wl_um": 1.55},
+      "tags": ["heterogeneous", "challenge", "mode-matching"]
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lda.dev/schemas/l1-agent-protocol.json",
+  "title": "LDA L1 Agent 协议层（机器优先消息契约）",
+  "description": "L1 = 人操作壳→agent 操作接口的翻译/适配层。本契约定义 agent 与 L3 内核之间的确定性、批处理、可验证、无交互消息信封，与 L0 IR、验证 harness 咬合。",
+  "type": "object",
+  "definitions": {
+    "CandidateSpec": {
+      "type": "object",
+      "title": "候选求解器规格（L3 接口适配）",
+      "properties": {
+        "type": {"type": "string", "enum": ["reference", "perturbed", "l3_ai"],
+                 "description": "reference=正确求解器(演示pass)；perturbed=注入扰动(演示fail检测)；l3_ai=L3 AI 写内核候选"},
+        "rel_err": {"type": "number", "description": "perturbed 模式的相对扰动比例，如 0.10 表示 +10%"}
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "AgentRequest": {
+      "type": "object",
+      "title": "AgentRequest",
+      "properties": {
+        "request_id": {"type": "string", "description": "请求唯一标识（缺省由网关生成）"},
+        "action": {"type": "string", "enum": ["verify_design", "run_candidate", "list_benchmarks"]},
+        "payload": {
+          "type": "object",
+          "properties": {
+            "l0_ir": {"type": ["object", "null"], "description": "L0 IR 对象；缺省用内置默认题库"},
+            "candidate": {"$ref": "#/definitions/CandidateSpec"},
+            "benchmarks": {"type": "array", "items": {"type": "string"},
+                           "description": "仅验证指定题号，如 [\"B1\",\"B2\"]"}
+          },
+          "required": ["candidate"]
+        },
+        "meta": {"type": "object", "description": "路由/审计元数据（requester、ts 等）"}
+      },
+      "required": ["action", "payload"],
+      "additionalProperties": false
+    },
+    "BenchmarkDetail": {
+      "type": "object",
+      "properties": {
+        "id": {"type": "string"},
+        "metric": {"type": "string"},
+        "golden": {"type": ["number", "null"]},
+        "candidate": {"type": ["number", "null"]},
+        "tol": {"type": "number"},
+        "passed": {"type": "boolean"},
+        "oracle": {"type": "string"}
+      },
+      "required": ["id", "metric", "tol", "passed"]
+    },
+    "AgentResponse": {
+      "type": "object",
+      "title": "AgentResponse",
+      "properties": {
+        "request_id": {"type": "string"},
+        "status": {"type": "string", "enum": ["ok", "fail", "error"],
+                   "description": "ok=全 PASS；fail=有 FAIL 但流程成功；error=异常"},
+        "result": {
+          "type": "object",
+          "properties": {
+            "summary": {"type": "object",
+                        "properties": {"total": {"type": "integer"},
+                                       "passed": {"type": "integer"}}},
+            "details": {"type": "array", "items": {"$ref": "#/definitions/BenchmarkDetail"}},
+            "benchmarks": {"type": "array"}
+          }
+        },
+        "artifacts": {"type": "object",
+                      "properties": {
+                        "report_md": {"type": "string"},
+                        "report_json": {"type": "string"}
+                      }},
+        "error": {"type": ["string", "null"]}
+      },
+      "required": ["request_id", "status"],
+      "additionalProperties": false
+    },
+    "ToolSchema": {
+      "type": "object",
+      "title": "MCP 风格工具声明",
+      "properties": {
+        "name": {"type": "string"},
+        "description": {"type": "string"},
+        "input_schema": {"type": "object"},
+        "output_schema": {"type": "object"}
+      },
+      "required": ["name", "description", "input_schema"]
+    }
+  },
+  "oneOf": [
+    {"$ref": "#/definitions/AgentRequest"},
+    {"$ref": "#/definitions/AgentResponse"},
+    {"$ref": "#/definitions/ToolSchema"}
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "L0_IR": "(内置默认)",
+    "candidate": "ReferenceCandidate",
+    "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
+    "via": "L1 KernelGateway"
+  },
+  "generated_at": "2026-08-14T18:37:30",
+  "summary": {
+    "total": 2,
+    "passed": 2
+  },
+  "results": [
+    {
+      "id": "B11",
+      "metric": "spectrum_match",
+      "oracle": "analytical(ring-transfer-function)",
+      "source": "physical-law",
+      "golden": 0.0012343462440966846,
+      "candidate": 0.0012343462440966846,
+      "tol": 0.03,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B4",
+      "metric": "FSR_nm",
+      "oracle": "analytical(ring)/sax",
+      "source": "physical-law",
+      "golden": 9.138705731866516,
+      "candidate": 9.138705731866516,
+      "tol": 0.3,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    }
+  ]
+}

@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lda.project/schemas/l0-ir-photon-subset/v0.1.0-draft.json",
+  "title": "LDA L0 IR — Photon Subset (Draft)",
+  "description": "LDA 统一中间表示（L0）光子子集草案 v0.1.0。机器优先 DSL，作为 agent 间 / agent 与内核间的机器语言（为人结果负责，而非为人操作）。借鉴 gdsfactory 的 Component/Netlist/PDK、KQCircuits 的 Element/refpoints、EDA-Q 的 fab_process/device_map。",
+  "type": "object",
+  "required": ["lda_version", "schema", "process", "library", "netlist"],
+  "additionalProperties": false,
+  "properties": {
+    "lda_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+.*$",
+      "description": "LDA IR 语义版本"
+    },
+    "schema": {
+      "type": "string",
+      "enum": ["photon-subset"],
+      "description": "子集标识；未来扩展 quantum-subset / unified"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "设计元数据（非机器逻辑必需，供追溯）",
+      "properties": {
+        "project": { "type": "string" },
+        "author": { "type": "string" },
+        "created": { "type": "string", "format": "date-time" },
+        "target_foundry": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "process": { "$ref": "#/$defs/process" },
+    "library": {
+      "type": "object",
+      "required": ["components"],
+      "properties": {
+        "components": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/component" },
+          "description": "参数化组件库（PCell 原生概念）；key = component_id"
+        }
+      }
+    },
+    "netlist": { "$ref": "#/$defs/netlist" },
+    "layout": {
+      "$ref": "#/$defs/layout",
+      "description": "可选：版图生成指令，交由 L3 / gdsfactory 类引擎执行"
+    },
+    "verification": {
+      "$ref": "#/$defs/verification",
+      "description": "可选：验证 harness 挂载点，绑定标准题 B1-B10"
+    },
+    "@extensions": {
+      "type": "object",
+      "description": "预留扩展位（如量子字段 epr/t1_t2/gate_fidelity）；光子子集暂不填",
+      "properties": {
+        "quantum": { "type": "object" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "process": {
+      "type": "object",
+      "required": ["foundry", "pdk_name"],
+      "properties": {
+        "foundry": { "type": "string" },
+        "pdk_name": { "type": "string" },
+        "layers": {
+          "type": "object",
+          "description": "逻辑层名 -> 工艺层号（GDS layer/datatype）",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "gds_layer": { "type": "integer" },
+              "gds_datatype": { "type": "integer" },
+              "purpose": { "type": "string" }
+            }
+          }
+        },
+        "design_rules": {
+          "type": "object",
+          "properties": {
+            "min_width": { "type": "number" },
+            "min_gap": { "type": "number" },
+            "min_radius": { "type": "number" },
+            "units": { "type": "string", "enum": ["um", "nm"], "default": "um" }
+          }
+        },
+        "material_stack": {
+          "type": "object",
+          "description": "材料栈（硅/氧化硅/金属层）；index 供解析基准 B2 等使用",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "material": { "type": "string" },
+              "thickness": { "type": "number" },
+              "index": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "required": ["type", "params", "ports"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["waveguide", "bend", "ring", "grating_coupler", "ydc", "mzi", "taper", "crossing", "straight", "custom"]
+        },
+        "params": {
+          "type": "object",
+          "description": "参数化几何原语（PCell 原生概念）；具体内容随 type 而定",
+          "additionalProperties": true
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "position", "orientation"],
+            "properties": {
+              "name": { "type": "string" },
+              "position": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 3 },
+              "orientation": { "type": "number", "description": "度 (0=+x, 90=+y)" },
+              "layer": { "type": "string" },
+              "mode": { "type": "string", "description": "光学模式标识，如 TE0" }
+            }
+          }
+        },
+        "refpoints": {
+          "type": "object",
+          "description": "KQCircuits 风格命名参考点，支持自动相对定位",
+          "additionalProperties": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 3 }
+        },
+        "sim_ref": {
+          "$ref": "#/$defs/sim_ref",
+          "description": "指向 L3 求解器 / ORACLE 句柄"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sim_ref": {
+      "type": "object",
+      "required": ["solver"],
+      "properties": {
+        "solver": {
+          "type": "string",
+          "enum": ["meep", "mpb", "sax", "tidy3d", "ai_fdtd", "analytical"]
+        },
+        "model": { "type": "string", "description": "具体模型/脚本引用" },
+        "golden": { "type": "string", "description": "golden reference 标识，对应验证 harness 标准题 B1-B10" },
+        "license_note": { "type": "string", "description": "ORACLE 许可证边界（GPL 仅外部调用；Apache 可深度集成）" }
+      }
+    },
+    "netlist": {
+      "type": "object",
+      "required": ["instances", "connections"],
+      "properties": {
+        "instances": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["component"],
+            "properties": {
+              "component": { "type": "string", "description": "引用 library.components 的 component_id" },
+              "params_override": { "type": "object", "additionalProperties": true }
+            }
+          }
+        },
+        "connections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to"],
+            "properties": {
+              "from": { "type": "string", "description": "instance.port" },
+              "to": { "type": "string" }
+            }
+          }
+        },
+        "ports": {
+          "type": "array",
+          "items": { "type": "string", "description": "顶层 IO：instance.port" }
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "properties": {
+        "grid": { "type": "number" },
+        "bbox": { "type": "array", "items": { "type": "number" }, "minItems": 4, "maxItems": 4 },
+        "routes": { "type": "array", "items": { "type": "object", "additionalProperties": true } }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "properties": {
+        "benchmarks": {
+          "type": "array",
+          "description": "绑定验证 harness 标准题（B1-B10）；确定性 harness 据此比对 pass/fail",
+          "items": {
+            "type": "object",
+            "required": ["id", "metric", "target", "oracle"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^B\\d+$" },
+              "metric": { "type": "string" },
+              "target": { "type": "number" },
+              "tol": { "type": "number", "description": "允许误差（绝对）" },
+              "oracle": { "type": "string", "enum": ["analytical", "meep", "mpb", "sax", "tidy3d"] }
+            }
+          }
+        },
+        "pass_criteria": { "type": "object", "additionalProperties": true }
+      }
+    }
+  }
+}

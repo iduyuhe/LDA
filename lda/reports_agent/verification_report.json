@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "L0_IR": "(内置默认)",
+    "candidate": "ReferenceCandidate",
+    "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
+    "via": "L1 KernelGateway"
+  },
+  "generated_at": "2026-08-15T07:51:20",
+  "summary": {
+    "total": 1,
+    "passed": 1
+  },
+  "results": [
+    {
+      "id": "B9",
+      "metric": "f01_GHz",
+      "oracle": "analytical(transmon/Koch2007)",
+      "source": "physical-law",
+      "golden": 5.010082416960389,
+      "candidate": 5.010082416960389,
+      "tol": 0.05,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    }
+  ]
+}

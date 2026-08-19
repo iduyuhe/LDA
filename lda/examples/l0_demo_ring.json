@@ -1,0 +1,60 @@
+{
+  "lda_version": "0.1.0-draft",
+  "schema": "photon-subset",
+  "metadata": {
+    "project": "LDA-demo-ring",
+    "author": "LDA-agent",
+    "created": "2026-08-14T09:30:00+08:00",
+    "target_foundry": "CUMEC-130nm-SOI",
+    "notes": "光子子集草案示例：SOI 波导(B2) + add-drop 环形谐振器(B4)，供验证 harness 演示"
+  },
+  "process": {
+    "foundry": "CUMEC",
+    "pdk_name": "CUMEC-130-SOI",
+    "layers": {
+      "wg_core": { "gds_layer": 1, "gds_datatype": 0, "purpose": "硅波导芯" },
+      "clad":    { "gds_layer": 2, "gds_datatype": 0, "purpose": "氧化硅包层" }
+    },
+    "design_rules": { "min_width": 0.12, "min_gap": 0.12, "min_radius": 5, "units": "um" },
+    "material_stack": {
+      "si":   { "material": "Si",   "thickness": 0.22, "index": 3.48 },
+      "sio2": { "material": "SiO2", "thickness": 2.0,  "index": 1.44 }
+    }
+  },
+  "library": {
+    "components": {
+      "wg_1550": {
+        "type": "waveguide",
+        "params": { "width": 0.5, "height": 0.22, "wavelength": 1.55 },
+        "ports": [
+          { "name": "in",  "position": [0, 0],  "orientation": 0,   "layer": "wg_core", "mode": "TE0" },
+          { "name": "out", "position": [10, 0], "orientation": 0,   "layer": "wg_core", "mode": "TE0" }
+        ],
+        "sim_ref": { "solver": "analytical", "model": "EIM", "golden": "B2", "license_note": "解析基准，零成本" }
+      },
+      "ring_r10": {
+        "type": "ring",
+        "params": { "radius": 10, "wg_width": 0.5, "gap": 0.2 },
+        "ports": [
+          { "name": "in",  "position": [0, 0],  "orientation": 0,   "layer": "wg_core", "mode": "TE0" },
+          { "name": "out", "position": [0, 20], "orientation": 180, "layer": "wg_core", "mode": "TE0" }
+        ],
+        "sim_ref": { "solver": "sax", "model": "ring_theory", "golden": "B4", "license_note": "SAX 电路级确定性 ORACLE（Apache-2.0 可深度集成）" }
+      }
+    }
+  },
+  "netlist": {
+    "instances": {
+      "wg1": { "component": "wg_1550" },
+      "R1":  { "component": "ring_r10" }
+    },
+    "connections": [ { "from": "wg1.out", "to": "R1.in" } ],
+    "ports": ["wg1.in", "R1.out"]
+  },
+  "verification": {
+    "benchmarks": [
+      { "id": "B2", "metric": "n_eff", "target": 2.63, "tol": 0.05, "oracle": "analytical" },
+      { "id": "B4", "metric": "FSR_nm", "target": 9.15, "tol": 0.3, "oracle": "sax" }
+    ]
+  }
+}

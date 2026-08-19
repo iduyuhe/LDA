@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "L0_IR": "(内置默认)",
+    "candidate": "ReferenceCandidate",
+    "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
+    "via": "L1 KernelGateway"
+  },
+  "generated_at": "2026-08-14T12:27:31",
+  "summary": {
+    "total": 8,
+    "passed": 8
+  },
+  "results": [
+    {
+      "id": "B1",
+      "metric": "Q_scat",
+      "oracle": "analytical(Mie/Rayleigh)",
+      "golden": 0.0028413137328842765,
+      "candidate": 0.0028413137328842765,
+      "tol": 0.0002,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "id": "B2",
+      "metric": "n_eff",
+      "oracle": "analytical(EIM)",
+      "golden": 2.6509474264002217,
+      "candidate": 2.6509474264002217,
+      "tol": 0.05,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "id": "B3",
+      "metric": "FSR_nm",
+      "oracle": "analytical(Airy)",
+      "golden": 120.12500000000001,
+      "candidate": 120.12500000000001,
+      "tol": 1.0,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "id": "B4",
+      "metric": "FSR_nm",
+      "oracle": "analytical(ring)/sax",
+      "golden": 9.147601693260254,
+      "candidate": 9.147601693260254,
+      "tol": 0.3,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "id": "B5",
+      "metric": "split_loss_dB",
+      "oracle": "design-rule(Meep/Tidy3D field 预留)",
+      "golden": 3.0,
+      "candidate": 3.0,
+      "tol": 1.0,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "id": "B6",
+      "metric": "coupling_eff",
+      "oracle": "design-rule(Tidy3D/Meep field 预留)",
+      "golden": 0.5,
+      "candidate": 0.5,
+      "tol": 0.15,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "id": "B7",
+      "metric": "crosstalk_dB",
+      "oracle": "design-rule(Meep field 预留)",
+      "golden": -40.0,
+      "candidate": -40.0,
+      "tol": 5.0,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "id": "B8",
+      "metric": "T_taper",
+      "oracle": "analytical(adiabatic-limit)",
+      "golden": 1.0,
+      "candidate": 1.0,
+      "tol": 0.01,
+      "passed": true,
+      "note": ""
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+lda_cuda_venv/
+*.egg-info/
+.pytest_cache/
+
+# ---- 日志 / 临时 ----
+*.log
+_*_run*.log
+_diag_*.log
+_val_*.log
+
+# ---- 诊断脚本（本仓库不发布，留在本地工作区）----
+diag_*.py
+test_wg_quick.py
+
+# ---- 私有记忆 ----
+.workbuddy/
+
+# ---- IDE ----
+.idea/
+.vscode/
+*.swp

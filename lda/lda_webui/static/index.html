@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LDA · 验证内核实时预览</title>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#141b2e; --panel2:#1b2440; --line:#26304d;
+    --txt:#e6edf7; --mut:#8aa0c6; --accent:#38bdf8; --accent2:#3b82f6;
+    --green:#22c55e; --red:#ef4444; --amber:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;}
+  header{padding:22px 28px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#0e1530,#0b1020);
+    display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .logo{font-size:24px;font-weight:800;letter-spacing:1px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  header .sub{color:var(--mut);font-size:13px}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 28px 60px}
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0 26px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card .n{font-size:30px;font-weight:800}
+  .card .l{color:var(--mut);font-size:12px;margin-top:4px}
+  .card.g .n{color:var(--green)} .card.a .n{color:var(--accent)}
+  .sec{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;margin-bottom:22px}
+  .sec h2{margin:0 0 4px;font-size:16px}
+  .sec .hint{color:var(--mut);font-size:12px;margin-bottom:14px}
+  .subhead{font-size:13px;font-weight:600;color:var(--accent);margin:16px 0 8px;
+    padding-left:9px;border-left:3px solid var(--accent)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{font-size:12px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);
+    background:var(--panel2);display:flex;align-items:center;gap:7px}
+  .dot{width:8px;height:8px;border-radius:50%}
+  .dot.b{background:var(--green)} .dot.p{background:var(--amber)}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  label{font-size:13px;color:var(--mut)}
+  select,input[type=number]{background:var(--panel2);color:var(--txt);
+    border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+  input[type=number]{width:90px}
+  .btn{background:linear-gradient(90deg,var(--accent2),var(--accent));color:#04122a;
+    border:none;border-radius:8px;padding:9px 18px;font-weight:700;font-size:13px;
+    cursor:pointer}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txt)}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;font-size:12px}
+  td.ok{color:var(--green);font-weight:700} td.fail{color:var(--red);font-weight:700}
+  .tag{font-size:11px;padding:2px 7px;border-radius:6px;background:var(--panel2);
+    border:1px solid var(--line);color:var(--mut)}
+  .verdict{display:inline-block;padding:3px 9px;border-radius:6px;font-weight:700;font-size:12px}
+  .verdict.ok{background:rgba(34,197,94,.15);color:var(--green)}
+  .verdict.fail{background:rgba(239,68,68,.15);color:var(--red)}
+  .summary{font-size:14px;margin-bottom:10px}
+  .summary b{font-size:18px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.cols{grid-template-columns:1fr}}
+  .note{color:var(--mut);font-size:12px;margin-top:10px;line-height:1.6}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--mut);
+    border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;
+    vertical-align:-2px;margin-right:6px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .conclusion{border-left:3px solid var(--accent);padding:8px 12px;background:var(--panel2);
+    border-radius:0 8px 8px 0;font-size:13px;margin-top:12px;color:var(--txt)}
+  .footer{color:var(--mut);font-size:12px;text-align:center;margin-top:30px;line-height:1.7}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">LDA</span>
+  <span class="sub">agent-native 光子 + 量子芯片设计 · 验证内核实时预览（L4）</span>
+</header>
+
+<div class="wrap">
+  <div class="cards" id="cards">
+    <div class="card a"><div class="n" id="c-harness">—</div><div class="l">验证 harness 通过</div></div>
+    <div class="card a"><div class="n" id="c-ai">—</div><div class="l">L3 AI 内核候选</div></div>
+    <div class="card g"><div class="n" id="c-bench">—</div><div class="l">标准题 B1–B11</div></div>
+    <div class="card g"><div class="n" id="c-layers">—</div><div class="l">已落地真地基层</div></div>
+  </div>
+
+  <div class="sec">
+    <h2>① 架构落地状态</h2>
+    <div class="hint">绿 = 已有真实代码/文档并已跑通验证；琥珀 = 规划中。这是系统的真面目，非 PPT。</div>
+    <div class="chips" id="layerChips"></div>
+  </div>
+
+  <div class="cols">
+    <div class="sec">
+      <h2>② 验证裁判控制台</h2>
+      <div class="hint">选候选求解器，点"运行验证"——真调 LDA harness，用物理定律锚逐题比对。</div>
+      <div class="row">
+        <label>候选求解器
+          <select id="cand">
+            <option value="reference">参考求解器（正确内核）</option>
+            <option value="l3_ai">L3 AI 写内核（离线近似）</option>
+            <option value="perturb">注入扰动（演示 fail 检测）</option>
+          </select>
+        </label>
+        <label>扰动 %
+          <input type="number" id="perturb" value="10" min="1" max="50" />
+        </label>
+        <button class="btn" id="runVerify">运行验证</button>
+      </div>
+      <div id="verifySummary" class="summary"></div>
+      <div id="verifyTable"></div>
+      <div class="note" id="verifyNote"></div>
+    </div>
+
+    <div class="sec">
+      <h2>③ agent 自迭代设计闭环</h2>
+      <div class="hint">agent 提案 → L1 驱动内核 → 物理定律法官验证 → 诊断迭代。</div>
+      <div class="row">
+        <label>内核
+          <select id="solver">
+            <option value="truth">真内核（解析物理定律）</option>
+            <option value="l3_ai">L3 AI 写内核（有缺陷）</option>
+          </select>
+        </label>
+        <label class="chk"><input type="checkbox" id="dual" /> 双规格（B4+B2）</label>
+        <button class="btn" id="runLoop">运行闭环</button>
+      </div>
+      <div id="loopSummary" class="summary"></div>
+      <div id="loopTable"></div>
+      <div class="conclusion" id="loopConclusion"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>④ PDK 驱动的工艺逆设计（L2）</h2>
+    <div class="hint">选工艺节点（PDK）与器件模板——agent 在真实工艺窗口内逆设计几何，经物理定律法官验收。</div>
+    <div class="row">
+      <label>工艺 PDK
+        <select id="pdk"></select>
+      </label>
+      <label>器件模板
+        <select id="pdkTemplate"></select>
+      </label>
+      <label>内核
+        <select id="pdkSolver">
+          <option value="truth">真内核（解析物理定律）</option>
+          <option value="l3_ai">L3 AI 写内核（有缺陷）</option>
+        </select>
+      </label>
+      <button class="btn" id="runPdk">运行逆设计</button>
+    </div>
+    <div id="pdkSummary" class="summary"></div>
+    <div id="pdkTable"></div>
+    <div id="pdkSpectrum" style="margin-top:14px"></div>
+    <div class="conclusion" id="pdkConclusion"></div>
+  </div>
+
+  <div class="sec">
+    <h2>⑤ 多晶圆厂对比（L2 开放 PDK 共建）</h2>
+    <div class="hint">同一设计意图跨不同 foundry 跑逆设计——看工艺窗口（折射率/尺寸边界）差异如何驱动设计落点不同。量子 foundry 无该器件类型时自动跳过。</div>
+    <div class="row">
+      <label>器件类型
+        <select id="compareType"></select>
+      </label>
+      <label>内核
+        <select id="compareSolver">
+          <option value="truth">真内核（解析物理定律）</option>
+          <option value="l3_ai">L3 AI 写内核（有缺陷）</option>
+        </select>
+      </label>
+      <button class="btn" id="runCompare">运行跨厂对比</button>
+    </div>
+    <div id="compareSummary" class="summary"></div>
+    <div id="compareSvg" style="margin-top:12px"></div>
+    <div id="compareTable"></div>
+    <div class="conclusion" id="compareConclusion"></div>
+  </div>
+
+  <div class="sec">
+    <h2>⑥ L0 统一 IR 驱动逆设计（光子谱形 + 量子频率 · 多晶圆厂落点）</h2>
+    <div class="hint">同一套机器优先 IR（设计意图中间表示）同时表达光子与量子器件——表达"要造什么 + 目标 + 想落哪些 foundry"，经桥接层真驱动 agent 闭环。点运行看：光子段（环形目标谱形 B11 + 多晶圆厂落点差异）与量子段（transmon 频率逆设计 B9）如何被<b>同一个 IR 机器语言</b>驱动——"统一光子+量子"不是口号。</div>
+    <div class="row">
+      <label>目标 FSR (nm)
+        <input type="number" id="irFsr" value="9.15" step="0.05" min="1" max="30"/>
+      </label>
+      <label>内核
+        <select id="irSolver">
+          <option value="truth">真内核（解析物理定律）</option>
+          <option value="l3_ai">L3 AI 写内核（有缺陷）</option>
+        </select>
+      </label>
+      <button class="btn" id="runIr">运行 IR 逆设计（光子+量子）</button>
+    </div>
+    <div id="irSummary" class="summary"></div>
+
+    <div class="subhead">光子段 · 环形谐振器目标谱形（B11）+ 多晶圆厂落点</div>
+    <div class="conclusion" id="irDslPh"></div>
+    <div id="irTablePh"></div>
+
+    <div class="subhead">量子段 · transmon 频率逆设计（B9，工艺固定 E_C 只调 E_J）</div>
+    <div class="conclusion" id="irDslQ"></div>
+    <div id="irTableQ"></div>
+
+    <div class="subhead">L3 直接消费 IR · 真值计算（不经 DesignProblem，IR 即事实源）</div>
+    <div id="irTableEval"></div>
+  </div>
+
+  <div class="footer">
+    本界面所有数据均为<strong>实时真跑</strong> LDA 内核产出，非演示稿。<br/>
+    后端零依赖（Python 标准库 http.server），复用已落地的验证裁判 / L1 KernelGateway / agent 设计闭环。<br/>
+    LDA · agent-native 开源光子+量子芯片设计软件 · 杜玉河 / 工业5点0产业生态联盟
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+async function api(path, body){
+  const opt = body ? {method:'POST', headers:{'Content-Type':'application/json'},
+                       body: JSON.stringify(body)} : {};
+  const r = await fetch(path, opt);
+  return r.json();
+}
+
+function fmt(v){ return (typeof v==='number') ? (Math.abs(v)<1e-3 ? v.toExponential(3) : v.toPrecision(7)) : v; }
+
+function renderStatus(st){
+  const built = st.layers.filter(l=>l.status==='built').length;
+  $('c-layers').textContent = built + '/' + st.layers.length;
+  $('c-bench').textContent = st.benchmarks_total;
+  $('layerChips').innerHTML = st.layers.map(l=>
+    `<span class="chip"><span class="dot ${l.status==='built'?'b':'p'}"></span>${l.id} · ${l.name}</span>`
+  ).join('');
+}
+
+function renderVerify(d){
+  const s = d.summary;
+  $('verifySummary').innerHTML = `结果：<b style="color:${s.failed?'var(--red)':'var(--green)'}">${s.passed}/${s.total} PASS</b> · 候选：<span class="tag">${d.meta.candidate}</span> · ORACLE：<span class="tag">${d.meta.oracle}</span>`;
+  $('verifyTable').innerHTML = `<table>
+    <tr><th>题</th><th>指标</th><th>来源</th><th>黄金</th><th>候选</th><th>误差</th><th>容差</th><th>判定</th></tr>
+    ${d.details.map(r=>{
+      const err = (r.candidate!=null && r.golden!=null) ? Math.abs(r.candidate-r.golden) : '—';
+      return `<tr><td>${r.id}</td><td>${r.metric}</td><td><span class="tag">${r.source||r.oracle}</span></td>
+        <td>${r.golden!=null?fmt(r.golden):'—'}</td><td>${r.candidate!=null?fmt(r.candidate):'—'}</td>
+        <td>${err}</td><td>${r.tol}</td>
+        <td><span class="verdict ${r.passed?'ok':'fail'}">${r.passed?'PASS':'FAIL'}</span></td></tr>`;
+    }).join('')}
+  </table>`;
+  const fl = d.details.filter(r=>!r.passed).map(r=>r.id);
+  $('verifyNote').textContent = fl.length ? `被物理定律锚抓出 FAIL 的题：${fl.join(', ')} —— 验证裁判是独立质量门。`
+                                          : '全部通过物理定律锚验收（双判据·求解器正确性全绿）。';
+}
+
+function renderLoop(d){
+  $('loopSummary').innerHTML = `收敛：<b>${d.converged?'是':'否'}</b> · 轮次：<b>${d.iterations}</b> · 最终参数：${d.final_param} → metric=${fmt(d.final_metric)}（目标 ${d.target}）`;
+  $('loopTable').innerHTML = `<table>
+    <tr><th>轮</th><th>提案参数</th><th>求解 metric</th><th>误差</th><th>内核验证</th><th>L1 裁决</th></tr>
+    ${d.records.map(r=>`<tr><td>${r.iter}</td><td>${r.param}</td><td>${fmt(r.metric)}</td>
+      <td>${r.err}</td><td>${r.passed_all?'PASS':'FAIL'}</td>
+      <td><span class="verdict ${r.verdict==='ok'?'ok':'fail'}">${r.verdict}</span></td></tr>`).join('')}
+  </table>`;
+  const col = (d.converged && d.final_passed_all) ? 'var(--green)'
+            : (!d.converged ? 'var(--amber)' : 'var(--red)');
+  $('loopConclusion').style.borderLeftColor = col;
+  $('loopConclusion').innerHTML = `<strong>结论：</strong>${d.note} <br/>
+    （双判据：设计达标 ≠ 内核正确；验证裁判不为 agent 主观收敛放水。）`;
+}
+
+async function runVerify(){
+  const btn = $('runVerify'); btn.disabled = true;
+  $('verifySummary').innerHTML = '<span class="spin"></span> 正在真跑 harness…';
+  try{
+    const cand = $('cand').value;
+    const payload = cand==='perturb' ? {candidate:'perturb', perturb:Number($('perturb').value)/100}
+                                      : {candidate:cand};
+    const d = await api('/api/verify', payload);
+    renderVerify(d);
+  }catch(e){ $('verifySummary').textContent = '错误：'+e; }
+  finally{ btn.disabled = false; }
+}
+
+async function runLoop(){
+  const btn = $('runLoop'); btn.disabled = true;
+  $('loopSummary').innerHTML = '<span class="spin"></span> 正在跑 agent 设计闭环…';
+  try{
+    const d = await api('/api/agent_loop', {solver:$('solver').value, dual:$('dual').checked});
+    renderLoop(d);
+  }catch(e){ $('loopSummary').textContent = '错误：'+e; }
+  finally{ btn.disabled = false; }
+}
+
+$('runVerify').onclick = runVerify;
+$('runLoop').onclick = runLoop;
+
+function fillPdks(){
+  return api('/api/pdks').then(d=>{
+    const sel = $('pdk'); sel.innerHTML = '';
+    d.keys.forEach(k=>{
+      const o=document.createElement('option'); o.value=k; o.textContent=k; sel.appendChild(o);
+    });
+    window.__pdks = d.pdks;
+    fillPdkTemplates();
+    return d;
+  });
+}
+function fillPdkTemplates(){
+  const k = $('pdk').value;
+  const tpls = (window.__pdks && window.__pdks[k]) ? window.__pdks[k].templates : [];
+  const sel = $('pdkTemplate'); sel.innerHTML='';
+  tpls.forEach(t=>{
+    const o=document.createElement('option'); o.value=t.name;
+    const tn = t.tunables ? Object.entries(t.tunables).map(([k,v])=>k+'∈['+v[0]+','+v[1]+']').join(' , ') : (t.tunable+'∈['+t.bounds[0]+','+t.bounds[1]+']');
+    const cstr = (t.constraint_bids && t.constraint_bids.length) ? ' + 约束'+t.constraint_bids.join('/') : '';
+    const objs = (t.objective && t.objective.length>1) ? ' · 多目标['+t.objective.map(o=>o.bid+'='+o.target+'(w'+o.weight+')').join(',')+']' : '';
+    o.textContent = t.name + ' · 调 ' + tn + cstr + objs + ' → ' + t.target_metric + '=' + t.target;
+    sel.appendChild(o);
+  });
+}
+function renderPdk(d){
+  const fp = (d.final_param && typeof d.final_param==='object') ? Object.entries(d.final_param).map(([k,v])=>k+'='+v).join(' , ') : d.final_param;
+  const objs = (d.objectives && d.objectives.length>1) ? ' · 目标['+d.objectives.map(o=>o.bid+'='+o.target+'(w'+o.weight+')').join(' , ')+']' : '';
+  $('pdkSummary').innerHTML = 'PDK：<span class="tag">'+d.pdk+'</span> · 模板：<span class="tag">'+d.template+'</span> · 收敛：<b>'+(d.converged?'是':'否')+'</b> · 轮次：<b>'+d.iterations+'</b> · 最终参数 = '+fp+' → metric='+fmt(d.final_metric)+objs+'（目标 '+d.target+'）';
+  $('pdkTable').innerHTML = '<table><tr><th>轮</th><th>提案参数</th><th>求解 metric</th><th>误差</th><th>内核验证</th><th>L1 裁决</th></tr>' +
+    d.records.map(r=>{ const pp = (r.params && typeof r.params==='object') ? Object.entries(r.params).map(([k,v])=>k+'='+v).join(' , ') : r.param; return '<tr><td>'+r.iter+'</td><td>'+pp+'</td><td>'+fmt(r.metric)+'</td><td>'+r.err+'</td><td>'+(r.passed_all?'PASS':'FAIL')+'</td><td><span class="verdict '+(r.verdict==='ok'?'ok':'fail')+'">'+r.verdict+'</span></td></tr>'; }).join('') +
+    '</table>';
+  const col = (d.converged && d.final_passed_all) ? 'var(--green)' : (!d.converged ? 'var(--amber)' : 'var(--red)');
+  $('pdkConclusion').style.borderLeftColor = col;
+  $('pdkConclusion').innerHTML = '<strong>结论：</strong>'+d.note+'<br/>（PDK 提供工艺窗口，agent 在其内逆设计；验证裁判不为收敛放水。）';
+  if(d.spectrum){ $('pdkSpectrum').innerHTML = ringSvg(d.spectrum); }
+  else { $('pdkSpectrum').innerHTML = ''; }
+}
+
+// 环形透射谱 SVG（实际谱实线 + 目标谱虚线）；零依赖
+function ringSvg(spec){
+  const W=580,H=180,pad=36;
+  const wls=spec.wls, tr=spec.trans, tt=spec.target_trans;
+  const wmin=Math.min(...wls), wmax=Math.max(...wls);
+  const X=w=> pad + (w-wmin)/(wmax-wmin)*(W-2*pad);
+  const Y=t=> H-pad - Math.min(t,1.5)/1.5*(H-2*pad);
+  const pts = wls.map((w,i)=> X(w).toFixed(1)+','+Y(tr[i]).toFixed(1)).join(' ');
+  const tpts = wls.map((w,i)=> X(w).toFixed(1)+','+Y(tt[i]).toFixed(1)).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px">
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#26304d"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#26304d"/>
+    <polyline points="${tpts}" fill="none" stroke="#8aa0c6" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <polyline points="${pts}" fill="none" stroke="#38bdf8" stroke-width="2"/>
+    <text x="${pad+4}" y="${pad+2}" fill="#38bdf8" font-size="11">实际谱(实线) · 目标谱(虚线) · FSR=${spec.fsr_nm}nm / 目标 ${spec.target_fsr}nm</text>
+    <text x="${pad}" y="${H-10}" fill="#8aa0c6" font-size="11">λ=${wmin.toFixed(3)}µm</text>
+    <text x="${W-pad}" y="${H-10}" fill="#8aa0c6" font-size="11" text-anchor="end">${wmax.toFixed(3)}µm</text>
+  </svg>`;
+}
+
+// 多晶圆厂谱形叠加 SVG（每个 foundry 一种颜色）
+function compareSvg(rows){
+  const W=580,H=200,pad=36;
+  const colors=['#38bdf8','#22c55e','#f59e0b','#ef4444','#a78bfa'];
+  let wmin=1e9,wmax=-1e9;
+  rows.forEach(r=>{ if(r.spectrum) r.spectrum.wls.forEach(w=>{ if(w<wmin)wmin=w; if(w>wmax)wmax=w; }); });
+  if(wmin>wmax) return '';
+  const X=w=> pad + (w-wmin)/(wmax-wmin)*(W-2*pad);
+  const Y=t=> H-pad - Math.min(t,1.5)/1.5*(H-2*pad);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px">
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#26304d"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#26304d"/>`;
+  rows.forEach((r,i)=>{
+    if(!r.spectrum) return;
+    const c=colors[i%colors.length];
+    const pts=r.spectrum.wls.map((w,j)=> X(w).toFixed(1)+','+Y(r.spectrum.trans[j]).toFixed(1)).join(' ');
+    s+=`<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.8"/>`;
+    s+=`<text x="${pad+4}" y="${pad+4+i*14}" fill="${c}" font-size="11">${r.foundry}</text>`;
+  });
+  s+=`<text x="${W-pad}" y="${H-10}" fill="#8aa0c6" font-size="11" text-anchor="end">λ=${wmax.toFixed(3)}µm</text>`;
+  s+=`</svg>`;
+  return s;
+}
+async function runPdk(){
+  const btn=$('runPdk'); btn.disabled=true;
+  $('pdkSummary').innerHTML='<span class="spin"></span> 正在用 PDK 驱动 agent 逆设计…';
+  try{
+    const d=await api('/api/pdk_design',{pdk:$('pdk').value,template:$('pdkTemplate').value,solver:$('pdkSolver').value});
+    renderPdk(d);
+  }catch(e){ $('pdkSummary').textContent='错误：'+e; }
+  finally{ btn.disabled=false; }
+}
+$('runPdk').onclick = runPdk;
+$('pdk').onchange = fillPdkTemplates;
+
+async function runCompare(){
+  const btn=$('runCompare'); btn.disabled=true;
+  $('compareSummary').innerHTML='<span class="spin"></span> 正在跨 foundry 跑逆设计…';
+  try{
+    const d=await api('/api/pdk_compare',{device_type:$('compareType').value,solver:$('compareSolver').value});
+    renderCompare(d);
+  }catch(e){ $('compareSummary').textContent='错误：'+e; }
+  finally{ btn.disabled=false; }
+}
+function renderCompare(d){
+  $('compareSummary').innerHTML='跨厂对比：<b>'+d.rows.length+'</b> 个 foundry · 器件类型：<span class="tag">'+d.device_type+'</span>';
+  $('compareSvg').innerHTML = compareSvg(d.rows);
+  $('compareTable').innerHTML = '<table><tr><th>Foundry</th><th>Node</th><th>n_si</th><th>工艺窗口</th><th>收敛</th><th>最终参数</th><th>metric</th><th>内核验证</th></tr>' +
+    d.rows.map(r=>{
+      const fp=(r.final_param&&typeof r.final_param==='object')?Object.entries(r.final_param).map(([k,v])=>k+'='+v).join(', '):r.final_param;
+      const pw=r.param_window?('['+r.param_window[0]+', '+r.param_window[1]+']'):'—';
+      return `<tr><td>${r.foundry}</td><td>${r.node}</td><td>${r.n_si}</td><td>${pw}</td>`+
+        `<td>${r.converged?'是':'否'}</td><td>${fp}</td><td>${fmt(r.final_metric)}</td>`+
+        `<td><span class="verdict ${r.final_passed_all?'ok':'fail'}">${r.final_passed_all?'PASS':'FAIL'}</span></td></tr>`;
+    }).join('') + '</table>';
+  const allpass = d.rows.every(r=>r.final_passed_all);
+  const anyconv = d.rows.some(r=>r.converged);
+  $('compareConclusion').style.borderLeftColor = allpass ? 'var(--green)' : (anyconv ? 'var(--amber)' : 'var(--red)');
+  $('compareConclusion').innerHTML = '<strong>结论：</strong>不同 foundry 的工艺窗口（n_g/折射率/尺寸边界）不同 → 同一设计意图收敛到不同几何落点；agent 逆设计天然落在各自可制造边界内。量子 foundry 无该器件类型则自动跳过（生态可扩展）。';
+}
+$('runCompare').onclick = runCompare;
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+}
+async function runIr(){
+  const btn=$('runIr'); btn.disabled=true;
+  $('irSummary').innerHTML='<span class="spin"></span> 正在用 IR 驱动跨 foundry 逆设计…';
+  try{
+    const d=await api('/api/ir_demo',
+      {target_fsr_nm:parseFloat($('irFsr').value), solver:$('irSolver').value});
+    renderIr(d);
+  }catch(e){ $('irSummary').textContent='错误：'+e; }
+  finally{ btn.disabled=false; }
+}
+function renderIrBlock(prefix, blk, title, kind){
+  // blk: {dsl, validate_errors, rows, target_fsr_nm|target_f01_ghz}
+  const ok = blk.validate_errors && blk.validate_errors.length===0;
+  const dslEl=$(prefix+'Dsl');
+  dslEl.style.borderLeftColor='var(--accent)';
+  dslEl.innerHTML='<strong>'+title+' · IR DSL（机器优先中间表示）：</strong>'+
+    '<pre style="white-space:pre-wrap;margin:6px 0 0;color:var(--mut);font-size:12px">'+escapeHtml(blk.dsl)+'</pre>';
+  const tgt = blk.target_fsr_nm!=null ? ('目标 FSR='+blk.target_fsr_nm+'nm')
+            : ('目标 f01='+blk.target_f01_ghz+'GHz');
+  const keyCol = kind==='photon' ? '最终几何 R (µm)' : '收敛参数 (E_J, E_C)';
+  const metricCol = kind==='photon' ? '谱形误差' : 'f01 (GHz)';
+  const tblEl=$(prefix+'Table');
+  tblEl.innerHTML='<table><tr><th>Foundry</th><th>校验</th><th>收敛</th><th>'+keyCol+'</th>'+
+    '<th>'+metricCol+'</th><th>内核验证</th></tr>'+
+    blk.rows.map(r=>{
+      let key;
+      if(kind==='photon'){ key=(r.final_param && r.final_param.R!=null)?r.final_param.R:'—'; }
+      else { const p=r.final_param||{}; key='E_J='+(p.E_J!=null?fmt(p.E_J):'—')+' (E_C 工艺固定)'; }
+      return `<tr><td>${r.foundry}</td><td><span class="verdict ${ok?'ok':'fail'}">${ok?'OK':'ERR'}</span></td>`+
+        `<td>${r.converged?'是':'否'}</td><td>${key}</td>`+
+        `<td>${fmt(r.final_metric)}</td><td><span class="verdict ${r.final_passed_all?'ok':'fail'}">${r.final_passed_all?'PASS':'FAIL'}</span></td></tr>`;
+    }).join('')+'</table>';
+}
+function renderIr(d){
+  const ph=d.photon, q=d.quantum;
+  const ok = (ph.validate_errors.length===0) && (q.validate_errors.length===0);
+  $('irSummary').innerHTML='IR 校验：<b style="color:'+(ok?'var(--green)':'var(--red)')+'">'+
+    (ok?'光子+量子 全部通过 ✓':'失败')+'</b> · 光子跨 <b>'+ph.rows.length+
+    '</b> foundry · 量子跨 <b>'+q.rows.length+'</b> foundry · 同一 IR 机器语言驱动'+
+    (d.ir_eval && d.ir_eval.length ? ' · L3 直接消费 IR 真值已演示' : '');
+  renderIrBlock('irDslPh', ph, '光子段', 'photon');
+  renderIrBlock('irDslQ',  q, '量子段', 'quantum');
+  // L3 直接消费 IR 真值演示
+  const ev=d.ir_eval||[];
+  $('irTableEval').innerHTML = ev.length ? (
+    '<table><tr><th>Foundry</th><th>候选参数</th><th>BID</th><th>真值</th>'+
+    '<th>判定</th><th>事实来源</th></tr>'+
+    ev.map(r=>{
+      const p=r.param||{}; const pk=Object.entries(p).map(([k,v])=>k+'='+fmt(v)).join(', ');
+      return `<tr><td>${r.foundry}</td><td>${pk}</td><td>${r.bid}</td>`+
+        `<td>${fmt(r.value)}</td><td><span class="verdict ${r.passed?'ok':'fail'}">${r.passed?'PASS':'FAIL'}</span></td>`+
+        `<td>${r.source}</td></tr>`;
+    }).join('')+'</table>'+
+    '<div style="color:var(--mut);font-size:12px;margin-top:6px">上表由 L3 真值内核直接读 IR（spectrum/objective）计算物理真值并判定——不经手写 DesignProblem，IR 即事实源。</div>'
+  ) : '<div style="color:var(--mut);font-size:12px">（无 ir_eval 数据）</div>';
+}
+$('runIr').onclick = runIr;
+
+function fillCompareTypes(){
+  const types=new Set();
+  Object.values(window.__pdks||{}).forEach(p=> p.templates.forEach(t=> types.add(t.device_type)));
+  const sel=$('compareType'); sel.innerHTML='';
+  [...types].forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; sel.appendChild(o); });
+}
+
+(async ()=>{
+  await fillPdks();
+  fillCompareTypes();
+  const st = await api('/api/status');
+  renderStatus(st);
+  // 首屏自动跑一次 reference 验证，填表
+  runVerify();
+})();
+</script>
+</body>
+</html>

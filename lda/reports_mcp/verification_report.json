@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "L0_IR": "(内置默认)",
+    "candidate": "L3AISolverCandidate",
+    "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
+    "via": "L1 KernelGateway"
+  },
+  "generated_at": "2026-08-14T15:28:29",
+  "summary": {
+    "total": 8,
+    "passed": 6
+  },
+  "results": [
+    {
+      "id": "B1",
+      "metric": "Q_scat",
+      "oracle": "analytical(Mie/Rayleigh)",
+      "source": "physical-law",
+      "golden": 0.0028413137328842765,
+      "candidate": 0.0028413137328842765,
+      "tol": 0.0002,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B2",
+      "metric": "n_eff",
+      "oracle": "analytical(EIM)",
+      "source": "physical-law",
+      "golden": 2.6509474264002217,
+      "candidate": 3.275615322156264,
+      "tol": 0.05,
+      "passed": false,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B3",
+      "metric": "FSR_nm",
+      "oracle": "analytical(Airy)",
+      "source": "physical-law",
+      "golden": 120.12500000000001,
+      "candidate": 120.12500000000001,
+      "tol": 1.0,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B4",
+      "metric": "FSR_nm",
+      "oracle": "analytical(ring)/sax",
+      "source": "physical-law",
+      "golden": 9.147601693260254,
+      "candidate": 9.147601693260254,
+      "tol": 0.3,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B5",
+      "metric": "split_loss_dB",
+      "oracle": "design-rule(Meep/Tidy3D field 预留)",
+      "source": "numpy-overlap-offline",
+      "golden": 3.4,
+      "candidate": 3.4,
+      "tol": 1.0,
+      "passed": true,
+      "note": "overlap-estimate; theta=10.0deg"
+    },
+    {
+      "id": "B6",
+      "metric": "coupling_eff",
+      "oracle": "design-rule(Tidy3D/Meep field 预留)",
+      "source": "design-anchor",
+      "golden": 0.5,
+      "candidate": 0.5,
+      "tol": 0.15,
+      "passed": true,
+      "note": "ORACLE 不可用，回退设计守则锚"
+    },
+    {
+      "id": "B7",
+      "metric": "crosstalk_dB",
+      "oracle": "design-rule(Meep field 预留)",
+      "source": "numpy-fdtd-offline",
+      "golden": -19.73280864761468,
+      "candidate": -19.73280864761468,
+      "tol": 5.0,
+      "passed": true,
+      "note": "2D FDTD 离线; P_thr=9307 P_cross=98.97"
+    },
+    {
+      "id": "B8",
+      "metric": "T_taper",
+      "oracle": "analytical(adiabatic-limit)",
+      "source": "physical-law",
+      "golden": 1.0,
+      "candidate": 0.985,
+      "tol": 0.01,
+      "passed": false,
+      "note": "确定性物理定律/解析解"
+    }
+  ]
+}

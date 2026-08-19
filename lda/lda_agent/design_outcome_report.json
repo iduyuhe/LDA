@@ -1,0 +1,118 @@
+{
+  "target": {
+    "geometry_type": "bragg_mirror",
+    "materials": {
+      "air": 1.0,
+      "sih": 3.48,
+      "silo": 1.44
+    },
+    "target_wavelength_um": 1.55,
+    "target_metric": "R",
+    "threshold": 0.99,
+    "tolerance_rel": 0.02,
+    "max_iterations": 12,
+    "initial_periods": 1,
+    "extra": {
+      "backend": "numpy",
+      "dl_factor": 60.0,
+      "sponge": 60,
+      "ramp": 200
+    }
+  },
+  "accepted": true,
+  "iterations": 4,
+  "final_doc_id": "bragg-N4-it4",
+  "final_layers": [
+    [
+      "air",
+      Infinity
+    ],
+    [
+      "sih",
+      0.11135057471264369
+    ],
+    [
+      "silo",
+      0.26909722222222227
+    ],
+    [
+      "sih",
+      0.11135057471264369
+    ],
+    [
+      "silo",
+      0.26909722222222227
+    ],
+    [
+      "sih",
+      0.11135057471264369
+    ],
+    [
+      "silo",
+      0.26909722222222227
+    ],
+    [
+      "sih",
+      0.11135057471264369
+    ],
+    [
+      "silo",
+      0.26909722222222227
+    ],
+    [
+      "air",
+      Infinity
+    ]
+  ],
+  "final_metric": 0.9966681284263735,
+  "final_oracle_metric": 0.9965677437034383,
+  "final_metric_err": 0.00010038472293527612,
+  "final_max_metric_err": 0.00480823894051019,
+  "loop_trace": [
+    {
+      "iteration": 1,
+      "periods": 1,
+      "R_fdtd": 0.51085,
+      "R_tmm": 0.50072,
+      "metric_err": "1.01e-02",
+      "meets_target": false,
+      "within_tolerance": true,
+      "passed": false,
+      "backend": "numpy"
+    },
+    {
+      "iteration": 2,
+      "periods": 2,
+      "R_fdtd": 0.89333,
+      "R_tmm": 0.88931,
+      "metric_err": "4.01e-03",
+      "meets_target": false,
+      "within_tolerance": true,
+      "passed": false,
+      "backend": "numpy"
+    },
+    {
+      "iteration": 3,
+      "periods": 3,
+      "R_fdtd": 0.98085,
+      "R_tmm": 0.98012,
+      "metric_err": "7.30e-04",
+      "meets_target": false,
+      "within_tolerance": true,
+      "passed": false,
+      "backend": "numpy"
+    },
+    {
+      "iteration": 4,
+      "periods": 4,
+      "R_fdtd": 0.99667,
+      "R_tmm": 0.99657,
+      "metric_err": "1.00e-04",
+      "meets_target": true,
+      "within_tolerance": true,
+      "passed": true,
+      "backend": "numpy"
+    }
+  ],
+  "verdict": "设计达标：R(FDTD)=0.9967 ≥ 阈值，且对 TMM 物理定律锚 |ΔR|=1.00e-04 在公差内；闭环耗时 35.4s。结果已可由「人」验收。"
+}

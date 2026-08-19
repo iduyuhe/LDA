@@ -1,0 +1,5 @@
+# LDA 验证 harness 核心：零外部依赖（仅标准库 math）。
+# 以下为可选 ORACLE / 精度升级（不影响核心运行）：
+#   miepython  -> B1 完整 Mie 级数 ORACLE（替代 Rayleigh 极限）
+#   sax        -> B4 电路级确定性 ORACLE（Apache-2.0，可深度集成）
+#   numpy      -> 数值求解器 / 绘图辅助

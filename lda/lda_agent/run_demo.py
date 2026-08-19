@@ -15,12 +15,12 @@ import json
 import time
 import argparse
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
+_HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
-from design_loop import DesignAgent, json_report  # noqa: E402
-from l1_protocol import dump_json  # noqa: E402
+from lda_agent.design_loop import DesignAgent, json_report  # noqa: E402
+from lda_agent.l1_protocol import dump_json  # noqa: E402
 
 
 def build_intent(threshold: float, geo: str = "stack") -> dict:

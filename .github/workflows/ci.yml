@@ -32,3 +32,15 @@ jobs:
         run: |
           cd lda/lda_harness
           python run_empirical_bank.py
+
+      - name: Agent design loop smoke (bragg mirror, numpy backend)
+        # 回归防护：曾因扁平导入(design_loop→l1_protocol)导致 agent 链路整体不可用，
+        # CI 此前只跑 harness 未覆盖；现补冒烟，确保闭环入口可持续运行。
+        run: |
+          cd lda/lda_agent
+          python run_demo.py --threshold 0.90 --backend numpy --out /tmp/lda_ci_demo
+
+      - name: WebUI import smoke (webui server must stay importable)
+        run: |
+          cd lda
+          python -c "import sys; sys.path.insert(0,'.'); import lda_webui.app; s=lda_webui.app.system_status(); assert len(s['layers'])>=8; print('webui import OK, layers=%d'%len(s['layers']))"

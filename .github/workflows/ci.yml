@@ -59,3 +59,10 @@ jobs:
         run: |
           cd lda/lda_harness
           python run_all_specs.py --skip waveguide coupler --json reports/ci_unified_report.json | tail -5
+
+      - name: Multiband design loop smoke (D-03, full-band spectrum acceptance)
+        # 回归防护：D-03 把 1.2 单波长验收升级为全波段谱形验收。
+        # 验证 band 验收闭环可在 CI(纯 numpy) 跑通且 PASS（阻带全达标 + 全波段 max|ΔR|≤容差）。
+        run: |
+          cd lda
+          python -c "import sys; sys.path.insert(0,'.'); from lda_agent.multiband_loop import main_band; r=main_band(); assert r['accepted'], r['verdict']; print('D-03 multiband PASS, R_min=%.4f, max_abs_err=%.2e'%(r['final_band_min_R_fdtd'], r['final_max_abs_err']))"

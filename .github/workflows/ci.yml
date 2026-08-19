@@ -51,3 +51,11 @@ jobs:
         run: |
           cd lda
           python -c "import sys; sys.path[:0]=['lda_agent','lda_solver','lda_harness']; import fdtd3d_coupler, oracle_coupler, coupler_loop; print('coupler modules import OK')"
+
+      - name: Unified verification contract smoke (D-04, harness + solver_writer)
+        # 回归防护：D-04 统一验证契约（VerificationSpec + 四套适配器）。
+        # CI 跑不依赖 GPU 的快项（harness B1-B11 + solver_writer 1.4），
+        # waveguide/coupler 数值验收在本机跑。
+        run: |
+          cd lda/lda_harness
+          python run_all_specs.py --skip waveguide coupler --json reports/ci_unified_report.json | tail -5

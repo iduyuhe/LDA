@@ -1,0 +1,60 @@
+{
+ "kind": "unified_verification_report",
+ "contract": "VerificationSpec v1 (D-04)",
+ "total": 3,
+ "passed": 3,
+ "elapsed_s": 1185.4,
+ "outcomes": [
+  {
+   "spec_id": "WG-Si/SiO2 紧约束 50",
+   "metric": "neff",
+   "oracle_kind": "fdfd_eigen",
+   "passed": true,
+   "candidate": 2.608836094956467,
+   "oracle": 2.585211427807157,
+   "err": 0.023625,
+   "tol": 0.15,
+   "tol_mode": "abs",
+   "target_desc": "Si/SiO2 紧约束 500x220nm",
+   "source": "fdfd 标量亥姆霍兹本征值（独立频域）",
+   "candidate_desc": "标量 3D FDTD（独立时域）",
+   "diagnostics": "",
+   "elapsed_s": 391.3,
+   "extra": {}
+  },
+  {
+   "spec_id": "WG-Si/SiO2 450x22",
+   "metric": "neff",
+   "oracle_kind": "fdfd_eigen",
+   "passed": true,
+   "candidate": 2.59853226085328,
+   "oracle": 2.538414548093277,
+   "err": 0.060118,
+   "tol": 0.15,
+   "tol_mode": "abs",
+   "target_desc": "Si/SiO2 450x220nm",
+   "source": "fdfd 标量亥姆霍兹本征值（独立频域）",
+   "candidate_desc": "标量 3D FDTD（独立时域）",
+   "diagnostics": "",
+   "elapsed_s": 391.2,
+   "extra": {}
+  },
+  {
+   "spec_id": "WG-SiN/SiO2 500x3",
+   "metric": "neff",
+   "oracle_kind": "fdfd_eigen",
+   "passed": true,
+   "candidate": 1.483477389415675,
+   "oracle": 1.5307983970840697,
+   "err": 0.047321,
+   "tol": 0.15,
+   "tol_mode": "abs",
+   "target_desc": "SiN/SiO2 500x300nm",
+   "source": "fdfd 标量亥姆霍兹本征值（独立频域）",
+   "candidate_desc": "标量 3D FDTD（独立时域）",
+   "diagnostics": "",
+   "elapsed_s": 402.8,
+   "extra": {}
+  }
+ ]
+}

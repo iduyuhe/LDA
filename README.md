@@ -54,6 +54,15 @@ python lda/lda_solver/run_large_grid.py --N 100 --device cuda
 - GitHub: https://github.com/iduyuhe/LDA
 - Gitee:  https://gitee.com/i4hub/LDA
 
+## 参与共建 · 反向悬赏
+
+LDA 把「真实测量 + 开放对抗题」作为信任地基（对抗纯 AI 互证）。欢迎社区 / 退休专家 / 学生
+提交**实测语料**与**让 AI 求解器翻车的对抗题**：
+
+- 提交通道：`New Issue → 实测语料提交` / `对抗基准题提交`（结构化模板）
+- 悬赏与评审机制详见 [BOUNTY.md](BOUNTY.md)
+- 征集字段与 `lda/lda_harness/seed_empirical.json` 完全对齐
+
 ## 许可证
 
 [MIT](LICENSE)

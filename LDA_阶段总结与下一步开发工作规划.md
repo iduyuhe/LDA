@@ -86,7 +86,7 @@
 
 | # | 任务 | 内容 | 产出/证据 |
 |---|---|---|---|
-| D-01 | **分束器/方向耦合器验收锚** | 扩展 1.8 的 FDFD ORACLE + FDTD 验收范式到分束器（1×2）/方向耦合器（波导间耦合）；把"垂直场景"从单波导升级为"含耦合的多端口器件" | 3 器件 3/3 PASS 级证据；《LDA_真2D器件与ORACLE说明》v3.0 |
+| D-01 | **分束器/方向耦合器验收锚** ✅ **已交付（2026-08-20）** | 扩展 1.8 的 FDFD ORACLE + FDTD 验收范式到分束器（1×2）/方向耦合器（波导间耦合）；把"垂直场景"从单波导升级为"含耦合的多端口器件" | 3 器件 **3/3 PASS**（DC gap=0.3 κ 偏差 1.4%、DC gap=0.25 κ 偏差 2.5%、YB 平衡度 0.0006）；《LDA_真2D器件与ORACLE说明》**v3.0** |
 | D-02 | **AI-dev 自举实测 LLMGenerator** | 配 `LDA_LLM_*` 端点实测 solver_writer 的 LLMGenerator（此前只有离线 ScriptedAIDevGenerator 演示）；用真实 LLM 写核并过 ORACLE | LLMGenerator v0→v1 迭代轨迹 + PASS 报告 |
 | D-03 | **多波长/宽带闭环** | 把布拉格镜/波导的验收从单波长扩展为多波长扫描（λ 范围 + 目标谱形），逼近真实设计任务 | 宽带设计验收 PASS 报告 |
 
@@ -94,7 +94,7 @@
 
 | # | 任务 | 内容 | 产出/证据 |
 |---|---|---|---|
-| D-04 | **三套裁判范式统一** | 定义统一验证契约（VerificationSpec），让 harness / solver_writer / waveguide_loop 共用同一套 ORACLE 接入、容差、报告格式 | `lda/lda_harness/` 重构后全量回归 11/11 + 器件 3/3 PASS |
+| D-04 | **三套裁判范式统一** ✅ **已交付（2026-08-20）** | 定义统一验证契约（VerificationSpec），让 harness / solver_writer / waveguide_loop / coupler_loop 共用同一套 ORACLE 接入、容差、报告格式 | `verification_spec.py`（契约）+ `verification_adapters.py`（四套适配）+ `run_all_specs.py`（统一入口）；**全量回归 18/18 PASS**（harness 11 + waveguide 3 + coupler 3 + solver_writer 1） |
 | D-05 | **L0 IR 补全（光子子集 + 量子预留）** | 光子子集补全分束器/耦合器/微环字段；量子子集从"预留"推进为"骨架字段定义" | L0 IR schema v0.2 + 文档更新 |
 | D-06 | **实证语料结构化导入** | 把 `seed_empirical.json` 升级为可增量的语料库（支持 csv/JSON 批量导入、去重、溯源），为晶圆厂/专家补登铺路 | empirical_bank 导入工具 + 测试 |
 
@@ -111,8 +111,8 @@
 
 | 里程碑 | 时间窗(估) | 内容 | 判据 |
 |---|---|---|---|
-| M1 | 2–3 周 | D-01 分束器/耦合器验收锚 + D-02 AI-dev LLMGenerator 实测 | 分束器 3/3 PASS；LLMGenerator PASS 报告 |
-| M2 | 4–8 周 | D-04 三套裁判统一 + D-05 L0 IR 补全 + D-07 WebUI 完善 | 全量回归 PASS；IR schema v0.2；WebUI 可演示 |
+| M1 | 2–3 周 | D-01 ~~分束器/耦合器验收锚~~ ✅（已交付）+ D-02 AI-dev LLMGenerator 实测 | ~~分束器 3/3 PASS~~ ✅（3/3，2026-08-20）；LLMGenerator PASS 报告 |
+| M2 | 4–8 周 | D-04 ~~三套裁判统一~~ ✅（已交付）+ D-05 L0 IR 补全 + D-07 WebUI 完善 | ~~全量回归 PASS~~ ✅（18/18，2026-08-20）；IR schema v0.2；WebUI 可演示 |
 | M3 | 8–12 周 | D-06/D-10 语料工具 + D-08 认证版边界 + D-09 PDK 接入规范 | 工具就绪；认证版边界文档；PDK 接入规范定稿 |
 
 > 时间窗为估算，随发动期进展可弹性调整；P0（D-01/D-02/D-03）不依赖外部，可立即开工。

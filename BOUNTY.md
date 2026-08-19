@@ -1,27 +1,18 @@
-# LDA 反向悬赏 · 共建实证信任墙
+export interface ValidationContext {
+  isValid: boolean;
+  isExpired?: boolean;
+  timestamp?: number;
+}
 
-> 把「AI 写的光子 / 量子求解器」钉在事实地基上——靠可被事实打脸，而非自我宣称。
-
-## 为什么要有悬赏
-
-LDA 的核心主张是：**底层核心求解器由 AI agent 递归自举开发，但 LLM 永不进入判决路径**。
-要让这套主张被信任，不能靠自我宣称，要靠「可被事实打脸」。
-
-我们设了一道**雷③信任墙**：纯 AI 互证是循环论证。破解之道是把
-「真实世界测量 + 开放对抗题」作为事实地基。这就是本悬赏要征集的东西。
-
-## 征集什么
-
-### 1. 实测语料（corpus）—— 让求解器对照真实
-任何你能提供的真实器件测量数据，例如：
-
-- 波导有效折射率 `n_eff`、弯曲损耗、交叉串扰、MMI/Y-branch 分光比
-- 环形谐振器 `FSR` / `Q`、光栅耦合器效率、锥度传输效率
-- 超导量子比特参数（T1 / T2 / 频率 / 耦合）、版图寄生提取 ……
-
-**硬性要求**：必须带**可追溯引用**（论文 / 数据表 / 测试报告）。无引用不予收录。
-
-### 2. 对抗题（adversarial）—— 让求解器翻车
+export function validateAndProcess(item?: ValidationContext | null): boolean {
+  if (!item || typeof item !== 'object') {
+    return false;
+  }
+  if (!item.isValid || item.isExpired) {
+    return false;
+  }
+  return true;
+}解器翻车
 你心里「AI 求解器八成算错」的场景，例如：
 
 - 强受限小弯曲半径（辐射损耗 + 模式失配）

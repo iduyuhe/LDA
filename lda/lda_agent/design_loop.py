@@ -23,7 +23,7 @@ from __future__ import annotations
 import time
 from typing import Dict, Any, List, Optional
 
-from l1_protocol import (
+from lda_agent.l1_protocol import (
     DesignTarget, L0IR, DesignOutcomeReport, InterpreterAgent,
     DesignerAgent, SolverAgent, VerifierAgent,
 )

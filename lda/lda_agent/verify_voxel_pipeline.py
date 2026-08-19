@@ -15,12 +15,12 @@ import os
 import sys
 import time
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
+_HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
-from design_loop import DesignAgent  # noqa: E402
-from l1_protocol import load_solver, dump_json  # noqa: E402
+from lda_agent.design_loop import DesignAgent  # noqa: E402
+from lda_agent.l1_protocol import load_solver, dump_json  # noqa: E402
 
 
 def run_geo(geo: str, threshold: float, dl_factor: float, sponge: int):

@@ -1,0 +1,74 @@
+name: 对抗基准题提交
+description: 提交一道"让 AI 求解器翻车"的题，作为信任墙的公开对抗层（缓解雷③）
+title: "[对抗题] "
+labels: ["adversarial-benchmark", "challenge"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        欢迎出题！LDA 的立身之本是「可被事实打脸」。你提交的题会进入
+        `lda/lda_harness/seed_empirical.json` 的 `adversarial`，成为公开对抗题库。
+        一旦某版求解器在你的题上翻车，我们会把它写进 release notes 作为诚实记录。
+  - type: input
+    id: id
+    attributes:
+      label: 题目 ID（唯一）
+      description: 建议格式 A-<主题>-<序号>
+      placeholder: A-BEND-R2
+    validations:
+      required: true
+  - type: input
+    id: title
+    attributes:
+      label: 题目简称
+      placeholder: 小弯曲半径弯曲损耗
+    validations:
+      required: true
+  - type: textarea
+    id: desc
+    attributes:
+      label: 题目描述（为什么这题会让求解器翻车）
+      placeholder: 让求解器在 R=2um 强受限弯曲上翻车（弱导模辐射 + 模式失配）
+    validations:
+      required: true
+  - type: input
+    id: target_metric
+    attributes:
+      label: 目标指标
+      placeholder: bend_loss_dB
+    validations:
+      required: true
+  - type: dropdown
+    id: oracle_type
+    attributes:
+      label: ORACLE 真值来源
+      options:
+        - empirical-or-fdtd
+        - empirical-only
+        - fdtd-reference
+    validations:
+      required: true
+  - type: input
+    id: tol
+    attributes:
+      label: 容差 tol（数值）
+      placeholder: "0.5"
+    validations:
+      required: true
+  - type: textarea
+    id: geometry
+    attributes:
+      label: 几何与材料参数字典（JSON）
+      description: 与 AdversarialBenchmark.geometry 同构，必填以便可复现
+      render: json
+      placeholder: |
+        {"R_um": 2.0, "w_core_um": 0.5, "h_core_um": 0.22, "n_si": 3.48, "n_clad": 1.44, "wl_um": 1.55}
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: 物理陷阱说明（为什么难，可选）
+      description: 帮评审理解这题卡住求解器的物理机制
+    validations:
+      required: false

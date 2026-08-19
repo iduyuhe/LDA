@@ -1,0 +1,33 @@
+name: 缺陷报告
+description: 报告求解器 / agent / harness 的运行时错误或错误结果
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: 现象
+      description: 报错信息 / 数值明显错误 / 行为异常
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      description: 命令 / 输入参数 / 调用代码片段
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: 环境（python / torch / 系统）
+      placeholder: python 3.11, torch 2.11+cu128, win11
+    validations:
+      required: false
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+    validations:
+      required: false

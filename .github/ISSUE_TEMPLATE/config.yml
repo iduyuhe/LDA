@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 反向悬赏 / 共建咨询
+    url: https://gitee.com/i4hub/LDA/issues
+    about: 征集实测语料与对抗题的悬赏机制见仓库 BOUNTY.md，也可在此提咨询

@@ -91,14 +91,14 @@
 **目标**：开源首发 + 建可信基准 + 拉双引擎人力。
 
 **关键任务**：
-1. **开源首发**：L0/L1 规范 + MVP 内核上 Gitee/GitCode，MIT/Apache 许可。
-2. **基准套件 + 反向悬赏**：公开对抗性基准，征集"让 AI 求解器翻车"的题。
-3. **双引擎招募**：
-   - 学生：毕设/竞赛题投放（上交、华科、中科大、浙大、电子科大、西电）。
-   - 退休专家：EDA 老炮 + 光电半导体退休研究员组建顾问委员会。
-4. **晶圆厂初步接触**：NOEIC/CUMEC/SITRI PDK 对接意向。
+1. ✅ **开源首发（2026-08-19）**：L0/L1 规范 + 核心包 + 战略文档已上 **GitHub `iduyuhe/LDA`**（公开）+ **Gitee `i4hub/LDA`**（公开，国内镜像）；MIT 许可；CI 自动自测（`.github/workflows/ci.yml` 跑 B1–B11 裁判 + 实证锚）；打注解 tag **v0.1**。125 文件（剔除 venv/日志/诊断脚本/agent 私有记忆）。
+2. ✅ **基准套件 + 反向悬赏（2026-08-19）**：`lda/lda_harness/`（B1–B11 确定性裁判 + 实证大数据锚 `empirical_bank`）；GitHub Issue 模板（`empirical_measurement.yml`/`adversarial_benchmark.yml`/`bug_report.yml`）字段与 `seed_empirical.json` 对齐；`BOUNTY.md` 反向悬赏文案（「破壁者」徽章 + Hall of Fame，诚实标注当前无现金赏金）；GitHub 已开 2 个种子 Issue（#1 引导贡献 good-first-issue、#2 悬赏对抗题）。
+3. ✅ **双引擎招募（2026-08-19）**：`LDA_退休专家招募话术与顾问委员会架构.md`（三类话术 + L1/L2/L3 分层顾问委）、`LDA_学生贡献者招募方案.md`（核心6校布点 + 毕设/竞赛/科研挂钩 + good-first-issue）、`RECRUIT.md` 入口汇总 + README 链接、`LDA_双引擎触达首信模板.md`（按沪/汉/渝/合集群待填联系人发送）。
+4. ⬜ **晶圆厂初步接触**：NOEIC/CUMEC/SITRI PDK 对接意向——待阶段2 退出前启动（需退休专家线引荐，与任务3咬合）。
 
-**退出标准**：社区有稳定外部贡献者 + 顾问委员会成立 + 至少 1 家晶圆厂 PDK 对接意向。
+**诚实边界（平台限制）**：Gitee 仓库 Issues 写接口对该个人仓库返回 `project or enterprise`（Gitee 平台限制，labels 读接口正常），故规范 Issue 通道以 **GitHub 为主**（已开 #1/#2），Gitee 以 PR / 网页 Issue 为辅助；两仓库代码/文档已完全同步。
+
+**退出标准（进展）**：开源首发 ✅、可信基准框架 ✅、双引擎招募材料 ✅、种子 Issue 冷启动 ✅；余「稳定外部贡献者 + 顾问委员会成立 + 晶圆厂 PDK 意向」三项为**发动期 KPI**，依赖杜先生按《LDA_双引擎触达首信模板.md》实际触达。
 
 ---
 

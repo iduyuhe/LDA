@@ -175,6 +175,15 @@ jobs:
           cd lda
           python run_pipeline_smoke.py
 
+      - name: Coupler multi-wavelength band smoke (D-23, full-band κ/balance)
+        # 回归防护：D-23 把 D-01 单波长耦合器验收扩展为多波长全波段验收。
+        # CI(无 GPU) 跑 contract 自检（注册表+契约+波长扫描逻辑，快稳）；
+        # live 全波段 FDTD 需 torch CUDA（DC mean≤0.25+oracle 单调+Yb 平衡度
+        # ≤0.1 全 PASS），本机跑。
+        run: |
+          cd lda
+          python run_coupler_band_smoke.py
+
       - name: Empirical corpus incremental import smoke (D-06, csv/json/dedup/trace)
         # 回归防护：D-06 把 seed_empirical.json 升级为可增量语料库。
         # 验证 csv/JSON 批量导入 + 去重冲突 + 逐条溯源 provenance 全绿（纯静态）。

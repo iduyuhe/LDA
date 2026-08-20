@@ -48,12 +48,15 @@ def _build_fdfd_operator(eps2: np.ndarray, dl: float, wl_um: float):
 
 def fdfd_coupler_supermodes(eps2: np.ndarray, dl: float, wl_um: float,
                             mask_a: np.ndarray = None, mask_b: np.ndarray = None,
-                            k_eig: int = 16):
+                            k_eig: int = 16, neff_anchor: tuple = None):
     """FDFD 超模法求方向耦合器耦合系数。
 
     eps2 : (Nx,Ny) 双波导折射率平方场；dl : 网格步长 µm；wl_um : 真空波长。
     mask_a/mask_b : (Nx,Ny) 波导 A/B 芯区掩膜（缺省自动检测 > (n_clad²+n_core²)/2 的
                     两连通域，按 x 坐标负/正分配）。
+    neff_anchor : 可选 (neff_s, neff_a) 锚——多波长扫描时用上一波长的超模 neff
+                   做连续追踪，防网格变化导致选中高阶超模对（D-23）。缺省则算
+                   单波导基模 neff 作锚（基模带过滤，自稳）。
     返回 dict：
       neff_s / neff_a : 对称/反对称超模有效折射率
       mode_s / mode_a : (Nx,Ny) 超模剖面（归一化到单位峰值）
@@ -108,13 +111,27 @@ def fdfd_coupler_supermodes(eps2: np.ndarray, dl: float, wl_um: float,
         raise RuntimeError("FDFD 超模法：导模候选不足（耦合过弱或网格过粗）")
     cand.sort(key=lambda c: (-c["frac"], -c["ne"]))
 
-    # 选最受限的对称超模（最高芯区占比中 sym>0 者）与最受限的反对称超模（sym<0 者）
-    sym_cands = [c for c in cand if c["sym"] > 0.0]
-    asy_cands = [c for c in cand if c["sym"] < 0.0]
+    # 基模带锚定：超模对 neff 必须落在锚附近（±0.03）。
+    # 锚 = 外部给定(上一波长超模，波长连续追踪) 或 单波导基模 neff（自稳）。
+    # 原因：多波长扫描下网格随 λ 变化，eigs 候选集中高阶模可能比基模超模
+    # 芯区占比更高，导致误选高阶超模对 → κ 非物理振荡（D-23 实测暴露）。
+    # 基模对 neff 分裂 Δne = κ·λ/π < 0.02 ≪ 0.03，且与高阶模差距 >0.3，安全。
+    if neff_anchor is not None:
+        ne_s_anc, ne_a_anc = float(neff_anchor[0]), float(neff_anchor[1])
+    else:
+        from oracle_mode import fdfd_mode_field
+        eps2_a = np.full_like(arr, n_clad ** 2)
+        eps2_a[mask_a] = n_core ** 2
+        ne_single, _ = fdfd_mode_field(eps2_a, dl, wl_um)
+        ne_s_anc = ne_a_anc = ne_single
+    sym_cands = [c for c in cand if c["sym"] > 0.0
+                 and abs(c["ne"] - ne_s_anc) < 0.03]
+    asy_cands = [c for c in cand if c["sym"] < 0.0
+                 and abs(c["ne"] - ne_a_anc) < 0.03]
     if not sym_cands or not asy_cands:
-        # 兜底：若只有一组，取芯区占比最高的两个（物理上应为 s/a 对）
-        sym_cands = cand[:1]
-        asy_cands = cand[1:2]
+        # 兜底：锚过滤后不足，放宽到导模候选（物理上应为 s/a 对）
+        sym_cands = [c for c in cand if c["sym"] > 0.0] or cand[:1]
+        asy_cands = [c for c in cand if c["sym"] < 0.0] or cand[1:2]
     cs, ca = sym_cands[0], asy_cands[0]
     neff_s, mode_s = cs["ne"], cs["vec"]
     neff_a, mode_a = ca["ne"], ca["vec"]
@@ -134,7 +151,8 @@ def fdfd_coupler_supermodes(eps2: np.ndarray, dl: float, wl_um: float,
 
 def coupling_oracle(w_um: float, h_um: float, gap_um: float,
                     n_core: float, n_clad: float, wl_um: float,
-                    dl: float = None, clad_um: float = 3.0):
+                    dl: float = None, clad_um: float = 3.0,
+                    neff_anchor: tuple = None):
     """方向耦合器 ORACLE 参数化封装：直接由几何参数返回耦合系数真值。"""
     if dl is None:
         dl = wl_um / 24.0
@@ -151,7 +169,8 @@ def coupling_oracle(w_um: float, h_um: float, gap_um: float,
     core_b = (np.abs(X - xb) <= w_um / 2.0) & (np.abs(Y) <= h_um / 2.0)
     eps2 = np.full((Nx, Ny), n_clad ** 2, dtype=float)
     eps2[core_a | core_b] = n_core ** 2
-    return fdfd_coupler_supermodes(eps2, dl, wl_um, mask_a=core_a, mask_b=core_b)
+    return fdfd_coupler_supermodes(eps2, dl, wl_um, mask_a=core_a, mask_b=core_b,
+                                   neff_anchor=neff_anchor)
 
 
 # ---------------------------------------------------------------------------

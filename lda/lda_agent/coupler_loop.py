@@ -141,6 +141,8 @@ class CouplerTarget:
     n_clad: float = 1.44
     wl_um: float = 1.55
     dl_factor: float = 24.0         # dl = wl / factor
+    dl_um: Optional[float] = None   # 固定网格步长（多波长扫描用：不随 λ 变，保证
+                                    # FDFD 离散一致与超模选模稳定；None 则 wl/factor）
     clad_um: float = 3.0
     # dc 专属
     gap_um: float = 0.3
@@ -154,6 +156,7 @@ class CouplerTarget:
     tol_kappa: float = 0.25         # dc：κ 相对偏差容差
     tol_balance: float = 0.10       # yb：平衡度容差
     backend: str = "auto"           # auto|torch|numpy
+    oracle_anchor: Optional[Tuple[float, float]] = None  # dc：多波长超模 neff 追踪锚
 
 
 @dataclass
@@ -177,7 +180,7 @@ class CouplerOutcome:
 class CouplerAgent:
     def run(self, t: CouplerTarget) -> CouplerOutcome:
         t0 = time.time()
-        dl = t.wl_um / t.dl_factor
+        dl = t.dl_um if (t.dl_um and t.dl_um > 0) else t.wl_um / t.dl_factor
         backend = t.backend
         if backend == "auto":
             try:
@@ -203,7 +206,8 @@ class CouplerAgent:
         # ORACLE：FDFD 超模法（频域独立真值）
         orc = fdfd_coupler_supermodes(
             eps3[:, :, 0], meta["dl"], t.wl_um,
-            mask_a=meta["mask_a"], mask_b=meta["mask_b"])
+            mask_a=meta["mask_a"], mask_b=meta["mask_b"],
+            neff_anchor=t.oracle_anchor)
         kappa_o = orc["kappa"]
         Lc_o = orc["Lc_um"]
         # 源剖面：波导 A 的独立单波导基模（与 1.8 同源做法，最干净地注入输入通道）
@@ -260,6 +264,8 @@ class CouplerAgent:
         passed = rel <= t.tol_kappa
         metrics = {
             "gap_um": t.gap_um,
+            "neff_s": round(float(orc["neff_s"]), 5),
+            "neff_a": round(float(orc["neff_a"]), 5),
             "kappa_oracle": round(kappa_o, 5),
             "kappa_fdtd": round(kappa_fdtd, 5),
             "kappa_method": method,

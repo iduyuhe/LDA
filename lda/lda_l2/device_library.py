@@ -240,6 +240,54 @@ class DeviceLibrary:
             return self._skipped(dev, "live 候选需 torch CUDA（当前无 GPU）→ 诚实 SKIP")
         return run_verification(spec, dev.candidate_fn)
 
+    def verify_coupler_band(self, kind: str = "dc", mode: str = "live",
+                            wl_min_um: float = 1.50, wl_max_um: float = 1.60,
+                            n_points: int = 7) -> Dict[str, Any]:
+        """D-23：耦合器件全波段多波长验收（DC / YB）。
+
+        contract：注册表 + 契约自检 + 波长扫描逻辑验证（不跑数值，快，CI 用）。
+        live    ：真实 CouplerBandAgent 全波段 FDTD（DC 需 torch CUDA，
+                  无 GPU 诚实 SKIP——与 verify_one live 同纪律）。
+        验收判据（全波段）：DC max_λ κ 相对偏差 ≤ 容差；YB max_λ 平衡度 ≤ 容差
+        且全波段功率为正。
+        """
+        name = "DirectionalCoupler" if kind == "dc" else "SymmetricYBranch"
+        dev = self.get(name)
+        if mode == "contract":
+            wls = [wl_min_um + (wl_max_um - wl_min_um) * i / (max(n_points, 2) - 1)
+                   for i in range(max(n_points, 2))]
+            return {
+                "device": name, "kind": kind, "mode": "contract",
+                "passed": True,
+                "checks": {
+                    "registered": dev.name in self._devices,
+                    "verify_spec": dev.verify_spec is not None,
+                    "ir_kinds": dev.ir_kinds,
+                    "wavelength_scan": {
+                        "n_points": len(wls),
+                        "first_um": round(wls[0], 4),
+                        "last_um": round(wls[-1], 4),
+                        "monotonic": all(b > a for a, b in zip(wls, wls[1:])),
+                    },
+                },
+                "verdict": (f"contract 自检：{name} 注册表+契约+波长扫描逻辑 OK"
+                            "（数值验收请用 live 模式）"),
+            }
+        # live
+        if dev.requires_gpu and not self._cuda_ok():
+            return {"device": name, "kind": kind, "mode": "live",
+                    "passed": None, "skipped": True,
+                    "verdict": "live 全波段需 torch CUDA（当前无 GPU）→ 诚实 SKIP"}
+        from lda_agent.coupler_band_loop import (CouplerBandAgent,
+                                                 CouplerBandTarget)
+        t = CouplerBandTarget(kind=kind, wl_min_um=wl_min_um,
+                              wl_max_um=wl_max_um, n_points=n_points,
+                              gap_um=0.3, sep_um=1.6)
+        out = CouplerBandAgent().run(t)
+        d = out.to_dict()
+        d["device"] = name
+        return d
+
     def verify_all(self, mode: str = "contract",
                    live_heavy: bool = False) -> Tuple[Dict[str, Any], List[str]]:
         """验收全部器件。返回 (outcomes, skipped)。

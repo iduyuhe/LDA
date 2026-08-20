@@ -107,6 +107,26 @@
 | D-09 | **PDK 验证层接入规范** ✅（已起草 2026-08-20，待 PDK 样例接入） | 起草"PDK 如何接入 LDA 验证层"的接入规范（对准《晶圆厂 PDK 对接首封话术》五步路线图第 3 步），供首封后对接使用 | LDA_D-09_PDK验证层接入规范.md |
 | D-10 | **真实测量语料补登工具** ✅（已交付 2026-08-20） | 为退休专家/晶圆厂提供"实测语料登记"的 CLI（submit/template/validate：issue markdown 生成 + bank 追加去重）+ Issue 模板引导（对应 GitHub issue 模板 empirical_measurement.yml） | empirical_submit.py + run_d10_smoke |
 
+#### P3 · 新开发线（2026-08-20 追加）
+
+| # | 任务 | 内容 | 产出/证据 |
+|---|---|---|---|
+| D-11 | **环形谱形逆设计闭环** ✅（已交付 2026-08-20） | 把 D-03 宽带闭环扩展到环形谐振器（B11 谱形匹配）：RingBandAgent 黄金分割调 R 命中 FSR + 逐波长洛伦兹梳谱提取与解析公式双判据；bridge/derive_intent 支持 RingResonator | ring_loop.py + D-11 smoke 全绿；实测 R=9.9498µm=理论值、谱形误差 2.18e-08、方法一致性 2.46e-08；PDK 4 ring 模板真跑 |
+| D-12 | **已验证器件库固化** ✅（已交付 2026-08-20） | 把已验证器件（DC/Y 分支/Ring/Waveguide/Bragg）沉淀为可复用器件库：参数 schema + 标准验收契约（D-04 VerificationSpec）+ IR kind 映射 + contract/live 分层验收 | device_library.py + D-12 smoke 全绿；contract 5/5，live DC/YB/Ring 真跑 PASS |
+| D-13 | **WebUI 内网部署** ✅（已交付 2026-08-20） | 部署脚本（start/stop/status/restart + 健康检查，跨平台）+ main 增强（打印内网 IP）+ /api/ring_loop + 前端⑦环形面板 + 部署说明 | deploy.py + LDA_D-13_WebUI内网部署说明.md；本机 start→探测→stop 完整周期通过 |
+| D-14 | **GDSII 版图出口** ✅（已交付 2026-08-20） | 零依赖 GDSII 编码器（HEADER/BOUNDARY/PATH/SREF）+ IR/器件库→版图（Waveguide/Ring/DC/Y 分支几何）+ SVG 预览 + 读回解析器 | gds_export.py + run_gds_smoke 全绿；D-12 器件库批量导出 4 结构；演示 GDS 4 单元、SVG 预览可渲染 |
+| D-15 | **版图 DRC 自查** ✅（已交付 2026-08-20） | 可制造性规则检查（min_width / min_space / min_bend_R / max_split，典型 SOI 180nm 规则表，D-09 接入后由 PDK 覆盖）；合规 PASS / 违规逐条检出 | drc.py + run_drc_smoke 全绿；4 类违规逐一检出；D-12 器件库默认参数全过 DRC；报告 drc_report.json |
+| D-16 | **版图 → FDTD 仿真闭环** ✅（已交付 2026-08-20） | 从 D-14 版图描述提取波导宽度 → FDTD neff（复用已验证 2D-TE 内核）→ slab ORACLE 验收，形成"设计→版图→仿真→验收"全自动闭环最后一环 | layout_sim.py + run_layout_sim_smoke 全绿；Waveguide/Ring bus/IR 端到端 3 例仿真 PASS（rel 1.394%≤2%）；报告 layout_sim_report.json |
+| D-17 | **WebUI 版图流水线面板** ✅（已交付 2026-08-20） | 把 D-14 版图 / D-15 DRC / D-16 仿真接入 webui 三合一面板（⑧ 版图→DRC→仿真流水线，一键演示）；deploy.py 增端口占用检测（防残留双绑定） | /api/layout_pipeline + 前端⑧面板；本机 start→HTTP 探测（pipeline PASS/SVG/⑧面板在）→stop 完整周期通过；CI webui 冒烟增 lp 检查 |
+| D-18 | **DRC 回读整改闭环** ✅（已交付 2026-08-20） | agent 读取 DRC violation 自动整改参数（R/gap/width/split_angle 按规则调，margin 留余量）迭代直至可制造；整改轨迹 violation 单调降 + 版图 SVG | drc_fix_loop.py（DrcFixAgent）+ run_drc_fix_smoke 全绿；4 类违规初值全部 2 轮整改到可制造（如 R 2.0→5.5、gap 0.1→0.22、width 0.2→0.385、angle 45→27.3）；报告 drc_fix_report.json |
+| D-19 | **一键设计流水线** ✅（已交付 2026-08-20） | 产品化设计交付：逆设计（Ring FSR→R）→ 版图 GDS → DRC 自查 → DrcFix 自动整改 → FDTD 仿真验收 → 设计包落盘（GDS+SVG+JSON）；CLI `python -m lda_agent.design_pipeline` | design_pipeline.py + run_pipeline_smoke 全绿；Ring 逆设计 R=9.9498µm 全链路 PASS；DC 违规 gap=0.1 自动整改 0.22 PASS；CLI 入口可用 |
+| D-20 | **WebUI 一键设计流水线面板** ✅（已交付 2026-08-20） | D-19 接入 webui ⑨ 面板：输入设计意图 → 浏览器一键跑逆设计/版图/DRC/整改/仿真/验收，显示步骤+整改轨迹+版图 SVG | /api/design_pipeline + 前端⑨面板；本机 start→HTTP 探测（dp PASS/SVG/⑨面板在）→stop 通过；CI webui 冒烟增 dp 检查 |
+| D-21 | **DRC 工艺规则从 PDK 注入** ✅（已交付 2026-08-20） | PDK 加 design_rules 字段（各 foundry 不同：NOEIC min_bend 5 / CUMEC 4 / SITRI 6），DRC 按 foundry 取规则 → 同一设计跨厂可制造性不同；drc.rules_from_pdk（D-09 接入后由真实 PDK 提供） | pdk.py/pdk_examples.py 加 design_rules + run_drc_pdk_smoke 全绿；Ring R=4.5µm CUMEC 可制造、NOEIC/SITRI 违规；D-12 器件库在 CUMEC 规则下全过；报告 drc_pdk_report.json |
+| D-22 | **WebUI 可制造性面板** ✅（已交付 2026-08-20） | D-18 整改 + D-21 跨厂规则接入 webui ⑩ 面板：违规初值 → agent 读 violation 自动整改到可制造，展示整改轨迹 + 整改后设计在 3 个光子 foundry 规则下的差异化可制造性 + 版图 SVG | /api/drc_fix_demo + 前端⑩面板；本机 start→HTTP 探测（fx PASS/⑩面板在）→stop 通过；CI webui 冒烟增 fx 检查 |
+| D-23 | **耦合器多波长验收闭环** ✅（已交付 2026-08-20） | 把 D-01 单波长 DC/YB 验收扩展为多波长全波段验收（λ∈[1.5,1.6] 7 点）：DC 判据 = ORACLE κ(λ) 单调递增（真值谱形）+ FDTD 平均相对偏差≤0.25 + 最差≤0.75；YB = 全波段平衡度≤0.1 且功率正 | coupler_band_loop.py（CouplerBandAgent）+ run_coupler_band_smoke 全绿：DC mean=0.171（oracle 0.029→0.041 单调）、YB 平衡度 0.0007 全 PASS；修复 fdfd_coupler_supermodes 基模带锚定 + CouplerTarget.dl_um 固定网格；D-01 3/3 无回归；报告 coupler_band_report.json |
+| D-24 | **谱形逆设计通用化** ✅（已交付 2026-08-20） | 收敛 D-03 BandDesignAgent 与 D-11 RingBandAgent 两套近重复"搜索参数命中目标谱形"闭环为统一框架 SpectrumInverseDesignAgent（SpectrumTarget match/threshold 两模式 + 黄金分割/离散扫描两搜索器 + engine/metric/oracle 三函数即插即用） | spectrum_loop.py + run_spectrum_loop_smoke 全绿：ring 实例 R=9.9498（与 D-11 一致）、即插即用实例（n_g=4.18→R=9.9974，工艺窗口驱动落点差异）、bragg 实例 N=6 R_min=0.99981 max\|ΔR\|=7.6e-5（与 D-03 一致）；新谱形目标只须提供三函数即插即用；旧闭环保留零回归；报告 spectrum_loop_report.json |
+| D-25 | **一键设计流水线多器件扩展** ✅（已交付 2026-08-20） | design_pipeline 从只支持 Ring/DC 扩展到全部已验证器件：Waveguide target_neff→width 逆设计（slab ORACLE 反解，D-25 新）；SymmetricYBranch 分束验收（对称性定理，GPU live / 无 GPU 诚实 ORACLE 演示）；CLI 加 --target_neff | design_pipeline.py 扩展 + run_pipeline_multidevice_smoke 全绿：WG target_neff=3.2→width=0.4056µm（FDTD rel=0.478%）、YB live_fdtd balance=0.0006、Ring/DC/WG 默认回归；D-19 smoke 无回归；CI 补 D-25 冒烟 |
+
 ### 7. 里程碑节奏
 
 | 里程碑 | 时间窗(估) | 内容 | 判据 |
@@ -137,13 +157,44 @@
 | 三套裁判统一引入回归 | 统一前先锁定当前 PASS 基线（11/11 + 3/3 + 1.4 自举轨迹），统一后逐项对拍 |
 | 发动期无响应导致外部语料缺 | 开发线全部不依赖外部，先交付 P0/P1；语料工具就绪等数据 |
 
-### 10. 下一步（立即可启动的 3 件事）
+### 10. 技术债清零（2026-08-20）
 
-1. **D-01 分束器/方向耦合器验收锚**——垂直场景纵深的关键一步，架构与 1.8 完全同源，能力圈内 ✅（已交付）。
-2. **D-02 AI-dev LLMGenerator 实测**——把"AI 写核"从离线演示变成真实闭环 ✅（已交付，DeepSeek 端点 2 轮 PASS）。
-3. **D-04 三套裁判范式统一**——收敛验证资产，为 G1→G2 显式宣告和外部协作铺路 ✅（已交付）。
+D-05 时发现、本次已回填：webui 修复移除 `DesignProblem` 抽象后，`bridge`/`pdk`/smoke 仍是旧接口死代码（import `DesignProblem` 即 `ImportError`）。全部对齐当前 `DesignAgent.run(intent dict)` 现实：
+- `bridge.ir_to_design_problem` → `ir_to_intent`（Waveguide→waveguide_2d intent；其余 kind/量子域**诚实 NotImplementedError**，不静默返回假 intent）
+- `pdk.derive_problem` → `derive_intent`（waveguide 模板→intent；ring/transmon 模板诚实声明未接入）
+- `run_ir_smoke` / `run_ir_quantum_smoke` / `run_pdk_smoke` 重写为真实现；`run_ir_d05_smoke` 断言更新；`core.py` 注释对齐
+- 本地 5 个 smoke 全绿（光子 waveguide 3 foundry PASS、量子 B9 命中/失配、PDK waveguide 真跑 + 其余诚实声明、`ir_eval` 未受影响）。提交 `a9c04f8`。
 
-> 下一步建议：① P0 剩余 D-03（多波长/宽带闭环）已无外部依赖，可立即开工；② `LDA_LLM_*` 端点已配通（DeepSeek），D-02 闭环已验证；③ 是否将本规划同步到双平台仓库。
+### 11. 下一步（2026-08-20 更新：P0/P1/P2 全部交付，进入新阶段）
+
+P0（D-01/D-02/D-03）+ P1（D-04/D-05/D-06）+ P2（D-07/D-08/D-09/D-10）已**全部交付**，阶段 2 开发线闭环、技术债清零。下一步分三轨并行：
+
+**A. 开发纵深（无外部依赖，可立即开工）**
+1. **D-11 环形谱形逆设计闭环** ✅（已交付 2026-08-20）——把 D-03 宽带闭环扩展到环形谐振器（B11 谱形匹配），补上 bridge 对 RingResonator 的缺口（此前诚实 NotImplementedError）：新增 `lda/lda_agent/ring_loop.py`（RingBandAgent：黄金分割调 R 使 FSR 命中目标，逐波长洛伦兹梳谱提取 FSR 与解析公式**双判据**交叉对拍）；bridge `ir_to_intent` 支持 RingResonator → ring intent；PDK `derive_intent` 支持单 R ring 模板。**实测 PASS**：R=9.9498µm=理论值，谱形误差 2.18e-08≤0.03，方法一致性 2.46e-08≤0.02；PDK 4 个 ring 模板真跑过验收（工艺窗口差异：CUMEC n_g=4.18 → R=9.997µm）。D-11 smoke + CI 冒烟全绿。
+2. **D-12 已验证器件库固化** ✅（已交付 2026-08-20）——把已验证器件（D-01 DC/Y 分支、D-11 环形、真 2D 波导、D-03 布拉格宽带）沉淀为可复用器件库：`lda/lda_l2/device_library.py`（DeviceLibrary：每器件带参数 schema + 标准验收契约，复用 D-04 VerificationSpec；IR kind 映射；contract/live 分层验收）。**实测全绿**：contract 5/5（注册表+契约+管道，CI 用）；live 真实候选 DC/YB/Ring 全 PASS（DC κ 偏差 2.5%、YB 平衡度 0.0006、Ring FSR 解析），heavy（waveguide/bragg）标注可单跑。D-12 smoke + CI 冒烟全绿。
+3. **D-14 GDSII 版图出口** ✅（已交付 2026-08-20）——零依赖 GDSII 编码器 + IR/器件库→可制造版图：新增 `lda/lda_l2/gds_export.py`（最小 GDSII 编码器 HEADER/BOUNDARY/PATH/SREF，主权自持不依赖 gdsfactory/KLayout；4 器件几何 Waveguide/Ring/DC/Y 分支；SVG 预览 + 读回解析器）。**实测全绿**：4 器件 GDS 编码+解析 round-trip、D-12 器件库批量导出 4 结构（Bragg 一维堆叠诚实跳过）、演示 GDS `reports/gds_demo.gds`、SVG 预览可渲染。为阶段 3 真实版图生成铺路。
+4. **D-15 版图 DRC 自查** ✅（已交付 2026-08-20）——可制造性规则检查：新增 `lda/lda_l2/drc.py`（min_width / min_space / min_bend_R / max_split，典型 SOI 180nm 规则表，D-09 接入后由 PDK 覆盖；合规 PASS / 违规逐条检出 violation，供设计闭环回读整改）。**实测全绿**：4 类违规（width 0.2 / R 1.0 / gap 0.1 / angle 45）逐一检出；D-12 器件库默认参数全过 DRC；报告 `reports/drc_report.json`。"设计→版图→DRC 自查"可制造性闭环就绪。
+5. **D-16 版图 → FDTD 仿真闭环** ✅（已交付 2026-08-20）——从 D-14 版图描述提取波导宽度 → FDTD neff（复用已验证 2D-TE 内核，双监视点相位差法）→ slab ORACLE 验收：新增 `lda/lda_l2/layout_sim.py`。**实测全绿**：Waveguide / Ring bus / IR 端到端 3 例仿真 PASS（neff=3.2300 vs ORACLE 3.2756，rel=1.394%≤2%）；eps 场芯区/包层正确；报告 `reports/layout_sim_report.json`。**至此"设计→版图→DRC 自查→仿真→物理锚验收"全自动闭环贯通。**
+6. **D-18 DRC 回读整改闭环** ✅（已交付 2026-08-20）——agent 自适应可制造性修复：新增 `lda/lda_agent/drc_fix_loop.py`（DrcFixAgent 读 DRC violation 按规则整改参数，margin=1.1 留余量，迭代直至可制造；整改轨迹 violation 单调降 + 版图 SVG）。**实测全绿**：4 类违规初值全部 2 轮整改到可制造（Ring R 2.0→5.5、Waveguide width 0.2→0.385、DC gap 0.1→0.22、YB angle 45→27.3）；报告 `reports/drc_fix_report.json`。LDA 差异化演示：给一个不可制造初值，agent 自己改到可制造。
+7. **D-19 一键设计流水线** ✅（已交付 2026-08-20）——产品化设计交付：新增 `lda/lda_agent/design_pipeline.py`（逆设计 Ring FSR→R → 版图 GDS → DRC 自查 → DrcFix 自动整改 → FDTD 仿真验收 → 设计包落盘 GDS+SVG+JSON；CLI `python -m lda_agent.design_pipeline`）。**实测全绿**：Ring target_fsr=9.15 逆设计 R=9.9498µm 全链路 PASS；DC 违规 gap=0.1 自动整改 0.22 PASS；CLI 入口可用。**一条命令交付"可制造 + 已仿真验收"的设计包。**
+8. **D-21 DRC 工艺规则从 PDK 注入** ✅（已交付 2026-08-20）——可制造性落地 PDK（对齐 D-09）：`PDK` 加 `design_rules` 字段（各 foundry 不同：NOEIC min_bend 5 / CUMEC 4 / SITRI 6），`drc.rules_from_pdk` 按 foundry 取规则（未配置键回退默认）。**实测全绿**：同一 Ring R=4.5µm 在 CUMEC（min_bend 4）可制造、NOEIC（5）/SITRI（6）违规——工艺窗口驱动可制造性差异；D-12 器件库在 CUMEC 规则下全过；报告 `reports/drc_pdk_report.json`。**"多晶圆厂 → 各自工艺规则 → 差异化可制造性"链路就绪，真实 PDK 接入即插即用。**
+9. **D-23 耦合器多波长验收闭环** ✅（已交付 2026-08-20）——把 D-01 单波长耦合器验收扩展为全波段：新增 `lda/lda_agent/coupler_band_loop.py`（CouplerBandAgent，λ∈[1.5,1.6] 7 点逐波长调 D-01 CouplerAgent，全波段汇总判定）。**DC 判据**（诚实边界：κ 是大数小差量，标量近似+网格色散下 FDTD 提取精度固有 ~10–45%，故用平均偏差）：ORACLE κ(λ) 严格单调递增（真值谱形）+ FDTD 平均相对偏差 ≤ 0.25 + 最差 ≤ 0.75 + 无失败点。**YB**：全波段平衡度 ≤ 0.1 且功率正。**实测全绿**：DC mean=0.171（oracle κ 0.029→0.041 单调）、YB 平衡度 0.0007 全 PASS；**顺带修复两个真 bug**：① fdfd_coupler_supermodes 加基模带锚定（多波长下 FDFD 选模漂移 → κ 非物理振荡）；② CouplerTarget.dl_um 固定网格（dl 随 λ 变引入离散不连续）。D-01 3/3 无回归；报告 `reports/coupler_band_report.json`。
+10. **D-24 谱形逆设计通用化** ✅（已交付 2026-08-20）——收敛 D-03 BandDesignAgent 与 D-11 RingBandAgent 两套近重复闭环：新增 `lda/lda_agent/spectrum_loop.py`（**SpectrumInverseDesignAgent** 统一框架——SpectrumTarget **match/threshold 两目标模式** + **黄金分割/离散扫描两搜索器** + **engine/metric/oracle 三函数即插即用**；铁律不变：LLM 不进判决路径）。**实测全绿**：ring 实例（match+黄金分割）R=**9.9498**µm（与 D-11 完全一致）；即插即用实例（同 ring 引擎、n_g=4.18 → R=**9.9974**，工艺窗口驱动落点差异，证明三函数即插即用）；bragg 实例（threshold+离散扫描）N=6 R_min=0.99981、逐点 max|ΔR|=7.6e-5 ≤ 0.02（与 D-03 完全一致）。**收敛方向**：新谱形目标器件只须提供三函数走框架；D-03/D-11 旧实现保留零回归（前端/CI 稳定），框架等价性已由双实例验证。报告 `reports/spectrum_loop_report.json`。
+11. **D-25 一键设计流水线多器件扩展** ✅（已交付 2026-08-20）——`design_pipeline` 从只支持 Ring/DC 扩展为覆盖全部已验证器件：① **Waveguide target_neff→width 逆设计**（slab ORACLE 单调反解，`_inverse_design_waveguide`）；② **SymmetricYBranch 分束验收**（`_simulate_yb`：GPU 走 CouplerAgent live FDTD，无 GPU 诚实 ORACLE 真值演示——对称性定理 50/50）；③ CLI 加 `--target_neff`。**实测全绿**：Waveguide target_neff=3.2 → width=0.4056µm（FDTD neff=3.2152，rel=0.478% ≤ 2%）；YB live_fdtd fracA=0.4994（balance=0.0006 ≤ 0.1）；Ring/DC/WG 默认全链路回归 PASS；D-19 smoke 无回归。报告 `reports/pipeline_multidevice_report.json`。**一条命令覆盖全部已验证器件。**
+
+**B. 演示与部署（向阶段 3 商业试点过渡）**
+3. **D-13 WebUI 内网部署** ✅（已交付 2026-08-20）——新增 `lda/lda_webui/deploy.py`（start/stop/status/restart + pidfile/log + 健康检查，跨平台）；`app.py` main 增强（启动打印内网 IP 访问地址）+ 新增 `/api/ring_loop`（D-11 环形谱形闭环）；前端加 ⑦ 环形面板并入首屏预热；部署说明文档 `LDA_D-13_WebUI内网部署说明.md`。**本机实测**：deploy start → HTTP 探测（ring/coupler 全 PASS、页面 ⑦ 面板在）→ stop → status 未运行，完整运维周期通过。CI webui 冒烟增 ring/deploy 检查。
+4. **D-17 WebUI 版图流水线面板** ✅（已交付 2026-08-20）——把 D-14 版图 / D-15 DRC / D-16 仿真接入 webui ⑧ 三合一面板：新增 `/api/layout_pipeline`（器件 → GDS 版图 SVG + DRC 报告 + FDTD neff 验收一键跑）；`deploy.py` 增端口占用检测（修复多残留进程 SO_REUSEADDR 双绑定导致请求路由到旧代码的坑）；`layout_sim` 增精度自适应（wl/32 → wl/48/64，较宽波导默认分辨率精度不足 4%→0.15%）。**本机实测**：start→HTTP 探测（pipeline PASS、⑧ 面板在）→stop→端口释放，完整周期通过。CI webui 冒烟增 lp 检查。
+5. **D-20 WebUI 一键设计流水线面板** ✅（已交付 2026-08-20）——D-19 接入 webui ⑨ 面板：新增 `/api/design_pipeline`（设计意图 → 逆设计/版图/DRC/整改/仿真/验收一键跑，返回步骤+整改轨迹+版图 SVG）；`design_pipeline` 报告补 layout_svg 字段。**本机实测**：start→HTTP 探测（dp PASS、R=9.9498µm、⑨ 面板在）→stop 完整周期通过。CI webui 冒烟增 dp 检查。**webui 九个面板全部就绪（验证裁判/Agent 闭环/题库/耦合器/宽带/IR/环形/版图流水线/一键设计流水线）。**
+6. **D-22 WebUI 可制造性面板** ✅（已交付 2026-08-20）——D-18 整改 + D-21 跨厂规则接入 webui ⑩ 面板：新增 `/api/drc_fix_demo`（违规初值 → agent 读 violation 自动整改到可制造，返回整改轨迹 + 整改后设计在 3 个光子 foundry 规则下跨厂可制造性对比 + 版图 SVG）。**本机实测**：start→HTTP 探测（fx PASS、⑩ 面板在）→stop 通过。CI webui 冒烟增 fx 检查。**webui 十个面板全部就绪（+⑩ 可制造性）。**
+
+**C. 发动期（杜先生负责，与开发并行）**
+4. 退休专家线（实测语料补登，D-06/D-10 工具已就绪）
+5. 顾问委成立
+6. 晶圆厂 PDK 意向（拿到脱敏样例后执行 D-09 接入：首个 PDK 课题 = D-01 耦合器）
+7. 学生贡献者（good-first-issue 已备）
+
+> 建议杜先生确认：① D-11 / D-12 / D-13 是否按此顺序开工；② 发动期三条线的触达节奏。
 
 ---
 

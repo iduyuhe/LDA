@@ -107,6 +107,14 @@
 | D-09 | **PDK 验证层接入规范** ✅（已起草 2026-08-20，待 PDK 样例接入） | 起草"PDK 如何接入 LDA 验证层"的接入规范（对准《晶圆厂 PDK 对接首封话术》五步路线图第 3 步），供首封后对接使用 | LDA_D-09_PDK验证层接入规范.md |
 | D-10 | **真实测量语料补登工具** ✅（已交付 2026-08-20） | 为退休专家/晶圆厂提供"实测语料登记"的 CLI（submit/template/validate：issue markdown 生成 + bank 追加去重）+ Issue 模板引导（对应 GitHub issue 模板 empirical_measurement.yml） | empirical_submit.py + run_d10_smoke |
 
+#### P3 · 新开发线（2026-08-20 追加）
+
+| # | 任务 | 内容 | 产出/证据 |
+|---|---|---|---|
+| D-11 | **环形谱形逆设计闭环** ✅（已交付 2026-08-20） | 把 D-03 宽带闭环扩展到环形谐振器（B11 谱形匹配）：RingBandAgent 黄金分割调 R 命中 FSR + 逐波长洛伦兹梳谱提取与解析公式双判据；bridge/derive_intent 支持 RingResonator | ring_loop.py + D-11 smoke 全绿；实测 R=9.9498µm=理论值、谱形误差 2.18e-08、方法一致性 2.46e-08；PDK 4 ring 模板真跑 |
+| D-12 | **已验证器件库固化** | 把 D-01（DC/Y 分支）+ D-03（宽带谱形）沉淀为可复用器件库 + 验收锚 | 待开工 |
+| D-13 | **WebUI 内网演示部署** | 部署 D-07 三闭环可视化到内网演示机 | 待开工 |
+
 ### 7. 里程碑节奏
 
 | 里程碑 | 时间窗(估) | 内容 | 判据 |
@@ -150,7 +158,7 @@ D-05 时发现、本次已回填：webui 修复移除 `DesignProblem` 抽象后�
 P0（D-01/D-02/D-03）+ P1（D-04/D-05/D-06）+ P2（D-07/D-08/D-09/D-10）已**全部交付**，阶段 2 开发线闭环、技术债清零。下一步分三轨并行：
 
 **A. 开发纵深（无外部依赖，可立即开工）**
-1. **D-11 环形谱形逆设计闭环**——把 D-03 `BandDesignAgent` 从布拉格镜扩展到环形谐振器（B11 谱形匹配），补上 bridge 对 RingResonator 的最后一块（当前诚实 NotImplementedError）：让 D-05 的 RingResonator IR（R/Q/kappa/target_fsr_nm）真正驱动 agent 闭环。交付：环形 band 闭环 + bridge 环形 intent + PASS 报告。
+1. **D-11 环形谱形逆设计闭环** ✅（已交付 2026-08-20）——把 D-03 宽带闭环扩展到环形谐振器（B11 谱形匹配），补上 bridge 对 RingResonator 的缺口（此前诚实 NotImplementedError）：新增 `lda/lda_agent/ring_loop.py`（RingBandAgent：黄金分割调 R 使 FSR 命中目标，逐波长洛伦兹梳谱提取 FSR 与解析公式**双判据**交叉对拍）；bridge `ir_to_intent` 支持 RingResonator → ring intent；PDK `derive_intent` 支持单 R ring 模板。**实测 PASS**：R=9.9498µm=理论值，谱形误差 2.18e-08≤0.03，方法一致性 2.46e-08≤0.02；PDK 4 个 ring 模板真跑过验收（工艺窗口差异：CUMEC n_g=4.18 → R=9.997µm）。D-11 smoke + CI 冒烟全绿。
 2. **D-12 已验证器件库固化**——把 D-01（方向耦合器/对称 Y 分支）+ D-03（宽带谱形）沉淀为可复用器件库（自有 component + 验收锚），为阶段 3 真实版图生成铺路。
 
 **B. 演示与部署（向阶段 3 商业试点过渡）**

@@ -88,11 +88,19 @@ jobs:
       - name: L0 IR v0.2 augmentation smoke (D-05, static field completion)
         # 回归防护：D-05 L0 IR 字段补全（方向耦合器 / 对称 Y 分支 / 微环 Q·κ·FSR /
         # 量子 Transmon.target_f01 骨架）。纯静态（校验 + 序列化 round-trip + DSL +
-        # 导出 JSON），不跑 GPU 逆设计；bridge 调用被 try/except 包住（DesignProblem
-        # 已从 design_loop 移除，仅 WARN，不影响本 smoke）。
+        # 导出 JSON），不跑 GPU 逆设计；bridge 断言覆盖 Waveguide→intent、
+        # RingResonator→ring intent（D-11）、GratingCoupler 诚实 NotImplementedError。
         run: |
           cd lda
           python run_ir_d05_smoke.py
+
+      - name: Ring spectrum inverse-design loop smoke (D-11, bragg → ring)
+        # 回归防护：D-11 把宽带闭环扩展到环形谐振器（B11 谱形匹配）：IR → bridge →
+        # RingBandAgent 调 R 使 FSR 命中目标，逐波长洛伦兹梳谱提取 FSR 与解析公式
+        # 交叉对拍（双判据）。纯解析（环形传递函数），无 GPU/无 FDTD，快稳。
+        run: |
+          cd lda
+          python run_ir_ring_smoke.py
 
       - name: Empirical corpus incremental import smoke (D-06, csv/json/dedup/trace)
         # 回归防护：D-06 把 seed_empirical.json 升级为可增量语料库。

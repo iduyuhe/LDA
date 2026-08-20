@@ -47,11 +47,37 @@ def main():
     print(f"OK  waveguide 模板 {wg_cases} 例全过验收（FDTD neff ↔ slab ORACLE）")
     print()
 
-    # 2) 其它模板诚实 NotImplementedError（agent 逆设计未接入，规划 D-09）
+    # 2) ring 单 R 调 FSR 模板 → derive_intent → RingBandAgent 真跑（D-11）
+    from lda_agent.ring_loop import RingBandAgent
+    ring_agent = RingBandAgent()
+    ring_cases = 0
+    for key in reg.list_pdks():
+        for tpl in reg.get(key).templates.values():
+            if tpl.device_type != "ring_resonator":
+                continue
+            try:
+                rintent = reg.derive_intent(key, tpl.name)
+            except NotImplementedError:
+                continue  # 多参数 / B11 谱形 ring 变体 → 归入 section 3 诚实声明
+            prep = ring_agent.run(rintent)
+            assert prep["accepted"], f"ring 模板未过验收: {tpl.name}"
+            ring_cases += 1
+            print(f"[ring·{key.split('::')[0]}] {tpl.name}: "
+                  f"R={prep['final_R_um']:.4f}µm "
+                  f"FSR={prep['final_fsr_analytic_nm']:.3f}nm accepted=True")
+    assert ring_cases >= 3, "应至少跑通 3 个单 R ring 模板"
+    print(f"OK  ring 单 R 模板 {ring_cases} 例全过验收（环形谱形闭环，D-11）")
+    print()
+
+    # 3) 未接入模板诚实 NotImplementedError（transmon/gate_fidelity/多参数 ring/B11 ring）
     for key in reg.list_pdks():
         for tpl in reg.get(key).templates.values():
             if tpl.device_type == "waveguide":
-                continue
+                continue  # section 1 已真跑
+            if (tpl.device_type == "ring_resonator"
+                    and len(tpl.tunables) == 1 and "R" in tpl.tunables
+                    and tpl.target_metric == "FSR_nm"):
+                continue  # section 2 已真跑
             try:
                 reg.derive_intent(key, tpl.name)
                 print(f"FAIL {key} · {tpl.name} 应诚实 NotImplementedError")
@@ -78,8 +104,8 @@ def main():
     print(f"[多晶圆厂] 已登记 PDK 数={n_pdk}：{reg.list_pdks()}")
     assert n_pdk >= 4, "应已登记 ≥4 个 foundry（NOEIC/CUMEC/SITRI/量子）"
 
-    print("\nL2 PDK smoke OK —— waveguide 模板真跑过验收，其余模板诚实声明未接入，"
-          "B6 门控 + 多晶圆厂共建纪律生效。")
+    print("\nL2 PDK smoke OK —— waveguide + ring 单 R 模板真跑过验收，其余模板"
+          "诚实声明未接入，B6 门控 + 多晶圆厂共建纪律生效。")
 
 
 if __name__ == "__main__":

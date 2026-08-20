@@ -13,10 +13,11 @@ DesignAgent 现只消费 dict 意图，故本层输出 intent dict 而非 Design
           "同一设计意图落在不同工艺窗口 → 不同收敛落点"（多晶圆厂共建闭环）。
 
 当前 DesignAgent 能力边界（诚实声明）：
-  仅支持光子 Waveguide(kind) → 真 2D 波导验收闭环（geo_kind="waveguide_2d"，
-  FDTD neff ↔ slab ORACLE）。环形谱形 / 耦合器 / 量子逆设计需经
-  D-03 BandDesignAgent / D-01 CouplerAgent 专用闭环接入（规划 D-09）——
-  对不支持 kind 抛 NotImplementedError，不静默返回假 intent。
+  支持光子 Waveguide(kind) → 真 2D 波导验收闭环（geo_kind="waveguide_2d"，
+  FDTD neff ↔ slab ORACLE）；RingResonator → 环形谱形逆设计闭环（D-11，
+  解析环形传递函数 + 谱形提取交叉验收）。耦合器/分束器/量子逆设计需经
+  D-01 CouplerAgent 专用闭环接入（规划 D-09）——对不支持 kind 抛
+  NotImplementedError，不静默返回假 intent。
 
 另提供 ir_eval：L3 直接消费 IR 算真值 + 判定（不经 agent 闭环），这是
 "IR 即事实源"的活路径（与 DesignAgent 无关，始终可用）。
@@ -33,8 +34,9 @@ from .core import IRModel
 def _check_bridgeable(model: IRModel):
     """校验 IR 是否可桥接为 DesignAgent intent；返回 primary_component。
 
-    当前 DesignAgent 仅支持光子真 2D 波导（Waveguide → waveguide_2d）。
-    其余 kind / 量子域诚实抛 NotImplementedError，不静默返回假 intent。
+    当前 DesignAgent 支持光子 Waveguide（→waveguide_2d）与 RingResonator
+    （→ring 谱形闭环，D-11）。其余 kind / 量子域诚实抛 NotImplementedError，
+    不静默返回假 intent。
     """
     prim = model.primary_component
     if prim is None:
@@ -42,12 +44,13 @@ def _check_bridgeable(model: IRModel):
     if model.domain != "photon":
         raise NotImplementedError(
             f"domain={model.domain} 的 agent 逆设计闭环未接入：当前 DesignAgent "
-            "仅支持光子真 2D 波导(waveguide_2d)。量子侧真值判定请走 ir_eval。")
-    if prim.kind != "Waveguide":
+            "仅支持光子真 2D 波导(waveguide_2d)与环形谱形闭环(ring)。"
+            "量子侧真值判定请走 ir_eval。")
+    if prim.kind not in ("Waveguide", "RingResonator"):
         raise NotImplementedError(
             f"kind={prim.kind} 的 agent 逆设计闭环未接入：当前 DesignAgent 仅支持 "
-            "Waveguide（真 2D 波导）。RingResonator/耦合器/分束器谱形逆设计需经 "
-            "D-03 BandDesignAgent / D-01 CouplerAgent 接入（见规划 D-09）。")
+            "Waveguide（真 2D 波导）与 RingResonator（环形谱形，D-11）。"
+            "耦合器/分束器需经 D-01 CouplerAgent 接入（见规划 D-09）。")
     return prim
 
 
@@ -63,6 +66,40 @@ def ir_to_intent(model: IRModel, registry, foundry_key: str,
     prim = _check_bridgeable(model)
     pdk = registry.get(foundry_key)
 
+    if prim.kind == "RingResonator":
+        # —— 环形谱形逆设计闭环（D-11）：调 R 使 drop 谱 FSR 命中目标 ——
+        spec = model.spectrum
+        target_fsr = prim.params.get("target_fsr_nm")
+        if target_fsr is None and spec is not None:
+            target_fsr = spec.target_fsr_nm
+        if target_fsr is None:
+            raise ValueError(
+                "RingResonator IR 需 target_fsr_nm（组件参数或 SpectrumSpec）")
+        R_bounds = prim.param_bounds.get("R", (8.0, 12.0))
+        n_g = prim.params.get("n_g") or (spec.n_g if spec else 4.2)
+        wl0 = spec.wl0_um if spec else 1.55
+        return {
+            "geometry_type": "ring",
+            "target_wavelength_um": float(wl0),
+            "target_metric": "spectrum_match",
+            "threshold": 0.0,
+            "tolerance_rel": 0.02,       # 方法一致性容差（谱形提取 ↔ 解析）
+            "max_iterations": 40,
+            "initial_periods": 1,
+            "extra": {
+                "R_um": float(prim.params.get("R", 10.0)),
+                "R_bounds": [float(v) for v in R_bounds],
+                "n_g": float(n_g),
+                "Q": float(prim.params.get("Q", 1.0e4)),
+                "kappa": float(prim.params.get("kappa", 0.05)),
+                "target_fsr_nm": float(target_fsr),
+                "wl0_um": float(wl0),
+                "target_tol": 0.03,      # 设计目标容差（与 B11 golden 一致）
+                "backend": backend,
+            },
+        }
+
+    # —— Waveguide → 真 2D 波导验收闭环 ——
     wl0 = model.spectrum.wl0_um if model.spectrum else 1.55
     width = float(prim.params.get("width", 0.5))
     return {

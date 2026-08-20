@@ -140,25 +140,56 @@ class PDKRegistry:
         """由 PDK 模板派生一个 DesignAgent.run 可消费的 intent dict。
 
         当前 DesignAgent 能力边界（webui 修复后 DesignProblem 抽象已移除）：
-        仅 waveguide 模板可真跑（真 2D 波导闭环，FDTD neff ↔ slab ORACLE）。
-        ring_resonator/transmon 等谱形/频率逆设计未接入 agent 闭环（规划
-        D-09 / BandDesignAgent 通用化后接入）——对不支持模板诚实抛
-        NotImplementedError，不静默返回假 intent。
+        - waveguide 模板 → 真 2D 波导闭环（FDTD neff ↔ slab ORACLE）
+        - ring_resonator 单 R 调 FSR 模板 → 环形谱形闭环（D-11，解析环形
+          传递函数 + 谱形提取交叉验收）；多参数/谱形(B11) ring 变体未接入
+        - transmon/gate_fidelity → 未接入（规划 D-09 / BandDesignAgent 通用化）
+        对不支持模板诚实抛 NotImplementedError，不静默返回假 intent。
         """
         pdk = self.get(pdk_key)
         t = pdk.templates.get(template_name)
         if not t:
             raise KeyError(f"PDK {pdk_key} 无模板 {template_name}")
+        fp = dict(t.fixed_params)
+        tb = t.bounds if t.bounds is not None else list(t.tunables.values())[0]
+
+        if t.device_type == "ring_resonator":
+            # 仅支持"单 R 调 FSR"（tunables 仅 R、目标 metric 为 FSR_nm）
+            if not (len(t.tunables) == 1 and "R" in t.tunables
+                    and t.target_metric == "FSR_nm"):
+                raise NotImplementedError(
+                    f"模板 {t.name}（device_type=ring_resonator）未接入："
+                    "当前环形闭环仅支持单 R 调 FSR（D-11）；"
+                    "多参数/谱形(B11)变体规划 D-09 接入。")
+            return {
+                "geometry_type": "ring",
+                "target_wavelength_um": float(fp.get("wl", 1.55)),
+                "target_metric": "spectrum_match",
+                "threshold": 0.0,
+                "tolerance_rel": 0.02,       # 方法一致性容差
+                "max_iterations": 40,
+                "initial_periods": 1,
+                "extra": {
+                    "R_um": float((tb[0] + tb[1]) / 2.0),
+                    "R_bounds": [float(tb[0]), float(tb[1])],
+                    "n_g": float(fp.get("n_g", 4.2)),
+                    "Q": 1.0e4,
+                    "kappa": 0.05,
+                    "target_fsr_nm": float(t.target),
+                    "wl0_um": float(fp.get("wl", 1.55)),
+                    "target_tol": float(t.target_tol or 0.03),
+                    "backend": backend,
+                },
+            }
+
         if t.device_type != "waveguide":
             raise NotImplementedError(
                 f"模板 device_type={t.device_type} 的 agent 逆设计未接入："
-                "当前 DesignAgent 仅支持 waveguide（真 2D 波导）；"
-                "ring_resonator/transmon 等谱形/频率逆设计规划于 D-09 接入。")
+                "当前 DesignAgent 仅支持 waveguide / ring_resonator；"
+                "transmon/gate_fidelity 等规划于 D-09 接入。")
 
-        fp = dict(t.fixed_params)
-        # 模板的 tunable 是 benchmark 参数名（w_core），intent 只需宽度初始值：
+        # waveguide 模板的 tunable 是 benchmark 参数名（w_core），intent 只需宽度初始值：
         # 取工艺窗口（bounds）中值作为候选起点（waveguide_2d 单次验证即判定）。
-        tb = t.bounds if t.bounds is not None else list(t.tunables.values())[0]
         width_init = (tb[0] + tb[1]) / 2.0
         return {
             "geometry_type": "waveguide_2d",

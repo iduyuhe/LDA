@@ -1,18 +1,26 @@
 """LDA L0 → L2/L1/agent 桥接层。
 
-把"机器优先的 IR"翻译为现有 agent 设计闭环可消费的 DesignProblem，并经 L1
-KernelGateway 驱动 L3 内核真算——这正是《白皮书》人机协作哲学的落地：IR 是
-人/agent 写出的"设计意图机器语言"，桥接层把它适配成"agent 操作接口"
-（确定性、批处理、可验证、无交互）。
+把"机器优先的 IR"翻译为现有 agent 设计闭环可消费的 **intent dict**
+（DesignAgent.run 接口）。注：webui 修复时移除了 DesignProblem 抽象层，
+DesignAgent 现只消费 dict 意图，故本层输出 intent dict 而非 DesignProblem。
 
 两个入口：
-  - ir_to_design_problem(model, registry, foundry_key)
-        ：单 foundry 逆设计。foundry 的工艺窗口（n_si 等）注入 base_params，
-          IR 的 spectrum → B11 objective，objectives → 加权 objective，
-          param_bounds → tunables。
+  - ir_to_intent(model, registry, foundry_key)
+        ：单 foundry 意图。foundry 的工艺窗口（n_si 等）注入 materials，
+          设计意图（目标谱形/objective）翻译为 DesignAgent 可跑的目标。
   - ir_to_multifoundry(model, registry)
-        ：按 FoundryPlan 遍历 foundry 生成多个 DesignProblem，天然表达
+        ：按 FoundryPlan 遍历 foundry 生成多个 intent，天然表达
           "同一设计意图落在不同工艺窗口 → 不同收敛落点"（多晶圆厂共建闭环）。
+
+当前 DesignAgent 能力边界（诚实声明）：
+  支持光子 Waveguide(kind) → 真 2D 波导验收闭环（geo_kind="waveguide_2d"，
+  FDTD neff ↔ slab ORACLE）；RingResonator → 环形谱形逆设计闭环（D-11，
+  解析环形传递函数 + 谱形提取交叉验收）。耦合器/分束器/量子逆设计需经
+  D-01 CouplerAgent 专用闭环接入（规划 D-09）——对不支持 kind 抛
+  NotImplementedError，不静默返回假 intent。
+
+另提供 ir_eval：L3 直接消费 IR 算真值 + 判定（不经 agent 闭环），这是
+"IR 即事实源"的活路径（与 DesignAgent 无关，始终可用）。
 
 零外部依赖；延迟导入 lda_agent / lda_l2，避免编译期强耦合。
 """
@@ -20,113 +28,108 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Tuple
 
-from .core import IRModel, SpectrumSpec
+from .core import IRModel
 
 
-def _spectrum_to_objective(spec: SpectrumSpec) -> Dict:
-    """目标谱形 → 单目标 objective（bid=B11, target=0, tol=0.03）。
+def _check_bridgeable(model: IRModel):
+    """校验 IR 是否可桥接为 DesignAgent intent；返回 primary_component。
 
-    零耦合 harness：误差公式由 SpectrumSpec.metric 自身给出，与
-    lda_harness.golden.b11_ring_spectrum_match 同式，bridge 只负责把
-    spectrum 翻译成"让 B11 误差趋近 0"的目标。
+    当前 DesignAgent 支持光子 Waveguide（→waveguide_2d）与 RingResonator
+    （→ring 谱形闭环，D-11）。其余 kind / 量子域诚实抛 NotImplementedError，
+    不静默返回假 intent。
     """
-    return {"bid": "B11", "weight": 1.0, "target": 0.0, "tol": 0.03}
-
-
-def ir_to_design_problem(model: IRModel, registry, foundry_key: str,
-                         solver: str = "truth") -> "object":
-    """由 IR + 指定 foundry 构造一个 DesignProblem（驱动单 foundry 逆设计）。
-
-    registry 为 lda_l2.pdk.PDKRegistry 实例；foundry_key 形如 "NOEIC(演示近似)::SOI 180nm"。
-    """
-    from lda_agent.design_loop import DesignProblem
-
-    pdk = registry.get(foundry_key)
     prim = model.primary_component
     if prim is None:
-        raise ValueError("IR 无 component，无法构造设计问题")
+        raise ValueError("IR 无 component，无法构造设计意图")
+    if model.domain != "photon":
+        raise NotImplementedError(
+            f"domain={model.domain} 的 agent 逆设计闭环未接入：当前 DesignAgent "
+            "仅支持光子真 2D 波导(waveguide_2d)与环形谱形闭环(ring)。"
+            "量子侧真值判定请走 ir_eval。")
+    if prim.kind not in ("Waveguide", "RingResonator"):
+        raise NotImplementedError(
+            f"kind={prim.kind} 的 agent 逆设计闭环未接入：当前 DesignAgent 仅支持 "
+            "Waveguide（真 2D 波导）与 RingResonator（环形谱形，D-11）。"
+            "耦合器/分束器需经 D-01 CouplerAgent 接入（见规划 D-09）。")
+    return prim
 
-    # 工艺窗口注入：仅光子域有意义——foundry 的 n_si 作为 n_g 近似（与现有
-    # pdk_examples B11 模板一致）。折射率是工艺参数，由 foundry 决定，故光子域
-    # 强制用 foundry.n_si（覆盖 IR 占位），与量子 E_C 工艺固定对称：设计者只
-    # 调几何。量子域（transmon 频率由 E_J/E_C 决定）不注入 n_g。
-    base_params: Dict[str, float] = dict(prim.params)
-    if model.domain == "photon":
-        base_params["n_g"] = pdk.n_si
 
-    # 量子工艺窗口注入：transmon 的 E_C 是**工艺参数**（由代工结型/氧化层决定），
-    # 设计者只调 E_J（结面积）命中频率——与光子"n_si 由工艺决定、调几何 R"完全
-    # 对称。因此无论 IR 是否显式给 E_C，均用 foundry 的 ec_default 强制固定 E_C
-    # 并移除其可调，使"同一 f01 目标在不同量子厂收敛到不同 E_J 落点"的因果链
-    # 完全由工艺窗口驱动（多晶圆厂共建的干净演示）。
-    ec = None
-    if model.domain == "quantum" and pdk.quantum_window:
-        ec = pdk.quantum_window.get("ec_default")
-    if ec is not None:
-        base_params["E_C"] = ec
+def ir_to_intent(model: IRModel, registry, foundry_key: str,
+                 backend: str = "numpy") -> Dict:
+    """由 IR + 指定 foundry 构造一个 DesignAgent.run 可消费的 intent dict。
 
-    # 可调参数区间
-    tunables: Dict[str, Tuple[float, float]] = {k: tuple(v) for k, v in prim.param_bounds.items()}
-    if model.domain == "quantum" and ec is not None and "E_C" in tunables:
-        # E_C 由工艺固定 → 移除可调（只调 E_J）
-        del tunables["E_C"]
+    registry 为 lda_l2.pdk.PDKRegistry 实例；foundry_key 形如
+    "NOEIC(演示近似)::SOI 180nm"。foundry 的 n_si/n_clad 作为工艺窗口注入
+    materials（与旧 DesignProblem 的 base_params 注入语义一致），设计变量
+    width 经 extra 传入（waveguide_2d 的 DesignerAgent 读取）。
+    """
+    prim = _check_bridgeable(model)
+    pdk = registry.get(foundry_key)
 
-    # 构造 objective 列表：spectrum → B11；外加 IR.objectives
-    objective: List[Dict] = []
-    bids: List[str] = []
-    constraint_bids: List[str] = []
-    if model.spectrum is not None:
-        objective.append(_spectrum_to_objective(model.spectrum))
-        bids.append("B11")
-    for o in model.objectives:
-        objective.append({"bid": o.bid, "weight": o.weight,
-                          "target": o.target, "tol": o.tol})
-        bids.append(o.bid)
-        if o.role == "constraint":
-            constraint_bids.append(o.bid)
+    if prim.kind == "RingResonator":
+        # —— 环形谱形逆设计闭环（D-11）：调 R 使 drop 谱 FSR 命中目标 ——
+        spec = model.spectrum
+        target_fsr = prim.params.get("target_fsr_nm")
+        if target_fsr is None and spec is not None:
+            target_fsr = spec.target_fsr_nm
+        if target_fsr is None:
+            raise ValueError(
+                "RingResonator IR 需 target_fsr_nm（组件参数或 SpectrumSpec）")
+        R_bounds = prim.param_bounds.get("R", (8.0, 12.0))
+        n_g = prim.params.get("n_g") or (spec.n_g if spec else 4.2)
+        wl0 = spec.wl0_um if spec else 1.55
+        return {
+            "geometry_type": "ring",
+            "target_wavelength_um": float(wl0),
+            "target_metric": "spectrum_match",
+            "threshold": 0.0,
+            "tolerance_rel": 0.02,       # 方法一致性容差（谱形提取 ↔ 解析）
+            "max_iterations": 40,
+            "initial_periods": 1,
+            "extra": {
+                "R_um": float(prim.params.get("R", 10.0)),
+                "R_bounds": [float(v) for v in R_bounds],
+                "n_g": float(n_g),
+                "Q": float(prim.params.get("Q", 1.0e4)),
+                "kappa": float(prim.params.get("kappa", 0.05)),
+                "target_fsr_nm": float(target_fsr),
+                "wl0_um": float(wl0),
+                "target_tol": 0.03,      # 设计目标容差（与 B11 golden 一致）
+                "backend": backend,
+            },
+        }
 
-    # 几何相关硬约束（环形必须有 B4 弯曲半径约束，保证可制造）
-    if "RingResonator" in prim.kind and "B4" not in constraint_bids:
-        constraint_bids.append("B4")
-        if "B4" not in bids:
-            bids.append("B4")
-
-    if not objective:
-        raise ValueError("IR 未指定任何 objective（spectrum 或 objectives 至少其一）")
-
-    primary_bid = objective[0]["bid"]
-    # 主目标 target/tol（DesignProblem 单目标兼容字段）
-    primary_target = objective[0]["target"]
-    primary_tol = objective[0]["tol"]
-
-    # 梯度下降：谱形逆设计用有限差分梯度（数值伴随）
-    use_gradient = model.spectrum is not None
-
-    return DesignProblem(
-        name=f"{model.name or prim.kind} @ {pdk.foundry}/{pdk.node}",
-        bids=bids,
-        objective_bid=primary_bid,
-        target_metric="spectrum_match" if model.spectrum else "custom",
-        target=primary_target,
-        target_tol=primary_tol,
-        base_params=base_params,
-        tunables=tunables,
-        decreasing=False,
-        constraint_bids=constraint_bids,
-        use_gradient=use_gradient,
-        objective=objective,
-        solver=solver,
-    )
+    # —— Waveguide → 真 2D 波导验收闭环 ——
+    wl0 = model.spectrum.wl0_um if model.spectrum else 1.55
+    width = float(prim.params.get("width", 0.5))
+    return {
+        "geometry_type": "waveguide_2d",
+        "materials": {"air": 1.0, "sih": pdk.n_si, "silo": pdk.n_clad},
+        "target_wavelength_um": float(wl0),
+        "target_metric": "neff",
+        "threshold": 1.0,            # 波导验收以"与 slab ORACLE 一致"为准，无 R 阈值
+        "tolerance_rel": 0.02,
+        "max_iterations": 1,         # waveguide_2d 单次验证即判定（方法一致性）
+        "initial_periods": 1,
+        "extra": {
+            "width_um": width,
+            "core_ref": "sih",
+            "clad_ref": "silo",
+            "backend": backend,
+        },
+    }
 
 
 def ir_to_multifoundry(model: IRModel, registry,
-                       solver: str = "truth") -> List[Tuple[str, "object"]]:
-    """按 FoundryPlan 遍历 foundry，返回 [(foundry_key, DesignProblem), ...]。
+                       backend: str = "numpy") -> List[Tuple[str, Dict]]:
+    """按 FoundryPlan 遍历 foundry，返回 [(foundry_key, intent), ...]。
 
-    mode="all" → 注册表全部 foundry；mode="list" → 仅指定 foundry。量子 foundry
-    没有匹配光子器件的工艺窗口也能跑（桥接只用 n_si/工艺窗口，逆设计仍收敛到
-    几何落点），但若某 foundry 链构造失败则跳过并告警（不阻断其他 foundry）。
+    domain 过滤：光子 IR 不派发到量子 foundry（避免误用工艺窗口），量子 IR
+    反之。kind 不支持时整体抛 NotImplementedError（非静默空列表）；单 foundry
+    数据问题跳过并告警（不阻断其他 foundry）。
     """
+    _check_bridgeable(model)  # 整体不可桥接 → 直接抛，不静默返回空
+
     if model.foundry_plan is None:
         # 默认：若 IR 指定 pdk_ref 则单 foundry，否则全部
         keys = [model.pdk_ref] if model.pdk_ref else registry.list_pdks()
@@ -141,11 +144,11 @@ def ir_to_multifoundry(model: IRModel, registry,
     elif model.domain == "quantum":
         keys = [k for k in keys if "量子" in k]
 
-    out: List[Tuple[str, "object"]] = []
+    out: List[Tuple[str, Dict]] = []
     for k in keys:
         try:
-            prob = ir_to_design_problem(model, registry, k, solver=solver)
-            out.append((k, prob))
+            intent = ir_to_intent(model, registry, k, backend=backend)
+            out.append((k, intent))
         except Exception as e:  # 单 foundry 失败不阻断整体多 foundry 对比
             print(f"[bridge] 跳过 foundry '{k}'：{e}")
     return out
@@ -159,7 +162,7 @@ def ir_to_multifoundry(model: IRModel, registry,
 def _inject_process_params(model: IRModel, foundry_key: str, registry) -> Dict[str, float]:
     """构造 IR 的完整候选参数：组件初始参数 + foundry 工艺窗口注入。
 
-    与 ir_to_design_problem 共享同一套注入规则（光子 n_si、量子 E_C 工艺固定），
+    与 ir_to_intent 共享同一套注入规则（光子 n_si、量子 E_C 工艺固定），
     保证"经 agent 闭环优化"与"L3 直接算真值"两路径完全同源。
     """
     pdk = registry.get(foundry_key)

@@ -95,7 +95,7 @@
 | # | 任务 | 内容 | 产出/证据 |
 |---|---|---|---|
 | D-04 | **三套裁判范式统一** ✅ **已交付（2026-08-20）** | 定义统一验证契约（VerificationSpec），让 harness / solver_writer / waveguide_loop / coupler_loop 共用同一套 ORACLE 接入、容差、报告格式 | `verification_spec.py`（契约）+ `verification_adapters.py`（四套适配）+ `run_all_specs.py`（统一入口）；**全量回归 18/18 PASS**（harness 11 + waveguide 3 + coupler 3 + solver_writer 1） |
-| D-05 | **L0 IR 补全（光子子集 + 量子预留）** | 光子子集补全分束器/耦合器/微环字段；量子子集从"预留"推进为"骨架字段定义" | L0 IR schema v0.2 + 文档更新 |
+| D-05 | **L0 IR 补全（光子子集 + 量子预留）** ✅（已交付 2026-08-20） | 光子子集补全分束器/耦合器/微环字段；量子子集从"预留"推进为"骨架字段定义" | L0 IR schema v0.2（DirectionalCoupler/SymmetricYBranch/RingResonator 扩展/Transmon.target_f01）+ v0.2 增补说明文档 + D-05 smoke 全绿 |
 | D-06 | **实证语料结构化导入** | 把 `seed_empirical.json` 升级为可增量的语料库（支持 csv/JSON 批量导入、去重、溯源），为晶圆厂/专家补登铺路 | empirical_bank 导入工具 + 测试 |
 
 #### P2 · 工程化与商业准备（与发动期联动 · 部分依赖外部）
@@ -112,7 +112,7 @@
 | 里程碑 | 时间窗(估) | 内容 | 判据 |
 |---|---|---|---|
 | M1 | 2–3 周 | D-01 ~~分束器/耦合器验收锚~~ ✅（已交付）+ D-02 ~~AI-dev LLMGenerator 实测~~ ✅（已交付）+ D-03 ~~多波长/宽带闭环~~ ✅（已交付） | ~~分束器 3/3 PASS~~ ✅（3/3，2026-08-20）；~~LLMGenerator PASS 报告~~ ✅（2 轮闭环 PASS，max_abs_err=0.0026）；~~宽带设计验收 PASS~~ ✅（λ∈[1.43,1.67]µm 全波段 max&#124;ΔR&#124;=7.6e-5，2026-08-20） |
-| M2 | 4–8 周 | D-04 ~~三套裁判统一~~ ✅（已交付）+ D-05 L0 IR 补全 + D-07 WebUI 完善 | ~~全量回归 PASS~~ ✅（18/18，2026-08-20）；IR schema v0.2；WebUI 可演示 |
+| M2 | 4–8 周 | D-04 ~~三套裁判统一~~ ✅（已交付）+ D-05 ~~L0 IR 补全~~ ✅（已交付 2026-08-20）+ D-07 WebUI 完善 | ~~全量回归 PASS~~ ✅（18/18，2026-08-20）；IR schema v0.2 ✅（v0.2 增补说明 + D-05 smoke 全绿）；WebUI 可演示 |
 | M3 | 8–12 周 | D-06/D-10 语料工具 + D-08 认证版边界 + D-09 PDK 接入规范 | 工具就绪；认证版边界文档；PDK 接入规范定稿 |
 
 > 时间窗为估算，随发动期进展可弹性调整；P0（D-01/D-02/D-03）不依赖外部，可立即开工。

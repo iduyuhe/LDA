@@ -66,3 +66,12 @@ jobs:
         run: |
           cd lda
           python -c "import sys; sys.path.insert(0,'.'); from lda_agent.multiband_loop import main_band; r=main_band(); assert r['accepted'], r['verdict']; print('D-03 multiband PASS, R_min=%.4f, max_abs_err=%.2e'%(r['final_band_min_R_fdtd'], r['final_max_abs_err']))"
+
+      - name: L0 IR v0.2 augmentation smoke (D-05, static field completion)
+        # 回归防护：D-05 L0 IR 字段补全（方向耦合器 / 对称 Y 分支 / 微环 Q·κ·FSR /
+        # 量子 Transmon.target_f01 骨架）。纯静态（校验 + 序列化 round-trip + DSL +
+        # 导出 JSON），不跑 GPU 逆设计；bridge 调用被 try/except 包住（DesignProblem
+        # 已从 design_loop 移除，仅 WARN，不影响本 smoke）。
+        run: |
+          cd lda
+          python run_ir_d05_smoke.py

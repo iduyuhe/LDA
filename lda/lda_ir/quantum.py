@@ -15,24 +15,37 @@ Param / ObjectiveSpec / 校验器 / 桥接层）同时表达光子器件与量�
 """
 from __future__ import annotations
 
-from typing import Tuple
+from typing import Dict, Optional, Tuple
 
 from .core import Component, Port
 
 
 def Transmon(id: str = "q1", E_J: float = 20.0, E_C: float = 0.30,
+             target_f01: Optional[float] = None,
              EJ_bounds: Tuple[float, float] = (5.0, 40.0),
              EC_bounds: Tuple[float, float] = (0.1, 1.0)) -> Component:
     """超导 transmon 量子比特（驱动 B9 频率逆设计的主器件）。
 
-    E_J = 约瑟夫森能（GHz），E_C = 充电能（GHz）。f01 = √(8·E_J·E_C) − E_C。
+    光子子集 v0.2 同步：量子子集从"预留"推进为"骨架字段定义"——
+    本件已是完整骨架（E_J / E_C 字段 + f01 解析锚），新增 target_f01
+    表达量子设计意图：
+      - E_J / E_C    ：约瑟夫森能 / 充电能（GHz），f01 = √(8·E_J·E_C) − E_C；
+      - target_f01   ：可选目标跃迁频率（GHz），对齐光子 SpectrumSpec 的
+                       "目标谱形"语义——量子侧用"目标频率"表达设计意图。
+
     默认两参数均可调（N 维逆设计）；若只想调 E_J 命中频率，可只给 EJ_bounds。
     """
+    params: Dict[str, float] = {"E_J": E_J, "E_C": E_C}
+    if target_f01 is not None:
+        params["target_f01"] = target_f01
+    bounds: Dict[str, tuple] = {"E_J": tuple(EJ_bounds), "E_C": tuple(EC_bounds)}
+    if target_f01 is not None:
+        bounds["target_f01"] = (1.0, 15.0)
     return Component(
         id=id,
         kind="Transmon",
-        params={"E_J": E_J, "E_C": E_C},
-        param_bounds={"E_J": tuple(EJ_bounds), "E_C": tuple(EC_bounds)},
+        params=params,
+        param_bounds=bounds,
         ports=[Port("control"), Port("readout")],
     )
 

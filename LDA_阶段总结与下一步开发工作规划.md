@@ -114,6 +114,7 @@
 | D-11 | **环形谱形逆设计闭环** ✅（已交付 2026-08-20） | 把 D-03 宽带闭环扩展到环形谐振器（B11 谱形匹配）：RingBandAgent 黄金分割调 R 命中 FSR + 逐波长洛伦兹梳谱提取与解析公式双判据；bridge/derive_intent 支持 RingResonator | ring_loop.py + D-11 smoke 全绿；实测 R=9.9498µm=理论值、谱形误差 2.18e-08、方法一致性 2.46e-08；PDK 4 ring 模板真跑 |
 | D-12 | **已验证器件库固化** ✅（已交付 2026-08-20） | 把已验证器件（DC/Y 分支/Ring/Waveguide/Bragg）沉淀为可复用器件库：参数 schema + 标准验收契约（D-04 VerificationSpec）+ IR kind 映射 + contract/live 分层验收 | device_library.py + D-12 smoke 全绿；contract 5/5，live DC/YB/Ring 真跑 PASS |
 | D-13 | **WebUI 内网部署** ✅（已交付 2026-08-20） | 部署脚本（start/stop/status/restart + 健康检查，跨平台）+ main 增强（打印内网 IP）+ /api/ring_loop + 前端⑦环形面板 + 部署说明 | deploy.py + LDA_D-13_WebUI内网部署说明.md；本机 start→探测→stop 完整周期通过 |
+| D-14 | **GDSII 版图出口** ✅（已交付 2026-08-20） | 零依赖 GDSII 编码器（HEADER/BOUNDARY/PATH/SREF）+ IR/器件库→版图（Waveguide/Ring/DC/Y 分支几何）+ SVG 预览 + 读回解析器 | gds_export.py + run_gds_smoke 全绿；D-12 器件库批量导出 4 结构；演示 GDS 4 单元、SVG 预览可渲染 |
 
 ### 7. 里程碑节奏
 
@@ -160,6 +161,7 @@ P0（D-01/D-02/D-03）+ P1（D-04/D-05/D-06）+ P2（D-07/D-08/D-09/D-10）已**
 **A. 开发纵深（无外部依赖，可立即开工）**
 1. **D-11 环形谱形逆设计闭环** ✅（已交付 2026-08-20）——把 D-03 宽带闭环扩展到环形谐振器（B11 谱形匹配），补上 bridge 对 RingResonator 的缺口（此前诚实 NotImplementedError）：新增 `lda/lda_agent/ring_loop.py`（RingBandAgent：黄金分割调 R 使 FSR 命中目标，逐波长洛伦兹梳谱提取 FSR 与解析公式**双判据**交叉对拍）；bridge `ir_to_intent` 支持 RingResonator → ring intent；PDK `derive_intent` 支持单 R ring 模板。**实测 PASS**：R=9.9498µm=理论值，谱形误差 2.18e-08≤0.03，方法一致性 2.46e-08≤0.02；PDK 4 个 ring 模板真跑过验收（工艺窗口差异：CUMEC n_g=4.18 → R=9.997µm）。D-11 smoke + CI 冒烟全绿。
 2. **D-12 已验证器件库固化** ✅（已交付 2026-08-20）——把已验证器件（D-01 DC/Y 分支、D-11 环形、真 2D 波导、D-03 布拉格宽带）沉淀为可复用器件库：`lda/lda_l2/device_library.py`（DeviceLibrary：每器件带参数 schema + 标准验收契约，复用 D-04 VerificationSpec；IR kind 映射；contract/live 分层验收）。**实测全绿**：contract 5/5（注册表+契约+管道，CI 用）；live 真实候选 DC/YB/Ring 全 PASS（DC κ 偏差 2.5%、YB 平衡度 0.0006、Ring FSR 解析），heavy（waveguide/bragg）标注可单跑。D-12 smoke + CI 冒烟全绿。
+3. **D-14 GDSII 版图出口** ✅（已交付 2026-08-20）——零依赖 GDSII 编码器 + IR/器件库→可制造版图：新增 `lda/lda_l2/gds_export.py`（最小 GDSII 编码器 HEADER/BOUNDARY/PATH/SREF，主权自持不依赖 gdsfactory/KLayout；4 器件几何 Waveguide/Ring/DC/Y 分支；SVG 预览 + 读回解析器）。**实测全绿**：4 器件 GDS 编码+解析 round-trip、D-12 器件库批量导出 4 结构（Bragg 一维堆叠诚实跳过）、演示 GDS `reports/gds_demo.gds`、SVG 预览可渲染。为阶段 3 真实版图生成铺路。
 
 **B. 演示与部署（向阶段 3 商业试点过渡）**
 3. **D-13 WebUI 内网部署** ✅（已交付 2026-08-20）——新增 `lda/lda_webui/deploy.py`（start/stop/status/restart + pidfile/log + 健康检查，跨平台）；`app.py` main 增强（启动打印内网 IP 访问地址）+ 新增 `/api/ring_loop`（D-11 环形谱形闭环）；前端加 ⑦ 环形面板并入首屏预热；部署说明文档 `LDA_D-13_WebUI内网部署说明.md`。**本机实测**：deploy start → HTTP 探测（ring/coupler 全 PASS、页面 ⑦ 面板在）→ stop → status 未运行，完整运维周期通过。CI webui 冒烟增 ring/deploy 检查。

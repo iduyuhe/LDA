@@ -121,6 +121,7 @@
 | D-18 | **DRC 回读整改闭环** ✅（已交付 2026-08-20） | agent 读取 DRC violation 自动整改参数（R/gap/width/split_angle 按规则调，margin 留余量）迭代直至可制造；整改轨迹 violation 单调降 + 版图 SVG | drc_fix_loop.py（DrcFixAgent）+ run_drc_fix_smoke 全绿；4 类违规初值全部 2 轮整改到可制造（如 R 2.0→5.5、gap 0.1→0.22、width 0.2→0.385、angle 45→27.3）；报告 drc_fix_report.json |
 | D-19 | **一键设计流水线** ✅（已交付 2026-08-20） | 产品化设计交付：逆设计（Ring FSR→R）→ 版图 GDS → DRC 自查 → DrcFix 自动整改 → FDTD 仿真验收 → 设计包落盘（GDS+SVG+JSON）；CLI `python -m lda_agent.design_pipeline` | design_pipeline.py + run_pipeline_smoke 全绿；Ring 逆设计 R=9.9498µm 全链路 PASS；DC 违规 gap=0.1 自动整改 0.22 PASS；CLI 入口可用 |
 | D-20 | **WebUI 一键设计流水线面板** ✅（已交付 2026-08-20） | D-19 接入 webui ⑨ 面板：输入设计意图 → 浏览器一键跑逆设计/版图/DRC/整改/仿真/验收，显示步骤+整改轨迹+版图 SVG | /api/design_pipeline + 前端⑨面板；本机 start→HTTP 探测（dp PASS/SVG/⑨面板在）→stop 通过；CI webui 冒烟增 dp 检查 |
+| D-21 | **DRC 工艺规则从 PDK 注入** ✅（已交付 2026-08-20） | PDK 加 design_rules 字段（各 foundry 不同：NOEIC min_bend 5 / CUMEC 4 / SITRI 6），DRC 按 foundry 取规则 → 同一设计跨厂可制造性不同；drc.rules_from_pdk（D-09 接入后由真实 PDK 提供） | pdk.py/pdk_examples.py 加 design_rules + run_drc_pdk_smoke 全绿；Ring R=4.5µm CUMEC 可制造、NOEIC/SITRI 违规；D-12 器件库在 CUMEC 规则下全过；报告 drc_pdk_report.json |
 
 ### 7. 里程碑节奏
 
@@ -172,6 +173,7 @@ P0（D-01/D-02/D-03）+ P1（D-04/D-05/D-06）+ P2（D-07/D-08/D-09/D-10）已**
 5. **D-16 版图 → FDTD 仿真闭环** ✅（已交付 2026-08-20）——从 D-14 版图描述提取波导宽度 → FDTD neff（复用已验证 2D-TE 内核，双监视点相位差法）→ slab ORACLE 验收：新增 `lda/lda_l2/layout_sim.py`。**实测全绿**：Waveguide / Ring bus / IR 端到端 3 例仿真 PASS（neff=3.2300 vs ORACLE 3.2756，rel=1.394%≤2%）；eps 场芯区/包层正确；报告 `reports/layout_sim_report.json`。**至此"设计→版图→DRC 自查→仿真→物理锚验收"全自动闭环贯通。**
 6. **D-18 DRC 回读整改闭环** ✅（已交付 2026-08-20）——agent 自适应可制造性修复：新增 `lda/lda_agent/drc_fix_loop.py`（DrcFixAgent 读 DRC violation 按规则整改参数，margin=1.1 留余量，迭代直至可制造；整改轨迹 violation 单调降 + 版图 SVG）。**实测全绿**：4 类违规初值全部 2 轮整改到可制造（Ring R 2.0→5.5、Waveguide width 0.2→0.385、DC gap 0.1→0.22、YB angle 45→27.3）；报告 `reports/drc_fix_report.json`。LDA 差异化演示：给一个不可制造初值，agent 自己改到可制造。
 7. **D-19 一键设计流水线** ✅（已交付 2026-08-20）——产品化设计交付：新增 `lda/lda_agent/design_pipeline.py`（逆设计 Ring FSR→R → 版图 GDS → DRC 自查 → DrcFix 自动整改 → FDTD 仿真验收 → 设计包落盘 GDS+SVG+JSON；CLI `python -m lda_agent.design_pipeline`）。**实测全绿**：Ring target_fsr=9.15 逆设计 R=9.9498µm 全链路 PASS；DC 违规 gap=0.1 自动整改 0.22 PASS；CLI 入口可用。**一条命令交付"可制造 + 已仿真验收"的设计包。**
+8. **D-21 DRC 工艺规则从 PDK 注入** ✅（已交付 2026-08-20）——可制造性落地 PDK（对齐 D-09）：`PDK` 加 `design_rules` 字段（各 foundry 不同：NOEIC min_bend 5 / CUMEC 4 / SITRI 6），`drc.rules_from_pdk` 按 foundry 取规则（未配置键回退默认）。**实测全绿**：同一 Ring R=4.5µm 在 CUMEC（min_bend 4）可制造、NOEIC（5）/SITRI（6）违规——工艺窗口驱动可制造性差异；D-12 器件库在 CUMEC 规则下全过；报告 `reports/drc_pdk_report.json`。**"多晶圆厂 → 各自工艺规则 → 差异化可制造性"链路就绪，真实 PDK 接入即插即用。**
 
 **B. 演示与部署（向阶段 3 商业试点过渡）**
 3. **D-13 WebUI 内网部署** ✅（已交付 2026-08-20）——新增 `lda/lda_webui/deploy.py`（start/stop/status/restart + pidfile/log + 健康检查，跨平台）；`app.py` main 增强（启动打印内网 IP 访问地址）+ 新增 `/api/ring_loop`（D-11 环形谱形闭环）；前端加 ⑦ 环形面板并入首屏预热；部署说明文档 `LDA_D-13_WebUI内网部署说明.md`。**本机实测**：deploy start → HTTP 探测（ring/coupler 全 PASS、页面 ⑦ 面板在）→ stop → status 未运行，完整运维周期通过。CI webui 冒烟增 ring/deploy 检查。

@@ -28,6 +28,18 @@ DEFAULT_RULES: Dict[str, float] = {
 }
 
 
+def rules_from_pdk(pdk) -> Dict[str, float]:
+    """从 PDK 提取 DRC 工艺规则（D-21；D-09 接入后由真实 PDK 提供）。
+
+    PDK.design_rules 键与 DEFAULT_RULES 对齐；未配置的键回退默认典型值。
+    不同 foundry 规则不同 → 同一设计在不同厂可制造性不同（工艺窗口差异）。
+    """
+    base = dict(DEFAULT_RULES)
+    if pdk is not None and getattr(pdk, "design_rules", None):
+        base.update({k: float(v) for k, v in pdk.design_rules.items()})
+    return base
+
+
 @dataclass
 class DRCCheck:
     rule: str                # min_width / min_space / min_bend_R / max_split

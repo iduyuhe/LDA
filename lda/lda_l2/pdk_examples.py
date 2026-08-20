@@ -23,6 +23,8 @@ def _noeic_soi_180nm() -> PDK:
         process_notes="220nm 顶硅 / 2um BOX；波导宽度窗口 0.4–0.6um；"
                       "最小弯曲半径约 5um（弯曲损耗可控）。本参数为公开近似，"
                       "非真实 NDA-PDK，仅用于驱动链路演示。",
+        design_rules={"min_width_um": 0.40, "min_space_um": 0.20,
+                      "min_bend_R_um": 5.0, "max_split_angle_deg": 30.0},
     )
     # 模板1：环形谐振器 FSR 逆设计（B4，单规格）
     pdk.add_template(DeviceTemplate(
@@ -151,6 +153,8 @@ def _cumec_soi_180nm() -> PDK:
         n_clad=1.44,
         process_notes="220nm 顶硅 / 2um BOX；波导宽度窗口 0.35–0.65um；"
                       "最小弯曲半径约 4um。公开近似，非真实 NDA-PDK。",
+        design_rules={"min_width_um": 0.35, "min_space_um": 0.20,
+                      "min_bend_R_um": 4.0, "max_split_angle_deg": 30.0},
     )
     pdk.add_template(DeviceTemplate(
         name="环形谐振器 FSR", device_type="ring_resonator",
@@ -180,6 +184,8 @@ def _sitri_soi_180nm() -> PDK:
         n_clad=1.44,
         process_notes="210nm 顶硅 / 2um BOX；波导宽度窗口 0.45–0.75um；"
                       "最小弯曲半径约 6um。公开近似，非真实 NDA-PDK。",
+        design_rules={"min_width_um": 0.45, "min_space_um": 0.25,
+                      "min_bend_R_um": 6.0, "max_split_angle_deg": 30.0},
     )
     pdk.add_template(DeviceTemplate(
         name="环形谐振器 FSR", device_type="ring_resonator",

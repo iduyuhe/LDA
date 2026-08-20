@@ -1,0 +1,27 @@
+{
+  "ring_R4.5_verdict": {
+    "NOEIC(演示近似)::SOI 180nm": false,
+    "CUMEC(演示近似)::SOI 180nm": true,
+    "SITRI(演示近似)::SOI 180nm": false
+  },
+  "foundry_rules": {
+    "NOEIC(演示近似)::SOI 180nm": {
+      "min_width_um": 0.4,
+      "min_space_um": 0.2,
+      "min_bend_R_um": 5.0,
+      "max_split_angle_deg": 30.0
+    },
+    "CUMEC(演示近似)::SOI 180nm": {
+      "min_width_um": 0.35,
+      "min_space_um": 0.2,
+      "min_bend_R_um": 4.0,
+      "max_split_angle_deg": 30.0
+    },
+    "SITRI(演示近似)::SOI 180nm": {
+      "min_width_um": 0.45,
+      "min_space_um": 0.25,
+      "min_bend_R_um": 6.0,
+      "max_split_angle_deg": 30.0
+    }
+  }
+}

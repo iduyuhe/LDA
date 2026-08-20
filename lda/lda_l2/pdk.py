@@ -73,6 +73,11 @@ class PDK:
     # 天然落在某厂的 E_C 工艺现实内，不同厂收敛到不同 E_J 落点。
     quantum_window: Optional[Dict[str, float]] = None
     templates: Dict[str, DeviceTemplate] = field(default_factory=dict)
+    # D-21 可制造性工艺规则（DRC 用）：不同 foundry 的规则不同，同一设计
+    # 在不同厂的可制造性不同（工艺窗口差异）。键与 lda_l2.drc.DEFAULT_RULES
+    # 对齐（min_width_um / min_space_um / min_bend_R_um / max_split_angle_deg）。
+    # D-09 接入后由真实 PDK 提供；None = 用默认典型规则。
+    design_rules: Optional[Dict[str, float]] = None
 
     def add_template(self, template: DeviceTemplate) -> None:
         self.templates[template.name] = template

@@ -155,6 +155,14 @@ jobs:
           cd lda
           python run_drc_fix_smoke.py
 
+      - name: DRC rules from PDK smoke (D-21, foundry-specific manufacturability)
+        # 回归防护：D-21 DRC 工艺规则从 PDK 注入——各 foundry design_rules
+        # 不同（min_bend 4/5/6），同一设计跨厂可制造性不同（工艺窗口差异）。
+        # 纯参数级，快稳。
+        run: |
+          cd lda
+          python run_drc_pdk_smoke.py
+
       - name: One-click design pipeline smoke (D-19, IR→GDS→DRC→sim→deliverable)
         # 回归防护：D-19 一键设计流水线——逆设计(Ring FSR)→版图→DRC→整改→
         # FDTD 仿真→验收→设计包落盘。验证 Ring 目标逆设计 + DC 违规自动整改

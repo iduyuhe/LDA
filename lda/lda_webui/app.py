@@ -224,6 +224,47 @@ def run_design_pipeline(payload):
     return run_pipeline(kind, params=params, target_fsr_nm=target_fsr)
 
 
+def run_drc_fix_demo(payload):
+    """D-18/D-21/D-22 可制造性面板：agent 自动整改 + 跨厂工艺规则对比。
+
+    输入器件 + 参数（默认给违规初值演示自动整改）+ foundry（选择工艺规则），
+    返回：整改轨迹（violation 单调降）+ 整改后参数在 3 个光子 foundry 规则下
+    的跨厂可制造性对比 + 版图 SVG。
+    """
+    from lda_agent.drc_fix_loop import DrcFixAgent
+    from lda_l2.drc import drc_check_device, rules_from_pdk
+    from lda_l2.pdk import get_default_registry
+
+    kind = payload.get("kind", "RingResonator")
+    params = {k: float(v) for k, v in (payload.get("params") or {}).items()}
+    if not params:
+        # 默认违规初值（演示 agent 自动整改）
+        _defaults = {
+            "RingResonator": {"R": 2.0, "wg_width": 0.3},
+            "Waveguide": {"width": 0.2},
+            "DirectionalCoupler": {"gap": 0.1, "width": 0.5},
+            "SymmetricYBranch": {"width": 0.5, "split_angle": 45.0},
+        }
+        params = _defaults.get(kind, {})
+
+    reg = get_default_registry()
+    photon = [k for k in reg.list_pdks() if "量子" not in k]
+    fk = payload.get("foundry") or photon[0]
+    rules = rules_from_pdk(reg.get(fk))
+
+    fix = DrcFixAgent(rules=rules).run(kind, params)
+    # 跨厂对比：整改后参数在 3 个光子 foundry 规则下可制造性
+    cross = {}
+    for k in photon:
+        r = drc_check_device(kind, fix["final_params"],
+                             rules=rules_from_pdk(reg.get(k)))
+        cross[k.split("::")[0]] = {"passed": r.passed,
+                                   "violations": [c.brief() for c in r.violations()]}
+    fix["cross_foundry"] = cross
+    fix["foundry"] = fk
+    return fix
+
+
 def run_coupler_loop(payload):
     """D-01 多端口耦合器件验收锚（设计→仿真→验收 可视化）。
 
@@ -421,6 +462,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_layout_pipeline(payload))
             elif path == "/api/design_pipeline":
                 self._send(200, run_design_pipeline(payload))
+            elif path == "/api/drc_fix_demo":
+                self._send(200, run_drc_fix_demo(payload))
             elif path == "/api/coupler_loop":
                 self._send(200, run_coupler_loop(payload))
             elif path == "/api/ir_demo":

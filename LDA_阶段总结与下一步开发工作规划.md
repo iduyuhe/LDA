@@ -122,6 +122,7 @@
 | D-19 | **一键设计流水线** ✅（已交付 2026-08-20） | 产品化设计交付：逆设计（Ring FSR→R）→ 版图 GDS → DRC 自查 → DrcFix 自动整改 → FDTD 仿真验收 → 设计包落盘（GDS+SVG+JSON）；CLI `python -m lda_agent.design_pipeline` | design_pipeline.py + run_pipeline_smoke 全绿；Ring 逆设计 R=9.9498µm 全链路 PASS；DC 违规 gap=0.1 自动整改 0.22 PASS；CLI 入口可用 |
 | D-20 | **WebUI 一键设计流水线面板** ✅（已交付 2026-08-20） | D-19 接入 webui ⑨ 面板：输入设计意图 → 浏览器一键跑逆设计/版图/DRC/整改/仿真/验收，显示步骤+整改轨迹+版图 SVG | /api/design_pipeline + 前端⑨面板；本机 start→HTTP 探测（dp PASS/SVG/⑨面板在）→stop 通过；CI webui 冒烟增 dp 检查 |
 | D-21 | **DRC 工艺规则从 PDK 注入** ✅（已交付 2026-08-20） | PDK 加 design_rules 字段（各 foundry 不同：NOEIC min_bend 5 / CUMEC 4 / SITRI 6），DRC 按 foundry 取规则 → 同一设计跨厂可制造性不同；drc.rules_from_pdk（D-09 接入后由真实 PDK 提供） | pdk.py/pdk_examples.py 加 design_rules + run_drc_pdk_smoke 全绿；Ring R=4.5µm CUMEC 可制造、NOEIC/SITRI 违规；D-12 器件库在 CUMEC 规则下全过；报告 drc_pdk_report.json |
+| D-22 | **WebUI 可制造性面板** ✅（已交付 2026-08-20） | D-18 整改 + D-21 跨厂规则接入 webui ⑩ 面板：违规初值 → agent 读 violation 自动整改到可制造，展示整改轨迹 + 整改后设计在 3 个光子 foundry 规则下的差异化可制造性 + 版图 SVG | /api/drc_fix_demo + 前端⑩面板；本机 start→HTTP 探测（fx PASS/⑩面板在）→stop 通过；CI webui 冒烟增 fx 检查 |
 
 ### 7. 里程碑节奏
 
@@ -179,6 +180,7 @@ P0（D-01/D-02/D-03）+ P1（D-04/D-05/D-06）+ P2（D-07/D-08/D-09/D-10）已**
 3. **D-13 WebUI 内网部署** ✅（已交付 2026-08-20）——新增 `lda/lda_webui/deploy.py`（start/stop/status/restart + pidfile/log + 健康检查，跨平台）；`app.py` main 增强（启动打印内网 IP 访问地址）+ 新增 `/api/ring_loop`（D-11 环形谱形闭环）；前端加 ⑦ 环形面板并入首屏预热；部署说明文档 `LDA_D-13_WebUI内网部署说明.md`。**本机实测**：deploy start → HTTP 探测（ring/coupler 全 PASS、页面 ⑦ 面板在）→ stop → status 未运行，完整运维周期通过。CI webui 冒烟增 ring/deploy 检查。
 4. **D-17 WebUI 版图流水线面板** ✅（已交付 2026-08-20）——把 D-14 版图 / D-15 DRC / D-16 仿真接入 webui ⑧ 三合一面板：新增 `/api/layout_pipeline`（器件 → GDS 版图 SVG + DRC 报告 + FDTD neff 验收一键跑）；`deploy.py` 增端口占用检测（修复多残留进程 SO_REUSEADDR 双绑定导致请求路由到旧代码的坑）；`layout_sim` 增精度自适应（wl/32 → wl/48/64，较宽波导默认分辨率精度不足 4%→0.15%）。**本机实测**：start→HTTP 探测（pipeline PASS、⑧ 面板在）→stop→端口释放，完整周期通过。CI webui 冒烟增 lp 检查。
 5. **D-20 WebUI 一键设计流水线面板** ✅（已交付 2026-08-20）——D-19 接入 webui ⑨ 面板：新增 `/api/design_pipeline`（设计意图 → 逆设计/版图/DRC/整改/仿真/验收一键跑，返回步骤+整改轨迹+版图 SVG）；`design_pipeline` 报告补 layout_svg 字段。**本机实测**：start→HTTP 探测（dp PASS、R=9.9498µm、⑨ 面板在）→stop 完整周期通过。CI webui 冒烟增 dp 检查。**webui 九个面板全部就绪（验证裁判/Agent 闭环/题库/耦合器/宽带/IR/环形/版图流水线/一键设计流水线）。**
+6. **D-22 WebUI 可制造性面板** ✅（已交付 2026-08-20）——D-18 整改 + D-21 跨厂规则接入 webui ⑩ 面板：新增 `/api/drc_fix_demo`（违规初值 → agent 读 violation 自动整改到可制造，返回整改轨迹 + 整改后设计在 3 个光子 foundry 规则下跨厂可制造性对比 + 版图 SVG）。**本机实测**：start→HTTP 探测（fx PASS、⑩ 面板在）→stop 通过。CI webui 冒烟增 fx 检查。**webui 十个面板全部就绪（+⑩ 可制造性）。**
 
 **C. 发动期（杜先生负责，与开发并行）**
 4. 退休专家线（实测语料补登，D-06/D-10 工具已就绪）

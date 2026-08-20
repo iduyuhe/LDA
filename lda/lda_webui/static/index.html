@@ -247,6 +247,37 @@
   </div>
 
   <div class="sec">
+    <h2>⑩ 可制造性面板（D-18/D-21）</h2>
+    <div class="hint">给一个 DRC 违规初值 → agent 读 violation 自动整改到可制造；并展示整改后设计在三个光子 foundry 工艺规则下的差异化可制造性（工艺窗口驱动）。</div>
+    <div class="row">
+      <label>器件
+        <select id="fxKind">
+          <option>RingResonator</option>
+          <option>Waveguide</option>
+          <option>DirectionalCoupler</option>
+          <option>SymmetricYBranch</option>
+        </select>
+      </label>
+      <label>参数 (留空=违规演示)
+        <input type="text" id="fxParams" placeholder="R=2.0 演示自动整改" style="width:180px"/>
+      </label>
+      <label>整改依据工艺
+        <select id="fxFoundry">
+          <option>NOEIC(演示近似)::SOI 180nm</option>
+          <option>CUMEC(演示近似)::SOI 180nm</option>
+          <option>SITRI(演示近似)::SOI 180nm</option>
+        </select>
+      </label>
+      <button class="btn" id="runFx">agent 自动整改</button>
+    </div>
+    <div id="fxSummary" class="summary"></div>
+    <div id="fxTrace"></div>
+    <div id="fxSvg" style="margin-top:10px"></div>
+    <div id="fxCross"></div>
+    <div class="conclusion" id="fxConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 · 机器优先中间表示）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -553,6 +584,35 @@ function renderDp(d){
   $('dpConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}`;
 }
 $('runDp').onclick = runDp;
+
+// ---- ⑩ D-22 可制造性面板 ----
+async function runFx(){
+  const btn = $('runFx'); btn.disabled = true;
+  $('fxSummary').innerHTML = '<span class="spin"></span> agent 正在读 DRC violation 自动整改…';
+  try{
+    const d = await api('/api/drc_fix_demo', {
+      kind: $('fxKind').value,
+      params: parseParams($('fxParams').value),
+      foundry: $('fxFoundry').value,
+    });
+    renderFx(d);
+  }catch(e){ $('fxSummary').textContent = '错误：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderFx(d){
+  $('fxSummary').innerHTML = `器件：<b>${d.kind}</b> · 整改依据工艺：<b>${String(d.foundry).split('::')[0]}</b> · 整改 <b>${d.iterations}</b> 轮 → 最终参数 ${JSON.stringify(d.final_params)} · <span class="verdict ${d.accepted?'ok':'fail'}">${d.accepted?'可制造':'未达标'}</span>`;
+  $('fxTrace').innerHTML = `<div class="summary">agent 整改轨迹（DRC violation 单调降）：</div><table>
+    <tr><th>轮</th><th>违规数</th><th>违规明细</th></tr>
+    ${d.trace.map(s=>`<tr><td>${s.iteration}</td><td>${s.n_violations}</td><td>${s.violations.join('; ')}</td></tr>`).join('')}
+  </table>`;
+  $('fxSvg').innerHTML = d.layout_svg || '';
+  $('fxCross').innerHTML = `<div class="summary">整改后设计跨厂可制造性（多晶圆厂工艺规则差异）：</div><table>
+    <tr><th>foundry</th><th>可制造</th><th>违规</th></tr>
+    ${Object.entries(d.cross_foundry).map(([f,v])=>`<tr><td>${f}</td><td><span class="verdict ${v.passed?'ok':'fail'}">${v.passed?'PASS':'FAIL'}</span></td><td>${v.violations.join('; ')||'—'}</td></tr>`).join('')}
+  </table>`;
+  $('fxConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}`;
+}
+$('runFx').onclick = runFx;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

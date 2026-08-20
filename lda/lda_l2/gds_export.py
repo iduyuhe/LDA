@@ -149,47 +149,63 @@ def _flatten_rings(rings: List[List[Tuple[float, float]]]) -> List[Tuple[float, 
     return pts
 
 
-def layout_elements(kind: str, params: Dict[str, float], **opt) -> List[bytes]:
-    """IR 器件 kind + 参数 → GDSII 元素记录列表。
+def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
+    """器件 kind + 参数 → 几何元素描述（单一来源，GDS 编码 / SVG / DRC 复用）。
 
-    参数（µm）：Waveguide{width,length}；RingResonator{R,Q,...} + width；
+    每个 desc：{'kind': 'path'|'boundary', 'layer': int, ...}
+      path     : + width_um + points_um（折线）
+      boundary : + rings_um（多环多边形，每环闭合点列表）
+
+    参数（µm）：Waveguide{width,length}；RingResonator{R,...} + wg_width；
     DirectionalCoupler{gap,Lc,width}；SymmetricYBranch{width,split_angle,arm_length}。
     """
     core_w = float(params.get("width", 0.5))
-    elements: List[bytes] = []
+    descs: List[Dict] = []
 
     if kind == "Waveguide":
         length = float(opt.get("length", params.get("length", 10.0)))
-        elements.append(path(LIB_LAYER_SI, core_w,
-                             [(0.0, 0.0), (length, 0.0)]))
+        descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": core_w,
+                      "points_um": [(0.0, 0.0), (length, 0.0)]})
     elif kind == "RingResonator":
         R = float(params.get("R", 10.0))
         wg_w = float(opt.get("wg_width", params.get("wg_width", 0.5)))
-        rings = ring_ring_polygon(R, wg_w)
-        elements.append(boundary(LIB_LAYER_SI, _flatten_rings(rings)))
-        # 接入波导（bus line）
-        elements.append(path(LIB_LAYER_SI, wg_w, [(-R * 1.4, -R - wg_w / 2.0),
-                                                  (R * 1.4, -R - wg_w / 2.0)]))
+        descs.append({"kind": "boundary", "layer": LIB_LAYER_SI,
+                      "rings_um": ring_ring_polygon(R, wg_w)})
+        descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": wg_w,
+                      "points_um": [(-R * 1.4, -R - wg_w / 2.0),
+                                    (R * 1.4, -R - wg_w / 2.0)]})
     elif kind == "DirectionalCoupler":
         gap = float(params.get("gap", 0.3))
         Lc = float(params.get("Lc", 10.0))
-        wg_w = float(opt.get("width", core_w))
-        off = (gap + wg_w) / 2.0
-        elements.append(path(LIB_LAYER_SI, wg_w, [(0.0, off), (Lc, off)]))
-        elements.append(path(LIB_LAYER_SI, wg_w, [(0.0, -off), (Lc, -off)]))
+        off = (gap + core_w) / 2.0
+        descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": core_w,
+                      "points_um": [(0.0, off), (Lc, off)]})
+        descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": core_w,
+                      "points_um": [(0.0, -off), (Lc, -off)]})
     elif kind == "SymmetricYBranch":
         angle = math.radians(float(params.get("split_angle", 10.0)))
         arm = float(params.get("arm_length", 5.0))
         half = angle / 2.0
-        wg_w = float(opt.get("width", core_w))
-        elements.append(path(LIB_LAYER_SI, wg_w, [(0.0, 0.0),
-                                                   (arm * math.cos(half),
-                                                    arm * math.sin(half))]))
-        elements.append(path(LIB_LAYER_SI, wg_w, [(0.0, 0.0),
-                                                   (arm * math.cos(half),
-                                                    -arm * math.sin(half))]))
+        descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": core_w,
+                      "points_um": [(0.0, 0.0),
+                                    (arm * math.cos(half), arm * math.sin(half))]})
+        descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": core_w,
+                      "points_um": [(0.0, 0.0),
+                                    (arm * math.cos(half), -arm * math.sin(half))]})
     else:
         raise ValueError(f"暂不支持导出 kind={kind}")
+    return descs
+
+
+def layout_elements(kind: str, params: Dict[str, float], **opt) -> List[bytes]:
+    """IR 器件 kind + 参数 → GDSII 元素记录列表（由 geometry_desc 生成）。"""
+    elements: List[bytes] = []
+    for d in geometry_desc(kind, params, **opt):
+        if d["kind"] == "path":
+            elements.append(path(d["layer"], d["width_um"], d["points_um"]))
+        else:
+            elements.append(boundary(d["layer"],
+                                     _flatten_rings(d.get("rings_um"))))
     return elements
 
 

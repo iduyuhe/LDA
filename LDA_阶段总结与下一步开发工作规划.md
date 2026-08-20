@@ -137,13 +137,32 @@
 | 三套裁判统一引入回归 | 统一前先锁定当前 PASS 基线（11/11 + 3/3 + 1.4 自举轨迹），统一后逐项对拍 |
 | 发动期无响应导致外部语料缺 | 开发线全部不依赖外部，先交付 P0/P1；语料工具就绪等数据 |
 
-### 10. 下一步（立即可启动的 3 件事）
+### 10. 技术债清零（2026-08-20）
 
-1. **D-01 分束器/方向耦合器验收锚**——垂直场景纵深的关键一步，架构与 1.8 完全同源，能力圈内 ✅（已交付）。
-2. **D-02 AI-dev LLMGenerator 实测**——把"AI 写核"从离线演示变成真实闭环 ✅（已交付，DeepSeek 端点 2 轮 PASS）。
-3. **D-04 三套裁判范式统一**——收敛验证资产，为 G1→G2 显式宣告和外部协作铺路 ✅（已交付）。
+D-05 时发现、本次已回填：webui 修复移除 `DesignProblem` 抽象后，`bridge`/`pdk`/smoke 仍是旧接口死代码（import `DesignProblem` 即 `ImportError`）。全部对齐当前 `DesignAgent.run(intent dict)` 现实：
+- `bridge.ir_to_design_problem` → `ir_to_intent`（Waveguide→waveguide_2d intent；其余 kind/量子域**诚实 NotImplementedError**，不静默返回假 intent）
+- `pdk.derive_problem` → `derive_intent`（waveguide 模板→intent；ring/transmon 模板诚实声明未接入）
+- `run_ir_smoke` / `run_ir_quantum_smoke` / `run_pdk_smoke` 重写为真实现；`run_ir_d05_smoke` 断言更新；`core.py` 注释对齐
+- 本地 5 个 smoke 全绿（光子 waveguide 3 foundry PASS、量子 B9 命中/失配、PDK waveguide 真跑 + 其余诚实声明、`ir_eval` 未受影响）。提交 `a9c04f8`。
 
-> 下一步建议：① P0 剩余 D-03（多波长/宽带闭环）已无外部依赖，可立即开工；② `LDA_LLM_*` 端点已配通（DeepSeek），D-02 闭环已验证；③ 是否将本规划同步到双平台仓库。
+### 11. 下一步（2026-08-20 更新：P0/P1/P2 全部交付，进入新阶段）
+
+P0（D-01/D-02/D-03）+ P1（D-04/D-05/D-06）+ P2（D-07/D-08/D-09/D-10）已**全部交付**，阶段 2 开发线闭环、技术债清零。下一步分三轨并行：
+
+**A. 开发纵深（无外部依赖，可立即开工）**
+1. **D-11 环形谱形逆设计闭环**——把 D-03 `BandDesignAgent` 从布拉格镜扩展到环形谐振器（B11 谱形匹配），补上 bridge 对 RingResonator 的最后一块（当前诚实 NotImplementedError）：让 D-05 的 RingResonator IR（R/Q/kappa/target_fsr_nm）真正驱动 agent 闭环。交付：环形 band 闭环 + bridge 环形 intent + PASS 报告。
+2. **D-12 已验证器件库固化**——把 D-01（方向耦合器/对称 Y 分支）+ D-03（宽带谱形）沉淀为可复用器件库（自有 component + 验收锚），为阶段 3 真实版图生成铺路。
+
+**B. 演示与部署（向阶段 3 商业试点过渡）**
+3. **D-13 WebUI 内网演示部署**——沿用已修复的 webui（D-07 三闭环可视化），部署到内网演示机，让"设计→仿真→验收"闭环可被顾问委 / 晶圆厂看到。
+
+**C. 发动期（杜先生负责，与开发并行）**
+4. 退休专家线（实测语料补登，D-06/D-10 工具已就绪）
+5. 顾问委成立
+6. 晶圆厂 PDK 意向（拿到脱敏样例后执行 D-09 接入：首个 PDK 课题 = D-01 耦合器）
+7. 学生贡献者（good-first-issue 已备）
+
+> 建议杜先生确认：① D-11 / D-12 / D-13 是否按此顺序开工；② 发动期三条线的触达节奏。
 
 ---
 

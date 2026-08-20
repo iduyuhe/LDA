@@ -149,6 +149,15 @@ jobs:
           cd lda
           python run_ring_fdtd_smoke.py
 
+      - name: Ring inverse-design FDTD double-verify smoke (D-31, analytic + FDTD)
+        # 回归防护：D-31 环形逆设计闭环 FDTD 双验证——RingBandAgent 解析收敛 R 后
+        # 调 D-27 环形 FDTD 核做最终 drop 谱验证（FSR(FDTD)↔解析对拍），两层各司
+        # 其职（解析层验设计目标命中 / FDTD 层验物理行为自洽）。CI(无 GPU) 跑结构
+        # 自检 + 解析层零回归（快）+ 诚实 SKIP live FDTD；本地 GPU 机跑完整双验证。
+        run: |
+          cd lda
+          python run_ring_double_verify_smoke.py
+
       - name: DC transmission spectrum smoke (D-29, 2D FDTD power exchange)
         # 回归防护：D-29 DC 全场透射谱（2D FDTD，CW 稳态逐波长 thru/cross
         # 功率交换）。纯 numpy，验证 cross_frac 单调递增 + 反解 κ_fdtd 单调

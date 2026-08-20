@@ -217,9 +217,13 @@ def ring_transmission_spectrum(R_um: float, w_um: float, gap_um: float,
     }
 
 
-def find_resonances(spec: Dict, min_frac: float = 0.10) -> List[float]:
-    """drop 谱谐振峰检测：局部最大 + 强度 ≥ min_frac×max 且 ≥3×邻域中位。
+def find_resonances(spec: Dict, min_frac: float = 0.10,
+                    rel_med: float = 1.5) -> List[float]:
+    """drop 谱谐振峰检测：局部最大 + 强度 ≥ min_frac×max 且 ≥ rel_med×中位。
 
+    显著性阈值 rel_med 相对中位数（默认 1.5）：D-27 稀疏尖峰谱（R=6）与
+    D-31 高基线谱（R≈10 弱耦合高 Q，drop 基线高、调制弱）都适用——3.0×med
+    在基线高时会把真实峰全过滤（D-31 实测 R=9.95：med=693 > 峰值 3 倍条件）。
     返回谐振波长列表（升序）。
     """
     wls = list(spec["wavelengths_um"])
@@ -229,7 +233,7 @@ def find_resonances(spec: Dict, min_frac: float = 0.10) -> List[float]:
     peaks = []
     for i in range(1, len(drop) - 1):
         if drop[i] > drop[i - 1] and drop[i] > drop[i + 1] \
-                and drop[i] >= min_frac * mx and drop[i] >= 3.0 * med:
+                and drop[i] >= min_frac * mx and drop[i] >= rel_med * med:
             # 抛物线插值精确定位
             y0, y1, y2 = drop[i - 1], drop[i], drop[i + 1]
             denom = (y0 - 2.0 * y1 + y2)

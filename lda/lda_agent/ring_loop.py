@@ -148,6 +148,45 @@ def verify_ring(R_um: float, n_g: float, wl0_um: float, Q: float, kappa: float,
 
 
 # ---------------------------------------------------------------------------
+# 环形 FDTD 最终验证层（D-31：解析收敛 → 真实 FDTD 交叉对拍）
+# ---------------------------------------------------------------------------
+def verify_ring_fdtd(R_um: float, w_um: float, gap_um: float,
+                     n_core: float, n_clad: float, wl0_um: float = 1.55,
+                     n_points: int = 21, dl_factor: float = 20.0,
+                     transient_cycles: int = 2500, M_cycles: int = 80,
+                     tol_rel: float = 0.30, backend: str = "auto") -> Dict[str, Any]:
+    """D-31 FDTD 最终谱形验证：drop 谱谐振峰 → FSR(FDTD) ↔ 解析 FSR 对拍。
+
+    调 D-27 环形 FDTD 核（2D TM add-drop，CW 稳态逐波长）。解析对比基准用
+    n_g=n_core（2D 平板群折射率≈材料折射率，见 fdtd2d_ring docstring）。
+
+    诚实边界：2D 平板的群折射率(≈3.48) ≠ 设计意图 n_g(如 4.2，含垂直限制的
+    3D 环形有效折射率)，故本层只验证「真实 FDTD 环形物理行为自洽」（方法
+    一致性：FDTD 峰 ↔ 解析公式），设计目标命中仍由解析层 verify_ring 判定
+    ——两层各司其职。FDTD 慢（GPU 每波长 ~10-20s），仅作最终验证跑一次。
+    """
+    from lda_solver.fdtd2d_ring import run_ring_fdtd
+    rep = run_ring_fdtd(
+        R_um=R_um, w_um=w_um, gap_um=gap_um,
+        n_core=n_core, n_clad=n_clad, wl0_um=wl0_um,
+        n_points=n_points, dl_factor=dl_factor,
+        transient_cycles=transient_cycles, M_cycles=M_cycles,
+        tol_rel=tol_rel, backend=backend)
+    return {
+        "enabled": True,
+        "accepted": bool(rep["accepted"]),
+        "R_um": R_um,
+        "peaks_um": rep["peaks_um"],
+        "fsr_fdtd_nm": rep["fsr_fdtd_nm"],
+        "fsr_analytic_nm": rep["fsr_analytic_nm"],   # 基准 n_g=n_core
+        "fsr_rel_dev": rep["fsr_rel_dev"],
+        "tol_rel": tol_rel,
+        "backend": backend,
+        "verdict": rep["verdict"],
+    }
+
+
+# ---------------------------------------------------------------------------
 # 环形谱形逆设计闭环
 # ---------------------------------------------------------------------------
 class RingBandAgent:
@@ -169,6 +208,15 @@ class RingBandAgent:
         target_tol = float(ex.get("target_tol", 0.03))
         method_tol = float(intent.get("tolerance_rel", 0.02))
         max_iter = int(intent.get("max_iterations", 40))
+        # D-31：可选 FDTD 最终验证（慢，仅最终跑一次；默认关）
+        fdtd_verify = bool(ex.get("fdtd_verify", False))
+        fdtd_n_core = float(ex.get("fdtd_n_core", 3.48))
+        fdtd_n_clad = float(ex.get("fdtd_n_clad", 1.44))
+        fdtd_gap = float(ex.get("fdtd_gap_um", 0.3))
+        fdtd_w = float(ex.get("fdtd_w_um", 0.5))
+        fdtd_n_points = int(ex.get("fdtd_n_points", 21))
+        fdtd_tol = float(ex.get("fdtd_tol_rel", 0.30))
+        fdtd_backend = str(ex.get("fdtd_backend", "auto"))
         if not (R_lo < R0 < R_hi):
             R0 = (R_lo + R_hi) / 2.0
 
@@ -206,6 +254,15 @@ class RingBandAgent:
         # 最终谱形级验收（在收敛 R 下做逐波长谱提取 ↔ 解析对拍）
         verify = verify_ring(R_final, n_g, wl0, Q, kappa, target_fsr,
                              target_tol, method_tol, n_points=self.n_points)
+        # D-31：可选 FDTD 最终验证（真实 FDTD drop 谱 ↔ 解析 FSR 对拍）
+        fdtd = None
+        if fdtd_verify:
+            fdtd = verify_ring_fdtd(
+                R_final, w_um=fdtd_w, gap_um=fdtd_gap,
+                n_core=fdtd_n_core, n_clad=fdtd_n_clad, wl0_um=wl0,
+                n_points=fdtd_n_points, tol_rel=fdtd_tol,
+                backend=fdtd_backend)
+        accepted = verify.passed and (fdtd is None or fdtd["accepted"])
         elapsed = time.time() - t0
         report = {
             "target": {
@@ -215,7 +272,7 @@ class RingBandAgent:
                 "tolerance_rel": method_tol,
                 "max_iterations": max_iter,
             },
-            "accepted": verify.passed,
+            "accepted": accepted,
             "iterations": it,
             "final_R_um": R_final,
             "R_bounds": [R_lo, R_hi],
@@ -229,14 +286,39 @@ class RingBandAgent:
             "final_fsr_method_err": verify.fsr_method_err,
             "target_tol": target_tol,
             "method_tol": method_tol,
+            "fdtd_verify": fdtd,                     # D-31（None=未启用）
             "final_band_curves": verify.per_wavelength,
             "loop_trace": trace,
-            "verdict": self._verdict(verify, elapsed),
+            "verdict": self._verdict(verify, elapsed, fdtd),
         }
         return report
 
     @staticmethod
-    def _verdict(v: RingVerifyResult, elapsed: float) -> str:
+    def _verdict(v: RingVerifyResult, elapsed: float,
+                 fdtd: Optional[Dict[str, Any]] = None) -> str:
+        if fdtd is not None:
+            if not v.passed:
+                return (
+                    f"环形谱形未达标：解析层谱形误差={v.spectrum_err:.2e}，"
+                    f"方法一致性={v.fsr_method_err:.2e}；"
+                    f"（FDTD 最终验证已跳过）耗时 {elapsed:.1f}s。")
+            if fdtd["accepted"]:
+                return (
+                    f"环形谱形双验证 PASS：解析层 R={v.final_R_um:.4f}µm，"
+                    f"FSR={v.fsr_analytic_nm:.3f}nm，谱形误差 "
+                    f"{v.spectrum_err:.2e} ≤ 容差；FDTD 最终验证 "
+                    f"drop 谱 {len(fdtd['peaks_um'])} 个谐振峰，FSR(FDTD)="
+                    f"{fdtd['fsr_fdtd_nm']:.2f}nm vs 解析 "
+                    f"{fdtd['fsr_analytic_nm']:.2f}nm（rel={fdtd['fsr_rel_dev']:.2%}"
+                    f" ≤ {fdtd['tol_rel']:.0%}）。解析收敛 + 真实 FDTD 交叉"
+                    f"验证一致，结果已可由「人」验收。耗时 {elapsed:.1f}s。")
+            return (
+                f"环形谱形 FDTD 验证未达标：解析层已收敛（R={v.final_R_um:.4f}"
+                f"µm，谱形误差 {v.spectrum_err:.2e}），但 FDTD 最终验证 "
+                f"FSR={fdtd['fsr_fdtd_nm']:.2f}nm vs 解析 "
+                f"{fdtd['fsr_analytic_nm']:.2f}nm（rel={fdtd['fsr_rel_dev']:.2%}"
+                f" > {fdtd['tol_rel']:.0%}，峰 {[round(p,4) for p in fdtd['peaks_um']]})。"
+                f"耗时 {elapsed:.1f}s。")
         if v.passed:
             return (
                 f"环形谱形设计达标：R={v.final_R_um:.4f}µm，"

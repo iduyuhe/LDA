@@ -40,10 +40,28 @@ jobs:
           cd lda/lda_agent
           python run_demo.py --threshold 0.90 --backend numpy --out /tmp/lda_ci_demo
 
-      - name: WebUI import smoke (webui server must stay importable)
+      - name: WebUI import smoke (webui server + new closed-loop endpoints)
+        # 回归防护：D-07 把 D-01 耦合器验收锚 / D-03 多波长闭环 / D-05 L0 IR 接入 webui。
+        # 校验服务可导入，且三个新端点返回结构正确；coupler 在 CI(无 GPU) 走 ORACLE
+        # 真值演示路径（快速、不挂起），band/ir 为纯 numpy/静态（快速）。
         run: |
           cd lda
-          python -c "import sys; sys.path.insert(0,'.'); import lda_webui.app; s=lda_webui.app.system_status(); assert len(s['layers'])>=8; print('webui import OK, layers=%d'%len(s['layers']))"
+          python -c "
+          import sys; sys.path.insert(0,'.')
+          import lda_webui.app as A
+          s = A.system_status()
+          assert len(s['layers']) >= 8 and s['pdks_registered'] >= 1
+          ir = A.run_ir_demo({})
+          assert ir['all_valid'] and len(ir['examples']) == 4, ir
+          yb = A.run_coupler_loop({'kind':'ybranch'})
+          yb_m = yb if 'metrics' not in yb else yb['metrics']   # live_fdtd 展平 / oracle_only 嵌套
+          assert yb['kind'] == 'ybranch' and 'fracA' in yb_m, yb
+          dc = A.run_coupler_loop({'kind':'dc','gap':0.3})
+          dc_m = dc if 'metrics' not in dc else dc['metrics']
+          assert dc['kind'] == 'dc' and 'kappa_oracle' in dc_m, dc
+          print('webui D-07 endpoints OK: layers=%d pdks=%d ir=%d yb=%s dc=%s' % (
+            len(s['layers']), s['pdks_registered'], len(ir['examples']), yb['mode'], dc['mode']))
+          "
 
       - name: Coupler/beamsplitter module import smoke (D-01, no GPU numerics)
         # 回归防护：D-01 新增 fdtd3d_coupler/oracle_coupler/coupler_loop 三模块，
@@ -66,3 +84,12 @@ jobs:
         run: |
           cd lda
           python -c "import sys; sys.path.insert(0,'.'); from lda_agent.multiband_loop import main_band; r=main_band(); assert r['accepted'], r['verdict']; print('D-03 multiband PASS, R_min=%.4f, max_abs_err=%.2e'%(r['final_band_min_R_fdtd'], r['final_max_abs_err']))"
+
+      - name: L0 IR v0.2 augmentation smoke (D-05, static field completion)
+        # 回归防护：D-05 L0 IR 字段补全（方向耦合器 / 对称 Y 分支 / 微环 Q·κ·FSR /
+        # 量子 Transmon.target_f01 骨架）。纯静态（校验 + 序列化 round-trip + DSL +
+        # 导出 JSON），不跑 GPU 逆设计；bridge 调用被 try/except 包住（DesignProblem
+        # 已从 design_loop 移除，仅 WARN，不影响本 smoke）。
+        run: |
+          cd lda
+          python run_ir_d05_smoke.py

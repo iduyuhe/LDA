@@ -126,6 +126,7 @@
 | D-23 | **耦合器多波长验收闭环** ✅（已交付 2026-08-20） | 把 D-01 单波长 DC/YB 验收扩展为多波长全波段验收（λ∈[1.5,1.6] 7 点）：DC 判据 = ORACLE κ(λ) 单调递增（真值谱形）+ FDTD 平均相对偏差≤0.25 + 最差≤0.75；YB = 全波段平衡度≤0.1 且功率正 | coupler_band_loop.py（CouplerBandAgent）+ run_coupler_band_smoke 全绿：DC mean=0.171（oracle 0.029→0.041 单调）、YB 平衡度 0.0007 全 PASS；修复 fdfd_coupler_supermodes 基模带锚定 + CouplerTarget.dl_um 固定网格；D-01 3/3 无回归；报告 coupler_band_report.json |
 | D-24 | **谱形逆设计通用化** ✅（已交付 2026-08-20） | 收敛 D-03 BandDesignAgent 与 D-11 RingBandAgent 两套近重复"搜索参数命中目标谱形"闭环为统一框架 SpectrumInverseDesignAgent（SpectrumTarget match/threshold 两模式 + 黄金分割/离散扫描两搜索器 + engine/metric/oracle 三函数即插即用） | spectrum_loop.py + run_spectrum_loop_smoke 全绿：ring 实例 R=9.9498（与 D-11 一致）、即插即用实例（n_g=4.18→R=9.9974，工艺窗口驱动落点差异）、bragg 实例 N=6 R_min=0.99981 max\|ΔR\|=7.6e-5（与 D-03 一致）；新谱形目标只须提供三函数即插即用；旧闭环保留零回归；报告 spectrum_loop_report.json |
 | D-25 | **一键设计流水线多器件扩展** ✅（已交付 2026-08-20） | design_pipeline 从只支持 Ring/DC 扩展到全部已验证器件：Waveguide target_neff→width 逆设计（slab ORACLE 反解，D-25 新）；SymmetricYBranch 分束验收（对称性定理，GPU live / 无 GPU 诚实 ORACLE 演示）；CLI 加 --target_neff | design_pipeline.py 扩展 + run_pipeline_multidevice_smoke 全绿：WG target_neff=3.2→width=0.4056µm（FDTD rel=0.478%）、YB live_fdtd balance=0.0006、Ring/DC/WG 默认回归；D-19 smoke 无回归；CI 补 D-25 冒烟 |
+| D-26 | **WebUI 一键流水线多器件面板** ✅（已交付 2026-08-20） | ⑨ 面板从只支持 Ring 升级为全部 4 器件：/api/design_pipeline 透传 target_neff；前端器件下拉 + 动态目标参数（Ring→FSR / Waveguide→neff）+ 结果展示适配（逆设计 R/width、仿真按 mode 渲染：layout_fdtd/oracle_demo/live_fdtd） | webui app.py/index.html 升级；后端 4 器件全 PASS；HTTP 实测（WG target_neff=3.2→width=0.4056µm、⑨ 面板 dpNeff 在、start→stop 周期通过）；CI webui 冒烟增 dpw 检查 |
 
 ### 7. 里程碑节奏
 
@@ -187,6 +188,7 @@ P0（D-01/D-02/D-03）+ P1（D-04/D-05/D-06）+ P2（D-07/D-08/D-09/D-10）已**
 4. **D-17 WebUI 版图流水线面板** ✅（已交付 2026-08-20）——把 D-14 版图 / D-15 DRC / D-16 仿真接入 webui ⑧ 三合一面板：新增 `/api/layout_pipeline`（器件 → GDS 版图 SVG + DRC 报告 + FDTD neff 验收一键跑）；`deploy.py` 增端口占用检测（修复多残留进程 SO_REUSEADDR 双绑定导致请求路由到旧代码的坑）；`layout_sim` 增精度自适应（wl/32 → wl/48/64，较宽波导默认分辨率精度不足 4%→0.15%）。**本机实测**：start→HTTP 探测（pipeline PASS、⑧ 面板在）→stop→端口释放，完整周期通过。CI webui 冒烟增 lp 检查。
 5. **D-20 WebUI 一键设计流水线面板** ✅（已交付 2026-08-20）——D-19 接入 webui ⑨ 面板：新增 `/api/design_pipeline`（设计意图 → 逆设计/版图/DRC/整改/仿真/验收一键跑，返回步骤+整改轨迹+版图 SVG）；`design_pipeline` 报告补 layout_svg 字段。**本机实测**：start→HTTP 探测（dp PASS、R=9.9498µm、⑨ 面板在）→stop 完整周期通过。CI webui 冒烟增 dp 检查。**webui 九个面板全部就绪（验证裁判/Agent 闭环/题库/耦合器/宽带/IR/环形/版图流水线/一键设计流水线）。**
 6. **D-22 WebUI 可制造性面板** ✅（已交付 2026-08-20）——D-18 整改 + D-21 跨厂规则接入 webui ⑩ 面板：新增 `/api/drc_fix_demo`（违规初值 → agent 读 violation 自动整改到可制造，返回整改轨迹 + 整改后设计在 3 个光子 foundry 规则下跨厂可制造性对比 + 版图 SVG）。**本机实测**：start→HTTP 探测（fx PASS、⑩ 面板在）→stop 通过。CI webui 冒烟增 fx 检查。**webui 十个面板全部就绪（+⑩ 可制造性）。**
+7. **D-26 WebUI 一键流水线多器件面板** ✅（已交付 2026-08-20）——D-25 流水线多器件能力接入 webui ⑨ 面板：`/api/design_pipeline` 透传 `target_neff`；前端器件下拉（4 种）+ **动态目标参数**（Ring→target_fsr / Waveguide→target_neff）+ **结果展示按 sim.mode 适配**（layout_fdtd neff / oracle_demo 对称性定理 / live_fdtd 分束）。**本机实测**：后端 4 器件全 PASS、HTTP WG target_neff=3.2→width=0.4056µm（⑨ 面板 dpNeff 在）、start→stop 周期通过。CI webui 冒烟增 dpw（Waveguide 逆设计）检查。**webui ⑨ 面板从"仅环形"升级为"全部已验证器件一键交付"。**
 
 **C. 发动期（杜先生负责，与开发并行）**
 4. 退休专家线（实测语料补登，D-06/D-10 工具已就绪）

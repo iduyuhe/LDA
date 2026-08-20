@@ -220,19 +220,22 @@
   </div>
 
   <div class="sec">
-    <h2>⑨ 一键设计流水线（D-19）</h2>
-    <div class="hint">输入设计意图 → 自动完成：逆设计（Ring FSR→R）→ 版图 GDS → DRC 自查 → agent 自动整改 → FDTD 仿真验收 → 设计包。一条命令交付"可制造 + 已仿真验收"的设计。</div>
+    <h2>⑨ 一键设计流水线（D-19/D-25/D-26 · 全部器件）</h2>
+    <div class="hint">输入设计意图 → 自动完成：逆设计（Ring FSR→R / Waveguide neff→width）→ 版图 GDS → DRC 自查 → agent 自动整改 → 仿真验收 → 设计包。一条命令交付"可制造 + 已仿真验收"的设计，覆盖全部已验证器件。</div>
     <div class="row">
       <label>器件
         <select id="dpKind">
-          <option>RingResonator</option>
-          <option>Waveguide</option>
-          <option>DirectionalCoupler</option>
-          <option>SymmetricYBranch</option>
+          <option value="RingResonator">RingResonator</option>
+          <option value="Waveguide">Waveguide</option>
+          <option value="DirectionalCoupler">DirectionalCoupler</option>
+          <option value="SymmetricYBranch">SymmetricYBranch</option>
         </select>
       </label>
-      <label>目标 FSR (nm, 仅环形逆设计)
+      <label>目标 FSR (nm, 环形)
         <input type="number" id="dpFsr" value="9.15" step="0.05" min="1" max="50" style="width:90px"/>
+      </label>
+      <label>目标 neff (波导)
+        <input type="number" id="dpNeff" value="3.2" step="0.05" min="1" max="4" style="width:90px"/>
       </label>
       <label>参数覆盖 (k=v,逗号分隔)
         <input type="text" id="dpParams" placeholder="gap=0.1 演示自动整改" style="width:200px"/>
@@ -554,16 +557,16 @@ function renderLp(d){
 }
 $('runLp').onclick = runLp;
 
-// ---- ⑨ D-19 一键设计流水线 ----
+// ---- ⑨ D-19/D-25/D-26 一键设计流水线（全部器件） ----
 async function runDp(){
   const btn = $('runDp'); btn.disabled = true;
   $('dpSummary').innerHTML = '<span class="spin"></span> 正在跑一键设计流水线（逆设计→版图→DRC→整改→仿真→验收）…';
+  const kind = $('dpKind').value;
+  const payload = { kind, params: parseParams($('dpParams').value) };
+  if(kind === 'RingResonator') payload.target_fsr = parseFloat($('dpFsr').value);
+  if(kind === 'Waveguide') payload.target_neff = parseFloat($('dpNeff').value);
   try{
-    const d = await api('/api/design_pipeline', {
-      kind: $('dpKind').value,
-      target_fsr: parseFloat($('dpFsr').value),
-      params: parseParams($('dpParams').value),
-    });
+    const d = await api('/api/design_pipeline', payload);
     renderDp(d);
   }catch(e){ $('dpSummary').textContent = '错误：'+e; }
   finally{ btn.disabled = false; }
@@ -574,12 +577,20 @@ function renderDp(d){
     d.steps.map(s=>`<div class="note">· ${s}</div>`).join('');
   $('dpSvg').innerHTML = d.layout_svg || '';
   let extra = '';
-  if(d.inverse_design) extra += `<div class="summary">逆设计：目标 FSR=<b>${d.inverse_design.target_fsr_nm}</b>nm → R=<b>${fmt(d.inverse_design.R_um)}µm</b></div>`;
+  if(d.inverse_design){
+    if(d.inverse_design.target_fsr_nm) extra += `<div class="summary">逆设计：目标 FSR=<b>${d.inverse_design.target_fsr_nm}</b>nm → R=<b>${fmt(d.inverse_design.R_um)}µm</b></div>`;
+    else if(d.inverse_design.target_neff) extra += `<div class="summary">逆设计：目标 neff=<b>${d.inverse_design.target_neff}</b> → width=<b>${fmt(d.inverse_design.width_um)}µm</b></div>`;
+  }
   if(d.drc_fix && d.drc_fix.length) extra += `<div class="summary">agent 自动整改轨迹（初始违规→可制造）：</div><table>
     <tr><th>轮</th><th>违规数</th><th>违规明细</th></tr>
     ${d.drc_fix.map(s=>`<tr><td>${s.iteration}</td><td>${s.n_violations}</td><td>${s.violations.join('; ')}</td></tr>`).join('')}
   </table>`;
-  extra += `<div class="summary">DRC：<span class="verdict ${d.drc.passed?'ok':'fail'}">${d.drc.passed?'PASS':'FAIL'}</span> · 仿真：neff(FDTD)=<b>${fmt(d.sim.neff_fdtd)}</b> vs ORACLE ${fmt(d.sim.neff_oracle)} · rel=${fmt(d.sim.rel_err)} → <span class="verdict ${d.sim.passed?'ok':'fail'}">${d.sim.passed?'PASS':'FAIL'}</span></div>`;
+  const sim = d.sim || {};
+  let simHtml;
+  if(sim.mode === 'oracle_demo') simHtml = `仿真：ORACLE 真值演示（对称性定理 50/50，实时 FDTD 需 GPU）→ <span class="verdict ${sim.passed?'ok':'fail'}">${sim.passed?'PASS':'FAIL'}</span>`;
+  else if(sim.mode === 'live_fdtd') simHtml = `仿真：FDTD 分束 fracA=<b>${sim.fracA}</b>（balance=${sim.balance_abs}）→ <span class="verdict ${sim.passed?'ok':'fail'}">${sim.passed?'PASS':'FAIL'}</span>`;
+  else simHtml = `仿真：neff(FDTD)=<b>${fmt(sim.neff_fdtd)}</b> vs ORACLE ${fmt(sim.neff_oracle)} · rel=${fmt(sim.rel_err)} → <span class="verdict ${sim.passed?'ok':'fail'}">${sim.passed?'PASS':'FAIL'}</span>`;
+  extra += `<div class="summary">DRC：<span class="verdict ${d.drc.passed?'ok':'fail'}">${d.drc.passed?'PASS':'FAIL'}</span> · ${simHtml}</div>`;
   $('dpBody').innerHTML = extra;
   $('dpConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}`;
 }

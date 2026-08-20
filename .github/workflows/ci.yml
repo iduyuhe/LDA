@@ -45,7 +45,8 @@ jobs:
         # D-13 增 /api/ring_loop（D-11 环形闭环）与部署脚本 deploy.py；
         # D-17 增 /api/layout_pipeline（D-14 版图 + D-15 DRC + D-16 仿真三合一）；
         # D-20 增 /api/design_pipeline（D-19 一键设计流水线）；
-        # D-22 增 /api/drc_fix_demo（D-18 整改 + D-21 跨厂规则）。
+        # D-22 增 /api/drc_fix_demo（D-18 整改 + D-21 跨厂规则）；
+        # D-26 design_pipeline 支持全部 4 器件（Waveguide target_neff 逆设计）。
         # 校验服务可导入，且各端点返回结构正确；coupler 在 CI(无 GPU) 走 ORACLE
         # 真值演示路径（快速、不挂起），band/ring/ir 为纯 numpy/解析/静态（快速）。
         run: |
@@ -70,14 +71,17 @@ jobs:
           assert lp['passed'] and '<svg' in lp['layout_svg'] and lp['drc']['passed'], lp
           dp = A.run_design_pipeline({'kind':'RingResonator','target_fsr':9.15})   # D-20
           assert dp['accepted'] and 'layout_svg' in dp and dp['inverse_design'], dp
+          dpw = A.run_design_pipeline({'kind':'Waveguide','target_neff':3.2})      # D-26
+          assert dpw['accepted'] and dpw['inverse_design']['target_neff'] == 3.2, dpw
           fx = A.run_drc_fix_demo({'kind':'RingResonator'})     # D-22
           assert fx['accepted'] and 'cross_foundry' in fx and fx['iterations'] >= 1, fx
           assert hasattr(D, 'start') and hasattr(D, 'stop') and hasattr(D, 'status')
-          print('webui endpoints OK: layers=%d pdks=%d ir=%d yb=%s dc=%s ring=%s lp=%s dp=%s fx=%s' % (
+          print('webui endpoints OK: layers=%d pdks=%d ir=%d yb=%s dc=%s ring=%s lp=%s dp=%s dpw=%s fx=%s' % (
             len(s['layers']), s['pdks_registered'], len(ir['examples']), yb['mode'],
             dc['mode'], 'PASS' if ring['accepted'] else 'FAIL',
             'PASS' if lp['passed'] else 'FAIL',
             'PASS' if dp['accepted'] else 'FAIL',
+            'PASS' if dpw['accepted'] else 'FAIL',
             'PASS' if fx['accepted'] else 'FAIL'))
           "
 

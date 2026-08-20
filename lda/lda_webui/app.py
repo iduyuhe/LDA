@@ -209,10 +209,12 @@ def run_layout_pipeline(payload):
 
 
 def run_design_pipeline(payload):
-    """D-19/D-20 一键设计流水线（webui ⑨ 面板）。
+    """D-19/D-20/D-26 一键设计流水线（webui ⑨ 面板）。
 
-    输入设计意图（器件 kind + 目标 FSR / 参数覆盖），自动完成逆设计 → 版图 →
-    DRC → 自动整改 → FDTD 仿真验收 → 设计包。返回完整报告 + 版图 SVG。
+    输入设计意图（器件 kind + 目标 FSR / 目标 neff / 参数覆盖），自动完成
+    逆设计 → 版图 → DRC → 自动整改 → FDTD 仿真验收 → 设计包。返回完整报告
+    + 版图 SVG。D-26：支持全部 4 器件（Ring target_fsr / Waveguide
+    target_neff / DC / YBranch）。
     """
     from lda_agent.design_pipeline import run_pipeline
 
@@ -221,7 +223,11 @@ def run_design_pipeline(payload):
     target_fsr = None
     if payload.get("target_fsr"):
         target_fsr = float(payload["target_fsr"])
-    return run_pipeline(kind, params=params, target_fsr_nm=target_fsr)
+    target_neff = None
+    if payload.get("target_neff"):
+        target_neff = float(payload["target_neff"])
+    return run_pipeline(kind, params=params, target_fsr_nm=target_fsr,
+                        target_neff=target_neff)
 
 
 def run_drc_fix_demo(payload):

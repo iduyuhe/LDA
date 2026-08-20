@@ -1,0 +1,120 @@
+{
+  "RingResonator": {
+    "accepted": true,
+    "iterations": 2,
+    "final_params": {
+      "R": 5.5,
+      "wg_width": 0.385
+    },
+    "trace": [
+      {
+        "iteration": 1,
+        "params": {
+          "R": 2.0,
+          "wg_width": 0.3
+        },
+        "n_violations": 2,
+        "violations": [
+          "[ERR] min_bend_R   RingResonator.R=2（要求 ≥ 5）",
+          "[ERR] min_width    RingResonator.wg_width=0.3（要求 ≥ 0.35）"
+        ]
+      },
+      {
+        "iteration": 2,
+        "params": {
+          "R": 5.5,
+          "wg_width": 0.385
+        },
+        "n_violations": 0,
+        "violations": []
+      }
+    ]
+  },
+  "Waveguide": {
+    "accepted": true,
+    "iterations": 2,
+    "final_params": {
+      "width": 0.385
+    },
+    "trace": [
+      {
+        "iteration": 1,
+        "params": {
+          "width": 0.2
+        },
+        "n_violations": 1,
+        "violations": [
+          "[ERR] min_width    Waveguide.width=0.2（要求 ≥ 0.35）"
+        ]
+      },
+      {
+        "iteration": 2,
+        "params": {
+          "width": 0.385
+        },
+        "n_violations": 0,
+        "violations": []
+      }
+    ]
+  },
+  "DirectionalCoupler": {
+    "accepted": true,
+    "iterations": 2,
+    "final_params": {
+      "gap": 0.22000000000000003,
+      "width": 0.5
+    },
+    "trace": [
+      {
+        "iteration": 1,
+        "params": {
+          "gap": 0.1,
+          "width": 0.5
+        },
+        "n_violations": 1,
+        "violations": [
+          "[ERR] min_space    DirectionalCoupler.gap=0.1（要求 ≥ 0.2）"
+        ]
+      },
+      {
+        "iteration": 2,
+        "params": {
+          "gap": 0.22000000000000003,
+          "width": 0.5
+        },
+        "n_violations": 0,
+        "violations": []
+      }
+    ]
+  },
+  "SymmetricYBranch": {
+    "accepted": true,
+    "iterations": 2,
+    "final_params": {
+      "width": 0.5,
+      "split_angle": 27.27272727272727
+    },
+    "trace": [
+      {
+        "iteration": 1,
+        "params": {
+          "width": 0.5,
+          "split_angle": 45.0
+        },
+        "n_violations": 1,
+        "violations": [
+          "[ERR] max_split    SymmetricYBranch.split_angle=45（要求 ≤ 30）"
+        ]
+      },
+      {
+        "iteration": 2,
+        "params": {
+          "width": 0.5,
+          "split_angle": 27.27272727272727
+        },
+        "n_violations": 0,
+        "violations": []
+      }
+    ]
+  }
+}

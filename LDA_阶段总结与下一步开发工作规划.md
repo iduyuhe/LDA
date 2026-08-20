@@ -118,6 +118,7 @@
 | D-15 | **版图 DRC 自查** ✅（已交付 2026-08-20） | 可制造性规则检查（min_width / min_space / min_bend_R / max_split，典型 SOI 180nm 规则表，D-09 接入后由 PDK 覆盖）；合规 PASS / 违规逐条检出 | drc.py + run_drc_smoke 全绿；4 类违规逐一检出；D-12 器件库默认参数全过 DRC；报告 drc_report.json |
 | D-16 | **版图 → FDTD 仿真闭环** ✅（已交付 2026-08-20） | 从 D-14 版图描述提取波导宽度 → FDTD neff（复用已验证 2D-TE 内核）→ slab ORACLE 验收，形成"设计→版图→仿真→验收"全自动闭环最后一环 | layout_sim.py + run_layout_sim_smoke 全绿；Waveguide/Ring bus/IR 端到端 3 例仿真 PASS（rel 1.394%≤2%）；报告 layout_sim_report.json |
 | D-17 | **WebUI 版图流水线面板** ✅（已交付 2026-08-20） | 把 D-14 版图 / D-15 DRC / D-16 仿真接入 webui 三合一面板（⑧ 版图→DRC→仿真流水线，一键演示）；deploy.py 增端口占用检测（防残留双绑定） | /api/layout_pipeline + 前端⑧面板；本机 start→HTTP 探测（pipeline PASS/SVG/⑧面板在）→stop 完整周期通过；CI webui 冒烟增 lp 检查 |
+| D-18 | **DRC 回读整改闭环** ✅（已交付 2026-08-20） | agent 读取 DRC violation 自动整改参数（R/gap/width/split_angle 按规则调，margin 留余量）迭代直至可制造；整改轨迹 violation 单调降 + 版图 SVG | drc_fix_loop.py（DrcFixAgent）+ run_drc_fix_smoke 全绿；4 类违规初值全部 2 轮整改到可制造（如 R 2.0→5.5、gap 0.1→0.22、width 0.2→0.385、angle 45→27.3）；报告 drc_fix_report.json |
 
 ### 7. 里程碑节奏
 
@@ -167,6 +168,7 @@ P0（D-01/D-02/D-03）+ P1（D-04/D-05/D-06）+ P2（D-07/D-08/D-09/D-10）已**
 3. **D-14 GDSII 版图出口** ✅（已交付 2026-08-20）——零依赖 GDSII 编码器 + IR/器件库→可制造版图：新增 `lda/lda_l2/gds_export.py`（最小 GDSII 编码器 HEADER/BOUNDARY/PATH/SREF，主权自持不依赖 gdsfactory/KLayout；4 器件几何 Waveguide/Ring/DC/Y 分支；SVG 预览 + 读回解析器）。**实测全绿**：4 器件 GDS 编码+解析 round-trip、D-12 器件库批量导出 4 结构（Bragg 一维堆叠诚实跳过）、演示 GDS `reports/gds_demo.gds`、SVG 预览可渲染。为阶段 3 真实版图生成铺路。
 4. **D-15 版图 DRC 自查** ✅（已交付 2026-08-20）——可制造性规则检查：新增 `lda/lda_l2/drc.py`（min_width / min_space / min_bend_R / max_split，典型 SOI 180nm 规则表，D-09 接入后由 PDK 覆盖；合规 PASS / 违规逐条检出 violation，供设计闭环回读整改）。**实测全绿**：4 类违规（width 0.2 / R 1.0 / gap 0.1 / angle 45）逐一检出；D-12 器件库默认参数全过 DRC；报告 `reports/drc_report.json`。"设计→版图→DRC 自查"可制造性闭环就绪。
 5. **D-16 版图 → FDTD 仿真闭环** ✅（已交付 2026-08-20）——从 D-14 版图描述提取波导宽度 → FDTD neff（复用已验证 2D-TE 内核，双监视点相位差法）→ slab ORACLE 验收：新增 `lda/lda_l2/layout_sim.py`。**实测全绿**：Waveguide / Ring bus / IR 端到端 3 例仿真 PASS（neff=3.2300 vs ORACLE 3.2756，rel=1.394%≤2%）；eps 场芯区/包层正确；报告 `reports/layout_sim_report.json`。**至此"设计→版图→DRC 自查→仿真→物理锚验收"全自动闭环贯通。**
+6. **D-18 DRC 回读整改闭环** ✅（已交付 2026-08-20）——agent 自适应可制造性修复：新增 `lda/lda_agent/drc_fix_loop.py`（DrcFixAgent 读 DRC violation 按规则整改参数，margin=1.1 留余量，迭代直至可制造；整改轨迹 violation 单调降 + 版图 SVG）。**实测全绿**：4 类违规初值全部 2 轮整改到可制造（Ring R 2.0→5.5、Waveguide width 0.2→0.385、DC gap 0.1→0.22、YB angle 45→27.3）；报告 `reports/drc_fix_report.json`。LDA 差异化演示：给一个不可制造初值，agent 自己改到可制造。
 
 **B. 演示与部署（向阶段 3 商业试点过渡）**
 3. **D-13 WebUI 内网部署** ✅（已交付 2026-08-20）——新增 `lda/lda_webui/deploy.py`（start/stop/status/restart + pidfile/log + 健康检查，跨平台）；`app.py` main 增强（启动打印内网 IP 访问地址）+ 新增 `/api/ring_loop`（D-11 环形谱形闭环）；前端加 ⑦ 环形面板并入首屏预热；部署说明文档 `LDA_D-13_WebUI内网部署说明.md`。**本机实测**：deploy start → HTTP 探测（ring/coupler 全 PASS、页面 ⑦ 面板在）→ stop → status 未运行，完整运维周期通过。CI webui 冒烟增 ring/deploy 检查。

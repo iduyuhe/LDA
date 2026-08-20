@@ -128,6 +128,7 @@
 | D-25 | **一键设计流水线多器件扩展** ✅（已交付 2026-08-20） | design_pipeline 从只支持 Ring/DC 扩展到全部已验证器件：Waveguide target_neff→width 逆设计（slab ORACLE 反解，D-25 新）；SymmetricYBranch 分束验收（对称性定理，GPU live / 无 GPU 诚实 ORACLE 演示）；CLI 加 --target_neff | design_pipeline.py 扩展 + run_pipeline_multidevice_smoke 全绿：WG target_neff=3.2→width=0.4056µm（FDTD rel=0.478%）、YB live_fdtd balance=0.0006、Ring/DC/WG 默认回归；D-19 smoke 无回归；CI 补 D-25 冒烟 |
 | D-26 | **WebUI 一键流水线多器件面板** ✅（已交付 2026-08-20） | ⑨ 面板从只支持 Ring 升级为全部 4 器件：/api/design_pipeline 透传 target_neff；前端器件下拉 + 动态目标参数（Ring→FSR / Waveguide→neff）+ 结果展示适配（逆设计 R/width、仿真按 mode 渲染：layout_fdtd/oracle_demo/live_fdtd） | webui app.py/index.html 升级；后端 4 器件全 PASS；HTTP 实测（WG target_neff=3.2→width=0.4056µm、⑨ 面板 dpNeff 在、start→stop 周期通过）；CI webui 冒烟增 dpw 检查 |
 | D-27 | **环形 FDTD 仿真核** ✅（已交付 2026-08-20） | 补 D-11 标注的"环形 FDTD 求解核"：2D TM add-drop 环形谐振器（环 + 上下 bus）CW 稳态逐波长透射谱 → drop 谱谐振峰 → FSR 与解析公式对拍（环形闭环从纯解析升级为真实 FDTD，对齐 D-03 FDTD↔TMM 模式） | fdtd2d_ring.py + run_ring_fdtd_smoke 全绿：R=6 加密 21 点 → drop 谱 4 峰（1.513/1.526/1.557/1.574µm），FSR(FDTD)=17.14nm vs 解析 18.31nm（rel=6.4% ≤ 30%）；thru 谐振处同步凹陷；诚实边界（2D 有效折射率/弯曲网格）；CI 补 D-27 冒烟（无 GPU 结构自检+SKIP）；报告 ring_fdtd_report.json |
+| D-28 | **WebUI 环形 FDTD 谱形面板** ✅（已交付 2026-08-20） | 把 D-27 真实 FDTD 环形透射谱可视化：预计算完整 drop/thru 谱（reports/ring_fdtd_spectrum.json，GPU ~6min 一次），/api/ring_fdtd 加载秒回 + 前端 ⑪ 面板（drop 谱曲线 + 谐振峰标记 + FSR(FDTD)↔解析对拍），并入首屏自动演示 | webui app.py/index.html + 预计算谱数据；HTTP 实测（ring_fdtd available、4 峰、FSR 17.14 vs 18.31、⑪ 面板齐备、start→stop 通过）；CI webui 冒烟增 rf 检查 |
 
 ### 7. 里程碑节奏
 
@@ -191,6 +192,7 @@ P0（D-01/D-02/D-03）+ P1（D-04/D-05/D-06）+ P2（D-07/D-08/D-09/D-10）已**
 5. **D-20 WebUI 一键设计流水线面板** ✅（已交付 2026-08-20）——D-19 接入 webui ⑨ 面板：新增 `/api/design_pipeline`（设计意图 → 逆设计/版图/DRC/整改/仿真/验收一键跑，返回步骤+整改轨迹+版图 SVG）；`design_pipeline` 报告补 layout_svg 字段。**本机实测**：start→HTTP 探测（dp PASS、R=9.9498µm、⑨ 面板在）→stop 完整周期通过。CI webui 冒烟增 dp 检查。**webui 九个面板全部就绪（验证裁判/Agent 闭环/题库/耦合器/宽带/IR/环形/版图流水线/一键设计流水线）。**
 6. **D-22 WebUI 可制造性面板** ✅（已交付 2026-08-20）——D-18 整改 + D-21 跨厂规则接入 webui ⑩ 面板：新增 `/api/drc_fix_demo`（违规初值 → agent 读 violation 自动整改到可制造，返回整改轨迹 + 整改后设计在 3 个光子 foundry 规则下跨厂可制造性对比 + 版图 SVG）。**本机实测**：start→HTTP 探测（fx PASS、⑩ 面板在）→stop 通过。CI webui 冒烟增 fx 检查。**webui 十个面板全部就绪（+⑩ 可制造性）。**
 7. **D-26 WebUI 一键流水线多器件面板** ✅（已交付 2026-08-20）——D-25 流水线多器件能力接入 webui ⑨ 面板：`/api/design_pipeline` 透传 `target_neff`；前端器件下拉（4 种）+ **动态目标参数**（Ring→target_fsr / Waveguide→target_neff）+ **结果展示按 sim.mode 适配**（layout_fdtd neff / oracle_demo 对称性定理 / live_fdtd 分束）。**本机实测**：后端 4 器件全 PASS、HTTP WG target_neff=3.2→width=0.4056µm（⑨ 面板 dpNeff 在）、start→stop 周期通过。CI webui 冒烟增 dpw（Waveguide 逆设计）检查。**webui ⑨ 面板从"仅环形"升级为"全部已验证器件一键交付"。**
+8. **D-28 WebUI 环形 FDTD 谱形面板** ✅（已交付 2026-08-20）——把 D-27 真实 FDTD 环形透射谱可视化：预计算完整 drop/thru 谱数据 `reports/ring_fdtd_spectrum.json`（D-27 核 CW 稳态 21 点，GPU ~6min 一次；webui 秒回）；新增 `/api/ring_fdtd`（加载预计算数据，诚实标注为预计算演示）+ 前端 **⑪ 环形 FDTD 透射谱面板**（drop 谱曲线 + 谐振峰标记 + FSR(FDTD)↔解析对拍表），并入首屏自动演示。**本机实测**：HTTP /api/ring_fdtd（available、4 峰、FSR 17.14 vs 18.31 rel 6.4%）、⑪ 面板齐备、start→stop 通过。CI webui 冒烟增 rf 检查。**webui 十一面板全部就绪——观众直接看到"解析模型 vs 真实 FDTD"交叉验证。**
 
 **C. 发动期（杜先生负责，与开发并行）**
 4. 退休专家线（实测语料补登，D-06/D-10 工具已就绪）

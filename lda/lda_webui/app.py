@@ -230,6 +230,23 @@ def run_design_pipeline(payload):
                         target_neff=target_neff)
 
 
+def run_ring_fdtd_demo(payload=None):
+    """D-27/D-28 环形 FDTD 透射谱（webui ⑪ 面板）。
+
+    加载预计算演示数据 reports/ring_fdtd_spectrum.json（D-27 核 CW 稳态逐波长，
+    21 点 GPU ~6min 一次；webui 秒回完整 drop/thru 谱 + 谐振峰 + FSR 对拍）。
+    实时重算需 GPU 且慢，不阻塞 HTTP——诚实标注为预计算演示数据。
+    """
+    path = os.path.join(LDA_ROOT, "reports", "ring_fdtd_spectrum.json")
+    if not os.path.exists(path):
+        return {"available": False, "error":
+                "ring_fdtd_spectrum.json 缺失（需在 GPU 机预计算 D-27 环形 FDTD 谱）"}
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    data["available"] = True
+    return data
+
+
 def run_drc_fix_demo(payload):
     """D-18/D-21/D-22 可制造性面板：agent 自动整改 + 跨厂工艺规则对比。
 
@@ -464,6 +481,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_band_loop(payload))
             elif path == "/api/ring_loop":
                 self._send(200, run_ring_loop(payload))
+            elif path == "/api/ring_fdtd":
+                self._send(200, run_ring_fdtd_demo(payload))
             elif path == "/api/layout_pipeline":
                 self._send(200, run_layout_pipeline(payload))
             elif path == "/api/design_pipeline":

@@ -1,0 +1,40 @@
+{
+  "waveguide_layout": {
+    "width_um": 0.5,
+    "neff_fdtd": 3.2299655783336036,
+    "neff_oracle": 3.2756153221562645,
+    "rel_err": 0.013936234671356539,
+    "dl_um": 0.0484375,
+    "n_core": 3.48,
+    "n_clad": 1.44,
+    "wl_um": 1.55,
+    "passed": true,
+    "tol_rel": 0.02
+  },
+  "ring_bus_layout": {
+    "width_um": 0.5,
+    "neff_fdtd": 3.2299655783336036,
+    "neff_oracle": 3.2756153221562645,
+    "rel_err": 0.013936234671356539,
+    "dl_um": 0.0484375,
+    "n_core": 3.48,
+    "n_clad": 1.44,
+    "wl_um": 1.55,
+    "passed": true,
+    "tol_rel": 0.02
+  },
+  "ir_end_to_end": {
+    "width_um": 0.5,
+    "neff_fdtd": 3.2299655783336036,
+    "neff_oracle": 3.2756153221562645,
+    "rel_err": 0.013936234671356539,
+    "dl_um": 0.0484375,
+    "n_core": 3.48,
+    "n_clad": 1.44,
+    "wl_um": 1.55,
+    "passed": true,
+    "tol_rel": 0.02,
+    "ir_kind": "Waveguide",
+    "ir_id": "wg"
+  }
+}

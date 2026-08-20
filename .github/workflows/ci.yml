@@ -132,6 +132,13 @@ jobs:
           cd lda
           python run_drc_smoke.py
 
+      - name: Layout-to-FDTD simulation smoke (D-16, GDS geometry → sim → oracle)
+        # 回归防护：D-16 版图→仿真闭环（版图宽度→FDTD neff→slab ORACLE 验收）。
+        # 纯 numpy 2D-TE FDTD（3 例 ≈20s），验证版图驱动仿真链路与 IR 端到端。
+        run: |
+          cd lda
+          python run_layout_sim_smoke.py
+
       - name: Empirical corpus incremental import smoke (D-06, csv/json/dedup/trace)
         # 回归防护：D-06 把 seed_empirical.json 升级为可增量语料库。
         # 验证 csv/JSON 批量导入 + 去重冲突 + 逐条溯源 provenance 全绿（纯静态）。

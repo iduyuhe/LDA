@@ -196,6 +196,30 @@
   </div>
 
   <div class="sec">
+    <h2>⑧ 版图 → DRC → 仿真 流水线（D-14/D-15/D-16）</h2>
+    <div class="hint">一键贯通：器件参数 → GDS 版图（SVG 预览）→ 可制造性 DRC 自查 → FDTD 仿真 neff → 物理锚验收。参数取自 D-12 器件库工艺窗口（可覆盖）。</div>
+    <div class="row">
+      <label>器件
+        <select id="lpKind">
+          <option>Waveguide</option>
+          <option>RingResonator</option>
+          <option>DirectionalCoupler</option>
+          <option>SymmetricYBranch</option>
+        </select>
+      </label>
+      <label>参数覆盖 (k=v,逗号分隔)
+        <input type="text" id="lpParams" placeholder="gap=0.3,R=10.0" style="width:190px"/>
+      </label>
+      <button class="btn" id="runLp">运行版图流水线</button>
+    </div>
+    <div id="lpSummary" class="summary"></div>
+    <div id="lpSvg" style="margin-top:10px"></div>
+    <div id="lpDrc"></div>
+    <div id="lpSim"></div>
+    <div class="conclusion" id="lpConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 · 机器优先中间表示）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -439,6 +463,39 @@ function ringSvg(curves, targetFsr){
 }
 $('runRing').onclick = runRing;
 
+// ---- ⑧ D-17 版图→DRC→仿真 流水线 ----
+async function runLp(){
+  const btn = $('runLp'); btn.disabled = true;
+  $('lpSummary').innerHTML = '<span class="spin"></span> 正在跑版图流水线（版图→DRC→FDTD 仿真→验收）…';
+  try{
+    const d = await api('/api/layout_pipeline', {
+      kind: $('lpKind').value,
+      params: parseParams($('lpParams').value),
+    });
+    renderLp(d);
+  }catch(e){ $('lpSummary').textContent = '错误：'+e; }
+  finally{ btn.disabled = false; }
+}
+function parseParams(s){
+  const o = {};
+  (s||'').split(',').forEach(kv=>{
+    const k = kv.split('=')[0], v = kv.split('=')[1];
+    if(k && v!==undefined && !isNaN(parseFloat(v))) o[k.trim()] = parseFloat(v);
+  });
+  return o;
+}
+function renderLp(d){
+  $('lpSummary').innerHTML = `器件：<b>${d.kind}</b> · 参数：${JSON.stringify(d.params)}`;
+  $('lpSvg').innerHTML = d.layout_svg || '';
+  $('lpDrc').innerHTML = `<div class="summary">DRC 自查：<span class="verdict ${d.drc.passed?'ok':'fail'}">${d.drc.passed?'PASS':'FAIL'}</span>（${d.drc.checks.length} 项检查）</div>
+    <table><tr><th>规则</th><th>参数</th><th>实测</th><th>要求</th><th>结果</th></tr>
+    ${d.drc.checks.map(c=>`<tr><td>${c.rule}</td><td>${c.param}</td><td>${fmt(c.value)}</td><td>${c.required}</td><td><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'OK':'ERR'}</span></td></tr>`).join('')}
+    </table>`;
+  $('lpSim').innerHTML = `<div class="summary">FDTD 仿真：neff(FDTD)=<b>${fmt(d.sim.neff_fdtd)}</b> vs slab ORACLE ${fmt(d.sim.neff_oracle)} · 相对误差 ${fmt(d.sim.rel_err)} ≤ ${d.sim.tol_rel} → <span class="verdict ${d.sim.passed?'ok':'fail'}">${d.sim.passed?'PASS':'FAIL'}</span></div>`;
+  $('lpConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}`;
+}
+$('runLp').onclick = runLp;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -471,10 +528,11 @@ $('runIr').onclick = runIr;
   const st = await api('/api/status');
   renderStatus(st);
   runVerify();
-  // 首屏预热：自动演示三个真闭环（耦合器验收锚 + 多波长闭环 + 环形谱形闭环），让闭环可视化立即可见
+  // 首屏预热：自动演示四个真闭环（耦合器验收锚 + 多波长 + 环形谱形 + 版图流水线），让闭环可视化立即可见
   runCoupler();
   runBand();
   runRing();
+  runLp();
   runIr();
 })();
 </script>

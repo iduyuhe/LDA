@@ -58,10 +58,25 @@ def _read_pid():
     return pid if _pid_alive(pid) else None
 
 
+def _port_in_use(port: int) -> bool:
+    """端口是否已被监听（防双绑定 → 请求路由到残留旧进程）。"""
+    import socket
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=0.5):
+            return True
+    except OSError:
+        return False
+
+
 def start(port: int) -> int:
     pid = _read_pid()
     if pid is not None:
         print(f"LDA WebUI 已在运行 pid={pid}（如需重启：deploy.py restart）")
+        return 1
+    if _port_in_use(port):
+        print(f"端口 {port} 已被占用（疑似残留 app.py 进程）。请先清理占用该端口的进程，"
+              f"或改用 --port 换端口。清理示例：taskkill /F /PID <占用进程 PID>。")
+        print("  可用：netstat -ano | findstr :%d  查看占用 PID" % port)
         return 1
     python = sys.executable
     cmd = [python, os.path.join(WEBUI_DIR, "app.py")]

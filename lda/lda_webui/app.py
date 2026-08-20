@@ -158,6 +158,56 @@ def run_ring_loop(payload):
     return RingBandAgent().run(intent)
 
 
+def _svg_item_from_desc(d):
+    """geometry_desc → svg_preview item（boundary 多环展平）。"""
+    layer = d.get("layer", 1)
+    if d["kind"] == "boundary":
+        rings = d.get("rings_um", [d.get("points_um", [])])
+        pts = []
+        for r in rings:
+            pts.extend(r)
+            pts.append(r[0])
+        return ("boundary", {"points_um": pts, "layer": layer})
+    return (d["kind"], {"points_um": d.get("points_um", []),
+                        "width_um": d.get("width_um", 0.5), "layer": layer})
+
+
+def run_layout_pipeline(payload):
+    """D-17 版图流水线：器件/IR → GDS 版图 SVG + DRC 自查 + FDTD 仿真验收。
+
+    三合一可视化：把 D-14 版图出口 + D-15 DRC + D-16 仿真串成一条命令，
+    浏览器可看"设计→版图→DRC→仿真→验收"全自动闭环。参数从 D-12 器件库
+    取默认窗口（可覆盖）。
+    """
+    from lda_l2 import drc as drc_mod
+    from lda_l2 import gds_export as ge
+    from lda_l2 import layout_sim as ls
+    from lda_l2.device_library import get_default_library
+
+    kind = payload.get("kind", "Waveguide")
+    lib = get_default_library()
+    if kind not in lib.list():
+        return {"error": f"未知器件 kind={kind}（可用：{lib.list()}）", "passed": False}
+    dev = lib.get(kind)
+    params = {k: (lo + hi) / 2.0 for k, (lo, hi) in dev.params_schema.items()}
+    params.update({k: float(v) for k, v in (payload.get("params") or {}).items()})
+
+    desc_list = ge.geometry_desc(kind, params)
+    svg = ge.svg_preview({kind: [_svg_item_from_desc(d) for d in desc_list]})
+    drc_result = drc_mod.drc_check_device(kind, params)
+    sim = ls.simulate_layout(desc_list, 3.48, 1.44, 1.55)
+    return {
+        "kind": kind,
+        "params": params,
+        "layout_svg": svg,
+        "drc": drc_result.to_dict(),
+        "sim": sim,
+        "passed": bool(drc_result.passed and sim.get("passed", False)),
+        "verdict": ("版图→DRC→仿真 全链路 PASS" if (drc_result.passed and sim.get("passed"))
+                    else "链路未全过（见 DRC/仿真 详情）"),
+    }
+
+
 def run_coupler_loop(payload):
     """D-01 多端口耦合器件验收锚（设计→仿真→验收 可视化）。
 
@@ -351,6 +401,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_band_loop(payload))
             elif path == "/api/ring_loop":
                 self._send(200, run_ring_loop(payload))
+            elif path == "/api/layout_pipeline":
+                self._send(200, run_layout_pipeline(payload))
             elif path == "/api/coupler_loop":
                 self._send(200, run_coupler_loop(payload))
             elif path == "/api/ir_demo":

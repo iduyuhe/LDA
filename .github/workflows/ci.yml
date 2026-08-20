@@ -42,7 +42,8 @@ jobs:
 
       - name: WebUI import smoke (webui server + new closed-loop endpoints)
         # 回归防护：D-07 把 D-01 耦合器验收锚 / D-03 多波长闭环 / D-05 L0 IR 接入 webui；
-        # D-13 增 /api/ring_loop（D-11 环形闭环）与部署脚本 deploy.py。
+        # D-13 增 /api/ring_loop（D-11 环形闭环）与部署脚本 deploy.py；
+        # D-17 增 /api/layout_pipeline（D-14 版图 + D-15 DRC + D-16 仿真三合一）。
         # 校验服务可导入，且各端点返回结构正确；coupler 在 CI(无 GPU) 走 ORACLE
         # 真值演示路径（快速、不挂起），band/ring/ir 为纯 numpy/解析/静态（快速）。
         run: |
@@ -63,10 +64,13 @@ jobs:
           assert dc['kind'] == 'dc' and 'kappa_oracle' in dc_m, dc
           ring = A.run_ring_loop({})                            # D-13 /api/ring_loop
           assert ring['accepted'] and 'final_R_um' in ring, ring
+          lp = A.run_layout_pipeline({'kind':'Waveguide','params':{'width':0.5}})  # D-17
+          assert lp['passed'] and '<svg' in lp['layout_svg'] and lp['drc']['passed'], lp
           assert hasattr(D, 'start') and hasattr(D, 'stop') and hasattr(D, 'status')
-          print('webui endpoints OK: layers=%d pdks=%d ir=%d yb=%s dc=%s ring=%s' % (
+          print('webui endpoints OK: layers=%d pdks=%d ir=%d yb=%s dc=%s ring=%s lp=%s' % (
             len(s['layers']), s['pdks_registered'], len(ir['examples']), yb['mode'],
-            dc['mode'], 'PASS' if ring['accepted'] else 'FAIL'))
+            dc['mode'], 'PASS' if ring['accepted'] else 'FAIL',
+            'PASS' if lp['passed'] else 'FAIL'))
           "
 
       - name: Coupler/beamsplitter module import smoke (D-01, no GPU numerics)

@@ -117,6 +117,7 @@
 | D-14 | **GDSII 版图出口** ✅（已交付 2026-08-20） | 零依赖 GDSII 编码器（HEADER/BOUNDARY/PATH/SREF）+ IR/器件库→版图（Waveguide/Ring/DC/Y 分支几何）+ SVG 预览 + 读回解析器 | gds_export.py + run_gds_smoke 全绿；D-12 器件库批量导出 4 结构；演示 GDS 4 单元、SVG 预览可渲染 |
 | D-15 | **版图 DRC 自查** ✅（已交付 2026-08-20） | 可制造性规则检查（min_width / min_space / min_bend_R / max_split，典型 SOI 180nm 规则表，D-09 接入后由 PDK 覆盖）；合规 PASS / 违规逐条检出 | drc.py + run_drc_smoke 全绿；4 类违规逐一检出；D-12 器件库默认参数全过 DRC；报告 drc_report.json |
 | D-16 | **版图 → FDTD 仿真闭环** ✅（已交付 2026-08-20） | 从 D-14 版图描述提取波导宽度 → FDTD neff（复用已验证 2D-TE 内核）→ slab ORACLE 验收，形成"设计→版图→仿真→验收"全自动闭环最后一环 | layout_sim.py + run_layout_sim_smoke 全绿；Waveguide/Ring bus/IR 端到端 3 例仿真 PASS（rel 1.394%≤2%）；报告 layout_sim_report.json |
+| D-17 | **WebUI 版图流水线面板** ✅（已交付 2026-08-20） | 把 D-14 版图 / D-15 DRC / D-16 仿真接入 webui 三合一面板（⑧ 版图→DRC→仿真流水线，一键演示）；deploy.py 增端口占用检测（防残留双绑定） | /api/layout_pipeline + 前端⑧面板；本机 start→HTTP 探测（pipeline PASS/SVG/⑧面板在）→stop 完整周期通过；CI webui 冒烟增 lp 检查 |
 
 ### 7. 里程碑节奏
 
@@ -169,6 +170,7 @@ P0（D-01/D-02/D-03）+ P1（D-04/D-05/D-06）+ P2（D-07/D-08/D-09/D-10）已**
 
 **B. 演示与部署（向阶段 3 商业试点过渡）**
 3. **D-13 WebUI 内网部署** ✅（已交付 2026-08-20）——新增 `lda/lda_webui/deploy.py`（start/stop/status/restart + pidfile/log + 健康检查，跨平台）；`app.py` main 增强（启动打印内网 IP 访问地址）+ 新增 `/api/ring_loop`（D-11 环形谱形闭环）；前端加 ⑦ 环形面板并入首屏预热；部署说明文档 `LDA_D-13_WebUI内网部署说明.md`。**本机实测**：deploy start → HTTP 探测（ring/coupler 全 PASS、页面 ⑦ 面板在）→ stop → status 未运行，完整运维周期通过。CI webui 冒烟增 ring/deploy 检查。
+4. **D-17 WebUI 版图流水线面板** ✅（已交付 2026-08-20）——把 D-14 版图 / D-15 DRC / D-16 仿真接入 webui ⑧ 三合一面板：新增 `/api/layout_pipeline`（器件 → GDS 版图 SVG + DRC 报告 + FDTD neff 验收一键跑）；`deploy.py` 增端口占用检测（修复多残留进程 SO_REUSEADDR 双绑定导致请求路由到旧代码的坑）；`layout_sim` 增精度自适应（wl/32 → wl/48/64，较宽波导默认分辨率精度不足 4%→0.15%）。**本机实测**：start→HTTP 探测（pipeline PASS、⑧ 面板在）→stop→端口释放，完整周期通过。CI webui 冒烟增 lp 检查。
 
 **C. 发动期（杜先生负责，与开发并行）**
 4. 退休专家线（实测语料补登，D-06/D-10 工具已就绪）

@@ -80,11 +80,19 @@ def simulate_layout(desc_list: List[Dict], n_core: float, n_clad: float,
 
     desc_list 为 D-14 geometry_desc 输出；提取波导宽度后 FDTD 仿真 + ORACLE
     验收，返回报告（含 passed）。
+
+    精度自适应：默认分辨率 wl/32（快）；若相对误差超容差，逐级提精
+    wl/48 → wl/64（网格色散对不同宽度敏感，提精可压到 2% 内）。
     """
     width = find_waveguide_width(desc_list)
     if width is None:
         raise ValueError("版图描述无 PATH 波导元素（本任务仅支持波导类版图）")
-    sim = simulate_waveguide_neff(width, n_core, n_clad, wl_um)
+    sim = None
+    for dl in (None, wl_um / 48.0, wl_um / 64.0):
+        s = simulate_waveguide_neff(width, n_core, n_clad, wl_um, dl=dl)
+        sim = s
+        if s["rel_err"] <= tol_rel:
+            break
     sim["passed"] = sim["rel_err"] <= tol_rel
     sim["tol_rel"] = tol_rel
     return sim

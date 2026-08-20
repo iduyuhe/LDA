@@ -1,0 +1,65 @@
+{
+  "d25": "pipeline multi-device",
+  "checks": [
+    {
+      "key": "wg_inverse",
+      "ok": true,
+      "msg": "Waveguide target_neff=3.2 PASS：设计流水线全链路 PASS：Waveguide 参数 {'width': 0.4056}，可制造（DRC 全过）+ 仿真验收 neff=3.2152（rel=0"
+    },
+    {
+      "key": "wg_inverse_rec",
+      "ok": true,
+      "msg": "逆设计记录：{'target_neff': 3.2, 'width_um': 0.4056}"
+    },
+    {
+      "key": "wg_accept",
+      "ok": true,
+      "msg": "width=0.4056µm（窗口内），FDTD neff=3.2152 rel=0.478% ≤ 2%"
+    },
+    {
+      "key": "yb_pipeline",
+      "ok": true,
+      "msg": "SymmetricYBranch PASS（sim mode=live_fdtd）：设计流水线全链路 PASS：SymmetricYBranch 参数 {'width': 0.65, 'split_angle': 15.5,"
+    },
+    {
+      "key": "yb_live",
+      "ok": true,
+      "msg": "FDTD 分束 balance=0.0006 ≤ 0.1"
+    },
+    {
+      "key": "default_RingResonator",
+      "ok": true,
+      "msg": "RingResonator 默认参数全链路 PASS（2 步）"
+    },
+    {
+      "key": "steps_RingResonator",
+      "ok": true,
+      "msg": "RingResonator 步骤完整（2 步）+ SVG 版图"
+    },
+    {
+      "key": "default_DirectionalCoupler",
+      "ok": true,
+      "msg": "DirectionalCoupler 默认参数全链路 PASS（2 步）"
+    },
+    {
+      "key": "steps_DirectionalCoupler",
+      "ok": true,
+      "msg": "DirectionalCoupler 步骤完整（2 步）+ SVG 版图"
+    },
+    {
+      "key": "default_Waveguide",
+      "ok": true,
+      "msg": "Waveguide 默认参数全链路 PASS（2 步）"
+    },
+    {
+      "key": "steps_Waveguide",
+      "ok": true,
+      "msg": "Waveguide 步骤完整（2 步）+ SVG 版图"
+    },
+    {
+      "key": "cli",
+      "ok": true,
+      "msg": "CLI --target_neff 参数可用"
+    }
+  ]
+}

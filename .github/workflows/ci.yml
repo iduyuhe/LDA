@@ -184,6 +184,14 @@ jobs:
           cd lda
           python run_pipeline_smoke.py
 
+      - name: Pipeline multi-device smoke (D-25, Waveguide neff + YBranch split)
+        # 回归防护：D-25 一键设计流水线多器件扩展——Waveguide target_neff→width
+        # 逆设计（slab 反解）+ FDTD 验收；SymmetricYBranch 分束验收（CI 无 GPU
+        # 走诚实 ORACLE 演示）；Ring/DC/Waveguide 默认全链路回归（≈45s）。
+        run: |
+          cd lda
+          python run_pipeline_multidevice_smoke.py
+
       - name: Coupler multi-wavelength band smoke (D-23, full-band κ/balance)
         # 回归防护：D-23 把 D-01 单波长耦合器验收扩展为多波长全波段验收。
         # CI(无 GPU) 跑 contract 自检（注册表+契约+波长扫描逻辑，快稳）；

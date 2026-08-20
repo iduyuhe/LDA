@@ -151,6 +151,14 @@ jobs:
           cd lda
           python run_drc_fix_smoke.py
 
+      - name: One-click design pipeline smoke (D-19, IR→GDS→DRC→sim→deliverable)
+        # 回归防护：D-19 一键设计流水线——逆设计(Ring FSR)→版图→DRC→整改→
+        # FDTD 仿真→验收→设计包落盘。验证 Ring 目标逆设计 + DC 违规自动整改
+        # 全链路 PASS + 产物非空（2 例 ≈10s）。
+        run: |
+          cd lda
+          python run_pipeline_smoke.py
+
       - name: Empirical corpus incremental import smoke (D-06, csv/json/dedup/trace)
         # 回归防护：D-06 把 seed_empirical.json 升级为可增量语料库。
         # 验证 csv/JSON 批量导入 + 去重冲突 + 逐条溯源 provenance 全绿（纯静态）。

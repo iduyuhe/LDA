@@ -1,0 +1,55 @@
+{
+  "kind": "RingResonator",
+  "final_params": {
+    "R": 9.949772116681736,
+    "wg_width": 0.5
+  },
+  "inverse_design": {
+    "target_fsr_nm": 9.15,
+    "R_um": 9.949772116681736
+  },
+  "drc": {
+    "device": "RingResonator",
+    "passed": true,
+    "checks": [
+      {
+        "rule": "min_bend_R",
+        "device": "RingResonator",
+        "param": "R",
+        "value": 9.949772116681736,
+        "required": 5.0,
+        "ok": true,
+        "severity": "error"
+      },
+      {
+        "rule": "min_width",
+        "device": "RingResonator",
+        "param": "wg_width",
+        "value": 0.5,
+        "required": 0.35,
+        "ok": true,
+        "severity": "error"
+      }
+    ]
+  },
+  "drc_fix": null,
+  "sim": {
+    "width_um": 0.5,
+    "neff_fdtd": 3.2299655783336036,
+    "neff_oracle": 3.2756153221562645,
+    "rel_err": 0.013936234671356539,
+    "dl_um": 0.0484375,
+    "n_core": 3.48,
+    "n_clad": 1.44,
+    "wl_um": 1.55,
+    "passed": true,
+    "tol_rel": 0.02
+  },
+  "steps": [
+    "逆设计 target_fsr=9.15nm → R=9.9498µm",
+    "版图生成（GDSII + SVG）",
+    "FDTD 仿真 neff=3.2300（rel=1.394%）"
+  ],
+  "accepted": true,
+  "verdict": "设计流水线全链路 PASS：RingResonator 参数 {'R': 9.949772116681736, 'wg_width': 0.5}，可制造（DRC 全过）+ 仿真验收 neff=3.2300（rel=1.394%）。设计包已落盘（GDS + SVG + JSON 报告）。"
+}

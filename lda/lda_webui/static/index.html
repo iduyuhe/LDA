@@ -114,7 +114,7 @@
 
     <div class="sec">
       <h2>③ agent 自迭代设计闭环</h2>
-      <div class="hint">agent 提案 → L1 驱动内核 → 物理定律法官验证 → 诊断迭代。</div>
+      <div class="hint">agent 提案 → L1 驱动内核 → 物理定律法官验证 → 诊断迭代（布拉格镜单波长验收）。</div>
       <div class="row">
         <label>内核
           <select id="solver">
@@ -132,82 +132,62 @@
   </div>
 
   <div class="sec">
-    <h2>④ PDK 驱动的工艺逆设计（L2）</h2>
-    <div class="hint">选工艺节点（PDK）与器件模板——agent 在真实工艺窗口内逆设计几何，经物理定律法官验收。</div>
+    <h2>④ 多端口耦合器件验收锚（D-01）</h2>
+    <div class="hint">方向耦合器（DC）：FDFD 超模法 ORACLE（κ、Lc）↔ FDTD 超模投影 κ_fdtd 交叉对拍；对称 Y 分支分束器（YB）：对称性定理 ORACLE（50/50）↔ FDTD 两臂能流平衡度。实时 FDTD 需 GPU 演示机；无 GPU 时展示 ORACLE 真值。</div>
     <div class="row">
-      <label>工艺 PDK
-        <select id="pdk"></select>
-      </label>
-      <label>器件模板
-        <select id="pdkTemplate"></select>
-      </label>
-      <label>内核
-        <select id="pdkSolver">
-          <option value="truth">真内核（解析物理定律）</option>
-          <option value="l3_ai">L3 AI 写内核（有缺陷）</option>
+      <label>器件
+        <select id="couplerKind">
+          <option value="ybranch">对称 Y 分支分束器（50/50）</option>
+          <option value="dc">方向耦合器（DC）</option>
         </select>
       </label>
-      <button class="btn" id="runPdk">运行逆设计</button>
+      <label>gap (µm, DC)
+        <input type="number" id="couplerGap" value="0.3" step="0.05" min="0.1" max="1"/>
+      </label>
+      <label>sep (µm, YB)
+        <input type="number" id="couplerSep" value="1.6" step="0.1" min="0.5" max="5"/>
+      </label>
+      <button class="btn" id="runCoupler">运行验收锚</button>
     </div>
-    <div id="pdkSummary" class="summary"></div>
-    <div id="pdkTable"></div>
-    <div id="pdkSpectrum" style="margin-top:14px"></div>
-    <div class="conclusion" id="pdkConclusion"></div>
+    <div id="couplerSummary" class="summary"></div>
+    <div id="couplerBody"></div>
   </div>
 
   <div class="sec">
-    <h2>⑤ 多晶圆厂对比（L2 开放 PDK 共建）</h2>
-    <div class="hint">同一设计意图跨不同 foundry 跑逆设计——看工艺窗口（折射率/尺寸边界）差异如何驱动设计落点不同。量子 foundry 无该器件类型时自动跳过。</div>
+    <h2>⑤ 多波长 / 宽带设计闭环（D-03）</h2>
+    <div class="hint">agent 增减布拉格周期数，使整个 λ 扫描范围阻带都达标（R≥阈值）且与 TMM 物理定律锚全波段谱形一致（max|ΔR|≤容差）。从“单点达标”升级到“给定目标谱形达标”。</div>
     <div class="row">
-      <label>器件类型
-        <select id="compareType"></select>
+      <label>阻带阈值 R≥
+        <input type="number" id="bandThr" value="0.99" step="0.005" min="0.5" max="1"/>
       </label>
-      <label>内核
-        <select id="compareSolver">
-          <option value="truth">真内核（解析物理定律）</option>
-          <option value="l3_ai">L3 AI 写内核（有缺陷）</option>
-        </select>
+      <label>扫描半宽 (µm)
+        <input type="number" id="bandSpan" value="0.12" step="0.01" min="0.02" max="0.5"/>
       </label>
-      <button class="btn" id="runCompare">运行跨厂对比</button>
+      <label>初始周期数
+        <input type="number" id="bandPer" value="6" step="1" min="2" max="20"/>
+      </label>
+      <button class="btn" id="runBand">运行宽带闭环</button>
     </div>
-    <div id="compareSummary" class="summary"></div>
-    <div id="compareSvg" style="margin-top:12px"></div>
-    <div id="compareTable"></div>
-    <div class="conclusion" id="compareConclusion"></div>
+    <div id="bandSummary" class="summary"></div>
+    <div id="bandSvg" style="margin-top:10px"></div>
+    <div id="bandTrace"></div>
+    <div class="conclusion" id="bandConclusion"></div>
   </div>
 
   <div class="sec">
-    <h2>⑥ L0 统一 IR 驱动逆设计（光子谱形 + 量子频率 · 多晶圆厂落点）</h2>
-    <div class="hint">同一套机器优先 IR（设计意图中间表示）同时表达光子与量子器件——表达"要造什么 + 目标 + 想落哪些 foundry"，经桥接层真驱动 agent 闭环。点运行看：光子段（环形目标谱形 B11 + 多晶圆厂落点差异）与量子段（transmon 频率逆设计 B9）如何被<b>同一个 IR 机器语言</b>驱动——"统一光子+量子"不是口号。</div>
+    <h2>⑥ L0 统一 IR（D-05 v0.2 · 机器优先中间表示）</h2>
+    <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
-      <label>目标 FSR (nm)
-        <input type="number" id="irFsr" value="9.15" step="0.05" min="1" max="30"/>
-      </label>
-      <label>内核
-        <select id="irSolver">
-          <option value="truth">真内核（解析物理定律）</option>
-          <option value="l3_ai">L3 AI 写内核（有缺陷）</option>
-        </select>
-      </label>
-      <button class="btn" id="runIr">运行 IR 逆设计（光子+量子）</button>
+      <button class="btn" id="runIr">构造并校验 IR 实例</button>
     </div>
     <div id="irSummary" class="summary"></div>
-
-    <div class="subhead">光子段 · 环形谐振器目标谱形（B11）+ 多晶圆厂落点</div>
-    <div class="conclusion" id="irDslPh"></div>
-    <div id="irTablePh"></div>
-
-    <div class="subhead">量子段 · transmon 频率逆设计（B9，工艺固定 E_C 只调 E_J）</div>
-    <div class="conclusion" id="irDslQ"></div>
-    <div id="irTableQ"></div>
-
-    <div class="subhead">L3 直接消费 IR · 真值计算（不经 DesignProblem，IR 即事实源）</div>
-    <div id="irTableEval"></div>
+    <div id="irBody"></div>
   </div>
 
   <div class="footer">
     本界面所有数据均为<strong>实时真跑</strong> LDA 内核产出，非演示稿。<br/>
     后端零依赖（Python 标准库 http.server），复用已落地的验证裁判 / L1 KernelGateway / agent 设计闭环。<br/>
+    红线：LLM 不进判决路径，是否 PASS 由死标量比对（FDTD vs 物理定律 ORACLE）决定。<br/>
     LDA · agent-native 开源光子+量子芯片设计软件 · 杜玉河 / 工业5点0产业生态联盟
   </div>
 </div>
@@ -292,201 +272,145 @@ async function runLoop(){
 $('runVerify').onclick = runVerify;
 $('runLoop').onclick = runLoop;
 
-function fillPdks(){
-  return api('/api/pdks').then(d=>{
-    const sel = $('pdk'); sel.innerHTML = '';
-    d.keys.forEach(k=>{
-      const o=document.createElement('option'); o.value=k; o.textContent=k; sel.appendChild(o);
-    });
-    window.__pdks = d.pdks;
-    fillPdkTemplates();
-    return d;
-  });
+// ---- ④ D-01 多端口耦合器件验收锚 ----
+async function runCoupler(){
+  const btn = $('runCoupler'); btn.disabled = true;
+  const kind = $('couplerKind').value;
+  $('couplerSummary').innerHTML = '<span class="spin"></span> 正在跑 D-01 验收锚（实时 FDTD ↔ ORACLE）…';
+  try{
+    const body = {kind};
+    if(kind === 'dc') body.gap = parseFloat($('couplerGap').value);
+    else body.sep = parseFloat($('couplerSep').value);
+    const d = await api('/api/coupler_loop', body);
+    renderCoupler(d);
+  }catch(e){ $('couplerSummary').textContent = '错误：'+e; }
+  finally{ btn.disabled = false; }
 }
-function fillPdkTemplates(){
-  const k = $('pdk').value;
-  const tpls = (window.__pdks && window.__pdks[k]) ? window.__pdks[k].templates : [];
-  const sel = $('pdkTemplate'); sel.innerHTML='';
-  tpls.forEach(t=>{
-    const o=document.createElement('option'); o.value=t.name;
-    const tn = t.tunables ? Object.entries(t.tunables).map(([k,v])=>k+'∈['+v[0]+','+v[1]+']').join(' , ') : (t.tunable+'∈['+t.bounds[0]+','+t.bounds[1]+']');
-    const cstr = (t.constraint_bids && t.constraint_bids.length) ? ' + 约束'+t.constraint_bids.join('/') : '';
-    const objs = (t.objective && t.objective.length>1) ? ' · 多目标['+t.objective.map(o=>o.bid+'='+o.target+'(w'+o.weight+')').join(',')+']' : '';
-    o.textContent = t.name + ' · 调 ' + tn + cstr + objs + ' → ' + t.target_metric + '=' + t.target;
-    sel.appendChild(o);
-  });
+function renderCoupler(d){
+  const m = d.metrics || {};
+  const mode = d.mode === 'live_fdtd'
+    ? '实时 FDTD ↔ ORACLE 交叉对拍'
+    : 'ORACLE 真值演示（无 GPU；实时 FDTD 需在 GPU 演示机运行）';
+  let body = '';
+  if(d.kind === 'ybranch'){
+    const z = m.z_out_um || [], fa = m.fracA_by_z || [], fb = m.fracB_by_z || [];
+    body = `<div style="margin-top:10px">${ybSvg(z, fa, fb)}</div>` +
+      `<div class="summary">fracA=${m.fracA} · fracB=${m.fracB} · 平衡度 |Δ|=${m.balance_abs}（容差 ${m.tol_balance}）· 总功率正=${m.total_power_positive}</div>`;
+  } else {
+    body = `<div class="summary">κ_oracle=${m.kappa_oracle} · κ_fdtd=${m.kappa_fdtd}（${m.kappa_method}）· 相对偏差=${m.kappa_rel_dev}（容差 ${m.tol_kappa}）· Lc_oracle=${m.Lc_oracle_um}µm</div>`;
+  }
+  const cls = d.passed === null ? 'fail' : (d.passed ? 'ok' : 'fail');
+  const vt = d.passed === null ? 'ORACLE' : (d.passed ? 'PASS' : 'FAIL');
+  const col = d.passed === null ? 'var(--amber)' : (d.passed ? 'var(--green)' : 'var(--red)');
+  $('couplerSummary').innerHTML = `模式：<span class="tag">${mode}</span> · 判定：<span class="verdict ${cls}">${vt}</span>`;
+  $('couplerBody').innerHTML = body +
+    `<div class="conclusion" style="border-left-color:${col}"><strong>结论：</strong>${d.note||''}</div>`;
 }
-function renderPdk(d){
-  const fp = (d.final_param && typeof d.final_param==='object') ? Object.entries(d.final_param).map(([k,v])=>k+'='+v).join(' , ') : d.final_param;
-  const objs = (d.objectives && d.objectives.length>1) ? ' · 目标['+d.objectives.map(o=>o.bid+'='+o.target+'(w'+o.weight+')').join(' , ')+']' : '';
-  $('pdkSummary').innerHTML = 'PDK：<span class="tag">'+d.pdk+'</span> · 模板：<span class="tag">'+d.template+'</span> · 收敛：<b>'+(d.converged?'是':'否')+'</b> · 轮次：<b>'+d.iterations+'</b> · 最终参数 = '+fp+' → metric='+fmt(d.final_metric)+objs+'（目标 '+d.target+'）';
-  $('pdkTable').innerHTML = '<table><tr><th>轮</th><th>提案参数</th><th>求解 metric</th><th>误差</th><th>内核验证</th><th>L1 裁决</th></tr>' +
-    d.records.map(r=>{ const pp = (r.params && typeof r.params==='object') ? Object.entries(r.params).map(([k,v])=>k+'='+v).join(' , ') : r.param; return '<tr><td>'+r.iter+'</td><td>'+pp+'</td><td>'+fmt(r.metric)+'</td><td>'+r.err+'</td><td>'+(r.passed_all?'PASS':'FAIL')+'</td><td><span class="verdict '+(r.verdict==='ok'?'ok':'fail')+'">'+r.verdict+'</span></td></tr>'; }).join('') +
-    '</table>';
-  const col = (d.converged && d.final_passed_all) ? 'var(--green)' : (!d.converged ? 'var(--amber)' : 'var(--red)');
-  $('pdkConclusion').style.borderLeftColor = col;
-  $('pdkConclusion').innerHTML = '<strong>结论：</strong>'+d.note+'<br/>（PDK 提供工艺窗口，agent 在其内逆设计；验证裁判不为收敛放水。）';
-  if(d.spectrum){ $('pdkSpectrum').innerHTML = ringSvg(d.spectrum); }
-  else { $('pdkSpectrum').innerHTML = ''; }
-}
-
-// 环形透射谱 SVG（实际谱实线 + 目标谱虚线）；零依赖
-function ringSvg(spec){
-  const W=580,H=180,pad=36;
-  const wls=spec.wls, tr=spec.trans, tt=spec.target_trans;
-  const wmin=Math.min(...wls), wmax=Math.max(...wls);
-  const X=w=> pad + (w-wmin)/(wmax-wmin)*(W-2*pad);
-  const Y=t=> H-pad - Math.min(t,1.5)/1.5*(H-2*pad);
-  const pts = wls.map((w,i)=> X(w).toFixed(1)+','+Y(tr[i]).toFixed(1)).join(' ');
-  const tpts = wls.map((w,i)=> X(w).toFixed(1)+','+Y(tt[i]).toFixed(1)).join(' ');
+function ybSvg(z, fa, fb){
+  if(!z.length) return '';
+  const W=560, H=200, pad=38;
+  const zmin=z[0], zmax=z[z.length-1];
+  const X=v=> pad + (v-zmin)/(zmax-zmin||1)*(W-2*pad);
+  const Y=v=> H-pad - Math.min(Math.max(v,0),1)/1*(H-2*pad);
+  const pa = z.map((x,i)=> X(x).toFixed(1)+','+Y(fa[i]||0).toFixed(1)).join(' ');
+  const pb = z.map((x,i)=> X(x).toFixed(1)+','+Y(fb[i]||0).toFixed(1)).join(' ');
+  const yt = Y(0.5).toFixed(1);
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px">
     <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#26304d"/>
     <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#26304d"/>
-    <polyline points="${tpts}" fill="none" stroke="#8aa0c6" stroke-width="1.5" stroke-dasharray="5 4"/>
-    <polyline points="${pts}" fill="none" stroke="#38bdf8" stroke-width="2"/>
-    <text x="${pad+4}" y="${pad+2}" fill="#38bdf8" font-size="11">实际谱(实线) · 目标谱(虚线) · FSR=${spec.fsr_nm}nm / 目标 ${spec.target_fsr}nm</text>
+    <line x1="${pad}" y1="${yt}" x2="${W-pad}" y2="${yt}" stroke="#f59e0b" stroke-dasharray="5 4" stroke-width="1"/>
+    <polyline points="${pa}" fill="none" stroke="#38bdf8" stroke-width="2"/>
+    <polyline points="${pb}" fill="none" stroke="#22c55e" stroke-width="2"/>
+    <text x="${pad+4}" y="${pad+2}" fill="#38bdf8" font-size="11">臂 A 能流占比(实线)</text>
+    <text x="${pad+4}" y="${pad+16}" fill="#22c55e" font-size="11">臂 B 能流占比(实线)</text>
+    <text x="${pad+4}" y="${yt-4}" fill="#f59e0b" font-size="11">目标 0.5（虚线）</text>
+    <text x="${pad}" y="${H-10}" fill="#8aa0c6" font-size="11">z=${zmin.toFixed(1)}µm</text>
+    <text x="${W-pad}" y="${H-10}" fill="#8aa0c6" font-size="11" text-anchor="end">${zmax.toFixed(1)}µm</text>
+  </svg>`;
+}
+$('runCoupler').onclick = runCoupler;
+
+// ---- ⑤ D-03 多波长 / 宽带设计闭环 ----
+async function runBand(){
+  const btn = $('runBand'); btn.disabled = true;
+  $('bandSummary').innerHTML = '<span class="spin"></span> 正在跑 D-03 多波长宽带闭环（设计→仿真→验收）…';
+  try{
+    const d = await api('/api/band_loop', {
+      threshold: parseFloat($('bandThr').value),
+      band_span: parseFloat($('bandSpan').value),
+      periods: parseInt($('bandPer').value),
+    });
+    renderBand(d);
+  }catch(e){ $('bandSummary').textContent = '错误：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderBand(d){
+  const curves = d.final_band_curves || [];
+  $('bandSummary').innerHTML = `收敛：<b>${d.accepted?'是':'否'}</b> · 轮次：<b>${d.iterations}</b> · 阻带底线 R_min(FDTD)=<b>${fmt(d.final_band_min_R_fdtd)}</b> ≥ 阈值 · 全波段 max|ΔR|=${fmt(d.final_max_abs_err)}（容差 ${d.target.tolerance_rel}）`;
+  $('bandSvg').innerHTML = bandSvg(curves);
+  $('bandTrace').innerHTML = `<div class="summary">闭环轨迹（agent 增减布拉格周期数直至全波段达标）：</div><table>
+    <tr><th>轮</th><th>周期数</th><th>R_min(FDTD)</th><th>max|ΔR|</th><th>达标</th></tr>
+    ${d.loop_trace.map(r=>`<tr><td>${r.iteration}</td><td>${r.periods}</td><td>${fmt(r.band_min_R_fdtd)}</td><td>${fmt(r.max_abs_err)}</td><td><span class="verdict ${r.passed?'ok':'fail'}">${r.passed?'PASS':'FAIL'}</span></td></tr>`).join('')}
+  </table>`;
+  $('bandConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}`;
+}
+function bandSvg(curves){
+  if(!curves.length) return '';
+  const W=580, H=200, pad=38;
+  const wls = curves.map(c=>c.wl);
+  const wmin=Math.min(...wls), wmax=Math.max(...wls);
+  const X=w=> pad + (w-wmin)/(wmax-wmin||1)*(W-2*pad);
+  const Y=r=> H-pad - Math.min(Math.max(r,0),1.2)/1.2*(H-2*pad);
+  const pf = curves.map(c=> X(c.wl).toFixed(1)+','+Y(c.R_fdtd).toFixed(1)).join(' ');
+  const po = curves.map(c=> X(c.wl).toFixed(1)+','+Y(c.R_oracle).toFixed(1)).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px">
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#26304d"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#26304d"/>
+    <polyline points="${po}" fill="none" stroke="#8aa0c6" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <polyline points="${pf}" fill="none" stroke="#38bdf8" stroke-width="2"/>
+    <text x="${pad+4}" y="${pad+2}" fill="#38bdf8" font-size="11">FDTD R(实线) · TMM ORACLE R(虚线)</text>
     <text x="${pad}" y="${H-10}" fill="#8aa0c6" font-size="11">λ=${wmin.toFixed(3)}µm</text>
     <text x="${W-pad}" y="${H-10}" fill="#8aa0c6" font-size="11" text-anchor="end">${wmax.toFixed(3)}µm</text>
   </svg>`;
 }
+$('runBand').onclick = runBand;
 
-// 多晶圆厂谱形叠加 SVG（每个 foundry 一种颜色）
-function compareSvg(rows){
-  const W=580,H=200,pad=36;
-  const colors=['#38bdf8','#22c55e','#f59e0b','#ef4444','#a78bfa'];
-  let wmin=1e9,wmax=-1e9;
-  rows.forEach(r=>{ if(r.spectrum) r.spectrum.wls.forEach(w=>{ if(w<wmin)wmin=w; if(w>wmax)wmax=w; }); });
-  if(wmin>wmax) return '';
-  const X=w=> pad + (w-wmin)/(wmax-wmin)*(W-2*pad);
-  const Y=t=> H-pad - Math.min(t,1.5)/1.5*(H-2*pad);
-  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px">
-    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#26304d"/>
-    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#26304d"/>`;
-  rows.forEach((r,i)=>{
-    if(!r.spectrum) return;
-    const c=colors[i%colors.length];
-    const pts=r.spectrum.wls.map((w,j)=> X(w).toFixed(1)+','+Y(r.spectrum.trans[j]).toFixed(1)).join(' ');
-    s+=`<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.8"/>`;
-    s+=`<text x="${pad+4}" y="${pad+4+i*14}" fill="${c}" font-size="11">${r.foundry}</text>`;
-  });
-  s+=`<text x="${W-pad}" y="${H-10}" fill="#8aa0c6" font-size="11" text-anchor="end">λ=${wmax.toFixed(3)}µm</text>`;
-  s+=`</svg>`;
-  return s;
-}
-async function runPdk(){
-  const btn=$('runPdk'); btn.disabled=true;
-  $('pdkSummary').innerHTML='<span class="spin"></span> 正在用 PDK 驱动 agent 逆设计…';
+// ---- ⑥ D-05 L0 统一 IR（v0.2）----
+async function runIr(){
+  const btn = $('runIr'); btn.disabled = true;
+  $('irSummary').innerHTML = '<span class="spin"></span> 正在用 lda_ir（D-05 v0.2）构造并校验 IR…';
   try{
-    const d=await api('/api/pdk_design',{pdk:$('pdk').value,template:$('pdkTemplate').value,solver:$('pdkSolver').value});
-    renderPdk(d);
-  }catch(e){ $('pdkSummary').textContent='错误：'+e; }
-  finally{ btn.disabled=false; }
+    const d = await api('/api/ir_demo', {});
+    renderIr(d);
+  }catch(e){ $('irSummary').textContent = '错误：'+e; }
+  finally{ btn.disabled = false; }
 }
-$('runPdk').onclick = runPdk;
-$('pdk').onchange = fillPdkTemplates;
-
-async function runCompare(){
-  const btn=$('runCompare'); btn.disabled=true;
-  $('compareSummary').innerHTML='<span class="spin"></span> 正在跨 foundry 跑逆设计…';
-  try{
-    const d=await api('/api/pdk_compare',{device_type:$('compareType').value,solver:$('compareSolver').value});
-    renderCompare(d);
-  }catch(e){ $('compareSummary').textContent='错误：'+e; }
-  finally{ btn.disabled=false; }
-}
-function renderCompare(d){
-  $('compareSummary').innerHTML='跨厂对比：<b>'+d.rows.length+'</b> 个 foundry · 器件类型：<span class="tag">'+d.device_type+'</span>';
-  $('compareSvg').innerHTML = compareSvg(d.rows);
-  $('compareTable').innerHTML = '<table><tr><th>Foundry</th><th>Node</th><th>n_si</th><th>工艺窗口</th><th>收敛</th><th>最终参数</th><th>metric</th><th>内核验证</th></tr>' +
-    d.rows.map(r=>{
-      const fp=(r.final_param&&typeof r.final_param==='object')?Object.entries(r.final_param).map(([k,v])=>k+'='+v).join(', '):r.final_param;
-      const pw=r.param_window?('['+r.param_window[0]+', '+r.param_window[1]+']'):'—';
-      return `<tr><td>${r.foundry}</td><td>${r.node}</td><td>${r.n_si}</td><td>${pw}</td>`+
-        `<td>${r.converged?'是':'否'}</td><td>${fp}</td><td>${fmt(r.final_metric)}</td>`+
-        `<td><span class="verdict ${r.final_passed_all?'ok':'fail'}">${r.final_passed_all?'PASS':'FAIL'}</span></td></tr>`;
-    }).join('') + '</table>';
-  const allpass = d.rows.every(r=>r.final_passed_all);
-  const anyconv = d.rows.some(r=>r.converged);
-  $('compareConclusion').style.borderLeftColor = allpass ? 'var(--green)' : (anyconv ? 'var(--amber)' : 'var(--red)');
-  $('compareConclusion').innerHTML = '<strong>结论：</strong>不同 foundry 的工艺窗口（n_g/折射率/尺寸边界）不同 → 同一设计意图收敛到不同几何落点；agent 逆设计天然落在各自可制造边界内。量子 foundry 无该器件类型则自动跳过（生态可扩展）。';
-}
-$('runCompare').onclick = runCompare;
-
 function escapeHtml(s){
   return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 }
-async function runIr(){
-  const btn=$('runIr'); btn.disabled=true;
-  $('irSummary').innerHTML='<span class="spin"></span> 正在用 IR 驱动跨 foundry 逆设计…';
-  try{
-    const d=await api('/api/ir_demo',
-      {target_fsr_nm:parseFloat($('irFsr').value), solver:$('irSolver').value});
-    renderIr(d);
-  }catch(e){ $('irSummary').textContent='错误：'+e; }
-  finally{ btn.disabled=false; }
-}
-function renderIrBlock(prefix, blk, title, kind){
-  // blk: {dsl, validate_errors, rows, target_fsr_nm|target_f01_ghz}
-  const ok = blk.validate_errors && blk.validate_errors.length===0;
-  const dslEl=$(prefix+'Dsl');
-  dslEl.style.borderLeftColor='var(--accent)';
-  dslEl.innerHTML='<strong>'+title+' · IR DSL（机器优先中间表示）：</strong>'+
-    '<pre style="white-space:pre-wrap;margin:6px 0 0;color:var(--mut);font-size:12px">'+escapeHtml(blk.dsl)+'</pre>';
-  const tgt = blk.target_fsr_nm!=null ? ('目标 FSR='+blk.target_fsr_nm+'nm')
-            : ('目标 f01='+blk.target_f01_ghz+'GHz');
-  const keyCol = kind==='photon' ? '最终几何 R (µm)' : '收敛参数 (E_J, E_C)';
-  const metricCol = kind==='photon' ? '谱形误差' : 'f01 (GHz)';
-  const tblEl=$(prefix+'Table');
-  tblEl.innerHTML='<table><tr><th>Foundry</th><th>校验</th><th>收敛</th><th>'+keyCol+'</th>'+
-    '<th>'+metricCol+'</th><th>内核验证</th></tr>'+
-    blk.rows.map(r=>{
-      let key;
-      if(kind==='photon'){ key=(r.final_param && r.final_param.R!=null)?r.final_param.R:'—'; }
-      else { const p=r.final_param||{}; key='E_J='+(p.E_J!=null?fmt(p.E_J):'—')+' (E_C 工艺固定)'; }
-      return `<tr><td>${r.foundry}</td><td><span class="verdict ${ok?'ok':'fail'}">${ok?'OK':'ERR'}</span></td>`+
-        `<td>${r.converged?'是':'否'}</td><td>${key}</td>`+
-        `<td>${fmt(r.final_metric)}</td><td><span class="verdict ${r.final_passed_all?'ok':'fail'}">${r.final_passed_all?'PASS':'FAIL'}</span></td></tr>`;
-    }).join('')+'</table>';
-}
 function renderIr(d){
-  const ph=d.photon, q=d.quantum;
-  const ok = (ph.validate_errors.length===0) && (q.validate_errors.length===0);
-  $('irSummary').innerHTML='IR 校验：<b style="color:'+(ok?'var(--green)':'var(--red)')+'">'+
-    (ok?'光子+量子 全部通过 ✓':'失败')+'</b> · 光子跨 <b>'+ph.rows.length+
-    '</b> foundry · 量子跨 <b>'+q.rows.length+'</b> foundry · 同一 IR 机器语言驱动'+
-    (d.ir_eval && d.ir_eval.length ? ' · L3 直接消费 IR 真值已演示' : '');
-  renderIrBlock('irDslPh', ph, '光子段', 'photon');
-  renderIrBlock('irDslQ',  q, '量子段', 'quantum');
-  // L3 直接消费 IR 真值演示
-  const ev=d.ir_eval||[];
-  $('irTableEval').innerHTML = ev.length ? (
-    '<table><tr><th>Foundry</th><th>候选参数</th><th>BID</th><th>真值</th>'+
-    '<th>判定</th><th>事实来源</th></tr>'+
-    ev.map(r=>{
-      const p=r.param||{}; const pk=Object.entries(p).map(([k,v])=>k+'='+fmt(v)).join(', ');
-      return `<tr><td>${r.foundry}</td><td>${pk}</td><td>${r.bid}</td>`+
-        `<td>${fmt(r.value)}</td><td><span class="verdict ${r.passed?'ok':'fail'}">${r.passed?'PASS':'FAIL'}</span></td>`+
-        `<td>${r.source}</td></tr>`;
-    }).join('')+'</table>'+
-    '<div style="color:var(--mut);font-size:12px;margin-top:6px">上表由 L3 真值内核直接读 IR（spectrum/objective）计算物理真值并判定——不经手写 DesignProblem，IR 即事实源。</div>'
-  ) : '<div style="color:var(--mut);font-size:12px">（无 ir_eval 数据）</div>';
+  $('irSummary').innerHTML = `L0 IR schema=<b>${d.schema_version}</b> · 全部器件校验：<b style="color:${d.all_valid?'var(--green)':'var(--red)'}">${d.all_valid?'通过 ✓':'失败'}</b> · 实例数=${d.examples.length}`;
+  $('irBody').innerHTML = d.examples.map(e=>{
+    const ok = e.validate_errors.length === 0;
+    const params = Object.entries(e.params).map(([k,v])=> k+'='+v).join(' , ');
+    return `<div class="subhead">${e.kind}</div>
+      <div class="conclusion" style="border-left-color:${ok?'var(--green)':'var(--red)'}">
+        <span class="verdict ${ok?'ok':'fail'}">${ok?'VALID':'ERR'}</span> 参数：${params}
+      </div>
+      <pre style="white-space:pre-wrap;margin:6px 0 12px;color:var(--mut);font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px">${escapeHtml(e.dsl)}</pre>
+      ${e.validate_errors.length ? ('<div class="note">'+escapeHtml(e.validate_errors.join('; '))+'</div>') : ''}`;
+  }).join('') + `<div class="note">${escapeHtml(d.note)}</div>`;
 }
 $('runIr').onclick = runIr;
 
-function fillCompareTypes(){
-  const types=new Set();
-  Object.values(window.__pdks||{}).forEach(p=> p.templates.forEach(t=> types.add(t.device_type)));
-  const sel=$('compareType'); sel.innerHTML='';
-  [...types].forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; sel.appendChild(o); });
-}
-
 (async ()=>{
-  await fillPdks();
-  fillCompareTypes();
   const st = await api('/api/status');
   renderStatus(st);
-  // 首屏自动跑一次 reference 验证，填表
   runVerify();
+  // 首屏预热：自动演示两个真闭环（耦合器验收锚 + 多波长闭环），让闭环可视化立即可见
+  runCoupler();
+  runBand();
+  runIr();
 })();
 </script>
 </body>

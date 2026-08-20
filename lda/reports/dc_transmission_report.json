@@ -1,0 +1,53 @@
+{
+  "d29": "DC transmission spectrum",
+  "checks": [
+    {
+      "key": "field",
+      "ok": true,
+      "msg": "DC 双波导场构造：Nx=335 Ny=94，芯区 4690 cells"
+    },
+    {
+      "key": "trend",
+      "ok": true,
+      "msg": "cross 功率单调递增：[0.1476, 0.1624, 0.1774, 0.1933, 0.2086, 0.2274, 0.2469]（CMT 功率交换趋势，κ 随 λ 增）"
+    },
+    {
+      "key": "kappa_mono",
+      "ok": true,
+      "msg": "反解 κ_fdtd 单调递增：[0.02094, 0.02202, 0.02308, 0.02417, 0.02519, 0.02639, 0.02761]（与 D-23 3D 超模法趋势一致）"
+    },
+    {
+      "key": "kappa_range",
+      "ok": true,
+      "msg": "κ_fdtd 物理量级 [0.005,0.2] rad/µm"
+    },
+    {
+      "key": "accept",
+      "ok": true,
+      "msg": "DC 全场透射谱验收 PASS：DC 全场透射谱验收 PASS：cross_frac 单调递增 (0.148→0.247)，反解 κ_fdtd 单调递增且物理量级 (0.0209→0.0276"
+    }
+  ],
+  "live": {
+    "cross_frac_fdtd": [
+      0.1476,
+      0.1624,
+      0.1774,
+      0.1933,
+      0.2086,
+      0.2274,
+      0.2469
+    ],
+    "kappa_fdtd": [
+      0.02094,
+      0.02202,
+      0.02308,
+      0.02417,
+      0.02519,
+      0.02639,
+      0.02761
+    ],
+    "monotone_increasing": true,
+    "kappa_monotone": true,
+    "kappa_in_range": true
+  }
+}

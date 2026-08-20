@@ -145,6 +145,14 @@ jobs:
           cd lda
           python run_ring_fdtd_smoke.py
 
+      - name: DC transmission spectrum smoke (D-29, 2D FDTD power exchange)
+        # 回归防护：D-29 DC 全场透射谱（2D FDTD，CW 稳态逐波长 thru/cross
+        # 功率交换）。纯 numpy，验证 cross_frac 单调递增 + 反解 κ_fdtd 单调
+        # 物理量级（≈1min，CI 可跑）。
+        run: |
+          cd lda
+          python run_dc_transmission_smoke.py
+
       - name: Verified device library smoke (D-12, reusable device registry)
         # 回归防护：D-12 把已验证器件（DC/YB/Ring/Waveguide/Bragg）固化为可复用
         # 器件库。contract 模式全 PASS（注册表+契约+管道，快）；live 模式在 CI(无

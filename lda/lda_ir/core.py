@@ -128,7 +128,7 @@ class IRModel:
     仅作人类可读渲染（见 dsl.py）。描述"要造什么、约束、目标谱、想落哪个
     foundry"，不直接算物理。
     """
-    schema_version: str = "0.1"
+    schema_version: str = "0.2"
     domain: str = "photon"                      # "photon" | "quantum"
     name: str = ""
     components: List[Component] = field(default_factory=list)
@@ -153,8 +153,10 @@ class IRModel:
     def primary_component(self) -> Optional[Component]:
         if not self.components:
             return None
-        # 优先取 kind 含 Resonator / Grating / Splitter / Waveguide 的设计主体
-        for k in ("Resonator", "Grating", "Splitter", "Waveguide"):
+        # 优先取 kind 含 Resonator / Grating / Splitter / Waveguide /
+        # Coupler / YBranch 的设计主体（v0.2 新增方向耦合器 / 对称 Y 分支）
+        for k in ("Resonator", "Grating", "Splitter", "Waveguide",
+                  "Coupler", "YBranch"):
             for c in self.components:
                 if k in c.kind:
                     return c

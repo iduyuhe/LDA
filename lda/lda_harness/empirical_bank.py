@@ -24,6 +24,7 @@ D-06 增量升级（2026-08-20）：在 1.6 的基础上把语料库升级为**�
 """
 import csv
 import json
+import re
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 
@@ -180,7 +181,8 @@ class EmpiricalCorpus:
         ua = float(g("uncertainty_abs"))
         geom = g("geometry")
         geometry = json.loads(geom) if geom else {}
-        tags = [t.strip() for t in g("tags").split(",") if t.strip()]
+        # 兼容 CSV 模板的「;」与手写「,」分隔（seed JSON 为列表，三者统一）
+        tags = [t.strip() for t in re.split(r"[;,]+", g("tags")) if t.strip()]
         return EmpiricalMeasurement(
             id=g("id"), device=g("device"), metric=g("metric"),
             measured_value=mv, uncertainty_abs=ua, fab_source=g("fab_source"),

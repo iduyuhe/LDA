@@ -93,3 +93,17 @@ jobs:
         run: |
           cd lda
           python run_ir_d05_smoke.py
+
+      - name: Empirical corpus incremental import smoke (D-06, csv/json/dedup/trace)
+        # 回归防护：D-06 把 seed_empirical.json 升级为可增量语料库。
+        # 验证 csv/JSON 批量导入 + 去重冲突 + 逐条溯源 provenance 全绿（纯静态）。
+        run: |
+          cd lda
+          python run_d06_smoke.py
+
+      - name: Empirical submission CLI smoke (D-10, corpus registration tool)
+        # 回归防护：D-10 实测语料补登 CLI（与 empirical_measurement.yml 同源）。
+        # 验证 issue markdown 生成 + bank 追加去重 + validate 命令（纯静态）。
+        run: |
+          cd lda
+          python run_d10_smoke.py

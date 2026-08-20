@@ -17,9 +17,15 @@ source)，与 golden.golden_with_source 同构，可作为 harness 的 golden �
 
 许可证纪律：实测语料为事实数据，不依赖任何 GPL 求解器；登记时可选的
 ORACLE 交叉校验仅作参考、不进判决。
+
+D-06 增量升级（2026-08-20）：在 1.6 的基础上把语料库升级为**可增量**
+资产——支持 csv/JSON 批量导入、去重冲突处理、逐条溯源（provenance：
+来源文件 / 贡献者 / 导入时间）。溯源字段不写死在 seed 里，导入时自动填充。
 """
+import csv
 import json
 from dataclasses import dataclass, field, asdict
+from datetime import datetime, timezone
 
 
 # ============================ 实测语料 ============================
@@ -35,6 +41,7 @@ class EmpiricalMeasurement:
     method: str = ""
     geometry: dict = field(default_factory=dict)
     tags: list = field(default_factory=list)
+    provenance: dict = field(default_factory=dict)
 
     def validate(self):
         if not self.id or not self.device:
@@ -48,8 +55,24 @@ class EmpiricalMeasurement:
         return True
 
 
+@dataclass
+class ImportResult:
+    """批量导入结果：added=新增 / skipped=去重跳过 / conflicts=id 冲突未覆盖 / errors=解析失败。"""
+    added: int = 0
+    skipped: int = 0
+    conflicts: list = field(default_factory=list)
+    errors: list = field(default_factory=list)
+
+    def __repr__(self):
+        return (f"ImportResult(added={self.added}, skipped={self.skipped}, "
+                f"conflicts={len(self.conflicts)}, errors={len(self.errors)})")
+
+
 class EmpiricalCorpus:
-    """真实器件实测语料库。"""
+    """真实器件实测语料库（D-06 增量：支持批量导入 / 去重 / 溯源）。"""
+
+    COLUMNS = ["id", "device", "metric", "measured_value", "uncertainty_abs",
+               "fab_source", "citation", "method", "geometry", "tags"]
 
     def __init__(self, items=None):
         self._items = {}
@@ -57,10 +80,20 @@ class EmpiricalCorpus:
             m = it if isinstance(it, EmpiricalMeasurement) else EmpiricalMeasurement(**it)
             self.add(m)
 
-    def add(self, m: EmpiricalMeasurement):
+    def add(self, m: EmpiricalMeasurement, contributor=None, source_file=None,
+            overwrite=False):
+        """返回 'added'（新增或覆盖更新）/ 'conflict'（id 已存在且未覆盖）。"""
         m.validate()
+        if m.id in self._items and not overwrite:
+            # 去重：id 已存在且非覆盖 → 跳过（保留现有，记录冲突）
+            return "conflict"
+        m.provenance = {
+            "source_file": source_file or m.provenance.get("source_file"),
+            "contributor": contributor or m.provenance.get("contributor", "seed"),
+            "imported_at": datetime.now(timezone.utc).isoformat(),
+        }
         self._items[m.id] = m
-        return m
+        return "added"
 
     def get(self, mid):
         return self._items.get(mid)
@@ -83,17 +116,77 @@ class EmpiricalCorpus:
             by_metric[m.metric] = by_metric.get(m.metric, 0) + 1
         return {"total": len(self._items), "by_metric": by_metric}
 
-    def to_json(self, path):
+    def to_json(self, path, wrap=True):
+        records = [asdict(m) for m in self._items.values()]
         with open(path, "w", encoding="utf-8") as f:
-            json.dump([asdict(m) for m in self._items.values()], f,
-                      indent=2, ensure_ascii=False)
+            if wrap:
+                json.dump({"corpus": records}, f, indent=2, ensure_ascii=False)
+            else:
+                json.dump(records, f, indent=2, ensure_ascii=False)
 
     @classmethod
     def load(cls, path):
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
         items = data.get("corpus", data) if isinstance(data, dict) else data
-        return cls(items)
+        bank = cls()
+        for it in items:
+            m = it if isinstance(it, EmpiricalMeasurement) else EmpiricalMeasurement(**it)
+            bank.add(m, contributor="seed", source_file=path)
+        return bank
+
+    # ---------- D-06 批量导入 ----------
+    def import_json(self, path, contributor=None, overwrite=False) -> ImportResult:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        items = data.get("corpus", data) if isinstance(data, dict) else data
+        res = ImportResult()
+        for raw in items:
+                try:
+                    m = raw if isinstance(raw, EmpiricalMeasurement) else EmpiricalMeasurement(**raw)
+                    st = self.add(m, contributor=contributor, source_file=path,
+                                  overwrite=overwrite)
+                    if st == "added":
+                        res.added += 1
+                    else:  # conflict
+                        res.conflicts.append((m.id, "id 已存在（未覆盖）"))
+                except Exception as e:  # noqa: BLE001
+                    res.errors.append((str(raw.get("id", "?")), str(e)))
+        return res
+
+    def import_csv(self, path, contributor=None, overwrite=False) -> ImportResult:
+        res = ImportResult()
+        with open(path, "r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                try:
+                    m = self._row_to_measurement(row)
+                    st = self.add(m, contributor=contributor, source_file=path,
+                                  overwrite=overwrite)
+                    if st == "added":
+                        res.added += 1
+                    else:  # conflict
+                        res.conflicts.append((m.id, "id 已存在（未覆盖）"))
+                except Exception as e:  # noqa: BLE001
+                    res.errors.append((row.get("id", "?"), str(e)))
+        return res
+
+    @staticmethod
+    def _row_to_measurement(row: dict) -> EmpiricalMeasurement:
+        def g(k):
+            v = (row.get(k) or "").strip()
+            return v
+        mv = float(g("measured_value"))
+        ua = float(g("uncertainty_abs"))
+        geom = g("geometry")
+        geometry = json.loads(geom) if geom else {}
+        tags = [t.strip() for t in g("tags").split(",") if t.strip()]
+        return EmpiricalMeasurement(
+            id=g("id"), device=g("device"), metric=g("metric"),
+            measured_value=mv, uncertainty_abs=ua, fab_source=g("fab_source"),
+            citation=g("citation"), method=g("method"), geometry=geometry,
+            tags=tags,
+        )
 
 
 # ============================ 对抗性题库 ============================
@@ -108,6 +201,7 @@ class AdversarialBenchmark:
     submitted_by: str = "community"
     geometry: dict = field(default_factory=dict)
     tags: list = field(default_factory=list)
+    provenance: dict = field(default_factory=dict)
 
     def validate(self):
         if not self.id or not self.title:
@@ -120,7 +214,7 @@ class AdversarialBenchmark:
 
 
 class AdversarialBenchmarkBank:
-    """开放对抗性题库（征集让 AI 求解器翻车的题）。"""
+    """开放对抗性题库（征集让 AI 求解器翻车的题）。D-06 增量：溯源 + 批量导入。"""
 
     def __init__(self, items=None):
         self._items = {}
@@ -128,10 +222,18 @@ class AdversarialBenchmarkBank:
             b = it if isinstance(it, AdversarialBenchmark) else AdversarialBenchmark(**it)
             self.add(b)
 
-    def add(self, b: AdversarialBenchmark):
+    def add(self, b: AdversarialBenchmark, contributor=None, source_file=None,
+            overwrite=False):
         b.validate()
+        if b.id in self._items and not overwrite:
+            return "conflict"
+        b.provenance = {
+            "source_file": source_file or b.provenance.get("source_file"),
+            "contributor": contributor or b.provenance.get("contributor", "seed"),
+            "imported_at": datetime.now(timezone.utc).isoformat(),
+        }
         self._items[b.id] = b
-        return b
+        return "added"
 
     def get(self, bid):
         return self._items.get(bid)
@@ -148,7 +250,29 @@ class AdversarialBenchmarkBank:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
         items = data.get("adversarial", data) if isinstance(data, dict) else data
-        return cls(items)
+        bank = cls()
+        for it in items:
+            b = it if isinstance(it, AdversarialBenchmark) else AdversarialBenchmark(**it)
+            bank.add(b, contributor="seed", source_file=path)
+        return bank
+
+    def import_json(self, path, contributor=None, overwrite=False) -> ImportResult:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        items = data.get("adversarial", data) if isinstance(data, dict) else data
+        res = ImportResult()
+        for raw in items:
+            try:
+                b = raw if isinstance(raw, AdversarialBenchmark) else AdversarialBenchmark(**raw)
+                st = self.add(b, contributor=contributor, source_file=path,
+                              overwrite=overwrite)
+                if st == "added":
+                    res.added += 1
+                else:
+                    res.conflicts.append((b.id, "id 已存在（未覆盖）"))
+            except Exception as e:  # noqa: BLE001
+                res.errors.append((str(raw.get("id", "?")), str(e)))
+        return res
 
 
 # ====================== 实证锚接入（与 harness golden 同构） ======================

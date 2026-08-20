@@ -133,6 +133,14 @@ jobs:
           cd lda
           python run_ir_ring_smoke.py
 
+      - name: Ring FDTD kernel smoke (D-27, 2D add-drop ring transmission)
+        # 回归防护：D-27 环形 FDTD 仿真核（2D TM add-drop 环形，CW 稳态逐波长
+        # 透射谱）。CI(无 GPU) 跑结构自检（场构造+解析 FSR 量级，快）+ 诚实
+        # SKIP 全谱形；本地 GPU 机跑 drop 谱 ≥3 峰 + FSR(FDTD)↔解析 ≤30%。
+        run: |
+          cd lda
+          python run_ring_fdtd_smoke.py
+
       - name: Verified device library smoke (D-12, reusable device registry)
         # 回归防护：D-12 把已验证器件（DC/YB/Ring/Waveguide/Bragg）固化为可复用
         # 器件库。contract 模式全 PASS（注册表+契约+管道，快）；live 模式在 CI(无

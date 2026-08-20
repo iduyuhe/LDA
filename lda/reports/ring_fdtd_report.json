@@ -1,0 +1,41 @@
+{
+  "d27": "ring FDTD kernel",
+  "checks": [
+    {
+      "key": "field",
+      "ok": true,
+      "msg": "环形+双 bus 场构造：N=253，芯区 6682 cells"
+    },
+    {
+      "key": "fsr_an",
+      "ok": true,
+      "msg": "解析 FSR(R=6,n_core=3.48)=18.31nm（物理量级）"
+    },
+    {
+      "key": "live_spectrum",
+      "ok": true,
+      "msg": "环形 FDTD 谱形验收 PASS：环形 FDTD 谱形验收 PASS：R=6.0µm，drop 谱 4 个谐振峰，FSR(FDTD)=17.14nm vs 解析 18.31nm（相对 6.4% ≤ 容差）。真实 F"
+    },
+    {
+      "key": "peaks",
+      "ok": true,
+      "msg": "drop 谱 4 个谐振峰（[1.5134, 1.5261, 1.5566, 1.5738]）"
+    },
+    {
+      "key": "fsr",
+      "ok": true,
+      "msg": "FSR(FDTD)=17.14nm vs 解析 18.31nm（rel=6.41% ≤ 30%）"
+    }
+  ],
+  "live": {
+    "peaks_um": [
+      1.5134246389533739,
+      1.5261173670599906,
+      1.5566356463010773,
+      1.5737753674832498
+    ],
+    "fsr_fdtd_nm": 17.14,
+    "fsr_analytic_nm": 18.313,
+    "fsr_rel_dev": 0.0641
+  }
+}

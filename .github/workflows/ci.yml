@@ -102,6 +102,14 @@ jobs:
           cd lda
           python run_ir_ring_smoke.py
 
+      - name: Verified device library smoke (D-12, reusable device registry)
+        # 回归防护：D-12 把已验证器件（DC/YB/Ring/Waveguide/Bragg）固化为可复用
+        # 器件库。contract 模式全 PASS（注册表+契约+管道，快）；live 模式在 CI(无
+        # GPU) 下 DC/YB 诚实 SKIP、Ring 真跑 PASS——SKIP 不算失败，重项标注跳过。
+        run: |
+          cd lda
+          python run_device_library_smoke.py
+
       - name: Empirical corpus incremental import smoke (D-06, csv/json/dedup/trace)
         # 回归防护：D-06 把 seed_empirical.json 升级为可增量语料库。
         # 验证 csv/JSON 批量导入 + 去重冲突 + 逐条溯源 provenance 全绿（纯静态）。

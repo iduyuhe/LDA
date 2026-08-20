@@ -112,7 +112,7 @@
 | # | 任务 | 内容 | 产出/证据 |
 |---|---|---|---|
 | D-11 | **环形谱形逆设计闭环** ✅（已交付 2026-08-20） | 把 D-03 宽带闭环扩展到环形谐振器（B11 谱形匹配）：RingBandAgent 黄金分割调 R 命中 FSR + 逐波长洛伦兹梳谱提取与解析公式双判据；bridge/derive_intent 支持 RingResonator | ring_loop.py + D-11 smoke 全绿；实测 R=9.9498µm=理论值、谱形误差 2.18e-08、方法一致性 2.46e-08；PDK 4 ring 模板真跑 |
-| D-12 | **已验证器件库固化** | 把 D-01（DC/Y 分支）+ D-03（宽带谱形）沉淀为可复用器件库 + 验收锚 | 待开工 |
+| D-12 | **已验证器件库固化** ✅（已交付 2026-08-20） | 把已验证器件（DC/Y 分支/Ring/Waveguide/Bragg）沉淀为可复用器件库：参数 schema + 标准验收契约（D-04 VerificationSpec）+ IR kind 映射 + contract/live 分层验收 | device_library.py + D-12 smoke 全绿；contract 5/5，live DC/YB/Ring 真跑 PASS |
 | D-13 | **WebUI 内网演示部署** | 部署 D-07 三闭环可视化到内网演示机 | 待开工 |
 
 ### 7. 里程碑节奏
@@ -159,7 +159,7 @@ P0（D-01/D-02/D-03）+ P1（D-04/D-05/D-06）+ P2（D-07/D-08/D-09/D-10）已**
 
 **A. 开发纵深（无外部依赖，可立即开工）**
 1. **D-11 环形谱形逆设计闭环** ✅（已交付 2026-08-20）——把 D-03 宽带闭环扩展到环形谐振器（B11 谱形匹配），补上 bridge 对 RingResonator 的缺口（此前诚实 NotImplementedError）：新增 `lda/lda_agent/ring_loop.py`（RingBandAgent：黄金分割调 R 使 FSR 命中目标，逐波长洛伦兹梳谱提取 FSR 与解析公式**双判据**交叉对拍）；bridge `ir_to_intent` 支持 RingResonator → ring intent；PDK `derive_intent` 支持单 R ring 模板。**实测 PASS**：R=9.9498µm=理论值，谱形误差 2.18e-08≤0.03，方法一致性 2.46e-08≤0.02；PDK 4 个 ring 模板真跑过验收（工艺窗口差异：CUMEC n_g=4.18 → R=9.997µm）。D-11 smoke + CI 冒烟全绿。
-2. **D-12 已验证器件库固化**——把 D-01（方向耦合器/对称 Y 分支）+ D-03（宽带谱形）沉淀为可复用器件库（自有 component + 验收锚），为阶段 3 真实版图生成铺路。
+2. **D-12 已验证器件库固化** ✅（已交付 2026-08-20）——把已验证器件（D-01 DC/Y 分支、D-11 环形、真 2D 波导、D-03 布拉格宽带）沉淀为可复用器件库：`lda/lda_l2/device_library.py`（DeviceLibrary：每器件带参数 schema + 标准验收契约，复用 D-04 VerificationSpec；IR kind 映射；contract/live 分层验收）。**实测全绿**：contract 5/5（注册表+契约+管道，CI 用）；live 真实候选 DC/YB/Ring 全 PASS（DC κ 偏差 2.5%、YB 平衡度 0.0006、Ring FSR 解析），heavy（waveguide/bragg）标注可单跑。D-12 smoke + CI 冒烟全绿。
 
 **B. 演示与部署（向阶段 3 商业试点过渡）**
 3. **D-13 WebUI 内网演示部署**——沿用已修复的 webui（D-07 三闭环可视化），部署到内网演示机，让"设计→仿真→验收"闭环可被顾问委 / 晶圆厂看到。

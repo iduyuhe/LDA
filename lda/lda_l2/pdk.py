@@ -25,7 +25,7 @@ from typing import Dict, List, Optional, Tuple
 class DeviceTemplate:
     """一个器件模板：描述某工艺节点下可调/固定参数与设计规格目标。
 
-    derive_problem() 会把它映射成 agent 设计闭环可消费的 DesignProblem。
+    derive_intent() 会把它映射成 agent 设计闭环可消费的 intent dict。
     支持单参数（tunable/bounds）与 N 维逆设计（tunables + constraint_bids）。
     """
 
@@ -135,34 +135,46 @@ class PDKRegistry:
             raise KeyError(f"未登记的 PDK: {key}（已知：{self.list_pdks()}）")
         return self._pdks[key]
 
-    def derive_problem(self, pdk_key: str, template_name: str,
-                       solver: str = "truth"):
-        """由 PDK 模板派生一个可喂给 DesignAgent 的 DesignProblem。
+    def derive_intent(self, pdk_key: str, template_name: str,
+                      backend: str = "numpy") -> Dict:
+        """由 PDK 模板派生一个 DesignAgent.run 可消费的 intent dict。
 
-        延迟导入 lda_agent.design_loop，避免 lda_l2 与 lda_agent 形成
-        强编译期耦合（二者在运行期才接成闭环）。
+        当前 DesignAgent 能力边界（webui 修复后 DesignProblem 抽象已移除）：
+        仅 waveguide 模板可真跑（真 2D 波导闭环，FDTD neff ↔ slab ORACLE）。
+        ring_resonator/transmon 等谱形/频率逆设计未接入 agent 闭环（规划
+        D-09 / BandDesignAgent 通用化后接入）——对不支持模板诚实抛
+        NotImplementedError，不静默返回假 intent。
         """
-        from lda_agent.design_loop import DesignProblem
-
         pdk = self.get(pdk_key)
         t = pdk.templates.get(template_name)
         if not t:
             raise KeyError(f"PDK {pdk_key} 无模板 {template_name}")
-        return DesignProblem(
-            name=f"{pdk.foundry}/{pdk.node} · {t.name}",
-            bids=list(t.bids),
-            objective_bid=t.objective_bid,
-            target_metric=t.target_metric,
-            target=t.target,
-            target_tol=t.target_tol,
-            tunables={k: tuple(v) for k, v in t.tunables.items()},
-            base_params=dict(t.fixed_params),
-            decreasing=t.decreasing,
-            constraint_bids=list(t.constraint_bids),
-            use_gradient=t.use_gradient,
-            objective=list(t.objective) if t.objective else None,
-            solver=solver,
-        )
+        if t.device_type != "waveguide":
+            raise NotImplementedError(
+                f"模板 device_type={t.device_type} 的 agent 逆设计未接入："
+                "当前 DesignAgent 仅支持 waveguide（真 2D 波导）；"
+                "ring_resonator/transmon 等谱形/频率逆设计规划于 D-09 接入。")
+
+        fp = dict(t.fixed_params)
+        # 模板的 tunable 是 benchmark 参数名（w_core），intent 只需宽度初始值：
+        # 取工艺窗口（bounds）中值作为候选起点（waveguide_2d 单次验证即判定）。
+        tb = t.bounds if t.bounds is not None else list(t.tunables.values())[0]
+        width_init = (tb[0] + tb[1]) / 2.0
+        return {
+            "geometry_type": "waveguide_2d",
+            "materials": {"air": 1.0,
+                          "sih": fp.get("n_si", pdk.n_si),
+                          "silo": fp.get("n_clad", pdk.n_clad)},
+            "target_wavelength_um": float(fp.get("wl", 1.55)),
+            "target_metric": "neff",
+            "threshold": 1.0,            # 波导验收以"与 slab ORACLE 一致"为准
+            "tolerance_rel": float(t.target_tol or 0.02),
+            "max_iterations": 1,         # waveguide_2d 单次验证即判定
+            "initial_periods": 1,
+            "extra": {"width_um": float(width_init),
+                      "core_ref": "sih", "clad_ref": "silo",
+                      "backend": backend},
+        }
 
     def to_summary(self) -> dict:
         return {k: v.to_summary() for k, v in self._pdks.items()}

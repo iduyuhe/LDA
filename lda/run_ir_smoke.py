@@ -1,12 +1,14 @@
-"""LDA L0 · IR 真跑 smoke 测试。
+"""LDA L0 · IR 真跑 smoke 测试（光子 Waveguide 端到端 agent 闭环）。
 
-证明"机器优先 IR"能端到端驱动真实 agent 设计闭环：
-  1. 构造一个带 SpectrumSpec(B11 目标谱形) + FoundryPlan(all) 的环形谐振器 IR；
+证明"机器优先 IR"能端到端驱动真实 agent 设计闭环。注：DesignProblem 抽象已
+随 webui 修复移除，DesignAgent 现只消费 intent dict，bridge 输出 intent：
+  1. 构造 Waveguide IR（真 2D 波导，foundry 工艺窗口注入 n_si）；
   2. validate 通过（IR 层先过验证门，技术复利）；
   3. to_dict → from_dict round-trip 零损失；to_dsl 可读渲染；
-  4. ir_to_multifoundry 跨全部 foundry 派生 DesignProblem；
-  5. 每个 foundry 真跑 DesignAgent（梯度下降逆设计）→ 收敛 + final_passed_all；
-  6. 断言不同 foundry 收敛到不同 R 落点（折射率/工艺窗口驱动差异）。
+  4. ir_to_multifoundry 跨光子 foundry 派生 intent（domain 过滤，不误派量子厂）；
+  5. 每个 foundry 真跑 DesignAgent（geo_kind=waveguide_2d：FDTD neff ↔
+     slab ORACLE）→ accepted；
+  6. 断言全部 foundry PASS，并展示不同 n_si 工艺窗口 → 不同 neff 落点。
 
 退出码 0=全绿；非 0=有失败（便于 CI / 自动化）。
 """
@@ -14,36 +16,36 @@ from __future__ import annotations
 
 import sys
 
-from lda_ir import (FoundryPlan, IRModel, RingResonator, SpectrumSpec,
-                    dumps, from_dict, to_dict, to_dsl, validate)
+from lda_ir import (FoundryPlan, IRModel, ObjectiveSpec, Waveguide, dumps,
+                    from_dict, to_dict, to_dsl, validate)
 from lda_ir.bridge import ir_to_multifoundry
 from lda_l2.pdk import get_default_registry
-from lda_l1.protocol import KernelGateway
 from lda_agent.design_loop import DesignAgent
 
 
-def build_ring_fsr_ir() -> IRModel:
-    """构造一个"环形谱形匹配"IR：目标 FSR=9.15nm，跨全部 foundry 落点。"""
+def build_waveguide_ir() -> IRModel:
+    """构造一个"真 2D 波导"IR：跨全部光子 foundry 落点（n_si 工艺窗口差异）。
+
+    objective 用 B2（波导 n_eff 标准题）作为设计意图——满足 IR 层"至少一个
+    意图"的门禁；waveguide_2d 验收本身由 DesignAgent 对 slab ORACLE 完成。
+    """
     m = IRModel(
         domain="photon",
-        name="ring-fsr-B11",
-        components=[RingResonator(id="ring", R=10.0, R_bounds=(8.0, 14.0))],
-        spectrum=SpectrumSpec(kind="ring_fsr", target_fsr_nm=9.15,
-                              wl0_um=1.55, n_g=4.2, primary_param="R"),
+        name="wg-neff",
+        components=[Waveguide(id="wg", width=0.5, width_bounds=(0.35, 0.75))],
+        objectives=[ObjectiveSpec(bid="B2", target=2.62, tol=0.02)],
         foundry_plan=FoundryPlan(mode="all"),
-        notes="L0 IR 草案：目标谱形逆设计 + 多晶圆厂落点（候选④）",
+        notes="L0 IR：真 2D 波导验收闭环（FDTD neff ↔ slab ORACLE）",
     )
     return m
 
 
 def main() -> int:
-    print("=== L0 IR smoke ===")
+    print("=== L0 IR 光子 smoke (Waveguide) ===")
     registry = get_default_registry()
-    gw = KernelGateway(out_dir="reports_ir")
-    agent = DesignAgent(gw, out_dir="reports_ir")
 
     # 1) 构造 + 校验
-    m = build_ring_fsr_ir()
+    m = build_waveguide_ir()
     errs = validate(m)
     if errs:
         print("FAIL IR 校验：")
@@ -64,35 +66,38 @@ def main() -> int:
     print(to_dsl(m))
     print("---------------")
 
-    # 4) 多 foundry 桥接
-    plans = ir_to_multifoundry(m, registry, solver="truth")
+    # 4) 多 foundry 桥接（domain=photon → 仅光子 foundry，派生 intent dict）
+    plans = ir_to_multifoundry(m, registry)
     if not plans:
-        print("FAIL 未派生出任何 foundry 设计问题")
+        print("FAIL 未派生出任何光子 foundry intent")
         return 1
-    print(f"OK  派生 {len(plans)} 个 foundry 设计问题：")
-    for k, _ in plans:
-        print("   -", k)
+    print(f"OK  派生 {len(plans)} 个光子 foundry intent：")
+    for k, intent in plans:
+        print(f"     - {k}  (n_si={intent['materials']['sih']})")
 
-    # 5) 真跑每个 foundry 逆设计
+    # 5) 真跑每个 foundry 逆设计（waveguide_2d 单次验证即判定）
+    agent = DesignAgent(backend="numpy", geo_kind="waveguide_2d")
     rs = {}
-    for k, prob in plans:
-        res = agent.run(prob, max_iter=120)
-        ok = res.converged and res.final_passed_all
-        rs[k] = (res.final_param.get("R"), round(res.final_metric, 5), ok)
+    for k, intent in plans:
+        rep = agent.run(intent)
+        ok = rep.accepted
+        rs[k] = (rep.final_metric, rep.final_oracle_metric, ok)
         flag = "PASS" if ok else "FAIL"
-        print(f"   [{flag}] {k}: R={res.final_param.get('R')} "
-              f"FSR_err={round(res.final_metric,5)} passed={res.final_passed_all}")
+        print(f"   [{flag}] {k}: neff(FDTD)={rep.final_metric:.4f} "
+              f"slab={rep.final_oracle_metric:.4f} "
+              f"|Δneff|={abs(rep.final_metric - rep.final_oracle_metric):.2e}")
 
-    # 6) 不同 foundry 收敛到不同落点（工艺窗口驱动差异）
-    converged = [v for v in rs.values() if v[2]]
-    if len(converged) < len(plans):
-        print("FAIL 部分 foundry 未收敛/未过验证")
+    # 6) 全部 PASS + 工艺窗口驱动差异
+    if not all(v[2] for v in rs.values()):
+        print("FAIL 部分 foundry 未过验收")
         return 1
-    distinct_R = {v[0] for v in rs.values()}
-    print(f"OK  全部 foundry 收敛且过验证；不同落点数={len(distinct_R)} "
-          f"(工艺窗口驱动设计差异)")
-    if len(distinct_R) < 2 and len(plans) >= 2:
-        print("WARN 各 foundry 落点相同（可能折射率近似一致），仍判通过")
+    print("OK  全部 foundry PASS（FDTD neff 对 slab ORACLE 在公差内）")
+    if len(plans) >= 2:
+        neffs = {round(v[0], 4) for v in rs.values()}
+        if len(neffs) >= 2:
+            print(f"OK  不同 foundry n_si 工艺窗口 → 不同 neff 落点 {sorted(neffs)}")
+        else:
+            print("WARN 各 foundry neff 落点相同（n_si 近似一致），仍判通过")
 
     print("\n=== L0 IR smoke: ALL GREEN ===")
     return 0

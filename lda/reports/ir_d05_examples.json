@@ -1,0 +1,228 @@
+{
+  "directional_coupler": {
+    "schema_version": "0.2",
+    "domain": "photon",
+    "name": "dc-demo",
+    "components": [
+      {
+        "id": "dc1",
+        "kind": "DirectionalCoupler",
+        "params": {
+          "gap": 0.3,
+          "Lc": 12.0,
+          "kappa_target": 0.035
+        },
+        "param_bounds": {
+          "gap": [
+            0.1,
+            0.6
+          ],
+          "Lc": [
+            1.0,
+            60.0
+          ],
+          "kappa_target": [
+            0.0,
+            0.5
+          ]
+        },
+        "ports": [
+          {
+            "name": "in1",
+            "directed": false
+          },
+          {
+            "name": "in2",
+            "directed": false
+          },
+          {
+            "name": "thru1",
+            "directed": false
+          },
+          {
+            "name": "thru2",
+            "directed": false
+          }
+        ],
+        "foundry_hints": []
+      }
+    ],
+    "nets": [],
+    "pdk_ref": null,
+    "foundry_plan": null,
+    "objectives": [],
+    "spectrum": null,
+    "notes": ""
+  },
+  "symmetric_y_branch": {
+    "schema_version": "0.2",
+    "domain": "photon",
+    "name": "yb-demo",
+    "components": [
+      {
+        "id": "yb1",
+        "kind": "SymmetricYBranch",
+        "params": {
+          "width": 0.5,
+          "split_angle": 10.0,
+          "arm_length": 5.0
+        },
+        "param_bounds": {
+          "width": [
+            0.3,
+            1.0
+          ],
+          "split_angle": [
+            1.0,
+            30.0
+          ],
+          "arm_length": [
+            1.0,
+            20.0
+          ]
+        },
+        "ports": [
+          {
+            "name": "in",
+            "directed": false
+          },
+          {
+            "name": "out1",
+            "directed": false
+          },
+          {
+            "name": "out2",
+            "directed": false
+          }
+        ],
+        "foundry_hints": []
+      }
+    ],
+    "nets": [],
+    "pdk_ref": null,
+    "foundry_plan": null,
+    "objectives": [],
+    "spectrum": null,
+    "notes": ""
+  },
+  "ring_resonator_v02": {
+    "schema_version": "0.2",
+    "domain": "photon",
+    "name": "ring-demo",
+    "components": [
+      {
+        "id": "ring1",
+        "kind": "RingResonator",
+        "params": {
+          "R": 10.0,
+          "Q": 10000.0,
+          "kappa": 0.05,
+          "target_fsr_nm": 9.15
+        },
+        "param_bounds": {
+          "R": [
+            8.0,
+            12.0
+          ],
+          "Q": [
+            1000.0,
+            100000.0
+          ],
+          "kappa": [
+            0.0,
+            0.5
+          ],
+          "target_fsr_nm": [
+            0.1,
+            100.0
+          ]
+        },
+        "ports": [
+          {
+            "name": "in",
+            "directed": false
+          },
+          {
+            "name": "out",
+            "directed": false
+          },
+          {
+            "name": "drop",
+            "directed": false
+          }
+        ],
+        "foundry_hints": []
+      }
+    ],
+    "nets": [],
+    "pdk_ref": null,
+    "foundry_plan": {
+      "mode": "all",
+      "foundries": []
+    },
+    "objectives": [],
+    "spectrum": {
+      "kind": "ring_fsr",
+      "target_fsr_nm": 9.15,
+      "wl0_um": 1.55,
+      "n_g": 4.2,
+      "primary_param": "R"
+    },
+    "notes": ""
+  },
+  "transmon_target_f01": {
+    "schema_version": "0.2",
+    "domain": "quantum",
+    "name": "q-demo",
+    "components": [
+      {
+        "id": "q1",
+        "kind": "Transmon",
+        "params": {
+          "E_J": 20.0,
+          "E_C": 0.3,
+          "target_f01": 5.0
+        },
+        "param_bounds": {
+          "E_J": [
+            5.0,
+            40.0
+          ],
+          "E_C": [
+            0.1,
+            1.0
+          ],
+          "target_f01": [
+            1.0,
+            15.0
+          ]
+        },
+        "ports": [
+          {
+            "name": "control",
+            "directed": false
+          },
+          {
+            "name": "readout",
+            "directed": false
+          }
+        ],
+        "foundry_hints": []
+      }
+    ],
+    "nets": [],
+    "pdk_ref": null,
+    "foundry_plan": null,
+    "objectives": [
+      {
+        "bid": "B9",
+        "weight": 1.0,
+        "target": 5.0,
+        "tol": 0.1,
+        "role": "objective"
+      }
+    ],
+    "spectrum": null,
+    "notes": ""
+  }
+}

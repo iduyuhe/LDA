@@ -48,7 +48,8 @@ jobs:
         # D-22 增 /api/drc_fix_demo（D-18 整改 + D-21 跨厂规则）；
         # D-26 design_pipeline 支持全部 4 器件（Waveguide target_neff 逆设计）；
         # D-28 增 /api/ring_fdtd（D-27 环形 FDTD 预计算谱形演示）；
-        # D-30 增 /api/dc_transmission（D-29 DC 2D FDTD 功率交换谱演示）。
+        # D-30 增 /api/dc_transmission（D-29 DC 2D FDTD 功率交换谱演示）；
+        # D-33 增 /api/device_library（D-12 器件库全景 + contract + Ring FDTD 双验证）。
         # 校验服务可导入，且各端点返回结构正确；coupler 在 CI(无 GPU) 走 ORACLE
         # 真值演示路径（快速、不挂起），band/ring/ir 为纯 numpy/解析/静态（快速）。
         run: |
@@ -81,8 +82,12 @@ jobs:
           assert dt['available'] and dt['accepted'], dt
           fx = A.run_drc_fix_demo({'kind':'RingResonator'})     # D-22
           assert fx['accepted'] and 'cross_foundry' in fx and fx['iterations'] >= 1, fx
+          dl = A.run_device_library_demo({})           # D-33
+          assert dl['available'] and len(dl['devices']) == 5, dl
+          assert all(v['passed'] for v in dl['contracts'].values()), dl['contracts']
+          assert dl['ring_analytic']['passed'] and dl['ring_fdtd']['accepted'], dl
           assert hasattr(D, 'start') and hasattr(D, 'stop') and hasattr(D, 'status')
-          print('webui endpoints OK: layers=%d pdks=%d ir=%d yb=%s dc=%s ring=%s lp=%s dp=%s dpw=%s rf=%s dt=%s fx=%s' % (
+          print('webui endpoints OK: layers=%d pdks=%d ir=%d yb=%s dc=%s ring=%s lp=%s dp=%s dpw=%s rf=%s dt=%s fx=%s dl=%s' % (
             len(s['layers']), s['pdks_registered'], len(ir['examples']), yb['mode'],
             dc['mode'], 'PASS' if ring['accepted'] else 'FAIL',
             'PASS' if lp['passed'] else 'FAIL',
@@ -90,7 +95,8 @@ jobs:
             'PASS' if dpw['accepted'] else 'FAIL',
             'PASS' if rf['available'] else 'FAIL',
             'PASS' if dt['available'] else 'FAIL',
-            'PASS' if fx['accepted'] else 'FAIL'))
+            'PASS' if fx['accepted'] else 'FAIL',
+            'PASS' if dl['available'] else 'FAIL'))
           "
 
       - name: Coupler/beamsplitter module import smoke (D-01, no GPU numerics)

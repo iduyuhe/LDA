@@ -264,6 +264,61 @@ def run_dc_transmission_demo(payload=None):
     return data
 
 
+def run_device_library_demo(payload=None):
+    """D-12/D-32/D-33 器件库验收（webui ⑬ 面板）。
+
+    返回：器件库全景（5 器件：验收锚 / 参数窗口 / live_weight / 需 GPU /
+    IR kind）+ 每器件 contract 快验收状态 + Ring 真实 FDTD 双验证（预计算
+    D-32 smoke live 结果：解析契约 + FDTD drop 谱 4 峰 / FSR 对拍）。
+    """
+    from lda_l2.device_library import get_default_library
+    lib = get_default_library()
+    summary = lib.to_summary()
+    # 每器件 contract 快验收（秒级）
+    contracts = {}
+    for name in lib.list():
+        try:
+            o = lib.verify_one(name, mode="contract")
+            contracts[name] = {
+                "passed": bool(o.passed), "spec_id": o.spec_id,
+                "metric": o.metric, "oracle_kind": o.oracle_kind,
+                "tol": o.tol, "tol_mode": o.tol_mode,
+                "source": (o.source or "")[:70],
+            }
+        except Exception as e:  # noqa: BLE001
+            contracts[name] = {"passed": False, "error": str(e)[:80]}
+    # Ring FDTD 双验证：FDTD 谱用 D-28 预计算数据（独立产物，R=6 完整谱 +
+    # peaks + FSR 对拍），解析契约现场快跑（RING-fsr，秒级）
+    ring_fdtd = None
+    path = os.path.join(LDA_ROOT, "reports", "ring_fdtd_spectrum.json")
+    if os.path.exists(path):
+        try:
+            with open(path, encoding="utf-8") as f:
+                ring_fdtd = json.load(f)
+        except Exception:  # noqa: BLE001
+            ring_fdtd = None
+    ring_analytic = None
+    try:
+        o = lib.verify_one("RingResonator", mode="live")
+        ring_analytic = {
+            "passed": bool(o.passed),
+            "candidate_fsr_nm": o.candidate,
+            "oracle_fsr_nm": o.oracle_value,
+            "err": o.err, "tol": o.tol,
+        }
+    except Exception as e:  # noqa: BLE001
+        ring_analytic = {"passed": False, "error": str(e)[:80]}
+    return {
+        "available": True,
+        "devices": summary,
+        "contracts": contracts,
+        "ring_fdtd": ring_fdtd,
+        "ring_analytic": ring_analytic,
+        "note": "Ring FDTD 透射谱为预计算演示数据（D-28，GPU ~6min 一次；"
+                "实时重算需 GPU 不阻塞 HTTP）",
+    }
+
+
 def run_drc_fix_demo(payload):
     """D-18/D-21/D-22 可制造性面板：agent 自动整改 + 跨厂工艺规则对比。
 
@@ -500,6 +555,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_ring_loop(payload))
             elif path == "/api/ring_fdtd":
                 self._send(200, run_ring_fdtd_demo(payload))
+            elif path == "/api/device_library":
+                self._send(200, run_device_library_demo(payload))
             elif path == "/api/dc_transmission":
                 self._send(200, run_dc_transmission_demo(payload))
             elif path == "/api/layout_pipeline":

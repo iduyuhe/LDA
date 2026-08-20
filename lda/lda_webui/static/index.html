@@ -305,6 +305,18 @@
   </div>
 
   <div class="sec">
+    <h2>⑬ 器件库验收（D-12/D-32 · 已验证器件 + 真实 FDTD 入口）</h2>
+    <div class="hint">D-12 器件库把已验证器件固化为可复用资产（参数窗口 + D-04 统一验收契约 + 求解器），D-32 为环形挂上真实 FDTD 验收。面板展示：器件全景表（验收锚 / 参数窗口 / live_weight / 需 GPU）+ 每器件 contract 契约状态 + Ring 双验证（解析契约 + 真实 FDTD drop 谱/FSR 对拍）。</div>
+    <div class="row">
+      <button class="btn" id="runDevLib">加载器件库验收</button>
+    </div>
+    <div id="dlSummary" class="summary"></div>
+    <div id="dlTable"></div>
+    <div id="dlRing"></div>
+    <div class="conclusion" id="dlConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 · 机器优先中间表示）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -724,6 +736,70 @@ function dtSvg(d){
 }
 $('runDcTrans').onclick = runDcTrans;
 
+// ---- ⑬ D-12/D-32 器件库验收 ----
+async function runDevLib(){
+  const btn = $('runDevLib'); btn.disabled = true;
+  $('dlSummary').innerHTML = '<span class="spin"></span> 加载器件库验收（D-12 契约 + D-32 真实 FDTD 入口）…';
+  try{
+    const d = await api('/api/device_library', {});
+    if(!d.available){ $('dlSummary').textContent = '不可用：'+d.error; return; }
+    renderDevLib(d);
+  }catch(e){ $('dlSummary').textContent = '错误：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderDevLib(d){
+  const devs = Object.keys(d.devices);
+  $('dlSummary').innerHTML = `已验证器件库：<b>${devs.length} 个器件</b>（D-12 固化 · D-04 统一契约 · 每器件带真实物理验证入口）· Ring FDTD 双验证<span class="verdict ${(d.ring_fdtd&&d.ring_fdtd.accepted)?'ok':'fail'}">${(d.ring_fdtd&&d.ring_fdtd.accepted)?'PASS':'—'}</span>`;
+  $('dlTable').innerHTML = `<table>
+    <tr><th>器件</th><th>验收锚（ORACLE ↔ 候选）</th><th>参数窗口</th><th>契约</th><th>live_weight</th><th>需 GPU</th></tr>
+    ${devs.map(n=>{
+      const s=d.devices[n], c=d.contracts[n]||{};
+      const metric={fsr_nm:'FSR',neff:'neff',R_min_band:'R_min',kappa:'κ',balance:'平衡度'}[s.metric]||s.metric;
+      const o={physical_law:'物理定律',tmm_analytic:'TMM 解析',analytical:'解析',fdfd_eigen:'FDFD 本征'}[s.oracle_kind]||s.oracle_kind;
+      return `<tr>
+        <td><b>${n}</b><br><span class="note">IR: ${s.ir_kinds.join('/')||'—'}</span></td>
+        <td>${metric}（${o}↔已验证求解器）</td>
+        <td>${Object.entries(s.params_schema).map(([k,v])=>`${k}∈[${v[0]},${v[1]}]`).join('<br>')}</td>
+        <td><span class="verdict ${c.passed?'ok':'fail'}">${c.passed?'PASS':'FAIL'}</span><br><span class="note">${c.spec_id||''}</span></td>
+        <td>${s.live_weight}</td>
+        <td>${s.requires_gpu?'是':'否'}</td>
+      </tr>`;}).join('')}
+  </table>`;
+  // Ring 双验证区
+  const rf = d.ring_fdtd, ra = d.ring_analytic;
+  if(rf && ra){
+    const fdtd_ok = rf.accepted;
+    $('dlRing').innerHTML = `<div class="summary">RingResonator 双验证（D-27/D-31/D-32）：</div>
+      <div class="note">① 解析契约（设计目标命中，RING-fsr）：candidate FSR=<b>${fmt(ra.candidate_fsr_nm)}</b>nm vs oracle <b>${fmt(ra.oracle_fsr_nm)}</b>nm · err=<b>${fmt(ra.err)}</b> ≤ tol ${ra.tol} · <span class="verdict ${ra.passed?'ok':'fail'}">${ra.passed?'PASS':'FAIL'}</span></div>
+      <div class="note">② 真实 FDTD（物理行为自洽，R=${rf.R_um}µm）：drop 谱 <b>${rf.peaks_um.length}</b> 个谐振峰 · FSR(FDTD)=<b>${rf.fsr_fdtd_nm}</b>nm vs 解析 <b>${rf.fsr_analytic_nm}</b>nm · rel=<b>${(rf.fsr_rel_dev*100).toFixed(2)}%</b> ≤ ${(rf.tol_rel*100).toFixed(0)}% · <span class="verdict ${fdtd_ok?'ok':'fail'}">${fdtd_ok?'PASS':'FAIL'}</span></div>
+      ${ringSpectrumSvg(rf)}
+      <div class="conclusion"><strong>结论：</strong>${rf.verdict}</div>`;
+  } else {
+    $('dlRing').innerHTML = '<div class="note">Ring FDTD 双验证数据不可用（需 GPU 机预计算 D-28 环形谱）</div>';
+  }
+  $('dlConclusion').innerHTML = `<strong>器件库定位：</strong>设计者/agent/webui/PDK 接入按名字取用已验证器件，无需重写接线——每器件带参数窗口 + 统一验收契约 + 真实物理验证入口（LLM 不进判决路径）。${d.note||''}`;
+}
+function ringSpectrumSvg(rf){
+  const wls = rf.wavelengths_um, drops = rf.drop_normalized;
+  if(!wls || !wls.length) return '';
+  const W=580, H=200, pad=38;
+  const wmin=wls[0], wmax=wls[wls.length-1];
+  const X=w=> pad + (w-wmin)/(wmax-wmin||1)*(W-2*pad);
+  const Y=v=> H-pad - Math.min(Math.max(v,0),1.0)/1.0*(H-2*pad);
+  const pd = wls.map((w,i)=> X(w).toFixed(1)+','+Y(drops[i]).toFixed(1)).join(' ');
+  const peaks = (rf.peaks_um||[]).map(p=>`<circle cx="${X(p).toFixed(1)}" cy="${Y(1).toFixed(1)}" r="3.5" fill="#e91e63"/><text x="${X(p).toFixed(1)}" y="${Y(1)+14}" fill="#e91e63" font-size="9" text-anchor="middle">${p.toFixed(4)}</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;margin-top:8px">
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#26304d"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#26304d"/>
+    <polyline points="${pd}" fill="none" stroke="#7c3aed" stroke-width="2"/>
+    ${peaks}
+    <text x="${pad+4}" y="${pad+2}" fill="#7c3aed" font-size="11">Ring drop 端口透射谱（真实 FDTD，CW 稳态）· 谐振峰标记</text>
+    <text x="${pad}" y="${H-10}" fill="#8aa0c6" font-size="11">λ=${wmin.toFixed(4)}µm</text>
+    <text x="${W-pad}" y="${H-10}" fill="#8aa0c6" font-size="11" text-anchor="end">${wmax.toFixed(4)}µm</text>
+  </svg>`;
+}
+$('runDevLib').onclick = runDevLib;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -763,6 +839,7 @@ $('runIr').onclick = runIr;
   runLp();
   runRingFdtd();
   runDcTrans();
+  runDevLib();
   runIr();
 })();
 </script>

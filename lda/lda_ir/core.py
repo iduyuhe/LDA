@@ -18,7 +18,8 @@ core），并顺带把两块"设计意图"显式表达出来（对应之前讨�
 光子靠折射率/几何、量子靠约瑟夫森/充电能，但"设计意图→IR→桥接→设计闭环→
 物理定律锚验证"链路完全一致——这正是"统一光子+量子"差异化定位的底座。
 
-验证裁判（harness）与设计闭环（agent）都消费 IR 派生出的 DesignProblem，
+验证裁判（harness）与设计闭环（agent）都消费 IR 派生出的设计意图
+（bridge 输出 DesignAgent intent / ir_eval 直接消费 IR），
 IR 本身不直接算物理——它只描述"要造什么、约束是什么、目标谱长什么样、
 想落在哪个/哪些 foundry"。
 """
@@ -148,7 +149,7 @@ class IRModel:
         self.nets.append(Net(id=net_id, connects=list(ports)))
         return self
 
-    # —— 主器件（bridge 取它构造 DesignProblem）——
+    # —— 主器件（bridge 取它构造 intent / 供 ir_eval 消费）——
     @property
     def primary_component(self) -> Optional[Component]:
         if not self.components:

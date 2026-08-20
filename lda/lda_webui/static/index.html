@@ -293,6 +293,18 @@
   </div>
 
   <div class="sec">
+    <h2>⑫ DC 全场透射谱（D-29/D-30 · 2D FDTD 功率交换）</h2>
+    <div class="hint">D-29 DC 全场透射谱仿真核（2D FDTD 双平行波导，CW 稳态逐波长）——thru/cross 功率交换 vs 波长（cross_frac 单调递增 = CMT 趋势），反解 κ_fdtd(λ) 物理量级。数据为预计算演示（numpy ~1min 一次，webui 秒回）。</div>
+    <div class="row">
+      <button class="btn" id="runDcTrans">加载 DC 全场透射谱</button>
+    </div>
+    <div id="dtSummary" class="summary"></div>
+    <div id="dtSvg" style="margin-top:10px"></div>
+    <div id="dtBody"></div>
+    <div class="conclusion" id="dtConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 · 机器优先中间表示）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -676,6 +688,42 @@ function rfSvg(d){
 }
 $('runRingFdtd').onclick = runRingFdtd;
 
+// ---- ⑫ D-29/D-30 DC 全场透射谱 ----
+async function runDcTrans(){
+  const btn = $('runDcTrans'); btn.disabled = true;
+  $('dtSummary').innerHTML = '<span class="spin"></span> 加载 DC 全场透射谱（D-29 预计算演示数据）…';
+  try{
+    const d = await api('/api/dc_transmission', {});
+    if(!d.available){ $('dtSummary').textContent = '不可用：'+d.error; return; }
+    $('dtSummary').innerHTML = `DC（2D FDTD）· gap=<b>${d.gap_um}µm</b> · L_eff=<b>${d.L_eff_um}µm</b> · cross_frac <b>${fmt(d.cross_frac[0])}→${fmt(d.cross_frac[d.cross_frac.length-1])}</b>（单调递增=${d.monotone_increasing}）· κ_fdtd <b>${fmt(d.kappa_fdtd[0])}→${fmt(d.kappa_fdtd[d.kappa_fdtd.length-1])}</b> rad/µm`;
+    $('dtSvg').innerHTML = dtSvg(d);
+    $('dtBody').innerHTML = `<div class="summary">逐波长功率交换：</div><table>
+      <tr><th>λ (µm)</th><th>cross_frac</th><th>thru</th><th>κ_fdtd (rad/µm)</th></tr>
+      ${d.wavelengths_um.map((w,i)=>`<tr><td>${w}</td><td>${fmt(d.cross_frac[i])}</td><td>${fmt(d.thru_power[i]/1e4)}e4</td><td>${fmt(d.kappa_fdtd[i])}</td></tr>`).join('')}
+    </table>`;
+    $('dtConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}`;
+  }catch(e){ $('dtSummary').textContent = '错误：'+e; }
+  finally{ btn.disabled = false; }
+}
+function dtSvg(d){
+  const wls = d.wavelengths_um, cf = d.cross_frac;
+  if(!wls || !wls.length) return '';
+  const W=580, H=200, pad=38;
+  const wmin=wls[0], wmax=wls[wls.length-1], ymax=1.0;
+  const X=w=> pad + (w-wmin)/(wmax-wmin||1)*(W-2*pad);
+  const Y=v=> H-pad - Math.min(Math.max(v,0),ymax)/ymax*(H-2*pad);
+  const pd = wls.map((w,i)=> X(w).toFixed(1)+','+Y(cf[i]).toFixed(1)).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px">
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#26304d"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#26304d"/>
+    <polyline points="${pd}" fill="none" stroke="#0ea5e9" stroke-width="2"/>
+    <text x="${pad+4}" y="${pad+2}" fill="#0ea5e9" font-size="11">cross_frac = P_cross/(P_cross+P_thru)（CMT 功率交换，单调递增）</text>
+    <text x="${pad}" y="${H-10}" fill="#8aa0c6" font-size="11">λ=${wmin.toFixed(4)}µm</text>
+    <text x="${W-pad}" y="${H-10}" fill="#8aa0c6" font-size="11" text-anchor="end">${wmax.toFixed(4)}µm</text>
+  </svg>`;
+}
+$('runDcTrans').onclick = runDcTrans;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -714,6 +762,7 @@ $('runIr').onclick = runIr;
   runRing();
   runLp();
   runRingFdtd();
+  runDcTrans();
   runIr();
 })();
 </script>

@@ -247,6 +247,23 @@ def run_ring_fdtd_demo(payload=None):
     return data
 
 
+def run_dc_transmission_demo(payload=None):
+    """D-29/D-30 DC 全场透射谱（webui ⑫ 面板）。
+
+    加载预计算演示数据 reports/dc_transmission_spectrum.json（D-29 核 2D FDTD
+    CW 稳态逐波长，numpy ~1min 一次；webui 秒回 cross/thru 谱 + κ_fdtd 反解）。
+    诚实标注为预计算演示数据。
+    """
+    path = os.path.join(LDA_ROOT, "reports", "dc_transmission_spectrum.json")
+    if not os.path.exists(path):
+        return {"available": False, "error":
+                "dc_transmission_spectrum.json 缺失（需先预计算 D-29 DC 透射谱）"}
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    data["available"] = True
+    return data
+
+
 def run_drc_fix_demo(payload):
     """D-18/D-21/D-22 可制造性面板：agent 自动整改 + 跨厂工艺规则对比。
 
@@ -483,6 +500,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_ring_loop(payload))
             elif path == "/api/ring_fdtd":
                 self._send(200, run_ring_fdtd_demo(payload))
+            elif path == "/api/dc_transmission":
+                self._send(200, run_dc_transmission_demo(payload))
             elif path == "/api/layout_pipeline":
                 self._send(200, run_layout_pipeline(payload))
             elif path == "/api/design_pipeline":

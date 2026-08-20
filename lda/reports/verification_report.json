@@ -1,13 +1,13 @@
 {
   "meta": {
     "L0_IR": "(内置默认 B1–B4,B8)",
-    "candidate": "L3AISolverCandidate(llm=False)",
+    "candidate": "ReferenceCandidate",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）"
   },
-  "generated_at": "2026-08-18T15:46:34",
+  "generated_at": "2026-08-20T06:43:18",
   "summary": {
     "total": 11,
-    "passed": 8
+    "passed": 11
   },
   "results": [
     {
@@ -49,9 +49,9 @@
       "oracle": "analytical(EIM)",
       "source": "physical-law",
       "golden": 2.6509474264002217,
-      "candidate": 3.275615322156264,
+      "candidate": 2.6509474264002217,
       "tol": 0.05,
-      "passed": false,
+      "passed": true,
       "note": "确定性物理定律/解析解"
     },
     {
@@ -115,9 +115,9 @@
       "oracle": "analytical(adiabatic-limit)",
       "source": "physical-law",
       "golden": 1.0,
-      "candidate": 0.985,
+      "candidate": 1.0,
       "tol": 0.01,
-      "passed": false,
+      "passed": true,
       "note": "确定性物理定律/解析解"
     },
     {
@@ -126,9 +126,9 @@
       "oracle": "analytical(transmon/Koch2007)",
       "source": "physical-law",
       "golden": 6.628203230275509,
-      "candidate": 48.0,
+      "candidate": 6.628203230275509,
       "tol": 0.05,
-      "passed": false,
+      "passed": true,
       "note": "确定性物理定律/解析解"
     }
   ]

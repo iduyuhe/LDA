@@ -1,0 +1,20 @@
+{
+  "checks": {
+    "registered": {
+      "ok": true,
+      "msg": "RingResonator 已注册且带 RING-fsr 解析契约（D-12）"
+    },
+    "contract": {
+      "ok": true,
+      "msg": "verify_ring_fdtd contract 自检：R=6 解析 FSR=18.31nm（物理量级）+ fdtd2d_ring 可导入"
+    },
+    "analytic_live": {
+      "ok": true,
+      "msg": "RING-fsr 解析契约 live：candidate FSR=9.149790607779664 vs oracle 9.149790638389057 (err=3.35e-09 ≤ tol 0.02)"
+    }
+  },
+  "live": {
+    "skipped": true
+  },
+  "all_green": true
+}

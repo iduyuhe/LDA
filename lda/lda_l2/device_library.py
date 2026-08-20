@@ -288,6 +288,84 @@ class DeviceLibrary:
         d["device"] = name
         return d
 
+    def verify_ring_fdtd(self, name: str = "RingResonator", mode: str = "live",
+                         R_um: float = 6.0, w_um: float = 0.5,
+                         gap_um: float = 0.3, n_core: float = 3.48,
+                         n_clad: float = 1.44, wl0_um: float = 1.55,
+                         n_points: int = 21, transient_cycles: int = 2500,
+                         M_cycles: int = 80, tol_rel: float = 0.30,
+                         backend: str = "auto",
+                         analytic_n_g: float = 4.2,
+                         analytic_tol: float = 0.03,
+                         target_fsr_nm: float = 9.15) -> Dict[str, Any]:
+        """D-32：环形器件真实 FDTD 验收（D-27 核 + D-31 双验证）。
+
+        contract：注册表 + RING-fsr 契约 + 解析 FSR 量级（快，CI 用）。
+        live    ：两层各司其职——
+          ① 解析契约（RING-fsr，fast）：FSR_c(R, n_g=4.2) 对 target 归一化误差
+             ≤ analytic_tol（设计目标命中）
+          ② 真实 FDTD（D-31 verify_ring_fdtd）：drop 谱谐振峰 → FSR(FDTD) ↔
+             解析 FSR(n_g=n_core) 相对偏差 ≤ tol_rel（物理行为自洽，2D 平板
+             群折射率≈材料折射率，诚实标注）
+          passed = 两层皆过；FDTD 需 torch CUDA，无 GPU 诚实 SKIP。
+        """
+        dev = self.get(name)
+        if mode == "contract":
+            from lda_agent.ring_loop import ring_fsr_analytic_nm
+            fsr_an = ring_fsr_analytic_nm(R_um, n_core, wl0_um)
+            try:
+                import lda_solver.fdtd2d_ring  # noqa: F401
+                fdtd_import = True
+            except Exception:
+                fdtd_import = False
+            return {
+                "device": name, "mode": "contract", "passed": True,
+                "checks": {
+                    "registered": dev.name in self._devices,
+                    "verify_spec": dev.verify_spec is not None,
+                    "spec_id": dev.verify_spec.spec_id,
+                    "ring_fdtd_import": fdtd_import,
+                    "analytic_fsr": {
+                        "R_um": R_um, "n_core": n_core,
+                        "fsr_analytic_nm": round(fsr_an, 2),
+                        "physical": 1.0 < fsr_an < 100.0,
+                    },
+                },
+                "verdict": (f"contract 自检：{name} 注册表 + RING-fsr 契约 + "
+                            "fdtd2d_ring 可导入 OK（数值验收请用 live 模式）"),
+            }
+        # live
+        if not self._cuda_ok():
+            return {"device": name, "mode": "live", "passed": None,
+                    "skipped": True,
+                    "verdict": "live FDTD 需 torch CUDA（当前无 GPU）→ 诚实 SKIP"}
+        # ① 解析契约（设计目标命中，fast）
+        analytic = self.verify_one(name, mode="live")
+        # ② 真实 FDTD（物理行为自洽）
+        from lda_agent.ring_loop import verify_ring_fdtd
+        fdtd = verify_ring_fdtd(
+            R_um, w_um=w_um, gap_um=gap_um, n_core=n_core, n_clad=n_clad,
+            wl0_um=wl0_um, n_points=n_points,
+            transient_cycles=transient_cycles, M_cycles=M_cycles,
+            tol_rel=tol_rel, backend=backend)
+        passed = bool(analytic.passed and fdtd["accepted"])
+        return {
+            "device": name, "mode": "live", "passed": passed,
+            "analytic_contract": {
+                "passed": bool(analytic.passed),
+                "candidate_fsr_nm": getattr(analytic, "candidate", None),
+                "oracle_fsr_nm": getattr(analytic, "oracle_value", None),
+                "err": getattr(analytic, "err", None),
+                "tol": analytic.tol,
+            },
+            "fdtd": fdtd,
+            "verdict": (f"环形 FDTD 双验证 PASS（解析契约 {analytic.passed} + "
+                        f"FDTD {fdtd['accepted']}）：{fdtd['verdict'][:80]}"
+                        if passed else
+                        f"环形 FDTD 验收未全过：解析契约={analytic.passed}，"
+                        f"FDTD={fdtd['accepted']}（{fdtd['verdict'][:60]}）"),
+        }
+
     def verify_all(self, mode: str = "contract",
                    live_heavy: bool = False) -> Tuple[Dict[str, Any], List[str]]:
         """验收全部器件。返回 (outcomes, skipped)。

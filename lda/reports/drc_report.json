@@ -1,0 +1,135 @@
+{
+  "rules": {
+    "min_width_um": 0.35,
+    "min_space_um": 0.2,
+    "min_bend_R_um": 5.0,
+    "max_split_angle_deg": 30.0
+  },
+  "library": {
+    "DirectionalCoupler": {
+      "device": "DirectionalCoupler",
+      "passed": true,
+      "checks": [
+        {
+          "rule": "min_space",
+          "device": "DirectionalCoupler",
+          "param": "gap",
+          "value": 0.35,
+          "required": 0.2,
+          "ok": true,
+          "severity": "error"
+        },
+        {
+          "rule": "min_width",
+          "device": "DirectionalCoupler",
+          "param": "width",
+          "value": 0.5,
+          "required": 0.35,
+          "ok": true,
+          "severity": "error"
+        }
+      ]
+    },
+    "SymmetricYBranch": {
+      "device": "SymmetricYBranch",
+      "passed": true,
+      "checks": [
+        {
+          "rule": "min_width",
+          "device": "SymmetricYBranch",
+          "param": "width",
+          "value": 0.65,
+          "required": 0.35,
+          "ok": true,
+          "severity": "error"
+        },
+        {
+          "rule": "max_split",
+          "device": "SymmetricYBranch",
+          "param": "split_angle",
+          "value": 15.5,
+          "required": 30.0,
+          "ok": true,
+          "severity": "error"
+        }
+      ]
+    },
+    "Waveguide": {
+      "device": "Waveguide",
+      "passed": true,
+      "checks": [
+        {
+          "rule": "min_width",
+          "device": "Waveguide",
+          "param": "width",
+          "value": 0.55,
+          "required": 0.35,
+          "ok": true,
+          "severity": "error"
+        }
+      ]
+    },
+    "RingResonator": {
+      "device": "RingResonator",
+      "passed": true,
+      "checks": [
+        {
+          "rule": "min_bend_R",
+          "device": "RingResonator",
+          "param": "R",
+          "value": 10.0,
+          "required": 5.0,
+          "ok": true,
+          "severity": "error"
+        },
+        {
+          "rule": "min_width",
+          "device": "RingResonator",
+          "param": "wg_width",
+          "value": 0.5,
+          "required": 0.35,
+          "ok": true,
+          "severity": "error"
+        }
+      ]
+    },
+    "BraggMirror": {
+      "device": "BraggMirror",
+      "passed": true,
+      "checks": []
+    }
+  },
+  "compliance_cases": [
+    {
+      "kind": "Waveguide",
+      "params": {
+        "width": 0.5
+      },
+      "passed": true
+    },
+    {
+      "kind": "RingResonator",
+      "params": {
+        "R": 10.0,
+        "wg_width": 0.5
+      },
+      "passed": true
+    },
+    {
+      "kind": "DirectionalCoupler",
+      "params": {
+        "gap": 0.3,
+        "width": 0.5
+      },
+      "passed": true
+    },
+    {
+      "kind": "SymmetricYBranch",
+      "params": {
+        "width": 0.5,
+        "split_angle": 10.0
+      },
+      "passed": true
+    }
+  ]
+}

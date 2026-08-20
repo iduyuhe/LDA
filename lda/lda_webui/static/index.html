@@ -175,6 +175,27 @@
   </div>
 
   <div class="sec">
+    <h2>⑦ 环形谱形逆设计闭环（D-11）</h2>
+    <div class="hint">agent 调半径 R 使环形 drop 谱 FSR 命中目标谱形——解析环形传递函数与逐波长洛伦兹梳谱提取交叉对拍（双判据）。纯解析、秒级出结果。</div>
+    <div class="row">
+      <label>目标 FSR (nm)
+        <input type="number" id="ringFsr" value="9.15" step="0.05" min="1" max="50"/>
+      </label>
+      <label>R 范围下界 (µm)
+        <input type="number" id="ringRlo" value="8" step="0.5" min="1" max="60"/>
+      </label>
+      <label>R 范围上界 (µm)
+        <input type="number" id="ringRhi" value="12" step="0.5" min="1" max="60"/>
+      </label>
+      <button class="btn" id="runRing">运行环形闭环</button>
+    </div>
+    <div id="ringSummary" class="summary"></div>
+    <div id="ringSvg" style="margin-top:10px"></div>
+    <div id="ringTrace"></div>
+    <div class="conclusion" id="ringConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 · 机器优先中间表示）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -375,6 +396,49 @@ function bandSvg(curves){
 }
 $('runBand').onclick = runBand;
 
+// ---- ⑦ D-11 环形谱形逆设计闭环 ----
+async function runRing(){
+  const btn = $('runRing'); btn.disabled = true;
+  $('ringSummary').innerHTML = '<span class="spin"></span> 正在跑 D-11 环形谱形逆设计闭环（调 R 命中 FSR）…';
+  try{
+    const d = await api('/api/ring_loop', {
+      target_fsr_nm: parseFloat($('ringFsr').value),
+      R_bounds: [parseFloat($('ringRlo').value), parseFloat($('ringRhi').value)],
+    });
+    renderRing(d);
+  }catch(e){ $('ringSummary').textContent = '错误：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderRing(d){
+  $('ringSummary').innerHTML = `收敛：<b>${d.accepted?'是':'否'}</b> · R=<b>${fmt(d.final_R_um)}µm</b> · FSR(解析)=<b>${fmt(d.final_fsr_analytic_nm)}nm</b> · 谱形提取=<b>${fmt(d.final_fsr_measured_nm)}nm</b> · 谱形误差=${fmt(d.final_spectrum_err)} · 方法一致性=${fmt(d.final_fsr_method_err)}`;
+  $('ringSvg').innerHTML = ringSvg(d.final_band_curves, d.target_fsr_nm);
+  $('ringTrace').innerHTML = `<div class="summary">闭环轨迹（黄金分割调 R 直至谱形误差→0）：</div><table>
+    <tr><th>轮</th><th>R (µm)</th><th>谱形误差</th></tr>
+    ${d.loop_trace.map(t=>`<tr><td>${t.iteration}</td><td>${fmt(t.R)}</td><td>${fmt(t.spectrum_err)}</td></tr>`).join('')}
+  </table>`;
+  $('ringConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}`;
+}
+function ringSvg(curves, targetFsr){
+  if(!curves || !curves.length) return '';
+  const W=580, H=200, pad=38;
+  const wls = curves.map(c=>c.wl);
+  const wmin=Math.min(...wls), wmax=Math.max(...wls);
+  const drops = curves.map(c=>c.drop);
+  const ymax = Math.max(...drops, 1e-9);
+  const X=w=> pad + (w-wmin)/(wmax-wmin||1)*(W-2*pad);
+  const Y=v=> H-pad - Math.min(Math.max(v,0),ymax)/ymax*(H-2*pad);
+  const pd = curves.map(c=> X(c.wl).toFixed(1)+','+Y(c.drop).toFixed(1)).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px">
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#26304d"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#26304d"/>
+    <polyline points="${pd}" fill="none" stroke="#e91e63" stroke-width="2"/>
+    <text x="${pad+4}" y="${pad+2}" fill="#e91e63" font-size="11">drop 端口透射谱（洛伦兹梳）· 目标 FSR=${targetFsr}nm</text>
+    <text x="${pad}" y="${H-10}" fill="#8aa0c6" font-size="11">λ=${wmin.toFixed(5)}µm</text>
+    <text x="${W-pad}" y="${H-10}" fill="#8aa0c6" font-size="11" text-anchor="end">${wmax.toFixed(5)}µm</text>
+  </svg>`;
+}
+$('runRing').onclick = runRing;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -407,9 +471,10 @@ $('runIr').onclick = runIr;
   const st = await api('/api/status');
   renderStatus(st);
   runVerify();
-  // 首屏预热：自动演示两个真闭环（耦合器验收锚 + 多波长闭环），让闭环可视化立即可见
+  // 首屏预热：自动演示三个真闭环（耦合器验收锚 + 多波长闭环 + 环形谱形闭环），让闭环可视化立即可见
   runCoupler();
   runBand();
+  runRing();
   runIr();
 })();
 </script>

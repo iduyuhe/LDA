@@ -127,6 +127,144 @@ def run_band_loop(payload):
     return rep
 
 
+def run_ring_loop(payload):
+    """D-11 环形谱形逆设计闭环（设计→仿真→验收 可视化）。
+
+    复用 RingBandAgent：调 R 使 drop 谱 FSR 命中目标谱形（解析环形传递函数
+    + 洛伦兹梳谱提取双判据）。返回逐波长洛伦兹梳谱曲线 + 收敛轨迹。纯解析，
+    快、无 GPU 依赖。
+    """
+    from lda_agent.ring_loop import RingBandAgent
+
+    ex = payload
+    intent = {
+        "geometry_type": "ring",
+        "target_wavelength_um": float(ex.get("lam0", 1.55)),
+        "target_metric": "spectrum_match",
+        "tolerance_rel": float(ex.get("tol", 0.02)),
+        "max_iterations": int(ex.get("max_iter", 40)),
+        "extra": {
+            "R_um": float(ex.get("R", 10.0)),
+            "R_bounds": [float(v) for v in ex.get("R_bounds", [8.0, 12.0])],
+            "n_g": float(ex.get("n_g", 4.2)),
+            "Q": float(ex.get("Q", 1.0e4)),
+            "kappa": float(ex.get("kappa", 0.05)),
+            "target_fsr_nm": float(ex.get("target_fsr_nm", 9.15)),
+            "wl0_um": float(ex.get("lam0", 1.55)),
+            "target_tol": float(ex.get("target_tol", 0.03)),
+            "backend": "numpy",
+        },
+    }
+    return RingBandAgent().run(intent)
+
+
+def _svg_item_from_desc(d):
+    """geometry_desc → svg_preview item（boundary 多环展平）。"""
+    layer = d.get("layer", 1)
+    if d["kind"] == "boundary":
+        rings = d.get("rings_um", [d.get("points_um", [])])
+        pts = []
+        for r in rings:
+            pts.extend(r)
+            pts.append(r[0])
+        return ("boundary", {"points_um": pts, "layer": layer})
+    return (d["kind"], {"points_um": d.get("points_um", []),
+                        "width_um": d.get("width_um", 0.5), "layer": layer})
+
+
+def run_layout_pipeline(payload):
+    """D-17 版图流水线：器件/IR → GDS 版图 SVG + DRC 自查 + FDTD 仿真验收。
+
+    三合一可视化：把 D-14 版图出口 + D-15 DRC + D-16 仿真串成一条命令，
+    浏览器可看"设计→版图→DRC→仿真→验收"全自动闭环。参数从 D-12 器件库
+    取默认窗口（可覆盖）。
+    """
+    from lda_l2 import drc as drc_mod
+    from lda_l2 import gds_export as ge
+    from lda_l2 import layout_sim as ls
+    from lda_l2.device_library import get_default_library
+
+    kind = payload.get("kind", "Waveguide")
+    lib = get_default_library()
+    if kind not in lib.list():
+        return {"error": f"未知器件 kind={kind}（可用：{lib.list()}）", "passed": False}
+    dev = lib.get(kind)
+    params = {k: (lo + hi) / 2.0 for k, (lo, hi) in dev.params_schema.items()}
+    params.update({k: float(v) for k, v in (payload.get("params") or {}).items()})
+
+    desc_list = ge.geometry_desc(kind, params)
+    svg = ge.svg_preview({kind: [_svg_item_from_desc(d) for d in desc_list]})
+    drc_result = drc_mod.drc_check_device(kind, params)
+    sim = ls.simulate_layout(desc_list, 3.48, 1.44, 1.55)
+    return {
+        "kind": kind,
+        "params": params,
+        "layout_svg": svg,
+        "drc": drc_result.to_dict(),
+        "sim": sim,
+        "passed": bool(drc_result.passed and sim.get("passed", False)),
+        "verdict": ("版图→DRC→仿真 全链路 PASS" if (drc_result.passed and sim.get("passed"))
+                    else "链路未全过（见 DRC/仿真 详情）"),
+    }
+
+
+def run_design_pipeline(payload):
+    """D-19/D-20 一键设计流水线（webui ⑨ 面板）。
+
+    输入设计意图（器件 kind + 目标 FSR / 参数覆盖），自动完成逆设计 → 版图 →
+    DRC → 自动整改 → FDTD 仿真验收 → 设计包。返回完整报告 + 版图 SVG。
+    """
+    from lda_agent.design_pipeline import run_pipeline
+
+    kind = payload.get("kind", "RingResonator")
+    params = {k: float(v) for k, v in (payload.get("params") or {}).items()} or None
+    target_fsr = None
+    if payload.get("target_fsr"):
+        target_fsr = float(payload["target_fsr"])
+    return run_pipeline(kind, params=params, target_fsr_nm=target_fsr)
+
+
+def run_drc_fix_demo(payload):
+    """D-18/D-21/D-22 可制造性面板：agent 自动整改 + 跨厂工艺规则对比。
+
+    输入器件 + 参数（默认给违规初值演示自动整改）+ foundry（选择工艺规则），
+    返回：整改轨迹（violation 单调降）+ 整改后参数在 3 个光子 foundry 规则下
+    的跨厂可制造性对比 + 版图 SVG。
+    """
+    from lda_agent.drc_fix_loop import DrcFixAgent
+    from lda_l2.drc import drc_check_device, rules_from_pdk
+    from lda_l2.pdk import get_default_registry
+
+    kind = payload.get("kind", "RingResonator")
+    params = {k: float(v) for k, v in (payload.get("params") or {}).items()}
+    if not params:
+        # 默认违规初值（演示 agent 自动整改）
+        _defaults = {
+            "RingResonator": {"R": 2.0, "wg_width": 0.3},
+            "Waveguide": {"width": 0.2},
+            "DirectionalCoupler": {"gap": 0.1, "width": 0.5},
+            "SymmetricYBranch": {"width": 0.5, "split_angle": 45.0},
+        }
+        params = _defaults.get(kind, {})
+
+    reg = get_default_registry()
+    photon = [k for k in reg.list_pdks() if "量子" not in k]
+    fk = payload.get("foundry") or photon[0]
+    rules = rules_from_pdk(reg.get(fk))
+
+    fix = DrcFixAgent(rules=rules).run(kind, params)
+    # 跨厂对比：整改后参数在 3 个光子 foundry 规则下可制造性
+    cross = {}
+    for k in photon:
+        r = drc_check_device(kind, fix["final_params"],
+                             rules=rules_from_pdk(reg.get(k)))
+        cross[k.split("::")[0]] = {"passed": r.passed,
+                                   "violations": [c.brief() for c in r.violations()]}
+    fix["cross_foundry"] = cross
+    fix["foundry"] = fk
+    return fix
+
+
 def run_coupler_loop(payload):
     """D-01 多端口耦合器件验收锚（设计→仿真→验收 可视化）。
 
@@ -318,6 +456,14 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_agent_loop(payload))
             elif path == "/api/band_loop":
                 self._send(200, run_band_loop(payload))
+            elif path == "/api/ring_loop":
+                self._send(200, run_ring_loop(payload))
+            elif path == "/api/layout_pipeline":
+                self._send(200, run_layout_pipeline(payload))
+            elif path == "/api/design_pipeline":
+                self._send(200, run_design_pipeline(payload))
+            elif path == "/api/drc_fix_demo":
+                self._send(200, run_drc_fix_demo(payload))
             elif path == "/api/coupler_loop":
                 self._send(200, run_coupler_loop(payload))
             elif path == "/api/ir_demo":
@@ -340,10 +486,31 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
+def _local_ips() -> list:
+    """本机内网 IPv4 地址（供访问提示）。"""
+    import socket
+    ips = []
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            ip = info[4][0]
+            if not ip.startswith("127.") and ip not in ips:
+                ips.append(ip)
+    except Exception:  # noqa: BLE001
+        pass
+    return ips or ["127.0.0.1"]
+
+
 def main():
     port = int(os.environ.get("LDA_WEBUI_PORT", "8787"))
     srv = ThreadingHTTPServer(("0.0.0.0", port), Handler)
-    print("LDA webui serving on http://0.0.0.0:%d" % port, flush=True)
+    print("=" * 58, flush=True)
+    print("LDA WebUI 内网演示服务已启动", flush=True)
+    for ip in _local_ips():
+        print("  内网访问  http://%s:%d   演示机本机  http://127.0.0.1:%d"
+              % (ip, port, port), flush=True)
+    print("  健康检查  GET /api/status", flush=True)
+    print("  停止服务  python lda_webui/deploy.py stop（或 Ctrl+C）", flush=True)
+    print("=" * 58, flush=True)
     srv.serve_forever()
 
 

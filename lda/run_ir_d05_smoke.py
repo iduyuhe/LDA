@@ -21,10 +21,11 @@ if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
 from lda_ir import (DirectionalCoupler, SymmetricYBranch, RingResonator,
-                    Transmon, IRModel, FoundryPlan, SpectrumSpec,
-                    ObjectiveSpec, dumps, from_dict, to_dict, to_dsl, validate)
+                    Transmon, Waveguide, GratingCoupler, IRModel, FoundryPlan,
+                    SpectrumSpec, ObjectiveSpec, dumps, from_dict, to_dict,
+                    to_dsl, validate)
 from lda_ir.photon import KNOWN_KINDS
-from lda_ir.bridge import ir_to_design_problem  # 轻量：仅构造 DesignProblem，不跑逆设计
+from lda_ir.bridge import ir_to_intent  # 轻量：仅构造 intent dict，不跑逆设计
 
 
 def check(cond: bool, msg: str) -> bool:
@@ -87,16 +88,33 @@ def main() -> int:
     r4 = from_dict(to_dict(m_q))
     ok &= check(dumps(m_q) == dumps(r4), "Transmon(v0.2) IR round-trip 零损失")
 
-    # 5) bridge 轻量构造（不跑逆设计）：RingResonator 仍可桥接逆设计
+    # 5) bridge 轻量构造（不跑逆设计）：Waveguide→waveguide_2d；RingResonator→ring
+    #    （D-11 已补上此缺口）；GratingCoupler 等 → 诚实 NotImplementedError
     try:
         from lda_l2.pdk import get_default_registry
         registry = get_default_registry()
-        fk = registry.list_pdks()[0]
-        prob = ir_to_design_problem(m_ring, registry, fk)
-        ok &= check(prob is not None and prob.objective_bid == "B11",
-                    "bridge 仍能由 RingResonator(v0.2) 构造 DesignProblem(B11)")
-    except Exception as e:  # 单 foundry 失败不致命（CI 环境差异）
-        print("WARN bridge 构造跳过：", e)
+        fk = [k for k in registry.list_pdks() if "量子" not in k][0]
+        m_wg = IRModel(domain="photon", name="wg-bridge",
+                       components=[Waveguide(id="wg", width=0.5)])
+        intent = ir_to_intent(m_wg, registry, fk)
+        ok &= check(intent["geometry_type"] == "waveguide_2d"
+                    and intent["materials"]["sih"] == registry.get(fk).n_si,
+                    "bridge 由 Waveguide IR 构造 waveguide_2d intent（foundry n_si 注入）")
+        rintent = ir_to_intent(m_ring, registry, fk)
+        ok &= check(rintent["geometry_type"] == "ring"
+                    and rintent["extra"]["target_fsr_nm"] == 9.15,
+                    "bridge 由 RingResonator(v0.2) 构造 ring intent（D-11 谱形闭环）")
+        try:
+            m_gc = IRModel(domain="photon", name="gc-bridge",
+                           components=[GratingCoupler(id="gc", period=0.63)])
+            ir_to_intent(m_gc, registry, fk)
+            ok &= check(False, "GratingCoupler 应诚实 NotImplementedError")
+        except NotImplementedError:
+            ok &= check(True,
+                        "GratingCoupler 桥接诚实 NotImplementedError"
+                        "（当前 DesignAgent 仅支持 Waveguide/RingResonator）")
+    except Exception as e:  # 环境差异不致命（CI 无 lda_agent 依赖）
+        print("WARN bridge 检查跳过：", e)
 
     # 6) 导出示例 JSON（IR = 事实源，机器语言落盘）
     out = {

@@ -173,6 +173,8 @@ class BandDesignAgent:
             "final_max_abs_err": (
                 final_verify.max_abs_err if final_verify else float("inf")),
             "scan_wavelengths_um": wavelengths_um,
+            "final_band_curves": (
+                final_verify.per_wavelength if final_verify else []),
             "loop_trace": trace,
             "verdict": self._verdict(accepted, final_verify, elapsed),
         }

@@ -99,6 +99,160 @@ def run_agent_loop(payload):
     return rep.to_dict()
 
 
+def run_band_loop(payload):
+    """D-03 多波长/宽带设计闭环（设计→仿真→验收 可视化）。
+
+    复用 multiband_loop.BandDesignAgent：agent 增减布拉格周期数，使整个
+    λ 扫描范围阻带达标（R≥threshold）且与 TMM 物理定律锚全波段谱形一致
+    （max|ΔR|≤tol）。返回逐波长 R 曲线供前端绘图。
+    """
+    from lda_agent import multiband_loop as mb
+
+    intent = {
+        "geometry_type": "bragg_mirror",
+        "materials": {"air": 1.0, "sih": 3.48, "silo": 1.44},
+        "target_wavelength_um": float(payload.get("lam0", 1.55)),
+        "target_metric": "R",
+        "threshold": float(payload.get("threshold", 0.99)),
+        "tolerance_rel": float(payload.get("tol", 0.02)),
+        "max_iterations": int(payload.get("max_iter", 12)),
+        "initial_periods": int(payload.get("periods", 6)),
+        "extra": {
+            "band_span_um": float(payload.get("band_span", 0.12)),
+            "band_points": int(payload.get("band_points", 11)),
+            "backend": "numpy",   # CI/演示机纯 numpy 可跑；GPU 机可改 torch
+        },
+    }
+    rep = mb.main_band(intent)
+    return rep
+
+
+def run_coupler_loop(payload):
+    """D-01 多端口耦合器件验收锚（设计→仿真→验收 可视化）。
+
+    方向耦合器（DC）：FDFD 超模法 ORACLE（κ、Lc）↔ FDTD 超模投影 κ_fdtd 交叉对拍；
+    对称 Y 分支分束器（YB）：对称性定理 ORACLE（50/50）↔ FDTD 两臂能流功率平衡度。
+
+    实时 FDTD 仅 torch CUDA 可跑（3D 大规模网格纯 numpy 在 CPU 上不可行/会挂起）；
+    无 GPU 时诚实退回「ORACLE 真值演示」：仍展示物理定律锚的真实数值，标注
+    “实时 FDTD 交叉对拍需在 GPU 演示机运行”。LLM 不进判决路径。
+    """
+    from lda_agent import coupler_loop as cl
+
+    kind = payload.get("kind", "ybranch")
+    if kind not in ("dc", "ybranch"):
+        return {"error": "kind 必须是 dc 或 ybranch", "passed": False}
+    gap = float(payload["gap"]) if payload.get("gap") is not None else None
+    sep = float(payload["sep"]) if payload.get("sep") is not None else None
+
+    use_torch = False
+    try:
+        import torch
+        use_torch = bool(torch.cuda.is_available())
+    except Exception:  # noqa: BLE001
+        use_torch = False
+
+    if use_torch:
+        t = cl.CouplerTarget(kind=kind, backend="torch")
+        if kind == "dc" and gap is not None:
+            t.gap_um = gap
+        if kind == "ybranch" and sep is not None:
+            t.sep_um = sep
+        out = cl.CouplerAgent().run(t)
+        d = out.to_dict()
+        d["mode"] = "live_fdtd"
+        return d
+
+    # ---- 无 GPU：ORACLE 真值演示（快速、不挂起、诚实标注）----
+    if kind == "dc":
+        w, h, nc, ncl, wl = 0.5, 0.22, 3.48, 1.44, 1.55
+        g = gap if gap is not None else 0.3
+        dl = wl / 24.0
+        eps3, meta = cl.build_coupler_field_3d(
+            w, h, g, nc, ncl, wl, dl=dl, clad_um=3.0, Lz_um=24.0)
+        orc = cl.fdfd_coupler_supermodes(
+            eps3[:, :, 0], meta["dl"], wl,
+            mask_a=meta["mask_a"], mask_b=meta["mask_b"])
+        return {
+            "kind": "dc", "mode": "oracle_only", "passed": None,
+            "label": "DC Si 500x220 gap=%.2fµm（FDFD 超模法 ORACLE）" % g,
+            "metrics": {
+                "gap_um": g,
+                "kappa_oracle": round(orc["kappa"], 5),
+                "Lc_oracle_um": round(orc["Lc_um"], 2),
+                "neff_s": round(orc["neff_s"], 4),
+                "neff_a": round(orc["neff_a"], 4),
+            },
+            "note": "无 GPU：仅展示 FDFD 超模法 ORACLE 真值（κ、Lc）。"
+                    "实时 FDTD 超模投影 κ_fdtd 交叉对拍需在 GPU 演示机运行。",
+        }
+    # ybranch
+    s = sep if sep is not None else 1.6
+    orc = cl.ybranch_oracle()
+    return {
+        "kind": "ybranch", "mode": "oracle_only", "passed": None,
+        "label": "YB Si 对称分束器 1x2（sep=%.1fµm，对称性定理 ORACLE）" % s,
+        "metrics": {
+            "sep_um": s,
+            "target_frac": orc["target_frac"],
+            "balance_abs": 0.0,
+        },
+        "note": "对称性定理 ORACLE：P1=P2=0.5·P_in（精确 50/50）。"
+                "实时 FDTD 两臂能流平衡度对拍需在 GPU 演示机运行。",
+    }
+
+
+def run_ir_demo(payload):
+    """D-05 L0 统一 IR（v0.2）真实渲染：用已落地的 lda_ir 构造器件 IR，
+    导出 DSL（机器优先中间表示）并跑静态校验，证明 IR 即设计事实源。
+
+    不跑 GPU 逆设计（逆设计闭环见上方 band/coupler 接口）；此处只展示
+    “同一套 IR 机器语言如何精确表达光子与量子器件”。
+    """
+    from lda_ir import (
+        DirectionalCoupler, SymmetricYBranch, RingResonator, Transmon,
+        IRModel, ObjectiveSpec, validate, to_dsl,
+    )
+
+    def build(kind_name, comp, bid):
+        # 包一个最小 IRModel：器件 + 一个合法 objective（满足 IR 必须含设计意图）
+        m = IRModel(components=[comp], nets=[],
+                    objectives=[ObjectiveSpec(bid=bid, target=0.99)])
+        try:
+            dsl = to_dsl(m)
+        except Exception as e:  # noqa: BLE001
+            dsl = "(DSL 序列化失败: %s)" % e
+        try:
+            errs = validate(m)
+        except Exception as e:  # noqa: BLE001
+            errs = ["校验异常: %s" % e]
+        return {
+            "kind": kind_name,
+            "dsl": dsl,
+            "validate_errors": errs,
+            "params": dict(comp.params),
+        }
+
+    examples = [
+        build("DirectionalCoupler（方向耦合器·D-01 验收锚）",
+              DirectionalCoupler(), "B2"),
+        build("SymmetricYBranch（对称 Y 分支分束器·D-01 验收锚）",
+              SymmetricYBranch(), "B2"),
+        build("RingResonator（环形谐振器·多波长闭环主器件）",
+              RingResonator(), "B11"),
+        build("Transmon（超导量子比特·量子频率骨架）",
+              Transmon(), "B9"),
+    ]
+    all_ok = all(len(e["validate_errors"]) == 0 for e in examples)
+    return {
+        "schema_version": IRModel().schema_version,
+        "all_valid": all_ok,
+        "examples": examples,
+        "note": "上述 IR 由 lda_ir（D-05 v0.2）实时构造并校验；耦合器/分束器 IR "
+                "是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。",
+    }
+
+
 def system_status():
     return {
         "layers": [
@@ -112,6 +266,7 @@ def system_status():
             {"id": "ui", "name": "L4 产品级实时 UI", "status": "built"},
         ],
         "benchmarks_total": len(BENCHMARK_DEFS),
+        "pdks_registered": len(get_default_registry().list_pdks()),
     }
 
 
@@ -161,18 +316,21 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_verify(payload))
             elif path == "/api/agent_loop":
                 self._send(200, run_agent_loop(payload))
+            elif path == "/api/band_loop":
+                self._send(200, run_band_loop(payload))
+            elif path == "/api/coupler_loop":
+                self._send(200, run_coupler_loop(payload))
+            elif path == "/api/ir_demo":
+                self._send(200, run_ir_demo(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
-                                 "message": "PDK 逆设计依赖 DesignProblem 抽象层，尚未实现（超前骨架）。"
-                                            "当前可用：/api/verify、/api/agent_loop。"})
+                                 "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"
+                                            "当前可用：/api/verify、/api/agent_loop、/api/band_loop、"
+                                            "/api/coupler_loop、/api/ir_demo。"})
             elif path == "/api/pdk_compare":
                 self._send(501, {"error": "not_implemented",
-                                 "message": "PDK 跨厂对比依赖 DesignProblem 抽象层，尚未实现（超前骨架）。"
-                                            "当前可用：/api/verify、/api/agent_loop。"})
-            elif path == "/api/ir_demo":
-                self._send(501, {"error": "not_implemented",
-                                 "message": "IR demo 依赖 DesignProblem 抽象层，尚未实现（超前骨架）。"
-                                            "当前可用：/api/verify、/api/agent_loop。"})
+                                 "message": "PDK 跨厂对比依赖 DesignProblem 抽象层，规划于 D-09；"
+                                            "当前可用：上方已落地的闭环接口。"})
             else:
                 self._send(404, {"error": "not found"})
         except Exception as e:  # noqa: BLE001

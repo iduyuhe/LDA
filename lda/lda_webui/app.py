@@ -208,6 +208,22 @@ def run_layout_pipeline(payload):
     }
 
 
+def run_design_pipeline(payload):
+    """D-19/D-20 一键设计流水线（webui ⑨ 面板）。
+
+    输入设计意图（器件 kind + 目标 FSR / 参数覆盖），自动完成逆设计 → 版图 →
+    DRC → 自动整改 → FDTD 仿真验收 → 设计包。返回完整报告 + 版图 SVG。
+    """
+    from lda_agent.design_pipeline import run_pipeline
+
+    kind = payload.get("kind", "RingResonator")
+    params = {k: float(v) for k, v in (payload.get("params") or {}).items()} or None
+    target_fsr = None
+    if payload.get("target_fsr"):
+        target_fsr = float(payload["target_fsr"])
+    return run_pipeline(kind, params=params, target_fsr_nm=target_fsr)
+
+
 def run_coupler_loop(payload):
     """D-01 多端口耦合器件验收锚（设计→仿真→验收 可视化）。
 
@@ -403,6 +419,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_ring_loop(payload))
             elif path == "/api/layout_pipeline":
                 self._send(200, run_layout_pipeline(payload))
+            elif path == "/api/design_pipeline":
+                self._send(200, run_design_pipeline(payload))
             elif path == "/api/coupler_loop":
                 self._send(200, run_coupler_loop(payload))
             elif path == "/api/ir_demo":

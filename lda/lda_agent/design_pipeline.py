@@ -109,6 +109,7 @@ def run_pipeline(kind: str = "RingResonator",
     report = {
         "kind": kind,
         "final_params": params,
+        "layout_svg": svg,
         "inverse_design": ({"target_fsr_nm": target_fsr_nm,
                             "R_um": params.get("R")}
                            if target_fsr_nm else None),

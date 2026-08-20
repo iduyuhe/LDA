@@ -220,6 +220,33 @@
   </div>
 
   <div class="sec">
+    <h2>⑨ 一键设计流水线（D-19）</h2>
+    <div class="hint">输入设计意图 → 自动完成：逆设计（Ring FSR→R）→ 版图 GDS → DRC 自查 → agent 自动整改 → FDTD 仿真验收 → 设计包。一条命令交付"可制造 + 已仿真验收"的设计。</div>
+    <div class="row">
+      <label>器件
+        <select id="dpKind">
+          <option>RingResonator</option>
+          <option>Waveguide</option>
+          <option>DirectionalCoupler</option>
+          <option>SymmetricYBranch</option>
+        </select>
+      </label>
+      <label>目标 FSR (nm, 仅环形逆设计)
+        <input type="number" id="dpFsr" value="9.15" step="0.05" min="1" max="50" style="width:90px"/>
+      </label>
+      <label>参数覆盖 (k=v,逗号分隔)
+        <input type="text" id="dpParams" placeholder="gap=0.1 演示自动整改" style="width:200px"/>
+      </label>
+      <button class="btn" id="runDp">一键设计交付</button>
+    </div>
+    <div id="dpSummary" class="summary"></div>
+    <div id="dpSteps"></div>
+    <div id="dpSvg" style="margin-top:10px"></div>
+    <div id="dpBody"></div>
+    <div class="conclusion" id="dpConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 · 机器优先中间表示）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -495,6 +522,37 @@ function renderLp(d){
   $('lpConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}`;
 }
 $('runLp').onclick = runLp;
+
+// ---- ⑨ D-19 一键设计流水线 ----
+async function runDp(){
+  const btn = $('runDp'); btn.disabled = true;
+  $('dpSummary').innerHTML = '<span class="spin"></span> 正在跑一键设计流水线（逆设计→版图→DRC→整改→仿真→验收）…';
+  try{
+    const d = await api('/api/design_pipeline', {
+      kind: $('dpKind').value,
+      target_fsr: parseFloat($('dpFsr').value),
+      params: parseParams($('dpParams').value),
+    });
+    renderDp(d);
+  }catch(e){ $('dpSummary').textContent = '错误：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderDp(d){
+  $('dpSummary').innerHTML = `器件：<b>${d.kind}</b> · 最终参数：${JSON.stringify(d.final_params)} · 全链路 <span class="verdict ${d.accepted?'ok':'fail'}">${d.accepted?'PASS':'FAIL'}</span>`;
+  $('dpSteps').innerHTML = `<div class="summary">流水线步骤（共 ${d.steps.length} 步）：</div>` +
+    d.steps.map(s=>`<div class="note">· ${s}</div>`).join('');
+  $('dpSvg').innerHTML = d.layout_svg || '';
+  let extra = '';
+  if(d.inverse_design) extra += `<div class="summary">逆设计：目标 FSR=<b>${d.inverse_design.target_fsr_nm}</b>nm → R=<b>${fmt(d.inverse_design.R_um)}µm</b></div>`;
+  if(d.drc_fix && d.drc_fix.length) extra += `<div class="summary">agent 自动整改轨迹（初始违规→可制造）：</div><table>
+    <tr><th>轮</th><th>违规数</th><th>违规明细</th></tr>
+    ${d.drc_fix.map(s=>`<tr><td>${s.iteration}</td><td>${s.n_violations}</td><td>${s.violations.join('; ')}</td></tr>`).join('')}
+  </table>`;
+  extra += `<div class="summary">DRC：<span class="verdict ${d.drc.passed?'ok':'fail'}">${d.drc.passed?'PASS':'FAIL'}</span> · 仿真：neff(FDTD)=<b>${fmt(d.sim.neff_fdtd)}</b> vs ORACLE ${fmt(d.sim.neff_oracle)} · rel=${fmt(d.sim.rel_err)} → <span class="verdict ${d.sim.passed?'ok':'fail'}">${d.sim.passed?'PASS':'FAIL'}</span></div>`;
+  $('dpBody').innerHTML = extra;
+  $('dpConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}`;
+}
+$('runDp').onclick = runDp;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

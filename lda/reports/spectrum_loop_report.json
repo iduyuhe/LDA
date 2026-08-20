@@ -1,0 +1,55 @@
+{
+  "d24": "spectrum inverse-design framework",
+  "checks": [
+    {
+      "key": "ring",
+      "ok": true,
+      "msg": "ring 实例 PASS：ring-fsr 谱形设计达标：R_um=9.9498，特征=9.150000 vs 目标 9.150000（误差 1.85e-08 ≤ 0.03），方法一致性"
+    },
+    {
+      "key": "ring_R",
+      "ok": true,
+      "msg": "R=9.9498µm（理论 9.9498，误差 0.0000µm）"
+    },
+    {
+      "key": "ring_dual",
+      "ok": true,
+      "msg": "谱形误差 0.00e+00 ≤ 0.03，方法一致性 0.00e+00 ≤ 0.02"
+    },
+    {
+      "key": "plug_and_play",
+      "ok": true,
+      "msg": "即插即用实例（n_g=4.18）PASS：R=9.9974µm（vs n_g=4.2 的 9.9498µm，工艺窗口驱动落点差异）"
+    },
+    {
+      "key": "ppl_diff",
+      "ok": true,
+      "msg": "不同工艺窗口收敛到不同 R（非走过场）"
+    },
+    {
+      "key": "bragg",
+      "ok": true,
+      "msg": "bragg 实例 PASS：bragg-band 谱形设计达标：periods=6.0000，特征=0.999811 vs 目标 0.990000（误差 0.00e+00 ≤ 0.99），"
+    },
+    {
+      "key": "bragg_R",
+      "ok": true,
+      "msg": "N=6，R_min=0.99981 ≥ 0.99"
+    },
+    {
+      "key": "bragg_tol",
+      "ok": true,
+      "msg": "逐点 max|ΔR|=7.6e-05 ≤ 0.02（与 D-03 verify_band 同式）"
+    },
+    {
+      "key": "mode_match",
+      "ok": true,
+      "msg": "match 模式：|m−t|/t"
+    },
+    {
+      "key": "mode_threshold",
+      "ok": true,
+      "msg": "threshold 模式：达标 0 / 未达 (t−m)/t"
+    }
+  ]
+}

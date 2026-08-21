@@ -4,7 +4,7 @@
   "kind": "readout_chain",
   "domain": "hybrid",
   "title": "光子-量子混合链路 · 芯片级 dispersive readout",
-  "created_at": "2026-08-21T14:06:38",
+  "created_at": "2026-08-21T14:18:49",
   "ir": {
     "schema_version": "0.3",
     "domain": "hybrid",

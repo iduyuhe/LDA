@@ -4,11 +4,12 @@
   "kind": "quantum",
   "domain": "quantum",
   "title": "量子逆设计包（Transmon）",
-  "created_at": "2026-08-21T14:06:38",
+  "created_at": "2026-08-21T14:18:49",
   "ir": {
     "schema_version": "0.3",
-    "physics_bid": "B9",
-    "physics_kind": "transmon-f01",
+    "domain": "quantum",
+    "n_components": 1,
+    "n_nets": 0,
     "validate_errors": []
   },
   "design": {

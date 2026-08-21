@@ -67,6 +67,21 @@
 - README：能力阶梯表 D-36~D-60、新增「PDK 标定库」章节、快速开始 11 步（⑧ 升级 --grid 全网格模式）
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 10 项枚举，延续）
 
+## v0.3.2（2026-08-22 · 待 tag）
+
+**里程碑：方向耦合器 × 量子读出——光子分束网络供电量子读出控制线（D-63）**
+
+- **D-63 方向耦合器 × 量子读出（新 kind=splitter_readout）**：新增 `lda_agent/splitter_readout.py`——**二叉树级联 DC 分束网络**（权重二分递归建树，每级 target_cross=右子树权重/节点权重，每级 D-55 `design_coupler` **真实 2D FDTD 设计闭环**，级联功率=路径 FDTD 实测分束比之积）→ **readout_power_budget**（每 qubit 有效 n̄=nbar0×p_actual，P∝n̄、SNR∝√n̄，D-47 复用）→ **统一 IR 网表**（power+DC×m+Transmon×N+Resonator×N+objectives）→ 联合验收（分束命中 Δ≤0.05/SNR≥3.0/F≥0.98/IR/诚实标注光↔微波拓扑同构、物理独立）。实测 3 qubit：2 级 DC（dc1 1/3→FDTD 0.337、dc2 1/2→FDTD 0.502）→ 功率分配 [0.330/0.333/0.337]（Δ≤0.0034）→ SNR∈[3.95,3.99] F∈[0.9996]；4 qubit 3 级 DC PASS；负例（极端权重/低 nbar0/长度不匹配）正确 FAIL；**设计包 11 kind**。
+
+### 新增/变更（v0.3.2）
+
+- `lda_agent/`：splitter_readout.py（方向耦合器 × 量子读出联合设计）
+- `lda_design` + spec/schema：kind 10 → **11**（加 `splitter_readout`，spec §4 注册表 / §9 枚举 / 变更记录 0.1.6 同步）
+- WebUI：二十六 → **二十七面板**（㉗ 方向耦合器×量子读出：DC 网络 / 功率分配 / 每 qubit 预算，首屏自动演示纳入）
+- API：`/api/splitter_readout`（nbar0/delta/g/kappa_r/T1_us/eta/N_amp/weights 全透传）
+- README：能力阶梯表加 D-63 行、二十七面板、11 kind、快速开始 12 步（新增 ⑨ splitter_readout）
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

@@ -60,12 +60,13 @@ L4  统一交付          lda_design/ 设计包规范（DesignPackage schema v0.
 | D-57 | **耦合器 × WDM 组合** | **FDTD 标定 PDK 文件驱动 gap** → WDM 验收全过 + 诚实报告解析偏差 4.6 倍 |
 | D-59 | **波长相关标定库** | κ_c(gap,λ) 二维：每信道按 λ 独立 k_ring，实测增幅 ~27% 物理正确 |
 | D-60 | **κ_c(gap,λ) 全网格标定库** | **双线性插值查表**（9 点全网格）替代分离变量近似，无需任何解析假设 |
+| D-63 | **方向耦合器 × 量子读出** | 光子**分束网络供电量子读出控制线**：级联功率=**FDTD 实测分束比之积** → 每 qubit n̄ 缩放 → SNR/F 预算（Δ≤0.003，F≥0.9996）|
 
-## WebUI（二十六面板，设计闭环可视化）
+## WebUI（二十七面板，设计闭环可视化）
 
 LDA 自带零依赖 WebUI（`python lda/lda_webui/deploy.py start`，默认 `http://127.0.0.1:8787`），首屏自动演示全部闭环：
 
-`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM（标定库驱动：gap/波长/全网格三模式）`
+`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM（标定库驱动：gap/波长/全网格三模式）` `㉗方向耦合器×量子读出（分束网络供电控制线）`
 
 ## PDK 标定库（真实 FDTD 实测沉淀，设计时秒级加载）
 
@@ -79,11 +80,11 @@ bus↔ring 耦合本质是方向耦合器——κ_c 由 2D FDTD（D-55 双点标
 
 三种模式（`wdm_coupler` CLI/API 可选，优先级 grid > wavelength > gap 一维），每信道独立 k_ring = sin(κ_c·L_couple)，最弱耦合保守验收；诚实标注 L_couple=2√(2R·gap) 为环形耦合近似，并显式报告 FDTD 校准 vs 解析假设偏差（D-57 实测解析偏乐观 4.6 倍）。
 
-## 统一设计包规范（对外标准 · 10 kind）
+## 统一设计包规范（对外标准 · 11 kind）
 
 - 正式规范文档：[docs/design_package_spec.md](docs/design_package_spec.md)（schema 定义 / kind 注册表 / 校验规则 / 扩展指南）
 - 机器可读 JSON Schema：[docs/design_package_schema.json](docs/design_package_schema.json)（draft-07，jsonschema 校验全部 kind conforms）
-- kind：`add_drop` `quantum` `wdm` `readout_chain` `multiqubit` `readout_fidelity` `multiqubit_fidelity` `mixed_system` `coupler` `wdm_coupler`
+- kind：`add_drop` `quantum` `wdm` `readout_chain` `multiqubit` `readout_fidelity` `multiqubit_fidelity` `mixed_system` `coupler` `wdm_coupler` `splitter_readout`
 
 ## 目录结构
 
@@ -95,7 +96,7 @@ lda/                     核心软件包（主权求解器 + agent + 设计引�
   lda_ir/                统一 IR（光子+量子，schema v0.3，PhysicsAnchor）
   lda_l2/                器件库（已验证资产）+ GDS 编码器 + DRC + 版图仿真
   lda_harness/           确定性比对裁判（13 标准题物理定律锚 B1-B13）
-  lda_webui/             零依赖 WebUI（二十六面板）
+  lda_webui/             零依赖 WebUI（二十七面板）
 docs/                    design_package_spec.md + design_package_schema.json
 ```
 
@@ -126,13 +127,16 @@ python -m lda.lda_agent.directional_coupler --target_cross 0.5 --gap 0.3
 # ⑧ 耦合器 × WDM 组合（FDTD 标定 PDK 文件驱动 gap 选择；--wavelength 波长相关 / --grid 全网格双线性插值）
 python -m lda.lda_agent.wdm_coupler --channels "1550,1553,1556" --gap_scan "0.25,0.30,0.35" --grid
 
-# ⑨ 确定性比对裁判（13 标准题物理定律锚）
+# ⑨ 方向耦合器 × 量子读出（光子分束网络供电量子读出控制线）
+python -m lda.lda_agent.splitter_readout --f01s "4.8,5.0,5.2"
+
+# ⑩ 确定性比对裁判（13 标准题物理定律锚）
 python lda/run_harness.py --ai
 
-# ⑩ GPU 实跑激活（L2-B 第三步：CUDA 检测 → 5 例锚 selfcheck → cuda↔cpu bit-equivalent 互证 → 加速比）
+# ⑪ GPU 实跑激活（L2-B 第三步：CUDA 检测 → 5 例锚 selfcheck → cuda↔cpu bit-equivalent 互证 → 加速比）
 python lda/lda_solver/activate_gpu_fdtd3d.py
 
-# ⑪ WebUI（二十六面板，首屏自动演示）
+# ⑫ WebUI（二十七面板，首屏自动演示）
 python lda/lda_webui/deploy.py start --port 8787
 ```
 

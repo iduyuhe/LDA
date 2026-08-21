@@ -4,7 +4,7 @@
   "kind": "multiqubit",
   "domain": "hybrid",
   "title": "3-qubit 频率复用读出（光子-量子混合系统）",
-  "created_at": "2026-08-21T14:32:11",
+  "created_at": "2026-08-21T15:13:44",
   "ir": {
     "schema_version": "0.3",
     "domain": "hybrid",

@@ -24,6 +24,18 @@
       "passed": true,
       "schema_ok": true,
       "schema_errors": []
+    },
+    "multiqubit": {
+      "package_id": "multiqubit-3q",
+      "passed": true,
+      "schema_ok": true,
+      "schema_errors": []
+    },
+    "readout_fidelity": {
+      "package_id": "readout-fidelity-f015.0-t120.0",
+      "passed": true,
+      "schema_ok": true,
+      "schema_errors": []
     }
   },
   "all_schema_ok": true

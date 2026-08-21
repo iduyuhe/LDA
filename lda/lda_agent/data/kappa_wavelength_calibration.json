@@ -1,0 +1,35 @@
+{
+  "name": "LDA kappa_c(wavelength) PDK 标定（方向耦合器 2D FDTD, D-57 方法, gap=0.3µm 基线）",
+  "created_at": "2026-08-21T21:38:22",
+  "w_um": 0.5,
+  "n_core": 3.48,
+  "n_clad": 1.44,
+  "gap_um": 0.3,
+  "dl_factor": 20,
+  "dl_um": 0.0775,
+  "method": "kappa_c 双点差分标定（D-55 dc_transmission_spectrum 复用）",
+  "points": [
+    {
+      "wl_um": 1.5,
+      "kappa_c_rad_um": 0.02132,
+      "cf1": 0.157,
+      "cf2": 0.674,
+      "winding": false
+    },
+    {
+      "wl_um": 1.55,
+      "kappa_c_rad_um": 0.02411,
+      "cf1": 0.192,
+      "cf2": 0.78,
+      "winding": false
+    },
+    {
+      "wl_um": 1.6,
+      "kappa_c_rad_um": 0.02701,
+      "cf1": 0.238,
+      "cf2": 0.877,
+      "winding": false
+    }
+  ],
+  "note": "κ_c 随 λ 单调增大（λ 大 → 模式扩展 → 耦合强）；D-59 实测 1.50→1.60 增幅 ~27%；WDM 波长相关模式每信道按 λ 插值取 κ_c（gap 分辨率受 dl 限制，波长趋势可靠）。"
+}

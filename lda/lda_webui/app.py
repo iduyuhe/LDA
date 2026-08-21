@@ -797,8 +797,10 @@ def run_wdm_coupler(payload=None):
     if ch is None or gs is None or len(ch) < 2 or not gs:
         return {"ok": False,
                 "error": "channels(≥2) / gap_scan 须为逗号分隔数值列表"}
+    wl = bool(payload.get("wavelength", False))
     try:
-        rep = design_wdm_with_coupler(ch, gap_scan=gs)
+        rep = design_wdm_with_coupler(ch, gap_scan=gs,
+                                      wavelength_calibrated=wl)
         rep["ok"] = True
         return rep
     except Exception as e:  # noqa: BLE001

@@ -306,7 +306,7 @@
 
   <div class="sec">
     <h2>⑬ 器件库验收（D-12/D-32 · 已验证器件 + 真实 FDTD 入口）</h2>
-    <div class="hint">D-12 器件库把已验证器件固化为可复用资产（参数窗口 + D-04 统一验收契约 + 求解器），D-32 为 Ring 挂上真实 FDTD 验收，D-34 延伸至 Waveguide / BraggMirror——器件库每个成员都有一等真实物理验证入口。面板展示：器件全景表（验收锚 / 参数窗口 / live_weight / 需 GPU）+ 每器件 contract 契约状态 + Ring/WG/Bragg 三器件真实 FDTD 双验证（解析契约设计目标命中 + 真实 FDTD 物理行为自洽）。</div>
+    <div class="hint">D-12 器件库把已验证器件固化为可复用资产（参数窗口 + D-04 统一验收契约 + 求解器），D-32 为 Ring 挂上真实 FDTD 验收，D-34 延伸至 Waveguide / BraggMirror——器件库每个成员都有一等真实物理验证入口；D-35 进一步把量子域 Transmon 也带上一等真实物理验证入口（Koch 解析 ↔ 严格对角化，与光子栈同构）。面板展示：器件全景表（验收锚 / 参数窗口 / live_weight / 需 GPU）+ 每器件 contract 契约状态 + Ring/WG/Bragg 三器件真实 FDTD 双验证 + Transmon 量子双验证（解析契约设计目标命中 + 真实数值物理行为自洽）。</div>
     <div class="row">
       <button class="btn" id="runDevLib">加载器件库验收</button>
     </div>
@@ -315,6 +315,7 @@
     <div id="dlRing"></div>
     <div id="dlWG"></div>
     <div id="dlBragg"></div>
+    <div id="dlQuantum"></div>
     <div class="conclusion" id="dlConclusion"></div>
   </div>
 
@@ -802,6 +803,19 @@ function renderDevLib(d){
   } else {
     $('dlBragg').innerHTML = '<div class="note">BraggMirror 真实 FDTD 双验证数据不可用</div>';
   }
+  // 量子 Transmon 双验证区（D-35 实质推进）
+  const tf = d.transmon_fdtd, tc = d.transmon_contract;
+  if(tf && tc){
+    const tnum = tf.numerical || {}, tac = tf.analytic_contract || {};
+    $('dlQuantum').innerHTML = `<div class="summary">Transmon 双验证（D-35 量子域实质推进）：</div>
+      <div class="note">① 解析契约（B9 Koch 反解命中设计目标）：target f01=<b>${fmt(tac.target_f01_ghz)}</b>GHz → 反解 E_J=<b>${fmt(tac.ej_hit)}</b>（落 EJ_bounds，hit_err=<b>${fmt(tac.b9_hit_err)}</b>）· <span class="verdict ${tac.analytic_hit?'ok':'fail'}">${tac.analytic_hit?'PASS':'FAIL'}</span></div>
+      <div class="note">② 真实数值（物理行为自洽，transmon 哈密顿量严格对角化）：f01=<b>${fmt(tnum.f01_diag)}</b>GHz ↔ Koch 解析 <b>${fmt(tnum.f01_koch)}</b>GHz · rel=<b>${(tnum.rel_err*100).toFixed(2)}%</b> ≤ ${(tnum.tol_rel*100).toFixed(0)}% · <span class="verdict ${tnum.accepted?'ok':'fail'}">${tnum.accepted?'PASS':'FAIL'}</span></div>
+      <div class="note">辅助物理自洽：anharmonicity α=<b>${fmt(tnum.alpha_diag)}</b>GHz（Koch≈<b>${fmt(tnum.alpha_koch)}</b>，量级一致；严格对角化更负为真值）</div>
+      ${transmonLevelsSvg(tf)}
+      <div class="conclusion"><strong>结论：</strong>${tf.verdict}</div>`;
+  } else {
+    $('dlQuantum').innerHTML = '<div class="note">Transmon 量子双验证数据不可用</div>';
+  }
   $('dlConclusion').innerHTML = `<strong>器件库定位：</strong>设计者/agent/webui/PDK 接入按名字取用已验证器件，无需重写接线——每器件带参数窗口 + 统一验收契约 + 真实物理验证入口（LLM 不进判决路径）。${d.note||''}`;
 }
 function ringSpectrumSvg(rf){
@@ -844,6 +858,28 @@ function braggSpectrumSvg(rf){
   </svg>`;
 }
 function bfdtd_tol(rf){ return ((rf.fdtd&&rf.fdtd.tol_abs)?(rf.fdtd.tol_abs*100).toFixed(0):'2')+'%'; }
+function transmonLevelsSvg(tf){
+  const lev = (tf.numerical && tf.numerical.levels_ghz) || [];
+  if(!lev.length) return '';
+  const W=580, H=240, pad=42;
+  const emin=lev[0], emax=lev[lev.length-1], span=(emax-emin)||1;
+  const Y=e=> H-pad - (e-emin)/span*(H-2*pad);
+  const rows = lev.map((e,i)=>{
+    const y=Y(e).toFixed(1);
+    const lbl = i===0?'E0 基态': (i===1?`E1 · f01=${(lev[1]-lev[0]).toFixed(3)}`:`E${i}`);
+    return `<line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="#7c3aed" stroke-width="2"/>
+      <text x="${pad-6}" y="${(parseFloat(y)+3).toFixed(1)}" fill="#7c3aed" font-size="10" text-anchor="end">${lbl}</text>
+      <text x="${W-pad+6}" y="${(parseFloat(y)+3).toFixed(1)}" fill="#8aa0c6" font-size="10">${e.toFixed(3)}</text>`;
+  }).join('');
+  const y0=Y(lev[0]).toFixed(1), y1=Y(lev[1]).toFixed(1), ym=((parseFloat(y0)+parseFloat(y1))/2).toFixed(1);
+  const arrow = `<line x1="${pad+26}" y1="${y0}" x2="${pad+26}" y2="${y1}" stroke="#e91e63" stroke-width="2"/>
+    <text x="${pad+30}" y="${ym}" fill="#e91e63" font-size="10">f01</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;margin-top:8px">
+    ${rows}
+    ${arrow}
+    <text x="${pad+4}" y="${pad-20}" fill="#7c3aed" font-size="11">Transmon 能级（电荷 basis 严格对角化，纯 numpy）· 标记 f01 跃迁</text>
+  </svg>`;
+}
 $('runDevLib').onclick = runDevLib;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----

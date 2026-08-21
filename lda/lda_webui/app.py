@@ -269,7 +269,9 @@ def run_device_library_demo(payload=None):
 
     返回：器件库全景（5 器件：验收锚 / 参数窗口 / live_weight / 需 GPU /
     IR kind）+ 每器件 contract 快验收状态 + Ring 真实 FDTD 双验证（预计算
-    D-32 smoke live 结果：解析契约 + FDTD drop 谱 4 峰 / FSR 对拍）。
+    D-32 smoke live 结果：解析契约 + FDTD drop 谱 4 峰 / FSR 对拍）+ WG/Bragg
+    真实 FDTD 双验证（D-34 预计算）+ 量子 Transmon 双验证（D-35：Koch 解析
+    契约 + 严格对角化自洽，现场跑，纯 numpy 秒级）。
     """
     from lda_l2.device_library import get_default_library
     lib = get_default_library()
@@ -333,6 +335,18 @@ def run_device_library_demo(payload=None):
                          "fdtd3d_import": o["checks"]["fdtd3d_import"]}
     except Exception as e:  # noqa: BLE001
         bragg_analytic = {"passed": False, "error": str(e)[:80]}
+    # 量子域 Transmon 双验证（D-35 实质推进）：现场跑 Koch 解析契约 + 严格对角化
+    # 自洽（纯 numpy 对角化 <1s，零 GPU），与光子 D-32/D-34 同构
+    transmon = None
+    transmon_contract = None
+    try:
+        transmon = lib.verify_transmon(mode="live")
+    except Exception as e:  # noqa: BLE001
+        transmon = {"passed": False, "error": str(e)[:80]}
+    try:
+        transmon_contract = lib.verify_transmon(mode="contract")
+    except Exception as e:  # noqa: BLE001
+        transmon_contract = {"passed": False, "error": str(e)[:80]}
     return {
         "available": True,
         "devices": summary,
@@ -343,9 +357,13 @@ def run_device_library_demo(payload=None):
         "bragg_fdtd": (wg_bragg_fdtd or {}).get("bragg") if wg_bragg_fdtd else None,
         "wg_analytic": wg_analytic,
         "bragg_analytic": bragg_analytic,
+        "transmon_fdtd": transmon,
+        "transmon_contract": transmon_contract,
         "note": "Ring/WG/Bragg 真实 FDTD 双验证：FDTD 层用预计算演示数据"
                 "（D-28 Ring / D-34 WG-Bragg，纯 numpy 离线生成），"
-                "解析契约层现场快跑（秒级）；实时重算 Ring 需 GPU 不阻塞 HTTP",
+                "解析契约层现场快跑（秒级）；量子 Transmon 双验证（D-35）"
+                "现场跑 Koch 解析 + 严格对角化自洽（纯 numpy，<1s，零 GPU）；"
+                "实时重算 Ring 需 GPU 不阻塞 HTTP",
     }
 
 

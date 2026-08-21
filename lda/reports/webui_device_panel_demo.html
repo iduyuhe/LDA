@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LDA 器件库真实物理验证面板（演示证据 · D-34/D-35）</title>
+<style>
+body{font-family:-apple-system,Segoe UI,Roboto,'Microsoft YaHei',sans-serif;background:#f5f7fb;color:#1f2a44;margin:0;padding:24px;}
+.wrap{max-width:920px;margin:0 auto;}
+h1{font-size:22px;color:#1f2a44;border-left:4px solid #2563eb;padding-left:10px;margin-bottom:4px;}
+.sub{color:#5b6b8c;font-size:13px;margin:0 0 18px;}
+.sec{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin:14px 0;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.sec h2{font-size:16px;margin:0 0 10px;color:#23304d;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th,td{border:1px solid #e2e8f0;padding:6px 8px;text-align:left;vertical-align:top;}
+th{background:#eff6ff;color:#1e3a8a;}
+.note{color:#5b6b8c;font-size:12.5px;margin:5px 0;line-height:1.5;}
+.summary{font-weight:600;color:#23304d;margin-bottom:6px;}
+.conclusion{margin-top:10px;padding:8px 10px;background:#f1f5f9;border-left:3px solid #2563eb;border-radius:4px;font-size:13px;}
+.v{padding:1px 7px;border-radius:4px;font-size:12px;font-weight:600;}
+.ok{background:#dcfce7;color:#166534;}
+.fail{background:#fee2e2;color:#991b1b;}
+</style></head>
+<body><div class="wrap">
+<h1>LDA 器件库真实物理验证面板</h1>
+<p class="sub">演示证据固化页 · 与 WebUI ⑬ 面板同源数据（D-34 WG/Bragg + D-35 量子 Transmon）· 生成于本地自举求解器，零 GPU 依赖（Ring 除外）</p>
+
+<div class="sec"><h2>器件全景表（D-12 固化 · D-04 统一契约）</h2>
+<table><tr><th>器件</th><th>验收锚</th><th>参数窗口</th><th>契约</th><th>live_weight</th><th>需 GPU</th></tr>
+<tr><td><b>DirectionalCoupler</b><br><span class='note'>IR:DirectionalCoupler</span></td><td>κ</td><td>gap∈[0.1,0.6] ; Lc∈[1.0,60.0] ; kappa_target∈[0.0,0.5]</td><td><span class='v ok'>PASS</span></td><td>light</td><td>是</td></tr><tr><td><b>SymmetricYBranch</b><br><span class='note'>IR:SymmetricYBranch</span></td><td>power_frac</td><td>width∈[0.3,1.0] ; split_angle∈[1.0,30.0] ; arm_length∈[1.0,20.0]</td><td><span class='v ok'>PASS</span></td><td>light</td><td>是</td></tr><tr><td><b>Waveguide</b><br><span class='note'>IR:Waveguide</span></td><td>neff</td><td>width∈[0.35,0.75]</td><td><span class='v ok'>PASS</span></td><td>heavy</td><td>否</td></tr><tr><td><b>RingResonator</b><br><span class='note'>IR:RingResonator</span></td><td>FSR</td><td>R∈[8.0,12.0] ; Q∈[1000.0,100000.0] ; kappa∈[0.0,0.5]</td><td><span class='v ok'>PASS</span></td><td>light</td><td>否</td></tr><tr><td><b>BraggMirror</b><br><span class='note'>IR:—</span></td><td>R_min</td><td>periods∈[1,12]</td><td><span class='v ok'>PASS</span></td><td>heavy</td><td>否</td></tr></table></div>
+
+<div class="sec"><h2>RingResonator 双验证（解析契约 + 真实 FDTD）</h2><div class='summary'>RingResonator 双验证（D-27/D-31/D-32）：</div><div class='note'>① 解析契约（RING-fsr）：candidate FSR=9.14979nm vs oracle 9.14979nm · err=0.00000 ≤ tol 0.02 · <span class='v ok'>PASS</span></div><div class='note'>② 真实 FDTD（R=6.0µm）：drop 谱 4 谐振峰 · FSR(FDTD)=17.14000nm vs 解析 18.31300nm · rel=6.41% ≤ 0% · <span class='v ok'>PASS</span></div><div class='conclusion'><strong>结论：</strong>环形 FDTD 谱形验收 PASS：R=6.0µm，drop 谱 4 个谐振峰，FSR(FDTD)=17.14nm vs 解析 18.31nm（相对 6.4% ≤ 容差）。真实 FDTD 仿真 ↔ 解析锚一致，结果已可由「人」验收。</div></div>
+<div class="sec"><h2>Waveguide 双验证（解析 slab 契约 + 真实 FDTD neff）</h2><div class='summary'>Waveguide 双验证（D-32 延伸 / D-34）：</div><div class='note'>① 解析契约（slab 闭式）：slab neff=3.27562（物理区间）· <span class='v ok'>PASS</span></div><div class='note'>② 真实 FDTD（2D-TE）：neff=3.22997 ↔ slab ORACLE 3.27562 · rel=1.39% ≤ 2% · <span class='v ok'>PASS</span></div><div class='conclusion'><strong>结论：</strong>波导 FDTD 双验证 PASS（解析 slab 契约物理合理 + FDTD neff=3.22997 ↔ slab=3.27562 rel=1.39% ≤ 2%）</div></div>
+<div class="sec"><h2>BraggMirror 双验证（解析 TMM 契约 + 真实 FDTD 阻带）</h2><div class='summary'>BraggMirror 双验证（D-32 延伸 / D-34）：</div><div class='note'>① 解析契约（TMM 闭式）：R_min(TMM)=0.99986（高反设计目标）· <span class='v ok'>PASS</span></div><div class='note'>② 真实 FDTD（3D）：R_min=0.99981 ↔ TMM 0.99986 · abs=4.40e-05 ≤ 2% · <span class='v ok'>PASS</span></div><svg viewBox="0 0 580 200" width="100%" style="max-width:580px;margin-top:8px">
+<line x1="38" y1="162" x2="542" y2="162" stroke="#26304d"/>
+<line x1="38" y1="38" x2="38" y2="162" stroke="#26304d"/>
+<polyline points="38.0,162.0 88.4,162.0 138.8,162.0 189.2,162.0 239.6,162.0 290.0,162.0 340.4,162.0 390.8,162.0 441.2,162.0 491.6,162.0 542.0,162.0" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="5 3"/>
+<polyline points="38.0,162.0 88.4,162.0 138.8,162.0 189.2,162.0 239.6,162.0 290.0,162.0 340.4,162.0 390.8,162.0 441.2,162.0 491.6,162.0 542.0,162.0" fill="none" stroke="#e91e63" stroke-width="2"/>
+<text x="42" y="40" fill="#e91e63" font-size="11">Bragg 透射谱（TMM 虚线 / FDTD 实线）· 真实 FDTD 与解析 TMM 自洽</text>
+<text x="38" y="190" fill="#8aa0c6" font-size="11">λ=1.4300µm</text>
+<text x="542" y="190" fill="#8aa0c6" font-size="11" text-anchor="end">λ=1.6700µm</text>
+</svg><div class='conclusion'><strong>结论：</strong>布拉格 FDTD 双验证 PASS（解析 TMM 契约物理合理 + FDTD R_min=0.99981 ↔ TMM=0.99986 abs=4.45e-05 ≤ 2%）</div></div>
+<div class="sec"><h2>Transmon 双验证（量子域 · Koch 解析 ↔ 严格对角化）</h2><div class='summary'>Transmon 双验证（D-35 量子域实质推进）：</div><div class='note'>① 解析契约（B9 Koch 反解命中设计目标）：target f01=5.00000GHz → 反解 E_J=11.70420（落 EJ_bounds，hit_err=0.00000）· <span class='v ok'>PASS</span></div><div class='note'>② 真实数值（transmon 哈密顿量严格对角化）：f01=4.97984GHz ↔ Koch 解析 5.00000GHz · rel=0.40% ≤ 3% · <span class='v ok'>PASS</span></div><div class='note'>辅助物理自洽：anharmonicity α=-0.35423GHz（Koch≈-0.30000，量级一致）</div><svg viewBox="0 0 580 240" width="100%" style="max-width:580px;margin-top:8px">
+<line x1="42" y1="198.0" x2="538" y2="198.0" stroke="#7c3aed" stroke-width="2"/>
+<text x="36" y="201.0" fill="#7c3aed" font-size="10" text-anchor="end">E0 基态</text>
+<text x="544" y="201.0" fill="#8aa0c6" font-size="10">-9.132</text>
+<line x1="42" y1="153.3" x2="538" y2="153.3" stroke="#7c3aed" stroke-width="2"/>
+<text x="36" y="156.3" fill="#7c3aed" font-size="10" text-anchor="end">E1 · f01=4.980</text>
+<text x="544" y="156.3" fill="#8aa0c6" font-size="10">-4.152</text>
+<line x1="42" y1="111.8" x2="538" y2="111.8" stroke="#7c3aed" stroke-width="2"/>
+<text x="36" y="114.8" fill="#7c3aed" font-size="10" text-anchor="end">E2</text>
+<text x="544" y="114.8" fill="#8aa0c6" font-size="10">0.474</text>
+<line x1="42" y1="73.7" x2="538" y2="73.7" stroke="#7c3aed" stroke-width="2"/>
+<text x="36" y="76.7" fill="#7c3aed" font-size="10" text-anchor="end">E3</text>
+<text x="544" y="76.7" fill="#8aa0c6" font-size="10">4.708</text>
+<line x1="42" y1="42.0" x2="538" y2="42.0" stroke="#7c3aed" stroke-width="2"/>
+<text x="36" y="45.0" fill="#7c3aed" font-size="10" text-anchor="end">E4</text>
+<text x="544" y="45.0" fill="#8aa0c6" font-size="10">8.243</text>
+<line x1="68" y1="198.0" x2="68" y2="153.3" stroke="#e91e63" stroke-width="2"/>
+<text x="72" y="175.6" fill="#e91e63" font-size="10">f01</text>
+<text x="46" y="22" fill="#7c3aed" font-size="11">Transmon 能级（电荷 basis 严格对角化，纯 numpy）· 标记 f01 跃迁</text>
+</svg><div class='conclusion'><strong>结论：</strong>Transmon 双验证 PASS（B9 Koch 命中 + 对角化 f01=4.9798 ↔ Koch=5.0000 rel=0.40% ≤ 3%）</div></div>
+
+<div class="sec"><h2>判定哲学</h2>
+<div class="note">每器件带参数窗口 + 统一验收契约 + 真实物理验证入口；验收两层各司其职——① 解析契约验设计目标命中，② 真实数值物理验自洽。LLM 不进判决路径，物理定律锚（解析近似 / 严格数值 / 确定性 ORACLE）为不可移除地基。</div>
+</div>
+</div></body></html>

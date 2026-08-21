@@ -36,7 +36,7 @@ if _LDA not in sys.path:
 
 SCHEMA_VERSION = "0.1"
 PACKAGE_KINDS = ("add_drop", "quantum", "wdm", "readout_chain", "multiqubit",
-                 "readout_fidelity")
+                 "readout_fidelity", "multiqubit_fidelity")
 
 
 def _now_iso() -> str:
@@ -176,6 +176,13 @@ def package_from_readout_fidelity(f01: float = 5.0, **kw) -> Dict[str, Any]:
     return _p(f01=f01, **kw)
 
 
+def package_from_multiqubit_fidelity(
+        f01s: Optional[List[float]] = None, **kw) -> Dict[str, Any]:
+    """D-51 N-qubit 复用读出逐 qubit 保真度 → 统一设计包。"""
+    from lda_agent.multiqubit_fidelity import package_from_multiqubit_fidelity as _p
+    return _p(f01s=f01s, **kw)
+
+
 _BUILDERS = {
     "add_drop": package_from_add_drop,
     "quantum": package_from_quantum,
@@ -183,6 +190,7 @@ _BUILDERS = {
     "readout_chain": package_from_readout,
     "multiqubit": package_from_multiqubit,
     "readout_fidelity": package_from_readout_fidelity,
+    "multiqubit_fidelity": package_from_multiqubit_fidelity,
 }
 
 _DEFAULTS = {
@@ -192,6 +200,8 @@ _DEFAULTS = {
     "readout_chain": {"f01": 5.0, "delta": 1.0, "g": 0.10, "kappa_r": 0.005},
     "multiqubit": {"f01s": [4.8, 5.0, 5.2]},
     "readout_fidelity": {"f01": 5.0},
+    "multiqubit_fidelity": {"f01s": [4.8, 5.0, 5.2],
+                            "T1_us_list": [20.0, 15.0, 25.0]},
 }
 
 

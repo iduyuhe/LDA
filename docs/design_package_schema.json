@@ -32,7 +32,8 @@
         "wdm",
         "readout_chain",
         "multiqubit",
-        "readout_fidelity"
+        "readout_fidelity",
+        "multiqubit_fidelity"
       ]
     },
     "domain": {

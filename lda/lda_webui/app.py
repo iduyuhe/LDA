@@ -651,6 +651,51 @@ def run_readout_fidelity(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_multiqubit_fidelity(payload=None):
+    """D-51 N-qubit 复用读出逐 qubit 保真度（webui ㉓ 面板）。
+
+    输入 {f01s?, delta?, g?, T1_us?, nbar?}：频率复用（D-46）× 逐 qubit
+    保真度（D-47）集成——readout 错开 + dip 可分辨 + 每 qubit 独立
+    t_m*/SNR/F（T1/n̄ 可逐 qubit 不同）→ 系统级联合验收。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.multiqubit_fidelity import design_multiqubit_fidelity
+    payload = payload or {}
+    raw = payload.get("f01s", "4.8,5.0,5.2")
+    if isinstance(raw, str):
+        raw = raw.split(",")
+    try:
+        f01s = [float(x) for x in raw if str(x).strip()]
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "f01s 须为逗号分隔的 qubit 频率(GHz)列表"}
+    kw = {}
+    for k in ("delta", "g"):
+        if payload.get(k) is not None:
+            try:
+                kw[k] = float(payload[k])
+            except (TypeError, ValueError):
+                return {"ok": False, "error": f"{k} 须为数值"}
+    for k in ("T1_us", "nbar"):
+        raw_l = payload.get(k)
+        if raw_l is not None:
+            if isinstance(raw_l, str):
+                raw_l = raw_l.split(",")
+            try:
+                kw[k + "_list"] = [float(x) for x in raw_l if str(x).strip()]
+            except (TypeError, ValueError):
+                return {"ok": False, "error": f"{k} 须为逗号分隔数值列表"}
+    try:
+        rep = design_multiqubit_fidelity(f01s, **kw)
+        rep["ok"] = True
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_design_package(payload=None):
     """D-44 统一设计包规范（webui ⑳ 面板）。
 
@@ -950,6 +995,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_multiqubit_readout(payload))
             elif path == "/api/readout_fidelity":
                 self._send(200, run_readout_fidelity(payload))
+            elif path == "/api/multiqubit_fidelity":
+                self._send(200, run_multiqubit_fidelity(payload))
             elif path == "/api/design_package":
                 self._send(200, run_design_package(payload))
             elif path == "/api/drc_fix_demo":

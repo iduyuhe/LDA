@@ -462,6 +462,22 @@
   </div>
 
   <div class="sec">
+    <h2>㉓ N-qubit 复用读出逐 qubit 保真度（D-51 · D-46×D-47 集成）</h2>
+    <div class="hint">把 D-46（频率复用：信道错开 ≥3×κ_r + dip 可分辨）与 D-47（单发保真度：SNR/T1 污染/t_m* 优化）合并为<b>一个系统闭环</b>：N qubit 沿公共力线复用读出，每 qubit 独立 T1 / 读出光子数 → 逐 qubit 保真度预算（t_m*、SNR、F0/F1/F）→ 系统级联合验收（复用 + 逐 qubit 全过）。<b>坏 qubit 独立 FAIL，不影响他者</b>。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>qubit 频率 f01(GHz，逗号分隔)<input id="mqfF01s" type="text" value="4.8,5.0,5.2" style="width:170px"></label>
+      <label>T1(µs，逗号分隔)<input id="mqfT1" type="text" value="20,15,25" style="width:100px"></label>
+      <label>n̄(逗号分隔)<input id="mqfNbar" type="text" value="10,10,10" style="width:90px"></label>
+      <label>Δ(GHz)<input id="mqfDelta" type="number" step="0.1" value="1.0" style="width:55px"></label>
+      <button class="btn" id="runMqf">预算逐 qubit 保真度</button>
+    </div>
+    <div id="mqfSummary" class="summary"></div>
+    <div id="mqfBody"></div>
+    <div id="mqfSpectrum" style="margin-top:10px"></div>
+    <div class="conclusion" id="mqfConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1426,6 +1442,46 @@ function renderRf(d){
 }
 $('runRf').onclick = runRf;
 
+// ---- ㉓ D-51 N-qubit 复用读出逐 qubit 保真度 ----
+async function runMqf(){
+  const btn = $('runMqf'); btn.disabled = true;
+  const f01s = $('mqfF01s').value.trim();
+  const t1 = $('mqfT1').value.trim();
+  const nbar = $('mqfNbar').value.trim();
+  const delta = parseFloat($('mqfDelta').value);
+  $('mqfSummary').innerHTML = '<span class="spin"></span> N-qubit 复用读出逐 qubit 保真度预算中（频率复用 × 每 qubit SNR/T1 污染 → 系统联合验收）…';
+  $('mqfBody').innerHTML=''; $('mqfSpectrum').innerHTML='';
+  try{
+    const d = await api('/api/multiqubit_fidelity', {f01s, T1_us:t1, nbar, delta});
+    renderMqf(d);
+  }catch(e){ $('mqfSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderMqf(d){
+  if(!d.ok){ $('mqfSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const acc = d.acceptance||{}, pq = d.per_qubit||[];
+  const rows = pq.map(q=>{
+    const b = q.budget||{};
+    return `<tr><td><b>${q.qid}</b></td><td>${q.f01_ghz}</td><td>${q.f_r_ghz}</td>
+      <td>${q.T1_us}µs</td><td>${q.nbar}</td><td>${q.t_m_star_ns}</td>
+      <td>${b.snr.toFixed(2)}</td><td>${b.F0.toFixed(4)}</td><td>${b.F1.toFixed(4)}</td>
+      <td>${b.F.toFixed(4)}</td></tr>`;
+  }).join('');
+  const checks = (acc.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('');
+  const resv = (d.dip_resolvability||[]).map(r=>`${r.f0_ghz}↔${r.f1_ghz}GHz 中点 T=${r.mid_T} ${r.resolvable?'✓':'✗'}`).join('；');
+  const fmin = Math.min.apply(null, pq.map(q=>q.budget.F)).toFixed(4);
+  $('mqfSummary').innerHTML = `逐 qubit 保真度：readout <b>${d.readout_freqs_ghz.join(', ')}</b>GHz 错开 · χ/κ_r=<b>${(d.chi_ghz/d.kappa_r_ghz).toFixed(1)}</b> · 逐 qubit F ∈ [<b>${fmin}</b>..${Math.max.apply(null, pq.map(q=>q.budget.F)).toFixed(4)}] · <span class="verdict ${acc.passed?'ok':'fail'}">${acc.passed?'PASS':'FAIL'}</span>`;
+  $('mqfBody').innerHTML = `
+    <div class="subhead">逐 qubit 保真度预算表（每 qubit 独立 T1/n̄/t_m*）</div>
+    <table class="tbl"><thead><tr><th>qubit</th><th>f01</th><th>f_r</th><th>T1</th><th>n̄</th><th>t_m*(ns)</th><th>SNR</th><th>F0</th><th>F1</th><th>F</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="subhead">dip 可分辨性：${resv || '—'}</div>
+    <div class="subhead">系统联合验收（复用 + 逐 qubit 保真度）</div>
+    ${checks}`;
+  $('mqfSpectrum').innerHTML = mqSpectrumSvg(d);
+  $('mqfConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+}
+$('runMqf').onclick = runMqf;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -1475,6 +1531,7 @@ $('runIr').onclick = runIr;
   runDp();
   runMq();
   runRf();
+  runMqf();
   runIr();
 })();
 </script>

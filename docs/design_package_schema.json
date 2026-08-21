@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lda.dev/schema/design-package/0.1",
+  "title": "LDA Design Package",
+  "description": "LDA 统一设计包（design outcome 统一交付格式）v0.1。verification.passed 为唯一验收门（死标量比对，LLM 不进判决路径）。",
+  "type": "object",
+  "required": [
+    "package_id", "schema_version", "kind", "domain", "title",
+    "created_at", "ir", "design", "verification", "honest_notes"
+  ],
+  "properties": {
+    "package_id": { "type": "string", "minLength": 1 },
+    "schema_version": { "const": "0.1" },
+    "kind": {
+      "type": "string",
+      "enum": ["add_drop", "quantum", "wdm", "readout_chain"]
+    },
+    "domain": { "type": "string", "enum": ["photon", "quantum", "hybrid"] },
+    "title": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "ir": {
+      "type": "object",
+      "required": ["schema_version", "domain", "n_components", "n_nets", "validate_errors"],
+      "properties": {
+        "schema_version": { "type": "string" },
+        "domain": { "type": "string" },
+        "n_components": { "type": "integer", "minimum": 0 },
+        "n_nets": { "type": "integer", "minimum": 0 },
+        "validate_errors": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "design": {
+      "type": "object",
+      "required": ["targets", "params"],
+      "properties": {
+        "targets": { "type": "object" },
+        "params": { "type": "object" },
+        "inverse_design": { "type": ["object", "null"] },
+        "metrics": { "type": ["object", "null"] }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "required": ["checks", "passed", "verdict"],
+      "properties": {
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "ok", "detail"],
+            "properties": {
+              "name": { "type": "string" },
+              "ok": { "type": "boolean" },
+              "detail": { "type": "string" }
+            }
+          }
+        },
+        "passed": { "type": "boolean", "description": "唯一验收门（死标量比对，LLM 不进判决路径）" },
+        "verdict": { "type": "string" }
+      }
+    },
+    "artifacts": { "type": "object" },
+    "honest_notes": { "type": "string", "minLength": 1, "description": "诚实标注（必填）：模型假设/数据来源/近似边界" }
+  },
+  "additionalProperties": true
+}

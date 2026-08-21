@@ -538,6 +538,40 @@ def run_wdm_design(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_readout_chain(payload=None):
+    """D-43 光子-量子混合链路：芯片级 dispersive readout（webui ⑲ 面板）。
+
+    输入 {f01, delta?, g?, kappa_r?}：qubit ↔ readout 谐振器 ↔ 读出力线
+    系统设计——闭式反解（E_J / l / Cc / Q_ext）→ 三器件双验证（D-39）+
+    JC 精确对角化 ↔ 色散近似（χ=g²/Δ）交叉验证 → 系统验收（Δ/g、χ≥κ_r、
+    Q_ext）→ 混合 IR 网表（domain=hybrid）。秒级零 GPU，LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.qubit_readout_chain import design_chain
+    payload = payload or {}
+    try:
+        f01 = float(payload.get("f01", 5.0))
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "f01 须为数值"}
+    kw = {"f01": f01}
+    for k in ("delta", "g", "kappa_r"):
+        if payload.get(k) is not None:
+            try:
+                kw[k] = float(payload[k])
+            except (TypeError, ValueError):
+                return {"ok": False, "error": f"{k} 须为数值"}
+    try:
+        rep = design_chain(**kw)
+        rep["ok"] = True
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_drc_fix_demo(payload):
     """D-18/D-21/D-22 可制造性面板：agent 自动整改 + 跨厂工艺规则对比。
 
@@ -799,6 +833,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_quantum_design(payload))
             elif path == "/api/wdm_design":
                 self._send(200, run_wdm_design(payload))
+            elif path == "/api/readout_chain":
+                self._send(200, run_readout_chain(payload))
             elif path == "/api/drc_fix_demo":
                 self._send(200, run_drc_fix_demo(payload))
             elif path == "/api/coupler_loop":

@@ -401,6 +401,21 @@
   </div>
 
   <div class="sec">
+    <h2>⑲ 光子-量子混合链路（D-43 · 芯片级 dispersive readout）</h2>
+    <div class="hint">量子芯片标准读出架构，也是"跨光子+量子统一"的<b>系统级</b>落地：<b>Transmon qubit ↔ 电容耦合(g) ↔ readout 谐振器(f_r=f01+Δ) ↔ 读出力线(feedline, κ_r)</b>——同一 IR 网表（domain=<b>hybrid</b>）连接微波光子器件与量子器件。闭式反解（E_J / l / Cc / Q_ext）→ 三器件双验证（D-39）→ <b>JC 哈密顿量精确对角化</b> ↔ 色散近似 χ=g²/Δ 交叉验证 → 系统验收（Δ/g≥5、χ≥κ_r、Q_ext）。负例会正确拒绝（色散失效/读出不可分辨）。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>f01(GHz)<input id="rcF01" type="number" step="0.1" value="5.0" style="width:70px"></label>
+      <label>Δ(GHz)<input id="rcDelta" type="number" step="0.1" value="1.0" style="width:70px"></label>
+      <label>g(GHz)<input id="rcG" type="number" step="0.01" value="0.10" style="width:70px"></label>
+      <label>κ_r(GHz)<input id="rcKr" type="number" step="0.001" value="0.005" style="width:70px"></label>
+      <button class="btn" id="runRc">设计 readout 链路</button>
+    </div>
+    <div id="rcSummary" class="summary"></div>
+    <div id="rcBody"></div>
+    <div class="conclusion" id="rcConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1188,6 +1203,37 @@ function renderWdm(d){
 }
 $('runWdm').onclick = runWdm;
 
+// ---- ⑲ D-43 光子-量子混合链路（dispersive readout）----
+async function runRc(){
+  const btn = $('runRc'); btn.disabled = true;
+  const payload = {f01: parseFloat($('rcF01').value), delta: parseFloat($('rcDelta').value),
+                   g: parseFloat($('rcG').value), kappa_r: parseFloat($('rcKr').value)};
+  $('rcSummary').innerHTML = '<span class="spin"></span> readout 链路设计中（闭式反解 → 三器件双验证 → JC 精确对角化 ↔ 色散）…';
+  $('rcBody').innerHTML = '';
+  try{
+    const d = await api('/api/readout_chain', payload);
+    renderRc(d);
+  }catch(e){ $('rcSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderRc(d){
+  if(!d.ok){ $('rcSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const p = d.params||{}, v = d.verification||{}, acc = d.acceptance||{};
+  $('rcSummary').innerHTML = `混合链路：qubit f01=<b>${d.f01_ghz}GHz</b> ↔ readout <b>${d.f_r_ghz}GHz</b>（Δ=${d.delta_ghz}，g=${d.g_ghz}）↔ feedline <span class="verdict ${acc.passed?'ok':'fail'}">${acc.passed?'PASS':'FAIL'}</span> · IR domain=<b>${(d.ir||{}).domain}</b>（${(d.ir||{}).n_components}器件+${(d.ir||{}).n_nets}网表）`;
+  const jc = v.jc||{};
+  $('rcBody').innerHTML = `
+    <div class="subhead">① 系统设计（闭式物理反解）</div>
+    <div class="note">E_J=<b>${p.E_J}</b>（f01 反解）· readout l=<b>${(p.l_m*1e3).toFixed(2)}mm</b>（λ/4 反解）· 耦合 Cc=<b>${p.Cc}</b>（g 反解）· Q_ext=<b>${p.Q_ext}</b>（=f_r/κ_r）</div>
+    <div class="subhead">② 严格数值双验证</div>
+    <div class="note">Transmon：对角化 ${v.transmon.f01_diag_ghz} ↔ Koch ${v.transmon.f01_koch_ghz}GHz（rel=${(v.transmon.rel_err*100).toFixed(2)}%）· Resonator：离散本征 ${v.resonator.f0_num_ghz} ↔ 闭式 ${v.resonator.f0_closed_ghz}GHz（rel=${(v.resonator.rel_err*100).toFixed(2)}%）</div>
+    <div class="subhead">③ JC 精确对角化 ↔ 色散近似（χ=g²/Δ）</div>
+    <div class="note">真空拉比分裂=<b>${jc.rabi_split_ghz}</b>GHz（=2g=${(2*d.g_ghz).toFixed(3)}）· |χ_num|=<b>${jc.chi_num_ghz}</b> vs g²/Δ=<b>${jc.chi_analytic_ghz}</b>GHz · rel=<b>${(jc.chi_rel_err*100).toFixed(1)}%</b> ≤ ${(jc.tol_rel*100).toFixed(0)}%</div>
+    <div class="subhead">④ 系统验收（死标量比对）</div>
+    ${(acc.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('')}`;
+  $('rcConclusion').innerHTML = `<strong>${d.verdict}</strong><br><span class="note">${d.note||''}</span>`;
+}
+$('runRc').onclick = runRc;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -1233,6 +1279,7 @@ $('runIr').onclick = runIr;
   runInvDesign();
   runQd();
   runWdm();
+  runRc();
   runIr();
 })();
 </script>

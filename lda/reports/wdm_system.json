@@ -1,0 +1,81 @@
+{
+  "all_passed": true,
+  "case_4ch": {
+    "channels_nm": [
+      1550.0,
+      1552.5,
+      1555.0,
+      1557.5
+    ],
+    "ring_radii_um": [
+      9.9851,
+      10.0012,
+      10.0173,
+      10.0334
+    ],
+    "metrics": {
+      "il_drop_db": [
+        0.002,
+        0.034,
+        0.052,
+        0.115
+      ],
+      "xt_min_db": [
+        18.41,
+        21.32,
+        21.37,
+        53.16
+      ],
+      "thru_at_channels": [
+        0.00032,
+        0.00019,
+        0.0001,
+        3e-05
+      ]
+    },
+    "acceptance": {
+      "checks": [
+        {
+          "name": "IR 网表校验",
+          "ok": true,
+          "detail": "4 环 + 5 网表 通过"
+        },
+        {
+          "name": "每信道 drop IL ≤ 3dB",
+          "ok": true,
+          "detail": "λ1550.0=0.00 / λ1552.5=0.03 / λ1555.0=0.05 / λ1557.5=0.12"
+        },
+        {
+          "name": "邻信道串扰 XT ≥ 15dB",
+          "ok": true,
+          "detail": "18.4dB / 21.3dB / 21.4dB / 53.2dB"
+        },
+        {
+          "name": "每环 DRC（R/gap/wg）",
+          "ok": true,
+          "detail": "R∈[9.9851,10.0334]µm gap=0.3µm wg=0.5µm"
+        },
+        {
+          "name": "单 FSR 工作区（防混叠）",
+          "ok": true,
+          "detail": "信道跨度 7.5nm < min FSR 9.1nm"
+        }
+      ],
+      "passed": true
+    },
+    "verdict": "WDM 4 信道级联系统设计 PASS：每信道 drop IL ≤0.12dB、邻信道串扰 ≥18.4dB、IR 网表通过、DRC 可制造、单 FSR 防混叠。",
+    "gds": {
+      "libname": "LDA-WDM",
+      "structures": {
+        "WDM": {
+          "elements": 9,
+          "layers": [
+            1
+          ]
+        }
+      },
+      "n_structures": 1,
+      "size_bytes": 4560
+    }
+  }
+}

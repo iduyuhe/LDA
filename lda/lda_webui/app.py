@@ -506,6 +506,38 @@ def run_quantum_design(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_wdm_design(payload=None):
+    """WDM 多环级联系统设计（webui ⑱ 面板，系统级纵深）。
+
+    输入 {channels, gap?}：IR 网表（N 环 + bus 链）→ 信道逆设计（谐振对齐）
+    → 级联传递 → 系统验收（drop IL / 串扰 XT / DRC / 单 FSR 防混叠）→
+    N 环级联 GDS+SVG + 报告。纯解析模型秒级，LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.wdm_system import design_wdm
+    payload = payload or {}
+    ch_raw = payload.get("channels", "1550,1552.5,1555,1557.5")
+    try:
+        channels = [float(x) for x in str(ch_raw).split(",") if x.strip()]
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "channels 须为逗号分隔的波长(nm)列表"}
+    gap = payload.get("gap", 0.3)
+    try:
+        gap = float(gap)
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "gap 须为数值"}
+    try:
+        rep = design_wdm(channels, gap=gap)
+        rep["ok"] = True
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_drc_fix_demo(payload):
     """D-18/D-21/D-22 可制造性面板：agent 自动整改 + 跨厂工艺规则对比。
 
@@ -765,6 +797,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_inverse_design_demo(payload))
             elif path == "/api/quantum_design":
                 self._send(200, run_quantum_design(payload))
+            elif path == "/api/wdm_design":
+                self._send(200, run_wdm_design(payload))
             elif path == "/api/drc_fix_demo":
                 self._send(200, run_drc_fix_demo(payload))
             elif path == "/api/coupler_loop":

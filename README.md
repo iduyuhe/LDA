@@ -2,7 +2,7 @@
 
 > LDA（Lightwave Design Agent）= 光子芯片(PDA) + 量子芯片(QEDA) 的开源、主权、Agent-native 设计软件。
 > 核心主张：**底层核心求解器由 AI agent 递归自举开发**，人类做架构与验证，AI 不进入判决路径。
-> 当前版本：**v0.1**（2026-08-21 · 设计→验证闭环引擎 + 统一设计包规范）
+> 当前版本：**v0.2**（2026-08-21 · 设计→验证闭环引擎 + 统一设计包规范）
 
 ## 这是什么
 
@@ -106,7 +106,7 @@ python lda/lda_webui/deploy.py start --port 8787
 
 ## 变更记录
 
-见 [CHANGELOG.md](CHANGELOG.md)（v0.1：设计→验证闭环引擎 + 统一设计包规范 + 十二项能力交付）。
+见 [CHANGELOG.md](CHANGELOG.md)（v0.2：设计→验证闭环引擎 + 统一设计包规范 + 十二项能力交付）。
 
 ## 参与共建 · 反向悬赏
 

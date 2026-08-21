@@ -845,7 +845,9 @@ def run_splitter_readout(payload=None):
             kappa_r=float(payload.get("kappa_r", 0.005)),
             T1_us=float(payload.get("T1_us", 25.0)),
             eta=float(payload.get("eta", 0.5)),
-            N_amp=float(payload.get("N_amp", 1.0)))
+            N_amp=float(payload.get("N_amp", 1.0)),
+            calibrated=bool(payload.get("calibrated", False)),
+            grid=payload.get("grid"))
         rep["ok"] = True
         return rep
     except Exception as e:  # noqa: BLE001

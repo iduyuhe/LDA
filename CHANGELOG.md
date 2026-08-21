@@ -31,20 +31,23 @@
 
 - IR schema 0.2 → 0.3（受控升级，0.2 遗留模型仍可校验）
 
-## v0.2.1（2026-08-21 · tag v0.2 后追加，D-49~D-52）
+## v0.3（2026-08-21 · git tag v0.3）
 
-**里程碑：求解器 GPU 激活 + 量子读出最终形态 + 混合巨型系统**
+**里程碑：求解器 GPU 激活 + 量子读出最终形态 + 混合巨型系统（D-49~D-53）**
 
 - **D-49 设计包 spec/schema 扩展至 6 kind**：正式文档与代码注册表零漂移（§4 注册表/§7 artifacts/§9 校验枚举/变更记录 + JSON Schema enum 同步）。
 - **D-50 fdtd3d GPU 实跑激活（L2-B 第三步验收 PASS）**：RTX 5060 Ti 实测——cuda 物理定律锚 selfcheck 4 例 PASS、**cuda↔cpu fp64 互证 5 例 bit-equivalent（max_rel=0.00e+00）**、greens N=120 cuda 19.43s；诚实说明消费卡 fp64 阉割（GPU 收益在显存容量，算力优先 numba-cpu 43.1×）。
 - **D-51 N-qubit 复用读出逐 qubit 保真度**：D-46×D-47 集成——逐 qubit T1/n̄ 独立预算（t_m*/SNR/F），坏 qubit 独立 FAIL 不影响他者；设计包 7 kind。
 - **D-52 多环 WDM × 量子读出混合巨型系统**：光子 WDM 分波（D-42）+ 量子读出（D-51）**同一 IR 网表**（10 器件+8 网表）——信道↔qubit 1:1 映射 + 系统联合验收；诚实标注光↔微波物理独立（桥接为接口规划）；设计包 **8 kind**。
+- **D-53 README/CHANGELOG 更新**：能力阶梯表 13 行、二十四面板、8 kind 清单、快速开始 9 步——对外基线文档零漂移。
 
-### 新增/变更（v0.2.1）
+### 新增/变更（v0.3）
 
 - `lda_agent/`：multiqubit_fidelity / mixed_system
 - `docs/design_package_spec.md` + `design_package_schema.json`：kind 6 → **8**
 - WebUI：二十二 → **二十四**面板（㉓ 逐 qubit 保真度 / ㉔ 混合巨型系统）
+- README：能力阶梯表 D-36~D-52、二十四面板、8 kind、快速开始 9 步
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 8 项枚举）
 
 ## v0.0（阶段 0/1/2，此前交付）
 

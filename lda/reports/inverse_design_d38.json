@@ -1,0 +1,30 @@
+{
+  "framework": "SpectrumInverseDesignAgent (D-24/D-38)",
+  "all_passed": true,
+  "devices": {
+    "RingResonator": {
+      "accepted": true,
+      "final_params": {
+        "R_um": 9.949772
+      }
+    },
+    "BraggMirror": {
+      "accepted": true,
+      "final_params": {
+        "periods": 4.0
+      }
+    },
+    "Transmon": {
+      "accepted": true,
+      "final_params": {
+        "E_J": 11.792975
+      }
+    },
+    "RingAddDrop": {
+      "accepted": true,
+      "final_params": {
+        "gap": 0.299696
+      }
+    }
+  }
+}

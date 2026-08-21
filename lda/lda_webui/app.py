@@ -424,6 +424,34 @@ def run_ring_package(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_inverse_design_demo(payload=None):
+    """D-38 agent 逆设计通用框架（webui ⑯ 面板）。
+
+    输入 {kind?|target?}：经声明式注册表统一派发到 SpectrumInverseDesignAgent
+    （D-24），落地 4 个真实器件（Ring/Bragg/Transmon/RingAddDrop，跨光子/量子、
+    跨 match/threshold、跨连续/离散）。kind="all"（默认）跑全部。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.inverse_design import run_all_designs, run_inverse_design
+    payload = payload or {}
+    kind = payload.get("kind", "all")
+    target = payload.get("target")
+    extra = payload.get("extra") or {}
+    try:
+        if kind == "all":
+            return run_all_designs(extra=extra)
+        return run_inverse_design(kind,
+                                  target_metric=float(target) if target is not None
+                                  else None,
+                                  extra=extra)
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_drc_fix_demo(payload):
     """D-18/D-21/D-22 可制造性面板：agent 自动整改 + 跨厂工艺规则对比。
 
@@ -672,6 +700,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_design_loop(payload))
             elif path == "/api/ring_package":
                 self._send(200, run_ring_package(payload))
+            elif path == "/api/inverse_design":
+                self._send(200, run_inverse_design_demo(payload))
             elif path == "/api/drc_fix_demo":
                 self._send(200, run_drc_fix_demo(payload))
             elif path == "/api/coupler_loop":

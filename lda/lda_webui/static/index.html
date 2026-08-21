@@ -356,6 +356,17 @@
   </div>
 
   <div class="sec">
+    <h2>⑯ agent 逆设计通用框架（D-38 · 同一框架落地 4 器件）</h2>
+    <div class="hint">D-24 的 `SpectrumInverseDesignAgent` 是<b>通用谱形逆设计框架</b>（engine / metric / oracle 三函数即插即用）；D-38 把它升级为<b>声明式注册表</b>，用<b>同一套 agent</b> 落地 4 个真实器件——跨光子/量子、跨 match/threshold、跨连续/离散：<br>① RingResonator：参数 R_um → 目标 FSR（match + 黄金分割）② BraggMirror：参数 periods → 目标 R_min 阻带（threshold + 离散扫描，TMM 搜索 + 终验真实 3D FDTD vs TMM）③ Transmon（量子域）：参数 E_J → 目标 f01（match，严格对角化 ↔ Koch 解析）④ RingAddDrop（D-37 器件）：参数 gap → 目标加载 Q_L（match，谱线宽反解 ↔ Q 分解解析）。<b>新器件接入 = 注册一条 spec，零框架改动——跨场景复用，非单点 hack。LLM 不进判决路径。</b></div>
+    <div class="row">
+      <button class="btn" id="runInvDesign">运行全部 4 器件逆设计</button>
+    </div>
+    <div id="invSummary" class="summary"></div>
+    <div id="invBody"></div>
+    <div class="conclusion" id="invConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 · 机器优先中间表示）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1012,6 +1023,39 @@ function renderRingPkg(d){
 }
 $('runRingPkg').onclick = runRingPkg;
 
+// ---- ⑯ D-38 agent 逆设计通用框架 ----
+async function runInvDesign(){
+  const btn = $('runInvDesign'); btn.disabled = true;
+  $('invSummary').innerHTML = '<span class="spin"></span> 运行全部 4 器件逆设计（同一 SpectrumInverseDesignAgent 派发；Bragg 含一次真实 3D FDTD 终验 ~20s）…';
+  $('invBody').innerHTML = '';
+  try{
+    const d = await api('/api/inverse_design', {kind:'all'});
+    renderInvDesign(d);
+  }catch(e){ $('invSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderInvDesign(d){
+  const devs = d.devices || {};
+  const kinds = Object.keys(devs);
+  $('invSummary').innerHTML = `框架=<b>${d.framework||'SpectrumInverseDesignAgent'}</b> · 落地 <b>${kinds.length} 个真实器件</b> · 全部 accepted：<span class="verdict ${d.all_passed?'ok':'fail'}">${d.all_passed?'PASS':'FAIL'}</span>`;
+  const rows = kinds.map(k=>{
+    const v = devs[k]||{};
+    const fp = v.final_params ? Object.entries(v.final_params).map(([a,b])=>`${a}=${b}`).join('，') : '—';
+    return `<tr>
+      <td><b>${k}</b></td>
+      <td>${v.param_name||''}</td>
+      <td>${v.domain||''}</td>
+      <td>${fp}</td>
+      <td>${v.metric_err!==undefined?v.metric_err:'—'}</td>
+      <td>${v.method_err!==undefined?v.method_err:'—'}</td>
+      <td><span class="verdict ${v.accepted?'ok':'fail'}">${v.accepted?'PASS':'FAIL'}</span></td>
+    </tr>`;
+  }).join('');
+  $('invBody').innerHTML = `<table class="tbl"><thead><tr><th>器件</th><th>可调参数</th><th>域</th><th>最优参数</th><th>特征误差</th><th>方法一致性</th><th>验收</th></tr></thead><tbody>${rows}</tbody></table>`;
+  $('invConclusion').innerHTML = `<b>跨场景复用证明：</b>Ring/Bragg（光子谱形）、Transmon（量子能级谱）、RingAddDrop（D-37 器件 Q_L）——4 个真实器件全部由<b>同一个</b>通用 agent 闭环（黄金分割/离散扫描、match/threshold、解析 ORACLE 独立锚），无一为单点 hack。新器件只需注册一条 spec（engine/metric/oracle 三函数）。`;
+}
+$('runInvDesign').onclick = runInvDesign;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -1054,6 +1098,7 @@ $('runIr').onclick = runIr;
   runDevLib();
   runDesignLoop();
   runRingPkg();
+  runInvDesign();
   runIr();
 })();
 </script>

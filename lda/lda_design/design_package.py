@@ -37,7 +37,7 @@ if _LDA not in sys.path:
 SCHEMA_VERSION = "0.1"
 PACKAGE_KINDS = ("add_drop", "quantum", "wdm", "readout_chain", "multiqubit",
                  "readout_fidelity", "multiqubit_fidelity", "mixed_system",
-                 "coupler", "wdm_coupler")
+                 "coupler", "wdm_coupler", "splitter_readout")
 
 
 def _now_iso() -> str:
@@ -206,6 +206,15 @@ def package_from_wdm_coupler(
     return _p(channels_nm=channels_nm, **kw)
 
 
+def package_from_splitter_readout(
+        f01s: Optional[List[float]] = None, **kw) -> Dict[str, Any]:
+    """D-63 方向耦合器×量子读出（分束网络供电控制线）→ 统一设计包。"""
+    from lda_agent.splitter_readout import (
+        package_from_splitter_readout as _p,
+    )
+    return _p(f01s=f01s, **kw)
+
+
 _BUILDERS = {
     "add_drop": package_from_add_drop,
     "quantum": package_from_quantum,
@@ -217,6 +226,7 @@ _BUILDERS = {
     "mixed_system": package_from_mixed_system,
     "coupler": package_from_coupler,
     "wdm_coupler": package_from_wdm_coupler,
+    "splitter_readout": package_from_splitter_readout,
 }
 
 _DEFAULTS = {
@@ -233,6 +243,7 @@ _DEFAULTS = {
     "coupler": {"target_cross": 0.5, "transient_cycles": 400},
     "wdm_coupler": {"channels_nm": [1550.0, 1553.0, 1556.0],
                     "gap_scan": [0.25, 0.30, 0.35]},
+    "splitter_readout": {"f01s": [4.8, 5.0, 5.2]},
 }
 
 

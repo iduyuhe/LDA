@@ -71,7 +71,7 @@ agent（L1 协议）/ 人（验收）/ 第三方工具 / CI 自动化
 - `verification.checks` 与 harness 基准题（B1–B13）同语义：死标量比对明细。
 - 第三方对接只需消费 DesignPackage 这一个格式，无需理解内部各闭环。
 
-## 4. kind 注册表（v0.1 · 10 kind）
+## 4. kind 注册表（v0.1 · 11 kind）
 
 | kind | 来源 | domain | targets 典型键 | params 典型键 | artifacts 典型键 |
 |---|---|---|---|---|---|
@@ -85,6 +85,7 @@ agent（L1 协议）/ 人（验收）/ 第三方工具 / CI 自动化
 | `mixed_system` | D-52 多环 WDM × 量子读出混合巨型系统 | hybrid | `wdm_channels_nm` `qubit_f01s_ghz` | `mapping[]`（信道↔qubit 1:1）`photon`（R/指标）`quantum`（readout/per_qubit） | `photon_metrics` `quantum_spectrum` `dip_resolvability` |
 | `coupler` | D-55 方向耦合器设计闭环 | photon | `target_cross` `wl_um` `gap_um` | `kappa_fdtd` `calibration`（双点 FDTD）`L_target_um` | `iteration`（设计→验证迭代历史）`cross_val_fdtd` |
 | `wdm_coupler` | D-57 耦合器×WDM 组合（FDTD 标定驱动 gap） | photon | `channels_nm` `gap_scan` | `chosen_gap_um` `chosen_k_ring` `calibrations[]`（PDK 标定文件） | `attempts[]`（gap 扫描试次）`wdm_metrics` |
+| `splitter_readout` | D-63 方向耦合器×量子读出（分束网络供电控制线） | hybrid | `f01s_ghz` `weights` | `nbar0` `splitters[]`（每级 DC：target_cross/cross_fdtd/L）`leaves[]`（每路实际功率）`per_qubit[]`（缩放后 SNR/F） | `ir`（光子分束+量子读出同一网表）`power_budget` |
 
 > 新增 kind 指南见 §10。
 
@@ -170,7 +171,7 @@ agent（L1 协议）/ 人（验收）/ 第三方工具 / CI 自动化
 1. 必填字段齐全：`package_id` `schema_version` `kind` `domain` `title`
    `created_at` `design` `verification` `honest_notes`
 2. `schema_version == "0.1"`
-3. `kind ∈ {add_drop, quantum, wdm, readout_chain, multiqubit, readout_fidelity, multiqubit_fidelity, mixed_system, coupler, wdm_coupler}`
+3. `kind ∈ {add_drop, quantum, wdm, readout_chain, multiqubit, readout_fidelity, multiqubit_fidelity, mixed_system, coupler, wdm_coupler, splitter_readout}`
 4. `domain ∈ {photon, quantum, hybrid}`
 5. `verification.passed` 存在（验收门）
 6. `honest_notes` 非空（诚实标注必填）
@@ -227,3 +228,4 @@ agent（L1 协议）/ 人（验收）/ 第三方工具 / CI 自动化
 | 0.1.3 | 2026-08-21 | kind 注册表扩展至 8 类（D-52 配套）：新增 `mixed_system`（D-52 多环 WDM × 量子读出混合巨型系统——D-42 × D-51 集成，光子分波 + 量子读出同一网表，信道↔qubit 1:1 映射）；§9 机器校验规则 kind 枚举同步更新 |
 | 0.1.4 | 2026-08-21 | kind 注册表扩展至 9 类（D-55 配套）：新增 `coupler`（D-55 方向耦合器设计闭环——目标分束比 → 2D FDTD 双点标定 κ → CMT 反解 L → 实测-修正迭代；光子域基础器件空白补齐）；§9 机器校验规则 kind 枚举同步更新 |
 | 0.1.5 | 2026-08-21 | kind 注册表扩展至 10 类（D-57 配套）：新增 `wdm_coupler`（D-57 耦合器×WDM 组合——FDTD 标定 κ_c(gap) PDK 文件驱动 WDM 环 bus 耦合段 gap 选择，诚实报告 vs 解析假设偏差）；§9 机器校验规则 kind 枚举同步更新 |
+| 0.1.6 | 2026-08-22 | kind 注册表扩展至 11 类（D-63 配套）：新增 `splitter_readout`（D-63 方向耦合器×量子读出——光子二叉树级联 DC 分束网络【每级 D-55 真实 FDTD 设计】供电量子读出控制线，功率按 FDTD 实测分束比缩放 n̄；光↔微波拓扑同构、物理独立诚实标注）；§9 机器校验规则 kind 枚举同步更新 |

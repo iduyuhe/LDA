@@ -809,6 +809,49 @@ def run_wdm_coupler(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_splitter_readout(payload=None):
+    """D-63 方向耦合器×量子读出（webui ㉗ 面板）。
+
+    输入 {f01s?, weights?}：光子二叉树级联 DC 分束网络（每级 D-55 真实
+    FDTD 设计闭环）供电量子读出控制线——功率按 FDTD 实测分束比缩放 n̄ →
+    每 qubit SNR/保真度预算 + 统一 IR 网表 + 联合验收。光↔微波拓扑同构、
+    物理独立（诚实标注）。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.splitter_readout import design_splitter_readout
+    payload = payload or {}
+
+    def _num_list(v, name):
+        if isinstance(v, str):
+            v = v.split(",")
+        try:
+            return [float(x) for x in v if str(x).strip()]
+        except (TypeError, ValueError):
+            return None
+    f01s = _num_list(payload.get("f01s", "4.8,5.0,5.2"), "f01s")
+    ws = _num_list(payload.get("weights", ""), "weights")
+    if f01s is None or len(f01s) < 1:
+        return {"ok": False, "error": "f01s 须为逗号分隔数值列表"}
+    try:
+        rep = design_splitter_readout(
+            f01s, weights=ws or None,
+            nbar0=float(payload.get("nbar0", 30.0)),
+            delta=float(payload.get("delta", 1.0)),
+            g=float(payload.get("g", 0.10)),
+            kappa_r=float(payload.get("kappa_r", 0.005)),
+            T1_us=float(payload.get("T1_us", 25.0)),
+            eta=float(payload.get("eta", 0.5)),
+            N_amp=float(payload.get("N_amp", 1.0)))
+        rep["ok"] = True
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_design_package(payload=None):
     """D-44 统一设计包规范（webui ⑳ 面板）。
 
@@ -1116,6 +1159,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_coupler_design(payload))
             elif path == "/api/wdm_coupler":
                 self._send(200, run_wdm_coupler(payload))
+            elif path == "/api/splitter_readout":
+                self._send(200, run_splitter_readout(payload))
             elif path == "/api/design_package":
                 self._send(200, run_design_package(payload))
             elif path == "/api/drc_fix_demo":

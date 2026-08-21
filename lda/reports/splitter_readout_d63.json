@@ -1,0 +1,156 @@
+{
+  "ok": true,
+  "title": "3-qubit 读出 × 2 级 DC 分束网络",
+  "n_qubits": 3,
+  "n_splitters": 2,
+  "f01s_ghz": [
+    4.8,
+    5.0,
+    5.2
+  ],
+  "splitters": [
+    {
+      "id": "dc1",
+      "ok": true,
+      "target_cross": 0.33333,
+      "cross_val_fdtd": 0.3367,
+      "L_target_um": 32.723,
+      "gap_um": 0.3,
+      "iteration": [
+        {
+          "Lx_um": 32.723,
+          "L_eff_um": 25.575,
+          "cf": 0.3367,
+          "err": 0.0034
+        }
+      ],
+      "left_span": [
+        0,
+        2
+      ],
+      "right_span": [
+        2,
+        3
+      ],
+      "left_frac": 0.6633,
+      "right_frac": 0.3367
+    },
+    {
+      "id": "dc2",
+      "ok": true,
+      "target_cross": 0.5,
+      "cross_val_fdtd": 0.502,
+      "L_target_um": 39.778,
+      "gap_um": 0.3,
+      "iteration": [
+        {
+          "Lx_um": 39.778,
+          "L_eff_um": 32.627,
+          "cf": 0.502,
+          "err": 0.002
+        }
+      ],
+      "left_span": [
+        0,
+        1
+      ],
+      "right_span": [
+        1,
+        2
+      ],
+      "left_frac": 0.498,
+      "right_frac": 0.502
+    }
+  ],
+  "leaves": [
+    {
+      "qubit_index": 0,
+      "w_target": 0.3333333333333333,
+      "p_actual": 0.3303234,
+      "delta": 0.00301
+    },
+    {
+      "qubit_index": 1,
+      "w_target": 0.3333333333333333,
+      "p_actual": 0.3329766,
+      "delta": 0.00036
+    },
+    {
+      "qubit_index": 2,
+      "w_target": 0.3333333333333333,
+      "p_actual": 0.3367,
+      "delta": 0.00337
+    }
+  ],
+  "per_qubit": [
+    {
+      "qubit": 1,
+      "f01_ghz": 4.8,
+      "p_actual": 0.33032,
+      "nbar_eff": 9.9097,
+      "snr": 3.949,
+      "F": 0.99958,
+      "t_m_star_ns": 18.8,
+      "passed": true
+    },
+    {
+      "qubit": 2,
+      "f01_ghz": 5.0,
+      "p_actual": 0.33298,
+      "nbar_eff": 9.9893,
+      "snr": 3.965,
+      "F": 0.99959,
+      "t_m_star_ns": 18.8,
+      "passed": true
+    },
+    {
+      "qubit": 3,
+      "f01_ghz": 5.2,
+      "p_actual": 0.3367,
+      "nbar_eff": 10.101,
+      "snr": 3.987,
+      "F": 0.99959,
+      "t_m_star_ns": 18.8,
+      "passed": true
+    }
+  ],
+  "ir": {
+    "schema_version": "0.3",
+    "domain": "hybrid",
+    "n_components": 9,
+    "n_nets": 8,
+    "validate_errors": []
+  },
+  "acceptance": {
+    "checks": [
+      {
+        "name": "分束网络命中（|Δ|≤0.05）",
+        "ok": true,
+        "detail": "q1: 目标0.33 实得0.33(Δ=0.003); q2: 目标0.33 实得0.33(Δ=0.000); q3: 目标0.33 实得0.34(Δ=0.003)"
+      },
+      {
+        "name": "缩放后单发 SNR ≥ 3.0",
+        "ok": true,
+        "detail": "SNR∈[3.95, 3.99]"
+      },
+      {
+        "name": "缩放后读出保真度 F ≥ 0.98",
+        "ok": true,
+        "detail": "F∈[0.9996, 0.9996]"
+      },
+      {
+        "name": "混合 IR 网表校验（DC 分束 + 量子读出同一网表）",
+        "ok": true,
+        "detail": "9 器件 + 8 网表 通过"
+      },
+      {
+        "name": "诚实标注：光↔微波拓扑同构（物理独立）",
+        "ok": true,
+        "detail": "分束网络为光子域器件（FDTD 实测分束比）；功率→读出映射为拓扑同构/接口规划，不做跨物理域功率传递的物理声称"
+      }
+    ],
+    "passed": true
+  },
+  "verdict": "方向耦合器×量子读出 PASS：2 级 DC 分束网络（FDTD 实测分束）→ 3 qubit 读出（缩放后 F∈[0.9996, 0.9996]）同一网表，功率分配命中",
+  "note": "光子侧：二叉树级联 DC（D-55 真实 FDTD 设计闭环，每级分束比取实测 cross_val_fdtd）；量子侧：D-47 读出预算按实际功率权重缩放n̄（SNR ∝ √n̄）。光↔微波物理独立，拓扑同构映射为接口规划。LLM 不进判决路径。"
+}

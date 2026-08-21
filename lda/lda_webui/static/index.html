@@ -519,6 +519,19 @@
   </div>
 
   <div class="sec">
+    <h2>㉗ 方向耦合器 × 量子读出（D-63 · 分束网络供电控制线）</h2>
+    <div class="hint">光子 <b>二叉树级联 DC 分束网络</b>（每级 D-55 真实 2D FDTD 设计闭环，分束比取实测 cross_val_fdtd）供电量子读出控制线：每 qubit 读出 n̄ 按实际功率权重缩放（微波功分器：P ∝ n̄、SNR ∝ √n̄）→ D-47 保真度预算 + 统一 IR 网表（光子分束 + 量子读出同一网表）+ 联合验收。<b>诚实标注：光↔微波物理独立，功率→读出为拓扑同构 / 接口规划</b>。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>qubit 读出(GHz，逗号分隔)<input id="srF01s" type="text" value="4.8,5.0,5.2" style="width:150px"></label>
+      <label>功率权重(逗号分隔，空=均匀)<input id="srW" type="text" value="" style="width:130px" placeholder="空=均匀"></label>
+      <button class="btn" id="runSr">设计分束网络 → 读出</button>
+    </div>
+    <div id="srSummary" class="summary"></div>
+    <div id="srBody"></div>
+    <div class="conclusion" id="srConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1616,6 +1629,36 @@ function renderWc(d){
 }
 $('runWc').onclick = runWc;
 
+// ---- ㉗ D-63 方向耦合器×量子读出（分束网络供电控制线）----
+async function runSr(){
+  $('srSummary').innerHTML = '<span class="spin"></span> 分束网络设计中（每级 DC 真实 2D FDTD 设计闭环 → 功率缩放 → 读出预算）…';
+  const body = { f01s: $('srF01s').value, weights: $('srW').value };
+  try{
+    const d = await post('/api/splitter_readout', body);
+    renderSr(d);
+  }catch(e){ $('srSummary').innerHTML = '运行失败：'+e; }
+}
+function renderSr(d){
+  if(!d.ok){ $('srSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const acc = d.acceptance||{};
+  const dcRows = (d.splitters||[]).map(s=>`<tr><td>${s.id}</td><td>${s.target_cross}</td><td>${s.cross_val_fdtd}</td><td>${s.L_target_um}µm</td><td>${(s.iteration||[]).length} 轮</td></tr>`).join('');
+  const leafRows = (d.leaves||[]).map(l=>`<tr><td>q${l.qubit_index+1}</td><td>${l.w_target.toFixed(3)}</td><td>${l.p_actual.toFixed(4)}</td><td>${l.delta.toFixed(4)}</td></tr>`).join('');
+  const qRows = (d.per_qubit||[]).map(p=>`<tr><td>q${p.qubit}</td><td>${p.f01_ghz}</td><td>${p.p_actual}</td><td>${p.nbar_eff}</td><td>${p.snr}</td><td>${p.F}</td><td>${p.passed?'✓':'✗'}</td></tr>`).join('');
+  const checks = (acc.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('');
+  $('srSummary').innerHTML = `方向耦合器×量子读出：<b>${d.n_splitters}</b> 级 DC 分束 → <b>${d.n_qubits}</b> qubit 读出 · <span class="verdict ${acc.passed?'ok':'fail'}">${acc.passed?'PASS':'FAIL'}</span>`;
+  $('srBody').innerHTML = `
+    <div class="subhead">DC 分束网络（每级 D-55 真实 FDTD 设计）</div>
+    <table class="tbl"><thead><tr><th>DC</th><th>目标 cross</th><th>FDTD 实测</th><th>L(µm)</th><th>迭代</th></tr></thead><tbody>${dcRows}</tbody></table>
+    <div class="subhead">功率分配（目标 vs 实得）</div>
+    <table class="tbl"><thead><tr><th>信道</th><th>w_target</th><th>p_actual</th><th>|Δ|</th></tr></thead><tbody>${leafRows}</tbody></table>
+    <div class="subhead">每 qubit 读出预算（功率缩放后）</div>
+    <table class="tbl"><thead><tr><th>qubit</th><th>f01(GHz)</th><th>功率</th><th>n̄_eff</th><th>SNR</th><th>F</th><th>过</th></tr></thead><tbody>${qRows}</tbody></table>
+    <div class="subhead">联合验收（死标量比对）</div>
+    ${checks}`;
+  $('srConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+}
+$('runSr').onclick = runSr;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -1669,6 +1712,7 @@ $('runIr').onclick = runIr;
   runMs();
   runCd();
   runWc();
+  runSr();
   runIr();
 })();
 </script>

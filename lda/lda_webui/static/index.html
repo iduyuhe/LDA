@@ -341,6 +341,21 @@
   </div>
 
   <div class="sec">
+    <h2>⑮ 环形 add-drop 产品链路（D-37 · 一键可制造设计包）</h2>
+    <div class="hint">把 D-36 的设计闭环推到<b>产品级交付</b>：给定目标 FSR（或半径/gap），一键产出<b>可制造设计包</b>——双 bus add-drop 版图（GDSII + SVG）→ DRC 可制造性 → bus 波导<b>真实 FDTD</b> 验收（neff↔slab ORACLE）+ FSR 物理定律契约 + FDTD 锚点对拍 → <b>耦合/损耗预算</b>（κ(gap) 模型、弯曲损耗、Q 分解、drop IL、消光比）→ 验收判决（LLM 不进判决路径）。耦合/损耗模型取文献典型 SOI 220nm（PDK 接入后校准），诚实标注。</div>
+    <div class="row">
+      <label>目标 FSR(nm)<input id="rpFsr" type="number" step="0.1" value="17.5" style="width:80px"></label>
+      <label>gap(µm)<input id="rpGap" type="number" step="0.05" value="0.3" style="width:70px"></label>
+      <button class="btn" id="runRingPkg">一键产出设计包</button>
+    </div>
+    <div id="rpSummary" class="summary"></div>
+    <div id="rpLayout" style="margin-top:10px"></div>
+    <div id="rpBody"></div>
+    <div id="rpSpectrum" style="margin-top:10px"></div>
+    <div class="conclusion" id="rpConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 · 机器优先中间表示）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -939,6 +954,64 @@ function renderDesignLoop(d){
 }
 $('runDesignLoop').onclick = runDesignLoop;
 
+// ---- ⑮ D-37 环形 add-drop 产品链路 ----
+async function runRingPkg(){
+  const btn = $('runRingPkg'); btn.disabled = true;
+  const target_fsr = parseFloat($('rpFsr').value);
+  const gap = parseFloat($('rpGap').value);
+  $('rpSummary').innerHTML = '<span class="spin"></span> 一键产出环形 add-drop 可制造设计包（逆设计→GDS→DRC→FDTD 验收→耦合/损耗预算）…';
+  $('rpLayout').innerHTML=''; $('rpBody').innerHTML=''; $('rpSpectrum').innerHTML='';
+  try{
+    const d = await api('/api/ring_package', {target_fsr, gap});
+    renderRingPkg(d);
+  }catch(e){ $('rpSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function ringDropSpectrumSvg(d){
+  const wl = d.spectrum.wavelengths_um, dr = d.spectrum.drop, th = d.spectrum.thru;
+  if(!wl || !wl.length) return '';
+  const W=580, H=200, pad=38;
+  const wmin=wl[0], wmax=wl[wl.length-1], vmax=Math.max(1, ...dr, ...th);
+  const X=w=> pad + (w-wmin)/(wmax-wmin||1)*(W-2*pad);
+  const Y=v=> H-pad - Math.min(Math.max(v,0),vmax)/vmax*(H-2*pad);
+  const pd = wl.map((w,i)=> X(w).toFixed(1)+','+Y(dr[i]).toFixed(1)).join(' ');
+  const pt = wl.map((w,i)=> X(w).toFixed(1)+','+Y(th[i]).toFixed(1)).join(' ');
+  const q = (d.q_budget||{});
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px">
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#26304d"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#26304d"/>
+    <polyline points="${pt}" fill="none" stroke="#8aa0c6" stroke-width="2"/>
+    <polyline points="${pd}" fill="none" stroke="#e91e63" stroke-width="2"/>
+    <text x="${pad+4}" y="${pad+2}" fill="#e91e63" font-size="11">drop 谱（红）· thru（灰）· Q_L=${q.Q_L||'—'} · IL_drop=${(d.loss_budget||[])[3]?d.loss_budget[3].value:'—'}dB</text>
+    <text x="${pad}" y="${H-10}" fill="#8aa0c6" font-size="11">λ=${wmin.toFixed(3)}µm</text>
+    <text x="${W-pad}" y="${H-10}" fill="#8aa0c6" font-size="11" text-anchor="end">${wmax.toFixed(3)}µm</text>
+  </svg>`;
+}
+function renderRingPkg(d){
+  if(!d.ok){ $('rpSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const p = d.params;
+  const acc = d.acceptance||{};
+  $('rpSummary').innerHTML = `环形 add-drop 设计包：R=<b>${p.R}µm</b> · wg=<b>${p.wg_width}µm</b> · gap=<b>${p.gap}µm</b> <span class="verdict ${acc.passed?'ok':'fail'}">${acc.passed?'PASS':'FAIL'}</span>`;
+  $('rpLayout').innerHTML = d.layout_svg||'';
+  // 预算表
+  const lb = (d.loss_budget||[]).map(r=>`<tr><td>${r.item}</td><td>${r.value}</td><td>${r.unit}</td><td class="note">${r.note}</td></tr>`).join('');
+  const qb = d.q_budget||{};
+  const drc = d.drc||{};
+  const drcRows = (drc.checks||[]).map(c=>`<tr><td>${c.rule}</td><td>${c.param}=${c.value}</td><td>要求 ${c.ok?'≥':'<' }${c.required}</td><td>${c.ok?'✅':'❌'}</td></tr>`).join('');
+  $('rpBody').innerHTML = `
+    <div class="subhead">耦合/损耗预算（解析物理模型 · 文献典型 SOI 220nm）</div>
+    <table class="tbl"><thead><tr><th>项目</th><th>值</th><th>单位</th><th>说明</th></tr></thead><tbody>${lb}</tbody></table>
+    <div class="subhead">Q 分解</div>
+    <div class="note">Q_c（耦合）=<b>${qb.Q_c}</b> · Q_i（本征）=<b>${qb.Q_i}</b> · Q_L（加载）=<b>${qb.Q_L}</b> · 谱线宽 FWHM≈<b>${qb.fwhm_nm}nm</b></div>
+    <div class="subhead">DRC（可制造性）</div>
+    <table class="tbl"><thead><tr><th>规则</th><th>实测</th><th>要求</th><th>判定</th></tr></thead><tbody>${drcRows||'<tr><td colspan=4>—</td></tr>'}</tbody></table>
+    <div class="subhead">验收检查（死标量比对）</div>
+    ${(acc.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('')}`;
+  $('rpSpectrum').innerHTML = ringDropSpectrumSvg(d);
+  $('rpConclusion').innerHTML = `<strong>${d.verdict}</strong><br><span class="note">${d.note||''}</span>`;
+}
+$('runRingPkg').onclick = runRingPkg;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -980,6 +1053,7 @@ $('runIr').onclick = runIr;
   runDcTrans();
   runDevLib();
   runDesignLoop();
+  runRingPkg();
   runIr();
 })();
 </script>

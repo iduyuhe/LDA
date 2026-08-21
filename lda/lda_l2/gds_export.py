@@ -157,7 +157,10 @@ def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
       boundary : + rings_um（多环多边形，每环闭合点列表）
 
     参数（µm）：Waveguide{width,length}；RingResonator{R,...} + wg_width；
-    DirectionalCoupler{gap,Lc,width}；SymmetricYBranch{width,split_angle,arm_length}。
+    DirectionalCoupler{gap,Lc,width}；SymmetricYBranch{width,split_angle,arm_length}；
+    RingAddDrop{R, wg_width, gap}（D-37 环形 add-drop：环 + through/drop 双 bus，
+    端口：input→through（下 bus，y=-off）、add→drop（上 bus，y=+off），
+    off = R + wg_width/2 + gap）。
     """
     core_w = float(params.get("width", 0.5))
     descs: List[Dict] = []
@@ -174,6 +177,21 @@ def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
         descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": wg_w,
                       "points_um": [(-R * 1.4, -R - wg_w / 2.0),
                                     (R * 1.4, -R - wg_w / 2.0)]})
+    elif kind == "RingAddDrop":
+        # D-37：环形 add-drop（双 bus）。环居中，through bus 在下，drop bus 在上。
+        R = float(params.get("R", 10.0))
+        wg_w = float(opt.get("wg_width", params.get("wg_width", 0.5)))
+        gap = float(params.get("gap", 0.3))
+        half = float(opt.get("bus_half_length", R * 1.5))
+        off = R + wg_w / 2.0 + gap
+        descs.append({"kind": "boundary", "layer": LIB_LAYER_SI,
+                      "rings_um": ring_ring_polygon(R, wg_w)})
+        # through（下 bus）：input → through
+        descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": wg_w,
+                      "points_um": [(-half, -off), (half, -off)]})
+        # drop（上 bus）：add → drop
+        descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": wg_w,
+                      "points_um": [(-half, off), (half, off)]})
     elif kind == "DirectionalCoupler":
         gap = float(params.get("gap", 0.3))
         Lc = float(params.get("Lc", 10.0))

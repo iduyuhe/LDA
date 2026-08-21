@@ -388,6 +388,42 @@ def run_design_loop(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_ring_package(payload=None):
+    """D-37 环形 add-drop 完整产品链路（webui ⑮ 面板）。
+
+    输入 {target_fsr?|R?|gap?|wg_width?}：一键产出可制造设计包——
+    逆设计(R) → 双 bus 版图 GDS/SVG → DRC → bus FDTD 验收 + FSR 契约 +
+    FDTD 锚点对拍 → 耦合/损耗预算（κ/Q/弯曲损耗/drop IL/消光比）→ 验收判决。
+    现场跑（bus FDTD ~7s 纯 numpy），LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.ring_adddrop import build_package
+    payload = payload or {}
+    params = {}
+    for k in ("R", "gap", "wg_width"):
+        if payload.get(k) is not None:
+            try:
+                params[k] = float(payload[k])
+            except (TypeError, ValueError):
+                return {"ok": False, "error": f"{k} 须为数值"}
+    target_fsr = None
+    if payload.get("target_fsr") is not None:
+        try:
+            target_fsr = float(payload["target_fsr"])
+        except (TypeError, ValueError):
+            return {"ok": False, "error": "target_fsr 须为数值"}
+    try:
+        rep = build_package(target_fsr_nm=target_fsr, params=params or None)
+        rep["ok"] = True
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_drc_fix_demo(payload):
     """D-18/D-21/D-22 可制造性面板：agent 自动整改 + 跨厂工艺规则对比。
 
@@ -634,6 +670,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_design_pipeline(payload))
             elif path == "/api/design_loop":
                 self._send(200, run_design_loop(payload))
+            elif path == "/api/ring_package":
+                self._send(200, run_ring_package(payload))
             elif path == "/api/drc_fix_demo":
                 self._send(200, run_drc_fix_demo(payload))
             elif path == "/api/coupler_loop":

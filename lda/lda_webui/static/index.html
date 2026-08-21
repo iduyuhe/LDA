@@ -428,6 +428,22 @@
   </div>
 
   <div class="sec">
+    <h2>㉑ N-qubit 频率复用读出（D-46 · 光子-量子混合系统）</h2>
+    <div class="hint">把 D-42（级联/信道错开）+ D-43（色散读出）组合成<b>多 qubit 频率复用读出</b>：N 个 Transmon 各自耦合专属 readout 谐振器（f_r=f01+Δ），谐振器沿公共读出力线（feedline）<b>错开读出频率（间隔≥3×κ_r 防串扰）</b>——WDM 的量子版。逐 qubit 严格数值双验证 + <b>JC 精确对角化↔色散 χ=g²/Δ</b>（复用 D-43）；力线透射 = N 个 hanger 型 dip 级联（Goppl 2008 标准形式），<b>可分辨判据=相邻 dip 中点透射&gt;0.5</b>；混合 IR 网表（3N+1 器件，D-40 v0.3）。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>qubit 频率 f01(GHz，逗号分隔)<input id="mqF01s" type="text" value="4.8,5.0,5.2" style="width:180px"></label>
+      <label>Δ(GHz)<input id="mqDelta" type="number" step="0.1" value="1.0" style="width:60px"></label>
+      <label>g(GHz)<input id="mqG" type="number" step="0.01" value="0.10" style="width:60px"></label>
+      <label>κ_ext(GHz)<input id="mqKe" type="number" step="0.001" value="0.005" style="width:70px"></label>
+      <button class="btn" id="runMq">设计 N-qubit 读出</button>
+    </div>
+    <div id="mqSummary" class="summary"></div>
+    <div id="mqBody"></div>
+    <div id="mqSpectrum" style="margin-top:10px"></div>
+    <div class="conclusion" id="mqConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1283,6 +1299,63 @@ function renderDp(d){
 }
 $('runDp').onclick = runDp;
 
+// ---- ㉑ D-46 N-qubit 频率复用读出 ----
+async function runMq(){
+  const btn = $('runMq'); btn.disabled = true;
+  const f01s = $('mqF01s').value.trim();
+  const delta = parseFloat($('mqDelta').value);
+  const g = parseFloat($('mqG').value);
+  const ke = parseFloat($('mqKe').value);
+  $('mqSummary').innerHTML = '<span class="spin"></span> N-qubit 频率复用读出设计中（反解 → 逐 qubit 双验证 + JC ↔ 色散 → 力线透射 → 系统验收）…';
+  $('mqBody').innerHTML=''; $('mqSpectrum').innerHTML='';
+  try{
+    const d = await api('/api/multiqubit_readout', {f01s, delta, g, kappa_ext:ke});
+    renderMq(d);
+  }catch(e){ $('mqSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function mqSpectrumSvg(d){
+  const sp = d.spectrum||{};
+  const fs = sp.frequencies_ghz, T = sp.transmission||[];
+  if(!fs || !fs.length) return '';
+  const W=580, H=220, pad=38;
+  const fmin=fs[0], fmax=fs[fs.length-1];
+  const X=f=> pad + (f-fmin)/(fmax-fmin||1)*(W-2*pad);
+  const Y=v=> H-pad - Math.min(Math.max(v,0),1.05)/1.05*(H-2*pad);
+  const pt = fs.map((f,k)=> X(f).toFixed(1)+','+Y(T[k]).toFixed(1)).join(' ');
+  const dips = (d.readout_freqs_ghz||[]).map(f=>`<line x1="${X(f).toFixed(1)}" y1="${pad}" x2="${X(f).toFixed(1)}" y2="${H-pad}" stroke="#e91e63" stroke-dasharray="3,3" stroke-width="0.8"/><text x="${X(f).toFixed(1)}" y="${pad-4}" fill="#e91e63" font-size="8" text-anchor="middle">${f}GHz</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px">
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#26304d"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#26304d"/>
+    <polyline points="${pt}" fill="none" stroke="#2563eb" stroke-width="2.2"/>
+    ${dips}
+    <text x="${pad+4}" y="${pad-16}" fill="#8aa0c6" font-size="11">公共力线级联透射 |S21|²（N 个 hanger dip）· 红虚线=readout 频率</text>
+  </svg>`;
+}
+function renderMq(d){
+  if(!d.ok){ $('mqSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const acc = d.acceptance||{}, qs = d.qubits||[];
+  const rows = qs.map(q=>{
+    const v = q.verification||{};
+    return `<tr><td><b>${q.qid}</b></td><td>${q.f01_ghz}</td><td>${q.f_r_ghz}</td>
+      <td>${v.transmon? v.transmon.f01_diag_ghz+'GHz':''}</td><td>${v.transmon? (v.transmon.rel_err*100).toFixed(2)+'%':''}</td>
+      <td>${v.resonator? v.resonator.f0_num_ghz+'GHz':''}</td><td>${v.resonator? (v.resonator.rel_err*100).toFixed(2)+'%':''}</td>
+      <td>${v.jc? v.jc.chi_num_ghz+'↔'+v.jc.chi_analytic_ghz+'GHz':''}</td><td>${v.jc? (v.jc.chi_rel_err*100).toFixed(1)+'%':''}</td></tr>`;
+  }).join('');
+  const checks = (acc.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('');
+  const resv = (d.dip_resolvability||[]).map(r=>`${r.f0_ghz}↔${r.f1_ghz}GHz 中点 T=${r.mid_T} ${r.resolvable?'✓':'✗'}`).join('；');
+  $('mqSummary').innerHTML = `N-qubit 频率复用读出：f01=<b>${d.f01s_ghz.join(',')}</b>GHz → readout <b>${d.readout_freqs_ghz.join(', ')}</b>GHz 沿 feedline 错开 · Δ/g=<b>${(d.delta_ghz/d.g_ghz).toFixed(1)}</b> · χ/κ_r=<b>${(d.chi_ghz/d.kappa_r_ghz).toFixed(1)}</b> · dip 可分辨：<span class="verdict ${acc.passed?'ok':'fail'}">${acc.passed?'PASS':'FAIL'}</span>`;
+  $('mqBody').innerHTML = `
+    <div class="subhead">qubit / readout 设计表（每 qubit：闭式反解 → 严格数值双验证 + JC）</div>
+    <table class="tbl"><thead><tr><th>qubit</th><th>f01(GHz)</th><th>f_r(GHz)</th><th>f01 对角化</th><th>rel</th><th>f0 离散本征值</th><th>rel</th><th>χ_num↔χ_an</th><th>χ rel</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="subhead">dip 可分辨性：${resv || '—'}</div>
+    <div class="subhead">系统验收（死标量比对）</div>
+    ${checks}`;
+  $('mqSpectrum').innerHTML = mqSpectrumSvg(d);
+  $('mqConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+}
+$('runMq').onclick = runMq;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -1330,6 +1403,7 @@ $('runIr').onclick = runIr;
   runWdm();
   runRc();
   runDp();
+  runMq();
   runIr();
 })();
 </script>

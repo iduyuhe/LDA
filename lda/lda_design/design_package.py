@@ -35,7 +35,7 @@ if _LDA not in sys.path:
     sys.path.insert(0, _LDA)
 
 SCHEMA_VERSION = "0.1"
-PACKAGE_KINDS = ("add_drop", "quantum", "wdm", "readout_chain")
+PACKAGE_KINDS = ("add_drop", "quantum", "wdm", "readout_chain", "multiqubit")
 
 
 def _now_iso() -> str:
@@ -163,11 +163,18 @@ def package_from_readout(f01: float = 5.0, delta: float = 1.0, g: float = 0.10,
     }
 
 
+def package_from_multiqubit(f01s: Optional[List[float]] = None, **kw) -> Dict[str, Any]:
+    """D-46 N-qubit 频率复用读出（光子-量子混合系统）→ 统一设计包。"""
+    from lda_agent.multiqubit_readout import package_from_multiqubit as _p
+    return _p(f01s=f01s, **kw)
+
+
 _BUILDERS = {
     "add_drop": package_from_add_drop,
     "quantum": package_from_quantum,
     "wdm": package_from_wdm,
     "readout_chain": package_from_readout,
+    "multiqubit": package_from_multiqubit,
 }
 
 _DEFAULTS = {
@@ -175,6 +182,7 @@ _DEFAULTS = {
     "quantum": {"kind": "Transmon", "target": 5.0},
     "wdm": {"channels": [1550.0, 1552.5, 1555.0, 1557.5], "gap": 0.3},
     "readout_chain": {"f01": 5.0, "delta": 1.0, "g": 0.10, "kappa_r": 0.005},
+    "multiqubit": {"f01s": [4.8, 5.0, 5.2]},
 }
 
 

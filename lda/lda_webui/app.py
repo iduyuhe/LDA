@@ -586,6 +586,42 @@ def run_readout_chain(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_multiqubit_readout(payload=None):
+    """D-46 N-qubit 频率复用读出（webui ㉑ 面板）。
+
+    输入 {f01s?, delta?, g?, kappa_ext?}：N qubit → 各自 readout 谐振器沿
+    公共力线频率错开（间隔≥3×κ_r）→ 逐 qubit 双验证 + JC ↔ 色散 χ →
+    力线 hanger 级联透射（dip 可分辨判据）→ 系统验收 → 混合 IR 网表。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.multiqubit_readout import design_multiqubit_readout
+    payload = payload or {}
+    raw = payload.get("f01s", "4.8,5.0,5.2")
+    if isinstance(raw, str):
+        raw = raw.split(",")
+    try:
+        f01s = [float(x) for x in raw if str(x).strip()]
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "f01s 须为逗号分隔的 qubit 频率(GHz)列表"}
+    kw = {}
+    for k in ("delta", "g", "kappa_ext"):
+        if payload.get(k) is not None:
+            try:
+                kw[k] = float(payload[k])
+            except (TypeError, ValueError):
+                return {"ok": False, "error": f"{k} 须为数值"}
+    try:
+        rep = design_multiqubit_readout(f01s, **kw)
+        rep["ok"] = True
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_design_package(payload=None):
     """D-44 统一设计包规范（webui ⑳ 面板）。
 
@@ -881,6 +917,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_wdm_design(payload))
             elif path == "/api/readout_chain":
                 self._send(200, run_readout_chain(payload))
+            elif path == "/api/multiqubit_readout":
+                self._send(200, run_multiqubit_readout(payload))
             elif path == "/api/design_package":
                 self._send(200, run_design_package(payload))
             elif path == "/api/drc_fix_demo":

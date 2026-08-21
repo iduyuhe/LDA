@@ -46,10 +46,20 @@ def kappa_fdtd(gap, wl, dl_factor=20):
 
 
 def main():
+    import argparse
+    ap = argparse.ArgumentParser(description="κ_c(gap,λ) 全网格 PDK 标定")
+    ap.add_argument("--gaps", default=",".join(str(g) for g in GAPS),
+                    help="gap 扫描(µm)，逗号分隔（默认 0.25,0.30,0.35）")
+    ap.add_argument("--wls", default=",".join(str(w) for w in WLS),
+                    help="波长扫描(µm)，逗号分隔（默认 1.50,1.55,1.60）")
+    ap.add_argument("--out", default=OUT, help="输出 JSON 路径")
+    args = ap.parse_args()
+    gaps = [float(x) for x in args.gaps.split(",") if x.strip()]
+    wls = [float(x) for x in args.wls.split(",") if x.strip()]
     t0 = time.time()
     points = []
-    for gap in GAPS:
-        for wl in WLS:
+    for gap in gaps:
+        for wl in wls:
             k, c1, c2, w = kappa_fdtd(gap, wl)
             points.append({"gap_um": gap, "wl_um": wl,
                            "kappa_c_rad_um": round(k, 6),
@@ -62,17 +72,18 @@ def main():
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "w_um": 0.5, "n_core": 3.48, "n_clad": 1.44,
         "dl_factor": 20, "dl_um": 0.0775,
-        "gaps_um": GAPS, "wls_um": WLS,
-        "method": "kappa_c 双点差分标定（D-55），全网格 (gap×λ) 9 点",
+        "gaps_um": gaps, "wls_um": wls,
+        "method": "kappa_c 双点差分标定（D-55），全网格 (gap×λ) "
+                  f"{len(gaps) * len(wls)} 点",
         "note": "二维网格直接查表（双线性插值），替代 D-59 分离变量近似；"
                 "诚实标注：dl=0.078µm 分辨 gap≥0.1µm，κ_c 非严格单调（网格"
                 "色散噪声）；winding=True 点 κL 越过 π/2（asin 折叠，降级单点）。",
         "points": points,
         "elapsed_s": round(time.time() - t0, 1),
     }
-    json.dump(calib, open(OUT, "w", encoding="utf-8"), ensure_ascii=False,
+    json.dump(calib, open(args.out, "w", encoding="utf-8"), ensure_ascii=False,
               indent=2)
-    print(f"已保存 {OUT} | {len(points)} 点 | 耗时 {calib['elapsed_s']}s",
+    print(f"已保存 {args.out} | {len(points)} 点 | 耗时 {calib['elapsed_s']}s",
           flush=True)
 
 

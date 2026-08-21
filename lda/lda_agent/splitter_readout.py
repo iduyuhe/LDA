@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 import argparse
 import json
 import math
+import os
 import sys
 
 # 默认参数
@@ -29,6 +30,39 @@ _DEF_N_AMP = 1.0
 _PWR_TOL = 0.05                      # 分束命中容差（|实际-目标|）
 _SNR_MIN = 3.0                       # 缩放后单发 SNR 阈值
 _F_MIN = 0.98                        # 缩放后读出保真度阈值
+_GRID_CALIB_PATH = None              # 惰性解析（避免循环 import）
+
+
+def _load_grid_calib() -> Optional[Dict[str, Any]]:
+    """加载 κ_c(gap,λ) 全网格标定文件（D-60/D-68，供标定库驱动模式）。"""
+    global _GRID_CALIB_PATH
+    if _GRID_CALIB_PATH is None:
+        _GRID_CALIB_PATH = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "data", "kappa_grid_calibration.json")
+    if not os.path.exists(_GRID_CALIB_PATH):
+        return None
+    with open(_GRID_CALIB_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _pick_gap_from_calib(grid: Dict[str, Any], target_cross: float,
+                         wl_um: float = 1.55) -> Optional[float]:
+    """从标定库选 gap：扫 gap 网格，κ_c(gap) 反解 L_est=asin(√cross)/κ_c，
+    选 L_est ∈ [5,80]µm 的最小 gap（大 gap 工艺友好）；无合适取最接近 20µm。"""
+    if not grid or not grid.get("points") or not grid.get("gaps_um"):
+        return None
+    from lda_agent.wdm_coupler import kappa_c_grid_interp  # noqa: E402
+    best, best_key = None, None
+    for gap in sorted(grid["gaps_um"]):
+        kc = kappa_c_grid_interp(grid, gap, wl_um)
+        if kc is None or kc <= 0:
+            continue
+        L_est = math.asin(math.sqrt(min(max(target_cross, 0.0), 0.999))) / kc
+        key = (0, gap) if 5.0 <= L_est <= 80.0 else (1, abs(L_est - 20.0))
+        if best_key is None or key < best_key:
+            best, best_key = gap, key
+    return best
 
 
 def _split_index(weights: List[float], lo: int, hi: int) -> int:
@@ -43,13 +77,39 @@ def _split_index(weights: List[float], lo: int, hi: int) -> int:
     return best
 
 
-def _design_dc(target_cross: float, dc_id: str) -> Dict[str, Any]:
-    """单级方向耦合器设计（D-55 design_coupler 真实 FDTD 闭环）。"""
+def _design_dc(target_cross: float, dc_id: str,
+               calibrated: bool = False,
+               grid: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """单级方向耦合器设计（D-55 design_coupler 真实 FDTD 闭环）。
+
+    calibrated=True：gap 由 κ_c(gap,λ) 全网格标定库选择（D-66 标定库驱动
+    ——反解 L_est=asin(√cross)/κ_c 落在合理工艺窗的最小 gap），而非固定 0.3。
+    """
     from lda_agent.directional_coupler import design_coupler  # noqa: E402
-    rep = design_coupler(target_cross=target_cross)
+    extra: Dict[str, Any] = {}
+    kwargs: Dict[str, Any] = {}
+    if calibrated:
+        if grid is None:
+            grid = _load_grid_calib()
+        if grid is None:
+            return {"id": dc_id, "ok": False,
+                    "error": "标定库文件缺失（data/kappa_grid_calibration.json）"}
+        gap_pick = _pick_gap_from_calib(grid, target_cross)
+        if gap_pick is None:
+            return {"id": dc_id, "ok": False,
+                    "error": "标定库无法为 target_cross 选 gap"}
+        kwargs["gap_um"] = gap_pick
+        from lda_agent.wdm_coupler import kappa_c_grid_interp  # noqa: E402
+        kc = kappa_c_grid_interp(grid, gap_pick, 1.55)
+        L_est = (math.asin(math.sqrt(min(max(target_cross, 0.0), 0.999))) / kc
+                 if kc and kc > 0 else None)
+        extra = {"gap_from_calibration": True,
+                 "kappa_c_calib_rad_um": round(kc, 6) if kc else None,
+                 "L_est_um": round(L_est, 2) if L_est else None}
+    rep = design_coupler(target_cross=target_cross, **kwargs)
     if not rep.get("ok"):
         return {"id": dc_id, "ok": False, "error": rep.get("error")}
-    return {
+    out = {
         "id": dc_id,
         "ok": True,
         "target_cross": round(rep["target_cross"], 5),
@@ -58,6 +118,8 @@ def _design_dc(target_cross: float, dc_id: str) -> Dict[str, Any]:
         "gap_um": rep["gap_um"],
         "iteration": rep["iteration"],
     }
+    out.update(extra)
+    return out
 
 
 def design_splitter_readout(
@@ -68,11 +130,15 @@ def design_splitter_readout(
     kappa_r: float = _DEF_KAPPA_R,
     T1_us: float = _DEF_T1_US, eta: float = _DEF_ETA,
     N_amp: float = _DEF_N_AMP,
+    calibrated: bool = False,
+    grid: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """方向耦合器 × 量子读出联合设计闭环。
 
     weights=None → 均匀 1/N。返回分束网络（每级 FDTD 设计）+ 每 qubit 读出
     预算（按实际功率缩放）+ 统一 IR 网表 + 联合验收。
+    calibrated=True：每级 DC 的 gap 由 κ_c(gap,λ) 全网格标定库选择
+    （D-66 标定库驱动——真实 FDTD 标定替代固定 gap=0.3）。
     """
     if f01s is None:
         f01s = list(_DEF_F01S)
@@ -100,7 +166,8 @@ def design_splitter_readout(
         right_w = sum(weights[k:hi])
         target_cross = right_w / (left_w + right_w)
         dc_idx += 1
-        dc = _design_dc(target_cross, f"dc{dc_idx}")
+        dc = _design_dc(target_cross, f"dc{dc_idx}",
+                        calibrated=calibrated, grid=grid)
         if not dc["ok"]:
             raise RuntimeError(f"DC 设计失败: {dc.get('error')}")
         cross_fdtd = dc["cross_val_fdtd"]
@@ -233,10 +300,22 @@ def design_splitter_readout(
          "detail": "分束网络为光子域器件（FDTD 实测分束比）；功率→读出映射为"
                    "拓扑同构/接口规划，不做跨物理域功率传递的物理声称"},
     ]
+    if calibrated:
+        g_from_calib = [s for s in splitters if s.get("gap_from_calibration")]
+        checks.append({
+            "name": "标定库驱动（gap 由 κ_c(gap,λ) 网格选择，D-66）",
+            "ok": bool(g_from_calib) and all(
+                s["cross_val_fdtd"] > 0 for s in g_from_calib),
+            "detail": "; ".join(
+                f"{s['id']}: cross={s['target_cross']} → gap="
+                f"{s['gap_um']}µm（κ_c={s['kappa_c_calib_rad_um']} "
+                f"L_est={s['L_est_um']}µm → FDTD 实测 "
+                f"{s['cross_val_fdtd']}）" for s in g_from_calib)})
     accepted = all(c["ok"] for c in checks)
     verdict = (
         f"方向耦合器×量子读出 PASS：{len(splitters)} 级 DC 分束网络"
-        f"（FDTD 实测分束）→ {n_q} qubit 读出（缩放后 F∈"
+        f"（{'标定库驱动 gap' if calibrated else 'FDTD 实测分束'}"
+        f"）→ {n_q} qubit 读出（缩放后 F∈"
         f"[{min(f_list):.4f}, {max(f_list):.4f}]）同一网表，功率分配命中"
         if accepted else
         "未全过：" + "; ".join(c["name"] for c in checks if not c["ok"]))
@@ -246,6 +325,7 @@ def design_splitter_readout(
         "title": f"{n_q}-qubit 读出 × {len(splitters)} 级 DC 分束网络",
         "n_qubits": n_q, "n_splitters": len(splitters),
         "f01s_ghz": f01s,
+        "calibrated": calibrated,
         "splitters": splitters,
         "leaves": leaves,
         "per_qubit": per_qubit,
@@ -256,7 +336,10 @@ def design_splitter_readout(
         "acceptance": {"checks": checks, "passed": accepted},
         "verdict": verdict,
         "note": "光子侧：二叉树级联 DC（D-55 真实 FDTD 设计闭环，每级分束比取"
-                "实测 cross_val_fdtd）；量子侧：D-47 读出预算按实际功率权重缩放"
+                "实测 cross_val_fdtd" +
+                ("；gap 由 κ_c(gap,λ) 全网格标定库选择（D-66）"
+                 if calibrated else "") +
+                "）；量子侧：D-47 读出预算按实际功率权重缩放"
                 "n̄（SNR ∝ √n̄）。光↔微波物理独立，拓扑同构映射为接口规划。"
                 "LLM 不进判决路径。",
     }
@@ -311,13 +394,15 @@ def main() -> int:
                     help="qubit 读出频率(GHz)，逗号分隔")
     ap.add_argument("--weights", default="",
                     help="功率权重(逗号分隔)，空=均匀")
+    ap.add_argument("--calibrated", action="store_true",
+                    help="标定库驱动：每级 DC 的 gap 由 κ_c(gap,λ) 网格选择")
     args = ap.parse_args()
     f01s = [float(x) for x in args.f01s.split(",") if x.strip()]
     ws = [float(x) for x in args.weights.split(",") if x.strip()] or None
-    r = design_splitter_readout(f01s, weights=ws)
-    out = {k: r[k] for k in ("title", "n_qubits", "n_splitters", "splitters",
-                             "leaves", "per_qubit", "ir", "acceptance",
-                             "verdict", "note")}
+    r = design_splitter_readout(f01s, weights=ws, calibrated=args.calibrated)
+    out = {k: r[k] for k in ("title", "n_qubits", "n_splitters", "calibrated",
+                             "splitters", "leaves", "per_qubit", "ir",
+                             "acceptance", "verdict", "note")}
     print(json.dumps(out, ensure_ascii=False, indent=2, default=str))
     return 0 if r["acceptance"]["passed"] else 1
 

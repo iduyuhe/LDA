@@ -1,6 +1,6 @@
 {
   "directional_coupler": {
-    "schema_version": "0.2",
+    "schema_version": "0.3",
     "domain": "photon",
     "name": "dc-demo",
     "components": [
@@ -55,7 +55,7 @@
     "notes": ""
   },
   "symmetric_y_branch": {
-    "schema_version": "0.2",
+    "schema_version": "0.3",
     "domain": "photon",
     "name": "yb-demo",
     "components": [
@@ -106,7 +106,7 @@
     "notes": ""
   },
   "ring_resonator_v02": {
-    "schema_version": "0.2",
+    "schema_version": "0.3",
     "domain": "photon",
     "name": "ring-demo",
     "components": [
@@ -171,7 +171,7 @@
     "notes": ""
   },
   "transmon_target_f01": {
-    "schema_version": "0.2",
+    "schema_version": "0.3",
     "domain": "quantum",
     "name": "q-demo",
     "components": [

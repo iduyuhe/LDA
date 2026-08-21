@@ -71,7 +71,7 @@ agent（L1 协议）/ 人（验收）/ 第三方工具 / CI 自动化
 - `verification.checks` 与 harness 基准题（B1–B13）同语义：死标量比对明细。
 - 第三方对接只需消费 DesignPackage 这一个格式，无需理解内部各闭环。
 
-## 4. kind 注册表（v0.1）
+## 4. kind 注册表（v0.1 · 6 kind）
 
 | kind | 来源 | domain | targets 典型键 | params 典型键 | artifacts 典型键 |
 |---|---|---|---|---|---|
@@ -79,6 +79,8 @@ agent（L1 协议）/ 人（验收）/ 第三方工具 / CI 自动化
 | `quantum` | D-41 量子 agent 逆设计闭环 | quantum | `transmon`/`resonator`/`coupler`（目标 GHz） | `E_J` `E_C` / `Lp` `Cp` `l` / `Cc` … | `numerical` `analytic` |
 | `wdm` | D-42 WDM 多环级联系统设计 | photon | `channels_nm` | `ring_radii_um` `gap_um` `wg_width_um` | `layout_svg` `spectrum` `gds` |
 | `readout_chain` | D-43 光子-量子混合链路 | hybrid | `f01_ghz` `f_r_ghz` `g_ghz` `kappa_r_ghz` | `E_J` `l_m` `Cc` `Q_ext` | `verification_detail` |
+| `multiqubit` | D-46 N-qubit 频率复用读出 | hybrid | `f01s_ghz` `delta_ghz` `g_ghz` | `readout_freqs_ghz` `kappa_r_ghz` `kappa_ext_ghz` `kappa_i_ghz` `chi_ghz` `qubits[]` | `spectrum`（力线透射谱）`dip_resolvability` |
+| `readout_fidelity` | D-47 单发读出保真度预算 | hybrid | `f01_ghz` `delta_ghz` `g_ghz` `kappa_r_ghz` | `T1_us` `nbar` `eta` `N_amp` `t_m_star_ns` `budget` | `sweep`（SNR/保真度随 t_m 扫描） |
 
 > 新增 kind 指南见 §10。
 
@@ -154,6 +156,8 @@ agent（L1 协议）/ 人（验收）/ 第三方工具 / CI 自动化
 | `budgets` | object | 耦合/损耗预算表（add_drop） |
 | `numerical` / `analytic` | object | 严格数值 vs 解析契约明细（quantum） |
 | `verification_detail` | object | 器件级双验证明细（readout_chain） |
+| `dip_resolvability` | object[] | 相邻读出 dip 可分辨检查（multiqubit） |
+| `sweep` | object[] | SNR/保真度随 t_m 扫描预算表（readout_fidelity） |
 
 ## 9. 机器校验规则（validate_package）
 
@@ -162,7 +166,7 @@ agent（L1 协议）/ 人（验收）/ 第三方工具 / CI 自动化
 1. 必填字段齐全：`package_id` `schema_version` `kind` `domain` `title`
    `created_at` `design` `verification` `honest_notes`
 2. `schema_version == "0.1"`
-3. `kind ∈ {add_drop, quantum, wdm, readout_chain}`
+3. `kind ∈ {add_drop, quantum, wdm, readout_chain, multiqubit, readout_fidelity}`
 4. `domain ∈ {photon, quantum, hybrid}`
 5. `verification.passed` 存在（验收门）
 6. `honest_notes` 非空（诚实标注必填）
@@ -214,3 +218,4 @@ agent（L1 协议）/ 人（验收）/ 第三方工具 / CI 自动化
 | 版本 | 日期 | 变更 |
 |---|---|---|
 | 0.1 | 2026-08-21 | 初始发布（D-44）：schema + 4 类 kind + 校验规则 + JSON Schema |
+| 0.1.1 | 2026-08-21 | kind 注册表扩展至 6 类（D-48 配套）：新增 `multiqubit`（D-46 N-qubit 频率复用读出）与 `readout_fidelity`（D-47 单发读出保真度预算）；§7 artifacts 常见键补充 `dip_resolvability` / `sweep`；§9 机器校验规则 kind 枚举同步更新 |

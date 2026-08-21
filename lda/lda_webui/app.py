@@ -798,9 +798,11 @@ def run_wdm_coupler(payload=None):
         return {"ok": False,
                 "error": "channels(≥2) / gap_scan 须为逗号分隔数值列表"}
     wl = bool(payload.get("wavelength", False))
+    grid = bool(payload.get("grid", False))
     try:
         rep = design_wdm_with_coupler(ch, gap_scan=gs,
-                                      wavelength_calibrated=wl)
+                                      wavelength_calibrated=wl,
+                                      grid_calibrated=grid)
         rep["ok"] = True
         return rep
     except Exception as e:  # noqa: BLE001

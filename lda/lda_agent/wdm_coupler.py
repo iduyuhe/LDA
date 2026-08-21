@@ -36,11 +36,41 @@ _CALIB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "data", "kappa_calibration.json")
 _WL_CALIB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                               "data", "kappa_wavelength_calibration.json")
+_GRID_CALIB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "data", "kappa_grid_calibration.json")
 
 
 # ---------------------------------------------------------------------------
 # PDK 标定文件
 # ---------------------------------------------------------------------------
+def kappa_c_grid_interp(grid: Dict[str, Any], gap_um: float,
+                        wl_um: float) -> Optional[float]:
+    """κ_c(gap,λ) 全网格双线性插值（越界 → None）。"""
+    pts = {(p["gap_um"], p["wl_um"]): p["kappa_c_rad_um"]
+           for p in grid["points"]}
+    gaps = sorted(grid["gaps_um"])
+    wls = sorted(grid["wls_um"])
+    if gap_um < gaps[0] - 1e-9 or gap_um > gaps[-1] + 1e-9:
+        return None
+    if wl_um < wls[0] - 1e-9 or wl_um > wls[-1] + 1e-9:
+        return None
+    g0 = max(g for g in gaps if g <= gap_um + 1e-9)
+    g1 = min(g for g in gaps if g >= gap_um - 1e-9)
+    w0 = max(w for w in wls if w <= wl_um + 1e-9)
+    w1 = min(w for w in wls if w >= wl_um - 1e-9)
+    if g0 == g1 and w0 == w1:
+        return pts[(g0, w0)]
+    k00 = pts[(g0, w0)]
+    k01 = pts[(g0, w1)] if w1 != w0 else k00
+    k10 = pts[(g1, w0)] if g1 != g0 else k00
+    k11 = pts[(g1, w1)] if (g1 != g0 and w1 != w0) else k00
+    wg = (gap_um - g0) / (g1 - g0) if g1 != g0 else 0.0
+    ww = (wl_um - w0) / (w1 - w0) if w1 != w0 else 0.0
+    k_bot = k00 + (k10 - k00) * wg
+    k_top = k01 + (k11 - k01) * wg
+    return k_bot + (k_top - k_bot) * ww
+
+
 def _wdm_detail(wdm: Dict[str, Any]) -> str:
     """WDM 验收摘要（避免多行 f-string 跨括号，Python<3.12 兼容）。"""
     chks = wdm["acceptance"]["checks"]
@@ -121,6 +151,8 @@ def design_wdm_with_coupler(channels_nm: Optional[List[float]] = None,
                             n_g: float = 4.2, m: int = 170,
                             wavelength_calibrated: bool = False,
                             wl_calib: Optional[Dict[str, Any]] = None,
+                            grid_calibrated: bool = False,
+                            grid_calib: Optional[Dict[str, Any]] = None,
                             ) -> Dict[str, Any]:
     """耦合器×WDM 组合设计：FDTD 标定驱动 gap 选择 → WDM 系统验收。
 
@@ -128,6 +160,10 @@ def design_wdm_with_coupler(channels_nm: Optional[List[float]] = None,
     每信道按 λ 插值 κ_c → 每环独立 k_ring；WDM 验收用最弱耦合
     k_ring_min（保守——最弱信道过则全部过），并报告每信道 k_ring 表
     与 κ_c(λ) 趋势（D-59：λ 1.50→1.60 增幅 ~27%）。
+
+    grid_calibrated=True：加载 κ_c(gap,λ) 全网格标定文件（D-60），
+    **双线性插值**直接查表（替代 D-59 分离变量近似）——每 gap × 每信道
+    独立 κ_c → 最弱耦合保守验收。grid 优先级高于 wavelength。
     """
     if channels_nm is None:
         channels_nm = list(_DEF_CHANNELS)
@@ -138,9 +174,19 @@ def design_wdm_with_coupler(channels_nm: Optional[List[float]] = None,
     if wl_calib is None:
         wl_calib = (load_calibration(_WL_CALIB_PATH)
                     if os.path.exists(_WL_CALIB_PATH) else None)
+    if grid_calib is None:
+        grid_calib = (load_calibration(_GRID_CALIB_PATH)
+                      if os.path.exists(_GRID_CALIB_PATH) else None)
     n_ch = len(channels_nm)
     # WDM 环半径（m 阶环）：R = m·λ0/(2π·n_g)
     R_typ = m * channels_nm[0] * 1e-3 / (2.0 * math.pi * n_g)
+
+    def _grid_valid(gd: Dict[str, Any]) -> bool:
+        """全网格标定文件覆盖全部 (gap_scan, 信道 λ)。"""
+        return bool(gd and all(
+            kappa_c_grid_interp(gd, g, c * 1e-3) is not None
+            for g in gap_scan for c in channels_nm))
+    grid_valid = _grid_valid(grid_calib) if grid_calib else False
 
     def _wl_valid(cb: Dict[str, Any]) -> bool:
         """波长标定文件覆盖全部信道。"""
@@ -158,7 +204,41 @@ def design_wdm_with_coupler(channels_nm: Optional[List[float]] = None,
     chosen: Optional[Dict[str, Any]] = None
     chosen_per_channel: List[Dict[str, Any]] = []
     for gap in gap_scan:
-        if wavelength_calibrated and wl_valid and wl_base:
+        if grid_calibrated and grid_valid:
+            # 全网格：双线性插值 κ_c(gap,λ)（D-60，替代分离变量近似）
+            Lc = 2.0 * math.sqrt(2.0 * R_typ * gap)
+            per_channel = []
+            for ch in channels_nm:
+                kc = kappa_c_grid_interp(grid_calib, gap, ch * 1e-3)
+                if kc is None:
+                    attempts.append({"gap_um": gap, "ok": False,
+                                     "reason": "网格插值越界"})
+                    continue
+                kr = math.sin(kc * Lc)
+                per_channel.append({"channel_nm": ch,
+                                    "kappa_c_rad_um": round(kc, 6),
+                                    "k_ring": round(kr, 5)})
+            if len(per_channel) != n_ch:
+                continue
+            k_rings = [p["k_ring"] for p in per_channel if p["k_ring"]]
+            k_ring_min = min(k_rings) if k_rings else 0.0
+            cal = {"gap_um": gap,
+                   "kappa_c_rad_um": per_channel[0]["kappa_c_rad_um"],
+                   "R_um": round(R_typ, 3),
+                   "L_couple_um": round(Lc, 3),
+                   "k_ring": round(k_ring_min, 5),
+                   "k_analytic": round(gap_to_kappa(gap), 5),
+                   "ratio_fdtd_over_analytic": round(
+                       k_ring_min / gap_to_kappa(gap), 3)
+                   if gap_to_kappa(gap) > 0 else None}
+            calibrations.append(cal)
+            if not 0 < cal["k_ring"] < 1.0:
+                attempts.append({"gap_um": gap, "ok": False,
+                                 "reason": "k_ring 超出 (0,1)"})
+                continue
+            k_ring = cal["k_ring"]
+            kappa_fn: Callable[[float], float] = lambda g, kr=k_ring: kr
+        elif wavelength_calibrated and wl_valid and wl_base:
             # 波长相关：κ_c(gap,λ) ≈ κ_c_gap(gap)·[κ_c_wl(λ)/κ_c_wl(1.55)]
             # （分离变量近似，诚实标注）；每信道独立 k_ring，取最弱保守验收
             kc_gap = kappa_c_from_calibration(calib, gap)
@@ -212,7 +292,8 @@ def design_wdm_with_coupler(channels_nm: Optional[List[float]] = None,
             chosen = {"gap_um": gap, "k_ring": k_ring, "wdm": rep,
                       "calibration": cal}
             chosen_per_channel = per_channel if (
-                wavelength_calibrated and wl_valid) else []
+                (grid_calibrated and grid_valid)
+                or (wavelength_calibrated and wl_valid)) else []
             attempts.append({"gap_um": gap, "ok": True,
                              "reason": "WDM 验收全过",
                              "il_drop_max": max(rep["metrics"]["il_drop_db"]),
@@ -265,7 +346,19 @@ def design_wdm_with_coupler(channels_nm: Optional[List[float]] = None,
                           if 0.8 <= cal["ratio_fdtd_over_analytic"] <= 1.25
                           else "偏差显著，解析假设需校准") + "）"},
         ]
-        if wavelength_calibrated:
+        if grid_calibrated:
+            kcs = [p["kappa_c_rad_um"] for p in chosen_per_channel
+                   if p["kappa_c_rad_um"]]
+            mono = bool(len(kcs) >= 2 and all(
+                b >= a for a, b in zip(kcs, kcs[1:])))
+            checks.append({
+                "name": "全网格标定有效（κ_c(gap,λ) 双线性插值）",
+                "ok": bool(grid_valid and mono),
+                "detail": "；".join(
+                    f"λ{p['channel_nm']}nm κ_c={p['kappa_c_rad_um']} "
+                    f"k_ring={p['k_ring']}" for p in chosen_per_channel) +
+                    ("" if mono else "（非单调）")})
+        elif wavelength_calibrated:
             kcs = [p["kappa_c_rad_um"] for p in chosen_per_channel
                    if p["kappa_c_rad_um"]]
             mono = bool(len(kcs) >= 2 and all(
@@ -299,8 +392,11 @@ def design_wdm_with_coupler(channels_nm: Optional[List[float]] = None,
         "attempts": attempts,
         "chosen_gap_um": chosen["gap_um"] if chosen else None,
         "chosen_k_ring": chosen["k_ring"] if chosen else None,
-        "per_channel_kappa": chosen_per_channel if wavelength_calibrated else None,
+        "per_channel_kappa": (chosen_per_channel
+                              if (grid_calibrated or wavelength_calibrated)
+                              else None),
         "wavelength_calibrated": wavelength_calibrated,
+        "grid_calibrated": grid_calibrated,
         "wdm": chosen["wdm"] if chosen else None,
         "acceptance": {"checks": checks, "passed": accepted},
         "verdict": verdict,
@@ -365,17 +461,20 @@ def main() -> int:
                     help="gap 扫描(µm)，逗号分隔")
     ap.add_argument("--wavelength", action="store_true",
                     help="波长相关标定模式（每信道按 λ 独立 k_ring）")
+    ap.add_argument("--grid", action="store_true",
+                    help="全网格标定模式（κ_c(gap,λ) 双线性插值，D-60）")
     args = ap.parse_args()
     ch = [float(x) for x in args.channels.split(",") if x.strip()]
     gs = [float(x) for x in args.gap_scan.split(",") if x.strip()]
     r = design_wdm_with_coupler(ch, gap_scan=gs,
-                                wavelength_calibrated=args.wavelength)
+                                wavelength_calibrated=args.wavelength,
+                                grid_calibrated=args.grid)
     print(json.dumps({k: r[k] for k in
                       ("title", "channels_nm", "gap_scan", "R_typ_um",
                        "calibration_file", "calibrations", "attempts",
                        "chosen_gap_um", "chosen_k_ring",
                        "per_channel_kappa", "wavelength_calibrated",
-                       "acceptance", "verdict")},
+                       "grid_calibrated", "acceptance", "verdict")},
                      ensure_ascii=False, indent=2, default=str))
     return 0 if r["acceptance"]["passed"] else 1
 

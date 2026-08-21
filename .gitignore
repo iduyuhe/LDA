@@ -24,3 +24,4 @@ test_wg_quick.py
 .vscode/
 *.swp
 *.pid
+*.pid

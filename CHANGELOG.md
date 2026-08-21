@@ -51,6 +51,22 @@
 - README：能力阶梯表 D-36~D-57、二十六面板、10 kind、快速开始 11 步
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 10 项枚举）
 
+## v0.3.1（2026-08-22 · git tag v0.3.1）
+
+**里程碑：PDK 标定库最终形态——κ_c(gap,λ) 全网格直接查表，无需任何解析假设（D-58~D-60）**
+
+- **D-58 README/CHANGELOG 更新至 D-57**：能力阶梯表 15 行、二十六面板、10 kind、快速开始 11 步——对外基线文档零漂移。
+- **D-59 波长相关标定库（κ_c(gap,λ) 二维）**：新增 `data/kappa_wavelength_calibration.json`（3 点 κ_c(λ)，gap=0.3 基线，FDTD 双点标定）；`wdm_coupler` 新增 `wavelength_calibrated` 模式——分离变量近似 κ_c(gap,λ)≈κ_c_gap(gap)·[κ_c_wl(λ)/κ_c_wl(1.55)]（诚实标注）→ 每信道按 λ 独立 k_ring → 最弱耦合保守验收 + 波长单调检查；实测 κ_c(λ)=0.0213/0.0241/0.0270（1.50/1.55/1.60，**单调增幅 ~27% 物理正确**）。
+- **D-60 κ_c(gap,λ) 全网格标定库（最终形态）**：新增 `calibrate_kappa_grid.py`（9 点 gap×λ 全网格标定脚本，后台 ~81s）+ `data/kappa_grid_calibration.json`（二维网格，9 点全非缠绕）；`wdm_coupler` 新增 `grid_calibrated` 模式——**双线性插值直接查表**（替代分离变量近似，无需任何解析假设）→ 每信道独立 k_ring → 最弱耦合保守验收（优先级 grid > wavelength > gap 一维）；实测 3 信道每信道 k_ring=[0.10755/0.10833/0.1091] 单调、WDM 5/5 IL≤0.32dB/XT≥43.4dB，负例（弱耦合/超 FSR/标定缺失）正确 FAIL。
+
+### 新增/变更（v0.3.1）
+
+- `lda_agent/`：calibrate_kappa_grid.py（全网格标定脚本）+ `data/kappa_wavelength_calibration.json` + `data/kappa_grid_calibration.json`（PDK 标定库三文件齐备）
+- `wdm_coupler`：wavelength_calibrated / grid_calibrated 两种标定模式（CLI `--wavelength` / `--grid`，API 同参）
+- WebUI：二十六面板（㉖ 扩展：gap/波长/全网格三模式）
+- README：能力阶梯表 D-36~D-60、新增「PDK 标定库」章节、快速开始 11 步（⑧ 升级 --grid 全网格模式）
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 10 项枚举，延续）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

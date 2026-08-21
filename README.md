@@ -58,12 +58,26 @@ L4  统一交付          lda_design/ 设计包规范（DesignPackage schema v0.
 | D-52 | **混合巨型系统** | 光子 WDM 分波 + 量子读出**同一网表**（IR 10 器件+8 网表）联合验收 |
 | D-55 | **方向耦合器设计闭环** | 目标分束比 → **2D FDTD 标定 κ** → CMT 反解 L → 迭代收敛（50:50 命中 cross=0.503）|
 | D-57 | **耦合器 × WDM 组合** | **FDTD 标定 PDK 文件驱动 gap** → WDM 验收全过 + 诚实报告解析偏差 4.6 倍 |
+| D-59 | **波长相关标定库** | κ_c(gap,λ) 二维：每信道按 λ 独立 k_ring，实测增幅 ~27% 物理正确 |
+| D-60 | **κ_c(gap,λ) 全网格标定库** | **双线性插值查表**（9 点全网格）替代分离变量近似，无需任何解析假设 |
 
 ## WebUI（二十六面板，设计闭环可视化）
 
 LDA 自带零依赖 WebUI（`python lda/lda_webui/deploy.py start`，默认 `http://127.0.0.1:8787`），首屏自动演示全部闭环：
 
-`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM 组合`
+`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM（标定库驱动：gap/波长/全网格三模式）`
+
+## PDK 标定库（真实 FDTD 实测沉淀，设计时秒级加载）
+
+bus↔ring 耦合本质是方向耦合器——κ_c 由 2D FDTD（D-55 双点标定）实测并沉淀为 PDK 标定文件（一次性后台标定，设计时秒级加载/插值），驱动 WDM 环耦合段设计：
+
+| 标定文件 | 维度 | 说明 |
+|---|---|---|
+| `lda_agent/data/kappa_calibration.json` | κ_c(gap) 一维 | 5 点 gap 扫描（dl=0.039µm 高分辨率），D-57 |
+| `lda_agent/data/kappa_wavelength_calibration.json` | κ_c(λ) 一维 | 3 点波长扫描（gap=0.3 基线），D-59 |
+| `lda_agent/data/kappa_grid_calibration.json` | κ_c(gap,λ) **二维** | **9 点全网格**，双线性插值直接查表（D-60，最终形态） |
+
+三种模式（`wdm_coupler` CLI/API 可选，优先级 grid > wavelength > gap 一维），每信道独立 k_ring = sin(κ_c·L_couple)，最弱耦合保守验收；诚实标注 L_couple=2√(2R·gap) 为环形耦合近似，并显式报告 FDTD 校准 vs 解析假设偏差（D-57 实测解析偏乐观 4.6 倍）。
 
 ## 统一设计包规范（对外标准 · 10 kind）
 
@@ -109,8 +123,8 @@ python -m lda.lda_agent.mixed_system --wdm_channels "1550,1553,1556" --f01s "4.8
 # ⑦ 方向耦合器设计闭环（目标分束比 → 2D FDTD 标定 → 迭代收敛）
 python -m lda.lda_agent.directional_coupler --target_cross 0.5 --gap 0.3
 
-# ⑧ 耦合器 × WDM 组合（FDTD 标定 PDK 文件驱动 gap 选择）
-python -m lda.lda_agent.wdm_coupler --channels "1550,1553,1556" --gap_scan "0.25,0.30,0.35"
+# ⑧ 耦合器 × WDM 组合（FDTD 标定 PDK 文件驱动 gap 选择；--wavelength 波长相关 / --grid 全网格双线性插值）
+python -m lda.lda_agent.wdm_coupler --channels "1550,1553,1556" --gap_scan "0.25,0.30,0.35" --grid
 
 # ⑨ 确定性比对裁判（13 标准题物理定律锚）
 python lda/run_harness.py --ai

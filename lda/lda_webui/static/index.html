@@ -367,6 +367,25 @@
   </div>
 
   <div class="sec">
+    <h2>⑰ 量子 agent 逆设计闭环（D-41 · 目标频率/耦合 → IR → 数值验证 PASS）</h2>
+    <div class="hint">把 D-38 框架 + D-39 求解器 + D-40 物理锚串成<b>量子 agent 逆设计最小闭环</b>：给定目标 f01/f0/J → 构造 D-40 量子 IR（PhysicsAnchor + objective）→ 校验 → <b>闭式物理定律反解</b>（Transmon E_J=(f+E_C)²/8E_C · Resonator l=1/(4f₀√(L′C′)) · Coupler Cc=J·C₁C₂/n01₁n01₂）→ D-39 <b>严格数值双验证</b>（对角化/离散本征值/441 维 vs 解析契约）→ PASS 判决。与光子 D-37 产品链路同构，LLM 不进判决路径。</div>
+    <div class="row">
+      <label>器件
+        <select id="qdKind">
+          <option value="Transmon">Transmon · 目标 f01</option>
+          <option value="Resonator">Resonator · 目标 f0</option>
+          <option value="Coupler">Coupler · 目标 J</option>
+        </select>
+      </label>
+      <label>目标值(GHz)<input id="qdTarget" type="number" step="0.0001" value="5.0" style="width:90px"></label>
+      <button class="btn" id="runQd">运行量子逆设计闭环</button>
+    </div>
+    <div id="qdSummary" class="summary"></div>
+    <div id="qdBody"></div>
+    <div class="conclusion" id="qdConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1068,6 +1087,36 @@ function renderInvDesign(d){
 }
 $('runInvDesign').onclick = runInvDesign;
 
+// ---- ⑰ D-41 量子 agent 逆设计闭环 ----
+async function runQd(){
+  const btn = $('runQd'); btn.disabled = true;
+  const kind = $('qdKind').value;
+  const target = parseFloat($('qdTarget').value);
+  $('qdSummary').innerHTML = '<span class="spin"></span> 量子 agent 逆设计闭环运行中（IR → 闭式反解 → D-39 严格数值双验证）…';
+  $('qdBody').innerHTML = '';
+  try{
+    const d = await api('/api/quantum_design', {kind, target});
+    renderQd(d);
+  }catch(e){ $('qdSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderQd(d){
+  if(!d.ok){ $('qdSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const inv = d.inverse_design||{}, v = d.verification||{}, num = v.numerical||{}, an = v.analytic||{};
+  const params = Object.entries(inv.params||{}).map(([k,x])=>`${k}=<b>${x}</b>`).join('，');
+  $('qdSummary').innerHTML = `${d.kind} 目标 <b>${d.target}GHz</b> <span class="verdict ${d.passed?'ok':'fail'}">${d.passed?'PASS':'FAIL'}</span> · IR schema=<b>${(d.ir||{}).schema_version}</b> · 物理锚=<b>${(d.ir||{}).physics_bid}</b>（${(d.ir||{}).physics_kind}）`;
+  $('qdBody').innerHTML = `
+    <div class="subhead">① IR（D-40 统一 IR · PhysicsAnchor + objective）</div>
+    <div class="note">domain=quantum · 目标 objective B${(d.ir||{}).physics_bid}（${d.target}GHz）· validate 通过</div>
+    <div class="subhead">② 闭式物理反解（${inv.formula||''}）</div>
+    <div class="note">设计参数：${params}</div>
+    <div class="subhead">③ D-39 严格数值双验证</div>
+    <div class="note">解析契约 ↔ 严格数值：${Object.entries(an).map(([k,x])=>`${k}=<b>${x}</b>`).join('，')} ↔ ${Object.entries(num).filter(([k])=>k!=='levels_ghz'&&k!=='N_used').map(([k,x])=>`${k}=<b>${x}</b>`).join('，')} · rel=<b>${num.rel_err}</b> ≤ ${num.tol_rel}</div>
+    ${num.levels_ghz?`<div class="note">能级/模式：${num.levels_ghz.map(x=>x.toFixed(3)).join(' / ')} GHz</div>`:''}`;
+  $('qdConclusion').innerHTML = `<strong>${d.verdict||''}</strong>`;
+}
+$('runQd').onclick = runQd;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -1111,6 +1160,7 @@ $('runIr').onclick = runIr;
   runDesignLoop();
   runRingPkg();
   runInvDesign();
+  runQd();
   runIr();
 })();
 </script>

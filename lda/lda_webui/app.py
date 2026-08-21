@@ -477,6 +477,35 @@ def run_inverse_design_demo(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_quantum_design(payload=None):
+    """D-41 量子 agent 逆设计最小闭环（webui ⑰ 面板）。
+
+    输入 {kind, target, extra?}：目标频率/耦合 → D-40 量子 IR（PhysicsAnchor +
+    objective）→ 校验 → 闭式物理反解 → D-39 严格数值双验证 → 报告。
+    现场跑（纯 numpy 秒级，零 GPU），LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.quantum_design import design_quantum
+    payload = payload or {}
+    kind = payload.get("kind", "Transmon")
+    target = payload.get("target")
+    if target is None:
+        return {"ok": False, "error": "需指定 target（目标 f01/f0/J，GHz）"}
+    try:
+        target = float(target)
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "target 须为数值"}
+    extra = {k: float(v) for k, v in (payload.get("extra") or {}).items()}
+    try:
+        return design_quantum(kind, target, extra)
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_drc_fix_demo(payload):
     """D-18/D-21/D-22 可制造性面板：agent 自动整改 + 跨厂工艺规则对比。
 
@@ -734,6 +763,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_ring_package(payload))
             elif path == "/api/inverse_design":
                 self._send(200, run_inverse_design_demo(payload))
+            elif path == "/api/quantum_design":
+                self._send(200, run_quantum_design(payload))
             elif path == "/api/drc_fix_demo":
                 self._send(200, run_drc_fix_demo(payload))
             elif path == "/api/coupler_loop":

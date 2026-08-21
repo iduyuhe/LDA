@@ -1,0 +1,41 @@
+{
+  "all_passed": true,
+  "cases": [
+    {
+      "Transmon": {
+        "target": 5.0,
+        "passed": true
+      }
+    },
+    {
+      "Transmon": {
+        "target": 6.5,
+        "passed": true
+      }
+    },
+    {
+      "Resonator": {
+        "target": 10.7583,
+        "passed": true
+      }
+    },
+    {
+      "Resonator": {
+        "target": 8.0,
+        "passed": true
+      }
+    },
+    {
+      "Coupler": {
+        "target": 0.0316,
+        "passed": true
+      }
+    },
+    {
+      "Coupler": {
+        "target": 0.08,
+        "passed": true
+      }
+    }
+  ]
+}

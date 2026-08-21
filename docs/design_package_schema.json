@@ -35,7 +35,8 @@
         "readout_fidelity",
         "multiqubit_fidelity",
         "mixed_system",
-        "coupler"
+        "coupler",
+        "wdm_coupler"
       ]
     },
     "domain": {

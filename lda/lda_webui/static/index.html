@@ -506,6 +506,19 @@
   </div>
 
   <div class="sec">
+    <h2>㉖ 耦合器 × WDM 组合（D-57 · FDTD 标定驱动 gap）</h2>
+    <div class="hint">bus↔ring 耦合本质是方向耦合器：κ_c(gap) 由 <b>2D FDTD 双点标定</b>（D-55）实测并沉淀为 <b>PDK 标定文件</b>（一次性后台标定 ~20 分钟，设计时秒级加载）→ k_ring=sin(κ_c·2√(2R·gap)) → <b>gap 扫描设计</b>驱动 WDM（D-42 级联传递）→ 系统验收 + <b>诚实偏差报告</b>（D-57 实测 k_ring vs 解析 gap_to_kappa 比值 0.218——解析假设偏乐观 4.6 倍）。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>WDM 信道(nm，逗号分隔)<input id="wcCh" type="text" value="1550,1553,1556" style="width:150px"></label>
+      <label>gap 扫描(µm，逗号分隔)<input id="wcGap" type="text" value="0.25,0.30,0.35" style="width:130px"></label>
+      <button class="btn" id="runWc">设计 WDM（FDTD 标定驱动）</button>
+    </div>
+    <div id="wcSummary" class="summary"></div>
+    <div id="wcBody"></div>
+    <div class="conclusion" id="wcConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1572,6 +1585,37 @@ function renderCd(d){
 }
 $('runCd').onclick = runCd;
 
+// ---- ㉖ D-57 耦合器×WDM 组合 ----
+async function runWc(){
+  const btn = $('runWc'); btn.disabled = true;
+  const channels = $('wcCh').value.trim();
+  const gap_scan = $('wcGap').value.trim();
+  $('wcSummary').innerHTML = '<span class="spin"></span> 耦合器×WDM 组合设计中（FDTD 标定文件 → k_ring 换算 → gap 扫描 → WDM 验收）…';
+  $('wcBody').innerHTML='';
+  try{
+    const d = await api('/api/wdm_coupler', {channels, gap_scan});
+    renderWc(d);
+  }catch(e){ $('wcSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderWc(d){
+  if(!d.ok){ $('wcSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const acc = d.acceptance||{}, cals = d.calibrations||[];
+  const calRows = cals.map(c=>`<tr><td>${c.gap_um}</td><td>${c.kappa_c_rad_um!==null?c.kappa_c_rad_um:'越界'}</td><td>${c.k_ring}</td><td>${c.k_analytic}</td><td>${c.ratio_fdtd_over_analytic!==null?c.ratio_fdtd_over_analytic:'—'}</td></tr>`).join('');
+  const checks = (acc.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('');
+  const attempts = (d.attempts||[]).map(a=>`<div class="note">gap=${a.gap_um}: ${a.reason}${a.il_drop_max!==undefined?'（IL≤'+a.il_drop_max.toFixed(2)+'dB XT≥'+a.xt_min.toFixed(1)+'dB）':''}</div>`).join('');
+  $('wcSummary').innerHTML = `耦合器×WDM：R=<b>${d.R_typ_um}µm</b> · 选中 gap=<b>${d.chosen_gap_um??'无'}</b>µm（k_ring=${d.chosen_k_ring??'—'}）· 标定文件=<b>${d.calibration_file}</b> · <span class="verdict ${acc.passed?'ok':'fail'}">${acc.passed?'PASS':'FAIL'}</span>`;
+  $('wcBody').innerHTML = `
+    <div class="subhead">FDTD 标定 κ_c(gap)（PDK 文件）</div>
+    <table class="tbl"><thead><tr><th>gap(µm)</th><th>κ_c(rad/µm)</th><th>k_ring</th><th>解析 k</th><th>比值</th></tr></thead><tbody>${calRows}</tbody></table>
+    <div class="subhead">gap 扫描试次</div>
+    ${attempts||'—'}
+    <div class="subhead">系统验收（死标量比对）</div>
+    ${checks}`;
+  $('wcConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+}
+$('runWc').onclick = runWc;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -1624,6 +1668,7 @@ $('runIr').onclick = runIr;
   runMqf();
   runMs();
   runCd();
+  runWc();
   runIr();
 })();
 </script>

@@ -770,6 +770,41 @@ def run_coupler_design(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_wdm_coupler(payload=None):
+    """D-57 耦合器×WDM 组合（webui ㉖ 面板）。
+
+    输入 {channels?, gap_scan?}：FDTD 标定 κ_c(gap) PDK 文件驱动 WDM 环
+    bus 耦合段 gap 选择 → WDM 系统验收 + 诚实偏差报告（秒级，标定文件
+    为一次性后台 FDTD 实测产物）。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.wdm_coupler import design_wdm_with_coupler
+    payload = payload or {}
+
+    def _num_list(v, name):
+        if isinstance(v, str):
+            v = v.split(",")
+        try:
+            return [float(x) for x in v if str(x).strip()]
+        except (TypeError, ValueError):
+            return None
+    ch = _num_list(payload.get("channels", "1550,1553,1556"), "channels")
+    gs = _num_list(payload.get("gap_scan", "0.25,0.30,0.35"), "gap_scan")
+    if ch is None or gs is None or len(ch) < 2 or not gs:
+        return {"ok": False,
+                "error": "channels(≥2) / gap_scan 须为逗号分隔数值列表"}
+    try:
+        rep = design_wdm_with_coupler(ch, gap_scan=gs)
+        rep["ok"] = True
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_design_package(payload=None):
     """D-44 统一设计包规范（webui ⑳ 面板）。
 
@@ -1075,6 +1110,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_mixed_system(payload))
             elif path == "/api/coupler_design":
                 self._send(200, run_coupler_design(payload))
+            elif path == "/api/wdm_coupler":
+                self._send(200, run_wdm_coupler(payload))
             elif path == "/api/design_package":
                 self._send(200, run_design_package(payload))
             elif path == "/api/drc_fix_demo":

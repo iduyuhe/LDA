@@ -37,7 +37,7 @@ if _LDA not in sys.path:
 SCHEMA_VERSION = "0.1"
 PACKAGE_KINDS = ("add_drop", "quantum", "wdm", "readout_chain", "multiqubit",
                  "readout_fidelity", "multiqubit_fidelity", "mixed_system",
-                 "coupler")
+                 "coupler", "wdm_coupler")
 
 
 def _now_iso() -> str:
@@ -199,6 +199,13 @@ def package_from_coupler(target_cross: float = 0.5, **kw) -> Dict[str, Any]:
     return _p(target_cross=target_cross, **kw)
 
 
+def package_from_wdm_coupler(
+        channels_nm: Optional[List[float]] = None, **kw) -> Dict[str, Any]:
+    """D-57 耦合器×WDM 组合（FDTD 标定驱动 gap）→ 统一设计包。"""
+    from lda_agent.wdm_coupler import package_from_wdm_coupler as _p
+    return _p(channels_nm=channels_nm, **kw)
+
+
 _BUILDERS = {
     "add_drop": package_from_add_drop,
     "quantum": package_from_quantum,
@@ -209,6 +216,7 @@ _BUILDERS = {
     "multiqubit_fidelity": package_from_multiqubit_fidelity,
     "mixed_system": package_from_mixed_system,
     "coupler": package_from_coupler,
+    "wdm_coupler": package_from_wdm_coupler,
 }
 
 _DEFAULTS = {
@@ -223,6 +231,8 @@ _DEFAULTS = {
     "mixed_system": {"wdm_channels_nm": [1550.0, 1553.0, 1556.0],
                      "qubit_f01s_ghz": [4.8, 5.0, 5.2]},
     "coupler": {"target_cross": 0.5, "transient_cycles": 400},
+    "wdm_coupler": {"channels_nm": [1550.0, 1553.0, 1556.0],
+                    "gap_scan": [0.25, 0.30, 0.35]},
 }
 
 

@@ -1,0 +1,98 @@
+{
+  "package_id": "wdm-coupler3ch",
+  "schema_version": "0.1",
+  "kind": "wdm_coupler",
+  "domain": "photon",
+  "title": "3-信道 WDM × 方向耦合器组合（FDTD 标定驱动 gap）",
+  "created_at": "2026-08-21T21:27:24",
+  "ir": {
+    "schema_version": "0.3",
+    "domain": "photon",
+    "n_components": 3,
+    "n_nets": 4,
+    "validate_errors": []
+  },
+  "design": {
+    "targets": {
+      "channels_nm": [
+        1550.0,
+        1553.0,
+        1556.0
+      ],
+      "gap_scan": [
+        0.25,
+        0.3,
+        0.35
+      ]
+    },
+    "params": {
+      "chosen_gap_um": 0.25,
+      "chosen_k_ring": 0.1066,
+      "calibrations": [
+        {
+          "gap_um": 0.25,
+          "kappa_c_rad_um": 0.0239,
+          "R_um": 9.985,
+          "L_couple_um": 4.469,
+          "k_ring": 0.1066,
+          "k_analytic": 0.48846,
+          "ratio_fdtd_over_analytic": 0.218
+        }
+      ]
+    },
+    "inverse_design": {
+      "formula": "FDTD 标定 κ_c(gap)（D-55）+ k_ring=sin(κ_c·2√(2R·gap))（环形耦合近似）"
+    }
+  },
+  "verification": {
+    "checks": [
+      {
+        "name": "FDTD 标定有效（κ_c>0，k_ring 自洽）",
+        "ok": true,
+        "detail": "gap=0.25µm → κ_c=0.0239 rad/µm（L_couple=4.469µm）→ k_ring=0.1066"
+      },
+      {
+        "name": "WDM 系统验收（IL≤3dB/XT≥15dB/DRC）",
+        "ok": true,
+        "detail": "5/5 项：IL≤0.33dB XT≥43.5dB"
+      },
+      {
+        "name": "FDTD 校准 vs 解析假设偏差（诚实报告）",
+        "ok": true,
+        "detail": "k_ring=0.1066 vs 解析 gap_to_kappa=0.48846（比值 0.218——偏差显著，解析假设需校准）"
+      }
+    ],
+    "passed": true,
+    "verdict": "耦合器×WDM 组合 PASS：FDTD 标定驱动 gap=0.25µm（κ_c=0.0239 rad/µm → k_ring=0.1066），3 信道 WDM 验收全过（IL≤0.33dB，XT≥43.5dB）"
+  },
+  "artifacts": {
+    "attempts": [
+      {
+        "gap_um": 0.25,
+        "ok": true,
+        "reason": "WDM 验收全过",
+        "il_drop_max": 0.33,
+        "xt_min": 43.52
+      }
+    ],
+    "wdm_metrics": {
+      "il_drop_db": [
+        0.186,
+        0.011,
+        0.33
+      ],
+      "xt_min_db": [
+        43.53,
+        43.52,
+        57.65
+      ],
+      "thru_at_channels": [
+        0.04071,
+        0.00135,
+        0.072
+      ]
+    }
+  },
+  "honest_notes": "bus↔ring 耦合本质是方向耦合器：κ_c 由 2D FDTD（D-55 双点标定）实测并沉淀为 PDK 标定文件（一次性后台标定，设计时秒级加载），经环形耦合有效长度 L_couple=2√(2R·gap) 换算 k_ring=sin(κ_c·L_couple) 驱动 WDM（D-42 级联传递）。诚实标注：L_couple 为环形耦合近似；D-57 实测 gap=0.25 时 k_ring=0.107 vs 解析 0.488（比值 0.22，解析偏乐观）——系统以 FDTD 校准为准并报告偏差。LLM 不进判决路径。",
+  "ok": true
+}

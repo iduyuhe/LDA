@@ -53,24 +53,31 @@ def fsr_nm(lam_nm: float, R_um: float, n_g: float = 4.2) -> float:
     return lam_nm ** 2 / (n_g * 2.0 * math.pi * R_um * 1000.0)
 
 
-def _transfer(R_um: float, gap_um: float, wls_um: List[float]):
-    """单环 add-drop 传递（复用 D-37 模型）。返回 (drop[], thru[])。"""
+def _transfer(R_um: float, gap_um: float, wls_um: List[float],
+              kappa_fn=None):
+    """单环 add-drop 传递（复用 D-37 模型）。返回 (drop[], thru[])。
+
+    kappa_fn: 可选覆盖 gap→每圈场耦合比 的函数（缺省解析 gap_to_kappa；
+    D-57 用 FDTD 标定换算函数替换——bus 耦合段由真实 2D FDTD 校准）。
+    """
     from lda_agent.ring_adddrop import (adddrop_spectrum, bending_loss_db_per_cm,
                                         gap_to_kappa)
-    kappa = gap_to_kappa(gap_um)
+    if kappa_fn is None:
+        kappa_fn = gap_to_kappa
+    kappa = kappa_fn(gap_um)
     alpha_bend = bending_loss_db_per_cm(R_um)
     sp = adddrop_spectrum(wls_um, R_um, 4.2, kappa, alpha_bend, 1.55)
     return sp["drop"], sp["thru"]
 
 
 def system_metrics(channels_nm: List[float], Rs: List[float], gap: float,
-                   n_g: float = 4.2) -> Dict[str, Any]:
+                   n_g: float = 4.2, kappa_fn=None) -> Dict[str, Any]:
     """在精确信道波长处求级联 drop/thru → 每信道 IL、邻信道串扰、thru。"""
     wls = [lam * 1e-3 for lam in channels_nm]
     drop_ij: List[List[float]] = []
     thru_ij: List[List[float]] = []
     for i, R in enumerate(Rs):
-        d, t = _transfer(R, gap, wls)
+        d, t = _transfer(R, gap, wls, kappa_fn)
         drop_ij.append(d)
         thru_ij.append(t)
     il_drop, xt_min, thru_ch = [], [], []
@@ -97,7 +104,7 @@ def system_metrics(channels_nm: List[float], Rs: List[float], gap: float,
 
 
 def cascade_spectrum(channels_nm: List[float], Rs: List[float], gap: float,
-                     step_nm: float = 0.1) -> Dict[str, Any]:
+                     step_nm: float = 0.1, kappa_fn=None) -> Dict[str, Any]:
     """级联 drop 谱（显示用，粗网格）。"""
     lo, hi = min(channels_nm) - 2.0, max(channels_nm) + 2.0
     grid = [round((lo + i * step_nm) * 1e-3, 6)
@@ -105,10 +112,10 @@ def cascade_spectrum(channels_nm: List[float], Rs: List[float], gap: float,
     out = {"wavelengths_nm": [round(g * 1000, 2) for g in grid],
            "drop": [], "thru": []}
     for i, R in enumerate(Rs):
-        d, t = _transfer(R, gap, grid)
+        d, t = _transfer(R, gap, grid, kappa_fn)
         cascade = d[:]
         for k in range(i):
-            _, tk = _transfer(Rs[k], gap, grid)
+            _, tk = _transfer(Rs[k], gap, grid, kappa_fn)
             cascade = [cascade[x] * tk[x] for x in range(len(grid))]
         out["drop"].append([round(x, 5) for x in cascade])
     thru = [1.0] * len(grid)
@@ -187,8 +194,12 @@ def cascade_layout(channels_nm: List[float], Rs: List[float], gap: float,
 # ---------------------------------------------------------------------------
 def design_wdm(channels_nm: List[float], gap: float = 0.3,
                wg_width: float = 0.5, n_g: float = 4.2,
-               m: int = 170) -> Dict[str, Any]:
-    """WDM 多环级联系统设计闭环：IR 网表 → 逆设计 → 级联响应 → 系统验收。"""
+               m: int = 170, kappa_fn=None) -> Dict[str, Any]:
+    """WDM 多环级联系统设计闭环：IR 网表 → 逆设计 → 级联响应 → 系统验收。
+
+    kappa_fn: 可选覆盖 gap→每圈场耦合比（缺省解析 gap_to_kappa；D-57
+    wdm_coupler 传 FDTD 标定换算函数——bus 耦合段由真实 2D FDTD 校准）。
+    """
     if len(channels_nm) < 2:
         return {"ok": False, "error": "至少 2 个信道"}
     channels_nm = [float(c) for c in channels_nm]
@@ -203,8 +214,8 @@ def design_wdm(channels_nm: List[float], gap: float = 0.3,
     ir_errs = validate(model)
 
     # 3) 级联响应 + 系统指标
-    metrics = system_metrics(channels_nm, Rs, gap, n_g)
-    spec = cascade_spectrum(channels_nm, Rs, gap)
+    metrics = system_metrics(channels_nm, Rs, gap, n_g, kappa_fn)
+    spec = cascade_spectrum(channels_nm, Rs, gap, kappa_fn=kappa_fn)
 
     # 4) 系统验收（死标量比对）
     checks = [

@@ -33,7 +33,8 @@
         "readout_chain",
         "multiqubit",
         "readout_fidelity",
-        "multiqubit_fidelity"
+        "multiqubit_fidelity",
+        "mixed_system"
       ]
     },
     "domain": {

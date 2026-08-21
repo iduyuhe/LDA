@@ -36,7 +36,7 @@ if _LDA not in sys.path:
 
 SCHEMA_VERSION = "0.1"
 PACKAGE_KINDS = ("add_drop", "quantum", "wdm", "readout_chain", "multiqubit",
-                 "readout_fidelity", "multiqubit_fidelity")
+                 "readout_fidelity", "multiqubit_fidelity", "mixed_system")
 
 
 def _now_iso() -> str:
@@ -183,6 +183,15 @@ def package_from_multiqubit_fidelity(
     return _p(f01s=f01s, **kw)
 
 
+def package_from_mixed_system(
+        wdm_channels_nm: Optional[List[float]] = None,
+        qubit_f01s_ghz: Optional[List[float]] = None, **kw) -> Dict[str, Any]:
+    """D-52 多环 WDM × 量子读出混合巨型系统 → 统一设计包。"""
+    from lda_agent.mixed_system import package_from_mixed_system as _p
+    return _p(wdm_channels_nm=wdm_channels_nm, qubit_f01s_ghz=qubit_f01s_ghz,
+              **kw)
+
+
 _BUILDERS = {
     "add_drop": package_from_add_drop,
     "quantum": package_from_quantum,
@@ -191,6 +200,7 @@ _BUILDERS = {
     "multiqubit": package_from_multiqubit,
     "readout_fidelity": package_from_readout_fidelity,
     "multiqubit_fidelity": package_from_multiqubit_fidelity,
+    "mixed_system": package_from_mixed_system,
 }
 
 _DEFAULTS = {
@@ -202,6 +212,8 @@ _DEFAULTS = {
     "readout_fidelity": {"f01": 5.0},
     "multiqubit_fidelity": {"f01s": [4.8, 5.0, 5.2],
                             "T1_us_list": [20.0, 15.0, 25.0]},
+    "mixed_system": {"wdm_channels_nm": [1550.0, 1553.0, 1556.0],
+                     "qubit_f01s_ghz": [4.8, 5.0, 5.2]},
 }
 
 

@@ -696,6 +696,51 @@ def run_multiqubit_fidelity(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_mixed_system(payload=None):
+    """D-52 多环 WDM × 量子读出混合巨型系统（webui ㉔ 面板）。
+
+    输入 {wdm_channels?, f01s?, gap?, T1_us?}：光子 WDM 分波（D-42）×
+    量子读出（D-51）同一网表——信道↔qubit 1:1 映射 + 联合验收。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.mixed_system import design_mixed_system
+    payload = payload or {}
+
+    def _num_list(v, name):
+        if isinstance(v, str):
+            v = v.split(",")
+        try:
+            return [float(x) for x in v if str(x).strip()]
+        except (TypeError, ValueError):
+            return None
+    ch = _num_list(payload.get("wdm_channels", "1550,1553,1556"),
+                   "wdm_channels")
+    f01s = _num_list(payload.get("f01s", "4.8,5.0,5.2"), "f01s")
+    if ch is None or f01s is None:
+        return {"ok": False, "error": "wdm_channels / f01s 须为逗号分隔数值列表"}
+    kw = {}
+    try:
+        kw["wdm_gap_um"] = float(payload.get("gap", 0.3))
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "gap 须为数值"}
+    t1 = payload.get("T1_us")
+    if t1 is not None:
+        t1l = _num_list(t1, "T1_us")
+        if t1l is None:
+            return {"ok": False, "error": "T1_us 须为逗号分隔数值列表"}
+        kw["T1_us_list"] = t1l
+    try:
+        rep = design_mixed_system(ch, f01s, **kw)
+        rep["ok"] = True
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_design_package(payload=None):
     """D-44 统一设计包规范（webui ⑳ 面板）。
 
@@ -997,6 +1042,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_readout_fidelity(payload))
             elif path == "/api/multiqubit_fidelity":
                 self._send(200, run_multiqubit_fidelity(payload))
+            elif path == "/api/mixed_system":
+                self._send(200, run_mixed_system(payload))
             elif path == "/api/design_package":
                 self._send(200, run_design_package(payload))
             elif path == "/api/drc_fix_demo":

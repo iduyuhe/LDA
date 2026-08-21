@@ -478,6 +478,20 @@
   </div>
 
   <div class="sec">
+    <h2>㉔ 多环 WDM × 量子读出混合巨型系统（D-52 · 光子分波 + 量子读出同一网表）</h2>
+    <div class="hint">把 D-42（WDM 多环分波，1550nm）与 D-51（N-qubit 频率复用读出，GHz）放进<b>同一个 IR 网表、同一个设计包</b>：光子子网络验收（IL≤3dB/XT≥15dB/DRC/单 FSR）+ 量子子网络验收（错开≥3κ_r/dip 可分辨/逐 qubit 保真度）+ <b>WDM 信道 ↔ qubit 读出 1:1 映射</b>联合验收。诚实标注：光↔微波物理独立，桥接为芯片级接口规划（光电转换不在模型内）。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>WDM 信道(nm，逗号分隔)<input id="msWdm" type="text" value="1550,1553,1556" style="width:150px"></label>
+      <label>qubit f01(GHz，逗号分隔)<input id="msF01s" type="text" value="4.8,5.0,5.2" style="width:140px"></label>
+      <label>T1(µs，逗号分隔)<input id="msT1" type="text" value="20,15,25" style="width:100px"></label>
+      <button class="btn" id="runMs">设计混合巨型系统</button>
+    </div>
+    <div id="msSummary" class="summary"></div>
+    <div id="msBody"></div>
+    <div class="conclusion" id="msConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1482,6 +1496,38 @@ function renderMqf(d){
 }
 $('runMqf').onclick = runMqf;
 
+// ---- ㉔ D-52 多环 WDM × 量子读出混合巨型系统 ----
+async function runMs(){
+  const btn = $('runMs'); btn.disabled = true;
+  const wdm = $('msWdm').value.trim();
+  const f01s = $('msF01s').value.trim();
+  const t1 = $('msT1').value.trim();
+  $('msSummary').innerHTML = '<span class="spin"></span> 多环 WDM × 量子读出混合巨型系统设计中（光子分波 + 量子读出同一网表 → 联合验收）…';
+  $('msBody').innerHTML='';
+  try{
+    const d = await api('/api/mixed_system', {wdm_channels:wdm, f01s, T1_us:t1});
+    renderMs(d);
+  }catch(e){ $('msSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderMs(d){
+  if(!d.ok){ $('msSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const acc = d.acceptance||{}, ph = d.photon||{}, qu = d.quantum||{};
+  const rows = (d.mapping||[]).map(m=>`<tr><td><b>${m.channel_nm}nm</b></td><td>${m.qubit_f01_ghz}GHz</td><td>${m.readout_ghz}GHz</td></tr>`).join('');
+  const checks = (acc.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('');
+  const fq = (qu.per_qubit||[]).map(q=>`${q.qid}:F=${q.budget.F.toFixed(4)}`).join(' ');
+  $('msSummary').innerHTML = `混合巨型系统：WDM <b>${d.n_wdm}</b> 信道（R≈<b>${(ph.ring_radii_um||[]).map(r=>r.toFixed(2)).join(',')}</b>µm）× qubit <b>${d.n_qubits}</b> 个（readout <b>${(qu.readout_freqs_ghz||[]).join(',')}</b>GHz）· 映射 <span class="verdict ${d.mapping_ok?'ok':'fail'}">${d.mapping_ok?'1:1 完整':'不完整'}</span> · 联合验收 <span class="verdict ${acc.passed?'ok':'fail'}">${acc.passed?'PASS':'FAIL'}</span>`;
+  $('msBody').innerHTML = `
+    <div class="subhead">信道 ↔ qubit 映射表（芯片级接口规划）</div>
+    <table class="tbl"><thead><tr><th>WDM 信道</th><th>qubit f01</th><th>readout 频率</th></tr></thead><tbody>${rows||'<tr><td colspan="3">映射不完整</td></tr>'}</tbody></table>
+    <div class="subhead">光子子网络：IL_drop=${(ph.metrics?.il_drop_db||[]).map(x=>x.toFixed(2)+'dB').join(',')} · XT≥${Math.min.apply(null, ph.metrics?.xt_min_db||[0]).toFixed(1)}dB</div>
+    <div class="subhead">量子子网络：${fq}</div>
+    <div class="subhead">系统联合验收（死标量比对）</div>
+    ${checks}`;
+  $('msConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+}
+$('runMs').onclick = runMs;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -1532,6 +1578,7 @@ $('runIr').onclick = runIr;
   runMq();
   runRf();
   runMqf();
+  runMs();
   runIr();
 })();
 </script>

@@ -306,7 +306,7 @@
 
   <div class="sec">
     <h2>⑬ 器件库验收（D-12/D-32 · 已验证器件 + 真实 FDTD 入口）</h2>
-    <div class="hint">D-12 器件库把已验证器件固化为可复用资产（参数窗口 + D-04 统一验收契约 + 求解器），D-32 为 Ring 挂上真实 FDTD 验收，D-34 延伸至 Waveguide / BraggMirror——器件库每个成员都有一等真实物理验证入口；D-35 进一步把量子域 Transmon 也带上一等真实物理验证入口（Koch 解析 ↔ 严格对角化，与光子栈同构）。面板展示：器件全景表（验收锚 / 参数窗口 / live_weight / 需 GPU）+ 每器件 contract 契约状态 + Ring/WG/Bragg 三器件真实 FDTD 双验证 + Transmon 量子双验证（解析契约设计目标命中 + 真实数值物理行为自洽）。</div>
+    <div class="hint">D-12 器件库把已验证器件固化为可复用资产（参数窗口 + D-04 统一验收契约 + 求解器），D-32 为 Ring 挂上真实 FDTD 验收，D-34 延伸至 Waveguide / BraggMirror——器件库每个成员都有一等真实物理验证入口；D-35/D-39 把量子域 Transmon / Resonator / Coupler 都带上一等真实物理验证入口（解析闭式 ↔ 严格数值，与光子栈同构）。面板展示：器件全景表（验收锚 / 参数窗口 / live_weight / 需 GPU）+ 每器件 contract 契约状态 + Ring/WG/Bragg 三器件真实 FDTD 双验证 + Transmon/Resonator/Coupler 量子双验证（解析契约设计目标命中 + 真实数值物理行为自洽）。</div>
     <div class="row">
       <button class="btn" id="runDevLib">加载器件库验收</button>
     </div>
@@ -862,6 +862,18 @@ function renderDevLib(d){
       <div class="conclusion"><strong>结论：</strong>${tf.verdict}</div>`;
   } else {
     $('dlQuantum').innerHTML = '<div class="note">Transmon 量子双验证数据不可用</div>';
+  }
+  // 量子域 D-39：Resonator / Coupler 双验证卡片
+  const rfq = d.resonator_fdtd, cfq = d.coupler_fdtd;
+  if(rfq && cfq){
+    const rn = rfq.numerical||{}, cn = cfq.numerical||{}, ca = cfq.analytic_contract||{};
+    $('dlQuantum').innerHTML += `
+      <div class="summary" style="margin-top:12px">Resonator 双验证（D-39 · λ/4 闭式 ↔ 离散严格本征值）：</div>
+      <div class="note">f0 闭式=<b>${fmt(rn.f0_closed_ghz)}</b>GHz ↔ 严格数值=<b>${fmt(rn.f0_num_ghz)}</b>GHz · rel=<b>${(rn.rel_err*100).toFixed(2)}%</b> ≤ ${(rn.tol_rel*100).toFixed(0)}% · N=${rn.N_used} · <span class="verdict ${rfq.passed?'ok':'fail'}">${rfq.passed?'PASS':'FAIL'}</span></div>
+      <div class="note">模式谱（闭式 f_m=(2m+1)v_p/4l）：${(rn.levels_closed_ghz||[]).map(x=>x.toFixed(3)).join(' / ')} GHz</div>
+      <div class="summary" style="margin-top:12px">Coupler 双验证（D-39 · 双 transmon 电容耦合，解析 J ↔ 441 维严格对角化）：</div>
+      <div class="note">J 解析=<b>${fmt(ca.J_analytic_ghz)}</b>GHz ↔ J 严格=<b>${fmt(cn.J_num_ghz)}</b>GHz · rel=<b>${(cn.rel_err*100).toFixed(2)}%</b> ≤ ${(cn.tol_rel*100).toFixed(0)}% · f01=<b>${fmt(cn.f01_1_ghz)}</b>/<b>${fmt(cn.f01_2_ghz)}</b>GHz · <span class="verdict ${cfq.passed?'ok':'fail'}">${cfq.passed?'PASS':'FAIL'}</span></div>
+      <div class="note">n01 闭式 = (E_J/2E_C)^{1/4}/2（Koch 类）；能级=${(cn.levels_ghz||[]).map(x=>x.toFixed(3)).join(' / ')} GHz</div>`;
   }
   $('dlConclusion').innerHTML = `<strong>器件库定位：</strong>设计者/agent/webui/PDK 接入按名字取用已验证器件，无需重写接线——每器件带参数窗口 + 统一验收契约 + 真实物理验证入口（LLM 不进判决路径）。${d.note||''}`;
 }

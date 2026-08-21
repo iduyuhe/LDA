@@ -347,6 +347,27 @@ def run_device_library_demo(payload=None):
         transmon_contract = lib.verify_transmon(mode="contract")
     except Exception as e:  # noqa: BLE001
         transmon_contract = {"passed": False, "error": str(e)[:80]}
+    # 量子域 D-39：Resonator / Coupler 双验证（闭式 ↔ 严格数值，纯 numpy 秒级）
+    resonator = None
+    resonator_contract = None
+    coupler = None
+    coupler_contract = None
+    try:
+        resonator = lib.verify_resonator(mode="live")
+    except Exception as e:  # noqa: BLE001
+        resonator = {"passed": False, "error": str(e)[:80]}
+    try:
+        resonator_contract = lib.verify_resonator(mode="contract")
+    except Exception as e:  # noqa: BLE001
+        resonator_contract = {"passed": False, "error": str(e)[:80]}
+    try:
+        coupler = lib.verify_coupler(mode="live")
+    except Exception as e:  # noqa: BLE001
+        coupler = {"passed": False, "error": str(e)[:80]}
+    try:
+        coupler_contract = lib.verify_coupler(mode="contract")
+    except Exception as e:  # noqa: BLE001
+        coupler_contract = {"passed": False, "error": str(e)[:80]}
     return {
         "available": True,
         "devices": summary,
@@ -359,6 +380,10 @@ def run_device_library_demo(payload=None):
         "bragg_analytic": bragg_analytic,
         "transmon_fdtd": transmon,
         "transmon_contract": transmon_contract,
+        "resonator_fdtd": resonator,
+        "resonator_contract": resonator_contract,
+        "coupler_fdtd": coupler,
+        "coupler_contract": coupler_contract,
         "note": "Ring/WG/Bragg 真实 FDTD 双验证：FDTD 层用预计算演示数据"
                 "（D-28 Ring / D-34 WG-Bragg，纯 numpy 离线生成），"
                 "解析契约层现场快跑（秒级）；量子 Transmon 双验证（D-35）"

@@ -1,0 +1,46 @@
+{
+  "d39": "quantum resonator+coupler double-verify",
+  "checks": [
+    {
+      "key": "resonator",
+      "ok": true,
+      "detail": {
+        "f0_num_ghz": 10.731431,
+        "rel_err": 0.002496,
+        "tol_rel": 0.01,
+        "N_used": 200,
+        "accepted": true,
+        "levels_closed_ghz": [
+          10.758287,
+          32.274861,
+          53.791435,
+          75.30801
+        ]
+      }
+    },
+    {
+      "key": "coupler",
+      "ok": true,
+      "detail": {
+        "J_num_ghz": 0.03031,
+        "split_ghz": 0.060619,
+        "rel_err": 0.041525,
+        "tol_rel": 0.1,
+        "accepted": true,
+        "f01_1_ghz": 6.07456,
+        "f01_2_ghz": 6.07456,
+        "levels_ghz": [
+          -33.8032,
+          -27.7701,
+          -27.7094,
+          -21.9659,
+          -21.9537
+        ]
+      }
+    },
+    {
+      "key": "coupler_variants",
+      "ok": true
+    }
+  ]
+}

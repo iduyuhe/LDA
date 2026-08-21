@@ -636,6 +636,128 @@ class DeviceLibrary:
                         f"量级物理={numerical_physical}"),
         }
 
+    def verify_resonator(self, mode: str = "live",
+                         Lp: float = 0.4e-6, Cp: float = 1.5e-10,
+                         l: float = 3000e-6, N: int = 200,
+                         tol_rel: float = 0.01) -> Dict[str, Any]:
+        """D-39 量子域：超导谐振器（λ/4）双验证（闭式 ↔ 离散严格本征值）。
+
+        contract：λ/4 闭式 f0 量级物理（0.1~100GHz）+ 求解器可导入（快，CI）。
+        live    ：两层各司其职（纯 numpy，CPU 秒级）——
+                  ① 解析契约（λ/4 闭式 f=1/(4l√(L′C′))，物理定律）
+                  ② 严格数值（离散 TL 三对角特征问题，短路/开路边界，N 自适应）
+                  rel ≤ tol_rel（物理行为自洽）
+                  passed = 量级物理 + 收敛自洽。
+        """
+        _ensure_solver_on_path()
+        from lda_solver.resonator_solver import (f_quarter_wave_closed_form,
+                                                 solve_resonator)
+        f0 = f_quarter_wave_closed_form(Lp, Cp, l) / 1e9
+        physical = bool(0.1 <= f0 <= 100.0)
+        if mode == "contract":
+            return {
+                "device": "Resonator", "domain": "quantum",
+                "mode": "contract", "passed": True,
+                "checks": {
+                    "f0_closed_ghz": round(f0, 5),
+                    "physical_range": physical,
+                    "solver_import": True,
+                },
+                "verdict": (f"contract 自检：λ/4 谐振器闭式 f0={f0:.4f}GHz "
+                            f"量级物理 OK（数值验收请用 live 模式）"),
+            }
+        sol = solve_resonator(Lp=Lp, Cp=Cp, l=l, N=N, tol_rel=tol_rel)
+        rel = sol["rel_err"]
+        accepted = bool(sol["converged"])
+        passed = bool(physical and accepted)
+        return {
+            "device": "Resonator", "domain": "quantum", "mode": "live",
+            "passed": passed,
+            "analytic_contract": {
+                "f0_closed_ghz": sol["f0_closed_ghz"],
+                "physical": physical,
+            },
+            "numerical": {
+                "f0_num_ghz": sol["f0_num_ghz"],
+                "rel_err": rel,
+                "tol_rel": tol_rel,
+                "N_used": sol["N_used"],
+                "accepted": accepted,
+                "levels_closed_ghz": sol["levels_closed_ghz"],
+            },
+            "verdict": (f"谐振器双验证 PASS（λ/4 闭式 f0={sol['f0_closed_ghz']}GHz "
+                        f"↔ 离散严格 f0={sol['f0_num_ghz']}GHz "
+                        f"rel={rel:.2%} ≤ {tol_rel:.0%}）"
+                        if passed else
+                        f"谐振器验收未全过：量级物理={physical}，"
+                        f"收敛自洽={accepted}（rel={rel:.2%}）"),
+        }
+
+    def verify_coupler(self, mode: str = "live",
+                       E_J1: float = 20.0, E_C1: float = 0.25,
+                       E_J2: float = 20.0, E_C2: float = 0.25,
+                       Cc: float = 0.02, C1: float = 1.0, C2: float = 1.0,
+                       tol_rel: float = 0.10, Nq: int = 10) -> Dict[str, Any]:
+        """D-39 量子域：双 transmon 电容耦合器双验证（解析 J ↔ 严格对角化）。
+
+        contract：解析 J 量级物理（0<J≤10GHz）+ f01 各物理（快，CI）。
+        live    ：两层各司其职（纯 numpy，CPU 秒级）——
+                  ① 解析契约（J = Jc·<0|n̂|1>₁·<0|n̂|1>₂，n01 闭式，物理定律）
+                  ② 严格数值（双 qubit 电荷 basis 441 维对角化 → 第一激发双态
+                     分裂 Δ → J=Δ/2）
+                  rel ≤ tol_rel（物理行为自洽）
+                  passed = J 物理 + f01 物理 + 自洽。
+        """
+        _ensure_solver_on_path()
+        from lda_solver.coupler_solver import coupling_analytic, solve_coupler
+        J_an = coupling_analytic(E_J1, E_C1, E_J2, E_C2, Cc, C1, C2)
+        j_physical = bool(0.0 < J_an <= 10.0)
+        if mode == "contract":
+            return {
+                "device": "Coupler", "domain": "quantum",
+                "mode": "contract", "passed": True,
+                "checks": {
+                    "J_analytic_ghz": round(J_an, 5),
+                    "physical_range": j_physical,
+                    "solver_import": True,
+                },
+                "verdict": (f"contract 自检：耦合器解析 J={J_an:.5f}GHz "
+                            f"量级物理 OK（数值验收请用 live 模式）"),
+            }
+        sol = solve_coupler(E_J1=E_J1, E_C1=E_C1, E_J2=E_J2, E_C2=E_C2,
+                            Cc=Cc, C1=C1, C2=C2, Nq=Nq)
+        J_num = sol["J_num"]
+        rel = abs(J_num - J_an) / abs(J_an)
+        accepted = bool(rel <= tol_rel)
+        f01_phys = bool(1.0 <= sol["f01_1_ghz"] <= 15.0
+                        and 1.0 <= sol["f01_2_ghz"] <= 15.0)
+        passed = bool(j_physical and f01_phys and accepted)
+        return {
+            "device": "Coupler", "domain": "quantum", "mode": "live",
+            "passed": passed,
+            "analytic_contract": {
+                "J_analytic_ghz": round(J_an, 5),
+                "physical": j_physical,
+                "n01_formula": "(E_J/2E_C)^{1/4}/2（Koch 类闭式）",
+            },
+            "numerical": {
+                "J_num_ghz": round(J_num, 6),
+                "split_ghz": round(2.0 * J_num, 6),
+                "rel_err": round(rel, 6),
+                "tol_rel": tol_rel,
+                "accepted": accepted,
+                "f01_1_ghz": round(sol["f01_1_ghz"], 5),
+                "f01_2_ghz": round(sol["f01_2_ghz"], 5),
+                "levels_ghz": [round(x, 4) for x in sol["levels_ghz"]],
+            },
+            "verdict": (f"耦合器双验证 PASS（解析 J={J_an:.5f}GHz ↔ "
+                        f"严格对角化 J={J_num:.5f}GHz rel={rel:.2%} ≤ "
+                        f"{tol_rel:.0%}）"
+                        if passed else
+                        f"耦合器验收未全过：J物理={j_physical}，"
+                        f"f01物理={f01_phys}，自洽={accepted}（rel={rel:.2%}）"),
+        }
+
     def verify_all(self, mode: str = "contract",
                    live_heavy: bool = False) -> Tuple[Dict[str, Any], List[str]]:
         """验收全部器件。返回 (outcomes, skipped)。

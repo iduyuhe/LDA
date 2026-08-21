@@ -1,0 +1,56 @@
+{
+  "package_id": "quantum-transmon-5.0",
+  "schema_version": "0.1",
+  "kind": "quantum",
+  "domain": "quantum",
+  "title": "量子逆设计包（Transmon）",
+  "created_at": "2026-08-21T14:06:38",
+  "ir": {
+    "schema_version": "0.3",
+    "physics_bid": "B9",
+    "physics_kind": "transmon-f01",
+    "validate_errors": []
+  },
+  "design": {
+    "targets": {
+      "transmon": 5.0
+    },
+    "params": {
+      "E_J": 11.704167,
+      "E_C": 0.3
+    },
+    "inverse_design": {
+      "formula": "E_J=(f01+E_C)²/(8E_C)（Koch 反解）"
+    }
+  },
+  "verification": {
+    "checks": [
+      {
+        "name": "严格数值双验证",
+        "ok": true,
+        "detail": "Transmon 双验证 PASS（严格对角化 f01=4.9798 ↔ Koch 5.0000 rel=0.40%≤3%）"
+      }
+    ],
+    "passed": true,
+    "verdict": "量子 agent 逆设计闭环 PASS：目标 Transmon 5.0GHz → E_J=(f01+E_C)²/(8E_C)（Koch 反解） → Transmon 双验证 PASS（严格对角化 f01=4.9798 ↔ Koch 5.0000 rel=0.40%≤3%）"
+  },
+  "artifacts": {
+    "numerical": {
+      "f01_diag_ghz": 4.97984,
+      "rel_err": 0.004032,
+      "tol_rel": 0.03,
+      "levels_ghz": [
+        -9.1315,
+        -4.1517,
+        0.474,
+        4.708,
+        8.2432
+      ]
+    },
+    "analytic": {
+      "f01_koch_ghz": 5.0
+    }
+  },
+  "honest_notes": "量子闭式反解 + D-39 严格数值双验证（LLM 不进判决）。",
+  "ok": true
+}

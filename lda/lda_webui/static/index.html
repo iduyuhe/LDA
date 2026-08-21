@@ -416,6 +416,17 @@
   </div>
 
   <div class="sec">
+    <h2>⑳ 统一设计包（D-44 · design outcome 统一交付格式）</h2>
+    <div class="hint">把 D-37（add-drop）/ D-41（量子）/ D-42（WDM）/ D-43（readout 混合链路）四类设计结果统一为<b>同一份 DesignPackage</b>——无论设计什么，交付物格式一致、机器可校验、可汇总：`ir`（设计意图回溯）+ `design`（目标/参数/反解）+ `verification`（死标量验收门 + verdict）+ `artifacts`（SVG/谱/GDS）+ `honest_notes`（诚实标注必填）。<b>verification.passed 是唯一验收门（LLM 不进判决路径）。</b></div>
+    <div class="row">
+      <button class="btn" id="runDp">构建全部 4 类设计包</button>
+    </div>
+    <div id="dpSummary" class="summary"></div>
+    <div id="dpBody"></div>
+    <div class="conclusion" id="dpConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1234,6 +1245,30 @@ function renderRc(d){
 }
 $('runRc').onclick = runRc;
 
+// ---- ⑳ D-44 统一设计包 ----
+async function runDp(){
+  const btn = $('runDp'); btn.disabled = true;
+  $('dpSummary').innerHTML = '<span class="spin"></span> 构建全部 4 类统一设计包（add_drop / quantum / wdm / readout_chain）…';
+  $('dpBody').innerHTML = '';
+  try{
+    const d = await api('/api/design_package', {kind:'all'});
+    renderDp(d);
+  }catch(e){ $('dpSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderDp(d){
+  const pkgs = d.packages || {};
+  const kinds = Object.keys(pkgs);
+  $('dpSummary').innerHTML = `统一设计包 schema=<b>${d.schema_version}</b> · ${kinds.length} 类包 · schema 全通过：<span class="verdict ${d.all_schema_ok?'ok':'fail'}">${d.all_schema_ok?'PASS':'FAIL'}</span>`;
+  const rows = kinds.map(k=>{
+    const v = pkgs[k]||{};
+    return `<tr><td><b>${k}</b></td><td>${v.package_id||'—'}</td><td><span class="verdict ${v.passed?'ok':'fail'}">${v.passed?'PASS':'FAIL'}</span></td><td><span class="verdict ${v.schema_ok?'ok':'fail'}">${v.schema_ok?'OK':'ERR'}</span></td></tr>`;
+  }).join('');
+  $('dpBody').innerHTML = `<table class="tbl"><thead><tr><th>设计包 kind</th><th>package_id</th><th>验收（verification.passed）</th><th>schema 校验</th></tr></thead><tbody>${rows}</tbody></table>`;
+  $('dpConclusion').innerHTML = `<b>统一设计包意义：</b>无论设计环形 add-drop、量子 Transmon、WDM 系统还是 readout 混合链路，交付物都是同一份机器可校验的 DesignPackage（ir+design+verification+artifacts+honest_notes）——agent 与人都用同一格式验收，这是"design outcome"的统一交付规范。`;
+}
+$('runDp').onclick = runDp;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -1280,6 +1315,7 @@ $('runIr').onclick = runIr;
   runQd();
   runWdm();
   runRc();
+  runDp();
   runIr();
 })();
 </script>

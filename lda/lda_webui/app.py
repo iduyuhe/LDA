@@ -572,6 +572,38 @@ def run_readout_chain(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_design_package(payload=None):
+    """D-44 统一设计包规范（webui ⑳ 面板）。
+
+    输入 {kind, params?}：把 4 类设计结果（add_drop/quantum/wdm/readout_chain）
+    统一为同一 DesignPackage schema（ir + design + verification + artifacts +
+    honest_notes），机器可校验。kind 省略 → 构建全部。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_design.design_package import (build_all, build_package,
+                                           validate_package)
+    payload = payload or {}
+    kind = payload.get("kind")
+    try:
+        if kind in (None, "", "all"):
+            out = build_all()
+            out["ok"] = True
+            return out
+        params = payload.get("params") or {}
+        pkg = build_package(kind, params=params)
+        errs = validate_package(pkg)
+        pkg["schema_ok"] = not errs
+        pkg["schema_errors"] = errs
+        pkg["ok"] = True
+        return pkg
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_drc_fix_demo(payload):
     """D-18/D-21/D-22 可制造性面板：agent 自动整改 + 跨厂工艺规则对比。
 
@@ -835,6 +867,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_wdm_design(payload))
             elif path == "/api/readout_chain":
                 self._send(200, run_readout_chain(payload))
+            elif path == "/api/design_package":
+                self._send(200, run_design_package(payload))
             elif path == "/api/drc_fix_demo":
                 self._send(200, run_drc_fix_demo(payload))
             elif path == "/api/coupler_loop":

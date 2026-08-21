@@ -1,0 +1,103 @@
+{
+  "package_id": "readout-f015.0-d1.0",
+  "schema_version": "0.1",
+  "kind": "readout_chain",
+  "domain": "hybrid",
+  "title": "光子-量子混合链路 · 芯片级 dispersive readout",
+  "created_at": "2026-08-21T14:06:38",
+  "ir": {
+    "schema_version": "0.3",
+    "domain": "hybrid",
+    "n_components": 3,
+    "n_nets": 2,
+    "validate_errors": []
+  },
+  "design": {
+    "targets": {
+      "f01_ghz": 5.0,
+      "f_r_ghz": 6.0,
+      "g_ghz": 0.1,
+      "kappa_r_ghz": 0.005
+    },
+    "params": {
+      "E_J": 13.7812,
+      "E_C": 0.25,
+      "f_r_ghz": 6.0,
+      "Lp": 4e-07,
+      "Cp": 1.5e-10,
+      "l_m": 0.005379144,
+      "Cc": 0.03651,
+      "Q_ext": 1200.0
+    },
+    "inverse_design": {
+      "formula": "E_J/l/Cc/Q_ext 闭式反解"
+    }
+  },
+  "verification": {
+    "checks": [
+      {
+        "name": "混合 IR 网表校验（hybrid）",
+        "ok": true,
+        "detail": "3 器件 + 2 网表 通过"
+      },
+      {
+        "name": "Transmon 双验证（对角化↔Koch）",
+        "ok": true,
+        "detail": "f01=4.9863↔5.0000GHz rel=0.27%"
+      },
+      {
+        "name": "Resonator 双验证（离散本征值↔λ/4 闭式）",
+        "ok": true,
+        "detail": "f0=5.985022↔6.0000GHz rel=0.25%"
+      },
+      {
+        "name": "JC 精确对角化自洽（共振分裂=2g + 色散 χ）",
+        "ok": true,
+        "detail": "拉比分裂=0.2≈2g · |χ_num|=0.009808 vs g²/Δ=0.01 rel=1.92%"
+      },
+      {
+        "name": "色散区有效（Δ/g ≥ 5）",
+        "ok": true,
+        "detail": "Δ/g=10.0"
+      },
+      {
+        "name": "读出可分辨（χ ≥ κ_r）",
+        "ok": true,
+        "detail": "χ=0.0100GHz vs κ_r=0.005GHz"
+      },
+      {
+        "name": "读出 Q_ext 物理量级（1e2~1e5）",
+        "ok": true,
+        "detail": "Q_ext=1200（=f_r/κ_r）"
+      }
+    ],
+    "passed": true,
+    "verdict": "芯片级 dispersive readout 链路设计 PASS：qubit f01=5.000GHz ↔ readout f_r=6.000GHz（Δ=1.00GHz，Δ/g=10.0）↔ feedline Q_ext=1200，χ=10.00MHz ≥ κ_r=5.0MHz；三器件双验证 + JC 精确对角化自洽。"
+  },
+  "artifacts": {
+    "verification_detail": {
+      "transmon": {
+        "f01_diag_ghz": 4.98628,
+        "f01_koch_ghz": 5.0,
+        "rel_err": 0.002744
+      },
+      "resonator": {
+        "f0_num_ghz": 5.985022,
+        "f0_closed_ghz": 6.0,
+        "rel_err": 0.002496
+      },
+      "jc": {
+        "passed": true,
+        "chi_num_ghz": 0.009808,
+        "chi_analytic_ghz": 0.01,
+        "chi_rel_err": 0.019238,
+        "tol_rel": 0.1,
+        "rabi_split_ghz": 0.2,
+        "g_from_split_ghz": 0.1,
+        "g_rel_err": 0.0
+      }
+    }
+  },
+  "honest_notes": "JC 精确对角化（Fock 截断 M=30）为耦合系统严格数值侧；χ=g²/Δ 为色散解析近似——两者交叉验证（rel≤10%）。耦合闭式取 CΣ=Cr=1 归一。LLM 不进判决路径。",
+  "ok": true
+}

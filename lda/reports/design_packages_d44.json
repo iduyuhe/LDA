@@ -1,0 +1,30 @@
+{
+  "schema_version": "0.1",
+  "packages": {
+    "add_drop": {
+      "package_id": "add-drop-fsr17.5",
+      "passed": true,
+      "schema_ok": true,
+      "schema_errors": []
+    },
+    "quantum": {
+      "package_id": "quantum-transmon-5.0",
+      "passed": true,
+      "schema_ok": true,
+      "schema_errors": []
+    },
+    "wdm": {
+      "package_id": "wdm-4ch",
+      "passed": true,
+      "schema_ok": true,
+      "schema_errors": []
+    },
+    "readout_chain": {
+      "package_id": "readout-f015.0-d1.0",
+      "passed": true,
+      "schema_ok": true,
+      "schema_errors": []
+    }
+  },
+  "all_schema_ok": true
+}

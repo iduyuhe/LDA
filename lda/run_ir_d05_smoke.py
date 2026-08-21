@@ -40,8 +40,8 @@ def main() -> int:
     print("=== L0 IR v0.2 增补 smoke (D-05) ===")
     ok = True
 
-    # 0) schema 版本 + 词汇表
-    ok &= check(IRModel().schema_version == "0.2", "默认 schema_version == 0.2")
+    # 0) schema 版本（D-40 受控升级 0.2→0.3）+ 词汇表
+    ok &= check(IRModel().schema_version == "0.3", "默认 schema_version == 0.3 (D-40 受控升级)")
     ok &= check("DirectionalCoupler" in KNOWN_KINDS, "KNOWN_KINDS 含 DirectionalCoupler")
     ok &= check("SymmetricYBranch" in KNOWN_KINDS, "KNOWN_KINDS 含 SymmetricYBranch")
 

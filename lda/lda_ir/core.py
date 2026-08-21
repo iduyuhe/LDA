@@ -105,13 +105,35 @@ class FoundryPlan:
 # 器件实例 / 顶层模型
 # --------------------------------------------------------------------------
 @dataclass
+class PhysicsAnchor:
+    """量子/光子物理锚（D-40：同一 IR 表达两种物理的一等字段）。
+
+    每个器件声明它锚定的确定性物理定律（LLM 不进判决路径）：
+      - bid        ：harness 基准题号（B9 transmon-f01 / B12 resonator-f0 /
+                     B13 coupler-J；光子侧沿用 B1-B11）
+      - kind       ：物理模型名（如 "transmon-f01" / "resonator-f0" /
+                     "coupler-J"）
+      - spec_params：物理规范参数（供严格求解器消费；与器件可调 params 可分离）
+      - anchor     ：人类可读锚说明（确定性闭式/定律）
+
+    bridge/harness 消费 physics.bid 直接算出真值并判定——光子靠折射率/几何、
+    量子靠约瑟夫森/充电能，但"IR → physics → 物理定律锚验证"链路完全一致。
+    """
+    bid: str
+    kind: str
+    spec_params: Dict[str, float] = field(default_factory=dict)
+    anchor: str = ""
+
+
+@dataclass
 class Component:
     """一个器件实例（IR 图里的节点）。
 
     kind 决定领域语义（光子：RingResonator / Waveguide / GratingCoupler /
-    Splitter ...）；params 是几何/工艺参数；param_bounds 标记哪些参数可调
-    及其工艺窗口；ports 用于网表连接；foundry_hints 给 agent 的软提示
-    （最终落点由 FoundryPlan + L2 Registry 决定，不强制）。
+    Splitter ...；量子：Transmon / Resonator / Coupler）；params 是几何/工艺
+    参数；param_bounds 标记哪些参数可调及其工艺窗口；ports 用于网表连接；
+    foundry_hints 给 agent 的软提示；physics 声明该器件的物理定律锚（D-40，
+    同一 IR 表达两种物理）。
     """
     id: str
     kind: str
@@ -119,6 +141,7 @@ class Component:
     param_bounds: Dict[str, Tuple[float, float]] = field(default_factory=dict)
     ports: List[Port] = field(default_factory=list)
     foundry_hints: List[str] = field(default_factory=list)
+    physics: Optional[PhysicsAnchor] = None
 
 
 @dataclass
@@ -129,7 +152,7 @@ class IRModel:
     仅作人类可读渲染（见 dsl.py）。描述"要造什么、约束、目标谱、想落哪个
     foundry"，不直接算物理。
     """
-    schema_version: str = "0.2"
+    schema_version: str = "0.3"                 # D-40 受控升级：0.2 遗留仍可校验
     domain: str = "photon"                      # "photon" | "quantum"
     name: str = ""
     components: List[Component] = field(default_factory=list)

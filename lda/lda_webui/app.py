@@ -602,6 +602,7 @@ def run_ir_demo(payload):
     """
     from lda_ir import (
         DirectionalCoupler, SymmetricYBranch, RingResonator, Transmon,
+        Resonator, Coupler,
         IRModel, ObjectiveSpec, validate, to_dsl,
     )
 
@@ -633,14 +634,20 @@ def run_ir_demo(payload):
               RingResonator(), "B11"),
         build("Transmon（超导量子比特·量子频率骨架）",
               Transmon(), "B9"),
+        build("Resonator（超导谐振器 λ/4 · D-40 物理锚 B12）",
+              Resonator(), "B12"),
+        build("Coupler（双 transmon 电容耦合 · D-40 物理锚 B13）",
+              Coupler(), "B13"),
     ]
     all_ok = all(len(e["validate_errors"]) == 0 for e in examples)
     return {
         "schema_version": IRModel().schema_version,
         "all_valid": all_ok,
         "examples": examples,
-        "note": "上述 IR 由 lda_ir（D-05 v0.2）实时构造并校验；耦合器/分束器 IR "
-                "是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。",
+        "note": "上述 IR 由 lda_ir（D-05 v0.2 / D-40 v0.3）实时构造并校验；"
+                "耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长"
+                "闭环的事实源，Transmon/Resonator/Coupler 量子 IR 带 PhysicsAnchor "
+                "（B9/B12/B13）——同一 IR 表达两种物理。",
     }
 
 

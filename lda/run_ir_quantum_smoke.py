@@ -97,6 +97,78 @@ def main() -> int:
     else:
         print("WARN 量子 foundry 落点未显现差异（E_C 近似一致）")
 
+    # 6) D-40：全部量子 kind（Transmon/Resonator/Coupler）物理锚 + schema v0.3 受控升级
+    from lda_ir import Coupler, Resonator  # noqa: E402
+
+    m_r = IRModel(
+        domain="quantum", name="resonator-f0-B12",
+        components=[Resonator(id="r1")],
+        objectives=[ObjectiveSpec(
+            bid="B12",
+            target=round(1.0 / (4.0 * 3000e-6 * (0.4e-6 * 1.5e-10) ** 0.5) / 1e9, 4),
+            tol=0.02, role="objective")],
+    )
+    m_c = IRModel(
+        domain="quantum", name="coupler-J-B13",
+        components=[Coupler(id="c1")],
+        objectives=[ObjectiveSpec(bid="B13",
+                                  target=round(Coupler().params["J_ghz"], 4),
+                                  tol=0.10, role="objective")],
+    )
+    for name, mm in (("Resonator", m_r), ("Coupler", m_c)):
+        errs = validate(mm)
+        ph = mm.components[0].physics
+        if errs or ph is None or not ph.spec_params:
+            print(f"FAIL D-40 {name} IR 校验/物理锚：{errs or 'physics 缺失'}")
+            return 1
+        if mm.schema_version != "0.3":
+            print(f"FAIL D-40 {name} schema_version 应为 0.3，got {mm.schema_version}")
+            return 1
+        mm2 = from_dict(to_dict(mm))
+        if dumps(mm) != dumps(mm2):
+            print(f"FAIL D-40 {name} round-trip 信息损失")
+            return 1
+        print(f"OK  D-40 {name}: schema={mm.schema_version} physics.bid={ph.bid} "
+              f"({ph.kind}) spec_params={list(ph.spec_params)}")
+    # Transmon 也挂物理锚（B9）
+    if m.components[0].physics is None or m.components[0].physics.bid != "B9":
+        print("FAIL D-40 Transmon 缺 physics 锚 B9")
+        return 1
+    print("OK  D-40 Transmon: physics.bid=B9 (transmon-f01)")
+
+    # 7) D-40：schema 受控升级——v0.2 遗留模型仍可校验（向后兼容）
+    m_legacy = IRModel(schema_version="0.2", domain="quantum",
+                       components=[Transmon(id="q1")],
+                       objectives=[ObjectiveSpec(bid="B9", target=5.0, tol=0.1)])
+    errs_legacy = validate(m_legacy)
+    if errs_legacy:
+        print(f"FAIL D-40 schema 0.2 遗留模型不再兼容：{errs_legacy}")
+        return 1
+    print("OK  D-40 schema 受控升级：0.2 遗留模型仍可校验（向后兼容）")
+
+    # 8) D-40：ir_eval B12（resonator f0）/ B13（coupler J）真值判定
+    r_hit12 = ir_eval(m_r, {"Lp": 0.4e-6, "Cp": 1.5e-10, "l": 3000e-6})
+    if not r_hit12["passed_all"]:
+        print(f"FAIL B12 命中未判 PASS：{r_hit12['rows']}")
+        return 1
+    print(f"OK  B12 ir_eval PASS（f0={r_hit12['rows']['B12']['candidate']:.4f}GHz）")
+    r_miss12 = ir_eval(m_r, {"Lp": 0.6e-6, "Cp": 1.5e-10, "l": 3000e-6})
+    if r_miss12["passed_all"]:
+        print("FAIL B12 失配 Lp 仍判 PASS（应为 FAIL）")
+        return 1
+    print("OK  B12 失配 Lp → ir_eval FAIL")
+
+    r_hit13 = ir_eval(m_c, {})
+    if not r_hit13["passed_all"]:
+        print(f"FAIL B13 命中未判 PASS：{r_hit13['rows']}")
+        return 1
+    print(f"OK  B13 ir_eval PASS（J={r_hit13['rows']['B13']['candidate']:.5f}GHz）")
+    r_miss13 = ir_eval(m_c, {"Cc": 0.2})
+    if r_miss13["passed_all"]:
+        print("FAIL B13 失配 Cc 仍判 PASS（应为 FAIL）")
+        return 1
+    print("OK  B13 失配 Cc → ir_eval FAIL")
+
     print("\n=== L0 IR 量子子集 smoke: ALL GREEN ===")
     return 0
 

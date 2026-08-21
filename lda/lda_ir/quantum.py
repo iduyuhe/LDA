@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from typing import Dict, Optional, Tuple
 
-from .core import Component, Port
+from .core import Component, PhysicsAnchor, Port
 
 
 def Transmon(id: str = "q1", E_J: float = 20.0, E_C: float = 0.30,
@@ -34,6 +34,7 @@ def Transmon(id: str = "q1", E_J: float = 20.0, E_C: float = 0.30,
                        "目标谱形"语义——量子侧用"目标频率"表达设计意图。
 
     默认两参数均可调（N 维逆设计）；若只想调 E_J 命中频率，可只给 EJ_bounds。
+    D-40：挂 PhysicsAnchor B9（Koch2007 确定性物理锚）。
     """
     params: Dict[str, float] = {"E_J": E_J, "E_C": E_C}
     if target_f01 is not None:
@@ -47,36 +48,66 @@ def Transmon(id: str = "q1", E_J: float = 20.0, E_C: float = 0.30,
         params=params,
         param_bounds=bounds,
         ports=[Port("control"), Port("readout")],
+        physics=PhysicsAnchor(
+            bid="B9", kind="transmon-f01",
+            spec_params={"E_J": E_J, "E_C": E_C},
+            anchor="Koch2007 解析色散近似 f01=√(8·E_J·E_C)−E_C（GHz）"
+                   "；严格侧=D-35 transmon 哈密顿量对角化"),
     )
 
 
-def Resonator(id: str = "r1", f0: float = 5.0, Q: float = 1.0e4,
-              f0_bounds: Tuple[float, float] = (4.0, 8.0)) -> Component:
-    """读out/耦合谐振腔（频率 f0 GHz、品质因子 Q）。
+def Resonator(id: str = "r1", Lp: float = 0.4e-6, Cp: float = 1.5e-10,
+              l: float = 3000e-6, Q: float = 1.0e4,
+              Lp_bounds: Tuple[float, float] = (0.3e-6, 0.6e-6),
+              Cp_bounds: Tuple[float, float] = (1.0e-10, 2.5e-10),
+              l_bounds: Tuple[float, float] = (2000e-6, 4000e-6)) -> Component:
+    """读out/耦合谐振腔（λ/4 微波谐振，频率 f0、品质因子 Q）。
 
-    用于量子-光子混合系统（如玻色编码、readout 腔）。当前 IR 仅建模几何/
-    频率参数；与光子谐振器不同，这里是微波谐振，不进入 B11 光学谱形链路。
+    D-40 深化：从"抽象 f0/Q"升级为**物理规范参数**（L′/C′/l，分布参数），
+    f0 由物理定律 λ/4 闭式给出（f=1/(4l√(L′C′))），并挂 PhysicsAnchor B12
+    （闭式 ↔ D-39 离散 TL 严格本征值）。与光子谐振器不同，这里是微波谐振，
+    不进入 B11 光学谱形链路。
     """
+    f0 = 1.0 / (4.0 * l * (Lp * Cp) ** 0.5) / 1e9  # GHz
     return Component(
         id=id,
         kind="Resonator",
-        params={"f0": f0, "Q": Q},
-        param_bounds={"f0": tuple(f0_bounds)},
+        params={"Lp": Lp, "Cp": Cp, "l": l, "Q": Q, "f0_ghz": round(f0, 6)},
+        param_bounds={"Lp": tuple(Lp_bounds), "Cp": tuple(Cp_bounds),
+                      "l": tuple(l_bounds)},
         ports=[Port("in"), Port("out")],
+        physics=PhysicsAnchor(
+            bid="B12", kind="resonator-f0",
+            spec_params={"Lp": Lp, "Cp": Cp, "l": l},
+            anchor="λ/4 闭式 f0=1/(4l√(L′C′))（连续极限物理定律）"
+                   "；严格侧=D-39 离散 TL 三对角特征值"),
     )
 
 
-def Coupler(id: str = "c1", g: float = 0.1,
+def Coupler(id: str = "c1", g: float = 0.1, E_J1: float = 20.0,
+            E_C1: float = 0.25, E_J2: float = 20.0, E_C2: float = 0.25,
+            Cc: float = 0.02, C1: float = 1.0, C2: float = 1.0,
             g_bounds: Tuple[float, float] = (0.0, 0.5)) -> Component:
     """可调耦合器（耦合强度 g GHz，连接两个 transmon 或 transmon-谐振腔）。
 
-    用于可调耦合架构（避免固定耦合带来的频率拥挤 / 串扰）。g 可调区间由
-    工艺窗口决定（可调耦合 junction 的磁通偏置范围）。
+    D-40 深化：从"抽象 g"升级为**双 transmon 物理规范参数**（E_J1/E_C1/
+    E_J2/E_C2/Cc/C1/C2），J 由解析闭式 J=Jc·n01₁·n01₂ 给出，并挂
+    PhysicsAnchor B13（解析 J ↔ D-39 441 维严格对角化）。
     """
+    Jc = Cc / (C1 * C2)
+    n01 = lambda ej, ec: (ej / (2.0 * ec)) ** 0.25 / 2.0  # noqa: E731
+    j_ghz = Jc * n01(E_J1, E_C1) * n01(E_J2, E_C2)
     return Component(
         id=id,
         kind="Coupler",
-        params={"g": g},
+        params={"g": g, "E_J1": E_J1, "E_C1": E_C1, "E_J2": E_J2, "E_C2": E_C2,
+                "Cc": Cc, "C1": C1, "C2": C2, "J_ghz": round(j_ghz, 6)},
         param_bounds={"g": tuple(g_bounds)},
         ports=[Port("a"), Port("b", directed=True)],
+        physics=PhysicsAnchor(
+            bid="B13", kind="coupler-J",
+            spec_params={"E_J1": E_J1, "E_C1": E_C1, "E_J2": E_J2,
+                         "E_C2": E_C2, "Cc": Cc, "C1": C1, "C2": C2},
+            anchor="J=Jc·<0|n̂|1>₁·<0|n̂|1>₂，n01=(E_J/2E_C)^{1/4}/2（Koch 类）"
+                   "；严格侧=D-39 双 qubit 441 维电荷 basis 对角化"),
     )

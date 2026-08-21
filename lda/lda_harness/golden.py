@@ -166,6 +166,35 @@ def b10_gate_fidelity(T1, T2, t_gate):
 
 
 # --------------------------------------------------------------------------
+# B12 · 超导谐振器 λ/4 最低模 f0（闭式，D-40 量子物理锚）
+# --------------------------------------------------------------------------
+def b12_resonator_frequency(Lp, Cp, l):
+    """λ/4 谐振器最低模 f0（GHz，连续极限闭式）。
+
+    f0 = 1/(4·l·√(L′·C′))，L′/C′ 为传输线分布电感/电容（H/m、F/m），l 为长度
+    （m）。确定性物理定律（连续极限）；严格侧=D-39 离散 TL 三对角特征值
+    （rel 收敛 <1%，N=400）。这是量子 EDA 验证锚的第二块"物理定律地基"。
+    """
+    return 1.0 / (4.0 * l * math.sqrt(Lp * Cp)) / 1e9
+
+
+# --------------------------------------------------------------------------
+# B13 · 双 transmon 电容耦合强度 J（解析，D-40 量子物理锚）
+# --------------------------------------------------------------------------
+def b13_coupler_coupling(E_J1, E_C1, E_J2, E_C2, Cc, C1, C2):
+    """有效 qubit-qubit 耦合 J（GHz，解析闭式）。
+
+    J = Jc·<0|n̂|1>₁·<0|n̂|1>₂，Jc=Cc/(C_Σ1·C_Σ2)，n01=(E_J/2E_C)^{1/4}/2
+    （Koch 类闭式）。确定性物理定律（微扰闭式）；严格侧=D-39 双 qubit
+    441 维电荷 basis 对角化（共振 rel~4%≤10%）。量子 EDA 第三块物理锚。
+    """
+    Jc = Cc / (C1 * C2)
+    n01_1 = (E_J1 / (2.0 * E_C1)) ** 0.25 / 2.0
+    n01_2 = (E_J2 / (2.0 * E_C2)) ** 0.25 / 2.0
+    return Jc * n01_1 * n01_2
+
+
+# --------------------------------------------------------------------------
 # B11 · 环形谐振器 drop 端口透射谱 "目标谱形" 匹配误差（标量，越小越好）
 # --------------------------------------------------------------------------
 def b11_ring_spectrum_match(R, n_g, wl0=1.55, target_fsr=9.15):
@@ -251,6 +280,8 @@ def golden_value(bid, params):
         "B9": b9_transmon_frequency,
         "B10": b10_gate_fidelity,
         "B11": b11_ring_spectrum_match,
+        "B12": b12_resonator_frequency,
+        "B13": b13_coupler_coupling,
     }
     if bid not in dispatch:
         raise KeyError(f"无黄金参考定义: {bid}")
@@ -265,7 +296,8 @@ def golden_with_source(bid, params):
       - 'numpy-overlap-offline'  B5 numpy 重叠估计离线近似
       - 'design-anchor'          设计守则锚（ORACLE 不可用时的验收基准）
     """
-    physical_law = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11"}
+    physical_law = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
+                    "B12", "B13"}
     if bid in physical_law:
         return (golden_value(bid, params), "physical-law", "确定性物理定律/解析解")
     # B5–B7：查 ORACLE 来源

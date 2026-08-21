@@ -27,11 +27,19 @@ from typing import List
 from .core import IRModel
 
 _KNOWN_SPECTRUM_KINDS = {"ring_fsr", "lorentz_comb"}
+_KNOWN_SCHEMA_VERSIONS = {"0.2", "0.3"}     # D-40 受控升级：0.2 遗留兼容
+_KNOWN_PHYSICS_BIDS = {"B9", "B12", "B13"}  # 量子物理锚（B9 transmon-f01 /
+                                            # B12 resonator-f0 / B13 coupler-J）
 
 
 def validate(m: IRModel) -> List[str]:
     """校验 IRModel，返回错误列表（空=合法）。"""
     errs: List[str] = []
+
+    # 0. schema 版本受控（D-40：0.3 现行，0.2 遗留兼容；未知版本拒绝）
+    if m.schema_version not in _KNOWN_SCHEMA_VERSIONS:
+        errs.append(f"schema_version 未知：'{m.schema_version}'"
+                    f"（须 {sorted(_KNOWN_SCHEMA_VERSIONS)}）")
 
     # 1. component id 唯一
     ids = [c.id for c in m.components]
@@ -54,6 +62,16 @@ def validate(m: IRModel) -> List[str]:
     for o in m.objectives:
         if not o.bid or not (o.bid[0] == "B" and o.bid[1:].isdigit()):
             errs.append(f"objective/constraint bid 非法：'{o.bid}'（须形如 B11）")
+
+    # 3b. physics 物理锚合法（D-40：bid 已知 + spec_params 非空）
+    for c in m.components:
+        if c.physics is not None:
+            ph = c.physics
+            if ph.bid not in _KNOWN_PHYSICS_BIDS:
+                errs.append(f"component '{c.id}' physics.bid 未知：'{ph.bid}'")
+            if not ph.spec_params:
+                errs.append(f"component '{c.id}' physics.spec_params 为空"
+                            f"（物理锚须带规范参数）")
 
     # 4. spectrum 规格合法
     if m.spectrum:

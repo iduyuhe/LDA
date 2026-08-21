@@ -10,6 +10,7 @@ from .golden import (
     b4_ring_fsr_nm, b5_ybranch_split_loss_dB, b6_grating_coupling_eff,
     b7_crossing_crosstalk_dB, b8_taper_transmission,
     b9_transmon_frequency, b10_gate_fidelity, b11_ring_spectrum_match,
+    b12_resonator_frequency, b13_coupler_coupling,
 )
 
 BENCHMARK_DEFS = {
@@ -121,7 +122,29 @@ BENCHMARK_DEFS = {
         "note": "误差=计算谱与目标洛伦兹梳谱形的逐波长 L2 距离；调 R 命中目标 FSR "
                 "即匹配谱形。确定性物理定律（环形传递函数）。逆设计'目标谱形'基准。",
     },
+    "B12": {
+        "title": "超导谐振器 λ/4 最低模 f0",
+        "metric": "f0_GHz",
+        "oracle": "analytical(quarter-wave closed form)",
+        "tol": 0.02,
+        "default_params": {"Lp": 0.4e-6, "Cp": 1.5e-10, "l": 3000e-6},
+        "golden_fn": b12_resonator_frequency,
+        "note": "f0=1/(4l√(L′C′))（GHz，连续极限）；严格侧=D-39 离散 TL 三对角 "
+                "特征值（rel~0.25%）。D-40 量子物理锚：同一 IR 表达两种物理。",
+    },
+    "B13": {
+        "title": "双 transmon 电容耦合强度 J",
+        "metric": "J_GHz",
+        "oracle": "analytical(charge-coupling closed form)",
+        "tol": 0.10,
+        "default_params": {"E_J1": 20.0, "E_C1": 0.25, "E_J2": 20.0,
+                           "E_C2": 0.25, "Cc": 0.02, "C1": 1.0, "C2": 1.0},
+        "golden_fn": b13_coupler_coupling,
+        "note": "J=Jc·<0|n̂|1>₁·<0|n̂|1>₂（GHz，n01=(E_J/2E_C)^{1/4}/2）；严格侧="
+                "D-39 441 维电荷 basis 对角化（rel~4%）。D-40 量子物理锚。",
+    },
 }
 
 # 对齐顺序（报告展示用）
-BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11"]
+BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
+                   "B11", "B12", "B13"]

@@ -4,10 +4,10 @@
     "candidate": "ReferenceCandidate",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）"
   },
-  "generated_at": "2026-08-20T06:43:18",
+  "generated_at": "2026-08-21T13:18:06",
   "summary": {
-    "total": 11,
-    "passed": 11
+    "total": 13,
+    "passed": 13
   },
   "results": [
     {
@@ -40,6 +40,28 @@
       "golden": 0.005022766645124605,
       "candidate": 0.005022766645124605,
       "tol": 0.03,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B12",
+      "metric": "f0_GHz",
+      "oracle": "analytical(quarter-wave closed form)",
+      "source": "physical-law",
+      "golden": 10.758287072798378,
+      "candidate": 10.758287072798378,
+      "tol": 0.02,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B13",
+      "metric": "J_GHz",
+      "oracle": "analytical(charge-coupling closed form)",
+      "source": "physical-law",
+      "golden": 0.0316227766016838,
+      "candidate": 0.0316227766016838,
+      "tol": 0.1,
       "passed": true,
       "note": "确定性物理定律/解析解"
     },

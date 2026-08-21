@@ -741,6 +741,35 @@ def run_mixed_system(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_coupler_design(payload=None):
+    """D-55 方向耦合器设计闭环（webui ㉕ 面板）。
+
+    输入 {target_cross?, gap?, w?}：目标分束比 → 2D FDTD 双点标定 κ →
+    CMT 反解耦合长度（物理长度=有效长度+offset）→ 实测-修正迭代 →
+    死标量验收。秒级-数十秒（2D FDTD 真实求解器）。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.directional_coupler import design_coupler
+    payload = payload or {}
+    kw = {}
+    for k in ("target_cross", "gap", "w"):
+        if payload.get(k) is not None:
+            try:
+                kw[k] = float(payload[k])
+            except (TypeError, ValueError):
+                return {"ok": False, "error": f"{k} 须为数值"}
+    try:
+        rep = design_coupler(transient_cycles=600, **kw)
+        rep["ok"] = True
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_design_package(payload=None):
     """D-44 统一设计包规范（webui ⑳ 面板）。
 
@@ -1044,6 +1073,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_multiqubit_fidelity(payload))
             elif path == "/api/mixed_system":
                 self._send(200, run_mixed_system(payload))
+            elif path == "/api/coupler_design":
+                self._send(200, run_coupler_design(payload))
             elif path == "/api/design_package":
                 self._send(200, run_design_package(payload))
             elif path == "/api/drc_fix_demo":

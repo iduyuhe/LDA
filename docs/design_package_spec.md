@@ -71,7 +71,7 @@ agent（L1 协议）/ 人（验收）/ 第三方工具 / CI 自动化
 - `verification.checks` 与 harness 基准题（B1–B13）同语义：死标量比对明细。
 - 第三方对接只需消费 DesignPackage 这一个格式，无需理解内部各闭环。
 
-## 4. kind 注册表（v0.1 · 8 kind）
+## 4. kind 注册表（v0.1 · 9 kind）
 
 | kind | 来源 | domain | targets 典型键 | params 典型键 | artifacts 典型键 |
 |---|---|---|---|---|---|
@@ -83,6 +83,7 @@ agent（L1 协议）/ 人（验收）/ 第三方工具 / CI 自动化
 | `readout_fidelity` | D-47 单发读出保真度预算 | hybrid | `f01_ghz` `delta_ghz` `g_ghz` `kappa_r_ghz` | `T1_us` `nbar` `eta` `N_amp` `t_m_star_ns` `budget` | `sweep`（SNR/保真度随 t_m 扫描） |
 | `multiqubit_fidelity` | D-51 N-qubit 复用读出逐 qubit 保真度 | hybrid | `f01s_ghz` `delta_ghz` `g_ghz` | `readout_freqs_ghz` `kappa_r_ghz` `chi_ghz` `per_qubit[]`（逐 qubit T1/n̄/t_m*/budget） | `spectrum` `dip_resolvability` |
 | `mixed_system` | D-52 多环 WDM × 量子读出混合巨型系统 | hybrid | `wdm_channels_nm` `qubit_f01s_ghz` | `mapping[]`（信道↔qubit 1:1）`photon`（R/指标）`quantum`（readout/per_qubit） | `photon_metrics` `quantum_spectrum` `dip_resolvability` |
+| `coupler` | D-55 方向耦合器设计闭环 | photon | `target_cross` `wl_um` `gap_um` | `kappa_fdtd` `calibration`（双点 FDTD）`L_target_um` | `iteration`（设计→验证迭代历史）`cross_val_fdtd` |
 
 > 新增 kind 指南见 §10。
 
@@ -168,7 +169,7 @@ agent（L1 协议）/ 人（验收）/ 第三方工具 / CI 自动化
 1. 必填字段齐全：`package_id` `schema_version` `kind` `domain` `title`
    `created_at` `design` `verification` `honest_notes`
 2. `schema_version == "0.1"`
-3. `kind ∈ {add_drop, quantum, wdm, readout_chain, multiqubit, readout_fidelity, multiqubit_fidelity, mixed_system}`
+3. `kind ∈ {add_drop, quantum, wdm, readout_chain, multiqubit, readout_fidelity, multiqubit_fidelity, mixed_system, coupler}`
 4. `domain ∈ {photon, quantum, hybrid}`
 5. `verification.passed` 存在（验收门）
 6. `honest_notes` 非空（诚实标注必填）
@@ -223,3 +224,4 @@ agent（L1 协议）/ 人（验收）/ 第三方工具 / CI 自动化
 | 0.1.1 | 2026-08-21 | kind 注册表扩展至 6 类（D-48 配套）：新增 `multiqubit`（D-46 N-qubit 频率复用读出）与 `readout_fidelity`（D-47 单发读出保真度预算）；§7 artifacts 常见键补充 `dip_resolvability` / `sweep`；§9 机器校验规则 kind 枚举同步更新 |
 | 0.1.2 | 2026-08-21 | kind 注册表扩展至 7 类（D-51 配套）：新增 `multiqubit_fidelity`（D-51 N-qubit 复用读出逐 qubit 保真度预算——D-46 × D-47 集成）；§9 机器校验规则 kind 枚举同步更新 |
 | 0.1.3 | 2026-08-21 | kind 注册表扩展至 8 类（D-52 配套）：新增 `mixed_system`（D-52 多环 WDM × 量子读出混合巨型系统——D-42 × D-51 集成，光子分波 + 量子读出同一网表，信道↔qubit 1:1 映射）；§9 机器校验规则 kind 枚举同步更新 |
+| 0.1.4 | 2026-08-21 | kind 注册表扩展至 9 类（D-55 配套）：新增 `coupler`（D-55 方向耦合器设计闭环——目标分束比 → 2D FDTD 双点标定 κ → CMT 反解 L → 实测-修正迭代；光子域基础器件空白补齐）；§9 机器校验规则 kind 枚举同步更新 |

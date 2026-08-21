@@ -36,7 +36,8 @@ if _LDA not in sys.path:
 
 SCHEMA_VERSION = "0.1"
 PACKAGE_KINDS = ("add_drop", "quantum", "wdm", "readout_chain", "multiqubit",
-                 "readout_fidelity", "multiqubit_fidelity", "mixed_system")
+                 "readout_fidelity", "multiqubit_fidelity", "mixed_system",
+                 "coupler")
 
 
 def _now_iso() -> str:
@@ -192,6 +193,12 @@ def package_from_mixed_system(
               **kw)
 
 
+def package_from_coupler(target_cross: float = 0.5, **kw) -> Dict[str, Any]:
+    """D-55 方向耦合器设计闭环 → 统一设计包。"""
+    from lda_agent.directional_coupler import package_from_coupler as _p
+    return _p(target_cross=target_cross, **kw)
+
+
 _BUILDERS = {
     "add_drop": package_from_add_drop,
     "quantum": package_from_quantum,
@@ -201,6 +208,7 @@ _BUILDERS = {
     "readout_fidelity": package_from_readout_fidelity,
     "multiqubit_fidelity": package_from_multiqubit_fidelity,
     "mixed_system": package_from_mixed_system,
+    "coupler": package_from_coupler,
 }
 
 _DEFAULTS = {
@@ -214,6 +222,7 @@ _DEFAULTS = {
                             "T1_us_list": [20.0, 15.0, 25.0]},
     "mixed_system": {"wdm_channels_nm": [1550.0, 1553.0, 1556.0],
                      "qubit_f01s_ghz": [4.8, 5.0, 5.2]},
+    "coupler": {"target_cross": 0.5, "transient_cycles": 400},
 }
 
 

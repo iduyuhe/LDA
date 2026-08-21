@@ -492,6 +492,20 @@
   </div>
 
   <div class="sec">
+    <h2>㉕ 方向耦合器设计闭环（D-55 · 2D FDTD 真实求解器验证）</h2>
+    <div class="hint">补上光子域基础器件空白：目标分束比 → <b>2D FDTD 双点标定 κ</b>（D-29 已验收 dc_port_powers，秒级真实求解器）→ 耦合模理论反解耦合长度 L=asin(√R)/κ（<b>物理长度=有效长度+源/测量面 offset</b>）→ <b>实测-修正迭代</b>（≤3 轮）收敛到目标分束比 → 死标量验收（分束比命中/κ 物理量级/L≤200µm/IR）。诚实标注：2D 无材料损耗；3D FDTD 为可选深度确认。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>目标分束比 cross(0~1)<input id="cdCross" type="number" step="0.05" value="0.50" style="width:60px"></label>
+      <label>gap(µm)<input id="cdGap" type="number" step="0.05" value="0.30" style="width:60px"></label>
+      <label>w(µm)<input id="cdW" type="number" step="0.05" value="0.50" style="width:60px"></label>
+      <button class="btn" id="runCd">设计方向耦合器</button>
+    </div>
+    <div id="cdSummary" class="summary"></div>
+    <div id="cdBody"></div>
+    <div class="conclusion" id="cdConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1528,6 +1542,36 @@ function renderMs(d){
 }
 $('runMs').onclick = runMs;
 
+// ---- ㉕ D-55 方向耦合器设计闭环 ----
+async function runCd(){
+  const btn = $('runCd'); btn.disabled = true;
+  const target_cross = parseFloat($('cdCross').value);
+  const gap = parseFloat($('cdGap').value);
+  const w = parseFloat($('cdW').value);
+  $('cdSummary').innerHTML = '<span class="spin"></span> 方向耦合器设计中（2D FDTD 双点标定 κ → CMT 反解 L → 实测-修正迭代）…';
+  $('cdBody').innerHTML='';
+  try{
+    const d = await api('/api/coupler_design', {target_cross, gap, w});
+    renderCd(d);
+  }catch(e){ $('cdSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderCd(d){
+  if(!d.ok){ $('cdSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const acc = d.acceptance||{}, cal = d.calibration||{};
+  const checks = (acc.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('');
+  const it = (d.iteration||[]).map(s=>`L=${s.Lx_um}µm(L_eff=${s.L_eff_um})→实测 ${s.cf}（err ${s.err}）`).join(' → ');
+  const cv = d.cross_val_fdtd;
+  $('cdSummary').innerHTML = `方向耦合器：目标 cross=<b>${d.target_cross}</b>@${d.wl_um}µm · gap=<b>${d.gap_um}</b>µm · κ_fdtd=<b>${d.kappa_fdtd}</b>rad/µm · L=<b>${d.L_target_um}µm</b> · ${cv!==null?'实测 cross=<b>'+cv+'</b>':''} · <span class="verdict ${acc.passed?'ok':'fail'}">${acc.passed?'PASS':'FAIL'}</span>`;
+  $('cdBody').innerHTML = `
+    <div class="subhead">标定：L1=${cal.cf1!==undefined?cal.L1_eff_um+'µm cf='+cal.cf1:''} · L2=${cal.cf2!==undefined?cal.L2_eff_um+'µm cf='+cal.cf2:''}（offset=${cal.offset_um||'—'}µm）</div>
+    <div class="subhead">设计→验证迭代：${it||'（超界短路，未跑迭代）'}</div>
+    <div class="subhead">系统验收（死标量比对）</div>
+    ${checks}`;
+  $('cdConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+}
+$('runCd').onclick = runCd;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -1579,6 +1623,7 @@ $('runIr').onclick = runIr;
   runRf();
   runMqf();
   runMs();
+  runCd();
   runIr();
 })();
 </script>

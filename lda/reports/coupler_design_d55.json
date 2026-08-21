@@ -1,0 +1,66 @@
+{
+  "ok": true,
+  "title": "方向耦合器设计闭环（目标分束比 50%）",
+  "target_cross": 0.5,
+  "w_um": 0.5,
+  "gap_um": 0.3,
+  "wl_um": 1.55,
+  "kappa_fdtd": 0.024072,
+  "L_target_um": 39.795,
+  "calibration": {
+    "L1_eff_um": 18.832,
+    "cf1": 0.194,
+    "L2_eff_um": 44.873,
+    "cf2": 0.7803,
+    "offset_um": 7.168
+  },
+  "iteration": [
+    {
+      "Lx_um": 39.795,
+      "L_eff_um": 32.627,
+      "cf": 0.5033,
+      "err": 0.0033
+    }
+  ],
+  "cross_val_fdtd": 0.5033,
+  "cross_err": 0.0033,
+  "ir": {
+    "schema_version": "0.3",
+    "domain": "photon",
+    "n_components": 2,
+    "n_nets": 1,
+    "validate_errors": []
+  },
+  "acceptance": {
+    "checks": [
+      {
+        "name": "IR 网表校验（photon）",
+        "ok": true,
+        "detail": "2 器件 + 1 网表 通过"
+      },
+      {
+        "name": "分束比命中（|实测−目标| ≤ 0.05）",
+        "ok": true,
+        "detail": "实测 cross=0.503 vs 目标 0.50（|Δ|=0.003）"
+      },
+      {
+        "name": "κ_fdtd 物理量级（0.005~0.20 rad/µm）",
+        "ok": true,
+        "detail": "κ=0.0241 rad/µm（L_c=65.3µm）"
+      },
+      {
+        "name": "耦合长度 L_target 合理（≤200µm）",
+        "ok": true,
+        "detail": "L_target=39.80µm（物理长度；L_eff=32.63µm + offset 7.17µm）"
+      },
+      {
+        "name": "双点标定↔迭代验证自洽",
+        "ok": true,
+        "detail": "L1=18.8µm cf=0.194 · L2=44.9µm cf=0.780 · 迭代 1 轮 [{'Lx_um': 39.795, 'L_eff_um': 32.627, 'cf': 0.5033, 'err': 0.0033}]"
+      }
+    ],
+    "passed": true
+  },
+  "verdict": "方向耦合器设计 PASS：目标分束比 50%@1.55µm → gap=0.3µm, κ=0.0241 rad/µm, L=39.80µm；2D FDTD 实测 cross=0.503（|Δ|=0.003）。",
+  "note": "κ 由 2D FDTD（D-29 已验收 dc_port_powers）**双点差分标定**（L_ref 与 2×L_ref，实测 κ 单点一致 0.0241 rad/µm——CMT 自洽）；反解用有效耦合长度 L_eff=asin(√R)/κ，再加回源/测量面偏移 offset（物理长度 Lx=L_eff+offset）；实测-修正迭代（≤3 轮）收敛到目标分束比——真实的设计→验证迭代。诚实标注：2D 无材料损耗（插损非有效判据）；3D FDTD（fdtd3d_coupler.py，分钟级）为可选深度确认。LLM 不进判决路径。"
+}

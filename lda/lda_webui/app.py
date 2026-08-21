@@ -518,21 +518,35 @@ def run_wdm_design(payload=None):
     _lda = _P(__file__).resolve().parent.parent  # lda/
     if str(_lda) not in _sys.path:
         _sys.path.insert(0, str(_lda))
-    from lda_agent.wdm_system import design_wdm
+    from lda_agent.wdm_system import design_wdm, design_wdm_advanced
     payload = payload or {}
     ch_raw = payload.get("channels", "1550,1552.5,1555,1557.5")
-    try:
-        channels = [float(x) for x in str(ch_raw).split(",") if x.strip()]
-    except (TypeError, ValueError):
-        return {"ok": False, "error": "channels 须为逗号分隔的波长(nm)列表"}
+    channels = None
+    if ch_raw:
+        try:
+            channels = [float(x) for x in str(ch_raw).split(",") if x.strip()]
+        except (TypeError, ValueError):
+            return {"ok": False, "error": "channels 须为逗号分隔的波长(nm)列表"}
     gap = payload.get("gap", 0.3)
     try:
         gap = float(gap)
     except (TypeError, ValueError):
         return {"ok": False, "error": "gap 须为数值"}
+    xt_target = payload.get("xt_target")
+    if xt_target is not None:
+        try:
+            xt_target = float(xt_target)
+        except (TypeError, ValueError):
+            return {"ok": False, "error": "xt_target 须为数值"}
     try:
-        rep = design_wdm(channels, gap=gap)
-        rep["ok"] = True
+        if xt_target is not None:
+            # XT 指标优先：强制反解 gap（忽略用户固定 gap）
+            rep = design_wdm_advanced(channels_nm=channels or None,
+                                      xt_target_db=xt_target, gap=None)
+        else:
+            rep = design_wdm(channels or [1550.0, 1552.5, 1555.0, 1557.5],
+                             gap=gap)
+        rep.setdefault("ok", True)
         return rep
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)[:120]}

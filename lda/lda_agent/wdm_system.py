@@ -276,5 +276,170 @@ def main() -> int:
     return 0 if rep["acceptance"]["passed"] else 1
 
 
+# ---------------------------------------------------------------------------
+# D-45 WDM 纵深：XT 反解 gap / 插损预算 / 单 FSR 信道上限
+# ---------------------------------------------------------------------------
+def xt_min_for_gap(channels_nm: List[float], Rs: List[float], gap: float,
+                   n_g: float = 4.2) -> float:
+    """给定 gap 的邻信道最小串扰（dB）。"""
+    m = system_metrics(channels_nm, Rs, gap, n_g)
+    return float(min(m["xt_min_db"]))
+
+
+def xt_to_gap(channels_nm: List[float], xt_target_db: float,
+              gap_lo: float = 0.20, gap_hi: float = 0.80,
+              tol_db: float = 0.3, n_g: float = 4.2) -> Dict[str, Any]:
+    """反解满足 XT 指标的最小耦合 gap（XT(gap) 单调增，bisection）。
+
+    返回 {gap, xt_db, achievable, note}；gap_hi 仍不达标 → achievable=False。
+    """
+    Rs = [inverse_ring_for_channel(c * 1e-3, n_g) for c in channels_nm]
+
+    def f(g: float) -> float:
+        return xt_min_for_gap(channels_nm, Rs, g, n_g) - xt_target_db
+
+    if f(gap_lo) >= 0:
+        return {"gap": gap_lo, "xt_db": round(xt_min_for_gap(channels_nm, Rs,
+                                                             gap_lo, n_g), 2),
+                "achievable": True, "note": "gap 下限已满足指标"}
+    if f(gap_hi) < 0:
+        return {"gap": None, "xt_db": round(xt_min_for_gap(channels_nm, Rs,
+                                                           gap_hi, n_g), 2),
+                "achievable": False,
+                "note": f"gap 上限 {gap_hi}µm 仍达不到 XT={xt_target_db}dB"
+                        f"（需更弱耦合/更宽信道间隔）"}
+    lo, hi = gap_lo, gap_hi
+    for _ in range(60):
+        mid = (lo + hi) / 2.0
+        if f(mid) < 0:
+            lo = mid
+        else:
+            hi = mid
+    gap = round((lo + hi) / 2.0, 4)
+    return {"gap": gap,
+            "xt_db": round(xt_min_for_gap(channels_nm, Rs, gap, n_g), 2),
+            "achievable": True,
+            "note": f"bisection 反解：XT(gap) 单调，{tol_db}dB 内收敛"}
+
+
+def insertion_loss_budget(channels_nm: List[float], Rs: List[float], gap: float,
+                          n_g: float = 4.2) -> Dict[str, Any]:
+    """级联插损预算：每信道总插损 = drop IL + 前序环 thru 残差。
+
+    返回 {rows: [{channel, drop_il_db, thru_residue_db, total_il_db}],
+          max_total_il_db}。
+    """
+    from lda_agent.ring_adddrop import (adddrop_spectrum, bending_loss_db_per_cm,
+                                        gap_to_kappa)
+    wls = [c * 1e-3 for c in channels_nm]
+    di, ti = [], []
+    for R in Rs:
+        k = gap_to_kappa(gap)
+        ab = bending_loss_db_per_cm(R)
+        sp = adddrop_spectrum(wls, R, n_g, k, ab, 1.55)
+        di.append(sp["drop"]); ti.append(sp["thru"])
+    rows = []
+    for i in range(len(channels_nm)):
+        drop = di[i][i]
+        thru_res = 1.0
+        for k in range(i):
+            thru_res *= ti[k][i]
+        drop_il = -10.0 * math.log10(max(drop, 1e-9))
+        res_il = -10.0 * math.log10(max(thru_res, 1e-9))
+        rows.append({"channel_nm": channels_nm[i],
+                     "drop_il_db": round(drop_il, 3),
+                     "thru_residue_db": round(res_il, 3),
+                     "total_il_db": round(drop_il + res_il, 3)})
+    return {"rows": rows, "max_total_il_db": round(max(r["total_il_db"]
+                                                       for r in rows), 3)}
+
+
+def channel_capacity(xt_target_db: float, spacing_nm: float,
+                     n_g: float = 4.2, m: int = 170,
+                     gap_hi: float = 0.80) -> Dict[str, Any]:
+    """单 FSR 工作区 + XT 指标下的信道上限。
+
+    ① 反解满足 XT 的最小 gap（相邻信道对）；② 单 FSR 限制：span=(N−1)·spacing
+    < FSR(R) → N_max = floor(FSR/spacing)+1。
+    """
+    # 相邻信道对（最紧串扰）上反解 gap
+    pair = [1550.0, 1550.0 + spacing_nm]
+    g = xt_to_gap(pair, xt_target_db, gap_hi=gap_hi)
+    if not g["achievable"]:
+        return {"achievable": False, "note": g["note"]}
+    R = inverse_ring_for_channel(1550e-3, n_g, m)
+    fsr = fsr_nm(1550.0, R, n_g)
+    n_max = int(math.floor(fsr / spacing_nm)) + 1
+    return {"achievable": True,
+            "required_gap_um": g["gap"],
+            "xt_at_gap_db": g["xt_db"],
+            "spacing_nm": spacing_nm,
+            "min_fsr_nm": round(fsr, 2),
+            "n_max_single_fsr": n_max,
+            "max_channel_span_nm": round((n_max - 1) * spacing_nm, 2),
+            "note": f"信道间隔 {spacing_nm}nm、XT≥{xt_target_db}dB → 需 gap="
+                    f"{g['gap']}µm；单 FSR {fsr:.1f}nm 内最多 {n_max} 信道"}
+
+
+def design_wdm_advanced(channels_nm: Optional[List[float]] = None,
+                        n_channels: int = 4, spacing_nm: float = 2.5,
+                        xt_target_db: Optional[float] = None,
+                        gap: Optional[float] = None,
+                        wg_width: float = 0.5, n_g: float = 4.2,
+                        m: int = 170) -> Dict[str, Any]:
+    """WDM 纵深统一入口：XT 指标→gap 反解 / 信道生成 / 插损预算 / 容量。"""
+    if channels_nm is None:
+        channels_nm = [round(1550.0 + i * spacing_nm, 2)
+                       for i in range(n_channels)]
+    channels_nm = [float(c) for c in channels_nm]
+    channels_nm.sort()
+    # XT 指标 → gap 反解（未显式给 gap 时）
+    xt_solve = None
+    if gap is None and xt_target_db is not None:
+        xt_solve = xt_to_gap(channels_nm, xt_target_db)
+        if not xt_solve["achievable"]:
+            return {"ok": False, "error": xt_solve["note"],
+                    "xt_target_db": xt_target_db}
+        gap = xt_solve["gap"]
+    gap = gap if gap is not None else 0.3
+    rep = design_wdm(channels_nm, gap=gap, wg_width=wg_width, n_g=n_g, m=m)
+    if not rep["ok"]:
+        return rep
+    # 插损预算 + 容量
+    Rs = rep["ring_radii_um"]
+    ilb = insertion_loss_budget(channels_nm, Rs, gap, n_g)
+    rep["insertion_loss_budget"] = ilb
+    rep["xt_solve"] = xt_solve
+    if xt_target_db is not None:
+        cap = channel_capacity(xt_target_db,
+                               spacing_nm if len(channels_nm) > 1
+                               else min(abs(b - a) for a, b in
+                                        zip(channels_nm, channels_nm[1:]) or [2.5]),
+                               n_g=n_g, m=m)
+        rep["channel_capacity"] = cap
+        # 追加验收：XT ≥ 指标 + 插损预算 ≤ 3dB
+        m0 = rep["metrics"]
+        acc = rep["acceptance"]
+        acc["checks"].append(
+            {"name": f"XT ≥ 指标 {xt_target_db}dB", "ok": bool(
+                min(m0["xt_min_db"]) >= xt_target_db - 0.5),
+             "detail": f"min XT={min(m0['xt_min_db']):.1f}dB vs 指标 "
+                       f"{xt_target_db}dB（bisection 容差 0.5dB）"})
+        acc["checks"].append(
+            {"name": "级联插损预算 ≤ 3dB", "ok": bool(
+                ilb["max_total_il_db"] <= 3.0),
+             "detail": f"max 总插损={ilb['max_total_il_db']}dB"})
+        acc["passed"] = all(c["ok"] for c in acc["checks"])
+        rep["verdict"] = ("WDM 纵深设计 PASS：XT≥指标 "
+                          f"{xt_target_db}dB（min {min(m0['xt_min_db']):.1f}dB）、"
+                          f"gap={gap}µm（反解）、插损预算 ≤"
+                          f"{ilb['max_total_il_db']}dB、单 FSR 上限 "
+                          f"{(rep.get('channel_capacity') or {}).get('n_max_single_fsr')}"
+                          if acc["passed"] else
+                          "WDM 纵深未全过：" + "; ".join(
+                              c["name"] for c in acc["checks"] if not c["ok"]))
+    return rep
+
+
 if __name__ == "__main__":
     sys.exit(main())

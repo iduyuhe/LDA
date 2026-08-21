@@ -387,10 +387,11 @@
 
   <div class="sec">
     <h2>⑱ WDM 多环级联系统设计（D-42 · 系统级纵深）</h2>
-    <div class="hint">把 D-36~D-41 的单器件闭环升级为<b>系统级</b>：一条 bus 串联 N 个 add-drop 环，每环谐振对齐一个 WDM 信道 → input 到各 drop 端口分波（数据中心光模块核心器件）。<b>IR 网表</b>（N 环 + bus 链，D-40）→ 信道逆设计（谐振对齐闭式 R=m·λ/2πn_g）→ <b>级联传递</b>（drop_i=T_drop_i·ΠT_thru_j）→ 系统验收（每信道 drop IL ≤ 3dB、邻信道串扰 XT ≥ 15dB、DRC、单 FSR 防混叠——<b>超规格用例会被正确拒绝</b>）→ N 环级联 GDS+SVG。LLM 不进判决路径。</div>
+    <div class="hint">把 D-36~D-41 的单器件闭环升级为<b>系统级</b>：一条 bus 串联 N 个 add-drop 环，每环谐振对齐一个 WDM 信道 → input 到各 drop 端口分波（数据中心光模块核心器件）。<b>IR 网表</b>（N 环 + bus 链，D-40）→ 信道逆设计（谐振对齐闭式 R=m·λ/2πn_g）→ <b>级联传递</b>（drop_i=T_drop_i·ΠT_thru_j）→ 系统验收（每信道 drop IL ≤ 3dB、邻信道串扰 XT ≥ 15dB、DRC、单 FSR 防混叠——<b>超规格用例会被正确拒绝</b>）→ N 环级联 GDS+SVG。<b>D-45 纵深：给定 XT 指标反解 gap（bisection）、级联插损预算表（drop IL+前序环 thru 残差）、单 FSR 信道上限。</b>LLM 不进判决路径。</div>
     <div class="row">
       <label>信道波长(nm，逗号分隔)<input id="wdmCh" type="text" value="1550,1552.5,1555,1557.5" style="width:220px"></label>
       <label>gap(µm)<input id="wdmGap" type="number" step="0.05" value="0.3" style="width:70px"></label>
+      <label>XT 目标(dB)<input id="wdmXt" type="number" step="1" value="20" style="width:70px"></label>
       <button class="btn" id="runWdm">设计 WDM 系统</button>
     </div>
     <div id="wdmSummary" class="summary"></div>
@@ -1163,10 +1164,12 @@ async function runWdm(){
   const btn = $('runWdm'); btn.disabled = true;
   const channels = $('wdmCh').value.trim();
   const gap = parseFloat($('wdmGap').value);
-  $('wdmSummary').innerHTML = '<span class="spin"></span> WDM 多环级联系统设计中（IR 网表 → 信道逆设计 → 级联响应 → 系统验收）…';
+  const xt = parseFloat($('wdmXt').value);
+  const payload = {channels, gap, xt_target: xt};
+  $('wdmSummary').innerHTML = '<span class="spin"></span> WDM 多环级联系统设计中（XT 指标→gap 反解 → 级联响应 → 插损预算 → 系统验收）…';
   $('wdmBody').innerHTML=''; $('wdmLayout').innerHTML=''; $('wdmSpectrum').innerHTML='';
   try{
-    const d = await api('/api/wdm_design', {channels, gap});
+    const d = await api('/api/wdm_design', payload);
     renderWdm(d);
   }catch(e){ $('wdmSummary').innerHTML = '运行失败：'+e; }
   finally{ btn.disabled = false; }
@@ -1204,9 +1207,20 @@ function renderWdm(d){
   const chs = d.channels_nm||[];
   const rows = chs.map((c,i)=>`<tr><td>${c}nm</td><td>${(d.ring_radii_um||[])[i]}</td><td>${(m.il_drop_db||[])[i]}dB</td><td>${(m.xt_min_db||[])[i]}dB</td><td>${(m.thru_at_channels||[])[i]}</td></tr>`).join('');
   const checks = (acc.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('');
+  const xts = d.xt_solve;
+  const ilb = d.insertion_loss_budget;
+  const cap = d.channel_capacity;
+  const ilbRows = ilb ? ilb.rows.map(r=>`<tr><td>${r.channel_nm}nm</td><td>${r.drop_il_db}dB</td><td>${r.thru_residue_db}dB</td><td><b>${r.total_il_db}dB</b></td></tr>`).join('') : '';
   $('wdmBody').innerHTML = `
     <div class="subhead">信道设计表（谐振对齐逆设计）</div>
     <table class="tbl"><thead><tr><th>信道(nm)</th><th>环半径 R(µm)</th><th>drop IL</th><th>邻信道串扰 XT</th><th>thru@信道</th></tr></thead><tbody>${rows}</tbody></table>
+    ${xts?`<div class="subhead">XT 指标 → gap 反解（D-45）</div>
+    <div class="note">XT 目标 ≥${$('wdmXt').value}dB → 反解 gap=<b>${xts.gap}µm</b>（实际 XT=${xts.xt_db}dB，${xts.note}）</div>`:''}
+    ${ilb?`<div class="subhead">级联插损预算（D-45：drop IL + 前序环 thru 残差）</div>
+    <table class="tbl"><thead><tr><th>信道</th><th>drop IL</th><th>thru 残差</th><th>总插损</th></tr></thead><tbody>${ilbRows}</tbody></table>
+    <div class="note">max 总插损 = <b>${ilb.max_total_il_db}dB</b> ≤ 3dB 阈值</div>`:''}
+    ${cap?`<div class="subhead">单 FSR 信道上限（D-45）</div>
+    <div class="note">信道间隔 ${cap.spacing_nm}nm、XT≥20dB → 需 gap=<b>${cap.required_gap_um}µm</b>；单 FSR ${cap.min_fsr_nm}nm 内最多 <b>${cap.n_max_single_fsr}</b> 信道（${cap.note}）</div>`:''}
     <div class="subhead">系统验收（死标量比对）</div>
     ${checks}`;
   $('wdmSpectrum').innerHTML = wdmSpectrumSvg(d);

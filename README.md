@@ -95,7 +95,10 @@ python -m lda.lda_agent.multiqubit_readout --f01s "4.8,5.0,5.2"
 # ⑤ 确定性比对裁判（13 标准题物理定律锚）
 python lda/run_harness.py --ai
 
-# ⑥ WebUI（二十二面板，首屏自动演示）
+# ⑥ GPU 实跑激活（L2-B 第三步：CUDA 检测 → 5 例锚 selfcheck → cuda↔cpu bit-equivalent 互证 → 加速比）
+python lda/lda_solver/activate_gpu_fdtd3d.py
+
+# ⑦ WebUI（二十二面板，首屏自动演示）
 python lda/lda_webui/deploy.py start --port 8787
 ```
 

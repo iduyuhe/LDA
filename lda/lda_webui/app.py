@@ -367,6 +367,27 @@ def run_device_library_demo(payload=None):
     }
 
 
+def run_design_loop(payload=None):
+    """D-36 设计→验证闭环（webui ⑭ 面板）。
+
+    输入 {kind, target, top_k?}：在参数网格用物理定律 ORACLE 快速搜索目标，
+    仅对 top-K 候选跑真实求解器双重验证（解析契约 + 真实数值物理自洽，纯 numpy
+    零 GPU），返回最优已验证设计。Ring 用解析锚（诚实标注 FDTD 抽检需 GPU）。
+    LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_design.design_engine import DesignEngine
+    try:
+        eng = DesignEngine()
+        return eng.design_request(payload or {})
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_drc_fix_demo(payload):
     """D-18/D-21/D-22 可制造性面板：agent 自动整改 + 跨厂工艺规则对比。
 
@@ -611,6 +632,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_layout_pipeline(payload))
             elif path == "/api/design_pipeline":
                 self._send(200, run_design_pipeline(payload))
+            elif path == "/api/design_loop":
+                self._send(200, run_design_loop(payload))
             elif path == "/api/drc_fix_demo":
                 self._send(200, run_drc_fix_demo(payload))
             elif path == "/api/coupler_loop":

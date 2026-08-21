@@ -320,6 +320,27 @@
   </div>
 
   <div class="sec">
+    <h2>⑭ 设计→验证闭环（D-36 · 给定目标，返回已验证最优器件）</h2>
+    <div class="hint">这是 LDA 作为"系统"而非"组件集"的核心：给定设计目标（器件类型 + 目标指标），引擎在参数网格用<b>物理定律 ORACLE</b>（瞬时）快速逼近，仅对 top-K 候选跑<b>真实求解器双重验证</b>（解析契约 + 真实数值物理自洽，纯 numpy 零 GPU），返回的"最优设计"是被求解器<b>真正验证过</b>的——LLM 不进判决路径。与 ⑨ 设计流水线（逆设计→版图→DRC）互补：本面板聚焦"严格物理锚定的设计→验证闭环"。</div>
+    <div class="row">
+      <label>器件
+        <select id="dlKind">
+          <option value="Waveguide">直波导 · 目标 neff</option>
+          <option value="BraggMirror">布拉格镜 · 目标 R_min</option>
+          <option value="Transmon">Transmon · 目标 f01(GHz)</option>
+          <option value="RingResonator">环形 · 目标 FSR(nm)</option>
+        </select>
+      </label>
+      <label>目标值 <input id="dlTarget" type="number" step="0.001" value="3.25" style="width:90px"></label>
+      <button class="btn" id="runDesignLoop">运行设计闭环</button>
+    </div>
+    <div id="dlDesignSummary" class="summary"></div>
+    <div id="dlDesignBest" class="summary"></div>
+    <div id="dlDesignCands"></div>
+    <div class="conclusion" id="dlDesignConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 · 机器优先中间表示）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -882,6 +903,42 @@ function transmonLevelsSvg(tf){
 }
 $('runDevLib').onclick = runDevLib;
 
+// ---- ⑭ D-36 设计→验证闭环 ----
+async function runDesignLoop(){
+  const btn = $('runDesignLoop'); btn.disabled = true;
+  const kind = $('dlKind').value;
+  const target = parseFloat($('dlTarget').value);
+  $('dlDesignSummary').innerHTML = '<span class="spin"></span> 设计闭环运行中（物理定律 ORACLE 搜索 + 真实求解器双重验证）…';
+  $('dlDesignBest').innerHTML = ''; $('dlDesignCands').innerHTML='';
+  try{
+    const d = await api('/api/design_loop', {kind, target, top_k:5});
+    renderDesignLoop(d);
+  }catch(e){ $('dlDesignSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderDesignLoop(d){
+  if(!d.ok){ $('dlDesignSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const mu = d.target_unit||'';
+  $('dlDesignSummary').innerHTML = `目标 <b>${d.target}${mu}</b> · 搜索 <b>${d.searched}</b> 点 → 验证 <b>${d.verified}</b> 候选 → 通过 <b>${d.passed}</b>${d.analytic_only?' <span class="warn">[解析锚，FDTD 抽检需 GPU]</span>':''}`;
+  const b = d.best;
+  if(!b){
+    $('dlDesignBest').innerHTML = '<span class="warn">无已验证候选（请放宽目标或参数范围）</span>';
+  }else{
+    const params = Object.entries(b.params).map(([k,v])=>`${k}=${v}`).join('，');
+    $('dlDesignBest').innerHTML = `<div class="ok">✅ 最优已验证设计：<b>${params}</b> → ${d.metric_name}=<b>${b.metric}</b>（目标误差 ${b.err.toFixed(4)}）</div>`+
+      (b.verdict?`<div style="margin-top:4px;color:#8aa0c6">${b.verdict}</div>`:'');
+  }
+  if(d.top && d.top.length){
+    const rows = d.top.map(c=>{
+      const p = Object.entries(c.params).map(([k,v])=>`${k}=${v}`).join('，');
+      return `<tr><td>${p}</td><td>${c.metric===null?'—':c.metric}</td><td>${c.err.toFixed(4)}</td><td>${c.passed?'✅':'—'}</td></tr>`;
+    }).join('');
+    $('dlDesignCands').innerHTML = `<table class="tbl"><thead><tr><th>参数</th><th>${d.metric_name}</th><th>目标误差</th><th>验证</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+  $('dlDesignConclusion').innerHTML = `<b>设计→验证闭环意义：</b>你给一个目标，系统自动搜索参数并用真实求解器双重验证，返回的器件是求解器确认可用的——这是 agent-native 的 design outcome，不是"辅助人设计"的软件。${d.note||''}`;
+}
+$('runDesignLoop').onclick = runDesignLoop;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -922,6 +979,7 @@ $('runIr').onclick = runIr;
   runRingFdtd();
   runDcTrans();
   runDevLib();
+  runDesignLoop();
   runIr();
 })();
 </script>

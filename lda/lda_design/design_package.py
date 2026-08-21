@@ -35,7 +35,8 @@ if _LDA not in sys.path:
     sys.path.insert(0, _LDA)
 
 SCHEMA_VERSION = "0.1"
-PACKAGE_KINDS = ("add_drop", "quantum", "wdm", "readout_chain", "multiqubit")
+PACKAGE_KINDS = ("add_drop", "quantum", "wdm", "readout_chain", "multiqubit",
+                 "readout_fidelity")
 
 
 def _now_iso() -> str:
@@ -169,12 +170,19 @@ def package_from_multiqubit(f01s: Optional[List[float]] = None, **kw) -> Dict[st
     return _p(f01s=f01s, **kw)
 
 
+def package_from_readout_fidelity(f01: float = 5.0, **kw) -> Dict[str, Any]:
+    """D-47 单发读出保真度预算 → 统一设计包。"""
+    from lda_agent.readout_fidelity import package_from_readout_fidelity as _p
+    return _p(f01=f01, **kw)
+
+
 _BUILDERS = {
     "add_drop": package_from_add_drop,
     "quantum": package_from_quantum,
     "wdm": package_from_wdm,
     "readout_chain": package_from_readout,
     "multiqubit": package_from_multiqubit,
+    "readout_fidelity": package_from_readout_fidelity,
 }
 
 _DEFAULTS = {
@@ -183,6 +191,7 @@ _DEFAULTS = {
     "wdm": {"channels": [1550.0, 1552.5, 1555.0, 1557.5], "gap": 0.3},
     "readout_chain": {"f01": 5.0, "delta": 1.0, "g": 0.10, "kappa_r": 0.005},
     "multiqubit": {"f01s": [4.8, 5.0, 5.2]},
+    "readout_fidelity": {"f01": 5.0},
 }
 
 

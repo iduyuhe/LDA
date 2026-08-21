@@ -444,6 +444,24 @@
   </div>
 
   <div class="sec">
+    <h2>㉒ 单发读出保真度预算（D-47 · T1 限制 · SNR/保真度）</h2>
+    <div class="hint">在 D-43/D-46 色散读出架构上推进到<b>读出保真度可预算</b>：相位积分（匹配滤波）单发 SNR = 2·χ_rad·√(n̄·η·t_m/(κ_rad·(1+2N_amp)))，误判 ε=½erfc(SNR/√2)，<b>T1 弛豫污染</b> F1=(1−ε)(1−t_m/T1)；扫描 t_m 得<b>最优读出时间 t_m*</b>（SNR 增长 vs 污染增长权衡）。死标量验收：SNR≥2 · F≥0.95 · <b>F1≥0.95（|1⟩ 态 T1 污染直接门槛）</b> · t_m*/T1≤0.1 · n̄≤100（非破坏） · χ≥κ_r · Δ/g≥5。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>f01(GHz)<input id="rfF01" type="number" step="0.1" value="5.0" style="width:60px"></label>
+      <label>Δ(GHz)<input id="rfDelta" type="number" step="0.1" value="1.0" style="width:60px"></label>
+      <label>g(GHz)<input id="rfG" type="number" step="0.01" value="0.10" style="width:60px"></label>
+      <label>κ_r(GHz)<input id="rfKr" type="number" step="0.001" value="0.005" style="width:70px"></label>
+      <label>T1(µs)<input id="rfT1" type="number" step="1" value="20" style="width:60px"></label>
+      <label>n̄<input id="rfNbar" type="number" step="1" value="10" style="width:50px"></label>
+      <button class="btn" id="runRf">预算读出保真度</button>
+    </div>
+    <div id="rfSummary" class="summary"></div>
+    <div id="rfBody"></div>
+    <div id="rfCurve" style="margin-top:10px"></div>
+    <div class="conclusion" id="rfConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1356,6 +1374,58 @@ function renderMq(d){
 }
 $('runMq').onclick = runMq;
 
+// ---- ㉒ D-47 单发读出保真度预算 ----
+async function runRf(){
+  const btn = $('runRf'); btn.disabled = true;
+  const kw = {f01:parseFloat($('rfF01').value), delta:parseFloat($('rfDelta').value),
+    g:parseFloat($('rfG').value), kappa_r:parseFloat($('rfKr').value),
+    T1_us:parseFloat($('rfT1').value), nbar:parseFloat($('rfNbar').value)};
+  $('rfSummary').innerHTML = '<span class="spin"></span> 单发读出保真度预算中（SNR(t_m) 模型 → T1 污染 → 最优读出时间扫描 → 验收）…';
+  $('rfBody').innerHTML=''; $('rfCurve').innerHTML='';
+  try{
+    const d = await api('/api/readout_fidelity', kw);
+    renderRf(d);
+  }catch(e){ $('rfSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function rfCurveSvg(d){
+  const sw = d.sweep||[];
+  if(!sw || !sw.length) return '';
+  const W=580, H=220, pad=38;
+  const tmax = sw[sw.length-1].t_m_s;
+  const smax = Math.max.apply(null, sw.map(s=>s.snr))*1.1;
+  const X=t=> pad + t/tmax*(W-2*pad);
+  const Ys=v=> H-pad - v/smax*(H-2*pad);
+  const Yf=v=> H-pad - v/1.05*(H-2*pad);
+  const ps = sw.map(s=> X(s.t_m_s).toFixed(1)+','+Ys(s.snr).toFixed(1)).join(' ');
+  const pf = sw.map(s=> X(s.t_m_s).toFixed(1)+','+Yf(s.F).toFixed(1)).join(' ');
+  const tm = d.t_m_star_ns*1e-9;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px">
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#26304d"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#26304d"/>
+    <polyline points="${ps}" fill="none" stroke="#2563eb" stroke-width="2.2"/>
+    <polyline points="${pf}" fill="none" stroke="#e91e63" stroke-width="2.2"/>
+    <line x1="${X(tm)}" y1="${pad}" x2="${X(tm)}" y2="${H-pad}" stroke="#26304d" stroke-dasharray="4,3" stroke-width="0.9"/>
+    <text x="${X(tm)+3}" y="${pad+10}" fill="#26304d" font-size="9">t_m*=${d.t_m_star_ns}ns</text>
+    <text x="${pad+4}" y="${pad-12}" fill="#2563eb" font-size="11">SNR(t_m)（蓝）· 保真度 F(t_m)（红）· 虚线=最优 t_m*</text>
+  </svg>`;
+}
+function renderRf(d){
+  if(!d.ok){ $('rfSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const acc = d.acceptance||{}, b = d.budget||{};
+  const checks = (acc.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('');
+  const rows = (d.sweep||[]).map(s=>`<tr><td>${(s.t_m_s*1e9).toFixed(0)}</td><td>${s.snr.toFixed(2)}</td><td>${s.F0.toFixed(4)}</td><td>${s.F1.toFixed(4)}</td><td>${s.F.toFixed(4)}</td><td>${(s.t1_pollution*100).toFixed(2)}%</td></tr>`).join('');
+  $('rfSummary').innerHTML = `单发读出保真度预算：χ=<b>${d.chi_ghz}</b>GHz · κ_r=<b>${d.kappa_r_ghz}</b>GHz（χ/κ=<b>${(d.chi_ghz/d.kappa_r_ghz).toFixed(1)}</b>）· T1=<b>${d.T1_us}µs</b> · n̄=<b>${d.nbar}</b> · 最优 t_m*=<b>${d.t_m_star_ns}ns</b> → SNR=<b>${b.snr.toFixed(2)}</b> · F=<b>${b.F.toFixed(4)}</b> · <span class="verdict ${acc.passed?'ok':'fail'}">${acc.passed?'PASS':'FAIL'}</span>`;
+  $('rfBody').innerHTML = `
+    <div class="subhead">预算表（t_m 扫描）</div>
+    <table class="tbl"><thead><tr><th>t_m(ns)</th><th>SNR</th><th>F0</th><th>F1(T1 污染)</th><th>F</th><th>污染%</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="subhead">系统验收（死标量比对）</div>
+    ${checks}`;
+  $('rfCurve').innerHTML = rfCurveSvg(d);
+  $('rfConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+}
+$('runRf').onclick = runRf;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -1404,6 +1474,7 @@ $('runIr').onclick = runIr;
   runRc();
   runDp();
   runMq();
+  runRf();
   runIr();
 })();
 </script>

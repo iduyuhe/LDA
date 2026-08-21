@@ -622,6 +622,35 @@ def run_multiqubit_readout(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_readout_fidelity(payload=None):
+    """D-47 单发读出保真度预算（webui ㉒ 面板）。
+
+    输入 {f01?, delta?, g?, kappa_r?, T1_us?, nbar?, eta?, N_amp?}：
+    相位积分 SNR(t_m) 模型 + T1 弛豫污染 → 最优读出时间 t_m* 扫描 →
+    死标量验收（SNR/F/F1/污染预算/非破坏性/可分辨/色散区）。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.readout_fidelity import design_fidelity
+    payload = payload or {}
+    kw = {}
+    for k in ("f01", "delta", "g", "kappa_r", "T1_us", "nbar", "eta", "N_amp"):
+        if payload.get(k) is not None:
+            try:
+                kw[k] = float(payload[k])
+            except (TypeError, ValueError):
+                return {"ok": False, "error": f"{k} 须为数值"}
+    try:
+        rep = design_fidelity(**kw)
+        rep["ok"] = True
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_design_package(payload=None):
     """D-44 统一设计包规范（webui ⑳ 面板）。
 
@@ -919,6 +948,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_readout_chain(payload))
             elif path == "/api/multiqubit_readout":
                 self._send(200, run_multiqubit_readout(payload))
+            elif path == "/api/readout_fidelity":
+                self._send(200, run_readout_fidelity(payload))
             elif path == "/api/design_package":
                 self._send(200, run_design_package(payload))
             elif path == "/api/drc_fix_demo":

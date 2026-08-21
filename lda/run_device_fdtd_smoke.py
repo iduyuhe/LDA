@@ -86,6 +86,51 @@ def main() -> int:
         print("SKIP live FDTD 双验证（无 GPU / LDA_SKIP_LIVE=1）")
         report["live"] = {"skipped": True}
 
+    # 5) Waveguide 真实 FDTD 双验证（D-32 延伸，纯 numpy CPU 可跑）
+    wg = lib.verify_waveguide_fdtd(mode="contract", width_um=0.5)
+    ok &= check(wg["passed"] and wg["checks"]["fdtd2d_waveguide_import"]
+                and wg["checks"]["analytic_slab_neff"]["physical"],
+                f"verify_waveguide_fdtd contract 自检：width=0.5µm slab neff="
+                f"{wg['checks']['analytic_slab_neff']['slab_neff']}nm（物理区间）"
+                f" + fdtd2d_waveguide 可导入", report, "wg_contract")
+    wa = lib.verify_waveguide_fdtd(mode="live", width_um=0.5)
+    ok &= check(wa["passed"],
+                f"Waveguide 真实 FDTD 双验证 PASS：slab契约物理="
+                f"{wa['analytic_contract']['physical']} + FDTD neff="
+                f"{wa['fdtd']['neff_fdtd']} ↔ slab "
+                f"{wa['fdtd']['neff_oracle']}（rel="
+                f"{wa['fdtd']['rel_err']:.2%} ≤ {wa['fdtd']['tol_rel']:.0%}）",
+                report, "wg_live")
+
+    # 6) Bragg 真实 FDTD 双验证（D-32 延伸，纯 numpy CPU 可跑）
+    bg = lib.verify_bragg_fdtd(mode="contract")
+    ok &= check(bg["passed"] and bg["checks"]["fdtd3d_import"]
+                and bg["checks"]["tmm_import"],
+                "verify_bragg_fdtd contract 自检：fdtd3d + tmm 可导入",
+                report, "bg_contract")
+    bgl = lib.verify_bragg_fdtd(mode="live")
+    ok &= check(bgl["passed"],
+                f"Bragg 真实 FDTD 双验证 PASS：TMM契约物理="
+                f"{bgl['analytic_contract']['physical']} + FDTD R_min="
+                f"{bgl['fdtd']['R_min_fdtd']} ↔ TMM "
+                f"{bgl['fdtd']['R_min_tmm']}（abs="
+                f"{bgl['fdtd']['abs_err']:.2e} ≤ {bgl['fdtd']['tol_abs']:.0%}）",
+                report, "bg_live")
+
+    # 7) 预计算 WG/Bragg 真实 FDTD 双验证产物（供 WebUI ⑬ 面板秒回加载，仿 D-28）
+    precomp = {
+        "waveguide": wa,
+        "bragg": bgl,
+        "generated_by": "run_device_fdtd_smoke.py",
+        "note": "Waveguide/Bragg 真实 FDTD 双验证预计算（纯 numpy ~30s）；WebUI "
+                "⑬ 面板加载此 JSON 秒回展示，避免 HTTP 阻塞。解析契约层由 "
+                "WebUI 现场跑 contract 模式（秒级）。",
+    }
+    with open(os.path.join(_HERE, "reports", "device_fdtd_wg_bragg.json"),
+              "w", encoding="utf-8") as f:
+        json.dump(precomp, f, ensure_ascii=False, indent=2)
+    print("OK  预计算 reports/device_fdtd_wg_bragg.json 已写入（WG/Bragg 真实 FDTD）")
+
     report["all_green"] = ok
     os.makedirs(os.path.join(_HERE, "reports"), exist_ok=True)
     with open(os.path.join(_HERE, "reports", "device_fdtd_smoke.json"),

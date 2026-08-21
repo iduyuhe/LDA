@@ -308,14 +308,44 @@ def run_device_library_demo(payload=None):
         }
     except Exception as e:  # noqa: BLE001
         ring_analytic = {"passed": False, "error": str(e)[:80]}
+    # WG/Bragg 真实 FDTD 双验证（D-34）：FDTD 层用预计算 JSON（秒回），
+    # 解析契约层现场跑 contract（秒级）—— 与 Ring 处理对称
+    wg_bragg_fdtd = None
+    wb_path = os.path.join(LDA_ROOT, "reports", "device_fdtd_wg_bragg.json")
+    if os.path.exists(wb_path):
+        try:
+            with open(wb_path, encoding="utf-8") as f:
+                wg_bragg_fdtd = json.load(f)
+        except Exception:  # noqa: BLE001
+            wg_bragg_fdtd = None
+    wg_analytic, bragg_analytic = None, None
+    try:
+        o = lib.verify_waveguide_fdtd(mode="contract", width_um=0.5)
+        wg_analytic = {"passed": bool(o["passed"]),
+                       "slab_neff": o["checks"]["analytic_slab_neff"]["slab_neff"],
+                       "physical": o["checks"]["analytic_slab_neff"]["physical"]}
+    except Exception as e:  # noqa: BLE001
+        wg_analytic = {"passed": False, "error": str(e)[:80]}
+    try:
+        o = lib.verify_bragg_fdtd(mode="contract")
+        bragg_analytic = {"passed": bool(o["passed"]),
+                         "tmm_import": o["checks"]["tmm_import"],
+                         "fdtd3d_import": o["checks"]["fdtd3d_import"]}
+    except Exception as e:  # noqa: BLE001
+        bragg_analytic = {"passed": False, "error": str(e)[:80]}
     return {
         "available": True,
         "devices": summary,
         "contracts": contracts,
         "ring_fdtd": ring_fdtd,
         "ring_analytic": ring_analytic,
-        "note": "Ring FDTD 透射谱为预计算演示数据（D-28，GPU ~6min 一次；"
-                "实时重算需 GPU 不阻塞 HTTP）",
+        "wg_fdtd": (wg_bragg_fdtd or {}).get("waveguide") if wg_bragg_fdtd else None,
+        "bragg_fdtd": (wg_bragg_fdtd or {}).get("bragg") if wg_bragg_fdtd else None,
+        "wg_analytic": wg_analytic,
+        "bragg_analytic": bragg_analytic,
+        "note": "Ring/WG/Bragg 真实 FDTD 双验证：FDTD 层用预计算演示数据"
+                "（D-28 Ring / D-34 WG-Bragg，纯 numpy 离线生成），"
+                "解析契约层现场快跑（秒级）；实时重算 Ring 需 GPU 不阻塞 HTTP",
     }
 
 

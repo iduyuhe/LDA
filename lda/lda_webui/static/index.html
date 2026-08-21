@@ -306,13 +306,15 @@
 
   <div class="sec">
     <h2>⑬ 器件库验收（D-12/D-32 · 已验证器件 + 真实 FDTD 入口）</h2>
-    <div class="hint">D-12 器件库把已验证器件固化为可复用资产（参数窗口 + D-04 统一验收契约 + 求解器），D-32 为环形挂上真实 FDTD 验收。面板展示：器件全景表（验收锚 / 参数窗口 / live_weight / 需 GPU）+ 每器件 contract 契约状态 + Ring 双验证（解析契约 + 真实 FDTD drop 谱/FSR 对拍）。</div>
+    <div class="hint">D-12 器件库把已验证器件固化为可复用资产（参数窗口 + D-04 统一验收契约 + 求解器），D-32 为 Ring 挂上真实 FDTD 验收，D-34 延伸至 Waveguide / BraggMirror——器件库每个成员都有一等真实物理验证入口。面板展示：器件全景表（验收锚 / 参数窗口 / live_weight / 需 GPU）+ 每器件 contract 契约状态 + Ring/WG/Bragg 三器件真实 FDTD 双验证（解析契约设计目标命中 + 真实 FDTD 物理行为自洽）。</div>
     <div class="row">
       <button class="btn" id="runDevLib">加载器件库验收</button>
     </div>
     <div id="dlSummary" class="summary"></div>
     <div id="dlTable"></div>
     <div id="dlRing"></div>
+    <div id="dlWG"></div>
+    <div id="dlBragg"></div>
     <div class="conclusion" id="dlConclusion"></div>
   </div>
 
@@ -777,6 +779,29 @@ function renderDevLib(d){
   } else {
     $('dlRing').innerHTML = '<div class="note">Ring FDTD 双验证数据不可用（需 GPU 机预计算 D-28 环形谱）</div>';
   }
+  // WG 双验证区（D-34 延伸）
+  const wf = d.wg_fdtd, wa2 = d.wg_analytic;
+  if(wf && wa2){
+    const wfdtd_ok = wf.fdtd.accepted;
+    $('dlWG').innerHTML = `<div class="summary">Waveguide 双验证（D-32 延伸 / D-34）：</div>
+      <div class="note">① 解析契约（设计目标命中，slab 闭式）：slab neff=<b>${fmt(wa2.slab_neff)}</b>（物理区间且为有效设计目标）· <span class="verdict ${wa2.physical&&wa2.passed?'ok':'fail'}">${wa2.physical?'PASS':'FAIL'}</span></div>
+      <div class="note">② 真实 FDTD（物理行为自洽，2D-TE）：neff=<b>${fmt(wf.fdtd.neff_fdtd)}</b> ↔ slab ORACLE <b>${fmt(wf.fdtd.neff_oracle)}</b> · rel=<b>${(wf.fdtd.rel_err*100).toFixed(2)}%</b> ≤ ${(wf.fdtd.tol_rel*100).toFixed(0)}% · <span class="verdict ${wfdtd_ok?'ok':'fail'}">${wfdtd_ok?'PASS':'FAIL'}</span></div>
+      <div class="conclusion"><strong>结论：</strong>${wf.verdict}</div>`;
+  } else {
+    $('dlWG').innerHTML = '<div class="note">Waveguide 真实 FDTD 双验证数据不可用</div>';
+  }
+  // Bragg 双验证区（D-34 延伸）
+  const bf = d.bragg_fdtd, ba = d.bragg_analytic;
+  if(bf && ba){
+    const bfdtd_ok = bf.fdtd.accepted;
+    $('dlBragg').innerHTML = `<div class="summary">BraggMirror 双验证（D-32 延伸 / D-34）：</div>
+      <div class="note">① 解析契约（设计目标命中，TMM 闭式）：R_min(TMM)=<b>${fmt(bf.analytic_contract.R_min_tmm)}</b>（高反设计目标）· <span class="verdict ${ba.passed?'ok':'fail'}">${ba.passed?'PASS':'FAIL'}</span></div>
+      <div class="note">② 真实 FDTD（物理行为自洽，3D）：R_min=<b>${fmt(bf.fdtd.R_min_fdtd)}</b> ↔ TMM <b>${fmt(bf.fdtd.R_min_tmm)}</b> · abs=<b>${bf.fdtd.abs_err.toExponential(2)}</b> ≤ ${(bf.fdtd.tol_abs*100).toFixed(0)}% · <span class="verdict ${bfdtd_ok?'ok':'fail'}">${bfdtd_ok?'PASS':'FAIL'}</span></div>
+      ${braggSpectrumSvg(bf)}
+      <div class="conclusion"><strong>结论：</strong>${bf.verdict}</div>`;
+  } else {
+    $('dlBragg').innerHTML = '<div class="note">BraggMirror 真实 FDTD 双验证数据不可用</div>';
+  }
   $('dlConclusion').innerHTML = `<strong>器件库定位：</strong>设计者/agent/webui/PDK 接入按名字取用已验证器件，无需重写接线——每器件带参数窗口 + 统一验收契约 + 真实物理验证入口（LLM 不进判决路径）。${d.note||''}`;
 }
 function ringSpectrumSvg(rf){
@@ -798,6 +823,27 @@ function ringSpectrumSvg(rf){
     <text x="${W-pad}" y="${H-10}" fill="#8aa0c6" font-size="11" text-anchor="end">${wmax.toFixed(4)}µm</text>
   </svg>`;
 }
+function braggSpectrumSvg(rf){
+  const sp = rf.spectrum || {};
+  const wls = sp.wavelengths_um, tf = sp.transmission_fdtd, tm = sp.transmission_tmm;
+  if(!wls || !wls.length) return '';
+  const W=580, H=200, pad=38;
+  const wmin=wls[0], wmax=wls[wls.length-1];
+  const X=w=> pad + (w-wmin)/(wmax-wmin||1)*(W-2*pad);
+  const Y=v=> H-pad - Math.min(Math.max(v,0),1.0)*(H-2*pad);
+  const pd = wls.map((w,i)=> X(w).toFixed(1)+','+Y(tf[i]).toFixed(1)).join(' ');
+  const pm = wls.map((w,i)=> X(w).toFixed(1)+','+Y(tm[i]).toFixed(1)).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;margin-top:8px">
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#26304d"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#26304d"/>
+    <polyline points="${pm}" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="5 3"/>
+    <polyline points="${pd}" fill="none" stroke="#e91e63" stroke-width="2"/>
+    <text x="${pad+4}" y="${pad+2}" fill="#e91e63" font-size="11">Bragg 透射谱（TMM 虚线 / FDTD 实线）· 真实 FDTD 与解析 TMM 自洽（abs≤${bfdtd_tol(rf)}）</text>
+    <text x="${pad}" y="${H-10}" fill="#8aa0c6" font-size="11">λ=${wmin.toFixed(4)}µm</text>
+    <text x="${W-pad}" y="${H-10}" fill="#8aa0c6" font-size="11" text-anchor="end">${wmax.toFixed(4)}µm</text>
+  </svg>`;
+}
+function bfdtd_tol(rf){ return ((rf.fdtd&&rf.fdtd.tol_abs)?(rf.fdtd.tol_abs*100).toFixed(0):'2')+'%'; }
 $('runDevLib').onclick = runDevLib;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----

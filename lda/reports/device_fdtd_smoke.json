@@ -11,6 +11,22 @@
     "analytic_live": {
       "ok": true,
       "msg": "RING-fsr 解析契约 live：candidate FSR=9.149790607779664 vs oracle 9.149790638389057 (err=3.35e-09 ≤ tol 0.02)"
+    },
+    "wg_contract": {
+      "ok": true,
+      "msg": "verify_waveguide_fdtd contract 自检：width=0.5µm slab neff=3.27562nm（物理区间） + fdtd2d_waveguide 可导入"
+    },
+    "wg_live": {
+      "ok": true,
+      "msg": "Waveguide 真实 FDTD 双验证 PASS：slab契约物理=True + FDTD neff=3.22997 ↔ slab 3.27562（rel=1.39% ≤ 2%）"
+    },
+    "bg_contract": {
+      "ok": true,
+      "msg": "verify_bragg_fdtd contract 自检：fdtd3d + tmm 可导入"
+    },
+    "bg_live": {
+      "ok": true,
+      "msg": "Bragg 真实 FDTD 双验证 PASS：TMM契约物理=True + FDTD R_min=0.999811 ↔ TMM 0.999855（abs=4.40e-05 ≤ 2%）"
     }
   },
   "live": {

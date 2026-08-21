@@ -1,0 +1,79 @@
+{
+  "waveguide": {
+    "device": "Waveguide",
+    "mode": "live",
+    "passed": true,
+    "analytic_contract": {
+      "slab_neff": 3.27562,
+      "physical": true
+    },
+    "fdtd": {
+      "neff_fdtd": 3.22997,
+      "neff_oracle": 3.27562,
+      "rel_err": 0.013936,
+      "tol_rel": 0.02,
+      "accepted": true
+    },
+    "verdict": "波导 FDTD 双验证 PASS（解析 slab 契约物理合理 + FDTD neff=3.22997 ↔ slab=3.27562 rel=1.39% ≤ 2%）"
+  },
+  "bragg": {
+    "device": "BraggMirror",
+    "mode": "live",
+    "passed": true,
+    "analytic_contract": {
+      "R_min_tmm": 0.999855,
+      "physical": true
+    },
+    "fdtd": {
+      "R_min_fdtd": 0.999811,
+      "R_min_tmm": 0.999855,
+      "abs_err": 4.4e-05,
+      "tol_abs": 0.02,
+      "accepted": true
+    },
+    "spectrum": {
+      "wavelengths_um": [
+        1.43,
+        1.454,
+        1.478,
+        1.502,
+        1.526,
+        1.55,
+        1.574,
+        1.598,
+        1.622,
+        1.646,
+        1.67
+      ],
+      "transmission_fdtd": [
+        0.00018,
+        0.00019,
+        0.00019,
+        9e-05,
+        9e-05,
+        0.0001,
+        0.0001,
+        0.0001,
+        9e-05,
+        9e-05,
+        9e-05
+      ],
+      "transmission_tmm": [
+        0.00014,
+        0.00013,
+        0.00011,
+        0.00011,
+        0.0001,
+        0.0001,
+        0.0001,
+        0.00011,
+        0.00011,
+        0.00012,
+        0.00013
+      ]
+    },
+    "verdict": "布拉格 FDTD 双验证 PASS（解析 TMM 契约物理合理 + FDTD R_min=0.99981 ↔ TMM=0.99986 abs=4.45e-05 ≤ 2%）"
+  },
+  "generated_by": "run_device_fdtd_smoke.py",
+  "note": "Waveguide/Bragg 真实 FDTD 双验证预计算（纯 numpy ~30s）；WebUI ⑬ 面板加载此 JSON 秒回展示，避免 HTTP 阻塞。解析契约层由 WebUI 现场跑 contract 模式（秒级）。"
+}

@@ -532,6 +532,19 @@
   </div>
 
   <div class="sec">
+    <h2>㉘ 分束网络×WDM（D-67 · WDM 解复用 → 每信道 DC 分束树）</h2>
+    <div class="hint">光子域功率分配与分波联合：WDM 多环级联（D-42 + D-57 标定库驱动 gap）把 λ 分到独立 drop 口 → 每信道 drop 接二叉树级联 DC 分束树（D-63 复用，每级 D-55 真实 2D FDTD 设计）→ 信道输入 = drop 扣除实测 IL 的剩余功率（10^(-IL/10) 诚实标注）→ 每信道分束命中 + 统一 IR 网表（Ring×N + DC×M）+ 联合验收。纯光子域，无跨物理域声称。</div>
+    <div class="row">
+      <label>WDM 信道(nm，逗号分隔)<input id="wsCh" type="text" value="1550,1553,1556" style="width:170px"></label>
+      <label><input id="wsCal" type="checkbox"> 标定库驱动 DC gap</label>
+      <button class="btn" id="runWs">WDM × 分束网络联合设计</button>
+    </div>
+    <div id="wsSummary" class="summary"></div>
+    <div id="wsBody"></div>
+    <div class="conclusion" id="wsConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1659,6 +1672,33 @@ function renderSr(d){
 }
 $('runSr').onclick = runSr;
 
+// ---- ㉘ D-67 分束网络×WDM（WDM 解复用 → 每信道 DC 分束树）----
+async function runWs(){
+  $('wsSummary').innerHTML = '<span class="spin"></span> WDM × 分束网络联合设计中（WDM 解复用 → 每信道 DC 真实 FDTD 设计 → 功率分配）…';
+  const body = { channels: $('wsCh').value, calibrated: $('wsCal').checked };
+  try{
+    const d = await post('/api/wdm_splitter', body);
+    renderWs(d);
+  }catch(e){ $('wsSummary').innerHTML = '运行失败：'+e; }
+}
+function renderWs(d){
+  if(!d.ok){ $('wsSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const acc = d.acceptance||{};
+  const wm = d.wdm||{};
+  const pcRows = (d.per_channel||[]).map(p=>`<tr><td>${p.channel_nm}nm</td><td>${p.il_drop_db}dB</td><td>${p.p_in}</td><td>${p.n_splitters}</td><td>${(p.leaves||[]).map(l=>l.p_actual.toFixed(3)).join(' / ')}</td></tr>`).join('');
+  const checks = (acc.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('');
+  $('wsSummary').innerHTML = `WDM × 分束网络：<b>${d.n_channels}</b> 信道解复用 → <b>${d.n_splitters_total}</b> 级 DC 分束 · <span class="verdict ${acc.passed?'ok':'fail'}">${acc.passed?'PASS':'FAIL'}</span>`;
+  $('wsBody').innerHTML = `
+    <div class="subhead">WDM 解复用（gap=${wm.chosen_gap_um}µm, k_ring=${wm.chosen_k_ring}）</div>
+    <table class="tbl"><thead><tr><th>信道</th><th>IL(dB)</th><th>XT≥(dB)</th></tr></thead><tbody><tr><td>${(d.channels_nm||[]).join(', ')}nm</td><td>${(wm.metrics||{}).il_drop_db?wm.metrics.il_drop_db.join(' / '):'—'}</td><td>${(wm.metrics||{}).xt_min_db?wm.metrics.xt_min_db.join(' / '):'—'}</td></tr></tbody></table>
+    <div class="subhead">每信道分束网络（drop 扣除 IL 后输入）</div>
+    <table class="tbl"><thead><tr><th>信道</th><th>IL(dB)</th><th>p_in</th><th>DC×</th><th>叶子功率</th></tr></thead><tbody>${pcRows}</tbody></table>
+    <div class="subhead">联合验收（死标量比对）</div>
+    ${checks}`;
+  $('wsConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+}
+$('runWs').onclick = runWs;
+
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){
   const btn = $('runIr'); btn.disabled = true;
@@ -1713,6 +1753,7 @@ $('runIr').onclick = runIr;
   runCd();
   runWc();
   runSr();
+  runWs();
   runIr();
 })();
 </script>

@@ -47,6 +47,9 @@ class DesignAgent:
         # D-70：伴随梯度拓扑逆设计走专用闭环（目标 → 梯度优化 → 双验证 → PASS）
         if target.method == "adjoint":
             return self._run_adjoint(target)
+        # D-72 深化：3D 端口 S 参数验收闭环（mmi/dc/ring → 3D FDTD S 谱 → 死标量验收）
+        if target.method == "sparams3d":
+            return self._run_sparams3d(target)
         # 把数值/后端偏好注入 target.extra，供 Designer 生成 L0IR 时取用
         target.extra.setdefault("backend", self.backend)
         target.extra.setdefault("dl_factor", self.dl_factor)
@@ -199,6 +202,75 @@ class DesignAgent:
             final_oracle_metric=float(fom0),       # oracle = 均匀平板初值基线
             final_metric_err=float(vr["max_rel_err"]),
             final_max_metric_err=float(vr["max_rel_err"]),
+            loop_trace=trace,
+            verdict=verdict,
+        )
+
+    def _run_sparams3d(self, target: DesignTarget) -> DesignOutcomeReport:
+        """D-72 深化：3D 端口 S 参数验收闭环（method="sparams3d"）。
+
+        目标泛化：kind（mmi/dc/ring）+ 几何（设计区/耦合区/环参数）全部由
+        意图 extra 指定 → 3D FDTD 端口 S 参数谱（SOI 220nm，复用已验证
+        numba 核）→ 死标量验收（kind 判据：mmi 平衡度 / dc cross_frac
+        端点趋势 / ring drop 谐振峰，均 + 仿真有效 + 透射）→
+        DesignOutcomeReport 兼容输出（iterations=波长数、loop_trace 每波长
+        S11/S21/S31、final_metric=中心波长 T_total）。
+
+        依赖 numba（python envs/default venv）；当前环境无 numba 时优雅
+        FAIL（报告错误，不崩）。LLM 不进判决路径。
+        """
+        t0 = time.time()
+        ex = target.extra
+        kind = str(ex.get("kind", "mmi")).lower()
+        params = {k: float(v) for k, v in ex.items()
+                  if k not in ("kind", "iters", "step0", "beta_max")
+                  and isinstance(v, (int, float))}
+        try:
+            from lda_solver.port_sparams_3d import verify_s_params_3d
+        except ImportError as e:  # noqa: BLE001
+            return DesignOutcomeReport(
+                target=target.__dict__, accepted=False, iterations=0,
+                final_doc_id="sparams3d-none", final_layers=[],
+                final_metric=0.0, final_oracle_metric=0.0,
+                final_metric_err=0.0, loop_trace=[],
+                verdict=(f"3D 端口验收 FAIL：当前环境缺 numba（{e}）——"
+                         f"请用 `python envs/default/Scripts/python.exe` 运行。"))
+        try:
+            vr = verify_s_params_3d(
+                kind, params,
+                transient_cycles=int(ex.get("transient_cycles", 800)),
+                dl_factor=float(ex.get("dl_factor", 12.0)))
+        except (ValueError, KeyError) as e:  # noqa: BLE001
+            return DesignOutcomeReport(
+                target=target.__dict__, accepted=False, iterations=0,
+                final_doc_id="sparams3d-invalid", final_layers=[],
+                final_metric=0.0, final_oracle_metric=0.0,
+                final_metric_err=0.0, loop_trace=[],
+                verdict=f"3D 端口验收 FAIL：参数无效（{e}）。")
+        pts = vr["spectrum"]["points"]
+        trace = [{"iteration": i, "wl_um": p["wl_um"],
+                  "S11": round(p["S11_2"], 4), "S21": round(p["S21_2"], 4),
+                  "S31": round(p["S31_2"], 4),
+                  "T_total": round(p["T_total"], 4)}
+                 for i, p in enumerate(pts)]
+        accepted = bool(vr["acceptance"]["passed"])
+        # final_metric = 中心波长（最接近 wl0）T_total
+        wl0 = float(params.get("wl0_um", 1.55))
+        ctr = min(pts, key=lambda p: abs(p["wl_um"] - wl0))
+        verdict = (vr["verdict"] +
+                   f"（闭环 method=sparams3d，耗时 {time.time() - t0:.1f}s，"
+                   f"结果已可由「人」验收。）" if accepted else
+                   vr["verdict"] + f"（闭环耗时 {time.time() - t0:.1f}s。）")
+        return DesignOutcomeReport(
+            target=target.__dict__,
+            accepted=accepted,
+            iterations=len(trace),
+            final_doc_id=f"sparams3d-{kind}",
+            final_layers=[],
+            final_metric=float(ctr["T_total"]),
+            final_oracle_metric=float(ctr["S11_2"]),  # oracle 参考 = 回波
+            final_metric_err=float(min(p["T_total"] for p in pts)),
+            final_max_metric_err=float(max(p["T_total"] for p in pts)),
             loop_trace=trace,
             verdict=verdict,
         )

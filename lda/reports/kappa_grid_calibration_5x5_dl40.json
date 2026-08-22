@@ -1,12 +1,13 @@
 {
-  "name": "LDA kappa_c(gap,lambda) 全网格 PDK 标定（2D FDTD 双点差分）",
-  "created_at": "2026-08-22T10:44:08",
+  "name": "LDA kappa_c(gap,λ) 全网格 PDK 标定（2D FDTD 双点差分）",
+  "created_at": "2026-08-22T09:20:50",
   "w_um": 0.5,
   "n_core": 3.48,
   "n_clad": 1.44,
   "dl_factor": 40,
   "dl_um": 0.03875,
   "gaps_um": [
+    0.2,
     0.25,
     0.3,
     0.35,
@@ -19,9 +20,49 @@
     1.575,
     1.6
   ],
-  "method": "kappa_c 双点差分标定（D-55），全网格 (gap x lambda) 20 点（gaps 0.25/0.30/0.35/0.40 x 5 波长）",
-  "note": "D-68 升级：dl40（dl=0.03875um）解析分辨率足够区分相邻 gap（0.05um 差=>1.29 网格），修正 D-60 生产库在 dl20（dl=0.0775um，0.05um 差<1 网格）下 gap 0.25/0.30 不可分辨（kappa_c 完全相同）的缺陷；剔除 gap=0.20 行（kappaL 越过 pi/2 winding + 非单调，不可靠）。二维网格直接查表（双线性插值），替代 D-59 分离变量近似；kappa_c 沿 gap 与 lambda 均单调。",
+  "method": "kappa_c 双点差分标定（D-55），全网格 (gap×λ) 25 点",
+  "note": "二维网格直接查表（双线性插值），替代 D-59 分离变量近似；诚实标注：dl=0.078µm 分辨 gap≥0.1µm，κ_c 非严格单调（网格色散噪声）；winding=True 点 κL 越过 π/2（asin 折叠，降级单点）。",
   "points": [
+    {
+      "gap_um": 0.2,
+      "wl_um": 1.5,
+      "kappa_c_rad_um": 0.028436,
+      "cf1": 0.468,
+      "cf2": 0.994,
+      "winding": false
+    },
+    {
+      "gap_um": 0.2,
+      "wl_um": 1.525,
+      "kappa_c_rad_um": 0.023024,
+      "cf1": 0.513,
+      "cf2": 0.97,
+      "winding": false
+    },
+    {
+      "gap_um": 0.2,
+      "wl_um": 1.55,
+      "kappa_c_rad_um": 0.017215,
+      "cf1": 0.563,
+      "cf2": 0.926,
+      "winding": false
+    },
+    {
+      "gap_um": 0.2,
+      "wl_um": 1.575,
+      "kappa_c_rad_um": 0.040129,
+      "cf1": 0.614,
+      "cf2": 0.862,
+      "winding": true
+    },
+    {
+      "gap_um": 0.2,
+      "wl_um": 1.6,
+      "kappa_c_rad_um": 0.04251,
+      "cf1": 0.665,
+      "cf2": 0.777,
+      "winding": true
+    },
     {
       "gap_um": 0.25,
       "wl_um": 1.5,
@@ -183,6 +224,5 @@
       "winding": false
     }
   ],
-  "elapsed_s": 5155.5,
-  "d68_source": "由 dl40 5x5 标定（25 点，含 gap=0.20 winding 行）裁剪为干净 4x5 生产网格；完整 5x5 见 reports/kappa_grid_calibration_5x5_dl40.json（诊断保留，不进生产）。"
+  "elapsed_s": 5155.5
 }

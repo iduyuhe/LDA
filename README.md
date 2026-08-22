@@ -67,12 +67,13 @@ L4  统一交付          lda_design/ 设计包规范（DesignPackage schema v0.
 | D-69 | **伴随法拓扑逆设计（adjoint FDTD）** | 主权 2D FDTD **显式转置伴随**（Mᵀ 对拍 1e-15）+ 高斯脉冲源收集场能目标 + 回溯线搜索梯度优化：**对拍 max_rel_err=0.0**，**拓扑逆设计提升 15.1×**（3996 体素）|
 | D-70 | **逆设计接入设计→验证引擎（method=adjoint）** | DesignAgent 统一入口按 **method** 分流（scan=布拉格扫描零改动 / adjoint=伴随梯度拓扑逆设计）：目标泛化为**「把指定孔径内收集场能最大化」**（设计区/孔径/材料对比度/波长全透传）→ 均匀平板初值 → FD 对拍锚（≤0.15）→ 回溯线搜索梯度优化（improvement≥1.5）→ 死标量验收输出 DesignOutcomeReport |
 | D-71 | **真实版图基元库（foundry-ready）** | 4 基元替代玩具几何：Taper（线性/绝热余弦轮廓）、Euler 弯（clothoid 曲率连续，90° 终点角误差&lt;0.01°）、MMI 1×2 对称分束、光栅耦合器（周期部分刻蚀齿）→ **GDS 可编码（round-trip 回读一致）+ DRC 全绿**（min_width/min_space/min_bend_R）；几何交付，电特性归 D-72 |
+| D-72 | **真实 2D FDTD 端口 S 参数验收（M5）** | MMI 全 2D FDTD 端口透反射谱（输入 CW 激励→多端口 DFT 收集→输入功率归一→S11/S21/S31）：**平衡度 max=0.062**、中心波长 **S11=0.003 / T=0.997**（近理想分束）+ **DRC 规则从真实 SOI 180nm PDK 注入**（NOEIC/CUMEC/SITRI 全绿）|
 
-## WebUI（三十一面板，设计闭环可视化）
+## WebUI（三十二面板，设计闭环可视化）
 
 LDA 自带零依赖 WebUI（`python lda/lda_webui/deploy.py start`，默认 `http://127.0.0.1:8787`），首屏自动演示全部闭环：
 
-`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM（标定库驱动：gap/波长/全网格三模式）` `㉗方向耦合器×量子读出（分束网络供电控制线）` `㉘分束网络×WDM（解复用→每信道分束树）` `㉙伴随法拓扑逆设计（主权 adjoint FDTD）` `㉚逆设计接入设计→验证引擎（method=adjoint）` `㉛真实版图基元库（foundry-ready）`
+`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM（标定库驱动：gap/波长/全网格三模式）` `㉗方向耦合器×量子读出（分束网络供电控制线）` `㉘分束网络×WDM（解复用→每信道分束树）` `㉙伴随法拓扑逆设计（主权 adjoint FDTD）` `㉚逆设计接入设计→验证引擎（method=adjoint）` `㉛真实版图基元库（foundry-ready）` `㉜端口 S 参数验收（MMI 2D FDTD + ORACLE 对拍）`
 
 ## PDK 标定库（真实 FDTD 实测沉淀，设计时秒级加载）
 
@@ -102,7 +103,7 @@ lda/                     核心软件包（主权求解器 + agent + 设计引�
   lda_ir/                统一 IR（光子+量子，schema v0.3，PhysicsAnchor）
   lda_l2/                器件库（已验证资产）+ GDS 编码器 + DRC + 版图仿真
   lda_harness/           确定性比对裁判（13 标准题物理定律锚 B1-B13）
-  lda_webui/             零依赖 WebUI（三十一面板）
+  lda_webui/             零依赖 WebUI（三十二面板）
 docs/                    design_package_spec.md + design_package_schema.json
 ```
 
@@ -142,7 +143,7 @@ python lda/run_harness.py --ai
 # ⑪ GPU 实跑激活（L2-B 第三步：CUDA 检测 → 5 例锚 selfcheck → cuda↔cpu bit-equivalent 互证 → 加速比）
 python lda/lda_solver/activate_gpu_fdtd3d.py
 
-# ⑫ WebUI（三十一面板，首屏自动演示）
+# ⑫ WebUI（三十二面板，首屏自动演示）
 python lda/lda_webui/deploy.py start --port 8787
 ```
 

@@ -1,0 +1,231 @@
+{
+  "title": "3D 端口验收接入设计闭环（D-72 深化 · DesignAgent method=sparams3d）",
+  "method": "sparams3d",
+  "devices": {
+    "mmi": {
+      "target": {
+        "geometry_type": "3d_sparams",
+        "materials": {
+          "air": 1.0,
+          "sih": 3.48,
+          "silo": 1.44
+        },
+        "target_wavelength_um": 1.55,
+        "target_metric": "R",
+        "threshold": 0.99,
+        "tolerance_rel": 0.02,
+        "max_iterations": 12,
+        "initial_periods": 1,
+        "method": "sparams3d",
+        "extra": {
+          "kind": "mmi",
+          "width": 0.5,
+          "W_mmi": 3.0,
+          "L_mmi": 6.0,
+          "L_tap": 3.0,
+          "out_gap": 0.5,
+          "L_out": 2.0,
+          "wl0_um": 1.55,
+          "n_wl": 3,
+          "span_um": 0.02,
+          "transient_cycles": 800,
+          "dl_factor": 12.0
+        }
+      },
+      "accepted": true,
+      "iterations": 3,
+      "final_doc_id": "sparams3d-mmi",
+      "final_layers": [],
+      "final_metric": 0.6961556023814299,
+      "final_oracle_metric": 0.30384439761857013,
+      "final_metric_err": 0.4539214619531267,
+      "final_max_metric_err": 0.6961556023814299,
+      "loop_trace": [
+        {
+          "iteration": 0,
+          "wl_um": 1.53,
+          "S11": 0.5461,
+          "S21": 0.2304,
+          "S31": 0.2235,
+          "T_total": 0.4539
+        },
+        {
+          "iteration": 1,
+          "wl_um": 1.55,
+          "S11": 0.3038,
+          "S21": 0.3769,
+          "S31": 0.3193,
+          "T_total": 0.6962
+        },
+        {
+          "iteration": 2,
+          "wl_um": 1.57,
+          "S11": 0.5113,
+          "S21": 0.2482,
+          "S31": 0.2405,
+          "T_total": 0.4887
+        }
+      ],
+      "verdict": "MMI 3D S 参数验收 PASS：3 波长全部满足——仿真有效、平衡度 max=0.083（≤0.15）、透射 T_total min=0.454（≥0.05）。（闭环 method=sparams3d，耗时 13.5s，结果已可由「人」验收。）"
+    },
+    "dc": {
+      "target": {
+        "geometry_type": "3d_sparams",
+        "materials": {
+          "air": 1.0,
+          "sih": 3.48,
+          "silo": 1.44
+        },
+        "target_wavelength_um": 1.55,
+        "target_metric": "R",
+        "threshold": 0.99,
+        "tolerance_rel": 0.02,
+        "max_iterations": 12,
+        "initial_periods": 1,
+        "method": "sparams3d",
+        "extra": {
+          "kind": "dc",
+          "width": 0.5,
+          "gap": 0.3,
+          "Lc": 10.0,
+          "wl0_um": 1.55,
+          "n_wl": 5,
+          "span_um": 0.04,
+          "transient_cycles": 800,
+          "dl_factor": 12.0
+        }
+      },
+      "accepted": true,
+      "iterations": 5,
+      "final_doc_id": "sparams3d-dc",
+      "final_layers": [],
+      "final_metric": 0.27555453619091824,
+      "final_oracle_metric": 0.7244454638090817,
+      "final_metric_err": 0.2085730640745727,
+      "final_max_metric_err": 0.3151010261015017,
+      "loop_trace": [
+        {
+          "iteration": 0,
+          "wl_um": 1.51,
+          "S11": 0.6849,
+          "S21": 0.1495,
+          "S31": 0.1656,
+          "T_total": 0.3151
+        },
+        {
+          "iteration": 1,
+          "wl_um": 1.53,
+          "S11": 0.6931,
+          "S21": 0.1513,
+          "S31": 0.1556,
+          "T_total": 0.3069
+        },
+        {
+          "iteration": 2,
+          "wl_um": 1.55,
+          "S11": 0.7244,
+          "S21": 0.1358,
+          "S31": 0.1397,
+          "T_total": 0.2756
+        },
+        {
+          "iteration": 3,
+          "wl_um": 1.57,
+          "S11": 0.7643,
+          "S21": 0.111,
+          "S31": 0.1247,
+          "T_total": 0.2357
+        },
+        {
+          "iteration": 4,
+          "wl_um": 1.59,
+          "S11": 0.7914,
+          "S21": 0.0999,
+          "S31": 0.1087,
+          "T_total": 0.2086
+        }
+      ],
+      "verdict": "DC 3D S 参数验收 PASS：5 波长全部满足——仿真有效、cross_frac 端点趋势 ✓ ([0.525, 0.507, 0.507, 0.529, 0.521])、透射 T_total min=0.209（≥0.05）。（闭环 method=sparams3d，耗时 16.5s，结果已可由「人」验收。）"
+    },
+    "ring": {
+      "target": {
+        "geometry_type": "3d_sparams",
+        "materials": {
+          "air": 1.0,
+          "sih": 3.48,
+          "silo": 1.44
+        },
+        "target_wavelength_um": 1.55,
+        "target_metric": "R",
+        "threshold": 0.99,
+        "tolerance_rel": 0.02,
+        "max_iterations": 12,
+        "initial_periods": 1,
+        "method": "sparams3d",
+        "extra": {
+          "kind": "ring",
+          "R": 3.0,
+          "width": 0.5,
+          "gap": 0.3,
+          "wl0_um": 1.55,
+          "n_wl": 5,
+          "span_um": 0.08,
+          "transient_cycles": 800,
+          "dl_factor": 12.0
+        }
+      },
+      "accepted": true,
+      "iterations": 5,
+      "final_doc_id": "sparams3d-ring",
+      "final_layers": [],
+      "final_metric": 0.41477724902207297,
+      "final_oracle_metric": 0.585222750977927,
+      "final_metric_err": 0.08452439285582194,
+      "final_max_metric_err": 0.4202317571849084,
+      "loop_trace": [
+        {
+          "iteration": 0,
+          "wl_um": 1.47,
+          "S11": 0.6992,
+          "S21": 0.1603,
+          "S31": 0.1405,
+          "T_total": 0.3008
+        },
+        {
+          "iteration": 1,
+          "wl_um": 1.51,
+          "S11": 0.5798,
+          "S21": 0.218,
+          "S31": 0.2022,
+          "T_total": 0.4202
+        },
+        {
+          "iteration": 2,
+          "wl_um": 1.55,
+          "S11": 0.5852,
+          "S21": 0.2207,
+          "S31": 0.1941,
+          "T_total": 0.4148
+        },
+        {
+          "iteration": 3,
+          "wl_um": 1.59,
+          "S11": 0.7264,
+          "S21": 0.1353,
+          "S31": 0.1383,
+          "T_total": 0.2736
+        },
+        {
+          "iteration": 4,
+          "wl_um": 1.63,
+          "S11": 0.9155,
+          "S21": 0.0378,
+          "S31": 0.0467,
+          "T_total": 0.0845
+        }
+      ],
+      "verdict": "RING 3D S 参数验收 PASS：5 波长全部满足——仿真有效、drop 谐振峰 ✓ (max=0.202 med=0.140)、透射 T_total min=0.085（≥0.05）。（闭环 method=sparams3d，耗时 20.9s，结果已可由「人」验收。）"
+    }
+  },
+  "verdict": "MMI=True; DC=True; RING=True"
+}

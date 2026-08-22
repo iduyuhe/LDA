@@ -603,6 +603,21 @@
   </div>
 
   <div class="sec">
+    <h2>㉝ 3D 端口 S 参数验收（D-72 深化 · SOI 220nm · numba 核）</h2>
+    <div class="hint">把 2D 端口验收<b>深化到 3D</b>：MMI 1×2 对称分束器（SOI 220nm 波导层 + 上下包层）全 <b>3D FDTD</b> 端口透反射谱（复用已验证 numba 核 <code>_fdtd3d_core</code>，零新依赖）——3D 波导截面匹配源注入（TE 主极化 Ez）→ 多端口 DFT 收集 → 输入功率归一 → S 参数谱 → 死标量验收（<b>仿真有效 + 平衡度 ≤0.15 + 透射 ≥0.05</b>）+ <b>2D↔3D 连续性对拍诊断</b>（3D 垂直模式约束使 S 参数与 2D 系统性不同，差异是物理非 bug，不作判据）。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>W_mmi<input id="sp3W" type="number" value="3" style="width:56px"></label>
+      <label>L_mmi<input id="sp3L" type="number" value="6" style="width:56px"></label>
+      <label>波长数<input id="sp3N" type="number" value="3" style="width:52px"></label>
+      <label>跨度µm<input id="sp3Span" type="number" value="0.02" step="0.01" style="width:60px"></label>
+      <button class="btn" id="runSp3">3D 端口 S 参数验收</button>
+    </div>
+    <div id="sp3Summary" class="summary"></div>
+    <div id="sp3Body"></div>
+    <div class="conclusion" id="sp3Conclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1886,6 +1901,34 @@ function renderSp(d){
   $('spConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
 }
 $('runSp').onclick = runSp;
+
+// ---- ㉝ D-72 深化 3D 端口 S 参数验收（SOI 220nm）----
+async function runSp3(){
+  const btn = $('runSp3'); btn.disabled = true;
+  $('sp3Summary').innerHTML = '<span class="spin"></span> 3D FDTD 端口 S 参数验收中（numba 核 × 波长数，需数分钟）…';
+  const body = { W_mmi: $('sp3W').value, L_mmi: $('sp3L').value,
+                 n_wl: $('sp3N').value, span_um: $('sp3Span').value };
+  try{
+    const d = await post('/api/sparams_3d', body);
+    renderSp3(d);
+  }catch(e){ $('sp3Summary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderSp3(d){
+  if(!d.ok){ $('sp3Summary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const spec = d.spectrum||{};
+  const rows = (spec.points||[]).map(p=>`<tr><td>${p.wl_um}</td><td>${p.S11_2.toFixed(3)}</td><td>${p.S21_2.toFixed(3)}</td><td>${p.S31_2.toFixed(3)}</td><td>${p.balance.toFixed(3)}</td><td>${p.T_total.toFixed(3)}</td></tr>`).join('');
+  const diag = (d.diagnostic_2d_vs_3d||[]).map(x=>`<tr><td>${x.wl_um}</td><td>${x.bal_2d}</td><td>${x.bal_3d}</td><td>${x.T_2d}</td><td>${x.T_3d}</td></tr>`).join('');
+  const g = d.geometry||{};
+  $('sp3Summary').innerHTML = `3D S 参数验收（MMI ${g.MMI_3D?g.MMI_3D.W_mmi:'-'}×${g.MMI_3D?g.MMI_3D.L_mmi:'-'}µm，h=${g.h_si_um}µm，dl=${g.dl_um}µm）：<span class="verdict ${d.acceptance.passed?'ok':'fail'}">${d.acceptance.passed?'PASS':'FAIL'}</span>`;
+  $('sp3Body').innerHTML = `
+    <div class="subhead">3D S 参数谱（输入功率归一，能量守恒自动满足）</div>
+    <table class="tbl"><thead><tr><th>λ(µm)</th><th>|S11|² 回波</th><th>|S21|² 上输出</th><th>|S31|² 下输出</th><th>平衡度</th><th>T_total</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="subhead">2D↔3D 对拍诊断（物理差异，非判据）</div>
+    <table class="tbl"><thead><tr><th>λ(µm)</th><th>bal_2D</th><th>bal_3D</th><th>T_2D</th><th>T_3D</th></tr></thead><tbody>${diag||'<tr><td colspan="5">—</td></tr>'}</tbody></table>`;
+  $('sp3Conclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+}
+$('runSp3').onclick = runSp3;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

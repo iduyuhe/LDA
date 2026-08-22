@@ -561,6 +561,22 @@
   </div>
 
   <div class="sec">
+    <h2>㉚ 逆设计接入设计→验证引擎（D-70 · method=adjoint）</h2>
+    <div class="hint">把伴随梯度逆设计<b>泛化接入 D-36 设计→验证闭环引擎</b>：DesignAgent 统一入口按 <b>method</b> 分流（默认 scan=布拉格参数扫描；adjoint=梯度拓扑逆设计）——目标泛化为<b>「把指定孔径内的收集场能最大化」</b>（设计区/孔径/材料对比度/波长/分辨率全部由意图透传）→ 均匀平板初值 → 验证锚（adjoint vs 中心有限差分 max_rel_err ≤ 0.15）→ 密度投影 + 回溯线搜索梯度优化（improvement ≥ 1.5）→ 死标量验收输出 <b>DesignOutcomeReport</b>（target/accepted/iterations/loop_trace/verdict）。布拉格扫描路径零改动。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>迭代<input id="alIters" type="number" value="50" style="width:64px"></label>
+      <label>对拍样本<input id="alNs" type="number" value="8" style="width:52px"></label>
+      <label>Nx<input id="alNx" type="number" value="110" style="width:56px"></label>
+      <label>Ny<input id="alNy" type="number" value="90" style="width:56px"></label>
+      <label>sponge<input id="alSp" type="number" value="10" style="width:52px"></label>
+      <button class="btn" id="runAl">逆设计闭环（引擎内）</button>
+    </div>
+    <div id="alSummary" class="summary"></div>
+    <div id="alBody"></div>
+    <div class="conclusion" id="alConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1751,6 +1767,34 @@ function renderAj(d){
   $('ajConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
 }
 $('runAj').onclick = runAj;
+
+// ---- ㉚ D-70 逆设计接入 D-36 引擎（method=adjoint）----
+async function runAl(){
+  const btn = $('runAl'); btn.disabled = true;
+  $('alSummary').innerHTML = '<span class="spin"></span> DesignAgent(method=adjoint) 逆设计闭环中（目标解析 → FD 对拍锚 → 梯度优化，需数分钟）…';
+  const body = { iters: $('alIters').value, nsamples: $('alNs').value,
+                 Nx: $('alNx').value, Ny: $('alNy').value, sponge: $('alSp').value };
+  try{
+    const d = await post('/api/adjoint_loop', body);
+    renderAl(d);
+  }catch(e){ $('alSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderAl(d){
+  if(!d.ok){ $('alSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const rows = (d.loop_trace||[]).map(h=>`<tr><td>${h.iteration}</td><td>${h.beta}</td><td>${h.alpha}</td><td>${Number(h.FOM).toExponential(2)}</td><td>${h.T.toFixed(4)}</td></tr>`).join('');
+  const mt = d.target||{};
+  $('alSummary').innerHTML = `逆设计闭环：<b>${d.iterations}</b> 次迭代 · FOM <b>${Number(d.final_oracle_metric).toExponential(2)} → ${Number(d.final_metric).toExponential(2)}</b>（${d.iterations>0 && d.final_oracle_metric>0 ? (d.final_metric/d.final_oracle_metric).toFixed(2) : 1.0}×）· <span class="verdict ${d.accepted?'ok':'fail'}">${d.accepted?'PASS':'FAIL'}</span>`;
+  $('alBody').innerHTML = `
+    <div class="subhead">引擎分流（DesignAgent 统一入口）</div>
+    <table class="tbl"><thead><tr><th>method</th><th>geometry_type</th><th>验收度量</th><th>阈值语义</th></tr></thead><tbody><tr><td>${mt.method||'scan'}</td><td>${mt.geometry_type||''}</td><td>${mt.target_metric||'FOM_gain'}</td><td>improvement≥1.5 且 FD 对拍≤0.15</td></tr></tbody></table>
+    <div class="subhead">优化轨迹（loop_trace，FOM 单调不降）</div>
+    <table class="tbl"><thead><tr><th>iter</th><th>beta</th><th>alpha</th><th>FOM</th><th>T</th></tr></thead><tbody>${rows||'<tr><td colspan="5">（无迭代轨迹）</td></tr>'}</tbody></table>
+    <div class="subhead">设计结果（DesignOutcomeReport 兼容格式）</div>
+    <table class="tbl"><thead><tr><th>final_doc_id</th><th>final_metric(FOM)</th><th>oracle(初值基线)</th><th>metric_err(FD 对拍)</th></tr></thead><tbody><tr><td>${d.final_doc_id}</td><td>${Number(d.final_metric).toExponential(2)}</td><td>${Number(d.final_oracle_metric).toExponential(2)}</td><td>${Number(d.final_metric_err).toExponential(2)}</td></tr></tbody></table>`;
+  $('alConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">目标泛化：设计区/孔径/材料对比度/波长/分辨率均由意图透传；布拉格扫描路径（method=scan）不受影响。FOM=收集场能，聚焦增益可致 T&gt;1，非功率透射。LLM 不进判决路径。</div>`;
+}
+$('runAl').onclick = runAl;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

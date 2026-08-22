@@ -1130,6 +1130,56 @@ def run_adjoint_design(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_adjoint_loop(payload=None):
+    """D-70 逆设计目标泛化接入 D-36 引擎（webui ㉚ 面板）。
+
+    输入 {iters?, step?, beta?, nsamples?, delta?, Nx?, Ny?, dl_factor?,
+    sponge?, di0?, di1?, dj0?, dj1?, y_mon0?, y_mon1?}：DesignAgent
+    method="adjoint" 闭环 = 目标解析（extra 几何透传）→ 均匀平板初值 →
+    FD 对拍锚（max_rel_err≤0.15）→ 密度投影 + 回溯线搜索梯度拓扑优化
+    （improvement≥1.5）→ 死标量验收，输出 DesignOutcomeReport 兼容格式
+    （target/accepted/iterations/loop_trace/verdict）。LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.design_loop import DesignAgent
+    payload = payload or {}
+    extra = {}
+    for k in ("Nx", "Ny", "dl_factor", "sponge", "di0", "di1", "dj0", "dj1",
+              "y_mon0", "y_mon1", "i_src", "i_mon", "eps_min", "eps_max",
+              "wl_um"):
+        if k in payload and payload[k] not in (None, ""):
+            try:
+                v = float(payload[k])
+                extra[k] = int(v) if k in (
+                    "Nx", "Ny", "sponge", "di0", "di1", "dj0", "dj1",
+                    "i_src", "i_mon") else v
+            except (TypeError, ValueError):
+                extra[k] = payload[k]
+    intent = {
+        "method": "adjoint",
+        "geometry_type": payload.get("geometry_type", "adjoint_focuser"),
+        "extra": {
+            **extra,
+            "iters": int(payload.get("iters", 50)),
+            "step0": float(payload.get("step", 0.5)),
+            "beta_max": float(payload.get("beta", 14.0)),
+            "nsamples": int(payload.get("nsamples", 8)),
+            "delta": float(payload.get("delta", 0.05)),
+        },
+    }
+    try:
+        rep = DesignAgent().run(intent)
+        out = rep.to_dict()
+        out["ok"] = True
+        return out
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def system_status():
     return {
         "layers": [
@@ -1245,6 +1295,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_ir_demo(payload))
             elif path == "/api/adjoint_design":
                 self._send(200, run_adjoint_design(payload))
+            elif path == "/api/adjoint_loop":
+                self._send(200, run_adjoint_loop(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

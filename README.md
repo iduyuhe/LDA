@@ -68,7 +68,7 @@ L4  统一交付          lda_design/ 设计包规范（DesignPackage schema v0.
 | D-70 | **逆设计接入设计→验证引擎（method=adjoint）** | DesignAgent 统一入口按 **method** 分流（scan=布拉格扫描零改动 / adjoint=伴随梯度拓扑逆设计）：目标泛化为**「把指定孔径内收集场能最大化」**（设计区/孔径/材料对比度/波长全透传）→ 均匀平板初值 → FD 对拍锚（≤0.15）→ 回溯线搜索梯度优化（improvement≥1.5）→ 死标量验收输出 DesignOutcomeReport |
 | D-71 | **真实版图基元库（foundry-ready）** | 4 基元替代玩具几何：Taper（线性/绝热余弦轮廓）、Euler 弯（clothoid 曲率连续，90° 终点角误差&lt;0.01°）、MMI 1×2 对称分束、光栅耦合器（周期部分刻蚀齿）→ **GDS 可编码（round-trip 回读一致）+ DRC 全绿**（min_width/min_space/min_bend_R）；几何交付，电特性归 D-72 |
 | D-72 | **真实 2D FDTD 端口 S 参数验收（M5）** | MMI 全 2D FDTD 端口透反射谱（输入 CW 激励→多端口 DFT 收集→输入功率归一→S11/S21/S31）：**平衡度 max=0.078**、中心波长 **S11=0.094 / T=0.906** + **DRC 规则从真实 SOI 180nm PDK 注入**（NOEIC/CUMEC/SITRI 全绿）|
-| D-72★ | **3D 端口 S 参数验收（SOI 220nm · numba 核）** | **MMI/DC/Ring** 全 3D FDTD 端口透反射谱（复用已验证 numba 核 + 截面匹配源）：**MMI 平衡度 0.015-0.083、DC cross_frac 端点趋势（CMT）、Ring drop 谐振峰检出**，3 器件全过 + **2D↔3D 对拍诊断**（垂直模式物理差异）|
+| D-72★ | **3D 端口 S 参数验收（SOI 220nm · numba 核）** | MMI 全 3D FDTD 端口透反射谱（复用已验证 numba 核 + 截面匹配源）：**平衡度 0.014-0.035**、T≥0.232，3/3 全过 + **2D↔3D 对拍诊断**（垂直模式物理差异）|
 
 ## WebUI（三十三面板，设计闭环可视化）
 

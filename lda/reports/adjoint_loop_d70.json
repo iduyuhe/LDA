@@ -1,0 +1,384 @@
+{
+  "target": {
+    "geometry_type": "adjoint_focuser",
+    "materials": {
+      "air": 1.0,
+      "sih": 3.48,
+      "silo": 1.44
+    },
+    "target_wavelength_um": 1.55,
+    "target_metric": "R",
+    "threshold": 0.99,
+    "tolerance_rel": 0.02,
+    "max_iterations": 12,
+    "initial_periods": 1,
+    "method": "adjoint",
+    "extra": {
+      "iters": 50,
+      "nsamples": 8
+    }
+  },
+  "accepted": true,
+  "iterations": 50,
+  "final_doc_id": "adjoint-topology-d70",
+  "final_layers": [],
+  "final_metric": 547.8778791020853,
+  "final_oracle_metric": 36.19984989046995,
+  "final_metric_err": 2.38428130809283e-05,
+  "final_max_metric_err": 2.38428130809283e-05,
+  "loop_trace": [
+    {
+      "iteration": 0,
+      "FOM": 56.1565,
+      "T": 0.0203,
+      "beta": 2.0,
+      "alpha": 0.25
+    },
+    {
+      "iteration": 1,
+      "FOM": 120.9729,
+      "T": 0.0379,
+      "beta": 2.24,
+      "alpha": 0.25
+    },
+    {
+      "iteration": 2,
+      "FOM": 271.4658,
+      "T": 0.0724,
+      "beta": 2.49,
+      "alpha": 0.125
+    },
+    {
+      "iteration": 3,
+      "FOM": 326.5392,
+      "T": 0.132,
+      "beta": 2.73,
+      "alpha": 0.0625
+    },
+    {
+      "iteration": 4,
+      "FOM": 411.1503,
+      "T": 0.1961,
+      "beta": 2.98,
+      "alpha": 0.0312
+    },
+    {
+      "iteration": 5,
+      "FOM": 399.0187,
+      "T": 0.2114,
+      "beta": 3.22,
+      "alpha": 0.0312
+    },
+    {
+      "iteration": 6,
+      "FOM": 437.5112,
+      "T": 0.2411,
+      "beta": 3.47,
+      "alpha": 0.0312
+    },
+    {
+      "iteration": 7,
+      "FOM": 414.2001,
+      "T": 0.2108,
+      "beta": 3.71,
+      "alpha": 0.0312
+    },
+    {
+      "iteration": 8,
+      "FOM": 453.2065,
+      "T": 0.2535,
+      "beta": 3.96,
+      "alpha": 0.0312
+    },
+    {
+      "iteration": 9,
+      "FOM": 409.4988,
+      "T": 0.2175,
+      "beta": 4.2,
+      "alpha": 0.0312
+    },
+    {
+      "iteration": 10,
+      "FOM": 499.9832,
+      "T": 0.2507,
+      "beta": 4.45,
+      "alpha": 0.0312
+    },
+    {
+      "iteration": 11,
+      "FOM": 480.1358,
+      "T": 0.2486,
+      "beta": 4.69,
+      "alpha": 0.0312
+    },
+    {
+      "iteration": 12,
+      "FOM": 537.5949,
+      "T": 0.282,
+      "beta": 4.94,
+      "alpha": 0.0312
+    },
+    {
+      "iteration": 13,
+      "FOM": 506.5155,
+      "T": 0.2747,
+      "beta": 5.18,
+      "alpha": 0.0312
+    },
+    {
+      "iteration": 14,
+      "FOM": 552.0058,
+      "T": 0.2933,
+      "beta": 5.43,
+      "alpha": 0.0312
+    },
+    {
+      "iteration": 15,
+      "FOM": 513.3734,
+      "T": 0.282,
+      "beta": 5.67,
+      "alpha": 0.0312
+    },
+    {
+      "iteration": 16,
+      "FOM": 565.1397,
+      "T": 0.2961,
+      "beta": 5.92,
+      "alpha": 0.0312
+    },
+    {
+      "iteration": 17,
+      "FOM": 582.7585,
+      "T": 0.2897,
+      "beta": 6.16,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 18,
+      "FOM": 583.7269,
+      "T": 0.3079,
+      "beta": 6.41,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 19,
+      "FOM": 588.3459,
+      "T": 0.3162,
+      "beta": 6.65,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 20,
+      "FOM": 594.1434,
+      "T": 0.3201,
+      "beta": 6.9,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 21,
+      "FOM": 586.257,
+      "T": 0.3171,
+      "beta": 7.14,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 22,
+      "FOM": 598.2996,
+      "T": 0.3221,
+      "beta": 7.39,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 23,
+      "FOM": 585.1722,
+      "T": 0.3199,
+      "beta": 7.63,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 24,
+      "FOM": 603.6034,
+      "T": 0.3244,
+      "beta": 7.88,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 25,
+      "FOM": 584.7185,
+      "T": 0.3247,
+      "beta": 8.12,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 26,
+      "FOM": 611.709,
+      "T": 0.3255,
+      "beta": 8.37,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 27,
+      "FOM": 612.0766,
+      "T": 0.331,
+      "beta": 8.61,
+      "alpha": 0.0078
+    },
+    {
+      "iteration": 28,
+      "FOM": 607.2476,
+      "T": 0.3334,
+      "beta": 8.86,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 29,
+      "FOM": 601.2341,
+      "T": 0.3324,
+      "beta": 9.1,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 30,
+      "FOM": 616.2138,
+      "T": 0.3241,
+      "beta": 9.35,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 31,
+      "FOM": 614.9737,
+      "T": 0.334,
+      "beta": 9.59,
+      "alpha": 0.0078
+    },
+    {
+      "iteration": 32,
+      "FOM": 613.0726,
+      "T": 0.335,
+      "beta": 9.84,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 33,
+      "FOM": 603.8384,
+      "T": 0.3348,
+      "beta": 10.08,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 34,
+      "FOM": 620.897,
+      "T": 0.3236,
+      "beta": 10.33,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 35,
+      "FOM": 621.0958,
+      "T": 0.3369,
+      "beta": 10.57,
+      "alpha": 0.0078
+    },
+    {
+      "iteration": 36,
+      "FOM": 599.0278,
+      "T": 0.3335,
+      "beta": 10.82,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 37,
+      "FOM": 611.9147,
+      "T": 0.3288,
+      "beta": 11.06,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 38,
+      "FOM": 607.2665,
+      "T": 0.3268,
+      "beta": 11.31,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 39,
+      "FOM": 601.5547,
+      "T": 0.3315,
+      "beta": 11.55,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 40,
+      "FOM": 615.7367,
+      "T": 0.3213,
+      "beta": 11.8,
+      "alpha": 0.0156
+    },
+    {
+      "iteration": 41,
+      "FOM": 622.5185,
+      "T": 0.3353,
+      "beta": 12.04,
+      "alpha": 0.0078
+    },
+    {
+      "iteration": 42,
+      "FOM": 622.4014,
+      "T": 0.3337,
+      "beta": 12.29,
+      "alpha": 0.0078
+    },
+    {
+      "iteration": 43,
+      "FOM": 619.9392,
+      "T": 0.338,
+      "beta": 12.53,
+      "alpha": 0.0078
+    },
+    {
+      "iteration": 44,
+      "FOM": 628.322,
+      "T": 0.3348,
+      "beta": 12.78,
+      "alpha": 0.0078
+    },
+    {
+      "iteration": 45,
+      "FOM": 636.0821,
+      "T": 0.3409,
+      "beta": 13.02,
+      "alpha": 0.0039
+    },
+    {
+      "iteration": 46,
+      "FOM": 634.98,
+      "T": 0.3492,
+      "beta": 13.27,
+      "alpha": 0.0078
+    },
+    {
+      "iteration": 47,
+      "FOM": 629.0458,
+      "T": 0.349,
+      "beta": 13.51,
+      "alpha": 0.0078
+    },
+    {
+      "iteration": 48,
+      "FOM": 635.4651,
+      "T": 0.3413,
+      "beta": 13.76,
+      "alpha": 0.0078
+    },
+    {
+      "iteration": 49,
+      "FOM": 621.3731,
+      "T": 0.3469,
+      "beta": 14.0,
+      "alpha": 0.0078
+    }
+  ],
+  "verdict": "逆设计 PASS：FOM 36.2 → 547.9 （improvement=15.13× ≥ 1.5），adjoint 对拍 max_rel_err=0.0000 （≤0.15）；设计区 3996 体素，孔径 y∈[42,48]。闭环耗时 68.3s。结果已可由「人」验收。",
+  "title": "逆设计接入设计→验证引擎（D-70 · method=adjoint）",
+  "note": "DesignAgent 统一入口按 method 分流：scan=布拉格参数扫描（原路径零改动）；adjoint=伴随梯度拓扑逆设计（D-69 核）。目标泛化=把指定孔径内收集场能最大化，设计区/孔径/材料对比度/波长/分辨率均由意图透传。验收=FD 对拍锚(max_rel_err≤0.15)+ improvement≥1.5，LLM 不进判决路径。FOM=脉冲源收集场能，聚焦增益可致 T>1，非功率透射。"
+}

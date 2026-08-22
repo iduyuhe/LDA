@@ -44,6 +44,9 @@ class DesignAgent:
     def run(self, intent: Dict[str, Any]) -> DesignOutcomeReport:
         t0 = time.time()
         target = InterpreterAgent.parse(intent)
+        # D-70：伴随梯度拓扑逆设计走专用闭环（目标 → 梯度优化 → 双验证 → PASS）
+        if target.method == "adjoint":
+            return self._run_adjoint(target)
         # 把数值/后端偏好注入 target.extra，供 Designer 生成 L0IR 时取用
         target.extra.setdefault("backend", self.backend)
         target.extra.setdefault("dl_factor", self.dl_factor)
@@ -103,6 +106,102 @@ class DesignAgent:
             verdict=self._verdict(accepted, final_verify, elapsed),
         )
         return report
+
+    def _run_adjoint(self, target: DesignTarget) -> DesignOutcomeReport:
+        """D-70：伴随梯度拓扑逆设计闭环（method="adjoint"）。
+
+        目标泛化：设计区/监视孔径/材料对比度/波长/网格分辨率全部由 intent 的
+        extra 指定（AdjointProblem 几何透传）——"设计目标"从布拉格周期数泛化为
+        "把某孔径内的收集场能最大化"。
+
+        闭环（LLM 不进判决路径，PASS 由死标量比对决定）：
+          (a) 数值/物理自洽锚：adjoint vs 中心有限差分方向对拍 max_rel_err ≤ 0.15；
+          (b) 目标达成：improvement = final_FOM / initial_FOM ≥ 1.5（M4）。
+        优化器 = 密度投影（beta 延拓二值化）+ 回溯线搜索梯度上升（FOM 单调不降）。
+        FOM 语义诚实标注：脉冲源监视器孔径收集场能，聚焦增益可致 T>1，非功率透射。
+        """
+        import numpy as np
+        from lda_solver.adjoint_fdtd import (
+            AdjointProblem, verify_adjoint, optimize_topology,
+        )
+
+        t0 = time.time()
+        ex = target.extra
+        geo = {k: v for k, v in ex.items()
+               if k in ("Nx", "Ny", "dl_factor", "sponge", "i_src", "i_mon",
+                        "y_src0", "y_src1", "y_mon0", "y_mon1",
+                        "di0", "di1", "dj0", "dj1", "eps_min", "eps_max",
+                        "wl_um", "courant", "target_exp", "ramp",
+                        "periods_factor")}
+        if isinstance(ex.get("geo"), dict):
+            geo.update(ex["geo"])
+        problem = AdjointProblem(**geo)
+
+        # 空设计区：优雅 FAIL（非异常）
+        if problem.design_mask.sum() == 0:
+            return DesignOutcomeReport(
+                target=target.__dict__, accepted=False, iterations=0,
+                final_doc_id="adjoint-topology-none", final_layers=[],
+                final_metric=0.0, final_oracle_metric=0.0, final_metric_err=0.0,
+                loop_trace=[],
+                verdict=("逆设计 FAIL：设计区为空（di0/di1 或 dj0/dj1 无效），"
+                         "无优化自由度。"))
+
+        # 1) 均匀平板初值（设计区 = 中间折射率）
+        eps0 = np.full((problem.Nx, problem.Ny), problem.eps_min)
+        eps0[problem.design_mask] = (problem.eps_min + problem.eps_max) / 2.0
+
+        # 2) 验证锚：adjoint 梯度 vs 中心有限差分（方向对拍）
+        nsamples = int(ex.get("nsamples", 8))
+        delta = float(ex.get("delta", 0.05))
+        vr = verify_adjoint(problem, eps0, nsamples=nsamples, delta=delta)
+
+        # 3) 梯度拓扑优化（回溯线搜索，FOM 单调不降）
+        iters = int(ex.get("iters", 50))
+        step0 = float(ex.get("step0", 0.5))
+        beta_max = float(ex.get("beta_max", 14.0))
+        opt = optimize_topology(problem, eps0, iters=iters, step0=step0,
+                                beta_max=beta_max)
+
+        # 4) 死标量验收
+        ok_anchor = bool(vr["passed"])
+        ok_gain = bool(opt["passed"])
+        accepted = ok_anchor and ok_gain
+        fom0, fomf = opt["initial_FOM"], opt["final_FOM"]
+        trace = [{"iteration": h["iter"], "FOM": round(h["FOM"], 4),
+                  "T": round(h["T"], 4), "beta": h["beta"], "alpha": h["alpha"]}
+                 for h in opt["history"]]
+
+        if accepted:
+            verdict = (f"逆设计 PASS：FOM {fom0:.1f} → {fomf:.1f} "
+                       f"（improvement={opt['improvement']:.2f}× ≥ 1.5），"
+                       f"adjoint 对拍 max_rel_err={vr['max_rel_err']:.4f} "
+                       f"（≤0.15）；设计区 "
+                       f"{int(problem.design_mask.sum())} 体素，孔径 "
+                       f"y∈[{problem.y_mon0},{problem.y_mon1}]。"
+                       f"闭环耗时 {time.time() - t0:.1f}s。结果已可由「人」验收。")
+        else:
+            fails = []
+            if not ok_anchor:
+                fails.append(f"adjoint 对拍 max_rel_err={vr['max_rel_err']:.4f} 超 0.15")
+            if not ok_gain:
+                fails.append(f"improvement={opt['improvement']:.2f}× 未达 1.5")
+            verdict = (f"逆设计未全过：" + "；".join(fails) +
+                       f"。闭环耗时 {time.time() - t0:.1f}s。")
+
+        return DesignOutcomeReport(
+            target=target.__dict__,
+            accepted=accepted,
+            iterations=len(trace),
+            final_doc_id="adjoint-topology-d70",
+            final_layers=[],                       # voxel 设计：分布见 loop_trace/verdict
+            final_metric=float(fomf),
+            final_oracle_metric=float(fom0),       # oracle = 均匀平板初值基线
+            final_metric_err=float(vr["max_rel_err"]),
+            final_max_metric_err=float(vr["max_rel_err"]),
+            loop_trace=trace,
+            verdict=verdict,
+        )
 
     @staticmethod
     def _verdict(accepted: bool, verify, elapsed: float) -> str:

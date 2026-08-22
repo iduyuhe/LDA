@@ -210,6 +210,10 @@ def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
         descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": core_w,
                       "points_um": [(0.0, 0.0),
                                     (arm * math.cos(half), -arm * math.sin(half))]})
+    # ---- D-71 真实版图基元（foundry-ready；几何交付，电特性归 D-72）----
+    elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler"):
+        from lda_l2.primitives import primitive_descs as _prim
+        descs.extend(_prim(kind, params))
     else:
         raise ValueError(f"暂不支持导出 kind={kind}")
     return descs

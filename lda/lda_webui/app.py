@@ -1096,6 +1096,40 @@ def run_ir_demo(payload):
     }
 
 
+def run_adjoint_design(payload=None):
+    """D-69 伴随法拓扑逆设计（webui ㉙ 面板）。
+
+    输入 {iters?, step?, beta?, nsamples?, Nx?, Ny?, dl_factor?, sponge?,
+    y_mon0?, y_mon1?, di0?, di1?, dj0?, dj1?}：主权 2D adjoint FDTD 核
+    （高斯脉冲源 + 窄孔径收集场能 FOM）→ 验证锚（adjoint vs 中心有限差分
+    方向对拍 ≤0.15）→ 密度投影 + 回溯线搜索梯度拓扑逆设计
+    （improvement ≥1.5）→ 死标量验收。LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.adjoint_design import design_adjoint
+    payload = payload or {}
+    geo = {}
+    for k in ("Nx", "Ny", "dl_factor", "sponge", "y_mon0", "y_mon1",
+              "di0", "di1", "dj0", "dj1"):
+        if k in payload and payload[k] not in (None, ""):
+            geo[k] = int(float(payload[k]))
+    try:
+        rep = design_adjoint(
+            iters=int(payload.get("iters", 50)),
+            step0=float(payload.get("step", 0.5)),
+            beta_max=float(payload.get("beta", 14.0)),
+            nsamples=int(payload.get("nsamples", 8)),
+            **geo)
+        rep["ok"] = True
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def system_status():
     return {
         "layers": [
@@ -1209,6 +1243,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_coupler_loop(payload))
             elif path == "/api/ir_demo":
                 self._send(200, run_ir_demo(payload))
+            elif path == "/api/adjoint_design":
+                self._send(200, run_adjoint_design(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

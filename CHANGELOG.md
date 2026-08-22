@@ -82,6 +82,25 @@
 - README：能力阶梯表加 D-63 行、二十七面板、11 kind、快速开始 12 步（新增 ⑨ splitter_readout）
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举）
 
+## Unreleased（v0.3.2 之后 · D-66~D-69）
+
+**里程碑：PDK 标定库分辨率修正（D-68）+ 伴随法梯度拓扑逆设计（D-69，M4 Track A 首个里程碑）**
+
+- **D-66 标定库 × 分束网络**：`splitter_readout_cal` 模式——DC gap 由 κ_c(gap) 标定库驱动设计（标定 5/5 PASS）。
+- **D-67 分束网络 × WDM（新 kind=wdm_splitter 流程）**：`lda_agent/wdm_splitter.py`——WDM 多环级联解复用（D-42 + D-57 标定库驱动 gap）→ 每信道 drop 口接二叉树级联 DC 分束树（D-63 复用，每级 D-55 真实 2D FDTD 设计）→ 信道输入 = drop 扣除实测 IL 的剩余功率（10^(-IL/10) 诚实标注）→ 统一 IR 网表（Ring×N + DC×M）+ 联合验收。纯光子域，无跨物理域声称。
+- **D-68 PDK 标定库 4×5 升级**：诊断性 5×5 dl40 标定发现原 3×3（dl20）中 gap 0.25/0.30 的 κ_c 完全相同（分辨率假象）→ 生产库升级为干净 4×5 网格（gaps 0.25/0.30/0.35/0.40 × 5 波长 = 20 点，dl40，κ_c 沿 gap 与 λ 双轴单调，双线性插值查表）；`calibrate_kappa_grid.py` 参数化（--gaps/--wls/--dl_factor/--out）成复用基础设施。
+- **D-69 伴随法梯度逆设计核（adjoint FDTD，M4 Track A）**：`lda_solver/adjoint_fdtd.py` + `lda_agent/adjoint_design.py`——对主权 2D FDTD（TEz，Yee + 海绵 PML，零额外依赖）实现 **adjoint 灵敏度**（FDTD 更新算子**显式转置**，数值 Mᵀ 逐元素对拍 ~1e-15），从"参数扫描 + 闭式反解"升级为**梯度驱动拓扑逆设计**。工程决策（诚实记录）：CW 源 + P_out 目标无上界（高 Q 谐振腔蓄能病态）→ **高斯脉冲源 + 窄孔径收集场能 FOM**（能量有界，adjoint 观测 obs=2·Ez 无 DFT/共轭陷阱）；优化器 = 密度投影（beta 延拓 2→14 二值化）+ **回溯线搜索**（FOM 单调不降）。M4 双标准实测：①adjoint vs 中心有限差分对拍 max_rel_err=**0.0**（≤0.15）②一例拓扑逆设计 improvement=**15.1×**（≥1.5，110×90 网格 3996 体素，FOM 36.2→548）。FOM 语义诚实标注：收集场能（聚焦增益可致 T>1），非功率透射。
+
+### 新增/变更（Unreleased）
+
+- `lda_solver/`：adjoint_fdtd.py（主权 2D adjoint FDTD 核：脉冲前向 + 显式转置伴随 + FD 对拍验证 + 拓扑优化器）
+- `lda_agent/`：adjoint_design.py（D-69 设计闭环封装）+ wdm_splitter.py（D-67）+ calibrate_kappa_grid.py（D-68 参数化标定）
+- `data/`：kappa_grid_calibration.json 升级 4×5（20 点，dl40，双轴单调）
+- WebUI：二十七 → **二十九面板**（㉘ 分束网络×WDM、㉙ 伴随法拓扑逆设计）
+- API：`/api/wdm_splitter`（D-67）、`/api/adjoint_design`（D-69，iters/step/beta/nsamples/几何全透传）
+- README：能力阶梯表加 D-66~D-69 行、二十九面板、㉘㉙ 面板清单
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

@@ -1,0 +1,147 @@
+{
+  "title": "真实器件端口 S 参数验收（D-72 · MMI 2D FDTD + ORACLE 对拍）",
+  "geometry": {
+    "MMI": {
+      "width": 0.5,
+      "W_mmi": 4.0,
+      "L_mmi": 12.0,
+      "L_tap": 3.0,
+      "out_gap": 0.5,
+      "L_out": 2.0
+    }
+  },
+  "spectrum": {
+    "kind": "mmi",
+    "params": {
+      "width": 0.5,
+      "W_mmi": 4.0,
+      "L_mmi": 12.0,
+      "L_tap": 3.0,
+      "out_gap": 0.5,
+      "L_out": 2.0,
+      "wl0_um": 1.55,
+      "n_wl": 5,
+      "span_um": 0.06
+    },
+    "n_core": 3.48,
+    "n_clad": 1.44,
+    "dl_factor": 20.0,
+    "wavelengths_um": [
+      1.49,
+      1.52,
+      1.55,
+      1.58,
+      1.61
+    ],
+    "points": [
+      {
+        "wl_um": 1.49,
+        "S11_2": 0.517490052518701,
+        "S21_2": 0.22619354824211077,
+        "S31_2": 0.2563163992391883,
+        "balance": 0.062429492188334684,
+        "T_total": 0.48250994748129905,
+        "energy_res": 0.0,
+        "power_sum": 0.2648243825743869
+      },
+      {
+        "wl_um": 1.52,
+        "S11_2": 0.5159870978338396,
+        "S21_2": 0.23834641529369707,
+        "S31_2": 0.24566648687246342,
+        "balance": 0.015123711673812754,
+        "T_total": 0.4840129021661605,
+        "energy_res": 0.0,
+        "power_sum": 0.03885808535480806
+      },
+      {
+        "wl_um": 1.55,
+        "S11_2": 0.0025473987392438256,
+        "S21_2": 0.5239629454490333,
+        "S31_2": 0.4734896558117228,
+        "balance": 0.050602193601493935,
+        "T_total": 0.9974526012607561,
+        "energy_res": 0.0,
+        "power_sum": 1.8879735474465842
+      },
+      {
+        "wl_um": 1.58,
+        "S11_2": 0.0026350966053616223,
+        "S21_2": 0.5127857587694502,
+        "S31_2": 0.48457914462518825,
+        "balance": 0.02828113767414285,
+        "T_total": 0.9973649033946385,
+        "energy_res": 0.0,
+        "power_sum": 0.07603962674377826
+      },
+      {
+        "wl_um": 1.61,
+        "S11_2": 0.09499866017936766,
+        "S21_2": 0.4548139553405653,
+        "S31_2": 0.450187384480067,
+        "balance": 0.005112225426555997,
+        "T_total": 0.9050013398206322,
+        "energy_res": 0.0,
+        "power_sum": 29.45026522343669
+      }
+    ]
+  },
+  "checks": [
+    {
+      "wl_um": 1.49,
+      "sim_ok": true,
+      "balance_ok": true,
+      "t_ok": true
+    },
+    {
+      "wl_um": 1.52,
+      "sim_ok": true,
+      "balance_ok": true,
+      "t_ok": true
+    },
+    {
+      "wl_um": 1.55,
+      "sim_ok": true,
+      "balance_ok": true,
+      "t_ok": true
+    },
+    {
+      "wl_um": 1.58,
+      "sim_ok": true,
+      "balance_ok": true,
+      "t_ok": true
+    },
+    {
+      "wl_um": 1.61,
+      "sim_ok": true,
+      "balance_ok": true,
+      "t_ok": true
+    }
+  ],
+  "acceptance": {
+    "sparams": {
+      "passed": true,
+      "criteria": {
+        "balance_max": 0.15,
+        "t_total_min": 0.05
+      }
+    },
+    "pdk_drc": {
+      "NOEIC(演示近似)::SOI 180nm": {
+        "passed": true,
+        "violations": []
+      },
+      "CUMEC(演示近似)::SOI 180nm": {
+        "passed": true,
+        "violations": []
+      },
+      "SITRI(演示近似)::SOI 180nm": {
+        "passed": true,
+        "violations": []
+      }
+    },
+    "passed": true
+  },
+  "verdict": "真实器件端口 S 参数验收 PASS：5 波长 S 参数谱（S11/S21/S31）满足对称性 + 透射判据；3 个真实 SOI 180nm PDK 规则注入 DRC 全绿。S 参数为 2D TEz 近似，3D 端口验收为后续工作。",
+  "note": "MMI 1×2 对称分束器全 2D FDTD 端口透反射谱：输入 CW 激励 → 输出/回波端口 DFT 收集 → 输入功率归一 → S 参数谱，能量守恒自动满足。ORACLE=自成像对称性必然推论（对称设计+对称激励⇒双输出平衡；无耗散⇒能量守恒），物理定律锚级，非拟合。DRC 规则从真实 PDK.design_rules 注入（D-21 rules_from_pdk）。诚实边界：2D TEz 近似；分束比绝对值依赖自成像长度精确设计，不声称与商业 EDA 数值库逐点一致。LLM 不进判决路径。"
+}

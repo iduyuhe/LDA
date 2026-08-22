@@ -16,6 +16,8 @@ import os
 import sys
 from typing import Any, Dict
 
+import numpy as np
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _LDA_ROOT = os.path.dirname(_HERE)
 if _LDA_ROOT not in sys.path:
@@ -23,37 +25,59 @@ if _LDA_ROOT not in sys.path:
 
 from lda_solver.port_sparams_3d import verify_s_params_3d  # noqa: E402
 
-_DEF_MMI = {"width": 0.5, "W_mmi": 3.0, "L_mmi": 6.0, "L_tap": 3.0,
+_DEF_PARAMS: Dict[str, Dict[str, float]] = {
+    "mmi": {"width": 0.5, "W_mmi": 3.0, "L_mmi": 6.0, "L_tap": 3.0,
             "out_gap": 0.5, "L_out": 2.0, "wl0_um": 1.55, "n_wl": 3,
-            "span_um": 0.04}
+            "span_um": 0.02},
+    "dc": {"width": 0.5, "gap": 0.3, "Lc": 10.0, "wl0_um": 1.55,
+           "n_wl": 5, "span_um": 0.04},
+    "ring": {"R": 3.0, "width": 0.5, "gap": 0.3, "wl0_um": 1.55,
+             "n_wl": 5, "span_um": 0.08},
+}
 
 
 def design_sparams_3d(mmi: Dict[str, Any] | None = None,
+                      kind: str = "mmi",
                       verbose: bool = False, **kw: Any) -> Dict[str, Any]:
-    """3D 端口 S 参数验收（MMI SOI 220nm）。kw 透传求解参数（smoke 提速）。"""
-    params = dict(_DEF_MMI)
+    """3D 端口 S 参数验收（mmi/dc/ring，SOI 220nm）。kw 透传求解参数。"""
+    kind = kind.lower()
+    if kind not in _DEF_PARAMS:
+        raise ValueError(f"3D 端口验收暂不支持 kind={kind}")
+    params = dict(_DEF_PARAMS[kind])
     if mmi:
         params.update({k: float(v) for k, v in mmi.items()
                        if v is not None})
-    vr = verify_s_params_3d(params, **kw)
+    vr = verify_s_params_3d(kind, params, **kw)
 
     pts = vr["spectrum"]["points"]
+    kind_u = kind.upper()
+    if kind == "mmi":
+        metric = (f"平衡度 max={max(p['balance'] for p in pts):.3f}（≤0.15）")
+    elif kind == "dc":
+        metric = ("cross_frac " +
+                  str([round(p['cross_frac'], 3) for p in pts]) +
+                  "（单调 CMT 趋势）")
+    else:
+        drops = [p['S31_2'] for p in pts]
+        metric = f"drop 谱 max={max(drops):.3f}/med={float(np.median(drops)):.3f}（峰检出）"
     checks = [
-        {"name": "MMI 3D 端口 S 参数验收（SOI 220nm）",
+        {"name": f"{kind_u} 3D 端口 S 参数验收（SOI 220nm）",
          "ok": bool(vr["acceptance"]["passed"]),
-         "detail": (f"{len(pts)} 波长 · 平衡度 max="
-                    f"{max(p['balance'] for p in pts):.3f}（≤0.15）· "
+         "detail": (f"{len(pts)} 波长 · {metric} · "
                     f"T_total min={min(p['T_total'] for p in pts):.3f}（≥0.05）")},
         {"name": "2D↔3D 连续性对拍诊断（物理差异，非判据）",
          "ok": True,
          "detail": "; ".join(
-             f"λ{d['wl_um']}: bal {d.get('bal_2d', '-')}→{d.get('bal_3d', '-')}"
+             f"λ{d['wl_um']}: " +
+             " ".join(f"{k.replace('_2d','').replace('_3d','')}"
+                      f" {v}" for k, v in d.items()
+                      if k not in ('wl_um', 'error'))
              for d in vr["diagnostic_2d_vs_3d"][:3])},
     ]
     accepted = all(c["ok"] for c in checks)
     verdict = (
-        f"MMI 3D 端口 S 参数验收 PASS：{len(pts)} 波长 S 参数谱（S11/S21/S31）"
-        f"满足仿真有效 + 平衡度 + 透射判据；2D↔3D 对拍为诊断量（垂直模式"
+        f"{kind_u} 3D 端口 S 参数验收 PASS：{len(pts)} 波长 S 参数谱"
+        f"（S11/S21/S31）满足仿真有效 + 判据；2D↔3D 对拍为诊断量（垂直模式"
         f"约束下的物理差异）。"
         if accepted else
         "未全过：" + "; ".join(c["name"] for c in checks if not c["ok"]))

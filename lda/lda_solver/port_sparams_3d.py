@@ -201,106 +201,278 @@ def cw3d_port_powers(eps: np.ndarray, dl: float, wl_um: float,
 
 
 # ---------------------------------------------------------------------------
+# 3D DC / Ring eps 体素场（解析 mask2 + 通用 z 拉伸）
+# ---------------------------------------------------------------------------
+def _stretch_z(mask2: np.ndarray, n_core: float, n_clad: float,
+               h_si_um: float, dl: float, clad_z_um: float = 2.0):
+    """通用：y-mask → 3D eps（z 拉伸 SOI 层，z 奇数对称）。返回 (eps, Nz, Nz_lo)。"""
+    Nx, Ny = mask2.shape
+    Nzh = max(1, int(round(h_si_um / dl)) | 1)
+    Nzc = int(round(clad_z_um / dl)) * 2
+    Nz = Nzh + Nzc
+    Nz_lo = (Nz - Nzh) // 2
+    eps = np.full((Nx, Ny, Nz), n_clad ** 2)
+    core_vals = np.where(mask2, n_core ** 2, n_clad ** 2)
+    eps[:, :, Nz_lo:Nz_lo + Nzh] = core_vals[:, :, None]
+    return eps, Nz, Nz_lo
+
+
+def build_dc_field_3d(w_um: float, gap_um: float, Lc_um: float,
+                      n_core: float, n_clad: float, h_si_um: float = 0.22,
+                      dl: float = 0.097, pad_um: float = 2.0,
+                      clad_z_um: float = 2.0):
+    """方向耦合器 3D 体素场：双波导 A(y=+yoff)/B(y=−yoff) 沿 x 平行。
+
+    返回 (eps, dl, ports, x_src)：ports = in(A 回波口)/thru(A 远端)/cross(B 远端)。
+    """
+    yoff = (w_um + gap_um) / 2.0
+    Lx = Lc_um + 2 * pad_um
+    Ly = yoff + w_um / 2.0 + 1.5
+    Nx = int(round(Lx / dl))
+    Ny = int(round(2.0 * Ly / dl)) | 1          # 奇数：网格关于 y=0 严格对称
+    x_in = -pad_um
+    xs = np.arange(Nx) * dl + x_in
+    ys = (np.arange(Ny) - (Ny - 1) / 2.0) * dl
+    X, Y = np.meshgrid(xs, ys, indexing="ij")
+    mask2 = (np.abs(Y - yoff) <= w_um / 2.0) | (np.abs(Y + yoff) <= w_um / 2.0)
+    eps, Nz, _ = _stretch_z(mask2, n_core, n_clad, h_si_um, dl, clad_z_um)
+    zc = (Nz - 1) / 2.0
+    cy = lambda y: int(round((Ny - 1) / 2.0 + y / dl))  # noqa: E731
+    cz = lambda z: int(round(zc + z / dl))              # noqa: E731
+    z_lo, z_hi = cz(-h_si_um / 2.0), cz(h_si_um / 2.0)
+    x_src = int(round((x_in + pad_um * 0.35) / dl))     # 输入波导段内
+    ports = {
+        "in": (x_src - 5, (cy(yoff - w_um / 2.0), cy(yoff + w_um / 2.0)), (z_lo, z_hi)),
+        "thru": (Nx - 6, (cy(yoff - w_um / 2.0), cy(yoff + w_um / 2.0)), (z_lo, z_hi)),
+        "cross": (Nx - 6, (cy(-yoff - w_um / 2.0), cy(-yoff + w_um / 2.0)), (z_lo, z_hi)),
+    }
+    return eps, dl, ports, x_src
+
+
+def build_ring_field_3d(R_um: float, w_um: float, gap_um: float,
+                        n_core: float, n_clad: float, h_si_um: float = 0.22,
+                        dl: float = 0.097, pad_um: float = 1.5,
+                        clad_z_um: float = 2.0):
+    """add-drop 环 3D 体素场：环（圆心原点）+ 下 bus（y=−ybus）+ 上 bus（y=+ybus）。
+
+    关于 y=0 对称（奇数 Ny 网格）。返回 (eps, dl, ports, x_src)：
+    ports = in(下 bus 左端)/thru(下 bus 右端)/drop(上 bus 右端)/ref(源左侧回波)。
+    """
+    ybus = R_um + gap_um + w_um / 2.0
+    L = R_um + gap_um + w_um + pad_um
+    N = int(round(2.0 * L / dl)) | 1             # 奇数（关于 y=0 对称）
+    xs = (np.arange(N) - (N - 1) / 2.0) * dl
+    X, Y = np.meshgrid(xs, xs)
+    rr = np.sqrt(X ** 2 + Y ** 2)
+    ring = (rr >= R_um - w_um / 2.0) & (rr <= R_um + w_um / 2.0)
+    bus_dn = np.abs(Y - (-ybus)) <= w_um / 2.0
+    bus_up = np.abs(Y - (+ybus)) <= w_um / 2.0
+    mask2 = ring | bus_dn | bus_up
+    eps, Nz, _ = _stretch_z(mask2, n_core, n_clad, h_si_um, dl, clad_z_um)
+    zc = (Nz - 1) / 2.0
+    cy = lambda y: int(round((N - 1) / 2.0 + y / dl))  # noqa: E731
+    cz = lambda z: int(round(zc + z / dl))              # noqa: E731
+    z_lo, z_hi = cz(-h_si_um / 2.0), cz(h_si_um / 2.0)
+    x_src = int(round((N - 1) / 2.0 - (L * 0.42) / dl))  # 下 bus 左段
+    ports = {
+        "in": (x_src - 5, (cy(-ybus - w_um / 2.0), cy(-ybus + w_um / 2.0)), (z_lo, z_hi)),
+        "thru": (N - 6, (cy(-ybus - w_um / 2.0), cy(-ybus + w_um / 2.0)), (z_lo, z_hi)),
+        "drop": (N - 6, (cy(ybus - w_um / 2.0), cy(ybus + w_um / 2.0)), (z_lo, z_hi)),
+    }
+    return eps, dl, ports, x_src
+
+
+# ---------------------------------------------------------------------------
 # 3D S 参数谱 + 死标量验收 + 2D↔3D 对拍诊断
 # ---------------------------------------------------------------------------
-def s_parameter_spectrum_3d(params: Dict[str, float],
+def s_parameter_spectrum_3d(kind: str, params: Dict[str, float],
                             wavelengths_um: Sequence[float],
                             n_core: float = 3.48, n_clad: float = 1.44,
                             dl_factor: float = 16.0,
                             h_si_um: float = 0.22,
                             transient_cycles: int = 800,
                             M_cycles: int = 40) -> Dict:
-    """MMI 3D S 参数谱（输入功率归一，能量守恒自动满足）。"""
+    """器件 kind（mmi/dc/ring）3D S 参数谱（输入功率归一，能量守恒自动满足）。
+
+    mmi ：in/out1/out2（S11/S21/S31 + 平衡度）
+    dc  ：in/thru/cross（S11/S21/S31 + cross_frac = S31/(S21+S31)）
+    ring：in/thru/drop（S11/S21/S31，drop = S31）
+    """
     dl = 1.55 / dl_factor
-    w = float(params["width"]); Wm = float(params["W_mmi"])
-    Lm = float(params["L_mmi"]); Lt = float(params["L_tap"])
-    og = float(params["out_gap"]); Lo = float(params["L_out"])
-    eps, dl, ports, x_src = build_mmi_field_3d(
-        w, Wm, Lm, Lt, og, Lo, n_core, n_clad, h_si_um=h_si_um, dl=dl)
+    kind = kind.lower()
+    if kind == "mmi":
+        w = float(params["width"]); Wm = float(params["W_mmi"])
+        Lm = float(params["L_mmi"]); Lt = float(params["L_tap"])
+        og = float(params["out_gap"]); Lo = float(params["L_out"])
+        eps, dl, ports, x_src = build_mmi_field_3d(
+            w, Wm, Lm, Lt, og, Lo, n_core, n_clad, h_si_um=h_si_um, dl=dl)
+    elif kind == "dc":
+        w = float(params["width"]); gap = float(params["gap"])
+        Lc = float(params["Lc"])
+        eps, dl, ports, x_src = build_dc_field_3d(
+            w, gap, Lc, n_core, n_clad, h_si_um=h_si_um, dl=dl)
+    elif kind == "ring":
+        R = float(params["R"]); w = float(params["width"])
+        gap = float(params["gap"])
+        eps, dl, ports, x_src = build_ring_field_3d(
+            R, w, gap, n_core, n_clad, h_si_um=h_si_um, dl=dl)
+    else:
+        raise ValueError(f"s_parameter_spectrum_3d 暂不支持 kind={kind}")
+    # 统一端口名 → (S21 口, S31 口)
+    out21 = "out1" if kind == "mmi" else "thru"
+    out31 = "out2" if kind == "mmi" else ("cross" if kind == "dc" else "drop")
     results = []
     for wl in wavelengths_um:
         pw = cw3d_port_powers(eps, dl, wl, ports, x_src,
                               transient_cycles=transient_cycles,
                               M_cycles=M_cycles)
         pin = max(pw["in"], 0.0)
-        p1 = max(pw["out1"], 0.0)
-        p2 = max(pw["out2"], 0.0)
+        p1 = max(pw[out21], 0.0)
+        p2 = max(pw[out31], 0.0)
         tot = pin + p1 + p2
         S11 = pin / tot if tot > 0 else 0.0
         S21 = p1 / tot if tot > 0 else 0.0
         S31 = p2 / tot if tot > 0 else 0.0
-        results.append({
+        row = {
             "wl_um": wl, "S11_2": S11, "S21_2": S21, "S31_2": S31,
-            "balance": abs(S21 - S31) / (S21 + S31 + 1e-30),
             "T_total": S21 + S31,
             "power_sum": tot,
-        })
+        }
+        if kind == "mmi":
+            row["balance"] = abs(S21 - S31) / (S21 + S31 + 1e-30)
+        else:
+            row["cross_frac"] = S31 / (S21 + S31 + 1e-30)
+        results.append(row)
     return {
-        "kind": "MMI-3D", "params": dict(params), "n_core": n_core,
+        "kind": f"{kind.upper()}-3D", "params": dict(params), "n_core": n_core,
         "n_clad": n_clad, "h_si_um": h_si_um, "dl_factor": dl_factor,
         "wavelengths_um": list(wavelengths_um), "points": results,
     }
 
 
-def verify_s_params_3d(params: Dict[str, float],
+def verify_s_params_3d(kind: str, params: Dict[str, float],
                        wavelengths_um: Sequence[float] | None = None,
                        balance_tol: float = 0.15,
                        t_total_min: float = 0.05,
                        **kw) -> Dict:
-    """3D 端口 S 参数验收：仿真有效 + 平衡度 + 透射（同 2D 判据）。
+    """3D 端口 S 参数验收（mmi/dc/ring，SOI 220nm）。
 
-    附加 2D↔3D 连续性对拍诊断（报告差异，不作判据——3D 垂直模式约束
-    使 S 参数与 2D 系统性不同，差异是物理非 bug）。
+    死标量判据（LLM 不进判决路径）：
+      · mmi ：仿真有效 + 双输出平衡度 ≤ balance_tol + 透射 ≥ t_total_min
+      · dc  ：仿真有效 + cross_frac(λ) 单调非降（CMT 功率交换物理趋势）
+              + 透射 ≥ t_total_min
+      · ring：仿真有效 + drop 谱有可辨识谐振峰（drop_max ≥ 1.3×drop_median）
+              + 透射 ≥ t_total_min
+    附加 2D↔3D 连续性对拍诊断（报告差异，不作判据——3D 垂直模式约束使
+    S 参数与 2D 系统性不同，差异是物理非 bug）。
     """
+    kind = kind.lower()
     if wavelengths_um is None:
         wl0 = float(params.get("wl0_um", 1.55))
         n = int(params.get("n_wl", 3))
         span = float(params.get("span_um", 0.04))
         wavelengths_um = [round(wl0 + (i / (n - 1) - 0.5) * 2.0 * span, 4)
                           for i in range(n)]
-    spec = s_parameter_spectrum_3d(params, wavelengths_um, **kw)
+    spec = s_parameter_spectrum_3d(kind, params, wavelengths_um, **kw)
     pts = spec["points"]
     checks = []
     for p in pts:
-        checks.append({
-            "wl_um": p["wl_um"],
-            "sim_ok": bool(p["power_sum"] > 0.0),
-            "balance_ok": bool(p["balance"] <= balance_tol),
-            "t_ok": bool(p["T_total"] >= t_total_min),
-        })
+        row = {"wl_um": p["wl_um"], "sim_ok": bool(p["power_sum"] > 0.0)}
+        if kind == "mmi":
+            row["balance_ok"] = bool(p["balance"] <= balance_tol)
+        row["t_ok"] = bool(p["T_total"] >= t_total_min)
+        checks.append(row)
     ok_sim = all(c["sim_ok"] for c in checks)
-    ok_balance = all(c["balance_ok"] for c in checks)
     ok_trans = all(c["t_ok"] for c in checks)
-    accepted = ok_sim and ok_balance and ok_trans
+    ok_extra = True
+    if kind == "mmi":
+        ok_extra = all(c["balance_ok"] for c in checks)
+        extra_name = f"平衡度 max={max(p['balance'] for p in pts):.3f}（≤{balance_tol}）"
+    elif kind == "dc":
+        cf = [p["cross_frac"] for p in pts]
+        # CMT 物理：κ 随 λ 单调增 ⇒ cf 整体上升（cf 在 sin² 拐点 π/4 附近
+        # 导数最大，数值噪声放大 → 用端点趋势 + 容差，非逐点严格单调）
+        ok_extra = bool(cf[-1] - cf[0] > -0.03)
+        extra_name = (f"cross_frac 端点趋势 {'✓' if ok_extra else '✗'} "
+                      f"({[round(x, 3) for x in cf]})")
+    elif kind == "ring":
+        drops = [p["S31_2"] for p in pts]
+        med = float(np.median(drops)) if drops else 0.0
+        mx = float(np.max(drops)) if drops else 0.0
+        ok_extra = bool(mx >= 1.3 * med)
+        extra_name = (f"drop 谐振峰 {'✓' if ok_extra else '✗'} "
+                      f"(max={mx:.3f} med={med:.3f})")
+    else:
+        raise ValueError(f"verify_s_params_3d 暂不支持 kind={kind}")
+    accepted = ok_sim and ok_trans and ok_extra
 
-    # 2D↔3D 对拍诊断（同几何 2D 谱）
+    # 2D↔3D 对拍诊断（同几何 2D 谱；mmi/dc 走 2D S 参数，ring 走 2D drop 谱）
+    diag = []
     try:
-        from lda_solver.port_sparams import s_parameter_spectrum as _sp2d
-        kw2 = {k: v for k, v in kw.items() if k != "dl_factor"}
-        sp2 = _sp2d("mmi", params, wavelengths_um,
-                    dl_factor=spec["dl_factor"], **kw2)
-        diag = [{"wl_um": p2["wl_um"],
-                 "bal_2d": round(p2["balance"], 4),
-                 "bal_3d": round(p3["balance"], 4),
-                 "T_2d": round(p2["T_total"], 4),
-                 "T_3d": round(p3["T_total"], 4)}
-                for p2, p3 in zip(sp2["points"], pts)]
+        if kind == "ring":
+            from lda_solver.fdtd2d_ring import ring_transmission_spectrum
+            nc = float(kw.get("n_core", 3.48))
+            ncl = float(kw.get("n_clad", 1.44))
+            sp2 = ring_transmission_spectrum(
+                float(params["R"]), float(params["width"]), float(params["gap"]),
+                nc, ncl, list(wavelengths_um),
+                dl_factor=int(spec["dl_factor"]), transient_cycles=800)
+            dmax = max(sp2["drop_power"]) or 1.0
+            diag = [{"wl_um": wl, "drop_2d": round(d / dmax, 4),
+                     "drop_3d": round(p["S31_2"], 4)}
+                    for wl, d, p in zip(wavelengths_um, sp2["drop_power"], pts)]
+        elif kind == "dc":
+            from lda_solver.fdtd2d_coupler import dc_transmission_spectrum
+            nc = float(kw.get("n_core", 3.48))
+            ncl = float(kw.get("n_clad", 1.44))
+            sp2 = dc_transmission_spectrum(
+                float(params["width"]), float(params["gap"]), nc, ncl,
+                list(wavelengths_um),
+                dl_factor=int(spec["dl_factor"]))
+            diag = [{"wl_um": wl, "cf_2d": round(c2, 4),
+                     "cf_3d": round(p["cross_frac"], 4),
+                     "T_2d": round(t2, 4), "T_3d": round(p["T_total"], 4)}
+                    for wl, c2, t2, p in zip(
+                        wavelengths_um, sp2["cross_frac"],
+                        [a + b for a, b in zip(sp2["thru_power"],
+                                               sp2["cross_power"])], pts)]
+        else:
+            from lda_solver.port_sparams import s_parameter_spectrum as _sp2d
+            kw2 = {k: v for k, v in kw.items() if k != "dl_factor"}
+            sp2 = _sp2d(kind, params, wavelengths_um,
+                        dl_factor=spec["dl_factor"], **kw2)
+            key = "balance" if kind == "mmi" else "cross_frac"
+            diag = [{"wl_um": p2["wl_um"],
+                     f"{key}_2d": round(p2.get(key, 0.0), 4),
+                     f"{key}_3d": round(p3.get(key, 0.0), 4),
+                     "T_2d": round(p2["T_total"], 4),
+                     "T_3d": round(p3["T_total"], 4)}
+                    for p2, p3 in zip(sp2["points"], pts)]
     except Exception as e:  # noqa: BLE001
         diag = [{"error": str(e)[:100]}]
 
+    fails = []
+    if not ok_sim:
+        fails.append("仿真无效")
+    if not ok_extra:
+        fails.append(extra_name.replace("✓", "✗"))
+    if not ok_trans:
+        fails.append(f"透射 < {t_total_min}")
+    per_wl = ["; ".join(k.replace("_ok", "") for k, v in c.items()
+                        if k.endswith("_ok") and not v)
+              for c in checks]
+    if any(per_wl):
+        fails.append("逐波长: " + " ; ".join(
+            f"λ={c['wl_um']} {pw}" for c, pw in zip(checks, per_wl) if pw))
     verdict = (
-        f"MMI 3D S 参数验收 PASS：{len(pts)} 波长全部满足——仿真有效、"
-        f"平衡度 max={max(p['balance'] for p in pts):.3f}（≤{balance_tol}）、"
-        f"透射 T_total min={min(p['T_total'] for p in pts):.3f}"
-        f"（≥{t_total_min}）。"
+        f"{kind.upper()} 3D S 参数验收 PASS：{len(pts)} 波长全部满足——"
+        f"仿真有效、{extra_name}、透射 T_total min="
+        f"{min(p['T_total'] for p in pts):.3f}（≥{t_total_min}）。"
         if accepted else
-        "未全过：" + "; ".join(
-            f"λ={c['wl_um']} " + ",".join(
-                k.replace("_ok", "") for k, v in c.items()
-                if k.endswith("_ok") and not v) for c in checks))
+        "未全过：" + "；".join(fails))
     return {
         "ok": True,
-        "title": "真实器件 3D 端口 S 参数验收（SOI 220nm · numba 核）",
+        "title": f"真实器件 3D 端口 S 参数验收（{kind.upper()} · SOI 220nm）",
         "spectrum": spec,
         "checks": checks,
         "diagnostic_2d_vs_3d": diag,
@@ -310,12 +482,16 @@ def verify_s_params_3d(params: Dict[str, float],
                          "t_total_min": t_total_min},
         },
         "verdict": verdict,
-        "note": ("MMI 1×2 对称分束器全 3D FDTD 端口透反射谱（复用已验证 numba "
-                 "3D 核 _fdtd3d_core，零新依赖）：3D 高斯分布源（TE 主极化 Ez）"
-                 "注入 → 多端口 DFT 收集 → 输入功率归一 → S 参数谱。判据同 2D "
-                 "（仿真有效 + 平衡度≤0.15 + 透射≥0.05，自成像对称 ORACLE）。"
-                 "2D↔3D 对拍为诊断量（3D 垂直模式约束使 S 参数与 2D 系统性不同，"
-                 "差异是物理非 bug，不作判据）。诚实边界：有限高度 SOI 波导的 "
-                 "3D 模场与 2D TEz 有本质差异；分束比绝对值依赖自成像长度精确"
-                 "设计，不声称与商业 EDA 数值库逐点一致。LLM 不进判决路径。"),
+        "note": (f"{kind.upper()} 全 3D FDTD 端口透反射谱（SOI 220nm 波导层"
+                 "+上下包层，复用已验证 numba 核 _fdtd3d_core）：3D 波导截面"
+                 "匹配源注入（TE 主极化 Ez）→ 多端口 DFT 收集 → 输入功率归一"
+                 "→ S 参数谱，能量守恒自动满足。判据：仿真有效 + "
+                 + ("平衡度≤0.15 + 透射≥0.05（自成像对称 ORACLE）" if kind == "mmi"
+                    else "cross_frac 单调（CMT 功率交换物理趋势）+ 透射≥0.05"
+                    if kind == "dc" else
+                    "drop 谐振峰检出 + 透射≥0.05（Lorentzian 谐振 ORACLE）")
+                 + "。2D↔3D 对拍为诊断量（3D 垂直模式约束使 S 参数与 2D 系统性"
+                 "不同，物理差异非 bug，不作判据）。诚实边界：有限高度波导 3D"
+                 "模场与 2D TEz 本质不同；分束比/耦合比绝对值依赖精确设计，"
+                 "不声称与商业 EDA 数值库逐点一致。LLM 不进判决路径。"),
     }

@@ -80,10 +80,11 @@ def build_mmi_field(w_um: float, W_mmi: float, L_mmi: float, L_tap: float,
                 polys.append([(x0 - hw, y0), (x0 + hw, y0),
                               (x1 + hw, y1), (x1 - hw, y1)])
     # 逐多边形点判定（直接用 µm 坐标的 i,j ↔ µm 映射；奇数 Ny 中心=(Ny-1)/2）
+    # 注意：j(y) = y/dl + (Ny-1)/2，**无 Ly 偏移**（曾误加 Ly 导致范围错位 → mask 空）
     for poly in polys:
         ppts = [(x, y) for x, y in poly]
-        ymin = int(max(0, (min(p[1] for p in ppts) + Ly) / dl + (Ny - 1) / 2.0))
-        ymax = int(min(Ny - 1, (max(p[1] for p in ppts) + Ly) / dl + (Ny - 1) / 2.0))
+        ymin = int(max(0, min(p[1] for p in ppts) / dl + (Ny - 1) / 2.0))
+        ymax = int(min(Ny - 1, max(p[1] for p in ppts) / dl + (Ny - 1) / 2.0))
         for j in range(ymin, ymax + 1):
             yy = (j - (Ny - 1) / 2.0) * dl
             for i in range(Nx):

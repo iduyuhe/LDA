@@ -577,6 +577,17 @@
   </div>
 
   <div class="sec">
+    <h2>㉛ 真实版图基元库（D-71 · foundry-ready 几何）</h2>
+    <div class="hint">替代玩具几何（直线/圆环）的<b>可流片级版图基元</b>：① <b>Taper</b> 线性/绝热（余弦）轮廓（两端斜率 0 减模式失配）② <b>Euler 弯</b>（clothoid：曲率 0→1/R→0 连续，无折角尖点，90° 弯终点角误差 &lt;0.01°）③ <b>MMI</b> 1×2 对称分束（输入 taper + 多模干涉区 + 双输出 taper）④ <b>光栅耦合器</b>（周期部分刻蚀齿，齿宽=Λ·duty）。每个基元 → <b>GDSII 编码（round-trip 回读一致）+ DRC 可制造性自查</b>（min_width / min_space / min_bend_R，典型 SOI 180nm 规则）+ SVG 预览。诚实边界：只交付几何，分束比/透射谱等电特性归 D-72 2D FDTD 端口 S 参数验收。LLM 不进判决路径。</div>
+    <div class="row">
+      <button class="btn" id="runPrim">生成基元库（GDS+DRC+SVG）</button>
+    </div>
+    <div id="primSummary" class="summary"></div>
+    <div id="primBody"></div>
+    <div class="conclusion" id="primConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1795,6 +1806,42 @@ function renderAl(d){
   $('alConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">目标泛化：设计区/孔径/材料对比度/波长/分辨率均由意图透传；布拉格扫描路径（method=scan）不受影响。FOM=收集场能，聚焦增益可致 T&gt;1，非功率透射。LLM 不进判决路径。</div>`;
 }
 $('runAl').onclick = runAl;
+
+// ---- ㉛ D-71 真实版图基元库（foundry-ready 几何）----
+async function runPrim(){
+  const btn = $('runPrim'); btn.disabled = true;
+  $('primSummary').innerHTML = '<span class="spin"></span> 生成 4 基元 GDS + DRC + SVG…';
+  try{
+    const d = await post('/api/primitives', {});
+    renderPrim(d);
+  }catch(e){ $('primSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderPrim(d){
+  if(!d.ok){ $('primSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const pm = d.primitives||{};
+  const names = ['Taper','EulerBend','MMI','GratingCoupler'];
+  const cards = names.map(k=>{
+    const p = pm[k]||{};
+    const drc = p.drc||{};
+    const params = Object.entries(p.params||{}).map(([a,b])=>a+'='+b).join(' , ');
+    const viol = (drc.violations||[]).map(v=>`<div class="note">${v}</div>`).join('')||'';
+    return `<div class="subhead">${k} <span class="verdict ${drc.passed?'ok':'fail'}" style="float:right">DRC ${drc.passed?'PASS':'FAIL'}</span></div>
+      <div class="row" style="gap:12px;align-items:flex-start">
+        <div style="flex:1;min-width:200px">${p.svg||'<p>（无预览）</p>'}</div>
+        <div style="flex:1.4">
+          <div class="note">参数：${params}</div>
+          <div class="note">GDS：${p.n_elements} 元素 / ${p.gds_bytes}B · round-trip ${p.roundtrip_ok?'OK':'FAIL'} · bbox x[${p.bbox_um?p.bbox_um.x.join('~'):'-'}] y[${p.bbox_um?p.bbox_um.y.join('~'):'-'}]µm</div>
+          ${viol}
+        </div>
+      </div>`;
+  }).join('');
+  const checks = (d.acceptance&&d.acceptance.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('');
+  $('primSummary').innerHTML = `基元库：4 基元 · <span class="verdict ${d.acceptance.passed?'ok':'fail'}">${d.acceptance.passed?'PASS':'FAIL'}</span>`;
+  $('primBody').innerHTML = cards + `<div class="subhead">死标量验收</div>${checks}`;
+  $('primConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+}
+$('runPrim').onclick = runPrim;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

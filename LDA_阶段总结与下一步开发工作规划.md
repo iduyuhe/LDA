@@ -311,7 +311,7 @@ P0（D-01/D-02/D-03）+ P1（D-04/D-05/D-06）+ P2（D-07/D-08/D-09/D-10）已**
 
 #### Track B · 版图真实化（foundry-ready）
 当前 GDS 几何为矩形/圆形玩具级（D-14/D-19 可跑通流程，但几何不代表真实可流片器件）。迈向真实流片需要真实版图基元 + 真实端口 S 参数验收。
-- **D-71 真实版图基元**：绝热/线性 taper、欧拉弯（Euler bend）、MMI 分束器、光栅耦合器——替代玩具几何，输出 foundry 可接受的 GDS。
+- **D-71 真实版图基元 ✅ 已交付（2026-08-22）**：`lda_l2/primitives.py`（纯几何核心，零依赖）——①**Taper**（线性/绝热余弦轮廓，两端斜率 0 减模式失配）②**Euler 弯**（clothoid：曲率 0→1/R→0 连续，90°/180°/45° 终点角误差 <0.01°，无折角尖点）③**MMI 1×2 对称分束**（输入 taper + 多模干涉区 + 双输出 taper）④**光栅耦合器**（周期部分刻蚀齿，齿宽=Λ·duty）。注册进 `gds_export.geometry_desc`（GDS/SVG/DRC 单一来源复用）+ `drc.drc_check_device`（min_width/min_space/min_bend_R，典型 SOI 180nm 规则）。agent 封装 `lda_agent/primitives_design.py`：GDS 编码（round-trip 回读一致）+ DRC 自查 + SVG 预览 + 死标量验收（smoke 3/3：4 基元全过 + 非法 kind 优雅 + min_width 违规 FAIL）；WebUI ㉛ 面板 + `/api/primitives`。**诚实边界**：只交付 foundry 可接受的几何；分束比/透射谱等电特性归 D-72 2D FDTD 端口 S 参数验收，不做性能声称。
 - **D-72 真实 2D/3D FDTD 端口 S 参数验收**：当前 `layout_sim`（D-16）仅验 neff；升级为真实器件（DC / MMI / 环）全 2D FDTD 端口透反射谱验收 + DRC 工艺规则从 PDK 注入（D-21 已就绪，待真实 PDK）。
 
 #### Track C · 实证锚框架（验证锚② · 工具先行，数据待发动期）

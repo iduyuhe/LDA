@@ -1180,6 +1180,46 @@ def run_adjoint_loop(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_primitives(payload=None):
+    """D-71 真实版图基元库（webui ㉛ 面板）。
+
+    输入 {Taper?: {w1,w2,length,profile}, EulerBend?: {width,R,theta_deg},
+    MMI?: {width,W_mmi,L_mmi,L_tap,out_gap,L_out},
+    GratingCoupler?: {width,Lambda,duty,n_tooth,L_in}}：四个基元 → GDS
+    编码（round-trip 回读一致）+ DRC 可制造性自查（min_width/min_space/
+    min_bend_R，典型 SOI 规则）+ SVG 预览。诚实边界：只交付 foundry 可接受
+    的几何；电特性（分束比/透射谱）归 D-72 2D FDTD 端口 S 参数验收。
+    LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.primitives_design import design_primitives
+    payload = payload or {}
+    overrides = {}
+    for kind in ("Taper", "EulerBend", "MMI", "GratingCoupler"):
+        ov = payload.get(kind) or {}
+        if isinstance(ov, dict) and ov:
+            clean = {}
+            for k, v in ov.items():
+                if v in (None, ""):
+                    continue
+                try:
+                    clean[k] = float(v)
+                except (TypeError, ValueError):
+                    clean[k] = v          # 字符串参数（如 profile）
+            if clean:
+                overrides[kind] = clean
+    try:
+        rep = design_primitives(**overrides)
+        rep["ok"] = True
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def system_status():
     return {
         "layers": [
@@ -1297,6 +1337,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_adjoint_design(payload))
             elif path == "/api/adjoint_loop":
                 self._send(200, run_adjoint_loop(payload))
+            elif path == "/api/primitives":
+                self._send(200, run_primitives(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

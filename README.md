@@ -65,12 +65,13 @@ L4  统一交付          lda_design/ 设计包规范（DesignPackage schema v0.
 | D-67 | **分束网络 × WDM** | 光子域功率分配与分波联合：WDM 解复用 → 每信道 DC 分束树（FDTD 实测分束比级联）|
 | D-68 | **PDK 标定库 4×5 升级** | 分辨率修正：κ_c 沿 gap/λ 双轴单调的干净网格（20 点，dl40），双线性插值查表 |
 | D-69 | **伴随法拓扑逆设计（adjoint FDTD）** | 主权 2D FDTD **显式转置伴随**（Mᵀ 对拍 1e-15）+ 高斯脉冲源收集场能目标 + 回溯线搜索梯度优化：**对拍 max_rel_err=0.0**，**拓扑逆设计提升 15.1×**（3996 体素）|
+| D-70 | **逆设计接入设计→验证引擎（method=adjoint）** | DesignAgent 统一入口按 **method** 分流（scan=布拉格扫描零改动 / adjoint=伴随梯度拓扑逆设计）：目标泛化为**「把指定孔径内收集场能最大化」**（设计区/孔径/材料对比度/波长全透传）→ 均匀平板初值 → FD 对拍锚（≤0.15）→ 回溯线搜索梯度优化（improvement≥1.5）→ 死标量验收输出 DesignOutcomeReport |
 
-## WebUI（二十九面板，设计闭环可视化）
+## WebUI（三十面板，设计闭环可视化）
 
 LDA 自带零依赖 WebUI（`python lda/lda_webui/deploy.py start`，默认 `http://127.0.0.1:8787`），首屏自动演示全部闭环：
 
-`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM（标定库驱动：gap/波长/全网格三模式）` `㉗方向耦合器×量子读出（分束网络供电控制线）` `㉘分束网络×WDM（解复用→每信道分束树）` `㉙伴随法拓扑逆设计（主权 adjoint FDTD）`
+`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM（标定库驱动：gap/波长/全网格三模式）` `㉗方向耦合器×量子读出（分束网络供电控制线）` `㉘分束网络×WDM（解复用→每信道分束树）` `㉙伴随法拓扑逆设计（主权 adjoint FDTD）` `㉚逆设计接入设计→验证引擎（method=adjoint）`
 
 ## PDK 标定库（真实 FDTD 实测沉淀，设计时秒级加载）
 
@@ -100,7 +101,7 @@ lda/                     核心软件包（主权求解器 + agent + 设计引�
   lda_ir/                统一 IR（光子+量子，schema v0.3，PhysicsAnchor）
   lda_l2/                器件库（已验证资产）+ GDS 编码器 + DRC + 版图仿真
   lda_harness/           确定性比对裁判（13 标准题物理定律锚 B1-B13）
-  lda_webui/             零依赖 WebUI（二十九面板）
+  lda_webui/             零依赖 WebUI（三十面板）
 docs/                    design_package_spec.md + design_package_schema.json
 ```
 
@@ -140,7 +141,7 @@ python lda/run_harness.py --ai
 # ⑪ GPU 实跑激活（L2-B 第三步：CUDA 检测 → 5 例锚 selfcheck → cuda↔cpu bit-equivalent 互证 → 加速比）
 python lda/lda_solver/activate_gpu_fdtd3d.py
 
-# ⑫ WebUI（二十九面板，首屏自动演示）
+# ⑫ WebUI（三十面板，首屏自动演示）
 python lda/lda_webui/deploy.py start --port 8787
 ```
 

@@ -82,9 +82,9 @@
 - README：能力阶梯表加 D-63 行、二十七面板、11 kind、快速开始 12 步（新增 ⑨ splitter_readout）
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举）
 
-## Unreleased（v0.3.2 之后 · D-66~D-71）
+## Unreleased（v0.3.2 之后 · D-66~D-72）
 
-**里程碑：PDK 标定库分辨率修正（D-68）+ 伴随法梯度拓扑逆设计（D-69）+ 逆设计接入 D-36 引擎（D-70，M4 Track A 收口）+ 真实版图基元库（D-71，Track B 起步）**
+**里程碑：PDK 标定库分辨率修正（D-68）+ 伴随法梯度拓扑逆设计（D-69）+ 逆设计接入 D-36 引擎（D-70，M4 Track A 收口）+ 真实版图基元库（D-71）+ 真实 2D FDTD 端口 S 参数验收（D-72，M5 Track B）**
 
 - **D-66 标定库 × 分束网络**：`splitter_readout_cal` 模式——DC gap 由 κ_c(gap) 标定库驱动设计（标定 5/5 PASS）。
 - **D-67 分束网络 × WDM（新 kind=wdm_splitter 流程）**：`lda_agent/wdm_splitter.py`——WDM 多环级联解复用（D-42 + D-57 标定库驱动 gap）→ 每信道 drop 口接二叉树级联 DC 分束树（D-63 复用，每级 D-55 真实 2D FDTD 设计）→ 信道输入 = drop 扣除实测 IL 的剩余功率（10^(-IL/10) 诚实标注）→ 统一 IR 网表（Ring×N + DC×M）+ 联合验收。纯光子域，无跨物理域声称。
@@ -92,16 +92,17 @@
 - **D-69 伴随法梯度逆设计核（adjoint FDTD，M4 Track A）**：`lda_solver/adjoint_fdtd.py` + `lda_agent/adjoint_design.py`——对主权 2D FDTD（TEz，Yee + 海绵 PML，零额外依赖）实现 **adjoint 灵敏度**（FDTD 更新算子**显式转置**，数值 Mᵀ 逐元素对拍 ~1e-15），从"参数扫描 + 闭式反解"升级为**梯度驱动拓扑逆设计**。工程决策（诚实记录）：CW 源 + P_out 目标无上界（高 Q 谐振腔蓄能病态）→ **高斯脉冲源 + 窄孔径收集场能 FOM**（能量有界，adjoint 观测 obs=2·Ez 无 DFT/共轭陷阱）；优化器 = 密度投影（beta 延拓 2→14 二值化）+ **回溯线搜索**（FOM 单调不降）。M4 双标准实测：①adjoint vs 中心有限差分对拍 max_rel_err=**0.0**（≤0.15）②一例拓扑逆设计 improvement=**15.1×**（≥1.5，110×90 网格 3996 体素，FOM 36.2→548）。FOM 语义诚实标注：收集场能（聚焦增益可致 T>1），非功率透射。
 - **D-70 逆设计目标泛化接入 D-36 引擎（method=adjoint，M4 Track A 收口）**：`lda_agent/design_loop.py` 的 `DesignAgent` 统一入口按 **method** 分流——默认 `scan`（布拉格参数扫描，原路径零改动）+ `adjoint`（伴随梯度拓扑逆设计）；`l1_protocol.DesignTarget` 新增 `method` 字段透传意图。目标从"布拉格周期数"泛化为**「把指定孔径内的收集场能最大化」**（设计区/孔径/材料对比度/波长/分辨率全部由意图 extra 透传 `AdjointProblem`）。闭环 = 均匀平板初值 → FD 对拍锚（adjoint vs 中心有限差分 max_rel_err≤0.15）→ 密度投影 + 回溯线搜索梯度优化（improvement≥1.5）→ 死标量验收，输出 `DesignOutcomeReport` 兼容格式（target/accepted/iterations/loop_trace/verdict，final_oracle_metric=均匀平板初值基线，诚实标注）。M4 双标准实测：smoke 4/4（正例 improvement=15.13× + 空设计区 FAIL + 0 迭代 FAIL + 布拉格兼容）、全参报告 improvement=**15.13×**（FOM 36.2→547.9，FD 对拍 err=2.4e-5）。LLM 不进判决路径。
 - **D-71 真实版图基元库（Track B 起步，foundry-ready）**：`lda_l2/primitives.py`（纯几何核心，零依赖）——①**Taper**（线性/绝热余弦轮廓，两端斜率 0 减模式失配）②**Euler 弯**（clothoid：曲率 0→1/R→0 连续无折角，90°/180°/45° 终点角误差 &lt;0.01°）③**MMI 1×2 对称分束**（输入 taper + 多模干涉区 + 双输出 taper，7 元素）④**光栅耦合器**（周期部分刻蚀齿，齿宽=Λ·duty，22 元素）。注册进 `gds_export.geometry_desc`（GDS/SVG/DRC 单一来源）+ `drc.drc_check_device`（min_width/min_space/min_bend_R）。`lda_agent/primitives_design.py` 封装：GDS 编码（round-trip 回读一致）+ DRC 自查 + SVG 预览 + 死标量验收（smoke 3/3：4 基元全过 + 非法 kind 优雅 + min_width 违规 FAIL；报告 PASS，GDS 628B/8312B/1936B/1462B）。**诚实边界**：只交付 foundry 可接受几何；分束比/透射谱等电特性归 D-72 2D FDTD 端口 S 参数验收，不做性能声称。
+- **D-72 真实 2D FDTD 端口 S 参数验收（M5 Track B 首个里程碑）**：`lda_solver/port_sparams.py` + `lda_agent/sparams_design.py`——对 D-71 真实基元（MMI 1×2 对称分束器）做**全 2D FDTD 端口透反射谱**验收：输入 CW 激励 → 输出/回波端口 DFT 收集 → 输入功率归一 → **S 参数谱**（|S11|² 回波 / |S21|² 上输出 / |S31|² 下输出，能量守恒自动满足）。死标量验收（LLM 不进判决路径）：仿真有效 + 双输出平衡度 ≤0.15 + 透射 ≥0.05（自成像对称 ORACLE 物理定律锚）+ **DRC 工艺规则从真实 SOI 180nm PDK 注入**（NOEIC/CUMEC/SITRI design_rules → rules_from_pdk，D-21 落地，3/3 全绿）。实测（W=4/L=12µm，5 波长，dl=1.55/20，1200 瞬态）：**平衡度 max=0.062**（≤0.15）、中心波长 **S11=0.003 / T=0.997**（近理想分束）、5/5 波长全过；smoke 3/3（正例 + 非法 kind + 输出口离线 FAIL）。**关键 bug 修复（诚实记录）**：偶数 Ny 网格对称轴在 y=−dl/2 而非 y=0 → 多模区上下栅格化差一格 → S21/S31 系统性不对称（bal 0.19-0.55）→ **Ny 取奇数（网格关于 y=0 严格对称）根治**（bal→0.005-0.062）。诚实边界：2D TEz 近似（3D 端口验收为后续）；分束比绝对值依赖自成像长度精确设计，不声称与商业 EDA 数值库逐点一致。
 
 ### 新增/变更（Unreleased）
 
-- `lda_solver/`：adjoint_fdtd.py（主权 2D adjoint FDTD 核：脉冲前向 + 显式转置伴随 + FD 对拍验证 + 拓扑优化器）
-- `lda_agent/`：adjoint_design.py（D-69 设计闭环封装）+ wdm_splitter.py（D-67）+ calibrate_kappa_grid.py（D-68 参数化标定）+ design_loop.py（D-70 method=adjoint 逆设计分支）+ l1_protocol.py（DesignTarget.method 字段）+ primitives_design.py（D-71 基元库封装）
+- `lda_solver/`：adjoint_fdtd.py（主权 2D adjoint FDTD 核：脉冲前向 + 显式转置伴随 + FD 对拍验证 + 拓扑优化器）+ port_sparams.py（D-72 端口 S 参数框架：MMI eps 场构建 + CW 多端口收集 + 输入功率归一 + 自成像 ORACLE 验收）
+- `lda_agent/`：adjoint_design.py（D-69 设计闭环封装）+ wdm_splitter.py（D-67）+ calibrate_kappa_grid.py（D-68 参数化标定）+ design_loop.py（D-70 method=adjoint 逆设计分支）+ l1_protocol.py（DesignTarget.method 字段）+ primitives_design.py（D-71 基元库封装）+ sparams_design.py（D-72 S 参数验收封装 + PDK 规则注入 DRC）
 - `lda_l2/`：primitives.py（D-71 真实版图基元：taper/euler_bend/mmi/grating_coupler 纯几何）+ gds_export.py（geometry_desc 注册 4 新 kind）+ drc.py（drc_check_device 支持 4 新 kind）
 - `data/`：kappa_grid_calibration.json 升级 4×5（20 点，dl40，双轴单调）
-- WebUI：二十七 → **三十一面板**（㉘ 分束网络×WDM、㉙ 伴随法拓扑逆设计、㉚ 逆设计接入 D-36 引擎、㉛ 真实版图基元库）
-- API：`/api/wdm_splitter`（D-67）、`/api/adjoint_design`（D-69）、`/api/adjoint_loop`（D-70）、`/api/primitives`（D-71，4 基元参数透传 → GDS+DRC+SVG）
-- README：能力阶梯表加 D-66~D-71 行、三十一面板、㉘~㉛ 面板清单
+- WebUI：二十七 → **三十二面板**（㉘ 分束网络×WDM、㉙ 伴随法拓扑逆设计、㉚ 逆设计接入 D-36 引擎、㉛ 真实版图基元库、㉜ 端口 S 参数验收）
+- API：`/api/wdm_splitter`（D-67）、`/api/adjoint_design`（D-69）、`/api/adjoint_loop`（D-70）、`/api/primitives`（D-71）、`/api/sparams`（D-72，MMI 几何/波长数透传 → S 参数谱 + PDK DRC）
+- README：能力阶梯表加 D-66~D-72 行、三十二面板、㉘~㉜ 面板清单
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
 ## v0.0（阶段 0/1/2，此前交付）

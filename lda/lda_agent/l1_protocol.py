@@ -104,14 +104,16 @@ def load_oracle_mode():
 @dataclass
 class DesignTarget:
     """Interpreter 产出：人类设计意图的结构化表达。"""
-    geometry_type: str                 # "bragg_mirror" | "ar_coating" | ...
+    geometry_type: str                 # "bragg_mirror" | "ar_coating" | "adjoint_focuser" | ...
     materials: Dict[str, float]        # ref -> 折射率 n
     target_wavelength_um: float        # 设计中心波长
-    target_metric: str = "R"           # 验收度量（反射率）
+    target_metric: str = "R"           # 验收度量（反射率 / FOM_gain）
     threshold: float = 0.99            # 目标阈值（R >= threshold 即达标）
     tolerance_rel: float = 0.02        # FDTD 对 TMM 的最大相对误差（物理定律锚）
     max_iterations: int = 12           # 迭代上限（防失控）
     initial_periods: int = 1           # Designer 起始周期数
+    method: str = "scan"               # 设计方法："scan"=参数扫描（布拉格/波导）
+                                       #        "adjoint"=伴随梯度拓扑逆设计（D-70）
     extra: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -216,6 +218,7 @@ class InterpreterAgent:
             tolerance_rel=float(intent.get("tolerance_rel", 0.02)),
             max_iterations=int(intent.get("max_iterations", 12)),
             initial_periods=int(intent.get("initial_periods", 1)),
+            method=intent.get("method", "scan"),
             extra=intent.get("extra", {}),
         )
 

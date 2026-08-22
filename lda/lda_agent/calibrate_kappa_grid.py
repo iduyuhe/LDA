@@ -53,14 +53,17 @@ def main():
     ap.add_argument("--wls", default=",".join(str(w) for w in WLS),
                     help="波长扫描(µm)，逗号分隔（默认 1.50,1.55,1.60）")
     ap.add_argument("--out", default=OUT, help="输出 JSON 路径")
+    ap.add_argument("--dl_factor", type=int, default=20,
+                    help="网格细度（dl=λ/dl_factor；40 可分辨 0.05µm gap 间距）")
     args = ap.parse_args()
     gaps = [float(x) for x in args.gaps.split(",") if x.strip()]
     wls = [float(x) for x in args.wls.split(",") if x.strip()]
+    dlf = args.dl_factor
     t0 = time.time()
     points = []
     for gap in gaps:
         for wl in wls:
-            k, c1, c2, w = kappa_fdtd(gap, wl)
+            k, c1, c2, w = kappa_fdtd(gap, wl, dl_factor=dlf)
             points.append({"gap_um": gap, "wl_um": wl,
                            "kappa_c_rad_um": round(k, 6),
                            "cf1": round(c1, 3), "cf2": round(c2, 3),
@@ -71,7 +74,7 @@ def main():
         "name": "LDA kappa_c(gap,λ) 全网格 PDK 标定（2D FDTD 双点差分）",
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "w_um": 0.5, "n_core": 3.48, "n_clad": 1.44,
-        "dl_factor": 20, "dl_um": 0.0775,
+        "dl_factor": dlf, "dl_um": round(1.55 / dlf, 5),
         "gaps_um": gaps, "wls_um": wls,
         "method": "kappa_c 双点差分标定（D-55），全网格 (gap×λ) "
                   f"{len(gaps) * len(wls)} 点",

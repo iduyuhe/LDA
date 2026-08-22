@@ -545,6 +545,22 @@
   </div>
 
   <div class="sec">
+    <h2>㉙ 伴随法拓扑逆设计（D-69 · 主权 adjoint FDTD）</h2>
+    <div class="hint">把"参数扫描 + 闭式反解"升级为<b>梯度驱动拓扑逆设计</b>：主权 2D FDTD（TEz，Yee 网格 + 海绵 PML）的<b>显式转置伴随</b>（数值 Mᵀ 对拍至 1e-15）求 dFOM/dε → 验证锚：<b>adjoint vs 中心有限差分方向对拍 max_rel_err ≤ 0.15</b> → 高斯脉冲源 + 窄孔径<b>收集场能</b> FOM（能量有界，杜绝 CW 谐振病态）→ 密度投影（beta 延拓二值化）+ 回溯线搜索梯度上升（FOM 单调不降，improvement ≥ 1.5）。诚实标注：T 为归一化收集场能，聚焦增益可 &gt;1，非功率透射。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>迭代<input id="ajIters" type="number" value="50" style="width:64px"></label>
+      <label>对拍样本<input id="ajNs" type="number" value="8" style="width:52px"></label>
+      <label>Nx<input id="ajNx" type="number" value="110" style="width:56px"></label>
+      <label>Ny<input id="ajNy" type="number" value="90" style="width:56px"></label>
+      <label>sponge<input id="ajSp" type="number" value="10" style="width:52px"></label>
+      <button class="btn" id="runAj">伴随法拓扑逆设计</button>
+    </div>
+    <div id="ajSummary" class="summary"></div>
+    <div id="ajBody"></div>
+    <div class="conclusion" id="ajConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1698,6 +1714,43 @@ function renderWs(d){
   $('wsConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
 }
 $('runWs').onclick = runWs;
+
+// ---- ㉙ D-69 伴随法拓扑逆设计（主权 adjoint FDTD）----
+async function runAj(){
+  const btn = $('runAj'); btn.disabled = true;
+  $('ajSummary').innerHTML = '<span class="spin"></span> 伴随法拓扑逆设计中（前向 FDTD × N 迭代 + 显式转置伴随 + FD 对拍验证，需数分钟）…';
+  const body = { iters: $('ajIters').value, nsamples: $('ajNs').value,
+                 Nx: $('ajNx').value, Ny: $('ajNy').value, sponge: $('ajSp').value };
+  try{
+    const d = await post('/api/adjoint_design', body);
+    renderAj(d);
+  }catch(e){ $('ajSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderAj(d){
+  if(!d.ok){ $('ajSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const acc = d.acceptance||{};
+  const vr = d.verify||{};
+  const op = d.optimization||{};
+  const g = d.geometry||{};
+  const mt = d.material||{};
+  const checks = (acc.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('');
+  const tail = (op.history_tail||[]).map(h=>`<tr><td>${h.iter}</td><td>${h.beta}</td><td>${h.alpha}</td><td>${Number(h.FOM).toExponential(2)}</td><td>${h.T.toFixed(4)}</td></tr>`).join('');
+  $('ajSummary').innerHTML = `伴随法拓扑逆设计：<b>${mt.n_design_voxels}</b> 体素设计区 · FOM <b>${Number(op.initial_FOM).toExponential(2)} → ${Number(op.final_FOM).toExponential(2)}</b>（${op.improvement.toFixed(2)}×）· <span class="verdict ${acc.passed?'ok':'fail'}">${acc.passed?'PASS':'FAIL'}</span>`;
+  $('ajBody').innerHTML = `
+    <div class="subhead">几何（${g.Nx}×${g.Ny}，dl=${g.dl_um}µm，sponge=${g.sponge}）</div>
+    <table class="tbl"><thead><tr><th>源</th><th>输出孔径</th><th>设计区 i</th><th>设计区 j</th><th>ε 范围</th></tr></thead><tbody><tr><td>x=${g.i_src}, y=[${g.y_src[0]},${g.y_src[1]})</td><td>x=${g.i_mon}, y=[${g.aperture_y[0]},${g.aperture_y[1]})</td><td>[${g.design_i[0]},${g.design_i[1]})</td><td>[${g.design_j[0]},${g.design_j[1]})</td><td>${g.eps_range[0]}–${g.eps_range[1]}</td></tr></tbody></table>
+    <div class="subhead">验证锚（adjoint vs 中心有限差分，死标量）</div>
+    <table class="tbl"><thead><tr><th>样本</th><th>K(adj/FD)</th><th>max_rel_err</th><th>容差</th><th>结果</th></tr></thead><tbody><tr><td>${vr.nsamples}</td><td>${vr.K_adj_over_fd.toFixed(3)}</td><td>${vr.max_rel_err.toFixed(4)}</td><td>≤0.15</td><td><span class="verdict ${vr.passed?'ok':'fail'}">${vr.passed?'PASS':'FAIL'}</span></td></tr></tbody></table>
+    <div class="subhead">优化轨迹（尾 10 迭代，FOM 单调不降）</div>
+    <table class="tbl"><thead><tr><th>iter</th><th>beta</th><th>alpha</th><th>FOM</th><th>T</th></tr></thead><tbody>${tail}</tbody></table>
+    <div class="subhead">最终设计材料分布（二值化）</div>
+    <table class="tbl"><thead><tr><th>低 ε(背景)</th><th>高 ε(硅)</th><th>中间态</th></tr></thead><tbody><tr><td>${(mt.frac_low_eps*100).toFixed(1)}%</td><td>${(mt.frac_high_eps*100).toFixed(1)}%</td><td>${(mt.frac_intermediate*100).toFixed(1)}%</td></tr></tbody></table>
+    <div class="subhead">死标量验收</div>
+    ${checks}`;
+  $('ajConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+}
+$('runAj').onclick = runAj;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

@@ -1252,10 +1252,11 @@ def run_sparams(payload=None):
 def run_sparams_3d(payload=None):
     """D-72 深化 3D 端口 S 参数验收（webui ㉝ 面板）。
 
-    输入 {width?, W_mmi?, L_mmi?, L_tap?, out_gap?, L_out?, wl0_um?,
-    n_wl?, span_um?, h_si_um?}：MMI 1×2 对称分束器全 3D FDTD 端口透反射谱
-    （SOI 220nm，复用已验证 numba 3D 核）——3D 截面匹配源注入 → 多端口 DFT
-    收集 → 输入功率归一 → S 参数谱 → 死标量验收（仿真有效 + 平衡度≤0.15 +
+    输入 {kind? (mmi/dc/ring), width?, W_mmi?, L_mmi?, L_tap?, out_gap?,
+    L_out?, gap?, Lc?, R?, wl0_um?, n_wl?, span_um?, h_si_um?}：器件全 3D
+    FDTD 端口透反射谱（SOI 220nm，复用已验证 numba 3D 核）——3D 截面匹配
+    源注入 → 多端口 DFT 收集 → 输入功率归一 → S 参数谱 → 死标量验收
+    （mmi: 平衡度≤0.15；dc: cross_frac 端点趋势；ring: drop 谐振峰；均 +
     透射≥0.05）+ 2D↔3D 对拍诊断。LLM 不进判决路径。
     """
     import sys as _sys
@@ -1265,13 +1266,16 @@ def run_sparams_3d(payload=None):
         _sys.path.insert(0, str(_lda))
     from lda_agent.sparams_3d_design import design_sparams_3d
     payload = payload or {}
+    kind = str(payload.get("kind", "mmi")).lower()
+    if kind not in ("mmi", "dc", "ring"):
+        kind = "mmi"
     mmi = {}
     for k in ("width", "W_mmi", "L_mmi", "L_tap", "out_gap", "L_out",
-              "wl0_um", "n_wl", "span_um", "h_si_um"):
+              "gap", "Lc", "R", "wl0_um", "n_wl", "span_um", "h_si_um"):
         if k in payload and payload[k] not in (None, ""):
             mmi[k] = float(payload[k])
     try:
-        rep = design_sparams_3d(mmi=mmi or None)
+        rep = design_sparams_3d(mmi=mmi or None, kind=kind)
         rep["ok"] = True
         return rep
     except Exception as e:  # noqa: BLE001

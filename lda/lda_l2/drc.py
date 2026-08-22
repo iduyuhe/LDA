@@ -123,6 +123,16 @@ def drc_check_device(kind: str, params: Dict[str, float],
     elif kind == "BraggMirror":
         # 一维层堆叠：宽度规则由衬底工艺决定（无 2D 版图几何），跳过
         pass
+    elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler"):
+        # D-71 真实版图基元：可制造性几何量来自 primitives.primitive_geometry
+        from lda_l2.primitives import primitive_geometry
+        g = primitive_geometry(kind, params)
+        if "min_width" in g:
+            add("min_width", "min_width", g["min_width"], rules["min_width_um"])
+        if "min_space" in g:
+            add("min_space", "min_space", g["min_space"], rules["min_space_um"])
+        if "min_bend_R" in g:
+            add("min_bend_R", "R", g["min_bend_R"], rules["min_bend_R_um"])
     else:
         raise ValueError(f"DRC 暂不支持 kind={kind}")
 

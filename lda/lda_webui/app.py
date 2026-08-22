@@ -854,6 +854,42 @@ def run_splitter_readout(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_wdm_splitter(payload=None):
+    """D-67 分束网络×WDM（webui ㉘ 面板）。
+
+    输入 {channels?, calibrated?, grid?}：WDM 解复用（D-42/D-57 标定库驱动
+    gap）→ 每信道 drop 口接 DC 分束树（D-63 复用，D-55 真实 FDTD 设计）
+    → 每信道分束命中 + 统一 IR 网表（Ring×N + DC×M）+ 联合验收。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.wdm_splitter import design_wdm_splitter
+    payload = payload or {}
+
+    def _num_list(v, name):
+        if isinstance(v, str):
+            v = v.split(",")
+        try:
+            return [float(x) for x in v if str(x).strip()]
+        except (TypeError, ValueError):
+            return None
+    ch = _num_list(payload.get("channels", "1550,1553,1556"), "channels")
+    if ch is None or len(ch) < 2:
+        return {"ok": False, "error": "channels(≥2) 须为逗号分隔数值列表"}
+    try:
+        rep = design_wdm_splitter(
+            ch,
+            calibrated=bool(payload.get("calibrated", False)),
+            grid_calibrated=bool(payload.get("grid", False)))
+        rep["ok"] = True
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def run_design_package(payload=None):
     """D-44 统一设计包规范（webui ⑳ 面板）。
 
@@ -1163,6 +1199,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_wdm_coupler(payload))
             elif path == "/api/splitter_readout":
                 self._send(200, run_splitter_readout(payload))
+            elif path == "/api/wdm_splitter":
+                self._send(200, run_wdm_splitter(payload))
             elif path == "/api/design_package":
                 self._send(200, run_design_package(payload))
             elif path == "/api/drc_fix_demo":

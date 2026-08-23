@@ -182,11 +182,9 @@ def grating_coupler_descs(params: Dict[str, float]) -> List[Dict]:
     # 输入波导
     descs.append({"kind": "path", "layer": 1, "width_um": w,
                   "points_um": [(-Li, 0.0), (0.0, 0.0)]})
-    # 齿区主体（波导全宽）
-    descs.append({"kind": "boundary", "layer": 1,
-                  "rings_um": [[(0.0, -w / 2.0), (total, -w / 2.0),
-                                (total, w / 2.0), (0.0, w / 2.0)]]})
-    # 周期齿（保留硅矩形，间隔=刻蚀凹槽）
+    # 周期齿（保留硅矩形，间隔=刻蚀凹槽=包层）。
+    # D-78 修正：不再加"齿区主体"实心矩形——它与齿同层合并会把凹槽填成硅
+    # （GDS 同层多边形为合并填充语义），栅格化后等于直波导，无周期调制。
     for k in range(N):
         x0 = k * Lam
         descs.append({"kind": "boundary", "layer": 1,

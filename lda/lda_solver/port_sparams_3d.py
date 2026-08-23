@@ -116,11 +116,17 @@ def cw3d_port_powers(eps: np.ndarray, dl: float, wl_um: float,
                      ports: Dict, x_src: int,
                      transient_cycles: int = 800, M_cycles: int = 40,
                      sponge: int = 24, courant: float = 0.95,
-                     source_amp: float = 0.05) -> Dict[str, float]:
-    """3D CW 稳态：Ez 高斯分布源（y,z 横截面）注入 → 各端口芯区 |Ez|² 积分。
+                     source_amp: float = 0.05,
+                     src_profile: Optional[np.ndarray] = None
+                     ) -> Dict[str, float]:
+    """3D CW 稳态：Ez 分布源（y,z 横截面）注入 → 各端口芯区 |Ez|² 积分。
 
     复用 _fdtd3d_core（numba njit）；内部源禁用（src_val=0），
     外层每步手动注入 TE 主极化分布源（稳态下相位差恒定，|Ez|² 不受影响）。
+
+    src_profile: (Ny,Nz) 分布源截面（None = 默认 SOI 矩形 0.5µm×0.22µm，
+    D-86 起支持自定义——3D adjoint 域（44×36×12 平板波导）用
+    y 芯区矩形 × z 核心层适配）。
     """
     omega = 2.0 * math.pi / wl_um
     dt = dl * courant / math.sqrt(3.0)
@@ -143,12 +149,19 @@ def cw3d_port_powers(eps: np.ndarray, dl: float, wl_um: float,
 
     # 源横截面分布：与波导截面匹配（矩形近似 TE0 基模芯区分布，
     # 高斯过宽会把能量注入包层——3D 有限高波导对源匹配敏感）
-    yc = (Ny - 1) / 2.0
-    zc = (Nz - 1) / 2.0
-    w_half = max(1.0, 0.5 / 2.0 / dl)          # 波导半宽（0.5µm）格数
-    h_half = max(1.0, 0.22 / 2.0 / dl)         # 波导层半高（0.22µm）格数
-    prof_y = np.where(np.abs(np.arange(Ny) - yc) <= w_half, 1.0, 0.0)
-    prof_z = np.where(np.abs(np.arange(Nz) - zc) <= h_half, 1.0, 0.0)
+    if src_profile is not None:
+        amp2d = np.asarray(src_profile, dtype=float)   # (Ny,Nz)
+        if amp2d.shape != (Ny, Nz):
+            raise ValueError(f"src_profile 形状须 (Ny,Nz)=({Ny},{Nz})，"
+                             f"实际 {amp2d.shape}")
+    else:
+        yc = (Ny - 1) / 2.0
+        zc = (Nz - 1) / 2.0
+        w_half = max(1.0, 0.5 / 2.0 / dl)          # 波导半宽（0.5µm）格数
+        h_half = max(1.0, 0.22 / 2.0 / dl)         # 波导层半高（0.22µm）格数
+        prof_y = np.where(np.abs(np.arange(Ny) - yc) <= w_half, 1.0, 0.0)
+        prof_z = np.where(np.abs(np.arange(Nz) - zc) <= h_half, 1.0, 0.0)
+        amp2d = prof_y[:, None] * prof_z[None, :]
 
     # 探针：各端口芯区 (y,z) 格点
     probes = []
@@ -173,7 +186,6 @@ def cw3d_port_powers(eps: np.ndarray, dl: float, wl_um: float,
     Hy = np.zeros((Nx, Ny, Nz))
     Hz = np.zeros((Nx, Ny, Nz))
     pbc_y = pbc_z = False
-    amp2d = prof_y[:, None] * prof_z[None, :]
 
     for n in range(nsteps):
         t = n * dt

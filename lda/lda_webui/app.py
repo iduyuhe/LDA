@@ -1691,6 +1691,36 @@ def run_adjoint3d(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_port_acceptance(payload=None):
+    """D-86 3D 逆设计 × 3D 端口 S 参数联合验收（webui ㊼ 面板）。
+
+    输入 {Nx?, Ny?, Nz?, n_controls?, iters?, w_min?, init_w?}：3D adjoint
+    场能优化设计 → 独立 3D CW 端口核测量 S11/S21 → 双独立确认验收
+    （FOM imp ≥1.5 且 S21 imp ≥1.5）。LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.port_acceptance import design_port_acceptance
+    payload = payload or {}
+    kw = {}
+    for k, cast in (("Nx", int), ("Ny", int), ("Nz", int),
+                    ("n_controls", int), ("iters", int)):
+        if payload.get(k) not in (None, ""):
+            kw[k] = cast(payload[k])
+    for k, cast in (("w_min", float), ("init_w", float)):
+        if payload.get(k) not in (None, ""):
+            kw[k] = cast(payload[k])
+    try:
+        rep = design_port_acceptance(**kw)
+        rep["ok"] = bool(rep.get("ok"))
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def system_status():
     return {
         "layers": [
@@ -1840,6 +1870,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_hybrid_multi(payload))
             elif path == "/api/adjoint3d":
                 self._send(200, run_adjoint3d(payload))
+            elif path == "/api/port_acceptance":
+                self._send(200, run_port_acceptance(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

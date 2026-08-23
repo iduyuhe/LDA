@@ -663,6 +663,23 @@
   </div>
 
   <div class="sec">
+    <h2>㊲ 量子门 / 纠错拓扑（D-74 · Track D 系统级 · M7）</h2>
+    <div class="hint">量子域从「读出」走向「计算」：组合①量子门库（I/X/Y/Z/H/S/T/CNOT/CZ/SWAP/Toffoli 解析矩阵，幺正性 ‖U†U−I‖≤1e-12 精确 + {H,T,CNOT} 通用性 T∉24元Clifford 群论死标量锚）②rotated surface code（d² 数据比特、全对易、GF(2) 秩验证 k=1、阈值标度 p_L=A·(p/p_th)^((d+1)/2)）③cross-resonance 门（g_CR=2J²Δ/(α²−Δ²) 有效模型 + t_CR≤T2）。ORACLE：|g_CR|∈[0.02,10]MHz、p<p_th（阈值门）。诚实边界：CR 为 SW 主导阶非多能级数值、σ_zz 由 echoed-CR 抵消、表面码 p_th=1% 为公认模拟常数非本系统解码仿真。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>距离 d(奇):<input id="qd" value="3" size="4"></label>
+      <label>p_phys:<input id="qp" value="0.005" size="7"></label>
+      <label>J(MHz):<input id="qJ" value="5" size="5"></label>
+      <label>Δ(MHz):<input id="qD" value="100" size="6"></label>
+      <label>α(MHz):<input id="qA" value="-250" size="6"></label>
+      <label>T2(µs):<input id="qT2" value="100" size="5"></label>
+      <button class="btn" id="runQeda">设计容错拓扑</button>
+    </div>
+    <div id="qedaSummary" class="summary"></div>
+    <div id="qedaBody"></div>
+    <div class="conclusion" id="qedaConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -2080,6 +2097,58 @@ async function runTw(){
   } finally { btn.disabled = false; }
 }
 $('runTw').onclick = runTw;
+
+// ---- ㊲ D-74 量子门 / 纠错拓扑 ----
+async function runQeda(){
+  const btn = $('runQeda'); btn.disabled = true;
+  $('qedaSummary').innerHTML = '<span class="spin"></span> 量子门库 + surface code + cross-resonance 死标量验收中…';
+  const payload = {
+    d: $('qd').value, p_phys: $('qp').value, J: $('qJ').value,
+    delta: $('qD').value, alpha: $('qA').value, T2_us: $('qT2').value
+  };
+  try {
+    const d = await postJson('/api/qeda_topology', payload);
+    const gl = d.gate_library || {}, sc = d.surface_code || {}, cr = d.cross_resonance || {}, rs = d.resources || {};
+    const passed = d.acceptance ? d.acceptance.passed : false;
+    $('qedaSummary').innerHTML = `量子门/纠错拓扑：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（d=${sc.d||'?'} · k=${sc.k??'?'} · 门库 ${gl.n_gates||'?'} 门 · |g_CR|=${cr.abs_g_CR_MHz!=null?cr.abs_g_CR_MHz:'?'}MHz）`;
+    const gRows = `
+      <tr><td>门数量</td><td>${gl.n_gates}</td></tr>
+      <tr><td>全部幺正（‖U†U−I‖≤1e-12）</td><td class="${gl.all_unitary?'ok':'fail'}">${gl.all_unitary?'是':'否'}</td></tr>
+      <tr><td>Clifford 群大小</td><td>${gl.clifford_group_size}</td></tr>
+      <tr><td>T ∉ 单比特 Clifford（通用性）</td><td class="${gl.T_not_in_clifford?'ok':'fail'}">${gl.T_not_in_clifford?'是（{H,T,CNOT} 通用）':'否'}</td></tr>`;
+    const sRows = `
+      <tr><td>数据比特 n_data</td><td>${sc.n_data} = d²</td></tr>
+      <tr><td>稳定子数 n_stab</td><td>${sc.n_stab} = d²−1</td></tr>
+      <tr><td>编码逻辑比特 k（GF(2) 秩）</td><td class="${sc.k===1?'ok':'fail'}">${sc.k}</td></tr>
+      <tr><td>稳定子全对易</td><td class="${sc.all_commute?'ok':'fail'}">${sc.all_commute?'是':'否（'+sc.n_noncommuting+' 对不对易）'}</td></tr>
+      <tr><td>物理错误 p_phys / 阈值 p_th</td><td>${sc.p_phys} / ${sc.p_th}</td></tr>
+      <tr><td>p_L(d) / 容错可达最小 d</td><td>${sc.p_logical!=null?sc.p_logical.toExponential(2):'—'} / d=${sc.min_d_for_target||'—'}</td></tr>`;
+    const cRows = `
+      <tr><td>有效 ZX 耦合 |g_CR| (MHz)</td><td class="${cr.in_real_band?'ok':'fail'}">${cr.abs_g_CR_MHz!=null?cr.abs_g_CR_MHz.toFixed(3):'—'}（ORACLE [0.02,10]）</td></tr>
+      <tr><td>门时间 t_CR (µs)</td><td class="${cr.within_T2?'ok':'fail'}">${cr.t_CR_us!=null?cr.t_CR_us.toFixed(2):'∞'} ≤ T2=${cr.T2_us}</td></tr>
+      <tr><td>残余 ZZ σ_zz (MHz)</td><td>${cr.sigma_zz_MHz!=null?cr.sigma_zz_MHz.toFixed(4):'—'}（echoed-CR 抵消）</td></tr>
+      <tr><td>参数区 |Δ|&lt;|α|</td><td class="${cr.valid_regime?'ok':'fail'}">${cr.valid_regime?'有效':'无效'}</td></tr>`;
+    const chk = (d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
+    $('qedaBody').innerHTML = `
+      <div class="subhead">① 量子门库（解析矩阵 · 死标量锚）</div>
+      <table class="tbl"><tbody>${gRows}</tbody></table>
+      <div class="subhead">② rotated surface code（d=${sc.d} · 全对易 · k=1）</div>
+      <table class="tbl"><tbody>${sRows}</tbody></table>
+      <div class="subhead">③ cross-resonance 门（有效模型）</div>
+      <table class="tbl"><tbody>${cRows}</tbody></table>
+      <div class="subhead">资源（容错拓扑）</div>
+      <table class="tbl"><tbody>
+        <tr><td>每逻辑比特物理比特总数</td><td>${rs.total_physical_per_logical}（数据 ${rs.physical_data_per_logical} + 稳定子 ${rs.stabilizers_per_logical}）</td></tr>
+        <tr><td>缩放律</td><td>${rs.scaling}</td></tr>
+      </tbody></table>
+      <div class="subhead">死标量验收</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
+    $('qedaConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+  } catch(e){
+    $('qedaSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runQeda').onclick = runQeda;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

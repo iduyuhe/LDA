@@ -1364,6 +1364,32 @@ def run_tunable_wdm(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_qeda_topology(payload=None):
+    """D-74 量子门/纠错拓扑（webui ㊲ 面板）。
+
+    输入 {d?, p_phys?, J?, delta?, alpha?, T2?, target?}：量子门库（幺正性+通用性
+    死标量锚）+ rotated surface code（全对易+k=1+阈值标度）+ cross-resonance 门
+    （有效模型+退相干预算）组合为容错拓扑 spec 并死标量验收。LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.qeda_topology import design_qeda_topology
+    payload = payload or {}
+    kw = {}
+    for k in ("d", "p_phys", "J", "delta", "alpha", "T2_us", "target"):
+        if payload.get(k) not in (None, ""):
+            kw[k] = float(payload[k]) if k != "d" else int(payload[k])
+    try:
+        rep = design_qeda_topology(**kw)
+        rep["ok"] = bool(rep.get("ok"))
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def system_status():
     return {
         "layers": [
@@ -1493,6 +1519,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_pipeline_realize(payload))
             elif path == "/api/tunable_wdm":
                 self._send(200, run_tunable_wdm(payload))
+            elif path == "/api/qeda_topology":
+                self._send(200, run_qeda_topology(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

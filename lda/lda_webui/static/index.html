@@ -621,6 +621,21 @@
   </div>
 
   <div class="sec">
+    <h2>㉞ 光栅耦合器端口验收（D-78 · 光栅方程 ORACLE）</h2>
+    <div class="hint">4 基元中<b>最后一块电特性验收</b>：GC（周期部分刻蚀齿，D-78 修正为真实方波光栅：齿=硅、凹槽=包层）全 <b>2D FDTD</b> 端口透射谱——CW 注入 → thru/in 归一 → <b>透射谷检测</b>（周期调制耦合损耗）→ 谷位置 vs <b>光栅方程</b> λ_rad=Λ·n_eff 解析预测对拍（n_eff 由同宽直波导 FDTD 相位差法独立测得，<b>非拟合</b>）+ <b>Λ 扫描趋势锚</b>（dλ/dΛ=周期结构 n_eff）。死标量验收：<b>谷检出 depth≥0.10 + 谷位置 rel≤0.15 + 趋势斜率 rel≤0.10</b>。诚实标注：谷位对直波导 neff 系统性负偏 ~9%（凹槽微扰，物理）；2D 方波 ≠ 3D 光纤耦合，不声称耦合效率。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>Lambda µm<input id="gcLam" type="number" value="0.68" step="0.01" style="width:60px"></label>
+      <label>duty<input id="gcDuty" type="number" value="0.55" step="0.05" style="width:52px"></label>
+      <label>齿数<input id="gcN" type="number" value="12" style="width:52px"></label>
+      <label>波长数<input id="gcNwl" type="number" value="9" style="width:52px"></label>
+      <button class="btn" id="runGc">GC 端口验收</button>
+    </div>
+    <div id="gcSummary" class="summary"></div>
+    <div id="gcBody"></div>
+    <div class="conclusion" id="gcConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -1942,6 +1957,41 @@ function renderSp3(d, kind){
   $('sp3Conclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
 }
 $('runSp3').onclick = runSp3;
+
+// ---- ㉞ D-78 光栅耦合器端口验收（光栅方程 ORACLE）----
+async function runGc(){
+  const btn = $('runGc'); btn.disabled = true;
+  $('gcSummary').innerHTML = '<span class="spin"></span> GC 2D FDTD 端口验收中（λ 扫描 × Λ 趋势，约 1 分钟）…';
+  const body = { Lambda: $('gcLam').value, duty: $('gcDuty').value,
+                 n_tooth: $('gcN').value, n_wl: $('gcNwl').value };
+  try{
+    const d = await post('/api/gc_sparams', body);
+    renderGc(d);
+  }catch(e){ $('gcSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderGc(d){
+  if(!d.ok){ $('gcSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const spec = d.spectrum||{};
+  const rows = (spec.points||[]).map(p=>`<tr><td>${p.wl_um}</td><td>${p.T.toFixed(3)}</td><td>${p.S11_2.toFixed(3)}</td></tr>`).join('');
+  const dip = d.dip||{};
+  const sl = d.slope||{};
+  const dips = (sl.dip_wls||[]).map((x,i)=>`${sl.lambdas[i]}→${x}`).join('；')||'—';
+  $('gcSummary').innerHTML = `GC 端口验收：<span class="verdict ${d.acceptance.passed?'ok':'fail'}">${d.acceptance.passed?'PASS':'FAIL'}</span>（neff=${d.geometry.neff_measured}，λ_rad 预测=${d.geometry.lambda_rad_pred}µm，谷 λ=${dip.wl_um}µm，微扰 ${d.perturb_frac}` ;
+  $('gcSummary').innerHTML += `）`;
+  $('gcBody').innerHTML = `
+    <div class="subhead">GC 透射谱（thru/in 归一，谷=周期调制耦合损耗）</div>
+    <table class="tbl"><thead><tr><th>λ(µm)</th><th>T</th><th>|S11|² 回波</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="subhead">光栅方程对拍 + Λ 趋势锚</div>
+    <table class="tbl"><thead><tr><th>项</th><th>值</th><th>判据</th><th>状态</th></tr></thead><tbody>
+      <tr><td>谷位置 vs λ_rad=Λ·n_eff</td><td>${dip.wl_um}µm vs ${d.lambda_rad_pred}µm (rel=${(Math.abs(dip.wl_um-d.lambda_rad_pred)/d.lambda_rad_pred).toFixed(3)})</td><td>≤0.15</td><td>${d.acceptance.passed?'✓':'✗'}</td></tr>
+      <tr><td>Λ 扫描斜率 dλ/dΛ</td><td>${sl.slope_fit} vs 周期结构 neff ${sl.slope_pred} (rel=${sl.slope_rel_err})</td><td>≤0.10</td><td>${sl.slope_rel_err<=0.10?'✓':'✗'}</td></tr>
+      <tr><td>Λ→谷映射</td><td>${dips}</td><td>单调</td><td>${sl.monotonic?'✓':'✗'}</td></tr>
+      <tr><td>凹槽微扰（诊断）</td><td>直波导 neff=${d.neff_measured} vs 周期结构 ${d.neff_gc_inferred}（${d.perturb_frac}）</td><td>物理预期</td><td>—</td></tr>
+    </tbody></table>`;
+  $('gcConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+}
+$('runGc').onclick = runGc;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

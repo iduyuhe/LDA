@@ -758,6 +758,20 @@
   </div>
 
   <div class="sec">
+    <h2>㊸ 形状+拓扑混合逆设计（D-82 · Track A 纵深 · 分层表达：形状主干 + 拓扑微调带）</h2>
+    <div class="hint">把形状逆设计（可制造性好）与拓扑逆设计（表达自由）**分层混合**：**形状主干**（宽度曲线 K 控制点，可制造内建 DRC）+ **拓扑微调带**（紧贴形状边界的 voxel 密度，概率 OR 光滑组合——"任一有材料即材料"处处可导）。联合梯度 [形状链式 ⊕ 拓扑] + 回溯线搜索。**实测：混合 imp 29.5× vs 纯形状基线 10.2×（混合增益 2.89×）**——拓扑微调带提供局部自由度大幅提升性能。死标量验收：混合梯度 FD 对拍 + improvement + **混合 ≥ 纯形状** + DRC。诚实边界：3D 形状（宽+高截面）需 3D adjoint 核（2D TEz 限制，归后续）；FOM 为收集场能（T>1 聚焦增益非功率透射）。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>控制点:<input id="hyK" value="8" size="3"></label>
+      <label>迭代:<input id="hyIters" value="16" size="4"></label>
+      <label>拓扑带(lo,hi):<input id="hyBand" value="2.5,7.5" size="10"></label>
+      <button class="btn" id="runHy">混合逆设计</button>
+    </div>
+    <div id="hySummary" class="summary"></div>
+    <div id="hyBody"></div>
+    <div class="conclusion" id="hyConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -2437,6 +2451,40 @@ async function runSh(){
   } finally { btn.disabled = false; }
 }
 $('runSh').onclick = runSh;
+
+// ---- ㊸ D-82 形状+拓扑混合逆设计 ----
+async function runHy(){
+  const btn = $('runHy'); btn.disabled = true;
+  $('hySummary').innerHTML = '<span class="spin"></span> 形状主干 + 拓扑微调带混合逆设计运行中…';
+  const payload = {
+    n_controls: $('hyK').value, iters: $('hyIters').value,
+    topo_band: $('hyBand').value
+  };
+  try {
+    const d = await postJson('/api/hybrid_design', payload);
+    const passed = d.acceptance ? d.acceptance.passed : false;
+    const o = d.optimization || {}, v = d.verify || {};
+    $('hySummary').innerHTML = `混合逆设计：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（improvement=${o.improvement!=null?o.improvement.toFixed(2)+'×':'?'} · 纯形状基线 ${o.baseline_shape_improvement!=null?o.baseline_shape_improvement.toFixed(2)+'×':'?'} · <b>混合增益 ${o.gain_over_shape!=null?o.gain_over_shape.toFixed(2)+'×':'?'}</b>）`;
+    const chk = (d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
+    $('hyBody').innerHTML = `
+      <div class="subhead">分层表达（形状主干 + 拓扑微调带）</div>
+      <table class="tbl"><tbody>
+        <tr><td>FOM improvement（混合）</td><td class="ok">${o.improvement!=null?o.improvement.toFixed(2)+'×':'?'}</td></tr>
+        <tr><td>纯形状基线（同迭代）</td><td>${o.baseline_shape_improvement!=null?o.baseline_shape_improvement.toFixed(2)+'×':'?'}</td></tr>
+        <tr><td>混合增益（拓扑自由度价值）</td><td class="ok">${o.gain_over_shape!=null?o.gain_over_shape.toFixed(2)+'×':'?'} ≥ 1.0</td></tr>
+        <tr><td>宽度曲线（形状主干）</td><td>[${(o.final_width||[]).map(x=>x.toFixed(2)).join(', ')}]</td></tr>
+        <tr><td>拓扑带体素 / 参与度</td><td>${d.n_topo_voxels||'?'} 体素 · fill=${o.topo_fill_frac!=null?o.topo_fill_frac:'?'}</td></tr>
+        <tr><td>混合梯度对拍（FD）</td><td class="ok">max_rel_err=${v.max_rel_err!=null?v.max_rel_err.toExponential(1):'?'} ≤ 0.15</td></tr>
+        <tr><td>可制造性 DRC</td><td>${d.drc?escapeHtml(d.drc.detail):'—'}</td></tr>
+      </tbody></table>
+      <div class="subhead">死标量验收</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
+    $('hyConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+  } catch(e){
+    $('hySummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runHy').onclick = runHy;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

@@ -193,6 +193,18 @@
 - README：能力阶梯表加 D-81 行、四十一→四十二面板、㊷ 面板清单 + 目录结构补 shape/multi 模块
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
+### 新增/变更（post-v0.4 · D-82 · Track A 纵深第二件）
+- `lda/lda_solver/hybrid_inverse.py`：**混合逆设计核**——HybridProblem（形状主干 K 控制点宽度曲线 + 拓扑微调带 M voxel 密度；**概率 OR 光滑组合** frac_total=frac_shape+ρ(1−frac_shape)，处处可导）+ 联合梯度（形状链式×(1−ρ) ⊕ 拓扑×(1−frac_shape)）+ verify_hybrid_gradient（混合参数 FD 对拍，ρ=0.5 远离边界）+ optimize_hybrid（联合线搜索 + 可行性投影 + 纯形状基线）
+- `lda/lda_agent/hybrid_design.py`：混合逆设计统一入口（混合优化 + 纯形状基线对比 + 死标量验收：FD 对拍 / improvement / **混合≥纯形状** / DRC）
+- `lda/run_hybrid_design_smoke.py`：3/3 smoke（混合正例 + 混合≥纯形状 + 拓扑带非法优雅 FAIL）
+- `lda_webui/app.py`：`/api/hybrid_design`（n_controls/iters/topo_band 透传）
+- `lda_webui/static/index.html`：㊸ 面板（分层表达结果 + 混合增益对比 + 死标量验收）
+- `lda/reports/hybrid_inverse_d82.json`：D-82 验收报告（imp 18.3× / 增益 3.06× 全 PASS）
+- **实测**：混合 imp 18.3× vs 纯形状 6.0×（**混合增益 3.06×**，smoke 29.5×/10.2× 增益 2.89×）；混合梯度 FD 对拍全过
+- **工程坑**：①`min(1,frac+ρ)` 截断不可导 → 概率 OR 光滑组合；②拓扑 FD 对拍 ρ=0 单边差分半值假象 → ρ=0.5 对拍
+- README：能力阶梯表加 D-82 行、四十二→四十三面板、㊸ 面板清单 + 目录结构补 hybrid 模块
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

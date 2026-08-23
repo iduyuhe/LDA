@@ -541,6 +541,198 @@ def optimize_shape3d(sp: ShapeProblem3D, iters: int = 20, step0: float = 0.4,
     }
 
 
+class ShapeProblem3DSection:
+    """D-85 3D 截面形状：宽度 w(x) × 厚度 h(x) 双软边界。
+
+    截面 = 底固定 z=0、顶 z_top(x)=h(x) 的平板；y 向半宽 w(x)。介电
+        eps(i,j,k) = Δeps·σ_w((w(x)-|y-j_mid|)/t_w)·σ_h((h(x)-k)/t_z)
+    参数 θ = [w(K), h(K)]（2K 控制点），联合梯度链式 dFOM/dw、dFOM/dh。
+    可制造 DRC：宽度界 + 厚度界 + 双平滑。
+    """
+
+    def __init__(self, base: AdjointProblem3D, n_controls: int = 8,
+                 w_min: float = 2.0, w_max: float = 10.0,
+                 h_min: float = 1.5, h_max: float = 6.0,
+                 slope_max: float = 1.5, t_w: float = 1.2,
+                 t_z: float = 0.8, init_w: float = 5.0,
+                 init_h: float = 3.0):
+        self.base = base
+        self.n_controls = n_controls
+        self.w_min, self.w_max = w_min, w_max
+        self.h_min, self.h_max = h_min, h_max
+        self.slope_max = slope_max
+        self.t_w, self.t_z = t_w, t_z
+        self.init_w, self.init_h = init_w, init_h
+        self.di0, self.di1 = base.di0, base.di1
+        self.dj0, self.dj1 = base.dj0, base.dj1
+        self.j_mid = (base.dj0 + base.dj1) // 2
+        self.k0, self.k1 = base.k_core0, base.k_core1
+        self.knots = np.linspace(self.di0, self.di1 - 1, n_controls)
+        self.cols = np.arange(self.di0, self.di1)
+
+    def width_at(self, w) -> np.ndarray:
+        return np.interp(self.cols, self.knots, np.asarray(w, dtype=float))
+
+    def height_at(self, h) -> np.ndarray:
+        return np.interp(self.cols, self.knots, np.asarray(h, dtype=float))
+
+    def eps(self, w_ctl: np.ndarray, h_ctl: np.ndarray) -> np.ndarray:
+        p = self.base
+        tw, tz = self.t_w, self.t_z
+        wc = self.width_at(w_ctl)
+        hc = self.height_at(h_ctl)
+        eps3 = np.full((p.Nx, p.Ny, p.Nz), p.eps_min)
+        j = np.arange(self.dj0, self.dj1)
+        k = np.arange(self.k0, self.k1)
+        for ci, i in enumerate(self.cols):
+            sw = _sigmoid((wc[ci] - np.abs(j - self.j_mid)) / tw)
+            sh = _sigmoid((hc[ci] - k) / tz)
+            eps3[i, self.dj0:self.dj1, self.k0:self.k1] = p.eps_min + \
+                (p.eps_max - p.eps_min) * np.outer(sw, sh)
+        return eps3
+
+    def gradient(self, fwd: dict, w_ctl: np.ndarray,
+                 h_ctl: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """链式：dFOM/dw_k、dFOM/dh_k（双软边界，探针 FD 对拍 4e-4）。"""
+        p = self.base
+        tw, tz = self.t_w, self.t_z
+        geps = compute_gradient3d(p, fwd)
+        K = self.n_controls
+        wc = self.width_at(w_ctl)
+        hc = self.height_at(h_ctl)
+        j = np.arange(self.dj0, self.dj1)
+        k = np.arange(self.k0, self.k1)
+        gw = np.zeros(K)
+        gh = np.zeros(K)
+        for ci, i in enumerate(self.cols):
+            sw = _sigmoid((wc[ci] - np.abs(j - self.j_mid)) / tw)
+            sh = _sigmoid((hc[ci] - k) / tz)
+            dsw = (sw * (1.0 - sw)) / tw
+            dsh = (sh * (1.0 - sh)) / tz
+            region = geps[i, self.dj0:self.dj1, self.k0:self.k1] * \
+                (p.eps_max - p.eps_min)
+            for kk in range(K):
+                wgt = _interp_weight(i, self.knots, kk, K)
+                if wgt == 0.0:
+                    continue
+                gw[kk] += np.sum(region * np.outer(dsw, sh)) * wgt
+                gh[kk] += np.sum(region * np.outer(sw, dsh)) * wgt
+        return gw, gh
+
+
+def verify_section_gradient(sp: ShapeProblem3DSection, w_ctl: np.ndarray,
+                            h_ctl: np.ndarray, nsamples: int = 6,
+                            delta: float = 0.02, seed: int = 7
+                            ) -> Dict[str, Any]:
+    """截面联合梯度（w+h 控制点混合采样）FD 对拍。"""
+    fwd0 = forward3d(sp.base, sp.eps(w_ctl, h_ctl))
+    gw, gh = sp.gradient(fwd0, w_ctl, h_ctl)
+    K = sp.n_controls
+    rng = np.random.default_rng(seed)
+    picks = sorted(rng.choice(K, size=min(nsamples, K), replace=False))
+    rows = []
+    for k in picks:
+        for kind, g in (("w", gw), ("h", gh)):
+            if kind == "w":
+                wp = w_ctl.copy(); wp[k] += delta
+                wm = w_ctl.copy(); wm[k] -= delta
+                Fp = forward3d(sp.base, sp.eps(wp, h_ctl))["FOM"]
+                Fm = forward3d(sp.base, sp.eps(wm, h_ctl))["FOM"]
+            else:
+                hp = h_ctl.copy(); hp[k] += delta
+                hm = h_ctl.copy(); hm[k] -= delta
+                Fp = forward3d(sp.base, sp.eps(w_ctl, hp))["FOM"]
+                Fm = forward3d(sp.base, sp.eps(w_ctl, hm))["FOM"]
+            rows.append({"kind": kind, "k": int(k),
+                         "g_adj": float(g[k]),
+                         "g_fd": float((Fp - Fm) / (2 * delta))})
+    ref = max(rows, key=lambda r: abs(r["g_fd"]))
+    Kc = ref["g_adj"] / ref["g_fd"] if abs(ref["g_fd"]) > 1e-12 else 1.0
+    max_rel = max(abs(r["g_adj"] - Kc * r["g_fd"]) /
+                  (abs(Kc * r["g_fd"]) + 1e-12) for r in rows)
+    return {"rows": rows, "max_rel_err": float(max_rel),
+            "nsamples": len(rows), "passed": bool(max_rel <= 0.15)}
+
+
+def _section_drc(sp: ShapeProblem3DSection, w: np.ndarray,
+                 h: np.ndarray) -> Dict[str, Any]:
+    """宽度 + 厚度双界 + 双平滑 DRC。"""
+    w = np.asarray(w)
+    h = np.asarray(h)
+    w_ok = bool(w.min() >= sp.w_min - 1e-9 and w.max() <= sp.w_max + 1e-9)
+    h_ok = bool(h.min() >= sp.h_min - 1e-9 and h.max() <= sp.h_max + 1e-9)
+    dw = float(np.max(np.abs(np.diff(w)))) if len(w) > 1 else 0.0
+    dh = float(np.max(np.abs(np.diff(h)))) if len(h) > 1 else 0.0
+    sm_ok = bool(dw <= sp.slope_max + 1e-9 and dh <= sp.slope_max + 1e-9)
+    ok = bool(w_ok and h_ok and sm_ok)
+    return {"ok": ok, "w_range": [float(w.min()), float(w.max())],
+            "h_range": [float(h.min()), float(h.max())],
+            "max_slope_w": round(dw, 3), "max_slope_h": round(dh, 3),
+            "detail": (f"宽度∈[{w.min():.2f},{w.max():.2f}]（界 "
+                       f"[{sp.w_min},{sp.w_max}]）；厚度∈[{h.min():.2f},"
+                       f"{h.max():.2f}]（界 [{sp.h_min},{sp.h_max}]）；"
+                       f"最大相邻变化 w={dw:.2f} h={dh:.2f}（≤{sp.slope_max}）")}
+
+
+def optimize_section3d(sp: ShapeProblem3DSection, iters: int = 18,
+                       step0: float = 0.4, verbose: bool = False
+                       ) -> Dict[str, Any]:
+    """截面联合优化（w+h 联合梯度 + 回溯线搜索 + 双可行性投影）。"""
+    K = sp.n_controls
+    w = np.full(K, sp.init_w)
+    h = np.full(K, sp.init_h)
+    fom0 = forward3d(sp.base, sp.eps(w, h))["FOM"]
+    best_fom, best_w, best_h = fom0, w.copy(), h.copy()
+    history = []
+    for it in range(iters):
+        fwd = forward3d(sp.base, sp.eps(w, h))
+        gw, gh = sp.gradient(fwd, w, h)
+        g = np.concatenate([gw, gh])
+        m = np.max(np.abs(g)) + 1e-12
+        d = g / m
+        alpha = step0
+        f_eval = fwd["FOM"]
+        f_try, accepted = f_eval, False
+        while alpha > 2e-3:
+            wt = _project_shape(w + alpha * d[:K], sp.w_min, sp.w_max,
+                                sp.slope_max)
+            ht = _project_shape(h + alpha * d[K:], sp.h_min, sp.h_max,
+                                sp.slope_max)
+            f_try = forward3d(sp.base, sp.eps(wt, ht))["FOM"]
+            if f_try > f_eval:
+                accepted = True
+                break
+            alpha *= 0.5
+        if accepted:
+            w = _project_shape(w + alpha * d[:K], sp.w_min, sp.w_max,
+                               sp.slope_max)
+            h = _project_shape(h + alpha * d[K:], sp.h_min, sp.h_max,
+                               sp.slope_max)
+            f_final = f_try
+        else:
+            f_final = f_eval
+        if f_final > best_fom:
+            best_fom, best_w, best_h = f_final, w.copy(), h.copy()
+        history.append({"iter": it, "FOM": f_final, "alpha": round(alpha, 4)})
+        if verbose and (it % 5 == 0 or it == iters - 1):
+            print(f"  it={it:3d} alpha={alpha:6.3f} FOM={f_final:.4e}")
+    fbf = forward3d(sp.base, sp.eps(best_w, best_h))
+    improvement = fbf["FOM"] / (fom0 + 1e-12)
+    drc = _section_drc(sp, best_w, best_h)
+    return {
+        "history": history,
+        "final_width": [round(float(x), 3) for x in best_w],
+        "final_height": [round(float(x), 3) for x in best_h],
+        "final_FOM": fbf["FOM"],
+        "initial_FOM": fom0,
+        "improvement": float(improvement),
+        "drc": drc,
+        "passed": bool(improvement >= 1.5 and drc["ok"]),
+        "note": ("D-85 3D 截面形状：宽度 w(x) × 厚度 h(x) 双软边界联合优化"
+                 "（3D adjoint 显式转置梯度链式）。"),
+    }
+
+
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser(description="D-84 3D adjoint 形状核")

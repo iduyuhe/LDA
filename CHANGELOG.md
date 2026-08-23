@@ -248,6 +248,21 @@
 - README：能力阶梯表加 D-84 行、四十四→四十五面板、㊺ 面板清单 + 目录结构补 adjoint3d 模块
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
+### D-85 3D 截面形状逆设计（2026-08-23 · 3D 纵深第二件）
+
+**里程碑：把 z 截面也变成形状自由度——宽度 w(x) × 厚度 h(x) 双软边界（imp 3.17×，比平板 2.02× 提升 57%）**
+
+- `lda/lda_solver/adjoint_fdtd3d.py`：`ShapeProblem3DSection`（z 底固定 0、顶 z_top=h(x)，介电=Δeps·σ_w·σ_h 双软边界处处可导；联合梯度 [dFOM/dw ⊕ dFOM/dh] 链式）+ `verify_section_gradient`（w+h 控制点混合采样 FD 对拍）+ `_section_drc`（宽度/厚度双界 + 双平滑）+ `optimize_section3d`（联合线搜索 + 双可行性投影）
+- `lda/lda_agent/adjoint3d_design.py`：`design_section3d`（mode=section 统一入口）+ CLI `--mode section`
+- `lda/run_adjoint3d_smoke.py`：4/4 smoke（shape 正例 + **section 正例** + 不同网格 + 域过小负例）
+- `lda_webui/app.py`：`/api/adjoint3d` 加 `mode=section` 分支
+- `lda_webui/static/index.html`：㊻ 面板（宽度/厚度双曲线 + 双界 DRC + 死标量验收）
+- `lda/reports/section3d_d85.json`：D-85 验收报告（imp 3.17× 全 PASS）
+- **实测**：FOM improvement 3.17×（宽度 [2.58,4.08,4.61,4.18,4.54,4.91,4.26,2.76] + 厚度 [2.98,4.48,3.74,2.83,2.67,3.50,3.60,2.34]）；3D adjoint FD 对拍 1.1e-4、截面梯度 1.0e-2；DRC 双界双平滑全过（w 1.50 / h 1.50 ≤1.5）
+- **工程坑**：①`ShapeProblem3DSection.knots` 误用域宽度（di1-di0）作控制点数 → np.interp fp/xp 长度不匹配 ValueError（探针 40×32×12 域宽恰 =8 掩盖 bug）→ 改 `linspace(di0, di1-1, n_controls)`
+- README：能力阶梯表加 D-85 行、四十五→四十六面板、㊻ 面板清单
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

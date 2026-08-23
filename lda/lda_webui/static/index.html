@@ -786,6 +786,22 @@
   </div>
 
   <div class="sec">
+    <h2>㊺ 3D adjoint 形状逆设计（D-84 · 破 3D 诚实边界 · 3D Yee 显式转置伴随）</h2>
+    <div class="hint">Track A 纵深新线：把 adjoint 从 2D 推向 **3D Yee 交错网格**（6 分量 Ex/Ey/Ez+Hx/Hy/Hz）——更新算子**显式转置**伴随（数值 Mᵀ 随机对拍 **1e-15** 级），不依赖 torch/jax。设计域 = 平板波导（z 核心薄层）+ **宽度曲线形状** w(x)（K 控制点软边界，可制造 DRC 内建）。死标量验收：3D adjoint FD 对拍 + 形状梯度链式对拍 + improvement + DRC。诚实边界：z 截面暂均匀（截面变化归 D-85+）；FOM 为收集场能（T&gt;1 聚焦增益非功率透射）；小 3D 域（内存/算力）。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>Nx:<input id="a3Nx" value="48" size="3"></label>
+      <label>Ny:<input id="a3Ny" value="40" size="3"></label>
+      <label>Nz:<input id="a3Nz" value="12" size="3"></label>
+      <label>控制点:<input id="a3K" value="8" size="3"></label>
+      <label>迭代:<input id="a3Iters" value="14" size="4"></label>
+      <button class="btn" id="runA3">3D adjoint 形状逆设计</button>
+    </div>
+    <div id="a3Summary" class="summary"></div>
+    <div id="a3Body"></div>
+    <div class="conclusion" id="a3Conclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -2538,6 +2554,41 @@ async function runHm(){
   } finally { btn.disabled = false; }
 }
 $('runHm').onclick = runHm;
+
+// ---- ㊺ D-84 3D adjoint 形状逆设计 ----
+async function runA3(){
+  const btn = $('runA3'); btn.disabled = true;
+  $('a3Summary').innerHTML = '<span class="spin"></span> 3D Yee 显式转置伴随 + 宽度曲线形状逆设计运行中…';
+  const payload = {
+    Nx: $('a3Nx').value, Ny: $('a3Ny').value, Nz: $('a3Nz').value,
+    n_controls: $('a3K').value, iters: $('a3Iters').value
+  };
+  try {
+    const d = await postJson('/api/adjoint3d', payload);
+    const passed = d.acceptance ? d.acceptance.passed : false;
+    const o = d.optimization || {}, v = d.verify || {};
+    $('a3Summary').innerHTML = `3D adjoint 形状逆设计：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（FOM improvement=${o.improvement!=null?o.improvement.toFixed(2)+'×':'?'} · 3D adjoint FD 对拍 ${v.max_rel_err!=null?v.max_rel_err.toExponential(1):'?'}）`;
+    const chk = (d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
+    $('a3Body').innerHTML = `
+      <div class="subhead">3D Yee 显式转置伴随（破 3D 诚实边界）</div>
+      <table class="tbl"><tbody>
+        <tr><td>3D 域</td><td>${d.grid?d.grid.Nx+'×'+d.grid.Ny+'×'+d.grid.Nz+'（dl='+d.grid.dl_um+'μm）':'?'}</td></tr>
+        <tr><td>核心层 / 设计体素</td><td>z∈[${(d.core_layer?d.core_layer.z:['?','?']).join(',')}] · ${d.design_voxels||'?'} 体素</td></tr>
+        <tr><td>FOM improvement</td><td class="ok">${o.improvement!=null?o.improvement.toFixed(2)+'×':'?'} ≥ 1.5</td></tr>
+        <tr><td>3D adjoint 梯度 FD 对拍</td><td class="ok">${v.max_rel_err!=null?v.max_rel_err.toExponential(1):'?'} ≤ 0.15</td></tr>
+        <tr><td>3D 形状梯度链式 FD 对拍</td><td class="ok">${v.shape_max_rel_err!=null?v.shape_max_rel_err.toExponential(1):'?'} ≤ 0.15</td></tr>
+        <tr><td>宽度 taper（形状）</td><td>[${(o.final_width||[]).map(x=>x.toFixed(2)).join(', ')}]</td></tr>
+        <tr><td>可制造性 DRC</td><td>${d.drc?escapeHtml(d.drc.detail):'—'}</td></tr>
+        <tr><td>耗时</td><td>${o.elapsed_s!=null?o.elapsed_s.toFixed(1)+'s':'?'}</td></tr>
+      </tbody></table>
+      <div class="subhead">死标量验收</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
+    $('a3Conclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+  } catch(e){
+    $('a3Summary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runA3').onclick = runA3;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

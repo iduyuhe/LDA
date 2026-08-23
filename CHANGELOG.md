@@ -279,6 +279,13 @@
 - README：能力阶梯表加 D-86 行、四十六→四十七面板、㊼ 面板清单 + 目录结构补 port 模块
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
+#### D-87 谱形目标 × 3D 截面（2026-08-24 · 参数化×目标矩阵 3D 打通）
+- **新增**：`adjoint_fdtd3d.py`——`make_wl_problems3d`（多波长问题族：deepcopy 保留惰性 dl/dt 基准网格，只改 omega/period_steps → **归一化网格陷阱免疫**）、`verify_section_gradient_multi`（多波长加权联合梯度 FD 对拍：联合 FOM=Σw_λ·FOM_λ 中心差分）、`optimize_section3d_multi`（**分块归一化** w/h 各自尺度 + 全波长线搜索同投影一致）；`adjoint3d_design.py`——`design_spectral3d`（mode=spectral）+ CLI choices 扩 spectral；`run_adjoint3d_smoke.py` 扩到 5 例
+- **实测**（生产网格 44×36×12，三波长 1.5/1.55/1.6）：加权 improvement **3.13×**（逐波长 3.18×/3.15×/3.06×——三波长同向 ≥3×，远超 1.2 门槛）、多波长联合梯度 FD 对拍 **4.2e-4**、3D adjoint 对拍 1.1e-4、DRC 双界全过（w=1.50/h=1.50）；smoke 5/5；D-84/85 回归零影响；WebUI ㊽ 面板 + `/api/adjoint3d` mode=spectral（HTTP 实测 wimp 1.92×）
+- **工程坑**：`verify_section_gradient_multi` 返回缺 `nsamples` 键 → verdict KeyError（补齐）
+- README：能力阶梯表加 D-87 行、四十七→四十八面板、㊽ 面板清单
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

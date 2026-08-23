@@ -1661,10 +1661,11 @@ def run_hybrid_multi(payload=None):
 
 
 def run_adjoint3d(payload=None):
-    """D-84/85 3D adjoint 形状逆设计（webui ㊺/㊻ 面板）。
+    """D-84/85/87 3D adjoint 形状逆设计（webui ㊺/㊻/㊽ 面板）。
 
-    输入 {mode?: shape|section, Nx?, Ny?, Nz?, n_controls?, iters?}：
-    shape=宽度曲线平板（D-84），section=宽度×厚度截面（D-85）。
+    输入 {mode?: shape|section|spectral, Nx?, Ny?, Nz?, n_controls?, iters?}：
+    shape=宽度曲线平板（D-84），section=宽度×厚度截面（D-85），
+    spectral=截面 × 多波长加权联合（D-87）。
     死标量验收：3D adjoint FD 对拍 + 形状梯度链式对拍 + improvement + DRC。
     LLM 不进判决路径。
     """
@@ -1673,16 +1674,22 @@ def run_adjoint3d(payload=None):
     _lda = _P(__file__).resolve().parent.parent  # lda/
     if str(_lda) not in _sys.path:
         _sys.path.insert(0, str(_lda))
-    from lda_agent.adjoint3d_design import design_shape3d, design_section3d
+    from lda_agent.adjoint3d_design import (design_shape3d, design_section3d,
+                                            design_spectral3d)
     payload = payload or {}
     kw = {}
     for k, cast in (("Nx", int), ("Ny", int), ("Nz", int),
                     ("n_controls", int), ("iters", int)):
         if payload.get(k) not in (None, ""):
             kw[k] = cast(payload[k])
+    mode = payload.get("mode", "shape")
+    if payload.get("wavelengths") and mode == "spectral":
+        kw["wavelengths_um"] = [float(x) for x in payload["wavelengths"]]
     try:
-        if payload.get("mode") == "section":
+        if mode == "section":
             rep = design_section3d(**kw)
+        elif mode == "spectral":
+            rep = design_spectral3d(**kw)
         else:
             rep = design_shape3d(**kw)
         rep["ok"] = bool(rep.get("ok"))

@@ -719,6 +719,27 @@
   </div>
 
   <div class="sec">
+    <h2>㊶ 谱形目标逆设计（D-80 · Track A 深化 · 目标从收集场能泛化到分束/模式/谱形）</h2>
+    <div class="hint">把伴随梯度拓扑逆设计（D-69/D-70「孔径收集场能最大化」）泛化为三类<b>谱形目标 FOM</b>（逼近商业 EDA adjoint 逆设计核心卖点）：①<b>split_ratio 分束比</b>（双输出监视器，FOM=a·log E_A+b·log E_B，优化后 FDTD 实测分束比命中 target±0.10）；②<b>mode_match 模式匹配</b>（目标场分布投影 FOM=proj²/‖p‖²）；③<b>spectrum 多波长谱形</b>（FOM=Σw_λ·FOM_λ 加权联合，设计对目标波长带整体可用）。死标量验收：adjoint vs 有限差分对拍 ≤0.15 + improvement≥1.5（分束器 1.2）+ 分束比命中。实测：50:50 分束比命中 0.498（err 0.0016）、improvement 7.1×；3 波长谱形 2.0×。诚实边界：FOM 为收集场能（T>1 聚焦增益，非功率透射）、2D TEz、窄带谱形物理窗口。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>目标类型:<select id="sdType">
+        <option value="split_ratio">split_ratio 分束比</option>
+        <option value="spectrum">spectrum 多波长</option>
+        <option value="mode_match">mode_match 模式匹配</option>
+        <option value="field_energy">field_energy 收集场能</option>
+      </select></label>
+      <label>目标比(0-1):<input id="sdRatio" value="0.5" size="4"></label>
+      <label>波长(µm,逗号):<input id="sdWls" value="1.53,1.55,1.57" size="16"></label>
+      <label>迭代:<input id="sdIters" value="14" size="4"></label>
+      <label>网格:<input id="sdNx" value="80" size="4"><span style="margin:0 2px">×</span><input id="sdNy" value="70" size="4"></label>
+      <button class="btn" id="runSd">谱形目标逆设计</button>
+    </div>
+    <div id="sdSummary" class="summary"></div>
+    <div id="sdBody"></div>
+    <div class="conclusion" id="sdConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -2322,6 +2343,43 @@ async function runPerf(){
   } finally { btn.disabled = false; }
 }
 $('runPerf').onclick = runPerf;
+
+// ---- ㊶ D-80 谱形目标逆设计 ----
+async function runSd(){
+  const btn = $('runSd'); btn.disabled = true;
+  $('sdSummary').innerHTML = '<span class="spin"></span> 伴随梯度拓扑逆设计（谱形目标）运行中…';
+  const payload = {
+    target_type: $('sdType').value, target_ratio: $('sdRatio').value,
+    wavelengths: $('sdWls').value, iters: $('sdIters').value,
+    Nx: $('sdNx').value, Ny: $('sdNy').value
+  };
+  try {
+    const d = await postJson('/api/spectral_design', payload);
+    const passed = d.acceptance ? d.acceptance.passed : false;
+    const o = d.optimization || {}, v = d.verify || {}, g = d.grid || {};
+    $('sdSummary').innerHTML = `谱形目标逆设计（${d.target_type||'?'}）：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（improvement=${o.improvement!=null?o.improvement.toFixed(2)+'×':'?'} · 对拍 ${v.max_rel_err!=null?v.max_rel_err.toExponential(1):'?'}）`;
+    const chk = (d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
+    let specRows = '';
+    if (d.target_type==='split_ratio') specRows = `
+      <tr><td>FDTD 实测分束比</td><td class="${Math.abs(o.final_ratio-o.target_ratio)<=0.10?'ok':'fail'}">${o.final_ratio.toFixed(3)}（target ${o.target_ratio}）</td></tr>`;
+    if (d.target_type==='spectrum') specRows = (o.per_wavelength||[]).map(w=>`<tr><td>λ=${w.wl_um}µm</td><td class="ok">improvement ${w.improvement.toFixed(2)}×（T=${w.final_T.toFixed(3)}）</td></tr>`).join('');
+    $('sdBody').innerHTML = `
+      <div class="subhead">配置</div>
+      <table class="tbl"><tbody>
+        <tr><td>目标类型</td><td>${d.target_type||'?'}</td></tr>
+        <tr><td>网格 / 设计体素</td><td>${g.Nx}×${g.Ny}（dl_factor=${g.dl_factor||'?'}）· ${g.design_voxels||'?'} 体素</td></tr>
+        <tr><td>FOM improvement</td><td>${o.improvement!=null?o.improvement.toFixed(2)+'×':'?'}（初值 ${o.initial_FOM!=null?o.initial_FOM.toExponential(1):'?'} → 终值 ${o.final_FOM!=null?o.final_FOM.toExponential(1):'?'}）</td></tr>
+        <tr><td>adjoint 对拍（FD）</td><td class="ok">max_rel_err=${v.max_rel_err!=null?v.max_rel_err.toExponential(1):'?'} ≤ 0.15</td></tr>
+        ${specRows}
+      </tbody></table>
+      <div class="subhead">死标量验收</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
+    $('sdConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+  } catch(e){
+    $('sdSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runSd').onclick = runSd;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

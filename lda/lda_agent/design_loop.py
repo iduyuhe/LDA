@@ -111,21 +111,26 @@ class DesignAgent:
         return report
 
     def _run_adjoint(self, target: DesignTarget) -> DesignOutcomeReport:
-        """D-70：伴随梯度拓扑逆设计闭环（method="adjoint"）。
+        """D-70/D-80：伴随梯度拓扑逆设计闭环（method="adjoint"）。
 
-        目标泛化：设计区/监视孔径/材料对比度/波长/网格分辨率全部由 intent 的
-        extra 指定（AdjointProblem 几何透传）——"设计目标"从布拉格周期数泛化为
-        "把某孔径内的收集场能最大化"。
+        目标泛化（D-80）：extra.target_type 选择 FOM 语义——
+          "field_energy"（默认，D-70）：单孔径收集场能最大化；
+          "split_ratio"（D-80）：双输出监视器分束比命中（FOM=(E_A+ε)^a(E_B+ε)^b）；
+          "mode_match"（D-80）：目标场分布投影（FOM=proj²/‖p‖²）；
+          "spectrum"（D-80）：多波长加权联合（谱形目标，FOM=Σw_λ·FOM_λ）。
+        设计区/监视孔径/材料对比度/波长/网格分辨率全部由 intent 的 extra 指定。
 
         闭环（LLM 不进判决路径，PASS 由死标量比对决定）：
           (a) 数值/物理自洽锚：adjoint vs 中心有限差分方向对拍 max_rel_err ≤ 0.15；
-          (b) 目标达成：improvement = final_FOM / initial_FOM ≥ 1.5（M4）。
+          (b) 目标达成：improvement = final_FOM / initial_FOM ≥ 1.5；
+          (c) split_ratio 追加：final_ratio 命中 target_ratio ± 0.10。
         优化器 = 密度投影（beta 延拓二值化）+ 回溯线搜索梯度上升（FOM 单调不降）。
         FOM 语义诚实标注：脉冲源监视器孔径收集场能，聚焦增益可致 T>1，非功率透射。
         """
         import numpy as np
         from lda_solver.adjoint_fdtd import (
             AdjointProblem, verify_adjoint, optimize_topology,
+            spectrum_optimize,
         )
 
         t0 = time.time()
@@ -135,9 +140,16 @@ class DesignAgent:
                         "y_src0", "y_src1", "y_mon0", "y_mon1",
                         "di0", "di1", "dj0", "dj1", "eps_min", "eps_max",
                         "wl_um", "courant", "target_exp", "ramp",
-                        "periods_factor")}
+                        "periods_factor", "target_type", "target_ratio",
+                        "i_mon2", "y2_mon0", "y2_mon1")}
         if isinstance(ex.get("geo"), dict):
             geo.update(ex["geo"])
+        ttype = str(ex.get("target_type", "field_energy"))
+        geo.setdefault("target_type", ttype)
+        if ttype == "split_ratio":
+            geo.setdefault("target_ratio", float(ex.get("target_ratio", 0.5)))
+        if ttype == "mode_match" and ex.get("mode_profile") is not None:
+            geo["mode_profile"] = np.asarray(ex["mode_profile"], dtype=float)
         problem = AdjointProblem(**geo)
 
         # 空设计区：优雅 FAIL（非异常）
@@ -159,44 +171,78 @@ class DesignAgent:
         delta = float(ex.get("delta", 0.05))
         vr = verify_adjoint(problem, eps0, nsamples=nsamples, delta=delta)
 
-        # 3) 梯度拓扑优化（回溯线搜索，FOM 单调不降）
+        # 3) 梯度拓扑优化（谱形目标走多波长联合）
         iters = int(ex.get("iters", 50))
         step0 = float(ex.get("step0", 0.5))
         beta_max = float(ex.get("beta_max", 14.0))
-        opt = optimize_topology(problem, eps0, iters=iters, step0=step0,
-                                beta_max=beta_max)
+        if ttype == "spectrum":
+            wls = [float(x) for x in
+                   str(ex.get("wavelengths", "1.53,1.55,1.57")).split(",")
+                   if x.strip()]
+            weights = None
+            if ex.get("weights"):
+                weights = [float(x) for x in
+                           str(ex["weights"]).split(",") if x.strip()]
+            opt = spectrum_optimize(problem, eps0, wavelengths_um=wls,
+                                    weights=weights, iters=iters,
+                                    step0=step0, beta_max=beta_max)
+        else:
+            opt = optimize_topology(problem, eps0, iters=iters, step0=step0,
+                                    beta_max=beta_max)
 
         # 4) 死标量验收
         ok_anchor = bool(vr["passed"])
         ok_gain = bool(opt["passed"])
-        accepted = ok_anchor and ok_gain
-        fom0, fomf = opt["initial_FOM"], opt["final_FOM"]
-        trace = [{"iteration": h["iter"], "FOM": round(h["FOM"], 4),
-                  "T": round(h["T"], 4), "beta": h["beta"], "alpha": h["alpha"]}
-                 for h in opt["history"]]
+        ratio_ok = True
+        if ttype == "split_ratio":
+            ratio_ok = bool(opt.get("ratio_err", 1.0) <= 0.10)
+        accepted = ok_anchor and ok_gain and ratio_ok
+        if ttype == "spectrum":
+            fom0 = opt["initial_FOM_total"]
+            fomf = opt["final_FOM_total"]
+            trace = [{"iteration": h["iter"], "FOM": round(h["FOM_total"], 4),
+                      "beta": h["beta"], "alpha": h["alpha"]}
+                     for h in opt["history"]]
+        else:
+            fom0, fomf = opt["initial_FOM"], opt["final_FOM"]
+            trace = [{"iteration": h["iter"], "FOM": round(h["FOM"], 4),
+                      "T": round(h["T"], 4), "beta": h["beta"],
+                      "alpha": h["alpha"]} for h in opt["history"]]
 
         if accepted:
-            verdict = (f"逆设计 PASS：FOM {fom0:.1f} → {fomf:.1f} "
-                       f"（improvement={opt['improvement']:.2f}× ≥ 1.5），"
+            extra_s = ""
+            if ttype == "split_ratio":
+                extra_s = (f"，分束比 {opt['final_ratio']:.3f} 命中目标 "
+                           f"{opt['target_ratio']}（err={opt['ratio_err']:.3f} ≤0.10）")
+            elif ttype == "spectrum":
+                extra_s = (f"，多波长加权 improvement="
+                           f"{opt['weighted_improvement']:.2f}×（"
+                           + ", ".join(f"λ{w['wl_um']}:{w['improvement']:.2f}×"
+                                       for w in opt["per_wavelength"]) + "）")
+            elif ttype == "mode_match":
+                extra_s = f"，模式匹配投影 FOM 提升 {opt['improvement']:.2f}×"
+            verdict = (f"逆设计（{ttype}）PASS：FOM {fom0:.1f} → {fomf:.1f} "
+                       f"（improvement={opt['improvement'] if ttype != 'spectrum' else opt['weighted_improvement']:.2f}× ≥ 1.5），"
                        f"adjoint 对拍 max_rel_err={vr['max_rel_err']:.4f} "
-                       f"（≤0.15）；设计区 "
-                       f"{int(problem.design_mask.sum())} 体素，孔径 "
-                       f"y∈[{problem.y_mon0},{problem.y_mon1}]。"
+                       f"（≤0.15）{extra_s}；设计区 "
+                       f"{int(problem.design_mask.sum())} 体素。"
                        f"闭环耗时 {time.time() - t0:.1f}s。结果已可由「人」验收。")
         else:
             fails = []
             if not ok_anchor:
                 fails.append(f"adjoint 对拍 max_rel_err={vr['max_rel_err']:.4f} 超 0.15")
             if not ok_gain:
-                fails.append(f"improvement={opt['improvement']:.2f}× 未达 1.5")
-            verdict = (f"逆设计未全过：" + "；".join(fails) +
+                fails.append(f"improvement 未达 1.5（{opt.get('improvement', opt.get('weighted_improvement', 0)):.2f}×）")
+            if not ratio_ok:
+                fails.append(f"分束比 err={opt.get('ratio_err', 1.0):.3f} 超 0.10")
+            verdict = (f"逆设计（{ttype}）未全过：" + "；".join(fails) +
                        f"。闭环耗时 {time.time() - t0:.1f}s。")
 
         return DesignOutcomeReport(
             target=target.__dict__,
             accepted=accepted,
             iterations=len(trace),
-            final_doc_id="adjoint-topology-d70",
+            final_doc_id=f"adjoint-topology-{ttype}",
             final_layers=[],                       # voxel 设计：分布见 loop_trace/verdict
             final_metric=float(fomf),
             final_oracle_metric=float(fom0),       # oracle = 均匀平板初值基线

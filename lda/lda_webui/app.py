@@ -1532,6 +1532,37 @@ def run_perf_bench(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_spectral_design(payload=None):
+    """D-80 谱形目标逆设计（webui ㊶ 面板）。
+
+    输入 {target_type?, target_ratio?, wavelengths?, Nx?, Ny?, iters?}：
+    伴随梯度拓扑逆设计目标泛化——field_energy（收集场能）/ split_ratio
+    （分束比）/ mode_match（模式匹配）/ spectrum（多波长谱形）。死标量验收：
+    FD 对拍 ≤0.15 + improvement + 分束比命中。LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.spectral_inverse_design import design_spectral
+    payload = payload or {}
+    kw = {}
+    for k, cast in (("target_ratio", float), ("Nx", int), ("Ny", int),
+                    ("iters", int), ("dl_factor", float),
+                    ("nsamples", int), ("delta", float)):
+        if payload.get(k) not in (None, ""):
+            kw[k] = cast(payload[k])
+    ttype = payload.get("target_type") or "split_ratio"
+    wls = payload.get("wavelengths")
+    try:
+        rep = design_spectral(target_type=ttype, wavelengths=wls, **kw)
+        rep["ok"] = bool(rep.get("ok"))
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def system_status():
     return {
         "layers": [
@@ -1671,6 +1702,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_ci_regression(payload))
             elif path == "/api/perf_bench":
                 self._send(200, run_perf_bench(payload))
+            elif path == "/api/spectral_design":
+                self._send(200, run_spectral_design(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

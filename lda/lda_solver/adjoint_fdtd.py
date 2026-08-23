@@ -70,6 +70,14 @@ class AdjointProblem:
     i_mon: int = 0
     y_mon0: int = 0
     y_mon1: int = 0
+    # D-80 多目标：第二监视器（分束比用，mon2 = 下/另一输出臂）
+    i_mon2: int = 0
+    y2_mon0: int = 0
+    y2_mon1: int = 0
+    # D-80 目标类型：field_energy | split_ratio | mode_match
+    target_type: str = "field_energy"
+    target_ratio: float = 0.5            # 分束比目标：mon(主) 端口占比 ∈(0,1)
+    mode_profile: Optional[np.ndarray] = None   # mode_match 目标场分布（长度=y_mon1-y_mon0）
     # 设计区（盒子 [i0:i1, j0:j1]，须在源/监视器之间且避开海绵）
     di0: int = 0
     di1: int = 0
@@ -96,6 +104,18 @@ class AdjointProblem:
             # 窄孔径（6 行 ≈ 0.85 λ0），聚焦式 FOM
             self.y_mon0 = self.Ny // 2 - 3
             self.y_mon1 = self.Ny // 2 + 3
+        # D-80 split_ratio 默认第二监视器：同列、与主监视器上下对称（两输出臂）
+        if self.target_type == "split_ratio":
+            if self.i_mon2 == 0:
+                self.i_mon2 = self.i_mon
+            if self.y2_mon0 == 0 and self.y2_mon1 == 0:
+                span = self.y_mon1 - self.y_mon0
+                self.y2_mon0 = self.y_mon1 + 2          # 下臂（主=上臂）
+                self.y2_mon1 = self.y2_mon0 + span
+                if self.y2_mon1 >= self.Ny - self.sponge:
+                    # 空间不足：主/第二上下翻转
+                    self.y2_mon1 = self.y_mon0 - 2
+                    self.y2_mon0 = self.y2_mon1 - span
         if self.di0 == 0 and self.di1 == 0:
             self.di0 = self.sponge + 8
             self.di1 = self.Nx - self.sponge - 8
@@ -182,6 +202,7 @@ def forward(prob: AdjointProblem, eps: np.ndarray,
     dr_i, dr_j = prob._dr // Ny, prob._dr % Ny
     curlH_dr = np.zeros((nsteps, ndr))
     Ez_mon = np.zeros((nsteps, mw))
+    Ez_mon2 = np.zeros((nsteps, mw)) if prob.target_type == "split_ratio" else None
     E_in = 0.0
 
     for n in range(nsteps):
@@ -210,11 +231,34 @@ def forward(prob: AdjointProblem, eps: np.ndarray,
             E_in += env * env * (j1s - j0s)
         # ---- 监视器场能记录 ----
         Ez_mon[n, :] = Ez[i_mon, m0:m1]
+        if Ez_mon2 is not None:
+            Ez_mon2[n, :] = Ez[prob.i_mon2, prob.y2_mon0:prob.y2_mon1]
 
-    FOM = float(np.sum(Ez_mon[meas0:, :] ** 2))
+    # D-80 目标 FOM（按 target_type）
+    E_A = float(np.sum(Ez_mon[meas0:, :] ** 2))          # 主监视器场能
+    ttype = prob.target_type
+    if ttype == "split_ratio":
+        E_B = float(np.sum(Ez_mon2[meas0:, :] ** 2))     # 第二监视器场能
+        eps_reg = 1e-6
+        a, b = prob.target_ratio, 1.0 - prob.target_ratio
+        # 对数加权 FOM（=几何平均的对数，单调等价但数值更稳；观测线性化无 FOM 系数）
+        FOM = a * math.log(E_A + eps_reg) + b * math.log(E_B + eps_reg)
+        FOM_geom = (E_A + eps_reg) ** a * (E_B + eps_reg) ** b
+        ratio = E_A / (E_A + E_B + 1e-12)
+        res = {
+            "FOM": FOM, "FOM_geom": FOM_geom, "E_A": E_A, "E_B": E_B,
+            "ratio": ratio, "target_ratio": prob.target_ratio}
+    elif ttype == "mode_match":
+        prof = prob.mode_profile
+        norm2 = float(np.sum(prof ** 2)) + 1e-12
+        proj = float(np.sum(Ez_mon[meas0:, :] * prof[None, :]))
+        FOM = proj * proj / norm2
+        res = {"FOM": FOM, "proj": proj, "norm2": norm2}
+    else:   # field_energy（默认，兼容原语义）
+        FOM = E_A
+        res = {"FOM": FOM, "E_A": E_A}
     T = (FOM / E_in) if E_in > 1e-12 else 0.0
-    return {
-        "FOM": FOM,
+    out = {
         "T": T,
         "P_out": FOM,
         "P_in": E_in,
@@ -227,6 +271,10 @@ def forward(prob: AdjointProblem, eps: np.ndarray,
         "sigma_n": sigma_n,
         "n_peak": n_peak,
     }
+    out.update(res)
+    if Ez_mon2 is not None:
+        out["Ez_mon2"] = Ez_mon2
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -255,10 +303,32 @@ def compute_gradient(prob: AdjointProblem, fwd: dict):
     curlH_dr = fwd["curlH_dr"]
     Ez_mon = fwd["Ez_mon"]
     dr = prob._dr
+    ttype = prob.target_type
 
-    # 观测源：dFOM/dEz[n, j] = 2·Ez_fwd[n, j]（测量窗内）
-    obs = np.zeros((nsteps, Ny))
-    obs[meas0:, m0:m1] = 2.0 * Ez_mon[meas0:, :]
+    # 观测源（按 target_type）
+    if ttype == "split_ratio":
+        E_A, E_B = fwd["E_A"], fwd["E_B"]
+        eps_reg = 1e-6
+        a, b = prob.target_ratio, 1.0 - prob.target_ratio
+        # dFOM_log/dEz = 2a/(E_A+ε)·Ez_A（对数 FOM 观测线性化，无需 FOM 系数）
+        ca = 2.0 * a / (E_A + eps_reg)
+        cb = 2.0 * b / (E_B + eps_reg)
+        obs = np.zeros((nsteps, Ny))
+        obs[meas0:, m0:m1] = ca * Ez_mon[meas0:, :]
+        obs2 = np.zeros((nsteps, Ny))
+        i2, m2a, m2b = prob.i_mon2, prob.y2_mon0, prob.y2_mon1
+        obs2[meas0:, m2a:m2b] = cb * fwd["Ez_mon2"][meas0:, :]
+    elif ttype == "mode_match":
+        prof = np.asarray(prob.mode_profile, dtype=float)
+        norm2 = fwd["norm2"]
+        proj = fwd["proj"]
+        obs = np.zeros((nsteps, Ny))
+        obs[:, m0:m1] = (2.0 * proj / norm2) * prof[None, :]
+        obs2 = None
+    else:   # field_energy（原语义）
+        obs = np.zeros((nsteps, Ny))
+        obs[meas0:, m0:m1] = 2.0 * Ez_mon[meas0:, :]
+        obs2 = None
 
     lamE = np.zeros((Nx, Ny))
     lamHx = np.zeros((Nx, Ny))
@@ -269,6 +339,11 @@ def compute_gradient(prob: AdjointProblem, fwd: dict):
     nN = nsteps - 1
     if nN >= meas0:
         lamE[i_mon, m0:m1] += obs[nN, m0:m1]
+        if obs2 is not None and (prob.target_type == "mode_match"
+                                 or nN >= meas0):
+            i2, m2a, m2b = prob.i_mon2, prob.y2_mon0, prob.y2_mon1
+            if ttype == "split_ratio":
+                lamE[i2, m2a:m2b] += obs2[nN, m2a:m2b]
 
     for k in range(nsteps - 1, -1, -1):
         # ---- Bᵀ 项：(dt/dl)/eps · D_E λ_E^k 注入 H 伴随状态 ----
@@ -306,6 +381,9 @@ def compute_gradient(prob: AdjointProblem, fwd: dict):
         lamE_new = dampE * lamE + dE_full
         if (k - 1) >= meas0:
             lamE_new[i_mon, m0:m1] += obs[k - 1, m0:m1]
+            if obs2 is not None and ttype == "split_ratio":
+                i2, m2a, m2b = prob.i_mon2, prob.y2_mon0, prob.y2_mon1
+                lamE_new[i2, m2a:m2b] += obs2[k - 1, m2a:m2b]
 
         lamHx = lamHx_new
         lamHy = lamHy_new
@@ -408,6 +486,10 @@ def optimize_topology(prob: AdjointProblem, eps0: np.ndarray,
 
     r = np.full(nd, 0.5)
     fom0 = FOM_at(r, 2.0)          # 均匀平板初值（project(0.5,·)=0.5）
+    prob_init_geom = fom0
+    if prob.target_type == "split_ratio":
+        f0g = forward(prob, eps0)
+        prob_init_geom = f0g["FOM_geom"]
     best_fom = fom0
     best_r = r.copy()
     history = []
@@ -446,25 +528,163 @@ def optimize_topology(prob: AdjointProblem, eps0: np.ndarray,
         if f_final > best_fom:
             best_fom = f_final
             best_r = r.copy()
+        ratio_rec = (fwd.get("ratio")
+                     if prob.target_type == "split_ratio" else None)
         history.append({"iter": it, "FOM": f_final, "T": fwd["T"],
-                        "beta": round(beta, 2), "alpha": round(alpha, 4)})
+                        "beta": round(beta, 2), "alpha": round(alpha, 4),
+                        **({"ratio": round(ratio_rec, 4)}
+                           if ratio_rec is not None else {})})
         if verbose and (it % 5 == 0 or it == iters - 1):
             print(f"  it={it:3d} beta={beta:5.2f} alpha={alpha:6.3f} "
-                  f"FOM={f_final:.4e} T={fwd['T']:.4f}")
+                  f"FOM={f_final:.4e} T={fwd['T']:.4f}"
+                  + (f" ratio={ratio_rec:.3f}" if ratio_rec is not None else ""))
 
     # 最终设计：best_r 以 beta_max 重投影（二值化）后评估
     best_eps = eps0.copy()
     best_eps[dm] = rho_to_eps(project(best_r, beta_max))
     fbf = forward(prob, best_eps)
-    improvement = fbf["FOM"] / (fom0 + 1e-12)
-    return {
+    # split_ratio 用 FOM_geom（几何平均语义）算 improvement；线搜索仍用对数 FOM
+    if prob.target_type == "split_ratio":
+        improvement = fbf["FOM_geom"] / (prob_init_geom + 1e-12)
+        fom0_report = prob_init_geom
+    else:
+        improvement = fbf["FOM"] / (fom0 + 1e-12)
+        fom0_report = fom0
+    out = {
         "history": history,
         "final_eps": best_eps,
         "final_T": fbf["T"],
         "final_FOM": fbf["FOM"],
-        "initial_FOM": fom0,
+        "initial_FOM": fom0_report,
         "improvement": float(improvement),
-        "passed": bool(improvement >= 1.5),   # 收集场能较初值提升 ≥50%
+        "passed": bool(improvement >= 1.5),   # 目标 FOM 较初值提升 ≥50%
+    }
+    if prob.target_type == "split_ratio":
+        out["final_ratio"] = fbf["ratio"]
+        out["target_ratio"] = prob.target_ratio
+        out["ratio_err"] = abs(fbf["ratio"] - prob.target_ratio)
+        # 分束器重比例命中：improvement（几何平均）≥1.2 且比例 err ≤0.10
+        out["passed"] = bool(improvement >= 1.2
+                             and out["ratio_err"] <= 0.10)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# D-80 谱形目标：多波长加权联合优化（spectrum target）
+# ---------------------------------------------------------------------------
+def spectrum_optimize(base: AdjointProblem, eps0: np.ndarray,
+                      wavelengths_um: Optional[list] = None,
+                      weights: Optional[list] = None,
+                      iters: int = 25, step0: float = 0.5,
+                      beta_max: float = 14.0, verbose: bool = False):
+    """多波长谱形目标联合优化：总 FOM = Σ_λ w_λ · FOM_λ。
+
+    每个波长构造独立 AdjointProblem（同几何、wl_um 变），每次迭代对每波长
+    各跑 forward + adjoint，梯度按权重合并后统一线搜索（线搜索评估也跑全
+    波长 → 与优化目标同投影一致）。谱形目标 = 设计对目标波长带整体可用。
+
+    返回 dict：per_wavelength（各波长初/末 FOM + improvement）、weighted
+    improvement、final_eps、passed（加权 improvement ≥ 1.5 且各波长均 ≥ 1.2）。
+    """
+    if wavelengths_um is None:
+        wavelengths_um = [1.5, 1.55, 1.6]
+    nwl = len(wavelengths_um)
+    if weights is None:
+        weights = [1.0 / nwl] * nwl
+    probs = []
+    for wl in wavelengths_um:
+        import copy
+        p = copy.deepcopy(base)
+        # 物理网格固定（dl/dt 用基准波长定），只变 omega → 波长真正变化
+        # （归一化网格陷阱：若 dl=wl/dl_factor 则 omega·dt 与波长无关）
+        p.wl_um = float(wl)
+        p.omega = 2.0 * math.pi / float(wl)
+        p.period_steps = int(round(2.0 * math.pi / (p.omega * p.dt)))
+        probs.append(p)
+    w = np.asarray(weights, dtype=float)
+    w = w / w.sum()
+
+    dm = base.design_mask
+    nd = int(dm.sum())
+    eps_min, eps_max = base.eps_min, base.eps_max
+
+    def rho_to_eps(r):
+        return eps_min + r * (eps_max - eps_min)
+
+    def project(r, b):
+        t = np.tanh(b * (r - 0.5)) / (2.0 * np.tanh(b / 2.0)) + 0.5
+        return np.clip(t, 0.0, 1.0)
+
+    def FOM_total_at(r, beta):
+        e = eps0.copy()
+        e[dm] = rho_to_eps(project(r, beta))
+        return sum(w[k] * forward(probs[k], e)["FOM"] for k in range(nwl))
+
+    r = np.full(nd, 0.5)
+    fom0 = FOM_total_at(r, 2.0)
+    best_fom, best_r = fom0, r.copy()
+    history = []
+    for it in range(iters):
+        beta = 2.0 + (beta_max - 2.0) * (it / max(iters - 1, 1))
+        rho = project(r, beta)
+        eps_cur = eps0.copy()
+        eps_cur[dm] = rho_to_eps(rho)
+        g_total = np.zeros((base.Nx, base.Ny))
+        fwds = []
+        for k in range(nwl):
+            fwd = forward(probs[k], eps_cur)
+            fwds.append(fwd)
+            g_total += w[k] * compute_gradient(probs[k], fwd)
+        g_rho = (eps_max - eps_min) * g_total[dm]
+        t = np.tanh(beta * (r - 0.5))
+        dproj = beta * (1.0 - t ** 2) / (2.0 * np.tanh(beta / 2.0))
+        g_r = g_rho * dproj
+        m = np.max(np.abs(g_r)) + 1e-12
+        d = g_r / m
+        alpha = step0
+        f_eval = sum(w[k] * fwds[k]["FOM"] for k in range(nwl))
+        f_try = f_eval
+        accepted = False
+        while alpha > 2e-3:
+            f_try = FOM_total_at(np.clip(r + alpha * d, 0.0, 1.0), beta)
+            if f_try > f_eval:
+                accepted = True
+                break
+            alpha *= 0.5
+        if accepted:
+            r = np.clip(r + alpha * d, 0.0, 1.0)
+            f_final = f_try
+        else:
+            f_final = f_eval
+        if f_final > best_fom:
+            best_fom, best_r = f_final, r.copy()
+        history.append({"iter": it, "FOM_total": f_final,
+                        "beta": round(beta, 2), "alpha": round(alpha, 4)})
+        if verbose and (it % 5 == 0 or it == iters - 1):
+            print(f"  it={it:3d} beta={beta:5.2f} FOM_total={f_final:.4e}")
+
+    best_eps = eps0.copy()
+    best_eps[dm] = rho_to_eps(project(best_r, beta_max))
+    per_wl = []
+    for k in range(nwl):
+        f0 = forward(probs[k], eps0)
+        f1 = forward(probs[k], best_eps)
+        per_wl.append({"wl_um": wavelengths_um[k], "weight": round(w[k], 4),
+                       "initial_FOM": f0["FOM"], "final_FOM": f1["FOM"],
+                       "improvement": float(f1["FOM"] / (f0["FOM"] + 1e-12)),
+                       "final_T": f1["T"]})
+    weighted_imp = sum(w[k] * per_wl[k]["improvement"] for k in range(nwl))
+    all_ok = all(per_wl[k]["improvement"] >= 1.2 for k in range(nwl))
+    return {
+        "history": history,
+        "per_wavelength": per_wl,
+        "weighted_improvement": float(weighted_imp),
+        "initial_FOM_total": fom0,
+        "final_FOM_total": best_fom,
+        "final_eps": best_eps,
+        "passed": bool(weighted_imp >= 1.5 and all_ok),
+        "note": ("多波长加权联合优化：总 FOM=Σw_λ·FOM_λ，谱形目标=设计对"
+                 "目标波长带整体可用；加权 improvement≥1.5 且各波长≥1.2。"),
     }
 
 

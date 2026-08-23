@@ -1563,6 +1563,40 @@ def run_spectral_design(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_shape_design(payload=None):
+    """D-81 形状逆设计 + 多目标联合（webui ㊷ 面板）。
+
+    输入 {mode?: shape|multi, wavelengths?, n_controls?, iters?}：
+    shape=宽度曲线形状逆设计（K 控制点 + 可制造性 DRC）；multi=多波长
+    加权联合 + Pareto 前端。死标量验收：形状梯度 FD 对拍 + improvement +
+    DRC。LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.multi_objective_design import (design_shape,
+                                                  design_multi_objective)
+    payload = payload or {}
+    kw = {}
+    for k, cast in (("n_controls", int), ("iters", int), ("Nx", int),
+                    ("Ny", int)):
+        if payload.get(k) not in (None, ""):
+            kw[k] = cast(payload[k])
+    mode = payload.get("mode") or "shape"
+    try:
+        if mode == "multi":
+            rep = design_multi_objective(
+                wavelengths=payload.get("wavelengths"), **kw)
+        else:
+            rep = design_shape(**kw)
+        rep["ok"] = bool(rep.get("ok"))
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def system_status():
     return {
         "layers": [
@@ -1704,6 +1738,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_perf_bench(payload))
             elif path == "/api/spectral_design":
                 self._send(200, run_spectral_design(payload))
+            elif path == "/api/shape_design":
+                self._send(200, run_shape_design(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

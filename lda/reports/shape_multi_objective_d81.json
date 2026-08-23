@@ -1,0 +1,210 @@
+{
+  "title": "D-81 形状逆设计 + 多目标联合（Track A 纵深）",
+  "created_at": "2026-08-23T17:25:56",
+  "shape_design": {
+    "ok": true,
+    "title": "形状逆设计（宽度曲线 · 控制点参数化）",
+    "mode": "shape",
+    "n_controls": 8,
+    "grid": {
+      "Nx": 90,
+      "Ny": 70,
+      "dl_factor": 10
+    },
+    "verify": {
+      "max_rel_err": 0.016334696053763035,
+      "nsamples": 6
+    },
+    "optimization": {
+      "initial_FOM": 2.177842469435324,
+      "final_FOM": 14.376788665803774,
+      "improvement": 6.60139053561795,
+      "final_width": [
+        2.0,
+        3.5,
+        3.671,
+        5.16,
+        4.367,
+        4.858,
+        4.542,
+        3.042
+      ],
+      "elapsed_s": 8.69
+    },
+    "drc": {
+      "ok": true,
+      "w_min": 2.0,
+      "w_max": 10.0,
+      "width_range": [
+        2.0,
+        5.16
+      ],
+      "max_slope": 1.5,
+      "slope_max": 1.5,
+      "detail": "宽度∈[2.0,5.2]（界 [2.0,10.0]）；最大相邻变化 1.50（≤1.5）"
+    },
+    "acceptance": {
+      "checks": [
+        {
+          "name": "形状梯度 vs 有限差分（max_rel_err ≤ 0.15）",
+          "ok": true,
+          "detail": "max_rel_err=0.0163（6 控制点）"
+        },
+        {
+          "name": "FOM improvement ≥ 1.5",
+          "ok": true,
+          "detail": "6.60×（2.18e+00 → 1.44e+01）"
+        },
+        {
+          "name": "可制造性 DRC（宽度界 + 平滑）",
+          "ok": true,
+          "detail": "宽度∈[2.0,5.2]（界 [2.0,10.0]）；最大相邻变化 1.50（≤1.5）"
+        }
+      ],
+      "passed": true
+    },
+    "verdict": "形状逆设计 PASS：宽度曲线优化 FOM improvement=6.60×（宽度 [2.0, 3.5, 3.671, 5.16, 4.367, 4.858, 4.542, 3.042]）；形状梯度对拍 0.0163；DRC 宽度∈[2.0,5.2]（界 [2.0,10.0]）；最大相邻变化 1.50（≤1.5）。耗时 8.7s。",
+    "note": "D-81 形状逆设计：K 控制点宽度曲线（单芯 taper/模式适配），可制造性内建；形状梯度链式（geps·dε/dw）FD 对拍验证；分叉/多芯归拓扑域。LLM 不进判决路径。"
+  },
+  "multi_objective": {
+    "ok": true,
+    "title": "多目标联合逆设计（2 波长 · 形状参数共享）",
+    "mode": "multi_objective",
+    "wavelengths": [
+      1.53,
+      1.57
+    ],
+    "weights": [
+      0.5,
+      0.5
+    ],
+    "n_controls": 8,
+    "per_wavelength": [
+      {
+        "wl_um": 1.53,
+        "weight": 0.5,
+        "initial_FOM": 2.1778424694353227,
+        "final_FOM": 11.70193713744983,
+        "improvement": 5.373178869304798
+      },
+      {
+        "wl_um": 1.57,
+        "weight": 0.5,
+        "initial_FOM": 2.0856898835475466,
+        "final_FOM": 12.149950927610481,
+        "improvement": 5.825387092993338
+      }
+    ],
+    "weighted_improvement": 5.5993,
+    "final_width": [
+      2.0,
+      3.5,
+      3.772,
+      5.089,
+      4.412,
+      4.269,
+      5.079,
+      3.579
+    ],
+    "drc": {
+      "ok": true,
+      "w_min": 2.0,
+      "w_max": 10.0,
+      "width_range": [
+        2.0,
+        5.09
+      ],
+      "max_slope": 1.5,
+      "slope_max": 1.5,
+      "detail": "宽度∈[2.0,5.1]（界 [2.0,10.0]）；最大相邻变化 1.50（≤1.5）"
+    },
+    "pareto_points": [
+      {
+        "weight_l1": 0.2,
+        "weight_l2": 0.8,
+        "FOM_l1": 10.2477,
+        "FOM_l2": 11.2256,
+        "improvement_l1": 4.705,
+        "improvement_l2": 5.382,
+        "width": [
+          2.14,
+          3.64,
+          3.86,
+          4.89,
+          4.58,
+          4.01,
+          5.3,
+          3.8
+        ]
+      },
+      {
+        "weight_l1": 0.5,
+        "weight_l2": 0.5,
+        "FOM_l1": 10.6496,
+        "FOM_l2": 11.3272,
+        "improvement_l1": 4.89,
+        "improvement_l2": 5.431,
+        "width": [
+          2.07,
+          3.57,
+          3.93,
+          4.99,
+          4.62,
+          4.15,
+          5.25,
+          3.75
+        ]
+      },
+      {
+        "weight_l1": 0.8,
+        "weight_l2": 0.2,
+        "FOM_l1": 10.8719,
+        "FOM_l2": 11.3788,
+        "improvement_l1": 4.992,
+        "improvement_l2": 5.456,
+        "width": [
+          2.01,
+          3.51,
+          4.0,
+          5.08,
+          4.66,
+          4.27,
+          5.2,
+          3.7
+        ]
+      }
+    ],
+    "elapsed_s": 38.03,
+    "acceptance": {
+      "checks": [
+        {
+          "name": "多目标加权 improvement ≥ 1.5（2 波长）",
+          "ok": true,
+          "detail": "加权 5.60×（各波长 λ1.53:5.37×, λ1.57:5.83×）"
+        },
+        {
+          "name": "各波长均 ≥ 1.2×（联合不牺牲单目标）",
+          "ok": true,
+          "detail": "λ1.53=5.37×，λ1.57=5.83×"
+        },
+        {
+          "name": "可制造性 DRC（共享宽度曲线）",
+          "ok": true,
+          "detail": "宽度∈[2.0,5.1]（界 [2.0,10.0]）；最大相邻变化 1.50（≤1.5）"
+        },
+        {
+          "name": "Pareto 前端（权重网格扫描）",
+          "ok": true,
+          "detail": "(w1=0.2) λ1×4.705/λ2×5.382; (w1=0.5) λ1×4.89/λ2×5.431; (w1=0.8) λ1×4.992/λ2×5.456"
+        }
+      ],
+      "passed": true
+    },
+    "verdict": "多目标联合逆设计 PASS：加权 improvement=5.60×（λ1.53:5.37×, λ1.57:5.83×）；共享宽度 [2.0, 3.5, 3.8, 5.1, 4.4, 4.3, 5.1, 3.6]；Pareto 前端 3 点。耗时 38.0s。",
+    "note": "D-81 多目标联合：多波长透射加权 FOM + Pareto 前端扫描（有限权重网格近似）；形状参数共享（可制造性内建）。诚实边界：FOM 为收集场能代理（非功率透射）、2D TEz、Pareto 为近似前端。LLM 不进判决路径。"
+  },
+  "acceptance": {
+    "passed": true,
+    "checks": []
+  }
+}

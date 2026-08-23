@@ -23,6 +23,7 @@ import math
 import os
 import sys
 import time
+import copy
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -730,6 +731,182 @@ def optimize_section3d(sp: ShapeProblem3DSection, iters: int = 18,
         "passed": bool(improvement >= 1.5 and drc["ok"]),
         "note": ("D-85 3D 截面形状：宽度 w(x) × 厚度 h(x) 双软边界联合优化"
                  "（3D adjoint 显式转置梯度链式）。"),
+    }
+
+
+# ---------------------------------------------------------------------------
+# D-87 谱形目标 × 3D 截面：多波长加权联合优化
+# ---------------------------------------------------------------------------
+def make_wl_problems3d(base: AdjointProblem3D,
+                       wavelengths_um: Optional[List[float]] = None
+                       ) -> List[AdjointProblem3D]:
+    """多波长 3D 问题族：deepcopy base，**物理网格固定（dl/dt 保持基准）**，
+    只变 omega/period_steps → 波长真正变化（D-80 归一化网格陷阱：若
+    dl=wl/dl_factor 则 omega·dt 与波长无关，deepcopy 保留惰性字段天然免疫）。
+    """
+    if wavelengths_um is None:
+        wavelengths_um = [1.5, 1.55, 1.6]
+    probs = []
+    for wl in wavelengths_um:
+        p = copy.deepcopy(base)
+        p.wl_um = float(wl)
+        p.omega = 2.0 * math.pi / float(wl)
+        p.period_steps = int(round(2.0 * math.pi / (p.omega * p.dt)))
+        probs.append(p)
+    return probs
+
+
+def verify_section_gradient_multi(sps: List[ShapeProblem3DSection],
+                                  weights: np.ndarray, w_ctl: np.ndarray,
+                                  h_ctl: np.ndarray, nsamples: int = 6,
+                                  delta: float = 0.02, seed: int = 11
+                                  ) -> Dict[str, Any]:
+    """多波长截面联合梯度 FD 对拍：逐波长 + 加权联合（w/h 混合采样）。
+
+    联合梯度 G = Σ_k w_k·[gw_k, gh_k]；FD 用联合 FOM=Σw_k·FOM_k 中心差分。
+    """
+    nwl = len(sps)
+    wt = np.asarray(weights, dtype=float)
+    wt = wt / wt.sum()
+    K = sps[0].n_controls
+
+    def F(w_, h_):
+        return float(sum(wt[k] * forward3d(sps[k].base, sps[k].eps(w_, h_))["FOM"]
+                         for k in range(nwl)))
+
+    G_w = np.zeros(K)
+    G_h = np.zeros(K)
+    per_wl = []
+    for k in range(nwl):
+        fwd = forward3d(sps[k].base, sps[k].eps(w_ctl, h_ctl))
+        gw, gh = sps[k].gradient(fwd, w_ctl, h_ctl)
+        G_w += wt[k] * gw
+        G_h += wt[k] * gh
+        per_wl.append({"wl_um": float(sps[k].base.wl_um),
+                       "weight": round(float(wt[k]), 4)})
+    rng = np.random.default_rng(seed)
+    picks = sorted(rng.choice(K, size=min(nsamples, K), replace=False))
+    rows = []
+    for k in picks:
+        for kind, G in (("w", G_w), ("h", G_h)):
+            if kind == "w":
+                wp = w_ctl.copy(); wp[k] += delta
+                wm = w_ctl.copy(); wm[k] -= delta
+                Fp = F(wp, h_ctl); Fm = F(wm, h_ctl)
+            else:
+                hp = h_ctl.copy(); hp[k] += delta
+                hm = h_ctl.copy(); hm[k] -= delta
+                Fp = F(w_ctl, hp); Fm = F(w_ctl, hm)
+            rows.append({"kind": kind, "k": int(k),
+                         "g_adj": float(G[k]),
+                         "g_fd": float((Fp - Fm) / (2 * delta))})
+    g_adj = np.array([r["g_adj"] for r in rows])
+    g_fd = np.array([r["g_fd"] for r in rows])
+    denom = np.abs(g_fd).max() + 1e-12
+    max_rel_err = float(np.abs(g_adj - g_fd).max() / denom)
+    mean_rel_err = float(np.mean(np.abs(g_adj - g_fd)) / denom)
+    return {"max_rel_err": max_rel_err, "mean_rel_err": mean_rel_err,
+            "passed": bool(max_rel_err <= 0.15), "rows": rows,
+            "nsamples": len(picks),
+            "per_wavelength": per_wl}
+
+
+def optimize_section3d_multi(sps: List[ShapeProblem3DSection],
+                             weights: Optional[List[float]] = None,
+                             iters: int = 16, step0: float = 0.4,
+                             verbose: bool = False) -> Dict[str, Any]:
+    """D-87 3D 截面 × 多波长加权联合（谱形目标 3D）。
+
+    联合 FOM = Σ_k w_k · FOM_k；联合梯度 = Σ_k w_k·[gw_k, gh_k]；
+    **分块归一化**（w 块 / h 块各自归一化后拼接——合并 max 归一化会压制
+    量级小但重要的厚度梯度，D-83 教训）。线搜索评估 = 同一可行性投影设计
+    下的全波长加权 FOM（单调不降，与迭代目标同投影一致）。
+
+    验收：加权 improvement ≥ 1.5 且各波长均 ≥ 1.2 + DRC 双界。
+    """
+    nwl = len(sps)
+    if weights is None:
+        wt = np.ones(nwl) / nwl
+    else:
+        wt = np.asarray(weights, dtype=float) / np.asarray(weights).sum()
+    K = sps[0].n_controls
+
+    def F(w_, h_):
+        return float(sum(wt[k] * forward3d(sps[k].base, sps[k].eps(w_, h_))["FOM"]
+                         for k in range(nwl)))
+
+    w = np.full(K, sps[0].init_w)
+    h = np.full(K, sps[0].init_h)
+    fom0 = F(w, h)
+    best_fom, best_w, best_h = fom0, w.copy(), h.copy()
+    history = []
+    for it in range(iters):
+        G_w = np.zeros(K)
+        G_h = np.zeros(K)
+        f_eval = 0.0
+        for k in range(nwl):
+            fwd = forward3d(sps[k].base, sps[k].eps(w, h))
+            f_eval += wt[k] * fwd["FOM"]
+            gw, gh = sps[k].gradient(fwd, w, h)
+            G_w += wt[k] * gw
+            G_h += wt[k] * gh
+        # 分块归一化（w/h 各自尺度）
+        dw = G_w / (np.max(np.abs(G_w)) + 1e-12)
+        dh = G_h / (np.max(np.abs(G_h)) + 1e-12)
+        alpha = step0
+        f_try, accepted = f_eval, False
+        while alpha > 2e-3:
+            wt_ = _project_shape(w + alpha * dw, sps[0].w_min, sps[0].w_max,
+                                 sps[0].slope_max)
+            ht_ = _project_shape(h + alpha * dh, sps[0].h_min, sps[0].h_max,
+                                 sps[0].slope_max)
+            f_try = F(wt_, ht_)
+            if f_try > f_eval:
+                accepted = True
+                break
+            alpha *= 0.5
+        if accepted:
+            w = wt_
+            h = ht_
+            f_final = f_try
+        else:
+            f_final = f_eval
+        if f_final > best_fom:
+            best_fom, best_w, best_h = f_final, w.copy(), h.copy()
+        history.append({"iter": it, "FOM_total": f_final,
+                        "alpha": round(alpha, 4)})
+        if verbose and (it % 5 == 0 or it == iters - 1):
+            print(f"  it={it:3d} alpha={alpha:6.3f} FOM_total={f_final:.4e}")
+
+    w_init = np.full(K, sps[0].init_w)
+    h_init = np.full(K, sps[0].init_h)
+    per_wl = []
+    for k, sp in enumerate(sps):
+        f0 = forward3d(sp.base, sp.eps(w_init, h_init))["FOM"]
+        f1 = forward3d(sp.base, sp.eps(best_w, best_h))["FOM"]
+        per_wl.append({"wl_um": float(sp.base.wl_um),
+                       "weight": round(float(wt[k]), 4),
+                       "initial_FOM": float(f0), "final_FOM": float(f1),
+                       "improvement": float(f1 / (f0 + 1e-12))})
+    weighted_imp = float(sum(wt[k] * per_wl[k]["improvement"]
+                             for k in range(nwl)))
+    drc = _section_drc(sps[0], best_w, best_h)
+    passed = bool(weighted_imp >= 1.5 and drc["ok"]
+                  and all(per_wl[k]["improvement"] >= 1.2
+                          for k in range(nwl)))
+    return {
+        "history": history,
+        "per_wavelength": per_wl,
+        "weighted_improvement": round(weighted_imp, 3),
+        "final_width": [round(float(x), 3) for x in best_w],
+        "final_height": [round(float(x), 3) for x in best_h],
+        "final_FOM_total": best_fom,
+        "initial_FOM_total": fom0,
+        "drc": drc,
+        "passed": bool(passed),
+        "note": ("D-87 3D 截面 × 多波长加权联合：FOM=Σw_λ·FOM_λ（物理网格"
+                 "固定只变 omega）；分块归一化（w/h 各自尺度）；谱形目标 = "
+                 "设计对目标波长带整体可用；加权 improvement≥1.5 且各波长≥1.2。"),
     }
 
 

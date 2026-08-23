@@ -835,6 +835,22 @@
     <div class="conclusion" id="paConclusion"></div>
   </div>
 
+  <div class="sec" id="sec-spectral3d">
+    <h3>㊽ 谱形目标 × 3D 截面（多波长加权联合）</h3>
+    <div class="ctrl">
+      <label>Nx:<input id="spNx" value="40" size="3"></label>
+      <label>Ny:<input id="spNy" value="32" size="3"></label>
+      <label>Nz:<input id="spNz" value="12" size="3"></label>
+      <label>控制点:<input id="spNc" value="8" size="3"></label>
+      <label>迭代:<input id="spIters" value="10" size="3"></label>
+      <label>波长(,分隔):<input id="spWls" value="1.5,1.6" size="10"></label>
+      <button class="btn" id="runSp">谱形×3D 逆设计</button>
+    </div>
+    <div id="spSummary" class="summary"></div>
+    <div id="spBody"></div>
+    <div class="conclusion" id="spConclusion"></div>
+  </div>
+
   <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
@@ -2695,6 +2711,44 @@ async function runPa(){
   } finally { btn.disabled = false; }
 }
 $('runPa').onclick = runPa;
+
+// ---- ㊽ D-87 谱形目标 × 3D 截面（多波长加权联合）----
+async function runSp(){
+  const btn = $('runSp'); btn.disabled = true;
+  $('spSummary').innerHTML = '<span class="spin"></span> 谱形目标 × 3D 截面（多波长加权联合）运行中…';
+  const wls = $('spWls').value.split(',').map(s=>parseFloat(s.trim())).filter(x=>!isNaN(x));
+  const payload = {
+    mode: 'spectral',
+    Nx: $('spNx').value, Ny: $('spNy').value, Nz: $('spNz').value,
+    n_controls: $('spNc').value, iters: $('spIters').value,
+    wavelengths: wls
+  };
+  try {
+    const d = await postJson('/api/adjoint3d', payload);
+    const passed = d.acceptance ? d.acceptance.passed : false;
+    const o = d.optimization || {}, v = d.verify || {};
+    const per = (o.per_wavelength||[]).map(p=>`λ${p.wl_um}:${p.improvement.toFixed(2)}×`).join(' · ');
+    $('spSummary').innerHTML = `谱形目标 × 3D 截面：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（加权 imp=<b>${o.weighted_improvement!=null?o.weighted_improvement.toFixed(2)+'×':'?'}</b> ≥1.5 · 逐波长 ${per}）`;
+    const chk = (d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
+    $('spBody').innerHTML = `
+      <div class="subhead">多波长加权联合（物理网格固定只变 ω）</div>
+      <table class="tbl"><tbody>
+        <tr><td>3D 域 / 波长数</td><td>${d.grid?d.grid.Nx+'×'+d.grid.Ny+'×'+d.grid.Nz:'?'} · ${d.n_wavelengths!=null?d.n_wavelengths+' 波长':'?'}（设计体素 ${d.design_voxels!=null?d.design_voxels:'?'}）</td></tr>
+        <tr><td>加权 improvement</td><td class="ok">${o.weighted_improvement!=null?o.weighted_improvement.toFixed(2)+'×':'?'} ≥ 1.5</td></tr>
+        <tr><td>逐波长 improvement</td><td>${per}</td></tr>
+        <tr><td>多波长联合梯度 FD 对拍</td><td class="ok">${v.spectral_max_rel_err!=null?v.spectral_max_rel_err.toExponential(1):'?'} ≤ 0.15</td></tr>
+        <tr><td>宽度 taper</td><td>[${(o.final_width||[]).map(x=>x.toFixed(2)).join(', ')}]</td></tr>
+        <tr><td>厚度 taper</td><td>[${(o.final_height||[]).map(x=>x.toFixed(2)).join(', ')}]</td></tr>
+        <tr><td>可制造性 DRC</td><td>${d.drc?escapeHtml(d.drc.detail):'—'}</td></tr>
+      </tbody></table>
+      <div class="subhead">死标量验收</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
+    $('spConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+  } catch(e){
+    $('spSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runSp').onclick = runSp;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

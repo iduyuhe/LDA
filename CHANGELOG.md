@@ -114,13 +114,25 @@
 
 - **D-73 热光/电光可调 WDM（Track D 系统级 · M7）**：`lda_agent/tunable_wdm.py`——静态 WDM（D-42/D-57，FDTD 标定 κ_c 驱动 gap 多环级联解复用）叠加**每环热光相位 shifter**：**Δλ/λ=(dn/dT)·R_th·P/n_eff 物理定律锚**（dn/dT=1.86e-4/K 硅热光系数材料常数、n_eff=2.4 波导有效折射率，**非拟合**，ORACLE 比对真实 Si 加热器调谐斜率区间 [0.02,0.5] nm/mW）→ 信道重分配验证 **|P|≤P_max 且 |Δλ|≤FSR/2（无 FSR 混叠）** + 整 FSR 内可重构（P_max·S_min≥FSR_min/2）。实测：默认 3 信道 S≈0.120 nm/mW（命中真实区间）、目标 [1552.7,1555.7,1558.7]nm 各需 ~22.7mW（≤P_max=50）、最大可达位移 6.0nm≥FSR/2=4.56nm，**验收 PASS**；smoke 3/3（正例 + FSR 混叠负例 + 单信道负例）；报告 `reports/tunable_wdm_d73.json`；WebUI ㊱ 面板 + `/api/tunable_wdm`（HTTP 实测通）。**诚实边界**：①未建模环间热串扰（默认加热器热隔离）；②仅热光调谐（未实现电光载流子注入型）；③静态重配置（信道再分配）非高速调制（不声称调制带宽）；④FSR 仍由静态环半径决定，调谐仅在其内重分配。LLM 不进判决路径。
 
-### 新增/变更（post-v0.4 · D-73）
+- **D-74 量子门 / 纠错拓扑（Track D 系统级 · M7 第二件）**：`lda/lda_qeda/`（gates/surface_code/cross_resonance）+ `lda/lda_agent/qeda_topology.py`——量子域从读出走向计算：①量子门库 11 门解析矩阵（I/X/Y/Z/H/S/T/CNOT/CZ/SWAP/Toffoli），幺正性 ‖U†U−I‖≤1e-12 精确 + {H,T,CNOT} 通用性（**T∉24元Clifford 群论死标量锚**）；②rotated surface code **d² 数据比特、全部稳定子对易（精确 Pauli）、GF(2) 秩验证 k=1**、阈值标度 p_L=A·(p/p_th)^((d+1)/2)；③cross-resonance 门 g_CR=2J²Δ/(α²−Δ²) 有效模型 + t_CR=π/|g_CR|≤T2（ORACLE |g_CR|∈[0.02,10]MHz、p<p_th 阈值门）。默认 d=3/p=5e-3：门库全幺正+通用、surface code 全对易 k=1、|g_CR|=0.095MHz、t_CR=33µs≤T2=100µs，**验收 PASS**；smoke 3/3（正例 + 超阈值 FAIL + CR 失效 FAIL）；报告 `lda/reports/qeda_topology_d74.json`；WebUI ㊲ 面板 + `/api/qeda_topology`。**诚实边界**：CR 为 Schrieffer-Wolff 主导阶有效模型（非 transmon 多能级数值）、σ_zz 由 echoed-CR 抵消、表面码 p_th=1% 为公认模拟常数（非本系统逐周期解码仿真）、本设计给出拓扑与资源不含 GDS 版图。LLM 不进判决路径。
+
+### 新增/变更（post-v0.4 · D-73/D-74）
 
 - `lda_agent/tunable_wdm.py`：热光可调 WDM 设计封装（静态 WDM 复用 design_wdm_with_coupler + 每环热模型 + 信道重分配死标量验收）
 - `run_tunable_wdm_smoke.py`：3/3 smoke（正例 + FSR 混叠 FAIL + 单信道 FAIL）
 - `lda_webui/app.py`：`/api/tunable_wdm`（channels/target/R_th/n_eff/P_max 透传 → 可调 WDM 验收）
 - `lda_webui/static/index.html`：㊱ 面板（热模型 + 信道重分配计划表 + 死标量验收）
 - README：能力阶梯表加 D-73 行、三十六面板、㊱ 面板清单
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
+### 新增/变更（post-v0.4 · D-74）
+- `lda/lda_qeda/__init__.py`、`gates.py`、`surface_code.py`、`cross_resonance.py`：量子门库（解析矩阵+幺正性+通用性死标量锚）+ rotated surface code（全对易+GF(2)秩 k=1+阈值标度）+ cross-resonance（有效模型+退相干预算）
+- `lda/lda_agent/qeda_topology.py`：量子门/纠错拓扑设计→验证封装（门库 + surface code + CR 死标量验收）
+- `lda/run_qeda_topology_smoke.py`：3/3 smoke（正例 + 超阈值 FAIL + CR 失效 FAIL）
+- `lda_webui/app.py`：`/api/qeda_topology`（d/p_phys/J/delta/alpha/T2 透传 → 容错拓扑验收）
+- `lda_webui/static/index.html`：㊲ 面板（门库 + surface code + CR + 死标量验收）
+- `lda/reports/qeda_topology_d74.json`：D-74 验收报告
+- README：能力阶梯表加 D-74 行、三十七面板、㊲ 面板清单 + 目录结构加 `lda_qeda/`
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
 ## v0.0（阶段 0/1/2，此前交付）

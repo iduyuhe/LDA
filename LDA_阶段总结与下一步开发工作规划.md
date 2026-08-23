@@ -333,7 +333,7 @@ D-71 之前，GDS 几何为矩形/圆形玩具级（D-14/D-19 可跑通流程，
 
 #### Track D · 系统级纵深（可重构 + 更大规模 + 量子计算）
 - **D-73 热光/电光可调 WDM** ✅ **已交付（2026-08-23）**：把 D-42/D-57 静态 WDM 升级为可调谐——每条 add-drop 环叠加**热光相位 shifter**，**Δλ/λ=(dn/dT)·R_th·P/n_eff 物理定律锚**（dn/dT=1.86e-4/K 材料常数、n_eff=2.4 波导有效折射率，ORACLE 比对真实 Si 加热器斜率区间 [0.02,0.5] nm/mW）；信道重分配验证 |P|≤P_max 且 |Δλ|≤FSR/2（无 FSR 混叠）；默认 3 信道 S≈0.120 nm/mW、目标 [1552.7,1555.7,1558.7]nm 各需 ~22.7mW、最大可达位移 6.0nm≥FSR/2；smoke 3/3；WebUI ㊱ + `/api/tunable_wdm`。诚实边界：未建模环间热串扰、仅热光（非电光载流子注入）、静态重配置非高速调制。
-- **D-74 量子门/纠错拓扑**：cross-resonance 门参数化 + surface-code 版图布局，量子域从"读出"走向"计算"。
+- **D-74 量子门/纠错拓扑 ✅（M7 第二件 · 2026-08-23）**：cross-resonance 门参数化 + surface-code 版图布局，量子域从"读出"走向"计算"。交付 `lda/lda_qeda/`（gates/surface_code/cross_resonance）+ `lda/lda_agent/qeda_topology.py`：量子门库 11 门全幺正（‖U†U−I‖≤1e-12 精确）+ {H,T,CNOT} 通用（T∉24元Clifford 群论死标量锚）；rotated surface code **d² 数据比特、全部稳定子对易、GF(2) 秩验证 k=1**；CR 门 g_CR=2J²Δ/(α²−Δ²) 有效模型 + t_CR≤T2（ORACLE |g_CR|∈[0.02,10]MHz、p<p_th 阈值门）；smoke 3/3；WebUI ㊲ 面板 + `/api/qeda_topology`。诚实边界：CR 为 SW 主导阶有效模型（非多能级数值）、σ_zz 由 echoed-CR 抵消、表面码 p_th=1% 为公认模拟常数（非本系统逐周期解码仿真）、本设计给拓扑与资源不计 GDS 版图。
 - **D-75 大规模系统基准**：N≥8 WDM 信道 / N≥8 qubit 读出联合验收的性能与精度边界压测（确认标定网格分辨率、网格色散、级联损耗模型在规模下的余量）。
 
 ### 12.3 护城河与标准层（与发动期联动）
@@ -357,6 +357,6 @@ D-71 之前，GDS 几何为矩形/圆形玩具级（D-14/D-19 可跑通流程，
 | **M4（✅ 达成 08-22）** | Track A：D-69 adjoint 核 + D-70 接入引擎 | FD 对拍 err=2.4e-5（≤0.15）；拓扑逆设计 improvement=15.1×（≥1.5）；smoke 4/4 |
 | **M5（✅ 达成 08-22/23）** | Track B：D-71/D-72 真实版图 + 真实 2D/3D 端口验收 + 闭环集成 | 4 基元 foundry-ready GDS + DRC 全绿；MMI/DC/Ring 3D S 参数判据全过；DesignAgent 三 method 统一入口；smoke 5/5 |
 | **M6（✅ 达成 08-23）** | **v0.4 门槛：Track B 收口**——D-78 GC 端口验收 + D-79 真实基元接入流水线（可选 D-80 adjoint 谱形目标） | GC 峰值耦合波长 vs 光栅方程解析对拍（rel=0.092）；设计→验证→版图全链路真实化出图（9 kind DRC 三厂全绿）；**v0.4 发布准备即对外基线升级**（不依赖发动期） |
-| **M7（中期）** | Track D 系统级：D-73 可调 WDM ✅ / D-74 量子门 / D-75 大规模基准；D-62 实证锚（发动期联动） | D-73 可调谐信道分配（热光相位 shifter + 物理定律锚 Δλ/λ=(dn/dT)·R_th·P/n_eff，已 PASS）；D-74 量子门 + surface-code 版图布局；D-75 N≥8 联合验收压测；双地基在真实器件闭环 |
+| **M7（中期）** | Track D 系统级：D-73 可调 WDM ✅ / D-74 量子门 ✅ / D-75 大规模基准；D-62 实证锚（发动期联动） | D-73 可调谐信道分配（热光相位 shifter + 物理定律锚 Δλ/λ=(dn/dT)·R_th·P/n_eff，已 PASS）；D-74 量子门库（幺正性+通用性死标量锚）+ rotated surface code（d²/k=1/全对易）+ CR 门（有效模型），smoke 3/3 PASS；D-75 N≥8 联合验收压测；双地基在真实器件闭环 |
 
 > 时间窗为估算，随开发密度弹性调整；M6 已达成（D-78/D-79），下一步 M7（Track D 系统级）或 v0.4 发布准备可立即开工。

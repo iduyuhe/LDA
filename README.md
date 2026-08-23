@@ -72,12 +72,13 @@ L4  统一交付          lda_design/ 设计包规范（DesignPackage schema v0.
 | D-78 | **光栅耦合器端口验收（M6 起步 · 光栅方程 ORACLE）** | GC 2D FDTD 透射谱谷检测（D-78 修正真实方波光栅：齿=硅/凹槽=包层）：谷位置 vs **光栅方程 λ_rad=Λ·n_eff** 对拍（**rel=0.092**≤0.15，n_eff FDTD 独立测得非拟合）+ **Λ 趋势锚 dλ/dΛ=周期结构 n_eff（rel=0.020**≤0.10）：谷深 0.996、**验收 PASS**，smoke 3/3；诚实标注凹槽微扰负偏 ~9% + 2D≠3D 光纤耦合 |
 | D-79 | **真实基元接入设计流水线（Track B 收口 · v0.4 门槛达成）** | 流水线默认几何切换到 D-71 真实基元：Ring/AddDrop 实心环带→**真实波导环 PATH**、YBranch 裸分叉→**输入绝热 taper**+双 arm、DC/Waveguide 已是 PATH、Taper/EulerBend/MMI/GC 沿用基元——全 **9 kind 真实 GDS + round-trip + 3×SOI PDK DRC 全绿**（NOEIC/CUMEC/SITRI），"设计→验证→版图"全链路真实化闭环 |
 | D-73 | **热光可调 WDM（Track D 系统级 · M7 第一件）** | 静态 WDM（D-42/D-57）叠加**每环热光相位 shifter**：**Δλ/λ=(dn/dT)·R_th·P/n_eff 物理定律锚**（dn/dT=1.86e-4/K 材料常数、n_eff=2.4，ORACLE 比对真实 Si 加热器斜率 [0.02,0.5] nm/mW）→ 信道重分配验证 |P|≤P_max 且 |Δλ|≤FSR/2（无混叠）；默认 3 信道 S≈0.120 nm/mW、目标 [1552.7,1555.7,1558.7]nm 各 ~22.7mW、最大可达位移 6.0nm≥FSR/2；smoke 3/3 |
+| D-74 | **量子门 / 纠错拓扑（Track D 系统级 · M7 第二件）** | 量子域从「读出」走向「计算」：①量子门库（I/X/Y/Z/H/S/T/CNOT/CZ/SWAP/Toffoli 解析矩阵，幺正性 ‖U†U−I‖≤1e-12 精确 + {H,T,CNOT} 通用性 **T∉24元Clifford 群论死标量锚**）②rotated surface code（**d² 数据比特、全对易、GF(2) 秩验证 k=1**、阈值标度 p_L=A·(p/p_th)^((d+1)/2)）③cross-resonance 门（g_CR=2J²Δ/(α²−Δ²) 有效模型 + t_CR≤T2）；ORACLE：|g_CR|∈[0.02,10]MHz、p<p_th（阈值门）；smoke 3/3 |
 
-## WebUI（三十六面板，设计闭环可视化）
+## WebUI（三十七面板，设计闭环可视化）
 
 LDA 自带零依赖 WebUI（`python lda/lda_webui/deploy.py start`，默认 `http://127.0.0.1:8787`），首屏自动演示全部闭环：
 
-`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM（标定库驱动：gap/波长/全网格三模式）` `㉗方向耦合器×量子读出（分束网络供电控制线）` `㉘分束网络×WDM（解复用→每信道分束树）` `㉙伴随法拓扑逆设计（主权 adjoint FDTD）` `㉚逆设计接入设计→验证引擎（method=adjoint）` `㉛真实版图基元库（foundry-ready）` `㉜端口 S 参数验收（MMI 2D FDTD + ORACLE 对拍）` `㉝3D 端口 S 参数验收（SOI 220nm · numba 核）` `㉞光栅耦合器端口验收（光栅方程 ORACLE）` `㉟真实基元接入设计流水线（Track B 收口）` `㊱热光可调 WDM（热光相位 shifter + 物理定律锚）`
+`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM（标定库驱动：gap/波长/全网格三模式）` `㉗方向耦合器×量子读出（分束网络供电控制线）` `㉘分束网络×WDM（解复用→每信道分束树）` `㉙伴随法拓扑逆设计（主权 adjoint FDTD）` `㉚逆设计接入设计→验证引擎（method=adjoint）` `㉛真实版图基元库（foundry-ready）` `㉜端口 S 参数验收（MMI 2D FDTD + ORACLE 对拍）` `㉝3D 端口 S 参数验收（SOI 220nm · numba 核）` `㉞光栅耦合器端口验收（光栅方程 ORACLE）` `㉟真实基元接入设计流水线（Track B 收口）` `㊱热光可调 WDM（热光相位 shifter + 物理定律锚）` `㊲量子门/纠错拓扑（surface code + cross-resonance）`
 
 ## PDK 标定库（真实 FDTD 实测沉淀，设计时秒级加载）
 
@@ -103,11 +104,12 @@ bus↔ring 耦合本质是方向耦合器——κ_c 由 2D FDTD（D-55 双点标
 lda/                     核心软件包（主权求解器 + agent + 设计引擎 + harness）
   lda_solver/            FDTD/FDFD/Mie/TMM/Transmon/Resonator/Coupler 自研求解器
   lda_agent/             设计→验证闭环、逆设计框架、WDM/readout 系统级设计、AI-dev 写核
+  lda_qeda/              量子门库 + surface code + cross-resonance（D-74 QEDA 容错拓扑设计）
   lda_design/            设计引擎 + 统一设计包规范（DesignPackage）
   lda_ir/                统一 IR（光子+量子，schema v0.3，PhysicsAnchor）
   lda_l2/                器件库（已验证资产）+ GDS 编码器 + DRC + 版图仿真
   lda_harness/           确定性比对裁判（13 标准题物理定律锚 B1-B13）
-  lda_webui/             零依赖 WebUI（三十六面板）
+  lda_webui/             零依赖 WebUI（三十七面板）
 docs/                    design_package_spec.md + design_package_schema.json
 ```
 

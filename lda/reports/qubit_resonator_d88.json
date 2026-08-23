@@ -1,0 +1,52 @@
+{
+  "chi_num_ghz": -0.002250813550655817,
+  "chi_3level_ghz": -0.002307692307692308,
+  "chi_2level_ghz": -0.010000000000000002,
+  "chi_rel_err_3level": 0.02464746137179887,
+  "chi_rel_err_2level": 0.7749186448569264,
+  "n_crit": 24.999999999999996,
+  "gamma_purcell_ghz": 5e-05,
+  "t1_purcell_us": 3183098.8618379068,
+  "ac_stark_1ph_ghz": -0.004501627101311634,
+  "rabi_split_ghz": 0.20004122248994527,
+  "g_from_split_ghz": 0.10002061124497263,
+  "g_rel_err": 0.00020611244972423113,
+  "detune_ghz": -1.0,
+  "delta_over_g": 10.0,
+  "f_q": 5.0,
+  "alpha": -0.3,
+  "f_r": 6.0,
+  "g": 0.1,
+  "kappa": 0.005,
+  "M": 25,
+  "levels_ghz": [
+    -0.000909476425457169,
+    4.988226217999703,
+    6.008085883247678,
+    9.684667070515681,
+    10.992719950571527,
+    12.017055750212272
+  ],
+  "acceptance": {
+    "passed": true,
+    "checks": {
+      "dispersive_region_delta_g_ge_5": true,
+      "chi_3level_rel_le_0.10": true,
+      "rabi_split_self_consistency_le_0.02": true,
+      "alpha_correction_necessary_ge_3x": true
+    }
+  },
+  "verdict": "三能级色散严格对角化 ↔ Blais 修正解析式一致 + 拉比自洽 + α 修正必要性确认",
+  "elapsed_s": 0.0,
+  "ok": true,
+  "title": "D-88 QEDA 求解器级补强：transmon-resonator 色散读出",
+  "note": "三能级 transmon + Fock 谐振器严格对角化 ↔ Blais 色散修正解析式（χ=g²α/(Δ(Δ+α))）双路径；二能级 JC（χ=g²/Δ）误差 ≥3× 证明非谐性修正必要。输出 n_crit/Purcell/AC Stark 全套 readout 物理量。",
+  "design": {
+    "f_q_ghz": 5.0,
+    "alpha_ghz": -0.3,
+    "f_r_ghz": 6.0,
+    "g_ghz": 0.1,
+    "kappa_ghz": 0.005,
+    "M": 25
+  }
+}

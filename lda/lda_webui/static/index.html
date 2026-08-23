@@ -861,6 +861,21 @@
     <div class="conclusion" id="pfConclusion"></div>
   </div>
 
+  <div class="sec" id="sec-qubit-res">
+    <h3>㊿ QEDA 求解器级补强 · transmon-resonator 色散读出（三能级严格求解）</h3>
+    <div class="row">
+      <label>f_q:<input id="qrFq" value="5.0" size="4"></label>
+      <label>α:<input id="qrAlpha" value="-0.3" size="4"></label>
+      <label>f_r:<input id="qrFr" value="6.0" size="4"></label>
+      <label>g:<input id="qrG" value="0.1" size="4"></label>
+      <label>κ:<input id="qrKappa" value="0.005" size="5"></label>
+      <button class="btn" id="runQr">色散读出求解</button>
+    </div>
+    <div id="qrSummary" class="summary"></div>
+    <div id="qrBody"></div>
+    <div class="conclusion" id="qrConclusion"></div>
+  </div>
+
   <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
@@ -2758,6 +2773,43 @@ async function runPf(){
   } finally { btn.disabled = false; }
 }
 $('runPf').onclick = runPf;
+
+// ---- ㊿ D-88 QEDA 求解器级补强：transmon-resonator 色散读出（三能级严格求解）----
+async function runQr(){
+  const btn = $('runQr'); btn.disabled = true;
+  $('qrSummary').innerHTML = '<span class="spin"></span> 三能级 transmon-resonator 严格对角化运行中…';
+  const payload = {
+    f_q: $('qrFq').value, alpha: $('qrAlpha').value,
+    f_r: $('qrFr').value, g: $('qrG').value, kappa: $('qrKappa').value
+  };
+  try {
+    const d = await postJson('/api/qubit_resonator', payload);
+    const passed = d.acceptance ? d.acceptance.passed : false;
+    $('qrSummary').innerHTML = `transmon-resonator 色散读出：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（χ_num=${d.chi_num_ghz!=null?d.chi_num_ghz.toFixed(6)+' GHz':'?'} · rel=${d.chi_rel_err_3level!=null?(d.chi_rel_err_3level*100).toFixed(1)+'%':'?'}）`;
+    const chk = (d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
+    $('qrBody').innerHTML = `
+      <div class="subhead">色散频移 χ（三能级严格对角化 ↔ 解析式双路径）</div>
+      <table class="tbl"><tbody>
+        <tr><td>χ 严格数值（3 能级对角化）</td><td class="ok">${d.chi_num_ghz!=null?d.chi_num_ghz.toFixed(6)+' GHz':'?'}</td></tr>
+        <tr><td>χ 解析（Blais 修正 χ=g²α/(Δ(Δ+α))）</td><td class="ok">${d.chi_3level_ghz!=null?d.chi_3level_ghz.toFixed(6)+' GHz':'?'}（rel ${d.chi_rel_err_3level!=null?(d.chi_rel_err_3level*100).toFixed(1)+'%':'?'} ≤10%）</td></tr>
+        <tr><td>χ 二能级近似（g²/Δ，无 α 修正）</td><td class="fail">${d.chi_2level_ghz!=null?d.chi_2level_ghz.toFixed(6)+' GHz':'?'}（rel ${d.chi_rel_err_2level!=null?(d.chi_rel_err_2level*100).toFixed(1)+'%':'?'}——α 修正必要性 ≥3×）</td></tr>
+        <tr><td>失谐 Δ / 耦合 g</td><td>${d.detune_ghz!=null?d.detune_ghz.toFixed(2):'?'} GHz · Δ/g=${d.delta_over_g!=null?d.delta_over_g.toFixed(1):'?'}（≥5 色散区）</td></tr>
+      </tbody></table>
+      <div class="subhead">readout 设计物理量</div>
+      <table class="tbl"><tbody>
+        <tr><td>临界光子数 n_crit=Δ²/4g²</td><td>${d.n_crit!=null?d.n_crit.toFixed(1):'?'}（色散近似有效上限）</td></tr>
+        <tr><td>Purcell 率 γ=κg²/Δ²</td><td>${d.gamma_purcell_ghz!=null?d.gamma_purcell_ghz.toExponential(2)+' GHz':'?'} → T1=${d.t1_purcell_us!=null?Math.round(d.t1_purcell_us).toLocaleString()+' µs':'?'}</td></tr>
+        <tr><td>AC Stark（1 光子 qubit 频移 2χ）</td><td>${d.ac_stark_1ph_ghz!=null?d.ac_stark_1ph_ghz.toFixed(6)+' GHz':'?'}</td></tr>
+        <tr><td>真空拉比分裂自洽</td><td class="ok">2g=0.200 → 分裂 ${d.rabi_split_ghz!=null?d.rabi_split_ghz.toFixed(5):'?'}（rel ${d.g_rel_err!=null?(d.g_rel_err*100).toFixed(2)+'%':'?'} ≤2%）</td></tr>
+      </tbody></table>
+      <div class="subhead">死标量验收</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
+    $('qrConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+  } catch(e){
+    $('qrSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runQr').onclick = runQr;
 
 // ---- ㊽ D-87 谱形目标 × 3D 截面（多波长加权联合）----
 async function runSp(){

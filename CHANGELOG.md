@@ -292,6 +292,12 @@
 - **工程坑**：① dampE/dampH 为 (Nx,1,Nz) 广播形状 → numba 逐点索引 j 越界读垃圾（物理 NaN）→ 包装层广播全尺寸化；② curlE 记录误带 cH/eps 系数 → 去掉（与 numpy 版记录 curl(H) 差分组合一致）；③ 小域优化链路加速被 eps 构造 Python 开销稀释（0.9×）→ 大域才是主战场
 - **文档/UI**：README D-89 行 + 四十八→四十九面板 + ㊾ 清单 + 目录补 run_perf_adjoint3d；WebUI ㊾ 面板 + `/api/adjoint3d_perf`；D-77 回归 9 PASS 零影响
 
+#### D-88 · QEDA 求解器级补强：transmon-resonator 色散读出（2026-08-24，量子蓝海占位）
+- **核**：`lda_solver/qubit_resonator_solver.py`——三能级 transmon（|g⟩|e⟩|f⟩，E_f=2f_q+α）+ Fock 谐振器**联合严格对角化**（耦合 g·(n̂₀₁σ+n̂₁₂√2)(a+a†)）；Blais 修正解析 χ=g²α/(Δ(Δ+α))；最近能量匹配提取 qubit 态依赖谐振器频移
+- **实测**（f_q=5.0, α=-0.3, f_r=6.0, g=0.1, κ=0.005）：χ_num=-0.002251 ↔ χ_an=-0.002308（**rel 2.5%** ≤10%）；二能级近似 rel **77.5%**（**α 修正必要性 31×**，χ 为负即非谐性标志）；拉比分裂自洽 0.02%；**n_crit=25 / Purcell γ=5e-5 GHz（T1≈3.2e6 µs）/ AC Stark 1ph=-0.0045 GHz**；smoke 3/3（含色散区失效 Δ/g<5 负例）；量子链回归全绿（D-23/D-43/D-46/D-51/D-55）；报告 `reports/qubit_resonator_d88.json`
+- **工程坑**：三能级低能谱顺序 |g,0⟩<|e,0⟩<|g,1⟩<|f,0⟩<|e,1⟩——固定索引错取态（χ 假值 -1.94）→ **最近能量匹配**提取四态
+- **文档/UI**：README D-88 行 + 四十九→五十面板 + ㊿ 清单；WebUI ㊿ 面板 + `/api/qubit_resonator`；D-77 回归 9 PASS 零影响
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

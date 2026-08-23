@@ -1756,6 +1756,34 @@ def run_adjoint3d_perf(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_qubit_resonator(payload=None):
+    """D-88 QEDA 求解器级补强：transmon-resonator 色散读出（webui ㊿ 面板）。
+
+    输入 {f_q?, alpha?, f_r?, g?, kappa?}：三能级 transmon + Fock 谐振器
+    严格对角化 ↔ Blais 色散修正解析式（χ=g²α/(Δ(Δ+α))）双路径；输出
+    n_crit/Purcell/AC Stark。死标量验收：色散区 Δ/g≥5 + χ rel≤10% +
+    拉比自洽 + α 修正必要性。LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.qubit_resonator_design import design_qubit_resonator
+    payload = payload or {}
+    kw = {}
+    for k, cast in (("f_q", float), ("alpha", float), ("f_r", float),
+                    ("g", float), ("kappa", float)):
+        if payload.get(k) not in (None, ""):
+            kw[k] = cast(payload[k])
+    try:
+        rep = design_qubit_resonator(**kw)
+        rep["ok"] = bool(rep.get("ok"))
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def system_status():
     return {
         "layers": [
@@ -1909,6 +1937,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_port_acceptance(payload))
             elif path == "/api/adjoint3d_perf":
                 self._send(200, run_adjoint3d_perf(payload))
+            elif path == "/api/qubit_resonator":
+                self._send(200, run_qubit_resonator(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

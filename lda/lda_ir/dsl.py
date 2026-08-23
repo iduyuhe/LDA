@@ -72,23 +72,41 @@ def _plan_from_dict(d: Dict[str, Any]) -> FoundryPlan:
 
 
 def _comp_to_dict(c: Component) -> Dict[str, Any]:
-    return {
+    d = {
         "id": c.id, "kind": c.kind,
         "params": dict(c.params),
         "param_bounds": {k: list(v) for k, v in c.param_bounds.items()},
         "ports": [_port_to_dict(p) for p in c.ports],
         "foundry_hints": list(c.foundry_hints),
     }
+    # D-40 physics 一等字段（标准化定稿 D-76：物理锚必须经 round-trip 保留，
+    # 否则 agent 间传递 IR 会丢"锚定的物理定律"，下游验证裁判失去判据）
+    if c.physics is not None:
+        d["physics"] = {
+            "bid": c.physics.bid,
+            "kind": c.physics.kind,
+            "spec_params": dict(c.physics.spec_params),
+            "anchor": c.physics.anchor,
+        }
+    return d
 
 
 def _comp_from_dict(d: Dict[str, Any]) -> Component:
-    return Component(
+    comp = Component(
         id=d["id"], kind=d["kind"],
         params=dict(d.get("params", {})),
         param_bounds={k: tuple(v) for k, v in d.get("param_bounds", {}).items()},
         ports=[_port_from_dict(p) for p in d.get("ports", [])],
         foundry_hints=list(d.get("foundry_hints", [])),
     )
+    ph = d.get("physics")
+    if ph:
+        from .core import PhysicsAnchor
+        comp.physics = PhysicsAnchor(
+            bid=ph["bid"], kind=ph.get("kind", ""),
+            spec_params=dict(ph.get("spec_params", {})),
+            anchor=ph.get("anchor", ""))
+    return comp
 
 
 def to_dict(m: IRModel) -> Dict[str, Any]:

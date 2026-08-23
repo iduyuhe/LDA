@@ -1,0 +1,157 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lda.dev/schemas/ir.schema.json",
+  "title": "LDA L0 Unified Intermediate Representation (IR)",
+  "description": "LDA 统一中间表示开放标准 v0.3 —— 光子+量子同一机器语言。与 docs/ir_spec.md 零漂移（D-76 定稿）。",
+  "version": "0.3",
+  "type": "object",
+  "required": ["schema_version", "domain", "components"],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["0.2", "0.3"],
+      "description": "受控升级：0.3 现行（D-40）；0.2 遗留兼容；未知版本拒绝"
+    },
+    "domain": {
+      "type": "string",
+      "enum": ["photon", "quantum", "hybrid"],
+      "description": "领域：光子 / 量子 / 混合"
+    },
+    "name": { "type": "string" },
+    "notes": { "type": "string" },
+    "pdk_ref": { "type": ["string", "null"] },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/component" }
+    },
+    "nets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "connects"],
+        "properties": {
+          "id": { "type": "string" },
+          "connects": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "引用 component_id.port_name"
+          }
+        }
+      }
+    },
+    "objectives": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/objective" }
+    },
+    "spectrum": {
+      "anyOf": [
+        { "$ref": "#/definitions/spectrum" },
+        { "type": "null" }
+      ]
+    },
+    "foundry_plan": {
+      "anyOf": [
+        { "$ref": "#/definitions/foundry_plan" },
+        { "type": "null" }
+      ]
+    }
+  },
+  "definitions": {
+    "component": {
+      "type": "object",
+      "required": ["id", "kind"],
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string" },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "RingResonator", "Waveguide", "GratingCoupler", "Splitter",
+            "DirectionalCoupler", "SymmetricYBranch",
+            "Transmon", "Resonator", "Coupler"
+          ],
+          "description": "Kind 注册表（光子 6 + 量子 3 = 9）；新 kind 见 spec §7 扩展指南"
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        },
+        "param_bounds": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "number" }
+          }
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "directed": { "type": "boolean" }
+            }
+          }
+        },
+        "foundry_hints": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "physics": { "$ref": "#/definitions/physics_anchor" }
+      }
+    },
+    "physics_anchor": {
+      "type": "object",
+      "required": ["bid", "kind"],
+      "additionalProperties": true,
+      "properties": {
+        "bid": {
+          "type": "string",
+          "enum": ["B9", "B12", "B13"],
+          "description": "确定性物理锚题号（LLM 不进判决路径）"
+        },
+        "kind": { "type": "string" },
+        "spec_params": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        },
+        "anchor": { "type": "string" }
+      }
+    },
+    "objective": {
+      "type": "object",
+      "required": ["bid"],
+      "properties": {
+        "bid": { "type": "string", "pattern": "^B[0-9]+$" },
+        "weight": { "type": "number", "default": 1.0 },
+        "target": { "type": "number", "default": 0.0 },
+        "tol": { "type": "number", "default": 0.05 },
+        "role": { "type": "string", "enum": ["objective", "constraint"] }
+      }
+    },
+    "spectrum": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["ring_fsr", "lorentz_comb"] },
+        "target_fsr_nm": { "type": "number", "exclusiveMinimum": 0 },
+        "wl0_um": { "type": "number" },
+        "n_g": { "type": "number" },
+        "primary_param": { "type": "string" }
+      }
+    },
+    "foundry_plan": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["all", "list"] },
+        "foundries": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

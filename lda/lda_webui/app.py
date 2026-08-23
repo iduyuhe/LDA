@@ -1419,6 +1419,27 @@ def run_large_scale_bench(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_ir_spec(payload=None):
+    """D-76 L0 IR 开放标准零漂移校验（webui ㊴ 面板）。
+
+    校验 docs/ir_spec.md + docs/ir_schema.json 与 lda_ir 代码三方零漂移：
+    kind 注册表 9 kind / JSON Schema draft-07 合法 / 全 kind conforms /
+    0.2 向后兼容 / physics 物理锚 round-trip（D-76 修复）。LLM 不进判决。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_ir.spec_check import run_ir_spec_check
+    try:
+        rep = run_ir_spec_check()
+        rep["ok"] = bool(rep.get("ok"))
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def system_status():
     return {
         "layers": [
@@ -1552,6 +1573,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_qeda_topology(payload))
             elif path == "/api/large_scale_bench":
                 self._send(200, run_large_scale_bench(payload))
+            elif path == "/api/ir_spec":
+                self._send(200, run_ir_spec(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

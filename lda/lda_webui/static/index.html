@@ -696,6 +696,17 @@
   </div>
 
   <div class="sec">
+    <h2>㊴ L0 IR 开放标准（D-76 · 护城河与标准层 · v0.3 定稿）</h2>
+    <div class="hint">把 schema 0.3 固化为<b>开放标准</b>（社区共建起点）：`docs/ir_spec.md`（规范文档）+ `docs/ir_schema.json`（JSON Schema draft-07 机器可读）与 `lda_ir` 代码实现做<b>零漂移校验</b>——① Schema↔代码 kind 注册表一致（光子 6 + 量子 3 = <b>9 kind</b>）；② JSON Schema draft-07 合法；③ 全 9 kind 示例 conforms；④ schema_version=0.2 遗留向后兼容；⑤ <b>physics 物理锚 round-trip 保留</b>（D-76 修复：to_dict/from_dict 此前丢物理锚，已修复）；⑥ validate 7 规则负例全部检出。"标准文档即真值"——第三方/社区按 spec 接入即共建 L0 标准（护城河 = 标准 + 生态 + PDK 供给）。LLM 不进判决路径。</div>
+    <div class="row">
+      <button class="btn" id="runIrSpec">运行零漂移校验</button>
+    </div>
+    <div id="irSpecSummary" class="summary"></div>
+    <div id="irSpecBody"></div>
+    <div class="conclusion" id="irSpecConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -2225,6 +2236,38 @@ async function runLs(){
   } finally { btn.disabled = false; }
 }
 $('runLs').onclick = runLs;
+
+// ---- ㊴ D-76 L0 IR 开放标准零漂移校验 ----
+async function runIrSpec(){
+  const btn = $('runIrSpec'); btn.disabled = true;
+  $('irSpecSummary').innerHTML = '<span class="spin"></span> 规范文档 + JSON Schema + 代码实现零漂移校验中…';
+  try {
+    const d = await postJson('/api/ir_spec', {});
+    const passed = d.acceptance ? d.acceptance.passed : false;
+    const kd = d.kinds || {};
+    $('irSpecSummary').innerHTML = `L0 IR 开放标准 v${d.schema_version||'?'}：<span class="verdict ${passed?'ok':'fail'}">${passed?'ZERO-DRIFT PASS':'FAIL'}</span>（${kd.total||'?'} kind：光子 ${(kd.photon||[]).length} + 量子 ${(kd.quantum||[]).length}）`;
+    const chk = (d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
+    const pRows = (kd.photon||[]).map(k=>`<tr><td>${k}</td></tr>`).join('');
+    const qRows = (kd.quantum||[]).map(k=>`<tr><td>${k}</td></tr>`).join('');
+    $('irSpecBody').innerHTML = `
+      <div class="subhead">开放标准资产</div>
+      <table class="tbl"><tbody>
+        <tr><td>规范文档</td><td>${d.spec_doc||'docs/ir_spec.md'}</td></tr>
+        <tr><td>JSON Schema</td><td>${d.schema_file||'docs/ir_schema.json'}（draft-07 机器可读）</td></tr>
+        <tr><td>schema 版本</td><td>v${d.schema_version||'?'}（0.2 遗留兼容）</td></tr>
+      </tbody></table>
+      <div class="subhead">Kind 注册表（光子 6）</div>
+      <table class="tbl"><tbody>${pRows}</tbody></table>
+      <div class="subhead">Kind 注册表（量子 3 · 全挂确定性物理锚）</div>
+      <table class="tbl"><tbody>${qRows}</tbody></table>
+      <div class="subhead">零漂移校验（死标量）</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
+    $('irSpecConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+  } catch(e){
+    $('irSpecSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runIrSpec').onclick = runIrSpec;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

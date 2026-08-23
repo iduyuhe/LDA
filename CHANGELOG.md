@@ -146,6 +146,18 @@
 - README：能力阶梯表加 D-75 行（M7 收口）、三十七→三十八面板、㊳ 面板清单 + 目录结构加 `large_scale_bench.py`
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
+### 新增/变更（post-v0.4 · D-76 · 护城河与标准层）
+- `docs/ir_spec.md`：L0 IR 开放标准规范（LDA-STD-001 v0.3 定稿：顶层/组件/子对象模型 + 9 kind 注册表 + 物理锚语义 + 校验 7 规则 + 扩展指南 + 0.2→0.3 变更记录）
+- `docs/ir_schema.json`：L0 IR 机器可读标准（JSON Schema draft-07，kind enum 9 / physics bid enum B9/B12/B13 / 0.2+0.3 schema_version / spectrum·foundry_plan 允许 null）
+- `lda/lda_ir/spec_check.py`：零漂移校验（文档↔Schema↔代码：kind 注册表 / Schema 合法 / 全 kind conforms / 0.2 兼容 / physics round-trip / validate 负例）
+- `lda/lda_ir/dsl.py`：**修复 physics 序列化缺陷**——`_comp_to_dict`/`_comp_from_dict` 此前 round-trip 丢 `Component.physics`（D-40 物理锚），已补齐（量子 3 kind round-trip 保留验证）
+- `lda/run_ir_spec_smoke.py`：3/3 smoke（正例零漂移 + 未知 kind 被 schema 拒绝 + 缺设计意图被 validate 检出；jsonschema 校验需 venv）
+- `lda_webui/app.py`：`/api/ir_spec`（零漂移校验现场跑）
+- `lda_webui/static/index.html`：㊴ 面板（标准资产 + kind 注册表 + 零漂移校验表）
+- `lda/reports/ir_spec_d76.json`：D-76 验收报告
+- README：能力阶梯表加 D-76 行、三十八→三十九面板、㊴ 面板清单 + docs 目录补 ir_spec/ir_schema
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

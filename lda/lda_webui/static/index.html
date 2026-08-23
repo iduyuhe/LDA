@@ -772,6 +772,20 @@
   </div>
 
   <div class="sec">
+    <h2>㊹ 混合×多波长加权联合（D-83 · Track A 纵深收官 · 参数化×目标矩阵全打通）</h2>
+    <div class="hint">Track A 四阶链的**笛卡尔积收敛**：参数化 ∈ {拓扑, 形状, 混合} × 目标 ∈ {单场能, 谱形目标, 多波长}——本面板 = **混合参数化 × 多波长谱形**。形状主干（宽度曲线）+ 拓扑微调带共享同一参数，多波长加权 FOM=Σw_λ·FOM_λ（固定 dl 只变 omega）；**分块归一化**（形状/拓扑各自尺度）保证拓扑带参与度。死标量验收：联合梯度 FD 对拍 ≤0.15 + 加权 improvement ≥1.5 + 各波长 ≥1.2 + **混合 ≥ 纯形状多波长基线** + DRC；Pareto 前端权重网格扫描。诚实边界：3D 形状需 3D adjoint 核；FOM 为收集场能（T&gt;1 聚焦增益非功率透射）。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>波长(逗号分隔):<input id="hmWl" value="1.53,1.57" size="12"></label>
+      <label>控制点:<input id="hmK" value="8" size="3"></label>
+      <label>迭代:<input id="hmIters" value="14" size="4"></label>
+      <button class="btn" id="runHm">混合×多波长联合</button>
+    </div>
+    <div id="hmSummary" class="summary"></div>
+    <div id="hmBody"></div>
+    <div class="conclusion" id="hmConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -2485,6 +2499,45 @@ async function runHy(){
   } finally { btn.disabled = false; }
 }
 $('runHy').onclick = runHy;
+
+// ---- ㊹ D-83 混合×多波长加权联合 ----
+async function runHm(){
+  const btn = $('runHm'); btn.disabled = true;
+  $('hmSummary').innerHTML = '<span class="spin"></span> 混合参数化 × 多波长加权联合运行中…';
+  const payload = {
+    wavelengths: $('hmWl').value, n_controls: $('hmK').value,
+    iters: $('hmIters').value
+  };
+  try {
+    const d = await postJson('/api/hybrid_multi', payload);
+    const passed = d.acceptance ? d.acceptance.passed : false;
+    const o = d.optimization || {}, v = d.verify || {};
+    const pwl = (o.per_wavelength||[]).map(p=>`λ${p.wl_um}:${p.improvement.toFixed(2)}×`).join(' · ');
+    $('hmSummary').innerHTML = `混合×多波长联合：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（加权 improvement=${o.weighted_improvement!=null?o.weighted_improvement.toFixed(2)+'×':'?'} · <b>混合增益 ${o.gain_over_shape!=null?o.gain_over_shape.toFixed(2)+'×':'?'}</b> · Pareto ${(d.pareto_points||[]).length} 点）`;
+    const chk = (d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
+    const paretoRows = (d.pareto_points||[]).map(p=>`<tr><td>[${(p.weights||[]).map(x=>x.toFixed(1)).join(', ')}]</td><td>${(p.improvements||[]).map(x=>x.toFixed(2)).join(' / ')}</td><td>${p.weighted_improvement!=null?p.weighted_improvement.toFixed(2)+'×':'?'}</td></tr>`).join('');
+    $('hmBody').innerHTML = `
+      <div class="subhead">参数化×目标矩阵全打通（混合 × 多波长）</div>
+      <table class="tbl"><tbody>
+        <tr><td>波长 / 权重</td><td>${(d.wavelengths||[]).join(', ')}（w=[${(d.weights||[]).map(x=>x.toFixed(2)).join(', ')}]）</td></tr>
+        <tr><td>逐波长 improvement</td><td class="ok">${pwl}</td></tr>
+        <tr><td>纯形状多波长基线</td><td>${o.baseline_shape_improvement!=null?o.baseline_shape_improvement.toFixed(2)+'×':'?'}</td></tr>
+        <tr><td>混合增益（拓扑自由度价值）</td><td class="ok">${o.gain_over_shape!=null?o.gain_over_shape.toFixed(2)+'×':'?'} ≥ 1.0</td></tr>
+        <tr><td>宽度曲线（形状主干）</td><td>[${(o.final_width||[]).map(x=>x.toFixed(2)).join(', ')}]</td></tr>
+        <tr><td>拓扑带参与度</td><td>${d.n_topo_voxels||'?'} 体素 · ρ_max=${o.topo_rho_max!=null?o.topo_rho_max.toFixed(2):'?'}</td></tr>
+        <tr><td>联合梯度对拍（FD）</td><td class="ok">max_rel_err=${v.max_rel_err!=null?v.max_rel_err.toExponential(1):'?'} ≤ 0.15</td></tr>
+        <tr><td>可制造性 DRC</td><td>${d.drc?escapeHtml(d.drc.detail):'—'}</td></tr>
+      </tbody></table>
+      ${paretoRows?`<div class="subhead">Pareto 前端（权重网格）</div>
+      <table class="tbl"><thead><tr><th>权重 (λ1,λ2)</th><th>逐波长 improvement</th><th>加权</th></tr></thead><tbody>${paretoRows}</tbody></table>`:''}
+      <div class="subhead">死标量验收</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
+    $('hmConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+  } catch(e){
+    $('hmSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runHm').onclick = runHm;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

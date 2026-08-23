@@ -2,7 +2,7 @@
 
 > LDA（Lightwave Design Agent）= 光子芯片(PDA) + 量子芯片(QEDA) 的开源、主权、Agent-native 设计软件。
 > 核心主张：**底层核心求解器由 AI agent 递归自举开发**，人类做架构与验证，AI 不进入判决路径。
-> 当前版本：**v0.5**（2026-08-23 · 系统级里程碑：M7 收口（可调 WDM + 量子门/纠错拓扑 + 大规模基准）+ 护城河两件（L0 IR 开放标准 + 验证合约工业化）+ Track A 逆设计纵深四阶（谱形目标 → 形状 → 混合）+ 四十三面板）
+> 当前版本：**v0.5**（2026-08-23 · 系统级里程碑：M7 收口（可调 WDM + 量子门/纠错拓扑 + 大规模基准）+ 护城河两件（L0 IR 开放标准 + 验证合约工业化）+ Track A 逆设计纵深（谱形目标 → 形状 → 混合 → 混合×多波长联合）+ 四十四面板）
 
 ## 这是什么
 
@@ -79,12 +79,13 @@ L4  统一交付          lda_design/ 设计包规范（DesignPackage schema v0.
 | D-80 | **谱形目标逆设计（Track A 深化）** | 把 adjoint 逆设计目标从「收集场能最大化」**泛化为三类谱形目标 FOM**（逼近商业 EDA 核心卖点）：**①split_ratio 分束比**（双输出监视器，对数加权 FOM，FDTD 实测命中 target±0.10——50:50 实测 0.574、imp 2.5×）；**②spectrum 多波长谱形**（FOM=Σw_λ·FOM_λ 加权联合，3 波长窄带 imp **11.7×**）；**③mode_match 模式匹配**（目标场投影，平坦目标 imp **8.6×**）；死标量验收 FD 对拍 ≤2e-4；smoke 3/3 |
 | D-81 | **形状逆设计 + 多目标联合（Track A 纵深新线）** | 从 voxel 拓扑升级为**连续形状逆设计**（K 控制点宽度曲线 w(x) + sigmoid 软边界，**可制造性内建**：宽度界 + 平滑约束 + DRC 验收；形状梯度链式投影 FD 对拍 5e-4；imp **6.6×**）+ **多目标联合**（多波长加权 FOM 共享形状 + Pareto 前端扫描：2 波长加权 **5.6×** + 前端 3 点）；smoke 3/3 |
 | D-82 | **形状+拓扑混合逆设计（Track A 纵深第二件）** | 形状主干（宽度曲线，可制造内建）⊕ **拓扑微调带**（voxel 密度，概率 OR 光滑组合——"任一有材料即材料"处处可导）分层表达；联合梯度 + 回溯线搜索 + **纯形状基线对比**（混合≥纯形状为验收判据）：混合 imp **18.3× vs 纯形状 6.0×（混合增益 3.06×）**；FD 对拍全过；smoke 3/3 |
+| D-83 | **混合×多波长加权联合（Track A 纵深收官）** | 参数化×目标矩阵**全打通**（参数化∈{拓扑,形状,混合} × 目标∈{单场能,谱形,多波长}）：混合参数化共享形状主干+拓扑带，多波长加权 FOM=Σw_λ·FOM_λ（固定 dl 只变 omega）+ **分块归一化**（形状/拓扑各自尺度，保证拓扑带参与）+ Pareto 前端：加权 imp **19.35× vs 纯形状多波长基线（增益 3.18×）**，逐波长 22.2×/16.5×，Pareto 3 点；FD 对拍 9.8e-4；smoke 3/3 |
 
-## WebUI（四十三面板，设计闭环可视化）
+## WebUI（四十四面板，设计闭环可视化）
 
 LDA 自带零依赖 WebUI（`python lda/lda_webui/deploy.py start`，默认 `http://127.0.0.1:8787`），首屏自动演示全部闭环：
 
-`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM（标定库驱动：gap/波长/全网格三模式）` `㉗方向耦合器×量子读出（分束网络供电控制线）` `㉘分束网络×WDM（解复用→每信道分束树）` `㉙伴随法拓扑逆设计（主权 adjoint FDTD）` `㉚逆设计接入设计→验证引擎（method=adjoint）` `㉛真实版图基元库（foundry-ready）` `㉜端口 S 参数验收（MMI 2D FDTD + ORACLE 对拍）` `㉝3D 端口 S 参数验收（SOI 220nm · numba 核）` `㉞光栅耦合器端口验收（光栅方程 ORACLE）` `㉟真实基元接入设计流水线（Track B 收口）` `㊱热光可调 WDM（热光相位 shifter + 物理定律锚）` `㊲量子门/纠错拓扑（surface code + cross-resonance）` `㊳大规模系统基准（WDM 8×qubit 8 联合压测 + 容量/IL/间隔/网格边界）` `㊴L0 IR 开放标准（规范+JSON Schema 零漂移校验）` `㊵验证合约工业化（CI 全量回归 + 性能基准）` `㊶谱形目标逆设计（分束比/模式匹配/多波长谱形 FOM）` `㊷形状逆设计 + 多目标联合（宽度曲线控制点 + Pareto 前端）` `㊸形状+拓扑混合逆设计（分层表达：形状主干 + 拓扑微调带）`
+`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM（标定库驱动：gap/波长/全网格三模式）` `㉗方向耦合器×量子读出（分束网络供电控制线）` `㉘分束网络×WDM（解复用→每信道分束树）` `㉙伴随法拓扑逆设计（主权 adjoint FDTD）` `㉚逆设计接入设计→验证引擎（method=adjoint）` `㉛真实版图基元库（foundry-ready）` `㉜端口 S 参数验收（MMI 2D FDTD + ORACLE 对拍）` `㉝3D 端口 S 参数验收（SOI 220nm · numba 核）` `㉞光栅耦合器端口验收（光栅方程 ORACLE）` `㉟真实基元接入设计流水线（Track B 收口）` `㊱热光可调 WDM（热光相位 shifter + 物理定律锚）` `㊲量子门/纠错拓扑（surface code + cross-resonance）` `㊳大规模系统基准（WDM 8×qubit 8 联合压测 + 容量/IL/间隔/网格边界）` `㊴L0 IR 开放标准（规范+JSON Schema 零漂移校验）` `㊵验证合约工业化（CI 全量回归 + 性能基准）` `㊶谱形目标逆设计（分束比/模式匹配/多波长谱形 FOM）` `㊷形状逆设计 + 多目标联合（宽度曲线控制点 + Pareto 前端）` `㊸形状+拓扑混合逆设计（分层表达：形状主干 + 拓扑微调带）` `㊹混合×多波长加权联合（参数化×目标矩阵全打通）`
 
 ## PDK 标定库（真实 FDTD 实测沉淀，设计时秒级加载）
 
@@ -116,12 +117,13 @@ lda/                     核心软件包（主权求解器 + agent + 设计引�
   lda_ir/                统一 IR（光子+量子，schema v0.3，PhysicsAnchor）
   lda_l2/                器件库（已验证资产）+ GDS 编码器 + DRC + 版图仿真
   lda_harness/           确定性比对裁判（13 标准题物理定律锚 B1-B13）
-  lda_webui/             零依赖 WebUI（四十三面板）
+  lda_webui/             零依赖 WebUI（四十四面板）
   run_ci_regression.py   验证合约工业化·全量回归统一入口（D-77，自动发现 54+ smoke）
   run_perf_bench.py      求解器性能基准（D-77，numba/GPU 加速比 + 基线漂移监控）
+  lda_solver/hybrid_inverse.py  混合逆设计核（D-82/83，形状主干 + 拓扑微调带 + 多波长联合）
+  lda_agent/hybrid_design.py    混合逆设计入口（D-82/83，纯形状基线对比 + Pareto 前端）
   lda_solver/shape_inverse.py  形状逆设计核（D-81，宽度曲线控制点 + 可制造性 DRC）
   lda_agent/multi_objective_design.py  多目标联合（D-81，多波长加权 + Pareto 前端）
-  lda_solver/hybrid_inverse.py  混合逆设计核（D-82，形状主干 + 拓扑微调带）
 docs/                    ir_spec.md + ir_schema.json（L0 开放标准）· design_package_spec.md + design_package_schema.json
 ```
 

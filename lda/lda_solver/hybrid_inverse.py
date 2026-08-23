@@ -285,6 +285,130 @@ def _project_shape(w: np.ndarray, w_min: float, w_max: float,
     return np.clip(w, w_min, w_max)
 
 
+def optimize_hybrid_multi(hps: List[HybridProblem], weights: np.ndarray,
+                          iters: int = 22, step0: float = 0.4,
+                          topo_wgt: float = 0.6, verbose: bool = False,
+                          baseline: Optional[Dict[str, Any]] = None,
+                          ) -> Dict[str, Any]:
+    """D-83 多波长加权联合混合优化（形状主干 + 拓扑微调带 × 多波长谱形）。
+
+    每个波长一个 HybridProblem（base 复制后固定 dl 只变 omega——D-80 教训）。
+    联合 FOM = Σ_k w_k · FOM_k；联合梯度 = Σ_k w_k·[gs_k, gt_k]；
+    **分块归一化**：形状块 / 拓扑块各自归一化后拼接（D-83 增强——合并
+    max 归一化会压制量级小但重要的拓扑梯度，导致拓扑带利用不足）。
+
+    线搜索评估 = 同一可行性投影设计下的全波长加权 FOM（单调不降）。
+    baseline = 纯形状多波长同迭代结果（增益对比）。
+    """
+    nwl = len(hps)
+    if weights is None:
+        wt = np.ones(nwl) / nwl
+    else:
+        wt = np.asarray(weights, dtype=float) / np.asarray(weights).sum()
+    K = hps[0].n_controls
+    n_t = hps[0].n_topo
+    assert all(hp.n_topo == n_t for hp in hps), "各波长拓扑结构须一致"
+    w = np.full(K, hps[0].init_halfwidth)
+    rho = np.zeros(n_t)
+
+    def F(w_, rho_):
+        return float(sum(wt[k] * forward(hps[k].base, hps[k].eps(w_, rho_))["FOM"]
+                         for k in range(nwl)))
+
+    fom0 = F(w, rho)
+    best_fom, best_w, best_r = fom0, w.copy(), rho.copy()
+    history: List[Dict[str, Any]] = []
+    for it in range(iters):
+        fwds = [forward(hps[k].base, hps[k].eps(w, rho)) for k in range(nwl)]
+        gs = np.zeros(K)
+        gt = np.zeros(n_t)
+        for k in range(nwl):
+            gsk, gtk = hps[k].gradient(fwds[k], w, rho)
+            gs += wt[k] * gsk
+            gt += wt[k] * gtk
+        # 分块归一化（形状/拓扑各自尺度）
+        ds = gs / (np.max(np.abs(gs)) + 1e-12)
+        dt = gt / (np.max(np.abs(gt)) + 1e-12)
+        d = np.concatenate([ds, dt * topo_wgt])
+        alpha = step0
+        f_eval = float(sum(wt[k] * fwds[k]["FOM"] for k in range(nwl)))
+        f_try, accepted = f_eval, False
+        while alpha > 2e-3:
+            wt_ = _project_shape(w + alpha * d[:K], hps[0].w_min,
+                                 hps[0].w_max, hps[0].slope_max)
+            rt = np.clip(rho + alpha * d[K:] * topo_wgt, 0.0, 1.0)
+            f_try = F(wt_, rt)
+            if f_try > f_eval:
+                accepted = True
+                break
+            alpha *= 0.5
+        if accepted:
+            w = _project_shape(w + alpha * d[:K], hps[0].w_min,
+                               hps[0].w_max, hps[0].slope_max)
+            rho = np.clip(rho + alpha * d[K:] * topo_wgt, 0.0, 1.0)
+            f_final = f_try
+        else:
+            f_final = f_eval
+        if f_final > best_fom:
+            best_fom, best_w, best_r = f_final, w.copy(), rho.copy()
+        history.append({"iter": it, "FOM_total": f_final,
+                        "alpha": round(alpha, 4)})
+        if verbose and (it % 5 == 0 or it == iters - 1):
+            print(f"  it={it:3d} alpha={alpha:6.3f} FOM_total={f_final:.4e}")
+
+    # 逐波长改善（初始均匀基线：w_init + ρ=0）
+    w_init = np.full(K, hps[0].init_halfwidth)
+    per_wl: List[Dict[str, Any]] = []
+    for k, hp in enumerate(hps):
+        f0 = forward(hp.base, hp.eps(w_init, np.zeros(n_t)))["FOM"]
+        f1 = forward(hp.base, hp.eps(best_w, best_r))["FOM"]
+        per_wl.append({"wl_um": float(hp.base.wl_um),
+                       "weight": round(float(wt[k]), 4),
+                       "initial_FOM": float(f0), "final_FOM": float(f1),
+                       "improvement": float(f1 / (f0 + 1e-12))})
+    weighted_imp = float(sum(wt[k] * per_wl[k]["improvement"]
+                             for k in range(nwl)))
+    drc = shape_drc(type("S", (), {"w_min": hps[0].w_min,
+                                   "w_max": hps[0].w_max,
+                                   "slope_max": hps[0].slope_max,
+                                   "n_controls": K})(), best_w)
+    fill = float((best_r > 0.5).mean())
+    rho_max = float(best_r.max()) if n_t else 0.0
+    rho_mean = float(best_r.mean()) if n_t else 0.0
+    gain_over_shape = None
+    if baseline:
+        b_imp = (baseline.get("improvement")
+                 or baseline.get("weighted_improvement"))
+        if b_imp:
+            gain_over_shape = weighted_imp / (b_imp + 1e-12)
+    passed = bool(weighted_imp >= 1.5 and drc["ok"]
+                  and all(per_wl[k]["improvement"] >= 1.2
+                          for k in range(nwl))
+                  and (gain_over_shape is None or gain_over_shape >= 1.0))
+    return {
+        "history": history,
+        "per_wavelength": per_wl,
+        "weighted_improvement": round(weighted_imp, 3),
+        "final_width": [round(float(x), 3) for x in best_w],
+        "topo_fill_frac": round(fill, 4),
+        "topo_rho_max": rho_max,
+        "topo_rho_mean": round(rho_mean, 4),
+        "final_FOM": best_fom,
+        "initial_FOM": fom0,
+        "baseline_shape_improvement": (
+            baseline.get("improvement")
+            or baseline.get("weighted_improvement")
+            if baseline else None),
+        "gain_over_shape": (round(gain_over_shape, 3)
+                            if gain_over_shape is not None else None),
+        "drc": drc,
+        "passed": bool(passed),
+        "note": ("D-83 混合参数化 × 多波长加权联合：FOM=Σw_λ·FOM_λ；分块"
+                 "归一化（形状/拓扑各自尺度）保证拓扑带参与度；混合 ≥ "
+                 "纯形状多波长基线为验收条件之一。"),
+    }
+
+
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser(description="D-82 混合逆设计核")

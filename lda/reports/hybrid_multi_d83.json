@@ -1,0 +1,143 @@
+{
+  "ok": true,
+  "title": "混合参数化 × 多波长加权联合（Track A 纵深收官）",
+  "mode": "hybrid_multi",
+  "wavelengths": [
+    1.53,
+    1.57
+  ],
+  "weights": [
+    0.5,
+    0.5
+  ],
+  "n_controls": 8,
+  "n_topo_voxels": 580,
+  "topo_band": [
+    2.5,
+    7.5
+  ],
+  "grid": {
+    "Nx": 90,
+    "Ny": 70,
+    "dl_factor": 10
+  },
+  "verify": {
+    "max_rel_err": 0.000978754611696364,
+    "nsamples": 8
+  },
+  "optimization": {
+    "initial_FOM": 2.118592865451469,
+    "final_FOM": 40.723633996411095,
+    "weighted_improvement": 19.347,
+    "per_wavelength": [
+      {
+        "wl_um": 1.53,
+        "weight": 0.5,
+        "initial_FOM": 2.0257954108189935,
+        "final_FOM": 44.96052337533851,
+        "improvement": 22.19400988628934
+      },
+      {
+        "wl_um": 1.57,
+        "weight": 0.5,
+        "initial_FOM": 2.2113903200839453,
+        "final_FOM": 36.48674461748367,
+        "improvement": 16.499459315749434
+      }
+    ],
+    "final_width": [
+      3.155,
+      4.655,
+      4.472,
+      4.344,
+      4.455,
+      4.506,
+      4.937,
+      3.437
+    ],
+    "topo_fill_frac": 0.0052,
+    "topo_rho_max": 0.7790045115573033,
+    "baseline_shape_improvement": 6.078,
+    "gain_over_shape": 3.183,
+    "elapsed_s": 32.47
+  },
+  "pareto_points": [
+    {
+      "weights": [
+        0.2,
+        0.8
+      ],
+      "improvements": [
+        11.377,
+        10.815
+      ],
+      "weighted_improvement": 10.927
+    },
+    {
+      "weights": [
+        0.5,
+        0.5
+      ],
+      "improvements": [
+        12.986,
+        11.048
+      ],
+      "weighted_improvement": 12.017
+    },
+    {
+      "weights": [
+        0.8,
+        0.2
+      ],
+      "improvements": [
+        12.285,
+        10.232
+      ],
+      "weighted_improvement": 11.874
+    }
+  ],
+  "drc": {
+    "ok": true,
+    "w_min": 2.0,
+    "w_max": 10.0,
+    "width_range": [
+      3.15,
+      4.94
+    ],
+    "max_slope": 1.5,
+    "slope_max": 1.5,
+    "detail": "宽度∈[3.2,4.9]（界 [2.0,10.0]）；最大相邻变化 1.50（≤1.5）"
+  },
+  "acceptance": {
+    "checks": [
+      {
+        "name": "混合×多波长联合梯度 vs 有限差分（≤0.15）",
+        "ok": true,
+        "detail": "max_rel_err=0.0010（8 采样）"
+      },
+      {
+        "name": "加权 FOM improvement ≥ 1.5",
+        "ok": true,
+        "detail": "19.347×（初始 2.12e+00 → 4.07e+01）"
+      },
+      {
+        "name": "各波长 improvement ≥ 1.2",
+        "ok": true,
+        "detail": "λ1.53:22.19×, λ1.57:16.50×"
+      },
+      {
+        "name": "混合 ≥ 纯形状多波长基线（拓扑增益）",
+        "ok": true,
+        "detail": "混合 19.347× vs 纯形状 6.078×（增益 3.183×）"
+      },
+      {
+        "name": "可制造性 DRC（形状宽度 + 平滑）",
+        "ok": true,
+        "detail": "宽度∈[3.2,4.9]（界 [2.0,10.0]）；最大相邻变化 1.50（≤1.5）"
+      }
+    ],
+    "passed": true
+  },
+  "verdict": "混合×多波长联合 PASS：加权 improvement=19.347×（纯形状多波长基线 6.078×，混合增益 3.183×）；逐波长 λ1.53:22.19×; λ1.57:16.50×；混合梯度对拍 0.0010；DRC 宽度∈[3.2,4.9]（界 [2.0,10.0]）；最大相邻变化 1.50（≤1.5）；Pareto 前端 3 点。耗时 32.5s。",
+  "note": "D-83 参数化×目标矩阵全打通：参数化∈{拓扑,形状,混合} × 目标∈{单场能,谱形目标,多波长}。分块归一化保证拓扑带参与度。诚实边界：3D 形状需 3D adjoint 核（归后续）；FOM 为收集场能（T>1 聚焦增益非功率透射）；2D TEz。LLM 不进判决路径。"
+}

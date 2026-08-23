@@ -218,6 +218,21 @@
 - README：能力阶梯表加 D-82 行、四十二→四十三面板、㊸ 面板清单 + 目录结构补 hybrid 模块
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
+### D-83 混合参数化 × 多波长加权联合（2026-08-23 · Track A 纵深收官）
+
+**里程碑：参数化×目标矩阵全打通——参数化∈{拓扑,形状,混合} × 目标∈{单场能,谱形目标,多波长}，本件 = 混合 × 多波长谱形**
+
+- `lda/lda_solver/hybrid_inverse.py`：新增 `optimize_hybrid_multi`——多波长 HybridProblem（共享拓扑结构，固定 dl 只变 omega）+ 联合 FOM=Σw_λ·FOM_λ + 联合梯度=Σw_k·[gs,gt] + **分块归一化**（形状/拓扑块各自归一化，根治合并 max 归一化压制拓扑梯度）+ 逐波长 improvement + 基线对比
+- `lda/lda_agent/hybrid_design.py`：新增 `design_hybrid_multi` 统一入口（多波长联合 FD 对拍 + 纯形状多波长基线 + Pareto 权重网格前端）+ main CLI `--mode multi`
+- `lda/run_hybrid_multi_smoke.py`：3/3 smoke（混合×多波长正例 + Pareto 正例 + 单波长优雅 FAIL）
+- `lda_webui/app.py`：`/api/hybrid_multi`（wavelengths/n_controls/iters/pareto 透传）
+- `lda_webui/static/index.html`：㊹ 面板（逐波长 improvement + 混合增益 + Pareto 前端表 + 死标量验收）
+- `lda/reports/hybrid_multi_d83.json`：D-83 验收报告（加权 imp 19.35× / 增益 3.18× / Pareto 3 点 全 PASS）
+- **实测**：加权 improvement 19.35× vs 纯形状多波长基线（**混合增益 3.18×**，smoke 32.1×/10.7× 增益 3.01×）；逐波长 λ1.53:22.19× / λ1.57:16.50×；FD 对拍 9.8e-4
+- **工程坑**：①基线 dict 键不匹配（improvement vs weighted_improvement）→ 兼容两键；②拓扑参与度统计口径——ρ_max=0.93 但 fill>0.5 近 0（稀疏关键体素），报告用 ρ_max/ρ_mean
+- README：能力阶梯表加 D-83 行、四十三→四十四面板、㊹ 面板清单 + 目录结构补 hybrid 多波长说明
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

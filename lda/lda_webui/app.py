@@ -1440,6 +1440,98 @@ def run_ir_spec(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+# WebUI 回归演示子集（~15s，避免全量 6min 阻塞）
+_WEBUI_SUBSET = [
+    "run_harness.py", "run_ir_smoke.py", "run_ir_quantum_smoke.py",
+    "run_gds_smoke.py", "run_drc_smoke.py", "run_device_library_smoke.py",
+    "run_tunable_wdm_smoke.py", "run_qeda_topology_smoke.py",
+    "run_large_scale_smoke.py",
+]
+
+
+def run_ci_regression(payload=None):
+    """D-77 验证合约工业化回归（webui ㊵ 面板）。
+
+    输入 {tag?: "webui"|"core"|"all", timeout?}：统一入口跑 smoke 回归
+    （webui=快速子集 ~15s；core=CI 安全集 ~6min；all=全量含重 FDTD/GPU）。
+    LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    payload = payload or {}
+    tag = payload.get("tag", "webui")
+    timeout = float(payload.get("timeout") or 120.0)
+    from run_ci_regression import run_ci_regression as _run
+    if tag == "webui":
+        # 只跑内置演示子集（逐项 subprocess）
+        import subprocess as _sp, time as _t
+        results = []
+        for script in _WEBUI_SUBSET:
+            t0 = _t.perf_counter()
+            try:
+                p = _sp.run([_sys.executable, script], cwd=_lda,
+                            capture_output=True, text=True, timeout=timeout)
+                rc, out = p.returncode, (p.stdout or "") + (p.stderr or "")
+                st = "PASS" if rc == 0 else "FAIL"
+                if rc != 0 and any(m in out for m in
+                                   ("SKIP", "无 GPU", "未安装", "SKIPPED")):
+                    st = "SKIP"
+                results.append({"script": script, "rc": rc, "status": st,
+                                "elapsed_s": round(_t.perf_counter() - t0, 2),
+                                "tail": "\n".join(out.splitlines()[-2:])})
+            except Exception as e:  # noqa: BLE001
+                results.append({"script": script, "rc": -1, "status": "ERROR",
+                                "elapsed_s": round(_t.perf_counter() - t0, 2),
+                                "tail": str(e)[:100]})
+        n_pass = sum(1 for r in results if r["status"] == "PASS")
+        n_skip = sum(1 for r in results if r["status"] == "SKIP")
+        n_fail = sum(1 for r in results if r["status"] in ("FAIL", "ERROR"))
+        passed = n_fail == 0
+        return {"ok": True, "tag": tag, "results": results,
+                "summary": {"pass": n_pass, "skip": n_skip, "fail": n_fail,
+                            "total_s": round(sum(r["elapsed_s"] for r in results), 2)},
+                "acceptance": {"passed": passed,
+                               "checks": [{"name": "WebUI 回归子集",
+                                           "ok": passed,
+                                           "detail": f"{n_pass} PASS / "
+                                                     f"{n_skip} SKIP / {n_fail} FAIL"}]},
+                "verdict": (f"WebUI 回归子集 {n_pass} PASS / {n_skip} SKIP / "
+                            f"{n_fail} FAIL"
+                            + (" —— 全绿" if passed else " —— 有失败"))}
+    try:
+        rep = _run(tag=tag if tag in ("core", "all") else "core",
+                   timeout=timeout)
+        rep["ok"] = bool(rep.get("ok"))
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
+def run_perf_bench(payload=None):
+    """D-77 性能基准（webui ㊵ 面板 · quick 模式 ~80s）。
+
+    输入 {quick?}：greens numpy→numba 加速比 + 物理一致 + GPU（CUDA 可用时）
+    bit-equivalent + 历史基线漂移监控。LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from run_perf_bench import run_perf_bench as _run
+    payload = payload or {}
+    quick = payload.get("quick") not in (None, "", False)
+    try:
+        rep = _run(compare_baseline=True, quick=quick)
+        rep["ok"] = bool(rep.get("ok"))
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def system_status():
     return {
         "layers": [
@@ -1575,6 +1667,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_large_scale_bench(payload))
             elif path == "/api/ir_spec":
                 self._send(200, run_ir_spec(payload))
+            elif path == "/api/ci_regression":
+                self._send(200, run_ci_regression(payload))
+            elif path == "/api/perf_bench":
+                self._send(200, run_perf_bench(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

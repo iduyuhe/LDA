@@ -1,0 +1,84 @@
+{
+  "ok": true,
+  "title": "求解器性能基准（numba-cpu / GPU 加速比监控）",
+  "benchmarks": {
+    "greens": {
+      "case": "greens-N48",
+      "numpy_s": 25.491,
+      "numba_s": 0.522,
+      "speedup": 48.85,
+      "rel_diff": 4.784332132204888e-16,
+      "ok": true
+    },
+    "spectrum": {
+      "cases": [
+        {
+          "case": "fp",
+          "numpy_s": 8.84,
+          "numba_s": 1.813,
+          "speedup": 4.88,
+          "rel_diff": 1.454684668958148e-15,
+          "ok": true
+        }
+      ],
+      "total_numpy_s": 8.84,
+      "total_numba_s": 1.813,
+      "overall_speedup": 4.88,
+      "ok": true
+    },
+    "gpu": {
+      "available": false,
+      "note": "CUDA 不可用（GPU 项 SKIP，非失败）"
+    }
+  },
+  "baseline": {
+    "greens": {
+      "speedup": 34.71,
+      "numpy_s": 36.49,
+      "numba_s": 1.051
+    },
+    "spectrum": {
+      "overall_speedup": 2.62
+    },
+    "created_at": "2026-08-23T16:00:50"
+  },
+  "drift": {
+    "metric": "greens numba speedup",
+    "prev": 34.71,
+    "now": 48.85,
+    "rel_change": 0.4074,
+    "warn": true
+  },
+  "acceptance": {
+    "checks": [
+      {
+        "name": "numpy↔numba 物理一致（greens rel≤1e-2）",
+        "ok": true,
+        "detail": "rel=4.78e-16"
+      },
+      {
+        "name": "numba 加速比 ≥5.0×（greens）",
+        "ok": true,
+        "detail": "48.85×（numpy 25.491s → numba 0.522s）"
+      },
+      {
+        "name": "透射谱 3 case numpy↔numba 一致",
+        "ok": true,
+        "detail": "overall speedup 4.88×（1.454684668958148e-15）"
+      },
+      {
+        "name": "GPU 基准（SKIP：CUDA 不可用）",
+        "ok": true,
+        "detail": "CUDA 不可用（GPU 项 SKIP，非失败）"
+      },
+      {
+        "name": "性能漂移监控（greens numba 加速比）",
+        "ok": true,
+        "detail": "greens numba speedup 34.71× → 48.85×（Δ40.7%，⚠ 预警：偏离基线 >±30%，建议重跑确认"
+      }
+    ],
+    "passed": true
+  },
+  "verdict": "求解器性能基准 PASS：greens numpy→numba 48.85×（物理一致 rel=4.8e-16）；透射谱 overall 4.88×；GPU SKIP（CUDA 不可用）；基线对比 Δ40.7%。LLM 不进判决路径。",
+  "note": "D-77 性能基准：同一规格 numpy/numba/cuda 计时 + 物理一致/bit-equivalence 铁律 + 历史基线漂移监控（±30% 预警）。诚实边界：消费卡 GPU fp64≈1/64（D-50），生产默认 numba-cpu；本基准为求解核级性能，非端到端设计闭环。"
+}

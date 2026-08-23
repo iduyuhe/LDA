@@ -158,6 +158,18 @@
 - README：能力阶梯表加 D-76 行、三十八→三十九面板、㊴ 面板清单 + docs 目录补 ir_spec/ir_schema
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
+### 新增/变更（post-v0.4 · D-77 · 护城河与标准层第二件）
+- `lda/run_ci_regression.py`：验证合约工业化全量回归统一入口——自动发现 `run_*smoke*.py`（54+）+ run_harness.py，每项独立子进程 + 超时 + 输出尾部捕获；**SKIP 语义**（退出非 0 且含"无 GPU/未安装/SKIP"标记 → SKIP 非 FAIL）；`--tag core`（CI 安全纯 numpy 集）/ `--tag all`（全量）；机器可读 JSON 报告
+- `lda/run_perf_bench.py`：求解器性能基准——greens/透射谱 numpy vs numba-cpu 计时 + 加速比 + 物理一致（rel≤1e-2）+ GPU cuda↔cpu fp64 bit-equivalent（可用时）+ **历史基线漂移监控**（reports/perf_baseline.json，±30% 预警，预警=黄灯非硬判据）
+- `.github/workflows/ci.yml`：新增 `industrial-regression` job（统一入口 core 集一键回归）
+- `lda/run_ci_industrial_smoke.py`：3/3 smoke（回归子集全过 + 性能基准 PASS + 坏 smoke 被检出）
+- `lda_webui/app.py`：`/api/ci_regression`（webui/core/all 三模式）+ `/api/perf_bench`（quick 重跑）
+- `lda_webui/static/index.html`：㊵ 面板（回归结果表 + 性能基准表 + 验收）
+- `lda/reports/perf_bench_d77.json` + `lda/reports/ci_regression_core_d77.json` + `lda/reports/perf_baseline.json`：基准报告与基线
+- **实测**：core 回归 **27 PASS / 0 SKIP / 0 FAIL**（358s）；greens numpy→numba **34.7×**（rel=4.8e-16）；透射谱 overall 2.6×；GPU SKIP（CUDA 不可用，非失败）
+- README：能力阶梯表加 D-77 行、三十九→四十面板、㊵ 面板清单 + 目录结构补 ci/perf 入口
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

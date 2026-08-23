@@ -1309,28 +1309,6 @@ def run_gc_sparams(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
-def run_pipeline_realize(payload=None):
-    """D-79 真实基元接入设计流水线（webui ㉟ 面板）。
-
-    输入 {kinds? (list)}：全 kind 真实 GDS 出图 + 3×SOI PDK DRC 复查 +
-    玩具→真实几何对比诊断。LLM 不进判决路径。
-    """
-    import sys as _sys
-    from pathlib import Path as _P
-    _lda = _P(__file__).resolve().parent.parent  # lda/
-    if str(_lda) not in _sys.path:
-        _sys.path.insert(0, str(_lda))
-    from lda_agent.pipeline_realize import design_pipeline_realize
-    payload = payload or {}
-    kinds = payload.get("kinds") or None
-    try:
-        rep = design_pipeline_realize(devices=kinds)
-        rep["ok"] = True
-        return rep
-    except Exception as e:  # noqa: BLE001
-        return {"ok": False, "error": str(e)[:120]}
-
-
 def system_status():
     return {
         "layers": [
@@ -1456,8 +1434,6 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_sparams_3d(payload))
             elif path == "/api/gc_sparams":
                 self._send(200, run_gc_sparams(payload))
-            elif path == "/api/pipeline_realize":
-                self._send(200, run_pipeline_realize(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

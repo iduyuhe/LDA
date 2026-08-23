@@ -636,17 +636,6 @@
   </div>
 
   <div class="sec">
-    <h2>㉟ 真实基元接入设计流水线（D-79 · Track B 收口 · v0.4 门槛）</h2>
-    <div class="hint">把 D-14/D-19 版图流水线的默认几何从<b>玩具矩形/圆形切换到 D-71 真实基元</b>：Ring/AddDrop 实心环带 → <b>真实波导环</b>（中心线 PATH，foundry 弯曲波导标准表达）、YBranch 裸分叉 → <b>输入绝热 taper</b> + 双 arm、DC/Waveguide 已是 PATH 波导、Taper/EulerBend/MMI/GC 沿用基元（GC=D-78 方波光栅）。全 9 kind <b>真实 GDS 出图 + round-trip + 3×SOI PDK DRC 复查</b>（NOEIC/CUMEC/SITRI 规则注入）。诚实边界：环为圆弧中心线（曲率恒定），Euler 弯无缝拼合留作深化；几何真实化不改变电特性判据（归 D-72/D-78）。LLM 不进判决路径。</div>
-    <div class="row">
-      <button class="btn" id="runReal">全 kind 真实 GDS + DRC 验收</button>
-    </div>
-    <div id="realSummary" class="summary"></div>
-    <div id="realBody"></div>
-    <div class="conclusion" id="realConclusion"></div>
-  </div>
-
-  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -2003,34 +1992,6 @@ function renderGc(d){
   $('gcConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
 }
 $('runGc').onclick = runGc;
-
-// ---- ㉟ D-79 真实基元接入设计流水线 ----
-async function runReal(){
-  const btn = $('runReal'); btn.disabled = true;
-  $('realSummary').innerHTML = '<span class="spin"></span> 全 kind 真实 GDS 出图 + DRC 复查中…';
-  try{
-    const d = await post('/api/pipeline_realize', {});
-    renderReal(d);
-  }catch(e){ $('realSummary').innerHTML = '运行失败：'+e; }
-  finally{ btn.disabled = false; }
-}
-function renderReal(d){
-  if(!d.ok){ $('realSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
-  const devs = d.devices||{};
-  const rows = Object.entries(devs).map(([k,v])=>{
-    const drc = Object.entries(v.drc||{}).map(([p,x])=>`${p}:${x.passed?'✓':'✗'}`).join(' ');
-    return `<tr><td>${k}</td><td>${v.desc_summary||'-'}</td><td>${v.gds_bytes}B</td><td>${v.roundtrip_ok?'✓':'✗'}</td><td>${drc}</td></tr>`;
-  }).join('');
-  $('realSummary').innerHTML = `真实基元接入流水线：<span class="verdict ${d.acceptance.passed?'ok':'fail'}">${d.acceptance.passed?'PASS':'FAIL'}</span>（${d.acceptance.n_devices} kind · 3×SOI PDK DRC）`;
-  $('realBody').innerHTML = `
-    <table class="tbl"><thead><tr><th>kind</th><th>几何构成（真实基元）</th><th>GDS</th><th>round-trip</th><th>PDK DRC</th></tr></thead><tbody>${rows}</tbody></table>
-    <div class="subhead">玩具→真实几何升级对照（诊断）</div>
-    <table class="tbl"><thead><tr><th>kind</th><th>旧（玩具）</th><th>新（真实基元）</th></tr></thead><tbody>
-    ${Object.entries(devs).filter(([k,v])=>v.old_geom&&!v.old_geom.includes('沿用')).map(([k,v])=>`<tr><td>${k}</td><td>${v.old_geom}</td><td>${v.desc_summary}</td></tr>`).join('')}
-    </tbody></table>`;
-  $('realConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
-}
-$('runReal').onclick = runReal;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

@@ -182,6 +182,17 @@
 - README：能力阶梯表加 D-80 行、四十→四十一面板、㊶ 面板清单
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
+### 新增/变更（post-v0.4 · D-81 · Track A 纵深新线）
+- `lda/lda_solver/shape_inverse.py`：**形状逆设计核**——ShapeProblem（K 控制点宽度曲线 + sigmoid 软边界介电 + `project()` 可行性投影：宽度界 clip + 正反贪心平滑迭代）+ shape_gradient（链式 dFOM/dw=Σgeps·dε/dw）+ verify_shape_gradient（控制点 FD 方向对拍）+ shape_drc（宽度界 + 相邻控制点变化率）+ optimize_shape（线搜索 + 投影）
+- `lda/lda_agent/multi_objective_design.py`：design_shape（单目标形状逆设计）+ design_multi_objective（多波长加权 FOM 共享形状 + Pareto 前端权重网格扫描）
+- `lda/run_shape_design_smoke.py`：3/3 smoke（形状正例 + 多目标正例 + 宽度界非法优雅 FAIL）
+- `lda_webui/app.py`：`/api/shape_design`（mode=shape|multi / n_controls / iters / wavelengths 透传）
+- `lda_webui/static/index.html`：㊷ 面板（模式下拉 + 宽度曲线/多目标/Pareto 结果 + 死标量验收）
+- `lda/reports/shape_multi_objective_d81.json`：D-81 验收报告（shape 6.6× / multi 5.6× 全 PASS）
+- **实测**：形状逆设计 imp 6.6×（smoke 10.3×，宽度 taper 成形平滑 1.5≤1.5 DRC 过）；多目标 2 波长加权 5.6× + Pareto 3 点；形状梯度 FD 对拍 5e-4
+- README：能力阶梯表加 D-81 行、四十一→四十二面板、㊷ 面板清单 + 目录结构补 shape/multi 模块
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

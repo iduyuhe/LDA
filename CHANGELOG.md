@@ -108,6 +108,21 @@
 - README：能力阶梯表加 D-66~D-79 行（含 D-72★ 3D 深化、D-78 GC 验收、D-79 流水线真实化）、三十五面板、㉘~㉟ 面板清单
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
+## Unreleased（post-v0.4 · D-73 起 · M7 Track D 系统级）
+
+**里程碑（M7 第一件）：热光可调 WDM（D-73）—— 静态 WDM 升级为运行时可重构**
+
+- **D-73 热光/电光可调 WDM（Track D 系统级 · M7）**：`lda_agent/tunable_wdm.py`——静态 WDM（D-42/D-57，FDTD 标定 κ_c 驱动 gap 多环级联解复用）叠加**每环热光相位 shifter**：**Δλ/λ=(dn/dT)·R_th·P/n_eff 物理定律锚**（dn/dT=1.86e-4/K 硅热光系数材料常数、n_eff=2.4 波导有效折射率，**非拟合**，ORACLE 比对真实 Si 加热器调谐斜率区间 [0.02,0.5] nm/mW）→ 信道重分配验证 **|P|≤P_max 且 |Δλ|≤FSR/2（无 FSR 混叠）** + 整 FSR 内可重构（P_max·S_min≥FSR_min/2）。实测：默认 3 信道 S≈0.120 nm/mW（命中真实区间）、目标 [1552.7,1555.7,1558.7]nm 各需 ~22.7mW（≤P_max=50）、最大可达位移 6.0nm≥FSR/2=4.56nm，**验收 PASS**；smoke 3/3（正例 + FSR 混叠负例 + 单信道负例）；报告 `reports/tunable_wdm_d73.json`；WebUI ㊱ 面板 + `/api/tunable_wdm`（HTTP 实测通）。**诚实边界**：①未建模环间热串扰（默认加热器热隔离）；②仅热光调谐（未实现电光载流子注入型）；③静态重配置（信道再分配）非高速调制（不声称调制带宽）；④FSR 仍由静态环半径决定，调谐仅在其内重分配。LLM 不进判决路径。
+
+### 新增/变更（post-v0.4 · D-73）
+
+- `lda_agent/tunable_wdm.py`：热光可调 WDM 设计封装（静态 WDM 复用 design_wdm_with_coupler + 每环热模型 + 信道重分配死标量验收）
+- `run_tunable_wdm_smoke.py`：3/3 smoke（正例 + FSR 混叠 FAIL + 单信道 FAIL）
+- `lda_webui/app.py`：`/api/tunable_wdm`（channels/target/R_th/n_eff/P_max 透传 → 可调 WDM 验收）
+- `lda_webui/static/index.html`：㊱ 面板（热模型 + 信道重分配计划表 + 死标量验收）
+- README：能力阶梯表加 D-73 行、三十六面板、㊱ 面板清单
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

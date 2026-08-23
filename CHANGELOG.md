@@ -82,9 +82,9 @@
 - README：能力阶梯表加 D-63 行、二十七面板、11 kind、快速开始 12 步（新增 ⑨ splitter_readout）
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举）
 
-## Unreleased（v0.3.2 之后 · D-66~D-79）
+## v0.4（2026-08-23 · git tag v0.4）
 
-**里程碑：PDK 标定库分辨率修正（D-68）+ 伴随法梯度拓扑逆设计（D-69）+ 逆设计接入 D-36 引擎（D-70，M4 Track A 收口）+ 真实版图基元库（D-71）+ 真实 2D FDTD 端口 S 参数验收（D-72，M5 Track B）+ 3D 端口验收与闭环集成（D-72★）+ 光栅耦合器端口验收（D-78）+ 真实基元接入设计流水线（D-79，M6 v0.4 门槛达成）**
+**里程碑（真实化里程碑 · M4/M5/M6 三里程碑达成）：PDK 标定库分辨率修正（D-68）+ 伴随法梯度拓扑逆设计（D-69）+ 逆设计接入 D-36 引擎（D-70，M4）+ 真实版图基元库（D-71）+ 真实 2D/3D FDTD 端口 S 参数验收（D-72，M5）+ 光栅耦合器端口验收（D-78，光栅方程 ORACLE）+ 真实基元接入设计流水线（D-79，M6 · v0.4 门槛达成 · Track B 收口）**
 
 - **D-66 标定库 × 分束网络**：`splitter_readout_cal` 模式——DC gap 由 κ_c(gap) 标定库驱动设计（标定 5/5 PASS）。
 - **D-67 分束网络 × WDM（新 kind=wdm_splitter 流程）**：`lda_agent/wdm_splitter.py`——WDM 多环级联解复用（D-42 + D-57 标定库驱动 gap）→ 每信道 drop 口接二叉树级联 DC 分束树（D-63 复用，每级 D-55 真实 2D FDTD 设计）→ 信道输入 = drop 扣除实测 IL 的剩余功率（10^(-IL/10) 诚实标注）→ 统一 IR 网表（Ring×N + DC×M）+ 联合验收。纯光子域，无跨物理域声称。
@@ -97,7 +97,7 @@
 - **D-78 光栅耦合器端口验收（M6 v0.4 门槛起步 · 光栅方程 ORACLE）**：`lda_solver/port_sparams_gc.py` + `lda_agent/gc_design.py`——4 基元最后一块电特性验收。**几何修正（诚实记录）**：D-71 GC 原"齿区主体+齿"同层合并（GDS 合并填充语义）实心=直波导、无周期调制 → D-78 修正为真实方波光栅（齿=硅、凹槽=包层）。**2D FDTD 端口透射谱**：CW 注入 → thru/in 归一 → 透射谷检测（周期调制耦合损耗，预测窗内局部谷——谱为级联干涉梳结构，全局最小谷≠光栅方程谷）→ 谷位置 vs **光栅方程** λ_rad=Λ·n_eff 解析预测对拍（n_eff 由同宽直波导 FDTD 双监视点相位差法独立测得，**非拟合**）+ **Λ 扫描趋势锚**（dλ/dΛ=周期结构实测 n_eff）。死标量验收：**谷检出 depth≥0.10 + 谷位置 rel≤0.15 + 趋势斜率 rel≤0.10**。实测：neff=3.699、谷 λ=2.283µm vs 预测 2.515µm（**rel=0.092**）、Λ 扫描斜率 3.290 vs 周期结构 neff 3.357（**rel=0.020**）、谷深 0.996，**验收 PASS**；smoke 3/3（正例 + duty=1.0 无调制 FAIL + Lambda=0 优雅 FAIL）；报告 `reports/gc_d78.json`；WebUI ㉞ 面板 + `/api/gc_sparams`（HTTP 实测通，passed=True）。**诚实标注**：①谷位置对直波导 neff 预测系统性负偏 ~9%（凹槽微扰使周期结构平均传播常数低于直波导 neff，Λ 无关恒定比例，物理预期非 bug），趋势斜率锚定反解值不受影响；②2D 全刻蚀方波 ≠ 3D 浅刻蚀 GC 光纤耦合（无光纤模/方向性），不声称耦合效率。
 - **D-79 真实基元接入设计流水线（M6 v0.4 门槛达成 · Track B 收口）**：`gds_export.geometry_desc` 默认几何从玩具矩形/圆形切换到 D-71 真实基元——**RingResonator/RingAddDrop 实心环带 BOUNDARY → 真实波导环**（中心线 PATH + width，foundry 弯曲波导标准表达，可 DRC 检查环宽）；**SymmetricYBranch 裸分叉 → 输入绝热 taper**（D-71 taper_polygon 余弦轮廓）+ 双 arm PATH；DC/Waveguide 已是 PATH 波导表达（确认沿用）；Taper/EulerBend/MMI/GratingCoupler 沿用 D-71 基元（GC=D-78 修正方波光栅）。`lda_agent/pipeline_realize.py`：全 9 kind 真实 GDS 出图 + round-trip 一致 + **3×SOI PDK DRC 复查**（NOEIC/CUMEC/SITRI design_rules 注入）+ 玩具→真实几何对比诊断。实测：9/9 kind PASS（Waveguide 100B / Ring 638B / AddDrop 680B / DC 142B / YB 702B / Taper 618B / Euler 8298B / MMI 1928B / GC 1380B，全 rt=OK drc 三厂全绿）；smoke 3/3（全 kind + 几何真实化断言 + 非法 kind 优雅 FAIL）；报告 `reports/pipeline_realize_d79.json`；WebUI ㉟ 面板 + `/api/pipeline_realize`（HTTP 实测通）。**诚实边界**：环 path 为圆弧中心线（曲率恒定），Euler 弯无缝拼合环留作深化；几何真实化不改变电特性判据（归 D-72/D-78 端口验收）。**Track B 至此收口，"设计→验证→版图"全链路真实化闭环，v0.4 门槛达成。**
 
-### 新增/变更（Unreleased）
+### 新增/变更（v0.4）
 
 - `lda_solver/`：adjoint_fdtd.py（主权 2D adjoint FDTD 核：脉冲前向 + 显式转置伴随 + FD 对拍验证 + 拓扑优化器）+ port_sparams.py（D-72 端口 S 参数框架：MMI eps 场构建 + CW 多端口收集 + 输入功率归一 + 自成像 ORACLE 验收）+ port_sparams_3d.py（D-72 深化：3D MMI/DC/Ring 体素场 + 3D CW 多端口收集 + kind 分支判据 + 2D↔3D 对拍诊断）+ port_sparams_gc.py（D-78：GC 方波光栅场构建 + 透射谱谷检测 + 光栅方程 ORACLE 验收 + Λ 趋势锚）
 - `lda_agent/`：adjoint_design.py（D-69 设计闭环封装）+ wdm_splitter.py（D-67）+ calibrate_kappa_grid.py（D-68 参数化标定）+ design_loop.py（D-70 method=adjoint 逆设计分支）+ l1_protocol.py（DesignTarget.method 字段）+ primitives_design.py（D-71 基元库封装）+ sparams_design.py（D-72 S 参数验收封装 + PDK 规则注入 DRC）+ sparams_3d_design.py（D-72 深化 3D 验收封装）+ gc_design.py（D-78 GC 验收封装）

@@ -1282,33 +1282,6 @@ def run_sparams_3d(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
-def run_gc_sparams(payload=None):
-    """D-78 光栅耦合器端口验收（webui ㉞ 面板）。
-
-    输入 {width?, Lambda?, duty?, n_tooth?, n_wl?}：GC 2D FDTD 透射谱 +
-    光栅方程 ORACLE 验收（谷检出 / 谷位置 vs λ_rad=Λ·n_eff 对拍 / Λ 扫描
-    趋势锚 dλ/dΛ=neff_gc）。LLM 不进判决路径。
-    """
-    import sys as _sys
-    from pathlib import Path as _P
-    _lda = _P(__file__).resolve().parent.parent  # lda/
-    if str(_lda) not in _sys.path:
-        _sys.path.insert(0, str(_lda))
-    from lda_agent.gc_design import design_gc
-    payload = payload or {}
-    gc = {}
-    for k in ("width", "Lambda", "duty", "n_tooth", "L_in", "L_out",
-              "wl0_um", "n_wl"):
-        if k in payload and payload[k] not in (None, ""):
-            gc[k] = float(payload[k])
-    try:
-        rep = design_gc(gc or None)
-        rep["ok"] = True
-        return rep
-    except Exception as e:  # noqa: BLE001
-        return {"ok": False, "error": str(e)[:120]}
-
-
 def system_status():
     return {
         "layers": [
@@ -1432,8 +1405,6 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_sparams(payload))
             elif path == "/api/sparams_3d":
                 self._send(200, run_sparams_3d(payload))
-            elif path == "/api/gc_sparams":
-                self._send(200, run_gc_sparams(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

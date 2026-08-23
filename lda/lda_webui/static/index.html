@@ -680,6 +680,22 @@
   </div>
 
   <div class="sec">
+    <h2>㊳ 大规模系统基准（D-75 · Track D 系统级 · M7 第三件）</h2>
+    <div class="hint">把 WDM 级联（D-42/45）+ 多 qubit 读出（D-51）+ 混合巨型系统（D-52）推进到 <b>N≥8 大规模</b>并做<b>性能与精度边界压测</b>：① WDM 8 信道（间隔 1.2nm 密集 DWDM grid、gap=0.4µm 弱耦合高 XT）级联 + 插损预算；② 8-qubit 沿公共力线频率复用读出（间隔 50MHz ≫ 3κ_r=22.5MHz）；③ 联合 8×8 混合巨型系统；④ 边界压测：<b>容量自洽</b>（实际最大可行 N == 理论 floor(FSR/间隔)+1）、<b>IL 级联模型余量</b>（thru 残差累积 vs 3dB 预算）、<b>qubit 间隔临界</b>（dip 融合/3κ_r 失效点）、<b>标定网格分辨率</b>（κ_c 网格 λ 间距 25nm vs 信道间隔 1.2nm）。诚实边界：级联为解析物理模型（FSR 2D 容差 30% 已知）；性能为解析模型耗时。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>WDM 信道数(≥8):<input id="lsWdm" value="8" size="4"></label>
+      <label>qubit 数(≥8):<input id="lsQubit" value="8" size="4"></label>
+      <label>WDM 间隔(nm):<input id="lsSpacing" value="1.2" size="5"></label>
+      <label>gap(µm):<input id="lsGap" value="0.4" size="4"></label>
+      <label>qubit 间隔(GHz):<input id="lsQsp" value="0.05" size="5"></label>
+      <button class="btn" id="runLs">运行大规模压测</button>
+    </div>
+    <div id="lsSummary" class="summary"></div>
+    <div id="lsBody"></div>
+    <div class="conclusion" id="lsConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -2149,6 +2165,66 @@ async function runQeda(){
   } finally { btn.disabled = false; }
 }
 $('runQeda').onclick = runQeda;
+
+// ---- ㊳ D-75 大规模系统基准 ----
+async function runLs(){
+  const btn = $('runLs'); btn.disabled = true;
+  $('lsSummary').innerHTML = '<span class="spin"></span> WDM×qubit 大规模联合压测 + 边界扫描中…';
+  const payload = {
+    n_wdm: $('lsWdm').value, n_qubit: $('lsQubit').value,
+    wdm_spacing: $('lsSpacing').value, wdm_gap: $('lsGap').value,
+    qubit_spacing: $('lsQsp').value
+  };
+  try {
+    const d = await postJson('/api/large_scale_bench', payload);
+    const passed = d.acceptance ? d.acceptance.passed : false;
+    const pf = d.performance || {};
+    const bd = d.boundary || {};
+    const ws = bd.wdm_scale || {}, ic = bd.il_cascade || {},
+          qs = bd.qubit_spacing || {}, kg = bd.kappa_grid_resolution || {};
+    $('lsSummary').innerHTML = `大规模系统基准：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（WDM ${d.n_wdm} × qubit ${d.n_qubit} · 总耗时 ${pf.total_s||'?'}s）`;
+    const wdmM = d.wdm && d.wdm.metrics ? d.wdm.metrics : {};
+    const quPer = d.qubit && d.qubit.per_qubit ? d.qubit.per_qubit : [];
+    const fMin = quPer.length ? Math.min(...quPer.map(q=>q.budget.F)).toFixed(4) : '—';
+    const chk = (d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
+    const wsRows = (ws.rows||[]).map(r=>`<tr><td>${r.n}</td><td>${r.span_nm}nm</td><td>${r.fsr_min_nm}nm</td><td class="${r.passed?'ok':'fail'}">${r.passed?'✓':'✗'}</td><td>${escapeHtml(r.fail_reason)}</td></tr>`).join('');
+    const icRows = (ic.rows||[]).map(r=>`<tr><td>${r.n}</td><td>${r.max_total_il_db}dB</td><td>${r.budget_usage_pct}%</td><td class="${r.within_budget?'ok':'fail'}">${r.within_budget?'✓':'✗'}</td></tr>`).join('');
+    const qsRows = (qs.rows||[]).map(r=>`<tr><td>${r.spacing_ghz}GHz</td><td>${r.spacing_vs_3kappa}×</td><td class="${r.dip_all_resolvable?'ok':'fail'}">${r.dip_all_resolvable?'✓':'✗'}</td><td class="${r.spacing_ok?'ok':'fail'}">${r.spacing_ok?'✓':'✗'}</td><td class="${r.passed?'ok':'fail'}">${r.passed?'✓':'✗'}</td></tr>`).join('');
+    $('lsBody').innerHTML = `
+      <div class="subhead">① WDM ${d.n_wdm} 信道大规模（间隔 ${d.wdm? (d.wdm.channels_nm||[])[1]-(d.wdm.channels_nm||[])[0]:''}nm · gap=${d.wdm?d.wdm.gap_um:'?'}µm）</div>
+      <table class="tbl"><tbody>
+        <tr><td>每信道 drop IL (max)</td><td>${wdmM.il_drop_db? Math.max(...wdmM.il_drop_db).toFixed(2):'—'}dB ≤ 3dB</td></tr>
+        <tr><td>邻信道串扰 XT (min)</td><td>${wdmM.xt_min_db? Math.min(...wdmM.xt_min_db).toFixed(1):'—'}dB ≥ 15dB</td></tr>
+        <tr><td>插损预算（含 thru 残差累积）</td><td>${d.wdm && d.wdm.insertion_loss_budget ? d.wdm.insertion_loss_budget.max_total_il_db+'dB' : '—'}</td></tr>
+      </tbody></table>
+      <div class="subhead">② ${d.n_qubit}-qubit 大规模复用读出（间隔 ${qs.default_spacing_ghz||'?'}GHz · 3κ_r=${qs.kappa_r_ghz? (qs.kappa_r_ghz*3).toFixed(4):'?'}GHz）</div>
+      <table class="tbl"><tbody>
+        <tr><td>逐 qubit 保真度 F (min)</td><td class="ok">${fMin} ≥ 0.95</td></tr>
+        <tr><td>读出频率跨度</td><td>${d.qubit? ((d.qubit.readout_freqs_ghz[d.qubit.readout_freqs_ghz.length-1]-d.qubit.readout_freqs_ghz[0])*1000).toFixed(0):'—'}MHz</td></tr>
+      </tbody></table>
+      <div class="subhead">③ 联合 ${d.n_wdm}×${d.n_qubit} 混合巨型系统</div>
+      <table class="tbl"><tbody>
+        <tr><td>子网络 + 映射</td><td>${d.joint? d.joint.acceptance.checks.length+' 项验收':'—'}</td></tr>
+      </tbody></table>
+      <div class="subhead">④ 容量边界（单 FSR 工作区）</div>
+      <table class="tbl"><thead><tr><th>N</th><th>跨度</th><th>min FSR</th><th>通过</th><th>原因</th></tr></thead><tbody>${wsRows}</tbody></table>
+      <div class="subhead">④ 级联 IL 模型（vs 3dB 预算）</div>
+      <table class="tbl"><thead><tr><th>N 环</th><th>max_total_il</th><th>预算占用</th><th>≤预算</th></tr></thead><tbody>${icRows}</tbody></table>
+      <div class="subhead">④ qubit 间隔临界（dip 可分辨 / 3κ_r）</div>
+      <table class="tbl"><thead><tr><th>间隔</th><th>vs 3κ_r</th><th>dip 可分辨</th><th>≥3κ_r</th><th>全过</th></tr></thead><tbody>${qsRows}</tbody></table>
+      <div class="subhead">④ 标定网格分辨率（κ_c 网格 λ 间距 vs 信道间隔）</div>
+      <table class="tbl"><tbody>
+        <tr><td>网格 λ 间距 / 信道间隔</td><td>${kg.grid_lambda_step_nm||'?'}nm / ${kg.channel_spacing_nm||'?'}nm</td></tr>
+        <tr><td>每信道 κ_c 相对变化</td><td class="${kg.ok?'ok':'fail'}">${kg.rel_change_per_channel||'—'}（≤${kg.tolerance||'?'}）</td></tr>
+      </tbody></table>
+      <div class="subhead">死标量验收</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
+    $('lsConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+  } catch(e){
+    $('lsSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runLs').onclick = runLs;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

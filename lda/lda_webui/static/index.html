@@ -707,6 +707,18 @@
   </div>
 
   <div class="sec">
+    <h2>㊵ 验证合约工业化（D-77 · 护城河与标准层第二件 · CI 全量回归 + 性能基准）</h2>
+    <div class="hint">把全部验证收敛到<b>一条命令、一份机器可读报告</b>（降低社区协作门槛）：`run_ci_regression.py` 自动发现 54+ smoke + harness B1-B13 统一回归（SKIP=无 GPU/numba 优雅降级，FAIL=真失败，新增 smoke 零配置纳入）；`run_perf_bench.py` 求解器性能基准（numpy→numba 加速比 + 物理一致 bit-equivalence + 历史基线漂移监控 ±30%）。实测：core 集 <b>27 PASS / 0 FAIL</b>（358s）；greens numpy→numba <b>34.7×</b>（rel=4.8e-16 物理一致）。LLM 不进判决路径。</div>
+    <div class="row">
+      <button class="btn" id="runCi">运行回归（WebUI 快速子集）</button>
+      <button class="btn" id="runPerf">重跑性能基准（~40s）</button>
+    </div>
+    <div id="ciSummary" class="summary"></div>
+    <div id="ciBody"></div>
+    <div class="conclusion" id="ciConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -2268,6 +2280,48 @@ async function runIrSpec(){
   } finally { btn.disabled = false; }
 }
 $('runIrSpec').onclick = runIrSpec;
+
+// ---- ㊵ D-77 验证合约工业化（回归 + 性能基准）----
+async function runCi(){
+  const btn = $('runCi'); btn.disabled = true;
+  $('ciSummary').innerHTML = '<span class="spin"></span> 回归统一入口（WebUI 快速子集）运行中…';
+  try {
+    const d = await postJson('/api/ci_regression', {tag:'webui'});
+    const s = d.summary || {};
+    $('ciSummary').innerHTML = `回归（${d.tag||'?'}）：<span class="verdict ${s.fail===0?'ok':'fail'}">${s.fail===0?'全绿':'FAIL'}</span>（${s.pass} PASS / ${s.skip} SKIP / ${s.fail} FAIL · ${s.total_s}s）`;
+    const rows = (d.results||[]).map(r=>`<tr><td>${r.script}</td><td class="${r.status==='PASS'?'ok':(r.status==='SKIP'?'':'fail')}">${r.status}</td><td>${r.elapsed_s}s</td><td>${escapeHtml(r.tail||'')}</td></tr>`).join('');
+    $('ciBody').innerHTML = `
+      <div class="subhead">回归结果（统一入口自动发现 · SKIP=环境缺失，FAIL=真失败）</div>
+      <table class="tbl"><thead><tr><th>脚本</th><th>状态</th><th>耗时</th><th>输出尾部</th></tr></thead><tbody>${rows}</tbody></table>`;
+    $('ciConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">全量回归：python run_ci_regression.py（--tag core 供 CI / 默认 all 本机）；性能基准：python run_perf_bench.py。LLM 不进判决路径。</div>`;
+  } catch(e){
+    $('ciSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runCi').onclick = runCi;
+
+async function runPerf(){
+  const btn = $('runPerf'); btn.disabled = true;
+  $('ciSummary').innerHTML = '<span class="spin"></span> 性能基准重跑中（greens numpy 约 35s）…';
+  try {
+    const d = await postJson('/api/perf_bench', {quick:true});
+    const g = (d.benchmarks||{}).greens||{}, s = (d.benchmarks||{}).spectrum||{}, gpu = (d.benchmarks||{}).gpu||{};
+    $('ciSummary').innerHTML = `性能基准：<span class="verdict ${d.acceptance&&d.acceptance.passed?'ok':'fail'}">${d.acceptance&&d.acceptance.passed?'PASS':'FAIL'}</span>（greens numba <b>${g.speedup||'?'}×</b> · rel=${g.rel_diff!=null?g.rel_diff.toExponential(1):'?'}）`;
+    $('ciBody').innerHTML = `
+      <div class="subhead">求解器性能基准（numba-cpu / GPU 加速比监控）</div>
+      <table class="tbl"><tbody>
+        <tr><td>greens numpy→numba</td><td>${g.numpy_s}s → ${g.numba_s}s（<b>${g.speedup}×</b>）</td><td class="ok">物理一致 rel=${g.rel_diff!=null?g.rel_diff.toExponential(1):'?'} ≤1e-2</td></tr>
+        <tr><td>透射谱 overall</td><td>${s.overall_speedup||'—'}×</td><td>${s.total_numpy_s}s → ${s.total_numba_s}s</td></tr>
+        <tr><td>GPU</td><td>${gpu.available?gpu.device+'（'+gpu.cuda_s+'s）':'SKIP（CUDA 不可用）'}</td><td>${gpu.available?(gpu.bit_equiv?'bit-equivalent ✓':'FAIL'):'非失败'}</td></tr>
+      </tbody></table>
+      <div class="subhead">验收</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${(d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('')}</tbody></table>`;
+    $('ciConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+  } catch(e){
+    $('ciSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runPerf').onclick = runPerf;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

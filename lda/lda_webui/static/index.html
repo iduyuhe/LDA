@@ -851,6 +851,16 @@
     <div class="conclusion" id="spConclusion"></div>
   </div>
 
+  <div class="sec" id="sec-perf3d">
+    <h3>㊾ 3D adjoint numba 性能基准（大域 20×+）</h3>
+    <div class="row">
+      <button class="btn" id="runPf">运行性能基准</button>
+    </div>
+    <div id="pfSummary" class="summary"></div>
+    <div id="pfBody"></div>
+    <div class="conclusion" id="pfConclusion"></div>
+  </div>
+
   <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
@@ -2711,6 +2721,43 @@ async function runPa(){
   } finally { btn.disabled = false; }
 }
 $('runPa').onclick = runPa;
+
+// ---- ㊾ D-89 3D adjoint numba 性能基准（大域 20×+）----
+async function runPf(){
+  const btn = $('runPf'); btn.disabled = true;
+  $('pfSummary').innerHTML = '<span class="spin"></span> 3D adjoint numba 性能基准运行中（三域 forward/梯度 + 优化链路，需 numba 环境）…';
+  try {
+    const d = await postJson('/api/adjoint3d_perf', {});
+    const passed = d.acceptance ? d.acceptance.passed : false;
+    $('pfSummary').innerHTML = `3D adjoint numba 性能：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（numba=${d.numba_available}）`;
+    const rows = (d.rows||[]).map(r=>`<tr>
+      <td>${r.domain}</td>
+      <td>${r.fwd_speedup}×</td>
+      <td>${r.fwd_numpy_s}s → ${r.fwd_numba_s}s</td>
+      <td>${r.fom_rel!=null?r.fom_rel.toExponential(1):'?'}</td>
+      <td>${r.grad_speedup}×</td>
+      <td>${r.grad_rel!=null?r.grad_rel.toExponential(1):'?'}</td>
+    </tr>`).join('');
+    const opt = d.optimization || {};
+    $('pfBody').innerHTML = `
+      <div class="subhead">forward 核加速比（大域 = numba 主战场）</div>
+      <table class="tbl"><thead><tr><th>域</th><th>FWD 加速</th><th>耗时 (numpy→numba)</th><th>FOM rel</th><th>GRAD 加速</th><th>梯度 rel</th></tr></thead><tbody>${rows}</tbody></table>
+      ${opt.opt_speedup?`<div class="subhead">优化链路（64×52×16 · iters=4）</div>
+      <table class="tbl"><tbody>
+        <tr><td>端到端加速</td><td class="ok">${opt.opt_speedup}×（${opt.opt_numpy_s}s → ${opt.opt_numba_s}s）</td></tr>
+        <tr><td>improvement 一致性</td><td class="ok">numpy ${opt.imp_numpy} == numba ${opt.imp_numba}</td></tr>
+      </tbody></table>`:''}
+      <div class="subhead">死标量验收</div>
+      <table class="tbl"><tbody>
+        <tr><td>最大域 forward ≥ 20×</td><td class="${d.acceptance&&d.acceptance.checks.max_domain_forward_speedup_ge_20x?'ok':'fail'}">${d.acceptance&&d.acceptance.checks.max_domain_forward_speedup_ge_20x?'✓':'✗'}</td></tr>
+        <tr><td>FOM bit-level 一致 ≤ 1e-10</td><td class="${d.acceptance&&d.acceptance.checks.fom_bit_consistency_le_1e-10?'ok':'fail'}">${d.acceptance&&d.acceptance.checks.fom_bit_consistency_le_1e-10?'✓':'✗'}</td></tr>
+      </tbody></table>`;
+    $('pfConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">numba 核与 numpy 版 bit-level 一致（FOM rel≈1e-16）；无 numba 环境自动回退 numpy。反向核加速 2-4×、优化链路大域 4-5×（小域被 eps 构造开销稀释）。</div>`;
+  } catch(e){
+    $('pfSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runPf').onclick = runPf;
 
 // ---- ㊽ D-87 谱形目标 × 3D 截面（多波长加权联合）----
 async function runSp(){

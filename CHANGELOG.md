@@ -286,6 +286,12 @@
 - README：能力阶梯表加 D-87 行、四十七→四十八面板、㊽ 面板清单
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
+#### D-89 · 3D adjoint numba 化性能升维（2026-08-24，突破 3D 域规模天花板）
+- **核**：3D Yee 步进 + 显式转置反向 **prange 并行 JIT**（`_step_h_nb`/`_step_e_nb`/`_fwd_nb3d` + `_bd_t_nb`/`_fd_t_nb` 逐点差分转置 + `_grad_nb3d`）；`forward3d`/`compute_gradient3d`/三个 optimize 函数加 `backend`（auto/numba/numpy，**无 numba 自动回退纯 numpy**）
+- **实测**（repeat=3 取最好）：forward 加速 **44 域 8-11× / 64 域 17-21× / 80 域 22-29×**（最大域 ≥20× 验收过）；FOM/curlE/梯度 **bit-level 一致（rel ≤ 3.7e-16）**；梯度 2-5×；**优化链路 64 域 4.4-5.2×**（imp 1.336==1.336 完全一致）；无 numba 回退正常（managed smoke 6/6、numba 环境 smoke 6/6 全过 16s vs 146s）；报告 `reports/perf_adjoint3d_d89.json`
+- **工程坑**：① dampE/dampH 为 (Nx,1,Nz) 广播形状 → numba 逐点索引 j 越界读垃圾（物理 NaN）→ 包装层广播全尺寸化；② curlE 记录误带 cH/eps 系数 → 去掉（与 numpy 版记录 curl(H) 差分组合一致）；③ 小域优化链路加速被 eps 构造 Python 开销稀释（0.9×）→ 大域才是主战场
+- **文档/UI**：README D-89 行 + 四十八→四十九面板 + ㊾ 清单 + 目录补 run_perf_adjoint3d；WebUI ㊾ 面板 + `/api/adjoint3d_perf`；D-77 回归 9 PASS 零影响
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

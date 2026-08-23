@@ -36,6 +36,281 @@ if _LDA_ROOT not in sys.path:
 
 from lda_solver.shape_inverse import _sigmoid, _interp_weight, shape_drc  # noqa: E402
 
+# ---------------------------------------------------------------------------
+# numba 加速后端（D-89）：有 numba 用 JIT 核（大域 20×+），无则回退纯 numpy
+# ---------------------------------------------------------------------------
+try:
+    from numba import njit, prange  # type: ignore
+    _NUMBA = True
+except Exception:  # noqa: BLE001
+    njit = None
+    prange = range
+    _NUMBA = False
+
+if _NUMBA:  # pragma: no cover - numba 环境专属
+
+    @njit(parallel=True, cache=True, fastmath=True)
+    def _step_h_nb(Ex, Ey, Ez, Hx, Hy, Hz, dHx, dHy, dHz, cH):
+        """H 半步（前向差分，无 PBC，x 永不 PBC）——镜像 `_step_h3d`。"""
+        Nx, Ny, Nz = Ex.shape
+        for i in prange(Nx):
+            for j in range(Ny):
+                for k in range(Nz):
+                    ez_fj = Ez[i, j + 1, k] - Ez[i, j, k] if j + 1 < Ny else 0.0
+                    ey_fk = Ey[i, j, k + 1] - Ey[i, j, k] if k + 1 < Nz else 0.0
+                    ex_fk = Ex[i, j, k + 1] - Ex[i, j, k] if k + 1 < Nz else 0.0
+                    ez_fi = Ez[i + 1, j, k] - Ez[i, j, k] if i + 1 < Nx else 0.0
+                    ey_fi = Ey[i + 1, j, k] - Ey[i, j, k] if i + 1 < Nx else 0.0
+                    ex_fj = Ex[i, j + 1, k] - Ex[i, j, k] if j + 1 < Ny else 0.0
+                    Hx[i, j, k] = (Hx[i, j, k] - cH * (ez_fj - ey_fk)) * dHx[i, j, k]
+                    Hy[i, j, k] = (Hy[i, j, k] - cH * (ex_fk - ez_fi)) * dHy[i, j, k]
+                    Hz[i, j, k] = (Hz[i, j, k] - cH * (ey_fi - ex_fj)) * dHz[i, j, k]
+
+    @njit(parallel=True, cache=True, fastmath=True)
+    def _step_e_nb(Ex, Ey, Ez, Hx, Hy, Hz, eps, dE, cH):
+        """E 全步（后向差分）——镜像 `_step_e3d`。"""
+        Nx, Ny, Nz = Ex.shape
+        for i in prange(Nx):
+            for j in range(Ny):
+                for k in range(Nz):
+                    e = eps[i, j, k]
+                    cE = cH / e
+                    hz_bj = Hz[i, j, k] - Hz[i, j - 1, k] if j - 1 >= 0 else 0.0
+                    hy_bk = Hy[i, j, k] - Hy[i, j, k - 1] if k - 1 >= 0 else 0.0
+                    hx_bk = Hx[i, j, k] - Hx[i, j, k - 1] if k - 1 >= 0 else 0.0
+                    hz_bi = Hz[i, j, k] - Hz[i - 1, j, k] if i - 1 >= 0 else 0.0
+                    hy_bi = Hy[i, j, k] - Hy[i - 1, j, k] if i - 1 >= 0 else 0.0
+                    hx_bj = Hx[i, j, k] - Hx[i, j - 1, k] if j - 1 >= 0 else 0.0
+                    Ex[i, j, k] = (Ex[i, j, k] + cE * (hz_bj - hy_bk)) * dE[i, j, k]
+                    Ey[i, j, k] = (Ey[i, j, k] + cE * (hx_bk - hz_bi)) * dE[i, j, k]
+                    Ez[i, j, k] = (Ez[i, j, k] + cE * (hy_bi - hx_bj)) * dE[i, j, k]
+
+    @njit(parallel=True, cache=True, fastmath=True)
+    def _fwd_nb3d(Ex, Ey, Ez, Hx, Hy, Hz, eps, dE, dHx, dHy, dHz, cH,
+                  i_src, y0s, y1s, k0, k1, i_mon, m0, m1,
+                  sigma_n, n_peak, meas0, nsteps,
+                  dr, curlE_dr, omegadt, Ez_mon):
+        """正演主循环（H→E→curlE 记录→软源→监视器）——镜像 `forward3d`。
+
+        ⚠ 输入约束：dE/dHx/dHy/dHz 必须为全尺寸 (Nx,Ny,Nz) 数组（numpy 版
+        依赖广播 (Nx,1,Nz)，numba 逐点索引 j 会越界——D-89 教训）。
+        """
+        for n in range(nsteps):
+            _step_h_nb(Ex, Ey, Ez, Hx, Hy, Hz, dHx, dHy, dHz, cH)
+            _step_e_nb(Ex, Ey, Ez, Hx, Hy, Hz, eps, dE, cH)
+            # curlE 记录 = curl(H) 差分组合（无 cH/eps 系数，与 numpy 版一致）
+            for q in range(dr.shape[0]):
+                i = dr[q, 0]; j = dr[q, 1]; k = dr[q, 2]
+                curlE_dr[n, 0, q] = (
+                    (Hz[i, j, k] - Hz[i, j - 1, k] if j - 1 >= 0 else 0.0) -
+                    (Hy[i, j, k] - Hy[i, j, k - 1] if k - 1 >= 0 else 0.0))
+                curlE_dr[n, 1, q] = (
+                    (Hx[i, j, k] - Hx[i, j, k - 1] if k - 1 >= 0 else 0.0) -
+                    (Hz[i, j, k] - Hz[i - 1, j, k] if i - 1 >= 0 else 0.0))
+                curlE_dr[n, 2, q] = (
+                    (Hy[i, j, k] - Hy[i - 1, j, k] if i - 1 >= 0 else 0.0) -
+                    (Hx[i, j, k] - Hx[i, j - 1, k] if j - 1 >= 0 else 0.0))
+            nn = n - n_peak
+            env = np.exp(-0.5 * (nn * nn) / (sigma_n * sigma_n))
+            if env > 1e-12:
+                for jj in range(y0s, y1s):
+                    for kk in range(k0, k1):
+                        Ez[i_src, jj, kk] += env * np.cos(omegadt * n)
+            for jj in range(m0, m1):
+                for kk in range(k0, k1):
+                    Ez_mon[n, jj - m0, kk - k0] = Ez[i_mon, jj, kk]
+
+    @njit(cache=True, fastmath=True)
+    def _bd_t_nb(lam, out, axis):
+        """后向差分转置（边界掩码严格镜像 `_bd_t`）：tf[j]=λ[j](j≥1)-λ[j+1](j≤N-2)。"""
+        Nx, Ny, Nz = lam.shape
+        for i in range(Nx):
+            for j in range(Ny):
+                for k in range(Nz):
+                    if axis == 0:
+                        out[i, j, k] = (lam[i, j, k] if i >= 1 else 0.0) - \
+                            (lam[i + 1, j, k] if i + 1 <= Nx - 1 else 0.0)
+                    elif axis == 1:
+                        out[i, j, k] = (lam[i, j, k] if j >= 1 else 0.0) - \
+                            (lam[i, j + 1, k] if j + 1 <= Ny - 1 else 0.0)
+                    else:
+                        out[i, j, k] = (lam[i, j, k] if k >= 1 else 0.0) - \
+                            (lam[i, j, k + 1] if k + 1 <= Nz - 1 else 0.0)
+
+    @njit(cache=True, fastmath=True)
+    def _fd_t_nb(lam, out, axis):
+        """前向差分转置（边界掩码严格镜像 `_fd_t`）：tf[j]=λ[j-1](j≥1)-λ[j](j≤N-2)。"""
+        Nx, Ny, Nz = lam.shape
+        for i in range(Nx):
+            for j in range(Ny):
+                for k in range(Nz):
+                    if axis == 0:
+                        out[i, j, k] = (lam[i - 1, j, k] if i >= 1 else 0.0) - \
+                            (lam[i, j, k] if i <= Nx - 2 else 0.0)
+                    elif axis == 1:
+                        out[i, j, k] = (lam[i, j - 1, k] if j >= 1 else 0.0) - \
+                            (lam[i, j, k] if j <= Ny - 2 else 0.0)
+                    else:
+                        out[i, j, k] = (lam[i, j, k - 1] if k >= 1 else 0.0) - \
+                            (lam[i, j, k] if k <= Nz - 2 else 0.0)
+
+    @njit(cache=True, fastmath=True)
+    def _grad_nb3d(lamEx, lamEy, lamEz, lamHx, lamHy, lamHz, eps, dE,
+                   dHx, dHy, dHz, cH, nsteps, meas0, dr, curlE_dr, grad,
+                   i_mon, m0, m1, k0, k1, obs_full,
+                   wEx, wEy, wEz, b1, b2, phiHx, phiHy, phiHz,
+                   nHx, nHy, nHz, nEx, nEy, nEz,
+                   lamEx2, lamEy2, lamEz2):
+        """反向主循环（镜像 `compute_gradient3d`）：灵敏度累积 + E 步转置 +
+        H 步转置 + obs 注入。⚠ dE/dHx/dHy/dHz 全尺寸数组（广播约束同上）。"""
+        Nx, Ny, Nz = lamEx.shape
+        nN = nsteps - 1
+        if nN >= meas0:
+            for jj in range(m0, m1):
+                for kk in range(k0, k1):
+                    lamEz[i_mon, jj, kk] += obs_full[nN, jj - m0, kk - k0]
+        for k in range(nsteps - 1, -1, -1):
+            # (a) ε 灵敏度累积（三分量同位）
+            for q in range(dr.shape[0]):
+                i = dr[q, 0]; j = dr[q, 1]; kk = dr[q, 2]
+                grad[i, j, kk] += dE[i, j, kk] * (
+                    lamEx[i, j, kk] * curlE_dr[k, 0, q] +
+                    lamEy[i, j, kk] * curlE_dr[k, 1, q] +
+                    lamEz[i, j, kk] * curlE_dr[k, 2, q])
+            if k == 0:
+                break
+            # (b) E 步转置：wE[c]=cE·D_E·λE；nH = λH + C_HEᵀ·wE
+            for i in range(Nx):
+                for j in range(Ny):
+                    for kk in range(Nz):
+                        cE = cH / eps[i, j, kk]
+                        wEx[i, j, kk] = cE * lamEx[i, j, kk] * dE[i, j, kk]
+                        wEy[i, j, kk] = cE * lamEy[i, j, kk] * dE[i, j, kk]
+                        wEz[i, j, kk] = cE * lamEz[i, j, kk] * dE[i, j, kk]
+            _bd_t_nb(wEx, b1, 1); _bd_t_nb(wEy, b2, 0)
+            for i in range(Nx):
+                for j in range(Ny):
+                    for kk in range(Nz):
+                        nHz[i, j, kk] = lamHz[i, j, kk] + b1[i, j, kk] - b2[i, j, kk]
+            _bd_t_nb(wEx, b1, 2); _bd_t_nb(wEz, b2, 0)
+            for i in range(Nx):
+                for j in range(Ny):
+                    for kk in range(Nz):
+                        nHy[i, j, kk] = lamHy[i, j, kk] - b1[i, j, kk] + b2[i, j, kk]
+            _bd_t_nb(wEy, b1, 2); _bd_t_nb(wEz, b2, 1)
+            for i in range(Nx):
+                for j in range(Ny):
+                    for kk in range(Nz):
+                        nHx[i, j, kk] = lamHx[i, j, kk] + b1[i, j, kk] - b2[i, j, kk]
+            # (c) λH^{k-1} = D_H·(λH+注入)
+            for i in range(Nx):
+                for j in range(Ny):
+                    for kk in range(Nz):
+                        phiHx[i, j, kk] = dHx[i, j, kk] * nHx[i, j, kk]
+                        phiHy[i, j, kk] = dHy[i, j, kk] * nHy[i, j, kk]
+                        phiHz[i, j, kk] = dHz[i, j, kk] * nHz[i, j, kk]
+            # (d) H 步转置：nE = C_EHᵀ·φH（lamE 输入零）
+            _fd_t_nb(phiHx, b1, 1); _fd_t_nb(phiHy, b2, 0)
+            for i in range(Nx):
+                for j in range(Ny):
+                    for kk in range(Nz):
+                        nEz[i, j, kk] = -cH * b1[i, j, kk] + cH * b2[i, j, kk]
+            _fd_t_nb(phiHx, b1, 2); _fd_t_nb(phiHz, b2, 0)
+            for i in range(Nx):
+                for j in range(Ny):
+                    for kk in range(Nz):
+                        nEy[i, j, kk] = cH * b1[i, j, kk] - cH * b2[i, j, kk]
+            _fd_t_nb(phiHy, b1, 2); _fd_t_nb(phiHz, b2, 1)
+            for i in range(Nx):
+                for j in range(Ny):
+                    for kk in range(Nz):
+                        nEx[i, j, kk] = -cH * b1[i, j, kk] + cH * b2[i, j, kk]
+            # (e) λE^{k-1} = D_E·λE + Aᵀ + obs[k-1]
+            for i in range(Nx):
+                for j in range(Ny):
+                    for kk in range(Nz):
+                        lamEx2[i, j, kk] = dE[i, j, kk] * lamEx[i, j, kk] + nEx[i, j, kk]
+                        lamEy2[i, j, kk] = dE[i, j, kk] * lamEy[i, j, kk] + nEy[i, j, kk]
+                        lamEz2[i, j, kk] = dE[i, j, kk] * lamEz[i, j, kk] + nEz[i, j, kk]
+            if k - 1 >= meas0:
+                for jj in range(m0, m1):
+                    for kk in range(k0, k1):
+                        lamEz2[i_mon, jj, kk] += obs_full[k - 1, jj - m0, kk - k0]
+            lamEx[:] = lamEx2[:]; lamEy[:] = lamEy2[:]; lamEz[:] = lamEz2[:]
+            lamHx[:] = phiHx[:]; lamHy[:] = phiHy[:]; lamHz[:] = phiHz[:]
+
+    def _forward3d_numba(prob, eps3, nsteps, meas0, sigma_n, n_peak):
+        """numba 正演包装：构造全尺寸阻尼数组 + 调用 JIT 核（与 numpy 版一致）。"""
+        Nx, Ny, Nz = prob.Nx, prob.Ny, prob.Nz
+        Ex = np.zeros((Nx, Ny, Nz)); Ey = np.zeros((Nx, Ny, Nz))
+        Ez = np.zeros((Nx, Ny, Nz))
+        Hx = np.zeros((Nx, Ny, Nz)); Hy = np.zeros((Nx, Ny, Nz))
+        Hz = np.zeros((Nx, Ny, Nz))
+        # ⚠ numba 逐点索引要求全尺寸数组（numpy 版依赖 (Nx,1,Nz) 广播——D-89 教训）
+        dE = np.broadcast_to(prob.dampE, (Nx, Ny, Nz)).copy()
+        dHx = np.broadcast_to(prob.dampH[0], (Nx, Ny, Nz)).copy()
+        dHy = np.broadcast_to(prob.dampH[1], (Nx, Ny, Nz)).copy()
+        dHz = np.broadcast_to(prob.dampH[2], (Nx, Ny, Nz)).copy()
+        cH = prob.dt / prob.dl
+        i_src, y0s, y1s = prob.i_src, prob.y_src0, prob.y_src1
+        i_mon, m0, m1 = prob.i_mon, prob.y_mon0, prob.y_mon1
+        k0, k1 = prob.k_core0, prob.k_core1
+        ndr = len(prob._dr)
+        dri, drj, drk = np.unravel_index(prob._dr, (Nx, Ny, Nz))
+        dr = np.stack([dri, drj, drk], axis=1).astype(np.int64)
+        curlE_dr = np.zeros((nsteps, 3, ndr))
+        Ez_mon = np.zeros((nsteps, m1 - m0, k1 - k0))
+        _fwd_nb3d(Ex, Ey, Ez, Hx, Hy, Hz, eps3, dE, dHx, dHy, dHz, cH,
+                  i_src, y0s, y1s, k0, k1, i_mon, m0, m1,
+                  sigma_n, n_peak, meas0, nsteps, dr, curlE_dr,
+                  prob.omega * prob.dt, Ez_mon)
+        FOM = float(np.sum(Ez_mon[meas0:, :, :] ** 2))
+        E_in = 0.0
+        for n in range(nsteps):
+            nn = n - n_peak
+            env = math.exp(-0.5 * (nn / sigma_n) ** 2)
+            if env > 1e-12:
+                E_in += env * env * (y1s - y0s) * (k1 - k0)
+        T = (FOM / E_in) if E_in > 1e-12 else 0.0
+        return {
+            "FOM": FOM, "T": T, "P_out": FOM, "P_in": E_in, "E_in": E_in,
+            "curlE_dr": curlE_dr, "Ez_mon": Ez_mon, "eps": eps3,
+            "nsteps": nsteps, "meas0": meas0, "sigma_n": sigma_n,
+            "n_peak": n_peak,
+        }
+
+    def _gradient3d_numba(prob, fwd):
+        """numba 反向包装：全尺寸阻尼数组 + JIT 反向核（梯度与 numpy 版一致）。"""
+        Nx, Ny, Nz = prob.Nx, prob.Ny, prob.Nz
+        nsteps, meas0 = fwd["nsteps"], fwd["meas0"]
+        Zl = np.zeros((Nx, Ny, Nz))
+        lamEx = Zl.copy(); lamEy = Zl.copy(); lamEz = Zl.copy()
+        lamHx = Zl.copy(); lamHy = Zl.copy(); lamHz = Zl.copy()
+        grad = Zl.copy()
+        dE = np.broadcast_to(prob.dampE, (Nx, Ny, Nz)).copy()
+        dHx = np.broadcast_to(prob.dampH[0], (Nx, Ny, Nz)).copy()
+        dHy = np.broadcast_to(prob.dampH[1], (Nx, Ny, Nz)).copy()
+        dHz = np.broadcast_to(prob.dampH[2], (Nx, Ny, Nz)).copy()
+        cH = prob.dt / prob.dl
+        i_mon, m0, m1 = prob.i_mon, prob.y_mon0, prob.y_mon1
+        k0, k1 = prob.k_core0, prob.k_core1
+        dri, drj, drk = np.unravel_index(prob._dr, (Nx, Ny, Nz))
+        dr = np.stack([dri, drj, drk], axis=1).astype(np.int64)
+        obs_full = 2.0 * fwd["Ez_mon"]
+        _grad_nb3d(lamEx, lamEy, lamEz, lamHx, lamHy, lamHz, fwd["eps"],
+                   dE, dHx, dHy, dHz, cH, nsteps, meas0, dr,
+                   fwd["curlE_dr"], grad, i_mon, m0, m1, k0, k1, obs_full,
+                   Zl.copy(), Zl.copy(), Zl.copy(),   # wEx wEy wEz
+                   Zl.copy(), Zl.copy(),              # b1 b2
+                   Zl.copy(), Zl.copy(), Zl.copy(),   # phiHx phiHy phiHz
+                   Zl.copy(), Zl.copy(), Zl.copy(),   # nHx nHy nHz
+                   Zl.copy(), Zl.copy(), Zl.copy(),   # nEx nEy nEz
+                   Zl.copy(), Zl.copy(), Zl.copy())   # lamEx2 lamEy2 lamEz2
+        geps = np.zeros((Nx, Ny, Nz))
+        geps.ravel()[prob._dr] = (-(cH) / (fwd["eps"].ravel()[prob._dr] ** 2)
+                                  * grad.ravel()[prob._dr])
+        return geps
+
 
 # ---------------------------------------------------------------------------
 # 差分转置（3D Yee 交错网格边界掩码——Mᵀ 对拍 1e-15 的关键）
@@ -225,7 +500,13 @@ class AdjointProblem3D:
 # ---------------------------------------------------------------------------
 # 正向（高斯脉冲软源 + 设计区 curlE 记录 + 监视器场能 FOM）
 # ---------------------------------------------------------------------------
-def forward3d(prob: AdjointProblem3D, eps3: np.ndarray) -> Dict[str, Any]:
+def forward3d(prob: AdjointProblem3D, eps3: np.ndarray,
+              backend: str = "auto") -> Dict[str, Any]:
+    """3D 正演（D-89 起支持 numba 加速后端）。
+
+    backend='auto'：有 numba 用 JIT 核（大域 20×+，prange 并行），无则回退
+    纯 numpy 数组切片版。结果与 numpy 版 bit-level 一致（FOM rel≈1e-16）。
+    """
     Nx, Ny, Nz = prob.Nx, prob.Ny, prob.Nz
     dl, dt = prob.dl, prob.dt
     per = prob.period_steps
@@ -235,6 +516,9 @@ def forward3d(prob: AdjointProblem3D, eps3: np.ndarray) -> Dict[str, Any]:
     meas0 = max(n_peak + travel - 3 * sigma_n, 0)
     nsteps = n_peak + travel + int(round(6 * per)) + 6 * sigma_n + 200
     omega = prob.omega
+
+    if _NUMBA and backend in ("auto", "numba"):
+        return _forward3d_numba(prob, eps3, nsteps, meas0, sigma_n, n_peak)
 
     Ex = np.zeros((Nx, Ny, Nz)); Ey = np.zeros((Nx, Ny, Nz))
     Ez = np.zeros((Nx, Ny, Nz))
@@ -283,7 +567,8 @@ def forward3d(prob: AdjointProblem3D, eps3: np.ndarray) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 # 反向：显式转置伴随 + ε 灵敏度
 # ---------------------------------------------------------------------------
-def compute_gradient3d(prob: AdjointProblem3D, fwd: Dict[str, Any]) -> np.ndarray:
+def compute_gradient3d(prob: AdjointProblem3D, fwd: Dict[str, Any],
+                       backend: str = "auto") -> np.ndarray:
     """dFOM/dε（全网格 (Nx,Ny,Nz)，仅设计区非零）。
 
     FOM = Σ_{n≥meas0} Σ Ez[i_mon,y,z]² → 观测源 obs_Ez[n,y,z] = 2·Ez_mon[n,y,z]。
@@ -293,7 +578,11 @@ def compute_gradient3d(prob: AdjointProblem3D, fwd: Dict[str, Any]) -> np.ndarra
       (c) λH^{k-1} = D_H·(λH + 注入)；
       (d) H 步转置：λE += C_EHᵀ·D_H·(λH+注入)；
       (e) λE^{k-1} = D_E·λE + (d) + obs[k-1]。
+
+    backend='auto'：有 numba 用 JIT 反向核，无则回退纯 numpy（D-89）。
     """
+    if _NUMBA and backend in ("auto", "numba"):
+        return _gradient3d_numba(prob, fwd)
     Nx, Ny, Nz = prob.Nx, prob.Ny, prob.Nz
     eps3 = fwd["eps"]
     dampE = prob.dampE
@@ -424,9 +713,10 @@ class ShapeProblem3D:
                 (p.eps_max - p.eps_min) * _sigmoid(d / t)[:, None]
         return eps3
 
-    def gradient(self, fwd: dict, w_ctl: np.ndarray) -> np.ndarray:
+    def gradient(self, fwd: dict, w_ctl: np.ndarray,
+                 backend: str = "auto") -> np.ndarray:
         """链式：dFOM/dw_k = Σ_ijk geps[i,j,k]·dε/dw_k（软边界 δσ/δw）。"""
-        geps = compute_gradient3d(self.base, fwd)
+        geps = compute_gradient3d(self.base, fwd, backend)
         p = self.base
         t = self.soft_t
         K = self.n_controls
@@ -490,16 +780,16 @@ def _project_shape(w: np.ndarray, w_min: float, w_max: float,
 
 
 def optimize_shape3d(sp: ShapeProblem3D, iters: int = 20, step0: float = 0.4,
-                     verbose: bool = False) -> Dict[str, Any]:
+                     verbose: bool = False, backend: str = "auto") -> Dict[str, Any]:
     """3D 宽度曲线形状优化（回溯线搜索 + 可行性投影）。"""
     K = sp.n_controls
     w = np.full(K, sp.init_halfwidth)
-    fom0 = forward3d(sp.base, sp.eps(w))["FOM"]
+    fom0 = forward3d(sp.base, sp.eps(w), backend)["FOM"]
     best_fom, best_w = fom0, w.copy()
     history = []
     for it in range(iters):
-        fwd = forward3d(sp.base, sp.eps(w))
-        g = sp.gradient(fwd, w)
+        fwd = forward3d(sp.base, sp.eps(w), backend)
+        g = sp.gradient(fwd, w, backend)
         m = np.max(np.abs(g)) + 1e-12
         d = g / m
         alpha = step0
@@ -508,7 +798,7 @@ def optimize_shape3d(sp: ShapeProblem3D, iters: int = 20, step0: float = 0.4,
         while alpha > 2e-3:
             wt = _project_shape(w + alpha * d, sp.w_min, sp.w_max,
                                 sp.slope_max)
-            f_try = forward3d(sp.base, sp.eps(wt))["FOM"]
+            f_try = forward3d(sp.base, sp.eps(wt), backend)["FOM"]
             if f_try > f_eval:
                 accepted = True
                 break
@@ -524,7 +814,7 @@ def optimize_shape3d(sp: ShapeProblem3D, iters: int = 20, step0: float = 0.4,
         history.append({"iter": it, "FOM": f_final, "alpha": round(alpha, 4)})
         if verbose and (it % 5 == 0 or it == iters - 1):
             print(f"  it={it:3d} alpha={alpha:6.3f} FOM={f_final:.4e}")
-    fbf = forward3d(sp.base, sp.eps(best_w))
+    fbf = forward3d(sp.base, sp.eps(best_w), backend)
     improvement = fbf["FOM"] / (fom0 + 1e-12)
     drc = shape_drc(type("S", (), {"w_min": sp.w_min, "w_max": sp.w_max,
                                    "slope_max": sp.slope_max,
@@ -593,11 +883,12 @@ class ShapeProblem3DSection:
         return eps3
 
     def gradient(self, fwd: dict, w_ctl: np.ndarray,
-                 h_ctl: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+                 h_ctl: np.ndarray, backend: str = "auto"
+                 ) -> Tuple[np.ndarray, np.ndarray]:
         """链式：dFOM/dw_k、dFOM/dh_k（双软边界，探针 FD 对拍 4e-4）。"""
         p = self.base
         tw, tz = self.t_w, self.t_z
-        geps = compute_gradient3d(p, fwd)
+        geps = compute_gradient3d(p, fwd, backend)
         K = self.n_controls
         wc = self.width_at(w_ctl)
         hc = self.height_at(h_ctl)
@@ -676,18 +967,18 @@ def _section_drc(sp: ShapeProblem3DSection, w: np.ndarray,
 
 
 def optimize_section3d(sp: ShapeProblem3DSection, iters: int = 18,
-                       step0: float = 0.4, verbose: bool = False
-                       ) -> Dict[str, Any]:
+                       step0: float = 0.4, verbose: bool = False,
+                       backend: str = "auto") -> Dict[str, Any]:
     """截面联合优化（w+h 联合梯度 + 回溯线搜索 + 双可行性投影）。"""
     K = sp.n_controls
     w = np.full(K, sp.init_w)
     h = np.full(K, sp.init_h)
-    fom0 = forward3d(sp.base, sp.eps(w, h))["FOM"]
+    fom0 = forward3d(sp.base, sp.eps(w, h), backend)["FOM"]
     best_fom, best_w, best_h = fom0, w.copy(), h.copy()
     history = []
     for it in range(iters):
-        fwd = forward3d(sp.base, sp.eps(w, h))
-        gw, gh = sp.gradient(fwd, w, h)
+        fwd = forward3d(sp.base, sp.eps(w, h), backend)
+        gw, gh = sp.gradient(fwd, w, h, backend)
         g = np.concatenate([gw, gh])
         m = np.max(np.abs(g)) + 1e-12
         d = g / m
@@ -699,7 +990,7 @@ def optimize_section3d(sp: ShapeProblem3DSection, iters: int = 18,
                                 sp.slope_max)
             ht = _project_shape(h + alpha * d[K:], sp.h_min, sp.h_max,
                                 sp.slope_max)
-            f_try = forward3d(sp.base, sp.eps(wt, ht))["FOM"]
+            f_try = forward3d(sp.base, sp.eps(wt, ht), backend)["FOM"]
             if f_try > f_eval:
                 accepted = True
                 break
@@ -717,7 +1008,7 @@ def optimize_section3d(sp: ShapeProblem3DSection, iters: int = 18,
         history.append({"iter": it, "FOM": f_final, "alpha": round(alpha, 4)})
         if verbose and (it % 5 == 0 or it == iters - 1):
             print(f"  it={it:3d} alpha={alpha:6.3f} FOM={f_final:.4e}")
-    fbf = forward3d(sp.base, sp.eps(best_w, best_h))
+    fbf = forward3d(sp.base, sp.eps(best_w, best_h), backend)
     improvement = fbf["FOM"] / (fom0 + 1e-12)
     drc = _section_drc(sp, best_w, best_h)
     return {
@@ -814,7 +1105,8 @@ def verify_section_gradient_multi(sps: List[ShapeProblem3DSection],
 def optimize_section3d_multi(sps: List[ShapeProblem3DSection],
                              weights: Optional[List[float]] = None,
                              iters: int = 16, step0: float = 0.4,
-                             verbose: bool = False) -> Dict[str, Any]:
+                             verbose: bool = False,
+                             backend: str = "auto") -> Dict[str, Any]:
     """D-87 3D 截面 × 多波长加权联合（谱形目标 3D）。
 
     联合 FOM = Σ_k w_k · FOM_k；联合梯度 = Σ_k w_k·[gw_k, gh_k]；
@@ -832,7 +1124,8 @@ def optimize_section3d_multi(sps: List[ShapeProblem3DSection],
     K = sps[0].n_controls
 
     def F(w_, h_):
-        return float(sum(wt[k] * forward3d(sps[k].base, sps[k].eps(w_, h_))["FOM"]
+        return float(sum(wt[k] * forward3d(sps[k].base, sps[k].eps(w_, h_),
+                                           backend)["FOM"]
                          for k in range(nwl)))
 
     w = np.full(K, sps[0].init_w)
@@ -845,9 +1138,9 @@ def optimize_section3d_multi(sps: List[ShapeProblem3DSection],
         G_h = np.zeros(K)
         f_eval = 0.0
         for k in range(nwl):
-            fwd = forward3d(sps[k].base, sps[k].eps(w, h))
+            fwd = forward3d(sps[k].base, sps[k].eps(w, h), backend)
             f_eval += wt[k] * fwd["FOM"]
-            gw, gh = sps[k].gradient(fwd, w, h)
+            gw, gh = sps[k].gradient(fwd, w, h, backend)
             G_w += wt[k] * gw
             G_h += wt[k] * gh
         # 分块归一化（w/h 各自尺度）
@@ -882,8 +1175,8 @@ def optimize_section3d_multi(sps: List[ShapeProblem3DSection],
     h_init = np.full(K, sps[0].init_h)
     per_wl = []
     for k, sp in enumerate(sps):
-        f0 = forward3d(sp.base, sp.eps(w_init, h_init))["FOM"]
-        f1 = forward3d(sp.base, sp.eps(best_w, best_h))["FOM"]
+        f0 = forward3d(sp.base, sp.eps(w_init, h_init), backend)["FOM"]
+        f1 = forward3d(sp.base, sp.eps(best_w, best_h), backend)["FOM"]
         per_wl.append({"wl_um": float(sp.base.wl_um),
                        "weight": round(float(wt[k]), 4),
                        "initial_FOM": float(f0), "final_FOM": float(f1),

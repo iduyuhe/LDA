@@ -1728,6 +1728,34 @@ def run_port_acceptance(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_adjoint3d_perf(payload=None):
+    """D-89 3D adjoint numba 性能基准（webui ㊾ 面板）。
+
+    输入 {}：测量 44/64/80 三域 forward/梯度加速比 + FOM bit-level 一致性 +
+    优化链路加速。死标量验收：最大域 forward ≥20× 且 FOM rel ≤1e-10。
+    无 numba 环境自动跳过加速测量（回退本身即验收项）。
+    """
+    import subprocess as _sp
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    _py = _sys.executable
+    try:
+        r = _sp.run([_py, str(_P(_lda) / "run_perf_adjoint3d.py")],
+                    capture_output=True, text=True, timeout=240)
+        if r.returncode != 0:
+            return {"ok": False, "error": (r.stderr or r.stdout)[-200:]}
+        import json as _json
+        rep = _json.loads(
+            _P(_lda / "reports" / "perf_adjoint3d_d89.json").read_text(
+                encoding="utf-8"))
+        rep["ok"] = bool(rep["acceptance"]["passed"])
+        rep["stdout"] = r.stdout[-500:]
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def system_status():
     return {
         "layers": [
@@ -1879,6 +1907,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_adjoint3d(payload))
             elif path == "/api/port_acceptance":
                 self._send(200, run_port_acceptance(payload))
+            elif path == "/api/adjoint3d_perf":
+                self._send(200, run_adjoint3d_perf(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

@@ -233,6 +233,21 @@
 - README：能力阶梯表加 D-83 行、四十三→四十四面板、㊹ 面板清单 + 目录结构补 hybrid 多波长说明
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
+### D-84 3D adjoint 形状逆设计（2026-08-23 · 破 3D 诚实边界第一步）
+
+**里程碑：adjoint 从 2D 推向 3D Yee 交错网格——3D 更新算子显式转置伴随（数值 Mᵀ 对拍 1e-15）**
+
+- `lda/lda_solver/adjoint_fdtd3d.py`：3D Yee 6 分量核（数组切片版）+ 差分转置 `_fd_t`/`_bd_t`（边界掩码严格镜像正演有效范围）+ `AdjointProblem3D`（平板波导：5 层核心 + 源匹配 + 海绵）+ `forward3d`（高斯脉冲软源 + 设计区 curlE 三分量记录 + 监视器 Ez 场能 FOM）+ `compute_gradient3d`（显式转置反向 + ε 灵敏度）+ `ShapeProblem3D`（宽度曲线 w(x) 软边界）+ `verify_adjoint3d`/`verify_shape_gradient3d`/`optimize_shape3d`
+- `lda/lda_agent/adjoint3d_design.py`：统一入口（死标量验收：3D adjoint FD 对拍 + 形状梯度链式 + improvement + DRC）+ CLI
+- `lda/run_adjoint3d_smoke.py`：3/3 smoke（正例 + 不同网格 + 域过小优雅 FAIL）
+- `lda_webui/app.py`：`/api/adjoint3d`（Nx/Ny/Nz/n_controls/iters 透传）
+- `lda_webui/static/index.html`：㊺ 面板（3D 域 + FD 对拍 + taper + 死标量验收）
+- `lda/reports/adjoint3d_shape_d84.json`：D-84 验收报告（imp 2.02× 全 PASS）
+- **实测**：FOM improvement 2.02×（聚焦 taper [2.29,3.66,5.02,4.30,5.80,4.86,4.65,3.15]）；3D adjoint FD 对拍 9.4e-6、形状梯度 8.2e-4（≤0.15）；Mᵀ 对拍 P_H 1.3e-15 / P_E 1.4e-15 / FULL 6.9e-16
+- **工程坑**：①差分转置边界掩码——后向差分 g[0]=0 → tf[0]=-λ[1] 非 0（初版 j=0 置零致对拍 0.26）；②形状梯度 FD 对拍 delta≤0.02（0.05 时二阶非线性超阈 0.178）；③源-波导失配 → 源收窄 + 核心 5 层；④i_mon 贴设计区测近场 / 设计区压缩 → 恢复 ±6/±8；⑤48 域传播 20 格泄漏 imp 1.35 → 生产网格 44×36×12（imp 2.02）
+- README：能力阶梯表加 D-84 行、四十四→四十五面板、㊺ 面板清单 + 目录结构补 adjoint3d 模块
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

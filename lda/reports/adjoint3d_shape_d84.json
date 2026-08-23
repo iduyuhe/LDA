@@ -1,0 +1,81 @@
+{
+  "ok": true,
+  "title": "3D adjoint 形状逆设计（3D Yee 显式转置伴随 · 破 3D 边界）",
+  "mode": "adjoint3d_shape",
+  "n_controls": 8,
+  "grid": {
+    "Nx": 44,
+    "Ny": 36,
+    "Nz": 12,
+    "dl_factor": 10,
+    "dl_um": 0.155,
+    "dt": 0.085015
+  },
+  "core_layer": {
+    "z": [
+      0,
+      5
+    ]
+  },
+  "design_voxels": 1440,
+  "verify": {
+    "max_rel_err": 9.42374138535794e-06,
+    "shape_max_rel_err": 0.0008163023173354886,
+    "nsamples": 6
+  },
+  "optimization": {
+    "initial_FOM": 50.37579144118924,
+    "final_FOM": 101.93617986755558,
+    "improvement": 2.023515203459543,
+    "final_width": [
+      2.288,
+      3.66,
+      5.022,
+      4.304,
+      5.804,
+      4.864,
+      4.649,
+      3.149
+    ],
+    "elapsed_s": 47.43
+  },
+  "drc": {
+    "ok": true,
+    "w_min": 2.0,
+    "w_max": 10.0,
+    "width_range": [
+      2.29,
+      5.8
+    ],
+    "max_slope": 1.5,
+    "slope_max": 1.5,
+    "detail": "宽度∈[2.3,5.8]（界 [2.0,10.0]）；最大相邻变化 1.50（≤1.5）"
+  },
+  "acceptance": {
+    "checks": [
+      {
+        "name": "3D adjoint 梯度 vs 有限差分（≤0.15）",
+        "ok": true,
+        "detail": "max_rel_err=0.0000（6 采样）"
+      },
+      {
+        "name": "3D 形状梯度链式 vs 有限差分（≤0.15）",
+        "ok": true,
+        "detail": "max_rel_err=0.0008（6 采样）"
+      },
+      {
+        "name": "FOM improvement ≥ 1.5（均匀宽 → 优化 taper）",
+        "ok": true,
+        "detail": "2.02×（5.04e+01 → 1.02e+02）"
+      },
+      {
+        "name": "可制造性 DRC（形状宽度 + 平滑）",
+        "ok": true,
+        "detail": "宽度∈[2.3,5.8]（界 [2.0,10.0]）；最大相邻变化 1.50（≤1.5）"
+      }
+    ],
+    "passed": true
+  },
+  "verdict": "3D adjoint 形状逆设计 PASS：FOM improvement=2.02×（5.04e+01 → 1.02e+02）；3D adjoint FD 对拍 0.0000、形状梯度链式 0.0008（≤0.15）；宽度 taper [2.288, 3.66, 5.022, 4.304, 5.804, 4.864, 4.649, 3.149]；DRC 宽度∈[2.3,5.8]（界 [2.0,10.0]）；最大相邻变化 1.50（≤1.5）。3D 域 44×36×12，设计体素 1440。耗时 47.4s。",
+  "note": "D-84 破 3D 诚实边界第一步：3D Yee 交错网格（6 分量）更新算子显式转置伴随（数值 Mᵀ 对拍 1e-15）+ 宽度曲线平板波导形状（z 截面暂均匀）。诚实边界：z 方向截面变化归 D-85+；FOM 为监视器收集场能（T>1 聚焦增益非功率透射）；小 3D 域（内存/算力）。LLM 不进判决路径。"
+}

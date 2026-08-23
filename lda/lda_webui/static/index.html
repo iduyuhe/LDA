@@ -818,6 +818,24 @@
   </div>
 
   <div class="sec">
+    <h2>㊼ 3D 逆设计 × 端口 S 参数联合验收（D-86 · 补闭环最大缺口 · 双独立确认）</h2>
+    <div class="hint">战略审计（LDA-ST-001）指出的最大缺口：3D 逆设计结果此前只有**监视器收集场能 FOM**，无端口级验收。本面板打通 **3D adjoint 逆设计 → 独立 3D CW 端口核**（S11/S21 端口功率系数）→ **双独立确认**：场能 FOM improvement ≥1.5 **且** 端口 S21 improvement ≥1.5。🔴 探针发现的物理：聚焦 FOM 与透射 S21 可能不一致（两端收窄 taper 模式失配）→ 用可制造宽度界 w_min=4 + 初始宽度 init_w=6 对齐，实测 FOM 1.88× **且** S21 1.60× 同向双过。诚实标注：S 参数为两端口功率占比（非严格模式分解）；FOM 为收集场能。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>Nx:<input id="paNx" value="44" size="3"></label>
+      <label>Ny:<input id="paNy" value="36" size="3"></label>
+      <label>Nz:<input id="paNz" value="12" size="3"></label>
+      <label>控制点:<input id="paK" value="8" size="3"></label>
+      <label>迭代:<input id="paIters" value="16" size="4"></label>
+      <label>w_min:<input id="paWmin" value="4" size="3"></label>
+      <label>init_w:<input id="paWinit" value="6" size="3"></label>
+      <button class="btn" id="runPa">端口联合验收</button>
+    </div>
+    <div id="paSummary" class="summary"></div>
+    <div id="paBody"></div>
+    <div class="conclusion" id="paConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -2641,6 +2659,42 @@ async function runS3(){
   } finally { btn.disabled = false; }
 }
 $('runS3').onclick = runS3;
+
+// ---- ㊼ D-86 3D 逆设计 × 端口 S 参数联合验收 ----
+async function runPa(){
+  const btn = $('runPa'); btn.disabled = true;
+  $('paSummary').innerHTML = '<span class="spin"></span> 3D adjoint 逆设计 → 3D CW 端口核联合验收运行中…';
+  const payload = {
+    Nx: $('paNx').value, Ny: $('paNy').value, Nz: $('paNz').value,
+    n_controls: $('paK').value, iters: $('paIters').value,
+    w_min: $('paWmin').value, init_w: $('paWinit').value
+  };
+  try {
+    const d = await postJson('/api/port_acceptance', payload);
+    const passed = d.acceptance ? d.acceptance.passed : false;
+    const o = d.optimization || {}, v = d.verify || {};
+    const pb = d.port_base || {}, po = d.port_optimized || {};
+    $('paSummary').innerHTML = `3D 逆设计 × 端口联合验收：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（FOM imp=${o.improvement!=null?o.improvement.toFixed(2)+'×':'?'} · <b>端口 S21 imp=${d.s21_improvement!=null?d.s21_improvement.toFixed(2)+'×':'?'}</b> 双独立确认）`;
+    const chk = (d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
+    $('paBody').innerHTML = `
+      <div class="subhead">双独立确认（场能 FOM × 端口透射 S21）</div>
+      <table class="tbl"><tbody>
+        <tr><td>3D 域 / 设计</td><td>${d.grid?d.grid.Nx+'×'+d.grid.Ny+'×'+d.grid.Nz:'?'} · w_min=${d.design?d.design.w_min:'?'} init_w=${d.design?d.design.init_w:'?'}</td></tr>
+        <tr><td>场能 FOM improvement（adjoint）</td><td class="ok">${o.improvement!=null?o.improvement.toFixed(2)+'×':'?'} ≥ 1.5</td></tr>
+        <tr><td>端口 S21（独立 CW 核）</td><td class="ok">${pb.S21!=null?pb.S21.toFixed(3):'?'} → ${po.S21!=null?po.S21.toFixed(3):'?'}（${d.s21_improvement!=null?d.s21_improvement.toFixed(2)+'×':'?'} ≥ 1.5）</td></tr>
+        <tr><td>能量守恒 S11+S21</td><td>基线 ${pb.S11!=null?(pb.S11+pb.S21).toFixed(3):'?'} / 优化 ${po.S11!=null?(po.S11+po.S21).toFixed(3):'?'} ≈ 1</td></tr>
+        <tr><td>3D adjoint 梯度 FD 对拍</td><td class="ok">${v.max_rel_err!=null?v.max_rel_err.toExponential(1):'?'} ≤ 0.15</td></tr>
+        <tr><td>宽度 taper</td><td>[${(d.design?d.design.final_width:[]).map(x=>x.toFixed(2)).join(', ')}]</td></tr>
+        <tr><td>可制造性 DRC</td><td>${d.drc?escapeHtml(d.drc.detail):'—'}</td></tr>
+      </tbody></table>
+      <div class="subhead">死标量验收</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
+    $('paConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+  } catch(e){
+    $('paSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runPa').onclick = runPa;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

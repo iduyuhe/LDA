@@ -263,6 +263,22 @@
 - README：能力阶梯表加 D-85 行、四十五→四十六面板、㊻ 面板清单
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
+### D-86 3D 逆设计 × 3D 端口 S 参数联合验收（2026-08-23 · 补闭环最大缺口）
+
+**里程碑：3D 逆设计结果首次获得端口级验收（战略审计 LDA-ST-001 最大缺口的闭环）**
+
+- `lda/lda_solver/port_sparams_3d.py`：`cw3d_port_powers` 加 **`src_profile` 可配源截面**（None = 默认 SOI 0.5×0.22µm 矩形，向后兼容 D-72；D-86 起支持 3D adjoint 域平板波导适配）
+- `lda/lda_agent/port_acceptance.py`：`design_port_acceptance`（3D adjoint 场能优化 → 独立 3D CW 端口核测 S11/S21 → **双独立确认**验收：FOM imp ≥1.5 且 S21 imp ≥1.5 + 能量守恒 + FD 对拍 + DRC）+ CLI
+- `lda/run_port_acceptance_smoke.py`：3/3 smoke（正例 + 不同波长 + 宽度界非法负例）
+- `lda_webui/app.py`：`/api/port_acceptance`（w_min/init_w/iters 透传）
+- `lda_webui/static/index.html`：㊼ 面板（FOM×S21 双确认 + 能量守恒 + 死标量验收）
+- `lda/reports/port_acceptance_d86.json`：D-86 验收报告（FOM 1.88× + S21 1.60× 双过 全 PASS）
+- **实测**：场能 FOM imp 1.88× **且** 端口 S21 0.132→0.211（1.60×）——两个独立测量同向双过；能量守恒 S11+S21≈1；3D adjoint FD 对拍 1e-4；smoke 3/3；D-72 端口核回归 5/5、D-84/85 回归 4/4 零影响
+- **关键物理认知**：①**聚焦 FOM ≠ 透射 S21**——收集场能 FOM 优化"聚焦"，两端收窄 taper 端口模式失配 → S21 反降（w_min=2：FOM 2.02× 但 S21 0.80×）；**对齐 = w_min=4 + init_w=6**（初始比源宽，优化 taper 收窄匹配源）→ FOM 与 S21 同向；②S21 提升对网格/域配置敏感（40 域 1.19×、dlf=12 1.28×）、对波长鲁棒（1.5/1.6 均 1.57×）——最优配置 dlf=10 + 44 域
+- **诚实标注**：S 参数为两端口功率占比（P_out/(P_in+P_out)），非严格模式分解 S 参数（无模式正交投影）；FOM 为收集场能
+- README：能力阶梯表加 D-86 行、四十六→四十七面板、㊼ 面板清单 + 目录结构补 port 模块
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

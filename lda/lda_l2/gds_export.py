@@ -132,6 +132,13 @@ def ring_polygon(R_um: float, n_sides: int = 64) -> List[Tuple[float, float]]:
             for i in range(n_sides)]
 
 
+def ring_centerline(R_um: float, n_pts: int = 64) -> List[Tuple[float, float]]:
+    """环中心线离散点（D-79 真实波导环 PATH；首≠尾避免 GDS PATH 闭合歧义）。"""
+    return [(R_um * math.cos(2.0 * math.pi * i / n_pts),
+             R_um * math.sin(2.0 * math.pi * i / n_pts))
+            for i in range(n_pts)]
+
+
 def ring_ring_polygon(R_um: float, width_um: float,
                       n_sides: int = 64) -> List[List[Tuple[float, float]]]:
     """环形（外环 + 内环，BOUNDARY 多环）。外环顺时针、内环逆时针挖洞。"""
@@ -172,8 +179,10 @@ def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
     elif kind == "RingResonator":
         R = float(params.get("R", 10.0))
         wg_w = float(opt.get("wg_width", params.get("wg_width", 0.5)))
-        descs.append({"kind": "boundary", "layer": LIB_LAYER_SI,
-                      "rings_um": ring_ring_polygon(R, wg_w)})
+        # D-79：实心环带 → 真实波导环（中心线 PATH + width，foundry 弯曲波导
+        # 标准表达；实心 BOUNDARY 环带不可变宽度、DRC 无法检查环宽）。
+        descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": wg_w,
+                      "points_um": ring_centerline(R)})
         descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": wg_w,
                       "points_um": [(-R * 1.4, -R - wg_w / 2.0),
                                     (R * 1.4, -R - wg_w / 2.0)]})
@@ -184,8 +193,9 @@ def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
         gap = float(params.get("gap", 0.3))
         half = float(opt.get("bus_half_length", R * 1.5))
         off = R + wg_w / 2.0 + gap
-        descs.append({"kind": "boundary", "layer": LIB_LAYER_SI,
-                      "rings_um": ring_ring_polygon(R, wg_w)})
+        # D-79：实心环带 → 真实波导环（中心线 PATH + width）
+        descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": wg_w,
+                      "points_um": ring_centerline(R)})
         # through（下 bus）：input → through
         descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": wg_w,
                       "points_um": [(-half, -off), (half, -off)]})
@@ -196,6 +206,7 @@ def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
         gap = float(params.get("gap", 0.3))
         Lc = float(params.get("Lc", 10.0))
         off = (gap + core_w) / 2.0
+        # D-79：双波导 PATH（真实波导表达；输入输出 taper 由流水线可选叠加）
         descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": core_w,
                       "points_um": [(0.0, off), (Lc, off)]})
         descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": core_w,
@@ -204,12 +215,22 @@ def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
         angle = math.radians(float(params.get("split_angle", 10.0)))
         arm = float(params.get("arm_length", 5.0))
         half = angle / 2.0
+        # D-79：输入绝热 taper（D-71 基元）→ 分叉点 → 双 arm PATH
+        from lda_l2.primitives import taper_polygon as _tp
+        tap_len = min(arm * 0.25, 2.0)
+        tap_w2 = core_w * 1.6                       # taper 末端渐宽容纳分叉
+        descs.append({"kind": "boundary", "layer": LIB_LAYER_SI,
+                      "rings_um": [_tp(core_w, tap_w2, tap_len,
+                                       profile="adiabatic")]})
+        x0 = tap_len
         descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": core_w,
-                      "points_um": [(0.0, 0.0),
-                                    (arm * math.cos(half), arm * math.sin(half))]})
+                      "points_um": [(x0, 0.0),
+                                    (x0 + arm * math.cos(half),
+                                     arm * math.sin(half))]})
         descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": core_w,
-                      "points_um": [(0.0, 0.0),
-                                    (arm * math.cos(half), -arm * math.sin(half))]})
+                      "points_um": [(x0, 0.0),
+                                    (x0 + arm * math.cos(half),
+                                     -arm * math.sin(half))]})
     # ---- D-71 真实版图基元（foundry-ready；几何交付，电特性归 D-72）----
     elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler"):
         from lda_l2.primitives import primitive_descs as _prim

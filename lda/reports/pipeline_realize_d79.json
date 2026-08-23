@@ -1,0 +1,324 @@
+{
+  "title": "真实基元接入设计流水线（D-79 · Track B 收口 · v0.4 门槛）",
+  "devices": {
+    "Waveguide": {
+      "params": {
+        "width": 0.5,
+        "length": 10.0
+      },
+      "n_desc": 1,
+      "desc_summary": "path",
+      "old_geom": "直 PATH（已是波导表达）",
+      "bbox_um": {
+        "xmin": 0.0,
+        "xmax": 10.0,
+        "ymin": 0.0,
+        "ymax": 0.0
+      },
+      "gds_bytes": 100,
+      "roundtrip_ok": true,
+      "drc": {
+        "NOEIC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "CUMEC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "SITRI(演示近似)": {
+          "passed": true,
+          "violations": 0
+        }
+      }
+    },
+    "RingResonator": {
+      "params": {
+        "R": 10.0,
+        "width": 0.5
+      },
+      "n_desc": 2,
+      "desc_summary": "path+path",
+      "old_geom": "实心环带 BOUNDARY(外环+内环挖洞) + 直 bus PATH",
+      "bbox_um": {
+        "xmin": -14.0,
+        "xmax": 14.0,
+        "ymin": -10.25,
+        "ymax": 10.0
+      },
+      "gds_bytes": 638,
+      "roundtrip_ok": true,
+      "drc": {
+        "NOEIC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "CUMEC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "SITRI(演示近似)": {
+          "passed": true,
+          "violations": 0
+        }
+      }
+    },
+    "RingAddDrop": {
+      "params": {
+        "R": 6.0,
+        "width": 0.5,
+        "gap": 0.3
+      },
+      "n_desc": 3,
+      "desc_summary": "path+path+path",
+      "old_geom": "实心环带 BOUNDARY + 双直 bus PATH",
+      "bbox_um": {
+        "xmin": -9.0,
+        "xmax": 9.0,
+        "ymin": -6.55,
+        "ymax": 6.55
+      },
+      "gds_bytes": 680,
+      "roundtrip_ok": true,
+      "drc": {
+        "NOEIC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "CUMEC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "SITRI(演示近似)": {
+          "passed": true,
+          "violations": 0
+        }
+      }
+    },
+    "DirectionalCoupler": {
+      "params": {
+        "width": 0.5,
+        "gap": 0.3,
+        "Lc": 10.0
+      },
+      "n_desc": 2,
+      "desc_summary": "path+path",
+      "old_geom": "双直 PATH（已是波导表达）",
+      "bbox_um": {
+        "xmin": 0.0,
+        "xmax": 10.0,
+        "ymin": -0.4,
+        "ymax": 0.4
+      },
+      "gds_bytes": 142,
+      "roundtrip_ok": true,
+      "drc": {
+        "NOEIC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "CUMEC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "SITRI(演示近似)": {
+          "passed": true,
+          "violations": 0
+        }
+      }
+    },
+    "SymmetricYBranch": {
+      "params": {
+        "width": 0.5,
+        "split_angle": 10.0,
+        "arm_length": 5.0
+      },
+      "n_desc": 3,
+      "desc_summary": "boundary+path+path",
+      "old_geom": "双 arm PATH（无过渡，裸分叉）",
+      "bbox_um": {
+        "xmin": 0.0,
+        "xmax": 6.231,
+        "ymin": -0.436,
+        "ymax": 0.436
+      },
+      "gds_bytes": 702,
+      "roundtrip_ok": true,
+      "drc": {
+        "NOEIC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "CUMEC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "SITRI(演示近似)": {
+          "passed": true,
+          "violations": 0
+        }
+      }
+    },
+    "Taper": {
+      "params": {
+        "width": 0.5,
+        "width_out": 2.0,
+        "length": 20.0,
+        "profile": "adiabatic"
+      },
+      "n_desc": 1,
+      "desc_summary": "boundary",
+      "old_geom": "D-71 真实基元（沿用）",
+      "bbox_um": {
+        "xmin": 0.0,
+        "xmax": 20.0,
+        "ymin": -1.0,
+        "ymax": 1.0
+      },
+      "gds_bytes": 618,
+      "roundtrip_ok": true,
+      "drc": {
+        "NOEIC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "CUMEC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "SITRI(演示近似)": {
+          "passed": true,
+          "violations": 0
+        }
+      }
+    },
+    "EulerBend": {
+      "params": {
+        "width": 0.5,
+        "R": 10.0,
+        "theta_deg": 90.0
+      },
+      "n_desc": 1,
+      "desc_summary": "boundary",
+      "old_geom": "D-71 真实基元（沿用）",
+      "bbox_um": {
+        "xmin": -0.0,
+        "xmax": 18.92,
+        "ymin": -0.25,
+        "ymax": 18.732
+      },
+      "gds_bytes": 8298,
+      "roundtrip_ok": true,
+      "drc": {
+        "NOEIC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "CUMEC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "SITRI(演示近似)": {
+          "passed": true,
+          "violations": 0
+        }
+      }
+    },
+    "MMI": {
+      "params": {
+        "width": 0.5,
+        "W_mmi": 4.0,
+        "L_mmi": 12.0,
+        "L_tap": 3.0,
+        "out_gap": 0.5,
+        "L_out": 2.0
+      },
+      "n_desc": 7,
+      "desc_summary": "path+boundary+boundary+boundary+path+boundary+path",
+      "old_geom": "D-71 真实基元（沿用）",
+      "bbox_um": {
+        "xmin": -3.0,
+        "xmax": 17.0,
+        "ymin": -2.5,
+        "ymax": 2.5
+      },
+      "gds_bytes": 1928,
+      "roundtrip_ok": true,
+      "drc": {
+        "NOEIC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "CUMEC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "SITRI(演示近似)": {
+          "passed": true,
+          "violations": 0
+        }
+      }
+    },
+    "GratingCoupler": {
+      "params": {
+        "width": 0.5,
+        "Lambda": 0.85,
+        "duty": 0.55,
+        "n_tooth": 20,
+        "L_in": 3.0
+      },
+      "n_desc": 21,
+      "desc_summary": "path+boundary+boundary+boundary+boundary+boundary+boundary+boundary+boundary+boundary+boundary+boundary+boundary+boundary+boundary+boundary+boundary+boundary+boundary+boundary+boundary",
+      "old_geom": "D-71 真实基元（沿用）",
+      "bbox_um": {
+        "xmin": -3.0,
+        "xmax": 16.617,
+        "ymin": -0.25,
+        "ymax": 0.25
+      },
+      "gds_bytes": 1380,
+      "roundtrip_ok": true,
+      "drc": {
+        "NOEIC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "CUMEC(演示近似)": {
+          "passed": true,
+          "violations": 0
+        },
+        "SITRI(演示近似)": {
+          "passed": true,
+          "violations": 0
+        }
+      }
+    }
+  },
+  "pdk_rules": {
+    "NOEIC(演示近似)::SOI 180nm": {
+      "min_width_um": 0.4,
+      "min_space_um": 0.2,
+      "min_bend_R_um": 5.0,
+      "max_split_angle_deg": 30.0
+    },
+    "CUMEC(演示近似)::SOI 180nm": {
+      "min_width_um": 0.35,
+      "min_space_um": 0.2,
+      "min_bend_R_um": 4.0,
+      "max_split_angle_deg": 30.0
+    },
+    "SITRI(演示近似)::SOI 180nm": {
+      "min_width_um": 0.45,
+      "min_space_um": 0.25,
+      "min_bend_R_um": 6.0,
+      "max_split_angle_deg": 30.0
+    }
+  },
+  "acceptance": {
+    "passed": true,
+    "n_devices": 9,
+    "n_real": 9
+  },
+  "verdict": "真实基元接入流水线 PASS：9/9 kind 全真实 GDS round-trip 一致 + 3 个 SOI PDK DRC 全绿；Ring/AddDrop 从实心环带升级为波导环 PATH，YBranch 加输入绝热 taper。",
+  "note": "D-14/D-19 版图流水线默认几何从玩具矩形/圆形切换到 D-71 真实基元：Ring/AddDrop 实心环带 BOUNDARY → 真实波导环（中心线 PATH + width，foundry 弯曲波导标准表达，可 DRC 检查环宽）；YBranch 裸分叉 → 输入绝热 taper（D-71 taper_polygon 余弦轮廓）+ 双 arm PATH；DC/Waveguide 已是 PATH 波导表达；Taper/EulerBend/MMI/GratingCoupler 沿用 D-71 基元（GC 为 D-78 修正的方波光栅）。全链路真实 GDS 出图 + 3×SOI PDK DRC 复查（NOEIC/CUMEC/SITRI design_rules 注入）。诚实边界：环 path 为圆弧中心线（曲率恒定），Euler 弯无缝拼合环留作后续深化；几何真实化不改变电特性判据（电特性由 D-72/D-78 端口验收负责）。LLM 不进判决路径。"
+}

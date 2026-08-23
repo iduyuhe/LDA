@@ -1390,6 +1390,35 @@ def run_qeda_topology(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_large_scale_bench(payload=None):
+    """D-75 大规模系统基准（webui ㊳ 面板）。
+
+    输入 {n_wdm?, n_qubit?, wdm_spacing?, wdm_gap?, qubit_spacing?}：
+    WDM N≥8 信道 + N≥8 qubit 联合压测 + 性能/精度边界扫描
+    （容量自洽 / IL 级联余量 / qubit 间隔临界 / 标定网格分辨率）。
+    LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.large_scale_bench import run_large_scale_bench as _run
+    payload = payload or {}
+    kw = {}
+    for k, cast in (("n_wdm", int), ("n_qubit", int),
+                    ("wdm_spacing", float), ("wdm_gap", float),
+                    ("qubit_spacing", float)):
+        if payload.get(k) not in (None, ""):
+            kw[k] = cast(payload[k])
+    try:
+        rep = _run(**kw)
+        rep["ok"] = bool(rep.get("ok"))
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def system_status():
     return {
         "layers": [
@@ -1521,6 +1550,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_tunable_wdm(payload))
             elif path == "/api/qeda_topology":
                 self._send(200, run_qeda_topology(payload))
+            elif path == "/api/large_scale_bench":
+                self._send(200, run_large_scale_bench(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

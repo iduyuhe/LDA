@@ -116,6 +116,8 @@
 
 - **D-74 量子门 / 纠错拓扑（Track D 系统级 · M7 第二件）**：`lda/lda_qeda/`（gates/surface_code/cross_resonance）+ `lda/lda_agent/qeda_topology.py`——量子域从读出走向计算：①量子门库 11 门解析矩阵（I/X/Y/Z/H/S/T/CNOT/CZ/SWAP/Toffoli），幺正性 ‖U†U−I‖≤1e-12 精确 + {H,T,CNOT} 通用性（**T∉24元Clifford 群论死标量锚**）；②rotated surface code **d² 数据比特、全部稳定子对易（精确 Pauli）、GF(2) 秩验证 k=1**、阈值标度 p_L=A·(p/p_th)^((d+1)/2)；③cross-resonance 门 g_CR=2J²Δ/(α²−Δ²) 有效模型 + t_CR=π/|g_CR|≤T2（ORACLE |g_CR|∈[0.02,10]MHz、p<p_th 阈值门）。默认 d=3/p=5e-3：门库全幺正+通用、surface code 全对易 k=1、|g_CR|=0.095MHz、t_CR=33µs≤T2=100µs，**验收 PASS**；smoke 3/3（正例 + 超阈值 FAIL + CR 失效 FAIL）；报告 `lda/reports/qeda_topology_d74.json`；WebUI ㊲ 面板 + `/api/qeda_topology`。**诚实边界**：CR 为 Schrieffer-Wolff 主导阶有效模型（非 transmon 多能级数值）、σ_zz 由 echoed-CR 抵消、表面码 p_th=1% 为公认模拟常数（非本系统逐周期解码仿真）、本设计给出拓扑与资源不含 GDS 版图。LLM 不进判决路径。
 
+- **D-75 大规模系统基准（Track D 系统级 · M7 第三件 · M7 收口）**：`lda/lda_agent/large_scale_bench.py`——把 WDM 级联（D-42/45）+ 多 qubit 读出（D-51）+ 混合巨型系统（D-52）推进到 **N≥8 大规模**并做**性能与精度边界压测**：①WDM 8 信道（间隔 1.2nm 密集 DWDM grid、gap=0.4µm 弱耦合高 XT）级联设计 + 插损预算；②8-qubit 沿公共力线频率复用读出（间隔 50MHz ≫ 3κ_r=22.5MHz）逐 qubit 保真度 + dip 可分辨；③联合 8×8 混合巨型系统（光子 WDM 信道 ↔ qubit 1:1 映射）；④边界压测：**WDM 容量自洽**（实际最大可行 N=8 == 理论 floor(FSR 9.12nm/1.2nm)+1=8，单 FSR 工作区）、**IL 级联模型余量**（N=16 时 max_total_il=0.22dB，3dB 预算的 7.3%，thru 残差累积趋势）、**qubit 间隔临界**（0.02GHz≈3κ_r=0.0225GHz 失效，默认 0.05GHz 余量 2.5×）、**标定网格分辨率**（κ_c 网格 λ 间距 25nm vs 信道间隔 1.2nm → 每信道相对变化 0.59% ≤1%）。实测：默认 8×8 全过（WDM 5/5：IL≤0.09dB XT≥24.1dB；qubit 13/13：F∈[0.9978]；联合 4/4），**总压测耗时 0.056s**（解析物理模型性能基准）；smoke 3/3（正例 8×8 + WDM 超容量 N=10 跨 FSR FAIL + qubit 过密 0.02<3κ_r FAIL）；报告 `lda/reports/large_scale_bench_d75.json`；WebUI ㊳ 面板 + `/api/large_scale_bench`（HTTP 实测 200 passed=True、负例正确 FAIL）。**诚实边界**：级联为解析物理模型（FSR 2D 有效折射率容差 30% 已知）、性能为解析模型耗时非商业级 FDTD、网格分辨率诊断基于标定库内插值相对变化（标定自身已由 D-68 dl40 验证）。LLM 不进判决路径。
+
 ### 新增/变更（post-v0.4 · D-73/D-74）
 
 - `lda_agent/tunable_wdm.py`：热光可调 WDM 设计封装（静态 WDM 复用 design_wdm_with_coupler + 每环热模型 + 信道重分配死标量验收）
@@ -133,6 +135,15 @@
 - `lda_webui/static/index.html`：㊲ 面板（门库 + surface code + CR + 死标量验收）
 - `lda/reports/qeda_topology_d74.json`：D-74 验收报告
 - README：能力阶梯表加 D-74 行、三十七面板、㊲ 面板清单 + 目录结构加 `lda_qeda/`
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
+### 新增/变更（post-v0.4 · D-75）
+- `lda/lda_agent/large_scale_bench.py`：大规模系统基准（run_large_scale_bench + wdm_scale_scan 容量扫描 + il_cascade_scan 级联 IL 模型 + qubit_spacing_scan 间隔临界 + kappa_grid_resolution_diag 标定网格分辨率）
+- `lda/run_large_scale_smoke.py`：3/3 smoke（正例 8×8 + WDM 超容量 N=10 跨 FSR FAIL + qubit 过密 0.02<3κ_r FAIL）
+- `lda_webui/app.py`：`/api/large_scale_bench`（n_wdm/n_qubit/wdm_spacing/wdm_gap/qubit_spacing 透传 → 联合压测 + 边界验收）
+- `lda_webui/static/index.html`：㊳ 面板（WDM/qubit/联合概览 + 容量边界表 + IL 级联表 + qubit 间隔临界表 + 网格分辨率 + 死标量验收）
+- `lda/reports/large_scale_bench_d75.json`：D-75 验收报告
+- README：能力阶梯表加 D-75 行（M7 收口）、三十七→三十八面板、㊳ 面板清单 + 目录结构加 `large_scale_bench.py`
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
 ## v0.0（阶段 0/1/2，此前交付）

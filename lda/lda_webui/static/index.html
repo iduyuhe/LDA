@@ -647,6 +647,22 @@
   </div>
 
   <div class="sec">
+    <h2>㊱ 热光可调 WDM（D-73 · Track D 系统级 · M7）</h2>
+    <div class="hint">把 D-42/D-57 静态 WDM 升级为<b>运行时可重构</b>：每条 add-drop 环叠加<b>热光相位 shifter</b>，通过热光效应实时移动每环谐振波长，实现可调信道分配。物理定律锚：Δλ/λ = (dn/dT)·R_th·P/n_eff（dn/dT=1.86e-4/K 材料常数，n_eff 波导有效折射率，<b>非拟合</b>），ORACLE 比对真实 Si 加热器调谐斜率区间 [0.02,0.5] nm/mW；信道重分配验证 |P|≤P_max 且 |Δλ|≤FSR/2（无 FSR 混叠）。诚实边界：未建模环间热串扰、仅热光（非电光载流子注入）、静态重配置非高速调制。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>信道(nm,逗号):<input id="twChannels" value="1550,1553,1556" size="22"></label>
+      <label>目标(nm,逗号,可空=全局热调谐):<input id="twTarget" value="" size="22" placeholder="缺省演示+Δ"></label>
+      <label>R_th(K/mW):<input id="twRth" value="1.0" size="5"></label>
+      <label>n_eff:<input id="twNeff" value="2.4" size="5"></label>
+      <label>P_max(mW):<input id="twPmax" value="50" size="5"></label>
+      <button class="btn" id="runTw">设计可调 WDM</button>
+    </div>
+    <div id="twSummary" class="summary"></div>
+    <div id="twBody"></div>
+    <div class="conclusion" id="twConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -2031,6 +2047,39 @@ function renderReal(d){
   $('realConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
 }
 $('runReal').onclick = runReal;
+
+// ---- ㊱ D-73 热光可调 WDM ----
+async function runTw(){
+  const btn = $('runTw'); btn.disabled = true;
+  $('twSummary').innerHTML = '<span class="spin"></span> 静态 WDM + 热光调谐 + 信道重分配验收中…';
+  const payload = {
+    channels: $('twChannels').value, target: $('twTarget').value,
+    R_th: $('twRth').value, n_eff: $('twNeff').value, P_max: $('twPmax').value
+  };
+  try {
+    const d = await postJson('/api/tunable_wdm', payload);
+    const tm = d.thermal_model || {};
+    $('twSummary').innerHTML = `热光可调 WDM：<span class="verdict ${d.acceptance.passed?'ok':'fail'}">${d.acceptance.passed?'PASS':'FAIL'}</span>（${d.channels_nm.length} 信道 · dn/dT=${tm.dn_dT_per_K} · R_th=${tm.R_th_K_per_mW}K/mW）`;
+    const rows = d.reallocation_plan.map(p=>`<tr><td>λ${p.channel_nm}nm</td><td>${p.target_nm}nm</td><td class="${p.delta_nm>=0?'pos':'neg'}">${p.delta_nm>0?'+':''}${p.delta_nm}nm</td><td>${p.P_mW}mW</td><td>${p.S_nm_per_mW}nm/mW</td><td>${p.FSR_nm}nm</td><td class="${p.within_budget?'ok':'fail'}">${p.within_budget?'预算内':'超预算'}</td><td class="${p.no_fsr_alias?'ok':'fail'}">${p.no_fsr_alias?'无混叠':'FSR混叠'}</td></tr>`).join('');
+    const chk = d.acceptance.checks.map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
+    $('twBody').innerHTML = `
+      <div class="subhead">热模型（物理定律锚，非拟合）</div>
+      <table class="tbl"><tbody>
+        <tr><td>Δλ 公式</td><td>${tm.formula||'—'}</td></tr>
+        <tr><td>锚定</td><td>${tm.anchor||'—'}</td></tr>
+        <tr><td>静态 WDM</td><td>gap=${d.static_wdm.gap_um}µm · k_ring=${d.static_wdm.k_ring} · Rs=${d.static_wdm.Rs_um.join(',')}µm</td></tr>
+        <tr><td>整 FSR 最大可达位移</td><td>${d.max_reachable_shift_nm}nm（≥FSR/2 方可全 FSR 内重分配）</td></tr>
+      </tbody></table>
+      <div class="subhead">信道重分配计划（每环 heater 功率）</div>
+      <table class="tbl"><thead><tr><th>设计信道</th><th>目标信道</th><th>位移 Δλ</th><th>所需功率 P</th><th>调谐斜率 S</th><th>FSR</th><th>功率预算</th><th>FSR 混叠</th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="subhead">死标量验收</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
+    $('twConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+  } catch(e){
+    $('twSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runTw').onclick = runTw;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

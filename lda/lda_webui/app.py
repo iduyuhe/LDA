@@ -1331,6 +1331,39 @@ def run_pipeline_realize(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_tunable_wdm(payload=None):
+    """D-73 热光可调 WDM（webui ㊱ 面板）。
+
+    输入 {channels? (csv), target? (csv), R_th?, n_eff?, P_max?}：静态 WDM
+    （D-42/D-57）+ 每环热光调谐（Δλ/λ=(dn/dT)·R_th·P/n_eff 物理定律锚）+
+    信道重分配验收（|P|≤P_max 且 |Δλ|≤FSR/2 无混叠）。LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.tunable_wdm import design_tunable_wdm
+    payload = payload or {}
+    ch = payload.get("channels")
+    channels = ([float(x) for x in str(ch).split(",") if x.strip()]
+                if ch else None)
+    tgt = payload.get("target")
+    target = ([float(x) for x in str(tgt).split(",") if x.strip()]
+              if tgt else None)
+    kw = {}
+    for k in ("R_th", "n_eff", "P_max"):
+        if payload.get(k) not in (None, ""):
+            kw[k] = float(payload[k])
+    try:
+        rep = design_tunable_wdm(channels_nm=channels,
+                                 target_channels_nm=target, **kw)
+        rep["ok"] = bool(rep.get("ok"))
+        return rep
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:120]}
+
+
 def system_status():
     return {
         "layers": [
@@ -1458,6 +1491,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_gc_sparams(payload))
             elif path == "/api/pipeline_realize":
                 self._send(200, run_pipeline_realize(payload))
+            elif path == "/api/tunable_wdm":
+                self._send(200, run_tunable_wdm(payload))
             elif path == "/api/pdk_design":
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"

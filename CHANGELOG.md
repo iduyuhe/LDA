@@ -170,6 +170,18 @@
 - README：能力阶梯表加 D-77 行、三十九→四十面板、㊵ 面板清单 + 目录结构补 ci/perf 入口
 - 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
 
+### 新增/变更（post-v0.4 · D-80 · Track A 深化）
+- `lda/lda_solver/adjoint_fdtd.py`：**谱形目标 FOM 泛化**——AdjointProblem 增 `target_type`（field_energy/split_ratio/mode_match）+ 第二监视器（mon2）+ `target_ratio` + `mode_profile`；forward 返回 E_A/E_B/ratio/FOM_geom；compute_gradient 按目标类型生成观测（split_ratio 对数加权 FOM=a·log E_A+b·log E_B，观测线性化无 FOM 系数；mode_match 场投影 obs=2·proj/‖p‖²·p）；新增 `spectrum_optimize`（多波长加权联合，固定 dl 只变 omega——修复归一化网格陷阱）
+- `lda/lda_agent/spectral_inverse_design.py`：谱形目标逆设计统一入口（FD 对拍 + 优化 + 死标量验收 + 报告）
+- `lda/lda_agent/design_loop.py`：`_run_adjoint` 支持 target_type（split_ratio/spectrum 追加验收：分束比 err≤0.10、多波长加权）
+- `lda/run_spectral_design_smoke.py`：3/3 smoke（split_ratio 50:50 + spectrum 3 波长 + 非法 target_type 优雅 FAIL）
+- `lda_webui/app.py`：`/api/spectral_design`（target_type/target_ratio/wavelengths/Nx/Ny/iters 透传）
+- `lda_webui/static/index.html`：㊶ 面板（目标类型下拉 + 结果表 + 死标量验收）
+- `lda/reports/spectral_inverse_design_d80.json`：D-80 验收报告（split 2.5× / spectrum 11.7× / mode 8.6× 全 PASS）
+- **实测**：split_ratio 50:50 实测比 0.574（err 0.074≤0.10）；spectrum 3 波长（1.53/1.55/1.57）imp 11.7×；mode_match 平坦 imp 8.6×；全目标 FD 对拍 ≤2e-4
+- README：能力阶梯表加 D-80 行、四十→四十一面板、㊶ 面板清单
+- 兼容性：IR schema 0.3（延续）；设计包 schema 0.1（kind 11 项枚举，延续）
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

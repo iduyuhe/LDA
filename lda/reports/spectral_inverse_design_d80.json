@@ -1,0 +1,197 @@
+{
+  "title": "D-80 谱形目标逆设计（Track A 深化）",
+  "created_at": "2026-08-23T16:39:44",
+  "split_ratio_5050": {
+    "ok": true,
+    "title": "谱形目标逆设计（split_ratio）",
+    "target_type": "split_ratio",
+    "target_ratio": 0.5,
+    "grid": {
+      "Nx": 90,
+      "Ny": 80,
+      "dl_factor": 12,
+      "design_voxels": 2784
+    },
+    "geometry": {
+      "i_src": 14,
+      "i_mon": 76,
+      "mon_y": [
+        37,
+        43
+      ],
+      "mon2_y": [
+        45,
+        51
+      ]
+    },
+    "verify": {
+      "max_rel_err": 1.0086621468719405e-05,
+      "mean_rel_err": 3.6950947199725573e-06,
+      "nsamples": 6
+    },
+    "optimization": {
+      "initial_FOM": 24.01594212475167,
+      "final_FOM": 4.096671642770994,
+      "improvement": 2.504161073745978,
+      "iters": 20,
+      "elapsed_s": 17.93,
+      "final_ratio": 0.5740675549329421,
+      "target_ratio": 0.5,
+      "ratio_err": 0.07406755493294215
+    },
+    "acceptance": {
+      "checks": [
+        {
+          "name": "adjoint 梯度 vs 有限差分（max_rel_err ≤ 0.15）",
+          "ok": true,
+          "detail": "max_rel_err=0.0000（6 样本）"
+        },
+        {
+          "name": "目标 FOM improvement ≥ 1.5（split_ratio）",
+          "ok": true,
+          "detail": "improvement=2.50×"
+        },
+        {
+          "name": "分束比命中 target ± 0.10",
+          "ok": true,
+          "detail": "FDTD 实测 0.574 vs 目标 0.5（err=0.074）"
+        }
+      ],
+      "passed": true
+    },
+    "verdict": "谱形目标逆设计（split_ratio）PASS：分束比 FOM improvement=2.50×，实测分束比 0.574（target 0.5）；adjoint 对拍 0.0000；耗时 17.9s。",
+    "note": "D-80 目标泛化：field_energy（D-70 收集场能）/ split_ratio（分束比）/ mode_match（模式匹配）/ spectrum（多波长谱形）。诚实边界：FOM 为脉冲源监视器收集场能（T>1 聚焦增益，非功率透射）；窄带谱形窗口物理可行（网格色散均匀）；2D TEz 近似。LLM 不进判决路径。"
+  },
+  "spectrum_3wl": {
+    "ok": true,
+    "title": "谱形目标逆设计（spectrum）",
+    "target_type": "spectrum",
+    "target_ratio": 0.5,
+    "grid": {
+      "Nx": 90,
+      "Ny": 80,
+      "dl_factor": 12,
+      "design_voxels": 2784
+    },
+    "geometry": {
+      "i_src": 14,
+      "i_mon": 76,
+      "mon_y": [
+        37,
+        43
+      ],
+      "mon2_y": null
+    },
+    "verify": {
+      "max_rel_err": 6.408603261547275e-06,
+      "mean_rel_err": 2.591741180789961e-06,
+      "nsamples": 6
+    },
+    "optimization": {
+      "initial_FOM": 24.556670608680005,
+      "final_FOM": 287.0935879235352,
+      "improvement": 11.691268320221099,
+      "iters": 12,
+      "elapsed_s": 32.64,
+      "per_wavelength": [
+        {
+          "wl_um": 1.53,
+          "weight": 0.3333,
+          "initial_FOM": 24.56402287083969,
+          "final_FOM": 286.8646583339373,
+          "improvement": 11.6782442290618,
+          "final_T": 0.18732181958332572
+        },
+        {
+          "wl_um": 1.55,
+          "weight": 0.3333,
+          "initial_FOM": 24.521478769112555,
+          "final_FOM": 292.669963603953,
+          "improvement": 11.935249352603908,
+          "final_T": 0.19111266768825366
+        },
+        {
+          "wl_um": 1.57,
+          "weight": 0.3333,
+          "initial_FOM": 24.58451018608777,
+          "final_FOM": 281.74614183271535,
+          "improvement": 11.460311378997593,
+          "final_T": 0.1839794426235957
+        }
+      ],
+      "weighted_improvement": 11.691268320221099
+    },
+    "acceptance": {
+      "checks": [
+        {
+          "name": "adjoint 梯度 vs 有限差分（max_rel_err ≤ 0.15）",
+          "ok": true,
+          "detail": "max_rel_err=0.0000（6 样本）"
+        },
+        {
+          "name": "目标 FOM improvement ≥ 1.5（spectrum）",
+          "ok": true,
+          "detail": "加权 11.69×（各波长 1.53:11.68×, 1.55:11.94×, 1.57:11.46×）"
+        }
+      ],
+      "passed": true
+    },
+    "verdict": "谱形目标逆设计（spectrum）PASS：FOM improvement=11.69×；adjoint 对拍 0.0000；耗时 32.6s。",
+    "note": "D-80 目标泛化：field_energy（D-70 收集场能）/ split_ratio（分束比）/ mode_match（模式匹配）/ spectrum（多波长谱形）。诚实边界：FOM 为脉冲源监视器收集场能（T>1 聚焦增益，非功率透射）；窄带谱形窗口物理可行（网格色散均匀）；2D TEz 近似。LLM 不进判决路径。"
+  },
+  "mode_match_flat": {
+    "ok": true,
+    "title": "谱形目标逆设计（mode_match）",
+    "target_type": "mode_match",
+    "target_ratio": 0.5,
+    "grid": {
+      "Nx": 70,
+      "Ny": 60,
+      "dl_factor": 10,
+      "design_voxels": 1064
+    },
+    "geometry": {
+      "i_src": 14,
+      "i_mon": 56,
+      "mon_y": [
+        27,
+        33
+      ],
+      "mon2_y": null
+    },
+    "verify": {
+      "max_rel_err": 6.2288974154322e-05,
+      "mean_rel_err": 3.593375744216003e-05,
+      "nsamples": 5
+    },
+    "optimization": {
+      "initial_FOM": 0.0006202141961799397,
+      "final_FOM": 0.005348442902170759,
+      "improvement": 8.623541554659127,
+      "iters": 12,
+      "elapsed_s": 5.17
+    },
+    "acceptance": {
+      "checks": [
+        {
+          "name": "adjoint 梯度 vs 有限差分（max_rel_err ≤ 0.15）",
+          "ok": true,
+          "detail": "max_rel_err=0.0001（5 样本）"
+        },
+        {
+          "name": "目标 FOM improvement ≥ 1.5（mode_match）",
+          "ok": true,
+          "detail": "improvement=8.62×"
+        }
+      ],
+      "passed": true
+    },
+    "verdict": "谱形目标逆设计（mode_match）PASS：FOM improvement=8.62×；adjoint 对拍 0.0001；耗时 5.2s。",
+    "note": "D-80 目标泛化：field_energy（D-70 收集场能）/ split_ratio（分束比）/ mode_match（模式匹配）/ spectrum（多波长谱形）。诚实边界：FOM 为脉冲源监视器收集场能（T>1 聚焦增益，非功率透射）；窄带谱形窗口物理可行（网格色散均匀）；2D TEz 近似。LLM 不进判决路径。"
+  },
+  "honest_boundary": "窄高斯模式匹配目标（σ≈1.4 格）在 2D TEz 粗网格下接近衍射极限，优化不可达（诚实记录，非判定用）",
+  "acceptance": {
+    "passed": true,
+    "checks": []
+  }
+}

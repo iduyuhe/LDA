@@ -4,7 +4,7 @@
   "kind": "readout_fidelity",
   "domain": "hybrid",
   "title": "单发读出保真度预算（T1 限制 · SNR/保真度）",
-  "created_at": "2026-08-25T03:45:21",
+  "created_at": "2026-08-25T07:24:14",
   "ir": {
     "schema_version": "0.3",
     "domain": "hybrid",

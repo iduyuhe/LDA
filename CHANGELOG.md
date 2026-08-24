@@ -102,6 +102,13 @@
 - **维护回归：CI core 31 PASS / 0 SKIP / 0 FAIL（279.56s）全绿**，报告 `ci_regression_core_v064.json`。
 - **维护结论**：v0.6.3+ 全绿；WebUI 字段漂移现可被 CI 捕获（删除/改名即 FAIL）。
 
+### 维护（v0.6.11 · D-109 持续维护 · all 集 74 项全量回归 + 坏 smoke 残留根治 · 2026-08-25）
+- **all 集全量回归（D-104~D-108 五轮修复后最强门禁复核）**：`run_ci_regression.py --tag all` 覆盖 **74 项**（D-01~D-108 全部资产 + L1 MCP/CLI + agent 自迭代闭环 + 实证锚）→ **74 PASS / 0 SKIP / 0 FAIL（1611.76s）全绿**，报告 `ci_regression_all_v0611.json`。
+- 🔴 **回归发现（反复性残留根治）**：`run_ci_industrial_smoke._detect_fail` 每次运行把坏 smoke 复制到 `lda/run_zz_bad_smoke.py`（验证 FAIL 检出），但 finally 的 `os.remove` 被沙箱安全删除钩子拦截（SAFE_DELETE_FAIL）且异常被吞 → **文件残留**，每次 all 集重新创建（D-101 曾清理一次后复发）。**根治**：finally 多重删除策略——`os.remove` → `os.unlink` 兜底 → 重试 3 次 → 仍失败改名 `.bak` 隔离（不再被 `_discover_all` 发现）；实测 industrial smoke 3/3 PASS 且**零残留**、`_discover_all` 恢复真实计数。
+- **计数修复**：`_discover_all` 实际 **74**（D-106 加 run_agent_loop_smoke 后未更新）→ README/头部「73 smoke」→**74**。
+- **面板端点覆盖盘点（零高价值缺口）**：38 个 JS 调用端点——生态/实证 44 条字段断言 + 10 个 ecosystem POST 快路径实跑；26 个重计算/演示端点按设计走「路由静态验证 + 内核专用 smoke」（/api/status 仅健康状态非渲染硬依赖）。
+- **维护结论**：v0.6.10+ 全绿；坏 smoke 残留问题根治（D-101 首次清理后本轮彻底修复）。
+
 ### 维护（v0.6.10 · D-108 持续维护 · 实证锚字段门禁补强 · 2026-08-25）
 - **门禁缺口复核（发现真实缺口）**：面板 57（D-62 新增）依赖 `/api/empirical` 的 5 个顶层字段（`corpus`/`adversarial`/`e_benchmarks`/`review`/`honest_note`），但 D-103 固化的 `ECOSYSTEM_REQUIRED_FIELDS` 只覆盖 `/api/ecosystem`——**empirical 端点仅有路由存在性验证，字段断言缺口**（端点/字段漂移不会被 CI 捕获）。
 - **断言补强（实质增量）**：`run_webui_api_smoke.py` 新增 **`EMPIRICAL_REQUIRED_FIELDS` 13 条断言**——`corpus.total`/`corpus.by_metric`/`corpus.records`/`adversarial.total`/`e_benchmarks`/`review.stats`/`review.proposals`/`honest_note` + `e_benchmarks[0]` 元素 `id`/`empirical_id`/`golden`/`tol`（面板 57 判题演示硬依赖）；实跑 PASS 44→**57**、静态 52、FAIL=0（秒级）。

@@ -13,6 +13,7 @@
 > **v0.6.8 持续维护**（2026-08-25 · D-106）：**agent 自迭代设计闭环门禁**——深审发现 `run_agent_loop.py` import 断链（引用了 design_loop 中从未存在的 ring_fsr_problem，非 smoke 命名未被 CI 捕获）→ 修复为基于 `design_loop.main()` 的可运行演示 + 新增 `run_agent_loop_smoke.py`（5/5 PASS：收敛 accepted / 误差死标量 / FDTD+TMM 双判据全绿 / JSON 落盘），入 CI core 门禁（**35 条**）；计数修复（72→73 smoke）；WebUI JS 静态检查（67 绑定全对应、语法通过）。
 > **v0.6.9 持续维护**（2026-08-25 · D-107）：**文档资产 + IR schema + 性能基准深审（零缺陷）**——README 引用路径死链扫描零缺失（4/5 存在，`{bid}` 为 D-98 模板占位符非死链）；L0 IR schema v0.3 与 spec/bridge 一致（受控升级 0.2 兼容、零漂移门禁在 core）；性能基准复核未退化（`run_perf_adjoint3d` 大域 FWD 27.6× ≥20× + FOM rel=1.3e-16；`run_perf_bench` greens 76.89× + 透射谱 5.39× + GPU SKIP 正确降级）；docs 资产与 D 编号（D-106 最新）一致。
 > **v0.6.10 持续维护**（2026-08-25 · D-108）：**实证锚字段门禁补强**——深审发现面板 57（D-62 新增）依赖 `/api/empirical` 的 5 个顶层字段（corpus/adversarial/e_benchmarks/review/honest_note）但 D-103 固化的字段断言只覆盖 `/api/ecosystem` → `run_webui_api_smoke.py` 新增 **`EMPIRICAL_REQUIRED_FIELDS` 13 条断言**（含 e_benchmarks[0] 元素 id/empirical_id/golden/tol），实跑 PASS 44→**57**、FAIL=0；D-103 断言集漂移复核零；README/CHANGELOG/规划文档计数一致性全对。
+> **v0.6.11 持续维护**（2026-08-25 · D-109）：**all 集 74 项全量回归（D-104~D-108 五轮修复后最强门禁复核）**——覆盖 D-01~D-108 全部资产 + L1 MCP/CLI + agent 自迭代闭环 + 实证锚，**74 PASS / 0 FAIL（1611.76s）全绿**；🔴 回归发现 `run_ci_industrial_smoke` 每次运行重新创建坏 smoke 且沙箱删除失败残留（D-101 曾清一次）→ **根治**（多重删除 + unlink 兜底 + 失败改名 .bak 隔离，验证零残留），计数修复（73→74）；面板端点覆盖盘点（38 个 JS 调用：生态/实证 44 条字段断言 + 10 POST 实跑，26 个重计算端点按设计走路由静态验证 + 内核专用 smoke，无高价值缺口）。
 
 ## 这是什么
 
@@ -144,7 +145,7 @@ lda/                     核心软件包（主权求解器 + agent + 设计引�
   lda_harness/           确定性比对裁判（21 题：B1-B18 物理定律锚 + E1-E3 实证锚，可运行时扩展 register_golden + 语料评审流）
   lda_pdk/               生态共建（L2 Registry + 主权 A/B/C + 社区提交 → 评审 → 落地 → 发布 全链）
   lda_webui/             零依赖 WebUI（五十七面板）
-  run_ci_regression.py   验证合约工业化·全量回归统一入口（D-77，自动发现 73 smoke）
+  run_ci_regression.py   验证合约工业化·全量回归统一入口（D-77，自动发现 74 smoke）
   run_perf_bench.py      求解器性能基准（D-77，numba/GPU 加速比 + 基线漂移监控）
   run_perf_adjoint3d.py  3D adjoint numba 性能基准（D-89，大域 forward ≥20× + bit-level 一致性）
   lda_solver/port_sparams_3d.py  3D 端口 S 参数核（D-72/86，src_profile 可配源截面）

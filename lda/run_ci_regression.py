@@ -1,6 +1,6 @@
 """D-77 · 验证合约工业化 —— 持续集成全量回归统一入口。
 
-把 LDA 全部验证（73 个 run_*smoke*.py + run_harness.py B1-B18+E1-E3）收敛到
+把 LDA 全部验证（74 个 run_*smoke*.py + run_harness.py B1-B18+E1-E3）收敛到
 **一条命令、一份机器可读报告**——降低社区协作门槛（新贡献者/第三方跑
 `python run_ci_regression.py` 即可看全量回归红绿），对齐 D-04 三套裁判统一。
 

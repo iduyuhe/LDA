@@ -102,6 +102,14 @@
 - **维护回归：CI core 31 PASS / 0 SKIP / 0 FAIL（279.56s）全绿**，报告 `ci_regression_core_v064.json`。
 - **维护结论**：v0.6.3+ 全绿；WebUI 字段漂移现可被 CI 捕获（删除/改名即 FAIL）。
 
+### 维护（v0.6.8 · D-106 持续维护 · agent 自迭代设计闭环门禁 + 断链修复 · 2026-08-25）
+- **未覆盖路径盘点 + 断链发现（🔴 真实回归）**：`run_agent_loop.py`（agent 自迭代设计闭环演示，「AI for AI」最小实证）**import 断链不可运行**——引用了 `design_loop.py` 中从未存在的 `ring_fsr_problem`/`ring_fsr_with_waveguide_problem`（git 历史亦无定义，早期草稿遗留）；且非 `_smoke.py` 命名不被 CI 捕获，**断链长期潜伏**。
+- **修复 + 新门禁（实质增量）**：①重写 `run_agent_loop.py` 为基于 `design_loop.main()`（bragg_mirror 收敛闭环）的可运行演示（收敛=True、4 轮、R=0.9967、双判据全绿）；②新增 `run_agent_loop_smoke.py`（**5/5 PASS**）：收敛 accepted / |ΔR|=1.00e-4 ≤ tol 2%（死标量）/ FDTD+TMM 物理定律锚双判据全绿 / 报告字段完整 / JSON 落盘；**纳入 CORE_SMOKES（34→35 条）**。
+- **计数修复**：`_discover_all` 实际 73（D-105 加 run_l1_agent_smoke）→ README/头部「72 smoke」→**73**。
+- **WebUI JS 静态检查**：67 处事件绑定 ↔ 445 元素 id 全对应（`refreshEmp` 为防御式 `$('x') &&` 绑定，安全）；`node --check` 内联 JS 语法通过；面板 57 存在。
+- **维护回归：CI core 35 PASS / 0 SKIP / 0 FAIL**，报告 `ci_regression_core_v068.json`。
+- **维护结论**：v0.6.7+ 全绿；agent 自迭代闭环（Agent-native 战略核心实证）现受 core 门禁保护。
+
 ### 维护（v0.6.7 · D-105 持续维护 · L1 协议层全链路门禁 + 环境一致性 · 2026-08-25）
 - **未覆盖模块盘点（D-104 之后的深审）**：发现 `run_agent.py`（L1 agent 协议层 CLI 演示，白皮书 §12「人操作壳 → agent 操作接口」翻译层最小可跑实证）的 KernelGateway 全链路路径**无 smoke 覆盖**——run_mcp_smoke 只覆盖 MCP 工具路径（verify_design/list_benchmarks），CLI 路径（L0 IR 驱动 + 三种 candidate + benchmarks 过滤）此前零门禁。
 - **新门禁（实质增量）**：新增 `run_l1_agent_smoke.py`（6/6 PASS，库方式走同一 KernelGateway）——①reference 21/21（B1-B18 + E1-E3 双 ground，实证锚注入生效）；②perturbed(rel=0.10) 6/21 抓 FAIL；③l3_ai 18/21 法官抓 FAIL（LLM 候选被死标量驳回）；④list_benchmarks 21 题；⑤benchmarks 过滤 B1,B2,B4 → 3/3；⑥L0 IR 驱动（l0_demo_ring.json）→ 2/2。**纳入 CORE_SMOKES（33→34 条）**。

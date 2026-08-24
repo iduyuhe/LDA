@@ -10,6 +10,7 @@
 > **v0.6.5 实证锚**（2026-08-24 · D-62 发动期联动框架落地）：**实证大数据锚 = 验证的第二道非 AI ground**——harness 新增 **E1-E3 实证锚题**（golden=实测语料 2.63/1.53/9.15，参考候选 21/21 PASS 双 ground、扰动 FAIL 检测）；**语料评审流**（`lda_pdk/empirical.py`：citation 必填 → 具名评审（LLM 不进判决）→ 落库 → harness E 题实时生效）；WebUI **五十七面板**（面板57 + `/api/empirical` + `/api/ecosystem/measurement`）；CI core 32 项；诚实边界：种子语料为公开文献/PDK 量级，真实晶圆厂 NDA 流片实测经社区流持续流入。
 > **v0.6.6 持续维护**（2026-08-25 · D-104）：**D-62 收官后全量回归（最强门禁）**——all 集 **72 项 smoke 全量回归 72 PASS / 0 FAIL**（覆盖 D-01~D-103 全部资产 + WebUI 路由层 + 实证锚）；**修复**：L1 协议层注入实证锚（`verify_design` 恢复 21/21，MCP smoke 适配 D-62），`run_mcp_smoke` 入 CI core 门禁（33 条）；一致性深审：实证锚键集三通道核验、计数修复（70→72 smoke）、README 当前态陈旧引用修复（18→21 题 / 五十六→五十七面板）、任务台账 16 项归正。
 > **v0.6.7 持续维护**（2026-08-25 · D-105）：**L1 协议层全链路门禁**——新增 `run_l1_agent_smoke.py`（KernelGateway + L0 IR + 三种 candidate + benchmarks 过滤全链路 6/6 PASS），`run_agent.py` CLI 演示路径此前无 smoke 覆盖的缺口闭合，入 CI core 门禁（**34 条**）；环境一致性核验（requirements 必装 3 包与 venv 全齐、可选标注完整）；残留扫描干净。
+> **v0.6.8 持续维护**（2026-08-25 · D-106）：**agent 自迭代设计闭环门禁**——深审发现 `run_agent_loop.py` import 断链（引用了 design_loop 中从未存在的 ring_fsr_problem，非 smoke 命名未被 CI 捕获）→ 修复为基于 `design_loop.main()` 的可运行演示 + 新增 `run_agent_loop_smoke.py`（5/5 PASS：收敛 accepted / 误差死标量 / FDTD+TMM 双判据全绿 / JSON 落盘），入 CI core 门禁（**35 条**）；计数修复（72→73 smoke）；WebUI JS 静态检查（67 绑定全对应、语法通过）。
 
 ## 这是什么
 
@@ -141,7 +142,7 @@ lda/                     核心软件包（主权求解器 + agent + 设计引�
   lda_harness/           确定性比对裁判（21 题：B1-B18 物理定律锚 + E1-E3 实证锚，可运行时扩展 register_golden + 语料评审流）
   lda_pdk/               生态共建（L2 Registry + 主权 A/B/C + 社区提交 → 评审 → 落地 → 发布 全链）
   lda_webui/             零依赖 WebUI（五十七面板）
-  run_ci_regression.py   验证合约工业化·全量回归统一入口（D-77，自动发现 72 smoke）
+  run_ci_regression.py   验证合约工业化·全量回归统一入口（D-77，自动发现 73 smoke）
   run_perf_bench.py      求解器性能基准（D-77，numba/GPU 加速比 + 基线漂移监控）
   run_perf_adjoint3d.py  3D adjoint numba 性能基准（D-89，大域 forward ≥20× + bit-level 一致性）
   lda_solver/port_sparams_3d.py  3D 端口 S 参数核（D-72/86，src_profile 可配源截面）

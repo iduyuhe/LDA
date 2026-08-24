@@ -31,37 +31,11 @@
     "sig_backend": {
       "ok": true,
       "msg": "verify_ring_fdtd 参数 backend 齐备"
-    },
-    "live_accepted": {
-      "ok": true,
-      "msg": "环形双验证 PASS（解析收敛 + FDTD 最终验证）：环形谱形双验证 PASS：解析层 R=9.9498µm，FSR=9.150nm，谱形误差 2.18e-08 ≤ 容差；FDTD 最终验证 drop 谱 5 个谐振峰，FSR(FDTD)=9.54nm vs 解析 11.0"
-    },
-    "live_fdtd": {
-      "ok": true,
-      "msg": "FDTD 层 drop 谱 5 个谐振峰 + FSR(FDTD)=9.54nm vs 解析 11.04nm（rel=13.57% ≤ 30%）"
     }
   },
   "live": {
-    "final_R_um": 9.949772116681736,
-    "accepted": true,
-    "fdtd": {
-      "enabled": true,
-      "accepted": true,
-      "R_um": 9.949772116681736,
-      "peaks_um": [
-        1.5318669000194565,
-        1.542851633803465,
-        1.5522589922451213,
-        1.5600840791755821,
-        1.5697657549904536
-      ],
-      "fsr_fdtd_nm": 9.545,
-      "fsr_analytic_nm": 11.043,
-      "fsr_rel_dev": 0.1357,
-      "tol_rel": 0.3,
-      "backend": "auto",
-      "verdict": "环形 FDTD 谱形验收 PASS：R=9.949772116681736µm，drop 谱 5 个谐振峰，FSR(FDTD)=9.54nm vs 解析 11.04nm（相对 13.6% ≤ 容差）。真实 FDTD 仿真 ↔ 解析锚一致，结果已可由「人」验收。"
-    }
+    "skipped": true,
+    "reason": "no cuda"
   },
   "all_green": true
 }

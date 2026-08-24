@@ -1,6 +1,6 @@
 """D-77 · 验证合约工业化 —— 持续集成全量回归统一入口。
 
-把 LDA 全部验证（54+ 个 run_*smoke*.py + run_harness.py B1-B13）收敛到
+把 LDA 全部验证（60+ 个 run_*smoke*.py + run_harness.py B1-B18）收敛到
 **一条命令、一份机器可读报告**——降低社区协作门槛（新贡献者/第三方跑
 `python run_ci_regression.py` 即可看全量回归红绿），对齐 D-04 三套裁判统一。
 
@@ -50,6 +50,10 @@ CORE_SMOKES: List[str] = [
     # Track D / 标准层（D-73~D-76）
     "run_tunable_wdm_smoke.py", "run_qeda_topology_smoke.py",
     "run_large_scale_smoke.py",
+    # 生态共建链（D-93~D-98：harness 扩展 / 提交 / 评审→落地→发布，纯 numpy 快速）
+    "run_ecosystem_smoke.py",        # harness B1-B18 + 主权 A/B/C + Registry 自检
+    "run_ecosystem_submit_smoke.py", # 社区提交入口（器件 + 批量 + 提案）
+    "run_ecosystem_publish_smoke.py",# 评审→落地→发布 全链（含补丁生成）
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

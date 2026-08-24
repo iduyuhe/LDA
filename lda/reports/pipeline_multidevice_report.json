@@ -19,12 +19,12 @@
     {
       "key": "yb_pipeline",
       "ok": true,
-      "msg": "SymmetricYBranch PASS（sim mode=live_fdtd）：设计流水线全链路 PASS：SymmetricYBranch 参数 {'width': 0.65, 'split_angle': 15.5,"
+      "msg": "SymmetricYBranch PASS（sim mode=oracle_demo）：设计流水线全链路 PASS：SymmetricYBranch 参数 {'width': 0.65, 'split_angle': 15.5,"
     },
     {
-      "key": "yb_live",
+      "key": "yb_demo",
       "ok": true,
-      "msg": "FDTD 分束 balance=0.0006 ≤ 0.1"
+      "msg": "无 GPU → 诚实 ORACLE 真值演示（对称性定理 50/50）"
     },
     {
       "key": "default_RingResonator",

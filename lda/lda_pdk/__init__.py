@@ -1,5 +1,5 @@
 """LDA · L2 开放 PDK / 器件本体 Registry（生态共建地基，D-93）+ 社区提交入口（D-94）
-+ 社区评审流与提案落地（D-95）。
++ 社区评审流与提案落地（D-95）+ 门槛扩展/策略/批量评审（D-96/D-97）+ 端到端发布（D-98）。
 
 L2 = 开放 PDK/器件本体 Registry（社区共建）。本模块提供：
   - PDKRegistry：器件本体注册（id/name/tech/foundry/sovereign_class/
@@ -7,19 +7,25 @@ L2 = 开放 PDK/器件本体 Registry（社区共建）。本模块提供：
   - SOVEREIGN_DEPS：主权依赖分级清单（A/B/C，来自战略审计 LDA-ST-001）。
   - submit：社区提交入口（D-94）—— submit_device / submit_devices_batch /
     BenchmarkProposal / ProposalStore / submit_benchmark_proposal /
-    list_contributions，贡献库持久化于 contributions.json（gitignore）。
+    list_contributions，贡献库持久化于 contributions.json（gitignore）；
+    D-96/D-97 提交期防重守卫 + ReviewPolicy 可配置评审策略。
   - review：社区评审流 + 提案→golden 落地（D-95）—— review_proposal /
-    land_proposal / reload_landed / list_proposals / get_audit / list_landed，
-    落地注册于 landed.json（gitignore），并生成补丁供维护者 git 提交。
+    land_proposal / reload_landed / list_proposals / get_audit / list_landed /
+    resubmit_proposal / review_stats，落地注册于 landed.json（gitignore）；
+    D-96 门槛扩展（签名完备性/数值界限/core 双评审 quorum）+ D-97 批量评审/批量落地。
+  - publish：端到端发布（D-98）—— publish_proposal（landed→published，生成
+    可 git apply 的 golden.py/benchmarks.py 补丁 + Release Notes 草稿于
+    reports/patches/）+ list_published。
 
 作用边界（诚实标注）：
-  - 本模块是生态共建的「地基接口 + 提交入口 + 评审落地流」——定义 Registry
-    结构与主权清单，并让社区/退休专家/晶圆厂经统一入口流入真实 PDK 数据与
-    harness 提案；
+  - 本模块是生态共建的「地基接口 + 提交入口 + 评审落地流 + 发布」——定义
+    Registry 结构与主权清单，并让社区/退休专家/晶圆厂经统一入口流入真实 PDK
+    数据与 harness 提案；
   - **不实际对接晶圆厂 NDA-PDK**（属发动期事项，D-62 联动，暂缓）；
     真实 PDK 数据只经提交入口登记，不在此硬编码；
   - harness 提案经「具名人工评审（LLM 不进判决路径）→ 确定性自测门禁 →
-    落地注册」闭环；落库(live) ≠ 进版本控制，权威 ORACLE 以维护者 git 提交
+    落地注册 → 发布（补丁+Release Notes 草稿）」端到端闭环；落库(live) ≠
+    进版本控制、发布(git apply)由维护者执行，权威 ORACLE 以维护者 git 提交
     （开放评审流）为准。
 
 许可证纪律：Registry 仅存元数据（器件几何/工艺参数/来源），不依赖

@@ -4,10 +4,10 @@
     "candidate": "ReferenceCandidate",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）"
   },
-  "generated_at": "2026-08-21T13:18:06",
+  "generated_at": "2026-08-24T21:02:18",
   "summary": {
-    "total": 13,
-    "passed": 13
+    "total": 18,
+    "passed": 18
   },
   "results": [
     {
@@ -62,6 +62,61 @@
       "golden": 0.0316227766016838,
       "candidate": 0.0316227766016838,
       "tol": 0.1,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B14",
+      "metric": "L_3dB_um",
+      "oracle": "analytical(beat-length)",
+      "source": "physical-law",
+      "golden": 15.499999999999918,
+      "candidate": 15.499999999999918,
+      "tol": 0.5,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B15",
+      "metric": "lambda_B_um",
+      "oracle": "analytical(Bragg condition)",
+      "source": "physical-law",
+      "golden": 1.5504,
+      "candidate": 1.5504,
+      "tol": 0.01,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B16",
+      "metric": "L_mmi_um",
+      "oracle": "design-rule(general-interference)",
+      "source": "physical-law",
+      "golden": 18.58064516129032,
+      "candidate": 18.58064516129032,
+      "tol": 3.0,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B17",
+      "metric": "I_c_A",
+      "oracle": "analytical(Josephson relation)",
+      "source": "physical-law",
+      "golden": 4.026709074502098e-08,
+      "candidate": 4.026709074502098e-08,
+      "tol": 1e-09,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B18",
+      "metric": "F_purcell",
+      "oracle": "analytical(cavity-QED)",
+      "source": "physical-law",
+      "golden": 8000.000000000001,
+      "candidate": 8000.000000000001,
+      "tol": 1.0,
       "passed": true,
       "note": "确定性物理定律/解析解"
     },

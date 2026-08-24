@@ -207,7 +207,16 @@
             "directed": false
           }
         ],
-        "foundry_hints": []
+        "foundry_hints": [],
+        "physics": {
+          "bid": "B9",
+          "kind": "transmon-f01",
+          "spec_params": {
+            "E_J": 20.0,
+            "E_C": 0.3
+          },
+          "anchor": "Koch2007 解析色散近似 f01=√(8·E_J·E_C)−E_C（GHz）；严格侧=D-35 transmon 哈密顿量对角化"
+        }
       }
     ],
     "nets": [],

@@ -64,6 +64,14 @@
 - **完整生命周期落地**：提案 → 具名人工评审 → 确定性自测 → 落地（自动纳入统一回归）→ 发布（补丁+Release Notes 草稿）→ 维护者 git 合并。
 - 新增 `run_ecosystem_publish_smoke.py`（12/12 PASS）、`run_ecosystem_d98_report.py`（10/10，产出 `lda/reports/ecosystem_d98.json`）；D-93~D-97 smoke 回归全绿。
 
+### 维护（v0.6.1 · D-99 生态共建收官维护 · 2026-08-24）
+- **生态共建（D-93~D-98）收官基线**：「提交→评审→落地→发布」全链闭环，五十六面板。
+- **CI core 门禁覆盖生态链**：`run_ci_regression.py` `CORE_SMOKES` 新增三 smoke——`run_ecosystem_smoke.py`（harness B1-B18 + 主权 A/B/C + Registry 自检）/ `run_ecosystem_submit_smoke.py`（提交入口）/ `run_ecosystem_publish_smoke.py`（评审→落地→发布全链）；CI 门禁（`--tag core`）从此覆盖共建链；文件头陈旧 "B1-B13"→"B1-B18"。
+- **模块文档同步**：`lda_pdk/__init__.py` docstring 补齐 D-96/D-97/D-98（门槛扩展/ReviewPolicy 策略/批量评审/端到端发布）。
+- **一致性审计**：面板 56 = README 五十六面板 ✓；README 无陈旧当前态计数（历史记录保留）✓。
+- 新增维护回归报告 `lda/reports/ci_regression_core_v061.json`（CI core 全量，含生态链）。
+- **维护回归结果：30 PASS / 0 SKIP / 0 FAIL（281.43s）全绿**。🔴 环境结论：managed base python（3.13.12）缺 `scipy`/`jsonschema`，core 集 11 项旧 smoke 因此瞬时 FAIL——非代码回归；以装齐依赖的 venv（`~/.workbuddy/binaries/python/envs/default`，scipy 1.17.1 + jsonschema 4.26.0）运行即全绿。CI/本机跑 core 集须确保 scipy+jsonschema 可用。
+
 ### 新增/变更（post-v0.5 · D-84~D-89 全量 · 详见下方 v0.5 详细记录）
 
 ## v0.5（2026-08-23 · git tag v0.5 · 系统级里程碑）

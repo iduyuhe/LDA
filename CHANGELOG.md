@@ -102,6 +102,14 @@
 - **维护回归：CI core 31 PASS / 0 SKIP / 0 FAIL（279.56s）全绿**，报告 `ci_regression_core_v064.json`。
 - **维护结论**：v0.6.3+ 全绿；WebUI 字段漂移现可被 CI 捕获（删除/改名即 FAIL）。
 
+### 维护（v0.6.7 · D-105 持续维护 · L1 协议层全链路门禁 + 环境一致性 · 2026-08-25）
+- **未覆盖模块盘点（D-104 之后的深审）**：发现 `run_agent.py`（L1 agent 协议层 CLI 演示，白皮书 §12「人操作壳 → agent 操作接口」翻译层最小可跑实证）的 KernelGateway 全链路路径**无 smoke 覆盖**——run_mcp_smoke 只覆盖 MCP 工具路径（verify_design/list_benchmarks），CLI 路径（L0 IR 驱动 + 三种 candidate + benchmarks 过滤）此前零门禁。
+- **新门禁（实质增量）**：新增 `run_l1_agent_smoke.py`（6/6 PASS，库方式走同一 KernelGateway）——①reference 21/21（B1-B18 + E1-E3 双 ground，实证锚注入生效）；②perturbed(rel=0.10) 6/21 抓 FAIL；③l3_ai 18/21 法官抓 FAIL（LLM 候选被死标量驳回）；④list_benchmarks 21 题；⑤benchmarks 过滤 B1,B2,B4 → 3/3；⑥L0 IR 驱动（l0_demo_ring.json）→ 2/2。**纳入 CORE_SMOKES（33→34 条）**。
+- **环境一致性核验**：requirements.txt 必装 3 包（numpy/scipy/jsonschema）与 venv 全齐（numpy 2.4.6 / scipy 1.17.1 / jsonschema 4.26.0）；可选包（numba/torch/matplotlib/pandas/networkx/tqdm）注释标注完整，venv 安装状态与语义一致。
+- **残留扫描**：无未跟踪诊断残留（zz/bad/tmp/diag 类归零）。
+- **维护回归：CI core 34 PASS / 0 SKIP / 0 FAIL**，报告 `ci_regression_core_v067.json`。
+- **维护结论**：v0.6.6+ 全绿；L1 协议层（MCP + CLI 双路径）现受 core 门禁双覆盖。
+
 ### 维护（v0.6.6 · D-104 持续维护 · D-62 收官后全量回归 + 一致性深审 · 2026-08-25）
 - **D-62 收官后 all 集全量回归（最强门禁）**：`run_ci_regression.py --tag all`（标准 venv）覆盖 **72 项 smoke**（D-01~D-103 全部资产 + WebUI 路由层 + 实证锚）→ **72 PASS / 0 SKIP / 0 FAIL**，报告 `ci_regression_all_v066.json`——实证锚收官后全项目零回归。
 - **一致性深审（实证锚键集核验）**：`golden._GOLDEN_DISPATCH` 18 ⊂ `BENCHMARK_DEFS` 21（E1-E3 设计上不走 dispatch）；E 题三条消费路径全部正确——①`VerificationHarness` 有 anchor 时 21/21 PASS、无 anchor 时诚实降级（`empirical-missing` 不判 PASS）；②`verification_adapters.build_harness_specs` 实证锚走 `EmpiricalAnchor.resolve`（seed + 社区增量）；③`lda_ir/bridge.py` 对 E 题 `golden_with_source` 的 KeyError 有 try-except 兜底（error 行不崩溃）。**无路径可误触发**。

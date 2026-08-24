@@ -35,7 +35,8 @@ _LDA_ROOT = _HERE          # 本脚本位于 lda/（包根）
 CORE_SMOKES: List[str] = [
     # 裁判 + 标准题
     "run_harness.py",                        # B1-B13 物理定律锚 + E1-E3 实证锚（21 题）
-    "run_mcp_smoke.py",                      # L1 协议层（agent 链路 + MCP 工具，D-104 入 core）
+    "run_mcp_smoke.py",                      # L1 协议层（MCP 工具路径，D-104 入 core）
+    "run_l1_agent_smoke.py",                 # L1 协议层全链路（KernelGateway + L0 IR + candidate，D-105 入 core）
     # IR / 谱形 / 环形（纯 numpy）
     "run_ir_d05_smoke.py", "run_ir_ring_smoke.py", "run_ir_spec_smoke.py",
     "run_spectrum_loop_smoke.py", "run_ring_fdtd_smoke.py",

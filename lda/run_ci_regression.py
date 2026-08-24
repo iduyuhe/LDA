@@ -1,6 +1,6 @@
 """D-77 · 验证合约工业化 —— 持续集成全量回归统一入口。
 
-把 LDA 全部验证（70 个 run_*smoke*.py + run_harness.py B1-B18）收敛到
+把 LDA 全部验证（72 个 run_*smoke*.py + run_harness.py B1-B18+E1-E3）收敛到
 **一条命令、一份机器可读报告**——降低社区协作门槛（新贡献者/第三方跑
 `python run_ci_regression.py` 即可看全量回归红绿），对齐 D-04 三套裁判统一。
 
@@ -34,7 +34,8 @@ _LDA_ROOT = _HERE          # 本脚本位于 lda/（包根）
 # wdm_coupler 标定等）走 --tag all 在本机/venv 跑。
 CORE_SMOKES: List[str] = [
     # 裁判 + 标准题
-    "run_harness.py",                        # B1-B13 物理定律锚
+    "run_harness.py",                        # B1-B13 物理定律锚 + E1-E3 实证锚（21 题）
+    "run_mcp_smoke.py",                      # L1 协议层（agent 链路 + MCP 工具，D-104 入 core）
     # IR / 谱形 / 环形（纯 numpy）
     "run_ir_d05_smoke.py", "run_ir_ring_smoke.py", "run_ir_spec_smoke.py",
     "run_spectrum_loop_smoke.py", "run_ring_fdtd_smoke.py",

@@ -90,7 +90,16 @@ class KernelGateway:
 
     def __init__(self, defs=None, out_dir="reports_l1"):
         self.defs = defs or BENCHMARK_DEFS
-        self.harness = VerificationHarness(self.defs)
+        # D-62 实证锚注入：L1 agent 验证链路默认携带第二道非 AI ground
+        # （seed_empirical.json + 社区落库增量 empirical_contributions.json）。
+        # 语料缺失/损坏时 anchor=None → E 题诚实降级（empirical-missing 不判 PASS）。
+        anchor = None
+        try:
+            from lda_harness.verification_adapters import _load_empirical_anchor
+            anchor = _load_empirical_anchor()
+        except Exception:
+            anchor = None
+        self.harness = VerificationHarness(self.defs, anchor=anchor)
         self.out_dir = out_dir
 
     # ---- candidate 构造（L3 接口适配）---------------------------------

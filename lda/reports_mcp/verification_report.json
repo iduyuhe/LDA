@@ -5,10 +5,10 @@
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "via": "L1 KernelGateway"
   },
-  "generated_at": "2026-08-24T21:30:24",
+  "generated_at": "2026-08-25T05:30:47",
   "summary": {
-    "total": 18,
-    "passed": 15
+    "total": 21,
+    "passed": 18
   },
   "results": [
     {
@@ -208,6 +208,39 @@
       "tol": 0.05,
       "passed": false,
       "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "E1",
+      "metric": "n_eff",
+      "oracle": "empirical-measurement(E-SOI-NEFF-220)",
+      "source": "empirical-measurement",
+      "golden": 2.63,
+      "candidate": 2.63,
+      "tol": 0.02,
+      "passed": true,
+      "note": "IMEC iSiPP50G 公开 PDK（文献量级） | iSiPP50G PDK published specs | σ=0.02 | tol=0.02"
+    },
+    {
+      "id": "E2",
+      "metric": "n_eff",
+      "oracle": "empirical-measurement(E-SIN-NEFF-300)",
+      "source": "empirical-measurement",
+      "golden": 1.53,
+      "candidate": 1.53,
+      "tol": 0.02,
+      "passed": true,
+      "note": "公开 SiN 工艺文献量级 | SiN photonics published data | σ=0.02 | tol=0.02"
+    },
+    {
+      "id": "E3",
+      "metric": "FSR_nm",
+      "oracle": "empirical-measurement(E-RING-FSR)",
+      "source": "empirical-measurement",
+      "golden": 9.15,
+      "candidate": 9.15,
+      "tol": 0.1,
+      "passed": true,
+      "note": "环形谐振器公开测试数据 | ring resonator published measurement | σ=0.1 | tol=0.1"
     }
   ]
 }

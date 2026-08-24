@@ -102,6 +102,14 @@
 - **维护回归：CI core 31 PASS / 0 SKIP / 0 FAIL（279.56s）全绿**，报告 `ci_regression_core_v064.json`。
 - **维护结论**：v0.6.3+ 全绿；WebUI 字段漂移现可被 CI 捕获（删除/改名即 FAIL）。
 
+### 维护（v0.6.6 · D-104 持续维护 · D-62 收官后全量回归 + 一致性深审 · 2026-08-25）
+- **D-62 收官后 all 集全量回归（最强门禁）**：`run_ci_regression.py --tag all`（标准 venv）覆盖 **72 项 smoke**（D-01~D-103 全部资产 + WebUI 路由层 + 实证锚）→ **72 PASS / 0 SKIP / 0 FAIL**，报告 `ci_regression_all_v066.json`——实证锚收官后全项目零回归。
+- **一致性深审（实证锚键集核验）**：`golden._GOLDEN_DISPATCH` 18 ⊂ `BENCHMARK_DEFS` 21（E1-E3 设计上不走 dispatch）；E 题三条消费路径全部正确——①`VerificationHarness` 有 anchor 时 21/21 PASS、无 anchor 时诚实降级（`empirical-missing` 不判 PASS）；②`verification_adapters.build_harness_specs` 实证锚走 `EmpiricalAnchor.resolve`（seed + 社区增量）；③`lda_ir/bridge.py` 对 E 题 `golden_with_source` 的 KeyError 有 try-except 兜底（error 行不崩溃）。**无路径可误触发**。
+- **修复（D-62 适配 · 实质增量）**：`lda_l1/protocol.py` `KernelGateway.__init__` 注入实证锚（`_load_empirical_anchor`：seed + 社区增量）——L1 agent 验证链路默认携带第二道非 AI ground，`verify_design` reference 恢复 **21/21 PASS**（此前无 anchor → E 题诚实降级 18/21）；🔴 根因：D-62 新增 E1-E3 后 MCP smoke 断言未同步，且 `run_mcp_smoke.py` 不在 CORE_SMOKES（L1 协议层未被 core 门禁覆盖）→ all 集才捕获。**门禁改进**：`run_mcp_smoke.py` 纳入 CORE_SMOKES（33 条），L1 协议层此后受 core 门禁保护。
+- **计数修复**：`_discover_all` 实际 72 项 → README「自动发现 70 smoke」→72、`run_ci_regression` 头部「70 个」→「72 个」（D-62 新增 `run_empirical_anchor_smoke.py` 后未同步）；README 当前态陈旧引用修复（模块列表/⑩ 章节 18→21 题、⑫ 章节五十六→五十七面板）。
+- **任务台账清理**：16 项历史遗留任务（D-74~D-86 期间实际已交付但状态滞留的 in_progress/pending）标记 completed——台账与 D-01~D-103 全部收官事实对齐。
+- **维护结论**：v0.6.5（实证锚收官）后全项目在标准 venv 环境零失败；72 项 smoke 全量门禁为最强基线。
+
 ### 新增/变更（post-v0.5 · D-84~D-89 全量 · 详见下方 v0.5 详细记录）
 
 ## v0.5（2026-08-23 · git tag v0.5 · 系统级里程碑）

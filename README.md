@@ -2,7 +2,7 @@
 
 > LDA（Lightwave Design Agent）= 光子芯片(PDA) + 量子芯片(QEDA) 的开源、主权、Agent-native 设计软件。
 > 核心主张：**底层核心求解器由 AI agent 递归自举开发**，人类做架构与验证，AI 不进入判决路径。
-> 当前版本：**v0.6**（2026-08-24 · 3D 逆设计纵深 + QEDA 求解器级补强：破 3D 诚实边界（3D Yee 显式转置伴随 Mᵀ 1e-15 → 3D 截面 → 3D 端口验收 → 谱形×3D → 3D numba 性能 20×+）+ transmon-resonator 色散读出三能级严格求解（α 修正必要性 31×）+ 五十面板）
+> 当前版本：**v0.6**（2026-08-24 · 3D 逆设计纵深 + QEDA 求解器级补强：破 3D 诚实边界（3D Yee 显式转置伴随 Mᵀ 1e-15 → 3D 截面 → 3D 端口验收 → 谱形×3D → 3D numba 性能 20×+）+ transmon-resonator 色散读出三能级严格求解（α 修正必要性 31×）+ QEDA 纵深三件套（多能级展开收敛 / Rabi+AC Stark / 读出串扰 ZZ 耦合）+ 五十一面板）
 
 ## 这是什么
 
@@ -86,12 +86,13 @@ L4  统一交付          lda_design/ 设计包规范（DesignPackage schema v0.
 | D-87 | **谱形目标 × 3D 截面（多波长加权联合）** | 2D 谱形/多波长目标扩展到 3D：**物理网格固定只变 omega**（归一化网格陷阱免疫）+ **多波长加权联合梯度**（分块归一化 w/h 各自尺度）+ 全波长线搜索：加权 imp **3.13×**（逐波长 3.18×/3.15×/3.06× 三波长同向 ≥3×）、联合梯度 **4.2e-4**、DRC 双界全过；smoke 5/5 |
 | D-89 | **3D adjoint numba 化性能升维（突破 3D 域规模天花板）** | 3D Yee 核 + 显式转置反向 **prange 并行 JIT**（`backend` 参数 auto/numba/numpy，**无 numba 自动回退**）：forward 加速 **44 域 8-11× / 64 域 17-21× / 80 域 22-29×（最大域 ≥20×）**，与 numpy **bit-level 一致（FOM rel ≤ 3.7e-16）**；优化链路 64 域 **4.4-5.2×**（imp 完全一致）；梯度 2-5×；smoke 6/6（含 numba 一致性 + 回退） |
 | D-88 | **QEDA 求解器级补强 · transmon-resonator 色散读出（量子蓝海占位）** | 三能级 transmon + Fock 谐振器**联合严格对角化**（D-43 二能级 JC 升级，引入 |f⟩ 态非谐性）：**真实色散 χ=g²α/(Δ(Δ+α))**（Blais 修正）↔ 数值 rel **2.5%**，二能级近似 rel 77.5%（**α 修正必要性 31×**，χ 为负即非谐性标志）；输出 **n_crit / Purcell 率 / AC Stark / 拉比自洽**（0.02%）；smoke 3/3（含色散区失效负例） |
+| D-91 | **QEDA 纵深三件套（多能级展开 · 驱动场 · 读出串扰）** | ①多能级电荷基底展开：χ 3→6 能级**收敛 0.495%**（<1% 证明三能级自洽）+ Blais 解析 rel 1.98%；②驱动场 RWA：共振 **Rabi 自洽 rel 0** + 失谐 **AC Stark Ω²/4δ 对拍 rel 0.39%**；③多 qubit 读出串扰：共享谐振器媒介 **ZZ 耦合 J_zz=0.000831 GHz**（g=0 自洽 + 互换对称 rel 0 + |J_zz/χ|=0.369 弱耦合）；smoke 4/4（含驱动强场 + 串扰简并负例） |
 
-## WebUI（五十面板，设计闭环可视化）
+## WebUI（五十一面板，设计闭环可视化）
 
 LDA 自带零依赖 WebUI（`python lda/lda_webui/deploy.py start`，默认 `http://127.0.0.1:8787`），首屏自动演示全部闭环：
 
-`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM（标定库驱动：gap/波长/全网格三模式）` `㉗方向耦合器×量子读出（分束网络供电控制线）` `㉘分束网络×WDM（解复用→每信道分束树）` `㉙伴随法拓扑逆设计（主权 adjoint FDTD）` `㉚逆设计接入设计→验证引擎（method=adjoint）` `㉛真实版图基元库（foundry-ready）` `㉜端口 S 参数验收（MMI 2D FDTD + ORACLE 对拍）` `㉝3D 端口 S 参数验收（SOI 220nm · numba 核）` `㉞光栅耦合器端口验收（光栅方程 ORACLE）` `㉟真实基元接入设计流水线（Track B 收口）` `㊱热光可调 WDM（热光相位 shifter + 物理定律锚）` `㊲量子门/纠错拓扑（surface code + cross-resonance）` `㊳大规模系统基准（WDM 8×qubit 8 联合压测 + 容量/IL/间隔/网格边界）` `㊴L0 IR 开放标准（规范+JSON Schema 零漂移校验）` `㊵验证合约工业化（CI 全量回归 + 性能基准）` `㊶谱形目标逆设计（分束比/模式匹配/多波长谱形 FOM）` `㊷形状逆设计 + 多目标联合（宽度曲线控制点 + Pareto 前端）` `㊸形状+拓扑混合逆设计（分层表达：形状主干 + 拓扑微调带）` `㊹混合×多波长加权联合（参数化×目标矩阵全打通）` `㊺3D adjoint 形状逆设计（3D Yee 显式转置伴随）` `㊻3D 截面形状逆设计（宽度 × 厚度双软边界）` `㊼3D 逆设计 × 端口 S 参数联合验收（双独立确认）` `㊽谱形目标 × 3D 截面（多波长加权联合）` `㊾3D adjoint numba 性能基准（大域 20×+）` `㊿QEDA 求解器级补强 · transmon-resonator 色散读出（三能级严格求解）`
+`①求解器验收` `②1D FDTD` `③Mie` `④FDFD` `⑤耦合器验收` `⑥统一 IR` `⑦TMM` `⑧B 基准题` `⑨版图流水线` `⑩Bootstrap` `⑪多层验证` `⑫对抗基准` `⑬器件库（含量子双验证）` `⑭设计→验证闭环` `⑮环形 add-drop 产品链路` `⑯agent 逆设计框架` `⑰量子逆设计闭环` `⑱WDM 多环系统` `⑲readout 混合链路` `⑳统一设计包` `㉑N-qubit 频率复用读出` `㉒单发读出保真度预算` `㉓N-qubit 逐 qubit 保真度` `㉔WDM×readout 混合巨型系统` `㉕方向耦合器设计闭环` `㉖耦合器×WDM（标定库驱动：gap/波长/全网格三模式）` `㉗方向耦合器×量子读出（分束网络供电控制线）` `㉘分束网络×WDM（解复用→每信道分束树）` `㉙伴随法拓扑逆设计（主权 adjoint FDTD）` `㉚逆设计接入设计→验证引擎（method=adjoint）` `㉛真实版图基元库（foundry-ready）` `㉜端口 S 参数验收（MMI 2D FDTD + ORACLE 对拍）` `㉝3D 端口 S 参数验收（SOI 220nm · numba 核）` `㉞光栅耦合器端口验收（光栅方程 ORACLE）` `㉟真实基元接入设计流水线（Track B 收口）` `㊱热光可调 WDM（热光相位 shifter + 物理定律锚）` `㊲量子门/纠错拓扑（surface code + cross-resonance）` `㊳大规模系统基准（WDM 8×qubit 8 联合压测 + 容量/IL/间隔/网格边界）` `㊴L0 IR 开放标准（规范+JSON Schema 零漂移校验）` `㊵验证合约工业化（CI 全量回归 + 性能基准）` `㊶谱形目标逆设计（分束比/模式匹配/多波长谱形 FOM）` `㊷形状逆设计 + 多目标联合（宽度曲线控制点 + Pareto 前端）` `㊸形状+拓扑混合逆设计（分层表达：形状主干 + 拓扑微调带）` `㊹混合×多波长加权联合（参数化×目标矩阵全打通）` `㊺3D adjoint 形状逆设计（3D Yee 显式转置伴随）` `㊻3D 截面形状逆设计（宽度 × 厚度双软边界）` `㊼3D 逆设计 × 端口 S 参数联合验收（双独立确认）` `㊽谱形目标 × 3D 截面（多波长加权联合）` `㊾3D adjoint numba 性能基准（大域 20×+）` `㊿QEDA 求解器级补强 · transmon-resonator 色散读出（三能级严格求解）` `51 QEDA 纵深三件套（多能级展开 · 驱动场 Rabi/AC Stark · 读出串扰 ZZ 耦合）`
 
 ## PDK 标定库（真实 FDTD 实测沉淀，设计时秒级加载）
 
@@ -123,7 +124,7 @@ lda/                     核心软件包（主权求解器 + agent + 设计引�
   lda_ir/                统一 IR（光子+量子，schema v0.3，PhysicsAnchor）
   lda_l2/                器件库（已验证资产）+ GDS 编码器 + DRC + 版图仿真
   lda_harness/           确定性比对裁判（13 标准题物理定律锚 B1-B13）
-  lda_webui/             零依赖 WebUI（五十面板）
+  lda_webui/             零依赖 WebUI（五十一面板）
   run_ci_regression.py   验证合约工业化·全量回归统一入口（D-77，自动发现 63 smoke）
   run_perf_bench.py      求解器性能基准（D-77，numba/GPU 加速比 + 基线漂移监控）
   run_perf_adjoint3d.py  3D adjoint numba 性能基准（D-89，大域 forward ≥20× + bit-level 一致性）

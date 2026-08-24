@@ -310,6 +310,12 @@
 - **工程坑**：三能级低能谱顺序 |g,0⟩<|e,0⟩<|g,1⟩<|f,0⟩<|e,1⟩——固定索引错取态（χ 假值 -1.94）→ **最近能量匹配**提取四态
 - **文档/UI**：README D-88 行 + 四十九→五十面板 + ㊿ 清单；WebUI ㊿ 面板 + `/api/qubit_resonator`；D-77 回归 9 PASS 零影响
 
+#### D-91 · QEDA 纵深三件套（2026-08-24，QEDA 求解器栈纵深）
+- **核**：`lda_solver/qeda_depth_solver.py`——①**多能级电荷基底展开**（`tls_spectrum_L`：L 能级 E_s=s·f_q+s(s-1)/2·α + 耦合矩阵元 √(s+1) + Fock 谐振器严格对角化，χ 收敛性验证）；②**驱动场 Rabi/AC Stark**（`rwa_spectrum`：RWA 静态哈密顿 H=−(δ/2)σz+(Ω/2)σx）；③**多 qubit 读出串扰**（`twoq_resonator_spectrum`：2 transmon 异频 + 共享谐振器，`_jzz_from_spectrum`：J_zz=(E_ee−E_eg−E_ge+E_gg)/2）
+- **实测**：①χ(L=3)=−0.002251→L=6=−0.002262（**收敛 0.495%** <1% + Blais 解析 rel 1.98%）；②共振 **Rabi rel 0.0000**、失谐 **AC Stark 0.001556 vs 解析 0.001563（rel 0.39%）**；③**J_zz=0.000831 GHz**、g=0 自洽 −4.4e-16、**互换对称 rel 0**、|J_zz/χ|=0.369 弱耦合；smoke 4/4（标准点 + 不同参数 + 驱动强场负例 + 串扰简并负例）；量子链回归全绿；报告 `reports/qeda_depth_d91.json`
+- **工程坑**：双 qubit 同频简并使最近匹配态标记错乱（χ1 假值 −0.0107 vs 单 qubit −0.00225）→ **异频打破简并 + ZZ 耦合提取**（无需谐振器态标记）；驱动强场 Ω/δ_d>1 时 AC Stark 弱驱动近似失效 → 负例诚实捕获
+- **文档/UI**：README D-91 行 + 五十→五十一面板 + 面板 51 清单；WebUI 面板 51 + `/api/qeda_depth`；D-77 回归 9 PASS 零影响
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

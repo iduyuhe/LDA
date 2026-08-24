@@ -1,0 +1,89 @@
+{
+  "convergence": {
+    "chi_by_level": {
+      "3": -0.002250814,
+      "4": -0.002261948,
+      "5": -0.002261958,
+      "6": -0.002261958
+    },
+    "chi_3level": -0.002250814,
+    "chi_maxlevel": -0.002261958,
+    "conv_rel_3_to_max": 0.00495135173535574,
+    "chi_analytic_3level_ghz": -0.002307692,
+    "chi_analytic_rel_err": 0.0198181478870785,
+    "converged": true,
+    "acceptance": {
+      "passed": true,
+      "checks": {
+        "convergence_3_to_max_le_1pct": true,
+        "chi_matches_blais_3level_le_10pct": true
+      }
+    }
+  },
+  "drive": {
+    "rabi_freq_ghz": 0.05,
+    "omega_ghz": 0.05,
+    "rabi_self_rel_err": 0.0,
+    "ac_stark_num_ghz": 0.001556444,
+    "ac_stark_analytic_ghz": 0.0015625,
+    "ac_stark_rel_err": 0.0038760272207405376,
+    "delta_d_ghz": 0.4,
+    "omega_over_delta": 0.125,
+    "passed": true,
+    "acceptance": {
+      "passed": true,
+      "checks": {
+        "rabi_self_consistency_le_1pct": true,
+        "ac_stark_analytic_le_10pct": true
+      }
+    }
+  },
+  "crosstalk": {
+    "jzz_coupling_ghz": 0.000830857,
+    "jzz_zero_coupling": -0.0,
+    "symmetry_swap_rel_err": 1.7103723393574763e-11,
+    "ratio_jzz_over_chi": 0.36913625329433936,
+    "chi_ref_ghz": 0.002250814,
+    "f_q1": 5.0,
+    "f_q2": 5.2,
+    "f_r": 6.0,
+    "g1": 0.1,
+    "g2": 0.08,
+    "passed": true,
+    "acceptance": {
+      "passed": true,
+      "checks": {
+        "self_consistency_g0_jzz0": true,
+        "swap_symmetry_le_1pct": true,
+        "mediator_weaker_than_direct": true
+      }
+    }
+  },
+  "passed": true,
+  "acceptance": {
+    "passed": true,
+    "checks": {
+      "level_convergence_3_to_max_le_1pct": true,
+      "rabi_self_consistency": true,
+      "ac_stark_analytic": true,
+      "crosstalk_self_consistency": true,
+      "crosstalk_swap_symmetry": true,
+      "crosstalk_mediator_weaker_than_direct": true
+    }
+  },
+  "verdict": "QEDA 纵深三件套全过：多能级展开收敛 + Rabi/AC Stark 解析锚 + 读出串扰 ZZ 耦合自洽",
+  "elapsed_s": 0.02,
+  "ok": true,
+  "title": "D-91 QEDA 纵深三件套（多能级展开 / 驱动场 / 读出串扰）",
+  "note": "①多能级电荷基底展开：χ 3→6 能级收敛 <1% 证明三能级模型自洽；②驱动场 RWA：共振 Rabi 自洽 + 失谐 AC Stark 解析对拍；③共享谐振器媒介 ZZ 耦合：自洽 + 互换对称 + 弱耦合量级。",
+  "design": {
+    "f_q_ghz": 5.0,
+    "alpha_ghz": -0.3,
+    "f_r_ghz": 6.0,
+    "g_ghz": 0.1,
+    "Omega_ghz": 0.05,
+    "delta_d_ghz": 0.4,
+    "f_q2_ghz": 5.2,
+    "g2_ghz": 0.08
+  }
+}

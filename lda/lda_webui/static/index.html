@@ -876,6 +876,24 @@
     <div class="conclusion" id="qrConclusion"></div>
   </div>
 
+  <div class="sec" id="sec-qeda-depth">
+    <h3>51 QEDA 纵深三件套（多能级展开 · 驱动场 Rabi/AC Stark · 读出串扰 ZZ 耦合）</h3>
+    <div class="row">
+      <label>f_q:<input id="qdFq" value="5.0" size="4"></label>
+      <label>α:<input id="qdAlpha" value="-0.3" size="4"></label>
+      <label>f_r:<input id="qdFr" value="6.0" size="4"></label>
+      <label>g:<input id="qdG" value="0.1" size="4"></label>
+      <label>Ω:<input id="qdOm" value="0.05" size="4"></label>
+      <label>δd:<input id="qdDd" value="0.4" size="4"></label>
+      <label>f_q2:<input id="qdFq2" value="5.2" size="4"></label>
+      <label>g2:<input id="qdG2" value="0.08" size="4"></label>
+      <button class="btn" id="runQd">QEDA 纵深求解</button>
+    </div>
+    <div id="qdSummary" class="summary"></div>
+    <div id="qdBody"></div>
+    <div class="conclusion" id="qdConclusion"></div>
+  </div>
+
   <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
@@ -2810,6 +2828,46 @@ async function runQr(){
   } finally { btn.disabled = false; }
 }
 $('runQr').onclick = runQr;
+
+// ---- 51 D-91 QEDA 纵深三件套（多能级展开 · 驱动场 · 读出串扰）----
+async function runQd(){
+  const btn = $('runQd'); btn.disabled = true;
+  $('qdSummary').innerHTML = '<span class="spin"></span> QEDA 纵深三件套（多能级收敛 + 驱动场 + 串扰 ZZ 耦合）运行中…';
+  const payload = {
+    f_q: $('qdFq').value, alpha: $('qdAlpha').value, f_r: $('qdFr').value,
+    g: $('qdG').value, Omega: $('qdOm').value, delta_d: $('qdDd').value,
+    f_q2: $('qdFq2').value, g2: $('qdG2').value
+  };
+  try {
+    const d = await postJson('/api/qeda_depth', payload);
+    const passed = d.acceptance ? d.acceptance.passed : false;
+    const c = d.convergence||{}, dr = d.drive||{}, x = d.crosstalk||{};
+    $('qdSummary').innerHTML = `QEDA 纵深三件套：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（收敛 ${c.conv_rel_3_to_max!=null?(c.conv_rel_3_to_max*100).toFixed(2)+'%':'?'} · Rabi rel ${dr.rabi_self_rel_err!=null?(dr.rabi_self_rel_err*100).toFixed(2)+'%':'?'} · J_zz=${x.jzz_coupling_ghz!=null?x.jzz_coupling_ghz.toFixed(6)+' GHz':'?'}）`;
+    const chk = (d.acceptance?d.acceptance.checks:[]).map(c2=>`<tr><td>${c2.name}</td><td class="${c2.ok?'ok':'fail'}">${c2.ok?'✓':'✗'}</td><td>${escapeHtml(c2.detail)}</td></tr>`).join('');
+    $('qdBody').innerHTML = `
+      <div class="subhead">① 多能级电荷基底展开（色散读出收敛性）</div>
+      <table class="tbl"><tbody>
+        <tr><td>χ(L=3) → χ(L=6)</td><td class="ok">${c.chi_3level!=null?c.chi_3level.toFixed(6):'?'} → ${c.chi_maxlevel!=null?c.chi_maxlevel.toFixed(6):'?'} GHz（变化 ${c.conv_rel_3_to_max!=null?(c.conv_rel_3_to_max*100).toFixed(2)+'%':'?'} < 1% 收敛）</td></tr>
+        <tr><td>Blais 修正解析对拍</td><td class="ok">rel ${c.chi_analytic_rel_err!=null?(c.chi_analytic_rel_err*100).toFixed(1)+'%':'?'} ≤ 10%</td></tr>
+      </tbody></table>
+      <div class="subhead">② 驱动场 Rabi / AC Stark（RWA）</div>
+      <table class="tbl"><tbody>
+        <tr><td>共振 Rabi 频率</td><td class="ok">${dr.rabi_freq_ghz!=null?dr.rabi_freq_ghz.toFixed(6)+' GHz':'?'}（=Ω=${dr.omega_ghz!=null?dr.omega_ghz.toFixed(4):'?'}，rel ${dr.rabi_self_rel_err!=null?(dr.rabi_self_rel_err*100).toFixed(2)+'%':'?'} ≤1%）</td></tr>
+        <tr><td>AC Stark 频移（失谐 δ_d=${dr.delta_d_ghz!=null?dr.delta_d_ghz.toFixed(2):'?'}）</td><td class="ok">数值 ${dr.ac_stark_num_ghz!=null?dr.ac_stark_num_ghz.toFixed(6):'?'} vs 解析 Ω²/4δ ${dr.ac_stark_analytic_ghz!=null?dr.ac_stark_analytic_ghz.toFixed(6):'?'} GHz（rel ${dr.ac_stark_rel_err!=null?(dr.ac_stark_rel_err*100).toFixed(2)+'%':'?'} ≤10%）</td></tr>
+      </tbody></table>
+      <div class="subhead">③ 多 qubit 读出串扰（共享谐振器媒介 ZZ 耦合）</div>
+      <table class="tbl"><tbody>
+        <tr><td>J_zz（f_q1=${x.f_q1!=null?x.f_q1:'?'} vs f_q2=${x.f_q2!=null?x.f_q2:'?'}）</td><td class="ok">${x.jzz_coupling_ghz!=null?x.jzz_coupling_ghz.toFixed(6)+' GHz':'?'}（g=0 自洽 ${x.jzz_zero_coupling!=null?x.jzz_zero_coupling.toExponential(1):'?'}≈0）</td></tr>
+        <tr><td>互换对称性 / 量级</td><td>对称 rel ${x.symmetry_swap_rel_err!=null?(x.symmetry_swap_rel_err*100).toFixed(2)+'%':'?'} ≤1% · |J_zz/χ|=${x.ratio_jzz_over_chi!=null?x.ratio_jzz_over_chi.toFixed(3):'?'} < 1（媒介耦合弱于直接色散）</td></tr>
+      </tbody></table>
+      <div class="subhead">死标量验收</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
+    $('qdConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+  } catch(e){
+    $('qdSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runQd').onclick = runQd;
 
 // ---- ㊽ D-87 谱形目标 × 3D 截面（多波长加权联合）----
 async function runSp(){

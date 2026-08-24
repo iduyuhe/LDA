@@ -17,6 +17,15 @@
 - **WebUI 升级至五十三面板**：新增面板 53「生态共建框架」（D-93），后端 `/api/ecosystem` 暴露 harness(B1-B18)+主权 A/B/C+Registry 自检快照（验收 4/4 PASS）。
 - 新增 `run_ecosystem_smoke.py`（4/4 PASS：harness 18/18、B14-B18 扰动 fail 检测 5/5、主权 A/B/C、Registry 接口自洽）；`run_ecosystem_report.py` 产出 `lda/reports/ecosystem_d93.json`。
 
+### 新增/变更（post-v0.6 · D-94 生态共建深化 · 社区提交入口 · 2026-08-24）
+- **社区提交入口（`lda_pdk/submit.py`，建在 D-93 Registry 地基之上）**：
+  - `submit_device`：提交器件本体，自动推断主权分级（A/B/C）+ 校验 + 冲突感知 + 持久化贡献库 `contributions.json`（gitignore，不进版本库）。
+  - `submit_devices_batch`：批量导入，逐条返回 accepted/conflict/rejected。
+  - `BenchmarkProposal` + `ProposalStore` + `submit_benchmark_proposal`：社区可提案新的物理定律锚（id/title/metric/公式/oracle_fn/容差/默认参数），状态 = pending，**仅登记待代码评审 + golden.dispatch/physical_law 注册后纳入回归——绝不自动注入 golden 函数，LLM 不进判决路径**。
+  - `list_contributions`：贡献库快照（Registry 计数 + 器件列表 + 提案列表）。
+- **WebUI 升级至五十四面板**：新增面板 54「社区提交入口」，后端新增 `POST /api/ecosystem/submit|import|propose`，`GET /api/ecosystem` 增加 `community` 段；并修复面板 53 的 `runEco` 误用 POST 调只读接口（改为 `apiGet`）的隐性 bug。
+- 新增 `run_ecosystem_submit_smoke.py`（10/10 PASS）、`run_ecosystem_d94_report.py`（7/7，产出 `lda/reports/ecosystem_d94.json`）。
+
 ### 新增/变更（post-v0.5 · D-84~D-89 全量 · 详见下方 v0.5 详细记录）
 
 ## v0.5（2026-08-23 · git tag v0.5 · 系统级里程碑）

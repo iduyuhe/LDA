@@ -11,7 +11,10 @@ L2 开放 PDK Registry）通过 HTTP 暴露给一个真正的产品级前端，�
   GET  /api/status        → 系统落地状态（哪些层已 built / planned）
   GET  /api/benchmarks    → 题库 B1–B11 定义
   GET  /api/pdks          → 已登记 PDK + 器件模板（L2）
-  GET  /api/ecosystem      → D-93 生态共建快照（harness B1-B18 + 主权依赖 A/B/C + Registry 自检）
+  GET  /api/ecosystem      → D-93 生态共建快照（harness B1-B18 + 主权依赖 A/B/C + Registry 自检 + 社区贡献库）
+  POST /api/ecosystem/submit  → D-94 社区提交：登记一条器件本体（自动推断主权分级 + 冲突感知）
+  POST /api/ecosystem/import  → D-94 批量导入器件 JSON（逐条 accepted/conflict/rejected）
+  POST /api/ecosystem/propose → D-94 提交 harness 物理定律锚提案（pending，待代码评审）
   POST /api/verify        → {candidate, perturb?} 真跑 harness，返回逐题判定
   POST /api/agent_loop    → {solver, dual?} 真跑 agent 自迭代设计闭环
   POST /api/pdk_design    → {pdk, template, solver} 用 PDK 驱动 agent 逆设计
@@ -39,7 +42,9 @@ from lda_harness.l3_ai_solver import L3AISolverCandidate
 from lda_agent.design_loop import DesignAgent
 from lda_agent.run_demo import build_intent
 from lda_l2.pdk import get_default_registry
-from lda_pdk import PDKRegistry, DeviceEntry, SOVEREIGN_DEPS, by_class
+from lda_pdk import (PDKRegistry, DeviceEntry, SOVEREIGN_DEPS, by_class,
+                    submit_device, submit_devices_batch,
+                    submit_benchmark_proposal, list_contributions)
 
 HARNESS = VerificationHarness(BENCHMARK_DEFS)
 AGENT_OUT = os.path.join(LDA_ROOT, "reports_agent")
@@ -1902,14 +1907,38 @@ def ecosystem_status():
          "ok": added.count("added") == 3 and len(q_soi) == 1 and stats["total"] == 3,
          "detail": f"add={added.count('added')}/3 query(SOI)={len(q_soi)} stats.total={stats['total']}"},
     ]
+
+    # --- D-94 社区贡献库快照（真实提交数据，持久化于 contributions.json）---
+    comm = list_contributions()
+
     return {
         "harness": {"total": total, "passed": passed, "new_ids": new_ids},
         "new_benchmarks": new_benchmarks,
         "sovereign": {**sov, "total": sov_total},
         "registry": {"added": added, "query_soi": len(q_soi), "stats": stats},
-        "honest_boundary": "真实晶圆厂 NDA-PDK 对接属发动期事项(D-62)，暂缓；本模块仅提供 Registry 入口，不硬编码任何商业 PDK。",
+        "community": {
+            "registry_stats": comm["registry_stats"],
+            "device_count": len(comm["devices"]),
+            "devices": comm["devices"],
+            "proposals": comm["proposals"],
+            "proposal_count": comm["proposal_count"],
+            "honest_note": "贡献库持久化于 contributions.json（gitignore）；真实晶圆厂 NDA-PDK 仍属发动期 D-62 暂缓。harness 提案仅登记 pending，需代码评审 + golden 函数注册后方可纳入回归。",
+        },
+        "honest_boundary": "真实晶圆厂 NDA-PDK 对接属发动期事项(D-62)，暂缓；本模块仅提供 Registry 入口与社区提交入口，不硬编码任何商业 PDK。",
         "acceptance": {"passed": all(c["ok"] for c in acceptance), "checks": acceptance},
     }
+
+
+def _summarize_submit(results):
+    """汇总 submit_devices_batch 的逐条结果。"""
+    if not results:
+        return {"total": 0, "accepted": 0, "conflict": 0, "rejected": 0}
+    cnt = {"accepted": 0, "conflict": 0, "rejected": 0}
+    for r in results:
+        s = r.get("status")
+        if s in cnt:
+            cnt[s] += 1
+    return {"total": len(results), **cnt}
 
 
 # --------------------------------------------------------------------------
@@ -2063,6 +2092,15 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(501, {"error": "not_implemented",
                                  "message": "PDK 跨厂对比依赖 DesignProblem 抽象层，规划于 D-09；"
                                             "当前可用：上方已落地的闭环接口。"})
+            # ---- D-94 生态共建 · 社区提交入口 ----
+            elif path == "/api/ecosystem/submit":
+                self._send(200, submit_device(payload))
+            elif path == "/api/ecosystem/import":
+                entries = payload.get("entries", []) if isinstance(payload, dict) else []
+                res = submit_devices_batch(entries)
+                self._send(200, {"results": res, "summary": _summarize_submit(res)})
+            elif path == "/api/ecosystem/propose":
+                self._send(200, submit_benchmark_proposal(payload))
             else:
                 self._send(404, {"error": "not found"})
         except Exception as e:  # noqa: BLE001

@@ -1,0 +1,196 @@
+{
+  "d_task": "D-94 生态共建深化 · 社区提交入口",
+  "submit_chain": {
+    "device_single": {
+      "status": "accepted",
+      "id": "eco-soi-community-1",
+      "sovereign_class": "C",
+      "reason": "已登记入贡献库"
+    },
+    "device_dup": {
+      "status": "conflict",
+      "id": "eco-soi-community-1",
+      "reason": "id 已存在（如需覆盖请置 overwrite=true）",
+      "existing": {
+        "id": "eco-soi-community-1",
+        "name": "SOI 波导 450nm",
+        "tech": "光子·SOI",
+        "foundry": "community",
+        "sovereign_class": "C",
+        "layers": [
+          "wg-core"
+        ],
+        "params": {
+          "w_um": 0.45
+        },
+        "tags": [
+          "waveguide"
+        ],
+        "note": "社区贡献样例"
+      }
+    },
+    "device_invalid": {
+      "status": "rejected",
+      "id": null,
+      "reason": "校验失败：id/name 必填"
+    },
+    "batch": [
+      {
+        "status": "accepted",
+        "id": "eco-batch-1",
+        "sovereign_class": "C",
+        "reason": "已登记入贡献库"
+      },
+      {
+        "status": "accepted",
+        "id": "eco-batch-2",
+        "sovereign_class": "C",
+        "reason": "已登记入贡献库"
+      },
+      {
+        "status": "conflict",
+        "id": "eco-soi-community-1",
+        "reason": "id 已存在"
+      }
+    ],
+    "proposal": {
+      "status": "accepted_pending",
+      "id": "B19",
+      "review_status": "pending",
+      "reason": "提案已登记，待代码评审与 golden 函数注册后纳入回归（LLM 不进判决路径）",
+      "store_op": "added"
+    }
+  },
+  "infer_sovereign_class_samples": {
+    "community foundry": "C",
+    "gdsfactory": "B",
+    "Lumerical": "A",
+    "explicit A": "A"
+  },
+  "community_store": {
+    "registry_stats": {
+      "total": 4,
+      "by_sovereign_class": {
+        "C": 3,
+        "B": 1
+      },
+      "by_tech": {
+        "光子·SOI": 2,
+        "光子·SiN": 1,
+        "量子·超导": 1
+      }
+    },
+    "device_count": 4,
+    "proposal_count": 1,
+    "devices": [
+      {
+        "id": "eco-soi-community-1",
+        "name": "SOI 波导 450nm",
+        "tech": "光子·SOI",
+        "foundry": "community",
+        "sovereign_class": "C",
+        "layers": [
+          "wg-core"
+        ],
+        "params": {
+          "w_um": 0.45
+        },
+        "tags": [
+          "waveguide"
+        ],
+        "note": "社区贡献样例"
+      },
+      {
+        "id": "eco-b-1",
+        "name": "基于 gdsfactory 的器件",
+        "tech": "光子·SOI",
+        "foundry": "gdsfactory fork",
+        "sovereign_class": "B",
+        "layers": [],
+        "params": {},
+        "tags": [],
+        "note": ""
+      },
+      {
+        "id": "eco-batch-1",
+        "name": "批量A",
+        "tech": "光子·SiN",
+        "foundry": "community",
+        "sovereign_class": "C",
+        "layers": [],
+        "params": {},
+        "tags": [],
+        "note": ""
+      },
+      {
+        "id": "eco-batch-2",
+        "name": "批量B",
+        "tech": "量子·超导",
+        "foundry": "community",
+        "sovereign_class": "C",
+        "layers": [],
+        "params": {},
+        "tags": [],
+        "note": ""
+      }
+    ],
+    "proposals": [
+      {
+        "id": "B19",
+        "title": "微环 FSR",
+        "metric": "FSR_GHz",
+        "formula": "FSR = c / (n_g * L)",
+        "oracle_fn_name": "b19_micro_ring_fsr",
+        "tol": 0.5,
+        "default_params": {
+          "L_um": 100.0,
+          "n_g": 4.0
+        },
+        "proposed_by": "community",
+        "status": "pending",
+        "note": ""
+      }
+    ]
+  },
+  "honest_boundary": "真实晶圆厂 NDA-PDK 对接仍属发动期事项(D-62)，暂缓；本入口仅登记元数据，不硬编码商业 PDK。harness 提案仅登记 pending，需代码评审 + golden.dispatch/physical_law 注册后方可纳入回归（LLM 不进判决路径）。",
+  "acceptance": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "submit 有效器件 → accepted + 推断 C",
+        "ok": true,
+        "detail": "{'status': 'accepted', 'id': 'eco-soi-community-1', 'sovereign_class': 'C', 'reason': '已登记入贡献库'}"
+      },
+      {
+        "name": "重复提交 → conflict",
+        "ok": true,
+        "detail": "{'status': 'conflict', 'id': 'eco-soi-community-1', 'reason': 'id 已存在（如需覆盖请置 overwrite=true）', 'existing': {'id': 'eco-soi-community-1', 'name': 'SOI 波导 450nm', 'tech': '光子·SOI', 'foundry': 'community', 'sovereign_class': 'C', 'layers': ['wg-core'], 'params': {'w_um': 0.45}, 'tags': ['waveguide'], 'note': '社区贡献样例'}}"
+      },
+      {
+        "name": "无效提交（缺 id）→ rejected",
+        "ok": true,
+        "detail": "{'status': 'rejected', 'id': None, 'reason': '校验失败：id/name 必填'}"
+      },
+      {
+        "name": "gdsfactory foundry → 自动推断 B + accepted",
+        "ok": true,
+        "detail": "{'status': 'accepted', 'id': 'eco-b-1', 'sovereign_class': 'B', 'reason': '已登记入贡献库'}"
+      },
+      {
+        "name": "批量导入 2 接受 / 1 冲突",
+        "ok": true,
+        "detail": "['accepted', 'accepted', 'conflict']"
+      },
+      {
+        "name": "harness 提案 → accepted_pending",
+        "ok": true,
+        "detail": "{'status': 'accepted_pending', 'id': 'B19', 'review_status': 'pending', 'reason': '提案已登记，待代码评审与 golden 函数注册后纳入回归（LLM 不进判决路径）', 'store_op': 'added'}"
+      },
+      {
+        "name": "贡献库快照自洽（器件 4 / 提案 1）",
+        "ok": true,
+        "detail": "device_count=4 proposal_count=1"
+      }
+    ]
+  }
+}

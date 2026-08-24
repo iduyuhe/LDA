@@ -919,6 +919,72 @@
     <div class="conclusion" id="ecoConclusion"></div>
   </div>
 
+  <div class="sec" id="sec-ecosub">
+    <h3>54 社区提交入口（D-94 · 真实 PDK/器件本体与 harness 提案的统一提交通道）</h3>
+    <div class="hint">在 D-93 Registry 地基之上，向社区/退休专家/晶圆厂开放「提交入口」：① 提交器件本体（自动推断主权分级 A/B/C + 冲突感知 + 持久化贡献库 contributions.json）；② 批量导入器件 JSON；③ 提案新的物理定律锚（仅登记 pending，需代码评审 + golden 函数注册后方可纳入回归——LLM 不进判决路径）。<b>诚实边界：真实晶圆厂 NDA-PDK 对接仍属发动期 D-62 暂缓，本入口仅登记元数据，不硬编码商业 PDK。</b></div>
+
+    <div class="subhead">① 提交器件本体</div>
+    <div class="row">
+      <label>id <input id="devId" size="20" placeholder="eco-soi-community-1"></label>
+      <label>名称 <input id="devName" size="22" placeholder="SOI 波导 450nm"></label>
+      <label>工艺 <input id="devTech" size="14" placeholder="光子·SOI"></label>
+      <label>来源 <input id="devFoundry" size="14" placeholder="community"></label>
+      <label>主权
+        <select id="devClass">
+          <option value="">自动推断</option>
+          <option value="A">A 永不借</option>
+          <option value="B">B 借今踢后</option>
+          <option value="C">C 第一天自主</option>
+        </select>
+      </label>
+    </div>
+    <div class="row">
+      <label>layers(逗号) <input id="devLayers" size="28" placeholder="wg-core,clad-oxide"></label>
+      <label>tags(逗号) <input id="devTags" size="22" placeholder="waveguide"></label>
+      <label>params(JSON) <input id="devParams" size="30" placeholder='{"w_um":0.45}'></label>
+    </div>
+    <div class="row">
+      <label>note <input id="devNote" size="40" placeholder="社区贡献样例"></label>
+      <button class="btn" id="submitDev">提交器件</button>
+    </div>
+    <div id="submitDevRes" class="summary"></div>
+
+    <div class="subhead">② 批量导入器件 JSON</div>
+    <div class="row">
+      <textarea id="importJson" rows="4" style="width:92%;font-family:monospace" placeholder='{"entries":[{"id":"eco-x-1","name":"...","tech":"光子·SOI","foundry":"community","layers":["wg-core"],"params":{"w_um":0.45},"tags":["waveguide"]}]}'></textarea>
+    </div>
+    <div class="row">
+      <button class="btn" id="importBtn">批量导入</button>
+      <button class="btn" id="exportBtn">导出贡献库 JSON</button>
+    </div>
+    <div id="importRes" class="summary"></div>
+
+    <div class="subhead">③ 提案新的物理定律锚（harness）</div>
+    <div class="row">
+      <label>id <input id="bpId" size="12" placeholder="B19"></label>
+      <label>标题 <input id="bpTitle" size="22" placeholder="微环 FSR"></label>
+      <label>指标 <input id="bpMetric" size="18" placeholder="FSR_GHz"></label>
+      <label>tol <input id="bpTol" size="8" placeholder="0.5"></label>
+    </div>
+    <div class="row">
+      <label>公式 <input id="bpFormula" size="34" placeholder="FSR = c/(n_g·L)"></label>
+      <label>oracle_fn <input id="bpFn" size="22" placeholder="b19_micro_ring_fsr"></label>
+      <label>提案人 <input id="bpBy" size="14" placeholder="community"></label>
+    </div>
+    <div class="row">
+      <label>default_params(JSON) <input id="bpParams" size="34" placeholder='{"L_um":100.0,"n_g":4.0}'></label>
+      <button class="btn" id="proposeBtn">提交提案</button>
+    </div>
+    <div id="proposeRes" class="summary"></div>
+
+    <div class="subhead">社区贡献实时列表</div>
+    <div class="row">
+      <button class="btn" id="refreshComm">刷新贡献库</button>
+    </div>
+    <div id="commBody"></div>
+    <div class="conclusion" id="ecosubConclusion"></div>
+  </div>
+
   <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
@@ -945,6 +1011,11 @@ async function api(path, body){
                        body: JSON.stringify(body)} : {};
   const r = await fetch(path, opt);
   return r.json();
+}
+async function apiGet(path){
+  const r = await fetch(path);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return await r.json();
 }
 
 function fmt(v){ return (typeof v==='number') ? (Math.abs(v)<1e-3 ? v.toExponential(3) : v.toPrecision(7)) : v; }
@@ -2933,7 +3004,7 @@ async function runEco(){
   const btn = $('runEco'); btn.disabled = true;
   $('ecoSummary').innerHTML = '<span class="spin"></span> 生态共建快照生成中（harness + 主权分级 + Registry 自检）…';
   try {
-    const d = await api('/api/ecosystem', {});
+    const d = await apiGet('/api/ecosystem');
     const a = d.acceptance || {}, h = d.harness || {}, sov = d.sovereign || {}, reg = d.registry || {};
     $('ecoSummary').innerHTML = `生态共建：<span class="verdict ${a.passed?'ok':'fail'}">${a.passed?'PASS':'FAIL'}</span>（harness ${h.passed}/${h.total} · 主权 A=${sov.A?sov.A.count:'?'} B=${sov.B?sov.B.count:'?'} C=${sov.C?sov.C.count:'?'} · Registry 自检 ${reg.stats?reg.stats.total:'?'})`;
     const nb = (d.new_benchmarks||[]).map(b=>`<tr><td>${b.id}</td><td>${escapeHtml(b.title||'')}</td><td>${b.metric}</td><td>${escapeHtml(b.oracle||'')}</td><td>${b.tol}</td></tr>`).join('');
@@ -2952,6 +3023,109 @@ async function runEco(){
   } finally { btn.disabled = false; }
 }
 $('runEco').onclick = runEco;
+
+// ---- 54 D-94 生态共建 · 社区提交入口 ----
+function _devPayload(){
+  return {
+    id: $('devId').value.trim(),
+    name: $('devName').value.trim(),
+    tech: $('devTech').value.trim(),
+    foundry: $('devFoundry').value.trim(),
+    sovereign_class: $('devClass').value || undefined,
+    layers: $('devLayers').value.trim(),
+    tags: $('devTags').value.trim(),
+    params: $('devParams').value.trim(),
+    note: $('devNote').value.trim(),
+  };
+}
+async function submitDev(){
+  const btn = $('submitDev'); btn.disabled = true;
+  try {
+    const d = await api('/api/ecosystem/submit', _devPayload());
+    const cls = (d.status==='accepted') ? 'ok' : 'fail';
+    $('submitDevRes').innerHTML = `<span class="verdict ${cls}">${escapeHtml(d.status)}</span> ${escapeHtml(d.id||'')} · ${escapeHtml(d.reason||'')}${d.sovereign_class?(' · 主权 '+d.sovereign_class):''}`;
+    refreshComm();
+  } catch(e){
+    $('submitDevRes').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('submitDev').onclick = submitDev;
+
+async function importBtn(){
+  const btn = $('importBtn'); btn.disabled = true;
+  try {
+    let body;
+    try { body = JSON.parse($('importJson').value || '{}'); }
+    catch(ex){ $('importRes').innerHTML = '<span class="fail">JSON 解析失败：'+ex+'</span>'; return; }
+    const d = await api('/api/ecosystem/import', body);
+    const s = d.summary || {};
+    const rows = (d.results||[]).map(r=>`<tr><td>${escapeHtml(String(r.id||''))}</td><td class="${r.status==='accepted'?'ok':'fail'}">${r.status}</td><td>${escapeHtml(r.reason||'')}</td></tr>`).join('');
+    $('importRes').innerHTML = `导入：<span class="verdict ${s.accepted>0?'ok':'fail'}">${s.accepted} 接受 / ${s.conflict} 冲突 / ${s.rejected} 拒绝</span>
+      <table class="tbl"><thead><tr><th>id</th><th>状态</th><th>明细</th></tr></thead><tbody>${rows}</tbody></table>`;
+    refreshComm();
+  } catch(e){
+    $('importRes').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('importBtn').onclick = importBtn;
+
+async function exportBtn(){
+  try {
+    const d = await apiGet('/api/ecosystem');
+    const blob = new Blob([JSON.stringify({community: d.community||{}}, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'lda_ecosystem_contributions.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch(e){ alert('导出失败：'+e); }
+}
+$('exportBtn').onclick = exportBtn;
+
+function _bpPayload(){
+  return {
+    id: $('bpId').value.trim(),
+    title: $('bpTitle').value.trim(),
+    metric: $('bpMetric').value.trim(),
+    formula: $('bpFormula').value.trim(),
+    oracle_fn_name: $('bpFn').value.trim(),
+    tol: parseFloat($('bpTol').value || '0') || 0,
+    default_params: $('bpParams').value.trim(),
+    proposed_by: $('bpBy').value.trim() || 'community',
+  };
+}
+async function proposeBtn(){
+  const btn = $('proposeBtn'); btn.disabled = true;
+  try {
+    const d = await api('/api/ecosystem/propose', _bpPayload());
+    const cls = (d.status==='accepted_pending') ? 'ok' : 'fail';
+    $('proposeRes').innerHTML = `<span class="verdict ${cls}">${escapeHtml(d.status)}</span> ${escapeHtml(d.id||'')} · 评审态 ${escapeHtml(d.review_status||'')} · ${escapeHtml(d.reason||'')}`;
+    refreshComm();
+  } catch(e){
+    $('proposeRes').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('proposeBtn').onclick = proposeBtn;
+
+async function refreshComm(){
+  try {
+    const d = await apiGet('/api/ecosystem');
+    const c = d.community || {};
+    const devRows = (c.devices||[]).map(e=>`<tr><td>${escapeHtml(e.id)}</td><td>${escapeHtml(e.name)}</td><td>${escapeHtml(e.tech)}</td><td>${escapeHtml(e.foundry)}</td><td class="${e.sovereign_class==='C'?'ok':''}">${e.sovereign_class}</td></tr>`).join('');
+    const bpRows = (c.proposals||[]).map(p=>`<tr><td>${escapeHtml(p.id)}</td><td>${escapeHtml(p.title)}</td><td>${escapeHtml(p.metric)}</td><td>${escapeHtml(p.status)}</td></tr>`).join('');
+    $('commBody').innerHTML = `
+      <div class="summary">贡献库：器件 <b>${c.device_count||0}</b> · 提案 <b>${c.proposal_count||0}</b>（持久化于 contributions.json，gitignore）</div>
+      <div class="subhead">已登记器件本体</div>
+      <table class="tbl"><thead><tr><th>id</th><th>名称</th><th>工艺</th><th>来源</th><th>主权</th></tr></thead><tbody>${devRows}</tbody></table>
+      <div class="subhead">harness 提案（pending）</div>
+      <table class="tbl"><thead><tr><th>id</th><th>标题</th><th>指标</th><th>评审态</th></tr></thead><tbody>${bpRows}</tbody></table>`;
+    $('ecosubConclusion').innerHTML = `<strong>诚实边界：</strong>${escapeHtml(c.honest_note||'')}`;
+  } catch(e){
+    $('commBody').innerHTML = '<span class="fail">刷新失败：'+e+'</span>';
+  }
+}
+$('refreshComm').onclick = refreshComm;
+refreshComm();
 
 // ---- ㊽ D-87 谱形目标 × 3D 截面（多波长加权联合）----
 async function runSp(){

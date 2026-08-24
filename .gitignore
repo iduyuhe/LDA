@@ -19,6 +19,9 @@ test_wg_quick.py
 # ---- 私有记忆 ----
 .workbuddy/
 
+# ---- 生态共建社区贡献库（真实提交数据，不进版本库） ----
+lda/lda_pdk/contributions.json
+
 # ---- IDE ----
 .idea/
 .vscode/

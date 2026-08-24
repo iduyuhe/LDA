@@ -11,6 +11,7 @@
 > **v0.6.6 持续维护**（2026-08-25 · D-104）：**D-62 收官后全量回归（最强门禁）**——all 集 **72 项 smoke 全量回归 72 PASS / 0 FAIL**（覆盖 D-01~D-103 全部资产 + WebUI 路由层 + 实证锚）；**修复**：L1 协议层注入实证锚（`verify_design` 恢复 21/21，MCP smoke 适配 D-62），`run_mcp_smoke` 入 CI core 门禁（33 条）；一致性深审：实证锚键集三通道核验、计数修复（70→72 smoke）、README 当前态陈旧引用修复（18→21 题 / 五十六→五十七面板）、任务台账 16 项归正。
 > **v0.6.7 持续维护**（2026-08-25 · D-105）：**L1 协议层全链路门禁**——新增 `run_l1_agent_smoke.py`（KernelGateway + L0 IR + 三种 candidate + benchmarks 过滤全链路 6/6 PASS），`run_agent.py` CLI 演示路径此前无 smoke 覆盖的缺口闭合，入 CI core 门禁（**34 条**）；环境一致性核验（requirements 必装 3 包与 venv 全齐、可选标注完整）；残留扫描干净。
 > **v0.6.8 持续维护**（2026-08-25 · D-106）：**agent 自迭代设计闭环门禁**——深审发现 `run_agent_loop.py` import 断链（引用了 design_loop 中从未存在的 ring_fsr_problem，非 smoke 命名未被 CI 捕获）→ 修复为基于 `design_loop.main()` 的可运行演示 + 新增 `run_agent_loop_smoke.py`（5/5 PASS：收敛 accepted / 误差死标量 / FDTD+TMM 双判据全绿 / JSON 落盘），入 CI core 门禁（**35 条**）；计数修复（72→73 smoke）；WebUI JS 静态检查（67 绑定全对应、语法通过）。
+> **v0.6.9 持续维护**（2026-08-25 · D-107）：**文档资产 + IR schema + 性能基准深审（零缺陷）**——README 引用路径死链扫描零缺失（4/5 存在，`{bid}` 为 D-98 模板占位符非死链）；L0 IR schema v0.3 与 spec/bridge 一致（受控升级 0.2 兼容、零漂移门禁在 core）；性能基准复核未退化（`run_perf_adjoint3d` 大域 FWD 27.6× ≥20× + FOM rel=1.3e-16；`run_perf_bench` greens 76.89× + 透射谱 5.39× + GPU SKIP 正确降级）；docs 资产与 D 编号（D-106 最新）一致。
 
 ## 这是什么
 

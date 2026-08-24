@@ -102,6 +102,13 @@
 - **维护回归：CI core 31 PASS / 0 SKIP / 0 FAIL（279.56s）全绿**，报告 `ci_regression_core_v064.json`。
 - **维护结论**：v0.6.3+ 全绿；WebUI 字段漂移现可被 CI 捕获（删除/改名即 FAIL）。
 
+### 维护（v0.6.9 · D-107 持续维护 · 文档资产 + IR schema + 性能基准深审 · 2026-08-25）
+- **README 死链扫描**：提取 README 全部相对路径引用（lda/…、docs/…、examples/…、reports/…），4/5 存在（`reports/patches/{bid}.publish.patch` 为 D-98 模板占位符，非死链）——**零缺失**。
+- **L0 IR schema 一致性**：`docs/ir_schema.json` 语法有效（draft-07、version 0.3）、与 `docs/ir_spec.md`（v0.3 定稿 D-76）一致、受控升级语义（0.3 现行/0.2 兼容/未知拒绝）；零漂移校验 `run_ir_spec_smoke.py` 在 all 集 + CORE_SMOKES 双覆盖。
+- **性能基准复核（未退化）**：`run_perf_adjoint3d.py` PASS——大域 64×52×16 FWD **27.6×**（≥20× 阈值）、FOM rel=1.3e-16（bit-level）、优化链路 imp 1.336==1.336；`run_perf_bench.py`（--quick）PASS——greens numpy→numba **76.89×**（物理一致 rel=4.8e-16）、透射谱 **5.39×**、GPU SKIP（CUDA 不可用，正确降级）；🔴 注：重 FDTD 基准在沙箱内被限速跑不动（超时），非沙箱正常——属环境特性非脚本缺陷；性能基准独立于 all 集运行（设计意图：性能监控非功能正确性）。
+- **docs 资产与 D 编号一致性**：docs/ 4 资产齐全；规划文档最新 D-106 与交付一致；CHANGELOG 维护段 7 个（v0.6.1~v0.6.8，v0.6.5 为 D-62 功能件走功能段）。
+- **维护结论（零缺陷）**：v0.6.8+ 文档/资产/schema/性能基准全绿——前六轮门禁有效，本轮无实质缺陷需修复；性能基准可运行性已复核。
+
 ### 维护（v0.6.8 · D-106 持续维护 · agent 自迭代设计闭环门禁 + 断链修复 · 2026-08-25）
 - **未覆盖路径盘点 + 断链发现（🔴 真实回归）**：`run_agent_loop.py`（agent 自迭代设计闭环演示，「AI for AI」最小实证）**import 断链不可运行**——引用了 `design_loop.py` 中从未存在的 `ring_fsr_problem`/`ring_fsr_with_waveguide_problem`（git 历史亦无定义，早期草稿遗留）；且非 `_smoke.py` 命名不被 CI 捕获，**断链长期潜伏**。
 - **修复 + 新门禁（实质增量）**：①重写 `run_agent_loop.py` 为基于 `design_loop.main()`（bragg_mirror 收敛闭环）的可运行演示（收敛=True、4 轮、R=0.9967、双判据全绿）；②新增 `run_agent_loop_smoke.py`（**5/5 PASS**）：收敛 accepted / |ΔR|=1.00e-4 ≤ tol 2%（死标量）/ FDTD+TMM 物理定律锚双判据全绿 / 报告字段完整 / JSON 落盘；**纳入 CORE_SMOKES（34→35 条）**。

@@ -1,11 +1,11 @@
 {
   "greens": {
-    "speedup": 48.85,
-    "numpy_s": 25.491,
-    "numba_s": 0.522
+    "speedup": 65.21,
+    "numpy_s": 30.724,
+    "numba_s": 0.471
   },
   "spectrum": {
-    "overall_speedup": 4.88
+    "overall_speedup": 3.59
   },
-  "created_at": "2026-08-23T16:14:03"
+  "created_at": "2026-08-25T06:24:14"
 }

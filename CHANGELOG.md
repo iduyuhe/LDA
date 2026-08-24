@@ -85,6 +85,13 @@
 - **一致性深审**：README "自动发现 63 smoke" → **70 smoke**（陈旧计数修正）；run_ci_regression 文件头 "60+ 个" → "70 个"；**harness 键集一致性核验**（`golden._GOLDEN_DISPATCH` 18 == `benchmarks.BENCHMARK_DEFS` 18，B5-B7 为 ORACLE 项属正确设计）；/api 端点 docstring 与代码路由核对。
 - **维护结论**：v0.6.2+ 在标准 venv 环境全绿；路由层新增 64 端点门禁；README/规划/CHANGELOG 计数一致。
 
+### 维护（v0.6.4 · D-103 持续维护 · WebUI 字段一致性门禁 + 深审固化 · 2026-08-24）
+- **前端字段一致性深审（D-102 路由层之上补字段级）**：交叉核对「面板 JS 访问字段 ↔ 后端真实返回」——①端点层：36 个 JS 调用全部有后端路由（零缺失）；②GET /api/ecosystem：生态面板（53-56）函数访问的段字段 + 嵌套对象（review_stats/proposal_status/review_policy）**逐路径运行时解析零缺失**；③POST 四端点（import/review/land/publish）响应字段与前端访问全对齐（import 的 results/summary 为 app.py 包装键、review 的 votes 在 core quorum 分支、publish 的 diff_lines/patch_path/release_path 均确认存在）。
+- **深审方法固化为 CI 门禁**：`run_webui_api_smoke.py` 新增 **31 条生态字段存在性断言**（`ECOSYSTEM_REQUIRED_FIELDS`：harness.total/passed、sovereign.A/B/C.count、review_stats 4 键、proposal_status 5 态、review_policy 7 键、published/publish_pending 等前端渲染硬依赖）——字段被删除/改名即 FAIL；实跑 PASS 13→**44**、静态 51、FAIL=0（秒级）。
+- 🔴 **深审排除的误报源（记录）**：`c.detail/c.name/c.ok` 是 `['A','B','C'].map(c=>...)` 循环变量、`a.op/a.ts` 是 audit 循环变量、`d.status/d.value` 等是 POST 端点各自响应对象——均非 GET /api/ecosystem 缺失，逐项人工核实排除。
+- **维护回归：CI core 31 PASS / 0 SKIP / 0 FAIL（279.56s）全绿**，报告 `ci_regression_core_v064.json`。
+- **维护结论**：v0.6.3+ 全绿；WebUI 字段漂移现可被 CI 捕获（删除/改名即 FAIL）。
+
 ### 新增/变更（post-v0.5 · D-84~D-89 全量 · 详见下方 v0.5 详细记录）
 
 ## v0.5（2026-08-23 · git tag v0.5 · 系统级里程碑）

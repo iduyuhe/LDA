@@ -6,6 +6,7 @@
 > **v0.6.1 维护基线**（2026-08-24 · D-99）：生态共建（D-93~D-98）收官——「提交→评审→落地→发布」全链闭环；CI core 门禁覆盖生态链三 smoke（harness 扩展 / 提交 / 评审→落地→发布）；`lda_pdk` 模块文档同步 D-96~D-98；全量回归全绿。
 > **v0.6.2 持续维护**（2026-08-24 · D-101）：**all 集 70 项 smoke 全量回归 70 PASS / 0 FAIL**（1602.72s，覆盖 D-01~D-98 全部资产含重 FDTD/3D adjoint/GPU 项）；新增 `requirements.txt` 环境固化（必装 numpy/scipy/jsonschema + 可选 numba/torch）；README 模块列表补 `lda_pdk` 生态共建全链。
 > **v0.6.3 持续维护**（2026-08-24 · D-102）：**WebUI API 路由层冒烟**（64 条 /api 路由：快路径 13 实跑 + 重计算 51 静态验证，纳入 CI core 门禁）；一致性深审（README 63→70 smoke 修正、harness 键集一致性核验）。
+> **v0.6.4 持续维护**（2026-08-24 · D-103）：**WebUI 字段一致性门禁**——前端面板 53-56 渲染硬依赖字段 ↔ GET /api/ecosystem 真实响应逐路径核对零缺失（端点 36 调用全有路由、POST 四端点响应字段全对齐）；深审方法固化进 `run_webui_api_smoke.py`（新增 **31 条生态字段存在性断言**，实跑 13→44 PASS）；CI core **31 PASS / 0 FAIL**（279.56s）全绿；字段删除/改名今后即被 CI 捕获。
 
 ## 这是什么
 

@@ -8,6 +8,9 @@
   4) 重计算 POST 端点（adjoint/hybrid/inverse/sparams 等）**不实跑**——
      静态已证路由存在，其内核由各自专用 smoke 覆盖（run_adjoint_design_smoke
      等）；避免空载荷触发数分钟优化导致冒烟挂起（🔴 D-102 血泪教训）。
+  5) D-103 追加：生态字段存在性断言——前端面板 53-56 渲染硬依赖的
+     GET /api/ecosystem 关键字段路径（含嵌套 review_stats / proposal_status /
+     review_policy / sovereign.A/B/C 等）逐一验证存在，字段被删除/改名即 FAIL。
 """
 import json
 import os
@@ -73,6 +76,50 @@ def _http(method, url, body=None, timeout=15):
         return None, str(e)
 
 
+# 前端面板 53-56 渲染硬依赖的 GET /api/ecosystem 关键字段路径（D-103 深审固化）
+ECOSYSTEM_REQUIRED_FIELDS = [
+    "harness.total", "harness.passed", "new_benchmarks",
+    "sovereign.A.count", "sovereign.B.count", "sovereign.C.count",
+    "registry.stats.total", "acceptance.passed", "acceptance.checks",
+    "community.devices", "community.proposals",
+    "community.proposal_status.pending", "community.proposal_status.approved",
+    "community.proposal_status.rejected", "community.proposal_status.landed",
+    "community.proposal_status.published",
+    "community.review_stats.approvals", "community.review_stats.rejections",
+    "community.review_stats.quorum_votes", "community.review_stats.avg_review_seconds",
+    "community.review_policy.enforce_positive_tol",
+    "community.review_policy.enforce_nonempty_params",
+    "community.review_policy.enforce_value_bounds",
+    "community.review_policy.authorized_reviewers",
+    "community.review_policy.min_source_length",
+    "community.review_policy.min_quorum",
+    "community.review_policy.strict_dedup",
+    "community.published", "community.publish_pending",
+    "community.landed_count", "community.honest_note",
+]
+
+
+def _check_ecosystem_fields(base):
+    """生态字段存在性断言（D-103）：GET /api/ecosystem 真实响应中逐一解析
+    前端面板 53-56 渲染硬依赖的关键字段路径，字段删除/改名即 FAIL。"""
+    try:
+        with urllib.request.urlopen(f"{base}/api/ecosystem", timeout=15) as r:
+            d = json.load(r)
+    except Exception as e:
+        return [("FAIL", "GET /api/ecosystem", f"响应读取/解析失败: {e}")]
+
+    def has(path):
+        cur = d
+        for k in path.split("."):
+            if not isinstance(cur, dict) or k not in cur:
+                return False
+            cur = cur[k]
+        return True
+
+    return [(("PASS" if has(p) else "FAIL"), "field", p)
+            for p in ECOSYSTEM_REQUIRED_FIELDS]
+
+
 def main():
     gets, posts = _extract_routes()
     port = _free_port()
@@ -111,7 +158,13 @@ def main():
                 ok.append(("POST", r, f"{code} JSON"))
             else:
                 fail.append(("POST", r, f"{code} {text[:50]}"))
-        # 3) 重计算 POST 端点：静态验证存在（不实跑）
+        # 3) 生态字段存在性断言（D-103：前端渲染硬依赖，字段删除/改名即 FAIL）
+        for kind, r, d in _check_ecosystem_fields(base):
+            if kind == "PASS":
+                ok.append(("FIELD", r, d))
+            else:
+                fail.append(("FIELD", r, d))
+        # 4) 重计算 POST 端点：静态验证存在（不实跑）
         heavy = [r for r in posts
                  if any(f"/{h}" in r for h in HEAVY_POST)]
         static_only = [r for r in posts if r not in eco_posts

@@ -5,10 +5,10 @@
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "via": "L1 KernelGateway"
   },
-  "generated_at": "2026-08-14T15:28:29",
+  "generated_at": "2026-08-24T21:30:24",
   "summary": {
-    "total": 8,
-    "passed": 6
+    "total": 18,
+    "passed": 15
   },
   "results": [
     {
@@ -19,6 +19,105 @@
       "golden": 0.0028413137328842765,
       "candidate": 0.0028413137328842765,
       "tol": 0.0002,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B10",
+      "metric": "F_gate",
+      "oracle": "analytical(decoherence-limit)",
+      "source": "physical-law",
+      "golden": 0.9995834201268338,
+      "candidate": 0.9995834201268338,
+      "tol": 0.01,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B11",
+      "metric": "spectrum_match",
+      "oracle": "analytical(ring-transfer-function)",
+      "source": "physical-law",
+      "golden": 0.005022766645124605,
+      "candidate": 0.005022766645124605,
+      "tol": 0.03,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B12",
+      "metric": "f0_GHz",
+      "oracle": "analytical(quarter-wave closed form)",
+      "source": "physical-law",
+      "golden": 10.758287072798378,
+      "candidate": 10.758287072798378,
+      "tol": 0.02,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B13",
+      "metric": "J_GHz",
+      "oracle": "analytical(charge-coupling closed form)",
+      "source": "physical-law",
+      "golden": 0.0316227766016838,
+      "candidate": 0.0316227766016838,
+      "tol": 0.1,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B14",
+      "metric": "L_3dB_um",
+      "oracle": "analytical(beat-length)",
+      "source": "physical-law",
+      "golden": 15.499999999999918,
+      "candidate": 15.499999999999918,
+      "tol": 0.5,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B15",
+      "metric": "lambda_B_um",
+      "oracle": "analytical(Bragg condition)",
+      "source": "physical-law",
+      "golden": 1.5504,
+      "candidate": 1.5504,
+      "tol": 0.01,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B16",
+      "metric": "L_mmi_um",
+      "oracle": "design-rule(general-interference)",
+      "source": "physical-law",
+      "golden": 18.58064516129032,
+      "candidate": 18.58064516129032,
+      "tol": 3.0,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B17",
+      "metric": "I_c_A",
+      "oracle": "analytical(Josephson relation)",
+      "source": "physical-law",
+      "golden": 4.026709074502098e-08,
+      "candidate": 4.026709074502098e-08,
+      "tol": 1e-09,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B18",
+      "metric": "F_purcell",
+      "oracle": "analytical(cavity-QED)",
+      "source": "physical-law",
+      "golden": 8000.000000000001,
+      "candidate": 8000.000000000001,
+      "tol": 1.0,
       "passed": true,
       "note": "确定性物理定律/解析解"
     },
@@ -96,6 +195,17 @@
       "golden": 1.0,
       "candidate": 0.985,
       "tol": 0.01,
+      "passed": false,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B9",
+      "metric": "f01_GHz",
+      "oracle": "analytical(transmon/Koch2007)",
+      "source": "physical-law",
+      "golden": 6.628203230275509,
+      "candidate": 48.0,
+      "tol": 0.05,
       "passed": false,
       "note": "确定性物理定律/解析解"
     }

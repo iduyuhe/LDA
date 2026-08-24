@@ -26,6 +26,15 @@
 - **WebUI 升级至五十四面板**：新增面板 54「社区提交入口」，后端新增 `POST /api/ecosystem/submit|import|propose`，`GET /api/ecosystem` 增加 `community` 段；并修复面板 53 的 `runEco` 误用 POST 调只读接口（改为 `apiGet`）的隐性 bug。
 - 新增 `run_ecosystem_submit_smoke.py`（10/10 PASS）、`run_ecosystem_d94_report.py`（7/7，产出 `lda/reports/ecosystem_d94.json`）。
 
+### 新增/变更（post-v0.6 · D-95 生态共建闭环 · 社区评审流 + 提案落地 · 2026-08-24）
+- **社区评审流 + 提案→golden 落地（`lda_pdk/review.py`，建在 D-94 提交入口之上）**：
+  - `review_proposal`：仅 pending 可评审；approve 须附 ORACLE 参考实现源码并先过**前置确定性自测**（受限命名空间编译 + 默认参数返回有限标量），通过才置 approved；reject 直落 rejected；**缺具名评审人即拒（LLM 不进判决路径）**；每次评审写入审计轨迹（谁/何时/决定/理由/自测值）。
+  - `land_proposal`：仅 approved 可落地；受限命名空间编译 ORACLE → `register_golden`（golden.py 新增模块级 `_GOLDEN_DISPATCH`/`_PHYSICAL_LAW` + 注册钩子）与 `register_benchmark`（benchmarks.py）**零接线接入统一回归** → 持久化 `landed.json`（gitignore）→ **生成 golden.py/benchmarks.py 补丁**供维护者 git 提交（**落库 live ≠ 进版本控制，权威 ORACLE 以维护者 git/PR 提交为准**）。
+  - `reload_landed`：启动时按 landed.json 恢复已落地注册（live 一致性）；`list_proposals(status)`/`get_audit`/`list_landed` 查询。
+- **WebUI 升级至五十五面板**：新增面板 55「社区评审流 + 提案落地」（评审/落地台 + 提案状态分布 + 审计轨迹 + 已落地补丁下载），后端新增 `POST /api/ecosystem/review|land`，`GET /api/ecosystem` 增加 `proposal_status`/`landed` 段。
+- **实测闭环**：B19 微环 FSR 提案经评审落地后，harness 统一回归自动 18→**19 题 19/19 PASS**（零接线自动纳入）。
+- 新增 `run_ecosystem_review_smoke.py`（18/18 PASS）、`run_ecosystem_d95_report.py`（10/10，产出 `lda/reports/ecosystem_d95.json`）。
+
 ### 新增/变更（post-v0.5 · D-84~D-89 全量 · 详见下方 v0.5 详细记录）
 
 ## v0.5（2026-08-23 · git tag v0.5 · 系统级里程碑）

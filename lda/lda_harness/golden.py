@@ -330,31 +330,54 @@ def b7_crossing_crosstalk_dB(w_core, h_core, n_si, n_clad, wl, gap):
 # --------------------------------------------------------------------------
 # 调度器 + 来源标注
 # --------------------------------------------------------------------------
+# 模块级调度表与物理定律锚集合：支持运行时 register_golden 动态注册
+# （社区提案经「具名人工评审 → 确定性自测」后落地接入统一回归；
+#  仅登记确定性物理定律，LLM 不进判决路径）。
+_GOLDEN_DISPATCH = {
+    "B1": b1_mie_qscat,
+    "B2": b2_soi_waveguide_neff,
+    "B3": b3_fp_fsr_nm,
+    "B4": b4_ring_fsr_nm,
+    "B5": b5_ybranch_split_loss_dB,
+    "B6": b6_grating_coupling_eff,
+    "B7": b7_crossing_crosstalk_dB,
+    "B8": b8_taper_transmission,
+    "B9": b9_transmon_frequency,
+    "B10": b10_gate_fidelity,
+    "B11": b11_ring_spectrum_match,
+    "B12": b12_resonator_frequency,
+    "B13": b13_coupler_coupling,
+    "B14": b14_dc_coupling_length,
+    "B15": b15_bragg_wavelength,
+    "B16": b16_mmi_length,
+    "B17": b17_jj_critical_current,
+    "B18": b18_purcell_factor,
+}
+
+_PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
+                 "B12", "B13", "B14", "B15", "B16", "B17", "B18"}
+
+
 def golden_value(bid, params):
     """按 benchmark id 调用对应黄金参考函数（标量）。"""
-    dispatch = {
-        "B1": b1_mie_qscat,
-        "B2": b2_soi_waveguide_neff,
-        "B3": b3_fp_fsr_nm,
-        "B4": b4_ring_fsr_nm,
-        "B5": b5_ybranch_split_loss_dB,
-        "B6": b6_grating_coupling_eff,
-        "B7": b7_crossing_crosstalk_dB,
-        "B8": b8_taper_transmission,
-        "B9": b9_transmon_frequency,
-        "B10": b10_gate_fidelity,
-        "B11": b11_ring_spectrum_match,
-        "B12": b12_resonator_frequency,
-        "B13": b13_coupler_coupling,
-        "B14": b14_dc_coupling_length,
-        "B15": b15_bragg_wavelength,
-        "B16": b16_mmi_length,
-        "B17": b17_jj_critical_current,
-        "B18": b18_purcell_factor,
-    }
-    if bid not in dispatch:
+    if bid not in _GOLDEN_DISPATCH:
         raise KeyError(f"无黄金参考定义: {bid}")
-    return dispatch[bid](**params)
+    return _GOLDEN_DISPATCH[bid](**params)
+
+
+def register_golden(bid, fn, physical_law=True):
+    """运行时注册黄金参考（社区提案评审→落地用）。
+
+    bid: benchmark id（如 'B19'）；fn: 确定性物理定律实现（ORACLE）；
+    physical_law=True 时同时标记为物理定律锚，纳入 golden_with_source 的
+    'physical-law' 来源判定。仅登记经具名人工评审通过的 ORACLE，LLM 不进判决路径。
+    """
+    if not callable(fn):
+        raise ValueError(f"register_golden: {bid} 的 fn 不可调用")
+    _GOLDEN_DISPATCH[bid] = fn
+    if physical_law:
+        _PHYSICAL_LAW.add(bid)
+    return bid
 
 
 def golden_with_source(bid, params):
@@ -365,9 +388,7 @@ def golden_with_source(bid, params):
       - 'numpy-overlap-offline'  B5 numpy 重叠估计离线近似
       - 'design-anchor'          设计守则锚（ORACLE 不可用时的验收基准）
     """
-    physical_law = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
-                    "B12", "B13", "B14", "B15", "B16", "B17", "B18"}
-    if bid in physical_law:
+    if bid in _PHYSICAL_LAW:
         return (golden_value(bid, params), "physical-law", "确定性物理定律/解析解")
     # B5–B7：查 ORACLE 来源
     if bid in ("B5", "B6", "B7"):

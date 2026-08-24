@@ -195,3 +195,22 @@ BENCHMARK_DEFS = {
 # 对齐顺序（报告展示用）
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18"]
+
+
+def register_benchmark(def_dict: dict) -> str:
+    """运行时注册一道新 benchmark（社区提案评审→落地用）。
+
+    def_dict 与 BENCHMARK_DEFS 条目同构（title/metric/oracle/tol/default_params/
+    golden_fn/note）。golden_fn 必须已是确定性物理定律实现（经具名人工评审的
+    ORACLE）。注册后 build_harness_specs 自动纳入统一回归（零接线）。
+    """
+    bid = str(def_dict.get("bid", "")).strip()
+    if not bid:
+        raise ValueError("register_benchmark: 缺少 bid")
+    if not callable(def_dict.get("golden_fn")):
+        raise ValueError(f"register_benchmark: {bid} 的 golden_fn 不可调用")
+    item = {k: v for k, v in def_dict.items() if k != "bid"}
+    BENCHMARK_DEFS[bid] = item
+    if bid not in BENCHMARK_ORDER:
+        BENCHMARK_ORDER.append(bid)
+    return bid

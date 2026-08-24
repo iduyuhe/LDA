@@ -15,6 +15,8 @@ L2 开放 PDK Registry）通过 HTTP 暴露给一个真正的产品级前端，�
   POST /api/ecosystem/submit  → D-94 社区提交：登记一条器件本体（自动推断主权分级 + 冲突感知）
   POST /api/ecosystem/import  → D-94 批量导入器件 JSON（逐条 accepted/conflict/rejected）
   POST /api/ecosystem/propose → D-94 提交 harness 物理定律锚提案（pending，待代码评审）
+  POST /api/ecosystem/review  → D-95 评审提案（approve/reject，具名评审人 + 理由 + ORACLE 源码）
+  POST /api/ecosystem/land    → D-95 落地已批准提案（确定性自测门禁 → 接入统一回归 + 补丁生成）
   POST /api/verify        → {candidate, perturb?} 真跑 harness，返回逐题判定
   POST /api/agent_loop    → {solver, dual?} 真跑 agent 自迭代设计闭环
   POST /api/pdk_design    → {pdk, template, solver} 用 PDK 驱动 agent 逆设计
@@ -44,7 +46,9 @@ from lda_agent.run_demo import build_intent
 from lda_l2.pdk import get_default_registry
 from lda_pdk import (PDKRegistry, DeviceEntry, SOVEREIGN_DEPS, by_class,
                     submit_device, submit_devices_batch,
-                    submit_benchmark_proposal, list_contributions)
+                    submit_benchmark_proposal, list_contributions,
+                    review_proposal, land_proposal, reload_landed,
+                    list_proposals, get_audit, list_landed)
 
 HARNESS = VerificationHarness(BENCHMARK_DEFS)
 AGENT_OUT = os.path.join(LDA_ROOT, "reports_agent")
@@ -1910,6 +1914,18 @@ def ecosystem_status():
 
     # --- D-94 社区贡献库快照（真实提交数据，持久化于 contributions.json）---
     comm = list_contributions()
+    # --- D-95 评审流：启动恢复已落地注册 + 提案状态分布 + 已落地清单 ---
+    try:
+        reload_landed()   # 按 landed.json 恢复 live 注册（若存在）
+    except Exception:
+        pass
+    props = comm["proposals"]
+    prop_status = {"pending": 0, "approved": 0, "rejected": 0, "landed": 0}
+    for pr in props:
+        st = pr.get("status", "")
+        if st in prop_status:
+            prop_status[st] += 1
+    landed = list_landed()
 
     return {
         "harness": {"total": total, "passed": passed, "new_ids": new_ids},
@@ -1920,11 +1936,14 @@ def ecosystem_status():
             "registry_stats": comm["registry_stats"],
             "device_count": len(comm["devices"]),
             "devices": comm["devices"],
-            "proposals": comm["proposals"],
+            "proposals": props,
             "proposal_count": comm["proposal_count"],
-            "honest_note": "贡献库持久化于 contributions.json（gitignore）；真实晶圆厂 NDA-PDK 仍属发动期 D-62 暂缓。harness 提案仅登记 pending，需代码评审 + golden 函数注册后方可纳入回归。",
+            "proposal_status": prop_status,
+            "landed": landed,
+            "landed_count": len(landed),
+            "honest_note": "贡献库持久化于 contributions.json、落地注册于 landed.json（均 gitignore）；真实晶圆厂 NDA-PDK 仍属发动期 D-62 暂缓。harness 提案经「具名人工评审（LLM 不进判决路径）→ 确定性自测门禁 → 落地注册」闭环；落库(live)≠进版本控制，权威 ORACLE 以维护者 git 提交为准。",
         },
-        "honest_boundary": "真实晶圆厂 NDA-PDK 对接属发动期事项(D-62)，暂缓；本模块仅提供 Registry 入口与社区提交入口，不硬编码任何商业 PDK。",
+        "honest_boundary": "真实晶圆厂 NDA-PDK 对接属发动期事项(D-62)，暂缓；本模块仅提供 Registry 入口与社区提交/评审落地入口，不硬编码任何商业 PDK。",
         "acceptance": {"passed": all(c["ok"] for c in acceptance), "checks": acceptance},
     }
 
@@ -2101,6 +2120,16 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, {"results": res, "summary": _summarize_submit(res)})
             elif path == "/api/ecosystem/propose":
                 self._send(200, submit_benchmark_proposal(payload))
+            # ---- D-95 生态共建 · 社区评审流 + 提案落地 ----
+            elif path == "/api/ecosystem/review":
+                self._send(200, review_proposal(
+                    proposal_id=payload.get("id", ""),
+                    decision=payload.get("decision", ""),
+                    reviewer=payload.get("reviewer", ""),
+                    rationale=payload.get("rationale", ""),
+                    oracle_fn_source=payload.get("oracle_fn_source")))
+            elif path == "/api/ecosystem/land":
+                self._send(200, land_proposal(payload.get("id", "")))
             else:
                 self._send(404, {"error": "not found"})
         except Exception as e:  # noqa: BLE001

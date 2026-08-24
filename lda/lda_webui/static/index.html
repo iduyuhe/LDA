@@ -985,6 +985,42 @@
     <div class="conclusion" id="ecosubConclusion"></div>
   </div>
 
+  <div class="sec" id="sec-ecorev">
+    <h3>55 社区评审流 + 提案落地（D-95 · 提案 → 具名人工评审 → 确定性自测 → 接入统一回归）</h3>
+    <div class="hint">把 D-94 的 pending 提案闭环成「提案 → <b>具名人工评审（LLM 不进判决路径）</b> → 确定性自测门禁 → 落地接入 harness 统一回归」。approve 须附 ORACLE 参考实现源码（评审前置自测：可编译 + 默认参数返回有限标量）；落地会实时注册进 golden（_GOLDEN_DISPATCH + _PHYSICAL_LAW）与 BENCHMARK_DEFS（自动纳入回归，零接线），并生成补丁供维护者 git 提交。<b>落库(live) ≠ 进版本控制：权威 ORACLE 以维护者 git/PR 提交为准。</b></div>
+
+    <div class="subhead">① 评审 / 落地台（先选一条提案）</div>
+    <div class="row">
+      <select id="rvSel" style="min-width:340px"></select>
+      <button class="btn" id="refreshRvw">刷新评审台</button>
+    </div>
+    <div class="row">
+      <label>决策
+        <select id="rvDecision">
+          <option value="approve">approve（批准）</option>
+          <option value="reject">reject（拒绝）</option>
+        </select>
+      </label>
+      <label>具名评审人 <input id="rvReviewer" size="16" placeholder="杜玉河"></label>
+    </div>
+    <div class="row">
+      <label>评审理由 <input id="rvRationale" size="48" placeholder="公式与实现一致，为确定性物理定律"></label>
+    </div>
+    <div class="row"><label>ORACLE 参考实现源码（approve 必填；仅 math 命名空间）</label></div>
+    <div class="row">
+      <textarea id="rvSource" rows="5" style="width:92%;font-family:monospace" placeholder='def b19_micro_ring_fsr(L_um, n_g):&#10;    c_um_s = 2.99792458e14&#10;    return c_um_s / (n_g * L_um) / 1e9'></textarea>
+    </div>
+    <div class="row">
+      <button class="btn" id="rvBtn">执行评审</button>
+      <button class="btn" id="landBtn">落地（仅 approved）</button>
+    </div>
+    <div id="rvRes" class="summary"></div>
+
+    <div class="subhead">② 提案状态分布 + 审计轨迹 + 已落地清单</div>
+    <div id="rvwStatus" class="summary"></div>
+    <div id="rvwBody"></div>
+  </div>
+
   <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
@@ -3126,6 +3162,76 @@ async function refreshComm(){
 }
 $('refreshComm').onclick = refreshComm;
 refreshComm();
+
+// ---- 55 D-95 生态共建 · 社区评审流 + 提案落地 ----
+async function refreshRvw(){
+  try {
+    const d = await apiGet('/api/ecosystem');
+    const c = d.community || {};
+    const props = c.proposals || [];
+    const st = c.proposal_status || {};
+    const sel = $('rvSel');
+    sel.innerHTML = props.map(p=>`<option value="${escapeHtml(p.id)}">${escapeHtml(p.id)} · ${escapeHtml(p.status)} · ${escapeHtml(p.title)}</option>`).join('') || '<option value="">（暂无提案）</option>';
+    const statRow = `pending <b>${st.pending||0}</b> · approved <b>${st.approved||0}</b> · rejected <b>${st.rejected||0}</b> · landed <b>${st.landed||0}</b> · 已落地注册 <b>${c.landed_count||0}</b>`;
+    const pRows = props.map(p=>{
+      const aud = (p.audit||[]).map(a=>`${a.op}[${a.decision||''}] @${a.ts} by ${a.reviewer||'-'}`).join('<br>') || '—';
+      const cls = p.status==='landed' ? 'ok' : (p.status==='pending' ? '' : 'fail');
+      return `<tr><td>${escapeHtml(p.id)}</td><td>${escapeHtml(p.title)}</td><td>${escapeHtml(p.metric)}</td><td>${escapeHtml(p.formula)}</td>
+        <td class="${cls}">${p.status}</td><td>${escapeHtml(p.reviewed_by||'')}${p.reviewed_at?(' @'+escapeHtml(p.reviewed_at)):''}</td>
+        <td style="font-size:11px">${aud}</td></tr>`;
+    }).join('');
+    const lRows = (c.landed||[]).map(l=>{
+      const patchB64 = btoa(unescape(encodeURIComponent(l.patch||'')));
+      return `<tr><td>${escapeHtml(l.bid)}</td><td>${escapeHtml(l.title)}</td><td>${escapeHtml(l.oracle_fn_name)}</td>
+        <td>${escapeHtml(l.reviewed_by||'')} @${escapeHtml(l.reviewed_at||'')}</td>
+        <td><a href="data:text/plain;charset=utf-8;base64,${patchB64}" download="landed_${escapeHtml(l.bid)}.patch.txt">补丁</a></td></tr>`;
+    }).join('');
+    $('rvwStatus').innerHTML = `提案状态：${statRow}（<span class="note">LLM 不进判决路径：评审=具名人工，自测=死标量门禁</span>）`;
+    $('rvwBody').innerHTML = `
+      <div class="subhead">全部提案 + 审计轨迹</div>
+      <table class="tbl"><thead><tr><th>id</th><th>标题</th><th>指标</th><th>公式</th><th>评审态</th><th>评审人/时间</th><th>审计</th></tr></thead><tbody>${pRows}</tbody></table>
+      <div class="subhead">已落地（live 注册 + git 补丁）</div>
+      <table class="tbl"><thead><tr><th>bid</th><th>标题</th><th>oracle_fn</th><th>评审人</th><th>git 补丁</th></tr></thead><tbody>${lRows}</tbody></table>`;
+  } catch(e){
+    $('rvwBody').innerHTML = '<span class="fail">刷新失败：'+e+'</span>';
+  }
+}
+$('refreshRvw').onclick = refreshRvw;
+
+async function rvBtn(){
+  const btn = $('rvBtn'); btn.disabled = true;
+  try {
+    const d = await api('/api/ecosystem/review', {
+      id: $('rvSel').value, decision: $('rvDecision').value,
+      reviewer: $('rvReviewer').value.trim(),
+      rationale: $('rvRationale').value.trim(),
+      oracle_fn_source: $('rvSource').value,
+    });
+    const cls = (d.status==='approved'||d.status==='rejected') ? (d.status==='approved'?'ok':'fail') : 'fail';
+    $('rvRes').innerHTML = `<span class="verdict ${cls}">${escapeHtml(d.status)}</span> ${escapeHtml(d.id||'')} · ${escapeHtml(d.reason||'')}`;
+    refreshRvw();
+  } catch(e){
+    $('rvRes').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('rvBtn').onclick = rvBtn;
+
+async function landBtn(){
+  const btn = $('landBtn'); btn.disabled = true;
+  try {
+    const d = await api('/api/ecosystem/land', { id: $('rvSel').value });
+    const cls = (d.status==='landed') ? 'ok' : 'fail';
+    $('rvRes').innerHTML = `<span class="verdict ${cls}">${escapeHtml(d.status)}</span> ${escapeHtml(d.id||'')} · 自测值 <b>${d.value!=null?d.value:''}</b> · ${escapeHtml(d.reason||'')}`;
+    if(d.patch){
+      $('rvRes').innerHTML += `<pre style="font-size:11px;max-height:220px;overflow:auto;background:#f1f5f9;padding:8px;border-radius:6px">${escapeHtml(d.patch)}</pre>`;
+    }
+    refreshRvw();
+  } catch(e){
+    $('rvRes').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('landBtn').onclick = landBtn;
+refreshRvw();
 
 // ---- ㊽ D-87 谱形目标 × 3D 截面（多波长加权联合）----
 async function runSp(){

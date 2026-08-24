@@ -1,0 +1,165 @@
+{
+  "d": "D-95",
+  "title": "生态共建 · 社区评审流 + 提案→golden 落地",
+  "flow": {
+    "submit": {
+      "status": "accepted_pending",
+      "id": "B19",
+      "review_status": "pending",
+      "reason": "提案已登记，待代码评审与 golden 函数注册后纳入回归（LLM 不进判决路径）",
+      "store_op": "added"
+    },
+    "review_without_reviewer": {
+      "status": "error",
+      "reason": "评审人（具名/授权签署）必填——LLM 不进判决路径"
+    },
+    "review_bad_oracle": {
+      "status": "error",
+      "id": "B19",
+      "reason": "approve 前置自测失败：ORACLE 自测未返回有限标量：'x'"
+    },
+    "review_approve": {
+      "status": "approved",
+      "id": "B19",
+      "decision": "approve",
+      "reviewer": "杜玉河",
+      "reviewed_at": "2026-08-24T14:08:22",
+      "reason": "评审已记录（审计轨迹已落盘）"
+    },
+    "land": {
+      "status": "landed",
+      "id": "B19",
+      "value": 749.481145,
+      "reason": "已注册 golden._GOLDEN_DISPATCH + _PHYSICAL_LAW + benchmarks.BENCHMARK_DEFS，自动纳入统一回归；补丁已生成，待维护者 git 提交"
+    },
+    "review_after_landed": {
+      "status": "error",
+      "reason": "提案 B19 状态为 landed，仅 pending 可评审"
+    }
+  },
+  "live_regression": {
+    "B19_in_BENCHMARK_DEFS": true,
+    "B19_in_dispatch": true,
+    "B19_in_physical_law": true,
+    "golden_with_source": {
+      "kind": "physical-law",
+      "value": 749.481145
+    }
+  },
+  "reload": {
+    "count": 1,
+    "bids": [
+      "B19"
+    ],
+    "re_registered": true
+  },
+  "audit": [
+    {
+      "ts": "2026-08-24T14:08:22",
+      "op": "review",
+      "decision": "approve",
+      "reviewer": "杜玉河",
+      "rationale": "FSR=c/(n_g·L) 为确定性物理定律，公式与实现一致",
+      "self_test_value": 749.481145
+    },
+    {
+      "ts": "2026-08-24T14:08:22",
+      "op": "land",
+      "value": 749.481145,
+      "live_registered": true
+    }
+  ],
+  "proposal_final": {
+    "id": "B19",
+    "title": "微环 FSR",
+    "metric": "FSR_GHz",
+    "formula": "FSR = c/(n_g·L)",
+    "oracle_fn_name": "b19_micro_ring_fsr",
+    "tol": 0.5,
+    "default_params": {
+      "L_um": 100.0,
+      "n_g": 4.0
+    },
+    "proposed_by": "community",
+    "status": "landed",
+    "note": "",
+    "reviewed_by": "杜玉河",
+    "reviewed_at": "2026-08-24T14:08:22",
+    "review_rationale": "FSR=c/(n_g·L) 为确定性物理定律，公式与实现一致",
+    "landed_at": "2026-08-24T14:08:22",
+    "audit": [
+      {
+        "ts": "2026-08-24T14:08:22",
+        "op": "review",
+        "decision": "approve",
+        "reviewer": "杜玉河",
+        "rationale": "FSR=c/(n_g·L) 为确定性物理定律，公式与实现一致",
+        "self_test_value": 749.481145
+      },
+      {
+        "ts": "2026-08-24T14:08:22",
+        "op": "land",
+        "value": 749.481145,
+        "live_registered": true
+      }
+    ]
+  },
+  "patch_generated": true,
+  "patch_head": "# ===== 社区提案落地补丁（B19）=====\n# 请合并到 lda_harness/golden.py 与 lda_harness/benchmarks.py，\n# 经维护者评审后提交 git（PR 即开放评审流）。落库(live) ≠ 进版本控制。\n\n## 1) golden.py —— 新增 ORACLE 函数（建议置于 B18 之后）\ndef b19_micro_ring_fsr(L_um, n_g):",
+  "honest_boundary": "LLM 不进判决路径：评审=具名人工（缺评审人即拒），自测=死标量门禁（非法 ORACLE 即拒）；落地仅登记确定性物理定律并实时接入统一回归；落库(live)≠进版本控制，权威 ORACLE 以维护者 git 提交（开放评审流）为准。",
+  "acceptance": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "提案提交 → accepted_pending（仅登记不注入）",
+        "ok": true,
+        "detail": "{'status': 'accepted_pending', 'id': 'B19', 'review_status': 'pending', 'reason': '提案已登记，待代码评审与 golden 函数注册后纳入回归（LLM 不进判决路径）', 'store_op': 'added'}"
+      },
+      {
+        "name": "缺评审人 → 拒绝（LLM 不进判决路径）",
+        "ok": true,
+        "detail": "评审人（具名/授权签署）必填——LLM 不进判决路径"
+      },
+      {
+        "name": "非法 ORACLE → 前置自测拒绝（死标量门禁）",
+        "ok": true,
+        "detail": "approve 前置自测失败：ORACLE 自测未返回有限标量：'x'"
+      },
+      {
+        "name": "有效 approve → approved",
+        "ok": true,
+        "detail": "{'status': 'approved', 'id': 'B19', 'decision': 'approve', 'reviewer': '杜玉河', 'reviewed_at': '2026-08-24T14:08:22', 'reason': '评审已记录（审计轨迹已落盘）'}"
+      },
+      {
+        "name": "落地 → landed + 物理值正确",
+        "ok": true,
+        "detail": "value=749.481145"
+      },
+      {
+        "name": "live 回归接入（BENCHMARK_DEFS + dispatch + physical_law）",
+        "ok": true,
+        "detail": "defs=True dispatch=True physical_law=True"
+      },
+      {
+        "name": "golden_with_source 判为 physical-law",
+        "ok": true,
+        "detail": "physical-law value=749.4811"
+      },
+      {
+        "name": "landed 后不可再评审（状态机锁定）",
+        "ok": true,
+        "detail": "{'status': 'error', 'reason': '提案 B19 状态为 landed，仅 pending 可评审'}"
+      },
+      {
+        "name": "reload_landed 启动恢复",
+        "ok": true,
+        "detail": "n=1 bids=['B19']"
+      },
+      {
+        "name": "审计轨迹（review[approve] → land）",
+        "ok": true,
+        "detail": "[{'ts': '2026-08-24T14:08:22', 'op': 'review', 'decision': 'approve', 'reviewer': '杜玉河', 'rationale': 'FSR=c/(n_g·L) 为确定性物理定律，公式与实现一致', 'self_test_value': 749.481145}, {'ts': '2026-08-24T14:08:22', 'op': 'land', 'value': 749.481145, 'live_registered': True}]"
+      }
+    ]
+  }
+}

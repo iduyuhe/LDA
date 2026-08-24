@@ -26,7 +26,6 @@ import json
 import os
 from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Optional
-
 from .registry import PDKRegistry, DeviceEntry
 from .sovereign_deps import SOVEREIGN_DEPS
 
@@ -186,7 +185,12 @@ def submit_devices_batch(payloads: List[dict],
 # --------------------------------------------------------------------------
 @dataclass
 class BenchmarkProposal:
-    """社区提案：新的物理定律锚（需代码评审 + golden 函数注册后纳入回归）。"""
+    """社区提案：新的物理定律锚（需代码评审 + golden 函数注册后纳入回归）。
+
+    状态机：pending →（review approve）approved →（land）landed；
+            pending →（review reject）rejected。
+    评审/落地字段由 lda_pdk/review.py 维护（D-95）。
+    """
     id: str
     title: str
     metric: str
@@ -195,8 +199,15 @@ class BenchmarkProposal:
     tol: float = 0.0
     default_params: Dict = field(default_factory=dict)
     proposed_by: str = "community"
-    status: str = "pending"            # pending / accepted / rejected
+    status: str = "pending"            # pending / approved / rejected / landed
     note: str = ""
+    # ---- D-95 评审/落地字段（缺省兼容旧 contributions.json）----
+    oracle_fn_source: str = ""         # 评审通过后附带的 ORACLE 参考实现源码
+    reviewed_by: str = ""              # 具名评审人/授权签署（LLM 不进判决路径）
+    reviewed_at: str = ""
+    review_rationale: str = ""
+    landed_at: str = ""
+    audit: List[dict] = field(default_factory=list)   # 审计轨迹
 
     def validate(self) -> bool:
         if not self.id or not self.title or not self.metric:

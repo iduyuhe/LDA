@@ -98,6 +98,47 @@ ECOSYSTEM_REQUIRED_FIELDS = [
     "community.landed_count", "community.honest_note",
 ]
 
+# D-108 实证锚字段存在性断言（面板 57 渲染硬依赖，D-62 新增端点此前无字段门禁）：
+EMPIRICAL_REQUIRED_FIELDS = [
+    "corpus.total", "corpus.by_metric", "corpus.records",
+    "adversarial.total",
+    "e_benchmarks",
+    "review.stats", "review.proposals",
+    "honest_note",
+]
+
+
+def _check_empirical_fields(base):
+    """实证锚字段存在性断言（D-108）：GET /api/empirical 真实响应中逐一解析
+    面板 57 渲染硬依赖字段路径（corpus/adversarial/e_benchmarks/review/
+    honest_note），字段删除/改名即 FAIL。"""
+    try:
+        with urllib.request.urlopen(f"{base}/api/empirical", timeout=15) as r:
+            d = json.load(r)
+    except Exception as e:
+        return [("FAIL", "GET /api/empirical", f"响应读取/解析失败: {e}")]
+
+    def has(path):
+        cur = d
+        for k in path.split("."):
+            if not isinstance(cur, dict) or k not in cur:
+                return False
+            cur = cur[k]
+        return True
+
+    checks = [("PASS" if has(p) else "FAIL", "field", p)
+              for p in EMPIRICAL_REQUIRED_FIELDS]
+    # e_benchmarks 数组元素字段（面板 57 判题演示硬依赖）
+    eb = d.get("e_benchmarks") if isinstance(d, dict) else None
+    if isinstance(eb, list) and eb:
+        elem = eb[0]
+        for k in ("id", "empirical_id", "golden", "tol"):
+            checks.append(("PASS" if isinstance(elem, dict) and k in elem
+                           else "FAIL", "field", f"e_benchmarks[0].{k}"))
+    elif not isinstance(eb, list):
+        checks.append(("FAIL", "field", "e_benchmarks 非数组"))
+    return checks
+
 
 def _check_ecosystem_fields(base):
     """生态字段存在性断言（D-103）：GET /api/ecosystem 真实响应中逐一解析
@@ -163,6 +204,12 @@ def main():
                 fail.append(("POST", r, f"{code} {text[:50]}"))
         # 3) 生态字段存在性断言（D-103：前端渲染硬依赖，字段删除/改名即 FAIL）
         for kind, r, d in _check_ecosystem_fields(base):
+            if kind == "PASS":
+                ok.append(("FIELD", r, d))
+            else:
+                fail.append(("FIELD", r, d))
+        # 3b) 实证锚字段存在性断言（D-108：面板 57 渲染硬依赖）
+        for kind, r, d in _check_empirical_fields(base):
             if kind == "PASS":
                 ok.append(("FIELD", r, d))
             else:

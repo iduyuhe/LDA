@@ -102,6 +102,13 @@
 - **维护回归：CI core 31 PASS / 0 SKIP / 0 FAIL（279.56s）全绿**，报告 `ci_regression_core_v064.json`。
 - **维护结论**：v0.6.3+ 全绿；WebUI 字段漂移现可被 CI 捕获（删除/改名即 FAIL）。
 
+### 维护（v0.6.10 · D-108 持续维护 · 实证锚字段门禁补强 · 2026-08-25）
+- **门禁缺口复核（发现真实缺口）**：面板 57（D-62 新增）依赖 `/api/empirical` 的 5 个顶层字段（`corpus`/`adversarial`/`e_benchmarks`/`review`/`honest_note`），但 D-103 固化的 `ECOSYSTEM_REQUIRED_FIELDS` 只覆盖 `/api/ecosystem`——**empirical 端点仅有路由存在性验证，字段断言缺口**（端点/字段漂移不会被 CI 捕获）。
+- **断言补强（实质增量）**：`run_webui_api_smoke.py` 新增 **`EMPIRICAL_REQUIRED_FIELDS` 13 条断言**——`corpus.total`/`corpus.by_metric`/`corpus.records`/`adversarial.total`/`e_benchmarks`/`review.stats`/`review.proposals`/`honest_note` + `e_benchmarks[0]` 元素 `id`/`empirical_id`/`golden`/`tol`（面板 57 判题演示硬依赖）；实跑 PASS 44→**57**、静态 52、FAIL=0（秒级）。
+- **漂移复核**：D-103 的 31 条 `ECOSYSTEM_REQUIRED_FIELDS` 对当前 GET /api/ecosystem 全 PASS（零漂移）；README 计数（五十七面板/73 smoke/35 core/21 题）、CHANGELOG 维护段 8 个、规划最新 D-107 全一致。
+- **维护回归：CI core 35 PASS / 0 SKIP / 0 FAIL**，报告 `ci_regression_core_v0610.json`。
+- **维护结论**：v0.6.9+ 全绿；`/api/empirical` 字段漂移现可被 CI 捕获（此前面板 57 渲染依赖零保护）。
+
 ### 维护（v0.6.9 · D-107 持续维护 · 文档资产 + IR schema + 性能基准深审 · 2026-08-25）
 - **README 死链扫描**：提取 README 全部相对路径引用（lda/…、docs/…、examples/…、reports/…），4/5 存在（`reports/patches/{bid}.publish.patch` 为 D-98 模板占位符，非死链）——**零缺失**。
 - **L0 IR schema 一致性**：`docs/ir_schema.json` 语法有效（draft-07、version 0.3）、与 `docs/ir_spec.md`（v0.3 定稿 D-76）一致、受控升级语义（0.3 现行/0.2 兼容/未知拒绝）；零漂移校验 `run_ir_spec_smoke.py` 在 all 集 + CORE_SMOKES 双覆盖。

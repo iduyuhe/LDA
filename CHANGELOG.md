@@ -64,6 +64,16 @@
 - **完整生命周期落地**：提案 → 具名人工评审 → 确定性自测 → 落地（自动纳入统一回归）→ 发布（补丁+Release Notes 草稿）→ 维护者 git 合并。
 - 新增 `run_ecosystem_publish_smoke.py`（12/12 PASS）、`run_ecosystem_d98_report.py`（10/10，产出 `lda/reports/ecosystem_d98.json`）；D-93~D-97 smoke 回归全绿。
 
+### 新增/变更（post-v0.6 · D-62 实证大数据锚 · 发动期联动框架落地 · 2026-08-24）
+- **实证锚 = 验证的第二道非 AI ground**（与物理定律锚并列，对抗"纯 AI 互证循环论证"）：
+  - **harness 实证锚题 E1-E3**（`benchmarks.py`）：BENCHMARK_DEFS 新增 E1（SOI neff）/E2（SiN neff）/E3（环形 FSR），oracle=empirical-measurement、`anchor="empirical"`、`empirical_id` 指向语料库、golden_fn=None（golden 来自实测语料而非解析函数）；BENCHMARK_DEFS 18→**21 题**。
+  - **验证路径实证锚分支**（`harness.py` `VerificationHarness.__init__/resolve_specs/run` + `verification_adapters.build_harness_specs`）：实证锚题 golden 经 `EmpiricalAnchor.resolve(empirical_id)` 从语料库实时取（seed_empirical.json + 社区落库增量 `empirical_contributions.json`）；无 anchor 时**诚实降级不判 PASS**（empirical-missing）；比对=|candidate−measured|≤tol（死标量），LLM 永不进判决路径。
+  - **语料评审流**（`lda_pdk/empirical.py`）：`submit_measurement`（确定性校验：id/device/metric 必填、measured_value 有限、σ≥0、**citation 必填=可追溯来源（无引用不予收录）**、防重）→ `review_measurement`（具名人工评审，LLM 不进判决路径）→ `land_measurement`（写 `empirical_contributions.json`（gitignore）+ reload 进语料库——harness E 题实时生效）；`list_measurements`/`measurement_stats`/`list_landed_measurements`。
+- **WebUI 升级至五十七面板**：面板 57「实证大数据锚」（语料库统计+逐条溯源（fab/citation/σ/provenance）+ harness E 题 golden 来源 + 判题演示（候选值→死标量判定）+ 语料提交流（提交→评审→落库 UI））；后端 `GET /api/empirical` + `POST /api/ecosystem/measurement`（action=submit|review|land）。
+- **实测**：E1-E3 golden=2.63/1.53/9.15（来自 seed 语料）；参考候选 **21/21 PASS**（B18 物理定律 + E3 实证锚双 ground）；扰动 10% 实证锚题全部 FAIL 检测；语料 提交→评审→落地→reload 生效；WebUI 全链 200；`run_webui_api_smoke.py` 处理 measurement 端点（空载荷 400 是正确行为，静态验证）。
+- 新增 `run_empirical_anchor_smoke.py`（**17/17** PASS，已纳入 CI core 门禁 CORE_SMOKES 32 条）、`run_empirical_d62_report.py`（6/6，产出 `lda/reports/empirical_d62.json`）；D-93 smoke 回归全绿（n>=18 兼容 21 题）。
+- **诚实边界**：种子语料为公开文献/PDK 量级（fab_source+citation 可追溯）；真实晶圆厂 NDA 流片实测属发动期联动，经「具名人工评审 → 落库」流持续流入（管道先建好）；落库(live) ≠ 进版本控制，权威语料以维护者 git 提交为准。
+
 ### 维护（v0.6.1 · D-99 生态共建收官维护 · 2026-08-24）
 - **生态共建（D-93~D-98）收官基线**：「提交→评审→落地→发布」全链闭环，五十六面板。
 - **CI core 门禁覆盖生态链**：`run_ci_regression.py` `CORE_SMOKES` 新增三 smoke——`run_ecosystem_smoke.py`（harness B1-B18 + 主权 A/B/C + Registry 自检）/ `run_ecosystem_submit_smoke.py`（提交入口）/ `run_ecosystem_publish_smoke.py`（评审→落地→发布全链）；CI 门禁（`--tag core`）从此覆盖共建链；文件头陈旧 "B1-B13"→"B1-B18"。

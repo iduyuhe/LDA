@@ -22,8 +22,9 @@ class BenchmarkResult:
 
 
 class VerificationHarness:
-    def __init__(self, defs):
+    def __init__(self, defs, anchor=None):
         self.defs = defs
+        self.anchor = anchor  # D-62 实证大数据锚（EmpiricalAnchor）——第二道非 AI ground
 
     def resolve_specs(self, l0_ir=None):
         """解析 benchmark 规格。
@@ -31,6 +32,9 @@ class VerificationHarness:
         若给定 L0 IR 且含 verification.benchmarks，则以其为准（target/tol/oracle
         可被 L0 覆盖）；否则用内置 BENCHMARK_DEFS 默认规格。
         返回规格列表：{id, metric, target, tol, oracle, params, golden_fn, resolved}
+
+        D-62 实证锚题（anchor=empirical，golden_fn=None）：target 不在此解析——
+        由 run() 经 EmpiricalAnchor 从实测语料实时取（第二道非 AI ground，死标量比对）。
         """
         specs = []
         benchmarks = []
@@ -48,6 +52,16 @@ class VerificationHarness:
                 params = dict(d["default_params"])
                 if b.get("params"):        # L0 IR 携带设计实际几何参数 → 覆盖默认
                     params.update(b["params"])
+                anchor = d.get("anchor")
+                if anchor == "empirical":
+                    specs.append({
+                        "id": bid, "metric": b.get("metric", d["metric"]),
+                        "target": None, "tol": b.get("tol", d["tol"]),
+                        "oracle": b.get("oracle", d["oracle"]),
+                        "params": params, "golden_fn": None,
+                        "anchor": "empirical", "empirical_id": d.get("empirical_id"),
+                        "resolved": True})
+                    continue
                 target = b.get("target", d["golden_fn"](**params))
                 specs.append({
                     "id": bid, "metric": b.get("metric", d["metric"]),
@@ -59,6 +73,15 @@ class VerificationHarness:
             for bid in sorted(self.defs.keys()):
                 d = self.defs[bid]
                 params = dict(d["default_params"])
+                anchor = d.get("anchor")
+                if anchor == "empirical":
+                    specs.append({
+                        "id": bid, "metric": d["metric"],
+                        "target": None, "tol": d["tol"],
+                        "oracle": d["oracle"], "params": params,
+                        "golden_fn": None, "anchor": "empirical",
+                        "empirical_id": d.get("empirical_id"), "resolved": True})
+                    continue
                 specs.append({
                     "id": bid, "metric": d["metric"],
                     "target": d["golden_fn"](**params), "tol": d["tol"],
@@ -72,6 +95,10 @@ class VerificationHarness:
 
         candidate: callable(spec, golden, params) -> float
         返回 BenchmarkResult 列表。
+
+        D-62：实证锚题（spec.anchor=empirical）的 golden 经 self.anchor.resolve
+        （EmpiricalAnchor）从实测语料取——来源='empirical-measurement'（真实测量，
+        非 AI 意见）。anchor 未注入时实证锚题按未解析处理（诚实降级）。
         """
         results = []
         for s in specs:
@@ -80,6 +107,26 @@ class VerificationHarness:
                     s["id"], s.get("metric"), None, None, s.get("tol"),
                     s.get("oracle"), False, "未解析：缺少黄金参考定义",
                     s.get("oracle")))
+                continue
+            if s.get("anchor") == "empirical":
+                if self.anchor is None:
+                    results.append(BenchmarkResult(
+                        s["id"], s["metric"], None, None, s["tol"],
+                        s["oracle"], False,
+                        "实证锚未注入（语料库未加载）——诚实降级不判 PASS",
+                        "empirical-missing"))
+                    continue
+                golden, source, src_note = self.anchor.resolve(s.get("empirical_id"))
+                if golden is None:
+                    results.append(BenchmarkResult(
+                        s["id"], s["metric"], None, None, s["tol"],
+                        s["oracle"], False, src_note, source))
+                    continue
+                candidate_val = candidate(s, golden, s["params"])
+                passed = abs(candidate_val - golden) <= s["tol"]
+                results.append(BenchmarkResult(
+                    s["id"], s["metric"], golden, candidate_val, s["tol"],
+                    s["oracle"], passed, src_note, source))
                 continue
             golden, source, src_note = golden_with_source(s["id"], s["params"])
             candidate_val = candidate(s, golden, s["params"])

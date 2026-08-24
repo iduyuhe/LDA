@@ -190,11 +190,51 @@ BENCHMARK_DEFS = {
         "golden_fn": b18_purcell_factor,
         "note": "F_P=4g²/(κ·γ_1)（标准腔 QED 增强因子）；复用 D-88 物理参数。",
     },
+    # ---- D-62 实证大数据锚（第二道非 AI ground：真实测量语料）----
+    # anchor=empirical 的题：golden 来自 EmpiricalCorpus 实测语料（seed_empirical.json
+    # + 社区经评审流落库的语料），非解析函数（golden_fn=None）。
+    # 比对 = |candidate − measured| ≤ tol（死标量），LLM 永不进判决路径。
+    # 诚实边界：种子语料为公开文献/PDK 量级（fab_source 标注来源），
+    # 真实晶圆厂 NDA 流片实测属发动期 D-62 联动，经社区提交流持续流入。
+    "E1": {
+        "title": "SOI 波导有效折射率（实证语料锚）",
+        "metric": "n_eff",
+        "oracle": "empirical-measurement(E-SOI-NEFF-220)",
+        "tol": 0.02,
+        "anchor": "empirical",
+        "empirical_id": "E-SOI-NEFF-220",
+        "default_params": {"w_um": 0.5, "h_um": 0.22, "wl_um": 1.55},
+        "golden_fn": None,
+        "note": "实证锚：golden=语料实测值 2.63±0.02（IMEC iSiPP50G 公开 PDK 文献量级）；比对=|candidate−measured|≤σ。",
+    },
+    "E2": {
+        "title": "SiN 波导有效折射率（实证语料锚）",
+        "metric": "n_eff",
+        "oracle": "empirical-measurement(E-SIN-NEFF-300)",
+        "tol": 0.02,
+        "anchor": "empirical",
+        "empirical_id": "E-SIN-NEFF-300",
+        "default_params": {"w_um": 0.5, "h_um": 0.3, "wl_um": 1.55},
+        "golden_fn": None,
+        "note": "实证锚：golden=语料实测值 1.53±0.02（公开 SiN 工艺文献量级）；比对=|candidate−measured|≤σ。",
+    },
+    "E3": {
+        "title": "环形谐振器 FSR（实证语料锚）",
+        "metric": "FSR_nm",
+        "oracle": "empirical-measurement(E-RING-FSR)",
+        "tol": 0.1,
+        "anchor": "empirical",
+        "empirical_id": "E-RING-FSR",
+        "default_params": {"R_um": 10.0, "n_g": 4.18, "wl_um": 1.55},
+        "golden_fn": None,
+        "note": "实证锚：golden=语料实测值 9.15±0.1（环形谐振器公开测试数据）；比对=|candidate−measured|≤σ。",
+    },
 }
 
 # 对齐顺序（报告展示用）
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
-                   "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18"]
+                   "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
+                   "E1", "E2", "E3"]
 
 
 def register_benchmark(def_dict: dict) -> str:

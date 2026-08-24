@@ -1,11 +1,11 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-08-24T22:36:29
+- 生成时间：2026-08-24T22:53:19
 - L0_IR：(内置默认 B1–B4,B8)
 - candidate：ReferenceCandidate
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 
-## 汇总：18/18 通过
+## 汇总：18/21 通过
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -27,6 +27,14 @@
 | B7 | crosstalk_dB | numpy-fdtd-offline | -19.7328 | -19.7328 | 0 | 5 | ✅ PASS |
 | B8 | T_taper | physical-law | 1 | 1 | 0 | 0.01 | ✅ PASS |
 | B9 | f01_GHz | physical-law | 6.6282 | 6.6282 | 0 | 0.05 | ✅ PASS |
+| E1 | n_eff | empirical-missing | — | — | — | 0.02 | ❌ FAIL |
+| E2 | n_eff | empirical-missing | — | — | — | 0.02 | ❌ FAIL |
+| E3 | FSR_nm | empirical-missing | — | — | — | 0.1 | ❌ FAIL |
+
+## 未通过项
+- **E1**（n_eff）：实证锚未注入（语料库未加载）——诚实降级不判 PASS
+- **E2**（n_eff）：实证锚未注入（语料库未加载）——诚实降级不判 PASS
+- **E3**（FSR_nm）：实证锚未注入（语料库未加载）——诚实降级不判 PASS
 
 ---
 *本报告由 LDA 验证 harness 生成；黄金参考为确定性物理定律锚（非 AI）。*

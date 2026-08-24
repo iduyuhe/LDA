@@ -1,0 +1,253 @@
+{
+  "ok": true,
+  "title": "CI 全量回归（tag=core）",
+  "tag": "core",
+  "python": "C:\\Users\\Administrator\\.workbuddy\\binaries\\python\\envs\\default\\Scripts\\python.exe",
+  "n_scripts": 32,
+  "summary": {
+    "pass": 32,
+    "skip": 0,
+    "fail": 0,
+    "total_s": 287.46,
+    "failed": [],
+    "skipped": []
+  },
+  "results": [
+    {
+      "script": "run_harness.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.71,
+      "tail": "\n报告已写入：\n  D:\\agent_LDA\\lda\\reports\\verification_report.md\n  D:\\agent_LDA\\lda\\reports\\verification_report.json"
+    },
+    {
+      "script": "run_ir_d05_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.24,
+      "tail": "OK  GratingCoupler 桥接诚实 NotImplementedError（当前 DesignAgent 仅支持 Waveguide/RingResonator）\nOK  导出示例 IR JSON -> lda/reports/ir_d05_examples.json\n\n=== L0 IR v0.2 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_ir_ring_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.24,
+      "tail": "OK  PDK ring 模板 [环形谐振器 FSR@SITRI(演示近似)] 闭环 PASS (R=9.950, FSR=9.150nm)\nOK  PDK 中单 R 调 FSR 的 ring 模板 4 个均真跑\n\n=== D-11 环形谱形逆设计闭环 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_ir_spec_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.3,
+      "tail": "[PASS] 负例-缺设计意图被validate检出: ok=True\n      缺设计意图被 validate 检出（1 错误）\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_spectrum_loop_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 22.31,
+      "tail": "[OK  ] threshold 模式：达标 0 / 未达 (t−m)/t\n\n报告：D:\\agent_LDA\\lda\\reports\\spectrum_loop_report.json\nD-24 通用谱形逆设计框架 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_ring_fdtd_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 1.23,
+      "tail": "[SKIP] 环形 FDTD 谱形验收需 torch CUDA（CW 稳态逐波长 numpy 太慢）→ 诚实 SKIP；本地 GPU 机跑全谱形\n\n报告：D:\\agent_LDA\\lda\\reports\\ring_fdtd_report.json\nD-27 环形 FDTD 仿真核 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_ring_double_verify_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 1.21,
+      "tail": "OK   verify_ring_fdtd 参数 tol_rel 齐备\nOK   verify_ring_fdtd 参数 backend 齐备\nSKIP live 双验证（无 GPU；环形 FDTD 需 CUDA，见 fdtd2d_ring）\nALL GREEN"
+    },
+    {
+      "script": "run_device_fdtd_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 24.91,
+      "tail": "OK   verify_bragg_fdtd contract 自检：fdtd3d + tmm 可导入\nOK   Bragg 真实 FDTD 双验证 PASS：TMM契约物理=True + FDTD R_min=0.999811 ↔ TMM 0.999855（abs=4.40e-05 ≤ 2%）\nOK  预计算 reports/device_fdtd_wg_bragg.json 已写入（WG/Bragg 真实 FDTD）\nALL GREEN"
+    },
+    {
+      "script": "run_dc_transmission_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 49.2,
+      "tail": "[OK  ] DC 全场透射谱验收 PASS：DC 全场透射谱验收 PASS：cross_frac 单调递增 (0.148→0.247)，反解 κ_fdtd 单调递增且物理量级 (0.0209→0.0276\n\n报告：D:\\agent_LDA\\lda\\reports\\dc_transmission_report.json\nD-29 DC 全场透射谱 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_device_library_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 1.33,
+      "tail": "OK  live RingResonator 真跑 PASS（解析，无需 GPU）\nOK  live 至少一个真实候选 PASS\n\n=== D-12 已验证器件库 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_gds_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.44,
+      "tail": "OK  演示 GDS 含 4 个器件结构（wg/ring/dc/yb）\n    演示 GDS  D:\\agent_LDA\\lda\\reports\\gds_demo.gds  (1454 B, 4 结构)\n\n=== D-14 GDSII 版图出口 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_drc_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.43,
+      "tail": "    [PASS] BraggMirror: 0 项检查，0 项违规\nOK  导出 DRC 报告 -> D:\\agent_LDA\\lda\\reports\\drc_report.json\n\n=== D-15 版图 DRC 自查 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_layout_sim_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 18.23,
+      "tail": "    eps 场 shape=(72, 206) 芯占比=15.3%\nOK  导出仿真报告 -> D:\\agent_LDA\\lda\\reports\\layout_sim_report.json\n\n=== D-16 版图 → 仿真闭环 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_drc_fix_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.24,
+      "tail": "OK      SymmetricYBranch 整改后版图 SVG 可渲染\nOK  导出整改报告 -> D:\\agent_LDA\\lda\\reports\\drc_fix_report.json\n\n=== D-18 DRC 回读整改闭环 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_drc_pdk_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.43,
+      "tail": "OK  D-12 器件库默认参数在 CUMEC 规则下全过 DRC\nOK  导出多 foundry DRC 对比报告 -> D:\\agent_LDA\\lda\\reports\\drc_pdk_report.json\n\n=== D-21 DRC 工艺规则从 PDK 注入 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_pipeline_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 8.46,
+      "tail": "OK  产物 pipeline_ringresonator_report.json 非空\nOK  DC 报告 JSON 结构正确\n\n=== D-19 一键设计流水线 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_pipeline_multidevice_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 43.1,
+      "tail": "[OK  ] CLI --target_neff 参数可用\n\n报告：D:\\agent_LDA\\lda\\reports\\pipeline_multidevice_report.json\nD-25 一键设计流水线多器件扩展 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_pipeline_realize_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.24,
+      "tail": "[PASS] 几何真实化断言（Ring/AddDrop→PATH，YB→taper+PATH）\n[PASS] 非法 kind 优雅 FAIL\n\nD-79 smoke: 3/3 PASS"
+    },
+    {
+      "script": "run_primitives_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.25,
+      "tail": "PASS | Taper w1=0.1µm 违反 min_width（应 FAIL）\n\n========================================\nD-71 smoke: 3/3 PASS"
+    },
+    {
+      "script": "run_gc_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 83.71,
+      "tail": "[PASS] duty=1.0 无周期调制（应 FAIL） (expect=False, got=False, 37s)\n[PASS] Lambda=0 非法参数（应 FAIL） (异常: float division by zero)\n\nD-78 smoke: 3/3 PASS"
+    },
+    {
+      "script": "run_coupler_band_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 1.35,
+      "tail": "[SKIP] live 全波段 FDTD 需 torch CUDA（当前无 GPU）→ 诚实 SKIP\n\n报告：D:\\agent_LDA\\lda\\reports\\coupler_band_report.json\nD-23 多波长耦合器件验收 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_d06_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.26,
+      "tail": "csv import: ImportResult(added=1, skipped=0, conflicts=1, errors=1)\njson import: ImportResult(added=1, skipped=0, conflicts=0, errors=0)\nD-06 smoke ALL GREEN: corpus=6, bank=5, provenance OK"
+    },
+    {
+      "script": "run_d10_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.25,
+      "tail": "[3] bank append + dedup OK\n[4] validate OK\nD-10 smoke ALL GREEN\n[校验失败] citation 必填（实证锚必须有可追溯来源）"
+    },
+    {
+      "script": "run_pdk_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 24.25,
+      "tail": "\n[多晶圆厂] 已登记 PDK 数=5：['NOEIC(演示近似)::SOI 180nm', 'CUMEC(演示近似)::SOI 180nm', 'SITRI(演示近似)::SOI 180nm', '量子A(演示近似)::Al/AlOx 固定频率 transmon', '量子B(演示近似)::可调耦合 transmon（薄氧化层）']\n\nL2 PDK smoke OK —— waveguide + ring 单 R 模板真跑过验收，其余模板诚实声明未接入，B6 门控 + 多晶圆厂共建纪律生效。"
+    },
+    {
+      "script": "run_tunable_wdm_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.28,
+      "tail": "[PASS] 负例-单信道: ok=False\n      至少 2 个 WDM 信道\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_qeda_topology_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.27,
+      "tail": "[PASS] 负例-CR失效(J=0): ok=False\n      量子门/纠错拓扑未全过：CR 有效耦合在实器件区间；CR 门时间 ≤ T2（退相干预算）\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_large_scale_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.44,
+      "tail": "[PASS] 负例-qubit过密(0.02<3κ_r): ok=False\n      大规模系统基准未全过：8-qubit 大规模复用读出; 联合 8×8 混合巨型系统\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_ecosystem_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.49,
+      "tail": "[PASS] PDK Registry 注册/查询/统计自洽                        注册=['added', 'added', 'added'] 冲突=conflict SOI查询=2 统计={'total': 3, 'by_sovereign_class': {'B': 2, 'C': 1}, 'by_tech': {'SOI': 2, 'Transmon': 1}}\n----------------------------------------------------------------\nSMOKE: 4/4 PASS\n  判定红线：ORACLE 全为确定性物理定律锚，LLM 不进判决路径。"
+    },
+    {
+      "script": "run_ecosystem_submit_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.28,
+      "tail": "\n=== D-94 提交入口 smoke 结果 ===\nPASS=10 FAIL=0\n全部通过 ✅"
+    },
+    {
+      "script": "run_ecosystem_publish_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.28,
+      "tail": "[PASS] list_published 返回记录                        [('B19', '杜玉河')]\n----------------------------------------------------------\nPASS=12 FAIL=0\n全部通过 ✅"
+    },
+    {
+      "script": "run_empirical_anchor_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.7,
+      "tail": "[PASS] measurement_stats 自洽 | {'total': 1, 'by_status': {'pending': 0, 'approved': 0, 'rejected': 0, 'landed': 1}}\n[PASS] list_measurements 含审计 \n------------------------------------------------------------\n实证锚 smoke：17/17 PASS"
+    },
+    {
+      "script": "run_webui_api_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 1.41,
+      "tail": "[INFO] POST  /api/ecosystem/measurement               静态存在（未分类/重计算，不实跑）\n------------------------------------------------------------------\n实跑 PASS=45 · 静态 INFO=52 · FAIL=0\n路由层全绿 ✅（重计算端点静态验证存在，其内核由各专用 smoke 覆盖）"
+    }
+  ],
+  "acceptance": {
+    "checks": [
+      {
+        "name": "回归通过（32/32，FAIL=0）",
+        "ok": true,
+        "detail": "32 PASS / 0 SKIP / 0 FAIL"
+      }
+    ],
+    "passed": true
+  },
+  "verdict": "验证合约工业化回归 core 集：32 PASS / 0 SKIP / 0 FAIL，总耗时 287.46s —— 全绿",
+  "note": "统一入口自动发现全部 smoke（新增零配置纳入）；SKIP=环境缺失优雅降级（无 GPU/numba），FAIL=真失败；LLM 不进判决路径。core 集对齐 CI 可跑（纯 numpy）；all 集含重 FDTD/GPU 项。"
+}

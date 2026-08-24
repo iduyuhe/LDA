@@ -4,9 +4,9 @@
     "candidate": "ReferenceCandidate",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）"
   },
-  "generated_at": "2026-08-24T22:36:29",
+  "generated_at": "2026-08-24T22:53:19",
   "summary": {
-    "total": 18,
+    "total": 21,
     "passed": 18
   },
   "results": [
@@ -207,6 +207,39 @@
       "tol": 0.05,
       "passed": true,
       "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "E1",
+      "metric": "n_eff",
+      "oracle": "empirical-measurement(E-SOI-NEFF-220)",
+      "source": "empirical-missing",
+      "golden": null,
+      "candidate": null,
+      "tol": 0.02,
+      "passed": false,
+      "note": "实证锚未注入（语料库未加载）——诚实降级不判 PASS"
+    },
+    {
+      "id": "E2",
+      "metric": "n_eff",
+      "oracle": "empirical-measurement(E-SIN-NEFF-300)",
+      "source": "empirical-missing",
+      "golden": null,
+      "candidate": null,
+      "tol": 0.02,
+      "passed": false,
+      "note": "实证锚未注入（语料库未加载）——诚实降级不判 PASS"
+    },
+    {
+      "id": "E3",
+      "metric": "FSR_nm",
+      "oracle": "empirical-measurement(E-RING-FSR)",
+      "source": "empirical-missing",
+      "golden": null,
+      "candidate": null,
+      "tol": 0.1,
+      "passed": false,
+      "note": "实证锚未注入（语料库未加载）——诚实降级不判 PASS"
     }
   ]
 }

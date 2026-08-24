@@ -1,0 +1,50 @@
+{
+  "summary": {
+    "total_benchmarks": 21,
+    "physical_law": 18,
+    "empirical_anchor": 3,
+    "seed_corpus": 5,
+    "review_flow": {
+      "total": 1,
+      "by_status": {
+        "pending": 0,
+        "approved": 0,
+        "rejected": 0,
+        "landed": 1
+      }
+    },
+    "honest_boundary": "种子语料为公开文献/PDK 量级（citation 可追溯）；真实晶圆厂 NDA 流片实测属发动期联动，经「具名人工评审（LLM 不进判决路径）→ 落库」流持续流入；落库(live)≠进版本控制，权威语料以维护者 git 提交为准；比对=|candidate−measured|≤σ（死标量）。"
+  },
+  "checks": [
+    {
+      "name": "双 ground：物理定律 B1-B18 + 实证锚 E1-E3",
+      "ok": true,
+      "detail": "total=21 empirical=['E1', 'E2', 'E3']"
+    },
+    {
+      "name": "实证锚题 golden 全部可 resolve",
+      "ok": true,
+      "detail": "{'E1': 2.63, 'E2': 1.53, 'E3': 9.15}"
+    },
+    {
+      "name": "语料溯源完整性（citation/fab_source 全可追溯）",
+      "ok": true,
+      "detail": "total=5"
+    },
+    {
+      "name": "语料评审流端到端（提交→评审→落地）",
+      "ok": true,
+      "detail": "submit=accepted_pending review=approved land=landed"
+    },
+    {
+      "name": "落地语料落盘（empirical_contributions.json 结构）",
+      "ok": true,
+      "detail": "{'contributor': '社区', 'reviewer': '杜玉河', 'landed_at': '2026-08-24T22:52:08'}"
+    },
+    {
+      "name": "评审流状态自洽",
+      "ok": true,
+      "detail": "{'total': 1, 'by_status': {'pending': 0, 'approved': 0, 'rejected': 0, 'landed': 1}}"
+    }
+  ]
+}

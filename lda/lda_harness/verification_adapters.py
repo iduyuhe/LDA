@@ -33,19 +33,48 @@ def _ensure_paths():
 
 
 # ---------------------------------------------------------------------------
-# 1. harness（B1-B11 · 确定性黄金参考 · physical-law）
+# 1. harness（B1-B18 物理定律 + E1-E3 实证语料锚 · D-62 双 ground）
 # ---------------------------------------------------------------------------
 def build_harness_specs(defs: Optional[Dict] = None
                         ) -> Tuple[List[VerificationSpec], Dict[str, Callable]]:
     from .benchmarks import BENCHMARK_DEFS
     from .golden import golden_with_source
+    from .empirical_bank import EmpiricalCorpus, EmpiricalAnchor
 
     defs = defs or BENCHMARK_DEFS
     specs: List[VerificationSpec] = []
     cand_map: Dict[str, Callable] = {}
+    # D-62 实证锚：加载实测语料（seed + 社区落库增量），供 E1-E3 实证锚题取 golden
+    anchor = None
     for bid in sorted(defs.keys()):
         d = defs[bid]
         params = dict(d["default_params"])
+
+        if d.get("anchor") == "empirical":
+            if anchor is None:
+                anchor = _load_empirical_anchor()
+            eid = d.get("empirical_id")
+
+            def _emp_oracle(p, eid=eid, anchor=anchor):
+                val, _src, _note = anchor.resolve(eid)
+                if val is None:
+                    raise ValueError(f"实证语料缺失: {eid}（须先经社区评审流落库）")
+                return val
+
+            specs.append(VerificationSpec(
+                spec_id=bid,
+                metric=d["metric"],
+                oracle_kind="empirical_measurement",
+                oracle_fn=_emp_oracle,
+                compare_fn=cmp_abs,
+                tol=d["tol"],
+                tol_mode="abs",
+                target_desc=d.get("title", ""),
+                params=params,
+                source=d.get("oracle", "empirical-measurement"),
+                candidate_desc="harness 候选求解器（对照真实测量）"))
+            cand_map[bid] = _harness_reference_candidate
+            continue
 
         def _oracle(p, bid=bid):
             val, _src, _note = golden_with_source(bid, p)
@@ -66,6 +95,30 @@ def build_harness_specs(defs: Optional[Dict] = None
         ))
         cand_map[bid] = _harness_reference_candidate
     return specs, cand_map
+
+
+def _load_empirical_anchor():
+    """加载实证语料锚（seed_empirical.json + 社区落库增量 empirical_contributions.json）。
+
+    语料=真实测量事实（文献/PDK 公开量级 + 社区经「具名人工评审→落地」流入），
+    构成验证的第二道非 AI ground；LLM 永不进判决路径。
+    """
+    from .empirical_bank import EmpiricalCorpus, EmpiricalAnchor
+    _here = os.path.dirname(os.path.abspath(__file__))
+    corpus = EmpiricalCorpus()
+    seed = os.path.join(_here, "seed_empirical.json")
+    if os.path.exists(seed):
+        for m in EmpiricalCorpus.load(seed)._items.values():
+            corpus.add(m, contributor="seed", source_file=seed, overwrite=True)
+    contrib = os.path.join(os.path.dirname(_here), "lda_pdk", "empirical_contributions.json")
+    if os.path.exists(contrib):
+        try:
+            for m in EmpiricalCorpus.load(contrib)._items.values():
+                corpus.add(m, contributor="community", source_file=contrib,
+                           overwrite=True)
+        except Exception:  # 增量文件损坏时优雅降级（诚实：以 seed 为准）
+            pass
+    return EmpiricalAnchor(corpus)
 
 
 def _harness_reference_candidate(spec: VerificationSpec, oracle_value: Any) -> float:

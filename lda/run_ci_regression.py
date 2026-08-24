@@ -54,6 +54,8 @@ CORE_SMOKES: List[str] = [
     "run_ecosystem_smoke.py",        # harness B1-B18 + 主权 A/B/C + Registry 自检
     "run_ecosystem_submit_smoke.py", # 社区提交入口（器件 + 批量 + 提案）
     "run_ecosystem_publish_smoke.py",# 评审→落地→发布 全链（含补丁生成）
+    # 实证大数据锚（D-62：harness E1-E3 实证锚题 + 语料评审流，纯 numpy 快速）
+    "run_empirical_anchor_smoke.py",
     # WebUI 路由层（D-102：全端点静态 + 快路径实跑，秒级）
     "run_webui_api_smoke.py",
 ]

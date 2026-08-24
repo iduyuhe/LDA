@@ -21,6 +21,8 @@ L2 开放 PDK Registry）通过 HTTP 暴露给一个真正的产品级前端，�
   POST /api/ecosystem/review_batch → D-97 多提案批量评审（entries=[{id,decision,reviewer,rationale,oracle_fn_source?}]）
   POST /api/ecosystem/land_batch   → D-97 多提案批量落地（ids=[...]，仅 approved）
   POST /api/ecosystem/publish      → D-98 发布 landed 提案（生成正式补丁 + Release Notes 草稿，git 提交由维护者执行）
+  POST /api/ecosystem/measurement  → D-62 实证语料评审流（action=submit|review|land）
+  GET  /api/empirical              → D-62 实证大数据锚（语料统计+逐条溯源+harness E 题 golden 来源+判题演示）
   POST /api/verify        → {candidate, perturb?} 真跑 harness，返回逐题判定
   POST /api/agent_loop    → {solver, dual?} 真跑 agent 自迭代设计闭环
   POST /api/pdk_design    → {pdk, template, solver} 用 PDK 驱动 agent 逆设计
@@ -56,7 +58,12 @@ from lda_pdk import (PDKRegistry, DeviceEntry, SOVEREIGN_DEPS, by_class,
                     resubmit_proposal, review_stats,
                     review_proposals_batch, land_proposals_batch,
                     get_policy, policy_info,
-                    publish_proposal, list_published)
+                    publish_proposal, list_published,
+                    submit_measurement, review_measurement, land_measurement,
+                    list_measurements, measurement_stats,
+                    list_landed_measurements)
+from lda_harness.empirical_bank import EmpiricalCorpus, EmpiricalAnchor
+from lda_harness.verification_adapters import _load_empirical_anchor
 
 HARNESS = VerificationHarness(BENCHMARK_DEFS)
 AGENT_OUT = os.path.join(LDA_ROOT, "reports_agent")
@@ -1990,6 +1997,64 @@ def _summarize_submit(results):
     return {"total": len(results), **cnt}
 
 
+def empirical_status():
+    """D-62 实证大数据锚快照：语料库统计 + 逐条溯源 + 对抗题库 +
+    harness 实证锚题（E1-E3）golden 来源 + 语料评审流状态。"""
+    anchor = _load_empirical_anchor()
+    corpus = anchor.corpus
+    corpus_records = []
+    for m in corpus._items.values():
+        corpus_records.append({
+            "id": m.id, "device": m.device, "metric": m.metric,
+            "measured_value": m.measured_value,
+            "uncertainty_abs": m.uncertainty_abs,
+            "fab_source": m.fab_source, "citation": m.citation,
+            "method": m.method, "tags": m.tags,
+            "provenance": m.provenance,
+        })
+    # harness 实证锚题（E1-E3）golden 来源
+    from lda_harness.benchmarks import BENCHMARK_DEFS
+    e_benchmarks = []
+    for bid, d in BENCHMARK_DEFS.items():
+        if d.get("anchor") == "empirical":
+            val, src, note = anchor.resolve(d.get("empirical_id"))
+            e_benchmarks.append({
+                "id": bid, "title": d.get("title", ""),
+                "metric": d.get("metric", ""), "empirical_id": d.get("empirical_id"),
+                "tol": d.get("tol"), "golden": val, "source": src, "note": note,
+            })
+    try:
+        mstats = measurement_stats()
+        proposals = list_measurements()
+    except Exception:
+        mstats, proposals = {}, []
+    return {
+        "corpus": {"total": len(corpus_records), "by_metric": corpus.stats()["by_metric"],
+                   "records": corpus_records},
+        "adversarial": {"total": _adv_bank_total()},
+        "e_benchmarks": e_benchmarks,
+        "review": {"stats": mstats, "proposals": proposals},
+        "honest_note": "实证大数据锚 = 验证的第二道非 AI ground（真实测量语料，跨多源可溯源）。"
+                       "种子语料为公开文献/PDK 量级；真实晶圆厂 NDA 流片实测属发动期 D-62 联动，"
+                       "经「具名人工评审（LLM 不进判决路径）→ 落库」流持续流入，"
+                       "落地后 harness E1-E3 实证锚题实时生效。比对=|candidate−measured|≤σ（死标量）。",
+    }
+
+
+def _adv_bank_total():
+    """对抗性题库总数（seed_empirical.json 的 adversarial 段）。"""
+    import os as _os
+    p = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))),
+                      "lda_harness", "seed_empirical.json")
+    try:
+        with open(p, "r", encoding="utf-8") as f:
+            import json as _json
+            d = _json.load(f)
+        return len(d.get("adversarial", []))
+    except Exception:
+        return 0
+
+
 # --------------------------------------------------------------------------
 # HTTP 处理
 # --------------------------------------------------------------------------
@@ -2022,6 +2087,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, {"pdks": reg.to_summary(), "keys": reg.list_pdks()})
         elif path == "/api/ecosystem":
             self._send(200, ecosystem_status())
+        elif path == "/api/empirical":
+            self._send(200, empirical_status())
         else:
             self._send(404, {"error": "not found"})
 
@@ -2176,6 +2243,22 @@ class Handler(BaseHTTPRequestHandler):
                     proposal_id=payload.get("id", ""),
                     author=payload.get("author", ""),
                     note=payload.get("note", "")))
+            elif path == "/api/ecosystem/measurement":
+                # D-62 实证语料评审流：action=submit|review|land
+                action = payload.get("action", "")
+                if action == "submit":
+                    self._send(200, submit_measurement(payload))
+                elif action == "review":
+                    self._send(200, review_measurement(
+                        mid=payload.get("id", ""),
+                        decision=payload.get("decision", ""),
+                        reviewer=payload.get("reviewer", ""),
+                        rationale=payload.get("rationale", "")))
+                elif action == "land":
+                    self._send(200, land_measurement(payload.get("id", "")))
+                else:
+                    self._send(400, {"status": "error",
+                                     "reason": "action 须为 submit|review|land"})
             else:
                 self._send(404, {"error": "not found"})
         except Exception as e:  # noqa: BLE001

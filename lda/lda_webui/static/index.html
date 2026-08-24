@@ -1047,6 +1047,48 @@
     <div id="pubBody"></div>
   </div>
 
+  <div class="sec" id="sec-empirical">
+    <h3>57 实证大数据锚（D-62 · 真实测量语料 = 验证的第二道非 AI ground）</h3>
+    <div class="hint">实证锚与物理定律锚并列构成验证的两道<b>非 AI ground</b>：harness E1-E3 实证锚题的 golden 直接来自<b>实测语料库</b>（跨多源可溯源），比对 = |candidate−measured| ≤ σ（死标量），<b>LLM 永不进判决路径</b>。种子语料为公开文献/PDK 量级；真实晶圆厂 NDA 流片实测属发动期联动，经「<b>具名人工评审（citation=可追溯来源，无引用不予收录）→ 落库</b>」流持续流入，落地后 harness E 题实时生效。<b>落库(live) ≠ 进版本控制，权威语料以维护者 git 提交为准。</b></div>
+
+    <div class="subhead">① 语料库统计 + 实证锚题（harness E1-E3）</div>
+    <div id="empStatus" class="summary"></div>
+    <div id="empBody"></div>
+
+    <div class="subhead">② 判题演示（候选求解器输出 ↔ 实测语料 死标量比对）</div>
+    <div class="row">
+      <select id="empSel" style="min-width:260px"></select>
+      <label>候选值 <input id="empCand" size="10" placeholder="2.63"></label>
+      <button class="btn" id="empCheckBtn">实证锚判题</button>
+      <button class="btn" id="empRefBtn">参考候选（应 PASS）</button>
+    </div>
+    <div id="empRes" class="summary"></div>
+
+    <div class="subhead">③ 实测语料提交（citation 必填，经具名评审落库）</div>
+    <div class="row">
+      <label>id <input id="emId" size="14" placeholder="E-CUMEC-MMI"></label>
+      <label>器件 <input id="emDevice" size="14" placeholder="MMI 1x2"></label>
+      <label>指标 <input id="emMetric" size="12" placeholder="loss_dB"></label>
+      <label>实测值 <input id="emVal" size="8" placeholder="0.82"></label>
+      <label>σ <input id="emSig" size="6" placeholder="0.05"></label>
+    </div>
+    <div class="row">
+      <label>来源 fab/文献 <input id="emFab" size="14" placeholder="CUMEC"></label>
+      <label>引用（必填） <input id="emCite" size="30" placeholder="CUMEC 公开 PDK 文献量级"></label>
+      <label>提交人 <input id="emBy" size="10" placeholder="community"></label>
+      <button class="btn" id="emSubmitBtn">提交语料提案</button>
+    </div>
+    <div class="subhead">④ 语料评审流（pending → 具名评审 → 落库）</div>
+    <div class="row">
+      <select id="emSel2" style="min-width:300px"></select>
+      <button class="btn" id="emApproveBtn">批准</button>
+      <button class="btn" id="emRejectBtn">拒绝</button>
+      <button class="btn" id="emLandBtn">落库（land）</button>
+      <label>评审人 <input id="emReviewer" size="12" placeholder="杜玉河"></label>
+    </div>
+    <div id="emReviewRes" class="summary"></div>
+  </div>
+
   <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
@@ -3363,6 +3405,101 @@ async function pubBtn(){
 }
 $('pubBtn').onclick = pubBtn;
 refreshPub();
+
+// ---- 57 D-62 实证大数据锚（真实测量语料 = 第二道非 AI ground）----
+async function refreshEmp(){
+  try {
+    const d = await apiGet('/api/empirical');
+    const c = d.corpus || {}, adv = d.adversarial || {}, eb = d.e_benchmarks || [];
+    const rv = d.review || {}, st = rv.stats || {}, props = rv.proposals || [];
+    const byM = Object.entries(c.by_metric||{}).map(([k,v])=>`${escapeHtml(k)} <b>${v}</b>`).join(' · ');
+    $('empStatus').innerHTML = `语料库 <b>${c.total||0}</b> 条（${byM||'—'}）· 对抗题库 <b>${adv.total||0}</b> 题 · 实证锚题 <b>${eb.length}</b> 道 · 评审流 <b>${st.total||0}</b> 提案（pending <b>${(st.by_status||{}).pending||0}</b> / landed <b>${(st.by_status||{}).landed||0}</b>）<br><span class="note">${escapeHtml(d.honest_note||'')}</span>`;
+    const eRows = eb.map(b=>`<tr><td>${escapeHtml(b.id)}</td><td>${escapeHtml(b.title)}</td><td>${escapeHtml(b.empirical_id)}</td><td><b>${b.golden}</b></td><td>±${b.tol}</td><td>${escapeHtml(b.note||'')}</td></tr>`).join('');
+    const cRows = (c.records||[]).map(m=>`<tr><td>${escapeHtml(m.id)}</td><td>${escapeHtml(m.device)}</td><td>${escapeHtml(m.metric)}</td><td><b>${m.measured_value}</b> ±${m.uncertainty_abs}</td><td>${escapeHtml(m.fab_source)}</td><td style="font-size:11px">${escapeHtml(m.citation)}</td><td style="font-size:11px">${escapeHtml((m.provenance&&m.provenance.contributor)||'')}</td></tr>`).join('');
+    const pRows = props.map(p=>`<tr><td>${escapeHtml(p.id)}</td><td>${escapeHtml(p.device)}</td><td>${escapeHtml(p.metric)}</td><td>${p.measured_value} ±${p.uncertainty_abs}</td><td style="font-size:11px">${escapeHtml(p.citation)}</td><td class="${p.status==='landed'?'ok':(p.status==='pending'?'':'fail')}">${p.status}</td><td>${escapeHtml(p.reviewed_by||'')}</td></tr>`).join('');
+    // 判题下拉
+    $('empSel').innerHTML = eb.map(b=>`<option value="${escapeHtml(b.empirical_id)}">${escapeHtml(b.id)} · ${escapeHtml(b.empirical_id)}（${b.golden}±${b.tol}）</option>`).join('');
+    $('emSel2').innerHTML = (props.filter(p=>p.status==='pending').map(p=>`<option value="${escapeHtml(p.id)}">${escapeHtml(p.id)} · ${escapeHtml(p.metric)} ${p.measured_value}±${p.uncertainty_abs}</option>`).join('')) || '<option value="">（暂无 pending 语料提案）</option>';
+    $('empBody').innerHTML = `
+      <div class="subhead">实证锚题（harness E1-E3 · golden=实测值）</div>
+      <table class="tbl"><thead><tr><th>题</th><th>标题</th><th>语料 id</th><th>golden</th><th>tol(σ)</th><th>来源说明</th></tr></thead><tbody>${eRows}</tbody></table>
+      <div class="subhead">语料库逐条（跨多源可溯源）</div>
+      <table class="tbl"><thead><tr><th>id</th><th>器件</th><th>指标</th><th>实测值</th><th>来源</th><th>引用</th><th>贡献者</th></tr></thead><tbody>${cRows}</tbody></table>
+      <div class="subhead">语料评审流（pending → 具名评审 → 落库）</div>
+      <table class="tbl"><thead><tr><th>id</th><th>器件</th><th>指标</th><th>值±σ</th><th>引用</th><th>状态</th><th>评审人</th></tr></thead><tbody>${pRows}</tbody></table>`;
+  } catch(e){
+    $('empBody').innerHTML = '<span class="fail">刷新失败：'+e+'</span>';
+  }
+}
+$('refreshEmp') && ($('refreshEmp').onclick = refreshEmp);
+
+async function empCheck(candVal){
+  try {
+    const d = await apiGet('/api/empirical');
+    const eb = d.e_benchmarks || [];
+    const eid = $('empSel').value;
+    const b = eb.find(x=>x.empirical_id===eid);
+    if(!b){ $('empRes').innerHTML = '<span class="fail">未找到实证锚题</span>'; return; }
+    const cand = parseFloat(candVal);
+    const ok = Math.abs(cand - b.golden) <= b.tol;
+    $('empRes').innerHTML = `${escapeHtml(b.id)}（${escapeHtml(b.empirical_id)}）· 候选 <b>${cand}</b> vs 实测 <b>${b.golden}±${b.tol}</b> → <span class="verdict ${ok?'ok':'fail'}">${ok?'PASS':'FAIL'}</span>（死标量比对，LLM 不进判决路径）`;
+  } catch(e){ $('empRes').innerHTML = '<span class="fail">'+e+'</span>'; }
+}
+$('empCheckBtn').onclick = ()=>{ empCheck($('empCand').value); };
+$('empRefBtn').onclick = async ()=>{
+  try {
+    const d = await apiGet('/api/empirical');
+    const b = (d.e_benchmarks||[]).find(x=>x.empirical_id===$('empSel').value);
+    if(b){ $('empCand').value = b.golden; empCheck(b.golden); }
+  } catch(e){}
+};
+
+async function emSubmit(){
+  const btn = $('emSubmitBtn'); btn.disabled = true;
+  try {
+    const d = await api('/api/ecosystem/measurement', {
+      action:'submit', id:$('emId').value.trim(), device:$('emDevice').value.trim(),
+      metric:$('emMetric').value.trim(), measured_value:parseFloat($('emVal').value||'0')||0,
+      uncertainty_abs:parseFloat($('emSig').value||'0')||0, fab_source:$('emFab').value.trim(),
+      citation:$('emCite').value.trim(), proposed_by:$('emBy').value.trim()||'community',
+    });
+    const cls = d.status==='accepted_pending' ? 'ok' : 'fail';
+    $('emReviewRes').innerHTML = `<span class="verdict ${cls}">${escapeHtml(d.status)}</span> ${escapeHtml(d.id||'')} · ${escapeHtml(d.reason||'')}`;
+    refreshEmp();
+  } catch(e){ $('emReviewRes').innerHTML = '<span class="fail">请求失败：'+e+'</span>'; }
+  finally { btn.disabled = false; }
+}
+$('emSubmitBtn').onclick = emSubmit;
+
+async function emReview(decision){
+  const id = $('emSel2').value;
+  if(!id){ $('emReviewRes').innerHTML = '<span class="fail">请选 pending 提案</span>'; return; }
+  const reviewer = $('emReviewer').value.trim();
+  if(!reviewer){ $('emReviewRes').innerHTML = '<span class="fail">评审人必填（LLM 不进判决路径）</span>'; return; }
+  try {
+    const d = await api('/api/ecosystem/measurement', {
+      action:'review', id, decision, reviewer, rationale: decision==='approve' ? 'citation 可追溯，数值确定性自测通过' : '来源/数值存疑',
+    });
+    const cls = (d.status==='approved'||d.status==='rejected') ? (d.status==='approved'?'ok':'fail') : 'fail';
+    $('emReviewRes').innerHTML = `<span class="verdict ${cls}">${escapeHtml(d.status)}</span> ${escapeHtml(d.id||'')} · ${escapeHtml(d.reason||'')}`;
+    refreshEmp();
+  } catch(e){ $('emReviewRes').innerHTML = '<span class="fail">请求失败：'+e+'</span>'; }
+}
+$('emApproveBtn').onclick = ()=>emReview('approve');
+$('emRejectBtn').onclick = ()=>emReview('reject');
+
+async function emLand(){
+  const id = $('emSel2').value;
+  if(!id){ $('emReviewRes').innerHTML = '<span class="fail">请选提案</span>'; return; }
+  try {
+    const d = await api('/api/ecosystem/measurement', { action:'land', id });
+    const cls = d.status==='landed' ? 'ok' : 'fail';
+    $('emReviewRes').innerHTML = `<span class="verdict ${cls}">${escapeHtml(d.status)}</span> ${escapeHtml(d.id||'')} · ${escapeHtml(d.reason||'')}`;
+    refreshEmp();
+  } catch(e){ $('emReviewRes').innerHTML = '<span class="fail">请求失败：'+e+'</span>'; }
+}
+$('emLandBtn').onclick = emLand;
+refreshEmp();
 
 // ---- ㊽ D-87 谱形目标 × 3D 截面（多波长加权联合）----
 async function runSp(){

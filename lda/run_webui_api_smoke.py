@@ -150,7 +150,10 @@ def main():
             else:
                 fail.append(("GET", r, f"{code} {text[:50]}"))
         # 2) /api/ecosystem/* 快速 POST 实跑（空载荷即快速返回）
-        eco_posts = [r for r in posts if r.startswith("/api/ecosystem/")]
+        #    measurement（D-62）除外：空载荷 400 是正确行为（action 必填），
+        #    其内核由 run_empirical_anchor_smoke 深度覆盖 → 静态验证存在。
+        eco_posts = [r for r in posts if r.startswith("/api/ecosystem/")
+                     and r != "/api/ecosystem/measurement"]
         for r in eco_posts:
             code, text = _http("POST", f"{base}{r}", {})
             is_json = text.lstrip().startswith(("{", "["))

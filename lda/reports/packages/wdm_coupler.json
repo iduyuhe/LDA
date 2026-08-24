@@ -4,7 +4,7 @@
   "kind": "wdm_coupler",
   "domain": "photon",
   "title": "3-信道 WDM × 方向耦合器组合（FDTD 标定驱动 gap）",
-  "created_at": "2026-08-21T21:27:24",
+  "created_at": "2026-08-24T21:25:15",
   "ir": {
     "schema_version": "0.3",
     "domain": "photon",
@@ -93,6 +93,6 @@
       ]
     }
   },
-  "honest_notes": "bus↔ring 耦合本质是方向耦合器：κ_c 由 2D FDTD（D-55 双点标定）实测并沉淀为 PDK 标定文件（一次性后台标定，设计时秒级加载），经环形耦合有效长度 L_couple=2√(2R·gap) 换算 k_ring=sin(κ_c·L_couple) 驱动 WDM（D-42 级联传递）。诚实标注：L_couple 为环形耦合近似；D-57 实测 gap=0.25 时 k_ring=0.107 vs 解析 0.488（比值 0.22，解析偏乐观）——系统以 FDTD 校准为准并报告偏差。LLM 不进判决路径。",
+  "honest_notes": "bus↔ring 耦合本质是方向耦合器：κ_c 由 2D FDTD（D-55 双点标定）实测并沉淀为 PDK 标定文件（一次性后台标定，设计时秒级加载），经环形耦合有效长度 L_couple=2√(2R·gap) 换算 k_ring=sin(κ_c·L_couple) 驱动 WDM（D-42 级联传递）。诚实标注：L_couple 为环形耦合近似；D-57 实测 gap=0.25 时 k_ring=0.107 vs 解析 0.488（比值 0.22，解析偏乐观）；D-59 波长相关标定：κ_c(λ) 单调（1.50→1.60 增幅 ~27%），每信道按 λ 独立 k_ring（最弱耦合保守验收）——系统以 FDTD 校准为准并报告偏差。LLM 不进判决路径。",
   "ok": true
 }

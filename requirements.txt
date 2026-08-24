@@ -1,0 +1,27 @@
+# LDA · Python 依赖清单（v0.6.x 维护基线 · D-101 固化）
+#
+# 项目哲学：L0 IR/L1 agent 协议/L3 AI 求解核/验证裁判为**零外部依赖**
+# （纯 numpy 自举），但以下两类外部依赖用于扩展能力：
+#   - 必装（CI core 门禁 / 部分标准题所需）：
+#       scipy      —— 标准题 ORACLE（oracle_coupler 等稀疏求解）
+#       jsonschema —— L0 IR schema 零漂移校验（ir_spec）
+#   - 可选（性能升维 / 可视化 / 大型标准，缺失时优雅降级或 SKIP）：
+#       numba      —— 3D adjoint 加速后端（缺失自动回退纯 numpy）
+#       torch      —— GPU adjoint 后端（可选）
+#       matplotlib / pandas / networkx / tqdm —— 报告与图论标准
+#
+# 🔴 工程提醒（D-99 血泪教训）：CI/core 集跑前必须确保 scipy+jsonschema 可用，
+# 否则 11 项标准 smoke 会以 "No module named" 瞬时 FAIL（非代码问题）。
+
+# ---- 必装（CI core 门禁）----
+numpy>=1.24
+scipy>=1.10
+jsonschema>=4.0
+
+# ---- 可选（性能/可视化，缺失时优雅降级或 SKIP）----
+# numba>=0.58          # 3D adjoint / FDTD numba 加速（无 numba 自动回退纯 numpy）
+# torch>=2.0           # GPU adjoint 后端（消费级 GPU fp64 阉割，生产默认 numba-cpu）
+# matplotlib>=3.6      # SVG/图报告
+# pandas>=2.0          # 语料/校准数据处理
+# networkx>=2.8        # 图论/网络标准
+# tqdm>=4.60           # 进度条

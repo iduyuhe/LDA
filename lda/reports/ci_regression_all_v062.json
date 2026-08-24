@@ -1,0 +1,519 @@
+{
+  "ok": true,
+  "title": "CI 全量回归（tag=all）",
+  "tag": "all",
+  "python": "C:\\Users\\Administrator\\.workbuddy\\binaries\\python\\envs\\default\\Scripts\\python.exe",
+  "n_scripts": 70,
+  "summary": {
+    "pass": 70,
+    "skip": 0,
+    "fail": 0,
+    "total_s": 1602.72,
+    "failed": [],
+    "skipped": []
+  },
+  "results": [
+    {
+      "script": "run_adjoint3d_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 21.0,
+      "tail": "[PASS] 负例-域过小: ok=False\n      3D 域过小（Nx≥32, Ny≥24, Nz≥8）\n\nSMOKE ALL PASS (7/7)"
+    },
+    {
+      "script": "run_adjoint_design_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 40.0,
+      "tail": "PASS | 0 次迭代（应 FAIL）\n\n========================================\nD-69 smoke: 3/3 PASS"
+    },
+    {
+      "script": "run_adjoint_loop_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 55.78,
+      "tail": "PASS | method 默认 scan（布拉格）路径兼容\n\n========================================\nD-70 smoke: 4/4 PASS"
+    },
+    {
+      "script": "run_ci_industrial_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 132.07,
+      "tail": "      坏 smoke 被检出（fail=1）\n\nSMOKE ALL PASS (3/3)\n[safe-delete][SAFE_DELETE_FAIL_CLOSED] {\"target\": \"D:\\\\agent_LDA\\\\lda\\\\run_zz_bad_smoke.py\", \"reason\": \"windows-sandbox-recycle-bin-unavailable\"}"
+    },
+    {
+      "script": "run_coupler_band_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 1.34,
+      "tail": "[SKIP] live 全波段 FDTD 需 torch CUDA（当前无 GPU）→ 诚实 SKIP\n\n报告：D:\\agent_LDA\\lda\\reports\\coupler_band_report.json\nD-23 多波长耦合器件验收 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_coupler_design_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 52.76,
+      "tail": "[OK  ] 负例C: gap=0.7µm L 超界\n      κ=0.00016 L=4925.50µm （L 超界短路） | checks 1/5 | passed=False（期望 False）\n============================================================================\nD-55 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_d06_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.26,
+      "tail": "csv import: ImportResult(added=1, skipped=0, conflicts=1, errors=1)\njson import: ImportResult(added=1, skipped=0, conflicts=0, errors=0)\nD-06 smoke ALL GREEN: corpus=6, bank=5, provenance OK"
+    },
+    {
+      "script": "run_d10_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.25,
+      "tail": "[3] bank append + dedup OK\n[4] validate OK\nD-10 smoke ALL GREEN\n[校验失败] citation 必填（实证锚必须有可追溯来源）"
+    },
+    {
+      "script": "run_dc_transmission_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 48.3,
+      "tail": "[OK  ] DC 全场透射谱验收 PASS：DC 全场透射谱验收 PASS：cross_frac 单调递增 (0.148→0.247)，反解 κ_fdtd 单调递增且物理量级 (0.0209→0.0276\n\n报告：D:\\agent_LDA\\lda\\reports\\dc_transmission_report.json\nD-29 DC 全场透射谱 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_design_package_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 118.27,
+      "tail": "[OK  ] readout_chain: id=readout-f015.0-d1.0 domain=hybrid passed=True schema=OK\n      [PASS] readout_chain · 光子-量子混合链路 · 芯片级 dispersive readout · domain=hybrid · 目标 {'f01_ghz': 5.0, 'f_r_ghz': 6.0\n======================================================================\nD-44 smoke 全绿: True （schema v0.1，4 类包）"
+    },
+    {
+      "script": "run_device_fdtd_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 24.59,
+      "tail": "OK   verify_bragg_fdtd contract 自检：fdtd3d + tmm 可导入\nOK   Bragg 真实 FDTD 双验证 PASS：TMM契约物理=True + FDTD R_min=0.999811 ↔ TMM 0.999855（abs=4.40e-05 ≤ 2%）\nOK  预计算 reports/device_fdtd_wg_bragg.json 已写入（WG/Bragg 真实 FDTD）\nALL GREEN"
+    },
+    {
+      "script": "run_device_library_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 1.33,
+      "tail": "OK  live RingResonator 真跑 PASS（解析，无需 GPU）\nOK  live 至少一个真实候选 PASS\n\n=== D-12 已验证器件库 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_drc_fix_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.26,
+      "tail": "OK      SymmetricYBranch 整改后版图 SVG 可渲染\nOK  导出整改报告 -> D:\\agent_LDA\\lda\\reports\\drc_fix_report.json\n\n=== D-18 DRC 回读整改闭环 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_drc_pdk_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.47,
+      "tail": "OK  D-12 器件库默认参数在 CUMEC 规则下全过 DRC\nOK  导出多 foundry DRC 对比报告 -> D:\\agent_LDA\\lda\\reports\\drc_pdk_report.json\n\n=== D-21 DRC 工艺规则从 PDK 注入 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_drc_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.43,
+      "tail": "    [PASS] BraggMirror: 0 项检查，0 项违规\nOK  导出 DRC 报告 -> D:\\agent_LDA\\lda\\reports\\drc_report.json\n\n=== D-15 版图 DRC 自查 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_ecosystem_publish_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.28,
+      "tail": "[PASS] list_published 返回记录                        [('B19', '杜玉河')]\n----------------------------------------------------------\nPASS=12 FAIL=0\n全部通过 ✅"
+    },
+    {
+      "script": "run_ecosystem_review2_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.28,
+      "tail": "[PASS] review_stats 自洽                      {'total': 3, 'by_status': {'pending': 2, 'approved': 0, 'rejected': 0, 'landed': 1, 'published': 0}, 'approvals': 1, 'rejections': 1, 'quorum_votes': 2, 'avg_review_seconds': 0.0}\n----------------------------------------------------------\nPASS=13 FAIL=0\n全部通过 ✅"
+    },
+    {
+      "script": "run_ecosystem_review3_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.27,
+      "tail": "[PASS] policy_info 快照                         {'enforce_positive_tol': True, 'enforce_nonempty_params': True, 'enforce_value_bounds': False, 'authorized_reviewers': [], 'min_source_length': 0, 'strict_dedup': False, 'min_quorum': 2}\n----------------------------------------------------------\nPASS=14 FAIL=0\n全部通过 ✅"
+    },
+    {
+      "script": "run_ecosystem_review_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.29,
+      "tail": "[PASS] 审计轨迹完整(approve+land)               [{'ts': '2026-08-24T21:26:24', 'op': 'review', 'decision': 'approve', 'reviewer': '杜玉河', 'rationale': 'FSR=c/(n_g·L) 为确定性物理定律，公式与实现一致', 'self_test_value': 749.481145, 'votes': '1/1'}, {'ts': '2026-08-24T21:26:24', 'op': 'land', 'value': 749.481145, 'live_registered': True}]\n----------------------------------------------------------\nPASS=18 FAIL=0\n全部通过 ✅"
+    },
+    {
+      "script": "run_ecosystem_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.48,
+      "tail": "[PASS] PDK Registry 注册/查询/统计自洽                        注册=['added', 'added', 'added'] 冲突=conflict SOI查询=2 统计={'total': 3, 'by_sovereign_class': {'B': 2, 'C': 1}, 'by_tech': {'SOI': 2, 'Transmon': 1}}\n----------------------------------------------------------------\nSMOKE: 4/4 PASS\n  判定红线：ORACLE 全为确定性物理定律锚，LLM 不进判决路径。"
+    },
+    {
+      "script": "run_ecosystem_submit_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.27,
+      "tail": "\n=== D-94 提交入口 smoke 结果 ===\nPASS=10 FAIL=0\n全部通过 ✅"
+    },
+    {
+      "script": "run_gc_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 82.72,
+      "tail": "[PASS] duty=1.0 无周期调制（应 FAIL） (expect=False, got=False, 36s)\n[PASS] Lambda=0 非法参数（应 FAIL） (异常: float division by zero)\n\nD-78 smoke: 3/3 PASS"
+    },
+    {
+      "script": "run_gds_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.45,
+      "tail": "OK  演示 GDS 含 4 个器件结构（wg/ring/dc/yb）\n    演示 GDS  D:\\agent_LDA\\lda\\reports\\gds_demo.gds  (1454 B, 4 结构)\n\n=== D-14 GDSII 版图出口 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_harness.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.71,
+      "tail": "\n报告已写入：\n  D:\\agent_LDA\\lda\\reports\\verification_report.md\n  D:\\agent_LDA\\lda\\reports\\verification_report.json"
+    },
+    {
+      "script": "run_hybrid_design_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 17.08,
+      "tail": "[PASS] 负例-拓扑带非法: ok=False\n      拓扑带非法：7.0,2.0（须 lo<hi）\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_hybrid_multi_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 69.5,
+      "tail": "[PASS] 负例-单波长: ok=False\n      多目标需 ≥2 个波长（逗号分隔）\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_inverse_design_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 19.67,
+      "tail": "[OK  ] Transmon       param={'E_J': 11.792975} (E_J,match) metric_err=0.0 method_err=0.003998 accepted=True 0.0s\n[OK  ] RingAddDrop    param={'gap': 0.299696} (gap,match) metric_err=0.0 method_err=0.03806 accepted=True 0.0s\n======================================================================\n全部 4 器件经同一框架 accepted: True"
+    },
+    {
+      "script": "run_ir_d05_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.23,
+      "tail": "OK  GratingCoupler 桥接诚实 NotImplementedError（当前 DesignAgent 仅支持 Waveguide/RingResonator）\nOK  导出示例 IR JSON -> lda/reports/ir_d05_examples.json\n\n=== L0 IR v0.2 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_ir_quantum_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.27,
+      "tail": "OK  B13 ir_eval PASS（J=0.03162GHz）\nOK  B13 失配 Cc → ir_eval FAIL\n\n=== L0 IR 量子子集 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_ir_ring_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.24,
+      "tail": "OK  PDK ring 模板 [环形谐振器 FSR@SITRI(演示近似)] 闭环 PASS (R=9.950, FSR=9.150nm)\nOK  PDK 中单 R 调 FSR 的 ring 模板 4 个均真跑\n\n=== D-11 环形谱形逆设计闭环 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_ir_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 23.48,
+      "tail": "OK  全部 foundry PASS（FDTD neff 对 slab ORACLE 在公差内）\nOK  不同 foundry n_si 工艺窗口 → 不同 neff 落点 [3.2192, 3.23]\n\n=== L0 IR smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_ir_solve_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.27,
+      "tail": "  量子 B9 失配 E_J=5.0 → f01=3.79264 passed=False\nOK  量子 B9 失配 E_J → ir_eval 判 FAIL\n\n=== L0 IR · L3 直接消费 IR 真值计算: ALL GREEN ==="
+    },
+    {
+      "script": "run_ir_spec_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.28,
+      "tail": "[PASS] 负例-缺设计意图被validate检出: ok=True\n      缺设计意图被 validate 检出（1 错误）\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_large_scale_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.44,
+      "tail": "[PASS] 负例-qubit过密(0.02<3κ_r): ok=False\n      大规模系统基准未全过：8-qubit 大规模复用读出; 联合 8×8 混合巨型系统\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_layout_sim_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 23.19,
+      "tail": "    eps 场 shape=(72, 206) 芯占比=15.3%\nOK  导出仿真报告 -> D:\\agent_LDA\\lda\\reports\\layout_sim_report.json\n\n=== D-16 版图 → 仿真闭环 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_mcp_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 1.37,
+      "tail": "  ✅ tools/call:list_benchmarks  ·  18 题\n  ✅ tools/call:verify_design  ·  18/18 PASS\n  ✅ tools/call:verify_design(l3_ai)  ·  15/18 (法官抓 FAIL)\n=== 结论: 全通过 ==="
+    },
+    {
+      "script": "run_mixed_system_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.29,
+      "tail": "[OK  ] 负例C: 4 信道 ↔ 3 qubit 映射不完整\n      IR 11器件+9网表 | checks 2/4 | passed=False（期望 False）\n============================================================================\nD-52 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_multiqubit_fidelity_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.28,
+      "tail": "[OK  ] 负例C: q3 n̄=500 非破坏超限\n      F per qubit=[0.9978, 0.9978, 0.9999] | checks 7/8 | passed=False（期望 False）\n============================================================================\nD-51 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_multiqubit_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.33,
+      "tail": "[OK  ] 负例B: Δ/g=2 色散失效\n      f01=[5.0] → readout [5.2]GHz（跨度 0MHz）| Δ/g=2.0 | checks 6/8 | passed=False（期望 False）\n========================================================================\nD-46 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_pdk_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 24.03,
+      "tail": "\n[多晶圆厂] 已登记 PDK 数=5：['NOEIC(演示近似)::SOI 180nm', 'CUMEC(演示近似)::SOI 180nm', 'SITRI(演示近似)::SOI 180nm', '量子A(演示近似)::Al/AlOx 固定频率 transmon', '量子B(演示近似)::可调耦合 transmon（薄氧化层）']\n\nL2 PDK smoke OK —— waveguide + ring 单 R 模板真跑过验收，其余模板诚实声明未接入，B6 门控 + 多晶圆厂共建纪律生效。"
+    },
+    {
+      "script": "run_pipeline_multidevice_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 41.45,
+      "tail": "[OK  ] CLI --target_neff 参数可用\n\n报告：D:\\agent_LDA\\lda\\reports\\pipeline_multidevice_report.json\nD-25 一键设计流水线多器件扩展 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_pipeline_realize_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.24,
+      "tail": "[PASS] 几何真实化断言（Ring/AddDrop→PATH，YB→taper+PATH）\n[PASS] 非法 kind 优雅 FAIL\n\nD-79 smoke: 3/3 PASS"
+    },
+    {
+      "script": "run_pipeline_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 13.58,
+      "tail": "OK  产物 pipeline_ringresonator_report.json 非空\nOK  DC 报告 JSON 结构正确\n\n=== D-19 一键设计流水线 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_port_acceptance_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 10.03,
+      "tail": "[PASS] 负例-宽度界非法: ok=False\n      w_min(6.0) 须 < init_w(5.0)（初始宽度须在界外）\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_primitives_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.24,
+      "tail": "PASS | Taper w1=0.1µm 违反 min_width（应 FAIL）\n\n========================================\nD-71 smoke: 3/3 PASS"
+    },
+    {
+      "script": "run_qeda_depth_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.35,
+      "tail": "[PASS] 负例-串扰简并: ok=False\n      未达标\n\nSMOKE ALL PASS (4/4)"
+    },
+    {
+      "script": "run_qeda_topology_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.28,
+      "tail": "[PASS] 负例-CR失效(J=0): ok=False\n      量子门/纠错拓扑未全过：CR 有效耦合在实器件区间；CR 门时间 ≤ T2（退相干预算）\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_quantum_design_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.72,
+      "tail": "[OK  ] IR 消费 r1 (Resonator) → params={'Lp': 4e-07, 'Cp': 1.5e-10, 'l': 0.0029999964}\n[OK  ] IR 消费 c1 (Coupler) → params={'E_J1': 20.0, 'E_C1': 0.25, 'E_J2': 20.0, 'E_C2': 0.25, 'C1': 1.0, 'C2': 1.0, 'Cc': 0.019986}\n======================================================================\nD-41 全绿: True"
+    },
+    {
+      "script": "run_quantum_devices_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.69,
+      "tail": "[OK  ] Coupler 变体 EJ1=25.0/EC1=0.22 EJ2=18.0/EC2=0.3 Cc=0.01: J=0.015396GHz\n[OK  ] Coupler 变体 EJ1=30.0/EC1=0.18 EJ2=30.0/EC2=0.18 Cc=0.05: J=0.110896GHz\n======================================================================\nD-39 全绿: True"
+    },
+    {
+      "script": "run_qubit_resonator_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.3,
+      "tail": "[PASS] 负例-色散区失效: ok=False\n      未达标\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_readout_chain_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.3,
+      "tail": "[OK  ] f01=5.0 Δ=1.0 g=0.02 κ_r=0.005 (期望 FAIL): E_J=13.7812 l=5.38mm Cc=0.0073 Q_ext=1200.0 | JC χ rel=0.1% | 实际 FAIL\n    ✗ 读出可分辨（χ ≥ κ_r） ： χ=0.0004GHz vs κ_r=0.005GHz\n======================================================================\nD-43 smoke 全绿: True"
+    },
+    {
+      "script": "run_readout_fidelity_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.24,
+      "tail": "[OK  ] 负例C: n̄=500 非破坏超限\n      t_m*=6ns | SNR=8.53 | F=0.9998（F0=1.0000·F1=0.9997）| 污染 0.03% | checks 7/8 | passed=False（期望 False）\n========================================================================\nD-47 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_ring_double_verify_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 1.18,
+      "tail": "OK   verify_ring_fdtd 参数 tol_rel 齐备\nOK   verify_ring_fdtd 参数 backend 齐备\nSKIP live 双验证（无 GPU；环形 FDTD 需 CUDA，见 fdtd2d_ring）\nALL GREEN"
+    },
+    {
+      "script": "run_ring_fdtd_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 1.15,
+      "tail": "[SKIP] 环形 FDTD 谱形验收需 torch CUDA（CW 稳态逐波长 numpy 太慢）→ 诚实 SKIP；本地 GPU 机跑全谱形\n\n报告：D:\\agent_LDA\\lda\\reports\\ring_fdtd_report.json\nD-27 环形 FDTD 仿真核 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_shape_design_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 31.46,
+      "tail": "[PASS] 负例-宽度界非法: ok=False\n      宽度界非法：w_min=10.0 ≥ w_max=2.0（须 w_min < w_max）\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_sparams_3d_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 48.18,
+      "tail": "PASS | 3D out_gap 超大 → 仿真无效（应 FAIL）\n\n========================================\nD-72 3D smoke: 5/5 PASS"
+    },
+    {
+      "script": "run_sparams_loop_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 65.17,
+      "tail": "PASS | method 默认 scan（布拉格）路径兼容\n\n========================================\nD-72 闭环 smoke: 4/4 PASS"
+    },
+    {
+      "script": "run_sparams_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 24.61,
+      "tail": "PASS | out_gap 超大 → 仿真无效（应 FAIL）\n\n========================================\nD-72 smoke: 3/3 PASS"
+    },
+    {
+      "script": "run_spectral_design_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 26.71,
+      "tail": "[PASS] 负例-非法target_type: ok=False\n      未知 target_type=not_a_target（须 field_energy/split_ratio/mode_match/spectrum）\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_spectrum_loop_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 16.32,
+      "tail": "[OK  ] threshold 模式：达标 0 / 未达 (t−m)/t\n\n报告：D:\\agent_LDA\\lda\\reports\\spectrum_loop_report.json\nD-24 通用谱形逆设计框架 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_splitter_readout_cal_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 184.82,
+      "tail": "PASS | 极端权重 [0.9,0.05,0.05]+nbar0=3（应 FAIL）\n\n========================================\nD-66 smoke: 5/5 PASS"
+    },
+    {
+      "script": "run_splitter_readout_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 203.09,
+      "tail": "  PASS | 极端权重（最弱路 SNR 不足应 FAIL） | passed=False (期望 False) | \n  PASS | nbar0 过低（均匀分配后 SNR 不足应 FAIL） | passed=False (期望 False) | \n  PASS | weights 与 f01s 长度不匹配（应 FAIL） | passed=False (期望 False) | weights 须与 f01s 等长且全为正\n=== ALL PASS（5/5）==="
+    },
+    {
+      "script": "run_transmon_double_verify_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.44,
+      "tail": "  levels_ghz=[-9.1315, -4.1517, 0.474, 4.708, 8.2432]\nverdict: Transmon 双验证 PASS（B9 Koch 命中 + 对角化 f01=4.9798 ↔ Koch=5.0000 rel=0.40% ≤ 3%）\n\n=== Transmon 双验证 smoke: ALL GREEN ==="
+    },
+    {
+      "script": "run_tunable_wdm_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.28,
+      "tail": "[PASS] 负例-单信道: ok=False\n      至少 2 个 WDM 信道\n\nSMOKE ALL PASS (3/3)"
+    },
+    {
+      "script": "run_wdm_coupler_grid_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.28,
+      "tail": "[OK  ] 负例C: 全网格标定文件缺失\n      （未启用/无效） | chosen=0.25 | checks 3/4 | passed=False（期望 False）\n============================================================================\nD-60 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_wdm_coupler_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.28,
+      "tail": "[OK  ] 负例C: 5 信道跨度超 FSR（WDM 混叠）\n      R=9.985µm | chosen gap=None | checks 1/2 | passed=False（期望 False）\n============================================================================\nD-57 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_wdm_coupler_wl_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.3,
+      "tail": "[OK  ] 负例C: 波长标定文件缺失\n      （未启用/无效） | chosen=0.25 | checks 3/4 | passed=False（期望 False）\n============================================================================\nD-59 smoke: ALL GREEN"
+    },
+    {
+      "script": "run_wdm_depth_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.28,
+      "tail": "[OK  ] 信道上限: gap=0.2894µm, 单 FSR 9.12nm → 最多 4 信道\n[OK  ] 负例 XT≥90dB: achievable=False（应 False，gap 上限不可达）\n======================================================================\nD-45 smoke 全绿: True"
+    },
+    {
+      "script": "run_wdm_splitter_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 165.68,
+      "tail": "PASS | weights 长度不匹配（应 FAIL）\n\n========================================\nD-67 smoke: 5/5 PASS"
+    },
+    {
+      "script": "run_wdm_system_smoke.py",
+      "rc": 0,
+      "status": "PASS",
+      "elapsed_s": 0.28,
+      "tail": "    ✗ 邻信道串扰 XT ≥ 15dB ： 6.4dB / 6.9dB / 29.6dB / 29.4dB / 48.5dB\n    ✗ 单 FSR 工作区（防混叠） ： 信道跨度 12.0nm < min FSR 9.1nm\n======================================================================\nWDM 系统 smoke 全绿: True"
+    }
+  ],
+  "acceptance": {
+    "checks": [
+      {
+        "name": "回归通过（70/70，FAIL=0）",
+        "ok": true,
+        "detail": "70 PASS / 0 SKIP / 0 FAIL"
+      }
+    ],
+    "passed": true
+  },
+  "verdict": "验证合约工业化回归 all 集：70 PASS / 0 SKIP / 0 FAIL，总耗时 1602.72s —— 全绿",
+  "note": "统一入口自动发现全部 smoke（新增零配置纳入）；SKIP=环境缺失优雅降级（无 GPU/numba），FAIL=真失败；LLM 不进判决路径。core 集对齐 CI 可跑（纯 numpy）；all 集含重 FDTD/GPU 项。"
+}

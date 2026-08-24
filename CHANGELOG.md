@@ -72,6 +72,13 @@
 - 新增维护回归报告 `lda/reports/ci_regression_core_v061.json`（CI core 全量，含生态链）。
 - **维护回归结果：30 PASS / 0 SKIP / 0 FAIL（281.43s）全绿**。🔴 环境结论：managed base python（3.13.12）缺 `scipy`/`jsonschema`，core 集 11 项旧 smoke 因此瞬时 FAIL——非代码回归；以装齐依赖的 venv（`~/.workbuddy/binaries/python/envs/default`，scipy 1.17.1 + jsonschema 4.26.0）运行即全绿。CI/本机跑 core 集须确保 scipy+jsonschema 可用。
 
+### 维护（v0.6.2 · D-101 持续维护 · all 集全量回归 + 环境固化 · 2026-08-24）
+- **all 集全量回归（最强维护门禁）**：`run_ci_regression.py --tag all`（venv python）覆盖 **70 项 smoke**（D-01~D-98 全部资产，含重 FDTD/3D adjoint/hybrid 逆设计/sparams 3D/splitter_readout 203s 等）——**70 PASS / 0 SKIP / 0 FAIL，1602.72s 全绿**；报告 `lda/reports/ci_regression_all_v062.json`；派生报告（design_packages 等）随维护基线刷新。
+- **环境固化（防 D-99 事故重演）**：新增 `requirements.txt`——必装 `numpy/scipy/jsonschema`（CI core 门禁所需）+ 可选 `numba/torch/matplotlib/pandas/networkx/tqdm`（缺失优雅降级或 SKIP），并注明 D-99 血泪教训。
+- **一致性微修**：README 模块列表补 `lda_pdk/ 生态共建（L2 Registry + 主权 A/B/C + 社区提交→评审→落地→发布 全链）`；README CLI 示例/面板计数核验一致（⑩ 18 标准题 / ⑫ 五十六面板）。
+- **持续维护结论**：v0.6.1+ 全项目（70 smoke + core 30）在标准 venv 环境零失败；生态共建链（D-93~D-98）六 smoke 全部纳入回归门禁。
+- **维护发现（运行残留物）**：`run_ci_industrial_smoke.py` 故意创建的坏 smoke（`run_zz_bad_smoke.py`）因沙箱"回收站不可用"未能安全删除而残留——已清理；该文件为诊断产物，不进版本控制。
+
 ### 新增/变更（post-v0.5 · D-84~D-89 全量 · 详见下方 v0.5 详细记录）
 
 ## v0.5（2026-08-23 · git tag v0.5 · 系统级里程碑）

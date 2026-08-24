@@ -36,6 +36,36 @@
       "passed": true,
       "schema_ok": true,
       "schema_errors": []
+    },
+    "multiqubit_fidelity": {
+      "package_id": "multiqubit-fidelity-3q",
+      "passed": true,
+      "schema_ok": true,
+      "schema_errors": []
+    },
+    "mixed_system": {
+      "package_id": "mixed-wdm3-q3",
+      "passed": true,
+      "schema_ok": true,
+      "schema_errors": []
+    },
+    "coupler": {
+      "package_id": "coupler-split0.50",
+      "passed": true,
+      "schema_ok": true,
+      "schema_errors": []
+    },
+    "wdm_coupler": {
+      "package_id": "wdm-coupler3ch",
+      "passed": true,
+      "schema_ok": true,
+      "schema_errors": []
+    },
+    "splitter_readout": {
+      "package_id": "splitter-readout3q",
+      "passed": true,
+      "schema_ok": true,
+      "schema_errors": []
     }
   },
   "all_schema_ok": true

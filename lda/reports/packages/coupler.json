@@ -4,7 +4,7 @@
   "kind": "coupler",
   "domain": "photon",
   "title": "方向耦合器设计闭环（目标分束比 50%）",
-  "created_at": "2026-08-21T17:41:28",
+  "created_at": "2026-08-24T21:25:15",
   "ir": {
     "schema_version": "0.3",
     "domain": "photon",

@@ -79,6 +79,12 @@
 - **持续维护结论**：v0.6.1+ 全项目（70 smoke + core 30）在标准 venv 环境零失败；生态共建链（D-93~D-98）六 smoke 全部纳入回归门禁。
 - **维护发现（运行残留物）**：`run_ci_industrial_smoke.py` 故意创建的坏 smoke（`run_zz_bad_smoke.py`）因沙箱"回收站不可用"未能安全删除而残留——已清理；该文件为诊断产物，不进版本控制。
 
+### 维护（v0.6.3 · D-102 持续维护 · WebUI 路由层门禁 + 一致性深审 · 2026-08-24）
+- **WebUI API 路由层冒烟（新门禁，此前未覆盖路由层）**：新增 `run_webui_api_smoke.py`——静态提取 app.py 全部 64 条 /api 路由（GET 4 + POST 60）→ 启动 WebUI 子进程 → **实跑快路径 13 条**（4 GET 全绿 + /api/ecosystem/* 9 条提交/评审类 POST 200 JSON）+ **静态验证重计算端点 51 条**（adjoint/hybrid/inverse/sparams 等，内核由各专用 smoke 覆盖）；已纳入 `CORE_SMOKES`（CI core 门禁覆盖路由层）。
+- 🔴 **血泪教训（挂起根因）**：初版对全部 60 个 POST 端点发空载荷 `{}` → 重计算端点（/api/adjoint_design、/api/hybrid_design 等）会**触发真实优化（数分钟/端）** → 冒烟无限挂起（timeout 124 确认）。修复：重计算端点不实跑、仅静态验证存在（其内核已有专用 smoke）。
+- **一致性深审**：README "自动发现 63 smoke" → **70 smoke**（陈旧计数修正）；run_ci_regression 文件头 "60+ 个" → "70 个"；**harness 键集一致性核验**（`golden._GOLDEN_DISPATCH` 18 == `benchmarks.BENCHMARK_DEFS` 18，B5-B7 为 ORACLE 项属正确设计）；/api 端点 docstring 与代码路由核对。
+- **维护结论**：v0.6.2+ 在标准 venv 环境全绿；路由层新增 64 端点门禁；README/规划/CHANGELOG 计数一致。
+
 ### 新增/变更（post-v0.5 · D-84~D-89 全量 · 详见下方 v0.5 详细记录）
 
 ## v0.5（2026-08-23 · git tag v0.5 · 系统级里程碑）

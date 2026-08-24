@@ -5,6 +5,7 @@
 > 当前版本：**v0.6**（2026-08-24 · 3D 逆设计纵深 + QEDA 求解器级补强：破 3D 诚实边界（3D Yee 显式转置伴随 Mᵀ 1e-15 → 3D 截面 → 3D 端口验收 → 谱形×3D → 3D numba 性能 20×+ → **3D voxel 拓扑**）+ transmon-resonator 色散读出三能级严格求解（α 修正必要性 31×）+ QEDA 纵深三件套（多能级展开收敛 / Rabi+AC Stark / 读出串扰 ZZ 耦合）+ 生态共建闭环（harness B1-B18 · 主权依赖 A/B/C · 社区提交入口 · 评审流 + 提案落地 · 门槛扩展 + ReviewPolicy 策略 + 批量评审 · **端到端发布**）+ 五十六面板）
 > **v0.6.1 维护基线**（2026-08-24 · D-99）：生态共建（D-93~D-98）收官——「提交→评审→落地→发布」全链闭环；CI core 门禁覆盖生态链三 smoke（harness 扩展 / 提交 / 评审→落地→发布）；`lda_pdk` 模块文档同步 D-96~D-98；全量回归全绿。
 > **v0.6.2 持续维护**（2026-08-24 · D-101）：**all 集 70 项 smoke 全量回归 70 PASS / 0 FAIL**（1602.72s，覆盖 D-01~D-98 全部资产含重 FDTD/3D adjoint/GPU 项）；新增 `requirements.txt` 环境固化（必装 numpy/scipy/jsonschema + 可选 numba/torch）；README 模块列表补 `lda_pdk` 生态共建全链。
+> **v0.6.3 持续维护**（2026-08-24 · D-102）：**WebUI API 路由层冒烟**（64 条 /api 路由：快路径 13 实跑 + 重计算 51 静态验证，纳入 CI core 门禁）；一致性深审（README 63→70 smoke 修正、harness 键集一致性核验）。
 
 ## 这是什么
 
@@ -135,7 +136,7 @@ lda/                     核心软件包（主权求解器 + agent + 设计引�
   lda_harness/           确定性比对裁判（18 标准题物理定律锚 B1-B18，可运行时扩展 register_golden）
   lda_pdk/               生态共建（L2 Registry + 主权 A/B/C + 社区提交 → 评审 → 落地 → 发布 全链）
   lda_webui/             零依赖 WebUI（五十六面板）
-  run_ci_regression.py   验证合约工业化·全量回归统一入口（D-77，自动发现 63 smoke）
+  run_ci_regression.py   验证合约工业化·全量回归统一入口（D-77，自动发现 70 smoke）
   run_perf_bench.py      求解器性能基准（D-77，numba/GPU 加速比 + 基线漂移监控）
   run_perf_adjoint3d.py  3D adjoint numba 性能基准（D-89，大域 forward ≥20× + bit-level 一致性）
   lda_solver/port_sparams_3d.py  3D 端口 S 参数核（D-72/86，src_profile 可配源截面）

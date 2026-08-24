@@ -35,6 +35,16 @@
 - **实测闭环**：B19 微环 FSR 提案经评审落地后，harness 统一回归自动 18→**19 题 19/19 PASS**（零接线自动纳入）。
 - 新增 `run_ecosystem_review_smoke.py`（18/18 PASS）、`run_ecosystem_d95_report.py`（10/10，产出 `lda/reports/ecosystem_d95.json`）。
 
+### 新增/变更（post-v0.6 · D-96 生态共建进一步 · 评审门槛扩展 + 评审流 UI 增强 · 2026-08-24）
+- **评审门槛扩展（全确定性门禁，LLM 不进判决路径；`lda_pdk/review.py` + `submit.py`）**：
+  - `review_proposal` 新增三门槛：**签名完备性**（`inspect.signature`：ORACLE 必填参数 ⊆ default_params，明确报缺参）；**数值界限**（提案声明 `value_min`/`value_max`，自测值须落界内，死标量比对）；**core 双评审人 quorum**（`core=True` 提案需 2 位**不同**具名评审人批准；同评审人重复票不推进；票数入 `approvals` 列表 + 审计 `review_vote`；1 票保持 pending 记 votes=1/2，2 票才置 approved）。
+  - `submit_benchmark_proposal` 新增**提交期防重守卫** `_dup_check`：oracle_fn_name 已落地（landed.json 全局权威）或公式规范化（去空白+小写）与现有 pending/approved/**landed** 提案重复 → 提交即拒。
+  - 新增 **`resubmit_proposal`**：rejected → pending（被拒重提，可选更新公式/参数/值界/core），保留审计并追加 `resubmit` 记录。
+  - 新增 **`review_stats`**：状态分布 + 批准/拒绝计数 + quorum 票 + 平均评审时延（review ts − submitted_at，ISO 解析）。
+  - `BenchmarkProposal` 新增字段：`value_min`/`value_max`/`core`/`approvals`/`submitted_at`（缺省兼容旧 contributions.json）。
+- **评审流 UI 增强（面板 55）**：评审统计条（批准/拒绝/quorum 票/平均时延）、状态筛选页签（全部/pending/approved/rejected/landed）、行内操作（批准→选中入表单、拒绝→prompt 理由、被拒→重新提交）、core 双评审徽标+票数、值界展示；面板 54 提案表单加 core 复选框 + 值界输入；后端新增 `POST /api/ecosystem/resubmit`，`GET /api/ecosystem` 增 `review_stats` 段。
+- 新增 `run_ecosystem_review2_smoke.py`（13/13 PASS）、`run_ecosystem_d96_report.py`（10/10，产出 `lda/reports/ecosystem_d96.json`）；D-93/D-94/D-95 smoke 回归全绿。
+
 ### 新增/变更（post-v0.5 · D-84~D-89 全量 · 详见下方 v0.5 详细记录）
 
 ## v0.5（2026-08-23 · git tag v0.5 · 系统级里程碑）

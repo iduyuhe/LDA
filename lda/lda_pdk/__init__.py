@@ -37,6 +37,7 @@ from .submit import (
 from .review import (
     review_proposal, land_proposal, reload_landed,
     list_proposals, get_audit, list_landed,
+    resubmit_proposal, review_stats,
 )
 
 __all__ = [
@@ -47,4 +48,5 @@ __all__ = [
     "list_contributions", "infer_sovereign_class",
     "review_proposal", "land_proposal", "reload_landed",
     "list_proposals", "get_audit", "list_landed",
+    "resubmit_proposal", "review_stats",
 ]

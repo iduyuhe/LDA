@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass, field, asdict
+from datetime import datetime
 from typing import Dict, List, Optional
 from .registry import PDKRegistry, DeviceEntry
 from .sovereign_deps import SOVEREIGN_DEPS
@@ -41,6 +42,10 @@ _B_KEYWORDS = ("gdsfactory", "meep", "klayout", "sax", "mpb", "nazca", "tidy3d")
 # --------------------------------------------------------------------------
 def _resolve_path(contrib_path: Optional[str]) -> str:
     return contrib_path or CONTRIB_PATH
+
+
+def _now_iso() -> str:
+    return datetime.now().isoformat(timespec="seconds")
 
 
 def _norm_list(v) -> List[str]:
@@ -208,6 +213,12 @@ class BenchmarkProposal:
     review_rationale: str = ""
     landed_at: str = ""
     audit: List[dict] = field(default_factory=list)   # 审计轨迹
+    # ---- D-96 门槛扩展字段（缺省兼容旧 JSON）----
+    value_min: Optional[float] = None  # 数值界限下限（自测值须 ≥ 此值；None=不检查）
+    value_max: Optional[float] = None  # 数值界限上限（自测值须 ≤ 此值；None=不检查）
+    core: bool = False                 # core 提案需双评审人 quorum（2 位不同具名评审人）
+    approvals: List[dict] = field(default_factory=list)  # quorum 票（{reviewer,ts,rationale}）
+    submitted_at: str = ""             # 提交时间（评审统计用）
 
     def validate(self) -> bool:
         if not self.id or not self.title or not self.metric:
@@ -258,6 +269,42 @@ class ProposalStore:
         return out
 
 
+def _norm_formula(formula: str) -> str:
+    """公式规范化（防重比对用）：去空白 + 小写。"""
+    return "".join(str(formula).split()).lower()
+
+
+def _dup_check(payload: dict, store: "ProposalStore", contrib_path: str):
+    """提交期防重守卫（确定性，D-96）：
+
+      - oracle_fn_name 与已落地基准（landed.json）重复 → 拒；
+      - 公式规范化后与本贡献库内已有 pending/approved 提案重复 → 拒。
+    返回 None（无重复）或拒绝原因字符串。
+    """
+    fn = str(payload.get("oracle_fn_name", "")).strip()
+    formula = _norm_formula(payload.get("formula", ""))
+    # ① 已落地（本地最小读 landed.json，避免与 review 循环导入）
+    landed_path = os.path.join(os.path.dirname(__file__), "landed.json")
+    try:
+        with open(landed_path, "r", encoding="utf-8") as f:
+            landed = json.load(f)
+    except Exception:
+        landed = {}
+    if landed:
+        landed_fns = {str(v.get("oracle_fn_name", "")).lower()
+                      for v in landed.values() if isinstance(v, dict)}
+        if fn.lower() in landed_fns:
+            return f"oracle_fn_name {fn!r} 已落地为权威 ORACLE，禁止重复提案（维护者 git 提交的权威版本已存在）"
+    # ② 本贡献库内已有提案（pending/approved/landed 均禁重——已落地即权威）
+    for p in store._items:
+        if p.status in ("pending", "approved", "landed"):
+            if p.oracle_fn_name and p.oracle_fn_name.lower() == fn.lower():
+                return f"oracle_fn_name {fn!r} 已存在于提案 {p.id}（{p.status}）"
+            if formula and _norm_formula(p.formula) == formula:
+                return f"公式与提案 {p.id}（{p.status}）重复"
+    return None
+
+
 def submit_benchmark_proposal(payload: dict,
                               contrib_path: Optional[str] = None) -> dict:
     path = _resolve_path(contrib_path)
@@ -274,11 +321,21 @@ def submit_benchmark_proposal(payload: dict,
             proposed_by=str(payload.get("proposed_by", "community")).strip(),
             status="pending",
             note=str(payload.get("note", "")).strip(),
+            value_min=(float(payload["value_min"])
+                       if payload.get("value_min") not in (None, "") else None),
+            value_max=(float(payload["value_max"])
+                       if payload.get("value_max") not in (None, "") else None),
+            core=bool(payload.get("core", False)),
+            submitted_at=_now_iso(),
         )
         p.validate()
     except Exception as ex:
         return {"status": "rejected", "id": payload.get("id"),
                 "reason": f"校验失败：{ex}"}
+    dup = _dup_check(payload, store, path)
+    if dup:
+        return {"status": "rejected", "id": payload.get("id"),
+                "reason": f"防重守卫：{dup}"}
     res = store.add(p)
     _save_store(reg, path, store)
     return {"status": "accepted_pending", "id": p.id, "review_status": "pending",

@@ -17,6 +17,7 @@ L2 开放 PDK Registry）通过 HTTP 暴露给一个真正的产品级前端，�
   POST /api/ecosystem/propose → D-94 提交 harness 物理定律锚提案（pending，待代码评审）
   POST /api/ecosystem/review  → D-95 评审提案（approve/reject，具名评审人 + 理由 + ORACLE 源码）
   POST /api/ecosystem/land    → D-95 落地已批准提案（确定性自测门禁 → 接入统一回归 + 补丁生成）
+  POST /api/ecosystem/resubmit → D-96 被拒提案重新提交（rejected→pending，保留审计）
   POST /api/verify        → {candidate, perturb?} 真跑 harness，返回逐题判定
   POST /api/agent_loop    → {solver, dual?} 真跑 agent 自迭代设计闭环
   POST /api/pdk_design    → {pdk, template, solver} 用 PDK 驱动 agent 逆设计
@@ -48,7 +49,8 @@ from lda_pdk import (PDKRegistry, DeviceEntry, SOVEREIGN_DEPS, by_class,
                     submit_device, submit_devices_batch,
                     submit_benchmark_proposal, list_contributions,
                     review_proposal, land_proposal, reload_landed,
-                    list_proposals, get_audit, list_landed)
+                    list_proposals, get_audit, list_landed,
+                    resubmit_proposal, review_stats)
 
 HARNESS = VerificationHarness(BENCHMARK_DEFS)
 AGENT_OUT = os.path.join(LDA_ROOT, "reports_agent")
@@ -1926,6 +1928,11 @@ def ecosystem_status():
         if st in prop_status:
             prop_status[st] += 1
     landed = list_landed()
+    # --- D-96 评审统计（状态分布 + 批准/拒绝 + 平均时延）---
+    try:
+        rstats = review_stats()
+    except Exception:
+        rstats = {}
 
     return {
         "harness": {"total": total, "passed": passed, "new_ids": new_ids},
@@ -1941,7 +1948,8 @@ def ecosystem_status():
             "proposal_status": prop_status,
             "landed": landed,
             "landed_count": len(landed),
-            "honest_note": "贡献库持久化于 contributions.json、落地注册于 landed.json（均 gitignore）；真实晶圆厂 NDA-PDK 仍属发动期 D-62 暂缓。harness 提案经「具名人工评审（LLM 不进判决路径）→ 确定性自测门禁 → 落地注册」闭环；落库(live)≠进版本控制，权威 ORACLE 以维护者 git 提交为准。",
+            "review_stats": rstats,
+            "honest_note": "贡献库持久化于 contributions.json、落地注册于 landed.json（均 gitignore）；真实晶圆厂 NDA-PDK 仍属发动期 D-62 暂缓。harness 提案经「具名人工评审（LLM 不进判决路径）→ 确定性自测门禁 → 落地注册」闭环；落库(live)≠进版本控制，权威 ORACLE 以维护者 git 提交为准。D-96 门槛扩展：签名完备性 / 数值界限 / core 双评审 quorum / 提交期防重 / 被拒重提。",
         },
         "honest_boundary": "真实晶圆厂 NDA-PDK 对接属发动期事项(D-62)，暂缓；本模块仅提供 Registry 入口与社区提交/评审落地入口，不硬编码任何商业 PDK。",
         "acceptance": {"passed": all(c["ok"] for c in acceptance), "checks": acceptance},
@@ -2130,6 +2138,11 @@ class Handler(BaseHTTPRequestHandler):
                     oracle_fn_source=payload.get("oracle_fn_source")))
             elif path == "/api/ecosystem/land":
                 self._send(200, land_proposal(payload.get("id", "")))
+            elif path == "/api/ecosystem/resubmit":
+                self._send(200, resubmit_proposal(
+                    proposal_id=payload.get("id", ""),
+                    updates=payload.get("updates") or {},
+                    contrib_path=None))
             else:
                 self._send(404, {"error": "not found"})
         except Exception as e:  # noqa: BLE001

@@ -1,0 +1,166 @@
+{
+  "d": "D-96",
+  "title": "生态共建进一步 · 评审流 UI 增强 + 评审门槛扩展",
+  "thresholds": {
+    "core_quorum": {
+      "vote1": {
+        "status": "pending",
+        "id": "B19",
+        "decision": "approve",
+        "reviewer": "评审人甲",
+        "votes": "1/2",
+        "reason": "core 提案需双评审人 quorum：已记录 1/2 票，待另一位具名评审人批准（LLM 不进判决路径）"
+      },
+      "vote1_dup": {
+        "status": "pending",
+        "id": "B19",
+        "decision": "approve",
+        "reviewer": "评审人甲",
+        "votes": "1/2",
+        "reason": "core 提案需双评审人 quorum：已记录 1/2 票，待另一位具名评审人批准（LLM 不进判决路径）"
+      },
+      "vote2": {
+        "status": "approved",
+        "id": "B19",
+        "decision": "approve",
+        "reviewer": "评审人乙",
+        "reviewed_at": "2026-08-24T14:28:03",
+        "reason": "评审已记录（审计轨迹已落盘）"
+      }
+    },
+    "value_bounds": {
+      "status": "error",
+      "id": "B20",
+      "reason": "数值界限门槛：自测值 749.481 > value_max 200"
+    },
+    "signature": {
+      "status": "error",
+      "id": "B21",
+      "reason": "approve 前置自测失败：ORACLE 自测调用失败：b21_missing() missing 1 required positional argument: 'n_g'"
+    },
+    "dedup_formula": {
+      "status": "rejected",
+      "id": "B22",
+      "reason": "防重守卫：公式与提案 B19（landed）重复"
+    },
+    "dedup_fn": {
+      "status": "rejected",
+      "id": "B23",
+      "reason": "防重守卫：oracle_fn_name 'b19_micro_ring_fsr' 已存在于提案 B19（landed）"
+    },
+    "resubmit": {
+      "status": "pending",
+      "id": "B20",
+      "decision": "resubmit",
+      "reason": "已重新提交为 pending，进入新一轮评审（审计轨迹保留）"
+    }
+  },
+  "landed": {
+    "bid": "B19",
+    "value": 749.481145
+  },
+  "review_stats": {
+    "total": 3,
+    "by_status": {
+      "pending": 2,
+      "approved": 0,
+      "rejected": 0,
+      "landed": 1
+    },
+    "approvals": 1,
+    "rejections": 1,
+    "quorum_votes": 2,
+    "avg_review_seconds": 0.0
+  },
+  "audit_b20": [
+    {
+      "ts": "2026-08-24T14:28:03",
+      "op": "review",
+      "decision": "reject",
+      "reviewer": "评审员丁",
+      "rationale": "界限不符"
+    },
+    {
+      "ts": "2026-08-24T14:28:03",
+      "op": "resubmit",
+      "by": "community",
+      "reason": "被拒后重新提交，进入新一轮评审"
+    }
+  ],
+  "proposals": [
+    {
+      "id": "B19",
+      "status": "landed",
+      "core": true,
+      "votes": 2
+    },
+    {
+      "id": "B20",
+      "status": "pending",
+      "core": false,
+      "votes": 0
+    },
+    {
+      "id": "B21",
+      "status": "pending",
+      "core": false,
+      "votes": 0
+    }
+  ],
+  "honest_boundary": "全部门槛为确定性门禁：签名完备性(inspect)/数值界限(死标量比对)/core 双评审 quorum（2 位不同具名评审人）/提交期防重（landed 权威公式与 fn 双通道）/被拒重提（rejected→pending 保留审计）；评审=具名人工，LLM 不进判决路径；真实晶圆厂 NDA-PDK 仍属发动期 D-62 暂缓。",
+  "acceptance": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "core 提案提交（带值界）→ accepted_pending",
+        "ok": true,
+        "detail": "{'status': 'accepted_pending', 'id': 'B19', 'review_status': 'pending', 'reason': '提案已登记，待代码评审与 golden 函数注册后纳入回归（LLM 不进判决路径）', 'store_op': 'added'}"
+      },
+      {
+        "name": "core 双评审 quorum：第1票 pending 1/2",
+        "ok": true,
+        "detail": "votes=1/2"
+      },
+      {
+        "name": "同评审人重复票不推进 quorum（仍 1/2）",
+        "ok": true,
+        "detail": "votes=1/2"
+      },
+      {
+        "name": "第2位评审人 → approved（quorum 达成）",
+        "ok": true,
+        "detail": "reviewer=评审人乙"
+      },
+      {
+        "name": "数值界限门槛（749 > value_max 200）→ 拒",
+        "ok": true,
+        "detail": "数值界限门槛：自测值 749.481 > value_max 200"
+      },
+      {
+        "name": "签名完备性门槛（缺 n_g）→ 拒",
+        "ok": true,
+        "detail": "approve 前置自测失败：ORACLE 自测调用失败：b21_missing() missing 1 require"
+      },
+      {
+        "name": "提交期防重：landed 同公式 → 拒",
+        "ok": true,
+        "detail": "防重守卫：公式与提案 B19（landed）重复"
+      },
+      {
+        "name": "提交期防重：landed 同 fn → 拒",
+        "ok": true,
+        "detail": "防重守卫：oracle_fn_name 'b19_micro_ring_fsr' 已存在于提案 B1"
+      },
+      {
+        "name": "被拒重提：rejected → pending（审计保留+追加）",
+        "ok": true,
+        "detail": "audit_ops=['review', 'resubmit']"
+      },
+      {
+        "name": "review_stats 自洽",
+        "ok": true,
+        "detail": "{'total': 3, 'by_status': {'pending': 2, 'approved': 0, 'rejected': 0, 'landed': 1}, 'approvals': 1, 'rejections': 1, 'quorum_votes': 2, 'avg_review_seconds': 0.0}"
+      }
+    ]
+  }
+}

@@ -26,6 +26,7 @@
 """
 from __future__ import annotations
 
+import inspect
 import json
 import math
 import os
@@ -56,6 +57,24 @@ _SAFE_BUILTINS = {
 # --------------------------------------------------------------------------
 # ORACLE 编译 + 确定性自测（死标量门禁）
 # --------------------------------------------------------------------------
+def _check_signature(fn, fn_name: str, params: Dict) -> List[str]:
+    """签名完备性（确定性门禁，D-96）：ORACLE 必填参数 ⊆ default_params。
+
+    返回缺失参数名列表（空 = 完备）。
+    """
+    try:
+        sig = inspect.signature(fn)
+    except (TypeError, ValueError):
+        return []
+    missing = []
+    for pname, p in sig.parameters.items():
+        if pname == "self":
+            continue
+        if p.default is inspect.Parameter.empty and pname not in params:
+            missing.append(pname)
+    return missing
+
+
 def _compile_oracle(source: str, fn_name: str, params: Dict):
     """受限命名空间编译 ORACLE 源码，提取 fn_name，默认参数下自测。
 
@@ -113,15 +132,46 @@ def review_proposal(proposal_id: str, decision: str, reviewer: str,
                     "reason": "approve 须附 ORACLE 参考实现源码（oracle_fn_source）"}
         # 前置确定性自测（不落地，仅验证可编译 + 默认参数返回有限标量）
         try:
-            _, val = _compile_oracle(src, p.oracle_fn_name, p.default_params)
+            fn, val = _compile_oracle(src, p.oracle_fn_name, p.default_params)
         except ValueError as ex:
             return {"status": "error", "id": p.id, "reason": f"approve 前置自测失败：{ex}"}
+        # D-96 门槛扩展①：签名完备性（必填参数 ⊆ default_params）
+        missing = _check_signature(fn, p.oracle_fn_name, p.default_params)
+        if missing:
+            return {"status": "error", "id": p.id,
+                    "reason": f"签名完备性门槛：ORACLE 必填参数 {missing} 未在 default_params 中提供"}
+        # D-96 门槛扩展②：数值界限（value_min/value_max 声明时须落界内）
+        if p.value_min is not None and val < p.value_min:
+            return {"status": "error", "id": p.id,
+                    "reason": f"数值界限门槛：自测值 {val:.6g} < value_min {p.value_min:.6g}"}
+        if p.value_max is not None and val > p.value_max:
+            return {"status": "error", "id": p.id,
+                    "reason": f"数值界限门槛：自测值 {val:.6g} > value_max {p.value_max:.6g}"}
+        # D-96 门槛扩展③：core 提案双评审人 quorum
+        if p.core:
+            approvals = [a for a in p.approvals
+                         if a.get("reviewer", "") != reviewer]
+            approvals.append({"reviewer": reviewer, "ts": _now(),
+                              "rationale": rationale, "self_test_value": val})
+            p.approvals = approvals
+            distinct = len({a["reviewer"] for a in approvals if a["reviewer"]})
+            if distinct < 2:
+                p.audit.append({"ts": _now(), "op": "review_vote",
+                                "decision": "approve", "reviewer": reviewer,
+                                "rationale": rationale, "self_test_value": val,
+                                "votes": f"{distinct}/2"})
+                _save_store(reg, path, store)
+                return {"status": "pending", "id": p.id,
+                        "decision": "approve", "reviewer": reviewer,
+                        "votes": f"{distinct}/2",
+                        "reason": f"core 提案需双评审人 quorum：已记录 {distinct}/2 票，待另一位具名评审人批准（LLM 不进判决路径）"}
         p.oracle_fn_source = src
         p.status = "approved"
         p.reviewed_at = _now()
         p.audit.append({"ts": p.reviewed_at, "op": "review",
                         "decision": "approve", "reviewer": reviewer,
-                        "rationale": rationale, "self_test_value": val})
+                        "rationale": rationale, "self_test_value": val,
+                        "votes": f"{len(p.approvals) or 1}/{'2' if p.core else '1'}"})
     else:
         p.status = "rejected"
         p.reviewed_at = _now()
@@ -139,6 +189,48 @@ def review_proposal(proposal_id: str, decision: str, reviewer: str,
 # --------------------------------------------------------------------------
 # 落地（接入统一回归）
 # --------------------------------------------------------------------------
+def resubmit_proposal(proposal_id: str, updates: Optional[dict] = None,
+                      contrib_path: Optional[str] = None) -> dict:
+    """被拒提案重新提交（D-96）：rejected → pending，保留审计并追加 resubmit 记录。
+
+    updates 可选：可更新 formula/tol/default_params/note/value_min/value_max/core
+    （确定性门禁外不新增任何判断）。
+    """
+    path = _resolve_path(contrib_path)
+    reg, store = _load_store(path)
+    p = next((x for x in store._items if x.id == proposal_id), None)
+    if p is None:
+        return {"status": "error", "reason": f"提案 {proposal_id} 不存在"}
+    if p.status != "rejected":
+        return {"status": "error",
+                "reason": f"提案 {proposal_id} 状态为 {p.status}，仅 rejected 可重新提交"}
+    updates = updates or {}
+    if "formula" in updates and str(updates.get("formula", "")).strip():
+        p.formula = str(updates["formula"]).strip()
+    if "note" in updates:
+        p.note = str(updates.get("note", "")).strip()
+    if "tol" in updates and updates.get("tol") not in (None, ""):
+        p.tol = float(updates["tol"])
+    if "default_params" in updates and updates.get("default_params"):
+        p.default_params = dict(_norm_params(updates["default_params"]))
+    if updates.get("value_min") not in (None, ""):
+        p.value_min = float(updates["value_min"])
+    if updates.get("value_max") not in (None, ""):
+        p.value_max = float(updates["value_max"])
+    if "core" in updates:
+        p.core = bool(updates["core"])
+    # 状态重置（保留审计轨迹）
+    p.status = "pending"
+    p.reviewed_by = ""
+    p.reviewed_at = ""
+    p.review_rationale = ""
+    p.approvals = []
+    p.audit.append({"ts": _now(), "op": "resubmit",
+                    "by": str(updates.get("by", "community")).strip() or "community",
+                    "reason": "被拒后重新提交，进入新一轮评审"})
+    _save_store(reg, path, store)
+    return {"status": "pending", "id": p.id, "decision": "resubmit",
+            "reason": "已重新提交为 pending，进入新一轮评审（审计轨迹保留）"}
 def _generate_patch(p: BenchmarkProposal) -> str:
     src = p.oracle_fn_source.strip()
     params_repr = dict(p.default_params)
@@ -294,6 +386,43 @@ def get_audit(proposal_id: str, contrib_path: Optional[str] = None) -> List[dict
     reg, store = _load_store(path)
     p = next((x for x in store._items if x.id == proposal_id), None)
     return list(p.audit) if p else []
+
+
+def review_stats(contrib_path: Optional[str] = None) -> dict:
+    """评审统计（D-96）：状态分布 + 批准/拒绝计数 + 平均评审时延。
+
+    时延 = 首次评审 ts − submitted_at（ISO 解析失败/缺失则跳过）。
+    """
+    path = _resolve_path(contrib_path)
+    reg, store = _load_store(path)
+    by_status = {"pending": 0, "approved": 0, "rejected": 0, "landed": 0}
+    approvals = rejections = votes = 0
+    latencies: List[float] = []
+    for p in store._items:
+        by_status[p.status] = by_status.get(p.status, 0) + 1
+        for a in p.audit:
+            if a.get("op") == "review_vote":
+                votes += 1
+            if a.get("op") == "review" and a.get("decision") == "approve":
+                approvals += 1
+            elif a.get("op") == "review" and a.get("decision") == "reject":
+                rejections += 1
+        try:
+            if p.submitted_at and p.reviewed_at:
+                t0 = datetime.fromisoformat(p.submitted_at)
+                t1 = datetime.fromisoformat(p.reviewed_at)
+                latencies.append((t1 - t0).total_seconds())
+        except Exception:
+            pass
+    avg_latency = (sum(latencies) / len(latencies)) if latencies else None
+    return {
+        "total": len(store._items),
+        "by_status": by_status,
+        "approvals": approvals,
+        "rejections": rejections,
+        "quorum_votes": votes,
+        "avg_review_seconds": avg_latency,
+    }
 
 
 def list_landed(landed_path: Optional[str] = None) -> List[dict]:

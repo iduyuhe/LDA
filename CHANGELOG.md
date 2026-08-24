@@ -316,6 +316,12 @@
 - **工程坑**：双 qubit 同频简并使最近匹配态标记错乱（χ1 假值 −0.0107 vs 单 qubit −0.00225）→ **异频打破简并 + ZZ 耦合提取**（无需谐振器态标记）；驱动强场 Ω/δ_d>1 时 AC Stark 弱驱动近似失效 → 负例诚实捕获
 - **文档/UI**：README D-91 行 + 五十→五十一面板 + 面板 51 清单；WebUI 面板 51 + `/api/qeda_depth`；D-77 回归 9 PASS 零影响
 
+#### D-92 · 3D voxel 拓扑逆设计（2026-08-24，3D 纵深最后一环）
+- **核**：`adjoint_fdtd3d.py` 新增 `TopologyProblem3D`（设计区 = 核心层体素 `_dr`，潜伏密度 r∈[0,1] + **tanh 投影 beta 2→beta_max 延拓**（先柔后硬二值化，可制造性内建）+ 链式 dFOM/dr=Δeps·geps·dρ̄/dr）+ `verify_topo_gradient3d` + `optimize_topology3d`（最大分量归一化 + Armijo 回溯线搜索同投影一致）+ `design_topology3d`（mode=topology）
+- **实测**（44×36×12, iters=24, beta_max=16）：**imp 6.30×**（FOM 33.7→212）、3D adjoint FD 对拍 1e-4、**拓扑梯度链式 5.9e-3**、**二值化 20.8%**；HTTP 40 域 imp 7.76×；smoke **7/7**；shape/section/spectral 回归零影响；报告 `reports/topology3d_d92.json`
+- **工程坑**：3D 拓扑二值化收敛慢（44 域 18 迭代仅 18% 二值）→ **iters=24 + beta_max=16 达 20.8%**；beta 太激进损 FOM（28 迭代 bm=18 → imp 4.67×）→ 平衡点 24/16
+- **文档/UI**：README D-92 行 + 五十一→五十二面板 + 面板 52 清单；WebUI 面板 52 + `/api/adjoint3d` mode=topology；D-77 回归 9 PASS 零影响
+
 ## v0.0（阶段 0/1/2，此前交付）
 
 - 自研 1D/2D/3D FDTD（numpy 零依赖，物理定律锚校验）+ Numba-CPU JIT + PyTorch GPU 升维

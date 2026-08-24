@@ -30,6 +30,7 @@ from lda_solver.adjoint_fdtd3d import (  # noqa: E402
     ShapeProblem3DSection, verify_section_gradient, optimize_section3d,
     make_wl_problems3d, verify_section_gradient_multi,
     optimize_section3d_multi,
+    TopologyProblem3D, verify_topo_gradient3d, optimize_topology3d,
 )
 
 
@@ -292,11 +293,93 @@ def design_spectral3d(
     return result
 
 
+def design_topology3d(
+        Nx: int = 44, Ny: int = 36, Nz: int = 12,
+        dl_factor: float = 10.0, iters: int = 16,
+        nsamples: int = 6, delta: float = 0.05,
+        beta_max: float = 12.0, out: Optional[str] = None) -> Dict[str, Any]:
+    """D-92 3D voxel 拓扑逆设计（3D 纵深最后一环）。
+
+    设计区 = 核心层体素（潜伏密度 r ∈ [0,1]）；tanh 投影 beta 2→beta_max
+    延拓（可制造二值化内建）；梯度链式 dFOM/dr = Δeps·geps·dρ̄/dr（3D
+    adjoint 显式转置）。验收：拓扑梯度 FD 对拍≤0.15 + improvement≥1.5 +
+    二值化比例（beta_max 投影二值度）。
+    """
+    if Nx < 32 or Ny < 24 or Nz < 8:
+        return {"ok": False, "error": "3D 域过小（Nx≥32, Ny≥24, Nz≥8）"}
+    base = AdjointProblem3D(Nx=Nx, Ny=Ny, Nz=Nz, dl_factor=dl_factor)
+    tp = TopologyProblem3D(base, beta_max=beta_max)
+    r0 = np.full(tp.ndr, 0.5)
+
+    t0 = time.perf_counter()
+    vr = verify_adjoint3d(base, tp.rho_to_eps(tp.project(r0, 2.0)),
+                          nsamples=nsamples, delta=delta)
+    vt = verify_topo_gradient3d(tp, r0, nsamples=nsamples,
+                                delta=min(delta, 0.02))
+    opt = optimize_topology3d(tp, iters=iters, beta_max=beta_max)
+    elapsed = time.perf_counter() - t0
+
+    checks = [
+        {"name": "3D adjoint 梯度 vs 有限差分（≤0.15）",
+         "ok": bool(vr["passed"]),
+         "detail": f"max_rel_err={vr['max_rel_err']:.4f}（{vr['nsamples']} 采样）"},
+        {"name": "3D 拓扑梯度链式（潜伏密度）vs 有限差分（≤0.15）",
+         "ok": bool(vt["passed"]),
+         "detail": f"max_rel_err={vt['max_rel_err']:.4f}（{vt['nsamples']} 采样）"},
+        {"name": "improvement ≥ 1.5（均匀核心层 → 3D voxel 拓扑）",
+         "ok": bool(opt["improvement"] >= 1.5),
+         "detail": f"{opt['improvement']:.2f}×（FOM "
+                   f"{opt['initial_FOM']:.3e} → {opt['final_FOM']:.3e}）"},
+        {"name": "二值化投影（beta_max 重投影，可制造性）",
+         "ok": bool(opt["binary_fraction"] >= 0.2),
+         "detail": f"二值度 {opt['binary_fraction'] * 100:.1f}%"
+                   f"（体素 <0.1 或 >0.9 比例）"},
+    ]
+    passed = all(c["ok"] for c in checks)
+    result = {
+        "ok": True,
+        "title": "3D voxel 拓扑逆设计（3D 纵深最后一环）",
+        "mode": "adjoint3d_topology",
+        "grid": {"Nx": Nx, "Ny": Ny, "Nz": Nz, "dl_factor": dl_factor,
+                 "dl_um": round(base.dl, 4), "dt": round(base.dt, 6)},
+        "core_layer": {"z": [base.k_core0, base.k_core1]},
+        "design_voxels": int(tp.ndr),
+        "verify": {"max_rel_err": vr["max_rel_err"],
+                   "topo_max_rel_err": vt["max_rel_err"],
+                   "nsamples": vr["nsamples"]},
+        "optimization": {
+            "improvement": opt["improvement"],
+            "initial_FOM": opt["initial_FOM"],
+            "final_FOM": opt["final_FOM"],
+            "binary_fraction": opt["binary_fraction"],
+            "beta_max": beta_max,
+            "elapsed_s": round(elapsed, 2)},
+        "acceptance": {"checks": checks, "passed": passed},
+        "verdict": (f"3D voxel 拓扑逆设计 PASS：improvement="
+                    f"{opt['improvement']:.2f}×（FOM "
+                    f"{opt['initial_FOM']:.3e} → {opt['final_FOM']:.3e}）；"
+                    f"3D adjoint FD 对拍 {vr['max_rel_err']:.4f}、拓扑梯度 "
+                    f"{vt['max_rel_err']:.4f}（≤0.15）；二值度 "
+                    f"{opt['binary_fraction'] * 100:.1f}%。耗时 {elapsed:.1f}s。"
+                    if passed else
+                    "3D voxel 拓扑未全过：" +
+                    "; ".join(c["name"] for c in checks if not c["ok"])),
+        "note": ("D-92 3D voxel 拓扑逆设计：潜伏密度 + tanh 投影 beta 延拓"
+                 "（先柔后硬二值化，可制造性内建）+ 3D adjoint 显式转置梯度"
+                 "（Mᵀ 1e-15 级）。诚实边界：小 3D 域；FOM 为收集场能（T>1 "
+                 "聚焦增益非功率透射）。LLM 不进判决路径。"),
+    }
+    if out:
+        with open(out, "w", encoding="utf-8") as f:
+            json.dump(result, f, ensure_ascii=False, indent=2)
+    return result
+
+
 def main() -> int:
     import argparse
-    ap = argparse.ArgumentParser(description="D-84/85/87 3D adjoint 形状逆设计")
+    ap = argparse.ArgumentParser(description="D-84/85/87/92 3D adjoint 逆设计")
     ap.add_argument("--mode", default="shape",
-                    choices=["shape", "section", "spectral"])
+                    choices=["shape", "section", "spectral", "topology"])
     ap.add_argument("--Nx", type=int, default=44)
     ap.add_argument("--Ny", type=int, default=36)
     ap.add_argument("--Nz", type=int, default=12)
@@ -310,6 +393,9 @@ def main() -> int:
         r = design_section3d(**kw)
     elif a.mode == "spectral":
         r = design_spectral3d(**kw)
+    elif a.mode == "topology":
+        r = design_topology3d(Nx=a.Nx, Ny=a.Ny, Nz=a.Nz,
+                              iters=a.iters, out=a.out)
     else:
         r = design_shape3d(**kw)
     print(json.dumps({k: r[k] for k in

@@ -1661,12 +1661,13 @@ def run_hybrid_multi(payload=None):
 
 
 def run_adjoint3d(payload=None):
-    """D-84/85/87 3D adjoint 形状逆设计（webui ㊺/㊻/㊽ 面板）。
+    """D-84/85/87/92 3D adjoint 逆设计（webui ㊺/㊻/㊽/面板52）。
 
-    输入 {mode?: shape|section|spectral, Nx?, Ny?, Nz?, n_controls?, iters?}：
-    shape=宽度曲线平板（D-84），section=宽度×厚度截面（D-85），
-    spectral=截面 × 多波长加权联合（D-87）。
-    死标量验收：3D adjoint FD 对拍 + 形状梯度链式对拍 + improvement + DRC。
+    输入 {mode?: shape|section|spectral|topology, Nx?, Ny?, Nz?,
+    n_controls?, iters?}：shape=宽度曲线平板（D-84），section=宽度×厚度
+    截面（D-85），spectral=截面 × 多波长加权联合（D-87），
+    topology=3D voxel 拓扑（D-92，3D 纵深最后一环）。
+    死标量验收：3D adjoint FD 对拍 + 梯度链式对拍 + improvement + DRC/二值化。
     LLM 不进判决路径。
     """
     import sys as _sys
@@ -1675,7 +1676,8 @@ def run_adjoint3d(payload=None):
     if str(_lda) not in _sys.path:
         _sys.path.insert(0, str(_lda))
     from lda_agent.adjoint3d_design import (design_shape3d, design_section3d,
-                                            design_spectral3d)
+                                            design_spectral3d,
+                                            design_topology3d)
     payload = payload or {}
     kw = {}
     for k, cast in (("Nx", int), ("Ny", int), ("Nz", int),
@@ -1690,6 +1692,10 @@ def run_adjoint3d(payload=None):
             rep = design_section3d(**kw)
         elif mode == "spectral":
             rep = design_spectral3d(**kw)
+        elif mode == "topology":
+            rep = design_topology3d(Nx=kw.get("Nx", 44), Ny=kw.get("Ny", 36),
+                                    Nz=kw.get("Nz", 12),
+                                    iters=kw.get("iters", 16))
         else:
             rep = design_shape3d(**kw)
         rep["ok"] = bool(rep.get("ok"))

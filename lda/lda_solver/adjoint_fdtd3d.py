@@ -832,6 +832,142 @@ def optimize_shape3d(sp: ShapeProblem3D, iters: int = 20, step0: float = 0.4,
     }
 
 
+class TopologyProblem3D:
+    """D-92 3D voxel 拓扑逆设计问题（3D 纵深最后一环）。
+
+    设计区 = 核心层体素（`AdjointProblem3D._dr`，全网格坐标列表）；
+    潜伏密度 r ∈ [0,1]^ndr，物理密度 ρ̄ = tanh 投影（beta 2→beta_max 延拓，
+    先柔后硬二值化——可制造性内建）；
+        eps(体素) = eps_min + ρ̄·(eps_max−eps_min)
+    梯度链式：dFOM/dr = (eps_max−eps_min)·geps·dρ̄/dr（geps = dFOM/dε 来自
+    `compute_gradient3d`，已 FD 对拍 9.4e-6；拓扑链式 FD 对拍 ≤0.15 验收）。
+
+    与 2D 拓扑（D-29 `optimize_topology`）同构：最大分量归一化 + Armijo
+    回溯线搜索（评估 = 与迭代一致的同投影设计，FOM 单调不降）。
+    """
+
+    def __init__(self, base: "AdjointProblem3D", beta_max: float = 12.0):
+        self.base = base
+        self.dr = np.asarray(base._dr)
+        self.ndr = len(self.dr)
+        self.beta_max = beta_max
+        self.eps_min = base.eps_min
+        self.eps_max = base.eps_max
+
+    def rho_to_eps(self, rho: np.ndarray,
+                   eps0: Optional[np.ndarray] = None) -> np.ndarray:
+        """物理密度 ρ̄ → 介电（eps0 为包层基底，未指定则全 eps_min）。"""
+        if eps0 is None:
+            eps0 = np.full((self.base.Nx, self.base.Ny, self.base.Nz),
+                           self.eps_min)
+        e = eps0.copy()
+        e.ravel()[self.dr] = self.eps_min + rho * (self.eps_max - self.eps_min)
+        return e
+
+    @staticmethod
+    def project(r: np.ndarray, beta: float) -> np.ndarray:
+        """tanh 投影（beta=2 时近线性；beta≫1 时二值化）。"""
+        t = np.tanh(beta * (r - 0.5)) / (2.0 * np.tanh(beta / 2.0)) + 0.5
+        return np.clip(t, 0.0, 1.0)
+
+    def fom_at(self, r: np.ndarray, beta: float,
+               eps0: Optional[np.ndarray] = None) -> float:
+        """投影一致目标：物理密度 = project(r, beta) 后再转 eps。"""
+        return float(forward3d(self.base,
+                               self.rho_to_eps(self.project(r, beta),
+                                               eps0))["FOM"])
+
+    def gradient(self, r: np.ndarray, beta: float,
+                 eps0: Optional[np.ndarray] = None) -> np.ndarray:
+        """链式 dFOM/dr（潜伏密度）：geps·(eps_max−eps_min)·dρ̄/dr。"""
+        rho = self.project(r, beta)
+        fwd = forward3d(self.base, self.rho_to_eps(rho, eps0))
+        geps = compute_gradient3d(self.base, fwd)
+        g_rho = (self.eps_max - self.eps_min) * geps.ravel()[self.dr]
+        t = np.tanh(beta * (r - 0.5))
+        dproj = beta * (1.0 - t ** 2) / (2.0 * np.tanh(beta / 2.0))
+        return g_rho * dproj, fwd
+
+
+def verify_topo_gradient3d(tp: TopologyProblem3D, r0: np.ndarray,
+                           beta: float = 2.0, nsamples: int = 6,
+                           delta: float = 0.02,
+                           seed: int = 11) -> Dict[str, Any]:
+    """3D 拓扑梯度链式 FD 对拍（潜伏密度方向采样）。"""
+    rng = np.random.default_rng(seed)
+    g_r, _ = tp.gradient(r0, beta)
+    order = np.argsort(np.abs(g_r))[::-1][:max(nsamples, 1)]
+    rows = []
+    for idx in order:
+        rp = r0.copy(); rp[idx] += delta
+        rm = r0.copy(); rm[idx] -= delta
+        g_fd = (tp.fom_at(rp, beta) - tp.fom_at(rm, beta)) / (2.0 * delta)
+        rows.append({"voxel": int(idx), "g_adj": float(g_r[idx]),
+                     "g_fd": float(g_fd)})
+    ga = np.array([r["g_adj"] for r in rows])
+    gf = np.array([r["g_fd"] for r in rows])
+    max_rel = float(np.abs(ga - gf).max() / (np.abs(gf).max() + 1e-12))
+    return {"max_rel_err": max_rel, "passed": bool(max_rel <= 0.15),
+            "rows": rows, "nsamples": nsamples, "delta": delta}
+
+
+def optimize_topology3d(tp: TopologyProblem3D, iters: int = 18,
+                        step0: float = 0.5, beta_max: float = 12.0,
+                        verbose: bool = False) -> Dict[str, Any]:
+    """3D voxel 拓扑优化：tanh 投影 beta 延拓 + 最大分量归一化 + 回溯线搜索。
+
+    返回 dict：history、final_density（二值化投影）、improvement、二值度。
+    """
+    nd = tp.ndr
+    r = np.full(nd, 0.5)
+    fom0 = tp.fom_at(r, 2.0)
+    best_fom, best_r = fom0, r.copy()
+    history = []
+    for it in range(iters):
+        beta = 2.0 + (beta_max - 2.0) * (it / max(iters - 1, 1))
+        g_r, fwd = tp.gradient(r, beta)
+        m = np.max(np.abs(g_r)) + 1e-12
+        d = g_r / m
+        alpha = step0
+        f_eval = fwd["FOM"]
+        f_try, accepted = f_eval, False
+        while alpha > 2e-3:
+            f_try = tp.fom_at(np.clip(r + alpha * d, 0.0, 1.0), beta)
+            if f_try > f_eval:
+                accepted = True
+                break
+            alpha *= 0.5
+        if accepted:
+            r = np.clip(r + alpha * d, 0.0, 1.0)
+            f_final = f_try
+        else:
+            f_final = f_eval
+        if f_final > best_fom:
+            best_fom, best_r = f_final, r.copy()
+        history.append({"iter": it, "FOM": f_final, "T": fwd["T"],
+                        "beta": round(beta, 2), "alpha": round(alpha, 4)})
+        if verbose and (it % 5 == 0 or it == iters - 1):
+            print(f"  it={it:3d} beta={beta:5.2f} alpha={alpha:6.3f} "
+                  f"FOM={f_final:.4e}")
+    # 最终设计：best_r 以 beta_max 重投影（二值化）后评估
+    rho_final = tp.project(best_r, beta_max)
+    fbf = tp.fom_at(best_r, beta_max)
+    improvement = fbf / (fom0 + 1e-12)
+    bw = rho_final
+    binary_frac = float(((bw < 0.1) | (bw > 0.9)).mean())
+    return {
+        "history": history,
+        "final_density": bw,
+        "final_FOM": float(fbf),
+        "initial_FOM": float(fom0),
+        "improvement": float(improvement),
+        "binary_fraction": binary_frac,
+        "passed": bool(improvement >= 1.5),
+        "note": ("D-92 3D voxel 拓扑逆设计（3D 纵深最后一环）：潜伏密度 + tanh "
+                 "投影 beta 延拓（可制造二值化内建）+ 3D adjoint 显式转置梯度。"),
+    }
+
+
 class ShapeProblem3DSection:
     """D-85 3D 截面形状：宽度 w(x) × 厚度 h(x) 双软边界。
 

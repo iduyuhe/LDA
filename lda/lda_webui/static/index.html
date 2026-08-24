@@ -894,6 +894,20 @@
     <div class="conclusion" id="qdConclusion"></div>
   </div>
 
+  <div class="sec" id="sec-topo3d">
+    <h3>52 3D voxel 拓扑逆设计（3D 纵深最后一环 · 潜伏密度 + 二值化投影）</h3>
+    <div class="row">
+      <label>Nx:<input id="tpNx" value="40" size="3"></label>
+      <label>Ny:<input id="tpNy" value="32" size="3"></label>
+      <label>Nz:<input id="tpNz" value="12" size="3"></label>
+      <label>迭代:<input id="tpIters" value="14" size="3"></label>
+      <button class="btn" id="runTp">3D 拓扑逆设计</button>
+    </div>
+    <div id="tpSummary" class="summary"></div>
+    <div id="tpBody"></div>
+    <div class="conclusion" id="tpConclusion"></div>
+  </div>
+
   <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
@@ -2868,6 +2882,40 @@ async function runQd(){
   } finally { btn.disabled = false; }
 }
 $('runQd').onclick = runQd;
+
+// ---- 52 D-92 3D voxel 拓扑逆设计（3D 纵深最后一环）----
+async function runTp(){
+  const btn = $('runTp'); btn.disabled = true;
+  $('tpSummary').innerHTML = '<span class="spin"></span> 3D voxel 拓扑逆设计（潜伏密度 + 二值化投影）运行中…';
+  const payload = {
+    mode: 'topology',
+    Nx: $('tpNx').value, Ny: $('tpNy').value, Nz: $('tpNz').value,
+    iters: $('tpIters').value
+  };
+  try {
+    const d = await postJson('/api/adjoint3d', payload);
+    const passed = d.acceptance ? d.acceptance.passed : false;
+    const o = d.optimization || {}, v = d.verify || {};
+    $('tpSummary').innerHTML = `3D voxel 拓扑：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（improvement=${o.improvement!=null?o.improvement.toFixed(2)+'×':'?'} · 设计体素 ${d.design_voxels||'?'}）`;
+    const chk = (d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
+    $('tpBody').innerHTML = `
+      <div class="subhead">3D voxel 拓扑优化</div>
+      <table class="tbl"><tbody>
+        <tr><td>域 / 设计体素</td><td>${d.grid?d.grid.Nx+'×'+d.grid.Ny+'×'+d.grid.Nz:'?'} · ${d.design_voxels||'?'} voxel（核心层）</td></tr>
+        <tr><td>improvement</td><td class="ok">${o.improvement!=null?o.improvement.toFixed(2)+'×':'?'} ≥ 1.5（FOM ${o.initial_FOM!=null?o.initial_FOM.toExponential(2):'?'} → ${o.final_FOM!=null?o.final_FOM.toExponential(2):'?'}）</td></tr>
+        <tr><td>3D adjoint 梯度 FD 对拍</td><td class="ok">${v.max_rel_err!=null?v.max_rel_err.toFixed(4):'?'} ≤ 0.15</td></tr>
+        <tr><td>拓扑梯度链式 FD 对拍</td><td class="ok">${v.topo_max_rel_err!=null?v.topo_max_rel_err.toFixed(4):'?'} ≤ 0.15</td></tr>
+        <tr><td>二值化投影（beta_max=${o.beta_max!=null?o.beta_max:'?'}）</td><td>${o.binary_fraction!=null?(o.binary_fraction*100).toFixed(1)+'%':'?'} 体素二值（<0.1 或 >0.9——可制造性内建）</td></tr>
+        <tr><td>耗时</td><td>${o.elapsed_s!=null?o.elapsed_s+'s':'?'}</td></tr>
+      </tbody></table>
+      <div class="subhead">死标量验收</div>
+      <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
+    $('tpConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+  } catch(e){
+    $('tpSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('runTp').onclick = runTp;
 
 // ---- ㊽ D-87 谱形目标 × 3D 截面（多波长加权联合）----
 async function runSp(){

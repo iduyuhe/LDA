@@ -1,4 +1,4 @@
-"""D-84/85/87/89 3D adjoint 形状逆设计 smoke：6 例（shape + section + spectral + 不同网格 + numba 一致性 + 非法域负例）。
+"""D-84/85/87/89/92 3D adjoint 逆设计 smoke：7 例（shape + section + spectral + 不同网格 + numba 一致性 + 3D 拓扑 + 非法域负例）。
 
 运行：python run_adjoint3d_smoke.py（managed python，纯 numpy；有 numba 时
 forward/梯度自动走 JIT 核，无则回退 numpy——一致性用例跨环境稳定）
@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, ".")
 
 from lda_agent.adjoint3d_design import (  # noqa: E402
-    design_shape3d, design_section3d, design_spectral3d,
+    design_shape3d, design_section3d, design_spectral3d, design_topology3d,
 )
 
 cases = []
@@ -65,7 +65,11 @@ def case_numba():
 
 run("正例-numba后端一致性", case_numba, True)
 
-# 6) 负例：3D 域过小 → 优雅 FAIL
+# 6) 正例：3D voxel 拓扑逆设计（3D 纵深最后一环——潜伏密度 + tanh 投影）
+run("正例-3D拓扑逆设计", lambda: design_topology3d(
+    Nx=40, Ny=32, Nz=12, dl_factor=10, iters=12, nsamples=5, delta=0.05), True)
+
+# 7) 负例：3D 域过小 → 优雅 FAIL
 run("负例-域过小", lambda: design_spectral3d(
     Nx=16, Ny=16, Nz=6, n_controls=4, iters=4), False)
 

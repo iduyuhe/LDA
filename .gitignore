@@ -22,6 +22,7 @@ test_wg_quick.py
 # ---- 生态共建社区贡献库（真实提交数据，不进版本库） ----
 lda/lda_pdk/contributions.json
 lda/lda_pdk/landed.json
+lda/reports/patches/
 
 # ---- IDE ----
 .idea/

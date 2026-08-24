@@ -452,7 +452,8 @@ def review_stats(contrib_path: Optional[str] = None) -> dict:
     """
     path = _resolve_path(contrib_path)
     reg, store = _load_store(path)
-    by_status = {"pending": 0, "approved": 0, "rejected": 0, "landed": 0}
+    by_status = {"pending": 0, "approved": 0, "rejected": 0, "landed": 0,
+                 "published": 0}
     approvals = rejections = votes = 0
     latencies: List[float] = []
     for p in store._items:

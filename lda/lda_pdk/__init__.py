@@ -41,6 +41,7 @@ from .review import (
     resubmit_proposal, review_stats,
     review_proposals_batch, land_proposals_batch,
 )
+from .publish import publish_proposal, list_published
 
 __all__ = [
     "PDKRegistry", "DeviceEntry",
@@ -53,4 +54,5 @@ __all__ = [
     "list_proposals", "get_audit", "list_landed",
     "resubmit_proposal", "review_stats",
     "review_proposals_batch", "land_proposals_batch",
+    "publish_proposal", "list_published",
 ]

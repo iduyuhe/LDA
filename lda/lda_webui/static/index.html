@@ -1024,6 +1024,29 @@
     <div id="rvwBody"></div>
   </div>
 
+  <div class="sec" id="sec-ecopub">
+    <h3>56 评审流端到端 · 发布（D-98 · 提案→评审→落地→回归→发布 全链收官）</h3>
+    <div class="hint">评审流端到端最后一环：把 landed 的社区 ORACLE 固化为<b>正式版本控制补丁 + Release Notes 草稿</b>（`lda/reports/patches/{bid}.publish.patch` + `{bid}.RELEASE.md`），形成完整生命周期「提案 → 具名人工评审 → 确定性自测 → 落地接入统一回归 → <b>发布</b>」→ 维护者 `git apply` 合并。<b>诚实边界：发布不改源文件、不做 git commit——产出补丁+发布草稿，git 提交是维护者动作；LLM 不进判决路径，发布自检=死标量门禁。</b></div>
+
+    <div class="subhead">① 状态机概览</div>
+    <div id="pubFlow" class="summary"></div>
+
+    <div class="subhead">② 可发布（landed 未发布）</div>
+    <div class="row">
+      <select id="pubSel" style="min-width:340px"></select>
+      <button class="btn" id="refreshPub">刷新</button>
+    </div>
+    <div class="row">
+      <label>发布人 <input id="pubAuthor" size="16" placeholder="杜玉河"></label>
+      <label>备注 <input id="pubNote" size="40" placeholder="社区贡献，经评审落地"></label>
+      <button class="btn" id="pubBtn">生成补丁 + Release Notes（发布）</button>
+    </div>
+    <div id="pubRes" class="summary"></div>
+
+    <div class="subhead">③ 已发布基准</div>
+    <div id="pubBody"></div>
+  </div>
+
   <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
@@ -3306,6 +3329,40 @@ async function landBtn(){
 }
 $('landBtn').onclick = landBtn;
 refreshRvw();
+
+// ---- 56 D-98 评审流端到端 · 发布 ----
+async function refreshPub(){
+  try {
+    const d = await apiGet('/api/ecosystem');
+    const c = d.community || {};
+    const st = c.proposal_status || {};
+    const published = c.published || [];
+    const pend = (c.proposals||[]).filter(p=>p.status==='landed');
+    const sel = $('pubSel');
+    sel.innerHTML = pend.map(p=>`<option value="${escapeHtml(p.id)}">${escapeHtml(p.id)} · ${escapeHtml(p.title)}</option>`).join('') || '<option value="">（无可发布提案）</option>';
+    $('pubFlow').innerHTML = `生命周期：提案 <b>${st.pending||0}</b> → approved <b>${st.approved||0}</b> → landed <b>${st.landed||0}</b> → <span class="ok">published <b>${st.published||0}</b></span>（已发布 <b>${c.published_count||0}</b> · 可发布 <b>${c.publish_pending||0}</b>）<br><span class="note">LLM 不进判决路径：评审=具名人工、自测=死标量门禁；发布产出补丁+Release Notes 草稿于 reports/patches/，git 提交是维护者动作。</span>`;
+    const pRows = published.map(x=>`<tr><td class="ok">${escapeHtml(x.bid)}</td><td>${escapeHtml(x.title)}</td><td>${escapeHtml(x.metric)}</td><td>${escapeHtml(x.oracle_fn_name)}</td><td>${escapeHtml(x.reviewed_by)} @${escapeHtml(x.reviewed_at)}</td><td>${escapeHtml(x.published_by)} @${escapeHtml(x.published_at)}</td><td style="font-size:11px">${escapeHtml(x.patch_path)}</td></tr>`).join('');
+    $('pubBody').innerHTML = `<table class="tbl"><thead><tr><th>bid</th><th>标题</th><th>指标</th><th>oracle_fn</th><th>评审</th><th>发布</th><th>补丁路径</th></tr></thead><tbody>${pRows}</tbody></table>`;
+  } catch(e){
+    $('pubBody').innerHTML = '<span class="fail">刷新失败：'+e+'</span>';
+  }
+}
+$('refreshPub').onclick = refreshPub;
+async function pubBtn(){
+  const btn = $('pubBtn'); btn.disabled = true;
+  try {
+    const d = await api('/api/ecosystem/publish', {
+      id: $('pubSel').value, author: $('pubAuthor').value.trim(),
+      note: $('pubNote').value.trim() });
+    const cls = d.status==='published' ? 'ok' : 'fail';
+    $('pubRes').innerHTML = `<span class="verdict ${cls}">${escapeHtml(d.status)}</span> ${escapeHtml(d.id||'')} · 自测值 <b>${d.value!=null?d.value:''}</b> · diff ${d.diff_lines||0} 行<br><span class="note">补丁：${escapeHtml(d.patch_path||'')}<br>Release Notes：${escapeHtml(d.release_path||'')}</span><br>${escapeHtml(d.reason||'')}`;
+    refreshPub();
+  } catch(e){
+    $('pubRes').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+  } finally { btn.disabled = false; }
+}
+$('pubBtn').onclick = pubBtn;
+refreshPub();
 
 // ---- ㊽ D-87 谱形目标 × 3D 截面（多波长加权联合）----
 async function runSp(){

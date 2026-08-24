@@ -56,6 +56,14 @@
 - **实测**：批量拒绝 2/2、批量批准 2/2、批量落地 2/2（落地值 4.0，harness 自动 18→**20 题 20/20 PASS**）。
 - 新增 `run_ecosystem_review3_smoke.py`（14/14 PASS）、`run_ecosystem_d97_report.py`（10/10，产出 `lda/reports/ecosystem_d97.json`）；D-93~D-96 smoke 回归全绿。
 
+### 新增/变更（post-v0.6 · D-98 生态共建收官 · 评审流端到端发布 · 2026-08-24）
+- **发布模块（`lda_pdk/publish.py`）**：评审流端到端最后一环，landed ORACLE 固化为**正式版本控制补丁 + Release Notes 草稿**：
+  - `publish_proposal`：仅 landed 可发布；**须具名发布人**（git 提交是维护者动作）；确定性重编译 ORACLE 自测（死标量门禁）；difflib 生成 golden.py / benchmarks.py 的**可 `git apply` unified diff**（EOF 追加：ORACLE 函数 + `_GOLDEN_DISPATCH`/`_PHYSICAL_LAW` 注册 + `BENCHMARK_DEFS` 条目 + ORDER）；写 `reports/patches/{bid}.publish.patch` + `{bid}.RELEASE.md`（gitignore）；状态 landed→published；审计追加 `publish`；landed 记录补 published_at/published_by/patch_path/release_path。
+  - `list_published`：已发布记录。
+- **WebUI 升级至五十六面板**：新增面板 56「评审流端到端 · 发布」（状态机概览 pending→approved→landed→published + 可发布（landed 未发布）列表+发布表单（author/note）+ 已发布基准列表），后端新增 `POST /api/ecosystem/publish`，`GET /api/ecosystem` 增 `published`/`published_count`/`publish_pending` 段、`proposal_status` 加 published。
+- **完整生命周期落地**：提案 → 具名人工评审 → 确定性自测 → 落地（自动纳入统一回归）→ 发布（补丁+Release Notes 草稿）→ 维护者 git 合并。
+- 新增 `run_ecosystem_publish_smoke.py`（12/12 PASS）、`run_ecosystem_d98_report.py`（10/10，产出 `lda/reports/ecosystem_d98.json`）；D-93~D-97 smoke 回归全绿。
+
 ### 新增/变更（post-v0.5 · D-84~D-89 全量 · 详见下方 v0.5 详细记录）
 
 ## v0.5（2026-08-23 · git tag v0.5 · 系统级里程碑）

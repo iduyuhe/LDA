@@ -45,6 +45,17 @@
 - **评审流 UI 增强（面板 55）**：评审统计条（批准/拒绝/quorum 票/平均时延）、状态筛选页签（全部/pending/approved/rejected/landed）、行内操作（批准→选中入表单、拒绝→prompt 理由、被拒→重新提交）、core 双评审徽标+票数、值界展示；面板 54 提案表单加 core 复选框 + 值界输入；后端新增 `POST /api/ecosystem/resubmit`，`GET /api/ecosystem` 增 `review_stats` 段。
 - 新增 `run_ecosystem_review2_smoke.py`（13/13 PASS）、`run_ecosystem_d96_report.py`（10/10，产出 `lda/reports/ecosystem_d96.json`）；D-93/D-94/D-95 smoke 回归全绿。
 
+### 新增/变更（post-v0.6 · D-97 生态共建进一步 · 评审门槛再扩展 + 多提案批量评审 · 2026-08-24）
+- **可配置评审策略（`lda_pdk/submit.py`：`ReviewPolicy` + `get_policy` + `policy_info`）**：
+  - 提交期预检：`enforce_positive_tol`（tol>0）/ `enforce_nonempty_params`（default_params 非空）/ value_min>value_max 即拒 / `enforce_value_bounds`（强制声明值界，策略开）。
+  - 评审期门槛：`authorized_reviewers`（评审人白名单，空=任意具名；非空=白名单制）/ `min_source_length`（ORACLE 源码最短长度，防空壳）。
+  - `strict_dedup`：严格防重（公式 token 集比较，"n_g·L"≡"n_g*L"）；`min_quorum`：core 双评审基准数可配（默认 2）。
+  - 默认策略 = D-95/D-96 行为不变（全部既有 smoke 回归全绿证明）；env `LDA_REVIEW_*` 可调。
+- **多提案批量评审/落地（`lda_pdk/review.py`）**：`review_proposals_batch(entries)`（逐条复用同一确定性门禁 + results/summary）、`land_proposals_batch(ids)`（批量落地，仅 approved）。
+- **WebUI 面板 55 增强**：提案表加复选框多选 + 表头全选/清空 + "批量拒绝选中"/"批量落地选中"（结果表格渲染）+ 评审策略显示条；后端新增 `POST /api/ecosystem/review_batch|land_batch`，`GET /api/ecosystem` 增 `review_policy` 段。
+- **实测**：批量拒绝 2/2、批量批准 2/2、批量落地 2/2（落地值 4.0，harness 自动 18→**20 题 20/20 PASS**）。
+- 新增 `run_ecosystem_review3_smoke.py`（14/14 PASS）、`run_ecosystem_d97_report.py`（10/10，产出 `lda/reports/ecosystem_d97.json`）；D-93~D-96 smoke 回归全绿。
+
 ### 新增/变更（post-v0.5 · D-84~D-89 全量 · 详见下方 v0.5 详细记录）
 
 ## v0.5（2026-08-23 · git tag v0.5 · 系统级里程碑）

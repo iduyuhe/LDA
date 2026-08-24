@@ -1,0 +1,196 @@
+{
+  "d": "D-97",
+  "title": "生态共建进一步 · 评审门槛再扩展（ReviewPolicy）+ 多提案批量评审",
+  "policy": {
+    "enforce_positive_tol": true,
+    "enforce_nonempty_params": true,
+    "enforce_value_bounds": false,
+    "authorized_reviewers": [],
+    "min_source_length": 0,
+    "strict_dedup": false,
+    "min_quorum": 2
+  },
+  "policy_checks": {
+    "tol_nonpositive": {
+      "status": "rejected",
+      "id": "B90",
+      "reason": "策略门槛：tol 必须为正（当前 0.0）"
+    },
+    "empty_params": {
+      "status": "rejected",
+      "id": "B91",
+      "reason": "策略门槛：default_params 不能为空（物理定律锚需要参数）"
+    },
+    "bounds_inverted": {
+      "status": "rejected",
+      "id": "B92",
+      "reason": "策略门槛：value_min 5.0 > value_max 1.0"
+    },
+    "enforce_bounds_missing": {
+      "status": "rejected",
+      "id": "B93",
+      "reason": "策略门槛：当前策略要求提案声明 value_min/value_max（数值界限强制）"
+    },
+    "whitelist_reject": {
+      "status": "error",
+      "reason": "策略门槛：评审人 '评审人甲' 不在授权白名单（['杜玉河']）"
+    },
+    "whitelist_ok": {
+      "status": "approved",
+      "id": "B94",
+      "decision": "approve",
+      "reviewer": "杜玉河",
+      "reviewed_at": "2026-08-24T14:37:50",
+      "reason": "评审已记录（审计轨迹已落盘）"
+    },
+    "source_short": {
+      "status": "error",
+      "id": "B95",
+      "reason": "策略门槛：ORACLE 源码过短（24 < 60 字符）"
+    },
+    "source_ok": {
+      "status": "approved",
+      "id": "B95",
+      "decision": "approve",
+      "reviewer": "杜玉河",
+      "reviewed_at": "2026-08-24T14:37:50",
+      "reason": "评审已记录（审计轨迹已落盘）"
+    },
+    "strict_dedup": {
+      "status": "rejected",
+      "id": "B97",
+      "reason": "防重守卫：公式(token)与提案 B96（pending）重复"
+    }
+  },
+  "batch": {
+    "review_reject": {
+      "summary": {
+        "total": 2,
+        "ok": 2,
+        "error": 0
+      },
+      "results": [
+        {
+          "status": "rejected",
+          "id": "B99",
+          "decision": "reject",
+          "reviewer": "杜玉河",
+          "reviewed_at": "2026-08-24T14:37:50",
+          "reason": "评审已记录（审计轨迹已落盘）"
+        },
+        {
+          "status": "rejected",
+          "id": "B100",
+          "decision": "reject",
+          "reviewer": "杜玉河",
+          "reviewed_at": "2026-08-24T14:37:50",
+          "reason": "评审已记录（审计轨迹已落盘）"
+        }
+      ]
+    },
+    "review_approve": {
+      "summary": {
+        "total": 2,
+        "ok": 2,
+        "error": 0
+      },
+      "results": [
+        {
+          "status": "approved",
+          "id": "B101",
+          "decision": "approve",
+          "reviewer": "杜玉河",
+          "reviewed_at": "2026-08-24T14:37:50",
+          "reason": "评审已记录（审计轨迹已落盘）"
+        },
+        {
+          "status": "approved",
+          "id": "B102",
+          "decision": "approve",
+          "reviewer": "杜玉河",
+          "reviewed_at": "2026-08-24T14:37:50",
+          "reason": "评审已记录（审计轨迹已落盘）"
+        }
+      ]
+    },
+    "land": {
+      "summary": {
+        "total": 2,
+        "landed": 2,
+        "error": 0
+      },
+      "results": [
+        {
+          "status": "landed",
+          "id": "B101",
+          "value": 4.0,
+          "reason": "已注册 golden._GOLDEN_DISPATCH + _PHYSICAL_LAW + benchmarks.BENCHMARK_DEFS，自动纳入统一回归；补丁已生成，待维护者 git 提交",
+          "patch": "# ===== 社区提案落地补丁（B101）=====\n# 请合并到 lda_harness/golden.py 与 lda_harness/benchmarks.py，\n# 经维护者评审后提交 git（PR 即开放评审流）。落库(live) ≠ 进版本控制。\n\n## 1) golden.py —— 新增 ORACLE 函数（建议置于 B18 之后）\ndef b101(L, n_g):\n    return n_g * L\n\n## 2) golden.py —— 注册（模块级 _GOLDEN_DISPATCH / _PHYSICAL_LAW）\n_GOLDEN_DISPATCH[\"B101\"] = b101\n_PHYSICAL_LAW.add(\"B101\")\n\n## 3) benchmarks.py —— BENCHMARK_DEFS 条目\n\"B101\": {\n    \"title\": \"c\", \"metric\": \"M\",\n    \"oracle\": \"analytical(community)\",\n    \"tol\": 0.5,\n    \"default_params\": {'L': 1.0, 'n_g': 4.0},\n    \"golden_fn\": b101,\n    \"note\": \"社区提案 B101 经评审落地；评审人 杜玉河 于 2026-08-24T14:37:50。\",\n},\n"
+        },
+        {
+          "status": "landed",
+          "id": "B102",
+          "value": 4.0,
+          "reason": "已注册 golden._GOLDEN_DISPATCH + _PHYSICAL_LAW + benchmarks.BENCHMARK_DEFS，自动纳入统一回归；补丁已生成，待维护者 git 提交",
+          "patch": "# ===== 社区提案落地补丁（B102）=====\n# 请合并到 lda_harness/golden.py 与 lda_harness/benchmarks.py，\n# 经维护者评审后提交 git（PR 即开放评审流）。落库(live) ≠ 进版本控制。\n\n## 1) golden.py —— 新增 ORACLE 函数（建议置于 B18 之后）\ndef b102(L, n_g):\n    return n_g * L\n\n## 2) golden.py —— 注册（模块级 _GOLDEN_DISPATCH / _PHYSICAL_LAW）\n_GOLDEN_DISPATCH[\"B102\"] = b102\n_PHYSICAL_LAW.add(\"B102\")\n\n## 3) benchmarks.py —— BENCHMARK_DEFS 条目\n\"B102\": {\n    \"title\": \"d\", \"metric\": \"M\",\n    \"oracle\": \"analytical(community)\",\n    \"tol\": 0.5,\n    \"default_params\": {'L': 1.0, 'n_g': 4.0},\n    \"golden_fn\": b102,\n    \"note\": \"社区提案 B102 经评审落地；评审人 杜玉河 于 2026-08-24T14:37:50。\",\n},\n"
+        }
+      ]
+    }
+  },
+  "honest_boundary": "全部门槛为确定性门禁（LLM 不进判决路径）：策略预检（tol>0/params 非空/值界一致/强制值界）、评审人白名单、ORACLE 最短源码、严格防重（token 集）、批量评审/批量落地逐条复用同一门禁；策略可经 env LDA_REVIEW_* 或显式 overrides 配置，默认保持 D-95/D-96 行为不变；真实晶圆厂 NDA-PDK 仍属发动期 D-62 暂缓；权威 ORACLE 以维护者 git 提交为准。",
+  "acceptance": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "策略预检：tol<=0 → 拒",
+        "ok": true,
+        "detail": "策略门槛：tol 必须为正（当前 0.0）"
+      },
+      {
+        "name": "策略预检：空 params → 拒",
+        "ok": true,
+        "detail": "策略门槛：default_params 不能为空（物理定律锚需要参数）"
+      },
+      {
+        "name": "策略预检：value_min>max → 拒",
+        "ok": true,
+        "detail": "策略门槛：value_min 5.0 > value_max 1.0"
+      },
+      {
+        "name": "策略：enforce_value_bounds 缺界 → 拒",
+        "ok": true,
+        "detail": "策略门槛：当前策略要求提案声明 value_min/value_max（数值界限强制）"
+      },
+      {
+        "name": "策略：白名单外评审人 → 拒 / 白名单内 → approved",
+        "ok": true,
+        "detail": "reject=error ok=approved"
+      },
+      {
+        "name": "策略：源码过短 → 拒 / 足长 → approved",
+        "ok": true,
+        "detail": "short=error long=approved"
+      },
+      {
+        "name": "严格防重：token 级公式重复 → 拒",
+        "ok": true,
+        "detail": "防重守卫：公式(token)与提案 B96（pending）重复"
+      },
+      {
+        "name": "批量拒绝 2/2",
+        "ok": true,
+        "detail": "{'total': 2, 'ok': 2, 'error': 0}"
+      },
+      {
+        "name": "批量批准 2/2 → 批量落地 2/2（自动纳入回归）",
+        "ok": true,
+        "detail": "approve={'total': 2, 'ok': 2, 'error': 0} land={'total': 2, 'landed': 2, 'error': 0}"
+      },
+      {
+        "name": "policy_info 快照",
+        "ok": true,
+        "detail": "{'enforce_positive_tol': True, 'enforce_nonempty_params': True, 'enforce_value_bounds': False, 'authorized_reviewers': [], 'min_source_length': 0, 'strict_dedup': False, 'min_quorum': 2}"
+      }
+    ]
+  }
+}

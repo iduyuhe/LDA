@@ -35,6 +35,7 @@ from typing import Dict, List, Optional
 
 from .submit import (
     BenchmarkProposal, ProposalStore, _load_store, _save_store, _resolve_path,
+    ReviewPolicy, get_policy,
 )
 # 项目包风格：lda/ 目录入 sys.path，lda_pdk 与 lda_harness 为同级顶层包，
 # 故用绝对导入（相对导入 ..lda_harness 会越出顶层包）。
@@ -107,9 +108,11 @@ def _now() -> str:
 # --------------------------------------------------------------------------
 def review_proposal(proposal_id: str, decision: str, reviewer: str,
                     rationale: str, oracle_fn_source: Optional[str] = None,
-                    contrib_path: Optional[str] = None) -> dict:
+                    contrib_path: Optional[str] = None,
+                    policy_override: Optional[dict] = None) -> dict:
     path = _resolve_path(contrib_path)
     reg, store = _load_store(path)
+    pol = get_policy(policy_override)
     p = next((x for x in store._items if x.id == proposal_id), None)
     if p is None:
         return {"status": "error", "reason": f"提案 {proposal_id} 不存在"}
@@ -120,6 +123,11 @@ def review_proposal(proposal_id: str, decision: str, reviewer: str,
     if not reviewer:
         return {"status": "error",
                 "reason": "评审人（具名/授权签署）必填——LLM 不进判决路径"}
+    # D-97 策略门槛：评审人白名单
+    if pol.authorized_reviewers and reviewer not in pol.authorized_reviewers:
+        return {"status": "error",
+                "reason": f"策略门槛：评审人 {reviewer!r} 不在授权白名单"
+                          f"（{sorted(pol.authorized_reviewers)}）"}
     decision = str(decision or "").strip().lower()
     if decision not in ("approve", "reject"):
         return {"status": "error", "reason": "decision 须为 approve/reject"}
@@ -130,6 +138,10 @@ def review_proposal(proposal_id: str, decision: str, reviewer: str,
         if not src:
             return {"status": "error",
                     "reason": "approve 须附 ORACLE 参考实现源码（oracle_fn_source）"}
+        # D-97 策略门槛：ORACLE 源码最短长度（防空壳）
+        if pol.min_source_length > 0 and len(src) < pol.min_source_length:
+            return {"status": "error", "id": p.id,
+                    "reason": f"策略门槛：ORACLE 源码过短（{len(src)} < {pol.min_source_length} 字符）"}
         # 前置确定性自测（不落地，仅验证可编译 + 默认参数返回有限标量）
         try:
             fn, val = _compile_oracle(src, p.oracle_fn_name, p.default_params)
@@ -147,7 +159,8 @@ def review_proposal(proposal_id: str, decision: str, reviewer: str,
         if p.value_max is not None and val > p.value_max:
             return {"status": "error", "id": p.id,
                     "reason": f"数值界限门槛：自测值 {val:.6g} > value_max {p.value_max:.6g}"}
-        # D-96 门槛扩展③：core 提案双评审人 quorum
+        # D-96 门槛扩展③：core 提案双评审人 quorum（基准数=策略 min_quorum）
+        need = max(pol.min_quorum, 1)
         if p.core:
             approvals = [a for a in p.approvals
                          if a.get("reviewer", "") != reviewer]
@@ -155,16 +168,16 @@ def review_proposal(proposal_id: str, decision: str, reviewer: str,
                               "rationale": rationale, "self_test_value": val})
             p.approvals = approvals
             distinct = len({a["reviewer"] for a in approvals if a["reviewer"]})
-            if distinct < 2:
+            if distinct < need:
                 p.audit.append({"ts": _now(), "op": "review_vote",
                                 "decision": "approve", "reviewer": reviewer,
                                 "rationale": rationale, "self_test_value": val,
-                                "votes": f"{distinct}/2"})
+                                "votes": f"{distinct}/{need}"})
                 _save_store(reg, path, store)
                 return {"status": "pending", "id": p.id,
                         "decision": "approve", "reviewer": reviewer,
-                        "votes": f"{distinct}/2",
-                        "reason": f"core 提案需双评审人 quorum：已记录 {distinct}/2 票，待另一位具名评审人批准（LLM 不进判决路径）"}
+                        "votes": f"{distinct}/{need}",
+                        "reason": f"core 提案需双评审人 quorum：已记录 {distinct}/{need} 票，待另一位具名评审人批准（LLM 不进判决路径）"}
         p.oracle_fn_source = src
         p.status = "approved"
         p.reviewed_at = _now()
@@ -309,6 +322,50 @@ def land_proposal(proposal_id: str, contrib_path: Optional[str] = None,
     return {"status": "landed", "id": p.id, "value": val,
             "reason": "已注册 golden._GOLDEN_DISPATCH + _PHYSICAL_LAW + benchmarks.BENCHMARK_DEFS，自动纳入统一回归；补丁已生成，待维护者 git 提交",
             "patch": patch}
+
+
+# --------------------------------------------------------------------------
+# 批量评审 / 批量落地（D-97 · 多提案批量评审 UI 支撑）
+# --------------------------------------------------------------------------
+def review_proposals_batch(entries: List[dict], contrib_path: Optional[str] = None,
+                           policy_override: Optional[dict] = None) -> dict:
+    """批量评审：entries = [{id, decision, reviewer, rationale, oracle_fn_source?}, ...]。
+
+    逐条调用 review_proposal（确定性门禁一致），返回逐条结果 + 汇总。
+    """
+    results = []
+    for e in entries or []:
+        if not isinstance(e, dict):
+            continue
+        results.append(review_proposal(
+            proposal_id=str(e.get("id", "")),
+            decision=str(e.get("decision", "")),
+            reviewer=str(e.get("reviewer", "")),
+            rationale=str(e.get("rationale", "")),
+            oracle_fn_source=e.get("oracle_fn_source"),
+            contrib_path=contrib_path,
+            policy_override=policy_override))
+    summary = {
+        "total": len(results),
+        "ok": sum(1 for r in results if r.get("status") in ("approved", "rejected", "pending")),
+        "error": sum(1 for r in results if r.get("status") == "error"),
+    }
+    return {"results": results, "summary": summary}
+
+
+def land_proposals_batch(ids: List[str], contrib_path: Optional[str] = None,
+                         landed_path: Optional[str] = None) -> dict:
+    """批量落地：ids = [proposal_id, ...]（仅 approved 可落地，逐条门禁一致）。"""
+    results = []
+    for i in ids or []:
+        results.append(land_proposal(str(i), contrib_path=contrib_path,
+                                     landed_path=landed_path))
+    summary = {
+        "total": len(results),
+        "landed": sum(1 for r in results if r.get("status") == "landed"),
+        "error": sum(1 for r in results if r.get("status") == "error"),
+    }
+    return {"results": results, "summary": summary}
 
 
 # --------------------------------------------------------------------------

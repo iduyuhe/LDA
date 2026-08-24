@@ -33,11 +33,13 @@ from .submit import (
     submit_device, submit_devices_batch,
     BenchmarkProposal, ProposalStore, submit_benchmark_proposal,
     list_contributions, infer_sovereign_class,
+    ReviewPolicy, get_policy, policy_info,
 )
 from .review import (
     review_proposal, land_proposal, reload_landed,
     list_proposals, get_audit, list_landed,
     resubmit_proposal, review_stats,
+    review_proposals_batch, land_proposals_batch,
 )
 
 __all__ = [
@@ -46,7 +48,9 @@ __all__ = [
     "submit_device", "submit_devices_batch",
     "BenchmarkProposal", "ProposalStore", "submit_benchmark_proposal",
     "list_contributions", "infer_sovereign_class",
+    "ReviewPolicy", "get_policy", "policy_info",
     "review_proposal", "land_proposal", "reload_landed",
     "list_proposals", "get_audit", "list_landed",
     "resubmit_proposal", "review_stats",
+    "review_proposals_batch", "land_proposals_batch",
 ]

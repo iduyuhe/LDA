@@ -48,6 +48,66 @@ def _now_iso() -> str:
     return datetime.now().isoformat(timespec="seconds")
 
 
+# --------------------------------------------------------------------------
+# 评审策略（D-97 门槛再扩展 · 全确定性，LLM 不进判决路径）
+# --------------------------------------------------------------------------
+@dataclass
+class ReviewPolicy:
+    """可配置评审门槛策略（默认保持 D-95/D-96 行为不变）。
+
+    - enforce_positive_tol:     提交期 tol 必须为正
+    - enforce_nonempty_params:  提交期 default_params 非空（物理定律锚需要参数）
+    - enforce_value_bounds:     提交期强制声明 value_min/value_max
+    - authorized_reviewers:     评审人白名单（空 = 任意具名可；非空 = 白名单制）
+    - min_source_length:        ORACLE 源码最短长度（>0 时防空壳实现）
+    - strict_dedup:             防重用 token 集比较（True 时 "n_g·L" == "n_g*L"）
+    - min_quorum:               core 提案双评审基准数（默认 2）
+    """
+    enforce_positive_tol: bool = True
+    enforce_nonempty_params: bool = True
+    enforce_value_bounds: bool = False
+    authorized_reviewers: frozenset = field(default_factory=frozenset)
+    min_source_length: int = 0
+    strict_dedup: bool = False
+    min_quorum: int = 2
+
+
+def get_policy(overrides: Optional[dict] = None) -> ReviewPolicy:
+    """读取评审策略：默认 + 环境变量覆盖（LDA_REVIEW_*）+ 显式 overrides。"""
+    p = ReviewPolicy()
+    env = os.environ
+    if env.get("LDA_REVIEW_ENFORCE_BOUNDS") in ("1", "true", "True"):
+        p.enforce_value_bounds = True
+    ar = env.get("LDA_REVIEW_AUTH_REVIEWERS", "")
+    if ar.strip():
+        p.authorized_reviewers = frozenset(
+            x.strip() for x in ar.split(",") if x.strip())
+    msl = env.get("LDA_REVIEW_MIN_SOURCE_LEN", "")
+    if msl.strip().isdigit():
+        p.min_source_length = int(msl)
+    if env.get("LDA_REVIEW_STRICT_DEDUP") in ("1", "true", "True"):
+        p.strict_dedup = True
+    if overrides:
+        for k, v in overrides.items():
+            if hasattr(p, k):
+                setattr(p, k, v)
+    return p
+
+
+def policy_info(overrides: Optional[dict] = None) -> dict:
+    """策略快照（WebUI 展示用）。"""
+    p = get_policy(overrides)
+    return {
+        "enforce_positive_tol": p.enforce_positive_tol,
+        "enforce_nonempty_params": p.enforce_nonempty_params,
+        "enforce_value_bounds": p.enforce_value_bounds,
+        "authorized_reviewers": sorted(p.authorized_reviewers),
+        "min_source_length": p.min_source_length,
+        "strict_dedup": p.strict_dedup,
+        "min_quorum": p.min_quorum,
+    }
+
+
 def _norm_list(v) -> List[str]:
     if v is None:
         return []
@@ -274,11 +334,19 @@ def _norm_formula(formula: str) -> str:
     return "".join(str(formula).split()).lower()
 
 
-def _dup_check(payload: dict, store: "ProposalStore", contrib_path: str):
-    """提交期防重守卫（确定性，D-96）：
+def _formula_tokens(formula: str) -> set:
+    """公式 token 集（严格防重用）：规范化后提取标识符。"""
+    import re
+    return set(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", _norm_formula(formula)))
+
+
+def _dup_check(payload: dict, store: "ProposalStore", contrib_path: str,
+               strict: bool = False):
+    """提交期防重守卫（确定性，D-96/D-97）：
 
       - oracle_fn_name 与已落地基准（landed.json）重复 → 拒；
-      - 公式规范化后与本贡献库内已有 pending/approved 提案重复 → 拒。
+      - 公式（strict 时按 token 集）与本贡献库内已有
+        pending/approved/landed 提案重复 → 拒。
     返回 None（无重复）或拒绝原因字符串。
     """
     fn = str(payload.get("oracle_fn_name", "")).strip()
@@ -300,15 +368,21 @@ def _dup_check(payload: dict, store: "ProposalStore", contrib_path: str):
         if p.status in ("pending", "approved", "landed"):
             if p.oracle_fn_name and p.oracle_fn_name.lower() == fn.lower():
                 return f"oracle_fn_name {fn!r} 已存在于提案 {p.id}（{p.status}）"
-            if formula and _norm_formula(p.formula) == formula:
-                return f"公式与提案 {p.id}（{p.status}）重复"
+            if formula:
+                if strict:
+                    if _formula_tokens(p.formula) == _formula_tokens(formula):
+                        return f"公式(token)与提案 {p.id}（{p.status}）重复"
+                elif _norm_formula(p.formula) == formula:
+                    return f"公式与提案 {p.id}（{p.status}）重复"
     return None
 
 
 def submit_benchmark_proposal(payload: dict,
-                              contrib_path: Optional[str] = None) -> dict:
+                              contrib_path: Optional[str] = None,
+                              policy_override: Optional[dict] = None) -> dict:
     path = _resolve_path(contrib_path)
     reg, store = _load_store(path)
+    pol = get_policy(policy_override)
     try:
         p = BenchmarkProposal(
             id=str(payload.get("id", "")).strip(),
@@ -332,7 +406,21 @@ def submit_benchmark_proposal(payload: dict,
     except Exception as ex:
         return {"status": "rejected", "id": payload.get("id"),
                 "reason": f"校验失败：{ex}"}
-    dup = _dup_check(payload, store, path)
+    # D-97 策略门槛预检（提交期，确定性）
+    if pol.enforce_positive_tol and p.tol <= 0:
+        return {"status": "rejected", "id": p.id,
+                "reason": f"策略门槛：tol 必须为正（当前 {p.tol}）"}
+    if pol.enforce_nonempty_params and not p.default_params:
+        return {"status": "rejected", "id": p.id,
+                "reason": "策略门槛：default_params 不能为空（物理定律锚需要参数）"}
+    if (p.value_min is not None and p.value_max is not None
+            and p.value_min > p.value_max):
+        return {"status": "rejected", "id": p.id,
+                "reason": f"策略门槛：value_min {p.value_min} > value_max {p.value_max}"}
+    if pol.enforce_value_bounds and (p.value_min is None or p.value_max is None):
+        return {"status": "rejected", "id": p.id,
+                "reason": "策略门槛：当前策略要求提案声明 value_min/value_max（数值界限强制）"}
+    dup = _dup_check(payload, store, path, strict=pol.strict_dedup)
     if dup:
         return {"status": "rejected", "id": payload.get("id"),
                 "reason": f"防重守卫：{dup}"}

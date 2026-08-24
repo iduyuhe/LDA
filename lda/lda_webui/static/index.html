@@ -989,8 +989,8 @@
   </div>
 
   <div class="sec" id="sec-ecorev">
-    <h3>55 社区评审流 + 提案落地（D-95 评审闭环 · D-96 门槛扩展+UI 增强）</h3>
-    <div class="hint">把 D-94 的 pending 提案闭环成「提案 → <b>具名人工评审（LLM 不进判决路径）</b> → 确定性自测门禁 → 落地接入统一回归」。approve 须附 ORACLE 参考实现源码（前置自测：可编译 + 默认参数返回有限标量）；落地会实时注册进 golden（_GOLDEN_DISPATCH + _PHYSICAL_LAW）与 BENCHMARK_DEFS（自动纳入回归，零接线），并生成补丁供维护者 git 提交。<b>落库(live) ≠ 进版本控制：权威 ORACLE 以维护者 git/PR 提交为准。</b> D-96 门槛扩展：<b>签名完备性</b>（ORACLE 必填参数 ⊆ default_params）/ <b>数值界限</b>（value_min/value_max）/ <b>core 双评审人 quorum</b>（2 位不同具名评审人）/ <b>提交期防重</b> / <b>被拒重提</b>（rejected→pending 保留审计）。</div>
+    <h3>55 社区评审流 + 提案落地（D-95 评审闭环 · D-96 门槛扩展+UI · D-97 策略+批量评审）</h3>
+    <div class="hint">把 D-94 的 pending 提案闭环成「提案 → <b>具名人工评审（LLM 不进判决路径）</b> → 确定性自测门禁 → 落地接入统一回归」。D-97 新增：<b>可配置评审策略 ReviewPolicy</b>（tol>0 / params 非空 / 值界强制 / 评审人白名单 / ORACLE 最短源码 / 严格防重 token 级 / quorum 基准，env `LDA_REVIEW_*` 可调）+ <b>多提案批量评审/批量落地</b>（勾选 → 批量拒绝/批量落地）。落地实时注册进 golden（_GOLDEN_DISPATCH + _PHYSICAL_LAW）与 BENCHMARK_DEFS（自动纳入回归，零接线），并生成补丁供维护者 git 提交。<b>落库(live) ≠ 进版本控制：权威 ORACLE 以维护者 git/PR 提交为准。</b></div>
 
     <div class="subhead">① 评审 / 落地台（先选一条提案）</div>
     <div class="row">
@@ -3178,9 +3178,11 @@ async function refreshRvw(){
     const props = c.proposals || [];
     const st = c.proposal_status || {};
     const rs = c.review_stats || {};
+    const rp = c.review_policy || {};
     const sel = $('rvSel');
     sel.innerHTML = props.map(p=>`<option value="${escapeHtml(p.id)}">${escapeHtml(p.id)} · ${escapeHtml(p.status)} · ${escapeHtml(p.title)}</option>`).join('') || '<option value="">（暂无提案）</option>';
     const rsHtml = `已评审 <b>${rs.approvals!=null?rs.approvals:0}</b> 批准 / <b>${rs.rejections!=null?rs.rejections:0}</b> 拒绝 · quorum 票 <b>${rs.quorum_votes!=null?rs.quorum_votes:0}</b> · 平均时延 ${rs.avg_review_seconds!=null?rs.avg_review_seconds.toFixed(1)+'s':'—'}`;
+    const polHtml = `策略：tol>0 <b>${rp.enforce_positive_tol?'✓':'✗'}</b> · params 非空 <b>${rp.enforce_nonempty_params?'✓':'✗'}</b> · 值界强制 <b>${rp.enforce_value_bounds?'✓':'✗'}</b> · 白名单 [${(rp.authorized_reviewers||[]).join(',')||'任意具名'}] · 最短源码 <b>${rp.min_source_length||0}</b> · 严格防重 <b>${rp.strict_dedup?'✓':'✗'}</b> · quorum <b>${rp.min_quorum||2}</b>`;
     const tabs = [['all','全部'],['pending','pending'],['approved','approved'],['rejected','rejected'],['landed','landed']]
       .map(t=>`<button class="btn" style="${rvFilter===t[0]?'background:#2563eb;color:#fff':''}" onclick="rvSetFilter('${t[0]}')">${t[1]}</button>`).join(' ');
     const filtered = props.filter(p=> rvFilter==='all' || p.status===rvFilter);
@@ -3193,7 +3195,7 @@ async function refreshRvw(){
       let acts = '';
       if(p.status==='pending') acts = `<button class="btn" onclick="rvPick('${p.id}')">批准</button> <button class="btn" onclick="rvReject('${p.id}')">拒绝</button>`;
       if(p.status==='rejected') acts = `<button class="btn" onclick="rvResubmit('${p.id}')">重新提交</button>`;
-      return `<tr><td>${escapeHtml(p.id)} ${core}</td><td>${escapeHtml(p.title)}</td><td>${escapeHtml(p.metric)}</td><td>${escapeHtml(p.formula)} ${bounds}</td>
+      return `<tr><td><input type="checkbox" data-id="${escapeHtml(p.id)}" ${rvSelSet.has(p.id)?'checked':''} onchange="rvToggle('${escapeHtml(p.id)}', this.checked)"></td><td>${escapeHtml(p.id)} ${core}</td><td>${escapeHtml(p.title)}</td><td>${escapeHtml(p.metric)}</td><td>${escapeHtml(p.formula)} ${bounds}</td>
         <td class="${cls}">${p.status}</td><td>${escapeHtml(p.reviewed_by||'')}${p.reviewed_at?(' @'+escapeHtml(p.reviewed_at)):''}</td>
         <td style="font-size:11px">${aud}</td><td>${acts}</td></tr>`;
     }).join('');
@@ -3203,15 +3205,51 @@ async function refreshRvw(){
         <td>${escapeHtml(l.reviewed_by||'')} @${escapeHtml(l.reviewed_at||'')}</td>
         <td><a href="data:text/plain;charset=utf-8;base64,${patchB64}" download="landed_${escapeHtml(l.bid)}.patch.txt">补丁</a></td></tr>`;
     }).join('');
-    $('rvwStatus').innerHTML = `提案状态：pending <b>${st.pending||0}</b> · approved <b>${st.approved||0}</b> · rejected <b>${st.rejected||0}</b> · landed <b>${st.landed||0}</b> · 已落地注册 <b>${c.landed_count||0}</b> &nbsp;|&nbsp; ${rsHtml}<br>${tabs}<br><span class="note">LLM 不进判决路径：评审=具名人工，自测=死标量门禁；core=双评审人 quorum；门槛：签名完备性 / 数值界限 / 提交期防重</span>`;
+    $('rvwStatus').innerHTML = `提案状态：pending <b>${st.pending||0}</b> · approved <b>${st.approved||0}</b> · rejected <b>${st.rejected||0}</b> · landed <b>${st.landed||0}</b> · 已落地注册 <b>${c.landed_count||0}</b> &nbsp;|&nbsp; ${rsHtml}<br>${tabs}<br>${polHtml}<br><span class="note">LLM 不进判决路径：评审=具名人工，自测=死标量门禁；core=双评审人 quorum；门槛：签名完备性 / 数值界限 / 提交期防重</span>`;
     $('rvwBody').innerHTML = `
-      <div class="subhead">提案列表（筛选：${rvFilter}）</div>
-      <table class="tbl"><thead><tr><th>id</th><th>标题</th><th>指标</th><th>公式</th><th>评审态</th><th>评审人/时间</th><th>审计</th><th>操作</th></tr></thead><tbody>${pRows}</tbody></table>
+      <div class="subhead">提案列表（筛选：${rvFilter}）—— 多选后批量操作</div>
+      <table class="tbl"><thead><tr><th><input type="checkbox" id="rvAll" onchange="rvToggleAll(this.checked)"></th><th>id</th><th>标题</th><th>指标</th><th>公式</th><th>评审态</th><th>评审人/时间</th><th>审计</th><th>操作</th></tr></thead><tbody>${pRows}</tbody></table>
+      <div class="row">
+        <button class="btn" onclick="rvBatchReject()">批量拒绝选中（${rvSelSet.size}）</button>
+        <button class="btn" onclick="rvBatchLand()">批量落地选中（仅 approved）</button>
+        <button class="btn" onclick="rvClearSel()">清空选择</button>
+      </div>
       <div class="subhead">已落地（live 注册 + git 补丁）</div>
       <table class="tbl"><thead><tr><th>bid</th><th>标题</th><th>oracle_fn</th><th>评审人</th><th>git 补丁</th></tr></thead><tbody>${lRows}</tbody></table>`;
   } catch(e){
     $('rvwBody').innerHTML = '<span class="fail">刷新失败：'+e+'</span>';
   }
+}
+let rvSelSet = new Set();
+function rvToggle(id, checked){ if(checked){ rvSelSet.add(id); } else { rvSelSet.delete(id); } }
+function rvToggleAll(checked){
+  document.querySelectorAll('#rvwBody input[type=checkbox][data-id]').forEach(cb=>{ cb.checked = checked; rvToggle(cb.getAttribute('data-id'), checked); });
+}
+function rvClearSel(){ rvSelSet.clear(); refreshRvw(); }
+async function rvBatchReject(){
+  const ids = [...rvSelSet];
+  if(!ids.length){ alert('请先勾选提案'); return; }
+  const reviewer = prompt('具名评审人（LLM 不进判决路径）：', '杜玉河');
+  if(!reviewer) return;
+  const rationale = prompt('统一拒绝理由：', '');
+  try {
+    const d = await api('/api/ecosystem/review_batch', {entries: ids.map(id=>({id, decision:'reject', reviewer, rationale}))});
+    const s = d.summary || {};
+    const rows = (d.results||[]).map(r=>`<tr><td>${escapeHtml(r.id||'')}</td><td class="${r.status==='rejected'?'ok':'fail'}">${r.status}</td><td>${escapeHtml(r.reason||'')}</td></tr>`).join('');
+    $('rvRes').innerHTML = `批量拒绝：<span class="verdict ${s.error===0?'ok':'fail'}">${s.ok||0}/${s.total||0} 成功</span><table class="tbl"><thead><tr><th>id</th><th>结果</th><th>明细</th></tr></thead><tbody>${rows}</tbody></table>`;
+    rvSelSet.clear(); refreshRvw();
+  } catch(e){ $('rvRes').innerHTML = '<span class="fail">请求失败：'+e+'</span>'; }
+}
+async function rvBatchLand(){
+  const ids = [...rvSelSet];
+  if(!ids.length){ alert('请先勾选提案'); return; }
+  try {
+    const d = await api('/api/ecosystem/land_batch', {ids});
+    const s = d.summary || {};
+    const rows = (d.results||[]).map(r=>`<tr><td>${escapeHtml(r.id||'')}</td><td class="${r.status==='landed'?'ok':'fail'}">${r.status}</td><td>${r.value!=null?r.value:''}</td><td>${escapeHtml(r.reason||'')}</td></tr>`).join('');
+    $('rvRes').innerHTML = `批量落地：<span class="verdict ${s.error===0?'ok':'fail'}">${s.landed||0}/${s.total||0} 落地</span><table class="tbl"><thead><tr><th>id</th><th>结果</th><th>自测值</th><th>明细</th></tr></thead><tbody>${rows}</tbody></table>`;
+    rvSelSet.clear(); refreshRvw();
+  } catch(e){ $('rvRes').innerHTML = '<span class="fail">请求失败：'+e+'</span>'; }
 }
 function rvSetFilter(f){ rvFilter = f; refreshRvw(); }
 function rvPick(id){ $('rvSel').value = id; $('rvSource').focus(); $('rvRes').innerHTML = '<span class="note">已选中 '+id+'：填 ORACLE 源码后点「执行评审」（approve）</span>'; }

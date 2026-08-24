@@ -8,7 +8,14 @@
 
 - **3D 逆设计纵深五阶**：D-84 3D adjoint 形状（3D Yee **显式转置伴随 Mᵀ 对拍 1e-15**、imp 2.02×、破 3D 诚实边界）；D-85 3D 截面形状（**宽度×厚度双软边界**、imp 3.17× 比平板提升 57%）；D-86 3D 逆设计 × 端口 S 参数联合验收（**双独立确认 FOM 1.88× + S21 1.60×**、补闭环最大缺口、聚焦 FOM≠透射 S21 认知）；D-87 谱形目标 × 3D 截面（**物理网格固定只变 omega**、加权 3.13× 逐波长 ≥3×、参数化×目标矩阵 3D 打通）；D-89 3D adjoint numba 化（**prange 并行 JIT、大域 forward 20-29× bit-level 一致、无 numba 自动回退**）。
 - **QEDA 求解器级补强（D-88）**：三能级 transmon-resonator 色散读出严格求解（χ=g²α/(Δ(Δ+α)) **α 修正必要性 31×**、n_crit/Purcell/AC Stark 全套 readout 物理量、量子蓝海占位）。
-- WebUI 五十面板（新增 ㊺~㊿ 六面板）；harness 13 题全过；62 smoke 全绿；三端 tree 零差异（383/383）。
+- WebUI 五十二面板（v0.6 发布态）；harness 13 题（B1-B13）全过；64 smoke 全绿；三端 tree 零差异（389/389）。
+
+### 新增/变更（post-v0.6 · D-93 生态共建框架 · 2026-08-24）
+- **harness 题库扩充 B1-B13 → B1-B18**：新增 5 道物理定律锚（B14 定向耦合器 3dB 耦合长 / B15 Bragg 光栅中心波长 / B16 MMI 1×2 自成像长 / B17 约瑟夫森临界电流 / B18 腔 QED Purcell 因子）；经 `BENCHMARK_DEFS` 自动纳入统一回归（零接线），参考候选 18/18 PASS。
+- **主权依赖三级分级代码化**（`lda_pdk/sovereign_deps.py`，来自战略审计 LDA-ST-001）：A 级永不借（Lumerical/Ansys、Synopsys、Cadence、Siemens、GDSFactory+商业 NDA-PDK 共 5 项）/ B 级借今踢后（gdsfactory 内核、Meep、KLayout、SAX、MPB、Nazca、Tidy3D 共 7 项，全部 fork 到 Gitee/GitCode）/ C 级第一天自主（L0 IR/DSL、L1 agent 协议、L3 AI 求解核、物理定律锚 共 4 项）。
+- **开放 PDK/器件本体 Registry 地基接口**（`lda_pdk/registry.py` + `__init__.py`）：`PDKRegistry`（add/query/stats/to_json/load，与 `empirical_bank` 同构）承载社区共建器件元数据入口；诚实边界——真实晶圆厂 NDA-PDK 对接属发动期 D-62 暂缓、不在此硬编码。
+- **WebUI 升级至五十三面板**：新增面板 53「生态共建框架」（D-93），后端 `/api/ecosystem` 暴露 harness(B1-B18)+主权 A/B/C+Registry 自检快照（验收 4/4 PASS）。
+- 新增 `run_ecosystem_smoke.py`（4/4 PASS：harness 18/18、B14-B18 扰动 fail 检测 5/5、主权 A/B/C、Registry 接口自洽）；`run_ecosystem_report.py` 产出 `lda/reports/ecosystem_d93.json`。
 
 ### 新增/变更（post-v0.5 · D-84~D-89 全量 · 详见下方 v0.5 详细记录）
 

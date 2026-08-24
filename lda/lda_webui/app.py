@@ -11,6 +11,7 @@ L2 开放 PDK Registry）通过 HTTP 暴露给一个真正的产品级前端，�
   GET  /api/status        → 系统落地状态（哪些层已 built / planned）
   GET  /api/benchmarks    → 题库 B1–B11 定义
   GET  /api/pdks          → 已登记 PDK + 器件模板（L2）
+  GET  /api/ecosystem      → D-93 生态共建快照（harness B1-B18 + 主权依赖 A/B/C + Registry 自检）
   POST /api/verify        → {candidate, perturb?} 真跑 harness，返回逐题判定
   POST /api/agent_loop    → {solver, dual?} 真跑 agent 自迭代设计闭环
   POST /api/pdk_design    → {pdk, template, solver} 用 PDK 驱动 agent 逆设计
@@ -38,6 +39,7 @@ from lda_harness.l3_ai_solver import L3AISolverCandidate
 from lda_agent.design_loop import DesignAgent
 from lda_agent.run_demo import build_intent
 from lda_l2.pdk import get_default_registry
+from lda_pdk import PDKRegistry, DeviceEntry, SOVEREIGN_DEPS, by_class
 
 HARNESS = VerificationHarness(BENCHMARK_DEFS)
 AGENT_OUT = os.path.join(LDA_ROOT, "reports_agent")
@@ -1836,6 +1838,80 @@ def system_status():
     }
 
 
+def ecosystem_status():
+    """D-93 生态共建框架快照：harness 题库(含 B14-B18) + 主权依赖 A/B/C + Registry 接口自检。
+
+    诚实边界：真实晶圆厂 NDA-PDK 对接属发动期事项(D-62)，暂缓；本接口只暴露
+    Registry 地基与主权分级清单，供社区/退休专家/晶圆厂经统一入口流入真实数据，
+    不在此硬编码任何商业 PDK 参数。
+    """
+    # --- harness 题库（物理定律锚，B1-B18）---
+    from lda_harness.verification_adapters import build_harness_specs
+    from lda_harness.verification_spec import run_verification
+    specs, cand_map = build_harness_specs()
+    total = len(specs)
+    passed = 0
+    for spec in specs:
+        try:
+            out = run_verification(spec, cand_map[spec.spec_id])
+            if out.passed:
+                passed += 1
+        except Exception:
+            pass
+    new_ids = ["B14", "B15", "B16", "B17", "B18"]
+    new_benchmarks = [{
+        "id": k, "title": BENCHMARK_DEFS[k].get("title"),
+        "metric": BENCHMARK_DEFS[k].get("metric"),
+        "oracle": BENCHMARK_DEFS[k].get("oracle"),
+        "tol": BENCHMARK_DEFS[k].get("tol"),
+    } for k in new_ids if k in BENCHMARK_DEFS]
+
+    # --- 主权依赖分级 A/B/C（战略审计 LDA-ST-001）---
+    sov = {}
+    for cls in ("A", "B", "C"):
+        items = by_class(cls)
+        sov[cls] = {"count": len(items), "names": [d.name for d in items]}
+    sov_total = len(SOVEREIGN_DEPS)
+
+    # --- Registry 接口自检（不硬编码真实 PDK，仅跑接口一致性）---
+    reg = PDKRegistry()
+    demo = [
+        DeviceEntry("eco-soi-1", "SOI 波导 220nm", "光子·SOI", "演示(无 NDA)",
+                    "C", ["wg-core", "clad-oxide"], {"w_um": 0.45, "h_um": 0.22},
+                    ["waveguide"], "D-93 接口自检样例·非真实 PDK"),
+        DeviceEntry("eco-sin-1", "SiN 波导 400nm", "光子·SiN", "演示(无 NDA)",
+                    "C", ["wg-core", "clad-oxide"], {"w_um": 1.2, "h_um": 0.4},
+                    ["waveguide"], "D-93 接口自检样例·非真实 PDK"),
+        DeviceEntry("eco-q-1", "Transmon 量子比特", "量子·超导", "演示(无 NDA)",
+                    "C", ["jj", "pad"], {"E_J_ghz": 20.0}, ["qubit"],
+                    "D-93 接口自检样例·非真实 PDK"),
+    ]
+    added = [reg.add(e) for e in demo]
+    q_soi = reg.query(tech="光子·SOI")
+    stats = reg.stats()
+
+    acceptance = [
+        {"name": "harness 题库 B1-B18 参考全 PASS", "ok": passed == total and total >= 18,
+         "detail": f"{passed}/{total} PASS"},
+        {"name": "新增 B14-B18 物理定律锚已登记", "ok": len(new_benchmarks) == 5,
+         "detail": f"{len(new_benchmarks)} 题"},
+        {"name": "主权依赖 A≥4 / B≥6 / C≥4",
+         "ok": sov["A"]["count"] >= 4 and sov["B"]["count"] >= 6 and sov["C"]["count"] >= 4,
+         "detail": f"A={sov['A']['count']} B={sov['B']['count']} C={sov['C']['count']}"},
+        {"name": "Registry 接口自洽(add/query/stats)",
+         "ok": added.count("added") == 3 and len(q_soi) == 1 and stats["total"] == 3,
+         "detail": f"add={added.count('added')}/3 query(SOI)={len(q_soi)} stats.total={stats['total']}"},
+    ]
+    return {
+        "harness": {"total": total, "passed": passed, "new_ids": new_ids},
+        "new_benchmarks": new_benchmarks,
+        "sovereign": {**sov, "total": sov_total},
+        "registry": {"added": added, "query_soi": len(q_soi), "stats": stats},
+        "honest_boundary": "真实晶圆厂 NDA-PDK 对接属发动期事项(D-62)，暂缓；本模块仅提供 Registry 入口，不硬编码任何商业 PDK。",
+        "acceptance": {"passed": all(c["ok"] for c in acceptance), "checks": acceptance},
+    }
+
+
 # --------------------------------------------------------------------------
 # HTTP 处理
 # --------------------------------------------------------------------------
@@ -1866,6 +1942,8 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/api/pdks":
             reg = get_default_registry()
             self._send(200, {"pdks": reg.to_summary(), "keys": reg.list_pdks()})
+        elif path == "/api/ecosystem":
+            self._send(200, ecosystem_status())
         else:
             self._send(404, {"error": "not found"})
 

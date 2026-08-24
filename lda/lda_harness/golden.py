@@ -195,6 +195,70 @@ def b13_coupler_coupling(E_J1, E_C1, E_J2, E_C2, Cc, C1, C2):
 
 
 # --------------------------------------------------------------------------
+# B14 · 定向耦合器 3dB 耦合长度（解析：偶/奇模拍波长法）
+# --------------------------------------------------------------------------
+def b14_dc_coupling_length(n_e, n_o, wl):
+    """定向耦合器 3dB 耦合长度 L_3dB（um，确定性物理定律）。
+
+    耦合系数 κ=π/(2L_c)，L_c=λ0/(2|n_e−n_o|)（偶/奇模拍波长）。
+    3dB 点（50/50 分束）恰为 L_c。模式耦合理论解析解。
+    """
+    return wl / (2.0 * abs(n_e - n_o))
+
+
+# --------------------------------------------------------------------------
+# B15 · Bragg 光栅中心波长（解析：一阶 Bragg 条件）
+# --------------------------------------------------------------------------
+def b15_bragg_wavelength(n_eff, period):
+    """一阶 Bragg 光栅中心波长 λ_B（um，确定性物理定律）。
+
+    λ_B = 2·n_eff·Λ（一级 Bragg 条件）。period 单位 um。
+    """
+    return 2.0 * n_eff * period
+
+
+# --------------------------------------------------------------------------
+# B16 · MMI 1×2 自映像长度（解析：general interference principle）
+# --------------------------------------------------------------------------
+def b16_mmi_length(W_e, n_eff, wl):
+    """1×2 MMI 自映像长度 L_mmi（um，设计守则锚）。
+
+    L_π = n_eff·W_e²/λ0（自映像条件简化，忽略 cladding 修正）；
+    1×2 MMI 取 p=3 自映像 L = 3·L_π。确定性几何光学（MMI 自成像原理）。
+    精确真值待 FEM ORACLE。
+    """
+    L_pi = n_eff * (W_e ** 2) / wl
+    return 3.0 * L_pi
+
+
+# --------------------------------------------------------------------------
+# B17 · 约瑟夫森结临界电流（解析：Josephson 关系）
+# --------------------------------------------------------------------------
+def b17_jj_critical_current(E_J_ghz):
+    """Al 约瑟夫森结临界电流 I_c（A，确定性物理定律）。
+
+    E_J = (Φ0/2π)·I_c → I_c = 2·e·E_J/ℏ = E_J_ghz·1e9·4π·e。
+    E_J 以频率单位(GHz)给出（E_J/h）。典型 E_J≈20GHz 对应 I_c≈40nA
+    （铝 JJ 工艺）。量子 EDA 第四块物理锚（器件级）。
+    """
+    e = 1.602176634e-19
+    return E_J_ghz * 1e9 * 4.0 * math.pi * e
+
+
+# --------------------------------------------------------------------------
+# B18 · 谐振腔 Purcell 因子（解析：腔 QED 增强因子）
+# --------------------------------------------------------------------------
+def b18_purcell_factor(g_ghz, kappa_ghz, gamma_ghz):
+    """腔 QED Purcell 增强因子 F_P（无量纲，确定性物理定律）。
+
+    F_P = 4·g²/(κ·γ_1)（标准腔 QED 定义：发射到腔模 vs 自由空间）。
+    复用 D-88 物理：g=单光子 Rabi/耦合，κ=腔衰减率，γ_1=原子退相干率。
+    量子 EDA 第五块物理锚。
+    """
+    return 4.0 * (g_ghz ** 2) / (kappa_ghz * gamma_ghz)
+
+
+# --------------------------------------------------------------------------
 # B11 · 环形谐振器 drop 端口透射谱 "目标谱形" 匹配误差（标量，越小越好）
 # --------------------------------------------------------------------------
 def b11_ring_spectrum_match(R, n_g, wl0=1.55, target_fsr=9.15):
@@ -282,6 +346,11 @@ def golden_value(bid, params):
         "B11": b11_ring_spectrum_match,
         "B12": b12_resonator_frequency,
         "B13": b13_coupler_coupling,
+        "B14": b14_dc_coupling_length,
+        "B15": b15_bragg_wavelength,
+        "B16": b16_mmi_length,
+        "B17": b17_jj_critical_current,
+        "B18": b18_purcell_factor,
     }
     if bid not in dispatch:
         raise KeyError(f"无黄金参考定义: {bid}")
@@ -297,7 +366,7 @@ def golden_with_source(bid, params):
       - 'design-anchor'          设计守则锚（ORACLE 不可用时的验收基准）
     """
     physical_law = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
-                    "B12", "B13"}
+                    "B12", "B13", "B14", "B15", "B16", "B17", "B18"}
     if bid in physical_law:
         return (golden_value(bid, params), "physical-law", "确定性物理定律/解析解")
     # B5–B7：查 ORACLE 来源

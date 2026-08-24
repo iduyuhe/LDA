@@ -1,0 +1,129 @@
+{
+  "d93": "生态共建框架（harness 题库扩充 B14-B18 + PDK Registry/L2 开放标准接口）",
+  "date": "2026-08-24",
+  "honest_boundary": "harness 题库 B14-B18 为确定性物理定律锚（能力圈内，立即落地）；PDK Registry 为 L2 开放标准接口框架 + 主权依赖分级 A/B/C 代码化（系统开发可做）；真实晶圆厂 PDK 对接/实测语料采集属发动期事项（D-62 联动），暂缓，不在此硬编码。",
+  "harness": {
+    "total": 18,
+    "passed": 18,
+    "new_benchmarks": [
+      "B14",
+      "B15",
+      "B16",
+      "B17",
+      "B18"
+    ],
+    "all_pass": true
+  },
+  "new_benchmark_values": {
+    "B14": {
+      "metric": "L_3dB_um",
+      "value": 15.499999999999918,
+      "tol": 0.5,
+      "params": {
+        "n_e": 2.45,
+        "n_o": 2.4,
+        "wl": 1.55
+      },
+      "note": "拍波长法 L=λ0/(2|n_e−n_o|)",
+      "oracle": "analytical(physical-law)"
+    },
+    "B15": {
+      "metric": "lambda_B_um",
+      "value": 1.5504,
+      "tol": 0.01,
+      "params": {
+        "n_eff": 2.4,
+        "period": 0.323
+      },
+      "note": "一阶 Bragg 条件 λ_B=2·n_eff·Λ",
+      "oracle": "analytical(physical-law)"
+    },
+    "B16": {
+      "metric": "L_mmi_um",
+      "value": 18.58064516129032,
+      "tol": 3.0,
+      "params": {
+        "W_e": 2.0,
+        "n_eff": 2.4,
+        "wl": 1.55
+      },
+      "note": "L=3·L_π，L_π=n_eff·W_e²/λ0（设计守则锚）",
+      "oracle": "analytical(physical-law)"
+    },
+    "B17": {
+      "metric": "I_c_A",
+      "value": 4.026709074502098e-08,
+      "tol": 1e-09,
+      "params": {
+        "E_J_ghz": 20.0
+      },
+      "note": "I_c=2e·E_J/ℏ=E_J·1e9·4π·e（约瑟夫森关系）",
+      "oracle": "analytical(physical-law)"
+    },
+    "B18": {
+      "metric": "F_purcell",
+      "value": 8000.000000000001,
+      "tol": 1.0,
+      "params": {
+        "g_ghz": 0.1,
+        "kappa_ghz": 0.005,
+        "gamma_ghz": 0.001
+      },
+      "note": "F_P=4g²/(κ·γ_1)（腔 QED 增强因子）",
+      "oracle": "analytical(physical-law)"
+    }
+  },
+  "pdk_sovereign": {
+    "sovereign_deps_total": 16,
+    "by_class": {
+      "A": 5,
+      "B": 7,
+      "C": 4
+    },
+    "class_A_names": [
+      "Lumerical (Ansys)",
+      "Synopsys",
+      "Cadence",
+      "Siemens (Calibre)",
+      "GDSFactory+商业 NDA-PDK"
+    ],
+    "class_B_names": [
+      "gdsfactory 内核",
+      "Meep",
+      "KLayout",
+      "SAX",
+      "MPB",
+      "Nazca",
+      "Tidy3D"
+    ],
+    "class_C_names": [
+      "L0 IR/DSL",
+      "L1 agent 协议层",
+      "L3 AI 求解核",
+      "物理定律锚"
+    ]
+  },
+  "pdk_registry_interface": {
+    "ok": true,
+    "stats": {
+      "total": 1,
+      "by_sovereign_class": {
+        "B": 1
+      },
+      "by_tech": {
+        "SOI": 1
+      }
+    },
+    "note": "Registry 仅承载器件本体元数据（几何/工艺/来源），真实 PDK 数据经 empirical_submit 同源入口流入。"
+  },
+  "acceptance": {
+    "passed": true,
+    "checks": {
+      "harness_B1_B18_all_pass": true,
+      "pdk_class_A_ge_4": true,
+      "pdk_class_B_ge_6": true,
+      "pdk_class_C_ge_4": true,
+      "registry_add_conflict_self_consistent": true
+    }
+  }
+}

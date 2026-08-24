@@ -11,6 +11,8 @@ from .golden import (
     b7_crossing_crosstalk_dB, b8_taper_transmission,
     b9_transmon_frequency, b10_gate_fidelity, b11_ring_spectrum_match,
     b12_resonator_frequency, b13_coupler_coupling,
+    b14_dc_coupling_length, b15_bragg_wavelength, b16_mmi_length,
+    b17_jj_critical_current, b18_purcell_factor,
 )
 
 BENCHMARK_DEFS = {
@@ -143,8 +145,53 @@ BENCHMARK_DEFS = {
         "note": "J=Jc·<0|n̂|1>₁·<0|n̂|1>₂（GHz，n01=(E_J/2E_C)^{1/4}/2）；严格侧="
                 "D-39 441 维电荷 basis 对角化（rel~4%）。D-40 量子物理锚。",
     },
+    "B14": {
+        "title": "定向耦合器 3dB 耦合长度",
+        "metric": "L_3dB_um",
+        "oracle": "analytical(beat-length)",
+        "tol": 0.5,
+        "default_params": {"n_e": 2.45, "n_o": 2.40, "wl": 1.55},
+        "golden_fn": b14_dc_coupling_length,
+        "note": "拍波长法 L=λ0/(2|n_e−n_o|)；3dB 点=耦合长度。n_e/n_o 为偶/奇模有效折射率。",
+    },
+    "B15": {
+        "title": "Bragg 光栅中心波长",
+        "metric": "lambda_B_um",
+        "oracle": "analytical(Bragg condition)",
+        "tol": 0.01,
+        "default_params": {"n_eff": 2.4, "period": 0.323},
+        "golden_fn": b15_bragg_wavelength,
+        "note": "一阶 Bragg 条件 λ_B=2·n_eff·Λ；给定 n_eff/Λ 直接算。",
+    },
+    "B16": {
+        "title": "MMI 1×2 自映像长度",
+        "metric": "L_mmi_um",
+        "oracle": "design-rule(general-interference)",
+        "tol": 3.0,
+        "default_params": {"W_e": 2.0, "n_eff": 2.4, "wl": 1.55},
+        "golden_fn": b16_mmi_length,
+        "note": "L=3·L_π，L_π=n_eff·W_e²/λ0（自映像简化，设计守则锚）；精确真值待 FEM ORACLE。",
+    },
+    "B17": {
+        "title": "约瑟夫森结临界电流 I_c",
+        "metric": "I_c_A",
+        "oracle": "analytical(Josephson relation)",
+        "tol": 1e-9,
+        "default_params": {"E_J_ghz": 20.0},
+        "golden_fn": b17_jj_critical_current,
+        "note": "I_c=2e·E_J/ℏ=E_J·1e9·4π·e（A）；确定性约瑟夫森关系。典型 E_J=20GHz→I_c≈40nA。",
+    },
+    "B18": {
+        "title": "谐振腔 Purcell 因子 F_P",
+        "metric": "F_purcell",
+        "oracle": "analytical(cavity-QED)",
+        "tol": 1.0,
+        "default_params": {"g_ghz": 0.1, "kappa_ghz": 0.005, "gamma_ghz": 0.001},
+        "golden_fn": b18_purcell_factor,
+        "note": "F_P=4g²/(κ·γ_1)（标准腔 QED 增强因子）；复用 D-88 物理参数。",
+    },
 }
 
 # 对齐顺序（报告展示用）
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
-                   "B11", "B12", "B13"]
+                   "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18"]

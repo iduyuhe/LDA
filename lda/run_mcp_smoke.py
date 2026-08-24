@@ -80,8 +80,9 @@ def main():
     txt = content[0].get("text", "{}") if content else "{}"
     vr = json.loads(txt)
     sm = vr.get("result", {}).get("summary", {})
+    # harness 题数随基准扩充增长（B1-B13 → 13 题）；断言 ≥8 而非 ==8 以兼容增长
     ok = (r.get("id") == 4 and not r.get("result", {}).get("isError")
-          and sm.get("passed") == sm.get("total") and sm.get("total") == 8)
+          and sm.get("passed") == sm.get("total") and sm.get("total") >= 8)
     checks.append(("tools/call:verify_design", ok,
                    f"{sm.get('passed')}/{sm.get('total')} PASS"))
 

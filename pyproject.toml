@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lda-design"
+version = "0.7.0"
+description = "LDA — Agent-native open-source photon (PDA) + quantum (QEDA) chip design software"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "LDA Open-Source Community" }]
+keywords = [
+    "photonics",
+    "silicon-photonics",
+    "quantum",
+    "EDA",
+    "chip-design",
+    "agent-native",
+    "fdtd",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "jsonschema>=4.0",
+]
+
+[project.optional-dependencies]
+# 性能升维后端（缺失时自动回退纯 numpy / SKIP）
+numba = ["numba>=0.58"]
+torch = ["torch>=2.0"]
+# 报告与可视化（可选）
+viz = ["matplotlib>=3.6", "pandas>=2.0", "networkx>=2.8", "tqdm>=4.60"]
+# 开发 / 打包
+dev = ["build", "wheel", "pytest"]
+
+[project.urls]
+Homepage = "https://github.com/iduyuhe/LDA"
+Repository = "https://github.com/iduyuhe/LDA"
+Documentation = "https://github.com/iduyuhe/LDA/tree/main/docs"
+
+[tool.setuptools]
+# 源码树中可导入包位于 lda/ 子目录（扁平 lda_* 命名空间）
+package-dir = { "" = "lda" }
+packages = [
+    "lda_agent",
+    "lda_chain",
+    "lda_harness",
+    "lda_ir",
+    "lda_l1",
+    "lda_l2",
+    "lda_layout",
+    "lda_pdk",
+    "lda_qeda",
+    "lda_solver",
+    "lda_design",
+    "lda_webui",
+    "ext_oracle",
+    "examples",
+]
+
+[tool.setuptools.package-data]
+lda_webui = ["static/*", "static/**/*", "*.html", "*.js", "*.css"]
+examples = ["*.json", "*.py"]
+"*" = ["*.json", "*.yaml", "*.yml", "*.csv", "*.txt", "*.md", "*.html", "*.js", "*.css", "*.svg"]

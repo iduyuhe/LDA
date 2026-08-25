@@ -1,0 +1,25 @@
+# LDA 源码分发包清单（sdist）
+# 仅纳入发布所需文件，排除本地诊断脚本 / 日志 / 构建产物 / 私有记忆
+
+# ---- 根级文档与元信息 ----
+include README.md LICENSE AUTHORS.md CONTRIBUTING.md CHANGELOG.md BOUNTY.md requirements.txt pyproject.toml
+
+# ---- 核心包（递归纳入 .py 与数据） ----
+recursive-include lda *.py *.json *.html *.js *.css *.yaml *.yml *.csv *.svg
+recursive-include lda/lda_webui/static *
+
+# ---- 排除噪声 ----
+global-exclude __pycache__/*.pyc *.pyo
+exclude diag_*.py test_wg_quick.py build_pitch_deck.js build_whitepaper_docx.js
+exclude _closure_run*.log _diag_*.log _val_*.log
+prune lda_cuda_venv
+prune lda/reports
+prune lda/reports_agent
+prune lda/reports_ai
+prune lda/reports_ir
+prune lda/reports_ir_q
+prune lda/reports_l1
+prune lda/reports_mcp
+prune lda/reports_pdk
+prune .github
+prune .workbuddy

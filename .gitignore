@@ -5,6 +5,8 @@ __pycache__/
 lda_cuda_venv/
 *.egg-info/
 .pytest_cache/
+dist/
+build/
 
 # ---- 日志 / 临时 ----
 *.log

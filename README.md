@@ -236,6 +236,8 @@ LDA 开源生态靠**双引擎**驱动——有时间有热情的**学生**、�
 - 一页纸·双引擎招募：[LDA_一页纸_双引擎招募.md](LDA_一页纸_双引擎招募.md)
 - 一页纸·合作对接（晶圆厂/合作方）：[LDA_一页纸_合作对接.md](LDA_一页纸_合作对接.md)
 - 一页纸·产业投资：[LDA_一页纸_产业投资.md](LDA_一页纸_产业投资.md)
+- **技术向·器件开发实操手册**：[中文版](LDA_器件开发实操手册_MMI_Transmon.md)（MMI + Transmon + 逆设计 三案例，真实运行产出）· [English](LDA_Device_Dev_Handbook_EN.md)
+- **在线阅读（GitHub Pages）**：<https://iduyuhe.github.io/LDA/>（门户 + WebUI 实测截图）
 
 ## 许可证
 

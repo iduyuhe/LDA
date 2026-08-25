@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDA · 开源 Agent 原生光量子器件设计验证系统</title>
+<style>
+  body{font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;margin:0;color:#1a202c;background:#f7fafc;line-height:1.7}
+  .wrap{max-width:920px;margin:0 auto;padding:48px 24px}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:.5px}
+  .sub{color:#4a5568;font-size:15px;margin-bottom:8px}
+  .badge{display:inline-block;background:#ebf4ff;color:#1a56db;border:1px solid #bfdbfe;border-radius:999px;padding:2px 12px;font-size:12px;margin:2px 4px 2px 0}
+  h2{font-size:20px;margin:36px 0 12px;padding-bottom:6px;border-bottom:2px solid #e2e8f0}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px}
+  .card b{display:block;font-size:14px;margin-bottom:4px;color:#1a56db}
+  .card span{font-size:13px;color:#4a5568}
+  table{border-collapse:collapse;width:100%;font-size:13px;background:#fff}
+  th,td{border:1px solid #e2e8f0;padding:8px 10px;text-align:left}
+  th{background:#f1f5f9}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+  .shots img{width:100%;border:1px solid #e2e8f0;border-radius:8px}
+  .shots figcaption{font-size:12px;color:#718096;text-align:center;margin-top:4px}
+  .links a{color:#1a56db;text-decoration:none}
+  .links a:hover{text-decoration:underline}
+  footer{margin-top:48px;color:#a0aec0;font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LDA</h1>
+  <div class="sub">开源 · Agent 原生 · 光子（PDA）+ 量子（QEDA）器件设计验证系统</div>
+  <div>
+    <span class="badge">自研求解器 · 零商业 EDA 依赖</span>
+    <span class="badge">物理定律锚 + 实证锚 双 ground</span>
+    <span class="badge">LLM 不进判决路径</span>
+    <span class="badge">v0.6.x · 双案例实操手册</span>
+  </div>
+
+  <h2>四层能力</h2>
+  <div class="cards">
+    <div class="card"><b>入口层</b><span>WebUI 57 面板 · L1 Agent 协议（MCP/CLI）· 库级 API</span></div>
+    <div class="card"><b>设计引擎</b><span>逆设计（3D adjoint / 截面 / voxel 拓扑 / 谱形目标）· 参数扫描 · Agent 自迭代</span></div>
+    <div class="card"><b>求解内核</b><span>1D/2D/3D FDTD（numpy · numba 30×+ · torch）· transmon 严格对角化</span></div>
+    <div class="card"><b>验证裁判</b><span>harness 21 题 = 物理定律锚 B1-B18 + 实证锚 E1-E3（死标量）</span></div>
+  </div>
+
+  <h2>器件开发案例（真实运行）</h2>
+  <table>
+    <tr><th>案例</th><th>目标</th><th>结果</th></tr>
+    <tr><td>1550nm 1×2 MMI 均分分束器</td><td>50:50 分束，5 波长谱形验收</td><td>平衡度 0.0335（阈值 0.15），PASS</td></tr>
+    <tr><td>E_J=15GHz transmon 读出设计</td><td>f01 + 色散读出（χ/n_crit/Purcell）</td><td>f01=5.214GHz，χ=-0.88MHz，4 判据全过</td></tr>
+    <tr><td>谱形目标逆设计</td><td>3 波长目标谱，自动搜几何</td><td>FOM 加权 15.68×，adjoint 对拍零误差</td></tr>
+  </table>
+
+  <h2>实操手册</h2>
+  <div class="links">
+    <p>📖 <a href="https://github.com/iduyuhe/LDA/blob/main/LDA_%E5%99%A8%E4%BB%B6%E5%BC%80%E5%8F%91%E5%AE%9E%E6%93%8D%E6%89%8B%E5%86%8C_MMI_Transmon.md">《LDA 器件开发实操手册：MMI + Transmon + 逆设计》（中文 v2.0）</a></p>
+    <p>📖 <a href="https://github.com/iduyuhe/LDA/blob/main/LDA_Device_Dev_Handbook_EN.md">Device Design Handbook: MMI + Transmon + Inverse Design (English v2.0)</a></p>
+    <p>🔗 <a href="https://github.com/iduyuhe/LDA">GitHub 仓库</a> · <a href="https://github.com/iduyuhe/LDA/blob/main/README.md">README</a> · <a href="https://github.com/iduyuhe/LDA/blob/main/LICENSE">MIT License</a></p>
+  </div>
+
+  <h2>WebUI 实测截图</h2>
+  <div class="shots">
+    <figure><img src="images/01_webui_top.png" alt="WebUI 首屏"><figcaption>首屏（自动演示）</figcaption></figure>
+    <figure><img src="images/02_spectral_inverse.png" alt="谱形逆设计面板"><figcaption>谱形目标逆设计（㊶ D-80）</figcaption></figure>
+    <figure><img src="images/03_empirical_judge.png" alt="实证锚判题"><figcaption>实证大数据锚判题（面板 57 · D-62）</figcaption></figure>
+    <figure><img src="images/04_ecosystem.png" alt="生态共建框架"><figcaption>生态共建框架（面板 53 · D-93）</figcaption></figure>
+  </div>
+
+  <footer>LDA · 开源 Agent 原生光量子 EDA · 所有验收判据为确定性物理定律锚，LLM 不进判决路径</footer>
+</div>
+</body>
+</html>

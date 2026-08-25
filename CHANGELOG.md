@@ -102,6 +102,18 @@
 - **维护回归：CI core 31 PASS / 0 SKIP / 0 FAIL（279.56s）全绿**，报告 `ci_regression_core_v064.json`。
 - **维护结论**：v0.6.3+ 全绿；WebUI 字段漂移现可被 CI 捕获（删除/改名即 FAIL）。
 
+### 维护（v0.6.14 · D-112 持续维护 · 浏览器级 UI 实测（agent-browser 全量遍历）· 2026-08-25）
+- **背景**：现有门禁（路由层 64 端点 + 字段断言 44 条 + node --check 语法）未覆盖**浏览器内 JS 运行时错误与真实交互渲染**——按方案 B 全量遍历执行。
+- **实测方法**：agent-browser（真实 Chromium）打开 WebUI（127.0.0.1:8825）→ `errors`/`console` 抓取页面级错误 → `eval` 检查 57 面板渲染 → 触发真实交互（面板 53 `runEco`、面板 57 `refreshEmp`+`empCheck` 判题）→ 截图存证。
+- **实测结果（零缺陷）**：
+  · 页面加载**零 JS 运行时错误**（errors 空、console 空）；57 面板全部存在、正文 40316 字符；
+  · 面板 53 交互渲染 PASS（ecoBody 1652 字符；harness **21/21** · 主权 A=5 B=7 C=4 · Registry 自检 3）；
+  · 面板 55/56（评审/发布）容器已填充；
+  · 面板 57 判题交互 PASS（3 个 E 题选项；候选 2.63 vs 实测 2.63±0.02 → **PASS（死标量比对，LLM 不进判决路径）**）；
+  · 截图存证 `lda_webui_ui_test.png`。
+- 🔴 **方法学记录**：初检 33 个"空面板容器"为**误报**——选择器 `[id$=Body]` 匹配到按钮触发型面板（如面板 53 `runEco` 点击才渲染），属设计行为非缺陷；`refreshEco`/`refreshSub` 为假设函数名不存在（实际 `runEco`/`subBtn`），误报源已排除。
+- **维护结论**：v0.6.13+ 浏览器级 UI 零运行时错误、交互链路正确——JS 运行时盲区经一次性全量遍历验证闭合；此后转低频抽测（周期复核时 3-5 个代表面板）。
+
 ### 维护（v0.6.13 · D-111 持续维护 · CI 基础设施 + 开源门面核查 · 2026-08-25）
 - **CI 基础设施核查（健康）**：`.github/workflows/ci.yml` 双 job——job2 `industrial-regression` **已走统一入口**（`run_ci_regression.py --tag core --timeout 600`，自动发现 CORE_SMOKES 36 条）+ `pip install numpy scipy jsonschema`（D-99 血泪教训已落实）；job1 `deterministic-judge` 为 D-01~D-33 时代的历史检查保留（无破坏）。**本地 36 条 core 门禁 = GitHub CI 门禁，改一处传播**（D-99 目标达成）。
 - **开源门面核查（发现缺口）**：LICENSE（MIT，Copyright 2026 杜玉河）与 README「许可证」段一致 ✓；🔴 **AUTHORS.md 缺失**——BOUNTY.md 明确承诺"贡献者署名进 AUTHORS + 仓库 Hall of Fame"但文件不存在（对外兑现机制的门面缺口）。**修复**：新增 `AUTHORS.md`（维护者 + 社区评审流收录署名机制 + Hall of Fame/破壁者说明 + 收录格式模板）；README 许可证段补 `[AUTHORS](AUTHORS.md)` 引用。

@@ -16,6 +16,7 @@
 > **v0.6.11 持续维护**（2026-08-25 · D-109）：**all 集 74 项全量回归（D-104~D-108 五轮修复后最强门禁复核）**——覆盖 D-01~D-108 全部资产 + L1 MCP/CLI + agent 自迭代闭环 + 实证锚，**74 PASS / 0 FAIL（1611.76s）全绿**；🔴 回归发现 `run_ci_industrial_smoke` 每次运行重新创建坏 smoke 且沙箱删除失败残留（D-101 曾清一次）→ **根治**（多重删除 + unlink 兜底 + 失败改名 .bak 隔离，验证零残留），计数修复（73→74）；面板端点覆盖盘点（38 个 JS 调用：生态/实证 44 条字段断言 + 10 POST 实跑，26 个重计算端点按设计走路由静态验证 + 内核专用 smoke，无高价值缺口）。
 > **v0.6.12 持续维护**（2026-08-25 · D-110）：**社区文档一致性 + core 覆盖补强**——🔴 发现 `BOUNTY.md` 评审流程陈旧（仍写"维护者直写 seed_empirical.json"，D-62 前旧流程）→ 更新为社区评审流（submit_measurement→具名评审→land→empirical_contributions.json，面板 57/API 可提交）；`run_ci_industrial_smoke`（FAIL 检出机制 + 性能基准，zz_bad 残留根治的守卫）此前不在 CORE_SMOKES → **纳入 core 门禁（36 条）**；CONTRIBUTING/BOUNTY 无陈旧计数、design_package_schema 语法有效。
 > **v0.6.13 持续维护**（2026-08-25 · D-111）：**CI 基础设施 + 开源门面核查**——`.github/workflows/ci.yml` 健康（job2 `industrial-regression` 已走 `run_ci_regression --tag core` 统一入口自动发现 36 条 + 安装含 jsonschema，D-99 教训已落实；job1 为历史检查保留无破坏）；LICENSE（MIT）与 README 声明一致；🔴 发现 **AUTHORS.md 缺失**（BOUNTY 承诺"贡献者署名进 AUTHORS + Hall of Fame"但文件不存在）→ **补齐**（维护者 + 社区评审流署名机制 + Hall of Fame 说明）+ README 许可证段补引用。
+> **v0.6.14 持续维护**（2026-08-25 · D-112）：**浏览器级 UI 实测（agent-browser 全量遍历，零缺陷）**——真实 Chromium 打开 WebUI：页面加载**零 JS 运行时错误**、57 面板全渲染（40316 字符）；真实交互实测通过——面板 53（`runEco`：harness 21/21 · 主权 A=5 B=7 C=4）、面板 57 判题（候选 2.63 vs 实测 2.63±0.02 → **PASS 死标量比对**）；JS 运行时盲区经一次性全量遍历验证闭合，此后转低频抽测。
 
 ## 这是什么
 

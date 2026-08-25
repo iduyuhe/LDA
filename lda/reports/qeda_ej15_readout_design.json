@@ -1,0 +1,24 @@
+{
+  "device": "E_J=15GHz transmon 读出设计",
+  "E_J_ghz": 15.0,
+  "E_C_ghz": 0.25,
+  "f01_ghz": 5.2142,
+  "alpha_ghz": -0.2829,
+  "koch_rel_err": 0.00249884,
+  "readout": {
+    "f_r_ghz": 6.5142,
+    "g_ghz": 0.08,
+    "kappa_ghz": 0.01,
+    "chi_mhz": -0.88,
+    "chi_3level_mhz": -0.88,
+    "n_crit": 66,
+    "delta_over_g": 16.3,
+    "T1_purcell_ms": 4202.92,
+    "ac_stark_1ph_mhz": -1.759
+  },
+  "acceptance": {
+    "transmon_diag": "PASS (Koch 对拍)",
+    "readout": true
+  },
+  "verdict": "三能级色散严格对角化 ↔ Blais 修正解析式一致 + 拉比自洽 + α 修正必要性确认"
+}

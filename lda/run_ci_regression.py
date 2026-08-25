@@ -63,6 +63,8 @@ CORE_SMOKES: List[str] = [
     "run_empirical_anchor_smoke.py",
     # WebUI 路由层（D-102：全端点静态 + 快路径实跑，秒级）
     "run_webui_api_smoke.py",
+    # P1 芯片级补强（链路框架 + 自动布线 + Agent 元编排，纯 numpy 快速）
+    "run_link_m1_smoke.py", "run_link_m2_smoke.py", "run_link_m3_smoke.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

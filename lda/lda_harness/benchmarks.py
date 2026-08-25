@@ -12,7 +12,7 @@ from .golden import (
     b9_transmon_frequency, b10_gate_fidelity, b11_ring_spectrum_match,
     b12_resonator_frequency, b13_coupler_coupling,
     b14_dc_coupling_length, b15_bragg_wavelength, b16_mmi_length,
-    b17_jj_critical_current, b18_purcell_factor,
+    b17_jj_critical_current, b18_purcell_factor, b19_link_passivity_bound,
 )
 
 BENCHMARK_DEFS = {
@@ -190,6 +190,24 @@ BENCHMARK_DEFS = {
         "golden_fn": b18_purcell_factor,
         "note": "F_P=4g²/(κ·γ_1)（标准腔 QED 增强因子）；复用 D-88 物理参数。",
     },
+    # ---- P1-M4 链路级物理定律锚（第一道非 AI ground 上提为 B 类题）----
+    # 无源线性网络（无外部泵浦）硬约束：所有传递增益 max|T(λ)| ≤ 1 + tol。
+    # 能量守恒是其无损（α=0）特例。cmp='le' ⇒ candidate ≤ golden+tol。
+    # 链路级缺系统级实证语料 → 仅物理定律锚，不判 E 题（诚实边界）。
+    "B19": {
+        "title": "无源链路物理定律锚：无增益（passivity / max|T|≤1）",
+        "metric": "max|T(λ)| over all transfer paths",
+        "oracle": "analytical(passive-network: 无外部泵浦 ⇒ |T|≤1)",
+        "tol": 1e-9,
+        "default_params": {"type": "wdm", "channels_nm": [1530, 1550, 1570, 1590],
+                            "Rs_um": [10.0, 10.34, 10.68, 11.02],
+                            "gap_um": 0.3, "n_g": 4.2, "alpha_cm": 2.5},
+        "golden_fn": b19_link_passivity_bound,
+        "cmp": "le",
+        "note": ("链路级第一道非 AI ground：无源网络无增益上界 1.0（损耗合法、"
+                 "增益判 FAIL）；能量守恒为无损特例。由 lda_chain 引擎级联输出与"
+                 "黄金上界死标量比对，LLM 不进判决路径。"),
+    },
     # ---- D-62 实证大数据锚（第二道非 AI ground：真实测量语料）----
     # anchor=empirical 的题：golden 来自 EmpiricalCorpus 实测语料（seed_empirical.json
     # + 社区经评审流落库的语料），非解析函数（golden_fn=None）。
@@ -234,6 +252,7 @@ BENCHMARK_DEFS = {
 # 对齐顺序（报告展示用）
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
+                   "B19",
                    "E1", "E2", "E3"]
 
 

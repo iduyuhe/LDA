@@ -46,6 +46,16 @@ def main() -> int:
         for c in acc.get("checks", []):
             if not c["ok"]:
                 print("    ✗", c["name"], "：", c["detail"])
+    # 串扰索引 bug 回归钉（D-104 修复）：4 信道末环 xt 应≈18.4dB（旧 bug 给
+    # 53.16），且末环隔离必须低于首环——转置修复后首环无上游排斥，本信道
+    # 最易泄漏到首环 drop，故末环最差是正确物理；旧 bug 因转置把末环高估。
+    r4x = design_wdm([1550.0, 1552.5, 1555.0, 1557.5], gap=0.3)
+    x4 = r4x["metrics"]["xt_min_db"]
+    pin_ok = (abs(x4[3] - 18.41) <= 0.2) and (abs(x4[0] - 53.16) <= 0.2) \
+        and (x4[3] < x4[0])
+    ok &= pin_ok
+    print(f"[{'OK  ' if pin_ok else 'FAIL'}] 串扰索引回归钉: 首环 xt="
+          f"{x4[0]:.2f}dB(≈53.16) 末环 xt={x4[3]:.2f}dB(≈18.41, 旧bug=53.16)")
     # 4 信道结果落盘证据
     r4 = design_wdm([1550.0, 1552.5, 1555.0, 1557.5], gap=0.3)
     with open(os.path.join(_HERE, "reports", "wdm_system.json"), "w",

@@ -333,6 +333,23 @@ def b7_crossing_crosstalk_dB(w_core, h_core, n_si, n_clad, wl, gap):
 # 模块级调度表与物理定律锚集合：支持运行时 register_golden 动态注册
 # （社区提案经「具名人工评审 → 确定性自测」后落地接入统一回归；
 #  仅登记确定性物理定律，LLM 不进判决路径）。
+
+# --------------------------------------------------------------------------
+# B19 · 链路级物理定律锚：无源网络无增益（passivity）
+# --------------------------------------------------------------------------
+def b19_link_passivity_bound(**kwargs):
+    """无源线性网络（无外部泵浦）的物理硬约束：所有传递增益 |T(λ)| ≤ 1。
+
+    这是链路级第一道非 AI ground（与 B1–B19 同框架、同死标量比对）；
+    能量守恒是其无损（α=0）特例——无损 ⇒ S 幺正 ⇒ 功率守恒。本锚以
+    「无增益上界」表达，损耗（|T|<1）合法，增益（|T|>1）判 FAIL。
+
+    golden 为无源上界常量 1.0；配合 harness cmp='le' 判定
+    candidate(=max|T(λ)|) ≤ 1.0 + tol。
+    """
+    return 1.0
+
+
 _GOLDEN_DISPATCH = {
     "B1": b1_mie_qscat,
     "B2": b2_soi_waveguide_neff,
@@ -352,10 +369,11 @@ _GOLDEN_DISPATCH = {
     "B16": b16_mmi_length,
     "B17": b17_jj_critical_current,
     "B18": b18_purcell_factor,
+    "B19": b19_link_passivity_bound,
 }
 
 _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
-                 "B12", "B13", "B14", "B15", "B16", "B17", "B18"}
+                 "B12", "B13", "B14", "B15", "B16", "B17", "B18", "B19"}
 
 
 def golden_value(bid, params):

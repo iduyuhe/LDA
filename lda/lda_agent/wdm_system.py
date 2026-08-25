@@ -12,7 +12,7 @@
        thru_out(λ) = Π_all T_thru(R_j)
   4. 系统验收（死标量比对，LLM 不进判决）：
        - 每信道 drop IL ≤ 3dB（在自身波长处 drop 效率）
-       - 邻信道串扰 XT ≥ 15dB（在其它信道波长处泄漏）
+       - 邻信道串扰 XT ≥ 15dB（本信道泄漏到其它 drop 端口的最小隔离）
        - 每环 DRC（R/gap/wg）可制造
        - 每环 FSR > 信道总跨度（单 FSR 工作区，无混叠）
   5. N 环级联版图（GDS + SVG）+ 设计报告。
@@ -80,22 +80,35 @@ def system_metrics(channels_nm: List[float], Rs: List[float], gap: float,
         d, t = _transfer(R, gap, wls, kappa_fn)
         drop_ij.append(d)
         thru_ij.append(t)
-    il_drop, xt_min, thru_ch = [], [], []
-    for i in range(len(Rs)):
-        vals = []
-        for j in range(len(Rs)):
-            v = drop_ij[i][j]
-            for k in range(i):
-                v *= thru_ij[k][j]
-            vals.append(v)
-        il_drop.append(-10.0 * math.log10(max(vals[i], 1e-9)))
-        xts = [-10.0 * math.log10(max(vals[j], 1e-9))
-               for j in range(len(Rs)) if j != i]
+    N = len(Rs)
+    # leak[i][r] = 信道 i 的信号落在 ring r 的 drop 端口的功率
+    #   = drop_r(λ_i) · Π_{k<r} thru_k(λ_i)
+    #   （信号须先经前 r 个环的 thru，才抵达 ring r 的 drop）
+    # 修复（D-104 串扰索引 bug）：旧版误用「其它信道泄漏进 ring_i 的 drop
+    #   （leak[j][i]）」当作串扰，是 leak 矩阵的转置；正确串扰应为
+    #   「信道 i 泄漏到其它 drop 端口（leak[i][r]）」。旧版对末环高估隔离
+    #   （受益于上游环排斥），对首环低估——例：4 信道末环给 53.16dB，
+    #   正确地应为 18.41dB（本信道泄漏到无上游排斥的首环 drop）。
+    leak = [[0.0] * N for _ in range(N)]
+    for i in range(N):
+        for r in range(N):
+            v = drop_ij[r][i]
+            for k in range(r):
+                v *= thru_ij[k][i]
+            leak[i][r] = v
+    il_drop, xt_min = [], []
+    for i in range(N):
+        # 本信道 wanted = 信道 i 落在自身 ring i 的 drop
+        il_drop.append(-10.0 * math.log10(max(leak[i][i], 1e-9)))
+        # 邻信道串扰 = 信道 i 泄漏到「其它 ring 的 drop 端口」的最小隔离（dB）
+        #   标准 add-drop 串扰定义：本信道不应出现在别的 drop 端口
+        xts = [-10.0 * math.log10(max(leak[i][r], 1e-9))
+               for r in range(N) if r != i]
         xt_min.append(min(xts) if xts else 90.0)
-    thru_out = [1.0] * len(Rs)
-    for j in range(len(Rs)):
+    thru_out = [1.0] * N
+    for j in range(N):
         v = 1.0
-        for k in range(len(Rs)):
+        for k in range(N):
             v *= thru_ij[k][j]
         thru_out[j] = v
     return {"il_drop_db": [round(x, 3) for x in il_drop],

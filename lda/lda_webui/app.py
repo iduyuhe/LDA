@@ -578,6 +578,70 @@ def run_wdm_design(payload=None):
         return {"ok": False, "error": str(e)[:120]}
 
 
+def run_link_design(payload=None):
+    """P1-M4 链路设计→验证闭环（WebUI ㊽ 面板）。
+
+    四 Agent 元编排端到端（规划→综合→布线→验证）→ 链路级物理定律锚
+    B19（无源无增益，经 VerificationHarness 死标量比对）上提为 harness 题
+    → GDS + 系统报告。纯解析级联秒级，LLM 不进判决路径。
+    """
+    import sys as _sys
+    import base64
+    import tempfile
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_agent.orchestrator import Orchestrator
+    payload = payload or {}
+    ch_raw = payload.get("channels", "1.53,1.55,1.57,1.59")
+    try:
+        channels = [float(x) for x in str(ch_raw).split(",") if x.strip()]
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "channels 须为逗号分隔波长(um)列表"}
+    try:
+        spec = {
+            "type": "wdm",
+            "channels_um": channels,
+            "R_um": float(payload.get("R", 10.0)),
+            "gap_um": float(payload.get("gap", 0.3)),
+            "kappa": float(payload.get("kappa", 0.05)),
+            "alpha_cm": float(payload.get("alpha", 2.5)),
+        }
+    except (TypeError, ValueError) as e:
+        return {"ok": False, "error": f"参数须为数值: {e}"}
+    try:
+        out_dir = tempfile.mkdtemp(prefix="lda_link_webui_")
+        ctx = Orchestrator().run(spec, out_dir=out_dir)
+        v = ctx.verification or {}
+        b19 = v.get("b19_harness", {})
+        ec = v.get("energy_conservation", {})
+        gds_b64 = base64.b64encode(ctx.gds_bytes or b"").decode("ascii")
+        return {
+            "ok": True,
+            "title": "链路设计→验证闭环（P1-M4 双 ground 上提）",
+            "accepted": v.get("status") == "ok",
+            "status": v.get("status"),
+            "channels_um": channels,
+            "n_components": len(ctx.link.ir.components) if ctx.link else 0,
+            "n_nets": len(ctx.link.ir.nets) if ctx.link else 0,
+            "b19": b19,
+            "energy_conservation": ec,
+            "no_missing_models": v.get("no_missing_models"),
+            "routing_complete": v.get("routing_complete"),
+            "system_metrics": v.get("system_metrics", {}),
+            "honest_note": v.get("honest_note"),
+            "anchor": v.get("anchor"),
+            "empirical_anchor": v.get("empirical_anchor"),
+            "gds_size": len(ctx.gds_bytes or b""),
+            "gds_b64": gds_b64,
+            "steps": [(s.get("agent"), s.get("action")) for s in ctx.steps],
+            "error": ctx.error,
+        }
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:160]}
+
+
 def run_readout_chain(payload=None):
     """D-43 光子-量子混合链路：芯片级 dispersive readout（webui ⑲ 面板）。
 
@@ -2179,6 +2243,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_ir_spec(payload))
             elif path == "/api/ci_regression":
                 self._send(200, run_ci_regression(payload))
+            elif path == "/api/link_design":
+                self._send(200, run_link_design(payload))
             elif path == "/api/perf_bench":
                 self._send(200, run_perf_bench(payload))
             elif path == "/api/spectral_design":

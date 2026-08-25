@@ -1090,6 +1090,23 @@
   </div>
 
   <div class="sec">
+    <h2>㊽ 链路设计→验证闭环（P1-M4 · 双 ground 上提 · 芯片级 Agent 编排）</h2>
+    <div class="hint">把 M1–M3 的通用链路框架 / 自动布线 / 四-Agent 元编排，经 <b>链路级物理定律锚 B19</b>（无源无增益，经 VerificationHarness 死标量比对）正式上提为 harness 一等公民。四 Agent（规划→综合→布线→验证）确定性协作，输出 GDS + 系统报告。诚实边界：链路级<b>仅物理定律锚</b>（缺系统级实证语料，不判 E 题）；LLM 不进判决路径。</div>
+    <div class="row">
+      <label>信道(um)<input id="lkCh" value="1.53,1.55,1.57,1.59" size="22"></label>
+      <label>R(µm)<input id="lkR" value="10" size="4"></label>
+      <label>gap(µm)<input id="lkGap" value="0.3" size="4"></label>
+      <label>κ<input id="lkKappa" value="0.05" size="4"></label>
+      <label>α(dB/cm)<input id="lkAlpha" value="2.5" size="4"></label>
+      <button class="btn" id="runLk">运行链路设计闭环</button>
+    </div>
+    <div id="lkSummary" class="summary"></div>
+    <div id="lkBody"></div>
+    <div id="lkGds"></div>
+    <div class="conclusion" id="lkConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -2955,6 +2972,54 @@ async function runPa(){
 }
 $('runPa').onclick = runPa;
 
+// ---- ㊽ P1-M4 链路设计→验证闭环（双 ground 上提）----
+async function runLk(){
+  const btn = $('runLk'); btn.disabled = true;
+  const ch = $('lkCh').value.trim();
+  const payload = {channels: ch, R: $('lkR').value, gap: $('lkGap').value,
+                    kappa: $('lkKappa').value, alpha: $('lkAlpha').value};
+  $('lkSummary').innerHTML = '<span class="spin"></span> 链路规划→器件综合→版图布线→验证（B19 物理锚）四 Agent 编排中…';
+  $('lkBody').innerHTML=''; $('lkGds').innerHTML=''; $('lkConclusion').innerHTML='';
+  try{
+    const d = await postJson('/api/link_design', payload);
+    renderLinkDesign(d);
+  }catch(e){ $('lkSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderLinkDesign(d){
+  if(!d.ok){ $('lkSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const b19 = d.b19||{}, ec = d.energy_conservation||{};
+  const leak = ec.per_source_leak||{};
+  const leakStr = Object.entries(leak).map(([k,v])=>`${k}:${v}`).join(' ');
+  $('lkSummary').innerHTML = `${d.title} · 信道 ${(d.channels_um||[]).join('/')}µm · `
+    + `${d.n_components} 器件 + ${d.n_nets} 网表 · `
+    + `<span class="verdict ${d.accepted?'ok':'fail'}">${d.accepted?'PASS':'FAIL'}</span>`;
+  const sysRows = Object.entries(d.system_metrics||{}).map(([k,m])=>{
+    const pk = m.peak_power_db!=null?m.peak_power_db.toFixed(2)+'dB':(m.peak_magnitude!=null?m.peak_magnitude.toFixed(3):'?');
+    return `<tr><td>${k}</td><td>${pk}</td><td>${m.n_wl}</td></tr>`;
+  }).join('');
+  $('lkBody').innerHTML = `
+    <div class="subhead">B19 物理定律锚（harness 死标量比对，cmp=${b19.cmp||'le'}）</div>
+    <table class="tbl"><tbody>
+      <tr><td>无源无增益 max|T|</td><td class="${b19.passed?'ok':'fail'}">${b19.passed?'PASS':'FAIL'}</td>
+          <td>${b19.candidate!=null?b19.candidate.toFixed(6):'?'} ≤ golden=${b19.golden} (tol=${b19.tol})</td></tr>
+      <tr><td>ORACLE 来源</td><td colspan="2">${b19.source||'?'} — ${b19.oracle||''}</td></tr>
+    </tbody></table>
+    <div class="subhead">能量守恒（无损特例诊断）</div>
+    <div class="note">逐源最大泄漏 = <b>${leakStr}</b> · lossless_ok=${ec.lossless_ok}（α≠0 时损耗合法）</div>
+    <div class="subhead">链路系统指标（传递峰值功率）</div>
+    <table class="tbl"><thead><tr><th>传递路径</th><th>峰值功率/幅度</th><th>n_λ</th></tr></thead><tbody>${sysRows}</tbody></table>
+    <div class="note">无缺模型 = <b>${d.no_missing_models}</b> · 布线完整 = <b>${d.routing_complete}</b> · 物理锚 = ${d.anchor} · empirical_anchor=${d.empirical_anchor}</div>
+    <div class="note">agent 链路：${(d.steps||[]).map(s=>s[0]+'@'+s[1]).join(' → ')}</div>`;
+  if(d.gds_b64){
+    const blob = 'data:application/octet-stream;base64,'+d.gds_b64;
+    $('lkGds').innerHTML = `<a class="btn" href="${blob}" download="chip.gds">下载 GDS（${d.gds_size}B）</a>`;
+  }
+  $('lkConclusion').innerHTML = `<strong>结论：${d.accepted?'链路设计→验证闭环 PASS（双 ground 上提生效）':'FAIL'}</strong>`
+    + `<br><span class="note">${d.honest_note||''}</span>`;
+}
+$('runLk').onclick = runLk;
+
 // ---- ㊾ D-89 3D adjoint numba 性能基准（大域 20×+）----
 async function runPf(){
   const btn = $('runPf'); btn.disabled = true;
@@ -3595,6 +3660,7 @@ $('runIr').onclick = runIr;
   runSr();
   runWs();
   runIr();
+  runLk();
 })();
 </script>
 </body>

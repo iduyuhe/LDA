@@ -53,6 +53,7 @@ class VerificationHarness:
                 if b.get("params"):        # L0 IR 携带设计实际几何参数 → 覆盖默认
                     params.update(b["params"])
                 anchor = d.get("anchor")
+                cmp = b.get("cmp", d.get("cmp", "abs"))
                 if anchor == "empirical":
                     specs.append({
                         "id": bid, "metric": b.get("metric", d["metric"]),
@@ -60,33 +61,36 @@ class VerificationHarness:
                         "oracle": b.get("oracle", d["oracle"]),
                         "params": params, "golden_fn": None,
                         "anchor": "empirical", "empirical_id": d.get("empirical_id"),
-                        "resolved": True})
+                        "cmp": cmp, "resolved": True})
                     continue
                 target = b.get("target", d["golden_fn"](**params))
                 specs.append({
                     "id": bid, "metric": b.get("metric", d["metric"]),
                     "target": target, "tol": b.get("tol", d["tol"]),
                     "oracle": b.get("oracle", d["oracle"]),
-                    "params": params, "golden_fn": d["golden_fn"], "resolved": True,
+                    "params": params, "golden_fn": d["golden_fn"],
+                    "cmp": cmp, "resolved": True,
                 })
         else:
             for bid in sorted(self.defs.keys()):
                 d = self.defs[bid]
                 params = dict(d["default_params"])
                 anchor = d.get("anchor")
+                cmp = d.get("cmp", "abs")
                 if anchor == "empirical":
                     specs.append({
                         "id": bid, "metric": d["metric"],
                         "target": None, "tol": d["tol"],
                         "oracle": d["oracle"], "params": params,
                         "golden_fn": None, "anchor": "empirical",
-                        "empirical_id": d.get("empirical_id"), "resolved": True})
+                        "empirical_id": d.get("empirical_id"),
+                        "cmp": cmp, "resolved": True})
                     continue
                 specs.append({
                     "id": bid, "metric": d["metric"],
                     "target": d["golden_fn"](**params), "tol": d["tol"],
                     "oracle": d["oracle"], "params": params,
-                    "golden_fn": d["golden_fn"], "resolved": True,
+                    "golden_fn": d["golden_fn"], "cmp": cmp, "resolved": True,
                 })
         return specs
 
@@ -130,11 +134,25 @@ class VerificationHarness:
                 continue
             golden, source, src_note = golden_with_source(s["id"], s["params"])
             candidate_val = candidate(s, golden, s["params"])
-            passed = abs(candidate_val - golden) <= s["tol"]
+            passed = _cmp_ok(candidate_val, golden, s["tol"], s.get("cmp", "abs"))
             results.append(BenchmarkResult(
                 s["id"], s["metric"], golden, candidate_val, s["tol"],
                 s["oracle"], passed, src_note, source))
         return results
+
+
+def _cmp_ok(candidate_val, golden, tol, cmp):
+    """判定算子。
+
+    - 'abs'（默认）：|candidate - golden| ≤ tol（解析标定锚，B1-B19）
+    - 'le'：candidate ≤ golden + tol（物理定律不等式锚，如 B19 无源无增益）
+    - 'ge'：candidate ≥ golden - tol（物理定律下界锚，如设计守则下限）
+    """
+    if cmp == "le":
+        return candidate_val <= golden + tol
+    if cmp == "ge":
+        return candidate_val >= golden - tol
+    return abs(candidate_val - golden) <= tol
 
 
 # ------------------------- 候选求解器（stand-in） -------------------------

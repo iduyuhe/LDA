@@ -81,20 +81,25 @@ class LdaMcpServer:
         if method == "tools/call":
             name = params.get("name", "")
             args = params.get("arguments", {}) or {}
-            if name == "lda.list_benchmarks":
-                req = AgentRequest("list_benchmarks", {})
-                return self._wrap(self.gw.handle(req))
-            if name == "lda.verify_design":
-                payload = {}
-                if "l0_ir" in args:
-                    payload["l0_ir"] = args["l0_ir"]
-                if "candidate" in args:
-                    payload["candidate"] = args["candidate"]
-                if "benchmarks" in args:
-                    payload["benchmarks"] = args["benchmarks"]
-                if "rel_err" in args:
-                    payload.setdefault("candidate", {})["rel_err"] = args["rel_err"]
-                req = AgentRequest("verify_design", payload)
+            # 通用分派：lda.<action> → AgentRequest(action, args)
+            # 覆盖 verify_design / list_benchmarks / link_simulate / route /
+            # place / export_chip_gds 等全部 L1 原语，无需逐工具分支。
+            if name.startswith("lda."):
+                action = name[len("lda."):]
+                # verify_design 兼容旧字段名（l0_ir/candidate/benchmarks）
+                if action in ("verify_design", "run_candidate"):
+                    payload = {}
+                    if "l0_ir" in args:
+                        payload["l0_ir"] = args["l0_ir"]
+                    if "candidate" in args:
+                        payload["candidate"] = args["candidate"]
+                    if "benchmarks" in args:
+                        payload["benchmarks"] = args["benchmarks"]
+                    if "rel_err" in args:
+                        payload.setdefault("candidate", {})["rel_err"] = args["rel_err"]
+                else:
+                    payload = args
+                req = AgentRequest(action, payload)
                 return self._wrap(self.gw.handle(req))
             return {"error": {"code": -32602,
                               "message": f"未知工具: {name}"}}

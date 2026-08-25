@@ -53,6 +53,8 @@ CORE_SMOKES: List[str] = [
     # Track D / 标准层（D-73~D-76）
     "run_tunable_wdm_smoke.py", "run_qeda_topology_smoke.py",
     "run_large_scale_smoke.py",
+    # 工业化验证（D-76：FAIL 检出机制 + 性能基准——坏 smoke 残留根治的守卫）
+    "run_ci_industrial_smoke.py",
     # 生态共建链（D-93~D-98：harness 扩展 / 提交 / 评审→落地→发布，纯 numpy 快速）
     "run_ecosystem_smoke.py",        # harness B1-B18 + 主权 A/B/C + Registry 自检
     "run_ecosystem_submit_smoke.py", # 社区提交入口（器件 + 批量 + 提案）

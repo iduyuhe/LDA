@@ -55,11 +55,11 @@ LDA 的核心主张是：**底层核心求解器由 AI agent 递归自举开发�
 - **LLM 不进判决路径**：你提交的数据 / 题只作为 golden 或题库，PASS/FAIL 由死代码标量比对决定。
 - **可验证**：每条语料 / 题都配确定性裁判或物理定律锚，杜绝纯 AI 互证。
 
-## 评审流程
+## 评审流程（D-62 语料评审流 · D-95~D-98 生态链闭环）
 
-1. 提交 Issue（结构化模板）
-2. 维护者将候选写入 `seed_empirical.json`，跑 `lda/lda_harness/run_empirical_bank.py` 验证可加载
-3. AI-dev 自举写核（`solver_writer`）尝试求解，确定性裁判（`run_harness.py`） + 实证锚验收
+1. 提交 Issue（结构化模板，附 citation=可追溯来源——无引用不予收录）
+2. **经社区评审流落库**：`submit_measurement`（确定性校验：数值有限 / σ≥0 / citation 必填 / 防重）→ `review_measurement`（**具名人工评审，LLM 不进判决路径**）→ `land_measurement`（写入 `lda/lda_pdk/empirical_contributions.json`，harness E1-E3 实证锚题实时生效）——WebUI 面板 57「实证大数据锚」或 `POST /api/ecosystem/measurement` 均可提交
+3. AI-dev 自举写核（`solver_writer`）尝试求解，确定性裁判（`run_harness.py`） + 实证锚验收（比对=|candidate−measured|≤σ 死标量）
 4. 翻车则记入 release notes；通过后该能力标注「已被 X 题实证锚定」
 
 ---

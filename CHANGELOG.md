@@ -102,6 +102,13 @@
 - **维护回归：CI core 31 PASS / 0 SKIP / 0 FAIL（279.56s）全绿**，报告 `ci_regression_core_v064.json`。
 - **维护结论**：v0.6.3+ 全绿；WebUI 字段漂移现可被 CI 捕获（删除/改名即 FAIL）。
 
+### 维护（v0.6.12 · D-110 持续维护 · 社区文档一致性 + core 覆盖补强 · 2026-08-25）
+- **社区文档一致性深审（发现陈旧）**：`BOUNTY.md` 评审流程第 2 步仍写"维护者将候选直接写入 `seed_empirical.json`，跑 `run_empirical_bank.py` 验证"——**D-62 前的旧流程**（现走社区评审流）。**修复**：更新为「①提交 Issue（citation 必填）→ ②`submit_measurement`（确定性校验）→ `review_measurement`（具名人工评审，LLM 不进判决）→ `land_measurement`（落库 `empirical_contributions.json`，harness E1-E3 实时生效；WebUI 面板 57 / `POST /api/ecosystem/measurement`）→ ③AI-dev 写核 + 死标量验收 → ④标注实证锚定」。CONTRIBUTING.md 无陈旧计数（实证锚已提及）、BOUNTY 红线段正确。
+- **core 覆盖补强（门禁缺口）**：`run_ci_industrial_smoke.py`（FAIL 检出机制 + 性能基准——zz_bad 残留根治的守卫）此前仅在 all 集、不在 CORE_SMOKES → **纳入 core 门禁（35→36 条）**，D-109 的根治改动从此受 core 保护。
+- **schema 核验**：`docs/design_package_schema.json` 语法有效（draft-07、title 合理、properties 完整）——无问题。
+- **维护回归：CI core 36 PASS / 0 SKIP / 0 FAIL**，报告 `ci_regression_core_v0612.json`。
+- **维护结论**：v0.6.11+ 全绿；社区文档与 D-62/D-95~D-98 生态链现状对齐；industrial 门禁入 core。
+
 ### 维护（v0.6.11 · D-109 持续维护 · all 集 74 项全量回归 + 坏 smoke 残留根治 · 2026-08-25）
 - **all 集全量回归（D-104~D-108 五轮修复后最强门禁复核）**：`run_ci_regression.py --tag all` 覆盖 **74 项**（D-01~D-108 全部资产 + L1 MCP/CLI + agent 自迭代闭环 + 实证锚）→ **74 PASS / 0 SKIP / 0 FAIL（1611.76s）全绿**，报告 `ci_regression_all_v0611.json`。
 - 🔴 **回归发现（反复性残留根治）**：`run_ci_industrial_smoke._detect_fail` 每次运行把坏 smoke 复制到 `lda/run_zz_bad_smoke.py`（验证 FAIL 检出），但 finally 的 `os.remove` 被沙箱安全删除钩子拦截（SAFE_DELETE_FAIL）且异常被吞 → **文件残留**，每次 all 集重新创建（D-101 曾清理一次后复发）。**根治**：finally 多重删除策略——`os.remove` → `os.unlink` 兜底 → 重试 3 次 → 仍失败改名 `.bak` 隔离（不再被 `_discover_all` 发现）；实测 industrial smoke 3/3 PASS 且**零残留**、`_discover_all` 恢复真实计数。

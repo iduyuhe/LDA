@@ -102,6 +102,11 @@
 - **维护回归：CI core 31 PASS / 0 SKIP / 0 FAIL（279.56s）全绿**，报告 `ci_regression_core_v064.json`。
 - **维护结论**：v0.6.3+ 全绿；WebUI 字段漂移现可被 CI 捕获（删除/改名即 FAIL）。
 
+### 维护（v0.6.13 · D-111 持续维护 · CI 基础设施 + 开源门面核查 · 2026-08-25）
+- **CI 基础设施核查（健康）**：`.github/workflows/ci.yml` 双 job——job2 `industrial-regression` **已走统一入口**（`run_ci_regression.py --tag core --timeout 600`，自动发现 CORE_SMOKES 36 条）+ `pip install numpy scipy jsonschema`（D-99 血泪教训已落实）；job1 `deterministic-judge` 为 D-01~D-33 时代的历史检查保留（无破坏）。**本地 36 条 core 门禁 = GitHub CI 门禁，改一处传播**（D-99 目标达成）。
+- **开源门面核查（发现缺口）**：LICENSE（MIT，Copyright 2026 杜玉河）与 README「许可证」段一致 ✓；🔴 **AUTHORS.md 缺失**——BOUNTY.md 明确承诺"贡献者署名进 AUTHORS + 仓库 Hall of Fame"但文件不存在（对外兑现机制的门面缺口）。**修复**：新增 `AUTHORS.md`（维护者 + 社区评审流收录署名机制 + Hall of Fame/破壁者说明 + 收录格式模板）；README 许可证段补 `[AUTHORS](AUTHORS.md)` 引用。
+- **维护结论**：v0.6.12+ 全绿；CI 统一入口与本地门禁一致、开源门面（LICENSE/AUTHORS/CONTRIBUTING/BOUNTY）齐备。
+
 ### 维护（v0.6.12 · D-110 持续维护 · 社区文档一致性 + core 覆盖补强 · 2026-08-25）
 - **社区文档一致性深审（发现陈旧）**：`BOUNTY.md` 评审流程第 2 步仍写"维护者将候选直接写入 `seed_empirical.json`，跑 `run_empirical_bank.py` 验证"——**D-62 前的旧流程**（现走社区评审流）。**修复**：更新为「①提交 Issue（citation 必填）→ ②`submit_measurement`（确定性校验）→ `review_measurement`（具名人工评审，LLM 不进判决）→ `land_measurement`（落库 `empirical_contributions.json`，harness E1-E3 实时生效；WebUI 面板 57 / `POST /api/ecosystem/measurement`）→ ③AI-dev 写核 + 死标量验收 → ④标注实证锚定」。CONTRIBUTING.md 无陈旧计数（实证锚已提及）、BOUNTY 红线段正确。
 - **core 覆盖补强（门禁缺口）**：`run_ci_industrial_smoke.py`（FAIL 检出机制 + 性能基准——zz_bad 残留根治的守卫）此前仅在 all 集、不在 CORE_SMOKES → **纳入 core 门禁（35→36 条）**，D-109 的根治改动从此受 core 保护。

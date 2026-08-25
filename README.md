@@ -15,6 +15,7 @@
 > **v0.6.10 持续维护**（2026-08-25 · D-108）：**实证锚字段门禁补强**——深审发现面板 57（D-62 新增）依赖 `/api/empirical` 的 5 个顶层字段（corpus/adversarial/e_benchmarks/review/honest_note）但 D-103 固化的字段断言只覆盖 `/api/ecosystem` → `run_webui_api_smoke.py` 新增 **`EMPIRICAL_REQUIRED_FIELDS` 13 条断言**（含 e_benchmarks[0] 元素 id/empirical_id/golden/tol），实跑 PASS 44→**57**、FAIL=0；D-103 断言集漂移复核零；README/CHANGELOG/规划文档计数一致性全对。
 > **v0.6.11 持续维护**（2026-08-25 · D-109）：**all 集 74 项全量回归（D-104~D-108 五轮修复后最强门禁复核）**——覆盖 D-01~D-108 全部资产 + L1 MCP/CLI + agent 自迭代闭环 + 实证锚，**74 PASS / 0 FAIL（1611.76s）全绿**；🔴 回归发现 `run_ci_industrial_smoke` 每次运行重新创建坏 smoke 且沙箱删除失败残留（D-101 曾清一次）→ **根治**（多重删除 + unlink 兜底 + 失败改名 .bak 隔离，验证零残留），计数修复（73→74）；面板端点覆盖盘点（38 个 JS 调用：生态/实证 44 条字段断言 + 10 POST 实跑，26 个重计算端点按设计走路由静态验证 + 内核专用 smoke，无高价值缺口）。
 > **v0.6.12 持续维护**（2026-08-25 · D-110）：**社区文档一致性 + core 覆盖补强**——🔴 发现 `BOUNTY.md` 评审流程陈旧（仍写"维护者直写 seed_empirical.json"，D-62 前旧流程）→ 更新为社区评审流（submit_measurement→具名评审→land→empirical_contributions.json，面板 57/API 可提交）；`run_ci_industrial_smoke`（FAIL 检出机制 + 性能基准，zz_bad 残留根治的守卫）此前不在 CORE_SMOKES → **纳入 core 门禁（36 条）**；CONTRIBUTING/BOUNTY 无陈旧计数、design_package_schema 语法有效。
+> **v0.6.13 持续维护**（2026-08-25 · D-111）：**CI 基础设施 + 开源门面核查**——`.github/workflows/ci.yml` 健康（job2 `industrial-regression` 已走 `run_ci_regression --tag core` 统一入口自动发现 36 条 + 安装含 jsonschema，D-99 教训已落实；job1 为历史检查保留无破坏）；LICENSE（MIT）与 README 声明一致；🔴 发现 **AUTHORS.md 缺失**（BOUNTY 承诺"贡献者署名进 AUTHORS + Hall of Fame"但文件不存在）→ **补齐**（维护者 + 社区评审流署名机制 + Hall of Fame 说明）+ README 许可证段补引用。
 
 ## 这是什么
 
@@ -238,3 +239,5 @@ LDA 开源生态靠**双引擎**驱动——有时间有热情的**学生**、�
 ## 许可证
 
 [MIT](LICENSE)
+
+贡献者署名见 [AUTHORS](AUTHORS.md)（社区评审流收录机制见 [BOUNTY](BOUNTY.md)）。

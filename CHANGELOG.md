@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.8.4（2026-08-26 · 内核纵深 C · CPW λ/4 读出谐振器 1D 传输线 FDTD）
+
+**里程碑：量子域内核纵深第一击——超导量子比特读出谐振器真跑 1D 传输线 FDTD，基模频率对物理定律锚 B22 死标量比对（纯 numpy 零 GPU）；与 Transmon 引擎配对构成 QEDA「比特+读出」基础单元。**
+
+### 核心能力
+- **B22 物理定律锚**（`golden.py` + `benchmarks.py`）：CPW λ/4 读出谐振器（远端短路/近端开路）基模频率 `f0 = c0/(4·L·n_eff)`（传输线理论，n_eff=√ε_eff 为 CPW 有效折射率，Si 衬底典型 2.5；确定性、零拟合）。
+- **`device_library.verify_qres_fdtd`**：自包含 **1D 传输线 FDTD** 求解核（V/I leapfrog 时域步进 + 开路端注入高斯脉冲 + FFT 提取基模，与 2D Yee 场求解器互补的新求解核家族），contract（快，CI）+ live（真跑 FDTD）双模式；live 提取 f0 与 B22 锚比对，rel ≤ 3% PASS。实测 L=2/4/6mm → FDTD 与锚吻合 0.09%~0.27%。
+- **设计闭环引擎新增 `ReadoutResonator`**（`design_engine.py`）：网格搜索谐振器长度 L 命中目标 f0；cheap ORACLE = B22 解析（瞬时），仅对 top-K 跑真实 1D TL-FDTD 双重验证；`secondary=("L_um", False)` 偏好更紧凑读出线。
+- **统一设计包注册 `engine_qres`**（`design_package.py` 六处）：引擎闭环目录 6→**7 类**（7 引擎 + 11 包 = 18 类端到端）；WebUI 旗舰面板经 `engine_catalog()` 自动纳入，无需改前端。
+- **门禁新增**：`run_qres_anchor_smoke.py`（B22 harness PASS + 引擎最优 f0==b22 解析，死标量）；`run_design_outcome_smoke.py` 扩展 `engine_qres` 端到端。
+
+> 注：v0.7.0（芯片级补强 P1 收官）+ v0.8.0~v0.8.2（产品化外壳 / MZI 引擎 + B20 锚）详见提交历史；本条目聚焦 v0.8.4 读出谐振器内核纵深。
+
 ## v0.8.3（2026-08-26 · 内核纵深 B · 光子晶体腔 PhC 2D FDTD）
 
 **里程碑：光子域内核纵深第二击——光子晶体腔（布拉格镜 Fabry–Perot 腔）真跑 2D FDTD，共振波长对物理定律锚 B21 死标量比对（纯 numpy 零 GPU）。**

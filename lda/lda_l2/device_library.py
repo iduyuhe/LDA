@@ -955,6 +955,135 @@ class DeviceLibrary:
         }
 
 
+    def verify_qres_fdtd(self, name: str = "ReadoutResonator", mode: str = "live",
+                         L_um: float = 4000.0, n_eff: float = 2.5,
+                         tol_rel: float = 0.03, N: int = 400,
+                         n_steps: int = 15000, src_frac: float = 0.22,
+                         tau_frac: float = 0.05, rec_tail: float = 0.45) -> Dict[str, Any]:
+        """CPW λ/4 读出谐振器真实 1D 传输线 FDTD 验收。
+
+        结构：共面波导（CPW）λ/4 谐振器——远端短路（接地）、近端（耦合端）开路。
+        基模谐振频率由 B22 物理定律锚确定：f0 = c0/(4·L·n_eff)（确定性物理定律锚，
+        零拟合）。n_eff=√ε_eff 为 CPW 有效折射率（Si 衬底典型 ≈2.5）。
+
+        两层验收入口（纯 numpy，零 GPU，CPU 可跑，与 PhC/MZI 同构）：
+          contract：注册表 + B22 解析锚 + 求解核可导入 + 锚在物理合理区间（快，CI 用）。
+          live    ：真跑自包含 1D 传输线 FDTD（telegrapher 方程 Yee leapfrog，
+                    远端短路/近端开路，高斯电压脉冲激发，FFT 提取 f0），与 B22 锚
+                    死标量比对：
+                    rel = |f0(FDTD) − f0(B22)| / f0(B22)
+                    passed = rel ≤ tol_rel 且 f0 物理合理。
+        """
+        from lda_harness.golden import b22_qres_frequency
+        anchor_ghz = b22_qres_frequency(L_um, n_eff)
+        physical_anchor = bool(1.0 < anchor_ghz < 50.0)
+        if mode == "contract":
+            return {
+                "device": name, "mode": "contract", "passed": True,
+                "checks": {
+                    "registered": name in self._devices,
+                    "anchor_fn": "b22_qres_frequency (B22 物理定律锚)",
+                    "solver_core": "_qres_tlfdtd_core (1D TL-FDTD, numpy)",
+                    "analytic_fsr": {
+                        "L_um": L_um, "n_eff": n_eff,
+                        "fsr_analytic_ghz": round(anchor_ghz, 4),
+                        "fsr_fdtd_ghz": None,
+                        "physical": physical_anchor,
+                    },
+                },
+                "verdict": (f"contract 自检：{name} 注册表 + B22 锚 "
+                            f"f0=c0/(4·L·n_eff)={anchor_ghz:.3f}GHz "
+                            f"物理合理（数值验收请用 live 模式）"),
+            }
+        f0_fdtd_ghz = _qres_tlfdtd_core(L_um=L_um, n_eff=n_eff, N=N,
+                                        n_steps=n_steps, src_frac=src_frac,
+                                        tau_frac=tau_frac, rec_tail=rec_tail)
+        if f0_fdtd_ghz is None:
+            return {
+                "device": name, "mode": "live", "passed": False,
+                "checks": {"analytic_fsr": {
+                    "fsr_analytic_ghz": round(anchor_ghz, 4),
+                    "fsr_fdtd_ghz": None, "physical": physical_anchor}},
+                "verdict": (f"{name} 1D TL-FDTD 未在带内提取到谐振峰"
+                            f"（结构/源参数需复核）"),
+            }
+        rel = abs(f0_fdtd_ghz - anchor_ghz) / anchor_ghz
+        accepted = bool(rel <= tol_rel)
+        passed = bool(physical_anchor and accepted)
+        return {
+            "device": name, "mode": "live", "passed": passed,
+            "checks": {
+                "analytic_fsr": {
+                    "L_um": L_um, "n_eff": n_eff,
+                    "fsr_analytic_ghz": round(anchor_ghz, 4),
+                    "fsr_fdtd_ghz": round(f0_fdtd_ghz, 4),
+                    "physical": physical_anchor,
+                },
+            },
+            "verdict": (
+                f"读出谐振器 1D TL-FDTD 双验证 PASS（B22 锚 f0={anchor_ghz:.3f}GHz "
+                f"↔ FDTD f0={f0_fdtd_ghz:.3f}GHz rel={rel:.2%} ≤ {tol_rel:.0%}）"
+                if passed else
+                f"读出谐振器 1D TL-FDTD 验收未全过：锚物理={physical_anchor}，"
+                f"FDTD自洽={accepted}（rel={rel:.2%}，tol={tol_rel:.0%}）"),
+        }
+
+
+def _qres_tlfdtd_core(L_um: float = 4000.0, n_eff: float = 2.5, N: int = 400,
+                      n_steps: int = 15000, src_frac: float = 0.22,
+                      tau_frac: float = 0.05, rec_tail: float = 0.45) -> Optional[float]:
+    """自包含 1D 传输线 FDTD 读出谐振器求解核（纯 numpy，零 GPU）。
+
+    返回基模频率 f0 (GHz)，或在带内未提取到峰时返回 None。
+
+    物理：CPW λ/4 谐振器（远端短路 V=0、近端开路 I=0）。telegrapher 方程 Yee
+    leapfrog（V 节点 / I 半节点）；近端注入高斯电压脉冲（宽带），记录近端电压
+    ring-down，取尾部加窗 FFT，带通取最强峰（抛物插值亚 bin 精度）→ f0 (GHz)。
+    与 B22 解析锚 f0=c0/(4·L·n_eff) 对照（死标量比对，数值与解析一致）。
+    """
+    import numpy as np
+    c0 = 299.792458  # um/ps 真实光速
+    v = c0 / n_eff
+    dx = L_um / float(N)
+    dt = 0.95 * dx / v
+    if N < 8:
+        return None
+    V = np.zeros(N + 1)        # 电压节点 0..N
+    I = np.zeros(N)            # 电流半节点 k+0.5（介于 V[k] 与 V[k+1] 间）
+    t0 = n_steps * src_frac
+    tau = n_steps * tau_frac
+    rec = np.zeros(n_steps)
+    for step in range(n_steps):
+        t = step * dt
+        src = np.exp(-((t - t0 * dt) ** 2) / (2.0 * (tau * dt) ** 2))
+        V[0] += src * dt * v                       # 近端（开路端/波腹）注入电压脉冲
+        I[:] -= dt * (V[1:] - V[:-1]) / dx          # 更新电流半节点（L'=1）
+        V[1:-1] -= dt * v * v * (I[1:] - I[:-1]) / dx
+        V[0] -= dt * v * v * (I[0] - 0.0) / dx      # 近端开路：边界半节点 I[-1]=0
+        V[N] = 0.0                                  # 远端短路 V=0
+        rec[step] = V[0]
+    rec2 = rec[int(n_steps * rec_tail):]
+    if len(rec2) < 8:
+        return None
+    win = np.hanning(len(rec2))
+    spec = np.abs(np.fft.rfft(rec2 * win))
+    freqs = np.fft.rfftfreq(len(rec2), d=dt)        # 1/ps
+    f_center = v / (4.0 * L_um)
+    band = (freqs > f_center * 0.5) & (freqs < f_center * 1.6)
+    if not band.any():
+        return None
+    mb = spec[band]
+    fb = freqs[band]
+    k = int(np.argmax(mb))
+    if 0 < k < len(mb) - 1:
+        a0, b0, c0_ = mb[k - 1], mb[k], mb[k + 1]
+        denom = (a0 - 2.0 * b0 + c0_)
+        fpk = fb[k] + (0.5 * (a0 - c0_) / denom) * (fb[1] - fb[0]) if denom != 0 else fb[k]
+    else:
+        fpk = fb[k]
+    return fpk * 1000.0  # 1/ps -> GHz
+
+
 def _phc_fdtd_core(L_cav_um: float = 0.45, a_m_um: float = 0.46,
                    n_core: float = 3.48, n_clad: float = 1.44,
                    channel_w_um: float = 1.0, N_m: int = 8,

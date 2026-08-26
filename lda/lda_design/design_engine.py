@@ -50,6 +50,7 @@ class DesignEngine:
     def _build_specs(self) -> Dict[str, Dict[str, Any]]:
         from lda_harness.oracle_mode import _slab_te_neff  # noqa: E402
         from lda_harness.golden import b21_phc_resonance  # noqa: E402
+        from lda_harness.golden import b22_qres_frequency  # noqa: E402
         import tmm  # lda_solver/tmm.py  # noqa: E402
         from lda_solver.transmon_solver import koch_f01  # noqa: E402
         from lda_agent.ring_loop import ring_fsr_analytic_nm  # noqa: E402
@@ -170,6 +171,26 @@ class DesignEngine:
                     "L_cav（B21 物理定律锚，确定性、零拟合）。网格搜索 L_cav 命中"
                     "目标共振；2D FDTD 提取真实腔共振与锚死标量比对（纯 numpy "
                     "零 GPU）。与 MZI/环形并列的光子共振器件，且是真跑全波 FDTD。",
+        },
+        "ReadoutResonator": {
+            "title": "CPW λ/4 读出谐振器 · 目标基模频率 f0（1D 传输线 FDTD + 传输线锚）",
+            "sweep": [("L_um", 1000.0, 8000.0, 250.0)],
+            "fixed": dict(n_eff=2.5, tol_rel=0.03, N=400, n_steps=15000,
+                          src_frac=0.22, tau_frac=0.05, rec_tail=0.45),
+            "verify": lambda mode, target_f01, **kw:
+                self.lib.verify_qres_fdtd(mode=mode, **kw),
+            "cheap": lambda combo, target: b22_qres_frequency(
+                combo["L_um"], 2.5),
+            "extract": lambda r: r["checks"]["analytic_fsr"]["fsr_fdtd_ghz"],
+            "metric_name": "f0 (1D TL-FDTD, GHz)",
+            "target_unit": "GHz",
+            "analytic_only": False,
+            "secondary": ("L_um", False),  # 偏好较短（更紧凑的读出线）
+            "note": "CPW λ/4 读出谐振器（超导量子比特读出）：f0=c0/(4·L·n_eff)"
+                    "（B22 物理定律锚，确定性、零拟合）。网格搜索 L 命中目标"
+                    "谐振频率；1D 传输线 FDTD 提取真实 f0 与锚死标量比对"
+                    "（纯 numpy 零 GPU）。与 Transmon 引擎配对构成 QEDA"
+                    "「比特+读出」基础单元。",
         },
         }
         return specs

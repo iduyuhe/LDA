@@ -15,6 +15,7 @@ from .golden import (
     b17_jj_critical_current, b18_purcell_factor, b19_link_passivity_bound,
     b20_mzi_fsr,
     b21_phc_resonance,
+    b22_qres_frequency,
 )
 
 BENCHMARK_DEFS = {
@@ -236,6 +237,20 @@ BENCHMARK_DEFS = {
                  "2D FDTD 全波验证吻合 ~2%）。确定性物理定律锚，"
                  "LLM 不进判决路径；harness 默认 ReferenceCandidate 自洽 PASS。"),
     },
+    # ---- 内核纵深（v0.8.4）：CPW λ/4 读出谐振器基模频率物理定律锚 ----
+    "B22": {
+        "title": "CPW λ/4 读出谐振器基模频率 f0",
+        "metric": "qres_f_ghz",
+        "oracle": "analytical(CPW λ/4 TL resonance)",
+        "tol": 1e-6,
+        "default_params": {"L_um": 4000.0, "n_eff": 2.5},
+        "golden_fn": b22_qres_frequency,
+        "note": ("超导量子比特读出谐振器 = 共面波导（CPW）λ/4 谐振器（远端短路/"
+                 "近端开路）；基模 f0=c0/(4·L·n_eff)（传输线理论，n_eff=√ε_eff "
+                 "为 CPW 有效折射率，Si 衬底典型 ≈2.5）。确定性物理定律锚，"
+                 "LLM 不进判决路径；harness 默认 ReferenceCandidate 自洽 PASS。"
+                 "与 Transmon 引擎配对补强 QEDA「比特+读出」基础单元。"),
+    },
     # ---- D-62 实证大数据锚（第二道非 AI ground：真实测量语料）----
     # anchor=empirical 的题：golden 来自 EmpiricalCorpus 实测语料（seed_empirical.json
     # + 社区经评审流落库的语料），非解析函数（golden_fn=None）。
@@ -280,7 +295,7 @@ BENCHMARK_DEFS = {
 # 对齐顺序（报告展示用）
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
-                   "B19", "B20", "B21",
+                   "B19", "B20", "B21", "B22",
                    "E1", "E2", "E3"]
 
 

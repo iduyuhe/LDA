@@ -101,6 +101,26 @@ class DesignOutcomeSmoke(unittest.TestCase):
         self.assertIsNotNone(best_lam)
         self.assertAlmostEqual(best_lam, golden, delta=0.05 * golden)
 
+    def test_engine_qres_package(self):
+        from lda_design.design_package import (
+            package_from_engine, validate_package,
+        )
+        pkg = package_from_engine("engine_qres", 7.5, top_k=3)
+        self.assertTrue(pkg.get("ok"), msg=pkg.get("error"))
+        self.assertEqual(pkg["domain"], "quantum")
+        self.assertEqual(pkg["kind"], "engine_qres")
+        v = pkg["verification"]
+        # QRES 为真跑 1D TL-FDTD：闭环 + 真实求解器双重验证通过即 PASS
+        self.assertTrue(v["passed"], msg=v.get("verdict"))
+        self.assertEqual(validate_package(pkg), [])
+        # 校验最优候选 f0 与物理定律锚 B22 一致（死标量比对）
+        best = pkg["artifacts"]["engine_result"]["best"]
+        best_f0 = best["metric"]
+        from lda_harness.golden import b22_qres_frequency
+        golden = b22_qres_frequency(best["params"]["L_um"], 2.5)
+        self.assertIsNotNone(best_f0)
+        self.assertAlmostEqual(best_f0, golden, delta=0.05 * golden)
+
     def test_package_all_11(self):
         from lda_design.design_package import (
             build_package, validate_package, PACKAGE_KINDS,

@@ -381,6 +381,22 @@ def b21_phc_resonance(L_cav_um: float = 0.45, n_core: float = 3.48,
     return 1000.0 * (n_core + n_clad) * L_cav_um
 
 
+def b22_qres_frequency(L_um: float = 4000.0, n_eff: float = 2.5) -> float:
+    """CPW λ/4 读出谐振器基模频率（确定性物理定律锚）。
+
+    超导量子比特读出谐振器 = 共面波导（CPW）传输线 λ/4 谐振器：远端短路
+    （接地）、近端（耦合端）开路。其基模谐振频率由传输线理论确定：
+        f0 = c0 / (4 · L · n_eff)
+    其中 c0 为真空中光速（um/ps），L 为谐振器物理长度（um），
+    n_eff = √ε_eff 为 CPW 有效折射率（ε_eff 为等效介电常数；Si 衬底
+    （ε_r≈11.7）上对称 CPW 典型 ε_eff≈(ε_r+1)/2≈6.35 → n_eff≈2.52）。
+    返回单位 GHz。与 B4（环形谐振 FSR）、B12（集总 LC 谐振）、B21（光子晶体腔
+    共振）同属"周期/谐振结构"物理定律锚家族，互为对照验证地基；并直接补强
+    QEDA 栈——与 Transmon 引擎配对构成"比特 + 读出"基础单元。
+    """
+    return 1000.0 * 299.792458 / (4.0 * L_um * n_eff)
+
+
 _GOLDEN_DISPATCH = {
     "B1": b1_mie_qscat,
     "B2": b2_soi_waveguide_neff,
@@ -402,12 +418,13 @@ _GOLDEN_DISPATCH = {
     "B18": b18_purcell_factor,
     "B19": b19_link_passivity_bound,
     "B20": b20_mzi_fsr,
-    "B21": b21_phc_resonance,
+        "B21": b21_phc_resonance,
+        "B22": b22_qres_frequency,
 }
 
 _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
-                 "B12", "B13", "B14", "B15", "B16", "B17", "B18", "B19", "B20",
-                 "B21"}
+                 "B12", "B13", "B14", "B15", "B16", "B17", "B18",                  "B19", "B20",
+                 "B21", "B22"}
 
 
 def golden_value(bid, params):

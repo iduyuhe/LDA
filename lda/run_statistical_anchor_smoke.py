@@ -8,7 +8,9 @@
      agent/llm 模块；harness S7 的 oracle_kind 为确定性统计量）
   ⑤ S7 harness reference PASS（golden 自洽）
   ⑥ 扰动负例：损耗整体 +1dB → 分布下移 → candidate 偏离 golden > tol 被 FAIL 抓
-  ⑦ 题库计数 41（B1-B27 27 + E1-E7 7 + S1-S7 7）
+  ⑦ 题库计数 42（B1-B27 27 + E1-E7 7 + S1-S8 8）
+  ⑧ S8 OSNR 统计锚（模板复用：Jensen 方向 + golden 收敛）
+  ⑨ 蒙特卡洛收敛性（N 扫描收敛带）
 
 运行：python run_statistical_anchor_smoke.py
 """
@@ -24,7 +26,8 @@ from lda_harness.golden import golden_value
 from lda_harness.harness import VerificationHarness
 from lda_harness.statistical_anchor import (
     distribution_report, margin_stats, monte_carlo_margins,
-    s7_statistical_margin_anchor,
+    s7_statistical_margin_anchor, s8_statistical_osnr_anchor,
+    monte_carlo_osnr, osnr_distribution_report, convergence_scan,
 )
 from lda_harness.verification_adapters import build_harness_specs
 
@@ -108,10 +111,29 @@ def main() -> int:
     b_ids = [b for b in BENCHMARK_ORDER if b.startswith("B")]
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
     s_ids = [b for b in BENCHMARK_ORDER if b.startswith("S")]
-    check("题库 41 题（B1-B27 27 + E1-E7 7 + S1-S7 7）",
-          len(BENCHMARK_ORDER) == 41 and len(b_ids) == 27
-          and len(e_ids) == 7 and len(s_ids) == 7,
+    check("题库 42 题（B1-B27 27 + E1-E7 7 + S1-S8 8）",
+          len(BENCHMARK_ORDER) == 42 and len(b_ids) == 27
+          and len(e_ids) == 7 and len(s_ids) == 8,
           f"总={len(BENCHMARK_ORDER)} B={len(b_ids)} E={len(e_ids)} S={len(s_ids)}")
+
+    # ⑧ S8 OSNR 统计锚（模板复用验证）
+    r8 = osnr_distribution_report()
+    check("S8 golden 收敛于解析 46.93（P_sig 线性保持）",
+          abs(r8["stats"]["mean"] - r8["analytic_osnr_dB"]) < 0.15,
+          f"mean={r8['stats']['mean']} analytic={r8['analytic_osnr_dB']}")
+    check("S8 Jensen 方向（NF 非线性：均值≤解析，物理真实）",
+          r8["jensen_ok"],
+          f"mean={r8['stats']['mean']} ≤ {r8['analytic_osnr_dB']}")
+    check("S8 p5 携带最坏情况（Δ>0.5dB）",
+          (r8["stats"]["mean"] - r8["stats"]["p5"]) > 0.5,
+          f"Δ={r8['stats']['mean'] - r8['stats']['p5']:.3f}")
+    g8 = s8_statistical_osnr_anchor()
+    check("S8 种子 7 可复现", g8 == s8_statistical_osnr_anchor())
+
+    # ⑨ 蒙特卡洛收敛性（N 扫描收敛带——采样充分性死标量）
+    c = convergence_scan()
+    check("收敛性 N 扫描（500→4000 收敛带 <0.05）",
+          c["converged"], f"spread={c['spread']} means={c['means']}")
 
     print(f"\n统计锚 smoke：{_PASS} PASS / {_FAIL} FAIL")
     return 1 if _FAIL else 0

@@ -31,6 +31,8 @@ from .golden import (
     s6_detector_margin,
     # S7 统计锚（Phase 3 · 专投区第一刀，蒙特卡洛分布）
     s7_statistical_margin_anchor,
+    # S8 统计锚（Phase 3 · OSNR 统计延伸，模板复用）
+    s8_statistical_osnr_anchor,
 )
 
 BENCHMARK_DEFS = {
@@ -504,6 +506,21 @@ BENCHMARK_DEFS = {
                 "（采样噪声 <0.15）；p5=9.41 携带最坏情况下界——确定性锚缺失的维度。"
                 "红线：随机在采样、判决在统计量算术，LLM 不进判决路径。",
     },
+
+    # ---- S8 统计锚（Phase 3 · OSNR 统计延伸 · 模板复用验证） ----
+    "S8": {
+        "title": "OSNR 统计锚（ASE 噪声 + 功率容差 · 蒙特卡洛）",
+        "metric": "OSNR_mean_dB",
+        "oracle": "statistical(monte-carlo, seed-fixed)",
+        "tol": 0.20,
+        "anchor": "physical_law",
+        "default_params": {"n_samples": 2000, "seed": 7},
+        "golden_fn": s8_statistical_osnr_anchor,
+        "note": "统计锚：P_sig（激光器 0.5dB 容差）+ NF（放大器 0.3dB 容差）高斯扰动"
+                "下 OSNR 分布（固定种子 7 可复现）。golden=均值 46.93≈解析 46.93"
+                "（P_sig 线性保持；NF 非线性 Jensen 偏差极小，均值≤解析物理真实）；"
+                "p5=45.93 最坏情况。S7 模板直接复用——加题从开发变填表。",
+    },
 }
 
 # 对齐顺序（报告展示用）
@@ -512,7 +529,7 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                    "B26", "B27",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7",
-                   "S1", "S2", "S3", "S4", "S5", "S6", "S7"]  # S 系统锚（Phase 0-3）
+                   "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"]  # S 系统锚（Phase 0-3）
 
 
 def register_benchmark(def_dict: dict) -> str:

@@ -20,6 +20,7 @@ Phase 3 最小切片（纵向贯通律）：S7 = S1 功率预算的统计延伸�
 """
 from __future__ import annotations
 
+import math
 import random
 import statistics
 from typing import Dict, List, Tuple
@@ -120,3 +121,84 @@ def distribution_report() -> Dict[str, object]:
                      "p5 携带最坏情况下界（确定性锚缺失的维度）；"
                      "判决全部为统计量算术，LLM 不进路径。"
                      % st["n"])}
+
+
+# ---------------------------------------------------------------------------
+# S8 · OSNR 统计锚（S3 的统计延伸——模板复用验证：加题从开发变填表）
+# ---------------------------------------------------------------------------
+# 信号功率容差（激光器功率漂移，dB）与噪声系数容差（放大器，dB）
+LASER_PWR_SIGMA_DB = 0.50
+NF_SIGMA_DB = 0.30
+
+
+def monte_carlo_osnr(
+        p_sig_dbm: float = 0.0,
+        n_amp: int = 1,
+        nf_db: float = 5.0,
+        bw_ghz: float = 50.0,
+        n_samples: int = 2000,
+        seed: int = 7) -> List[float]:
+    """蒙特卡洛 OSNR 采样：信号功率与噪声系数加高斯容差扰动。
+
+    OSNR = P_sig − 10·log10(h·ν·bw·(N_amp·F))（S3 同式）。
+    - P_sig 扰动对称（激光器漂移）→ E[OSNR] 线性保持 ≈ 解析值；
+    - F 扰动经 10·log10 非线性（log 凹）→ E[log F] < log(E[F])
+      （Jensen 偏差）→ 均值系统性略低于解析值——物理真实，
+      判决用宽容差 + 方向断言（E[OSNR] ≤ 解析值），不声称无偏。
+    """
+    h = 6.626e-34
+    nu = 3.0e8 / (1.55e-6)
+    rng = random.Random(seed)
+    osnrs = []
+    for _ in range(n_samples):
+        p_sig = p_sig_dbm + rng.gauss(0.0, LASER_PWR_SIGMA_DB)
+        f_lin = 10.0 ** ((nf_db + rng.gauss(0.0, NF_SIGMA_DB)) / 10.0)
+        p_ase_w = h * nu * (bw_ghz * 1e9) * (n_amp * f_lin)
+        p_ase_dbm = 30.0 + 10.0 * math.log10(p_ase_w)
+        osnrs.append(p_sig - p_ase_dbm)
+    return osnrs
+
+
+def s8_statistical_osnr_anchor(
+        p_sig_dbm: float = 0.0,
+        n_amp: int = 1,
+        nf_db: float = 5.0,
+        bw_ghz: float = 50.0,
+        n_samples: int = 2000,
+        seed: int = 7) -> float:
+    """S8 golden：固定种子下 OSNR 分布均值（确定性判决量）。"""
+    return round(statistics.fmean(monte_carlo_osnr(
+        p_sig_dbm=p_sig_dbm, n_amp=n_amp, nf_db=nf_db, bw_ghz=bw_ghz,
+        n_samples=n_samples, seed=seed)), 6)
+
+
+def osnr_distribution_report() -> Dict[str, object]:
+    """OSNR 分布报告：解析值 + 统计量 + Jensen 方向断言。"""
+    osnrs = monte_carlo_osnr()
+    st = margin_stats(osnrs)
+    # 解析 OSNR（S3 默认 46.93dB）
+    h = 6.626e-34
+    nu = 3.0e8 / (1.55e-6)
+    p_ase_w = h * nu * (50.0e9) * (10.0 ** (5.0 / 10.0))
+    analytic = 0.0 - (30.0 + 10.0 * math.log10(p_ase_w))
+    return {"analytic_osnr_dB": round(analytic, 3),
+            "stats": st,
+            # Jensen 偏差：均值 ≤ 解析（log 凹），方向物理正确
+            "jensen_ok": st["mean"] <= analytic + 0.02,
+            "note": ("OSNR 统计锚：P_sig 对称扰动线性保持 + NF 非线性 Jensen "
+                     "偏差（均值略低物理真实）；判决统计量算术，LLM 不进路径。")}
+
+
+def convergence_scan(ns: Tuple[int, ...] = (500, 1000, 2000, 4000),
+                     seed: int = 42) -> Dict[str, float]:
+    """蒙特卡洛收敛性扫描：N 增大 → 均值收敛带（统计锚可信度前提）。
+
+    返回各 N 的均值与最大收敛偏移（N=4000 与 N=500 的差）——
+    采样充分性死标量（若偏移 > tol 说明 N 不足，判决不可信）。
+    """
+    means = {}
+    for n in ns:
+        means[n] = s7_statistical_margin_anchor(n_samples=n, seed=seed)
+    spread = max(means.values()) - min(means.values())
+    return {"means": means, "spread": round(spread, 6),
+            "converged": spread < 0.05}

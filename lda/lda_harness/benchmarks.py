@@ -361,6 +361,50 @@ BENCHMARK_DEFS = {
         "golden_fn": None,
         "note": "实证锚：golden=语料实测值 9.15±0.1（环形谐振器公开测试数据）；比对=|candidate−measured|≤σ。",
     },
+    "E4": {
+        "title": "SOI 波导 crossing 插入损耗（实证语料锚）",
+        "metric": "insertion_loss_dB",
+        "oracle": "empirical-measurement(E-SOI-CROSS-IL)",
+        "tol": 0.1,
+        "anchor": "empirical",
+        "empirical_id": "E-SOI-CROSS-IL",
+        "default_params": {"w_um": 0.5, "h_um": 0.22, "wl_um": 1.55},
+        "golden_fn": None,
+        "note": "实证锚：golden=语料实测值 0.18±0.03 dB（CMOS 兼容 crossing，8 英寸晶圆，Zhang PTL 2013）；比对=|candidate−measured|≤tol。",
+    },
+    "E5": {
+        "title": "MMI 1×2 过量损耗（实证语料锚）",
+        "metric": "excess_loss_dB",
+        "oracle": "empirical-measurement(E-MMI-1X2-EL)",
+        "tol": 0.1,
+        "anchor": "empirical",
+        "empirical_id": "E-MMI-1X2-EL",
+        "default_params": {"w_um": 0.5, "h_um": 0.22, "wl_um": 1.55},
+        "golden_fn": None,
+        "note": "实证锚：golden=语料实测值 0.05 dB（SOI MMI 1×2，TE 1550nm，Chack & Hassan OE 2020）；比对=|candidate−measured|≤tol。",
+    },
+    "E6": {
+        "title": "厚 SiN 波导传播损耗（实证语料锚）",
+        "metric": "propagation_loss_dBcm",
+        "oracle": "empirical-measurement(E-SIN-PL-800)",
+        "tol": 0.05,
+        "anchor": "empirical",
+        "empirical_id": "E-SIN-PL-800",
+        "default_params": {"w_um": 0.8, "h_um": 0.8, "wl_um": 1.55},
+        "golden_fn": None,
+        "note": "实证锚：golden=语料实测值 0.087±0.01 dB/cm（8 英寸厚 SiN cut-back，1550nm，光子学报 2024）；比对=|candidate−measured|≤tol。",
+    },
+    "E7": {
+        "title": "SOI 波导 crossing 串扰（实证语料锚）",
+        "metric": "crosstalk_dB",
+        "oracle": "empirical-measurement(E-SOI-CROSS-XT)",
+        "tol": 5.0,
+        "anchor": "empirical",
+        "empirical_id": "E-SOI-CROSS-XT",
+        "default_params": {"w_um": 0.5, "h_um": 0.22, "wl_um": 1.55},
+        "golden_fn": None,
+        "note": "实证锚：golden=语料实测值 −41±2 dB（CMOS 兼容 crossing 串扰，Zhang PTL 2013）；比对=|candidate−measured|≤tol。",
+    },
 }
 
 # 对齐顺序（报告展示用）
@@ -368,7 +412,7 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                    "B26", "B27",
-                   "E1", "E2", "E3"]
+                   "E1", "E2", "E3", "E4", "E5", "E6", "E7"]
 
 
 def register_benchmark(def_dict: dict) -> str:

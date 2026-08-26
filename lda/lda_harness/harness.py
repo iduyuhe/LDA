@@ -2,9 +2,37 @@
 
 职责：把 L0 IR（或内置默认）的 verification.benchmarks 与确定性黄金参考
 挂钩，运行候选求解器输出，按 tol 判定 pass/fail，产出结果供人验收。
-黄金参考 = 非 AI 的物理定律锚（见 golden.py / 《白皮书》§11）。
+黄金参考 = 非 AI 的物理定律锚（见 golden.py / 《白皮书》§11）+ 实证大数据锚
+（D-62：E 题 golden 来自真实测量语料，见 empirical_bank.py）。
 """
+import os
+
 from .golden import golden_value, golden_with_source
+
+
+def _default_empirical_anchor():
+    """加载默认实证语料锚（seed_empirical.json + 社区落库增量）。
+
+    供 VerificationHarness 默认注入；语料缺失时返回 None（E 题诚实降级）。
+    """
+    try:
+        from .empirical_bank import EmpiricalCorpus, EmpiricalAnchor
+    except Exception:  # noqa: BLE001 —— empirical_bank 依赖缺失时降级
+        return None
+    here = os.path.dirname(os.path.abspath(__file__))
+    seed = os.path.join(here, "seed_empirical.json")
+    corpus = EmpiricalCorpus.load(seed)
+    contrib = os.path.join(os.path.dirname(here), "lda_pdk",
+                           "empirical_contributions.json")
+    if os.path.exists(contrib):
+        try:
+            extra = EmpiricalCorpus.load(contrib)
+            corpus._items.update(extra._items)
+        except Exception:  # noqa: BLE001 —— 增量损坏不阻断默认语料
+            pass
+    if not corpus._items:
+        return None
+    return EmpiricalAnchor(corpus)
 
 
 class BenchmarkResult:
@@ -24,7 +52,13 @@ class BenchmarkResult:
 class VerificationHarness:
     def __init__(self, defs, anchor=None):
         self.defs = defs
-        self.anchor = anchor  # D-62 实证大数据锚（EmpiricalAnchor）——第二道非 AI ground
+        # D-62 实证大数据锚（EmpiricalAnchor）——第二道非 AI ground。
+        # anchor 未显式注入时默认加载内置语料（seed_empirical.json + 社区落库
+        # empirical_contributions.json），使 E 题在 CLI/默认路径真实生效；
+        # 显式传 None 的场景可自行控制（如纯物理定律演示）。
+        if anchor is None:
+            anchor = _default_empirical_anchor()
+        self.anchor = anchor
 
     def resolve_specs(self, l0_ir=None):
         """解析 benchmark 规格。

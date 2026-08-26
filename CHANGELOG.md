@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.8.11（2026-08-26 · 实证锚语料扩充 · 题库 30→34）
+
+**里程碑：实证大数据锚（第二道非 AI ground）语料扩充——新增 4 条真实文献语料 + 4 个实证锚题（E4-E7），覆盖新器件族（crossing/MMI/厚 SiN），全部可溯源引用（DOI），诚实边界不变（种子语料为公开文献量级，真实晶圆厂 NDA 实测仍属发动期）。**
+
+### 新增
+- **语料库 `seed_empirical.json` 5→9 条**：
+  - `E-SOI-CROSS-IL`：SOI crossing 插入损耗 0.18±0.03 dB（CMOS 兼容 248nm，8 英寸晶圆，Y. Zhang et al., IEEE PTL 2013, DOI 10.1109/LPT.2013.2241049）
+  - `E-SOI-CROSS-XT`：SOI crossing 串扰 −41±2 dB（同文献，bar/cross 端口功率比）
+  - `E-MMI-1X2-EL`：MMI 1×2 过量损耗 0.05 dB（TE 1550nm，D. Chack & S. Hassan, Opt. Eng. 2020, DOI 10.1117/1.OE.59.10.105102）
+  - `E-SIN-PL-800`：厚 SiN 波导传播损耗 0.087±0.01 dB/cm（8 英寸 LPCVD cut-back，1550nm，丛庆宇 等, 光子学报 2024, DOI 10.3788/gzxb20245309.0913002）
+- **harness 实证锚题 E1-E3 → E1-E7**（BENCHMARK_ORDER 30→34）：E4 crossing IL（tol 0.1）/ E5 MMI EL（tol 0.1）/ E6 SiN 传播损耗（tol 0.05）/ E7 crossing 串扰（tol 5.0）。golden 均经 EmpiricalAnchor 从语料动态 resolve（LLM 不进判决路径）。
+- **实证锚 smoke 扰动检测增强**：E4-E7 为小量值（0.05/0.087 dB 等），固定 10% 相对扰动的绝对偏差可能小于绝对 tol → 扰动幅度改为按题自适应 `rel=max(0.10, 2·tol/|golden|)`（保证扰动偏差 ≥2×tol），检测对全部 7 题有效。
+
+### 同步
+- 计数口径 30→34：`run_empirical_anchor_smoke`（34/34 + E1-E7 golden 断言）、`run_l1_agent_smoke`（reference 34/34、list_benchmarks 34 题）、`run_count_consistency_smoke`（题库 34、E 题 7、README 串"34 题"/"E1-E7"）、README 版本行 v0.8.11。
+- `pyproject.toml` version 0.8.10 → 0.8.11（构建 wheel 部署生产，health 显示同步）。
+
 ## v0.8.10（2026-08-26 · 持续维护：v0.8 系列首轮全量回归 + 计数漂移修复）
 
 **里程碑：v0.8.2-v0.8.9 八连发后首轮持续维护——CI core 全量回归（44 条）捕获 3 项计数/递归缺陷并修复，全绿收官。**

@@ -10,8 +10,17 @@
       "fab_source": "IMEC iSiPP50G 公开 PDK（文献量级）",
       "citation": "iSiPP50G PDK published specs",
       "method": "propagation-constant extraction",
-      "geometry": {"w_core_um": 0.5, "h_core_um": 0.22, "n_si": 3.48, "n_clad": 1.44, "wl_um": 1.55},
-      "tags": ["waveguide", "soi"]
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "waveguide",
+        "soi"
+      ]
     },
     {
       "id": "E-SIN-NEFF-300",
@@ -22,8 +31,17 @@
       "fab_source": "公开 SiN 工艺文献量级",
       "citation": "SiN photonics published data",
       "method": "Mach-Zehnder asymmetry",
-      "geometry": {"w_core_um": 0.5, "h_core_um": 0.3, "n_sin": 2.0, "n_clad": 1.44, "wl_um": 1.55},
-      "tags": ["waveguide", "sin"]
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.3,
+        "n_sin": 2.0,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "waveguide",
+        "sin"
+      ]
     },
     {
       "id": "E-YBRANCH-LOSS",
@@ -34,8 +52,18 @@
       "fab_source": "公开 Y-branch 文献典型值",
       "citation": "MMI/Y-branch published characterization",
       "method": "cutback + optical probing",
-      "geometry": {"w_core_um": 0.5, "h_core_um": 0.22, "n_si": 3.48, "n_clad": 1.44, "wl_um": 1.55, "theta_deg": 10.0},
-      "tags": ["splitter", "ybranch"]
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 1.55,
+        "theta_deg": 10.0
+      },
+      "tags": [
+        "splitter",
+        "ybranch"
+      ]
     },
     {
       "id": "E-RING-FSR",
@@ -46,8 +74,15 @@
       "fab_source": "环形谐振器公开测试数据",
       "citation": "ring resonator published measurement",
       "method": "transmission dip spacing",
-      "geometry": {"R_um": 10.0, "n_g": 4.18, "wl_um": 1.55},
-      "tags": ["ring", "resonator"]
+      "geometry": {
+        "R_um": 10.0,
+        "n_g": 4.18,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "ring",
+        "resonator"
+      ]
     },
     {
       "id": "E-GRATING-EFF",
@@ -58,8 +93,106 @@
       "fab_source": "光栅耦合器公开文献量级",
       "citation": "grating coupler published efficiency",
       "method": "fiber-to-fiber cutback",
-      "geometry": {"wl_um": 1.55, "n_si": 3.48, "n_clad": 1.44, "period_um": 0.63, "ff": 0.5, "theta_deg": 8.0},
-      "tags": ["grating", "coupler"]
+      "geometry": {
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "period_um": 0.63,
+        "ff": 0.5,
+        "theta_deg": 8.0
+      },
+      "tags": [
+        "grating",
+        "coupler"
+      ]
+    },
+    {
+      "id": "E-SOI-CROSS-IL",
+      "device": "SOI waveguide crossing 500x220 nm (CMOS-compatible)",
+      "metric": "insertion_loss_dB",
+      "measured_value": 0.18,
+      "uncertainty_abs": 0.03,
+      "fab_source": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测",
+      "citation": "Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049",
+      "method": "cutback + wafer-level probing（8 英寸晶圆均匀性）",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "crossing",
+        "soi",
+        "routing"
+      ]
+    },
+    {
+      "id": "E-SOI-CROSS-XT",
+      "device": "SOI waveguide crossing 500x220 nm (CMOS-compatible)",
+      "metric": "crosstalk_dB",
+      "measured_value": -41.0,
+      "uncertainty_abs": 2.0,
+      "fab_source": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测",
+      "citation": "Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049",
+      "method": "cross-port 串扰测量（bar/cross 端口功率比）",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "crossing",
+        "soi",
+        "crosstalk"
+      ]
+    },
+    {
+      "id": "E-MMI-1X2-EL",
+      "device": "MMI 1x2 3dB splitter (SOI, 2.8x27 um2 footprint)",
+      "metric": "excess_loss_dB",
+      "measured_value": 0.05,
+      "uncertainty_abs": 0.05,
+      "fab_source": "SOI 平台（EME 设计 + 实验演示）",
+      "citation": "D. Chack & S. Hassan, Opt. Eng. 59(10), 105102 (2020), DOI 10.1117/1.OE.59.10.105102",
+      "method": "TE 模 1550nm 过量损耗（EME 分析 + 实验）",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "mmi",
+        "splitter",
+        "soi"
+      ]
+    },
+    {
+      "id": "E-SIN-PL-800",
+      "device": "Thick SiN strip waveguide 800x800 nm (LPCVD, 8-inch)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.087,
+      "uncertainty_abs": 0.01,
+      "fab_source": "8 英寸晶圆厚 SiN（LPCVD 两步沉积 + 退火，大马士革工艺）",
+      "citation": "丛庆宇 等, 光子学报 53(9), 0913002 (2024), DOI 10.3788/gzxb20245309.0913002",
+      "method": "cut-back 传输损耗测试（1550nm）",
+      "geometry": {
+        "w_core_um": 0.8,
+        "h_core_um": 0.8,
+        "n_sin": 2.0,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "sin",
+        "waveguide",
+        "low-loss"
+      ]
     }
   ],
   "adversarial": [
@@ -71,8 +204,19 @@
       "oracle_type": "empirical-or-fdtd",
       "tol": 0.5,
       "submitted_by": "community",
-      "geometry": {"R_um": 2.0, "w_core_um": 0.5, "h_core_um": 0.22, "n_si": 3.48, "n_clad": 1.44, "wl_um": 1.55},
-      "tags": ["bend", "challenge", "radiation"]
+      "geometry": {
+        "R_um": 2.0,
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "bend",
+        "challenge",
+        "radiation"
+      ]
     },
     {
       "id": "A-CROSS-TIGHT",
@@ -82,8 +226,19 @@
       "oracle_type": "empirical-or-fdtd",
       "tol": 5.0,
       "submitted_by": "community",
-      "geometry": {"gap_um": 0.1, "w_core_um": 0.5, "h_core_um": 0.22, "n_si": 3.48, "n_clad": 1.44, "wl_um": 1.55},
-      "tags": ["crossing", "challenge", "crosstalk"]
+      "geometry": {
+        "gap_um": 0.1,
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "crossing",
+        "challenge",
+        "crosstalk"
+      ]
     },
     {
       "id": "A-TAPER-FAST",
@@ -93,8 +248,20 @@
       "oracle_type": "empirical-or-fdtd",
       "tol": 0.02,
       "submitted_by": "community",
-      "geometry": {"w1_um": 0.2, "w2_um": 0.5, "L_um": 5.0, "wl_um": 1.55, "n_eff": 2.44, "n_core": 3.48, "n_clad": 1.44},
-      "tags": ["taper", "challenge", "adiabatic"]
+      "geometry": {
+        "w1_um": 0.2,
+        "w2_um": 0.5,
+        "L_um": 5.0,
+        "wl_um": 1.55,
+        "n_eff": 2.44,
+        "n_core": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "taper",
+        "challenge",
+        "adiabatic"
+      ]
     },
     {
       "id": "A-HETERO-MODE",
@@ -104,8 +271,18 @@
       "oracle_type": "empirical-or-fdtd",
       "tol": 0.05,
       "submitted_by": "community",
-      "geometry": {"n1": 3.48, "n2": 3.2, "w1_um": 0.5, "w2_um": 1.5, "wl_um": 1.55},
-      "tags": ["heterogeneous", "challenge", "mode-matching"]
+      "geometry": {
+        "n1": 3.48,
+        "n2": 3.2,
+        "w1_um": 0.5,
+        "w2_um": 1.5,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "heterogeneous",
+        "challenge",
+        "mode-matching"
+      ]
     }
   ]
 }

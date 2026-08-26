@@ -33,7 +33,7 @@ def _ensure_paths():
 
 
 # ---------------------------------------------------------------------------
-# 1. harness（B1-B18 物理定律 + E1-E3 实证语料锚 · D-62 双 ground）
+# 1. harness（B1-B18 物理定律 + E1-E7 实证语料锚 · D-62 双 ground）
 # ---------------------------------------------------------------------------
 def build_harness_specs(defs: Optional[Dict] = None
                         ) -> Tuple[List[VerificationSpec], Dict[str, Callable]]:
@@ -44,7 +44,7 @@ def build_harness_specs(defs: Optional[Dict] = None
     defs = defs or BENCHMARK_DEFS
     specs: List[VerificationSpec] = []
     cand_map: Dict[str, Callable] = {}
-    # D-62 实证锚：加载实测语料（seed + 社区落库增量），供 E1-E3 实证锚题取 golden
+    # D-62 实证锚：加载实测语料（seed + 社区落库增量），供 E1-E7 实证锚题取 golden
     anchor = None
     for bid in sorted(defs.keys()):
         d = defs[bid]

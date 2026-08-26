@@ -9,10 +9,10 @@ README 引擎域计数「光子 9 + 量子 6」与代码 ENGINE_DOMAIN 实际 8+
 断言维度（全部死标量，LLM 不进判决路径）：
   1. 引擎结构：ENGINE_KINDS 15、光子 8、量子 7（ENGINE_DOMAIN 动态统计）
   2. 包结构：PACKAGE_KINDS 11（15 引擎 + 11 包 = 26 类端到端）
-  3. 题库：BENCHMARK_ORDER 30 题（B1-B27 27 题 + E1-E3 3 题）
+  3. 题库：BENCHMARK_ORDER 34 题（B1-B27 27 题 + E1-E7 7 题）
   4. CI 门禁：CORE_SMOKES 条数（当前 45 条，动态）
   5. README 宣传串：动态构造「15 引擎 + 11 包 = 26 类端到端（光子 8 + 量子 7）」
-     「30 题（B1-B27 + E1-E3）」「CI core N 条」断言 README.md 包含；
+     「34 题（B1-B27 + E1-E7）」「CI core N 条」断言 README.md 包含；
      反向断言 README 不含已废弃错误串「光子 9 + 量子 6」（防回退）。
 """
 from __future__ import annotations
@@ -85,20 +85,20 @@ class CountConsistencySmoke(unittest.TestCase):
                          "15 引擎 + 11 包应 = 26 类端到端")
 
     # ---- 3. 题库 ----
-    def test_benchmark_order_30(self):
-        self.assertEqual(len(self.benchmark_order), 30,
-                         f"BENCHMARK_ORDER 应 30 题，实际 {len(self.benchmark_order)}")
+    def test_benchmark_order_34(self):
+        self.assertEqual(len(self.benchmark_order), 34,
+                         f"BENCHMARK_ORDER 应 34 题，实际 {len(self.benchmark_order)}")
 
-    def test_benchmark_b27_e3_split(self):
+    def test_benchmark_b27_e7_split(self):
         b_ids = [b for b in self.benchmark_order
                  if re.fullmatch(r"B\d+", b)]
         e_ids = [b for b in self.benchmark_order
                  if re.fullmatch(r"E\d+", b)]
         self.assertEqual(len(b_ids), 27, f"B 题应 27，实际 {len(b_ids)}")
-        self.assertEqual(len(e_ids), 3, f"E 题应 3，实际 {len(e_ids)}")
+        self.assertEqual(len(e_ids), 7, f"E 题应 7，实际 {len(e_ids)}")
         self.assertEqual(b_ids[0], "B1")
         self.assertEqual(b_ids[-1], "B27")
-        self.assertEqual(e_ids, ["E1", "E2", "E3"])
+        self.assertEqual(e_ids, ["E1", "E2", "E3", "E4", "E5", "E6", "E7"])
 
     # ---- 4. CI 门禁条数 ----
     def test_ci_core_count_matches_readme(self):
@@ -118,9 +118,9 @@ class CountConsistencySmoke(unittest.TestCase):
         self.assertNotIn("光子 9+量子 6", self.readme)
 
     def test_readme_benchmark_counts(self):
-        self.assertIn("30 题", self.readme)
+        self.assertIn("34 题", self.readme)
         self.assertIn("B1-B27", self.readme)
-        self.assertIn("E1-E3", self.readme)
+        self.assertIn("E1-E7", self.readme)
 
     def test_readme_version_line(self):
         self.assertIn("v0.8.10", self.readme)

@@ -21,7 +21,7 @@ L2 = 开放 PDK/器件本体 Registry（社区共建）。本模块提供：
     review_measurement / land_measurement / list_measurements /
     measurement_stats / list_landed_measurements；实测语料（citation 必填=
     可追溯来源）经「具名人工评审（LLM 不进判决路径）→ 确定性自测门禁 →
-    落库 empirical_contributions.json」后，harness E1-E3 实证锚题实时可用
+    落库 empirical_contributions.json」后，harness E1-E7 实证锚题实时可用
     （第二道非 AI ground，与物理定律锚并列）。
 
 作用边界（诚实标注）：

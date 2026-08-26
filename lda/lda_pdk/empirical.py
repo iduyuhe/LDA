@@ -7,7 +7,7 @@
                        防重）→ pending
   review_measurement  → 具名人工评审（LLM 不进判决路径）+ 前置确定性自测门禁
   land_measurement    → 写 empirical_contributions.json（gitignore）+ 实时 reload
-                        进语料库 —— harness E1-E3 实证锚题立即可用
+                        进语料库 —— harness E1-E7 实证锚题立即可用
   list_measurements / measurement_stats
 
 诚实边界：
@@ -205,7 +205,7 @@ def review_measurement(mid: str, decision: str, reviewer: str, rationale: str,
 def land_measurement(mid: str, proposals_path: Optional[str] = None,
                      corpus_path: Optional[str] = None) -> dict:
     """落地已批准语料 → 写入 empirical_contributions.json（gitignore），
-    harness E1-E3 实证锚题实时可用（verification_adapters 启动即 reload）。"""
+    harness E1-E7 实证锚题实时可用（verification_adapters 启动即 reload）。"""
     ppath = _resolve_path(proposals_path)
     cpath = _resolve_corpus(corpus_path)
     store = _load(ppath)

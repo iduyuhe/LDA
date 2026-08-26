@@ -68,6 +68,8 @@ CORE_SMOKES: List[str] = [
     "run_link_m4_smoke.py",
     # P1-M4 补强：芯片级设计验收标准（四锚 A-D 死标量）
     "run_chip_acceptance_smoke.py",
+    # 器件库主流封口（v0.8.7：MMI/光栅/方向耦合/可调 transmon/读出配对/CZ 门）
+    "run_kernel_seal_smoke.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

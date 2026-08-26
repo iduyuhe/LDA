@@ -52,6 +52,11 @@ class DesignEngine:
         from lda_harness.golden import b21_phc_resonance  # noqa: E402
         from lda_harness.golden import b22_qres_frequency  # noqa: E402
         from lda_harness.golden import b24_tcoup_geff  # noqa: E402
+        from lda_harness.golden import b16_mmi_length  # noqa: E402
+        from lda_harness.golden import b14_dc_coupling_length  # noqa: E402
+        from lda_harness.golden import b25_tunable_transmon_f01  # noqa: E402
+        from lda_harness.golden import b26_dispersive_shift  # noqa: E402
+        from lda_harness.golden import b27_cz_gate_time  # noqa: E402
         import tmm  # lda_solver/tmm.py  # noqa: E402
         from lda_solver.transmon_solver import koch_f01  # noqa: E402
         from lda_agent.ring_loop import ring_fsr_analytic_nm  # noqa: E402
@@ -239,6 +244,104 @@ class DesignEngine:
                     "搜索 g1 命中目标 |g_eff|；top-K 真跑三模 Fock 截断对角化"
                     "激发带劈裂/2 与锚死标量比对（rel≤3%）。可调耦合器是"
                     "可调两比特门架构的核心元件。",
+        },
+        "Mmi1x2": {
+            "title": "MMI 1×2 分束器 · 目标自映像长度 L_mmi（多模干涉 + B16 锚）",
+            "sweep": [("W_e_um", 2.5, 8.0, 0.5)],
+            "fixed": dict(n_eff=3.30, wl_um=1.55, tol_rel=0.05),
+            "verify": lambda mode, target_f01, **kw:
+                self.lib.verify_mmi(mode=mode, **kw),
+            "cheap": lambda combo, target: b16_mmi_length(
+                combo["W_e_um"], 3.30, 1.55),
+            "extract": lambda r: r["checks"]["analytic_fsr"]["fsr_fdtd_um"],
+            "metric_name": "L_mmi (模式叠加, um)",
+            "target_unit": "um",
+            "analytic_only": False,
+            "secondary": ("W_e_um", True),
+            "note": "MMI 1×2 自映像长 L=3·n_eff·W²/λ（B16 锚，多模干涉自成像）。"
+                    "网格搜宽度命中目标自映像长；top-K 模式叠加数值核复核。",
+        },
+        "GratingCoupler2": {
+            "title": "光栅耦合器 · 目标 Bragg 波长 λ_B（一阶衍射 + Bragg 锚）",
+            "sweep": [("period_um", 0.50, 1.20, 0.02)],
+            "fixed": dict(n_eff=2.80, wl_um=1.55, tol_rel=0.05),
+            "verify": lambda mode, target_f01, **kw:
+                self.lib.verify_grating_coupler(mode=mode, **kw),
+            "cheap": lambda combo, target: combo["period_um"] * 2.80,
+            "extract": lambda r: r["checks"]["analytic_fsr"]["fsr_fdtd_um"],
+            "metric_name": "λ_B (Bragg, um)",
+            "target_unit": "um",
+            "analytic_only": False,
+            "secondary": ("period_um", True),
+            "note": "一阶 Bragg 波长 λ_B=Λ·n_eff（垂直接入近似，物理定律锚）。"
+                    "网格搜光栅周期命中目标 λ_B；top-K 数值核复核。",
+        },
+        "DirectionalCoupler2": {
+            "title": "方向耦合器 · 目标 3dB 长度 L_3dB（超模拍频 + B14 锚）",
+            "sweep": [("n_e", 3.30, 3.50, 0.005)],
+            "fixed": dict(n_o=3.36, wl_um=1.55, tol_rel=0.05),
+            "verify": lambda mode, target_f01, **kw:
+                self.lib.verify_directional_coupler(mode=mode, **kw),
+            "cheap": lambda combo, target: b14_dc_coupling_length(
+                combo["n_e"], 3.36, 1.55),
+            "extract": lambda r: r["checks"]["analytic_fsr"]["fsr_fdtd_um"],
+            "metric_name": "L_3dB (超模拍频, um)",
+            "target_unit": "um",
+            "analytic_only": False,
+            "secondary": ("n_e", True),
+            "note": "方向耦合器 3dB 长 L=λ/(2|n_e−n_o|)（B14 锚，偶/奇超模拍频）。"
+                    "网格搜偶模折射率命中目标 3dB 长；top-K 超模拍频核复核。",
+        },
+        "TunableTransmon": {
+            "title": "可调 transmon · 目标频率 f01（SQUID 磁通调谐 + B25 锚）",
+            "sweep": [("phi_frac", 0.0, 0.45, 0.05)],
+            "fixed": dict(e_j_sum_ghz=20.0, e_c_ghz=0.30,
+                          tol_rel=0.03),
+            "verify": lambda mode, target_f01, **kw:
+                self.lib.verify_tunable_transmon(mode=mode, **kw),
+            "cheap": lambda combo, target: b25_tunable_transmon_f01(
+                combo["phi_frac"], 20.0, 0.30),
+            "extract": lambda r: r["checks"]["analytic_fsr"]["fsr_fdtd_ghz"],
+            "metric_name": "f01 (koch+SQUID, GHz)",
+            "target_unit": "GHz",
+            "analytic_only": False,
+            "secondary": ("phi_frac", True),
+            "note": "可调 transmon f01(Φ)=√(8Ec·EJ(Φ))−Ec（B25 锚，SQUID 磁通调谐）。"
+                    "网格搜磁通偏置命中目标 f01；top-K koch 复核。",
+        },
+        "ReadoutPair": {
+            "title": "量子比特-读出谐振器配对 · 目标色散位移 χ（严格对角化 + B26 锚）",
+            "sweep": [("f_r_ghz", 5.2, 7.0, 0.2)],
+            "fixed": dict(f_q_ghz=5.0, alpha_ghz=-0.30, g_ghz=0.10,
+                          tol_rel=0.05),
+            "verify": lambda mode, target_f01, **kw:
+                self.lib.verify_readout_pair(mode=mode, **kw),
+            "cheap": lambda combo, target: abs(b26_dispersive_shift(
+                5.0, -0.30, combo["f_r_ghz"], 0.10)),
+            "extract": lambda r: abs(r["checks"]["analytic_fsr"]["fsr_fdtd_ghz"]),
+            "metric_name": "|χ| (严格对角化, GHz)",
+            "target_unit": "GHz",
+            "analytic_only": False,
+            "secondary": ("f_r_ghz", False),
+            "note": "色散位移 χ=g²α/(Δ(Δ+α))（B26 锚，Blais 修正）。网格搜读出"
+                    "频率命中目标 |χ|；top-K 多能级+Fock 严格对角化复核。",
+        },
+        "CzGate": {
+            "title": "色散 CZ 门 · 目标门时间 t_CZ（条件相位 π + B27 锚）",
+            "sweep": [("g_ghz", 0.05, 0.20, 0.01)],
+            "fixed": dict(f_q_ghz=5.0, alpha_ghz=-0.30, f_r_ghz=6.0,
+                          tol_rel=0.03),
+            "verify": lambda mode, target_f01, **kw:
+                self.lib.verify_cz_gate(mode=mode, **kw),
+            "cheap": lambda combo, target: b27_cz_gate_time(
+                5.0, -0.30, 6.0, combo["g_ghz"]),
+            "extract": lambda r: r["checks"]["analytic_fsr"]["fsr_fdtd_ns"],
+            "metric_name": "t_CZ (条件相位 π, ns)",
+            "target_unit": "ns",
+            "analytic_only": False,
+            "secondary": ("g_ghz", True),
+            "note": "色散 CZ 门时间 t_CZ=π/(2|χ|)（B27 锚）。网格搜耦合强度 g "
+                    "命中目标门时间；top-K 对角化 χ 复核 + 2|χ|·t=π 精确性校验。",
         },
         }
         return specs

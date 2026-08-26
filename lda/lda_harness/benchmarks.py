@@ -18,6 +18,9 @@ from .golden import (
     b22_qres_frequency,
     b23_fluxonium_lc_limit,
     b24_tcoup_geff,
+    b25_tunable_transmon_f01,
+    b26_dispersive_shift,
+    b27_cz_gate_time,
 )
 
 BENCHMARK_DEFS = {
@@ -281,6 +284,44 @@ BENCHMARK_DEFS = {
                  "解析基准。确定性物理定律锚，LLM 不进判决路径；harness 默认 "
                  "ReferenceCandidate 自洽 PASS。"),
     },
+    # ---- 器件库主流封口（v0.8.7）：可调 transmon / 色散读出 / CZ 门 ----
+    "B25": {
+        "title": "可调 transmon（SQUID 磁通调谐）f01(Φ)",
+        "metric": "tunable_f01_ghz",
+        "oracle": "analytical(SQUID E_J(Φ)=E_JΣ·|cos(πΦ/Φ0)| + Koch)",
+        "tol": 1e-6,
+        "default_params": {"phi_frac": 0.0, "e_j_sum_ghz": 20.0,
+                           "e_c_ghz": 0.30},
+        "golden_fn": b25_tunable_transmon_f01,
+        "note": ("可调 transmon f01(Φ)=√(8·Ec·EJ(Φ))−Ec，EJ(Φ)=EJΣ·|cos(πΦ/Φ0)|"
+                 "（SQUID 磁通调谐）。Φ=0 最大频率、Φ=0.5 调谐关点。确定性物理"
+                 "定律锚，LLM 不进判决路径；harness 默认 ReferenceCandidate 自洽 PASS。"),
+    },
+    "B26": {
+        "title": "量子比特-读出谐振器色散位移 χ",
+        "metric": "dispersive_chi_ghz",
+        "oracle": "analytical(Blais χ=g²α/(Δ(Δ+α)))",
+        "tol": 1e-6,
+        "default_params": {"f_q_ghz": 5.0, "alpha_ghz": -0.30,
+                           "f_r_ghz": 6.0, "g_ghz": 0.10},
+        "golden_fn": b26_dispersive_shift,
+        "note": ("色散位移 χ=g²α/(Δ(Δ+α))（Blais 修正），失谐区 |Δ|≫g。数值"
+                 "验证 = 多能级+Fock 联合严格对角化提取（实测 rel 0.6~2%）。"
+                 "确定性物理定律锚，LLM 不进判决路径；harness 默认 "
+                 "ReferenceCandidate 自洽 PASS。"),
+    },
+    "B27": {
+        "title": "色散 CZ 门时间 t_CZ",
+        "metric": "cz_gate_time_ns",
+        "oracle": "analytical(t_CZ=π/(2|χ|))",
+        "tol": 1e-6,
+        "default_params": {"f_q_ghz": 5.0, "alpha_ghz": -0.30,
+                           "f_r_ghz": 6.0, "g_ghz": 0.10},
+        "golden_fn": b27_cz_gate_time,
+        "note": ("色散 CZ 门时间 t_CZ=π/(2|χ|)（GHz→ns）；校验 2|χ|·t_CZ=π 精确"
+                 "成立。确定性物理定律锚，LLM 不进判决路径；harness 默认 "
+                 "ReferenceCandidate 自洽 PASS。"),
+    },
     # ---- D-62 实证大数据锚（第二道非 AI ground：真实测量语料）----
     # anchor=empirical 的题：golden 来自 EmpiricalCorpus 实测语料（seed_empirical.json
     # + 社区经评审流落库的语料），非解析函数（golden_fn=None）。
@@ -325,7 +366,8 @@ BENCHMARK_DEFS = {
 # 对齐顺序（报告展示用）
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
-                   "B19", "B20", "B21", "B22", "B23", "B24",
+                   "B19", "B20", "B21", "B22", "B23", "B24", "B25",
+                   "B26", "B27",
                    "E1", "E2", "E3"]
 
 

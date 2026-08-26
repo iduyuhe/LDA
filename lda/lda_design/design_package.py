@@ -47,7 +47,9 @@ PACKAGE_KINDS = ("add_drop", "quantum", "wdm", "readout_chain", "multiqubit",
 ENGINE_KINDS = ("engine_waveguide", "engine_braggmirror",
                 "engine_transmon", "engine_ringresonator", "engine_mzi",
                 "engine_phc", "engine_qres", "engine_fluxonium",
-                "engine_tcoup")
+                "engine_tcoup", "engine_mmi", "engine_gcoupler",
+                "engine_dcoupler", "engine_tuntransmon",
+                "engine_readoutpair", "engine_czgate")
 ENGINE_KIND_MAP = {
     "engine_waveguide": "Waveguide",
     "engine_braggmirror": "BraggMirror",
@@ -58,6 +60,12 @@ ENGINE_KIND_MAP = {
     "engine_qres": "ReadoutResonator",
     "engine_fluxonium": "Fluxonium",
     "engine_tcoup": "TunableCoupler",
+    "engine_mmi": "Mmi1x2",
+    "engine_gcoupler": "GratingCoupler2",
+    "engine_dcoupler": "DirectionalCoupler2",
+    "engine_tuntransmon": "TunableTransmon",
+    "engine_readoutpair": "ReadoutPair",
+    "engine_czgate": "CzGate",
 }
 ENGINE_DOMAIN = {
     "Waveguide": "photon", "BraggMirror": "photon",
@@ -65,6 +73,10 @@ ENGINE_DOMAIN = {
     "MziInterferometer": "photon", "PhCCavity": "photon",
     "ReadoutResonator": "quantum", "Fluxonium": "quantum",
     "TunableCoupler": "quantum",
+    "Mmi1x2": "photon", "GratingCoupler2": "photon",
+    "DirectionalCoupler2": "photon",
+    "TunableTransmon": "quantum", "ReadoutPair": "quantum",
+    "CzGate": "quantum",
 }
 _ENGINE_DEFAULT_TARGET = {
     "engine_waveguide": 3.25,      # 目标 neff
@@ -76,6 +88,12 @@ _ENGINE_DEFAULT_TARGET = {
     "engine_qres": 7.5,            # 目标基模频率 f0 (GHz)
     "engine_fluxonium": 6.0,       # 目标 f01 (GHz)
     "engine_tcoup": 0.005,         # 目标 |g_eff| (GHz)
+    "engine_mmi": 100.0,           # 目标 L_mmi (um)
+    "engine_gcoupler": 2.38,       # 目标 λ_B (um)
+    "engine_dcoupler": 20.0,       # 目标 L_3dB (um)
+    "engine_tuntransmon": 6.0,     # 目标 f01 (GHz)
+    "engine_readoutpair": 0.002,   # 目标 |χ| (GHz)
+    "engine_czgate": 700.0,        # 目标 t_CZ (ns)
 }
 _ENGINE_TITLE = {
     "engine_waveguide": "直波导 · 目标有效折射率 neff",
@@ -87,6 +105,12 @@ _ENGINE_TITLE = {
     "engine_qres": "CPW λ/4 读出谐振器 · 目标基模频率 f0（1D 传输线 FDTD + 传输线锚）",
     "engine_fluxonium": "Fluxonium 超导量子比特 · 目标频率 f01（相位对角化 + 双基对拍）",
     "engine_tcoup": "可调耦合器 · 目标有效耦合 |g_eff|（三模对角化 + 二阶微扰锚）",
+    "engine_mmi": "MMI 1×2 · 目标自映像长 L_mmi（多模干涉 + B16 锚）",
+    "engine_gcoupler": "光栅耦合器 · 目标 Bragg 波长 λ_B（一阶衍射 + Bragg 锚）",
+    "engine_dcoupler": "方向耦合器 · 目标 3dB 长 L_3dB（超模拍频 + B14 锚）",
+    "engine_tuntransmon": "可调 transmon · 目标 f01（SQUID 磁通调谐 + B25 锚）",
+    "engine_readoutpair": "比特-读出配对 · 目标 |χ|（严格对角化 + B26 锚）",
+    "engine_czgate": "色散 CZ 门 · 目标 t_CZ（条件相位 π + B27 锚）",
 }
 
 
@@ -441,6 +465,12 @@ def engine_catalog() -> List[Dict[str, Any]]:
             "ReadoutResonator": "f0 (1D TL-FDTD, GHz)",
             "Fluxonium": "f01 (相位对角化, GHz)",
             "TunableCoupler": "|g_eff| (三模对角化, GHz)",
+            "Mmi1x2": "L_mmi (模式叠加, um)",
+            "GratingCoupler2": "λ_B (Bragg, um)",
+            "DirectionalCoupler2": "L_3dB (超模拍频, um)",
+            "TunableTransmon": "f01 (koch+SQUID, GHz)",
+            "ReadoutPair": "|χ| (严格对角化, GHz)",
+            "CzGate": "t_CZ (条件相位 π, ns)",
         }.get(ek, ""),
         "target_unit": {"Waveguide": "", "BraggMirror": "",
                         "Transmon": "GHz", "RingResonator": "nm",
@@ -448,7 +478,11 @@ def engine_catalog() -> List[Dict[str, Any]]:
                         "PhCCavity": "nm",
                         "ReadoutResonator": "GHz",
                         "Fluxonium": "GHz",
-                        "TunableCoupler": "GHz"}.get(ek, ""),
+                        "TunableCoupler": "GHz",
+                        "Mmi1x2": "um", "GratingCoupler2": "um",
+                        "DirectionalCoupler2": "um",
+                        "TunableTransmon": "GHz", "ReadoutPair": "GHz",
+                        "CzGate": "ns"}.get(ek, ""),
         "default_target": _ENGINE_DEFAULT_TARGET.get(pk),
         "domain": ENGINE_DOMAIN.get(ek, "photon"),
         "analytic_only": ek == "RingResonator",

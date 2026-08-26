@@ -433,6 +433,54 @@ def b24_tcoup_geff(wq_ghz: float = 5.0, wc_ghz: float = 7.5,
     return 0.5 * g1_ghz * g2_ghz * (1.0 / d1 + 1.0 / d2)
 
 
+def b25_tunable_transmon_f01(phi_frac: float = 0.0,
+                             e_j_sum_ghz: float = 20.0,
+                             e_c_ghz: float = 0.30) -> float:
+    """可调 transmon（SQUID 磁通调谐）f01（确定性物理定律锚）。
+
+    SQUID 有效约瑟夫森能随外磁通调谐：E_J(Φ) = E_JΣ·|cos(π·Φ/Φ0)|
+    （对称双结 SQUID 的一阶近似）。transmon 频率（Koch 一阶）：
+        f01(Φ) = √(8·E_C·E_J(Φ)) − E_C
+    返回单位 GHz。Φ/Φ0=0 时 E_J=E_JΣ（最大频率）；Φ/Φ0=0.5 时
+    E_J→0（调谐"关"点，频率降至 E_C 以下）。与 B9（固定频率 transmon）
+    互补——本锚给出磁通调谐自由度，是 QEDA 可调比特/可调耦合的基础。
+    """
+    ej_phi = e_j_sum_ghz * abs(math.cos(math.pi * phi_frac))
+    return float(math.sqrt(8.0 * e_c_ghz * ej_phi) - e_c_ghz)
+
+
+def b26_dispersive_shift(f_q_ghz: float = 5.0, alpha_ghz: float = -0.30,
+                         f_r_ghz: float = 6.0,
+                         g_ghz: float = 0.10) -> float:
+    """量子比特-读出谐振器色散位移（确定性物理定律锚）。
+
+    超导量子比特（transmon/fluxonium）与读出谐振器在失谐区（|Δ|≫g，
+    Δ=f_q−f_r）的色散耦合导致读出频率依赖比特态的移动（Blais 修正）：
+        χ = g²·α / (Δ·(Δ+α))
+    返回单位 GHz（代数值；负 α ⇒ 负 χ）。数值验证 = 多能级+Fock 联合
+    严格对角化提取 χ（见 qeda_depth_solver），实测 rel ~0.6~2%。
+    是读出保真度 / 色散读出架构的核心物理量。
+    """
+    delta = f_q_ghz - f_r_ghz
+    return float(g_ghz * g_ghz * alpha_ghz
+                 / (delta * (delta + alpha_ghz)))
+
+
+def b27_cz_gate_time(f_q_ghz: float = 5.0, alpha_ghz: float = -0.30,
+                     f_r_ghz: float = 6.0,
+                     g_ghz: float = 0.10) -> float:
+    """色散 CZ 门时间（确定性物理定律锚）。
+
+    基于色散耦合实现受控-Z（CZ）门：|11⟩ 态相对相移 φ = 2·χ·t，条件相位
+    π 所需时间（GHz→ns，频率单位 GHz 时 t=π/(2|χ|) 直接给 ns）：
+        t_CZ = π / (2·|χ|)，χ 见 B26
+    数值验证：2·|χ|·t_CZ = π 精确成立（rel=0.000%）。返回单位 ns。
+    是固定频率比特 CZ 门 / 门时间预算的核心解析基准。
+    """
+    chi = b26_dispersive_shift(f_q_ghz, alpha_ghz, f_r_ghz, g_ghz)
+    return float(math.pi / (2.0 * abs(chi)))
+
+
 _GOLDEN_DISPATCH = {
     "B1": b1_mie_qscat,
     "B2": b2_soi_waveguide_neff,
@@ -458,11 +506,15 @@ _GOLDEN_DISPATCH = {
     "B22": b22_qres_frequency,
     "B23": b23_fluxonium_lc_limit,
     "B24": b24_tcoup_geff,
+    "B25": b25_tunable_transmon_f01,
+    "B26": b26_dispersive_shift,
+    "B27": b27_cz_gate_time,
 }
 
 _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B12", "B13", "B14", "B15", "B16", "B17", "B18",
-                 "B19", "B20", "B21", "B22", "B23", "B24"}
+                 "B19", "B20", "B21", "B22", "B23", "B24", "B25",
+                 "B26", "B27"}
 
 
 def golden_value(bid, params):

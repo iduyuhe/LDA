@@ -72,6 +72,8 @@ CORE_SMOKES: List[str] = [
     "run_kernel_seal_smoke.py",
     # 仿真级芯片设计闭环演示（任务 256：WDM 收发 + 量子读出链路双案例）
     "run_chip_design_demo.py",
+    # 流片级验证管道（门3 接口细化：PDK→DRC→工艺角→实测回流）
+    "run_tapeout_smoke.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

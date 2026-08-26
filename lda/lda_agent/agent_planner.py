@@ -73,9 +73,16 @@ class LinkPlannerAgent(BaseAgent):
                 {k: float(v) for k, v in inst.get("params", {}).items()},
             )
         for net in spec.get("nets", []):
-            # net: {"id":.., "connects":["i0.p0","i1.p1",...]}
-            link.connect(*[tuple(c.split(".", 1)) for c in net["connects"]])
+            # net: {"id":.., "connects":["i0.p0","i1.p1"]} → connect(net_id, src, src_port, dst, dst_port)
+            src, dst = net["connects"]
+            si, sp = src.split(".", 1)
+            di, dp = dst.split(".", 1)
+            link.connect(net["id"], si, sp, di, dp)
         for s in spec.get("sources", []):
             i, p = tuple(s.split(".", 1))
             link.mark_source(i, p)
+        for s in spec.get("sinks", []):
+            # 输出端口显式声明为外部 IO（单端口 net 悬挂端口）
+            i, p = tuple(s.split(".", 1))
+            link.external_io(f"sink_{i}_{p}", i, p)
         return link

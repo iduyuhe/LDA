@@ -17,6 +17,22 @@
 - 计数口径 30→34：`run_empirical_anchor_smoke`（34/34 + E1-E7 golden 断言）、`run_l1_agent_smoke`（reference 34/34、list_benchmarks 34 题）、`run_count_consistency_smoke`（题库 34、E 题 7、README 串"34 题"/"E1-E7"）、README 版本行 v0.8.11。
 - `pyproject.toml` version 0.8.10 → 0.8.11（构建 wheel 部署生产，health 显示同步）。
 
+## v0.8.11b（2026-08-26 · 芯片案例扩展：MZI 干涉网络 + 链路引擎传播语义修复）
+
+**里程碑：芯片级演示新增第三案例（MZI 干涉网络芯片，generic 链路 + MZI 解析响应），端到端跑通并暴露/修复链路引擎两个深层语义 bug（幽灵反向路径 + C 锚功率域双重平方），四锚数值从此精确。**
+
+### 新增
+- **MZI 器件接入链路引擎**：`lda_chain/registry.py` 新增 `_mzi_response`（2×2 MZI 解析传递，与 B20 MZI FSR 锚同源：bar=cos²(Δφ/2)、cross=sin²(Δφ/2)）+ `link_model._DEFAULT_PORTS` 注册 MZI 端口。
+- **generic 链路 sinks 支持**：`agent_planner._plan_generic` 支持 `sinks` 声明（输出端口 external_io），修复 generic 链路端到端路径（此前 `connect()` 调用签名错误，generic 链路从未真正跑通）。
+- **第三芯片案例**：`run_chip_design_demo.py --case mzi`——2×2 MZI 交叉开关级联网络（6 组件 6 net 双源双输出），四锚 ACCEPT：A 无源界 max|T|=0.998 / B 级联乘法性 rel=0.0 / **C 能量守恒泄漏=0.0（无损网络功率精确闭合）** / D 完整性。
+
+### 修复（链路引擎深层语义，v0.8.11 系列）
+- **幽灵反向路径**：器件响应此前注册互易反向边（如 ("in","out")），DFS 允许从输出端口反向进器件 → 产生非物理路径（信号"漏入"另一输入端口，Σ|T|²>1，C 锚数值失真）。修复：①响应字典只注册正向边（in→out；互易性由引擎单向 DFS 语义保证）；②`engine._propagate` 增加 sink 截断（信号到达外部输出即终止）+ 仅输入端口进器件（防御性 in_ports 检查）。
+- **C 锚功率域双重平方**：`engine.simulate` 的 transfers 是**功率谱**（响应直接给 cos²/sin²/thru/drop），但 `_per_source_power_balance` 又平方一次 → 无损 MZI 网络报泄漏 0.5。修复：功率域直接求和（Σ T_power），无损网络泄漏精确 = 0。
+
+### 回归
+- 链路全家桶全绿：M1/M2/M3/M4、chip_acceptance 14/14、chip_design_demo 三案例、tunable_wdm 3/3、wdm_system、ecosystem 4/4、webui 59/0、count_consistency 11/11、harness 34/34。
+
 ## v0.8.10（2026-08-26 · 持续维护：v0.8 系列首轮全量回归 + 计数漂移修复）
 
 **里程碑：v0.8.2-v0.8.9 八连发后首轮持续维护——CI core 全量回归（44 条）捕获 3 项计数/递归缺陷并修复，全绿收官。**

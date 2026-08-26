@@ -34,28 +34,44 @@ def _propagate(src: Tuple[str, str], sinks, wls: List[float],
                internal_map: Dict[Tuple[str, str], list],
                responses: Dict[str, Dict[Tuple[str, str], List[float]]]
                ) -> Dict[Tuple[str, str], List[float]]:
-    """从 src 出发 DFS 累积所有路径到各 sink 的 per-wavelength 传递。"""
+    """从 src 出发 DFS 累积所有路径到各 sink 的 per-wavelength 传递。
+
+    传播语义（物理方向性，v0.8.11 修复）：
+      - 信号沿「器件正向」传播：仅允许从器件**输入端口**进入、输出端口离开
+        （响应 key 的 in 侧视为输入端口；互易反向项不参与传播——否则会产生
+        非物理的"幽灵反向路径"，如信号经 MZI 反向漏入另一输入端口，导致
+        Σ|T|² > 1 或 C 锚泄漏数值失真）；
+      - **sink 截断**：信号到达外部输出端口（sink）即终止，不沿互易边
+        反向传播回芯片内部（输出端口是链路边界）。
+    """
     n = len(wls)
     collected: Dict[Tuple[str, str], List[List[float]]] = defaultdict(list)
+
+    # 每器件响应图的输入端口集合（响应 key 的 in 侧）——只允许从这些端口进器件
+    in_ports: Dict[str, frozenset] = {}
+    for inst, resp in responses.items():
+        in_ports[inst] = frozenset(p_in for _, p_in in resp.keys())
 
     def dfs(node: Tuple[str, str], gain: List[float], seen: frozenset) -> None:
         if node != src and node in sinks:
             collected[node].append(gain)
+            return  # sink 截断：输出端口是链路边界，信号终止于此
         if node in seen:
             return
         seen = seen | {node}
         # 1) 内部连接边（带 net 损耗增益 g，默认透射 1）
         for other, g in internal_map.get(node, []):
             dfs(other, [gain[i] * g for i in range(n)], seen)
-        # 2) 器件内边（端口传递）
+        # 2) 器件内边（端口传递，仅输入端口进器件）
         inst = node[0]
         resp = responses.get(inst)
         if resp:
             p_in = node[1]
-            for (p_out, p_in_key), spec in resp.items():
-                if p_in_key == p_in:
-                    new_gain = [gain[i] * spec[i] for i in range(n)]
-                    dfs((inst, p_out), new_gain, seen)
+            if p_in in in_ports.get(inst, ()):
+                for (p_out, p_in_key), spec in resp.items():
+                    if p_in_key == p_in:
+                        new_gain = [gain[i] * spec[i] for i in range(n)]
+                        dfs((inst, p_out), new_gain, seen)
 
     dfs(src, [1.0] * n, frozenset())
 

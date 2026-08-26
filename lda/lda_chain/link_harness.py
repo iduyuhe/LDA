@@ -40,7 +40,13 @@ def _per_source_power_balance(transfers: Dict[str, List[float]],
                               wls: List[float]) -> Dict[str, Any]:
     """逐源功率守恒诊断（无损特例：每波长各 sink 功率和 = 1）。
 
-    返回每源的最大「功率泄漏」= 1 - Σ_sink |T_src→sink|²（按波长取最坏）。
+    **语义（v0.8.11 修正）**：engine.simulate 的 transfers 是**功率谱**
+    （器件响应直接给功率，如 MZI cos²/sin²、ring thru/drop 功率谱、
+    wg 透射 1），不是场幅度——能量守恒在功率域直接求和，
+    **不得再平方**（旧版对功率再平方导致泄漏失真，如无损 MZI 网络
+    报泄漏 0.5）。
+
+    返回每源的最大「功率泄漏」= 1 - Σ_sink T_src→sink（按波长取最坏）。
     损耗合法：泄漏 ≥ 0 即物理（≤0 表示增益，判 FAIL）；无损链路应 ≈0。
     """
     # 按 (src) 聚合 sink；transfer key = 'src_comp.src_port->dst_comp.dst_port'
@@ -56,7 +62,7 @@ def _per_source_power_balance(transfers: Dict[str, List[float]],
         n = len(next(iter(sinks.values())))
         leak_max = 0.0
         for k in range(n):
-            p = sum((abs(vec[k]) ** 2) for vec in sinks.values())
+            p = sum(vec[k] for vec in sinks.values())  # 功率域直接求和（transfers 已是功率）
             leak = 1.0 - p
             if leak > leak_max:
                 leak_max = leak

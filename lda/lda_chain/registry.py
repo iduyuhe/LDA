@@ -70,23 +70,53 @@ def _ring_response(component, wls: List[float], link_params, kappa_fn):
     alpha_bend = bending_loss_db_per_cm(R)
     sp = adddrop_spectrum(wls, R, n_g, kappa, alpha_bend, 1.55)
     t_thru, t_drop = sp["thru"], sp["drop"]
-    return {("out", "in"): t_thru, ("in", "out"): t_thru,
-            ("drop", "in"): t_drop, ("in", "drop"): t_drop}
+    return {("out", "in"): t_thru, ("drop", "in"): t_drop}
 
 
 def _waveguide_response(component, wls: List[float], link_params, kappa_fn):
-    """直波导：理想透射 1（损耗可由 L 计入，MVP 理想）。"""
+    """直波导：理想透射 1（损耗可由 L 计入，MVP 理想）。
+
+    仅注册正向边（in→out）：引擎按信号方向单向传播（v0.8.11），
+    互易反向边会导致"幽灵反向路径"（信号经器件反向漏入他端口，
+    Σ|T|²>1 / C 锚泄漏失真）。互易性由引擎单向 DFS + sink 截断保证。
+    """
     ones = [1.0] * len(wls)
-    return {("out", "in"): ones, ("in", "out"): ones}
+    return {("out", "in"): ones}
 
 
 def _grating_response(component, wls: List[float], link_params, kappa_fn):
     """光栅耦合器：固定耦合效率（缺省 -3dB；可由 params.coupling 覆盖）。"""
     eff = float(component.params.get("coupling", 0.5))
     c = [eff] * len(wls)
-    return {("wg", "fib"): c, ("fib", "wg"): c}
+    return {("wg", "fib"): c}  # 仅正向 fib→wg（同 v0.8.11 单向传播语义）
+
+
+def _mzi_response(component, wls: List[float], link_params, kappa_fn):
+    """2×2 MZI 交叉开关：理想 50/50 分束 + 两臂相位差 Δφ(λ)=2π·n_eff·ΔL/λ。
+
+    端口传递（无源互易，与 B20 MZI FSR 锚 T=½(1+cosΔφ)=cos²(Δφ/2) 同源）：
+        in1→out1（bar）= cos²(Δφ/2)；in1→out2（cross）= sin²(Δφ/2)
+        in2 对称；bar+cross = 1（无损，能量守恒诊断理想闭合）。
+    参数：n_eff（缺省 2.6）、deltaL_um（缺省 34.5，对应 B20 锚默认 ΔL）。
+    """
+    import math
+    n_eff = float(component.params.get("n_eff", 2.6))
+    dL = float(component.params.get("deltaL_um", 34.5))
+    bar = []
+    cross = []
+    for wl in wls:
+        dphi = 2.0 * math.pi * n_eff * dL / max(wl, 1e-12)
+        c = math.cos(dphi / 2.0)
+        s = math.sin(dphi / 2.0)
+        bar.append(c * c)
+        cross.append(s * s)
+    return {
+        ("out1", "in1"): bar, ("out2", "in1"): cross,
+        ("out2", "in2"): bar, ("out1", "in2"): cross,
+    }  # 仅正向边（in→out）；互易反向由引擎单向 DFS 语义保证
 
 
 register_device_model("RingResonator", _ring_response)
 register_device_model("Waveguide", _waveguide_response)
 register_device_model("GratingCoupler", _grating_response)
+register_device_model("MZI", _mzi_response)

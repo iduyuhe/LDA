@@ -1,8 +1,10 @@
-"""LDA 仿真级芯片设计闭环演示（任务 256 · 门2 收官演示）。
+"""LDA 仿真级芯片设计闭环演示（任务 256 · 门2 收官演示 + v0.8.11 MZI 案例扩展）。
 
-两个端到端芯片设计案例（目标→布线→版图→四锚验收→报告）：
+三个端到端芯片设计案例（目标→布线→版图→四锚验收→报告）：
   A. WDM 收发芯片：4 信道 WDM 链路（目标=信道波长 → 环形路由 → GDS）
   B. 量子读出链路芯片：Transmon+读出谐振器 dispersive readout 链路
+  C. MZI 干涉网络芯片（v0.8.11）：2×2 MZI 交叉开关级联网络
+     （generic 链路 + MZI 解析响应（B20 锚同源）+ 四锚验收）
 
 每个案例：
   1. Orchestrator 四 Agent 元编排（规划→综合→布线→验证）
@@ -99,7 +101,8 @@ def _design_readout_chip(name: str, spec: dict, out_dir: Path) -> dict:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="LDA 仿真级芯片设计闭环演示")
     ap.add_argument("--out", default=None, help="输出目录（默认临时目录）")
-    ap.add_argument("--case", default="all", choices=["all", "wdm", "readout"],
+    ap.add_argument("--case", default="all",
+                    choices=["all", "wdm", "readout", "mzi"],
                     help="演示案例")
     args = ap.parse_args(argv)
     out_dir = Path(args.out or tempfile.mkdtemp(prefix="lda_chip_demo_"))
@@ -116,6 +119,31 @@ def main(argv=None) -> int:
             "f01_ghz": 5.0, "delta_ghz": 1.0, "g_ghz": 0.10,
             "kappa_r_ghz": 0.005,
         }))
+    if args.case in ("all", "mzi"):
+        # 2×2 MZI 交叉开关级联网络：双输入双输出，MZI 解析响应（B20 锚同源）
+        cases.append(("MZI 干涉网络芯片", "mzi", {
+            "type": "generic",
+            "instances": [
+                {"id": "wg_i1", "kind": "Waveguide", "params": {}},
+                {"id": "wg_i2", "kind": "Waveguide", "params": {}},
+                {"id": "mzi_a", "kind": "MZI",
+                 "params": {"n_eff": 2.6, "deltaL_um": 34.5}},
+                {"id": "mzi_b", "kind": "MZI",
+                 "params": {"n_eff": 2.6, "deltaL_um": 17.25}},
+                {"id": "wg_o1", "kind": "Waveguide", "params": {}},
+                {"id": "wg_o2", "kind": "Waveguide", "params": {}},
+            ],
+            "nets": [
+                {"id": "n1", "connects": ["wg_i1.out", "mzi_a.in1"]},
+                {"id": "n2", "connects": ["wg_i2.out", "mzi_a.in2"]},
+                {"id": "n3", "connects": ["mzi_a.out1", "mzi_b.in1"]},
+                {"id": "n4", "connects": ["mzi_a.out2", "mzi_b.in2"]},
+                {"id": "n5", "connects": ["mzi_b.out1", "wg_o1.in"]},
+                {"id": "n6", "connects": ["mzi_b.out2", "wg_o2.in"]},
+            ],
+            "sources": ["wg_i1.in", "wg_i2.in"],
+            "sinks": ["wg_o1.out", "wg_o2.out"],
+        }))
 
     print("=" * 70)
     print("LDA 仿真级芯片设计闭环演示（任务 256 · 死标量验收）")
@@ -124,7 +152,7 @@ def main(argv=None) -> int:
     results = []
     for name, kind, spec in cases:
         try:
-            if kind == "wdm":
+            if kind in ("wdm", "mzi"):
                 r = _design_chip(name, spec, out_dir)
             else:
                 r = _design_readout_chip(name, spec, out_dir)

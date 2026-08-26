@@ -1044,27 +1044,43 @@ def run_design_outcome(payload=None):
     if str(_lda) not in _sys.path:
         _sys.path.insert(0, str(_lda))
     from lda_design.design_package import (
-        package_from_engine, validate_package, engine_catalog, package_catalog,
+        package_from_engine, build_package, validate_package,
+        engine_catalog, package_catalog, ENGINE_KINDS, PACKAGE_KINDS,
     )
     payload = payload or {}
     kind = payload.get("kind")
     target = payload.get("target")
     top_k = int(payload.get("top_k", 3) or 3)
+    build_params = payload.get("params") or {}
     try:
-        if not kind or target is None:
+        if not kind:
             # 目录模式：返回可用器件清单（不跑求解器）
             return {"ok": True, "catalog": {
                 "engine": engine_catalog(), "package": package_catalog()}}
-        pkg = package_from_engine(kind, target, top_k)
+        # 分流：engine 类（target 驱动的闭环搜索） vs package 类（params 驱动的统一包）
+        if kind in ENGINE_KINDS:
+            if target is None:
+                return {"ok": False, "error": f"引擎类 {kind} 需要 target 目标值"}
+            pkg = package_from_engine(kind, target, top_k)
+        elif kind in PACKAGE_KINDS:
+            pkg = build_package(kind, build_params)
+        else:
+            return {"ok": False,
+                    "error": f"未知设计类型 {kind}（可选见 /api/design_catalog）"}
+        if not pkg.get("ok"):
+            errs = (validate_package(pkg)
+                    if pkg.get("kind") in (PACKAGE_KINDS + ENGINE_KINDS) else [])
+            return {"ok": False, "error": pkg.get("error", "设计失败"),
+                    "package": None, "schema_errors": errs}
         errs = validate_package(pkg)
         pkg["schema_ok"] = not errs
         pkg["schema_errors"] = errs
         eng = pkg.get("artifacts", {}).get("engine_result")
         return {
-            "ok": bool(pkg.get("ok", False)),
-            "engine_result": _trim_engine(eng),
-            "package": pkg if pkg.get("ok") else None,
-            "error": None if pkg.get("ok") else pkg.get("error"),
+            "ok": True,
+            "engine_result": _trim_engine(eng) if eng else None,
+            "package": pkg,
+            "error": None,
         }
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)[:160]}

@@ -86,7 +86,7 @@
 
   <div class="sec" style="border-color:#2563eb">
     <h2>★ 旗舰流程 · 设计闭环端到端：给目标 → 出统一设计包</h2>
-    <div class="hint">这是 LDA 作为"系统"而非"组件集"的核心：你给一个目标指标，系统在参数空间用物理定律 ORACLE 搜索，仅对 top-K 候选跑真实求解器双重验证，返回被求解器确认可用的最优器件，并自动包成机器可校验的统一 DesignPackage（可下载）。<b>LLM 不进判决路径。</b> 闭环器件目录来自 <code>/api/design_catalog</code>。</div>
+    <div class="hint">这是 LDA 作为"系统"而非"组件集"的核心：你给一个目标指标，系统在参数空间用物理定律 ORACLE 搜索，仅对 top-K 候选跑真实求解器双重验证，返回被求解器确认可用的最优器件，并自动包成机器可校验的统一 DesignPackage（可下载）。<b>LLM 不进判决路径。</b> 闭环器件目录来自 <code>/api/design_catalog</code>。下拉含两类：<b>● 闭环引擎</b>（给目标值 → 网格搜索最优器件）与 <b>○ 参数驱动包</b>（11 类成熟器件，用默认参数直接出统一设计包）。</div>
     <div class="row">
       <label>器件类型（闭环入口）
         <select id="doKind"></select>
@@ -3663,27 +3663,51 @@ async function loadDesignCatalog(){
   try{
     const c = await api('/api/design_catalog');
     const sel = $('doKind'); sel.innerHTML = '';
+    // 闭环引擎（target 驱动）：4 类
     (c.engine||[]).forEach(k=>{
       const o = document.createElement('option');
-      o.value = k.kind;
-      o.textContent = `${k.title}（${k.metric_name}${k.target_unit?(' / '+k.target_unit):''}）`;
+      o.value = k.kind; o.dataset.mode='engine';
+      o.textContent = `● ${k.title}（${k.metric_name}${k.target_unit?(' / '+k.target_unit):''}）`;
       o.dataset.unit = k.target_unit||''; o.dataset.def = k.default_target;
+      sel.appendChild(o);
+    });
+    // 统一设计包（params 驱动）：11 类 —— 补齐面板"具体类型"完整性
+    (c.package||[]).forEach(k=>{
+      const o = document.createElement('option');
+      o.value = k.kind; o.dataset.mode='package';
+      o.textContent = `○ ${k.title}（参数驱动包）`;
+      o.dataset.unit=''; o.dataset.def='';
       sel.appendChild(o);
     });
     // 默认选中 Transmon（numpy 对角化，快速；避免首屏预热跑 FDTD）
     if([...sel.options].some(o=>o.value==='engine_transmon')) sel.value='engine_transmon';
-    const cur = sel.options[sel.selectedIndex];
-    if(cur){ $('doUnit').textContent = cur.dataset.unit?('单位：'+cur.dataset.unit):''; $('doTarget').value = cur.dataset.def; }
-    sel.onchange = ()=>{ const o=sel.options[sel.selectedIndex]; $('doUnit').textContent=o.dataset.unit?('单位：'+o.dataset.unit):''; $('doTarget').value=o.dataset.def; };
+    _syncDoKindUI();
+    sel.onchange = ()=>{ _syncDoKindUI(); };
   }catch(e){ $('doSummary').textContent='目录加载失败：'+e; }
+}
+function _syncDoKindUI(){
+  const sel=$('doKind'); const o=sel.options[sel.selectedIndex]; if(!o) return;
+  const isPkg = o.dataset.mode==='package';
+  $('doUnit').textContent = isPkg ? '参数驱动（用默认参数）' : (o.dataset.unit?('单位：'+o.dataset.unit):'');
+  $('doTarget').value = isPkg ? '' : (o.dataset.def||'');
+  $('doTarget').disabled = isPkg;
+  $('doTopk').disabled = isPkg;
+  $('doTarget').placeholder = isPkg ? '（包模式无需目标值）' : '输入目标值';
 }
 async function runDesignOutcome(){
   const btn=$('runDesignOutcome'); btn.disabled=true; $('doDownload').disabled=true; _outcomePkg=null;
-  const kind=$('doKind').value; const target=parseFloat($('doTarget').value); const top_k=parseInt($('doTopk').value)||3;
-  $('doSummary').innerHTML='<span class="spin"></span> 设计闭环运行中（物理定律 ORACLE 搜索 + 真实求解器双重验证 → 包成统一设计包）…';
+  const sel=$('doKind'); const o=sel.options[sel.selectedIndex];
+  const kind=sel.value; const mode=o?o.dataset.mode:'engine';
+  const payload={kind};
+  if(mode==='engine'){
+    payload.target=parseFloat($('doTarget').value); payload.top_k=parseInt($('doTopk').value)||3;
+  } else {
+    payload.params={};  // 包模式用默认参数，无需目标值
+  }
+  $('doSummary').innerHTML='<span class="spin"></span> 设计运行中（'+(mode==='engine'?'物理定律 ORACLE 搜索 + 真实求解器双重验证':'参数驱动统一设计包')+' → 包成统一设计包）…';
   $('doBest').innerHTML=''; $('doCands').innerHTML=''; $('doPkg').innerHTML=''; $('doConclusion').innerHTML='';
   try{
-    const d = await api('/api/design_outcome', {kind, target, top_k});
+    const d = await api('/api/design_outcome', payload);
     renderDesignOutcome(d);
   }catch(e){ $('doSummary').innerHTML='运行失败：'+e; }
   finally{ btn.disabled=false; }
@@ -3693,7 +3717,11 @@ function renderDesignOutcome(d){
   const er = d.engine_result||{}; const mu = er.target_unit||'';
   const pkgv = (d.package&&d.package.verification)||{};
   const pkgPass = !!pkgv.passed;
-  $('doSummary').innerHTML = `目标 <b>${er.target}${mu}</b> · 搜索 <b>${er.searched}</b> 点 → 验证 <b>${er.verified}</b> 候选 → 通过 <b>${er.passed}</b> ${er.analytic_only?'<span class="warn">[解析锚，FDTD 抽检需 GPU]</span>':''} · 设计包验收 <span class="verdict ${pkgPass?'ok':'fail'}">${pkgPass?'PASS':'FAIL'}</span>`;
+  if(er.target!==undefined && er.target!==null){
+    $('doSummary').innerHTML = `目标 <b>${er.target}${mu}</b> · 搜索 <b>${er.searched}</b> 点 → 验证 <b>${er.verified}</b> 候选 → 通过 <b>${er.passed}</b> ${er.analytic_only?'<span class="warn">[解析锚，FDTD 抽检需 GPU]</span>':''} · 设计包验收 <span class="verdict ${pkgPass?'ok':'fail'}">${pkgPass?'PASS':'FAIL'}</span>`;
+  } else {
+    $('doSummary').innerHTML = `统一设计包模式 · 参数驱动（无目标搜索）· 设计包验收 <span class="verdict ${pkgPass?'ok':'fail'}">${pkgPass?'PASS':'FAIL'}</span>`;
+  }
   const b = er.best;
   if(!b){ $('doBest').innerHTML='<span class="warn">无已验证候选（请放宽目标或参数范围）</span>'; }
   else{

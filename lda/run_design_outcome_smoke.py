@@ -62,6 +62,18 @@ class DesignOutcomeSmoke(unittest.TestCase):
         self.assertTrue(v["passed"], msg=v.get("verdict"))
         self.assertEqual(validate_package(pkg), [])
 
+    def test_package_all_11(self):
+        from lda_design.design_package import (
+            build_package, validate_package, PACKAGE_KINDS,
+        )
+        for k in PACKAGE_KINDS:
+            with self.subTest(kind=k):
+                pkg = build_package(k)
+                self.assertTrue(pkg.get("ok"), msg=pkg.get("error"))
+                self.assertEqual(validate_package(pkg), [])
+                self.assertIn("verification", pkg)
+                self.assertIn("passed", pkg["verification"])
+
     def test_unknown_kind(self):
         from lda_design.design_package import package_from_engine
         pkg = package_from_engine("engine_nonexistent", 1.0, top_k=1)

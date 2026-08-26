@@ -69,6 +69,11 @@ class DesignEngine:
                                     "wavelengths_um": wls})["transmission"]
             return float(min(1.0 - t for t in r))
 
+        def _mzi_fsr(deltaL_um: float, wl0: float = 1.55,
+                     n_core: float = 3.48) -> float:
+            """MZI 干涉型 FSR（nm）：FSR = λ²/(n_eff·ΔL)。"""
+            return 1000.0 * wl0 ** 2 / (n_core * deltaL_um)
+
         specs: Dict[str, Dict[str, Any]] = {
             "Waveguide": {
                 "title": "直波导 · 目标有效折射率 neff",
@@ -125,10 +130,26 @@ class DesignEngine:
                 "extract": lambda r: r["checks"]["analytic_fsr"]["fsr_analytic_nm"],
                 "metric_name": "FSR (解析, nm)",
                 "target_unit": "nm",
-                "analytic_only": True,
-                "note": "FSR 由物理定律 λ²/(n_g·2πR) 决定；解析契约验证（FDTD 真实 "
-                        "抽检需 GPU，此处诚实标注）。",
-            },
+            "analytic_only": True,
+            "note": "FSR 由物理定律 λ²/(n_g·2πR) 决定；解析契约验证（FDTD 真实 "
+                    "抽检需 GPU，此处诚实标注）。",
+        },
+        "MziInterferometer": {
+            "title": "MZI 马赫曾德尔干涉仪 · 目标 FSR（解析干涉谱，FDTD 全波抽检需 GPU）",
+            "sweep": [("deltaL_um", 1.0, 60.0, 1.0)],
+            "fixed": dict(n_core=3.48, wl0_um=1.55, tol_rel=0.02),
+            "verify": lambda mode, target_f01, **kw:
+                self.lib.verify_mzi_fdtd(mode=mode, **kw),
+            "cheap": lambda combo, target: _mzi_fsr(combo["deltaL_um"]),
+            "extract": lambda r: r["checks"]["analytic_fsr"]["fsr_analytic_nm"],
+            "metric_name": "FSR (干涉谱, nm)",
+            "target_unit": "nm",
+            "analytic_only": True,
+            "secondary": ("deltaL_um", True),
+            "note": "MZI 干涉传输 T=½(1+cos(2π·n_eff·ΔL/λ))；解析干涉谱 "
+                    "FSR=λ²/(n_eff·ΔL) 契约验证（FDTD 全波抽检需 GPU，诚实标注）。"
+                    "干涉型 FSR 与环形谐振型并列对照。",
+        },
         }
         return specs
 

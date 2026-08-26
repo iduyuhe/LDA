@@ -350,6 +350,20 @@ def b19_link_passivity_bound(**kwargs):
     return 1.0
 
 
+def b20_mzi_fsr(wl0_um: float = 1.55, n_core: float = 3.48,
+                deltaL_um: float = 34.5) -> float:
+    """MZI 马赫曾德尔干涉仪自由光谱范围 FSR（确定性物理定律锚）。
+
+    MZI 两臂几何长度差 ΔL 导致单程相位累积 φ(λ)=2π·n_eff·ΔL/λ，干涉传输
+    T(λ)=½(1+cos φ)。波长自由光谱范围（相邻透射峰间距）：
+        FSR_λ = λ² / (n_eff · ΔL)
+    确定性物理定律（麦克斯韦干涉解，与 B4 环形 FSR=λ²/(n_g·2πR) 并列：
+    MZI 为「干涉型」、Ring 为「谐振型」，两道锚互为对照验证地基）。
+    返回单位 nm。
+    """
+    return 1000.0 * wl0_um ** 2 / (n_core * deltaL_um)
+
+
 _GOLDEN_DISPATCH = {
     "B1": b1_mie_qscat,
     "B2": b2_soi_waveguide_neff,
@@ -370,10 +384,11 @@ _GOLDEN_DISPATCH = {
     "B17": b17_jj_critical_current,
     "B18": b18_purcell_factor,
     "B19": b19_link_passivity_bound,
+    "B20": b20_mzi_fsr,
 }
 
 _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
-                 "B12", "B13", "B14", "B15", "B16", "B17", "B18", "B19"}
+                 "B12", "B13", "B14", "B15", "B16", "B17", "B18", "B19", "B20"}
 
 
 def golden_value(bid, params):

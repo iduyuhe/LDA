@@ -13,6 +13,7 @@ from .golden import (
     b12_resonator_frequency, b13_coupler_coupling,
     b14_dc_coupling_length, b15_bragg_wavelength, b16_mmi_length,
     b17_jj_critical_current, b18_purcell_factor, b19_link_passivity_bound,
+    b20_mzi_fsr,
 )
 
 BENCHMARK_DEFS = {
@@ -208,6 +209,18 @@ BENCHMARK_DEFS = {
                  "增益判 FAIL）；能量守恒为无损特例。由 lda_chain 引擎级联输出与"
                  "黄金上界死标量比对，LLM 不进判决路径。"),
     },
+    # ---- 内核纵深（D-112 后）：MZI 干涉型 FSR 物理定律锚 ----
+    "B20": {
+        "title": "MZI 马赫曾德尔干涉仪自由光谱范围 FSR",
+        "metric": "FSR_nm",
+        "oracle": "analytical(MZI interference)",
+        "tol": 1e-6,
+        "default_params": {"wl0_um": 1.55, "n_core": 3.48, "deltaL_um": 34.5},
+        "golden_fn": b20_mzi_fsr,
+        "note": ("MZI 干涉传输 T=½(1+cos(2π·n_eff·ΔL/λ))；FSR=λ²/(n_eff·ΔL)"
+                 "（干涉型，与 B4 环形谐振型并列对照）。确定性物理定律锚，"
+                 "LLM 不进判决路径；harness 默认 ReferenceCandidate 自洽 PASS。"),
+    },
     # ---- D-62 实证大数据锚（第二道非 AI ground：真实测量语料）----
     # anchor=empirical 的题：golden 来自 EmpiricalCorpus 实测语料（seed_empirical.json
     # + 社区经评审流落库的语料），非解析函数（golden_fn=None）。
@@ -252,7 +265,7 @@ BENCHMARK_DEFS = {
 # 对齐顺序（报告展示用）
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
-                   "B19",
+                   "B19", "B20",
                    "E1", "E2", "E3"]
 
 

@@ -45,28 +45,32 @@ PACKAGE_KINDS = ("add_drop", "quantum", "wdm", "readout_chain", "multiqubit",
 # 的一等公民，把闭环结果包成统一 schema，供端到端面板"给目标→出设计包"使用。
 # ---------------------------------------------------------------------------
 ENGINE_KINDS = ("engine_waveguide", "engine_braggmirror",
-                "engine_transmon", "engine_ringresonator")
+                "engine_transmon", "engine_ringresonator", "engine_mzi")
 ENGINE_KIND_MAP = {
     "engine_waveguide": "Waveguide",
     "engine_braggmirror": "BraggMirror",
     "engine_transmon": "Transmon",
     "engine_ringresonator": "RingResonator",
+    "engine_mzi": "MziInterferometer",
 }
 ENGINE_DOMAIN = {
     "Waveguide": "photon", "BraggMirror": "photon",
     "Transmon": "quantum", "RingResonator": "photon",
+    "MziInterferometer": "photon",
 }
 _ENGINE_DEFAULT_TARGET = {
     "engine_waveguide": 3.25,      # 目标 neff
     "engine_braggmirror": 0.999,   # 目标 R_min ≥ 0.999
     "engine_transmon": 5.0,        # 目标 f01 (GHz)
     "engine_ringresonator": 9.0,   # 目标 FSR (nm)
+    "engine_mzi": 20.0,            # 目标 FSR (nm) · 干涉型
 }
 _ENGINE_TITLE = {
     "engine_waveguide": "直波导 · 目标有效折射率 neff",
     "engine_braggmirror": "布拉格镜 · 目标反射率 R_min（最少周期）",
     "engine_transmon": "Transmon 量子比特 · 目标频率 f01",
     "engine_ringresonator": "环形谐振器 · 目标 FSR（解析锚）",
+    "engine_mzi": "MZI 马赫曾德尔干涉仪 · 目标 FSR（解析干涉谱）",
 }
 
 
@@ -416,9 +420,11 @@ def engine_catalog() -> List[Dict[str, Any]]:
         "metric_name": {
             "Waveguide": "neff (FDTD)", "BraggMirror": "R_min (FDTD)",
             "Transmon": "f01 (对角化, GHz)", "RingResonator": "FSR (解析, nm)",
+            "MziInterferometer": "FSR (干涉谱, nm)",
         }.get(ek, ""),
         "target_unit": {"Waveguide": "", "BraggMirror": "",
-                        "Transmon": "GHz", "RingResonator": "nm"}.get(ek, ""),
+                        "Transmon": "GHz", "RingResonator": "nm",
+                        "MziInterferometer": "nm"}.get(ek, ""),
         "default_target": _ENGINE_DEFAULT_TARGET.get(pk),
         "domain": ENGINE_DOMAIN.get(ek, "photon"),
         "analytic_only": ek == "RingResonator",

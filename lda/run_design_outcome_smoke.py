@@ -62,6 +62,25 @@ class DesignOutcomeSmoke(unittest.TestCase):
         self.assertTrue(v["passed"], msg=v.get("verdict"))
         self.assertEqual(validate_package(pkg), [])
 
+    def test_engine_mzi_package(self):
+        from lda_design.design_package import (
+            package_from_engine, validate_package,
+        )
+        pkg = package_from_engine("engine_mzi", 20.0, top_k=3)
+        self.assertTrue(pkg.get("ok"), msg=pkg.get("error"))
+        self.assertEqual(pkg["domain"], "photon")
+        self.assertEqual(pkg["kind"], "engine_mzi")
+        v = pkg["verification"]
+        # MZI 为解析干涉谱契约（analytic_only）：物理自洽即 PASS
+        self.assertTrue(v["passed"], msg=v.get("verdict"))
+        self.assertEqual(validate_package(pkg), [])
+        # 校验最优候选 FSR 与物理定律锚 B20 一致（死标量比对）
+        best = pkg["artifacts"]["engine_result"]["best"]
+        best_fsr = best["metric"]
+        from lda_harness.golden import b20_mzi_fsr
+        golden_fsr = b20_mzi_fsr(deltaL_um=best["params"]["deltaL_um"])
+        self.assertAlmostEqual(best_fsr, golden_fsr, delta=0.5)
+
     def test_package_all_11(self):
         from lda_design.design_package import (
             build_package, validate_package, PACKAGE_KINDS,

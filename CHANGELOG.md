@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.8.5（2026-08-26 · 内核纵深 D+E · Fluxonium 相位对角化 + 可调耦合器三模对角化）
+
+**里程碑：QEDA 内核纵深双击——Fluxonium 超导量子比特（新求解核：相位基/谐振子基双基对角化对拍）+ 可调耦合器（三模 Fock 截断对角化 vs 二阶微扰锚）。引擎闭环 7→9 类（9 引擎 + 11 包 = 20 类端到端），量子域引擎 2→4。**
+
+### 核心能力
+- **B23 物理定律锚**：Fluxonium LC 谐振严格极限 `f01=√(8·Ec·El)`（E_J→0 严格极限，任意 E_J 无解析闭式——正是必须数值对角化的原因）。
+- **`device_library.verify_fluxonium`**：**双基独立数值对拍**（相位网格有限差分 vs 谐振子基展开，两条独立路径互证，确定性数值物理、非 AI 判定）+ B23 LC 单调上界校验。实测 Ej=5：双基 rel=0.024%。
+- **B24 物理定律锚**：可调耦合器二阶有效耦合 `g_eff=(g1·g2/2)(1/Δ1+1/Δ2)`（Schrieffer-Wolff/中间态虚跃迁，共振时严格）。
+- **`device_library.verify_tunable_coupler`**：三模 Fock 截断（transmon×2+coupler）对角化，激发带对称/反对称劈裂/2 提取 |g_eff| 与 B24 锚死标量比对。实测 9 组参数 rel=0.1%~2.5%。
+- **设计闭环引擎新增 `Fluxonium` + `TunableCoupler`**：前者 sweep E_J 命中目标 f01（cheap=粗网格毫秒级对角化）；后者 sweep g1 命中目标 |g_eff|。
+- **统一设计包注册 `engine_fluxonium` + `engine_tcoup`**（各六处）：**catalog 20 类端到端**；WebUI 旗舰面板经 `engine_catalog()` 自动纳入。
+- **门禁新增**：`run_fluxonium_anchor_smoke.py`（B23/B24 harness + 双引擎锚对照）；`run_design_outcome_smoke.py` 扩展至 13 测试。
+
+> 注：v0.7.0（芯片级补强 P1 收官）+ v0.8.0~v0.8.2（产品化外壳 / MZI 引擎 + B20 锚）详见提交历史；本条目聚焦 v0.8.5 内核纵深 D+E。
+
 ## v0.8.4（2026-08-26 · 内核纵深 C · CPW λ/4 读出谐振器 1D 传输线 FDTD）
 
 **里程碑：量子域内核纵深第一击——超导量子比特读出谐振器真跑 1D 传输线 FDTD，基模频率对物理定律锚 B22 死标量比对（纯 numpy 零 GPU）；与 Transmon 引擎配对构成 QEDA「比特+读出」基础单元。**

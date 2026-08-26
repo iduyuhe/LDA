@@ -1028,6 +1028,155 @@ class DeviceLibrary:
                 f"FDTD自洽={accepted}（rel={rel:.2%}，tol={tol_rel:.0%}）"),
         }
 
+    def verify_fluxonium(self, name: str = "Fluxonium",
+                         mode: str = "live", e_j: float = 5.0,
+                         e_c: float = 1.0, e_l: float = 1.0,
+                         tol_rel: float = 0.01, nphi: int = 401,
+                         ncut: int = 40, phi_max_pi: float = 4.0) -> Dict[str, Any]:
+        """Fluxonium 超导量子比特真实相位对角化验收（新求解核家族）。
+
+        H = 4·Ec·n² + ½·El·(φ−φext)² − Ej·cos(φ)（φext=0）。
+
+        两层验收入口（纯 numpy，零 GPU）：
+          contract：注册表 + B23 LC 严格极限锚 + 求解核可导入 + 锚物理合理。
+          live    ：①相位基有限差分对角化（numpy.linalg.eigh）提取 f01；
+                    ②与谐振子基独立对角化（第二条数值路径）对拍；
+                    ③Ej→0 时与 B23 LC 严格极限 √(8·Ec·El) 物理边界比对。
+                    passed = 双基对拍 rel ≤ tol_rel 且 LC 边界 rel ≤ 5×tol_rel。
+        """
+        from lda_harness.golden import b23_fluxonium_lc_limit
+        anchor_ghz = b23_fluxonium_lc_limit(e_c, e_l)
+        physical_anchor = bool(0.1 < anchor_ghz < 50.0)
+        if mode == "contract":
+            return {
+                "device": name, "mode": "contract", "passed": True,
+                "checks": {
+                    "registered": name in self._devices,
+                    "anchor_fn": "b23_fluxonium_lc_limit (B23 物理定律锚)",
+                    "solver_core": "_fluxonium_phase_core/_fluxonium_ho_core (numpy eigh)",
+                    "analytic_fsr": {
+                        "e_j": e_j, "e_c": e_c, "e_l": e_l,
+                        "fsr_analytic_ghz": round(anchor_ghz, 4),
+                        "fsr_fdtd_ghz": None,
+                        "physical": physical_anchor,
+                    },
+                },
+                "verdict": (f"contract 自检：{name} 注册表 + B23 LC 极限锚 "
+                            f"f01=√(8·Ec·El)={anchor_ghz:.3f}GHz 物理合理"
+                            f"（数值验收请用 live 模式）"),
+            }
+        f01_phase = _fluxonium_phase_core(e_j=e_j, e_c=e_c, e_l=e_l,
+                                          nphi=nphi, phi_max_pi=phi_max_pi)
+        f01_ho = _fluxonium_ho_core(e_j=e_j, e_c=e_c, e_l=e_l, ncut=ncut)
+        if f01_phase is None or f01_ho is None:
+            return {
+                "device": name, "mode": "live", "passed": False,
+                "checks": {"analytic_fsr": {
+                    "fsr_analytic_ghz": round(anchor_ghz, 4),
+                    "fsr_fdtd_ghz": None, "physical": physical_anchor}},
+                "verdict": f"{name} 对角化未返回有限 f01（参数需复核）",
+            }
+        rel_dual = abs(f01_phase - f01_ho) / f01_ho
+        # LC 边界：当前 Ej 下 f01 偏离 LC 极限是物理（势阱重组）；边界检验只在
+        # 小 Ej 时要求逼近锚。取边界容差 5×tol_rel 判定"趋势正确"：
+        # f01(Ej>0) ≥ f01(LC)（cosφ 势加深抬升能级），物理单调边界。
+        lc_ok = bool(f01_phase >= anchor_ghz * (1.0 - 5.0 * tol_rel))
+        accepted = bool(rel_dual <= tol_rel)
+        passed = bool(physical_anchor and accepted and lc_ok)
+        return {
+            "device": name, "mode": "live", "passed": passed,
+            "checks": {
+                "analytic_fsr": {
+                    "e_j": e_j, "e_c": e_c, "e_l": e_l,
+                    "fsr_analytic_ghz": round(anchor_ghz, 4),
+                    "fsr_fdtd_ghz": round(f01_phase, 4),
+                    "physical": physical_anchor,
+                },
+                "dual_basis": {
+                    "f01_phase_ghz": round(f01_phase, 4),
+                    "f01_ho_ghz": round(f01_ho, 4),
+                    "rel": round(rel_dual, 6),
+                    "tol": tol_rel,
+                    "lc_bound_ok": lc_ok,
+                },
+            },
+            "verdict": (
+                f"Fluxonium 双基对拍 PASS（相位基 f01={f01_phase:.3f}GHz ↔ "
+                f"HO 基 f01={f01_ho:.3f}GHz rel={rel_dual:.4%} ≤ {tol_rel:.0%}；"
+                f"B23 LC 边界锚={anchor_ghz:.3f}GHz 单调上界成立）"
+                if passed else
+                f"Fluxonium 双基对拍未全过：双基 rel={rel_dual:.4%}"
+                f"（tol={tol_rel:.0%}）、LC 边界={lc_ok}"),
+        }
+
+    def verify_tunable_coupler(self, name: str = "TunableCoupler",
+                               mode: str = "live", wq_ghz: float = 5.0,
+                               wc_ghz: float = 7.5, g1_ghz: float = 0.10,
+                               g2_ghz: float = 0.10, alpha_ghz: float = -0.20,
+                               tol_rel: float = 0.03, ncut: int = 3) -> Dict[str, Any]:
+        """可调耦合器三模对角化验收（QEDA tunable coupler）。
+
+        两个 transmon（共振 wq，非谐度 alpha）经可调耦合器 wc，耦合 g1/g2。
+        B24 二阶微扰锚：g_eff = (g1·g2/2)(1/Δ1+1/Δ2)（共振时严格）。
+        数值 = 三模 Fock 截断（ncut³）对角化，激发带对称/反对称劈裂/2。
+
+          contract：注册表 + B24 锚 + 求解核可导入 + 锚物理合理。
+          live    ：真跑三模对角化提取 |g_eff| 与 B24 锚死标量比对 rel≤tol_rel。
+        """
+        from lda_harness.golden import b24_tcoup_geff
+        anchor_ghz = b24_tcoup_geff(wq_ghz, wc_ghz, g1_ghz, g2_ghz)
+        physical_anchor = bool(0.0 < abs(anchor_ghz) < 0.5)
+        if mode == "contract":
+            return {
+                "device": name, "mode": "contract", "passed": True,
+                "checks": {
+                    "registered": name in self._devices,
+                    "anchor_fn": "b24_tcoup_geff (B24 物理定律锚)",
+                    "solver_core": "_tcoup_3mode_core (Fock 截断 eigh)",
+                    "analytic_fsr": {
+                        "wq_ghz": wq_ghz, "wc_ghz": wc_ghz,
+                        "g1_ghz": g1_ghz, "g2_ghz": g2_ghz,
+                        "fsr_analytic_ghz": round(anchor_ghz, 6),
+                        "fsr_fdtd_ghz": None,
+                        "physical": physical_anchor,
+                    },
+                },
+                "verdict": (f"contract 自检：{name} 注册表 + B24 锚 "
+                            f"g_eff=(g1g2/2)(1/Δ1+1/Δ2)={anchor_ghz:.4f}GHz "
+                            f"物理合理（数值验收请用 live 模式）"),
+            }
+        geff_num = _tcoup_3mode_core(wq=wq_ghz, wc=wc_ghz, g1=g1_ghz,
+                                     g2=g2_ghz, alpha=alpha_ghz, ncut=ncut)
+        if geff_num is None:
+            return {
+                "device": name, "mode": "live", "passed": False,
+                "checks": {"analytic_fsr": {
+                    "fsr_analytic_ghz": round(anchor_ghz, 6),
+                    "fsr_fdtd_ghz": None, "physical": physical_anchor}},
+                "verdict": f"{name} 三模对角化未提取到劈裂（参数需复核）",
+            }
+        rel = abs(geff_num - abs(anchor_ghz)) / abs(anchor_ghz)
+        accepted = bool(rel <= tol_rel)
+        passed = bool(physical_anchor and accepted)
+        return {
+            "device": name, "mode": "live", "passed": passed,
+            "checks": {
+                "analytic_fsr": {
+                    "wq_ghz": wq_ghz, "wc_ghz": wc_ghz,
+                    "g1_ghz": g1_ghz, "g2_ghz": g2_ghz,
+                    "fsr_analytic_ghz": round(anchor_ghz, 6),
+                    "fsr_fdtd_ghz": round(geff_num, 6),
+                    "physical": physical_anchor,
+                },
+            },
+            "verdict": (
+                f"可调耦合器三模对角化 PASS（B24 锚 |g_eff|={abs(anchor_ghz):.4f}GHz "
+                f"↔ 数值 |g_eff|={geff_num:.4f}GHz rel={rel:.2%} ≤ {tol_rel:.0%}）"
+                if passed else
+                f"可调耦合器验收未全过：锚物理={physical_anchor}，"
+                f"对拍 rel={rel:.2%}（tol={tol_rel:.0%}）"),
+        }
+
 
 def _qres_tlfdtd_core(L_um: float = 4000.0, n_eff: float = 2.5, N: int = 400,
                       n_steps: int = 15000, src_frac: float = 0.22,
@@ -1190,6 +1339,96 @@ def _phc_fdtd_core(L_cav_um: float = 0.45, a_m_um: float = 0.46,
         if best is None or err < best[0]:
             best = (err, lam_nm)
     return best[1] if best else None
+
+
+def _fluxonium_phase_core(e_j: float = 5.0, e_c: float = 1.0, e_l: float = 1.0,
+                          nphi: int = 401, phi_max_pi: float = 4.0
+                          ) -> Optional[float]:
+    """Fluxonium 相位基有限差分对角化求解核（纯 numpy，零 GPU）。
+
+    H = 4·Ec·n² + ½·El·φ² − Ej·cos(φ)（φ_ext=0，偶宇称，开窗 Dirichlet）。
+    n = −i·d/dφ → 中心差分；返回 f01 = E1 − E0（GHz），失败返回 None。
+    """
+    import numpy as np
+    phi_max = phi_max_pi * np.pi
+    dphi = 2.0 * phi_max / (nphi - 1)
+    phi = np.linspace(-phi_max, phi_max, nphi)
+    d2 = (np.diag(-2.0 * np.ones(nphi))
+          + np.diag(np.ones(nphi - 1), 1) + np.diag(np.ones(nphi - 1), -1))
+    n2 = -d2 / (dphi ** 2)
+    h = (4.0 * e_c * n2 + 0.5 * e_l * np.diag(phi ** 2)
+         - e_j * np.diag(np.cos(phi)))
+    try:
+        evals = np.linalg.eigvalsh(h)
+    except np.linalg.LinAlgError:
+        return None
+    f01 = float(evals[1] - evals[0])
+    return f01 if np.isfinite(f01) else None
+
+
+def _fluxonium_ho_core(e_j: float = 5.0, e_c: float = 1.0, e_l: float = 1.0,
+                       ncut: int = 40) -> Optional[float]:
+    """Fluxonium 谐振子基展开对角化求解核（独立第二条数值路径）。
+
+    LC 参考谐振子（由 Ec/El 决定零点涨落）基矢展开；cosφ 用泰勒矩阵幂级数。
+    返回 f01（GHz），失败返回 None。与相位网格基互为独立对拍。
+    """
+    import numpy as np
+    import math as _math
+    phi_zpf = (8.0 * e_c / e_l) ** 0.25
+    n_zpf = 0.5 * (e_l / (8.0 * e_c)) ** 0.25
+    n = np.arange(ncut)
+    a = np.diag(np.sqrt(n[1:]), 1)
+    ad = a.T
+    phi_op = phi_zpf * (ad + a)
+    n_op = -1j * n_zpf * (ad - a)
+    h = 4.0 * e_c * (n_op @ n_op) + 0.5 * e_l * (phi_op @ phi_op)
+    cos_phi = np.eye(ncut)
+    term = np.eye(ncut)
+    for k in range(1, 24):
+        term = term @ phi_op @ phi_op
+        cos_phi += ((-1) ** k) * term / _math.factorial(2 * k)
+        if np.abs(term).max() / _math.factorial(2 * k) < 1e-18:
+            break
+    h = h - e_j * cos_phi
+    try:
+        evals = np.linalg.eigvalsh(h.real)
+    except np.linalg.LinAlgError:
+        return None
+    f01 = float(evals[1] - evals[0])
+    return f01 if np.isfinite(f01) else None
+
+
+def _tcoup_3mode_core(wq: float = 5.0, wc: float = 7.5, g1: float = 0.10,
+                      g2: float = 0.10, alpha: float = -0.20, ncut: int = 3
+                      ) -> Optional[float]:
+    """可调耦合器三模 Fock 截断对角化求解核（纯 numpy，零 GPU）。
+
+    两 transmon（共振 wq、非谐度 alpha）+ 耦合器（wc、alpha），耦合 g1/g2。
+    激发带（基态之上第 2、3 条 = 对称/反对称 qubit-like 组合）劈裂 /2
+    = |g_eff|（共振读出，与 B24 锚同级近似严格）。失败返回 None。
+    """
+    import numpy as np
+    n = np.arange(ncut)
+    diag_q = wq * n - 0.5 * alpha * n * (n - 1)
+    diag_c = wc * n - 0.5 * alpha * n * (n - 1)
+    a = np.diag(np.sqrt(n[1:]), 1)
+    i_ = np.eye(ncut)
+    h1 = np.diag(diag_q)
+    h2 = np.diag(diag_q)
+    hc = np.diag(diag_c)
+    h = (np.kron(np.kron(h1, i_), i_) + np.kron(np.kron(i_, h2), i_)
+         + np.kron(np.kron(i_, i_), hc))
+    j1 = (np.kron(np.kron(a.T, i_), a) + np.kron(np.kron(a, i_), a.T))
+    j2 = (np.kron(np.kron(i_, a.T), a) + np.kron(np.kron(i_, a), a.T))
+    try:
+        evals = np.linalg.eigvalsh(h + g1 * j1 + g2 * j2)
+    except np.linalg.LinAlgError:
+        return None
+    if len(evals) < 3:
+        return None
+    geff = 0.5 * (evals[2] - evals[1])
+    return float(abs(geff)) if np.isfinite(geff) else None
 
 
 def get_default_library() -> DeviceLibrary:

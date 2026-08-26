@@ -51,6 +51,7 @@ class DesignEngine:
         from lda_harness.oracle_mode import _slab_te_neff  # noqa: E402
         from lda_harness.golden import b21_phc_resonance  # noqa: E402
         from lda_harness.golden import b22_qres_frequency  # noqa: E402
+        from lda_harness.golden import b24_tcoup_geff  # noqa: E402
         import tmm  # lda_solver/tmm.py  # noqa: E402
         from lda_solver.transmon_solver import koch_f01  # noqa: E402
         from lda_agent.ring_loop import ring_fsr_analytic_nm  # noqa: E402
@@ -75,6 +76,12 @@ class DesignEngine:
                      n_core: float = 3.48) -> float:
             """MZI 干涉型 FSR（nm）：FSR = λ²/(n_eff·ΔL)。"""
             return 1000.0 * wl0 ** 2 / (n_core * deltaL_um)
+
+        def _flux_f01_cheap(e_j: float, e_c: float = 1.0,
+                            e_l: float = 1.0):
+            """Fluxonium cheap ORACLE：粗相位网格对角化（nphi=81，毫秒级）。"""
+            from lda_l2.device_library import _fluxonium_phase_core
+            return _fluxonium_phase_core(e_j=e_j, e_c=e_c, e_l=e_l, nphi=81)
 
         specs: Dict[str, Dict[str, Any]] = {
             "Waveguide": {
@@ -191,6 +198,47 @@ class DesignEngine:
                     "谐振频率；1D 传输线 FDTD 提取真实 f0 与锚死标量比对"
                     "（纯 numpy 零 GPU）。与 Transmon 引擎配对构成 QEDA"
                     "「比特+读出」基础单元。",
+        },
+        "Fluxonium": {
+            "title": "Fluxonium 超导量子比特 · 目标频率 f01（相位对角化 + 双基对拍）",
+            "sweep": [("e_j", 1.0, 12.0, 0.5)],
+            "fixed": dict(e_c=1.0, e_l=1.0, tol_rel=0.01, nphi=401,
+                          ncut=40, phi_max_pi=4.0),
+            "verify": lambda mode, target_f01, **kw:
+                self.lib.verify_fluxonium(mode=mode, **kw),
+            # 无解析闭式 → cheap = 粗相位网格对角化（nphi=81，毫秒级）
+            "cheap": lambda combo, target: _flux_f01_cheap(
+                combo["e_j"], 1.0, 1.0),
+            "extract": lambda r: r["checks"]["analytic_fsr"]["fsr_fdtd_ghz"],
+            "metric_name": "f01 (相位对角化, GHz)",
+            "target_unit": "GHz",
+            "analytic_only": False,
+            "secondary": ("e_j", True),
+            "note": "Fluxonium H=4Ec·n²+½El·φ²−Ej·cosφ 任意 Ej 无解析闭式"
+                    "（正是必须数值对角化的原因）。cheap=粗相位网格 f01"
+                    "（小网格快速评估），top-K 用 401 点相位网格 + HO 基"
+                    "双路径对拍（rel≤1%）+ B23 LC 极限边界校验。与 "
+                    "Transmon 并列的第二类超导比特，补强 QEDA 栈。",
+        },
+        "TunableCoupler": {
+            "title": "可调耦合器 · 目标有效耦合 |g_eff|（三模对角化 + 二阶微扰锚）",
+            "sweep": [("g1_ghz", 0.05, 0.25, 0.01)],
+            "fixed": dict(wq_ghz=5.0, wc_ghz=7.5, g2_ghz=0.10,
+                          alpha_ghz=-0.20, tol_rel=0.03, ncut=3),
+            "verify": lambda mode, target_f01, **kw:
+                self.lib.verify_tunable_coupler(mode=mode, **kw),
+            "cheap": lambda combo, target: abs(b24_tcoup_geff(
+                5.0, 7.5, combo["g1_ghz"], 0.10)),
+            "extract": lambda r: r["checks"]["analytic_fsr"]["fsr_fdtd_ghz"],
+            "metric_name": "|g_eff| (三模对角化, GHz)",
+            "target_unit": "GHz",
+            "analytic_only": False,
+            "secondary": ("g1_ghz", True),
+            "note": "QEDA 可调耦合器：两 transmon 经中间 coupler 的等效直接"
+                    "耦合。B24 二阶微扰锚 g_eff=(g1g2/2)(1/Δ1+1/Δ2) 引导网格"
+                    "搜索 g1 命中目标 |g_eff|；top-K 真跑三模 Fock 截断对角化"
+                    "激发带劈裂/2 与锚死标量比对（rel≤3%）。可调耦合器是"
+                    "可调两比特门架构的核心元件。",
         },
         }
         return specs

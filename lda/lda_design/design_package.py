@@ -46,7 +46,8 @@ PACKAGE_KINDS = ("add_drop", "quantum", "wdm", "readout_chain", "multiqubit",
 # ---------------------------------------------------------------------------
 ENGINE_KINDS = ("engine_waveguide", "engine_braggmirror",
                 "engine_transmon", "engine_ringresonator", "engine_mzi",
-                "engine_phc", "engine_qres")
+                "engine_phc", "engine_qres", "engine_fluxonium",
+                "engine_tcoup")
 ENGINE_KIND_MAP = {
     "engine_waveguide": "Waveguide",
     "engine_braggmirror": "BraggMirror",
@@ -55,12 +56,15 @@ ENGINE_KIND_MAP = {
     "engine_mzi": "MziInterferometer",
     "engine_phc": "PhCCavity",
     "engine_qres": "ReadoutResonator",
+    "engine_fluxonium": "Fluxonium",
+    "engine_tcoup": "TunableCoupler",
 }
 ENGINE_DOMAIN = {
     "Waveguide": "photon", "BraggMirror": "photon",
     "Transmon": "quantum", "RingResonator": "photon",
     "MziInterferometer": "photon", "PhCCavity": "photon",
-    "ReadoutResonator": "quantum",
+    "ReadoutResonator": "quantum", "Fluxonium": "quantum",
+    "TunableCoupler": "quantum",
 }
 _ENGINE_DEFAULT_TARGET = {
     "engine_waveguide": 3.25,      # 目标 neff
@@ -70,6 +74,8 @@ _ENGINE_DEFAULT_TARGET = {
     "engine_mzi": 20.0,            # 目标 FSR (nm) · 干涉型
     "engine_phc": 2200.0,          # 目标共振波长 λ_res (nm)
     "engine_qres": 7.5,            # 目标基模频率 f0 (GHz)
+    "engine_fluxonium": 6.0,       # 目标 f01 (GHz)
+    "engine_tcoup": 0.005,         # 目标 |g_eff| (GHz)
 }
 _ENGINE_TITLE = {
     "engine_waveguide": "直波导 · 目标有效折射率 neff",
@@ -79,6 +85,8 @@ _ENGINE_TITLE = {
     "engine_mzi": "MZI 马赫曾德尔干涉仪 · 目标 FSR（解析干涉谱）",
     "engine_phc": "光子晶体腔 · 目标共振波长 λ_res（2D FDTD + 布拉格带边锚）",
     "engine_qres": "CPW λ/4 读出谐振器 · 目标基模频率 f0（1D 传输线 FDTD + 传输线锚）",
+    "engine_fluxonium": "Fluxonium 超导量子比特 · 目标频率 f01（相位对角化 + 双基对拍）",
+    "engine_tcoup": "可调耦合器 · 目标有效耦合 |g_eff|（三模对角化 + 二阶微扰锚）",
 }
 
 
@@ -431,12 +439,16 @@ def engine_catalog() -> List[Dict[str, Any]]:
             "MziInterferometer": "FSR (干涉谱, nm)",
             "PhCCavity": "cavity_wl (2D FDTD, nm)",
             "ReadoutResonator": "f0 (1D TL-FDTD, GHz)",
+            "Fluxonium": "f01 (相位对角化, GHz)",
+            "TunableCoupler": "|g_eff| (三模对角化, GHz)",
         }.get(ek, ""),
         "target_unit": {"Waveguide": "", "BraggMirror": "",
                         "Transmon": "GHz", "RingResonator": "nm",
                         "MziInterferometer": "nm",
                         "PhCCavity": "nm",
-                        "ReadoutResonator": "GHz"}.get(ek, ""),
+                        "ReadoutResonator": "GHz",
+                        "Fluxonium": "GHz",
+                        "TunableCoupler": "GHz"}.get(ek, ""),
         "default_target": _ENGINE_DEFAULT_TARGET.get(pk),
         "domain": ENGINE_DOMAIN.get(ek, "photon"),
         "analytic_only": ek == "RingResonator",

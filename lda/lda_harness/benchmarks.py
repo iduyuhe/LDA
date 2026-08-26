@@ -16,6 +16,8 @@ from .golden import (
     b20_mzi_fsr,
     b21_phc_resonance,
     b22_qres_frequency,
+    b23_fluxonium_lc_limit,
+    b24_tcoup_geff,
 )
 
 BENCHMARK_DEFS = {
@@ -251,6 +253,34 @@ BENCHMARK_DEFS = {
                  "LLM 不进判决路径；harness 默认 ReferenceCandidate 自洽 PASS。"
                  "与 Transmon 引擎配对补强 QEDA「比特+读出」基础单元。"),
     },
+    # ---- 内核纵深（v0.8.5）：Fluxonium LC 极限 / 可调耦合器二阶锚 ----
+    "B23": {
+        "title": "Fluxonium LC 谐振严格极限 f01",
+        "metric": "fluxonium_f01_ghz",
+        "oracle": "analytical(LC oscillator strict limit E_J→0)",
+        "tol": 1e-6,
+        "default_params": {"ec_ghz": 1.0, "el_ghz": 1.0},
+        "golden_fn": b23_fluxonium_lc_limit,
+        "note": ("Fluxonium H=4Ec·n²+½El(φ−φext)²−Ej·cosφ 在 Ej→0 严格极限"
+                 "退化为 LC 谐振子 f01=√(8·Ec·El)（GHz 计能直接给出）。任意 Ej "
+                 "无解析闭式 → 数值对角化双基对拍验证（相位网格 vs 谐振子基）。"
+                 "确定性物理定律锚，LLM 不进判决路径；harness 默认 "
+                 "ReferenceCandidate 自洽 PASS。"),
+    },
+    "B24": {
+        "title": "可调耦合器二阶有效耦合 g_eff",
+        "metric": "tcoup_geff_ghz",
+        "oracle": "analytical(2nd-order perturbation / Schrieffer-Wolff)",
+        "tol": 1e-6,
+        "default_params": {"wq_ghz": 5.0, "wc_ghz": 7.5,
+                           "g1_ghz": 0.10, "g2_ghz": 0.10},
+        "golden_fn": b24_tcoup_geff,
+        "note": ("两 transmon 经可调耦合器的等效直接耦合（二阶微扰/SW 变换）"
+                 "g_eff=(g1g2/2)(1/Δ1+1/Δ2)，共振 w1=w2 时严格。数值验证 = "
+                 "三模 Fock 截断对角化激发带劈裂/2。QEDA 可调耦合器架构核心"
+                 "解析基准。确定性物理定律锚，LLM 不进判决路径；harness 默认 "
+                 "ReferenceCandidate 自洽 PASS。"),
+    },
     # ---- D-62 实证大数据锚（第二道非 AI ground：真实测量语料）----
     # anchor=empirical 的题：golden 来自 EmpiricalCorpus 实测语料（seed_empirical.json
     # + 社区经评审流落库的语料），非解析函数（golden_fn=None）。
@@ -295,7 +325,7 @@ BENCHMARK_DEFS = {
 # 对齐顺序（报告展示用）
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
-                   "B19", "B20", "B21", "B22",
+                   "B19", "B20", "B21", "B22", "B23", "B24",
                    "E1", "E2", "E3"]
 
 

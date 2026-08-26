@@ -121,6 +121,48 @@ class DesignOutcomeSmoke(unittest.TestCase):
         self.assertIsNotNone(best_f0)
         self.assertAlmostEqual(best_f0, golden, delta=0.05 * golden)
 
+    def test_engine_fluxonium_package(self):
+        from lda_design.design_package import (
+            package_from_engine, validate_package,
+        )
+        pkg = package_from_engine("engine_fluxonium", 6.0, top_k=3)
+        self.assertTrue(pkg.get("ok"), msg=pkg.get("error"))
+        self.assertEqual(pkg["domain"], "quantum")
+        self.assertEqual(pkg["kind"], "engine_fluxonium")
+        v = pkg["verification"]
+        # Fluxonium 真跑相位对角化 + 双基对拍：双重验证通过即 PASS
+        self.assertTrue(v["passed"], msg=v.get("verdict"))
+        self.assertEqual(validate_package(pkg), [])
+        best = pkg["artifacts"]["engine_result"]["best"]
+        f01 = best["metric"]
+        from lda_harness.golden import b23_fluxonium_lc_limit
+        lc = b23_fluxonium_lc_limit(1.0, 1.0)
+        self.assertIsNotNone(f01)
+        # f01 ≥ B23 LC 极限（Ej>0 单调物理边界）
+        self.assertGreaterEqual(f01, lc * 0.95)
+        # 双基对拍一致 ≤1%
+        dual = best["result"]["checks"]["dual_basis"]
+        self.assertLessEqual(dual["rel"], 0.01)
+
+    def test_engine_tcoup_package(self):
+        from lda_design.design_package import (
+            package_from_engine, validate_package,
+        )
+        pkg = package_from_engine("engine_tcoup", 0.005, top_k=3)
+        self.assertTrue(pkg.get("ok"), msg=pkg.get("error"))
+        self.assertEqual(pkg["domain"], "quantum")
+        self.assertEqual(pkg["kind"], "engine_tcoup")
+        v = pkg["verification"]
+        # 可调耦合器真跑三模对角化：双重验证通过即 PASS
+        self.assertTrue(v["passed"], msg=v.get("verdict"))
+        self.assertEqual(validate_package(pkg), [])
+        best = pkg["artifacts"]["engine_result"]["best"]
+        geff = best["metric"]
+        from lda_harness.golden import b24_tcoup_geff
+        golden = abs(b24_tcoup_geff(5.0, 7.5, best["params"]["g1_ghz"], 0.10))
+        self.assertIsNotNone(geff)
+        self.assertAlmostEqual(geff, golden, delta=0.05 * golden)
+
     def test_package_all_11(self):
         from lda_design.design_package import (
             build_package, validate_package, PACKAGE_KINDS,

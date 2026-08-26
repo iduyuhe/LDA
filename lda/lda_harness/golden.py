@@ -9,6 +9,8 @@ B1–B4、B8（光子子集第一批）。所有返回值均为标量 metric，�
 """
 import math
 
+import numpy as np
+
 from .oracle_field import resolve_field_oracle
 from .oracle_pyepr import resolve_pyepr_transmon
 
@@ -397,6 +399,40 @@ def b22_qres_frequency(L_um: float = 4000.0, n_eff: float = 2.5) -> float:
     return 1000.0 * 299.792458 / (4.0 * L_um * n_eff)
 
 
+def b23_fluxonium_lc_limit(ec_ghz: float = 1.0, el_ghz: float = 1.0) -> float:
+    """Fluxonium LC 谐振严格极限（确定性物理定律锚）。
+
+    Fluxonium 哈密顿量 H = 4·E_C·n² + ½·E_L·(φ−φ_ext)² − E_J·cos(φ)。
+    在 E_J → 0 严格极限下退化为 LC 谐振子，能级间隔解析精确：
+        f01 = √(8·E_C·E_L) / h
+    （能量以 GHz 计即 E/h，该式直接给出 GHz）。此极限是 Fluxonium 任意
+    参数数值对角化的物理边界校验点；任意 E_J 的 f01 无解析闭式（正是
+    Fluxonium 必须数值对角化的原因），其验证采用双基独立数值对拍
+    （相位网格有限差分 vs 谐振子基展开，见 verify_fluxonium）。
+    返回单位 GHz。与 B9（Transmon）、B22（读出谐振器）同属超导量子
+    器件物理定律锚家族。
+    """
+    return float(np.sqrt(8.0 * ec_ghz * el_ghz))
+
+
+def b24_tcoup_geff(wq_ghz: float = 5.0, wc_ghz: float = 7.5,
+                   g1_ghz: float = 0.10, g2_ghz: float = 0.10) -> float:
+    """可调耦合器二阶有效耦合强度（确定性物理定律锚）。
+
+    两个 transmon 量子比特（频率 wq，经中间可调耦合器 wc）的等效直接
+    耦合由二阶微扰论（Schrieffer-Wolff / 中间态虚跃迁）解析给出：
+        g_eff = (g1·g2/2) · (1/Δ1 + 1/Δ2)，  Δi = wi − wc
+    共振情形 w1=w2=wq 时 g_eff = g1·g2·wq/(wc²−wq²)，严格成立；数值
+    验证 = 三模 Fock 截断对角化激发带对称/反对称劈裂 /2（见
+    verify_tunable_coupler）。该锚是 QEDA 架构（可调耦合器开/关两比特
+    门）的核心解析基准。
+    返回单位 GHz（代数值；负值表示可调"关"点一侧）。
+    """
+    d1 = wq_ghz - wc_ghz
+    d2 = wq_ghz - wc_ghz
+    return 0.5 * g1_ghz * g2_ghz * (1.0 / d1 + 1.0 / d2)
+
+
 _GOLDEN_DISPATCH = {
     "B1": b1_mie_qscat,
     "B2": b2_soi_waveguide_neff,
@@ -418,13 +454,15 @@ _GOLDEN_DISPATCH = {
     "B18": b18_purcell_factor,
     "B19": b19_link_passivity_bound,
     "B20": b20_mzi_fsr,
-        "B21": b21_phc_resonance,
-        "B22": b22_qres_frequency,
+    "B21": b21_phc_resonance,
+    "B22": b22_qres_frequency,
+    "B23": b23_fluxonium_lc_limit,
+    "B24": b24_tcoup_geff,
 }
 
 _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
-                 "B12", "B13", "B14", "B15", "B16", "B17", "B18",                  "B19", "B20",
-                 "B21", "B22"}
+                 "B12", "B13", "B14", "B15", "B16", "B17", "B18",
+                 "B19", "B20", "B21", "B22", "B23", "B24"}
 
 
 def golden_value(bid, params):

@@ -48,6 +48,7 @@ class LinkModel:
         self.ir = IRModel(domain=domain, name=name, notes=notes)
         self._sources: List[Tuple[str, str]] = []
         self.link_params: Dict[str, Any] = {}
+        self._subsystems: Dict[str, "LinkModel"] = {}  # Merge-3b 层级 IR
 
     # —— 便捷构造 ——
     def add_device(self, id: str, kind: str,
@@ -86,6 +87,72 @@ class LinkModel:
         """设置 link 级共享参数（如 bus gap），供器件传递模型消费。"""
         self.link_params[key] = value
         return self
+
+    # —— Merge-3b：层级 IR（子系统组合 + flatten 宏展开）——
+    def add_subsystem(self, id: str, sub: "LinkModel") -> "LinkModel":
+        """把一条子链路声明为子系统（组合器件），可参与父链路。
+
+        语义：flatten() 时把子系统内部组件/net 内联进父 IR（id 前缀化），
+        子系统外部 IO 端口提升为父级可引用端口（"subid.pin"）。
+        设计原则：不改 IR 结构/引擎/schema——纯构造层宏展开（EDA 层级概念
+        的最小实现，大设计组织性 + 系统网表地基）。
+        """
+        self._subsystems[id] = sub
+        return self
+
+    def flatten(self) -> "LinkModel":
+        """返回宏展开后的扁平 LinkModel（子系统内联，端口合并）。"""
+        out = LinkModel(domain=self.ir.domain, name=self.ir.name,
+                        notes=self.ir.notes)
+        port_map: Dict[str, Tuple[str, str]] = {}   # "subid.pin" -> (inst, port)
+        # 1) 子系统内联（id 前缀化；前缀用 "__" 避免与 inst.port 点拆分冲突）
+        for sid, sub in self._subsystems.items():
+            prefix = f"{sid}__"
+            for comp in sub.ir.components:
+                c2 = Component(
+                    id=prefix + comp.id, kind=comp.kind,
+                    params=dict(comp.params),
+                    ports=[Port(p) for p in comp.ports])
+                out.ir.add(c2)
+            for net in sub.ir.nets:
+                sub_ids = {c.id for c in sub.ir.components}
+                if len(net.connects) == 1:
+                    inst, port = net.connects[0].split(".", 1)
+                    port_map[f"{sid}.{port}"] = (prefix + inst, port)
+                else:
+                    resolved = []
+                    for c in net.connects:
+                        inst_p, _, _ = c.partition(".")
+                        if inst_p in sub_ids and not c.startswith(prefix):
+                            resolved.append(prefix + c)
+                        else:
+                            resolved.append(c)
+                    out.ir.connect(net.id, *resolved)
+        # 2) 父级组件
+        for comp in self.ir.components:
+            out.ir.add(comp)
+        # 3) 父级 net（解析 subid.pin 引用 → 子系统内部端点）
+        for net in self.ir.nets:
+            resolved = []
+            for c in net.connects:
+                if c in port_map:
+                    inst, port = port_map[c]
+                    resolved.append(f"{inst}.{port}")
+                else:
+                    resolved.append(c)
+            out.ir.connect(net.id, *resolved)
+        # 4) 源重映射（父级 "subid.pin" → 子系统内部端点）+ 共享参数
+        out_sources = []
+        for inst, port in self._sources:
+            key = f"{inst}.{port}"
+            if key in port_map:
+                real_inst, real_port = port_map[key]
+                out_sources.append((real_inst, real_port))
+            else:
+                out_sources.append((inst, port))
+        out._sources = out_sources
+        out.link_params = dict(self.link_params)
+        return out
 
     # —— 标准 IR 出口 ——
     def to_ir(self) -> IRModel:

@@ -90,6 +90,10 @@ CORE_SMOKES: List[str] = [
     "run_corner_performance_smoke.py",
     # 有源双出口（Merge-2a：相移器/调制器设计量+行为黑箱，22 引擎）
     "run_active_device_smoke.py",
+    # 模型精度分级（Merge-3a：L0/L1/L2 诚实标注 + 升迁机制）
+    "run_model_class_smoke.py",
+    # 层级 IR（Merge-3b：子系统 flatten 等价性）
+    "run_hierarchy_smoke.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

@@ -800,3 +800,20 @@
 ### 意义
 - **黑箱三件套齐**：激光（S1 参数化）→ 调制（Merge-2a）→ 探测（本版）——真实通信链的"发射-传输-接收"全链行为仿真就绪；
 - **Phase 1 锚题库达标（5+ 题）**：系统级可行域判决面从单点（S1）扩为六域——锚前置剪枝的筛选面成型。
+
+## v0.8.16（2026-08-26 · Merge-3 达成：model_class 分级 + 层级 IR · 总决策点就绪）
+
+**里程碑：Merge-3 收口——规划 v2 第一梯队完成（Phase 2 基底），总决策点到达。model_class 精度分级（诚实性基建）+ 层级 IR 子系统组合（系统网表地基）双落地，CI core 52→54。**
+
+### Merge-3a · model_class 精度分级
+- **registry 精度分级**（L0 解析/L1 数值标定/L2 实测校准）：7 个链路 kind 登记全 L0（诚实标注）；`register_model_class` 升迁机制就绪（发动期实测回流升 L2 入口）；未登记 kind 缺省 L0 不静默。
+- **对照报告按精度级分列**：引擎对照表新增"模型精度"列 + 精度分级统计段——用户能看见"这个数能信几分"。
+- `run_model_class_smoke.py` 4/4 入 CI。
+
+### Merge-3b · 层级 IR（子系统组合 + flatten）
+- **LinkModel 子系统**（`add_subsystem` + `flatten`）：嵌套链路声明式组合，flatten 宏展开（组件/net 前缀化 + 端口提升 + 源重映射）——**不改 IR 结构/引擎/schema，纯构造层**（EDA 层级概念最小实现）。
+- **传播等价性验证**：子系统组合链路 vs 手工平铺，transfers 逐点一致（max_diff=0.0）；父级 connect("subid.pin") 端口互连解析正确。
+- `run_hierarchy_smoke.py` 4/4 入 CI（调试中抓到前缀点号冲突——`A.wg_i.in` 与 inst.port 两层拆分歧义，改 `__` 前缀根治）。
+
+### 意义
+- **总决策点到达**：Phase 2 基底（锚题 6/层级 IR/model_class 分级）全部落地——按规划 v2，此时应评估是否进专投区（Phase 3 统计锚 / Phase 4 提案生成）。

@@ -21,6 +21,26 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 # kind -> response 函数
 _RESPONSE_MODELS: Dict[str, Callable] = {}
 
+# model_class 精度分级（Merge-3a · 诚实性基建，规划 v2 第 8 项）
+#   L0：解析模型（registry 内置闭式，无标定）
+#   L1：数值标定/拟合（FDTD 标定、PDK 标定库、工艺参数）
+#   L2：实测校准（真实测量数据，发动期回流升入）
+# 用途：对照报告按精度级分列——用户能看见"这个数能信几分"。
+MODEL_CLASS_L0 = "L0-解析"
+MODEL_CLASS_L1 = "L1-标定"
+MODEL_CLASS_L2 = "L2-实测校准"
+_MODEL_CLASSES: Dict[str, str] = {}
+
+
+def register_model_class(kind: str, model_class: str) -> None:
+    """注册器件 kind 的模型精度等级（默认 L0 解析）。"""
+    _MODEL_CLASSES[kind] = model_class
+
+
+def get_model_class(kind: str) -> str:
+    """查询器件 kind 的模型精度等级（未登记默认 L0）。"""
+    return _MODEL_CLASSES.get(kind, MODEL_CLASS_L0)
+
 
 def register_device_model(kind: str,
                           fn: Callable[[Any, List[float], Optional[Dict],
@@ -169,3 +189,8 @@ def _photodetector_response(component, wls: List[float], link_params, kappa_fn):
 register_device_model("PhaseShifter", _phaseshifter_response)
 register_device_model("MziModulator", _mzimod_response)
 register_device_model("Photodetector", _photodetector_response)
+
+# 模型精度分级（Merge-3a）：当前全 L0 解析（诚实标注——无 FDTD 标定/实测校准）
+for _kind in ("RingResonator", "Waveguide", "GratingCoupler", "MZI",
+              "PhaseShifter", "MziModulator", "Photodetector"):
+    register_model_class(_kind, MODEL_CLASS_L0)

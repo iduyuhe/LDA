@@ -101,6 +101,15 @@ def _extract_rel(verdict: str):
     return None
 
 
+def _model_class_of(kind: str) -> str:
+    """引擎 kind → 模型精度等级（registry 查询，缺省 L0 解析）。"""
+    try:
+        from lda_chain.registry import get_model_class
+        return get_model_class(kind)
+    except Exception:
+        return "L0-解析"
+
+
 def _load_empirical():
     """加载实证语料（seed + contributions）。"""
     from lda_harness.empirical_bank import EmpiricalCorpus, EmpiricalAnchor
@@ -133,7 +142,9 @@ def run_crosscheck(quick: bool = False) -> dict:
             res = eng.design(kind, float(DEFAULT_TARGET[kind]), top_k=2)
             dt = time.perf_counter() - t0
         except Exception as e:  # noqa: BLE001
-            rows.append({"kind": kind, "ok": False, "error": str(e)[:100],
+            rows.append({"kind": kind, "ok": False,
+                        "model_class": _model_class_of(kind),
+                        "error": str(e)[:100],
                          "elapsed_s": 0.0})
             continue
         best = res.get("best") or {}
@@ -141,6 +152,7 @@ def run_crosscheck(quick: bool = False) -> dict:
         rel = _extract_rel(verdict)
         row = {
             "kind": kind,
+            "model_class": _model_class_of(kind),
             "ok": bool(res.get("ok")),
             "passed": bool(best.get("passed")),
             "metric": best.get("metric"),
@@ -231,15 +243,15 @@ def _fmt_report(data: dict) -> str:
     L.append("")
     L.append("## 一、引擎验证对照（22 引擎设计闭环验证证据：15 设计量解析锚 + 5 loss 实证锚 + 2 有源双出口）")
     L.append("")
-    L.append("| 引擎 | 解析锚题 | metric | 引擎 rel% | 通过 | 验证证据（verdict） |")
-    L.append("|---|---|---|---|---|---|")
+    L.append("| 引擎 | 模型精度 | 解析锚题 | metric | 引擎 rel% | 通过 | 验证证据（verdict） |")
+    L.append("|---|---|---|---|---|---|---|")
     for r in data["rows"]:
         if not r.get("ok"):
-            L.append(f"| {r['kind']} | — | — | — | ❌ | {r.get('error','')[:60]} |")
+            L.append(f"| {r['kind']} | {r.get('model_class','L0-解析')} | — | — | — | ❌ | {r.get('error','')[:60]} |")
             continue
         rel = f"{r['analytical_rel_pct']:.2f}" if r["analytical_rel_pct"] is not None else "—"
         mark = "✅" if r["passed"] else "❌"
-        L.append(f"| {r['kind']} | {r['bid'] or '契约自检'} | {r['metric']} | {rel} | {mark} | {r['verdict']} |")
+        L.append(f"| {r['kind']} | {r.get('model_class','L0-解析')} | {r['bid'] or '契约自检'} | {r['metric']} | {rel} | {mark} | {r['verdict']} |")
     L.append("")
     L.append("## 二、实证锚语料覆盖矩阵（9 条语料 × 引擎，v0.8.11e 全对照）")
     L.append("")

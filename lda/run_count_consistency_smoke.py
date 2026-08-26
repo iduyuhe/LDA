@@ -12,7 +12,7 @@ README 引擎域计数「光子 9 + 量子 6」与代码 ENGINE_DOMAIN 实际 8+
   3. 题库：BENCHMARK_ORDER 40 题（B1-B27 27 题 + E1-E7 7 题 + S1-S6 系统锚 6 题）
   4. CI 门禁：CORE_SMOKES 条数（当前 45 条，动态）
   5. README 宣传串：动态构造「22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）」
-     「40 题（B1-B27 + E1-E7 + S1-S6）」「CI core N 条」断言 README.md 包含；
+     「41 题（B1-B27 + E1-E7 + S1-S7）」「CI core N 条」断言 README.md 包含；
      反向断言 README 不含已废弃错误串「光子 9 + 量子 6」（防回退）。
 """
 from __future__ import annotations
@@ -85,11 +85,11 @@ class CountConsistencySmoke(unittest.TestCase):
                          "22 引擎 + 11 包应 = 33 类端到端")
 
     # ---- 3. 题库 ----
-    def test_benchmark_order_40(self):
-        self.assertEqual(len(self.benchmark_order), 40,
-                         f"BENCHMARK_ORDER 应 40 题，实际 {len(self.benchmark_order)}")
+    def test_benchmark_order_41(self):
+        self.assertEqual(len(self.benchmark_order), 41,
+                         f"BENCHMARK_ORDER 应 41 题，实际 {len(self.benchmark_order)}")
 
-    def test_benchmark_b27_e7_s6_split(self):
+    def test_benchmark_b27_e7_s7_split(self):
         b_ids = [b for b in self.benchmark_order
                  if re.fullmatch(r"B\d+", b)]
         e_ids = [b for b in self.benchmark_order
@@ -98,11 +98,11 @@ class CountConsistencySmoke(unittest.TestCase):
                  if re.fullmatch(r"S\d+", b)]
         self.assertEqual(len(b_ids), 27, f"B 题应 27，实际 {len(b_ids)}")
         self.assertEqual(len(e_ids), 7, f"E 题应 7，实际 {len(e_ids)}")
-        self.assertEqual(len(s_ids), 6, f"S 题应 6，实际 {len(s_ids)}")
+        self.assertEqual(len(s_ids), 7, f"S 题应 7，实际 {len(s_ids)}")
         self.assertEqual(b_ids[0], "B1")
         self.assertEqual(b_ids[-1], "B27")
         self.assertEqual(e_ids, ["E1", "E2", "E3", "E4", "E5", "E6", "E7"])
-        self.assertEqual(s_ids, ["S1", "S2", "S3", "S4", "S5", "S6"])
+        self.assertEqual(s_ids, ["S1", "S2", "S3", "S4", "S5", "S6", "S7"])
 
     # ---- 4. CI 门禁条数 ----
     def test_ci_core_count_matches_readme(self):
@@ -122,10 +122,10 @@ class CountConsistencySmoke(unittest.TestCase):
         self.assertNotIn("光子 9+量子 6", self.readme)
 
     def test_readme_benchmark_counts(self):
-        self.assertIn("40 题", self.readme)
+        self.assertIn("41 题", self.readme)
         self.assertIn("B1-B27", self.readme)
         self.assertIn("E1-E7", self.readme)
-        self.assertIn("S1-S6", self.readme)
+        self.assertIn("S1-S7", self.readme)
 
     def test_readme_version_line(self):
         self.assertIn("v0.8.10", self.readme)

@@ -835,3 +835,26 @@
 ### 验证
 - CI core **54 PASS / 0 SKIP / 0 FAIL（623.98s）** 全绿。
 - webui_api_smoke 实跑 **60 PASS / 0 FAIL**；本地 8898 实测：benchmarks 40 题含 S1-S6、verify 40/40、crosscheck 18 引擎精度分级 L0×18、页面含 22 引擎标题 + 模型精度列。
+
+## v0.8.17（2026-08-27 · Phase 3 专投区第一刀：统计锚 S7 · 蒙特卡洛分布锚）
+
+**里程碑：总决策点后杜先生选 A（进专投区）——系统级从「确定性」跨入「统计」。S7 蒙特卡洛分布锚入题库（41 题），红线（LLM 不进判决路径）在随机世界严格保持：随机在采样、判决在统计量的确定性函数。CI core 54→55。**
+
+### 新增
+- **`lda_harness/statistical_anchor.py`**（纯标准库 random/statistics 零依赖——核心零依赖铁律）：
+  - `monte_carlo_margins`：S1 链路各损耗级（光栅 0.3dB/波导 0.5dB/cm/环形 0.1dB 工艺容差）高斯扰动 → margin 分布（N=2000）
+  - `margin_stats`：mean/p5/p95/std（判决输入，确定性函数）
+  - `s7_statistical_margin_anchor`：固定种子 golden（可复现——统计锚判决前提）
+  - `distribution_report`：解析值 + 分布统计 + 方向性（p5 < 解析 < p95）
+- **S7 锚题**（题库 40→41）：golden=固定种子分布均值 10.497≈解析 10.5（采样噪声 <0.15）；p5=9.41 携带最坏情况下界——**确定性锚缺失的维度**。
+- **`run_statistical_anchor_smoke.py`**（11/11 PASS，入 CI core 54→55）：均值收敛/分布方向/p5 显著下移/种子可复现/不同种子不同/🔴红线断言（import 零 LLM/agent）/S7 reference PASS/扰动负例 +1dB→mean≈6.5 被 FAIL 抓/题库 41。
+
+### 修复
+- **统计锚自洽检查抓到参数约定不一致**：S1 级联中 grating/ring 损耗存负数、wg 传播损耗存正数——采样代码 wg 项未取负致 mean=23.5（应为 10.5）→ 蒙特卡洛「均值收敛于解析值」约束当场暴露，修正取负入级联。统计锚第一次用就抓出真问题（与 S1 单调性检查同价值）。
+
+### 同步
+- 题库 41（B1-B27 + E1-E7 + S1-S7）；empirical 17/17、L1 6/6、count_consistency 11/11、harness 41/41、webui/mcp 全绿；README 41 题 + CI 55 条。
+
+### 意义
+- **Phase 3 落地**：系统级「多稳」问题第一次有了死标量答案（分布均值 + 最坏情况分位），且红线在随机世界依然严格成立（洞察 B 工程兑现）；
+- S7 为 Phase 3 扩展铺平模板：OSNR/保真度的统计延伸、蒙特卡洛收敛性（N 扫描）、置信带判决均可按同构模板加题。

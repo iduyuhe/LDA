@@ -29,6 +29,8 @@ from .golden import (
     s4_fidelity_budget,
     s5_worst_case_budget,
     s6_detector_margin,
+    # S7 统计锚（Phase 3 · 专投区第一刀，蒙特卡洛分布）
+    s7_statistical_margin_anchor,
 )
 
 BENCHMARK_DEFS = {
@@ -487,6 +489,21 @@ BENCHMARK_DEFS = {
         "golden_fn": s6_detector_margin,
         "note": "系统锚：margin=P_rx−Sens（−8.5+20=11.5dB 可探测）。",
     },
+
+    # ---- S7 统计锚（Phase 3 · 专投区 · 蒙特卡洛分布） ----
+    "S7": {
+        "title": "系统功率预算统计锚（蒙特卡洛分布 · Phase 3）",
+        "metric": "margin_mean_dB",
+        "oracle": "statistical(monte-carlo, seed-fixed)",
+        "tol": 0.15,
+        "anchor": "physical_law",
+        "default_params": {"n_samples": 2000, "seed": 42},
+        "golden_fn": s7_statistical_margin_anchor,
+        "note": "统计锚：工艺容差（光栅 0.3dB/波导 0.5dB/cm/环形 0.1dB）高斯扰动下"
+                "蒙特卡洛 margin 分布（固定种子 42 可复现）。golden=分布均值≈解析 10.5"
+                "（采样噪声 <0.15）；p5=9.41 携带最坏情况下界——确定性锚缺失的维度。"
+                "红线：随机在采样、判决在统计量算术，LLM 不进判决路径。",
+    },
 }
 
 # 对齐顺序（报告展示用）
@@ -495,7 +512,7 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                    "B26", "B27",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7",
-                   "S1", "S2", "S3", "S4", "S5", "S6"]  # S 系统锚（Phase 0-1）
+                   "S1", "S2", "S3", "S4", "S5", "S6", "S7"]  # S 系统锚（Phase 0-3）
 
 
 def register_benchmark(def_dict: dict) -> str:

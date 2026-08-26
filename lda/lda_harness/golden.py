@@ -17,6 +17,9 @@ from .system_budget import (  # noqa: E402  # S 系统锚
     s3_osnr_budget, s4_fidelity_budget,
     s5_worst_case_budget, s6_detector_margin,
 )
+from .statistical_anchor import (  # noqa: E402  # Phase 3 统计锚
+    s7_statistical_margin_anchor,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -521,13 +524,14 @@ _GOLDEN_DISPATCH = {
     "S4": s4_fidelity_budget,
     "S5": s5_worst_case_budget,
     "S6": s6_detector_margin,
+    "S7": s7_statistical_margin_anchor,
 }
 
 _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                  "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                  "B26", "B27",
-                 "S1", "S2", "S3", "S4", "S5", "S6"}  # S 系统锚（确定性算术）
+                 "S1", "S2", "S3", "S4", "S5", "S6", "S7"}  # S 系统锚（确定性算术+统计）
 
 
 def golden_value(bid, params):

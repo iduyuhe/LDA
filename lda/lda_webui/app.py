@@ -634,10 +634,12 @@ def run_link_design(payload=None):
         b19 = v.get("b19_harness", {})
         ec = v.get("energy_conservation", {})
         gds_b64 = base64.b64encode(ctx.gds_bytes or b"").decode("ascii")
+        ca = getattr(ctx, "chip_acceptance", None) or {}
         return {
             "ok": True,
-            "title": "链路设计→验证闭环（P1-M4 双 ground 上提）",
-            "accepted": v.get("status") == "ok",
+            "title": "链路设计→验证闭环（P1-M4 双 ground 上提 + 芯片级四锚验收）",
+            "accepted": bool(ca.get("accepted", v.get("status") == "ok")),
+            "chip_acceptance": ca,
             "status": v.get("status"),
             "channels_um": channels,
             "n_components": len(ctx.link.ir.components) if ctx.link else 0,

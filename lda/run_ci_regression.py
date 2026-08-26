@@ -70,6 +70,8 @@ CORE_SMOKES: List[str] = [
     "run_chip_acceptance_smoke.py",
     # 器件库主流封口（v0.8.7：MMI/光栅/方向耦合/可调 transmon/读出配对/CZ 门）
     "run_kernel_seal_smoke.py",
+    # 仿真级芯片设计闭环演示（任务 256：WDM 收发 + 量子读出链路双案例）
+    "run_chip_design_demo.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

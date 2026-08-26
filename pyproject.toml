@@ -41,6 +41,8 @@ numba = ["numba>=0.58"]
 torch = ["torch>=2.0"]
 # 报告与可视化（可选）
 viz = ["matplotlib>=3.6", "pandas>=2.0", "networkx>=2.8", "tqdm>=4.60"]
+# 多用户数据层（P2.2）：bcrypt 为推荐密码哈希后端；缺省自动回退标准库 pbkdf2
+data = ["bcrypt>=4.0"]
 # 开发 / 打包
 dev = ["build", "wheel", "pytest"]
 
@@ -65,6 +67,7 @@ packages = [
     "lda_solver",
     "lda_design",
     "lda_webui",
+    "lda_data",
     "ext_oracle",
     "examples",
 ]

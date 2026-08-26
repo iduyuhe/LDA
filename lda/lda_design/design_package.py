@@ -39,6 +39,36 @@ PACKAGE_KINDS = ("add_drop", "quantum", "wdm", "readout_chain", "multiqubit",
                  "readout_fidelity", "multiqubit_fidelity", "mixed_system",
                  "coupler", "wdm_coupler", "splitter_readout")
 
+# ---------------------------------------------------------------------------
+# 引擎闭环入口（设计→验证闭环引擎，target-based 网格搜索 + 真实求解器双重验证）
+# 这些 kind 不走 _BUILDERS/build_all（避免批量构建时跑 FDTD），单独作为"设计包"
+# 的一等公民，把闭环结果包成统一 schema，供端到端面板"给目标→出设计包"使用。
+# ---------------------------------------------------------------------------
+ENGINE_KINDS = ("engine_waveguide", "engine_braggmirror",
+                "engine_transmon", "engine_ringresonator")
+ENGINE_KIND_MAP = {
+    "engine_waveguide": "Waveguide",
+    "engine_braggmirror": "BraggMirror",
+    "engine_transmon": "Transmon",
+    "engine_ringresonator": "RingResonator",
+}
+ENGINE_DOMAIN = {
+    "Waveguide": "photon", "BraggMirror": "photon",
+    "Transmon": "quantum", "RingResonator": "photon",
+}
+_ENGINE_DEFAULT_TARGET = {
+    "engine_waveguide": 3.25,      # 目标 neff
+    "engine_braggmirror": 0.999,   # 目标 R_min ≥ 0.999
+    "engine_transmon": 5.0,        # 目标 f01 (GHz)
+    "engine_ringresonator": 9.0,   # 目标 FSR (nm)
+}
+_ENGINE_TITLE = {
+    "engine_waveguide": "直波导 · 目标有效折射率 neff",
+    "engine_braggmirror": "布拉格镜 · 目标反射率 R_min（最少周期）",
+    "engine_transmon": "Transmon 量子比特 · 目标频率 f01",
+    "engine_ringresonator": "环形谐振器 · 目标 FSR（解析锚）",
+}
+
 
 def _now_iso() -> str:
     return _dt.datetime.now().isoformat(timespec="seconds")
@@ -282,7 +312,7 @@ def validate_package(pkg: Dict[str, Any]) -> List[str]:
             errs.append(f"缺必填字段 '{f}'")
     if pkg.get("schema_version") != SCHEMA_VERSION:
         errs.append(f"schema_version 应为 {SCHEMA_VERSION}，got {pkg.get('schema_version')}")
-    if pkg.get("kind") not in PACKAGE_KINDS:
+    if pkg.get("kind") not in (PACKAGE_KINDS + ENGINE_KINDS):
         errs.append(f"kind 未知：'{pkg.get('kind')}'")
     if pkg.get("domain") not in ("photon", "quantum", "hybrid"):
         errs.append(f"domain 未知：'{pkg.get('domain')}'")
@@ -302,6 +332,119 @@ def summarize(pkg: Dict[str, Any]) -> str:
             f"{pkg.get('title')} · domain={pkg.get('domain')} · "
             f"目标 {d.get('targets')} · 参数 {d.get('params')} · "
             f"{str(v.get('verdict'))[:80]}")
+
+
+# ---------------------------------------------------------------------------
+# 引擎闭环 → 统一设计包（端到端"给目标 → 出设计包"桥接）
+# ---------------------------------------------------------------------------
+def package_from_engine(kind: str, target: Optional[float] = None,
+                        top_k: int = 5, **kw) -> Dict[str, Any]:
+    """把 DesignEngine 真实设计闭环结果包成统一 DesignPackage。
+
+    kind 为 ENGINE_KINDS 之一（映射到 DesignEngine 的 4 类器件）。
+    内部真跑：物理定律 ORACLE 网格搜索 + 仅对 top-K 跑真实求解器双重验证，
+    返回的 verdict / passed 全部来自求解器死标量比对（LLM 不进判决路径）。
+    不在此重写任何验证逻辑——只把已验证结果按统一 schema 包装成可下载交付物。
+    """
+    ek = ENGINE_KIND_MAP.get(kind, kind)
+    if target is None:
+        target = _ENGINE_DEFAULT_TARGET.get(kind, 5.0)
+    from lda_design.design_engine import DesignEngine
+    eng = DesignEngine()
+    res = eng.design(ek, float(target), top_k=int(top_k))
+    if not res.get("ok"):
+        return {"ok": False, "error": res.get("error", "design failed"),
+                "kind": kind}
+    best = res.get("best")
+    passed = (res.get("passed", 0) or 0) > 0
+    domain = ENGINE_DOMAIN.get(ek, "photon")
+    checks = [{
+        "name": "闭环搜索 + 真实求解器双重验证",
+        "ok": passed,
+        "detail": (f"搜索 {res.get('searched')} 点 → 验证 {res.get('verified')} "
+                   f"候选 → 通过 {res.get('passed')}"),
+    }]
+    if best:
+        checks.append({
+            "name": "最优候选已验证",
+            "ok": bool(best.get("passed")),
+            "detail": best.get("verdict", ""),
+        })
+    pkg = {
+        "package_id": f"dp-{kind}-t{target}",
+        "schema_version": SCHEMA_VERSION,
+        "kind": kind, "domain": domain,
+        "title": f"设计闭环包 · {res.get('title', _ENGINE_TITLE.get(kind, ek))}",
+        "created_at": _now_iso(),
+        "ir": {"schema_version": "0.3", "domain": domain, "n_components": 1,
+               "n_nets": 0, "validate_errors": []},
+        "design": {
+            "targets": {"target": float(target),
+                        "metric": res.get("metric_name"),
+                        "unit": res.get("target_unit", "")},
+            "params": (best or {}).get("params", {}),
+            "inverse_design": {"mode": "网格搜索 + 物理定律 ORACLE 引导"},
+            "metrics": {"searched": res.get("searched"),
+                        "verified": res.get("verified"),
+                        "passed": res.get("passed"),
+                        "best_metric": (best or {}).get("metric"),
+                        "best_err": (best or {}).get("err")},
+        },
+        "verification": {
+            "checks": checks,
+            "passed": passed,
+            "verdict": (best or {}).get("verdict") or res.get("note", ""),
+        },
+        "artifacts": {"engine_result": res},
+        "honest_notes": (res.get("note") or "")
+            + " · 闭环结果包成统一 DesignPackage（LLM 不进判决路径）。",
+    }
+    pkg["ok"] = True
+    return pkg
+
+
+def engine_catalog() -> List[Dict[str, Any]]:
+    """端到端面板用的闭环器件目录（硬编码元数据，避免每次 GET 实例化引擎）。
+
+    返回 4 类闭环器件：kind / 引擎 kind / 标题 / 指标名 / 目标单位 / 默认目标 /
+    域 / 是否仅解析锚（诚实标注 FDTD 抽检需 GPU）。
+    """
+    return [{
+        "kind": pk,
+        "engine_kind": ek,
+        "title": _ENGINE_TITLE.get(pk, ek),
+        "metric_name": {
+            "Waveguide": "neff (FDTD)", "BraggMirror": "R_min (FDTD)",
+            "Transmon": "f01 (对角化, GHz)", "RingResonator": "FSR (解析, nm)",
+        }.get(ek, ""),
+        "target_unit": {"Waveguide": "", "BraggMirror": "",
+                        "Transmon": "GHz", "RingResonator": "nm"}.get(ek, ""),
+        "default_target": _ENGINE_DEFAULT_TARGET.get(pk),
+        "domain": ENGINE_DOMAIN.get(ek, "photon"),
+        "analytic_only": ek == "RingResonator",
+    } for pk, ek in ENGINE_KIND_MAP.items()]
+
+
+_KIND_TITLES = {
+    "add_drop": "环形 add-drop 可制造设计包",
+    "quantum": "量子逆设计包（Transmon）",
+    "wdm": "WDM 多环级联系统",
+    "readout_chain": "光子-量子混合读出链路",
+    "multiqubit": "N-qubit 频率复用读出",
+    "readout_fidelity": "单发读出保真度预算",
+    "multiqubit_fidelity": "N-qubit 复用读出保真度",
+    "mixed_system": "WDM×量子读出混合巨型系统",
+    "coupler": "方向耦合器设计闭环",
+    "wdm_coupler": "耦合器×WDM 组合",
+    "splitter_readout": "分束网络供电读出",
+}
+
+
+def package_catalog() -> List[Dict[str, Any]]:
+    """端到端面板用的统一设计包目录（11 类 param-based 包，附默认参数）。"""
+    return [{"kind": k, "title": _KIND_TITLES.get(k, k),
+             "defaults": _DEFAULTS.get(k, {})}
+            for k in _DEFAULTS]
 
 
 # ---------------------------------------------------------------------------

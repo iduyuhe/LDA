@@ -84,6 +84,31 @@
     <div class="card g"><div class="n" id="c-layers">—</div><div class="l">已落地真地基层</div></div>
   </div>
 
+  <div class="sec" style="border-color:#2563eb">
+    <h2>★ 旗舰流程 · 设计闭环端到端：给目标 → 出统一设计包</h2>
+    <div class="hint">这是 LDA 作为"系统"而非"组件集"的核心：你给一个目标指标，系统在参数空间用物理定律 ORACLE 搜索，仅对 top-K 候选跑真实求解器双重验证，返回被求解器确认可用的最优器件，并自动包成机器可校验的统一 DesignPackage（可下载）。<b>LLM 不进判决路径。</b> 闭环器件目录来自 <code>/api/design_catalog</code>。</div>
+    <div class="row">
+      <label>器件类型（闭环入口）
+        <select id="doKind"></select>
+      </label>
+      <label>目标值 <span id="doUnit" class="tag"></span>
+        <input type="number" id="doTarget" step="0.001" />
+      </label>
+      <label>验证候选数 top_k
+        <input type="number" id="doTopk" value="3" min="1" max="10" />
+      </label>
+      <button class="btn" id="runDesignOutcome">运行设计闭环 → 出设计包</button>
+    </div>
+    <div id="doSummary" class="summary"></div>
+    <div id="doBest" class="note"></div>
+    <div id="doCands"></div>
+    <div id="doPkg" class="note"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn" id="doDownload" disabled>下载统一设计包 JSON</button>
+    </div>
+    <div class="conclusion" id="doConclusion"></div>
+  </div>
+
   <div class="sec">
     <h2>① 架构落地状态</h2>
     <div class="hint">绿 = 已有真实代码/文档并已跑通验证；琥珀 = 规划中。这是系统的真面目，非 PPT。</div>
@@ -3632,9 +3657,71 @@ function renderIr(d){
 }
 $('runIr').onclick = runIr;
 
+// ---- ★ 旗舰 · 设计闭环端到端（给目标 → 出统一设计包）----
+let _outcomePkg = null;
+async function loadDesignCatalog(){
+  try{
+    const c = await api('/api/design_catalog');
+    const sel = $('doKind'); sel.innerHTML = '';
+    (c.engine||[]).forEach(k=>{
+      const o = document.createElement('option');
+      o.value = k.kind;
+      o.textContent = `${k.title}（${k.metric_name}${k.target_unit?(' / '+k.target_unit):''}）`;
+      o.dataset.unit = k.target_unit||''; o.dataset.def = k.default_target;
+      sel.appendChild(o);
+    });
+    // 默认选中 Transmon（numpy 对角化，快速；避免首屏预热跑 FDTD）
+    if([...sel.options].some(o=>o.value==='engine_transmon')) sel.value='engine_transmon';
+    const cur = sel.options[sel.selectedIndex];
+    if(cur){ $('doUnit').textContent = cur.dataset.unit?('单位：'+cur.dataset.unit):''; $('doTarget').value = cur.dataset.def; }
+    sel.onchange = ()=>{ const o=sel.options[sel.selectedIndex]; $('doUnit').textContent=o.dataset.unit?('单位：'+o.dataset.unit):''; $('doTarget').value=o.dataset.def; };
+  }catch(e){ $('doSummary').textContent='目录加载失败：'+e; }
+}
+async function runDesignOutcome(){
+  const btn=$('runDesignOutcome'); btn.disabled=true; $('doDownload').disabled=true; _outcomePkg=null;
+  const kind=$('doKind').value; const target=parseFloat($('doTarget').value); const top_k=parseInt($('doTopk').value)||3;
+  $('doSummary').innerHTML='<span class="spin"></span> 设计闭环运行中（物理定律 ORACLE 搜索 + 真实求解器双重验证 → 包成统一设计包）…';
+  $('doBest').innerHTML=''; $('doCands').innerHTML=''; $('doPkg').innerHTML=''; $('doConclusion').innerHTML='';
+  try{
+    const d = await api('/api/design_outcome', {kind, target, top_k});
+    renderDesignOutcome(d);
+  }catch(e){ $('doSummary').innerHTML='运行失败：'+e; }
+  finally{ btn.disabled=false; }
+}
+function renderDesignOutcome(d){
+  if(!d.ok){ $('doSummary').innerHTML='<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const er = d.engine_result||{}; const mu = er.target_unit||'';
+  const pkgv = (d.package&&d.package.verification)||{};
+  const pkgPass = !!pkgv.passed;
+  $('doSummary').innerHTML = `目标 <b>${er.target}${mu}</b> · 搜索 <b>${er.searched}</b> 点 → 验证 <b>${er.verified}</b> 候选 → 通过 <b>${er.passed}</b> ${er.analytic_only?'<span class="warn">[解析锚，FDTD 抽检需 GPU]</span>':''} · 设计包验收 <span class="verdict ${pkgPass?'ok':'fail'}">${pkgPass?'PASS':'FAIL'}</span>`;
+  const b = er.best;
+  if(!b){ $('doBest').innerHTML='<span class="warn">无已验证候选（请放宽目标或参数范围）</span>'; }
+  else{
+    const params=Object.entries(b.params).map(([k,v])=>`${k}=${v}`).join('，');
+    $('doBest').innerHTML=`<div class="ok">✅ 最优已验证设计：<b>${params}</b> → ${er.metric_name}=<b>${b.metric}</b>（目标误差 ${b.err.toFixed(4)}）</div>`+(b.verdict?`<div style="margin-top:4px;color:#8aa0c6">${b.verdict}</div>`:'');
+  }
+  if(er.top&&er.top.length){
+    const rows=er.top.map(c=>{ const p=Object.entries(c.params).map(([k,v])=>`${k}=${v}`).join('，'); return `<tr><td>${p}</td><td>${c.metric===null?'—':c.metric}</td><td>${c.err.toFixed(4)}</td><td>${c.passed?'✅':'—'}</td></tr>`;}).join('');
+    $('doCands').innerHTML=`<table class="tbl"><thead><tr><th>参数</th><th>${er.metric_name}</th><th>目标误差</th><th>验证</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+  if(d.package){
+    const pkg=d.package; const v=pkg.verification||{};
+    const dl = v.checks||[];
+    const drows = dl.map(c=>`<tr><td>${c.name}</td><td>${c.ok?'✅':'—'}</td><td>${c.detail||''}</td></tr>`).join('');
+    $('doPkg').innerHTML = `<div class="ok" style="margin-top:6px">📦 统一设计包 <b>${pkg.package_id}</b>（schema ${pkg.schema_version}${pkg.schema_ok?' · schema OK':''}）· 验收 <span class="verdict ${v.passed?'ok':'fail'}">${v.passed?'PASS':'FAIL'}</span></div>`+
+      (drows?`<table class="tbl"><thead><tr><th>验证项</th><th>结果</th><th>明细</th></tr></thead><tbody>${drows}</tbody></table>`:'')+
+      `<div style="margin-top:4px;color:#8aa0c6">诚实标注：${pkg.honest_notes||''}</div>`;
+    _outcomePkg = pkg; $('doDownload').disabled=false;
+  }
+  $('doConclusion').innerHTML=`<b>端到端意义：</b>你输入一个目标，系统自动搜索参数并用真实求解器双重验证，返回的器件是求解器确认可用的，并自动包成统一 DesignPackage——这是 agent-native 的 design outcome（可用设计结果），不是"辅助人设计"的软件。所有验收由死标量比对决定，LLM 不进判决路径。`;
+}
+$('runDesignOutcome').onclick = runDesignOutcome;
+$('doDownload').onclick = ()=>{ if(!_outcomePkg) return; const blob=new Blob([JSON.stringify(_outcomePkg,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(_outcomePkg.package_id||'lda_design_package')+'.json'; a.click(); };
+
 (async ()=>{
   const st = await api('/api/status');
   renderStatus(st);
+  await loadDesignCatalog();
   runVerify();
   // 首屏预热：自动演示真闭环（耦合器验收锚 + 多波长 + 环形谱形 + 版图流水线 + 环形 FDTD），让闭环可视化立即可见
   runCoupler();
@@ -3645,6 +3732,7 @@ $('runIr').onclick = runIr;
   runDcTrans();
   runDevLib();
   runDesignLoop();
+  runDesignOutcome();
   runRingPkg();
   runInvDesign();
   runQd();

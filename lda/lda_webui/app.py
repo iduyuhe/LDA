@@ -27,6 +27,8 @@ L2 开放 PDK Registry）通过 HTTP 暴露给一个真正的产品级前端，�
   POST /api/agent_loop    → {solver, dual?} 真跑 agent 自迭代设计闭环
   POST /api/pdk_design    → {pdk, template, solver} 用 PDK 驱动 agent 逆设计
   POST /api/pdk_compare   → {device_type, solver} 跨多晶圆厂跑同器件类型逆设计对比
+  GET  /api/design_catalog → 旗舰面板：闭环器件目录(engine) + 统一设计包目录(package)
+  POST /api/design_outcome → 旗舰端到端：给目标→设计闭环→统一设计包({kind,target,top_k})
 
 许可证纪律：零外部依赖（仅 Python 标准库），离线可跑、主权可控；
 所有内核逻辑复用 lda_harness / lda_l1 / lda_agent / lda_l2，不在此处重写验证逻辑。
@@ -1025,6 +1027,65 @@ def run_design_package(payload=None):
         return pkg
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)[:120]}
+
+
+def run_design_outcome(payload=None):
+    """旗舰端到端：给目标 → 设计闭环 → 统一设计包（webui 旗舰面板）。
+
+    输入 {kind, target, top_k?}：kind 为 ENGINE_KINDS 之一（Waveguide/BraggMirror/
+    Transmon/RingResonator 的闭环入口）。运行 DesignEngine 真实设计闭环 +
+    双重验证，并把最优已验证设计包成统一 DesignPackage（含 verification.passed
+    验收门 + honest_notes）。返回 {ok, engine_result(trim), package}。
+    LLM 不进判决路径。无 kind/target 时返回目录（不跑求解器）。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_design.design_package import (
+        package_from_engine, validate_package, engine_catalog, package_catalog,
+    )
+    payload = payload or {}
+    kind = payload.get("kind")
+    target = payload.get("target")
+    top_k = int(payload.get("top_k", 3) or 3)
+    try:
+        if not kind or target is None:
+            # 目录模式：返回可用器件清单（不跑求解器）
+            return {"ok": True, "catalog": {
+                "engine": engine_catalog(), "package": package_catalog()}}
+        pkg = package_from_engine(kind, target, top_k)
+        errs = validate_package(pkg)
+        pkg["schema_ok"] = not errs
+        pkg["schema_errors"] = errs
+        eng = pkg.get("artifacts", {}).get("engine_result")
+        return {
+            "ok": bool(pkg.get("ok", False)),
+            "engine_result": _trim_engine(eng),
+            "package": pkg if pkg.get("ok") else None,
+            "error": None if pkg.get("ok") else pkg.get("error"),
+        }
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:160]}
+
+
+def _trim_engine(res: dict):
+    """去除 engine_result 中体积过大的逐候选 result 数组，保留摘要（轻量响应）。"""
+    if not res:
+        return res
+    top = res.get("top") or []
+    trimmed = []
+    for c in top:
+        cc = dict(c)
+        cc.pop("result", None)
+        trimmed.append(cc)
+    r = dict(res)
+    r["top"] = trimmed
+    if isinstance(r.get("best"), dict):
+        r["best"] = dict(r["best"])
+        r["best"].pop("result", None)
+    return r
 
 
 def run_drc_fix_demo(payload):
@@ -2195,6 +2256,16 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, ecosystem_status())
         elif path == "/api/empirical":
             self._send(200, empirical_status())
+        elif path == "/api/design_catalog":
+            try:
+                from lda_design.design_package import (
+                    engine_catalog, package_catalog,
+                )
+                self._send(200, {"engine": engine_catalog(),
+                                "package": package_catalog()})
+            except Exception as e:  # noqa: BLE001
+                self._send(200, {"engine": [], "package": [],
+                                "error": str(e)[:120]})
         else:
             self._send(404, {"error": "not found"})
 
@@ -2278,6 +2349,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_wdm_splitter(payload))
             elif path == "/api/design_package":
                 self._send(200, run_design_package(payload))
+            elif path == "/api/design_outcome":
+                self._send(200, run_design_outcome(payload))
             elif path == "/api/drc_fix_demo":
                 self._send(200, run_drc_fix_demo(payload))
             elif path == "/api/coupler_loop":

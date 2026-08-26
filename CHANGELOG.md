@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.6（2026-08-26 · P1 芯片级验收闭环：链路 harness 补强 + 芯片级四锚验收标准）
+
+**里程碑：芯片级「设计→验证」验收闭环补全——链路级第二道死标量锚（级联乘法性）+ 芯片级设计验收标准（四锚 A-D），把「芯片设计成功」从口头承诺变成死标量可判定。**
+
+### 核心能力
+- **M4 smoke 挂入 CI core**（`run_ci_regression.py` 40→41 条）：此前 M4 双 ground 上提门禁漏挂 CI，现补齐（任务 206 收官）。
+- **级联乘法性死标量锚**（`lda_chain/link_harness.py::link_cascade_check`）：验证「级联引擎算得对」——解析闭式 `T(drop_i)=T_drop(i)·Π_{j<i}[T_thru(j)·g_bus(j)]`（含同源 net 段损耗）vs 引擎 transfers 逐波长死标量比对，实测 max_rel=0.0。与 B19（无源界，物理合法性）互补。
+- **芯片级设计验收标准**（`lda_chain/chip_acceptance.py`）：四锚 A-D 死标量判定——A B19 无源界 / B 级联乘法性 / C 能量守恒（泄漏≥0 合法损耗，<0 增益判 FAIL）/ D 完整性（无缺模型+布线完整）；接入 orchestrator（`ctx.chip_acceptance`），报告落盘。门禁为真：注入增益→REJECT、缺模型→REJECT（14/14 PASS）。
+- **CLI 链路验证入口**（`lda_chain/verify_link.py`）已含 chip_acceptance 汇总。
+
+> 注：本条目为 P1 芯片级补强（v0.7.0）的验证层收官；器件库主流封口（MMI/光栅/方向耦合/可调 transmon/CZ 门）与仿真级芯片设计演示（WDM/量子链路）为后续阶段。
+
 ## v0.8.5（2026-08-26 · 内核纵深 D+E · Fluxonium 相位对角化 + 可调耦合器三模对角化）
 
 **里程碑：QEDA 内核纵深双击——Fluxonium 超导量子比特（新求解核：相位基/谐振子基双基对角化对拍）+ 可调耦合器（三模 Fock 截断对角化 vs 二阶微扰锚）。引擎闭环 7→9 类（9 引擎 + 11 包 = 20 类端到端），量子域引擎 2→4。**

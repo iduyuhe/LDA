@@ -70,6 +70,8 @@ class DesignContext:
     # 验证产
     sim: Dict[str, Any] = field(default_factory=dict)
     verification: Dict[str, Any] = field(default_factory=dict)
+    # 芯片级验收（P1-M4 补强：四锚 A-D 死标量汇总）
+    chip_acceptance: Dict[str, Any] = field(default_factory=dict)
     # 流程追踪
     steps: List[Dict[str, Any]] = field(default_factory=list)
     trace: List[Dict[str, Any]] = field(default_factory=list)
@@ -109,6 +111,7 @@ class DesignContext:
                 for k, v in self.sim.get("transfers", {}).items()
             },
             "verification": self.verification,
+            "chip_acceptance": self.chip_acceptance,
             "trace": self.trace,
             "artifacts": self.artifacts,
             "error": self.error,

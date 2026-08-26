@@ -70,6 +70,13 @@ def main() -> int:
     checks.append(("诚实边界：仅物理锚/无实证", v.get("anchor") == "physical_law_only"
                    and v.get("empirical_anchor") is False))
 
+    # 4b) 级联乘法性死标量锚（芯片级验收数值锚）
+    cc = v.get("cascade_check") or {}
+    checks.append(("cascade_check 存在", "cascade_check" in v and "max_rel" in cc))
+    checks.append(("cascade_check passed（级联乘法性死标量）", cc.get("passed") is True))
+    checks.append(("cascade max_rel ≤ 1e-6", (cc.get("max_rel") if cc.get("max_rel") is not None else 1.0) <= 1e-6))
+    checks.append(("cascade 覆盖全部环（checked_pairs>0）", (cc.get("checked_pairs") or 0) > 0))
+
     # 5) WebUI 端点
     d = _app.run_link_design({"channels": "1.53,1.55,1.57,1.59", "R": 10,
                                "gap": 0.3, "kappa": 0.05, "alpha": 2.5})

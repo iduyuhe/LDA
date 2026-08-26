@@ -61,6 +61,14 @@ class Orchestrator:
         self._dispatch(ctx, "layout", "layout", layout_opts)
         # 4) 验证
         self._dispatch(ctx, "verify", "verify", {})
+        # 4b) 芯片级验收汇总（P1-M4 补强：死标量四锚 A-D）
+        try:
+            from lda_chain.chip_acceptance import accept_chip
+            ctx.chip_acceptance = accept_chip(ctx)
+        except Exception as e:  # noqa: BLE001
+            ctx.chip_acceptance = {
+                "accepted": False, "blockers": [f"验收异常：{str(e)[:60]}"],
+                "report": f"REJECT: 验收异常 {str(e)[:40]}"}
 
         # 落盘（GDS + 系统报告）
         if out_dir:
@@ -83,6 +91,10 @@ class Orchestrator:
         # 系统报告
         report = ctx.to_dict()
         report["accepted"] = (ctx.verification.get("status") == "ok")
+        ca = getattr(ctx, "chip_acceptance", None)
+        if ca:
+            report["chip_acceptance"] = ca
+            report["accepted"] = bool(ca.get("accepted"))
         report_path = os.path.join(out_dir, "chip_report.json")
         with open(report_path, "w", encoding="utf-8") as f:
             json.dump(report, f, ensure_ascii=False, indent=2)

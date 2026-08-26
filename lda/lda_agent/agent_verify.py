@@ -19,7 +19,7 @@ import math
 
 from .agents import AgentMsg, BaseAgent, DesignContext
 from lda_chain import engine
-from lda_chain.link_harness import link_physics_harness
+from lda_chain.link_harness import link_physics_harness, link_cascade_check
 
 
 PASSIVITY_TOL = 1e-9  # |T| 允许上限 = 1 + tol（数值浮点余量）
@@ -87,9 +87,14 @@ class VerificationAgent(BaseAgent):
 
         # 5) 物理定律锚上提为 harness B19（P1-M4）：经真实 VerificationHarness 跑
         harness_res = link_physics_harness(ctx.link, sim, ctx.blocked_nets)
+        # 5b) 级联乘法性死标量锚（芯片级验收数值锚，P1-M4 补强）：
+        #     解析闭式 T(drop_i)=T_drop(i)·Π_{j<i}T_thru(j)·g_bus(j) vs 引擎
+        #     transfers 逐波长比对（计入同源 net 段损耗）
+        cascade = link_cascade_check(ctx.link, sim, net_loss_db=ctx.net_loss_db or None)
 
         passed = sum(1 for c in checks if c["passed"])
-        status = "ok" if (passed == len(checks) and harness_res["status"] == "ok") else "fail"
+        status = ("ok" if (passed == len(checks) and harness_res["status"] == "ok"
+                           and cascade["passed"]) else "fail")
         verification = {
             "status": status,
             "passed": passed,
@@ -101,10 +106,13 @@ class VerificationAgent(BaseAgent):
             "energy_conservation": harness_res["energy_conservation"],
             "no_missing_models": harness_res["no_missing_models"],
             "routing_complete": harness_res["routing_complete"],
+            # P1-M4 补强：级联乘法性死标量锚（数值正确性，与 B19 物理合法性互补）
+            "cascade_check": cascade,
             "anchor": "physical_law_only",
             "empirical_anchor": False,
-            "honest_note": ("链路级仅物理定律锚（B19 无源无增益 / 无缺模型 / 布线完整"
-                            "）。缺系统级实证语料，未做实证校准，不判 E 题。"),
+            "honest_note": ("链路级物理定律锚（B19 无源无增益 / 无缺模型 / 布线完整"
+                            "）+ 级联乘法性死标量锚。缺系统级实证语料，未做实证校准，"
+                            "不判 E 题。"),
         }
         ctx.verification = verification
         ctx.append_step(self.NAME, msg.action,

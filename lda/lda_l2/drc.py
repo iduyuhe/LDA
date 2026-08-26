@@ -106,6 +106,8 @@ def drc_check_device(kind: str, params: Dict[str, float],
         add("min_width", "wg_width",
             params.get("wg_width", params.get("width", 0.5)),
             rules["min_width_um"])
+        # v0.8.11d：环形有耦合 bus，gap 是可制造性硬约束（与 RingAddDrop 对齐）
+        add("min_space", "gap", params.get("gap", 0.3), rules["min_space_um"])
     elif kind == "RingAddDrop":
         # D-37 环形 add-drop：弯曲半径 + 波导宽 + 耦合 gap（双 bus 间距）
         add("min_bend_R", "R", params.get("R", 10.0), rules["min_bend_R_um"])

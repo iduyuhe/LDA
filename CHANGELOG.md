@@ -662,3 +662,21 @@
 - L0 IR 光子子集（D-01~D-05）、L1 agent 闭环、L2 器件库（GDS/DRC/版图仿真）
 - 确定性比对裁判 B1-B11（含量子 B9/B10）
 - AI-dev 自举写核（SolverSpec + ORACLE + BootstrapLoop）、生产级 GPU 网格（6400 万点）
+
+## v0.8.11d（2026-08-26 · 芯片级版图导出增强 · 门3 前置）
+
+**里程碑：从「原理图 → 可测芯片版图」——IO 光栅耦合器接入 + 版图统计 + 芯片级 DRC 三要素，入 CI core（46→47 条）。**
+
+### 新增
+- **`lda_l2/chip_layout_export.py`**（独立增强层，不动 route_sim 核心）：
+  - **IO 光栅耦合器接入**：链路所有外部端口（源/汇）自动放置真实光栅齿区几何（grating_coupler_descs），芯片版图可光纤耦合测试（WDM 案例 GDS 2156→7310B）
+  - **版图统计**：器件/net/IO 数、芯片 bbox/面积、GDS round-trip（结构/元素/层）
+  - **芯片级 DRC 报告**：对链路全部器件跑 drc_check_device（死标量），与门3 流片管道 S2 同源
+- **`run_chip_layout_smoke.py`**（6/6 PASS，入 CI core）：IO 接入 + 统计 + round-trip + 合规 DRC 全 PASS + 负例（gap=0.05µm 违规被抓）
+
+### 修复
+- **RingResonator DRC 覆盖缺口**：DRC 此前仅查 min_bend_R/min_width，缺耦合 gap（min_space）检查 → 补上与 RingAddDrop 对齐；负例 gap=0.05µm 现在被 0/3 抓违规
+- **链路 R 单位归一（mm→µm）**：链路引擎 RingResonator 的 R 单位 mm（registry 同源），DRC 规则单位 µm → chip_drc_report 归一化（0.0099mm=9.9µm 合规不再误报）
+
+### 回归
+- DRC smoke ALL GREEN、tapeout 5/5、链路 M1-M4、chip demo 三案例、count_consistency 全绿。

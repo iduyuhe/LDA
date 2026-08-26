@@ -78,6 +78,8 @@ CORE_SMOKES: List[str] = [
     "run_count_consistency_smoke.py",
     # 基准对照验证闭环报告（v0.8.11c：15 引擎解析锚 rel + 实证语料覆盖矩阵 + ORACLE 状态）
     "run_benchmark_crosscheck_report.py",
+    # 芯片级版图导出增强（v0.8.11d：IO 光栅接入 + 版图统计 + 芯片级 DRC 正负例）
+    "run_chip_layout_smoke.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

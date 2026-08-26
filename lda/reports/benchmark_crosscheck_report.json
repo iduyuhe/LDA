@@ -1,0 +1,232 @@
+{
+  "method": "跨源死标量对照（解析契约锚 rel + 实证语料实测值 + 第三方 ORACLE 状态）",
+  "rows": [
+    {
+      "kind": "Waveguide",
+      "ok": true,
+      "passed": true,
+      "metric": 3.10887,
+      "metric_dim": "n_eff",
+      "bid": null,
+      "analytical_rel_pct": 0.14,
+      "verdict": "波导 FDTD 双验证 PASS（解析 slab 契约物理合理 + FDTD neff=3.10887 ↔ slab=3.10464 rel=0.14% ≤ 2%）",
+      "empirical_ids": [
+        "E-SOI-NEFF-220",
+        "E-SIN-NEFF-300"
+      ],
+      "elapsed_s": 11.27,
+      "empirical": {
+        "E-SOI-NEFF-220": {
+          "measured": 2.63,
+          "note": "IMEC iSiPP50G 公开 PDK（文献量级） | iSiPP50G PDK published specs | σ=0.02 | tol=0.02"
+        },
+        "E-SIN-NEFF-300": {
+          "measured": 1.53,
+          "note": "公开 SiN 工艺文献量级 | SiN photonics published data | σ=0.02 | tol=0.02"
+        }
+      }
+    },
+    {
+      "kind": "Transmon",
+      "ok": true,
+      "passed": true,
+      "metric": 4.9914,
+      "metric_dim": "f01",
+      "bid": "B9",
+      "analytical_rel_pct": 0.17,
+      "verdict": "Transmon 双验证 PASS（B9 Koch 命中 + 对角化 f01=4.9914 ↔ Koch=5.0000 rel=0.17% ≤ 3%）",
+      "empirical_ids": [],
+      "elapsed_s": 0.0,
+      "empirical": {}
+    },
+    {
+      "kind": "RingResonator",
+      "ok": true,
+      "passed": true,
+      "metric": 9.16,
+      "metric_dim": "FSR",
+      "bid": "B4",
+      "analytical_rel_pct": null,
+      "verdict": "contract 自检：RingResonator 注册表 + RING-fsr 契约 + fdtd2d_ring 可导入 OK（数值验收请用 live 模式）",
+      "empirical_ids": [
+        "E-RING-FSR"
+      ],
+      "elapsed_s": 0.0,
+      "empirical": {
+        "E-RING-FSR": {
+          "measured": 9.15,
+          "note": "环形谐振器公开测试数据 | ring resonator published measurement | σ=0.1 | tol=0.1"
+        }
+      }
+    },
+    {
+      "kind": "MziInterferometer",
+      "ok": true,
+      "passed": true,
+      "metric": 19.725,
+      "metric_dim": "FSR",
+      "bid": "B20",
+      "analytical_rel_pct": null,
+      "verdict": "contract 自检：MZI 干涉谱 + MZI-fsr 契约 OK；ΔL=35.0μm → FSR≈19.72nm（干涉谱提取 53.07nm 一致）",
+      "empirical_ids": [],
+      "elapsed_s": 0.0,
+      "empirical": {}
+    },
+    {
+      "kind": "Fluxonium",
+      "ok": true,
+      "passed": true,
+      "metric": 5.9827,
+      "metric_dim": "f01",
+      "bid": "B23",
+      "analytical_rel_pct": 0.0241,
+      "verdict": "Fluxonium 双基对拍 PASS（相位基 f01=5.983GHz ↔ HO 基 f01=5.984GHz rel=0.0241% ≤ 1%；B23 LC 边界锚=2.828GHz 单调上界成立）",
+      "empirical_ids": [],
+      "elapsed_s": 0.06,
+      "empirical": {}
+    },
+    {
+      "kind": "Mmi1x2",
+      "ok": true,
+      "passed": true,
+      "metric": 102.194,
+      "metric_dim": "L_mmi",
+      "bid": "B16",
+      "analytical_rel_pct": 0.0,
+      "verdict": "MMI 自映像 PASS（B16 锚 L=102.2um ↔ 模式叠加 L=102.2um rel=0.00% ≤ 5%）",
+      "empirical_ids": [],
+      "elapsed_s": 0.0,
+      "empirical": {}
+    },
+    {
+      "kind": "GratingCoupler2",
+      "ok": true,
+      "passed": true,
+      "metric": 2.352,
+      "metric_dim": "lambda_B",
+      "bid": "B15",
+      "analytical_rel_pct": 0.0,
+      "verdict": "光栅耦合器 Bragg PASS（锚 λ_B=2.352um ↔ 数值 λ_B=2.352um rel=0.00% ≤ 5%）",
+      "empirical_ids": [],
+      "elapsed_s": 0.0,
+      "empirical": {}
+    },
+    {
+      "kind": "DirectionalCoupler2",
+      "ok": true,
+      "passed": true,
+      "metric": 19.375,
+      "metric_dim": "L_3dB",
+      "bid": "B14",
+      "analytical_rel_pct": 0.0,
+      "verdict": "方向耦合器 3dB PASS（B14 锚 L=19.4um ↔ 超模拍频 L=19.4um rel=0.00% ≤ 5%）",
+      "empirical_ids": [],
+      "elapsed_s": 0.0,
+      "empirical": {}
+    },
+    {
+      "kind": "TunableTransmon",
+      "ok": true,
+      "passed": true,
+      "metric": 5.9316,
+      "metric_dim": "f01",
+      "bid": "B25",
+      "analytical_rel_pct": 0.0,
+      "verdict": "可调 transmon PASS（B25 锚 f01=5.932GHz ↔ koch f01=5.932GHz rel=0.00% ≤ 3%）",
+      "empirical_ids": [],
+      "elapsed_s": 0.0,
+      "empirical": {}
+    },
+    {
+      "kind": "ReadoutPair",
+      "ok": true,
+      "passed": true,
+      "metric": 0.002262,
+      "metric_dim": "chi",
+      "bid": "B26",
+      "analytical_rel_pct": 1.98,
+      "verdict": "读出配对 PASS（B26 锚 χ=-0.002308GHz ↔ 严格对角化 χ=-0.002262GHz rel=1.98% ≤ 5%）",
+      "empirical_ids": [],
+      "elapsed_s": 0.01,
+      "empirical": {}
+    },
+    {
+      "kind": "CzGate",
+      "ok": true,
+      "passed": true,
+      "metric": 694.444,
+      "metric_dim": "t_CZ",
+      "bid": "B27",
+      "analytical_rel_pct": 2.02,
+      "verdict": "CZ 门 PASS（B27 锚 t=680.7ns ↔ 对角化 t=694.4ns rel=2.02% ≤ 3%；2|χ|·t=π 精确成立）",
+      "empirical_ids": [],
+      "elapsed_s": 0.01,
+      "empirical": {}
+    }
+  ],
+  "summary": {
+    "engines_total": 11,
+    "engines_ok": 11,
+    "engines_passed": 11,
+    "with_analytical_rel": 9,
+    "rel_max_pct": 2.02,
+    "rel_median_pct": 0.0241
+  },
+  "corpus_coverage": {
+    "E-SOI-NEFF-220": {
+      "measured": 2.63,
+      "engine_kinds": [
+        "Waveguide"
+      ],
+      "covered": true
+    },
+    "E-SIN-NEFF-300": {
+      "measured": 1.53,
+      "engine_kinds": [
+        "Waveguide"
+      ],
+      "covered": true
+    },
+    "E-YBRANCH-LOSS": {
+      "measured": 3.4,
+      "engine_kinds": [],
+      "covered": false
+    },
+    "E-RING-FSR": {
+      "measured": 9.15,
+      "engine_kinds": [
+        "RingResonator"
+      ],
+      "covered": true
+    },
+    "E-GRATING-EFF": {
+      "measured": 0.45,
+      "engine_kinds": [],
+      "covered": false
+    },
+    "E-SOI-CROSS-IL": {
+      "measured": 0.18,
+      "engine_kinds": [],
+      "covered": false
+    },
+    "E-SOI-CROSS-XT": {
+      "measured": -41.0,
+      "engine_kinds": [],
+      "covered": false
+    },
+    "E-MMI-1X2-EL": {
+      "measured": 0.05,
+      "engine_kinds": [],
+      "covered": false
+    },
+    "E-SIN-PL-800": {
+      "measured": 0.087,
+      "engine_kinds": [],
+      "covered": false
+    }
+  },
+  "oracle": {
+    "tidy3d": "N/A（未配置 TIDY3D_API_KEY，主权默认回退设计守则锚 B6）"
+  },
+  "honest_note": "原理验证级非流片级；实证锚语料为公开文献量级（9 条全部 DOI 可溯源）；仅 neff/FSR 类语料（3 条）与引擎输出 metric 维度一致可严格对照，loss/效率类语料（crossing/MMI EL/SiN PL/Y-branch/grating eff）与引擎输出设计量（λ_B/L_mmi 等）维度不同——对照报告暴露的覆盖缺口即引擎待补清单"
+}

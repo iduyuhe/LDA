@@ -76,6 +76,8 @@ CORE_SMOKES: List[str] = [
     "run_tapeout_smoke.py",
     # 计数一致性门禁（v0.8.10：引擎/包/题库/CI 条数 vs README 宣传串机器断言，防计数漂移根治）
     "run_count_consistency_smoke.py",
+    # 基准对照验证闭环报告（v0.8.11c：15 引擎解析锚 rel + 实证语料覆盖矩阵 + ORACLE 状态）
+    "run_benchmark_crosscheck_report.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

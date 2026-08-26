@@ -33,6 +33,21 @@
 ### 回归
 - 链路全家桶全绿：M1/M2/M3/M4、chip_acceptance 14/14、chip_design_demo 三案例、tunable_wdm 3/3、wdm_system、ecosystem 4/4、webui 59/0、count_consistency 11/11、harness 34/34。
 
+## v0.8.11c（2026-08-26 · 基准对照验证闭环报告 · 院校说服素材）
+
+**里程碑：杜先生战略想法落地——「设计包 vs 解析锚/实证锚/第三方 ORACLE 死标量对照」生成对照报告，跨源验证证据汇总 + 语料覆盖缺口暴露，入 CI core（45→46 条）。**
+
+### 新增
+- **`run_benchmark_crosscheck_report.py`**（全量 15 引擎 55s / --quick 12s）：产出 `reports/benchmark_crosscheck_report.{md,json}`：
+  - **解析锚对照**：15 引擎设计闭环验证证据（verdict 全文 + 死标量 rel 提取），实测 **15/15 PASS，rel max=2.02%、median=0.17%**（解析契约锚 ↔ 数值双验证一致性）
+  - **实证锚覆盖矩阵**：9 条真实文献语料 × 引擎 metric 维度——仅 neff/FSR 类 3 条（E-SOI-NEFF-220/E-SIN-NEFF-300/E-RING-FSR）与引擎输出维度一致可严格对照；**6 条 loss/效率类（crossing IL/XT、MMI EL、SiN PL、Y-branch、grating eff）与引擎输出设计量维度不同 → 引擎待补清单**（诚实暴露缺口）
+  - **第三方 ORACLE 状态**：Tidy3D 外部 ORACLE N/A（未配置 Key，主权默认回退设计守则锚 B6）
+- **CI core 45→46 条**；README 版本行同步（含对照报告描述 + CI core 46 条）。
+
+### 意义
+- 把"验证可信"从口头主张变成**跨源死标量对照证据**（解析锚 rel + 实证语料 + ORACLE 状态三列矩阵），可直接作为院校说服/外部评审素材；
+- 覆盖矩阵如实标注 6 条 loss 类语料无对应引擎——即下一步引擎补强（loss/效率类引擎）的路线图依据。
+
 ## v0.8.10（2026-08-26 · 持续维护：v0.8 系列首轮全量回归 + 计数漂移修复）
 
 **里程碑：v0.8.2-v0.8.9 八连发后首轮持续维护——CI core 全量回归（44 条）捕获 3 项计数/递归缺陷并修复，全绿收官。**

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lda-design"
-version = "0.8.19"
+version = "0.8.20"
 description = "LDA — Agent-native open-source photon (PDA) + quantum (QEDA) chip design software"
 readme = "README.md"
 requires-python = ">=3.11"

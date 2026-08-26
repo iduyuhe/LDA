@@ -81,6 +81,26 @@ class DesignOutcomeSmoke(unittest.TestCase):
         golden_fsr = b20_mzi_fsr(deltaL_um=best["params"]["deltaL_um"])
         self.assertAlmostEqual(best_fsr, golden_fsr, delta=0.5)
 
+    def test_engine_phc_package(self):
+        from lda_design.design_package import (
+            package_from_engine, validate_package,
+        )
+        pkg = package_from_engine("engine_phc", 2200.0, top_k=3)
+        self.assertTrue(pkg.get("ok"), msg=pkg.get("error"))
+        self.assertEqual(pkg["domain"], "photon")
+        self.assertEqual(pkg["kind"], "engine_phc")
+        v = pkg["verification"]
+        # PhC 为真跑 2D FDTD：闭环 + 真实求解器双重验证通过即 PASS
+        self.assertTrue(v["passed"], msg=v.get("verdict"))
+        self.assertEqual(validate_package(pkg), [])
+        # 校验最优候选 λ_res 与物理定律锚 B21 一致（死标量比对）
+        best = pkg["artifacts"]["engine_result"]["best"]
+        best_lam = best["metric"]
+        from lda_harness.golden import b21_phc_resonance
+        golden = b21_phc_resonance(best["params"]["L_cav_um"], 3.48, 1.44)
+        self.assertIsNotNone(best_lam)
+        self.assertAlmostEqual(best_lam, golden, delta=0.05 * golden)
+
     def test_package_all_11(self):
         from lda_design.design_package import (
             build_package, validate_package, PACKAGE_KINDS,

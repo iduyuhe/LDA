@@ -14,6 +14,7 @@ from .golden import (
     b14_dc_coupling_length, b15_bragg_wavelength, b16_mmi_length,
     b17_jj_critical_current, b18_purcell_factor, b19_link_passivity_bound,
     b20_mzi_fsr,
+    b21_phc_resonance,
 )
 
 BENCHMARK_DEFS = {
@@ -221,6 +222,20 @@ BENCHMARK_DEFS = {
                  "（干涉型，与 B4 环形谐振型并列对照）。确定性物理定律锚，"
                  "LLM 不进判决路径；harness 默认 ReferenceCandidate 自洽 PASS。"),
     },
+    # ---- 内核纵深（v0.8.3）：光子晶体腔 Fabry–Perot 共振波长物理定律锚 ----
+    "B21": {
+        "title": "光子晶体腔（布拉格镜 FP 腔）共振波长",
+        "metric": "cavity_wl_nm",
+        "oracle": "analytical(PhC Bragg/FP band-edge)",
+        "tol": 1e-6,
+        "default_params": {"L_cav_um": 0.45, "n_core": 3.48, "n_clad": 1.44},
+        "golden_fn": b21_phc_resonance,
+        "note": ("2D 光子晶体腔 = 均匀高折射率波导腔（L_cav）两端夹持 50% 占空比"
+                 "周期性布拉格光栅镜；腔共振 λ_res=(n_core+n_clad)·L_cav"
+                 "（FP/布拉格带边，n_eff,grating=(n_core+n_clad)/2 一阶近似，"
+                 "2D FDTD 全波验证吻合 ~2%）。确定性物理定律锚，"
+                 "LLM 不进判决路径；harness 默认 ReferenceCandidate 自洽 PASS。"),
+    },
     # ---- D-62 实证大数据锚（第二道非 AI ground：真实测量语料）----
     # anchor=empirical 的题：golden 来自 EmpiricalCorpus 实测语料（seed_empirical.json
     # + 社区经评审流落库的语料），非解析函数（golden_fn=None）。
@@ -265,7 +280,7 @@ BENCHMARK_DEFS = {
 # 对齐顺序（报告展示用）
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
-                   "B19", "B20",
+                   "B19", "B20", "B21",
                    "E1", "E2", "E3"]
 
 

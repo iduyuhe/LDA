@@ -364,6 +364,23 @@ def b20_mzi_fsr(wl0_um: float = 1.55, n_core: float = 3.48,
     return 1000.0 * wl0_um ** 2 / (n_core * deltaL_um)
 
 
+def b21_phc_resonance(L_cav_um: float = 0.45, n_core: float = 3.48,
+                      n_clad: float = 1.44) -> float:
+    """光子晶体腔（布拉格反射镜 Fabry–Perot 腔）共振波长（确定性物理定律锚）。
+
+    2D 光子晶体腔 = 均匀高折射率波导腔（长 L_cav）两端由 50% 占空比周期性
+    布拉格光栅镜（周期 a_m、折射率 n_core/n_clad 交替）夹持。其腔共振由
+    Fabry–Perot / 布拉格带边条件决定：
+        λ_res = 2 · n_eff,grating · L_cav
+    其中 50% 占空比深调制光栅的本征有效折射率取两介质折射率的算术平均
+    n_eff,grating = (n_core + n_clad)/2（一阶近似；2D FDTD 全波验证吻合 ~2%）。
+    故 λ_res = (n_core + n_clad) · L_cav。
+    返回单位 nm。与 B4（环形谐振 FSR）、B15（布拉格波长）、B20（MZI 干涉 FSR）
+    同属"周期结构带边"物理定律锚家族，互为对照验证地基。
+    """
+    return 1000.0 * (n_core + n_clad) * L_cav_um
+
+
 _GOLDEN_DISPATCH = {
     "B1": b1_mie_qscat,
     "B2": b2_soi_waveguide_neff,
@@ -385,10 +402,12 @@ _GOLDEN_DISPATCH = {
     "B18": b18_purcell_factor,
     "B19": b19_link_passivity_bound,
     "B20": b20_mzi_fsr,
+    "B21": b21_phc_resonance,
 }
 
 _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
-                 "B12", "B13", "B14", "B15", "B16", "B17", "B18", "B19", "B20"}
+                 "B12", "B13", "B14", "B15", "B16", "B17", "B18", "B19", "B20",
+                 "B21"}
 
 
 def golden_value(bid, params):

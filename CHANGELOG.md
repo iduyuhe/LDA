@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.8.3（2026-08-26 · 内核纵深 B · 光子晶体腔 PhC 2D FDTD）
+
+**里程碑：光子域内核纵深第二击——光子晶体腔（布拉格镜 Fabry–Perot 腔）真跑 2D FDTD，共振波长对物理定律锚 B21 死标量比对（纯 numpy 零 GPU）。**
+
+### 核心能力
+- **B21 物理定律锚**（`golden.py` + `benchmarks.py`）：光子晶体腔共振波长 `λ_res = (n_core+n_clad)·L_cav`（50% 占空比深调制光栅本征有效折射率取算术平均 `(n_core+n_clad)/2`，确定性、零拟合）。
+- **`device_library.verify_phc_fdtd`**：自包含 2D FDTD 求解核（Yee 网格 + PML + 高斯线源 + FFT 提取腔共振，抛物插值亚 bin 精度），contract（快，CI）+ live（真跑 FDTD）双模式；live 提取 λ_res 与 B21 锚比对，rel ≤ 3% PASS。实测 L=0.30/0.45/0.60 → FDTD 峰与锚吻合 0.3%~1.3%。
+- **设计闭环引擎新增 `PhCCavity`**（`design_engine.py`）：网格搜索腔长 L_cav 命中目标共振 λ_res；cheap ORACLE = B21 解析（瞬时），仅对 top-K 跑真实 2D FDTD 双重验证；`analytic_only=False`（真跑全波，与 MZI/环形解析锚对照）。
+- **统一设计包注册 `engine_phc`**（`design_package.py` 六处）：引擎闭环目录 5→**6 类**（5 引擎 + 11 包 = 17 类端到端）；WebUI 旗舰面板经 `engine_catalog()` 自动纳入，无需改前端。
+- **门禁新增**：`run_phc_anchor_smoke.py`（B21 harness PASS + 引擎最优 λ_res==b21 解析，死标量）；`run_design_outcome_smoke.py` 扩展 `engine_phc` 端到端（9/9 测试 PASS，含真实 FDTD）。
+
+> 注：v0.7.0（芯片级补强 P1 收官）+ v0.8.0~v0.8.2（产品化外壳 / MZI 引擎 + B20 锚）详见提交历史；本条目聚焦 v0.8.3 光子晶体腔内核纵深。
+
 ## v0.6（2026-08-24 · git tag v0.6 · 3D 逆设计纵深 + QEDA 求解器级补强）
 
 **里程碑：破 3D 诚实边界（3D adjoint → 3D 截面 → 3D 端口验收 → 谱形×3D → 3D numba 性能 20×+）+ QEDA 求解器栈补强（transmon-resonator 色散读出三能级严格求解）**

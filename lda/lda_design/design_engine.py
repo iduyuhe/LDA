@@ -49,6 +49,7 @@ class DesignEngine:
     # ------------------------------------------------------------------ #
     def _build_specs(self) -> Dict[str, Dict[str, Any]]:
         from lda_harness.oracle_mode import _slab_te_neff  # noqa: E402
+        from lda_harness.golden import b21_phc_resonance  # noqa: E402
         import tmm  # lda_solver/tmm.py  # noqa: E402
         from lda_solver.transmon_solver import koch_f01  # noqa: E402
         from lda_agent.ring_loop import ring_fsr_analytic_nm  # noqa: E402
@@ -149,6 +150,26 @@ class DesignEngine:
             "note": "MZI 干涉传输 T=½(1+cos(2π·n_eff·ΔL/λ))；解析干涉谱 "
                     "FSR=λ²/(n_eff·ΔL) 契约验证（FDTD 全波抽检需 GPU，诚实标注）。"
                     "干涉型 FSR 与环形谐振型并列对照。",
+        },
+        "PhCCavity": {
+            "title": "光子晶体腔 · 目标共振波长 λ_res（2D FDTD + 布拉格带边锚）",
+            "sweep": [("L_cav_um", 0.20, 0.80, 0.02)],
+            "fixed": dict(n_core=3.48, n_clad=1.44, a_m_um=0.46, N_m=8,
+                          channel_w_um=1.0, tol_rel=0.03,
+                          dx_frac=20, n_steps=9000, pml=18),
+            "verify": lambda mode, target_f01, **kw:
+                self.lib.verify_phc_fdtd(mode=mode, **kw),
+            "cheap": lambda combo, target: b21_phc_resonance(
+                combo["L_cav_um"], 3.48, 1.44),
+            "extract": lambda r: r["checks"]["analytic_fsr"]["fsr_fdtd_nm"],
+            "metric_name": "cavity_wl (2D FDTD, nm)",
+            "target_unit": "nm",
+            "analytic_only": False,
+            "secondary": ("L_cav_um", True),
+            "note": "光子晶体腔（布拉格镜 Fabry–Perot 腔）：λ_res=(n_core+n_clad)·"
+                    "L_cav（B21 物理定律锚，确定性、零拟合）。网格搜索 L_cav 命中"
+                    "目标共振；2D FDTD 提取真实腔共振与锚死标量比对（纯 numpy "
+                    "零 GPU）。与 MZI/环形并列的光子共振器件，且是真跑全波 FDTD。",
         },
         }
         return specs

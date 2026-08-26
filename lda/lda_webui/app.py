@@ -35,12 +35,21 @@ import json
 import math
 import os
 import sys
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 WEBUI_DIR = os.path.dirname(os.path.abspath(__file__))
 LDA_ROOT = os.path.dirname(WEBUI_DIR)
 if LDA_ROOT not in sys.path:
     sys.path.insert(0, LDA_ROOT)
+
+# --- 版本与启动时间（P2.1 健康检查用）---
+try:
+    from importlib.metadata import version as _pkg_version
+    LDA_VERSION = _pkg_version("lda-design")
+except Exception:  # noqa: BLE001
+    LDA_VERSION = "0.7.0"
+_START_TIME = time.time()
 
 from lda_harness.benchmarks import BENCHMARK_DEFS
 from lda_harness.harness import (
@@ -1926,6 +1935,29 @@ def system_status():
     }
 
 
+def health_check():
+    """P2.1 产品级健康检查（供 Docker/K8s liveness & readiness 探针）。
+
+    返回服务存活 + 版本 + 部署形态 + 内核落地概览。
+    db 字段在 P2.2（多用户数据层）落地后改为真实连通性；当前尚未配置 DB，
+    诚实标注 "not_configured"，不谎报健康。
+    """
+    st = system_status()
+    return {
+        "status": "ok",
+        "service": "lda-webui",
+        "version": LDA_VERSION,
+        "deploy_mode": os.environ.get("DEPLOY_MODE", "selfhost"),
+        "db": "not_configured",
+        "kernel": {
+            "layers_built": len(st["layers"]),
+            "benchmarks": st["benchmarks_total"],
+            "pdks": st["pdks_registered"],
+        },
+        "uptime_s": int(time.time() - _START_TIME),
+    }
+
+
 def ecosystem_status():
     """D-93 生态共建框架快照：harness 题库(含 B14-B18) + 主权依赖 A/B/C + Registry 接口自检。
 
@@ -2141,6 +2173,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, body=f.read(), ctype="text/html")
         elif path == "/api/status":
             self._send(200, system_status())
+        elif path == "/api/health":
+            self._send(200, health_check())
         elif path == "/api/benchmarks":
             bm = [{"id": k, "title": v.get("title"), "metric": v.get("metric"),
                    "oracle": v.get("oracle"), "tol": v.get("tol")}
@@ -2356,7 +2390,7 @@ def main():
     for ip in _local_ips():
         print("  内网访问  http://%s:%d   演示机本机  http://127.0.0.1:%d"
               % (ip, port, port), flush=True)
-    print("  健康检查  GET /api/status", flush=True)
+    print("  健康检查  GET /api/status  ·  GET /api/health (容器探针)", flush=True)
     print("  停止服务  python lda_webui/deploy.py stop（或 Ctrl+C）", flush=True)
     print("=" * 58, flush=True)
     srv.serve_forever()

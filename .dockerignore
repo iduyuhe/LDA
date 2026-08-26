@@ -1,0 +1,14 @@
+# 构建上下文排除项（仅保留源码 + 打包元数据，缩小镜像构建上下文）
+.git
+.workbuddy
+node_modules
+dist
+build
+reports
+*.log
+__pycache__
+*.pyc
+.venv
+venv
+*.egg-info
+.DS_Store

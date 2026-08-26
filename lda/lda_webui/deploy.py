@@ -3,8 +3,9 @@
 """LDA WebUI 内网部署脚本（D-13）。
 
 用法（在仓库任意位置，用 LDA 的 venv python 运行）：
-  python lda/lda_webui/deploy.py start            # 启动（默认端口 8787）
+  python lda/lda_webui/deploy.py start            # 启动（默认端口 8787，后台）
   python lda/lda_webui/deploy.py start --port 9000
+  python lda/lda_webui/deploy.py start --foreground   # 前台运行（容器/无守护）
   python lda/lda_webui/deploy.py status           # 状态 + 健康检查
   python lda/lda_webui/deploy.py stop             # 停止
   python lda/lda_webui/deploy.py restart          # 重启
@@ -68,20 +69,35 @@ def _port_in_use(port: int) -> bool:
         return False
 
 
-def start(port: int) -> int:
-    pid = _read_pid()
-    if pid is not None:
-        print(f"LDA WebUI 已在运行 pid={pid}（如需重启：deploy.py restart）")
-        return 1
-    if _port_in_use(port):
-        print(f"端口 {port} 已被占用（疑似残留 app.py 进程）。请先清理占用该端口的进程，"
-              f"或改用 --port 换端口。清理示例：taskkill /F /PID <占用进程 PID>。")
-        print("  可用：netstat -ano | findstr :%d  查看占用 PID" % port)
-        return 1
+def start(port: int, foreground: bool = False) -> int:
+    """启动 WebUI。
+
+    foreground=False（默认）：后台子进程 + pid 文件（内网单机运维，保留原行为）。
+    foreground=True：前台运行（继承 stdio，无 pid 文件）——供容器/无守护场景，
+                     进程即服务进程，Docker 容器可直接用它作 CMD。
+    """
+    if not foreground:
+        pid = _read_pid()
+        if pid is not None:
+            print(f"LDA WebUI 已在运行 pid={pid}（如需重启：deploy.py restart）")
+            return 1
+        if _port_in_use(port):
+            print(f"端口 {port} 已被占用（疑似残留 app.py 进程）。请先清理占用该端口的进程，"
+                  f"或改用 --port 换端口。清理示例：taskkill /F /PID <占用进程 PID>。")
+            print("  可用：netstat -ano | findstr :%d  查看占用 PID" % port)
+            return 1
     python = sys.executable
     cmd = [python, os.path.join(WEBUI_DIR, "app.py")]
     env = dict(os.environ)
     env["LDA_WEBUI_PORT"] = str(port)
+    if foreground:
+        # 前台运行：STDIN 保持、stdio 直连，便于容器日志采集
+        print(f"LDA WebUI 前台运行（容器模式）端口={port}", flush=True)
+        try:
+            subprocess.run(cmd, cwd=WEBUI_DIR, env=env)
+        except KeyboardInterrupt:
+            pass
+        return 0
     with open(LOGFILE, "a", encoding="utf-8") as f:
         proc = subprocess.Popen(
             cmd, cwd=WEBUI_DIR, env=env,
@@ -140,14 +156,16 @@ def restart(port: int) -> int:
 # CLI
 # ---------------------------------------------------------------------------
 def main() -> int:
-    ap = argparse.ArgumentParser(description="LDA WebUI 内网部署脚本（D-13）")
+    ap = argparse.ArgumentParser(description="LDA WebUI 部署脚本（D-13 / P2.1 增强）")
     ap.add_argument("action", choices=["start", "stop", "status", "restart"])
     ap.add_argument("--port", type=int, default=DEFAULT_PORT,
                     help=f"端口（默认 {DEFAULT_PORT}）")
+    ap.add_argument("--foreground", action="store_true",
+                    help="前台运行（容器/无守护模式，进程即服务进程；不写 pid 文件）")
     args = ap.parse_args()
 
     if args.action == "start":
-        return start(args.port)
+        return start(args.port, foreground=args.foreground)
     if args.action == "stop":
         return stop()
     if args.action == "status":

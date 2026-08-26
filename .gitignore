@@ -34,3 +34,8 @@ lda/reports/patches/
 *.swp
 *.pid
 *.pid
+
+# ---- 部署密钥（绝不提交真实 .env）----
+.env
+.env.local
+

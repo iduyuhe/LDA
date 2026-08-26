@@ -50,6 +50,17 @@ ENGINE_ANCHOR_MAP = {
     "TunableTransmon": {"bid": "B25", "empirical": [], "metric_dim": "f01"},
     "ReadoutPair": {"bid": "B26", "empirical": [], "metric_dim": "chi"},
     "CzGate": {"bid": "B27", "empirical": [], "metric_dim": "t_CZ"},
+    # v0.8.11e：loss/效率类引擎（实证锚判决路径，无解析 B 锚）
+    "YbranchLoss": {"bid": None, "empirical": ["E-YBRANCH-LOSS"],
+                    "metric_dim": "split_loss_dB"},
+    "GratingEff": {"bid": None, "empirical": ["E-GRATING-EFF"],
+                   "metric_dim": "coupling_eff"},
+    "Crossing": {"bid": None, "empirical": ["E-SOI-CROSS-IL", "E-SOI-CROSS-XT"],
+                 "metric_dim": "insertion_loss_dB"},
+    "MmiEl": {"bid": None, "empirical": ["E-MMI-1X2-EL"],
+              "metric_dim": "excess_loss_dB"},
+    "SinPl": {"bid": None, "empirical": ["E-SIN-PL-800"],
+              "metric_dim": "propagation_loss_dBcm"},
 }
 
 # 默认设计目标（与 design_package._ENGINE_DEFAULT_TARGET 一致）
@@ -59,12 +70,16 @@ DEFAULT_TARGET = {
     "ReadoutResonator": 7.5, "Fluxonium": 6.0, "TunableCoupler": 0.005,
     "Mmi1x2": 100.0, "GratingCoupler2": 2.38, "DirectionalCoupler2": 20.0,
     "TunableTransmon": 6.0, "ReadoutPair": 0.002, "CzGate": 700.0,
+    # v0.8.11e：loss/效率类引擎（目标=实证语料实测典型）
+    "YbranchLoss": 3.4, "GratingEff": 0.45, "Crossing": 0.18,
+    "MmiEl": 0.05, "SinPl": 0.087,
 }
 
-# quick 子集（解析快引擎，CI 用）
+# quick 子集（解析快引擎，CI 用；loss 引擎秒级可含）
 QUICK_KINDS = ["Waveguide", "Transmon", "RingResonator", "MziInterferometer",
                "Fluxonium", "Mmi1x2", "GratingCoupler2", "DirectionalCoupler2",
-               "TunableTransmon", "ReadoutPair", "CzGate"]
+               "TunableTransmon", "ReadoutPair", "CzGate",
+               "YbranchLoss", "GratingEff", "Crossing", "MmiEl", "SinPl"]
 
 
 def _extract_rel(verdict: str):
@@ -208,7 +223,7 @@ def _fmt_report(data: dict) -> str:
     L.append("")
     L.append(f"> 生成时间：{time.strftime('%Y-%m-%d %H:%M:%S')} · 方法：{data['method']}")
     L.append("")
-    L.append("## 一、引擎解析锚对照（15 引擎设计闭环验证证据）")
+    L.append("## 一、引擎验证对照（20 引擎设计闭环验证证据：15 设计量解析锚 + 5 loss 实证锚）")
     L.append("")
     L.append("| 引擎 | 解析锚题 | metric | 引擎 rel% | 通过 | 验证证据（verdict） |")
     L.append("|---|---|---|---|---|---|")

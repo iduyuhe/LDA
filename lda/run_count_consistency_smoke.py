@@ -7,11 +7,11 @@ README 引擎域计数「光子 9 + 量子 6」与代码 ENGINE_DOMAIN 实际 8+
 今后任何引擎/包/题库/CI 条数变化而文档未同步，立即 FAIL 拦截。
 
 断言维度（全部死标量，LLM 不进判决路径）：
-  1. 引擎结构：ENGINE_KINDS 15、光子 8、量子 7（ENGINE_DOMAIN 动态统计）
-  2. 包结构：PACKAGE_KINDS 11（15 引擎 + 11 包 = 26 类端到端）
+  1. 引擎结构：ENGINE_KINDS 20（15 设计量 + 5 loss）、光子 13、量子 7
+  2. 包结构：PACKAGE_KINDS 11（20 引擎 + 11 包 = 31 类端到端）
   3. 题库：BENCHMARK_ORDER 34 题（B1-B27 27 题 + E1-E7 7 题）
   4. CI 门禁：CORE_SMOKES 条数（当前 45 条，动态）
-  5. README 宣传串：动态构造「15 引擎 + 11 包 = 26 类端到端（光子 8 + 量子 7）」
+  5. README 宣传串：动态构造「20 引擎 + 11 包 = 31 类端到端（光子 13 + 量子 7）」
      「34 题（B1-B27 + E1-E7）」「CI core N 条」断言 README.md 包含；
      反向断言 README 不含已废弃错误串「光子 9 + 量子 6」（防回退）。
 """
@@ -49,23 +49,23 @@ class CountConsistencySmoke(unittest.TestCase):
             cls.readme = f.read()
 
     # ---- 1. 引擎结构 ----
-    def test_engine_total_15(self):
-        self.assertEqual(len(self.engine_kinds), 15,
-                         f"ENGINE_KINDS 应 15 类，实际 {len(self.engine_kinds)}")
+    def test_engine_total_20(self):
+        self.assertEqual(len(self.engine_kinds), 20,
+                         f"ENGINE_KINDS 应 20 类（15 设计量 + 5 loss/效率），实际 {len(self.engine_kinds)}")
 
-    def test_engine_domain_split_8_7(self):
+    def test_engine_domain_split_13_7(self):
         # 域划分以 ENGINE_DOMAIN 动态统计为准（engine_kind → 显示名 → photon/quantum）
         names = []
         for k in self.engine_kinds:
             self.assertIn(k, self.kind_map,
                           f"引擎 {k} 缺 ENGINE_KIND_MAP 映射（新增引擎漏注册）")
             names.append(self.domain[self.kind_map[k]])
-        self.assertEqual(len(names), 15, "ENGINE_KINDS 全部应在 ENGINE_DOMAIN 有映射")
+        self.assertEqual(len(names), 20, "ENGINE_KINDS 全部应在 ENGINE_DOMAIN 有映射")
         n_photon = sum(1 for d in names if d == "photon")
         n_quantum = sum(1 for d in names if d == "quantum")
-        self.assertEqual(n_photon, 8, f"光子引擎应 8 类，实际 {n_photon}")
+        self.assertEqual(n_photon, 13, f"光子引擎应 13 类（8 设计量 + 5 loss），实际 {n_photon}")
         self.assertEqual(n_quantum, 7, f"量子引擎应 7 类，实际 {n_quantum}")
-        self.assertEqual(n_photon + n_quantum, 15)
+        self.assertEqual(n_photon + n_quantum, 20)
 
     def test_engine_domain_no_unknown(self):
         for k in self.engine_kinds:
@@ -80,9 +80,9 @@ class CountConsistencySmoke(unittest.TestCase):
         self.assertEqual(len(self.package_kinds), 11,
                          f"PACKAGE_KINDS 应 11 类，实际 {len(self.package_kinds)}")
 
-    def test_engine_plus_package_26(self):
-        self.assertEqual(len(self.engine_kinds) + len(self.package_kinds), 26,
-                         "15 引擎 + 11 包应 = 26 类端到端")
+    def test_engine_plus_package_31(self):
+        self.assertEqual(len(self.engine_kinds) + len(self.package_kinds), 31,
+                         "20 引擎 + 11 包应 = 31 类端到端")
 
     # ---- 3. 题库 ----
     def test_benchmark_order_34(self):
@@ -111,8 +111,8 @@ class CountConsistencySmoke(unittest.TestCase):
 
     # ---- 5. README 宣传串一致性 ----
     def test_readme_engine_counts(self):
-        self.assertIn("15 引擎 + 11 包 = 26 类端到端", self.readme)
-        self.assertIn("光子 8 + 量子 7", self.readme)
+        self.assertIn("20 引擎 + 11 包 = 31 类端到端", self.readme)
+        self.assertIn("光子 13 + 量子 7", self.readme)
         # 反向断言：废弃错误串不得回退
         self.assertNotIn("光子 9 + 量子 6", self.readme)
         self.assertNotIn("光子 9+量子 6", self.readme)

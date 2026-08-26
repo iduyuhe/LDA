@@ -698,3 +698,17 @@
 ### 意义
 - 实证锚 9 条语料从"部分可对照"变"全部可对照"——跨源死标量对照闭环完整；
 - loss 引擎为半解析近似（工艺标定参数显式暴露），发动期真实 PDK 数据可替换标定——对照 rel 即"引擎近似精度"的诚实度量。
+
+## v0.8.11f（2026-08-26 · loss 引擎接入引擎闭环 · 20 引擎族 + 实证锚判决）
+
+**里程碑：5 个 loss/效率类引擎接入 DesignEngine 一等引擎闭环——引擎族 15→20、端到端 26→31 类；实证锚（E1-E7 语料）第一次成为引擎级判决锚（|engine_out − golden| ≤ tol，LLM 不进判决）。**
+
+### 新增
+- **DesignEngine 新增 5 个 loss spec**（YbranchLoss/GratingEff/Crossing/MmiEl/SinPl）：sweep 工艺参数（θ/ff/taper/粗糙度）、cheap=loss 引擎正向输出、**verify=实证锚对照**（`_loss_verify`：引擎输出 vs 语料 golden 死标量）；实测 5/5 PASS（rel 0-10%）。
+- **design_package 注册 15→20 引擎**：ENGINE_KINDS/ENGINE_KIND_MAP/ENGINE_DOMAIN（光子 13 = 8 设计量 + 5 loss、量子 7）/默认目标/描述全同步。
+- **对照报告升级 20 引擎**：解析锚/实证锚全列，**20/20 PASS**、9/9 语料全对照。
+- **计数口径 15→20、26→31 类**：count_consistency 断言更新（光子 13/量子 7、20+11=31）、README 版本行同步。
+
+### 意义
+- **实证锚进入引擎判决路径**：此前 E 题仅 harness 参考候选自洽/扰动检测，现在 5 个 loss 引擎的 PASS/FAIL 直接由真实文献语料判决——"实证大数据锚"从验证框架升格为引擎验收标准；
+- 引擎族 20（15 设计量 + 5 loss）+ 11 包 = 31 类端到端，统一设计包口径完整。

@@ -49,7 +49,10 @@ ENGINE_KINDS = ("engine_waveguide", "engine_braggmirror",
                 "engine_phc", "engine_qres", "engine_fluxonium",
                 "engine_tcoup", "engine_mmi", "engine_gcoupler",
                 "engine_dcoupler", "engine_tuntransmon",
-                "engine_readoutpair", "engine_czgate")
+                "engine_readoutpair", "engine_czgate",
+                # v0.8.11e：loss/效率类引擎（实证锚判决路径）
+                "engine_ybranchloss", "engine_gratingeff",
+                "engine_crossing", "engine_mmiel", "engine_sinpl")
 ENGINE_KIND_MAP = {
     "engine_waveguide": "Waveguide",
     "engine_braggmirror": "BraggMirror",
@@ -66,6 +69,11 @@ ENGINE_KIND_MAP = {
     "engine_tuntransmon": "TunableTransmon",
     "engine_readoutpair": "ReadoutPair",
     "engine_czgate": "CzGate",
+    "engine_ybranchloss": "YbranchLoss",
+    "engine_gratingeff": "GratingEff",
+    "engine_crossing": "Crossing",
+    "engine_mmiel": "MmiEl",
+    "engine_sinpl": "SinPl",
 }
 ENGINE_DOMAIN = {
     "Waveguide": "photon", "BraggMirror": "photon",
@@ -77,6 +85,8 @@ ENGINE_DOMAIN = {
     "DirectionalCoupler2": "photon",
     "TunableTransmon": "quantum", "ReadoutPair": "quantum",
     "CzGate": "quantum",
+    "YbranchLoss": "photon", "GratingEff": "photon",
+    "Crossing": "photon", "MmiEl": "photon", "SinPl": "photon",
 }
 _ENGINE_DEFAULT_TARGET = {
     "engine_waveguide": 3.25,      # 目标 neff
@@ -94,6 +104,11 @@ _ENGINE_DEFAULT_TARGET = {
     "engine_tuntransmon": 6.0,     # 目标 f01 (GHz)
     "engine_readoutpair": 0.002,   # 目标 |χ| (GHz)
     "engine_czgate": 700.0,        # 目标 t_CZ (ns)
+    "engine_ybranchloss": 3.4,     # 目标 split_loss (dB，实证锚)
+    "engine_gratingeff": 0.45,     # 目标 coupling_eff（实证锚）
+    "engine_crossing": 0.18,       # 目标 IL (dB，实证锚)
+    "engine_mmiel": 0.05,          # 目标 excess_loss (dB，实证锚)
+    "engine_sinpl": 0.087,         # 目标 PL (dB/cm，实证锚)
 }
 _ENGINE_TITLE = {
     "engine_waveguide": "直波导 · 目标有效折射率 neff",
@@ -111,6 +126,11 @@ _ENGINE_TITLE = {
     "engine_tuntransmon": "可调 transmon · 目标 f01（SQUID 磁通调谐 + B25 锚）",
     "engine_readoutpair": "比特-读出配对 · 目标 |χ|（严格对角化 + B26 锚）",
     "engine_czgate": "色散 CZ 门 · 目标 t_CZ（条件相位 π + B27 锚）",
+    "engine_ybranchloss": "Y-branch 分束损耗 · 实证锚 E-YBRANCH-LOSS 判决",
+    "engine_gratingeff": "光栅耦合效率 · 实证锚 E-GRATING-EFF 判决",
+    "engine_crossing": "crossing 插入损耗+串扰 · 实证锚 E-SOI-CROSS-IL/XT 判决",
+    "engine_mmiel": "MMI 1×2 过量损耗 · 实证锚 E-MMI-1X2-EL 判决",
+    "engine_sinpl": "SiN 传播损耗 · 实证锚 E-SIN-PL-800 判决",
 }
 
 

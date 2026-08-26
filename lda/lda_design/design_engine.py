@@ -26,6 +26,57 @@ if str(_LDA) not in sys.path:
 
 from lda_l2.device_library import DeviceLibrary  # noqa: E402
 
+# --------------------------------------------------------------------------- #
+# v0.8.11e · loss/效率类引擎验证辅助（实证锚判决路径）
+# --------------------------------------------------------------------------- #
+_LOSS_GOLDEN_CACHE: Dict[str, Tuple[float, float]] = {}
+
+
+def _loss_golden(eid: str) -> Tuple[float, float]:
+    """语料 golden（measured_value, uncertainty_abs），带缓存。"""
+    if eid not in _LOSS_GOLDEN_CACHE:
+        from lda_harness.empirical_bank import EmpiricalCorpus
+        corpus = EmpiricalCorpus.load(
+            os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         "..", "lda_harness", "seed_empirical.json"))
+        m = corpus.get(eid)
+        _LOSS_GOLDEN_CACHE[eid] = (float(m.measured_value),
+                                   float(m.uncertainty_abs))
+    return _LOSS_GOLDEN_CACHE[eid]
+
+
+def _loss_cheap(engine_name: str, combo: Dict[str, float]) -> float:
+    """loss 引擎正向输出（搜索排序用）。"""
+    from lda_design.loss_engines import ENGINE_FUNCS
+    out = ENGINE_FUNCS[engine_name](dict(combo))
+    return float(out["value"])
+
+
+def _loss_verify(engine_name: str, eid: str, tol: float):
+    """loss 引擎验证工厂：引擎输出 vs 实证语料 golden 死标量对照。
+
+    实证锚第一次进入引擎级判决路径：|engine_out − measured| ≤ tol → passed。
+    LLM 不进判决路径（golden 为真实文献语料）。
+    """
+    def _verify(mode: str, target_f01: float = None, **kw):
+        from lda_design.loss_engines import ENGINE_FUNCS
+        golden, unc = _loss_golden(eid)
+        out = ENGINE_FUNCS[engine_name](dict(kw))
+        val = float(out["value"])
+        rel = abs(val - golden) / max(abs(golden), 1e-9) * 100
+        passed = abs(val - golden) <= tol
+        return {
+            "passed": passed,
+            "metric": val,
+            "rel": rel,
+            "verdict": (f"实证锚 {eid} 对照 PASS（引擎 {val:.4g} ↔ 实测 "
+                        f"{golden}±{unc} rel={rel:.2f}% ≤ tol={tol}）"
+                        if passed else
+                        f"实证锚 {eid} 对照 FAIL（引擎 {val:.4g} ↔ 实测 "
+                        f"{golden}±{unc} rel={rel:.2f}% > tol={tol}）"),
+        }
+    return _verify
+
 
 def _ensure_path() -> None:
     """注入本地求解器路径（tmm / fdtd3d 等）。"""
@@ -342,6 +393,87 @@ class DesignEngine:
             "secondary": ("g_ghz", True),
             "note": "色散 CZ 门时间 t_CZ=π/(2|χ|)（B27 锚）。网格搜耦合强度 g "
                     "命中目标门时间；top-K 对角化 χ 复核 + 2|χ|·t=π 精确性校验。",
+        },
+        # ---- v0.8.11e：loss/效率类引擎（实证锚判决路径）----
+        # 这些引擎的"目标" = 损耗/效率预算（文献实测典型值），验证锚 = **实证语料**
+        # （E1-E7 golden，非解析锚）——实证锚第一次成为引擎级判决锚（LLM 不进判决）。
+        "YbranchLoss": {
+            "title": "Y-branch 分束损耗 · 目标 split_loss（实证锚 E-YBRANCH-LOSS）",
+            "sweep": [("theta_deg", 2.0, 20.0, 1.0)],
+            "fixed": dict(excess_coef=0.004),
+            "verify": _loss_verify("engine_ybranch_split", "E-YBRANCH-LOSS",
+                                   tol=0.5),
+            "cheap": lambda combo, target: _loss_cheap(
+                "engine_ybranch_split", combo),
+            "extract": lambda r: r["metric"],
+            "metric_name": "split_loss_dB",
+            "target_unit": "dB",
+            "analytic_only": False,
+            "secondary": ("theta_deg", True),
+            "note": "Y-branch 分束损耗（3dB 理想 + θ² 过量）。目标=公开实测典型"
+                    "3.4dB；实证锚 E-YBRANCH-LOSS 死标量判决（|out−golden|≤tol）。",
+        },
+        "GratingEff": {
+            "title": "光栅耦合效率 · 目标 coupling_eff（实证锚 E-GRATING-EFF）",
+            "sweep": [("ff", 0.30, 0.70, 0.05)],
+            "fixed": dict(theta_deg=8.0, tilt_sigma_deg=15.0),
+            "verify": _loss_verify("engine_grating_eff", "E-GRATING-EFF",
+                                   tol=0.10),
+            "cheap": lambda combo, target: _loss_cheap(
+                "engine_grating_eff", combo),
+            "extract": lambda r: r["metric"],
+            "metric_name": "coupling_eff",
+            "target_unit": "",
+            "analytic_only": False,
+            "secondary": ("ff", False),
+            "note": "光栅耦合峰值效率（Bragg×占空比×倾斜）。目标=公开实测典型"
+                    "0.45；实证锚 E-GRATING-EFF 判决。",
+        },
+        "Crossing": {
+            "title": "波导 crossing · 目标插入损耗（实证锚 E-SOI-CROSS-IL/XT）",
+            "sweep": [("taper_w_ratio", 1.5, 4.0, 0.5)],
+            "fixed": dict(w_core_um=0.5),
+            "verify": _loss_verify("engine_crossing", "E-SOI-CROSS-IL",
+                                   tol=0.10),
+            "cheap": lambda combo, target: _loss_cheap(
+                "engine_crossing", combo),
+            "extract": lambda r: r["metric"],
+            "metric_name": "insertion_loss_dB",
+            "target_unit": "dB",
+            "analytic_only": False,
+            "secondary": ("taper_w_ratio", False),
+            "note": "crossing 插入损耗（taper 参数化，XT 联动报告）。目标=优化"
+                    "crossing 典型 0.18dB；实证锚 E-SOI-CROSS-IL 判决。",
+        },
+        "MmiEl": {
+            "title": "MMI 1×2 过量损耗 · 目标 excess_loss（实证锚 E-MMI-1X2-EL）",
+            "sweep": [("L_mmi_um", 20.0, 35.0, 1.0)],
+            "fixed": dict(w_mmi_um=2.8, n_si=3.48, wl_um=1.55),
+            "verify": _loss_verify("engine_mmi_el", "E-MMI-1X2-EL",
+                                   tol=0.05),
+            "cheap": lambda combo, target: _loss_cheap("engine_mmi_el", combo),
+            "extract": lambda r: r["metric"],
+            "metric_name": "excess_loss_dB",
+            "target_unit": "dB",
+            "analytic_only": False,
+            "secondary": ("L_mmi_um", True),
+            "note": "MMI 1×2 过量损耗（长度失配模型，L=L_ideal 最优）。目标=优化"
+                    "MMI 典型 0.05dB；实证锚 E-MMI-1X2-EL 判决。",
+        },
+        "SinPl": {
+            "title": "SiN 波导传播损耗 · 目标 PL（实证锚 E-SIN-PL-800）",
+            "sweep": [("roughness_nm", 0.20, 0.60, 0.05)],
+            "fixed": dict(w_core_um=0.8, h_core_um=0.8),
+            "verify": _loss_verify("engine_sin_pl", "E-SIN-PL-800",
+                                   tol=0.02),
+            "cheap": lambda combo, target: _loss_cheap("engine_sin_pl", combo),
+            "extract": lambda r: r["metric"],
+            "metric_name": "propagation_loss_dBcm",
+            "target_unit": "dB/cm",
+            "analytic_only": False,
+            "secondary": ("roughness_nm", True),
+            "note": "厚 SiN 传播损耗（Payne-Lacey 粗糙度散射，标定 800×800nm）。"
+                    "目标=典型 0.087dB/cm；实证锚 E-SIN-PL-800 判决。",
         },
         }
         return specs

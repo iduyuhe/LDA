@@ -161,6 +161,22 @@ def screen_proposal(proposal: Dict[str, Any]) -> Dict[str, Any]:
     coll = (proposal["channel_plan"]["spacing_ghz"]
             - proposal["channel_plan"]["filter_bw_ghz"])
 
+    # 第 4 锚：统计锚 S7-p5（蒙特卡洛最坏情况下界 > 0——Phase 4c）
+    # 用提案自身参数采样（固定种子，确定性可复现）；确定性锚抓不到的
+    # 「名义过但统计挂」案例在此被剪（margin 刚好压线的提案 p5 必为负）。
+    from .statistical_anchor import margin_stats, monte_carlo_margins
+    ls_full = proposal["link_spec"]
+    margins = monte_carlo_margins(
+        p_tx_dbm=ls_full["p_tx_dbm"],
+        n_gratings=int(ls_full["n_gratings"]),
+        grating_db=ls_full["grating_db"],
+        wg_length_cm=ls_full["wg_length_cm"],
+        wg_loss_db_cm=ls_full["wg_loss_db_cm"],
+        ring_il_db=ls_full["ring_il_db"],
+        detector_sens_dbm=ls_full["detector_sens_dbm"],
+        n_samples=1000, seed=42)
+    p5 = margin_stats(margins)["p5"]
+
     checks = [
         {"anchor": "S1-power-budget",
          "name": "功率预算余量 ≥ 要求",
@@ -174,10 +190,14 @@ def screen_proposal(proposal: Dict[str, Any]) -> Dict[str, Any]:
          "name": "信道无碰撞（间隔>带宽）",
          "value": round(coll, 3), "threshold": 0.0,
          "passed": coll > 0},
+        {"anchor": "S7-statistical-p5",
+         "name": "统计最坏情况 p5 > 0（蒙特卡洛）",
+         "value": p5, "threshold": 0.0,
+         "passed": p5 > 0},
     ]
     accepted = all(c["passed"] for c in checks)
     return {"accepted": accepted, "checks": checks,
-            "margin_db": round(margin, 3)}
+            "margin_db": round(margin, 3), "p5_db": p5}
 
 
 # ---------------------------------------------------------------------------
@@ -202,7 +222,7 @@ def rank_proposals(candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return [{"rank": i + 1, "proposal": c, "screening": s,
              "screening_summary": (f"{'ACCEPT' if s['accepted'] else 'REJECT'} · "
                                    f"margin={s['margin_db']}dB · "
-                                   f"{sum(ch['passed'] for ch in s['checks'])}/3 锚过")}
+                                   f"{sum(ch['passed'] for ch in s['checks'])}/4 锚过")}
             for i, (c, s) in enumerate(scored)]
 
 

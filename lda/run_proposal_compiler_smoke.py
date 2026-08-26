@@ -59,12 +59,21 @@ def main() -> int:
     check("域内生成：候选全部可行（剪枝前置）",
           len(cands) > 0 and all_in_domain, f"{len(cands)} 候选")
 
-    # ③ 即提即验（逐案三锚证据链）
+    # ③ 即提即验（逐案四锚证据链：S1/S5/S2/S7）
     s = screen_proposal(good)
-    check("即提即验：3/3 锚过（S1/S2/S5 证据链）",
-          s["accepted"] and len(s["checks"]) == 3
+    check("即提即验：4/4 锚过（S1/S2/S5/S7 证据链）",
+          s["accepted"] and len(s["checks"]) == 4
           and all(c["passed"] for c in s["checks"]),
-          f"margin={s['margin_db']}")
+          f"margin={s['margin_db']} p5={s['p5_db']}")
+
+    # ③b 统计锚独有价值：名义过但统计挂（S1 margin>0 但 p5<0）
+    borderline = compile_proposal({"wg_length_cm": 3.6, "link_budget_db": 0.0})
+    sb = screen_proposal(borderline)
+    s1_pass = sb["checks"][0]["passed"]
+    s7_pass = sb["checks"][3]["passed"]
+    check("统计锚独有判决：margin=2.7 名义过(S1 P) 但 p5=−0.32 统计挂(S7 F)",
+          s1_pass and (not s7_pass) and (not sb["accepted"]),
+          f"p5={sb['p5_db']}——确定性锚抓不到，统计锚剪掉")
 
     # ④ 排序确定性（两次运行同序）
     r1 = [r["screening_summary"] for r in rank_proposals(cands)]
@@ -89,7 +98,7 @@ def main() -> int:
     check("端到端：需求→过锚提案列表（人审材料完整）",
           pipe["n_accepted"] >= 1 and pipe["ranked"]
           and pipe["feasible_domain"]["feasible"],
-          f"域内 {pipe['n_domain_candidates']} · 过锚 {pipe['n_accepted']}")
+          f"域内 {pipe['n_domain_candidates']} · 过锚 {pipe['n_accepted']}（S7 收紧后）")
 
     # ⑦ 负例：超预算提案被锚抓
     s_bad = screen_proposal(bad)

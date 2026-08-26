@@ -107,6 +107,21 @@ def build_results_json(results, meta):
     }
 
 
+def run_proposal_design(payload):
+    """Phase 4 生成侧：功能需求 → 过锚提案列表（人终审材料）。"""
+    sys.path.insert(0, LDA_ROOT)
+    from lda_harness.proposal_compiler import design_pipeline
+    req = {
+        "n_channels": int(payload.get("n_channels", 4) or 4),
+        "channel_spacing_ghz": float(payload.get("channel_spacing_ghz", 100.0) or 100.0),
+        "filter_bw_ghz": float(payload.get("filter_bw_ghz", 50.0) or 50.0),
+        "link_budget_db": float(payload.get("link_budget_db", 3.0) or 3.0),
+        "p_tx_dbm": float(payload.get("p_tx_dbm", 0.0) or 0.0),
+        "wg_length_cm": float(payload.get("wg_length_cm", 1.0) or 1.0),
+    }
+    return design_pipeline(req, n_top=int(payload.get("n_top", 3) or 3))
+
+
 def run_verify(payload):
     kind = payload.get("candidate", "reference")
     perturb = float(payload.get("perturb", 0.1) or 0.1)
@@ -2344,6 +2359,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path == "/api/verify":
                 self._send(200, run_verify(payload))
+            elif path == "/api/proposal_design":
+                self._send(200, run_proposal_design(payload))
             elif path == "/api/agent_loop":
                 self._send(200, run_agent_loop(payload))
             elif path == "/api/band_loop":

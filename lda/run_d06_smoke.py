@@ -27,7 +27,8 @@ def main():
     assert os.path.exists(seed), f"seed 缺失: {seed}"
 
     corpus = EmpiricalCorpus.load(seed)
-    assert corpus.stats()["total"] == 5, corpus.stats()
+    n = corpus.stats()["total"]
+    assert n >= 5, corpus.stats()  # v0.8.11 语料扩充 5→9（动态下限防漂移）
     # 溯源：seed 记录加载后 contributor 标记为 seed，source_file 指向 seed 文件
     seed_prov = corpus.get("E-SOI-NEFF-220").provenance
     assert seed_prov.get("contributor") == "seed", seed_prov

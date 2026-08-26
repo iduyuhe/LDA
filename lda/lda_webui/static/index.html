@@ -1173,6 +1173,9 @@ async function apiGet(path){
   if(!r.ok) throw new Error('HTTP '+r.status);
   return await r.json();
 }
+// post 别名（修复既有潜伏 bug：20+ 处调用 post() 但此前未定义，
+// 点击相关按钮即抛 ReferenceError；v0.8.11g 浏览器实测暴露）
+const post = api;
 
 function fmt(v){ return (typeof v==='number') ? (Math.abs(v)<1e-3 ? v.toExponential(3) : v.toPrecision(7)) : v; }
 

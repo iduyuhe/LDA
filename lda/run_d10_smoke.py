@@ -82,7 +82,7 @@ def main():
     # 4) validate 命令
     rc, out = run_capture(["validate", "--bank",
                            os.path.join(HERE, "lda_harness", "seed_empirical.json")])
-    assert rc == 0 and "5 条" in out, out
+    assert rc == 0 and "条" in out and "非法 0 条" in out, out
     print("[4] validate OK")
 
     print("D-10 smoke ALL GREEN")

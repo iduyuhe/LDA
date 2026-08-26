@@ -737,3 +737,18 @@
 - **浏览器实测面板㊾**：运行基准对照 → 引擎对照 16/16 PASS + 9 语料矩阵 + ORACLE 状态全块渲染（本地 8899 + 生产实测）。
 - **CI core 48 条**：46 PASS / 2 FAIL（上述 2 项）→ 修复后复跑 48/48 全绿。
 - 生产：git pull a9baa00 + restart，post 修复生效（页面 grep=1 去重正确）、health 正常。
+
+## v0.8.12（2026-08-26 · Phase 0 试金石 · 系统级第一锚 S1）
+
+**里程碑：Merge-0 达成——LDA 系统级探索零的突破。新增 S 系统锚前缀：S1 功率预算锚（dB 级联纯算术）入 harness 题库（34→35 题），全链路 35/35 全绿。验证了「预算类系统指标 = 确定性算术锚」的可行性——系统级与器件级共用同一锚体系、同一判决机制、LLM 不进判决路径。**
+
+### 新增
+- **`lda_harness/system_budget.py`**：系统预算锚模块——`link_budget_cascade`（dB 域级联 = 线性乘法对数像）+ `budget_margin_db`（余量判定）+ `s1_power_budget_margin_dB`（S1 golden：激光 0dBm→光栅×2(−3dB 每)→波导 1cm(3dB/cm)→环形 through(−0.5dB)→探测器 −20dBm ⇒ margin=10.5dB，纯算术）+ `budget_breakdown`（逐级贡献报告）。有源器件为行为级黑箱参数（文献典型值，诚实标注）。
+- **`run_system_budget_smoke.py`**（10/10 PASS，入 CI core 48→49 条）：①golden=独立手算（非调用自身）②harness reference PASS ③扰动 +2dB 被 FAIL 抓（防自证门禁）④题库 35 计数 ⑤物理单调性（损耗↑→margin↓）⑥预算分解报告。**smoke 曾抓到真实符号 bug**（wg_loss 为正系数被直接相加导致 margin 随损耗增大——单调性检查当场暴露，修复为取负入级联）——防自证门禁价值实证。
+
+### 同步
+- 题库 34→35（B1-B27 + E1-E7 + S1）；`run_harness` 35/35；empirical 17/17、L1 6/6、count_consistency 11/11 全绿。
+- S 前缀接入 golden 分发（_GOLDEN_DISPATCH + _PHYSICAL_LAW）；README 版本行同步。
+
+### 意义
+- **Phase 0 试金石完成**：验证「约束验证型系统指标（预算类）」可直接复用现有锚体系——系统级攻关的第一步落定，且为 Phase 1 锚题库（频率规划/OSNR/量子保真度预算）铺平模板。

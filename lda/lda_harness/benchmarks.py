@@ -21,6 +21,8 @@ from .golden import (
     b25_tunable_transmon_f01,
     b26_dispersive_shift,
     b27_cz_gate_time,
+    # S 系统锚（Phase 0 · Merge-0）
+    s1_power_budget_margin_dB,
 )
 
 BENCHMARK_DEFS = {
@@ -405,6 +407,22 @@ BENCHMARK_DEFS = {
         "golden_fn": None,
         "note": "实证锚：golden=语料实测值 −41±2 dB（CMOS 兼容 crossing 串扰，Zhang PTL 2013）；比对=|candidate−measured|≤tol。",
     },
+
+    # ---- S 系统锚（Phase 0 · Merge-0，2026-08-26）----
+    "S1": {
+        "title": "系统功率预算余量（dB 级联 · 系统级第一锚）",
+        "metric": "margin_dB",
+        "oracle": "physical-law(dB-budget-cascade)",
+        "tol": 0.01,
+        "anchor": "physical_law",
+        "default_params": {"p_tx_dbm": 0.0, "n_gratings": 2,
+                           "grating_db": -3.0, "wg_length_cm": 1.0,
+                           "wg_loss_db_cm": 3.0, "ring_il_db": -0.5,
+                           "detector_sens_dbm": -20.0},
+        "golden_fn": s1_power_budget_margin_dB,
+        "note": "系统锚：激光→光栅×2→波导1cm→环形thru→探测器，margin=0−6−3−0.5+20=10.5dB（纯算术）。"
+                "链路引擎端到端输出须与此解析值一致——锚前置剪枝的第一道可行域判决。",
+    },
 }
 
 # 对齐顺序（报告展示用）
@@ -412,7 +430,8 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                    "B26", "B27",
-                   "E1", "E2", "E3", "E4", "E5", "E6", "E7"]
+                   "E1", "E2", "E3", "E4", "E5", "E6", "E7",
+                   "S1"]  # S 系统锚（Phase 0 · Merge-0）
 
 
 def register_benchmark(def_dict: dict) -> str:

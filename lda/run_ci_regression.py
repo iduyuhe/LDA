@@ -82,6 +82,8 @@ CORE_SMOKES: List[str] = [
     "run_chip_layout_smoke.py",
     # loss/效率类引擎（v0.8.11e：实证锚 9 条语料全对照 + 物理合理性）
     "run_loss_engine_smoke.py",
+    # 系统级锚（Phase 0 · Merge-0：S1 功率预算 + 防自证负例）
+    "run_system_budget_smoke.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

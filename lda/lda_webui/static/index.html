@@ -366,7 +366,7 @@
   </div>
 
   <div class="sec">
-    <h2>㊾ 基准对照验证闭环（v0.8.11 · 20 引擎 × 解析锚/实证锚/ORACLE）</h2>
+    <h2>㊾ 基准对照验证闭环（v0.8.16 · 22 引擎 × 解析锚/实证锚/ORACLE + 模型精度分级）</h2>
     <div class="hint">把「验证可信」变成<b>跨源死标量对照证据</b>：20 引擎（15 设计量 + 5 loss）设计闭环验证 rel + 实证锚 9 条真实文献语料全对照 + 第三方 ORACLE 状态——解析锚/实证锚双 ground 引擎验收，LLM 不进判决路径。<b>诚实边界</b>：loss 引擎为半解析近似（工艺标定参数可替换）；Tidy3D 无 Key 自动回退设计守则锚。</div>
     <button class="btn" id="runCrosscheck">运行基准对照 → 生成报告</button>
     <div id="ccSummary" class="summary"></div>
@@ -3780,10 +3780,10 @@ async function runCrosscheck(){
     // 引擎对照表（top 20 行）
     const erows = (d.rows||[]).map(r=>{
       const rel = r.analytical_rel_pct!==null&&r.analytical_rel_pct!==undefined?`${r.analytical_rel_pct}%`:'—';
-      return `<tr><td>${r.kind}</td><td>${r.metric??'—'}</td><td>${rel}</td><td>${r.passed?'✅':'❌'}</td><td>${(r.verdict||'').slice(0,60)}</td></tr>`;
+      return `<tr><td>${r.kind}</td><td>${r.model_class||'L0-解析'}</td><td>${r.metric??'—'}</td><td>${rel}</td><td>${r.passed?'✅':'❌'}</td><td>${(r.verdict||'').slice(0,60)}</td></tr>`;
     }).join('');
     $('ccEngine').innerHTML = `<div class="subhead">引擎验证对照（${erows? (d.rows||[]).length:0} 引擎）</div>
-      <table class="tab"><tr><th>引擎</th><th>metric</th><th>rel%</th><th>PASS</th><th>verdict</th></tr>${erows}</table>`;
+      <table class="tab"><tr><th>引擎</th><th>模型精度</th><th>metric</th><th>rel%</th><th>PASS</th><th>verdict</th></tr>${erows}</table>`;
     // ORACLE 状态
     const or = d.oracle||{};
     $('ccOracle').innerHTML = `<div class="subhead">第三方 ORACLE 状态</div>` +

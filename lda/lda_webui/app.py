@@ -2297,6 +2297,7 @@ class Handler(BaseHTTPRequestHandler):
                     "rows": [{"kind": r["kind"], "ok": r.get("ok"),
                               "passed": r.get("passed"),
                               "metric": r.get("metric"),
+                              "model_class": r.get("model_class", "L0-解析"),
                               "analytical_rel_pct": r.get("analytical_rel_pct"),
                               "verdict": r.get("verdict", "")[:140]}
                              for r in data["rows"]],

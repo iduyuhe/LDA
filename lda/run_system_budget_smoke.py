@@ -74,8 +74,8 @@ def main() -> int:
           "预算锚能抓候选偏离（死标量）")
 
     # ④ 题库计数（35 = 27B + 7E + 1S）
-    check("题库 35 题（B27+E7+S1）",
-          len(BENCHMARK_ORDER) == 35 and BENCHMARK_ORDER[-1] == "S1",
+    check("题库 40 题（B27+E7+S6）",
+          len(BENCHMARK_ORDER) == 40 and BENCHMARK_ORDER[-1] == "S6",
           f"{len(BENCHMARK_ORDER)} 题")
 
     # ⑤ 预算语义物理合理性：单调性 + 余量域
@@ -97,6 +97,35 @@ def main() -> int:
     check("预算分解报告（逐级贡献，人可读）",
           len(rows) >= 6 and any("光栅" in r[0] for r in rows),
           f"{len(rows)} 行")
+
+    # ⑦ S2-S6 系统锚 golden 正确性（独立手算）
+    from lda_harness.system_budget import (
+        s2_channel_plan_no_collision, s3_osnr_budget,
+        s4_fidelity_budget, s5_worst_case_budget, s6_detector_margin,
+    )
+    check("S2 频率规划无碰撞（100−50=50GHz）",
+          s2_channel_plan_no_collision() == 50.0)
+    check("S3 OSNR 预算（ASE 解析，>40dB 合理）",
+          s3_osnr_budget() > 40.0, f"OSNR={s3_osnr_budget():.2f}dB")
+    f_tot = 0.999 ** 4 * 0.998
+    check("S4 保真度预算 ∏fᵢ（对数域同构）",
+          abs(s4_fidelity_budget() - (f_tot - 0.995)) < 1e-6,
+          f"margin={s4_fidelity_budget():.6f}")
+    check("S5 最坏情况预算（0−10+20=10dB）",
+          s5_worst_case_budget() == 10.0)
+    check("S6 探测器灵敏度余量（−8.5+20=11.5dB）",
+          s6_detector_margin() == 11.5)
+
+    # ⑧ 探测器黑箱（三件套收口）：响应度 + 光电流物理正确
+    from lda_design.active_models import detector_responsivity, detector_response
+    r_a = detector_responsivity(0.8, 1.55)
+    check("探测器响应度 R_A≈1.0 A/W（η=0.8@1550nm 量子效率解析）",
+          abs(r_a - 1.0) < 0.05, f"R_A={r_a:.3f}")
+    d = detector_response(-8.5, 0.8, 1.55)
+    # −8.5dBm=0.141mW=1.41e-4 W；R_A×P=1.41e-4 A=141µA
+    check("光电流物理正确（−8.5dBm→141µA）",
+          abs(d["photocurrent_uA"] - 141.16) < 1.0,
+          f"I={d['photocurrent_uA']}µA")
 
     print(f"\n汇总：{PASS} PASS / {FAIL} FAIL")
     return 0 if FAIL == 0 else 1

@@ -23,6 +23,12 @@ from .golden import (
     b27_cz_gate_time,
     # S 系统锚（Phase 0 · Merge-0）
     s1_power_budget_margin_dB,
+    # S2-S6 系统锚（Merge-2b · Phase 1 锚题库）
+    s2_channel_plan_no_collision,
+    s3_osnr_budget,
+    s4_fidelity_budget,
+    s5_worst_case_budget,
+    s6_detector_margin,
 )
 
 BENCHMARK_DEFS = {
@@ -423,6 +429,64 @@ BENCHMARK_DEFS = {
         "note": "系统锚：激光→光栅×2→波导1cm→环形thru→探测器，margin=0−6−3−0.5+20=10.5dB（纯算术）。"
                 "链路引擎端到端输出须与此解析值一致——锚前置剪枝的第一道可行域判决。",
     },
+
+    # ---- S2-S6 系统锚（Merge-2b · Phase 1 锚题库，5 题连发） ----
+    "S2": {
+        "title": "WDM 信道频率规划无碰撞（系统锚）",
+        "metric": "margin_GHz",
+        "oracle": "physical-law(channel-plan)",
+        "tol": 1e-6,
+        "anchor": "physical_law",
+        "default_params": {"channel_spacing_ghz": 100.0,
+                           "filter_bw_ghz": 50.0},
+        "golden_fn": s2_channel_plan_no_collision,
+        "note": "系统锚：信道间隔 − 滤波器带宽 > 0 无碰撞（100−50=50GHz 纯算术）。",
+    },
+    "S3": {
+        "title": "OSNR 解析预算（ASE 级联）",
+        "metric": "OSNR_dB",
+        "oracle": "physical-law(ASE-cascade)",
+        "tol": 0.01,
+        "anchor": "physical_law",
+        "default_params": {"p_sig_dbm": 0.0, "n_amp": 1, "nf_db": 5.0,
+                           "bw_ghz": 50.0},
+        "golden_fn": s3_osnr_budget,
+        "note": "系统锚：OSNR=P_sig−10log(hν·bw·N·F)（ASE 确定性解析，46.93dB 默认）。",
+    },
+    "S4": {
+        "title": "量子门保真度预算（∏fᵢ 乘法级联）",
+        "metric": "margin",
+        "oracle": "physical-law(fidelity-product)",
+        "tol": 1e-6,
+        "anchor": "physical_law",
+        "default_params": {"fidelities": (0.999, 0.999, 0.999, 0.998, 0.999),
+                           "f_target": 0.995},
+        "golden_fn": s4_fidelity_budget,
+        "note": "系统锚：F_total=∏fᵢ（对数域同构洞察 A）——默认 0.994 略低于 0.995 目标"
+                "（margin<0 语义：预算略超，须提保真度或减门数）。",
+    },
+    "S5": {
+        "title": "最坏情况功率预算（工艺角最坏）",
+        "metric": "margin_dB",
+        "oracle": "physical-law(worst-case)",
+        "tol": 1e-6,
+        "anchor": "physical_law",
+        "default_params": {"p_tx_dbm": 0.0, "il_worst_db": 10.0,
+                           "sens_dbm": -20.0},
+        "golden_fn": s5_worst_case_budget,
+        "note": "系统锚：margin_worst=P_tx−IL_worst−Sens（确定性最坏情况，"
+                "与 Merge-1b 角扫下界同构）。",
+    },
+    "S6": {
+        "title": "探测器灵敏度预算（光电流 vs 阈值）",
+        "metric": "margin_dB",
+        "oracle": "physical-law(detector-margin)",
+        "tol": 1e-6,
+        "anchor": "physical_law",
+        "default_params": {"p_rx_dbm": -8.5, "sens_dbm": -20.0},
+        "golden_fn": s6_detector_margin,
+        "note": "系统锚：margin=P_rx−Sens（−8.5+20=11.5dB 可探测）。",
+    },
 }
 
 # 对齐顺序（报告展示用）
@@ -431,7 +495,7 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                    "B26", "B27",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7",
-                   "S1"]  # S 系统锚（Phase 0 · Merge-0）
+                   "S1", "S2", "S3", "S4", "S5", "S6"]  # S 系统锚（Phase 0-1）
 
 
 def register_benchmark(def_dict: dict) -> str:

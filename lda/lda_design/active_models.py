@@ -101,3 +101,30 @@ def mzi_mod_response(V: float, V_pi: float,
     return {"transmission": mzi_transmission(V, V_pi),
             "T_dB": 10.0 * math.log10(max(mzi_transmission(V, V_pi), 1e-12)),
             "V_pi": V_pi, "V": V}
+
+
+# ---- 探测器（Merge-2b · 黑箱三件套收口） ----
+Q_E = 1.602e-19       # 电子电荷 (C)
+H_PLANCK = 6.626e-34  # 普朗克常数 (J·s)
+C_LIGHT = 3.0e8       # 光速 (m/s)
+
+
+def detector_responsivity(eta: float = 0.8, wl_um: float = WL_UM) -> float:
+    """探测器响应度 R_A（A/W）：R_A = η·q·λ/(h·c)。PIN 典型 0.8-1.0 A/W。"""
+    return eta * Q_E * (wl_um * 1e-6) / (H_PLANCK * C_LIGHT)
+
+
+def photocurrent_ua(p_w: float, R_A: float) -> float:
+    """光电流（µA）：I = R_A · P（P 为接收功率 W）。"""
+    return R_A * p_w * 1e6
+
+
+def detector_response(P_dbm: float, eta: float = 0.8,
+                      wl_um: float = WL_UM) -> Dict[str, Any]:
+    """行为黑箱：接收功率(dBm) → 光电流 + 灵敏度判定（链路仿真消费）。"""
+    p_w = 10.0 ** ((P_dbm - 30.0) / 10.0)   # dBm → W
+    r_a = detector_responsivity(eta, wl_um)
+    i_ua = photocurrent_ua(p_w, r_a)
+    return {"P_dbm": P_dbm, "P_w": p_w, "responsivity_AW": r_a,
+            "photocurrent_uA": round(i_ua, 4),
+            "note": f"R_A={r_a:.3f} A/W（η={eta}, λ={wl_um}µm，量子效率解析）"}

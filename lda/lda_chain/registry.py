@@ -157,5 +157,15 @@ register_device_model("RingResonator", _ring_response)
 register_device_model("Waveguide", _waveguide_response)
 register_device_model("GratingCoupler", _grating_response)
 register_device_model("MZI", _mzi_response)
+def _photodetector_response(component, wls: List[float], link_params, kappa_fn):
+    """探测器（行为黑箱，Merge-2b）：链路终点，接收功率→透射 1（信号消费）。
+
+    光电流由 active_models.detector_response 提供（响应度/灵敏度模型层）；
+    链路功率级联把探测器当终端负载（透射=1，无下游传播）。
+    """
+    return {("out", "in"): [1.0] * len(wls)}
+
+
 register_device_model("PhaseShifter", _phaseshifter_response)
 register_device_model("MziModulator", _mzimod_response)
+register_device_model("Photodetector", _photodetector_response)

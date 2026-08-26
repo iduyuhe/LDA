@@ -33,6 +33,8 @@ from .golden import (
     s7_statistical_margin_anchor,
     # S8 统计锚（Phase 3 · OSNR 统计延伸，模板复用）
     s8_statistical_osnr_anchor,
+    # S9 LVS 签核锚（Phase 4 · 版图-原理图一致性判决）
+    s9_lvs_verdict,
 )
 
 BENCHMARK_DEFS = {
@@ -521,6 +523,21 @@ BENCHMARK_DEFS = {
                 "（P_sig 线性保持；NF 非线性 Jensen 偏差极小，均值≤解析物理真实）；"
                 "p5=45.93 最坏情况。S7 模板直接复用——加题从开发变填表。",
     },
+
+    # ---- S9 LVS 签核锚（Phase 4 · 版图-原理图一致性判决） ----
+    "S9": {
+        "title": "LVS 版图-原理图一致性签核锚（签核级）",
+        "metric": "verdict(ACCEPT=1, REJECT=0)",
+        "oracle": "deterministic(LVS-algorithm, geometry+set)",
+        "tol": 1e-9,
+        "anchor": "physical_law",
+        "default_params": {"case": "consistent"},
+        "golden_fn": s9_lvs_verdict,
+        "note": "系统锚（签核级）：LVS 判决确定性可复现——一致版图 ACCEPT=1.0；"
+                "断路/错连/短路/悬空四类失配 REJECT=0.0。版图网表由布线几何独立"
+                "恢复（端点→端口锚点归属），比对纯集合运算，判决零 LLM。"
+                "正例 case=consistent；反例由 smoke 逐案例断言。",
+    },
 }
 
 # 对齐顺序（报告展示用）
@@ -529,7 +546,8 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                    "B26", "B27",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7",
-                   "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"]  # S 系统锚（Phase 0-3）
+                   "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
+                   "S9"]  # S 系统锚（Phase 0-4；S9=LVS 签核锚 v0.8.24）
 
 
 def register_benchmark(def_dict: dict) -> str:

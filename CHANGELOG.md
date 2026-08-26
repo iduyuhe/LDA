@@ -980,3 +980,24 @@
 ### 验证
 - `run_second_tier_smoke.py` **8/8 PASS** 入 CI core（57→58）；chip_layout/demo/DRC/tapeout 回归全绿；count 一致。
 - 版图 7 差距进度：①A* ✅ ②诚实退化 ✅ ③2D 放置 ✅ ④多端网+有源基元 ✅（剩 ⑤LVS ⑥多层 ⑦规模——后置项）。
+
+## v0.8.24（2026-08-27 · LVS 签核深化 · 版图审计差距 #5 落地）
+
+**里程碑：版图审计 7 差距第五项闭合——LVS（Layout vs Schematic）版图-原理图一致性签核，芯片级签核双闸（DRC + LVS）齐备。版图网表从布线几何独立恢复（不读原理图声明），六类违规死标量检出，ACCEPT/REJECT 确定性判决；配套 harness S9 锚（题库 42→43）。**
+
+### 新增
+- **`lda_l2/lvs.py`**（C 级自写零依赖，签核级）：
+  - `extract_schematic_netlist`：原理图网表（LinkModel.ir 器件实例 + 网络）
+  - `extract_layout_netlist`：**版图网表从几何独立恢复**——布线路径端点坐标→端口锚点最近归属（容差 1µm），不读原理图声明（这才是签核的意义：发现「实现≠意图」）
+  - `run_lvs`：器件比对 + 网络比对 + **六类违规**（断路 open / 短路 short_port+short_cross / 错连 misconnect / 悬空 dangling / 自环 loop / 多余 extra / 器件失配）→ 死标量 ACCEPT/REJECT
+  - `lvs_markdown`：人类可读签核报告
+- **harness S9 锚**（`lda_harness/lvs_anchor.py`）：LVS 判决正确性确定性可复现——一致版图 1.0 / open·misconnect·short·dangling 四类反例 0.0；BENCHMARK_ORDER **42→43**（B27+E7+S9）
+- **集成三处**：
+  - `export_chip_gds` 返回 `lvs_report`（与 `drc_report` 并列芯片级签核双闸）；`layout_markdown` 含 LVS 段
+  - `tapeout_pipeline` 新增 **S4 LVS 段**（一致 ACCEPT / 错连 REJECT 阻断 / 无版图 SKIP 诚实标注不阻断——兼容既有器件级接口）
+  - WebUI：`/api/link_lvs` 新端点（五案例） + 独立 LVS 面板 + `/api/link_design` 返回 lvs_report
+
+### 验证
+- `run_lvs_smoke.py` **17/17 PASS** 入 CI core（58→59）：正例 ACCEPT / 四类反例 REJECT / 几何恢复独立性 / 双集成断言 / S9 锚 / 红线（源码零 LLM）
+- 计数一致性同步：题库 43、S1-S9、CI 59；empirical/l1/statistical/system_budget 四 smoke 42→43 全绿
+- 版图 7 差距进度：①A* ✅ ②诚实退化 ✅ ③2D 放置 ✅ ④多端网+有源基元 ✅ **⑤LVS ✅**（剩 ⑥多层 ⑦规模——后置项）

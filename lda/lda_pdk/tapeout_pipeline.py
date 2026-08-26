@@ -1,22 +1,27 @@
-"""LDA 流片级验证管道（tapeout pipeline · 门3 接口细化）。
+"""LDA 流片级验证管道（tapeout pipeline · 门3 接口细化 · v0.8.24 +S5 LVS）。
 
-把「PDK → DRC → 工艺角 → 流片实测回流」串成一条可运行的**流片级验证管道**。
-真实晶圆厂 PDK 对接属发动期（外联延期）；本模块先把管道接口建好，用公开
-工艺参数（典型 SOI 180nm / Al-AlOx 量子工艺）示例驱动，保证：
+把「PDK → DRC → 工艺角 → **LVS** → 流片实测回流」串成一条可运行的
+**流片级验证管道**。真实晶圆厂 PDK 对接属发动期（外联延期）；本模块先把
+管道接口建好，用公开工艺参数（典型 SOI 180nm / Al-AlOx 量子工艺）示例
+驱动，保证：
 
   1. 管道完整可运行（不依赖真实 PDK 也可全链路执行——诚实用示例参数）
   2. 真实 PDK 就位后**零改动接入**（数据驱动，非硬编码）
   3. 每个环节都是死标量判定，LLM 不进判决路径
 
-四段管道：
+五段管道：
   S1 PDK 装载     ：PDK 工艺参数 + DRC 设计规则（rules_from_pdk）
   S2 DRC 全器件自查：对设计中的每个器件跑 drc_check_device（可制造性）
   S3 工艺角扫描     ：SS/TT/FF 三角落的器件参数偏差 → 各角落 DRC 复检
                     （工艺波动下设计仍可制造 = 良率窗口）
-  S4 流片实测回流   ：把「假设流片后实测数据」经实证语料评审流提交
+  S4 LVS 签核       ：版图 vs 原理图一致性（v0.8.24 新增，签核级）——
+                    传入 link/placement/routes 实跑 run_lvs；
+                    缺省诚实标注「未提供版图，本次跳过」（不造假）
+  S5 流片实测回流   ：把「假设流片后实测数据」经实证语料评审流提交
                     （empirical.py → harness E1-E7 实证锚题实时生效）
 
-诚实边界：S1-S3 用公开工艺参数示例（非真实 NDA-PDK）；S4 的实测数据在真实
+诚实边界：S1-S3 用公开工艺参数示例（非真实 NDA-PDK）；S4 LVS 需要版图
+输入（link+placement+routes），无输入时诚实跳过；S5 的实测数据在真实
 流片前为占位（真实测量属发动期晶圆厂对接后）；管道接口完整、判定规则完整。
 
 运行：python -m lda_pdk.tapeout_pipeline --devices '{"RingAddDrop":{"R":10.0,"gap":0.3}}'
@@ -62,6 +67,7 @@ class TapeoutResult:
     drc_violations: List[Dict[str, Any]]
     corners: List[CornerResult]
     corners_all_pass: bool
+    lvs_result: Optional[Dict[str, Any]]
     empirical_submission: Optional[Dict[str, Any]]
     accepted: bool
     honest_note: str
@@ -94,13 +100,16 @@ def _scale_params(params: Dict[str, float], corner: Dict[str, float]
 
 def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
                          pdk_key: Optional[str] = None,
-                         submit_empirical: bool = False) -> TapeoutResult:
+                         submit_empirical: bool = False,
+                         link=None, placement=None, routes=None) -> TapeoutResult:
     """流片级验证管道主入口。
 
     devices   : {kind: params}，如 {"RingAddDrop": {"R": 10.0, "gap": 0.3}}
     pdk_key   : PDK key（缺省取 registry 第一个）
     submit_empirical : 是否把假想流片实测提交实证语料流（默认 False——
                       真实流片前不做占位提交，诚实标注）
+    link/placement/routes : （v0.8.24 S4）LVS 签核输入——提供则实跑
+                      run_lvs（版图-原理图一致性），缺省 None 诚实跳过。
     """
     from lda_l2.drc import drc_check_device, rules_from_pdk
     pdk = _load_pdk(pdk_key)
@@ -141,7 +150,23 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
             checks=c_violations,
             note=f"{cname}: {'通过' if c_ok else '有违规'}"))
 
-    # S4：流片实测回流（仅当显式要求；真实流片前不占位）
+    # S4：LVS 签核（版图 vs 原理图一致性，v0.8.24）
+    # 语义：提供版图 → 实跑（REJECT 阻断签核）；未提供 → SKIP 不阻断但
+    # 诚实标注（不造假声明已验，兼容既有器件级 DRC+角扫接口）。
+    lvs_res = None
+    if link is not None and placement is not None and routes is not None:
+        from lda_l2.lvs import run_lvs
+        lvs_res = run_lvs(link, placement, routes)
+    else:
+        lvs_res = {
+            "verdict": "SKIP",
+            "honest_note": "S4 LVS 未提供版图输入（link+placement+routes），"
+                           "本次诚实跳过——不造假。传齐三输入即实跑签核。",
+            "n_violations": 0,
+        }
+    lvs_ok = (lvs_res.get("verdict") != "REJECT")  # ACCEPT 通过 / SKIP 不阻断
+
+    # S5：流片实测回流（仅当显式要求；真实流片前不占位）
     emp_sub = None
     if submit_empirical:
         from lda_pdk.empirical import submit_measurement
@@ -159,11 +184,12 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
             "proposed_by": "tapeout-pipeline",
         })
 
-    accepted = bool(drc_ok and corners_ok)
+    accepted = bool(drc_ok and corners_ok and lvs_ok)
     honest = (
         f"流片级验证管道（门3 接口就绪）：PDK={pdk.foundry}::{pdk.node}；"
         f"S1-S3 用公开工艺参数示例（真实 NDA-PDK 属发动期）；"
-        f"S4 实测回流在真实流片前不占位提交。判定死标量，LLM 不进判决路径。"
+        f"S4 LVS={'实跑 ACCEPT' if lvs_res.get('verdict') == 'ACCEPT' else ('实跑 REJECT' if lvs_res.get('verdict') == 'REJECT' else '跳过（未提供版图输入）')}；"
+        f"S5 实测回流在真实流片前不占位提交。判定死标量，LLM 不进判决路径。"
     )
     return TapeoutResult(
         pdk_key=pdk.foundry + "::" + pdk.node,
@@ -172,6 +198,7 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
         drc_violations=violations,
         corners=corners,
         corners_all_pass=corners_ok,
+        lvs_result=lvs_res,
         empirical_submission=emp_sub,
         accepted=accepted,
         honest_note=honest,
@@ -188,6 +215,7 @@ def tapeout_to_dict(res: TapeoutResult) -> Dict[str, Any]:
         "corners": [{"corner": c.corner, "passed": c.passed,
                      "checks": c.checks, "note": c.note} for c in res.corners],
         "corners_all_pass": res.corners_all_pass,
+        "lvs_result": res.lvs_result,
         "empirical_submission": res.empirical_submission,
         "accepted": res.accepted,
         "honest_note": res.honest_note,
@@ -233,6 +261,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"  工艺角 {c.corner:>2}        : {'PASS' if c.passed else 'FAIL'}"
               f"  {c.note}  违规 {len(c.checks)} 条")
     print(f"  三角落全过     : {res.corners_all_pass}")
+    lvs_r = res.lvs_result or {}
+    lvs_v = lvs_r.get("verdict", "SKIP")
+    print(f"  LVS 签核       : {lvs_v}"
+          + (f"  {lvs_r.get('match', {}).get('n_nets_match', 0)}/"
+             f"{lvs_r.get('match', {}).get('n_nets_total', 0)} 网一致"
+             if lvs_v == "ACCEPT" else "")
+          + (f"  违规 {lvs_r.get('n_violations', 0)} 项"
+             if lvs_v == "REJECT" else ""))
     print(f"  实测回流       : "
           f"{'已提交(示例)' if res.empirical_submission else '未提交（真实流片前不占位）'}")
     print(f"  验收           : {d['verdict']}")

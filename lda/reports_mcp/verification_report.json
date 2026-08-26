@@ -5,10 +5,10 @@
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "via": "L1 KernelGateway"
   },
-  "generated_at": "2026-08-25T08:35:50",
+  "generated_at": "2026-08-27T07:50:38",
   "summary": {
-    "total": 21,
-    "passed": 18
+    "total": 43,
+    "passed": 40
   },
   "results": [
     {
@@ -122,6 +122,17 @@
       "note": "确定性物理定律/解析解"
     },
     {
+      "id": "B19",
+      "metric": "max|T(λ)| over all transfer paths",
+      "oracle": "analytical(passive-network: 无外部泵浦 ⇒ |T|≤1)",
+      "source": "physical-law",
+      "golden": 1.0,
+      "candidate": 1.0,
+      "tol": 1e-09,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
       "id": "B2",
       "metric": "n_eff",
       "oracle": "analytical(EIM)",
@@ -130,6 +141,94 @@
       "candidate": 3.275615322156264,
       "tol": 0.05,
       "passed": false,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B20",
+      "metric": "FSR_nm",
+      "oracle": "analytical(MZI interference)",
+      "source": "physical-law",
+      "golden": 20.01082791937365,
+      "candidate": 20.01082791937365,
+      "tol": 1e-06,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B21",
+      "metric": "cavity_wl_nm",
+      "oracle": "analytical(PhC Bragg/FP band-edge)",
+      "source": "physical-law",
+      "golden": 2214.0,
+      "candidate": 2214.0,
+      "tol": 1e-06,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B22",
+      "metric": "qres_f_ghz",
+      "oracle": "analytical(CPW λ/4 TL resonance)",
+      "source": "physical-law",
+      "golden": 7.494811449999999,
+      "candidate": 7.494811449999999,
+      "tol": 1e-06,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B23",
+      "metric": "fluxonium_f01_ghz",
+      "oracle": "analytical(LC oscillator strict limit E_J→0)",
+      "source": "physical-law",
+      "golden": 2.8284271247461903,
+      "candidate": 2.8284271247461903,
+      "tol": 1e-06,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B24",
+      "metric": "tcoup_geff_ghz",
+      "oracle": "analytical(2nd-order perturbation / Schrieffer-Wolff)",
+      "source": "physical-law",
+      "golden": -0.004000000000000001,
+      "candidate": -0.004000000000000001,
+      "tol": 1e-06,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B25",
+      "metric": "tunable_f01_ghz",
+      "oracle": "analytical(SQUID E_J(Φ)=E_JΣ·|cos(πΦ/Φ0)| + Koch)",
+      "source": "physical-law",
+      "golden": 6.628203230275509,
+      "candidate": 6.628203230275509,
+      "tol": 1e-06,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B26",
+      "metric": "dispersive_chi_ghz",
+      "oracle": "analytical(Blais χ=g²α/(Δ(Δ+α)))",
+      "source": "physical-law",
+      "golden": -0.002307692307692308,
+      "candidate": -0.002307692307692308,
+      "tol": 1e-06,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "B27",
+      "metric": "cz_gate_time_ns",
+      "oracle": "analytical(t_CZ=π/(2|χ|))",
+      "source": "physical-law",
+      "golden": 680.6784082777884,
+      "candidate": 680.6784082777884,
+      "tol": 1e-06,
+      "passed": true,
       "note": "确定性物理定律/解析解"
     },
     {
@@ -241,6 +340,149 @@
       "tol": 0.1,
       "passed": true,
       "note": "环形谐振器公开测试数据 | ring resonator published measurement | σ=0.1 | tol=0.1"
+    },
+    {
+      "id": "E4",
+      "metric": "insertion_loss_dB",
+      "oracle": "empirical-measurement(E-SOI-CROSS-IL)",
+      "source": "empirical-measurement",
+      "golden": 0.18,
+      "candidate": 0.18,
+      "tol": 0.1,
+      "passed": true,
+      "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=0.03 | tol=0.03"
+    },
+    {
+      "id": "E5",
+      "metric": "excess_loss_dB",
+      "oracle": "empirical-measurement(E-MMI-1X2-EL)",
+      "source": "empirical-measurement",
+      "golden": 0.05,
+      "candidate": 0.05,
+      "tol": 0.1,
+      "passed": true,
+      "note": "SOI 平台（EME 设计 + 实验演示） | D. Chack & S. Hassan, Opt. Eng. 59(10), 105102 (2020), DOI 10.1117/1.OE.59.10.105102 | σ=0.05 | tol=0.05"
+    },
+    {
+      "id": "E6",
+      "metric": "propagation_loss_dBcm",
+      "oracle": "empirical-measurement(E-SIN-PL-800)",
+      "source": "empirical-measurement",
+      "golden": 0.087,
+      "candidate": 0.087,
+      "tol": 0.05,
+      "passed": true,
+      "note": "8 英寸晶圆厚 SiN（LPCVD 两步沉积 + 退火，大马士革工艺） | 丛庆宇 等, 光子学报 53(9), 0913002 (2024), DOI 10.3788/gzxb20245309.0913002 | σ=0.01 | tol=0.01"
+    },
+    {
+      "id": "E7",
+      "metric": "crosstalk_dB",
+      "oracle": "empirical-measurement(E-SOI-CROSS-XT)",
+      "source": "empirical-measurement",
+      "golden": -41.0,
+      "candidate": -41.0,
+      "tol": 5.0,
+      "passed": true,
+      "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=2.0 | tol=2.0"
+    },
+    {
+      "id": "S1",
+      "metric": "margin_dB",
+      "oracle": "physical-law(dB-budget-cascade)",
+      "source": "physical-law",
+      "golden": 10.5,
+      "candidate": 10.5,
+      "tol": 0.01,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "S2",
+      "metric": "margin_GHz",
+      "oracle": "physical-law(channel-plan)",
+      "source": "physical-law",
+      "golden": 50.0,
+      "candidate": 50.0,
+      "tol": 1e-06,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "S3",
+      "metric": "OSNR_dB",
+      "oracle": "physical-law(ASE-cascade)",
+      "source": "physical-law",
+      "golden": 46.92989,
+      "candidate": 46.92989,
+      "tol": 0.01,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "S4",
+      "metric": "margin",
+      "oracle": "physical-law(fidelity-product)",
+      "source": "physical-law",
+      "golden": -0.00098602,
+      "candidate": -0.00098602,
+      "tol": 1e-06,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "S5",
+      "metric": "margin_dB",
+      "oracle": "physical-law(worst-case)",
+      "source": "physical-law",
+      "golden": 10.0,
+      "candidate": 10.0,
+      "tol": 1e-06,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "S6",
+      "metric": "margin_dB",
+      "oracle": "physical-law(detector-margin)",
+      "source": "physical-law",
+      "golden": 11.5,
+      "candidate": 11.5,
+      "tol": 1e-06,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "S7",
+      "metric": "margin_mean_dB",
+      "oracle": "statistical(monte-carlo, seed-fixed)",
+      "source": "physical-law",
+      "golden": 10.496913,
+      "candidate": 10.496913,
+      "tol": 0.15,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "S8",
+      "metric": "OSNR_mean_dB",
+      "oracle": "statistical(monte-carlo, seed-fixed)",
+      "source": "physical-law",
+      "golden": 46.929842,
+      "candidate": 46.929842,
+      "tol": 0.2,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "S9",
+      "metric": "verdict(ACCEPT=1, REJECT=0)",
+      "oracle": "deterministic(LVS-algorithm, geometry+set)",
+      "source": "physical-law",
+      "golden": 1.0,
+      "candidate": 1.0,
+      "tol": 1e-09,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
     }
   ]
 }

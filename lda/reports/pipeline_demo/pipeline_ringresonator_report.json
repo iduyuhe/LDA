@@ -30,6 +30,15 @@
         "required": 0.35,
         "ok": true,
         "severity": "error"
+      },
+      {
+        "rule": "min_space",
+        "device": "RingResonator",
+        "param": "gap",
+        "value": 0.3,
+        "required": 0.2,
+        "ok": true,
+        "severity": "error"
       }
     ]
   },

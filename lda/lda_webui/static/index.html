@@ -1160,6 +1160,26 @@
   </div>
 
   <div class="sec">
+    <h2>LVS 签核（v0.8.24 · 版图-原理图一致性 · 签核级）</h2>
+    <div class="hint">标准 EDA 签核双闸：DRC 保证「版图可制造」，<b>LVS 保证「版图即原理图」</b>。版图网表<b>从布线几何独立恢复</b>（布线端点→端口锚点归属，不读原理图声明——才能发现「实现≠意图」），与原理图网表比对：断路/错连/短路/悬空/多余/自环六类违规死标量检出，ACCEPT/REJECT 确定性判决。配套 harness <b>S9 锚</b>（一致版图 1.0 / 四类反例 0.0）。LLM 不进判决路径。</div>
+    <div class="row">
+      <label>案例
+        <select id="lvsCase">
+          <option value="consistent">一致版图（正例）</option>
+          <option value="open">断路（删布线）</option>
+          <option value="misconnect">错连（布线互换）</option>
+          <option value="short">短路（共享端口）</option>
+          <option value="dangling">悬空（端点无归属）</option>
+        </select>
+      </label>
+      <button class="btn" id="runLvs">运行 LVS 签核</button>
+    </div>
+    <div id="lvsSummary" class="summary"></div>
+    <div id="lvsBody"></div>
+    <div class="conclusion" id="lvsConclusion"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b>PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row">
@@ -3071,10 +3091,53 @@ function renderLinkDesign(d){
     const blob = 'data:application/octet-stream;base64,'+d.gds_b64;
     $('lkGds').innerHTML = `<a class="btn" href="${blob}" download="chip.gds">下载 GDS（${d.gds_size}B）</a>`;
   }
+  const lvs = d.lvs_report||{};
+  const lvsMark = lvs.verdict==='ACCEPT'?'<span class="verdict ok">LVS ACCEPT</span>'
+                : lvs.verdict==='REJECT'?'<span class="verdict fail">LVS REJECT</span>'
+                : '<span class="warn">LVS '+lvs.verdict+'</span>';
   $('lkConclusion').innerHTML = `<strong>结论：${d.accepted?'链路设计→验证闭环 PASS（双 ground 上提生效）':'FAIL'}</strong>`
-    + `<br><span class="note">${d.honest_note||''}</span>`;
+    + `<br><span class="note">${d.honest_note||''}</span>`
+    + `<br>LVS 签核：${lvsMark}（${(lvs.match||{}).n_nets_match}/${(lvs.match||{}).n_nets_total} 网一致 · 违规 ${lvs.n_violations}）——`
+    + `<span class="note">${lvs.honest_note||''}</span>`;
 }
 $('runLk').onclick = runLk;
+
+// ---- LVS 签核（v0.8.24 · 版图-原理图一致性）----
+async function runLvs(){
+  const btn = $('runLvs'); btn.disabled = true;
+  const payload = {case: $('lvsCase').value};
+  $('lvsSummary').innerHTML = '<span class="spin"></span> LVS 签核运行中（版图网表几何恢复 → 与原理图比对）…';
+  $('lvsBody').innerHTML=''; $('lvsConclusion').innerHTML='';
+  try{
+    const d = await postJson('/api/link_lvs', payload);
+    renderLvs(d);
+  }catch(e){ $('lvsSummary').innerHTML = '运行失败：'+e; }
+  finally{ btn.disabled = false; }
+}
+function renderLvs(d){
+  if(!d.ok){ $('lvsSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  const acc = d.verdict==='ACCEPT';
+  const sch = d.schematic||{}, lay = d.layout||{}, m = d.match||{};
+  $('lvsSummary').innerHTML = `LVS 签核 · 案例 <b>${d.case}</b> · `
+    + `<span class="verdict ${acc?'ok':'fail'}">${d.verdict}</span>`
+    + `（违规 ${d.n_violations} 项）`;
+  const viol = d.violations||{};
+  const violRows = Object.entries(viol).map(([k,v])=>`
+    <tr><td>${k}</td><td class="fail">${Array.isArray(v)?v.length:1} 项</td><td>${escapeHtml(JSON.stringify(v).slice(0,160))}</td></tr>`).join('');
+  $('lvsBody').innerHTML = `
+    <div class="subhead">器件 / 网络匹配</div>
+    <table class="tbl"><tbody>
+      <tr><td>器件</td><td>原理图 ${sch.n_instances} · 版图 ${lay.n_instances} · 匹配 <b>${m.n_devices_match}</b></td></tr>
+      <tr><td>网络</td><td>原理图 ${sch.n_nets} · 版图 ${lay.n_nets} · 一致 <b>${m.n_nets_match}/${m.n_nets_total}</b></td></tr>
+    </tbody></table>
+    ${violRows?`<div class="subhead">违规明细（${d.n_violations} 项）</div>
+    <table class="tbl"><thead><tr><th>类别</th><th>数量</th><th>明细</th></tr></thead><tbody>${violRows}</tbody></table>`:'<div class="note">零违规——版图与原理图完全一致。</div>'}
+    <div class="subhead">S9 锚全案例自检</div>
+    <div class="note">${escapeHtml(JSON.stringify((d.s9&&d.s9.cases)||[]).slice(0,220))}</div>`;
+  $('lvsConclusion').innerHTML = `<strong>结论：${acc?'LVS 签核通过（版图-原理图一致）':'LVS 签核拒绝（见违规明细）'}</strong>`
+    + `<br><span class="note">${d.honest_note||''}</span>`;
+}
+$('runLvs').onclick = runLvs;
 
 // ---- ㊾ D-89 3D adjoint numba 性能基准（大域 20×+）----
 async function runPf(){

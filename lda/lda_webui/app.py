@@ -650,9 +650,16 @@ def run_link_design(payload=None):
         ec = v.get("energy_conservation", {})
         gds_b64 = base64.b64encode(ctx.gds_bytes or b"").decode("ascii")
         ca = getattr(ctx, "chip_acceptance", None) or {}
+        # v0.8.24：LVS 签核（版图-原理图一致性，签核级）
+        try:
+            from lda_l2.lvs import run_lvs
+            lvs_report = run_lvs(ctx.link, ctx.placement, ctx.routes)
+        except Exception as _e:  # noqa: BLE001 —— LVS 失败不阻断主链路
+            lvs_report = {"verdict": "ERROR",
+                          "honest_note": f"LVS 计算异常：{str(_e)[:80]}"}
         return {
             "ok": True,
-            "title": "链路设计→验证闭环（P1-M4 双 ground 上提 + 芯片级四锚验收）",
+            "title": "链路设计→验证闭环（P1-M4 双 ground 上提 + 芯片级四锚验收 + LVS 签核）",
             "accepted": bool(ca.get("accepted", v.get("status") == "ok")),
             "chip_acceptance": ca,
             "status": v.get("status"),
@@ -667,11 +674,43 @@ def run_link_design(payload=None):
             "honest_note": v.get("honest_note"),
             "anchor": v.get("anchor"),
             "empirical_anchor": v.get("empirical_anchor"),
+            "lvs_report": lvs_report,
             "gds_size": len(ctx.gds_bytes or b""),
             "gds_b64": gds_b64,
             "steps": [(s.get("agent"), s.get("action")) for s in ctx.steps],
             "error": ctx.error,
         }
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:160]}
+
+
+def run_link_lvs(payload=None):
+    """v0.8.24 LVS 签核端点：版图-原理图一致性检查（签核级）。
+
+    输入：无（用内置 WDM 案例实跑）或 {case: consistent|open|misconnect|
+    short|dangling}（S9 锚案例）。
+    返回：LVS 判决（verdict/match/violations）+ 人类可读 markdown。
+    判决全死标量（坐标几何 + 集合比对），LLM 不进判决路径。
+    """
+    import sys as _sys
+    from pathlib import Path as _P
+    _lda = _P(__file__).resolve().parent.parent  # lda/
+    if str(_lda) not in _sys.path:
+        _sys.path.insert(0, str(_lda))
+    from lda_harness.lvs_anchor import build_lvs_case, CASES, s9_report
+    from lda_l2.lvs import run_lvs, lvs_markdown
+    payload = payload or {}
+    case = str(payload.get("case", "consistent"))
+    if case not in CASES:
+        return {"ok": False, "error": f"case 须为 {CASES}，实际 {case}"}
+    try:
+        link, placement, routes = build_lvs_case(case)
+        report = run_lvs(link, placement, routes)
+        report["case"] = case
+        report["markdown"] = lvs_markdown(report)
+        report["s9"] = s9_report()
+        report["ok"] = True
+        return report
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)[:160]}
 
@@ -2441,6 +2480,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_ci_regression(payload))
             elif path == "/api/link_design":
                 self._send(200, run_link_design(payload))
+            elif path == "/api/link_lvs":
+                self._send(200, run_link_lvs(payload))
             elif path == "/api/perf_bench":
                 self._send(200, run_perf_bench(payload))
             elif path == "/api/spectral_design":

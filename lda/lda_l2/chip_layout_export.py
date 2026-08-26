@@ -26,6 +26,7 @@ if _LDA not in sys.path:
 
 from lda_l2 import gds_export
 from lda_l2.drc import drc_check_device, drc_summary, rules_from_pdk
+from lda_l2.lvs import run_lvs, lvs_markdown
 from lda_l2.primitives import primitive_descs
 from lda_layout.placement import port_abs, device_bbox
 
@@ -173,9 +174,10 @@ def export_chip_gds(link, placement, routes, wg_width: float = 0.5,
                     with_io_grating: bool = True,
                     rules: Optional[Dict[str, float]] = None
                     ) -> Dict[str, Any]:
-    """芯片级版图导出主入口：器件 + 布线 + IO 光栅 + 统计 + DRC。
+    """芯片级版图导出主入口：器件 + 布线 + IO 光栅 + 统计 + DRC + LVS。
 
-    返回 {gds_bytes, gds_parse, gds_stats, drc_report, io_ports}。
+    返回 {gds_bytes, gds_parse, gds_stats, drc_report, lvs_report, io_ports}。
+    v0.8.24：新增 lvs_report（版图-原理图一致性签核，与 DRC 并列双闸）。
     """
     elements = _device_elements(link, placement, wg_width)
     for net_id, rr in (routes or {}).items():
@@ -192,21 +194,24 @@ def export_chip_gds(link, placement, routes, wg_width: float = 0.5,
                              if isinstance(parse, dict) else None)
     stats["gds_bytes"] = len(gds_bytes)
     drc = chip_drc_report(link, placement, rules=rules)
+    lvs = run_lvs(link, placement, routes)
     return {
         "gds_bytes": gds_bytes,
         "gds_parse": parse,
         "gds_stats": stats,
         "drc_report": drc,
+        "lvs_report": lvs,
         "io_ports": [f"{i}.{p}" for i, p in io_ports_of(link)],
     }
 
 
 def layout_markdown(link, placement, routes, wg_width: float = 0.5,
                     rules: Optional[Dict[str, float]] = None) -> str:
-    """芯片版图 markdown 报告（器件/布线/IO/统计/DRC）。"""
+    """芯片版图 markdown 报告（器件/布线/IO/统计/DRC/LVS）。"""
     r = export_chip_gds(link, placement, routes, wg_width=wg_width, rules=rules)
     st = r["gds_stats"]
     drc = r["drc_report"]
+    lvs = r["lvs_report"]
     L = []
     L.append("# LDA 芯片版图导出报告（可测芯片版图）")
     L.append("")
@@ -217,6 +222,10 @@ def layout_markdown(link, placement, routes, wg_width: float = 0.5,
              f"{st['n_elements']} 元素")
     L.append(f"- DRC：{drc['n_pass']}/{drc['n_checked']} 器件通过"
              f"（{'✅ 可制造性自查通过' if drc['all_pass'] else '❌ 有违规，见明细'}）")
+    L.append(f"- LVS：**{lvs['verdict']}**（{'✅ 版图-原理图一致'
+             if lvs['verdict'] == 'ACCEPT' else '❌ 有失配，见明细'}）"
+             f" · {lvs['match']['n_nets_match']}/{lvs['match']['n_nets_total']} 网一致"
+             f" · 违规 {lvs['n_violations']} 项")
     L.append("")
     L.append("## 器件与 DRC 明细")
     L.append("")
@@ -231,6 +240,8 @@ def layout_markdown(link, placement, routes, wg_width: float = 0.5,
     L.append("")
     for p in r["io_ports"]:
         L.append(f"- `{p}`")
+    L.append("")
+    L.append(lvs_markdown(lvs))
     L.append("")
     L.append("*本报告为芯片级版图（原理图→可测版图），非流片级；"
              "光栅耦合器为几何交付（耦合效率需 D-72 FDTD 验证）。*")

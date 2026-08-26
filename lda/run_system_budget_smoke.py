@@ -74,8 +74,8 @@ def main() -> int:
           "预算锚能抓候选偏离（死标量）")
 
     # ④ 题库计数（35 = 27B + 7E + 1S）
-    check("题库 42 题（B27+E7+S8）",
-          len(BENCHMARK_ORDER) == 42 and BENCHMARK_ORDER[-1] == "S8",
+    check("题库 43 题（B27+E7+S9）",
+          len(BENCHMARK_ORDER) == 43 and BENCHMARK_ORDER[-1] == "S9",
           f"{len(BENCHMARK_ORDER)} 题")
 
     # ⑤ 预算语义物理合理性：单调性 + 余量域

@@ -102,6 +102,8 @@ CORE_SMOKES: List[str] = [
     "run_astar_route_smoke.py",
     # 第二梯队-2 三件套（多端网 Steiner + 2D 放置 + 有源基元）
     "run_second_tier_smoke.py",
+    # LVS 签核（v0.8.24：版图-原理图一致性 · 签核级 · 版图差距 #5 + S9 锚）
+    "run_lvs_smoke.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

@@ -84,6 +84,10 @@ CORE_SMOKES: List[str] = [
     "run_loss_engine_smoke.py",
     # 系统级锚（Phase 0 · Merge-0：S1 功率预算 + 防自证负例）
     "run_system_budget_smoke.py",
+    # 链路损耗感知（Merge-1a：Waveguide/MZI 可选损耗 + 预算报告）
+    "run_link_loss_smoke.py",
+    # 性能漂移角扫（Merge-1b：⑥审计落地，光子/量子按域角 + 死标量判决）
+    "run_corner_performance_smoke.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

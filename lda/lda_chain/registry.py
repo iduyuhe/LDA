@@ -79,9 +79,16 @@ def _waveguide_response(component, wls: List[float], link_params, kappa_fn):
     仅注册正向边（in→out）：引擎按信号方向单向传播（v0.8.11），
     互易反向边会导致"幽灵反向路径"（信号经器件反向漏入他端口，
     Σ|T|²>1 / C 锚泄漏失真）。互易性由引擎单向 DFS + sink 截断保证。
+
+    v0.8.13（Merge-1a）：可选传播损耗——params/link_params 提供
+    `loss_db_cm`（dB/cm）与 `length_um` 时，透射 = 10^(−α·L/10)。
+    默认缺省 = 理想透射 1（与既有链路 smoke 兼容，零破坏）。
     """
-    ones = [1.0] * len(wls)
-    return {("out", "in"): ones}
+    a = float(component.params.get("loss_db_cm",
+               (link_params or {}).get("wg_loss_db_cm", 0.0)))
+    L_um = float(component.params.get("length_um", 0.0))
+    g = 10.0 ** (-a * L_um / 1e4 / 10.0) if (a > 0 and L_um > 0) else 1.0
+    return {("out", "in"): [g] * len(wls)}
 
 
 def _grating_response(component, wls: List[float], link_params, kappa_fn):
@@ -97,19 +104,23 @@ def _mzi_response(component, wls: List[float], link_params, kappa_fn):
     端口传递（无源互易，与 B20 MZI FSR 锚 T=½(1+cosΔφ)=cos²(Δφ/2) 同源）：
         in1→out1（bar）= cos²(Δφ/2)；in1→out2（cross）= sin²(Δφ/2)
         in2 对称；bar+cross = 1（无损，能量守恒诊断理想闭合）。
-    参数：n_eff（缺省 2.6）、deltaL_um（缺省 34.5，对应 B20 锚默认 ΔL）。
+    参数：n_eff（缺省 2.6）、deltaL_um（缺省 34.5，对应 B20 锚默认 ΔL）；
+    v0.8.13（Merge-1a）可选 excess loss `il_db`（默认 0 无损，兼容既有 smoke）：
+    bar/cross 统一乘 10^(−IL/10)——C 锚在耗损器件上泄漏=IL 合法。
     """
     import math
     n_eff = float(component.params.get("n_eff", 2.6))
     dL = float(component.params.get("deltaL_um", 34.5))
+    il_db = float(component.params.get("il_db", 0.0))
+    k_il = 10.0 ** (-il_db / 10.0)
     bar = []
     cross = []
     for wl in wls:
         dphi = 2.0 * math.pi * n_eff * dL / max(wl, 1e-12)
         c = math.cos(dphi / 2.0)
         s = math.sin(dphi / 2.0)
-        bar.append(c * c)
-        cross.append(s * s)
+        bar.append(c * c * k_il)
+        cross.append(s * s * k_il)
     return {
         ("out1", "in1"): bar, ("out2", "in1"): cross,
         ("out2", "in2"): bar, ("out1", "in2"): cross,

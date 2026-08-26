@@ -752,3 +752,20 @@
 
 ### 意义
 - **Phase 0 试金石完成**：验证「约束验证型系统指标（预算类）」可直接复用现有锚体系——系统级攻关的第一步落定，且为 Phase 1 锚题库（频率规划/OSNR/量子保真度预算）铺平模板。
+
+## v0.8.13（2026-08-26 · Merge-1 达成：loss 入链路 + 性能漂移角扫 · v0.9 候选）
+
+**里程碑：Merge-1 收口——链路从「理想透射」升级为「损耗感知」，⑥审计缺口（性能漂移角扫）落地。器件损耗以可选参数注入 registry 响应（默认零 = 既有链路零破坏），性能漂移复用锚体系 golden 正算（确定性死标量）。**
+
+### Merge-1a · loss 入链路传播
+- **registry 响应损耗语义**：Waveguide 支持 `loss_db_cm×length_um` 传播损耗（10^(−αL/10)）、MZI 支持 `il_db` excess loss（bar/cross×10^(−IL/10)）——**默认缺省 = 理想透射，既有链路 smoke 零破坏**（链路全家桶 M1-M4/chip_acceptance/demo/wdm_system 全绿验证）。
+- **`lda_chain/link_loss.py`**（独立增强层）：`with_link_loss()` 注入损耗参数副本 + `link_loss_budget()` 逐器件预算报告（诚实边界：光栅耦合/环形弯曲损耗在响应内不重复计）。
+- **`run_link_loss_smoke.py`** 6/6 PASS 入 CI core（49→50）。
+
+### Merge-1b · 性能漂移角扫（⑥审计落地）
+- **`lda_pdk/corner_performance.py`**：工艺角缩放参数 → harness golden 正算性能 metric → 相对 TT 漂移带报告。**按域定义角**：光子角 SS/TT/FF（w/n/gap 容差）+ 量子角 Q-SS/Q-TT/Q-FF（EJ/EC 容差，transmon 域无 SS/TT/FF 惯例——显式命名避免概念混用）；死标量判决：漂移 > tol 即 FAIL。
+- 实测：Ring FSR 三角落 [8.63,9.73] max_drift=11.3%（FSR∝1/R 物理事实，行业角扫容差 15%）；Transmon f01 漂移 0.27%（EJ/EC 容差）；未登记 bid 显式报错不静默。
+- **`run_corner_performance_smoke.py`** 8/8 PASS 入 CI core（50→51）。
+
+### 意义
+- **Merge-1 = v0.9 候选版本特征**：链路数值真实化（损耗入传播）+ 流片管道 S3 从"可制造性"补全到"性能漂移"——⑥审计的两大缺口同日闭合；为统计锚（Phase 3）提供确定性前驱（漂移带 = 确定性最坏情况）。

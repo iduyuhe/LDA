@@ -74,6 +74,12 @@ from lda_pdk import (PDKRegistry, DeviceEntry, SOVEREIGN_DEPS, by_class,
 from lda_harness.empirical_bank import EmpiricalCorpus, EmpiricalAnchor
 from lda_harness.verification_adapters import _load_empirical_anchor
 
+# P2.3 v1 REST API（认证 + 租户隔离 + 插件 seam）；延迟导入避免循环，且不影响旧端点
+try:
+    from . import api_v1          # 作为包模块导入时（python -m / Docker）
+except ImportError:
+    from lda_webui import api_v1  # 直接 python app.py 运行时（无父包）回退
+
 HARNESS = VerificationHarness(BENCHMARK_DEFS)
 AGENT_OUT = os.path.join(LDA_ROOT, "reports_agent")
 
@@ -2175,6 +2181,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, system_status())
         elif path == "/api/health":
             self._send(200, health_check())
+        elif path.startswith("/api/v1/"):
+            self._handle_v1()
         elif path == "/api/benchmarks":
             bm = [{"id": k, "title": v.get("title"), "metric": v.get("metric"),
                    "oracle": v.get("oracle"), "tol": v.get("tol")}
@@ -2190,8 +2198,31 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self._send(404, {"error": "not found"})
 
+    def _handle_v1(self):
+        """委托 P2.3 v1 REST 处理（认证 + 租户隔离 + 插件 seam）。"""
+        from urllib.parse import urlparse, parse_qs
+        method = self.command
+        full = self.path
+        path = full.split("?")[0]
+        length = int(self.headers.get("Content-Length", 0))
+        raw = self.rfile.read(length) if length else b"{}"
+        try:
+            payload = json.loads(raw.decode("utf-8") or "{}")
+        except Exception:
+            payload = {}
+        # GET 用 query string 传 org_id 等（如 ?org_id=5）
+        query = {k: v[0] for k, v in parse_qs(urlparse(full).query).items()}
+        if method == "GET":
+            payload.update(query)
+        headers = {k: v for k, v in self.headers.items()}
+        code, obj = api_v1.handle_v1(method, path, payload, headers)
+        self._send(code, obj)
+
     def do_POST(self):
         path = self.path.split("?")[0]
+        if path.startswith("/api/v1/"):
+            self._handle_v1()
+            return
         length = int(self.headers.get("Content-Length", 0))
         raw = self.rfile.read(length) if length else b"{}"
         try:

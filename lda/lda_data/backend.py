@@ -126,6 +126,13 @@ class _SqliteBase(StorageBackend):
         conn.executescript(self.schema_sql())
         conn.commit()
 
+    def _connect(self, db_path: str):
+        # 多线程 Web 服务（ThreadingHTTPServer）共享连接，需关闭线程检查 + 加锁超时
+        conn = sqlite3.connect(db_path, check_same_thread=False, timeout=30)
+        conn.row_factory = sqlite3.Row
+        self._configure(conn)
+        return conn
+
 
 class SqliteFileBackend(_SqliteBase):
     """文件型 SQLite（自托管持久化）。url 形如 sqlite:////data/lda.db。"""
@@ -138,20 +145,14 @@ class SqliteFileBackend(_SqliteBase):
             os.makedirs(parent, exist_ok=True)
 
     def connect(self):
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        self._configure(conn)
-        return conn
+        return self._connect(self.db_path)
 
 
 class MemoryBackend(_SqliteBase):
     """内存 SQLite（零持久化，单进程演示 / 测试用）。保留原内网 demo 行为。"""
 
     def connect(self):
-        conn = sqlite3.connect(":memory:")
-        conn.row_factory = sqlite3.Row
-        self._configure(conn)
-        return conn
+        return self._connect(":memory:")
 
 
 def get_backend(url: str | None = None) -> StorageBackend:

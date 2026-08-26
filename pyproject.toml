@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lda-design"
-version = "0.7.0"
+version = "0.8.0"
 description = "LDA — Agent-native open-source photon (PDA) + quantum (QEDA) chip design software"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -68,6 +68,7 @@ packages = [
     "lda_design",
     "lda_webui",
     "lda_data",
+    "lda_license",
     "ext_oracle",
     "examples",
 ]

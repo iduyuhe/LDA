@@ -13,6 +13,7 @@ P1-M2 核心。把「端口 A→端口 B」自动转为波导走线：
 """
 from __future__ import annotations
 
+import heapq
 import math
 from dataclasses import dataclass
 from typing import List, Optional, Sequence, Tuple
@@ -153,9 +154,125 @@ def _count_bends(points, tol_deg=15.0):
     return n
 
 
+def astar_route(src: Tuple[float, float], dst: Tuple[float, float],
+               obstacles: Sequence[Tuple[float, float, float, float]],
+               wg_half: float, dl: float = 1.0,
+               max_span: float = 2000.0) -> Optional[List[Tuple[float, float]]]:
+    """A* 最短路径（网格离散 + 曼哈顿启发式 + 障碍膨胀）。
+
+    第二梯队-1（版图审计差距 #1/#2 落地）：从贪心「2-6 个 L/Z 形候选首个
+    可行即取」升级为全局网格搜索——最短曼哈顿路径（可采纳启发式保证最优）。
+
+    参数：
+      src/dst    绝对坐标 (x,y) µm
+      obstacles  器件包围盒 [(cx,cy,hw,hh)]（中心+半宽半高）
+      wg_half    波导半宽 µm（障碍膨胀用）
+      dl         网格分辨率 µm（默认 1.0）
+      max_span   搜索域上限 µm（防超大规模爆炸）
+    返回：
+      路径折点列表（已压缩共线点，仅保留拐弯）或 None（无解——不再盲目退化）。
+    """
+    if not obstacles:
+        # 无障碍直接 L 形（等价于原贪心最优解）
+        x1, y1 = src
+        x2, y2 = dst
+        return [src, (x2, y1), dst] if abs(x2 - x1) > 1e-9 else [src, dst]
+
+    # —— 网格离散（搜索域 = 源/目标/障碍边界 + margin——非固定大 padding）——
+    pad = wg_half + dl * 0.75
+    x1, y1 = src
+    x2, y2 = dst
+    xs = [x1, x2]
+    ys = [y1, y2]
+    for cx, cy, hw, hh in obstacles:
+        xs.extend([cx - hw, cx + hw])
+        ys.extend([cy - hh, cy + hh])
+    margin = min(max_span, max(20.0, dl * 50.0))
+    xmin = min(xs) - margin
+    xmax = max(xs) + margin
+    ymin = min(ys) - margin
+    ymax = max(ys) + margin
+
+    def to_grid(p):
+        return (round((p[0] - xmin) / dl), round((p[1] - ymin) / dl))
+
+    def to_xy(g):
+        return (xmin + g[0] * dl, ymin + g[1] * dl)
+
+    gs = to_grid(src)
+    gd = to_grid(dst)
+    span = (round((xmax - xmin) / dl), round((ymax - ymin) / dl))
+    if span[0] * span[1] > 4_000_000:   # 网格过大防爆
+        return None
+
+    # —— 障碍栅格（膨胀 wg_half + 网格余量，碰撞即禁格）——
+    blocked = set()
+    n_obs = 0
+    for cx, cy, hw, hh in obstacles:
+        bx0 = round((cx - hw - pad - xmin) / dl)
+        bx1 = round((cx + hw + pad - xmin) / dl)
+        by0 = round((cy - hh - pad - ymin) / dl)
+        by1 = round((cy + hh + pad - ymin) / dl)
+        for gx in range(max(0, bx0), min(span[0], bx1) + 1):
+            for gy in range(max(0, by0), min(span[1], by1) + 1):
+                if (gx, gy) != gs and (gx, gy) != gd:
+                    blocked.add((gx, gy))
+        n_obs += 1
+
+    # —— A*（4 邻域，g=步长，h=曼哈顿——可采纳→最优）——
+    start = gs
+    goal = gd
+    if start == goal:
+        return [src, dst]
+    if goal in blocked:
+        return None
+    open_h = []
+    g_cost = {start: 0.0}
+    came: dict = {}
+    heapq.heappush(open_h, (0.0, start))
+    closed = set()
+    while open_h:
+        _, cur = heapq.heappop(open_h)
+        if cur == goal:
+            # 回溯路径
+            path = [goal]
+            while path[-1] in came:
+                path.append(came[path[-1]])
+            path.reverse()
+            pts = [to_xy(g) for g in path]
+            # 压缩共线点（仅保留拐弯）
+            comp = [pts[0]]
+            for i in range(1, len(pts) - 1):
+                a = pts[i - 1]
+                b = pts[i]
+                c = pts[i + 1]
+                if (b[0] - a[0]) * (c[1] - b[1]) != (b[1] - a[1]) * (c[0] - b[0]):
+                    comp.append(b)
+            comp.append(pts[-1])
+            return comp
+        if cur in closed:
+            continue
+        closed.add(cur)
+        gx, gy = cur
+        for nx, ny in ((gx + 1, gy), (gx - 1, gy), (gx, gy + 1), (gx, gy - 1)):
+            nb = (nx, ny)
+            if nb in blocked or nb in closed:
+                continue
+            if not (0 <= nx <= span[0] and 0 <= ny <= span[1]):
+                continue
+            ng = g_cost[cur] + dl
+            if ng < g_cost.get(nb, float("inf")):
+                g_cost[nb] = ng
+                came[nb] = cur
+                h = abs(nx - goal[0]) + abs(ny - goal[1])  # 曼哈顿（可采纳）
+                heapq.heappush(open_h, (ng + h * dl, nb))
+    return None  # 无解（不盲目退化直连——诚实返回）
+
+
 def route_net(net_id, src, dst, obstacles=None, wg_width=0.5,
               bend_radius=5.0, corner="round",
-              straight_loss_db_cm=DEFAULT_STRAIGHT_LOSS_DB_CM) -> RouteResult:
+              straight_loss_db_cm=DEFAULT_STRAIGHT_LOSS_DB_CM,
+              method: str = "astar", grid_dl: float = 1.0) -> RouteResult:
     """端口 A→B 自动布线（曼哈顿 + 圆角/直角 + 避障 + 损耗计入）。
 
     参数：
@@ -171,12 +288,20 @@ def route_net(net_id, src, dst, obstacles=None, wg_width=0.5,
     obstacles = obstacles or []
     wg_half = wg_width / 2.0
     best, raw, blocked = None, None, False
-    for cand in _path_variants(src, dst):
-        pts = _round_corners(cand, bend_radius) if corner == "round" else list(cand)
-        if not _path_hits(pts, obstacles, wg_half):
-            best, raw = pts, cand
-            break
-    if best is None:  # 退化直连（诚实标注）
+    if method == "astar":
+        # 第二梯队-1：A* 全局最优（网格搜索），无解返回 None 走退化直连
+        path = astar_route(src, dst, obstacles, wg_half, dl=grid_dl)
+        if path is not None:
+            pts = _round_corners(path, bend_radius) if corner == "round" else list(path)
+            if not _path_hits(pts, obstacles, wg_half):
+                best, raw = pts, path
+    if best is None and method != "astar":
+        for cand in _path_variants(src, dst):
+            pts = _round_corners(cand, bend_radius) if corner == "round" else list(cand)
+            if not _path_hits(pts, obstacles, wg_half):
+                best, raw = pts, cand
+                break
+    if best is None:  # 退化直连（诚实标注——A* 无解或全部候选碰撞）
         cand = [src, dst]
         best = _round_corners(cand, bend_radius) if corner == "round" else list(cand)
         raw, blocked = cand, True

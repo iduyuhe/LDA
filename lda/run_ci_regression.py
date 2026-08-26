@@ -98,6 +98,8 @@ CORE_SMOKES: List[str] = [
     "run_statistical_anchor_smoke.py",
     # Phase 4 提案编译器（生成侧：锚前置剪枝 + 即提即验 + 人终审）
     "run_proposal_compiler_smoke.py",
+    # 第二梯队-1 A* 布线（贪心→全局最优 + 避障 + 无解诚实退化）
+    "run_astar_route_smoke.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

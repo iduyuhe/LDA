@@ -52,7 +52,9 @@ ENGINE_KINDS = ("engine_waveguide", "engine_braggmirror",
                 "engine_readoutpair", "engine_czgate",
                 # v0.8.11e：loss/效率类引擎（实证锚判决路径）
                 "engine_ybranchloss", "engine_gratingeff",
-                "engine_crossing", "engine_mmiel", "engine_sinpl")
+                "engine_crossing", "engine_mmiel", "engine_sinpl",
+                # v0.8.13：有源双出口（设计量 + 行为黑箱）
+                "engine_phaseshifter", "engine_mzimod")
 ENGINE_KIND_MAP = {
     "engine_waveguide": "Waveguide",
     "engine_braggmirror": "BraggMirror",
@@ -74,6 +76,8 @@ ENGINE_KIND_MAP = {
     "engine_crossing": "Crossing",
     "engine_mmiel": "MmiEl",
     "engine_sinpl": "SinPl",
+    "engine_phaseshifter": "PhaseShifter",
+    "engine_mzimod": "MziModulator",
 }
 ENGINE_DOMAIN = {
     "Waveguide": "photon", "BraggMirror": "photon",
@@ -87,6 +91,7 @@ ENGINE_DOMAIN = {
     "CzGate": "quantum",
     "YbranchLoss": "photon", "GratingEff": "photon",
     "Crossing": "photon", "MmiEl": "photon", "SinPl": "photon",
+    "PhaseShifter": "photon", "MziModulator": "photon",
 }
 _ENGINE_DEFAULT_TARGET = {
     "engine_waveguide": 3.25,      # 目标 neff
@@ -109,6 +114,8 @@ _ENGINE_DEFAULT_TARGET = {
     "engine_crossing": 0.18,       # 目标 IL (dB，实证锚)
     "engine_mmiel": 0.05,          # 目标 excess_loss (dB，实证锚)
     "engine_sinpl": 0.087,         # 目标 PL (dB/cm，实证锚)
+    "engine_phaseshifter": 10.0,   # 目标相移效率 (deg/mW，D-73 同源)
+    "engine_mzimod": 5.0,          # 目标 V_π (V，Pockels)
 }
 _ENGINE_TITLE = {
     "engine_waveguide": "直波导 · 目标有效折射率 neff",
@@ -131,6 +138,8 @@ _ENGINE_TITLE = {
     "engine_crossing": "crossing 插入损耗+串扰 · 实证锚 E-SOI-CROSS-IL/XT 判决",
     "engine_mmiel": "MMI 1×2 过量损耗 · 实证锚 E-MMI-1X2-EL 判决",
     "engine_sinpl": "SiN 传播损耗 · 实证锚 E-SIN-PL-800 判决",
+    "engine_phaseshifter": "热光相移器 · 目标相移效率（D-73 同源）",
+    "engine_mzimod": "MZI 电光调制器 · 目标 V_π（Pockels）",
 }
 
 
@@ -496,6 +505,8 @@ def engine_catalog() -> List[Dict[str, Any]]:
             "Crossing": "IL (dB, 实证锚)",
             "MmiEl": "excess_loss (dB, 实证锚)",
             "SinPl": "PL (dB/cm, 实证锚)",
+            "PhaseShifter": "相移效率 (deg/mW)",
+            "MziModulator": "V_π (V)",
         }.get(ek, ""),
         "target_unit": {"Waveguide": "", "BraggMirror": "",
                         "Transmon": "GHz", "RingResonator": "nm",
@@ -510,7 +521,9 @@ def engine_catalog() -> List[Dict[str, Any]]:
                         "CzGate": "ns",
                         "YbranchLoss": "dB", "GratingEff": "",
                         "Crossing": "dB", "MmiEl": "dB",
-                        "SinPl": "dB/cm"}.get(ek, ""),
+                        "SinPl": "dB/cm",
+                        "PhaseShifter": "deg/mW",
+                        "MziModulator": "V"}.get(ek, ""),
         "default_target": _ENGINE_DEFAULT_TARGET.get(pk),
         "domain": ENGINE_DOMAIN.get(ek, "photon"),
         "analytic_only": ek == "RingResonator",

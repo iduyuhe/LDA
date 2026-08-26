@@ -127,7 +127,35 @@ def _mzi_response(component, wls: List[float], link_params, kappa_fn):
     }  # 仅正向边（in→out）；互易反向由引擎单向 DFS 语义保证
 
 
+def _phaseshifter_response(component, wls: List[float], link_params, kappa_fn):
+    """热光相移器（行为黑箱，Merge-2a）：P_mw → 相移 → 直通。
+
+    功率域语义（与链路引擎 v0.8.11 一致）：透射幅值 1（无幅值损耗），
+    相位 exp(i·Δφ) 由 active_models.thermo_phase_response 提供
+    （供 MZI 等需要相位的消费方使用；链路功率级联不需要相位）。
+    """
+    return {("out", "in"): [1.0] * len(wls)}
+
+
+def _mzimod_response(component, wls: List[float], link_params, kappa_fn):
+    """MZI 电光调制器（行为黑箱，Merge-2a）：V → 透射 T=cos²(πV/2V_π)。
+
+    参数：V（驱动电压）、V_pi（半波电压，缺省由 L_um/g/r 解析算）。
+    """
+    import math
+    from lda_design.active_models import mzi_transmission, vpi_electrooptic
+    V = float(component.params.get("V", 0.0))
+    vpi = float(component.params.get("V_pi", 0.0)) or vpi_electrooptic(
+        float(component.params.get("L_um", 500.0)),
+        float(component.params.get("g_um", 1.0)),
+        float(component.params.get("r_pm_per_V", 30.0)))
+    t = mzi_transmission(V, vpi)
+    return {("out", "in"): [t] * len(wls)}
+
+
 register_device_model("RingResonator", _ring_response)
 register_device_model("Waveguide", _waveguide_response)
 register_device_model("GratingCoupler", _grating_response)
 register_device_model("MZI", _mzi_response)
+register_device_model("PhaseShifter", _phaseshifter_response)
+register_device_model("MziModulator", _mzimod_response)

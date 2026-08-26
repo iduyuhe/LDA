@@ -25,6 +25,10 @@ if str(_LDA) not in sys.path:
     sys.path.insert(0, str(_LDA))
 
 from lda_l2.device_library import DeviceLibrary  # noqa: E402
+from lda_design.active_models import (  # noqa: E402
+    phase_efficiency_deg_per_mW, power_for_pi,
+    vpi_electrooptic,
+)
 
 # --------------------------------------------------------------------------- #
 # v0.8.11e · loss/效率类引擎验证辅助（实证锚判决路径）
@@ -76,6 +80,40 @@ def _loss_verify(engine_name: str, eid: str, tol: float):
                         f"{golden}±{unc} rel={rel:.2f}% > tol={tol}）"),
         }
     return _verify
+
+
+def _phase_verify(target: float, **kw):
+    """相移器验证工厂：目标=相移效率（deg/mW），cheap 正算对照。"""
+    from lda_design.active_models import phase_efficiency_deg_per_mW
+    L = float(kw.get("L_um", 300.0))
+    val = phase_efficiency_deg_per_mW(L)
+    rel = abs(val - target) / max(abs(target), 1e-9) * 100
+    passed = rel <= 10.0
+    return {
+        "passed": passed, "metric": val, "rel": rel,
+        "verdict": (f"相移效率对照 PASS（{val:.3f} deg/mW ↔ 目标 {target} "
+                    f"rel={rel:.2f}% ≤ 10%）" if passed else
+                    f"相移效率对照 FAIL（{val:.3f} deg/mW ↔ 目标 {target} "
+                    f"rel={rel:.2f}% > 10%）"),
+    }
+
+
+def _mzi_mod_verify(target: float, **kw):
+    """MZI 调制器验证工厂：目标=V_π（V），cheap 正算对照。"""
+    from lda_design.active_models import vpi_electrooptic
+    L = float(kw.get("L_um", 500.0))
+    g = float(kw.get("g_um", 1.0))
+    r = float(kw.get("r_pm_per_V", 30.0))
+    val = vpi_electrooptic(L, g, r)
+    rel = abs(val - target) / max(abs(target), 1e-9) * 100
+    passed = rel <= 10.0
+    return {
+        "passed": passed, "metric": val, "rel": rel,
+        "verdict": (f"V_π 对照 PASS（{val:.3f} V ↔ 目标 {target} "
+                    f"rel={rel:.2f}% ≤ 10%）" if passed else
+                    f"V_π 对照 FAIL（{val:.3f} V ↔ 目标 {target} "
+                    f"rel={rel:.2f}% > 10%）"),
+    }
 
 
 def _ensure_path() -> None:
@@ -474,6 +512,41 @@ class DesignEngine:
             "secondary": ("roughness_nm", True),
             "note": "厚 SiN 传播损耗（Payne-Lacey 粗糙度散射，标定 800×800nm）。"
                     "目标=典型 0.087dB/cm；实证锚 E-SIN-PL-800 判决。",
+        },
+
+        # ---- 有源双出口（Merge-2a：设计量 + 行为黑箱） ----
+        "PhaseShifter": {
+            "title": "热光相移器 · 目标相移效率（deg/mW，D-73 同源锚）",
+            "sweep": [("L_um", 50.0, 800.0, 50.0)],
+            "fixed": dict(),
+            "verify": lambda mode, target_f01=None, **kw:
+                _phase_verify(target_f01 or kw.get("target"), **kw),
+            "cheap": lambda combo, target: phase_efficiency_deg_per_mW(
+                combo["L_um"]),
+            "extract": lambda r: r["metric"],
+            "metric_name": "相移效率 (deg/mW)",
+            "target_unit": "deg/mW",
+            "analytic_only": True,
+            "secondary": ("L_um", True),
+            "note": "热光相移：Δφ=2π/λ·dn/dT·R_th·P·L（dn/dT=1.86e-4 硅热光系数，"
+                    "D-73 同源）。目标=相移效率 deg/mW；P_π=半波功率。",
+        },
+        "MziModulator": {
+            "title": "MZI 电光调制器 · 目标 V_π（V，Pockels）",
+            "sweep": [("L_um", 100.0, 2000.0, 100.0)],
+            "fixed": dict(g_um=1.0, r_pm_per_V=30.0),
+            "verify": lambda mode, target_f01=None, **kw:
+                _mzi_mod_verify(target_f01 or kw.get("target"), **kw),
+            "cheap": lambda combo, target: vpi_electrooptic(
+                combo["L_um"], combo.get("g_um", 1.0),
+                combo.get("r_pm_per_V", 30.0)),
+            "extract": lambda r: r["metric"],
+            "metric_name": "V_π (V)",
+            "target_unit": "V",
+            "analytic_only": True,
+            "secondary": ("L_um", True),
+            "note": "MZI 电光调制器：V_π=λ·g/(L·r·n³)（Pockels r=30pm/V LiNbO3 典型）。"
+                    "目标=半波电压；行为黑箱 T(V)=cos²(πV/2V_π) 供链路消费。",
         },
         }
         return specs

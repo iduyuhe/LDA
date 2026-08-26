@@ -30,6 +30,8 @@ _DEFAULT_PORTS = {
     "DirectionalCoupler": ["in1", "in2", "out1", "out2"],
     "SymmetricYBranch": ["in", "out1", "out2"],
     "MZI": ["in1", "in2", "out1", "out2"],
+    "PhaseShifter": ["in", "out"],
+    "MziModulator": ["in", "out"],
 }
 
 

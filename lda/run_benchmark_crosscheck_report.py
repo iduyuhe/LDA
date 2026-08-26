@@ -61,6 +61,9 @@ ENGINE_ANCHOR_MAP = {
               "metric_dim": "excess_loss_dB"},
     "SinPl": {"bid": None, "empirical": ["E-SIN-PL-800"],
               "metric_dim": "propagation_loss_dBcm"},
+    # v0.8.13：有源双出口（解析锚自洽，无独立 B 题）
+    "PhaseShifter": {"bid": None, "empirical": [], "metric_dim": "deg_per_mW"},
+    "MziModulator": {"bid": None, "empirical": [], "metric_dim": "V_pi"},
 }
 
 # 默认设计目标（与 design_package._ENGINE_DEFAULT_TARGET 一致）
@@ -73,13 +76,16 @@ DEFAULT_TARGET = {
     # v0.8.11e：loss/效率类引擎（目标=实证语料实测典型）
     "YbranchLoss": 3.4, "GratingEff": 0.45, "Crossing": 0.18,
     "MmiEl": 0.05, "SinPl": 0.087,
+    # v0.8.13：有源双出口
+    "PhaseShifter": 10.0, "MziModulator": 5.0,
 }
 
 # quick 子集（解析快引擎，CI 用；loss 引擎秒级可含）
 QUICK_KINDS = ["Waveguide", "Transmon", "RingResonator", "MziInterferometer",
                "Fluxonium", "Mmi1x2", "GratingCoupler2", "DirectionalCoupler2",
                "TunableTransmon", "ReadoutPair", "CzGate",
-               "YbranchLoss", "GratingEff", "Crossing", "MmiEl", "SinPl"]
+               "YbranchLoss", "GratingEff", "Crossing", "MmiEl", "SinPl",
+               "PhaseShifter", "MziModulator"]  # v0.8.13 有源双出口
 
 
 def _extract_rel(verdict: str):
@@ -223,7 +229,7 @@ def _fmt_report(data: dict) -> str:
     L.append("")
     L.append(f"> 生成时间：{time.strftime('%Y-%m-%d %H:%M:%S')} · 方法：{data['method']}")
     L.append("")
-    L.append("## 一、引擎验证对照（20 引擎设计闭环验证证据：15 设计量解析锚 + 5 loss 实证锚）")
+    L.append("## 一、引擎验证对照（22 引擎设计闭环验证证据：15 设计量解析锚 + 5 loss 实证锚 + 2 有源双出口）")
     L.append("")
     L.append("| 引擎 | 解析锚题 | metric | 引擎 rel% | 通过 | 验证证据（verdict） |")
     L.append("|---|---|---|---|---|---|")

@@ -88,6 +88,8 @@ CORE_SMOKES: List[str] = [
     "run_link_loss_smoke.py",
     # 性能漂移角扫（Merge-1b：⑥审计落地，光子/量子按域角 + 死标量判决）
     "run_corner_performance_smoke.py",
+    # 有源双出口（Merge-2a：相移器/调制器设计量+行为黑箱，22 引擎）
+    "run_active_device_smoke.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

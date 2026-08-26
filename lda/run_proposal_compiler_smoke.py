@@ -9,6 +9,8 @@
   ⑥ 端到端：4 信道 WDM 需求 → 过锚提案列表（人审材料完整）
   ⑦ 负例：超预算提案被锚抓（margin<need → REJECT + 证据链）
   ⑧ 低功耗优先 tiebreak（同余量下 p_tx 小者前）
+  ⑩ LLM 生成器（发动期）：未配置降级网格 / mock 输出结构校验（垃圾被丢）
+     / 红线：LLMProposer 零 PASS/FAIL 判决逻辑（源码级断言）
 
 运行：python run_proposal_compiler_smoke.py
 """
@@ -81,16 +83,20 @@ def main() -> int:
         generate_candidates(good))]
     check("排序确定性（重跑同序，无随机）", r1 == r2, f"{len(r1)} 项")
 
-    # ⑤ 红线断言（import 零 LLM/agent）
-    src_lines = open(os.path.join(
-        os.path.dirname(__file__), "lda_harness", "proposal_compiler.py"),
-        encoding="utf-8").read().splitlines()
-    imports = [ln for ln in src_lines
-               if ln.strip().startswith(("import ", "from "))]
-    banned = [w for w in ("llm", "openai", "anthropic", "gpt")
-              if any(w.lower() in ln.lower() for ln in imports)]
-    check("红线：proposal_compiler import 零 LLM（判决纯算术）",
-          not banned, f"banned={banned}" if banned else "仅标准库")
+    # ⑤ 红线断言：判决函数（screen_proposal/rank_proposals/feasible_domain）
+    #    不得引用 LLM——生成函数（generate_candidates）允许接 LLM 生成器
+    #    （生成与判决分离：LLM 在生成侧，判决侧纯算术锚）。
+    import inspect as _insp
+    import lda_harness.proposal_compiler as _pc
+    verdict_ok = True
+    detail = "判决三函数零 LLM 引用"
+    for fname in ("screen_proposal", "rank_proposals", "feasible_domain"):
+        fn_src = _insp.getsource(getattr(_pc, fname))
+        if any(w in fn_src.lower() for w in ("llm", "openai", "anthropic")):
+            verdict_ok = False
+            detail = f"{fname} 引用了 LLM"
+    check("红线：判决函数零 LLM（生成侧允许，判决侧纯算术）",
+          verdict_ok, detail)
 
     # ⑥ 端到端
     pipe = design_pipeline({"n_channels": 4, "channel_spacing_ghz": 100,
@@ -125,6 +131,51 @@ def main() -> int:
               f"{ {m: pts for m, pts in list(margins.items())[:2]} }")
     else:
         check("tiebreak：同余量低功耗优先（p_tx 升序）", True, "候选不足跳过")
+
+    # ⑩ LLM 生成器（发动期接入——生成与判决分离验证）
+    import sys as _sys
+    _sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from lda_agent.llm_proposer import LLMProposer
+
+    # a) 未配置 → 空列表 + 降级网格（核心零依赖优雅降级）
+    prop = LLMProposer()
+    check("LLM 未配置返回空列表（调用方降级网格）",
+          (not prop.enabled) and prop.propose({"n_channels": 4}) == []
+          and prop.last_source == "unconfigured")
+
+    # b) mock 合法输出 → 结构校验通过
+    prop2 = LLMProposer(base_url="http://mock", api_key="k")
+    ok_cand = {"p_tx_dbm": 6.0, "channel_spacing_ghz": 100.0,
+               "filter_bw_ghz": 40.0, "wg_length_cm": 0.8}
+    check("LLM mock 结构校验：合法参数通过",
+          prop2.validate_params(ok_cand))
+
+    # c) mock 垃圾输出 → 被丢弃（越界/NaN/带宽>间隔/缺类型）
+    bads = [
+        {"p_tx_dbm": 999.0, "channel_spacing_ghz": 100.0, "filter_bw_ghz": 40.0, "wg_length_cm": 0.8},  # 越界
+        {"p_tx_dbm": float("nan"), "channel_spacing_ghz": 100.0, "filter_bw_ghz": 40.0, "wg_length_cm": 0.8},  # NaN
+        {"p_tx_dbm": 0.0, "channel_spacing_ghz": 50.0, "filter_bw_ghz": 80.0, "wg_length_cm": 0.8},  # 带宽>间隔
+        "not_a_dict",  # 类型错
+    ]
+    all_rejected = all(not prop2.validate_params(b) for b in bads)
+    check("LLM mock 垃圾输出全被丢弃（越界/NaN/物理矛盾/类型错）",
+          all_rejected, f"{sum(not prop2.validate_params(b) for b in bads)}/4 拒")
+
+    # d) 🔴 红线：LLMProposer 源码零 PASS/FAIL 判决逻辑
+    src = open(os.path.join(os.path.dirname(__file__),
+                            "lda_agent", "llm_proposer.py"),
+               encoding="utf-8").read()
+    no_verdict_words = all(w not in src for w in
+                           ('"passed"', "'passed'", '"accepted"',
+                            "'accepted'", "def verdict", "def judge"))
+    check("红线：LLMProposer 零判决逻辑（只生成不判对错）",
+          no_verdict_words, "判决全在四锚管线")
+
+    # e) LLM 候选与网格合并走同一判决（generator=llm 无配置时端到端不崩）
+    r_llm = design_pipeline({"n_channels": 4}, generator="llm")
+    check("generator=llm 端到端（未配置降级网格不崩）",
+          r_llm["n_accepted"] >= 1,
+          f"过锚 {r_llm['n_accepted']}（锚对 LLM 候选同样生效）")
 
     print(f"\n提案编译器 smoke：{_PASS} PASS / {_FAIL} FAIL")
     return 1 if _FAIL else 0

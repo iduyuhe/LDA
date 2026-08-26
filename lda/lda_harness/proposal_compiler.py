@@ -118,15 +118,19 @@ def feasible_domain(proposal: Dict[str, Any]) -> Dict[str, Any]:
 # ③ 域内候选生成（确定性网格；LLM 生成器将来替换件——接口不变判决不变）
 # ---------------------------------------------------------------------------
 def generate_candidates(proposal: Dict[str, Any],
-                        n_top: int = 3) -> List[Dict[str, Any]]:
-    """在可行域内生成候选（功率×信道间隔×滤波带宽 网格）。
+                        n_top: int = 3,
+                        generator: str = "grid") -> List[Dict[str, Any]]:
+    """在可行域内生成候选（网格 + 可选 LLM 合并——发动期接入）。
 
-    MVP 确定性网格扫描：p_tx ∈ {0, 3, 6} dBm × spacing ∈ {50, 100} GHz
-    × bw ∈ {25, 50} GHz——每个候选携带完整 link_spec 供锚验。
+    grid（默认，确定性）：p_tx ∈ {0, 3, 6} × spacing ∈ {50, 100} × bw ∈ {25, 50}。
+    llm：LLMProposer 生成候选（env 配置 LDA_LLM_BASE/KEY/MODEL；未配置/
+         失败/垃圾输出自动降级网格）——**LLM 候选与网格候选合并后走同一条
+         四锚判决**（LLM 无法跳过锚，红线不破）。
     生成后先经 feasible_domain 剪枝（废案不出域）。
     """
     base = compile_proposal(proposal.get("req_source", {}))
-    grid = []
+    pool = []
+    # ① 确定性网格基线（永远保留——LLM 降级兜底 + 对照组）
     for p_tx, spacing, bw in itertools.product((0.0, 3.0, 6.0),
                                                (50.0, 100.0),
                                                (25.0, 50.0)):
@@ -134,10 +138,25 @@ def generate_candidates(proposal: Dict[str, Any],
                                  "p_tx_dbm": p_tx,
                                  "channel_spacing_ghz": spacing,
                                  "filter_bw_ghz": bw})
-        dom = feasible_domain(cand)
-        if dom["feasible"]:
-            grid.append(cand)
-    return grid[: max(n_top * 4, 12)]  # 域内候选池（排序前）
+        pool.append(cand)
+    # ② LLM 候选（可选，结构校验后入池——判决统一在四锚）
+    if generator == "llm":
+        try:
+            import sys
+            import os
+            _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            if _root not in sys.path:
+                sys.path.insert(0, _root)
+            from lda_agent.llm_proposer import LLMProposer
+            proposer = LLMProposer()
+            llm_cands = proposer.propose(base["req_source"], n=n_top)
+            for c in llm_cands:
+                merged = {**base["req_source"], **c}
+                pool.append(compile_proposal(merged))
+        except Exception:  # noqa: BLE001 —— LLM 全失败不影响网格基线
+            pass
+    # ③ 可行域剪枝（LLM 废案同样被剪——锚不豁免任何生成器）
+    return [c for c in pool if feasible_domain(c)["feasible"]][:max(n_top * 6, 18)]
 
 
 # ---------------------------------------------------------------------------
@@ -229,7 +248,8 @@ def rank_proposals(candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 # 端到端入口：需求 → 过锚提案列表（人终审材料）
 # ---------------------------------------------------------------------------
-def design_pipeline(req: Dict[str, Any], n_top: int = 3) -> Dict[str, Any]:
+def design_pipeline(req: Dict[str, Any], n_top: int = 3,
+                    generator: str = "grid") -> Dict[str, Any]:
     """完整管线：编译 → 剪枝 → 生成 → 逐案锚验 → 排序 → 人审材料。
 
     诚实边界：输出是「过了系统锚的候选列表」，不是「最优架构」——
@@ -237,7 +257,7 @@ def design_pipeline(req: Dict[str, Any], n_top: int = 3) -> Dict[str, Any]:
     """
     proposal = compile_proposal(req)
     domain = feasible_domain(proposal)
-    cands = generate_candidates(proposal, n_top=n_top)
+    cands = generate_candidates(proposal, n_top=n_top, generator=generator)
     ranked = rank_proposals(cands)[:n_top]
     accepted = [r for r in ranked if r["screening"]["accepted"]]
     return {"input_req": req,

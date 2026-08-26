@@ -74,6 +74,8 @@ CORE_SMOKES: List[str] = [
     "run_chip_design_demo.py",
     # 流片级验证管道（门3 接口细化：PDK→DRC→工艺角→实测回流）
     "run_tapeout_smoke.py",
+    # 计数一致性门禁（v0.8.10：引擎/包/题库/CI 条数 vs README 宣传串机器断言，防计数漂移根治）
+    "run_count_consistency_smoke.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

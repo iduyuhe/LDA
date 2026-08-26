@@ -15,6 +15,20 @@
 
 > 注：本条目为维护基线；全量 all 集回归（含重 FDTD/GPU 项）可在本机按需执行。
 
+## v0.8.10b（2026-08-26 · 计数一致性机器断言 · 防计数漂移根治）
+
+**里程碑：把「宣传口径 vs 代码事实」的一致性变成机器断言——新增 `run_count_consistency_smoke.py` 入 CI core（44→45 条），今后引擎/包/题库/CI 条数变化而文档未同步立即 FAIL 拦截。**
+
+### 修复
+- **README 引擎域计数错误**：宣传「光子 9 + 量子 6」实为代码 `ENGINE_DOMAIN` 的 **光子 8 + 量子 7**（总数 15 一致、域划分错，与首轮计数漂移同类）→ 修正 README 宣传串。
+- **README 当前版本行同步**：v0.8.9 → v0.8.10（含计数一致性门禁描述、CI core 45 条）。
+- **生产版本回退消除**：`pyproject.toml` version 0.8.0 → 0.8.10；构建 `lda_design-0.8.10` wheel 部署生产（`/opt/lda_env` pip install --force-reinstall --no-deps）→ `/api/health` version **0.7.0 → 0.8.10**（此前 venv 未装 wheel 触发 app.py 回退兜底）。
+
+### 新增
+- **`run_count_consistency_smoke.py`**（11/11 PASS，入 CI core）：动态断言——引擎 15（光子 8 + 量子 7，经 ENGINE_KIND_MAP→ENGINE_DOMAIN 统计）、包 11（15+11=26 类端到端）、题库 30（B1-B27 27 + E1-E3 3）、CI core 条数与 README 标注一致、README 宣传串含正确口径且不含废弃串（防回退）。
+
+> 注：本条目为 v0.8.10 的持续维护补充（三端同步，生产 wheel 已升级 0.8.10）。
+
 ## v0.8.9（2026-08-26 · 流片级验证管道 · 门3 接口细化）
 
 **里程碑：门3（真实 PDK/流片级）的接口层就绪——「PDK → DRC → 工艺角 → 流片实测回流」串成可运行管道；真实晶圆厂对接属发动期，管道先用公开工艺参数示例全链路可执行、真实 PDK 就位零改动接入。**

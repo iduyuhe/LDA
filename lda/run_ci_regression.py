@@ -94,8 +94,10 @@ CORE_SMOKES: List[str] = [
     "run_model_class_smoke.py",
     # 层级 IR（Merge-3b：子系统 flatten 等价性）
     "run_hierarchy_smoke.py",
-    # Phase 3 统计锚（S7 蒙特卡洛分布：红线 + 防自证负例）
+    # Phase 3 统计锚（S7/S8 蒙特卡洛分布 + 收敛性：红线 + 防自证负例）
     "run_statistical_anchor_smoke.py",
+    # Phase 4 提案编译器（生成侧：锚前置剪枝 + 即提即验 + 人终审）
+    "run_proposal_compiler_smoke.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

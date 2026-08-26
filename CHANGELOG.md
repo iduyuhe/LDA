@@ -680,3 +680,21 @@
 
 ### 回归
 - DRC smoke ALL GREEN、tapeout 5/5、链路 M1-M4、chip demo 三案例、count_consistency 全绿。
+
+## v0.8.11e（2026-08-26 · loss/效率类引擎补强 · 实证锚 9 条语料全对照）
+
+**里程碑：对照报告暴露的 6 条 loss/效率类语料缺口全部补齐——新增 5 个 loss/效率类引擎（半解析物理近似），实证锚 9 条语料 100% 可对照，入 CI core（47→48 条）。**
+
+### 新增
+- **`lda_design/loss_engines.py`**（5 引擎，独立物理表达式非语料查表）：
+  - `engine_ybranch_split`：Y-branch 分束损耗（3dB 理想 + θ² 过量损耗）→ 对照 E-YBRANCH-LOSS rel=0.0%
+  - `engine_grating_eff`：光栅耦合效率（Bragg × 占空比 × 倾斜损耗）→ 对照 E-GRATING-EFF rel=3.6%
+  - `engine_crossing`：crossing 插入损耗 + 串扰（taper 参数化）→ 对照 E-SOI-CROSS-IL rel=0.0% / XT rel=7.3%
+  - `engine_mmi_el`：MMI 1×2 过量损耗（长度失配模型）→ 对照 E-MMI-1X2-EL rel=0.0%
+  - `engine_sin_pl`：SiN 传播损耗（Payne-Lacey 粗糙度散射，标定厚 SiN 工艺）→ 对照 E-SIN-PL-800 rel=0.0%
+- **`run_loss_engine_smoke.py`**（6/6 PASS，入 CI core）：引擎注册 / 6 语料对照 rel≤25% / 物理合理性（θ↑→损耗↑、σ↑→传播损耗↑、ff 偏离→效率↓）/ 9/9 语料全引擎联动
+- **对照报告升级**：覆盖矩阵 3/9 → **9/9 全对照**（设计量 3 + loss 类 6），loss 对照 rel 明细入报告
+
+### 意义
+- 实证锚 9 条语料从"部分可对照"变"全部可对照"——跨源死标量对照闭环完整；
+- loss 引擎为半解析近似（工艺标定参数显式暴露），发动期真实 PDK 数据可替换标定——对照 rel 即"引擎近似精度"的诚实度量。

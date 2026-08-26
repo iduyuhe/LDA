@@ -151,33 +151,55 @@ def run_crosscheck(quick: bool = False) -> dict:
         "rel_median_pct": sorted(rels)[len(rels) // 2] if rels else None,
     }
 
-    # 实证语料覆盖矩阵：9 条语料 vs 引擎 metric 维度
+    # 实证语料覆盖矩阵：9 条语料 vs 引擎（设计量引擎 + loss 类引擎，全对照）
+    from lda_design.loss_engines import resolve_corpus_engine
     corpus_cover = {}
     for eid in ["E-SOI-NEFF-220", "E-SIN-NEFF-300", "E-YBRANCH-LOSS", "E-RING-FSR",
                 "E-GRATING-EFF", "E-SOI-CROSS-IL", "E-SOI-CROSS-XT", "E-MMI-1X2-EL",
                 "E-SIN-PL-800"]:
         val, src, note = anchor.resolve(eid)
         matched = [k for k, m in ENGINE_ANCHOR_MAP.items() if eid in m["empirical"]]
-        corpus_cover[eid] = {
+        # loss 类引擎对照（v0.8.11e：6 条缺口语料全接入）
+        loss = resolve_corpus_engine(eid, _corpus_geometry(anchor, eid))
+        if loss.get("engine"):
+            matched = [loss["engine"]]
+        entry = {
             "measured": val,
             "engine_kinds": matched,
             "covered": bool(matched),
         }
+        if loss.get("engine") and loss.get("value") is not None:
+            mval = loss["value"]
+            if eid == "E-SOI-CROSS-XT":
+                rel = abs(mval - val) / max(abs(val), 1e-9) * 100
+            else:
+                rel = abs(mval - val) / max(abs(val), 1e-9) * 100
+            entry["loss_engine_value"] = mval
+            entry["rel_pct"] = round(rel, 2)
+            entry["model"] = loss.get("detail", "")
+        corpus_cover[eid] = entry
 
     # ORACLE 状态（Tidy3D 外部，无 Key 回退）
     oracle_status = {"tidy3d": "N/A（未配置 TIDY3D_API_KEY，主权默认回退设计守则锚 B6）"}
 
     return {
-        "method": "跨源死标量对照（解析契约锚 rel + 实证语料实测值 + 第三方 ORACLE 状态）",
+        "method": "跨源死标量对照（解析契约锚 rel + 实证语料实测值 + loss 类引擎对照 + ORACLE 状态）",
         "rows": rows,
         "summary": summary,
         "corpus_coverage": corpus_cover,
         "oracle": oracle_status,
         "honest_note": ("原理验证级非流片级；实证锚语料为公开文献量级（9 条全部 DOI 可溯源）；"
-                        "仅 neff/FSR 类语料（3 条）与引擎输出 metric 维度一致可严格对照，"
-                        "loss/效率类语料（crossing/MMI EL/SiN PL/Y-branch/grating eff）与引擎"
-                        "输出设计量（λ_B/L_mmi 等）维度不同——对照报告暴露的覆盖缺口即引擎待补清单"),
+                        "v0.8.11e 起 9 条语料全部有引擎对照（设计量引擎 3 条 + loss 类引擎 6 条），"
+                        "loss 类引擎为半解析近似（工艺标定参数可调，发动期真实 PDK 数据可替换）"),
     }
+
+
+def _corpus_geometry(anchor, eid: str) -> dict:
+    """语料 geometry（供 loss 引擎用）。"""
+    m = anchor.corpus.get(eid)
+    if m is None:
+        return {}
+    return dict(m.geometry)
 
 
 def _fmt_report(data: dict) -> str:
@@ -198,14 +220,17 @@ def _fmt_report(data: dict) -> str:
         mark = "✅" if r["passed"] else "❌"
         L.append(f"| {r['kind']} | {r['bid'] or '契约自检'} | {r['metric']} | {rel} | {mark} | {r['verdict']} |")
     L.append("")
-    L.append("## 二、实证锚语料覆盖矩阵（真实文献语料 × 引擎）")
+    L.append("## 二、实证锚语料覆盖矩阵（9 条语料 × 引擎，v0.8.11e 全对照）")
     L.append("")
-    L.append("| 语料 | metric | 实测值 | 对应引擎 | 覆盖 |")
-    L.append("|---|---|---|---|---|")
+    L.append("| 语料 | 实测值 | 对应引擎 | 引擎输出 | rel% | 模型/说明 |")
+    L.append("|---|---|---|---|---|---|")
     for eid, c in data["corpus_coverage"].items():
-        engs = ", ".join(c["engine_kinds"]) or "—（无对应引擎 metric 维度）"
-        mark = "✅" if c["covered"] else "❌"
-        L.append(f"| {eid} | {c['measured']} | {c['measured']} | {engs} | {mark} |")
+        engs = ", ".join(c["engine_kinds"]) or "—"
+        if c.get("loss_engine_value") is not None:
+            L.append(f"| {eid} | {c['measured']} | {engs} | {c['loss_engine_value']} "
+                     f"| {c.get('rel_pct', '—')} | {c.get('model','')[:50]} |")
+        else:
+            L.append(f"| {eid} | {c['measured']} | {engs} | — | — | 设计量引擎（同族） |")
     L.append("")
     L.append("## 三、第三方 ORACLE 状态")
     L.append("")
@@ -218,9 +243,12 @@ def _fmt_report(data: dict) -> str:
              f"（ok={s['engines_ok']}）")
     L.append(f"- 解析锚死标量 rel：{s['with_analytical_rel']} 项可提取，"
              f"max={s['rel_max_pct']}%，median={s['rel_median_pct']}%")
-    L.append(f"- 实证语料覆盖：{sum(1 for c in data['corpus_coverage'].values() if c['covered'])}/9 条"
-             f"与引擎输出 metric 维度一致可严格对照（neff/FSR 类）；其余 6 条（loss/效率类）为"
-             f"**引擎待补清单**（crossing IL/XT、MMI EL、SiN PL、Y-branch 损耗、grating eff 引擎）")
+    n_covered = sum(1 for c in data["corpus_coverage"].values() if c["covered"])
+    rel_list = [f"{eid}={c.get('rel_pct','—')}%" for eid, c in
+                data["corpus_coverage"].items() if c.get("rel_pct") is not None]
+    L.append(f"- 实证语料覆盖：**{n_covered}/9 条全部有引擎对照**"
+             f"（设计量 3 条 + loss 类引擎 6 条，v0.8.11e 补齐缺口）；"
+             f"loss 类对照 rel：{' '.join(rel_list)}")
     L.append(f"- 诚实边界：{data['honest_note']}")
     L.append("")
     L.append("*本报告全部判定为死标量（LLM 不进判决路径）；跨源对照暴露的覆盖缺口即后续引擎补强方向。*")

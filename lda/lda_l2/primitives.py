@@ -196,6 +196,75 @@ def grating_coupler_descs(params: Dict[str, float]) -> List[Dict]:
 # ---------------------------------------------------------------------------
 # 统一入口：kind + params → geometry_desc 风格 desc 列表
 # ---------------------------------------------------------------------------
+def _poly_rect(x0, y0, x1, y1):
+    """矩形多边形（逆时针，基元几何工具）。"""
+    return [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+
+
+def phase_shifter_descs(params: Dict[str, float]) -> List[Dict]:
+    """热光相移器几何（第二梯队-2c 有源基元一）：硅波导 + 顶部加热电阻。
+
+    params：width(波导宽) / L_heat(加热段长) / width_heat(电阻宽) /
+            gap_heat(电阻与波导间距)。
+    几何表达：主波导条 + 加热电阻矩形（诚实标注：实际工艺加热器在金属层/
+    掺杂层，本步先交付几何，工艺层映射归真实 PDK）。
+    """
+    w = float(params.get("width", 0.5))
+    Lh = float(params.get("L_heat", 40.0))
+    wh = float(params.get("width_heat", 2.0))
+    gh = float(params.get("gap_heat", 1.0))
+    y_top = w / 2.0 + gh
+    return [
+        {"kind": "boundary", "layer": 1,   # 主波导
+         "rings_um": [_poly_rect(-Lh / 2.0, -w / 2.0, Lh / 2.0, w / 2.0)]},
+        {"kind": "boundary", "layer": 1,   # 加热电阻（顶部，工艺层简化）
+         "rings_um": [_poly_rect(-Lh / 2.0, y_top, Lh / 2.0, y_top + wh)]},
+    ]
+
+
+def modulator_descs(params: Dict[str, float]) -> List[Dict]:
+    """MZI 电光调制器几何（有源基元二）：双平行臂 + 电极。
+
+    params：width(波导宽) / arm_L(臂长) / arm_gap(臂间距) /
+            elec_w(电极宽) / elec_gap(电极与臂间距)。
+    """
+    w = float(params.get("width", 0.5))
+    La = float(params.get("arm_L", 200.0))
+    ag = float(params.get("arm_gap", 4.0))
+    ew = float(params.get("elec_w", 3.0))
+    eg = float(params.get("elec_gap", 1.0))
+    y_inner = ag / 2.0 - w / 2.0
+    y_outer = ag / 2.0 + w / 2.0
+    ye = y_outer + eg
+    return [
+        {"kind": "boundary", "layer": 1,   # 臂1
+         "rings_um": [_poly_rect(-La / 2.0, -y_outer, La / 2.0, -y_inner)]},
+        {"kind": "boundary", "layer": 1,   # 臂2
+         "rings_um": [_poly_rect(-La / 2.0, y_inner, La / 2.0, y_outer)]},
+        {"kind": "boundary", "layer": 1,   # 电极1（工艺层简化）
+         "rings_um": [_poly_rect(-La / 2.0, ye, La / 2.0, ye + ew)]},
+        {"kind": "boundary", "layer": 1,   # 电极2
+         "rings_um": [_poly_rect(-La / 2.0, -ye - ew, La / 2.0, -ye)]},
+    ]
+
+
+def photodetector_descs(params: Dict[str, float]) -> List[Dict]:
+    """光电探测器几何（有源基元三）：Ge 吸收区（宽矩形）+ 输入 taper 过渡。
+
+    params：width(输入波导宽) / det_L(吸收区长) / det_w(吸收区宽)。
+    诚实标注：实际 Ge 探测器有 n+/p+ 接触与金属互联，本步只交付吸收区几何。
+    """
+    w = float(params.get("width", 0.5))
+    Ld = float(params.get("det_L", 20.0))
+    Wd = float(params.get("det_w", 5.0))
+    return [
+        {"kind": "boundary", "layer": 1,   # 输入波导
+         "rings_um": [_poly_rect(-8.0, -w / 2.0, 0.0, w / 2.0)]},
+        {"kind": "boundary", "layer": 1,   # Ge 吸收区
+         "rings_um": [_poly_rect(0.0, -Wd / 2.0, Ld, Wd / 2.0)]},
+    ]
+
+
 def primitive_descs(kind: str, params: Dict[str, float]) -> List[Dict]:
     """真实版图基元统一几何入口（供 gds_export.geometry_desc 注册）。"""
     kind = kind.lower()
@@ -218,6 +287,12 @@ def primitive_descs(kind: str, params: Dict[str, float]) -> List[Dict]:
         return mmi_descs(params)
     if kind in ("gratingcoupler", "grating_coupler"):
         return grating_coupler_descs(params)
+    if kind in ("phaseshifter", "phase_shifter"):
+        return phase_shifter_descs(params)
+    if kind in ("modulator", "mzimodulator", "mzi_modulator"):
+        return modulator_descs(params)
+    if kind in ("photodetector", "photo_detector"):
+        return photodetector_descs(params)
     raise ValueError(f"真实版图基元暂不支持 kind={kind}")
 
 

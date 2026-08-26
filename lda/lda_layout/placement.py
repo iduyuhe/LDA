@@ -73,6 +73,35 @@ def place_row(link: LinkModel, pitch_x: Optional[float] = None,
             for i, c in enumerate(comps)}
 
 
+def place_2d(link: LinkModel, cols: int = 3,
+             origin: Tuple[float, float] = (0.0, 0.0),
+             pitch_x: Optional[float] = None,
+             pitch_y: Optional[float] = None) -> Dict[str, Tuple[float, float, float]]:
+    """2D 网格放置（行优先，器件尺寸感知——第二梯队-2b，审计差距 #3）。
+
+    在 place_row 单行基础上支持多行布局：按 cols 列宽分多行，
+    行距/列距由器件包围盒自适应（≥2*hw/hh + 余量），旋转保持 0
+    （端口默认左右方向，网格放置与波导布线天然对齐）。
+
+    pitch_x/pitch_y 省略时按最大器件半宽/半高自动设定。
+    """
+    comps = link.ir.components
+    if not comps:
+        return {}
+    bboxes = {c.id: device_bbox(c.kind, dict(c.params)) for c in comps}
+    if pitch_x is None:
+        pitch_x = 2.0 * max(hw for hw, _ in bboxes.values()) + 8.0
+    if pitch_y is None:
+        pitch_y = 2.0 * max(hh for _, hh in bboxes.values()) + 8.0
+    cols = max(1, int(cols))
+    out = {}
+    for i, c in enumerate(comps):
+        row, col = divmod(i, cols)
+        out[c.id] = (origin[0] + col * pitch_x,
+                     origin[1] + row * pitch_y, 0.0)
+    return out
+
+
 def port_abs(inst: str, port: str, placement: dict,
              link: LinkModel) -> Tuple[float, float]:
     """端口绝对坐标 (x,y)。"""

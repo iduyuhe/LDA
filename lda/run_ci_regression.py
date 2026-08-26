@@ -100,6 +100,8 @@ CORE_SMOKES: List[str] = [
     "run_proposal_compiler_smoke.py",
     # 第二梯队-1 A* 布线（贪心→全局最优 + 避障 + 无解诚实退化）
     "run_astar_route_smoke.py",
+    # 第二梯队-2 三件套（多端网 Steiner + 2D 放置 + 有源基元）
+    "run_second_tier_smoke.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

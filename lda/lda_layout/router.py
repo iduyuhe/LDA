@@ -269,6 +269,120 @@ def astar_route(src: Tuple[float, float], dst: Tuple[float, float],
     return None  # 无解（不盲目退化直连——诚实返回）
 
 
+def route_multi_net(ports: Sequence[Tuple[float, float]],
+                   obstacles: Sequence[Tuple[float, float, float, float]] = (),
+                   wg_width: float = 0.5, dl: float = 1.0,
+                   max_span: float = 2000.0) -> Optional[List[List[Tuple[float, float]]]]:
+    """多端网 Steiner 布线（N 端汇聚——第二梯队-2a，审计差距 #4）。
+
+    算法：增量建树——从首端口出发，每步用【多目标 A*】把下一个端口连到
+    当前已建树（目标=树上任意点，h=到目标集的最小曼哈顿），累计路径段。
+    这是网格 Steiner 树的标准近似（中位数点意义下的最短互连）。
+
+    返回：路径段列表（每段为折点序列，段间共享端点构成树）；任一端无法
+    连通返回 None（诚实，不产生断网）。
+    """
+    if len(ports) < 2:
+        return None
+    # 无障碍：中位数汇聚点放射连接（曼哈顿 Steiner 近似，确定性）
+    if not obstacles:
+        xs = [p[0] for p in ports]
+        ys = [p[1] for p in ports]
+        cx = sorted(xs)[len(xs) // 2]
+        cy = sorted(ys)[len(ys) // 2]
+        hub = (float(cx), float(cy))
+        segs = []
+        for p in ports:
+            if p == hub:
+                continue
+            path = [p, (hub[0], p[1]), hub] if abs(hub[0] - p[0]) > 1e-9 else [p, hub]
+            segs.append(path)
+        return segs
+
+    # 有障碍：多目标 A* 增量建树
+    # —— 网格预处理（复用 astar_route 的域与膨胀逻辑）——
+    pad = wg_width / 2.0 + dl * 0.75
+    allx = [p[0] for p in ports]
+    ally = [p[1] for p in ports]
+    for cx, cy, hw, hh in obstacles:
+        allx.extend([cx - hw, cx + hw])
+        ally.extend([cy - hh, cy + hh])
+    margin = min(max_span, max(20.0, dl * 50.0))
+    xmin, xmax = min(allx) - margin, max(allx) + margin
+    ymin, ymax = min(ally) - margin, max(ally) + margin
+
+    def to_grid(p):
+        return (round((p[0] - xmin) / dl), round((p[1] - ymin) / dl))
+
+    def to_xy(g):
+        return (xmin + g[0] * dl, ymin + g[1] * dl)
+
+    span = (round((xmax - xmin) / dl), round((ymax - ymin) / dl))
+    if span[0] * span[1] > 4_000_000:
+        return None
+    blocked = set()
+    for cx, cy, hw, hh in obstacles:
+        for gx in range(max(0, round((cx - hw - pad - xmin) / dl)),
+                        min(span[0], round((cx + hw + pad - xmin) / dl)) + 1):
+            for gy in range(max(0, round((cy - hh - pad - ymin) / dl)),
+                            min(span[1], round((cy + hh + pad - ymin) / dl)) + 1):
+                blocked.add((gx, gy))
+    gports = [to_grid(p) for p in ports]
+    for gp in gports:
+        blocked.discard(gp)
+
+    def astar_to_set(src_g, goals, blocked_set):
+        """多目标 A*：src 到 goal 集任一点的最短网格路径（折点压缩后）。"""
+        if src_g in goals:
+            return [to_xy(src_g)]
+        open_h = []
+        g_cost = {src_g: 0.0}
+        came: dict = {}
+        heapq.heappush(open_h, (0.0, src_g))
+        closed = set()
+        while open_h:
+            _, cur = heapq.heappop(open_h)
+            if cur in goals:
+                path = [cur]
+                while path[-1] in came:
+                    path.append(came[path[-1]])
+                path.reverse()
+                return [to_xy(g) for g in path]
+            if cur in closed:
+                continue
+            closed.add(cur)
+            gx, gy = cur
+            for nx, ny in ((gx + 1, gy), (gx - 1, gy), (gx, gy + 1), (gx, gy - 1)):
+                nb = (nx, ny)
+                if nb in blocked_set or nb in closed:
+                    continue
+                if not (0 <= nx <= span[0] and 0 <= ny <= span[1]):
+                    continue
+                ng = g_cost[cur] + dl
+                if ng < g_cost.get(nb, float("inf")):
+                    g_cost[nb] = ng
+                    came[nb] = cur
+                    h = min(abs(nx - gx2) + abs(ny - gy2) for gx2, gy2 in goals)
+                    heapq.heappush(open_h, (ng + h * dl, nb))
+        return None
+
+    # —— 增量建树：已连树 = 已接入端口集合；逐端口 A* 连到树 ——
+    tree_goals = {gports[0]}
+    tree_points = set()
+    segs = []
+    for i in range(1, len(gports)):
+        path_g = astar_to_set(gports[i], tree_goals, blocked)
+        if path_g is None:
+            return None  # 任一端不可达 → 整体诚实失败
+        segs.append(path_g)
+        # 把新路径的全部网格点并入树（作为后续端口的目标）
+        for pt in path_g:
+            g = to_grid(pt)
+            tree_goals.add(g)
+            tree_points.add(pt)
+    return segs
+
+
 def route_net(net_id, src, dst, obstacles=None, wg_width=0.5,
               bend_radius=5.0, corner="round",
               straight_loss_db_cm=DEFAULT_STRAIGHT_LOSS_DB_CM,

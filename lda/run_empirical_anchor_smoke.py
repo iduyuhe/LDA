@@ -1,9 +1,9 @@
 """D-62 实证大数据锚 smoke：harness 实证锚题（E1-E3 第二道非 AI ground）+ 语料评审流。
 
 覆盖：
-  ① harness 实证锚题解析（BENCHMARK_DEFS 22 = B19 + E3；E 题 golden 来自实测语料；
-     B19 为 P1-M4 新增链路级无源无增益物理定律锚）
-  ② 参考候选 22/22 PASS（物理定律 + 实证锚双 ground）
+  ① harness 实证锚题解析（BENCHMARK_DEFS 30 = B1-B27 + E1-E3；E 题 golden 来自实测语料；
+     B19 为 P1-M4 新增链路级无源无增益物理定律锚；B20-B27 为 v0.8 内核纵深新增）
+  ② 参考候选 30/30 PASS（物理定律 + 实证锚双 ground）
   ③ 扰动候选：实证锚题 FAIL 检测（实证锚能抓偏离）
   ④ 语料评审流：提交（citation/数值/σ 门禁 + 防重）→ 具名评审（缺评审人拒）→ 落地 → reload 生效
   ⑤ harness 键集一致性（E1-E3 全部可解析）
@@ -34,7 +34,7 @@ def check(name, ok, detail=""):
 def main():
     # ① 实证锚题解析
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
-    check("BENCHMARK_DEFS 22 题（B19+E3）", len(BENCHMARK_DEFS) == 22
+    check("BENCHMARK_DEFS 30 题（B1-B27+E1-E3）", len(BENCHMARK_DEFS) == 30
           and e_ids == ["E1", "E2", "E3"], f"defs={len(BENCHMARK_DEFS)} e={e_ids}")
     specs, cand_map = build_harness_specs()
     emp = [s for s in specs if s.oracle_kind == "empirical_measurement"]
@@ -47,10 +47,10 @@ def main():
           and abs(goldens["E3"] - 9.15) < 1e-9,
           str(goldens))
 
-    # ② 参考候选全 PASS（22/22）
+    # ② 参考候选全 PASS（30/30）
     npass = sum(1 for s in specs
                 if abs(cand_map[s.spec_id](s, s.oracle_fn(s.params)) - s.oracle_fn(s.params)) <= s.tol)
-    check("参考候选 22/22 PASS（双 ground）", npass == len(specs) == 22,
+    check("参考候选 30/30 PASS（双 ground）", npass == len(specs) == 30,
           f"{npass}/{len(specs)}")
 
     # ③ 扰动候选：实证锚题 FAIL 检测

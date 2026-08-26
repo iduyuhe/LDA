@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.8.10（2026-08-26 · 持续维护：v0.8 系列首轮全量回归 + 计数漂移修复）
+
+**里程碑：v0.8.2-v0.8.9 八连发后首轮持续维护——CI core 全量回归（44 条）捕获 3 项计数/递归缺陷并修复，全绿收官。**
+
+### 修复
+- **`run_l1_agent_smoke.py` 计数漂移**（22→30 题）：v0.8 新增 B20-B27 锚后，L1 协议层 smoke 硬编码 22 题（B1-B19+E1-E3）过时 → 更新为 30 题（B1-B27+E1-E3），reference 30/30、list_benchmarks 30 题。
+- **`run_empirical_anchor_smoke.py` 计数漂移**（22→30 题）：同上，实证锚 smoke 17/17 修复。
+- **`run_ci_industrial_smoke.py` 无限递归 bug**：内部 `_reg_subset` 递归调用 `run_ci_regression(tag="core")` 时未排除自身（`run_ci_industrial_smoke.py` 在 CORE_SMOKES 内）→ 无限递归致 300s 超时（v0.8 新增 smoke 入 core 后暴露）→ `_SLOW_CORE` 加自身递归保护，3/3 PASS（内部回归 23 条全绿 + greens 35.98×）。
+- **README 版本基线同步**：v0.6 → v0.8.9（八连发里程碑摘要 + 26 类/30 题/44 条计数）。
+
+### 回归
+- **CI core 44 PASS / 0 SKIP / 0 FAIL**（608.19s 全绿）。
+
+> 注：本条目为维护基线；全量 all 集回归（含重 FDTD/GPU 项）可在本机按需执行。
+
 ## v0.8.9（2026-08-26 · 流片级验证管道 · 门3 接口细化）
 
 **里程碑：门3（真实 PDK/流片级）的接口层就绪——「PDK → DRC → 工艺角 → 流片实测回流」串成可运行管道；真实晶圆厂对接属发动期，管道先用公开工艺参数示例全链路可执行、真实 PDK 就位零改动接入。**

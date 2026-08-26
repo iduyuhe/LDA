@@ -4,11 +4,11 @@
 run_agent.py 的 CLI 演示路径（KernelGateway 直接调用 + L0 IR 驱动 + 三种 candidate +
 benchmarks 过滤）无 smoke 覆盖。本 smoke 以库方式走同一 KernelGateway 全链路：
 
-  1) reference 候选 → 22/22 PASS（B1-B19 物理定律 + E1-E3 实证锚，D-104 注入实证锚后；
-     B19 为 P1-M4 新增链路级无源无增益物理定律锚）；
+  1) reference 候选 → 30/30 PASS（B1-B27 物理定律 + E1-E3 实证锚，D-104 注入实证锚后；
+     B19 为 P1-M4 新增链路级无源无增益物理定律锚；B20-B27 为 v0.8 内核纵深新增）；
   2) perturbed(rel=0.10) 候选 → 抓 FAIL（passed < total，死标量）；
   3) l3_ai 候选 → 法官抓 FAIL（passed < total，流程成功）；
-  4) list_benchmarks → 22 题；
+  4) list_benchmarks → 30 题；
   5) benchmarks 过滤（B1,B2,B4）→ 3/3；
   6) L0 IR 驱动（examples/l0_demo_ring.json）→ 流程成功（IR 携带设计参数覆盖默认）。
 
@@ -40,14 +40,14 @@ def main() -> int:
         return gw.handle(AgentRequest(action=action, payload=payload,
                                       meta={"requester": "smoke"}))
 
-    # 1) reference → 22/22（物理定律 + 实证锚双 ground；B19 链路级无源无增益锚）
+    # 1) reference → 30/30（物理定律 + 实证锚双 ground；B1-B27 + E1-E3）
     r = run("verify_design", {"candidate": {"type": "reference"}})
     s = r.result["summary"]
-    check("verify_design(reference) 22/22",
-          r.status == "ok" and s.get("passed") == s.get("total") == 22,
+    check("verify_design(reference) 30/30",
+          r.status == "ok" and s.get("passed") == s.get("total") == 30,
           f"{s.get('passed')}/{s.get('total')} PASS")
 
-    # 2) perturbed(rel=0.10) → 抓 FAIL（6/22，死标量）
+    # 2) perturbed(rel=0.10) → 抓 FAIL（死标量）
     r = run("verify_design", {"candidate": {"type": "perturbed", "rel_err": 0.10}})
     s = r.result["summary"]
     check("verify_design(perturbed) 抓 FAIL",
@@ -61,13 +61,13 @@ def main() -> int:
           r.status == "fail" and s.get("passed", 99) < s.get("total", 0),
           f"{s.get('passed')}/{s.get('total')} (LLM 候选被死标量驳回)")
 
-    # 4) list_benchmarks → 22 题（B19 + E3）
+    # 4) list_benchmarks → 30 题（B27 + E3）
     r = run("list_benchmarks", {})
     bm = r.result.get("benchmarks", [])
     ids = [b.get("id") for b in bm] if bm else []
-    check("list_benchmarks 22 题",
-          len(ids) == 22 and "B19" in ids and "E3" in ids,
-          f"{len(ids)} 题（B1-B19 + E1-E3）")
+    check("list_benchmarks 30 题",
+          len(ids) == 30 and "B27" in ids and "E3" in ids,
+          f"{len(ids)} 题（B1-B27 + E1-E3）")
 
     # 5) benchmarks 过滤（B1,B2,B4）→ 3/3
     r = run("verify_design", {"candidate": {"type": "reference"},

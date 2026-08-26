@@ -27,6 +27,9 @@ def run(name, fn, expect_ok):
 
 
 # 1) 正例：回归统一入口 core 快速子集（harness + IR + GDS + DRC + 系统级）全过
+# 注意：必须排除自身（run_ci_industrial_smoke.py）——内部递归调 core 回归，
+# 若不排除自身会造成无限递归（内部回归又启动 industrial → 又启动 core → …）
+# 导致 300s 超时（v0.8.x 新增 smoke 入 core 后暴露）。新增慢 smoke 也须纳入。
 _SLOW_CORE = {
     "run_ring_fdtd_smoke.py", "run_ring_double_verify_smoke.py",
     "run_device_fdtd_smoke.py", "run_dc_transmission_smoke.py",
@@ -37,6 +40,8 @@ _SLOW_CORE = {
     "run_large_scale_smoke.py", "run_primitives_smoke.py",
     "run_gc_smoke.py", "run_drc_fix_smoke.py", "run_drc_pdk_smoke.py",
     "run_d06_smoke.py", "run_d10_smoke.py", "run_pdk_smoke.py",
+    # 递归保护：本文件自身
+    "run_ci_industrial_smoke.py",
 }
 
 

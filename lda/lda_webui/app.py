@@ -2284,6 +2284,28 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:  # noqa: BLE001
                 self._send(200, {"engine": [], "package": [],
                                 "error": str(e)[:120]})
+        elif path == "/api/benchmark_crosscheck":
+            # v0.8.11f 基准对照验证闭环（20 引擎 + 9 语料 + ORACLE，quick 秒级）
+            try:
+                sys.path.insert(0, LDA_ROOT)
+                from run_benchmark_crosscheck_report import run_crosscheck
+                data = run_crosscheck(quick=True)
+                self._send(200, {
+                    "summary": data["summary"],
+                    "corpus_coverage": data["corpus_coverage"],
+                    "oracle": data["oracle"],
+                    "rows": [{"kind": r["kind"], "ok": r.get("ok"),
+                              "passed": r.get("passed"),
+                              "metric": r.get("metric"),
+                              "analytical_rel_pct": r.get("analytical_rel_pct"),
+                              "verdict": r.get("verdict", "")[:140]}
+                             for r in data["rows"]],
+                    "honest_note": data["honest_note"],
+                })
+            except Exception as e:  # noqa: BLE001
+                self._send(200, {"summary": {}, "corpus_coverage": {},
+                                "oracle": {}, "rows": [],
+                                "error": str(e)[:120]})
         else:
             self._send(404, {"error": "not found"})
 

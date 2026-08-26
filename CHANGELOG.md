@@ -712,3 +712,15 @@
 ### 意义
 - **实证锚进入引擎判决路径**：此前 E 题仅 harness 参考候选自洽/扰动检测，现在 5 个 loss 引擎的 PASS/FAIL 直接由真实文献语料判决——"实证大数据锚"从验证框架升格为引擎验收标准；
 - 引擎族 20（15 设计量 + 5 loss）+ 11 包 = 31 类端到端，统一设计包口径完整。
+
+## v0.8.11g（2026-08-26 · WebUI 面板接入 20 引擎 + 基准对照报告）
+
+**里程碑：20 引擎族与基准对照验证闭环接入 WebUI——引擎下拉自动含 5 个 loss 引擎（ENGINE_KINDS 动态生成）；新增面板 ㊾ 基准对照验证（/api/benchmark_crosscheck 端点，quick 秒级）。**
+
+### 新增
+- **`/api/benchmark_crosscheck`**：20 引擎验证 rel（quick 16 引擎秒级）+ 实证锚 9 条语料覆盖矩阵 + ORACLE 状态，JSON 直出（LLM 不进判决）。
+- **前端面板 ㊾**（index.html）：运行基准对照 → 渲染引擎对照表（rel%/PASS/verdict）+ 语料覆盖矩阵（9 条引擎输出 rel）+ ORACLE 状态 + 诚实边界声明。
+- **engine_catalog 20 引擎**：5 个 loss 引擎的 metric_name/target_unit/default_target 补齐，设计闭环下拉自动含（● 引擎 20 + ○ 包 11）。
+
+### 回归
+- `run_webui_api_smoke` 实跑 **59→60 PASS / 0 FAIL**（新端点被路由自动发现并实跑）；本地 curl 实测：16 引擎/9 语料/ORACLE 全返回，面板 HTML 注入正常。

@@ -366,6 +366,16 @@
   </div>
 
   <div class="sec">
+    <h2>㊾ 基准对照验证闭环（v0.8.11 · 20 引擎 × 解析锚/实证锚/ORACLE）</h2>
+    <div class="hint">把「验证可信」变成<b>跨源死标量对照证据</b>：20 引擎（15 设计量 + 5 loss）设计闭环验证 rel + 实证锚 9 条真实文献语料全对照 + 第三方 ORACLE 状态——解析锚/实证锚双 ground 引擎验收，LLM 不进判决路径。<b>诚实边界</b>：loss 引擎为半解析近似（工艺标定参数可替换）；Tidy3D 无 Key 自动回退设计守则锚。</div>
+    <button class="btn" id="runCrosscheck">运行基准对照 → 生成报告</button>
+    <div id="ccSummary" class="summary"></div>
+    <div id="ccCorpus" class="summary"></div>
+    <div id="ccEngine" class="summary"></div>
+    <div id="ccOracle" class="summary"></div>
+  </div>
+
+  <div class="sec">
     <h2>⑮ 环形 add-drop 产品链路（D-37 · 一键可制造设计包）</h2>
     <div class="hint">把 D-36 的设计闭环推到<b>产品级交付</b>：给定目标 FSR（或半径/gap），一键产出<b>可制造设计包</b>——双 bus add-drop 版图（GDSII + SVG）→ DRC 可制造性 → bus 波导<b>真实 FDTD</b> 验收（neff↔slab ORACLE）+ FSR 物理定律契约 + FDTD 锚点对拍 → <b>耦合/损耗预算</b>（κ(gap) 模型、弯曲损耗、Q 分解、drop IL、消光比）→ 验收判决（LLM 不进判决路径）。耦合/损耗模型取文献典型 SOI 220nm（PDK 接入后校准），诚实标注。</div>
     <div class="row">
@@ -3745,6 +3755,40 @@ function renderDesignOutcome(d){
 }
 $('runDesignOutcome').onclick = runDesignOutcome;
 $('doDownload').onclick = ()=>{ if(!_outcomePkg) return; const blob=new Blob([JSON.stringify(_outcomePkg,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(_outcomePkg.package_id||'lda_design_package')+'.json'; a.click(); };
+
+// ---- ★ 基准对照验证闭环（v0.8.11 · 20 引擎 × 解析锚/实证锚/ORACLE）----
+async function runCrosscheck(){
+  const btn=$('runCrosscheck'); btn.disabled=true;
+  $('ccSummary').innerHTML='<span class="spin"></span> 基准对照运行中（20 引擎解析锚 rel + 实证语料全对照 + ORACLE 状态）…';
+  $('ccCorpus').innerHTML=''; $('ccEngine').innerHTML=''; $('ccOracle').innerHTML='';
+  try{
+    const d = await api('/api/benchmark_crosscheck');
+    const s = d.summary||{};
+    $('ccSummary').innerHTML = `<b>引擎设计闭环：${s.engines_passed}/${s.engines_total} PASS</b> · 解析锚 rel max=${s.rel_max_pct}% median=${s.rel_median_pct}% · ${d.honest_note||''}`;
+    // 语料覆盖矩阵
+    const cc = d.corpus_coverage||{};
+    const rows = Object.entries(cc).map(([eid,c])=>{
+      const eng = (c.engine_kinds||[]).join(',')||'—';
+      const val = c.loss_engine_value!==undefined?`${c.loss_engine_value} (rel ${c.rel_pct}%)`:'—';
+      return `<tr><td>${eid}</td><td>${c.measured}</td><td>${eng}</td><td>${val}</td></tr>`;
+    }).join('');
+    $('ccCorpus').innerHTML = `<div class="subhead">实证锚语料覆盖矩阵（${Object.keys(cc).length} 条全对照）</div>
+      <table class="tab"><tr><th>语料</th><th>实测值</th><th>对应引擎</th><th>引擎输出(rel)</th></tr>${rows}</table>`;
+    // 引擎对照表（top 20 行）
+    const erows = (d.rows||[]).map(r=>{
+      const rel = r.analytical_rel_pct!==null&&r.analytical_rel_pct!==undefined?`${r.analytical_rel_pct}%`:'—';
+      return `<tr><td>${r.kind}</td><td>${r.metric??'—'}</td><td>${rel}</td><td>${r.passed?'✅':'❌'}</td><td>${(r.verdict||'').slice(0,60)}</td></tr>`;
+    }).join('');
+    $('ccEngine').innerHTML = `<div class="subhead">引擎验证对照（${erows? (d.rows||[]).length:0} 引擎）</div>
+      <table class="tab"><tr><th>引擎</th><th>metric</th><th>rel%</th><th>PASS</th><th>verdict</th></tr>${erows}</table>`;
+    // ORACLE 状态
+    const or = d.oracle||{};
+    $('ccOracle').innerHTML = `<div class="subhead">第三方 ORACLE 状态</div>` +
+      Object.entries(or).map(([k,v])=>`<div class="note">${k}: ${v}</div>`).join('');
+  }catch(e){ $('ccSummary').innerHTML='运行失败：'+e; }
+  finally{ btn.disabled=false; }
+}
+$('runCrosscheck').onclick = runCrosscheck;
 
 (async ()=>{
   const st = await api('/api/status');

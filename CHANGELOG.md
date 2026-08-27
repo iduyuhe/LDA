@@ -1046,3 +1046,20 @@
 - `run_scale_smoke.py` 13/13：千器件 ACCEPT / 断路 REJECT / 错连 REJECT / 性能预算 / 多层协同（M2 段=跳线数）/ S11 golden / 红线零 LLM
 - 计数一致性同步：题库 45、S1-S11、CI 60；empirical/l1/statistical/system_budget/lvs 五 smoke 44→45 全绿
 - **版图 7 差距全部闭合**：①A* ②诚实退化 ③2D 放置 ④多端网+有源基元 ⑤LVS ⑥多层 ⑦规模 ✅✅✅✅✅✅✅
+
+## v0.8.27（2026-08-27 · 千器件芯片级演示 · 千器件版图接入演示闭环）
+
+**里程碑：千器件能力接入芯片级演示——1000 器件链式链路 → 2D 放置 → 多层布线 → 可测芯片版图（GDS + IO 光栅 + 统计 + DRC + LVS 签核双闸）→ 报告落盘，全链路 0.99s。**
+
+### 新增
+- **`run_chip_scale_demo.py`**（8/8 断言，入 CI core 60→61）：
+  - 千器件链路构建 + **IO 标记**（wg0.in 源 + wg999.out 汇 → 光栅耦合器接入，芯片可测）
+  - `export_chip_gds` 千器件导出（**自动检测多层 routes** → LVS 用 run_lvs_multilayer 层叠语义；GDS 段按段绘制）
+  - 死标量验收：GDS round-trip 可解析（2033 元素 95KB）/ DRC **1000/1000 全过** / LVS **ACCEPT**（999/999 网一致）/ 性能预算 ≤10s（实测 **0.99s**）
+  - 报告落盘（JSON + markdown）
+- **`chip_layout_export.py` 多层兼容**：`_route_points` 支持段列表聚合、`_is_multilayer_routes` 自动检测、`export_chip_gds` 多层时 lvs_report 用 run_lvs_multilayer、stats 标 multilayer
+
+### 验证
+- 千器件演示：IO 2 端口 / 器件 1000 / 网络 999 全匹配 / DRC+LVS 双闸 ACCEPT / 0.99s
+- 回归：count 11/11、chip_layout 6/6、lvs 27/27、scale 13/13 全绿
+- 体系终态：22 引擎/33 类/45 题/CI core 61 条；版图 7 差距全闭合 + 千器件演示闭环

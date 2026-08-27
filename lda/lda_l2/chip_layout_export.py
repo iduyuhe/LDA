@@ -46,10 +46,23 @@ def io_ports_of(link) -> List[Tuple[str, str]]:
 
 
 def _route_points(rr) -> List[Tuple[float, float]]:
-    """RouteResult 或 dict 摘要 → 折线点。"""
+    """RouteResult / dict / 多层段列表 → 折线点（聚合全部段）。"""
+    if isinstance(rr, (list, tuple)):          # v0.8.26 多层：段列表
+        pts: List[Tuple[float, float]] = []
+        for seg in rr:
+            pts.extend(_route_points(seg))
+        return pts
     if isinstance(rr, dict):
         return list(rr.get("points_um") or [])
     return list(getattr(rr, "points_um", []) or [])
+
+
+def _is_multilayer_routes(routes) -> bool:
+    """routes 是否多层（任一 net 值为段列表，v0.8.26 千器件跨行跳线）。"""
+    for val in (routes or {}).values():
+        if isinstance(val, (list, tuple)):
+            return True
+    return False
 
 
 def _device_elements(link, placement, wg_width) -> List[bytes]:
@@ -178,7 +191,11 @@ def export_chip_gds(link, placement, routes, wg_width: float = 0.5,
 
     返回 {gds_bytes, gds_parse, gds_stats, drc_report, lvs_report, io_ports}。
     v0.8.24：新增 lvs_report（版图-原理图一致性签核，与 DRC 并列双闸）。
+    v0.8.26：自动检测多层 routes（net_id → [RouteResult, ...] 段列表，
+    千器件跨行跳线）——多层时 lvs_report 用 run_lvs_multilayer（层叠短路
+    语义），GDS 段按段绘制。
     """
+    multi = _is_multilayer_routes(routes)
     elements = _device_elements(link, placement, wg_width)
     for net_id, rr in (routes or {}).items():
         elements.append(gds_export.path(gds_export.LIB_LAYER_SI,
@@ -193,8 +210,14 @@ def export_chip_gds(link, placement, routes, wg_width: float = 0.5,
     stats["n_structures"] = (parse.get("n_structures")
                              if isinstance(parse, dict) else None)
     stats["gds_bytes"] = len(gds_bytes)
+    stats["multilayer"] = multi
     drc = chip_drc_report(link, placement, rules=rules)
-    lvs = run_lvs(link, placement, routes)
+    if multi:
+        from lda_l2.layers import get_stack
+        from lda_l2.lvs import run_lvs_multilayer
+        lvs = run_lvs_multilayer(link, placement, routes, stack=get_stack("soi"))
+    else:
+        lvs = run_lvs(link, placement, routes)
     return {
         "gds_bytes": gds_bytes,
         "gds_parse": parse,

@@ -10,7 +10,7 @@ README 引擎域计数「光子 9 + 量子 6」与代码 ENGINE_DOMAIN 实际 8+
   1. 引擎结构：ENGINE_KINDS 22（15 设计量 + 5 loss + 2 有源）、光子 15、量子 7
   2. 包结构：PACKAGE_KINDS 11（22 引擎 + 11 包 = 33 类端到端）
   3. 题库：BENCHMARK_ORDER 45 题（B1-B27 27 题 + E1-E7 7 题 + S1-S11 系统锚 11 题）
-  4. CI 门禁：CORE_SMOKES 条数（当前 60 条，动态）
+  4. CI 门禁：CORE_SMOKES 条数（当前 61 条，动态）
   5. README 宣传串：动态构造「22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）」
      「45 题（B1-B27 + E1-E7 + S1-S11）」「CI core N 条」断言 README.md 包含；
      反向断言 README 不含已废弃错误串「光子 9 + 量子 6」（防回退）。
@@ -130,7 +130,7 @@ class CountConsistencySmoke(unittest.TestCase):
         self.assertIn("S1-S11", self.readme)
 
     def test_readme_version_line(self):
-        self.assertIn("v0.8.26", self.readme)
+        self.assertIn("v0.8.27", self.readme)
 
 
 if __name__ == "__main__":

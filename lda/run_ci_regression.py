@@ -106,6 +106,8 @@ CORE_SMOKES: List[str] = [
     "run_lvs_smoke.py",
     # 千器件规模扩展（v0.8.26：版图差距 #7 收官 · S11 规模锚）
     "run_scale_smoke.py",
+    # 千器件芯片级演示（v0.8.27：千器件版图接入演示 · GDS/DRC/LVS 双闸）
+    "run_chip_scale_demo.py",
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",

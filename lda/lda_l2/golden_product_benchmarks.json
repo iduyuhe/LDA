@@ -1,0 +1,128 @@
+[
+  {
+    "product_id": "GP-MMI-1X2",
+    "device_type": "MMI 1×2 分束器（过量损耗）",
+    "source_kind": "literature",
+    "source_ref": "SciProfiles c4b9157434 'Compact Low Loss Ribbed Asymmetric MMI Power Splitter' (SOI, 仿真额外损耗 <0.4 dB, 分束比波动 <3% @1500–1600 nm)",
+    "engine": "engine_mmi_el",
+    "geom": {
+      "w_mmi_um": 2.8,
+      "n_si": 3.48,
+      "wl_um": 1.55
+    },
+    "metrics": [
+      {
+        "name": "excess_loss_dB",
+        "golden": 0.4,
+        "tol": 0.3,
+        "unit": "dB",
+        "direction": "le",
+        "note": "文献实测额外损耗 <0.4 dB"
+      }
+    ],
+    "replica_note": "优化 MMI（长度=自映像长），LDA 复现过量损耗 0.05 dB。",
+    "honest_note": "等效验证（对标公开实测），非本团队流片；解析近似对标典型量级。"
+  },
+  {
+    "product_id": "GP-GRATING-EFF",
+    "device_type": "Grating coupler（光纤-芯片耦合效率）",
+    "source_kind": "literature",
+    "source_ref": "PubMed 29714320 / Appl. Opt. 'Segmented waveguide grating coupler' 实测峰值耦合效率 51.7% (−2.86 dB) @1550 nm, 3 dB 带宽 71.4 nm",
+    "engine": "engine_grating_eff",
+    "geom": {
+      "ff": 0.5,
+      "theta_deg": 8.0,
+      "tilt_sigma_deg": 15.0
+    },
+    "metrics": [
+      {
+        "name": "coupling_eff",
+        "golden": 0.517,
+        "tol": 0.1,
+        "unit": "ratio",
+        "direction": "ge",
+        "note": "实测 0.517；模型量级一致（容差 ±0.10）"
+      }
+    ],
+    "replica_note": "占空比 0.5 / 倾角 8° 设计，LDA 复现耦合效率 0.434。",
+    "honest_note": "等效验证（对标公开实测），非本团队流片；解析近似对标典型量级。"
+  },
+  {
+    "product_id": "GP-CROSSING",
+    "device_type": "波导 Crossing 交叉（插入损耗 + 串扰）",
+    "source_kind": "literature",
+    "source_ref": "Optics Letters 2024, doi:10.1364/OL.537506 'Polarization-insensitive multimode Si crossing' 实测 IL<0.67 dB, XT<−28.6 dB (TE0, 1520–1600 nm)",
+    "engine": "engine_crossing",
+    "geom": {
+      "w_core_um": 0.5,
+      "taper_w_ratio": 2.5
+    },
+    "metrics": [
+      {
+        "name": "insertion_loss_dB",
+        "golden": 0.7,
+        "tol": 0.5,
+        "unit": "dB",
+        "direction": "le",
+        "note": "实测 <0.67 dB"
+      },
+      {
+        "name": "crosstalk_dB",
+        "golden": -25,
+        "tol": 5,
+        "unit": "dB",
+        "direction": "le",
+        "note": "实测 <−28.6 dB（越负越好）"
+      }
+    ],
+    "replica_note": "taper 比 2.5 设计，LDA 复现 IL=0.18 dB / XT=−38 dB。",
+    "honest_note": "等效验证（对标公开实测），非本团队流片；解析近似对标典型量级。"
+  },
+  {
+    "product_id": "GP-YBRANCH",
+    "device_type": "Y-branch 分束器（总分束损耗，含理想 3 dB）",
+    "source_kind": "literature",
+    "source_ref": "Optics Express 32, 46080 'Ultracompact Si3N4 Y-branch' 实测 excess loss <0.15 dB (TE) @1550 nm（inverse design, 商用 SiN foundry）",
+    "engine": "engine_ybranch_split",
+    "geom": {
+      "theta_deg": 5.0,
+      "excess_coef": 0.004
+    },
+    "metrics": [
+      {
+        "name": "split_loss_dB",
+        "golden": 3.15,
+        "tol": 0.3,
+        "unit": "dB",
+        "direction": "le",
+        "note": "含理想 3 dB；实测 excess<0.15 → 总<3.15"
+      }
+    ],
+    "replica_note": "分束角 5° 设计（小角降过量损耗），LDA 复现总分束损耗 3.10 dB。",
+    "honest_note": "等效验证（对标公开实测），非本团队流片；解析近似对标典型量级。"
+  },
+  {
+    "product_id": "GP-SIN-PL",
+    "device_type": "SiN 波导传播损耗（已商品化平台）",
+    "source_kind": "datasheet",
+    "source_ref": "LioniX International TriPleX® 商用 SiN 平台 datasheet：传播损耗 <0.1 dB/cm @1550 nm（已商品化 MPW）",
+    "engine": "engine_sin_pl",
+    "geom": {
+      "w_core_um": 0.8,
+      "h_core_um": 0.8,
+      "roughness_nm": 0.3
+    },
+    "metrics": [
+      {
+        "name": "propagation_loss_dBcm",
+        "golden": 0.1,
+        "tol": 0.05,
+        "unit": "dB/cm",
+        "direction": "le",
+        "note": "商用 datasheet <0.1 dB/cm"
+      }
+    ],
+    "replica_note": "800×800 nm 截面 + 粗糙度 0.3 nm 标定，LDA 复现传播损耗 0.087 dB/cm。",
+    "honest_note": "等效验证（对标商用 datasheet），非本团队流片；解析近似对标典型量级。"
+  }
+]

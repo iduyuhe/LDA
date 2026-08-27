@@ -94,6 +94,8 @@ CORE_SMOKES: List[str] = [
     "run_model_class_smoke.py",
     # 层级 IR（Merge-3b：子系统 flatten 等价性）
     "run_hierarchy_smoke.py",
+    # 开发者 CLI 钩子（v0.8.29：lda design/check/report 薄壳三命令）
+    "run_cli_smoke.py",
     # Phase 3 统计锚（S7/S8 蒙特卡洛分布 + 收敛性：红线 + 防自证负例）
     "run_statistical_anchor_smoke.py",
     # Phase 4 提案编译器（生成侧：锚前置剪枝 + 即提即验 + 人终审）

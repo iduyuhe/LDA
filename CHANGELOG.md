@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.8.29（2026-08-27 · 开发者 CLI 钩子 · 实用价值收口）
+
+**里程碑：把已齐备的设计—验证能力包装成对外可感知、独立可验证的开发者入口（开源 EDA "10 分钟跑通"硬伤闭环）。原 v2 开发规划的可执行部分在发动期之前彻底收口。**
+
+### 新增
+- **`lda_design/cli.py` + pyproject `[project.scripts] lda=...`**：三命令薄壳，**零新依赖、不进判决路径**（仅复用 design_engine / chip_layout_export / run_benchmark_crosscheck_report 的真实计算结果）：
+  - `lda design <kind> --target <float> [--top-k N]`：跑器件设计闭环，输出最优已验证候选（参数/指标/目标误差）。
+  - `lda check <spec.json>`：链路 JSON → `layout_only` 官方布局布线 → 版图导出 + **DRC/LVS 双闸报告** + GDS 落盘。
+  - `lda report [--out DIR] [--quick]`：基准对照验证闭环报告（跨源死标量对照 + 实证语料覆盖矩阵）。
+- **`examples/cli_check_example.json`**：`lda check` 示例链路（wg→ring→wg，含 IO/源声明）。
+- **`run_cli_smoke.py` 入 CI core**（61→63 条）：三命令可用 + 设计闭环 + 版图双闸 ACCEPT 门禁。
+
+### 文档
+- README「快速开始」新增 **LDA 命令行（v0.8.29 · 开发者钩子）** 段（三命令用法 + 链路 JSON schema）。
+- README 顶部版本行推进至 v0.8.29（含 v0.8.28/27/26/24/10 历史链压缩）。
+
+### 诚实边界（不变）
+- CLI 是薄壳呈现层，所有判决仍是既有引擎/锚的死标量；当前属**原理验证级非流片级**；实证锚为公开文献量级（9 条 DOI 可溯源），真实晶圆厂 NDA 实测仍属发动期。
+
 ## v0.8.11（2026-08-26 · 实证锚语料扩充 · 题库 30→34）
 
 **里程碑：实证大数据锚（第二道非 AI ground）语料扩充——新增 4 条真实文献语料 + 4 个实证锚题（E4-E7），覆盖新器件族（crossing/MMI/厚 SiN），全部可溯源引用（DOI），诚实边界不变（种子语料为公开文献量级，真实晶圆厂 NDA 实测仍属发动期）。**

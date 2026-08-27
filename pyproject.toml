@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lda-design"
-version = "0.8.28"
+version = "0.8.29"
 description = "LDA — Agent-native open-source photon (PDA) + quantum (QEDA) chip design software"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -50,6 +50,9 @@ dev = ["build", "wheel", "pytest"]
 Homepage = "https://github.com/iduyuhe/LDA"
 Repository = "https://github.com/iduyuhe/LDA"
 Documentation = "https://github.com/iduyuhe/LDA/tree/main/docs"
+
+[project.scripts]
+lda = "lda_design.cli:main"
 
 [tool.setuptools]
 # 源码树中可导入包位于 lda/ 子目录（扁平 lda_* 命名空间）

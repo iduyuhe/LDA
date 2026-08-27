@@ -1,0 +1,20 @@
+{
+  "domain": "photon",
+  "name": "demo_wg_ring",
+  "devices": [
+    {"id": "wg1", "kind": "Waveguide", "params": {}},
+    {"id": "ring", "kind": "RingResonator", "params": {"R": 10.0, "gap": 0.3}},
+    {"id": "wg2", "kind": "Waveguide", "params": {}}
+  ],
+  "nets": [
+    {"net": "n1", "from": ["wg1", "out"], "to": ["ring", "in"]},
+    {"net": "n2", "from": ["ring", "out"], "to": ["wg2", "in"]}
+  ],
+  "io": [
+    {"net": "e1", "device": "wg1", "port": "in"},
+    {"net": "e2", "device": "wg2", "port": "out"}
+  ],
+  "sources": [
+    {"device": "wg1", "port": "in"}
+  ]
+}

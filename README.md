@@ -2,7 +2,7 @@
 
 > LDA（Lightwave Design Agent）= 光子芯片(PDA) + 量子芯片(QEDA) 的开源、主权、Agent-native 设计软件。
 > 核心主张：**底层核心求解器由 AI agent 递归自举开发**，人类做架构与验证，AI 不进入判决路径。
-> 当前版本：**v0.8.28**（2026-08-27 · **UI 双修**：①目标误差列 0.0000 bug——`design_engine` 的 `rec["err"]` 用 cheap 估算（Koch 反解数学精确 → err 恒 0），改验证后按真实 metric 误差重算（Transmon 候选现显示 0.0047/0.0086/0.0137，best 按真实误差选优 E_C=0.15）②统计卡片死卡——c-harness/c-ai 前端从未赋值，后端 /api/status 补 harness_passed/harness_total/ai_candidates 字段 + 前端 renderStatus 填值，标签统一）· 历史：v0.8.27（2026-08-27 · **千器件芯片级演示**：千器件版图接入芯片级演示闭环——1000 器件链式链路 + 2D 放置 + 多层布线 → GDS 导出（IO 光栅接入）+ DRC 1000/1000 + LVS ACCEPT 双闸，全链路 0.99s，`run_chip_scale_demo.py` 8/8 入 CI core 61 条）· 历史：v0.8.26（2026-08-27 · **千器件规模扩展（版图差距 #7 收官）**：`lda_harness/scale_anchor.py` 千器件链式链路全链路（1000 器件/999 net 构建 + 2D 放置 + 多层布线 + LVS 签核）**0.92s 完成 ACCEPT**——跨行跳线走 M2 层（与 ⑥多层协同：M1 短垂 + M2 横穿 + M1 纯垂直短接，奇偶行错列防共线）；LVS 相交检测 **bbox 预检 3.6× 提速**（千器件 2.04s→0.56s）；harness **S11 规模锚**（千器件 ACCEPT 1.0 / 局部破坏 0.0，题库 **44→45**，性能预算 5s 死标量）+ CI core **60 条**；版图 7 差距**全部闭合**）· 历史：（2026-08-27 · **多层版图（版图差距 #6 落地）**：`lda_l2/layers.py` 层栈定义（SOI M1/VIA12/M2 + 量子 Al 栈，`can_cross` 谓词=同层可短/跨层介质隔离）+ `route_net` 支持 `layer` 参数 + **多层 LVS**（`run_lvs_multilayer`：层感知几何恢复——M1 段只接 M1 端口、跨层段端点重合自动发现 **via 桥接**、短路判定层叠化——同层相交才 short / **跨层垂直投影重叠安全**=介质隔离，这是多层版图可叠布线的物理依据）+ harness **S10 锚**（跨层 via 正例 1.0 / 同层交叉·通孔短路·端口共享·悬空四反例 0.0，题库 **43→44**）+ WebUI `/api/link_lvs` 支持多层案例 + CI core 61 条）· 历史：v0.8.24 LVS 签核深化（版图差距 #5）· ：`lda_l2/lvs.py` 版图-原理图一致性检查（签核级）——版图网表**从布线几何独立恢复**（布线端点→端口锚点归属，不读原理图声明，才能发现「实现≠意图」）→ 器件/网络比对 → **断路/错连/短路/悬空/多余/自环六类违规**死标量检出 → ACCEPT/REJECT 确定性判决（LLM 不进路径）+ harness **S9 锚**（LVS 判决正确性：一致版图 1.0 / open·misconnect·short·dangling 四类反例 0.0，题库 **42→43 题**）+ 集成三处（`export_chip_gds` 返回 `lvs_report` 与 DRC 并列**芯片级签核双闸**；tapeout 管道新增 S4 LVS 段——一致 ACCEPT / 错连 REJECT / 无版图 SKIP 诚实标注不阻断；WebUI `/api/link_design` 返回 lvs_report）+ CI core **59 条**）· 历史：v0.8.23 第二梯队-2（多端网 Steiner + 2D 放置 + 有源基元三件套）· v0.8.22 第二梯队-1（A* 全局最优布线）· v0.8.11h 系列八连发（实证锚语料扩充 30→34 题 + 芯片案例扩展 + 基准对照验证闭环 + 芯片级版图导出 + loss/效率类引擎五连 + WebUI 面板㊾ + 浏览器实测终验）· v0.8.10 首轮持续维护（内核纵深五击 + 芯片级验收闭环 + 器件库主流封口 + 流片级验证管道 + 计数一致性门禁：MZI/PhC 腔/λ/4 读出/Fluxonium/可调耦合器五类内核（B20-B24）+ 可调 transmon/色散读出配对/CZ 门（B25-B27）+ 引擎闭环 **22 引擎 + 11 包 = 33 类端到端**（光子 15 + 量子 7，含相移器/MZI 调制器有源双出口）+ **芯片级四锚验收**（无源界/级联乘法性/能量守恒/完整性）+ 仿真级芯片设计闭环演示（WDM 收发 + 量子读出链路）+ **流片级验证管道**（PDK→DRC→SS/TT/FF 工艺角→LVS→实测回流，门3 接口就绪）+ harness 题库 **45 题**（B1-B27 + E1-E7 + S1-S11 系统锚：功率预算/频率规划/OSNR/量子保真度/最坏情况/探测器/蒙特卡洛统计分布/OSNR 统计延伸/**LVS 版图-原理图一致性签核**）+ Phase 3 统计锚（专投区：随机在采样、判决在统计量、LLM 不进路径；S7/S8 模板化 + N 收敛性扫描）+ **Phase 4 提案编译器**（生成侧收官：锚前置剪枝可行域 → 域内生成 → 即提即验 S1/S2/S5 三锚 → 确定性排序 → 人终审——五共识全链落地）+ CI core 61 条）
+> 当前版本：**v0.8.29**（2026-08-27 · **开发者 CLI 钩子**：新增 `lda_design/cli.py` + pyproject `[project.scripts] lda=...` 三命令薄壳——`lda design <kind> --target`（设计闭环最优候选）/ `lda check <spec.json>`（链路 JSON → DRC/LVS 双闸报告 + GDS 落盘，复用 `layout_only` 官方布局布线）/ `lda report`（基准对照验证闭环报告，跨源死标量对照 + 实证语料覆盖矩阵）；均零新依赖、不进判决路径；`examples/cli_check_example.json` + README 快速开始新增 CLI 段 + `run_cli_smoke.py` 入 CI core（**61→63 条**）。注：v0.8.28 UI 双修（目标误差列 bug + 统计卡片死卡）、v0.8.27 千器件演示、v0.8.26 规模扩展、v0.8.24 多层版图、v0.8.24 LVS 签核、v0.8.10 首轮持续维护均已落地（同见下方历史链）。· 历史：v0.8.28（2026-08-27 · **UI 双修**：①目标误差列 0.0000 bug——`design_engine` 的 `rec["err"]` 用 cheap 估算（Koch 反解数学精确 → err 恒 0），改验证后按真实 metric 误差重算（Transmon 候选现显示 0.0047/0.0086/0.0137，best 按真实误差选优 E_C=0.15）②统计卡片死卡——c-harness/c-ai 前端从未赋值，后端 /api/status 补 harness_passed/harness_total/ai_candidates 字段 + 前端 renderStatus 填值，标签统一）· 历史：v0.8.27（2026-08-27 · **千器件芯片级演示**：千器件版图接入芯片级演示闭环——1000 器件链式链路 + 2D 放置 + 多层布线 → GDS 导出（IO 光栅接入）+ DRC 1000/1000 + LVS ACCEPT 双闸，全链路 0.99s，`run_chip_scale_demo.py` 8/8 入 CI core）· 历史：v0.8.26（2026-08-27 · **千器件规模扩展（版图差距 #7 收官）**：`lda_harness/scale_anchor.py` 千器件链式链路全链路 **0.92s 完成 ACCEPT**——跨行跳线走 M2 层；LVS 相交检测 **bbox 预检 3.6× 提速**；harness **S11 规模锚**（题库 **44→45**）；版图 7 差距**全部闭合**）· 历史：（2026-08-27 · **多层版图（版图差距 #6 落地）**：`lda_l2/layers.py` 层栈定义 + **多层 LVS**（`run_lvs_multilayer` 层感知几何恢复 + via 桥接 + 跨层垂直投影重叠安全=介质隔离）+ harness **S10 锚**（题库 **43→44**））· 历史：v0.8.24 LVS 签核深化（版图差距 #5）：`lda_l2/lvs.py` 版图-原理图一致性检查（签核级）——版图网表**从布线几何独立恢复** → 六类违规死标量检出 → ACCEPT/REJECT 确定性判决 + harness **S9 锚**（题库 **42→43 题**）+ 芯片级签核双闸 + WebUI `/api/link_design` 返回 lvs_report）· 历史：v0.8.23 第二梯队-2（多端网 Steiner + 2D 放置 + 有源基元三件套）· v0.8.22 第二梯队-1（A* 全局最优布线）· v0.8.10 首轮持续维护（内核纵深五击 + 芯片级验收闭环 + 器件库主流封口 + 流片级验证管道 + 计数一致性门禁：22 引擎 + 11 包 = 33 类端到端 + **芯片级四锚验收** + 仿真级芯片设计闭环演示 + **流片级验证管道**（PDK→DRC→SS/TT/FF 工艺角→LVS→实测回流）+ harness 题库 **45 题**（B1-B27 + E1-E7 + S1-S11）+ Phase 3 统计锚 + **Phase 4 提案编译器** + CI core 61 条）
 > **v0.6.1 维护基线**（2026-08-24 · D-99）：生态共建（D-93~D-98）收官——「提交→评审→落地→发布」全链闭环；CI core 门禁覆盖生态链三 smoke（harness 扩展 / 提交 / 评审→落地→发布）；`lda_pdk` 模块文档同步 D-96~D-98；全量回归全绿。
 > **v0.6.2 持续维护**（2026-08-24 · D-101）：**all 集 70 项 smoke 全量回归 70 PASS / 0 FAIL**（1602.72s，覆盖 D-01~D-98 全部资产含重 FDTD/3D adjoint/GPU 项）；新增 `requirements.txt` 环境固化（必装 numpy/scipy/jsonschema + 可选 numba/torch）；README 模块列表补 `lda_pdk` 生态共建全链。
 > **v0.6.3 持续维护**（2026-08-24 · D-102）：**WebUI API 路由层冒烟**（64 条 /api 路由：快路径 13 实跑 + 重计算 51 静态验证，纳入 CI core 门禁）；一致性深审（README 63→70 smoke 修正、harness 键集一致性核验）。
@@ -201,6 +201,40 @@ python lda/lda_solver/activate_gpu_fdtd3d.py
 # ⑫ WebUI（五十七面板，首屏自动演示）
 python lda/lda_webui/deploy.py start --port 8787
 ```
+
+### LDA 命令行（v0.8.29 · 开发者钩子）
+
+安装后可直接用 `lda` 命令感知设计—验证闭环（薄壳复用既有引擎，零新依赖）：
+
+```bash
+# ① 跑一个器件设计闭环，输出最优已验证候选（参数/指标/目标误差）
+lda design RingResonator --target 9.0 --top-k 3
+
+# ② 把一条链路 JSON 装配成版图，输出 DRC/LVS 双闸报告 + 导出 GDS
+lda check examples/cli_check_example.json --out reports
+
+# ③ 生成基准对照验证闭环报告（跨源死标量对照 + 实证语料覆盖矩阵）
+lda report --out reports --quick
+```
+
+`lda check` 接受的链路 JSON 示例（`examples/cli_check_example.json`）：
+```json
+{
+  "domain": "photon", "name": "demo_wg_ring",
+  "devices": [
+    {"id": "wg1", "kind": "Waveguide"},
+    {"id": "ring", "kind": "RingResonator", "params": {"R": 10.0, "gap": 0.3}},
+    {"id": "wg2", "kind": "Waveguide"}
+  ],
+  "nets": [
+    {"net": "n1", "from": ["wg1","out"], "to": ["ring","in"]},
+    {"net": "n2", "from": ["ring","out"], "to": ["wg2","in"]}
+  ],
+  "io": [{"net":"e1","device":"wg1","port":"in"}, {"net":"e2","device":"wg2","port":"out"}],
+  "sources": [{"device":"wg1","port":"in"}]
+}
+```
+红线：CLI 不做任何判决，仅对既有引擎 / layout / harness 的真实计算结果做格式化呈现（LLM 不进路径，死标量判决不变）。
 
 ## 仓库镜像
 

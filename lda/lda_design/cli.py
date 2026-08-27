@@ -12,6 +12,12 @@
       并把 GDS 落盘。主权零依赖（纯标准库 + lda 内部模块）。
   lda report [--out DIR] [--quick]
       生成「基准对照验证闭环报告」（跨源死标量对照 + 实证语料覆盖矩阵）。
+  lda gf <gdsfactory_component.py|json> [--out DIR]
+      把 gdsfactory 组件描述转成 LDA 链路 spec（IR 兼容），再走 LDA
+      设计—验证闭环 + DRC/LVS 双闸（对接最大开源光子生态，可选依赖）。
+  lda check --gds <file.gds> [--out DIR]
+      导入任意 GDSII（含 gdsfactory 导出），跑 LDA 主权几何 DRC 快查（子集）
+      + 版图摘要（诚实边界：非 foundry 全量 DRC）。
 
 红线：所有输出都是既有引擎 / harness / layout 的真实计算结果；CLI 不做
 任何判决，只对结果做格式化呈现。
@@ -105,6 +111,25 @@ def _build_link(spec: Dict[str, Any]) -> LinkModel:
 
 
 def cmd_check(args: argparse.Namespace) -> int:
+    # —— 模式 B：直接导入任意 GDSII（含 gdsfactory 导出）→ 主权几何 DRC 快查 ——
+    if getattr(args, "gds", None):
+        from lda_l2.gds_export import parse_gds_polygons
+        from lda_l2.gds_drc import check_geometry, geometry_drc_markdown
+        try:
+            with open(args.gds, "rb") as f:
+                data = f.read()
+        except FileNotFoundError:
+            print(f"[错误] 找不到 GDS 文件：{args.gds}", file=sys.stderr)
+            return 2
+        parsed = parse_gds_polygons(data)
+        rep = check_geometry(parsed["structures"])
+        print(f"# LDA 导入 GDSII 主权校验（{args.gds}）")
+        print(f"- 库名：{parsed['libname']} · 结构数：{len(parsed['structures'])} "
+              f"· 元素数：{rep['n_elements']}")
+        print(geometry_drc_markdown(rep))
+        return 0 if rep["all_pass"] else 1
+
+    # —— 模式 A：链路 JSON → 官方布局布线 → DRC/LVS 双闸 + GDS ——
     try:
         with open(args.spec, "r", encoding="utf-8") as f:
             spec = json.load(f)
@@ -148,26 +173,57 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 # --------------------------------------------------------------------------
+# lda gf —— gdsfactory 组件 → LDA 链路 spec（生态互通桥）
+# --------------------------------------------------------------------------
+def cmd_gf(args: argparse.Namespace) -> int:
+    from lda_l1.gdsfactory_bridge import (
+        gdsfactory_available, gf_component_to_spec, export_gf_component,
+    )
+    if not gdsfactory_available():
+        print("[提示] gdsfactory 未安装（B 级可选依赖，不阻塞 LDA 自有路径）。")
+        print("  对接 gdsfactory：pip install gdsfactory 后本命令可用；")
+        print("  或直接用 `lda check --gds <file.gds>` 导入 gdsfactory 导出的 GDS 做主权校验。")
+        return 0
+    # 输入：.py（含 gf.Component 工厂）或 .json（已序列化的组件名列表）
+    src = args.source
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        if src.endswith(".py"):
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("lda_gf_user", src)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            comp = getattr(mod, "component", None) or getattr(mod, "C", None)
+            if comp is None:
+                print("[错误] gdsfactory 脚本须导出 `component`（gf.Component）", file=sys.stderr)
+                return 2
+        else:
+            print(f"[错误] 暂仅支持 .py（gdsfactory 组件工厂），收到：{src}", file=sys.stderr)
+            return 2
+        lda_spec = gf_component_to_spec(comp, name=getattr(comp, "name", "gf_import"))
+        spec_path = out_dir / f"{getattr(comp, 'name', 'gf_import')}.lda_spec.json"
+        spec_path.write_text(json.dumps(lda_spec, ensure_ascii=False, indent=2),
+                             encoding="utf-8")
+        print(f"# LDA ⇄ gdsfactory 兼容桥")
+        print(f"- 已把 gdsfactory 组件 `{getattr(comp, 'name', '?')}` 转成 LDA 链路 spec：{spec_path}")
+        print(f"- 设备 {len(lda_spec['devices'])} · IO {len(lda_spec['io'])}（互连由用户显式补或 LDA 自动布线）")
+        print(f"- 下一步：lda check {spec_path}  → 走 LDA 设计—验证闭环 + DRC/LVS 双闸")
+        print(f"- 或导出 GDS 校验：lda check --gds <gds>（export_gf_component 可用）")
+        return 0
+    except Exception as e:  # noqa: BLE001
+        print(f"[错误] gdsfactory 桥处理失败：{str(e)[:160]}", file=sys.stderr)
+        return 1
+
+
+# --------------------------------------------------------------------------
 # lda report
 # --------------------------------------------------------------------------
 def cmd_report(args: argparse.Namespace) -> int:
-    from lda_harness.benchmark_report import run_crosscheck, _fmt_report  # noqa: E402
-    data = run_crosscheck(quick=args.quick)
-    out_dir = Path(args.out)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    md_path = out_dir / "benchmark_crosscheck_report.md"
-    js_path = out_dir / "benchmark_crosscheck_report.json"
-    md_path.write_text(_fmt_report(data), encoding="utf-8")
-    js_path.write_text(json.dumps(data, ensure_ascii=False, indent=2),
-                       encoding="utf-8")
-    s = data["summary"]
-    print(f"# LDA 基准对照验证闭环报告")
-    print(f"- 引擎 {s['engines_passed']}/{s['engines_total']} PASS · "
-          f"rel max={s['rel_max_pct']}% median={s['rel_median_pct']}%")
-    print(f"- 含解析契约锚 rel + 实证语料实测值 + loss 类引擎对照 + ORACLE 状态")
-    print(f"- 诚实边界：{data['honest_note'][:120]}...")
-    print(f"报告: {md_path}")
-    print(f"数据: {js_path}")
+    from lda_harness.crosscheck_report import build_report, print_summary  # noqa: E402
+    r = build_report(quick=args.quick, out_dir=args.out, archive=True)
+    print_summary(r)
+    s = r["score"]
     return 0 if s["engines_passed"] == s["engines_total"] else 1
 
 
@@ -188,11 +244,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_d.add_argument("--json", action="store_true", help="额外输出完整 JSON")
     p_d.set_defaults(func=cmd_design)
 
-    p_c = sub.add_parser("check", help="把链路 JSON 装配成版图，输出 DRC/LVS 双闸报告 + GDS")
-    p_c.add_argument("spec", help="链路描述 JSON 文件路径")
+    p_c = sub.add_parser("check", help="把链路 JSON 装配成版图，输出 DRC/LVS 双闸报告 + GDS；或导入 GDSII 做主权几何 DRC")
+    p_c.add_argument("spec", nargs="?", help="链路描述 JSON 文件路径（与 --gds 二选一）")
+    p_c.add_argument("--gds", default=None, help="导入任意 GDSII 文件（含 gdsfactory 导出）做主权几何 DRC 快查")
     p_c.add_argument("--out", default="reports", help="GDS/报告输出目录（默认 reports）")
     p_c.add_argument("--wg", type=float, default=0.5, help="波导宽度 µm（默认 0.5）")
     p_c.set_defaults(func=cmd_check)
+
+    p_g = sub.add_parser("gf", help="gdsfactory 组件 → LDA 链路 spec（生态互通桥，可选依赖）")
+    p_g.add_argument("source", help="gdsfactory 组件工厂脚本（.py，导出 `component`）")
+    p_g.add_argument("--out", default="reports", help="输出目录（默认 reports）")
+    p_g.set_defaults(func=cmd_gf)
 
     p_r = sub.add_parser("report", help="生成基准对照验证闭环报告")
     p_r.add_argument("--out", default="reports", help="输出目录（默认 reports）")

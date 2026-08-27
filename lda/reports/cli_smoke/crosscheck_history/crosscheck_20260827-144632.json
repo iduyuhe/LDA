@@ -1,0 +1,12 @@
+{
+  "ts": "20260827-144632",
+  "quick": true,
+  "score": {
+    "engines_total": 18,
+    "engines_passed": 18,
+    "with_analytical_rel": 16,
+    "empirical_covered": 9,
+    "empirical_with_rel": 6,
+    "honest": "原理验证级非流片级；实证锚语料为公开文献量级（9 条全部 DOI 可溯源）；v0.8.11e 起 9 条语料全部有引擎对照（设计量引擎 3 条 + loss 类引擎 6 条），loss 类引擎为半解析近似（工艺标定参数可调，发动期真实 PDK 数据可替换）"
+  }
+}

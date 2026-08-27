@@ -83,6 +83,29 @@ def main() -> int:
     check("lda report：基准对照报告生成（跨源死标量对照）",
           ok_report, r.stdout.replace("\n", " ")[:120] if ok_report else r.stderr[:120])
 
+    # ④ lda check --gds（主权几何 DRC 快查，自造 GDS 测试回路）
+    gds_path = os.path.join(_HERE, "reports", "cli_smoke_test.gds")
+    _run("check", tmp, "--out", out_dir)  # 先产出一份 LDA 自身 GDS
+    # 直接用 cmd_check 内部无法拿路径，这里再生成一份最小 GDS 用于 --gds 回路
+    import subprocess as _sp
+    gen = _sp.run([PY, "-c",
+                   "import sys;sys.path.insert(0,'.');"
+                   "from lda_l2 import gds_export;"
+                   "b=gds_export.gds_library('T',{'C':[gds_export.path(1,0.5,[(0,0),(20,0)]),"
+                   "gds_export.boundary(1,[(0,0),(5,0),(5,5),(0,5),(0,0)])]});"
+                   "open(r'" + gds_path.replace("\\", "/") + "','wb').write(b)"],
+                  capture_output=True, text=True, cwd=_HERE)
+    r = _run("check", "--gds", gds_path, "--out", out_dir)
+    ok_gds = r.returncode == 0 and "主权校验" in r.stdout and "几何 DRC 快查" in r.stdout
+    check("lda check --gds：导入 GDSII 主权几何 DRC 快查（回路）",
+          ok_gds, r.stdout.replace("\n", " ")[:120] if ok_gds else r.stderr[:120])
+
+    # ⑤ lda gf（gdsfactory 未装时优雅降级，不阻断）
+    r = _run("gf", tmp, "--out", out_dir)
+    ok_gf = r.returncode == 0 and ("gdsfactory 未安装" in r.stdout or "LDA ⇄ gdsfactory" in r.stdout)
+    check("lda gf：gdsfactory 兼容桥（未装优雅降级 / 已装转 spec）",
+          ok_gf, r.stdout.replace("\n", " ")[:120] if ok_gf else r.stderr[:120])
+
     npass = sum(1 for c in CHECKS if c[1])
     print("-" * 60)
     print(f"CLI 钩子 smoke：{npass}/{len(CHECKS)} PASS")

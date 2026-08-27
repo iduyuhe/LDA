@@ -371,6 +371,81 @@ def parse_gds(data: bytes) -> Dict:
             "n_structures": len(structures)}
 
 
+def parse_gds_polygons(data: bytes) -> Dict:
+    """解析 GDSII 字节 → 每结构多边形几何（主权最小解析器扩展 · v0.8.30）。
+
+    与 parse_gds（只取摘要）互补：本函数还原每个元素的多边形顶点（µm）与层，
+    供「几何 DRC 快查」（最小线宽/间距/面积）与 gdsfactory 兼容桥使用。
+
+    记录类型：BOUNDARY(0x08) / PATH(0x09) 元素 + LAYER(0x0D) + WIDTH(0x0F,
+    PATH 宽) + XY(0x10, INT4 顶点) + ENDEL(0x11) 闭合。坐标 DBU→µm（×1e-3）。
+    仅覆盖本编码器写出的标准子集；遇未知记录安全跳过。
+    """
+    i, n = 0, len(data)
+    libname = ""
+    structures: Dict[str, List[Dict]] = {}
+    cur: List[Dict] | None = None
+    cur_layer = 0
+    cur_kind = None          # 0x08 / 0x09
+    cur_width = None
+    cur_pts: List[Tuple[int, int]] = []
+    out = {"libname": libname, "structures": structures}
+
+    def _flush() -> None:
+        nonlocal cur_kind, cur_layer, cur_width, cur_pts
+        if cur is not None and cur_pts and cur_kind is not None:
+            cur.append({
+                "layer": cur_layer,
+                "kind": "boundary" if cur_kind == 0x08 else "path",
+                "width": cur_width,
+                "points_um": [(x * DBU, y * DBU) for x, y in cur_pts],
+            })
+        cur_kind = None
+        cur_layer = 0
+        cur_width = None
+        cur_pts = []
+
+    while i < n:
+        if i + 4 > n:
+            break
+        (ln,) = struct.unpack_from(">H", data, i)
+        if ln < 4:
+            break
+        rectype = data[i + 2]
+        datatype = data[i + 3]
+        payload = data[i + 4:i + ln]
+        if rectype == 0x02:                       # LIBNAME
+            libname = payload.decode("ascii", "ignore").rstrip("\x00")
+        elif rectype == 0x06:                     # STRNAME（新结构开始，flush 旧）
+            _flush()
+            sname = payload.decode("ascii", "ignore").rstrip("\x00")
+            cur = []
+            structures[sname] = cur
+        elif rectype in (0x08, 0x09):             # BOUNDARY / PATH（新元素）
+            _flush()
+            cur_kind = rectype
+            cur_layer = 0
+            cur_width = None
+            cur_pts = []
+        elif rectype == 0x0D:                     # LAYER
+            if len(payload) >= 2:
+                (cur_layer,) = struct.unpack_from(">h", payload, 0)
+        elif rectype == 0x0F:                     # WIDTH（PATH 宽）
+            if len(payload) >= 4:
+                (w,) = struct.unpack_from(">i", payload, 0)
+                cur_width = w * DBU
+        elif rectype == 0x10:                     # XY
+            if len(payload) >= 8 and len(payload) % 8 == 0:
+                vals = struct.unpack_from(">%di" % (len(payload) // 4), payload, 0)
+                cur_pts = [(vals[j], vals[j + 1]) for j in range(0, len(vals), 2)]
+        elif rectype == 0x11:                     # ENDEL（元素闭合）
+            _flush()
+        i += ln
+    _flush()
+    out["libname"] = libname
+    return out
+
+
 def write_gds(path: str, data: bytes) -> None:
     with open(path, "wb") as f:
         f.write(data)

@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.8.30（2026-08-27 · CLI 深化 + gdsfactory 兼容 + 计数守护固化）
+
+**里程碑：阶段 A（对外可达性）收口——把已齐备的设计—验证能力包装成独立可验证、可互通的开发者入口，并根治此前静默失效的计数漂移。**
+
+### 新增
+- **`lda gf <gdsfactory_component.py>`（gdsfactory 兼容桥）**：把 gdsfactory 组件转 LDA 链路 spec（IR 兼容），对接最大开源光子生态；gdsfactory 为 B 级可选依赖，**未装时优雅降级给指引、不阻断 LDA 自有路径**（`lda_l1/gdsfactory_bridge.py`）。
+- **`lda check --gds <file.gds>`（GDS 主权几何 DRC 快查）**：导入任意 GDSII（含 gdsfactory 导出），跑 LDA 主权几何 DRC 子集（最小线宽/间距/面积，死标量），诚实标注非晶圆厂官方 DRC deck 全量（`lda_l2/gds_drc.py` + `gds_export.parse_gds_polygons`）。
+- **对照报告飞轮（`lda_harness/crosscheck_report.py`）**：把 `lda report` 固化为可重复飞轮——一键产 Markdown+JSON 对照报表（设计包 vs 解析锚/实证锚/ORACLE 死标量）+ 历史归档（`reports/crosscheck_history/`）+ 覆盖度趋势 diff；院校说服素材积累闭环。
+- **`run_gdsfactory_bridge_smoke.py` + `run_crosscheck_flywheel_smoke.py` 入 CI core**（62→64 条）。
+
+### 修复（计数守护固化）
+- **根治计数守卫静默失效**：原 `run_count_consistency_smoke.py` 的 `CI core N 条` 正则误匹配 README 历史链旧数字（真实 62 却报 61，守卫已红却未拦）。v0.8.30 改为：①只认「当前账本：…CI core N 条」权威段；②版本线须=pyproject 动态校验；③历史链旧数字忽略。当前账本：**22 引擎（光子 15 + 量子 7）+ 11 包 = 33 类端到端 · 45 题 · CI core 64 条**。
+
+### 文档
+- README：顶行账本动态化 + CLI 段补 `gf`/`check --gds` + 新增「当前账本」段；顶部版本行推进 v0.8.30。
+- 新增 `LDA_一页纸_概览.md`（5 分钟读懂：定位/三句话价值/上手/护城河/路线图/诚实边界）。
+
+### 诚实边界（不变）
+CLI/桥/DRC 均零新判决逻辑；gdsfactory 几何 DRC 仅覆盖子集；当前仍属原理验证级非流片级；实证锚为公开文献量级（9 条 DOI 可溯源），真实晶圆厂 NDA 实测属发动期。
+
 ## v0.8.29（2026-08-27 · 开发者 CLI 钩子 · 实用价值收口）
 
 **里程碑：把已齐备的设计—验证能力包装成对外可感知、独立可验证的开发者入口（开源 EDA "10 分钟跑通"硬伤闭环）。原 v2 开发规划的可执行部分在发动期之前彻底收口。**

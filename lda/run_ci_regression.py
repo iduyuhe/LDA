@@ -96,6 +96,10 @@ CORE_SMOKES: List[str] = [
     "run_hierarchy_smoke.py",
     # 开发者 CLI 钩子（v0.8.29：lda design/check/report 薄壳三命令）
     "run_cli_smoke.py",
+    # gdsfactory 兼容桥 + GDS 主权几何 DRC（v0.8.30：生态互通 + 计数守护固化）
+    "run_gdsfactory_bridge_smoke.py",
+    # 对照报告飞轮（v0.8.30：多源死标量对照 + 历史归档 + 覆盖度趋势）
+    "run_crosscheck_flywheel_smoke.py",
     # Phase 3 统计锚（S7/S8 蒙特卡洛分布 + 收敛性：红线 + 防自证负例）
     "run_statistical_anchor_smoke.py",
     # Phase 4 提案编译器（生成侧：锚前置剪枝 + 即提即验 + 人终审）

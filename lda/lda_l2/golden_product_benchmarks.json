@@ -182,5 +182,65 @@
     "honest_note": "等效对标（解析模型对标公开指标），非本团队流片/实测；拓扑自研。",
     "honest_tier": "产品级对标（免流片）",
     "kind": "chip"
+  },
+  {
+    "chip_id": "GC-SENSE",
+    "chip_type": "光子传感前端整芯片（MZI 干涉传感，全链路插入损耗）",
+    "source_kind": "literature",
+    "source_ref": "公开 PICS（Photonic Integrated Circuit Sensor）/ FBG 光纤传感链路预算综述：干涉型光子传感前端全链路（激光器→耦合→传感干涉仪→探测）插入损耗预算通常 ≤15 dB（商用光纤传感模块发射-接收总损耗 10–18 dB 区间）。",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 2,
+      "wg_length_cm": 2.0,
+      "n_ybranch": 2,
+      "n_crossing": 0
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 15.0,
+        "tol": 3.0,
+        "unit": "dB",
+        "direction": "le",
+        "note": "干涉型传感前端全链路插入损耗预算上限（公开 ≤15 dB）"
+      }
+    ],
+    "replica_note": "MZI 传感前端：激光→光栅入→Y-branch 分束→参考臂+传感臂（SiN 波导，传感元件按参数化黑箱）→Y-branch 合束→光栅出→探测器；无源光路损耗由 GP-* 已锚定基元 dB 级联（2×光栅 + 2×Y-branch + 2cm SiN）。",
+    "honest_note": "等效验证（对标公开链路预算区间），非本团队流片；传感元件本身按参数化黑箱，不建模传感物理；拓扑自研。整芯片对标对象是全链路插入损耗死标量。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-QCTRL-COMM",
+    "chip_type": "商用量子控制/读出芯片（单发读出保真度，6-qubit 代表规模）",
+    "source_kind": "datasheet",
+    "source_ref": "商用超导量子系统公开指标（IBM Heron / Google 商业系统披露，per-qubit 读出保真度 ≥99.0%；NISQ 典型单发读出 ≥97.5%，PostQuantum 2026 基准）。6-qubit 复用读出链对标。",
+    "domain": "quantum",
+    "system_type": "quantum_fidelity",
+    "geom": {
+      "f01s": [
+        4.8,
+        5.0,
+        5.2,
+        5.4,
+        5.6,
+        5.8
+      ]
+    },
+    "metrics": [
+      {
+        "name": "readout_fidelity",
+        "golden": 0.99,
+        "tol": 0.02,
+        "unit": "ratio",
+        "direction": "ge",
+        "note": "对标商用超导量子系统 per-qubit 读出保真度 ≥99.0%（≥97.5% NISQ 典型）"
+      }
+    ],
+    "replica_note": "6-qubit 复用读出链（D-46×D-47 已验证闭环）逐 qubit 保真度最小值 = LDA 复现读出保真度。",
+    "honest_note": "等效对标（解析模型对标公开指标），非本团队流片/实测；拓扑自研。与 GC-QCTRL（本源悟空-180）互为独立商用参考，共同证明库可增量扩展。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
   }
 ]

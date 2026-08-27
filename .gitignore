@@ -27,6 +27,9 @@ lda/lda_pdk/landed.json
 lda/lda_pdk/empirical_proposals.json
 lda/lda_pdk/empirical_contributions.json
 lda/reports/patches/
+# ---- CLI / 飞轮 运行生成物（阻塞生产 git pull，绝不入库）----
+lda/reports/cli_smoke/
+lda/reports/crosscheck_history/
 
 # ---- IDE ----
 .idea/

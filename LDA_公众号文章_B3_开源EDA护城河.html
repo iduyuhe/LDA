@@ -1,0 +1,118 @@
+<!--
+  LDA 公众号文章（阶段 B · B3 技术叙事首篇）
+  V5 杂志编辑风：单强调色 #2563eb、零渐变、不使用原生列表标签（用 p+符号替代）。
+  草稿创建前需替换以下占位符（由 build_wechat_draft.py 自动完成）：
+    {{COVER_URL}}       -> material/add_material 返回的永久素材 url（封面缩略图）
+    {{HEADER_IMG_URL}}  -> media/uploadimg 返回的 from=appmsg url（正文头图，必须与封面同源）
+    {{ECOSYSTEM_URL}}   -> 全链路生态图（media/uploadimg）
+    {{RECRUIT_URL}}     -> 招募事业城市合伙人动图（media/uploadimg）
+  当前仓库已具备 AppID，但 ~/.workbuddy/wechat_credentials.json 缺 AppSecret，
+  故草稿 API 上传待补密后由 build_wechat_draft.py 一键完成（DRAFT ONLY，不发布）。
+-->
+<section style="margin:0; padding:0;">
+  <p style="margin:0 0 16px 0; text-align:center;">
+    <img src="{{HEADER_IMG_URL}}" style="width:100%; border-radius:8px;" />
+  </p>
+</section>
+
+<section style="max-width:680px; margin:0 auto; padding:0 16px; font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;">
+
+  <h1 style="font-size:24px; line-height:1.4; color:#0f172a; font-weight:800; margin:24px 0 12px 0;">
+    为什么我们需要一个开源的 Agent-native EDA？——LDA 的定位与护城河
+  </h1>
+
+  <p style="font-size:14px; color:#64748b; margin:0 0 24px 0;">
+    作者：杜玉河 · 工业5点0产业生态联盟
+  </p>
+
+  <p style="font-size:15px; line-height:1.9; color:#475569; margin:0 0 20px 0; border-left:4px solid #2563eb; padding:14px 16px; background:#f1f5f9; font-style:italic;">
+    当巨头们忙着把 AI 塞进闭源工具链时，我们走了一条相反的路：让 AI 直接写底层求解器，却把判决权死死交还给物理定律与实测数据。这不是取巧，而是 EDA 主权唯一的出路。
+  </p>
+
+  <h2 style="font-size:19px; color:#0f172a; font-weight:700; margin:32px 0 12px 0; border-bottom:2px solid #2563eb; padding-bottom:6px;">
+    一、EDA 的困局：巨头为何做不出开放内核
+  </h2>
+  <p style="font-size:15px; line-height:1.9; color:#475569; margin:0 0 16px 0;">
+    传统 EDA 三巨头（Synopsys / Ansys / Cadence）的商业模式，本质是卖闭源知识产权。这决定了他们结构性地无法开放核心求解器：一旦内核开源，护城河就塌了。于是「开放内核 + 社区共建 + 主权可控」这件事，巨头做不了，只能由新玩家从零定义。
+  </p>
+
+  <h2 style="font-size:19px; color:#0f172a; font-weight:700; margin:32px 0 12px 0; border-bottom:2px solid #2563eb; padding-bottom:6px;">
+    二、LDA 是什么：AI 写内核，确定性裁判验收
+  </h2>
+  <p style="font-size:15px; line-height:1.9; color:#475569; margin:0 0 16px 0;">
+    LDA（Lightwave Design Agent）是一套面向光子芯片（PDA）与量子芯片（QEDA）的开源设计软件。它的核心范式只有一句话：
+  </p>
+  <p style="font-size:15px; line-height:1.9; color:#475569; margin:0 0 8px 0;"><strong>• 生成侧</strong>：AI agent 提方案、写代码，甚至递归自举开发底层 FDTD / 严格对角化等求解器。</p>
+  <p style="font-size:15px; line-height:1.9; color:#475569; margin:0 0 16px 0;"><strong>• 判决侧</strong>：是否 PASS 由死标量比对决定——物理定律锚（解析解 / 麦克斯韦确定性计算）+ 实证大数据锚（真实测量语料）。<strong>LLM 不进判决路径</strong>，这是不可逾越的红线。</p>
+
+  <h2 style="font-size:19px; color:#0f172a; font-weight:700; margin:32px 0 12px 0; border-bottom:2px solid #2563eb; padding-bottom:6px;">
+    三、护城河不在求解器代码，而在标准 + 生态 + PDK 供给
+  </h2>
+  <p style="font-size:15px; line-height:1.9; color:#475569; margin:0 0 16px 0;">
+    底层求解器可以重写、可以替换，真正的壁垒是：统一的中间表示（IR/DSL）、开放的 PDK / 器件本体 Registry、以及带可信基准套件的开放内核。我们刻意把「主权内核」做成可被 AI 重写、却由社区共同验收的标准层——这意味着护城河来自生态，而非某段代码。
+  </p>
+
+  <h2 style="font-size:19px; color:#0f172a; font-weight:700; margin:32px 0 12px 0; border-bottom:2px solid #2563eb; padding-bottom:6px;">
+    四、主权边界：我们做什么、不做什么
+  </h2>
+  <p style="font-size:15px; line-height:1.9; color:#475569; margin:0 0 8px 0;"><strong>• 主权优先（C 级）</strong>：L0 IR / L1 协议 / L3 求解核 / 物理定律锚，第一天就自主。</p>
+  <p style="font-size:15px; line-height:1.9; color:#475569; margin:0 0 8px 0;"><strong>• 借今踢后（B 级）</strong>：gdsfactory / Meep / KLayout / SAX 等 MIT/BSD 工具，fork 主权副本、零硬依赖、未装优雅降级。</p>
+  <p style="font-size:15px; line-height:1.9; color:#475569; margin:0 0 16px 0;"><strong>• 永不借（A 级）</strong>：商业 EDA、NDA-PDK。封装测试、晶圆实测回流属发动期，诚实标注不夸大。</p>
+
+  <h2 style="font-size:19px; color:#0f172a; font-weight:700; margin:32px 0 12px 0; border-bottom:2px solid #2563eb; padding-bottom:6px;">
+    五、现在就能跑通的设计侧主权闭环
+  </h2>
+  <p style="font-size:15px; line-height:1.9; color:#475569; margin:0 0 16px 0;">
+    从设计目标到已验证器件，全链路主权可控、零 GPU 也能跑：设计 → 仿真 → 版图 → 主权几何 DRC/LVS → 工艺角 → 几何寄生估算。当前账本：
+  </p>
+
+  <section style="display:flex; gap:10px; margin:0 0 20px 0; flex-wrap:wrap;">
+    <div style="flex:1; min-width:120px; background:#eff6ff; border-radius:8px; padding:14px; text-align:center;">
+      <div style="font-size:26px; font-weight:800; color:#2563eb; line-height:1.1;">22</div>
+      <div style="font-size:12px; color:#64748b; margin-top:4px;">引擎（光子15+量子7）</div>
+    </div>
+    <div style="flex:1; min-width:120px; background:#eff6ff; border-radius:8px; padding:14px; text-align:center;">
+      <div style="font-size:26px; font-weight:800; color:#2563eb; line-height:1.1;">33</div>
+      <div style="font-size:12px; color:#64748b; margin-top:4px;">端到端类</div>
+    </div>
+    <div style="flex:1; min-width:120px; background:#eff6ff; border-radius:8px; padding:14px; text-align:center;">
+      <div style="font-size:26px; font-weight:800; color:#2563eb; line-height:1.1;">45</div>
+      <div style="font-size:12px; color:#64748b; margin-top:4px;">验证锚题</div>
+    </div>
+    <div style="flex:1; min-width:120px; background:#eff6ff; border-radius:8px; padding:14px; text-align:center;">
+      <div style="font-size:26px; font-weight:800; color:#2563eb; line-height:1.1;">65</div>
+      <div style="font-size:12px; color:#64748b; margin-top:4px;">CI core 门禁</div>
+    </div>
+  </section>
+
+  <p style="font-size:15px; line-height:1.9; color:#475569; margin:0 0 24px 0; border-left:4px solid #2563eb; padding:14px 16px; background:#f1f5f9;">
+    觉得有用？去 GitHub 点个 Star ⭐，或认领一个 Good First Issue 一起共建：<br/>
+    <a href="https://github.com/iduyuhe/LDA" style="color:#2563eb; font-weight:700;">https://github.com/iduyuhe/LDA</a>
+  </p>
+
+  <section style="margin-top:40px; padding:20px; border-top:2px solid #2563eb;">
+    <p style="font-size:14px; color:#2563eb; font-weight:bold; margin:0 0 12px 0;">📎 参考来源</p>
+    <p style="font-size:13px; color:#999; line-height:2; margin:0;">
+      1. LDA 开源仓库与一页纸概览：github.com/iduyuhe/LDA<br/>
+      2. 项目规划文档《LDA_完整项目总结与后续路径规划_2026-08-27.md》<br/>
+      3. Synopsys / Ansys / Cadence 公开商业模式与 EDA 生态分析（行业公开资料）<br/>
+      4. 光子集成回路（PIC）与超导量子比特设计公开文献（器件物理与验证方法）
+    </p>
+  </section>
+
+  <section style="margin-top:30px; text-align:center;">
+    <p style="font-size:14px; color:#2563eb; font-weight:bold; margin:0 0 12px 0;">全链路闭环生态</p>
+    <img src="{{ECOSYSTEM_URL}}" style="max-width:100%; border-radius:8px;" />
+  </section>
+
+  <section style="margin-top:30px; text-align:center;">
+    <img src="{{RECRUIT_URL}}" style="max-width:100%; border-radius:8px;" />
+  </section>
+
+  <section style="margin-top:20px; padding:15px 20px; background:#f8f8f8; border-left:3px solid #ccc; border-radius:4px;">
+    <p style="font-size:12px; color:#999; line-height:1.8; margin:0;">
+      ⚠️ 免责声明：本文内容基于公开信息整理，仅供行业交流参考，不构成任何投资建议或商业决策依据。文中观点仅代表作者个人立场，与所述机构无关。如涉及版权问题，请联系我们处理。
+    </p>
+  </section>
+
+</section>

@@ -706,7 +706,11 @@ def run_link_lvs(payload=None):
     from lda_l2.layers import get_stack
     payload = payload or {}
     case = str(payload.get("case", "consistent"))
-    multi = bool(payload.get("multi", False)) or case in MULTI_CASES
+    # 多层判定：显式 multi=true；或 case 名仅在多层集（cross_short/via_short/
+    # port_short）自动识别——与单层重叠名（consistent/dangling）默认走单层，
+    # 显式 multi=true 才走多层
+    multi = (bool(payload.get("multi", False))
+             or (case in MULTI_CASES and case not in CASES))
     if multi:
         if case not in MULTI_CASES:
             return {"ok": False, "error": f"多层案例须为 {MULTI_CASES}，实际 {case}"}

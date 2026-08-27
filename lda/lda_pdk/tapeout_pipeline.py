@@ -14,15 +14,19 @@
   S2 DRC 全器件自查：对设计中的每个器件跑 drc_check_device（可制造性）
   S3 工艺角扫描     ：SS/TT/FF 三角落的器件参数偏差 → 各角落 DRC 复检
                     （工艺波动下设计仍可制造 = 良率窗口）
+  S3.5 几何寄生估算：版图 GDSII → 几何级 R/C 寄生估算（v0.8.31 主权几何级，
+                    非 foundry 工艺级；提供 gds 实跑，缺省诚实跳过）
   S4 LVS 签核       ：版图 vs 原理图一致性（v0.8.24 新增，签核级）——
                     传入 link/placement/routes 实跑 run_lvs；
                     缺省诚实标注「未提供版图，本次跳过」（不造假）
   S5 流片实测回流   ：把「假设流片后实测数据」经实证语料评审流提交
                     （empirical.py → harness E1-E7 实证锚题实时生效）
 
-诚实边界：S1-S3 用公开工艺参数示例（非真实 NDA-PDK）；S4 LVS 需要版图
-输入（link+placement+routes），无输入时诚实跳过；S5 的实测数据在真实
-流片前为占位（真实测量属发动期晶圆厂对接后）；管道接口完整、判定规则完整。
+诚实边界：S1-S3 用公开工艺参数示例（非真实 NDA-PDK）；S3.5 几何寄生估算
+为几何级量级洞察（主权 RC 表，非 foundry 工艺级 deck），不进入签核硬门；
+S4 LVS 需要版图输入（link+placement+routes），无输入时诚实跳过；S5 的
+实测数据在真实流片前为占位（真实测量属发动期晶圆厂对接后）；管道接口
+完整、判定规则完整。
 
 运行：python -m lda_pdk.tapeout_pipeline --devices '{"RingAddDrop":{"R":10.0,"gap":0.3}}'
 """
@@ -58,6 +62,18 @@ class CornerResult:
 
 
 @dataclass
+class ParasiticResult:
+    """版图几何级 RC 寄生估算结果（v0.8.31 · 主权几何级）。"""
+
+    passed: bool                      # 是否越过主权几何护栏（非签核门）
+    by_structure: Dict[str, Any] = field(default_factory=dict)
+    total_r_ohm: float = 0.0
+    total_c_ff: float = 0.0
+    violations: List[str] = field(default_factory=list)
+    honest_note: str = ""
+
+
+@dataclass
 class TapeoutResult:
     """流片级验证管道整体结果。"""
 
@@ -68,6 +84,7 @@ class TapeoutResult:
     corners: List[CornerResult]
     corners_all_pass: bool
     lvs_result: Optional[Dict[str, Any]]
+    parasitic_result: Optional[ParasiticResult]
     empirical_submission: Optional[Dict[str, Any]]
     accepted: bool
     honest_note: str
@@ -101,7 +118,8 @@ def _scale_params(params: Dict[str, float], corner: Dict[str, float]
 def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
                          pdk_key: Optional[str] = None,
                          submit_empirical: bool = False,
-                         link=None, placement=None, routes=None) -> TapeoutResult:
+                         link=None, placement=None, routes=None,
+                         gds: Optional[bytes] = None) -> TapeoutResult:
     """流片级验证管道主入口。
 
     devices   : {kind: params}，如 {"RingAddDrop": {"R": 10.0, "gap": 0.3}}
@@ -110,6 +128,8 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
                       真实流片前不做占位提交，诚实标注）
     link/placement/routes : （v0.8.24 S4）LVS 签核输入——提供则实跑
                       run_lvs（版图-原理图一致性），缺省 None 诚实跳过。
+    gds       : （v0.8.31 S3.5）版图 GDSII 字节——提供则实跑几何级 RC 寄生
+                      估算（parasitic_rc）；缺省 None 诚实跳过（不造假）。
     """
     from lda_l2.drc import drc_check_device, rules_from_pdk
     pdk = _load_pdk(pdk_key)
@@ -150,6 +170,36 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
             checks=c_violations,
             note=f"{cname}: {'通过' if c_ok else '有违规'}"))
 
+    # S3.5：几何级 RC 寄生估算（v0.8.31 · 设计侧主权闭环收口）
+    # 语义：提供版图 GDS → 实跑（主权几何级 R/C 估算 + 护栏守门）；
+    # 未提供 → SKIP 不阻断但诚实标注（与 S4 LVS 一致的不造假原则）。
+    # 注意：寄生估算为设计侧深度洞察（几何护栏），不进入 accepted 硬门
+    # （不替代 foundry 签核），但如实写进报告供设计者参考。
+    para_res: Optional[ParasiticResult] = None
+    if gds is not None:
+        from lda_l2.gds_export import parse_gds_polygons
+        from lda_l2.parasitic_rc import (
+            estimate_parasitics, check_parasitic, parasitic_rc_markdown,
+        )
+        structs = parse_gds_polygons(gds).get("structures", {})
+        para_rep = estimate_parasitics(structs)
+        para_chk = check_parasitic(para_rep)
+        para_res = ParasiticResult(
+            passed=para_chk["all_pass"],
+            by_structure=para_rep["by_structure"],
+            total_r_ohm=para_rep["totals"]["R_series_ohm"],
+            total_c_ff=para_rep["totals"]["C_total_ff"],
+            violations=para_chk["violations"],
+            honest_note=para_rep["honest_note"],
+        )
+    else:
+        para_res = ParasiticResult(
+            passed=True, by_structure={}, total_r_ohm=0.0, total_c_ff=0.0,
+            violations=[],
+            honest_note="S3.5 几何寄生估算未提供版图 GDS 输入，本次诚实跳过"
+                       "——不造假。传 gds 字节即实跑。",
+        )
+
     # S4：LVS 签核（版图 vs 原理图一致性，v0.8.24）
     # 语义：提供版图 → 实跑（REJECT 阻断签核）；未提供 → SKIP 不阻断但
     # 诚实标注（不造假声明已验，兼容既有器件级 DRC+角扫接口）。
@@ -185,9 +235,11 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
         })
 
     accepted = bool(drc_ok and corners_ok and lvs_ok)
+    para_v = "实跑" if gds is not None else "跳过（未提供版图 GDS）"
     honest = (
         f"流片级验证管道（门3 接口就绪）：PDK={pdk.foundry}::{pdk.node}；"
         f"S1-S3 用公开工艺参数示例（真实 NDA-PDK 属发动期）；"
+        f"S3.5 几何寄生估算={para_v}（主权几何级，非 foundry 工艺级）；"
         f"S4 LVS={'实跑 ACCEPT' if lvs_res.get('verdict') == 'ACCEPT' else ('实跑 REJECT' if lvs_res.get('verdict') == 'REJECT' else '跳过（未提供版图输入）')}；"
         f"S5 实测回流在真实流片前不占位提交。判定死标量，LLM 不进判决路径。"
     )
@@ -199,6 +251,7 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
         corners=corners,
         corners_all_pass=corners_ok,
         lvs_result=lvs_res,
+        parasitic_result=para_res,
         empirical_submission=emp_sub,
         accepted=accepted,
         honest_note=honest,
@@ -216,6 +269,14 @@ def tapeout_to_dict(res: TapeoutResult) -> Dict[str, Any]:
                      "checks": c.checks, "note": c.note} for c in res.corners],
         "corners_all_pass": res.corners_all_pass,
         "lvs_result": res.lvs_result,
+        "parasitic_result": (None if res.parasitic_result is None else {
+            "passed": res.parasitic_result.passed,
+            "by_structure": res.parasitic_result.by_structure,
+            "total_r_ohm": res.parasitic_result.total_r_ohm,
+            "total_c_ff": res.parasitic_result.total_c_ff,
+            "violations": res.parasitic_result.violations,
+            "honest_note": res.parasitic_result.honest_note,
+        }),
         "empirical_submission": res.empirical_submission,
         "accepted": res.accepted,
         "honest_note": res.honest_note,
@@ -240,12 +301,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--pdk", default=None, help="PDK key（缺省取 registry 第一个）")
     ap.add_argument("--submit-empirical", action="store_true",
                     help="提交假想流片实测（默认不提交，诚实标注）")
+    ap.add_argument("--gds", default=None,
+                    help="版图 GDSII 路径（v0.8.31 S3.5 几何寄生估算输入）")
     ap.add_argument("--out", default=None, help="报告输出路径")
     args = ap.parse_args(argv)
 
+    gds_bytes = None
+    if args.gds:
+        with open(args.gds, "rb") as f:
+            gds_bytes = f.read()
+
     devices = _devices_from_arg(args.devices)
     res = run_tapeout_pipeline(devices, pdk_key=args.pdk,
-                               submit_empirical=args.submit_empirical)
+                               submit_empirical=args.submit_empirical,
+                               gds=gds_bytes)
     d = tapeout_to_dict(res)
 
     print("=" * 64)
@@ -261,6 +330,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"  工艺角 {c.corner:>2}        : {'PASS' if c.passed else 'FAIL'}"
               f"  {c.note}  违规 {len(c.checks)} 条")
     print(f"  三角落全过     : {res.corners_all_pass}")
+    para = res.parasitic_result
+    if para is not None:
+        pv = "实跑" if para.by_structure else "跳过"
+        print(f"  几何寄生估算   : {pv}"
+              + (f"  R≈{para.total_r_ohm:.3f}Ω C≈{para.total_c_ff:.3f}fF"
+                 if para.by_structure else "")
+              + (f"  护栏触发 {len(para.violations)} 项" if para.violations else ""))
     lvs_r = res.lvs_result or {}
     lvs_v = lvs_r.get("verdict", "SKIP")
     print(f"  LVS 签核       : {lvs_v}"

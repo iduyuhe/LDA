@@ -98,6 +98,8 @@ CORE_SMOKES: List[str] = [
     "run_cli_smoke.py",
     # gdsfactory 兼容桥 + GDS 主权几何 DRC（v0.8.30：生态互通 + 计数守护固化）
     "run_gdsfactory_bridge_smoke.py",
+    # 版图几何级 RC 寄生估算（v0.8.31：设计侧主权闭环收口 S3.5）
+    "run_parasitic_rc_smoke.py",
     # 对照报告飞轮（v0.8.30：多源死标量对照 + 历史归档 + 覆盖度趋势）
     "run_crosscheck_flywheel_smoke.py",
     # Phase 3 统计锚（S7/S8 蒙特卡洛分布 + 收敛性：红线 + 防自证负例）

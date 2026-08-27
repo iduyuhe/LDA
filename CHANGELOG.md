@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.8.35（2026-08-27 · 创新超市货架库扩展 · 2→5 货架）
+
+**货架库"越来越大"（组合创新继续）**：在 v0.8.34 货架注册表之上，新增 3 个前瞻预研货架，全部由已锚定基元（GP-*）组装、复用 system_type 已验证闭环、零新物理：
+
+- **IM-SENSE-RING**（微环折射率传感前端）：`system_type=link`，复用系统预算锚 S1/S2/S5/S7；基元 GP-GRATING-EFF + GP-SIN-PL。
+- **IM-LASER-INT**（片上激光源集成发射模板）：`system_type=link`；激光源作为**异质集成黑箱源**（负面清单：有源不物理级建模），组合其余已锚定基元 GP-GRATING-EFF + GP-SIN-PL；激光源本身非本团队新锚定器件（要进锚集须先按 v0.8.32 加 golden 基准）。
+- **IM-QCOM-LINK**（5 比特量子频率复用读出链路）：`system_type=quantum_fidelity`，复用 D-46×D-47；基元 GP-YBRANCH + GP-SIN-PL。
+
+### 护栏（CI 红线下护栏不变）
+货架仍为数据扩展（写入 `innovation_market.py` 的 `DEFAULT_SHELF`），**未新增 smoke 文件**，故 CI core 维持 **68 条**；`run_innovation_market_smoke` 现覆盖 5 货架 × 3 守护 = 15 检查全 PASS。composition 严格 ⊂ GOLDEN_IDS；honest_tier 强制=前瞻预研。
+
 ## v0.8.34（2026-08-27 · 创新超市 · 前瞻预研货架）
 
 **里程碑（三层战略收口）：在「产品级基准库」（v0.8.32）+「系统类型注册表」（v0.8.33）之上，建立第三层「创新超市」——把"已锚定基元 + 公开信号驱动"的**前瞻预研预设计**作为货架供社区挑选。组合创新，零新物理。**

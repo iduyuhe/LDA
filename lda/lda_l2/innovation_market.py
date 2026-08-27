@@ -97,10 +97,14 @@ class ShelfItem:
 
 
 # ---------------------------------------------------------------------------
-# 默认货架：首批 2 个低风险高复用（直接复用已验证闭环，零新物理）
-#   IM-CPO-WDM5   → 复用 wdm_demux（design_wdm_advanced, B4 锚）
-#   IM-QCHIP-INT  → 复用 quantum_fidelity（design_multiqubit_fidelity, D-46×D-47）
-# 组合创新：货架仅由产品级基准库已锚定基元（GP-*）组装。
+# 默认货架：5 个低风险高复用（直接复用已验证闭环，零新物理）
+#   IM-CPO-WDM5   → 复用 wdm_demux（design_wdm_advanced, B4 锚）            [光子·WDM]
+#   IM-QCHIP-INT  → 复用 quantum_fidelity（design_multiqubit_fidelity, D-46×D-47）[混合·量子]
+#   IM-SENSE-RING → 复用 link（微环传感前端，S1/S2/S5/S7）                  [光子·传感]
+#   IM-LASER-INT  → 复用 link（异质集成激光源=黑箱源，负面清单）             [光子·发射]
+#   IM-QCOM-LINK  → 复用 quantum_fidelity（5 比特频率复用读出）             [混合·量子]
+# 组合创新：货架仅由产品级基准库已锚定基元（GP-*）组装；active 器件按负面清单
+# 作黑箱源（不新增未锚定基元），激光源要进锚集须先按 v0.8.32 加 golden 基准。
 # ---------------------------------------------------------------------------
 DEFAULT_SHELF: List[ShelfItem] = [
     ShelfItem(
@@ -130,6 +134,57 @@ DEFAULT_SHELF: List[ShelfItem] = [
         default_req={"f01s": [4.8, 5.0, 5.2, 5.4]},
         design_note="4 比特频率复用读出链（D-46 复用 + D-47 保真度，已验证闭环）。"
                     "基元复用 Y-branch（分束）+ SiN 低损波导（量子光路互联）。",
+        ci_status="",
+    ),
+    # —— 以下为 v0.8.35 货架库扩展（仍严守"组合已锚定基元"护栏）——
+    ShelfItem(
+        id="IM-SENSE-RING",
+        title="微环折射率传感前端预设计（复用光链路拓扑）",
+        target_app="生物/化学折射率传感、光纤传感前端、实验室芯片（LoC）片上传感",
+        signal_ref="微环谐振传感公开路线（硅光折射率/生物传感 roadmap、公开文献与标准草案）；"
+                   "复用 link 系统预算锚 S1/S2/S5/S7 已验证闭环",
+        domain="photon",
+        system_type="link",
+        composition=["GP-GRATING-EFF", "GP-SIN-PL"],
+        default_req={"n_channels": 1, "channel_spacing_ghz": 100, "filter_bw_ghz": 50,
+                     "link_budget_db": 3.0, "p_tx_dbm": 0, "wg_length_cm": 1.0},
+        design_note="环谐振器作折射率传感单元，复用 link 拓扑（激光→grating→SiN 波导→"
+                    "ring→探测器）+ 系统预算锚 S1/S2/S5/S7。基元复用 grating coupler（"
+                    "GP-GRATING-EFF）+ SiN 低损波导（GP-SIN-PL）。传感灵敏度由环 Q / 波长"
+                    "偏移换算，属参数化下一迭代，不破现有已验证闭环。",
+        ci_status="",
+    ),
+    ShelfItem(
+        id="IM-LASER-INT",
+        title="片上激光源集成发射模板（异质集成黑箱源 + 已锚定无源网）",
+        target_app="共封装光模块发射端、硅光异质集成光源、片上收发前端",
+        signal_ref="异质集成 III-V/Si 片上光源公开路线图（AIM Photonics 等公开 PDK 动向 / "
+                   "学术异质集成 laser 公开文献）；复用 link 系统预算锚",
+        domain="photon",
+        system_type="link",
+        composition=["GP-GRATING-EFF", "GP-SIN-PL"],
+        default_req={"p_tx_dbm": 3.0, "wg_length_cm": 1.0, "link_budget_db": 3.0},
+        design_note="激光源作为**异质集成黑箱源**（有源器件不物理级建模——负面清单："
+                    "有源不物理级建模，行为黑箱 + 文献锚走完闭环），本货架组合其余已锚定"
+                    "基元：grating coupler（GP-GRATING-EFF）+ SiN 低损波导（GP-SIN-PL）。"
+                    "判决复用 link 系统预算锚 S1/S2/S5/S7（死标量，LLM 不进路径）。激光源"
+                    "本身**非本团队新锚定器件**——如要将其纳入锚集，须先按 v0.8.32 方式"
+                    "新增 golden 基准（待发动期/社区贡献）；本货架严守『组合创新、不新增"
+                    "未锚定基元』。",
+        ci_status="",
+    ),
+    ShelfItem(
+        id="IM-QCOM-LINK",
+        title="量子计算频率复用读出链路（5 比特保真度链）",
+        target_app="超导量子计算多比特频率复用读出、量子处理器读出总线",
+        signal_ref="IBM/Google 公开多比特频率复用读出架构；D-46×D-47 已验证保真度预算框架",
+        domain="hybrid",
+        system_type="quantum_fidelity",
+        composition=["GP-YBRANCH", "GP-SIN-PL"],
+        default_req={"f01s": [4.8, 5.0, 5.2, 5.4, 5.6]},
+        design_note="5 比特频率复用读出链（D-46 复用 + D-47 保真度，已验证闭环）。基元复用"
+                    "Y-branch（分束，GP-YBRANCH）+ SiN 低损波导（GP-SIN-PL，量子光路互联）。"
+                    "与 IM-QCHIP-INT（4 比特）互补，演示库随比特数扩展仍零新物理。",
         ci_status="",
     ),
 ]

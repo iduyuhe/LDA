@@ -1,22 +1,4 @@
-<!DOCTYPE
-
-  <section class="panel">
-    <h2>㊿ 系统级提案编译器（Phase 4 · 功能需求 → 过锚提案 → 人终审）</h2>
-    <div class="hint">生成-验证范式落地：锚前置剪枝可行域（S1 功率/S2 频率/S5 最坏情况）→ 域内候选生成 → 即提即验（含 S7 蒙特卡洛统计锚 p5）→ 确定性排序。生成与判决分离——LLM 生成器为发动期替换件，判决路径零 LLM；终审选择权在人。</div>
-    <div class="row">
-      <label>信道数 <input id="pcNCh" type="number" value="4" min="1" max="64"></label>
-      <label>信道间隔 GHz <input id="pcSpacing" type="number" value="100" step="10"></label>
-      <label>滤波带宽 GHz <input id="pcBw" type="number" value="50" step="5"></label>
-      <label>余量要求 dB <input id="pcNeed" type="number" value="3" step="0.5"></label>
-      <label>激光功率 dBm <input id="pcPtx" type="number" value="0" step="1"></label>
-      <label>波导长 cm <input id="pcWgl" type="number" value="1" step="0.1"></label>
-      <button id="runProposal">运行提案编译器</button>
-    </div>
-    <div id="pcDomain" class="summary"></div>
-    <div id="pcRanked"></div>
-    <div id="pcNote" class="note"></div>
-  </section>
- html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8" />
@@ -100,6 +82,23 @@
     <div class="card a"><div class="n" id="c-ai">—</div><div class="l">L3 AI 内核候选</div></div>
     <div class="card g"><div class="n" id="c-bench">—</div><div class="l">锚覆盖 S1-S11</div></div>
     <div class="card g"><div class="n" id="c-layers">—</div><div class="l">已落地真地基层</div></div>
+  </div>
+
+  <div class="sec">
+    <h2>㊿ 系统级提案编译器（Phase 4 · 功能需求 → 过锚提案 → 人终审）</h2>
+    <div class="hint">生成-验证范式落地：锚前置剪枝可行域（S1 功率/S2 频率/S5 最坏情况）→ 域内候选生成 → 即提即验（含 S7 蒙特卡洛统计锚 p5）→ 确定性排序。生成与判决分离——LLM 生成器为发动期替换件，判决路径零 LLM；终审选择权在人。</div>
+    <div class="row">
+      <label>信道数 <input id="pcNCh" type="number" value="4" min="1" max="64"></label>
+      <label>信道间隔 GHz <input id="pcSpacing" type="number" value="100" step="10"></label>
+      <label>滤波带宽 GHz <input id="pcBw" type="number" value="50" step="5"></label>
+      <label>余量要求 dB <input id="pcNeed" type="number" value="3" step="0.5"></label>
+      <label>激光功率 dBm <input id="pcPtx" type="number" value="0" step="1"></label>
+      <label>波导长 cm <input id="pcWgl" type="number" value="1" step="0.1"></label>
+      <button id="runProposal">运行提案编译器</button>
+    </div>
+    <div id="pcDomain" class="summary"></div>
+    <div id="pcRanked"></div>
+    <div id="pcNote" class="note"></div>
   </div>
 
   <div class="sec" style="border-color:#2563eb">

@@ -37,7 +37,6 @@ from lda_l2.chip_layout_export import (  # noqa: E402
     export_chip_gds,
     layout_markdown,
 )
-from run_benchmark_crosscheck_report import run_crosscheck  # noqa: E402
 
 
 # --------------------------------------------------------------------------
@@ -152,12 +151,12 @@ def cmd_check(args: argparse.Namespace) -> int:
 # lda report
 # --------------------------------------------------------------------------
 def cmd_report(args: argparse.Namespace) -> int:
+    from lda_harness.benchmark_report import run_crosscheck, _fmt_report  # noqa: E402
     data = run_crosscheck(quick=args.quick)
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     md_path = out_dir / "benchmark_crosscheck_report.md"
     js_path = out_dir / "benchmark_crosscheck_report.json"
-    from run_benchmark_crosscheck_report import _fmt_report  # noqa: E402
     md_path.write_text(_fmt_report(data), encoding="utf-8")
     js_path.write_text(json.dumps(data, ensure_ascii=False, indent=2),
                        encoding="utf-8")

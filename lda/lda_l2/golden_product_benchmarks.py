@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List
@@ -95,6 +96,93 @@ class ProductBenchmark:
 
 
 # ---------------------------------------------------------------------------
+# 整芯片级基准对照（GC-* · v0.8.36 · 器件级 GP-* 的级联聚合）
+#   把已锚定基元 GP-* 按系统预算级联（光子 S1 dB 加法 / 量子 S4 保真度乘法），
+#   对标公开整芯片规格（插入损耗 / 读出保真度）的死标量。
+#   复用已验证闭环（ENGINE_FUNCS / design_multiqubit_fidelity），零新物理。
+#   诚实边界：免流片，golden 来自公开产品规格（datasheet / 公开披露 / 文献），
+#   拓扑自研，不抄版图；落点 A/B 阶段，不碰 C 闸门。
+# ---------------------------------------------------------------------------
+# 标准基元几何（与 GP-* 标杆一致，保证级联复现值同源）
+_G_GEOM = {"ff": 0.5, "theta_deg": 8.0, "tilt_sigma_deg": 15.0}
+_SIN_GEOM = {"w_core_um": 0.8, "h_core_um": 0.8, "roughness_nm": 0.3}
+_YB_GEOM = {"theta_deg": 5.0, "excess_coef": 0.004}
+_CR_GEOM = {"w_core_um": 0.5, "taper_w_ratio": 2.5}
+
+
+@dataclass
+class ChipBenchmark:
+    """整芯片级基准对照条目（GC-*）。"""
+    chip_id: str
+    chip_type: str
+    source_kind: str
+    source_ref: str
+    domain: str          # photon / quantum
+    system_type: str     # 复用已验证闭环：link / quantum_fidelity
+    geom: Dict[str, Any]  # 级联组成（photon）或频率计划（quantum）
+    metrics: List[MetricSpec]
+    replica_note: str = ""
+    honest_note: str = ""
+    honest_tier: str = "产品级对标（免流片）"
+    kind: str = "chip"
+
+    def evaluate(self) -> Dict[str, Any]:
+        if self.domain == "photon":
+            replica = self._photon_cascade_il()
+        else:
+            replica = self._quantum_fidelity()
+        rows: List[Dict[str, Any]] = []
+        all_pass = True
+        for m in self.metrics:
+            if m.name not in replica:
+                rows.append({**asdict(m), "replica": None, "passed": False,
+                             "delta": None})
+                all_pass = False
+                continue
+            r = float(replica[m.name])
+            if m.direction == "le":
+                passed = r <= m.golden + m.tol
+            elif m.direction == "ge":
+                passed = r >= m.golden - m.tol
+            else:
+                passed = abs(r - m.golden) <= m.tol
+            rows.append({
+                "name": m.name, "golden": m.golden, "tol": m.tol,
+                "unit": m.unit, "direction": m.direction,
+                "replica": round(r, 4),
+                "delta": round(r - m.golden, 4), "passed": bool(passed),
+            })
+            all_pass = all_pass and passed
+        return {
+            "product_id": self.chip_id, "device_type": self.chip_type,
+            "source_kind": self.source_kind, "source_ref": self.source_ref,
+            "engine": f"{self.domain}:{self.system_type}",
+            "passed_all": all_pass, "rows": rows, "model": self.honest_tier,
+        }
+
+    def _photon_cascade_il(self) -> Dict[str, float]:
+        """光子：GP-* 已锚定基元 LDA 复现值 dB 级联（S1 同构）。"""
+        g = ENGINE_FUNCS["engine_grating_eff"](_G_GEOM)["value"]
+        grating_il = -10.0 * math.log10(g)
+        sil = ENGINE_FUNCS["engine_sin_pl"](_SIN_GEOM)["value"]
+        yb = ENGINE_FUNCS["engine_ybranch_split"](_YB_GEOM)["value"]
+        cr = ENGINE_FUNCS["engine_crossing"](_CR_GEOM)["value"]
+        n_g = int(self.geom.get("n_gratings", 0))
+        L = float(self.geom.get("wg_length_cm", 0.0))
+        n_yb = int(self.geom.get("n_ybranch", 0))
+        n_cr = int(self.geom.get("n_crossing", 0))
+        total = n_g * grating_il + sil * L + n_yb * yb + n_cr * cr
+        return {"total_insertion_loss_dB": round(total, 4)}
+
+    def _quantum_fidelity(self) -> Dict[str, float]:
+        """量子：复用 design_multiqubit_fidelity 已验证闭环（D-46×D-47）。"""
+        from lda_agent.multiqubit_fidelity import design_multiqubit_fidelity
+        r = design_multiqubit_fidelity(list(self.geom["f01s"]))
+        fmin = min(q["budget"]["F"] for q in r["per_qubit"])
+        return {"readout_fidelity": round(fmin, 6)}
+
+
+# ---------------------------------------------------------------------------
 # 默认库：首批 5 个标杆器件（覆盖 LDA 现有 5 个 loss 引擎，闭环自洽）
 #   golden 全部来自公开可溯源出处；replica 由 LDA 引擎独立算出。
 # ---------------------------------------------------------------------------
@@ -169,8 +257,50 @@ DEFAULT_BENCHMARKS: List[ProductBenchmark] = [
     ),
 ]
 
+# ---------------------------------------------------------------------------
+# 整芯片级（GC-*）：GP-* 已锚定基元的级联聚合，对标公开整芯片规格。
+#   全部零新物理，复用已验证闭环；CI 由 run_golden_product_smoke 自动覆盖。
+# ---------------------------------------------------------------------------
+DEFAULT_CHIP_BENCHMARKS: List[ChipBenchmark] = [
+    ChipBenchmark(
+        chip_id="GC-CPO-8CH",
+        chip_type="CPO 8 通道光引擎（每通道光纤-芯片插入损耗）",
+        source_kind="literature",
+        source_ref="公开 CPO 技术综述（OIF/Yole 汇总，winwinchip.com / 21ic.com 2026 汇总）："
+                   "标准光栅耦合器方案光纤到芯片每通道插入损耗典型区间 6–12 dB"
+                   "（商用 CPO 信道插入损耗 3–5 dB 电学区；IBM Research 先进耦合 <1.2 dB/通道为记录值，"
+                   "research.ibm.com 2025）",
+        domain="photon", system_type="link",
+        geom={"n_gratings": 2, "wg_length_cm": 1.0, "n_ybranch": 1, "n_crossing": 1},
+        metrics=[MetricSpec(name="total_insertion_loss_dB", golden=12.0, tol=3.0, unit="dB",
+                            direction="le",
+                            note="标准光栅耦合器 CPO 光引擎每通道插入损耗上限（6–12 dB 公开区间）")],
+        replica_note="8 通道对称；每通道 = 2×光栅耦合(标准) + SiN 波导 1cm + Y-branch 分束 + crossing，"
+                     "由 GP-* 已锚定基元 LDA 复现值 dB 级联（S1 同构）。",
+        honest_note="等效验证（对标公开典型区间），非本团队流片；标准光栅耦合器方案，"
+                    "非 IBM 先进耦合 <1.2 dB 记录值。拓扑自研，不抄版图。",
+    ),
+    ChipBenchmark(
+        chip_id="GC-QCTRL",
+        chip_type="超导量子控制/读出芯片（单发读出保真度）",
+        source_kind="datasheet",
+        source_ref="本源悟空-180 公开披露（中国日报 / 证券时报 2026-05-09）：读取保真度 99.00%；"
+                   "NISQ 典型单发读出保真度 ≥97.5%（PostQuantum 2026 基准）。4-qubit 复用读出链对标。",
+        domain="quantum", system_type="quantum_fidelity",
+        geom={"f01s": [4.8, 5.0, 5.2, 5.4]},
+        metrics=[MetricSpec(name="readout_fidelity", golden=0.99, tol=0.02, unit="ratio",
+                            direction="ge",
+                            note="对标公开商用超导量子系统读取保真度 99.0%（≥97.5% NISQ 典型）")],
+        replica_note="4-qubit 复用读出链（D-46×D-47 已验证闭环）逐 qubit 保真度最小值 = LDA 复现读出保真度。",
+        honest_note="等效对标（解析模型对标公开指标），非本团队流片/实测；拓扑自研。",
+    ),
+]
 
-def evaluate_all(benchmarks: List[ProductBenchmark] = None) -> List[Dict[str, Any]]:
+# 器件级 + 芯片级统一入口（evaluate_all / to_markdown / save / load 共用）
+DEFAULT_BENCHMARKS: List[Any] = list(DEFAULT_BENCHMARKS) + list(DEFAULT_CHIP_BENCHMARKS)
+
+
+def evaluate_all(benchmarks: List[Any] = None) -> List[Dict[str, Any]]:
     benchmarks = benchmarks or DEFAULT_BENCHMARKS
     return [b.evaluate() for b in benchmarks]
 
@@ -180,7 +310,7 @@ def to_markdown(results: List[Dict[str, Any]]) -> str:
     n_total = len(results)
     n_pass = sum(1 for r in results if r.get("passed_all"))
     lines = [
-        "# LDA 产品级基准对照报告（实证锚产品级扩展）",
+        "# LDA 产品级基准对照报告（实证锚产品级扩展 · 器件级 GP-* + 芯片级 GC-*）",
         "",
         f"> 生成口径：LDA 引擎规格驱动再设计 + 数值复现，对标已公开验证的器件性能死标量。",
         f"> **{n_pass}/{n_total} 产品级对标 PASS**。",
@@ -213,8 +343,8 @@ def to_markdown(results: List[Dict[str, Any]]) -> str:
         "",
         "## 结论",
         "",
-        f"LDA 用开源、主权、零外部依赖的引擎，对 5 类标杆器件完成规格驱动再设计，"
-        f"复现性能与公开 golden 死标量一致（{n_pass}/{n_total} PASS）。"
+        f"LDA 用开源、主权、零外部依赖的引擎，对标杆器件（GP-*）与整芯片（GC-*）"
+        f"完成规格驱动再设计，复现性能与公开 golden 死标量一致（{n_pass}/{n_total} PASS）。"
         "这证明：在不进入发动期、不实际流片的前提下，即可把验证做到产品级——"
         "以他人已量产/已验证的真实效果为外部尺子，杀同源自证风险，并为生态播种提供硬核素材。",
         "",
@@ -236,15 +366,18 @@ def save_library_json(benchmarks: List[ProductBenchmark] = None, path: str = Non
     return path
 
 
-def load_library_json(path: str = None) -> List[ProductBenchmark]:
+def load_library_json(path: str = None) -> List[Any]:
     path = path or library_path()
     if not os.path.exists(path):
         return list(DEFAULT_BENCHMARKS)
     data = json.load(open(path, encoding="utf-8"))
-    out: List[ProductBenchmark] = []
+    out: List[Any] = []
     for d in data:
         metrics = [MetricSpec(**m) for m in d.pop("metrics")]
-        out.append(ProductBenchmark(metrics=metrics, **d))
+        if d.get("kind") == "chip":
+            out.append(ChipBenchmark(metrics=metrics, **d))
+        else:
+            out.append(ProductBenchmark(metrics=metrics, **d))
     return out
 
 

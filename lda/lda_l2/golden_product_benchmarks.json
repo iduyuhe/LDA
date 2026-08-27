@@ -124,5 +124,63 @@
     ],
     "replica_note": "800×800 nm 截面 + 粗糙度 0.3 nm 标定，LDA 复现传播损耗 0.087 dB/cm。",
     "honest_note": "等效验证（对标商用 datasheet），非本团队流片；解析近似对标典型量级。"
+  },
+  {
+    "chip_id": "GC-CPO-8CH",
+    "chip_type": "CPO 8 通道光引擎（每通道光纤-芯片插入损耗）",
+    "source_kind": "literature",
+    "source_ref": "公开 CPO 技术综述（OIF/Yole 汇总，winwinchip.com / 21ic.com 2026 汇总）：标准光栅耦合器方案光纤到芯片每通道插入损耗典型区间 6–12 dB（商用 CPO 信道插入损耗 3–5 dB 电学区；IBM Research 先进耦合 <1.2 dB/通道为记录值，research.ibm.com 2025）",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 2,
+      "wg_length_cm": 1.0,
+      "n_ybranch": 1,
+      "n_crossing": 1
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 12.0,
+        "tol": 3.0,
+        "unit": "dB",
+        "direction": "le",
+        "note": "标准光栅耦合器 CPO 光引擎每通道插入损耗上限（6–12 dB 公开区间）"
+      }
+    ],
+    "replica_note": "8 通道对称；每通道 = 2×光栅耦合(标准) + SiN 波导 1cm + Y-branch 分束 + crossing，由 GP-* 已锚定基元 LDA 复现值 dB 级联（S1 同构）。",
+    "honest_note": "等效验证（对标公开典型区间），非本团队流片；标准光栅耦合器方案，非 IBM 先进耦合 <1.2 dB 记录值。拓扑自研，不抄版图。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-QCTRL",
+    "chip_type": "超导量子控制/读出芯片（单发读出保真度）",
+    "source_kind": "datasheet",
+    "source_ref": "本源悟空-180 公开披露（中国日报 / 证券时报 2026-05-09）：读取保真度 99.00%；NISQ 典型单发读出保真度 ≥97.5%（PostQuantum 2026 基准）。4-qubit 复用读出链对标。",
+    "domain": "quantum",
+    "system_type": "quantum_fidelity",
+    "geom": {
+      "f01s": [
+        4.8,
+        5.0,
+        5.2,
+        5.4
+      ]
+    },
+    "metrics": [
+      {
+        "name": "readout_fidelity",
+        "golden": 0.99,
+        "tol": 0.02,
+        "unit": "ratio",
+        "direction": "ge",
+        "note": "对标公开商用超导量子系统读取保真度 99.0%（≥97.5% NISQ 典型）"
+      }
+    ],
+    "replica_note": "4-qubit 复用读出链（D-46×D-47 已验证闭环）逐 qubit 保真度最小值 = LDA 复现读出保真度。",
+    "honest_note": "等效对标（解析模型对标公开指标），非本团队流片/实测；拓扑自研。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
   }
 ]

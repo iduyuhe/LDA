@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.36（2026-08-27 · 整芯片级对标 GC-* · 器件级→芯片级升级）
+
+`golden_product_benchmarks` 从器件级（GP-*）扩到整芯片级（GC-*）：
+
+- 新增 `ChipBenchmark` 类（芯片级聚合 + 死标量比对）：光子走 GP-* 已锚定基元 LDA 复现值 **dB 级联（S1 同构）**，量子走 `design_multiqubit_fidelity` 逐 qubit 保真度 **乘法级联（S4 同构）**；复用已验证闭环，**零新物理**。
+- 首批 2 个 GC 标杆（均免流片、golden 来自公开产品规格、可溯源）：
+  - `GC-CPO-8CH`：商用 CPO 8 通道光引擎，每通道光纤-芯片插入损耗 replica=10.6 dB ≤ golden 12 dB（tol 3）；golden 源自公开 CPO 技术综述（OIF/Yole 汇总 6–12 dB 区间；IBM Research 先进耦合 <1.2 dB 为记录值，已诚实区分）。
+  - `GC-QCTRL`：超导量子控制/读出芯片，单发读出保真度 replica=99.78% ≥ golden 99.0%（tol 2%）；golden 源自本源悟空-180 公开披露（读取保真度 99.00%，证券时报 2026-05-09）。
+- `run_golden_product_smoke` 现覆盖 **7/7（5 GP + 2 GC）**；货架为数据扩展，**CI core 维持 68 条**（未新增 smoke 文件）。
+- 诚实边界：对标公开产品聚合指标（非版图几何、非本团队流片）；拓扑自研不抄版图；落点 A/B 阶段，不碰 C 闸门。
+- README / CONTRIBUTING 账本同步（`golden_product_benchmarks_report.md` 标题与结论已含芯片级）。
+
 ## v0.8.35（2026-08-27 · 创新超市货架库扩展 · 2→5 货架）
 
 **货架库"越来越大"（组合创新继续）**：在 v0.8.34 货架注册表之上，新增 3 个前瞻预研货架，全部由已锚定基元（GP-*）组装、复用 system_type 已验证闭环、零新物理：

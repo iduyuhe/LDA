@@ -1,0 +1,32 @@
+name: Good First Issue（新手友好任务）
+description: 适合社区新人认领的小而明确的任务，用于熟悉 LDA 代码与贡献流程
+title: "[GFI] "
+labels: ["good first issue"]
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: 任务描述
+      description: 这个任务要完成什么？期望产出是什么？
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: 背景与参考
+      description: 相关代码路径、文档、或设计原则（红线）。可引用具体文件/函数。
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      description: 怎样算完成？需要带自测吗？CI core 是否仍全绿？
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 提交前自检
+      options:
+        - label: 已阅读 CONTRIBUTING.md 与三条红线
+        - label: 改动带了自测，CI core 全绿
+        - label: 未 git add -A（运行产物未入库）

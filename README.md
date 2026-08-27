@@ -18,6 +18,14 @@
 > **v0.6.13 持续维护**（2026-08-25 · D-111）：**CI 基础设施 + 开源门面核查**——`.github/workflows/ci.yml` 健康（job2 `industrial-regression` 已走 `run_ci_regression --tag core` 统一入口自动发现 36 条 + 安装含 jsonschema，D-99 教训已落实；job1 为历史检查保留无破坏）；LICENSE（MIT）与 README 声明一致；🔴 发现 **AUTHORS.md 缺失**（BOUNTY 承诺"贡献者署名进 AUTHORS + Hall of Fame"但文件不存在）→ **补齐**（维护者 + 社区评审流署名机制 + Hall of Fame 说明）+ README 许可证段补引用。
 > **v0.6.14 持续维护**（2026-08-25 · D-112）：**浏览器级 UI 实测（agent-browser 全量遍历，零缺陷）**——真实 Chromium 打开 WebUI：页面加载**零 JS 运行时错误**、57 面板全渲染（40316 字符）；真实交互实测通过——面板 53（`runEco`：harness 21/21 · 主权 A=5 B=7 C=4）、面板 57 判题（候选 2.63 vs 实测 2.63±0.02 → **PASS 死标量比对**）；JS 运行时盲区经一次性全量遍历验证闭合，此后转低频抽测。
 
+## 参与共建（阶段 B · 生态播种）
+
+- ⭐ **Star 仓库**：<https://github.com/iduyuhe/LDA>——你的 Star 是社区信号，也是对外可达性的杠杆。
+- 🐛 **认领 Good First Issue**：见 [Issues · good first issue 标签](https://github.com/iduyuhe/LDA/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)，按 `CONTRIBUTING.md` 流程提 PR。
+- 📐 **提交实测语料 / 对抗题**：见 `BOUNTY.md` 反向悬赏机制（实证大数据锚是验证的第二道非 AI ground）。
+- 📖 **技术叙事**：我们在公众号「工业5点0产业生态联盟」与知乎持续发布 LDA 设计哲学与闭环演示。
+- ▶️ **5 分钟上手**：见 `examples/README.md` 与 `LDA_一页纸_概览.md`。
+
 ## 这是什么
 
 LDA 是一套面向光子集成回路（PIC）与超导量子比特（QEDA）的**设计→验证闭环引擎**。它把"AI agent 写内核、确定性裁判验收"的工程范式落成可运行、可验证、可复现的代码，让普通算力（纯 numpy、零 GPU）就能自助完成**从设计目标到已验证器件/系统**的闭环，并把**物理定律锚 + 实证大数据锚**作为信任地基，而非依赖任意大模型意见。

@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.34（2026-08-27 · 创新超市 · 前瞻预研货架）
+
+**里程碑（三层战略收口）：在「产品级基准库」（v0.8.32）+「系统类型注册表」（v0.8.33）之上，建立第三层「创新超市」——把"已锚定基元 + 公开信号驱动"的**前瞻预研预设计**作为货架供社区挑选。组合创新，零新物理。**
+
+### 新增
+- **`lda/lda_l2/innovation_market.py`（货架注册表，主权零依赖）**：`ShelfItem` 数据模型（id/title/target_app/signal_ref/domain/system_type/composition[已锚定基元 id]/default_req/honest_tier=前瞻预研/design_note）+ `evaluate`（调 `design_pipeline` 复用 system_type 已验证闭环）+ `to_markdown` 目录 + JSON 库读写（可增量扩展）；默认 2 货架（IM-CPO-WDM5 复用 wdm_demux / IM-QCHIP-INT 复用 quantum_fidelity），组合均由产品级基准库 GP-* 已锚定基元组装。
+- **`run_innovation_market_smoke.py` 入 CI core**（67→68 条）：三守护——① composition 全锚定（禁未锚定基元）②结构可行+预算不破（上架）③ honest_tier=前瞻预研（CI 不宣称流片验证）。
+- **`docs/innovation_market.md`**：创新超市可浏览目录（B 生态播种素材），含诚实边界与信号溯源。
+
+### 诚实边界（红线下护栏）
+货架仅由已锚定基元组装（组合创新），判决复用 system_type 已验证闭环（B4 / D-46×D-47），LLM 不进判决路径；属等效验证（非本团队流片、非对未来的承诺）；信号源可溯源（roadmap/标准草案/厂商公开动向）。
+
 ## v0.8.33（2026-08-27 · 系统类型注册表 · 提案编译器系统级纵深）
 
 **里程碑（系统级纵深第一刀）：把提案编译器从"单一 link 拓扑"升级为"系统类型注册表"——`link`(默认) / `wdm_demux` / `quantum_fidelity` 三型共存，所有类型共享同一条死标量红线。wdm/quantum 直接复用已验证闭环（`design_wdm_advanced` / `design_multiqubit_fidelity`），零新物理、零回归。这是"用已锚定的确定性覆盖未验证地带"三层战略（产品级基准库 → 系统类型 → 创新超市）的第二层。**

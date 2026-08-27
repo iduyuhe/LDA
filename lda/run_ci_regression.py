@@ -110,6 +110,8 @@ CORE_SMOKES: List[str] = [
     "run_proposal_compiler_smoke.py",
     # 系统类型注册表（v0.8.33：link/wdm_demux/quantum_fidelity 分发，复用已验证闭环）
     "run_system_types_smoke.py",
+    # 创新超市货架（v0.8.34：前瞻预研货架 · 组合已锚定基元 + 公开信号驱动，红线下护栏）
+    "run_innovation_market_smoke.py",
     # 第二梯队-1 A* 布线（贪心→全局最优 + 避障 + 无解诚实退化）
     "run_astar_route_smoke.py",
     # 第二梯队-2 三件套（多端网 Steiner + 2D 放置 + 有源基元）

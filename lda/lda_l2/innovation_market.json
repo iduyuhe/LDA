@@ -1,0 +1,45 @@
+[
+  {
+    "id": "IM-CPO-WDM5",
+    "title": "CPO 多通道 WDM 共封装光模块预设计（5 通道基准）",
+    "target_app": "共封装光学（CPO）/ 数据中心光互连，单光纤多波长并行",
+    "signal_ref": "OIF CPO 2.0 共封装光学路线图（公开草案）；业界 8× 100G/200G WDM 硅光 CPO 模组量产前夕动向（公开报道）",
+    "domain": "photon",
+    "system_type": "wdm_demux",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-MMI-1X2",
+      "GP-CROSSING"
+    ],
+    "default_req": {
+      "n_channels": 5,
+      "spacing_nm": 2.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "面向 8 通道 CPO 的预研货架；以 5ch@2.0nm 单 FSR 闭环（B4：drop IL≤3 / XT≥15 / 单 FSR 防混叠）验证基元可行性。8 通道扩展需 FSR 扩展（更小环 R）属参数化下一迭代，不破现有已验证闭环。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-QCHIP-INT",
+    "title": "量子芯片间读出互联模板（多比特保真度链）",
+    "target_app": "超导量子芯片读出总线 / 多比特频率复用读出链",
+    "signal_ref": "量子计算多比特频率复用读出公开路线（IBM/Google 公开架构文档）；D-46×D-47 已验证保真度预算框架",
+    "domain": "hybrid",
+    "system_type": "quantum_fidelity",
+    "composition": [
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "f01s": [
+        4.8,
+        5.0,
+        5.2,
+        5.4
+      ]
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "4 比特频率复用读出链（D-46 复用 + D-47 保真度，已验证闭环）。基元复用 Y-branch（分束）+ SiN 低损波导（量子光路互联）。",
+    "ci_status": ""
+  }
+]

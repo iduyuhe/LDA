@@ -20,7 +20,8 @@ from lda_l2.innovation_market import (
 )
 from lda_l2.golden_product_benchmarks import DEFAULT_BENCHMARKS
 
-GOLDEN_IDS = {b.product_id for b in DEFAULT_BENCHMARKS}
+# 仅 GP-*（器件级基元）构成锚集；GC-*（整芯片级）为级联聚合条目，不参与基元锚集。
+GOLDEN_IDS = {b.product_id for b in DEFAULT_BENCHMARKS if hasattr(b, "product_id")}
 
 _PASS = 0
 _FAIL = 0

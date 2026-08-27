@@ -242,5 +242,501 @@
     "honest_note": "等效对标（解析模型对标公开指标），非本团队流片/实测；拓扑自研。与 GC-QCTRL（本源悟空-180）互为独立商用参考，共同证明库可增量扩展。",
     "honest_tier": "产品级对标（免流片）",
     "kind": "chip"
+  },
+  {
+    "chip_id": "GC-DR4-TX",
+    "chip_type": "400G DR4 硅光发射芯片（单通道，光纤-芯片插损）",
+    "source_kind": "datasheet",
+    "source_ref": "宏芯科技（泉州）400G 硅光 DR4 发射芯片公开规格（CIOE 中国光博会参展公开资料）：4×100G PAM4 @1310nm，单通道插损 <4.5 dB，电光带宽 >38 GHz",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 1,
+      "wg_length_cm": 1.0,
+      "n_ybranch": 0,
+      "n_crossing": 0
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 4.5,
+        "tol": 1.5,
+        "unit": "dB",
+        "direction": "le",
+        "note": "400G DR4 发射芯片单通道插损 <4.5 dB"
+      }
+    ],
+    "replica_note": "单通道 = 1×光栅耦合 + 1cm SiN 波导，GP-* 基元 dB 级联（S1 同构）。",
+    "honest_note": "等效验证（对标公开规格），非本团队流片；发射端调制器/激光器按黑箱源（负面清单）。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-DR4-ONCHIP",
+    "chip_type": "400G DR4 硅光收发全片（片上总损耗，边缘耦合）",
+    "source_kind": "datasheet",
+    "source_ref": "Hyperphotonix Hyper Silicon™ 平台公开资料（hyperphotonix.com）：400G DR4 / 800G DR8 / 1.6T DR8 PIC 片上损耗 <9 dB（边缘耦合低损光纤阵列）",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 2,
+      "wg_length_cm": 2.0,
+      "n_ybranch": 0,
+      "n_crossing": 1
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 9.0,
+        "tol": 1.5,
+        "unit": "dB",
+        "direction": "le",
+        "note": "400G DR4 硅光全片片上损耗 <9 dB"
+      }
+    ],
+    "replica_note": "全片往返 = 2×光栅耦合 + 2cm SiN 波导 + 1×crossing，GP-* dB 级联。",
+    "honest_note": "等效验证（对标公开平台规格），非本团队流片；有源器件按黑箱源。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-LR8-CH",
+    "chip_type": "400GBASE-LR8 单信道链路（8 波 WDM PAM4，10km OS2）",
+    "source_kind": "datasheet",
+    "source_ref": "IEEE 802.3bs 400GBASE-LR8（TIA FOTC 公开应用概述，clause 122）：8 波 WDM PAM4，信道插入损耗（max）6.3 dB，2m–10km OS2",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 1,
+      "wg_length_cm": 2.0,
+      "n_ybranch": 0,
+      "n_crossing": 1
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 6.3,
+        "tol": 1.2,
+        "unit": "dB",
+        "direction": "le",
+        "note": "LR8 信道插入损耗上限 6.3 dB（IEEE 802.3bs）"
+      }
+    ],
+    "replica_note": "单信道 = 1×光栅 + 2cm SiN 波导 + 1×crossing（WDM 复解按 AWG 方案，级联仅计无源损耗）。",
+    "honest_note": "等效验证（对标 IEEE 标准信道预算），非本团队流片；WDM 复解器按黑箱参数化。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-PLC-1X8",
+    "chip_type": "PLC 1×8 分路器（FTTH/PON 无源分光，每支路插损）",
+    "source_kind": "datasheet",
+    "source_ref": "ITU-T G.671 / Telcordia GR-1209 公开典型最大插损：1×8 ≤10.7 dB（含理想 9.03 dB 分光损耗 + 过量损耗；Sopto/LuLeey 等商用 PLC datasheet 一致）",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 0,
+      "wg_length_cm": 0.0,
+      "n_ybranch": 3,
+      "n_crossing": 0
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 10.7,
+        "tol": 1.0,
+        "unit": "dB",
+        "direction": "le",
+        "note": "PLC 1×8 每支路最大插损 ≤10.7 dB（G.671/GR-1209）"
+      }
+    ],
+    "replica_note": "1×8 = 3 级 Y-branch 级联（2^3=8 支路，含理想 3×3.01 dB 分光 + 过量损耗），GP-* dB 级联。",
+    "honest_note": "等效验证（对标 ITU-T/Telcordia 公开规格），非本团队流片；PLC 工艺按参数化黑箱。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-PLC-1X16",
+    "chip_type": "PLC 1×16 分路器（FTTH/PON 无源分光，每支路插损）",
+    "source_kind": "datasheet",
+    "source_ref": "ITU-T G.671 / Telcordia GR-1209 公开典型最大插损：1×16 ≤14.0 dB（含理想 12.04 dB 分光损耗；LuLeey 实测 ≤14.0 dB 一致）",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 0,
+      "wg_length_cm": 0.0,
+      "n_ybranch": 4,
+      "n_crossing": 0
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 14.0,
+        "tol": 1.0,
+        "unit": "dB",
+        "direction": "le",
+        "note": "PLC 1×16 每支路最大插损 ≤14.0 dB（G.671/GR-1209）"
+      }
+    ],
+    "replica_note": "1×16 = 4 级 Y-branch 级联（2^4=16 支路），GP-* dB 级联。",
+    "honest_note": "等效验证（对标 ITU-T/Telcordia 公开规格），非本团队流片。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-AWG-40CH",
+    "chip_type": "40ch 100GHz 无热 AWG（DWDM 复解，ITU 网格插损）",
+    "source_kind": "datasheet",
+    "source_ref": "Qualinet 40ch 100GHz Gaussian Athermal AWG 公开 datasheet：ITU 网格插损 typ 4.5 / max 6.0 dB；NTT-ID 标准 48ch AWG 3.5 dB 同量级",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 1,
+      "wg_length_cm": 10.0,
+      "n_ybranch": 0,
+      "n_crossing": 0
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 6.0,
+        "tol": 2.0,
+        "unit": "dB",
+        "direction": "le",
+        "note": "40ch AWG ITU 网格最大插损 6.0 dB（Qualinet datasheet）"
+      }
+    ],
+    "replica_note": "AWG 阵列波导按长波导黑箱：1×光栅 + 10cm SiN 波导级联近似，GP-* dB 级联。",
+    "honest_note": "等效验证（对标商用 AWG datasheet），非本团队流片；AWG 色散/串扰按黑箱（对标对象是插损死标量）。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-OCS-P576",
+    "chip_type": "OCS 光交换机光路层（Polatis 576×576，等效无源光路插损）",
+    "source_kind": "literature",
+    "source_ref": "UC Berkeley EECS-2024-213（公开技术报告）：Polatis 576×576 压电 OCS 中位插损 1.4 dB / 最大 3 dB；CALIENT 320×320 最大 3 dB；1100×1100 最大 4 dB",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 0,
+      "wg_length_cm": 2.0,
+      "n_ybranch": 0,
+      "n_crossing": 4
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 3.0,
+        "tol": 1.5,
+        "unit": "dB",
+        "direction": "le",
+        "note": "576×576 OCS 单路最大插损 3 dB（Berkeley 技术报告）"
+      }
+    ],
+    "replica_note": "OCS 全光路 = 2cm SiN 波导 + 4×crossing（准直/反射/耦合按 crossing 黑箱），GP-* dB 级联。",
+    "honest_note": "等效验证（对标公开技术报告规格），非本团队实测；MEMS/压电执行器按黑箱（非片上器件物理级建模）。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-OCS-FABRIC",
+    "chip_type": "OCS 直连收发前端（Google Jupiter/Palomar 架构，2×FR4 功率预算）",
+    "source_kind": "literature",
+    "source_ref": "arXiv 2411.01503（公开）：Google 136×136 OCS 插损 ≤2 dB；2×FR4 收发功率预算 4.0 dB；环行器附加 0.5–0.7 dB/个",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 1,
+      "wg_length_cm": 1.0,
+      "n_ybranch": 0,
+      "n_crossing": 0
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 4.0,
+        "tol": 1.0,
+        "unit": "dB",
+        "direction": "le",
+        "note": "2×FR4 收发功率预算 4.0 dB（OCS 集群收发前端）"
+      }
+    ],
+    "replica_note": "收发前端 = 1×光栅 + 1cm SiN 波导（OCS 本体 ≤2 dB 已含在链路预算内），GP-* dB 级联。",
+    "honest_note": "等效验证（对标公开架构规格），非本团队流片；交换矩阵按黑箱。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-LIDAR-FMCW",
+    "chip_type": "FMCW 激光雷达硅光芯片（单方向全光链路，1550nm）",
+    "source_kind": "literature",
+    "source_ref": "Optics Express 34, 7415 (2026) 公开论文：片上 FMCW LiDAR 激光器→芯片→自由空间全光链路损耗 ≈3.3 dB/方向；回波→芯片→探测 ≈3.3 dB",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 1,
+      "wg_length_cm": 0.5,
+      "n_ybranch": 0,
+      "n_crossing": 0
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 3.3,
+        "tol": 0.8,
+        "unit": "dB",
+        "direction": "le",
+        "note": "FMCW LiDAR 单方向片上链路 3.3 dB（OE 2026 实测）"
+      }
+    ],
+    "replica_note": "发射链路 = 1×光栅 + 0.5cm SiN 波导（相干混频按黑箱），GP-* dB 级联。",
+    "honest_note": "等效验证（对标公开文献实测），非本团队流片；OPA 扫描/调制器按黑箱（负面清单）。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-QKD-TX",
+    "chip_type": "QKD 发射端硅光芯片（Alice，BB84 态制备）",
+    "source_kind": "literature",
+    "source_ref": "npj Quantum Information 3, e1700262 (2017)（公开）：高维 QKD Alice 芯片总插损 15 dB（含光栅耦合 + MCF 扇入扇出 + 片上元件）",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 2,
+      "wg_length_cm": 1.0,
+      "n_ybranch": 2,
+      "n_crossing": 0
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 15.0,
+        "tol": 2.0,
+        "unit": "dB",
+        "direction": "le",
+        "note": "QKD Alice 芯片总插损 15 dB（npj QI 实测）"
+      }
+    ],
+    "replica_note": "Alice = 2×光栅（入 + MCF 扇出）+ 2×Y-branch（MZI 态制备）+ 1cm SiN，GP-* dB 级联。",
+    "honest_note": "等效验证（对标公开文献实测），非本团队流片；单光子源衰减/调制按黑箱。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-QKD-RX",
+    "chip_type": "QKD 接收端硅光芯片（Bob，基矢测量）",
+    "source_kind": "literature",
+    "source_ref": "npj Quantum Information 3, e1700262 (2017)（公开）：Bob 接收芯片总插损 8 dB（其中光栅耦合 ≈4 dB/端）",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 2,
+      "wg_length_cm": 0.5,
+      "n_ybranch": 0,
+      "n_crossing": 1
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 8.0,
+        "tol": 1.5,
+        "unit": "dB",
+        "direction": "le",
+        "note": "QKD Bob 芯片总插损 8 dB（npj QI 实测）"
+      }
+    ],
+    "replica_note": "Bob = 2×光栅（MCF 扇入 + 出）+ 0.5cm SiN + 1×crossing，GP-* dB 级联。",
+    "honest_note": "等效验证（对标公开文献实测），非本团队流片；单光子探测器按黑箱。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-QKD-MULTI",
+    "chip_type": "多用户 QKD 接收机硅光芯片（4 用户 MZI 选路）",
+    "source_kind": "literature",
+    "source_ref": "Optics Express 28, 18449 (2020)（公开）：多用户 QKD 接收芯片总损耗 13 dB（2D 光栅 6 dB + 1D 光栅 5 dB + 波导 2 dB）",
+    "domain": "photon",
+    "system_type": "link",
+    "geom": {
+      "n_gratings": 3,
+      "wg_length_cm": 5.0,
+      "n_ybranch": 0,
+      "n_crossing": 0
+    },
+    "metrics": [
+      {
+        "name": "total_insertion_loss_dB",
+        "golden": 13.0,
+        "tol": 1.5,
+        "unit": "dB",
+        "direction": "le",
+        "note": "多用户 QKD 接收机 13 dB（OE 2020 实测）"
+      }
+    ],
+    "replica_note": "4 用户接收 = 3×光栅（2D+1D 耦合）+ 5cm SiN 波导，GP-* dB 级联。",
+    "honest_note": "等效验证（对标公开文献实测），非本团队流片；SPD 探测器按黑箱。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-QCTRL-ZC3",
+    "chip_type": "超导量子芯片（祖冲之三号对标，10-qubit 代表读出段）",
+    "source_kind": "literature",
+    "source_ref": "上海科技情报研究所《全球量子计算最新进展》(2026) 公开对比表：电子科大祖冲之三号 (2024) 读出保真度 99.18%",
+    "domain": "quantum",
+    "system_type": "quantum_fidelity",
+    "geom": {
+      "f01s": [
+        5.0,
+        5.2,
+        5.4,
+        5.6,
+        5.8,
+        6.0,
+        6.2,
+        6.4,
+        6.6,
+        6.8
+      ]
+    },
+    "metrics": [
+      {
+        "name": "readout_fidelity",
+        "golden": 0.9918,
+        "tol": 0.01,
+        "unit": "ratio",
+        "direction": "ge",
+        "note": "祖冲之三号读出保真度 99.18%（公开对比表）"
+      }
+    ],
+    "replica_note": "10-qubit 复用读出链（D-46×D-47 已验证闭环）逐 qubit 保真度最小值 = LDA 复现。",
+    "honest_note": "等效对标（解析模型对标公开指标），非本团队流片/实测；105 比特整芯片以 10 比特代表段对标。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-QCTRL-HERON",
+    "chip_type": "超导量子芯片（IBM Heron R2 对标，16-qubit 代表读出段）",
+    "source_kind": "datasheet",
+    "source_ref": "上海科技情报研究所公开对比表：IBM Heron R2 (2024, 156 qubit) 读出保真度 98.5%；IBM Quantum Cloud 公开 Readout error (median) 亦 ~1-1.1% 量级",
+    "domain": "quantum",
+    "system_type": "quantum_fidelity",
+    "geom": {
+      "f01s": [
+        4.6,
+        4.8,
+        5.0,
+        5.2,
+        5.4,
+        5.6,
+        5.8,
+        6.0,
+        6.2,
+        6.4,
+        6.6,
+        6.8,
+        7.0,
+        7.2,
+        7.4,
+        7.6
+      ]
+    },
+    "metrics": [
+      {
+        "name": "readout_fidelity",
+        "golden": 0.985,
+        "tol": 0.015,
+        "unit": "ratio",
+        "direction": "ge",
+        "note": "IBM Heron R2 读出保真度 98.5%（公开对比表）"
+      }
+    ],
+    "replica_note": "16-qubit 复用读出链（D-46×D-47 已验证闭环）逐 qubit 保真度最小值 = LDA 复现。",
+    "honest_note": "等效对标（解析模型对标公开指标），非本团队流片/实测；156 比特整芯片以 16 比特代表段对标。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-QCTRL-WILLOW",
+    "chip_type": "超导量子芯片（Google Willow 对标，12-qubit 代表读出段）",
+    "source_kind": "literature",
+    "source_ref": "Applied Quantum 公开技术分析 (2025-2026)：Google Willow (2024, 105 qubit) 复用色散读出 + JPA 放大，读出保真度 ~99.3%",
+    "domain": "quantum",
+    "system_type": "quantum_fidelity",
+    "geom": {
+      "f01s": [
+        4.6,
+        4.8,
+        5.0,
+        5.2,
+        5.4,
+        5.6,
+        5.8,
+        6.0,
+        6.2,
+        6.4,
+        6.6,
+        6.8
+      ]
+    },
+    "metrics": [
+      {
+        "name": "readout_fidelity",
+        "golden": 0.9933,
+        "tol": 0.01,
+        "unit": "ratio",
+        "direction": "ge",
+        "note": "Google Willow 读出保真度 99.33%（公开对比表）"
+      }
+    ],
+    "replica_note": "12-qubit 复用读出链（D-46×D-47 已验证闭环）逐 qubit 保真度最小值 = LDA 复现。",
+    "honest_note": "等效对标（解析模型对标公开指标），非本团队流片/实测；105 比特整芯片以 12 比特代表段对标。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
+  },
+  {
+    "chip_id": "GC-QCTRL-M18",
+    "chip_type": "超导量子控制/读出芯片（18-qubit 规模扩展演示）",
+    "source_kind": "datasheet",
+    "source_ref": "商用超导量子系统公开指标区间（IBM/Google/本源公开披露 per-qubit 读出保真度 98.5–99.33%）；18-qubit 复用读出链规模扩展对标（NISQ 典型 ≥97.5%，PostQuantum 2026 基准）",
+    "domain": "quantum",
+    "system_type": "quantum_fidelity",
+    "geom": {
+      "f01s": [
+        4.6,
+        4.8,
+        5.0,
+        5.2,
+        5.4,
+        5.6,
+        5.8,
+        6.0,
+        6.2,
+        6.4,
+        6.6,
+        6.8,
+        7.0,
+        7.2,
+        7.4,
+        7.6,
+        7.8,
+        8.0
+      ]
+    },
+    "metrics": [
+      {
+        "name": "readout_fidelity",
+        "golden": 0.985,
+        "tol": 0.015,
+        "unit": "ratio",
+        "direction": "ge",
+        "note": "对标商用区间下限 98.5%（Heron R2 公开值）"
+      }
+    ],
+    "replica_note": "18-qubit 复用读出链（D-46×D-47 已验证闭环）逐 qubit 保真度最小值 = LDA 复现。",
+    "honest_note": "等效对标（解析模型对标公开指标区间），非本团队流片/实测；演示库随比特数扩展仍零新物理。",
+    "honest_tier": "产品级对标（免流片）",
+    "kind": "chip"
   }
 ]

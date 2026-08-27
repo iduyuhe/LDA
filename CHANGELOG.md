@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.8.38（2026-08-28 · GC 库扩至 20 项 + 创新超市货架扩至 20 · 市场信号驱动）
+
+**市场调研驱动的大规模数据扩展**（全部零新物理，复用已验证闭环，判决纯死标量）：
+
+GC 库 4→20（新增 16：光子 12 + 量子 4），golden 全部来自可溯源公开规格：
+- **光互连**：GC-DR4-TX（宏芯 400G 硅光 DR4 单通道 <4.5 dB）/ GC-DR4-ONCHIP（Hyperphotonix 片上 <9 dB）/ GC-LR8-CH（IEEE 802.3bs 信道 6.3 dB）。
+- **无源网络**：GC-PLC-1X8 / GC-PLC-1X16（ITU-T G.671 ≤10.7 / ≤14.0 dB）/ GC-AWG-40CH（Qualinet 40ch 100GHz AWG max 6.0 dB）。
+- **光交换/传感/LiDAR**：GC-OCS-P576（Berkeley EECS-2024-213：Polatis 576×576 max 3 dB）/ GC-OCS-FABRIC（arXiv 2411.01503：2×FR4 预算 4.0 dB）/ GC-LIDAR-FMCW（Optics Express 34,7415 单方向 3.3 dB 实测）。
+- **量子通 信**：GC-QKD-TX / GC-QKD-RX（npj QI 2017：Alice 15 dB / Bob 8 dB 实测）/ GC-QKD-MULTI（OE 28,18449 多用户 13 dB 实测）。
+- **量子计算**：GC-QCTRL-ZC3（祖冲之三号 99.18%）/ GC-QCTRL-HERON（IBM Heron R2 98.5%）/ GC-QCTRL-WILLOW（Google Willow 99.33%）/ GC-QCTRL-M18（18-qubit 规模扩展演示）。
+
+创新超市货架 5→20（新增 15：光子 12 + 量子 3），信号源全部可溯源：
+- 光子新增：IM-800G-DR8 / IM-WDM-8CH-1D / IM-DWDM-40CH / IM-FTTH-PLC8 / IM-FTTH-PLC16 / IM-CPO-OCS / IM-LIDAR-TX / IM-QKD-TX-SHELF / IM-QKD-RX-SHELF / IM-QKD-MULTI4 / IM-SENS-MZI / IM-CHIPLET-IO。
+- 量子新增：IM-QCTRL-ZC3-10Q / IM-QCTRL-HERON-16Q / IM-QCTRL-WILLOW-12Q。
+- 修复 v0.8.37 遗留 bug：`GOLDEN_IDS` 推导式对 `ChipBenchmark` 取 `product_id` 崩溃（v0.8.36 合并 DEFAULT_BENCHMARKS 后货架 smoke 已破坏）——改为 `hasattr` 过滤，仅 GP-* 构成基元锚集。
+
+计数：`run_golden_product_smoke` 现 **25/25（5 GP + 20 GC）**；`run_innovation_market_smoke` 现 **20/20 货架 × 3 守护 = 60 检查**；CI core 维持 68 条（数据扩展非新增 smoke 文件）。
+
 ## v0.8.37（2026-08-27 · GC 库扩至 4 项 + 数字孪生协同讨论稿）
 
 `golden_product_benchmarks` 续扩整芯片级对标（GC-*）：

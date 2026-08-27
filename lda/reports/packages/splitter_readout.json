@@ -4,7 +4,7 @@
   "kind": "splitter_readout",
   "domain": "hybrid",
   "title": "3-qubit 读出 × 2 级 DC 分束网络",
-  "created_at": "2026-08-25T07:24:58",
+  "created_at": "2026-08-27T15:11:13",
   "ir": {
     "schema_version": "0.3",
     "domain": "hybrid",

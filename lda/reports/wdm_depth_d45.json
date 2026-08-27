@@ -133,7 +133,7 @@
         {
           "name": "邻信道串扰 XT ≥ 15dB",
           "ok": true,
-          "detail": "20.0dB / 22.9dB / 22.9dB / 53.1dB"
+          "detail": "53.1dB / 22.9dB / 22.9dB / 20.0dB"
         },
         {
           "name": "每环 DRC（R/gap/wg）",

@@ -4,7 +4,7 @@
   "kind": "wdm",
   "domain": "photon",
   "title": "WDM 4 信道多环级联系统设计",
-  "created_at": "2026-08-25T07:24:14",
+  "created_at": "2026-08-27T15:10:28",
   "ir": {
     "schema_version": "0.3",
     "domain": "photon",
@@ -44,10 +44,10 @@
         0.115
       ],
       "xt_min_db": [
-        18.41,
+        53.16,
+        21.31,
         21.32,
-        21.37,
-        53.16
+        18.41
       ],
       "thru_at_channels": [
         0.00032,
@@ -72,7 +72,7 @@
       {
         "name": "邻信道串扰 XT ≥ 15dB",
         "ok": true,
-        "detail": "18.4dB / 21.3dB / 21.4dB / 53.2dB"
+        "detail": "53.2dB / 21.3dB / 21.3dB / 18.4dB"
       },
       {
         "name": "每环 DRC（R/gap/wg）",

@@ -108,5 +108,375 @@
     "honest_tier": "前瞻预研",
     "design_note": "5 比特频率复用读出链（D-46 复用 + D-47 保真度，已验证闭环）。基元复用Y-branch（分束，GP-YBRANCH）+ SiN 低损波导（GP-SIN-PL，量子光路互联）。与 IM-QCHIP-INT（4 比特）互补，演示库随比特数扩展仍零新物理。",
     "ci_status": ""
+  },
+  {
+    "id": "IM-800G-DR8",
+    "title": "800G DR8 硅光发射引擎预设计（8×100G PAM4）",
+    "target_app": "AI 数据中心 800G 光互连、1.6T DR8 前代平台",
+    "signal_ref": "Hyperphotonix Hyper Silicon™ 公开平台（400G DR4/800G DR8/1.6T DR8 PIC 路线）；IEEE 802.3 800G 光接口标准进程",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL",
+      "GP-CROSSING"
+    ],
+    "default_req": {
+      "n_channels": 8,
+      "channel_spacing_ghz": 100,
+      "filter_bw_ghz": 40,
+      "link_budget_db": 4.5,
+      "p_tx_dbm": 0,
+      "wg_length_cm": 2.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "8×100G 并行单波长方案（DR8）：每通道 = 光栅 + 2cm SiN + crossing，链路预算锚 S1/S2/S5/S7 死标量判决。对标 GC-DR4-TX/ONCHIP 公开规格量级。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-WDM-8CH-1D",
+    "title": "8 通道 CWDM/DWDM 解复用前端预设计（8×λ）",
+    "target_app": "800G FR8/LR8 类 WDM 模块解复用端、DWDM 城域前传",
+    "signal_ref": "IEEE 802.3bs 400GBASE-FR8/LR8（8 波 WDM 信道 IL 6.3 dB 上限，公开标准）；AWG 40ch datasheet 量级参照",
+    "domain": "photon",
+    "system_type": "wdm_demux",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-MMI-1X2",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 8,
+      "spacing_nm": 1.2
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "8 通道解复用：wdm_demux 闭环（B4：drop IL≤3 / XT≥15 / 单 FSR / DRC）。对标 LR8 信道预算 6.3 dB（GC-LR8-CH 同源公开标准）。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-DWDM-40CH",
+    "title": "40 通道 DWDM 阵列解复用预设计（C 波段 100GHz ITU 网格）",
+    "target_app": "DWDM 城域/骨干、40ch 无热 AWG 替代方案、波长路由",
+    "signal_ref": "Qualinet/NTT-ID 40ch 100GHz Athermal AWG 公开 datasheet（插损 typ 4.5/max 6.0 dB）；ITU-T G.694.1 DWDM 网格标准",
+    "domain": "photon",
+    "system_type": "wdm_demux",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-MMI-1X2",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 40,
+      "spacing_nm": 0.8
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "40 通道 DWDM 解复用：wdm_demux 闭环（B4 锚）演示大规模波长数扩展。对标 GC-AWG-40CH（商用 AWG datasheet 6.0 dB 死标量）。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-FTTH-PLC8",
+    "title": "FTTH 1×8 PLC 分光预设计（PON 无源分光网）",
+    "target_app": "GPON/XGS-PON 光分配网（ODN）、楼宇/园区 FTTH 部署",
+    "signal_ref": "ITU-T G.671 / Telcordia GR-1209 公开典型最大插损 1×8 ≤10.7 dB；ITU-T G.984.3 GPON ODN 预算标准",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 1,
+      "channel_spacing_ghz": 100,
+      "filter_bw_ghz": 50,
+      "link_budget_db": 10.7,
+      "p_tx_dbm": 3,
+      "wg_length_cm": 1.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "1×8 = 3 级 Y-branch 级联 + SiN 波导；对标 GC-PLC-1X8（G.671 死标量）。PON 上行突发时序按黑箱，判决只认链路预算锚 S1/S2/S5/S7。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-FTTH-PLC16",
+    "title": "FTTH 1×16 PLC 分光预设计（高密度分光）",
+    "target_app": "高密度 FTTH/FTTB、MDU 多住户单元部署",
+    "signal_ref": "ITU-T G.671 / Telcordia GR-1209 公开典型最大插损 1×16 ≤14.0 dB；商用 PLC datasheet 实测一致性（LuLeey ≤14.0 dB）",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 1,
+      "channel_spacing_ghz": 100,
+      "filter_bw_ghz": 50,
+      "link_budget_db": 14.0,
+      "p_tx_dbm": 3,
+      "wg_length_cm": 1.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "1×16 = 4 级 Y-branch 级联；对标 GC-PLC-1X16（G.671 死标量）。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-CPO-OCS",
+    "title": "OCS 直连光交换前端预设计（收发 + 交换矩阵黑箱）",
+    "target_app": "AI 集群 OCS 直连（Google Jupiter/Palomar 类架构）、CPO+OCS 混合互连",
+    "signal_ref": "UC Berkeley EECS-2024-213：Polatis 576×576 中位 1.4/max 3 dB、Google 136×136 ≤2 dB；arXiv 2411.01503：2×FR4 功率预算 4.0 dB 公开",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 1,
+      "channel_spacing_ghz": 100,
+      "filter_bw_ghz": 50,
+      "link_budget_db": 4.0,
+      "p_tx_dbm": 3,
+      "wg_length_cm": 1.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "OCS 收发前端：光栅 + SiN 波导，交换矩阵/MEMS 按黑箱（非片上器件）。对标 GC-OCS-FABRIC（2×FR4 预算 4.0 dB 公开死标量）。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-LIDAR-TX",
+    "title": "FMCW 激光雷达发射前端预设计（1550nm 相干探测）",
+    "target_app": "汽车/机器人 4D 感知、OPA 固态扫描 FMCW LiDAR",
+    "signal_ref": "Optics Express 34, 7415 (2026)：片上 FMCW 单方向全光链路 ≈3.3 dB 实测；Pointcloud Nature 2026 纯固态 FMCW 焦平面阵列公开路线",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 1,
+      "channel_spacing_ghz": 100,
+      "filter_bw_ghz": 50,
+      "link_budget_db": 3.3,
+      "p_tx_dbm": 0,
+      "wg_length_cm": 0.5
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "FMCW 发射前端：光栅 + 0.5cm SiN（相干混频/OPA 按黑箱）。对标 GC-LIDAR-FMCW（OE 2026 实测 3.3 dB 死标量）。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-QKD-TX-SHELF",
+    "title": "QKD 发射端货架（Alice BB84 态制备）",
+    "target_app": "量子密钥分发网络发射端、城际 QKD 干线",
+    "signal_ref": "npj Quantum Information 3, e1700262 (2017)：Alice 芯片总插损 15 dB 实测；中国 QKD 干线（京沪干线）公开路线",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 1,
+      "channel_spacing_ghz": 100,
+      "filter_bw_ghz": 50,
+      "link_budget_db": 15.0,
+      "p_tx_dbm": 0,
+      "wg_length_cm": 1.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "Alice 态制备 = 2×光栅 + 2×Y-branch（MZI）+ SiN；单光子衰减/调制按黑箱。对标 GC-QKD-TX（npj QI 实测 15 dB 死标量）。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-QKD-RX-SHELF",
+    "title": "QKD 接收端货架（Bob 基矢测量）",
+    "target_app": "量子密钥分发网络接收端、MDI-QKD 不信节点",
+    "signal_ref": "npj Quantum Information 3, e1700262 (2017)：Bob 芯片总插损 8 dB 实测；OE 28, 18449 (2020) 多用户接收机 13 dB 公开",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-CROSSING",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 1,
+      "channel_spacing_ghz": 100,
+      "filter_bw_ghz": 50,
+      "link_budget_db": 8.0,
+      "p_tx_dbm": 0,
+      "wg_length_cm": 0.5
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "Bob 基矢测量 = 2×光栅 + crossing + SiN；单光子探测器按黑箱。对标 GC-QKD-RX（npj QI 实测 8 dB 死标量）。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-QKD-MULTI4",
+    "title": "多用户 QKD 接收机货架（4 用户选路）",
+    "target_app": "量子密钥分发接入网、多用户 QKD 星形分发",
+    "signal_ref": "Optics Express 28, 18449 (2020)：4 用户 MZI 选路接收机总损耗 13 dB 实测（公开）",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 1,
+      "channel_spacing_ghz": 100,
+      "filter_bw_ghz": 50,
+      "link_budget_db": 3.0,
+      "p_tx_dbm": 0,
+      "wg_length_cm": 5.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "4 用户接收 = 3×光栅 + 5cm SiN（MZI 选路按黑箱）；SPD 按黑箱。判决用标准链路余量锚 S1/S2/S5/S7（要求 3 dB）；整芯片 13 dB 总插损对标见 GC-QKD-MULTI（OE 2020 实测死标量）。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-SENS-MZI",
+    "title": "MZI 干涉传感前端货架（生物化学折射率感测）",
+    "target_app": "生物/化学传感、Lab-on-Chip 干涉检测、环境监测",
+    "signal_ref": "公开 PICS/FBG 传感链路综述：干涉型传感前端全链路插损预算通常 ≤15 dB（商用光纤传感模块 10–18 dB 区间）",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 1,
+      "channel_spacing_ghz": 100,
+      "filter_bw_ghz": 50,
+      "link_budget_db": 3.0,
+      "p_tx_dbm": 0,
+      "wg_length_cm": 2.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "MZI 传感 = 2×光栅 + 2×Y-branch（分/合束）+ 2cm SiN 双臂；传感元件按黑箱。判决用标准链路余量锚 S1/S2/S5/S7（要求 3 dB）；整芯片全链路 ≤15 dB 预算对标见 GC-SENSE（公开传感链路预算区间）。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-CHIPLET-IO",
+    "title": "光 chiplet 互连前端货架（XPU 光 IO）",
+    "target_app": "AI 加速器光互连、CPO XPU attach、chiplet 间光 IO",
+    "signal_ref": "Broadcom 公开 CPO 路线（TH5-Bailly 6.4T 引擎，XPU 光连接演示）；OIF CPO 2.0 公开路线图",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL",
+      "GP-CROSSING"
+    ],
+    "default_req": {
+      "n_channels": 1,
+      "channel_spacing_ghz": 100,
+      "filter_bw_ghz": 50,
+      "link_budget_db": 6.0,
+      "p_tx_dbm": 3,
+      "wg_length_cm": 1.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "XPU 光 IO 前端 = 光栅 + SiN + crossing（EIC/PIC 键合按黑箱）。对标 GC-CPO-8CH 同源（CPO 每通道 6–12 dB 公开区间）。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-QCTRL-ZC3-10Q",
+    "title": "10 比特频率复用读出链货架（祖冲之三号量级）",
+    "target_app": "超导量子处理器读出总线、中等规模 NISQ 读出扩展",
+    "signal_ref": "上海科技情报研究所公开对比表：电子科大祖冲之三号 (2024, 105 qubit) 读出保真度 99.18%；D-46×D-47 已验证保真度预算框架",
+    "domain": "hybrid",
+    "system_type": "quantum_fidelity",
+    "composition": [
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "f01s": [
+        5.0,
+        5.2,
+        5.4,
+        5.6,
+        5.8,
+        6.0,
+        6.2,
+        6.4,
+        6.6,
+        6.8
+      ]
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "10 比特复用读出链（D-46 复用 + D-47 保真度）。对标 GC-QCTRL-ZC3（公开 99.18% 死标量），演示读出链规模扩展零新物理。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-QCTRL-HERON-16Q",
+    "title": "16 比特频率复用读出链货架（IBM Heron R2 量级）",
+    "target_app": "超导量子处理器读出总线、heavy-hex 架构读出段",
+    "signal_ref": "上海科技情报研究所公开对比表：IBM Heron R2 (2024, 156 qubit) 读出保真度 98.5%；IBM Quantum Cloud 公开 readout error ~1%",
+    "domain": "hybrid",
+    "system_type": "quantum_fidelity",
+    "composition": [
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "f01s": [
+        4.6,
+        4.8,
+        5.0,
+        5.2,
+        5.4,
+        5.6,
+        5.8,
+        6.0,
+        6.2,
+        6.4,
+        6.6,
+        6.8,
+        7.0,
+        7.2,
+        7.4,
+        7.6
+      ]
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "16 比特复用读出链；对标 GC-QCTRL-HERON（公开 98.5% 死标量）。156 比特整芯片按 heavy-hex 分段，本货架为单段代表。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-QCTRL-WILLOW-12Q",
+    "title": "12 比特频率复用读出链货架（Google Willow 量级）",
+    "target_app": "超导量子处理器读出总线、QEC 码字读出段（Willow 类架构）",
+    "signal_ref": "Applied Quantum 公开技术分析：Google Willow (2024, 105 qubit) 复用色散读出 + JPA，读出保真度 ~99.3%；arXiv 公开架构文档",
+    "domain": "hybrid",
+    "system_type": "quantum_fidelity",
+    "composition": [
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "f01s": [
+        4.6,
+        4.8,
+        5.0,
+        5.2,
+        5.4,
+        5.6,
+        5.8,
+        6.0,
+        6.2,
+        6.4,
+        6.6,
+        6.8
+      ]
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "12 比特复用读出链；对标 GC-QCTRL-WILLOW（公开 99.33% 死标量）。JPA 放大链按黑箱（有源不物理级建模，负面清单）。",
+    "ci_status": ""
   }
 ]

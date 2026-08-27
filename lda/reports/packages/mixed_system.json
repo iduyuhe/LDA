@@ -4,7 +4,7 @@
   "kind": "mixed_system",
   "domain": "hybrid",
   "title": "3-信道 WDM × 3-qubit 读出混合巨型系统",
-  "created_at": "2026-08-25T07:24:14",
+  "created_at": "2026-08-27T15:10:28",
   "ir": {
     "schema_version": "0.3",
     "domain": "hybrid",
@@ -149,9 +149,9 @@
         0.052
       ],
       "xt_min_db": [
+        57.29,
         22.38,
-        22.4,
-        57.52
+        22.4
       ],
       "thru_at_channels": [
         0.00032,

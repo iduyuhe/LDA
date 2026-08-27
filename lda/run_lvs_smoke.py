@@ -1,6 +1,6 @@
-"""v0.8.24 LVS 签核 smoke：版图-原理图一致性检查（签核级 · 版图差距 #5）。
+"""v0.8.24+ LVS 签核 smoke：版图-原理图一致性检查（签核级 · 版图差距 #5/#6）。
 
-验证 `lda_l2.lvs`：
+验证 `lda_l2.lvs`（单层 + 多层 v0.8.25）：
   1. 正例：一致版图 → ACCEPT（器件/网络全匹配、零违规）
   2. 反例-断路：删布线 → REJECT（open 检出）
   3. 反例-错连：布线互换 → REJECT（misconnect 检出）
@@ -9,7 +9,9 @@
   6. 几何恢复独立性：版图网表从布线几何恢复（不读原理图声明）
   7. 集成：chip_layout_export 返回 lvs_report；tapeout S4 一致 ACCEPT /
      错连 REJECT（SKIP 不阻断旧接口）
-  8. S9 锚：golden_value 正例 1.0 / 反例 0.0；BENCHMARK_ORDER 43 题
+  8. S9 锚：golden_value 正例 1.0 / 反例 0.0；BENCHMARK_ORDER 44 题
+  8b. 多层 LVS（v0.8.25 S10 锚）：层栈 can_cross 谓词 / 跨层 via 正例
+      ACCEPT / 同层交叉·通孔短路·端口共享·悬空四反例 REJECT / 题库 44
   9. 红线：判决函数源码零 LLM（import 断言）
 
 全部死标量（坐标几何 + 集合比对），LLM 不进判决路径。
@@ -124,12 +126,54 @@ def main() -> int:
     check("S9 锚：open/misconnect/short/dangling 均 =0.0（REJECT）",
           all(golden_value("S9", {"case": c}) == 0.0
               for c in ("open", "misconnect", "short", "dangling")))
-    check("S9 锚：题库 42 → 43 题（B27+E7+S9）",
-          "S9" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 43,
+    check("S9 锚：题库 43 → 44 题（B27+E7+S9+S10）",
+          "S9" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 44,
           f"n={len(BENCHMARK_ORDER)}")
     s9r = s9_report()
     check("S9 锚：全案例判决自洽（仅 consistent 判 ACCEPT）",
           s9r["all_consistent_accepted"])
+
+    # ⑧b 多层 LVS（v0.8.25 · S10 锚 · 版图差距 #6）
+    from lda_harness.lvs_anchor import (build_multilayer_case, s10_report,
+                                        s10_lvs_multilayer_verdict)
+    from lda_l2.layers import get_stack
+    from lda_l2.lvs import run_lvs_multilayer
+    mstack = get_stack("soi")
+    check("多层：can_cross 谓词（同层可短 M1∩M1 / 跨层介质隔离 M1×M2）",
+          mstack.can_cross("M1", "M1") and not mstack.can_cross("M1", "M2")
+          and not mstack.can_cross("M2", "M1"))
+    mlink, mpl, mroutes = build_multilayer_case("consistent")
+    mr = run_lvs_multilayer(mlink, mpl, mroutes, stack=mstack)
+    check("多层正例：跨层 via 布线 ACCEPT（M1 段+via+M2 段，零违规）",
+          mr["verdict"] == "ACCEPT" and mr["n_violations"] == 0,
+          f"{mr['verdict']} viol={mr['n_violations']}")
+    check("多层正例：mode=multilayer 且层栈 SOI",
+          mr.get("mode") == "multilayer"
+          and "M2" in mr.get("stack", {}).get("signal_layers", []),
+          f"stack={mr.get('stack', {}).get('name')}")
+    # 多层四类反例
+    multi_cases = {"cross_short": "short_cross", "via_short": "short_via",
+                   "port_short": "short_port", "dangling": "dangling"}
+    for mc, expect_viol in multi_cases.items():
+        l2, p2, rt2 = build_multilayer_case(mc)
+        rr2 = run_lvs_multilayer(l2, p2, rt2, stack=mstack)
+        check(f"多层反例-{mc}：REJECT 且 {expect_viol} 检出",
+              rr2["verdict"] == "REJECT" and expect_viol in rr2["violations"],
+              f"kinds={sorted(rr2['violations'].keys())}")
+    # S10 锚：golden_value 经 harness
+    check("S10 锚：consistent=1.0 / 四反例 0.0（经 golden_value）",
+          golden_value("S10", {"case": "consistent"}) == 1.0
+          and all(golden_value("S10", {"case": c}) == 0.0
+                  for c in ("cross_short", "via_short", "port_short",
+                            "dangling")))
+    check("S10 锚：题库 43 → 44 题（B27+E7+S9+S10）",
+          "S10" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 44,
+          f"n={len(BENCHMARK_ORDER)}")
+    s10r = s10_report()
+    check("S10 锚：全案例判决自洽 + 层栈信息",
+          s10r["all_consistent_accepted"]
+          and s10r.get("stack", {}).get("name", "").startswith("SOI"),
+          f"stack={s10r.get('stack', {}).get('name')}")
 
     # ⑨ 红线：判决路径零 LLM（run_lvs / extract_layout_netlist 源码零 LLM import）
     import inspect

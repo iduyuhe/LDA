@@ -1001,3 +1001,26 @@
 - `run_lvs_smoke.py` **17/17 PASS** 入 CI core（58→59）：正例 ACCEPT / 四类反例 REJECT / 几何恢复独立性 / 双集成断言 / S9 锚 / 红线（源码零 LLM）
 - 计数一致性同步：题库 43、S1-S9、CI 59；empirical/l1/statistical/system_budget 四 smoke 42→43 全绿
 - 版图 7 差距进度：①A* ✅ ②诚实退化 ✅ ③2D 放置 ✅ ④多端网+有源基元 ✅ **⑤LVS ✅**（剩 ⑥多层 ⑦规模——后置项）
+
+## v0.8.25（2026-08-27 · 多层版图 · 版图审计差距 #6 落地）
+
+**里程碑：版图审计 7 差距第六项闭合——多层版图（金属/通孔层叠）。LVS 短路判定层叠化：同层相交才 short、跨层垂直投影重叠安全（介质隔离）——这是多层版图能叠布线的物理依据；via（通孔）是唯一合法跨层桥。**
+
+### 新增
+- **`lda_l2/layers.py`**（层栈定义）：`Layer/LayerStack` + 默认 SOI 栈（M1 硅波导 / VIA12 通孔 / M2 金属互连）+ 量子 Al 栈（预留）；核心谓词 **`can_cross(l1,l2)`**（同层 signal 可短 / 异层介质隔离）——多层 LVS 短路判定的语义基石
+- **`route_net` 支持 `layer` 参数**（RouteResult 加 `layer` 字段，默认 M1——单层行为零破坏）
+- **多层 LVS**（`lvs.py` `run_lvs_multilayer` + `extract_layout_netlist_multilayer`）：
+  - **层感知几何恢复**：M1 布线段只匹配 M1 端口（层不匹配即悬空）
+  - **via 桥接自动发现**：同 net 跨层段端点重合 → 通孔桥（合法跨层）；跨 net 端点重合 → `short_via`（未经声明的跨层相接）
+  - **短路层叠化**：同层路径相交 → `short_cross`（带层标注）；跨层投影重叠 → 安全
+- **harness S10 锚**（`lvs_anchor.py` `build_multilayer_case`）：跨层 via 正例 1.0 / 同层交叉·通孔短路·端口共享·悬空四反例 0.0；BENCHMARK_ORDER **43→44**（B27+E7+S9+S10）
+- WebUI：`/api/link_lvs` 支持多层案例（`multi` 参数 + 自动识别）；LVS 面板分单层/多层 optgroup
+
+### 验证
+- `run_lvs_smoke.py` **27/27 PASS**（单层 17 + 多层 10）：can_cross 谓词 / 跨层 via 正例 ACCEPT / 四类多层反例 REJECT（short_cross·short_via·short_port·dangling 分别检出）/ S10 锚经 golden_value / 题库 44
+- 计数一致性同步：题库 44、S1-S10、CI 59；empirical/l1/statistical/system_budget 四 smoke 43→44 全绿
+- 版图 7 差距进度：①A* ✅ ②诚实退化 ✅ ③2D 放置 ✅ ④多端网+有源基元 ✅ ⑤LVS ✅ **⑥多层 ✅**（剩 ⑦规模——后置项）
+
+### 教训（S10 案例设计）
+- **同层段意外共线陷阱**：单行放置（place_row）下所有 Waveguide 端口 y 相同，两条 M1 水平段必然共线重叠 → 构造多层案例须自定义放置（wg1 下移）分离各层段；首版测试曾把「真实同层短路」误当误报——实际是多层 LVS 正确检出
+- 多层网表恢复的端口匹配：**仅首段起点/末段终点匹配端口，中间端点是 via 跳点**（不匹配端口、不判 dangling）

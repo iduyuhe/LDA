@@ -105,3 +105,110 @@ def s9_report() -> Dict[str, Any]:
             x["verdict"] == ("ACCEPT" if x["case"] == "consistent" else "REJECT")
             for x in rows),
     }
+
+
+# ---------------------------------------------------------------------------
+# S10 多层 LVS 锚（v0.8.25 · 版图差距 #6：金属/通孔层叠）
+# ---------------------------------------------------------------------------
+MULTI_CASES = ("consistent", "cross_short", "via_short", "port_short",
+               "dangling")
+
+
+def build_multilayer_case(case: str = "consistent"
+                          ) -> Tuple[LinkModel, Dict[str, Any], Dict[str, Any]]:
+    """构造多层 LVS 案例：3 器件（M1/M2 混合）+ 跨层 via 布线（正例/反例）。
+
+    层栈：SOI（M1 硅波导 / VIA12 / M2 金属互连）。器件：wg0/wg1 在 M1、
+    wg2 在 M2；net_a = wg0.out→wg2.in（M1→M2 跨层）、net_b = wg2.out→wg1.in。
+    """
+    if case not in MULTI_CASES:
+        raise ValueError(f"case 须为 {MULTI_CASES}，实际 {case}")
+    from lda_layout.placement import port_abs
+    from lda_layout.router import route_net
+
+    link = LinkModel(name=f"s10_lvs_{case}")
+    link.add_device("wg0", "Waveguide", {"length": 20.0})
+    link.add_device("wg2", "Waveguide", {"length": 20.0, "layer": "M2"})
+    link.add_device("wg1", "Waveguide", {"length": 20.0})
+    link.connect("net_a", "wg0", "out", "wg2", "in")
+    link.connect("net_b", "wg2", "out", "wg1", "in")
+    # 自定义放置：wg1 下移避免 M1 段共线（S9 放置陷阱教训：同层段不可意外共线）
+    placement = {"wg0": (0.0, 0.0, 0.0), "wg2": (60.0, 0.0, 0.0),
+                 "wg1": (100.0, -40.0, 0.0)}
+    pa0 = port_abs("wg0", "out", placement, link)     # (20, 0)  M1
+    pa1 = port_abs("wg2", "in", placement, link)      # (60, 0)  M2
+    pb0 = port_abs("wg2", "out", placement, link)     # (80, 0)  M2
+    pb1 = port_abs("wg1", "in", placement, link)      # (100,-40) M1
+
+    # 正例基线：net_a = M1 段 (20,0)→(20,-40) via → M2 段 → wg2.in；
+    #           net_b = M2 段 (80,0)→(80,-20) via → M1 段 → wg1.in
+    r_a1 = route_net("net_a", pa0, (20.0, -40.0), layer="M1")
+    r_a2 = route_net("net_a", (20.0, -40.0), pa1, layer="M2")
+    r_b1 = route_net("net_b", pb0, (80.0, -20.0), layer="M2")
+    r_b2 = route_net("net_b", (80.0, -20.0), pb1, layer="M1")
+
+    if case == "consistent":
+        routes = {"net_a": [r_a1, r_a2], "net_b": [r_b1, r_b2]}
+    elif case == "cross_short":      # 同层中点交叉：net_b M1 段水平穿过 net_a M1 垂直段
+        routes = {"net_a": [r_a1, r_a2],
+                  "net_b": [r_b1,
+                            route_net("net_b", (80.0, -20.0), (10.0, -20.0),
+                                      layer="M1"),
+                            route_net("net_b", (10.0, -20.0), pb1,
+                                      layer="M1")]}
+    elif case == "via_short":        # net_b 端点撞 net_a via 点 (20,-40)（跨层短路）
+        routes = {"net_a": [r_a1, r_a2],
+                  "net_b": [route_net("net_b", pb0, (20.0, -40.0), layer="M2"),
+                            route_net("net_b", (20.0, -40.0), pb1,
+                                      layer="M1")]}
+    elif case == "port_short":       # 两网共享 wg2.in 端口（net_b 从 wg2.in 出发）
+        routes = {"net_a": [r_a1, r_a2],
+                  "net_b": [route_net("net_b", pa1, (80.0, -20.0), layer="M2"),
+                            r_b2]}
+    elif case == "dangling":         # net_b M2 段端点悬空（空白区域）
+        routes = {"net_a": [r_a1, r_a2],
+                  "net_b": [route_net("net_b", (500.0, 500.0), (600.0, 500.0),
+                                      layer="M2"),
+                            route_net("net_b", (600.0, 500.0), pb1,
+                                      layer="M1")]}
+    return link, placement, routes
+
+
+def s10_lvs_multilayer_verdict(case: str = "consistent", tol: float = 1.0) -> float:
+    """S10 golden：多层 LVS 判决正确性（确定性，可复现）。
+
+    一致跨层版图 → 1.0（ACCEPT）；四类失配（同层交叉/通孔短路/端口共享/
+    悬空）→ 0.0（REJECT）。判决零 LLM（层感知几何 + can_cross 谓词）。
+    """
+    from lda_l2.layers import get_stack
+    from lda_l2.lvs import run_lvs_multilayer
+    link, placement, routes = build_multilayer_case(case)
+    r = run_lvs_multilayer(link, placement, routes,
+                           stack=get_stack("soi"), tol=tol)
+    return 1.0 if r["verdict"] == "ACCEPT" else 0.0
+
+
+def s10_report() -> Dict[str, Any]:
+    """S10 全案例判决报告（smoke/WebUI 消费）。"""
+    from lda_l2.layers import get_stack
+    from lda_l2.lvs import run_lvs_multilayer
+    stack = get_stack("soi")
+    rows = []
+    for case in MULTI_CASES:
+        link, placement, routes = build_multilayer_case(case)
+        r = run_lvs_multilayer(link, placement, routes, stack=stack)
+        rows.append({
+            "case": case,
+            "verdict": r["verdict"],
+            "n_violations": r["n_violations"],
+            "violation_kinds": sorted(r["violations"].keys()),
+        })
+    return {
+        "title": "S10 · 多层 LVS 签核锚（M1/VIA12/M2 层叠）",
+        "expected": {"consistent": "ACCEPT"},
+        "cases": rows,
+        "all_consistent_accepted": all(
+            x["verdict"] == ("ACCEPT" if x["case"] == "consistent" else "REJECT")
+            for x in rows),
+        "stack": stack.to_summary(),
+    }

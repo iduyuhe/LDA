@@ -35,6 +35,8 @@ from .golden import (
     s8_statistical_osnr_anchor,
     # S9 LVS 签核锚（Phase 4 · 版图-原理图一致性判决）
     s9_lvs_verdict,
+    # S10 多层 LVS 锚（Phase 4 · 金属/通孔层叠，版图差距 #6）
+    s10_lvs_multilayer_verdict,
 )
 
 BENCHMARK_DEFS = {
@@ -538,6 +540,22 @@ BENCHMARK_DEFS = {
                 "恢复（端点→端口锚点归属），比对纯集合运算，判决零 LLM。"
                 "正例 case=consistent；反例由 smoke 逐案例断言。",
     },
+
+    # ---- S10 多层 LVS 锚（Phase 4 · 版图差距 #6：金属/通孔层叠） ----
+    "S10": {
+        "title": "多层 LVS 签核锚（M1/VIA12/M2 层叠 · 版图差距 #6）",
+        "metric": "verdict(ACCEPT=1, REJECT=0)",
+        "oracle": "deterministic(multilayer-LVS, layer-stack+geometry)",
+        "tol": 1e-9,
+        "anchor": "physical_law",
+        "default_params": {"case": "consistent"},
+        "golden_fn": s10_lvs_multilayer_verdict,
+        "note": "系统锚（多层签核）：层感知几何恢复——M1 段只接 M1 端口、跨层段"
+                "端点重合自动发现 via 桥接；短路判定用层栈 can_cross 谓词（同层"
+                "相交才 short、跨层投影重叠安全=介质隔离——多层版图可叠布线的"
+                "物理依据）。一致跨层版图 1.0；同层交叉/通孔短路/端口共享/悬空"
+                "四类失配 0.0。判决零 LLM。",
+    },
 }
 
 # 对齐顺序（报告展示用）
@@ -547,7 +565,7 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B26", "B27",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
-                   "S9"]  # S 系统锚（Phase 0-4；S9=LVS 签核锚 v0.8.24）
+                   "S9", "S10"]  # S 系统锚（Phase 0-4；S9=LVS 签核，S10=多层 LVS）
 
 
 def register_benchmark(def_dict: dict) -> str:

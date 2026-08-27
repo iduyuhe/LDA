@@ -685,22 +685,42 @@ def run_link_design(payload=None):
 
 
 def run_link_lvs(payload=None):
-    """v0.8.24 LVS 签核端点：版图-原理图一致性检查（签核级）。
+    """v0.8.24+ LVS 签核端点：版图-原理图一致性检查（签核级）。
 
-    输入：无（用内置 WDM 案例实跑）或 {case: consistent|open|misconnect|
-    short|dangling}（S9 锚案例）。
-    返回：LVS 判决（verdict/match/violations）+ 人类可读 markdown。
-    判决全死标量（坐标几何 + 集合比对），LLM 不进判决路径。
+    输入：{case, multi?}——
+      - 单层（默认）：case ∈ consistent|open|misconnect|short|dangling（S9 锚）
+      - 多层（multi=true 或 case ∈ MULTI_CASES）：case ∈ consistent|cross_short|
+        via_short|port_short|dangling（S10 锚，M1/VIA12/M2 层叠）
+    返回：LVS 判决（verdict/match/violations/mode）+ 人类可读 markdown。
+    判决全死标量（坐标几何 + 层栈 can_cross 谓词 + 集合比对），LLM 不进判决路径。
     """
     import sys as _sys
     from pathlib import Path as _P
     _lda = _P(__file__).resolve().parent.parent  # lda/
     if str(_lda) not in _sys.path:
         _sys.path.insert(0, str(_lda))
-    from lda_harness.lvs_anchor import build_lvs_case, CASES, s9_report
-    from lda_l2.lvs import run_lvs, lvs_markdown
+    from lda_harness.lvs_anchor import (build_lvs_case, CASES, s9_report,
+                                        build_multilayer_case, MULTI_CASES,
+                                        s10_report)
+    from lda_l2.lvs import run_lvs, lvs_markdown, run_lvs_multilayer
+    from lda_l2.layers import get_stack
     payload = payload or {}
     case = str(payload.get("case", "consistent"))
+    multi = bool(payload.get("multi", False)) or case in MULTI_CASES
+    if multi:
+        if case not in MULTI_CASES:
+            return {"ok": False, "error": f"多层案例须为 {MULTI_CASES}，实际 {case}"}
+        try:
+            link, placement, routes = build_multilayer_case(case)
+            report = run_lvs_multilayer(link, placement, routes,
+                                        stack=get_stack("soi"))
+            report["case"] = case
+            report["markdown"] = lvs_markdown(report)
+            report["s10"] = s10_report()
+            report["ok"] = True
+            return report
+        except Exception as e:  # noqa: BLE001
+            return {"ok": False, "error": str(e)[:160]}
     if case not in CASES:
         return {"ok": False, "error": f"case 须为 {CASES}，实际 {case}"}
     try:

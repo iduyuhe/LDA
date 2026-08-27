@@ -36,6 +36,7 @@ class RouteResult:
     total_loss_db: float
     blocked: bool = False                   # 候选均碰撞时直连（诚实标注）
     note: str = ""
+    layer: str = "M1"                       # v0.8.25 多层版图：布线所在信号层
 
 
 def _norm(vx, vy):
@@ -386,7 +387,8 @@ def route_multi_net(ports: Sequence[Tuple[float, float]],
 def route_net(net_id, src, dst, obstacles=None, wg_width=0.5,
               bend_radius=5.0, corner="round",
               straight_loss_db_cm=DEFAULT_STRAIGHT_LOSS_DB_CM,
-              method: str = "astar", grid_dl: float = 1.0) -> RouteResult:
+              method: str = "astar", grid_dl: float = 1.0,
+              layer: str = "M1") -> RouteResult:
     """端口 A→B 自动布线（曼哈顿 + 圆角/直角 + 避障 + 损耗计入）。
 
     参数：
@@ -396,8 +398,10 @@ def route_net(net_id, src, dst, obstacles=None, wg_width=0.5,
       bend_radius         ：圆角半径 µm
       corner              ：'round'（圆弧，计弯曲损耗）| 'sharp'（直角，忽略散射）
       straight_loss_db_cm ：直波导损耗 dB/cm
+      layer               ：v0.8.25 多层版图——布线所在信号层（默认 M1，
+                            单层行为不变；多层 LVS 按层比对短路）
 
-    返回 RouteResult（points_um / 长度 / 弯曲数 / 损耗）。
+    返回 RouteResult（points_um / 长度 / 弯曲数 / 损耗 / layer）。
     """
     obstacles = obstacles or []
     wg_half = wg_width / 2.0
@@ -438,4 +442,5 @@ def route_net(net_id, src, dst, obstacles=None, wg_width=0.5,
         straight_um=round(straight, 4), n_bends=n_bends,
         bend_loss_db=round(bend_loss, 6),
         straight_loss_db=round(straight_loss, 6),
-        total_loss_db=round(total, 6), blocked=blocked, note=note)
+        total_loss_db=round(total, 6), blocked=blocked, note=note,
+        layer=layer)

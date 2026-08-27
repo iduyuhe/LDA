@@ -1160,16 +1160,25 @@
   </div>
 
   <div class="sec">
-    <h2>LVS 签核（v0.8.24 · 版图-原理图一致性 · 签核级）</h2>
-    <div class="hint">标准 EDA 签核双闸：DRC 保证「版图可制造」，<b>LVS 保证「版图即原理图」</b>。版图网表<b>从布线几何独立恢复</b>（布线端点→端口锚点归属，不读原理图声明——才能发现「实现≠意图」），与原理图网表比对：断路/错连/短路/悬空/多余/自环六类违规死标量检出，ACCEPT/REJECT 确定性判决。配套 harness <b>S9 锚</b>（一致版图 1.0 / 四类反例 0.0）。LLM 不进判决路径。</div>
+    <h2>LVS 签核（v0.8.25 · 版图-原理图一致性 · 单层 + 多层 M1/VIA12/M2）</h2>
+    <div class="hint">标准 EDA 签核双闸：DRC 保证「版图可制造」，<b>LVS 保证「版图即原理图」</b>。版图网表<b>从布线几何独立恢复</b>（布线端点→端口锚点归属，不读原理图声明——才能发现「实现≠意图」）。<b>多层版图（v0.8.25）</b>：M1 段只接 M1 端口、跨层段端点重合自动发现 <b>via 桥接</b>；短路判定层叠化——<b>同层相交才 short，跨层垂直投影重叠安全</b>（介质隔离，多层可叠布线的物理依据）。配套 harness <b>S9/S10 锚</b>。LLM 不进判决路径。</div>
     <div class="row">
       <label>案例
         <select id="lvsCase">
-          <option value="consistent">一致版图（正例）</option>
-          <option value="open">断路（删布线）</option>
-          <option value="misconnect">错连（布线互换）</option>
-          <option value="short">短路（共享端口）</option>
-          <option value="dangling">悬空（端点无归属）</option>
+          <optgroup label="单层（S9）">
+            <option value="consistent">一致版图（正例）</option>
+            <option value="open">断路（删布线）</option>
+            <option value="misconnect">错连（布线互换）</option>
+            <option value="short">短路（共享端口）</option>
+            <option value="dangling">悬空（端点无归属）</option>
+          </optgroup>
+          <optgroup label="多层 M1/VIA12/M2（S10）">
+            <option value="consistent" data-multi="1">跨层 via 一致版图（正例）</option>
+            <option value="cross_short" data-multi="1">同层交叉短路</option>
+            <option value="via_short" data-multi="1">通孔短路（撞他网 via）</option>
+            <option value="port_short" data-multi="1">端口共享短路</option>
+            <option value="dangling" data-multi="1">悬空布线</option>
+          </optgroup>
         </select>
       </label>
       <button class="btn" id="runLvs">运行 LVS 签核</button>
@@ -3102,10 +3111,12 @@ function renderLinkDesign(d){
 }
 $('runLk').onclick = runLk;
 
-// ---- LVS 签核（v0.8.24 · 版图-原理图一致性）----
+// ---- LVS 签核（v0.8.25 · 版图-原理图一致性 · 单层 + 多层）----
 async function runLvs(){
   const btn = $('runLvs'); btn.disabled = true;
-  const payload = {case: $('lvsCase').value};
+  const sel = $('lvsCase');
+  const opt = sel.options[sel.selectedIndex];
+  const payload = {case: sel.value, multi: opt && opt.dataset && opt.dataset.multi === '1'};
   $('lvsSummary').innerHTML = '<span class="spin"></span> LVS 签核运行中（版图网表几何恢复 → 与原理图比对）…';
   $('lvsBody').innerHTML=''; $('lvsConclusion').innerHTML='';
   try{
@@ -3118,7 +3129,8 @@ function renderLvs(d){
   if(!d.ok){ $('lvsSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
   const acc = d.verdict==='ACCEPT';
   const sch = d.schematic||{}, lay = d.layout||{}, m = d.match||{};
-  $('lvsSummary').innerHTML = `LVS 签核 · 案例 <b>${d.case}</b> · `
+  const mode = d.mode==='multilayer' ? '多层 '+((d.stack&&d.stack.name)||'') : '单层';
+  $('lvsSummary').innerHTML = `LVS 签核（${mode}）· 案例 <b>${d.case}</b> · `
     + `<span class="verdict ${acc?'ok':'fail'}">${d.verdict}</span>`
     + `（违规 ${d.n_violations} 项）`;
   const viol = d.violations||{};
@@ -3132,8 +3144,8 @@ function renderLvs(d){
     </tbody></table>
     ${violRows?`<div class="subhead">违规明细（${d.n_violations} 项）</div>
     <table class="tbl"><thead><tr><th>类别</th><th>数量</th><th>明细</th></tr></thead><tbody>${violRows}</tbody></table>`:'<div class="note">零违规——版图与原理图完全一致。</div>'}
-    <div class="subhead">S9 锚全案例自检</div>
-    <div class="note">${escapeHtml(JSON.stringify((d.s9&&d.s9.cases)||[]).slice(0,220))}</div>`;
+    <div class="subhead">S9/S10 锚自检</div>
+    <div class="note">${escapeHtml(JSON.stringify((d.s9&&d.s9.cases)||(d.s10&&d.s10.cases)||[]).slice(0,220))}</div>`;
   $('lvsConclusion').innerHTML = `<strong>结论：${acc?'LVS 签核通过（版图-原理图一致）':'LVS 签核拒绝（见违规明细）'}</strong>`
     + `<br><span class="note">${d.honest_note||''}</span>`;
 }

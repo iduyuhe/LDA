@@ -9,7 +9,7 @@
   6. 几何恢复独立性：版图网表从布线几何恢复（不读原理图声明）
   7. 集成：chip_layout_export 返回 lvs_report；tapeout S4 一致 ACCEPT /
      错连 REJECT（SKIP 不阻断旧接口）
-  8. S9 锚：golden_value 正例 1.0 / 反例 0.0；BENCHMARK_ORDER 44 题
+  8. S9 锚：golden_value 正例 1.0 / 反例 0.0；BENCHMARK_ORDER 45 题
   8b. 多层 LVS（v0.8.25 S10 锚）：层栈 can_cross 谓词 / 跨层 via 正例
       ACCEPT / 同层交叉·通孔短路·端口共享·悬空四反例 REJECT / 题库 44
   9. 红线：判决函数源码零 LLM（import 断言）
@@ -126,8 +126,8 @@ def main() -> int:
     check("S9 锚：open/misconnect/short/dangling 均 =0.0（REJECT）",
           all(golden_value("S9", {"case": c}) == 0.0
               for c in ("open", "misconnect", "short", "dangling")))
-    check("S9 锚：题库 43 → 44 题（B27+E7+S9+S10）",
-          "S9" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 44,
+    check("S9 锚：题库 44 → 45 题（B27+E7+S9+S10+S11）",
+          "S9" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 45,
           f"n={len(BENCHMARK_ORDER)}")
     s9r = s9_report()
     check("S9 锚：全案例判决自洽（仅 consistent 判 ACCEPT）",
@@ -166,8 +166,8 @@ def main() -> int:
           and all(golden_value("S10", {"case": c}) == 0.0
                   for c in ("cross_short", "via_short", "port_short",
                             "dangling")))
-    check("S10 锚：题库 43 → 44 题（B27+E7+S9+S10）",
-          "S10" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 44,
+    check("S10 锚：题库 44 → 45 题（B27+E7+S9+S10+S11）",
+          "S10" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 45,
           f"n={len(BENCHMARK_ORDER)}")
     s10r = s10_report()
     check("S10 锚：全案例判决自洽 + 层栈信息",

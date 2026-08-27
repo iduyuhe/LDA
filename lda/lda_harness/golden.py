@@ -25,6 +25,7 @@ from .lvs_anchor import (  # noqa: E402  # S9/S10 LVS 签核锚（Phase 4）
     s9_lvs_verdict,
     s10_lvs_multilayer_verdict,
 )
+from .scale_anchor import s11_large_scale_verdict  # noqa: E402  # S11 规模锚
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -533,6 +534,7 @@ _GOLDEN_DISPATCH = {
     "S8": s8_statistical_osnr_anchor,
     "S9": s9_lvs_verdict,
     "S10": s10_lvs_multilayer_verdict,
+    "S11": s11_large_scale_verdict,
 }
 
 _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
@@ -540,7 +542,7 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                  "B26", "B27",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
-                 "S9", "S10"}  # S 系统锚（确定性算术+统计+LVS 签核）
+                 "S9", "S10", "S11"}  # S 系统锚（确定性算术+统计+LVS+规模）
 
 
 def golden_value(bid, params):

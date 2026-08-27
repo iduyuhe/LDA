@@ -121,6 +121,45 @@ def _segments_intersect(a, b, c, d) -> bool:
     return (o1 * o2 < 0) and (o3 * o4 < 0)
 
 
+def _bbox_of(pts) -> Tuple[float, float, float, float]:
+    """折线 bbox (xmin, ymin, xmax, ymax)——相交检测快速排除用。"""
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def _bbox_overlap(b1, b2) -> bool:
+    """两 bbox 是否可能相交（含共边/共点）。"""
+    return not (b1[2] < b2[0] or b2[2] < b1[0]
+                or b1[3] < b2[1] or b2[3] < b1[1])
+
+
+def _seg_bbox_intersect(a, b, c, d) -> bool:
+    """段级 bbox 快速排除（不相交返回 False，避免 _segments_intersect 精确计算）。"""
+    return not (max(a[0], b[0]) < min(c[0], d[0])
+                or max(c[0], d[0]) < min(a[0], b[0])
+                or max(a[1], b[1]) < min(c[1], d[1])
+                or max(c[1], d[1]) < min(a[1], b[1]))
+
+
+def _paths_cross(pts1, pts2) -> bool:
+    """两折线是否相交（bbox 预检 + 段级 bbox 预检 + 精确判断）。"""
+    if not _bbox_overlap(_bbox_of(pts1), _bbox_of(pts2)):
+        return False
+    for k in range(len(pts1) - 1):
+        a, b = pts1[k], pts1[k + 1]
+        for m in range(len(pts2) - 1):
+            c, d = pts2[m], pts2[m + 1]
+            shared = (a == c or a == d or b == c or b == d)
+            if shared:
+                continue
+            if not _seg_bbox_intersect(a, b, c, d):
+                continue               # bbox 不相交快速跳过
+            if _segments_intersect(a, b, c, d):
+                return True
+    return False
+
+
 def extract_layout_netlist(link, placement, routes,
                            tol: float = 1.0) -> Dict[str, Any]:
     """版图网表：从布线几何恢复连接（不依赖原理图声明）。
@@ -175,26 +214,13 @@ def extract_layout_netlist(link, placement, routes,
             else:
                 port_owner[p] = net_id
 
-    # 布线交叉短路（不同 net 路径线段相交，非共享端点）
+    # 布线交叉短路（不同 net 路径线段相交，非共享端点）——bbox 预检提速
     cross_shorts: List[Tuple[str, str]] = []
     net_ids = sorted(paths.keys())
     for i in range(len(net_ids)):
         for j in range(i + 1, len(net_ids)):
             n1, n2 = net_ids[i], net_ids[j]
-            pts1, pts2 = paths[n1], paths[n2]
-            hit = False
-            for k in range(len(pts1) - 1):
-                for m in range(len(pts2) - 1):
-                    a, b = pts1[k], pts1[k + 1]
-                    c, d = pts2[m], pts2[m + 1]
-                    # 排除共享端点（合法汇聚——多端网/公共节点）
-                    shared = (a == c or a == d or b == c or b == d)
-                    if not shared and _segments_intersect(a, b, c, d):
-                        hit = True
-                        break
-                if hit:
-                    break
-            if hit:
+            if _paths_cross(paths[n1], paths[n2]):
                 cross_shorts.append((n1, n2))
 
     # 版图器件实例：placement 全集（防未来版图引擎独立生成时的核对点）
@@ -509,19 +535,7 @@ def extract_layout_netlist_multilayer(link, placement, routes, stack=None,
                 for n2 in sorted(pl2):
                     if n1 == n2 and l1 == l2:
                         continue       # 同网自身不比对
-                    pts1, pts2 = pl1[n1], pl2[n2]
-                    hit = False
-                    for k in range(len(pts1) - 1):
-                        for m in range(len(pts2) - 1):
-                            a, b = pts1[k], pts1[k + 1]
-                            c, d = pts2[m], pts2[m + 1]
-                            shared = (a == c or a == d or b == c or b == d)
-                            if not shared and _segments_intersect(a, b, c, d):
-                                hit = True
-                                break
-                        if hit:
-                            break
-                    if hit:
+                    if _paths_cross(pl1[n1], pl2[n2]):
                         cross_shorts.append((n1, n2, f"{l1}∩{l2}"))
 
     kind_of = {c.id: c.kind for c in link.ir.components}

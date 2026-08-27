@@ -706,6 +706,18 @@ def run_link_lvs(payload=None):
     from lda_l2.layers import get_stack
     payload = payload or {}
     case = str(payload.get("case", "consistent"))
+    # 千器件规模案例（S11 · v0.8.26）：case='scale' 跑 1000 器件全链路
+    if case == "scale":
+        try:
+            from lda_harness.scale_anchor import run_scale_pipeline, s11_report
+            report = run_scale_pipeline(case="consistent")
+            report["case"] = "scale"
+            report["markdown"] = lvs_markdown(report)
+            report["s11"] = s11_report()
+            report["ok"] = True
+            return report
+        except Exception as e:  # noqa: BLE001
+            return {"ok": False, "error": str(e)[:160]}
     # 多层判定：显式 multi=true；或 case 名仅在多层集（cross_short/via_short/
     # port_short）自动识别——与单层重叠名（consistent/dangling）默认走单层，
     # 显式 multi=true 才走多层

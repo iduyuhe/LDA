@@ -37,6 +37,8 @@ from .golden import (
     s9_lvs_verdict,
     # S10 多层 LVS 锚（Phase 4 · 金属/通孔层叠，版图差距 #6）
     s10_lvs_multilayer_verdict,
+    # S11 千器件规模锚（Phase 4 · 版图差距 #7 收官）
+    s11_large_scale_verdict,
 )
 
 BENCHMARK_DEFS = {
@@ -541,6 +543,18 @@ BENCHMARK_DEFS = {
                 "正例 case=consistent；反例由 smoke 逐案例断言。",
     },
 
+    # ---- S11 千器件规模锚（Phase 4 · 版图差距 #7 收官） ----
+    "S11": {
+        "title": "千器件规模扩展锚（链式 + 多层跨行跳线 · 版图差距 #7）",
+        "metric": "verdict(ACCEPT=1, REJECT=0)",
+        "oracle": "deterministic(scale-pipeline, build+place+route+LVS)",
+        "tol": 1e-9,
+        "anchor": "physical_law",
+        "default_params": {"case": "consistent", "n_devices": 1000},
+        "golden_fn": s11_large_scale_verdict,
+        "note": "规模锚（收官）：1000 器件链式链路全链路（构建+2D 放置+多层布线+LVS 签核）ACCEPT=1.0——跨行跳线走 M2 层（与 S10 多层协同）；局部破坏（断路/错连）REJECT=0.0。性能预算 5s（bbox 预检后实测 ~0.9s），正确性由 golden 判、性能由预算断。判决零 LLM。",
+    },
+
     # ---- S10 多层 LVS 锚（Phase 4 · 版图差距 #6：金属/通孔层叠） ----
     "S10": {
         "title": "多层 LVS 签核锚（M1/VIA12/M2 层叠 · 版图差距 #6）",
@@ -565,7 +579,7 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B26", "B27",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
-                   "S9", "S10"]  # S 系统锚（Phase 0-4；S9=LVS 签核，S10=多层 LVS）
+                   "S9", "S10", "S11"]  # S 系统锚（Phase 0-4；S9-11=LVS/多层/规模）
 
 
 def register_benchmark(def_dict: dict) -> str:

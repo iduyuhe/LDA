@@ -18,12 +18,13 @@ import json
 import subprocess
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-# 读 appid
+# 读 appid + secret（配置文件已含 AppSecret）
 _cfg = os.path.join(os.path.expanduser("~"), ".workbuddy", "wechat_credentials.json")
-APPID = json.load(open(_cfg, encoding="utf-8")).get("appid")
-SECRET = os.environ.get("WECHAT_APPSECRET")
+_cfg_data = json.load(open(_cfg, encoding="utf-8"))
+APPID = _cfg_data.get("appid")
+SECRET = _cfg_data.get("appsecret") or os.environ.get("WECHAT_APPSECRET")
 if not SECRET:
-    print("ERROR: 请先 set WECHAT_APPSECRET=xxxx"); sys.exit(2)
+    print("ERROR: 请在 ~/.workbuddy/wechat_credentials.json 中填入 AppSecret"); sys.exit(2)
 
 COVER = os.path.join(ROOT, "docs/images/cover_lda_b3.jpg")
 ECOSYS = r"C:\Users\Administrator\WorkBuddy\2026-05-29-19-34-45\.workbuddy\assets\ecosystem_banner.png"

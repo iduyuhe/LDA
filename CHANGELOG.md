@@ -1063,3 +1063,21 @@
 - 千器件演示：IO 2 端口 / 器件 1000 / 网络 999 全匹配 / DRC+LVS 双闸 ACCEPT / 0.99s
 - 回归：count 11/11、chip_layout 6/6、lvs 27/27、scale 13/13 全绿
 - 体系终态：22 引擎/33 类/45 题/CI core 61 条；版图 7 差距全闭合 + 千器件演示闭环
+
+## v0.8.28（2026-08-27 · UI 双修：目标误差语义 + 统计卡片死卡）
+
+**里程碑：杜先生 UI 实测反馈驱动的两个真 bug 修复（WebUI 设计闭环面板）——①"目标误差"列全 0.0000 数据语义错误（掩盖真实误差 0.27%）；②顶部统计卡片 c-harness/c-ai 永不赋值（死卡"—"）。**
+
+### 修复 #1：目标误差列 0.0000（数据语义 bug，`lda_design/design_engine.py`）
+- **根因**：`rec["err"]` 沿用 `cheap` 网格估算误差——Transmon 的 cheap 用 Koch 反解（数学精确）→ `cheap(combo, 5.0)` 恒等于 target → err 恒 0。但真实验证 f01=4.98628 与目标差 0.27%，"目标误差 0.0000"误导决策。
+- **修复**：验证通过且有真实 metric 时 `err = |metric − target|` 重算（cheap err 仅用于网格排序）；`package.metrics.best_err` 同步。
+- **效果**：候选误差现显示 0.0047/0.0086/0.0137（真实）；**best 按真实误差选优**——从 E_C=0.25 变为 E_C=0.15（f01=4.99526 最接近 5GHz）。
+
+### 修复 #2：统计卡片死卡（`app.py` + `index.html`）
+- **根因**：`renderStatus` 只填 c-bench/c-layers，c-harness（验证 harness 通过）/c-ai（L3 AI 内核候选）**从未被赋值**——HTML 初值"—"永远保留。
+- **修复**：后端 `/api/status` 补 `harness_passed/harness_total`（45/45，题库自洽）+ `ai_candidates`（22 引擎族）；前端 `renderStatus` 填值；卡片标签统一（"标准题 B1-B11"→"锚覆盖 S1-S11"）。
+
+### 验证
+- `run_design_outcome` 实测：top 3 err=0.004740/0.008600/0.013720 ✓，best 按真实误差 ✓
+- `run_design_outcome_smoke` 10/10、WebUI API smoke（status 新字段断言 PASS）、计数一致性 OK
+- CI core 61 条全量回归

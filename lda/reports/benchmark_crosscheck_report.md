@@ -1,6 +1,6 @@
 # LDA 基准对照验证闭环报告
 
-> 生成时间：2026-08-27 09:05:05 · 方法：跨源死标量对照（解析契约锚 rel + 实证语料实测值 + loss 类引擎对照 + ORACLE 状态）
+> 生成时间：2026-08-27 10:00:29 · 方法：跨源死标量对照（解析契约锚 rel + 实证语料实测值 + loss 类引擎对照 + ORACLE 状态）
 
 ## 一、引擎验证对照（22 引擎设计闭环验证证据：15 设计量解析锚 + 5 loss 实证锚 + 2 有源双出口）
 
@@ -8,7 +8,7 @@
 |---|---|---|---|---|---|---|
 | Waveguide | L0-解析 | 契约自检 | 3.10887 | 0.14 | ✅ | 波导 FDTD 双验证 PASS（解析 slab 契约物理合理 + FDTD neff=3.10887 ↔ slab=3.10464 rel=0.14% ≤ 2%） |
 | BraggMirror | L0-解析 | 契约自检 | 0.99903 | — | ✅ | 布拉格 FDTD 双验证 PASS（解析 TMM 契约物理合理 + FDTD R_min=0.99903 ↔ TMM=0.99922 abs=1.95e-04 ≤ 2%） |
-| Transmon | L0-解析 | B9 | 4.9914 | 0.17 | ✅ | Transmon 双验证 PASS（B9 Koch 命中 + 对角化 f01=4.9914 ↔ Koch=5.0000 rel=0.17% ≤ 3%） |
+| Transmon | L0-解析 | B9 | 4.99526 | 0.09 | ✅ | Transmon 双验证 PASS（B9 Koch 命中 + 对角化 f01=4.9953 ↔ Koch=5.0000 rel=0.09% ≤ 3%） |
 | RingResonator | L0-解析 | B4 | 9.16 | — | ✅ | contract 自检：RingResonator 注册表 + RING-fsr 契约 + fdtd2d_ring 可导入 OK（数值验收请用 live 模式） |
 | MziInterferometer | L0-解析 | B20 | 19.725 | — | ✅ | contract 自检：MZI 干涉谱 + MZI-fsr 契约 OK；ΔL=35.0μm → FSR≈19.72nm（干涉谱提取 53.07nm 一致） |
 | PhCCavity | L0-解析 | B21 | 2155.853 | 0.41 | ✅ | PhC 腔 2D FDTD 双验证 PASS（B21 锚 λ_res=2164.8nm ↔ FDTD λ_res=2155.9nm rel=0.41% ≤ 3%） |
@@ -49,7 +49,7 @@
 
 ## 四、汇总与差距分析
 - 引擎设计闭环：**22/22 PASS**（ok=22）
-- 解析锚死标量 rel：19 项可提取，max=10.0%，median=0.17%
+- 解析锚死标量 rel：19 项可提取，max=10.0%，median=0.14%
 - 实证语料覆盖：**9/9 条全部有引擎对照**（设计量 3 条 + loss 类引擎 6 条，v0.8.11e 补齐缺口）；loss 类对照 rel：E-YBRANCH-LOSS=0.0% E-GRATING-EFF=3.62% E-SOI-CROSS-IL=0.0% E-SOI-CROSS-XT=7.32% E-MMI-1X2-EL=0.0% E-SIN-PL-800=0.0%
 - 诚实边界：原理验证级非流片级；实证锚语料为公开文献量级（9 条全部 DOI 可溯源）；v0.8.11e 起 9 条语料全部有引擎对照（设计量引擎 3 条 + loss 类引擎 6 条），loss 类引擎为半解析近似（工艺标定参数可调，发动期真实 PDK 数据可替换）
 

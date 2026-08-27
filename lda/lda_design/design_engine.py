@@ -608,10 +608,17 @@ class DesignEngine:
             if spec.get("analytic_only") and r.get("checks", {}).get(
                     "analytic_fsr", {}).get("physical"):
                 passed = True  # 解析锚：物理合理即算可用（诚实标注）
+            metric = None if not passed else _safe(spec["extract"], r)
             rec = {
                 "params": combo,
-                "metric": None if not passed else _safe(spec["extract"], r),
-                "err": err,
+                "metric": metric,
+                # 目标误差语义（v0.8.28 修复）：err 用于网格排序（cheap 估算，
+                # 可能数学精确如 Koch 反解 → err=0），但对外展示的"目标误差"
+                # 必须是对真实验证 metric 的误差——否则 Transmon 候选显示
+                # 0.0000 而真实 f01=4.98628 误差 0.27% 被掩盖（误导决策）。
+                # 验证通过且有真实 metric 时，用 |metric − target| 重算。
+                "err": (abs(metric - target) if (passed and metric is not None)
+                        else err),
                 "passed": passed,
                 "verdict": r.get("verdict", ""),
                 "result": r if passed else None,  # 仅保留已验证候选的全证据

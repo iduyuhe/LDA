@@ -15,7 +15,7 @@
         "E-SOI-NEFF-220",
         "E-SIN-NEFF-300"
       ],
-      "elapsed_s": 11.38,
+      "elapsed_s": 10.32,
       "empirical": {
         "E-SOI-NEFF-220": {
           "measured": 2.63,
@@ -38,7 +38,7 @@
       "analytical_rel_pct": null,
       "verdict": "布拉格 FDTD 双验证 PASS（解析 TMM 契约物理合理 + FDTD R_min=0.99903 ↔ TMM=0.99922 abs=1.95e-04 ≤ 2%）",
       "empirical_ids": [],
-      "elapsed_s": 39.43,
+      "elapsed_s": 40.5,
       "empirical": {}
     },
     {
@@ -46,11 +46,11 @@
       "model_class": "L0-解析",
       "ok": true,
       "passed": true,
-      "metric": 4.9914,
+      "metric": 4.99526,
       "metric_dim": "f01",
       "bid": "B9",
-      "analytical_rel_pct": 0.17,
-      "verdict": "Transmon 双验证 PASS（B9 Koch 命中 + 对角化 f01=4.9914 ↔ Koch=5.0000 rel=0.17% ≤ 3%）",
+      "analytical_rel_pct": 0.09,
+      "verdict": "Transmon 双验证 PASS（B9 Koch 命中 + 对角化 f01=4.9953 ↔ Koch=5.0000 rel=0.09% ≤ 3%）",
       "empirical_ids": [],
       "elapsed_s": 0.0,
       "empirical": {}
@@ -101,7 +101,7 @@
       "analytical_rel_pct": 0.41,
       "verdict": "PhC 腔 2D FDTD 双验证 PASS（B21 锚 λ_res=2164.8nm ↔ FDTD λ_res=2155.9nm rel=0.41% ≤ 3%）",
       "empirical_ids": [],
-      "elapsed_s": 3.92,
+      "elapsed_s": 3.88,
       "empirical": {}
     },
     {
@@ -115,7 +115,7 @@
       "analytical_rel_pct": 0.41,
       "verdict": "读出谐振器 1D TL-FDTD 双验证 PASS（B22 锚 f0=7.495GHz ↔ FDTD f0=7.525GHz rel=0.41% ≤ 3%）",
       "empirical_ids": [],
-      "elapsed_s": 0.12,
+      "elapsed_s": 0.11,
       "empirical": {}
     },
     {
@@ -375,7 +375,7 @@
     "engines_passed": 22,
     "with_analytical_rel": 19,
     "rel_max_pct": 10.0,
-    "rel_median_pct": 0.17
+    "rel_median_pct": 0.14
   },
   "corpus_coverage": {
     "E-SOI-NEFF-220": {

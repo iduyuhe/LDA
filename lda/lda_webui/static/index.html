@@ -98,7 +98,7 @@
   <div class="cards" id="cards">
     <div class="card a"><div class="n" id="c-harness">—</div><div class="l">验证 harness 通过</div></div>
     <div class="card a"><div class="n" id="c-ai">—</div><div class="l">L3 AI 内核候选</div></div>
-    <div class="card g"><div class="n" id="c-bench">—</div><div class="l">标准题 B1–B11</div></div>
+    <div class="card g"><div class="n" id="c-bench">—</div><div class="l">锚覆盖 S1-S11</div></div>
     <div class="card g"><div class="n" id="c-layers">—</div><div class="l">已落地真地基层</div></div>
   </div>
 
@@ -1230,6 +1230,14 @@ function renderStatus(st){
   const built = st.layers.filter(l=>l.status==='built').length;
   $('c-layers').textContent = built + '/' + st.layers.length;
   $('c-bench').textContent = st.benchmarks_total;
+  // v0.8.28 修复 #2：c-harness / c-ai 此前从未赋值（死卡）——后端 /api/status
+  // 已补 harness_passed/harness_total/ai_candidates 字段
+  if(st.harness_passed!==undefined && st.harness_total!==undefined){
+    $('c-harness').textContent = st.harness_passed + '/' + st.harness_total;
+  }
+  if(st.ai_candidates!==undefined){
+    $('c-ai').textContent = st.ai_candidates;
+  }
   $('layerChips').innerHTML = st.layers.map(l=>
     `<span class="chip"><span class="dot ${l.status==='built'?'b':'p'}"></span>${l.id} · ${l.name}</span>`
   ).join('');

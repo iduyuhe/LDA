@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.33（2026-08-27 · 系统类型注册表 · 提案编译器系统级纵深）
+
+**里程碑（系统级纵深第一刀）：把提案编译器从"单一 link 拓扑"升级为"系统类型注册表"——`link`(默认) / `wdm_demux` / `quantum_fidelity` 三型共存，所有类型共享同一条死标量红线。wdm/quantum 直接复用已验证闭环（`design_wdm_advanced` / `design_multiqubit_fidelity`），零新物理、零回归。这是"用已锚定的确定性覆盖未验证地带"三层战略（产品级基准库 → 系统类型 → 创新超市）的第二层。**
+
+### 新增
+- **`proposal_compiler.SYSTEM_TYPES` 注册表**：声明每型的物理域 / 标题 / 复用引擎 / 锚集合 / 诚实层级；`supported_system_types()` 供 CLI 与后续创新超市货架引用。
+- **`design_pipeline(req, system_type="link", ...)` 类型分发**：`link` 走原闭环（零回归）；`wdm_demux` 复用 `wdm_system.design_wdm_advanced`（B4 锚：drop IL≤3 / XT≥15 / 单 FSR 防混叠 / DRC）；`quantum_fidelity` 复用 `multiqubit_fidelity.design_multiqubit_fidelity`（D-46 复用 + D-47 保真度）。
+- **`run_system_types_smoke.py` 入 CI core**（66→67 条）：三类分发 + 死标量判决 + 向后兼容 + 红线断言。
+
+### 诚实边界（强化）
+系统类型仅做"已验证基元的拓扑组合 / 参数搭配"，不发明新物理；wdm/quantum 判决完全来自既有闭环节点（B4 / D-46×D-47），LLM 不进判决路径。
+
 ## v0.8.32（2026-08-27 · 产品级基准对照库 · 实证锚产品级扩展 + B 生态播种）
 
 **里程碑（策略落地）：把"对标已公开验证产品的性能死标量"做成可增量扩展的对照库——用 LDA 引擎规格驱动再设计 + 数值复现，与公开 golden 死标量比对，免去实际流片即把验证做到产品级。落在 A/B 阶段内，不碰 C 闸门。**

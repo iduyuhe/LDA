@@ -248,8 +248,8 @@ def rank_proposals(candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 # 端到端入口：需求 → 过锚提案列表（人终审材料）
 # ---------------------------------------------------------------------------
-def design_pipeline(req: Dict[str, Any], n_top: int = 3,
-                    generator: str = "grid") -> Dict[str, Any]:
+def _design_pipeline_link(req: Dict[str, Any], n_top: int = 3,
+                       generator: str = "grid") -> Dict[str, Any]:
     """完整管线：编译 → 剪枝 → 生成 → 逐案锚验 → 排序 → 人审材料。
 
     诚实边界：输出是「过了系统锚的候选列表」，不是「最优架构」——
@@ -268,3 +268,128 @@ def design_pipeline(req: Dict[str, Any], n_top: int = 3,
             "n_accepted": len(accepted),
             "honest_note": ("提案过 S1/S2/S5 系统锚（死标量）；生成器当前为确定性"
                             "网格（LLM 接口预留）；终审选择权在人。")}
+
+
+# ---------------------------------------------------------------------------
+# 系统类型注册表（Phase 1 · v0.8.33 · 系统级纵深）
+# ---------------------------------------------------------------------------
+# 所有类型共用同一条死标量红线：LLM 只生成候选，不进判决路径。
+# 每个类型声明自己的：物理域 / 标题 / 复用引擎 / 锚集合 / 诚实层级。
+# 新增类型必须自带死标量锚（B4 / D-46×D-47 等已验证闭环），禁止"无锚假类型"。
+SYSTEM_TYPES = {
+    "link": {
+        "domain": "photon",
+        "title": "点对点光链路",
+        "engine": "proposal_compiler._design_pipeline_link",
+        "anchors": ["S1", "S2", "S5", "S7"],
+        "honest_tier": "已验证闭环",
+    },
+    "wdm_demux": {
+        "domain": "photon",
+        "title": "WDM 多环解复用 / 路由",
+        "engine": "wdm_system.design_wdm_advanced",
+        "anchors": ["B4", "DRC", "FSR"],
+        "honest_tier": "已验证闭环(B4)",
+    },
+    "quantum_fidelity": {
+        "domain": "hybrid",
+        "title": "量子复用读出保真度链",
+        "engine": "multiqubit_fidelity.design_multiqubit_fidelity",
+        "anchors": ["D-46", "D-47", "B9", "B12"],
+        "honest_tier": "已验证闭环(D-46×D-47)",
+    },
+}
+
+
+def supported_system_types() -> List[str]:
+    """返回所有受支持的系统类型名（供 CLI / 创新超市货架引用）。"""
+    return list(SYSTEM_TYPES.keys())
+
+
+def _design_wdm_demux(req: Dict[str, Any], n_top: int = 3,
+                      generator: str = "grid") -> Dict[str, Any]:
+    """WDM 多环解复用系统类型（复用 design_wdm_advanced 已验证闭环）。
+
+    判决 = B4 锚（drop IL≤3dB / 邻信道 XT≥15dB / 单 FSR 防混叠 / DRC 可制造）。
+    LLM 不进判决（设计函数内部纯解析物理 + 死标量比对）。
+    """
+    from lda_agent.wdm_system import design_wdm_advanced
+    n_channels = int(req.get("n_channels", 4))
+    spacing_nm = float(req.get("spacing_nm", 2.5))
+    xt_target_db = req.get("xt_target_db", None)
+    gap = req.get("gap", None)
+    rep = design_wdm_advanced(n_channels=n_channels, spacing_nm=spacing_nm,
+                              xt_target_db=xt_target_db, gap=gap)
+    checks = rep.get("acceptance", {}).get("checks", [])
+    accepted = bool(rep.get("acceptance", {}).get("passed", False))
+    return {
+        "input_req": req,
+        "system_type": "wdm_demux",
+        "compiled": {"system_type": "wdm_demux",
+                     "n_channels": n_channels, "spacing_nm": spacing_nm,
+                     "xt_target_db": xt_target_db, "gap": gap},
+        "feasible_domain": {"feasible": bool(rep.get("ok", False)),
+                             "note": "WDM 级联闭式验证（design_wdm_advanced）"},
+        "n_domain_candidates": 1,
+        "ranked": [{"rank": 1,
+                    "proposal": {"system_type": "wdm_demux"},
+                    "screening": {"accepted": accepted, "checks": checks},
+                    "screening_summary":
+                        (f"{'ACCEPT' if accepted else 'REJECT'} · "
+                         f"WDM {n_channels}ch B4 锚")}],
+        "n_accepted": 1 if accepted else 0,
+        "honest_note": ("复用 design_wdm_advanced 已验证闭环（B4：drop IL≤3 / "
+                        "XT≥15 / 单 FSR 防混叠）；LLM 不进判决路径。"),
+    }
+
+
+def _design_quantum_fidelity(req: Dict[str, Any], n_top: int = 3,
+                             generator: str = "grid") -> Dict[str, Any]:
+    """量子复用读出保真度系统类型（复用 design_multiqubit_fidelity 已验证闭环）。
+
+    判决 = D-46 频率复用（信道错开≥3×κ_r + dip 可分辨）+ D-47 逐 qubit 保真度
+    （SNR≥2 / F≥0.95 / n̄≤100）。LLM 不进判决。
+    """
+    from lda_agent.multiqubit_fidelity import design_multiqubit_fidelity
+    f01s = req.get("f01s") or [4.8, 5.0, 5.2]
+    rep = design_multiqubit_fidelity(f01s)
+    checks = rep.get("acceptance", {}).get("checks", [])
+    accepted = bool(rep.get("acceptance", {}).get("passed", False))
+    return {
+        "input_req": req,
+        "system_type": "quantum_fidelity",
+        "compiled": {"system_type": "quantum_fidelity", "f01s": f01s},
+        "feasible_domain": {"feasible": bool(rep.get("ok", False)),
+                             "note": "量子复用读出闭环（D-46×D-47）"},
+        "n_domain_candidates": 1,
+        "ranked": [{"rank": 1,
+                    "proposal": {"system_type": "quantum_fidelity"},
+                    "screening": {"accepted": accepted, "checks": checks},
+                    "screening_summary":
+                        (f"{'ACCEPT' if accepted else 'REJECT'} · "
+                         f"{len(f01s)}-qubit 保真度链")}],
+        "n_accepted": 1 if accepted else 0,
+        "honest_note": ("复用 design_multiqubit_fidelity 已验证闭环（D-46 复用 "
+                        "+ D-47 保真度）；LLM 不进判决路径。"),
+    }
+
+
+def design_pipeline(req: Dict[str, Any], n_top: int = 3,
+                    generator: str = "grid",
+                    system_type: str = "link") -> Dict[str, Any]:
+    """完整管线（系统类型分发版）：编译 → 剪枝 → 生成 → 逐案锚验 → 排序。
+
+    system_type：
+      "link"（默认）       → 原点对点光链路闭环（零回归）
+      "wdm_demux"          → WDM 多环解复用（复用 design_wdm_advanced）
+      "quantum_fidelity"   → 量子复用读出保真度（复用 design_multiqubit_fidelity）
+    所有类型共享同一条死标量红线：LLM 只生成候选，不进判决。
+    """
+    if system_type == "link":
+        return _design_pipeline_link(req, n_top=n_top, generator=generator)
+    if system_type == "wdm_demux":
+        return _design_wdm_demux(req, n_top=n_top, generator=generator)
+    if system_type == "quantum_fidelity":
+        return _design_quantum_fidelity(req, n_top=n_top, generator=generator)
+    raise ValueError(f"未知 system_type={system_type!r}；"
+                     f"可用：{supported_system_types()}")

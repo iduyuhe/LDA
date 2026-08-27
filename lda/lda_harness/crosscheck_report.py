@@ -82,7 +82,8 @@ def build_report(quick: bool = False,
         try:
             files = sorted(f for f in os.listdir(hist_dir) if f.endswith(".json"))
             if len(files) >= 2:
-                prev = json.load(open(os.path.join(hist_dir, files[-2]), encoding="utf-8"))
+                with open(os.path.join(hist_dir, files[-2]), encoding="utf-8") as f:
+                    prev = json.load(f)
                 cur = snapshot["score"]
                 p = prev["score"]
                 result["delta"] = {

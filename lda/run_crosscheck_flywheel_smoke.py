@@ -48,7 +48,8 @@ class CrosscheckFlywheelSmoke(unittest.TestCase):
         self.assertEqual(s["engines_passed"], 18)
         self.assertEqual(s["empirical_covered"], 9, "实证语料 9 条应全有引擎对照")
         # JSON 报告可解析且含 rows
-        data = json.load(open(r["json_path"], encoding="utf-8"))
+        with open(r["json_path"], encoding="utf-8") as f:
+            data = json.load(f)
         self.assertIn("rows", data)
         self.assertIn("corpus_coverage", data)
 

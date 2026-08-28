@@ -2591,13 +2591,16 @@ def _adv_bank_total():
 # HTTP 处理
 # --------------------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
-    def _send(self, code, obj=None, body=None, ctype="application/json"):
+    def _send(self, code, obj=None, body=None, ctype="application/json", headers=None):
         if body is None:
             body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", ctype + "; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Access-Control-Allow-Origin", "*")
+        if headers:
+            for _k, _v in headers.items():
+                self.send_header(_k, _v)
         self.end_headers()
         self.wfile.write(body)
 
@@ -2659,6 +2662,43 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, capability_demos_run())
             else:
                 self._send(200, capability_demos_status())
+        elif path.startswith("/api/shelf/") and path.count("/") == 4:
+            # 货架 → 设计就绪包：/api/shelf/<id>/package（免费看） | /download（付费下，需 token）
+            import re
+            parts = path.split("/")
+            sid = parts[3]
+            sub = parts[4] if len(parts) > 4 else ""
+            if not re.match(r"^[A-Za-z0-9_-]+$", sid):
+                self._send(404, {"error": "invalid shelf id"})
+            elif sub == "package":
+                from lda_l2.ship_package import package_info
+                self._send(200, package_info(sid))
+            elif sub == "download":
+                from urllib.parse import parse_qs, urlparse
+                from lda_l2.ship_package import (verify_license, consume_license,
+                                                 generate_package, is_download_open)
+                if not is_download_open(sid):
+                    self._send(403, {"error": "not_open",
+                                     "reason": "该货架设计就绪包尚未开放下载"})
+                    return
+                q = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
+                tok = q.get("token", "")
+                v = verify_license(tok, shelf_id=sid)
+                if not v.get("ok"):
+                    self._send(403, {"error": "unauthorized", "reason": v.get("reason")})
+                else:
+                    r = generate_package(sid)
+                    if not r.get("ok"):
+                        self._send(404, {"error": r.get("error", "not found")})
+                    else:
+                        with open(r["zip_path"], "rb") as _fh:
+                            _data = _fh.read()
+                        consume_license(tok)
+                        self._send(200, body=_data, ctype="application/zip",
+                                   headers={"Content-Disposition":
+                                             'attachment; filename="%s_design_ready.zip"' % sid})
+            else:
+                self._send(404, {"error": "not found"})
         elif path == "/api/benchmark_crosscheck":
             # v0.8.11f 基准对照验证闭环（20 引擎 + 9 语料 + ORACLE，quick 秒级）
             try:

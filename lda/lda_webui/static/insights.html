@@ -71,8 +71,8 @@
   </div>
 
   <div class="card">
-    <h2>② 创新超市货架（20 条 · 前瞻预研）</h2>
-    <div class="sub">每条货架 = 已锚定基元（GP-*）组合 + 公开信号驱动；点击「评估」现场跑 design_pipeline 死标量判决（LLM 不进判决路径）。</div>
+    <h2>② 创新超市货架（24 条 · 前瞻预研）</h2>
+    <div class="sub">每条货架 = 已锚定基元（GP-*）组合 + 公开信号驱动；点击「评估」现场跑 design_pipeline 死标量判决（LLM 不进判决路径）。部分货架已开放「设计就绪包」下载（GDS+网表+DRC+死锚报告），免费看、付费下。</div>
     <div class="shelf-grid" id="shelfGrid"></div>
   </div>
 
@@ -126,7 +126,12 @@ function load(){
          '<div class="meta">'+esc(s.domain)+' · '+esc(s.system_type)+' · '+esc(s.honest_tier)+'</div>'+
          '<div>'+comp+'</div>'+
          '<button class="btn" style="margin-top:10px;font-size:12px;padding:3px 10px" onclick="evalShelf(\''+esc(s.id)+'\',this)">评估</button>'+
-         '<div class="ev" id="ev-'+esc(s.id)+'"></div></div>';
+         '<div class="ev" id="ev-'+esc(s.id)+'"></div>'+
+         '<div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+
+           '<input id="tok-'+esc(s.id)+'" placeholder="兑换码" style="width:120px;font-size:12px;padding:3px 6px;background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:6px">'+
+           '<button class="btn" style="font-size:12px;padding:3px 10px" onclick="downloadShelf(\''+esc(s.id)+'\',this)">下载设计包</button>'+
+           '<span id="dl-'+esc(s.id)+'"></span></div>'+
+         '<div class="meta" style="margin-top:4px;font-size:11px">免费看（货架元数据）· 付费下（设计就绪包：GDS+网表+DRC+死锚报告）</div></div>';
     });
     $('shelfGrid').innerHTML=h;
   });
@@ -175,6 +180,27 @@ function evalShelf(id,btn){
       ev.innerHTML='<span class="'+(d.verdict==='PASS'?'ok':'no')+'"><b>'+esc(d.verdict)+'</b></span> · '+esc(d.summary||d.error||'');
       btn.disabled=false; btn.textContent='评估';
     }).catch(function(e){ ev.textContent='失败: '+e; btn.disabled=false; btn.textContent='评估'; });
+}
+
+function downloadShelf(id,btn){
+  var tok=document.getElementById('tok-'+id).value.trim();
+  var st=document.getElementById('dl-'+id);
+  if(!tok){ st.textContent='请输入兑换码'; st.style.color='var(--red)'; return; }
+  st.textContent='校验中…'; st.style.color='var(--mut)';
+  fetch('/api/shelf/'+encodeURIComponent(id)+'/download?token='+encodeURIComponent(tok))
+    .then(function(r){
+      if(r.status!==200){ st.textContent='未授权：兑换码无效/已用完/不匹配'; st.style.color='var(--red)'; return null; }
+      return r.blob();
+    })
+    .then(function(blob){
+      if(!blob) return;
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a'); a.href=url; a.download=id+'_design_ready.zip';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      st.textContent='下载完成 ✅'; st.style.color='var(--green)';
+    })
+    .catch(function(e){ st.textContent='失败: '+e; st.style.color='var(--red)'; });
 }
 
 function runScale(){

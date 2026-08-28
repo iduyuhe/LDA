@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.8.46（2026-08-28 · 工厂+商店化：货架→设计就绪包 + 下载授权闭环）
+- **设计商店化（阶段1 MVP）**：新增 `lda/lda_l2/ship_package.py`，由货架 composition（已锚定 GP-*）生成「设计就绪包」zip——真实组件库 GDS（geometry_desc 几何）、逐器件 DRC（drc_check_device 死标量）、ShelfItem.evaluate() 死锚仿真报告、SPICE 网表、工艺角说明、诚实声明（HONESTY.md）、设计授权协议（LICENSE.md）。诚实分层：design_ready（预研级设计交付），**非 foundry 认证、非本团队流片**。
+- **WebUI 下载端点 + 兑换码授权**：新增 `GET /api/shelf/{id}/package`（包信息，免费看）与 `GET /api/shelf/{id}/download?token=`（兑换码校验 + 限次 + 路径白名单防穿越 + 附件下载）；`ship_package.py` 提供 mint_license / verify_license / consume_license（dist/licenses.json，不入 git）。
+- **开放下载白名单（阶段1 试点 3 货架）**：IM-PSM4-SHELF / IM-CWDM4-SHELF / IM-FR4-SHELF；后续放开只需往 OPEN_SHELVES 加货架 id。
+- **前端（insights.html ② 创新超市）**：货架卡片加「下载设计包」按钮 + 兑换码输入，明示「免费看（货架元数据）/ 付费下（设计就绪包）」。
+- 文档：`docs/store_launch/` 三文档（01_EULA_template / 02_compliance_checklist / 03_mvp_tech_design）。CI core 维持 69 条（交付/展示扩展非新增 smoke）。
+
 ## v0.8.45（2026-08-28 · 展示能力扩张：GC 24 + 货架 24 + 能力演示 12 项）
 - **GC 整芯片对标库 20→24**：新增 4 条光子单通道收发链路（800G DR8 / 400G FR4 / 100G CWDM4 / 100G PSM4），golden 来自 IEEE 802.3bs/df、CWDM4 MSA、IEEE 802.3bm 公开标准；复用 GP-* 已锚定基元 dB 级联（S1 同构），零新物理。`run_golden_product_smoke` 现 **29/29 PASS**（5 GP + 24 GC）
 - **创新超市货架 20→24**：新增 4 条前瞻预研货架（IM-PSM4-SHELF / IM-FR4-SHELF / IM-CWDM4-SHELF / IM-LPO-112G），composition ⊂ GP-*，严守组合已锚定基元护栏；`run_innovation_market_smoke` 现 **24/24** 结构可行 + 系统预算不破

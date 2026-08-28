@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.8.41（2026-08-28 · 几何 DRC 拔钉子：间距检查 O(n²) → 网格候选）
+
+**S2 第三颗钉子**（万级 VLSI 六层困难 ③ 签核层收官——LVS 已修，几何 DRC 补齐）：
+
+`lda_l2/gds_drc.py` `check_geometry` 最小间距检查：
+- 旧：纯 O(n²) 双重循环（每对多边形 bbox 预检 + 精确段距），万级多边形必然爆炸。
+- 新：均匀网格候选（与 v0.8.39 lvs `_cross_pair_candidates` 同法）——bbox 重叠 ⟺ 至少共享一格（精确等价），仅候选对走精确段距；候选再按 bbox 重叠过滤，保证与旧语义逐位一致（spacing_checked / spacing_note 完全不变）。
+
+判决一致性铁证：随机 400 多边形 + 故意违规对，violations 3=3 / checked 13=13 / spacing_note 逐字符一致。
+
+性能（check_geometry 实测）：
+- 稀疏散布：1k 0.01s / 4k 0.04s / 8k 0.08s（每翻倍 2.0-2.1×，近线性）
+- 高密度最坏情形（4000 全重叠）：0.44s（旧 O(n²) 分钟级）——网格把全对剪到 29968 对（0.75%）
+
+验证：run_drc_smoke / drc_fix / drc_pdk / gds / chip_layout / pipeline_realize / golden_product 全绿；CI core 维持 68 条。
+
 ## v0.8.40（2026-08-28 · 构建器拔钉子：port_abs 索引缓存，32k 全链亚秒）
 
 **S2 第一颗钉子**（LVS 拔完后的下一瓶颈——scale_anchor 构建器布线生成）：

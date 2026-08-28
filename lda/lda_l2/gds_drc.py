@@ -109,15 +109,36 @@ def check_geometry(structures: Dict[str, List[Dict]],
                         violations.append(f"{sname}: 面积 {area:.3f}µm² < {min_a}µm²")
 
     # 最小间距（仅相邻 bbox 重叠者计算，近似）
+    # v0.8.41：O(n²) 双重循环 → 均匀网格候选（bbox 重叠 ⟺ 至少共享一格，
+    # 精确等价——与 lvs._cross_pair_candidates 同法；仅候选对走精确段距）。
     spacing_checked = 0
     spacing_min = None
-    for i in range(len(all_polys)):
-        x0i, y0i, x1i, y1i = _bbox(all_polys[i][1]["points_um"])
-        for j in range(i + 1, len(all_polys)):
-            x0j, y0j, x1j, y1j = _bbox(all_polys[j][1]["points_um"])
-            # bbox 不重叠则必间距>0，跳过
-            if x1i < x0j or x1j < x0i or y1i < y0j or y1j < y0i:
-                continue
+    if len(all_polys) > 1:
+        # 网格分桶：cell = 总跨度 / sqrt(n)，每格期望 O(1) 元素
+        bboxes = {i: _bbox(all_polys[i][1]["points_um"]) for i in range(len(all_polys))}
+        all_x0 = min(b[0] for b in bboxes.values())
+        all_y0 = min(b[1] for b in bboxes.values())
+        all_x1 = max(b[2] for b in bboxes.values())
+        all_y1 = max(b[3] for b in bboxes.values())
+        span = max(all_x1 - all_x0, all_y1 - all_y0, 1e-9)
+        cell = max(span / max(len(all_polys) ** 0.5, 1.0), 1e-6)
+        grid: Dict[Tuple[int, int], List[int]] = {}
+        for i, (x0, y0, x1, y1) in bboxes.items():
+            for cx in range(int(x0 // cell), int(x1 // cell) + 1):
+                for cy in range(int(y0 // cell), int(y1 // cell) + 1):
+                    grid.setdefault((cx, cy), []).append(i)
+        cand: set = set()
+        for occupants in grid.values():
+            m = len(occupants)
+            for a in range(m):
+                for b in range(a + 1, m):
+                    i, j = occupants[a], occupants[b]
+                    cand.add((i, j) if i < j else (j, i))
+        # 精确化：仅 bbox 重叠对（与旧语义一致——间距只在相邻元素间计算）
+        cand = {(i, j) for i, j in cand
+                if not (bboxes[i][2] < bboxes[j][0] or bboxes[j][2] < bboxes[i][0]
+                        or bboxes[i][3] < bboxes[j][1] or bboxes[j][3] < bboxes[i][1])}
+        for i, j in sorted(cand):
             d = min(
                 _seg_distance(s, t)
                 for s in _segments(all_polys[i][1]["points_um"])

@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.8.39（2026-08-28 · LVS 拔钉子：O(n²) → 空间索引，千器件 0.92s → 0.03s）
+
+**S1 拔钉子落地**（杜先生 08-27 评估「万级 VLSI 六层困难」后先做第一步）：
+
+`lda_l2/lvs.py` 四处复杂度热点根治（纯标准库 dict 分桶，零新依赖）：
+- **`_nearest_port` / `_nearest_port_on_layer`**：端口锚点网格索引（cell=tol，3×3 邻域查询）。数学等价：返回值必须满足 d≤tol，而 3×3 邻域覆盖所有 ≤tol 的锚点 → 与全量线性扫同解。兼容入口保留（小规模线性扫）。
+- **`_port_anchor_table`**：先建 {inst: comp} 索引，消除 port_abs 每次线性扫全组件（profile 显示原实现 87% 时间耗于此）。
+- **`_cross_pair_candidates`**：路径 bbox 均匀网格候选对（"bbox 相交 ⟺ 至少共享一格"精确等价，网格仅剪枝、判决仍走原 `_paths_cross`），支持同层/跨层配对，保序输出。
+- **多层 LVS**：按层分桶网格建一次循环复用。
+
+判决一致性铁证：3 case（consistent/disconnect/misroute）× 4 规模 + 单层，归一化逐字节 diff 零差异；随机 400 折线 62138 个交叉对零漏报零误报。
+
+性能（run_scale_pipeline 实测）：
+
+| 规模 | LVS 旧 | LVS 新 | 提速 |
+|---|---|---|---|
+| 1k | 0.88s | 0.01s | ~88× |
+| 4k | 14.39s | 0.04s | ~360× |
+| 8k | ~60s(外推) | 0.10s | ~600× |
+| 16k | ~240s(外推) | 0.23s | ~1000× |
+| 32k | ~960s(外推) | 0.58s | ~1600× |
+
+LVS 缩放斜率从 O(n²)（每翻倍 4×）降到近线性（16k→32k 2.5×）。32k 器件 LVS 仅 0.58s。剩余瓶颈为 scale_anchor 构建器（布线生成，非 LVS 代码，属 S2 纵深范围）。
+
+验证：run_lvs_smoke 27 PASS / run_scale_smoke 13 PASS / run_chip_scale_demo 8 PASS / tapeout / pipeline_realize / second_tier 全绿；CI core 维持 68 条。
+
 ## v0.8.38（2026-08-28 · GC 库扩至 20 项 + 创新超市货架扩至 20 · 市场信号驱动）
 
 **市场调研驱动的大规模数据扩展**（全部零新物理，复用已验证闭环，判决纯死标量）：

@@ -37,7 +37,7 @@ from __future__ import annotations
 import math
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from lda_layout.placement import device_bbox, port_abs
+from lda_layout.placement import device_bbox, port_abs, port_anchor
 
 
 # ---------------------------------------------------------------------------
@@ -80,23 +80,71 @@ def _route_endpoints(rr) -> List[Tuple[float, float]]:
 
 
 def _port_anchor_table(link, placement) -> Dict[Tuple[str, str], Tuple[float, float]]:
-    """端口锚点绝对坐标表：{(inst, port): (x, y)}。"""
+    """端口锚点绝对坐标表：{(inst, port): (x, y)}。
+
+    v0.8.39 提速：先建 {inst: comp} 索引，避免 port_abs 每次线性扫全组件
+    （O(n·m) → O(n+m)）。判决语义不变（同一坐标计算）。
+    """
+    comp_by_id = {c.id: c for c in link.ir.components}
     table: Dict[Tuple[str, str], Tuple[float, float]] = {}
     for c in link.ir.components:
+        ox, oy, _ = placement[c.id]
         for p in c.ports:
-            table[(c.id, p.name)] = port_abs(c.id, p.name, placement, link)
+            dx, dy = port_anchor(c.kind, p.name, dict(c.params))
+            table[(c.id, p.name)] = (ox + dx, oy + dy)
     return table
 
 
 def _nearest_port(x: float, y: float,
                   anchors: Dict[Tuple[str, str], Tuple[float, float]],
                   tol: float) -> Optional[Tuple[str, str]]:
-    """端点 → 最近端口锚点（容差内唯一归属；返回 None = 悬空 dangling）。"""
-    best, best_d = None, float("inf")
+    """端点 → 最近端口锚点（容差内唯一归属；返回 None = 悬空 dangling）。
+
+    兼容入口（extract 循环外单次调用）：小规模直接线性扫，
+    大规模走网格（build + query）。性能关键路径见 _build_anchor_grid。
+    """
+    if not anchors:
+        return None
+    if len(anchors) <= 64:
+        best, best_d = None, float("inf")
+        for key, (ax, ay) in anchors.items():
+            d = math.hypot(x - ax, y - ay)
+            if d < best_d:
+                best, best_d = key, d
+        return best if best_d <= tol else None
+    grid, cell = _build_anchor_grid(anchors, tol)
+    return _query_nearest_port_grid(x, y, grid, cell, tol)
+
+
+def _build_anchor_grid(anchors: Dict[Tuple[str, str], Tuple[float, float]],
+                       tol: float
+                       ) -> Tuple[Dict[Tuple[int, int], List[Tuple[Tuple[str, str], float, float]]], float]:
+    """端口锚点网格索引（v0.8.39 · 建一次多次查询）。
+
+    cell=tol：查询点 3×3 邻域覆盖所有距离 ≤tol 的锚点（数学等价于全量扫描，
+    因为返回值必须满足 best_d ≤ tol）。零新依赖，纯 dict 分桶。
+    """
+    cell = tol if tol > 0 else 1.0
+    grid: Dict[Tuple[int, int], List[Tuple[Tuple[str, str], float, float]]] = {}
     for key, (ax, ay) in anchors.items():
-        d = math.hypot(x - ax, y - ay)
-        if d < best_d:
-            best, best_d = key, d
+        grid.setdefault((int(ax // cell), int(ay // cell)), []).append(
+            (key, ax, ay))
+    return grid, cell
+
+
+def _query_nearest_port_grid(x: float, y: float,
+                             grid: Dict[Tuple[int, int], List[Tuple[Tuple[str, str], float, float]]],
+                             cell: float, tol: float
+                             ) -> Optional[Tuple[str, str]]:
+    """网格查询：3×3 邻域最近归属（容差内唯一；None=悬空）。"""
+    gx, gy = int(x // cell), int(y // cell)
+    best, best_d = None, float("inf")
+    for cx in (gx - 1, gx, gx + 1):
+        for cy in (gy - 1, gy, gy + 1):
+            for key, ax, ay in grid.get((cx, cy), ()):
+                d = math.hypot(x - ax, y - ay)
+                if d < best_d:
+                    best, best_d = key, d
     return best if best_d <= tol else None
 
 
@@ -160,6 +208,86 @@ def _paths_cross(pts1, pts2) -> bool:
     return False
 
 
+# ---------------------------------------------------------------------------
+# v0.8.39 · 路径对剪枝网格（cross_shorts O(n²) → 近似 O(n·k)）
+#   数学等价性：两折线 bbox 相交 ⟺ 均匀网格中至少共享一个 cell
+#   （bbox 重叠区域任一点落入的 cell 必被两者同时覆盖）。
+#   网格仅做候选对生成——精确判决仍走 _paths_cross（原语义原顺序）。
+#   cell 取路径总 bbox 尺寸 / 期望每格路径数的平方根，自适应规模。
+# ---------------------------------------------------------------------------
+def _cross_pair_candidates(paths_by_id: Dict[str, List[Tuple[float, float]]],
+                           other: Optional[Dict[str, List[Tuple[float, float]]]] = None,
+                           ) -> List[Tuple[str, str]]:
+    """生成可能相交的 (n1, n2) 候选对（超集，保序）。
+
+    - other=None：单集合内 i<j 两两（旧双重循环 sorted ids 语义）；
+    - other 给定：A=paths_by_id × B=other 全配对（含同 id——跨层同网也判，
+      与旧 `for n1 in sorted(pl1): for n2 in sorted(pl2)` 语义一致）。
+    保序：输出按 (n1, n2) 字符串全序排序 = 与原双重循环完全同序。
+    无漏报（bbox 共格 ⟺ 可能相交；精确判决仍走 _paths_cross）。
+    """
+    ids_a = sorted(paths_by_id.keys())
+    if other is None:
+        ids_b, cross = ids_a, False
+    else:
+        ids_b, cross = sorted(other.keys()), True
+    if not ids_a or not ids_b:
+        return []
+    bboxes_a = {nid: _bbox_of(paths_by_id[nid]) for nid in ids_a}
+    bboxes_b = bboxes_a if not cross else {nid: _bbox_of(other[nid]) for nid in ids_b}
+    all_x0 = min(min(b[0] for b in bboxes_a.values()),
+                 min(b[0] for b in bboxes_b.values()))
+    all_y0 = min(min(b[1] for b in bboxes_a.values()),
+                 min(b[1] for b in bboxes_b.values()))
+    all_x1 = max(max(b[2] for b in bboxes_a.values()),
+                 max(b[2] for b in bboxes_b.values()))
+    all_y1 = max(max(b[3] for b in bboxes_a.values()),
+                 max(b[3] for b in bboxes_b.values()))
+    span = max(all_x1 - all_x0, all_y1 - all_y0, 1e-9)
+    n_tot = len(ids_a) + len(ids_b)
+    cell = max(span / max(math.sqrt(n_tot), 1.0), 1e-6)
+    # 入格：元素 = (nid, src)，src 0=A 1=B；退化（跨全图）单独全对
+    grid: Dict[Tuple[int, int], List[Tuple[str, int]]] = {}
+    degen_a, degen_b = [], []
+    def _put(nid, src, bboxes):
+        x0, y0, x1, y1 = bboxes[nid]
+        cx0, cy0 = int(x0 // cell), int(y0 // cell)
+        cx1, cy1 = int(x1 // cell), int(y1 // cell)
+        n_cells = (cx1 - cx0 + 1) * (cy1 - cy0 + 1)
+        if n_cells > 4 * n_tot + 64:
+            (degen_a if src == 0 else degen_b).append(nid)
+            return
+        for cx in range(cx0, cx1 + 1):
+            for cy in range(cy0, cy1 + 1):
+                grid.setdefault((cx, cy), []).append((nid, src))
+    for nid in ids_a:
+        _put(nid, 0, bboxes_a)
+    if cross:
+        for nid in ids_b:
+            _put(nid, 1, bboxes_b)
+    # 候选对收集
+    cand: set = set()
+    for occupants in grid.values():
+        for i in range(len(occupants)):
+            a_id, a_src = occupants[i]
+            for j in range(i + 1, len(occupants)):
+                b_id, b_src = occupants[j]
+                if not cross:
+                    cand.add((a_id, b_id) if a_id < b_id else (b_id, a_id))
+                elif a_src != b_src:
+                    if a_src == 0:
+                        cand.add((a_id, b_id))
+                    else:
+                        cand.add((b_id, a_id))
+    for nid in degen_a:
+        for cid in ids_b:
+            cand.add((nid, cid))
+    for nid in degen_b:
+        for cid in ids_a:
+            cand.add((cid, nid))
+    return sorted(cand)
+
+
 def extract_layout_netlist(link, placement, routes,
                            tol: float = 1.0) -> Dict[str, Any]:
     """版图网表：从布线几何恢复连接（不依赖原理图声明）。
@@ -183,6 +311,11 @@ def extract_layout_netlist(link, placement, routes,
       }
     """
     anchors = _port_anchor_table(link, placement)
+    # v0.8.39：端口锚点网格建一次，循环内查询复用（O(n·m) → O(n+m) 建表 + O(1) 查询）
+    if len(anchors) > 64:
+        anchor_grid, anchor_cell = _build_anchor_grid(anchors, tol)
+    else:
+        anchor_grid, anchor_cell = None, None
     nets: Dict[str, List[str]] = {}
     dangling: List[str] = []
     loops: List[str] = []
@@ -199,8 +332,14 @@ def extract_layout_netlist(link, placement, routes,
             dangling.append(net_id)
             continue
         e0, e1 = pts[0], pts[-1]
-        p0 = _nearest_port(e0[0], e0[1], anchors, tol)
-        p1 = _nearest_port(e1[0], e1[1], anchors, tol)
+        if anchor_grid is not None:
+            p0 = _query_nearest_port_grid(e0[0], e0[1], anchor_grid,
+                                          anchor_cell, tol)
+            p1 = _query_nearest_port_grid(e1[0], e1[1], anchor_grid,
+                                          anchor_cell, tol)
+        else:
+            p0 = _nearest_port(e0[0], e0[1], anchors, tol)
+            p1 = _nearest_port(e1[0], e1[1], anchors, tol)
         if p0 is None or p1 is None:
             dangling.append(net_id)
             continue
@@ -214,14 +353,12 @@ def extract_layout_netlist(link, placement, routes,
             else:
                 port_owner[p] = net_id
 
-    # 布线交叉短路（不同 net 路径线段相交，非共享端点）——bbox 预检提速
+    # 布线交叉短路（不同 net 路径线段相交，非共享端点）——网格剪枝 + bbox 预检
+    # v0.8.39：O(n²) 双重循环 → 网格候选对（超集保序），精确判决仍走 _paths_cross
     cross_shorts: List[Tuple[str, str]] = []
-    net_ids = sorted(paths.keys())
-    for i in range(len(net_ids)):
-        for j in range(i + 1, len(net_ids)):
-            n1, n2 = net_ids[i], net_ids[j]
-            if _paths_cross(paths[n1], paths[n2]):
-                cross_shorts.append((n1, n2))
+    for n1, n2 in _cross_pair_candidates(paths):
+        if _paths_cross(paths[n1], paths[n2]):
+            cross_shorts.append((n1, n2))
 
     # 版图器件实例：placement 全集（防未来版图引擎独立生成时的核对点）
     kind_of = {c.id: c.kind for c in link.ir.components}
@@ -420,14 +557,26 @@ def _normalize_multilayer_routes(routes) -> Dict[str, List[Any]]:
 
 
 def _nearest_port_on_layer(x, y, layer, anchors_layered, tol):
-    """端点 → 指定层端口锚点最近归属（容差内唯一；None=悬空）。"""
-    best, best_d = None, float("inf")
+    """端点 → 指定层端口锚点最近归属（容差内唯一；None=悬空）。
+
+    兼容入口（小规模/单次调用）：按层过滤后线性扫。
+    性能关键路径见 _build_anchor_grid / _query_nearest_port_grid（建一次查询复用）。
+    """
+    cell = tol if tol > 0 else 1.0
+    grid: Dict[Tuple[int, int], List[Tuple[Tuple[str, str], float, float]]] = {}
     for (inst, port, pl), (ax, ay) in anchors_layered.items():
         if pl != layer:
             continue                   # 层不匹配：M1 布线只接 M1 端口
-        d = math.hypot(x - ax, y - ay)
-        if d < best_d:
-            best, best_d = (inst, port), d
+        grid.setdefault((int(ax // cell), int(ay // cell)), []).append(
+            ((inst, port), ax, ay))
+    gx, gy = int(x // cell), int(y // cell)
+    best, best_d = None, float("inf")
+    for cx in (gx - 1, gx, gx + 1):
+        for cy in (gy - 1, gy, gy + 1):
+            for key, ax, ay in grid.get((cx, cy), ()):
+                d = math.hypot(x - ax, y - ay)
+                if d < best_d:
+                    best, best_d = key, d
     return best if best_d <= tol else None
 
 
@@ -452,14 +601,25 @@ def extract_layout_netlist_multilayer(link, placement, routes, stack=None,
     """
     from lda_l2.layers import get_stack
     stack = stack or get_stack("soi")
-    # 端口锚点（带层）：{(inst, port, layer): (x, y)}
+    # 端口锚点（带层）：{(inst, port, layer): (x, y)}（v0.8.39：先建 comp 索引提速）
     anchors: Dict[Tuple[str, str, str], Tuple[float, float]] = {}
+    _comp_by_id = {c.id: c for c in link.ir.components}
     for c in link.ir.components:
         lay = _device_layer(c)
+        ox, oy, _ = placement[c.id]
         for p in c.ports:
-            anchors[(c.id, p.name, lay)] = port_abs(c.id, p.name, placement, link)
+            dx, dy = port_anchor(c.kind, p.name, dict(c.params))
+            anchors[(c.id, p.name, lay)] = (ox + dx, oy + dy)
 
     segs_by_net = _normalize_multilayer_routes(routes)
+    # v0.8.39：按层分桶的端口锚点网格，建一次循环内查询（O(n·m) → 近 O(n)）
+    anchors_by_layer: Dict[str, Dict[Tuple[str, str], Tuple[float, float]]] = {}
+    for (inst, port, lay), (ax, ay) in anchors.items():
+        anchors_by_layer.setdefault(lay, {})[(inst, port)] = (ax, ay)
+    grids_by_layer: Dict[str, Tuple] = {}
+    for lay, sub in anchors_by_layer.items():
+        if len(sub) > 64:
+            grids_by_layer[lay] = _build_anchor_grid(sub, tol)
     nets: Dict[str, List[str]] = {}
     dangling: List[str] = []
     loops: List[str] = []
@@ -490,10 +650,20 @@ def extract_layout_netlist_multilayer(link, placement, routes, stack=None,
         # 端口匹配：首段起点 + 末段终点（中间端点是 via 跳点，不匹配端口）
         first_ep, first_layer = all_endpoints[0]
         last_ep, last_layer = all_endpoints[-1]
-        p0 = _nearest_port_on_layer(first_ep[0], first_ep[1], first_layer,
-                                    anchors, tol)
-        p1 = _nearest_port_on_layer(last_ep[0], last_ep[1], last_layer,
-                                    anchors, tol)
+        g_first = grids_by_layer.get(first_layer)
+        g_last = grids_by_layer.get(last_layer)
+        if g_first is not None:
+            p0 = _query_nearest_port_grid(first_ep[0], first_ep[1],
+                                          g_first[0], g_first[1], tol)
+        else:
+            p0 = _nearest_port_on_layer(first_ep[0], first_ep[1], first_layer,
+                                        anchors, tol)
+        if g_last is not None:
+            p1 = _query_nearest_port_grid(last_ep[0], last_ep[1],
+                                          g_last[0], g_last[1], tol)
+        else:
+            p1 = _nearest_port_on_layer(last_ep[0], last_ep[1], last_layer,
+                                        anchors, tol)
         if p0 is None or p1 is None:
             dangling.append(net_id)
             continue
@@ -523,6 +693,7 @@ def extract_layout_netlist_multilayer(link, placement, routes, stack=None,
             nets[net_id] = sorted(net_ports)
 
     # —— 层叠短路：同层路径相交才判 short（stack.can_cross 谓词）——
+    # v0.8.39：层内 O(n²) 双重循环 → 网格候选对（跨层 can_cross 语义不变）
     cross_shorts: List[Tuple[str, str, str]] = []
     layer_names = sorted(paths_by_layer.keys())
     for i in range(len(layer_names)):
@@ -531,10 +702,14 @@ def extract_layout_netlist_multilayer(link, placement, routes, stack=None,
             if not stack.can_cross(l1, l2):
                 continue               # 异层介质隔离：投影重叠不短（核心语义）
             pl1, pl2 = paths_by_layer[l1], paths_by_layer[l2]
-            for n1 in sorted(pl1):
-                for n2 in sorted(pl2):
-                    if n1 == n2 and l1 == l2:
-                        continue       # 同网自身不比对
+            if l1 == l2:
+                cand = _cross_pair_candidates(pl1)
+                for n1, n2 in cand:
+                    if _paths_cross(pl1[n1], pl2[n2]):
+                        cross_shorts.append((n1, n2, f"{l1}∩{l2}"))
+            else:
+                cand = _cross_pair_candidates(pl1, other=pl2)
+                for n1, n2 in cand:
                     if _paths_cross(pl1[n1], pl2[n2]):
                         cross_shorts.append((n1, n2, f"{l1}∩{l2}"))
 

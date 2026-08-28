@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.8.45（2026-08-28 · 展示能力扩张：GC 24 + 货架 24 + 能力演示 12 项）
+- **GC 整芯片对标库 20→24**：新增 4 条光子单通道收发链路（800G DR8 / 400G FR4 / 100G CWDM4 / 100G PSM4），golden 来自 IEEE 802.3bs/df、CWDM4 MSA、IEEE 802.3bm 公开标准；复用 GP-* 已锚定基元 dB 级联（S1 同构），零新物理。`run_golden_product_smoke` 现 **29/29 PASS**（5 GP + 24 GC）
+- **创新超市货架 20→24**：新增 4 条前瞻预研货架（IM-PSM4-SHELF / IM-FR4-SHELF / IM-CWDM4-SHELF / IM-LPO-112G），composition ⊂ GP-*，严守组合已锚定基元护栏；`run_innovation_market_smoke` 现 **24/24** 结构可行 + 系统预算不破
+- **新增「能力演示场景」板块（insights.html 第④栏）**：12 项真实能力画廊（环形 add-drop / 逆向设计 / WDM / 光栅耦合 / 并行布线 / DRC 修复 / LVS / 多比特读出 / QEDA 拓扑 / IR 桥接 / Agent 闭环 / 万级规模），每条映射 **真实模块 + 真实 API 端点**；新增 `GET /api/capability_demos`（元数据）+ `?run=1`（核心引擎在线自检，6 项真实复现值）。`run_webui_api_smoke` 路由计入
+- 文档同步：README 版本线 v0.8.45、pyproject 0.8.45、重新生成 `docs/golden_product_benchmarks_report.md`（29/29）、`docs/innovation_market.md`（24/24）；CI core 维持 69 条（数据/展示扩展非新增 smoke）
+
 ## v0.8.44（2026-08-28 · B 技术纵深三连：并行布线 / 规模锚升 4k / 相关簇锚）
 - **并行布线**：新增 `lda_layout/parallel_routing.py` `route_batch`——批量布线统一入口（workers=1 串行逐位一致；workers>1 ProcessPoolExecutor 零依赖并行）；实测收益边界：链式拓扑单网 ~12µs 无收益（框架开销>任务），障碍密集复杂版图单网 ~400ms、workers=4 实测 **2.67×** 加速；诚实边界：拥塞感知（有标记顺序依赖）并行下明确拒绝不伪并行；`run_parallel_routing_smoke` 5/5 入 CI core（68→69）
 - **规模锚升 4k**：S11 默认规模 1000→4000、预算 5s→10s（实测 4k 全链 ~0.07s，余量 140×）；smoke 纵深同步升至 8k（LVS ≤2s、斜率 ≤6× 近线性守护）；scale/4k/8k 全链 ACCEPT

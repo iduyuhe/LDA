@@ -538,6 +538,61 @@ DEFAULT_CHIP_BENCHMARKS: List[ChipBenchmark] = [
         replica_note="18-qubit 复用读出链（D-46×D-47 已验证闭环）逐 qubit 保真度最小值 = LDA 复现。",
         honest_note="等效对标（解析模型对标公开指标区间），非本团队流片/实测；演示库随比特数扩展仍零新物理。",
     ),
+    # —— v0.8.45 GC 库小幅扩（20→24）：光子单通道收发链路，复用 GP-* dB 级联 ——
+    #   golden 全部来自公开标准/平台规格（IEEE 802.3bs/df、CWDM4 MSA、IEEE 802.3bm PSM4）；
+    #   复现确定性（GP-* 已锚定基元 dB 级联），判决纯死标量；零新物理。
+    ChipBenchmark(
+        chip_id="GC-DR8-CH",
+        chip_type="800G DR8 硅光发射芯片（单通道，光纤-芯片插损）",
+        source_kind="datasheet",
+        source_ref="Hyperphotonix Hyper Silicon™ 公开平台（800G DR8 / 1.6T DR8 PIC 路线）+ IEEE 802.3df 800G 光接口进程："
+                   "单波长通道插损与 DR4 同量级 <4.5 dB",
+        domain="photon", system_type="link",
+        geom={"n_gratings": 1, "wg_length_cm": 0.5, "n_ybranch": 0, "n_crossing": 0},
+        metrics=[MetricSpec(name="total_insertion_loss_dB", golden=4.5, tol=1.5, unit="dB",
+                            direction="le", note="800G DR8 单通道插损 <4.5 dB（公开平台量级）")],
+        replica_note="单通道 = 1×光栅耦合 + 0.5cm SiN 波导，GP-* 基元 dB 级联（S1 同构）。",
+        honest_note="等效验证（对标公开平台规格量级），非本团队流片；调制器按黑箱源（负面清单）。",
+    ),
+    ChipBenchmark(
+        chip_id="GC-FR4-CH",
+        chip_type="400G FR4 硅光收发单通道（4×100G PAM4，2km OS2）",
+        source_kind="datasheet",
+        source_ref="IEEE 802.3bs 400GBASE-FR4（clause 121）：单通道（λ，2km）信道插入损耗预算 ≤4.5 dB；"
+                   "Hyperphotonix 平台同量级",
+        domain="photon", system_type="link",
+        geom={"n_gratings": 1, "wg_length_cm": 1.0, "n_ybranch": 0, "n_crossing": 0},
+        metrics=[MetricSpec(name="total_insertion_loss_dB", golden= 4.5, tol=1.5, unit="dB",
+                            direction="le", note="FR4 单通道插损预算 ≤4.5 dB（IEEE 802.3bs）")],
+        replica_note="单通道 = 1×光栅耦合 + 1.0cm SiN 波导，GP-* dB 级联。",
+        honest_note="等效验证（对标 IEEE 标准信道预算），非本团队流片；WDM 复用/串行器按黑箱参数化。",
+    ),
+    ChipBenchmark(
+        chip_id="GC-CWDM4-CH",
+        chip_type="100G CWDM4 硅光收发单通道（4×25G，2km）",
+        source_kind="datasheet",
+        source_ref="CWDM4 MSA（100G CWDM4：4×25G，2km）单通道光信道插损典型 ≤4.0 dB；"
+                   "商用 100G CWDM4 光模块 datasheet 一致",
+        domain="photon", system_type="link",
+        geom={"n_gratings": 1, "wg_length_cm": 1.0, "n_ybranch": 0, "n_crossing": 0},
+        metrics=[MetricSpec(name="total_insertion_loss_dB", golden=4.0, tol=1.5, unit="dB",
+                            direction="le", note="CWDM4 单通道插损 ≤4.0 dB（CWDM4 MSA 公开规格）")],
+        replica_note="单通道 = 1×光栅耦合 + 1.0cm SiN 波导，GP-* dB 级联。",
+        honest_note="等效验证（对标 CWDM4 MSA 公开规格），非本团队流片；WDM 复解器按黑箱参数化。",
+    ),
+    ChipBenchmark(
+        chip_id="GC-PSM4-CH",
+        chip_type="100G PSM4 硅光收发单通道（4×25G，500m SMF）",
+        source_kind="datasheet",
+        source_ref="IEEE 802.3bm 100GBASE-PSM4（4×25G，500m SMF，边缘耦合低损）：单通道插损预算 ≤4.0 dB；"
+                   "商用 PSM4 平台 datasheet 一致",
+        domain="photon", system_type="link",
+        geom={"n_gratings": 1, "wg_length_cm": 2.0, "n_ybranch": 0, "n_crossing": 0},
+        metrics=[MetricSpec(name="total_insertion_loss_dB", golden=4.0, tol=1.5, unit="dB",
+                            direction="le", note="PSM4 单通道插损预算 ≤4.0 dB（IEEE 802.3bm）")],
+        replica_note="单通道 = 1×光栅耦合 + 2.0cm SiN 波导（边缘耦合按低损黑箱），GP-* dB 级联。",
+        honest_note="等效验证（对标 IEEE 标准信道预算），非本团队流片；边缘耦合按低损黑箱（负面清单）。",
+    ),
 ]
 
 # 器件级 + 芯片级统一入口（evaluate_all / to_markdown / save / load 共用）

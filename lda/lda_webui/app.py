@@ -2242,6 +2242,158 @@ def scale_demo_status():
             "note": "构建+放置+布线+LVS 全链；32k 器件亚秒（v0.8.40 后近线性）。"}
 
 
+# ---------------------------------------------------------------------------
+# A4 · 能力演示场景（v0.8.45 · 展示能力新增板块）
+#   把 LDA 已有的真实能力（真实模块 + 真实 API 端点）做成对外可见的展示画廊。
+#   零编造：每条都映射到真实存在的模块/端点；现场跑 = 真实引擎/端点，非示意。
+# ---------------------------------------------------------------------------
+CAPABILITY_DEMOS: list = [
+    {
+        "id": "CAP-RING-ADDDROP", "category": "光子", "domain": "photon",
+        "title": "环形谐振器 add-drop（滤波器 / 复用）",
+        "tagline": "拓扑优化环谐振滤波器：drop 插损与串扰走 B4 锚闭环",
+        "honest_metric": "drop IL ≤3 dB / XT ≥15 dB（B4 锚）",
+        "module": "lda_agent/ring_adddrop.py", "endpoint": "/api/ring_loop",
+        "heartbeat": False,
+    },
+    {
+        "id": "CAP-INVERSE", "category": "光子", "domain": "photon",
+        "title": "逆向设计（adjoint / topology）",
+        "tagline": "以目标光谱为约束的反向传播设计，收敛到满足指标的几何",
+        "honest_metric": "目标光谱残差收敛（design_pipeline 死标量）",
+        "module": "lda_agent/inverse_design.py", "endpoint": "/api/inverse_design",
+        "heartbeat": False,
+    },
+    {
+        "id": "CAP-WDM", "category": "光子", "domain": "photon",
+        "title": "WDM 解复用（多波长路由）",
+        "tagline": "DWDM/AWG 类多通道解复用，通道 IL 与串扰同构判决",
+        "honest_metric": "drop IL ≤3 dB / XT ≥15 dB（B4 锚）",
+        "module": "lda_agent/wdm_splitter.py", "endpoint": "/api/wdm_design",
+        "heartbeat": False,
+    },
+    {
+        "id": "CAP-GRATING", "category": "光子", "domain": "photon",
+        "title": "光栅耦合器耦合效率",
+        "tagline": "光纤-芯片耦合效率解析复现，对标公开实测 51.7%",
+        "honest_metric": "coupling_eff ≈0.434（golden 0.517±0.10）",
+        "module": "lda_design/loss_engines.py", "endpoint": "/api/gc_sparams",
+        "heartbeat": True,
+    },
+    {
+        "id": "CAP-PARALLEL-ROUTE", "category": "系统", "domain": "system",
+        "title": "并行布线（万级规模）",
+        "tagline": "ProcessPool 无依赖并行布线，复杂版图实测 2.67× 提速",
+        "honest_metric": "链式 12µs 无收益 / 复杂版图 400ms/网 workers=4 达 2.67×",
+        "module": "lda_layout/parallel_routing.py", "endpoint": "/api/scale_demo",
+        "heartbeat": False,
+    },
+    {
+        "id": "CAP-DRC-FIX", "category": "验证", "domain": "verify",
+        "title": "DRC 几何规则自动修复",
+        "tagline": "间距 / 宽度违规自动修复闭环，violation → 0",
+        "honest_metric": "violations 0/0（几何 DRC 死标量）",
+        "module": "lda_agent/drc_fix_loop.py", "endpoint": "/api/drc_fix_demo",
+        "heartbeat": False,
+    },
+    {
+        "id": "CAP-LVS", "category": "验证", "domain": "verify",
+        "title": "LVS 版图-原理图一致性",
+        "tagline": "从布线几何独立恢复网表，六类违规确定性判决",
+        "honest_metric": "62138 交叉对零漏报零误报",
+        "module": "lda_l2/lvs.py", "endpoint": "/api/link_lvs",
+        "heartbeat": False,
+    },
+    {
+        "id": "CAP-MULTIQUBIT", "category": "量子", "domain": "quantum",
+        "title": "多比特读取保真度链",
+        "tagline": "频率复用读出预算框架，逐比特保真度最小值",
+        "honest_metric": "readout_fidelity ≥97.5%（NISQ 典型）",
+        "module": "lda_agent/multiqubit_fidelity.py", "endpoint": "/api/multiqubit_fidelity",
+        "heartbeat": True,
+    },
+    {
+        "id": "CAP-QEDA", "category": "量子", "domain": "quantum",
+        "title": "QEDA 拓扑综合",
+        "tagline": "量子芯片拓扑映射与连线综合",
+        "honest_metric": "qubit 映射 / 拓扑可行性（QEDA 闭环）",
+        "module": "lda_agent/qeda_topology.py", "endpoint": "/api/qeda_topology",
+        "heartbeat": False,
+    },
+    {
+        "id":  "CAP-IR", "category": "跨介质", "domain": "hybrid",
+        "title": "IR 跨介质桥接（DSL → 后端）",
+        "tagline": "中间表示 DSL 与后端双向往返，保证语义守恒",
+        "honest_metric": "IR DSL↔后端双向桥接（语义守恒）",
+        "module": "lda_ir/bridge.py", "endpoint": "/api/ir_demo",
+        "heartbeat": False,
+    },
+    {
+        "id": "CAP-AGENT-LOOP", "category": "系统", "domain": "system",
+        "title": "Agent 设计闭环（端到端）",
+        "tagline": "目标 → 提案 → 仿真 → 判决 → 设计包 自迭代闭环",
+        "honest_metric": "端到端设计包生成（design_loop 闭环）",
+        "module": "lda_agent/design_loop.py", "endpoint": "/api/design_loop",
+        "heartbeat": False,
+    },
+    {
+        "id": "CAP-SCALE", "category": "规模", "domain": "system",
+        "title": "万级器件全链亚秒",
+        "tagline": "构建+放置+布线+LVS 全链近线性，32k 亚秒",
+        "honest_metric": "32k 全链 0.93s（≈1000×）",
+        "module": "lda_harness/scale_anchor.py", "endpoint": "/api/scale_demo",
+        "heartbeat": False,
+    },
+]
+
+
+def capability_demos_status():
+    """A4 · 能力演示场景元数据（12 条，快，零计算）。"""
+    return {
+        "count": len(CAPABILITY_DEMOS),
+        "rows": CAPABILITY_DEMOS,
+        "honest_note": "每条均映射 LDA 真实模块 / 端点；现场跑 = 真实引擎 / 端点，非示意。",
+    }
+
+
+def capability_demos_run():
+    """A4 · 核心引擎自检（现场跑）：跑一批确定性快引擎，返回逐引擎真实复现值 + 耗时。"""
+    from lda_design.loss_engines import ENGINE_FUNCS
+    engines = [
+        ("光栅耦合效率", "engine_grating_eff", {"ff": 0.5, "theta_deg": 8.0, "tilt_sigma_deg": 15.0}),
+        ("MMI 过量损耗", "engine_mmi_el", {"w_mmi_um": 2.8, "n_si": 3.48, "wl_um": 1.55}),
+        ("Waveguide Crossing", "engine_crossing", {"w_core_um": 0.5, "taper_w_ratio": 2.5}),
+        ("Y-branch 分束", "engine_ybranch_split", {"theta_deg": 5.0, "excess_coef": 0.004}),
+        ("SiN 传播损耗", "engine_sin_pl", {"w_core_um": 0.8, "h_core_um": 0.8, "roughness_nm": 0.3}),
+    ]
+    out = []
+    for name, fn, geom in engines:
+        t0 = time.time()
+        r = ENGINE_FUNCS[fn](geom)
+        val = r.get("value")
+        out.append({"name": name, "engine": fn,
+                    "value": round(float(val), 4) if val is not None else None,
+                    "unit": r.get("unit", ""), "ms": round((time.time() - t0) * 1000, 2)})
+    # 量子：多比特读出保真度（复用 D-46×D-47 已验证闭环）
+    try:
+        from lda_agent.multiqubit_fidelity import design_multiqubit_fidelity
+        t0 = time.time()
+        rr = design_multiqubit_fidelity([4.8, 5.0, 5.2, 5.4])
+        fmin = min(q["budget"]["F"] for q in rr["per_qubit"])
+        out.append({"name": "量子多比特读出保真度", "engine": "design_multiqubit_fidelity",
+                    "value": round(fmin, 6), "unit": "ratio",
+                    "ms": round((time.time() - t0) * 1000, 2)})
+    except Exception as e:  # noqa: BLE001
+        out.append({"name": "量子多比特读出保真度", "engine": "design_multiqubit_fidelity",
+                    "value": None, "unit": "ratio", "ms": 0, "error": str(e)})
+    passed = all(o.get("value") is not None for o in out)
+    return {
+        "passed": passed,
+        "engines": out,
+        "note": "核心引擎在线自检：以上为 LDA 主权、零外部依赖引擎的真实复现值（非示意）。",
+    }
+
+
 def ecosystem_status():
     """D-93 生态共建框架快照：harness 题库(含 B14-B18) + 主权依赖 A/B/C + Registry 接口自检。
 
@@ -2500,6 +2652,13 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, shelf_status())
         elif path == "/api/scale_demo":
             self._send(200, scale_demo_status())
+        elif path == "/api/capability_demos":
+            from urllib.parse import parse_qs, urlparse
+            q = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
+            if q.get("run") == "1":
+                self._send(200, capability_demos_run())
+            else:
+                self._send(200, capability_demos_status())
         elif path == "/api/benchmark_crosscheck":
             # v0.8.11f 基准对照验证闭环（20 引擎 + 9 语料 + ORACLE，quick 秒级）
             try:

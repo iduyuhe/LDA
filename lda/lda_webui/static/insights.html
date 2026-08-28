@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>LDA · 能力展示（GC 对照 / 创新超市 / 规模）</title>
+<title>LDA · 能力展示（GC 对照 / 创新超市 / 规模 / 能力演示）</title>
 <style>
   :root{
     --bg:#0b1020; --panel:#141b2e; --panel2:#1b2440; --line:#26304d;
@@ -53,7 +53,7 @@
 </style>
 </head>
 <body>
-<h2 class="sr-only">LDA 能力展示：20 条整芯片对标、20 条创新超市货架、万级规模现场实测</h2>
+<h2 class="sr-only">LDA 能力展示：24 条整芯片对标、24 条创新超市货架、万级规模现场实测、12 项能力演示场景</h2>
 <div class="top">
   <h1>LDA · 能力展示</h1>
   <a href="/">← 返回验证内核控制台</a>
@@ -84,6 +84,16 @@
       <table id="scTable" style="margin-top:14px"></table>
       <div class="bar-wrap" id="scBar"></div>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>④ 能力演示场景（12 项真实能力）</h2>
+    <div class="sub">每条均映射 LDA 真实模块 / 端点；点「现场跑」看核心引擎在线自检（真实复现值，非示意）。</div>
+    <button class="btn" id="capRun" onclick="runCap()">现场跑核心引擎自检（6 项）</button>
+    <div id="capArea" style="display:none">
+      <table id="capEngineTable" style="margin-top:12px"></table>
+    </div>
+    <div class="shelf-grid" id="capGrid" style="margin-top:14px"></div>
   </div>
 
   <div class="card foot">
@@ -119,6 +129,19 @@ function load(){
          '<div class="ev" id="ev-'+esc(s.id)+'"></div></div>';
     });
     $('shelfGrid').innerHTML=h;
+  });
+  fetch('/api/capability_demos').then(function(r){return r.json()}).then(function(d){
+    var h='';
+    d.rows.forEach(function(c){
+      h+='<div class="shelf"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'+
+         '<h3 style="margin:0 0 2px">'+esc(c.title)+'</h3>'+
+         '<span class="tag" style="white-space:nowrap">'+esc(c.category)+'</span></div>'+
+         '<div class="app">'+esc(c.tagline)+'</div>'+
+         '<div class="meta">可证死标量：'+esc(c.honest_metric)+'</div>'+
+         '<div class="meta">真实模块：<code style="color:var(--accent)">'+esc(c.module)+'</code></div>'+
+         '<div class="meta">真实端点：<code style="color:var(--accent)">'+esc(c.endpoint)+'</code></div></div>';
+    });
+    $('capGrid').innerHTML=h;
   });
 }
 
@@ -169,6 +192,21 @@ function runScale(){
     });
     $('scTable').innerHTML=h;
     $('scBar').innerHTML=bars;
+    b.disabled=false; b.textContent='重新现场跑';
+  }).catch(function(e){ b.disabled=false; b.textContent='现场跑'; alert('失败: '+e); });
+}
+
+function runCap(){
+  var b=$('capRun'); b.disabled=true; b.textContent='运行中…';
+  fetch('/api/capability_demos?run=1').then(function(r){return r.json()}).then(function(d){
+    $('capArea').style.display='block';
+    var h='<tr><th>引擎 / 真实能力</th><th>真实复现值</th><th>单位</th><th>耗时(ms)</th></tr>';
+    d.engines.forEach(function(e){
+      h+='<tr><td>'+esc(e.name)+'</td>'+
+         '<td><b style="color:var(--green)">'+(e.value===null?'—':e.value)+'</b></td>'+
+         '<td>'+esc(e.unit||'')+'</td><td>'+e.ms+'</td></tr>';
+    });
+    $('capEngineTable').innerHTML=h;
     b.disabled=false; b.textContent='重新现场跑';
   }).catch(function(e){ b.disabled=false; b.textContent='现场跑'; alert('失败: '+e); });
 }

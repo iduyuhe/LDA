@@ -1,7 +1,7 @@
 # LDA 产品级基准对照报告（实证锚产品级扩展 · 器件级 GP-* + 芯片级 GC-*）
 
 > 生成口径：LDA 引擎规格驱动再设计 + 数值复现，对标已公开验证的器件性能死标量。
-> **25/25 产品级对标 PASS**。
+> **29/29 产品级对标 PASS**。
 
 **诚实边界**：本结果对标公开实测 / 厂商 datasheet / 开源 PDK 表征，属**等效验证，**非本团队流片验证。LDA 引擎为解析近似，对标公开典型量级；对标对象是性能死标量，非版图几何。
 
@@ -35,6 +35,10 @@
 | GC-QCTRL-HERON | 超导量子芯片（IBM Heron R2 对标，16-qubit 代表读出段） | datasheet | quantum:quantum_fidelity | readout_fidelity | 0.9978 ratio | 0.985 ratio | 0.015 | PASS |
 | GC-QCTRL-WILLOW | 超导量子芯片（Google Willow 对标，12-qubit 代表读出段） | literature | quantum:quantum_fidelity | readout_fidelity | 0.9978 ratio | 0.9933 ratio | 0.01 | PASS |
 | GC-QCTRL-M18 | 超导量子控制/读出芯片（18-qubit 规模扩展演示） | datasheet | quantum:quantum_fidelity | readout_fidelity | 0.9978 ratio | 0.985 ratio | 0.015 | PASS |
+| GC-DR8-CH | 800G DR8 硅光发射芯片（单通道，光纤-芯片插损） | datasheet | photon:link | total_insertion_loss_dB | 3.6716 dB | 4.5 dB | 1.5 | PASS |
+| GC-FR4-CH | 400G FR4 硅光收发单通道（4×100G PAM4，2km OS2） | datasheet | photon:link | total_insertion_loss_dB | 3.7151 dB | 4.5 dB | 1.5 | PASS |
+| GC-CWDM4-CH | 100G CWDM4 硅光收发单通道（4×25G，2km） | datasheet | photon:link | total_insertion_loss_dB | 3.7151 dB | 4.0 dB | 1.5 | PASS |
+| GC-PSM4-CH | 100G PSM4 硅光收发单通道（4×25G，500m SMF） | datasheet | photon:link | total_insertion_loss_dB | 3.8021 dB | 4.0 dB | 1.5 | PASS |
 
 ## 出处清单（可溯源）
 
@@ -63,10 +67,14 @@
 - **GC-QCTRL-HERON** · 超导量子芯片（IBM Heron R2 对标，16-qubit 代表读出段）：上海科技情报研究所公开对比表：IBM Heron R2 (2024, 156 qubit) 读出保真度 98.5%；IBM Quantum Cloud 公开 Readout error (median) 亦 ~1-1.1% 量级
 - **GC-QCTRL-WILLOW** · 超导量子芯片（Google Willow 对标，12-qubit 代表读出段）：Applied Quantum 公开技术分析 (2025-2026)：Google Willow (2024, 105 qubit) 复用色散读出 + JPA 放大，读出保真度 ~99.3%
 - **GC-QCTRL-M18** · 超导量子控制/读出芯片（18-qubit 规模扩展演示）：商用超导量子系统公开指标区间（IBM/Google/本源公开披露 per-qubit 读出保真度 98.5–99.33%）；18-qubit 复用读出链规模扩展对标（NISQ 典型 ≥97.5%，PostQuantum 2026 基准）
+- **GC-DR8-CH** · 800G DR8 硅光发射芯片（单通道，光纤-芯片插损）：Hyperphotonix Hyper Silicon™ 公开平台（800G DR8 / 1.6T DR8 PIC 路线）+ IEEE 802.3df 800G 光接口进程：单波长通道插损与 DR4 同量级 <4.5 dB
+- **GC-FR4-CH** · 400G FR4 硅光收发单通道（4×100G PAM4，2km OS2）：IEEE 802.3bs 400GBASE-FR4（clause 121）：单通道（λ，2km）信道插入损耗预算 ≤4.5 dB；Hyperphotonix 平台同量级
+- **GC-CWDM4-CH** · 100G CWDM4 硅光收发单通道（4×25G，2km）：CWDM4 MSA（100G CWDM4：4×25G，2km）单通道光信道插损典型 ≤4.0 dB；商用 100G CWDM4 光模块 datasheet 一致
+- **GC-PSM4-CH** · 100G PSM4 硅光收发单通道（4×25G，500m SMF）：IEEE 802.3bm 100GBASE-PSM4（4×25G，500m SMF，边缘耦合低损）：单通道插损预算 ≤4.0 dB；商用 PSM4 平台 datasheet 一致
 
 ## 结论
 
-LDA 用开源、主权、零外部依赖的引擎，对标杆器件（GP-*）与整芯片（GC-*）完成规格驱动再设计，复现性能与公开 golden 死标量一致（25/25 PASS）。这证明：在不进入发动期、不实际流片的前提下，即可把验证做到产品级——以他人已量产/已验证的真实效果为外部尺子，杀同源自证风险，并为生态播种提供硬核素材。
+LDA 用开源、主权、零外部依赖的引擎，对标杆器件（GP-*）与整芯片（GC-*）完成规格驱动再设计，复现性能与公开 golden 死标量一致（29/29 PASS）。这证明：在不进入发动期、不实际流片的前提下，即可把验证做到产品级——以他人已量产/已验证的真实效果为外部尺子，杀同源自证风险，并为生态播种提供硬核素材。
 
 ---
 _LDA · 开源 Agent-native EDA（光子 PDA + 量子 QEDA）· 物理定律锚红线 · LLM 不进判决路径_

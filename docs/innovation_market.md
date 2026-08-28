@@ -1,7 +1,7 @@
 # LDA 创新超市（Innovation Marketplace）· 前瞻预研货架目录
 
 > 生成口径：每个货架 = 已锚定基元（产品级基准库 GP-*）+ 公开信号驱动的**前瞻预研**预设计。
-> **20/20 货架通过结构可行 + 系统预算不破检查**。
+> **24/24 货架通过结构可行 + 系统预算不破检查**。
 
 **诚实边界（红线下护栏）**：
 > 创新超市货架为**前瞻预研**预设计：组合已锚定基元（产品级基准库 GP-*）+ 公开信号驱动（行业 roadmap / 标准草案 / 厂商公开动向）。属等效验证（复用已锚定基元 + 系统预算不破），**非本团队流片验证**、**非对未来的承诺**。信号源可溯源；判决复用 system_type 已验证闭环，LLM 不进判决路径。
@@ -33,6 +33,10 @@
 | IM-QCTRL-ZC3-10Q | 10 比特频率复用读出链货架（祖冲之三号量级） | 超导量子处理器读出总线、中等规模 NISQ 读出扩展 | quantum_fidelity | GP-YBRANCH, GP-SIN-PL | OK |
 | IM-QCTRL-HERON-16Q | 16 比特频率复用读出链货架（IBM Heron R2 量级） | 超导量子处理器读出总线、heavy-hex 架构读出段 | quantum_fidelity | GP-YBRANCH, GP-SIN-PL | OK |
 | IM-QCTRL-WILLOW-12Q | 12 比特频率复用读出链货架（Google Willow 量级） | 超导量子处理器读出总线、QEC 码字读出段（Willow 类架构） | quantum_fidelity | GP-YBRANCH, GP-SIN-PL | OK |
+| IM-PSM4-SHELF | 100G PSM4 硅光收发前端预设计（4×25G，500m SMF） | 100G PSM4 数据中心光模块、边缘耦合低损并行光互连 | link | GP-GRATING-EFF, GP-SIN-PL, GP-CROSSING | OK |
+| IM-FR4-SHELF | 400G FR4 硅光收发前端预设计（4×100G PAM4，2km） | 400G FR4 数据中心光模块、中距（2km）光互连 | link | GP-GRATING-EFF, GP-SIN-PL | OK |
+| IM-CWDM4-SHELF | 100G CWDM4 解复用前端预设计（4×25G，2km） | 100G CWDM4 数据中心光模块、粗波分短距互连 | wdm_demux | GP-GRATING-EFF, GP-MMI-1X2, GP-SIN-PL | OK |
+| IM-LPO-112G | LPO 线性直驱光模块前端预设计（112G 单通道） | Linear Pluggable Optics（LPO）112G/通道 短距线性直驱互连、AI 机柜内光互连 | link | GP-GRATING-EFF, GP-SIN-PL | OK |
 
 ## 货架设计说明（诚实标注）
 
@@ -56,6 +60,10 @@
 - **IM-QCTRL-ZC3-10Q**：10 比特复用读出链（D-46 复用 + D-47 保真度）。对标 GC-QCTRL-ZC3（公开 99.18% 死标量），演示读出链规模扩展零新物理。
 - **IM-QCTRL-HERON-16Q**：16 比特复用读出链；对标 GC-QCTRL-HERON（公开 98.5% 死标量）。156 比特整芯片按 heavy-hex 分段，本货架为单段代表。
 - **IM-QCTRL-WILLOW-12Q**：12 比特复用读出链；对标 GC-QCTRL-WILLOW（公开 99.33% 死标量）。JPA 放大链按黑箱（有源不物理级建模，负面清单）。
+- **IM-PSM4-SHELF**：PSM4 单通道 = 光栅 + 2cm SiN（边缘耦合低损）+ crossing；链路预算锚 S1/S2/S5/S7 死标量判决。对标 GC-PSM4-CH（IEEE 802.3bm 4.0 dB 死标量）。
+- **IM-FR4-SHELF**：FR4 单通道 = 光栅 + 1cm SiN；WDM 复用/串行器按黑箱（非片上器件），判决复用 link 系统预算锚死标量。对标 GC-FR4-CH（IEEE 802.3bs 4.5 dB 死标量）。
+- **IM-CWDM4-SHELF**：4 通道 CWDM 解复用：wdm_demux 闭环（B4：drop IL≤3 / XT≥15 / 单 FSR / DRC）。对标 GC-CWDM4-CH（CWDM-MSA 4.0 dB 死标量）。
+- **IM-LPO-112G**：LPO 线性直驱前端 = 光栅 + SiN 波导（去 DSP 后链路裕度收窄，链路预算锚 S1/S2/S5/S7 死标量判决）；无量级新物理，复用已锚定基元。对标公开 LPO 链路预算量级。
 
 ## 信号来源（可溯源）
 
@@ -79,6 +87,10 @@
 - **IM-QCTRL-ZC3-10Q** · 10 比特频率复用读出链货架（祖冲之三号量级）：上海科技情报研究所公开对比表：电子科大祖冲之三号 (2024, 105 qubit) 读出保真度 99.18%；D-46×D-47 已验证保真度预算框架
 - **IM-QCTRL-HERON-16Q** · 16 比特频率复用读出链货架（IBM Heron R2 量级）：上海科技情报研究所公开对比表：IBM Heron R2 (2024, 156 qubit) 读出保真度 98.5%；IBM Quantum Cloud 公开 readout error ~1%
 - **IM-QCTRL-WILLOW-12Q** · 12 比特频率复用读出链货架（Google Willow 量级）：Applied Quantum 公开技术分析：Google Willow (2024, 105 qubit) 复用色散读出 + JPA，读出保真度 ~99.3%；arXiv 公开架构文档
+- **IM-PSM4-SHELF** · 100G PSM4 硅光收发前端预设计（4×25G，500m SMF）：IEEE 802.3bm 100GBASE-PSM4（4×25G，500m SMF）公开标准；商用 PSM4 平台 datasheet 单通道插损 ≤4.0 dB
+- **IM-FR4-SHELF** · 400G FR4 硅光收发前端预设计（4×100G PAM4，2km）：IEEE 802.3bs 400GBASE-FR4（clause 121）单通道插损预算 ≤4.5 dB；Hyperphotonix 平台同量级
+- **IM-CWDM4-SHELF** · 100G CWDM4 解复用前端预设计（4×25G，2km）：CWDM4 MSA（100G CWDM4：4×25G，2km）单通道插损 ≤4.0 dB；商用 100G CWDM4 光模块 datasheet 一致
+- **IM-LPO-112G** · LPO 线性直驱光模块前端预设计（112G 单通道）：LPO（线性可插拔光模块）公开产业路线（业界 112G/通道 线性直驱，去 Retimer/DSP 降功耗）：链路预算量级与 FR4/DR 同源
 
 ---
 _LDA · 开源 Agent-native EDA（光子 PDA + 量子 QEDA）· 物理定律锚红线 · LLM 不进判决路径_

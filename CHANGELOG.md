@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.8.48（2026-08-28 · 持续扩货架：新增 8 光子缺口品类开放下载、货架 25→33）
+- 货架 25→33：新增 8 个真实市场缺口光子品类（均 composition⊆GP-*、非出口管制、honest_tier=前瞻预研）：
+  - `IM-800G-FR4`（4×200G PAM4，贴合 NVIDIA 800G 主流）
+  - `IM-1.6T-FR4`（4×400G PAM4，IEEE 802.3dj 200G/lane 趋势）
+  - `IM-400G-DR4`（4×100G PAM4 500m，数据中心互联）
+  - `IM-100G-LR4`（4×25G LAN-WDM 10km，城域接入）
+  - `IM-PON-50G`（ITU-T G.9804，工信部 2026 商用，link_budget_db=6.0）
+  - `IM-OSW-1X8`（可重构光开关 OCS/dOCS，Cignal AI 2029 ≥$25B）
+  - `IM-LIDAR-RX`（FMCW 接收，车载/工业传感）
+  - `IM-BIOSENSE`（环形生物传感，IVD 前沿）
+- 开放下载白名单 `OPEN_SHELVES` 17→25（前述 8 个光子缺口品类全量放开；工厂产能已具备，任意已知货架可现场生成设计就绪包）。
+- 量子 8 个维持「咨询制」，不进自动下载白名单（出口管制合规红线）。
+- `docs/store_launch/04_market_analysis.md` 新增趋势段：50G-PON（工信部 2025 168 试点→2026 商用）、可重构光交换 OCS（Cignal AI 2029 ≥$25B / LightCounting 2027）；光子细分表格扩容（1.6T DR8/FR4、800G、400G DR4、50G-PON、OSW、LIDAR RX/BIOSENSE），开放策略 16→25 货架。
+- 重新生成 `innovation_market.json`（33 货架）；`run_innovation_market_smoke` **33/33 ALL PASS**；`run_count_consistency_smoke` **11/11 OK**（顺带根治 README 与 CI 计数漂移 68→69）。CI core 维持 69 条（新增货架不涉 ENGINE/PACKAGE/BENCHMARK 计数）。
+
 ## v0.8.47（2026-08-28 · 扩货架 + 市场分析：开放 17 光子货架、量子 8 咨询制）
 - 货架 24→25：新增 `IM-1.6T-DR8`（16×100G PAM4，composition⊆GP-*，贴合 1.6T 渗透趋势）。
 - 开放下载白名单 `OPEN_SHELVES` 3→17（光子主流全量：1.6T DR8/800G DR8/PSM4/FR4/CWDM4/LPO-112G/WDM 8CH/DWDM 40CH/CPO WDM5·OCS/FTTH PLC 8-16/传感 RING·MZI·LIDAR/光 chiplet IO/激光集成）。

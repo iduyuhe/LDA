@@ -61,17 +61,20 @@ GENERATED_NOTE = (
 # 阶段1 开放下载白名单（光子主流方向全量开放，覆盖预研企业最密集需求面）。
 # 量子相关（QKD×3 + 量子保真度链×5）因出口管制合规红线 + 受众小，暂列「咨询制/即将开放」，不进自动下载白名单。
 # 依据：docs/store_launch/04_market_analysis.md。后续放开只需往此集合加货架 id。
+# v0.8.48：新增 8 个光子缺口品类（FR4 200G/400G 每通道、400G DR4、100G LR4、50G-PON、
+# 可重构光开关、FMCW 接收、环形生物传感），均 composition⊂GP-* 且非出口管制品类。
 OPEN_SHELVES = {
-    # 高速收发
-    "IM-1.6T-DR8", "IM-800G-DR8", "IM-PSM4-SHELF", "IM-FR4-SHELF", "IM-CWDM4-SHELF", "IM-LPO-112G",
+    # 高速收发（DR8/FR4 × 400G/800G/1.6T + PSM4/CWDM4/FR4/LPO）
+    "IM-1.6T-DR8", "IM-1.6T-FR4", "IM-800G-DR8", "IM-800G-FR4", "IM-400G-DR4",
+    "IM-PSM4-SHELF", "IM-FR4-SHELF", "IM-CWDM4-SHELF", "IM-LPO-112G",
     # WDM 解复用
-    "IM-WDM-8CH-1D", "IM-DWDM-40CH",
-    # CPO / OCS
-    "IM-CPO-WDM5", "IM-CPO-OCS",
-    # 接入网
-    "IM-FTTH-PLC8", "IM-FTTH-PLC16",
-    # 传感
-    "IM-SENSE-RING", "IM-SENS-MZI", "IM-LIDAR-TX",
+    "IM-WDM-8CH-1D", "IM-DWDM-40CH", "IM-100G-LR4",
+    # CPO / OCS / 可重构光交换
+    "IM-CPO-WDM5", "IM-CPO-OCS", "IM-OSW-1X8",
+    # 接入网（FTTH PLC + 50G-PON）
+    "IM-FTTH-PLC8", "IM-FTTH-PLC16", "IM-PON-50G",
+    # 传感（环/MZI/LiDAR TX+RX/生物）
+    "IM-SENSE-RING", "IM-SENS-MZI", "IM-LIDAR-TX", "IM-LIDAR-RX", "IM-BIOSENSE",
     # 先进封装 / 异质集成
     "IM-CHIPLET-IO", "IM-LASER-INT",
 }

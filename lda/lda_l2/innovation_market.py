@@ -472,6 +472,136 @@ DEFAULT_SHELF: List[ShelfItem] = [
         design_note="1.6T DR8 = 800G DR8 的 16 通道扩展（composition 同源 GP-*），复用已锚定无源网 + 光栅耦合死标量；无量级新物理。对标公开 1.6T DR8 链路预算量级。",
         ci_status="",
     ),
+    # —— v0.8.48 货架扩容（25→33）：真实市场缺口品类，仍严守组合已锚定基元护栏 ——
+    #   信号源全部可溯源（IEEE/ITU 标准 / LightCounting·Cignal AI·QYResearch 市场数据 /
+    #   工信部试点公开报道 / 厂商公开路线）；system_type ∈ {link, wdm_demux}，判决复用已验证
+    #   闭环，零新物理。量子 8 货架维持咨询制（出口管制红线），本批全为光子非管制品类。
+    ShelfItem(
+        id="IM-800G-FR4",
+        title="800G FR4 硅光收发前端预设计（4×200G PAM4，2km）",
+        target_app="800G FR4 数据中心光模块、中距（2km）AI 互连（200G 每通道）",
+        signal_ref="OIF/光模块厂商 800G FR4（4×200G PAM4）公开路线：2026 均价 $400–480（硅光方案）；"
+                   "LightCounting 2026 高速数通市场 ~$12B、800G+ 出货 6300 万只（2.6×）；"
+                   "IEEE 802.3dj（200G/lane PAM4）预计 2026 中定稿",
+        domain="photon",
+        system_type="link",
+        composition=["GP-GRATING-EFF", "GP-SIN-PL", "GP-CROSSING"],
+        default_req={"p_tx_dbm": 3.0, "wg_length_cm": 1.5, "link_budget_db": 4.5},
+        design_note="800G FR4 = 4×200G PAM4 并行（与 800G DR8 同源无源网 + 光栅耦合，"
+                    "composition 同源 GP-*）；200G/lane DSP+SiPh 2026 成熟。对标公开 800G FR4 "
+                    "链路预算量级（单通道 ≤4.5 dB 量级）。",
+        ci_status="",
+    ),
+    ShelfItem(
+        id="IM-1.6T-FR4",
+        title="1.6T FR4 硅光发射引擎预设计（4×400G PAM4）",
+        target_app="1.6T FR4 数据中心光模块、AI 集群 scale-out 互连（400G 每通道）",
+        signal_ref="1.6T FR4（4×400G PAM4）公开产业路线：NVIDIA GB300 标配、2026 量产拐点"
+                   "（H1 主力上行）；硅光方案 $1000–1100；对标 1.6T DR8 同源、通道数减半",
+        domain="photon",
+        system_type="link",
+        composition=["GP-GRATING-EFF", "GP-SIN-PL", "GP-CROSSING"],
+        default_req={"p_tx_dbm": 3.0, "wg_length_cm": 1.0, "link_budget_db": 4.5},
+        design_note="1.6T FR4 = 1.6T DR8 的 4×400G 变体（composition 同源 GP-*），复用已锚定"
+                    "无源网 + 光栅耦合死标量；无量级新物理。对标公开 1.6T FR4 链路预算量级。",
+        ci_status="",
+    ),
+    ShelfItem(
+        id="IM-400G-DR4",
+        title="400G DR4 硅光收发前端预设计（4×100G PAM4，500m）",
+        target_app="400G DR4 数据中心光模块、短距（500m SMF）并行光互连",
+        signal_ref="IEEE 802.3bs 400GBASE-DR4（4×100G，500m SMF）公开标准；"
+                   "QYResearch 2026 全球 400G 光模块市场 ~$11.3 亿、传统云负载仍高量；"
+                   "商用 400G-DR4 平台单通道插损 ≤4.0 dB",
+        domain="photon",
+        system_type="link",
+        composition=["GP-GRATING-EFF", "GP-SIN-PL", "GP-CROSSING"],
+        default_req={"p_tx_dbm": 3.0, "wg_length_cm": 2.0, "link_budget_db": 4.0},
+        design_note="400G DR4 = 4×100G 并行单波长（与 800G DR8 同源无源网 + 光栅耦合，"
+                    "composition 同源 GP-*）；链路预算锚 S1/S2/S5/S7 死标量判决。对标 IEEE 802.3bs "
+                    "400G DR4 单通道 4.0 dB 量级。",
+        ci_status="",
+    ),
+    ShelfItem(
+        id="IM-100G-LR4",
+        title="100G LR4 解复用前端预设计（4×25G LAN-WDM，10km）",
+        target_app="100G LR4 数据中心/城域/5G 前传光模块、长距（10km）粗波分",
+        signal_ref="IEEE 802.3cu-2021 100GBASE-LR4（4×25G LAN-WDM，10km）公开标准；"
+                   "5G 前传/城域/企业网高量部署；商用 100G LR4 光模块单通道插损 ≤4.5 dB",
+        domain="photon",
+        system_type="wdm_demux",
+        composition=["GP-GRATING-EFF", "GP-MMI-1X2", "GP-SIN-PL"],
+        default_req={"n_channels": 4, "spacing_nm": 1.2},
+        design_note="4 通道 LAN-WDM 解复用：wdm_demux 闭环（B4：drop IL≤3 / XT≥15 / 单 FSR / DRC）。"
+                    "与 CWDM4-SHELF 同属 4ch 解复用前端，但面向 10km 长距 LAN-WDM（vs CWDM4 2km）。"
+                    "对标 IEEE 802.3cu 100G LR4 单通道 4.5 dB 量级。",
+        ci_status="",
+    ),
+    ShelfItem(
+        id="IM-PON-50G",
+        title="50G-PON 光前端预设计（OLT/ONU 无源网，ITU-T G.9804）",
+        target_app="50G-PON 万兆光网 OLT/ONU 光前端、下一代接入网（园区/工厂/小区）",
+        signal_ref="ITU-T G.9804（Higher Speed PON）50G-PON 标准 2021 发布、2023 增补对称型；"
+                   "工信部 2025 首批 168 试点→2026 商用启航（2026.4 验收 136：52 小区/38 工厂/46 园区）；"
+                   "功率预算 N1(29dB)/C+(32dB)、1:64 分光",
+        domain="photon",
+        system_type="link",
+        composition=["GP-GRATING-EFF", "GP-YBRANCH", "GP-SIN-PL"],
+        default_req={"n_channels": 1, "channel_spacing_ghz": 100, "filter_bw_ghz": 50,
+                     "link_budget_db": 6.0, "p_tx_dbm": 3, "wg_length_cm": 1.0},
+        design_note="50G-PON 光前端 = 光栅耦合 + Y-branch 分束 + SiN 波导（OLT 发射/ONU 接收无源网）。"
+                    "PIC 自身 IL 预算 6 dB；整系统 29/32 dB 功率预算由 ODN 1:64 分光主导（黑箱，"
+                    "非片上器件），判决复用 link 系统预算锚 S1/S2/S5/S7。对标 G.9804 死标量量级。",
+        ci_status="",
+    ),
+    ShelfItem(
+        id="IM-OSW-1X8",
+        title="1×8 可重构光开关前端预设计（OCS/dOCS 趋势）",
+        target_app="数据中心可重构光交换（OCS/dOCS）、AI 超节点拓扑实时重构、故障快速恢复",
+        signal_ref="数据中心可重构光交换（OCS/dOCS）趋势：Cignal AI 预测 OCS 全球市场 2029 ≥$25 亿；"
+                   "LightCounting 预计 Scale-Up 光互连 2027 规模商用；SiPh MZI 矩阵开关（8–72 端口，"
+                   "0.5 dB/级）公开；Google TPU v4 9216 卡 OCS 互联",
+        domain="photon",
+        system_type="link",
+        composition=["GP-YBRANCH", "GP-MMI-1X2", "GP-SIN-PL"],
+        default_req={"n_channels": 1, "channel_spacing_ghz": 100, "filter_bw_ghz": 50,
+                     "link_budget_db": 6.0, "p_tx_dbm": 3, "wg_length_cm": 1.0},
+        design_note="1×8 光开关无源前端 = Y-branch/MMI 分束 + SiN 波导；MZI 热光开关矩阵按黑箱"
+                    "（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。对标公开 SiPh "
+                    "MZI 矩阵开关 0.5 dB/级量级。",
+        ci_status="",
+    ),
+    ShelfItem(
+        id="IM-LIDAR-RX",
+        title="FMCW 激光雷达相干接收前端预设计（90° 混频）",
+        target_app="汽车/机器人 4D 感知、FMCW LiDAR 相干接收（与 IM-LIDAR-TX 配套）",
+        signal_ref="FMCW 激光雷达相干接收机公开路线（Aeva/Bosch 等全固态 FMCW）；与 IM-LIDAR-TX"
+                   "（Optics Express 34,7415 (2026) 实测 3.3 dB）配套，90° 混频 + 平衡探测按黑箱；"
+                   "相干探测公开链路预算量级",
+        domain="photon",
+        system_type="link",
+        composition=["GP-GRATING-EFF", "GP-SIN-PL", "GP-CROSSING"],
+        default_req={"n_channels": 1, "channel_spacing_ghz": 100, "filter_bw_ghz": 50,
+                     "link_budget_db": 3.3, "p_tx_dbm": 0, "wg_length_cm": 0.5},
+        design_note="FMCW 相干接收前端 = 光栅 + 0.5cm SiN + crossing（90° 混频/平衡探测按黑箱）。"
+                    "与 IM-LIDAR-TX 同源无源网，链路预算锚 3.3 dB（OE 2026 实测死标量）。",
+        ci_status="",
+    ),
+    ShelfItem(
+        id="IM-BIOSENSE",
+        title="环形谐振生物/化学传感前端预设计（Lab-on-Chip）",
+        target_app="生物/化学折射率传感、Lab-on-Chip 干涉检测、医疗/环境即时检测（POCT）",
+        signal_ref="公开 Lab-on-Chip 环形谐振传感文献综述：微环折射率传感在生物/化学检测"
+                   "（如多路免疫传感）的成熟应用；复用 SENSE-RING 拓扑与 GP-GRATING-EFF+GP-SIN-PL 基元",
+        domain="photon",
+        system_type="link",
+        composition=["GP-GRATING-EFF", "GP-SIN-PL"],
+        default_req={"n_channels": 1, "channel_spacing_ghz": 100, "filter_bw_ghz": 50,
+                     "link_budget_db": 3.0, "p_tx_dbm": 0, "wg_length_cm": 1.0},
+        design_note="环谐振生物传感前端 = 光栅 + 1cm SiN（环形谐振腔传感单元，复用 SENSE-RING 拓扑）。"
+                    "传感灵敏度由环 Q / 波长偏移换算，属参数化下一迭代；判决复用 link 系统预算锚。",
+        ci_status="",
+    ),
 ]
 
 

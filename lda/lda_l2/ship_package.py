@@ -65,11 +65,13 @@ GENERATED_NOTE = (
 # 可重构光开关、FMCW 接收、环形生物传感），均 composition⊂GP-* 且非出口管制品类。
 # v0.8.49：新增 5 个光子缺口品类（相干 ZR、微环调制器、XGS-PON、WSS、VOA），均
 # composition⊂GP-* 且非出口管制品类，白名单 25→30。
+# v0.8.50：新增 5 个光子缺口品类（MZM 调制器、PSR 偏振分束、光子中介层/CPO、光计算 ONN、
+# OCT 成像），均 composition⊂GP-* 且非出口管制品类，白名单 30→35。
 OPEN_SHELVES = {
-    # 高速收发（DR8/FR4 × 400G/800G/1.6T + PSM4/CWDM4/FR4/LPO + 相干 ZR）
+    # 高速收发（DR8/FR4 × 400G/800G/1.6T + PSM4/CWDM4/FR4/LPO + 相干 ZR + MZM 调制）
     "IM-1.6T-DR8", "IM-1.6T-FR4", "IM-800G-DR8", "IM-800G-FR4", "IM-400G-DR4",
     "IM-PSM4-SHELF", "IM-FR4-SHELF", "IM-CWDM4-SHELF", "IM-LPO-112G",
-    "IM-COHERENT-400ZR", "IM-RING-MOD",
+    "IM-COHERENT-400ZR", "IM-RING-MOD", "IM-MZI-MOD",
     # WDM 解复用
     "IM-WDM-8CH-1D", "IM-DWDM-40CH", "IM-100G-LR4",
     # CPO / OCS / 可重构光交换
@@ -80,6 +82,10 @@ OPEN_SHELVES = {
     "IM-SENSE-RING", "IM-SENS-MZI", "IM-LIDAR-TX", "IM-LIDAR-RX", "IM-BIOSENSE",
     # 波长选择开关 / 可变衰减器（ROADM 功率均衡）
     "IM-WSS-1X9", "IM-VOA",
+    # 偏振分束 / 光子中介层（CPO 2.5D）
+    "IM-PSR", "IM-PHOTONIC-INTERPOSER",
+    # 光计算 / 成像（ONN / OCT）
+    "IM-OPTO-COMPUTE", "IM-OCT",
     # 先进封装 / 异质集成
     "IM-CHIPLET-IO", "IM-LASER-INT",
 }

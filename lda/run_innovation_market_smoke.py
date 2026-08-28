@@ -15,13 +15,15 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from lda_l2.innovation_market import (
-    evaluate_all, to_markdown, save_library_json,
+    evaluate_all, to_markdown, save_library_json, DEFAULT_SHELF,
     HONEST_TIER, HONEST_BANNER,
 )
 from lda_l2.golden_product_benchmarks import DEFAULT_BENCHMARKS
+from lda_l2.ship_package import OPEN_SHELVES
 
 # 仅 GP-*（器件级基元）构成锚集；GC-*（整芯片级）为级联聚合条目，不参与基元锚集。
 GOLDEN_IDS = {b.product_id for b in DEFAULT_BENCHMARKS if hasattr(b, "product_id")}
+SHELF_IDS = {s.id for s in DEFAULT_SHELF}
 
 _PASS = 0
 _FAIL = 0
@@ -42,6 +44,12 @@ def main() -> int:
     print(HONEST_BANNER)
     results = evaluate_all()
     n_total = len(results)
+
+    # 回归护栏：白名单 ⊆ 货架集（防 v0.8.49 漏将新货架加入 OPEN_SHELVES 致 open=False/403）
+    missing = sorted(s for s in OPEN_SHELVES if s not in SHELF_IDS)
+    check("白名单 OPEN_SHELVES ⊆ DEFAULT_SHELF（无孤儿 id）",
+          not missing,
+          "" if not missing else f"孤儿 {missing}")
     n_ok = sum(1 for r in results if r.get("feasible") and not r.get("error"))
 
     for r in results:

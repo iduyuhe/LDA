@@ -864,5 +864,113 @@
     "honest_tier": "前瞻预研",
     "design_note": "VOA 前端 = 光栅耦合 + 1cm SiN 波导；可变衰减单元（MEMS/热光）按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚 S1/S2/S5/S7 死标量。复用已锚定无源网，无量级新物理。对标公开 VOA 量级。",
     "ci_status": ""
+  },
+  {
+    "id": "IM-MZI-MOD",
+    "title": "马赫-曾德尔调制器（MZM）前端预设计（相干/直检发射）",
+    "target_app": "高速光发射机调制前端、相干 400ZR/800ZR 调制器、硅光收发共封装调制核",
+    "signal_ref": "硅基 MZM 市场 $1.51B(2025)→$7.24B(2034) CAGR 19.0%（Growth Market Reports 2026-06）；Tower Semiconductor+Coherent（2026-03）400 Gbps/lane 硅 MZM 量产就绪；200+ GHz 带宽、sub-0.5 dB 插损；硅 MZM 占 2025 MZM 市场 45.8%。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-MMI-1X2",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 2.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "MZM 前端 = 光栅耦合 + 1×2 MMI 分束（两相位臂）+ SiN 波导臂 + 1×2 MMI 合束（复用分束基元作合束）+ 光栅耦合出。电光调制相移单元按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚 S1/S2/S5/S7 死标量。复用已锚定无源网，无量级新物理。对标公开硅 MZM 量级。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-PSR",
+    "title": "偏振分束旋转器（PSR）前端预设计（TE/TM 复用）",
+    "target_app": "硅光收发器偏振解复用、CPO 前端偏振路由、片上偏振复用链路",
+    "signal_ref": "Sama et al. Optics and Laser Technology 2026 vol 203，高隔离 PSR（SOI 220nm+70nm 部分刻蚀），TM-to-TE 损耗 0.71 dB @1550nm、PER 最差 30.95 dB、C 波段；偏振分束器市场 $1.2-1.5B(2025)→$2.2-3.2B(2035) CAGR 7-9%（IndexBox）。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 1.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "PSR 前端 = 光栅耦合 + 非对称 Y 分支偏振路由 + SiN 波导；偏振旋转/耦合的亚波长结构按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 PSR 量级。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-PHOTONIC-INTERPOSER",
+    "title": "光子中介层/共封装（CPO）前端预设计（2.5D 光互连）",
+    "target_app": "CPU/GPU 共封装光互连、2.5D 硅中介层光路由面、chiplet 间光 I/O 背板",
+    "signal_ref": "IDTechEx 预测 CPO 市场 2036 破 $20B、CAGR 37%；TSMC COUPE 2026-04 量产；NVIDIA Quantum-X/Spectrum-X Photonics CPO 2026 出货；Ayar Labs TeraPHY $500M E 轮 2026-03；2.5D 硅中介层+TSV 路径。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-MMI-1X2",
+      "GP-CROSSING",
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 5.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "光子中介层前端 = 光栅阵列 I/O + MMI 扇出 + 交叉矩阵 + Y 分支 + SiN 波导面；TSV/微环驱动按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 CPO 光互连量级。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-OPTO-COMPUTE",
+    "title": "光计算/光神经网络（ONN）前端预设计（模拟矩阵乘）",
+    "target_app": "光神经网络推理加速、模拟矩阵-向量乘前端、光互连-计算混合芯片",
+    "signal_ref": "光神经网络处理器市场 Lightmatter/Lightelligence/Celestial AI/Intel/Ayar Labs 占 56.3%（Global Market Insights）；北美光子神经形态芯片 $180-240M(2026) CAGR 32-38%；Lightmatter 1.2 petaflops 模拟 ONN、Lightelligence 8.3 pJ/op。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-MMI-1X2",
+      "GP-CROSSING",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 3.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "ONN 前端 = 1×2 MMI 分光权重分配 + 交叉干涉网格（MZI mesh）+ SiN 波导；相移/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光计算量级。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-OCT",
+    "title": "光学相干层析（OCT）前端预设计（医疗成像干涉仪）",
+    "target_app": "眼科 OCT 成像干涉前端、医疗诊断光相干层析、工业无损检测",
+    "signal_ref": "OCT 市场 $2.36B(2026)→$4.01B(2032) CAGR 9.08%（Research and Markets）；眼科 OCT $1.52B(2025)→$2.52B(2032) CAGR 6.49%；糖尿病视网膜病变+AMD 驱动。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-MMI-1X2",
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 2.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "OCT 前端 = 光栅耦合 + 1×2 MMI 分光（样品/参考臂）+ Y 分支 + SiN 波导干涉臂；扫描/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 OCT 量级。",
+    "ci_status": ""
   }
 ]

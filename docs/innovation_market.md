@@ -1,7 +1,7 @@
 # LDA 创新超市（Innovation Marketplace）· 前瞻预研货架目录
 
 > 生成口径：每个货架 = 已锚定基元（产品级基准库 GP-*）+ 公开信号驱动的**前瞻预研**预设计。
-> **38/38 货架通过结构可行 + 系统预算不破检查**。
+> **43/43 货架通过结构可行 + 系统预算不破检查**。
 
 **诚实边界（红线下护栏）**：
 > 创新超市货架为**前瞻预研**预设计：组合已锚定基元（产品级基准库 GP-*）+ 公开信号驱动（行业 roadmap / 标准草案 / 厂商公开动向）。属等效验证（复用已锚定基元 + 系统预算不破），**非本团队流片验证**、**非对未来的承诺**。信号源可溯源；判决复用 system_type 已验证闭环，LLM 不进判决路径。
@@ -51,6 +51,11 @@
 | IM-XGS-PON | XGS-PON 光前端预设计（OLT/ONU 无源网，ITU-T G.9807.1，10G 对称） | XGS-PON 万兆对称光网 OLT/ONU 光前端、下一代接入网（园区/工厂/小区） | link | GP-GRATING-EFF, GP-YBRANCH, GP-SIN-PL | OK |
 | IM-WSS-1X9 | 1×9 波长选择开关（WSS）前端预设计（ROADM 波长路由） | 可重构光分插复用（ROADM）波长选择开关、城域/骨干波长路由与功率均衡 | link | GP-GRATING-EFF, GP-MMI-1X2, GP-SIN-PL | OK |
 | IM-VOA | 可变光衰减器（VOA）前端预设计（ROADM 功率均衡） | 可重构光网络动态功率均衡、ROADM 通道衰减、测试仪表可调衰减 | link | GP-GRATING-EFF, GP-SIN-PL | OK |
+| IM-MZI-MOD | 马赫-曾德尔调制器（MZM）前端预设计（相干/直检发射） | 高速光发射机调制前端、相干 400ZR/800ZR 调制器、硅光收发共封装调制核 | link | GP-GRATING-EFF, GP-MMI-1X2, GP-SIN-PL | OK |
+| IM-PSR | 偏振分束旋转器（PSR）前端预设计（TE/TM 复用） | 硅光收发器偏振解复用、CPO 前端偏振路由、片上偏振复用链路 | link | GP-GRATING-EFF, GP-YBRANCH, GP-SIN-PL | OK |
+| IM-PHOTONIC-INTERPOSER | 光子中介层/共封装（CPO）前端预设计（2.5D 光互连） | CPU/GPU 共封装光互连、2.5D 硅中介层光路由面、chiplet 间光 I/O 背板 | link | GP-GRATING-EFF, GP-MMI-1X2, GP-CROSSING, GP-YBRANCH, GP-SIN-PL | OK |
+| IM-OPTO-COMPUTE | 光计算/光神经网络（ONN）前端预设计（模拟矩阵乘） | 光神经网络推理加速、模拟矩阵-向量乘前端、光互连-计算混合芯片 | link | GP-MMI-1X2, GP-CROSSING, GP-SIN-PL | OK |
+| IM-OCT | 光学相干层析（OCT）前端预设计（医疗成像干涉仪） | 眼科 OCT 成像干涉前端、医疗诊断光相干层析、工业无损检测 | link | GP-GRATING-EFF, GP-MMI-1X2, GP-YBRANCH, GP-SIN-PL | OK |
 
 ## 货架设计说明（诚实标注）
 
@@ -92,6 +97,11 @@
 - **IM-XGS-PON**：XGS-PON 光前端 = 光栅耦合 + Y-branch 分束 + SiN 波导（OLT 发射/ONU 接收无源网）。PIC 自身 IL 预算 6 dB；整系统功率预算由 ODN 1:64 分光主导（黑箱，非片上器件），判决复用 link 系统预算锚 S1/S2/S5/S7。对标 G.9807.1 量级（与 50G-PON 同族，速率 10G 对称）。
 - **IM-WSS-1X9**：1×9 WSS 无源前端 = 光栅耦合 + MMI 分束 + SiN 波导；波长选择/切换矩阵（LCOS/MEMS）按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 ROADM WSS 量级。
 - **IM-VOA**：VOA 前端 = 光栅耦合 + 1cm SiN 波导；可变衰减单元（MEMS/热光）按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚 S1/S2/S5/S7 死标量。复用已锚定无源网，无量级新物理。对标公开 VOA 量级。
+- **IM-MZI-MOD**：MZM 前端 = 光栅耦合 + 1×2 MMI 分束（两相位臂）+ SiN 波导臂 + 1×2 MMI 合束（复用分束基元作合束）+ 光栅耦合出。电光调制相移单元按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚 S1/S2/S5/S7 死标量。复用已锚定无源网，无量级新物理。对标公开硅 MZM 量级。
+- **IM-PSR**：PSR 前端 = 光栅耦合 + 非对称 Y 分支偏振路由 + SiN 波导；偏振旋转/耦合的亚波长结构按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 PSR 量级。
+- **IM-PHOTONIC-INTERPOSER**：光子中介层前端 = 光栅阵列 I/O + MMI 扇出 + 交叉矩阵 + Y 分支 + SiN 波导面；TSV/微环驱动按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 CPO 光互连量级。
+- **IM-OPTO-COMPUTE**：ONN 前端 = 1×2 MMI 分光权重分配 + 交叉干涉网格（MZI mesh）+ SiN 波导；相移/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光计算量级。
+- **IM-OCT**：OCT 前端 = 光栅耦合 + 1×2 MMI 分光（样品/参考臂）+ Y 分支 + SiN 波导干涉臂；扫描/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 OCT 量级。
 
 ## 信号来源（可溯源）
 
@@ -133,6 +143,11 @@
 - **IM-XGS-PON** · XGS-PON 光前端预设计（OLT/ONU 无源网，ITU-T G.9807.1，10G 对称）：ITU-T G.9807.1（XGS-PON，10G 对称）标准；Dell'Oro：PON 设备营收 $8.3B(2021)→$9.8B(2026)，XGS-PON 占 PON 市场 15%(2021)→55%(2026)；中国 10G PON 端口 3201 万(2026-03)→3286 万(2026-06)；Openreach 英国扩 XGS-PON
 - **IM-WSS-1X9** · 1×9 波长选择开关（WSS）前端预设计（ROADM 波长路由）：MarkWide：ROADM WSS 市场 $1.8B(2026)→$4.76B(2035) CAGR 11.4%；Dual WSS $325M(2025)→$384.43M(2026)；支撑 400G/800G/1.6T 相干；Lumentum/Coherent 主导
 - **IM-VOA** · 可变光衰减器（VOA）前端预设计（ROADM 功率均衡）：MEMS VOA 市场 $215.5M(2025)→$320.89M(2032) CAGR 5.85%；Variable Optical Attenuators $380M(2025)→$551.7M(2032) CAGR 5.4%；>70% 光网络用动态衰减（ROADM 功率均衡）
+- **IM-MZI-MOD** · 马赫-曾德尔调制器（MZM）前端预设计（相干/直检发射）：硅基 MZM 市场 $1.51B(2025)→$7.24B(2034) CAGR 19.0%（Growth Market Reports 2026-06）；Tower Semiconductor+Coherent（2026-03）400 Gbps/lane 硅 MZM 量产就绪；200+ GHz 带宽、sub-0.5 dB 插损；硅 MZM 占 2025 MZM 市场 45.8%。
+- **IM-PSR** · 偏振分束旋转器（PSR）前端预设计（TE/TM 复用）：Sama et al. Optics and Laser Technology 2026 vol 203，高隔离 PSR（SOI 220nm+70nm 部分刻蚀），TM-to-TE 损耗 0.71 dB @1550nm、PER 最差 30.95 dB、C 波段；偏振分束器市场 $1.2-1.5B(2025)→$2.2-3.2B(2035) CAGR 7-9%（IndexBox）。
+- **IM-PHOTONIC-INTERPOSER** · 光子中介层/共封装（CPO）前端预设计（2.5D 光互连）：IDTechEx 预测 CPO 市场 2036 破 $20B、CAGR 37%；TSMC COUPE 2026-04 量产；NVIDIA Quantum-X/Spectrum-X Photonics CPO 2026 出货；Ayar Labs TeraPHY $500M E 轮 2026-03；2.5D 硅中介层+TSV 路径。
+- **IM-OPTO-COMPUTE** · 光计算/光神经网络（ONN）前端预设计（模拟矩阵乘）：光神经网络处理器市场 Lightmatter/Lightelligence/Celestial AI/Intel/Ayar Labs 占 56.3%（Global Market Insights）；北美光子神经形态芯片 $180-240M(2026) CAGR 32-38%；Lightmatter 1.2 petaflops 模拟 ONN、Lightelligence 8.3 pJ/op。
+- **IM-OCT** · 光学相干层析（OCT）前端预设计（医疗成像干涉仪）：OCT 市场 $2.36B(2026)→$4.01B(2032) CAGR 9.08%（Research and Markets）；眼科 OCT $1.52B(2025)→$2.52B(2032) CAGR 6.49%；糖尿病视网膜病变+AMD 驱动。
 
 ---
 _LDA · 开源 Agent-native EDA（光子 PDA + 量子 QEDA）· 物理定律锚红线 · LLM 不进判决路径_

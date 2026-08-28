@@ -1,4 +1,4 @@
-# LDA 设计商店 · 市场与行业趋势分析（v0.8.47–v0.8.49 扩货架依据）
+# LDA 设计商店 · 市场与行业趋势分析（v0.8.47–v0.8.50 扩货架依据）
 
 > 用途：为「货架 → 下载付费」的开放范围、定价与叙事提供市场依据。数据来自 LightCounting / Yole / HDIN / Dataintelo / IIM 等公开报告及行业媒体（2026-08 检索），口径差异已在文中标注。本分析为筹划稿，不构成投资建议。
 
@@ -33,8 +33,13 @@
 | ROADM 光层 | 1×9 WSS（IM-WSS-1X9）/ VOA（IM-VOA） | WSS $1.8B→$4.76B（CAGR 11.4%）、支撑 400G/800G/1.6T 相干；VOA $380M→$551.7M（CAGR 5.4%）、>70% 光网络用动态衰减（功率均衡） |
 | 先进封装 | 光 Chiplet IO | XPU 光 IO、异质集成趋势 |
 | 异质集成 | 片上激光集成 LASER-INT | 硅光缺光源，III-V 异质集成热点 |
+| 调制器 | 马赫-曾德尔调制器 MZM（IM-MZI-MOD） | 硅 MZM 市场 $1.51B(2025)→$7.24B(2034) CAGR 19.0%；Tower Semiconductor+Coherent（2026-03）400 Gbps/lane 硅 MZM 量产就绪；200+ GHz 带宽、sub-0.5 dB 插损；硅 MZM 占 2025 MZM 市场 45.8% |
+| 偏振路由 | 偏振分束旋转器 PSR（IM-PSR） | Sama et al. Optics and Laser Technology 2026 vol 203，高隔离 PSR（SOI 220nm+70nm 部分刻蚀），TM-to-TE 损耗 0.71 dB @1550nm、PER 最差 30.95 dB；偏振分束器市场 $1.2-1.5B(2025)→$2.2-3.2B(2035) CAGR 7-9% |
+| CPO 2.5D | 光子中介层 / 共封装（IM-PHOTONIC-INTERPOSER） | IDTechEx 预测 CPO 市场 2036 破 $20B、CAGR 37%；TSMC COUPE 2026-04 量产；NVIDIA Quantum-X/Spectrum-X Photonics CPO 2026 出货；Ayar Labs TeraPHY $500M E 轮 2026-03；2.5D 硅中介层+TSV 路径 |
+| 光计算 | 光神经网络 ONN（IM-OPTO-COMPUTE） | 光神经网络处理器市场 Lightmatter/Lightelligence/Celestial AI/Intel/Ayar Labs 占 56.3%；北美光子神经形态芯片 $180-240M(2026) CAGR 32-38%；Lightmatter 1.2 petaflops 模拟 ONN、Lightelligence 8.3 pJ/op |
+| 医疗成像 | 光学相干层析 OCT（IM-OCT） | OCT 市场 $2.36B(2026)→$4.01B(2032) CAGR 9.08%；眼科 OCT $1.52B(2025)→$2.52B(2032) CAGR 6.49%；糖尿病视网膜病变+AMD 驱动 |
 
-**开放策略**：上述光子主流方向全量开放（30 个货架），覆盖预研企业最密集的需求面，含 FR4 200G/400G 每通道、400G DR4、100G LR4、50G-PON、XGS-PON、可重构光交换、FMCW 接收、环形生物传感、相干 ZR、微环调制器、WSS、VOA 等真实缺口品类。
+**开放策略**：上述光子主流方向全量开放（35 个货架），覆盖预研企业最密集的需求面，含 FR4 200G/400G 每通道、400G DR4、100G LR4、50G-PON、XGS-PON、可重构光交换、FMCW 接收、环形生物传感、相干 ZR、微环调制器、WSS、VOA、MZM、PSR、光子中介层/CPO、光计算 ONN、OCT 等真实缺口品类。
 
 ## 三、量子赛道（高价值、暂列咨询制）
 

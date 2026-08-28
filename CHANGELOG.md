@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.50（2026-08-28 · 持续扩货架：新增 5 光子缺口品类开放下载、货架 38→43）
+- 货架 38→43：新增 5 个真实 2026 市场缺口光子品类（信号源可溯源、composition⊆GP-*、非出口管制、honest_tier=前瞻预研）：
+  - `IM-MZI-MOD`（马赫-曾德尔调制器 MZM，相干/直检发射；硅 MZM $1.51B→$7.24B CAGR 19.0%、Tower+Coherent 400Gbps/lane 量产就绪）
+  - `IM-PSR`（偏振分束旋转器，TE/TM 复用；Sama et al. Optics and Laser Technology 2026 vol 203，TM-to-TE 0.71dB/PER 30.95dB；偏振分束器 $1.2-1.5B→$2.2-3.2B CAGR 7-9%）
+  - `IM-PHOTONIC-INTERPOSER`（光子中介层/CPO 2.5D 光互连；IDTechEx CPO 2036 破 $20B CAGR 37%、TSMC COUPE 2026-04 量产、NVIDIA Photonics CPO 2026 出货）
+  - `IM-OPTO-COMPUTE`（光计算/光神经网络 ONN，模拟矩阵乘；Lightmatter 等占 56.3%、北美光子神经形态 $180-240M CAGR 32-38%、Lightelligence 8.3 pJ/op）
+  - `IM-OCT`（光学相干层析成像干涉前端；OCT $2.36B→$4.01B CAGR 9.08%、眼科 OCT $1.52B→$2.52B CAGR 6.49%）
+- 开放下载白名单 `OPEN_SHELVES` 30→35（前述 5 个光子缺口品类全量放开；工厂产能已具备，任意已知货架可现场生成设计就绪包）。
+- 量子 8 个维持「咨询制」，不进自动下载白名单（出口管制合规红线）。
+- `docs/store_launch/04_market_analysis.md` 新增趋势段：MZM（硅 MZM $7.24B 2034）、PSR（高隔离偏振分束）、光子中介层/CPO（$20B 2036）、光计算 ONN（56.3% 份额）、OCT（$4.01B 2032）；光子细分表格扩容（MZM/PSR/CPO/ONN/OCT），开放策略 30→35 货架。
+- 回归护栏：`run_innovation_market_smoke` 新增 `OPEN_SHELVES ⊆ DEFAULT_SHELF` 断言（防 v0.8.49 漏加白名单致 open=False/403）；重新生成 `innovation_market.json`（43 货架）；货架 smoke **43/43 ALL PASS**；`run_count_consistency_smoke` **11/11 OK**（CI core 维持 69 条）。
+
 ## v0.8.49（2026-08-28 · 持续扩货架：新增 5 光子缺口品类开放下载、货架 33→38）
 - 货架 33→38：新增 5 个真实 2026 市场缺口光子品类（信号源可溯源、composition⊆GP-*、非出口管制、honest_tier=前瞻预研）：
   - `IM-COHERENT-400ZR`（400G ZR/ZR+ 相干可插拔，DCI 120km；OIF 800ZR IA 2024-11、IEEE 802.3dj 1600ZR 2026 中、Research and Markets ZR+ $18.4亿→$21.9亿 CAGR 18.9%）

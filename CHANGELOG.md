@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.49（2026-08-28 · 持续扩货架：新增 5 光子缺口品类开放下载、货架 33→38）
+- 货架 33→38：新增 5 个真实 2026 市场缺口光子品类（信号源可溯源、composition⊆GP-*、非出口管制、honest_tier=前瞻预研）：
+  - `IM-COHERENT-400ZR`（400G ZR/ZR+ 相干可插拔，DCI 120km；OIF 800ZR IA 2024-11、IEEE 802.3dj 1600ZR 2026 中、Research and Markets ZR+ $18.4亿→$21.9亿 CAGR 18.9%）
+  - `IM-RING-MOD`（微环调制器 MRM，200Gbps/lane，CPO 高带宽密度；NVIDIA CPO 采用 MRM、TSMC COUPE 2026 量产、Ayar/NewPhotonics OFC 2026）
+  - `IM-XGS-PON`（ITU-T G.9807.1 10G 对称，Dell'Oro XGS-PON 占 PON 市场 15%→55%、中国 10G PON 端口 3201万→3286万）
+  - `IM-WSS-1X9`（1×9 波长选择开关 ROADM；MarkWide WSS $1.8B→$4.76B CAGR 11.4%、支撑 400G/800G/1.6T 相干）
+  - `IM-VOA`（可变光衰减器 ROADM 功率均衡；MEMS VOA $215.5M→$320.89M CAGR 5.85%、>70% 光网络用动态衰减）
+- 开放下载白名单 `OPEN_SHELVES` 25→30（前述 5 个光子缺口品类全量放开；工厂产能已具备，任意已知货架可现场生成设计就绪包）。
+- 量子 8 个维持「咨询制」，不进自动下载白名单（出口管制合规红线）。
+- `docs/store_launch/04_market_analysis.md` 新增趋势段：相干 ZR（ZR+ 相干模块 $21.9 亿 / 800ZR 2026 规模部署）、微环调制器（MRM 带宽密度 >1 Tbps/mm / TSMC COUPE 2026）、XGS-PON（占 PON 市场 55%）、WSS（$4.76B 2035）、VOA（$551.7M 2032）；光子细分表格扩容（相干 ZR/MRM/XGS-PON/WSS/VOA），开放策略 25→30 货架。
+- 重新生成 `innovation_market.json`（38 货架）；`run_innovation_market_smoke` **38/38 ALL PASS**；`run_count_consistency_smoke` **11/11 OK**（CI core 维持 69 条，新增货架不涉 ENGINE/PACKAGE/BENCHMARK 计数）。
+
 ## v0.8.48（2026-08-28 · 持续扩货架：新增 8 光子缺口品类开放下载、货架 25→33）
 - 货架 25→33：新增 8 个真实市场缺口光子品类（均 composition⊆GP-*、非出口管制、honest_tier=前瞻预研）：
   - `IM-800G-FR4`（4×200G PAM4，贴合 NVIDIA 800G 主流）

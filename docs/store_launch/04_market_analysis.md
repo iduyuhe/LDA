@@ -1,4 +1,4 @@
-# LDA 设计商店 · 市场与行业趋势分析（v0.8.47–v0.8.48 扩货架依据）
+# LDA 设计商店 · 市场与行业趋势分析（v0.8.47–v0.8.49 扩货架依据）
 
 > 用途：为「货架 → 下载付费」的开放范围、定价与叙事提供市场依据。数据来自 LightCounting / Yole / HDIN / Dataintelo / IIM 等公开报告及行业媒体（2026-08 检索），口径差异已在文中标注。本分析为筹划稿，不构成投资建议。
 
@@ -27,10 +27,14 @@
 | 可重构互连 | 1×8 光开关 OSW（OCS/dOCS 趋势） | Cignal AI 估 OCS 市场 2029 ≥$25 亿；LightCounting 估 Scale-Up 光互连 2027 规模商用；AI 超节点拓扑实时重构 |
 | 接入网 | FTTH PLC 1×8 / 1×16 / 50G-PON | PON 无源分光量大面广；50G-PON（ITU-T G.9804）2026 商用启航（工信部 136 试点验收），万兆光网主航道 |
 | 传感 | 微环 RING / MZI / FMCW LIDAR TX+RX / 环形生物传感 | 生物化学折射率感测、激光雷达（发射+接收配套）、Lab-on-Chip 即时检测 |
+| 相干收发 | 400G ZR/ZR+ 相干（IM-COHERENT-400ZR） | OIF 800ZR IA 2024-11、IEEE 802.3dj 1600ZR 2026 中；ZR+ 相干模块市场 $18.4亿→$21.9亿（CAGR 18.9%），800ZR/ZR+ 2026 大规模部署 |
+| 微环调制 | 微环调制器 MRM（IM-RING-MOD） | NVIDIA CPO 采用 MRM（带宽密度 >1 Tbps/mm）；TSMC COUPE 2026 量产 200Gbps/lane MRM；Ayar/NewPhotonics 无热 MRM（OFC 2026） |
+| 接入网 | FTTH PLC 1×8 / 1×16 / 50G-PON / XGS-PON | PON 无源分光量大面广；50G-PON（G.9804）与 XGS-PON（G.9807.1 10G 对称）双线并进，XGS-PON 占 PON 市场 15%→55%、中国 10G PON 端口 3286 万 |
+| ROADM 光层 | 1×9 WSS（IM-WSS-1X9）/ VOA（IM-VOA） | WSS $1.8B→$4.76B（CAGR 11.4%）、支撑 400G/800G/1.6T 相干；VOA $380M→$551.7M（CAGR 5.4%）、>70% 光网络用动态衰减（功率均衡） |
 | 先进封装 | 光 Chiplet IO | XPU 光 IO、异质集成趋势 |
 | 异质集成 | 片上激光集成 LASER-INT | 硅光缺光源，III-V 异质集成热点 |
 
-**开放策略**：上述光子主流方向全量开放（25 个货架），覆盖预研企业最密集的需求面，含 FR4 200G/400G 每通道、400G DR4、100G LR4、50G-PON、可重构光交换、FMCW 接收、环形生物传感等真实缺口品类。
+**开放策略**：上述光子主流方向全量开放（30 个货架），覆盖预研企业最密集的需求面，含 FR4 200G/400G 每通道、400G DR4、100G LR4、50G-PON、XGS-PON、可重构光交换、FMCW 接收、环形生物传感、相干 ZR、微环调制器、WSS、VOA 等真实缺口品类。
 
 ## 三、量子赛道（高价值、暂列咨询制）
 

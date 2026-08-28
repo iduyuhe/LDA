@@ -63,18 +63,23 @@ GENERATED_NOTE = (
 # 依据：docs/store_launch/04_market_analysis.md。后续放开只需往此集合加货架 id。
 # v0.8.48：新增 8 个光子缺口品类（FR4 200G/400G 每通道、400G DR4、100G LR4、50G-PON、
 # 可重构光开关、FMCW 接收、环形生物传感），均 composition⊂GP-* 且非出口管制品类。
+# v0.8.49：新增 5 个光子缺口品类（相干 ZR、微环调制器、XGS-PON、WSS、VOA），均
+# composition⊂GP-* 且非出口管制品类，白名单 25→30。
 OPEN_SHELVES = {
-    # 高速收发（DR8/FR4 × 400G/800G/1.6T + PSM4/CWDM4/FR4/LPO）
+    # 高速收发（DR8/FR4 × 400G/800G/1.6T + PSM4/CWDM4/FR4/LPO + 相干 ZR）
     "IM-1.6T-DR8", "IM-1.6T-FR4", "IM-800G-DR8", "IM-800G-FR4", "IM-400G-DR4",
     "IM-PSM4-SHELF", "IM-FR4-SHELF", "IM-CWDM4-SHELF", "IM-LPO-112G",
+    "IM-COHERENT-400ZR",
     # WDM 解复用
     "IM-WDM-8CH-1D", "IM-DWDM-40CH", "IM-100G-LR4",
     # CPO / OCS / 可重构光交换
     "IM-CPO-WDM5", "IM-CPO-OCS", "IM-OSW-1X8",
-    # 接入网（FTTH PLC + 50G-PON）
-    "IM-FTTH-PLC8", "IM-FTTH-PLC16", "IM-PON-50G",
+    # 接入网（FTTH PLC + 50G-PON + XGS-PON）
+    "IM-FTTH-PLC8", "IM-FTTH-PLC16", "IM-PON-50G", "IM-XGS-PON",
     # 传感（环/MZI/LiDAR TX+RX/生物）
     "IM-SENSE-RING", "IM-SENS-MZI", "IM-LIDAR-TX", "IM-LIDAR-RX", "IM-BIOSENSE",
+    # 波长选择开关 / 可变衰减器（ROADM 功率均衡）
+    "IM-WSS-1X9", "IM-VOA",
     # 先进封装 / 异质集成
     "IM-CHIPLET-IO", "IM-LASER-INT",
 }

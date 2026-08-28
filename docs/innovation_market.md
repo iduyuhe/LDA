@@ -1,7 +1,7 @@
 # LDA 创新超市（Innovation Marketplace）· 前瞻预研货架目录
 
 > 生成口径：每个货架 = 已锚定基元（产品级基准库 GP-*）+ 公开信号驱动的**前瞻预研**预设计。
-> **33/33 货架通过结构可行 + 系统预算不破检查**。
+> **38/38 货架通过结构可行 + 系统预算不破检查**。
 
 **诚实边界（红线下护栏）**：
 > 创新超市货架为**前瞻预研**预设计：组合已锚定基元（产品级基准库 GP-*）+ 公开信号驱动（行业 roadmap / 标准草案 / 厂商公开动向）。属等效验证（复用已锚定基元 + 系统预算不破），**非本团队流片验证**、**非对未来的承诺**。信号源可溯源；判决复用 system_type 已验证闭环，LLM 不进判决路径。
@@ -46,6 +46,11 @@
 | IM-OSW-1X8 | 1×8 可重构光开关前端预设计（OCS/dOCS 趋势） | 数据中心可重构光交换（OCS/dOCS）、AI 超节点拓扑实时重构、故障快速恢复 | link | GP-YBRANCH, GP-MMI-1X2, GP-SIN-PL | OK |
 | IM-LIDAR-RX | FMCW 激光雷达相干接收前端预设计（90° 混频） | 汽车/机器人 4D 感知、FMCW LiDAR 相干接收（与 IM-LIDAR-TX 配套） | link | GP-GRATING-EFF, GP-SIN-PL, GP-CROSSING | OK |
 | IM-BIOSENSE | 环形谐振生物/化学传感前端预设计（Lab-on-Chip） | 生物/化学折射率传感、Lab-on-Chip 干涉检测、医疗/环境即时检测（POCT） | link | GP-GRATING-EFF, GP-SIN-PL | OK |
+| IM-COHERENT-400ZR | 400G ZR/ZR+ 相干收发前端预设计（DCI 120km，QSFP-DD/OSFP） | 数据中心互联（DCI）400G ZR/ZR+ 相干可插拔、城域相干传输 | link | GP-GRATING-EFF, GP-SIN-PL, GP-CROSSING | OK |
+| IM-RING-MOD | 微环调制器（MRM）前端预设计（200Gbps/lane，CPO 高带宽密度） | 共封装光学（CPO）微环调制器、高密度硅光发射、AI 机柜内光互连 | link | GP-GRATING-EFF, GP-SIN-PL | OK |
+| IM-XGS-PON | XGS-PON 光前端预设计（OLT/ONU 无源网，ITU-T G.9807.1，10G 对称） | XGS-PON 万兆对称光网 OLT/ONU 光前端、下一代接入网（园区/工厂/小区） | link | GP-GRATING-EFF, GP-YBRANCH, GP-SIN-PL | OK |
+| IM-WSS-1X9 | 1×9 波长选择开关（WSS）前端预设计（ROADM 波长路由） | 可重构光分插复用（ROADM）波长选择开关、城域/骨干波长路由与功率均衡 | link | GP-GRATING-EFF, GP-MMI-1X2, GP-SIN-PL | OK |
+| IM-VOA | 可变光衰减器（VOA）前端预设计（ROADM 功率均衡） | 可重构光网络动态功率均衡、ROADM 通道衰减、测试仪表可调衰减 | link | GP-GRATING-EFF, GP-SIN-PL | OK |
 
 ## 货架设计说明（诚实标注）
 
@@ -82,6 +87,11 @@
 - **IM-OSW-1X8**：1×8 光开关无源前端 = Y-branch/MMI 分束 + SiN 波导；MZI 热光开关矩阵按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。对标公开 SiPh MZI 矩阵开关 0.5 dB/级量级。
 - **IM-LIDAR-RX**：FMCW 相干接收前端 = 光栅 + 0.5cm SiN + crossing（90° 混频/平衡探测按黑箱）。与 IM-LIDAR-TX 同源无源网，链路预算锚 3.3 dB（OE 2026 实测死标量）。
 - **IM-BIOSENSE**：环谐振生物传感前端 = 光栅 + 1cm SiN（环形谐振腔传感单元，复用 SENSE-RING 拓扑）。传感灵敏度由环 Q / 波长偏移换算，属参数化下一迭代；判决复用 link 系统预算锚。
+- **IM-COHERENT-400ZR**：400G ZR/ZR+ 相干收发 PIC 前端 = 光栅耦合 + 1cm SiN（低损）+ crossing；相干 DSP / IQ 调制器 / 平衡探测按黑箱（有源不物理级建模，负面清单）。PIC 自身 IL 预算 6 dB（非整系统 120km 链路，链路预算锚 S1/S2/S5/S7 死标量判决）。复用已锚定无源网 + 光栅耦合，无量级新物理。
+- **IM-RING-MOD**：MRM 发射前端 = 光栅耦合 + 1cm SiN 波导；环形谐振调制单元（有源）按黑箱（有源不物理级建模，负面清单），其谐振/调制行为由文献锚走完闭环。判决复用 link 系统预算锚 S1/S2/S5/S7 死标量。复用已锚定无源网，无量级新物理。
+- **IM-XGS-PON**：XGS-PON 光前端 = 光栅耦合 + Y-branch 分束 + SiN 波导（OLT 发射/ONU 接收无源网）。PIC 自身 IL 预算 6 dB；整系统功率预算由 ODN 1:64 分光主导（黑箱，非片上器件），判决复用 link 系统预算锚 S1/S2/S5/S7。对标 G.9807.1 量级（与 50G-PON 同族，速率 10G 对称）。
+- **IM-WSS-1X9**：1×9 WSS 无源前端 = 光栅耦合 + MMI 分束 + SiN 波导；波长选择/切换矩阵（LCOS/MEMS）按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 ROADM WSS 量级。
+- **IM-VOA**：VOA 前端 = 光栅耦合 + 1cm SiN 波导；可变衰减单元（MEMS/热光）按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚 S1/S2/S5/S7 死标量。复用已锚定无源网，无量级新物理。对标公开 VOA 量级。
 
 ## 信号来源（可溯源）
 
@@ -118,6 +128,11 @@
 - **IM-OSW-1X8** · 1×8 可重构光开关前端预设计（OCS/dOCS 趋势）：数据中心可重构光交换（OCS/dOCS）趋势：Cignal AI 预测 OCS 全球市场 2029 ≥$25 亿；LightCounting 预计 Scale-Up 光互连 2027 规模商用；SiPh MZI 矩阵开关（8–72 端口，0.5 dB/级）公开；Google TPU v4 9216 卡 OCS 互联
 - **IM-LIDAR-RX** · FMCW 激光雷达相干接收前端预设计（90° 混频）：FMCW 激光雷达相干接收机公开路线（Aeva/Bosch 等全固态 FMCW）；与 IM-LIDAR-TX（Optics Express 34,7415 (2026) 实测 3.3 dB）配套，90° 混频 + 平衡探测按黑箱；相干探测公开链路预算量级
 - **IM-BIOSENSE** · 环形谐振生物/化学传感前端预设计（Lab-on-Chip）：公开 Lab-on-Chip 环形谐振传感文献综述：微环折射率传感在生物/化学检测（如多路免疫传感）的成熟应用；复用 SENSE-RING 拓扑与 GP-GRATING-EFF+GP-SIN-PL 基元
+- **IM-COHERENT-400ZR** · 400G ZR/ZR+ 相干收发前端预设计（DCI 120km，QSFP-DD/OSFP）：OIF 800ZR 互操作 IA（2024-11 发布）公开；IEEE 802.3dj 1600ZR 预计 2026 中定稿；Research and Markets：ZR+ 相干光模块市场 2025 $18.4 亿→2026 $21.9 亿（CAGR 18.9%）；Dell'Oro/Cignal AI：800ZR/ZR+ 2026 进入大规模部署
+- **IM-RING-MOD** · 微环调制器（MRM）前端预设计（200Gbps/lane，CPO 高带宽密度）：NVIDIA CPO 采用微环调制器（MRM，带宽密度 >1 Tbps/mm 公开路线）；TSMC COUPE 2026 量产 200Gbps/lane MRM、带宽密度 0.5→4 Tbps/mm (2030)；Ayar Labs TeraPHY / NewPhotonics 无热 MRM（OFC 2026 公开）
+- **IM-XGS-PON** · XGS-PON 光前端预设计（OLT/ONU 无源网，ITU-T G.9807.1，10G 对称）：ITU-T G.9807.1（XGS-PON，10G 对称）标准；Dell'Oro：PON 设备营收 $8.3B(2021)→$9.8B(2026)，XGS-PON 占 PON 市场 15%(2021)→55%(2026)；中国 10G PON 端口 3201 万(2026-03)→3286 万(2026-06)；Openreach 英国扩 XGS-PON
+- **IM-WSS-1X9** · 1×9 波长选择开关（WSS）前端预设计（ROADM 波长路由）：MarkWide：ROADM WSS 市场 $1.8B(2026)→$4.76B(2035) CAGR 11.4%；Dual WSS $325M(2025)→$384.43M(2026)；支撑 400G/800G/1.6T 相干；Lumentum/Coherent 主导
+- **IM-VOA** · 可变光衰减器（VOA）前端预设计（ROADM 功率均衡）：MEMS VOA 市场 $215.5M(2025)→$320.89M(2032) CAGR 5.85%；Variable Optical Attenuators $380M(2025)→$551.7M(2032) CAGR 5.4%；>70% 光网络用动态衰减（ROADM 功率均衡）
 
 ---
 _LDA · 开源 Agent-native EDA（光子 PDA + 量子 QEDA）· 物理定律锚红线 · LLM 不进判决路径_

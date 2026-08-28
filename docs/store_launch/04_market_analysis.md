@@ -1,4 +1,4 @@
-# LDA 设计商店 · 市场与行业趋势分析（v0.8.47–v0.8.50 扩货架依据）
+# LDA 设计商店 · 市场与行业趋势分析（v0.8.47–v0.8.51 扩货架依据）
 
 > 用途：为「货架 → 下载付费」的开放范围、定价与叙事提供市场依据。数据来自 LightCounting / Yole / HDIN / Dataintelo / IIM 等公开报告及行业媒体（2026-08 检索），口径差异已在文中标注。本分析为筹划稿，不构成投资建议。
 
@@ -38,8 +38,13 @@
 | CPO 2.5D | 光子中介层 / 共封装（IM-PHOTONIC-INTERPOSER） | IDTechEx 预测 CPO 市场 2036 破 $20B、CAGR 37%；TSMC COUPE 2026-04 量产；NVIDIA Quantum-X/Spectrum-X Photonics CPO 2026 出货；Ayar Labs TeraPHY $500M E 轮 2026-03；2.5D 硅中介层+TSV 路径 |
 | 光计算 | 光神经网络 ONN（IM-OPTO-COMPUTE） | 光神经网络处理器市场 Lightmatter/Lightelligence/Celestial AI/Intel/Ayar Labs 占 56.3%；北美光子神经形态芯片 $180-240M(2026) CAGR 32-38%；Lightmatter 1.2 petaflops 模拟 ONN、Lightelligence 8.3 pJ/op |
 | 医疗成像 | 光学相干层析 OCT（IM-OCT） | OCT 市场 $2.36B(2026)→$4.01B(2032) CAGR 9.08%；眼科 OCT $1.52B(2025)→$2.52B(2032) CAGR 6.49%；糖尿病视网膜病变+AMD 驱动 |
+| 固态感知 | 光学相控阵 LiDAR（IM-OPA-LIDAR） | OPA LiDAR $1.8B(2025)→$9.6B(2034) CAGR 20.4%；单芯片集成 OPA 占 63.7%；Yole：车规原型 12 家、2026 乘用车前装渗透率破 5%；CMOS 兼容硅光波导型 OPA |
+| 相干接收 | 90° 光混频器（IM-COHERENT-RX） | Optical Hybrid $483M(2025)→$1.10B(2032) CAGR 12.48%；90° 混频占 67.3%；400G/800G/1.6T 相干可插拔驱动、SiPh+InP 集成 |
+| 片上光互连 | 光网络 NoC / 芯片光 I/O（IM-ONCHIP-NOC） | Chiplet 互连光子 $1.8B(2025)→$52.1B(2034) CAGR 38.5%；光互连 $13.69B→$15.28B(2026) CAGR 11.6%→$23.54B(2030)；Ayar TeraPHY 8Tbps、Intel 光 I/O 4Tbps/5pJ/bit |
+| 空分复用 | 多芯光纤扇出（IM-MCF-FANOUT） | MCF Fanouts $640M(2025)→$1.25B(2032) CAGR 11.8%；OFC 2026 SDM4 MCF MSA（Corning/AFL/Sumitomo）4 芯；TPU 首条商用 MCF 2025-2026 |
+| 惯性传感 | 光纤陀螺 Sagnac（IM-OPTICAL-GYRO） | FOG $1.2B(2026)→$2.0B(2033) CAGR 7.5%；干涉型（Sagnac）占 78%；GNSS 拒止 + 国防现代化驱动 |
 
-**开放策略**：上述光子主流方向全量开放（35 个货架），覆盖预研企业最密集的需求面，含 FR4 200G/400G 每通道、400G DR4、100G LR4、50G-PON、XGS-PON、可重构光交换、FMCW 接收、环形生物传感、相干 ZR、微环调制器、WSS、VOA、MZM、PSR、光子中介层/CPO、光计算 ONN、OCT 等真实缺口品类。
+**开放策略**：上述光子主流方向全量开放（40 个货架），覆盖预研企业最密集的需求面，含 FR4 200G/400G 每通道、400G DR4、100G LR4、50G-PON、XGS-PON、可重构光交换、FMCW 接收、环形生物传感、相干 ZR、微环调制器、WSS、VOA、MZM、PSR、光子中介层/CPO、光计算 ONN、OCT、OPA LiDAR、相干接收、片上光互连、多芯光纤扇出、光纤陀螺等真实缺口品类。
 
 ## 三、量子赛道（高价值、暂列咨询制）
 

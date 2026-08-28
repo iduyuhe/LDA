@@ -972,5 +972,113 @@
     "honest_tier": "前瞻预研",
     "design_note": "OCT 前端 = 光栅耦合 + 1×2 MMI 分光（样品/参考臂）+ Y 分支 + SiN 波导干涉臂；扫描/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 OCT 量级。",
     "ci_status": ""
+  },
+  {
+    "id": "IM-OPA-LIDAR",
+    "title": "光学相控阵（OPA）固态激光雷达前端预设计（无惯量大角度光束扫描）",
+    "target_app": "固态 LiDAR 光束赋形发射阵、ADAS/机器人无机械扫描感知、芯片化波导 OPA",
+    "signal_ref": "OPA LiDAR 市场 Dataintelo $1.8B(2025)→$9.6B(2034) CAGR 20.4%；单芯片集成 OPA 占 63.7%（2025）；Yole：投入 OPA 研发厂商>35 家、车规原型 12 家，2026 乘用车前装渗透率破 5%（~$4.2 亿）；CMOS 兼容硅光波导型 OPA（MZI 阵列/级联光栅阵列）为主流。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-YBRANCH",
+      "GP-SIN-PL",
+      "GP-CROSSING"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 2.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "OPA 前端 = 光栅发射阵列 + Y 分支功分馈入阵元 + SiN 波导 + 交叉路由；相位调制单元按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 OPA LiDAR 量级。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-COHERENT-RX",
+    "title": "相干接收机（90° 光混频器）前端预设计（相干探测本振耦合）",
+    "target_app": "400G/800G/1.6T 相干接收 90° 混频前端、本振-信号干涉耦合、相干探测",
+    "signal_ref": "Optical Hybrid 市场 $483.33M(2025)→$1.10B(2032) CAGR 12.48%；90° 光混频占 67.3%（2025）；由 400G→800G→1.6T 相干可插拔驱动，SiPh+InP 集成降 footprint/功耗；相干光通信占应用 75.9%。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-MMI-1X2",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 2.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "相干接收前端 = 光栅耦合（信号+本振双入）+ 1×2 MMI 4×4 混频（两 MMI 作分/合）+ SiN 波导；平衡探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开相干接收量级。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-ONCHIP-NOC",
+    "title": "片上光网络（ONoC）路由前端预设计（chiplet 光互连 fabric）",
+    "target_app": "AI 加速器/CPU-GPU chiplet 片上光互连、低能耗高带宽 NoC 路由网格",
+    "signal_ref": "Chiplet 互连光子市场 $1.8B(2025)→$52.1B(2034) CAGR 38.5%（Market Intelo）；光互连 $13.69B(2025)→$15.28B(2026) CAGR 11.6%→$23.54B(2030)；Ayar TeraPHY（UCIe 光 chiplet 8Tbps）、Intel 光 I/O 4Tbps/5pJ/bit。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-CROSSING",
+      "GP-YBRANCH",
+      "GP-MMI-1X2",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 3.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "ONoC 前端 = 交叉矩阵（路由） + Y 分支功分 + 1×2 MMI + SiN 波导 fabric；调制/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开片上光互连量级。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-MCF-FANOUT",
+    "title": "多芯光纤扇出（MCF Fan-out）前端预设计（空分复用 SDM 过渡）",
+    "target_app": "多芯光纤（SDM）到单芯设备的无源扇出/扇入、AI 数据中心高密度互连",
+    "signal_ref": "MCF Fanouts 市场 $640M(2025)→$1.25B(2032) CAGR 11.8%（Strategic Market Research）；窄口径 $87.5M(2025)→$504.85M(2032) CAGR 28.45%；OFC 2026 SDM4 MCF MSA（Corning/AFL/Sumitomo）4 芯；TPU 首条商用 MCF（2025-2026）。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 1.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "MCF 扇出前端 = 光栅耦合阵列（多芯入） + Y 分支扇出到单芯 + SiN 波导；多芯对准按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 MCF 扇出量级。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-OPTICAL-GYRO",
+    "title": "光纤陀螺（FOG/Sagnac 干涉仪）前端预设计（高精度角速率传感）",
+    "target_app": "干涉型光纤陀螺 Sagnac 干涉前端、惯性导航/无人机/船舶 AHRS 角速率传感",
+    "signal_ref": "FOG 市场 $1.2B(2026)→$2.0B(2033) CAGR 7.5%（Persistence）；或 $1.96B(2025)→$4.60B(2034) CAGR 9.93%；干涉型 FOG（Sagnac 效应）占 78%（2026）；GNSS 拒止环境 + 国防现代化驱动。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-CROSSING",
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 2.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "FOG 前端 = 光栅耦合 + 交叉环形（Sagnac 环） + Y 分支分/合 + SiN 波导；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光纤陀螺量级。",
+    "ci_status": ""
   }
 ]

@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.51（2026-08-28 · 持续扩货架：新增 5 光子缺口品类开放下载、货架 43→48）
+- 货架 43→48：新增 5 个真实 2026 市场缺口光子品类（信号源可溯源、composition⊆GP-*、非出口管制、honest_tier=前瞻预研）：
+  - `IM-OPA-LIDAR`（光学相控阵固态 LiDAR；OPA LiDAR $1.8B→$9.6B CAGR 20.4%、单芯片 OPA 占 63.7%、Yole 车规渗透率 2026 破 5%）
+  - `IM-COHERENT-RX`（相干接收 90° 光混频；Optical Hybrid $483M→$1.10B CAGR 12.48%、90° 混频占 67.3%）
+  - `IM-ONCHIP-NOC`（片上光网络/芯片光互连；Chiplet 互连光子 $1.8B→$52.1B CAGR 38.5%、Ayar TeraPHY 8Tbps）
+  - `IM-MCF-FANOUT`（多芯光纤扇出/空分复用；MCF Fanouts $640M→$1.25B CAGR 11.8%、OFC 2026 SDM4 MCF MSA）
+  - `IM-OPTICAL-GYRO`（光纤陀螺 Sagnac 干涉；FOG $1.2B→$2.0B CAGR 7.5%、干涉型占 78%、GNSS 拒止驱动）
+- 开放下载白名单 `OPEN_SHELVES` 35→40（前述 5 个光子缺口品类全量放开；工厂产能已具备，任意已知货架可现场生成设计就绪包）。
+- 量子 8 个维持「咨询制」，不进自动下载白名单（出口管制合规红线）。
+- `docs/store_launch/04_market_analysis.md` 新增趋势段：OPA LiDAR（固态光束扫描 $9.6B 2034）、相干接收（90° 混频 $1.10B 2032）、片上光互连（Chiplet 光子 $52.1B 2034）、MCF 扇出（SDM4 MSA）、光纤陀螺（Sagnac $2.0B 2033）；光子细分表格扩容（OPA/相干接收/NoC/MCF/FOG），开放策略 35→40 货架。
+- 沿用 v0.8.50 新增的 `OPEN_SHELVES ⊆ DEFAULT_SHELF` 回归护栏；重新生成 `innovation_market.json`（48 货架）；货架 smoke **48/48 ALL PASS**；`run_count_consistency_smoke` **11/11 OK**（CI core 维持 69 条）。
+
 ## v0.8.50（2026-08-28 · 持续扩货架：新增 5 光子缺口品类开放下载、货架 38→43）
 - 货架 38→43：新增 5 个真实 2026 市场缺口光子品类（信号源可溯源、composition⊆GP-*、非出口管制、honest_tier=前瞻预研）：
   - `IM-MZI-MOD`（马赫-曾德尔调制器 MZM，相干/直检发射；硅 MZM $1.51B→$7.24B CAGR 19.0%、Tower+Coherent 400Gbps/lane 量产就绪）

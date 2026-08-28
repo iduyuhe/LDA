@@ -1,7 +1,7 @@
 # LDA 创新超市（Innovation Marketplace）· 前瞻预研货架目录
 
 > 生成口径：每个货架 = 已锚定基元（产品级基准库 GP-*）+ 公开信号驱动的**前瞻预研**预设计。
-> **43/43 货架通过结构可行 + 系统预算不破检查**。
+> **48/48 货架通过结构可行 + 系统预算不破检查**。
 
 **诚实边界（红线下护栏）**：
 > 创新超市货架为**前瞻预研**预设计：组合已锚定基元（产品级基准库 GP-*）+ 公开信号驱动（行业 roadmap / 标准草案 / 厂商公开动向）。属等效验证（复用已锚定基元 + 系统预算不破），**非本团队流片验证**、**非对未来的承诺**。信号源可溯源；判决复用 system_type 已验证闭环，LLM 不进判决路径。
@@ -56,6 +56,11 @@
 | IM-PHOTONIC-INTERPOSER | 光子中介层/共封装（CPO）前端预设计（2.5D 光互连） | CPU/GPU 共封装光互连、2.5D 硅中介层光路由面、chiplet 间光 I/O 背板 | link | GP-GRATING-EFF, GP-MMI-1X2, GP-CROSSING, GP-YBRANCH, GP-SIN-PL | OK |
 | IM-OPTO-COMPUTE | 光计算/光神经网络（ONN）前端预设计（模拟矩阵乘） | 光神经网络推理加速、模拟矩阵-向量乘前端、光互连-计算混合芯片 | link | GP-MMI-1X2, GP-CROSSING, GP-SIN-PL | OK |
 | IM-OCT | 光学相干层析（OCT）前端预设计（医疗成像干涉仪） | 眼科 OCT 成像干涉前端、医疗诊断光相干层析、工业无损检测 | link | GP-GRATING-EFF, GP-MMI-1X2, GP-YBRANCH, GP-SIN-PL | OK |
+| IM-OPA-LIDAR | 光学相控阵（OPA）固态激光雷达前端预设计（无惯量大角度光束扫描） | 固态 LiDAR 光束赋形发射阵、ADAS/机器人无机械扫描感知、芯片化波导 OPA | link | GP-GRATING-EFF, GP-YBRANCH, GP-SIN-PL, GP-CROSSING | OK |
+| IM-COHERENT-RX | 相干接收机（90° 光混频器）前端预设计（相干探测本振耦合） | 400G/800G/1.6T 相干接收 90° 混频前端、本振-信号干涉耦合、相干探测 | link | GP-GRATING-EFF, GP-MMI-1X2, GP-SIN-PL | OK |
+| IM-ONCHIP-NOC | 片上光网络（ONoC）路由前端预设计（chiplet 光互连 fabric） | AI 加速器/CPU-GPU chiplet 片上光互连、低能耗高带宽 NoC 路由网格 | link | GP-CROSSING, GP-YBRANCH, GP-MMI-1X2, GP-SIN-PL | OK |
+| IM-MCF-FANOUT | 多芯光纤扇出（MCF Fan-out）前端预设计（空分复用 SDM 过渡） | 多芯光纤（SDM）到单芯设备的无源扇出/扇入、AI 数据中心高密度互连 | link | GP-GRATING-EFF, GP-YBRANCH, GP-SIN-PL | OK |
+| IM-OPTICAL-GYRO | 光纤陀螺（FOG/Sagnac 干涉仪）前端预设计（高精度角速率传感） | 干涉型光纤陀螺 Sagnac 干涉前端、惯性导航/无人机/船舶 AHRS 角速率传感 | link | GP-GRATING-EFF, GP-CROSSING, GP-YBRANCH, GP-SIN-PL | OK |
 
 ## 货架设计说明（诚实标注）
 
@@ -102,6 +107,11 @@
 - **IM-PHOTONIC-INTERPOSER**：光子中介层前端 = 光栅阵列 I/O + MMI 扇出 + 交叉矩阵 + Y 分支 + SiN 波导面；TSV/微环驱动按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 CPO 光互连量级。
 - **IM-OPTO-COMPUTE**：ONN 前端 = 1×2 MMI 分光权重分配 + 交叉干涉网格（MZI mesh）+ SiN 波导；相移/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光计算量级。
 - **IM-OCT**：OCT 前端 = 光栅耦合 + 1×2 MMI 分光（样品/参考臂）+ Y 分支 + SiN 波导干涉臂；扫描/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 OCT 量级。
+- **IM-OPA-LIDAR**：OPA 前端 = 光栅发射阵列 + Y 分支功分馈入阵元 + SiN 波导 + 交叉路由；相位调制单元按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 OPA LiDAR 量级。
+- **IM-COHERENT-RX**：相干接收前端 = 光栅耦合（信号+本振双入）+ 1×2 MMI 4×4 混频（两 MMI 作分/合）+ SiN 波导；平衡探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开相干接收量级。
+- **IM-ONCHIP-NOC**：ONoC 前端 = 交叉矩阵（路由） + Y 分支功分 + 1×2 MMI + SiN 波导 fabric；调制/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开片上光互连量级。
+- **IM-MCF-FANOUT**：MCF 扇出前端 = 光栅耦合阵列（多芯入） + Y 分支扇出到单芯 + SiN 波导；多芯对准按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 MCF 扇出量级。
+- **IM-OPTICAL-GYRO**：FOG 前端 = 光栅耦合 + 交叉环形（Sagnac 环） + Y 分支分/合 + SiN 波导；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光纤陀螺量级。
 
 ## 信号来源（可溯源）
 
@@ -148,6 +158,11 @@
 - **IM-PHOTONIC-INTERPOSER** · 光子中介层/共封装（CPO）前端预设计（2.5D 光互连）：IDTechEx 预测 CPO 市场 2036 破 $20B、CAGR 37%；TSMC COUPE 2026-04 量产；NVIDIA Quantum-X/Spectrum-X Photonics CPO 2026 出货；Ayar Labs TeraPHY $500M E 轮 2026-03；2.5D 硅中介层+TSV 路径。
 - **IM-OPTO-COMPUTE** · 光计算/光神经网络（ONN）前端预设计（模拟矩阵乘）：光神经网络处理器市场 Lightmatter/Lightelligence/Celestial AI/Intel/Ayar Labs 占 56.3%（Global Market Insights）；北美光子神经形态芯片 $180-240M(2026) CAGR 32-38%；Lightmatter 1.2 petaflops 模拟 ONN、Lightelligence 8.3 pJ/op。
 - **IM-OCT** · 光学相干层析（OCT）前端预设计（医疗成像干涉仪）：OCT 市场 $2.36B(2026)→$4.01B(2032) CAGR 9.08%（Research and Markets）；眼科 OCT $1.52B(2025)→$2.52B(2032) CAGR 6.49%；糖尿病视网膜病变+AMD 驱动。
+- **IM-OPA-LIDAR** · 光学相控阵（OPA）固态激光雷达前端预设计（无惯量大角度光束扫描）：OPA LiDAR 市场 Dataintelo $1.8B(2025)→$9.6B(2034) CAGR 20.4%；单芯片集成 OPA 占 63.7%（2025）；Yole：投入 OPA 研发厂商>35 家、车规原型 12 家，2026 乘用车前装渗透率破 5%（~$4.2 亿）；CMOS 兼容硅光波导型 OPA（MZI 阵列/级联光栅阵列）为主流。
+- **IM-COHERENT-RX** · 相干接收机（90° 光混频器）前端预设计（相干探测本振耦合）：Optical Hybrid 市场 $483.33M(2025)→$1.10B(2032) CAGR 12.48%；90° 光混频占 67.3%（2025）；由 400G→800G→1.6T 相干可插拔驱动，SiPh+InP 集成降 footprint/功耗；相干光通信占应用 75.9%。
+- **IM-ONCHIP-NOC** · 片上光网络（ONoC）路由前端预设计（chiplet 光互连 fabric）：Chiplet 互连光子市场 $1.8B(2025)→$52.1B(2034) CAGR 38.5%（Market Intelo）；光互连 $13.69B(2025)→$15.28B(2026) CAGR 11.6%→$23.54B(2030)；Ayar TeraPHY（UCIe 光 chiplet 8Tbps）、Intel 光 I/O 4Tbps/5pJ/bit。
+- **IM-MCF-FANOUT** · 多芯光纤扇出（MCF Fan-out）前端预设计（空分复用 SDM 过渡）：MCF Fanouts 市场 $640M(2025)→$1.25B(2032) CAGR 11.8%（Strategic Market Research）；窄口径 $87.5M(2025)→$504.85M(2032) CAGR 28.45%；OFC 2026 SDM4 MCF MSA（Corning/AFL/Sumitomo）4 芯；TPU 首条商用 MCF（2025-2026）。
+- **IM-OPTICAL-GYRO** · 光纤陀螺（FOG/Sagnac 干涉仪）前端预设计（高精度角速率传感）：FOG 市场 $1.2B(2026)→$2.0B(2033) CAGR 7.5%（Persistence）；或 $1.96B(2025)→$4.60B(2034) CAGR 9.93%；干涉型 FOG（Sagnac 效应）占 78%（2026）；GNSS 拒止环境 + 国防现代化驱动。
 
 ---
 _LDA · 开源 Agent-native EDA（光子 PDA + 量子 QEDA）· 物理定律锚红线 · LLM 不进判决路径_

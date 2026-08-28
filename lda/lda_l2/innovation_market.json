@@ -1184,5 +1184,106 @@
     "honest_tier": "前瞻预研",
     "design_note": "光栅耦合阵列前端 = 高效光栅耦合器（GP-GRATING-EFF 核心） + SiN 波导引出；光纤阵列对准/封装按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光栅耦合量级。",
     "ci_status": ""
+  },
+  {
+    "id": "IM-AWG-DEMUX",
+    "title": "阵列波导光栅解复用器（AWG DeMUX）前端预设计",
+    "target_app": "DWDM 信道解复用、CPO/光模块波分合分波、ROADM 波长路由、光谱处理前端",
+    "signal_ref": "AWG MUX/DeMUX 市场 $735M(2025)→$1.375B(2031) CAGR 8.14%；Arrayed Waveguide Market $320-570M(2026) CAGR 6.5-11.7%；QYResearch $270M(2025)→$427M(2032) CAGR 6.9%；Thermal AWG $1.55B(2026)→$2.84B(2033) CAGR 9.1%；AI 数据中心 DWDM/CPO 结构性推升需求。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-MMI-1X2",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 1.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "AWG 解复用前端 = 输入/输出 MMI 星形耦合器（GP-MMI-1X2 近似） + SiN 阵列波导（GP-SIN-PL 自由色散长度）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 AWG DeMUX 量级。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-ONCHIP-SPECTROMETER",
+    "title": "片上微型光谱仪（Chip-scale Spectrometer）前端预设计",
+    "target_app": "便携式光谱检测、消费电子/医疗即时诊断、环境气体监测、工业过程光谱分析",
+    "signal_ref": "Chip-scale Spectrometer $2.44B(2025)→$8.7B(2033) CAGR 17.2%；Chip/Modular Spectrometers $546M(2026)→$886M(2032) CAGR 8.4%；Miniature Spectrometer IC $1.36B(2025)→$3.99B(2034) CAGR 12.7%（医疗/环境/消费电子驱动）。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-MMI-1X2",
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 1.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "片上光谱仪前端 = MMI 分光（GP-MMI-1X2） + Y 分支路由阵列（GP-YBRANCH） + SiN 波导色散/干涉臂（GP-SIN-PL）；探测器按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开微型光谱仪量级。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-MDM-MUX",
+    "title": "模分复用器（Mode-division Multiplexer）前端预设计",
+    "target_app": "少模光纤 MDM 收发前端、数据中心空分复用扩容、单模 Shannon 极限突破、模群延时补偿",
+    "signal_ref": "Few-Mode Fibers $10.74B(2025) CAGR 6.86%；MDM Equipment $1.42B(2024)→$4.16B(2033) CAGR 12.6%；Market Intelo →$6.89B CAGR 18.9%；Growth Market Reports CAGR 13.7%（突破单模容量极限）。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 1.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "模分复用前端 = 非对称 Y 分支模式合/分器（GP-YBRANCH 模式转换近似） + SiN 少模波导（GP-SIN-PL）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 MDM 量级。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-OPTCOMB",
+    "title": "芯片级光频梳（Microcomb）前端预设计",
+    "target_app": "DWDM 多波长光源、时频同步、相干光通信梳状源、量子频率计量",
+    "signal_ref": "Intel Market Research $58M(2025)→$108M(2034) CAGR 7.4%；全球光频梳 $1.87B(2026) 年增 31.7%；Archive Market Research $1.8B(2025) CAGR 11%；芯片级微梳 CAGR 47.8%（DWDM/时频同步/量子）。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 1.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "光频梳前端 = 高效光栅耦合 IO（GP-GRATING-EFF） + SiN 微环梳谐振波导（GP-SIN-PL，高 Q 色散工程）；泵浦/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开芯片级微梳量级。",
+    "ci_status": ""
+  },
+  {
+    "id": "IM-POL-ROTATOR",
+    "title": "片上偏振旋转器（Polarization Rotator）前端预设计",
+    "target_app": "偏振分集接收、相干收发器偏振管理、硅光集成偏振操控、CPO 偏振耦合接口",
+    "signal_ref": "光偏振控制器 $480M(2026) 增 12.3% / $4.72B(2026) 增 12.9%；Polarization Rotator CAGR 10.3%(2026-2033)；Stats N Data CAGR 6%；集成波导型增速 28%（硅光量产拉动）。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-CROSSING",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 1.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "偏振旋转器前端 = 波导交叉路由（GP-CROSSING） + SiN 双折射/非对称波导偏振旋转段（GP-SIN-PL）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开偏振旋转器量级。",
+    "ci_status": ""
   }
 ]

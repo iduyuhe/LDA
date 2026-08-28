@@ -1,4 +1,4 @@
-# LDA 设计商店 · 市场与行业趋势分析（v0.8.47–v0.8.51 扩货架依据）
+# LDA 设计商店 · 市场与行业趋势分析（v0.8.47–v0.8.53 扩货架依据）
 
 > 用途：为「货架 → 下载付费」的开放范围、定价与叙事提供市场依据。数据来自 LightCounting / Yole / HDIN / Dataintelo / IIM 等公开报告及行业媒体（2026-08 检索），口径差异已在文中标注。本分析为筹划稿，不构成投资建议。
 
@@ -48,8 +48,13 @@
 | 微波光子 | 真延时 TTD 波束成形（IM-TRUE-TIME-DELAY） | Phased Array Antenna $3.90B(2026)→$8.38B(2034) CAGR 10.04%；相控阵系统 $18.7B→$38.5B CAGR 12.8%；MWP 真延时用于相控阵雷达/5G-A |
 | 环境/医疗 | 波导气体吸收光谱（IM-GAS-SENSE） | SiN PIC $320M(2025)→$1113.58M(2032) CAGR 19.5%；SiN 宽透明窗口；VOC 中红外检测灵敏度较 Si 提升 5× |
 | 封装接口 | 光栅耦合阵列 CPO 光 IO（IM-GRATING-COUPLE） | Grating Coupler Array $1.45B(2024)→$3.07B(2033) CAGR 8.7%；耦合效率 >90%；CPO 共封装光学量产拉动 |
+| 波分复用 | 阵列波导光栅解复用 AWG DeMUX（IM-AWG-DEMUX） | AWG MUX/DeMUX $735M(2025)→$1.375B(2031) CAGR 8.14%；Arrayed Waveguide Market $320-570M(2026) CAGR 6.5-11.7%；AI 数据中心 DWDM/CPO 推升 |
+| 光谱检测 | 片上微型光谱仪（IM-ONCHIP-SPECTROMETER） | Chip-scale Spectrometer $2.44B(2025)→$8.7B(2033) CAGR 17.2%；Miniature Spectrometer IC $1.36B(2025)→$3.99B(2034) CAGR 12.7% |
+| 空分复用 | 模分复用 MDM（IM-MDM-MUX） | MDM Equipment $1.42B(2024)→$4.16B(2033) CAGR 12.6%；Few-Mode Fibers $10.74B(2025) CAGR 6.86%；突破单模 Shannon 极限 |
+| 光源 | 芯片级光频梳 Microcomb（IM-OPTCOMB） | 全球光频梳 $1.87B(2026) 年增 31.7%；Intel $58M(2025)→$108M(2034) CAGR 7.4%；芯片级微梳 CAGR 47.8% |
+| 偏振操控 | 片上偏振旋转器（IM-POL-ROTATOR） | 光偏振控制器 $4.72B(2026) 增 12.9%；Polarization Rotator CAGR 10.3%(2026-2033)；集成波导型增速 28% |
 
-**开放策略**：上述光子主流方向全量开放（45 个货架），覆盖预研企业最密集的需求面，含 FR4 200G/400G 每通道、400G DR4、100G LR4、50G-PON、XGS-PON、可重构光交换、FMCW 接收、环形生物传感、相干 ZR、微环调制器、WSS、VOA、MZM、PSR、光子中介层/CPO、光计算 ONN、OCT、OPA LiDAR、相干接收、片上光互连、多芯光纤扇出、光纤陀螺、微环谐振滤波、1×N 功分树、微波光子真延时、波导气体传感、光栅耦合阵列等真实缺口品类。
+**开放策略**：上述光子主流方向全量开放（50 个货架），覆盖预研企业最密集的需求面，含 FR4 200G/400G 每通道、400G DR4、100G LR4、50G-PON、XGS-PON、可重构光交换、FMCW 接收、环形生物传感、相干 ZR、微环调制器、WSS、VOA、MZM、PSR、光子中介层/CPO、光计算 ONN、OCT、OPA LiDAR、相干接收、片上光互连、多芯光纤扇出、光纤陀螺、微环谐振滤波、1×N 功分树、微波光子真延时、波导气体传感、光栅耦合阵列、AWG 解复用、片上微型光谱仪、模分复用 MDM、芯片级光频梳、片上偏振旋转器等真实缺口品类。
 
 ## 三、量子赛道（高价值、暂列咨询制）
 
@@ -89,4 +94,4 @@
 4. **质量底线**：开放货架须能由 ship_package 干净出包（GP-* 映射 + DRC + 死锚报告），任意无锚基元不强行新增。
 
 ---
-*分析日期：2026-08-28 · 检索源：LightCounting、Yole Group、HDIN Research、Dataintelo、IIM、格隆汇、东方财富、arXiv 等公开资料。*
+*分析日期：2026-08-29 · 检索源：LightCounting、Yole Group、HDIN Research、Dataintelo、IIM、QYResearch、MarketPublishers、Intel Market Research、格隆汇、东方财富、arXiv 等公开资料。*

@@ -71,6 +71,8 @@ GENERATED_NOTE = (
 # 多芯光纤扇出、光纤陀螺 Sagnac），均 composition⊂GP-* 且非出口管制品类，白名单 35→40。
 # v0.8.52：新增 5 个光子缺口品类（微环滤波、功分树、微波光子真延时、波导气体传感、
 # 光栅耦合阵列），均 composition⊂GP-* 且非出口管制品类，白名单 40→45。
+# v0.8.53：新增 5 个光子缺口品类（AWG 解复用、片上光谱仪、模分复用、芯片级光频梳、
+# 偏振旋转器），均 composition⊂GP-* 且非出口管制品类，白名单 45→50。
 OPEN_SHELVES = {
     # 高速收发（DR8/FR4 × 400G/800G/1.6T + PSM4/CWDM4/FR4/LPO + 相干 ZR + MZM 调制）
     "IM-1.6T-DR8", "IM-1.6T-FR4", "IM-800G-DR8", "IM-800G-FR4", "IM-400G-DR4",
@@ -96,6 +98,8 @@ OPEN_SHELVES = {
     "IM-CHIPLET-IO", "IM-LASER-INT",
     # 微环滤波 / 功分树 / 微波光子真延时 / 波导气体传感 / 光栅耦合阵列（v0.8.52）
     "IM-MRR-FILTER", "IM-SPLITTER-TREE", "IM-TRUE-TIME-DELAY", "IM-GAS-SENSE", "IM-GRATING-COUPLE",
+    # 阵列波导光栅解复用 / 片上光谱仪 / 模分复用 / 芯片级光频梳 / 偏振旋转器（v0.8.53）
+    "IM-AWG-DEMUX", "IM-ONCHIP-SPECTROMETER", "IM-MDM-MUX", "IM-OPTCOMB", "IM-POL-ROTATOR",
 }
 
 

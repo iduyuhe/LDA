@@ -1,7 +1,7 @@
 # LDA 创新超市（Innovation Marketplace）· 前瞻预研货架目录
 
 > 生成口径：每个货架 = 已锚定基元（产品级基准库 GP-*）+ 公开信号驱动的**前瞻预研**预设计。
-> **53/53 货架通过结构可行 + 系统预算不破检查**。
+> **58/58 货架通过结构可行 + 系统预算不破检查**。
 
 **诚实边界（红线下护栏）**：
 > 创新超市货架为**前瞻预研**预设计：组合已锚定基元（产品级基准库 GP-*）+ 公开信号驱动（行业 roadmap / 标准草案 / 厂商公开动向）。属等效验证（复用已锚定基元 + 系统预算不破），**非本团队流片验证**、**非对未来的承诺**。信号源可溯源；判决复用 system_type 已验证闭环，LLM 不进判决路径。
@@ -66,6 +66,11 @@
 | IM-TRUE-TIME-DELAY | 微波光子真延时（TTD）波束成形网络前端预设计 | 5G-A/6G 基站波束成形、相控阵雷达、卫星通信 TTD 延时网络 | link | GP-SIN-PL, GP-YBRANCH, GP-CROSSING | OK |
 | IM-GAS-SENSE | 波导气体/吸收光谱传感前端预设计（SiN 宽波段） | 环境 VOC/温室气体监测、医疗呼气诊断、工业排放多 analyte 检测 | link | GP-SIN-PL, GP-GRATING-EFF, GP-YBRANCH | OK |
 | IM-GRATING-COUPLE | 光栅耦合阵列 / 光纤贴装接口前端预设计（CPO 光 IO） | 硅光芯片-光纤阵列耦合、CPO 片上级联光 IO、多通道高密度封装接口 | link | GP-GRATING-EFF, GP-SIN-PL | OK |
+| IM-AWG-DEMUX | 阵列波导光栅解复用器（AWG DeMUX）前端预设计 | DWDM 信道解复用、CPO/光模块波分合分波、ROADM 波长路由、光谱处理前端 | link | GP-MMI-1X2, GP-SIN-PL | OK |
+| IM-ONCHIP-SPECTROMETER | 片上微型光谱仪（Chip-scale Spectrometer）前端预设计 | 便携式光谱检测、消费电子/医疗即时诊断、环境气体监测、工业过程光谱分析 | link | GP-MMI-1X2, GP-YBRANCH, GP-SIN-PL | OK |
+| IM-MDM-MUX | 模分复用器（Mode-division Multiplexer）前端预设计 | 少模光纤 MDM 收发前端、数据中心空分复用扩容、单模 Shannon 极限突破、模群延时补偿 | link | GP-YBRANCH, GP-SIN-PL | OK |
+| IM-OPTCOMB | 芯片级光频梳（Microcomb）前端预设计 | DWDM 多波长光源、时频同步、相干光通信梳状源、量子频率计量 | link | GP-GRATING-EFF, GP-SIN-PL | OK |
+| IM-POL-ROTATOR | 片上偏振旋转器（Polarization Rotator）前端预设计 | 偏振分集接收、相干收发器偏振管理、硅光集成偏振操控、CPO 偏振耦合接口 | link | GP-CROSSING, GP-SIN-PL | OK |
 
 ## 货架设计说明（诚实标注）
 
@@ -122,6 +127,11 @@
 - **IM-TRUE-TIME-DELAY**：TTD 前端 = 长 SiN 波导延迟线（不同长度阶梯） + Y 分支选择 + 交叉布线；RF 调制/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开微波光子 TTD 量级。
 - **IM-GAS-SENSE**：气体传感前端 = SiN 长波导吸收臂 + 光栅耦合进/出 + Y 分支参考/样品臂；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开波导气体传感量级。
 - **IM-GRATING-COUPLE**：光栅耦合阵列前端 = 高效光栅耦合器（GP-GRATING-EFF 核心） + SiN 波导引出；光纤阵列对准/封装按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光栅耦合量级。
+- **IM-AWG-DEMUX**：AWG 解复用前端 = 输入/输出 MMI 星形耦合器（GP-MMI-1X2 近似） + SiN 阵列波导（GP-SIN-PL 自由色散长度）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 AWG DeMUX 量级。
+- **IM-ONCHIP-SPECTROMETER**：片上光谱仪前端 = MMI 分光（GP-MMI-1X2） + Y 分支路由阵列（GP-YBRANCH） + SiN 波导色散/干涉臂（GP-SIN-PL）；探测器按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开微型光谱仪量级。
+- **IM-MDM-MUX**：模分复用前端 = 非对称 Y 分支模式合/分器（GP-YBRANCH 模式转换近似） + SiN 少模波导（GP-SIN-PL）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 MDM 量级。
+- **IM-OPTCOMB**：光频梳前端 = 高效光栅耦合 IO（GP-GRATING-EFF） + SiN 微环梳谐振波导（GP-SIN-PL，高 Q 色散工程）；泵浦/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开芯片级微梳量级。
+- **IM-POL-ROTATOR**：偏振旋转器前端 = 波导交叉路由（GP-CROSSING） + SiN 双折射/非对称波导偏振旋转段（GP-SIN-PL）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开偏振旋转器量级。
 
 ## 信号来源（可溯源）
 
@@ -178,6 +188,11 @@
 - **IM-TRUE-TIME-DELAY** · 微波光子真延时（TTD）波束成形网络前端预设计：Phased Array Antenna 市场 $3.90B(2026)→$8.38B(2034) CAGR 10.04%（ValueMarketResearch）；相控阵天线系统 2025 $18.7B→2030 $38.5B CAGR 12.8%（IIM）；微波光子真延时用于相控阵雷达波束赋形，电子移相器无法复制。
 - **IM-GAS-SENSE** · 波导气体/吸收光谱传感前端预设计（SiN 宽波段）：SiN PIC 市场 $320M(2025)→$1113.58M(2032) CAGR 19.5%（PW Consulting）；SiN 宽透明窗口（可见-中红外）适合分子指纹吸收；VOC 片上中红外检测灵敏度较 Si 提升 5×（TAMU 2022）；环境/医疗光子传感需求增长。
 - **IM-GRATING-COUPLE** · 光栅耦合阵列 / 光纤贴装接口前端预设计（CPO 光 IO）：Grating Coupler Array 市场 $1.45B(2024)→$3.07B(2033) CAGR 8.7%（GrowthMarketReports）；Grating Coupler 2025 APAC $0.31B 占 36.5%，耦合效率 >90%；CPO 共封装光学（Azure/Google/AWS）从试点转向早期量产，结构性拉动。
+- **IM-AWG-DEMUX** · 阵列波导光栅解复用器（AWG DeMUX）前端预设计：AWG MUX/DeMUX 市场 $735M(2025)→$1.375B(2031) CAGR 8.14%；Arrayed Waveguide Market $320-570M(2026) CAGR 6.5-11.7%；QYResearch $270M(2025)→$427M(2032) CAGR 6.9%；Thermal AWG $1.55B(2026)→$2.84B(2033) CAGR 9.1%；AI 数据中心 DWDM/CPO 结构性推升需求。
+- **IM-ONCHIP-SPECTROMETER** · 片上微型光谱仪（Chip-scale Spectrometer）前端预设计：Chip-scale Spectrometer $2.44B(2025)→$8.7B(2033) CAGR 17.2%；Chip/Modular Spectrometers $546M(2026)→$886M(2032) CAGR 8.4%；Miniature Spectrometer IC $1.36B(2025)→$3.99B(2034) CAGR 12.7%（医疗/环境/消费电子驱动）。
+- **IM-MDM-MUX** · 模分复用器（Mode-division Multiplexer）前端预设计：Few-Mode Fibers $10.74B(2025) CAGR 6.86%；MDM Equipment $1.42B(2024)→$4.16B(2033) CAGR 12.6%；Market Intelo →$6.89B CAGR 18.9%；Growth Market Reports CAGR 13.7%（突破单模容量极限）。
+- **IM-OPTCOMB** · 芯片级光频梳（Microcomb）前端预设计：Intel Market Research $58M(2025)→$108M(2034) CAGR 7.4%；全球光频梳 $1.87B(2026) 年增 31.7%；Archive Market Research $1.8B(2025) CAGR 11%；芯片级微梳 CAGR 47.8%（DWDM/时频同步/量子）。
+- **IM-POL-ROTATOR** · 片上偏振旋转器（Polarization Rotator）前端预设计：光偏振控制器 $480M(2026) 增 12.3% / $4.72B(2026) 增 12.9%；Polarization Rotator CAGR 10.3%(2026-2033)；Stats N Data CAGR 6%；集成波导型增速 28%（硅光量产拉动）。
 
 ---
 _LDA · 开源 Agent-native EDA（光子 PDA + 量子 QEDA）· 物理定律锚红线 · LLM 不进判决路径_

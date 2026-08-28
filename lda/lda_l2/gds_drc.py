@@ -48,7 +48,13 @@ def _segments(poly: List[Tuple[float, float]]) -> List[Tuple[Tuple[float, float]
 
 def _seg_distance(a: Tuple[Tuple[float, float], Tuple[float, float]],
                   b: Tuple[Tuple[float, float], Tuple[float, float]]) -> float:
-    """两线段最短距离（用于最小间距近似）。"""
+    """两线段最短距离（用于最小间距近似）。
+
+    v0.8.42 实测结论：细粒度几何内核（4 元素 tuple 短调用）numba njit
+    反而更慢（反射/装箱开销 > 编译收益，热路径 1.69s vs 纯 Python 0.44s）
+    → **锁定纯 Python 为最优路径**，不做 numba 化（不引入无效依赖）。
+    批量级热点（CongestionMap 标记 / 大数组）才值得 numba，见 router。
+    """
     def d_pt_seg(p, s0, s1) -> float:
         dx, dy = s1[0] - s0[0], s1[1] - s0[1]
         L2 = dx * dx + dy * dy

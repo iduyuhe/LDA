@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.8.42（2026-08-28 · S2 纵深三连：拥塞估计 + 算力实测 + 阵列统计锚）
+
+**② 布线拥塞估计**（`lda_layout/congestion.py` 新增）：
+- `CongestionMap` 拥塞图：网格占用计数 + 路径标记 + 惩罚查询（纯 dict 零依赖）。
+- `astar_route`/`route_net` 加可选 `congestion` 参数——A* 启发式 h 叠加 `penalty × 途经格占用`，引导后续网绕开拥挤走廊；**默认 None 行为逐位一致**（回归保护）；拥塞不阻塞格点、不改变可解性（有解必有解）。
+- 实测：8 条平行网绕同一障碍，最大占用 4→2（减半）、拥挤格 222→13（-94%）；run_astar_route_smoke 10/10。
+
+**④ 算力实测结论（numba 细粒度无效）**：
+- 对 DRC/LVS 几何内核（`_seg_distance` 4 元素 tuple 短调用）做 numba njit 实测：热路径 1.69s vs 纯 Python 0.44s——**numba 反而更慢**（反射/装箱开销 > 编译收益）。
+- 结论：细粒度几何内核**锁定纯 Python 为最优**，不引入无效 numba 依赖（避免污染主权代码）。已回退实验改动，DRC 性能保持 0.44s。
+
+**⑤ 阵列分布锚 S12**（`lda_harness/array_distribution_anchor.py` 新增）：
+- 锚+统计混合判决：**均值锚 + 下界锚 + 离群锚**（三者 AND 才 ACCEPT）——抓单点锚盲区「均值好看但某通道崩坏」（如 8 通道均值≈9 但单通道 14dB）。
+- 判决纯算术（statistics），LLM 不进路径；确定性可复现（固定 seed 生成阵列）。
+- 注册 S12（kind=insertion_loss / fidelity 两模板），题库 **45→46**；harness reference 46/46 PASS。
+- 同步更新 5 处题库断言（count_consistency / empirical / l1_agent / lvs / scale）+ README 账本 46 题。
+
+验证：统计锚 smoke 19/19、count_consistency 11/11、empirical 17/17、l1_agent 6/6、lvs 27、scale 16、astar 10 全绿；CI core 维持 68 条。
+
 ## v0.8.41（2026-08-28 · 几何 DRC 拔钉子：间距检查 O(n²) → 网格候选）
 
 **S2 第三颗钉子**（万级 VLSI 六层困难 ③ 签核层收官——LVS 已修，几何 DRC 补齐）：

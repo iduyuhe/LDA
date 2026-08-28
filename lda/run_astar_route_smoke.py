@@ -78,6 +78,40 @@ def main() -> int:
           ctx.link is not None and getattr(ctx, "sim", None) is not None,
           "端到端无异常")
 
+    # ⑦ v0.8.42 回归保护：congestion=None 与不传逐位一致
+    from lda_layout.congestion import CongestionMap
+    obs7 = [(50, 50, 10, 10), (50, 100, 10, 10)]
+    base = astar_route((0, 0), (100, 80), obs7, 0.25)
+    with_cg = astar_route((0, 0), (100, 80), obs7, 0.25,
+                          congestion=None)
+    check("拥塞=None 与不传逐位一致（回归保护）",
+          base == with_cg, f"{base} == {with_cg}")
+
+    # ⑧ 拥塞感知：平行网绕同一障碍，最大占用显著下降（通道均衡）
+    obs8 = [(50, 100, 15, 60)]
+    nets8 = [(i * 8, 0, i * 8, 240) for i in range(8)]
+    cm0 = CongestionMap()
+    for sx, sy, dx, dy in nets8:
+        p = astar_route((sx, sy), (dx, dy), obs8, 0.25)
+        if p:
+            cm0.mark_path(p)
+    cm1 = CongestionMap(penalty=8.0)
+    for sx, sy, dx, dy in nets8:
+        p = astar_route((sx, sy), (dx, dy), obs8, 0.25, congestion=cm1)
+        if p:
+            cm1.mark_path(p)
+    m0 = cm0.stats()["max_occupancy"]
+    m1 = cm1.stats()["max_occupancy"]
+    check("拥塞感知：最大通道占用下降（4→2 减半）",
+          m1 < m0, f"max {m0} → {m1}")
+
+    # ⑨ 红线：拥塞只影响启发式、不改变可解性（有解必有解）
+    check("拥塞感知：所有网仍连通（有解必有解，不阻塞）",
+          all(p is not None for p in
+              [astar_route(s, d, obs8, 0.25, congestion=cm1)
+               for s, d in [((0, 0), (0, 240)), ((56, 0), (56, 240))]]),
+          "无解退化未引入")
+
     print(f"\nA* 布线 smoke：{_PASS} PASS / {_FAIL} FAIL")
     return 1 if _FAIL else 0
 

@@ -7,7 +7,7 @@
   3. 反例-错连：互换 net_500/501 布线 → REJECT（misconnect 检出）
   4. 性能预算：全链路 ≤ 5s（bbox 预检后实测 ~0.9s，死标量）
   5. 多层协同：跨行跳线走 M2 层（M2 段数 > 0，与 S10 协同验证）
-  6. S11 锚：golden_value 正例 1.0 / 反例 0.0；BENCHMARK_ORDER 45 题
+  6. S11 锚：golden_value 正例 1.0 / 反例 0.0；BENCHMARK_ORDER 46 题
   7. 红线：判决源码零 LLM（scale_anchor/lvs import 断言）
 
 全部死标量（坐标几何 + 集合比对 + 性能预算），LLM 不进判决路径。
@@ -98,14 +98,14 @@ def main() -> int:
     check("多层协同：跨行跳线走 M2 层（M2 段 = 跳线数）",
           n_m2 == n_jump, f"M2 段 {n_m2} == 跳线 {n_jump}")
 
-    # ⑥ S11 锚：golden_value + 题库 45
+    # ⑥ S11 锚：golden_value + 题库 46
     check("S11 锚：consistent=1.0（千器件 ACCEPT）",
           golden_value("S11", {"case": "consistent"}) == 1.0)
     check("S11 锚：disconnect/misroute =0.0（REJECT）",
           all(golden_value("S11", {"case": c}) == 0.0
               for c in ("disconnect", "misroute")))
-    check("S11 锚：题库 44 → 45 题（B27+E7+S11）",
-          "S11" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 45,
+    check("S11 锚：题库 45 → 46 题（B27+E7+S11+S12）",
+          "S11" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 46,
           f"n={len(BENCHMARK_ORDER)}")
     rep = s11_report()
     check("S11 锚：全案例判决自洽 + 性能预算达标",

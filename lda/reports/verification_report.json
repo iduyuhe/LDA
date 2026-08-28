@@ -4,10 +4,10 @@
     "candidate": "ReferenceCandidate",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）"
   },
-  "generated_at": "2026-08-28T09:46:23",
+  "generated_at": "2026-08-28T10:27:28",
   "summary": {
-    "total": 45,
-    "passed": 45
+    "total": 46,
+    "passed": 46
   },
   "results": [
     {
@@ -410,6 +410,17 @@
       "id": "S11",
       "metric": "verdict(ACCEPT=1, REJECT=0)",
       "oracle": "deterministic(scale-pipeline, build+place+route+LVS)",
+      "source": "physical-law",
+      "golden": 1.0,
+      "candidate": 1.0,
+      "tol": 1e-09,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "S12",
+      "metric": "verdict(ACCEPT=1, REJECT=0)",
+      "oracle": "statistical(array-distribution, deterministic)",
       "source": "physical-law",
       "golden": 1.0,
       "candidate": 1.0,

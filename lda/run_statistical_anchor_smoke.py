@@ -107,13 +107,13 @@ def main() -> int:
           abs(bad_mean - golden) > 0.15,
           f"Δ={abs(bad_mean - golden):.3f} > 0.15")
 
-    # ⑦ 题库计数 41（B27 27 + E7 7 + S7 7）
+    # ⑦ 题库计数 46（B27 27 + E7 7 + S12 12）
     b_ids = [b for b in BENCHMARK_ORDER if b.startswith("B")]
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
     s_ids = [b for b in BENCHMARK_ORDER if b.startswith("S")]
-    check("题库 45 题（B1-B27 27 + E1-E7 7 + S1-S11 11）",
-          len(BENCHMARK_ORDER) == 45 and len(b_ids) == 27
-          and len(e_ids) == 7 and len(s_ids) == 11,
+    check("题库 46 题（B1-B27 27 + E1-E7 7 + S1-S12 12）",
+          len(BENCHMARK_ORDER) == 46 and len(b_ids) == 27
+          and len(e_ids) == 7 and len(s_ids) == 12,
           f"总={len(BENCHMARK_ORDER)} B={len(b_ids)} E={len(e_ids)} S={len(s_ids)}")
 
     # ⑧ S8 OSNR 统计锚（模板复用验证）
@@ -134,6 +134,34 @@ def main() -> int:
     c = convergence_scan()
     check("收敛性 N 扫描（500→4000 收敛带 <0.05）",
           c["converged"], f"spread={c['spread']} means={c['means']}")
+
+    # ⑩ v0.8.42 S12 阵列分布锚（锚+统计混合 · 抓单点锚盲区）
+    from lda_harness.array_distribution_anchor import (
+        array_insertion_loss_anchor, array_fidelity_anchor,
+        array_distribution_verdict,
+        s12_array_distribution_report, s12_array_distribution_verdict)
+    m_il, vals_il = array_insertion_loss_anchor(8, seed=42)
+    r12 = s12_array_distribution_report(kind="insertion_loss", seed=42)
+    check("S12 正例：8 通道插损分布 ACCEPT（均值/下界/离群三锚 AND）",
+          s12_array_distribution_verdict(kind="insertion_loss", seed=42) == 1.0
+          and r12["verdict"] == "ACCEPT",
+          f"mean={r12['stats']['mean']} checks={[c['ok'] for c in r12['checks']]}")
+    r12b = s12_array_distribution_report(kind="insertion_loss", seed=42)
+    # 反例：注入单通道离群（14dB，均值仍≈9——单点锚盲区）
+    bad_vals = list(vals_il)
+    bad_vals[3] = 14.0
+    r12b = array_distribution_verdict(
+        bad_vals, golden_mean=9.0, tol_mean=0.3,
+        golden_min=6.0, tol_min=0.5, outlier_margin=2.0)
+    check("S12 反例：单通道离群 REJECT（单点锚盲区被离群锚抓住）",
+          r12b["verdict"] == "REJECT"
+          and not [c for c in r12b["checks"] if c["name"] == "离群锚"][0]["ok"],
+          f"max={r12b['stats']['max']}")
+    m_f, vals_f = array_fidelity_anchor(8, seed=7)
+    r12f = s12_array_distribution_report(kind="fidelity", seed=7)
+    check("S12 保真度 kind：8 比特读出分布 ACCEPT",
+          s12_array_distribution_verdict(kind="fidelity", seed=7) == 1.0,
+          f"mean={r12f['stats']['mean']}")
 
     print(f"\n统计锚 smoke：{_PASS} PASS / {_FAIL} FAIL")
     return 1 if _FAIL else 0

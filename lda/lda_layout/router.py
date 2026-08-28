@@ -158,11 +158,18 @@ def _count_bends(points, tol_deg=15.0):
 def astar_route(src: Tuple[float, float], dst: Tuple[float, float],
                obstacles: Sequence[Tuple[float, float, float, float]],
                wg_half: float, dl: float = 1.0,
-               max_span: float = 2000.0) -> Optional[List[Tuple[float, float]]]:
+               max_span: float = 2000.0,
+               congestion=None) -> Optional[List[Tuple[float, float]]]:
     """A* 最短路径（网格离散 + 曼哈顿启发式 + 障碍膨胀）。
 
     第二梯队-1（版图审计差距 #1/#2 落地）：从贪心「2-6 个 L/Z 形候选首个
     可行即取」升级为全局网格搜索——最短曼哈顿路径（可采纳启发式保证最优）。
+
+    v0.8.42（S2-② 拥塞感知）：congestion 可选 CongestionMap——启发式 h 叠加
+    拥塞惩罚（h = 曼哈顿 + penalty × 途经格占用）。语义：
+      - congestion=None：与改造前逐位一致（可采纳 h → 严格最短路径）；
+      - 传入：引导绕开拥挤走廊（非严格最短，但均衡全局通道利用）。
+      拥塞**不阻塞格点、不改变可解性**（有解必有解）；纯启发式影响路径选择。
 
     参数：
       src/dst    绝对坐标 (x,y) µm
@@ -170,6 +177,7 @@ def astar_route(src: Tuple[float, float], dst: Tuple[float, float],
       wg_half    波导半宽 µm（障碍膨胀用）
       dl         网格分辨率 µm（默认 1.0）
       max_span   搜索域上限 µm（防超大规模爆炸）
+      congestion 可选 CongestionMap（拥塞感知启发式；None=关闭）
     返回：
       路径折点列表（已压缩共线点，仅保留拐弯）或 None（无解——不再盲目退化）。
     """
@@ -220,7 +228,9 @@ def astar_route(src: Tuple[float, float], dst: Tuple[float, float],
                     blocked.add((gx, gy))
         n_obs += 1
 
-    # —— A*（4 邻域，g=步长，h=曼哈顿——可采纳→最优）——
+    # —— A*（4 邻域，g=步长，h=曼哈顿+可选拥塞惩罚）——
+    # v0.8.42：congestion 非空时 h 叠加 penalty × 途经格占用（引导绕行，
+    # 不阻塞；h 不再严格可采纳 → 路径可能略长但通道更均衡）
     start = gs
     goal = gd
     if start == goal:
@@ -266,6 +276,12 @@ def astar_route(src: Tuple[float, float], dst: Tuple[float, float],
                 g_cost[nb] = ng
                 came[nb] = cur
                 h = abs(nx - goal[0]) + abs(ny - goal[1])  # 曼哈顿（可采纳）
+                if congestion is not None:
+                    # 拥塞惩罚：途经格占用 × penalty（引导绕行；可采纳性
+                    # 允许放宽——代价换通道均衡，路径仍保证连通）
+                    gx2, gy2 = nx, ny
+                    h += congestion.penalty_at(to_xy((gx2, gy2))[0],
+                                               to_xy((gx2, gy2))[1])
                 heapq.heappush(open_h, (ng + h * dl, nb))
     return None  # 无解（不盲目退化直连——诚实返回）
 
@@ -388,7 +404,7 @@ def route_net(net_id, src, dst, obstacles=None, wg_width=0.5,
               bend_radius=5.0, corner="round",
               straight_loss_db_cm=DEFAULT_STRAIGHT_LOSS_DB_CM,
               method: str = "astar", grid_dl: float = 1.0,
-              layer: str = "M1") -> RouteResult:
+              layer: str = "M1", congestion=None) -> RouteResult:
     """端口 A→B 自动布线（曼哈顿 + 圆角/直角 + 避障 + 损耗计入）。
 
     参数：
@@ -400,6 +416,8 @@ def route_net(net_id, src, dst, obstacles=None, wg_width=0.5,
       straight_loss_db_cm ：直波导损耗 dB/cm
       layer               ：v0.8.25 多层版图——布线所在信号层（默认 M1，
                             单层行为不变；多层 LVS 按层比对短路）
+      congestion          ：v0.8.42 可选 CongestionMap（拥塞感知 A* 启发式；
+                            默认 None = 与改造前逐位一致）
 
     返回 RouteResult（points_um / 长度 / 弯曲数 / 损耗 / layer）。
     """
@@ -408,7 +426,8 @@ def route_net(net_id, src, dst, obstacles=None, wg_width=0.5,
     best, raw, blocked = None, None, False
     if method == "astar":
         # 第二梯队-1：A* 全局最优（网格搜索），无解返回 None 走退化直连
-        path = astar_route(src, dst, obstacles, wg_half, dl=grid_dl)
+        path = astar_route(src, dst, obstacles, wg_half, dl=grid_dl,
+                           congestion=congestion)
         if path is not None:
             pts = _round_corners(path, bend_radius) if corner == "round" else list(path)
             if not _path_hits(pts, obstacles, wg_half):

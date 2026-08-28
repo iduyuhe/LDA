@@ -39,6 +39,8 @@ from .golden import (
     s10_lvs_multilayer_verdict,
     # S11 千器件规模锚（Phase 4 · 版图差距 #7 收官）
     s11_large_scale_verdict,
+    # S12 阵列分布锚（Phase 4 · v0.8.42 · 锚+统计混合判决）
+    s12_array_distribution_verdict,
 )
 
 BENCHMARK_DEFS = {
@@ -570,6 +572,21 @@ BENCHMARK_DEFS = {
                 "物理依据）。一致跨层版图 1.0；同层交叉/通孔短路/端口共享/悬空"
                 "四类失配 0.0。判决零 LLM。",
     },
+    # ---- S12 阵列分布锚（Phase 4 · v0.8.42 · 锚+统计混合判决） ----
+    "S12": {
+        "title": "阵列分布锚（多实例插损/保真度分布 · 锚+统计混合）",
+        "metric": "verdict(ACCEPT=1, REJECT=0)",
+        "oracle": "statistical(array-distribution, deterministic)",
+        "tol": 1e-9,
+        "anchor": "physical_law",
+        "default_params": {"kind": "insertion_loss", "seed": 42, "n_instances": 8},
+        "golden_fn": s12_array_distribution_verdict,
+        "note": "统计锚（阵列分布）：多实例（WDM/CPO 多通道、量子多比特）分布级"
+                "判决——均值锚（|mean−golden|≤tol）+ 下界锚（min≥规格下限，抓个别"
+                "通道劣化）+ 离群锚（max≤median+margin，防孤立崩坏），三者 AND 才"
+                "ACCEPT。单点锚抓不到的『均值好看但某通道崩』盲区由此覆盖。判决纯"
+                "算术（statistics），LLM 不进路径；确定性可复现。",
+    },
 }
 
 # 对齐顺序（报告展示用）
@@ -579,7 +596,7 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B26", "B27",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
-                   "S9", "S10", "S11"]  # S 系统锚（Phase 0-4；S9-11=LVS/多层/规模）
+                   "S9", "S10", "S11", "S12"]  # S 系统锚（Phase 0-4；S9-12=LVS/多层/规模/阵列分布）
 
 
 def register_benchmark(def_dict: dict) -> str:

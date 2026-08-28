@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.8.40（2026-08-28 · 构建器拔钉子：port_abs 索引缓存，32k 全链亚秒）
+
+**S2 第一颗钉子**（LVS 拔完后的下一瓶颈——scale_anchor 构建器布线生成）：
+
+profile 定位：build_chain_case 循环调 `port_abs`（每 net 2 次），而 `port_abs` 每次线性扫 `link.ir.components` 找 inst（O(n·m) 存量低效，构建 87% 时间耗于 `placement.py:109` 的 `next()`）。
+
+修复（`lda_layout/placement.py`）：
+- `port_abs` 组件查找走索引缓存（`{id(placement), id(link)} → {inst: comp}`，查表 O(1)）；提供 `_port_abs_cache_clear()` 供原地增删器件时清缓存。
+- IR 组件仅在构建期 `components.append`，运行时无原地增删 → id() 键生命周期内安全。
+- 不改变任何公共签名/返回语义（坐标计算路径不变）。
+
+性能（run_scale_pipeline 实测，构建+放置+布线+LVS 全链）：
+
+| 规模 | 旧全链 | 新全链 | 缩放 |
+|---|---|---|---|
+| 1k | 0.90s | 0.02s | — |
+| 4k | 14.65s | 0.07s | — |
+| 8k | ~60s(外推) | 0.15s | 2.2× |
+| 16k | ~240s(外推) | 0.40s | 2.7× |
+| 32k | ~960s(外推) | **0.98s** | 2.5× |
+
+**32k 器件全链亚秒**（~1000×），缩放斜率稳定 1.7–2.7×（近线性）。
+
+验证：判决三种 case 不变（ACCEPT/open/misconnect）；run_scale_smoke 新增 3 条「4k 规模纵深」检查（ACCEPT + LVS≤1s + 斜率≤8×）→ **16/16 PASS**；run_lvs_smoke 27 / chip_scale 8 / tapeout / link_m1-m4 全绿；CI core 维持 68 条。
+
 ## v0.8.39（2026-08-28 · LVS 拔钉子：O(n²) → 空间索引，千器件 0.92s → 0.03s）
 
 **S1 拔钉子落地**（杜先生 08-27 评估「万级 VLSI 六层困难」后先做第一步）：

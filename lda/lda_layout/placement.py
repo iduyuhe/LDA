@@ -14,6 +14,28 @@ from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:  # 仅类型标注用，避免 lda_chain ↔ lda_layout 循环导入
     from lda_chain.link_model import LinkModel
 
+# v0.8.39：port_abs 组件查找缓存（placement → comp_by_id 索引）。
+#   每次调用线性扫 link.ir.components 是 O(n·m) 存量低效（scale_anchor 构建
+#   与 LVS 锚点表均循环调用）；缓存 {id(placement), id(link)} → {inst: comp}
+#   后查表 O(1)。缓存失效条件：新 placement/link 对象（构造器每次新建，
+#   规模案例/不同用例天然新对象；原地增删器件走 _port_abs_cache_clear）。
+_port_abs_comp_cache: Dict[Tuple[int, int], Dict[str, "object"]] = {}
+
+
+def _port_abs_comp_index(placement: dict, link) -> Dict[str, "object"]:
+    """按 (placement, link) 对象身份缓存 {inst: comp} 索引。"""
+    key = (id(placement), id(link))
+    idx = _port_abs_comp_cache.get(key)
+    if idx is None:
+        idx = {c.id: c for c in link.ir.components}
+        _port_abs_comp_cache[key] = idx
+    return idx
+
+
+def _port_abs_cache_clear() -> None:
+    """清空 port_abs 组件索引缓存（对象原地增删器件后调用）。"""
+    _port_abs_comp_cache.clear()
+
 
 def port_anchor(kind: str, port: str, params: dict) -> Tuple[float, float]:
     """器件局部坐标下端口锚点 (dx,dy) µm（器件原点 0,0）。"""
@@ -104,9 +126,9 @@ def place_2d(link: LinkModel, cols: int = 3,
 
 def port_abs(inst: str, port: str, placement: dict,
              link: LinkModel) -> Tuple[float, float]:
-    """端口绝对坐标 (x,y)。"""
+    """端口绝对坐标 (x,y)。v0.8.39：comp 查找走索引缓存（O(1) 查表）。"""
     ox, oy, _ = placement[inst]
-    comp = next((c for c in link.ir.components if c.id == inst), None)
+    comp = _port_abs_comp_index(placement, link).get(inst)
     if comp is None:
         return (ox, oy)
     dx, dy = port_anchor(comp.kind, port, dict(comp.params))

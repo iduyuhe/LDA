@@ -76,6 +76,18 @@ def main() -> int:
     check("性能预算：LVS 千器件 ≤ 3s（bbox 预检优化）",
           r["time_lvs_s"] <= 3.0, f"{r['time_lvs_s']}s")
 
+    # ④b v0.8.39 规模纵深：4k 全链近线性（LVS O(n²)→网格后斜率 <3×/翻倍）
+    #    证明 LVS 不再卡规模；4k 在预算内（旧实现 14.65s 超预算，新 0.07s）
+    r4k = run_scale_pipeline(n_devices=4000, case="consistent")
+    check("4k 规模纵深：全链 ACCEPT 且在 5s 预算内",
+          r4k["verdict"] == "ACCEPT" and r4k["time_total_s"] <= BUDGET_SEC,
+          f"{r4k['verdict']} {r4k['time_total_s']}s")
+    check("4k 规模纵深：LVS 近线性（4k ≤ 1s，旧实现 14.4s）",
+          r4k["time_lvs_s"] <= 1.0, f"LVS {r4k['time_lvs_s']}s")
+    check("4k 规模纵深：缩放斜率近线性（4k/1k ≤ 8×，理想 4×）",
+          r4k["time_total_s"] <= 8.0 * r["time_total_s"],
+          f"{r4k['time_total_s']:.2f}s vs 1k {r['time_total_s']:.2f}s")
+
     # ⑤ 多层协同：跨行跳线走 M2 层
     from lda_harness.scale_anchor import build_chain_case
     link, placement, routes = build_chain_case(n_devices=200, cols=32)

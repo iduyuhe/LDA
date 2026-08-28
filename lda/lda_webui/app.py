@@ -2117,7 +2117,7 @@ def system_status():
         "benchmarks_total": len(BENCHMARK_DEFS),
         "pdks_registered": len(get_default_registry().list_pdks()),
         # v0.8.28 修复 #2：统计卡片 c-harness/c-ai 死值——补字段供前端填充
-        "harness_passed": len(BENCHMARK_DEFS),   # 题库 45 题（参考候选 45/45 PASS，CI 守护）
+        "harness_passed": len(BENCHMARK_DEFS),   # 题库 46 题（参考候选 46/46 PASS，CI 守护）
         "harness_total": len(BENCHMARK_DEFS),
         "ai_candidates": _n_engine_kinds(),      # L3 AI 内核候选 = 22 引擎族
     }
@@ -2144,6 +2144,102 @@ def health_check():
         },
         "uptime_s": int(time.time() - _START_TIME),
     }
+
+
+def gc_benchmarks_status(run: bool = False):
+    """A1 · GC 整芯片对照（golden_product_benchmarks：5 GP + 20 GC）。
+
+    run=False 返回元数据（快，零计算）；run=True 现场真跑 25/25（~2.5s，
+    用户显式点击才触发）。数据源 = lda_l2.golden_product_benchmarks
+    已验证库，不在此重写任何验证逻辑（LLM 不进判决路径）。
+    """
+    from lda_l2.golden_product_benchmarks import (
+        DEFAULT_CHIP_BENCHMARKS, evaluate_all,
+    )
+    rows = []
+    for c in DEFAULT_CHIP_BENCHMARKS:
+        rows.append({
+            "chip_id": c.chip_id,
+            "chip_type": (c.chip_type or "")[:120],
+            "domain": c.domain,
+            "system_type": c.system_type,
+            "source_kind": c.source_kind,
+            "source_ref": (c.source_ref or "")[:160],
+            "metrics": [{"name": m.name, "golden": m.golden, "tol": m.tol,
+                         "unit": m.unit, "direction": m.direction,
+                         "note": (m.note or "")[:100]} for m in c.metrics],
+            "honest_note": (c.honest_note or "")[:200],
+        })
+    out = {"count": len(rows), "rows": rows,
+           "honest_banner": "golden 均来自可溯源公开规格（IEEE/ITU-T/商用 datasheet/公开文献实测）；"
+                            "等效对标非本团队流片/实测。"}
+    if run:
+        res = evaluate_all()
+        out["run"] = {
+            "passed": sum(1 for r in res if r.get("passed_all")),
+            "total": len(res),
+            "per_item": [{"id": r.get("product_id"),
+                          "passed": bool(r.get("passed_all"))}
+                         for r in res],
+        }
+    return out
+
+
+def shelf_status():
+    """A2 · 创新超市货架元数据（20 条，快，零计算）。"""
+    from lda_l2.innovation_market import DEFAULT_SHELF
+    rows = []
+    for s in DEFAULT_SHELF:
+        rows.append({
+            "id": s.id, "title": s.title,
+            "target_app": (s.target_app or "")[:120],
+            "signal_ref": (s.signal_ref or "")[:160],
+            "domain": s.domain, "system_type": s.system_type,
+            "composition": list(s.composition),
+            "default_req": s.default_req,
+            "honest_tier": s.honest_tier,
+        })
+    return {"count": len(rows), "rows": rows,
+            "honest_tier": "全部为前瞻预研货架：组合已锚定基元（GP-*）+ 公开信号驱动，未流片。"}
+
+
+def shelf_evaluate(payload):
+    """A2 · 单条货架现场评估（真跑 design_pipeline ~0.2s，点击才触发）。"""
+    from lda_l2.innovation_market import DEFAULT_SHELF
+    sid = (payload or {}).get("id") or (payload or {}).get("shelf_id") or ""
+    for s in DEFAULT_SHELF:
+        if s.id == sid:
+            r = s.evaluate()
+            return {"id": sid,
+                    "verdict": "PASS" if r.get("feasible") else "FAIL",
+                    "feasible": r.get("feasible"),
+                    "n_accepted": r.get("n_accepted"),
+                    "summary": str(r.get("summary", ""))[:200],
+                    "screening": r.get("screening", {})}
+    return {"error": f"货架 {sid} 不存在"}
+
+
+def scale_demo_status():
+    """A3 · 规模能力现场演示（1k/4k/32k 全链耗时，总 ~1.1s）。"""
+    from lda_harness.scale_anchor import run_scale_pipeline
+    points = []
+    prev = None
+    for n in (1000, 4000, 32000):
+        t0 = time.time()
+        r = run_scale_pipeline(n_devices=n)
+        dt = r.get("time_total_s", time.time() - t0)
+        points.append({
+            "n": n,
+            "total_s": round(dt, 3),
+            "lvs_s": round(r.get("time_lvs_s", 0), 3),
+            "build_s": round(r.get("time_build_s", 0), 3),
+            "verdict": r.get("verdict"),
+            "wall_s": round(time.time() - t0, 3),
+            "scale_x": round(dt / prev, 2) if prev else None,
+        })
+        prev = dt
+    return {"points": points,
+            "note": "构建+放置+布线+LVS 全链；32k 器件亚秒（v0.8.40 后近线性）。"}
 
 
 def ecosystem_status():
@@ -2359,6 +2455,15 @@ class Handler(BaseHTTPRequestHandler):
             p = os.path.join(WEBUI_DIR, "static", "index.html")
             with open(p, "rb") as f:
                 self._send(200, body=f.read(), ctype="text/html")
+        elif path.endswith(".html"):
+            # 静态展示页（白名单，防路径穿越）
+            name = os.path.basename(path)
+            p = os.path.join(WEBUI_DIR, "static", name)
+            if name in ("index.html", "insights.html") and os.path.exists(p):
+                with open(p, "rb") as f:
+                    self._send(200, body=f.read(), ctype="text/html")
+            else:
+                self._send(404, {"error": "not found"})
         elif path == "/api/status":
             self._send(200, system_status())
         elif path == "/api/health":
@@ -2387,6 +2492,14 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:  # noqa: BLE001
                 self._send(200, {"engine": [], "package": [],
                                 "error": str(e)[:120]})
+        elif path == "/api/gc_benchmarks":
+            from urllib.parse import parse_qs, urlparse
+            q = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
+            self._send(200, gc_benchmarks_status(run=q.get("run") == "1"))
+        elif path == "/api/shelf":
+            self._send(200, shelf_status())
+        elif path == "/api/scale_demo":
+            self._send(200, scale_demo_status())
         elif path == "/api/benchmark_crosscheck":
             # v0.8.11f 基准对照验证闭环（20 引擎 + 9 语料 + ORACLE，quick 秒级）
             try:
@@ -2447,6 +2560,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path == "/api/verify":
                 self._send(200, run_verify(payload))
+            elif path == "/api/shelf/evaluate":
+                self._send(200, shelf_evaluate(payload))
             elif path == "/api/proposal_design":
                 self._send(200, run_proposal_design(payload))
             elif path == "/api/agent_loop":

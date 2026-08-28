@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.43（2026-08-28 · WebUI 能力展示层：GC 对照 / 创新超市 / 规模现场实测）
+- 新增 4 个 API（零依赖，数据源复用已验证库，不重写判决逻辑）：
+  - `GET /api/gc_benchmarks` — 20 条 GC 整芯片对标元数据（golden/来源/指标），`?run=1` 现场跑 25/25
+  - `GET /api/shelf` — 20 条创新超市货架元数据（组合/信号源/honest_tier）
+  - `POST /api/shelf/evaluate` — 单条货架现场评估（真跑 design_pipeline ~0.2s，点击才触发，LLM 不进判决）
+  - `GET /api/scale_demo` — 规模能力现场实测（1k/4k/32k 全链耗时+缩放比，32k 亚秒活演示）
+- 新增 `static/insights.html` 能力展示页（深色主题与主控制台一致）：GC 对照表 + 货架卡片评估 + 规模柱状图，index.html 顶部加入口
+- 路由安全：静态页白名单（防路径穿越，`..%2f` 探测 404）
+- 修复 health 过期注释（题库 45→46）；index 统计卡「锚覆盖 S1-S12」
+- **CI 超时根治**：`run_ci_regression` 增 `timeout_override` + 内置 special-case——`run_ci_industrial_smoke` 实测需 336.58s（内部子回归+greens），全局 300s 时限过紧致偶发 TIMEOUT，单独放宽至 600s
+- 路由冒烟 63 实跑 PASS + 57 静态 INFO 全绿；CI core 维持 68 条
+
 ## v0.8.42（2026-08-28 · S2 纵深三连：拥塞估计 + 算力实测 + 阵列统计锚）
 
 **② 布线拥塞估计**（`lda_layout/congestion.py` 新增）：

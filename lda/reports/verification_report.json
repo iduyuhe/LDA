@@ -4,7 +4,7 @@
     "candidate": "ReferenceCandidate",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）"
   },
-  "generated_at": "2026-08-28T10:27:28",
+  "generated_at": "2026-08-28T11:10:40",
   "summary": {
     "total": 46,
     "passed": 46

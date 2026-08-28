@@ -165,8 +165,16 @@ def _run_one(python: str, script: str, timeout: float) -> Dict[str, Any]:
 
 def run_ci_regression(python: Optional[str] = None, tag: str = "all",
                       timeout: float = 300.0, fail_fast: bool = False,
-                      exclude: Optional[List[str]] = None) -> Dict[str, Any]:
-    """全量/核心回归。返回 {results, summary, acceptance, verdict}。"""
+                      exclude: Optional[List[str]] = None,
+                      timeout_override: Optional[Dict[str, float]] = None
+                      ) -> Dict[str, Any]:
+    """全量/核心回归。返回 {results, summary, acceptance, verdict}。
+
+    timeout_override：per-script 超时覆盖（{脚本名: 秒}）——供特殊重 smoke
+    单独放宽时限（如 run_ci_industrial_smoke 内部含子回归+greens 基准，
+    约 300-315s 浮动，全局 300s 常顶到边界；覆盖 600s 根治偶发抖动，
+    不掩盖其它 smoke 的真实超时）。
+    """
     python = python or sys.executable
     if tag == "core":
         scripts = [s for s in CORE_SMOKES
@@ -175,11 +183,16 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
         scripts = _discover_all()
     exclude = set(exclude or [])
     scripts = [s for s in scripts if s not in exclude]
+    overrides = timeout_override or {}
 
     results: List[Dict[str, Any]] = []
     t_total0 = time.perf_counter()
     for s in scripts:
-        r = _run_one(python, s, timeout)
+        # run_ci_industrial_smoke 内部含子回归+greens 基准（~300-315s 浮动），
+        # 内置放宽至 600s 根治偶发 TIMEOUT；其余 smoke 用全局 timeout。
+        to = overrides.get(
+            s, 600.0 if s == "run_ci_industrial_smoke.py" else timeout)
+        r = _run_one(python, s, to)
         results.append(r)
         print(f"  [{r['status']:<6}] {r['script']}  ({r['elapsed_s']}s)")
         if fail_fast and r["status"] in ("FAIL", "ERROR", "TIMEOUT"):

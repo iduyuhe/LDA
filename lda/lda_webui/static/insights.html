@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LDA · 能力展示（GC 对照 / 创新超市 / 规模）</title>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#141b2e; --panel2:#1b2440; --line:#26304d;
+    --txt:#e6edf7; --mut:#8aa0c6; --accent:#38bdf8; --accent2:#3b82f6;
+    --green:#22c55e; --red:#ef4444; --amber:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.6}
+  .top{display:flex;align-items:center;gap:18px;padding:14px 28px;background:var(--panel);border-bottom:1px solid var(--line)}
+  .top h1{font-size:16px;font-weight:500;color:var(--accent);margin:0}
+  .top a{color:var(--mut);text-decoration:none;font-size:13px}
+  .top a:hover{color:var(--accent)}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 28px 60px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin-bottom:24px}
+  .card h2{font-size:15px;font-weight:500;color:var(--accent);margin:0 0 4px}
+  .card .sub{color:var(--mut);font-size:12px;margin-bottom:14px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{background:var(--panel2);color:var(--accent);text-align:left;padding:7px 10px;font-weight:500;white-space:nowrap}
+  td{padding:7px 10px;border-top:1px solid var(--line);vertical-align:top}
+  tr:hover td{background:rgba(56,189,248,.05)}
+  .btn{border:1px solid var(--accent2);background:transparent;color:var(--accent);border-radius:6px;padding:5px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+  .btn:hover{background:rgba(59,130,246,.15)}
+  .btn:disabled{opacity:.5;cursor:wait}
+  .tag{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:0 6px;font-size:11.5px;color:var(--mut);margin-right:4px}
+  .stat{display:inline-block;margin-left:16px;font-size:13px;color:var(--mut)}
+  .stat b{font-size:20px;font-weight:500;color:var(--green)}
+  .ok{color:var(--green)} .no{color:var(--red)}
+  .pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11.5px;margin-right:6px}
+  .pill.p{background:rgba(34,197,94,.12);color:var(--green)}
+  .pill.q{background:rgba(56,189,248,.12);color:var(--accent)}
+  .shelf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  .shelf{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .shelf h3{font-size:13.5px;font-weight:500;margin:0 0 4px;color:var(--txt)}
+  .shelf .app{color:var(--mut);font-size:12px;margin-bottom:6px}
+  .shelf .meta{font-size:11.5px;color:var(--mut);margin:6px 0 8px}
+  .ev{font-size:12px;margin-top:8px;min-height:18px;color:var(--mut)}
+  .bar-wrap{display:flex;align-items:flex-end;gap:28px;margin-top:16px;padding:0 8px}
+  .bar-col{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .bar{width:64px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--accent),var(--accent2));transition:height .4s}
+  .bar b{font-size:12.5px;font-weight:500;color:var(--accent)}
+  .bar .cap{color:var(--mut);font-size:11.5px}
+  .note{color:var(--mut);font-size:12px;margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+  .foot{background:rgba(245,158,11,.08);border-color:#5b4a1e}
+  .foot .sub{color:var(--amber)}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<h2 class="sr-only">LDA 能力展示：20 条整芯片对标、20 条创新超市货架、万级规模现场实测</h2>
+<div class="top">
+  <h1>LDA · 能力展示</h1>
+  <a href="/">← 返回验证内核控制台</a>
+</div>
+<div class="wrap">
+
+  <div class="card">
+    <h2>① 整芯片级对标库（GC-* · 20 条）</h2>
+    <div class="sub">golden 全部来自可溯源公开规格（IEEE 802.3bs / ITU-T G.671 / 商用 datasheet / 公开文献实测）；等效对标非本团队流片。</div>
+    <div style="margin-bottom:12px">
+      <button class="btn" id="gcRun" onclick="runGC()">现场跑 25/25 对照</button>
+      <span class="stat" id="gcStat" style="display:none"></span>
+    </div>
+    <div style="overflow:auto;max-height:540px"><table id="gcTable"></table></div>
+  </div>
+
+  <div class="card">
+    <h2>② 创新超市货架（20 条 · 前瞻预研）</h2>
+    <div class="sub">每条货架 = 已锚定基元（GP-*）组合 + 公开信号驱动；点击「评估」现场跑 design_pipeline 死标量判决（LLM 不进判决路径）。</div>
+    <div class="shelf-grid" id="shelfGrid"></div>
+  </div>
+
+  <div class="card">
+    <h2>③ 万级规模能力（现场实测）</h2>
+    <div class="sub">构建 + 放置 + 布线 + LVS 全链；v0.8.40 后近线性——32k 器件全链亚秒。</div>
+    <button class="btn" id="scRun" onclick="runScale()">现场跑规模演示（1k / 4k / 32k）</button>
+    <div id="scArea" style="display:none">
+      <table id="scTable" style="margin-top:14px"></table>
+      <div class="bar-wrap" id="scBar"></div>
+    </div>
+  </div>
+
+  <div class="card foot">
+    <div class="sub" style="margin:0">红线声明：LLM 不进判决路径 · 全部死标量比对 · 判决一致性铁证（零漏报零误报）· 零新物理。真实 PDK / 流片 / 封装测试属发动期（C 锁死），本页展示为等效对标与前瞻预研。</div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){return document.getElementById(id)};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+function load(){
+  fetch('/api/gc_benchmarks').then(function(r){return r.json()}).then(function(d){
+    var h='<tr><th>chip_id</th><th>类型</th><th>域</th><th>指标（golden±tol · 方向）</th><th>来源</th></tr>';
+    d.rows.forEach(function(c){
+      var m=c.metrics.map(function(x){return esc(x.name)+' <b>'+x.golden+'</b>±'+x.tol+' '+(x.direction==='ge'?'≥':'≤')}).join('<br>');
+      h+='<tr><td style="white-space:nowrap"><span class="pill '+c.domain+'" style="display:none"></span>'+esc(c.chip_id)+
+         '<br><span style="color:var(--mut);font-size:11px">'+esc(c.domain)+' · '+esc(c.system_type)+'</span></td>'+
+         '<td>'+esc(c.chip_type)+'</td><td>'+esc(c.domain)+'</td><td>'+m+'</td><td style="color:var(--mut);max-width:260px">'+esc(c.source_ref)+'</td></tr>';
+    });
+    $('gcTable').innerHTML=h;
+    window._gcRows=d.rows;
+  });
+  fetch('/api/shelf').then(function(r){return r.json()}).then(function(d){
+    var h='';
+    d.rows.forEach(function(s){
+      var comp=s.composition.map(function(x){return '<span class="tag">'+esc(x)+'</span>'}).join('');
+      h+='<div class="shelf"><h3>'+esc(s.id)+'</h3>'+
+         '<div class="app">'+esc(s.title)+'</div>'+
+         '<div class="meta">'+esc(s.domain)+' · '+esc(s.system_type)+' · '+esc(s.honest_tier)+'</div>'+
+         '<div>'+comp+'</div>'+
+         '<button class="btn" style="margin-top:10px;font-size:12px;padding:3px 10px" onclick="evalShelf(\''+esc(s.id)+'\',this)">评估</button>'+
+         '<div class="ev" id="ev-'+esc(s.id)+'"></div></div>';
+    });
+    $('shelfGrid').innerHTML=h;
+  });
+}
+
+function runGC(){
+  var b=$('gcRun'); b.disabled=true; b.textContent='运行中…';
+  fetch('/api/gc_benchmarks?run=1').then(function(r){return r.json()}).then(function(d){
+    var st=d.run, ok=st.passed===st.total;
+    $('gcStat').style.display='inline-block';
+    $('gcStat').innerHTML='<b style="color:'+(ok?'var(--green)':'var(--red)')+'">'+st.passed+'/'+st.total+'</b> PASS（'+esc(ok?'全绿':'有失败')+'）';
+    window._gcRun=st.per_item;
+    var rows=$('gcTable').querySelectorAll('tr');
+    for(var i=1;i<rows.length;i++){
+      var cell=rows[i].cells[0];
+      if(!cell) continue;
+      var id=cell.textContent.split('\n')[0].trim();
+      var item=null;
+      st.per_item.forEach(function(p){ if(p.id===id) item=p; });
+      if(item){ var s=document.createElement('span'); s.style.cssText='font-size:11px;margin-left:6px';
+        s.className=item.passed?'ok':'no'; s.textContent=item.passed?'PASS':'FAIL'; cell.appendChild(s); }
+    }
+    b.disabled=false; b.textContent='重新现场跑';
+  }).catch(function(e){ b.disabled=false; b.textContent='现场跑'; alert('失败: '+e); });
+}
+
+function evalShelf(id,btn){
+  btn.disabled=true; btn.textContent='评估中…';
+  var ev=$('ev-'+id);
+  ev.textContent='运行 design_pipeline 判决…';
+  fetch('/api/shelf/evaluate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})})
+    .then(function(r){return r.json()}).then(function(d){
+      ev.innerHTML='<span class="'+(d.verdict==='PASS'?'ok':'no')+'"><b>'+esc(d.verdict)+'</b></span> · '+esc(d.summary||d.error||'');
+      btn.disabled=false; btn.textContent='评估';
+    }).catch(function(e){ ev.textContent='失败: '+e; btn.disabled=false; btn.textContent='评估'; });
+}
+
+function runScale(){
+  var b=$('scRun'); b.disabled=true; b.textContent='运行中…';
+  fetch('/api/scale_demo').then(function(r){return r.json()}).then(function(d){
+    $('scArea').style.display='block';
+    var h='<tr><th>器件规模</th><th>全链耗时 (s)</th><th>其中 LVS (s)</th><th>缩放比</th><th>判决</th></tr>';
+    var max=0; d.points.forEach(function(p){ if(p.total_s>max) max=p.total_s; });
+    var bars='';
+    d.points.forEach(function(p){
+      h+='<tr><td>'+p.n+' 器件</td><td><b style="color:var(--accent)">'+p.total_s+'</b></td><td>'+p.lvs_s+'</td>'+
+         '<td>'+(p.scale_x?p.scale_x+'×':'基准')+'</td><td class="ok">'+esc(p.verdict)+'</td></tr>';
+      bars+='<div class="bar-col"><div class="bar" style="height:'+Math.max(6,Math.round(p.total_s/max*110))+'px"></div>'+
+            '<b>'+p.n+'</b><span class="cap">'+p.total_s+'s</span></div>';
+    });
+    $('scTable').innerHTML=h;
+    $('scBar').innerHTML=bars;
+    b.disabled=false; b.textContent='重新现场跑';
+  }).catch(function(e){ b.disabled=false; b.textContent='现场跑'; alert('失败: '+e); });
+}
+
+load();
+</script>
+</body>
+</html>

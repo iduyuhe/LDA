@@ -2186,8 +2186,9 @@ def gc_benchmarks_status(run: bool = False):
 
 
 def shelf_status():
-    """A2 · 创新超市货架元数据（20 条，快，零计算）。"""
+    """A2 · 创新超市货架元数据（快，零计算）。"""
     from lda_l2.innovation_market import DEFAULT_SHELF
+    from lda_l2.ship_package import is_download_open
     rows = []
     for s in DEFAULT_SHELF:
         rows.append({
@@ -2198,6 +2199,7 @@ def shelf_status():
             "composition": list(s.composition),
             "default_req": s.default_req,
             "honest_tier": s.honest_tier,
+            "open": is_download_open(s.id),
         })
     return {"count": len(rows), "rows": rows,
             "honest_tier": "全部为前瞻预研货架：组合已锚定基元（GP-*）+ 公开信号驱动，未流片。"}
@@ -2668,7 +2670,7 @@ class Handler(BaseHTTPRequestHandler):
             parts = path.split("/")
             sid = parts[3]
             sub = parts[4] if len(parts) > 4 else ""
-            if not re.match(r"^[A-Za-z0-9_-]+$", sid):
+            if not re.match(r"^[A-Za-z0-9_.-]+$", sid):
                 self._send(404, {"error": "invalid shelf id"})
             elif sub == "package":
                 from lda_l2.ship_package import package_info

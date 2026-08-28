@@ -58,8 +58,23 @@ GENERATED_NOTE = (
     " + 死锚仿真比对。非 foundry 认证版、非本团队流片。"
 )
 
-# 阶段1 MVP 开放下载白名单（试点货架）。后续放开只需往此集合加货架 id。
-OPEN_SHELVES = {"IM-PSM4-SHELF", "IM-CWDM4-SHELF", "IM-FR4-SHELF"}
+# 阶段1 开放下载白名单（光子主流方向全量开放，覆盖预研企业最密集需求面）。
+# 量子相关（QKD×3 + 量子保真度链×5）因出口管制合规红线 + 受众小，暂列「咨询制/即将开放」，不进自动下载白名单。
+# 依据：docs/store_launch/04_market_analysis.md。后续放开只需往此集合加货架 id。
+OPEN_SHELVES = {
+    # 高速收发
+    "IM-1.6T-DR8", "IM-800G-DR8", "IM-PSM4-SHELF", "IM-FR4-SHELF", "IM-CWDM4-SHELF", "IM-LPO-112G",
+    # WDM 解复用
+    "IM-WDM-8CH-1D", "IM-DWDM-40CH",
+    # CPO / OCS
+    "IM-CPO-WDM5", "IM-CPO-OCS",
+    # 接入网
+    "IM-FTTH-PLC8", "IM-FTTH-PLC16",
+    # 传感
+    "IM-SENSE-RING", "IM-SENS-MZI", "IM-LIDAR-TX",
+    # 先进封装 / 异质集成
+    "IM-CHIPLET-IO", "IM-LASER-INT",
+}
 
 
 def is_download_open(sid: str) -> bool:

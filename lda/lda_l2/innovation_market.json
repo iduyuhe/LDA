@@ -559,5 +559,26 @@
     "honest_tier": "前瞻预研",
     "design_note": "LPO 线性直驱前端 = 光栅 + SiN 波导（去 DSP 后链路裕度收窄，链路预算锚 S1/S2/S5/S7 死标量判决）；无量级新物理，复用已锚定基元。对标公开 LPO 链路预算量级。",
     "ci_status": ""
+  },
+  {
+    "id": "IM-1.6T-DR8",
+    "title": "1.6T DR8 硅光发射引擎预设计（16×100G PAM4）",
+    "target_app": "1.6T DR8 数据中心光模块、AI 集群 scale-out 互连（16×100G PAM4）",
+    "signal_ref": "1.6T DR8（16×100G PAM4）公开产业路线（OIF / 光模块厂商 1.6T DR8 MSA 量级）：单通道 100G PAM4，链路预算与 800G DR8 同源、通道翻倍",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL",
+      "GP-CROSSING"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 1.0,
+      "link_budget_db": 4.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "1.6T DR8 = 800G DR8 的 16 通道扩展（composition 同源 GP-*），复用已锚定无源网 + 光栅耦合死标量；无量级新物理。对标公开 1.6T DR8 链路预算量级。",
+    "ci_status": ""
   }
 ]

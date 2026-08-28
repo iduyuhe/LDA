@@ -121,17 +121,20 @@ function load(){
     var h='';
     d.rows.forEach(function(s){
       var comp=s.composition.map(function(x){return '<span class="tag">'+esc(x)+'</span>'}).join('');
+      var dlUI = s.open
+        ? ('<input id="tok-'+esc(s.id)+'" placeholder="兑换码" style="width:120px;font-size:12px;padding:3px 6px;background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:6px">'+
+           '<button class="btn" style="font-size:12px;padding:3px 10px" onclick="downloadShelf(\''+esc(s.id)+'\',this)">下载设计包</button>'+
+           '<span id="dl-'+esc(s.id)+'"></span>')
+        : ('<span class="tag" style="background:var(--bg);color:var(--mut);border:1px solid var(--line);padding:3px 8px;border-radius:6px">即将开放 · 咨询制</span>'+
+           '<span id="dl-'+esc(s.id)+'"></span>');
       h+='<div class="shelf"><h3>'+esc(s.id)+'</h3>'+
          '<div class="app">'+esc(s.title)+'</div>'+
-         '<div class="meta">'+esc(s.domain)+' · '+esc(s.system_type)+' · '+esc(s.honest_tier)+'</div>'+
+         '<div class="meta">'+esc(s.domain)+' · '+esc(s.system_type)+' · '+esc(s.honest_tier)+(s.open?'':' · 咨询制')+'</div>'+
          '<div>'+comp+'</div>'+
          '<button class="btn" style="margin-top:10px;font-size:12px;padding:3px 10px" onclick="evalShelf(\''+esc(s.id)+'\',this)">评估</button>'+
          '<div class="ev" id="ev-'+esc(s.id)+'"></div>'+
-         '<div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+
-           '<input id="tok-'+esc(s.id)+'" placeholder="兑换码" style="width:120px;font-size:12px;padding:3px 6px;background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:6px">'+
-           '<button class="btn" style="font-size:12px;padding:3px 10px" onclick="downloadShelf(\''+esc(s.id)+'\',this)">下载设计包</button>'+
-           '<span id="dl-'+esc(s.id)+'"></span></div>'+
-         '<div class="meta" style="margin-top:4px;font-size:11px">免费看（货架元数据）· 付费下（设计就绪包：GDS+网表+DRC+死锚报告）</div></div>';
+         '<div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+dlUI+'</div>'+
+         '<div class="meta" style="margin-top:4px;font-size:11px">免费看（货架元数据）'+(s.open?' · 付费下（设计就绪包：GDS+网表+DRC+死锚报告）':' · 量子类设计包暂为咨询制，开放下载前需合规评估')+'</div></div>';
     });
     $('shelfGrid').innerHTML=h;
   });

@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.8.47（2026-08-28 · 扩货架 + 市场分析：开放 17 光子货架、量子 8 咨询制）
+- 货架 24→25：新增 `IM-1.6T-DR8`（16×100G PAM4，composition⊆GP-*，贴合 1.6T 渗透趋势）。
+- 开放下载白名单 `OPEN_SHELVES` 3→17（光子主流全量：1.6T DR8/800G DR8/PSM4/FR4/CWDM4/LPO-112G/WDM 8CH/DWDM 40CH/CPO WDM5·OCS/FTTH PLC 8-16/传感 RING·MZI·LIDAR/光 chiplet IO/激光集成）。
+- 量子 8 个（QKD×3 + 量子保真度链×5）列「咨询制」，不进自动下载白名单（出口管制合规红线 + 受众小），待 C 阶段真实量子 PDK 外联后升级。
+- 新增 `docs/store_launch/04_market_analysis.md`：硅光/CPO/高速收发/量子市场趋势、客户痛点（商业 EDA $15k–$500k/年）、竞争格局与差异化、定价印证。
+- `/api/shelf` 主端点加 `open` 字段；前端货架卡片按 `open` 区分「下载设计包」（开放）vs「即将开放·咨询制」（量子），避免冷冰冰 403。
+- 修复路由正则：货架 id 含点号（如 `IM-1.6T-DR8`）被 `[A-Za-z0-9_-]+` 误判 invalid → 改为 `[A-Za-z0-9_.-]+`。
+- 重新生成 `innovation_market.json`（25 货架含 1.6T）；CI core 维持 69（新增货架不涉 ENGINE/PACKAGE/BENCHMARK 计数）。
+
 ## v0.8.46（2026-08-28 · 工厂+商店化：货架→设计就绪包 + 下载授权闭环）
 - **设计商店化（阶段1 MVP）**：新增 `lda/lda_l2/ship_package.py`，由货架 composition（已锚定 GP-*）生成「设计就绪包」zip——真实组件库 GDS（geometry_desc 几何）、逐器件 DRC（drc_check_device 死标量）、ShelfItem.evaluate() 死锚仿真报告、SPICE 网表、工艺角说明、诚实声明（HONESTY.md）、设计授权协议（LICENSE.md）。诚实分层：design_ready（预研级设计交付），**非 foundry 认证、非本团队流片**。
 - **WebUI 下载端点 + 兑换码授权**：新增 `GET /api/shelf/{id}/package`（包信息，免费看）与 `GET /api/shelf/{id}/download?token=`（兑换码校验 + 限次 + 路径白名单防穿越 + 附件下载）；`ship_package.py` 提供 mint_license / verify_license / consume_license（dist/licenses.json，不入 git）。

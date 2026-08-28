@@ -1,7 +1,7 @@
 # LDA 创新超市（Innovation Marketplace）· 前瞻预研货架目录
 
 > 生成口径：每个货架 = 已锚定基元（产品级基准库 GP-*）+ 公开信号驱动的**前瞻预研**预设计。
-> **48/48 货架通过结构可行 + 系统预算不破检查**。
+> **53/53 货架通过结构可行 + 系统预算不破检查**。
 
 **诚实边界（红线下护栏）**：
 > 创新超市货架为**前瞻预研**预设计：组合已锚定基元（产品级基准库 GP-*）+ 公开信号驱动（行业 roadmap / 标准草案 / 厂商公开动向）。属等效验证（复用已锚定基元 + 系统预算不破），**非本团队流片验证**、**非对未来的承诺**。信号源可溯源；判决复用 system_type 已验证闭环，LLM 不进判决路径。
@@ -61,6 +61,11 @@
 | IM-ONCHIP-NOC | 片上光网络（ONoC）路由前端预设计（chiplet 光互连 fabric） | AI 加速器/CPU-GPU chiplet 片上光互连、低能耗高带宽 NoC 路由网格 | link | GP-CROSSING, GP-YBRANCH, GP-MMI-1X2, GP-SIN-PL | OK |
 | IM-MCF-FANOUT | 多芯光纤扇出（MCF Fan-out）前端预设计（空分复用 SDM 过渡） | 多芯光纤（SDM）到单芯设备的无源扇出/扇入、AI 数据中心高密度互连 | link | GP-GRATING-EFF, GP-YBRANCH, GP-SIN-PL | OK |
 | IM-OPTICAL-GYRO | 光纤陀螺（FOG/Sagnac 干涉仪）前端预设计（高精度角速率传感） | 干涉型光纤陀螺 Sagnac 干涉前端、惯性导航/无人机/船舶 AHRS 角速率传感 | link | GP-GRATING-EFF, GP-CROSSING, GP-YBRANCH, GP-SIN-PL | OK |
+| IM-MRR-FILTER | 微环谐振滤波器（可重构光滤波 / add-drop）前端预设计 | WDM 灵活栅格信道选择、ROADM 滤波、相干收发器波长滤波、微波光子窄带滤波 | link | GP-GRATING-EFF, GP-MMI-1X2, GP-SIN-PL | OK |
+| IM-SPLITTER-TREE | 1×N 功分树（PLC 功分网络）前端预设计 | FTTH/FTTR 光分路、数据中心 fan-out、PON ODN 功率均分 | link | GP-YBRANCH, GP-MMI-1X2, GP-SIN-PL | OK |
+| IM-TRUE-TIME-DELAY | 微波光子真延时（TTD）波束成形网络前端预设计 | 5G-A/6G 基站波束成形、相控阵雷达、卫星通信 TTD 延时网络 | link | GP-SIN-PL, GP-YBRANCH, GP-CROSSING | OK |
+| IM-GAS-SENSE | 波导气体/吸收光谱传感前端预设计（SiN 宽波段） | 环境 VOC/温室气体监测、医疗呼气诊断、工业排放多 analyte 检测 | link | GP-SIN-PL, GP-GRATING-EFF, GP-YBRANCH | OK |
+| IM-GRATING-COUPLE | 光栅耦合阵列 / 光纤贴装接口前端预设计（CPO 光 IO） | 硅光芯片-光纤阵列耦合、CPO 片上级联光 IO、多通道高密度封装接口 | link | GP-GRATING-EFF, GP-SIN-PL | OK |
 
 ## 货架设计说明（诚实标注）
 
@@ -112,6 +117,11 @@
 - **IM-ONCHIP-NOC**：ONoC 前端 = 交叉矩阵（路由） + Y 分支功分 + 1×2 MMI + SiN 波导 fabric；调制/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开片上光互连量级。
 - **IM-MCF-FANOUT**：MCF 扇出前端 = 光栅耦合阵列（多芯入） + Y 分支扇出到单芯 + SiN 波导；多芯对准按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 MCF 扇出量级。
 - **IM-OPTICAL-GYRO**：FOG 前端 = 光栅耦合 + 交叉环形（Sagnac 环） + Y 分支分/合 + SiN 波导；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光纤陀螺量级。
+- **IM-MRR-FILTER**：微环滤波前端 = 光栅耦合进/出 + 1×2 MMI 总线分光 + SiN 波导环形谐振（调谐/探测按黑箱，有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开微环滤波器量级。
+- **IM-SPLITTER-TREE**：功分树前端 = Y 分支级联 + 1×2 MMI 均分 + SiN 波导；纯无源功率分配（调制/探测按黑箱）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开功分器量级。
+- **IM-TRUE-TIME-DELAY**：TTD 前端 = 长 SiN 波导延迟线（不同长度阶梯） + Y 分支选择 + 交叉布线；RF 调制/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开微波光子 TTD 量级。
+- **IM-GAS-SENSE**：气体传感前端 = SiN 长波导吸收臂 + 光栅耦合进/出 + Y 分支参考/样品臂；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开波导气体传感量级。
+- **IM-GRATING-COUPLE**：光栅耦合阵列前端 = 高效光栅耦合器（GP-GRATING-EFF 核心） + SiN 波导引出；光纤阵列对准/封装按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光栅耦合量级。
 
 ## 信号来源（可溯源）
 
@@ -163,6 +173,11 @@
 - **IM-ONCHIP-NOC** · 片上光网络（ONoC）路由前端预设计（chiplet 光互连 fabric）：Chiplet 互连光子市场 $1.8B(2025)→$52.1B(2034) CAGR 38.5%（Market Intelo）；光互连 $13.69B(2025)→$15.28B(2026) CAGR 11.6%→$23.54B(2030)；Ayar TeraPHY（UCIe 光 chiplet 8Tbps）、Intel 光 I/O 4Tbps/5pJ/bit。
 - **IM-MCF-FANOUT** · 多芯光纤扇出（MCF Fan-out）前端预设计（空分复用 SDM 过渡）：MCF Fanouts 市场 $640M(2025)→$1.25B(2032) CAGR 11.8%（Strategic Market Research）；窄口径 $87.5M(2025)→$504.85M(2032) CAGR 28.45%；OFC 2026 SDM4 MCF MSA（Corning/AFL/Sumitomo）4 芯；TPU 首条商用 MCF（2025-2026）。
 - **IM-OPTICAL-GYRO** · 光纤陀螺（FOG/Sagnac 干涉仪）前端预设计（高精度角速率传感）：FOG 市场 $1.2B(2026)→$2.0B(2033) CAGR 7.5%（Persistence）；或 $1.96B(2025)→$4.60B(2034) CAGR 9.93%；干涉型 FOG（Sagnac 效应）占 78%（2026）；GNSS 拒止环境 + 国防现代化驱动。
+- **IM-MRR-FILTER** · 微环谐振滤波器（可重构光滤波 / add-drop）前端预设计：Silicon Microring Resonators 市场 $450M(2025)→$1.66B(2032) CAGR 20.5%（PMarketResearch）；Microring Filter Array $41.58M(2025)→$245M(2032) CAGR 27.8%（MarketPublishers）；add-drop 型占 55.5%(2025)；AI 集群 DWDM/CPO 推升阵列化需求。
+- **IM-SPLITTER-TREE** · 1×N 功分树（PLC 功分网络）前端预设计：PLC Splitter 市场 $2.8B(2025)→$5.6B(2034) CAGR 8.1%（Dataintelo）；1×N 型占 62.4%(2025)；全球光分路器 $1.28B(2026)→$1.94B(2030) CAGR 8.7%（IIM）；XGS-PON/FTTR 推升 1×32 及以上高通道数需求。
+- **IM-TRUE-TIME-DELAY** · 微波光子真延时（TTD）波束成形网络前端预设计：Phased Array Antenna 市场 $3.90B(2026)→$8.38B(2034) CAGR 10.04%（ValueMarketResearch）；相控阵天线系统 2025 $18.7B→2030 $38.5B CAGR 12.8%（IIM）；微波光子真延时用于相控阵雷达波束赋形，电子移相器无法复制。
+- **IM-GAS-SENSE** · 波导气体/吸收光谱传感前端预设计（SiN 宽波段）：SiN PIC 市场 $320M(2025)→$1113.58M(2032) CAGR 19.5%（PW Consulting）；SiN 宽透明窗口（可见-中红外）适合分子指纹吸收；VOC 片上中红外检测灵敏度较 Si 提升 5×（TAMU 2022）；环境/医疗光子传感需求增长。
+- **IM-GRATING-COUPLE** · 光栅耦合阵列 / 光纤贴装接口前端预设计（CPO 光 IO）：Grating Coupler Array 市场 $1.45B(2024)→$3.07B(2033) CAGR 8.7%（GrowthMarketReports）；Grating Coupler 2025 APAC $0.31B 占 36.5%，耦合效率 >90%；CPO 共封装光学（Azure/Google/AWS）从试点转向早期量产，结构性拉动。
 
 ---
 _LDA · 开源 Agent-native EDA（光子 PDA + 量子 QEDA）· 物理定律锚红线 · LLM 不进判决路径_

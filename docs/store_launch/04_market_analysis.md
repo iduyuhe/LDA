@@ -43,8 +43,13 @@
 | 片上光互连 | 光网络 NoC / 芯片光 I/O（IM-ONCHIP-NOC） | Chiplet 互连光子 $1.8B(2025)→$52.1B(2034) CAGR 38.5%；光互连 $13.69B→$15.28B(2026) CAGR 11.6%→$23.54B(2030)；Ayar TeraPHY 8Tbps、Intel 光 I/O 4Tbps/5pJ/bit |
 | 空分复用 | 多芯光纤扇出（IM-MCF-FANOUT） | MCF Fanouts $640M(2025)→$1.25B(2032) CAGR 11.8%；OFC 2026 SDM4 MCF MSA（Corning/AFL/Sumitomo）4 芯；TPU 首条商用 MCF 2025-2026 |
 | 惯性传感 | 光纤陀螺 Sagnac（IM-OPTICAL-GYRO） | FOG $1.2B(2026)→$2.0B(2033) CAGR 7.5%；干涉型（Sagnac）占 78%；GNSS 拒止 + 国防现代化驱动 |
+| 光滤波 | 微环谐振滤波器 add-drop（IM-MRR-FILTER） | Silicon Microring Resonators $450M(2025)→$1.66B(2032) CAGR 20.5%；Microring Filter Array $41.58M→$245M CAGR 27.8%；add-drop 占 55.5%；AI 集群 DWDM/CPO 阵列化 |
+| 无源分配 | 1×N 功分树 PLC（IM-SPLITTER-TREE） | PLC Splitter $2.8B(2025)→$5.6B(2034) CAGR 8.1%；1×N 占 62.4%；FTTR/XGS-PON 推升 1×32+ 高通道数 |
+| 微波光子 | 真延时 TTD 波束成形（IM-TRUE-TIME-DELAY） | Phased Array Antenna $3.90B(2026)→$8.38B(2034) CAGR 10.04%；相控阵系统 $18.7B→$38.5B CAGR 12.8%；MWP 真延时用于相控阵雷达/5G-A |
+| 环境/医疗 | 波导气体吸收光谱（IM-GAS-SENSE） | SiN PIC $320M(2025)→$1113.58M(2032) CAGR 19.5%；SiN 宽透明窗口；VOC 中红外检测灵敏度较 Si 提升 5× |
+| 封装接口 | 光栅耦合阵列 CPO 光 IO（IM-GRATING-COUPLE） | Grating Coupler Array $1.45B(2024)→$3.07B(2033) CAGR 8.7%；耦合效率 >90%；CPO 共封装光学量产拉动 |
 
-**开放策略**：上述光子主流方向全量开放（40 个货架），覆盖预研企业最密集的需求面，含 FR4 200G/400G 每通道、400G DR4、100G LR4、50G-PON、XGS-PON、可重构光交换、FMCW 接收、环形生物传感、相干 ZR、微环调制器、WSS、VOA、MZM、PSR、光子中介层/CPO、光计算 ONN、OCT、OPA LiDAR、相干接收、片上光互连、多芯光纤扇出、光纤陀螺等真实缺口品类。
+**开放策略**：上述光子主流方向全量开放（45 个货架），覆盖预研企业最密集的需求面，含 FR4 200G/400G 每通道、400G DR4、100G LR4、50G-PON、XGS-PON、可重构光交换、FMCW 接收、环形生物传感、相干 ZR、微环调制器、WSS、VOA、MZM、PSR、光子中介层/CPO、光计算 ONN、OCT、OPA LiDAR、相干接收、片上光互连、多芯光纤扇出、光纤陀螺、微环谐振滤波、1×N 功分树、微波光子真延时、波导气体传感、光栅耦合阵列等真实缺口品类。
 
 ## 三、量子赛道（高价值、暂列咨询制）
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.52（2026-08-28 · 持续扩货架：新增 5 光子缺口品类开放下载、货架 48→53）
+- 货架 48→53：新增 5 个真实 2026 市场缺口光子品类（信号源可溯源、composition⊆GP-*、非出口管制、honest_tier=前瞻预研）：
+  - `IM-MRR-FILTER`（微环谐振滤波器/可重构光滤波 add-drop；Silicon Microring Resonators $450M→$1.66B CAGR 20.5%、Microring Filter Array $41.58M→$245M CAGR 27.8%、add-drop 占 55.5%）
+  - `IM-SPLITTER-TREE`（1×N 功分树/PLC 功分网络；PLC Splitter $2.8B→$5.6B CAGR 8.1%、1×N 占 62.4%、FTTR/XGS-PON 推升 1×32+）
+  - `IM-TRUE-TIME-DELAY`（微波光子真延时 TTD 波束成形；Phased Array Antenna $3.90B→$8.38B CAGR 10.04%、相控阵系统 $18.7B→$38.5B CAGR 12.8%、MWP 真延时用于相控阵雷达）
+  - `IM-GAS-SENSE`（波导气体/吸收光谱传感 SiN 宽波段；SiN PIC $320M→$1113.58M CAGR 19.5%、VOC 中红外检测灵敏度较 Si 提升 5×）
+  - `IM-GRATING-COUPLE`（光栅耦合阵列/光纤贴装接口 CPO 光 IO；Grating Coupler Array $1.45B→$3.07B CAGR 8.7%、CPO 共封装光学从试点转向早期量产）
+- 开放下载白名单 `OPEN_SHELVES` 40→45（前述 5 个光子缺口品类全量放开；工厂产能已具备，任意已知货架可现场生成设计就绪包）。
+- 量子 8 个维持「咨询制」，不进自动下载白名单（出口管制合规红线）。
+- `docs/store_launch/04_market_analysis.md` 新增趋势段：微环滤波（add-drop $1.66B 2032）、功分树（PLC $5.6B 2034）、微波光子真延时（相控阵 $8.38B 2034）、波导气体传感（SiN PIC $1.11B 2032）、光栅耦合阵列（CPO 光 IO $3.07B 2033）；光子细分表格扩容，开放策略 40→45 货架。
+- 沿用 `OPEN_SHELVES ⊆ DEFAULT_SHELF` 回归护栏；重新生成 `innovation_market.json`（53 货架）；货架 smoke **53/53 ALL PASS**；`run_count_consistency_smoke` **11/11 OK**（CI core 维持 69 条）。
+
 ## v0.8.51（2026-08-28 · 持续扩货架：新增 5 光子缺口品类开放下载、货架 43→48）
 - 货架 43→48：新增 5 个真实 2026 市场缺口光子品类（信号源可溯源、composition⊆GP-*、非出口管制、honest_tier=前瞻预研）：
   - `IM-OPA-LIDAR`（光学相控阵固态 LiDAR；OPA LiDAR $1.8B→$9.6B CAGR 20.4%、单芯片 OPA 占 63.7%、Yole 车规渗透率 2026 破 5%）

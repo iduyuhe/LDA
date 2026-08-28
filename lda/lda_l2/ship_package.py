@@ -69,6 +69,8 @@ GENERATED_NOTE = (
 # OCT 成像），均 composition⊂GP-* 且非出口管制品类，白名单 30→35。
 # v0.8.51：新增 5 个光子缺口品类（OPA 固态 LiDAR、相干接收 90°混频、片上光网络 NoC、
 # 多芯光纤扇出、光纤陀螺 Sagnac），均 composition⊂GP-* 且非出口管制品类，白名单 35→40。
+# v0.8.52：新增 5 个光子缺口品类（微环滤波、功分树、微波光子真延时、波导气体传感、
+# 光栅耦合阵列），均 composition⊂GP-* 且非出口管制品类，白名单 40→45。
 OPEN_SHELVES = {
     # 高速收发（DR8/FR4 × 400G/800G/1.6T + PSM4/CWDM4/FR4/LPO + 相干 ZR + MZM 调制）
     "IM-1.6T-DR8", "IM-1.6T-FR4", "IM-800G-DR8", "IM-800G-FR4", "IM-400G-DR4",
@@ -92,6 +94,8 @@ OPEN_SHELVES = {
     "IM-OPA-LIDAR", "IM-COHERENT-RX", "IM-ONCHIP-NOC", "IM-MCF-FANOUT", "IM-OPTICAL-GYRO",
     # 先进封装 / 异质集成
     "IM-CHIPLET-IO", "IM-LASER-INT",
+    # 微环滤波 / 功分树 / 微波光子真延时 / 波导气体传感 / 光栅耦合阵列（v0.8.52）
+    "IM-MRR-FILTER", "IM-SPLITTER-TREE", "IM-TRUE-TIME-DELAY", "IM-GAS-SENSE", "IM-GRATING-COUPLE",
 }
 
 

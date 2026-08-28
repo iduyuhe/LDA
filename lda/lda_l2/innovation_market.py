@@ -847,6 +847,85 @@ DEFAULT_SHELF: List[ShelfItem] = [
                     "死标量。复用已锚定无源网，无量级新物理。对标公开光纤陀螺量级。",
         ci_status="",
     ),
+    ShelfItem(
+        id="IM-MRR-FILTER",
+        title="微环谐振滤波器（可重构光滤波 / add-drop）前端预设计",
+        target_app="WDM 灵活栅格信道选择、ROADM 滤波、相干收发器波长滤波、微波光子窄带滤波",
+        signal_ref="Silicon Microring Resonators 市场 $450M(2025)→$1.66B(2032) CAGR 20.5%（PMarketResearch）；"
+                   "Microring Filter Array $41.58M(2025)→$245M(2032) CAGR 27.8%（MarketPublishers）；"
+                   "add-drop 型占 55.5%(2025)；AI 集群 DWDM/CPO 推升阵列化需求。",
+        domain="photon",
+        system_type="link",
+        composition=["GP-GRATING-EFF", "GP-MMI-1X2", "GP-SIN-PL"],
+        default_req={"p_tx_dbm": 3.0, "wg_length_cm": 1.0, "link_budget_db": 3.0},
+        design_note="微环滤波前端 = 光栅耦合进/出 + 1×2 MMI 总线分光 + SiN 波导环形谐振（调谐/探测按黑箱，"
+                    "有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，"
+                    "无量级新物理。对标公开微环滤波器量级。",
+        ci_status="",
+    ),
+    ShelfItem(
+        id="IM-SPLITTER-TREE",
+        title="1×N 功分树（PLC 功分网络）前端预设计",
+        target_app="FTTH/FTTR 光分路、数据中心 fan-out、PON ODN 功率均分",
+        signal_ref="PLC Splitter 市场 $2.8B(2025)→$5.6B(2034) CAGR 8.1%（Dataintelo）；"
+                   "1×N 型占 62.4%(2025)；全球光分路器 $1.28B(2026)→$1.94B(2030) CAGR 8.7%（IIM）；"
+                   "XGS-PON/FTTR 推升 1×32 及以上高通道数需求。",
+        domain="photon",
+        system_type="link",
+        composition=["GP-YBRANCH", "GP-MMI-1X2", "GP-SIN-PL"],
+        default_req={"p_tx_dbm": 3.0, "wg_length_cm": 1.0, "link_budget_db": 4.0},
+        design_note="功分树前端 = Y 分支级联 + 1×2 MMI 均分 + SiN 波导；纯无源功率分配（调制/探测按黑箱）。"
+                    "判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开功分器量级。",
+        ci_status="",
+    ),
+    ShelfItem(
+        id="IM-TRUE-TIME-DELAY",
+        title="微波光子真延时（TTD）波束成形网络前端预设计",
+        target_app="5G-A/6G 基站波束成形、相控阵雷达、卫星通信 TTD 延时网络",
+        signal_ref="Phased Array Antenna 市场 $3.90B(2026)→$8.38B(2034) CAGR 10.04%（ValueMarketResearch）；"
+                   "相控阵天线系统 2025 $18.7B→2030 $38.5B CAGR 12.8%（IIM）；"
+                   "微波光子真延时用于相控阵雷达波束赋形，电子移相器无法复制。",
+        domain="photon",
+        system_type="link",
+        composition=["GP-SIN-PL", "GP-YBRANCH", "GP-CROSSING"],
+        default_req={"p_tx_dbm": 3.0, "wg_length_cm": 5.0, "link_budget_db": 3.0},
+        design_note="TTD 前端 = 长 SiN 波导延迟线（不同长度阶梯） + Y 分支选择 + 交叉布线；"
+                    "RF 调制/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚"
+                    "死标量。复用已锚定无源网，无量级新物理。对标公开微波光子 TTD 量级。",
+        ci_status="",
+    ),
+    ShelfItem(
+        id="IM-GAS-SENSE",
+        title="波导气体/吸收光谱传感前端预设计（SiN 宽波段）",
+        target_app="环境 VOC/温室气体监测、医疗呼气诊断、工业排放多 analyte 检测",
+        signal_ref="SiN PIC 市场 $320M(2025)→$1113.58M(2032) CAGR 19.5%（PW Consulting）；"
+                   "SiN 宽透明窗口（可见-中红外）适合分子指纹吸收；VOC 片上中红外检测灵敏度较 Si 提升 5×"
+                   "（TAMU 2022）；环境/医疗光子传感需求增长。",
+        domain="photon",
+        system_type="link",
+        composition=["GP-SIN-PL", "GP-GRATING-EFF", "GP-YBRANCH"],
+        default_req={"p_tx_dbm": 3.0, "wg_length_cm": 2.0, "link_budget_db": 3.0},
+        design_note="气体传感前端 = SiN 长波导吸收臂 + 光栅耦合进/出 + Y 分支参考/样品臂；"
+                    "光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚"
+                    "死标量。复用已锚定无源网，无量级新物理。对标公开波导气体传感量级。",
+        ci_status="",
+    ),
+    ShelfItem(
+        id="IM-GRATING-COUPLE",
+        title="光栅耦合阵列 / 光纤贴装接口前端预设计（CPO 光 IO）",
+        target_app="硅光芯片-光纤阵列耦合、CPO 片上级联光 IO、多通道高密度封装接口",
+        signal_ref="Grating Coupler Array 市场 $1.45B(2024)→$3.07B(2033) CAGR 8.7%（GrowthMarketReports）；"
+                   "Grating Coupler 2025 APAC $0.31B 占 36.5%，耦合效率 >90%；CPO 共封装光学"
+                   "（Azure/Google/AWS）从试点转向早期量产，结构性拉动。",
+        domain="photon",
+        system_type="link",
+        composition=["GP-GRATING-EFF", "GP-SIN-PL"],
+        default_req={"p_tx_dbm": 3.0, "wg_length_cm": 0.5, "link_budget_db": 3.0},
+        design_note="光栅耦合阵列前端 = 高效光栅耦合器（GP-GRATING-EFF 核心） + SiN 波导引出；"
+                    "光纤阵列对准/封装按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚"
+                    "死标量。复用已锚定无源网，无量级新物理。对标公开光栅耦合量级。",
+        ci_status="",
+    ),
 ]
 
 

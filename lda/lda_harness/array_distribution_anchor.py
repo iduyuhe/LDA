@@ -10,8 +10,12 @@ S12 混合判决（全部纯算术，LLM 不进判决路径）：
   2. **下界锚**：min(values) ≥ golden_min − tol_min（最差实例不低于
      公开规格下限——「个别通道劣化」的直接捕获）；
   3. **离群锚**：max(values) ≤ median(values) + outlier_margin（无孤立
-     异常实例——防「均值好看但某通道崩坏」）。
-  三者 AND 才 PASS——比单点锚严格，正是系统级需要的阵列判决。
+     异常实例——防「均值好看但某通道崩坏」）；
+  4. **相关簇锚**（v0.8.44 · B3）：连续 min_cluster 个通道同向偏离中位数
+     ≥ cluster_dev = 系统级簇漂移（工艺/温度梯度、批次效应）→ REJECT。
+     单点锚抓不住簇漂移（均值仍达标、最差未必破下限、非单点离群）——
+     这是分布判决的最后一类盲区。
+  四者 AND 才 PASS——比单点锚严格，正是系统级需要的阵列判决。
 
 红线与诚实边界：
   - 判决 = 死标量算术（statistics 模块），LLM 只可能生成候选/默认参数；
@@ -26,6 +30,44 @@ import statistics
 from typing import Any, Dict, List, Sequence, Tuple
 
 
+def cluster_drift(
+        values: Sequence[float],
+        deviation_threshold: float,
+        min_cluster: int = 3) -> Dict[str, Any]:
+    """相关簇检测（B3 · v0.8.44）：连续同向偏离中位数的通道簇。
+
+    物理意义：WDM/CPO 阵列的**系统级漂移**（工艺梯度 / 温度梯度 / 批次效应）
+    表现为**连续通道同向偏离**——单点锚（均值/下界）抓不住（均值仍达标、
+    最差实例未必破下限），孤立离群锚也抓不住（不是单点）。这是 S12 分布
+    判决的最后一类盲区：**簇漂移**。
+
+    纯算术、确定性（同一序列 → 同一检测结果），LLM 不进判决路径。
+    返回：{drift, max_cluster_len, max_cluster_mean_dev}。
+    """
+    if not values:
+        return {"drift": False, "max_cluster_len": 0,
+                "max_cluster_mean_dev": 0.0}
+    med = statistics.median(values)
+    best_len = 0
+    best_mean_dev = 0.0
+    cur_len = 0
+    cur_sum = 0.0
+    for v in values:
+        dev = v - med
+        if abs(dev) >= deviation_threshold:
+            cur_len += 1
+            cur_sum += dev
+        else:
+            cur_len = 0
+            cur_sum = 0.0
+        if cur_len > best_len:
+            best_len = cur_len
+            best_mean_dev = cur_sum / cur_len
+    return {"drift": best_len >= min_cluster,
+            "max_cluster_len": best_len,
+            "max_cluster_mean_dev": round(best_mean_dev, 4)}
+
+
 def array_distribution_verdict(
         values: Sequence[float],
         golden_mean: float,
@@ -33,6 +75,8 @@ def array_distribution_verdict(
         golden_min: float,
         tol_min: float,
         outlier_margin: float,
+        cluster_dev: float = 0.0,
+        min_cluster: int = 3,
 ) -> Dict[str, Any]:
     """多实例阵列分布判决（锚+统计混合，纯算术）。
 
@@ -43,6 +87,10 @@ def array_distribution_verdict(
       golden_min      最差实例下限（公开规格 min 值）
       tol_min         下限容差（min ≥ golden_min − tol_min）
       outlier_margin  离群阈值（max ≤ median + margin——防孤立劣化）
+      cluster_dev     相关簇阈值（>0 时启用「相关簇锚」：连续 min_cluster 个
+                      通道偏离中位数 ≥ cluster_dev = 系统级簇漂移 → REJECT；
+                      =0 保持 v0.8.42 三锚行为，向后兼容）
+      min_cluster     簇漂移最小连续通道数（默认 3）
     返回：
       verdict ACCEPT/REJECT + 逐锚分解 + 分布统计（确定性可复现）。
     """
@@ -64,8 +112,18 @@ def array_distribution_verdict(
         {"name": "离群锚", "ok": out_ok, "detail": f"max={vmax:.4f} vs "
          f"median+margin {med + outlier_margin:.4f}"},
     ]
+    cluster_ok = True
+    if cluster_dev > 0:
+        cd = cluster_drift(values, cluster_dev, min_cluster=min_cluster)
+        cluster_ok = not cd["drift"]
+        checks.append({
+            "name": "相关簇锚", "ok": cluster_ok,
+            "detail": f"最长同向簇 {cd['max_cluster_len']} 通道"
+                      f"（均值偏离 {cd['max_cluster_mean_dev']}）vs "
+                      f"阈值 {cluster_dev}×{min_cluster}通道"})
     return {
-        "verdict": "ACCEPT" if (mean_ok and min_ok and out_ok) else "REJECT",
+        "verdict": ("ACCEPT" if (mean_ok and min_ok and out_ok
+                                 and cluster_ok) else "REJECT"),
         "checks": checks,
         "stats": {"n": len(values), "mean": round(mean, 4),
                   "median": round(med, 4), "min": round(vmin, 4),
@@ -126,10 +184,12 @@ def s12_array_distribution_report(
         _, vals = array_insertion_loss_anchor(n_instances, seed=seed)
         return array_distribution_verdict(
             vals, golden_mean=9.0, tol_mean=0.3,
-            golden_min=6.0, tol_min=0.5, outlier_margin=2.0)
+            golden_min=6.0, tol_min=0.5, outlier_margin=2.0,
+            cluster_dev=0.8, min_cluster=3)
     if kind == "fidelity":
         _, vals = array_fidelity_anchor(n_instances, seed=seed)
         return array_distribution_verdict(
             vals, golden_mean=0.99, tol_mean=0.005,
-            golden_min=0.985, tol_min=0.005, outlier_margin=0.01)
+            golden_min=0.985, tol_min=0.005, outlier_margin=0.01,
+            cluster_dev=0.004, min_cluster=3)
     raise ValueError(f"未知 kind: {kind}")

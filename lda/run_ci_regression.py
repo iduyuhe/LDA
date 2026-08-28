@@ -114,6 +114,8 @@ CORE_SMOKES: List[str] = [
     "run_innovation_market_smoke.py",
     # 第二梯队-1 A* 布线（贪心→全局最优 + 避障 + 无解诚实退化）
     "run_astar_route_smoke.py",
+    # B1 批量并行布线（v0.8.44：route_batch 语义一致 + 收益边界 + 诚实拒绝）
+    "run_parallel_routing_smoke.py",
     # 第二梯队-2 三件套（多端网 Steiner + 2D 放置 + 有源基元）
     "run_second_tier_smoke.py",
     # LVS 签核（v0.8.24：版图-原理图一致性 · 签核级 · 版图差距 #5 + S9 锚）

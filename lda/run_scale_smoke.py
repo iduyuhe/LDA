@@ -1,11 +1,11 @@
-"""v0.8.26 千器件规模扩展 smoke（版图差距 #7 收官 · S11 规模锚）。
+"""v0.8.26 规模扩展 smoke（版图差距 #7 收官 · S11 规模锚；v0.8.44 默认升 4k）。
 
-验证 `lda_harness/scale_anchor`（千器件链式 + 多层跨行跳线）：
-  1. 千器件全链路（构建 1000 器件/999 net + 2D 放置 + 多层布线 + LVS 签核）
+验证 `lda_harness/scale_anchor`（链式 + 多层跨行跳线）：
+  1. 4k 全链路（构建 4000 器件/3999 net + 2D 放置 + 多层布线 + LVS 签核）
      → ACCEPT（0 违规，器件/网络全匹配）
   2. 反例-断路：删 net_500 布线 → REJECT（open 检出）
   3. 反例-错连：互换 net_500/501 布线 → REJECT（misconnect 检出）
-  4. 性能预算：全链路 ≤ 5s（bbox 预检后实测 ~0.9s，死标量）
+  4. 性能预算：4k 全链路 ≤ 10s（近线性后实测 ~0.07s，死标量）
   5. 多层协同：跨行跳线走 M2 层（M2 段数 > 0，与 S10 协同验证）
   6. S11 锚：golden_value 正例 1.0 / 反例 0.0；BENCHMARK_ORDER 46 题
   7. 红线：判决源码零 LLM（scale_anchor/lvs import 断言）
@@ -41,20 +41,21 @@ def check(name: str, cond: bool, detail: str = "") -> None:
 
 
 def main() -> int:
-    print(f"千器件规模扩展 smoke（S11 · n={DEFAULT_N_DEVICES}）")
+    print(f"规模扩展 smoke（S11 · n={DEFAULT_N_DEVICES}）")
 
-    # ① 千器件正例：全链路 ACCEPT
+    # ① 4k 正例：全链路 ACCEPT
     r = run_scale_pipeline(n_devices=DEFAULT_N_DEVICES, case="consistent")
-    check("千器件正例：全链路 ACCEPT（零违规）",
+    check("4k 正例：全链路 ACCEPT（零违规）",
           r["verdict"] == "ACCEPT" and r["n_violations"] == 0,
           f"{r['verdict']} viol={r['n_violations']}")
     m = r["match"]
-    check("千器件正例：器件 1000/1000 · 网络 999/999 全匹配",
+    check("4k 正例：器件 4000/4000 · 网络 3999/3999 全匹配",
           m["n_devices_match"] == DEFAULT_N_DEVICES
-          and m["n_nets_match"] == m["n_nets_total"] == 999,
+          and m["n_nets_match"] == m["n_nets_total"] == DEFAULT_N_DEVICES - 1,
           f"dev={m['n_devices_match']} net={m['n_nets_match']}/{m['n_nets_total']}")
-    check("千器件正例：n_devices/n_nets 报告正确",
-          r["n_devices"] == DEFAULT_N_DEVICES and r["n_nets"] == 999,
+    check("4k 正例：n_devices/n_nets 报告正确",
+          r["n_devices"] == DEFAULT_N_DEVICES
+          and r["n_nets"] == DEFAULT_N_DEVICES - 1,
           f"dev={r['n_devices']} net={r['n_nets']}")
 
     # ② 反例-断路
@@ -69,24 +70,24 @@ def main() -> int:
           r3["verdict"] == "REJECT" and "misconnect" in r3["violations"],
           f"kinds={sorted(r3['violations'].keys())}")
 
-    # ④ 性能预算（死标量：千器件全链路 ≤ 5s）
-    check(f"性能预算：千器件全链路 ≤ {BUDGET_SEC}s",
+    # ④ 性能预算（死标量：4k 全链路 ≤ 10s）
+    check(f"性能预算：4k 全链路 ≤ {BUDGET_SEC}s",
           r["within_budget"] and r["time_total_s"] <= BUDGET_SEC,
           f"{r['time_total_s']}s（构建 {r['time_build_s']}s + LVS {r['time_lvs_s']}s）")
-    check("性能预算：LVS 千器件 ≤ 3s（bbox 预检优化）",
+    check("性能预算：LVS 4k ≤ 3s（网格索引优化）",
           r["time_lvs_s"] <= 3.0, f"{r['time_lvs_s']}s")
 
-    # ④b v0.8.39 规模纵深：4k 全链近线性（LVS O(n²)→网格后斜率 <3×/翻倍）
-    #    证明 LVS 不再卡规模；4k 在预算内（旧实现 14.65s 超预算，新 0.07s）
-    r4k = run_scale_pipeline(n_devices=4000, case="consistent")
-    check("4k 规模纵深：全链 ACCEPT 且在 5s 预算内",
-          r4k["verdict"] == "ACCEPT" and r4k["time_total_s"] <= BUDGET_SEC,
-          f"{r4k['verdict']} {r4k['time_total_s']}s")
-    check("4k 规模纵深：LVS 近线性（4k ≤ 1s，旧实现 14.4s）",
-          r4k["time_lvs_s"] <= 1.0, f"LVS {r4k['time_lvs_s']}s")
-    check("4k 规模纵深：缩放斜率近线性（4k/1k ≤ 8×，理想 4×）",
-          r4k["time_total_s"] <= 8.0 * r["time_total_s"],
-          f"{r4k['time_total_s']:.2f}s vs 1k {r['time_total_s']:.2f}s")
+    # ④b v0.8.39 规模纵深：8k 全链近线性（LVS O(n²)→网格后斜率 <3×/翻倍）
+    #    证明 LVS 不再卡规模；8k 在预算内（旧实现 ~60s 超预算，新 0.15s）
+    r8k = run_scale_pipeline(n_devices=8000, case="consistent")
+    check("8k 规模纵深：全链 ACCEPT 且在 10s 预算内",
+          r8k["verdict"] == "ACCEPT" and r8k["time_total_s"] <= BUDGET_SEC,
+          f"{r8k['verdict']} {r8k['time_total_s']}s")
+    check("8k 规模纵深：LVS 近线性（8k ≤ 2s，旧实现 ~60s）",
+          r8k["time_lvs_s"] <= 2.0, f"LVS {r8k['time_lvs_s']}s")
+    check("8k 规模纵深：缩放斜率近线性（8k/4k ≤ 6×，理想 2×）",
+          r8k["time_total_s"] <= 6.0 * r["time_total_s"],
+          f"{r8k['time_total_s']:.2f}s vs 4k {r['time_total_s']:.2f}s")
 
     # ⑤ 多层协同：跨行跳线走 M2 层
     from lda_harness.scale_anchor import build_chain_case
@@ -99,7 +100,7 @@ def main() -> int:
           n_m2 == n_jump, f"M2 段 {n_m2} == 跳线 {n_jump}")
 
     # ⑥ S11 锚：golden_value + 题库 46
-    check("S11 锚：consistent=1.0（千器件 ACCEPT）",
+    check("S11 锚：consistent=1.0（4k ACCEPT）",
           golden_value("S11", {"case": "consistent"}) == 1.0)
     check("S11 锚：disconnect/misroute =0.0（REJECT）",
           all(golden_value("S11", {"case": c}) == 0.0
@@ -121,7 +122,7 @@ def main() -> int:
     check("红线：scale_anchor.py 源码零 LLM 引用",
           not llm_hits, f"hits={llm_hits}")
 
-    print(f"\n千器件规模扩展 smoke：{_PASS} PASS / {_FAIL} FAIL")
+    print(f"\n规模扩展 smoke：{_PASS} PASS / {_FAIL} FAIL")
     return 1 if _FAIL else 0
 
 

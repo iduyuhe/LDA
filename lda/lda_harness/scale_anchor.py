@@ -1,9 +1,10 @@
-"""LDA S11 锚 · 千器件规模扩展锚（v0.8.26 · 版图差距 #7 收官）。
+"""LDA S11 锚 · 规模扩展锚（v0.8.26 · 版图差距 #7 收官；v0.8.44 默认 4k）。
 
-S11 是**规模锚**：验证 LDA 全链路（构建→放置→布线→LVS 签核）在**千器件级**
-设计下的正确性与可扩展性——确定性、可复现、死标量判决（LLM 不进路径）。
+S11 是**规模锚**：验证 LDA 全链路（构建→放置→布线→LVS 签核）在**4k 器件级**
+（v0.8.39-41 近线性化后，默认 1000→4000；8k 级 smoke 纵深守护）设计下的
+正确性与可扩展性——确定性、可复现、死标量判决（LLM 不进路径）。
 
-规模案例设计（千器件链式 + ⑥多层协同——收官项与多层项联动）：
+规模案例设计（链式 + ⑥多层协同——收官项与多层项联动）：
   - **n 器件链式链路**：wg_i.out → wg_{i+1}.in（n-1 条内部 net）；
   - **2D 网格放置**（place_2d，尺寸自适应）；
   - **跨行跳线走 M2 层**：行内 net 用 M1 直连；行尾→下一行首的跳线用
@@ -12,12 +13,12 @@ S11 是**规模锚**：验证 LDA 全链路（构建→放置→布线→LVS 签
     布线」在规模场景的价值（跨层投影重叠安全 = 跳线可横穿芯片）。
 
 S11 golden（s11_large_scale_verdict）：
-  - case='consistent'  ：千器件全链路 ACCEPT → 1.0；
+  - case='consistent'  ：4k 全链路 ACCEPT → 1.0；
   - case='disconnect'  ：破坏一条 net（删布线）→ REJECT → 0.0；
   - case='misroute'    ：互换两条 net 布线 → REJECT → 0.0。
 
 性能预算（smoke 断言，不进 golden——正确性由 golden 判、性能由预算断）：
-  千器件全链路（构建+放置+布线+LVS）≤ 5s（bbox 预检后实测 ~0.6s）。
+  4k 全链路（构建+放置+布线+LVS）≤ 10s（近线性化后实测 ~0.07s）。
 """
 from __future__ import annotations
 
@@ -38,11 +39,12 @@ from lda_l2.lvs import run_lvs_multilayer
 
 SCALE_CASES = ("consistent", "disconnect", "misroute")
 
-# 千器件默认规模（全链路死标量判决 + 性能预算基准）
-DEFAULT_N_DEVICES = 1000
+# v0.8.44：规模锚默认 1000→4000（千级→4k 纵深，体现 LVS/构建器近线性后的
+# 规模能力；4k 全链实测 ~0.07s，预算 10s 余量 140×）
+DEFAULT_N_DEVICES = 4000
 DEFAULT_COLS = 32
 VIA_SHORT_UM = 5.0          # 跳线 M1 段1 短垂距（行尾端口→via，不穿下行）
-BUDGET_SEC = 5.0            # 千器件全链路性能预算（构建+放置+布线+LVS）
+BUDGET_SEC = 10.0           # 4k 器件全链路性能预算（构建+放置+布线+LVS）
 
 
 def build_chain_case(n_devices: int = DEFAULT_N_DEVICES,

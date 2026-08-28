@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.8.44（2026-08-28 · B 技术纵深三连：并行布线 / 规模锚升 4k / 相关簇锚）
+- **并行布线**：新增 `lda_layout/parallel_routing.py` `route_batch`——批量布线统一入口（workers=1 串行逐位一致；workers>1 ProcessPoolExecutor 零依赖并行）；实测收益边界：链式拓扑单网 ~12µs 无收益（框架开销>任务），障碍密集复杂版图单网 ~400ms、workers=4 实测 **2.67×** 加速；诚实边界：拥塞感知（有标记顺序依赖）并行下明确拒绝不伪并行；`run_parallel_routing_smoke` 5/5 入 CI core（68→69）
+- **规模锚升 4k**：S11 默认规模 1000→4000、预算 5s→10s（实测 4k 全链 ~0.07s，余量 140×）；smoke 纵深同步升至 8k（LVS ≤2s、斜率 ≤6× 近线性守护）；scale/4k/8k 全链 ACCEPT
+- **统计锚相关簇**：S12 增「相关簇锚」（B3）——连续 ≥3 通道同向偏离中位数 ≥ 阈值 = 系统级簇漂移（工艺/温度梯度、批次效应）→ REJECT；纯盲区案例实证：16 通道 3 通道 +1.0~1.2dB 旧三锚 ACCEPT、簇锚唯一捕获 REJECT；插损/保真度 kind 已配置（0.8dB / 0.004），正例不误伤；统计锚 smoke 19→23
+- harness 46/46（S12 簇锚配置、S11 4k 后 reference 判决均 PASS）；CI core 68→69 条
+- 文档：README 账本段（45 题→46 题、CI core 68→69）、scale_anchor docstring
+
 ## v0.8.43（2026-08-28 · WebUI 能力展示层：GC 对照 / 创新超市 / 规模现场实测）
 - 新增 4 个 API（零依赖，数据源复用已验证库，不重写判决逻辑）：
   - `GET /api/gc_benchmarks` — 20 条 GC 整芯片对标元数据（golden/来源/指标），`?run=1` 现场跑 25/25

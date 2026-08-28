@@ -163,6 +163,41 @@ def main() -> int:
           s12_array_distribution_verdict(kind="fidelity", seed=7) == 1.0,
           f"mean={r12f['stats']['mean']}")
 
+    # ⑪ v0.8.44 B3 相关簇锚（系统级簇漂移——单点锚/离群锚的最后一类盲区）
+    from lda_harness.array_distribution_anchor import (
+        array_distribution_verdict, cluster_drift)
+    # 纯盲区：16 通道，通道 5-7 连续 3 通道 +1.0~1.2dB——均值/下界/离群三锚全过
+    vals_c = [9.0] * 16
+    for i, off in ((5, 1.0), (6, 1.1), (7, 1.2)):
+        vals_c[i] = 9.0 + off
+    r_old3 = array_distribution_verdict(
+        vals_c, golden_mean=9.0, tol_mean=0.3,
+        golden_min=6.0, tol_min=0.5, outlier_margin=2.0)
+    r_new4 = array_distribution_verdict(
+        vals_c, golden_mean=9.0, tol_mean=0.3,
+        golden_min=6.0, tol_min=0.5, outlier_margin=2.0,
+        cluster_dev=0.8, min_cluster=3)
+    check("B3 盲区确认：旧三锚 ACCEPT（均值/下界/离群全过）",
+          r_old3["verdict"] == "ACCEPT", f"{r_old3['verdict']}")
+    check("B3 相关簇锚唯一捕获：四锚 REJECT（簇锚 False 其他 True）",
+          r_new4["verdict"] == "REJECT"
+          and all(c["ok"] for c in r_new4["checks"]
+                  if c["name"] != "相关簇锚")
+          and not [c for c in r_new4["checks"]
+                   if c["name"] == "相关簇锚"][0]["ok"],
+          f"checks={[(c['name'], c['ok']) for c in r_new4['checks']]}")
+    cd = cluster_drift(vals_c, 0.8, 3)
+    check("B3 簇检测原语：3 通道连续同向（均值偏离 1.1）",
+          cd["drift"] and cd["max_cluster_len"] == 3,
+          f"{cd}")
+    # 正例不误伤（既有 S12 配置含簇锚）
+    r12_ok = s12_array_distribution_report("insertion_loss", seed=42)
+    check("B3 正例不误伤：配置簇锚后插损正例仍 ACCEPT",
+          r12_ok["verdict"] == "ACCEPT"
+          and [c for c in r12_ok["checks"]
+               if c["name"] == "相关簇锚"][0]["ok"],
+          f"{r12_ok['verdict']}")
+
     print(f"\n统计锚 smoke：{_PASS} PASS / {_FAIL} FAIL")
     return 1 if _FAIL else 0
 

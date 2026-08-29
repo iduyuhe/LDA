@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.8.56（2026-08-29 · 创新超市商业闭环：会员 + 统一订单 + 自动交付）
+- **商业闭环核心**：新增 `lda/lda_webui/store.py`（零依赖，数据落盘 `dist/store.json` gitignored）——会员注册/登录（PBKDF2 + 会话令牌）、统一订单状态机（created→paid_unverified→approved→rejected）、微信个人收款（收款码+凭证）、管理员「确认收款并自动发货」（复用 `ship_package` 生成一次性兑换码）。
+- **双通道**：个人用户（微信个人收款凭证）+ 企业客户（对公转账）共用同一套订单流；下单自动带单价（¥1999 默认，可按货架覆盖）。
+- **路由接入**：`lda/lda_webui/app.py` 新增 `/api/store/*`（register/login/me/order/orders/mine/config）与 `/api/admin/*`（orders/config/order/<id>/approve|reject）；新增 `_bearer()` 统一去 Bearer 前缀；管理员鉴权统一认可 `LDA_ADMIN_TOKEN` 环境变量（修复 list_orders 仅认 store 用户、下载路由 `parts[4]/count==5` 解析错位两处 bug）。
+- **前端**：`lda/lda_webui/static/store.html`（会员登录/注册、货架下单、上传支付凭证、自助下载）、`admin.html`（订单审核、一键发货、微信收款码配置）；静态白名单放行进 `store.html`。
+- 端到端验证通过：注册→下单→凭证→管理员审批（自动生成兑换码）→会员自助下载 zip；个人/企业两通道均跑通。
+- **Track 0 计费身份中枢**：注册新增三档身份（standard 标准个人 / academic 学术个人 / institution 机构席位，机构必填单位名称）；`tier_discount` 折扣引擎（1.0 / 0.6 / 0.85，管理员可经 `config.tiers` 覆盖）；`price_of(shelf_id, user_type)` 按身份计价；订单记录 `tier` 字段；`/api/shelf` 按登录身份返回 `price_cny/base_price/price_tier`；前端注册弹窗三身份选择 + 货架实付价 + 下单金额 + 会员中心/导航身份徽标；老账号无 user_type 字段安全回退 standard。生产 e2e 16/16 通过（三身份价格 1999 / 1199.4 / 1699.15 联动验证）。
+
 ## v0.8.55（2026-08-29 · 管理后台上线打通商务闭环 + 生产部署真实账户）
 - **管理后台**：新增 `lda/lda_webui/static/admin.html`——令牌登录（localStorage）、待处理申请列表（公司/联系人/电话/邮箱/货架/备注/时间）、一键审批并生成一次性兑换码、兑换码复制 + 下载链接；静态页白名单放行进 `admin.html`。
 - **文案修正**：`/api/purchase/request` 响应去掉"邮件发送兑换码"空头承诺，改为"到账后管理员生成兑换码、凭码下载"准确表述（手动发码阶段）。

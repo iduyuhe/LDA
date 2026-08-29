@@ -134,6 +134,21 @@ def _check_admin(headers: dict) -> bool:
     return False
 
 
+def _get_store():
+    """惰性加载商业闭环模块（避免循环导入 / 兼容直接运行与包运行）。"""
+    try:
+        from lda_webui import store
+    except ImportError:
+        import store
+    return store
+
+
+def _bearer(headers: dict) -> str:
+    """从 Authorization 头提取纯 token（去除 Bearer 前缀）。"""
+    h = headers.get("Authorization", "")
+    return h[len("Bearer "):] if h.startswith("Bearer ") else ""
+
+
 # --------------------------------------------------------------------------
 # 内核调用（全部复用已落地模块）
 # --------------------------------------------------------------------------
@@ -2233,12 +2248,15 @@ def gc_benchmarks_status(run: bool = False):
     return out
 
 
-def shelf_status():
-    """A2 · 创新超市货架元数据（快，零计算）。"""
+def shelf_status(user_type=None):
+    """A2 · 创新超市货架元数据（快，零计算）。含按当前身份计算的实付价。"""
     from lda_l2.innovation_market import DEFAULT_SHELF
     from lda_l2.ship_package import is_download_open
+    store = _get_store()
     rows = []
     for s in DEFAULT_SHELF:
+        price = store.price_of(s.id, user_type)
+        base = store.price_of(s.id, None)
         rows.append({
             "id": s.id, "title": s.title,
             "target_app": (s.target_app or "")[:120],
@@ -2248,6 +2266,9 @@ def shelf_status():
             "default_req": s.default_req,
             "honest_tier": s.honest_tier,
             "open": is_download_open(s.id),
+            "price_cny": price,
+            "base_price": base,
+            "price_tier": ("standard" if price == base else user_type) or "standard",
         })
     return {"count": len(rows), "rows": rows,
             "honest_tier": "全部为前瞻预研货架：组合已锚定基元（GP-*）+ 公开信号驱动，未流片。"}
@@ -2725,13 +2746,18 @@ def _adv_bank_total():
 # HTTP 处理
 # --------------------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
-    def _send(self, code, obj=None, body=None, ctype="application/json", headers=None):
+    def _send(self, code, obj=None, body=None, ctype="application/json", headers=None, nocache=False):
         if body is None:
             body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", ctype + "; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Access-Control-Allow-Origin", "*")
+        if nocache:
+            # 静态 HTML 强制不缓存，避免浏览器启发式缓存导致 inline script 失效
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Expires", "0")
         if headers:
             for _k, _v in headers.items():
                 self.send_header(_k, _v)
@@ -2743,14 +2769,23 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("/", "/index.html"):
             p = os.path.join(WEBUI_DIR, "static", "index.html")
             with open(p, "rb") as f:
-                self._send(200, body=f.read(), ctype="text/html")
+                self._send(200, body=f.read(), ctype="text/html", nocache=True)
         elif path.endswith(".html"):
             # 静态展示页（白名单，防路径穿越）
             name = os.path.basename(path)
             p = os.path.join(WEBUI_DIR, "static", name)
-            if name in ("index.html", "insights.html", "admin.html") and os.path.exists(p):
+            if name in ("index.html", "insights.html", "admin.html", "store.html") and os.path.exists(p):
                 with open(p, "rb") as f:
-                    self._send(200, body=f.read(), ctype="text/html")
+                    self._send(200, body=f.read(), ctype="text/html", nocache=True)
+            else:
+                self._send(404, {"error": "not found"})
+        elif path.endswith(".js") or path.endswith(".css"):
+            name = os.path.basename(path)
+            p = os.path.join(WEBUI_DIR, "static", name)
+            if os.path.exists(p):
+                ctype = "application/javascript" if path.endswith(".js") else "text/css"
+                with open(p, "rb") as f:
+                    self._send(200, body=f.read(), ctype=ctype, nocache=True)
             else:
                 self._send(404, {"error": "not found"})
         elif path == "/api/status":
@@ -2786,10 +2821,53 @@ class Handler(BaseHTTPRequestHandler):
             q = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
             self._send(200, gc_benchmarks_status(run=q.get("run") == "1"))
         elif path == "/api/shelf":
-            self._send(200, shelf_status())
+            store = _get_store()
+            u = store.user_by_token(_bearer(dict(self.headers)))
+            self._send(200, shelf_status(u.get("user_type") if u else None))
         elif path == "/api/admin/purchase_requests":
             code, obj = purchase_request_list(dict(self.headers))
             self._send(code, obj)
+        # ---- 商业闭环：会员 + 订单 ----
+        elif path == "/api/store/config":
+            self._send(200, _get_store().public_config())
+        elif path == "/api/store/me":
+            store = _get_store()
+            u = store.user_by_token(_bearer(dict(self.headers)))
+            self._send(200, {"user": store._public_user(u) if u else None})
+        elif path == "/api/store/orders/mine":
+            store = _get_store()
+            obj = store.list_orders(_bearer(dict(self.headers)), "mine")
+            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
+        elif path == "/api/admin/orders":
+            store = _get_store()
+            obj = store.list_orders(_bearer(dict(self.headers)), "all")
+            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
+        elif path.startswith("/api/store/order/") and path.count("/") == 5:
+            # /api/store/order/<id>/download
+            store = _get_store()
+            parts = path.split("/")
+            oid = parts[4]
+            sub = parts[5] if len(parts) > 5 else ""
+            if sub == "download":
+                r = store.order_download(oid, _bearer(dict(self.headers)))
+                if not r.get("ok"):
+                    self._send(403 if r.get("code") == 401 else 400, r)
+                elif r.get("deliverable_url"):
+                    self._send(200, r)
+                else:
+                    with open(r["zip_path"], "rb") as _fh:
+                        _data = _fh.read()
+                    self._send(200, body=_data, ctype="application/zip",
+                               headers={"Content-Disposition":
+                                        'attachment; filename="%s_design_ready.zip"' % r["shelf_id"]})
+            else:
+                self._send(404, {"error": "not found"})
+        elif path == "/api/admin/config":
+            store = _get_store()
+            if not store.is_admin(_bearer(dict(self.headers))):
+                self._send(401, {"error": "unauthorized"})
+            else:
+                self._send(200, {"config": store.get_config()})
         elif path == "/api/scale_demo":
             self._send(200, scale_demo_status())
         elif path == "/api/capability_demos":
@@ -3075,6 +3153,51 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     self._send(400, {"status": "error",
                                      "reason": "action 须为 submit|review|land"})
+            # ---- 商业闭环：会员 + 订单 ----
+            elif path == "/api/store/register":
+                store = _get_store()
+                r = store.register(payload.get("email"), payload.get("name"),
+                                   payload.get("password"), payload.get("phone"),
+                                   payload.get("user_type"), payload.get("organization"))
+                self._send(200, r)
+            elif path == "/api/store/login":
+                store = _get_store()
+                r = store.login(payload.get("email"), payload.get("password"))
+                self._send(200, r)
+            elif path == "/api/store/order":
+                store = _get_store()
+                r = store.create_order(_bearer(dict(self.headers)), payload)
+                self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
+            elif path.startswith("/api/store/order/") and path.count("/") == 5:
+                # /api/store/order/<id>/proof
+                store = _get_store()
+                parts = path.split("/")
+                oid = parts[4]
+                sub = parts[5]
+                if sub == "proof":
+                    r = store.submit_proof(oid, _bearer(dict(self.headers)),
+                                           payload.get("proof", ""))
+                    self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
+                else:
+                    self._send(404, {"error": "not found"})
+            elif path.startswith("/api/admin/order/") and path.count("/") == 5:
+                # /api/admin/order/<id>/approve | /api/admin/order/<id>/reject
+                store = _get_store()
+                parts = path.split("/")
+                oid = parts[4]
+                sub = parts[5]
+                tok = _bearer(dict(self.headers))
+                if sub == "approve":
+                    r = store.admin_approve(oid, tok, payload.get("deliverable_url", ""))
+                elif sub == "reject":
+                    r = store.admin_reject(oid, tok, payload.get("reason", ""))
+                else:
+                    r = {"ok": False, "error": "not found"}
+                self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
+            elif path == "/api/admin/config":
+                store = _get_store()
+                r = store.set_config(payload, _bearer(dict(self.headers)))
+                self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
             else:
                 self._send(404, {"error": "not found"})
         except Exception as e:  # noqa: BLE001

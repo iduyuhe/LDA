@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LDA 创新超市 · 商业闭环</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Cpath d='M8 10h2l2 11h10l1.5-8H11' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='13' cy='25' r='1.8' fill='white'/%3E%3Ccircle cx='20' cy='25' r='1.8' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root{--bg:#f4f6fb;--panel:#fff;--txt:#1a2030;--mut:#5b6478;--line:#e2e7f0;--accent:#2563eb;--green:#16a34a;--red:#dc2626;--amber:#d97706}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);padding:0 0 40px}
+  .wrap{max-width:1080px;margin:0 auto;padding:18px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;background:var(--panel);border-bottom:1px solid #e2e7f0;position:sticky;top:0;z-index:5}
+  .topbar h1{font-size:18px;margin:0}
+  .topbar .sub{color:var(--mut);font-size:12px}
+  .auth{display:flex;gap:8px;align-items:center}
+  button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
+  button.ghost{background:transparent;color:var(--txt);border:1px solid #e2e7f0}
+  button:disabled{opacity:.5;cursor:default}
+  input,textarea{width:100%;background:var(--panel);color:var(--txt);border:1px solid #e2e7f0;border-radius:8px;padding:9px 11px;font-size:13px;margin:4px 0 10px}
+  label{font-size:13px;color:var(--mut);display:block;margin-top:8px}
+  .panel{background:var(--panel);border:1px solid #e2e7f0;border-radius:12px;padding:16px;margin-top:16px}
+  h2{font-size:16px;margin:0 0 12px}
+  .shelf{background:var(--panel);border:1px solid #e2e7f0;border-radius:12px;padding:14px;margin-bottom:12px}
+  .shelf h3{margin:0 0 4px;font-size:15px}
+  .tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;background:#eef2ff;color:#4338ca;margin:2px}
+  .meta{color:var(--mut);font-size:12px;margin:4px 0}
+  .app{font-size:13px;color:#334155;margin:4px 0}
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .btn-sm{font-size:12px;padding:5px 12px}
+  .modal{position:fixed;inset:0;background:rgba(15,20,35,.55);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
+  .modal.show{display:flex}
+  .modal-box{background:var(--panel);border-radius:14px;max-width:460px;width:100%;padding:20px;position:relative;max-height:90vh;overflow:auto}
+  .close{position:absolute;right:14px;top:12px;font-size:22px;cursor:pointer;color:var(--mut)}
+  .msg{font-size:13px;margin-top:8px}
+  .ok{color:var(--green)} .err{color:var(--red)} .mut{color:var(--mut)}
+  .qr{width:200px;height:200px;background:#fff;border:1px solid #e2e7f0;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:10px auto;overflow:hidden}
+  .qr img{width:100%;height:100%;object-fit:contain}
+  .order{display:flex;justify-content:space-between;gap:12px;border:1px solid #e2e7f0;border-radius:10px;padding:12px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+  .step{display:flex;gap:6px;margin:10px 0}
+  .step span{flex:1;text-align:center;font-size:12px;padding:6px;border-radius:8px;background:#eef2ff;color:#4338ca}
+  .step span.done{background:#dcfce7;color:#166534}
+  .step span.wait{background:#fef3c7;color:#92400e}
+  .step span.rej{background:#fee2e2;color:#991b1b}
+  .hide{display:none}
+  .seg{display:flex;gap:8px;margin:10px 0}
+  .seg button{flex:1;background:#eef2ff;color:#4338ca}
+  .seg button.on{background:var(--accent);color:#fff}
+</style>
+</head>
+<body>
+  <!-- 统一导航由 nav.js 注入（顶部导航条 + 会员态） -->
+  <div class="wrap">
+    <!-- 会员中心 -->
+    <div class="panel hide" id="memberPanel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 id="memberTitle">我的账户</h2>
+        <button class="ghost btn-sm" onclick="logout()">退出登录</button>
+      </div>
+      <div class="msg mut" id="memberInfo"></div>
+    </div>
+
+    <!-- 货架 -->
+    <div class="panel">
+      <h2 style="display:flex;justify-content:space-between;align-items:center;gap:10px">创新货架（开放下载的设计就绪包）<button class="ghost btn-sm" onclick="openCustom()">🛠 提交定制需求</button></h2>
+      <div id="shelfGrid"></div>
+    </div>
+
+    <!-- 我的订单 -->
+    <div class="panel" id="ordersPanel">
+      <h2>我的订单</h2>
+      <div id="orderList"><span class="mut">登录后可查看订单。</span></div>
+    </div>
+  </div>
+
+<!-- 登录/注册 弹窗 -->
+<div class="modal" id="authModal" onclick="if(event.target===this)closeAuth()">
+  <div class="modal-box">
+    <span class="close" onclick="closeAuth()">&times;</span>
+    <h3 id="authTitle">登录</h3>
+    <label>邮箱 *</label>
+    <input id="a-email" placeholder="you@company.com">
+    <label>姓名 *</label>
+    <input id="a-name" placeholder="您的称谓">
+    <label>密码 *（至少 6 位）</label>
+    <input id="a-pass" type="password" placeholder="设置或输入密码">
+      <label>手机号（选填）</label>
+      <input id="a-phone" placeholder="选填">
+      <label>账户身份 *</label>
+      <div class="seg" id="regTypeWrap">
+        <button type="button" class="on" data-t="standard" onclick="setRegType('standard')">标准个人</button>
+        <button type="button" onclick="setRegType('academic')">学术个人</button>
+        <button type="button" onclick="setRegType('institution')">机构席位</button>
+      </div>
+      <label id="orgLabel" style="display:none">机构 / 单位名称（机构席位必填）</label>
+      <input id="a-org" style="display:none" placeholder="例如：某某大学光电实验室">
+      <div class="msg" id="authMsg"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="ghost" onclick="closeAuth()">取消</button>
+      <button id="authSubmit" onclick="submitAuth()">确定</button>
+    </div>
+    <div class="msg mut" style="margin-top:8px;font-size:12px" id="authSwitch"></div>
+  </div>
+</div>
+
+<!-- 下单 弹窗 -->
+<div class="modal" id="buyModal" onclick="if(event.target===this)closeBuy()">
+  <div class="modal-box">
+    <span class="close" onclick="closeBuy()">&times;</span>
+    <h3>购买 · <span id="buyShelf">—</span></h3>
+    <div class="seg">
+      <button id="segPersonal" class="on" onclick="setType('personal')">个人（微信收款）</button>
+      <button id="segBusiness" onclick="setType('business')">企业（对公转账）</button>
+      <button id="segCustom" onclick="setType('custom')">定制需求（按需设计）</button>
+    </div>
+    <div id="buyEmail" class="msg mut">下单前请先登录或注册（用于交付与下载）。</div>
+
+    <div id="buyPrice" class="msg" style="font-weight:700"></div>
+
+    <div id="personalPane">
+      <div class="msg" style="font-size:13px">① 扫码支付（微信个人收款）：</div>
+      <div class="qr" id="qrBox"><span class="mut">加载中…</span></div>
+      <div class="msg mut" id="payeeInfo"></div>
+      <label>支付凭证（微信交易单号 / 备注，便于对账）</label>
+      <textarea id="b-proof" placeholder="付款后填写：微信转账单号或备注信息"></textarea>
+      <div class="msg mut">② 提交后我们将在收款确认后自动发放兑换码，可在「我的订单」下载。</div>
+    </div>
+
+    <div id="businessPane" class="hide">
+      <div class="msg" style="font-size:13px">① 对公转账（可开增值税发票）：</div>
+      <div class="msg mut">户名：上海杜特企业管理咨询有限公司 · 上海农商银行陈行支行 · 账号 32434508010036375</div>
+      <label>公司名称 *</label>
+      <input id="b-company" placeholder="与对公转账账户一致的公司全称">
+      <div class="msg mut">② 提交后管理员确认到账即发货。</div>
+    </div>
+
+    <div id="customPane" class="hide">
+      <div class="msg" style="font-size:13px">① 提出你的设计需求，工程师评估后接单：</div>
+      <label>需求标题 *</label>
+      <input id="b-title" placeholder="例：800G 硅光收发模块布局优化">
+      <label>需求描述 *</label>
+      <textarea id="b-req" placeholder="目标指标、工艺约束、交付形式（GDS/版图/仿真报告/文档）等"></textarea>
+      <label>目标指标（可选）</label>
+      <input id="b-spec" placeholder="例：插入损耗 &lt; 3dB，带宽 56GBaud">
+      <label>预算区间（可选）</label>
+      <input id="b-budget" placeholder="例：¥8万–15万">
+      <div class="msg mut">② 提交后进入「待接单」，管理员确认接单后将联系您推进。</div>
+    </div>
+
+    <label>联系人 *</label>
+    <input id="b-contact" placeholder="姓名">
+    <label>联系电话 *</label>
+    <input id="b-phone" placeholder="手机或固话">
+    <label>电子邮箱 *</label>
+    <input id="b-email" placeholder="用于接收交付通知">
+
+    <div class="msg" id="buyMsg"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="ghost" onclick="closeBuy()">取消</button>
+      <button id="buySubmit" onclick="submitBuy()">提交订单</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ if(typeof id==='string' && id.charAt(0)==='#'){id=id.slice(1);} return document.getElementById(id); }
+var store_token = localStorage.getItem("lda_store_token") || "";
+var authMode = "login";          // login | register
+var regType = "standard";        // standard | academic | institution
+var buyType = "personal";
+var SHELF_PRICE = {};            // 货架 → 当前身份实付价
+var TIER_LABELS = {standard:"标准个人", academic:"学术个人", institution:"机构席位"};
+$("#buyShelf");
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+function authHeaders(){ return {"Authorization":"Bearer "+store_token,"Content-Type":"application/json"} }
+
+function refreshAuth(){
+  if(store_token){
+    fetch('/api/store/me', {headers: authHeaders()}).then(function(r){return r.json()}).then(function(d){
+      if(d.user){
+        $("#memberPanel").classList.remove('hide');
+        var tier = TIER_LABELS[d.user.user_type] || "标准个人";
+        var org = d.user.organization ? (' · '+esc(d.user.organization)) : '';
+        $("#memberInfo").innerHTML = '邮箱 '+esc(d.user.email)+' · 身份：'+tier+org+' · 注册于 '+(d.user.created_at||'').slice(0,10);
+        loadOrders();
+      }else{
+        store_token=""; localStorage.removeItem("lda_store_token");
+        $("#memberPanel").classList.add('hide');
+        $("#orderList").innerHTML='<span class="mut">登录后可查看订单。</span>';
+      }
+    });
+  }else{
+    $("#memberPanel").classList.add('hide');
+  }
+}
+
+function showLogin(){ authMode="login"; $("#authTitle").textContent="登录"; $("#authSwitch").innerHTML='没有账号？<a style="color:var(--accent);cursor:pointer" onclick="showRegister()">去注册</a>'; $("#authMsg").textContent=""; $("#regTypeWrap").style.display="none"; $("#orgLabel").style.display="none"; $("#a-org").style.display="none"; $("#authModal").classList.add('show'); }
+function showRegister(){ authMode="register"; $("#authTitle").textContent="注册"; $("#authSwitch").innerHTML='已有账号？<a style="color:var(--accent);cursor:pointer" onclick="showLogin()">去登录</a>'; $("#authMsg").textContent=""; setRegType("standard"); $("#regTypeWrap").style.display=""; $("#authModal").classList.add('show'); }
+function closeAuth(){ $("#authModal").classList.remove('show'); }
+
+function setRegType(t){
+  regType=t;
+  var btns=document.querySelectorAll("#regTypeWrap button");
+  btns.forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-t")===t); });
+  var isInst = (t==="institution");
+  $("#orgLabel").style.display = isInst ? "" : "none";
+  $("#a-org").style.display = isInst ? "" : "none";
+}
+
+function submitAuth(){
+  var email=$("#a-email").value.trim(), name=$("#a-name").value.trim(),
+      pass=$("#a-pass").value, phone=$("#a-phone").value.trim();
+  if(!email||!pass||!name){ $("#authMsg").innerHTML='<span class="err">邮箱、姓名、密码均为必填</span>'; return; }
+  if(authMode==="register" && regType==="institution" && !$("#a-org").value.trim()){
+    $("#authMsg").innerHTML='<span class="err">机构席位需填写机构/单位名称</span>'; return;
+  }
+  var url = authMode==="register" ? "/api/store/register" : "/api/store/login";
+  var body = {email:email,name:name,password:pass,phone:phone};
+  if(authMode==="register"){ body.user_type=regType; if($("#a-org").value.trim()) body.organization=$("#a-org").value.trim(); }
+  fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){return r.json()}).then(function(d){
+      if(!d.ok){ $("#authMsg").innerHTML='<span class="err">'+esc(d.error||'失败')+'</span>'; return; }
+      store_token=d.token; localStorage.setItem("lda_store_token",store_token);
+      closeAuth(); refreshAuth();
+    }).catch(function(e){ $("#authMsg").innerHTML='<span class="err">'+e+'</span>'; });
+}
+function logout(){ store_token=""; localStorage.removeItem("lda_store_token"); refreshAuth(); }
+
+function loadShelves(){
+  fetch('/api/shelf').then(function(r){return r.json()}).then(function(d){
+    var h='';
+    d.rows.forEach(function(s){
+      SHELF_PRICE[s.id]=s.price_cny;
+      var comp=s.composition.map(function(x){return '<span class="tag">'+esc(x)+'</span>'}).join('');
+      var discountTag = (s.price_tier && s.price_tier!=="standard")
+        ? ' <span class="tag" style="background:#fee2e2;color:#b91c1c">'+esc(TIER_LABELS[s.price_tier]||s.price_tier)+'价</span>' : '';
+      var btn = s.open
+        ? '<button class="btn-sm" onclick="openBuy(\''+esc(s.id)+'\')">立即购买</button>'
+        : '<button class="btn-sm ghost" onclick="openBuy(\''+esc(s.id)+'\')">咨询购买</button>';
+      h+='<div class="shelf"><h3>'+esc(s.id)+'</h3>'+
+         '<div class="app">'+esc(s.title)+'</div>'+
+         '<div class="meta">'+esc(s.domain)+' · '+esc(s.system_type)+' · '+esc(s.honest_tier)+(s.open?'':' · 咨询制')+'</div>'+
+         '<div>'+comp+'</div>'+
+         '<div class="meta" style="font-weight:700;color:var(--txt)">¥'+esc(s.price_cny)+discountTag+'</div>'+
+         '<div class="pill-row">'+btn+'</div>'+
+         '</div>';
+    });
+    $("#shelfGrid").innerHTML=h||'<span class="mut">暂无开放货架</span>';
+  });
+}
+
+function openBuy(shelfId){
+  if(!store_token){ showLogin(); return; }
+  $("#buyShelf").textContent=shelfId;
+  $("#buyPrice").textContent = (SHELF_PRICE[shelfId]!=null) ? ("应付：¥"+SHELF_PRICE[shelfId]) : "";
+  $("#b-proof").value=""; $("#b-company").value=""; $("#buyMsg").textContent="";
+  // 预填邮箱/姓名
+  fetch('/api/store/me', {headers: authHeaders()}).then(function(r){return r.json()}).then(function(d){
+    if(d.user){ $("#b-email").value=d.user.email||""; $("#b-contact").value=d.user.name||""; $("#b-phone").value=d.user.phone||""; }
+  });
+  // 微信收款码
+  fetch('/api/store/config').then(function(r){return r.json()}).then(function(c){
+    var box=$("#qrBox");
+    if(c.qr){
+      box.innerHTML='<img src="'+esc(c.qr)+'" alt="微信收款码">';
+    }else{
+      box.innerHTML='<span class="mut">管理员尚未配置收款码</span>';
+    }
+    $("#payeeInfo").textContent = c.payee ? ('收款方：'+c.payee+(c.amount_note?(' · '+c.amount_note):'')) : '';
+  });
+  setType('personal');
+  $("#buyModal").classList.add('show');
+}
+function setType(t){
+  buyType=t;
+  $("#segPersonal").classList.toggle('on', t==='personal');
+  $("#segBusiness").classList.toggle('on', t==='business');
+  $("#segCustom").classList.toggle('on', t==='custom');
+  $("#personalPane").classList.toggle('hide', t!=='personal');
+  $("#businessPane").classList.toggle('hide', t!=='business');
+  $("#customPane").classList.toggle('hide', t!=='custom');
+}
+function openCustom(){
+  if(!store_token){ showLogin(); return; }
+  $("#buyShelf").textContent='定制需求';
+  $("#b-title").value=""; $("#b-req").value=""; $("#b-spec").value=""; $("#b-budget").value="";
+  $("#b-contact").value=""; $("#b-phone").value=""; $("#b-email").value=""; $("#b-company").value=""; $("#b-proof").value="";
+  fetch('/api/store/me', {headers: authHeaders()}).then(function(r){return r.json()}).then(function(d){
+    if(d.user){ $("#b-email").value=d.user.email||""; $("#b-contact").value=d.user.name||""; $("#b-phone").value=d.user.phone||""; }
+  });
+  setType('custom');
+  $("#buyModal").classList.add('show');
+}
+function closeBuy(){ $("#buyModal").classList.remove('show'); }
+
+function submitBuy(){
+  var title = $("#b-title").value.trim();
+  var req = $("#b-req").value.trim();
+  var spec = $("#b-spec").value.trim();
+  var budget = $("#b-budget").value.trim();
+  var payload={
+    shelf_id: buyType==='custom' ? "" : $("#buyShelf").textContent.trim(),
+    type: buyType,
+    title: buyType==='custom' ? title : "",
+    requirement: buyType==='custom' ? req : "",
+    target_spec: buyType==='custom' ? spec : "",
+    budget: buyType==='custom' ? budget : "",
+    customer:{
+      name: $("#b-contact").value.trim(),
+      company: $("#b-company").value.trim(),
+      phone: $("#b-phone").value.trim(),
+      email: $("#b-email").value.trim()
+    },
+    proof: $("#b-proof").value.trim()
+  };
+  if(!payload.customer.name||!payload.customer.email){ $("#buyMsg").innerHTML='<span class="err">姓名与邮箱必填</span>'; return; }
+  if(buyType==='custom' && (!title||!req)){ $("#buyMsg").innerHTML='<span class="err">定制需求需填写标题与需求描述</span>'; return; }
+  if(payload.customer.email.indexOf('@')<0){ $("#buyMsg").innerHTML='<span class="err">邮箱格式不正确</span>'; return; }
+  $("#buySubmit").disabled=true; $("#buySubmit").textContent='提交中…';
+  fetch('/api/store/order',{method:'POST',headers:authHeaders(),body:JSON.stringify(payload)})
+    .then(function(r){return r.json().then(function(d){return {r:r,d:d};});})
+    .then(function(o){
+      $("#buySubmit").disabled=false; $("#buySubmit").textContent='提交订单';
+      if(o.r.status!==200 || !o.d.ok){ $("#buyMsg").innerHTML='<span class="err">'+(o.d.error||'失败')+'</span>'; return; }
+      closeBuy(); loadOrders();
+      alert('下单成功！订单号 '+o.d.order.id+'，请按所选方式完成支付并在「我的订单」上传凭证/等待发货。');
+    })
+    .catch(function(e){ $("#buySubmit").disabled=false; $("#buySubmit").textContent='提交订单'; $("#buyMsg").innerHTML='<span class="err">'+e+'</span>'; });
+}
+
+function loadOrders(){
+  if(!store_token){ $("#orderList").innerHTML='<span class="mut">登录后可查看订单。</span>'; return; }
+  fetch('/api/store/orders/mine',{headers:authHeaders()}).then(function(r){return r.json()}).then(function(d){
+    if(!d.ok){ $("#orderList").innerHTML='<span class="mut">登录后可查看订单。</span>'; return; }
+    if(!d.orders.length){ $("#orderList").innerHTML='<span class="mut">暂无订单，去上方货架下单吧。</span>'; return; }
+    $("#orderList").innerHTML = d.orders.map(function(o){
+      var step = o.type==='personal'
+        ? '<div class="step"><span class="'+(o.status==='created'?'wait':'done')+'">已下单</span><span class="'+(o.status==='paid_unverified'?'wait':'done')+'">待确认</span><span class="'+(o.status==='approved'?'done':(o.status==='rejected'?'rej':'wait'))+'">已交付</span></div>'
+        : '<div class="step"><span class="'+(o.status==='created'?'wait':'done')+'">已下单</span><span class="'+(o.status==='approved'?'done':(o.status==='rejected'?'rej':'wait'))+'">已交付</span></div>';
+      var act = (o.status==='approved'&&o.license_code)
+        ? '<button class="btn-sm" onclick="downloadOrder(\''+esc(o.id)+'\')">下载设计包</button>'
+        : '<span class="mut">待处理</span>';
+      var proofBtn = (o.status==='created'&&o.type==='personal')
+        ? '<button class="btn-sm ghost" onclick="uploadProof(\''+esc(o.id)+'\')">上传支付凭证</button>'
+        : '';
+      return '<div class="order"><div><b>'+esc(o.id)+'</b> · '+esc(o.shelf_id)+'<br><span class="mut">'+esc(o.type==='personal'?'个人·微信':'企业·对公')+' · ¥'+o.amount_cny+' · '+esc(o.status)+'</span></div><div style="display:flex;gap:8px;align-items:center">'+proofBtn+act+'</div></div>'+step;
+    }).join('');
+  });
+}
+
+function uploadProof(id){
+  var proof=prompt('请填写微信支付凭证（交易单号/备注）：');
+  if(proof===null) return;
+  fetch('/api/store/order/'+encodeURIComponent(id)+'/proof',{method:'POST',headers:authHeaders(),body:JSON.stringify({proof:proof})})
+    .then(function(r){return r.json()}).then(function(d){
+      if(!d.ok){ alert(d.error||'失败'); return; }
+      loadOrders();
+    });
+}
+
+function downloadOrder(id){
+  fetch('/api/store/order/'+encodeURIComponent(id)+'/download',{headers:authHeaders()})
+    .then(function(r){
+      if(r.status!==200){ alert('下载失败：订单尚未交付或无权下载'); return; }
+      var ct = r.headers.get('content-type')||'';
+      if(ct.indexOf('application/json')>=0){
+        return r.json().then(function(d){
+          if(d.deliverable_url){ window.open(d.deliverable_url,'_blank'); return null; }
+          alert('交付文件待上传，请联系管理员'); return null;
+        });
+      }
+      return r.blob();
+    })
+    .then(function(blob){
+      if(!blob) return;
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a'); a.href=url; a.download=id+'_design_ready.zip';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+}
+
+loadShelves();
+refreshAuth();
+</script>
+<script src="/nav.js"></script>
+</body>
+</html>

@@ -143,10 +143,27 @@ def _get_store():
     return store
 
 
-def _bearer(headers: dict) -> str:
-    """从 Authorization 头提取纯 token（去除 Bearer 前缀）。"""
-    h = headers.get("Authorization", "")
-    return h[len("Bearer "):] if h.startswith("Bearer ") else ""
+def _bearer(headers) -> str:
+    """从 Authorization 头提取纯 token（去除 Bearer 前缀）。
+
+    兼容两种输入：
+    - dict（如 curl 测试或人工 dict(self.headers) 调用）
+    - BaseHTTPRequestHandler 的 self.headers（http.client.HTTPMessage）
+
+    注意：dict() 转 HTTPMessage 在 Python 3 某些实现下会丢字段（实测 dict() 出来
+    Authorization 是空字符串），导致 token 静默丢失、鉴权失败。HTTPMessage 自身
+    的 .get() / [] 可用且正确，**永远不要对 HTTPMessage 用 dict()**。
+    """
+    try:
+        # 优先用 .get（dict 和 HTTPMessage 都有此方法）
+        h = headers.get("Authorization", "") if hasattr(headers, "get") else ""
+    except Exception:  # noqa: BLE001
+        h = ""
+    if not h:
+        return ""
+    if h.startswith("Bearer "):
+        return h[len("Bearer "):].strip()
+    return ""
 
 
 def _client_ip(handler) -> str:
@@ -2866,7 +2883,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, gc_benchmarks_status(run=q.get("run") == "1"))
         elif path == "/api/shelf":
             store = _get_store()
-            u = store.user_by_token(_bearer(dict(self.headers)))
+            u = store.user_by_token(_bearer(self.headers))
             self._send(200, shelf_status(u.get("user_type") if u else None))
         elif path == "/api/admin/purchase_requests":
             code, obj = purchase_request_list(dict(self.headers))
@@ -2876,37 +2893,37 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, _get_store().public_config())
         elif path == "/api/store/orders/mine":
             store = _get_store()
-            obj = store.list_orders(_bearer(dict(self.headers)), "mine")
+            obj = store.list_orders(_bearer(self.headers), "mine")
             self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
         elif path == "/api/store/me":
             # GET=读资料 / PATCH=改资料
             store = _get_store()
             if self.command == "PATCH":
                 obj = store.update_profile(
-                    _bearer(dict(self.headers)),
+                    _bearer(self.headers),
                     name=payload.get("name"), phone=payload.get("phone"),
                     organization=payload.get("organization"),
                     user_type=payload.get("user_type"))
             else:
-                u = store.user_by_token(_bearer(dict(self.headers)))
+                u = store.user_by_token(_bearer(self.headers))
                 obj = {"ok": True, "user": store._public_user(u) if u else None}
             self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
         elif path == "/api/store/me/summary":
             store = _get_store()
-            obj = store.my_summary(_bearer(dict(self.headers)))
+            obj = store.my_summary(_bearer(self.headers))
             self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
         elif path == "/api/store/me/licenses":
             store = _get_store()
-            obj = store.my_licenses(_bearer(dict(self.headers)))
+            obj = store.my_licenses(_bearer(self.headers))
             self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
         elif path == "/api/admin/orders":
             store = _get_store()
-            obj = store.list_orders(_bearer(dict(self.headers)), "all")
+            obj = store.list_orders(_bearer(self.headers), "all")
             self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
         elif path == "/api/admin/users":
             # 管理员用户列表（脱敏：不含密码/令牌/哈希）
             store = _get_store()
-            obj = store.admin_list_users(_bearer(dict(self.headers)))
+            obj = store.admin_list_users(_bearer(self.headers))
             self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
         elif path.startswith("/api/store/order/") and path.count("/") == 5:
             # /api/store/order/<id>/download
@@ -2915,7 +2932,7 @@ class Handler(BaseHTTPRequestHandler):
             oid = parts[4]
             sub = parts[5] if len(parts) > 5 else ""
             if sub == "download":
-                r = store.order_download(oid, _bearer(dict(self.headers)))
+                r = store.order_download(oid, _bearer(self.headers))
                 if not r.get("ok"):
                     self._send(403 if r.get("code") == 401 else 400, r)
                 elif r.get("deliverable_url"):
@@ -2930,7 +2947,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(404, {"error": "not found"})
         elif path == "/api/admin/config":
             store = _get_store()
-            if not store.is_admin(_bearer(dict(self.headers))):
+            if not store.is_admin(_bearer(self.headers)):
                 self._send(401, {"error": "unauthorized"})
             else:
                 self._send(200, {"config": store.get_config()})
@@ -3042,7 +3059,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/store/me":
             store = _get_store()
             obj = store.update_profile(
-                _bearer(dict(self.headers)),
+                _bearer(self.headers),
                 name=payload.get("name"), phone=payload.get("phone"),
                 organization=payload.get("organization"),
                 user_type=payload.get("user_type"))
@@ -3258,30 +3275,30 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/admin/user/reset_password":
                 store = _get_store()
                 obj = store.admin_reset_password(payload.get("email") or payload.get("user_id"),
-                                                 _bearer(dict(self.headers)),
+                                                 _bearer(self.headers),
                                                  payload.get("temp_password", ""))
                 self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
             elif path == "/api/admin/unlock_login":
                 # 管理员应急解锁：只清失败计数，不动密码
                 store = _get_store()
-                obj = store.admin_unlock_login(_bearer(dict(self.headers)))
+                obj = store.admin_unlock_login(_bearer(self.headers))
                 self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
             elif path == "/api/store/password":
                 # 改密（改密成功后会话令牌轮换，旧设备登录态失效）
                 store = _get_store()
-                r = store.change_password(_bearer(dict(self.headers)),
+                r = store.change_password(_bearer(self.headers),
                                           payload.get("old_password", ""),
                                           payload.get("new_password", ""))
                 self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
             elif path == "/api/store/order":
                 store = _get_store()
-                r = store.create_order(_bearer(dict(self.headers)), payload)
+                r = store.create_order(_bearer(self.headers), payload)
                 self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
             elif path.startswith("/api/store/order/") and path.count("/") == 5 and path.endswith("/accept_delivery"):
                 # 客户确认验收：delivered → accepted（必须在 proof 段前匹配，否则会因 sub!="proof" 走 404）
                 store = _get_store()
                 oid = path.split("/")[4]
-                r = store.custom_accept_delivery(oid, _bearer(dict(self.headers)))
+                r = store.custom_accept_delivery(oid, _bearer(self.headers))
                 self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
             elif path.startswith("/api/store/order/") and path.count("/") == 5:
                 # /api/store/order/<id>/proof
@@ -3290,7 +3307,7 @@ class Handler(BaseHTTPRequestHandler):
                 oid = parts[4]
                 sub = parts[5]
                 if sub == "proof":
-                    r = store.submit_proof(oid, _bearer(dict(self.headers)),
+                    r = store.submit_proof(oid, _bearer(self.headers),
                                            payload.get("proof", ""))
                     self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
                 else:
@@ -3301,7 +3318,7 @@ class Handler(BaseHTTPRequestHandler):
                 parts = path.split("/")
                 oid = parts[4]
                 sub = parts[5]
-                tok = _bearer(dict(self.headers))
+                tok = _bearer(self.headers)
                 if sub == "approve":
                     r = store.admin_approve(oid, tok, payload.get("deliverable_url", ""))
                 elif sub == "reject":
@@ -3315,7 +3332,7 @@ class Handler(BaseHTTPRequestHandler):
                 parts = path.split("/")
                 oid = parts[4]
                 sub = parts[5]
-                tok = _bearer(dict(self.headers))
+                tok = _bearer(self.headers)
                 if sub == "accept":
                     r = store.custom_accept(oid, tok,
                                              dev_note=payload.get("dev_note", ""),
@@ -3334,7 +3351,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
             elif path == "/api/admin/config":
                 store = _get_store()
-                r = store.set_config(payload, _bearer(dict(self.headers)))
+                r = store.set_config(payload, _bearer(self.headers))
                 self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
             else:
                 self._send(404, {"error": "not found"})

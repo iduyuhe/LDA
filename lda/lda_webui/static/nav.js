@@ -18,6 +18,7 @@
     var p = location.pathname.split("?")[0];
     if (p.endsWith("insights.html")) return "insights";
     if (p.endsWith("store.html")) return "store";
+    if (p.endsWith("mine.html")) return "mine";
     if (p.endsWith("admin.html")) return "admin";
     return "home";
   }
@@ -48,6 +49,7 @@
       link("/index.html", "首页", "home") +
       link("/insights.html", "能力展示", "insights") +
       link("/store.html", "创新超市", "store") +
+      '<a id="lda-nav-mine" href="/mine.html" style="display:none;text-decoration:none;font-size:14px">我的</a>' +
       link("/admin.html", "管理后台", "admin") +
       "</div>" +
       '<div id="lda-nav-auth" style="display:flex;gap:8px;align-items:center"></div>';
@@ -81,6 +83,12 @@
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (d.user) {
+          var mine = document.getElementById("lda-nav-mine");
+          if (mine) {
+            mine.style.display = "inline";
+            mine.style.color = currentKey() === "mine" ? "var(--accent)" : "var(--mut)";
+            mine.style.fontWeight = currentKey() === "mine" ? "700" : "400";
+          }
           var tier = TIER_LABELS[d.user.user_type] || "标准个人";
           var org = d.user.organization ? (" · " + esc(d.user.organization)) : "";
           box.innerHTML =

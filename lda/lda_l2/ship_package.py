@@ -478,6 +478,30 @@ def consume_license(code: str, shelf_id: Optional[str] = None) -> bool:
     return res is True
 
 
+def license_status(code: str) -> Dict[str, Any]:
+    """给「我的」页面：兑换码剩余下载次数等只读状态（不消耗）。
+
+    返回 ok=True 时含 used/max_uses/remaining/shelf_id/revoked；
+    码不存在返回 ok=False（reason=invalid_code）。
+    """
+    if not code:
+        return {"ok": False, "reason": "invalid_code"}
+    data = _load_licenses()
+    rec = data.get(code)
+    if rec is None:
+        return {"ok": False, "reason": "invalid_code"}
+    used = int(rec.get("used", 0) or 0)
+    max_uses = int(rec.get("max_uses", 1) or 1)
+    return {
+        "ok": True, "shelf_id": rec.get("shelf_id", ""),
+        "used": used, "max_uses": max_uses,
+        "remaining": max(0, max_uses - used),
+        "revoked": bool(rec.get("revoked")),
+        "created_at": rec.get("created_at", ""),
+        "email": rec.get("email", ""),
+    }
+
+
 def package_info(shelf_id: str) -> Dict[str, Any]:
     """给前端：包是否就绪 + 层级 + 文件清单（不含授权）。"""
     shelf = shelf_by_id(shelf_id)

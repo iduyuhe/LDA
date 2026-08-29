@@ -2782,7 +2782,8 @@ class Handler(BaseHTTPRequestHandler):
             # 静态展示页（白名单，防路径穿越）
             name = os.path.basename(path)
             p = os.path.join(WEBUI_DIR, "static", name)
-            if name in ("index.html", "insights.html", "admin.html", "store.html") and os.path.exists(p):
+            if name in ("index.html", "insights.html", "admin.html", "store.html",
+                        "mine.html") and os.path.exists(p):
                 with open(p, "rb") as f:
                     self._send(200, body=f.read(), ctype="text/html", nocache=True)
             else:
@@ -2850,13 +2851,30 @@ class Handler(BaseHTTPRequestHandler):
         # ---- 商业闭环：会员 + 订单 ----
         elif path == "/api/store/config":
             self._send(200, _get_store().public_config())
-        elif path == "/api/store/me":
-            store = _get_store()
-            u = store.user_by_token(_bearer(dict(self.headers)))
-            self._send(200, {"user": store._public_user(u) if u else None})
         elif path == "/api/store/orders/mine":
             store = _get_store()
             obj = store.list_orders(_bearer(dict(self.headers)), "mine")
+            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
+        elif path == "/api/store/me":
+            # GET=读资料 / PATCH=改资料
+            store = _get_store()
+            if self.command == "PATCH":
+                obj = store.update_profile(
+                    _bearer(dict(self.headers)),
+                    name=payload.get("name"), phone=payload.get("phone"),
+                    organization=payload.get("organization"),
+                    user_type=payload.get("user_type"))
+            else:
+                u = store.user_by_token(_bearer(dict(self.headers)))
+                obj = {"ok": True, "user": store._public_user(u) if u else None}
+            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
+        elif path == "/api/store/me/summary":
+            store = _get_store()
+            obj = store.my_summary(_bearer(dict(self.headers)))
+            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
+        elif path == "/api/store/me/licenses":
+            store = _get_store()
+            obj = store.my_licenses(_bearer(dict(self.headers)))
             self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
         elif path == "/api/admin/orders":
             store = _get_store()
@@ -2979,6 +2997,30 @@ class Handler(BaseHTTPRequestHandler):
         headers = {k: v for k, v in self.headers.items()}
         code, obj = api_v1.handle_v1(method, path, payload, headers)
         self._send(code, obj)
+
+    def do_PATCH(self):
+        """局部更新（目前仅 /api/store/me 改资料）。
+
+        BaseHTTPRequestHandler 默认不实现 PATCH → 501，故单独挂一个处理器，
+        与 do_POST 走同一套 JSON 读取与 _send 约定。
+        """
+        path = self.path.split("?")[0]
+        length = int(self.headers.get("Content-Length", 0))
+        raw = self.rfile.read(length) if length else b"{}"
+        try:
+            payload = json.loads(raw.decode("utf-8") or "{}")
+        except Exception:  # noqa: BLE001
+            payload = {}
+        if path == "/api/store/me":
+            store = _get_store()
+            obj = store.update_profile(
+                _bearer(dict(self.headers)),
+                name=payload.get("name"), phone=payload.get("phone"),
+                organization=payload.get("organization"),
+                user_type=payload.get("user_type"))
+            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
+        else:
+            self._send(404, {"error": "not found"})
 
     def do_POST(self):
         path = self.path.split("?")[0]
@@ -3184,6 +3226,13 @@ class Handler(BaseHTTPRequestHandler):
                 store = _get_store()
                 r = store.login(payload.get("email"), payload.get("password"))
                 self._send(200, r)
+            elif path == "/api/store/password":
+                # 改密（改密成功后会话令牌轮换，旧设备登录态失效）
+                store = _get_store()
+                r = store.change_password(_bearer(dict(self.headers)),
+                                          payload.get("old_password", ""),
+                                          payload.get("new_password", ""))
+                self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
             elif path == "/api/store/order":
                 store = _get_store()
                 r = store.create_order(_bearer(dict(self.headers)), payload)

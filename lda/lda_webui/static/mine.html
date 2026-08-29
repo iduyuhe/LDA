@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的 · LDA</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Cpath d='M8 10h2l2 11h10l1.5-8H11' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='13' cy='25' r='1.8' fill='white'/%3E%3Ccircle cx='20' cy='25' r='1.8' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root{--bg:#f4f6fb;--panel:#fff;--txt:#1a2030;--mut:#5b6478;--line:#e2e7f0;--accent:#2563eb;--green:#16a34a;--red:#dc2626;--amber:#d97706}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);padding:0 0 48px}
+  .wrap{max-width:1080px;margin:0 auto;padding:18px}
+  h2{font-size:16px;margin:0 0 12px}
+  button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
+  button.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  button:disabled{opacity:.5;cursor:default}
+  .btn-sm{font-size:12px;padding:5px 12px}
+  input,select,textarea{width:100%;background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:13px;margin:4px 0 10px}
+  label{font-size:13px;color:var(--mut);display:block;margin-top:8px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:16px}
+  .tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;background:#eef2ff;color:#4338ca;margin:2px}
+  .mut{color:var(--mut)} .ok{color:var(--green)} .err{color:var(--red)}
+  .msg{font-size:13px;margin-top:8px}
+  .hide{display:none}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+  .stat .n{font-size:26px;font-weight:800;color:var(--accent);line-height:1.2}
+  .stat .l{font-size:12px;color:var(--mut);margin-top:4px}
+  .row{display:flex;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+  .code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;background:#f8fafc;border:1px solid var(--line);border-radius:6px;padding:3px 7px;display:inline-block;word-break:break-all}
+  .step{display:flex;gap:6px;margin:8px 0 0}
+  .step span{flex:1;text-align:center;font-size:12px;padding:6px;border-radius:8px;background:#eef2ff;color:#4338ca}
+  .step span.done{background:#dcfce7;color:#166534}
+  .step span.wait{background:#fef3c7;color:#92400e}
+  .step span.rej{background:#fee2e2;color:#991b1b}
+  .tabs{display:flex;gap:8px;margin:16px 0 0;flex-wrap:wrap}
+  .tabs button{background:var(--panel);color:var(--txt);border:1px solid var(--line)}
+  .tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:720px){.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <!-- 统一导航由 nav.js 注入（顶部导航条 + 会员态） -->
+  <div class="wrap">
+    <div id="gate" class="panel hide" style="text-align:center;padding:40px 16px">
+      <h2>请先登录</h2>
+      <p class="mut" style="font-size:13px">「我的」用于查看你的许可证资产、定制需求进度与账户资料。</p>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:14px">
+        <button onclick="location.href='/store.html'">去登录 / 注册</button>
+        <button class="ghost" onclick="location.href='/index.html'">返回首页</button>
+      </div>
+    </div>
+
+    <div id="main" class="hide">
+      <!-- 概览 -->
+      <div class="panel" style="margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <div>
+            <h2 style="margin:0 0 4px" id="hello">我的</h2>
+            <div class="mut" style="font-size:12px" id="acctLine"></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="ghost btn-sm" onclick="location.href='/store.html'">去逛创新超市</button>
+            <button class="ghost btn-sm" onclick="doLogout()">退出登录</button>
+          </div>
+        </div>
+        <div class="grid" style="margin-top:16px">
+          <div class="stat"><div class="n" id="sSpent">¥0</div><div class="l">累计消费</div></div>
+          <div class="stat"><div class="n" id="sLic">0</div><div class="l">持有许可证</div></div>
+          <div class="stat"><div class="n" id="sLeft">0</div><div class="l">剩余下载次数</div></div>
+          <div class="stat"><div class="n" id="sOrders">0</div><div class="l">订单总数</div></div>
+          <div class="stat"><div class="n" id="sCustom">0</div><div class="l">进行中定制需求</div></div>
+        </div>
+        <div class="msg mut" id="tierLine"></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button id="t-lic" class="on" onclick="switchTab('lic')">我的许可证</button>
+        <button id="t-cus" onclick="switchTab('cus')">定制需求进度</button>
+        <button id="t-pro" onclick="switchTab('pro')">账户资料</button>
+        <button id="t-pwd" onclick="switchTab('pwd')">修改密码</button>
+      </div>
+
+      <!-- 许可证 -->
+      <div class="panel" id="pane-lic">
+        <h2>我的许可证</h2>
+        <div class="mut" style="font-size:12px">每份设计就绪包授权有限下载次数，次数用尽后需重新购买或联系管理员。</div>
+        <div id="licList" style="margin-top:12px"><span class="mut">加载中…</span></div>
+      </div>
+
+      <!-- 定制需求 -->
+      <div class="panel hide" id="pane-cus">
+        <h2>定制需求进度</h2>
+        <div class="mut" style="font-size:12px">流程：待接单 → 开发中 → 已交付 → 已验收。管理员交付后由你确认验收。</div>
+        <div id="cusList" style="margin-top:12px"><span class="mut">加载中…</span></div>
+      </div>
+
+      <!-- 资料 -->
+      <div class="panel hide" id="pane-pro">
+        <h2>账户资料</h2>
+        <div class="two">
+          <div>
+            <label>姓名</label>
+            <input id="pf-name" placeholder="你的称呼">
+            <label>手机号</label>
+            <input id="pf-phone" placeholder="选填，便于交付联络">
+          </div>
+          <div>
+            <label>机构 / 单位名称</label>
+            <input id="pf-org" placeholder="机构席位必填">
+            <label>身份（决定折扣）</label>
+            <select id="pf-type">
+              <option value="standard">标准个人（原价）</option>
+              <option value="academic">学术个人（6 折）</option>
+              <option value="institution">机构席位（8.5 折）</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:6px">
+          <button onclick="saveProfile()">保存资料</button>
+          <span class="msg" id="pf-msg"></span>
+        </div>
+        <div class="msg mut" style="font-size:12px">邮箱为登录账号，暂不支持自助修改；如需变更请联系管理员。</div>
+      </div>
+
+      <!-- 改密 -->
+      <div class="panel hide" id="pane-pwd">
+        <h2>修改密码</h2>
+        <div style="max-width:360px">
+          <label>原密码</label>
+          <input type="password" id="pw-old" placeholder="当前密码">
+          <label>新密码（至少 6 位）</label>
+          <input type="password" id="pw-new" placeholder="新密码">
+          <label>确认新密码</label>
+          <input type="password" id="pw-new2" placeholder="再输入一次">
+          <button onclick="savePwd()">确认修改</button>
+          <span class="msg" id="pw-msg"></span>
+        </div>
+        <div class="msg mut" style="font-size:12px">改密成功后会话令牌会轮换，其它设备上的登录状态将失效。</div>
+      </div>
+    </div>
+  </div>
+
+<script src="/nav.js"></script>
+<script>
+function $(s){ return document.querySelector(s) }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]}) }
+function token(){ return localStorage.getItem("lda_store_token")||"" }
+function authHeaders(){ return {"Authorization":"Bearer "+token(),"Content-Type":"application/json"} }
+
+var TIER_LABELS={standard:"标准个人",academic:"学术个人",institution:"机构席位"};
+
+function switchTab(t){
+  ["lic","cus","pro","pwd"].forEach(function(k){
+    $("#t-"+k).classList.toggle("on",k===t);
+    $("#pane-"+k).classList.toggle("hide",k!==t);
+  });
+}
+function doLogout(){
+  localStorage.removeItem("lda_store_token");
+  location.href="/store.html";
+}
+
+function boot(){
+  if(!token()){ $("#gate").classList.remove("hide"); return; }
+  fetch("/api/store/me/summary",{headers:authHeaders()})
+    .then(function(r){ return r.json() })
+    .then(function(d){
+      if(!d.ok || !d.user){ $("#gate").classList.remove("hide"); return; }
+      $("#main").classList.remove("hide");
+      var u=d.user;
+      $("#hello").textContent = "你好，" + (u.name || u.email.split("@")[0]);
+      $("#acctLine").textContent = "账号 " + u.email + " · 注册于 " + (u.created_at||"").slice(0,10);
+      $("#sSpent").textContent = "¥" + d.spent_cny;
+      $("#sLic").textContent = d.licenses_total;
+      $("#sLeft").textContent = d.downloads_left;
+      $("#sOrders").textContent = d.orders_total;
+      $("#sCustom").textContent = d.custom_active;
+      var pct = Math.round((1-d.discount)*100);
+      $("#tierLine").textContent = "当前身份：" + (d.tier_label||"标准个人") +
+        (pct>0 ? ("（享 " + pct + "% 折扣，下单自动生效）") : "（原价）");
+      // 填充资料表单
+      $("#pf-name").value = u.name||"";
+      $("#pf-phone").value = u.phone||"";
+      $("#pf-org").value = u.organization||"";
+      $("#pf-type").value = u.user_type||"standard";
+      loadLicenses(); loadCustom();
+    })
+    .catch(function(){ $("#gate").classList.remove("hide"); });
+}
+
+function loadLicenses(){
+  fetch("/api/store/me/licenses",{headers:authHeaders()}).then(function(r){return r.json()}).then(function(d){
+    if(!d.ok || !d.licenses.length){
+      $("#licList").innerHTML='<span class="mut">暂无许可证，<a href="/store.html" style="color:var(--accent)">去创新超市选购 →</a></span>';
+      return;
+    }
+    $("#licList").innerHTML = d.licenses.map(function(l){
+      var badge = l.revoked
+        ? '<span class="tag" style="background:#fee2e2;color:#991b1b">已吊销</span>'
+        : (l.downloadable ? '<span class="tag" style="background:#dcfce7;color:#166534">可下载 '+l.remaining+'/'+l.max_uses+'</span>'
+                          : '<span class="tag" style="background:#fef3c7;color:#92400e">次数已用完</span>');
+      var btn = l.downloadable
+        ? '<button class="btn-sm" onclick="dl(\''+esc(l.order_id)+'\')">下载</button>'
+        : '<button class="btn-sm ghost" disabled>不可下载</button>';
+      return '<div class="row"><div><b>'+esc(l.shelf_id)+'</b> '+badge+
+        '<br><span class="mut" style="font-size:12px">订单 '+esc(l.order_id)+' · 已用 '+l.used+'/'+l.max_uses+' 次</span>'+
+        '<br><span class="code" style="margin-top:4px">'+esc(l.license_code)+'</span></div>'+
+        '<div>'+btn+'</div></div>';
+    }).join('');
+  });
+}
+
+function loadCustom(){
+  fetch("/api/store/orders/mine",{headers:authHeaders()}).then(function(r){return r.json()}).then(function(d){
+    if(!d.ok){ $("#cusList").innerHTML='<span class="mut">加载失败</span>'; return; }
+    var rows=(d.orders||[]).filter(function(o){ return o.type==="custom" });
+    if(!rows.length){ $("#cusList").innerHTML='<span class="mut">暂无定制需求，可在创新超市提交你的真实需求。</span>'; return; }
+    $("#cusList").innerHTML = rows.map(function(o){
+      var st=o.status;
+      var step='<div class="step">'+
+        '<span class="'+(st==="created"?"wait":(st==="rejected"?"rej":"done"))+'">待接单</span>'+
+        '<span class="'+(st==="developing"?"wait":((st==="delivered"||st==="accepted")?"done":(st==="rejected"?"rej":"wait")))+'">开发中</span>'+
+        '<span class="'+((st==="delivered"||st==="accepted")?"done":(st==="rejected"?"rej":"wait"))+'">已交付</span>'+
+        '<span class="'+(st==="accepted"?"done":(st==="rejected"?"rej":"wait"))+'">已验收</span>'+
+        '</div>';
+      var extra = (o.quote_cny?('<span class="tag">报价 ¥'+o.quote_cny+'</span>'):'') +
+                  (o.eta_date?('<span class="tag">排期 '+esc(o.eta_date)+'</span>'):'') +
+                  (o.dev_note?('<span class="tag">进度：'+esc(o.dev_note)+'</span>'):'');
+      var dlv = (o.deliverables&&o.deliverables.length)
+        ? '<div style="margin-top:6px">'+o.deliverables.map(function(x){
+            return '<a class="tag" href="'+esc(x.url)+'" target="_blank" rel="noopener" style="text-decoration:none">📦 '+esc(x.name)+'</a>';
+          }).join(' ')+'</div>'
+        : '';
+      var act = (st==="delivered")
+        ? '<button class="btn-sm" onclick="acceptDelivery(\''+esc(o.id)+'\')">确认验收</button>'
+        : '';
+      return '<div class="row"><div><b>'+esc(o.title||o.id)+'</b><br>'+
+        '<span class="mut" style="font-size:12px">'+esc(o.requirement||"")+'</span><br>'+extra+dlv+'</div>'+
+        '<div>'+act+'</div></div>'+step;
+    }).join('');
+  });
+}
+
+function dl(oid){
+  fetch("/api/store/order/"+encodeURIComponent(oid)+"/download",{headers:authHeaders()})
+    .then(function(r){
+      if(r.status!==200){ alert("下载失败：订单尚未交付或次数已用完"); return null; }
+      var ct=r.headers.get("content-type")||"";
+      if(ct.indexOf("application/json")>=0){
+        return r.json().then(function(d){
+          if(d.deliverables && d.deliverables.length){
+            d.deliverables.forEach(function(x){ window.open(x.url,"_blank"); });
+            return null;
+          }
+          if(d.deliverable_url){ window.open(d.deliverable_url,"_blank"); return null; }
+          alert("交付文件待上传，请联系管理员"); return null;
+        });
+      }
+      return r.blob();
+    })
+    .then(function(b){
+      if(!b) return;
+      var url=URL.createObjectURL(b);
+      var a=document.createElement("a"); a.href=url; a.download=oid+"_design_ready.zip";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setTimeout(loadLicenses,800);
+    });
+}
+
+function acceptDelivery(oid){
+  if(!confirm("确认已收到并验收该交付物？")) return;
+  fetch("/api/store/order/"+encodeURIComponent(oid)+"/accept_delivery",{method:"POST",headers:authHeaders(),body:"{}"})
+    .then(function(r){return r.json()})
+    .then(function(d){
+      if(d.ok){ alert("验收完成，感谢你的确认！"); loadCustom(); }
+      else alert("验收失败："+(d.error||"未知错误"));
+    });
+}
+
+function saveProfile(){
+  var body={name:$("#pf-name").value.trim(),phone:$("#pf-phone").value.trim(),
+            organization:$("#pf-org").value.trim(),user_type:$("#pf-type").value};
+  fetch("/api/store/me",{method:"PATCH",headers:authHeaders(),body:JSON.stringify(body)})
+    .then(function(r){return r.json()})
+    .then(function(d){
+      $("#pf-msg").innerHTML = d.ok ? '<span class="ok">已保存</span>'
+                                    : '<span class="err">'+esc(d.error||"保存失败")+'</span>';
+      if(d.ok) setTimeout(boot,400);
+    });
+}
+
+function savePwd(){
+  var o=$("#pw-old").value, n=$("#pw-new").value, n2=$("#pw-new2").value;
+  if(n!==n2){ $("#pw-msg").innerHTML='<span class="err">两次输入的新密码不一致</span>'; return; }
+  if(n.length<6){ $("#pw-msg").innerHTML='<span class="err">新密码至少 6 位</span>'; return; }
+  fetch("/api/store/password",{method:"POST",headers:authHeaders(),
+        body:JSON.stringify({old_password:o,new_password:n})})
+    .then(function(r){return r.json()})
+    .then(function(d){
+      if(!d.ok){ $("#pw-msg").innerHTML='<span class="err">'+esc(d.error||"修改失败")+'</span>'; return; }
+      $("#pw-msg").innerHTML='<span class="ok">已修改，请重新登录</span>';
+      localStorage.setItem("lda_store_token", d.token);
+      setTimeout(function(){ location.href="/store.html" },1200);
+    });
+}
+
+boot();
+</script>
+</body>
+</html>

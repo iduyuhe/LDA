@@ -592,6 +592,126 @@ def list_orders(token: str, scope: str = "mine") -> dict:
             "count": len(rows)}
 
 
+# ---------------------------------------------------------------------------
+# 「我的」模块（用户自助）：资料维护 / 改密 / 许可证资产 / 消费概览
+#
+# 注：本层是「单租户 · 多用户 · 扁平池」——所有用户共享 store.json，无 tenant_id
+# 隔离键；user_type 是「定价折扣维度」不是「租户归属」。若未来升级真多租户，
+# 在此处按 organization 引入 tenant_id 即为天然 seam，无需推翻现有结构。
+# ---------------------------------------------------------------------------
+
+def update_profile(user_token: str, *, name: str | None = None,
+                   phone: str | None = None, organization: str | None = None,
+                   user_type: str | None = None) -> dict:
+    """用户自助改资料。身份（user_type）可改，但机构席位必须填机构名。"""
+    u = user_by_token(user_token)
+    if u is None:
+        return {"ok": False, "error": "请先登录", "code": 401}
+    if user_type is not None and user_type not in USER_TYPES:
+        return {"ok": False, "error": "身份取值非法"}
+    with _locked() as data:
+        cur = data["users"].get(u["id"])
+        if cur is None:
+            return {"ok": False, "error": "账号不存在", "code": 401}
+        if name is not None:
+            cur["name"] = str(name).strip()[:40]
+        if phone is not None:
+            cur["phone"] = str(phone).strip()[:40]
+        if organization is not None:
+            cur["organization"] = str(organization).strip()[:120]
+        if user_type is not None:
+            if user_type == "institution" and not (cur.get("organization") or "").strip():
+                return {"ok": False, "error": "机构席位需先填写机构/单位名称"}
+            cur["user_type"] = user_type
+        cur["updated_at"] = datetime.now(timezone.utc).isoformat()
+    return {"ok": True, "user": _public_user(cur)}
+
+
+def change_password(user_token: str, old_password: str, new_password: str) -> dict:
+    """改密：校验旧密码 → 换新 salt/hash → 轮换会话令牌（旧令牌立即失效）。"""
+    u = user_by_token(user_token)
+    if u is None:
+        return {"ok": False, "error": "请先登录", "code": 401}
+    if len(new_password or "") < 6:
+        return {"ok": False, "error": "新密码至少 6 位"}
+    with _locked() as data:
+        cur = data["users"].get(u["id"])
+        if cur is None:
+            return {"ok": False, "error": "账号不存在", "code": 401}
+        if _hash_pwd(old_password or "", cur.get("salt", "")) != cur.get("password_hash"):
+            return {"ok": False, "error": "原密码不正确"}
+        cur["salt"] = secrets.token_hex(8)
+        cur["password_hash"] = _hash_pwd(new_password, cur["salt"])
+        # 令牌轮换：改密后其它设备上的旧会话立即失效
+        token = secrets.token_urlsafe(24)
+        cur["token"] = token
+    return {"ok": True, "token": token, "user": _public_user(cur)}
+
+
+def my_licenses(user_token: str) -> dict:
+    """我的许可证资产：已购货架包 + 剩余下载次数（只读，不消耗）。"""
+    u = user_by_token(user_token)
+    if u is None:
+        return {"ok": False, "error": "请先登录", "code": 401}
+    data = _load()
+    rows = [o for o in data["orders"]
+            if o["user_id"] == u["id"] and o.get("license_code")]
+    try:
+        from lda_l2.ship_package import license_status
+    except Exception:  # noqa: BLE001
+        license_status = None
+
+    items = []
+    for o in rows:
+        code = o["license_code"]
+        st = license_status(code) if license_status else {}
+        items.append({
+            "order_id": o["id"],
+            "shelf_id": o.get("shelf_id", ""),
+            "title": o.get("title", ""),
+            "license_code": code,
+            "status": o.get("status", ""),
+            "approved_at": o.get("approved_at", ""),
+            "used": st.get("used", 0) if st.get("ok") else 0,
+            "max_uses": st.get("max_uses", 1) if st.get("ok") else 1,
+            "remaining": st.get("remaining", 0) if st.get("ok") else 0,
+            "revoked": bool(st.get("revoked")) if st.get("ok") else False,
+            "downloadable": bool(st.get("ok")) and st.get("remaining", 0) > 0,
+        })
+    items.sort(key=lambda x: x.get("approved_at", ""), reverse=True)
+    return {"ok": True, "licenses": items, "count": len(items)}
+
+
+def my_summary(user_token: str) -> dict:
+    """我的概览：身份/折扣 + 订单计数 + 累计消费 + 许可证资产 + 定制进度。"""
+    u = user_by_token(user_token)
+    if u is None:
+        return {"ok": False, "error": "请先登录", "code": 401}
+    data = _load()
+    uid = u["id"]
+    orders = [o for o in data["orders"] if o["user_id"] == uid]
+    paid_statuses = ("paid_unverified", "approved", "delivered", "accepted")
+    paid = [o for o in orders if o.get("status") in paid_statuses]
+    spent = round(sum(float(o.get("amount_cny", 0) or 0) for o in paid), 2)
+    lic = my_licenses(user_token)
+    licenses = lic.get("licenses", [])
+    custom = [o for o in orders if o.get("type") == "custom"]
+    return {
+        "ok": True,
+        "user": _public_user(u),
+        "tier_label": USER_TYPE_LABELS.get(u.get("user_type", DEFAULT_TIER), "标准个人"),
+        "discount": tier_discount(u.get("user_type")),
+        "orders_total": len(orders),
+        "orders_paid": len(paid),
+        "spent_cny": spent,
+        "licenses_total": len(licenses),
+        "downloads_left": sum(int(x.get("remaining", 0)) for x in licenses),
+        "custom_total": len(custom),
+        "custom_active": sum(1 for o in custom
+                             if o.get("status") in ("created", "developing", "delivered")),
+    }
+
+
 def public_config() -> dict:
     """给前台：微信收款码 + 对公账户 + 身份分层，不含管理员信息。"""
     data = _load()

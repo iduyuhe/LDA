@@ -149,6 +149,29 @@ def _bearer(headers: dict) -> str:
     return h[len("Bearer "):] if h.startswith("Bearer ") else ""
 
 
+def _client_ip(handler) -> str:
+    """取客户端 IP，用于登录限流的 IP 维度。
+
+    仅当请求来自本机可信代理（生产 nginx → 127.0.0.1:3006）时才采信
+    X-Forwarded-For / X-Real-IP；否则一律用 TCP 对端地址，
+    防止外部直接伪造 XFF 绕过限流。
+    """
+    peer = ""
+    try:
+        peer = handler.client_address[0]
+    except Exception:  # noqa: BLE001
+        peer = ""
+    if peer in ("127.0.0.1", "::1", ""):
+        hdrs = handler.headers
+        xff = (hdrs.get("X-Forwarded-For", "") if hasattr(hdrs, "get") else "") or ""
+        if xff:
+            return xff.split(",")[0].strip()[:64]
+        xri = (hdrs.get("X-Real-IP", "") if hasattr(hdrs, "get") else "") or ""
+        if xri:
+            return xri.strip()[:64]
+    return (peer or "unknown")[:64]
+
+
 # --------------------------------------------------------------------------
 # 内核调用（全部复用已落地模块）
 # --------------------------------------------------------------------------
@@ -3224,7 +3247,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, r)
             elif path == "/api/store/login":
                 store = _get_store()
-                r = store.login(payload.get("email"), payload.get("password"))
+                r = store.login(payload.get("email"), payload.get("password"),
+                                client_ip=_client_ip(self))
                 self._send(200, r)
             elif path == "/api/store/password":
                 # 改密（改密成功后会话令牌轮换，旧设备登录态失效）

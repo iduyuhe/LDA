@@ -85,12 +85,16 @@
     <h3 id="authTitle">登录</h3>
     <label>邮箱 *</label>
     <input id="a-email" placeholder="you@company.com">
-    <label>姓名 *</label>
-    <input id="a-name" placeholder="您的称谓">
+    <div id="nameWrap">
+      <label>姓名 *</label>
+      <input id="a-name" placeholder="您的称谓">
+    </div>
     <label>密码 *（至少 6 位）</label>
     <input id="a-pass" type="password" placeholder="设置或输入密码">
+      <div id="phoneWrap">
       <label>手机号（选填）</label>
       <input id="a-phone" placeholder="选填">
+      </div>
       <label>账户身份 *</label>
       <div class="seg" id="regTypeWrap">
         <button type="button" class="on" data-t="standard" onclick="setRegType('standard')">标准个人</button>
@@ -205,8 +209,32 @@ function refreshAuth(){
   }
 }
 
-function showLogin(){ authMode="login"; $("#authTitle").textContent="登录"; $("#authSwitch").innerHTML='没有账号？<a style="color:var(--accent);cursor:pointer" onclick="showRegister()">去注册</a>'; $("#authMsg").textContent=""; $("#regTypeWrap").style.display="none"; $("#orgLabel").style.display="none"; $("#a-org").style.display="none"; $("#authModal").classList.add('show'); }
-function showRegister(){ authMode="register"; $("#authTitle").textContent="注册"; $("#authSwitch").innerHTML='已有账号？<a style="color:var(--accent);cursor:pointer" onclick="showLogin()">去登录</a>'; $("#authMsg").textContent=""; setRegType("standard"); $("#regTypeWrap").style.display=""; $("#authModal").classList.add('show'); }
+function showLogin(){
+  authMode="login";
+  $("#authTitle").textContent="登录";
+  $("#authSwitch").innerHTML='没有账号？<a style="color:var(--accent);cursor:pointer" onclick="showRegister()">去注册</a>';
+  $("#authMsg").textContent="";
+  // 登录只需要邮箱+密码：隐藏姓名/手机/身份/机构（后端 login 不使用这些字段）
+  $("#regTypeWrap").style.display="none";
+  $("#orgLabel").style.display="none";
+  $("#a-org").style.display="none";
+  $("#nameWrap").style.display="none";
+  $("#phoneWrap").style.display="none";
+  $("#a-pass").placeholder="输入密码";
+  $("#authModal").classList.add('show');
+}
+function showRegister(){
+  authMode="register";
+  $("#authTitle").textContent="注册";
+  $("#authSwitch").innerHTML='已有账号？<a style="color:var(--accent);cursor:pointer" onclick="showLogin()">去登录</a>';
+  $("#authMsg").textContent="";
+  setRegType("standard");
+  $("#regTypeWrap").style.display="";
+  $("#nameWrap").style.display="";
+  $("#phoneWrap").style.display="";
+  $("#a-pass").placeholder="设置密码（至少 6 位）";
+  $("#authModal").classList.add('show');
+}
 function closeAuth(){ $("#authModal").classList.remove('show'); }
 
 function setRegType(t){
@@ -221,19 +249,29 @@ function setRegType(t){
 function submitAuth(){
   var email=$("#a-email").value.trim(), name=$("#a-name").value.trim(),
       pass=$("#a-pass").value, phone=$("#a-phone").value.trim();
-  if(!email||!pass||!name){ $("#authMsg").innerHTML='<span class="err">邮箱、姓名、密码均为必填</span>'; return; }
-  if(authMode==="register" && regType==="institution" && !$("#a-org").value.trim()){
+  var isReg = (authMode==="register");
+  if(!email||!pass){ $("#authMsg").innerHTML='<span class="err">邮箱、密码均为必填</span>'; return; }
+  if(isReg && !name){ $("#authMsg").innerHTML='<span class="err">请填写姓名/称谓</span>'; return; }
+  if(pass.length>200){ $("#authMsg").innerHTML='<span class="err">密码过长（上限 200 字符）</span>'; return; }
+  if(isReg && regType==="institution" && !$("#a-org").value.trim()){
     $("#authMsg").innerHTML='<span class="err">机构席位需填写机构/单位名称</span>'; return;
   }
-  var url = authMode==="register" ? "/api/store/register" : "/api/store/login";
-  var body = {email:email,name:name,password:pass,phone:phone};
-  if(authMode==="register"){ body.user_type=regType; if($("#a-org").value.trim()) body.organization=$("#a-org").value.trim(); }
+  var url = isReg ? "/api/store/register" : "/api/store/login";
+  var body = {email:email,password:pass};
+  if(isReg){ body.name=name; body.phone=phone; body.user_type=regType;
+             if($("#a-org").value.trim()) body.organization=$("#a-org").value.trim(); }
+  $("#authSubmit").disabled=true;
   fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
     .then(function(r){return r.json()}).then(function(d){
-      if(!d.ok){ $("#authMsg").innerHTML='<span class="err">'+esc(d.error||'失败')+'</span>'; return; }
+      $("#authSubmit").disabled=false;
+      if(!d.ok){
+        var tip = isReg ? '' : '<br><span class="mut" style="font-size:12px">忘记密码？请联系管理员重置（当前未接入邮箱验证）</span>';
+        $("#authMsg").innerHTML='<span class="err">'+esc(d.error||'失败')+'</span>'+tip;
+        return;
+      }
       store_token=d.token; localStorage.setItem("lda_store_token",store_token);
       closeAuth(); refreshAuth();
-    }).catch(function(e){ $("#authMsg").innerHTML='<span class="err">'+e+'</span>'; });
+    }).catch(function(e){ $("#authSubmit").disabled=false; $("#authMsg").innerHTML='<span class="err">网络异常，请重试</span>'; });
 }
 function logout(){ store_token=""; localStorage.removeItem("lda_store_token"); refreshAuth(); }
 

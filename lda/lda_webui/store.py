@@ -22,11 +22,12 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import secrets
 import threading
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _LDA = os.path.dirname(_HERE)
@@ -62,6 +63,23 @@ STATUS_FLOW = ("created", "paid_unverified", "approved", "rejected",
                "developing", "delivered", "accepted")
 # 定制需求专用状态流转：created → developing → delivered → accepted（任一可 → rejected）
 CUSTOM_STATUS_FLOW = ("created", "developing", "delivered", "accepted", "rejected")
+
+# —— 登录/注册安全基线（2026-08-29 审计后引入）——
+# 邮箱：比旧的 `"@" in email` 严格，杜绝 `a@.b`、`@.` 之类的畸形值入库。
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$")
+MAX_PASSWORD_LEN = 200        # 上限防 pbkdf2 计算型 DoS（10 万字符密码实测可注册）
+MIN_PASSWORD_LEN = 6
+# 会话令牌有效期（天）。到期后需重新登录；存量无时间戳的令牌视为「自首次访问起计时」，
+# 不会因本次升级把已登录用户立刻踢下线。
+TOKEN_TTL_DAYS = 30
+# 登录失败限流：单账号 + 单 IP 双维度，超过阈值后锁定时长（秒）
+_LOGIN_MAX_FAILS = 5
+_LOGIN_LOCK_SECONDS = 600
+
+# 失败计数器（进程内存）。本服务为单进程 ThreadingHTTPServer，内存计数足够；
+# 重启即清空，与“持久化不应记录失败口令”的安全取向一致。
+_LOGIN_GUARD: dict = {}
+_LOGIN_GUARD_LOCK = threading.Lock()
 
 
 # --------------------------------------------------------------------------
@@ -180,10 +198,15 @@ def _hash_pwd(password: str, salt: str) -> str:
 def register(email: str, name: str, password: str, phone: str = "",
              user_type: str = "standard", organization: str = "") -> dict:
     email = (email or "").strip().lower()
-    if "@" not in email or "." not in email.split("@")[-1]:
+    if not _EMAIL_RE.match(email):
         return {"ok": False, "error": "email 格式不合法"}
-    if len(password or "") < 6:
+    password = password or ""
+    if len(password) < 6:
         return {"ok": False, "error": "密码至少 6 位"}
+    if len(password) > MAX_PASSWORD_LEN:
+        return {"ok": False, "error": "密码过长（上限 %d 字符）" % MAX_PASSWORD_LEN}
+    if not (name or "").strip():
+        return {"ok": False, "error": "请填写姓名/称谓"}
     if user_type not in USER_TYPES:
         user_type = DEFAULT_TIER
     if user_type == "institution" and not (organization or "").strip():
@@ -194,45 +217,121 @@ def register(email: str, name: str, password: str, phone: str = "",
         salt = secrets.token_hex(8)
         uid = "u-" + uuid.uuid4().hex[:10]
         token = secrets.token_urlsafe(24)
+        now = datetime.now(timezone.utc).isoformat()
         data["users"][uid] = {
             "id": uid, "email": email, "name": (name or "").strip()[:40],
             "phone": (phone or "").strip()[:40],
             "user_type": user_type,
             "organization": (organization or "").strip()[:120],
             "password_hash": _hash_pwd(password, salt), "salt": salt,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "is_admin": False, "token": token,
+            "created_at": now,
+            "token": token, "token_created_at": now,
+            "is_admin": False,
         }
     return {"ok": True, "token": token, "user": _public_user(data["users"][uid])}
 
 
-def login(email: str, password: str) -> dict:
+def login(email: str, password: str, client_ip: str = "") -> dict:
+    """登录。安全基线（审计后）：
+
+    - 反用户枚举：账号不存在 / 密码错误 / 锁定 一律返回同一句提示；
+    - 失败限流：账号维度 + IP 维度双计数，超阈值锁定 _LOGIN_LOCK_SECONDS 秒；
+    - 只做一次 pbkdf2（账号不存在时用固定 salt 空算，避免时序差暴露账号存在性）；
+    - 记录 last_login_at / last_login_ip 供审计。
+    """
     email = (email or "").strip().lower()
+    generic_err = "邮箱或密码不正确"
+
+    def _guard_keys():
+        # 无 IP 时跳过 IP 维度（否则会退化成共享的 "ip:" 键，把无关请求锁在一起）
+        keys = []
+        if email:
+            keys.append("acct:" + email)
+        if client_ip:
+            keys.append("ip:" + client_ip)
+        return keys
+
+    # ---- 限流前置检查（不消耗 pbkdf2，防计算型 DoS）----
+    with _LOGIN_GUARD_LOCK:
+        for key in _guard_keys():
+            st = _LOGIN_GUARD.get(key)
+            if st and time.time() < st["until"] and st["fails"] >= _LOGIN_MAX_FAILS:
+                left = int(st["until"] - time.time())
+                return {"ok": False,
+                        "error": "尝试次数过多，请 %d 分钟后再试" % max(1, (left + 59) // 60)}
+
+    def _note_fail():
+        with _LOGIN_GUARD_LOCK:
+            now = time.time()
+            for key in _guard_keys():
+                st = _LOGIN_GUARD.get(key) or {"fails": 0, "until": 0.0}
+                st["fails"] += 1
+                if st["fails"] >= _LOGIN_MAX_FAILS:
+                    st["until"] = now + _LOGIN_LOCK_SECONDS
+                _LOGIN_GUARD[key] = st
+
+    def _clear_fail():
+        with _LOGIN_GUARD_LOCK:
+            for key in _guard_keys():
+                _LOGIN_GUARD.pop(key, None)
+
     with _locked() as data:
         user = next((u for u in data["users"].values() if u.get("email") == email), None)
         if user is None:
-            return {"ok": False, "error": "账号不存在，请先注册"}
-        if _hash_pwd(password, user.get("salt", "")) != user.get("password_hash"):
-            return {"ok": False, "error": "密码错误"}
-        # 刷新会话令牌
+            # 账号不存在：仍跑一次等价开销的哈希，消除时序侧信道
+            _hash_pwd(password or "", "no-such-account")
+            _note_fail()
+            return {"ok": False, "error": generic_err}
+        if _hash_pwd(password or "", user.get("salt", "")) != user.get("password_hash"):
+            _note_fail()
+            return {"ok": False, "error": generic_err}
+        _clear_fail()
+        # 刷新会话令牌（单设备语义：新登录会使旧令牌失效）
         token = secrets.token_urlsafe(24)
         user["token"] = token
+        user["token_created_at"] = datetime.now(timezone.utc).isoformat()
+        user["last_login_at"] = user["token_created_at"]
+        user["last_login_ip"] = (client_ip or "")[:64]
+        if not user.get("user_type"):
+            user["user_type"] = DEFAULT_TIER   # 修复历史脏值 None
     return {"ok": True, "token": token, "user": _public_user(user)}
 
 
 def user_by_token(token: str) -> dict | None:
+    """按会话令牌取用户。令牌比较用恒定时间算法，并检查 TTL。"""
     if not token:
         return None
     data = _load()
-    return next((u for u in data["users"].values() if u.get("token") == token), None)
+    for u in data["users"].values():
+        if secrets.compare_digest(str(u.get("token") or ""), str(token)):
+            if _token_expired(u):
+                return None
+            return u
+    return None
+
+
+def _token_expired(u: dict) -> bool:
+    """会话过期判定。存量令牌无 token_created_at 时不视为过期（平滑升级，不踢在线用户）。"""
+    ts = u.get("token_created_at") or u.get("created_at")
+    if not ts:
+        return False
+    try:
+        t = datetime.fromisoformat(ts)
+    except (TypeError, ValueError):
+        return False
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=timezone.utc)
+    return datetime.now(timezone.utc) - t > timedelta(days=TOKEN_TTL_DAYS)
 
 
 def _public_user(u: dict) -> dict:
-    return {"id": u["id"], "email": u["email"], "name": u.get("name", ""),
-            "phone": u.get("phone", ""), "is_admin": u.get("is_admin", False),
+    # 注意用 `or` 而非 .get(k, default)：键存在但值为 None 时 .get 会返回 None，
+    # 导致身份折扣静默降级为原价（生产中真实出现过该脏值）。
+    return {"id": u["id"], "email": u["email"], "name": u.get("name") or "",
+            "phone": u.get("phone") or "", "is_admin": bool(u.get("is_admin")),
             "created_at": u.get("created_at", ""),
-            "user_type": u.get("user_type", DEFAULT_TIER),
-            "organization": u.get("organization", "")}
+            "user_type": u.get("user_type") or DEFAULT_TIER,
+            "organization": u.get("organization") or ""}
 
 
 def is_admin(token: str) -> bool:
@@ -632,19 +731,25 @@ def change_password(user_token: str, old_password: str, new_password: str) -> di
     u = user_by_token(user_token)
     if u is None:
         return {"ok": False, "error": "请先登录", "code": 401}
-    if len(new_password or "") < 6:
-        return {"ok": False, "error": "新密码至少 6 位"}
+    new_password = new_password or ""
+    if len(new_password) < MIN_PASSWORD_LEN:
+        return {"ok": False, "error": "新密码至少 %d 位" % MIN_PASSWORD_LEN}
+    if len(new_password) > MAX_PASSWORD_LEN:
+        return {"ok": False, "error": "新密码过长（上限 %d 字符）" % MAX_PASSWORD_LEN}
     with _locked() as data:
         cur = data["users"].get(u["id"])
         if cur is None:
             return {"ok": False, "error": "账号不存在", "code": 401}
-        if _hash_pwd(old_password or "", cur.get("salt", "")) != cur.get("password_hash"):
+        if not secrets.compare_digest(
+                _hash_pwd(old_password or "", cur.get("salt", "")),
+                str(cur.get("password_hash") or "")):
             return {"ok": False, "error": "原密码不正确"}
         cur["salt"] = secrets.token_hex(8)
         cur["password_hash"] = _hash_pwd(new_password, cur["salt"])
         # 令牌轮换：改密后其它设备上的旧会话立即失效
         token = secrets.token_urlsafe(24)
         cur["token"] = token
+        cur["token_created_at"] = datetime.now(timezone.utc).isoformat()
     return {"ok": True, "token": token, "user": _public_user(cur)}
 
 

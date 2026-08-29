@@ -188,10 +188,12 @@ function refreshAuth(){
         var org = d.user.organization ? (' · '+esc(d.user.organization)) : '';
         $("#memberInfo").innerHTML = '邮箱 '+esc(d.user.email)+' · 身份：'+tier+org+' · 注册于 '+(d.user.created_at||'').slice(0,10);
         loadOrders();
+        loadShelves();   // 登录态变化后重拉货架价（身份价）
       }else{
         store_token=""; localStorage.removeItem("lda_store_token");
         $("#memberPanel").classList.add('hide');
         $("#orderList").innerHTML='<span class="mut">登录后可查看订单。</span>';
+        loadShelves();   // 退出/失效后同样回到匿名价
       }
     });
   }else{
@@ -306,7 +308,7 @@ function openBuy(shelfId){
       box.innerHTML='<span class="mut">管理员尚未配置收款码</span>';
     }
     var amt=(SHELF_PRICE[shelfId]!=null)?SHELF_PRICE[shelfId]:null;
-    $("#payAmount").textContent = (amt!=null && buyType!=='custom') ? ('本次支付：¥'+amt) : '';
+    updatePayAmount();
     $("#payeeInfo").textContent = c.payee ? ('收款方：'+c.payee+(c.amount_note?(' · '+c.amount_note):'')) : '';
     var b=c.bank||{};
     if(b.name){
@@ -328,6 +330,13 @@ function setType(t){
   $("#personalPane").classList.toggle('hide', t!=='personal');
   $("#businessPane").classList.toggle('hide', t!=='business');
   $("#customPane").classList.toggle('hide', t!=='custom');
+  updatePayAmount();
+}
+function updatePayAmount(){
+  var el=$("#payAmount"); if(!el) return;
+  var sid=$("#buyShelf").textContent.trim();
+  var amt=(sid && SHELF_PRICE[sid]!=null)?SHELF_PRICE[sid]:null;
+  el.textContent=(buyType!=='custom' && amt!=null)?('本次支付：¥'+amt):'';
 }
 function openCustom(){
   if(!store_token){ showLogin(); return; }

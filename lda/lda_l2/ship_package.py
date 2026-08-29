@@ -28,6 +28,7 @@ import math
 import os
 import secrets
 import sys
+import threading
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -394,33 +395,52 @@ def _read_manifest(zip_path: str) -> Optional[Dict[str, Any]]:
 
 
 # —— 兑换码授权（dist/licenses.json）——
+# 并发安全：读-改-写全程互斥（ThreadingHTTPServer 下防丢写）+ 原子落盘。
+_LIC_LOCK = threading.RLock()
+
+
 def _load_licenses() -> Dict[str, Any]:
     if not os.path.exists(LICENSES_PATH):
         return {}
-    try:
-        with open(LICENSES_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:  # noqa: BLE001
-        return {}
+    with _LIC_LOCK:
+        try:
+            with open(LICENSES_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:  # noqa: BLE001
+            return {}
 
 
 def _save_licenses(data: Dict[str, Any]) -> None:
     os.makedirs(os.path.dirname(LICENSES_PATH), exist_ok=True)
-    with open(LICENSES_PATH, "w", encoding="utf-8") as f:
+    tmp = LICENSES_PATH + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, LICENSES_PATH)
+
+
+def _lic_mutate(fn, *a, **kw):
+    """锁内读-改-写：mint_license / consume_license 等共用，防止并发丢写。"""
+    with _LIC_LOCK:
+        data = _load_licenses()
+        res = fn(data, *a, **kw)
+        if res is not False:
+            _save_licenses(data)
+        return res
 
 
 def mint_license(shelf_id: str, email: str = "", max_uses: int = 1) -> str:
     """生成兑换码并写入授权表（阶段2 由支付成功触发；阶段1 手动/CLI 用）。"""
-    data = _load_licenses()
-    code = secrets.token_urlsafe(16)
-    data[code] = {
-        "shelf_id": shelf_id, "email": email, "max_uses": max_uses,
-        "used": 0, "created_at": datetime.now(timezone.utc).isoformat(),
-        "revoked": False,
-    }
-    _save_licenses(data)
-    return code
+    def _do(data):
+        code = secrets.token_urlsafe(16)
+        data[code] = {
+            "shelf_id": shelf_id, "email": email, "max_uses": max_uses,
+            "used": 0, "created_at": datetime.now(timezone.utc).isoformat(),
+            "revoked": False,
+        }
+        return code
+    return _lic_mutate(_do)
 
 
 def verify_license(code: str, shelf_id: Optional[str] = None) -> Dict[str, Any]:
@@ -438,14 +458,24 @@ def verify_license(code: str, shelf_id: Optional[str] = None) -> Dict[str, Any]:
     return {"ok": True, "shelf_id": rec["shelf_id"]}
 
 
-def consume_license(code: str) -> None:
-    """下载成功后自增 used（限次）。"""
-    data = _load_licenses()
-    rec = data.get(code)
-    if rec is None:
-        return
-    rec["used"] = rec.get("used", 0) + 1
-    _save_licenses(data)
+def consume_license(code: str, shelf_id: Optional[str] = None) -> bool:
+    """下载成功后自增 used（限次）。锁内 验证+自增 原子化，防并发超额。
+
+    支持可选 shelf_id 货架匹配（与 verify_license 语义一致）。
+    返回 True=已消耗（可下载）；False=码无效/吊销/已用尽/货架不匹配（拒绝下载）。
+    """
+    def _do(data):
+        rec = data.get(code)
+        if rec is None or rec.get("revoked"):
+            return False
+        if shelf_id is not None and rec.get("shelf_id") != shelf_id:
+            return False
+        if rec.get("used", 0) >= rec.get("max_uses", 1):
+            return False
+        rec["used"] = rec.get("used", 0) + 1
+        return True
+    res = _lic_mutate(_do)
+    return res is True
 
 
 def package_info(shelf_id: str) -> Dict[str, Any]:

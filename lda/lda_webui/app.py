@@ -2910,7 +2910,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, package_info(sid))
             elif sub == "download":
                 from urllib.parse import parse_qs, urlparse
-                from lda_l2.ship_package import (verify_license, consume_license,
+                from lda_l2.ship_package import (consume_license,
                                                  generate_package, is_download_open)
                 if not is_download_open(sid):
                     self._send(403, {"error": "not_open",
@@ -2918,20 +2918,20 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 q = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
                 tok = q.get("token", "")
-                v = verify_license(tok, shelf_id=sid)
-                if not v.get("ok"):
-                    self._send(403, {"error": "unauthorized", "reason": v.get("reason")})
+                # 原子消耗（锁内验证+自增+货架匹配），失败即拒绝，防并发超额
+                if not consume_license(tok, shelf_id=sid):
+                    self._send(403, {"error": "unauthorized",
+                                     "reason": "兑换码无效/已用完/不匹配"})
+                    return
+                r = generate_package(sid)
+                if not r.get("ok"):
+                    self._send(404, {"error": r.get("error", "not found")})
                 else:
-                    r = generate_package(sid)
-                    if not r.get("ok"):
-                        self._send(404, {"error": r.get("error", "not found")})
-                    else:
-                        with open(r["zip_path"], "rb") as _fh:
-                            _data = _fh.read()
-                        consume_license(tok)
-                        self._send(200, body=_data, ctype="application/zip",
-                                   headers={"Content-Disposition":
-                                             'attachment; filename="%s_design_ready.zip"' % sid})
+                    with open(r["zip_path"], "rb") as _fh:
+                        _data = _fh.read()
+                    self._send(200, body=_data, ctype="application/zip",
+                               headers={"Content-Disposition":
+                                         'attachment; filename="%s_design_ready.zip"' % sid})
             else:
                 self._send(404, {"error": "not found"})
         elif path == "/api/benchmark_crosscheck":

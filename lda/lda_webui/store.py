@@ -24,6 +24,7 @@ import json
 import os
 import secrets
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 
@@ -34,7 +35,7 @@ if _LDA not in __import__("sys").path:
 
 ROOT = os.path.dirname(_LDA)                      # 仓库根（lda/ 上一级）
 STORE_PATH = os.path.join(ROOT, "dist", "store.json")
-_LOCK = threading.Lock()
+_LOCK = threading.RLock()    # 可重入：读-改-写全程互斥（含 _load 读），防并发丢写 + Windows rename 冲突
 
 # 默认单价（¥，可被 config.prices 按货架覆盖）。开放货架众多，默认统一价即可。
 DEFAULT_PRICE_CNY = 1999
@@ -68,20 +69,27 @@ def _load() -> dict:
     _ensure_dir()
     if not os.path.exists(STORE_PATH):
         return {"users": {}, "orders": [], "config": _default_config()}
-    try:
-        with open(STORE_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        data.setdefault("users", {})
-        data.setdefault("orders", [])
-        data.setdefault("config", {})
-        data["config"].setdefault("wechat", {"payee": "", "qr": "", "amount_note": ""})
-        data["config"].setdefault("bank", _default_bank())
-        data["config"].setdefault("prices", {})
-        data["config"].setdefault("tiers", {})
-        data["config"].setdefault("auto_confirm", False)
-        return data
-    except Exception:  # noqa: BLE001
-        return {"users": {}, "orders": [], "config": _default_config()}
+    with _LOCK:
+        try:
+            with open(STORE_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            data.setdefault("users", {})
+            data.setdefault("orders", [])
+            data.setdefault("config", {})
+            data["config"].setdefault("wechat", {"payee": "", "qr": "", "amount_note": ""})
+            data["config"].setdefault("bank", _default_bank())
+            data["config"].setdefault("prices", {})
+            data["config"].setdefault("tiers", {})
+            data["config"].setdefault("auto_confirm", False)
+            return data
+        except Exception:  # noqa: BLE001
+            # 数据文件损坏：绝不静默清空覆盖——先备份再返回默认，保留恢复机会。
+            try:
+                import time as _t
+                os.rename(STORE_PATH, STORE_PATH + ".corrupt-%d" % int(_t.time()))
+            except Exception:  # noqa: BLE001
+                pass
+            return {"users": {}, "orders": [], "config": _default_config()}
 
 
 def _default_bank() -> dict:
@@ -100,10 +108,59 @@ def _default_config() -> dict:
 
 
 def _save(data: dict) -> None:
-    _ensure_dir()
     with _LOCK:
-        with open(STORE_PATH, "w",  encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        _save_nolock(data)
+
+
+def _locked() -> "_LockedCtx":
+    """读-改-写全程互斥（ThreadingHTTPServer 并发下防丢写）。
+
+    用法：with _locked() as data: ...修改... （退出时自动落盘）
+    """
+    return _LockedCtx()
+
+
+class _LockedCtx:
+    def __enter__(self):
+        _LOCK.acquire()
+        try:
+            self._data = _load()
+            return self._data
+        except Exception:
+            _LOCK.release()
+            raise
+
+    def __exit__(self, exc_type, exc, tb):
+        try:
+            if exc_type is None:
+                _save_nolock(self._data)
+        finally:
+            _LOCK.release()
+        return False
+
+
+def _save_nolock(data: dict) -> None:
+    """原子写：先写临时文件再 rename，避免进程崩溃时留下半写坏文件。"""
+    _ensure_dir()
+    tmp = STORE_PATH + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    # Windows 下目标可能被瞬时读句柄占用：小重试窗口
+    for _try in range(5):
+        try:
+            os.replace(tmp, STORE_PATH)
+            return
+        except PermissionError:
+            time.sleep(0.02)
+    # 最后兜底：直接覆盖写（保留 .bak 防止坏文件）
+    try:
+        if os.path.exists(STORE_PATH):
+            os.replace(STORE_PATH, STORE_PATH + ".bak")
+    except Exception:  # noqa: BLE001
+        pass
+    os.replace(tmp, STORE_PATH)
 
 
 # --------------------------------------------------------------------------
@@ -125,37 +182,35 @@ def register(email: str, name: str, password: str, phone: str = "",
         user_type = DEFAULT_TIER
     if user_type == "institution" and not (organization or "").strip():
         return {"ok": False, "error": "机构席位需填写机构/单位名称"}
-    data = _load()
-    if any(u.get("email") == email for u in data["users"].values()):
-        return {"ok": False, "error": "该邮箱已注册，请直接登录"}
-    salt = secrets.token_hex(8)
-    uid = "u-" + uuid.uuid4().hex[:10]
-    token = secrets.token_urlsafe(24)
-    data["users"][uid] = {
-        "id": uid, "email": email, "name": (name or "").strip()[:40],
-        "phone": (phone or "").strip()[:40],
-        "user_type": user_type,
-        "organization": (organization or "").strip()[:120],
-        "password_hash": _hash_pwd(password, salt), "salt": salt,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "is_admin": False, "token": token,
-    }
-    _save(data)
+    with _locked() as data:
+        if any(u.get("email") == email for u in data["users"].values()):
+            return {"ok": False, "error": "该邮箱已注册，请直接登录"}
+        salt = secrets.token_hex(8)
+        uid = "u-" + uuid.uuid4().hex[:10]
+        token = secrets.token_urlsafe(24)
+        data["users"][uid] = {
+            "id": uid, "email": email, "name": (name or "").strip()[:40],
+            "phone": (phone or "").strip()[:40],
+            "user_type": user_type,
+            "organization": (organization or "").strip()[:120],
+            "password_hash": _hash_pwd(password, salt), "salt": salt,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "is_admin": False, "token": token,
+        }
     return {"ok": True, "token": token, "user": _public_user(data["users"][uid])}
 
 
 def login(email: str, password: str) -> dict:
     email = (email or "").strip().lower()
-    data = _load()
-    user = next((u for u in data["users"].values() if u.get("email") == email), None)
-    if user is None:
-        return {"ok": False, "error": "账号不存在，请先注册"}
-    if _hash_pwd(password, user.get("salt", "")) != user.get("password_hash"):
-        return {"ok": False, "error": "密码错误"}
-    # 刷新会话令牌
-    token = secrets.token_urlsafe(24)
-    user["token"] = token
-    _save(data)
+    with _locked() as data:
+        user = next((u for u in data["users"].values() if u.get("email") == email), None)
+        if user is None:
+            return {"ok": False, "error": "账号不存在，请先注册"}
+        if _hash_pwd(password, user.get("salt", "")) != user.get("password_hash"):
+            return {"ok": False, "error": "密码错误"}
+        # 刷新会话令牌
+        token = secrets.token_urlsafe(24)
+        user["token"] = token
     return {"ok": True, "token": token, "user": _public_user(user)}
 
 
@@ -193,35 +248,34 @@ def get_config() -> dict:
 def set_config(config: dict, token: str) -> dict:
     if not is_admin(token):
         return {"ok": False, "error": "unauthorized"}
-    data = _load()
-    # 仅接受已知字段
-    wc = config.get("wechat") or {}
-    if isinstance(wc, dict):
-        data["config"]["wechat"]["payee"] = str(wc.get("payee", ""))[:60]
-        data["config"]["wechat"]["qr"] = str(wc.get("qr", ""))[:2000]
-        data["config"]["wechat"]["amount_note"] = str(wc.get("amount_note", ""))[:200]
-    if isinstance(config.get("prices"), dict):
-        data["config"]["prices"].update({str(k): float(v)
-                                         for k, v in config["prices"].items()})
-    if isinstance(config.get("tiers"), dict):
-        new_tiers = {}
-        for k, v in config["tiers"].items():
-            if k in USER_TYPES:
-                try:
-                    new_tiers[k] = float(v)
-                except (TypeError, ValueError):
-                    pass
-        if new_tiers:
-            data["config"]["tiers"] = new_tiers
-    if isinstance(config.get("bank"), dict):
-        bank = config["bank"]
-        cur = data["config"].setdefault("bank", _default_bank())
-        for k in ("name", "branch", "account", "tel", "contact"):
-            if k in bank:
-                cur[k] = str(bank.get(k) or "").strip()[:200]
-    if "auto_confirm" in config:
-        data["config"]["auto_confirm"] = bool(config["auto_confirm"])
-    _save(data)
+    with _locked() as data:
+        # 仅接受已知字段
+        wc = config.get("wechat") or {}
+        if isinstance(wc, dict):
+            data["config"]["wechat"]["payee"] = str(wc.get("payee", ""))[:60]
+            data["config"]["wechat"]["qr"] = str(wc.get("qr", ""))[:2000]
+            data["config"]["wechat"]["amount_note"] = str(wc.get("amount_note", ""))[:200]
+        if isinstance(config.get("prices"), dict):
+            data["config"]["prices"].update({str(k): float(v)
+                                             for k, v in config["prices"].items()})
+        if isinstance(config.get("tiers"), dict):
+            new_tiers = {}
+            for k, v in config["tiers"].items():
+                if k in USER_TYPES:
+                    try:
+                        new_tiers[k] = float(v)
+                    except (TypeError, ValueError):
+                        pass
+            if new_tiers:
+                data["config"]["tiers"] = new_tiers
+        if isinstance(config.get("bank"), dict):
+            bank = config["bank"]
+            cur = data["config"].setdefault("bank", _default_bank())
+            for k in ("name", "branch", "account", "tel", "contact"):
+                if k in bank:
+                    cur[k] = str(bank.get(k) or "").strip()[:200]
+        if "auto_confirm" in config:
+            data["config"]["auto_confirm"] = bool(config["auto_confirm"])
     return {"ok": True, "config": data["config"]}
 
 
@@ -309,8 +363,8 @@ def create_order(user_token: str, payload: dict) -> dict:
         "reject_reason": "",
     }
     data = _load()
-    data["orders"].insert(0, order)
-    _save(data)
+    with _locked() as wdata:
+        wdata["orders"].insert(0, order)
     return {"ok": True, "order": _public_order(order)}
 
 
@@ -318,53 +372,50 @@ def submit_proof(order_id: str, user_token: str, proof: str) -> dict:
     u = user_by_token(user_token)
     if u is None:
         return {"ok": False, "error": "请先登录", "code": 401}
-    data = _load()
-    order = _find_order(data, order_id)
-    if order is None:
-        return {"ok": False, "error": "订单不存在"}
-    if order["user_id"] != u["id"] and not u.get("is_admin"):
-        return {"ok": False, "error": "无权操作该订单"}
-    if order["status"] not in ("created", "paid_unverified"):
-        return {"ok": False, "error": "该订单状态不可提交凭证"}
-    order["proof"] = (proof or "").strip()[:500]
-    order["status"] = "paid_unverified"
-    order["paid_at"] = datetime.now(timezone.utc).isoformat()
-    if data["config"].get("auto_confirm") and order["type"] == "personal":
-        _deliver(order, data)
-    _save(data)
+    with _locked() as data:
+        order = _find_order(data, order_id)
+        if order is None:
+            return {"ok": False, "error": "订单不存在"}
+        if order["user_id"] != u["id"] and not u.get("is_admin"):
+            return {"ok": False, "error": "无权操作该订单"}
+        if order["status"] not in ("created", "paid_unverified"):
+            return {"ok": False, "error": "该订单状态不可提交凭证"}
+        order["proof"] = (proof or "").strip()[:500]
+        order["status"] = "paid_unverified"
+        order["paid_at"] = datetime.now(timezone.utc).isoformat()
+        if data["config"].get("auto_confirm") and order["type"] == "personal":
+            _deliver(order, data)
     return {"ok": True, "order": _public_order(order)}
 
 
 def admin_approve(order_id: str, token: str, deliverable_url: str = "") -> dict:
     if not is_admin(token):
         return {"ok": False, "error": "unauthorized", "code": 401}
-    data = _load()
-    order = _find_order(data, order_id)
-    if order is None:
-        return {"ok": False, "error": "订单不存在"}
-    if order["status"] in ("approved", "rejected"):
-        return {"ok": False, "error": "订单已处理", "license_code": order.get("license_code")}
-    if order["type"] == "custom":
-        order["status"] = "approved"
-        order["approved_at"] = datetime.now(timezone.utc).isoformat()
-        if deliverable_url:
-            order["deliverable_url"] = str(deliverable_url).strip()[:500]
-    else:
-        _deliver(order, data, deliverable_url)
-    _save(data)
+    with _locked() as data:
+        order = _find_order(data, order_id)
+        if order is None:
+            return {"ok": False, "error": "订单不存在"}
+        if order["status"] in ("approved", "rejected"):
+            return {"ok": False, "error": "订单已处理", "license_code": order.get("license_code")}
+        if order["type"] == "custom":
+            order["status"] = "approved"
+            order["approved_at"] = datetime.now(timezone.utc).isoformat()
+            if deliverable_url:
+                order["deliverable_url"] = str(deliverable_url).strip()[:500]
+        else:
+            _deliver(order, data, deliverable_url)
     return {"ok": True, "order": _public_order(order)}
 
 
 def admin_reject(order_id: str, token: str, reason: str = "") -> dict:
     if not is_admin(token):
         return {"ok": False, "error": "unauthorized", "code": 401}
-    data = _load()
-    order = _find_order(data, order_id)
-    if order is None:
-        return {"ok": False, "error": "订单不存在"}
-    order["status"] = "rejected"
-    order["reject_reason"] = (reason or "").strip()[:200]
-    _save(data)
+    with _locked() as data:
+        order = _find_order(data, order_id)
+        if order is None:
+            return {"ok": False, "error": "订单不存在"}
+        order["status"] = "rejected"
+        order["reject_reason"] = (reason or "").strip()[:200]
     return {"ok": True, "order": _public_order(order)}
 
 
@@ -452,9 +503,11 @@ def order_download(order_id: str, token: str) -> dict:
     if order.get("status") != "approved" or not order.get("license_code"):
         return {"ok": False, "error": "订单尚未交付，无法下载"}
     from lda_l2.ship_package import generate_package, consume_license
+    # 原子消耗：锁内验证+自增，通过才生成包（修复并发超额下载 TOCTOU）
+    if not consume_license(order["license_code"]):
+        return {"ok": False, "error": "下载次数已用完或授权失效，请联系管理员"}
     r = generate_package(order["shelf_id"])
     if not r.get("ok"):
         return {"ok": False, "error": r.get("error", "生成失败")}
-    consume_license(order["license_code"])
     return {"ok": True, "zip_path": r["zip_path"],
             "license_code": order["license_code"], "shelf_id": order["shelf_id"]}

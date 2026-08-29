@@ -78,6 +78,26 @@ def _http(method, url, body=None, timeout=15, headers=None):
         return None, str(e)
 
 
+def _smoke_user_header(base: str):
+    """注册一个 smoke 专用临时账号，返回带 Authorization 的请求头；失败返回 None。
+
+    用途：验证 /api/store/me/* 与 /api/store/orders/mine 等需登录端点的 200 路径。
+    注册失败（如限流/环境限制）时返回 None，由调用方降级为「401 鉴权有效」断言。
+    """
+    import secrets as _secrets
+    email = f"smoke-{_secrets.token_hex(6)}@lda.local"
+    payload = {"email": email, "name": "smoke", "password": "lda-smoke-pwd-2026",
+               "user_type": "standard"}
+    code, text = _http("POST", f"{base}/api/store/register", payload)
+    if code != 200:
+        return None
+    try:
+        tok = json.loads(text).get("token")
+    except Exception:
+        return None
+    return {"Authorization": f"Bearer {tok}"} if tok else None
+
+
 # 前端面板 53-56 渲染硬依赖的 GET /api/ecosystem 关键字段路径（D-103 深审固化）
 ECOSYSTEM_REQUIRED_FIELDS = [
     "harness.total", "harness.passed", "new_benchmarks",
@@ -184,16 +204,33 @@ def main():
             return 1
 
         ok, info, fail = [], [], []
-        # 0) dev admin token：管理员端点 smoke 用默认 dev token（v0.8.54 新增）
-        admin_token = "Bearer LDA-ADMIN-DEV-TOKEN-CHANGE-ME"
+        # 0) 鉴权端点凭据准备（v0.8.55 起弱默认管理员令牌已失效，硬编码 dev token 不再被接受）
+        #    - /api/admin/* ：读环境变量 LDA_ADMIN_TOKEN（生产必设）
+        #    - 需登录端点   ：临时注册一个 smoke 专用账号取 token
+        #    无凭据时：断言「必须返回 401」= 鉴权有效（守护断言，防将来误关鉴权），
+        #              绝不把未授权放行当作 PASS——安全标准不因 CI 变绿而降低。
+        env_admin = os.environ.get("LDA_ADMIN_TOKEN", "").strip()
+        admin_hdr = {"Authorization": f"Bearer {env_admin}"} if env_admin else None
+        user_hdr = _smoke_user_header(base)
 
         # 1) GET 端点实跑（快）
         for r in gets:
-            h = {"Authorization": admin_token} if r.startswith("/api/admin/") else {}
+            if r.startswith("/api/admin/"):
+                h, need_auth = (admin_hdr or {}), True
+            elif r.startswith("/api/store/me/") or r == "/api/store/orders/mine":
+                h, need_auth = (user_hdr or {}), True
+            else:
+                h, need_auth = {}, False
             code, text = _http("GET", f"{base}{r}", headers=h)
             is_json = text.lstrip().startswith(("{", "["))
-            if code == 200 and is_json:
+            if need_auth and not h and code == 200:
+                # 安全回归：需鉴权端点在无任何凭据时返回 200 = 鉴权被误关，必须 FAIL
+                fail.append(("GET", r, "鉴权缺失：无凭据却返回 200"))
+            elif code == 200 and is_json:
                 ok.append(("GET", r, f"{code} JSON"))
+            elif need_auth and code == 401 and not h:
+                # 未配凭据 → 401 是正确行为（鉴权有效），作守护断言计入 PASS
+                ok.append(("GET", r, "401 鉴权有效（无凭据，仅验未授权被拒）"))
             else:
                 fail.append(("GET", r, f"{code} {text[:50]}"))
         # 2) /api/ecosystem/* 快速 POST 实跑（空载荷即快速返回）

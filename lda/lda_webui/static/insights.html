@@ -36,6 +36,26 @@
   .pill.p{background:rgba(34,197,94,.12);color:var(--green)}
   .pill.q{background:rgba(56,189,248,.12);color:var(--accent)}
   .shelf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  .top-actions{display:flex;gap:10px;margin-left:auto}
+  .btn2{border:1px solid var(--accent2);background:transparent;color:var(--accent);border-radius:6px;padding:5px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+  .btn2:hover{background:rgba(59,130,246,.15)}
+  .btn2.primary{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+  .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:1000}
+  .modal.show{display:flex}
+  .modal-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:520px;width:90%;max-height:90vh;overflow:auto;padding:22px 24px}
+  .modal-box h3{margin:0 0 12px;color:var(--accent);font-size:15px}
+  .modal-box .close{float:right;color:var(--mut);cursor:pointer;font-size:18px;line-height:1}
+  .modal-box .close:hover{color:var(--accent)}
+  .modal-box label{display:block;margin:12px 0 4px;font-size:12px;color:var(--mut)}
+  .modal-box input,.modal-box textarea,.modal-box select{width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--txt);font-family:inherit;font-size:13px}
+  .modal-box textarea{min-height:60px;resize:vertical}
+  .modal-box .hint{color:var(--mut);font-size:12px;margin:4px 0 10px}
+  .modal-box .foot{margin-top:16px;display:flex;justify-content:flex-end;gap:10px}
+  .modal-box .bank-info{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0;font-size:13px;line-height:1.8}
+  .modal-box .bank-info b{color:var(--accent);font-weight:500}
+  .modal-box .copy-row{display:flex;gap:8px;align-items:center}
+  .modal-box .copy-row input{flex:1}
+  .modal-box .copy-row button{padding:5px 10px;font-size:12px}
   .shelf{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
   .shelf h3{font-size:13.5px;font-weight:500;margin:0 0 4px;color:var(--txt)}
   .shelf .app{color:var(--mut);font-size:12px;margin-bottom:6px}
@@ -57,6 +77,9 @@
 <div class="top">
   <h1>LDA · 能力展示</h1>
   <a href="/">← 返回验证内核控制台</a>
+  <div class="top-actions">
+    <button class="btn2" onclick="showBankInfo()">对公收款说明</button>
+  </div>
 </div>
 <div class="wrap">
 
@@ -101,6 +124,49 @@
   </div>
 </div>
 
+<!-- 对公收款说明弹窗 -->
+<div class="modal" id="bankModal" onclick="if(event.target===this)closeBankInfo()">
+  <div class="modal-box">
+    <span class="close" onclick="closeBankInfo()">&times;</span>
+    <h3>对公收款说明</h3>
+    <p style="color:var(--mut);font-size:12px;margin:0 0 10px">上海杜特企业管理咨询有限公司 · 资金直达对公账户 · 可开具增值税发票</p>
+    <div class="bank-info">
+      <div class="copy-row"><b>户　名</b><input readonly value="上海杜特企业管理咨询有限公司" id="bank-name"><button class="btn2" onclick="copy('bank-name')">复制</button></div>
+      <div class="copy-row"><b>开户行</b><input readonly placeholder="〔请向杜先生索取或填写开户行〕" value="" id="bank-branch"><button class="btn2" onclick="copy('bank-branch')">复制</button></div>
+      <div class="copy-row"><b>账　号</b><input readonly placeholder="〔请向杜先生索取或填写银行账号〕" value="" id="bank-account"><button class="btn2" onclick="copy('bank-account')">复制</button></div>
+    </div>
+    <p style="color:var(--txt);font-size:13px;line-height:1.7">1. 请使用<strong>对公银行账户</strong>转账，备注建议写：LDA-货架ID-贵司简称。<br>2. 转账完成后点击货架卡片的「对公购买」提交申请，我们将在到账确认后邮件发送兑换码。<br>3. 收到兑换码后，在货架卡片输入框中填入并点击「下载设计包」即可获取完整设计就绪包。</p>
+    <div class="foot"><button class="btn2 primary" onclick="closeBankInfo()">知道了</button></div>
+  </div>
+</div>
+
+<!-- 对公购买申请弹窗 -->
+<div class="modal" id="purchaseModal" onclick="if(event.target===this)closePurchase()">
+  <div class="modal-box">
+    <span class="close" onclick="closePurchase()">&times;</span>
+    <h3>对公购买申请</h3>
+    <p style="color:var(--mut);font-size:12px;margin:0 0 12px">提交后请按「对公收款说明」转账，我们将在到账确认后邮件发送兑换码。</p>
+    <label>意向货架</label>
+    <input id="p-shelf" readonly>
+    <label>公司名称 *</label>
+    <input id="p-company" placeholder="请填写对公转账户名一致的公司全称">
+    <label>联系人 *</label>
+    <input id="p-contact" placeholder="姓名">
+    <label>联系电话 *</label>
+    <input id="p-phone" placeholder="手机或固话">
+    <label>电子邮箱 *</label>
+    <input id="p-email" placeholder="用于接收兑换码">
+    <label>付款备注 / 转账信息</label>
+    <textarea id="p-note" placeholder="如转账时间、流水号、合同号等，便于对账"></textarea>
+    <div class="hint">* 必填；兑换码将通过电子邮箱发送，请确保邮箱准确。</div>
+    <div class="foot">
+      <button class="btn2" onclick="closePurchase()">取消</button>
+      <button class="btn2 primary" id="p-submit" onclick="submitPurchase()">提交申请</button>
+    </div>
+    <div id="p-status" style="margin-top:10px;font-size:12px"></div>
+  </div>
+</div>
+
 <script>
 var $ = function(id){return document.getElementById(id)};
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
@@ -124,8 +190,10 @@ function load(){
       var dlUI = s.open
         ? ('<input id="tok-'+esc(s.id)+'" placeholder="兑换码" style="width:120px;font-size:12px;padding:3px 6px;background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:6px">'+
            '<button class="btn" style="font-size:12px;padding:3px 10px" onclick="downloadShelf(\''+esc(s.id)+'\',this)">下载设计包</button>'+
+           '<button class="btn" style="font-size:12px;padding:3px 10px" onclick="showPurchase(\''+esc(s.id)+'\')">对公购买</button>'+
            '<span id="dl-'+esc(s.id)+'"></span>')
         : ('<span class="tag" style="background:var(--bg);color:var(--mut);border:1px solid var(--line);padding:3px 8px;border-radius:6px">即将开放 · 咨询制</span>'+
+           '<button class="btn" style="font-size:12px;padding:3px 10px" onclick="showPurchase(\''+esc(s.id)+'\')">咨询购买</button>'+
            '<span id="dl-'+esc(s.id)+'"></span>');
       h+='<div class="shelf"><h3>'+esc(s.id)+'</h3>'+
          '<div class="app">'+esc(s.title)+'</div>'+
@@ -183,6 +251,43 @@ function evalShelf(id,btn){
       ev.innerHTML='<span class="'+(d.verdict==='PASS'?'ok':'no')+'"><b>'+esc(d.verdict)+'</b></span> · '+esc(d.summary||d.error||'');
       btn.disabled=false; btn.textContent='评估';
     }).catch(function(e){ ev.textContent='失败: '+e; btn.disabled=false; btn.textContent='评估'; });
+}
+
+function copy(id){
+  var el=document.getElementById(id); el.select(); document.execCommand('copy');
+  var hint=document.createElement('span'); hint.textContent='已复制'; hint.style.cssText='color:var(--green);font-size:12px;margin-left:6px';
+  el.parentNode.appendChild(hint); setTimeout(function(){hint.remove()},1200);
+}
+function showBankInfo(){ document.getElementById('bankModal').classList.add('show'); }
+function closeBankInfo(){ document.getElementById('bankModal').classList.remove('show'); }
+function showPurchase(shelfId){
+  document.getElementById('purchaseModal').classList.add('show');
+  document.getElementById('p-shelf').value=shelfId||'';
+  document.getElementById('p-status').textContent='';
+}
+function closePurchase(){ document.getElementById('purchaseModal').classList.remove('show'); }
+function submitPurchase(){
+  var payload={
+    shelf_id: document.getElementById('p-shelf').value.trim(),
+    company: document.getElementById('p-company').value.trim(),
+    contact: document.getElementById('p-contact').value.trim(),
+    phone: document.getElementById('p-phone').value.trim(),
+    email: document.getElementById('p-email').value.trim(),
+    note: document.getElementById('p-note').value.trim()
+  };
+  var missing=['company','contact','phone','email'].filter(function(k){return !payload[k]});
+  if(missing.length){ document.getElementById('p-status').innerHTML='<span style="color:var(--red)">请填写 '+missing.join(' / ')+'</span>'; return; }
+  if(payload.email.indexOf('@')<0){ document.getElementById('p-status').innerHTML='<span style="color:var(--red)">邮箱格式不正确</span>'; return; }
+  var btn=document.getElementById('p-submit'); btn.disabled=true; btn.textContent='提交中…';
+  fetch('/api/purchase/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json().then(function(d){return {r:r,d:d};});})
+    .then(function(o){
+      btn.disabled=false; btn.textContent='提交申请';
+      if(o.r.status!==200 || !o.d.ok){ document.getElementById('p-status').innerHTML='<span style="color:var(--red)">'+(o.d.error||'提交失败')+'</span>'; return; }
+      document.getElementById('p-status').innerHTML='<span style="color:var(--green)">'+esc(o.d.message)+' 申请号：'+esc(o.d.request_id)+'</span>';
+      setTimeout(function(){ closePurchase(); }, 2500);
+    })
+    .catch(function(e){ btn.disabled=false; btn.textContent='提交申请'; document.getElementById('p-status').innerHTML='<span style="color:var(--red)">失败: '+e+'</span>'; });
 }
 
 function downloadShelf(id,btn){

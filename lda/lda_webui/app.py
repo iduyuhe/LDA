@@ -33,11 +33,14 @@ L2 开放 PDK Registry）通过 HTTP 暴露给一个真正的产品级前端，�
 许可证纪律：零外部依赖（仅 Python 标准库），离线可跑、主权可控；
 所有内核逻辑复用 lda_harness / lda_l1 / lda_agent / lda_l2，不在此处重写验证逻辑。
 """
+import datetime
 import json
 import math
 import os
 import sys
+import threading
 import time
+import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 WEBUI_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -84,6 +87,51 @@ except ImportError:
 
 HARNESS = VerificationHarness(BENCHMARK_DEFS)
 AGENT_OUT = os.path.join(LDA_ROOT, "reports_agent")
+
+
+# --------------------------------------------------------------------------
+# 对公购买申请（v0.8.54 · 直接对公收款适配）
+# --------------------------------------------------------------------------
+# 购买申请持久化到 dist/（gitignored，避免客户信息入库）。
+PURCHASE_PATH = os.path.join(os.path.dirname(LDA_ROOT), "dist", "purchase_requests.json")
+_PURCHASE_LOCK = threading.Lock()
+
+
+def _ensure_dist_dir(path: str) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
+
+def _load_purchases() -> dict:
+    _ensure_dist_dir(PURCHASE_PATH)
+    if not os.path.exists(PURCHASE_PATH):
+        return {"requests": []}
+    try:
+        with open(PURCHASE_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:  # noqa: BLE001
+        return {"requests": []}
+
+
+def _save_purchases(data: dict) -> None:
+    _ensure_dist_dir(PURCHASE_PATH)
+    with _PURCHASE_LOCK:
+        with open(PURCHASE_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def _admin_token() -> str:
+    """管理员令牌：优先环境变量 LDA_ADMIN_TOKEN，否则使用显式弱默认值并警告。"""
+    tok = os.environ.get("LDA_ADMIN_TOKEN", "")
+    if not tok:
+        tok = "LDA-ADMIN-DEV-TOKEN-CHANGE-ME"
+    return tok
+
+
+def _check_admin(headers: dict) -> bool:
+    h = headers.get("Authorization", "")
+    if h.startswith("Bearer "):
+        return h[len("Bearer "):].strip() == _admin_token()
+    return False
 
 
 # --------------------------------------------------------------------------
@@ -2221,6 +2269,90 @@ def shelf_evaluate(payload):
     return {"error": f"货架 {sid} 不存在"}
 
 
+# ---------------------------------------------------------------------------
+# A2 · 对公购买申请（v0.8.54 · 直接对公收款适配）
+# ---------------------------------------------------------------------------
+PURCHASE_REQUIRED_FIELDS = ["company", "contact", "phone", "email", "shelf_id"]
+
+
+def purchase_request_submit(payload):
+    """客户提交对公购买申请，写入 dist/purchase_requests.json。"""
+    p = payload or {}
+    missing = [f for f in PURCHASE_REQUIRED_FIELDS if not str(p.get(f) or "").strip()]
+    if missing:
+        return 400, {"error": f"缺少必填项: {', '.join(missing)}"}
+    email = str(p.get("email") or "").strip()
+    if "@" not in email or "." not in email.split("@")[-1]:
+        return 400, {"error": "email 格式不合法"}
+    sid = str(p.get("shelf_id") or "").strip()
+    from lda_l2.innovation_market import DEFAULT_SHELF
+    from lda_l2.ship_package import is_download_open
+    if not any(s.id == sid for s in DEFAULT_SHELF):
+        return 404, {"error": f"货架 {sid} 不存在"}
+    if not is_download_open(sid):
+        return 403, {"error": f"货架 {sid} 尚未开放下载，暂不接受购买申请"}
+
+    data = _load_purchases()
+    req = {
+        "id": "pur-" + uuid.uuid4().hex[:12],
+        "company": str(p.get("company") or "").strip()[:120],
+        "contact": str(p.get("contact") or "").strip()[:60],
+        "phone": str(p.get("phone") or "").strip()[:40],
+        "email": email[:120],
+        "shelf_id": sid,
+        "note": str(p.get("note") or "").strip()[:500],
+        "status": "pending",
+        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "license_code": None,
+    }
+    data["requests"].insert(0, req)
+    _save_purchases(data)
+    return 200, {
+        "ok": True,
+        "request_id": req["id"],
+        "message": "申请已提交，请按对公收款说明转账并备注申请号，到账后我们将邮件发送兑换码。",
+    }
+
+
+def purchase_request_list(headers):
+    """管理员查看待处理购买申请列表。"""
+    if not _check_admin(headers):
+        return 401, {"error": "unauthorized"}
+    data = _load_purchases()
+    rows = sorted(data.get("requests", []), key=lambda x: x.get("created_at", ""), reverse=True)
+    return 200, {"count": len(rows), "requests": rows}
+
+
+def purchase_request_approve(payload, headers, req_id):
+    """管理员审批通过对公购买申请，生成绑定货架的兑换码。"""
+    if not _check_admin(headers):
+        return 401, {"error": "unauthorized"}
+    data = _load_purchases()
+    req = None
+    for r in data.get("requests", []):
+        if r.get("id") == req_id:
+            req = r
+            break
+    if req is None:
+        return 404, {"error": "申请不存在"}
+    if req.get("status") == "approved":
+        return 409, {"error": "该申请已审批", "license_code": req.get("license_code")}
+
+    from lda_l2.ship_package import mint_license
+    code = mint_license(req["shelf_id"], email=req.get("email", ""), max_uses=1)
+    req["status"] = "approved"
+    req["license_code"] = code
+    req["approved_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    _save_purchases(data)
+    return 200, {
+        "ok": True,
+        "request_id": req_id,
+        "license_code": code,
+        "shelf_id": req["shelf_id"],
+        "email": req.get("email"),
+    }
+
+
 def scale_demo_status():
     """A3 · 规模能力现场演示（1k/4k/32k 全链耗时，总 ~1.1s）。"""
     from lda_harness.scale_anchor import run_scale_pipeline
@@ -2655,6 +2787,9 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, gc_benchmarks_status(run=q.get("run") == "1"))
         elif path == "/api/shelf":
             self._send(200, shelf_status())
+        elif path == "/api/admin/purchase_requests":
+            code, obj = purchase_request_list(dict(self.headers))
+            self._send(code, obj)
         elif path == "/api/scale_demo":
             self._send(200, scale_demo_status())
         elif path == "/api/capability_demos":
@@ -2763,6 +2898,19 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, run_verify(payload))
             elif path == "/api/shelf/evaluate":
                 self._send(200, shelf_evaluate(payload))
+            elif path == "/api/purchase/request":
+                code, obj = purchase_request_submit(payload)
+                self._send(code, obj)
+            elif path.startswith("/api/admin/purchase/") and path.count("/") == 5:
+                # /api/admin/purchase/<req_id>/approve
+                parts = path.split("/")
+                req_id = parts[4]
+                sub = parts[5]
+                if sub == "approve":
+                    code, obj = purchase_request_approve(payload, dict(self.headers), req_id)
+                    self._send(code, obj)
+                else:
+                    self._send(404, {"error": "not found"})
             elif path == "/api/proposal_design":
                 self._send(200, run_proposal_design(payload))
             elif path == "/api/agent_loop":

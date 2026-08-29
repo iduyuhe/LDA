@@ -60,13 +60,15 @@ def _free_port():
     return p
 
 
-def _http(method, url, body=None, timeout=15):
+def _http(method, url, body=None, timeout=15, headers=None):
     data = None
-    headers = {}
+    h = {}
     if body is not None:
         data = json.dumps(body).encode()
-        headers["Content-Type"] = "application/json"
-    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+        h["Content-Type"] = "application/json"
+    if headers:
+        h.update(headers)
+    req = urllib.request.Request(url, data=data, headers=h, method=method)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.status, r.read(400).decode("utf-8", "replace")
@@ -182,9 +184,13 @@ def main():
             return 1
 
         ok, info, fail = [], [], []
+        # 0) dev admin token：管理员端点 smoke 用默认 dev token（v0.8.54 新增）
+        admin_token = "Bearer LDA-ADMIN-DEV-TOKEN-CHANGE-ME"
+
         # 1) GET 端点实跑（快）
         for r in gets:
-            code, text = _http("GET", f"{base}{r}")
+            h = {"Authorization": admin_token} if r.startswith("/api/admin/") else {}
+            code, text = _http("GET", f"{base}{r}", headers=h)
             is_json = text.lstrip().startswith(("{", "["))
             if code == 200 and is_json:
                 ok.append(("GET", r, f"{code} JSON"))

@@ -392,18 +392,69 @@ function loadOrders(){
     if(!d.ok){ $("#orderList").innerHTML='<span class="mut">登录后可查看订单。</span>'; return; }
     if(!d.orders.length){ $("#orderList").innerHTML='<span class="mut">暂无订单，去上方货架下单吧。</span>'; return; }
     $("#orderList").innerHTML = d.orders.map(function(o){
-      var step = o.type==='personal'
-        ? '<div class="step"><span class="'+(o.status==='created'?'wait':'done')+'">已下单</span><span class="'+(o.status==='paid_unverified'?'wait':'done')+'">待确认</span><span class="'+(o.status==='approved'?'done':(o.status==='rejected'?'rej':'wait'))+'">已交付</span></div>'
-        : '<div class="step"><span class="'+(o.status==='created'?'wait':'done')+'">已下单</span><span class="'+(o.status==='approved'?'done':(o.status==='rejected'?'rej':'wait'))+'">已交付</span></div>';
-      var act = (o.status==='approved'&&o.license_code)
-        ? '<button class="btn-sm" onclick="downloadOrder(\''+esc(o.id)+'\')">下载设计包</button>'
-        : '<span class="mut">待处理</span>';
-      var proofBtn = (o.status==='created'&&o.type==='personal')
-        ? '<button class="btn-sm ghost" onclick="uploadProof(\''+esc(o.id)+'\')">上传支付凭证</button>'
-        : '';
-      return '<div class="order"><div><b>'+esc(o.id)+'</b> · '+esc(o.shelf_id)+'<br><span class="mut">'+esc(o.type==='personal'?'个人·微信':'企业·对公')+' · ¥'+o.amount_cny+' · '+esc(o.status)+'</span></div><div style="display:flex;gap:8px;align-items:center">'+proofBtn+act+'</div></div>'+step;
+      if(o.type==='custom') return renderCustomOrder(o);
+      return renderShelfOrder(o);
     }).join('');
   });
+}
+
+function renderShelfOrder(o){
+  var step = '<div class="step"><span class="'+(o.status==='created'?'wait':'done')+'">已下单</span><span class="'+(o.status==='paid_unverified'?'wait':'done')+'">待确认</span><span class="'+(o.status==='approved'?'done':(o.status==='rejected'?'rej':'wait'))+'">已交付</span></div>';
+  var act = (o.status==='approved'&&o.license_code)
+    ? '<button class="btn-sm" onclick="downloadOrder(\''+esc(o.id)+'\')">下载设计包</button>'
+    : '<span class="mut">待处理</span>';
+  var proofBtn = (o.status==='created'&&o.type==='personal')
+    ? '<button class="btn-sm ghost" onclick="uploadProof(\''+esc(o.id)+'\')">上传支付凭证</button>'
+    : '';
+  return '<div class="order"><div><b>'+esc(o.id)+'</b> · '+esc(o.shelf_id)+'<br><span class="mut">'+esc(o.type==='personal'?'个人·微信':'企业·对公')+' · ¥'+o.amount_cny+' · '+esc(o.status)+'</span></div><div style="display:flex;gap:8px;align-items:center">'+proofBtn+act+'</div></div>'+step;
+}
+
+function renderCustomOrder(o){
+  var stClass = {created:'wait', developing:'wait', delivered:'done', accepted:'done', rejected:'rej'}[o.status]||'wait';
+  var labels = {created:'待接单', developing:'开发中', delivered:'已交付', accepted:'已验收', rejected:'已拒绝'};
+  var step = '<div class="step">'+
+    '<span class="'+(o.status==='created'?'wait':(o.status==='rejected'?'rej':'done'))+'">待接单</span>'+
+    '<span class="'+(o.status==='developing'?'wait':(o.status==='rejected'?'rej':(o.status==='created'?'mut':(o.status==='accepted'||o.status==='delivered'?'done':'mut'))))+'">开发中</span>'+
+    '<span class="'+(o.status==='delivered'?'wait':(o.status==='rejected'?'rej':(o.status==='accepted'?'done':(o.status==='created'||o.status==='developing'?'mut':'mut'))))+'">已交付</span>'+
+    '<span class="'+(o.status==='accepted'?'done':(o.status==='rejected'?'rej':'mut'))+'">已验收</span>'+
+    '</div>';
+  var devInfo = '';
+  if(o.quote_cny && o.quote_cny>0) devInfo += '<div class="meta" style="margin-top:4px">报价：¥'+o.quote_cny+'</div>';
+  if(o.eta_date) devInfo += '<div class="meta">排期：'+esc(o.eta_date)+'</div>';
+  if(o.dev_note) devInfo += '<div class="meta" style="color:var(--accent)">进度：'+esc(o.dev_note)+'</div>';
+  var deliverables = '';
+  if(o.deliverables && o.deliverables.length){
+    deliverables = '<div class="meta">交付物：' +
+      o.deliverables.map(function(d){ return '<a href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.name||'文件')+'</a>'; }).join(' · ') +
+      '</div>';
+  }
+  var actions = '';
+  if(o.status==='delivered'){
+    actions = '<button class="btn-sm" onclick="acceptDelivery(\''+esc(o.id)+'\')">确认验收</button>';
+  } else if((o.status==='delivered'||o.status==='accepted') && (o.deliverables||[]).length>0){
+    actions = '<button class="btn-sm ghost" onclick="downloadOrder(\''+esc(o.id)+'\')">查看交付物</button>';
+  } else {
+    actions = '<span class="mut">'+esc(labels[o.status]||o.status)+'</span>';
+  }
+  return '<div class="order">'+
+    '<div><b>'+esc(o.title||o.id)+'</b> · <span class="tag">定制</span><br>'+
+    '<span class="mut">需求：'+esc((o.requirement||'').slice(0,80))+((o.requirement||'').length>80?'…':'')+'</span>'+
+    (o.budget?('<br><span class="mut">预算：'+esc(o.budget)+'</span>'):'')+
+    devInfo+
+    deliverables+
+    '</div><div style="display:flex;gap:8px;align-items:center;flex-direction:column">'+
+    actions+
+    '<span class="mut" style="font-size:12px">'+esc(labels[o.status]||o.status)+'</span>'+
+    '</div></div>'+step;
+}
+
+function acceptDelivery(id){
+  if(!confirm('确认验收此定制需求？验收后订单将完结。')) return;
+  fetch('/api/store/order/'+encodeURIComponent(id)+'/accept_delivery',{method:'POST',headers:authHeaders(),body:JSON.stringify({})})
+    .then(function(r){return r.json()}).then(function(d){
+      if(!d.ok){ alert(d.error||'失败'); return; }
+      loadOrders();
+    });
 }
 
 function uploadProof(id){
@@ -423,6 +474,11 @@ function downloadOrder(id){
       var ct = r.headers.get('content-type')||'';
       if(ct.indexOf('application/json')>=0){
         return r.json().then(function(d){
+          // 定制需求：deliverables 多文件列表
+          if(d.deliverables && d.deliverables.length){
+            d.deliverables.forEach(function(f){ window.open(f.url,'_blank'); });
+            return null;
+          }
           if(d.deliverable_url){ window.open(d.deliverable_url,'_blank'); return null; }
           alert('交付文件待上传，请联系管理员'); return null;
         });

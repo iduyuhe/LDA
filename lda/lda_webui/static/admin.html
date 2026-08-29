@@ -69,7 +69,7 @@
     <table>
       <thead>
         <tr>
-          <th>订单号</th><th>类型</th><th>货架</th><th>客户</th><th>金额</th>
+          <th>订单号/标题</th><th>类型</th><th>货架/进度</th><th>客户</th><th>金额</th>
           <th>状态</th><th>凭证/备注</th><th>提交时间</th><th>操作</th>
         </tr>
       </thead>
@@ -170,40 +170,111 @@ function renderRow(o){
     : (o.type==="business"
        ? '<span class="tag business">企业·对公</span>'
        : '<span class="tag custom">定制·需求</span>');
-  let st;
-  if(o.status==="approved") st='<span class="tag approved">已交付</span>';
-  else if(o.status==="rejected") st='<span class="tag rejected">已拒绝</span>';
-  else if(o.status==="paid_unverified") st='<span class="tag pending">待确认收款</span>';
-  else st='<span class="tag created">待支付</span>';
+  let st, action;
   const cust=o.customer||{};
   const info = (cust.name||"")+(cust.company?(" / "+cust.company):"")+"<br><span class='dl'>"+(cust.phone||"")+" · "+(cust.email||"")+"</span>";
-  const proof = (o.title?("<b>标题：</b>"+esc(o.title)+"<br>"):"")+
-                (o.requirement?("<b>需求：</b>"+esc(o.requirement)+"<br>"):"")+
-                (o.budget?("<b>预算：</b>"+esc(o.budget)+"<br>"):"")+
-                (o.proof?("<b>凭证：</b>"+esc(o.proof)+"<br>"):"")+
-                "<span class='dl'>"+(o.reject_reason||"")+"</span>";
-  let action;
-  if(o.status==="approved"){
-    action = '<div class="code" id="c-'+esc(o.id)+'">'+esc(o.license_code)+'</div>'+
-             '<button class="ghost" onclick="copyCode(\''+esc(o.id)+'\')">复制码</button>';
-  }else if(o.status==="rejected"){
-    action = '<span class="dl">已拒绝</span>';
-  }else{
-    action = '<button onclick="approve(\''+esc(o.id)+'\')">确认收款并发货</button>'+
-             '<button class="ghost" onclick="reject(\''+esc(o.id)+'\')">拒绝</button>';
+  if(o.type==="custom"){
+    // 定制需求四态：created/developed/delivered/accepted + rejected
+    const labels = {created:'待接单', developing:'开发中', delivered:'已交付', accepted:'已验收', rejected:'已拒绝'};
+    st = '<span class="tag '+({delivered:'pending',accepted:'approved',rejected:'rejected'}[o.status]||'created')+'">'+esc(labels[o.status]||o.status)+'</span>';
+    if(o.status==="created"){
+      action = '<button onclick="customAccept(\''+esc(o.id)+'\')">接单</button>'+
+               '<button class="ghost" onclick="reject(\''+esc(o.id)+'\')">拒单</button>';
+    } else if(o.status==="developing"){
+      action = '<button onclick="customDeliver(\''+esc(o.id)+'\')">标记已交付</button>'+
+               '<button class="ghost" onclick="customAddDeliverable(\''+esc(o.id)+'\')">添加交付物</button>'+
+               '<button class="ghost" onclick="customUpdateNote(\''+esc(o.id)+'\')">更新进度</button>';
+    } else if(o.status==="delivered"){
+      action = '<span class="dl">待客户验收</span>'+
+               '<button class="ghost" onclick="customAddDeliverable(\''+esc(o.id)+'\')">追加交付物</button>';
+    } else if(o.status==="accepted"){
+      action = '<span class="ok">已完结</span>';
+    } else {
+      action = '<span class="dl">已拒绝</span>';
+    }
+  } else {
+    if(o.status==="approved") st='<span class="tag approved">已交付</span>';
+    else if(o.status==="rejected") st='<span class="tag rejected">已拒绝</span>';
+    else if(o.status==="paid_unverified") st='<span class="tag pending">待确认收款</span>';
+    else st='<span class="tag created">待支付</span>';
+    if(o.status==="approved"){
+      action = '<div class="code" id="c-'+esc(o.id)+'">'+esc(o.license_code||"")+'</div>'+
+               '<button class="ghost" onclick="copyCode(\''+esc(o.id)+'\')">复制码</button>';
+    } else if(o.status==="rejected"){
+      action = '<span class="dl">已拒绝</span>';
+    } else {
+      action = '<button onclick="approve(\''+esc(o.id)+'\')">确认收款并发货</button>'+
+               '<button class="ghost" onclick="reject(\''+esc(o.id)+'\')">拒绝</button>';
+    }
   }
+  // 货架/进度列
+  const shelfCol = o.type==="custom"
+    ? '<b>'+esc(o.title||"—")+'</b><br><span class="dl">'+esc((o.requirement||"").slice(0,60))+((o.requirement||"").length>60?'…':'')+'</span>'+
+      (o.quote_cny?'<br><span class="dl">报价：¥'+o.quote_cny+'</span>':'')+
+      (o.eta_date?'<br><span class="dl">排期：'+esc(o.eta_date)+'</span>':'')+
+      (o.dev_note?'<br><span class="dl" style="color:var(--accent)">'+esc(o.dev_note)+'</span>':'')+
+      (o.deliverables&&o.deliverables.length?'<br><span class="dl">交付物：'+o.deliverables.length+' 个</span>':'')
+    : '<b class="code">'+esc(o.shelf_id||"—")+'</b>';
+  const proof = (o.title && o.type==="custom"?"":"") +
+                (o.proof?("<b>凭证：</b>"+esc(o.proof)+"<br>"):"")+
+                (o.target_spec?("<b>指标：</b>"+esc(o.target_spec)+"<br>"):"")+
+                (o.budget?("<b>预算：</b>"+esc(o.budget)+"<br>"):"")+
+                "<span class='dl'>"+(o.reject_reason||"")+"</span>";
   const t=(o.created_at||"").replace("T"," ").slice(0,19)+"Z";
   return '<tr>'+
     '<td class="code">'+esc(o.id)+'</td>'+
     '<td>'+typeTag+'</td>'+
-    '<td class="code">'+esc(o.shelf_id)+'</td>'+
+    '<td>'+shelfCol+'</td>'+
     '<td>'+info+'</td>'+
-    '<td>¥'+o.amount_cny+'</td>'+
+    '<td>¥'+(o.amount_cny||0)+'</td>'+
     '<td>'+st+'</td>'+
     '<td class="dl">'+esc(proof)+'</td>'+
     '<td class="dl">'+esc(t)+'</td>'+
     '<td><div class="row-actions">'+action+'</div></td>'+
   '</tr>';
+}
+
+async function customAccept(id){
+  const devNote=prompt("接单·内部备注（可空）：")||"";
+  const quoteStr=prompt("报价（¥，可空，按需填写）：")||"";
+  const eta=prompt("排期（YYYY-MM-DD 或文字描述，可空）：")||"";
+  try{
+    const body={dev_note:devNote, eta_date:eta};
+    if(quoteStr && !isNaN(parseFloat(quoteStr))) body.quote_cny=parseFloat(quoteStr);
+    const r=await fetch("/api/admin/custom/"+id+"/accept",{method:"POST",headers:authHeaders(),body:JSON.stringify(body)});
+    const j=await r.json();
+    if(r.status===200 && j.ok){ $("msg").innerHTML='<div class="ok">已接单，进入开发中</div>'; refresh(); }
+    else $("msg").innerHTML='<div class="err">失败：'+esc(j.error||r.status)+'</div>';
+  }catch(e){ $("msg").innerHTML='<div class="err">请求失败：'+e.message+'</div>'; }
+}
+async function customUpdateNote(id){
+  const note=prompt("更新进度备注：")||"";
+  try{
+    const r=await fetch("/api/admin/custom/"+id+"/note",{method:"POST",headers:authHeaders(),body:JSON.stringify({dev_note:note})});
+    const j=await r.json();
+    if(r.status===200 && j.ok){ $("msg").innerHTML='<div class="ok">进度已更新</div>'; refresh(); }
+    else $("msg").innerHTML='<div class="err">失败：'+esc(j.error||r.status)+'</div>';
+  }catch(e){ $("msg").innerHTML='<div class="err">请求失败：'+e.message+'</div>'; }
+}
+async function customAddDeliverable(id){
+  const name=prompt("交付物名称（如：版图GDS、仿真报告）：")||"";
+  const url=prompt("交付物 URL（百度网盘/GitHub/任意链接）：")||"";
+  if(!url){ alert("URL 不能为空"); return; }
+  try{
+    const r=await fetch("/api/admin/custom/"+id+"/add_deliverable",{method:"POST",headers:authHeaders(),body:JSON.stringify({name:name,url:url})});
+    const j=await r.json();
+    if(r.status===200 && j.ok){ $("msg").innerHTML='<div class="ok">已添加交付物（共 '+(j.order.deliverables||[]).length+' 个）</div>'; refresh(); }
+    else $("msg").innerHTML='<div class="err">失败：'+esc(j.error||r.status)+'</div>';
+  }catch(e){ $("msg").innerHTML='<div class="err">请求失败：'+e.message+'</div>'; }
+}
+async function customDeliver(id){
+  if(!confirm("确认标记已交付？将通知客户查看并确认验收。")) return;
+  try{
+    const r=await fetch("/api/admin/custom/"+id+"/deliver",{method:"POST",headers:authHeaders(),body:"{}"});
+    const j=await r.json();
+    if(r.status===200 && j.ok){ $("msg").innerHTML='<div class="ok">已标记交付，等待客户验收</div>'; refresh(); }
+    else $("msg").innerHTML='<div class="err">失败：'+esc(j.error||r.status)+'</div>';
+  }catch(e){ $("msg").innerHTML='<div class="err">请求失败：'+e.message+'</div>'; }
 }
 
 async function approve(id){

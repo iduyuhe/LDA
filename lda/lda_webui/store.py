@@ -51,11 +51,17 @@ TIER_DISCOUNT = {"standard": 1.0, "academic": 0.6, "institution": 0.85}
 DEFAULT_TIER = "standard"
 
 # 订单状态机：
-#   created        → 已创建，待支付
+#   created        → 已创建，待支付（个人/企业货架）
 #   paid_unverified → 已提交支付凭证，待管理员确认收款
-#   approved       → 已确认收款并生成兑换码（待下载/已交付）
+#   approved       → 已确认收款并生成兑换码（货架类自动交付）
 #   rejected       → 已拒绝
-STATUS_FLOW = ("created", "paid_unverified", "approved", "rejected")
+#   developing     → 定制需求已接单，开发中（管理员录入排期/报价/内部备注）
+#   delivered      → 定制需求已交付（管理员上传交付物）
+#   accepted       → 客户确认验收（定制需求闭环）
+STATUS_FLOW = ("created", "paid_unverified", "approved", "rejected",
+               "developing", "delivered", "accepted")
+# 定制需求专用状态流转：created → developing → delivered → accepted（任一可 → rejected）
+CUSTOM_STATUS_FLOW = ("created", "developing", "delivered", "accepted", "rejected")
 
 
 # --------------------------------------------------------------------------
@@ -358,8 +364,12 @@ def create_order(user_token: str, payload: dict) -> dict:
         "proof": "",
         "license_code": None,
         "deliverable_url": "",
+        "deliverables": [],
+        "dev_note": "",
+        "eta_date": "",
+        "quote_cny": 0.0,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "paid_at": None, "approved_at": None, "note": "",
+        "paid_at": None, "approved_at": None, "accepted_at": None, "note": "",
         "reject_reason": "",
     }
     data = _load()
@@ -389,22 +399,26 @@ def submit_proof(order_id: str, user_token: str, proof: str) -> dict:
 
 
 def admin_approve(order_id: str, token: str, deliverable_url: str = "") -> dict:
+    """货架订单：收款确认+自动发货。定制订单：保留向后兼容的「接单+交付一步」入口（建议用 custom_accept/custom_deliver 分步）。"""
     if not is_admin(token):
         return {"ok": False, "error": "unauthorized", "code": 401}
     with _locked() as data:
         order = _find_order(data, order_id)
         if order is None:
             return {"ok": False, "error": "订单不存在"}
-        if order["status"] in ("approved", "rejected"):
+        if order["status"] in ("approved", "delivered", "accepted", "rejected"):
             return {"ok": False, "error": "订单已处理", "license_code": order.get("license_code")}
         if order["type"] == "custom":
-            order["status"] = "approved"
+            # 一步到位：created → delivered（兼容旧脚本）。新流程请走 custom_accept + custom_deliver。
+            order["status"] = "delivered"
             order["approved_at"] = datetime.now(timezone.utc).isoformat()
             if deliverable_url:
+                order["deliverables"] = order.get("deliverables") or []
+                order["deliverables"].append({"name": "交付文件", "url": str(deliverable_url).strip()[:500]})
                 order["deliverable_url"] = str(deliverable_url).strip()[:500]
         else:
             _deliver(order, data, deliverable_url)
-    return {"ok": True, "order": _public_order(order)}
+    return {"ok": True, "order": _public_order(order, for_admin=True)}
 
 
 def admin_reject(order_id: str, token: str, reason: str = "") -> dict:
@@ -416,6 +430,106 @@ def admin_reject(order_id: str, token: str, reason: str = "") -> dict:
             return {"ok": False, "error": "订单不存在"}
         order["status"] = "rejected"
         order["reject_reason"] = (reason or "").strip()[:200]
+    return {"ok": True, "order": _public_order(order, for_admin=True)}
+
+
+# --------------------------------------------------------------------------
+# 定制需求全流程：created → developing → delivered → accepted
+# --------------------------------------------------------------------------
+def _is_custom(o: dict) -> bool:
+    return o.get("type") == "custom"
+
+
+def custom_accept(order_id: str, token: str, dev_note: str = "",
+                  quote_cny=None, eta_date: str = "") -> dict:
+    """定制需求接单：created → developing。可填报价、排期、内部备注。"""
+    if not is_admin(token):
+        return {"ok": False, "error": "unauthorized", "code": 401}
+    with _locked() as data:
+        order = _find_order(data, order_id)
+        if order is None or not _is_custom(order):
+            return {"ok": False, "error": "订单不存在或非定制需求"}
+        if order["status"] != "created":
+            return {"ok": False, "error": "仅待接单状态可接单（当前状态：" + str(order["status"]) + "）"}
+        order["status"] = "developing"
+        order["approved_at"] = datetime.now(timezone.utc).isoformat()
+        if dev_note:
+            order["dev_note"] = str(dev_note).strip()[:2000]
+        if quote_cny is not None and str(quote_cny).strip() != "":
+            try:
+                order["quote_cny"] = round(float(quote_cny), 2)
+            except (TypeError, ValueError):
+                pass
+        if eta_date:
+            order["eta_date"] = str(eta_date).strip()[:40]
+    return {"ok": True, "order": _public_order(order, for_admin=True)}
+
+
+def custom_update_note(order_id: str, token: str, dev_note: str = "") -> dict:
+    """更新内部备注（任意状态可调）。"""
+    if not is_admin(token):
+        return {"ok": False, "error": "unauthorized", "code": 401}
+    with _locked() as data:
+        order = _find_order(data, order_id)
+        if order is None or not _is_custom(order):
+            return {"ok": False, "error": "订单不存在或非定制需求"}
+        order["dev_note"] = str(dev_note or "").strip()[:2000]
+    return {"ok": True, "order": _public_order(order, for_admin=True)}
+
+
+def custom_add_deliverable(order_id: str, token: str, name: str, url: str) -> dict:
+    """添加交付物（任意非终态可调）。支持多次添加多文件。"""
+    if not is_admin(token):
+        return {"ok": False, "error": "unauthorized", "code": 401}
+    name = (name or "").strip()[:120]
+    url = (url or "").strip()[:500]
+    if not url:
+        return {"ok": False, "error": "URL 不能为空"}
+    with _locked() as data:
+        order = _find_order(data, order_id)
+        if order is None or not _is_custom(order):
+            return {"ok": False, "error": "订单不存在或非定制需求"}
+        if order["status"] in ("rejected", "accepted"):
+            return {"ok": False, "error": "订单已结束，不能再添加交付物"}
+        order.setdefault("deliverables", []).append({"name": name or "交付文件", "url": url})
+        # 保持旧字段同步指向最后一项（向后兼容）
+        order["deliverable_url"] = url
+    return {"ok": True, "order": _public_order(order, for_admin=True)}
+
+
+def custom_deliver(order_id: str, token: str) -> dict:
+    """标记已交付：developing → delivered。需要至少已有一个交付物。"""
+    if not is_admin(token):
+        return {"ok": False, "error": "unauthorized", "code": 401}
+    with _locked() as data:
+        order = _find_order(data, order_id)
+        if order is None or not _is_custom(order):
+            return {"ok": False, "error": "订单不存在或非定制需求"}
+        if order["status"] != "developing":
+            return {"ok": False, "error": "仅开发中状态可标记已交付（当前：" + str(order["status"]) + "）"}
+        if not order.get("deliverables") and not order.get("deliverable_url"):
+            return {"ok": False, "error": "请先添加至少一个交付物（文件链接）"}
+        order["status"] = "delivered"
+        if not order.get("approved_at"):
+            order["approved_at"] = datetime.now(timezone.utc).isoformat()
+    return {"ok": True, "order": _public_order(order, for_admin=True)}
+
+
+def custom_accept_delivery(order_id: str, user_token: str) -> dict:
+    """客户确认验收：delivered → accepted。"""
+    u = user_by_token(user_token)
+    if u is None:
+        return {"ok": False, "error": "请先登录", "code": 401}
+    with _locked() as data:
+        order = _find_order(data, order_id)
+        if order is None or not _is_custom(order):
+            return {"ok": False, "error": "订单不存在或非定制需求"}
+        if order["user_id"] != u["id"]:
+            return {"ok": False, "error": "无权操作该订单"}
+        if order["status"] != "delivered":
+            return {"ok": False, "error": "仅已交付状态可确认验收（当前：" + str(order["status"]) + "）"}
+        order["status"] = "accepted"
+        order["accepted_at"] = datetime.now(timezone.utc).isoformat()
     return {"ok": True, "order": _public_order(order)}
 
 
@@ -436,8 +550,8 @@ def _find_order(data: dict, order_id: str) -> dict | None:
     return next((o for o in data["orders"] if o.get("id") == order_id), None)
 
 
-def _public_order(o: dict) -> dict:
-    return {
+def _public_order(o: dict, *, for_admin: bool = False) -> dict:
+    out = {
         "id": o["id"], "user_id": o["user_id"], "type": o["type"],
         "shelf_id": o["shelf_id"], "title": o.get("title", ""),
         "amount_cny": o["amount_cny"], "tier": o.get("tier", "standard"),
@@ -446,25 +560,35 @@ def _public_order(o: dict) -> dict:
         "requirement": o.get("requirement", ""), "target_spec": o.get("target_spec", ""),
         "budget": o.get("budget", ""), "proof": o.get("proof", ""),
         "license_code": o.get("license_code"), "deliverable_url": o.get("deliverable_url", ""),
+        "deliverables": o.get("deliverables", []),
         "created_at": o["created_at"], "paid_at": o.get("paid_at"),
         "approved_at": o.get("approved_at"),
+        "accepted_at": o.get("accepted_at"),
+        "dev_note": o.get("dev_note", ""),
+        "eta_date": o.get("eta_date", ""),
+        "quote_cny": o.get("quote_cny", 0),
         "reject_reason": o.get("reject_reason", ""),
     }
+    if not for_admin:
+        out.pop("proof", None)  # 客户视图不泄露管理员录入的支付凭证
+    return out
 
 
 def list_orders(token: str, scope: str = "mine") -> dict:
     data = _load()
     u = user_by_token(token)
+    for_admin = False
     if scope == "all":
         if not is_admin(token):
             return {"ok": False, "error":  "unauthorized", "code": 401}
         rows = [o for o in data["orders"]]
+        for_admin = True
     else:
         if u is None:
             return {"ok": False, "error": "请先登录", "code": 401}
         rows = [o for o in data["orders"] if o["user_id"] == u["id"]]
     rows.sort(key=lambda x: x.get("created_at", ""), reverse=True)
-    return {"ok": True, "orders": [_public_order(o) for o in rows],
+    return {"ok": True, "orders": [_public_order(o, for_admin=for_admin) for o in rows],
             "count": len(rows)}
 
 
@@ -494,8 +618,13 @@ def order_download(order_id: str, token: str) -> dict:
     if order["user_id"] != u["id"] and not is_admin(token):
         return {"ok": False, "error": "无权下载该订单"}
     if order["type"] == "custom":
-        if order.get("status") != "approved":
-            return {"ok": False, "error": "订单尚未接单/交付"}
+        if order.get("status") not in ("delivered", "accepted", "approved"):
+            return {"ok": False, "error": "订单尚未交付"}
+        # 优先返回新结构的 deliverables 列表；旧数据回落到 deliverable_url
+        if order.get("deliverables"):
+            return {"ok": True, "deliverables": order["deliverables"],
+                    "deliverable_url": order.get("deliverable_url", ""),
+                    "license_code": order.get("license_code")}
         if order.get("deliverable_url"):
             return {"ok": True, "deliverable_url": order["deliverable_url"],
                     "license_code": order.get("license_code")}

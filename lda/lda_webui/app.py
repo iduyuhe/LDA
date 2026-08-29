@@ -3188,6 +3188,12 @@ class Handler(BaseHTTPRequestHandler):
                 store = _get_store()
                 r = store.create_order(_bearer(dict(self.headers)), payload)
                 self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
+            elif path.startswith("/api/store/order/") and path.count("/") == 5 and path.endswith("/accept_delivery"):
+                # 客户确认验收：delivered → accepted（必须在 proof 段前匹配，否则会因 sub!="proof" 走 404）
+                store = _get_store()
+                oid = path.split("/")[4]
+                r = store.custom_accept_delivery(oid, _bearer(dict(self.headers)))
+                self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
             elif path.startswith("/api/store/order/") and path.count("/") == 5:
                 # /api/store/order/<id>/proof
                 store = _get_store()
@@ -3211,6 +3217,29 @@ class Handler(BaseHTTPRequestHandler):
                     r = store.admin_approve(oid, tok, payload.get("deliverable_url", ""))
                 elif sub == "reject":
                     r = store.admin_reject(oid, tok, payload.get("reason", ""))
+                else:
+                    r = {"ok": False, "error": "not found"}
+                self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
+            # ---- 定制需求全流程（接单/交付/添加交付物）----
+            elif path.startswith("/api/admin/custom/") and path.count("/") == 5:
+                store = _get_store()
+                parts = path.split("/")
+                oid = parts[4]
+                sub = parts[5]
+                tok = _bearer(dict(self.headers))
+                if sub == "accept":
+                    r = store.custom_accept(oid, tok,
+                                             dev_note=payload.get("dev_note", ""),
+                                             quote_cny=payload.get("quote_cny"),
+                                             eta_date=payload.get("eta_date", ""))
+                elif sub == "note":
+                    r = store.custom_update_note(oid, tok, payload.get("dev_note", ""))
+                elif sub == "add_deliverable":
+                    r = store.custom_add_deliverable(oid, tok,
+                                                    payload.get("name", ""),
+                                                    payload.get("url", ""))
+                elif sub == "deliver":
+                    r = store.custom_deliver(oid, tok)
                 else:
                     r = {"ok": False, "error": "not found"}
                 self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)

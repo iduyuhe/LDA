@@ -2903,6 +2903,11 @@ class Handler(BaseHTTPRequestHandler):
             store = _get_store()
             obj = store.list_orders(_bearer(dict(self.headers)), "all")
             self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
+        elif path == "/api/admin/users":
+            # 管理员用户列表（脱敏：不含密码/令牌/哈希）
+            store = _get_store()
+            obj = store.admin_list_users(_bearer(dict(self.headers)))
+            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
         elif path.startswith("/api/store/order/") and path.count("/") == 5:
             # /api/store/order/<id>/download
             store = _get_store()
@@ -3250,6 +3255,17 @@ class Handler(BaseHTTPRequestHandler):
                 r = store.login(payload.get("email"), payload.get("password"),
                                 client_ip=_client_ip(self))
                 self._send(200, r)
+            elif path == "/api/admin/user/reset_password":
+                store = _get_store()
+                obj = store.admin_reset_password(payload.get("email") or payload.get("user_id"),
+                                                 _bearer(dict(self.headers)),
+                                                 payload.get("temp_password", ""))
+                self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
+            elif path == "/api/admin/unlock_login":
+                # 管理员应急解锁：只清失败计数，不动密码
+                store = _get_store()
+                obj = store.admin_unlock_login(_bearer(dict(self.headers)))
+                self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
             elif path == "/api/store/password":
                 # 改密（改密成功后会话令牌轮换，旧设备登录态失效）
                 store = _get_store()

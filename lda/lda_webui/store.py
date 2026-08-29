@@ -294,7 +294,9 @@ def login(email: str, password: str, client_ip: str = "") -> dict:
         user["last_login_ip"] = (client_ip or "")[:64]
         if not user.get("user_type"):
             user["user_type"] = DEFAULT_TIER   # 修复历史脏值 None
-    return {"ok": True, "token": token, "user": _public_user(user)}
+        must_change = bool(user.get("must_change_password"))
+    return {"ok": True, "token": token, "user": _public_user(user),
+            "must_change_password": must_change}
 
 
 def user_by_token(token: str) -> dict | None:
@@ -750,7 +752,113 @@ def change_password(user_token: str, old_password: str, new_password: str) -> di
         token = secrets.token_urlsafe(24)
         cur["token"] = token
         cur["token_created_at"] = datetime.now(timezone.utc).isoformat()
-    return {"ok": True, "token": token, "user": _public_user(cur)}
+        # 管理员代重置后的「必须改密」标记在此解除
+        cur["must_change_password"] = False
+    return {"ok": True, "token": token, "user": _public_user(cur),
+            "must_change_password": False}
+
+
+# ---------------------------------------------------------------------------
+# 管理员代重置密码（找回密码兜底通路：未接 SMTP，无法邮件自助找回）
+# ---------------------------------------------------------------------------
+def _clear_login_locks(email: str = "", all_accounts: bool = False) -> None:
+    """清除登录失败锁定。管理员重置密码/应急解锁时调用。
+
+    - email 非空：清除该账号维度计数；
+    - IP 维度无法归属到具体账号，管理员人工介入时一并清空（低频已鉴权操作，
+      换取「用户被锁死管理员能解开」这一实际可用性）。
+    - all_accounts=True：连全部账号维度一起清空（应急开关）。
+    """
+    with _LOGIN_GUARD_LOCK:
+        if email:
+            _LOGIN_GUARD.pop("acct:" + (email or "").strip().lower(), None)
+        for k in list(_LOGIN_GUARD.keys()):
+            if k.startswith("ip:") or (all_accounts and k.startswith("acct:")):
+                _LOGIN_GUARD.pop(k, None)
+
+
+def _gen_temp_password() -> str:
+    """生成易口头传达的临时密码：12 位，去除易混字符 0/O/1/l/I。"""
+    alphabet = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789"
+    return "".join(secrets.choice(alphabet) for _ in range(12))
+
+
+def admin_list_users(token: str) -> dict:
+    """管理员查看用户列表（脱敏：不含密码/令牌/哈希）。"""
+    if not is_admin(token):
+        return {"ok": False, "error": "unauthorized", "code": 401}
+    data = _load()
+    rows = []
+    for u in data["users"].values():
+        rows.append({
+            "id": u["id"], "email": u.get("email", ""), "name": u.get("name") or "",
+            "phone": u.get("phone") or "",
+            "user_type": u.get("user_type") or DEFAULT_TIER,
+            "organization": u.get("organization") or "",
+            "is_admin": bool(u.get("is_admin")),
+            "created_at": u.get("created_at", ""),
+            "last_login_at": u.get("last_login_at", ""),
+            "must_change_password": bool(u.get("must_change_password")),
+        })
+    rows.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    return {"ok": True, "users": rows, "count": len(rows)}
+
+
+def admin_reset_password(identifier: str, token: str,
+                         temp_password: str = "") -> dict:
+    """管理员重置某用户密码（找回密码兜底）。
+
+    - identifier 可为邮箱或 user_id；
+    - 未指定 temp_password 时自动生成 12 位临时密码；
+    - 重置后：旧会话立即失效（令牌轮换为不可预测值），并置 must_change_password，
+      用户下次登录成功后需先改密码——避免临时密码长期有效。
+    """
+    if not is_admin(token):
+        return {"ok": False, "error": "unauthorized", "code": 401}
+    ident = (identifier or "").strip()
+    if not ident:
+        return {"ok": False, "error": "请填写邮箱或用户 ID"}
+    pwd = (temp_password or "").strip() or _gen_temp_password()
+    if len(pwd) < MIN_PASSWORD_LEN or len(pwd) > MAX_PASSWORD_LEN:
+        return {"ok": False,
+                "error": "临时密码长度需在 %d–%d 之间" % (MIN_PASSWORD_LEN, MAX_PASSWORD_LEN)}
+
+    with _locked() as data:
+        target = None
+        low = ident.lower()
+        for u in data["users"].values():
+            if u.get("id") == ident or (u.get("email") or "").lower() == low:
+                target = u
+                break
+        if target is None:
+            return {"ok": False, "error": "未找到该用户（邮箱或 ID 不存在）"}
+        target["salt"] = secrets.token_hex(8)
+        target["password_hash"] = _hash_pwd(pwd, target["salt"])
+        # 旧会话立即失效：换成随机值（不返回给任何人）
+        target["token"] = secrets.token_urlsafe(24)
+        target["token_created_at"] = None
+        target["must_change_password"] = True
+        target["password_reset_at"] = datetime.now(timezone.utc).isoformat()
+        # 清除该账号的登录锁定（含 IP 维度）：避免用户因旧的错误尝试被锁着进不来
+        _clear_login_locks(target.get("email", ""))
+    return {"ok": True, "email": target.get("email", ""), "user_id": target["id"],
+            "temp_password": pwd, "must_change_password": True,
+            "note": "请将临时密码通过原沟通渠道（微信/邮件）告知用户；"
+                    "用户下次登录需先改密码。该账号的登录失败锁定已一并清除。"}
+
+
+def admin_unlock_login(token: str) -> dict:
+    """管理员应急解锁：清空全部登录失败计数（账号 + IP 维度）。
+
+    用于处理「用户并未忘记密码，只是被失败锁定挡住」的场景，无需重置密码。
+    """
+    if not is_admin(token):
+        return {"ok": False, "error": "unauthorized", "code": 401}
+    with _LOGIN_GUARD_LOCK:
+        n = len(_LOGIN_GUARD)
+        _LOGIN_GUARD.clear()
+    return {"ok": True, "cleared": n,
+            "note": "已清除 %d 条登录失败锁定记录（账号 + IP 维度）。" % n}
 
 
 def my_licenses(user_token: str) -> dict:
@@ -814,6 +922,8 @@ def my_summary(user_token: str) -> dict:
         "custom_total": len(custom),
         "custom_active": sum(1 for o in custom
                              if o.get("status") in ("created", "developing", "delivered")),
+        # 管理员代重置后的临时密码标记：前端据此强制引导改密
+        "must_change_password": bool(u.get("must_change_password")),
     }
 
 

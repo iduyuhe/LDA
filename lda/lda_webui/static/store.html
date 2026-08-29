@@ -271,6 +271,11 @@ function submitAuth(){
       }
       store_token=d.token; localStorage.setItem("lda_store_token",store_token);
       closeAuth(); refreshAuth();
+      // 管理员代重置后的临时密码：强制引导改密，避免临时密码长期有效
+      if(d.must_change_password){
+        alert("你当前使用的是管理员发放的临时密码。\n为保障账户安全，请先修改密码。");
+        location.href="/mine.html#pwd";
+      }
     }).catch(function(e){ $("#authSubmit").disabled=false; $("#authMsg").innerHTML='<span class="err">网络异常，请重试</span>'; });
 }
 function logout(){ store_token=""; localStorage.removeItem("lda_store_token"); refreshAuth(); }

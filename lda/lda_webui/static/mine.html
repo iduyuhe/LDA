@@ -53,6 +53,10 @@
     </div>
 
     <div id="main" class="hide">
+      <div class="hide" id="mustChange" style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:12px;margin-top:12px;font-size:13px">
+        <b>你正在使用管理员发放的临时密码</b><br>
+        为保障账户安全，请尽快在下方「修改密码」中设置你的专属密码。
+      </div>
       <!-- 概览 -->
       <div class="panel" style="margin-top:16px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
@@ -181,6 +185,11 @@ function boot(){
       var pct = Math.round((1-d.discount)*100);
       $("#tierLine").textContent = "当前身份：" + (d.tier_label||"标准个人") +
         (pct>0 ? ("（享 " + pct + "% 折扣，下单自动生效）") : "（原价）");
+      // 管理员代重置后的临时密码：醒目提示 + 直达改密页
+      if(d.must_change_password || location.hash === "#pwd"){
+        $("#mustChange").classList.remove("hide");
+        switchTab("pwd");
+      }
       // 填充资料表单
       $("#pf-name").value = u.name||"";
       $("#pf-phone").value = u.phone||"";
@@ -302,9 +311,11 @@ function savePwd(){
     .then(function(r){return r.json()})
     .then(function(d){
       if(!d.ok){ $("#pw-msg").innerHTML='<span class="err">'+esc(d.error||"修改失败")+'</span>'; return; }
-      $("#pw-msg").innerHTML='<span class="ok">已修改，请重新登录</span>';
-      localStorage.setItem("lda_store_token", d.token);
-      setTimeout(function(){ location.href="/store.html" },1200);
+      // 令牌已在后端轮换，此处同步到本地即可继续停留在本页
+      $("#pw-msg").innerHTML='<span class="ok">密码已更新</span>';
+      $("#mustChange").classList.add("hide");
+      $("#pw-old").value=""; $("#pw-new").value=""; $("#pw-new2").value="";
+      setTimeout(boot,600);
     });
 }
 

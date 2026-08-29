@@ -60,6 +60,7 @@
     <button id="tab-orders" class="on" onclick="switchTab('orders')">订单管理</button>
     <button id="tab-purchase" onclick="switchTab('purchase')">对公申请</button>
     <button id="tab-cfg" onclick="switchTab('cfg')">收款配置</button>
+    <button id="tab-users" onclick="switchTab('users')">账号重置</button>
   </div>
 
   <div id="msg"></div>
@@ -89,6 +90,37 @@
       </thead>
       <tbody id="ptbody"><tr><td colspan="10" class="empty">请输入并保存管理员令牌后刷新</td></tr></tbody>
     </table>
+  </div>
+
+  <!-- 账号重置：找回密码兜底（未接 SMTP，无邮件自助找回） -->
+  <div class="panel hide" id="panel-users">
+    <h2>账号重置（找回密码）</h2>
+    <div class="mut" style="font-size:12px;margin-bottom:10px">
+      未接入邮箱验证，用户无法自助找回密码。此处由管理员重置并生成临时密码，
+      再通过原沟通渠道（微信/邮件）告知用户。<b>用户下次登录会被要求先改密码。</b>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:2;min-width:220px">
+        <label>用户邮箱</label>
+        <input id="rst-email" placeholder="user@company.com" style="margin-bottom:0">
+      </div>
+      <div style="flex:1;min-width:160px">
+        <label>临时密码（留空自动生成 12 位）</label>
+        <input id="rst-pwd" placeholder="选填" style="margin-bottom:0">
+      </div>
+      <div>
+        <button onclick="resetPwd()">重置密码</button>
+        <button class="ghost" onclick="unlockLogin()">仅解锁登录</button>
+      </div>
+    </div>
+    <div class="msg" id="rst-msg"></div>
+    <div id="rst-result" style="margin-top:10px"></div>
+
+    <h2 style="margin-top:20px">用户列表</h2>
+    <div class="mut" style="font-size:12px;margin-bottom:8px">
+      点击「重置」可把该用户邮箱带入上方输入框。
+    </div>
+    <div id="userList"><span class="mut">请输入并保存管理员令牌后刷新</span></div>
   </div>
 
   <!-- 收款配置：微信个人 + 对公账户 -->
@@ -140,11 +172,14 @@ function switchTab(t){ currentTab=t;
   $("tab-orders").classList.toggle('on',t=="orders");
   $("tab-purchase").classList.toggle('on',t=="purchase");
   $("tab-cfg").classList.toggle('on',t=="cfg");
+  $("tab-users").classList.toggle('on',t=="users");
   $("panel-orders").classList.toggle('hide',t!="orders");
   $("panel-purchase").classList.toggle('hide',t!="purchase");
   $("panel-cfg").classList.toggle('hide',t!="cfg");
+  $("panel-users").classList.toggle('hide',t!="users");
   if(t=="cfg") loadConfig();
   if(t=="purchase") loadPurchases();
+  if(t=="users") loadUsers();
   if(t=="orders") refresh();
 }
 
@@ -371,6 +406,99 @@ function copyText(t){
   navigator.clipboard&&navigator.clipboard.writeText(t);
   const s=document.createElement("span"); s.textContent="已复制"; s.className="dl";
   $("msg").appendChild(s); setTimeout(()=>s.remove(),1200);
+}
+
+// —— 账号重置（找回密码兜底）——
+var TIER_CN = {standard:"标准个人", academic:"学术个人", institution:"机构席位"};
+
+async function loadUsers(){
+  const box=$("userList");
+  if(!box) return;
+  if(!loadTok()){ box.innerHTML='<span class="mut">请输入并保存管理员令牌</span>'; return; }
+  box.innerHTML='<span class="mut">加载中…</span>';
+  try{
+    const r=await fetch("/api/admin/users",{headers:authHeaders()});
+    const j=await r.json();
+    if(r.status!==200 || !j.ok){
+      box.innerHTML='<span class="err">读取失败：'+esc(j.error||("HTTP "+r.status))+'</span>';
+      return;
+    }
+    if(!j.users.length){ box.innerHTML='<span class="mut">暂无用户</span>'; return; }
+    box.innerHTML = '<table><thead><tr><th>邮箱</th><th>姓名</th><th>身份</th>'+
+      '<th>机构</th><th>注册时间</th><th>最近登录</th><th>状态</th><th>操作</th></tr></thead><tbody>'+
+      j.users.map(function(u){
+        const flag = u.must_change_password
+          ? '<span class="tag" style="background:#fef3c7;color:#92400e">待改密</span>'
+          : '<span class="tag" style="background:#dcfce7;color:#166534">正常</span>';
+        const tier = TIER_CN[u.user_type] || "标准个人";
+        const last = u.last_login_at ? (u.last_login_at||"").replace("T"," ").slice(0,19) : "—";
+        return '<tr>'+
+          '<td class="code">'+esc(u.email)+'</td>'+
+          '<td>'+esc(u.name||"—")+'</td>'+
+          '<td>'+esc(tier)+(u.is_admin?' <span class="tag">管理员</span>':'')+'</td>'+
+          '<td>'+esc(u.organization||"—")+'</td>'+
+          '<td class="dl">'+esc((u.created_at||"").slice(0,10))+'</td>'+
+          '<td class="dl">'+esc(last)+'</td>'+
+          '<td>'+flag+'</td>'+
+          '<td><button class="ghost" onclick="pickUser(\''+esc(u.email)+'\')">重置</button></td>'+
+        '</tr>';
+      }).join('')+'</tbody></table>';
+  }catch(e){ box.innerHTML='<span class="err">请求失败：'+esc(e.message)+'</span>'; }
+}
+
+function pickUser(email){
+  $("rst-email").value = email;
+  $("rst-pwd").value = "";
+  $("rst-msg").textContent = "";
+  $("rst-result").innerHTML = "";
+  $("rst-email").scrollIntoView({behavior:"smooth",block:"center"});
+  $("rst-pwd").focus();
+}
+
+async function resetPwd(){
+  const email=$("rst-email").value.trim();
+  if(!email){ $("rst-msg").innerHTML='<span class="err">请填写用户邮箱</span>'; return; }
+  if(!confirm("确认重置 "+email+" 的密码？\n该用户当前的登录状态会立即失效。")) return;
+  $("rst-msg").textContent="处理中…";
+  try{
+    const r=await fetch("/api/admin/user/reset_password",{method:"POST",headers:authHeaders(),
+      body:JSON.stringify({email:email, temp_password:$("rst-pwd").value.trim()})});
+    const j=await r.json();
+    if(r.status===200 && j.ok){
+      $("rst-msg").innerHTML='<span class="ok">已重置</span>';
+      $("rst-result").innerHTML =
+        '<div style="border:1px solid var(--line);border-radius:10px;padding:12px;background:#f8fafc">'+
+        '<div class="mut" style="font-size:12px">临时密码（请复制并通过微信/邮件告知用户）</div>'+
+        '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap">'+
+        '<code id="tmpPwd" style="font-size:18px;font-weight:700;letter-spacing:1px">'+esc(j.temp_password)+'</code>'+
+        '<button class="ghost" onclick="copyTemp()">复制</button></div>'+
+        '<div class="mut" style="font-size:12px;margin-top:8px">'+esc(j.note||"")+'</div></div>';
+      loadUsers();
+    }else{
+      $("rst-msg").innerHTML='<span class="err">'+esc(j.error||("HTTP "+r.status))+'</span>';
+      $("rst-result").innerHTML="";
+    }
+  }catch(e){ $("rst-msg").innerHTML='<span class="err">请求失败：'+esc(e.message)+'</span>'; }
+}
+
+function copyTemp(){
+  const el=$("tmpPwd"); if(!el) return;
+  const t=el.textContent;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(function(){ alert("已复制： "+t); },
+      function(){ prompt("请手动复制：", t); });
+  }else{ prompt("请手动复制：", t); }
+}
+
+async function unlockLogin(){
+  if(!confirm("仅清除全部登录失败锁定，不改动任何用户密码。\n适用于用户没忘密码、只是被失败次数挡住的情况。")) return;
+  try{
+    const r=await fetch("/api/admin/unlock_login",{method:"POST",headers:authHeaders(),body:"{}"});
+    const j=await r.json();
+    $("rst-msg").innerHTML = (r.status===200 && j.ok)
+      ? '<span class="ok">'+esc(j.note||"已解锁")+'</span>'
+      : '<span class="err">'+esc(j.error||("HTTP "+r.status))+'</span>';
+  }catch(e){ $("rst-msg").innerHTML='<span class="err">请求失败：'+esc(e.message)+'</span>'; }
 }
 
 async function loadConfig(){

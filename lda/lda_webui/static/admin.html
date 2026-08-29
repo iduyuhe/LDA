@@ -61,6 +61,7 @@
     <button id="tab-purchase" onclick="switchTab('purchase')">对公申请</button>
     <button id="tab-cfg" onclick="switchTab('cfg')">收款配置</button>
     <button id="tab-users" onclick="switchTab('users')">账号重置</button>
+    <button id="tab-opinions" onclick="switchTab('opinions')">意见与需求</button>
   </div>
 
   <div id="msg"></div>
@@ -90,6 +91,15 @@
       </thead>
       <tbody id="ptbody"><tr><td colspan="11" class="empty">请输入并保存管理员令牌后刷新</td></tr></tbody>
     </table>
+  </div>
+
+  <!-- 意见与需求：货架评价/提意见聚合（需求收集器） -->
+  <div class="panel hide" id="panel-opinions">
+    <h2>意见与需求（货架评价/提意见 · 需求收集器）</h2>
+    <div class="mut" style="font-size:12px;margin-bottom:10px">
+      客户对货架的评价与改进意见按货架聚合——判断「哪个货架该扩展/该补新货架」的需求信号。
+    </div>
+    <div id="opAdmin" style="margin-top:10px"><span class="mut">请输入并保存管理员令牌后刷新</span></div>
   </div>
 
   <!-- 账号重置：找回密码兜底（未接 SMTP，无邮件自助找回） -->
@@ -173,13 +183,16 @@ function switchTab(t){ currentTab=t;
   $("tab-purchase").classList.toggle('on',t=="purchase");
   $("tab-cfg").classList.toggle('on',t=="cfg");
   $("tab-users").classList.toggle('on',t=="users");
+  $("tab-opinions").classList.toggle('on',t=="opinions");
   $("panel-orders").classList.toggle('hide',t!="orders");
   $("panel-purchase").classList.toggle('hide',t!="purchase");
   $("panel-cfg").classList.toggle('hide',t!="cfg");
   $("panel-users").classList.toggle('hide',t!="users");
+  $("panel-opinions").classList.toggle('hide',t!="opinions");
   if(t=="cfg") loadConfig();
   if(t=="purchase") loadPurchases();
   if(t=="users") loadUsers();
+  if(t=="opinions") loadOpAdmin();
   if(t=="orders") refresh();
 }
 
@@ -410,6 +423,32 @@ function copyText(t){
   navigator.clipboard&&navigator.clipboard.writeText(t);
   const s=document.createElement("span"); s.textContent="已复制"; s.className="dl";
   $("msg").appendChild(s); setTimeout(()=>s.remove(),1200);
+}
+
+// —— 意见与需求（需求收集器聚合视图）——
+async function loadOpAdmin(){
+  const box=$("opAdmin");
+  if(!box) return;
+  if(!loadTok()){ box.innerHTML='<span class="mut">请输入并保存管理员令牌</span>'; return; }
+  box.innerHTML='<span class="mut">加载中…</span>';
+  try{
+    const r=await fetch("/api/admin/opinions",{headers:authHeaders()});
+    const j=await r.json();
+    if(r.status!==200 || !j.ok){ box.innerHTML='<span class="err">读取失败：'+esc(j.error||("HTTP "+r.status))+'</span>'; return; }
+    if(!j.opinions || !j.opinions.length){ box.innerHTML='<span class="mut">暂无意见——货架的评价/提意见尚未产生。</span>'; return; }
+    var html='<div class="ok" style="font-size:13px;margin-bottom:10px">共 '+j.count+' 条意见</div>';
+    Object.keys(j.groups||{}).forEach(function(sid){
+      var list=j.groups[sid];
+      html+='<div style="border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px">'+
+            '<b>'+esc(sid)+'</b> <span class="dl">('+list.length+' 条)</span>'+
+            '<div style="margin-top:6px">'+list.map(function(o){
+              return '<div style="background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px">'+
+                esc(o.content)+
+                '<div class="dl" style="font-size:11px;margin-top:3px">'+(o.contact?('📮 '+esc(o.contact)+' · '):'')+(o.created_at||'').slice(0,16)+'</div></div>';
+            }).join('')+'</div></div>';
+    });
+    box.innerHTML=html;
+  }catch(e){ box.innerHTML='<span class="err">请求失败：'+esc(e.message)+'</span>'; }
 }
 
 // —— 账号重置（找回密码兜底）——

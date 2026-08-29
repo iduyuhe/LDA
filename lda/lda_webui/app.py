@@ -106,6 +106,11 @@ _PROOF_MAGIC = {
 }
 _PROOF_ALLOWED = ("png", "jpg")
 
+# 货架意见/评价（需求收集器 · v0.8.56）：dist/opinions.json
+OPINIONS_PATH = os.path.join(os.path.dirname(LDA_ROOT), "dist", "opinions.json")
+_OPINIONS_LOCK = threading.Lock()
+_OPINION_MAX_LEN = 500
+
 
 def _ensure_dist_dir(path: str) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -120,6 +125,76 @@ def _load_purchases() -> dict:
             return json.load(f)
     except Exception:  # noqa: BLE001
         return {"requests": []}
+
+
+# ---- 货架意见/评价（需求收集器）----
+def _load_opinions() -> dict:
+    _ensure_dist_dir(OPINIONS_PATH)
+    if not os.path.exists(OPINIONS_PATH):
+        return {"opinions": []}
+    try:
+        with open(OPINIONS_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:  # noqa: BLE001
+        return {"opinions": []}
+
+
+def _save_opinions(data: dict) -> None:
+    _ensure_dist_dir(OPINIONS_PATH)
+    with _OPINIONS_LOCK:
+        with open(OPINIONS_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def opinion_submit(payload):
+    """货架评价/提意见（需求收集，免登录，可选联系方式）。"""
+    p = payload or {}
+    sid = str(p.get("shelf_id") or "").strip()
+    content = str(p.get("content") or "").strip()
+    if not sid:
+        return 400, {"error": "缺少货架 id"}
+    if not content:
+        return 400, {"error": "意见内容不能为空"}
+    if len(content) > _OPINION_MAX_LEN:
+        return 400, {"error": f"意见过长（上限 {_OPINION_MAX_LEN} 字）"}
+    from lda_l2.innovation_market import DEFAULT_SHELF
+    if not any(s.id == sid for s in DEFAULT_SHELF):
+        return 404, {"error": f"货架 {sid} 不存在"}
+    data = _load_opinions()
+    op = {
+        "id": "op-" + uuid.uuid4().hex[:12],
+        "shelf_id": sid,
+        "content": content,
+        "contact": str(p.get("contact") or "").strip()[:80],   # 选填，仅管理员可见
+        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "status": "open",
+    }
+    data["opinions"].insert(0, op)
+    _save_opinions(data)
+    return 200, {"ok": True, "opinion_id": op["id"],
+                 "message": "已收到你的意见，我们会认真评估。"}
+
+
+def opinion_list(shelf_id: str):
+    """某货架的意见列表（公开：脱敏联系方式；内容展示）。"""
+    data = _load_opinions()
+    rows = [o for o in data["opinions"] if o.get("shelf_id") == shelf_id]
+    rows.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    pub = [{"id": o["id"], "shelf_id": o["shelf_id"], "content": o["content"],
+            "created_at": o["created_at"]} for o in rows]
+    return 200, {"count": len(rows), "opinions": pub}
+
+
+def opinion_admin_all(headers):
+    """管理员聚合视图：全部意见（含联系方式），按货架分组。"""
+    if not _check_admin(headers):
+        return 401, {"error": "unauthorized"}
+    data = _load_opinions()
+    rows = sorted(data.get("opinions", []), key=lambda x: x.get("created_at", ""), reverse=True)
+    groups = {}
+    for o in rows:
+        groups.setdefault(o.get("shelf_id", "?"), []).append(o)
+    return 200, {"count": len(rows), "groups": groups, "opinions": rows}
 
 
 def _save_purchases(data: dict) -> None:
@@ -2319,6 +2394,11 @@ def shelf_status(user_type=None):
             "price_cny": price,
             "base_price": base,
             "price_tier": ("standard" if price == base else user_type) or "standard",
+            # 商品化字段（v0.8.56）
+            "features": list(getattr(s, "features", [])),
+            "applications": list(getattr(s, "applications", [])),
+            "specs": dict(getattr(s, "specs", {})),
+            "peers": [dict(p) for p in getattr(s, "peers", [])],
         })
     return {"count": len(rows), "rows": rows,
             "honest_tier": "全部为前瞻预研货架：组合已锚定基元（GP-*）+ 公开信号驱动，未流片。"}
@@ -2956,8 +3036,17 @@ class Handler(BaseHTTPRequestHandler):
             store = _get_store()
             u = store.user_by_token(_bearer(self.headers))
             self._send(200, shelf_status(u.get("user_type") if u else None))
+        elif path.startswith("/api/shelf/") and path.count("/") == 4 and path.endswith("/opinions"):
+            # /api/shelf/<id>/opinions 公开意见列表（脱敏联系方式）
+            sid = path.split("/")[3]
+            code, obj = opinion_list(sid)
+            self._send(code, obj)
+        elif path == "/api/admin/opinions":
+            # 管理员聚合视图（GET，勿放 do_POST——历史踩坑）
+            code, obj = opinion_admin_all(self.headers)
+            self._send(code, obj)
         elif path == "/api/admin/purchase_requests":
-            code, obj = purchase_request_list(dict(self.headers))
+            code, obj = purchase_request_list(self.headers)
             self._send(code, obj)
         # ---- 商业闭环：会员 + 订单 ----
         elif path == "/api/store/config":
@@ -3160,13 +3249,16 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/purchase/upload_proof":
                 code, obj = purchase_upload_proof(payload)
                 self._send(code, obj)
+            elif path == "/api/opinion/submit":
+                code, obj = opinion_submit(payload)
+                self._send(code, obj)
             elif path.startswith("/api/admin/purchase/") and path.count("/") == 5:
                 # /api/admin/purchase/<req_id>/approve
                 parts = path.split("/")
                 req_id = parts[4]
                 sub = parts[5]
                 if sub == "approve":
-                    code, obj = purchase_request_approve(payload, dict(self.headers), req_id)
+                    code, obj = purchase_request_approve(payload, self.headers, req_id)
                     self._send(code, obj)
                 else:
                     self._send(404, {"error": "not found"})

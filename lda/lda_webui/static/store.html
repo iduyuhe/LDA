@@ -27,6 +27,18 @@
   .meta{color:var(--mut);font-size:12px;margin:4px 0}
   .app{font-size:13px;color:#334155;margin:4px 0}
   .pill-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .shelf-detail{margin-top:8px;border:1px solid #e2e7f0;border-radius:8px;overflow:hidden}
+  .shelf-detail-h{font-size:12px;color:#4338ca;background:#f8fafc;padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+  .shelf-detail-b{padding:8px 10px;font-size:12px;background:#fff}
+  .det-sec{margin-bottom:8px}
+  .det-sec b{color:var(--mut);display:block;margin-bottom:2px;font-size:11px}
+  .det-li{line-height:1.55;color:#334155}
+  .det-li b{display:inline;color:var(--txt)}
+  .peer{margin-top:6px;border-top:1px dashed #e2e7f0;padding-top:6px}
+  .peer-spec{color:#4338ca;font-size:11px}
+  .peer-note{color:var(--mut);font-size:11px}
+  .peer-src{color:#94a3b8;font-size:10px}
+  .opinion-item{background:#f8fafc;border:1px solid #e2e7f0;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;color:#334155}
   .ev{font-size:12px;margin-top:8px;min-height:16px;color:var(--mut)}
   .btn-sm{font-size:12px;padding:5px 12px}
   .modal{position:fixed;inset:0;background:rgba(15,20,35,.55);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
@@ -173,6 +185,24 @@
   </div>
 </div>
 
+<!-- 评价/意见 弹窗 -->
+<div class="modal" id="opinionModal" onclick="if(event.target===this)closeOpinion()">
+  <div class="modal-box">
+    <span class="close" onclick="closeOpinion()">&times;</span>
+    <h3 id="opTitle">评价 / 提意见</h3>
+    <p style="color:var(--mut);font-size:12px;margin:0 0 10px">你的意见直接进入我们改进货架的优先级清单——这是需求收集的重要渠道。</p>
+    <textarea id="opContent" rows="4" placeholder="例如：希望增加更宽带宽版本 / 需要 8 通道扩展 / 插损能否更低…（上限 500 字）"></textarea>
+    <label>联系方式（选填，仅管理员可见，便于后续答复）</label>
+    <input id="opContact" placeholder="邮箱或微信号">
+    <div class="msg" id="opMsg"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="ghost" onclick="closeOpinion()">取消</button>
+      <button id="opSubmit" onclick="submitOpinion()">提交意见</button>
+    </div>
+    <div id="opList" style="margin-top:14px"></div>
+  </div>
+</div>
+
 <script>
 var $ = function(id){ if(typeof id==='string' && id.charAt(0)==='#'){id=id.slice(1);} return document.getElementById(id); }
 var store_token = localStorage.getItem("lda_store_token") || "";
@@ -294,19 +324,53 @@ function loadShelves(){
       var price = s.open
         ? '<div class="meta" style="font-weight:700;color:var(--txt)">¥'+esc(s.price_cny)+discountTag+'</div>'
         : '<div class="meta">咨询制 · 按需求报价</div>';
+      // 商品化区：特点 / 用途 / 规格 / 国际对标（有数据才展示，折叠）
+      var merch='';
+      if((s.features&&s.features.length)||(s.applications&&s.applications.length)||(s.specs&&Object.keys(s.specs).length)||(s.peers&&s.peers.length)){
+        merch='<div class="shelf-detail"><div class="shelf-detail-h" onclick="toggleDetail(this)">特点 · 用途 · 规格 · 国际对标 <span class="darr">▾</span></div>'+
+              '<div class="shelf-detail-b hide">';
+        if(s.features&&s.features.length){
+          merch+='<div class="det-sec"><b>特点</b>'+s.features.map(function(x){return '<div class="det-li">• '+esc(x)+'</div>'}).join('')+'</div>';
+        }
+        if(s.applications&&s.applications.length){
+          merch+='<div class="det-sec"><b>用途</b>'+s.applications.map(function(x){return '<div class="det-li">• '+esc(x)+'</div>'}).join('')+'</div>';
+        }
+        if(s.specs&&Object.keys(s.specs).length){
+          merch+='<div class="det-sec"><b>关键规格</b>'+Object.keys(s.specs).map(function(k){return '<div class="det-li">'+esc(k)+'：<b>'+esc(s.specs[k])+'</b></div>'}).join('')+'</div>';
+        }
+        if(s.peers&&s.peers.length){
+          merch+='<div class="det-sec"><b>国际对标</b>';
+          merch+=s.peers.map(function(p){
+            var specTxt=Object.keys(p.specs||{}).map(function(k){return esc(k)+' '+esc(p.specs[k])}).join(' · ');
+            return '<div class="det-li peer">'+esc(p.vendor)+' · '+esc(p.product)+(specTxt?('<div class="peer-spec">'+specTxt+'</div>'):'')+
+                   (p.note?('<div class="peer-note">'+esc(p.note)+'</div>'):'')+
+                   '<div class="peer-src">来源：'+esc(p.source||"")+'</div></div>';
+          }).join('');
+          merch+='<div class="peer-honest" style="font-size:11px;color:var(--mut)">注：本货架数值为仿真预期（前瞻预研·未流片），与国际流片实测值性质不同，仅作定位与规格对照。</div>';
+          merch+='</div>';
+        }
+        merch+='</div></div>';
+      }
       h+='<div class="shelf"><h3>'+esc(s.id)+'</h3>'+
          '<div class="app">'+esc(s.title)+'</div>'+
          '<div class="meta">'+esc(s.domain)+' · '+esc(s.system_type)+' · '+esc(s.honest_tier)+(s.open?'':' · 咨询制')+'</div>'+
          '<div>'+comp+'</div>'+
          price+
+         merch+
          '<div class="ev" id="ev-'+esc(s.id)+'"></div>'+
          '<div class="pill-row">'+
-         '<button class="btn-sm ghost" onclick="evalShelf(\''+esc(s.id)+'\',this)">评估</button>'+btn+
+         '<button class="btn-sm ghost" onclick="evalShelf(\''+esc(s.id)+'\',this)">评估</button>'+
+         '<button class="btn-sm ghost" onclick="openOpinion(\''+esc(s.id)+'\')">评价/意见</button>'+btn+
          '</div>'+
          '</div>';
     });
     $("#shelfGrid").innerHTML=h||'<span class="mut">暂无开放货架</span>';
   });
+}
+
+function toggleDetail(btn){
+  var b=btn.parentNode.querySelector('.shelf-detail-b');
+  if(b){ b.classList.toggle('hide'); btn.querySelector('.darr').textContent = b.classList.contains('hide')?'▾':'▴'; }
 }
 
 function evalShelf(id,btn){
@@ -319,6 +383,46 @@ function evalShelf(id,btn){
       ev.innerHTML='<span class="'+(d.verdict==='PASS'?'ok':'err')+'"><b>'+esc(d.verdict)+'</b></span> · '+esc(d.summary||d.error||'');
       btn.disabled=false; btn.textContent='评估';
     }).catch(function(e){ ev.textContent='失败: '+e; btn.disabled=false; btn.textContent='评估'; });
+}
+
+var OP_SHELF = "";
+function openOpinion(shelfId){
+  OP_SHELF = shelfId;
+  $("#opTitle").textContent='评价 / 提意见 · '+shelfId;
+  $("#opContent").value=""; $("#opContact").value="";
+  $("#opMsg").textContent=""; 
+  $("#opinionModal").classList.add('show');
+  loadOpinions(shelfId);
+}
+function closeOpinion(){ $("#opinionModal").classList.remove('show'); }
+function loadOpinions(shelfId){
+  fetch('/api/shelf/'+encodeURIComponent(shelfId)+'/opinions').then(function(r){return r.json()}).then(function(d){
+    if(!d.ok && !d.opinions) return;
+    if(!d.opinions || !d.opinions.length){
+      $("#opList").innerHTML='<span class="mut" style="font-size:12px">暂无意见，来抢沙发 👇</span>';
+      return;
+    }
+    $("#opList").innerHTML='<div class="mut" style="font-size:12px;margin-bottom:6px">已有 '+d.count+' 条意见：</div>'+
+      d.opinions.slice(0,10).map(function(o){
+        return '<div class="opinion-item">'+esc(o.content)+'<span class="mut" style="font-size:11px;display:block;margin-top:2px">'+(o.created_at||'').slice(0,10)+'</span></div>';
+      }).join('');
+  });
+}
+function submitOpinion(){
+  var content=$("#opContent").value.trim();
+  if(!content){ $("#opMsg").innerHTML='<span class="err">请填写意见内容</span>'; return; }
+  var btn=$("#opSubmit"); btn.disabled=true; btn.textContent='提交中…';
+  fetch('/api/opinion/submit',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({shelf_id:OP_SHELF, content:content, contact:$("#opContact").value.trim()})})
+    .then(function(r){return r.json()})
+    .then(function(d){
+      btn.disabled=false; btn.textContent='提交意见';
+      if(!d.ok){ $("#opMsg").innerHTML='<span class="err">'+esc(d.error||'提交失败')+'</span>'; return; }
+      $("#opMsg").innerHTML='<span class="ok">'+esc(d.message||'已收到')+'</span>';
+      $("#opContent").value=""; $("#opContact").value="";
+      loadOpinions(OP_SHELF);
+    })
+    .catch(function(){ btn.disabled=false; btn.textContent='提交意见'; $("#opMsg").innerHTML='<span class="err">网络异常，请重试</span>'; });
 }
 
 function openConsult(shelfId){

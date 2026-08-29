@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from typing import Any, Dict, List
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -57,11 +57,31 @@ class ShelfItem:
     honest_tier: str = HONEST_TIER      # 强制 = 前瞻预研
     design_note: str = ""               # 设计说明/扩展路径（诚实标注）
     ci_status: str = ""
+    # —— 商品化字段（v0.8.56 起，首批 10 货架填充，随后铺开）——
+    features: List[str] = field(default_factory=list)          # 特点（1~3 条，专业表述）
+    applications: List[str] = field(default_factory=list)      # 典型用途（可含场景）
+    specs: Dict[str, str] = field(default_factory=dict)        # 关键规格（键值对，值=字符串）
+    peers: List[Dict[str, Any]] = field(default_factory=list)  # 国际对标（诚实标注来源与性质）
+    # peers 每项：{vendor, product, specs:{k:v}, note, source, source_url?}
 
     def validate_composition(self) -> Dict[str, Any]:
         """校验 composition 全部为已锚定基元（红线下护栏①：禁止含未锚定基元）。"""
         unknown = [c for c in self.composition if c not in GOLDEN_IDS]
         return {"all_anchored": len(unknown) == 0, "unknown": unknown}
+
+    def to_public(self) -> Dict[str, Any]:
+        """对外公开元数据（含商品化字段，不含设计内部参数）。"""
+        return {
+            "id": self.id, "title": self.title,
+            "target_app": self.target_app, "signal_ref": self.signal_ref,
+            "domain": self.domain, "system_type": self.system_type,
+            "composition": list(self.composition),
+            "honest_tier": self.honest_tier, "design_note": self.design_note,
+            "features": list(self.features),
+            "applications": list(self.applications),
+            "specs": dict(self.specs),
+            "peers": [dict(p) for p in self.peers],
+        }
 
     def evaluate(self) -> Dict[str, Any]:
         """判决：调 design_pipeline（复用 system_type 已验证闭环）。
@@ -1017,6 +1037,196 @@ DEFAULT_SHELF: List[ShelfItem] = [
         ci_status="",
     ),
 ]
+
+# ---------------------------------------------------------------------------
+# 商品化数据（v0.8.56 首批 10 货架；其余货架后续批次填充）
+# 国际对标原则（专业 + 诚实边界）：
+#   - 所有对标数值带来源（厂商白皮书/公开论文/公开 datasheet）
+#   - 本货架数值一律标注「仿真预期 · 前瞻预研 · 未流片验证」，绝不与流片实测值混比
+#   - 只呈现定位差异与规格对照，不做「LDA > 国际」的主观结论
+# ---------------------------------------------------------------------------
+_MERCH: Dict[str, Dict[str, Any]] = {
+    "IM-CPO-WDM5": {
+        "features": [
+            "复用已验证 wdm_demux 闭环（B4 锚：drop IL≤3dB / XT≥15dB）",
+            "5 通道 @ 2.0nm 单 FSR 基准，8 通道扩展为参数化下一迭代",
+            "光栅 + MMI + Crossing 全锚定基元组装，零新物理",
+        ],
+        "applications": ["共封装光学（CPO）WDM 解复用", "数据中心单光纤多波长并行互连"],
+        "specs": {"通道数": "5（基准）", "通道间隔": "2.0nm",
+                  "drop 插损": "≤3dB（B4 锚 · 仿真预期）", "串扰": "≥15dB（B4 锚 · 仿真预期）"},
+        "peers": [{
+            "vendor": "imec",
+            "product": "iSiPP50G 4ch WDM DEMUX（级联双环）",
+            "specs": {"通道数": "4", "通道间隔": "2nm（O 波段）", "FSR": "9.0nm"},
+            "note": "流片实测（4×50G O 波段 WDM 收发子组件演示）",
+            "source": "Optics Express 28-4-5706, 2020",
+        }],
+    },
+    "IM-800G-DR8": {
+        "features": [
+            "8×100G PAM4 并行单波长（1310nm），对标 IEEE 802.3cu",
+            "光栅 + 2cm SiN + Crossing，链路预算 S1/S2/S5/S7 死标量判决",
+            "发射引擎前端预设计（激光/驱动按黑箱源，负面清单）",
+        ],
+        "applications": ["AI 数据中心 800G 光互连（≤500m SMF）", "1.6T DR8 前代平台"],
+        "specs": {"通道": "8×100G PAM4", "波长": "1310nm",
+                  "链路预算": "S1/S2/S5/S7 锚（仿真预期）", "目标距离": "500m（802.3cu）"},
+        "peers": [{
+            "vendor": "IEEE 802.3cu / 商用模组",
+            "product": "800GBASE-DR8 OSFP/QSFP-DD 收发模块",
+            "specs": {"通道": "8×106.25G PAM4", "波长": "1310nm", "距离": "500m",
+                      "功耗": "≤16.5W（Broadcom 7nm DSP）"},
+            "note": "商用流片产品公开规格",
+            "source": "FS/Jabil 800G-DR8 Datasheet（IEEE 802.3cu-2021）",
+        }],
+    },
+    "IM-DWDM-40CH": {
+        "features": [
+            "40 通道 C 波段 100GHz ITU-T G.694.1 网格",
+            "wdm_demux 闭环（B4 锚）演示大规模波长数扩展",
+            "对标 40ch 无热 AWG（插损死标量）",
+        ],
+        "applications": ["DWDM 城域/骨干波长路由", "40ch 无热 AWG 替代方案"],
+        "specs": {"通道数": "40", "网格": "100GHz（ITU-T G.694.1）",
+                  "插损": "≤6.0dB（对标商用 AWG · 仿真预期）"},
+        "peers": [{
+            "vendor": "NTT-ID / Qualinet",
+            "product": "40ch 100GHz Athermal AWG",
+            "specs": {"通道数": "40", "网格": "100GHz", "插损": "typ 4.5 / max 6.0dB"},
+            "note": "厂商公开 datasheet（流片产品规格）",
+            "source": "40ch 100GHz Athermal AWG 公开 datasheet",
+        }],
+    },
+    "IM-COHERENT-400ZR": {
+        "features": [
+            "400G ZR/ZR+ 相干收发 PIC 前端（光栅 + 1cm SiN + Crossing）",
+            "PIC 自身 IL 预算 6dB（非整系统指标，诚实标注）",
+            "相干 DSP / IQ 调制器 / 平衡探测按黑箱（有源不物理级建模）",
+        ],
+        "applications": ["DCI 400G ZR/ZR+ 相干可插拔（120km）", "城域相干传输"],
+        "specs": {"数据率": "400G（DP-16QAM）", "距离": "120km（放大 DWDM）",
+                  "PIC IL 预算": "6dB（仿真预期 · 非整系统）", "网格": "C 波段 75/100GHz 可调"},
+        "peers": [{
+            "vendor": "Lumentum",
+            "product": "400G ZR/ZR+ QSFP-DD-DCO 相干模块",
+            "specs": {"数据率": "400G", "距离": "120km", "网格": "C/C++ 波段 75/100GHz",
+                      "功耗": "<18W（7nm DSP）"},
+            "note": "厂商公开产品规格（流片产品）",
+            "source": "Lumentum 400G ZR/ZR+ 产品页",
+        }],
+    },
+    "IM-LIDAR-TX": {
+        "features": [
+            "1550nm 相干 FMCW 发射前端（光栅 + 0.5cm SiN）",
+            "对标 Optics Express 2026 片上实测 ≈3.3dB",
+            "OPA/相干混频按黑箱（有源不物理级建模）",
+        ],
+        "applications": ["汽车/机器人 4D 感知", "纯固态 FMCW LiDAR 前端"],
+        "specs": {"波长": "1550nm", "全光链路": "≈3.3dB（OE 2026 对标 · 仿真预期）",
+                  "扫描方式": "FMCW（OPA 按黑箱）"},
+        "peers": [{
+            "vendor": "学术公开演示",
+            "product": "片上 FMCW 单方向全光链路",
+            "specs": {"波长": "1550nm", "全光链路 IL": "≈3.3dB（实测）"},
+            "note": "期刊公开实验数据",
+            "source": "Optics Express 34, 7415 (2026)",
+        }],
+    },
+    "IM-QCOM-LINK": {
+        "features": [
+            "D-46 复用 + D-47 保真度预算闭环（已验证）",
+            "Y-branch + SiN 低损波导基元（量子光路互联）",
+            "与 IM-QCHIP-INT（4 比特）互补，5 比特基准",
+        ],
+        "applications": ["超导量子计算多比特频率复用读出", "量子处理器读出总线"],
+        "specs": {"读出比特": "5（基准）", "复用方式": "频率复用",
+                  "保真度预算": "D-46×D-47 框架（已验证）"},
+        "peers": [{
+            "vendor": "IBM / Google",
+            "product": "超导量子芯片多比特频率复用读出架构",
+            "specs": {"读出保真度": "95%~99.5%（分平台公开值）"},
+            "note": "厂商/公开架构披露（非本团队流片）",
+            "source": "IBM/Google 公开多比特频率复用读出架构",
+        }],
+    },
+    "IM-QKD-TX-SHELF": {
+        "features": [
+            "Alice BB84 态制备：2×光栅 + 2×Y-branch（MZI）+ SiN",
+            "单光子衰减/调制按黑箱（有源不物理级建模）",
+            "对标 npj QI 2017 实测 15dB",
+        ],
+        "applications": ["QKD 网络发射端", "城际 QKD 干线"],
+        "specs": {"协议": "BB84（态制备）", "总插损": "≤15dB（npj QI 2017 对标 · 仿真预期）"},
+        "peers": [{
+            "vendor": "学术公开演示",
+            "product": "硅光 Alice 芯片（QKD 态制备）",
+            "specs": {"芯片总插损": "15dB（实测）"},
+            "note": "期刊公开实验数据",
+            "source": "npj Quantum Information 3, e1700262 (2017)",
+        }],
+    },
+    "IM-QCTRL-ZC3-10Q": {
+        "features": [
+            "10 比特频率复用读出链（D-46 复用 + D-47 保真度）",
+            "对标祖冲之三号 99.18% 读出保真度",
+            "读出链规模扩展零新物理",
+        ],
+        "applications": ["中等规模 NISQ 读出扩展", "超导量子处理器读出总线"],
+        "specs": {"读出比特": "10", "复用方式": "频率复用",
+                  "读出保真度": "≥99.18%（对标公开值 · 仿真预期）"},
+        "peers": [{
+            "vendor": "电子科技大学",
+            "product": "祖冲之三号（105 量子比特）",
+            "specs": {"读出保真度": "99.18%（公开对比表）"},
+            "note": "公开情报对比表（2024）",
+            "source": "上海科技情报研究所公开对比表",
+        }],
+    },
+    "IM-QCTRL-HERON-16Q": {
+        "features": [
+            "16 比特频率复用读出链，heavy-hex 单段代表",
+            "对标 IBM Heron R2 98.5% 读出保真度",
+            "156 比特整芯片按 heavy-hex 分段（本货架为单段）",
+        ],
+        "applications": ["IBM Heron 类 heavy-hex 架构读出段"],
+        "specs": {"读出比特": "16", "复用方式": "频率复用",
+                  "读出保真度": "≥98.5%（对标公开值 · 仿真预期）"},
+        "peers": [{
+            "vendor": "IBM",
+            "product": "Heron R2（156 量子比特）",
+            "specs": {"读出保真度": "98.5%（公开对比表）"},
+            "note": "公开情报对比表（2024）",
+            "source": "上海科技情报研究所公开对比表",
+        }],
+    },
+    "IM-QCTRL-WILLOW-12Q": {
+        "features": [
+            "12 比特频率复用读出链，QEC 码字读出段",
+            "对标 Google Willow ~99.3% 读出保真度",
+            "JPA 放大链按黑箱（有源不物理级建模，负面清单）",
+        ],
+        "applications": ["Google Willow 类 QEC 架构读出段"],
+        "specs": {"读出比特": "12", "复用方式": "频率复用（色散读出 + JPA）",
+                  "读出保真度": "≥99.3%（对标公开值 · 仿真预期）"},
+        "peers": [{
+            "vendor": "Google",
+            "product": "Willow（105 量子比特）",
+            "specs": {"读出保真度": "~99.3%（复用色散读出 + JPA）"},
+            "note": "公开技术分析",
+            "source": "Applied Quantum 公开技术分析 (2024)",
+        }],
+    },
+}
+
+# 商品化数据注入（不破坏 DEFAULT_SHELF 定义；后续批次只需向 _MERCH 加条目）
+for _s in DEFAULT_SHELF:
+    _m = _MERCH.get(_s.id)
+    if _m:
+        _s.features = list(_m.get("features", []))
+        _s.applications = list(_m.get("applications", []))
+        _s.specs = dict(_m.get("specs", {}))
+        _s.peers = [dict(p) for p in _m.get("peers", [])]
 
 
 def evaluate_all(shelf: List[ShelfItem] = None) -> List[Dict[str, Any]]:

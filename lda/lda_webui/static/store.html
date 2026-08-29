@@ -39,6 +39,14 @@
   .cmp-table td.b-head{background:#eef2ff;color:#4338ca;font-weight:600;white-space:nowrap;min-width:110px}
   .cmp-table .row-label{font-weight:600;color:#334155}
   .cmp-mut{color:var(--mut);font-size:11px}
+  .dir-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .dir-chips button{border:1px solid #cbd5e1;background:#fff;color:#475569;border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer}
+  .dir-chips button.on{background:#4338ca;color:#fff;border-color:#4338ca}
+  .dir-shelf{background:#f8fafc;border:1px solid #e2e7f0;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:12px}
+  .dir-shelf .ds-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed #e2e7f0}
+  .dir-shelf .ds-row:last-child{border-bottom:none}
+  .dir-shelf b{color:#4338ca}
+  .dir-shelf button{margin-left:auto;background:#4338ca;color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer}
   .shelf-detail{margin-top:8px;border:1px solid #e2e7f0;border-radius:8px;overflow:hidden}
   .shelf-detail-h{font-size:12px;color:#4338ca;background:#f8fafc;padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
   .shelf-detail-b{padding:8px 10px;font-size:12px;background:#fff}
@@ -171,6 +179,9 @@
 
     <div id="customPane" class="hide">
       <div class="msg" style="font-size:13px">① 提出你的设计需求，工程师评估后接单：</div>
+      <label>需求方向（点选，可跳过）</label>
+      <div class="dir-chips" id="dirChips"></div>
+      <div class="dir-shelf" id="dirShelf" style="display:none"></div>
       <label>需求标题 *</label>
       <input id="b-title" placeholder="例：800G 硅光收发模块布局优化">
       <label>需求描述 *</label>
@@ -244,6 +255,20 @@ var buyType = "personal";
 var SHELF_PRICE = {};            // 货架 → 当前身份实付价
 var CMP = {};                    // 对比列表：shelf_id → shelf 数据
 var SHELF_ROWS = [];             // /api/shelf 全部行（对比渲染用）
+var CUSTOM_DIR = {};             // 当前选中的定制需求方向
+// 定制需求方向 → 货架 id 映射（用于「该方向已有开放货架」导流推荐）
+var DIR_SHELVES = {
+  "ai_io":    ["IM-800G-DR8","IM-1.6T-DR8","IM-400G-DR4","IM-PSM4-SHELF","IM-FR4-SHELF","IM-CWDM4-SHELF","IM-LPO-112G","IM-800G-FR4","IM-1.6T-FR4","IM-CHIPLET-IO","IM-PHOTONIC-INTERPOSER","IM-ONCHIP-NOC","IM-GRATING-COUPLE","IM-CPO-OCS","IM-MCF-FANOUT","IM-OSW-1X8"],
+  "wdm":      ["IM-CPO-WDM5","IM-DWDM-40CH","IM-WDM-8CH-1D","IM-AWG-DEMUX","IM-MRR-FILTER","IM-WSS-1X9","IM-VOA","IM-100G-LR4"],
+  "sensing":  ["IM-SENSE-RING","IM-SENS-MZI","IM-BIOSENSE","IM-GAS-SENSE","IM-OPTICAL-GYRO","IM-OCT","IM-ONCHIP-SPECTROMETER","IM-LIDAR-TX","IM-LIDAR-RX","IM-OPA-LIDAR","IM-MDM-MUX"],
+  "coherent": ["IM-COHERENT-400ZR","IM-COHERENT-RX","IM-MZI-MOD","IM-RING-MOD","IM-PSR","IM-POL-ROTATOR","IM-OPTCOMB","IM-TRUE-TIME-DELAY","IM-OPTO-COMPUTE"],
+  "quantum":  ["IM-QCOM-LINK","IM-QCHIP-INT","IM-QKD-TX-SHELF","IM-QKD-RX-SHELF","IM-QKD-MULTI4","IM-QCTRL-ZC3-10Q","IM-QCTRL-HERON-16Q","IM-QCTRL-WILLOW-12Q"],
+  "pon":      ["IM-FTTH-PLC8","IM-FTTH-PLC16","IM-PON-50G","IM-XGS-PON","IM-SPLITTER-TREE","IM-LASER-INT"],
+};
+var DIR_LABELS = {
+  "ai_io": "光互连 / AI 集群", "wdm": "WDM 波分复用", "sensing": "传感与检测",
+  "coherent": "相干与调制", "quantum": "量子计算 / QKD", "pon": "接入网 / PON",
+};
 var TIER_LABELS = {standard:"标准个人", academic:"学术个人", institution:"机构席位"};
 $("#buyShelf");
 
@@ -355,7 +380,7 @@ function loadShelves(){
         ? ' <span class="tag" style="background:#fee2e2;color:#b91c1c">'+esc(TIER_LABELS[s.price_tier]||s.price_tier)+'价</span>' : '';
       var btn = s.open
         ? '<button class="btn-sm" onclick="openBuy(\''+esc(s.id)+'\')">立即购买</button>'
-        : '<button class="btn-sm ghost" onclick="openConsult(\''+esc(s.id)+'\')">咨询定制</button>';
+        : '<button class="btn-sm ghost" onclick="openConsult(\''+esc(s.id)+'\')">咨询此货架</button>';
       var price = s.open
         ? '<div class="meta" style="font-weight:700;color:var(--txt)">¥'+esc(s.price_cny)+discountTag+'</div>'
         : '<div class="meta">咨询制 · 按需求报价</div>';
@@ -529,7 +554,7 @@ function submitOpinion(){
 }
 
 function openConsult(shelfId){
-  // 咨询制货架（未开放下载）→ 引导到定制需求流，预填意向货架
+  // 咨询制货架（未开放下载）→ 引导到定制需求流，预填意向货架 + 自动带方向
   if(!store_token){ showLogin(); return; }
   $("#buyShelf").textContent='定制需求';
   $("#b-title").value="【咨询】"+shelfId;
@@ -537,6 +562,8 @@ function openConsult(shelfId){
   $("#b-spec").value=""; $("#b-budget").value="";
   $("#b-contact").value=""; $("#b-phone").value=""; $("#b-email").value=""; $("#b-company").value=""; $("#b-proof").value="";
   $("#buyPrice").textContent="咨询制货架 · 按需求评估报价";
+  var dir = Object.keys(DIR_SHELVES).find(function(d){ return DIR_SHELVES[d].indexOf(shelfId)>=0; }) || "";
+  renderDirChips(dir);
   fetch('/api/store/me', {headers: authHeaders()}).then(function(r){return r.json()}).then(function(d){
     if(d.user){ $("#b-email").value=d.user.email||""; $("#b-contact").value=d.user.name||""; $("#b-phone").value=d.user.phone||""; }
   });
@@ -597,11 +624,46 @@ function openCustom(){
   $("#buyShelf").textContent='定制需求';
   $("#b-title").value=""; $("#b-req").value=""; $("#b-spec").value=""; $("#b-budget").value="";
   $("#b-contact").value=""; $("#b-phone").value=""; $("#b-email").value=""; $("#b-company").value=""; $("#b-proof").value="";
+  renderDirChips("");
   fetch('/api/store/me', {headers: authHeaders()}).then(function(r){return r.json()}).then(function(d){
     if(d.user){ $("#b-email").value=d.user.email||""; $("#b-contact").value=d.user.name||""; $("#b-phone").value=d.user.phone||""; }
   });
   setType('custom');
   $("#buyModal").classList.add('show');
+}
+
+// —— 定制需求方向 chips + 该方向开放货架导流 ——
+function renderDirChips(sel){
+  CUSTOM_DIR = sel||"";
+  var box=$("#dirChips"); if(!box) return;
+  box.innerHTML = Object.keys(DIR_LABELS).map(function(k){
+    return '<button type="button" class="'+(CUSTOM_DIR===k?'on':'')+'" onclick="pickDir(\''+k+'\')">'+esc(DIR_LABELS[k])+'</button>';
+  }).join('');
+  renderDirShelves();
+}
+function pickDir(k){
+  renderDirChips(CUSTOM_DIR===k ? "" : k);
+}
+function renderDirShelves(){
+  var box=$("#dirShelf"); if(!box) return;
+  if(!CUSTOM_DIR){ box.style.display='none'; return; }
+  var ids=DIR_SHELVES[CUSTOM_DIR]||[];
+  var open=[];
+  SHELF_ROWS.forEach(function(s){ if(ids.indexOf(s.id)>=0 && s.open) open.push(s); });
+  if(!open.length){ box.style.display='none'; return; }
+  box.style.display='';
+  box.innerHTML = '<div class="msg mut" style="font-size:11px;margin-bottom:4px">💡 该方向已有 '+open.length+' 个开放货架，可能有现成方案：</div>'+
+    open.map(function(s){
+      return '<div class="ds-row"><span><b>'+esc(s.id)+'</b> · '+esc(s.title.slice(0,30))+'</span>'+
+             '<span style="color:var(--accent);font-weight:700">¥'+esc(s.price_cny)+'</span>'+
+             '<button type="button" onclick="jumpBuy(\''+esc(s.id)+'\')">直接购买</button></div>';
+    }).join('')+
+    '<div class="msg mut" style="font-size:11px;margin-top:4px">有现成的先看现成的，省时省钱；仍想定制可继续填写下方需求。</div>';
+}
+function jumpBuy(id){
+  // 从定制弹窗直接切到该货架购买
+  closeBuy();
+  openBuy(id);
 }
 function closeBuy(){ $("#buyModal").classList.remove('show'); }
 
@@ -617,6 +679,7 @@ function submitBuy(){
     requirement: buyType==='custom' ? req : "",
     target_spec: buyType==='custom' ? spec : "",
     budget: buyType==='custom' ? budget : "",
+    direction: buyType==='custom' ? (CUSTOM_DIR||"") : "",
     customer:{
       name: $("#b-contact").value.trim(),
       company: $("#b-company").value.trim(),
@@ -635,7 +698,15 @@ function submitBuy(){
       $("#buySubmit").disabled=false; $("#buySubmit").textContent='提交订单';
       if(o.r.status!==200 || !o.d.ok){ $("#buyMsg").innerHTML='<span class="err">'+(o.d.error||'失败')+'</span>'; return; }
       closeBuy(); loadOrders();
-      alert('下单成功！订单号 '+o.d.order.id+'，请按所选方式完成支付并在「我的订单」上传凭证/等待发货。');
+      // 定制需求提交成功 → 二次导流：该方向若有开放货架，提示先看现成的
+      var guide="";
+      if(buyType==='custom' && CUSTOM_DIR && DIR_SHELVES[CUSTOM_DIR]){
+        var cnt=(DIR_SHELVES[CUSTOM_DIR]||[]).filter(function(id){
+          var r=SHELF_ROWS.find(function(x){return x.id===id;}); return r&&r.open;
+        }).length;
+        if(cnt>0){ guide='\n\n💡 该方向有 '+cnt+' 个开放货架可直接下载。先看现成的再决定？→ /store.html#shelfGrid'; }
+      }
+      alert('下单成功！订单号 '+o.d.order.id+'，请按所选方式完成支付并在「我的订单」上传凭证/等待发货。'+guide);
     })
     .catch(function(e){ $("#buySubmit").disabled=false; $("#buySubmit").textContent='提交订单'; $("#buyMsg").innerHTML='<span class="err">'+e+'</span>'; });
 }

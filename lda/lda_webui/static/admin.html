@@ -170,6 +170,11 @@
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+// 定制需求方向标签（与 store.py CUSTOM_DIRECTIONS/DIRECTION_LABELS 一致）
+const DIR_LABELS2 = {
+  "ai_io": "光互连 / AI 集群", "wdm": "WDM 波分复用", "sensing": "传感与检测",
+  "coherent": "相干与调制", "quantum": "量子计算 / QKD", "pon": "接入网 / PON",
+};
 
 var currentTab = "orders";
 
@@ -257,7 +262,9 @@ function renderRow(o){
   }
   // 货架/进度列
   const shelfCol = o.type==="custom"
-    ? '<b>'+esc(o.title||"—")+'</b><br><span class="dl">'+esc((o.requirement||"").slice(0,60))+((o.requirement||"").length>60?'…':'')+'</span>'+
+    ? '<b>'+esc(o.title||"—")+'</b><br>'+
+      (o.direction?'<span class="tag">'+esc(DIR_LABELS2[o.direction]||o.direction)+'</span> ':'')+
+      '<span class="dl">'+esc((o.requirement||"").slice(0,60))+((o.requirement||"").length>60?'…':'')+'</span>'+
       (o.quote_cny?'<br><span class="dl">报价：¥'+o.quote_cny+'</span>':'')+
       (o.eta_date?'<br><span class="dl">排期：'+esc(o.eta_date)+'</span>':'')+
       (o.dev_note?'<br><span class="dl" style="color:var(--accent)">'+esc(o.dev_note)+'</span>':'')+

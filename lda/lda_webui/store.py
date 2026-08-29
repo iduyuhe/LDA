@@ -64,6 +64,17 @@ STATUS_FLOW = ("created", "paid_unverified", "approved", "rejected",
 # 定制需求专用状态流转：created → developing → delivered → accepted（任一可 → rejected）
 CUSTOM_STATUS_FLOW = ("created", "developing", "delivered", "accepted", "rejected")
 
+# 定制需求方向枚举（白名单；用于定制表单 chips 导流 + 管理后台精准对接）
+CUSTOM_DIRECTIONS = ("ai_io", "wdm", "sensing", "coherent", "quantum", "pon")
+DIRECTION_LABELS = {
+    "ai_io": "光互连 / AI 集群",
+    "wdm": "WDM 波分复用",
+    "sensing": "传感与检测",
+    "coherent": "相干与调制",
+    "quantum": "量子计算 / QKD",
+    "pon": "接入网 / PON",
+}
+
 # —— 登录/注册安全基线（2026-08-29 审计后引入）——
 # 邮箱：比旧的 `"@" in email` 严格，杜绝 `a@.b`、`@.` 之类的畸形值入库。
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$")
@@ -436,6 +447,10 @@ def create_order(user_token: str, payload: dict) -> dict:
             return {"ok": False, "error": "定制需求需填写标题与需求描述"}
         target_spec = str(p.get("target_spec") or "").strip()[:2000]
         budget = str(p.get("budget") or "").strip()[:200]
+        # 需求方向（可选，白名单校验，用于管理后台精准对接）
+        direction = str(p.get("direction") or "").strip()[:30]
+        if direction and direction not in CUSTOM_DIRECTIONS:
+            return {"ok": False, "error": "需求方向不合法"}
         shelf_id = ""
         amount_cny = 0
     else:
@@ -462,6 +477,7 @@ def create_order(user_token: str, payload: dict) -> dict:
         "requirement": requirement if otype == "custom" else "",
         "target_spec": target_spec,
         "budget": budget,
+        "direction": direction if otype == "custom" else "",
         "proof": "",
         "license_code": None,
         "deliverable_url": "",
@@ -659,7 +675,8 @@ def _public_order(o: dict, *, for_admin: bool = False) -> dict:
         "pay_method": o["pay_method"],
         "status": o["status"], "customer": o["customer"],
         "requirement": o.get("requirement", ""), "target_spec": o.get("target_spec", ""),
-        "budget": o.get("budget", ""), "proof": o.get("proof", ""),
+        "budget": o.get("budget", ""), "direction": o.get("direction", ""),
+        "proof": o.get("proof", ""),
         "license_code": o.get("license_code"), "deliverable_url": o.get("deliverable_url", ""),
         "deliverables": o.get("deliverables", []),
         "created_at": o["created_at"], "paid_at": o.get("paid_at"),

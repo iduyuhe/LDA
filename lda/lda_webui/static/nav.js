@@ -16,6 +16,7 @@
 
   function currentKey() {
     var p = location.pathname.split("?")[0];
+    if (p.endsWith("insights.html")) return "insights";
     if (p.endsWith("store.html")) return "store";
     if (p.endsWith("admin.html")) return "admin";
     return "home";
@@ -45,6 +46,7 @@
       '<div style="display:flex;gap:18px;align-items:center">' +
       '<span style="font-weight:800;color:var(--accent);font-size:16px;letter-spacing:.5px">LDA</span>' +
       link("/index.html", "首页", "home") +
+      link("/insights.html", "能力展示", "insights") +
       link("/store.html", "创新超市", "store") +
       link("/admin.html", "管理后台", "admin") +
       "</div>" +

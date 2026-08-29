@@ -2788,6 +2788,18 @@ class Handler(BaseHTTPRequestHandler):
                     self._send(200, body=f.read(), ctype=ctype, nocache=True)
             else:
                 self._send(404, {"error": "not found"})
+        elif path.endswith((".jpg", ".jpeg", ".png", ".gif")):
+            # 静态图片（白名单，防路径穿越）：收款码等
+            name = os.path.basename(path)
+            p = os.path.join(WEBUI_DIR, "static", name)
+            if os.path.exists(p):
+                ctype = {"jpg": "image/jpeg", "jpeg": "image/jpeg",
+                         "png": "image/png", "gif": "image/gif"}[name.rsplit(".", 1)[-1].lower()]
+                with open(p, "rb") as f:
+                    self._send(200, body=f.read(), ctype=ctype,
+                               headers={"Cache-Control": "public, max-age=86400"})
+            else:
+                self._send(404, {"error": "not found"})
         elif path == "/api/status":
             self._send(200, system_status())
         elif path == "/api/health":

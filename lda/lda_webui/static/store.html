@@ -118,9 +118,11 @@
     <div id="buyPrice" class="msg" style="font-weight:700"></div>
 
     <div id="personalPane">
-      <div class="msg" style="font-size:13px">① 扫码支付（微信个人收款）：</div>
+      <div class="msg" style="font-size:13px">① 微信扫码支付（个人收款，扫后请按显示金额付款）：</div>
       <div class="qr" id="qrBox"><span class="mut">加载中…</span></div>
+      <div class="msg" id="payAmount" style="font-weight:700;font-size:15px"></div>
       <div class="msg mut" id="payeeInfo"></div>
+      <div class="msg mut" style="margin:2px 0 6px">付款时请备注您的注册手机号后 4 位，便于对账。</div>
       <label>支付凭证（微信交易单号 / 备注，便于对账）</label>
       <textarea id="b-proof" placeholder="付款后填写：微信转账单号或备注信息"></textarea>
       <div class="msg mut">② 提交后我们将在收款确认后自动发放兑换码，可在「我的订单」下载。</div>
@@ -268,6 +270,8 @@ function openBuy(shelfId){
     }else{
       box.innerHTML='<span class="mut">管理员尚未配置收款码</span>';
     }
+    var amt=(SHELF_PRICE[shelfId]!=null)?SHELF_PRICE[shelfId]:null;
+    $("#payAmount").textContent = (amt!=null && buyType!=='custom') ? ('本次支付：¥'+amt) : '';
     $("#payeeInfo").textContent = c.payee ? ('收款方：'+c.payee+(c.amount_note?(' · '+c.amount_note):'')) : '';
   });
   setType('personal');

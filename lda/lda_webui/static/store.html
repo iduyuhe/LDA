@@ -27,6 +27,18 @@
   .meta{color:var(--mut);font-size:12px;margin:4px 0}
   .app{font-size:13px;color:#334155;margin:4px 0}
   .pill-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .btn-cmp{padding:5px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#475569;font-size:12px;cursor:pointer}
+  .btn-cmp.on{background:#4338ca;color:#fff;border-color:#4338ca}
+  .cmp-bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e2e7f0;box-shadow:0 -4px 16px rgba(0,0,0,.08);padding:10px 20px;display:flex;align-items:center;gap:12px;z-index:60;font-size:13px}
+  .cmp-bar .tags{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+  .cmp-bar .tag-x{display:inline-flex;align-items:center;gap:4px;background:#eef2ff;color:#4338ca;border-radius:999px;padding:2px 10px;font-size:12px}
+  .cmp-bar .tag-x button{background:none;border:none;color:#4338ca;cursor:pointer;font-size:14px;padding:0 2px;line-height:1}
+  .cmp-table{width:100%;border-collapse:collapse;font-size:12px}
+  .cmp-table th,.cmp-table td{border:1px solid #e2e7f0;padding:8px 10px;vertical-align:top;text-align:left}
+  .cmp-table th{background:#f8fafc;color:#64748b;font-weight:600;white-space:nowrap;min-width:70px}
+  .cmp-table td.b-head{background:#eef2ff;color:#4338ca;font-weight:600;white-space:nowrap;min-width:110px}
+  .cmp-table .row-label{font-weight:600;color:#334155}
+  .cmp-mut{color:var(--mut);font-size:11px}
   .shelf-detail{margin-top:8px;border:1px solid #e2e7f0;border-radius:8px;overflow:hidden}
   .shelf-detail-h{font-size:12px;color:#4338ca;background:#f8fafc;padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
   .shelf-detail-b{padding:8px 10px;font-size:12px;background:#fff}
@@ -203,6 +215,26 @@
   </div>
 </div>
 
+<!-- 同类对比：底部悬浮栏 -->
+<div class="cmp-bar hide" id="cmpBar">
+  <span style="font-weight:600;color:#4338ca">对比</span>
+  <div class="tags" id="cmpTags"></div>
+  <button style="background:#4338ca;color:#fff;border:none;border-radius:6px;padding:7px 16px;cursor:pointer;font-size:13px" onclick="openCompare()">开始对比</button>
+  <button class="btn-cmp" onclick="clearCompare()">清空</button>
+</div>
+
+<!-- 同类对比 弹窗 -->
+<div class="modal" id="cmpModal" onclick="if(event.target===this)closeCompare()">
+  <div class="modal-box" style="max-width:900px">
+    <span class="close" onclick="closeCompare()">&times;</span>
+    <h3>货架对比</h3>
+    <div class="cmp-wrap" style="overflow-x:auto">
+      <table class="cmp-table" id="cmpTable"></table>
+    </div>
+    <div class="msg mut" id="cmpMsg" style="margin-top:8px;font-size:11px">注：LDA 货架数值为仿真预期（前瞻预研·未流片），与国际流片实测值性质不同，仅作定位与规格对照。</div>
+  </div>
+</div>
+
 <script>
 var $ = function(id){ if(typeof id==='string' && id.charAt(0)==='#'){id=id.slice(1);} return document.getElementById(id); }
 var store_token = localStorage.getItem("lda_store_token") || "";
@@ -210,6 +242,8 @@ var authMode = "login";          // login | register
 var regType = "standard";        // standard | academic | institution
 var buyType = "personal";
 var SHELF_PRICE = {};            // 货架 → 当前身份实付价
+var CMP = {};                    // 对比列表：shelf_id → shelf 数据
+var SHELF_ROWS = [];             // /api/shelf 全部行（对比渲染用）
 var TIER_LABELS = {standard:"标准个人", academic:"学术个人", institution:"机构席位"};
 $("#buyShelf");
 
@@ -313,6 +347,7 @@ function logout(){ store_token=""; localStorage.removeItem("lda_store_token"); r
 function loadShelves(){
   fetch('/api/shelf').then(function(r){return r.json()}).then(function(d){
     var h='';
+    SHELF_ROWS = d.rows;
     d.rows.forEach(function(s){
       SHELF_PRICE[s.id]=s.price_cny;
       var comp=s.composition.map(function(x){return '<span class="tag">'+esc(x)+'</span>'}).join('');
@@ -360,7 +395,8 @@ function loadShelves(){
          '<div class="ev" id="ev-'+esc(s.id)+'"></div>'+
          '<div class="pill-row">'+
          '<button class="btn-sm ghost" onclick="evalShelf(\''+esc(s.id)+'\',this)">评估</button>'+
-         '<button class="btn-sm ghost" onclick="openOpinion(\''+esc(s.id)+'\')">评价/意见</button>'+btn+
+         '<button class="btn-sm ghost" onclick="openOpinion(\''+esc(s.id)+'\')">评价/意见</button>'+
+         '<button class="btn-cmp'+(CMP[s.id]?' on':'')+'" id="cmpb-'+esc(s.id)+'" onclick="toggleCompare(\''+esc(s.id)+'\')">对比</button>'+btn+
          '</div>'+
          '</div>';
     });
@@ -371,6 +407,73 @@ function loadShelves(){
 function toggleDetail(btn){
   var b=btn.parentNode.querySelector('.shelf-detail-b');
   if(b){ b.classList.toggle('hide'); btn.querySelector('.darr').textContent = b.classList.contains('hide')?'▾':'▴'; }
+}
+
+// —— 同类对比：勾选 2~4 个货架 → 对比表 ——
+function toggleCompare(id){
+  var s = SHELF_ROWS.find(function(x){ return x.id===id; });
+  if(!s) return;
+  if(CMP[id]){
+    delete CMP[id];
+  }else{
+    if(Object.keys(CMP).length>=4){ alert('最多同时对比 4 个货架，请先移除一个'); return; }
+    CMP[id]=s;
+  }
+  var b=document.getElementById('cmpb-'+id);
+  if(b) b.classList.toggle('on', !!CMP[id]);
+  renderCompareBar();
+}
+function renderCompareBar(){
+  var ids=Object.keys(CMP);
+  var bar=$("#cmpBar");
+  if(!ids.length){ bar.classList.add('hide'); return; }
+  bar.classList.remove('hide');
+  $("#cmpTags").innerHTML = ids.map(function(id){
+    var s=CMP[id];
+    return '<span class="tag-x">'+esc(s? s.id : id)+'<button onclick="toggleCompare(\''+esc(id)+'\')">&times;</button></span>';
+  }).join('');
+}
+function clearCompare(){ CMP={}; renderCompareBar(); var b=document.querySelectorAll('.btn-cmp.on'); b.forEach(function(x){x.classList.remove('on');}); }
+function closeCompare(){ $("#cmpModal").classList.remove('show'); }
+function openCompare(){
+  var ids=Object.keys(CMP);
+  if(ids.length<2){ alert('请至少勾选 2 个货架进行对比'); return; }
+  var rows=ids.map(function(id){ return CMP[id]; });
+  var h='<thead><tr><th>维度</th>';
+  rows.forEach(function(s){
+    h+='<td class="b-head">'+esc(s.id)+'<br><span style="font-weight:400;font-size:11px">'+esc(s.title)+'</span></td>';
+  });
+  h+='</tr></thead><tbody>';
+  function row(label, vals){
+    h+='<tr><td class="row-label">'+label+'</td>';
+    rows.forEach(function(s,i){ h+='<td>'+vals(s,i)+'</td>'; });
+    h+='</tr>';
+  }
+  row('领域 / 类型', function(s){ return esc(s.domain)+'<div class="cmp-mut">'+esc(s.system_type)+' · '+esc(s.honest_tier)+(s.open?'':' · 咨询制')+'</div>'; });
+  row('价格', function(s){
+    return s.open ? ('¥'+esc(s.price_cny)+(s.price_tier&&s.price_tier!=='standard'?('<div class="cmp-mut">'+esc(TIER_LABELS[s.price_tier]||s.price_tier)+'价</div>'):''))
+                  : '<span class="cmp-mut">咨询制 · 按需求报价</span>';
+  });
+  row('已锚定基元', function(s){ return (s.composition||[]).map(function(x){return '<span class="tag">'+esc(x)+'</span>'}).join(''); });
+  row('特点', function(s){ return (s.features||[]).slice(0,3).map(function(x){return '<div>• '+esc(x)+'</div>'}).join('')||'—'; });
+  row('用途', function(s){ return (s.applications||[]).slice(0,3).map(function(x){return '<div>• '+esc(x)+'</div>'}).join('')||'—'; });
+  row('关键规格', function(s){
+    var sp=s.specs||{};
+    var ks=Object.keys(sp);
+    if(!ks.length) return '—';
+    return ks.map(function(k){ return '<div class="cmp-mut">'+esc(k)+'：</div><div><b>'+esc(sp[k])+'</b></div>'; }).join('');
+  });
+  row('国际对标', function(s){
+    var ps=s.peers||[];
+    if(!ps.length) return '—';
+    return ps.slice(0,2).map(function(p){
+      var st=Object.keys(p.specs||{}).map(function(k){return esc(k)+' '+esc(p.specs[k])}).join(' · ');
+      return '<div><b>'+esc(p.vendor)+' · '+esc(p.product)+'</b>'+(st?('<div class="cmp-mut">'+st+'</div>'):'')+'<div class="cmp-mut">来源：'+esc(p.source||'')+'</div></div>';
+    }).join('<hr style="border:none;border-top:1px dashed #e2e7f0;margin:6px 0">');
+  });
+  h+='</tbody>';
+  $("#cmpTable").innerHTML=h;
+  $("#cmpModal").classList.add('show');
 }
 
 function evalShelf(id,btn){

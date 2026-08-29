@@ -1399,7 +1399,7 @@ _MERCH: Dict[str, Dict[str, Any]] = {
             ],
             "specs": {
                 "交换规模对标": "576×576（Polatis）/ 136×136（Google）",
-                "矩阵插损": "中位 ≤2dB（对标 · 仿真预期）"
+                "矩阵插损": "Polatis 中位 1.4dB / Google ≤2dB（实测对标 · 本货架为仿真预期）"
             },
             "peers": [
                 {
@@ -1410,7 +1410,7 @@ _MERCH: Dict[str, Dict[str, Any]] = {
                         "136×136": "≤2dB（Google）"
                     },
                     "note": "公开评测报告/arXiv 数据",
-                    "source": "UC Berkeley EECS-2024-213；arXiv 2411"
+                    "source": "UC Berkeley EECS-2024-213；arXiv 2411.01503"
                 }
             ]
         },
@@ -1898,7 +1898,7 @@ _MERCH: Dict[str, Dict[str, Any]] = {
             "features": [
                 "微环调制器（MRM）前端：200Gbps/lane，CPO 高带宽密度",
                 "对标 NVIDIA CPO MRM（>1Tbps/mm）与 TSMC COUPE 2026 量产 200Gbps/lane",
-                "带宽密度 0.5→1+ Tbps/mm 路线"
+                "带宽密度 0.5→4 Tbps/mm 路线（TSMC COUPE 2030）"
             ],
             "applications": [
                 "共封装光学（CPO）微环调制器",
@@ -1907,7 +1907,7 @@ _MERCH: Dict[str, Dict[str, Any]] = {
             ],
             "specs": {
                 "速率": "200Gbps/lane（对标 TSMC COUPE）",
-                "带宽密度": "0.5→1+ Tbps/mm（公开路线）"
+                "带宽密度": "0.5→4 Tbps/mm（TSMC COUPE 2030 路线）"
             },
             "peers": [
                 {
@@ -2053,7 +2053,8 @@ _MERCH: Dict[str, Dict[str, Any]] = {
                     "product": "高隔离 PSR（SOI 部分刻蚀）",
                     "specs": {
                         "结构": "220nm+70nm 部分刻蚀",
-                        "功能": "TM-to-TE（实测）"
+                        "TM-to-TE 损耗": "0.71dB @1550nm（实测）",
+                        "PER 最差": "30.95dB（C 波段实测）"
                     },
                     "note": "期刊公开实验数据",
                     "source": "Sama et al., Optics and Laser Technology 203 (2026)"
@@ -2445,7 +2446,7 @@ _MERCH: Dict[str, Dict[str, Any]] = {
                     "specs": {
                         "市场": "$735M(2025)→$1.375B(2031) CAGR 8.14%"
                     },
-                    "note": "公开市场报告",
+                    "note": "公开市场报告（多口径并存，取其一：Arrayed $320-570M/2026 CAGR 6.5-11.7%、QYResearch $427M/2032 CAGR 6.9%、Thermal AWG $2.84B/2033 CAGR 9.x%）",
                     "source": "AWG MUX/DeMUX 市场报告"
                 }
             ]

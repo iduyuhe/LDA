@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LDA 创新超市 · 管理后台</title>
+<style>
+  :root{--bg:#0f1320;--panel:#171c2c;--txt:#e6e9f2;--mut:#9aa3b8;--line:#28304a;--accent:#3b82f6;--green:#22c55e;--red:#ef4444;--amber:#f59e0b}
+  @media (prefers-color-scheme: light){:root{--bg:#f4f6fb;--panel:#fff;--txt:#1a2030;--mut:#5b6478;--line:#e2e7f0;--accent:#2563eb;--green:#16a34a;--red:#dc2626;--amber:#d97706}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);padding:18px}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:var(--mut);font-size:13px;margin-bottom:14px}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  input[type=password],input[type=text]{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+  button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
+  button.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  button:disabled{opacity:.5;cursor:default}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--mut);font-weight:600;background:rgba(127,127,127,.06)}
+  .tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:12px}
+  .tag.pending{background:rgba(245,158,11,.15);color:var(--amber)}
+  .tag.approved{background:rgba(34,197,94,.15);color:var(--green)}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(59,130,246,.12);color:var(--accent);padding:3px 7px;border-radius:6px;font-size:12px}
+  .row-actions{display:flex;gap:6px}
+  .empty{color:var(--mut);padding:24px;text-align:center}
+  .err{color:var(--red);font-size:13px;margin:6px 0}
+  .ok{color:var(--green);font-size:13px;margin:6px 0}
+  a{color:var(--accent)}
+  .dl{font-size:12px;color:var(--mut)}
+</style>
+</head>
+<body>
+  <h1>LDA 创新超市 · 管理后台</h1>
+  <div class="sub">对公购买申请审核 · 一键生成兑换码 · 数据持久化于服务器 dist/purchase_requests.json</div>
+
+  <div class="bar">
+    <input id="token" type="password" placeholder="管理员令牌" style="width:280px">
+    <button id="saveTok">保存令牌</button>
+    <button class="ghost" id="refresh">刷新列表</button>
+    <button class="ghost" id="logout">清除令牌</button>
+    <span id="status" class="dl"></span>
+  </div>
+
+  <div id="msg"></div>
+
+  <div class="panel">
+    <table>
+      <thead>
+        <tr>
+          <th>申请号</th><th>公司</th><th>联系人</th><th>电话</th><th>邮箱</th>
+          <th>货架</th><th>备注</th><th>状态</th><th>提交时间</th><th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"><tr><td colspan="10" class="empty">请输入并保存管理员令牌后刷新</td></tr></tbody>
+    </table>
+  </div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function loadTok(){ return localStorage.getItem("lda_admin_token") || ""; }
+function saveTok(){ const v=$("token").value.trim(); if(!v){$("msg").innerHTML='<div class="err">令牌不能为空</div>';return;} localStorage.setItem("lda_admin_token",v); $("msg").innerHTML='<div class="ok">令牌已保存（仅存于本浏览器）</div>'; refresh(); }
+function logout(){ localStorage.removeItem("lda_admin_token"); $("token").value=""; $("msg").innerHTML='<div class="ok">已清除</div>'; }
+
+function authHeaders(){ return {"Authorization":"Bearer "+loadTok(),"Content-Type":"application/json"}; }
+
+async function refresh(){
+  const tok=loadTok();
+  if(!tok){ $("tbody").innerHTML='<tr><td colspan="10" class="empty">未保存令牌，请先输入并保存</td></tr>'; return; }
+  $("status").textContent="加载中…";
+  try{
+    const r=await fetch("/api/admin/purchase_requests",{headers:authHeaders()});
+    if(r.status===401){ $("tbody").innerHTML='<tr><td colspan="10" class="empty">令牌无效或无权限</td></tr>'; $("status").textContent=""; return; }
+    const j=await r.json();
+    const rows=j.requests||[];
+    if(!rows.length){ $("tbody").innerHTML='<tr><td colspan="10" class="empty">暂无申请</td></tr>'; $("status").textContent="共 0 条"; return; }
+    $("tbody").innerHTML=rows.map(renderRow).join("");
+    $("status").textContent="共 "+rows.length+" 条";
+  }catch(e){ $("tbody").innerHTML='<tr><td colspan="10" class="empty">请求失败：'+esc(e.message)+'</td></tr>'; }
+}
+
+function renderRow(r){
+  const st = r.status==="approved"
+    ? '<span class="tag approved">已审批</span>'
+    : '<span class="tag pending">待处理</span>';
+  const t = (r.created_at||"").replace("T"," ").slice(0,19)+"Z";
+  let action;
+  if(r.status==="approved"){
+    action = '<div class="code" id="c-'+esc(r.id)+'">'+esc(r.license_code)+'</div>'+
+             '<button class="ghost" onclick="copyCode(\''+esc(r.id)+'\')">复制码</button>'+
+             '<div class="dl"><a href="/api/shelf/'+esc(r.shelf_id)+'/download?token='+esc(r.license_code)+'" target="_blank">下载链接</a></div>';
+  }else{
+    action = '<button onclick="approve(\''+esc(r.id)+'\')">审批并生成码</button>';
+  }
+  return '<tr>'+
+    '<td class="code">'+esc(r.id)+'</td>'+
+    '<td>'+esc(r.company)+'</td>'+
+    '<td>'+esc(r.contact)+'</td>'+
+    '<td>'+esc(r.phone)+'</td>'+
+    '<td>'+esc(r.email)+'</td>'+
+    '<td class="code">'+esc(r.shelf_id)+'</td>'+
+    '<td>'+esc(r.note)+'</td>'+
+    '<td>'+st+'</td>'+
+    '<td class="dl">'+esc(t)+'</td>'+
+    '<td><div class="row-actions">'+action+'</div></td>'+
+  '</tr>';
+}
+
+async function approve(id){
+  if(!confirm("确认审批 "+id+" 并生成一次性兑换码？")) return;
+  try{
+    const r=await fetch("/api/admin/purchase/"+id+"/approve",{method:"POST",headers:authHeaders()});
+    const j=await r.json();
+    if(r.status===200 && j.license_code){
+      $("msg").innerHTML='<div class="ok">已生成兑换码：<b class="code">'+esc(j.license_code)+'</b>（请复制发给客户：'+esc(j.email||"")+'）</div>';
+      refresh();
+    }else{
+      $("msg").innerHTML='<div class="err">审批失败：'+esc(JSON.stringify(j))+'</div>';
+    }
+  }catch(e){ $("msg").innerHTML='<div class="err">请求失败：'+esc(e.message)+'</div>'; }
+}
+
+function copyCode(id){
+  const el=document.getElementById("c-"+id);
+  if(!el) return;
+  navigator.clipboard.writeText(el.textContent).then(()=>{ $("msg").innerHTML='<div class="ok">兑换码已复制</div>'; });
+}
+
+$("saveTok").onclick=saveTok;
+$("refresh").onclick=refresh;
+$("logout").onclick=logout;
+$("token").value=loadTok();
+if(loadTok()) refresh();
+</script>
+</body>
+</html>

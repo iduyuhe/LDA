@@ -2310,7 +2310,7 @@ def purchase_request_submit(payload):
     return 200, {
         "ok": True,
         "request_id": req["id"],
-        "message": "申请已提交，请按对公收款说明转账并备注申请号，到账后我们将邮件发送兑换码。",
+        "message": "申请已提交，请按对公收款说明转账并备注申请号；到账后管理员将生成兑换码，您可凭码在创新超市下载设计包。",
     }
 
 
@@ -2748,7 +2748,7 @@ class Handler(BaseHTTPRequestHandler):
             # 静态展示页（白名单，防路径穿越）
             name = os.path.basename(path)
             p = os.path.join(WEBUI_DIR, "static", name)
-            if name in ("index.html", "insights.html") and os.path.exists(p):
+            if name in ("index.html", "insights.html", "admin.html") and os.path.exists(p):
                 with open(p, "rb") as f:
                     self._send(200, body=f.read(), ctype="text/html")
             else:

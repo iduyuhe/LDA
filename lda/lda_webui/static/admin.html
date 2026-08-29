@@ -85,10 +85,10 @@
       <thead>
         <tr>
           <th>申请号</th><th>公司</th><th>联系人</th><th>电话</th><th>邮箱</th>
-          <th>意向货架</th><th>备注</th><th>状态</th><th>提交时间</th><th>操作</th>
+          <th>意向货架</th><th>备注</th><th>凭证</th><th>状态</th><th>提交时间</th><th>操作</th>
         </tr>
       </thead>
-      <tbody id="ptbody"><tr><td colspan="10" class="empty">请输入并保存管理员令牌后刷新</td></tr></tbody>
+      <tbody id="ptbody"><tr><td colspan="11" class="empty">请输入并保存管理员令牌后刷新</td></tr></tbody>
     </table>
   </div>
 
@@ -339,17 +339,17 @@ function copyCode(id){
 
 async function loadPurchases(){
   const tok=loadTok();
-  if(!tok){ $("ptbody").innerHTML='<tr><td colspan="10" class="empty">未保存令牌，请先输入并保存</td></tr>'; return; }
+  if(!tok){ $("ptbody").innerHTML='<tr><td colspan="11" class="empty">未保存令牌，请先输入并保存</td></tr>'; return; }
   $("status").textContent="加载对公申请…";
   try{
     const r=await fetch("/api/admin/purchase_requests",{headers:authHeaders()});
-    if(r.status===401){ $("ptbody").innerHTML='<tr><td colspan="10" class="empty">令牌无效或无权限</td></tr>'; $("status").textContent=""; return; }
+    if(r.status===401){ $("ptbody").innerHTML='<tr><td colspan="11" class="empty">令牌无效或无权限</td></tr>'; $("status").textContent=""; return; }
     const j=await r.json();
     const rows=j.requests||[];
-    if(!rows.length){ $("ptbody").innerHTML='<tr><td colspan="10" class="empty">暂无对公申请</td></tr>'; $("status").textContent="共 0 条"; return; }
+    if(!rows.length){ $("ptbody").innerHTML='<tr><td colspan="11" class="empty">暂无对公申请</td></tr>'; $("status").textContent="共 0 条"; return; }
     $("ptbody").innerHTML=rows.map(renderPurchaseRow).join("");
     $("status").textContent="共 "+rows.length+" 条";
-  }catch(e){ $("ptbody").innerHTML='<tr><td colspan="10" class="empty">请求失败：'+esc(e.message)+'</td></tr>'; }
+  }catch(e){ $("ptbody").innerHTML='<tr><td colspan="11" class="empty">请求失败：'+esc(e.message)+'</td></tr>'; }
 }
 
 function renderPurchaseRow(p){
@@ -367,6 +367,9 @@ function renderPurchaseRow(p){
     action='<span class="dl">'+esc(p.status||"")+'</span>';
   }
   const t=(p.created_at||"").replace("T"," ").slice(0,19)+"Z";
+  const proofHtml = p.proof_url
+    ? '<a href="'+esc(p.proof_url)+'" target="_blank" rel="noopener"><img src="'+esc(p.proof_url)+'" alt="凭证" style="max-width:80px;max-height:64px;border:1px solid var(--line);border-radius:6px;display:inline-block;vertical-align:middle;cursor:pointer" title="点击查看大图"></a>'
+    : '<span class="dl">—</span>';
   return '<tr>'+
     '<td class="code">'+esc(p.id)+'</td>'+
     '<td>'+esc(p.company)+'</td>'+
@@ -375,6 +378,7 @@ function renderPurchaseRow(p){
     '<td class="dl">'+esc(p.email)+'</td>'+
     '<td class="code">'+esc(p.shelf_id)+'</td>'+
     '<td class="dl">'+esc(p.note||"")+'</td>'+
+    '<td>'+proofHtml+'</td>'+
     '<td>'+st+'</td>'+
     '<td class="dl">'+esc(t)+'</td>'+
     '<td><div class="row-actions">'+action+'</div></td>'+

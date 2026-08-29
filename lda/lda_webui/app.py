@@ -96,6 +96,16 @@ AGENT_OUT = os.path.join(LDA_ROOT, "reports_agent")
 PURCHASE_PATH = os.path.join(os.path.dirname(LDA_ROOT), "dist", "purchase_requests.json")
 _PURCHASE_LOCK = threading.Lock()
 
+# 转账凭证截图（对公申请附件）：dist/proofs/，免登录上传（对公申请本身免登录），
+# 但仅接受小体积图片并做 magic bytes 校验，文件名服务端随机生成（不可穿越/不可枚举）。
+PROOF_DIR = os.path.join(os.path.dirname(LDA_ROOT), "dist", "proofs")
+MAX_PROOF_BYTES = 3 * 1024 * 1024          # 3MB（base64 传输上限 4MB 左右）
+_PROOF_MAGIC = {
+    b"\x89PNG\r\n\x1a\n": "png",
+    b"\xff\xd8\xff": "jpg",
+}
+_PROOF_ALLOWED = ("png", "jpg")
+
 
 def _ensure_dist_dir(path: str) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -2336,6 +2346,50 @@ def shelf_evaluate(payload):
 PURCHASE_REQUIRED_FIELDS = ["company", "contact", "phone", "email", "shelf_id"]
 
 
+def purchase_upload_proof(payload):
+    """接收转账凭证截图（base64）→ 校验 → 存 dist/proofs/ → 返回可访问 URL。
+
+    限制：≤3MB、仅 PNG/JPG（magic bytes 校验）、文件名服务端随机生成。
+    免登录（对公申请本身免登录）；仅能存图，无执行/越权风险。
+    """
+    p = payload or {}
+    raw_b64 = str(p.get("data") or "").strip()
+    if not raw_b64:
+        return 400, {"error": "缺少图片数据"}
+    # 去 data:image/...;base64, 前缀（前端可能直接传 FileReader 的完整 dataURL）
+    if raw_b64.startswith("data:"):
+        try:
+            raw_b64 = raw_b64.split(",", 1)[1]
+        except IndexError:
+            return 400, {"error": "图片数据格式不合法"}
+    if len(raw_b64) > MAX_PROOF_BYTES * 2:  # base64 膨胀约 4/3
+        return 400, {"error": "图片过大（上限 3MB）"}
+    try:
+        import base64 as _b64
+        blob = _b64.b64decode(raw_b64, validate=True)
+    except Exception:  # noqa: BLE001
+        return 400, {"error": "图片数据不是合法 base64"}
+    if len(blob) > MAX_PROOF_BYTES:
+        return 400, {"error": "图片过大（上限 3MB）"}
+    ext = None
+    for magic, e in _PROOF_MAGIC.items():
+        if blob.startswith(magic):
+            ext = e
+            break
+    if ext is None:
+        return 400, {"error": "仅支持 PNG / JPG 图片"}
+    os.makedirs(PROOF_DIR, exist_ok=True)
+    fname = uuid.uuid4().hex + "." + ext
+    fpath = os.path.join(PROOF_DIR, fname)
+    try:
+        with open(fpath, "wb") as f:
+            f.write(blob)
+    except OSError as e:  # noqa: BLE001
+        return 500, {"error": "凭证保存失败：" + str(e)[:80]}
+    return 200, {"ok": True, "url": "/proofs/" + fname,
+                 "size": len(blob), "ext": ext}
+
+
 def purchase_request_submit(payload):
     """客户提交对公购买申请，写入 dist/purchase_requests.json。"""
     p = payload or {}
@@ -2362,6 +2416,7 @@ def purchase_request_submit(payload):
         "email": email[:120],
         "shelf_id": sid,
         "note": str(p.get("note") or "").strip()[:500],
+        "proof_url": str(p.get("proof_url") or "").strip()[:500],
         "status": "pending",
         "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "license_code": None,
@@ -2837,6 +2892,22 @@ class Handler(BaseHTTPRequestHandler):
                     self._send(200, body=f.read(), ctype=ctype, nocache=True)
             else:
                 self._send(404, {"error": "not found"})
+        elif path.startswith("/proofs/") and len(path) > len("/proofs/"):
+            # 转账凭证截图静态服务（白名单：仅 dist/proofs/ 下随机文件名图片，防穿越）
+            # 必须放在图片后缀分支之前，否则 /proofs/xxx.png 会被当成 static/ 静态图 404。
+            import re as _re
+            fname = path[len("/proofs/"):]
+            if not _re.fullmatch(r"[0-9a-f]{32}\.(png|jpg)", fname):
+                self._send(404, {"error": "not found"})
+                return
+            fp = os.path.join(PROOF_DIR, fname)
+            if not os.path.exists(fp):
+                self._send(404, {"error": "not found"})
+                return
+            ctype = "image/png" if fname.endswith(".png") else "image/jpeg"
+            with open(fp, "rb") as _f:
+                self._send(200, body=_f.read(), ctype=ctype,
+                           headers={"Cache-Control": "public, max-age=86400"})
         elif path.endswith((".jpg", ".jpeg", ".png", ".gif")):
             # 静态图片（白名单，防路径穿越）：收款码等
             name = os.path.basename(path)
@@ -3085,6 +3156,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, shelf_evaluate(payload))
             elif path == "/api/purchase/request":
                 code, obj = purchase_request_submit(payload)
+                self._send(code, obj)
+            elif path == "/api/purchase/upload_proof":
+                code, obj = purchase_upload_proof(payload)
                 self._send(code, obj)
             elif path.startswith("/api/admin/purchase/") and path.count("/") == 5:
                 # /api/admin/purchase/<req_id>/approve

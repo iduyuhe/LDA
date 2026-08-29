@@ -160,7 +160,13 @@
     <input id="p-email" placeholder="用于接收兑换码">
     <label>付款备注 / 转账信息</label>
     <textarea id="p-note" placeholder="如转账时间、流水号、合同号等，便于对账"></textarea>
-    <div class="hint">* 必填；兑换码将通过电子邮箱发送，请确保邮箱准确。</div>
+    <label>转账凭证截图（选填，便于加速到账核对）</label>
+    <input type="file" id="p-proof" accept="image/png,image/jpeg" onchange="uploadProof(event)">
+    <div id="p-proof-box" style="display:none;margin:6px 0">
+      <img id="p-proof-img" alt="凭证预览" style="max-width:220px;max-height:140px;border:1px solid var(--line);border-radius:8px;display:block">
+      <div class="mut" id="p-proof-state" style="font-size:11px;margin-top:4px"></div>
+    </div>
+    <div class="hint">* 必填；兑换码将通过电子邮箱发送，请确保邮箱准确。凭证仅 PNG/JPG、≤3MB。</div>
     <div class="foot">
       <button class="btn2" onclick="closePurchase()">取消</button>
       <button class="btn2 primary" id="p-submit" onclick="submitPurchase()">提交申请</button>
@@ -283,7 +289,35 @@ function showPurchase(shelfId){
   document.getElementById('p-shelf').value=shelfId||'';
   document.getElementById('p-status').textContent='';
 }
-function closePurchase(){ document.getElementById('purchaseModal').classList.remove('show'); }
+function closePurchase(){
+  document.getElementById('purchaseModal').classList.remove('show');
+  document.getElementById('p-proof').value='';
+  document.getElementById('p-proof-box').style.display='none';
+  document.getElementById('p-proof-img').removeAttribute('src');
+  document.getElementById('p-proof-state').textContent='';
+  delete window.__proofUrl;
+}
+function uploadProof(ev){
+  var f=ev.target.files && ev.target.files[0];
+  var box=document.getElementById('p-proof-box'), img=document.getElementById('p-proof-img'), st=document.getElementById('p-proof-state');
+  if(!f){ return; }
+  var okType=(f.type==='image/png'||f.type==='image/jpeg');
+  if(!okType){ st.textContent='仅支持 PNG/JPG'; box.style.display=''; delete window.__proofUrl; return; }
+  if(f.size>3*1024*1024){ st.textContent='图片过大（上限 3MB）'; box.style.display=''; delete window.__proofUrl; return; }
+  var rd=new FileReader();
+  rd.onload=function(){
+    var b64=rd.result;                       // data:image/png;base64,...
+    img.src=b64; box.style.display=''; st.textContent='上传中…';
+    fetch('/api/purchase/upload_proof',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:b64})})
+      .then(function(r){return r.json().then(function(d){return {r:r,d:d};});})
+      .then(function(o){
+        if(o.r.status===200 && o.d.ok){ window.__proofUrl=o.d.url; st.textContent='已上传，将随申请提交'; }
+        else{ st.textContent=o.d.error||'上传失败'; delete window.__proofUrl; }
+      })
+      .catch(function(){ st.textContent='网络异常，请重试'; delete window.__proofUrl; });
+  };
+  rd.readAsDataURL(f);
+}
 function submitPurchase(){
   var payload={
     shelf_id: document.getElementById('p-shelf').value.trim(),
@@ -291,7 +325,8 @@ function submitPurchase(){
     contact: document.getElementById('p-contact').value.trim(),
     phone: document.getElementById('p-phone').value.trim(),
     email: document.getElementById('p-email').value.trim(),
-    note: document.getElementById('p-note').value.trim()
+    note: document.getElementById('p-note').value.trim(),
+    proof_url: window.__proofUrl || ''
   };
   var missing=['company','contact','phone','email'].filter(function(k){return !payload[k]});
   if(missing.length){ document.getElementById('p-status').innerHTML='<span style="color:var(--red)">请填写 '+missing.join(' / ')+'</span>'; return; }

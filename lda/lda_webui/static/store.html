@@ -27,6 +27,7 @@
   .meta{color:var(--mut);font-size:12px;margin:4px 0}
   .app{font-size:13px;color:#334155;margin:4px 0}
   .pill-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .ev{font-size:12px;margin-top:8px;min-height:16px;color:var(--mut)}
   .btn-sm{font-size:12px;padding:5px 12px}
   .modal{position:fixed;inset:0;background:rgba(15,20,35,.55);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
   .modal.show{display:flex}
@@ -240,17 +241,51 @@ function loadShelves(){
         ? ' <span class="tag" style="background:#fee2e2;color:#b91c1c">'+esc(TIER_LABELS[s.price_tier]||s.price_tier)+'价</span>' : '';
       var btn = s.open
         ? '<button class="btn-sm" onclick="openBuy(\''+esc(s.id)+'\')">立即购买</button>'
-        : '<button class="btn-sm ghost" onclick="openBuy(\''+esc(s.id)+'\')">咨询购买</button>';
+        : '<button class="btn-sm ghost" onclick="openConsult(\''+esc(s.id)+'\')">咨询定制</button>';
+      var price = s.open
+        ? '<div class="meta" style="font-weight:700;color:var(--txt)">¥'+esc(s.price_cny)+discountTag+'</div>'
+        : '<div class="meta">咨询制 · 按需求报价</div>';
       h+='<div class="shelf"><h3>'+esc(s.id)+'</h3>'+
          '<div class="app">'+esc(s.title)+'</div>'+
          '<div class="meta">'+esc(s.domain)+' · '+esc(s.system_type)+' · '+esc(s.honest_tier)+(s.open?'':' · 咨询制')+'</div>'+
          '<div>'+comp+'</div>'+
-         '<div class="meta" style="font-weight:700;color:var(--txt)">¥'+esc(s.price_cny)+discountTag+'</div>'+
-         '<div class="pill-row">'+btn+'</div>'+
+         price+
+         '<div class="ev" id="ev-'+esc(s.id)+'"></div>'+
+         '<div class="pill-row">'+
+         '<button class="btn-sm ghost" onclick="evalShelf(\''+esc(s.id)+'\',this)">评估</button>'+btn+
+         '</div>'+
          '</div>';
     });
     $("#shelfGrid").innerHTML=h||'<span class="mut">暂无开放货架</span>';
   });
+}
+
+function evalShelf(id,btn){
+  btn.disabled=true; btn.textContent='评估中…';
+  var ev=document.getElementById('ev-'+id);
+  if(!ev) return;
+  ev.textContent='运行 design_pipeline 死标量判决…';
+  fetch('/api/shelf/evaluate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})})
+    .then(function(r){return r.json()}).then(function(d){
+      ev.innerHTML='<span class="'+(d.verdict==='PASS'?'ok':'err')+'"><b>'+esc(d.verdict)+'</b></span> · '+esc(d.summary||d.error||'');
+      btn.disabled=false; btn.textContent='评估';
+    }).catch(function(e){ ev.textContent='失败: '+e; btn.disabled=false; btn.textContent='评估'; });
+}
+
+function openConsult(shelfId){
+  // 咨询制货架（未开放下载）→ 引导到定制需求流，预填意向货架
+  if(!store_token){ showLogin(); return; }
+  $("#buyShelf").textContent='定制需求';
+  $("#b-title").value="【咨询】"+shelfId;
+  $("#b-req").value="";
+  $("#b-spec").value=""; $("#b-budget").value="";
+  $("#b-contact").value=""; $("#b-phone").value=""; $("#b-email").value=""; $("#b-company").value=""; $("#b-proof").value="";
+  $("#buyPrice").textContent="咨询制货架 · 按需求评估报价";
+  fetch('/api/store/me', {headers: authHeaders()}).then(function(r){return r.json()}).then(function(d){
+    if(d.user){ $("#b-email").value=d.user.email||""; $("#b-contact").value=d.user.name||""; $("#b-phone").value=d.user.phone||""; }
+  });
+  setType('custom');
+  $("#buyModal").classList.add('show');
 }
 
 function openBuy(shelfId){

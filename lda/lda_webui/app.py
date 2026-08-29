@@ -2345,7 +2345,7 @@ def purchase_request_list(headers):
 
 
 def purchase_request_approve(payload, headers, req_id):
-    """管理员审批通过对公购买申请，生成绑定货架的兑换码。"""
+    """管理员审批/拒绝对公购买申请；通过则生成绑定货架的兑换码。"""
     if not _check_admin(headers):
         return 401, {"error": "unauthorized"}
     data = _load_purchases()
@@ -2356,8 +2356,16 @@ def purchase_request_approve(payload, headers, req_id):
             break
     if req is None:
         return 404, {"error": "申请不存在"}
-    if req.get("status") == "approved":
-        return 409, {"error": "该申请已审批", "license_code": req.get("license_code")}
+    if req.get("status") in ("approved", "rejected"):
+        return 409, {"error": "该申请已处理", "license_code": req.get("license_code")}
+
+    p = payload or {}
+    if p.get("reject"):
+        req["status"] = "rejected"
+        req["reject_reason"] = str(p.get("reason") or "").strip()[:200]
+        req["rejected_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        _save_purchases(data)
+        return 200, {"ok": True, "request_id": req_id, "status": "rejected"}
 
     from lda_l2.ship_package import mint_license
     code = mint_license(req["shelf_id"], email=req.get("email", ""), max_uses=1)

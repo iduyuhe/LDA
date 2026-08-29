@@ -57,7 +57,8 @@
 
   <div class="tabs">
     <button id="tab-orders" class="on" onclick="switchTab('orders')">订单管理</button>
-    <button id="tab-cfg" onclick="switchTab('cfg')">微信收款配置</button>
+    <button id="tab-purchase" onclick="switchTab('purchase')">对公申请</button>
+    <button id="tab-cfg" onclick="switchTab('cfg')">收款配置</button>
   </div>
 
   <div id="msg"></div>
@@ -72,6 +73,20 @@
         </tr>
       </thead>
       <tbody id="tbody"><tr><td colspan="9" class="empty">请输入并保存管理员令牌后刷新</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- 对公申请（insights 免登录流） -->
+  <div class="panel hide" id="panel-purchase">
+    <h2>对公购买申请（免登录提交 · 来自能力展示页）</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>申请号</th><th>公司</th><th>联系人</th><th>电话</th><th>邮箱</th>
+          <th>意向货架</th><th>备注</th><th>状态</th><th>提交时间</th><th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="ptbody"><tr><td colspan="10" class="empty">请输入并保存管理员令牌后刷新</td></tr></tbody>
     </table>
   </div>
 
@@ -120,7 +135,17 @@ function saveTok(){ const v=$("token").value.trim(); if(!v){$("msg").innerHTML='
 function logout(){ localStorage.removeItem("lda_admin_token"); $("token").value=""; $("msg").innerHTML='<div class="ok">已清除</div>'; }
 
 function authHeaders(){ return {"Authorization":"Bearer "+loadTok(),"Content-Type":"application/json"}; }
-function switchTab(t){ currentTab=t; $("tab-orders").classList.toggle('on',t=="orders"); $("tab-cfg").classList.toggle('on',t=="cfg"); $("panel-orders").classList.toggle('hide',t!="orders"); $("panel-cfg").classList.toggle('hide',t!="cfg"); if(t=="cfg") loadConfig(); }
+function switchTab(t){ currentTab=t;
+  $("tab-orders").classList.toggle('on',t=="orders");
+  $("tab-purchase").classList.toggle('on',t=="purchase");
+  $("tab-cfg").classList.toggle('on',t=="cfg");
+  $("panel-orders").classList.toggle('hide',t!="orders");
+  $("panel-purchase").classList.toggle('hide',t!="purchase");
+  $("panel-cfg").classList.toggle('hide',t!="cfg");
+  if(t=="cfg") loadConfig();
+  if(t=="purchase") loadPurchases();
+  if(t=="orders") refresh();
+}
 
 async function refresh(){
   const tok=loadTok();
@@ -203,6 +228,77 @@ function copyCode(id){
   const e2=document.getElementById("c-"+id);
   if(!e2) return;
   navigator.clipboard.writeText(e2.textContent).then(()=>{ $("msg").innerHTML='<div class="ok">兑换码已复制</div>'; });
+}
+
+async function loadPurchases(){
+  const tok=loadTok();
+  if(!tok){ $("ptbody").innerHTML='<tr><td colspan="10" class="empty">未保存令牌，请先输入并保存</td></tr>'; return; }
+  $("status").textContent="加载对公申请…";
+  try{
+    const r=await fetch("/api/admin/purchase_requests",{headers:authHeaders()});
+    if(r.status===401){ $("ptbody").innerHTML='<tr><td colspan="10" class="empty">令牌无效或无权限</td></tr>'; $("status").textContent=""; return; }
+    const j=await r.json();
+    const rows=j.requests||[];
+    if(!rows.length){ $("ptbody").innerHTML='<tr><td colspan="10" class="empty">暂无对公申请</td></tr>'; $("status").textContent="共 0 条"; return; }
+    $("ptbody").innerHTML=rows.map(renderPurchaseRow).join("");
+    $("status").textContent="共 "+rows.length+" 条";
+  }catch(e){ $("ptbody").innerHTML='<tr><td colspan="10" class="empty">请求失败：'+esc(e.message)+'</td></tr>'; }
+}
+
+function renderPurchaseRow(p){
+  let st;
+  if(p.status==="approved") st='<span class="tag approved">已审批</span>';
+  else if(p.status==="rejected") st='<span class="tag rejected">已拒绝</span>';
+  else st='<span class="tag pending">待处理</span>';
+  let action;
+  if(p.status==="pending"){
+    action='<button onclick="approvePurchase(\''+esc(p.id)+'\')">审批并生成兑换码</button>'+
+           '<button class="ghost" onclick="rejectPurchase(\''+esc(p.id)+'\')">拒绝</button>';
+  }else if(p.status==="approved" && p.license_code){
+    action='<div class="code">'+esc(p.license_code)+'</div><button class="ghost" onclick="copyText(\''+esc(p.license_code)+'\')">复制码</button>';
+  }else{
+    action='<span class="dl">'+esc(p.status||"")+'</span>';
+  }
+  const t=(p.created_at||"").replace("T"," ").slice(0,19)+"Z";
+  return '<tr>'+
+    '<td class="code">'+esc(p.id)+'</td>'+
+    '<td>'+esc(p.company)+'</td>'+
+    '<td>'+esc(p.contact)+'</td>'+
+    '<td class="dl">'+esc(p.phone)+'</td>'+
+    '<td class="dl">'+esc(p.email)+'</td>'+
+    '<td class="code">'+esc(p.shelf_id)+'</td>'+
+    '<td class="dl">'+esc(p.note||"")+'</td>'+
+    '<td>'+st+'</td>'+
+    '<td class="dl">'+esc(t)+'</td>'+
+    '<td><div class="row-actions">'+action+'</div></td>'+
+  '</tr>';
+}
+
+async function approvePurchase(id){
+  if(!confirm("确认审批该对公申请？将生成绑定货架的一次性兑换码。")) return;
+  try{
+    const r=await fetch("/api/admin/purchase/"+id+"/approve",{method:"POST",headers:authHeaders(),body:"{}"});
+    const j=await r.json();
+    if(r.status===200 && j.ok){ $("msg").innerHTML='<div class="ok">已审批，兑换码：'+esc(j.license_code||"")+'</div>'; loadPurchases(); }
+    else{ $("msg").innerHTML='<div class="err">失败：'+esc(j.error||r.status)+'</div>'; }
+  }catch(e){ $("msg").innerHTML='<div class="err">请求失败：'+e.message+'</div>'; }
+}
+
+async function rejectPurchase(id){
+  const reason=prompt("拒绝原因（选填）：","");
+  if(reason===null) return;
+  try{
+    const r=await fetch("/api/admin/purchase/"+id+"/approve",{method:"POST",headers:authHeaders(),body:JSON.stringify({reject:true,reason})});
+    const j=await r.json();
+    if(r.status===200 && j.ok){ loadPurchases(); }
+    else{ $("msg").innerHTML='<div class="err">失败：'+esc(j.error||r.status)+'</div>'; }
+  }catch(e){ $("msg").innerHTML='<div class="err">请求失败：'+e.message+'</div>'; }
+}
+
+function copyText(t){
+  navigator.clipboard&&navigator.clipboard.writeText(t);
+  const s=document.createElement("span"); s.textContent="已复制"; s.className="dl";
+  $("msg").appendChild(s); setTimeout(()=>s.remove(),1200);
 }
 
 async function loadConfig(){

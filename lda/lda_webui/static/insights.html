@@ -209,10 +209,14 @@ function load(){
         : ('<span class="tag" style="background:var(--bg);color:var(--mut);border:1px solid var(--line);padding:3px 8px;border-radius:6px">即将开放 · 咨询制</span>'+
            '<button class="btn" style="font-size:12px;padding:3px 10px" onclick="showPurchase(\''+esc(s.id)+'\')">咨询购买</button>'+
            '<span id="dl-'+esc(s.id)+'"></span>');
+      var priceLine = s.open
+        ? '<div class="meta" style="color:var(--txt)">基准价 ¥'+esc(s.base_price!=null?s.base_price:s.price_cny)+'<span style="color:var(--mut)">（登录创新超市按身份享学术/机构价）</span></div>'
+        : '<div class="meta">咨询制 · 按需求报价</div>';
       h+='<div class="shelf"><h3>'+esc(s.id)+'</h3>'+
          '<div class="app">'+esc(s.title)+'</div>'+
          '<div class="meta">'+esc(s.domain)+' · '+esc(s.system_type)+' · '+esc(s.honest_tier)+(s.open?'':' · 咨询制')+'</div>'+
          '<div>'+comp+'</div>'+
+         priceLine+
          '<button class="btn" style="margin-top:10px;font-size:12px;padding:3px 10px" onclick="evalShelf(\''+esc(s.id)+'\',this)">评估</button>'+
          '<div class="ev" id="ev-'+esc(s.id)+'"></div>'+
          '<div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+dlUI+'</div>'+

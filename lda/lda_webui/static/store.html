@@ -130,7 +130,7 @@
 
     <div id="businessPane" class="hide">
       <div class="msg" style="font-size:13px">① 对公转账（可开增值税发票）：</div>
-      <div class="msg mut">户名：上海杜特企业管理咨询有限公司 · 上海农商银行陈行支行 · 账号 32434508010036375</div>
+      <div class="msg mut" id="bankInfo">加载中…</div>
       <label>公司名称 *</label>
       <input id="b-company" placeholder="与对公转账账户一致的公司全称">
       <div class="msg mut">② 提交后管理员确认到账即发货。</div>
@@ -262,7 +262,7 @@ function openBuy(shelfId){
   fetch('/api/store/me', {headers: authHeaders()}).then(function(r){return r.json()}).then(function(d){
     if(d.user){ $("#b-email").value=d.user.email||""; $("#b-contact").value=d.user.name||""; $("#b-phone").value=d.user.phone||""; }
   });
-  // 微信收款码
+  // 微信收款码 + 对公账户
   fetch('/api/store/config').then(function(r){return r.json()}).then(function(c){
     var box=$("#qrBox");
     if(c.qr){
@@ -273,6 +273,14 @@ function openBuy(shelfId){
     var amt=(SHELF_PRICE[shelfId]!=null)?SHELF_PRICE[shelfId]:null;
     $("#payAmount").textContent = (amt!=null && buyType!=='custom') ? ('本次支付：¥'+amt) : '';
     $("#payeeInfo").textContent = c.payee ? ('收款方：'+c.payee+(c.amount_note?(' · '+c.amount_note):'')) : '';
+    var b=c.bank||{};
+    if(b.name){
+      $("#bankInfo").innerHTML='户名：'+esc(b.name)+'<br>开户行：'+esc(b.branch)+'<br>账号：<b>'+esc(b.account)+'</b>'+
+        (b.tel?('<br>电话：'+esc(b.tel)):'')+(b.contact?('<br>联系人：'+esc(b.contact)):'')+
+        '<br>转账备注建议：LDA-'+esc(shelfId)+'-贵司简称';
+    }else{
+      $("#bankInfo").textContent='管理员尚未配置对公账户';
+    }
   });
   setType('personal');
   $("#buyModal").classList.add('show');

@@ -12,122 +12,226 @@
   h1{font-size:20px;margin:0 0 4px}
   .sub{color:var(--mut);font-size:13px;margin-bottom:14px}
   .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-  input[type=password],input[type=text]{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+  input[type=password],input[type=text],textarea,select{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
   button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
   button.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
   button:disabled{opacity:.5;cursor:default}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:16px}
+  .panel h2{font-size:15px;margin:0;padding:12px 14px;border-bottom:1px solid var(--line)}
   table{width:100%;border-collapse:collapse;font-size:13px}
   th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
   th{color:var(--mut);font-weight:600;background:rgba(127,127,127,.06)}
   .tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:12px}
   .tag.pending{background:rgba(245,158,11,.15);color:var(--amber)}
   .tag.approved{background:rgba(34,197,94,.15);color:var(--green)}
+  .tag.created{background:rgba(59,130,246,.15);color:var(--accent)}
+  .tag.rejected{background:rgba(239,68,68,.15);color:var(--red)}
+  .tag.personal{background:rgba(59,130,246,.12);color:var(--accent)}
+  .tag.business{background:rgba(168,85,247,.15);color:#a855f7}
   .code{font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(59,130,246,.12);color:var(--accent);padding:3px 7px;border-radius:6px;font-size:12px}
-  .row-actions{display:flex;gap:6px}
+  .row-actions{display:flex;gap:6px;flex-wrap:wrap}
   .empty{color:var(--mut);padding:24px;text-align:center}
   .err{color:var(--red);font-size:13px;margin:6px 0}
-  .ok{color:var(--green);font-size:13px;margin:6px 0}
+  .ok{color:var(--green);font-size:13px;margin: 6px 0}
   a{color:var(--accent)}
   .dl{font-size:12px;color:var(--mut)}
+  .cfg-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:12px 14px}
+  .cfg-row label{font-size:12px;color:var(--mut);display:block}
+  textarea{width:100%}
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tabs button{flex:1;background:var(--panel);color:var(--txt);border:1px solid var(--line)}
+  .tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 </style>
 </head>
 <body>
   <h1>LDA 创新超市 · 管理后台</h1>
-  <div class="sub">对公购买申请审核 · 一键生成兑换码 · 数据持久化于服务器 dist/purchase_requests.json</div>
+  <div class="sub">统一订单（个人·微信 / 企业·对公）· 一键确认收款并自动发货 · 微信收款配置</div>
 
   <div class="bar">
     <input id="token" type="password" placeholder="管理员令牌" style="width:280px">
     <button id="saveTok">保存令牌</button>
-    <button class="ghost" id="refresh">刷新列表</button>
+    <button class="ghost" id="refresh">刷新</button>
     <button class="ghost" id="logout">清除令牌</button>
     <span id="status" class="dl"></span>
   </div>
 
+  <div class="tabs">
+    <button id="tab-orders" class="on" onclick="switchTab('orders')">订单管理</button>
+    <button id="tab-cfg" onclick="switchTab('cfg')">微信收款配置</button>
+  </div>
+
   <div id="msg"></div>
 
-  <div class="panel">
+  <!-- 订单管理 -->
+  <div class="panel" id="panel-orders">
     <table>
       <thead>
         <tr>
-          <th>申请号</th><th>公司</th><th>联系人</th><th>电话</th><th>邮箱</th>
-          <th>货架</th><th>备注</th><th>状态</th><th>提交时间</th><th>操作</th>
+          <th>订单号</th><th>类型</th><th>货架</th><th>客户</th><th>金额</th>
+          <th>状态</th><th>凭证/备注</th><th>提交时间</th><th>操作</th>
         </tr>
       </thead>
-      <tbody id="tbody"><tr><td colspan="10" class="empty">请输入并保存管理员令牌后刷新</td></tr></tbody>
+      <tbody id="tbody"><tr><td colspan="9" class="empty">请输入并保存管理员令牌后刷新</td></tr></tbody>
     </table>
+  </div>
+
+  <!-- 收款配置：微信个人 + 对公账户 -->
+  <div class="panel hide" id="panel-cfg">
+    <h2>收款配置 · 微信个人收款</h2>
+    <div class="cfg-row" style="flex-direction:column;align-items:stretch">
+      <label>收款方名称（微信昵称/实名）</label>
+      <input id="cfg-payee" placeholder="如：杜先生 / 上海杜特" style="max-width:320px">
+      <label>微信收款码图片 URL（http(s) 或 data:image）</label>
+      <input id="cfg-qr" placeholder="粘贴微信收款码图片链接或 base64">
+      <label>金额说明（选填，如「单份 ¥1999」）</label>
+      <input id="cfg-note" placeholder="选填">
+      <label style="display:inline-flex;align-items:center;gap:6px">
+        <input type="checkbox" id="cfg-auto" style="width:auto"> 个人订单收款后自动确认发货（减少人工）
+      </label>
+    </div>
+    <h2 style="margin-top:18px">收款配置 · 对公账户（企业转账）</h2>
+    <div class="cfg-row" style="flex-direction:column;align-items:stretch">
+      <label>户名（公司全称）</label>
+      <input id="cfg-bank-name" placeholder="如：上海杜特企业管理咨询有限公司" style="max-width:420px">
+      <label>开户行</label>
+      <input id="cfg-bank-branch" placeholder="如：上海农商银行陈行支行" style="max-width:420px">
+      <label>账号</label>
+      <input id="cfg-bank-account" placeholder="对公账号" style="max-width:420px">
+      <label>联系电话</label>
+      <input id="cfg-bank-tel" placeholder="如：13636690529 / 13311602075" style="max-width:420px">
+      <label>联系人</label>
+      <input id="cfg-bank-contact" placeholder="如：杜先生 / 范女士" style="max-width:420px">
+      <div style="margin-top:10px">
+        <button onclick="saveConfig()">保存配置</button>
+        <span class="dl" id="cfg-msg"></span>
+      </div>
+    </div>
+    <div class="cfg-row"><div class="dl" id="cfg-preview"></div></div>
   </div>
 
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
+var currentTab = "orders";
+
 function loadTok(){ return localStorage.getItem("lda_admin_token") || ""; }
 function saveTok(){ const v=$("token").value.trim(); if(!v){$("msg").innerHTML='<div class="err">令牌不能为空</div>';return;} localStorage.setItem("lda_admin_token",v); $("msg").innerHTML='<div class="ok">令牌已保存（仅存于本浏览器）</div>'; refresh(); }
 function logout(){ localStorage.removeItem("lda_admin_token"); $("token").value=""; $("msg").innerHTML='<div class="ok">已清除</div>'; }
 
 function authHeaders(){ return {"Authorization":"Bearer "+loadTok(),"Content-Type":"application/json"}; }
+function switchTab(t){ currentTab=t; $("tab-orders").classList.toggle('on',t=="orders"); $("tab-cfg").classList.toggle('on',t=="cfg"); $("panel-orders").classList.toggle('hide',t!="orders"); $("panel-cfg").classList.toggle('hide',t!="cfg"); if(t=="cfg") loadConfig(); }
 
 async function refresh(){
   const tok=loadTok();
-  if(!tok){ $("tbody").innerHTML='<tr><td colspan="10" class="empty">未保存令牌，请先输入并保存</td></tr>'; return; }
+  if(!tok){ $("tbody").innerHTML='<tr><td colspan="9" class="empty">未保存令牌，请先输入并保存</td></tr>'; return; }
+  if(currentTab!=="orders") return;
   $("status").textContent="加载中…";
   try{
-    const r=await fetch("/api/admin/purchase_requests",{headers:authHeaders()});
-    if(r.status===401){ $("tbody").innerHTML='<tr><td colspan="10" class="empty">令牌无效或无权限</td></tr>'; $("status").textContent=""; return; }
+    const r=await fetch("/api/admin/orders",{headers:authHeaders()});
+    if(r.status===401){ $("tbody").innerHTML='<tr><td colspan="9" class="empty">令牌无效或无权限</td></tr>'; $("status").textContent=""; return; }
     const j=await r.json();
-    const rows=j.requests||[];
-    if(!rows.length){ $("tbody").innerHTML='<tr><td colspan="10" class="empty">暂无申请</td></tr>'; $("status").textContent="共 0 条"; return; }
+    const rows=j.orders||[];
+    if(!rows.length){ $("tbody").innerHTML='<tr><td colspan="9" class="empty">暂无订单</td></tr>'; $("status").textContent="共 0 条"; return; }
     $("tbody").innerHTML=rows.map(renderRow).join("");
     $("status").textContent="共 "+rows.length+" 条";
-  }catch(e){ $("tbody").innerHTML='<tr><td colspan="10" class="empty">请求失败：'+esc(e.message)+'</td></tr>'; }
+  }catch(e){ $("tbody").innerHTML='<tr><td colspan="9" class="empty">请求失败：'+esc(e.message)+'</td></tr>'; }
 }
 
-function renderRow(r){
-  const st = r.status==="approved"
-    ? '<span class="tag approved">已审批</span>'
-    : '<span class="tag pending">待处理</span>';
-  const t = (r.created_at||"").replace("T"," ").slice(0,19)+"Z";
+function renderRow(o){
+  const typeTag = o.type==="personal"
+    ? '<span class="tag personal">个人·微信</span>'
+    : (o.type==="business"
+       ? '<span class="tag business">企业·对公</span>'
+       : '<span class="tag custom">定制·需求</span>');
+  let st;
+  if(o.status==="approved") st='<span class="tag approved">已交付</span>';
+  else if(o.status==="rejected") st='<span class="tag rejected">已拒绝</span>';
+  else if(o.status==="paid_unverified") st='<span class="tag pending">待确认收款</span>';
+  else st='<span class="tag created">待支付</span>';
+  const cust=o.customer||{};
+  const info = (cust.name||"")+(cust.company?(" / "+cust.company):"")+"<br><span class='dl'>"+(cust.phone||"")+" · "+(cust.email||"")+"</span>";
+  const proof = (o.title?("<b>标题：</b>"+esc(o.title)+"<br>"):"")+
+                (o.requirement?("<b>需求：</b>"+esc(o.requirement)+"<br>"):"")+
+                (o.budget?("<b>预算：</b>"+esc(o.budget)+"<br>"):"")+
+                (o.proof?("<b>凭证：</b>"+esc(o.proof)+"<br>"):"")+
+                "<span class='dl'>"+(o.reject_reason||"")+"</span>";
   let action;
-  if(r.status==="approved"){
-    action = '<div class="code" id="c-'+esc(r.id)+'">'+esc(r.license_code)+'</div>'+
-             '<button class="ghost" onclick="copyCode(\''+esc(r.id)+'\')">复制码</button>'+
-             '<div class="dl"><a href="/api/shelf/'+esc(r.shelf_id)+'/download?token='+esc(r.license_code)+'" target="_blank">下载链接</a></div>';
+  if(o.status==="approved"){
+    action = '<div class="code" id="c-'+esc(o.id)+'">'+esc(o.license_code)+'</div>'+
+             '<button class="ghost" onclick="copyCode(\''+esc(o.id)+'\')">复制码</button>';
+  }else if(o.status==="rejected"){
+    action = '<span class="dl">已拒绝</span>';
   }else{
-    action = '<button onclick="approve(\''+esc(r.id)+'\')">审批并生成码</button>';
+    action = '<button onclick="approve(\''+esc(o.id)+'\')">确认收款并发货</button>'+
+             '<button class="ghost" onclick="reject(\''+esc(o.id)+'\')">拒绝</button>';
   }
+  const t=(o.created_at||"").replace("T"," ").slice(0,19)+"Z";
   return '<tr>'+
-    '<td class="code">'+esc(r.id)+'</td>'+
-    '<td>'+esc(r.company)+'</td>'+
-    '<td>'+esc(r.contact)+'</td>'+
-    '<td>'+esc(r.phone)+'</td>'+
-    '<td>'+esc(r.email)+'</td>'+
-    '<td class="code">'+esc(r.shelf_id)+'</td>'+
-    '<td>'+esc(r.note)+'</td>'+
+    '<td class="code">'+esc(o.id)+'</td>'+
+    '<td>'+typeTag+'</td>'+
+    '<td class="code">'+esc(o.shelf_id)+'</td>'+
+    '<td>'+info+'</td>'+
+    '<td>¥'+o.amount_cny+'</td>'+
     '<td>'+st+'</td>'+
+    '<td class="dl">'+esc(proof)+'</td>'+
     '<td class="dl">'+esc(t)+'</td>'+
     '<td><div class="row-actions">'+action+'</div></td>'+
   '</tr>';
 }
 
 async function approve(id){
-  if(!confirm("确认审批 "+id+" 并生成一次性兑换码？")) return;
+  const url=prompt("确认接单/收款。定制需求单如有交付链接请填写，可留空：","");
+  if(url===null) return;
   try{
-    const r=await fetch("/api/admin/purchase/"+id+"/approve",{method:"POST",headers:authHeaders()});
+    const r=await fetch("/api/admin/order/"+id+"/approve",{method:"POST",headers:authHeaders(),body:JSON.stringify({deliverable_url:url})});
     const j=await r.json();
-    if(r.status===200 && j.license_code){
-      $("msg").innerHTML='<div class="ok">已生成兑换码：<b class="code">'+esc(j.license_code)+'</b>（请复制发给客户：'+esc(j.email||"")+'）</div>';
-      refresh();
-    }else{
-      $("msg").innerHTML='<div class="err">审批失败：'+esc(JSON.stringify(j))+'</div>';
-    }
+    if(r.status===200 && j.ok){ $("msg").innerHTML='<div class="ok">已生成兑换码：<b class="code">'+esc(j.order.license_code)+'</b></div>'; refresh(); }
+    else{ $("msg").innerHTML='<div class="err">操作失败：'+esc(JSON.stringify(j))+'</div>'; }
   }catch(e){ $("msg").innerHTML='<div class="err">请求失败：'+esc(e.message)+'</div>'; }
 }
-
+async function reject(id){
+  const reason=prompt("拒绝原因（选填）：")||"";
+  try{
+    const r=await fetch("/api/admin/order/"+id+"/reject",{method:"POST",headers:authHeaders(),body:JSON.stringify({reason:reason})});
+    const j=await r.json();
+    if(r.status===200 && j.ok){ $("msg").innerHTML='<div class="ok">已拒绝</div>'; refresh(); }
+    else{ $("msg").innerHTML='<div class="err">操作失败：'+esc(JSON.stringify(j))+'</div>'; }
+  }catch(e){ $("msg").innerHTML='<div class="err">请求失败：'+esc(e.message)+'</div>'; }
+}
 function copyCode(id){
-  const el=document.getElementById("c-"+id);
-  if(!el) return;
-  navigator.clipboard.writeText(el.textContent).then(()=>{ $("msg").innerHTML='<div class="ok">兑换码已复制</div>'; });
+  const e2=document.getElementById("c-"+id);
+  if(!e2) return;
+  navigator.clipboard.writeText(e2.textContent).then(()=>{ $("msg").innerHTML='<div class="ok">兑换码已复制</div>'; });
+}
+
+async function loadConfig(){
+  try{
+    const r=await fetch("/api/admin/config",{headers:authHeaders()});
+    if(r.status!==200){ $("cfg-msg").textContent="读取失败（需管理员令牌）"; return; }
+    const j=await r.json(); const c=j.config.wechat||{}; const b=j.config.bank||{};
+    $("cfg-payee").value=c.payee||""; $("cfg-qr").value=c.qr||""; $("cfg-note").value=c.amount_note||"";
+    $("cfg-auto").checked=!!j.config.auto_confirm;
+    $("cfg-bank-name").value=b.name||""; $("cfg-bank-branch").value=b.branch||"";
+    $("cfg-bank-account").value=b.account||""; $("cfg-bank-tel").value=b.tel||"";
+    $("cfg-bank-contact").value=b.contact||"";
+    $("cfg-preview").innerHTML = c.qr ? ('当前收款码：<br><img src="'+esc(c.qr)+'" style="width:160px;height:160px;margin-top:8px;border:1px solid var(--line);border-radius:8px">') : '尚未配置收款码';
+  }catch(e){ $("cfg-msg").textContent="读取失败："+e.message; }
+}
+async function saveConfig(){
+  const body={
+    wechat:{ payee:$("cfg-payee").value.trim(), qr:$("cfg-qr").value.trim(), amount_note:$("cfg-note").value.trim() },
+    bank:{ name:$("cfg-bank-name").value.trim(), branch:$("cfg-bank-branch").value.trim(),
+           account:$("cfg-bank-account").value.trim(), tel:$("cfg-bank-tel").value.trim(),
+           contact:$("cfg-bank-contact").value.trim() },
+    auto_confirm:$("cfg-auto").checked
+  };
+  try{
+    const r=await fetch("/api/admin/config",{method:"POST",headers:authHeaders(),body:JSON.stringify(body)});
+    const j=await r.json();
+    if(r.status===200 && j.ok){ $("cfg-msg").innerHTML='<span class="ok">已保存</span>'; loadConfig(); }
+    else{ $("cfg-msg").innerHTML='<span class="err">保存失败：'+esc(JSON.stringify(j))+'</span>'; }
+  }catch(e){ $("cfg-msg").innerHTML='<span class="err">请求失败：'+e.message+'</span>'; }
 }
 
 $("saveTok").onclick=saveTok;
@@ -136,5 +240,6 @@ $("logout").onclick=logout;
 $("token").value=loadTok();
 if(loadTok()) refresh();
 </script>
+<script src="/nav.js"></script>
 </body>
 </html>

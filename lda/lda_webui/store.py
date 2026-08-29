@@ -67,9 +67,7 @@ def _ensure_dir():
 def _load() -> dict:
     _ensure_dir()
     if not os.path.exists(STORE_PATH):
-        return {"users": {}, "orders": [], "config": {
-            "wechat": {"payee": "", "qr": "", "amount_note": ""},
-            "prices": {}, "auto_confirm": False}}
+        return {"users": {}, "orders": [], "config": _default_config()}
     try:
         with open(STORE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -77,13 +75,28 @@ def _load() -> dict:
         data.setdefault("orders", [])
         data.setdefault("config", {})
         data["config"].setdefault("wechat", {"payee": "", "qr": "", "amount_note": ""})
+        data["config"].setdefault("bank", _default_bank())
         data["config"].setdefault("prices", {})
+        data["config"].setdefault("tiers", {})
         data["config"].setdefault("auto_confirm", False)
         return data
     except Exception:  # noqa: BLE001
-        return {"users": {}, "orders": [], "config": {
-            "wechat": {"payee": "", "qr": "", "amount_note": ""},
-            "prices": {}, "auto_confirm": False}}
+        return {"users": {}, "orders": [], "config": _default_config()}
+
+
+def _default_bank() -> dict:
+    return {
+        "name": "上海杜特企业管理咨询有限公司",
+        "branch": "上海农商银行陈行支行",
+        "account": "32434508010036375",
+        "tel": "13636690529 / 13311602075 / 13901700712",
+        "contact": "13636690529 / 13311602075 杜先生 或 13901700712 范女士",
+    }
+
+
+def _default_config() -> dict:
+    return {"wechat": {"payee": "", "qr": "", "amount_note": ""}, "bank": _default_bank(),
+            "prices": {}, "tiers": {}, "auto_confirm": False}
 
 
 def _save(data: dict) -> None:
@@ -200,6 +213,12 @@ def set_config(config: dict, token: str) -> dict:
                     pass
         if new_tiers:
             data["config"]["tiers"] = new_tiers
+    if isinstance(config.get("bank"), dict):
+        bank = config["bank"]
+        cur = data["config"].setdefault("bank", _default_bank())
+        for k in ("name", "branch", "account", "tel", "contact"):
+            if k in bank:
+                cur[k] = str(bank.get(k) or "").strip()[:200]
     if "auto_confirm" in config:
         data["config"]["auto_confirm"] = bool(config["auto_confirm"])
     _save(data)
@@ -399,14 +418,16 @@ def list_orders(token: str, scope: str = "mine") -> dict:
 
 
 def public_config() -> dict:
-    """给前台：微信收款码（脱敏）+ 单价 + 身份分层，不含管理员信息。"""
+    """给前台：微信收款码 + 对公账户 + 身份分层，不含管理员信息。"""
     data = _load()
     wc = data["config"]["wechat"]
+    bank = data["config"].get("bank") or _default_bank()
     tiers = {}
     for t in USER_TYPES:
         tiers[t] = {"label": USER_TYPE_LABELS[t], "discount": tier_discount(t)}
     return {"payee": wc.get("payee", ""), "qr": wc.get("qr", ""),
             "amount_note": wc.get("amount_note", ""),
+            "bank": bank,
             "tiers": tiers, "default_tier": DEFAULT_TIER}
 
 

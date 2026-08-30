@@ -193,6 +193,292 @@
         "waveguide",
         "low-loss"
       ]
+    },
+    {
+      "id": "E-GE-PD-RESP",
+      "device": "Ge p-i-n photodetector butt-coupled to SOI waveguide",
+      "metric": "responsivity_A_per_W",
+      "measured_value": 1.1,
+      "uncertainty_abs": 0.05,
+      "fab_source": "大截面 SOI 波导异质集成 Ge p-i-n（Kotura）",
+      "citation": "D. Feng et al., Appl. Phys. Lett. 95, 261105 (2009), DOI 10.1063/1.3279129",
+      "method": "1550nm 波导耦合响应度测试（>32 GHz 带宽）",
+      "geometry": {
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "photodetector",
+        "ge",
+        "soi"
+      ]
+    },
+    {
+      "id": "E-SOI-PL-36",
+      "device": "SOI strip waveguide 445x220 nm (200mm CMOS line)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 3.6,
+      "uncertainty_abs": 0.1,
+      "fab_source": "标准 200mm CMOS 线（IBM）SOI Unibond 220nm/2um BOX",
+      "citation": "Y. Vlasov & S. McNab, Opt. Express 12, 1622 (2004), DOI 10.1364/OPEX.12.001622",
+      "method": "cut-back 传输损耗（TE, 1.5um）",
+      "geometry": {
+        "w_core_um": 0.445,
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 1.5
+      },
+      "tags": [
+        "waveguide",
+        "soi",
+        "loss"
+      ]
+    },
+    {
+      "id": "E-SOI-BEND1",
+      "device": "SOI 90° bend R=1 um",
+      "metric": "bend_loss_per_90deg_dB",
+      "measured_value": 0.086,
+      "uncertainty_abs": 0.005,
+      "fab_source": "标准 200mm CMOS 线（IBM）SOI 220nm",
+      "citation": "Y. Vlasov & S. McNab, Opt. Express 12, 1622 (2004), DOI 10.1364/OPEX.12.001622",
+      "method": "环形弯曲损耗测试（TE, 1.5um）",
+      "geometry": {
+        "R_um": 1.0,
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 1.5
+      },
+      "tags": [
+        "bend",
+        "soi",
+        "loss"
+      ]
+    },
+    {
+      "id": "E-GC-APOD-81",
+      "device": "Apodized SOI grating coupler (260nm, C-band)",
+      "metric": "coupling_efficiency",
+      "measured_value": 0.81,
+      "uncertainty_abs": 0.02,
+      "fab_source": "260nm SOI 平台（周期+占空比双 apodization）",
+      "citation": "R. Marchetti et al., Sci. Rep. 7, 16505 (2017), DOI 10.1038/s41598-017-16505-z",
+      "method": "fiber-to-chip 耦合效率（实验 -0.9 dB / 仿真 -0.8 dB）",
+      "geometry": {
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "ff": 0.5
+      },
+      "tags": [
+        "grating",
+        "coupler",
+        "soi"
+      ]
+    },
+    {
+      "id": "E-RING-PL-25",
+      "device": "Si microring resonator R=10 um (C-band)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 2.5,
+      "uncertainty_abs": 0.5,
+      "fab_source": "紧凑型硅微环谐振器（弯曲半径 10um）",
+      "citation": "S. Xiao et al., Opt. Express 15, 14467 (2007), DOI 10.1364/OE.15.014467",
+      "method": "cut-back / 环形损耗反演（C 波段 1.53-1.57um）",
+      "geometry": {
+        "R_um": 10.0,
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "ring",
+        "resonator",
+        "soi"
+      ]
+    },
+    {
+      "id": "E-RING-Q42",
+      "device": "Si microring resonator R=10 um (intrinsic Q)",
+      "metric": "intrinsic_Q",
+      "measured_value": 420000,
+      "uncertainty_abs": 50000,
+      "fab_source": "紧凑型硅微环谐振器（弯曲半径 10um）",
+      "citation": "S. Xiao et al., Opt. Express 15, 14467 (2007), DOI 10.1364/OE.15.014467",
+      "method": "环形谐振本征品质因数（损耗反演 Q 达 4.2e5）",
+      "geometry": {
+        "R_um": 10.0,
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "ring",
+        "resonator",
+        "soi"
+      ]
+    },
+    {
+      "id": "E-MRM-VPI-098",
+      "device": "Si microring modulator, interleaved p-n junction",
+      "metric": "vpi_l_pi_Vcm",
+      "measured_value": 0.98,
+      "uncertainty_abs": 0.1,
+      "fab_source": "硅微环调制器（错位容限 interleaved PN）",
+      "citation": "X. Xiao et al., IEEE Int. Conf. Group IV Photonics, 359 (2011), DOI 10.1109/GROUP4.2011.6053816",
+      "method": "载流子耗尽相位调谐（8 GHz 调制带宽）",
+      "geometry": {
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "modulator",
+        "microring",
+        "carrier-depletion",
+        "soi"
+      ]
+    },
+    {
+      "id": "E-MZM-VPI-18",
+      "device": "Si Mach-Zehnder modulator, PN diode carrier depletion",
+      "metric": "vpi_l_pi_Vcm",
+      "measured_value": 1.8,
+      "uncertainty_abs": 0.2,
+      "fab_source": "硅 MZ 调制器（高掺杂 PN 二极管小截面波导）",
+      "citation": "J. W. Park et al., Opt. Express 17, 15520 (2009), DOI 10.1364/OE.17.015520",
+      "method": "载流子耗尽相位调谐（12.5 Gbps 眼图）",
+      "geometry": {
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "modulator",
+        "mzm",
+        "carrier-depletion",
+        "soi"
+      ]
+    },
+    {
+      "id": "E-SIN-Q37",
+      "device": "SiN microresonator (photonic damascene, 1.35um thick)",
+      "metric": "intrinsic_Q",
+      "measured_value": 3700000,
+      "uncertainty_abs": 500000,
+      "fab_source": "光子 damascene 工艺 SiN 微环（1.35um 厚，近 100% 良率）",
+      "citation": "M. H. P. Pfeiffer et al., Optica 3, 20 (2016), DOI 10.1364/OPTICA.3.000020",
+      "method": "微环谐振本征 Q（反常 GVD，DKS 频率梳）",
+      "geometry": {
+        "h_core_um": 1.35,
+        "n_sin": 2.0,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "sin",
+        "ring",
+        "resonator"
+      ]
+    },
+    {
+      "id": "E-SIN-Q50",
+      "device": "SiN microresonator (damascene reflow, anomalous dispersion)",
+      "metric": "intrinsic_Q",
+      "measured_value": 5000000,
+      "uncertainty_abs": 1000000,
+      "fab_source": "光子 damascene + reflow SiN 微环（超低粗糙侧墙）",
+      "citation": "M. H. P. Pfeiffer et al., Optica 5, 884 (2018), DOI 10.1364/OPTICA.5.000884",
+      "method": "微环散射 Q（均值 1.2e7，紧约束 anomalous 色散 >5e6）",
+      "geometry": {
+        "n_sin": 2.0,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "sin",
+        "ring",
+        "resonator"
+      ]
+    },
+    {
+      "id": "E-SIN-Q11",
+      "device": "SiN microresonator (subtractive processing)",
+      "metric": "intrinsic_Q",
+      "measured_value": 11000000,
+      "uncertainty_abs": 1000000,
+      "fab_source": "去除法工艺 SiN 微环（Kerr 非线性光学）",
+      "citation": "Silicon nitride microresonators by subtractive processing, Opt. Express 27, 35719 (2019), DOI 10.1364/OE.27.035719",
+      "method": "微环本征 Q 均值约 11e6（soliton microcomb）",
+      "geometry": {
+        "n_sin": 2.0,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "sin",
+        "ring",
+        "resonator"
+      ]
+    },
+    {
+      "id": "E-Q-TTRANS-T1",
+      "device": "2D tantalum transmon qubit",
+      "metric": "T1_us",
+      "measured_value": 300,
+      "uncertainty_abs": 50,
+      "fab_source": "钽替代铌二维 transmon（17 器件寿命提升）",
+      "citation": "A. P. M. Place et al., Nat. Commun. 12, 1779 (2021), DOI 10.1038/s41467-021-22030-5",
+      "method": "能量弛豫时间 T1（含动态解耦 >0.3 ms）",
+      "geometry": {},
+      "tags": [
+        "quantum",
+        "transmon",
+        "coherence"
+      ]
+    },
+    {
+      "id": "E-Q-NBTRANS-T1",
+      "device": "high-coherence Nb transmon qubit",
+      "metric": "T1_us",
+      "measured_value": 425,
+      "uncertainty_abs": 100,
+      "fab_source": "Nb 电极高相干 transmon（中位 T1 425 us，最大 666±33 us）",
+      "citation": "M. Tuokkola et al., Nat. Commun. 16, 5421 (2025), DOI 10.1038/s41467-025-61126-0",
+      "method": "能量弛豫时间 T1（中位 425 us / 最大 666 us）",
+      "geometry": {
+        "freq_ghz": 2.9
+      },
+      "tags": [
+        "quantum",
+        "transmon",
+        "coherence"
+      ]
+    },
+    {
+      "id": "E-PCN-Q75",
+      "device": "Si photonic crystal nanobeam cavity",
+      "metric": "intrinsic_Q",
+      "measured_value": 750000,
+      "uncertainty_abs": 100000,
+      "fab_source": "硅一维光子晶体纳米束腔（五孔锥形镜）",
+      "citation": "P. B. Deotare et al., Appl. Phys. Lett. 94, 121106 (2009), DOI 10.1063/1.3107263",
+      "method": "交叉偏振共振散射测 Q（理论达 1.4e7）",
+      "geometry": {
+        "wl_um": 1.55
+      },
+      "tags": [
+        "photonic-crystal",
+        "cavity",
+        "silicon"
+      ]
     }
   ],
   "adversarial": [

@@ -2305,7 +2305,7 @@ def system_status():
         "benchmarks_total": len(BENCHMARK_DEFS),
         "pdks_registered": len(get_default_registry().list_pdks()),
         # v0.8.28 修复 #2：统计卡片 c-harness/c-ai 死值——补字段供前端填充
-        "harness_passed": len(BENCHMARK_DEFS),   # 题库 46 题（参考候选 46/46 PASS，CI 守护）
+        "harness_passed": len(BENCHMARK_DEFS),   # 题库 47 题（参考候选 47/47 PASS，CI 守护；S13 后 46→47）
         "harness_total": len(BENCHMARK_DEFS),
         "ai_candidates": _n_engine_kinds(),      # L3 AI 内核候选 = 22 引擎族
     }

@@ -45,8 +45,8 @@ def main() -> int:
     # 1) reference → 46/46（物理定律 + 实证锚双 ground；B1-B27 + E1-E7 + S1-S12）
     r = run("verify_design", {"candidate": {"type": "reference"}})
     s = r.result["summary"]
-    check("verify_design(reference) 46/46",
-          r.status == "ok" and s.get("passed") == s.get("total") == 46,
+    check("verify_design(reference) 47/47",
+          r.status == "ok" and s.get("passed") == s.get("total") == 47,
           f"{s.get('passed')}/{s.get('total')} PASS")
 
     # 2) perturbed(rel=0.10) → 抓 FAIL（死标量）
@@ -63,13 +63,14 @@ def main() -> int:
           r.status == "fail" and s.get("passed", 99) < s.get("total", 0),
           f"{s.get('passed')}/{s.get('total')} (LLM 候选被死标量驳回)")
 
-    # 4) list_benchmarks → 46 题（B27 + E7 + S12）
+    # 4) list_benchmarks → 47 题（B27 + E7 + S13）
     r = run("list_benchmarks", {})
     bm = r.result.get("benchmarks", [])
     ids = [b.get("id") for b in bm] if bm else []
-    check("list_benchmarks 46 题",
-          len(ids) == 46 and "B27" in ids and "E7" in ids and "S11" in ids and "S12" in ids,
-          f"{len(ids)} 题（B1-B27 + E1-E7 + S1-S12）")
+    check("list_benchmarks 47 题",
+          len(ids) == 47 and "B27" in ids and "E7" in ids
+          and "S12" in ids and "S13" in ids,
+          f"{len(ids)} 题（B1-B27 + E1-E7 + S1-S13）")
 
     # 5) benchmarks 过滤（B1,B2,B4）→ 3/3
     r = run("verify_design", {"candidate": {"type": "reference"},

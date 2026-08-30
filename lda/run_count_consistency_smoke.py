@@ -131,11 +131,11 @@ class CountConsistencySmoke(unittest.TestCase):
                          "22 引擎 + 11 包应 = 33 类端到端")
 
     # ---- 3. 题库 ----
-    def test_benchmark_order_46(self):
-        self.assertEqual(len(self.benchmark_order), 46,
-                         f"BENCHMARK_ORDER 应 46 题，实际 {len(self.benchmark_order)}")
+    def test_benchmark_order_47(self):
+        self.assertEqual(len(self.benchmark_order), 47,
+                         f"BENCHMARK_ORDER 应 47 题，实际 {len(self.benchmark_order)}")
 
-    def test_benchmark_b27_e7_s11_split(self):
+    def test_benchmark_b27_e7_s13_split(self):
         b_ids = [b for b in self.benchmark_order
                  if re.fullmatch(r"B\d+", b)]
         e_ids = [b for b in self.benchmark_order
@@ -144,13 +144,13 @@ class CountConsistencySmoke(unittest.TestCase):
                  if re.fullmatch(r"S\d+", b)]
         self.assertEqual(len(b_ids), 27, f"B 题应 27，实际 {len(b_ids)}")
         self.assertEqual(len(e_ids), 7, f"E 题应 7，实际 {len(e_ids)}")
-        self.assertEqual(len(s_ids), 12, f"S 题应 12，实际 {len(s_ids)}")
+        self.assertEqual(len(s_ids), 13, f"S 题应 13，实际 {len(s_ids)}")
         self.assertEqual(b_ids[0], "B1")
         self.assertEqual(b_ids[-1], "B27")
         self.assertEqual(e_ids, ["E1", "E2", "E3", "E4", "E5", "E6", "E7"])
         self.assertEqual(s_ids,
                          ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
-                          "S9", "S10", "S11", "S12"])
+                          "S9", "S10", "S11", "S12", "S13"])
 
     # ---- 4. CI 门禁条数（v0.8.30 加固：只认「当前账本」权威段，防历史链污染）----
     def test_ci_core_count_matches_readme_top(self):
@@ -176,10 +176,10 @@ class CountConsistencySmoke(unittest.TestCase):
         self.assertNotIn("光子 9+量子 6", self.readme)
 
     def test_readme_benchmark_counts(self):
-        self.assertIn("46 题", self.readme)
+        self.assertIn("47 题", self.readme)
         self.assertIn("B1-B27", self.readme)
         self.assertIn("E1-E7", self.readme)
-        self.assertIn("S1-S12", self.readme)
+        self.assertIn("S1-S13", self.readme)
 
     # ---- 6. 版本线一致性（防滞后 / 防关联漂移）----
     def test_readme_version_matches_pyproject(self):

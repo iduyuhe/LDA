@@ -30,6 +30,10 @@ from .array_distribution_anchor import (  # noqa: E402  # S12 阵列分布锚（
     array_insertion_loss_anchor, array_fidelity_anchor,
     array_distribution_verdict, s12_array_distribution_verdict,
 )
+from .yield_anchor import (  # noqa: E402  # S13 设计良率锚（v0.9.1 · DFY）
+    yield_analytic, monte_carlo_yield, nominal_ring_length,
+    yield_report, yield_vs_tolerance_scan, s13_design_yield_anchor,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -540,6 +544,7 @@ _GOLDEN_DISPATCH = {
     "S10": s10_lvs_multilayer_verdict,
     "S11": s11_large_scale_verdict,
     "S12": s12_array_distribution_verdict,   # v0.8.42 阵列分布锚（锚+统计混合）
+    "S13": s13_design_yield_anchor,          # v0.9.1 设计良率锚（DFY）
 }
 
 _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
@@ -547,7 +552,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                  "B26", "B27",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
-                 "S9", "S10", "S11", "S12"}  # S 系统锚（确定性算术+统计+LVS+规模+阵列分布）
+                 "S9", "S10", "S11", "S12",
+                 "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）
 
 
 def golden_value(bid, params):

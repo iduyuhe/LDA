@@ -107,13 +107,13 @@ def main() -> int:
           abs(bad_mean - golden) > 0.15,
           f"Δ={abs(bad_mean - golden):.3f} > 0.15")
 
-    # ⑦ 题库计数 46（B27 27 + E7 7 + S12 12）
+    # ⑦ 题库计数 47（B27 27 + E7 7 + S13 13）
     b_ids = [b for b in BENCHMARK_ORDER if b.startswith("B")]
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
     s_ids = [b for b in BENCHMARK_ORDER if b.startswith("S")]
-    check("题库 46 题（B1-B27 27 + E1-E7 7 + S1-S12 12）",
-          len(BENCHMARK_ORDER) == 46 and len(b_ids) == 27
-          and len(e_ids) == 7 and len(s_ids) == 12,
+    check("题库 47 题（B1-B27 27 + E1-E7 7 + S1-S13 13）",
+          len(BENCHMARK_ORDER) == 47 and len(b_ids) == 27
+          and len(e_ids) == 7 and len(s_ids) == 13,
           f"总={len(BENCHMARK_ORDER)} B={len(b_ids)} E={len(e_ids)} S={len(s_ids)}")
 
     # ⑧ S8 OSNR 统计锚（模板复用验证）
@@ -197,6 +197,76 @@ def main() -> int:
           and [c for c in r12_ok["checks"]
                if c["name"] == "相关簇锚"][0]["ok"],
           f"{r12_ok['verdict']}")
+
+    # ⑫ v0.9.1 S13 设计良率锚（DFY · 解析闭式 ↔ 蒙特卡洛双算法互证）
+    from lda_harness.yield_anchor import (
+        monte_carlo_yield, nominal_ring_length, s13_design_yield_anchor,
+        yield_analytic, yield_report, yield_vs_tolerance_scan)
+
+    rep = yield_report()
+    y_an, y_mc = rep["yield_analytic"], rep["yield_monte_carlo"]
+    # ① 核心判决：两种独立算法（解析积分 / 数值采样）偏差 ≤ 1 个百分点
+    check("S13 解析↔蒙特卡洛互证（|Δ| ≤ 0.01）",
+          rep["cross_check_ok"],
+          f"解析={y_an} MC={y_mc} Δ={rep['cross_delta']:.6f}")
+    # ② 判别力：良率不得恒等于 1（否则锚无分辨率，正态容差下应约 95%）
+    check("S13 良率落在有判别力区间（0.8 < Y < 0.999）",
+          0.8 < y_an < 0.999, f"Y_analytic={y_an}")
+    # ③ DFY 物理正确性：工艺容差放大 → 良率单调下降
+    scan = yield_vs_tolerance_scan()
+    check("S13 良率随工艺容差单调下降（DFY 判别力）",
+          scan["monotone_decreasing"],
+          " > ".join(f"{r['sigma_rel']*100:g}%:{r['yield_analytic']:.3f}"
+                     for r in scan["rows"]))
+    # ④ 逐点互证：扫描的每个 σ 上解析与 MC 都要吻合（不只默认点）
+    worst = max(r["cross_delta"] for r in scan["rows"])
+    check("S13 全扫描点互证一致（max Δ ≤ 0.01）", worst <= 0.01,
+          f"maxΔ={worst:.6f}")
+    # ⑤ 规格窗口放宽 → 良率上升（客户可理解的 trade-off 方向）
+    y_tight = yield_analytic(delta=0.01)
+    y_loose = yield_analytic(delta=0.03)
+    check("S13 规格窗口放宽 → 良率上升", y_loose > y_tight,
+          f"δ=1%:{y_tight:.4f} < δ=3%:{y_loose:.4f}")
+    # ⑥ 种子可复现（统计锚判决前提）
+    y1 = s13_design_yield_anchor()
+    y2 = s13_design_yield_anchor()
+    check("S13 固定种子可复现（两次调用逐位一致）", y1 == y2, f"{y1} == {y2}")
+    # ⑦ 物理合理性：环长 µm 量级、样本 FSR 均值逼近名义 17.5nm
+    l0 = nominal_ring_length()
+    check("S13 物理合理性（L0 为 µm 量级、FSR 样本均值≈17.5nm）",
+          1e3 < l0 < 1e6 and abs(rep["diagnostics"]["fsr_mean_nm"] - 17.5) < 0.05,
+          f"L0={l0/1e3:.2f}µm FSR_mean={rep['diagnostics']['fsr_mean_nm']}nm")
+    # ⑧ 极端容差：收紧到 0.2% → 高良率；放大到 4% → 显著劣化
+    y_hi = yield_analytic(sigma_rel=0.002)
+    y_lo = yield_analytic(sigma_rel=0.04)
+    check("S13 容差收紧/放大两端行为正确", y_hi > 0.999 and y_lo < 0.7,
+          f"σ=0.2%:{y_hi:.4f}  σ=4%:{y_lo:.4f}")
+    # ⑨ harness S13 reference PASS（golden 自洽，复用 S7 同款构造）
+    from lda_harness.harness import ReferenceCandidate
+    h13 = VerificationHarness(BENCHMARK_DEFS)
+    spec_s13 = [s for s in h13.resolve_specs(None) if s.get("id") == "S13"]
+    check("S13 已注册进 harness 题库", len(spec_s13) == 1,
+          f"specs={len(spec_s13)}")
+    if spec_s13:
+        res13 = h13.run(spec_s13, ReferenceCandidate())[0]
+        check("S13 harness reference PASS（golden 自洽）",
+              res13.passed, f"{res13.candidate} vs {res13.golden}")
+    # ⑩ 红线：判决路径零 LLM（用 AST 查真实 import 依赖，不受注释文本干扰——
+    #    注：docstring 里出现的"LLM 不进判决路径"是声明而非依赖，文本匹配会误伤）
+    import ast
+    import inspect
+    from lda_harness import yield_anchor as _ya_mod
+    _tree = ast.parse(inspect.getsource(_ya_mod))
+    _imported: list = []
+    for _n in ast.walk(_tree):
+        if isinstance(_n, ast.Import):
+            _imported += [a.name for a in _n.names]
+        elif isinstance(_n, ast.ImportFrom):
+            _imported.append(_n.module or "")
+    _bad = [m for m in _imported
+            if any(k in m.lower() for k in ("llm", "openai", "agent", "torch"))]
+    check("S13 红线：yield_anchor 零 LLM/agent 依赖（AST 查 import）",
+          not _bad, f"imports={_imported}")
 
     print(f"\n统计锚 smoke：{_PASS} PASS / {_FAIL} FAIL")
     return 1 if _FAIL else 0

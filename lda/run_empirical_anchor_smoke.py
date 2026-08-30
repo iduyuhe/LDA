@@ -34,7 +34,7 @@ def check(name, ok, detail=""):
 def main():
     # ① 实证锚题解析
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
-    check("BENCHMARK_DEFS 46 题（B1-B27+E1-E7+S1-S12）", len(BENCHMARK_DEFS) == 46
+    check("BENCHMARK_DEFS 47 题（B1-B27+E1-E7+S1-S13）", len(BENCHMARK_DEFS) == 47
           and e_ids == ["E1", "E2", "E3", "E4", "E5", "E6", "E7"],
           f"defs={len(BENCHMARK_DEFS)} e={e_ids}")
     specs, cand_map = build_harness_specs()
@@ -53,7 +53,7 @@ def main():
     # ② 参考候选全 PASS（45/45）
     npass = sum(1 for s in specs
                 if abs(cand_map[s.spec_id](s, s.oracle_fn(s.params)) - s.oracle_fn(s.params)) <= s.tol)
-    check("参考候选 46/46 PASS（双 ground）", npass == len(specs) == 46,
+    check("参考候选 47/47 PASS（双 ground）", npass == len(specs) == 47,
           f"{npass}/{len(specs)}")
 
     # ③ 扰动候选：实证锚题 FAIL 检测（自适应扰动幅度）

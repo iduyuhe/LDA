@@ -41,6 +41,8 @@ from .golden import (
     s11_large_scale_verdict,
     # S12 阵列分布锚（Phase 4 · v0.8.42 · 锚+统计混合判决）
     s12_array_distribution_verdict,
+    # S13 设计良率锚（v0.9.1 · DFY · 解析闭式 ↔ 蒙特卡洛双算法互证）
+    s13_design_yield_anchor,
 )
 
 BENCHMARK_DEFS = {
@@ -587,6 +589,24 @@ BENCHMARK_DEFS = {
                 "ACCEPT。单点锚抓不到的『均值好看但某通道崩』盲区由此覆盖。判决纯"
                 "算术（statistics），LLM 不进路径；确定性可复现。",
     },
+    # ---- S13 设计良率锚（v0.9.1 · DFY · 对标 EDA yield 能力） ----
+    "S13": {
+        "title": "设计良率锚 DFY（工艺容差→命中规格概率 · 解析↔蒙特卡洛互证）",
+        "metric": "yield(0~1)",
+        "oracle": "statistical(monte-carlo, seed-fixed) + analytical(gaussian-integral)",
+        "tol": 0.01,
+        "anchor": "physical_law",
+        "default_params": {"fsr_nom_nm": 17.5, "delta": 0.02, "sigma_rel": 0.01,
+                           "n_samples": 20000, "seed": 1313},
+        "golden_fn": s13_design_yield_anchor,
+        "note": "设计良率锚（DFY）：环形 FSR 在光刻容差（环周长 σ=±1% 高斯）下命中"
+                "±2% 规格窗口的概率。golden=蒙特卡洛固定种子 1313 的仿真良率 0.95475，"
+                "并与**解析闭式**交叉验证——FSR=c/L 单调 → 规格窗口逆变换为 L 区间 →"
+                "Y=Φ((L_hi−L0)/σ_L)−Φ((L_lo−L0)/σ_L)，精确闭式（保留 1/L 非线性，非一阶"
+                "近似）；解析 0.954413 vs MC 0.954750，偏差 0.034pp ≤ tol 1pp。"
+                "同一物理定律两种独立算法互证 = 非 AI ground。载体 B4 环形 FSR 定律，"
+                "零新物理；判决死标量，LLM 不进路径。",
+    },
 }
 
 # 对齐顺序（报告展示用）
@@ -596,7 +616,7 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B26", "B27",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
-                   "S9", "S10", "S11", "S12"]  # S 系统锚（Phase 0-4；S9-12=LVS/多层/规模/阵列分布）
+                   "S9", "S10", "S11", "S12", "S13"]  # S 系统锚（Phase 0-4；S9=LVS/S10=多层/S11=规模/S12=阵列分布/S13=设计良率）
 
 
 def register_benchmark(def_dict: dict) -> str:

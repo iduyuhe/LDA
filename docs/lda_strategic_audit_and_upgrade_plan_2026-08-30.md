@@ -79,10 +79,10 @@
 |---|---|---|---|
 | **核心系统** | 技术资产厚度 | ⭐⭐⭐⭐½ | 22 引擎 / 46 锚 / 求解核主权干净，规模性能已拔到近线性（32k 全链亚秒） |
 | | 验证可信度 | ⭐⭐⭐ | 46 锚中**真外源尺子仅 7 条种子语料**，外部 ORACLE **默认不通** |
-| | 工程质量 | ⭐⭐⭐½ | 技术债集中（156KB 巨型文件、调试件入包），**量子侧 9 个 smoke 不在 CI 门禁** |
+| | 工程质量 | ⭐⭐⭐½ | 技术债集中（156KB 巨型文件）；**R1 量子 smoke 已入 CI core（v0.9.1）、R5 app.py 路由拆分 / R7 调试件清理已在本会话 P2 收口**（见风险清单更新） |
 | | **小计** | **3.7 / 5** | **已过"能不能"阶段，进入"够不够硬"阶段** |
 | **商业系统** | 闭环完整度 | ⭐⭐⭐⭐½ | 能收钱/能交付/能服务/能收集，四要素全通且已入 CI |
-| | 价值捕获精度 | ⭐⭐ | **58 货架统一定价 ¥1999**；定制需求占比 65% 但**金额全为 0（未报价）** |
+| | 价值捕获精度 | ⭐⭐ | **R10 统一定价已解除（D2 三档 ¥599/1999/4999 落地）**；定制需求无报价机制、金额全为 0（R11 代码事实，与订单量无关） |
 | | 规模化能力 | ⭐½ | 支付 100% 人工，交付依赖单人，无自动化 |
 | | **小计** | **2.7 / 5** | **闭环建成了，但商业模式还停在"手工作坊"** |
 | **生态系统** | 文档与物料 | ⭐⭐⭐⭐ | 一页纸/白皮书/GFI/BOUNTY/分享会物料齐备，三端同步 |
@@ -170,13 +170,13 @@
 
 | ID | 风险 | 严重度 | 证据 | 影响 |
 |---|---|---|---|---|
-| **R1** | **量子侧 9 个 smoke 不在 CI core** | 🔴 高 | 逐项 grep `run_ci_regression.py` 确认 NOT IN CORE | 双引擎一半无回归保护，静默破坏不可见 |
+| **R1** | **量子侧 9 个 smoke 不在 CI core** | 🟢 已关闭 | v0.9.1 已纳入 `CORE_SMOKES`（70→79，含 2 个 FDTD 慢项配 400s 超时）；`ci.yml` 的 `industrial-regression` job 跑 `run_ci_regression.py --tag core`（装 numpy+scipy+jsonschema）。本会话 2026-08-30 复跑 9 个全部 PASS | 双引擎回归对等已达成（见 P0-1 / line 21 / 390） |
 | **R2** | **外部 ORACLE（部分缓解）** | 🟠 中 | 离线 numpy 真值已本机实测可复现（B7=-10.08/B5=3.9dB）；外部 Meep 真值+互证脚本与实现已就绪，但本机 Windows 无 Meep（已实证 meep-base 无 Windows wheel），端到端 meep 互证**待 Linux 环境验证**。验证者按 `docs/oracle_reproduce.md` 跑通即接通 | "双 ground"卖点已具备可复现能力，外部 meep 真值演示待 Linux |
 | **R3** | **实证锚仅 7 条种子语料** | 🟠 中高 | `seed_empirical.json:2` 自述"示例种子，须由社区补真实测量"；corpus 9 / adversarial 4 | 非 AI ground 的第二根支柱偏软 |
 | **R4** | **3/46 锚为自证桩** | 🟠 中 | B5/B6/B7 oracle = `design-rule(Meep/Tidy3D 预留)`，golden 为理想下限 | 与"LLM 不进判决"红线并存的自证盲区 |
-| **R5** | **技术债集中** | 🟠 中 | `app.py` 3560 行 / `do_GET` 99 处 elif 链（`:2931-3530`）；`innovation_market.py` 2530 行数据字面量；`adjoint_fdtd3d.py` 33 处嵌套 for | 维护成本随规模上升，AI 改动风险增大 |
-| **R6** | **112 smoke 仅 70 进 core** | 🟠 中 | 磁盘 112 个 `run_*smoke*.py`，`CORE_SMOKES` 70 项 | 42 个冒烟的回归保护依赖人工触发 |
-| **R7** | **调试件混入生产包** | 🟡 低中 | `lda_solver/` 含 `fdtd2d_debug.py`/`fdtd3d_quickdiag.py`/`install_cuda_torch.py`；根目录 12 个 `diag_*.py/.log` | 包体污染、对外专业观感受损 |
+| **R5** | **技术债集中（app.py 巨型 elif 链）** | 🟢 已关闭（部分） | `app.py` 3560 行 / `do_GET` 99 处 elif 链已于 **本会话 P2** 拆分：`lda/lda_webui/routes.py` 承载全部 /api/* 处理器与路由表，`app.py` 降至 ~3060 行仅留 `_dispatch` 分发骨架（WebUI 路由层冒烟 74/0 全绿）。`innovation_market.py` 2530 行数据字面量 / `adjoint_fdtd3d.py` 33 处嵌套 for 仍待后续 | 路由拆分降低 AI 改动风险；巨型数据文件仍存 |
+| **R6** | **112 smoke 中 80 进 core** | 🟠 中 | 磁盘 112 个 `run_*smoke*.py`，`CORE_SMOKES` 现 80 项（README 当前账本 80 条，计数守护冒烟全绿）；其余冒烟经 `--tag all` 本机/venv 跑 | 约 32 个冒烟的回归保护依赖人工触发（重 FDTD/GPU 项） |
+| **R7** | **调试件混入生产包** | 🟢 已关闭 | **本会话 P2** 已删除 `lda_solver/` 下 4 个调试件（`fdtd2d_debug.py`/`fdtd3d_debug.py`/`fdtd3d_quickdiag.py`/`install_cuda_torch.py`，无运行时依赖），并修正 `activate_gpu_fdtd3d.py` 对已删脚本的 docstring 引用；根目录 `diag_*.py` 本就 gitignored | 包体污染已消除 |
 | **R8** | **fdtd3d_numba 硬依赖 numba** | 🟡 低中 | `fdtd3d_numba.py:27` 模块级 `from numba import njit`；`port_sparams_3d.py:31` 硬引用 | 与"纯 numpy 零依赖"宣称有出入，缺 numba 直接 ImportError |
 | **R9** | **gds_drc bucket 内仍 O(m²)** | 🟡 低 | `gds_drc.py:118-124` 外层已网格化，`:137-143` bucket 内仍双重循环 | 高密度退化场景仍可能超时 |
 
@@ -199,7 +199,7 @@
 
 | ID | 风险 | 严重度 | 证据 | 影响 |
 |---|---|---|---|---|
-| **R10** | **58 货架统一定价 ¥1999** | 🔴 高 | `store.py:42` `DEFAULT_PRICE_CNY=1999`；`config.prices` 实测为 `{}`（无差异化配置） | 价值捕获错位：高价值品类被低估，低价值品类卖不动 |
+| **R10** | **58 货架统一定价 ¥1999** | 🟢 已关闭 | D2 三档定价已落地：`store.base_price()` 优先级 = 管理员 `config.prices` > 代码分档表（¥599/1999/4999）> `DEFAULT_PRICE_CNY` 兜底；`run_innovation_market_smoke` 含 7 条定价断言（line 115 / 380） | 价值捕获错位已解；定制侧 R11 报价自动化仍待 P1-2 |
 | **R11** | **定制需求无报价机制（⚠️「占 65%」证据已作废）** | 🟠 中高（原判 🔴 高） | **代码事实**：定制单落库时 `amount_cny=0`、支付方式 `quote_later`，无自动报价路径。~~「定制占 65%」~~ 经核实本地订单全为测试数据，占比不成立（见判断二修正） | 定制需求无报价机制 → 转化只能靠一对一人工（属**代码事实**，与订单量无关） |
 | **R12** | **支付 100% 人工** | 🔴 高 | 支付方式实测仅 `wechat_personal` / `quote_later`，无支付网关 | 无法规模化，且兑换码生成依赖管理员在线 |
 | **R13** | **货架与客户需求的匹配度未知（⚠️ 原判据已作废）** | 🟡 存疑（原判 🟠 中高） | ~~50 个开放货架仅 IM-CPO-WDM5 出单（7/7）~~ 该数据来自测试订单，已作废。**当前无任何证据说明货架铺得多还是少** | 无法判断 58 货架是资产还是库存成本 → **须取生产数据后才能定论** |

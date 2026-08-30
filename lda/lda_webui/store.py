@@ -92,6 +92,20 @@ _LOGIN_LOCK_SECONDS = 600
 _LOGIN_GUARD: dict = {}
 _LOGIN_GUARD_LOCK = threading.Lock()
 
+# 注册频率护栏（2026-08-30 B 纵深加固）：与登录护栏同源思路，进程内存、重启清空。
+# 单 IP 在窗口内注册次数超限即拒，防脚本化批量注册刷库。阈值宽松（50/10min），
+# 不误伤正常冒烟（WebUI smoke 每次仅注册 1 个临时账号；单测直接调 store.register
+# 不带 client_ip → 此处 key 为空自动跳过，不影响单元测试）。
+_REG_GUARD: dict = {}
+_REG_GUARD_LOCK = threading.Lock()
+_REG_MAX = 50
+_REG_WINDOW = 600  # 秒
+
+# 测试/冒烟账号域名白名单：stats 聚合时据此把「真实注册」与「测试残留」区分开，
+# 避免把 smoke-*.@lda.local、*@smoke.com 等误计入真实用户信号。
+_TEST_DOMAINS = {"lda.local", "smoke.com", "test.com", "demo.com",
+                 "t.com", "example.com"}
+
 
 # --------------------------------------------------------------------------
 # 持久化
@@ -207,8 +221,19 @@ def _hash_pwd(password: str, salt: str) -> str:
 
 
 def register(email: str, name: str, password: str, phone: str = "",
-             user_type: str = "standard", organization: str = "") -> dict:
+             user_type: str = "standard", organization: str = "",
+             client_ip: str = "") -> dict:
     email = (email or "").strip().lower()
+    # 注册频率护栏：单 IP 窗口内超限即拒（无 IP 时跳过，兼容单测直接调用）
+    if client_ip:
+        _now = time.time()
+        with _REG_GUARD_LOCK:
+            _ts = _REG_GUARD.get("reg:" + client_ip)
+            _ts = [t for t in (_ts or []) if _now - t < _REG_WINDOW]
+            if len(_ts) >= _REG_MAX:
+                return {"ok": False, "error": "注册过于频繁，请稍后再试"}
+            _ts.append(_now)
+            _REG_GUARD["reg:" + client_ip] = _ts
     if not _EMAIL_RE.match(email):
         return {"ok": False, "error": "email 格式不合法"}
     password = password or ""

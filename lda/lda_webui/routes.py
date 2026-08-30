@@ -647,7 +647,8 @@ def h_store_register(h, p, q, path):
     store = _app._get_store()
     r = store.register(p.get("email"), p.get("name"),
                        p.get("password"), p.get("phone"),
-                       p.get("user_type"), p.get("organization"))
+                       p.get("user_type"), p.get("organization"),
+                       client_ip=_app._client_ip(h))
     return (200, r)
 
 

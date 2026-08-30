@@ -17,7 +17,35 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "面向 8 通道 CPO 的预研货架；以 5ch@2.0nm 单 FSR 闭环（B4：drop IL≤3 / XT≥15 / 单 FSR 防混叠）验证基元可行性。8 通道扩展需 FSR 扩展（更小环 R）属参数化下一迭代，不破现有已验证闭环。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "复用已验证 wdm_demux 闭环（B4 锚：drop IL≤3dB / XT≥15dB）",
+      "5 通道 @ 2.0nm 单 FSR 基准，8 通道扩展为参数化下一迭代",
+      "光栅 + MMI + Crossing 全锚定基元组装，零新物理"
+    ],
+    "applications": [
+      "共封装光学（CPO）WDM 解复用",
+      "数据中心单光纤多波长并行互连"
+    ],
+    "specs": {
+      "通道数": "5（基准）",
+      "通道间隔": "2.0nm",
+      "drop 插损": "≤3dB（B4 锚 · 仿真预期）",
+      "串扰": "≥15dB（B4 锚 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "imec",
+        "product": "iSiPP50G 4ch WDM DEMUX（级联双环）",
+        "specs": {
+          "通道数": "4",
+          "通道间隔": "2nm（O 波段）",
+          "FSR": "9.0nm"
+        },
+        "note": "流片实测（4×50G O 波段 WDM 收发子组件演示）",
+        "source": "Optics Express 28-4-5706, 2020"
+      }
+    ]
   },
   {
     "id": "IM-QCHIP-INT",
@@ -40,7 +68,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "4 比特频率复用读出链（D-46 复用 + D-47 保真度，已验证闭环）。基元复用 Y-branch（分束）+ SiN 低损波导（量子光路互联）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "量子芯片间读出互联模板，Y-branch + SiN 低损波导互联",
+      "复用 D-46×D-47 已验证保真度预算框架（频率复用读出）",
+      "与 IM-QCOM-LINK 互补：4 比特基准读出互联链"
+    ],
+    "applications": [
+      "超导量子芯片读出总线",
+      "多比特频率复用读出链互联"
+    ],
+    "specs": {
+      "互联比特": "4（基准）",
+      "复用方式": "频率复用",
+      "保真度预算": "D-46×D-47 框架（已验证）"
+    },
+    "peers": [
+      {
+        "vendor": "IBM / Google",
+        "product": "超导量子芯片多比特频率复用读出架构",
+        "specs": {
+          "读出保真度": "95%~99.5%（分平台公开值）"
+        },
+        "note": "厂商/公开架构披露（非本团队流片）",
+        "source": "IBM/Google 公开多比特频率复用读出架构"
+      }
+    ]
   },
   {
     "id": "IM-SENSE-RING",
@@ -63,7 +116,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "环谐振器作折射率传感单元，复用 link 拓扑（激光→grating→SiN 波导→ring→探测器）+ 系统预算锚 S1/S2/S5/S7。基元复用 grating coupler（GP-GRATING-EFF）+ SiN 低损波导（GP-SIN-PL）。传感灵敏度由环 Q / 波长偏移换算，属参数化下一迭代，不破现有已验证闭环。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "微环谐振折射率传感前端，复用 link 系统预算锚 S1/S2/S5/S7 已验证闭环",
+      "光栅 + SiN 低损波导，波长漂移检测",
+      "全锚定基元组装，零新物理"
+    ],
+    "applications": [
+      "生物/化学折射率传感",
+      "光纤传感前端",
+      "Lab-on-Chip 片上传感"
+    ],
+    "specs": {
+      "传感方式": "微环谐振（波长漂移检测）",
+      "链路预算": "S1/S2/S5/S7 锚（已验证）"
+    },
+    "peers": [
+      {
+        "vendor": "公开学术路线",
+        "product": "硅光微环折射率/生物传感公开路线",
+        "specs": {
+          "传感方式": "微环谐振波长漂移（公开文献综述）"
+        },
+        "note": "公开路线/文献综述，非单一产品规格",
+        "source": "硅光折射率/生物传感公开 roadmap 与文献"
+      }
+    ]
   },
   {
     "id": "IM-LASER-INT",
@@ -83,7 +161,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "激光源作为**异质集成黑箱源**（有源器件不物理级建模——负面清单：有源不物理级建模，行为黑箱 + 文献锚走完闭环），本货架组合其余已锚定基元：grating coupler（GP-GRATING-EFF）+ SiN 低损波导（GP-SIN-PL）。判决复用 link 系统预算锚 S1/S2/S5/S7（死标量，LLM 不进路径）。激光源本身**非本团队新锚定器件**——如要将其纳入锚集，须先按 v0.8.32 方式新增 golden 基准（待发动期/社区贡献）；本货架严守『组合创新、不新增未锚定基元』。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "异质集成 III-V/Si 激光黑箱源 + 已锚定无源网",
+      "光栅耦合输出，复用 link 系统预算锚",
+      "激光器本身按黑箱（有源不物理级建模，负面清单）"
+    ],
+    "applications": [
+      "共封装光模块发射端",
+      "硅光异质集成光源",
+      "片上收发前端"
+    ],
+    "specs": {
+      "激光源": "异质集成（黑箱源 · 负面清单）",
+      "无源网 IL 预算": "S1/S2/S5/S7（仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "AIM Photonics 等",
+        "product": "异质集成 III-V/Si 片上光源公开 PDK 路线",
+        "specs": {
+          "集成方式": "异质集成激光（公开 PDK 动向）"
+        },
+        "note": "公开 PDK 路线/学术文献，非单一产品规格",
+        "source": "AIM Photonics 等公开 PDK 动向 / 异质集成 laser 公开文献"
+      }
+    ]
   },
   {
     "id": "IM-QCOM-LINK",
@@ -107,7 +210,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "5 比特频率复用读出链（D-46 复用 + D-47 保真度，已验证闭环）。基元复用Y-branch（分束，GP-YBRANCH）+ SiN 低损波导（GP-SIN-PL，量子光路互联）。与 IM-QCHIP-INT（4 比特）互补，演示库随比特数扩展仍零新物理。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "D-46 复用 + D-47 保真度预算闭环（已验证）",
+      "Y-branch + SiN 低损波导基元（量子光路互联）",
+      "与 IM-QCHIP-INT（4 比特）互补，5 比特基准"
+    ],
+    "applications": [
+      "超导量子计算多比特频率复用读出",
+      "量子处理器读出总线"
+    ],
+    "specs": {
+      "读出比特": "5（基准）",
+      "复用方式": "频率复用",
+      "保真度预算": "D-46×D-47 框架（已验证）"
+    },
+    "peers": [
+      {
+        "vendor": "IBM / Google",
+        "product": "超导量子芯片多比特频率复用读出架构",
+        "specs": {
+          "读出保真度": "95%~99.5%（分平台公开值）"
+        },
+        "note": "厂商/公开架构披露（非本团队流片）",
+        "source": "IBM/Google 公开多比特频率复用读出架构"
+      }
+    ]
   },
   {
     "id": "IM-800G-DR8",
@@ -131,7 +259,36 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "8×100G 并行单波长方案（DR8）：每通道 = 光栅 + 2cm SiN + crossing，链路预算锚 S1/S2/S5/S7 死标量判决。对标 GC-DR4-TX/ONCHIP 公开规格量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "8×100G PAM4 并行单波长（1310nm），对标 IEEE 802.3cu",
+      "光栅 + 2cm SiN + Crossing，链路预算 S1/S2/S5/S7 死标量判决",
+      "发射引擎前端预设计（激光/驱动按黑箱源，负面清单）"
+    ],
+    "applications": [
+      "AI 数据中心 800G 光互连（≤500m SMF）",
+      "1.6T DR8 前代平台"
+    ],
+    "specs": {
+      "通道": "8×100G PAM4",
+      "波长": "1310nm",
+      "链路预算": "S1/S2/S5/S7 锚（仿真预期）",
+      "目标距离": "500m（802.3cu）"
+    },
+    "peers": [
+      {
+        "vendor": "IEEE 802.3cu / 商用模组",
+        "product": "800GBASE-DR8 OSFP/QSFP-DD 收发模块",
+        "specs": {
+          "通道": "8×106.25G PAM4",
+          "波长": "1310nm",
+          "距离": "500m",
+          "功耗": "≤16.5W（Broadcom 7nm DSP）"
+        },
+        "note": "商用流片产品公开规格",
+        "source": "FS/Jabil 800G-DR8 Datasheet（IEEE 802.3cu-2021）"
+      }
+    ]
   },
   {
     "id": "IM-WDM-8CH-1D",
@@ -151,7 +308,33 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "8 通道解复用：wdm_demux 闭环（B4：drop IL≤3 / XT≥15 / 单 FSR / DRC）。对标 LR8 信道预算 6.3 dB（GC-LR8-CH 同源公开标准）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "8 通道 CWDM/DWDM 解复用前端，光栅 + MMI 级联",
+      "对标 IEEE 802.3bs 400GBASE-FR8/LR8（信道 IL 6.3dB 上限）",
+      "8×λ 单 FSR 参数化扩展"
+    ],
+    "applications": [
+      "800G FR8/LR8 类 WDM 模块解复用端",
+      "DWDM 城域前传"
+    ],
+    "specs": {
+      "通道数": "8",
+      "信道插损": "≤6.3dB（IEEE 802.3bs 对标 · 仿真预期）",
+      "波长": "CWDM/DWDM"
+    },
+    "peers": [
+      {
+        "vendor": "IEEE 802.3bs",
+        "product": "400GBASE-FR8/LR8（8 波 WDM 信道）",
+        "specs": {
+          "通道数": "8",
+          "信道 IL 上限": "6.3dB（公开标准）"
+        },
+        "note": "公开标准（标准信道预算）",
+        "source": "IEEE 802.3bs 400GBASE-FR8/LR8；AWG 40ch datasheet 量级参照"
+      }
+    ]
   },
   {
     "id": "IM-DWDM-40CH",
@@ -171,7 +354,34 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "40 通道 DWDM 解复用：wdm_demux 闭环（B4 锚）演示大规模波长数扩展。对标 GC-AWG-40CH（商用 AWG datasheet 6.0 dB 死标量）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "40 通道 C 波段 100GHz ITU-T G.694.1 网格",
+      "wdm_demux 闭环（B4 锚）演示大规模波长数扩展",
+      "对标 40ch 无热 AWG（插损死标量）"
+    ],
+    "applications": [
+      "DWDM 城域/骨干波长路由",
+      "40ch 无热 AWG 替代方案"
+    ],
+    "specs": {
+      "通道数": "40",
+      "网格": "100GHz（ITU-T G.694.1）",
+      "插损": "≤6.0dB（对标商用 AWG · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "NTT-ID / Qualinet",
+        "product": "40ch 100GHz Athermal AWG",
+        "specs": {
+          "通道数": "40",
+          "网格": "100GHz",
+          "插损": "typ 4.5 / max 6.0dB"
+        },
+        "note": "厂商公开 datasheet（流片产品规格）",
+        "source": "40ch 100GHz Athermal AWG 公开 datasheet"
+      }
+    ]
   },
   {
     "id": "IM-FTTH-PLC8",
@@ -194,7 +404,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "1×8 = 3 级 Y-branch 级联 + SiN 波导；对标 GC-PLC-1X8（G.671 死标量）。PON 上行突发时序按黑箱，判决只认链路预算锚 S1/S2/S5/S7。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "FTTH 1×8 PLC 分光预设计，Y-branch 树",
+      "对标 ITU-T G.671 / Telcordia GR-1209 典型最大插损 1×8 ≤10.7dB",
+      "GPON/XGS-PON ODN 全场景覆盖"
+    ],
+    "applications": [
+      "GPON/XGS-PON 光分配网（ODN）",
+      "楼宇/园区 FTTH 部署"
+    ],
+    "specs": {
+      "分光比": "1×8",
+      "最大插损": "≤10.7dB（ITU-T G.671 对标 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "ITU-T / 商用 PLC",
+        "product": "1×8 PLC 分光器（标准件）",
+        "specs": {
+          "分光比": "1×8",
+          "最大插损": "≤10.7dB（公开标准典型值）"
+        },
+        "note": "公开标准典型值/商用 datasheet",
+        "source": "ITU-T G.671 / Telcordia GR-1209；ITU-T G.984.3 ODN 预算"
+      }
+    ]
   },
   {
     "id": "IM-FTTH-PLC16",
@@ -217,7 +452,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "1×16 = 4 级 Y-branch 级联；对标 GC-PLC-1X16（G.671 死标量）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "FTTH 1×16 PLC 分光预设计（高密度分光）",
+      "对标 ITU-T G.671 / GR-1209 典型最大插损 1×16 ≤14.0dB",
+      "商用 PLC datasheet 实测一致性（LuLeey ≤14.0dB）"
+    ],
+    "applications": [
+      "高密度 FTTH/FTTB",
+      "MDU 多住户单元部署"
+    ],
+    "specs": {
+      "分光比": "1×16",
+      "最大插损": "≤14.0dB（ITU-T G.671 对标 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "ITU-T / LuLeey",
+        "product": "1×16 PLC 分光器（标准件）",
+        "specs": {
+          "分光比": "1×16",
+          "最大插损": "≤14.0dB（公开典型值/实测一致）"
+        },
+        "note": "公开标准典型值 + 商用 datasheet 实测一致性",
+        "source": "ITU-T G.671 / GR-1209；商用 PLC datasheet（LuLeey ≤14.0dB）"
+      }
+    ]
   },
   {
     "id": "IM-CPO-OCS",
@@ -240,7 +500,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "OCS 收发前端：光栅 + SiN 波导，交换矩阵/MEMS 按黑箱（非片上器件）。对标 GC-OCS-FABRIC（2×FR4 预算 4.0 dB 公开死标量）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "OCS 直连光交换前端：收发前端 + 交换矩阵黑箱",
+      "对标 Polatis 576×576（中位 1.4/max 3dB）与 Google 136×136（≤2dB）",
+      "Google Jupiter/Palomar 类架构复用"
+    ],
+    "applications": [
+      "AI 集群 OCS 直连",
+      "CPO+OCS 混合互连"
+    ],
+    "specs": {
+      "交换规模对标": "576×576（Polatis）/ 136×136（Google）",
+      "矩阵插损": "Polatis 中位 1.4dB / Google ≤2dB（实测对标 · 本货架为仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "Polatis / Google",
+        "product": "OCS 光电路交换矩阵",
+        "specs": {
+          "576×576": "中位 1.4 / max 3dB（实测）",
+          "136×136": "≤2dB（Google）"
+        },
+        "note": "公开评测报告/arXiv 数据",
+        "source": "UC Berkeley EECS-2024-213；arXiv 2411.01503"
+      }
+    ]
   },
   {
     "id": "IM-LIDAR-TX",
@@ -263,7 +548,33 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "FMCW 发射前端：光栅 + 0.5cm SiN（相干混频/OPA 按黑箱）。对标 GC-LIDAR-FMCW（OE 2026 实测 3.3 dB 死标量）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "1550nm 相干 FMCW 发射前端（光栅 + 0.5cm SiN）",
+      "对标 Optics Express 2026 片上实测 ≈3.3dB",
+      "OPA/相干混频按黑箱（有源不物理级建模）"
+    ],
+    "applications": [
+      "汽车/机器人 4D 感知",
+      "纯固态 FMCW LiDAR 前端"
+    ],
+    "specs": {
+      "波长": "1550nm",
+      "全光链路": "≈3.3dB（OE 2026 对标 · 仿真预期）",
+      "扫描方式": "FMCW（OPA 按黑箱）"
+    },
+    "peers": [
+      {
+        "vendor": "学术公开演示",
+        "product": "片上 FMCW 单方向全光链路",
+        "specs": {
+          "波长": "1550nm",
+          "全光链路 IL": "≈3.3dB（实测）"
+        },
+        "note": "期刊公开实验数据",
+        "source": "Optics Express 34, 7415 (2026)"
+      }
+    ]
   },
   {
     "id": "IM-QKD-TX-SHELF",
@@ -287,7 +598,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "Alice 态制备 = 2×光栅 + 2×Y-branch（MZI）+ SiN；单光子衰减/调制按黑箱。对标 GC-QKD-TX（npj QI 实测 15 dB 死标量）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "Alice BB84 态制备：2×光栅 + 2×Y-branch（MZI）+ SiN",
+      "单光子衰减/调制按黑箱（有源不物理级建模）",
+      "对标 npj QI 2017 实测 15dB"
+    ],
+    "applications": [
+      "QKD 网络发射端",
+      "城际 QKD 干线"
+    ],
+    "specs": {
+      "协议": "BB84（态制备）",
+      "总插损": "≤15dB（npj QI 2017 对标 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "学术公开演示",
+        "product": "硅光 Alice 芯片（QKD 态制备）",
+        "specs": {
+          "芯片总插损": "15dB（实测）"
+        },
+        "note": "期刊公开实验数据",
+        "source": "npj Quantum Information 3, e1700262 (2017)"
+      }
+    ]
   },
   {
     "id": "IM-QKD-RX-SHELF",
@@ -311,7 +646,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "Bob 基矢测量 = 2×光栅 + crossing + SiN；单光子探测器按黑箱。对标 GC-QKD-RX（npj QI 实测 8 dB 死标量）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "QKD 接收端（Bob 基矢测量），光栅 + Crossing + SiN",
+      "对标 npj QI 2017 Bob 芯片实测总插损 8dB",
+      "单光子探测按黑箱（有源不物理级建模）"
+    ],
+    "applications": [
+      "量子密钥分发网络接收端",
+      "MDI-QKD 不信节点"
+    ],
+    "specs": {
+      "协议": "BB84（基矢测量）",
+      "总插损": "≤8dB（npj QI 2017 对标 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "学术公开演示",
+        "product": "硅光 Bob 芯片（QKD 基矢测量）",
+        "specs": {
+          "芯片总插损": "8dB（实测）"
+        },
+        "note": "期刊公开实验数据",
+        "source": "npj Quantum Information 3, e1700262 (2017)"
+      }
+    ]
   },
   {
     "id": "IM-QKD-MULTI4",
@@ -334,7 +693,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "4 用户接收 = 3×光栅 + 5cm SiN（MZI 选路按黑箱）；SPD 按黑箱。判决用标准链路余量锚 S1/S2/S5/S7（要求 3 dB）；整芯片 13 dB 总插损对标见 GC-QKD-MULTI（OE 2020 实测死标量）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "多用户 QKD 接收机：4 用户 MZI 选路",
+      "对标 OE 2020 实测 4 用户接收机总损耗 13dB",
+      "接入网星形分发架构"
+    ],
+    "applications": [
+      "量子密钥分发接入网",
+      "多用户 QKD 星形分发"
+    ],
+    "specs": {
+      "用户数": "4（MZI 选路）",
+      "总损耗": "≤13dB（OE 2020 对标 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "学术公开演示",
+        "product": "4 用户 MZI 选路 QKD 接收机",
+        "specs": {
+          "总损耗": "13dB（实测）"
+        },
+        "note": "期刊公开实验数据",
+        "source": "Optics Express 28, 18449 (2020)"
+      }
+    ]
   },
   {
     "id": "IM-SENS-MZI",
@@ -358,7 +741,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "MZI 传感 = 2×光栅 + 2×Y-branch（分/合束）+ 2cm SiN 双臂；传感元件按黑箱。判决用标准链路余量锚 S1/S2/S5/S7（要求 3 dB）；整芯片全链路 ≤15 dB 预算对标见 GC-SENSE（公开传感链路预算区间）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "MZI 干涉传感前端：光栅 + Y-branch + SiN",
+      "全链路插损预算 ≤15dB（商用光纤传感模块 10–18dB 区间）",
+      "干涉型传感（相位→强度）"
+    ],
+    "applications": [
+      "生物/化学传感",
+      "Lab-on-Chip 干涉检测",
+      "环境监测"
+    ],
+    "specs": {
+      "传感方式": "MZI 干涉（相位→强度）",
+      "全链路 IL 预算": "≤15dB（商用模块 10–18dB 区间 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "商用光纤传感",
+        "product": "商用光纤传感模块（干涉型）",
+        "specs": {
+          "全链路 IL": "10–18dB 区间（公开综述）"
+        },
+        "note": "公开综述量级参照",
+        "source": "公开 PICS/FBG 传感链路综述"
+      }
+    ]
   },
   {
     "id": "IM-CHIPLET-IO",
@@ -382,7 +790,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "XPU 光 IO 前端 = 光栅 + SiN + crossing（EIC/PIC 键合按黑箱）。对标 GC-CPO-8CH 同源（CPO 每通道 6–12 dB 公开区间）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "光 chiplet 互连前端（XPU 光 IO），光栅 + SiN + Crossing",
+      "对标 Broadcom TH5-Bailly 6.4T 引擎（XPU 光连接）",
+      "OIF CPO 2.0 路线对齐"
+    ],
+    "applications": [
+      "AI 加速器光互连",
+      "CPO XPU attach",
+      "chiplet 间光 IO"
+    ],
+    "specs": {
+      "对标引擎": "6.4T（Broadcom TH5-Bailly）",
+      "路线": "OIF CPO 2.0"
+    },
+    "peers": [
+      {
+        "vendor": "Broadcom / OIF",
+        "product": "TH5-Bailly 6.4T 光引擎 / OIF CPO 2.0",
+        "specs": {
+          "引擎容量": "6.4T（公开演示）"
+        },
+        "note": "厂商公开路线图/演示",
+        "source": "Broadcom CPO 路线；OIF CPO 2.0 公开路线图"
+      }
+    ]
   },
   {
     "id": "IM-QCTRL-ZC3-10Q",
@@ -411,7 +844,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "10 比特复用读出链（D-46 复用 + D-47 保真度）。对标 GC-QCTRL-ZC3（公开 99.18% 死标量），演示读出链规模扩展零新物理。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "10 比特频率复用读出链（D-46 复用 + D-47 保真度）",
+      "对标祖冲之三号 99.18% 读出保真度",
+      "读出链规模扩展零新物理"
+    ],
+    "applications": [
+      "中等规模 NISQ 读出扩展",
+      "超导量子处理器读出总线"
+    ],
+    "specs": {
+      "读出比特": "10",
+      "复用方式": "频率复用",
+      "读出保真度": "≥99.18%（对标公开值 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "电子科技大学",
+        "product": "祖冲之三号（105 量子比特）",
+        "specs": {
+          "读出保真度": "99.18%（公开对比表）"
+        },
+        "note": "公开情报对比表（2024）",
+        "source": "上海科技情报研究所公开对比表"
+      }
+    ]
   },
   {
     "id": "IM-QCTRL-HERON-16Q",
@@ -446,7 +904,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "16 比特复用读出链；对标 GC-QCTRL-HERON（公开 98.5% 死标量）。156 比特整芯片按 heavy-hex 分段，本货架为单段代表。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "16 比特频率复用读出链，heavy-hex 单段代表",
+      "对标 IBM Heron R2 98.5% 读出保真度",
+      "156 比特整芯片按 heavy-hex 分段（本货架为单段）"
+    ],
+    "applications": [
+      "IBM Heron 类 heavy-hex 架构读出段"
+    ],
+    "specs": {
+      "读出比特": "16",
+      "复用方式": "频率复用",
+      "读出保真度": "≥98.5%（对标公开值 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "IBM",
+        "product": "Heron R2（156 量子比特）",
+        "specs": {
+          "读出保真度": "98.5%（公开对比表）"
+        },
+        "note": "公开情报对比表（2024）",
+        "source": "上海科技情报研究所公开对比表"
+      }
+    ]
   },
   {
     "id": "IM-QCTRL-WILLOW-12Q",
@@ -477,7 +959,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "12 比特复用读出链；对标 GC-QCTRL-WILLOW（公开 99.33% 死标量）。JPA 放大链按黑箱（有源不物理级建模，负面清单）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "12 比特频率复用读出链，QEC 码字读出段",
+      "对标 Google Willow ~99.3% 读出保真度",
+      "JPA 放大链按黑箱（有源不物理级建模，负面清单）"
+    ],
+    "applications": [
+      "Google Willow 类 QEC 架构读出段"
+    ],
+    "specs": {
+      "读出比特": "12",
+      "复用方式": "频率复用（色散读出 + JPA）",
+      "读出保真度": "≥99.3%（对标公开值 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "Google",
+        "product": "Willow（105 量子比特）",
+        "specs": {
+          "读出保真度": "~99.3%（复用色散读出 + JPA）"
+        },
+        "note": "公开技术分析",
+        "source": "Applied Quantum 公开技术分析 (2024)"
+      }
+    ]
   },
   {
     "id": "IM-PSM4-SHELF",
@@ -498,7 +1004,34 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "PSM4 单通道 = 光栅 + 2cm SiN（边缘耦合低损）+ crossing；链路预算锚 S1/S2/S5/S7 死标量判决。对标 GC-PSM4-CH（IEEE 802.3bm 4.0 dB 死标量）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "100G PSM4 硅光收发前端：4×25G，500m SMF",
+      "对标 IEEE 802.3bm 100GBASE-PSM4",
+      "边缘耦合低损并行光互连，单通道插损 ≤4.0dB"
+    ],
+    "applications": [
+      "100G PSM4 数据中心光模块",
+      "边缘耦合低损并行光互连"
+    ],
+    "specs": {
+      "通道": "4×25G",
+      "距离": "500m（802.3bm）",
+      "单通道插损": "≤4.0dB（对标 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "IEEE / 商用 PSM4",
+        "product": "100GBASE-PSM4 模块（标准/商用）",
+        "specs": {
+          "通道": "4×25G",
+          "距离": "500m",
+          "单通道 IL": "≤4.0dB（公开）"
+        },
+        "note": "公开标准 + 商用 datasheet",
+        "source": "IEEE 802.3bm；商用 PSM4 平台 datasheet"
+      }
+    ]
   },
   {
     "id": "IM-FR4-SHELF",
@@ -518,7 +1051,34 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "FR4 单通道 = 光栅 + 1cm SiN；WDM 复用/串行器按黑箱（非片上器件），判决复用 link 系统预算锚死标量。对标 GC-FR4-CH（IEEE 802.3bs 4.5 dB 死标量）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "400G FR4 硅光收发前端：4×100G PAM4，2km",
+      "对标 IEEE 802.3bs 400GBASE-FR4（clause 121）单通道 IL ≤4.5dB",
+      "Hyperphotonix 平台同量级"
+    ],
+    "applications": [
+      "400G FR4 数据中心光模块",
+      "中距（2km）光互连"
+    ],
+    "specs": {
+      "通道": "4×100G PAM4",
+      "距离": "2km（802.3bs）",
+      "单通道插损": "≤4.5dB（802.3bs 对标 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "IEEE / Hyperphotonix",
+        "product": "400GBASE-FR4 模块（标准/平台）",
+        "specs": {
+          "通道": "4×100G PAM4",
+          "距离": "2km",
+          "单通道 IL": "≤4.5dB（公开）"
+        },
+        "note": "公开标准 + 平台同量级",
+        "source": "IEEE 802.3bs clause 121；Hyperphotonix 平台"
+      }
+    ]
   },
   {
     "id": "IM-CWDM4-SHELF",
@@ -538,7 +1098,34 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "4 通道 CWDM 解复用：wdm_demux 闭环（B4：drop IL≤3 / XT≥15 / 单 FSR / DRC）。对标 GC-CWDM4-CH（CWDM-MSA 4.0 dB 死标量）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "100G CWDM4 解复用前端：4×25G，2km",
+      "对标 CWDM4 MSA 单通道插损 ≤4.0dB",
+      "wdm_demux 闭环（B4 锚）复用"
+    ],
+    "applications": [
+      "100G CWDM4 数据中心光模块",
+      "粗波分短距互连"
+    ],
+    "specs": {
+      "通道": "4×25G",
+      "距离": "2km（CWDM4 MSA）",
+      "单通道插损": "≤4.0dB（MSA 对标 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "CWDM4 MSA",
+        "product": "100G CWDM4 光模块（MSA/商用）",
+        "specs": {
+          "通道": "4×25G",
+          "距离": "2km",
+          "单通道 IL": "≤4.0dB（公开）"
+        },
+        "note": "公开 MSA + 商用 datasheet 一致",
+        "source": "CWDM4 MSA；商用 100G CWDM4 光模块 datasheet"
+      }
+    ]
   },
   {
     "id": "IM-LPO-112G",
@@ -558,7 +1145,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "LPO 线性直驱前端 = 光栅 + SiN 波导（去 DSP 后链路裕度收窄，链路预算锚 S1/S2/S5/S7 死标量判决）；无量级新物理，复用已锚定基元。对标公开 LPO 链路预算量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "LPO 线性直驱光模块前端：112G/通道，去 Retimer/DSP",
+      "链路预算量级与 FR4/DR 同源",
+      "光栅 + SiN，AI 机柜内短距线性直驱"
+    ],
+    "applications": [
+      "Linear Pluggable Optics（LPO）112G/通道",
+      "AI 机柜内光互连"
+    ],
+    "specs": {
+      "通道": "112G PAM4",
+      "驱动方式": "线性直驱（去 Retimer/DSP）"
+    },
+    "peers": [
+      {
+        "vendor": "LPO 产业联盟",
+        "product": "LPO 线性可插拔光模块（业界 112G/通道 路线）",
+        "specs": {
+          "通道": "112G PAM4",
+          "驱动": "线性直驱（公开产业路线）"
+        },
+        "note": "公开产业路线",
+        "source": "LPO 公开产业路线（去 DSP 降功耗）"
+      }
+    ]
   },
   {
     "id": "IM-1.6T-DR8",
@@ -579,7 +1191,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "1.6T DR8 = 800G DR8 的 16 通道扩展（composition 同源 GP-*），复用已锚定无源网 + 光栅耦合死标量；无量级新物理。对标公开 1.6T DR8 链路预算量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "1.6T DR8 硅光发射引擎：16×100G PAM4",
+      "对标 1.6T DR8 MSA 量级，链路预算与 800G DR8 同源",
+      "光栅 + SiN + Crossing"
+    ],
+    "applications": [
+      "1.6T DR8 数据中心光模块",
+      "AI 集群 scale-out 互连"
+    ],
+    "specs": {
+      "通道": "16×100G PAM4",
+      "对标": "1.6T DR8 MSA（公开产业路线）"
+    },
+    "peers": [
+      {
+        "vendor": "OIF / 光模块厂商",
+        "product": "1.6T DR8 MSA 量级收发模块",
+        "specs": {
+          "通道": "16×100G PAM4（公开路线）"
+        },
+        "note": "公开产业路线/量级",
+        "source": "OIF / 光模块厂商 1.6T DR8 MSA 公开路线"
+      }
+    ]
   },
   {
     "id": "IM-800G-FR4",
@@ -600,7 +1236,33 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "800G FR4 = 4×200G PAM4 并行（与 800G DR8 同源无源网 + 光栅耦合，composition 同源 GP-*）；200G/lane DSP+SiPh 2026 成熟。对标公开 800G FR4 链路预算量级（单通道 ≤4.5 dB 量级）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "800G FR4 硅光收发前端：4×200G PAM4，2km",
+      "对标 OIF/厂商 800G FR4 路线，2026 均价 $400–480（硅光方案）",
+      "光栅 + SiN + Crossing"
+    ],
+    "applications": [
+      "800G FR4 数据中心光模块",
+      "中距（2km）AI 互连"
+    ],
+    "specs": {
+      "通道": "4×200G PAM4",
+      "距离": "2km",
+      "市场参考": "2026 均价 $400–480（硅光方案）"
+    },
+    "peers": [
+      {
+        "vendor": "OIF / LightCounting",
+        "product": "800G FR4 模块（4×200G PAM4 路线）",
+        "specs": {
+          "通道": "4×200G PAM4",
+          "均价": "$400–480（2026，硅光方案）"
+        },
+        "note": "公开产业路线 + 市场报告",
+        "source": "OIF 800G FR4 路线；LightCounting 2026 高速数通 ~$12B"
+      }
+    ]
   },
   {
     "id": "IM-1.6T-FR4",
@@ -621,7 +1283,33 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "1.6T FR4 = 1.6T DR8 的 4×400G 变体（composition 同源 GP-*），复用已锚定无源网 + 光栅耦合死标量；无量级新物理。对标公开 1.6T FR4 链路预算量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "1.6T FR4 硅光发射引擎：4×400G PAM4",
+      "NVIDIA GB300 标配、2026 量产拐点（H1 主力上行）",
+      "硅光方案 $1000–1100，对标 1.6T DR8"
+    ],
+    "applications": [
+      "1.6T FR4 数据中心光模块",
+      "AI 集群 scale-out（400G/通道）"
+    ],
+    "specs": {
+      "通道": "4×400G PAM4",
+      "量产拐点": "2026（H1）",
+      "市场参考": "硅光方案 $1000–1100"
+    },
+    "peers": [
+      {
+        "vendor": "NVIDIA / OIF",
+        "product": "1.6T FR4 模块（GB300 标配）",
+        "specs": {
+          "通道": "4×400G PAM4",
+          "方案": "硅光（公开路线）"
+        },
+        "note": "公开产业路线",
+        "source": "NVIDIA GB300 公开配置；1.6T FR4 产业路线"
+      }
+    ]
   },
   {
     "id": "IM-400G-DR4",
@@ -642,7 +1330,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "400G DR4 = 4×100G 并行单波长（与 800G DR8 同源无源网 + 光栅耦合，composition 同源 GP-*）；链路预算锚 S1/S2/S5/S7 死标量判决。对标 IEEE 802.3bs 400G DR4 单通道 4.0 dB 量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "400G DR4 硅光收发前端：4×100G PAM4，500m",
+      "对标 IEEE 802.3bs 400GBASE-DR4",
+      "短距并行 SMF 互连"
+    ],
+    "applications": [
+      "400G DR4 数据中心光模块",
+      "短距（500m SMF）并行光互连"
+    ],
+    "specs": {
+      "通道": "4×100G PAM4",
+      "距离": "500m（802.3bs）"
+    },
+    "peers": [
+      {
+        "vendor": "IEEE / QYResearch",
+        "product": "400GBASE-DR4 模块（标准/市场）",
+        "specs": {
+          "通道": "4×100G PAM4",
+          "距离": "500m（公开标准）"
+        },
+        "note": "公开标准 + 市场报告",
+        "source": "IEEE 802.3bs；QYResearch 2026 全球 400G 光模块 ~$11.3 亿"
+      }
+    ]
   },
   {
     "id": "IM-100G-LR4",
@@ -662,7 +1375,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "4 通道 LAN-WDM 解复用：wdm_demux 闭环（B4：drop IL≤3 / XT≥15 / 单 FSR / DRC）。与 CWDM4-SHELF 同属 4ch 解复用前端，但面向 10km 长距 LAN-WDM（vs CWDM4 2km）。对标 IEEE 802.3cu 100G LR4 单通道 4.5 dB 量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "100G LR4 解复用前端：4×25G LAN-WDM，10km",
+      "对标 IEEE 802.3cu-2021 100GBASE-LR4",
+      "5G 前传/城域/企业网高量部署"
+    ],
+    "applications": [
+      "100G LR4 数据中心/城域/5G 前传光模块",
+      "长距（10km）粗波分"
+    ],
+    "specs": {
+      "通道": "4×25G LAN-WDM",
+      "距离": "10km（802.3cu）"
+    },
+    "peers": [
+      {
+        "vendor": "IEEE 802.3cu",
+        "product": "100GBASE-LR4 模块",
+        "specs": {
+          "通道": "4×25G LAN-WDM",
+          "距离": "10km（公开标准）"
+        },
+        "note": "公开标准",
+        "source": "IEEE 802.3cu-2021 100GBASE-LR4"
+      }
+    ]
   },
   {
     "id": "IM-PON-50G",
@@ -686,7 +1424,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "50G-PON 光前端 = 光栅耦合 + Y-branch 分束 + SiN 波导（OLT 发射/ONU 接收无源网）。PIC 自身 IL 预算 6 dB；整系统 29/32 dB 功率预算由 ODN 1:64 分光主导（黑箱，非片上器件），判决复用 link 系统预算锚 S1/S2/S5/S7。对标 G.9804 死标量量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "50G-PON 光前端（OLT/ONU 无源网），Y-branch + 光栅 + SiN",
+      "对标 ITU-T G.9804（2021 发布、2023 对称型增补）",
+      "工信部 2025 首批 168 试点 → 2026 商用启航"
+    ],
+    "applications": [
+      "50G-PON OLT/ONU 光前端",
+      "下一代接入网（园区/工厂/小区）"
+    ],
+    "specs": {
+      "标准": "ITU-T G.9804（Higher Speed PON）",
+      "部署": "2026 商用启航（168 试点）"
+    },
+    "peers": [
+      {
+        "vendor": "ITU-T / 工信部",
+        "product": "50G-PON 标准/试点网络",
+        "specs": {
+          "标准": "ITU-T G.9804（2021/2023 对称型）"
+        },
+        "note": "公开标准 + 试点部署公开信息",
+        "source": "ITU-T G.9804；工信部 2025 首批 168 试点"
+      }
+    ]
   },
   {
     "id": "IM-OSW-1X8",
@@ -710,7 +1472,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "1×8 光开关无源前端 = Y-branch/MMI 分束 + SiN 波导；MZI 热光开关矩阵按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。对标公开 SiPh MZI 矩阵开关 0.5 dB/级量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "1×8 可重构光开关前端：Y-branch + MMI + SiN",
+      "OCS/dOCS 趋势：Cignal AI 预测 2029 ≥$25 亿",
+      "AI 超节点拓扑实时重构、故障快速恢复"
+    ],
+    "applications": [
+      "数据中心可重构光交换（OCS/dOCS）",
+      "AI 超节点拓扑实时重构"
+    ],
+    "specs": {
+      "端口": "1×8",
+      "市场": "OCS 2029 ≥$25 亿（Cignal AI 预测）"
+    },
+    "peers": [
+      {
+        "vendor": "Cignal AI / LightCounting",
+        "product": "OCS 可重构光交换市场/方案",
+        "specs": {
+          "市场": "2029 ≥$25 亿（预测）"
+        },
+        "note": "公开市场预测报告",
+        "source": "Cignal AI OCS 预测；LightCounting Scale-Up 光互连"
+      }
+    ]
   },
   {
     "id": "IM-LIDAR-RX",
@@ -734,7 +1520,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "FMCW 相干接收前端 = 光栅 + 0.5cm SiN + crossing（90° 混频/平衡探测按黑箱）。与 IM-LIDAR-TX 同源无源网，链路预算锚 3.3 dB（OE 2026 实测死标量）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "FMCW 激光雷达相干接收前端：90° 混频",
+      "与 IM-LIDAR-TX 配套（OE 2026 实测 3.3dB 同源）",
+      "光栅 + Crossing + SiN"
+    ],
+    "applications": [
+      "汽车/机器人 4D 感知",
+      "FMCW LiDAR 相干接收"
+    ],
+    "specs": {
+      "混频": "90° 相干",
+      "波长": "1550nm（与 TX 配套）",
+      "全光链路": "≈3.3dB（OE 2026 对标 · 仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "Aeva / Bosch",
+        "product": "全固态 FMCW LiDAR 相干接收",
+        "specs": {
+          "方式": "90° 相干混频（公开路线）"
+        },
+        "note": "厂商公开路线 + 期刊实验数据",
+        "source": "Aeva/Bosch 全固态 FMCW；Optics Express 34,7415 (2026)"
+      }
+    ]
   },
   {
     "id": "IM-BIOSENSE",
@@ -757,7 +1568,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "环谐振生物传感前端 = 光栅 + 1cm SiN（环形谐振腔传感单元，复用 SENSE-RING 拓扑）。传感灵敏度由环 Q / 波长偏移换算，属参数化下一迭代；判决复用 link 系统预算锚。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "环形谐振生物/化学传感前端：光栅 + SiN",
+      "复用 SENSE-RING 拓扑与 GP-GRATING-EFF+GP-SIN-PL",
+      "多路免疫传感等成熟应用"
+    ],
+    "applications": [
+      "生物/化学折射率传感",
+      "Lab-on-Chip 检测",
+      "医疗/环境 POCT"
+    ],
+    "specs": {
+      "传感方式": "微环谐振（多路免疫传感成熟应用）",
+      "复用": "SENSE-RING 拓扑（已验证）"
+    },
+    "peers": [
+      {
+        "vendor": "公开学术综述",
+        "product": "Lab-on-Chip 环形谐振传感（多路免疫传感）",
+        "specs": {
+          "传感方式": "微环折射率传感（公开综述）"
+        },
+        "note": "公开文献综述",
+        "source": "公开 Lab-on-Chip 环形谐振传感文献综述"
+      }
+    ]
   },
   {
     "id": "IM-COHERENT-400ZR",
@@ -778,7 +1614,36 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "400G ZR/ZR+ 相干收发 PIC 前端 = 光栅耦合 + 1cm SiN（低损）+ crossing；相干 DSP / IQ 调制器 / 平衡探测按黑箱（有源不物理级建模，负面清单）。PIC 自身 IL 预算 6 dB（非整系统 120km 链路，链路预算锚 S1/S2/S5/S7 死标量判决）。复用已锚定无源网 + 光栅耦合，无量级新物理。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "400G ZR/ZR+ 相干收发 PIC 前端（光栅 + 1cm SiN + Crossing）",
+      "PIC 自身 IL 预算 6dB（非整系统指标，诚实标注）",
+      "相干 DSP / IQ 调制器 / 平衡探测按黑箱（有源不物理级建模）"
+    ],
+    "applications": [
+      "DCI 400G ZR/ZR+ 相干可插拔（120km）",
+      "城域相干传输"
+    ],
+    "specs": {
+      "数据率": "400G（DP-16QAM）",
+      "距离": "120km（放大 DWDM）",
+      "PIC IL 预算": "6dB（仿真预期 · 非整系统）",
+      "网格": "C 波段 75/100GHz 可调"
+    },
+    "peers": [
+      {
+        "vendor": "Lumentum",
+        "product": "400G ZR/ZR+ QSFP-DD-DCO 相干模块",
+        "specs": {
+          "数据率": "400G",
+          "距离": "120km",
+          "网格": "C/C++ 波段 75/100GHz",
+          "功耗": "<18W（7nm DSP）"
+        },
+        "note": "厂商公开产品规格（流片产品）",
+        "source": "Lumentum 400G ZR/ZR+ 产品页"
+      }
+    ]
   },
   {
     "id": "IM-RING-MOD",
@@ -798,7 +1663,33 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "MRM 发射前端 = 光栅耦合 + 1cm SiN 波导；环形谐振调制单元（有源）按黑箱（有源不物理级建模，负面清单），其谐振/调制行为由文献锚走完闭环。判决复用 link 系统预算锚 S1/S2/S5/S7 死标量。复用已锚定无源网，无量级新物理。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "微环调制器（MRM）前端：200Gbps/lane，CPO 高带宽密度",
+      "对标 NVIDIA CPO MRM（>1Tbps/mm）与 TSMC COUPE 2026 量产 200Gbps/lane",
+      "带宽密度 0.5→4 Tbps/mm 路线（TSMC COUPE 2030）"
+    ],
+    "applications": [
+      "共封装光学（CPO）微环调制器",
+      "高密度硅光发射",
+      "AI 机柜内光互连"
+    ],
+    "specs": {
+      "速率": "200Gbps/lane（对标 TSMC COUPE）",
+      "带宽密度": "0.5→4 Tbps/mm（TSMC COUPE 2030 路线）"
+    },
+    "peers": [
+      {
+        "vendor": "NVIDIA / TSMC",
+        "product": "CPO MRM 方案（COUPE 2026 量产）",
+        "specs": {
+          "速率": "200Gbps/lane",
+          "带宽密度": ">1Tbps/mm（NVIDIA 路线）"
+        },
+        "note": "厂商公开路线",
+        "source": "NVIDIA CPO MRM；TSMC COUPE 2026 量产"
+      }
+    ]
   },
   {
     "id": "IM-XGS-PON",
@@ -822,7 +1713,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "XGS-PON 光前端 = 光栅耦合 + Y-branch 分束 + SiN 波导（OLT 发射/ONU 接收无源网）。PIC 自身 IL 预算 6 dB；整系统功率预算由 ODN 1:64 分光主导（黑箱，非片上器件），判决复用 link 系统预算锚 S1/S2/S5/S7。对标 G.9807.1 量级（与 50G-PON 同族，速率 10G 对称）。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "XGS-PON 光前端（OLT/ONU 无源网）：10G 对称",
+      "对标 ITU-T G.9807.1",
+      "Dell'Oro：PON 设备 $8.3B(2021)→$9.8B(2026)，XGS-PON 占主力"
+    ],
+    "applications": [
+      "XGS-PON OLT/ONU 光前端",
+      "下一代接入网（园区/工厂/小区）"
+    ],
+    "specs": {
+      "标准": "ITU-T G.9807.1（10G 对称）",
+      "市场": "PON 设备 $9.8B(2026)"
+    },
+    "peers": [
+      {
+        "vendor": "ITU-T / Dell'Oro",
+        "product": "XGS-PON 标准/设备市场",
+        "specs": {
+          "标准": "G.9807.1（10G 对称）"
+        },
+        "note": "公开标准 + 市场报告",
+        "source": "ITU-T G.9807.1；Dell'Oro PON 设备营收"
+      }
+    ]
   },
   {
     "id": "IM-WSS-1X9",
@@ -843,7 +1758,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "1×9 WSS 无源前端 = 光栅耦合 + MMI 分束 + SiN 波导；波长选择/切换矩阵（LCOS/MEMS）按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 ROADM WSS 量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "1×9 波长选择开关（WSS）前端：ROADM 波长路由",
+      "光栅 + MMI + SiN，波长路由与功率均衡",
+      "MarkWide：WSS 市场 $1.8B(2026)→$4.76B(2035) CAGR 11.4%"
+    ],
+    "applications": [
+      "可重构光分插复用（ROADM）",
+      "城域/骨干波长路由与功率均衡"
+    ],
+    "specs": {
+      "端口": "1×9",
+      "市场": "WSS $1.8B(2026)→$4.76B(2035) CAGR 11.4%"
+    },
+    "peers": [
+      {
+        "vendor": "MarkWide",
+        "product": "ROADM WSS 市场（含 Dual WSS）",
+        "specs": {
+          "市场": "$4.76B(2035)；Dual WSS $384.43M(2026)"
+        },
+        "note": "公开市场报告",
+        "source": "MarkWide WSS 市场报告"
+      }
+    ]
   },
   {
     "id": "IM-VOA",
@@ -863,7 +1802,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "VOA 前端 = 光栅耦合 + 1cm SiN 波导；可变衰减单元（MEMS/热光）按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚 S1/S2/S5/S7 死标量。复用已锚定无源网，无量级新物理。对标公开 VOA 量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "可变光衰减器（VOA）前端：ROADM 功率均衡",
+      "光栅 + SiN，动态通道衰减",
+      "MEMS VOA 市场 $215.5M(2025)→$320.89M(2032) CAGR 5.85%"
+    ],
+    "applications": [
+      "可重构光网络动态功率均衡",
+      "ROADM 通道衰减",
+      "测试仪表可调衰减"
+    ],
+    "specs": {
+      "市场": "MEMS VOA $320.89M(2032)；VOA $380M"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "MEMS VOA / 可变光衰减器市场",
+        "specs": {
+          "市场": "$215.5M(2025)→$320.89M(2032) CAGR 5.85%"
+        },
+        "note": "公开市场报告",
+        "source": "MEMS VOA / Variable Optical Attenuators 市场报告"
+      }
+    ]
   },
   {
     "id": "IM-MZI-MOD",
@@ -884,7 +1847,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "MZM 前端 = 光栅耦合 + 1×2 MMI 分束（两相位臂）+ SiN 波导臂 + 1×2 MMI 合束（复用分束基元作合束）+ 光栅耦合出。电光调制相移单元按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚 S1/S2/S5/S7 死标量。复用已锚定无源网，无量级新物理。对标公开硅 MZM 量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "马赫-曾德尔调制器（MZM）前端：相干/直检发射",
+      "光栅 + MMI + SiN，400ZR/800ZR 调制器",
+      "硅基 MZM 市场 $1.51B(2025)→$7.24B(2034) CAGR 19.0%"
+    ],
+    "applications": [
+      "高速光发射机调制前端",
+      "相干 400ZR/800ZR 调制器",
+      "共封装调制核"
+    ],
+    "specs": {
+      "调制方式": "MZM（推挽）",
+      "市场": "硅基 MZM $7.24B(2034) CAGR 19.0%"
+    },
+    "peers": [
+      {
+        "vendor": "Tower Semiconductor",
+        "product": "硅基 MZM 商用平台",
+        "specs": {
+          "市场": "$1.51B(2025)→$7.24B(2034) CAGR 19.0%"
+        },
+        "note": "公开市场报告",
+        "source": "Growth Market Reports 2026-06；Tower Semiconductor 硅光"
+      }
+    ]
   },
   {
     "id": "IM-PSR",
@@ -905,7 +1893,34 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "PSR 前端 = 光栅耦合 + 非对称 Y 分支偏振路由 + SiN 波导；偏振旋转/耦合的亚波长结构按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 PSR 量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "偏振分束旋转器（PSR）前端：TE/TM 复用",
+      "对标 Sama et al. OLT 2026 高隔离 PSR（SOI 220nm+70nm 部分刻蚀）",
+      "TM-to-TE 转换，光栅 + Y-branch + SiN"
+    ],
+    "applications": [
+      "硅光收发器偏振解复用",
+      "CPO 前端偏振路由",
+      "片上偏振复用链路"
+    ],
+    "specs": {
+      "结构": "SOI 220nm+70nm 部分刻蚀（对标文献）",
+      "功能": "TM-to-TE 转换（高隔离）"
+    },
+    "peers": [
+      {
+        "vendor": "学术公开文献",
+        "product": "高隔离 PSR（SOI 部分刻蚀）",
+        "specs": {
+          "结构": "220nm+70nm 部分刻蚀",
+          "TM-to-TE 损耗": "0.71dB @1550nm（实测）",
+          "PER 最差": "30.95dB（C 波段实测）"
+        },
+        "note": "期刊公开实验数据",
+        "source": "Sama et al., Optics and Laser Technology 203 (2026)"
+      }
+    ]
   },
   {
     "id": "IM-PHOTONIC-INTERPOSER",
@@ -928,7 +1943,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "光子中介层前端 = 光栅阵列 I/O + MMI 扇出 + 交叉矩阵 + Y 分支 + SiN 波导面；TSV/微环驱动按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 CPO 光互连量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "光子中介层/共封装（CPO）前端：2.5D 光互连",
+      "光栅 + MMI + Crossing + Y-branch",
+      "IDTechEx：CPO 市场 2036 破 $20B CAGR 37%"
+    ],
+    "applications": [
+      "CPU/GPU 共封装光互连",
+      "2.5D 硅中介层光路由面",
+      "chiplet 间光 I/O 背板"
+    ],
+    "specs": {
+      "市场": "CPO 2036 破 $20B CAGR 37%（IDTechEx）"
+    },
+    "peers": [
+      {
+        "vendor": "TSMC / NVIDIA",
+        "product": "COUPE 2026 量产 / Quantum-X Spectrum-X",
+        "specs": {
+          "量产": "COUPE 2026-04（公开）"
+        },
+        "note": "厂商公开量产/路线",
+        "source": "IDTechEx CPO 市场；TSMC COUPE 2026-04；NVIDIA Quantum-X/Spectrum-X"
+      }
+    ]
   },
   {
     "id": "IM-OPTO-COMPUTE",
@@ -949,7 +1988,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "ONN 前端 = 1×2 MMI 分光权重分配 + 交叉干涉网格（MZI mesh）+ SiN 波导；相移/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光计算量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "光计算/光神经网络（ONN）前端：模拟矩阵乘",
+      "MMI + Crossing + SiN，矩阵-向量乘前端",
+      "Lightmatter/Lightelligence/Celestial AI/Intel/Ayar Labs 占 56.3%"
+    ],
+    "applications": [
+      "光神经网络推理加速",
+      "模拟矩阵-向量乘前端",
+      "光互连-计算混合芯片"
+    ],
+    "specs": {
+      "计算方式": "模拟矩阵乘（MMI 网格）",
+      "市场": "头部厂商占 56.3%（Global Market Insights）"
+    },
+    "peers": [
+      {
+        "vendor": "Lightmatter / Lightelligence 等",
+        "product": "光神经网络处理器（ONN）",
+        "specs": {
+          "市场": "头部 5 家占 56.3%（2025）"
+        },
+        "note": "公开市场报告",
+        "source": "Global Market Insights 光神经网络处理器报告"
+      }
+    ]
   },
   {
     "id": "IM-OCT",
@@ -971,7 +2035,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "OCT 前端 = 光栅耦合 + 1×2 MMI 分光（样品/参考臂）+ Y 分支 + SiN 波导干涉臂；扫描/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 OCT 量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "光学相干层析（OCT）前端：医疗成像干涉仪",
+      "光栅 + MMI + Y-branch + SiN",
+      "OCT 市场 $2.36B(2026)→$4.01B(2032) CAGR 9.08%"
+    ],
+    "applications": [
+      "眼科 OCT 成像干涉前端",
+      "医疗诊断光相干层析",
+      "工业无损检测"
+    ],
+    "specs": {
+      "成像方式": "相干层析（干涉仪前端）",
+      "市场": "OCT $2.36B(2026)→$4.01B(2032) CAGR 9.08%"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "OCT 成像设备市场（眼科为主）",
+        "specs": {
+          "市场": "眼科 OCT $1.52B(2025)→$2.5B(2032)"
+        },
+        "note": "公开市场报告",
+        "source": "Research and Markets OCT 市场"
+      }
+    ]
   },
   {
     "id": "IM-OPA-LIDAR",
@@ -993,7 +2082,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "OPA 前端 = 光栅发射阵列 + Y 分支功分馈入阵元 + SiN 波导 + 交叉路由；相位调制单元按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 OPA LiDAR 量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "光学相控阵（OPA）固态激光雷达前端：无惯量大角度扫描",
+      "光栅 + Y-branch + Crossing，波导 OPA 阵列",
+      "OPA LiDAR 市场 $1.8B(2025)→$9.6B(2034) CAGR 20.4%"
+    ],
+    "applications": [
+      "固态 LiDAR 光束赋形发射阵",
+      "ADAS/机器人无机械扫描感知",
+      "芯片化波导 OPA"
+    ],
+    "specs": {
+      "扫描方式": "OPA（波导阵列，无机械）",
+      "市场": "$1.8B(2025)→$9.6B(2034) CAGR 20.4%"
+    },
+    "peers": [
+      {
+        "vendor": "Yole / Dataintelo",
+        "product": "OPA LiDAR 市场（单芯片集成占 63.7%）",
+        "specs": {
+          "市场": "$9.6B(2034)；单芯片集成 OPA 占 63.7%(2025)"
+        },
+        "note": "公开市场报告",
+        "source": "Dataintelo OPA LiDAR 市场；Yole 投入分析"
+      }
+    ]
   },
   {
     "id": "IM-COHERENT-RX",
@@ -1014,7 +2128,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "相干接收前端 = 光栅耦合（信号+本振双入）+ 1×2 MMI 4×4 混频（两 MMI 作分/合）+ SiN 波导；平衡探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开相干接收量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "相干接收机（90° 光混频器）前端：本振-信号干涉耦合",
+      "光栅 + MMI + SiN",
+      "Optical Hybrid 市场 $483.33M(2025)→$1.10B(2032) CAGR 12.48%"
+    ],
+    "applications": [
+      "400G/800G/1.6T 相干接收 90° 混频前端",
+      "相干探测"
+    ],
+    "specs": {
+      "混频": "90°（本振-信号干涉）",
+      "市场": "Optical Hybrid $1.10B(2032) CAGR 12.48%"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "90° 光混频器（占 Optical Hybrid 67.3%）",
+        "specs": {
+          "市场": "$483.33M(2025)→$1.10B(2032)；90° 占 67.3%"
+        },
+        "note": "公开市场报告",
+        "source": "Optical Hybrid 市场报告（400G→800G 驱动）"
+      }
+    ]
   },
   {
     "id": "IM-ONCHIP-NOC",
@@ -1036,7 +2174,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "ONoC 前端 = 交叉矩阵（路由） + Y 分支功分 + 1×2 MMI + SiN 波导 fabric；调制/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开片上光互连量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "片上光网络（ONoC）路由前端：chiplet 光互连 fabric",
+      "Crossing + Y-branch + MMI + SiN 路由网格",
+      "Chiplet 互连光子市场 $1.8B(2025)→$52.1B(2034) CAGR 38.5%"
+    ],
+    "applications": [
+      "AI 加速器/CPU-GPU chiplet 片上光互连",
+      "低能耗高带宽 NoC 路由"
+    ],
+    "specs": {
+      "网络": "ONoC 路由网格（无源光路由）",
+      "市场": "Chiplet 互连光子 $52.1B(2034) CAGR 38.5%"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "chiplet 光子互连市场（光互连 $15.28B(2026)）",
+        "specs": {
+          "市场": "$1.8B(2025)→$52.1B(2034) CAGR 38.5%"
+        },
+        "note": "公开市场报告",
+        "source": "Market Intelo Chiplet 互连光子；光互连市场报告"
+      }
+    ]
   },
   {
     "id": "IM-MCF-FANOUT",
@@ -1057,7 +2219,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "MCF 扇出前端 = 光栅耦合阵列（多芯入） + Y 分支扇出到单芯 + SiN 波导；多芯对准按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 MCF 扇出量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "多芯光纤扇出（MCF Fan-out）前端：SDM 过渡",
+      "光栅 + Y-branch + SiN，多芯到单芯无源扇出/扇入",
+      "MCF Fanouts 市场 $640M(2025)→$1.25B(2032) CAGR 11.8%"
+    ],
+    "applications": [
+      "多芯光纤（SDM）到单芯设备扇出",
+      "AI 数据中心高密度互连"
+    ],
+    "specs": {
+      "扇出": "MCF→单芯（无源过渡）",
+      "市场": "MCF Fanouts $1.25B(2032) CAGR 11.8%"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "MCF Fanouts 市场（窄口径 $87.5M）",
+        "specs": {
+          "市场": "$640M(2025)→$1.25B(2032) CAGR 11.8%"
+        },
+        "note": "公开市场报告",
+        "source": "Strategic Market Research MCF Fanouts"
+      }
+    ]
   },
   {
     "id": "IM-OPTICAL-GYRO",
@@ -1079,7 +2265,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "FOG 前端 = 光栅耦合 + 交叉环形（Sagnac 环） + Y 分支分/合 + SiN 波导；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光纤陀螺量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "光纤陀螺（FOG/Sagnac 干涉仪）前端：高精度角速率",
+      "光栅 + Crossing + Y-branch + SiN",
+      "FOG 市场 $1.2B(2026)→$2.0B(2033) CAGR 7.5%"
+    ],
+    "applications": [
+      "干涉型光纤陀螺 Sagnac 前端",
+      "惯性导航/无人机/船舶 AHRS"
+    ],
+    "specs": {
+      "传感方式": "Sagnac 干涉（角速率）",
+      "市场": "FOG $2.0B(2033) CAGR 7.5%"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "光纤陀螺（FOG）市场",
+        "specs": {
+          "市场": "$1.96B(2025)→$4.60B(2034) CAGR 9.9%"
+        },
+        "note": "公开市场报告（两口径并存）",
+        "source": "Persistence FOG 市场报告"
+      }
+    ]
   },
   {
     "id": "IM-MRR-FILTER",
@@ -1100,7 +2310,33 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "微环滤波前端 = 光栅耦合进/出 + 1×2 MMI 总线分光 + SiN 波导环形谐振（调谐/探测按黑箱，有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开微环滤波器量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "微环谐振滤波器前端：可重构光滤波 / add-drop",
+      "光栅 + MMI + SiN，灵活栅格信道选择",
+      "Silicon Microring Resonators 市场 $450M(2025)→$1.66B(2032) CAGR 20.5%"
+    ],
+    "applications": [
+      "WDM 灵活栅格信道选择",
+      "ROADM 滤波",
+      "相干收发器波长滤波",
+      "微波光子窄带滤波"
+    ],
+    "specs": {
+      "滤波": "微环 add-drop（可重构）",
+      "市场": "MRR $1.66B(2032) CAGR 20.5%"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "硅光微环谐振器（滤波）市场",
+        "specs": {
+          "市场": "$450M(2025)→$1.66B(2032) CAGR 20.5%"
+        },
+        "note": "公开市场报告",
+        "source": "PMarketResearch Silicon Microring Resonators"
+      }
+    ]
   },
   {
     "id": "IM-SPLITTER-TREE",
@@ -1121,7 +2357,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "功分树前端 = Y 分支级联 + 1×2 MMI 均分 + SiN 波导；纯无源功率分配（调制/探测按黑箱）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开功分器量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "1×N 功分树（PLC 功分网络）前端：Y-branch + MMI",
+      "FTTH/FTTR 光分路、PON ODN 功率均分",
+      "PLC Splitter 市场 $2.8B(2025)→$5.6B(2034) CAGR 8.1%"
+    ],
+    "applications": [
+      "FTTH/FTTR 光分路",
+      "数据中心 fan-out",
+      "PON ODN 功率均分"
+    ],
+    "specs": {
+      "分光": "1×N（Y-branch/MMI 树）",
+      "市场": "PLC Splitter $5.6B(2034) CAGR 8.1%"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "PLC Splitter 市场（1×N 占 62.4%）",
+        "specs": {
+          "市场": "$2.8B(2025)→$5.6B(2034)；1×N 占 62.4%(2025)"
+        },
+        "note": "公开市场报告",
+        "source": "Dataintelo PLC Splitter 市场"
+      }
+    ]
   },
   {
     "id": "IM-TRUE-TIME-DELAY",
@@ -1142,7 +2403,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "TTD 前端 = 长 SiN 波导延迟线（不同长度阶梯） + Y 分支选择 + 交叉布线；RF 调制/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开微波光子 TTD 量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "微波光子真延时（TTD）波束成形网络前端",
+      "SiN + Y-branch + Crossing，延时线网络",
+      "相控阵天线市场 $3.90B(2026)→$8.38B(2034) CAGR 10.04%"
+    ],
+    "applications": [
+      "5G-A/6G 基站波束成形",
+      "相控阵雷达",
+      "卫星通信 TTD 延时网络"
+    ],
+    "specs": {
+      "功能": "真延时（TTD）波束成形",
+      "市场": "相控阵 $8.38B(2034) CAGR 10.04%"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "相控阵天线系统市场",
+        "specs": {
+          "市场": "$3.90B(2026)→$8.38B(2034) CAGR 10.04%"
+        },
+        "note": "公开市场报告",
+        "source": "ValueMarketResearch Phased Array Antenna"
+      }
+    ]
   },
   {
     "id": "IM-GAS-SENSE",
@@ -1163,7 +2449,33 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "气体传感前端 = SiN 长波导吸收臂 + 光栅耦合进/出 + Y 分支参考/样品臂；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开波导气体传感量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "波导气体/吸收光谱传感前端：SiN 宽波段",
+      "SiN 宽透明窗口（可见-中红外）适合分子指纹吸收",
+      "SiN PIC 市场 $320M(2025)→$1113.58M(2032) CAGR 19.5%"
+    ],
+    "applications": [
+      "环境 VOC/温室气体监测",
+      "医疗呼气诊断",
+      "工业排放多 analyte 检测"
+    ],
+    "specs": {
+      "波段": "可见-中红外（SiN 宽透明窗口）",
+      "传感": "分子指纹吸收光谱",
+      "市场": "SiN PIC $1113.58M(2032) CAGR 19.5%"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "SiN PIC 市场（宽波段无源）",
+        "specs": {
+          "市场": "$320M(2025)→$1113.58M(2032) CAGR 19.5%"
+        },
+        "note": "公开市场报告",
+        "source": "PW Consulting SiN PIC 市场"
+      }
+    ]
   },
   {
     "id": "IM-GRATING-COUPLE",
@@ -1183,7 +2495,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "光栅耦合阵列前端 = 高效光栅耦合器（GP-GRATING-EFF 核心） + SiN 波导引出；光纤阵列对准/封装按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光栅耦合量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "光栅耦合阵列 / 光纤贴装接口前端：CPO 光 IO",
+      "光栅 + SiN，多通道高密度封装接口",
+      "Grating Coupler Array 市场 $1.45B(2024)→$3.07B(2033) CAGR 8.7%"
+    ],
+    "applications": [
+      "硅光芯片-光纤阵列耦合",
+      "CPO 片上级联光 IO",
+      "高密度封装接口"
+    ],
+    "specs": {
+      "接口": "光栅耦合阵列（光纤贴装）",
+      "市场": "Grating Coupler Array $3.07B(2033) CAGR 8.7%"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "光栅耦合阵列市场",
+        "specs": {
+          "市场": "$1.45B(2024)→$3.07B(2033) CAGR 8.7%"
+        },
+        "note": "公开市场报告",
+        "source": "GrowthMarketReports Grating Coupler Array"
+      }
+    ]
   },
   {
     "id": "IM-AWG-DEMUX",
@@ -1203,7 +2540,33 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "AWG 解复用前端 = 输入/输出 MMI 星形耦合器（GP-MMI-1X2 近似） + SiN 阵列波导（GP-SIN-PL 自由色散长度）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 AWG DeMUX 量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "阵列波导光栅解复用器（AWG DeMUX）前端",
+      "MMI + SiN，DWDM 信道解复用",
+      "AWG MUX/DeMUX 市场 $735M(2025)→$1.375B(2031) CAGR 8.14%"
+    ],
+    "applications": [
+      "DWDM 信道解复用",
+      "CPO/光模块波分合分波",
+      "ROADM 波长路由",
+      "光谱处理前端"
+    ],
+    "specs": {
+      "功能": "AWG DeMUX（阵列波导光栅）",
+      "市场": "AWG MUX/DeMUX $1.375B(2031) CAGR 8.14%"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "AWG MUX/DeMUX 市场",
+        "specs": {
+          "市场": "$735M(2025)→$1.375B(2031) CAGR 8.14%"
+        },
+        "note": "公开市场报告（多口径并存，取其一：Arrayed $320-570M/2026 CAGR 6.5-11.7%、QYResearch $427M/2032 CAGR 6.9%、Thermal AWG $2.84B/2033 CAGR 9.x%）",
+        "source": "AWG MUX/DeMUX 市场报告"
+      }
+    ]
   },
   {
     "id": "IM-ONCHIP-SPECTROMETER",
@@ -1224,7 +2587,33 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "片上光谱仪前端 = MMI 分光（GP-MMI-1X2） + Y 分支路由阵列（GP-YBRANCH） + SiN 波导色散/干涉臂（GP-SIN-PL）；探测器按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开微型光谱仪量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "片上微型光谱仪前端：MMI + Y-branch",
+      "便携式光谱检测，Chip-scale 设计",
+      "Chip-scale Spectrometer $2.44B(2025)→$8.7B(2033) CAGR 17.2%"
+    ],
+    "applications": [
+      "便携式光谱检测",
+      "消费电子/医疗即时诊断",
+      "环境气体监测",
+      "工业过程光谱分析"
+    ],
+    "specs": {
+      "形态": "Chip-scale 微型光谱仪",
+      "市场": "$2.44B(2025)→$8.7B(2033) CAGR 17.2%"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "Chip/Modular Spectrometers 市场",
+        "specs": {
+          "市场": "$2.44B(2025)→$8.7B(2033) CAGR 17.2%"
+        },
+        "note": "公开市场报告",
+        "source": "Chip-scale / Modular Spectrometers 市场报告"
+      }
+    ]
   },
   {
     "id": "IM-MDM-MUX",
@@ -1244,7 +2633,32 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "模分复用前端 = 非对称 Y 分支模式合/分器（GP-YBRANCH 模式转换近似） + SiN 少模波导（GP-SIN-PL）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 MDM 量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "模分复用器（MDM）前端：少模光纤 MDM 收发",
+      "Y-branch + SiN，模式转换/复用",
+      "MDM Equipment $1.42B(2024)→$4.16B(2033) CAGR 12.6%"
+    ],
+    "applications": [
+      "少模光纤 MDM 收发前端",
+      "数据中心空分复用扩容",
+      "单模 Shannon 极限突破"
+    ],
+    "specs": {
+      "复用": "模分（Mode-division）",
+      "市场": "MDM Equipment $4.16B(2033) CAGR 12.6%"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "少模光纤/MDM 设备市场",
+        "specs": {
+          "市场": "Few-Mode Fibers $10.74B(2025)；MDM $4.16B(2033)"
+        },
+        "note": "公开市场报告",
+        "source": "Few-Mode Fibers / MDM Equipment 市场报告"
+      }
+    ]
   },
   {
     "id": "IM-OPTCOMB",
@@ -1264,7 +2678,33 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "光频梳前端 = 高效光栅耦合 IO（GP-GRATING-EFF） + SiN 微环梳谐振波导（GP-SIN-PL，高 Q 色散工程）；泵浦/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开芯片级微梳量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "芯片级光频梳（Microcomb）前端：DWDM 多波长光源",
+      "光栅 + SiN，梳状源生成",
+      "全球光频梳 $1.87B(2026) 年增 31.7%"
+    ],
+    "applications": [
+      "DWDM 多波长光源",
+      "时频同步",
+      "相干光通信梳状源",
+      "量子频率计量"
+    ],
+    "specs": {
+      "形态": "芯片级光频梳（Microcomb）",
+      "市场": "光频梳 $1.87B(2026) 年增 31.7%"
+    },
+    "peers": [
+      {
+        "vendor": "Intel Market Research",
+        "product": "光频梳市场",
+        "specs": {
+          "市场": "$58M(2025)→$108M(2034) CAGR 7.4%"
+        },
+        "note": "公开市场报告（两口径并存）",
+        "source": "Intel Market Research 光频梳；Archive 全球光频梳"
+      }
+    ]
   },
   {
     "id": "IM-POL-ROTATOR",
@@ -1284,6 +2724,31 @@
     },
     "honest_tier": "前瞻预研",
     "design_note": "偏振旋转器前端 = 波导交叉路由（GP-CROSSING） + SiN 双折射/非对称波导偏振旋转段（GP-SIN-PL）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开偏振旋转器量级。",
-    "ci_status": ""
+    "ci_status": "",
+    "features": [
+      "片上偏振旋转器（Polarization Rotator）前端",
+      "Crossing + SiN，偏振分集接收",
+      "Polarization Rotator CAGR 10.3%(2026-2033)"
+    ],
+    "applications": [
+      "偏振分集接收",
+      "相干收发器偏振管理",
+      "CPO 偏振耦合接口"
+    ],
+    "specs": {
+      "功能": "偏振旋转（TE↔TM）",
+      "市场": "Polarization Rotator CAGR 10.3%(2026-2033)"
+    },
+    "peers": [
+      {
+        "vendor": "市场报告",
+        "product": "光偏振控制器/旋转器市场",
+        "specs": {
+          "市场": "偏振控制器 $480M(2026) 增 12.3%"
+        },
+        "note": "公开市场报告",
+        "source": "光偏振控制器市场报告"
+      }
+    ]
   }
 ]

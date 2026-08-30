@@ -1,0 +1,39 @@
+{
+  "repo": "iduyuhe/LDA",
+  "fetched_at": "2026-08-30T02:03:57.225616+00:00",
+  "rate_limit_status": {
+    "core": {
+      "limit": 5000,
+      "used": 10,
+      "remaining": 4990,
+      "reset": 1788058522
+    },
+    "search": {
+      "limit": 30,
+      "used": 0,
+      "remaining": 30,
+      "reset": 1788055499
+    }
+  },
+  "stars": 1,
+  "forks": 1,
+  "watchers": 1,
+  "subscribers": 0,
+  "open_issues_incl_pr": 4,
+  "network_count": 1,
+  "license": "MIT",
+  "language": "Python",
+  "created_at": "2026-08-19T00:07:58Z",
+  "pushed_at": "2026-08-30T00:33:26Z",
+  "updated_at": "2026-08-30T00:33:30Z",
+  "default_branch": "main",
+  "size_kb": 5675,
+  "contributors_visible": 0,
+  "last_commit_sha": "8358edfbcc557826a2391bcb6b8854f582f1e128",
+  "last_commit_date": "2026-08-30T00:32:49Z",
+  "last_commit_message": "feat(store): 创新超市三档定价 599/1999/4999（v0.9.1 · D2）\n\n解除 R10（58 货架统一定价 ¥1999）——价值捕获错位：一个 CPO 光引擎预设计\n与一个 FTTH PLC 分路器同价，复杂价值被",
+  "issues_total": 3,
+  "issues_open": 3,
+  "prs_total": 2,
+  "prs_open": 1
+}

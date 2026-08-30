@@ -40,6 +40,10 @@ _SLOW_CORE = {
     "run_large_scale_smoke.py", "run_primitives_smoke.py",
     "run_gc_smoke.py", "run_drc_fix_smoke.py", "run_drc_pdk_smoke.py",
     "run_d06_smoke.py", "run_d10_smoke.py", "run_pdk_smoke.py",
+    # v0.9.1 新增（量子侧入 core）：这两项含 FDTD 场级仿真，单项 180-200s。
+    # 若不排除，本脚本内部递归的 core 子集会突破 600s 超时上限
+    # （2026-08-30 实测：未排除时 TIMEOUT 600s → 排除后回落）
+    "run_splitter_readout_smoke.py", "run_splitter_readout_cal_smoke.py",
     # 递归保护：本文件自身
     "run_ci_industrial_smoke.py",
 }

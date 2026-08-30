@@ -155,10 +155,14 @@ class CountConsistencySmoke(unittest.TestCase):
     # ---- 4. CI 门禁条数（v0.8.30 加固：只认「当前账本」权威段，防历史链污染）----
     def test_ci_core_count_matches_readme_top(self):
         n_core = len(self.core_smokes)
-        # 权威标注位于「当前账本：…CI core N 条」段；历史链里的旧数字（如 61 条）
-        # 必须忽略——只取该段内的 CI core 声明
-        m = re.search(r"当前账本：.*?CI core (\d+) 条", self.readme)
-        self.assertIsNotNone(m, "README 须含 '当前账本：…CI core N 条' 权威标注")
+        # 权威标注位于「## 当前账本：…CI core N 条」段（行首二级标题）。
+        # 🔴 v0.9.1 加固：必须锚定行首 `## `，否则会误匹配到历史链里更早出现的
+        #    「当前账本：…」旧声明（v0.8.30 历史注记中出现过一次），导致权威段
+        #    数字改了却仍在比对旧值——这正是 70≠79 漂移未被当场捕获的根因。
+        m = re.search(r"^##\s*当前账本：.*?CI core (\d+) 条", self.readme,
+                      re.MULTILINE)
+        self.assertIsNotNone(
+            m, "README 须含行首 '## 当前账本：…CI core N 条' 权威标注")
         self.assertEqual(int(m.group(1)), n_core,
                          f"README 当前账本写 CI core {m.group(1)} 条，实际 CORE_SMOKES={n_core}")
         # 反向：当前账本段内不得出现与真实值冲突的其他 CI core 数字

@@ -127,6 +127,19 @@ CORE_SMOKES: List[str] = [
     # 商务闭环（v0.9.0：创新超市商业化链路——注册/下单/凭证/审批/下载限次/
     # 对公申请/定制状态机/我的模块/账号重置/意见收集，函数级快速回归）
     "run_store_flow_smoke.py",
+    # ---- 量子侧（QEDA）回归（v0.9.1 · P0-1 · 解除 R1）----
+    # 背景：量子占 7/22 引擎、13/47 锚，但此前 9 个量子 smoke 全不在 core 门禁，
+    # 导致双引擎的一半无回归保护。实测 9 个全部 PASS，其中 7 个为亚秒级、
+    # 2 个含 FDTD 仿真约 180-200s —— 全部纳入，慢的两项配 timeout override。
+    "run_ir_quantum_smoke.py",            # L0 IR 量子子集
+    "run_quantum_devices_smoke.py",       # 量子器件库
+    "run_quantum_design_smoke.py",        # 量子设计闭环
+    "run_multiqubit_smoke.py",            # 多比特系统
+    "run_multiqubit_fidelity_smoke.py",   # 多比特保真度（D-46/D-47 路径）
+    "run_readout_fidelity_smoke.py",      # 读出保真度
+    "run_readout_chain_smoke.py",         # 读出链路
+    "run_splitter_readout_smoke.py",      # D-63 方向耦合器×量子读出（含 FDTD，~198s）
+    "run_splitter_readout_cal_smoke.py",  # D-66 标定版读出（含 FDTD，~179s）
 ]
 
 _SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",
@@ -143,6 +156,18 @@ def _discover_all() -> List[str]:
     if os.path.exists(os.path.join(_HERE, "run_harness.py")):
         files.add("run_harness.py")
     return sorted(files)
+
+
+# 内置 per-script 超时覆盖（秒）：实测耗时 + 安全边际，防慢机器上偶发 TIMEOUT
+# 被误判为 FAIL（TIMEOUT 与真 FAIL 必须区分开）。调用方可通过 timeout_override 再覆盖。
+_BUILTIN_TIMEOUT_OVERRIDE = {
+    # 内部含子回归 + greens 基准（~300-315s 浮动），内置放宽根治偶发 TIMEOUT
+    "run_ci_industrial_smoke.py": 600.0,
+    # 含 FDTD 分束仿真，实测 ~198s（v0.9.1 入 core）
+    "run_splitter_readout_smoke.py": 400.0,
+    # 含 FDTD 标定仿真，实测 ~179s（v0.9.1 入 core）
+    "run_splitter_readout_cal_smoke.py": 400.0,
+}
 
 
 def _run_one(python: str, script: str, timeout: float) -> Dict[str, Any]:
@@ -195,8 +220,7 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
     for s in scripts:
         # run_ci_industrial_smoke 内部含子回归+greens 基准（~300-315s 浮动），
         # 内置放宽至 600s 根治偶发 TIMEOUT；其余 smoke 用全局 timeout。
-        to = overrides.get(
-            s, 600.0 if s == "run_ci_industrial_smoke.py" else timeout)
+        to = overrides.get(s, _BUILTIN_TIMEOUT_OVERRIDE.get(s, timeout))
         r = _run_one(python, s, to)
         results.append(r)
         print(f"  [{r['status']:<6}] {r['script']}  ({r['elapsed_s']}s)")

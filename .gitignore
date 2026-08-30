@@ -42,3 +42,6 @@ lda/reports/crosscheck_history/
 .env
 .env.local
 
+# ---- 外部 ORACLE 隔离环境配置（含本机绝对路径，由 scripts/setup_oracle_env.sh 生成）----
+.oracle_env
+

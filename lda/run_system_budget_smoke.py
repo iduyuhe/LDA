@@ -73,9 +73,9 @@ def main() -> int:
     check("扰动候选 FAIL 被抓（+2dB 偏移 ≫ tol）", caught,
           "预算锚能抓候选偏离（死标量）")
 
-    # ④ 题库计数（47 = 27B + 7E + 13S）
-    check("题库 47 题（B27+E7+S13）",
-          len(BENCHMARK_ORDER) == 47 and BENCHMARK_ORDER[-1] == "S13",
+    # ④ 题库计数（48 = 28B + 7E + 13S）
+    check("题库 48 题（B28+E7+S13）",
+          len(BENCHMARK_ORDER) == 48 and BENCHMARK_ORDER[-1] == "S13",
           f"{len(BENCHMARK_ORDER)} 题")
 
     # ⑤ 预算语义物理合理性：单调性 + 余量域

@@ -105,8 +105,8 @@ def main() -> int:
     check("S11 锚：disconnect/misroute =0.0（REJECT）",
           all(golden_value("S11", {"case": c}) == 0.0
               for c in ("disconnect", "misroute")))
-    check("S11 锚：题库 47 题（B27+E7+S1-S13，含 S11/S12/S13）",
-          "S11" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 47,
+    check("S11 锚：题库 48 题（B28+E7+S1-S13，含 S11/S12/S13）",
+          "S11" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 48,
           f"n={len(BENCHMARK_ORDER)}")
     rep = s11_report()
     check("S11 锚：全案例判决自洽 + 性能预算达标",

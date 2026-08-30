@@ -132,7 +132,7 @@ class CountConsistencySmoke(unittest.TestCase):
 
     # ---- 3. 题库 ----
     def test_benchmark_order_47(self):
-        self.assertEqual(len(self.benchmark_order), 47,
+        self.assertEqual(len(self.benchmark_order), 48,
                          f"BENCHMARK_ORDER 应 47 题，实际 {len(self.benchmark_order)}")
 
     def test_benchmark_b27_e7_s13_split(self):
@@ -142,11 +142,11 @@ class CountConsistencySmoke(unittest.TestCase):
                  if re.fullmatch(r"E\d+", b)]
         s_ids = [b for b in self.benchmark_order
                  if re.fullmatch(r"S\d+", b)]
-        self.assertEqual(len(b_ids), 27, f"B 题应 27，实际 {len(b_ids)}")
+        self.assertEqual(len(b_ids), 28, f"B 题应 28，实际 {len(b_ids)}")
         self.assertEqual(len(e_ids), 7, f"E 题应 7，实际 {len(e_ids)}")
         self.assertEqual(len(s_ids), 13, f"S 题应 13，实际 {len(s_ids)}")
         self.assertEqual(b_ids[0], "B1")
-        self.assertEqual(b_ids[-1], "B27")
+        self.assertEqual(b_ids[-1], "B28")
         self.assertEqual(e_ids, ["E1", "E2", "E3", "E4", "E5", "E6", "E7"])
         self.assertEqual(s_ids,
                          ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
@@ -180,8 +180,8 @@ class CountConsistencySmoke(unittest.TestCase):
         self.assertNotIn("光子 9+量子 6", self.readme)
 
     def test_readme_benchmark_counts(self):
-        self.assertIn("47 题", self.readme)
-        self.assertIn("B1-B27", self.readme)
+        self.assertIn("48 题", self.readme)
+        self.assertIn("B1-B28", self.readme)
         self.assertIn("E1-E7", self.readme)
         self.assertIn("S1-S13", self.readme)
 

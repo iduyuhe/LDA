@@ -46,7 +46,7 @@ def main() -> int:
     r = run("verify_design", {"candidate": {"type": "reference"}})
     s = r.result["summary"]
     check("verify_design(reference) 47/47",
-          r.status == "ok" and s.get("passed") == s.get("total") == 47,
+          r.status == "ok" and s.get("passed") == s.get("total") == 48,
           f"{s.get('passed')}/{s.get('total')} PASS")
 
     # 2) perturbed(rel=0.10) → 抓 FAIL（死标量）
@@ -67,8 +67,8 @@ def main() -> int:
     r = run("list_benchmarks", {})
     bm = r.result.get("benchmarks", [])
     ids = [b.get("id") for b in bm] if bm else []
-    check("list_benchmarks 47 题",
-          len(ids) == 47 and "B27" in ids and "E7" in ids
+    check("list_benchmarks 48 题",
+          len(ids) == 48 and "B27" in ids and "E7" in ids
           and "S12" in ids and "S13" in ids,
           f"{len(ids)} 题（B1-B27 + E1-E7 + S1-S13）")
 

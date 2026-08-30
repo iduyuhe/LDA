@@ -44,6 +44,9 @@ from .golden import (
     # S13 设计良率锚（v0.9.1 · DFY · 解析闭式 ↔ 蒙特卡洛双算法互证）
     s13_design_yield_anchor,
 )
+from .b28_modulator_vpi_anchor import (  # noqa: E402  # B28 MZM Vπ 锚（v0.9.1 · 钉子 D1b=A）
+    b28_modulator_vpi, b28_modulator_vpi_report,
+)
 
 BENCHMARK_DEFS = {
     "B1": {
@@ -344,6 +347,24 @@ BENCHMARK_DEFS = {
                  "成立。确定性物理定律锚，LLM 不进判决路径；harness 默认 "
                  "ReferenceCandidate 自洽 PASS。"),
     },
+    # ---- 有源调制器封口（v0.9.1 · 钉子 D1b=A）：MZM 半波电压 Vπ ----
+    "B28": {
+        "title": "MZM 调制器半波电压 Vπ（电光相位调制 · Pockels）",
+        "metric": "Vpi_volts",
+        "oracle": "analytical(MZM Pockels half-wave) + integral-bisect cross-check",
+        "tol": 1e-3,
+        "default_params": {"lambda_vac_um": 1.55, "n_eff": 2.2,
+                           "r_eff": 30.8e-12, "gamma": 0.5,
+                           "L_um": 10000.0, "d_um": 8.0},
+        "golden_fn": b28_modulator_vpi,
+        "note": ("MZM 半波电压 Vπ=λ₀·d/(2·n_eff³·r_eff·Γ·L)（推挽 Pockels 电光"
+                 "相位调制确定性物理定律，零模型假设）。golden=解析闭式；ORACLE"
+                 "交叉验证=沿程积分+二分（通用 Γ(z)），均匀段退化等于闭式、"
+                 "机器精度一致（Δ<1e-6V）→ 非 AI ground。实证量级（LiNbO3 "
+                 "x-cut MZM Vπ≈3.8V）仅作 honest-sanity，不进死标量判决。与 "
+                 "B20 无源 MZI-FSR 双锚闭合「MZI 无源+有源」。LLM 不进判决路径；"
+                 "harness 默认 ReferenceCandidate 自洽 PASS。"),
+    },
     # ---- D-62 实证大数据锚（第二道非 AI ground：真实测量语料）----
     # anchor=empirical 的题：golden 来自 EmpiricalCorpus 实测语料（seed_empirical.json
     # + 社区经评审流落库的语料），非解析函数（golden_fn=None）。
@@ -613,7 +634,7 @@ BENCHMARK_DEFS = {
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
-                   "B26", "B27",
+                   "B26", "B27", "B28",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                    "S9", "S10", "S11", "S12", "S13"]  # S 系统锚（Phase 0-4；S9=LVS/S10=多层/S11=规模/S12=阵列分布/S13=设计良率）

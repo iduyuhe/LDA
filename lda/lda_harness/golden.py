@@ -34,6 +34,9 @@ from .yield_anchor import (  # noqa: E402  # S13 设计良率锚（v0.9.1 · DFY
     yield_analytic, monte_carlo_yield, nominal_ring_length,
     yield_report, yield_vs_tolerance_scan, s13_design_yield_anchor,
 )
+from .b28_modulator_vpi_anchor import (  # noqa: E402  # B28 MZM Vπ 锚（v0.9.1 · 钉子 D1b=A）
+    b28_modulator_vpi, b28_modulator_vpi_report,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -531,6 +534,7 @@ _GOLDEN_DISPATCH = {
     "B25": b25_tunable_transmon_f01,
     "B26": b26_dispersive_shift,
     "B27": b27_cz_gate_time,
+    "B28": b28_modulator_vpi,                  # v0.9.1 MZM 调制器半波电压 Vπ（Pockels 电光）
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -550,7 +554,7 @@ _GOLDEN_DISPATCH = {
 _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                  "B19", "B20", "B21", "B22", "B23", "B24", "B25",
-                 "B26", "B27",
+                 "B26", "B27", "B28",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

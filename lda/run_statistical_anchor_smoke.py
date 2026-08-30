@@ -111,8 +111,8 @@ def main() -> int:
     b_ids = [b for b in BENCHMARK_ORDER if b.startswith("B")]
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
     s_ids = [b for b in BENCHMARK_ORDER if b.startswith("S")]
-    check("题库 47 题（B1-B27 27 + E1-E7 7 + S1-S13 13）",
-          len(BENCHMARK_ORDER) == 47 and len(b_ids) == 27
+    check("题库 48 题（B1-B28 28 + E1-E7 7 + S1-S13 13）",
+          len(BENCHMARK_ORDER) == 48 and len(b_ids) == 28
           and len(e_ids) == 7 and len(s_ids) == 13,
           f"总={len(BENCHMARK_ORDER)} B={len(b_ids)} E={len(e_ids)} S={len(s_ids)}")
 

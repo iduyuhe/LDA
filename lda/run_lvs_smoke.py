@@ -126,8 +126,8 @@ def main() -> int:
     check("S9 锚：open/misconnect/short/dangling 均 =0.0（REJECT）",
           all(golden_value("S9", {"case": c}) == 0.0
               for c in ("open", "misconnect", "short", "dangling")))
-    check("S9 锚：题库 47 题（B27+E7+S1-S13，含 S9/S10/S11/S12/S13）",
-          "S9" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 47,
+    check("S9 锚：题库 48 题（B28+E7+S1-S13，含 S9/S10/S11/S12/S13）",
+          "S9" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 48,
           f"n={len(BENCHMARK_ORDER)}")
     s9r = s9_report()
     check("S9 锚：全案例判决自洽（仅 consistent 判 ACCEPT）",
@@ -166,8 +166,8 @@ def main() -> int:
           and all(golden_value("S10", {"case": c}) == 0.0
                   for c in ("cross_short", "via_short", "port_short",
                             "dangling")))
-    check("S10 锚：题库 47 题（B27+E7+S1-S13，含 S9/S10/S11/S12/S13）",
-          "S10" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 47,
+    check("S10 锚：题库 48 题（B28+E7+S1-S13，含 S9/S10/S11/S12/S13）",
+          "S10" in BENCHMARK_ORDER and len(BENCHMARK_ORDER) == 48,
           f"n={len(BENCHMARK_ORDER)}")
     s10r = s10_report()
     check("S10 锚：全案例判决自洽 + 层栈信息",

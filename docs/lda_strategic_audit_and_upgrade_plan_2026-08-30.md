@@ -171,7 +171,7 @@
 | ID | 风险 | 严重度 | 证据 | 影响 |
 |---|---|---|---|---|
 | **R1** | **量子侧 9 个 smoke 不在 CI core** | 🔴 高 | 逐项 grep `run_ci_regression.py` 确认 NOT IN CORE | 双引擎一半无回归保护，静默破坏不可见 |
-| **R2** | **外部 ORACLE 默认不通** | 🔴 高 | `oracle_sax.py:19` return None；`meep_oracle.py:36-39` 需 `LDA_MEEP_PY`；`oracle_tidy3d.py:28-29` 仅占位 | "双 ground 交叉验证"卖点无法现场演示 |
+| **R2** | **外部 ORACLE（部分缓解）** | 🟠 中 | 离线 numpy 真值已本机实测可复现（B7=-10.08/B5=3.9dB）；外部 Meep 真值+互证脚本与实现已就绪，但本机 Windows 无 Meep（已实证 meep-base 无 Windows wheel），端到端 meep 互证**待 Linux 环境验证**。验证者按 `docs/oracle_reproduce.md` 跑通即接通 | "双 ground"卖点已具备可复现能力，外部 meep 真值演示待 Linux |
 | **R3** | **实证锚仅 7 条种子语料** | 🟠 中高 | `seed_empirical.json:2` 自述"示例种子，须由社区补真实测量"；corpus 9 / adversarial 4 | 非 AI ground 的第二根支柱偏软 |
 | **R4** | **3/46 锚为自证桩** | 🟠 中 | B5/B6/B7 oracle = `design-rule(Meep/Tidy3D 预留)`，golden 为理想下限 | 与"LLM 不进判决"红线并存的自证盲区 |
 | **R5** | **技术债集中** | 🟠 中 | `app.py` 3560 行 / `do_GET` 99 处 elif 链（`:2931-3530`）；`innovation_market.py` 2530 行数据字面量；`adjoint_fdtd3d.py` 33 处嵌套 for | 维护成本随规模上升，AI 改动风险增大 |
@@ -262,7 +262,7 @@
 |---|---|---|---|---|
 | **P0-1** | **量子侧 smoke 入 CI core**：评估 9 个量子 smoke 耗时，将可在 60s 内跑完的纳入 core；耗时长的拆出"快速子集"入 core | 双引擎回归对等 | 【AI】 | R1 |
 | **P0-2** | **S13 设计良率锚（DFY）**：工艺角分布→蒙特卡洛→规格容差内概率，与高斯 erfc 解析解交叉验证 | 补齐"对标 EDA yield"最大缺口，且是**可被外部验货的硬指标** | 【AI】（锚缺口分析已给方案） | R2/R3 |
-| **P0-3** | **ORACLE 一键可复现脚本**：`scripts/setup_oracle_env.sh` 一键装隔离 Meep + 自动设 `LDA_MEEP_PY`，并写 `docs/oracle_reproduce.md`（含预期输出） | 让"双 ground"卖点**可被外部现场验证** | 【AI】 | R2/R20 |
+| **P0-3** | ✅ **（本次会话已完成）ORACLE 一键可复现**：脚本+文档已写；`meep_oracle.py` B5/B7 真值实现完整；**离线 numpy 真值本机实测通过（B7=-10.083dB / B5=3.9dB）**；外部 Meep 真值+互证待 Linux 环境验证（本机 Windows 无 Meep，已实证） | 让"双 ground"卖点可被外部现场验证 | 【AI】 | R2/R20 |
 | **P0-4** | **差异化定价落地**：`config.prices` 按三档配置（基础 ¥599 / 标准 ¥1999 / 高价值 ¥4999），按货架复杂度分级 | 打破统一定价 | 【AI+杜】（分档标准杜先生定） | R10 |
 | **P0-0** | ✅ **（本次审计已完成）修复 CI 主干红**：`run_webui_api_smoke` 适配真实鉴权 + 新增「无凭据返回 200 即 FAIL」安全断言 | 主干恢复绿色，且安全断言更严 | 【AI】**已完成** | 第 2.0 节 |
 | **P0-5** | ✅ **（本次审计已完成）修 README 账本矛盾**（第 255 行 69→70） | 对外数字自洽 | 【AI】**已完成** | — |

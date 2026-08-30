@@ -27,7 +27,7 @@ pass/fail —— 是「为人结果负责」的质量门。
 
 > B1–B4、B8 为**严格物理定律锚**（麦克斯韦方程的必然，零依赖、确定性）。
 > B5/B7 已接入**场级 ORACLE**：默认走纯 numpy 离线求解（Apache-2.0，本环境
-> 即跑，几何相关——如 B7 默认几何 ≈ -20 dB，随波导宽度变化），配置
+> 即跑，几何相关——如 B7 默认几何实测 ≈ -10 dB（离线 2D-FDTD，可复现），随波导宽度变化），配置
 > `LDA_MEEP_PY` 后自动切换为 GPL **Meep 子进程**真场级真值（见 `ext_oracle/meep_oracle.py`）。
 > B6 为 3D 光栅耦合：已接入 `oracle_tidy3d.py` 作外部 ORACLE（仅当配置
 > `TIDY3D_API_KEY` 且环境可 import tidy3d 时真跑 3D 求解，GPL 绝不进核心）；

@@ -129,18 +129,29 @@ LDA 主进程  --(subprocess + JSON)-->  meep_oracle.py  --(import meep)-->  隔
 
 ---
 
-## 五、诚实边界
+## 五、诚实边界与实测状态（2026-08-30 更新）
 
-1. **完整安装流程未在本机实测**：撰写时本机无 conda/mamba/micromamba，
-   Docker 守护进程未运行，因此「创建环境 → 装 pymeep → 跑通 B7」这一完整链路
-   **尚未端到端验证过**。已验证的部分是：脚本语法（`bash -n` 通过）、
-   错误处理（指定无 meep 的解释器会明确报错并退出码 1，不会静默通过）。
-2. **B6 光栅耦合仍不可用**：`_sim_grating` 目前是 `return None` 占位，
-   预留给 Tidy3D（3D 求解，需 API key）。不属于本脚本解决范围。
-3. **Meep 版本差异**：不同 Meep 版本的场级结果可能有数值差异，
-   对照时应记录 Meep 版本号，判据建议用相对偏差而非绝对等值。
-4. **B5/B7 离线值属自证性质**：它们是 LDA 自研 numpy 求解器的输出。
-   只有引入 Meep 对照后才构成互证——这也是本脚本存在的全部意义。
+### 本机实测结论（Windows 开发机）
+- **离线 numpy 真值链路已本机验证通过**（用本地 CI venv + numpy 实跑 `oracle_field.resolve_field_oracle`）：
+  - B7 波导交叉串扰 = **-10.083406 dB**（`source=numpy-fdtd-offline`），与本文档第三节基线一致
+  - B5 Y 分支插损 = **3.9 dB**（`source=numpy-overlap-offline`）
+  - → **离线 ground 确认活着、数值可复现**，这是「双 ground」中自研侧的可演示部分。
+- **外部 Meep 真值 + 互证：本机无法验证**。已实证限制：
+  - `pip install meep-base` → `Could not find a version that satisfies the requirement (from versions: none)`（PyPI 无 Windows 兼容的 Meep 编译扩展 wheel）
+  - WSL 被本机安全策略禁用；Docker Desktop 引擎管道未运行（CLI 在但 daemon 不可达）；无 conda/mamba/micromamba
+  - → 本台 Windows 开发机物理上跑不了 Meep，**端到端 meep 互证需在 Linux/WSL/Docker 可用环境执行**。
+
+### P0-3 真实交付状态
+- ✅ 一键脚本 `scripts/setup_oracle_env.sh`（conda/mamba/micromamba/manual 探测 + 自测 + 写 `.oracle_env`）逻辑完整
+- ✅ `meep_oracle.py` 真值实现完整：B5/B7 的 Meep 2D-FDTD 求解已写好（非占位），B6 预留 Tidy3D
+- ✅ `oracle_field.py` 子进程集成契约经代码审查 + 离线降级实测正确
+- ✅ 离线 numpy 真值本机实测可复现（见上）
+- ⚠️ **外部 Meep 真值 + 互证**：待在 Linux/WSL/Docker 环境按计划执行（见第二节）。验证者无需改任何代码，跑通即接通。
+
+### 其余边界
+1. **B6 光栅耦合仍不可用**：`_sim_grating` 目前是 `return None` 占位，预留 Tidy3D（3D 求解，需 API key）。
+2. **Meep 版本差异**：不同 Meep 版本的场级结果可能有数值差异，对照时记录 Meep 版本号，判据用相对偏差而非绝对等值。
+3. **B5/B7 离线值属自研性质**：它们是 LDA 自研 numpy 求解器的输出；引入 Meep 对照后才构成「互证」——这也是本脚本存在的全部意义。
 
 ---
 

@@ -82,6 +82,44 @@ def main() -> int:
     print(f"目录已写: {out_md}")
     print(f"汇总: {n_ok}/{n_total} 货架通过结构可行检查")
 
+    # ⑥ 三档定价护栏（v0.9.1 · D2）：新增货架必须归档价档，且不得出现野价
+    try:
+        from lda_webui.shelf_pricing import (PRICE_TIERS, TIER_BASIC,
+                                             TIER_CONSULT, TIER_PREMIUM,
+                                             TIER_STANDARD, build_price_map)
+        pm = build_price_map()
+        tiered = set(TIER_BASIC) | set(TIER_STANDARD) | set(TIER_PREMIUM) | set(TIER_CONSULT)
+        check("定价覆盖：全部 58 货架均已归档价档（无漏定价）",
+              set(pm) == SHELF_IDS,
+              f"已定价={len(pm)} 货架={len(SHELF_IDS)} 差={sorted(SHELF_IDS ^ set(pm))[:5]}")
+        check("定价无孤儿 id（定价表不含不存在的货架）",
+              not (set(pm) - SHELF_IDS),
+              f"多余={sorted(set(pm) - SHELF_IDS)[:5]}")
+        allowed = set(PRICE_TIERS.values())
+        bad_price = {k: v for k, v in pm.items() if v not in allowed}
+        check("价格只能取三档（599 / 1999 / 4999）",
+              not bad_price, f"野价={list(bad_price.items())[:3]}")
+        check("档位分组无重叠（一个货架只归一档）",
+              len(tiered) == len(TIER_BASIC) + len(TIER_STANDARD)
+              + len(TIER_PREMIUM) + len(TIER_CONSULT),
+              f"并集={len(tiered)} 分项和={len(TIER_BASIC) + len(TIER_STANDARD) + len(TIER_PREMIUM) + len(TIER_CONSULT)}")
+        # 出口管制红线：量子咨询制货架不得进开放下载白名单
+        leaked = sorted(set(TIER_CONSULT) & set(OPEN_SHELVES))
+        check("出口管制红线：量子咨询制货架不在开放下载白名单",
+              not leaked, f"越界={leaked}")
+        # 定价生效性：store.price_of 走分档表（非 DEFAULT 兜底）
+        from lda_webui import store
+        p_basic = store.price_of(TIER_BASIC[0], None)
+        p_prem = store.price_of(TIER_PREMIUM[0], None)
+        check("定价生效：基础档 599 / 高端档 4999（经 store.price_of）",
+              p_basic == PRICE_TIERS["basic"] and p_prem == PRICE_TIERS["premium"],
+              f"{TIER_BASIC[0]}={p_basic} {TIER_PREMIUM[0]}={p_prem}")
+        p_aca = store.price_of(TIER_PREMIUM[0], "academic")
+        check("身份折扣叠加正确（学术 6 折 = 2999.40）",
+              abs(p_aca - PRICE_TIERS["premium"] * 0.6) < 0.01, f"{p_aca}")
+    except ImportError as e:  # 定价模块缺失 → 明确 FAIL（不允许静默跳过）
+        check("三档定价模块可导入", False, f"ImportError: {e}")
+
     if n_ok < n_total or _FAIL:
         print("FAIL: 存在未达标货架或护栏破")
         return 1

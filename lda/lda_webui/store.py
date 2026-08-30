@@ -411,11 +411,48 @@ def tier_discount(user_type: str | None = None) -> float:
     return TIER_DISCOUNT[user_type]
 
 
+_SHELF_PRICES_CACHE: dict | None = None
+
+
+def _shelf_prices() -> dict:
+    """代码内建三档定价表（懒加载 + 缓存）。
+
+    分档依据见 `lda_webui/shelf_pricing.py`：开源可替代性（gdsfactory 现成
+    标准件映射）× 技术复杂度（基元数/系统级）× 客户价值（市场规模）。
+    """
+    global _SHELF_PRICES_CACHE
+    if _SHELF_PRICES_CACHE is None:
+        try:
+            from .shelf_pricing import build_price_map
+            _SHELF_PRICES_CACHE = build_price_map()
+        except Exception:
+            _SHELF_PRICES_CACHE = {}
+    return _SHELF_PRICES_CACHE
+
+
+def base_price(shelf_id: str, data: dict | None = None) -> float:
+    """基准单价（未打折）。优先级：
+
+      ① 管理员配置 `config.prices[shelf_id]`（运营覆盖，最高优先）
+      ② 代码内建三档定价表 `shelf_pricing.build_price_map()`（¥599/1999/4999）
+      ③ `DEFAULT_PRICE_CNY` 兜底（新增货架尚未归档时）
+
+    ② 让定价开箱即用且开源可见（透明定价），① 保留运营调价空间。
+    """
+    d = data if data is not None else _load()
+    cfg = d["config"].get("prices", {}) or {}
+    if shelf_id in cfg:
+        try:
+            return float(cfg[shelf_id])
+        except (TypeError, ValueError):
+            pass
+    return float(_shelf_prices().get(shelf_id, DEFAULT_PRICE_CNY))
+
+
 def price_of(shelf_id: str, user_type: str | None = None) -> float:
-    """货架实付价：基准单价 × 身份折扣（可被 config.tiers 覆盖折扣）。"""
+    """货架实付价：基准单价 × 身份折扣（config.tiers 可覆盖折扣系数）。"""
     data = _load()
-    base = float(data["config"].get("prices", {}).get(shelf_id, DEFAULT_PRICE_CNY))
-    return round(base * tier_discount(user_type), 2)
+    return round(base_price(shelf_id, data) * tier_discount(user_type), 2)
 
 
 # --------------------------------------------------------------------------

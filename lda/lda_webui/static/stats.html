@@ -46,7 +46,7 @@
 <script>
 (function(){
   "use strict";
-  var TOK = localStorage.getItem("lda_admin_token") || "";
+  // P2-5：管理员令牌改由 HttpOnly Cookie 承载，前端不再持有；鉴权凭据随请求自动携带
   function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
   function fmt(n){ return (n==null?"0":n).toLocaleString("en-US"); }
   function card(n,label,cls){ return '<div class="card"><div class="n '+(cls||"")+'">'+esc(n)+'</div><div class="l">'+esc(label)+'</div></div>'; }
@@ -82,11 +82,11 @@
   function showErr(msg, link){
     document.getElementById("app").innerHTML='<div class="err">'+esc(msg)+(link?'<br><a href="'+link+'">前往管理后台登录</a>':'')+'</div>';
   }
-  if(!TOK){ showErr("未检测到管理员令牌，请先在管理后台登录。", "/admin.html"); return; }
-  fetch("/api/stats", { headers:{ Authorization:"Bearer "+TOK } })
+  // P2-5：不再用 JS 可读令牌判断登录态，直接凭 HttpOnly Cookie 请求 /api/stats
+  fetch("/api/stats", { headers:{ "Content-Type":"application/json" }, credentials:"include" })
     .then(function(r){ if(r.status===401) throw new Error("noauth"); return r.json(); })
     .then(function(d){ if(!d.ok){ showErr("无权限访问数据看板（需管理员）。", "/admin.html"); } else render(d); })
-    .catch(function(e){ showErr(e.message==="noauth"?"无权限访问数据看板（需管理员）。":"读取失败，请重试。", "/admin.html"); });
+    .catch(function(e){ showErr(e.message==="noauth"?"无权限访问数据看板（需管理员）。请先在管理后台登录。":"读取失败，请重试。", "/admin.html"); });
 })();
 </script>
 </body>

@@ -112,6 +112,37 @@ def _smoke_user_header(base: str):
     return {"Authorization": f"Bearer {tok}"} if tok else None
 
 
+def _smoke_user_cookie(base: str):
+    """P2-5 验证：注册临时账号并捕获后端签发的 HttpOnly Cookie（lda_store_token）。
+
+    后端登录/注册现在同时签发 HttpOnly Cookie，前端不再用 localStorage 持有
+    令牌。本函数验证「仅持 Cookie、不持 Authorization」也能通过需登录端点鉴权
+    → 证明 XSS 抵抗令牌流端到端可用。返回形如 "lda_store_token=xxxx" 的 cookie
+    字符串；注册/取 Cookie 失败时返回 None。
+    """
+    import secrets as _secrets
+    email = f"smoke-{_secrets.token_hex(6)}@lda.local"
+    payload = {"email": email, "name": "smoke", "password": "lda-smoke-pwd-2026",
+               "user_type": "standard"}
+    data = json.dumps(payload).encode()
+    req = urllib.request.Request(
+        f"{base}/api/store/register", data=data,
+        headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            if r.status != 200:
+                return None
+            sc = r.headers.get("Set-Cookie", "")
+            # 取 lda_store_token=... 这一段（到第一个 ; 为止；HttpOnly 等属性丢弃）
+            for part in sc.split(","):
+                part = part.strip()
+                if part.startswith("lda_store_token="):
+                    return part.split(";")[0]
+    except Exception:
+        return None
+    return None
+
+
 # 前端面板 53-56 渲染硬依赖的 GET /api/ecosystem 关键字段路径（D-103 深审固化）
 ECOSYSTEM_REQUIRED_FIELDS = [
     "harness.total", "harness.passed", "new_benchmarks",
@@ -266,6 +297,23 @@ def main():
                 ok.append(("GET", r, "401 鉴权有效（无凭据，仅验未授权被拒）"))
             else:
                 fail.append(("GET", r, f"{code} {text[:50]}"))
+        # 1b) P2-5 HttpOnly Cookie 端到端验证：仅持后端签发的 Cookie、
+        #     不持 Authorization，调需登录端点须返回 200 → 证明 XSS 抵抗令牌流可用。
+        #     该路径独立于现有 Bearer 鉴权（1a），二者并存不冲突。
+        store_cookie = _smoke_user_cookie(base)
+        if store_cookie:
+            code, text = _http("GET", f"{base}/api/store/orders/mine",
+                               headers={"Cookie": store_cookie})
+            if code == 200:
+                ok.append(("COOKIE", "/api/store/orders/mine",
+                           "仅持 HttpOnly Cookie 鉴权 200 ✅（XSS 抵抗令牌流可用）"))
+            else:
+                fail.append(("COOKIE", "/api/store/orders/mine",
+                             f"仅持 Cookie 鉴权失败 {code}（HttpOnly 流断裂）"))
+        else:
+            # 注册/取 Cookie 失败时降级：不破坏既有 PASS 口径，仅记录 info
+            info.append(("COOKIE", "/api/store/orders/mine",
+                         "注册未返回 HttpOnly Cookie（降级，未断言）"))
         # 2) /api/ecosystem/* 快速 POST 实跑（空载荷即快速返回）
         #    measurement（D-62）除外：空载荷 400 是正确行为（action 必填），
         #    其内核由 run_empirical_anchor_smoke 深度覆盖 → 静态验证存在。

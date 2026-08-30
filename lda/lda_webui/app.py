@@ -217,10 +217,22 @@ def _admin_token() -> str:
     return tok
 
 
-def _check_admin(headers: dict) -> bool:
+def _check_admin(headers) -> bool:
+    """管理员鉴权：优先 Authorization: Bearer（API 客户端/过渡），回退 HttpOnly Cookie（P2-5，XSS 不可读）。"""
+    if not hasattr(headers, "get"):
+        return False
     h = headers.get("Authorization", "")
     if h.startswith("Bearer "):
         return h[len("Bearer "):].strip() == _admin_token()
+    # HttpOnly Cookie：lda_admin_token（值与 LDA_ADMIN_TOKEN 一致，由 /api/admin/login 下发）
+    cookie = headers.get("Cookie", "")
+    if cookie:
+        for pair in cookie.split(";"):
+            pair = pair.strip()
+            if pair.startswith("lda_admin_token="):
+                val = pair[len("lda_admin_token="):]
+                if val and val == _admin_token():
+                    return True
     return False
 
 
@@ -254,6 +266,28 @@ def _bearer(headers) -> str:
     if h.startswith("Bearer "):
         return h[len("Bearer "):].strip()
     return ""
+
+
+def _token_from_request(headers) -> str:
+    """P2-5：会话令牌解析——优先 HttpOnly Cookie（lda_store_token，XSS 不可读），
+    其次管理 Cookie（lda_admin_token），最后回退 Authorization: Bearer（API 客户端/过渡）。
+    统一解析保证 store 用户态与管理态都能从 Cookie 鉴权，前端不再触碰令牌字符串。"""
+    if hasattr(headers, "get"):
+        cookie = headers.get("Cookie", "")
+        if cookie:
+            for pair in cookie.split(";"):
+                pair = pair.strip()
+                if pair.startswith("lda_store_token="):
+                    val = pair[len("lda_store_token="):]
+                    if val:
+                        return val
+            for pair in cookie.split(";"):
+                pair = pair.strip()
+                if pair.startswith("lda_admin_token="):
+                    val = pair[len("lda_admin_token="):]
+                    if val:
+                        return val
+    return _bearer(headers)
 
 
 def _client_ip(handler) -> str:
@@ -2934,7 +2968,40 @@ def _adv_bank_total():
 # HTTP 处理
 # --------------------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
-    def _send(self, code, obj=None, body=None, ctype="application/json", headers=None, nocache=False):
+    # ---- P2-5 HttpOnly Cookie 辅助：会话令牌改由 HttpOnly Cookie 承载，不再落 JS 可达的 localStorage ----
+    def _cookie_is_secure(self) -> bool:
+        # 仅当经 HTTPS 反代（nginx 注入 X-Forwarded-Proto: https）时才置 Secure，
+        # 否则本机 http / 冒烟环境无法种下 cookie（Secure 在 http 源下浏览器拒绝存储）。
+        fwd = ""
+        try:
+            fwd = self.headers.get("X-Forwarded-Proto", "") if hasattr(self.headers, "get") else ""
+        except Exception:  # noqa: BLE001
+            fwd = ""
+        return fwd.lower() == "https"
+
+    def _set_cookie(self, name, value, *, max_age=None, samesite="Strict", path="/"):
+        parts = ["%s=%s" % (name, value)]
+        if max_age is not None:
+            parts.append("Max-Age=%d" % int(max_age))
+        parts.append("Path=%s" % path)
+        parts.append("HttpOnly")
+        if self._cookie_is_secure():
+            parts.append("Secure")
+        parts.append("SameSite=%s" % samesite)
+        if not hasattr(self, "_pending_cookies"):
+            self._pending_cookies = []
+        self._pending_cookies.append("; ".join(parts))
+
+    def _clear_cookie(self, name, *, samesite="Strict", path="/"):
+        parts = ["%s=" % name, "Max-Age=0", "Path=%s" % path, "HttpOnly"]
+        if self._cookie_is_secure():
+            parts.append("Secure")
+        parts.append("SameSite=%s" % samesite)
+        if not hasattr(self, "_pending_cookies"):
+            self._pending_cookies = []
+        self._pending_cookies.append("; ".join(parts))
+
+    def _send(self, code, obj=None, body=None, ctype="application/json", headers=None, nocache=False, set_cookies=None):
         if body is None:
             body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
@@ -2963,6 +3030,9 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
             self.send_header("Pragma", "no-cache")
             self.send_header("Expires", "0")
+        if set_cookies:
+            for _c in set_cookies:
+                self.send_header("Set-Cookie", _c)
         if headers:
             for _k, _v in headers.items():
                 self.send_header(_k, _v)
@@ -3003,7 +3073,8 @@ class Handler(BaseHTTPRequestHandler):
         if res is None:
             return
         code, obj = res
-        self._send(code, obj)
+        cookies = getattr(self, "_pending_cookies", None)
+        self._send(code, obj, set_cookies=cookies)
     def _handle_v1(self):
         """委托 P2.3 v1 REST 处理（认证 + 租户隔离 + 插件 seam）。"""
         from urllib.parse import urlparse, parse_qs

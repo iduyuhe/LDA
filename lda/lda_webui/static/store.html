@@ -248,7 +248,7 @@
 
 <script>
 var $ = function(id){ if(typeof id==='string' && id.charAt(0)==='#'){id=id.slice(1);} return document.getElementById(id); }
-var store_token = localStorage.getItem("lda_store_token") || "";
+var store_token = "";  // P2-5：会话令牌改由 HttpOnly Cookie 承载，前端不再持有令牌字符串
 var authMode = "login";          // login | register
 var regType = "standard";        // standard | academic | institution
 var buyType = "personal";
@@ -274,28 +274,24 @@ $("#buyShelf");
 
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 
-function authHeaders(){ return {"Authorization":"Bearer "+store_token,"Content-Type":"application/json"} }
+function authHeaders(){ return {"Content-Type":"application/json"} }  // P2-5：令牌走 HttpOnly Cookie，随请求自动携带
 
 function refreshAuth(){
-  if(store_token){
-    fetch('/api/store/me', {headers: authHeaders()}).then(function(r){return r.json()}).then(function(d){
-      if(d.user){
-        $("#memberPanel").classList.remove('hide');
-        var tier = TIER_LABELS[d.user.user_type] || "标准个人";
-        var org = d.user.organization ? (' · '+esc(d.user.organization)) : '';
-        $("#memberInfo").innerHTML = '邮箱 '+esc(d.user.email)+' · 身份：'+tier+org+' · 注册于 '+(d.user.created_at||'').slice(0,10);
-        loadOrders();
-        loadShelves();   // 登录态变化后重拉货架价（身份价）
-      }else{
-        store_token=""; localStorage.removeItem("lda_store_token");
-        $("#memberPanel").classList.add('hide');
-        $("#orderList").innerHTML='<span class="mut">登录后可查看订单。</span>';
-        loadShelves();   // 退出/失效后同样回到匿名价
-      }
-    });
-  }else{
-    $("#memberPanel").classList.add('hide');
-  }
+  // P2-5：不再依赖 JS 可读的令牌；直接凭 HttpOnly Cookie 探活 /api/store/me
+  fetch('/api/store/me', {headers: authHeaders(), credentials: 'include'}).then(function(r){return r.json()}).then(function(d){
+    if(d.user){
+      $("#memberPanel").classList.remove('hide');
+      var tier = TIER_LABELS[d.user.user_type] || "标准个人";
+      var org = d.user.organization ? (' · '+esc(d.user.organization)) : '';
+      $("#memberInfo").innerHTML = '邮箱 '+esc(d.user.email)+' · 身份：'+tier+org+' · 注册于 '+(d.user.created_at||'').slice(0,10);
+      loadOrders();
+      loadShelves();   // 登录态变化后重拉货架价（身份价）
+    }else{
+      $("#memberPanel").classList.add('hide');
+      $("#orderList").innerHTML='<span class="mut">登录后可查看订单。</span>';
+      loadShelves();   // 退出/失效后同样回到匿名价
+    }
+  }).catch(function(){ $("#memberPanel").classList.add('hide'); });
 }
 
 function showLogin(){
@@ -358,8 +354,7 @@ function submitAuth(){
         $("#authMsg").innerHTML='<span class="err">'+esc(d.error||'失败')+'</span>'+tip;
         return;
       }
-      store_token=d.token; localStorage.setItem("lda_store_token",store_token);
-      closeAuth(); refreshAuth();
+      closeAuth(); refreshAuth();  // P2-5：后端已下发 HttpOnly Cookie，前端无需持有令牌
       // 管理员代重置后的临时密码：强制引导改密，避免临时密码长期有效
       if(d.must_change_password){
         alert("你当前使用的是管理员发放的临时密码。\n为保障账户安全，请先修改密码。");
@@ -367,7 +362,15 @@ function submitAuth(){
       }
     }).catch(function(e){ $("#authSubmit").disabled=false; $("#authMsg").innerHTML='<span class="err">网络异常，请重试</span>'; });
 }
-function logout(){ store_token=""; localStorage.removeItem("lda_store_token"); refreshAuth(); }
+function logout(){
+  // P2-5：清除服务端 HttpOnly Cookie，再重置前端匿名态
+  fetch('/api/store/logout', {method:'POST', credentials:'include'}).catch(function(){}).finally(function(){
+    store_token="";
+    $("#memberPanel").classList.add('hide');
+    $("#orderList").innerHTML='<span class="mut">登录后可查看订单。</span>';
+    refreshAuth();  // 重置为匿名态（货架回到匿名价）
+  });
+}
 
 function loadShelves(){
   fetch('/api/shelf').then(function(r){return r.json()}).then(function(d){

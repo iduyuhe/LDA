@@ -178,11 +178,31 @@ const DIR_LABELS2 = {
 
 var currentTab = "orders";
 
-function loadTok(){ return localStorage.getItem("lda_admin_token") || ""; }
-function saveTok(){ const v=$("token").value.trim(); if(!v){$("msg").innerHTML='<div class="err">令牌不能为空</div>';return;} localStorage.setItem("lda_admin_token",v); $("msg").innerHTML='<div class="ok">令牌已保存（仅存于本浏览器）</div>'; refresh(); }
-function logout(){ localStorage.removeItem("lda_admin_token"); $("token").value=""; $("msg").innerHTML='<div class="ok">已清除</div>'; }
+// P2-5：管理员令牌改为 HttpOnly Cookie 下发，前端不再持有令牌明文。
+// 此处仅用「非机密」的登录态标记（不含令牌本身），XSS 窃取该标记无任何收益。
+function loadTok(){ return localStorage.getItem("lda_admin_logged_in") || ""; }
+function saveTok(){
+  const v=$("token").value.trim();
+  if(!v){ $("msg").innerHTML='<div class="err">令牌不能为空</div>'; return; }
+  // 令牌仅经 HTTPS 提交给后端，由后端写入 HttpOnly Cookie；前端不保存令牌明文
+  fetch("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"include",body:JSON.stringify({token:v})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){ localStorage.setItem("lda_admin_logged_in","1"); $("msg").innerHTML='<div class="ok">已登录（令牌仅存于 HttpOnly Cookie）</div>'; refresh(); }
+      else { $("msg").innerHTML='<div class="err">'+(d.error||"登录失败")+'</div>'; }
+    })
+    .catch(function(){ $("msg").innerHTML='<div class="err">网络异常，请重试</div>'; });
+}
+function logout(){
+  // P2-5：清除服务端 HttpOnly Cookie
+  fetch("/api/admin/logout",{method:"POST",credentials:"include"}).catch(function(){}).finally(function(){
+    localStorage.removeItem("lda_admin_logged_in");
+    $("token").value="";
+    $("msg").innerHTML='<div class="ok">已清除登录态</div>';
+  });
+}
 
-function authHeaders(){ return {"Authorization":"Bearer "+loadTok(),"Content-Type":"application/json"}; }
+function authHeaders(){ return {"Content-Type":"application/json"}; }  // P2-5：凭据走 HttpOnly Cookie，随请求自动携带
 function switchTab(t){ currentTab=t;
   $("tab-orders").classList.toggle('on',t=="orders");
   $("tab-purchase").classList.toggle('on',t=="purchase");
@@ -208,7 +228,7 @@ async function refresh(){
   $("status").textContent="加载中…";
   try{
     const r=await fetch("/api/admin/orders",{headers:authHeaders()});
-    if(r.status===401){ $("tbody").innerHTML='<tr><td colspan="9" class="empty">令牌无效或无权限</td></tr>'; $("status").textContent=""; return; }
+    if(r.status===401){ localStorage.removeItem("lda_admin_logged_in"); $("tbody").innerHTML='<tr><td colspan="9" class="empty">登录态已失效，请重新输入管理员令牌</td></tr>'; $("status").textContent=""; return; }
     const j=await r.json();
     const rows=j.orders||[];
     if(!rows.length){ $("tbody").innerHTML='<tr><td colspan="9" class="empty">暂无订单</td></tr>'; $("status").textContent="共 0 条"; return; }
@@ -583,7 +603,7 @@ async function saveConfig(){
 $("saveTok").onclick=saveTok;
 $("refresh").onclick=refresh;
 $("logout").onclick=logout;
-$("token").value=loadTok();
+// P2-5：HttpOnly Cookie 不可被 JS 读取，故无法回填令牌输入框；登录态以非机密标记驱动
 if(loadTok()) refresh();
 </script>
 <script src="/nav.js"></script>

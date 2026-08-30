@@ -151,8 +151,8 @@
 <script>
 function $(s){ return document.querySelector(s) }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]}) }
-function token(){ return localStorage.getItem("lda_store_token")||"" }
-function authHeaders(){ return {"Authorization":"Bearer "+token(),"Content-Type":"application/json"} }
+function token(){ return "" }  // P2-5：令牌走 HttpOnly Cookie，前端不再持有令牌字符串
+function authHeaders(){ return {"Content-Type":"application/json"} }  // 凭据随 HttpOnly Cookie 自动携带
 
 var TIER_LABELS={standard:"标准个人",academic:"学术个人",institution:"机构席位"};
 
@@ -163,13 +163,15 @@ function switchTab(t){
   });
 }
 function doLogout(){
-  localStorage.removeItem("lda_store_token");
-  location.href="/store.html";
+  // P2-5：清除服务端 HttpOnly Cookie 后跳回超市
+  fetch("/api/store/logout",{method:"POST",credentials:"include"}).catch(function(){}).finally(function(){
+    location.href="/store.html";
+  });
 }
 
 function boot(){
-  if(!token()){ $("#gate").classList.remove("hide"); return; }
-  fetch("/api/store/me/summary",{headers:authHeaders()})
+  // P2-5：不再用 JS 可读令牌判断登录态，直接凭 HttpOnly Cookie 探活
+  fetch("/api/store/me/summary",{headers:authHeaders(),credentials:"include"})
     .then(function(r){ return r.json() })
     .then(function(d){
       if(!d.ok || !d.user){ $("#gate").classList.remove("hide"); return; }

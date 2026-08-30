@@ -56,7 +56,7 @@
       link("/store.html", "创新超市", "store") +
       '<a id="lda-nav-mine" href="/mine.html" style="display:none;text-decoration:none;font-size:14px">我的</a>' +
       link("/admin.html", "管理后台", "admin") +
-      (localStorage.getItem("lda_admin_token") ? link("/stats.html", "数据看板", "stats") : "") +
+      (localStorage.getItem("lda_admin_logged_in") ? link("/stats.html", "数据看板", "stats") : "") +
       "</div>" +
       '<div id="lda-nav-auth" style="display:flex;gap:8px;align-items:center"></div>';
     document.body.insertBefore(nav, document.body.firstChild);
@@ -76,12 +76,8 @@
   function renderAuth() {
     var box = document.getElementById("lda-nav-auth");
     if (!box) return;
-    var token = localStorage.getItem(STORE_TOKEN_KEY) || "";
-    if (!token) {
-      box.innerHTML = authButtons();
-      return;
-    }
-    fetch("/api/store/me", { headers: { Authorization: "Bearer " + token } })
+    // P2-5：不再用 JS 可读令牌判断登录态；直接凭 HttpOnly Cookie 探活 /api/store/me
+    fetch("/api/store/me", { headers: { "Content-Type": "application/json" }, credentials: "include" })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (d.user) {
@@ -101,7 +97,6 @@
             '<a href="/store.html#orders" style="color:var(--accent);text-decoration:none;font-size:13px;margin-right:8px">我的订单</a>' +
             '<button onclick="navLogout()" style="background:transparent;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px">退出</button>';
         } else {
-          localStorage.removeItem(STORE_TOKEN_KEY);
           box.innerHTML = authButtons();
         }
       })
@@ -109,8 +104,10 @@
   }
 
   window.navLogout = function () {
-    localStorage.removeItem(STORE_TOKEN_KEY);
-    location.reload();
+    // P2-5：清除服务端 HttpOnly Cookie
+    fetch("/api/store/logout", { method: "POST", credentials: "include" })
+      .catch(function () {})
+      .finally(function () { location.reload(); });
   };
 
   // —— 全局登录/注册弹窗（非 store 页使用；store 页复用其自身 showLogin/showRegister）——
@@ -233,6 +230,7 @@
     fetch("/api/store/" + (isReg ? "register" : "login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(body)
     })
       .then(function (r) { return r.json(); })
@@ -243,8 +241,7 @@
           navMsg(esc(d.error || "失败") + tip);
           return;
         }
-        localStorage.setItem(STORE_TOKEN_KEY, d.token);
-        navCloseAuth();
+        navCloseAuth();   // P2-5：后端已下发 HttpOnly Cookie，前端无需持有令牌
         renderAuth();
         if (d.must_change_password) {
           alert("你当前使用的是管理员发放的临时密码。\n为保障账户安全，请先修改密码。");

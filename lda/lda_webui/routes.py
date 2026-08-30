@@ -174,7 +174,7 @@ def h_benchmark_crosscheck(h, p, q, path):
 # ============================ GET · 货架 / 商业 ============================
 def h_shelf(h, p, q, path):
     store = _app._get_store()
-    u = store.user_by_token(_app._bearer(h.headers))
+    u = store.user_by_token(_app._token_from_request(h.headers))
     return (200, _app.shelf_status(u.get("user_type") if u else None))
 
 
@@ -245,45 +245,45 @@ def h_store_config(h, p, q, path):
 
 def h_store_orders_mine(h, p, q, path):
     store = _app._get_store()
-    obj = store.list_orders(_app._bearer(h.headers), "mine")
+    obj = store.list_orders(_app._token_from_request(h.headers), "mine")
     return (_ok_code(obj), obj)
 
 
 def h_store_me_get(h, p, q, path):
     store = _app._get_store()
-    u = store.user_by_token(_app._bearer(h.headers))
+    u = store.user_by_token(_app._token_from_request(h.headers))
     obj = {"ok": True, "user": store._public_user(u) if u else None}
     return (_ok_code(obj), obj)
 
 
 def h_store_me_summary(h, p, q, path):
     store = _app._get_store()
-    obj = store.my_summary(_app._bearer(h.headers))
+    obj = store.my_summary(_app._token_from_request(h.headers))
     return (_ok_code(obj), obj)
 
 
 def h_store_me_licenses(h, p, q, path):
     store = _app._get_store()
-    obj = store.my_licenses(_app._bearer(h.headers))
+    obj = store.my_licenses(_app._token_from_request(h.headers))
     return (_ok_code(obj), obj)
 
 
 def h_admin_orders(h, p, q, path):
     store = _app._get_store()
-    obj = store.list_orders(_app._bearer(h.headers), "all")
+    obj = store.list_orders(_app._token_from_request(h.headers), "all")
     return (_ok_code(obj), obj)
 
 
 def h_admin_users(h, p, q, path):
     store = _app._get_store()
-    obj = store.admin_list_users(_app._bearer(h.headers))
+    obj = store.admin_list_users(_app._token_from_request(h.headers))
     return (_ok_code(obj), obj)
 
 
 def h_stats(h, p, q, path):
     """管理后台数据看板（admin 专属）。真实/测试账号分离计数。"""
     store = _app._get_store()
-    obj = store.stats_summary(_app._bearer(h.headers))
+    obj = store.stats_summary(_app._token_from_request(h.headers))
     return (_ok_code(obj), obj)
 
 
@@ -408,7 +408,7 @@ def h_store_order_download(h, p, q, path):
     store = _app._get_store()
     parts = path.split("/")
     oid = parts[4]
-    r = store.order_download(oid, _app._bearer(h.headers))
+    r = store.order_download(oid, _app._token_from_request(h.headers))
     if not r.get("ok"):
         h._send(403 if r.get("code") == 401 else 400, r)
         return None
@@ -436,7 +436,7 @@ def h_store_order_get(h, p, q, path):
 
 def h_admin_config_get(h, p, q, path):
     store = _app._get_store()
-    if not store.is_admin(_app._bearer(h.headers)):
+    if not store.is_admin(_app._token_from_request(h.headers)):
         return (401, {"error": "unauthorized"})
     return (200, {"config": store.get_config()})
 
@@ -444,7 +444,7 @@ def h_admin_config_get(h, p, q, path):
 # ============================ GET · 会员资料 PATCH ============================
 def h_store_me_patch(h, p, q, path):
     store = _app._get_store()
-    obj = store.update_profile(_app._bearer(h.headers),
+    obj = store.update_profile(_app._token_from_request(h.headers),
                                name=p.get("name"), phone=p.get("phone"),
                                organization=p.get("organization"),
                                user_type=p.get("user_type"))
@@ -768,6 +768,10 @@ def h_store_register(h, p, q, path):
                        p.get("password"), p.get("phone"),
                        p.get("user_type"), p.get("organization"),
                        client_ip=_app._client_ip(h))
+    if r.get("ok") and r.get("token"):
+        # P2-5：会话令牌下发 HttpOnly Cookie（XSS 不可读），前端不再存 localStorage
+        h._set_cookie("lda_store_token", r["token"],
+                      max_age=store.TOKEN_TTL_DAYS * 86400)
     return (200, r)
 
 
@@ -775,40 +779,67 @@ def h_store_login(h, p, q, path):
     store = _app._get_store()
     r = store.login(p.get("email"), p.get("password"),
                     client_ip=_app._client_ip(h))
+    if r.get("ok") and r.get("token"):
+        h._set_cookie("lda_store_token", r["token"],
+                      max_age=store.TOKEN_TTL_DAYS * 86400)
     return (200, r)
 
 
 def h_admin_reset_pwd(h, p, q, path):
     store = _app._get_store()
     obj = store.admin_reset_password(p.get("email") or p.get("user_id"),
-                                     _app._bearer(h.headers),
+                                     _app._token_from_request(h.headers),
                                      p.get("temp_password", ""))
     return (_ok_code(obj), obj)
 
 
 def h_admin_unlock(h, p, q, path):
     store = _app._get_store()
-    obj = store.admin_unlock_login(_app._bearer(h.headers))
+    obj = store.admin_unlock_login(_app._token_from_request(h.headers))
     return (_ok_code(obj), obj)
 
 
 def h_store_password(h, p, q, path):
     store = _app._get_store()
-    r = store.change_password(_app._bearer(h.headers),
+    r = store.change_password(_app._token_from_request(h.headers),
                               p.get("old_password", ""),
                               p.get("new_password", ""))
+    if r.get("ok") and r.get("token"):
+        # P2-5：改密后刷新会话 Cookie（change_password 返回新令牌）
+        h._set_cookie("lda_store_token", r["token"],
+                      max_age=store.TOKEN_TTL_DAYS * 86400)
     return (r.get("code", 200) if isinstance(r, dict) else 200, r)
+
+
+def h_store_logout(h, p, q, path):
+    # P2-5：清除 HttpOnly 会话 Cookie（Max-Age=0）
+    h._clear_cookie("lda_store_token")
+    return (200, {"ok": True})
+
+
+def h_admin_login(h, p, q, path):
+    """P2-5：管理员令牌改为 HttpOnly Cookie 下发，不再存 localStorage。"""
+    tok = (p.get("token") or "").strip()
+    if tok and tok == _app._admin_token():
+        h._set_cookie("lda_admin_token", tok, max_age=86400)
+        return (200, {"ok": True})
+    return (401, {"ok": False, "error": "管理员令牌不正确"})
+
+
+def h_admin_logout(h, p, q, path):
+    h._clear_cookie("lda_admin_token")
+    return (200, {"ok": True})
 
 
 def h_store_order_create(h, p, q, path):
     store = _app._get_store()
-    r = store.create_order(_app._bearer(h.headers), p)
+    r = store.create_order(_app._token_from_request(h.headers), p)
     return (r.get("code", 200) if isinstance(r, dict) else 200, r)
 
 
 def h_admin_config_set(h, p, q, path):
     store = _app._get_store()
-    r = store.set_config(p, _app._bearer(h.headers))
+    r = store.set_config(p, _app._token_from_request(h.headers))
     return (r.get("code", 200) if isinstance(r, dict) else 200, r)
 
 
@@ -832,13 +863,13 @@ def h_store_order(h, p, q, path):
     parts = path.split("/")
     if path.endswith("/accept_delivery") and path.count("/") == 5:
         oid = parts[4]
-        r = store.custom_accept_delivery(oid, _app._bearer(h.headers))
+        r = store.custom_accept_delivery(oid, _app._token_from_request(h.headers))
         return (_ok_code(r), r)
     if path.count("/") == 5:
         oid = parts[4]
         sub = parts[5] if len(parts) > 5 else ""
         if sub == "download":
-            r = store.order_download(oid, _app._bearer(h.headers))
+            r = store.order_download(oid, _app._token_from_request(h.headers))
             if not r.get("ok"):
                 h._send(403 if r.get("code") == 401 else 400, r)
                 return None
@@ -852,7 +883,7 @@ def h_store_order(h, p, q, path):
                               'attachment; filename="%s_design_ready.zip"' % r["shelf_id"]})
             return None
         if sub == "proof":
-            r = store.submit_proof(oid, _app._bearer(h.headers),
+            r = store.submit_proof(oid, _app._token_from_request(h.headers),
                                    p.get("proof", ""))
             return (_ok_code(r), r)
         h._send(404, {"error": "not found"})
@@ -866,7 +897,7 @@ def h_admin_order(h, p, q, path):
     parts = path.split("/")
     oid = parts[4]
     sub = parts[5]
-    tok = _app._bearer(h.headers)
+    tok = _app._token_from_request(h.headers)
     if sub == "approve":
         r = store.admin_approve(oid, tok, p.get("deliverable_url", ""))
     elif sub == "reject":
@@ -881,7 +912,7 @@ def h_admin_custom(h, p, q, path):
     parts = path.split("/")
     oid = parts[4]
     sub = parts[5]
-    tok = _app._bearer(h.headers)
+    tok = _app._token_from_request(h.headers)
     if sub == "accept":
         r = store.custom_accept(oid, tok,
                                 dev_note=p.get("dev_note", ""),
@@ -1019,9 +1050,12 @@ POST_ROUTES = {
     "/api/ecosystem/measurement": h_eco_measurement,
     "/api/store/register": h_store_register,
     "/api/store/login": h_store_login,
+    "/api/store/logout": h_store_logout,
+    "/api/store/password": h_store_password,
+    "/api/admin/login": h_admin_login,
+    "/api/admin/logout": h_admin_logout,
     "/api/admin/user/reset_password": h_admin_reset_pwd,
     "/api/admin/unlock_login": h_admin_unlock,
-    "/api/store/password": h_store_password,
     "/api/store/order": h_store_order_create,
     "/api/admin/config": h_admin_config_set,
 }

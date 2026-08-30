@@ -29,12 +29,28 @@ def _ctx() -> ssl.SSLContext:
 
 
 def _password() -> str:
+    # 1) 优先环境变量（生产 systemd drop-in 注入）
     pw = os.environ.get("LDA_STORE_EMAIL_PASS")
-    if not pw:
-        raise RuntimeError(
-            "未设置环境变量 LDA_STORE_EMAIL_PASS（duyuhe@shdute.cn 客户端专用密码）"
-        )
-    return pw
+    if pw:
+        return pw
+    # 2) 回退：同目录 .env（gitignored，明文不进仓库；仅本地代发用）
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    try:
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if line.startswith("LDA_STORE_EMAIL_PASS="):
+                    val = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    if val:
+                        return val
+    except FileNotFoundError:
+        pass
+    raise RuntimeError(
+        "未找到 duyuhe@shdute.cn 客户端专用密码："
+        "请设置环境变量 LDA_STORE_EMAIL_PASS，或在 lda/lda_webui/.env 写入该变量"
+    )
 
 
 def send_download_code(recipient: str, item_name: str, code: str,

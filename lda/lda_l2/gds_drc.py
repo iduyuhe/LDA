@@ -116,7 +116,8 @@ def check_geometry(structures: Dict[str, List[Dict]],
 
     # 最小间距（仅相邻 bbox 重叠者计算，近似）
     # v0.8.41：O(n²) 双重循环 → 均匀网格候选（bbox 重叠 ⟺ 至少共享一格，
-    # 精确等价——与 lvs._cross_pair_candidates 同法；仅候选对走精确段距）。
+    # 精确等价——与 lvs._collect_cross_shorts 同法（线段网格超集，零语义变化）；
+    # 仅候选对走精确段距）。
     spacing_checked = 0
     spacing_min = None
     if len(all_polys) > 1:

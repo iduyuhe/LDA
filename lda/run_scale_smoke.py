@@ -43,13 +43,13 @@ def check(name: str, cond: bool, detail: str = "") -> None:
 def main() -> int:
     print(f"规模扩展 smoke（S11 · n={DEFAULT_N_DEVICES}）")
 
-    # ① 4k 正例：全链路 ACCEPT
+    # ① 128k 正例：全链路 ACCEPT（默认 DEFAULT_N_DEVICES=128000）
     r = run_scale_pipeline(n_devices=DEFAULT_N_DEVICES, case="consistent")
-    check("4k 正例：全链路 ACCEPT（零违规）",
+    check("128k 正例：全链路 ACCEPT（零违规）",
           r["verdict"] == "ACCEPT" and r["n_violations"] == 0,
           f"{r['verdict']} viol={r['n_violations']}")
     m = r["match"]
-    check("4k 正例：器件 4000/4000 · 网络 3999/3999 全匹配",
+    check(f"128k 正例：器件 {DEFAULT_N_DEVICES}/{DEFAULT_N_DEVICES} · 网络 {DEFAULT_N_DEVICES-1}/{DEFAULT_N_DEVICES-1} 全匹配",
           m["n_devices_match"] == DEFAULT_N_DEVICES
           and m["n_nets_match"] == m["n_nets_total"] == DEFAULT_N_DEVICES - 1,
           f"dev={m['n_devices_match']} net={m['n_nets_match']}/{m['n_nets_total']}")
@@ -70,24 +70,24 @@ def main() -> int:
           r3["verdict"] == "REJECT" and "misconnect" in r3["violations"],
           f"kinds={sorted(r3['violations'].keys())}")
 
-    # ④ 性能预算（死标量：4k 全链路 ≤ 10s）
-    check(f"性能预算：4k 全链路 ≤ {BUDGET_SEC}s",
+    # ④ 性能预算（死标量：128k 全链路 ≤ 30s）
+    check(f"性能预算：128k 全链路 ≤ {BUDGET_SEC}s",
           r["within_budget"] and r["time_total_s"] <= BUDGET_SEC,
           f"{r['time_total_s']}s（构建 {r['time_build_s']}s + LVS {r['time_lvs_s']}s）")
-    check("性能预算：LVS 4k ≤ 3s（网格索引优化）",
-          r["time_lvs_s"] <= 3.0, f"{r['time_lvs_s']}s")
+    check("性能预算：LVS 128k ≤ 15s（线段网格 O(n) 治理）",
+          r["time_lvs_s"] <= 15.0, f"{r['time_lvs_s']}s")
 
-    # ④b v0.8.39 规模纵深：8k 全链近线性（LVS O(n²)→网格后斜率 <3×/翻倍）
-    #    证明 LVS 不再卡规模；8k 在预算内（旧实现 ~60s 超预算，新 0.15s）
-    r8k = run_scale_pipeline(n_devices=8000, case="consistent")
-    check("8k 规模纵深：全链 ACCEPT 且在 10s 预算内",
-          r8k["verdict"] == "ACCEPT" and r8k["time_total_s"] <= BUDGET_SEC,
-          f"{r8k['verdict']} {r8k['time_total_s']}s")
-    check("8k 规模纵深：LVS 近线性（8k ≤ 2s，旧实现 ~60s）",
-          r8k["time_lvs_s"] <= 2.0, f"LVS {r8k['time_lvs_s']}s")
-    check("8k 规模纵深：缩放斜率近线性（8k/4k ≤ 6×，理想 2×）",
-          r8k["time_total_s"] <= 6.0 * r["time_total_s"],
-          f"{r8k['time_total_s']:.2f}s vs 4k {r['time_total_s']:.2f}s")
+    # ④b v0.8.45 规模纵深：256k 全链近线性（LVS O(n²) 治理后斜率 <3×/翻倍）
+    #    证明 10万+ 之上仍有充裕余量；256k 在 30s 预算内（治理前 128k 已 12.5s 且爆炸）
+    r256k = run_scale_pipeline(n_devices=256000, case="consistent")
+    check("256k 规模纵深：全链 ACCEPT 且在 30s 预算内",
+          r256k["verdict"] == "ACCEPT" and r256k["time_total_s"] <= BUDGET_SEC,
+          f"{r256k['verdict']} {r256k['time_total_s']}s")
+    check("256k 规模纵深：LVS 近线性（256k ≤ 20s，治理前 128k 已 9.1s 且 O(n²)）",
+          r256k["time_lvs_s"] <= 20.0, f"LVS {r256k['time_lvs_s']}s")
+    check("256k 规模纵深：缩放斜率近线性（256k/128k ≤ 6×，理想 2×）",
+          r256k["time_total_s"] <= 6.0 * r["time_total_s"],
+          f"{r256k['time_total_s']:.2f}s vs 128k {r['time_total_s']:.2f}s")
 
     # ⑤ 多层协同：跨行跳线走 M2 层
     from lda_harness.scale_anchor import build_chain_case

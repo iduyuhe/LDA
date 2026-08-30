@@ -1,8 +1,13 @@
-"""LDA S11 锚 · 规模扩展锚（v0.8.26 · 版图差距 #7 收官；v0.8.44 默认 4k）。
+"""LDA S11 锚 · 规模扩展锚（v0.8.26 · 版图差距 #7 收官；v0.8.45 默认 128k）。
 
-S11 是**规模锚**：验证 LDA 全链路（构建→放置→布线→LVS 签核）在**4k 器件级**
-（v0.8.39-41 近线性化后，默认 1000→4000；8k 级 smoke 纵深守护）设计下的
-正确性与可扩展性——确定性、可复现、死标量判决（LLM 不进路径）。
+S11 是**规模锚**：验证 LDA 全链路（构建→放置→布线→LVS 签核）在**128k 器件级
+（10万+）**设计下的正确性与可扩展性——确定性、可复现、死标量判决（LLM 不进路径）。
+
+v0.8.45 关键治理：LVS 短路检测在 v0.8.39 网格剪枝后仍为 O(n²)（按路径 bbox 分桶，
+长链跳线退化全对）。改为**按线段分桶**（`_collect_cross_shorts`）后，短路候选对枚举
+降为 O(n)，128k cProfile 热点榜前 12 名已无 lvs.py 函数（单函数 <10.7ms）。判决语义
+零变化（由 verify_lvs_cross_equiv.py 字节级等价铁证：46 组 0 FAIL）。
+全链 scaling：4k→256k 翻倍斜率 2.26–2.85×（近线性），256k 全链实测 14.5s。
 
 规模案例设计（链式 + ⑥多层协同——收官项与多层项联动）：
   - **n 器件链式链路**：wg_i.out → wg_{i+1}.in（n-1 条内部 net）；
@@ -18,7 +23,7 @@ S11 golden（s11_large_scale_verdict）：
   - case='misroute'    ：互换两条 net 布线 → REJECT → 0.0。
 
 性能预算（smoke 断言，不进 golden——正确性由 golden 判、性能由预算断）：
-  4k 全链路（构建+放置+布线+LVS）≤ 10s（近线性化后实测 ~0.07s）。
+  128k 全链路（构建+放置+布线+LVS）≤ 30s（LVS O(n²) 治理后实测 ~5s，256k ~14.5s）。
 """
 from __future__ import annotations
 
@@ -39,12 +44,12 @@ from lda_l2.lvs import run_lvs_multilayer
 
 SCALE_CASES = ("consistent", "disconnect", "misroute")
 
-# v0.8.44：规模锚默认 1000→4000（千级→4k 纵深，体现 LVS/构建器近线性后的
-# 规模能力；4k 全链实测 ~0.07s，预算 10s 余量 140×）
-DEFAULT_N_DEVICES = 4000
+# v0.8.45：规模锚默认 4k→128k（10万+ 纵深，LVS O(n²) 治理后规模能力实至名归；
+# 128k 全链实测 ~5s，预算 30s 余量 ~6×；256k 纵深守护 ~14.5s）
+DEFAULT_N_DEVICES = 128000
 DEFAULT_COLS = 32
 VIA_SHORT_UM = 5.0          # 跳线 M1 段1 短垂距（行尾端口→via，不穿下行）
-BUDGET_SEC = 10.0           # 4k 器件全链路性能预算（构建+放置+布线+LVS）
+BUDGET_SEC = 30.0           # 128k 器件全链路性能预算（构建+放置+布线+LVS）
 
 
 def build_chain_case(n_devices: int = DEFAULT_N_DEVICES,

@@ -209,83 +209,109 @@ def _paths_cross(pts1, pts2) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# v0.8.39 · 路径对剪枝网格（cross_shorts O(n²) → 近似 O(n·k)）
-#   数学等价性：两折线 bbox 相交 ⟺ 均匀网格中至少共享一个 cell
-#   （bbox 重叠区域任一点落入的 cell 必被两者同时覆盖）。
-#   网格仅做候选对生成——精确判决仍走 _paths_cross（原语义原顺序）。
-#   cell 取路径总 bbox 尺寸 / 期望每格路径数的平方根，自适应规模。
+# v0.8.44 · 线段网格短路检测（cross_shorts O(n²) → O(n) · 判决语义零变化）
+#   旧 v0.8.39 按「路径整体 bbox」分桶：长链/跨行跳线的 bbox 横跨整版图 →
+#   触发退化全对回退，规模翻倍耗时 ×12（实测 cProfile）。
+#   新法按「线段（segment）」分桶：每条线段落入其真实覆盖的所有 cell。
+#   相交的两线段必共享 ≥1 个 cell（交点所在 cell 或相邻）→ 候选对是真实
+#   相交对的【超集】→ 精确判决仍走 _paths_cross → 短路集合逐字节一致。
+#   纯 stdlib，cell = 总 bbox 跨度 / sqrt(线段总数)，自适应规模。
+#   等价性由 verify_lvs_cross_equiv.py（46 组随机/边界/长链断言）铁证。
 # ---------------------------------------------------------------------------
-def _cross_pair_candidates(paths_by_id: Dict[str, List[Tuple[float, float]]],
-                           other: Optional[Dict[str, List[Tuple[float, float]]]] = None,
-                           ) -> List[Tuple[str, str]]:
-    """生成可能相交的 (n1, n2) 候选对（超集，保序）。
+def _collect_cross_shorts(paths_by_id: Dict[str, List[Tuple[float, float]]],
+                          other: Optional[Dict[str, List[Tuple[float, float]]]] = None,
+                          ) -> List[Tuple[str, str]]:
+    """返回相交 net-pair 元组（sorted，语义等价于旧双重循环 + _paths_cross）。
 
-    - other=None：单集合内 i<j 两两（旧双重循环 sorted ids 语义）；
-    - other 给定：A=paths_by_id × B=other 全配对（含同 id——跨层同网也判，
-      与旧 `for n1 in sorted(pl1): for n2 in sorted(pl2)` 语义一致）。
-    保序：输出按 (n1, n2) 字符串全序排序 = 与原双重循环完全同序。
-    无漏报（bbox 共格 ⟺ 可能相交；精确判决仍走 _paths_cross）。
+    - other=None：单集合内不同 net 两两（i<j，n1<n2）；
+    - other 给定：A=paths_by_id × B=other（含同 id——跨层同网也判，
+      与旧跨层语义一致，返回 (A_net, B_net)）。
+    超集保证无漏报；_paths_cross 精确过滤；最终集合与旧实现逐字节相同。
     """
     ids_a = sorted(paths_by_id.keys())
-    if other is None:
-        ids_b, cross = ids_a, False
-    else:
-        ids_b, cross = sorted(other.keys()), True
-    if not ids_a or not ids_b:
+    if not ids_a:
         return []
-    bboxes_a = {nid: _bbox_of(paths_by_id[nid]) for nid in ids_a}
-    bboxes_b = bboxes_a if not cross else {nid: _bbox_of(other[nid]) for nid in ids_b}
-    all_x0 = min(min(b[0] for b in bboxes_a.values()),
-                 min(b[0] for b in bboxes_b.values()))
-    all_y0 = min(min(b[1] for b in bboxes_a.values()),
-                 min(b[1] for b in bboxes_b.values()))
-    all_x1 = max(max(b[2] for b in bboxes_a.values()),
-                 max(b[2] for b in bboxes_b.values()))
-    all_y1 = max(max(b[3] for b in bboxes_a.values()),
-                 max(b[3] for b in bboxes_b.values()))
-    span = max(all_x1 - all_x0, all_y1 - all_y0, 1e-9)
-    n_tot = len(ids_a) + len(ids_b)
-    cell = max(span / max(math.sqrt(n_tot), 1.0), 1e-6)
-    # 入格：元素 = (nid, src)，src 0=A 1=B；退化（跨全图）单独全对
-    grid: Dict[Tuple[int, int], List[Tuple[str, int]]] = {}
-    degen_a, degen_b = [], []
-    def _put(nid, src, bboxes):
-        x0, y0, x1, y1 = bboxes[nid]
-        cx0, cy0 = int(x0 // cell), int(y0 // cell)
-        cx1, cy1 = int(x1 // cell), int(y1 // cell)
-        n_cells = (cx1 - cx0 + 1) * (cy1 - cy0 + 1)
-        if n_cells > 4 * n_tot + 64:
-            (degen_a if src == 0 else degen_b).append(nid)
-            return
-        for cx in range(cx0, cx1 + 1):
-            for cy in range(cy0, cy1 + 1):
-                grid.setdefault((cx, cy), []).append((nid, src))
+    if other is None:
+        ids_b = ids_a
+    else:
+        ids_b = sorted(other.keys())
+        if not ids_b:
+            return []
+
+    # 收集线段：(net_id, src, (ax,ay),(bx,by))；src 0=A 1=B
+    segs: List[Tuple[str, int, Tuple[float, float], Tuple[float, float]]] = []
     for nid in ids_a:
-        _put(nid, 0, bboxes_a)
-    if cross:
+        pts = paths_by_id[nid]
+        for k in range(len(pts) - 1):
+            segs.append((nid, 0, tuple(pts[k]), tuple(pts[k + 1])))
+    if other is not None:
         for nid in ids_b:
-            _put(nid, 1, bboxes_b)
-    # 候选对收集
-    cand: set = set()
-    for occupants in grid.values():
-        for i in range(len(occupants)):
-            a_id, a_src = occupants[i]
-            for j in range(i + 1, len(occupants)):
-                b_id, b_src = occupants[j]
-                if not cross:
-                    cand.add((a_id, b_id) if a_id < b_id else (b_id, a_id))
-                elif a_src != b_src:
-                    if a_src == 0:
-                        cand.add((a_id, b_id))
-                    else:
-                        cand.add((b_id, a_id))
-    for nid in degen_a:
-        for cid in ids_b:
-            cand.add((nid, cid))
-    for nid in degen_b:
-        for cid in ids_a:
-            cand.add((cid, nid))
-    return sorted(cand)
+            pts = other[nid]
+            for k in range(len(pts) - 1):
+                segs.append((nid, 1, tuple(pts[k]), tuple(pts[k + 1])))
+    if not segs:
+        return []
+
+    # 总 bbox → 自适应 cell
+    xmin = ymin = float("inf")
+    xmax = ymax = float("-inf")
+    for (_, _, a, b) in segs:
+        for (px, py) in (a, b):
+            if px < xmin:
+                xmin = px
+            if py < ymin:
+                ymin = py
+            if px > xmax:
+                xmax = px
+            if py > ymax:
+                ymax = py
+    span = max(xmax - xmin, ymax - ymin, 1e-9)
+    nseg = len(segs)
+    cell = max(span / max(math.sqrt(nseg), 1.0), 1e-6)
+
+    # 入格：每条线段落入其覆盖的所有 cell（交点必落共享 cell）
+    grid: Dict[Tuple[int, int], List[int]] = {}
+    for idx, (nid, src, a, b) in enumerate(segs):
+        ax0, ay0, ax1, ay1 = (min(a[0], b[0]), min(a[1], b[1]),
+                              max(a[0], b[0]), max(a[1], b[1]))
+        gx0, gy0 = int(ax0 // cell), int(ay0 // cell)
+        gx1, gy1 = int(ax1 // cell), int(ay1 // cell)
+        for gx in range(gx0, gx1 + 1):
+            for gy in range(gy0, gy1 + 1):
+                grid.setdefault((gx, gy), []).append(idx)
+
+    p_a = paths_by_id
+    p_b = paths_by_id if other is None else other
+    tested: set = set()
+    result: set = set()
+    for occ in grid.values():
+        Ln = len(occ)
+        for ii in range(Ln):
+            ia = occ[ii]
+            na, sa, _, _ = segs[ia]
+            for jj in range(ii + 1, Ln):
+                ib = occ[jj]
+                nb, sb, _, _ = segs[ib]
+                if other is None:
+                    if na == nb:
+                        continue                       # 同 net 不自判
+                    key = (na, nb) if na < nb else (nb, na)
+                    if key in tested:
+                        continue
+                    tested.add(key)
+                    if _paths_cross(p_a[na], p_a[nb]):
+                        result.add(key)
+                else:
+                    if sa == sb:
+                        continue                       # 仅 A×B（src0×src1）
+                    a_net, b_net = (na, nb) if sa == 0 else (nb, na)
+                    key = (a_net, b_net)
+                    if key in tested:
+                        continue
+                    tested.add(key)
+                    if _paths_cross(p_a[a_net], p_b[b_net]):
+                        result.add(key)
+    return sorted(result)
 
 
 def extract_layout_netlist(link, placement, routes,
@@ -353,12 +379,9 @@ def extract_layout_netlist(link, placement, routes,
             else:
                 port_owner[p] = net_id
 
-    # 布线交叉短路（不同 net 路径线段相交，非共享端点）——网格剪枝 + bbox 预检
-    # v0.8.39：O(n²) 双重循环 → 网格候选对（超集保序），精确判决仍走 _paths_cross
-    cross_shorts: List[Tuple[str, str]] = []
-    for n1, n2 in _cross_pair_candidates(paths):
-        if _paths_cross(paths[n1], paths[n2]):
-            cross_shorts.append((n1, n2))
+    # 布线交叉短路（不同 net 路径线段相交，非共享端点）——线段网格（v0.8.44）
+    # 候选对已是真实相交对的超集；直接返回 sorted 相交 net-pair，语义零变化
+    cross_shorts: List[Tuple[str, str]] = _collect_cross_shorts(paths)
 
     # 版图器件实例：placement 全集（防未来版图引擎独立生成时的核对点）
     kind_of = {c.id: c.kind for c in link.ir.components}
@@ -693,7 +716,7 @@ def extract_layout_netlist_multilayer(link, placement, routes, stack=None,
             nets[net_id] = sorted(net_ports)
 
     # —— 层叠短路：同层路径相交才判 short（stack.can_cross 谓词）——
-    # v0.8.39：层内 O(n²) 双重循环 → 网格候选对（跨层 can_cross 语义不变）
+    # v0.8.44：线段网格候选对（超集）→ 直接返回相交 net-pair，can_cross 语义不变
     cross_shorts: List[Tuple[str, str, str]] = []
     layer_names = sorted(paths_by_layer.keys())
     for i in range(len(layer_names)):
@@ -703,15 +726,11 @@ def extract_layout_netlist_multilayer(link, placement, routes, stack=None,
                 continue               # 异层介质隔离：投影重叠不短（核心语义）
             pl1, pl2 = paths_by_layer[l1], paths_by_layer[l2]
             if l1 == l2:
-                cand = _cross_pair_candidates(pl1)
-                for n1, n2 in cand:
-                    if _paths_cross(pl1[n1], pl2[n2]):
-                        cross_shorts.append((n1, n2, f"{l1}∩{l2}"))
+                for n1, n2 in _collect_cross_shorts(pl1):
+                    cross_shorts.append((n1, n2, f"{l1}∩{l2}"))
             else:
-                cand = _cross_pair_candidates(pl1, other=pl2)
-                for n1, n2 in cand:
-                    if _paths_cross(pl1[n1], pl2[n2]):
-                        cross_shorts.append((n1, n2, f"{l1}∩{l2}"))
+                for n1, n2 in _collect_cross_shorts(pl1, other=pl2):
+                    cross_shorts.append((n1, n2, f"{l1}∩{l2}"))
 
     kind_of = {c.id: c.kind for c in link.ir.components}
     inst = {k: kind_of.get(k, "?") for k in (placement or {})}

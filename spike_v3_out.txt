@@ -1,0 +1,23 @@
+       N   build_s     lvs_s   total_s  verdict  x/2x_total
+    4000     0.031     0.038     0.069   ACCEPT            
+    8000     0.064     0.099     0.163   ACCEPT       2.36x
+   16000     0.145     0.225     0.369   ACCEPT       2.26x
+   32000     0.299     0.574     0.873   ACCEPT       2.37x
+   64000     0.700     1.444     2.144   ACCEPT       2.46x
+  128000     1.553     3.538     5.090   ACCEPT       2.37x
+  256000     3.330    11.200    14.530   ACCEPT       2.85x
+
+=== 128k cProfile（verdict=ACCEPT lvs=8.491s total=12.169s）===
+    1847.24ms   135997x  D:\agent_LDA\lda\lda_layout\router.py
+     978.51ms   135997x  D:\agent_LDA\lda\lda_layout\router.py
+     689.42ms   255998x  D:\agent_LDA\lda\lda_layout\placement.py
+     550.84ms   511998x  D:\agent_LDA\lda\lda_layout\placement.py
+     169.94ms   255998x  D:\agent_LDA\lda\lda_layout\placement.py
+     131.47ms   519994x  D:\agent_LDA\lda\lda_layout\router.py
+     131.15ms   135997x  D:\agent_LDA\lda\lda_layout\router.py
+     130.13ms   399993x  D:\agent_LDA\lda\lda_layout\router.py
+     105.84ms   128000x  D:\agent_LDA\lda\lda_layout\placement.py
+      40.32ms   135997x  D:\agent_LDA\lda\lda_layout\router.py
+      10.70ms   135997x  D:\agent_LDA\lda\lda_layout\router.py
+
+DONE

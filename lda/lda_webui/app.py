@@ -85,6 +85,11 @@ try:
 except ImportError:
     from lda_webui import api_v1  # 直接 python app.py 运行时（无父包）回退
 
+# P2 路由拆分：全部 /api/* 处理器与路由表外置到 routes.py，app.py 仅保留
+# do_GET/do_POST/do_PATCH 分发骨架。routes 在 _dispatch 内延迟导入，避免与
+# routes.py 的 `from . import app` 形成模块级循环依赖。
+from urllib.parse import urlparse, parse_qs
+
 HARNESS = VerificationHarness(BENCHMARK_DEFS)
 AGENT_OUT = os.path.join(LDA_ROOT, "reports_agent")
 
@@ -2949,240 +2954,39 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path.split("?")[0]
-        if path in ("/", "/index.html"):
-            p = os.path.join(WEBUI_DIR, "static", "index.html")
-            with open(p, "rb") as f:
-                self._send(200, body=f.read(), ctype="text/html", nocache=True)
-        elif path.endswith(".html"):
-            # 静态展示页（白名单，防路径穿越）
-            name = os.path.basename(path)
-            p = os.path.join(WEBUI_DIR, "static", name)
-            if name in ("index.html", "insights.html", "admin.html", "store.html",
-                        "mine.html") and os.path.exists(p):
-                with open(p, "rb") as f:
-                    self._send(200, body=f.read(), ctype="text/html", nocache=True)
-            else:
-                self._send(404, {"error": "not found"})
-        elif path.endswith(".js") or path.endswith(".css"):
-            name = os.path.basename(path)
-            p = os.path.join(WEBUI_DIR, "static", name)
-            if os.path.exists(p):
-                ctype = "application/javascript" if path.endswith(".js") else "text/css"
-                with open(p, "rb") as f:
-                    self._send(200, body=f.read(), ctype=ctype, nocache=True)
-            else:
-                self._send(404, {"error": "not found"})
-        elif path.startswith("/proofs/") and len(path) > len("/proofs/"):
-            # 转账凭证截图静态服务（白名单：仅 dist/proofs/ 下随机文件名图片，防穿越）
-            # 必须放在图片后缀分支之前，否则 /proofs/xxx.png 会被当成 static/ 静态图 404。
-            import re as _re
-            fname = path[len("/proofs/"):]
-            if not _re.fullmatch(r"[0-9a-f]{32}\.(png|jpg)", fname):
-                self._send(404, {"error": "not found"})
-                return
-            fp = os.path.join(PROOF_DIR, fname)
-            if not os.path.exists(fp):
-                self._send(404, {"error": "not found"})
-                return
-            ctype = "image/png" if fname.endswith(".png") else "image/jpeg"
-            with open(fp, "rb") as _f:
-                self._send(200, body=_f.read(), ctype=ctype,
-                           headers={"Cache-Control": "public, max-age=86400"})
-        elif path.endswith((".jpg", ".jpeg", ".png", ".gif")):
-            # 静态图片（白名单，防路径穿越）：收款码等
-            name = os.path.basename(path)
-            p = os.path.join(WEBUI_DIR, "static", name)
-            if os.path.exists(p):
-                ctype = {"jpg": "image/jpeg", "jpeg": "image/jpeg",
-                         "png": "image/png", "gif": "image/gif"}[name.rsplit(".", 1)[-1].lower()]
-                with open(p, "rb") as f:
-                    self._send(200, body=f.read(), ctype=ctype,
-                               headers={"Cache-Control": "public, max-age=86400"})
-            else:
-                self._send(404, {"error": "not found"})
-        elif path == "/api/status":
-            self._send(200, system_status())
-        elif path == "/api/health":
-            self._send(200, health_check())
-        elif path.startswith("/api/v1/"):
-            self._handle_v1()
-        elif path == "/api/benchmarks":
-            bm = [{"id": k, "title": v.get("title"), "metric": v.get("metric"),
-                   "oracle": v.get("oracle"), "tol": v.get("tol")}
-                  for k, v in BENCHMARK_DEFS.items()]
-            self._send(200, {"benchmarks": bm})
-        elif path == "/api/pdks":
-            reg = get_default_registry()
-            self._send(200, {"pdks": reg.to_summary(), "keys": reg.list_pdks()})
-        elif path == "/api/ecosystem":
-            self._send(200, ecosystem_status())
-        elif path == "/api/empirical":
-            self._send(200, empirical_status())
-        elif path == "/api/design_catalog":
-            try:
-                from lda_design.design_package import (
-                    engine_catalog, package_catalog,
-                )
-                self._send(200, {"engine": engine_catalog(),
-                                "package": package_catalog()})
-            except Exception as e:  # noqa: BLE001
-                self._send(200, {"engine": [], "package": [],
-                                "error": str(e)[:120]})
-        elif path == "/api/gc_benchmarks":
-            from urllib.parse import parse_qs, urlparse
-            q = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
-            self._send(200, gc_benchmarks_status(run=q.get("run") == "1"))
-        elif path == "/api/shelf":
-            store = _get_store()
-            u = store.user_by_token(_bearer(self.headers))
-            self._send(200, shelf_status(u.get("user_type") if u else None))
-        elif path.startswith("/api/shelf/") and path.count("/") == 4 and path.endswith("/opinions"):
-            # /api/shelf/<id>/opinions 公开意见列表（脱敏联系方式）
-            sid = path.split("/")[3]
-            code, obj = opinion_list(sid)
-            self._send(code, obj)
-        elif path == "/api/admin/opinions":
-            # 管理员聚合视图（GET，勿放 do_POST——历史踩坑）
-            code, obj = opinion_admin_all(self.headers)
-            self._send(code, obj)
-        elif path == "/api/admin/purchase_requests":
-            code, obj = purchase_request_list(self.headers)
-            self._send(code, obj)
-        # ---- 商业闭环：会员 + 订单 ----
-        elif path == "/api/store/config":
-            self._send(200, _get_store().public_config())
-        elif path == "/api/store/orders/mine":
-            store = _get_store()
-            obj = store.list_orders(_bearer(self.headers), "mine")
-            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
-        elif path == "/api/store/me":
-            # GET=读资料 / PATCH=改资料
-            store = _get_store()
-            if self.command == "PATCH":
-                obj = store.update_profile(
-                    _bearer(self.headers),
-                    name=payload.get("name"), phone=payload.get("phone"),
-                    organization=payload.get("organization"),
-                    user_type=payload.get("user_type"))
-            else:
-                u = store.user_by_token(_bearer(self.headers))
-                obj = {"ok": True, "user": store._public_user(u) if u else None}
-            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
-        elif path == "/api/store/me/summary":
-            store = _get_store()
-            obj = store.my_summary(_bearer(self.headers))
-            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
-        elif path == "/api/store/me/licenses":
-            store = _get_store()
-            obj = store.my_licenses(_bearer(self.headers))
-            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
-        elif path == "/api/admin/orders":
-            store = _get_store()
-            obj = store.list_orders(_bearer(self.headers), "all")
-            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
-        elif path == "/api/admin/users":
-            # 管理员用户列表（脱敏：不含密码/令牌/哈希）
-            store = _get_store()
-            obj = store.admin_list_users(_bearer(self.headers))
-            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
-        elif path.startswith("/api/store/order/") and path.count("/") == 5:
-            # /api/store/order/<id>/download
-            store = _get_store()
-            parts = path.split("/")
-            oid = parts[4]
-            sub = parts[5] if len(parts) > 5 else ""
-            if sub == "download":
-                r = store.order_download(oid, _bearer(self.headers))
-                if not r.get("ok"):
-                    self._send(403 if r.get("code") == 401 else 400, r)
-                elif r.get("deliverable_url"):
-                    self._send(200, r)
-                else:
-                    with open(r["zip_path"], "rb") as _fh:
-                        _data = _fh.read()
-                    self._send(200, body=_data, ctype="application/zip",
-                               headers={"Content-Disposition":
-                                        'attachment; filename="%s_design_ready.zip"' % r["shelf_id"]})
-            else:
-                self._send(404, {"error": "not found"})
-        elif path == "/api/admin/config":
-            store = _get_store()
-            if not store.is_admin(_bearer(self.headers)):
-                self._send(401, {"error": "unauthorized"})
-            else:
-                self._send(200, {"config": store.get_config()})
-        elif path == "/api/scale_demo":
-            self._send(200, scale_demo_status())
-        elif path == "/api/capability_demos":
-            from urllib.parse import parse_qs, urlparse
-            q = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
-            if q.get("run") == "1":
-                self._send(200, capability_demos_run())
-            else:
-                self._send(200, capability_demos_status())
-        elif path.startswith("/api/shelf/") and path.count("/") == 4:
-            # 货架 → 设计就绪包：/api/shelf/<id>/package（免费看） | /download（付费下，需 token）
-            import re
-            parts = path.split("/")
-            sid = parts[3]
-            sub = parts[4] if len(parts) > 4 else ""
-            if not re.match(r"^[A-Za-z0-9_.-]+$", sid):
-                self._send(404, {"error": "invalid shelf id"})
-            elif sub == "package":
-                from lda_l2.ship_package import package_info
-                self._send(200, package_info(sid))
-            elif sub == "download":
-                from urllib.parse import parse_qs, urlparse
-                from lda_l2.ship_package import (consume_license,
-                                                 generate_package, is_download_open)
-                if not is_download_open(sid):
-                    self._send(403, {"error": "not_open",
-                                     "reason": "该货架设计就绪包尚未开放下载"})
-                    return
-                q = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
-                tok = q.get("token", "")
-                # 原子消耗（锁内验证+自增+货架匹配），失败即拒绝，防并发超额
-                if not consume_license(tok, shelf_id=sid):
-                    self._send(403, {"error": "unauthorized",
-                                     "reason": "兑换码无效/已用完/不匹配"})
-                    return
-                r = generate_package(sid)
-                if not r.get("ok"):
-                    self._send(404, {"error": r.get("error", "not found")})
-                else:
-                    with open(r["zip_path"], "rb") as _fh:
-                        _data = _fh.read()
-                    self._send(200, body=_data, ctype="application/zip",
-                               headers={"Content-Disposition":
-                                         'attachment; filename="%s_design_ready.zip"' % sid})
-            else:
-                self._send(404, {"error": "not found"})
-        elif path == "/api/benchmark_crosscheck":
-            # v0.8.11f 基准对照验证闭环（20 引擎 + 9 语料 + ORACLE，quick 秒级）
-            try:
-                sys.path.insert(0, LDA_ROOT)
-                from run_benchmark_crosscheck_report import run_crosscheck
-                data = run_crosscheck(quick=True)
-                self._send(200, {
-                    "summary": data["summary"],
-                    "corpus_coverage": data["corpus_coverage"],
-                    "oracle": data["oracle"],
-                    "rows": [{"kind": r["kind"], "ok": r.get("ok"),
-                              "passed": r.get("passed"),
-                              "metric": r.get("metric"),
-                              "model_class": r.get("model_class", "L0-解析"),
-                              "analytical_rel_pct": r.get("analytical_rel_pct"),
-                              "verdict": r.get("verdict", "")[:140]}
-                             for r in data["rows"]],
-                    "honest_note": data["honest_note"],
-                })
-            except Exception as e:  # noqa: BLE001
-                self._send(200, {"summary": {}, "corpus_coverage": {},
-                                "oracle": {}, "rows": [],
-                                "error": str(e)[:120]})
-        else:
-            self._send(404, {"error": "not found"})
+        query = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
+        self._dispatch("GET", path, None, query)
 
+    def _dispatch(self, method, path, payload, query):
+        # P2 延迟加载路由表（请求期，所有模块已就绪，规避循环导入）
+        _rmod = getattr(self.__class__, "_routes_mod", None)
+        if _rmod is None:
+            try:
+                from . import routes as _rmod
+            except ImportError:
+                from lda_webui import routes as _rmod
+            self.__class__._routes_mod = _rmod
+        if method == "GET":
+            exact, prefixed = _rmod.GET_ROUTES, _rmod.GET_PREFIX
+        elif method == "POST":
+            exact, prefixed = _rmod.POST_ROUTES, _rmod.POST_PREFIX
+        else:  # PATCH
+            exact, prefixed = _rmod.PATCH_ROUTES, []
+        if path in exact:
+            res = exact[path](self, payload, query, path)
+        else:
+            matched = False
+            for kind, pat, fn in prefixed:
+                if kind == "startswith" and path.startswith(pat):
+                    res = fn(self, payload, query, path); matched = True; break
+                if kind == "endswith" and path.endswith(pat):
+                    res = fn(self, payload, query, path); matched = True; break
+            if not matched:
+                res = (404, {"error": "not found"})
+        if res is None:
+            return
+        code, obj = res
+        self._send(code, obj)
     def _handle_v1(self):
         """委托 P2.3 v1 REST 处理（认证 + 租户隔离 + 插件 seam）。"""
         from urllib.parse import urlparse, parse_qs
@@ -3204,326 +3008,30 @@ class Handler(BaseHTTPRequestHandler):
         self._send(code, obj)
 
     def do_PATCH(self):
-        """局部更新（目前仅 /api/store/me 改资料）。
-
-        BaseHTTPRequestHandler 默认不实现 PATCH → 501，故单独挂一个处理器，
-        与 do_POST 走同一套 JSON 读取与 _send 约定。
-        """
         path = self.path.split("?")[0]
-        length = int(self.headers.get("Content-Length", 0))
-        raw = self.rfile.read(length) if length else b"{}"
         try:
-            payload = json.loads(raw.decode("utf-8") or "{}")
-        except Exception:  # noqa: BLE001
-            payload = {}
-        if path == "/api/store/me":
-            store = _get_store()
-            obj = store.update_profile(
-                _bearer(self.headers),
-                name=payload.get("name"), phone=payload.get("phone"),
-                organization=payload.get("organization"),
-                user_type=payload.get("user_type"))
-            self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
-        else:
-            self._send(404, {"error": "not found"})
-
-    def do_POST(self):
-        path = self.path.split("?")[0]
-        if path.startswith("/api/v1/"):
-            self._handle_v1()
-            return
-        length = int(self.headers.get("Content-Length", 0))
-        raw = self.rfile.read(length) if length else b"{}"
-        try:
-            payload = json.loads(raw.decode("utf-8") or "{}")
-        except Exception:
-            payload = {}
-        try:
-            if path == "/api/verify":
-                self._send(200, run_verify(payload))
-            elif path == "/api/shelf/evaluate":
-                self._send(200, shelf_evaluate(payload))
-            elif path == "/api/purchase/request":
-                code, obj = purchase_request_submit(payload)
-                self._send(code, obj)
-            elif path == "/api/purchase/upload_proof":
-                code, obj = purchase_upload_proof(payload)
-                self._send(code, obj)
-            elif path == "/api/opinion/submit":
-                code, obj = opinion_submit(payload)
-                self._send(code, obj)
-            elif path.startswith("/api/admin/purchase/") and path.count("/") == 5:
-                # /api/admin/purchase/<req_id>/approve
-                parts = path.split("/")
-                req_id = parts[4]
-                sub = parts[5]
-                if sub == "approve":
-                    code, obj = purchase_request_approve(payload, self.headers, req_id)
-                    self._send(code, obj)
-                else:
-                    self._send(404, {"error": "not found"})
-            elif path == "/api/proposal_design":
-                self._send(200, run_proposal_design(payload))
-            elif path == "/api/agent_loop":
-                self._send(200, run_agent_loop(payload))
-            elif path == "/api/band_loop":
-                self._send(200, run_band_loop(payload))
-            elif path == "/api/ring_loop":
-                self._send(200, run_ring_loop(payload))
-            elif path == "/api/ring_fdtd":
-                self._send(200, run_ring_fdtd_demo(payload))
-            elif path == "/api/device_library":
-                self._send(200, run_device_library_demo(payload))
-            elif path == "/api/dc_transmission":
-                self._send(200, run_dc_transmission_demo(payload))
-            elif path == "/api/layout_pipeline":
-                self._send(200, run_layout_pipeline(payload))
-            elif path == "/api/design_pipeline":
-                self._send(200, run_design_pipeline(payload))
-            elif path == "/api/design_loop":
-                self._send(200, run_design_loop(payload))
-            elif path == "/api/ring_package":
-                self._send(200, run_ring_package(payload))
-            elif path == "/api/inverse_design":
-                self._send(200, run_inverse_design_demo(payload))
-            elif path == "/api/quantum_design":
-                self._send(200, run_quantum_design(payload))
-            elif path == "/api/wdm_design":
-                self._send(200, run_wdm_design(payload))
-            elif path == "/api/readout_chain":
-                self._send(200, run_readout_chain(payload))
-            elif path == "/api/multiqubit_readout":
-                self._send(200, run_multiqubit_readout(payload))
-            elif path == "/api/readout_fidelity":
-                self._send(200, run_readout_fidelity(payload))
-            elif path == "/api/multiqubit_fidelity":
-                self._send(200, run_multiqubit_fidelity(payload))
-            elif path == "/api/mixed_system":
-                self._send(200, run_mixed_system(payload))
-            elif path == "/api/coupler_design":
-                self._send(200, run_coupler_design(payload))
-            elif path == "/api/wdm_coupler":
-                self._send(200, run_wdm_coupler(payload))
-            elif path == "/api/splitter_readout":
-                self._send(200, run_splitter_readout(payload))
-            elif path == "/api/wdm_splitter":
-                self._send(200, run_wdm_splitter(payload))
-            elif path == "/api/design_package":
-                self._send(200, run_design_package(payload))
-            elif path == "/api/design_outcome":
-                self._send(200, run_design_outcome(payload))
-            elif path == "/api/drc_fix_demo":
-                self._send(200, run_drc_fix_demo(payload))
-            elif path == "/api/coupler_loop":
-                self._send(200, run_coupler_loop(payload))
-            elif path == "/api/ir_demo":
-                self._send(200, run_ir_demo(payload))
-            elif path == "/api/adjoint_design":
-                self._send(200, run_adjoint_design(payload))
-            elif path == "/api/adjoint_loop":
-                self._send(200, run_adjoint_loop(payload))
-            elif path == "/api/primitives":
-                self._send(200, run_primitives(payload))
-            elif path == "/api/sparams":
-                self._send(200, run_sparams(payload))
-            elif path == "/api/sparams_3d":
-                self._send(200, run_sparams_3d(payload))
-            elif path == "/api/gc_sparams":
-                self._send(200, run_gc_sparams(payload))
-            elif path == "/api/pipeline_realize":
-                self._send(200, run_pipeline_realize(payload))
-            elif path == "/api/tunable_wdm":
-                self._send(200, run_tunable_wdm(payload))
-            elif path == "/api/qeda_topology":
-                self._send(200, run_qeda_topology(payload))
-            elif path == "/api/large_scale_bench":
-                self._send(200, run_large_scale_bench(payload))
-            elif path == "/api/ir_spec":
-                self._send(200, run_ir_spec(payload))
-            elif path == "/api/ci_regression":
-                self._send(200, run_ci_regression(payload))
-            elif path == "/api/link_design":
-                self._send(200, run_link_design(payload))
-            elif path == "/api/link_lvs":
-                self._send(200, run_link_lvs(payload))
-            elif path == "/api/perf_bench":
-                self._send(200, run_perf_bench(payload))
-            elif path == "/api/spectral_design":
-                self._send(200, run_spectral_design(payload))
-            elif path == "/api/shape_design":
-                self._send(200, run_shape_design(payload))
-            elif path == "/api/hybrid_design":
-                self._send(200, run_hybrid_design(payload))
-            elif path == "/api/hybrid_multi":
-                self._send(200, run_hybrid_multi(payload))
-            elif path == "/api/adjoint3d":
-                self._send(200, run_adjoint3d(payload))
-            elif path == "/api/port_acceptance":
-                self._send(200, run_port_acceptance(payload))
-            elif path == "/api/adjoint3d_perf":
-                self._send(200, run_adjoint3d_perf(payload))
-            elif path == "/api/qubit_resonator":
-                self._send(200, run_qubit_resonator(payload))
-            elif path == "/api/qeda_depth":
-                self._send(200, run_qeda_depth(payload))
-            elif path == "/api/pdk_design":
-                self._send(501, {"error": "not_implemented",
-                                 "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"
-                                            "当前可用：/api/verify、/api/agent_loop、/api/band_loop、"
-                                            "/api/coupler_loop、/api/ir_demo。"})
-            elif path == "/api/pdk_compare":
-                self._send(501, {"error": "not_implemented",
-                                 "message": "PDK 跨厂对比依赖 DesignProblem 抽象层，规划于 D-09；"
-                                            "当前可用：上方已落地的闭环接口。"})
-            # ---- D-94 生态共建 · 社区提交入口 ----
-            elif path == "/api/ecosystem/submit":
-                self._send(200, submit_device(payload))
-            elif path == "/api/ecosystem/import":
-                entries = payload.get("entries", []) if isinstance(payload, dict) else []
-                res = submit_devices_batch(entries)
-                self._send(200, {"results": res, "summary": _summarize_submit(res)})
-            elif path == "/api/ecosystem/propose":
-                self._send(200, submit_benchmark_proposal(payload))
-            # ---- D-95 生态共建 · 社区评审流 + 提案落地 ----
-            elif path == "/api/ecosystem/review":
-                self._send(200, review_proposal(
-                    proposal_id=payload.get("id", ""),
-                    decision=payload.get("decision", ""),
-                    reviewer=payload.get("reviewer", ""),
-                    rationale=payload.get("rationale", ""),
-                    oracle_fn_source=payload.get("oracle_fn_source")))
-            elif path == "/api/ecosystem/land":
-                self._send(200, land_proposal(payload.get("id", "")))
-            elif path == "/api/ecosystem/resubmit":
-                self._send(200, resubmit_proposal(
-                    proposal_id=payload.get("id", ""),
-                    updates=payload.get("updates") or {},
-                    contrib_path=None))
-            elif path == "/api/ecosystem/review_batch":
-                entries = payload.get("entries", []) if isinstance(payload, dict) else []
-                self._send(200, review_proposals_batch(entries))
-            elif path == "/api/ecosystem/land_batch":
-                ids = payload.get("ids", []) if isinstance(payload, dict) else []
-                self._send(200, land_proposals_batch(ids))
-            elif path == "/api/ecosystem/publish":
-                self._send(200, publish_proposal(
-                    proposal_id=payload.get("id", ""),
-                    author=payload.get("author", ""),
-                    note=payload.get("note", "")))
-            elif path == "/api/ecosystem/measurement":
-                # D-62 实证语料评审流：action=submit|review|land
-                action = payload.get("action", "")
-                if action == "submit":
-                    self._send(200, submit_measurement(payload))
-                elif action == "review":
-                    self._send(200, review_measurement(
-                        mid=payload.get("id", ""),
-                        decision=payload.get("decision", ""),
-                        reviewer=payload.get("reviewer", ""),
-                        rationale=payload.get("rationale", "")))
-                elif action == "land":
-                    self._send(200, land_measurement(payload.get("id", "")))
-                else:
-                    self._send(400, {"status": "error",
-                                     "reason": "action 须为 submit|review|land"})
-            # ---- 商业闭环：会员 + 订单 ----
-            elif path == "/api/store/register":
-                store = _get_store()
-                r = store.register(payload.get("email"), payload.get("name"),
-                                   payload.get("password"), payload.get("phone"),
-                                   payload.get("user_type"), payload.get("organization"))
-                self._send(200, r)
-            elif path == "/api/store/login":
-                store = _get_store()
-                r = store.login(payload.get("email"), payload.get("password"),
-                                client_ip=_client_ip(self))
-                self._send(200, r)
-            elif path == "/api/admin/user/reset_password":
-                store = _get_store()
-                obj = store.admin_reset_password(payload.get("email") or payload.get("user_id"),
-                                                 _bearer(self.headers),
-                                                 payload.get("temp_password", ""))
-                self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
-            elif path == "/api/admin/unlock_login":
-                # 管理员应急解锁：只清失败计数，不动密码
-                store = _get_store()
-                obj = store.admin_unlock_login(_bearer(self.headers))
-                self._send((obj.get("code") or 200) if isinstance(obj, dict) else 200, obj)
-            elif path == "/api/store/password":
-                # 改密（改密成功后会话令牌轮换，旧设备登录态失效）
-                store = _get_store()
-                r = store.change_password(_bearer(self.headers),
-                                          payload.get("old_password", ""),
-                                          payload.get("new_password", ""))
-                self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
-            elif path == "/api/store/order":
-                store = _get_store()
-                r = store.create_order(_bearer(self.headers), payload)
-                self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
-            elif path.startswith("/api/store/order/") and path.count("/") == 5 and path.endswith("/accept_delivery"):
-                # 客户确认验收：delivered → accepted（必须在 proof 段前匹配，否则会因 sub!="proof" 走 404）
-                store = _get_store()
-                oid = path.split("/")[4]
-                r = store.custom_accept_delivery(oid, _bearer(self.headers))
-                self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
-            elif path.startswith("/api/store/order/") and path.count("/") == 5:
-                # /api/store/order/<id>/proof
-                store = _get_store()
-                parts = path.split("/")
-                oid = parts[4]
-                sub = parts[5]
-                if sub == "proof":
-                    r = store.submit_proof(oid, _bearer(self.headers),
-                                           payload.get("proof", ""))
-                    self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
-                else:
-                    self._send(404, {"error": "not found"})
-            elif path.startswith("/api/admin/order/") and path.count("/") == 5:
-                # /api/admin/order/<id>/approve | /api/admin/order/<id>/reject
-                store = _get_store()
-                parts = path.split("/")
-                oid = parts[4]
-                sub = parts[5]
-                tok = _bearer(self.headers)
-                if sub == "approve":
-                    r = store.admin_approve(oid, tok, payload.get("deliverable_url", ""))
-                elif sub == "reject":
-                    r = store.admin_reject(oid, tok, payload.get("reason", ""))
-                else:
-                    r = {"ok": False, "error": "not found"}
-                self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
-            # ---- 定制需求全流程（接单/交付/添加交付物）----
-            elif path.startswith("/api/admin/custom/") and path.count("/") == 5:
-                store = _get_store()
-                parts = path.split("/")
-                oid = parts[4]
-                sub = parts[5]
-                tok = _bearer(self.headers)
-                if sub == "accept":
-                    r = store.custom_accept(oid, tok,
-                                             dev_note=payload.get("dev_note", ""),
-                                             quote_cny=payload.get("quote_cny"),
-                                             eta_date=payload.get("eta_date", ""))
-                elif sub == "note":
-                    r = store.custom_update_note(oid, tok, payload.get("dev_note", ""))
-                elif sub == "add_deliverable":
-                    r = store.custom_add_deliverable(oid, tok,
-                                                    payload.get("name", ""),
-                                                    payload.get("url", ""))
-                elif sub == "deliver":
-                    r = store.custom_deliver(oid, tok)
-                else:
-                    r = {"ok": False, "error": "not found"}
-                self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
-            elif path == "/api/admin/config":
-                store = _get_store()
-                r = store.set_config(payload, _bearer(self.headers))
-                self._send(r.get("code", 200) if isinstance(r, dict) else 200, r)
-            else:
-                self._send(404, {"error": "not found"})
+            length = int(self.headers.get("Content-Length", 0))
+            raw = self.rfile.read(length) if length else b"{}"
+            try:
+                payload = json.loads(raw.decode("utf-8") or "{}")
+            except Exception:
+                payload = {}
+            self._dispatch("PATCH", path, payload, {})
         except Exception as e:  # noqa: BLE001
             self._send(500, {"error": str(e)})
-
+    def do_POST(self):
+        path = self.path.split("?")[0]
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            raw = self.rfile.read(length) if length else b"{}"
+            try:
+                payload = json.loads(raw.decode("utf-8") or "{}")
+            except Exception:
+                payload = {}
+            query = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
+            self._dispatch("POST", path, payload, query)
+        except Exception as e:  # noqa: BLE001
+            self._send(500, {"error": str(e)})
     def log_message(self, *a):
         pass
 

@@ -1,6 +1,6 @@
 """LDA · L2-B 第三步 · 主权 3D 核 GPU 激活与验证（device='cuda' 一键校验）。
 
-前置条件：已安装 CUDA 版 torch 轮子（见同目录 install_cuda_torch.py）。
+前置条件：已安装 CUDA 版 torch 轮子（可使用下方安装指引，或项目文档中的 CUDA torch 安装脚本）。
 运行：      python activate_gpu_fdtd3d.py
 
 流程：
@@ -76,7 +76,7 @@ def _guide_and_exit():
     print("      pip install torch --index-url https://download.pytorch.org/whl/cu128")
     print("    方式二（清华 TUNA 镜像，国内更快）：")
     print("      pip install torch --index-url https://mirrors.tuna.tsinghua.edu.cn/pytorch/whl/cu128")
-    print("    或使用本目录 install_cuda_torch.py 自动镜像回退 + 完整性校验。")
+    print("    或使用项目文档中的 CUDA torch 安装脚本（自动镜像回退 + 完整性校验）。")
     print(">>> 前置：NVIDIA 驱动 >= 对应 CUDA 12.8 要求；装完重跑本脚本即可自动 device='cuda'。")
     print(">>> 注意：本机 CPU 路径（numba-cpu 43.1× / torch-cpu 8.4×）已生产可用，")
     print("          GPU 仅用于超大网格；消费卡 fp64 速率受限，详见激活后提示。")

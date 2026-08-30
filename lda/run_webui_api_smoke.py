@@ -44,11 +44,25 @@ HEAVY_POST = {
 
 
 def _extract_routes():
-    src = open(APP, encoding="utf-8").read()
-    get_blk = src.split("def do_GET", 1)[1].split("def do_POST", 1)[0]
-    post_blk = src.split("def do_POST", 1)[1].split("def log_message", 1)[0]
-    gets = sorted(set(ROUTE_RE.findall(get_blk)))
-    posts = sorted(set(ROUTE_RE.findall(post_blk)))
+    """P2 路由拆分后，/api/* 路由表已外置到 lda_webui/routes.py。
+
+    从 routes.py 源码静态提取 GET_ROUTES / POST_ROUTES 字典的键（精确路由），
+    等价覆盖原 app.py do_GET/do_POST 中 `path == "..."` 的精确端点；
+    前缀型路由（startswith/endswith，如静态资源/proofs）非 API 端点，不纳入。
+    """
+    routes_path = os.path.join(HERE, "lda_webui", "routes.py")
+    src = open(routes_path, encoding="utf-8").read()
+    key_re = re.compile(r'^\s*"([/a-zA-Z0-9_.\-]+)"\s*:', re.M)
+
+    def keys_of(block_name):
+        i = src.index(block_name + " = {")
+        j = src.index("}", i)
+        return key_re.findall(src[i:j])
+
+    # 仅纳入 /api/* 精确端点（HTML 页面路由如 /、/index.html 由静态分发覆盖，
+    # 不纳入 JSON 路由层断言，与原 do_GET 解析口径一致）。
+    gets = sorted(set(k for k in keys_of("GET_ROUTES") if k.startswith("/api/")))
+    posts = sorted(set(k for k in keys_of("POST_ROUTES") if k.startswith("/api/")))
     return gets, posts
 
 

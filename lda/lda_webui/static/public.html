@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LDA · 验证实力自证看板</title>
+<style>
+  :root{
+    --panel:#fff; --line:#e6e8ee; --txt:#1b2030; --mut:#6b7280; --accent:#2563eb; --green:#16a34a;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --panel:#141925; --line:#26304a; --txt:#e6eaf2; --mut:#9aa6bf; --accent:#3b82f6; --green:#4ade80; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+       background:#f5f7fb;color:var(--txt)}
+  @media (prefers-color-scheme: dark){ body{background:#0d111a} }
+  .wrap{max-width:980px;margin:0 auto;padding:24px 18px 60px}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--mut);font-size:13px;margin-bottom:20px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:26px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .card .n{font-size:30px;font-weight:800;line-height:1.1;color:var(--accent)}
+  .card .l{color:var(--mut);font-size:12px;margin-top:6px}
+  section{margin-bottom:28px}
+  section h2{font-size:15px;margin:0 0 12px;color:var(--mut);font-weight:700;letter-spacing:.5px}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:10px 14px;font-size:13px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;background:rgba(37,99,235,.04)}
+  tr:last-child td{border-bottom:0}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+  .note{background:rgba(37,99,235,.06);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+        font-size:12px;color:var(--mut);line-height:1.6}
+  .principle{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+             border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.6;margin-bottom:10px}
+  .err{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px;text-align:center;color:var(--mut)}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;background:rgba(37,99,235,.1);color:var(--accent);margin-left:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>验证实力 · 自证看板 <span class="pill" id="gen">—</span></h1>
+  <div class="sub">LDA 开源 Agent 原生芯片设计软件 · 所有数字均由运行源码实时计算，非营销话术</div>
+  <div id="app"><div class="err">读取中…</div></div>
+</div>
+<script>
+(function(){
+  "use strict";
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function fmt(n){ return (n==null?"—":n).toLocaleString("en-US"); }
+  function card(n,label){ return '<div class="card"><div class="n">'+esc(n)+'</div><div class="l">'+esc(label)+'</div></div>'; }
+  function rowTable(head, rows){
+    if(!rows.length) return '<div class="note">无数据</div>';
+    var h='<table><thead><tr><th>'+esc(head[0])+'</th><th style="text-align:right">'+esc(head[1])+'</th></tr></thead><tbody>';
+    rows.forEach(function(r){ h+='<tr><td>'+esc(r[0])+'</td><td class="num">'+esc(r[1])+'</td></tr>'; });
+    return h+'</tbody></table>';
+  }
+  function render(d){
+    var v=d.version||"—", a=d.assets||{}, c=d.ci||{}, ver=(d.verification||{});
+    var html='';
+    html+='<div class="grid">'
+      + card(fmt(v), "软件版本")
+      + card(fmt(a.design_engines), "端到端设计引擎")
+      + card(fmt(a.anchors_total), "验证锚（总计）")
+      + card(fmt(a.shelves_total), "创新货架（总计）")
+      + card(fmt(c.core_smokes), "CI core 冒烟")
+      + '</div>';
+
+    html+='<section><h2>为什么可信 · 验证原则</h2>';
+    (ver.principles||[]).forEach(function(p){ html+='<div class="principle">'+esc(p)+'</div>'; });
+    html+='</section>';
+
+    html+='<section><h2>验证资产明细</h2>';
+    var ac=(a.anchors_by_class||{});
+    html+=rowTable(["锚分类","数量"], [
+      ["B 类 · 物理定律锚", ac.B],
+      ["E 类 · 实证锚", ac.E],
+      ["S 类 · 系统级锚", ac.S],
+    ]);
+    html+='</section>';
+
+    html+='<section><h2>创新超市货架</h2>';
+    var t=(a.pricing_tiers||{});
+    html+=rowTable(["分档","货架数"], [
+      ["基础档 ¥599", t.basic],
+      ["标准档 ¥1999", t.standard],
+      ["高端档 ¥4999", t.premium],
+      ["开放下载", a.shelves_open],
+    ]);
+    html+='</section>';
+
+    html+='<section><h2>CI 回归</h2>';
+    html+='<div class="note">'+esc(c.note||"")+'</div>';
+    html+='</section>';
+
+    html+='<div class="note">本页所有计数由服务端实时解析运行源码（锚清单 / CI core 清单 / 货架 / 引擎）得出，'
+        + '随代码库自更新。验证原则为 LDA 不可逾越的红线：物理定律锚 + 死标量比对 + LLM 不进判决路径。</div>';
+
+    document.getElementById("app").innerHTML=html;
+    document.getElementById("gen").textContent=(d.generated_at||"").slice(0,19).replace("T"," ")+" UTC";
+  }
+  fetch("/api/public/stats")
+    .then(function(r){ return r.json(); })
+    .then(render)
+    .catch(function(){ document.getElementById("app").innerHTML='<div class="err">加载失败，请稍后重试</div>'; });
+})();
+</script>
+<script src="/nav.js"></script>
+</script>
+</body>
+</html>

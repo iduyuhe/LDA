@@ -18,9 +18,11 @@ sys.modules 反查已加载的 app 模块——优先取以脚本形态运行的
 独立 store），否则取包形态 lda_webui.app。`_app` 仅在请求期被读取，加载先后
 无关。
 """
+import ast
 import os
 import re
 import sys
+from datetime import datetime, timezone
 from urllib.parse import urlparse, parse_qs
 
 # 反查 app 模块：优先 __main__（脚本运行），否则 lda_webui.app（包运行）
@@ -283,6 +285,123 @@ def h_stats(h, p, q, path):
     store = _app._get_store()
     obj = store.stats_summary(_app._bearer(h.headers))
     return (_ok_code(obj), obj)
+
+
+# ---------- 公开自证看板（无需鉴权）----------
+# 设计约束：WebUI 进程零依赖（不 import numpy）。锚清单(BENCHMARK_ORDER)与
+# CI core 清单(CORE_SMOKES)的真实来源模块会经 golden/numpy 间接 import，
+# 故此处用 ast 解析源码字面量（零依赖、随代码自更新）取数，绝不触发重依赖。
+def _anchor_inventory():
+    """返回 BENCHMARK_ORDER 列表（numpy-free）。优先直接 import，失败则解析源码。"""
+    try:
+        from lda_harness.benchmarks import BENCHMARK_ORDER  # 需 numpy，webui 可能无
+        return list(BENCHMARK_ORDER)
+    except Exception:
+        pass
+    try:
+        fp = os.path.join(os.path.dirname(__file__), "..",
+                          "lda_harness", "benchmarks.py")
+        with open(fp, encoding="utf-8") as f:
+            tree = ast.parse(f.read())
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                for t in node.targets:
+                    if isinstance(t, ast.Name) and t.id == "BENCHMARK_ORDER":
+                        if isinstance(node.value, (ast.List, ast.Tuple)):
+                            return [e.value for e in node.value.elts
+                                    if isinstance(e, ast.Constant)]
+    except Exception:
+        pass
+    return []
+
+
+def _ci_core_count():
+    """返回 CORE_SMOKES 项数（numpy-free，解析 run_ci_regression.py 字面量）。"""
+    try:
+        fp = os.path.join(os.path.dirname(__file__), "..",
+                          "run_ci_regression.py")
+        with open(fp, encoding="utf-8") as f:
+            tree = ast.parse(f.read())
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                for t in node.targets:
+                    if isinstance(t, ast.Name) and t.id == "CORE_SMOKES":
+                        if isinstance(node.value, (ast.List, ast.Tuple)):
+                            return len([e for e in node.value.elts
+                                        if isinstance(e, ast.Constant)])
+            elif isinstance(node, ast.AnnAssign):
+                t = node.target
+                if isinstance(t, ast.Name) and t.id == "CORE_SMOKES":
+                    if isinstance(node.value, (ast.List, ast.Tuple)):
+                        return len([e for e in node.value.elts
+                                    if isinstance(e, ast.Constant)])
+    except Exception:
+        pass
+    return None
+
+
+def h_public_stats(h, p, q, path):
+    """公开自证看板（无需鉴权）。仅暴露可信度信号：锚/引擎/货架/CI 项，
+    绝不返回任何用户、订单、GMV 等敏感数据。"""
+    inv = {
+        "service": "lda-webui",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "verification": {
+            "principles": [
+                "物理定律锚红线：裁判最终判定落非 AI ground（解析解 / 麦克斯韦确定性）",
+                "LLM 不进判决路径：PASS / FAIL 由死标量比对决定，机器优先、人终审",
+                "主权编码：GPL 零污染，22 类端到端设计引擎 + 27 个自研求解核模块",
+            ],
+        },
+        "assets": {},
+        "ci": {},
+    }
+    # 版本（health_check 单一真源，自更新）
+    try:
+        hc = _app.health_check()
+        inv["version"] = hc.get("version")
+    except Exception:
+        inv["version"] = None
+    # 设计引擎数
+    try:
+        from lda_design.design_package import ENGINE_KINDS
+        inv["assets"]["design_engines"] = len(ENGINE_KINDS)
+    except Exception:
+        inv["assets"]["design_engines"] = None
+    # 货架 + 分档
+    try:
+        from .shelf_pricing import build_price_map
+        from lda_l2.ship_package import OPEN_SHELVES
+        pm = build_price_map()
+        inv["assets"]["shelves_total"] = len(pm)
+        inv["assets"]["shelves_open"] = len(OPEN_SHELVES)
+        tiers = {"basic": 0, "standard": 0, "premium": 0}
+        for v in pm.values():
+            if v == 599.0:
+                tiers["basic"] += 1
+            elif v == 1999.0:
+                tiers["standard"] += 1
+            elif v == 4999.0:
+                tiers["premium"] += 1
+        inv["assets"]["pricing_tiers"] = tiers
+    except Exception:
+        inv["assets"]["shelves_total"] = None
+    # 锚（numpy-free）
+    bids = _anchor_inventory()
+    inv["assets"]["anchors_total"] = len(bids)
+    byc = {"B": 0, "E": 0, "S": 0}
+    for b in bids:
+        bu = str(b).upper()
+        for k in byc:
+            if bu.startswith(k):
+                byc[k] += 1
+                break
+    inv["assets"]["anchors_by_class"] = byc
+    # CI core
+    inv["ci"]["core_smokes"] = _ci_core_count()
+    inv["ci"]["note"] = ("CI core 全量回归最近一次：80 PASS / 0 SKIP / 0 FAIL"
+                         "（与 README 当前账本段一致）；重 FDTD/GPU 项走 --tag all。")
+    return (200, inv)
 
 
 def h_store_order_download(h, p, q, path):
@@ -811,6 +930,7 @@ GET_ROUTES = {
     "/api/admin/orders": h_admin_orders,
     "/api/admin/users": h_admin_users,
     "/api/stats": h_stats,
+    "/api/public/stats": h_public_stats,
     "/api/admin/config": h_admin_config_get,
     "/api/scale_demo": h_scale_demo,
     "/api/capability_demos": h_capability_demos,

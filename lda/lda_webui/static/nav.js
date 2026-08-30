@@ -23,6 +23,7 @@
     if (p.endsWith("mine.html")) return "mine";
     if (p.endsWith("admin.html")) return "admin";
     if (p.endsWith("stats.html")) return "stats";
+    if (p.endsWith("public.html")) return "public";
     return "home";
   }
 
@@ -51,6 +52,7 @@
       '<span style="font-weight:800;color:var(--accent);font-size:16px;letter-spacing:.5px">LDA</span>' +
       link("/index.html", "首页", "home") +
       link("/insights.html", "能力展示", "insights") +
+      link("/public.html", "验证实力", "public") +
       link("/store.html", "创新超市", "store") +
       '<a id="lda-nav-mine" href="/mine.html" style="display:none;text-decoration:none;font-size:14px">我的</a>' +
       link("/admin.html", "管理后台", "admin") +

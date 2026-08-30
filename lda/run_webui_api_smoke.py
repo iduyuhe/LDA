@@ -197,6 +197,25 @@ def _check_ecosystem_fields(base):
             for p in ECOSYSTEM_REQUIRED_FIELDS]
 
 
+def _check_security_headers(base):
+    """纵深防御安全头断言（B 纵深加固）：GET /api/status 响应须含全部安全响应头。
+
+    任一缺失即 FAIL——安全头是全局注入（app.py _send），漏配会全局降级。
+    """
+    required = ["X-Frame-Options", "X-Content-Type-Options", "Referrer-Policy",
+                "Content-Security-Policy", "Permissions-Policy"]
+    try:
+        with urllib.request.urlopen(f"{base}/api/status", timeout=15) as r:
+            hdrs = {k.lower(): v for k, v in r.headers.items()}
+    except Exception as e:
+        return [("FAIL", "header", f"响应读取失败: {e}")]
+    out = []
+    for name in required:
+        out.append(("PASS" if name.lower() in hdrs else "FAIL",
+                     "header", name + ("" if name.lower() in hdrs else " 缺失")))
+    return out
+
+
 def main():
     gets, posts = _extract_routes()
     port = _free_port()
@@ -271,6 +290,12 @@ def main():
                 ok.append(("FIELD", r, d))
             else:
                 fail.append(("FIELD", r, d))
+        # 3c) 纵深防御安全头断言（B 纵深加固）：/api/status 响应须含全部安全响应头
+        for kind, r, d in _check_security_headers(base):
+            if kind == "PASS":
+                ok.append(("HEADER", r, d))
+            else:
+                fail.append(("HEADER", r, d))
         # 4) 重计算 POST 端点：静态验证存在（不实跑）
         heavy = [r for r in posts
                  if any(f"/{h}" in r for h in HEAVY_POST)]

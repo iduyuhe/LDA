@@ -2941,6 +2941,23 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype + "; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Access-Control-Allow-Origin", "*")
+        # 纵深防御安全响应头（B 纵深加固 · 2026-08-30）：所有响应统一注入。
+        # 说明：本服务经 nginx 反代、应用层仅 HTTP，故 HSTS 由 nginx 负责、此处不发送
+        # （HTTP 响应带 HSTS 无效且易误导）；CSP 因既有页面含内联脚本/事件处理器，
+        # 暂保留 'unsafe-inline'（已知遗留债，待重构内联脚本后可收紧），但已锁死
+        # framing / 外部脚本源 / MIME 嗅探 / base-uri / object 嵌入。
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header(
+            "Content-Security-Policy",
+            "default-src 'self' blob:; script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; "
+            "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; "
+            "base-uri 'self'; object-src 'none'; form-action 'self'")
+        self.send_header(
+            "Permissions-Policy",
+            "geolocation=(), microphone=(), camera=(), payment=(), usb=()")
         if nocache:
             # 静态 HTML 强制不缓存，避免浏览器启发式缓存导致 inline script 失效
             self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")

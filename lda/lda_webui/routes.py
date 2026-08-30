@@ -45,7 +45,7 @@ def h_static_html(h, p, q, path):
     name = os.path.basename(path)
     fp = os.path.join(_app.WEBUI_DIR, "static", name)
     if name in ("index.html", "insights.html", "admin.html", "store.html",
-                "mine.html") and os.path.exists(fp):
+                "mine.html", "public.html") and os.path.exists(fp):
         with open(fp, "rb") as f:
             h._send(200, body=f.read(), ctype="text/html", nocache=True)
     else:

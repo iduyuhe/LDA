@@ -229,7 +229,7 @@ def main():
 
         # 1) GET 端点实跑（快）
         for r in gets:
-            if r.startswith("/api/admin/"):
+            if r.startswith("/api/admin/") or r == "/api/stats":
                 h, need_auth = (admin_hdr or {}), True
             elif r.startswith("/api/store/me/") or r == "/api/store/orders/mine":
                 h, need_auth = (user_hdr or {}), True

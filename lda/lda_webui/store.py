@@ -981,6 +981,76 @@ def my_summary(user_token: str) -> dict:
     }
 
 
+def _is_test_email(email: str) -> bool:
+    """判别测试/冒烟账号（stats 聚合用）：smoke-*.@lda.local 或已知测试域名。
+
+    仅作信号分类启发式，不用于任何权限/计费判定。
+    """
+    e = (email or "").lower()
+    if not e:
+        return True
+    if re.match(r"^smoke-.*@lda\.local$", e):
+        return True
+    dom = e.rsplit("@", 1)[-1]
+    return dom in _TEST_DOMAINS
+
+
+def stats_summary(token: str) -> dict:
+    """管理后台数据看板聚合（admin 专属）。
+
+    设计取向：把「真实信号」与「测试残留」分开计数——当前诚实边界是
+    「0 真实成交、不猜方向」，此端点让真实注册/订单到来时**立即可见**，
+    而不是混在 smoke 测试账号里被淹没。不依赖任何外部资源。
+    """
+    if not is_admin(token):
+        return {"ok": False, "error": "unauthorized", "code": 401}
+    data = _load()
+    users = list(data["users"].values())
+    total = len(users)
+    real = sum(1 for u in users if not _is_test_email(u.get("email", "")))
+    test = total - real
+    by_type = {t: 0 for t in USER_TYPES}
+    for u in users:
+        k = u.get("user_type") or DEFAULT_TIER
+        by_type[k] = by_type.get(k, 0) + 1
+    orders = data["orders"]
+    ototal = len(orders)
+    by_status: dict = {}
+    for o in orders:
+        s = o.get("status", "?")
+        by_status[s] = by_status.get(s, 0) + 1
+    by_type_o: dict = {}
+    for o in orders:
+        t = o.get("type", "?")
+        by_type_o[t] = by_type_o.get(t, 0) + 1
+    _paid = ("paid_unverified", "approved", "delivered", "accepted")
+    gmv = round(sum(float(o.get("amount_cny", 0) or 0)
+                    for o in orders if o.get("status") in _paid), 2)
+    # 货架档位分布（轻量，纯常量模块，无重依赖）
+    try:
+        from .shelf_pricing import build_price_map
+        _pm = build_price_map()
+    except Exception:  # noqa: BLE001
+        _pm = {}
+    by_tier = {"basic": 0, "standard": 0, "premium": 0}
+    for _price in _pm.values():
+        if _price == 599.0:
+            by_tier["basic"] += 1
+        elif _price == 1999.0:
+            by_tier["standard"] += 1
+        elif _price == 4999.0:
+            by_tier["premium"] += 1
+    return {
+        "ok": True,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "users": {"total": total, "real": real, "test": test, "by_type": by_type},
+        "orders": {"total": ototal, "by_status": by_status,
+                   "by_type": by_type_o, "gmv_cny": gmv},
+        "shelves": {"total": len(_pm), "by_tier": by_tier},
+        "note": "real=排除 smoke-*.@lda.local 及测试域名；test 为已知冒烟/测试残留。"
+    }
+
+
 def public_config() -> dict:
     """给前台：微信收款码 + 对公账户 + 身份分层，不含管理员信息。"""
     data = _load()

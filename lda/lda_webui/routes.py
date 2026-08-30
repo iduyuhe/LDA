@@ -278,6 +278,13 @@ def h_admin_users(h, p, q, path):
     return (_ok_code(obj), obj)
 
 
+def h_stats(h, p, q, path):
+    """管理后台数据看板（admin 专属）。真实/测试账号分离计数。"""
+    store = _app._get_store()
+    obj = store.stats_summary(_app._bearer(h.headers))
+    return (_ok_code(obj), obj)
+
+
 def h_store_order_download(h, p, q, path):
     store = _app._get_store()
     parts = path.split("/")
@@ -802,6 +809,7 @@ GET_ROUTES = {
     "/api/store/me/licenses": h_store_me_licenses,
     "/api/admin/orders": h_admin_orders,
     "/api/admin/users": h_admin_users,
+    "/api/stats": h_stats,
     "/api/admin/config": h_admin_config_get,
     "/api/scale_demo": h_scale_demo,
     "/api/capability_demos": h_capability_demos,

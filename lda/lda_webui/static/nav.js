@@ -22,6 +22,7 @@
     if (p.endsWith("store.html")) return "store";
     if (p.endsWith("mine.html")) return "mine";
     if (p.endsWith("admin.html")) return "admin";
+    if (p.endsWith("stats.html")) return "stats";
     return "home";
   }
 
@@ -53,6 +54,7 @@
       link("/store.html", "创新超市", "store") +
       '<a id="lda-nav-mine" href="/mine.html" style="display:none;text-decoration:none;font-size:14px">我的</a>' +
       link("/admin.html", "管理后台", "admin") +
+      (localStorage.getItem("lda_admin_token") ? link("/stats.html", "数据看板", "stats") : "") +
       "</div>" +
       '<div id="lda-nav-auth" style="display:flex;gap:8px;align-items:center"></div>';
     document.body.insertBefore(nav, document.body.firstChild);

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LDA · 数据看板</title>
+<style>
+  :root{
+    --panel:#fff; --line:#e6e8ee; --txt:#1b2030; --mut:#6b7280; --accent:#2563eb; --red:#dc2626; --green:#16a34a;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --panel:#141925; --line:#26304a; --txt:#e6eaf2; --mut:#9aa6bf; --accent:#3b82f6; --red:#f87171; --green:#4ade80; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+       background:#f5f7fb;color:var(--txt)}
+  @media (prefers-color-scheme: dark){ body{background:#0d111a} }
+  .wrap{max-width:980px;margin:0 auto;padding:24px 18px 60px}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--mut);font-size:13px;margin-bottom:20px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:26px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .card .n{font-size:30px;font-weight:800;line-height:1.1}
+  .card .l{color:var(--mut);font-size:12px;margin-top:6px}
+  .card .n.green{color:var(--green)} .card .n.red{color:var(--red)} .card .n.accent{color:var(--accent)}
+  section{margin-bottom:28px}
+  section h2{font-size:15px;margin:0 0 12px;color:var(--mut);font-weight:700;letter-spacing:.5px}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:10px 14px;font-size:13px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;background:rgba(37,99,235,.04)}
+  tr:last-child td{border-bottom:0}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+  .note{background:rgba(37,99,235,.06);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+        font-size:12px;color:var(--mut);line-height:1.6}
+  .err{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px;text-align:center;color:var(--mut)}
+  .err a{color:var(--accent)}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;background:rgba(37,99,235,.1);color:var(--accent);margin-left:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>数据看板 <span class="pill" id="gen">—</span></h1>
+  <div class="sub">创新超市真实信号聚合 · 仅管理员可见 · 真实账号与测试残留分离计数</div>
+  <div id="app"><div class="err">读取中…</div></div>
+</div>
+<script>
+(function(){
+  "use strict";
+  var TOK = localStorage.getItem("lda_admin_token") || "";
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function fmt(n){ return (n==null?"0":n).toLocaleString("en-US"); }
+  function card(n,label,cls){ return '<div class="card"><div class="n '+(cls||"")+'">'+esc(n)+'</div><div class="l">'+esc(label)+'</div></div>'; }
+  function rowTable(rows){
+    if(!rows.length) return '<div class="note">无数据</div>';
+    var h='<table><thead><tr><th>项</th><th style="text-align:right">计数</th></tr></thead><tbody>';
+    rows.forEach(function(r){ h+='<tr><td>'+esc(r[0])+'</td><td class="num">'+esc(r[1])+'</td></tr>'; });
+    return h+'</tbody></table>';
+  }
+  function render(d){
+    var u=d.users||{}, o=d.orders||{}, s=d.shelves||{};
+    var utypes=Object.keys(u.by_type||{}).map(function(k){return [k, u.by_type[k]];});
+    var ostat=Object.keys(o.by_status||{}).map(function(k){return [k, o.by_status[k]];});
+    var otype=Object.keys(o.by_type||{}).map(function(k){return [k, o.by_type[k]];});
+    var stier=Object.keys(s.by_tier||{}).map(function(k){return [k, s.by_tier[k]];});
+    var html=''
+      + '<div class="grid">'
+      +   card(fmt(u.total), "注册用户（总）")
+      +   card(fmt(u.real), "真实注册", "green")
+      +   card(fmt(u.test), "测试残留", "red")
+      +   card(fmt(o.total), "订单（总）")
+      +   card("¥"+fmt(o.gmv_cny||0), "GMV（已付款类）", "accent")
+      +   card(fmt(s.total), "货架（总）")
+      + '</div>'
+      + '<section><h2>用户 · 按身份</h2>'+rowTable(utypes)+'</section>'
+      + '<section><h2>订单 · 按状态</h2>'+rowTable(ostat)+'</section>'
+      + '<section><h2>订单 · 按类型</h2>'+rowTable(otype)+'</section>'
+      + '<section><h2>货架 · 按档位</h2>'+rowTable(stier)+'</section>'
+      + '<div class="note">'+esc(d.note||"")+'<br>生成时间：'+esc(d.generated_at||"")+'</div>';
+    document.getElementById("app").innerHTML=html;
+    document.getElementById("gen").textContent = (d.generated_at||"").slice(0,19).replace("T"," ");
+  }
+  function showErr(msg, link){
+    document.getElementById("app").innerHTML='<div class="err">'+esc(msg)+(link?'<br><a href="'+link+'">前往管理后台登录</a>':'')+'</div>';
+  }
+  if(!TOK){ showErr("未检测到管理员令牌，请先在管理后台登录。", "/admin.html"); return; }
+  fetch("/api/stats", { headers:{ Authorization:"Bearer "+TOK } })
+    .then(function(r){ if(r.status===401) throw new Error("noauth"); return r.json(); })
+    .then(function(d){ if(!d.ok){ showErr("无权限访问数据看板（需管理员）。", "/admin.html"); } else render(d); })
+    .catch(function(e){ showErr(e.message==="noauth"?"无权限访问数据看板（需管理员）。":"读取失败，请重试。", "/admin.html"); });
+})();
+</script>
+</body>
+</html>

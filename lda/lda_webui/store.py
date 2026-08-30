@@ -597,7 +597,8 @@ def admin_approve(order_id: str, token: str, deliverable_url: str = "") -> dict:
                 order["deliverable_url"] = str(deliverable_url).strip()[:500]
         else:
             _deliver(order, data, deliverable_url)
-    return {"ok": True, "order": _public_order(order, for_admin=True)}
+    email_sent = _email_license(order)  # Tier1：审批即自动发码邮件（失败不阻断）
+    return {"ok": True, "order": _public_order(order, for_admin=True), "email_sent": email_sent}
 
 
 def admin_reject(order_id: str, token: str, reason: str = "") -> dict:
@@ -723,6 +724,30 @@ def _deliver(order: dict, data: dict, deliverable_url: str = "") -> None:
     order["approved_at"] = datetime.now(timezone.utc).isoformat()
     if deliverable_url:
         order["deliverable_url"] = str(deliverable_url).strip()[:500]
+
+
+def _email_license(order: dict) -> bool:
+    """审批通过后自动向客户邮箱发送下载码（Tier1 自动交付）。
+
+    邮件通道异常绝不应阻断审批：发送失败仅返回 False，审批结果不受影响。
+    定制订单无 license_code，直接跳过（返回 False）。
+    """
+    customer = order.get("customer") or {}
+    email_addr = (customer.get("email") or "").strip()
+    code = order.get("license_code")
+    if not email_addr or not code:
+        return False
+    item_name = order.get("title") or order.get("shelf_id") or "LDA 设计就绪包"
+    try:
+        from lda_webui.email_delivery import send_download_code
+        send_download_code(email_addr, item_name, code)
+        return True
+    except Exception as exc:  # 邮件失败绝不阻断审批
+        import sys
+        sys.stderr.write(
+            f"[WARN] 下载码邮件发送失败 order={order.get('id')} -> {email_addr}: {exc!r}\n"
+        )
+        return False
 
 
 def _find_order(data: dict, order_id: str) -> dict | None:

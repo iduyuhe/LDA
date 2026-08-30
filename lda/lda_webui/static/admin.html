@@ -430,7 +430,11 @@ async function approvePurchase(id){
   try{
     const r=await fetch("/api/admin/purchase/"+id+"/approve",{method:"POST",headers:authHeaders(),body:"{}"});
     const j=await r.json();
-    if(r.status===200 && j.ok){ $("msg").innerHTML='<div class="ok">已审批，兑换码：'+esc(j.license_code||"")+'</div>'; loadPurchases(); }
+    if(r.status===200 && j.ok){
+      var mail = j.email_sent ? '，下载码已自动发至客户邮箱 ✅' : '（邮件发送未成功，请手动复制码发送）';
+      $("msg").innerHTML='<div class="ok">已审批，兑换码：'+esc(j.license_code||"")+mail+'</div>';
+      loadPurchases();
+    }
     else{ $("msg").innerHTML='<div class="err">失败：'+esc(j.error||r.status)+'</div>'; }
   }catch(e){ $("msg").innerHTML='<div class="err">请求失败：'+e.message+'</div>'; }
 }

@@ -1,0 +1,135 @@
+{
+  "endpoint": "/api/verification_ledger",
+  "ci_core": {
+    "count": 82,
+    "tag": "core",
+    "note": "run_ci_regression.py --tag core；计数一致性由 run_count_consistency_smoke 守护"
+  },
+  "anchors": {
+    "total": 48,
+    "by_kind": {
+      "physical-law": {
+        "count": 38,
+        "ids": [
+          "B1",
+          "B2",
+          "B3",
+          "B4",
+          "B8",
+          "B9",
+          "B10",
+          "B11",
+          "B12",
+          "B13",
+          "B14",
+          "B15",
+          "B16",
+          "B17",
+          "B18",
+          "B19",
+          "B20",
+          "B21",
+          "B22",
+          "B23",
+          "B24",
+          "B25",
+          "B26",
+          "B27",
+          "B28",
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5",
+          "S6",
+          "S7",
+          "S8",
+          "S9",
+          "S10",
+          "S11",
+          "S12",
+          "S13"
+        ]
+      },
+      "oracle-dependent": {
+        "count": 3,
+        "ids": [
+          "B5",
+          "B6",
+          "B7"
+        ],
+        "note": "B5/B6/B7 依赖外部 ORACLE（meep/tidy3d 真场级或 numpy 离线近似），ORACLE 缺失时回退设计守则下限——非纯物理定律，属 R4 开放缺口"
+      },
+      "empirical": {
+        "count": 7,
+        "ids": [
+          "E1",
+          "E2",
+          "E3",
+          "E4",
+          "E5",
+          "E6",
+          "E7"
+        ],
+        "note": "LDA 实证大数据锚（真实器件实测语料），文件背载，运行期由 harness 装载"
+      }
+    },
+    "dispatch_ids": [
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "B5",
+      "B6",
+      "B7",
+      "B8",
+      "B9",
+      "B10",
+      "B11",
+      "B12",
+      "B13",
+      "B14",
+      "B15",
+      "B16",
+      "B17",
+      "B18",
+      "B19",
+      "B20",
+      "B21",
+      "B22",
+      "B23",
+      "B24",
+      "B25",
+      "B26",
+      "B27",
+      "B28",
+      "S1",
+      "S2",
+      "S3",
+      "S4",
+      "S5",
+      "S6",
+      "S7",
+      "S8",
+      "S9",
+      "S10",
+      "S11",
+      "S12",
+      "S13"
+    ]
+  },
+  "cpo_scale": {
+    "endpoint": "/api/cpo_array",
+    "default_devices": 100096,
+    "scale_devices": 250240,
+    "verdict": "ACCEPT（死锚 DRC+LVS+断路反例）",
+    "note": "外部可 curl 活体验货；本账本仅静态引用"
+  },
+  "verified_by_classification": "physical-law=确定性物理定律/解析解（非 AI ground，任何人都可独立复算）；empirical=真实器件实测语料（跨多源，非 AI 互证）；oracle-dependent=B5/B6/B7 依赖外部 ORACLE（meep/tidy3d 真场级或 numpy 离线近似），ORACLE 缺失时回退设计守则下限（非纯物理定律）——属 R4 开放缺口",
+  "open_gaps": [
+    "R2 外部 ORACLE（Meep/Tidy3D/pyEPR）默认不通 → 物理定律锚无法现场交叉验证",
+    "R3 实证锚仅 7 条种子语料，规模不足以覆盖全品类",
+    "R4 B5/B6/B7 为 ORACLE 依赖（numpy 离线近似或设计守则下限回退），根因=R2 缺外部 ORACLE"
+  ],
+  "honest_note": "本账本仅声明已注册验证资产的分类与计数；LLM 不进判决路径，PASS/FAIL 一律由死标量比对。可被外部验货的部分=physical-law 锚（独立复算）+/api/cpo_array 死锚判决（curl 复现）。design-anchor 与 empirical 规模缺口为已知诚实边界。"
+}

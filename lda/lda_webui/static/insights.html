@@ -73,7 +73,7 @@
 </style>
 </head>
 <body>
-<h2 class="sr-only">LDA 能力展示：24 条整芯片对标、24 条创新超市货架、万级规模现场实测、12 项能力演示场景</h2>
+<h2 class="sr-only">LDA 能力展示：24 条整芯片对标、24 条创新超市货架、万级规模现场实测、12 项能力演示场景、验证可信度外部可验货（死锚账本 + CPO 十万级死锚）</h2>
 <div class="top">
   <h1>LDA · 能力展示</h1>
   <a href="/">← 返回验证内核控制台</a>
@@ -117,6 +117,19 @@
       <table id="capEngineTable" style="margin-top:12px"></table>
     </div>
     <div class="shelf-grid" id="capGrid" style="margin-top:14px"></div>
+  </div>
+
+  <div class="card">
+    <h2>⑤ 验证可信度 · 外部可验货（死锚账本 + CPO 十万级死锚）</h2>
+    <div class="sub">把"可被外部验货的验证可信度"做成可现场复现：本页实时拉取两个无鉴权端点，任何人可在自己浏览器/终端独立复算（等价 curl）。LLM 不进判决路径，全部死标量比对。</div>
+    <button class="btn" id="vRun" onclick="runVerify()">现场跑验货账本 + CPO 死锚</button>
+    <span class="stat" id="vStat" style="display:none"></span>
+    <div id="vArea" style="display:none;margin-top:14px">
+      <table id="vLedgerTable"></table>
+      <div class="bar-wrap" id="vKindBar"></div>
+      <table id="vCpoTable" style="margin-top:14px"></table>
+      <div id="vGaps" style="margin-top:12px"></div>
+    </div>
   </div>
 
   <div class="card foot">
@@ -396,6 +409,62 @@ function runCap(){
     $('capEngineTable').innerHTML=h;
     b.disabled=false; b.textContent='重新现场跑';
   }).catch(function(e){ b.disabled=false; b.textContent='现场跑'; alert('失败: '+e); });
+}
+
+function getJSON(url){ return fetch(url).then(function(r){ return r.ok?r.json():{__err:r.status}; }); }
+function runVerify(){
+  var b=$('vRun'); b.disabled=true; b.textContent='运行中…';
+  Promise.all([getJSON('/api/verification_ledger'), getJSON('/api/cpo_array')])
+    .then(function(res){
+      var L=res[0], C=res[1];
+      $('vArea').style.display='block';
+      // —— 验货账本分类 ——
+      var a=(L&&!L.__err)?L.anchors:null;
+      var bk=(a&&a.by_kind)||{};
+      var lh='<tr><th>验证资产分类</th><th>数量</th><th>事实来源（死锚基础）</th></tr>';
+      if(!a){
+        lh+='<tr><td colspan="3" style="color:var(--amber)">验货账本端点待部署（v0.9.3 上线后生效；当前生产为 v0.9.2）</td></tr>';
+      } else {
+        lh+='<tr><td>确定性物理定律 / 解析解</td><td><b style="color:var(--green)">'+((bk['physical-law']||{}).count||'?')+'</b></td><td style="color:var(--mut);font-size:12px">非 AI ground，任何人都可独立复算</td></tr>';
+        lh+='<tr><td>外部 ORACLE 依赖（B5/B6/B7）</td><td><b style="color:var(--amber)">'+((bk['oracle-dependent']||{}).count||'?')+'</b></td><td style="color:var(--mut);font-size:12px">ORACLE 缺失时回退设计守则下限（R4 开放缺口）</td></tr>';
+        lh+='<tr><td>真实器件实测语料（E1–E7）</td><td><b>'+((bk['empirical']||{}).count||'?')+'</b></td><td style="color:var(--mut);font-size:12px">文件背载，运行期 harness 装载</td></tr>';
+        lh+='<tr><td><b>合计已注册验货锚</b></td><td><b style="color:var(--accent)">'+a.total+'</b></td><td>CI core 守护 <b>'+((L.ci_core&&L.ci_core.count)||'?')+'</b> 条死标量冒烟</td></tr>';
+      }
+      $('vLedgerTable').innerHTML=lh;
+      // —— 分类条形图 ——
+      var pl=(bk['physical-law']||{}).count||0, po=(bk['oracle-dependent']||{}).count||0, pe=(bk['empirical']||{}).count||0;
+      var mc=Math.max(pl,po,pe,1);
+      function bar(name,c,color){
+        return '<div class="bar-col"><div class="bar" style="height:'+Math.max(6,Math.round(c/mc*110))+'px;background:linear-gradient(180deg,'+color+','+color+')"></div><b>'+name+'</b><span class="cap">'+c+'</span></div>';
+      }
+      $('vKindBar').innerHTML=a?bar('物理定律',pl,'#22c55e')+bar('ORACLE依赖',po,'#f59e0b')+bar('实证',pe,'#38bdf8'):'';
+      // —— CPO 死锚判决 ——
+      if(C&&!C.__err){
+        var cfg=C.config||{}, drc=C.drc||{}, lvs=C.lvs||{}, fi=C.fault_injection||{}, ts=C.time_s||{};
+        var cpo=[
+          ['器件规模', (cfg.n_oe||'?')+'×'+(cfg.n_ch||'?')+'×'+(cfg.n_lane||'?')+' = <b style="color:var(--accent)">'+(cfg.n_devices!=null?cfg.n_devices:'?')+'</b> 器件'],
+          ['DRC 死锚', (drc.all_pass?'<span class="ok">PASS</span>':'<span class="no">FAIL</span>')+' · '+(drc.n_pass||0)+'/'+(drc.n_total||0)],
+          ['LVS 网表', (lvs.verdict==='ACCEPT'?'<span class="ok">ACCEPT</span>':'<span class="no">'+esc(lvs.verdict)+'</span>')+' · 违规 '+(lvs.n_violations||0)],
+          ['断路反例注入', (fi.verdict==='REJECT'?'<span class="ok">REJECT（正确拒收）</span>':'<span class="no">'+esc(fi.verdict)+'</span>')],
+          ['<b>外部验货结论</b>', (C.accepted?'<span class="ok"><b>ACCEPT（真可行，非外推）</b></span>':'<span class="no"><b>REJECT</b></span>')],
+          ['全链耗时', (ts.total!=null?ts.total+'s':'?')+'（构建+DRC+LVS+反例）']
+        ];
+        var ch='<tr><th>CPO 共封装光引擎阵列 · 死锚判决</th><th>结果</th></tr>';
+        cpo.forEach(function(r){ ch+='<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>'; });
+        $('vCpoTable').innerHTML=ch;
+        // 诚实边界
+        var og=(L&&!L.__err&&L.open_gaps)||[];
+        $('vGaps').innerHTML=og.length
+          ? '<div class="note" style="color:var(--amber)"><b style="color:var(--amber)">诚实边界 · 已知开放缺口：</b><br>'+og.map(function(g){return '• '+esc(g)}).join('<br>')+'</div>'
+          : '';
+        $('vStat').style.display='inline-block';
+        $('vStat').innerHTML='验货账本 <b>'+(a?a.total:'—')+'</b> 锚 · CPO <b>'+(C.accepted?'ACCEPT':'REJECT')+'</b>';
+      } else {
+        $('vCpoTable').innerHTML='<tr><td colspan="2" style="color:var(--amber)">CPO 死锚端点暂不可达（'+((C&&C.__err)||'网络')+'）</td></tr>';
+      }
+      b.disabled=false; b.textContent='重新现场跑';
+    })
+    .catch(function(e){ b.disabled=false; b.textContent='现场跑'; alert('失败: '+e); });
 }
 
 load();

@@ -22,6 +22,7 @@ import ast
 import os
 import re
 import sys
+import time
 from datetime import datetime, timezone
 from urllib.parse import urlparse, parse_qs
 
@@ -145,6 +146,69 @@ def h_capability_demos(h, p, q, path):
     if q.get("run") == "1":
         return (200, _app.capability_demos_run())
     return (200, _app.capability_demos_status())
+
+
+def h_cpo_array(h, p, q, path):
+    """GET /api/cpo_array —— CPO 共封装光引擎阵列死锚判决（外部可验货）。
+
+    默认 32 引擎 × 34 通道 × 8 波长 = 100,096 器件；?oe=&ch=&lane=&ch_per_row=
+    缩放（如 ?oe=40&ch=68 → 250,240 器件）。?gds=1 含 GDS 导出（默认跳过省时）。
+    返回死标量验收 JSON：器件数 / DRC / LVS / 断路反例 / 耗时 / accepted。
+    读-only、无鉴权——直接服务「可被外部验货的验证可信度」战略主线。
+    """
+    try:
+        sys.path.insert(0, _app.LDA_ROOT)
+        from lda_harness.cpo_array import (CPOArrayConfig, build_cpo_array_case,
+                                           inject_fault)
+        from lda_l2.chip_layout_export import chip_drc_report
+        from lda_l2.lvs import run_lvs
+        oe = int(q.get("oe", ["32"])[0])
+        ch = int(q.get("ch", ["34"])[0])
+        lane = int(q.get("lane", ["8"])[0])
+        cpr = int(q.get("ch_per_row", ["4"])[0])
+        gds = q.get("gds", ["0"])[0] == "1"
+        cfg = CPOArrayConfig(n_oe=oe, n_ch=ch, n_lane=lane, ch_per_row=cpr)
+        cfg.validate()
+        t0 = time.perf_counter()
+        link, placement, routes, meta = build_cpo_array_case(cfg)
+        drc = chip_drc_report(link, placement)
+        lvs = run_lvs(link, placement, routes)
+        nm = lvs["match"]
+        r_dis = dict(routes)
+        inject_fault(r_dis, "disconnect")
+        lvs_dis = run_lvs(link, placement, r_dis)
+        gds_stats = {}
+        if gds:
+            from lda_l2.chip_layout_export import export_chip_gds
+            r = export_chip_gds(link, placement, routes)
+            st = r["gds_stats"]
+            gds_stats = {"gds_bytes": st["gds_bytes"], "n_elements": st["n_elements"],
+                         "width_um": st["width_um"], "height_um": st["height_um"]}
+        t_total = time.perf_counter() - t0
+        accepted = bool(drc["all_pass"] and lvs["verdict"] == "ACCEPT"
+                        and lvs_dis["verdict"] == "REJECT")
+        return (200, {
+            "endpoint": "/api/cpo_array",
+            "config": {"n_oe": oe, "n_ch": ch, "n_lane": lane,
+                       "ch_per_row": cpr, "n_devices": meta["n_devices"],
+                       "n_chains": meta["n_chains"]},
+            "drc": {"n_pass": drc["n_pass"], "n_checked": drc["n_checked"],
+                    "all_pass": drc["all_pass"]},
+            "lvs": {"verdict": lvs["verdict"], "n_violations": lvs["n_violations"],
+                    "net_match": nm["n_nets_match"], "net_total": nm["n_nets_total"]},
+            "fault_injection": {"verdict": lvs_dis["verdict"],
+                                "n_violations": lvs_dis["n_violations"]},
+            "gds": gds_stats,
+            "time_s": {"build_route": round(meta.get("time_build_link_s", 0), 3),
+                       "total": round(t_total, 3)},
+            "accepted": accepted,
+            "honest_note": "仅建模无源光子层（有源器件按黑箱·负面清单）；"
+                           "工艺为公开文献近似非真实 PDK；只做版图闭环未做光学仿真；"
+                           "未流片无实测回流。LLM 不进判决路径——PASS/FAIL 由死标量比对。",
+        })
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/cpo_array", "error": str(e)[:200],
+                      "accepted": False})
 
 
 def h_benchmark_crosscheck(h, p, q, path):
@@ -399,7 +463,7 @@ def h_public_stats(h, p, q, path):
     inv["assets"]["anchors_by_class"] = byc
     # CI core
     inv["ci"]["core_smokes"] = _ci_core_count()
-    inv["ci"]["note"] = ("CI core 全量回归最近一次：80 PASS / 0 SKIP / 0 FAIL"
+    inv["ci"]["note"] = ("CI core 全量回归最近一次：82 PASS / 0 SKIP / 0 FAIL"
                          "（与 README 当前账本段一致）；重 FDTD/GPU 项走 --tag all。")
     return (200, inv)
 
@@ -965,6 +1029,7 @@ GET_ROUTES = {
     "/api/admin/config": h_admin_config_get,
     "/api/scale_demo": h_scale_demo,
     "/api/capability_demos": h_capability_demos,
+    "/api/cpo_array": h_cpo_array,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,
 }
 

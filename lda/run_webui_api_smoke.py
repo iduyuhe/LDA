@@ -42,6 +42,12 @@ HEAVY_POST = {
     "wdm_splitter", "pdk_compare",
 }
 
+# 重计算 GET 端点（默认配置即实跑数秒~数十秒规模计算）→ 仅静态验证路由存在，
+# 不实跑（其内核由 run_cpo_array_smoke / run_cpo_array_scale_smoke 覆盖）。
+HEAVY_GET = {
+    "cpo_array",
+}
+
 
 def _extract_routes():
     """P2 路由拆分后，/api/* 路由表已外置到 lda_webui/routes.py。
@@ -279,6 +285,10 @@ def main():
 
         # 1) GET 端点实跑（快）
         for r in gets:
+            if r.replace("/api/", "") in HEAVY_GET:
+                info.append(("GET", r,
+                             "静态存在（重计算 GET，内核由专用 smoke 覆盖）"))
+                continue
             if r.startswith("/api/admin/") or r == "/api/stats":
                 h, need_auth = (admin_hdr or {}), True
             elif r.startswith("/api/store/me/") or r == "/api/store/orders/mine":

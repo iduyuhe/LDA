@@ -106,20 +106,26 @@ def sref(sname: str, origin_um: Sequence[float], layer: int = LIB_LAYER_SI) -> b
 
 
 def gds_library(name: str, structures: Dict[str, List[bytes]]) -> bytes:
-    """GDSII 库文件：库头 + 各结构（单元名 → 元素记录列表）。"""
-    out = b""
-    out += _rec(0x00, 2, _int2(600))               # HEADER（版本 600）
-    out += _rec(0x01, 0, b"")                      # BGNLIB
-    out += _rec(0x02, 6, _ascii(name))             # LIBNAME
-    out += _rec(0x03, 5, _real8(DBU) + _real8(1.0 / DBU))  # UNITS
+    """GDSII 库文件：库头 + 各结构（单元名 → 元素记录列表）。
+
+    v0.8.46 · 性能：累计字节改「收 list 后 b''.join()」一次性拼接。
+    原因：CPython 的 ``bytes += bytes`` **不做超额分配**，循环里逐段 ``+=``
+    每次复制整段 growing buffer → 整体 O(n²)（gds_library 在 20k 器件已占
+    全链 77% 墙钟，50k 56s、100k OOM）。list + join 为 O(n) 且**字节级一致**
+    （拼接顺序与内容不变，输出 bit-exact 同旧实现）。
+    """
+    chunks: List[bytes] = []
+    chunks.append(_rec(0x00, 2, _int2(600)))       # HEADER（版本 600）
+    chunks.append(_rec(0x01, 0, b""))              # BGNLIB
+    chunks.append(_rec(0x02, 6, _ascii(name)))     # LIBNAME
+    chunks.append(_rec(0x03, 5, _real8(DBU) + _real8(1.0 / DBU)))  # UNITS
     for sname, elements in structures.items():
-        out += _rec(0x05, 0, b"")                  # BGNSTR
-        out += _rec(0x06, 6, _ascii(sname))        # STRNAME
-        for el in elements:
-            out += el
-        out += _rec(0x07, 0, b"")                  # ENDSTR
-    out += _rec(0x04, 0, b"")                      # ENDLIB
-    return out
+        chunks.append(_rec(0x05, 0, b""))          # BGNSTR
+        chunks.append(_rec(0x06, 6, _ascii(sname)))  # STRNAME
+        chunks.extend(elements)
+        chunks.append(_rec(0x07, 0, b""))          # ENDSTR
+    chunks.append(_rec(0x04, 0, b""))              # ENDLIB
+    return b"".join(chunks)
 
 
 # ---------------------------------------------------------------------------

@@ -292,7 +292,32 @@ _HEAVY_GUARDS = {p: {"lock": threading.Lock(), "cache": {}, "ttl": _HEAVY_TTL}
 
 
 def _heavy_guard(name, payload, handler_fn, self, query, path):
-    """对单个重计算 POST 端点施加剧护栏，返回 (code, body)。"""
+    """对单个重计算 POST 端点施加剧护栏，返回 (code, body)。
+
+    登录闸门（v0.9.7）：重计算须登录——store 会话令牌或管理员 Bearer 令牌
+    二者之一。把「无鉴权重计算」敞口从「被并发数封顶」升级为「须有账号才能
+    触发」，攻击者无法再匿名打爆。验证优先 store.user_by_token（用户态），
+    回退 _check_admin（管理员 / 外部 ORACLE 验货用 Bearer）。未登录直接 401，
+    且不占缓存/并发资源。GET 验货端点（cpo_array / verification_ledger）仍无
+    鉴权，维持「可被外部验货」战略可达性。
+    """
+    # —— 登录闸门：须在最前，未登录不消耗任何资源 ——
+    _u = None
+    try:
+        _tok = _app._token_from_request(self.headers)
+        if _tok:
+            try:
+                _u = _app._get_store().user_by_token(_tok)
+            except Exception:
+                _u = None
+        if _u is None and _app._check_admin(self.headers):
+            _u = True  # 管理员令牌放行（API 客户端 / 外部 ORACLE）
+    except Exception:
+        _u = None
+    if _u is None:
+        return (401, {"endpoint": name, "accepted": False,
+                      "error": "需登录后才能触发重计算：请先 POST /api/store/login "
+                               "获取会话，或携带 Authorization: Bearer <管理员令牌>"})
     g = _HEAVY_GUARDS[name]
     # ④ 入参体积硬上限
     try:

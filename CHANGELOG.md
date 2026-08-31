@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.9.7（2026-09-01 · 生产安全加固 · POST 重计算端点登录闸门）
+
+复盘：在 v0.9.6 四重并发护栏（每端点锁+全局上限+缓存+入参上限）基础上，于 `_heavy_guard` 统一入口追加**登录闸门**——把「无鉴权重计算」敞口从「被并发数封顶」升级为「须登录才能触发」。验证优先 `store.user_by_token(token)`（store 会话态），回退 `_check_admin(headers)`（管理员 / 外部 ORACLE 验货用 Bearer）；未登录直接 401 且不占缓存/并发资源。GET 验货端点（cpo_array / verification_ledger）仍无鉴权，维持「可被外部验货」战略可达性。影响面排查：现有 CI smoke（`run_adjoint_design_smoke` 等）直接 import 库函数不走 WebUI HTTP、无 `run_*smoke` 经 HTTP POST 调这些端点、`run_api_v1_smoke` 走独立 `/api/v1/*`，故加闸门不会让 CI 失同步（规避 v0.8.55 教训）；前端 insights.html 仅拉 GET 不受影响。
+
 ## v0.9.6（2026-09-01 · 生产安全加固 · POST 重计算端点统一并发护栏）
 
 复盘：经排查，WebUI 的仿真/设计类 POST 端点（`/api/ring_fdtd`、`/api/sparams`、`/api/sparams_3d`、`/api/gc_sparams`、`/api/adjoint_design`、`/api/quantum_design`、`/api/wdm_design`、`/api/pdk_design`、`/api/pdk_compare` 等 50 个 `run_*` 端点）**同样无鉴权、直接触发重计算**，与之前打爆服务器的 GET 端点同源——且 `app.py` 的 `_dispatch` 无统一鉴权闸门。纯「按端点逐个锁」只能锁单端点，攻击者同时打 50 个端点仍可达 50 路并行 → 同样打爆。本次采用「每端点锁（公平）+ 全局并发上限（总资源封顶）」双锁设计：

@@ -1,11 +1,11 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-08-28T11:39:32
+- 生成时间：2026-08-31T14:00:57
 - L0_IR：(内置默认 B1–B4,B8)
 - candidate：ReferenceCandidate
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 
-## 汇总：46/46 通过
+## 汇总：48/48 通过
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -29,6 +29,7 @@
 | B25 | tunable_f01_ghz | physical-law | 6.6282 | 6.6282 | 0 | 1e-06 | ✅ PASS |
 | B26 | dispersive_chi_ghz | physical-law | -0.00230769 | -0.00230769 | 0 | 1e-06 | ✅ PASS |
 | B27 | cz_gate_time_ns | physical-law | 680.678 | 680.678 | 0 | 1e-06 | ✅ PASS |
+| B28 | Vpi_volts | physical-law | 3.78097 | 3.78097 | 0 | 0.001 | ✅ PASS |
 | B3 | FSR_nm | physical-law | 120.125 | 120.125 | 0 | 1 | ✅ PASS |
 | B4 | FSR_nm | physical-law | 9.1476 | 9.1476 | 0 | 0.3 | ✅ PASS |
 | B5 | split_loss_dB | numpy-overlap-offline | 3.4 | 3.4 | 0 | 1 | ✅ PASS |
@@ -47,6 +48,7 @@
 | S10 | verdict(ACCEPT=1, REJECT=0) | physical-law | 1 | 1 | 0 | 1e-09 | ✅ PASS |
 | S11 | verdict(ACCEPT=1, REJECT=0) | physical-law | 1 | 1 | 0 | 1e-09 | ✅ PASS |
 | S12 | verdict(ACCEPT=1, REJECT=0) | physical-law | 1 | 1 | 0 | 1e-09 | ✅ PASS |
+| S13 | yield(0~1) | physical-law | 0.95475 | 0.95475 | 0 | 0.01 | ✅ PASS |
 | S2 | margin_GHz | physical-law | 50 | 50 | 0 | 1e-06 | ✅ PASS |
 | S3 | OSNR_dB | physical-law | 46.9299 | 46.9299 | 0 | 0.01 | ✅ PASS |
 | S4 | margin | physical-law | -0.00098602 | -0.00098602 | 0 | 1e-06 | ✅ PASS |

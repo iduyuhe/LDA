@@ -5,10 +5,10 @@
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "via": "L1 KernelGateway"
   },
-  "generated_at": "2026-08-28T11:33:58",
+  "generated_at": "2026-08-31T13:54:31",
   "summary": {
-    "total": 46,
-    "passed": 43
+    "total": 48,
+    "passed": 45
   },
   "results": [
     {
@@ -232,6 +232,17 @@
       "note": "确定性物理定律/解析解"
     },
     {
+      "id": "B28",
+      "metric": "Vpi_volts",
+      "oracle": "analytical(MZM Pockels half-wave) + integral-bisect cross-check",
+      "source": "physical-law",
+      "golden": 3.780967342199497,
+      "candidate": 3.780967342199497,
+      "tol": 0.001,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
       "id": "B3",
       "metric": "FSR_nm",
       "oracle": "analytical(Airy)",
@@ -426,6 +437,17 @@
       "golden": 1.0,
       "candidate": 1.0,
       "tol": 1e-09,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "S13",
+      "metric": "yield(0~1)",
+      "oracle": "statistical(monte-carlo, seed-fixed) + analytical(gaussian-integral)",
+      "source": "physical-law",
+      "golden": 0.95475,
+      "candidate": 0.95475,
+      "tol": 0.01,
       "passed": true,
       "note": "确定性物理定律/解析解"
     },

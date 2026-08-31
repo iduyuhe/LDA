@@ -126,6 +126,9 @@ CORE_SMOKES: List[str] = [
     "run_scale_smoke.py",
     # 千器件芯片级演示（v0.8.27：千器件版图接入演示 · GDS/DRC/LVS 双闸）
     "run_chip_scale_demo.py",
+    # CPO 共封装光引擎阵列（v0.8.47 · 阶段2：十万级真实器件样例——
+    # 层次化器件构成 + 参数由谐振条件反解 + 端口线对齐零跳线几何 + 正反例双验）
+    "run_cpo_array_smoke.py",
     # 商务闭环（v0.9.0：创新超市商业化链路——注册/下单/凭证/审批/下载限次/
     # 对公申请/定制状态机/我的模块/账号重置/意见收集，函数级快速回归）
     "run_store_flow_smoke.py",

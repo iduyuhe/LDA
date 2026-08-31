@@ -1,0 +1,104 @@
+{
+  "title": "CPO 共封装光引擎阵列（v0.8.47 · 阶段2 十万级真实器件样例）",
+  "config": {
+    "n_oe": 32,
+    "n_ch": 34,
+    "n_lane": 8,
+    "ch_per_row": 4,
+    "cols": 368
+  },
+  "n_devices": 100096,
+  "n_chains": 2176,
+  "n_nets": 102272,
+  "pitch_um": [
+    35.76,
+    28.989
+  ],
+  "wavelengths_nm": [
+    1273.54,
+    1277.89,
+    1282.26,
+    1286.66,
+    1291.1,
+    1295.5,
+    1299.92,
+    1304.42
+  ],
+  "ring_radii_um": [
+    7.5285,
+    7.5542,
+    7.58,
+    7.6061,
+    7.6323,
+    7.6583,
+    7.6844,
+    7.711
+  ],
+  "n_eff": 2.45,
+  "ring_order_m": 91,
+  "device_mix": {
+    "Waveguide": 54400,
+    "RingResonator": 26112,
+    "RingAddDrop": 17408,
+    "GratingCoupler": 2176
+  },
+  "role_mix": {
+    "wg_feed": 8704,
+    "tap_in": 8704,
+    "wg_pre": 8704,
+    "mrm": 8704,
+    "wg_post": 8704,
+    "mon": 8704,
+    "wg_bus": 8704,
+    "demux": 8704,
+    "wg_drop": 8704,
+    "tap_rx": 8704,
+    "wg_pd": 8704,
+    "wg_trunk": 2176,
+    "gc_tx": 1088,
+    "gc_rx": 1088
+  },
+  "drc": {
+    "n_pass": 100096,
+    "n_checked": 100096,
+    "all_pass": true
+  },
+  "lvs": {
+    "verdict": "ACCEPT",
+    "n_violations": 0,
+    "match": {
+      "n_devices_match": 100096,
+      "n_nets_match": 97920,
+      "n_nets_total": 97920
+    }
+  },
+  "lvs_fault_injection": {
+    "net": "net_197_oe2_ch30_rx_l2_demux__oe2_ch30_rx_l2_wg_drop",
+    "verdict": "REJECT",
+    "n_violations": 1
+  },
+  "gds": {
+    "gds_bytes": 38980926,
+    "n_elements": 359040,
+    "bbox_um": [
+      -9.0,
+      -17.0,
+      13127.77,
+      7874.59
+    ],
+    "area_um2": 103669974.16,
+    "width_um": 13136.77,
+    "height_um": 7891.59,
+    "n_io": 4352,
+    "time_export_s": 4.018
+  },
+  "time_s": {
+    "build_route": 1.24,
+    "drc": 0.43,
+    "lvs": 1.34,
+    "total": 8.34
+  },
+  "pass": 11,
+  "fail": 0,
+  "accepted": true
+}

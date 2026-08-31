@@ -4,10 +4,10 @@
     "candidate": "ReferenceCandidate",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）"
   },
-  "generated_at": "2026-08-28T11:39:32",
+  "generated_at": "2026-08-31T14:00:57",
   "summary": {
-    "total": 46,
-    "passed": 46
+    "total": 48,
+    "passed": 48
   },
   "results": [
     {
@@ -231,6 +231,17 @@
       "note": "确定性物理定律/解析解"
     },
     {
+      "id": "B28",
+      "metric": "Vpi_volts",
+      "oracle": "analytical(MZM Pockels half-wave) + integral-bisect cross-check",
+      "source": "physical-law",
+      "golden": 3.780967342199497,
+      "candidate": 3.780967342199497,
+      "tol": 0.001,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
       "id": "B3",
       "metric": "FSR_nm",
       "oracle": "analytical(Airy)",
@@ -425,6 +436,17 @@
       "golden": 1.0,
       "candidate": 1.0,
       "tol": 1e-09,
+      "passed": true,
+      "note": "确定性物理定律/解析解"
+    },
+    {
+      "id": "S13",
+      "metric": "yield(0~1)",
+      "oracle": "statistical(monte-carlo, seed-fixed) + analytical(gaussian-integral)",
+      "source": "physical-law",
+      "golden": 0.95475,
+      "candidate": 0.95475,
+      "tol": 0.01,
       "passed": true,
       "note": "确定性物理定律/解析解"
     },

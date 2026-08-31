@@ -211,6 +211,68 @@ def h_cpo_array(h, p, q, path):
                       "accepted": False})
 
 
+def h_verification_ledger(h, p, q, path):
+    """GET /api/verification_ledger —— 全量验证账本（外部可验货，无鉴权）。
+
+    把「可被外部验货的验证可信度」从单点（CPO 规模死锚）扩展到整引擎：
+    暴露全部已注册验证资产的**分类与计数**，并诚实标注每类的事实来源
+    （physical-law 确定性物理定律 / empirical 真实器件实测语料 /
+    design-anchor B5/B6/B7 自证桩下限）。LLM 不进判决路径——此端点仅声明
+    资产分类与计数，死标量比对由 /api/cpo_array 与各 harness 实测执行。
+    """
+    try:
+        sys.path.insert(0, _app.LDA_ROOT)
+        from lda_harness import golden
+        dispatch = golden._GOLDEN_DISPATCH
+        phys = golden._PHYSICAL_LAW
+        phys_ids, anchor_ids = [], []
+        for bid in dispatch:
+            (phys_ids if bid in phys else anchor_ids).append(bid)
+        # 实证大数据锚：文件背载、运行期由 harness 装载；此处声明存在 + 文档计数
+        empirical_seed = 7  # E1–E7（README 账本）；真实器件实测语料
+        empirical_ids = [f"E{i}" for i in range(1, empirical_seed + 1)]
+        ci_core = 82  # run_ci_regression.py CORE_SMOKES 长度（计数一致性守护）
+        ledger = {
+            "endpoint": "/api/verification_ledger",
+            "ci_core": {"count": ci_core, "tag": "core",
+                        "note": "run_ci_regression.py --tag core；计数一致性由 run_count_consistency_smoke 守护"},
+            "anchors": {
+                "total": len(dispatch) + empirical_seed,
+                "by_kind": {
+                    "physical-law": {"count": len(phys_ids), "ids": phys_ids},
+                    "oracle-dependent": {"count": len(anchor_ids), "ids": anchor_ids,
+                                         "note": "B5/B6/B7 依赖外部 ORACLE（meep/tidy3d 真场级或 numpy 离线近似），ORACLE 缺失时回退设计守则下限——非纯物理定律，属 R4 开放缺口"},
+                    "empirical": {"count": empirical_seed, "ids": empirical_ids,
+                                  "note": "LDA 实证大数据锚（真实器件实测语料），文件背载，运行期由 harness 装载"},
+                },
+                "dispatch_ids": list(dispatch.keys()),
+            },
+            "cpo_scale": {
+                "endpoint": "/api/cpo_array",
+                "default_devices": 100096, "scale_devices": 250240,
+                "verdict": "ACCEPT（死锚 DRC+LVS+断路反例）",
+                "note": "外部可 curl 活体验货；本账本仅静态引用",
+            },
+            "verified_by_classification": (
+                "physical-law=确定性物理定律/解析解（非 AI ground，任何人都可独立复算）；"
+                "empirical=真实器件实测语料（跨多源，非 AI 互证）；"
+                "oracle-dependent=B5/B6/B7 依赖外部 ORACLE（meep/tidy3d 真场级或 numpy 离线近似），"
+                "ORACLE 缺失时回退设计守则下限（非纯物理定律）——属 R4 开放缺口"),
+            "open_gaps": [
+                "R2 外部 ORACLE（Meep/Tidy3D/pyEPR）默认不通 → 物理定律锚无法现场交叉验证",
+                "R3 实证锚仅 7 条种子语料，规模不足以覆盖全品类",
+                "R4 B5/B6/B7 为 ORACLE 依赖（numpy 离线近似或设计守则下限回退），根因=R2 缺外部 ORACLE",
+            ],
+            "honest_note": (
+                "本账本仅声明已注册验证资产的分类与计数；LLM 不进判决路径，PASS/FAIL 一律由"
+                "死标量比对。可被外部验货的部分=physical-law 锚（独立复算）+/api/cpo_array 死锚"
+                "判决（curl 复现）。design-anchor 与 empirical 规模缺口为已知诚实边界。"),
+        }
+        return (200, ledger)
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/verification_ledger", "error": str(e)[:200]})
+
+
 def h_benchmark_crosscheck(h, p, q, path):
     try:
         sys.path.insert(0, _app.LDA_ROOT)
@@ -1030,6 +1092,7 @@ GET_ROUTES = {
     "/api/scale_demo": h_scale_demo,
     "/api/capability_demos": h_capability_demos,
     "/api/cpo_array": h_cpo_array,
+    "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,
 }
 

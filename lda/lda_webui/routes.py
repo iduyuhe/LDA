@@ -313,24 +313,49 @@ def h_verification_ledger(h, p, q, path):
         return (200, {"endpoint": "/api/verification_ledger", "error": str(e)[:200]})
 
 
+# --------------------------------------------------------------------------
+# /api/benchmark_crosscheck 重计算端点并发护栏（与 cpo_array 同款纪律）
+# 无鉴权公开 GET、默认实跑 run_crosscheck(quick=True) ~9s（本地实测 9.2s），
+# ThreadingHTTPServer 下并发会被并行打爆。串行锁 + 结果缓存（TTL 120s）。
+# --------------------------------------------------------------------------
+_BMCC_HEAVY_LOCK = threading.Lock()
+_BMCC_CACHE = {}
+_BMCC_CACHE_TTL = 120.0
+
+
 def h_benchmark_crosscheck(h, p, q, path):
     try:
-        sys.path.insert(0, _app.LDA_ROOT)
-        from run_benchmark_crosscheck_report import run_crosscheck
-        data = run_crosscheck(quick=True)
-        return (200, {
-            "summary": data["summary"],
-            "corpus_coverage": data["corpus_coverage"],
-            "oracle": data["oracle"],
-            "rows": [{"kind": r["kind"], "ok": r.get("ok"),
-                      "passed": r.get("passed"),
-                      "metric": r.get("metric"),
-                      "model_class": r.get("model_class", "L0-解析"),
-                      "analytical_rel_pct": r.get("analytical_rel_pct"),
-                      "verdict": r.get("verdict", "")[:140]}
-                     for r in data["rows"]],
-            "honest_note": data["honest_note"],
-        })
+        # 缓存命中：重复 curl 秒回，不再重算 ~9s
+        cached = _BMCC_CACHE.get("default")
+        if cached and (time.time() - cached[0]) < _BMCC_CACHE_TTL:
+            body = dict(cached[1])
+            body["cached"] = True
+            return (200, body)
+        # 串行锁：任意时刻至多一个 crosscheck 在跑，其余 429
+        if not _BMCC_HEAVY_LOCK.acquire(timeout=1.0):
+            return (429, {"endpoint": "/api/benchmark_crosscheck",
+                          "error": "重计算忙，请稍后重试", "retry_after": 1})
+        try:
+            sys.path.insert(0, _app.LDA_ROOT)
+            from run_benchmark_crosscheck_report import run_crosscheck
+            data = run_crosscheck(quick=True)
+            body = {
+                "summary": data["summary"],
+                "corpus_coverage": data["corpus_coverage"],
+                "oracle": data["oracle"],
+                "rows": [{"kind": r["kind"], "ok": r.get("ok"),
+                          "passed": r.get("passed"),
+                          "metric": r.get("metric"),
+                          "model_class": r.get("model_class", "L0-解析"),
+                          "analytical_rel_pct": r.get("analytical_rel_pct"),
+                          "verdict": r.get("verdict", "")[:140]}
+                         for r in data["rows"]],
+                "honest_note": data["honest_note"],
+            }
+            _BMCC_CACHE["default"] = (time.time(), body)
+            return (200, body)
+        finally:
+            _BMCC_HEAVY_LOCK.release()
     except Exception as e:  # noqa: BLE001
         return (200, {"summary": {}, "corpus_coverage": {},
                       "oracle": {}, "rows": [],

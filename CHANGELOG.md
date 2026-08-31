@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.9.5（2026-08-31 · 生产安全加固 · 验货端点并发护栏补全）
+
+复盘：`GET /api/benchmark_crosscheck` 是 v0.9.3 同期存在的无鉴权公开 GET 端点，默认实跑 `run_crosscheck(quick=True)`（本地实测 9.2s），同样运行在 `ThreadingHTTPServer`（每请求一线程）下、与 `cpo_array` 同类——一旦被并发请求打中会把生产服务器并行打爆。本次补齐同款三护栏：全局串行锁（任意时刻至多一个 crosscheck 在跑，并发 429）+ 结果缓存（TTL 120s，重复 curl 秒回）。至此所有「公开 GET + 默认实跑重计算」端点（cpo_array、benchmark_crosscheck）均带护栏；verification_ledger / scale_demo / capability_demos(默认) / status / health 等均为轻量只读或需显式 `?run=1`，不在敞口之列。
+
 ## v0.9.4（2026-08-31 · 生产安全加固 · CPO 验货端点并发护栏）
 
 复盘：v0.9.2 部署的 `GET /api/cpo_array`（无鉴权、默认实跑十万级器件，build+DRC+LVS ~数秒~数十秒）运行在 `ThreadingHTTPServer`（每请求一线程）下，一旦被并发请求（外部扫描 / 监控轮询 / 反复自测）打中，多个重计算会并行吃满 CPU/内存，存在把生产服务器打爆的风险。本次加固：

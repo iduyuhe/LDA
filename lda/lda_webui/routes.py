@@ -19,6 +19,8 @@ sys.modules 反查已加载的 app 模块——优先取以脚本形态运行的
 无关。
 """
 import ast
+import hashlib
+import json
 import os
 import re
 import sys
@@ -249,6 +251,95 @@ def h_cpo_array(h, p, q, path):
     except Exception as e:  # noqa: BLE001
         return (200, {"endpoint": "/api/cpo_array", "error": str(e)[:200],
                       "accepted": False})
+
+
+# --------------------------------------------------------------------------
+# 重计算 POST 端点统一并发护栏（v0.9.6）
+# 设计：① 每端点独立串行锁（并发>1 即 429，避免跨端点耦合/队头阻塞）
+#       ② 一道全局并发上限（按 CPU 核数封顶到 4，防总 CPU/内存被打爆）
+#       ③ 参数哈希缓存（TTL 120s，限容 32 条防内存膨胀）
+#       ④ 入参体积硬上限（256KB，防超大 payload OOM）
+# 仅对 HEAVY_POST_PATHS（仿真/设计类 run_* 端点）生效；鉴权/商店/生态等轻端点不进护栏。
+# 与 GET 验货端点同源思路，但额外补了「全局上限」——纯按端点锁无法封住「同时打 50 个端点」的总并发。
+# --------------------------------------------------------------------------
+_HEAVY_TTL = 120.0
+_HEAVY_CACHE_CAP = 32
+_HEAVY_MAX_PAYLOAD_BYTES = 256 * 1024
+_HEAVY_GLOBAL_CAP = min(os.cpu_count() or 2, 4)
+_HEAVY_GLOBAL_SEM = threading.Semaphore(_HEAVY_GLOBAL_CAP)
+HEAVY_POST_PATHS = {
+    "/api/ring_fdtd", "/api/device_library", "/api/dc_transmission",
+    "/api/layout_pipeline", "/api/design_pipeline", "/api/design_loop",
+    "/api/ring_package", "/api/inverse_design", "/api/quantum_design",
+    "/api/wdm_design", "/api/readout_chain", "/api/multiqubit_readout",
+    "/api/readout_fidelity", "/api/multiqubit_fidelity", "/api/mixed_system",
+    "/api/coupler_design", "/api/wdm_coupler", "/api/splitter_readout",
+    "/api/wdm_splitter", "/api/design_package", "/api/design_outcome",
+    "/api/drc_fix_demo", "/api/coupler_loop", "/api/ir_demo",
+    "/api/adjoint_design", "/api/adjoint_loop", "/api/primitives",
+    "/api/sparams", "/api/sparams_3d", "/api/gc_sparams",
+    "/api/pipeline_realize", "/api/tunable_wdm", "/api/qeda_topology",
+    "/api/large_scale_bench", "/api/ir_spec", "/api/ci_regression",
+    "/api/link_design", "/api/link_lvs", "/api/perf_bench",
+    "/api/spectral_design", "/api/shape_design", "/api/hybrid_design",
+    "/api/hybrid_multi", "/api/adjoint3d", "/api/port_acceptance",
+    "/api/adjoint3d_perf", "/api/qubit_resonator", "/api/qeda_depth",
+    "/api/pdk_design", "/api/pdk_compare",
+}
+# 每端点独立锁 + 缓存，预先建好避免请求期竞态
+_HEAVY_GUARDS = {p: {"lock": threading.Lock(), "cache": {}, "ttl": _HEAVY_TTL}
+                 for p in HEAVY_POST_PATHS}
+
+
+def _heavy_guard(name, payload, handler_fn, self, query, path):
+    """对单个重计算 POST 端点施加剧护栏，返回 (code, body)。"""
+    g = _HEAVY_GUARDS[name]
+    # ④ 入参体积硬上限
+    try:
+        raw = json.dumps(payload, default=str).encode("utf-8")
+    except Exception:
+        raw = b""
+    if len(raw) > _HEAVY_MAX_PAYLOAD_BYTES:
+        return (413, {"endpoint": name, "accepted": False,
+                      "error": "请求体超过安全上限 %d 字节（防 OOM）" % _HEAVY_MAX_PAYLOAD_BYTES})
+    # ③ 参数哈希缓存
+    cache_key = None
+    if raw:
+        try:
+            cache_key = hashlib.md5(raw).hexdigest()
+        except Exception:
+            cache_key = None
+    if cache_key is not None:
+        cached = g["cache"].get(cache_key)
+        if cached and (time.time() - cached[0]) < g["ttl"]:
+            body = dict(cached[1]); body["cached"] = True; body["endpoint"] = name
+            return (200, body)
+    # ② 全局并发上限（总资源封顶）
+    if not _HEAVY_GLOBAL_SEM.acquire(timeout=1.0):
+        return (429, {"endpoint": name, "accepted": False,
+                      "error": "全局并发达上限（%d），请 1-2 秒后重试（并发护栏）" % _HEAVY_GLOBAL_CAP})
+    try:
+        # ① 每端点独立串行锁（公平，互不阻塞）
+        if not g["lock"].acquire(timeout=1.0):
+            return (429, {"endpoint": name, "accepted": False,
+                          "error": "重计算忙，请 1-2 秒后重试（并发护栏）"})
+        try:
+            res = handler_fn(self, payload, query, path)
+            if res is None:
+                code, body = 200, {}
+            elif isinstance(res, tuple) and len(res) == 2 and isinstance(res[0], int):
+                code, body = res
+            else:
+                code, body = 200, res
+            if cache_key is not None and isinstance(body, dict):
+                if len(g["cache"]) >= _HEAVY_CACHE_CAP:
+                    g["cache"].clear()
+                g["cache"][cache_key] = (time.time(), body)
+            return (code, body)
+        finally:
+            g["lock"].release()
+    finally:
+        _HEAVY_GLOBAL_SEM.release()
 
 
 def h_verification_ledger(h, p, q, path):

@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.9.6（2026-09-01 · 生产安全加固 · POST 重计算端点统一并发护栏）
+
+复盘：经排查，WebUI 的仿真/设计类 POST 端点（`/api/ring_fdtd`、`/api/sparams`、`/api/sparams_3d`、`/api/gc_sparams`、`/api/adjoint_design`、`/api/quantum_design`、`/api/wdm_design`、`/api/pdk_design`、`/api/pdk_compare` 等 50 个 `run_*` 端点）**同样无鉴权、直接触发重计算**，与之前打爆服务器的 GET 端点同源——且 `app.py` 的 `_dispatch` 无统一鉴权闸门。纯「按端点逐个锁」只能锁单端点，攻击者同时打 50 个端点仍可达 50 路并行 → 同样打爆。本次采用「每端点锁（公平）+ 全局并发上限（总资源封顶）」双锁设计：
+
+- **① 每端点独立串行锁**：每端点任意时刻至多一个重计算在跑，并发 429「重计算忙，请 1-2 秒后重试」，避免跨端点队头阻塞。
+- **② 全局并发上限**：`threading.Semaphore(min(cpu_count, 4))`，总重计算并发封顶，彻底封死「同时打所有端点」的总并发敞口（纯按端点锁做不到）。
+- **③ 参数哈希缓存**：TTL 120s、限容 32 条，重复相同请求秒回，防内存膨胀。
+- **④ 入参体积硬上限**：单请求体 256KB，超则 413，防超大 payload OOM。
+
+护栏经 `_dispatch` 在 POST 精确路由层接入，仅对 `HEAVY_POST_PATHS`（50 个重计算端点）生效；鉴权/商店/生态/opinion/verify 等轻端点与有副作用端点不进护栏，行为不变。本次**未加登录鉴权**（用户决策：先只做并发护栏，鉴权作独立议题）。
+
+验证（本地冒烟）：50 端点入表、轻端点不入表；单次 200；同参缓存命中秒回；并发 6 路同端点 `max_overlap=1`（每端点锁完全串行化，无并行堆叠）。`py_compile` 两文件通过。
+
 ## v0.9.5（2026-08-31 · 生产安全加固 · 验货端点并发护栏补全）
 
 复盘：`GET /api/benchmark_crosscheck` 是 v0.9.3 同期存在的无鉴权公开 GET 端点，默认实跑 `run_crosscheck(quick=True)`（本地实测 9.2s），同样运行在 `ThreadingHTTPServer`（每请求一线程）下、与 `cpo_array` 同类——一旦被并发请求打中会把生产服务器并行打爆。本次补齐同款三护栏：全局串行锁（任意时刻至多一个 crosscheck 在跑，并发 429）+ 结果缓存（TTL 120s，重复 curl 秒回）。至此所有「公开 GET + 默认实跑重计算」端点（cpo_array、benchmark_crosscheck）均带护栏；verification_ledger / scale_demo / capability_demos(默认) / status / health 等均为轻量只读或需显式 `?run=1`，不在敞口之列。

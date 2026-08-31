@@ -3060,7 +3060,10 @@ class Handler(BaseHTTPRequestHandler):
         else:  # PATCH
             exact, prefixed = _rmod.PATCH_ROUTES, []
         if path in exact:
-            res = exact[path](self, payload, query, path)
+            if method == "POST" and path in getattr(_rmod, "HEAVY_POST_PATHS", ()):
+                res = _rmod._heavy_guard(path, payload, exact[path], self, query, path)
+            else:
+                res = exact[path](self, payload, query, path)
         else:
             matched = False
             for kind, pat, fn in prefixed:

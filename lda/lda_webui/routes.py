@@ -22,6 +22,7 @@ import ast
 import os
 import re
 import sys
+import threading
 import time
 from datetime import datetime, timezone
 from urllib.parse import urlparse, parse_qs
@@ -148,6 +149,22 @@ def h_capability_demos(h, p, q, path):
     return (200, _app.capability_demos_status())
 
 
+# --------------------------------------------------------------------------
+# /api/cpo_array 重计算端点并发护栏
+# 背景：app.py 用 ThreadingHTTPServer（每请求一线程）。该端点无鉴权且默认
+# 实跑十万级器件（build+DRC+LVS ~数秒~数十秒），一旦被并发请求（外部扫描 /
+# 监控轮询 / 反复自测）打中，多个重计算会并行吃满 CPU/内存 → 服务器被打爆。
+# 三道护栏：① 输入硬上限（防单请求 scale 到 OOM）② 全局串行锁（任意时刻
+# 至多一个重计算在跑，其余 429 排队，杜绝并行堆叠）③ 默认配置结果缓存
+# （TTL 120s，重复 curl 同配置秒回，不再重算）。
+# --------------------------------------------------------------------------
+_CPO_HEAVY_LOCK = threading.Lock()
+_CPO_CACHE = {}                 # key -> (ts, body)；仅缓存默认配置，避免体积膨胀
+_CPO_CACHE_TTL = 120.0
+_CPO_MAX = {"oe": 48, "ch": 96, "lane": 16}   # 硬上限；超则 400，防单请求 OOM
+_CPO_DEFAULT = (32, 34, 8, 4)   # 默认配置 (oe, ch, lane, ch_per_row)
+
+
 def h_cpo_array(h, p, q, path):
     """GET /api/cpo_array —— CPO 共封装光引擎阵列死锚判决（外部可验货）。
 
@@ -167,45 +184,68 @@ def h_cpo_array(h, p, q, path):
         lane = int(q.get("lane", ["8"])[0])
         cpr = int(q.get("ch_per_row", ["4"])[0])
         gds = q.get("gds", ["0"])[0] == "1"
-        cfg = CPOArrayConfig(n_oe=oe, n_ch=ch, n_lane=lane, ch_per_row=cpr)
-        cfg.validate()
-        t0 = time.perf_counter()
-        link, placement, routes, meta = build_cpo_array_case(cfg)
-        drc = chip_drc_report(link, placement)
-        lvs = run_lvs(link, placement, routes)
-        nm = lvs["match"]
-        r_dis = dict(routes)
-        inject_fault(r_dis, "disconnect")
-        lvs_dis = run_lvs(link, placement, r_dis)
-        gds_stats = {}
-        if gds:
-            from lda_l2.chip_layout_export import export_chip_gds
-            r = export_chip_gds(link, placement, routes)
-            st = r["gds_stats"]
-            gds_stats = {"gds_bytes": st["gds_bytes"], "n_elements": st["n_elements"],
-                         "width_um": st["width_um"], "height_um": st["height_um"]}
-        t_total = time.perf_counter() - t0
-        accepted = bool(drc["all_pass"] and lvs["verdict"] == "ACCEPT"
-                        and lvs_dis["verdict"] == "REJECT")
-        return (200, {
-            "endpoint": "/api/cpo_array",
-            "config": {"n_oe": oe, "n_ch": ch, "n_lane": lane,
-                       "ch_per_row": cpr, "n_devices": meta["n_devices"],
-                       "n_chains": meta["n_chains"]},
-            "drc": {"n_pass": drc["n_pass"], "n_checked": drc["n_checked"],
-                    "all_pass": drc["all_pass"]},
-            "lvs": {"verdict": lvs["verdict"], "n_violations": lvs["n_violations"],
-                    "net_match": nm["n_nets_match"], "net_total": nm["n_nets_total"]},
-            "fault_injection": {"verdict": lvs_dis["verdict"],
-                                "n_violations": lvs_dis["n_violations"]},
-            "gds": gds_stats,
-            "time_s": {"build_route": round(meta.get("time_build_link_s", 0), 3),
-                       "total": round(t_total, 3)},
-            "accepted": accepted,
-            "honest_note": "仅建模无源光子层（有源器件按黑箱·负面清单）；"
-                           "工艺为公开文献近似非真实 PDK；只做版图闭环未做光学仿真；"
-                           "未流片无实测回流。LLM 不进判决路径——PASS/FAIL 由死标量比对。",
-        })
+        # ① 输入硬上限：防止单请求 scale 到 OOM（线程服务下尤为危险）
+        if oe > _CPO_MAX["oe"] or ch > _CPO_MAX["ch"] or lane > _CPO_MAX["lane"]:
+            return (400, {"endpoint": "/api/cpo_array", "accepted": False,
+                          "error": "超出安全上限 oe<=%d, ch<=%d, lane<=%d（防止单请求 OOM）"
+                                   % (_CPO_MAX["oe"], _CPO_MAX["ch"], _CPO_MAX["lane"])})
+        # ③ 默认配置走缓存：重复 curl 同配置秒回，不再重算
+        is_default = (oe, ch, lane, cpr) == _CPO_DEFAULT and not gds
+        if is_default:
+            cached = _CPO_CACHE.get("default")
+            if cached and (time.time() - cached[0]) < _CPO_CACHE_TTL:
+                body = dict(cached[1])
+                body["cached"] = True
+                return (200, body)
+        # ② 全局串行锁：任意时刻至多一个重计算在跑，其余 429 排队，杜绝并行堆叠
+        if not _CPO_HEAVY_LOCK.acquire(timeout=1.0):
+            return (429, {"endpoint": "/api/cpo_array", "accepted": False,
+                          "error": "重计算忙，请 1-2 秒后重试（并发护栏）"})
+        try:
+            cfg = CPOArrayConfig(n_oe=oe, n_ch=ch, n_lane=lane, ch_per_row=cpr)
+            cfg.validate()
+            t0 = time.perf_counter()
+            link, placement, routes, meta = build_cpo_array_case(cfg)
+            drc = chip_drc_report(link, placement)
+            lvs = run_lvs(link, placement, routes)
+            nm = lvs["match"]
+            r_dis = dict(routes)
+            inject_fault(r_dis, "disconnect")
+            lvs_dis = run_lvs(link, placement, r_dis)
+            gds_stats = {}
+            if gds:
+                from lda_l2.chip_layout_export import export_chip_gds
+                r = export_chip_gds(link, placement, routes)
+                st = r["gds_stats"]
+                gds_stats = {"gds_bytes": st["gds_bytes"], "n_elements": st["n_elements"],
+                             "width_um": st["width_um"], "height_um": st["height_um"]}
+            t_total = time.perf_counter() - t0
+            accepted = bool(drc["all_pass"] and lvs["verdict"] == "ACCEPT"
+                            and lvs_dis["verdict"] == "REJECT")
+            body = {
+                "endpoint": "/api/cpo_array",
+                "config": {"n_oe": oe, "n_ch": ch, "n_lane": lane,
+                           "ch_per_row": cpr, "n_devices": meta["n_devices"],
+                           "n_chains": meta["n_chains"]},
+                "drc": {"n_pass": drc["n_pass"], "n_checked": drc["n_checked"],
+                        "all_pass": drc["all_pass"]},
+                "lvs": {"verdict": lvs["verdict"], "n_violations": lvs["n_violations"],
+                        "net_match": nm["n_nets_match"], "net_total": nm["n_nets_total"]},
+                "fault_injection": {"verdict": lvs_dis["verdict"],
+                                    "n_violations": lvs_dis["n_violations"]},
+                "gds": gds_stats,
+                "time_s": {"build_route": round(meta.get("time_build_link_s", 0), 3),
+                           "total": round(t_total, 3)},
+                "accepted": accepted,
+                "honest_note": "仅建模无源光子层（有源器件按黑箱·负面清单）；"
+                               "工艺为公开文献近似非真实 PDK；只做版图闭环未做光学仿真；"
+                               "未流片无实测回流。LLM 不进判决路径——PASS/FAIL 由死标量比对。",
+            }
+            if is_default:
+                _CPO_CACHE["default"] = (time.time(), body)
+            return (200, body)
+        finally:
+            _CPO_HEAVY_LOCK.release()
     except Exception as e:  # noqa: BLE001
         return (200, {"endpoint": "/api/cpo_array", "error": str(e)[:200],
                       "accepted": False})

@@ -2,6 +2,29 @@
 import json
 import datetime
 
+# 占位自证候选：直接返回黄金值本身 ⇒ |候选 − 黄金| ≡ 0，恒 PASS。
+# 用于验证「判决回路闭合」，**不产生任何验证价值**（D-64）。
+SELF_CONSISTENT_CANDIDATES = ("ReferenceCandidate",)
+
+_SELF_CONSISTENT_WARNING = (
+    "> ⚠️ **本报告不构成验证结论**：candidate=ReferenceCandidate 直接把黄金参考值当作候选值，"
+    "故「误差」列恒为 0、全部 PASS。它只验证**判决回路闭合**（黄金取值→比对→容差判定→报告），"
+    "**不验证任何求解器**。真实验证必须由**独立候选求解器**产出候选值——见 "
+    "`run_harness.py --ai`（L3 AI 写内核）与 `verification_adapters.py`（独立频域候选，"
+    "如 E2 的 FDFD n_g）。把本报告的「N/N 通过」读作「N 项已验证」是误读。"
+)
+
+
+def is_self_consistent(meta):
+    """判断本次运行是否走占位自证候选（candidate≡golden）。"""
+    if not meta:
+        return True  # 未声明候选来源时按最保守处理
+    sc = meta.get("self_consistent")
+    if sc is not None:
+        return bool(sc)
+    name = str(meta.get("candidate", "ReferenceCandidate"))
+    return any(s in name for s in SELF_CONSISTENT_CANDIDATES)
+
 
 def format_markdown(results, meta=None):
     lines = []
@@ -12,8 +35,13 @@ def format_markdown(results, meta=None):
         for k, v in meta.items():
             lines.append(f"- {k}：{v}")
     lines.append("")
+    _sc = is_self_consistent(meta)
+    if _sc:
+        lines.append(_SELF_CONSISTENT_WARNING)
+        lines.append("")
     n_pass = sum(1 for r in results if r.passed)
-    lines.append(f"## 汇总：{n_pass}/{len(results)} 通过")
+    lines.append(f"## 汇总：{n_pass}/{len(results)} 通过"
+                 + ("（自证闭环，**非验证结论**）" if _sc else ""))
     lines.append("")
     lines.append("| 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |")
     lines.append("|---|---|---|---|---|---|---|---|")
@@ -42,12 +70,16 @@ def format_markdown(results, meta=None):
 
 
 def format_json(results, meta=None):
+    _sc = is_self_consistent(meta)
     out = {
-        "meta": meta or {},
+        "meta": dict(meta or {}, self_consistent=_sc),
         "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
         "summary": {
             "total": len(results),
             "passed": sum(1 for r in results if r.passed),
+            # 自证闭环下 passed 无验证含义，机器可读地钉死这一点
+            "self_consistent": _sc,
+            "verified": (0 if _sc else sum(1 for r in results if r.passed)),
         },
         "results": [
             {

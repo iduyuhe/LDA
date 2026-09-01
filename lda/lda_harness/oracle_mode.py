@@ -140,7 +140,15 @@ def fdfd_mode_field(eps2: np.ndarray, dl: float, wl_um: float):
     else:
         w_um_est = h_um_est = float(dl * arr.shape[0])
     ne0 = eim_neff(w_um_est, h_um_est, n_core, n_clad, wl_um)
-    sigma = (k0 * 2.3) ** 2  # 保守低于基模，避免 EIM 高估导致取错模态
+    # D-65 修复（2026-09-01）：shift-invert 目标 σ 此前被**写死**为 n=2.3
+    # （在 SOI 高反差结构上标定的值），与上方注释「σ 由 EIM 估计给出」不符。
+    # 对低反差结构（SiN：n_core=2.0、真实基模 n_eff≈1.57）而言谱顶仅
+    # k0²·n_core² < σ ⇒ σ 落在整个导模谱**之外**，eigs 返回谱顶附近的
+    # 伪模/包层模而非基模 ⇒ n_eff 随计算窗口在 1.56~1.62 间乱跳，
+    # n_g 在 1.88~1.96 间震荡（同一器件、仅改窗口，散射 ±0.04）。
+    # 现按注释原意以 EIM 估计作 σ，并夹在 (n_clad, n_core) 内确保落在谱内。
+    sigma_n = float(min(max(ne0, n_clad + 1e-3), n_core - 1e-3))
+    sigma = (k0 * sigma_n) ** 2
     try:
         lam, V = eigs(A, k=8, sigma=sigma, which="LM", ncv=80,
                       return_eigenvectors=True)

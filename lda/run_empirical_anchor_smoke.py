@@ -45,12 +45,61 @@ def main():
     goldens = {s.spec_id: s.oracle_fn(s.params) for s in emp}
     # D-63：E3 golden 由「解析公式反算的 9.15」换成「实测 FSR 10.44」
     # （Sridaran & Bhave, Opt. Express 18(4) 3850 (2010)，R=7.5um 环扫频实测）
-    check("E 题 golden=语料值（2.63/1.53/10.44/0.18/0.05/0.087/-41）",
-          abs(goldens["E1"] - 2.63) < 1e-9 and abs(goldens["E2"] - 1.53) < 1e-9
+    # D-64：E2 golden 由「n_eff 1.53（导出量·B级）」换成「群折射率 n_g 1.892」
+    # （300nm LPCVD Si3N4 平台 1.0×0.3um，OFDR 环腔实测 + MZI 交叉验证，几何已对齐）
+    check("E 题 golden=语料值（2.63/1.892/10.44/0.18/0.05/0.087/-41）",
+          abs(goldens["E1"] - 2.63) < 1e-9 and abs(goldens["E2"] - 1.892) < 1e-9
           and abs(goldens["E3"] - 10.44) < 1e-9
           and abs(goldens["E4"] - 0.18) < 1e-9 and abs(goldens["E5"] - 0.05) < 1e-9
           and abs(goldens["E6"] - 0.087) < 1e-9 and abs(goldens["E7"] + 41.0) < 1e-9,
           str(goldens))
+
+    # ---- D-64 核心：候选求解器独立性（把「真验证」钉进 smoke）----
+    # 背景：_harness_reference_candidate 直接 return golden ⇒ |candidate−golden|≡0，
+    #       恒 PASS 但零验证价值（D-64 实测 E1/E3-E7 均为 0.0）。
+    # E2 是首道接入独立候选（FDFD 本征模 n_eff(λ) 中心差分）的实证锚。
+    _s2 = next(s for s in emp if s.spec_id == "E2")
+    _g2 = _s2.oracle_fn(_s2.params)
+    _c2 = cand_map["E2"](_s2, _g2)
+    check("D-64 E2 candidate 为独立 FDFD 求解（非 golden 自证，且落在容差内）",
+          abs(_c2 - _g2) > 1e-6 and abs(_c2 - _g2) <= _s2.tol,
+          f"golden(实测)={_g2} candidate(FDFD)={_c2:.4f} |diff|={abs(_c2-_g2):.4f} tol={_s2.tol}")
+    # 反向断言：其余 E 题仍为占位自证（如实标注，不得假装已验证）
+    _still_self = [s.spec_id for s in emp
+                   if s.spec_id != "E2"
+                   and abs(cand_map[s.spec_id](s, s.oracle_fn(s.params))
+                           - s.oracle_fn(s.params)) < 1e-12]
+    check("D-64 其余 6 道 E 题仍为占位自证桩（candidate≡golden，如实标注非真验证）",
+          sorted(_still_self) == ["E1", "E3", "E4", "E5", "E6", "E7"],
+          f"自证={sorted(_still_self)}")
+
+    # ---- D-65 判定窗口鲁棒性：E2 的 PASS 不能是「挑了个好窗口」凑出来的 ----
+    # 实测：FDFD 候选的 n_g 随计算窗口（clad_um）在 1.878~1.962 间散射（网格过粗所致，
+    # 见 E2 note）。若只测默认窗口，PASS 可能只是运气。故断言**所有**窗口都必须落在
+    # 容差内，并对散射设上界护栏（防止网格实现退化让不确定度失控）。
+    try:
+        from lda_harness.verification_adapters import _fdfd_ng_candidate
+
+        class _P:  # 轻量 shim：候选函数只用到 spec.params
+            def __init__(self, params):
+                self.params = params
+
+        _ngs = {}
+        for _clad in (1.5, 2.0, 2.5, 3.0, 4.0):
+            _ngs[_clad] = _fdfd_ng_candidate(
+                _P(dict(_s2.params, clad_um=_clad)), _g2)
+        _worst = max(abs(v - _g2) for v in _ngs.values())
+        _spread = max(_ngs.values()) - min(_ngs.values())
+        check("D-65 E2 判定窗口鲁棒（5 个计算窗口全部落在容差内，PASS 非窗口凑巧）",
+              _worst <= _s2.tol,
+              " ".join(f"clad{k}={v:.4f}" for k, v in _ngs.items())
+              + f" | 最大|diff|={_worst:.4f} tol={_s2.tol}")
+        check("D-65 E2 数值不确定度护栏（窗口散射不得恶化；当前 ~0.08，属已知网格精度缺口 R16）",
+              _spread <= 0.12,
+              f"散射={_spread:.4f}（≈±{_spread/2:.3f}；0.10 容差中大部分是数值不确定度，"
+              f"非物理裕度——故 E2 只判『量级一致』不宣称『精度验证』）")
+    except Exception as _e:  # noqa: BLE001 求解器不可用时显式 FAIL，不静默放过
+        check("D-65 E2 窗口鲁棒性检查可运行", False, f"{type(_e).__name__}: {_e}")
     # 实测↔解析交叉验证：E3 实测 10.44 vs 解析 λ²/(ng·2πR)=10.46，差 0.02 nm（≤tol）
     _p = next(s for s in emp if s.spec_id == "E3").params
     _analytic = (_p["wl_um"] * 1000) ** 2 / (_p["n_g"] * 2 * 3.141592653589793
@@ -123,11 +172,12 @@ def main():
     # ⑤ harness 键集一致性（D-63：区分可溯源 A 级 / 待溯源 B 级）
     _anchors = {b: BENCHMARK_DEFS[b].get("anchor")
                 for b in ("E1", "E2", "E3", "E4", "E5", "E6", "E7")}
-    check("E1-E7 anchor 分型（E1/E2=empirical_unverified(B级待溯源)，E3-E7=empirical(A级)）",
+    # D-64：E2 换用可公开溯源的实测群折射率语料（E-SIN-NG-300）→ 升 A 级；
+    #       E1 因标量 FDFD 在高对比度 SOI 上不达标（差 10%），维持 B 级待溯源。
+    check("E1-E7 anchor 分型（E1=empirical_unverified(B级待溯源)，E2-E7=empirical(A级)）",
           _anchors["E1"] == "empirical_unverified"
-          and _anchors["E2"] == "empirical_unverified"
           and all(_anchors[b] == "empirical"
-                  for b in ("E3", "E4", "E5", "E6", "E7")),
+                  for b in ("E2", "E3", "E4", "E5", "E6", "E7")),
           str(_anchors))
 
     # ⑦ D-63 来源边界门禁：仅限公开论文/datasheet/公开测量数据集，且必须可公开溯源

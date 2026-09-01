@@ -387,7 +387,13 @@ def h_verification_ledger(h, p, q, path):
         # 实证大数据锚：文件背载、运行期由 harness 装载；此处声明存在 + 文档计数
         empirical_seed = 7  # E1–E7（README 账本）；真实器件实测语料
         empirical_ids = [f"E{i}" for i in range(1, empirical_seed + 1)]
-        ci_core = 82  # run_ci_regression.py CORE_SMOKES 长度（计数一致性守护）
+        # ci_core 动态取 CORE_SMOKES 长度：此前写死 82，实际已 83，
+        # 对外验货端点出现与 README 账本不一致的数字（同一类漂移第二次）。
+        try:
+            from run_ci_regression import CORE_SMOKES as _core
+            ci_core = len(_core)
+        except Exception:  # noqa: BLE001
+            ci_core = 82
         ledger = {
             "endpoint": "/api/verification_ledger",
             "ci_core": {"count": ci_core, "tag": "core",
@@ -402,6 +408,27 @@ def h_verification_ledger(h, p, q, path):
                                   "note": "LDA 实证大数据锚（真实器件实测语料），文件背载，运行期由 harness 装载"},
                 },
                 "dispatch_ids": list(dispatch.keys()),
+            },
+            # D-64：golden 真实只是必要条件，candidate 还必须**独立求解**。
+            # 7 道实证锚里只有 E2 接通了独立候选求解器，其余 6 道候选≡黄金（恒 PASS）。
+            # 这是对外验货面必须自己说出口的事——宁可难看，不可假绿。
+            "judgment_paths": {
+                "note": ("判决路径独立性：golden 可溯源只是必要不充分条件。"
+                         "若 candidate 直接取 golden，则 |candidate−golden|≡0 恒 PASS，零验证价值。"),
+                "empirical": {
+                    "independent_candidate": ["E2"],
+                    "self_consistent_placeholder": ["E1", "E3", "E4", "E5", "E6", "E7"],
+                    "detail": ("E2：golden=实测 n_g 1.892（Munoz Sensors 17,2088，可公开溯源），"
+                               "candidate=标量亥姆霍兹 FDFD 本征模独立求解（1.959），|diff|=0.067 ≤ tol 0.10。"
+                               "其余 6 道 candidate≡golden，PASS 只能算「自洽」不算「验证」；"
+                               "该事实已钉进 run_empirical_anchor_smoke 的 D-64 断言。"),
+                },
+                "harness_cli": {
+                    "self_consistent": True,
+                    "detail": ("run_harness.py 默认走 ReferenceCandidate（候选≡黄金），"
+                               "只验证判决回路闭合；报告头部已加醒目警告，"
+                               "真验证须 --ai（L3 AI 内核）或 verification_adapters 的独立候选。"),
+                },
             },
             "cpo_scale": {
                 "endpoint": "/api/cpo_array",
@@ -418,11 +445,23 @@ def h_verification_ledger(h, p, q, path):
                 "R2 外部 ORACLE（Meep/Tidy3D/pyEPR）默认不通 → 物理定律锚无法现场交叉验证",
                 "R3 实证锚仅 7 条种子语料，规模不足以覆盖全品类",
                 "R4 B5/B6/B7 为 ORACLE 依赖（numpy 离线近似或设计守则下限回退），根因=R2 缺外部 ORACLE",
+                "R15 判决路径独立性缺口（D-64，2026-09-01 新登记）：7 道实证锚中 6 道（E1、E3–E7）"
+                "candidate 仍为占位自证（candidate≡golden，|diff|≡0），其 PASS 不构成验证；"
+                "仅 E2 接通独立求解器。复制 E2 模式到其余六道为下一阶段主线。",
+                "R16 FDFD 本征模求解器网格收敛缺口（D-65，2026-09-01 新登记）："
+                "亚微米特征在 dl=λ/24 下仅约 4~5 格分辨，阶梯边界随计算窗口改变对齐位置，"
+                "n_eff 在窗口间跳变（SOI 侧达 0.25），n_g 散射 ±0.04~0.08"
+                "（对照：厚 SiN 800×800 约 12 格分辨，n_g 散射仅 0.0015）。"
+                "故 E1/E2/E3 当前只能判『量级一致』，不能宣称『精度验证』；"
+                "根治需亚网格 ε 平均（sub-cell averaging）+ 更细网格。",
             ],
             "honest_note": (
                 "本账本仅声明已注册验证资产的分类与计数；LLM 不进判决路径，PASS/FAIL 一律由"
                 "死标量比对。可被外部验货的部分=physical-law 锚（独立复算）+/api/cpo_array 死锚"
-                "判决（curl 复现）。design-anchor 与 empirical 规模缺口为已知诚实边界。"),
+                "判决（curl 复现）。design-anchor 与 empirical 规模缺口为已知诚实边界。"
+                "⚠️ 另须注意**判决路径独立性**：凡走 ReferenceCandidate 的运行（harness 报告默认模式）"
+                "其候选值即黄金值，「N/N 通过」只代表判决回路闭合、不代表 N 项已验证；"
+                "实证锚侧仅 E2 具备独立候选求解路径，详见本响应 judgment_paths 字段（D-64）。"),
         }
         return (200, ledger)
     except Exception as e:  # noqa: BLE001

@@ -15,15 +15,19 @@
         "E-SOI-NEFF-220",
         "E-SIN-NEFF-300"
       ],
-      "elapsed_s": 13.44,
+      "elapsed_s": 12.09,
       "empirical": {
         "E-SOI-NEFF-220": {
           "measured": 2.63,
-          "note": "IMEC iSiPP50G 公开 PDK（文献量级） | iSiPP50G PDK published specs | σ=0.02 | tol=0.02"
+          "source": "empirical-B-untraceable",
+          "traceable": false,
+          "note": "IMEC iSiPP50G 公开 PDK（文献量级） | iSiPP50G PDK published specs | σ=0.02 | tol=0.02 | tier=B"
         },
         "E-SIN-NEFF-300": {
           "measured": 1.53,
-          "note": "公开 SiN 工艺文献量级 | SiN photonics published data | σ=0.02 | tol=0.02"
+          "source": "empirical-B-untraceable",
+          "traceable": false,
+          "note": "公开 SiN 工艺文献量级 | SiN photonics published data | σ=0.02 | tol=0.02 | tier=B"
         }
       }
     },
@@ -38,7 +42,7 @@
       "analytical_rel_pct": null,
       "verdict": "布拉格 FDTD 双验证 PASS（解析 TMM 契约物理合理 + FDTD R_min=0.99903 ↔ TMM=0.99922 abs=1.95e-04 ≤ 2%）",
       "empirical_ids": [],
-      "elapsed_s": 38.74,
+      "elapsed_s": 39.69,
       "empirical": {}
     },
     {
@@ -72,7 +76,9 @@
       "empirical": {
         "E-RING-FSR": {
           "measured": 9.15,
-          "note": "环形谐振器公开测试数据 | ring resonator published measurement | σ=0.1 | tol=0.1"
+          "source": "empirical-B-untraceable",
+          "traceable": false,
+          "note": "环形谐振器公开测试数据 | ring resonator published measurement | σ=0.1 | tol=0.1 | tier=B"
         }
       }
     },
@@ -101,7 +107,7 @@
       "analytical_rel_pct": 0.41,
       "verdict": "PhC 腔 2D FDTD 双验证 PASS（B21 锚 λ_res=2164.8nm ↔ FDTD λ_res=2155.9nm rel=0.41% ≤ 3%）",
       "empirical_ids": [],
-      "elapsed_s": 3.84,
+      "elapsed_s": 3.98,
       "empirical": {}
     },
     {
@@ -247,7 +253,9 @@
       "empirical": {
         "E-YBRANCH-LOSS": {
           "measured": 3.4,
-          "note": "公开 Y-branch 文献典型值 | MMI/Y-branch published characterization | σ=0.3 | tol=0.3"
+          "source": "empirical-B-untraceable",
+          "traceable": false,
+          "note": "公开 Y-branch 文献典型值 | MMI/Y-branch published characterization | σ=0.3 | tol=0.3 | tier=B"
         }
       }
     },
@@ -268,7 +276,9 @@
       "empirical": {
         "E-GRATING-EFF": {
           "measured": 0.45,
-          "note": "光栅耦合器公开文献量级 | grating coupler published efficiency | σ=0.05 | tol=0.05"
+          "source": "empirical-B-untraceable",
+          "traceable": false,
+          "note": "光栅耦合器公开文献量级 | grating coupler published efficiency | σ=0.05 | tol=0.05 | tier=B"
         }
       }
     },
@@ -290,10 +300,14 @@
       "empirical": {
         "E-SOI-CROSS-IL": {
           "measured": 0.18,
+          "source": "empirical-measurement",
+          "traceable": true,
           "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.224"
         },
         "E-SOI-CROSS-XT": {
           "measured": -41.0,
+          "source": "empirical-measurement",
+          "traceable": true,
           "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.224"
         }
       }
@@ -315,6 +329,8 @@
       "empirical": {
         "E-MMI-1X2-EL": {
           "measured": 0.05,
+          "source": "empirical-measurement",
+          "traceable": true,
           "note": "SOI 平台（EME 设计 + 实验演示） | D. Chack & S. Hassan, Opt. Eng. 59(10), 105102 (2020), DOI 10.1117/1.OE.59.10.105102 | σ=0.05 | "
         }
       }
@@ -336,6 +352,8 @@
       "empirical": {
         "E-SIN-PL-800": {
           "measured": 0.087,
+          "source": "empirical-measurement",
+          "traceable": true,
           "note": "8 英寸晶圆厚 SiN（LPCVD 两步沉积 + 退火，大马士革工艺） | 丛庆宇 等, 光子学报 53(9), 0913002 (2024), DOI 10.3788/gzxb20245309.0913002 | σ=0.01 | tol"
         }
       }
@@ -380,6 +398,8 @@
   "corpus_coverage": {
     "E-SOI-NEFF-220": {
       "measured": 2.63,
+      "source": "empirical-B-untraceable",
+      "traceable": false,
       "engine_kinds": [
         "Waveguide"
       ],
@@ -387,6 +407,8 @@
     },
     "E-SIN-NEFF-300": {
       "measured": 1.53,
+      "source": "empirical-B-untraceable",
+      "traceable": false,
       "engine_kinds": [
         "Waveguide"
       ],
@@ -394,6 +416,8 @@
     },
     "E-YBRANCH-LOSS": {
       "measured": 3.4,
+      "source": "empirical-B-untraceable",
+      "traceable": false,
       "engine_kinds": [
         "engine_ybranch_split"
       ],
@@ -404,6 +428,8 @@
     },
     "E-RING-FSR": {
       "measured": 9.15,
+      "source": "empirical-B-untraceable",
+      "traceable": false,
       "engine_kinds": [
         "RingResonator"
       ],
@@ -411,6 +437,8 @@
     },
     "E-GRATING-EFF": {
       "measured": 0.45,
+      "source": "empirical-B-untraceable",
+      "traceable": false,
       "engine_kinds": [
         "engine_grating_eff"
       ],
@@ -421,6 +449,8 @@
     },
     "E-SOI-CROSS-IL": {
       "measured": 0.18,
+      "source": "empirical-measurement",
+      "traceable": true,
       "engine_kinds": [
         "engine_crossing"
       ],
@@ -431,6 +461,8 @@
     },
     "E-SOI-CROSS-XT": {
       "measured": -41.0,
+      "source": "empirical-measurement",
+      "traceable": true,
       "engine_kinds": [
         "engine_crossing"
       ],
@@ -441,6 +473,8 @@
     },
     "E-MMI-1X2-EL": {
       "measured": 0.05,
+      "source": "empirical-measurement",
+      "traceable": true,
       "engine_kinds": [
         "engine_mmi_el"
       ],
@@ -451,6 +485,8 @@
     },
     "E-SIN-PL-800": {
       "measured": 0.087,
+      "source": "empirical-measurement",
+      "traceable": true,
       "engine_kinds": [
         "engine_sin_pl"
       ],
@@ -463,5 +499,11 @@
   "oracle": {
     "tidy3d": "N/A（未配置 TIDY3D_API_KEY，主权默认回退设计守则锚 B6）"
   },
-  "honest_note": "原理验证级非流片级；实证锚语料为公开文献量级（9 条全部 DOI 可溯源）；v0.8.11e 起 9 条语料全部有引擎对照（设计量引擎 3 条 + loss 类引擎 6 条），loss 类引擎为半解析近似（工艺标定参数可调，发动期真实 PDK 数据可替换）"
+  "provenance": {
+    "corpus_total": 9,
+    "tier_a_traceable": 4,
+    "traceable_ratio": 0.4444,
+    "note": "A 级=含 DOI/arXiv/公开 URL，可独立复验、可进判决；B 级=仅描述性来源，本表仅作量级展示，禁止作 golden"
+  },
+  "honest_note": "原理验证级非流片级；实证语料 9 条中 A 级（可公开溯源）4 条，其余为 B 级（仅量级参考，禁止作 golden 进判决）；上表 loss 类引擎为半解析近似（工艺标定参数可调，发动期真实 PDK 数据可替换）"
 }

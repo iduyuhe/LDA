@@ -44,6 +44,30 @@
       ]
     },
     {
+      "id": "E-SIN-NG-300",
+      "device": "Si3N4 strip waveguide 1000x300 nm (SiO2 clad), 300nm LPCVD film platform",
+      "metric": "n_g",
+      "measured_value": 1.892,
+      "uncertainty_abs": 0.03,
+      "fab_source": "LPCVD Si3N4 300nm 平台（公开文献）：热氧 SiO2 2.5um 下包层 + PECVD SiO2 2.0um 上包层，全刻蚀条形波导",
+      "citation": "P. Munoz et al., Si3N4 300 nm photonic integration platform, Sensors (MDPI) 2017: OFDR ring-resonator group index TE=1.892 / TM=1.717; MZI transmission cross-check TE 1.90-1.92",
+      "source_url": "https://www.mdpi.com/1424-8220/17/9/2088",
+      "method": "OFDR（光频域反射）环形谐振腔群延迟：扫描激光 40nm/s、1555nm 中心、80nm 扫宽，群延迟在 1514-1594nm 线性拟合；MZI 传输谱（ASE+OSA）交叉验证",
+      "geometry": {
+        "w_core_um": 1.0,
+        "h_core_um": 0.3,
+        "n_sin": 2.0,
+        "n_clad": 1.44,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "waveguide",
+        "sin",
+        "group_index",
+        "measured"
+      ]
+    },
+    {
       "id": "E-YBRANCH-LOSS",
       "device": "Y-branch 1x2 splitter (SOI 500x220)",
       "metric": "split_loss_dB",

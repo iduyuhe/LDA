@@ -3,12 +3,15 @@
     "L0_IR": "0.1.0-draft",
     "candidate": "ReferenceCandidate",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
-    "via": "L1 KernelGateway"
+    "via": "L1 KernelGateway",
+    "self_consistent": true
   },
-  "generated_at": "2026-08-31T13:54:34",
+  "generated_at": "2026-09-01T12:32:45",
   "summary": {
     "total": 2,
-    "passed": 2
+    "passed": 2,
+    "self_consistent": true,
+    "verified": 0
   },
   "results": [
     {

@@ -84,8 +84,13 @@ def build_harness_specs(defs: Optional[Dict] = None
                 source=(d.get("oracle", "empirical-measurement")
                         + (" ⚠️B级·待溯源（无 DOI/URL，不计入可溯源实证锚）"
                            if unverified else "")),
-                candidate_desc="harness 候选求解器（对照真实测量）"))
-            cand_map[bid] = _harness_reference_candidate
+                candidate_desc=(
+                    "FDFD 本征模 n_eff(λ) 中心差分（独立频域求解，非 golden 自证）"
+                    if d.get("candidate") == "fdfd_ng"
+                    else "harness 参考候选（占位自证：candidate≡golden，恒 PASS，无验证价值）")))
+            cand_map[bid] = (_fdfd_ng_candidate
+                             if d.get("candidate") == "fdfd_ng"
+                             else _harness_reference_candidate)
             continue
 
         def _oracle(p, bid=bid):
@@ -134,8 +139,48 @@ def _load_empirical_anchor():
 
 
 def _harness_reference_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
-    """参考候选：返回 ORACLE 真值本身（正确求解器语义，同 ReferenceCandidate）。"""
+    """参考候选：返回 ORACLE 真值本身（正确求解器语义，同 ReferenceCandidate）。
+
+    ⚠️ 占位语义：|candidate − golden| ≡ 0 ⇒ 恒 PASS，**不产生验证价值**
+    （D-64 实测：E1-E7 七道 |diff| 全为 0.0）。任何宣称「锚题 PASS」的结论，
+    若走的是本候选，都只能算「自洽」而不能算「验证」。
+    需要真验证的锚题须在 benchmarks.py 里显式指定 `candidate` 字段（如 fdfd_ng）。
+    """
     return oracle_value
+
+
+def _fdfd_ng_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """独立候选：标量亥姆霍兹 FDFD 本征模算 n_eff(λ) → 中心差分得 n_g。
+
+    与实测 golden **完全独立**（不读取任何测量数据），构成真交叉验证：
+        实测侧：OFDR 环腔群延迟 / MZI 传输谱（实验）
+        计算侧：频域本征值 + 数值微分（独立物理求解）
+
+    ⚠️ 网格 dl 必须由**中心波长**固定：若 dl 随扫描波长变化，差分测到的是
+    网格伪变化而非物理色散（实测曾致 n_g 乱跳 5.93 / 1.85 / 1.61）。
+    """
+    _ensure_paths()
+    from fdtd3d_waveguide import build_waveguide_field_3d
+    from .oracle_mode import fdfd_mode_field   # oracle_mode 在 lda_harness 包内（非 lda_solver）
+
+    p = spec.params
+    wl = float(p["wl_um"])
+    dl = wl / float(p.get("dl_factor", 24.0))    # 固定网格（关键）
+    clad = float(p.get("clad_um", 3.0))
+    Lz = float(p.get("Lz_um", 8.0))
+    d = float(p.get("d_wl_um", 0.02))            # 差分半步长（默认 ±20nm）
+
+    def _neff(w):
+        eps3, meta = build_waveguide_field_3d(
+            float(p["w_um"]), float(p["h_um"]),
+            float(p["n_core"]), float(p["n_clad"]),
+            w, dl=dl, clad_um=clad, Lz_um=Lz)
+        return fdfd_mode_field(eps3, meta["dl"], w)[0]
+
+    n1 = _neff(wl - d)
+    n2 = _neff(wl + d)
+    # n_g = n_eff − λ·dn_eff/dλ（中心差分）
+    return (n1 + n2) / 2.0 - wl * (n2 - n1) / (2.0 * d)
 
 
 def harness_perturbed_candidate(rel_err: float):

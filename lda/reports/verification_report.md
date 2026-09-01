@@ -1,11 +1,14 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-08-31T14:00:57
+- 生成时间：2026-09-01T12:39:37
 - L0_IR：(内置默认 B1–B4,B8)
 - candidate：ReferenceCandidate
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
+- self_consistent：True
 
-## 汇总：48/48 通过
+> ⚠️ **本报告不构成验证结论**：candidate=ReferenceCandidate 直接把黄金参考值当作候选值，故「误差」列恒为 0、全部 PASS。它只验证**判决回路闭合**（黄金取值→比对→容差判定→报告），**不验证任何求解器**。真实验证必须由**独立候选求解器**产出候选值——见 `run_harness.py --ai`（L3 AI 写内核）与 `verification_adapters.py`（独立频域候选，如 E2 的 FDFD n_g）。把本报告的「N/N 通过」读作「N 项已验证」是误读。
+
+## 汇总：48/48 通过（自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -37,9 +40,9 @@
 | B7 | crosstalk_dB | numpy-fdtd-offline | -19.7328 | -19.7328 | 0 | 5 | ✅ PASS |
 | B8 | T_taper | physical-law | 1 | 1 | 0 | 0.01 | ✅ PASS |
 | B9 | f01_GHz | physical-law | 6.6282 | 6.6282 | 0 | 0.05 | ✅ PASS |
-| E1 | n_eff | empirical-measurement | 2.63 | 2.63 | 0 | 0.02 | ✅ PASS |
-| E2 | n_eff | empirical-measurement | 1.53 | 1.53 | 0 | 0.02 | ✅ PASS |
-| E3 | FSR_nm | empirical-measurement | 9.15 | 9.15 | 0 | 0.1 | ✅ PASS |
+| E1 | n_eff | empirical-B-untraceable | 2.63 | 2.63 | 0 | 0.02 | ✅ PASS |
+| E2 | n_g | empirical-measurement | 1.892 | 1.892 | 0 | 0.1 | ✅ PASS |
+| E3 | FSR_nm | empirical-measurement | 10.44 | 10.44 | 0 | 0.1 | ✅ PASS |
 | E4 | insertion_loss_dB | empirical-measurement | 0.18 | 0.18 | 0 | 0.1 | ✅ PASS |
 | E5 | excess_loss_dB | empirical-measurement | 0.05 | 0.05 | 0 | 0.1 | ✅ PASS |
 | E6 | propagation_loss_dBcm | empirical-measurement | 0.087 | 0.087 | 0 | 0.05 | ✅ PASS |

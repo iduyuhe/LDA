@@ -1,9 +1,9 @@
 {
   "summary": {
-    "total_benchmarks": 21,
+    "total_benchmarks": 48,
     "physical_law": 18,
     "empirical_anchor": 3,
-    "seed_corpus": 5,
+    "seed_corpus": 30,
     "review_flow": {
       "total": 1,
       "by_status": {
@@ -17,19 +17,19 @@
   },
   "checks": [
     {
-      "name": "双 ground：物理定律 B1-B18 + 实证锚 E1-E3",
+      "name": "双 ground：48 题（B1-B28 物理定律 + E1-E7 实证 + S1-S13 系统）",
       "ok": true,
-      "detail": "total=21 empirical=['E1', 'E2', 'E3']"
+      "detail": "total=48 empirical=['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7']"
     },
     {
-      "name": "实证锚题 golden 全部可 resolve",
+      "name": "实证锚题 golden 全部可 resolve（A 级 6 道可溯源 + B 级 1 道显式放行）",
       "ok": true,
-      "detail": "{'E1': 2.63, 'E2': 1.53, 'E3': 9.15}"
+      "detail": "A级=['E2', 'E3', 'E4', 'E5', 'E6', 'E7'] | golden={'E1': 2.63, 'E2': 1.892, 'E3': 10.44, 'E4': 0.18, 'E5': 0.05, 'E6': 0.087, 'E7': -41.0}"
     },
     {
       "name": "语料溯源完整性（citation/fab_source 全可追溯）",
       "ok": true,
-      "detail": "total=5"
+      "detail": "total=30"
     },
     {
       "name": "语料评审流端到端（提交→评审→落地）",
@@ -39,7 +39,7 @@
     {
       "name": "落地语料落盘（empirical_contributions.json 结构）",
       "ok": true,
-      "detail": "{'contributor': '社区', 'reviewer': '杜玉河', 'landed_at': '2026-08-24T22:52:08'}"
+      "detail": "{'contributor': '社区', 'reviewer': '杜玉河', 'landed_at': '2026-09-01T12:24:41'}"
     },
     {
       "name": "评审流状态自洽",

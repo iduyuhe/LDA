@@ -355,15 +355,30 @@ def run_verify(payload):
     if kind == "l3_ai":
         cand = L3AISolverCandidate()
         name = "L3AISolverCandidate(llm=%s)" % cand.llm_enabled
+        self_consistent = False
     elif kind == "perturb":
         cand = PerturbedCandidate(perturb)
         name = "PerturbedCandidate(%.0f%%)" % (perturb * 100)
+        self_consistent = False
     else:
+        # D-64：参考候选直接返回黄金值 ⇒ |候选−黄金|≡0 恒 PASS，只验证
+        # 「判决回路闭合」，不验证任何求解器。必须显式标注，否则外部读者会把
+        # 「48/48 通过」误读为「48 项已验证」。
         cand = ReferenceCandidate()
         name = "ReferenceCandidate"
+        self_consistent = True
     specs = HARNESS.resolve_specs(None)
     results = HARNESS.run(specs, cand)
-    meta = {"candidate": name, "oracle": "确定性物理定律锚（麦克斯韦方程的必然）"}
+    meta = {
+        "candidate": name,
+        "oracle": "确定性物理定律锚（麦克斯韦方程的必然）",
+        "self_consistent": self_consistent,
+    }
+    if self_consistent:
+        meta["warning"] = (
+            "candidate=ReferenceCandidate ⇒ 候选值≡黄金值，误差恒 0、全部 PASS。"
+            "本结果仅表示判决回路闭合，**不构成对任何求解器的验证**；"
+            "独立候选验证见 verification_adapters（如 E2 的 FDFD n_g 候选）。")
     return build_results_json(results, meta)
 
 

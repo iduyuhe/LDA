@@ -3,12 +3,15 @@
     "L0_IR": "(内置默认)",
     "candidate": "L3AISolverCandidate",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
-    "via": "L1 KernelGateway"
+    "via": "L1 KernelGateway",
+    "self_consistent": false
   },
-  "generated_at": "2026-08-31T13:54:31",
+  "generated_at": "2026-09-01T12:32:43",
   "summary": {
     "total": 48,
-    "passed": 45
+    "passed": 45,
+    "self_consistent": false,
+    "verified": 45
   },
   "results": [
     {
@@ -323,34 +326,34 @@
       "id": "E1",
       "metric": "n_eff",
       "oracle": "empirical-measurement(E-SOI-NEFF-220)",
-      "source": "empirical-measurement",
+      "source": "empirical-B-untraceable",
       "golden": 2.63,
       "candidate": 2.63,
       "tol": 0.02,
       "passed": true,
-      "note": "IMEC iSiPP50G 公开 PDK（文献量级） | iSiPP50G PDK published specs | σ=0.02 | tol=0.02"
+      "note": "IMEC iSiPP50G 公开 PDK（文献量级） | iSiPP50G PDK published specs | σ=0.02 | tol=0.02 | tier=B"
     },
     {
       "id": "E2",
-      "metric": "n_eff",
-      "oracle": "empirical-measurement(E-SIN-NEFF-300)",
+      "metric": "n_g",
+      "oracle": "empirical-measurement(E-SIN-NG-300)",
       "source": "empirical-measurement",
-      "golden": 1.53,
-      "candidate": 1.53,
-      "tol": 0.02,
+      "golden": 1.892,
+      "candidate": 1.892,
+      "tol": 0.1,
       "passed": true,
-      "note": "公开 SiN 工艺文献量级 | SiN photonics published data | σ=0.02 | tol=0.02"
+      "note": "LPCVD Si3N4 300nm 平台（公开文献）：热氧 SiO2 2.5um 下包层 + PECVD SiO2 2.0um 上包层，全刻蚀条形波导 | P. Munoz et al., Si3N4 300 nm photonic integration platform, Sensors (MDPI) 2017: OFDR ring-resonator group index TE=1.892 / TM=1.717; MZI transmission cross-check TE 1.90-1.92 | σ=0.03 | tol=0.03 | tier=A"
     },
     {
       "id": "E3",
       "metric": "FSR_nm",
-      "oracle": "empirical-measurement(E-RING-FSR)",
+      "oracle": "empirical-measurement(E-TBOX-FSR-TM)",
       "source": "empirical-measurement",
-      "golden": 9.15,
-      "candidate": 9.15,
+      "golden": 10.44,
+      "candidate": 10.44,
       "tol": 0.1,
       "passed": true,
-      "note": "环形谐振器公开测试数据 | ring resonator published measurement | σ=0.1 | tol=0.1"
+      "note": "SOITEC SOI 250nm 器件层 / 400nm 薄埋氧（局部衬底去除，Cornell OxideMEMS Lab） | S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850 | σ=0.1 | tol=0.1 | tier=A"
     },
     {
       "id": "E4",
@@ -361,7 +364,7 @@
       "candidate": 0.18,
       "tol": 0.1,
       "passed": true,
-      "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=0.03 | tol=0.03"
+      "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=0.03 | tol=0.03 | tier=A"
     },
     {
       "id": "E5",
@@ -372,7 +375,7 @@
       "candidate": 0.05,
       "tol": 0.1,
       "passed": true,
-      "note": "SOI 平台（EME 设计 + 实验演示） | D. Chack & S. Hassan, Opt. Eng. 59(10), 105102 (2020), DOI 10.1117/1.OE.59.10.105102 | σ=0.05 | tol=0.05"
+      "note": "SOI 平台（EME 设计 + 实验演示） | D. Chack & S. Hassan, Opt. Eng. 59(10), 105102 (2020), DOI 10.1117/1.OE.59.10.105102 | σ=0.05 | tol=0.05 | tier=A"
     },
     {
       "id": "E6",
@@ -383,7 +386,7 @@
       "candidate": 0.087,
       "tol": 0.05,
       "passed": true,
-      "note": "8 英寸晶圆厚 SiN（LPCVD 两步沉积 + 退火，大马士革工艺） | 丛庆宇 等, 光子学报 53(9), 0913002 (2024), DOI 10.3788/gzxb20245309.0913002 | σ=0.01 | tol=0.01"
+      "note": "8 英寸晶圆厚 SiN（LPCVD 两步沉积 + 退火，大马士革工艺） | 丛庆宇 等, 光子学报 53(9), 0913002 (2024), DOI 10.3788/gzxb20245309.0913002 | σ=0.01 | tol=0.01 | tier=A"
     },
     {
       "id": "E7",
@@ -394,7 +397,7 @@
       "candidate": -41.0,
       "tol": 5.0,
       "passed": true,
-      "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=2.0 | tol=2.0"
+      "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=2.0 | tol=2.0 | tier=A"
     },
     {
       "id": "S1",

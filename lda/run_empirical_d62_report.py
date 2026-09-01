@@ -37,11 +37,13 @@ def main():
     check("双 ground：48 题（B1-B28 物理定律 + E1-E7 实证 + S1-S13 系统）",
           len(BENCHMARK_DEFS) == 48 and len(e_bench) == 7,
           f"total={len(BENCHMARK_DEFS)} empirical={sorted(e_bench)}")
-    check("实证锚题 golden 全部可 resolve（A 级 5 道可溯源 + B 级 2 道显式放行）",
+    # D-64：E2 换用可公开溯源的实测群折射率语料（E-SIN-NG-300）→ 升 A 级；
+    #       E1 维持 B 级（标量 FDFD 在高对比度 SOI 上差 10%，需全矢量求解器）
+    check("实证锚题 golden 全部可 resolve（A 级 6 道可溯源 + B 级 1 道显式放行）",
           all(anchor.resolve(d.get("empirical_id"),
                              require_traceable=(d.get("anchor") == "empirical"))[0]
               is not None for d in e_bench.values())
-          and len(e_trace) == 5,
+          and len(e_trace) == 6,
           f"A级={sorted(e_trace)} | golden="
           f"{ {b: anchor.resolve(d.get('empirical_id'), require_traceable=(d.get('anchor') == 'empirical'))[0] for b, d in e_bench.items()} }")
 

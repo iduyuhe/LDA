@@ -40,6 +40,7 @@ class EmpiricalMeasurement:
     fab_source: str
     citation: str
     method: str = ""
+    source_url: str = ""
     geometry: dict = field(default_factory=dict)
     tags: list = field(default_factory=list)
     provenance: dict = field(default_factory=dict)
@@ -54,6 +55,15 @@ class EmpiricalMeasurement:
         if not self.citation:
             raise ValueError("citation 必填（实证锚必须有可追溯来源）")
         return True
+
+    def traceability(self) -> dict:
+        """返回本条语料的溯源分级（A/B/X），见 lda_harness.provenance。
+
+        A 级 = 含 DOI / arXiv / 公开 URL 等可解析定位符 → 第三方可独立复验；
+        B 级 = 仅描述性来源（如「XX 文献量级」）→ 不可独立复验，禁止作 golden。
+        """
+        from .provenance import classify_citation
+        return classify_citation(self.citation, self.source_url)
 
 
 @dataclass
@@ -290,10 +300,28 @@ class EmpiricalAnchor:
     def __init__(self, corpus: EmpiricalCorpus):
         self.corpus = corpus
 
-    def resolve(self, mid, tol=None):
+    def resolve(self, mid, tol=None, require_traceable=True):
+        """取某条实测语料作 golden。
+
+        require_traceable=True（默认，**红线守门**）：仅 A 级（含 DOI/arXiv/公开
+        URL 定位符）语料可作 golden 进判决路径；B 级（无定位符、不可独立复验）
+        直接拒绝，避免在「实证锚」名下混入无法复验的自证数据。
+
+        历史存量 B 级语料在显式传 require_traceable=False 时仍可取值，但会被
+        标注为 empirical-B-untraceable 且不计入可溯源实证锚计数（诚实降级）。
+        """
         m = self.corpus.get(mid)
         if not m:
             return (None, "empirical-missing", f"无实测语料: {mid}")
+        tr = m.traceability()
+        if require_traceable and not tr["traceable"]:
+            return (None, "empirical-untraceable",
+                    f"语料 {mid} 溯源等级={tr['tier']}（无 DOI/arXiv/公开 URL 定位符）→ "
+                    f"按来源边界纪律禁止作 golden 进判决；须补公开可溯源出处后升级 A 级。"
+                    f" 当前 citation={m.citation!r}")
         tol = tol if tol is not None else m.uncertainty_abs
-        return (float(m.measured_value), "empirical-measurement",
-                f"{m.fab_source} | {m.citation} | σ={m.uncertainty_abs} | tol={tol}")
+        tag = ("empirical-measurement" if tr["traceable"]
+               else "empirical-B-untraceable")
+        return (float(m.measured_value), tag,
+                f"{m.fab_source} | {m.citation} | σ={m.uncertainty_abs} "
+                f"| tol={tol} | tier={tr['tier']}")

@@ -50,15 +50,25 @@ def build_harness_specs(defs: Optional[Dict] = None
         d = defs[bid]
         params = dict(d["default_params"])
 
-        if d.get("anchor") == "empirical":
+        # D-63 溯源分级：empirical=A 级可公开溯源（计入实证锚）；
+        #   empirical_unverified=B 级待溯源（同走死标量判决，但单独标注、不计入可溯源计数）
+        if d.get("anchor") in ("empirical", "empirical_unverified"):
             if anchor is None:
                 anchor = _load_empirical_anchor()
             eid = d.get("empirical_id")
+            unverified = (d.get("anchor") == "empirical_unverified")
 
-            def _emp_oracle(p, eid=eid, anchor=anchor):
-                val, _src, _note = anchor.resolve(eid)
+            # A 级（empirical）：强制要求可公开溯源，B 级语料一律挡在判决之外；
+            # B 级（empirical_unverified）：显式放行取值但标注，且不计入可溯源计数
+            _req_trace = (not unverified)
+
+            def _emp_oracle(p, eid=eid, anchor=anchor, _req=_req_trace):
+                val, _src, _note = anchor.resolve(eid, require_traceable=_req)
                 if val is None:
-                    raise ValueError(f"实证语料缺失: {eid}（须先经社区评审流落库）")
+                    raise ValueError(
+                        f"实证语料不可用: {eid} —— {_note}"
+                        f"（B 级语料无公开溯源定位符，禁止作 golden；"
+                        f"须补 DOI/URL 后升级 A 级）")
                 return val
 
             specs.append(VerificationSpec(
@@ -71,7 +81,9 @@ def build_harness_specs(defs: Optional[Dict] = None
                 tol_mode="abs",
                 target_desc=d.get("title", ""),
                 params=params,
-                source=d.get("oracle", "empirical-measurement"),
+                source=(d.get("oracle", "empirical-measurement")
+                        + (" ⚠️B级·待溯源（无 DOI/URL，不计入可溯源实证锚）"
+                           if unverified else "")),
                 candidate_desc="harness 候选求解器（对照真实测量）"))
             cand_map[bid] = _harness_reference_candidate
             continue

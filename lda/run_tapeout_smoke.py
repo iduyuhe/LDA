@@ -83,14 +83,31 @@ class TapeoutPipelineSmoke(unittest.TestCase):
                                   submit_empirical=True)
         # 复用管道内的 id 构造：直接调 submit 验证唯一 id 走通
         from lda_pdk.empirical import submit_measurement
+        # D-63 溯源门禁：citation 必须带 DOI/arXiv/公开 URL 定位符才予收录。
+        # 本用例为接口连通性验证（method=simulated，非真实测量），定位符指向
+        # SkyWater SKY130 公开 PDK 的公开 DRC 规则仓库（真实可访问的公开出处）。
         st2 = submit_measurement({
             "id": uniq, "device": "Waveguide", "metric": "drc_pass",
             "measured_value": 1.0, "uncertainty_abs": 0.0,
-            "fab_source": "smoke", "citation": "tapeout smoke 唯一 id 验证",
+            "fab_source": "smoke",
+            "citation": ("smoke 接口验证（simulated，非真实测量）；判据出处："
+                         "SkyWater SKY130 公开 PDK DRC 规则集 "
+                         "https://github.com/google/skywater-pdk"),
+            "source_url": "https://github.com/google/skywater-pdk",
             "method": "simulated", "proposed_by": "tapeout-smoke",
         })
         self.assertEqual(st2.get("status"), "accepted_pending",
                          msg=f"唯一 id 应走通：{st2}")
+        # D-63 溯源门禁反向验证：无定位符的 citation 必须被拒（A/B/X 分级硬门禁）
+        st3 = submit_measurement({
+            "id": uniq + "-noref", "device": "Waveguide", "metric": "drc_pass",
+            "measured_value": 1.0, "uncertainty_abs": 0.0,
+            "fab_source": "smoke", "citation": "无出处的自述数据",
+            "method": "simulated", "proposed_by": "tapeout-smoke",
+        })
+        self.assertEqual(st3.get("status"), "rejected",
+                         msg=f"无定位符应被溯源门禁拒收：{st3}")
+        self.assertIn("溯源门禁", st3.get("reason", ""))
 
     def test_pdk_interface(self):
         from lda_pdk.tapeout_pipeline import _load_pdk

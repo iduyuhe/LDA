@@ -43,12 +43,21 @@ def main():
           len(emp) == 7 and all(s.spec_id in ("E1", "E2", "E3", "E4", "E5", "E6", "E7") for s in emp),
           f"emp={len(emp)}")
     goldens = {s.spec_id: s.oracle_fn(s.params) for s in emp}
-    check("E 题 golden=实测值（2.63/1.53/9.15/0.18/0.05/0.087/-41）",
+    # D-63：E3 golden 由「解析公式反算的 9.15」换成「实测 FSR 10.44」
+    # （Sridaran & Bhave, Opt. Express 18(4) 3850 (2010)，R=7.5um 环扫频实测）
+    check("E 题 golden=语料值（2.63/1.53/10.44/0.18/0.05/0.087/-41）",
           abs(goldens["E1"] - 2.63) < 1e-9 and abs(goldens["E2"] - 1.53) < 1e-9
-          and abs(goldens["E3"] - 9.15) < 1e-9
+          and abs(goldens["E3"] - 10.44) < 1e-9
           and abs(goldens["E4"] - 0.18) < 1e-9 and abs(goldens["E5"] - 0.05) < 1e-9
           and abs(goldens["E6"] - 0.087) < 1e-9 and abs(goldens["E7"] + 41.0) < 1e-9,
           str(goldens))
+    # 实测↔解析交叉验证：E3 实测 10.44 vs 解析 λ²/(ng·2πR)=10.46，差 0.02 nm（≤tol）
+    _p = next(s for s in emp if s.spec_id == "E3").params
+    _analytic = (_p["wl_um"] * 1000) ** 2 / (_p["n_g"] * 2 * 3.141592653589793
+                                             * _p["R_um"] * 1000)
+    check("E3 实测↔解析交叉验证（|10.44−λ²/(ng·2πR)| ≤ tol 0.1）",
+          abs(goldens["E3"] - _analytic) <= 0.1,
+          f"实测={goldens['E3']} 解析={_analytic:.3f} 差={abs(goldens['E3']-_analytic):.3f} nm")
 
     # ② 参考候选全 PASS（45/45）
     npass = sum(1 for s in specs
@@ -87,9 +96,12 @@ def main():
                             "fab_source": "X", "citation": "c"}, proposals_path=pp)
     check("σ<0 门禁", r["status"] == "rejected", r["reason"][:40])
 
+    # D-63 来源边界：citation 须含 DOI/arXiv/公开 URL 方可收录（A 级可公开溯源）
     PAY = {"id": "E-TEST-1", "device": "测试器件", "metric": "loss_dB",
            "measured_value": 0.82, "uncertainty_abs": 0.05, "fab_source": "CUMEC",
-           "citation": "CUMEC 公开 PDK 文献量级", "proposed_by": "community"}
+           "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), "
+                       "https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+           "proposed_by": "community"}
     r = submit_measurement(PAY, proposals_path=pp)
     check("语料提交 accepted_pending", r["status"] == "accepted_pending", r["reason"][:40])
     r = submit_measurement(PAY, proposals_path=pp)
@@ -108,14 +120,64 @@ def main():
     check("落地语料可被实证锚 resolve", val == 0.82 and src == "empirical-measurement",
           f"val={val} src={src}")
 
-    # ⑤ harness 键集一致性
-    check("E1-E7 全部在 BENCHMARK_DEFS 且 anchor=empirical",
-          all(BENCHMARK_DEFS[b].get("anchor") == "empirical"
-              for b in ("E1", "E2", "E3", "E4", "E5", "E6", "E7")))
+    # ⑤ harness 键集一致性（D-63：区分可溯源 A 级 / 待溯源 B 级）
+    _anchors = {b: BENCHMARK_DEFS[b].get("anchor")
+                for b in ("E1", "E2", "E3", "E4", "E5", "E6", "E7")}
+    check("E1-E7 anchor 分型（E1/E2=empirical_unverified(B级待溯源)，E3-E7=empirical(A级)）",
+          _anchors["E1"] == "empirical_unverified"
+          and _anchors["E2"] == "empirical_unverified"
+          and all(_anchors[b] == "empirical"
+                  for b in ("E3", "E4", "E5", "E6", "E7")),
+          str(_anchors))
+
+    # ⑦ D-63 来源边界门禁：仅限公开论文/datasheet/公开测量数据集，且必须可公开溯源
+    from lda_harness.provenance import classify_citation, audit_items
+
+    # (a) B 级（无 DOI/URL 的模糊描述）提交须被拒
+    r = submit_measurement({"id": "E-X4", "device": "d", "metric": "m",
+                            "measured_value": 1.0, "uncertainty_abs": 0.1,
+                            "fab_source": "X",
+                            "citation": "某某公开 PDK 文献量级"},
+                           proposals_path=pp)
+    check("溯源门禁：B 级（无 DOI/URL）语料被拒（来源边界）",
+          r["status"] == "rejected" and "溯源门禁" in r["reason"],
+          r["reason"][:56])
+
+    # (b) A 级（含公开 URL）可提交
+    r = submit_measurement({"id": "E-X5", "device": "d", "metric": "m",
+                            "measured_value": 1.0, "uncertainty_abs": 0.1,
+                            "fab_source": "X",
+                            "citation": "A. Author, Opt. Express 18(4), 3850 (2010), "
+                                        "https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850"},
+                           proposals_path=pp)
+    check("溯源门禁：A 级（含公开 URL）语料放行",
+          r["status"] == "accepted_pending", r["reason"][:56])
+
+    # (c) A 级语料可作 golden；B 级语料作 golden 须被挡下
+    _seed = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         "lda_harness", "seed_empirical.json")
+    _corpus = EmpiricalCorpus.load(_seed)
+    _anchor = EmpiricalAnchor(_corpus)
+    _v, _src, _ = _anchor.resolve("E-TBOX-FSR-TM")          # A 级（含 URL）
+    check("A 级语料可作 golden（E-TBOX-FSR-TM → 10.44）",
+          _v == 10.44 and _src == "empirical-measurement", f"val={_v} src={_src}")
+    _v2, _src2, _note2 = _anchor.resolve("E-RING-FSR")       # B 级（无定位符）
+    check("B 级语料禁止作 golden（E-RING-FSR 被挡下）",
+          _v2 is None and _src2 == "empirical-untraceable", f"val={_v2} src={_src2}")
+
+    # (d) 语料库整体溯源健康度
+    _rep = audit_items(_corpus._items.values())
+    check("语料库 A 级（可公开溯源）占比 ≥ 80%",
+          _rep["traceable_ratio"] >= 0.80,
+          f"A={_rep['by_tier']['A']} B={_rep['by_tier']['B']} "
+          f"total={_rep['total']} 占比={_rep['traceable_ratio']*100:.1f}%")
 
     # ⑥ 统计自洽
     s = measurement_stats(proposals_path=pp)
-    check("measurement_stats 自洽", s["total"] == 1 and s["by_status"]["landed"] == 1,
+    # 计数基线：E-TEST-1(landed) + E-X5(pending，⑦ 溯源门禁「A 级放行」用例)
+    check("measurement_stats 自洽（含 ⑦ A 级放行用例）",
+          s["total"] == 2 and s["by_status"]["landed"] == 1
+          and s["by_status"]["pending"] == 1,
           str(s))
     check("list_measurements 含审计", any(m["id"] == "E-TEST-1" and m["audit"]
           for m in list_measurements(proposals_path=pp)))

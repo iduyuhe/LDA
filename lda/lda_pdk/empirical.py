@@ -45,6 +45,7 @@ class EmpiricalProposal:
     fab_source: str
     citation: str
     method: str = ""
+    source_url: str = ""
     geometry: dict = field(default_factory=dict)
     tags: list = field(default_factory=list)
     status: str = "pending"
@@ -141,6 +142,7 @@ def submit_measurement(payload: dict,
         fab_source=str(payload.get("fab_source", "")).strip(),
         citation=str(payload.get("citation", "")).strip(),
         method=str(payload.get("method", "")).strip(),
+        source_url=str(payload.get("source_url", "") or "").strip(),
         geometry=payload.get("geometry") or {},
         tags=list(payload.get("tags") or []),
         proposed_by=str(payload.get("proposed_by", "community")).strip(),
@@ -152,6 +154,19 @@ def submit_measurement(payload: dict,
     except Exception as ex:
         return {"status": "rejected", "id": payload.get("id"),
                 "reason": f"校验失败：{ex}"}
+    # D-63 来源边界门禁：仅限公开论文 / datasheet / 公开测量数据集，且必须可公开溯源。
+    # 「可公开溯源」= citation 含 DOI / arXiv / 公开 URL 之一（机器可判，非主观描述）。
+    try:
+        from ..lda_harness.provenance import classify_citation
+    except ImportError:  # 兼容脚本态（sys.path 直指 lda/）
+        from lda_harness.provenance import classify_citation
+    _tr = classify_citation(p.citation, p.source_url)
+    if not _tr["traceable"]:
+        return {"status": "rejected", "id": p.id,
+                "reason": f"溯源门禁：来源边界仅限①公开论文②公开 datasheet③公开测量数据集，"
+                          f"且必须可公开溯源。当前 citation 未含 DOI / arXiv / 公开 URL "
+                          f"定位符，定为 {_tr['tier']} 级（不可独立复验），不予收录。"
+                          f"请补充可解析的公开出处（如 DOI 或 https:// 链接）。"}
     # 防重：与 pending/approved/landed 语料重复 → 拒
     ex = store.get(p.id)
     if ex is not None and ex.status in ("pending", "approved", "landed"):

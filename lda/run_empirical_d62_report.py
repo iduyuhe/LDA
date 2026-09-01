@@ -30,13 +30,20 @@ def check(name, ok, detail=""):
 def main():
     # ① 双 ground 结构
     anchor = _load_empirical_anchor()
-    e_bench = {b: d for b, d in BENCHMARK_DEFS.items() if d.get("anchor") == "empirical"}
-    check("双 ground：物理定律 B1-B18 + 实证锚 E1-E3",
-          len(BENCHMARK_DEFS) == 21 and len(e_bench) == 3,
+    # D-63：E 题分 A 级（empirical，可公开溯源）与 B 级（empirical_unverified，待溯源）
+    e_bench = {b: d for b, d in BENCHMARK_DEFS.items()
+               if d.get("anchor") in ("empirical", "empirical_unverified")}
+    e_trace = {b: d for b, d in e_bench.items() if d.get("anchor") == "empirical"}
+    check("双 ground：48 题（B1-B28 物理定律 + E1-E7 实证 + S1-S13 系统）",
+          len(BENCHMARK_DEFS) == 48 and len(e_bench) == 7,
           f"total={len(BENCHMARK_DEFS)} empirical={sorted(e_bench)}")
-    check("实证锚题 golden 全部可 resolve",
-          all(anchor.resolve(d.get("empirical_id"))[0] is not None for d in e_bench.values()),
-          str({b: anchor.resolve(d.get("empirical_id"))[0] for b, d in e_bench.items()}))
+    check("实证锚题 golden 全部可 resolve（A 级 5 道可溯源 + B 级 2 道显式放行）",
+          all(anchor.resolve(d.get("empirical_id"),
+                             require_traceable=(d.get("anchor") == "empirical"))[0]
+              is not None for d in e_bench.values())
+          and len(e_trace) == 5,
+          f"A级={sorted(e_trace)} | golden="
+          f"{ {b: anchor.resolve(d.get('empirical_id'), require_traceable=(d.get('anchor') == 'empirical'))[0] for b, d in e_bench.items()} }")
 
     # ② 语料溯源完整性（seed 5 条全部 citation 可追溯）
     corpus = anchor.corpus
@@ -49,9 +56,12 @@ def main():
     tmp = tempfile.mkdtemp(prefix="lda_d62_report_")
     pp = os.path.join(tmp, "empirical_proposals.json")
     cp = os.path.join(tmp, "empirical_contributions.json")
+    # D-63 来源边界：citation 须含 DOI/arXiv/公开 URL 方可收录
     PAY = {"id": "E-REPORT-1", "device": "环形谐振器", "metric": "FSR_nm",
            "measured_value": 9.20, "uncertainty_abs": 0.08, "fab_source": "公开测试",
-           "citation": "公开测试数据（文献量级）", "proposed_by": "社区"}
+           "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), "
+                       "https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+           "proposed_by": "社区"}
     r0 = submit_measurement(PAY, proposals_path=pp)
     r1 = review_measurement("E-REPORT-1", "approve", "杜玉河", "citation 可追溯", proposals_path=pp)
     r2 = land_measurement("E-REPORT-1", proposals_path=pp, corpus_path=cp)

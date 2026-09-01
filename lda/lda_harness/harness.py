@@ -88,13 +88,14 @@ class VerificationHarness:
                     params.update(b["params"])
                 anchor = d.get("anchor")
                 cmp = b.get("cmp", d.get("cmp", "abs"))
-                if anchor == "empirical":
+                # D-63：empirical_unverified（B 级待溯源）同走实证锚分支，单独标注
+                if anchor in ("empirical", "empirical_unverified"):
                     specs.append({
                         "id": bid, "metric": b.get("metric", d["metric"]),
                         "target": None, "tol": b.get("tol", d["tol"]),
                         "oracle": b.get("oracle", d["oracle"]),
                         "params": params, "golden_fn": None,
-                        "anchor": "empirical", "empirical_id": d.get("empirical_id"),
+                        "anchor": anchor, "empirical_id": d.get("empirical_id"),
                         "cmp": cmp, "resolved": True})
                     continue
                 target = b.get("target", d["golden_fn"](**params))
@@ -111,12 +112,13 @@ class VerificationHarness:
                 params = dict(d["default_params"])
                 anchor = d.get("anchor")
                 cmp = d.get("cmp", "abs")
-                if anchor == "empirical":
+                # D-63：empirical_unverified（B 级待溯源）同走实证锚分支，单独标注
+                if anchor in ("empirical", "empirical_unverified"):
                     specs.append({
                         "id": bid, "metric": d["metric"],
                         "target": None, "tol": d["tol"],
                         "oracle": d["oracle"], "params": params,
-                        "golden_fn": None, "anchor": "empirical",
+                        "golden_fn": None, "anchor": anchor,
                         "empirical_id": d.get("empirical_id"),
                         "cmp": cmp, "resolved": True})
                     continue
@@ -146,7 +148,7 @@ class VerificationHarness:
                     s.get("oracle"), False, "未解析：缺少黄金参考定义",
                     s.get("oracle")))
                 continue
-            if s.get("anchor") == "empirical":
+            if s.get("anchor") in ("empirical", "empirical_unverified"):
                 if self.anchor is None:
                     results.append(BenchmarkResult(
                         s["id"], s["metric"], None, None, s["tol"],
@@ -154,7 +156,11 @@ class VerificationHarness:
                         "实证锚未注入（语料库未加载）——诚实降级不判 PASS",
                         "empirical-missing"))
                     continue
-                golden, source, src_note = self.anchor.resolve(s.get("empirical_id"))
+                # 溯源门禁：A 级（empirical）强制要求可公开溯源；
+                # B 级（empirical_unverified）显式放行取值但标注，不计入可溯源计数
+                golden, source, src_note = self.anchor.resolve(
+                    s.get("empirical_id"),
+                    require_traceable=(s.get("anchor") == "empirical"))
                 if golden is None:
                     results.append(BenchmarkResult(
                         s["id"], s["metric"], None, None, s["tol"],

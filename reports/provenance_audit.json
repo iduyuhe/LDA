@@ -1,0 +1,391 @@
+{
+  "total": 29,
+  "by_tier": {
+    "A": 24,
+    "B": 5,
+    "X": 0
+  },
+  "traceable_ratio": 0.8275862068965517,
+  "traceable": [
+    {
+      "id": "E-SOI-CROSS-IL",
+      "metric": "insertion_loss_dB",
+      "device": "SOI waveguide crossing 500x220 nm (CMOS-compatible)",
+      "citation": "Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1109/LPT.2013.2241049"
+    },
+    {
+      "id": "E-SOI-CROSS-XT",
+      "metric": "crosstalk_dB",
+      "device": "SOI waveguide crossing 500x220 nm (CMOS-compatible)",
+      "citation": "Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1109/LPT.2013.2241049"
+    },
+    {
+      "id": "E-MMI-1X2-EL",
+      "metric": "excess_loss_dB",
+      "device": "MMI 1x2 3dB splitter (SOI, 2.8x27 um2 footprint)",
+      "citation": "D. Chack & S. Hassan, Opt. Eng. 59(10), 105102 (2020), DOI 10.1117/1.OE.59.10.105102",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1117/1.OE.59.10.105102"
+    },
+    {
+      "id": "E-SIN-PL-800",
+      "metric": "propagation_loss_dBcm",
+      "device": "Thick SiN strip waveguide 800x800 nm (LPCVD, 8-inch)",
+      "citation": "丛庆宇 等, 光子学报 53(9), 0913002 (2024), DOI 10.3788/gzxb20245309.0913002",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.3788/gzxb20245309.0913002"
+    },
+    {
+      "id": "E-GE-PD-RESP",
+      "metric": "responsivity_A_per_W",
+      "device": "Ge p-i-n photodetector butt-coupled to SOI waveguide",
+      "citation": "D. Feng et al., Appl. Phys. Lett. 95, 261105 (2009), DOI 10.1063/1.3279129",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1063/1.3279129"
+    },
+    {
+      "id": "E-SOI-PL-36",
+      "metric": "propagation_loss_dBcm",
+      "device": "SOI strip waveguide 445x220 nm (200mm CMOS line)",
+      "citation": "Y. Vlasov & S. McNab, Opt. Express 12, 1622 (2004), DOI 10.1364/OPEX.12.001622",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1364/OPEX.12.001622"
+    },
+    {
+      "id": "E-SOI-BEND1",
+      "metric": "bend_loss_per_90deg_dB",
+      "device": "SOI 90° bend R=1 um",
+      "citation": "Y. Vlasov & S. McNab, Opt. Express 12, 1622 (2004), DOI 10.1364/OPEX.12.001622",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1364/OPEX.12.001622"
+    },
+    {
+      "id": "E-GC-APOD-81",
+      "metric": "coupling_efficiency",
+      "device": "Apodized SOI grating coupler (260nm, C-band)",
+      "citation": "R. Marchetti et al., Sci. Rep. 7, 16505 (2017), DOI 10.1038/s41598-017-16505-z",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1038/s41598-017-16505-z"
+    },
+    {
+      "id": "E-RING-PL-25",
+      "metric": "propagation_loss_dBcm",
+      "device": "Si microring resonator R=10 um (C-band)",
+      "citation": "S. Xiao et al., Opt. Express 15, 14467 (2007), DOI 10.1364/OE.15.014467",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1364/OE.15.014467"
+    },
+    {
+      "id": "E-RING-Q42",
+      "metric": "intrinsic_Q",
+      "device": "Si microring resonator R=10 um (intrinsic Q)",
+      "citation": "S. Xiao et al., Opt. Express 15, 14467 (2007), DOI 10.1364/OE.15.014467",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1364/OE.15.014467"
+    },
+    {
+      "id": "E-MRM-VPI-098",
+      "metric": "vpi_l_pi_Vcm",
+      "device": "Si microring modulator, interleaved p-n junction",
+      "citation": "X. Xiao et al., IEEE Int. Conf. Group IV Photonics, 359 (2011), DOI 10.1109/GROUP4.2011.6053816",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1109/GROUP4.2011.6053816"
+    },
+    {
+      "id": "E-MZM-VPI-18",
+      "metric": "vpi_l_pi_Vcm",
+      "device": "Si Mach-Zehnder modulator, PN diode carrier depletion",
+      "citation": "J. W. Park et al., Opt. Express 17, 15520 (2009), DOI 10.1364/OE.17.015520",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1364/OE.17.015520"
+    },
+    {
+      "id": "E-SIN-Q37",
+      "metric": "intrinsic_Q",
+      "device": "SiN microresonator (photonic damascene, 1.35um thick)",
+      "citation": "M. H. P. Pfeiffer et al., Optica 3, 20 (2016), DOI 10.1364/OPTICA.3.000020",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1364/OPTICA.3.000020"
+    },
+    {
+      "id": "E-SIN-Q50",
+      "metric": "intrinsic_Q",
+      "device": "SiN microresonator (damascene reflow, anomalous dispersion)",
+      "citation": "M. H. P. Pfeiffer et al., Optica 5, 884 (2018), DOI 10.1364/OPTICA.5.000884",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1364/OPTICA.5.000884"
+    },
+    {
+      "id": "E-SIN-Q11",
+      "metric": "intrinsic_Q",
+      "device": "SiN microresonator (subtractive processing)",
+      "citation": "Silicon nitride microresonators by subtractive processing, Opt. Express 27, 35719 (2019), DOI 10.1364/OE.27.035719",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1364/OE.27.035719"
+    },
+    {
+      "id": "E-Q-TTRANS-T1",
+      "metric": "T1_us",
+      "device": "2D tantalum transmon qubit",
+      "citation": "A. P. M. Place et al., Nat. Commun. 12, 1779 (2021), DOI 10.1038/s41467-021-22030-5",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1038/s41467-021-22030-5"
+    },
+    {
+      "id": "E-Q-NBTRANS-T1",
+      "metric": "T1_us",
+      "device": "high-coherence Nb transmon qubit",
+      "citation": "M. Tuokkola et al., Nat. Commun. 16, 5421 (2025), DOI 10.1038/s41467-025-61126-0",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1038/s41467-025-61126-0"
+    },
+    {
+      "id": "E-PCN-Q75",
+      "metric": "intrinsic_Q",
+      "device": "Si photonic crystal nanobeam cavity",
+      "citation": "P. B. Deotare et al., Appl. Phys. Lett. 94, 121106 (2009), DOI 10.1063/1.3107263",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "doi",
+      "locator": "10.1063/1.3107263"
+    },
+    {
+      "id": "E-TBOX-FSR-TM",
+      "metric": "FSR_nm",
+      "device": "SOI microring R=7.5um, 450x250nm waveguide, 400nm thin BOX (quasi-TM)",
+      "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "url",
+      "locator": "https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850"
+    },
+    {
+      "id": "E-TBOX-FSR-TE",
+      "metric": "FSR_nm",
+      "device": "SOI microring R=7.5um, 450x250nm waveguide, 400nm thin BOX (quasi-TE)",
+      "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "url",
+      "locator": "https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850"
+    },
+    {
+      "id": "E-TBOX-PL-TE",
+      "metric": "propagation_loss_dBcm",
+      "device": "Thin-BOX SOI strip waveguide 450x250 nm (quasi-TE)",
+      "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "url",
+      "locator": "https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850"
+    },
+    {
+      "id": "E-TBOX-PL-TM",
+      "metric": "propagation_loss_dBcm",
+      "device": "Thin-BOX SOI strip waveguide 450x250 nm (quasi-TM)",
+      "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "url",
+      "locator": "https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850"
+    },
+    {
+      "id": "E-TBOX-QL-TM",
+      "metric": "loaded_Q",
+      "device": "SOI microring R=7.5um (quasi-TM, loaded Q)",
+      "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "url",
+      "locator": "https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850"
+    },
+    {
+      "id": "E-TBOX-QI-TE",
+      "metric": "intrinsic_Q",
+      "device": "SOI microring R=7.5um (quasi-TE, intrinsic Q)",
+      "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+      "tier": "A",
+      "source_class": "paper",
+      "locator_kind": "url",
+      "locator": "https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850"
+    }
+  ],
+  "untraceable": [
+    {
+      "id": "E-SOI-NEFF-220",
+      "metric": "n_eff",
+      "device": "SOI strip waveguide 500x220 nm",
+      "citation": "iSiPP50G PDK published specs",
+      "tier": "B",
+      "source_class": "other",
+      "locator_kind": "none",
+      "locator": null
+    },
+    {
+      "id": "E-SIN-NEFF-300",
+      "metric": "n_eff",
+      "device": "SiN strip waveguide 500x300 nm (SiO2 clad)",
+      "citation": "SiN photonics published data",
+      "tier": "B",
+      "source_class": "other",
+      "locator_kind": "none",
+      "locator": null
+    },
+    {
+      "id": "E-YBRANCH-LOSS",
+      "metric": "split_loss_dB",
+      "device": "Y-branch 1x2 splitter (SOI 500x220)",
+      "citation": "MMI/Y-branch published characterization",
+      "tier": "B",
+      "source_class": "other",
+      "locator_kind": "none",
+      "locator": null
+    },
+    {
+      "id": "E-RING-FSR",
+      "metric": "FSR_nm",
+      "device": "add-drop ring R=10um (ng=4.18)",
+      "citation": "ring resonator published measurement",
+      "tier": "B",
+      "source_class": "other",
+      "locator_kind": "none",
+      "locator": null
+    },
+    {
+      "id": "E-GRATING-EFF",
+      "metric": "coupling_eff",
+      "device": "grating coupler (SOI, 1D)",
+      "citation": "grating coupler published efficiency",
+      "tier": "B",
+      "source_class": "other",
+      "locator_kind": "none",
+      "locator": null
+    }
+  ],
+  "anchors": [
+    {
+      "bench_id": "E1",
+      "title": "SOI 波导有效折射率（实证语料锚）",
+      "corpus_id": "E-SOI-NEFF-220",
+      "declared_anchor": "empirical_unverified",
+      "tier": "B",
+      "locator_kind": "none",
+      "locator": null,
+      "traceable": false,
+      "measured_value": 2.63,
+      "consistent": true
+    },
+    {
+      "bench_id": "E2",
+      "title": "SiN 波导有效折射率（实证语料锚）",
+      "corpus_id": "E-SIN-NEFF-300",
+      "declared_anchor": "empirical_unverified",
+      "tier": "B",
+      "locator_kind": "none",
+      "locator": null,
+      "traceable": false,
+      "measured_value": 1.53,
+      "consistent": true
+    },
+    {
+      "bench_id": "E3",
+      "title": "薄埋氧 SOI 微环 FSR（实证语料锚 · 实测↔解析交叉验证）",
+      "corpus_id": "E-TBOX-FSR-TM",
+      "declared_anchor": "empirical",
+      "tier": "A",
+      "locator_kind": "url",
+      "locator": "https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+      "traceable": true,
+      "measured_value": 10.44,
+      "consistent": true
+    },
+    {
+      "bench_id": "E4",
+      "title": "SOI 波导 crossing 插入损耗（实证语料锚）",
+      "corpus_id": "E-SOI-CROSS-IL",
+      "declared_anchor": "empirical",
+      "tier": "A",
+      "locator_kind": "doi",
+      "locator": "10.1109/LPT.2013.2241049",
+      "traceable": true,
+      "measured_value": 0.18,
+      "consistent": true
+    },
+    {
+      "bench_id": "E5",
+      "title": "MMI 1×2 过量损耗（实证语料锚）",
+      "corpus_id": "E-MMI-1X2-EL",
+      "declared_anchor": "empirical",
+      "tier": "A",
+      "locator_kind": "doi",
+      "locator": "10.1117/1.OE.59.10.105102",
+      "traceable": true,
+      "measured_value": 0.05,
+      "consistent": true
+    },
+    {
+      "bench_id": "E6",
+      "title": "厚 SiN 波导传播损耗（实证语料锚）",
+      "corpus_id": "E-SIN-PL-800",
+      "declared_anchor": "empirical",
+      "tier": "A",
+      "locator_kind": "doi",
+      "locator": "10.3788/gzxb20245309.0913002",
+      "traceable": true,
+      "measured_value": 0.087,
+      "consistent": true
+    },
+    {
+      "bench_id": "E7",
+      "title": "SOI 波导 crossing 串扰（实证语料锚）",
+      "corpus_id": "E-SOI-CROSS-XT",
+      "declared_anchor": "empirical",
+      "tier": "A",
+      "locator_kind": "doi",
+      "locator": "10.1109/LPT.2013.2241049",
+      "traceable": true,
+      "measured_value": -41.0,
+      "consistent": true
+    }
+  ],
+  "anchors_traceable": 5,
+  "seed_path": "D:\\agent_LDA\\lda\\lda_harness\\seed_empirical.json"
+}

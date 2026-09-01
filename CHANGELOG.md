@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.9.8（2026-09-01 · 实证锚来源边界与溯源审计 · D-63）
+
+确立**实证语料来源边界**：仅限 ①公开论文 ②公开 datasheet ③公开测量数据集，且**必须可公开溯源**。新增 `lda_harness/provenance.py` 做**机器可判**的三级分级——A 级（citation 含 DOI / arXiv / 公开 URL 定位符，第三方可独立复验，可作 golden 进判决）、B 级（仅有描述性来源无定位符，**禁止作 golden**）、X 级（无来源，拒收）；内网/私有地址段 URL 不算公开。门禁落三处：新语料准入（`submit_measurement` 非 A 级一律 rejected）、golden 取值（`EmpiricalAnchor.resolve` 默认 `require_traceable=True`）、判决路径（`harness.py` / `verification_adapters.py` 按锚题类型传参，A 级强制溯源、B 级显式放行但标注且不计入可溯源计数）。新增独立审计器 `run_provenance_audit.py`（已入 CORE_SMOKES，82→83）。
+
+审计结果：语料 23→**29 条**，A 级 18→**24 条（82.8%）**；补 6 条 A 级真实实测语料（Sridaran & Bhave, Opt. Express 18(4) 3850–3857 (2010)，URL 定位符）：FSR 10.44/11.15 nm、cut-back 损耗 3.88/5.06 dB/cm、Q 46,500/148,000。
+
+**审计暴露两个重大问题并整改**：①E3 原 golden 9.15 nm 实为解析式 λ²/(n_g·2πR) 闭式反算（且 n_g=4.18 源自 2D FDTD 仿真），属「定律/仿真冒充实测」——已换成**实测 10.44 nm**，并形成实测↔解析交叉验证（10.44 vs 10.464，差 0.024 nm）；②n_eff 在工程上是导出量（多为仿真或反演，少有直接测量），E1/E2 缺公开可溯源实测源，已改标 `empirical_unverified`（B 级，仍走死标量判决但不计入可溯源计数），建议后续改为可实测的群折射率 n_g 锚。**可溯源实证锚题：5/7**。详见 `docs/lda_empirical_source_boundary_2026-09-01.md`。
+
+### 发版回归（core 83 条）抓出并根治的三类连带问题
+
+- **① 门禁漏改（第三次同类教训）**：`resolve_specs()` 两处把 B 级锚题的 spec `anchor` 硬写回 `"empirical"`，使 `run()` 中 `require_traceable=(anchor=="empirical")` 恒为真 → E1/E2 golden 被判 None → verify_design 掉到 46/48（mcp、l1_agent 两条 smoke 红）。**根因在赋值点而非比较点**——此前只 grep 了 `== "empirical"`（比较），漏了 `"anchor": "empirical"`（赋值）。已改为透传 `anchor` 原值，两条 smoke 回到 48/48。
+- **② 展示路径未适配 None**：`benchmark_report.run_crosscheck` 对 B 级语料仍走默认强制溯源 → `val=None` → `mval - None` TypeError（crosscheck 报告、飞轮 smoke 红）。已改为覆盖率展示显式 `require_traceable=False` 取值并标 `traceable` 字段（该报告是展示不是判决）；同时**修掉一句失真宣称**：`honest_note` 原写「9 条全部 DOI 可溯源」与事实不符，改为按 `provenance.audit_items` **实时统计** A 级条数，杜绝写死。
+- **③ 冒烟脚本自带语料被新门禁挡下**（同类第二次）：`run_tapeout_smoke` 的 citation 无定位符被拒、`run_d06_smoke` 断言 `src=="empirical-measurement"` 与 B 级现状冲突。已分别改为「补公开 URL（SkyWater SKY130 公开 PDK）+ 追加反向断言（无定位符必须 rejected）」与「默认门禁返回 `empirical-untraceable`、显式放行返回 `empirical-B-untraceable`」——把新门禁本身也钉进 smoke。
+- **额外根治：CI 回归 SKIP 判定过宽（假绿温床）**。旧规则「输出含『未安装』等字样即记 SKIP」，会把真失败误记 SKIP——本次 3 条（d06 / cli / ci_industrial）均为用例失败被洗白，其中 cli 仅因某条 PASS 行里提到「gdsfactory 未安装」就被记 SKIP。已收紧为两级：①行首 `[SKIP]`/`SKIPPED` 显式标记 → 无条件 SKIP；②环境缺失短语 → **仅当输出中无 Traceback / AssertionError / FAIL 行**时才记 SKIP，否则一律 FAIL。宁可红，不可假绿（对齐 v0.8.55「宣称全绿必须有实跑证据」教训，且实证锚 smoke 已覆盖 5 类判定用例）。
+
 ## v0.9.7（2026-09-01 · 生产安全加固 · POST 重计算端点登录闸门）
 
 复盘：在 v0.9.6 四重并发护栏（每端点锁+全局上限+缓存+入参上限）基础上，于 `_heavy_guard` 统一入口追加**登录闸门**——把「无鉴权重计算」敞口从「被并发数封顶」升级为「须登录才能触发」。验证优先 `store.user_by_token(token)`（store 会话态），回退 `_check_admin(headers)`（管理员 / 外部 ORACLE 验货用 Bearer）；未登录直接 401 且不占缓存/并发资源。GET 验货端点（cpo_array / verification_ledger）仍无鉴权，维持「可被外部验货」战略可达性。影响面排查：现有 CI smoke（`run_adjoint_design_smoke` 等）直接 import 库函数不走 WebUI HTTP、无 `run_*smoke` 经 HTTP POST 调这些端点、`run_api_v1_smoke` 走独立 `/api/v1/*`，故加闸门不会让 CI 失同步（规避 v0.8.55 教训）；前端 insights.html 仅拉 GET 不受影响。

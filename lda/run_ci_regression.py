@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -61,6 +62,8 @@ CORE_SMOKES: List[str] = [
     "run_ecosystem_publish_smoke.py",# 评审→落地→发布 全链（含补丁生成）
     # 实证大数据锚（D-62：harness E1-E3 实证锚题 + 语料评审流，纯 numpy 快速）
     "run_empirical_anchor_smoke.py",
+    # 来源边界合规审计（D-63：语料 A/B/X 溯源分级 + 锚题溯源状态，秒级）
+    "run_provenance_audit.py",
     # WebUI 路由层（D-102：全端点静态 + 快路径实跑，秒级）
     "run_webui_api_smoke.py",
     # P1 芯片级补强（链路框架 + 自动布线 + Agent 元编排 + 双 ground 上提，纯 numpy 快速）
@@ -149,9 +152,19 @@ CORE_SMOKES: List[str] = [
     "run_splitter_readout_cal_smoke.py",  # D-66 标定版读出（含 FDTD，~179s）
 ]
 
-_SKIP_MARKERS = ("SKIP", "skip", "无 GPU", "无gpu", "no GPU", "no gpu",
-                 "GPU 不可用", "torch 未安装", "未安装", "not installed",
-                 "numba 未安装", "SKIPPED")
+# D-63 收紧：旧判定只看「输出里是否含未安装/无 GPU 等字样」→ 副作用是把真失败
+# 误记成 SKIP（例如断言失败但正文里恰好提到「gdsfactory 未安装」的 PASS 行）。
+# 新判定两级：
+#   ① 显式 SKIP 行（行首 SKIP / [SKIP] / SKIPPED）→ 无条件记 SKIP；
+#   ② 环境缺失短语 → 仅当输出中**没有**真失败痕迹（Traceback / AssertionError /
+#      FAIL 行）时才记 SKIP，否则一律 FAIL（宁可红，不可假绿）。
+_SKIP_LINE_RE = re.compile(r"^\s*\[?\s*(SKIP|SKIPPED)\b", re.I)
+_SKIP_ENV_MARKERS = ("无 GPU", "无gpu", "no GPU", "no gpu", "GPU 不可用",
+                     "torch 未安装", "numba 未安装", "not installed",
+                     "未安装", "环境缺失")
+_FAIL_EVIDENCE_RE = re.compile(
+    r"(Traceback \(most recent call last\)|AssertionError|^\s*(FAIL|ERROR)\b)",
+    re.M)
 
 
 def _discover_all() -> List[str]:
@@ -186,8 +199,12 @@ def _run_one(python: str, script: str, timeout: float) -> Dict[str, Any]:
         rc, out = p.returncode, (p.stdout or "") + (p.stderr or "")
         dt = time.perf_counter() - t0
         status = "PASS" if rc == 0 else "FAIL"
-        if rc != 0 and any(m in out for m in _SKIP_MARKERS):
-            status = "SKIP"
+        if rc != 0:
+            has_skip_line = any(_SKIP_LINE_RE.match(ln) for ln in out.splitlines())
+            has_fail_evidence = bool(_FAIL_EVIDENCE_RE.search(out))
+            has_env_marker = any(m in out for m in _SKIP_ENV_MARKERS)
+            if has_skip_line or (has_env_marker and not has_fail_evidence):
+                status = "SKIP"
         tail = "\n".join(out.strip().splitlines()[-4:])
         return {"script": script, "rc": rc, "status": status,
                 "elapsed_s": round(dt, 2), "tail": tail}

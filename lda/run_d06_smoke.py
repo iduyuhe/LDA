@@ -85,11 +85,19 @@ def main():
         os.unlink(j_path)
 
     # ---- 锚接入仍可用 ----
+    # D-63 溯源分级：E-SOI-NEFF-220 为 B 级（n_eff 系导出量，citation 无
+    # DOI/arXiv/公开 URL 定位符）→ 默认红线门禁禁止作 golden 进判决路径；
+    # 显式 require_traceable=False 时仍可取历史存量值，但标 B 级不计入可溯源计数。
     anchor = EmpiricalAnchor(corpus)
-    v, src, note = anchor.resolve("E-SOI-NEFF-220")
-    assert v == 2.63 and src == "empirical-measurement", (v, src)
+    v0, src0, _ = anchor.resolve("E-SOI-NEFF-220")
+    assert v0 is None and src0 == "empirical-untraceable", (v0, src0)
+
+    v, src, note = anchor.resolve("E-SOI-NEFF-220", require_traceable=False)
+    assert v == 2.63 and src == "empirical-B-untraceable", (v, src)
+    assert "tier=B" in note, note
 
     print("D-06 smoke ALL GREEN: corpus=%d, bank=%d, provenance OK"
+          "（含 D-63 溯源门禁：B 级默认拒作 golden）"
           % (corpus.stats()["total"], bank.stats()["total"]))
     return 0
 

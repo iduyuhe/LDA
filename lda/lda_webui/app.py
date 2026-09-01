@@ -2925,12 +2925,16 @@ def empirical_status():
     from lda_harness.benchmarks import BENCHMARK_DEFS
     e_benchmarks = []
     for bid, d in BENCHMARK_DEFS.items():
-        if d.get("anchor") == "empirical":
-            val, src, note = anchor.resolve(d.get("empirical_id"))
+        # D-63：区分 A 级（empirical，可公开溯源）与 B 级（empirical_unverified，待溯源）
+        if d.get("anchor") in ("empirical", "empirical_unverified"):
+            val, src, note = anchor.resolve(
+                d.get("empirical_id"),
+                require_traceable=(d.get("anchor") == "empirical"))
             e_benchmarks.append({
                 "id": bid, "title": d.get("title", ""),
                 "metric": d.get("metric", ""), "empirical_id": d.get("empirical_id"),
                 "tol": d.get("tol"), "golden": val, "source": src, "note": note,
+                "traceable": (d.get("anchor") == "empirical"),
             })
     try:
         mstats = measurement_stats()

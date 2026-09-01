@@ -155,8 +155,12 @@ def run_crosscheck(quick: bool = False) -> dict:
         }
         emp_vals = {}
         for eid in row["empirical_ids"]:
-            val, src, note = anchor.resolve(eid)
-            emp_vals[eid] = {"measured": val, "note": note[:120]}
+            # D-63：本对照报告为覆盖率展示（非判决路径），B 级语料显式放行取值，
+            # 但标记 traceable=False，报告中不得计入「可溯源实证锚」。
+            val, src, note = anchor.resolve(eid, require_traceable=False)
+            emp_vals[eid] = {"measured": val, "source": src,
+                             "traceable": (src == "empirical-measurement"),
+                             "note": note[:120]}
         row["empirical"] = emp_vals
         rows.append(row)
 
@@ -177,17 +181,20 @@ def run_crosscheck(quick: bool = False) -> dict:
     for eid in ["E-SOI-NEFF-220", "E-SIN-NEFF-300", "E-YBRANCH-LOSS", "E-RING-FSR",
                 "E-GRATING-EFF", "E-SOI-CROSS-IL", "E-SOI-CROSS-XT", "E-MMI-1X2-EL",
                 "E-SIN-PL-800"]:
-        val, src, note = anchor.resolve(eid)
+        # D-63：覆盖率展示（非判决路径）→ B 级语料显式放行取值，但标 traceable=False
+        val, src, note = anchor.resolve(eid, require_traceable=False)
         matched = [k for k, m in ENGINE_ANCHOR_MAP.items() if eid in m["empirical"]]
         loss = resolve_corpus_engine(eid, _corpus_geometry(anchor, eid))
         if loss.get("engine"):
             matched = [loss["engine"]]
         entry = {
             "measured": val,
+            "source": src,
+            "traceable": (src == "empirical-measurement"),
             "engine_kinds": matched,
             "covered": bool(matched),
         }
-        if loss.get("engine") and loss.get("value") is not None:
+        if loss.get("engine") and loss.get("value") is not None and val is not None:
             mval = loss["value"]
             rel = abs(mval - val) / max(abs(val), 1e-9) * 100
             entry["loss_engine_value"] = mval
@@ -197,15 +204,33 @@ def run_crosscheck(quick: bool = False) -> dict:
 
     oracle_status = {"tidy3d": "N/A（未配置 TIDY3D_API_KEY，主权默认回退设计守则锚 B6）"}
 
+    # D-63：溯源底数实时统计（不写死），避免「宣称全可溯源」与实际不符
+    try:
+        from lda_harness.provenance import audit_items
+        _audit = audit_items(list(anchor.corpus.values()))
+        _n_tr = _audit["traceable"]
+        _n_all = _audit["total"]
+    except Exception:  # noqa: BLE001
+        _n_tr = sum(1 for e in corpus_cover.values() if e.get("traceable"))
+        _n_all = len(corpus_cover)
+
     return {
         "method": "跨源死标量对照（解析契约锚 rel + 实证语料实测值 + loss 类引擎对照 + ORACLE 状态）",
         "rows": rows,
         "summary": summary,
         "corpus_coverage": corpus_cover,
         "oracle": oracle_status,
-        "honest_note": ("原理验证级非流片级；实证锚语料为公开文献量级（9 条全部 DOI 可溯源）；"
-                        "v0.8.11e 起 9 条语料全部有引擎对照（设计量引擎 3 条 + loss 类引擎 6 条），"
-                        "loss 类引擎为半解析近似（工艺标定参数可调，发动期真实 PDK 数据可替换）"),
+        "provenance": {
+            "corpus_total": _n_all,
+            "tier_a_traceable": _n_tr,
+            "traceable_ratio": round(_n_tr / _n_all, 4) if _n_all else None,
+            "note": ("A 级=含 DOI/arXiv/公开 URL，可独立复验、可进判决；"
+                     "B 级=仅描述性来源，本表仅作量级展示，禁止作 golden"),
+        },
+        "honest_note": (
+            f"原理验证级非流片级；实证语料 {_n_all} 条中 A 级（可公开溯源）{_n_tr} 条，"
+            f"其余为 B 级（仅量级参考，禁止作 golden 进判决）；"
+            "上表 loss 类引擎为半解析近似（工艺标定参数可调，发动期真实 PDK 数据可替换）"),
     }
 
 

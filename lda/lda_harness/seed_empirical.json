@@ -479,6 +479,148 @@
         "cavity",
         "silicon"
       ]
+    },
+    {
+      "id": "E-TBOX-FSR-TM",
+      "device": "SOI microring R=7.5um, 450x250nm waveguide, 400nm thin BOX (quasi-TM)",
+      "metric": "FSR_nm",
+      "measured_value": 10.44,
+      "uncertainty_abs": 0.1,
+      "fab_source": "SOITEC SOI 250nm 器件层 / 400nm 薄埋氧（局部衬底去除，Cornell OxideMEMS Lab）",
+      "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+      "method": "可调激光扫频透射谱相邻谐振峰间距（实测 FSR，反算群折射率 ng=4.92 @1557.6nm）",
+      "geometry": {
+        "R_um": 7.5,
+        "n_g": 4.92,
+        "wl_um": 1.5576,
+        "w_core_um": 0.45,
+        "h_core_um": 0.25,
+        "box_um": 0.4
+      },
+      "tags": [
+        "ring",
+        "resonator",
+        "soi",
+        "fsr",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-TBOX-FSR-TE",
+      "device": "SOI microring R=7.5um, 450x250nm waveguide, 400nm thin BOX (quasi-TE)",
+      "metric": "FSR_nm",
+      "measured_value": 11.15,
+      "uncertainty_abs": 0.1,
+      "fab_source": "SOITEC SOI 250nm 器件层 / 400nm 薄埋氧（局部衬底去除，Cornell OxideMEMS Lab）",
+      "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+      "method": "透射谱谐振峰间距（观测 FSR，对应群折射率 ng=4.54）",
+      "geometry": {
+        "R_um": 7.5,
+        "n_g": 4.54,
+        "wl_um": 1.5576,
+        "w_core_um": 0.45,
+        "h_core_um": 0.25,
+        "box_um": 0.4
+      },
+      "tags": [
+        "ring",
+        "resonator",
+        "soi",
+        "fsr",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-TBOX-PL-TE",
+      "device": "Thin-BOX SOI strip waveguide 450x250 nm (quasi-TE)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 3.88,
+      "uncertainty_abs": 0.2,
+      "fab_source": "SOITEC SOI 250nm 器件层 / 400nm 薄埋氧（Cl2 ICP 刻蚀）",
+      "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+      "method": "cut-back 截断法（不同波导长度插损线性拟合斜率，1550nm）",
+      "geometry": {
+        "w_core_um": 0.45,
+        "h_core_um": 0.25,
+        "box_um": 0.4,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "waveguide",
+        "soi",
+        "loss",
+        "cutback",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-TBOX-PL-TM",
+      "device": "Thin-BOX SOI strip waveguide 450x250 nm (quasi-TM)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 5.06,
+      "uncertainty_abs": 0.2,
+      "fab_source": "SOITEC SOI 250nm 器件层 / 400nm 薄埋氧（Cl2 ICP 刻蚀）",
+      "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+      "method": "cut-back 截断法（不同波导长度插损线性拟合斜率，1550nm）",
+      "geometry": {
+        "w_core_um": 0.45,
+        "h_core_um": 0.25,
+        "box_um": 0.4,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "waveguide",
+        "soi",
+        "loss",
+        "cutback",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-TBOX-QL-TM",
+      "device": "SOI microring R=7.5um (quasi-TM, loaded Q)",
+      "metric": "loaded_Q",
+      "measured_value": 46500,
+      "uncertainty_abs": 2000,
+      "fab_source": "SOITEC SOI 250nm 器件层 / 400nm 薄埋氧（R=7.5um 环）",
+      "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+      "method": "Lorentzian 拟合实测透射谐振峰（消光比 14 dB）",
+      "geometry": {
+        "R_um": 7.5,
+        "w_core_um": 0.45,
+        "h_core_um": 0.25,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "ring",
+        "resonator",
+        "soi",
+        "q-factor",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-TBOX-QI-TE",
+      "device": "SOI microring R=7.5um (quasi-TE, intrinsic Q)",
+      "metric": "intrinsic_Q",
+      "measured_value": 148000,
+      "uncertainty_abs": 8000,
+      "fab_source": "SOITEC SOI 250nm 器件层 / 400nm 薄埋氧（R=7.5um 环）",
+      "citation": "S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850",
+      "method": "实测透射谱按谐振模型拟合取本征品质因数",
+      "geometry": {
+        "R_um": 7.5,
+        "w_core_um": 0.45,
+        "h_core_um": 0.25,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "ring",
+        "resonator",
+        "soi",
+        "q-factor",
+        "measured"
+      ]
     }
   ],
   "adversarial": [

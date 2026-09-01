@@ -1,5 +1,95 @@
 # Changelog
 
+## v0.9.14（2026-09-02 · P0-1 锚题独立候选化 · 反自证桩第一刀）
+
+**指令**：战略审计（v0.9.13 基线）后，杜先生拍板 E1=A「锚题独立候选化」，开工 P0。
+
+**起因（2026-09-02 战略审计实测）**：
+- 48 锚实跑 48 PASS，其中 **47 道是自证桩**——`build_harness_specs` 对所有非实证锚
+  一律落 `_harness_reference_candidate`（直接返回 golden），|cand−golden| ≡ 0 恒 PASS、零验证价值。
+- 结构性缺陷：**B 类 28 道连"接入独立候选"的入口都没有**（只有 E 类能指定 `candidate: "fdfd_ng"`）。
+- **全绿 ≠ 可证伪**：84/84 全绿与 47/48 自证桩并不矛盾，前者只证明无回归。
+
+**改动（P0-1 · 4 道真独立候选）**：
+1. **首开 B 类接入口**：`verification_adapters.py` 新增 `BENCHMARK_CANDIDATES` 注册表 +
+   `_register_candidate` 装饰器；`build_harness_specs` 按 `BENCHMARK_DEFS[x]["candidate"]`
+   查表分发（未登记者诚实保留自证桩，不假装已独立）。
+2. **接通 4 道**（golden=解析闭式 ↔ candidate=严格数值对角化，方法学独立）：
+   | 锚题 | golden | 独立候选 | 实测偏差 | tol 变更 |
+   |---|---|---|---|---|
+   | **B9** | Koch 色散近似 | 电荷基严格对角化（41 维 eigh） | rel 0.22% | 0.05（原就合理，未动） |
+   | **B25** | Koch(Φ) | 同上（E_J(Φ)） | rel 0.22~0.40% | 1e-6 → 0.05 |
+   | **B26** | Blais 微扰闭式 | L=6 多能级+Fock 联合对角化（162 维 eigh） | rel 1.98% | 1e-6 → 1e-4 |
+   | **B27** | t_CZ=π/(2\|χ\|) | 严格 χ 反推 | rel 2.02% | 1e-6 → 30ns |
+   - tol 放宽依据：实测偏差的 **2.2~2.5 倍余量**，逐条写入 note（不拍脑袋）。
+   - 🔍 顺带实证：**B9 的 tol=0.05 是早期按物理容差设的**，恰好合理；B20–B28 后期锚清一色
+     `tol=1e-6`——该量级设计上只容得下 candidate≡golden，即"自证桩容差"。
+3. **`candidate_status` 字段**：把「降级量级参考」（E2，FDFD 直波导候选 vs 环 golden 几何不同源）
+   从散文 note 变为**机器可读**，杜绝用已降级锚充数虚报独立强度。
+
+**新增常驻护栏 `run_benchmark_falsifiability_smoke.py`（入 CI core，84→85）**：
+- ① 独立候选数下限（当前 4，随进度递增）② 正向 PASS ③ **反向测试：10% 参数扰动必 FAIL**
+  ④ 灵敏度登记（最小可检出扰动）⑤ 全量 48 锚无回归 ⑥ 披露剩余自证桩清单。
+- **为什么③比②重要**：②只能证明"没坏"，③才能证明"坏了能发现"。只做②不做③，
+  等于把「放宽容差」变成「取消验证」——正是自证桩的翻版。
+
+**⚠️ 诚实边界（反向测试实测暴露）**：
+- **B26 在 g 扰动 +1% 处 diff=1.68e-6，反而小于未扰动时的 4.57e-5** —— 扰动方向与
+  （闭式↔数值）近似误差**偶然抵消**。属物理正常现象，但意味着**小幅系统误差存在检测盲点**，
+  这是放宽容差所付的代价 → 反向测试取 10% 稳健档（该档 4 道全 FAIL），而非单点小扰动。
+- **B27 与 B26 共用同一数值 χ**，独立性弱于 B26，只验证「χ→t_CZ 换算链路」，不重复计入独立强度。
+- 灵敏度实测：B9 ≤2%、B25/B26/B27 ≤5%（断言上界 ≤10%）。
+
+**验证**：独立候选 0→**4 道**（严格独立，E2 另计为降级量级参考）；48 PASS / 0 FAIL，耗时仍 1.1s；
+关键 smoke 全绿（harness 48/48、实证锚 29/29、计数守护 11/11、新冒烟 6/6、
+benchmark crosscheck / quantum design / quantum devices / device_library / statistical 均 EXIT=0）。
+
+**⚠️ 作用域澄清（重要，避免高估本轮成果）**
+
+LDA 存在**三条验证路径，各自用不同 candidate**，本轮改动**只覆盖第 ① 条**：
+
+| # | 路径 | candidate | 使用方 | 本轮后状态 |
+|---|---|---|---|---|
+| ① | `build_harness_specs` + `cand_map` | 按题查表分发 | `run_empirical_anchor_smoke`、新增的 `run_benchmark_falsifiability_smoke` | ✅ **4 道独立**（B9/B25/B26/B27） |
+| ② | `harness.run(specs, ReferenceCandidate)` | 恒定 `return golden` | **`run_harness.py`（对外主报告）** | ❌ 仍全自证，`verified=0` |
+| ③ | `L3AISolverCandidate` → `_local_approx` | 未配置 LLM 时回退；41 道 `return golden` | **MCP / L1 协议 / WebUI** | ❌ 仍全自证 |
+
+- 因此「48 锚中 4 道可证伪」**仅在路径①成立**。对外验货面走的是 ②③，仍显示 `diff=0`。
+  报告里 `verified=0` 在 ②③ 下是**准确的**（不是失真），因为它如实反映那两条路径仍是自证。
+- 接线成本很低（② 只需一个按 `spec_id` 路由的适配器，约 15 行；`harness.run` 已接受
+  `callable(spec, golden, params)`），但会改变对外报告与 `run_harness.py:117` 的
+  `verified==0` 断言 ⇒ **登记 P0-2，本轮不动**（回归在跑，不叠加改动面）。
+
+**未做（按 P0 计划顺延）**：剩余 **43/48 仍为自证桩**（全部 S 类 13 道 + E1/E3-E7 +
+B1-B8/B10-B24/B28），需继续接线；E2 建议的 numpy 版 DC/YB 候选（E2 决策点）未动。
+
+**🔴 本轮顺带挖出：第二条自证桩路径（登记为 P0-2，本轮不动代码）**
+
+改动 B25/B26/B27 的 tol 后复跑，发现 `lda/reports_mcp/verification_report.md` 里这三道
+**diff 仍是 0** —— 该报告头部写明 `candidate：L3AISolverCandidate`，走的是**不同于**
+`build_harness_specs` 的第二条验证路径（`lda_harness/l3_ai_solver.py`）。
+
+- 机制：`L3AISolverCandidate` 未配置 LLM 端点时回退 `_local_approx()`，而该函数
+  **只对 B1/B2/B3/B4/B8/B9/B10 七道有实现**（其中 B2/B8/B9 还是**故意**写错以演示
+  harness 的 FAIL 判别能力），**其余 41 道一律 `return golden`** ⇒ diff=0、全 PASS。
+- 影响面：该路径被 **`lda_webui/app.py:356`** 与 `lda_l1/protocol.py:121` 直接使用，
+  **对外可见** —— 外部验货者看到的「全 PASS + diff=0」实为自证，非验证。
+- 性质判定：这条是 **L3「AI 写内核」的演示/沙盒路径**（设计意图是演示 harness 判别能力，
+  非判决路径），与 harness 判决路径性质不同；但因其对外暴露，存在误导风险。
+- 处置：**登记 P0-2，本轮不动代码**（回归在跑，不叠加第二处改动面）。
+  待办方向：①默认分支改为显式"未实现"并返回非 golden 的哨兵值
+  ②报告头部标注「演示/沙盒路径，非判决结论」③或限制其不对外暴露。
+
+**P0-2 合并规划（路径 ②③ 接线，下一轮）**：
+- ② `run_harness.py`：默认 candidate 从 `ReferenceCandidate` 改为**路由适配器**
+  （按 `spec_id` 查 `build_harness_specs` 的 `cand_map`，未登记者回退 `return golden`），
+  同步把 `run_harness.py:117` 的 `verified==0` 断言改为 `verified>=1`（动态取独立候选数）。
+  ⇒ 对外主报告首次显示真验证（`verified=4`），这是「可被外部验货」战略的直接兑现。
+- ③ `l3_ai_solver._local_approx`：默认分支改为显式未实现哨兵值 + 报告标注演示路径。
+- 预期收益：可证伪锚题在**对外验货面**从 0 → 4（当前仅内部路径可见）。
+
+---
+
 ## v0.9.13（2026-09-01 · R16 实测证伪 + 诚实边界 C 降级）
 
 **指令**：开始 R16 阶段1（sub-cell 体积分数 averaging），实测证伪原假设，杜先生拍板 C 诚实边界降级。

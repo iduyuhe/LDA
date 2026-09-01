@@ -1,6 +1,6 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-02T01:13:35
+- 生成时间：2026-09-02T07:16:25
 - L0_IR：(内置默认)
 - candidate：L3AISolverCandidate
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
@@ -27,9 +27,9 @@
 | B22 | qres_f_ghz | physical-law | 7.49481 | 7.49481 | 0 | 1e-06 | ✅ PASS |
 | B23 | fluxonium_f01_ghz | physical-law | 2.82843 | 2.82843 | 0 | 1e-06 | ✅ PASS |
 | B24 | tcoup_geff_ghz | physical-law | -0.004 | -0.004 | 0 | 1e-06 | ✅ PASS |
-| B25 | tunable_f01_ghz | physical-law | 6.6282 | 6.6282 | 0 | 1e-06 | ✅ PASS |
-| B26 | dispersive_chi_ghz | physical-law | -0.00230769 | -0.00230769 | 0 | 1e-06 | ✅ PASS |
-| B27 | cz_gate_time_ns | physical-law | 680.678 | 680.678 | 0 | 1e-06 | ✅ PASS |
+| B25 | tunable_f01_ghz | physical-law | 6.6282 | 6.6282 | 0 | 0.05 | ✅ PASS |
+| B26 | dispersive_chi_ghz | physical-law | -0.00230769 | -0.00230769 | 0 | 0.0001 | ✅ PASS |
+| B27 | cz_gate_time_ns | physical-law | 680.678 | 680.678 | 0 | 30 | ✅ PASS |
 | B28 | Vpi_volts | physical-law | 3.78097 | 3.78097 | 0 | 0.001 | ✅ PASS |
 | B3 | FSR_nm | physical-law | 120.125 | 120.125 | 0 | 1 | ✅ PASS |
 | B4 | FSR_nm | physical-law | 9.1476 | 9.1476 | 0 | 0.3 | ✅ PASS |

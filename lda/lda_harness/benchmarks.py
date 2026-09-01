@@ -137,8 +137,16 @@ BENCHMARK_DEFS = {
         "tol": 0.05,
         "default_params": {"E_J": 20.0, "E_C": 0.30},
         "golden_fn": b9_transmon_frequency,
+        "candidate": "transmon_exact",
+        "candidate_desc": ("电荷基严格对角化 f01（N=20，41 维 eigh）——"
+                           "与 golden 的 Koch 色散近似方法学独立"),
         "note": "transmon 色散近似 f01=√(8·E_J·E_C)−E_C（GHz）；确定性物理定律锚。"
-                "EPR 哈密顿量对角化(pyEPR/Ansys)仅作外部 ORACLE。典型 E_J/E_C≈60。",
+                "EPR 哈密顿量对角化(pyEPR/Ansys)仅作外部 ORACLE。典型 E_J/E_C≈60。"
+                "【v0.9.14 P0-1】48 锚中**首道接真独立候选**的题：golden=Koch 解析"
+                "渐近，candidate=电荷基严格对角化（41 维 eigh）。实测偏差 rel=0.22%"
+                "（6.628203→6.613449，diff=1.475e-2 GHz），落在既有 tol=0.05 内"
+                "——本锚 tol 早期即按物理容差设定，无需放宽（对照：B20-B28 后期"
+                "锚清一色 tol=1e-6，该量级设计上只容得下 candidate≡golden）。",
     },
     "B10": {
         "title": "单量子比特门保真度 F（退相干极限）",
@@ -317,38 +325,67 @@ BENCHMARK_DEFS = {
         "title": "可调 transmon（SQUID 磁通调谐）f01(Φ)",
         "metric": "tunable_f01_ghz",
         "oracle": "analytical(SQUID E_J(Φ)=E_JΣ·|cos(πΦ/Φ0)| + Koch)",
-        "tol": 1e-6,
+        "tol": 0.05,
         "default_params": {"phi_frac": 0.0, "e_j_sum_ghz": 20.0,
                            "e_c_ghz": 0.30},
         "golden_fn": b25_tunable_transmon_f01,
+        "candidate": "transmon_exact",
+        "candidate_desc": ("电荷基严格对角化 f01(E_J(Φ))（N=20，41 维 eigh）——"
+                           "与 golden 的 Koch 色散近似方法学独立"),
         "note": ("可调 transmon f01(Φ)=√(8·Ec·EJ(Φ))−Ec，EJ(Φ)=EJΣ·|cos(πΦ/Φ0)|"
                  "（SQUID 磁通调谐）。Φ=0 最大频率、Φ=0.5 调谐关点。确定性物理"
-                 "定律锚，LLM 不进判决路径；harness 默认 ReferenceCandidate 自洽 PASS。"),
+                 "定律锚，LLM 不进判决路径。"
+                 "【v0.9.14 P0-1】接独立候选（电荷基严格对角化），脱离自证桩。"
+                 "tol 1e-6→0.05（依据：与 B9 同一物理同一方法学，实测 Φ=0/0.1/"
+                 "0.2/0.3 四点偏差 1.475e-2~2.011e-2 GHz，rel=0.22%~0.40%；"
+                 "0.05 为该实测最大偏差的 2.5 倍余量，且仍远小于典型设计误差"
+                 "量级 ⇒ 既能容纳近似式固有误差，又能抓住真错误，"
+                 "由反向测试（扰动必 FAIL）兜底防止容差放水）。"),
     },
     "B26": {
         "title": "量子比特-读出谐振器色散位移 χ",
         "metric": "dispersive_chi_ghz",
         "oracle": "analytical(Blais χ=g²α/(Δ(Δ+α)))",
-        "tol": 1e-6,
+        "tol": 1e-4,
         "default_params": {"f_q_ghz": 5.0, "alpha_ghz": -0.30,
                            "f_r_ghz": 6.0, "g_ghz": 0.10},
         "golden_fn": b26_dispersive_shift,
+        "candidate": "chi_exact",
+        "candidate_desc": ("L=6 能级 transmon + Fock 谐振器联合严格对角化"
+                           "（162 维 eigh）—— 与 golden 的 Blais 微扰闭式"
+                           "方法学独立"),
         "note": ("色散位移 χ=g²α/(Δ(Δ+α))（Blais 修正），失谐区 |Δ|≫g。数值"
                  "验证 = 多能级+Fock 联合严格对角化提取（实测 rel 0.6~2%）。"
-                 "确定性物理定律锚，LLM 不进判决路径；harness 默认 "
-                 "ReferenceCandidate 自洽 PASS。"),
+                 "确定性物理定律锚，LLM 不进判决路径。"
+                 "【v0.9.14 P0-1】接独立候选（L=6 多能级 + Fock 联合严格"
+                 "对角化，162 维 eigh），脱离自证桩。tol 1e-6→1e-4"
+                 "（依据：实测 χ_golden=−2.307692e-3 vs χ_num=−2.261958e-3，"
+                 "diff=4.573e-5，rel=1.98%；L 收敛扫描 L=3→6 得 2.46%/1.98%/"
+                 "1.98%/1.98%，L=5→6 已稳定 ⇒ 该偏差是**微扰闭式在 g/Δ=0.1 "
+                 "下的固有误差**、非数值噪声。1e-4 为实测偏差的 2.2 倍余量，"
+                 "反向测试兜底）。"),
     },
     "B27": {
         "title": "色散 CZ 门时间 t_CZ",
         "metric": "cz_gate_time_ns",
         "oracle": "analytical(t_CZ=π/(2|χ|))",
-        "tol": 1e-6,
+        "tol": 30.0,
         "default_params": {"f_q_ghz": 5.0, "alpha_ghz": -0.30,
                            "f_r_ghz": 6.0, "g_ghz": 0.10},
         "golden_fn": b27_cz_gate_time,
+        "candidate": "cz_exact",
+        "candidate_desc": ("t_CZ=π/(2|χ_num|)，χ_num 由 L=6 多能级+Fock 联合"
+                           "对角化给出 —— 与 golden 的闭式 χ 方法学独立"),
         "note": ("色散 CZ 门时间 t_CZ=π/(2|χ|)（GHz→ns）；校验 2|χ|·t_CZ=π 精确"
-                 "成立。确定性物理定律锚，LLM 不进判决路径；harness 默认 "
-                 "ReferenceCandidate 自洽 PASS。"),
+                 "成立。确定性物理定律锚，LLM 不进判决路径。"
+                 "【v0.9.14 P0-1】接独立候选（χ 取严格对角化值后反推 t_CZ），"
+                 "脱离自证桩。tol 1e-6→30ns"
+                 "（依据：实测 golden=680.678ns vs cand=694.441ns，"
+                 "diff=13.76ns，rel=2.02%；30ns 为实测偏差的 2.2 倍余量）。"
+                 "⚠️ 诚实边界：B27 与 B26 **共用同一数值 χ**，故 B27 并非"
+                 "完全独立于 B26（一荣俱荣）。它真正验证的是"
+                 "「χ→t_CZ 换算链路」+「χ 数值侧自洽」，能抓住换算因子错误"
+                 "（如漏 1/2），但独立性弱于 B26——不重复计入独立锚强度。"),
     },
     # ---- 有源调制器封口（v0.9.1 · 钉子 D1b=A）：MZM 半波电压 Vπ ----
     "B28": {
@@ -416,6 +453,12 @@ BENCHMARK_DEFS = {
         "anchor": "empirical",
         "empirical_id": "E-SIN-NG-300",
         "candidate": "fdfd_ng",
+        # v0.9.14：候选状态**机器可读**化（此前仅写在 note 散文里，无法被程序
+        # 统计，正是审计 N-2 类问题的根源——信息只存在于人类可读文本中）。
+        #   "degraded_ordinal" = 候选与 golden **几何不同源/精度不足**，
+        #     仅作量级参考，不进死标量判决（诚实边界 C，2026-09-01 R16 证伪）
+        #   （缺省/"strict"）= 进死标量判决的真独立候选
+        "candidate_status": "degraded_ordinal",
         "default_params": {"w_um": 1.0, "h_um": 0.3, "n_core": 2.0, "n_clad": 1.44,
                            "wl_um": 1.55, "clad_um": 3.0, "dl_factor": 24.0},
         "golden_fn": None,

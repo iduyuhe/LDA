@@ -121,6 +121,18 @@ jobs:
           cd lda
           python -c "import sys; sys.path.insert(0,'.'); from lda_agent.multiband_loop import main_band; r=main_band(); assert r['accepted'], r['verdict']; print('D-03 multiband PASS, R_min=%.4f, max_abs_err=%.2e'%(r['final_band_min_R_fdtd'], r['final_max_abs_err']))"
 
+      - name: Benchmark falsifiability smoke (P0-1, anti-self-consistency guard)
+        # 回归防护：v0.9.14 战略审计实测 48 锚中 47 道为自证桩
+        # （candidate≡golden、|diff|≡0 恒 PASS、零验证价值）⇒ 全绿 ≠ 可证伪。
+        # 本 smoke 是反自证桩常驻护栏：①独立候选数下限 ②正向 PASS
+        # ③**反向测试：10% 参数扰动必 FAIL（证明 tol 未放水）** ④灵敏度上界
+        # ⑤全量 48 锚无回归 ⑥披露剩余自证桩清单。纯 numpy，≈3s。
+        # ⚠️ ci.yml 为硬编码 smoke 列表（非 --tag core），新增 smoke 必须显式
+        # 加入本文件，否则本地 core 覆盖而 GitHub 主干漏跑（v0.9.10 教训的镜像）。
+        run: |
+          cd lda
+          python run_benchmark_falsifiability_smoke.py
+
       - name: Spectrum inverse-design framework smoke (D-24, unified engine/metric/oracle)
         # 回归防护：D-24 通用谱形逆设计框架（SpectrumInverseDesignAgent）。
         # 验证 ring 实例（match+黄金分割 R=9.9498）、即插即用实例（n_g=4.18→

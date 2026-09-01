@@ -5,7 +5,7 @@
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "self_consistent": true
   },
-  "generated_at": "2026-09-02T01:20:26",
+  "generated_at": "2026-09-02T07:25:09",
   "summary": {
     "total": 48,
     "passed": 48,
@@ -207,7 +207,7 @@
       "source": "physical-law",
       "golden": 6.628203230275509,
       "candidate": 6.628203230275509,
-      "tol": 1e-06,
+      "tol": 0.05,
       "passed": true,
       "note": "确定性物理定律/解析解"
     },
@@ -218,7 +218,7 @@
       "source": "physical-law",
       "golden": -0.002307692307692308,
       "candidate": -0.002307692307692308,
-      "tol": 1e-06,
+      "tol": 0.0001,
       "passed": true,
       "note": "确定性物理定律/解析解"
     },
@@ -229,7 +229,7 @@
       "source": "physical-law",
       "golden": 680.6784082777884,
       "candidate": 680.6784082777884,
-      "tol": 1e-06,
+      "tol": 30.0,
       "passed": true,
       "note": "确定性物理定律/解析解"
     },

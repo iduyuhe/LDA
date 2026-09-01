@@ -85,7 +85,11 @@ def build_harness_specs(defs: Optional[Dict] = None
                         + (" ⚠️B级·待溯源（无 DOI/URL，不计入可溯源实证锚）"
                            if unverified else "")),
                 candidate_desc=(
-                    "FDFD 本征模 n_eff(λ) 中心差分（独立频域求解，非 golden 自证）"
+                    ("FDFD 本征模 n_eff(λ) 中心差分（独立频域求解，非 golden 自证）"
+                     + (" ⚠️降级：直波导候选 vs 环器件 golden **几何不同源**、"
+                        "求解器精度不足，仅作量级参考，不进死标量判决"
+                        "（诚实边界 C · R16 已证伪）"
+                        if d.get("candidate_status") == "degraded_ordinal" else ""))
                     if d.get("candidate") == "fdfd_ng"
                     else "harness 参考候选（占位自证：candidate≡golden，恒 PASS，无验证价值）")))
             cand_map[bid] = (_fdfd_ng_candidate
@@ -96,6 +100,15 @@ def build_harness_specs(defs: Optional[Dict] = None
         def _oracle(p, bid=bid):
             val, _src, _note = golden_with_source(bid, p)
             return val
+
+        # v0.9.14（P0-1 · 战略审计 R1）：B 类物理定律锚**首次接入独立候选**。
+        # 此前 build_harness_specs 对所有非实证锚一律落 _harness_reference_candidate
+        # （candidate≡golden，恒 PASS、零验证价值）→ 48 锚中 47 道为自证桩。
+        # 现按 benchmarks.py 的 `candidate` 字段查表分发；未登记者仍是自证桩
+        # （诚实保留，不假装已独立）。
+        cand_key = d.get("candidate")
+        cand_fn = BENCHMARK_CANDIDATES.get(cand_key) if cand_key else None
+        independent = cand_fn is not None
 
         specs.append(VerificationSpec(
             spec_id=bid,
@@ -108,10 +121,107 @@ def build_harness_specs(defs: Optional[Dict] = None
             target_desc=d.get("title", ""),
             params=params,
             source=d.get("oracle", "physical_law"),
-            candidate_desc="harness 候选求解器",
+            candidate_desc=(d.get("candidate_desc")
+                            if independent
+                            else "harness 参考候选（占位自证："
+                                 "candidate≡golden，恒 PASS，无验证价值）"),
         ))
-        cand_map[bid] = _harness_reference_candidate
+        cand_map[bid] = cand_fn or _harness_reference_candidate
     return specs, cand_map
+
+
+# ---------------------------------------------------------------------------
+# 1b. B 类物理定律锚 · 独立候选登记表（v0.9.14 · P0-1）
+# ---------------------------------------------------------------------------
+# key   = benchmarks.py 中 BENCHMARK_DEFS[x]["candidate"] 的取值
+# value = candidate_fn(spec, oracle_value) -> float
+#
+# 「独立」的判据：候选必须走与 golden **方法学不同源**的求解路径
+#   golden = 解析闭式（Koch 色散近似 / Blais 微扰闭式 / 定义式）
+#   cand   = 严格数值（电荷基对角化 / 多能级+Fock 联合对角化）
+# 二者物理同源、方法独立 ⇒ |cand−golden| 反映**近似式的固有误差**，
+# 这才是真可证伪的验证（自证桩的 |diff|≡0 不携带任何信息）。
+BENCHMARK_CANDIDATES: Dict[str, Callable] = {}
+
+
+def _register_candidate(key: str, desc: str):
+    """登记一个 B 类独立候选（装饰器：同时写入 desc 供报告显示）。"""
+    def _wrap(fn: Callable) -> Callable:
+        fn.candidate_desc = desc
+        BENCHMARK_CANDIDATES[key] = fn
+        return fn
+    return _wrap
+
+
+@_register_candidate(
+    "transmon_exact",
+    "电荷基严格对角化 f01（N=20，41 维实对称矩阵 eigh）"
+    "—— 与 golden 的 Koch 色散近似方法学独立")
+def _transmon_exact_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B9 / B25 独立候选：transmon 哈密顿量电荷基严格对角化求 f01。
+
+    golden = Koch2007 解析色散近似 f01=√(8·E_J·E_C)−E_C（E_J≫E_C 渐近解）
+    cand   = H=4E_C(n−n_g)² − (E_J/2)Σ(|n+1><n|+h.c.) 电荷基截断严格对角化
+
+    两条路径**方法学独立**：解析渐近 vs 数值本征值。实测偏差（transmon
+    工作区 E_J/E_C≈67）rel≈0.22%（B9 默认参数），即近似式的固有误差。
+    纯 numpy（41 维 eigh），零外部依赖、零 GPU，LLM 不进判决路径。
+    """
+    _ensure_paths()
+    from transmon_solver import solve_transmon
+
+    p = spec.params
+    if "phi_frac" in p:      # B25：SQUID 磁通调谐，E_J(Φ)=E_JΣ·|cos(πΦ/Φ0)|
+        ej = float(p["e_j_sum_ghz"]) * abs(math.cos(math.pi * float(p["phi_frac"])))
+        ec = float(p["e_c_ghz"])
+    else:                    # B9：固定频率 transmon
+        ej, ec = float(p["E_J"]), float(p["E_C"])
+    return solve_transmon(ej, ec, N=20)["f01"]
+
+
+@_register_candidate(
+    "chi_exact",
+    "L=6 能级 transmon + Fock 谐振器联合严格对角化（162 维 eigh）"
+    "—— 与 golden 的 Blais 微扰闭式方法学独立")
+def _chi_exact_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B26 独立候选：多能级 + Fock 联合严格对角化提取色散位移 χ。
+
+    golden = Blais 修正微扰闭式 χ = g²α/(Δ(Δ+α))（|Δ|≫g 微扰展开）
+    cand   = H = Σ_s E_s|s><s| + f_r·a†a + g·(a†+a)·Σ_s√(s+1)|s+1><s|
+             严格对角化后按最近能量匹配提取 χ = ½[(E_e1−E_e0)−(E_g1−E_g0)]
+
+    取 L=6（χ(L) 在 L=5→6 已收敛，变化 <1e-6 相对量），M=25 Fock 截断。
+    实测偏差 rel≈1.98% —— 这是**微扰闭式在 g/Δ=0.1 下的固有误差**，
+    非数值噪声（L 收敛扫描已证：L=5 与 L=6 差 <1e-8）。
+    """
+    _ensure_paths()
+    from qeda_depth_solver import tls_spectrum_L, _chi_from_spectrum
+
+    p = spec.params
+    f_q = float(p["f_q_ghz"])
+    alpha = float(p["alpha_ghz"])
+    f_r = float(p["f_r_ghz"])
+    g = float(p["g_ghz"])
+    E = tls_spectrum_L(f_q, alpha, f_r, g, L=6, M=25)
+    return _chi_from_spectrum(E, f_q, f_r)
+
+
+@_register_candidate(
+    "cz_exact",
+    "t_CZ=π/(2|χ_严格对角化|)，χ 由 L=6 多能级+Fock 联合对角化给出"
+    "—— 与 golden 的闭式 χ 方法学独立")
+def _cz_exact_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B27 独立候选：CZ 门时间由严格对角化的 χ 反推。
+
+    golden = t_CZ = π/(2|χ_Blais闭式|)
+    cand   = t_CZ = π/(2|χ_严格对角化|)（χ 取自 _chi_exact_candidate）
+
+    严格说 B27 与 B26 共用同一数值 χ ⇒ 二者**非完全独立**（一荣俱荣）。
+    诚实标注：B27 验证的是「χ→t_CZ 的换算链路」+「χ 数值侧的自洽」，
+    其独立性弱于 B26。保留它是因为它能抓住换算错误（如漏掉因子 2）。
+    """
+    chi = _chi_exact_candidate(spec, oracle_value)
+    return math.pi / (2.0 * abs(chi))
 
 
 def _load_empirical_anchor():

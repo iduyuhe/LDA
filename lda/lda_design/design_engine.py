@@ -49,24 +49,35 @@ def _loss_golden(eid: str) -> Tuple[float, float]:
     return _LOSS_GOLDEN_CACHE[eid]
 
 
-def _loss_cheap(engine_name: str, combo: Dict[str, float]) -> float:
-    """loss 引擎正向输出（搜索排序用）。"""
+def _loss_cheap(engine_name: str, combo: Dict[str, float],
+                field: str = "value") -> float:
+    """loss 引擎正向输出（搜索排序用）。
+
+    `field`：取引擎输出的哪个字段。默认 `"value"` = 引擎的**链路预算默认量**；
+    当实证锚 golden 是另一个量（如 Y-branch 的**过量损耗**）时须显式指定，
+    使「搜索目标」与「判决量」同量纲（D-67）。
+    """
     from lda_design.loss_engines import ENGINE_FUNCS
     out = ENGINE_FUNCS[engine_name](dict(combo))
-    return float(out["value"])
+    return float(out[field])
 
 
-def _loss_verify(engine_name: str, eid: str, tol: float):
+def _loss_verify(engine_name: str, eid: str, tol: float, field: str = "value"):
     """loss 引擎验证工厂：引擎输出 vs 实证语料 golden 死标量对照。
 
     实证锚第一次进入引擎级判决路径：|engine_out − measured| ≤ tol → passed。
     LLM 不进判决路径（golden 为真实文献语料）。
+
+    `field`：读引擎输出的哪个字段与 golden 对照。默认 `"value"`；但当 golden 是
+    **器件品质量**（如 Y-branch 过量损耗 0.28 dB）而 `value` 是**链路预算量**
+    （含 3.0103 dB 分光）时**必须**显式传 `"excess_loss_dB"` —— 否则等于拿
+    3.41 dB 去比 0.28 dB（D-67：二者非同一量，混用即失真）。
     """
     def _verify(mode: str, target_f01: float = None, **kw):
         from lda_design.loss_engines import ENGINE_FUNCS
         golden, unc = _loss_golden(eid)
         out = ENGINE_FUNCS[engine_name](dict(kw))
-        val = float(out["value"])
+        val = float(out[field])
         rel = abs(val - golden) / max(abs(golden), 1e-9) * 100
         passed = abs(val - golden) <= tol
         return {
@@ -436,26 +447,30 @@ class DesignEngine:
         # 这些引擎的"目标" = 损耗/效率预算（文献实测典型值），验证锚 = **实证语料**
         # （E1-E7 golden，非解析锚）——实证锚第一次成为引擎级判决锚（LLM 不进判决）。
         "YbranchLoss": {
-            # D-66：metric 由「含 3.01dB 理想分光的分支插损 split_loss_dB」
-            # 改为「**过量损耗** excess_loss_dB」——3.01dB 是 1×2 均分的几何必然，
-            # 非器件品质指标、非被测量；实测 golden 也改判为 0.28±0.02 dB
-            # （Opt. Express 21, 1310 (2013)，DOI 10.1364/OE.21.001310）。
+            # D-66 判定：实证锚 golden 用**过量损耗** excess_loss_dB（公开实测
+            # 0.28±0.02 dB，Opt. Express 21, 1310 (2013)，DOI 10.1364/OE.21.001310）
+            # ——3.01dB 是 1×2 均分的几何必然，非器件品质指标、非被测量。
+            # D-67 修正：引擎 `value` 仍是**链路预算量** split_loss_dB
+            # （= 3.0103 + 过量），故此处 verify/cheap 均须显式指定
+            # field="excess_loss_dB"，保证「目标 / 搜索 / 判决」三者同量纲。
+            # 链路预算要的是含分光插损，直接用引擎 `value` 即可。
             "title": "Y-branch 过量损耗 · 目标 excess_loss（实证锚 E-YBRANCH-LOSS）",
             "sweep": [("theta_deg", 2.0, 20.0, 1.0)],
             "fixed": dict(excess_coef=0.004),
             "verify": _loss_verify("engine_ybranch_split", "E-YBRANCH-LOSS",
-                                   tol=0.5),
+                                   tol=0.5, field="excess_loss_dB"),
             "cheap": lambda combo, target: _loss_cheap(
-                "engine_ybranch_split", combo),
+                "engine_ybranch_split", combo, field="excess_loss_dB"),
             "extract": lambda r: r["metric"],
             "metric_name": "excess_loss_dB",
             "target_unit": "dB",
             "analytic_only": False,
             "secondary": ("theta_deg", True),
-            "note": "Y-branch **过量损耗** = c1·θ²（D-66：已剔除 3.01dB 理想分光；"
-                    "需含分光的插损自行 +3.0103dB）。目标=公开实测 0.28dB"
-                    "（Opt. Express 21, 1310）；实证锚 E-YBRANCH-LOSS 死标量判决"
-                    "（|out−golden|≤tol）。⚠️ c1=0.004 dB/deg² 为**未标定的唯象系数**，"
+            "note": "Y-branch **过量损耗** = c1·θ²（引擎 `value` 为含分光的链路预算量"
+                    " split_loss_dB = 3.0103 + 过量，二者不可混用；D-67）。"
+                    "目标=公开实测 0.28dB（Opt. Express 21, 1310）；"
+                    "实证锚 E-YBRANCH-LOSS 死标量判决（|out−golden|≤tol）。"
+                    "⚠️ c1=0.004 dB/deg² 为**未标定的唯象系数**，"
                     "θ=10° 给 0.4dB、实测 0.28dB，rel≈43%，如实暴露不做拟合回算。",
         },
         "GratingEff": {

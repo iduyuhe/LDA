@@ -13,22 +13,22 @@
 | GP-GRATING-EFF | Grating coupler（光纤-芯片耦合效率） | literature | engine_grating_eff | coupling_eff | 0.4337 ratio | 0.517 ratio | 0.1 | PASS |
 | GP-CROSSING | 波导 Crossing 交叉（插入损耗 + 串扰） | literature | engine_crossing | insertion_loss_dB | 0.18 dB | 0.7 dB | 0.5 | PASS |
 | GP-CROSSING | 波导 Crossing 交叉（插入损耗 + 串扰） | literature | engine_crossing | crosstalk_dB | -38.0 dB | -25 dB | 5 | PASS |
-| GP-YBRANCH | Y-branch 分束器（总分束损耗，含理想 3 dB） | literature | engine_ybranch_split | split_loss_dB | 3.1 dB | 3.15 dB | 0.3 | PASS |
+| GP-YBRANCH | Y-branch 分束器（总分束损耗，含理想 3 dB） | literature | engine_ybranch_split | split_loss_dB | 3.1103 dB | 3.15 dB | 0.3 | PASS |
 | GP-SIN-PL | SiN 波导传播损耗（已商品化平台） | datasheet | engine_sin_pl | propagation_loss_dBcm | 0.087 dB/cm | 0.1 dB/cm | 0.05 | PASS |
-| GC-CPO-8CH | CPO 8 通道光引擎（每通道光纤-芯片插入损耗） | literature | photon:link | total_insertion_loss_dB | 10.6232 dB | 12.0 dB | 3.0 | PASS |
+| GC-CPO-8CH | CPO 8 通道光引擎（每通道光纤-芯片插入损耗） | literature | photon:link | total_insertion_loss_dB | 10.6335 dB | 12.0 dB | 3.0 | PASS |
 | GC-QCTRL | 超导量子控制/读出芯片（单发读出保真度） | datasheet | quantum:quantum_fidelity | readout_fidelity | 0.9978 ratio | 0.99 ratio | 0.02 | PASS |
-| GC-SENSE | 光子传感前端整芯片（MZI 干涉传感，全链路插入损耗） | literature | photon:link | total_insertion_loss_dB | 13.6302 dB | 15.0 dB | 3.0 | PASS |
+| GC-SENSE | 光子传感前端整芯片（MZI 干涉传感，全链路插入损耗） | literature | photon:link | total_insertion_loss_dB | 13.6508 dB | 15.0 dB | 3.0 | PASS |
 | GC-QCTRL-COMM | 商用量子控制/读出芯片（单发读出保真度，6-qubit 代表规模） | datasheet | quantum:quantum_fidelity | readout_fidelity | 0.9978 ratio | 0.99 ratio | 0.02 | PASS |
 | GC-DR4-TX | 400G DR4 硅光发射芯片（单通道，光纤-芯片插损） | datasheet | photon:link | total_insertion_loss_dB | 3.7151 dB | 4.5 dB | 1.5 | PASS |
 | GC-DR4-ONCHIP | 400G DR4 硅光收发全片（片上总损耗，边缘耦合） | datasheet | photon:link | total_insertion_loss_dB | 7.6102 dB | 9.0 dB | 1.5 | PASS |
 | GC-LR8-CH | 400GBASE-LR8 单信道链路（8 波 WDM PAM4，10km OS2） | datasheet | photon:link | total_insertion_loss_dB | 3.9821 dB | 6.3 dB | 1.2 | PASS |
-| GC-PLC-1X8 | PLC 1×8 分路器（FTTH/PON 无源分光，每支路插损） | datasheet | photon:link | total_insertion_loss_dB | 9.3 dB | 10.7 dB | 1.0 | PASS |
-| GC-PLC-1X16 | PLC 1×16 分路器（FTTH/PON 无源分光，每支路插损） | datasheet | photon:link | total_insertion_loss_dB | 12.4 dB | 14.0 dB | 1.0 | PASS |
+| GC-PLC-1X8 | PLC 1×8 分路器（FTTH/PON 无源分光，每支路插损） | datasheet | photon:link | total_insertion_loss_dB | 9.3309 dB | 10.7 dB | 1.0 | PASS |
+| GC-PLC-1X16 | PLC 1×16 分路器（FTTH/PON 无源分光，每支路插损） | datasheet | photon:link | total_insertion_loss_dB | 12.4412 dB | 14.0 dB | 1.0 | PASS |
 | GC-AWG-40CH | 40ch 100GHz 无热 AWG（DWDM 复解，ITU 网格插损） | datasheet | photon:link | total_insertion_loss_dB | 4.4981 dB | 6.0 dB | 2.0 | PASS |
 | GC-OCS-P576 | OCS 光交换机光路层（Polatis 576×576，等效无源光路插损） | literature | photon:link | total_insertion_loss_dB | 0.894 dB | 3.0 dB | 1.5 | PASS |
 | GC-OCS-FABRIC | OCS 直连收发前端（Google Jupiter/Palomar 架构，2×FR4 功率预算） | literature | photon:link | total_insertion_loss_dB | 3.7151 dB | 4.0 dB | 1.0 | PASS |
 | GC-LIDAR-FMCW | FMCW 激光雷达硅光芯片（单方向全光链路，1550nm） | literature | photon:link | total_insertion_loss_dB | 3.6716 dB | 3.3 dB | 0.8 | PASS |
-| GC-QKD-TX | QKD 发射端硅光芯片（Alice，BB84 态制备） | literature | photon:link | total_insertion_loss_dB | 13.5432 dB | 15.0 dB | 2.0 | PASS |
+| GC-QKD-TX | QKD 发射端硅光芯片（Alice，BB84 态制备） | literature | photon:link | total_insertion_loss_dB | 13.5638 dB | 15.0 dB | 2.0 | PASS |
 | GC-QKD-RX | QKD 接收端硅光芯片（Bob，基矢测量） | literature | photon:link | total_insertion_loss_dB | 7.4797 dB | 8.0 dB | 1.5 | PASS |
 | GC-QKD-MULTI | 多用户 QKD 接收机硅光芯片（4 用户 MZI 选路） | literature | photon:link | total_insertion_loss_dB | 11.3193 dB | 13.0 dB | 1.5 | PASS |
 | GC-QCTRL-ZC3 | 超导量子芯片（祖冲之三号对标，10-qubit 代表读出段） | literature | quantum:quantum_fidelity | readout_fidelity | 0.9978 ratio | 0.9918 ratio | 0.01 | PASS |

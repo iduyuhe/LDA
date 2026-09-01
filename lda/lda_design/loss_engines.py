@@ -3,7 +3,9 @@
 补对照报告暴露的 6 条 loss/效率类语料缺口——新增 5 个「损耗/效率类引擎」
 （半解析物理近似），与既有 15 个设计量引擎互补：
 
-  engine_ybranch_split  : Y-branch 过量损耗 excess_loss_dB（D-66：剔除 3.01dB 理想分光）
+  engine_ybranch_split  : Y-branch 分束损耗 split_loss_dB（**链路预算量** = 3.0103
+                          分光 + 过量损耗；D-67 回归修复：另以同名字段暴露
+                          excess_loss_dB 供实证锚对照，二者不可混用）
   engine_grating_eff    : 光栅耦合器耦合效率 coupling_eff（Bragg 理想 + 倾斜/占空比损耗）
   engine_crossing       : 波导 crossing 插入损耗 + 串扰（taper 长度参数化）
   engine_mmi_el         : MMI 1×2 过量损耗 excess_loss_dB（长度失配模型）
@@ -35,22 +37,38 @@ LOSS_ENGINES = [
 ]
 
 
+#: 1×2 功率均分的**几何必然**分光损耗 −10·log10(0.5)（非器件品质指标，但**真实存在**）
+SPLIT_LOSS_3DB = -10.0 * math.log10(0.5)  # = 3.0103 dB
+
+
 def engine_ybranch_split(geom: Dict[str, float]) -> Dict[str, Any]:
-    """Y-branch **过量损耗**（excess loss, dB）：分束角引起的过量损耗。
+    """Y-branch 分束器：同时输出两个**互斥且互补**的量。
 
-    D-66（2026-09-01）语义修正：本引擎原先输出 `split_loss_dB = 3.0 + c1·θ²`
-    （含 3.01 dB 理想分光的分支插损）。但实证锚 E-YBRANCH-LOSS 的 golden 已改用
-    公开文献**实测的过量损耗** 0.28±0.02 dB（Opt. Express 21, 1310 (2013)，
-    DOI 10.1364/OE.21.001310）——3.01 dB 分光是 1×2 功率均分的**几何必然**
-    （−10·log10(0.5)），并非器件品质指标、也非被测量的量。二者混在一条 metric
-    里会让「引擎 ↔ 实测」对照失真（原 golden 3.4 dB 与实测 0.28 dB 相差一个量级）。
+        excess_loss_dB = c1·θ²                → **器件品质量**（过量损耗）
+        split_loss_dB  = 3.0103 + c1·θ²       → **链路预算量**（每支路插损）
 
-    故本引擎改为**只输出过量损耗**（与既有 E-MMI-1X2-EL / engine_mmi_el 的
-    excess_loss_dB 口径一致）：
+    `value` / `metric` = **split_loss_dB**（链路预算语义），`excess_loss_dB`
+    以同名字段显式暴露，供实证锚 E-YBRANCH-LOSS 对照读取。
 
-        excess_loss = c1·θ²   （θ 单位 deg，c1 为工艺标定系数）
+    🔴🔴 D-67（2026-09-01）回归修复 —— v0.9.10（D-66）把默认 `value` 改成了
+    excess_loss_dB，**而本引擎的 `value` 是链路预算的被加数量**
+    （见 `golden_product_benchmarks._photon_cascade_il` 的 `n_yb * yb`），
+    导致所有含分束器的整芯片链路**每个分束器少算 3.0103 dB**：
 
-    需含分光的分支插损时，自行叠加 3.0103 dB 即可。
+        GC-PLC-1X8   9.30  → 0.30 dB（3 级，−9.0）
+        GC-PLC-1X16 12.40  → 0.40 dB（4 级，−12.0）
+        GC-SENSE    13.63  → 7.63 dB（2 级，−6.0）
+        GC-QKD-TX   13.54  → 7.54 dB（2 级，−6.0）
+        GC-CPO-8CH  10.62  → 7.62 dB（1 级，−3.0）
+        GP-YBRANCH   3.10  → 0.10 dB（拿过量损耗去比总插损 golden 3.15）
+
+    **且因插损类 metric 方向为 `le`（越小越 PASS），这 6 行全部仍显示 PASS
+    → 典型的「假绿」**，CI core 84/84 全绿也没抓到（`run_golden_product_smoke`
+    只校验 PASS 条数，不校验死标量数值）。
+
+    🔴 教训（工程铁律）：**改引擎默认输出 `value` 的语义前，必须 grep 全部
+    `["value"]` 消费点**，而不只是同步改断言；「越小越 PASS」的方向性 metric
+    会把「少算损耗」伪装成「设计变好」，是失真最隐蔽的一类回归。
 
     ⚠️ 诚实边界：c1=0.004 dB/deg² 为**工艺标定的唯象系数**（非第一性原理推导），
     θ=10° → 0.4 dB；与实测 0.28 dB 相差 0.12 dB（相对 43%），属模型粗糙度，
@@ -59,8 +77,11 @@ def engine_ybranch_split(geom: Dict[str, float]) -> Dict[str, Any]:
     theta = float(geom.get("theta_deg", 10.0))
     c1 = float(geom.get("excess_coef", 0.004))  # dB/deg²，工艺标定
     excess = c1 * theta * theta
-    return {"metric": "excess_loss_dB", "value": round(excess, 4),
-            "model": f"{c1}·θ² (θ={theta}°，过量损耗；+3.0103dB 即含分光插损)"}
+    total = SPLIT_LOSS_3DB + excess
+    return {"metric": "split_loss_dB", "value": round(total, 4),
+            "excess_loss_dB": round(excess, 4),
+            "model": (f"3.0103 + {c1}·θ² (θ={theta}°；"
+                      f"含分光插损 {total:.4f}dB = 分光 3.0103 + 过量 {excess:.4f})")}
 
 
 def engine_grating_eff(geom: Dict[str, float]) -> Dict[str, Any]:
@@ -171,9 +192,13 @@ def resolve_corpus_engine(eid: str, geometry: Dict[str, float],
         out = fn(dict(geometry))
     except Exception as e:  # noqa: BLE001
         return {"engine": m["engine"], "error": str(e)[:60]}
-    value = out.get("value") if m["metric"] in ("split_loss_dB", "coupling_eff",
-                                                "insertion_loss_dB", "excess_loss_dB",
-                                                "propagation_loss_dBcm") else \
-        out.get("crosstalk_dB")
+    # D-67：按 metric **名**取值，而非一律取 "value"。
+    # 一个引擎可同时输出多个量（如 engine_ybranch_split 的 split_loss_dB /
+    # excess_loss_dB），"value" 只是**链路预算默认量**；实证锚对照要读的往往
+    # 是另一个（过量损耗）。此前一律取 "value" 是 D-66 假绿的技术成因之一。
+    if m["metric"] == out.get("metric"):
+        value = out.get("value")
+    else:
+        value = out.get(m["metric"], out.get("crosstalk_dB"))
     return {"engine": m["engine"], "metric": m["metric"], "value": value,
             "detail": out.get("model", "")}

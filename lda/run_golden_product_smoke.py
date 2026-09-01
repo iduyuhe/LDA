@@ -43,6 +43,53 @@ def main() -> int:
             print(f"   - {row['name']}: replica={row['replica']}{row['unit']} "
                   f"vs golden={row['golden']}{row['unit']} (tol±{row['tol']}) -> {tag}")
 
+    # ------------------------------------------------------------------
+    # 2.5) 🔴 D-67 反向测试：**验证护栏本身会响**（没被验证过的护栏不算护栏）
+    #   v0.9.10（D-66）把 engine_ybranch_split 的默认 `value` 从「含分光的
+    #   分支插损」改成「过量损耗」，导致 5 条整芯片链路每个分束器少算
+    #   3.0103 dB，却因插损 metric 方向为 `le`（越小越 PASS）**全部仍显示
+    #   PASS → 假绿**；而本 smoke 只校验 PASS 条数，CI core 84/84 全绿也
+    #   没抓到。这里注入那个回归，确认新加的两道护栏真的会拦下它。
+    # ------------------------------------------------------------------
+    from lda_design.loss_engines import ENGINE_FUNCS as _EF  # noqa: E402
+    from lda_l2 import golden_product_benchmarks as _gpb  # noqa: E402
+    _orig = _EF["engine_ybranch_split"]
+
+    def _bad_ybranch(geom):
+        """复现 D-66 回归：value 只给过量损耗，丢掉 3.0103 dB 分光。"""
+        th = float(geom.get("theta_deg", 10.0))
+        c1 = float(geom.get("excess_coef", 0.004))
+        return {"metric": "excess_loss_dB", "value": round(c1 * th * th, 4),
+                "model": "BAD-D66"}
+
+    _EF["engine_ybranch_split"] = _bad_ybranch
+    try:
+        _hit_floor = 0
+        _chips = [c for c in _gpb.DEFAULT_CHIP_BENCHMARKS
+                  if getattr(c, "geom", {}).get("n_ybranch", 0) > 0]
+        for _c in _chips:
+            try:
+                _c.evaluate()
+            except AssertionError:
+                _hit_floor += 1
+        _yb = [b for b in _gpb.DEFAULT_BENCHMARKS
+               if getattr(b, "product_id", None) == "GP-YBRANCH"][0]
+        _sem = bool(_yb.evaluate().get("error"))
+    finally:
+        _EF["engine_ybranch_split"] = _orig
+
+    if _hit_floor != len(_chips):
+        print(f"FAIL: 能量守恒下界护栏失效 —— 注入漏算分光后仅拦下 "
+              f"{_hit_floor}/{len(_chips)} 条含分束器链路")
+        return 1
+    if not _sem:
+        print("FAIL: metric 语义错配护栏失效 —— 拿过量损耗比总插损 golden "
+              "未被拦下（会静默 PASS = 假绿）")
+        return 1
+    print(f"\n[D-67 反向测试] 注入「漏算 3.0103dB 分光」回归 → 两道护栏均命中："
+          f"能量守恒下界拦下 {_hit_floor}/{len(_chips)} 条链路 + "
+          f"metric 语义错配拦下（护栏真实有效，非纸上谈兵）")
+
     # 3) 生成对照报告（B 生态播种硬核素材）
     report = to_markdown(results)
     out_md = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",

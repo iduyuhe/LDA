@@ -1,5 +1,60 @@
 # Changelog
 
+## v0.9.11（2026-09-01 · D-67 回归修复 · 链路预算漏算 3.0103dB 分光 + 双护栏）
+
+🔴 **v0.9.10（D-66）引入了一个「假绿」回归，本次修复并加装护栏。**
+
+**根因**：D-66 判定「3.01 dB 是 1×2 功率均分的几何必然、非器件品质指标」——**这个判定本身是对的**，
+但实现时把 `engine_ybranch_split` 的默认输出 `value` 从「含分光的分支插损 `split_loss_dB`」
+直接改成了「过量损耗 `excess_loss_dB`」。而该引擎的 `value` **同时是链路预算的被加数量**
+（`golden_product_benchmarks._photon_cascade_il` 的 `n_yb * yb`），于是**每个分束器少算 3.0103 dB**。
+
+**影响面（5 条整芯片链路 + 1 条器件级，全部静默）**：
+
+| 条目 | 修复前（v0.9.10 漏算） | 修复后（正确） | 偏差 |
+|---|---|---|---|
+| GC-PLC-1X8（3 级分光） | 0.33 dB | **9.3309 dB** | −9.0 dB |
+| GC-PLC-1X16（4 级分光） | 0.44 dB | **12.4412 dB** | −12.0 dB |
+| GC-SENSE（2 级） | 7.63 dB | **13.6508 dB** | −6.0 dB |
+| GC-QKD-TX（2 级） | 7.54 dB | **13.5638 dB** | −6.0 dB |
+| GC-CPO-8CH（1 级） | 7.62 dB | **10.6335 dB** | −3.0 dB |
+| GP-YBRANCH | 0.10 dB（拿过量损耗比总插损 golden 3.15） | **3.1103 dB** | 语义错配 |
+
+**为何 84/84 全绿没抓到（三重失真叠加）**：
+1. 插损类 metric 方向为 `le`（**越小越 PASS**）→ 「少算损耗」被伪装成「设计做得更好」；
+2. `run_golden_product_smoke` 只校验 PASS **条数**，不校验死标量数值；
+3. `ProductBenchmark.evaluate` 在 metric 名对不上时**静默回退**到 `out["value"]`
+   → 「拿 A 量比 B golden」不会报错。
+
+**修复（原则：分离而非替换 —— 两个量都真实存在，各归其位）**：
+- `engine_ybranch_split` 同时输出两个**互斥且互补**的量：
+  `value`/`metric` = **`split_loss_dB`**（链路预算量 = 3.0103 + 过量，向后兼容）；
+  `excess_loss_dB` 以**同名字段**显式暴露（器件品质量，供实证锚对照）。
+  新增模块常量 `SPLIT_LOSS_3DB = −10·log₁₀0.5 = 3.0103`。
+- `resolve_corpus_engine` 改**按 metric 名取值**（不再一律取 `"value"`）。
+- `_loss_verify` / `_loss_cheap` 新增 `field` 参数；`YbranchLoss` 显式传
+  `field="excess_loss_dB"`，使「搜索目标 / 判决量 / golden」三者同量纲。
+
+**新增两道护栏（均已做反向测试，证明会响）**：
+1. **能量守恒下界**（`_photon_cascade_il`）——每个 1×2 分束器的每支路插损不可能低于
+   3.0103 dB（能量守恒，与工艺水平无关）。⚠️ 关键设计：必须**按贡献项逐项守底**，
+   不能用「总插损 ≥ n_yb×3.0103」——反向测试证明混合判据会让 GC-CPO-8CH / GC-SENSE /
+   GC-QKD-TX 三条因其他损耗垫高而**逃逸（只抓住 2/5）**；逐项守底才 5/5 全抓。
+2. **metric 语义错配硬失败**（`ProductBenchmark.evaluate`）——MetricSpec 声明的量在
+   引擎输出里既不是主 metric 也不是显式字段时，**禁止静默回退到 `value`**，直接报错
+   （宁可红，不可假绿）。
+
+**护栏的护栏**：`run_golden_product_smoke` 新增 **D-67 反向测试**——临时注入「漏算分光」
+的坏引擎，断言两道护栏都命中（能量下界 5/5 + 语义错配 1/1），否则 smoke 直接 FAIL。
+**没被验证过的护栏不算护栏。**
+
+**同步改动**：`run_loss_engine_smoke` 新增 2 条引擎层双量语义 + 能量守恒断言（7→9 条，9/9 PASS）；
+`design_engine.YbranchLoss` note / `loss_engines` 模块 docstring 如实标注双量不可混用。
+
+🔴 **工程铁律（新）**：**改引擎默认输出 `value` 的语义前，必须 grep 全部 `["value"]` 消费点**，
+而不只是同步改断言；**「越小越 PASS」的方向性 metric 必须配物理下界护栏**，
+否则「算漏了损耗」会被伪装成「设计变好」——这是失真最隐蔽的一类回归。
+
 ## v0.9.10（2026-09-01 · 实证锚逐字核实 · D-66）
 
 **指令**：5 条 B 级语料（E-SOI-NEFF-220 / E-SIN-NEFF-300 / E-YBRANCH-LOSS / E-RING-FSR / E-GRATING-EFF）**逐字核实**补 DOI/URL 才能升 A 级。纪律：**不编造 DOI、找不到就保持 B 级**。

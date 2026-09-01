@@ -23,7 +23,8 @@ if _HERE not in sys.path:
 
 from lda_harness.empirical_bank import EmpiricalCorpus
 from lda_design.loss_engines import (ENGINE_FUNCS, LOSS_ENGINES,
-                                     resolve_corpus_engine, CORPUS_ENGINE_MAP)
+                                     resolve_corpus_engine, CORPUS_ENGINE_MAP,
+                                     SPLIT_LOSS_3DB)
 
 CHECKS = []
 
@@ -75,6 +76,23 @@ def main() -> int:
           "不做拟合回算，待真实 PDK 工艺标定）",
           _rel <= 50.0,
           f"engine={_r['value']}dB vs 实测 {_m.measured_value}dB → rel={_rel:.1f}%")
+
+    # ②·补 D-67 双量语义护栏：引擎必须同时给出「链路预算量」与「器件品质量」，
+    #    且二者严格相差 3.0103 dB（1×2 功率均分的几何必然）。
+    #    背景：v0.9.10（D-66）把 `value` 改成 excess_only，导致 5 条整芯片链路
+    #    每个分束器少算 3.0103 dB，却因插损 metric 方向为 `le` 全部仍显示 PASS
+    #    （假绿）。此断言从**引擎层**锁死该语义，使其不可能再退化。
+    _ybo = ENGINE_FUNCS["engine_ybranch_split"]({"theta_deg": 10.0})
+    check("Y-branch 双量语义（D-67）：value=split_loss_dB ⊇ 3.0103dB 分光 "
+          "+ excess_loss_dB 显式字段",
+          _ybo.get("metric") == "split_loss_dB"
+          and "excess_loss_dB" in _ybo
+          and abs(_ybo["value"] - (SPLIT_LOSS_3DB + _ybo["excess_loss_dB"])) < 1e-4,
+          f"metric={_ybo.get('metric')} value={_ybo.get('value')} "
+          f"excess={_ybo.get('excess_loss_dB')} (3.0103+{_ybo.get('excess_loss_dB')})")
+    check("Y-branch 能量守恒：单级插损 ≥ 3.0103dB（1×2 均分物理硬底）",
+          _ybo["value"] >= SPLIT_LOSS_3DB - 1e-9,
+          f"value={_ybo['value']}dB ≥ {SPLIT_LOSS_3DB:.4f}dB")
 
     # ③ 物理合理性：方向正确的参数响应
     # Y-branch：θ↑ → 损耗↑

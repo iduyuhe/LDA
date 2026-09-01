@@ -22,7 +22,7 @@ import os
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List
 
-from lda_design.loss_engines import ENGINE_FUNCS
+from lda_design.loss_engines import ENGINE_FUNCS, SPLIT_LOSS_3DB
 
 HONEST_BANNER = (
     "本库对标已公开验证（实测 / 厂商 datasheet / 开源 PDK 表征）的器件性能死标量，"
@@ -70,7 +70,22 @@ class ProductBenchmark:
             elif m.name in out:
                 replica = out.get(m.name)
             else:
-                replica = out.get("value")
+                # 🔴🔴 D-67 metric 语义错配护栏（此前这里是「静默回退到 value」）
+                # MetricSpec 声明的量在引擎输出里**既不是主 metric、也不是显式
+                # 字段**，却仍拿主 `value` 去比 golden —— 这就是「拿 A 量比 B
+                # golden」的语义错配。在 `le` 方向（越小越 PASS）下它会伪装成
+                # PASS：v0.9.10（D-66）正是这样让 GP-YBRANCH 把**过量损耗** 0.1 dB
+                # 拿去比**总插损** golden 3.15 dB 而显示 PASS（假绿）。
+                # 现在改为**硬失败**：宁可红，不可假绿。
+                return {
+                    "product_id": self.product_id,
+                    "error": (f"metric 语义错配：MetricSpec 声明 '{m.name}'，"
+                              f"但引擎 {self.engine} 输出主 metric 为 "
+                              f"'{out.get('metric')}'、可用字段 "
+                              f"{sorted(k for k in out if k not in ('metric', 'value', 'model'))} "
+                              f"——禁止静默回退到 value 比 golden（D-67）"),
+                    "passed_all": False, "rows": [],
+                }
             if replica is None:
                 rows.append({**asdict(m), "replica": None, "passed": False, "delta": None})
                 all_pass = False
@@ -172,7 +187,39 @@ class ChipBenchmark:
         n_yb = int(self.geom.get("n_ybranch", 0))
         n_cr = int(self.geom.get("n_crossing", 0))
         total = n_g * grating_il + sil * L + n_yb * yb + n_cr * cr
-        return {"total_insertion_loss_dB": round(total, 4)}
+
+        # 🔴🔴 D-67 能量守恒下界护栏（物理硬底，非经验阈值）
+        # 一个 1×2 分束器必然把功率分成两半 → **每个分束器件的每支路插损**
+        # 至少损失 −10·log10(0.5) = 3.0103 dB（能量守恒，与工艺/设计水平无关）。
+        #
+        # 为何必须有这条：v0.9.10（D-66）把 engine_ybranch_split 的默认 `value`
+        # 从「含分光的分支插损」改成了「过量损耗」，这里 `n_yb * yb` 随之把
+        # 3.0103 dB/级 漏掉 —— GC-PLC-1X8 由 9.33 → 0.33 dB（差 9.0）、
+        # GC-PLC-1X16 由 12.44 → 0.44 dB（差 12.0）、GC-SENSE 13.65 → 7.63、
+        # GC-QKD-TX 13.56 → 7.54、GC-CPO-8CH 10.63 → 7.62。而插损 metric
+        # 方向为 `le`（越小越 PASS），**这 5 行全都仍然显示 PASS → 假绿**，
+        # 且 run_golden_product_smoke 只校验 PASS 条数，84/84 全绿也没抓到。
+        #
+        # ⚠️ 护栏必须**按贡献项各自**守下界，不能用「总插损 ≥ n_yb×3.0103」
+        # 这种混合判据 —— 反向测试证明：混入光栅/波导损耗后，GC-CPO-8CH /
+        # GC-SENSE / GC-QKD-TX 三条的**总额**仍高于下界从而逃逸（只抓住 2/5）。
+        # 逐项守底才能真正抓住「某一项被漏算」。
+        #
+        # 教训：**「越小越 PASS」的方向性 metric 必须配物理下界护栏**，
+        # 否则「算漏了损耗」会被伪装成「设计做得更好」。
+        if n_yb > 0 and yb < SPLIT_LOSS_3DB - 1e-9:
+            raise AssertionError(
+                f"[{self.chip_id}] 分束器单级插损 {yb:.4f} dB 低于能量守恒下界 "
+                f"{SPLIT_LOSS_3DB:.4f} dB（1×2 功率均分的几何必然）——"
+                f"疑似漏算分光损耗（见 D-67 回归）")
+        floor = n_yb * SPLIT_LOSS_3DB
+        if total < floor - 1e-9:
+            raise AssertionError(
+                f"[{self.chip_id}] 链路插损 {total:.4f} dB 低于能量守恒下界 "
+                f"{floor:.4f} dB（{n_yb} 级 1×2 分光 × 3.0103 dB）——"
+                f"疑似漏算分光损耗（见 D-67 回归）")
+        return {"total_insertion_loss_dB": round(total, 4),
+                "energy_floor_dB": round(floor, 4)}
 
     def _quantum_fidelity(self) -> Dict[str, float]:
         """量子：复用 design_multiqubit_fidelity 已验证闭环（D-46×D-47）。"""

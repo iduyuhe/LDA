@@ -2755,7 +2755,11 @@ def capability_demos_run():
         ("光栅耦合效率", "engine_grating_eff", {"ff": 0.5, "theta_deg": 8.0, "tilt_sigma_deg": 15.0}),
         ("MMI 过量损耗", "engine_mmi_el", {"w_mmi_um": 2.8, "n_si": 3.48, "wl_um": 1.55}),
         ("Waveguide Crossing", "engine_crossing", {"w_core_um": 0.5, "taper_w_ratio": 2.5}),
-        ("Y-branch 分束", "engine_ybranch_split", {"theta_deg": 5.0, "excess_coef": 0.004}),
+        # D-67：该引擎 `value` = **含 3.0103dB 理想分光的链路预算插损**；
+        # 另有同名字段 `excess_loss_dB` = 器件品质的过量损耗（实证锚对照用）。
+        # 标签如实标注，避免对外展示被误读为「Y-branch 只有 0.1dB 损耗」。
+        ("Y-branch 分束插损（含 3.01dB 分光）", "engine_ybranch_split",
+         {"theta_deg": 5.0, "excess_coef": 0.004}),
         ("SiN 传播损耗", "engine_sin_pl", {"w_core_um": 0.8, "h_core_um": 0.8, "roughness_nm": 0.3}),
     ]
     out = []

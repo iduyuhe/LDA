@@ -65,8 +65,9 @@ def main():
     ap = argparse.ArgumentParser(description="实证语料来源边界合规审计")
     ap.add_argument("--seed", default=DEFAULT_SEED, help="语料库 JSON 路径")
     ap.add_argument("--json", default=None, help="报告输出路径（不指定则只打印）")
-    ap.add_argument("--min-ratio", type=float, default=0.80,
-                    help="A 级占比达标线（默认 0.80）")
+    ap.add_argument("--min-ratio", type=float, default=0.90,
+                    help="A 级占比达标线（默认 0.90；D-66 后语料库已 100%% A 级，"
+                         "此基线为审计宽松下限，提交门禁仍强制 100%% B级零容忍）")
     args = ap.parse_args()
 
     rep = build_report(args.seed)

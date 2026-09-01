@@ -8,7 +8,7 @@
       "passed": true,
       "metric": 3.10887,
       "metric_dim": "n_eff",
-      "empirical_dim_note": "语料为 n_g 实测、引擎输出 n_eff：量纲不同源，仅作器件族覆盖登记，不参加死标量对照",
+      "empirical_dim_note": "语料为 n_g 实测（环器件）、引擎/求解器输出 n_eff 或直波导 n_g：①量纲不同源 ②**几何不同源**（golden 来自弯曲/环器件，FDFD 解直波导）③FDFD 标量求解器精度不足（直波导 n_eff 偏差 0.18~0.37，R16 已证伪）。故仅作器件族覆盖登记，不参加死标量对照（C 方案诚实边界降级）。",
       "bid": null,
       "analytical_rel_pct": 0.14,
       "verdict": "波导 FDTD 双验证 PASS（解析 slab 契约物理合理 + FDTD neff=3.10887 ↔ slab=3.10464 rel=0.14% ≤ 2%）",
@@ -16,7 +16,7 @@
         "E-SOI-NG-220",
         "E-SIN-NG-1200"
       ],
-      "elapsed_s": 10.85,
+      "elapsed_s": 11.0,
       "empirical": {
         "E-SOI-NG-220": {
           "measured": 4.18,
@@ -44,7 +44,7 @@
       "analytical_rel_pct": null,
       "verdict": "布拉格 FDTD 双验证 PASS（解析 TMM 契约物理合理 + FDTD R_min=0.99903 ↔ TMM=0.99922 abs=1.95e-04 ≤ 2%）",
       "empirical_ids": [],
-      "elapsed_s": 39.5,
+      "elapsed_s": 38.82,
       "empirical": {}
     },
     {
@@ -113,7 +113,7 @@
       "analytical_rel_pct": 0.41,
       "verdict": "PhC 腔 2D FDTD 双验证 PASS（B21 锚 λ_res=2164.8nm ↔ FDTD λ_res=2155.9nm rel=0.41% ≤ 3%）",
       "empirical_ids": [],
-      "elapsed_s": 3.94,
+      "elapsed_s": 3.89,
       "empirical": {}
     },
     {
@@ -446,7 +446,7 @@
       "covered": true,
       "loss_engine_value": 0.4,
       "rel_pct": 42.86,
-      "model": "0.004·θ² (θ=10.0°，过量损耗；+3.0103dB 即含分光插损)"
+      "model": "3.0103 + 0.004·θ² (θ=10.0°；含分光插损 3.4103dB = 分光 3.0103 + 过量 0.4000)"
     },
     "E-RING-FSR": {
       "measured": 8.6,

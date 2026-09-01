@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.9.13（2026-09-01 · R16 实测证伪 + 诚实边界 C 降级）
+
+**指令**：开始 R16 阶段1（sub-cell 体积分数 averaging），实测证伪原假设，杜先生拍板 C 诚实边界降级。
+
+**R16 阶段1 实测结论（重大反向）**：
+- 在 `build_waveguide_field_3d` + `fdfd_neff` 启用 sub-cell averaging（界格点 ε 按芯/包层体积加权），
+  用 corpus golden 同源几何复跑 FDFD 对照：SOI n_g **3.776→3.741 恶化**、SiN n_g **1.961→1.928 恶化**；
+  D-65 窗口散射 SiN ±0.0385→±0.0018（改善）、SOI ±0.0215→±0.0305（略恶化）。
+- 网格 dl_factor 24→64 扫描：n_g **纹丝不动**（SOI~3.72 / SiN~1.93），偏差与网格无关。
+- 直波导 n_eff 直检：SOI=2.62（文献~2.44，+0.18）/ SiN=1.61（文献~1.98，−0.37）→ **求解器本身精度不足**。
+- 🔴 两层根因（均非网格）：①最简标量 FDFD 对高反差细波导 n_eff 偏差 0.18~0.37；②**对象不对齐**：
+  golden 4.18/2.2834 是**弯曲/环器件**群折射率（Garrisi 用 ring FSR 反演；E-SIN 是 R=100µm 环），
+  FDFD 解直波导，弯曲使模式更受限→n_g 天然高 ~0.46。
+- **R16 原假设（「网格过粗导致偏差，上 averaging/细网格解锁 E1/E2/E3」）被实测证伪**。
+  sub-cell averaging 单独使用恶化绝对精度且无净收益（D-65 窗口散射原本就 <±0.04 达标）。
+- 纪律：averaging 两处**回退**（工作区源码干净），**不提交实验态假绿**。
+- 附：D-65 原「网格过粗」诊断不实——±0.042 实为**窗口扫描**散射非网格（dl 24→64 已收敛）。
+
+**C 诚实边界降级（杜先生拍板）**：E1/E2/E3 的 golden 来自环器件，FDFD 直波导候选与之
+「量纲同源、几何不同源」+ FDFD 求解器精度不足 → 仅作量级参考，不参加死标量对照；
+E1 保持自证桩（candidate≡golden）。与 D-66 诚实边界一致。
+
+**代码/文档同步（不假绿，全部改注记/诚实边界，不改判决逻辑）**：
+- `benchmarks.py` E1/E2 note：R16 由「待根治」改为「已证伪 + 诚实边界 C」
+- `run_empirical_anchor_smoke.py` D-65 护栏注记：R16 已证伪
+- `lda_webui/routes.py` open_gaps R16：标注已证伪 + 与战略审计 R16（单人瓶颈）编号撞车提示
+- `benchmark_report.py` Waveguide empirical_dim_note：扩展为量纲+几何不同源 + FDFD 精度不足 + R16 证伪
+- `docs/lda_d64_replication_feasibility.md`：R16「最高杠杆一次性解锁 E1/E2/E3」改为已证伪
+- 注：战略审计文档的 R16 = 单人瓶颈（商业模式），与此处 FDFD 缺口 R16 编号撞车，已分别标注
+
+**验证**：全量 core 回归 84 PASS / 0 SKIP / 0 FAIL；empirical_anchor_smoke / D-65 护栏仍 PASS
+
 ## v0.9.12（2026-09-01 · CI 达标线政策化：80% → 90%+）
 
 **指令**：CI 达标线随语料补充逐步上调至 90%+。

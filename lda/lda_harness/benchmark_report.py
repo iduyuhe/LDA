@@ -25,8 +25,10 @@ ENGINE_ANCHOR_MAP = {
     #    ground」的覆盖率登记，**不参与死标量对照**（报告不据此判 PASS/FAIL）。
     "Waveguide": {"bid": None, "empirical": ["E-SOI-NG-220", "E-SIN-NG-1200"],
                   "metric_dim": "n_eff",
-                  "empirical_dim_note": "语料为 n_g 实测、引擎输出 n_eff：量纲不同源，"
-                                        "仅作器件族覆盖登记，不参加死标量对照"},
+                  "empirical_dim_note": "语料为 n_g 实测（环器件）、引擎/求解器输出 n_eff 或直波导 n_g："
+                                        "①量纲不同源 ②**几何不同源**（golden 来自弯曲/环器件，FDFD 解直波导）"
+                                        "③FDFD 标量求解器精度不足（直波导 n_eff 偏差 0.18~0.37，R16 已证伪）。"
+                                        "故仅作器件族覆盖登记，不参加死标量对照（C 方案诚实边界降级）。"},
     "BraggMirror": {"bid": None, "empirical": [], "metric_dim": "R"},
     "Transmon": {"bid": "B9", "empirical": [], "metric_dim": "f01"},
     "RingResonator": {"bid": "B4", "empirical": ["E-RING-FSR"], "metric_dim": "FSR"},

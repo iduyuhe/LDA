@@ -1,6 +1,6 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-01T14:55:21
+- 生成时间：2026-09-02T01:20:26
 - L0_IR：(内置默认 B1–B4,B8)
 - candidate：ReferenceCandidate
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）

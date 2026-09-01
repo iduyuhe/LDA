@@ -1,6 +1,6 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-01T12:32:43
+- 生成时间：2026-09-01T14:48:17
 - L0_IR：(内置默认)
 - candidate：L3AISolverCandidate
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
@@ -38,7 +38,7 @@
 | B7 | crosstalk_dB | numpy-fdtd-offline | -19.7328 | -19.7328 | 0 | 5 | ✅ PASS |
 | B8 | T_taper | physical-law | 1 | 0.985 | 0.015 | 0.01 | ❌ FAIL |
 | B9 | f01_GHz | physical-law | 6.6282 | 48 | 41.37 | 0.05 | ❌ FAIL |
-| E1 | n_eff | empirical-B-untraceable | 2.63 | 2.63 | 0 | 0.02 | ✅ PASS |
+| E1 | n_g | empirical-measurement | 4.18 | 4.18 | 0 | 0.1 | ✅ PASS |
 | E2 | n_g | empirical-measurement | 1.892 | 1.892 | 0 | 0.1 | ✅ PASS |
 | E3 | FSR_nm | empirical-measurement | 10.44 | 10.44 | 0 | 0.1 | ✅ PASS |
 | E4 | insertion_loss_dB | empirical-measurement | 0.18 | 0.18 | 0 | 0.1 | ✅ PASS |

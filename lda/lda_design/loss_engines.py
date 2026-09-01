@@ -3,7 +3,7 @@
 补对照报告暴露的 6 条 loss/效率类语料缺口——新增 5 个「损耗/效率类引擎」
 （半解析物理近似），与既有 15 个设计量引擎互补：
 
-  engine_ybranch_split  : Y-branch 分束损耗 split_loss_dB（3dB 理想 + 过量损耗）
+  engine_ybranch_split  : Y-branch 过量损耗 excess_loss_dB（D-66：剔除 3.01dB 理想分光）
   engine_grating_eff    : 光栅耦合器耦合效率 coupling_eff（Bragg 理想 + 倾斜/占空比损耗）
   engine_crossing       : 波导 crossing 插入损耗 + 串扰（taper 长度参数化）
   engine_mmi_el         : MMI 1×2 过量损耗 excess_loss_dB（长度失配模型）
@@ -36,16 +36,31 @@ LOSS_ENGINES = [
 
 
 def engine_ybranch_split(geom: Dict[str, float]) -> Dict[str, Any]:
-    """Y-branch 分束损耗（dB）：理想 3dB 分束 + 分束角过量损耗。
+    """Y-branch **过量损耗**（excess loss, dB）：分束角引起的过量损耗。
 
-    模型：split_loss = 3.0 + c1·θ²（θ 单位 deg；c1 为典型 SOI Y-branch
-    过量损耗标定，θ=10° → ≈3.4dB，与公开文献典型一致）。
+    D-66（2026-09-01）语义修正：本引擎原先输出 `split_loss_dB = 3.0 + c1·θ²`
+    （含 3.01 dB 理想分光的分支插损）。但实证锚 E-YBRANCH-LOSS 的 golden 已改用
+    公开文献**实测的过量损耗** 0.28±0.02 dB（Opt. Express 21, 1310 (2013)，
+    DOI 10.1364/OE.21.001310）——3.01 dB 分光是 1×2 功率均分的**几何必然**
+    （−10·log10(0.5)），并非器件品质指标、也非被测量的量。二者混在一条 metric
+    里会让「引擎 ↔ 实测」对照失真（原 golden 3.4 dB 与实测 0.28 dB 相差一个量级）。
+
+    故本引擎改为**只输出过量损耗**（与既有 E-MMI-1X2-EL / engine_mmi_el 的
+    excess_loss_dB 口径一致）：
+
+        excess_loss = c1·θ²   （θ 单位 deg，c1 为工艺标定系数）
+
+    需含分光的分支插损时，自行叠加 3.0103 dB 即可。
+
+    ⚠️ 诚实边界：c1=0.004 dB/deg² 为**工艺标定的唯象系数**（非第一性原理推导），
+    θ=10° → 0.4 dB；与实测 0.28 dB 相差 0.12 dB（相对 43%），属模型粗糙度，
+    如实暴露、不做拟合回算（拟合实测 = 循环自证，见 E6 教训）。
     """
     theta = float(geom.get("theta_deg", 10.0))
     c1 = float(geom.get("excess_coef", 0.004))  # dB/deg²，工艺标定
-    split = 3.0 + c1 * theta * theta
-    return {"metric": "split_loss_dB", "value": round(split, 4),
-            "model": f"3.0 + {c1}·θ² (θ={theta}°)"}
+    excess = c1 * theta * theta
+    return {"metric": "excess_loss_dB", "value": round(excess, 4),
+            "model": f"{c1}·θ² (θ={theta}°，过量损耗；+3.0103dB 即含分光插损)"}
 
 
 def engine_grating_eff(geom: Dict[str, float]) -> Dict[str, Any]:
@@ -124,7 +139,7 @@ def engine_sin_pl(geom: Dict[str, float]) -> Dict[str, Any]:
 
 # 语料 id → 引擎 + geometry 键映射（对照报告用）
 CORPUS_ENGINE_MAP = {
-    "E-YBRANCH-LOSS": {"engine": "engine_ybranch_split", "metric": "split_loss_dB"},
+    "E-YBRANCH-LOSS": {"engine": "engine_ybranch_split", "metric": "excess_loss_dB"},
     "E-GRATING-EFF": {"engine": "engine_grating_eff", "metric": "coupling_eff"},
     "E-SOI-CROSS-IL": {"engine": "engine_crossing", "metric": "insertion_loss_dB"},
     "E-SOI-CROSS-XT": {"engine": "engine_crossing", "metric": "crosstalk_dB"},

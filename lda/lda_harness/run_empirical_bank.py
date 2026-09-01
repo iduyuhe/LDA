@@ -2,7 +2,7 @@
 
 用法：
   python run_empirical_bank.py                               # 加载种子，打印统计 + 跑演示候选比对
-  python run_empirical_bank.py --check E-SOI-NEFF-220 --candidate 2.61
+  python run_empirical_bank.py --check E-SOI-NG-220 --candidate 4.15
   python run_empirical_bank.py --out reports
 
 说明：
@@ -26,12 +26,19 @@ from empirical_bank import (
 SEED = os.path.join(HERE, "seed_empirical.json")
 
 # 演示用候选求解器输出（模拟 AI 写内核的结果）
+# D-66（2026-09-01）：5 条语料经逐字核实后全部升级为 A 级可溯源实测，
+#   其中 3 条语义改判（metric 换了量）：
+#     E-SOI-NEFF-220  n_eff 2.63（错值）→ E-SOI-NG-220    n_g 4.18±0.05
+#     E-SIN-NEFF-300  n_eff 1.53        → E-SIN-NG-1200   n_g 2.2834±0.05
+#     E-YBRANCH-LOSS  split_loss 3.4dB  → 同 id，改 excess_loss_dB 0.28±0.02
+#     E-RING-FSR      9.15nm（反算值）  → 同 id，改实测 8.6±0.1 nm
+#     E-GRATING-EFF   0.45（无出处）    → 同 id，改实测 0.42±0.05
 DEMO_CANDIDATES = {
-    "E-SOI-NEFF-220": 2.62,   # 接近实测 2.63±0.02 → PASS
-    "E-SIN-NEFF-300": 1.58,   # 偏离实测 1.53±0.02 → FAIL（演示实证锚抓偏离）
-    "E-YBRANCH-LOSS": 3.5,    # 接近实测 3.4±0.3 → PASS
-    "E-RING-FSR": 9.10,       # 接近实测 9.15±0.1 → PASS
-    "E-GRATING-EFF": 0.52,    # 偏离实测 0.45±0.05 → FAIL（演示实证锚抓偏离）
+    "E-SOI-NG-220": 4.15,     # 接近实测 4.18±0.05 → PASS
+    "E-SIN-NG-1200": 2.40,    # 偏离实测 2.2834±0.05 → FAIL（演示实证锚抓偏离）
+    "E-YBRANCH-LOSS": 0.29,   # 接近实测 0.28±0.02 → PASS
+    "E-RING-FSR": 8.55,       # 接近实测 8.6±0.1 → PASS
+    "E-GRATING-EFF": 0.52,    # 偏离实测 0.42±0.05 → FAIL（演示实证锚抓偏离）
 }
 
 

@@ -1,17 +1,17 @@
 # LDA 实证大数据锚 · 报告
 
-- corpus 条目: 5
+- corpus 条目: 30
 - adversarial 题目: 4
 
 ## 候选 vs 实测（实证锚）
 
 | id | metric | 实测 | ±σ | 候选 | 误差 | 判定 |
 |---|---|---|---|---|---|---|
-| E-SOI-NEFF-220 | n_eff | 2.63 | 0.02 | 2.62 | 0.01 | PASS |
-| E-SIN-NEFF-300 | n_eff | 1.53 | 0.02 | 1.58 | 0.05 | FAIL |
-| E-YBRANCH-LOSS | split_loss_dB | 3.4 | 0.3 | 3.5 | 0.1 | PASS |
-| E-RING-FSR | FSR_nm | 9.15 | 0.1 | 9.1 | 0.05 | PASS |
-| E-GRATING-EFF | coupling_eff | 0.45 | 0.05 | 0.52 | 0.07 | FAIL |
+| E-SOI-NG-220 | n_g | 4.18 | 0.05 | 4.15 | 0.03 | PASS |
+| E-SIN-NG-1200 | n_g | 2.283 | 0.05 | 2.4 | 0.1166 | FAIL |
+| E-YBRANCH-LOSS | excess_loss_dB | 0.28 | 0.02 | 0.29 | 0.01 | PASS |
+| E-RING-FSR | FSR_nm | 8.6 | 0.1 | 8.55 | 0.05 | PASS |
+| E-GRATING-EFF | coupling_eff | 0.42 | 0.05 | 0.52 | 0.1 | FAIL |
 
 ## 对抗性题库
 - **A-BEND-R2** (小弯曲半径弯曲损耗): 让求解器在 R=2um 强受限弯曲上翻车（弱导模辐射 + 模式失配） [tol=0.5]

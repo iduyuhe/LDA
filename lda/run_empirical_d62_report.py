@@ -37,13 +37,15 @@ def main():
     check("双 ground：48 题（B1-B28 物理定律 + E1-E7 实证 + S1-S13 系统）",
           len(BENCHMARK_DEFS) == 48 and len(e_bench) == 7,
           f"total={len(BENCHMARK_DEFS)} empirical={sorted(e_bench)}")
-    # D-64：E2 换用可公开溯源的实测群折射率语料（E-SIN-NG-300）→ 升 A 级；
-    #       E1 维持 B 级（标量 FDFD 在高对比度 SOI 上差 10%，需全矢量求解器）
-    check("实证锚题 golden 全部可 resolve（A 级 6 道可溯源 + B 级 1 道显式放行）",
+    # D-64：E2 换用可公开溯源的实测群折射率语料（E-SIN-NG-300）→ 升 A 级。
+    # D-66：E1 原 n_eff=2.63 经逐字核实为错值 → 改判 n_g 实测锚 E-SOI-NG-220
+    #       （4.18，arXiv:2011.03273）→ **E1 同步升 A 级**。
+    #       至此 A 级 7 道 / B 级 0 道，全部走「必须可溯源」的严格门禁。
+    check("实证锚题 golden 全部可 resolve（D-66 后 A 级 7 道，B 级清零）",
           all(anchor.resolve(d.get("empirical_id"),
                              require_traceable=(d.get("anchor") == "empirical"))[0]
               is not None for d in e_bench.values())
-          and len(e_trace) == 6,
+          and len(e_trace) == 7,
           f"A级={sorted(e_trace)} | golden="
           f"{ {b: anchor.resolve(d.get('empirical_id'), require_traceable=(d.get('anchor') == 'empirical'))[0] for b, d in e_bench.items()} }")
 

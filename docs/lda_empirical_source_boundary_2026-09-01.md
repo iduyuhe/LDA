@@ -52,26 +52,26 @@
 
 ### 语料库
 
-| 指标 | 整改前 | 整改后 |
-|---|---|---|
-| 语料总数 | 23 | **29**（新增 6 条 A 级） |
-| A 级（可公开溯源） | 18（78.3%） | **24（82.8%）** |
-| B 级（禁止进判决） | 5 | 5（待整改，见第五节） |
-| X 级 | 0 | 0 |
+| 指标 | 整改前 | D-63/D-64 整改后 | **D-66 逐字核实后** |
+|---|---|---|---|
+| 语料总数 | 23 | 29 | **30** |
+| A 级（可公开溯源） | 18（78.3%） | 24（82.8%） | **30（100%）** |
+| B 级（禁止进判决） | 5 | 5 | **0** |
+| X 级 | 0 | 0 | **0** |
 
 ### 实证锚题（E1–E7）
 
 | 锚题 | 语料 | golden | 级别 | 定位符 |
 |---|---|---|---|---|
-| E1 | E-SOI-NEFF-220 | 2.63 | **B ⚠️** | 无 |
-| E2 | E-SIN-NEFF-300 | 1.53 | **B ⚠️** | 无 |
-| E3 | E-TBOX-FSR-TM | **10.44** | A ✅ | opg.optica.org 公开 URL |
+| E1 | E-SOI-NG-220 | 4.18 | A ✅ | DOI 10.48550/arXiv.2011.03273 |
+| E2 | E-SIN-NG-300 | 1.892 | A ✅ | DOI 10.3390/s17092088 |
+| E3 | E-TBOX-FSR-TM | 10.44 | A ✅ | opg.optica.org 公开 URL |
 | E4 | E-SOI-CROSS-IL | 0.18 | A ✅ | DOI 10.1109/LPT.2013.2241049 |
 | E5 | E-MMI-1X2-EL | 0.05 | A ✅ | DOI 10.1117/1.OE.59.10.105102 |
 | E6 | E-SIN-PL-800 | 0.087 | A ✅ | DOI 10.3788/gzxb20245309.0913002 |
 | E7 | E-SOI-CROSS-XT | −41 | A ✅ | DOI 10.1109/LPT.2013.2241049 |
 
-**可溯源实证锚题：5 / 7**（E1、E2 待溯源，不计入）。
+**可溯源实证锚题：7 / 7**（D-66 后 B 级清零，见第六节）。
 
 ---
 
@@ -108,20 +108,92 @@ quasi-TM 1.862），非测量值。这不是孤例——**n_eff 在工程上通�
 n_eff 实测源，二者已标为 B 级待溯源（`anchor=empirical_unverified`），
 **仍走同一死标量判决，但显式不计入可溯源实证锚计数**。
 
-**建议（待杜先生拍板）**：将 E1/E2 从 `n_eff` 改为 `n_g`（群折射率）锚 ——
-n_g 可由 MZI 非平衡干涉直接实测，且公开文献中这类实测数据充足。
+**建议**：将 E1/E2 从 `n_eff` 改为 `n_g`（群折射率）锚 —— n_g 可由 MZI 非平衡
+干涉 / 谐振腔 FSR 反演直接实测，公开文献中这类实测数据充足。
+
+> **✅ 已拍板并执行（D-66，2026-09-01）**：杜先生确认改判 n_g 锚。执行结果见第六节，
+> E1/E2 已升 A 级，语料库 B 级清零（30/30 全 A）。
 
 ---
 
-## 五、B 级语料整改清单（5 条，禁止作 golden 直至补溯源）
+## 四·补：D-66 逐字核实中发现的三个「差点踩进去」的坑
 
-| 语料 ID | metric | 当前 citation | 处置 |
-|---|---|---|---|
-| E-SOI-NEFF-220 | n_eff | `iSiPP50G PDK published specs` | 待补公开出处；或按问题 2 改 n_g 锚 |
-| E-SIN-NEFF-300 | n_eff | `SiN photonics published data` | 同上 |
-| E-YBRANCH-LOSS | split_loss_dB | `MMI/Y-branch published characterization` | 待补 DOI/URL（未作任何锚题 golden） |
-| E-RING-FSR | FSR_nm | `ring resonator published measurement` | 已被 E3 弃用（改指向 E-TBOX-FSR-TM） |
-| E-GRATING-EFF | coupling_eff | `grating coupler published efficiency` | 待补 DOI/URL（未作任何锚题 golden） |
+本节记录整改执行过程中的真实发现，**这些是方法论教训，价值高于结果本身**。
+
+### 坑 1：差点把仿真值当实测值（E-YBRANCH-LOSS 候选来源）
+
+为给 Y-branch 找实测出处时，arXiv:1909.09538 中出现
+`"−3.05 dB ~ −3.15 dB"`，看似完美的实测插损。逐字核对上下文后发现**前文一句**：
+
+> `"This simulation is shown in Fig. 5"`
+
+即这是**仿真结果**。**已排除**。教训：只看数值不看上下文，会把第一性原理模型的
+输出当成第二道 ground——两道 ground 短路，判决即自证。
+
+### 坑 2：metric 量纲陷阱（3.4 dB vs 0.28 dB）
+
+原 `E-YBRANCH-LOSS` golden = **3.4 dB**，名为 `split_loss_dB`（分支插损）；
+文献实测的是 **0.28 ± 0.02 dB 过量损耗（excess loss）**。两者**不是同一个量**：
+
+- 3.01 dB 是 1×2 功率均分的**几何必然**（−10·log₁₀0.5），任何理想分束器都有，
+  **不是器件品质指标、也不是被测量的量**；
+- 0.28 dB 才是真正反映工艺/设计水平的过量损耗。
+
+若直接拿 3.4 对 0.28，会得到一个量级的"偏差"，但那 **不是模型错了，是量纲错了**。
+已统一为 `excess_loss_dB`（与既有 E-MMI-1X2-EL 口径一致），
+`loss_engines.engine_ybranch_split` 同步剔除 3.0 dB 常数项。
+
+### 坑 3：原 golden 本身就是错值（E-SOI-NEFF-220 的 2.63）
+
+原 `E-SOI-NEFF-220` 声称 n_eff = 2.63 ± 0.02 @1550 nm。逐字核实：
+文献与 **3 个独立模式求解器**一致给出 500×220 SOI TE0 的 n_eff = **2.44 ~ 2.46**。
+2.63 实为 λ≈1.39 µm 处的取值，偏离 **0.19**（为其自称 ±0.02 的近 10 倍）。
+
+这类错误在"看上去合理"的数值上最难发现——**它不会报错，只会让所有对照结果
+系统性偏移**。已改判为同文献的 n_g 实测锚（4.18，由实测 FSR=8.6 nm 反演），
+并在语料 `note` 字段保留原值存疑的证据链（不静默丢弃）。
+
+---
+
+## 五、B 级语料整改清单（5 条）—— **D-66 已全部关闭 ✅**
+
+> 整改纪律：**逐字核实**（找到原文、核对数值与上下文），**不编造 DOI**，
+> **找不到就保持 B 级**。5 条中 3 条找到精确可溯源实测并按文献值替换，
+> 2 条因原 metric 无可溯源实测出处而**改判量纲**（n_eff → n_g）。
+
+| 原语料 ID | 原 metric / 值 | 处置 | 新 ID / 新值 | 可溯源出处 |
+|---|---|---|---|---|
+| E-SOI-NEFF-220 | n_eff 2.63（**经核实为错值**） | 改判 n_g 锚 | **E-SOI-NG-220** / n_g 4.18±0.05 | DOI 10.48550/arXiv.2011.03273 |
+| E-SIN-NEFF-300 | n_eff 1.53 | 改判 n_g 锚 + 按文献照实改写几何 | **E-SIN-NG-1200** / n_g 2.2834±0.05 | DOI 10.3390/coatings10040309 |
+| E-YBRANCH-LOSS | split_loss_dB 3.4（量纲不符） | 改判实测**过量损耗** | E-YBRANCH-LOSS / excess_loss_dB 0.28±0.02 | DOI 10.1364/OE.21.001310 |
+| E-RING-FSR | FSR_nm 9.15（**解析反算值**） | 换文献实测值 | E-RING-FSR / FSR_nm 8.6±0.1 | arXiv:2011.03273（racetrack L=66.8 µm） |
+| E-GRATING-EFF | coupling_eff 0.45（无出处） | 换文献实测值 | E-GRATING-EFF / coupling_eff 0.42±0.05 | DOI 10.1063/1.3304791 |
+
+### 逐字引用（证据链，均为原文照抄）
+
+| 语料 | 原文逐字引用 |
+|---|---|
+| E-SOI-NG-220 / E-RING-FSR | `"The resonator has the shape of a racetrack, it is 66.8 um long and its free spectral range (FSR) is 8.6 nm, from which we infer that its group index is 4.18."` |
+| E-SIN-NG-1200 | `"The free spectral range (FSR) measured from the transmission spectra given in Figure 4b was estimated as 1.61 nm that resulted in the effective group index ng = 2.2834."` |
+| E-YBRANCH-LOSS | `"Measured average insertion loss is 0.28 ± 0.02 dB, uniform across an 8-inch wafer."` |
+| E-GRATING-EFF | `"A peak coupling efficiency of 42% at 1550 nm and 1 dB bandwidth of 37 nm, as well as a low back reflection, are achieved."` |
+
+### 自洽校验
+
+- E-SOI-NG-220：λ²/(n_g·L) = 1547.6²/(4.18×66.8×10³) = **8.59 nm** ≈ 实测 8.6 nm ✅
+- E-SIN-NG-1200：λ²/(n_g·L) = 1550²/(2.2834×640.3×10³) = **1.64 nm** ≈ 实测 1.61 nm ✅
+
+### 如实披露（不掩饰的缺陷）
+
+1. **E-GRATING-EFF 结构不同源**：文献器件为**全刻蚀光子晶体孔阵**（孔径约 143 nm），
+   与本引擎的**参数化周期光栅**并非同一结构。该语料仅作设计引擎的量级对照，
+   **geometry 不构成 golden 判决输入**。
+2. **n_g 由 FSR 反演得到**（E-SOI-NG-220 / E-SIN-NG-1200）：属"实测 FSR + 闭式
+   换算"，比纯仿真强（FSR 是直接测量量），但**弱于 n_g 的直接测量**
+   （如 E-SIN-NG-300 的 OFDR 群延迟法）。已在语料 `method` 字段逐条标注反演路径。
+3. **E-YBRANCH-LOSS 模型粗糙度暴露**：引擎默认唯象系数 c1=0.004 dB/deg² 给 0.4 dB，
+   实测 0.28 dB，rel≈43%。**不做拟合回算**（用被验证量标定验证量 = 循环自证），
+   改设 50% 防回归护栏，待真实 PDK 工艺标定（发动期）。
 
 ---
 

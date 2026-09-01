@@ -1,5 +1,62 @@
 # Changelog
 
+## v0.9.10（2026-09-01 · 实证锚逐字核实 · D-66）
+
+**指令**：5 条 B 级语料（E-SOI-NEFF-220 / E-SIN-NEFF-300 / E-YBRANCH-LOSS / E-RING-FSR / E-GRATING-EFF）**逐字核实**补 DOI/URL 才能升 A 级。纪律：**不编造 DOI、找不到就保持 B 级**。
+
+**结果：语料库 A 级 25/30 → 30/30（100%），B 级清零；可溯源实证锚题 6/7 → 7/7。**
+
+| 原 ID | 原 metric / 值 | 核实结论 | 处置 | 新值（可溯源出处） |
+|---|---|---|---|---|
+| E-SOI-NEFF-220 | n_eff 2.63 | **原值是错的** | 改判 n_g 锚 → `E-SOI-NG-220` | n_g **4.18±0.05**（DOI 10.48550/arXiv.2011.03273） |
+| E-SIN-NEFF-300 | n_eff 1.53 | 无可溯源实测出处 | 改判 n_g 锚 + 按文献照实改写几何 → `E-SIN-NG-1200` | n_g **2.2834±0.05**（DOI 10.3390/coatings10040309） |
+| E-YBRANCH-LOSS | split_loss_dB 3.4 | **量纲不符** | 改判实测**过量损耗** | excess_loss_dB **0.28±0.02**（DOI 10.1364/OE.21.001310） |
+| E-RING-FSR | FSR_nm 9.15 | **系解析反算值**，非测量 | 换文献实测值 | FSR_nm **8.6±0.1**（arXiv:2011.03273，racetrack L=66.8 µm） |
+| E-GRATING-EFF | coupling_eff 0.45 | 无出处 | 换文献实测值 | coupling_eff **0.42±0.05**（DOI 10.1063/1.3304791） |
+
+**逐字引用（证据链，原文照抄）**
+
+- E-SOI-NG-220 / E-RING-FSR：`"The resonator has the shape of a racetrack, it is 66.8 um long and its free spectral range (FSR) is 8.6 nm, from which we infer that its group index is 4.18."`
+- E-SIN-NG-1200：`"The free spectral range (FSR) measured from the transmission spectra given in Figure 4b was estimated as 1.61 nm that resulted in the effective group index ng = 2.2834."`
+- E-YBRANCH-LOSS：`"Measured average insertion loss is 0.28 ± 0.02 dB, uniform across an 8-inch wafer."`
+- E-GRATING-EFF：`"A peak coupling efficiency of 42% at 1550 nm and 1 dB bandwidth of 37 nm, as well as a low back reflection, are achieved."`
+
+**自洽校验**：λ²/(n_g·L) —— SOI 1547.6²/(4.18×66.8×10³)=**8.59 nm** ≈ 实测 8.6 ✅；SiN 1550²/(2.2834×640.3×10³)=**1.64 nm** ≈ 实测 1.61 ✅
+
+### 三个「差点踩进去」的坑（方法论教训，价值高于结果）
+
+1. **差点把仿真值当实测值**：arXiv:1909.09538 的 `−3.05 dB ~ −3.15 dB` 看似完美实测，逐字核对前文是 **`"This simulation is shown in Fig. 5"`** → **已排除**。只看数值不看上下文，会让两道 ground 短路，判决即自证。（PDF 经 curl 下载 + pypdf 提取才读到，WebFetch 三次失败。）
+2. **metric 量纲陷阱**：Y-branch 的 3.4 dB 是**含 3.01 dB 理想分光的分支插损**，而文献实测的 0.28 dB 是**过量损耗**。3.01 dB 是 1×2 功率均分的**几何必然**（−10·log₁₀0.5），**非器件品质指标、非被测量的量**。直接拿 3.4 对 0.28 会得到一个量级的"偏差"，但那不是模型错了，是量纲错了。
+3. **原 golden 本身就是错值**：`E-SOI-NEFF-220` 的 2.63 与文献及 **3 个独立模式求解器**一致结论（2.44~2.46）差 **0.19**（为其自称 ±0.02 的近 10 倍），2.63 实为 λ≈1.39 µm 处的取值。这类错误在"看上去合理"的数值上最难发现——**它不报错，只让所有对照系统性偏移**。原值存疑证据链保留在新 `note` 字段，不静默丢弃。
+
+### 配套工程改动
+
+- `EmpiricalMeasurement` 新增 **`note`** 一等字段（溯源核实批注；**判定路径不读**，仅作证据链，不影响任何死标量比较）。
+- `loss_engines.engine_ybranch_split` 改为**只输出过量损耗**（剔除 3.0 dB 常数），与既有 `E-MMI-1X2-EL` 口径一致；`design_engine.YbranchLoss` / `design_package` 目标值 / `benchmark_report.DEFAULT_TARGET` 三处同步 3.4→0.28、0.45→0.42。
+- B5 设计守则锚**保留不动**（理想 50/50 下限 3.0 dB），note 增 D-66 澄清：它与实证锚的过量损耗**非同一量、互补不可混用**。
+- `benchmark_report` Waveguide 行：引擎输出 **n_eff**、语料实测 **n_g** → **量纲不同源如实披露**（`empirical_dim_note`，报告渲染带 ⚠️ 行），不假装同 metric 对照。
+- 语料库 A 级达标线 **80% → 100%**（提交门禁已强制 A 级，存量不应再出现 B 级；实证锚可信度完全建立在可独立复验上，零容忍）。
+- 下游同步 8 处：`benchmarks.py`(E1 锚) / `benchmark_report.py`(3) / `loss_engines.py`(2) / `design_engine.py`(2) / `design_package.py`(3) / `run_empirical_anchor_smoke.py`(4) / `run_d06_smoke.py`(5) / `run_loss_engine_smoke.py`(3) / `run_empirical_d62_report.py`(1) / `corpus_template.csv`。
+
+### 🔴 顺带修掉：GitHub Actions 主干自 v0.9.8 起一直红灯
+
+`empirical_bank.traceability()` 用 `from .provenance import ...` 相对导入，而 **ci.yml 以脚本方式直跑**（`cd lda/lda_harness && python run_empirical_bank.py`）→ `ImportError: attempted relative import with no known parent package`。该脚本 **不在本地 `CORE_SMOKES`**，故**本地全绿、主干红**（v0.9.8 D-63 引入）。修复为双路导入（包内相对优先，回退绝对），并**把该脚本纳入 core 门禁**（CI core 83→84），这类缺口今后由本地兜底。
+
+> 又一次印证两条铁律：①**改判定/公共字段时，把依赖它的 smoke 一起改**；②**「宣称全绿」必须有近期实跑证据支撑**——本地 core 覆盖不到的脚本，等于没有门禁。
+
+### 底数变化
+
+语料 **30 条（A 级 30/30 = 100%，B 级 0）**· 可溯源实证锚题 **7/7** · 题库 48 题不变 · **CI core 83 → 84 条**。
+
+### 诚实边界（不掩饰的缺陷）
+
+1. **E-GRATING-EFF 结构不同源**：文献器件为**全刻蚀光子晶体孔阵**（孔径约 143 nm），与参数化周期光栅**非同一结构**；仅作量级对照，geometry **不构成 golden 判决输入**。
+2. **n_g 由 FSR 反演得到**（E-SOI-NG-220 / E-SIN-NG-1200）：强于纯仿真（FSR 是直接测量量），但**弱于 n_g 直接测量**（如 E-SIN-NG-300 的 OFDR 群延迟法）；`method` 字段逐条标注反演路径。
+3. **Y-branch 模型粗糙度如实暴露**：默认唯象系数 c1=0.004 dB/deg² 给 0.4 dB vs 实测 0.28 dB，**rel≈43%**。**不做拟合回算**（调 c1 让该点通过 = 用被验证量标定验证量，循环自证，见 E6 教训），改为**防回归护栏**（≤50%）并在检查名中标注「未标定，待真实 PDK 工艺标定」。
+4. **E1 升 A 级 ≠ 判决路径变真**：E1 的 candidate **仍是占位自证桩**；且标量 FDFD 对高对比度 SOI 差约 10%，即便接入也必 FAIL，需待 **R16**（亚网格 ε 平均）。golden 可溯源只是必要不充分条件。
+
+---
+
 ## v0.9.9（2026-09-01 · 判决路径独立性整改 · D-64）
 
 **🔴 审计发现：实证锚判决路径为空（7 道全是假绿）。** v0.9.8 把「golden 必须真实可溯源」这条做到了，但漏了另一半——**candidate（候选求解器）也必须独立求解**。`verification_adapters.py` 的 `_harness_reference_candidate` 直接 `return oracle_value`，实测 E1-E7 七道 `|candidate − golden| ≡ 0.0000`：

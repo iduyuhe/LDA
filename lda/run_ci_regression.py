@@ -62,6 +62,10 @@ CORE_SMOKES: List[str] = [
     "run_ecosystem_publish_smoke.py",# 评审→落地→发布 全链（含补丁生成）
     # 实证大数据锚（D-62：harness E1-E3 实证锚题 + 语料评审流，纯 numpy 快速）
     "run_empirical_anchor_smoke.py",
+    # 实证语料库入口（D-66 入 core）：ci.yml 自 v0.9.8 起一直跑它，但**本地 core 未收录**
+    # → D-63 引入的相对导入 bug 让 GitHub 主干红了多个版本而本地全绿（典型「宣称全绿、
+    # 主干红」）。入 core 后该类缺口由本地门禁兜底。以子路径调用（cwd=lda/）。
+    "lda_harness/run_empirical_bank.py",
     # 来源边界合规审计（D-63：语料 A/B/X 溯源分级 + 锚题溯源状态，秒级）
     "run_provenance_audit.py",
     # WebUI 路由层（D-102：全端点静态 + 快路径实跑，秒级）

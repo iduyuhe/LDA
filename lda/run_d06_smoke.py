@@ -30,7 +30,8 @@ def main():
     n = corpus.stats()["total"]
     assert n >= 5, corpus.stats()  # v0.8.11 语料扩充 5→9（动态下限防漂移）
     # 溯源：seed 记录加载后 contributor 标记为 seed，source_file 指向 seed 文件
-    seed_prov = corpus.get("E-SOI-NEFF-220").provenance
+    # D-66：E-SOI-NEFF-220 已改判为 E-SOI-NG-220（n_eff=2.63 系错值，改判 n_g 实测锚）
+    seed_prov = corpus.get("E-SOI-NG-220").provenance
     assert seed_prov.get("contributor") == "seed", seed_prov
     assert seed_prov.get("source_file", "").endswith("seed_empirical.json"), seed_prov
 
@@ -38,7 +39,7 @@ def main():
     csv_text = (
         "id,device,metric,measured_value,uncertainty_abs,fab_source,citation,method,geometry,tags\n"
         "E-NEW-TEST,test waveguide,fsr,12.3,0.1,test fab,test cite,cutback,\"{}\",test\n"
-        "E-SOI-NEFF-220,duplicate attempt,fsr,99.9,0.1,evil,evil cite,cutback,\"{}\",dup\n"  # 重复 id → conflict
+        "E-SOI-NG-220,duplicate attempt,fsr,99.9,0.1,evil,evil cite,cutback,\"{}\",dup\n"  # 重复 id → conflict
         "E-BAD-ROW,bad device,fsr,not_a_number,0.1,fab,cite,,,,test\n"  # measured_value 非数值 → error
     )
     with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False,
@@ -49,10 +50,10 @@ def main():
         r = corpus.import_csv(csv_path, contributor="smoke")
         print("csv import:", r)
         assert r.added == 1, r
-        assert r.conflicts and r.conflicts[0][0] == "E-SOI-NEFF-220", r
+        assert r.conflicts and r.conflicts[0][0] == "E-SOI-NG-220", r
         assert r.errors and r.errors[0][0] == "E-BAD-ROW", r
-        # 去重生效：原 seed 值未被覆盖
-        assert corpus.get("E-SOI-NEFF-220").measured_value == 2.63, "去重未生效"
+        # 去重生效：原 seed 值未被覆盖（D-66：E-SOI-NG-220 实测 n_g = 4.18）
+        assert corpus.get("E-SOI-NG-220").measured_value == 4.18, "去重未生效"
         # 溯源填充
         new = corpus.get("E-NEW-TEST")
         assert new.provenance.get("contributor") == "smoke", new.provenance
@@ -85,19 +86,34 @@ def main():
         os.unlink(j_path)
 
     # ---- 锚接入仍可用 ----
-    # D-63 溯源分级：E-SOI-NEFF-220 为 B 级（n_eff 系导出量，citation 无
-    # DOI/arXiv/公开 URL 定位符）→ 默认红线门禁禁止作 golden 进判决路径；
-    # 显式 require_traceable=False 时仍可取历史存量值，但标 B 级不计入可溯源计数。
+    # D-66：E-SOI-NEFF-220（B 级、n_eff=2.63 系错值）已改判为 **A 级** E-SOI-NG-220
+    # （n_g=4.18±0.05，arXiv:2011.03273 racetrack 实测 FSR 反演，含 DOI）
+    # → 默认红线门禁**放行**作 golden 进判决路径。
     anchor = EmpiricalAnchor(corpus)
-    v0, src0, _ = anchor.resolve("E-SOI-NEFF-220")
-    assert v0 is None and src0 == "empirical-untraceable", (v0, src0)
+    v0, src0, note0 = anchor.resolve("E-SOI-NG-220")
+    assert v0 == 4.18 and src0 == "empirical-measurement", (v0, src0)
+    assert "tier=A" in note0, note0
 
-    v, src, note = anchor.resolve("E-SOI-NEFF-220", require_traceable=False)
-    assert v == 2.63 and src == "empirical-B-untraceable", (v, src)
+    # B 级门禁：seed 语料库 D-66 后 B 级已清零（30/30 全 A），已无真实 B 级样本。
+    # 用**合成 B 级语料**（citation 仅文本描述、无 DOI/arXiv/URL 定位符）验证门禁机制：
+    # 默认拒作 golden；显式 require_traceable=False 时降级取值并标注 tier=B。
+    # （不能用「库里没有 B 级」当作门禁通过——缺样本 ≠ 门禁有效。）
+    b_corpus = EmpiricalCorpus([{
+        "id": "E-SYNTH-B-1", "device": "synthetic", "metric": "m",
+        "measured_value": 1.0, "uncertainty_abs": 0.1, "fab_source": "X",
+        "citation": "某公开文献典型量级（无 DOI/arXiv/URL 定位符，仅文本描述）",
+        "method": "未标注", "geometry": {}, "tags": [],
+    }])
+    b_anchor = EmpiricalAnchor(b_corpus)
+    vb, srcb, _ = b_anchor.resolve("E-SYNTH-B-1")
+    assert vb is None and srcb == "empirical-untraceable", (vb, srcb)
+    v, src, note = b_anchor.resolve("E-SYNTH-B-1", require_traceable=False)
+    assert v == 1.0 and src == "empirical-B-untraceable", (v, src)
     assert "tier=B" in note, note
 
     print("D-06 smoke ALL GREEN: corpus=%d, bank=%d, provenance OK"
-          "（含 D-63 溯源门禁：B 级默认拒作 golden）"
+          "（含 D-63 溯源门禁：A 级 E-SOI-NG-220 放行作 golden；"
+          "合成 B 级默认拒、显式降级才可取）"
           % (corpus.stats()["total"], bank.stats()["total"]))
     return 0
 

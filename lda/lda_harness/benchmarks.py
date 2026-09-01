@@ -105,7 +105,10 @@ BENCHMARK_DEFS = {
         "default_params": {"w_core": 0.5, "h_core": 0.22, "n_si": 3.48,
                            "n_clad": 1.44, "wl": 1.55, "theta_deg": 10.0},
         "golden_fn": b5_ybranch_split_loss_dB,
-        "note": "黄金=理想 50/50 下限 3.0 dB（设计守则锚）；精确真值待 Meep/Tidy3D 场级 ORACLE。",
+        "note": "黄金=理想 50/50 下限 3.0 dB（设计守则锚）；精确真值待 Meep/Tidy3D 场级 ORACLE。"
+                "D-66 澄清：本锚的 split_loss_dB **含 3.01dB 理想分光**（1×2 均分的几何必然），"
+                "与实证锚 E-YBRANCH-LOSS 的「过量损耗 excess_loss_dB=0.28±0.02dB」**非同一量**，"
+                "二者互补（本锚=下界，实证锚=实测过量），不可互相替代或相加混用。",
     },
     "B6": {
         "title": "光栅耦合器峰值耦合效率",
@@ -372,23 +375,33 @@ BENCHMARK_DEFS = {
     # 诚实边界：种子语料为公开文献/PDK 量级（fab_source 标注来源），
     # 真实晶圆厂 NDA 流片实测属发动期 D-62 联动，经社区提交流持续流入。
     "E1": {
-        "title": "SOI 波导有效折射率（实证语料锚）",
-        "metric": "n_eff",
-        "oracle": "empirical-measurement(E-SOI-NEFF-220)",
-        "tol": 0.02,
-        "anchor": "empirical_unverified",
-        "empirical_id": "E-SOI-NEFF-220",
-        "default_params": {"w_um": 0.5, "h_um": 0.22, "wl_um": 1.55},
+        "title": "SOI 波导群折射率（实证语料锚 · AMF racetrack 实测 FSR 反演）",
+        "metric": "n_g",
+        "oracle": "empirical-measurement(E-SOI-NG-220)",
+        "tol": 0.10,
+        "anchor": "empirical",
+        "empirical_id": "E-SOI-NG-220",
+        "default_params": {"w_um": 0.5, "h_um": 0.22, "wl_um": 1.5476,
+                           "L_um": 66.8, "shape": "racetrack"},
         "golden_fn": None,
-        "note": "⚠️ B 级待溯源实证锚（D-63 溯源审计）：golden=2.63±0.02，来源仅标注"
-                "「IMEC iSiPP50G 公开 PDK 文献量级」，无 DOI/URL 等可解析定位符 → "
-                "定为 B 级（量级参考），**不计入可溯源实证锚计数**。"
-                "另注（D-64 实测定论，不再建议简单改 n_g 锚）：n_eff 本身极少直接测量"
-                "（多为 MZI/谐振反演的导出量）；且改 n_g 锚时，LDA 现有**标量**亥姆霍兹 FDFD "
-                "对 SOI 高对比度波导（3.48/1.44）不达标 —— FDFD 算 n_g=3.71~3.78 对实测参考 ~4.19，"
-                "差约 10%，且 n_eff 网格未收敛（f=24→48：2.585→2.542）。"
-                "**需全矢量模式求解器方可升 A 级**（低对比度 SiN 侧已验证可用，见 E2）。"
-                "比对仍为死标量 |candidate−measured|≤σ，LLM 不进判决路径。",
+        "note": "实证锚（**A 级可溯源**，D-66 逐字核实后由 B 级升级）："
+                "golden=**实测**群折射率 n_g=4.18±0.05 —— Advanced Micro Foundry 商用 SOI 平台、"
+                "二氧化硅埋层条形波导 500×220 nm²、add-drop racetrack 谐振腔 L=66.8 µm，"
+                "透射谱 FSR **实测** 8.6 nm 反演（λp=1547.6 nm）。"
+                "来源 arXiv:2011.03273，DOI 10.48550/arXiv.2011.03273（可公开取回）。"
+                "自洽校验：λ²/(n_g·L) = 1547.6²/(4.18×66800) = 8.59 nm ≈ 实测 8.6 nm。"
+                "**D-66 改判说明（必须一并阅读）**：原 E-SOI-NEFF-220 声称 n_eff=2.63±0.02 @1550 nm，"
+                "逐字核实后判定**该值有误** —— 公开文献与 3 个独立模式求解器一致给出"
+                "500×220 SOI TE0 的 n_eff = 2.44~2.46（2.63 实为 λ≈1.39 µm 处的取值，"
+                "偏离 0.19，为其自称不确定度 ±0.02 的近 10 倍）。且 n_eff 本身极少直接测量"
+                "（D-64 定论：多为 MZI/谐振反演的导出量），未找到任何可公开溯源的"
+                "500×220 n_eff 实测出处。故**改判为群折射率 n_g 锚**并取同一文献的实测量。"
+                "⚠️ **判决路径仍为自证桩**：candidate 尚未接独立求解器（ReferenceCandidate，"
+                "|candidate−golden|≡0）。且已知 LDA 现有**标量**亥姆霍兹 FDFD 对 SOI 高对比度波导"
+                "（3.48/1.44）不达标：FDFD 算 n_g=3.71~3.78 对实测 4.18 差约 10% —— "
+                "故即便立即接入也必 FAIL，需待 **R16（亚网格 ε 平均 + 更细网格）**根治。"
+                "本条升级仅表示 **golden 已可公开溯源**，**不表示求解器已通过验证**。"
+                "比对为死标量 |candidate−measured|≤tol，LLM 永不进判决路径。",
     },
     "E2": {
         "title": "SiN 波导群折射率（实证语料锚 · 实测↔FDFD 独立频域交叉验证）",

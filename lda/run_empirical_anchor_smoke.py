@@ -47,8 +47,11 @@ def main():
     # （Sridaran & Bhave, Opt. Express 18(4) 3850 (2010)，R=7.5um 环扫频实测）
     # D-64：E2 golden 由「n_eff 1.53（导出量·B级）」换成「群折射率 n_g 1.892」
     # （300nm LPCVD Si3N4 平台 1.0×0.3um，OFDR 环腔实测 + MZI 交叉验证，几何已对齐）
-    check("E 题 golden=语料值（2.63/1.892/10.44/0.18/0.05/0.087/-41）",
-          abs(goldens["E1"] - 2.63) < 1e-9 and abs(goldens["E2"] - 1.892) < 1e-9
+    # D-66：E1 golden 由「n_eff 2.63（经核实为错值，真值 2.44~2.46）」换成
+    # 「群折射率 n_g 4.18」（SOI 500×220nm racetrack L=66.8um，arXiv:2011.03273
+    # 实测 FSR=8.6nm 反演，含 DOI → A 级）。至此 E1-E7 golden 全部 A 级可溯源。
+    check("E 题 golden=语料值（4.18/1.892/10.44/0.18/0.05/0.087/-41）",
+          abs(goldens["E1"] - 4.18) < 1e-9 and abs(goldens["E2"] - 1.892) < 1e-9
           and abs(goldens["E3"] - 10.44) < 1e-9
           and abs(goldens["E4"] - 0.18) < 1e-9 and abs(goldens["E5"] - 0.05) < 1e-9
           and abs(goldens["E6"] - 0.087) < 1e-9 and abs(goldens["E7"] + 41.0) < 1e-9,
@@ -172,12 +175,14 @@ def main():
     # ⑤ harness 键集一致性（D-63：区分可溯源 A 级 / 待溯源 B 级）
     _anchors = {b: BENCHMARK_DEFS[b].get("anchor")
                 for b in ("E1", "E2", "E3", "E4", "E5", "E6", "E7")}
-    # D-64：E2 换用可公开溯源的实测群折射率语料（E-SIN-NG-300）→ 升 A 级；
-    #       E1 因标量 FDFD 在高对比度 SOI 上不达标（差 10%），维持 B 级待溯源。
-    check("E1-E7 anchor 分型（E1=empirical_unverified(B级待溯源)，E2-E7=empirical(A级)）",
-          _anchors["E1"] == "empirical_unverified"
-          and all(_anchors[b] == "empirical"
-                  for b in ("E2", "E3", "E4", "E5", "E6", "E7")),
+    # D-64：E2 换用可公开溯源的实测群折射率语料（E-SIN-NG-300）→ 升 A 级。
+    # D-66：E1 原用 E-SOI-NEFF-220（n_eff=2.63）经逐字核实系错值（真值 2.44~2.46），
+    #       改判为 n_g 实测锚 E-SOI-NG-220（4.18±0.05，arXiv:2011.03273 racetrack
+    #       实测 FSR 反演，含 DOI）→ **E1 同步升 A 级**。
+    #       至此 E1-E7 全部为 A 级可公开溯源实证锚（B 级清零）。
+    check("E1-E7 anchor 分型（D-66 后全部 = empirical(A级可公开溯源)，B 级清零）",
+          all(_anchors[b] == "empirical"
+              for b in ("E1", "E2", "E3", "E4", "E5", "E6", "E7")),
           str(_anchors))
 
     # ⑦ D-63 来源边界门禁：仅限公开论文/datasheet/公开测量数据集，且必须可公开溯源
@@ -211,14 +216,38 @@ def main():
     _v, _src, _ = _anchor.resolve("E-TBOX-FSR-TM")          # A 级（含 URL）
     check("A 级语料可作 golden（E-TBOX-FSR-TM → 10.44）",
           _v == 10.44 and _src == "empirical-measurement", f"val={_v} src={_src}")
-    _v2, _src2, _note2 = _anchor.resolve("E-RING-FSR")       # B 级（无定位符）
-    check("B 级语料禁止作 golden（E-RING-FSR 被挡下）",
-          _v2 is None and _src2 == "empirical-untraceable", f"val={_v2} src={_src2}")
+    _v2, _src2, _note2 = _anchor.resolve("E-RING-FSR")       # A 级（D-66 补 arXiv DOI）
+    check("A 级语料可作 golden（E-RING-FSR → 8.6，D-66 补 arXiv DOI 后由 B 升 A）",
+          _v2 == 8.6 and _src2 == "empirical-measurement", f"val={_v2} src={_src2}")
+
+    # B 级禁止作 golden：D-66 后 seed 语料库 **B 级已清零**（30/30 全 A），
+    # 已无真实的 B 级样本可供断言 → 改用**合成 B 级语料**（citation 只有文本描述、
+    # 无 DOI/arXiv/URL 定位符）来验证「门禁机制本身仍然生效」。
+    # （不能用「语料库里没有 B 级」来证明门禁有效——那是缺样本，不是门禁通过。）
+    from lda_harness.empirical_bank import EmpiricalMeasurement  # noqa: F401
+    _b_corpus = EmpiricalCorpus([{
+        "id": "E-SYNTH-B-1", "device": "synthetic", "metric": "m",
+        "measured_value": 1.0, "uncertainty_abs": 0.1, "fab_source": "X",
+        "citation": "某公开文献典型量级（无 DOI/arXiv/URL 定位符，仅文本描述）",
+        "method": "未标注", "geometry": {}, "tags": [],
+    }])
+    _b_anchor = EmpiricalAnchor(_b_corpus)
+    _vb, _srcb, _ = _b_anchor.resolve("E-SYNTH-B-1")
+    check("B 级语料禁止作 golden（合成无定位符语料被挡下；seed 库 B 级已清零）",
+          _vb is None and _srcb == "empirical-untraceable", f"val={_vb} src={_srcb}")
+    _vb2, _srcb2, _ = _b_anchor.resolve("E-SYNTH-B-1", require_traceable=False)
+    check("B 级语料显式 require_traceable=False 可降级取值并诚实标注",
+          _vb2 == 1.0 and _srcb2 == "empirical-B-untraceable",
+          f"val={_vb2} src={_srcb2}")
 
     # (d) 语料库整体溯源健康度
+    # D-66：5 条 B 级语料全部逐字核实补齐 DOI/URL 后升级 → 达标线由 80% **上调至 100%**。
+    # 理由：①提交门禁已强制 A 级（B 级无定位符直接 rejected），存量中不应再出现 B 级；
+    #      ②「实证锚 = 第二道非 AI ground」的可信度完全建立在可独立复验上，
+    #        任何一条 B 级混入都会稀释该 ground，故不再容忍。
     _rep = audit_items(_corpus._items.values())
-    check("语料库 A 级（可公开溯源）占比 ≥ 80%",
-          _rep["traceable_ratio"] >= 0.80,
+    check("语料库 A 级（可公开溯源）占比 = 100%（D-66 上调，B 级零容忍）",
+          _rep["traceable_ratio"] >= 1.0,
           f"A={_rep['by_tier']['A']} B={_rep['by_tier']['B']} "
           f"total={_rep['total']} 占比={_rep['traceable_ratio']*100:.1f}%")
 

@@ -41,6 +41,11 @@ class EmpiricalMeasurement:
     citation: str
     method: str = ""
     source_url: str = ""
+    # D-66（2026-09-01）：溯源核实批注。记录「本条数值是如何被逐字核实的」——
+    # 尤其是改判/修正的情形（例：原 golden 有误、原 metric 非直接测量量、
+    # 候选来源实为仿真值被排除）。空字符串 = 未经人工核实批注。
+    # 判定路径不读本字段（仅作证据链），故不影响任何死标量比较。
+    note: str = ""
     geometry: dict = field(default_factory=dict)
     tags: list = field(default_factory=list)
     provenance: dict = field(default_factory=dict)
@@ -61,8 +66,19 @@ class EmpiricalMeasurement:
 
         A 级 = 含 DOI / arXiv / 公开 URL 等可解析定位符 → 第三方可独立复验；
         B 级 = 仅描述性来源（如「XX 文献量级」）→ 不可独立复验，禁止作 golden。
+
+        D-66 修复（2026-09-01）：`from .provenance import ...` 在**以脚本方式
+        直接运行**时（CI: `cd lda/lda_harness && python run_empirical_bank.py`）
+        会因 empirical_bank 被当成顶层模块而抛
+        `ImportError: attempted relative import with no known parent package`
+        → **GitHub Actions ci.yml 主干自 v0.9.8（D-63 引入本方法）起一直红灯**，
+        而本地 CORE_SMOKES 未收录该脚本故本地全绿 —— 典型的「宣称全绿、主干红」。
+        现改为双路导入（包内相对导入优先，回退顶层绝对导入）。
         """
-        from .provenance import classify_citation
+        try:
+            from .provenance import classify_citation
+        except ImportError:  # 脚本直跑（无父包）→ 回退绝对导入
+            from provenance import classify_citation  # type: ignore[no-redef]
         return classify_citation(self.citation, self.source_url)
 
 

@@ -436,7 +436,11 @@ class DesignEngine:
         # 这些引擎的"目标" = 损耗/效率预算（文献实测典型值），验证锚 = **实证语料**
         # （E1-E7 golden，非解析锚）——实证锚第一次成为引擎级判决锚（LLM 不进判决）。
         "YbranchLoss": {
-            "title": "Y-branch 分束损耗 · 目标 split_loss（实证锚 E-YBRANCH-LOSS）",
+            # D-66：metric 由「含 3.01dB 理想分光的分支插损 split_loss_dB」
+            # 改为「**过量损耗** excess_loss_dB」——3.01dB 是 1×2 均分的几何必然，
+            # 非器件品质指标、非被测量；实测 golden 也改判为 0.28±0.02 dB
+            # （Opt. Express 21, 1310 (2013)，DOI 10.1364/OE.21.001310）。
+            "title": "Y-branch 过量损耗 · 目标 excess_loss（实证锚 E-YBRANCH-LOSS）",
             "sweep": [("theta_deg", 2.0, 20.0, 1.0)],
             "fixed": dict(excess_coef=0.004),
             "verify": _loss_verify("engine_ybranch_split", "E-YBRANCH-LOSS",
@@ -444,12 +448,15 @@ class DesignEngine:
             "cheap": lambda combo, target: _loss_cheap(
                 "engine_ybranch_split", combo),
             "extract": lambda r: r["metric"],
-            "metric_name": "split_loss_dB",
+            "metric_name": "excess_loss_dB",
             "target_unit": "dB",
             "analytic_only": False,
             "secondary": ("theta_deg", True),
-            "note": "Y-branch 分束损耗（3dB 理想 + θ² 过量）。目标=公开实测典型"
-                    "3.4dB；实证锚 E-YBRANCH-LOSS 死标量判决（|out−golden|≤tol）。",
+            "note": "Y-branch **过量损耗** = c1·θ²（D-66：已剔除 3.01dB 理想分光；"
+                    "需含分光的插损自行 +3.0103dB）。目标=公开实测 0.28dB"
+                    "（Opt. Express 21, 1310）；实证锚 E-YBRANCH-LOSS 死标量判决"
+                    "（|out−golden|≤tol）。⚠️ c1=0.004 dB/deg² 为**未标定的唯象系数**，"
+                    "θ=10° 给 0.4dB、实测 0.28dB，rel≈43%，如实暴露不做拟合回算。",
         },
         "GratingEff": {
             "title": "光栅耦合效率 · 目标 coupling_eff（实证锚 E-GRATING-EFF）",
@@ -464,8 +471,10 @@ class DesignEngine:
             "target_unit": "",
             "analytic_only": False,
             "secondary": ("ff", False),
-            "note": "光栅耦合峰值效率（Bragg×占空比×倾斜）。目标=公开实测典型"
-                    "0.45；实证锚 E-GRATING-EFF 判决。",
+            "note": "光栅耦合峰值效率（Bragg×占空比×倾斜）。目标=公开实测 0.42"
+                    "（D-66 逐字核实，APL 96, 051126 (2010)，DOI 10.1063/1.3304791；"
+                    "原 0.45 无出处已废弃）；实证锚 E-GRATING-EFF 判决。"
+                    "⚠️ 文献器件为全刻蚀光子晶体孔阵，与参数化周期光栅非同一结构。",
         },
         "Crossing": {
             "title": "波导 crossing · 目标插入损耗（实证锚 E-SOI-CROSS-IL/XT）",

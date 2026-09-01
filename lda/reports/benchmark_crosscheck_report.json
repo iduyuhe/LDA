@@ -8,26 +8,27 @@
       "passed": true,
       "metric": 3.10887,
       "metric_dim": "n_eff",
+      "empirical_dim_note": "语料为 n_g 实测、引擎输出 n_eff：量纲不同源，仅作器件族覆盖登记，不参加死标量对照",
       "bid": null,
       "analytical_rel_pct": 0.14,
       "verdict": "波导 FDTD 双验证 PASS（解析 slab 契约物理合理 + FDTD neff=3.10887 ↔ slab=3.10464 rel=0.14% ≤ 2%）",
       "empirical_ids": [
-        "E-SOI-NEFF-220",
-        "E-SIN-NEFF-300"
+        "E-SOI-NG-220",
+        "E-SIN-NG-1200"
       ],
-      "elapsed_s": 12.09,
+      "elapsed_s": 10.85,
       "empirical": {
-        "E-SOI-NEFF-220": {
-          "measured": 2.63,
-          "source": "empirical-B-untraceable",
-          "traceable": false,
-          "note": "IMEC iSiPP50G 公开 PDK（文献量级） | iSiPP50G PDK published specs | σ=0.02 | tol=0.02 | tier=B"
+        "E-SOI-NG-220": {
+          "measured": 4.18,
+          "source": "empirical-measurement",
+          "traceable": true,
+          "note": "Advanced Micro Foundry (AMF) 商用 SOI 平台；二氧化硅埋层条形波导 500x220 nm^2 | F. Garrisi et al., 'Characterization of photon pairs ge"
         },
-        "E-SIN-NEFF-300": {
-          "measured": 1.53,
-          "source": "empirical-B-untraceable",
-          "traceable": false,
-          "note": "公开 SiN 工艺文献量级 | SiN photonics published data | σ=0.02 | tol=0.02 | tier=B"
+        "E-SIN-NG-1200": {
+          "measured": 2.2834,
+          "source": "empirical-measurement",
+          "traceable": true,
+          "note": "SiOC 涂覆 Si3N4 平台（PECVD SiO2 埋层），n_Si3N4 = 1.9963 @1550 nm | 'SiOC-Coated Silicon Nitride Platform for Efficient Phase Ac"
         }
       }
     },
@@ -38,11 +39,12 @@
       "passed": true,
       "metric": 0.99903,
       "metric_dim": "R",
+      "empirical_dim_note": "",
       "bid": null,
       "analytical_rel_pct": null,
       "verdict": "布拉格 FDTD 双验证 PASS（解析 TMM 契约物理合理 + FDTD R_min=0.99903 ↔ TMM=0.99922 abs=1.95e-04 ≤ 2%）",
       "empirical_ids": [],
-      "elapsed_s": 39.69,
+      "elapsed_s": 39.5,
       "empirical": {}
     },
     {
@@ -52,6 +54,7 @@
       "passed": true,
       "metric": 4.99526,
       "metric_dim": "f01",
+      "empirical_dim_note": "",
       "bid": "B9",
       "analytical_rel_pct": 0.09,
       "verdict": "Transmon 双验证 PASS（B9 Koch 命中 + 对角化 f01=4.9953 ↔ Koch=5.0000 rel=0.09% ≤ 3%）",
@@ -66,6 +69,7 @@
       "passed": true,
       "metric": 9.16,
       "metric_dim": "FSR",
+      "empirical_dim_note": "",
       "bid": "B4",
       "analytical_rel_pct": null,
       "verdict": "contract 自检：RingResonator 注册表 + RING-fsr 契约 + fdtd2d_ring 可导入 OK（数值验收请用 live 模式）",
@@ -75,10 +79,10 @@
       "elapsed_s": 0.0,
       "empirical": {
         "E-RING-FSR": {
-          "measured": 9.15,
-          "source": "empirical-B-untraceable",
-          "traceable": false,
-          "note": "环形谐振器公开测试数据 | ring resonator published measurement | σ=0.1 | tol=0.1 | tier=B"
+          "measured": 8.6,
+          "source": "empirical-measurement",
+          "traceable": true,
+          "note": "Advanced Micro Foundry (AMF) 商用 SOI 平台；二氧化硅埋层条形波导 500x220 nm^2 | F. Garrisi et al., 'Characterization of photon pairs ge"
         }
       }
     },
@@ -89,6 +93,7 @@
       "passed": true,
       "metric": 19.725,
       "metric_dim": "FSR",
+      "empirical_dim_note": "",
       "bid": "B20",
       "analytical_rel_pct": null,
       "verdict": "contract 自检：MZI 干涉谱 + MZI-fsr 契约 OK；ΔL=35.0μm → FSR≈19.72nm（干涉谱提取 53.07nm 一致）",
@@ -103,11 +108,12 @@
       "passed": true,
       "metric": 2155.853,
       "metric_dim": "cavity_wl",
+      "empirical_dim_note": "",
       "bid": "B21",
       "analytical_rel_pct": 0.41,
       "verdict": "PhC 腔 2D FDTD 双验证 PASS（B21 锚 λ_res=2164.8nm ↔ FDTD λ_res=2155.9nm rel=0.41% ≤ 3%）",
       "empirical_ids": [],
-      "elapsed_s": 3.98,
+      "elapsed_s": 3.94,
       "empirical": {}
     },
     {
@@ -117,11 +123,12 @@
       "passed": true,
       "metric": 7.5253,
       "metric_dim": "f0",
+      "empirical_dim_note": "",
       "bid": "B22",
       "analytical_rel_pct": 0.41,
       "verdict": "读出谐振器 1D TL-FDTD 双验证 PASS（B22 锚 f0=7.495GHz ↔ FDTD f0=7.525GHz rel=0.41% ≤ 3%）",
       "empirical_ids": [],
-      "elapsed_s": 0.11,
+      "elapsed_s": 0.12,
       "empirical": {}
     },
     {
@@ -131,6 +138,7 @@
       "passed": true,
       "metric": 5.9827,
       "metric_dim": "f01",
+      "empirical_dim_note": "",
       "bid": "B23",
       "analytical_rel_pct": 0.0241,
       "verdict": "Fluxonium 双基对拍 PASS（相位基 f01=5.983GHz ↔ HO 基 f01=5.984GHz rel=0.0241% ≤ 1%；B23 LC 边界锚=2.828GHz 单调上界成立）",
@@ -145,6 +153,7 @@
       "passed": true,
       "metric": 0.004861,
       "metric_dim": "g_eff",
+      "empirical_dim_note": "",
       "bid": "B24",
       "analytical_rel_pct": 1.27,
       "verdict": "可调耦合器三模对角化 PASS（B24 锚 |g_eff|=0.0048GHz ↔ 数值 |g_eff|=0.0049GHz rel=1.27% ≤ 3%）",
@@ -159,6 +168,7 @@
       "passed": true,
       "metric": 102.194,
       "metric_dim": "L_mmi",
+      "empirical_dim_note": "",
       "bid": "B16",
       "analytical_rel_pct": 0.0,
       "verdict": "MMI 自映像 PASS（B16 锚 L=102.2um ↔ 模式叠加 L=102.2um rel=0.00% ≤ 5%）",
@@ -173,6 +183,7 @@
       "passed": true,
       "metric": 2.352,
       "metric_dim": "lambda_B",
+      "empirical_dim_note": "",
       "bid": "B15",
       "analytical_rel_pct": 0.0,
       "verdict": "光栅耦合器 Bragg PASS（锚 λ_B=2.352um ↔ 数值 λ_B=2.352um rel=0.00% ≤ 5%）",
@@ -187,6 +198,7 @@
       "passed": true,
       "metric": 19.375,
       "metric_dim": "L_3dB",
+      "empirical_dim_note": "",
       "bid": "B14",
       "analytical_rel_pct": 0.0,
       "verdict": "方向耦合器 3dB PASS（B14 锚 L=19.4um ↔ 超模拍频 L=19.4um rel=0.00% ≤ 5%）",
@@ -201,6 +213,7 @@
       "passed": true,
       "metric": 5.9316,
       "metric_dim": "f01",
+      "empirical_dim_note": "",
       "bid": "B25",
       "analytical_rel_pct": 0.0,
       "verdict": "可调 transmon PASS（B25 锚 f01=5.932GHz ↔ koch f01=5.932GHz rel=0.00% ≤ 3%）",
@@ -215,6 +228,7 @@
       "passed": true,
       "metric": 0.002262,
       "metric_dim": "chi",
+      "empirical_dim_note": "",
       "bid": "B26",
       "analytical_rel_pct": 1.98,
       "verdict": "读出配对 PASS（B26 锚 χ=-0.002308GHz ↔ 严格对角化 χ=-0.002262GHz rel=1.98% ≤ 5%）",
@@ -229,6 +243,7 @@
       "passed": true,
       "metric": 694.444,
       "metric_dim": "t_CZ",
+      "empirical_dim_note": "",
       "bid": "B27",
       "analytical_rel_pct": 2.02,
       "verdict": "CZ 门 PASS（B27 锚 t=680.7ns ↔ 对角化 t=694.4ns rel=2.02% ≤ 3%；2|χ|·t=π 精确成立）",
@@ -241,21 +256,22 @@
       "model_class": "L0-解析",
       "ok": true,
       "passed": true,
-      "metric": 3.4,
-      "metric_dim": "split_loss_dB",
+      "metric": 0.256,
+      "metric_dim": "excess_loss_dB",
+      "empirical_dim_note": "",
       "bid": null,
-      "analytical_rel_pct": 0.0,
-      "verdict": "实证锚 E-YBRANCH-LOSS 对照 PASS（引擎 3.4 ↔ 实测 3.4±0.3 rel=0.00% ≤ tol=0.5）",
+      "analytical_rel_pct": 8.57,
+      "verdict": "实证锚 E-YBRANCH-LOSS 对照 PASS（引擎 0.256 ↔ 实测 0.28±0.02 rel=8.57% ≤ tol=0.5）",
       "empirical_ids": [
         "E-YBRANCH-LOSS"
       ],
       "elapsed_s": 0.0,
       "empirical": {
         "E-YBRANCH-LOSS": {
-          "measured": 3.4,
-          "source": "empirical-B-untraceable",
-          "traceable": false,
-          "note": "公开 Y-branch 文献典型值 | MMI/Y-branch published characterization | σ=0.3 | tol=0.3 | tier=B"
+          "measured": 0.28,
+          "source": "empirical-measurement",
+          "traceable": true,
+          "note": "248 nm CMOS 兼容工艺，8 英寸晶圆（跨晶圆均匀性实测） | Y. Zhang, S. Yang, A. E.-J. Lim, G.-Q. Lo, C. Galland, T. Baehr-Jones, M. Hochberg, "
         }
       }
     },
@@ -264,21 +280,22 @@
       "model_class": "L0-解析",
       "ok": true,
       "passed": true,
-      "metric": 0.4337,
+      "metric": 0.4231,
       "metric_dim": "coupling_eff",
+      "empirical_dim_note": "",
       "bid": null,
-      "analytical_rel_pct": 3.62,
-      "verdict": "实证锚 E-GRATING-EFF 对照 PASS（引擎 0.4337 ↔ 实测 0.45±0.05 rel=3.62% ≤ tol=0.1）",
+      "analytical_rel_pct": 0.74,
+      "verdict": "实证锚 E-GRATING-EFF 对照 PASS（引擎 0.4231 ↔ 实测 0.42±0.05 rel=0.74% ≤ tol=0.1）",
       "empirical_ids": [
         "E-GRATING-EFF"
       ],
       "elapsed_s": 0.0,
       "empirical": {
         "E-GRATING-EFF": {
-          "measured": 0.45,
-          "source": "empirical-B-untraceable",
-          "traceable": false,
-          "note": "光栅耦合器公开文献量级 | grating coupler published efficiency | σ=0.05 | tol=0.05 | tier=B"
+          "measured": 0.42,
+          "source": "empirical-measurement",
+          "traceable": true,
+          "note": "SOI 220 nm 器件层，电子束光刻 + 全刻蚀（与条形波导同工序） | L. Liu, M. Pu, K. Yvind, J. M. Hvam, 'High-efficiency, large-bandwidth silicon-on"
         }
       }
     },
@@ -289,6 +306,7 @@
       "passed": true,
       "metric": 0.18,
       "metric_dim": "insertion_loss_dB",
+      "empirical_dim_note": "",
       "bid": null,
       "analytical_rel_pct": 0.0,
       "verdict": "实证锚 E-SOI-CROSS-IL 对照 PASS（引擎 0.18 ↔ 实测 0.18±0.03 rel=0.00% ≤ tol=0.1）",
@@ -319,6 +337,7 @@
       "passed": true,
       "metric": 0.055,
       "metric_dim": "excess_loss_dB",
+      "empirical_dim_note": "",
       "bid": null,
       "analytical_rel_pct": 10.0,
       "verdict": "实证锚 E-MMI-1X2-EL 对照 PASS（引擎 0.055 ↔ 实测 0.05±0.05 rel=10.00% ≤ tol=0.05）",
@@ -342,6 +361,7 @@
       "passed": true,
       "metric": 0.087,
       "metric_dim": "propagation_loss_dBcm",
+      "empirical_dim_note": "",
       "bid": null,
       "analytical_rel_pct": 0.0,
       "verdict": "实证锚 E-SIN-PL-800 对照 PASS（引擎 0.087 ↔ 实测 0.087±0.01 rel=0.00% ≤ tol=0.02）",
@@ -365,6 +385,7 @@
       "passed": true,
       "metric": 10.8,
       "metric_dim": "deg_per_mW",
+      "empirical_dim_note": "",
       "bid": null,
       "analytical_rel_pct": 8.0,
       "verdict": "相移效率对照 PASS（10.800 deg/mW ↔ 目标 10.0 rel=8.00% ≤ 10%）",
@@ -379,6 +400,7 @@
       "passed": true,
       "metric": 4.899357710008597,
       "metric_dim": "V_pi",
+      "empirical_dim_note": "",
       "bid": null,
       "analytical_rel_pct": 2.01,
       "verdict": "V_π 对照 PASS（4.899 V ↔ 目标 5.0 rel=2.01% ≤ 10%）",
@@ -393,58 +415,58 @@
     "engines_passed": 22,
     "with_analytical_rel": 19,
     "rel_max_pct": 10.0,
-    "rel_median_pct": 0.14
+    "rel_median_pct": 0.41
   },
   "corpus_coverage": {
-    "E-SOI-NEFF-220": {
-      "measured": 2.63,
-      "source": "empirical-B-untraceable",
-      "traceable": false,
+    "E-SOI-NG-220": {
+      "measured": 4.18,
+      "source": "empirical-measurement",
+      "traceable": true,
       "engine_kinds": [
         "Waveguide"
       ],
       "covered": true
     },
-    "E-SIN-NEFF-300": {
-      "measured": 1.53,
-      "source": "empirical-B-untraceable",
-      "traceable": false,
+    "E-SIN-NG-1200": {
+      "measured": 2.2834,
+      "source": "empirical-measurement",
+      "traceable": true,
       "engine_kinds": [
         "Waveguide"
       ],
       "covered": true
     },
     "E-YBRANCH-LOSS": {
-      "measured": 3.4,
-      "source": "empirical-B-untraceable",
-      "traceable": false,
+      "measured": 0.28,
+      "source": "empirical-measurement",
+      "traceable": true,
       "engine_kinds": [
         "engine_ybranch_split"
       ],
       "covered": true,
-      "loss_engine_value": 3.4,
-      "rel_pct": 0.0,
-      "model": "3.0 + 0.004·θ² (θ=10.0°)"
+      "loss_engine_value": 0.4,
+      "rel_pct": 42.86,
+      "model": "0.004·θ² (θ=10.0°，过量损耗；+3.0103dB 即含分光插损)"
     },
     "E-RING-FSR": {
-      "measured": 9.15,
-      "source": "empirical-B-untraceable",
-      "traceable": false,
+      "measured": 8.6,
+      "source": "empirical-measurement",
+      "traceable": true,
       "engine_kinds": [
         "RingResonator"
       ],
       "covered": true
     },
     "E-GRATING-EFF": {
-      "measured": 0.45,
-      "source": "empirical-B-untraceable",
-      "traceable": false,
+      "measured": 0.42,
+      "source": "empirical-measurement",
+      "traceable": true,
       "engine_kinds": [
         "engine_grating_eff"
       ],
       "covered": true,
       "loss_engine_value": 0.4337,
-      "rel_pct": 3.62,
+      "rel_pct": 3.26,
       "model": "0.5·sin²(π·0.5)·exp(−θ²/2σ²) (θ=8.0°)"
     },
     "E-SOI-CROSS-IL": {
@@ -501,9 +523,9 @@
   },
   "provenance": {
     "corpus_total": 9,
-    "tier_a_traceable": 4,
-    "traceable_ratio": 0.4444,
+    "tier_a_traceable": 9,
+    "traceable_ratio": 1.0,
     "note": "A 级=含 DOI/arXiv/公开 URL，可独立复验、可进判决；B 级=仅描述性来源，本表仅作量级展示，禁止作 golden"
   },
-  "honest_note": "原理验证级非流片级；实证语料 9 条中 A 级（可公开溯源）4 条，其余为 B 级（仅量级参考，禁止作 golden 进判决）；上表 loss 类引擎为半解析近似（工艺标定参数可调，发动期真实 PDK 数据可替换）"
+  "honest_note": "原理验证级非流片级；实证语料 9 条中 A 级（可公开溯源）9 条，其余为 B 级（仅量级参考，禁止作 golden 进判决）；上表 loss 类引擎为半解析近似（工艺标定参数可调，发动期真实 PDK 数据可替换）"
 }

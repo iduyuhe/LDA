@@ -18,8 +18,15 @@ import time
 
 # 引擎 → 锚对照映射（bid=解析锚题；empirical=metric 维度真正一致的语料）
 ENGINE_ANCHOR_MAP = {
-    "Waveguide": {"bid": None, "empirical": ["E-SOI-NEFF-220", "E-SIN-NEFF-300"],
-                  "metric_dim": "n_eff"},
+    # D-66：两条 n_eff 语料经逐字核实后改判为 n_g 实测（n_eff 极少直接测量，见 E1/E2 note）。
+    # ⚠️ 量纲不同源（诚实标注）：本引擎的设计闭环输出的是 **n_eff**（FDTD 3.10887
+    #    ↔ slab 解析 3.10464），而语料侧实测的是 **n_g** —— 二者非同一量。
+    #    故 metric_dim 保持引擎真值 "n_eff"；语料链接仅作「同一器件族留有公开实测
+    #    ground」的覆盖率登记，**不参与死标量对照**（报告不据此判 PASS/FAIL）。
+    "Waveguide": {"bid": None, "empirical": ["E-SOI-NG-220", "E-SIN-NG-1200"],
+                  "metric_dim": "n_eff",
+                  "empirical_dim_note": "语料为 n_g 实测、引擎输出 n_eff：量纲不同源，"
+                                        "仅作器件族覆盖登记，不参加死标量对照"},
     "BraggMirror": {"bid": None, "empirical": [], "metric_dim": "R"},
     "Transmon": {"bid": "B9", "empirical": [], "metric_dim": "f01"},
     "RingResonator": {"bid": "B4", "empirical": ["E-RING-FSR"], "metric_dim": "FSR"},
@@ -35,8 +42,9 @@ ENGINE_ANCHOR_MAP = {
     "ReadoutPair": {"bid": "B26", "empirical": [], "metric_dim": "chi"},
     "CzGate": {"bid": "B27", "empirical": [], "metric_dim": "t_CZ"},
     # loss/效率类引擎（实证锚判决路径，无解析 B 锚）
+    # D-66：改判为实测**过量损耗**（原 split_loss_dB 含 3.01dB 理想分光，非被测量）
     "YbranchLoss": {"bid": None, "empirical": ["E-YBRANCH-LOSS"],
-                    "metric_dim": "split_loss_dB"},
+                    "metric_dim": "excess_loss_dB"},
     "GratingEff": {"bid": None, "empirical": ["E-GRATING-EFF"],
                    "metric_dim": "coupling_eff"},
     "Crossing": {"bid": None, "empirical": ["E-SOI-CROSS-IL", "E-SOI-CROSS-XT"],
@@ -57,7 +65,9 @@ DEFAULT_TARGET = {
     "ReadoutResonator": 7.5, "Fluxonium": 6.0, "TunableCoupler": 0.005,
     "Mmi1x2": 100.0, "GratingCoupler2": 2.38, "DirectionalCoupler2": 20.0,
     "TunableTransmon": 6.0, "ReadoutPair": 0.002, "CzGate": 700.0,
-    "YbranchLoss": 3.4, "GratingEff": 0.45, "Crossing": 0.18,
+    # D-66：两项目标随实证锚 golden 同步改判（原 3.4 = 含 3.01dB 理想分光的分支插损，
+    # 且引擎已只输出过量损耗；原 0.45 无可溯源出处）
+    "YbranchLoss": 0.28, "GratingEff": 0.42, "Crossing": 0.18,
     "MmiEl": 0.05, "SinPl": 0.087,
     "PhaseShifter": 10.0, "MziModulator": 5.0,
 }
@@ -147,6 +157,9 @@ def run_crosscheck(quick: bool = False) -> dict:
             "passed": bool(best.get("passed")),
             "metric": best.get("metric"),
             "metric_dim": ENGINE_ANCHOR_MAP[kind]["metric_dim"],
+            # D-66：引擎 metric 与语料 metric 不同源时显式带出（不静默假装同量）
+            "empirical_dim_note": ENGINE_ANCHOR_MAP[kind].get(
+                "empirical_dim_note", ""),
             "bid": ENGINE_ANCHOR_MAP[kind]["bid"],
             "analytical_rel_pct": rel,
             "verdict": verdict[:180],
@@ -178,7 +191,7 @@ def run_crosscheck(quick: bool = False) -> dict:
 
     from lda_design.loss_engines import resolve_corpus_engine
     corpus_cover = {}
-    for eid in ["E-SOI-NEFF-220", "E-SIN-NEFF-300", "E-YBRANCH-LOSS", "E-RING-FSR",
+    for eid in ["E-SOI-NG-220", "E-SIN-NG-1200", "E-YBRANCH-LOSS", "E-RING-FSR",
                 "E-GRATING-EFF", "E-SOI-CROSS-IL", "E-SOI-CROSS-XT", "E-MMI-1X2-EL",
                 "E-SIN-PL-800"]:
         # D-63：覆盖率展示（非判决路径）→ B 级语料显式放行取值，但标 traceable=False
@@ -251,6 +264,9 @@ def _fmt_report(data: dict) -> str:
         rel = f"{r['analytical_rel_pct']:.2f}" if r["analytical_rel_pct"] is not None else "—"
         mark = "✅" if r["passed"] else "❌"
         L.append(f"| {r['kind']} | {r.get('model_class','L0-解析')} | {r['bid'] or '契约自检'} | {r['metric']} | {rel} | {mark} | {r['verdict']} |")
+        # D-66：引擎 metric 与所挂语料 metric 不同源时，紧跟一行显式披露
+        if r.get("empirical_dim_note"):
+            L.append(f"| ↳ ⚠️ | | | | | | {r['empirical_dim_note']} |")
     L.append("")
     L.append("## 二、实证锚语料覆盖矩阵（9 条语料 × 引擎，v0.8.11e 全对照）")
     L.append("")

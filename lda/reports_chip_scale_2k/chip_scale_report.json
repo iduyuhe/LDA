@@ -1,0 +1,49 @@
+{
+  "title": "千器件芯片级演示（n=2000 · 版图 7 差距收官）",
+  "n_devices": 2000,
+  "n_nets": 1999,
+  "gds_bytes": 188128,
+  "chip_bbox_um": [
+    -10.0,
+    -5.0,
+    898.0,
+    558.5
+  ],
+  "chip_area_um2": 511658.0,
+  "io_ports": [
+    "wg0.in",
+    "wg999.out"
+  ],
+  "drc": {
+    "n_pass": 2000,
+    "n_checked": 2000,
+    "all_pass": true
+  },
+  "lvs": {
+    "verdict": "ACCEPT",
+    "n_violations": 0,
+    "match": {
+      "n_devices_match": 2000,
+      "n_nets_match": 1999,
+      "n_nets_total": 1999
+    },
+    "stack": {
+      "name": "SOI-3L（公开近似）",
+      "signal_layers": [
+        "M1",
+        "M2"
+      ],
+      "via_layers": [
+        "VIA12"
+      ],
+      "via_map": {
+        "VIA12": [
+          "M1",
+          "M2"
+        ]
+      }
+    }
+  },
+  "time_total_s": 0.11,
+  "accepted": true
+}

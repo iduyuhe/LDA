@@ -109,8 +109,9 @@ _ENGINE_DEFAULT_TARGET = {
     "engine_tuntransmon": 6.0,     # 目标 f01 (GHz)
     "engine_readoutpair": 0.002,   # 目标 |χ| (GHz)
     "engine_czgate": 700.0,        # 目标 t_CZ (ns)
-    "engine_ybranchloss": 3.4,     # 目标 split_loss (dB，实证锚)
-    "engine_gratingeff": 0.45,     # 目标 coupling_eff（实证锚）
+    # D-66：两项目标值随实证锚 golden 同步改判为公开实测值（原 3.4 / 0.45 无出处或量纲不符）
+    "engine_ybranchloss": 0.28,    # 目标 **过量损耗** excess_loss (dB，实证锚；原 3.4 含 3.01dB 理想分光)
+    "engine_gratingeff": 0.42,     # 目标 coupling_eff（实证锚；A 级 DOI 10.1063/1.3304791）
     "engine_crossing": 0.18,       # 目标 IL (dB，实证锚)
     "engine_mmiel": 0.05,          # 目标 excess_loss (dB，实证锚)
     "engine_sinpl": 0.087,         # 目标 PL (dB/cm，实证锚)
@@ -500,7 +501,7 @@ def engine_catalog() -> List[Dict[str, Any]]:
             "TunableTransmon": "f01 (koch+SQUID, GHz)",
             "ReadoutPair": "|χ| (严格对角化, GHz)",
             "CzGate": "t_CZ (条件相位 π, ns)",
-            "YbranchLoss": "split_loss (dB, 实证锚)",
+            "YbranchLoss": "excess_loss (dB, 实证锚, D-66 剔除 3.01dB 分光)",
             "GratingEff": "coupling_eff (实证锚)",
             "Crossing": "IL (dB, 实证锚)",
             "MmiEl": "excess_loss (dB, 实证锚)",

@@ -95,6 +95,25 @@ LDA 有三条验证路径各自用不同 candidate：
 - `run_harness.py` 三模式全通：默认 `verified=4` / `--perturb 0.10` `verified=10` / `--ai` `verified=2`。
 - 端点三分类：生产实测三类和 = 48。
 
+**补记：生产实测又查出对外与实际的 1 处口径差（E2 在路径② 回落）**
+
+生产外网实测三分类正确（4 / 1 / 43，和=48），但核对 `harness_cli` 时发现：
+端点写 `self_consistent_stub_count=43`，而 `run_harness.py` 报告**实际是 44**。
+
+- **根因（实测确认）**：`fdfd_ng` **未登记进** `BENCHMARK_CANDIDATES` ⇒
+  - **路径①**（`build_harness_specs`）：E2 走真 FDFD 候选，实测 `golden=1.892 / cand=1.9587 / |diff|=0.0667` ⇒ 分类为「降级量级参考」
+  - **路径②**（`IndependentCandidateRouter`）：查表未命中 ⇒ **回落参考候选**，diff≡0 ⇒ 被计入「非独立」
+- 故路径② 的 stub = 三分类 stub(43) + degraded(1) = **44**，端点写 43 是**对外宣称与实际差 1**
+  （与 ci_core 漂移、写死 `["E2"]` 属**同一类缺陷**）。
+- **已修**：`harness_cli.self_consistent_stub_count` 改 `len(_stub) + len(_degraded)`，
+  新增 `trichotomy_totals` 字段把两套口径**同时暴露**（不再让人二选一），
+  并加注说明这是低估而非虚报（`verified` 计数不受影响）。
+- **护栏 ⑦ 补两条断言**：CLI stub 必须 = 三分类 stub + degraded；`trichotomy_totals` 必须逐项相等。
+  反向自检：把数字改回 43 ⇒ smoke 立刻 `exit=1` 报 `CLI stub=43≠44`（再次证明会响）。
+- 🔴 **登记 P0-3 缺口（未修，留给下一批）**：路径② 少接 E2 这一道。修复需把 `fdfd_ng`
+  登记进 `BENCHMARK_CANDIDATES`，**同时**让 `is_independent` 尊重 `candidate_status=degraded_ordinal`
+  —— 否则 E2 会被判为独立且 PASS ⇒ `verified` 从 4 虚报成 5（假绿）。这是"接线越多越容易假绿"的典型。
+
 **诚实边界（未变）**
 独立候选仍只有 **4/48**。本次是**让对外如实显示这个数字**，而非提高验证强度；
 `--ai` 的 45 → 2 是**戳破假绿**，不是能力倒退。剩余 43 道自证桩按 P0 计划继续接线

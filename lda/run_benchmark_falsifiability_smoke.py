@@ -242,6 +242,16 @@ def main() -> int:
             _diff.append(f"总数={_tot.get('anchors')}≠{len(specs)}")
         if _cli.get("verified") != len(strict):
             _diff.append(f"CLI verified={_cli.get('verified')}≠{len(strict)}")
+        # 路径② 只按 independent 二分 ⇒ E2（degraded）被计入「非独立」，
+        # 故 CLI 的 stub 应为 三分类 stub + degraded（实测 43+1=44）。
+        # v0.9.15 实测：端点曾写 43、与报告实际的 44 差 1 ⇒ 补断言钉死。
+        _expect_stub = len(stub) + len(degraded)
+        if _cli.get("self_consistent_stub_count") != _expect_stub:
+            _diff.append(f"CLI stub={_cli.get('self_consistent_stub_count')}≠{_expect_stub}")
+        _tri = _cli.get("trichotomy_totals") or {}
+        if (_tri.get("strict_independent"), _tri.get("degraded_ordinal"),
+                _tri.get("self_consistent_stub")) != (len(strict), len(degraded), len(stub)):
+            _diff.append(f"CLI 三分类={_tri}≠({len(strict)},{len(degraded)},{len(stub)})")
         check("对外账本 /api/verification_ledger 三分类与实测口径逐项一致（无硬编码漂移）",
               _code == 200 and not _diff,
               (f"端点 独立{len(_e_ind)}/降级{len(_e_deg)}/自证{len(_e_stub)}"

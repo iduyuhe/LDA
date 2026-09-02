@@ -249,7 +249,19 @@ BENCHMARK_DEFS = {
         "tol": 0.01,
         "default_params": {"n_eff": 2.4, "period": 0.323},
         "golden_fn": b15_bragg_wavelength,
-        "note": "一阶 Bragg 条件 λ_B=2·n_eff·Λ；给定 n_eff/Λ 直接算。",
+        # v0.9.19（P0 续）：接独立候选 —— 反周期 Bloch 广义本征值 ↔ 相位匹配闭式。
+        # v0.9.18 曾判「不接」：在库 tmm.py 是垂直入射多层膜（物理对象错配）。
+        # v0.9.19 新写 lda_solver/bragg_solver.py：E(z) 周期调制的波动方程
+        # 广义本征值问题，反周期边界锁定 k=±π/Λ，谱最低简并对=第一带隙。
+        "candidate": "bragg_bloch_exact",
+        "candidate_desc": ("反周期 Bloch 广义本征值 A ψ=β²B ψ（N=240，带隙中心"
+                           "2π/β_c）↔ 一阶相位匹配闭式 λ_B=2·n_eff·Λ，方法学独立"),
+        "note": "一阶 Bragg 条件 λ_B=2·n_eff·Λ；给定 n_eff/Λ 直接算。"
+                "【v0.9.19 P0 续】候选=Bloch 本征值（golden=运动学闭式 vs cand="
+                "动力学全波本征谱，调制深度 m 进入算子）。实测 baseline|diff|="
+                "8.356e-6（tol=0.01 未动，余量 1196×）；反向 n_eff×1.1 信号 "
+                "1.55e-1（15.5×）。网格 N=240 双向标定（N=480 偶然抵消点 5.4e-8、"
+                "N=960 越 LAPACK 地板反升，均避开，详 bragg_solver.py）。",
     },
     "B16": {
         "title": "MMI 1×2 自映像长度",

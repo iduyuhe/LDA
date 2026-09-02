@@ -93,6 +93,10 @@ PERTURB_SPEC = [
     #   · E_J1/E_J2 5.50e-4 ❌（比基线 1.31e-3 还小 —— 扰动与近似误差偶然抵消，
     #   同 B26 现象）。盲区已写入 benchmarks.py 的 note，不掩盖。
     ("B13", "C1", "mul"),
+    # v0.9.19（P0 续）：B15 Bragg 光栅（Bloch 本征值 ↔ 相位匹配闭式）。
+    # 扰 n_eff（信号 1.55e-1，15.5×）；period 与 n_eff 一阶等价（λ_B∝n_eff·Λ）
+    #   ⇒ 同信号，固定扰 n_eff。
+    ("B15", "n_eff", "mul"),
 ]
 PERTURB_REL = 0.10          # 反向测试扰动幅度（10%）
 SENSITIVITY_GRID = (0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20)
@@ -100,8 +104,9 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 
 # 独立候选数下限（随 P0 推进递增：v0.9.14 起步 4 → v0.9.16 光子侧 7
 # → v0.9.17 量子侧接 B12/B13/B22/B23/B24 后 12
-# → v0.9.18 接 S13（解析 Φ ↔ 蒙特卡洛双算法互证，S7/S8 伪独立陷阱已证否）后 13）
-MIN_INDEPENDENT = 13
+# → v0.9.18 接 S13（解析 Φ ↔ 蒙特卡洛双算法互证，S7/S8 伪独立陷阱已证否）后 13
+# → v0.9.19 接 B15（Bloch 本征值 ↔ 相位匹配闭式，tmm 物理对象错配已绕开）后 14）
+MIN_INDEPENDENT = 14
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

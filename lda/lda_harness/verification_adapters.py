@@ -668,6 +668,43 @@ def _s13_yield_analytic_candidate(spec: VerificationSpec, oracle_value: Any) -> 
 
 
 @_register_candidate(
+    "bragg_bloch_exact",
+    "反周期 Bloch 广义本征值问题 A ψ=β²B ψ（N=240，scipy eigvalsh）—— "
+    "与 golden 的一阶相位匹配闭式方法学独立")
+def _b15_bragg_bloch_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B15 独立候选：Bragg 光栅中心波长（Bloch 本征 ↔ 相位匹配闭式）。
+
+    golden = 一阶 Bragg 条件 λ_B = 2·n_eff·Λ（运动学：k 演化只计基波）
+    cand   = E(z)=n_eff²(1+m·cos(2πz/Λ)) 的广义本征值问题
+             A ψ = β² B ψ（反周期边界 ψ(z+Λ)=−ψ(z) 锁定 k=±π/Λ，
+             谱最低简并对即第一带隙边沿，中心 → λ_B=2π/β_c）
+             —— 动力学全波本征谱，调制深度 m 进入算子。
+
+    ⚠️ v0.9.18 曾判 B15「不可接」：当时唯一在库求解器 tmm.py 是垂直入射
+    多层膜堆（折射率沿 z 分层、平面波正入射透射谱），与波导光栅（折射率
+    沿传播方向周期调制、Bragg 反射带隙）物理对象不同 ⇒ 接它必成伪独立。
+    v0.9.19 新写 bragg_solver.py（正确的物理对象 + 正确的本征值方法）。
+
+    实测标定（n_eff=2.4 / Λ=0.323 / m=0.004 / N=240）：
+    baseline |diff| = 8.356e-6（rel 5.4e-6，tol=0.01 未动，余量 1196×）。
+    反向扰动信号谱：n_eff×1.1 → 1.55e-1（15.5×）✅ · period×1.1 → 1.55e-1
+    （与 n_eff 一阶等价，λ_B∝n_eff·Λ）⇒ PERTURB 固定扰 n_eff（最强键）。
+    网格双向标定：N=480 diff=5.4e-8 为偶然抵消点、N=960 起越过 LAPACK
+    地板反升（2.0e-6）⇒ 取 N=240 收敛段稳定点（详 bragg_solver.py docstring）。
+    """
+    _ensure_paths()
+    from bragg_solver import lambda_B_bloch
+
+    p = spec.params
+    return float(lambda_B_bloch(
+        n_eff=float(p["n_eff"]),
+        period=float(p["period"]),
+        mod_depth=float(p.get("mod_depth", 0.004)),
+        N=int(p.get("bloch_N", 240)),
+    ))
+
+
+@_register_candidate(
     "coupler_charge_exact",
     "双 transmon 441 维电荷基严格对角化 J（Nq=10，一般失谐提取 √((Δ/2)²−(δ/2)²)）"
     "—— 与 golden 的电荷矩阵元渐近闭式方法学独立")

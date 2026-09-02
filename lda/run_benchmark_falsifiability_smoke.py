@@ -97,6 +97,10 @@ PERTURB_SPEC = [
     # 扰 n_eff（信号 1.55e-1，15.5×）；period 与 n_eff 一阶等价（λ_B∝n_eff·Λ）
     #   ⇒ 同信号，固定扰 n_eff。
     ("B15", "n_eff", "mul"),
+    # v0.9.20（P0 续）：B14 定向耦合器 3dB（FFT 拍频谱峰 ↔ 解析闭式）。
+    # 🔴 本道伴随 golden 语义修正（15.5→7.75，完全转移长度错标 3dB 点）。
+    # 扰 n_e（信号 6.44，25.8× 最强键）；n_o×1.1→5.71 · wl×1.1→0.775。
+    ("B14", "n_e", "mul"),
 ]
 PERTURB_REL = 0.10          # 反向测试扰动幅度（10%）
 SENSITIVITY_GRID = (0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20)
@@ -105,8 +109,9 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 # 独立候选数下限（随 P0 推进递增：v0.9.14 起步 4 → v0.9.16 光子侧 7
 # → v0.9.17 量子侧接 B12/B13/B22/B23/B24 后 12
 # → v0.9.18 接 S13（解析 Φ ↔ 蒙特卡洛双算法互证，S7/S8 伪独立陷阱已证否）后 13
-# → v0.9.19 接 B15（Bloch 本征值 ↔ 相位匹配闭式，tmm 物理对象错配已绕开）后 14）
-MIN_INDEPENDENT = 14
+# → v0.9.19 接 B15（Bloch 本征值 ↔ 相位匹配闭式，tmm 物理对象错配已绕开）后 14
+# → v0.9.20 接 B14（FFT 拍频谱峰 ↔ 解析闭式；golden 语义修正 15.5→7.75）后 15）
+MIN_INDEPENDENT = 15
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

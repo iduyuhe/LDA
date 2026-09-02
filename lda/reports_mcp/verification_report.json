@@ -6,7 +6,7 @@
     "via": "L1 KernelGateway",
     "self_consistent": false
   },
-  "generated_at": "2026-09-02T20:58:29",
+  "generated_at": "2026-09-02T21:41:10",
   "summary": {
     "total": 48,
     "passed": 45,
@@ -85,11 +85,11 @@
     {
       "id": "B14",
       "metric": "L_3dB_um",
-      "oracle": "analytical(beat-length)",
+      "oracle": "analytical(coupled-mode)",
       "source": "physical-law",
-      "golden": 15.499999999999918,
-      "candidate": 15.499999999999918,
-      "tol": 0.5,
+      "golden": 7.749999999999959,
+      "candidate": 7.749999999999959,
+      "tol": 0.25,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,

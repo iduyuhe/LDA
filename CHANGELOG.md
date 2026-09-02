@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.9.20（2026-09-02 · B14 定向耦合器接线 + golden 语义修正 · 严格独立 14 → 15）
+
+**指令**：延续 P0 接线段（B14 定向耦合器 3dB 耦合长度）。
+
+**🔴 golden 语义修正（D-66「怀疑 golden 本身」第 4 例）**：
+- 原式 λ/(2|n_e−n_o|)=15.5µm 是**完全转移长度**（P₂=sin²(κz) 在该点=sin²(π/2)=**1.0**，RK4 数值实证），被错标为 3dB 点
+- 真 3dB 点（P₂=0.5）=λ/(4|n_e−n_o|)=**7.75µm**（P₂=sin²(π/4)=0.5，RK4 实证 8e-15 精度）
+- 同源消费点一并修正：`device_library._dc_supermode_core`（其相位校验 Δβ·L=π 本就是完全转移点 → 改 π/2）· `design_engine.py` note · `device_library` verdict 文案；`run_kernel_seal_smoke` 动态调用 golden 自动跟随（实测 5/5 PASS）
+- tol 0.5→0.25（占 golden 的 3.2%，同比重定——旧 tol 是旧 golden 的 3.2%）
+
+**独立候选**：新写 `lda_solver/dc_cmt_solver.py`（纯 numpy rFFT+复矩阵乘，零 GPU）
+- 方法：增量 2×2 复传播矩阵数值传播 [A1,A2]（每步一次矩阵乘，全程无 sin² 闭式）→ P₂(z) 序列去均值+Hann 窗 → rFFT 功率谱 → 谱峰三点抛物线细化 → L_P=1/f_peak → L_3dB=L_P/4；与 B3/B4/B20 同款「数值序列提取频域周期」方法学，与 golden 闭式反解独立
+- 🔴 **方法学发现（二模恒耦合陷阱）**：该系统传播矩阵是**精确旋转**，任何「数值传播+根查找」路线（RK4/分段传输矩阵/采样插值）都退化为机器精度（实测 8e-15~4.6e-13）→ 撞 1e-12 自证桩判据 ⇒ **必须走 FFT 谱峰路线**，残差由谱分辨率+抛物线近似控制（1.56e-4，非机器精度）
+- 标定：dz=0.01/n_periods=8（baseline 1.56e-4，tol 0.25 余量 1560×）；判据窗口 1.56e-4 < 0.25 < min 反向信号 5.71（22.9×）✓
+- 反向扰动信号谱：n_e×1.1→6.44（25.8×）✅ · n_o×1.1→5.71 ✅ · wl×1.1→0.775（3.1×）✅ ⇒ PERTURB 固定扰 n_e
+
+**接线（三处）**：`verification_adapters.py` 注册 `dc_cmt_fft` · `benchmarks.py` B14 加 candidate 字段+note 记录语义修正 · smoke `MIN_INDEPENDENT 14→15` + `PERTURB_SPEC` 加 B14@n_e
+
+**验证证据链**：
+- kernel_seal 5/5 PASS（golden 修正动态跟随）· device_library ALL GREEN
+- 可证伪性 smoke **8/8 PASS**：严格独立 **15** · 降级 1 · 自证桩 32 · B14 反向 `FAIL✅(d=6.437e+00/tol=0.25)`
+- 对外主报告 `run_harness.py` RC=0：B14 行 `7.75 vs 7.74984 / diff=1.563e-4 / PASS`、verified=15
+- 全量 core 回归 **85 PASS / 0 SKIP / 0 FAIL（1390.4s，REGRESSION_RC=0）**
+
 ## v0.9.19（2026-09-02 · B15 波导光栅严格求解器接线 · 严格独立 13 → 14）
 
 **指令**：B15 波导光栅严格求解器接线（v0.9.18 遗留任务）。

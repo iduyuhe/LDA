@@ -705,6 +705,41 @@ def _b15_bragg_bloch_candidate(spec: VerificationSpec, oracle_value: Any) -> flo
 
 
 @_register_candidate(
+    "dc_cmt_fft",
+    "数值传播 + FFT 拍频谱峰提取 L_3dB（增量 2×2 复传播矩阵 + Hann 窗 rFFT"
+    " + 三点抛物线细化）—— 与 golden 的耦合模解析闭式反解方法学独立")
+def _b14_dc_cmt_fft_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B14 独立候选：定向耦合器 3dB 耦合长度（FFT 拍频 ↔ 解析闭式）。
+
+    golden = 耦合模解析闭式 L_3dB = λ/(4|Δn|)（由 P2=sin²(κz) 反解 P2=0.5）
+    cand   = 数值传播 [A1,A2] 序列 → P2(z) 的 FFT 拍频谱峰 → L_P=1/f_peak
+             → L_3dB = L_P/4（B3/B4/B20 同款「数值序列提取频域周期」方法学）
+
+    ⚠️ v0.9.20 语义修正（D-66「怀疑 golden 本身」第 4 例）：golden 原式
+    λ/(2|Δn|) 是**完全转移长度**（P2=sin²(π/2)=1.0，RK4 实证），被错标
+    为 3dB 点；真 3dB 点 = λ/(4|Δn|)（P2=sin²(π/4)=0.5）。修正后
+    tol 从 0.5（旧值 3.2%）按同比重定 0.25（3.2%，余量不变）。
+
+    实测标定（n_e=2.45/n_o=2.40/λ=1.55，golden=7.75）：
+    baseline |diff| = 1.56e-4（rel 2.0e-5，tol=0.25 余量 1560×；
+    残差由谱分辨率+抛物线近似控制，远离 1e-12 自证桩判据）。
+    反向扰动信号谱：n_e×1.1 → 6.44（25.8×）✅ · n_o×1.1 → 5.71（22.9×）✅
+    · wl×1.1 → 0.775（3.1×）✅ ⇒ PERTURB 固定扰 n_e（最强键）。
+    """
+    _ensure_paths()
+    from dc_cmt_solver import dc_3dB_fft
+
+    p = spec.params
+    return float(dc_3dB_fft(
+        n_e=float(p["n_e"]),
+        n_o=float(p["n_o"]),
+        wl=float(p["wl"]),
+        dz=float(p.get("fft_dz", 0.01)),
+        n_periods=int(p.get("fft_n_periods", 8)),
+    ))
+
+
+@_register_candidate(
     "coupler_charge_exact",
     "双 transmon 441 维电荷基严格对角化 J（Nq=10，一般失谐提取 √((Δ/2)²−(δ/2)²)）"
     "—— 与 golden 的电荷矩阵元渐近闭式方法学独立")

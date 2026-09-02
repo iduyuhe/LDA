@@ -1,6 +1,6 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-02T20:58:29
+- 生成时间：2026-09-02T21:41:10
 - L0_IR：(内置默认)
 - candidate：L3AISolverCandidate
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
@@ -17,7 +17,7 @@
 | B11 | spectrum_match | physical-law | 0.00502277 | 0.00502277 | 0 | 0.03 | ✅ PASS |
 | B12 | f0_GHz | physical-law | 10.7583 | 10.7583 | 0 | 0.02 | ✅ PASS |
 | B13 | J_GHz | physical-law | 0.0316228 | 0.0316228 | 0 | 0.002 | ✅ PASS |
-| B14 | L_3dB_um | physical-law | 15.5 | 15.5 | 0 | 0.5 | ✅ PASS |
+| B14 | L_3dB_um | physical-law | 7.75 | 7.75 | 0 | 0.25 | ✅ PASS |
 | B15 | lambda_B_um | physical-law | 1.5504 | 1.5504 | 0 | 0.01 | ✅ PASS |
 | B16 | L_mmi_um | physical-law | 18.5806 | 18.5806 | 0 | 3 | ✅ PASS |
 | B17 | I_c_A | physical-law | 4.02671e-08 | 4.02671e-08 | 0 | 1e-09 | ✅ PASS |

@@ -1308,7 +1308,7 @@ class DeviceLibrary:
                     },
                 },
                 "verdict": (f"contract 自检：{name} 注册表 + B14 锚 "
-                            f"L_3dB=λ/(2|n_e−n_o|)={anchor:.2f}um 物理合理"),
+                            f"L_3dB=λ/(4|n_e−n_o|)={anchor:.2f}um 物理合理"),
             }
         l_num = _dc_supermode_core(n_e=n_e, n_o=n_o, wl_um=wl_um)
         if l_num is None:
@@ -1812,19 +1812,19 @@ def _dc_supermode_core(n_e: float = 3.40, n_o: float = 3.36,
                        wl_um: float = 1.55) -> Optional[float]:
     """方向耦合器 3dB 长度数值核（偶/奇超模拍频，纯 numpy）。
 
-    双平行波导偶模 n_e / 奇模 n_o；耦合长度 L_c = λ/(2|n_e−n_o|)
-    （B14 锚同源：拍频周期），3dB 点 = L_c。数值核以传播相位复核：
-    Δβ·L_c = π（偶奇模在 3dB 长积累 π 相位差 → 完全功率交换的 1/2）。
-    返回 L_3dB（um），失败 None。
+    双平行波导偶模 n_e / 奇模 n_o；耦合模理论 P2(z)=sin²(π|Δn|z/λ)。
+    完全转移长度 L_π=λ/(2|Δn|)（Δβ·L_π=π）；**3dB 点=L_π/2=λ/(4|Δn|)**
+    （B14 锚 v0.9.20 语义修正：Δβ·L_3dB=π/2 → P2=sin²(π/4)=0.5）。
+    数值核以传播相位复核：Δβ·L_3dB = π/2。返回 L_3dB（um），失败 None。
     """
     import numpy as np
     try:
-        L_c = wl_um / (2.0 * abs(n_e - n_o))
+        L_3dB = wl_um / (4.0 * abs(n_e - n_o))
         dbeta = 2.0 * math.pi * abs(n_e - n_o) / wl_um
-        phase = dbeta * L_c
-        if abs(phase - math.pi) / math.pi > 1e-9:
+        phase = dbeta * L_3dB
+        if abs(phase - math.pi / 2.0) / (math.pi / 2.0) > 1e-9:
             return None
-        return L_c
+        return L_3dB
     except Exception:  # noqa: BLE001
         return None
 

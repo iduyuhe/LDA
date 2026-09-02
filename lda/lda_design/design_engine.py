@@ -389,7 +389,7 @@ class DesignEngine:
             "target_unit": "um",
             "analytic_only": False,
             "secondary": ("n_e", True),
-            "note": "方向耦合器 3dB 长 L=λ/(2|n_e−n_o|)（B14 锚，偶/奇超模拍频）。"
+            "note": "方向耦合器 3dB 长 L=λ/(4|n_e−n_o|)（B14 锚 v0.9.20 语义修正，偶/奇超模拍频）。"
                     "网格搜偶模折射率命中目标 3dB 长；top-K 超模拍频核复核。",
         },
         "TunableTransmon": {

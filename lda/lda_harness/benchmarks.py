@@ -236,11 +236,23 @@ BENCHMARK_DEFS = {
     "B14": {
         "title": "定向耦合器 3dB 耦合长度",
         "metric": "L_3dB_um",
-        "oracle": "analytical(beat-length)",
-        "tol": 0.5,
+        "oracle": "analytical(coupled-mode)",
+        "tol": 0.25,
         "default_params": {"n_e": 2.45, "n_o": 2.40, "wl": 1.55},
         "golden_fn": b14_dc_coupling_length,
-        "note": "拍波长法 L=λ0/(2|n_e−n_o|)；3dB 点=耦合长度。n_e/n_o 为偶/奇模有效折射率。",
+        # v0.9.20：①golden 语义修正（λ/(2Δn)=完全转移长度 → λ/(4Δn)=真 3dB 点）
+        #         ②接独立候选：FFT 拍频谱峰 ↔ 解析闭式反解。
+        "candidate": "dc_cmt_fft",
+        "candidate_desc": ("数值传播序列 + FFT 拍频谱峰（B3/B4/B20 同款频域周期"
+                           "提取方法学）↔ 耦合模解析闭式反解，方法学独立"),
+        "note": "耦合模理论 P2(z)=sin²(κz)，κ=π|Δn|/λ。🔴 v0.9.20 语义修正"
+                "（D-66「怀疑 golden 本身」第 4 例）：原式 λ/(2|Δn|) 是完全转移"
+                "长度（P2=1.0，RK4 实证 sin²(π/2)=1），被错标为 3dB 点；真 3dB "
+                "点=λ/(4|Δn|)（P2=sin²(π/4)=0.5）。golden 15.5→7.75，tol 0.5→"
+                "0.25（同比 3.2% 重定）。同源消费点 _dc_supermode_core（相位校验"
+                "Δβ·L=π 本就是完全转移点）一并修正为 Δβ·L=π/2。candidate=FFT "
+                "拍频谱峰（dz=0.01/nP=8，baseline 1.56e-4 余量 1560×）；反向 "
+                "n_e×1.1 信号 6.44（25.8×）。",
     },
     "B15": {
         "title": "Bragg 光栅中心波长",

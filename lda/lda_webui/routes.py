@@ -394,6 +394,28 @@ def h_verification_ledger(h, p, q, path):
             ci_core = len(_core)
         except Exception:  # noqa: BLE001
             ci_core = 82
+        # P0-2（v0.9.15）：判决路径独立性**动态推导** —— 从 BENCHMARK_DEFS 的
+        # `candidate` 字段与 BENCHMARK_CANDIDATES 登记表实时算出三分类，
+        # 杜绝「写死在端点里、与代码实际状态脱节」的漂移（ci_core 曾犯同类错）。
+        _indep, _degraded, _stub = [], [], []
+        try:
+            from lda_harness.benchmarks import BENCHMARK_DEFS
+            from lda_harness.verification_adapters import BENCHMARK_CANDIDATES
+            for _bid in sorted(BENCHMARK_DEFS):
+                _d = BENCHMARK_DEFS[_bid]
+                _key = _d.get("candidate")
+                # 先判降级：E2 的 fdfd_ng 走独立分支、未登记进
+                # BENCHMARK_CANDIDATES，但它是「有候选、已降级」而非自证桩；
+                # 若按登记表判断会被误分到 stub（三分类口径须与
+                # run_benchmark_falsifiability_smoke 一致：严格 4 / 降级 1 / 自证 43）。
+                if _d.get("candidate_status") == "degraded_ordinal":
+                    _degraded.append(_bid)
+                elif _key and _key in BENCHMARK_CANDIDATES:
+                    _indep.append(_bid)
+                else:
+                    _stub.append(_bid)
+        except Exception:  # noqa: BLE001 —— 推导失败时**不猜**：留空并暴露错误
+            _indep, _degraded, _stub = [], [], []
         ledger = {
             "endpoint": "/api/verification_ledger",
             "ci_core": {"count": ci_core, "tag": "core",
@@ -415,19 +437,51 @@ def h_verification_ledger(h, p, q, path):
             "judgment_paths": {
                 "note": ("判决路径独立性：golden 可溯源只是必要不充分条件。"
                          "若 candidate 直接取 golden，则 |candidate−golden|≡0 恒 PASS，零验证价值。"),
+                # v0.9.15（P0-2）：以下全部**从代码动态推导**，不再硬编码。
+                # 此前此处写死 independent_candidate=["E2"]，而 E2 已在 v0.9.14
+                # 降级为量级参考（degraded_ordinal）⇒ 对外账本宣称的唯一独立
+                # 候选恰恰是已降级那道，且新接的 B9/B25/B26/B27 一道都没出现
+                # —— 对外验货面失真，且与 run_count_consistency_smoke 守护的
+                # ci_core 漂移属同一类缺陷（写死 vs 实际）。
+                "derived": {
+                    "source": "BENCHMARK_DEFS[*].candidate × BENCHMARK_CANDIDATES 登记表",
+                    "strict_independent": _indep,
+                    "degraded_ordinal": _degraded,
+                    "self_consistent_placeholder": _stub,
+                    "totals": {
+                        "anchors": len(_indep) + len(_degraded) + len(_stub),
+                        "strict_independent": len(_indep),
+                        "degraded_ordinal": len(_degraded),
+                        "self_consistent_stub": len(_stub),
+                    },
+                    "definitions": (
+                        "strict_independent=候选走与 golden 方法学不同源的独立求解路径"
+                        "（如 Koch 解析闭式 ↔ 电荷基严格对角化），|diff|≠0，真可证伪；"
+                        "degraded_ordinal=有独立候选但与 golden 几何不同源/精度不足，"
+                        "仅作量级参考，**不进死标量判决**；"
+                        "self_consistent_stub=candidate≡golden，|diff|≡0 恒 PASS，零验证价值。"),
+                },
                 "empirical": {
-                    "independent_candidate": ["E2"],
-                    "self_consistent_placeholder": ["E1", "E3", "E4", "E5", "E6", "E7"],
-                    "detail": ("E2：golden=实测 n_g 1.892（Munoz Sensors 17,2088，可公开溯源），"
-                               "candidate=标量亥姆霍兹 FDFD 本征模独立求解（1.959），|diff|=0.067 ≤ tol 0.10。"
-                               "其余 6 道 candidate≡golden，PASS 只能算「自洽」不算「验证」；"
-                               "该事实已钉进 run_empirical_anchor_smoke 的 D-64 断言。"),
+                    "independent_candidate": [b for b in _indep if b.startswith("E")],
+                    "degraded_ordinal": [b for b in _degraded if b.startswith("E")],
+                    "self_consistent_placeholder": [b for b in _stub if b.startswith("E")],
+                    "detail": ("E2 状态已在 v0.9.14 订正：golden=实测 n_g（Munoz Sensors 17,2088，"
+                               "可公开溯源），candidate=标量亥姆霍兹 FDFD 本征模独立求解，"
+                               "|diff|=0.067 ≤ tol 0.10；但 R16 实测证伪后确认 FDFD 直波导候选 "
+                               "与环器件 golden **几何不同源**、求解器精度不足 ⇒ 降级为 "
+                               "**量级参考（degraded_ordinal），不进死标量判决**。"
+                               "其余 6 道 candidate≡golden，PASS 只能算「自洽」不算「验证」。"),
                 },
                 "harness_cli": {
-                    "self_consistent": True,
-                    "detail": ("run_harness.py 默认走 ReferenceCandidate（候选≡黄金），"
-                               "只验证判决回路闭合；报告头部已加醒目警告，"
-                               "真验证须 --ai（L3 AI 内核）或 verification_adapters 的独立候选。"),
+                    # v0.9.15：默认候选已从 ReferenceCandidate 改为路由
+                    "candidate": ("IndependentCandidateRouter（按 spec_id 路由到已登记独立候选；"
+                                  "未登记者仍回落参考候选，诚实保留自证桩）"),
+                    "verified": len(_indep),
+                    "self_consistent_stub_count": len(_stub),
+                    "detail": ("run_harness.py 默认走 IndependentCandidateRouter：已登记的锚题由"
+                               "独立求解器判出并计入 summary.verified，其余仍走 ReferenceCandidate"
+                               "占位自证。报告头部按题分列说明，避免「N/N 通过」被读成「N 项已验证」。"
+                               "该口径由 run_harness.py 的双向护栏守护（多算=假绿 / 少算=倒退）。"),
                 },
             },
             "cpo_scale": {
@@ -445,9 +499,14 @@ def h_verification_ledger(h, p, q, path):
                 "R2 外部 ORACLE（Meep/Tidy3D/pyEPR）默认不通 → 物理定律锚无法现场交叉验证",
                 "R3 实证锚仅 7 条种子语料，规模不足以覆盖全品类",
                 "R4 B5/B6/B7 为 ORACLE 依赖（numpy 离线近似或设计守则下限回退），根因=R2 缺外部 ORACLE",
-                "R15 判决路径独立性缺口（D-64，2026-09-01 新登记）：7 道实证锚中 6 道（E1、E3–E7）"
-                "candidate 仍为占位自证（candidate≡golden，|diff|≡0），其 PASS 不构成验证；"
-                "仅 E2 接通独立求解器。复制 E2 模式到其余六道为下一阶段主线。",
+                "R15 判决路径独立性缺口（D-64，2026-09-01 登记；v0.9.14–v0.9.15 部分收窄）："
+                f"48 锚中严格独立候选 {len(_indep)} 道（{','.join(_indep) or '无'}），"
+                f"降级量级参考 {len(_degraded)} 道（{','.join(_degraded) or '无'}），"
+                f"仍为占位自证 {len(_stub)} 道 —— 其 PASS 不构成验证。"
+                "v0.9.14 首次接入 B9/B25/B26/B27（解析闭式 golden ↔ 严格数值对角化 candidate），"
+                "v0.9.15 已把独立性接到 CLI 默认路径与对外账本；剩余自证桩按 P0 计划继续接线。"
+                "注：原「复制 E2 模式到其余六道」已作废 —— R16 证伪后 E2 自身降级为量级参考，"
+                "不再是模板。",
                 "R16（FDFD 求解器缺口，D-65，2026-09-01 登记，**当晚实测证伪**）："
                 "原诊断『网格过粗』不准确——dl=24→64 已收敛（n_g 变化<0.02），±0.04~0.08 实为窗口扫描散射。"
                 "两层真因：①FDFD 标量求解器对高反差细波导精度不足（直波导 n_eff 偏差 0.18~0.37）"
@@ -460,9 +519,11 @@ def h_verification_ledger(h, p, q, path):
                 "本账本仅声明已注册验证资产的分类与计数；LLM 不进判决路径，PASS/FAIL 一律由"
                 "死标量比对。可被外部验货的部分=physical-law 锚（独立复算）+/api/cpo_array 死锚"
                 "判决（curl 复现）。design-anchor 与 empirical 规模缺口为已知诚实边界。"
-                "⚠️ 另须注意**判决路径独立性**：凡走 ReferenceCandidate 的运行（harness 报告默认模式）"
-                "其候选值即黄金值，「N/N 通过」只代表判决回路闭合、不代表 N 项已验证；"
-                "实证锚侧仅 E2 具备独立候选求解路径，详见本响应 judgment_paths 字段（D-64）。"),
+                "⚠️ 另须注意**判决路径独立性**：候选值若直接取黄金值，则「N/N 通过」"
+                "只代表判决回路闭合、不代表 N 项已验证。"
+                f"当前真正由独立候选判出的只有 {len(_indep)} 道"
+                f"（{','.join(_indep) or '无'}），另有 {len(_degraded)} 道降级量级参考、"
+                f"{len(_stub)} 道仍是占位自证 —— 详见本响应 judgment_paths 字段（D-64/P0-2）。"),
         }
         return (200, ledger)
     except Exception as e:  # noqa: BLE001

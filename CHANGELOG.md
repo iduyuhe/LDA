@@ -1,5 +1,109 @@
 # Changelog
 
+## v0.9.15（2026-09-02 · P0-2 独立性接到对外验货面）
+
+**指令**：战略审计（v0.9.13 基线）→ 杜先生拍板 E1=A「锚题独立候选化」→ P0-1 已完成，续做 P0-2。
+
+**起因（v0.9.14 作用域缺口）**：
+P0-1 接通的 4 道独立候选**只在路径①（内部 `build_harness_specs`+`cand_map`）成立**。
+LDA 有三条验证路径各自用不同 candidate：
+
+| 路径 | 入口 | v0.9.14 后状态 |
+|---|---|---|
+| ① | `build_harness_specs` + `cand_map`（内部 smoke） | ✅ 4 道独立 |
+| ② | `harness.run(specs, ReferenceCandidate)`（`run_harness.py` 对外主报告） | ❌ 全自证、`verified=0` |
+| ③ | `L3AISolverCandidate` → `_local_approx`（MCP/L1/WebUI） | ❌ 41 道 `return golden` |
+
+**对外验货面走 ②③ ⇒ 「可被外部验货」战略没真正兑现。** 本次三线收口。
+
+**改动一：路径②接线（CLI 默认候选改走路由）**
+- `harness.py` 新增 `_SpecShim`（把 dict spec 适配成候选所需对象接口）+ `IndependentCandidateRouter`
+  （按 `spec_id` 查 `BENCHMARK_DEFS[x].candidate` → `BENCHMARK_CANDIDATES` 分发，未登记者**诚实回落**
+  参考候选，不假装已独立）。⇒ 路径①候选**零改动**复用到路径②。
+- `BenchmarkResult` 加 `independent` **三态**字段：`True`=独立 / `False`=自证桩 / `None`=未标注旧路径。
+  三态设计是为**渐进式改造**——只有显式路由的候选才改变 `verified` 语义，其余路径行为完全不变。
+- `report.py`：新增 `independence_counts()` 与 `verified_count()`（**全库唯一权威口径**）；
+  混合态下报告头部改为**分列陈述**「N 项独立 / M 项自证」，`format_json` summary 增
+  `verified` / `self_consistent_stub_count` / `independent_candidate_count` 三字段。
+- `run_harness.py`：默认候选 `ReferenceCandidate()` → `IndependentCandidateRouter()`；
+  原单向断言（`verified == 0`）升级为**双向护栏**：
+  ```
+  verified ≡ 独立候选项数（多算=把自证桩当已验证，少算=独立候选被降级）
+  stub     ≡ 总项数 − 独立候选项数
+  verified + stub ≡ 总项数（不得有第三态漏算）
+  混合态下报告必须出现「独立候选求解器」字样
+  ```
+- **实测**：`[D-64/P0-2] 混合态断言通过：独立候选 verified=4 · 自证桩 44 · 判决回路 48/48 闭合`；
+  4 道误差非零（B25/B9 0.01475、B26 4.573e-05、B27 13.76）。旧路径零波及（`--perturb` 仍 10、`--ai` 见下）。
+
+**改动二：路径③治理（假绿修复）**
+- `l3_ai_solver.py` 订正 **B3/B10 两处注释与实现不符**（注释写"正确实现"、实际 `return golden`）。
+- 新增 `_LOCAL_INDEPENDENT_IDS = {B1,B2,B4,B8,B9}`——真有独立实现的只有 5 道，不是 41 道。
+- 新增 `is_independent(bid)`：**LLM 启用时一律返回 False**（项目红线：LLM 不进判决路径）。
+- **实测**：`--ai` 的 `verified` 从 **假绿 45 → 诚实 2**（5 道独立中 B2/B8/B9 故意错判 FAIL，仅 B1/B4 通过）。
+
+**改动三：对外账本去硬编码**
+- `/api/verification_ledger` 的 `judgment_paths` 原写死 `independent_candidate=["E2"]`，
+  **而 E2 恰是 v0.9.14 已降级那道，新接的 B9/B25/B26/B27 一道都没出现** ⇒ 对外验货面失真。
+  与 `run_count_consistency_smoke` 守护的 ci_core 漂移（82→85）属**同一类缺陷：写死 vs 实际**。
+- 改为从 `BENCHMARK_DEFS[*].candidate` × `BENCHMARK_CANDIDATES` **动态推导三分类**，
+  判序固定为「先判 `degraded_ordinal`、再查登记表、否则自证」（E2 的 `fdfd_ng` 未登记进
+  `BENCHMARK_CANDIDATES`，若按登记表判断会被误分到 stub）。
+- `judgment_paths` 增 `derived` 块（三分类 + totals + definitions），`empirical` 拆独立/降级/自证三字段，
+  `harness_cli.verified` 改动态；`open_gaps` 的 R15 重写（原「复制 E2 模式到其余六道」已作废——E2 自身已降级）。
+- **生产实测**：`{"anchors":48,"strict_independent":4,"degraded_ordinal":1,"self_consistent_stub":43}`，三类和=48。
+
+**改动四：新增第 ⑦⑧ 两项常驻护栏（钉死口径不漂移）**
+`run_benchmark_falsifiability_smoke.py` 6 → 8 项：
+
+- **⑦ 对外口径**：直接调 `h_verification_ledger`，断言端点三分类**逐项等于**本机实测
+  分类（独立/降级/自证集合差 + 总和 + CLI verified）。这样「登记表漏登记 /
+  候选跑挂回落 golden / 分类条件被改坏」三类失效都会被抓。
+- **⑧ 路径②一致**：在进程内复现路径②（`VerificationHarness.run` + `IndependentCandidateRouter`，
+  **不写报告文件**以免每次回归污染工作区），断言其 `verified` 口径与路径①一致、48 题
+  **全部按题标注**独立性、且**标独立的题 |cand−golden| 必须非零**。
+  为什么需要它：`ci.yml` 第 29 行会直跑 `run_harness.py`，但**本地 `--tag core` 门禁不跑它**
+  ⇒ 本地存在覆盖盲区（与 v0.9.10「脚本在 ci.yml 却不在本地 core」同类缺陷）。
+
+**🔴 反向自检三连（护栏自身必须先被证伪）**
+
+| # | 篡改手法 | 结果 |
+|---|---|---|
+| ⑦ | 端点分类条件改成 `if False and ...` | ✅ 立刻 `exit=1`，精确报 `降级集合差=['E2']；自证集合差=['E2']` |
+| ⑧ 首版 | 把 `router.__call__` 改成全回落 golden | ❌ **仍 PASS** —— 护栏无效！ |
+| ⑧ 加强版 | 同上 | ✅ 立刻 `exit=1`，精确报 `标独立却 \|diff\|≡0 的假独立=['B25','B26','B27','B9']` |
+
+**⑧ 首版为何无效（关键教训）**：它只核对 `independent` **标签**，而该标签来自
+`is_independent(bid)`（查登记表），被改坏的是 `__call__`（查表后执行）——
+**标签为真、实现已回落**，护栏看不出来。**标签 ≠ 行为**。
+⇒ 加强为**按值复核**：凡标独立的题，实测 `|candidate − golden|` 必须 `≥ 1e-12`。
+
+**顺带查出 CLI 自身断言有同一个洞**：`run_harness.py` 也是只看 `independent` 标签，
+同样会被「标签为真、实现回落」骗过 ⇒ 补同款按值复核。
+- ⚠️ **但语义必须按路径区分，否则会误伤**：
+  - 路径② `IndependentCandidateRouter` 承诺的是「golden=解析闭式 ↔ candidate=严格数值」
+    **方法学不同源** ⇒ `|diff|` 必须非零，为 0 **只可能是静默回落** ⇒ 严格断言。
+  - 路径③ `--ai`（L3 AI 内核）验证的是「**AI 写的内核对不对**」⇒ `|diff|≡0` 表示
+    **内核把公式算对了**（实测 **B1/B4** 即此情形：AI 内核独立重算 Rayleigh / 环形 FSR
+    闭式，与 golden 数值一致），是合法 PASS **而不是**回落失败。
+  - 一刀切会把「算对了」误判成「假独立」（实测确实误报过：`AssertionError: 假独立=['B1','B4']`）
+    ⇒ 该断言用 `isinstance(candidate, IndependentCandidateRouter)` **按路径收敛**。
+
+**验证结果**
+- `run_benchmark_falsifiability_smoke.py` **8/8 PASS**，末行 `严格独立 4 道 · 降级量级参考 1 道 · 自证桩 43/48 道`。
+- 路径②实跑：混合态断言通过（verified=4 / stub=44 / 48-48 闭合），4 道误差非零。
+- `run_harness.py` 三模式全通：默认 `verified=4` / `--perturb 0.10` `verified=10` / `--ai` `verified=2`。
+- 端点三分类：生产实测三类和 = 48。
+
+**诚实边界（未变）**
+独立候选仍只有 **4/48**。本次是**让对外如实显示这个数字**，而非提高验证强度；
+`--ai` 的 45 → 2 是**戳破假绿**，不是能力倒退。剩余 43 道自证桩按 P0 计划继续接线
+（下一批候选：B12/B22 离散 TL 三对角、B13/B24 电荷基/三模 Fock、B23 Fluxonium 相位网格、光子侧 B3/B4/B20）。
+
+**CI core**：维持 85 条（本轮为既有 smoke 增项，未新增文件）。
+
+---
+
 ## v0.9.14（2026-09-02 · P0-1 锚题独立候选化 · 反自证桩第一刀）
 
 **指令**：战略审计（v0.9.13 基线）后，杜先生拍板 E1=A「锚题独立候选化」，开工 P0。

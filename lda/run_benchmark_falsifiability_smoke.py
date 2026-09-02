@@ -1,15 +1,24 @@
-"""锚题可证伪性 smoke（v0.9.14 · P0-1 · 战略审计 R1 第一刀）。
+"""锚题可证伪性 smoke（v0.9.14 立项 · P0-1；v0.9.15 补 ⑦ 对外口径护栏 · P0-2）。
 
 背景（2026-09-02 战略审计实测）：48 锚实跑 48 PASS，其中 **47 道是自证桩**
 ——candidate 走 `_harness_reference_candidate`（直接返回 golden），
 |cand−golden| ≡ 0 恒 PASS、零验证价值。全绿不等于可证伪。
 
-本 smoke 是**反自证桩的常驻护栏**，判三件事：
+本 smoke 是**反自证桩的常驻护栏**，判八件事：
 
   ① 独立性普查：48 锚中有多少道真走独立候选（|cand−golden| > 0）
   ② 正向：独立候选锚必须在各自 tol 内 PASS（证明求解器没坏）
   ③ 反向（关键）：注入参数扰动 ⇒ **必须 FAIL**
      —— 证明 tol 没有放水到"什么都抓不住"，护栏真能抓错
+  ④ 灵敏度：登记「最小可检出扰动」上界，把验证强度显式化
+  ⑤ 无回归：独立化不得弄坏其余任何一道（全 48 锚仍全绿）
+  ⑥ 诚实披露剩余自证桩（不构成失败，但必须可见）
+  ⑦ 对外口径：/api/verification_ledger 的三分类必须**逐项等于**本机实测
+     —— 外部验货面曾把独立候选硬编码成 ["E2"]（而 E2 恰是已降级那道），
+     新接的 4 道一道没出现；改为动态推导后仍须钉死，防"动态"悄悄失效
+  ⑧ 路径②一致：CLI 对外主报告（VerificationHarness + IndependentCandidateRouter）
+     的 verified 口径必须等于路径①，且 48 题**全部按题标注**独立性
+     —— ci.yml 直跑 run_harness.py，但本地 `--tag core` 不跑它，存在覆盖盲区
 
 为什么③比②重要：②只能证明"没坏"，③才能证明"坏了能发现"。
 只做②不做③，等于把「放宽容差」变成「取消验证」——这正是自证桩的翻版。
@@ -29,7 +38,11 @@ from __future__ import annotations
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+_HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _HERE)
+# ⑦ 需按包路径导入 WebUI 端点（lda.lda_webui.routes）⇒ 仓库根也要在路径里。
+# 用 append 而非 insert，避免抢占 lda_harness 等顶层模块名。
+sys.path.append(os.path.dirname(_HERE))
 
 from lda_harness.benchmarks import BENCHMARK_DEFS, BENCHMARK_ORDER
 from lda_harness.verification_adapters import (
@@ -199,6 +212,88 @@ def main() -> int:
     check(f"全量 {len(specs)} 锚无回归（{BENCHMARK_ORDER[0]}–{BENCHMARK_ORDER[-1]}）",
           n_pass == len(specs) == len(BENCHMARK_DEFS),
           f"PASS={n_pass}/{len(specs)}")
+
+    # ⑦ 对外账本口径一致性（v0.9.15/P0-2 新增）：
+    # /api/verification_ledger 是**外部验货面**，此前把独立候选硬编码成
+    # ["E2"]——而 E2 恰是已降级那道，新接的 B9/B25/B26/B27 一道都没出现，
+    # 对外宣称与代码实际状态脱节。已改为动态推导，但"动态"本身也可能失效
+    # （登记表漏登记 / 候选跑挂回落 golden / 分类条件被改坏）。
+    # 与 ci_core 计数漂移是同一类缺陷（写死 vs 实际），故用常驻护栏钉死：
+    # 端点三分类必须**逐项等于**本机实测分类，且 CLI 报告 verified 同步。
+    try:
+        from lda.lda_webui.routes import h_verification_ledger
+        _code, _ledger = h_verification_ledger(None, None, None,
+                                               "/api/verification_ledger")
+        _jp = (_ledger or {}).get("judgment_paths", {})
+        _d = _jp.get("derived", {}) or {}
+        _e_ind = set(_d.get("strict_independent") or [])
+        _e_deg = set(_d.get("degraded_ordinal") or [])
+        _e_stub = set(_d.get("self_consistent_placeholder") or [])
+        _tot = _d.get("totals") or {}
+        _cli = _jp.get("harness_cli", {}) or {}
+        _diff = []
+        if _e_ind != set(strict):
+            _diff.append(f"独立集合差={sorted(set(strict) ^ _e_ind)}")
+        if _e_deg != set(degraded):
+            _diff.append(f"降级集合差={sorted(set(degraded) ^ _e_deg)}")
+        if _e_stub != set(stub):
+            _diff.append(f"自证集合差={sorted(set(stub) ^ _e_stub)}")
+        if _tot.get("anchors") != len(specs):
+            _diff.append(f"总数={_tot.get('anchors')}≠{len(specs)}")
+        if _cli.get("verified") != len(strict):
+            _diff.append(f"CLI verified={_cli.get('verified')}≠{len(strict)}")
+        check("对外账本 /api/verification_ledger 三分类与实测口径逐项一致（无硬编码漂移）",
+              _code == 200 and not _diff,
+              (f"端点 独立{len(_e_ind)}/降级{len(_e_deg)}/自证{len(_e_stub)}"
+               f" · 总和{_tot.get('anchors')}/{len(specs)}"
+               f" · CLI verified={_cli.get('verified')}/{len(strict)}")
+              + (" ⚠ " + "；".join(_diff) if _diff else ""))
+    except Exception as e:  # noqa: BLE001 —— 端点推导失败时判 FAIL，不静默跳过
+        check("对外账本 /api/verification_ledger 三分类与实测口径逐项一致（无硬编码漂移）",
+              False, f"端点不可达/推导异常：{str(e)[:80]}")
+
+    # ⑧ 路径②（CLI 对外主报告）护栏（v0.9.15/P0-2 新增）：
+    # ①–⑤ 守护的是**路径①**（内部 smoke 的 build_harness_specs + cand_map），
+    # 但对外主报告走**路径②**（VerificationHarness.run + IndependentCandidateRouter）。
+    # ci.yml 第 29 行会直跑 run_harness.py，但**本地 `--tag core` 门禁不跑它**
+    # ⇒ 本地存在覆盖盲区（与 v0.9.10「脚本在 ci.yml 却不在本地 core」同类）。
+    # 这里在进程内复现路径②（**不写报告文件**，避免每次回归污染工作区），
+    # 断言其 verified 口径与路径①一致，杜绝「两条路径各说各话」。
+    try:
+        from lda_harness.harness import VerificationHarness, IndependentCandidateRouter
+        from lda_harness import report as rep
+        _h = VerificationHarness(BENCHMARK_DEFS)
+        _r2 = _h.run(_h.resolve_specs(None), IndependentCandidateRouter())
+        _n_ind2 = sum(1 for r in _r2 if getattr(r, "independent", False))
+        _verified2 = rep.verified_count(_r2, True)
+        _n_marked2 = rep.independence_counts(_r2)[1]
+        _bad8 = []
+        if _n_ind2 != len(strict):
+            _bad8.append(f"独立数={_n_ind2}≠路径①{len(strict)}")
+        if _verified2 != _n_ind2:
+            _bad8.append(f"verified={_verified2}≠独立数{_n_ind2}")
+        # 🔴 标签 ≠ 行为：只查 independent 标签会被"标签为真、实现已回落 golden"
+        # 骗过（反向自检实测：把 router.__call__ 改成全回落，标签仍报 4 道独立
+        # ⇒ 假绿）。故必须**按值复核**——标独立的题 |cand−golden| 必须非零。
+        _labeled_stub = [r.bid for r in _r2
+                         if getattr(r, "independent", False)
+                         and isinstance(r.candidate, (int, float))
+                         and isinstance(r.golden, (int, float))
+                         and abs(r.candidate - r.golden) < 1e-12]
+        if _labeled_stub:
+            _bad8.append(f"标独立却 |diff|≡0 的假独立={sorted(_labeled_stub)}")
+        if _n_marked2 != len(_r2):
+            _bad8.append(f"按题标注{_n_marked2}/{len(_r2)}（有未标注项=口径退化）")
+        if len(_r2) != len(specs):
+            _bad8.append(f"题数={len(_r2)}≠{len(specs)}")
+        check("路径②（CLI 对外主报告）verified 口径与路径①一致且按题全标注",
+              not _bad8,
+              (f"独立{_n_ind2} · verified={_verified2} · "
+               f"按题标注{_n_marked2}/{len(_r2)}")
+              + (" ⚠ " + "；".join(_bad8) if _bad8 else ""))
+    except Exception as e:  # noqa: BLE001 —— 路径②复现失败即判 FAIL
+        check("路径②（CLI 对外主报告）verified 口径与路径①一致且按题全标注",
+              False, f"路径②复现异常：{str(e)[:80]}")
 
     # ⑥ 诚实披露剩余自证桩（不构成失败，但必须可见）
     print()

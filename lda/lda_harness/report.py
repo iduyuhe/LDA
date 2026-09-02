@@ -14,6 +14,16 @@ _SELF_CONSISTENT_WARNING = (
     "如 E2 的 FDFD n_g）。把本报告的「N/N 通过」读作「N 项已验证」是误读。"
 )
 
+# v0.9.15（P0-2）：混合态警告 —— 部分锚题已接独立候选，其余仍是自证桩。
+# 此时既不能说「全部已验证」（44 道仍是 |diff|≡0），也不能说「零验证」
+# （4 道确由独立求解器判出）。必须按题分列，否则又是另一种失真。
+_MIXED_WARNING = (
+    "> ⚠️ **本报告不构成验证结论**：本次运行中 **{n_ind} 项**由**独立候选求解器**"
+    "判出（计入 `summary.verified`），其余 **{n_stub} 项**仍走 ReferenceCandidate"
+    "占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。"
+    "把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 {n_ind} 项。"
+)
+
 
 def is_self_consistent(meta):
     """判断本次运行是否走占位自证候选（candidate≡golden）。"""
@@ -26,6 +36,32 @@ def is_self_consistent(meta):
     return any(s in name for s in SELF_CONSISTENT_CANDIDATES)
 
 
+def independence_counts(results):
+    """统计独立性标注。
+
+    返回 (n_independent, n_marked, n_stub)：
+      n_marked == 0 表示本次运行**未按题标注**独立性（旧路径：L3 AI / Perturbed /
+      L1 协议层等）→ 报告沿用旧的整体布尔判定，行为与 v0.9.14 及之前完全一致。
+      n_marked  > 0 表示走了 IndependentCandidateRouter，按题精确统计。
+    """
+    marked = [r for r in results if getattr(r, "independent", None) is not None]
+    n_ind = sum(1 for r in marked if r.independent)
+    return n_ind, len(marked), len(results) - n_ind
+
+
+def verified_count(results, self_consistent):
+    """计算「真被验证」的项数 —— 全库唯一权威口径。
+
+    - 按题标注过独立性（router / L3 路由）⇒ 只有**独立候选判出且通过**的算数
+    - 未标注（旧路径）⇒ 沿用整体布尔：自证则 0，否则等于 passed
+    """
+    n_ind, n_marked, _n_stub = independence_counts(results)
+    if n_marked:
+        return sum(1 for r in results
+                   if r.passed and getattr(r, "independent", False))
+    return 0 if self_consistent else sum(1 for r in results if r.passed)
+
+
 def format_markdown(results, meta=None):
     lines = []
     lines.append("# LDA 验证锚点 · 报告（Verification Harness Report）")
@@ -36,12 +72,28 @@ def format_markdown(results, meta=None):
             lines.append(f"- {k}：{v}")
     lines.append("")
     _sc = is_self_consistent(meta)
-    if _sc:
+    _n_ind, _n_marked, _n_stub = independence_counts(results)
+    if _n_marked:
+        # 混合态（有独立 + 有自证）→ 分列陈述；全独立 → 无需警告
+        if _n_ind and _n_stub:
+            lines.append(_MIXED_WARNING.format(n_ind=_n_ind, n_stub=_n_stub))
+            lines.append("")
+    elif _sc:
         lines.append(_SELF_CONSISTENT_WARNING)
         lines.append("")
     n_pass = sum(1 for r in results if r.passed)
-    lines.append(f"## 汇总：{n_pass}/{len(results)} 通过"
-                 + ("（自证闭环，**非验证结论**）" if _sc else ""))
+    if _n_marked and _n_ind:
+        # 措辞必须区分「独立候选项数」与「其中真正通过（=已验证）的项数」，
+        # 否则独立候选失败时，汇总行会把「7 项独立」说成「7 项已验证」。
+        _n_verified = sum(1 for r in results
+                          if r.passed and getattr(r, "independent", False))
+        _suffix = (f"（独立候选 {_n_ind} 项中 **{_n_verified} 项通过=已验证** · "
+                   f"{_n_stub} 项自证闭环，**非验证结论**）")
+    elif _n_marked or _sc:
+        _suffix = "（自证闭环，**非验证结论**）"
+    else:
+        _suffix = ""
+    lines.append(f"## 汇总：{n_pass}/{len(results)} 通过" + _suffix)
     lines.append("")
     lines.append("| 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |")
     lines.append("|---|---|---|---|---|---|---|---|")
@@ -71,6 +123,10 @@ def format_markdown(results, meta=None):
 
 def format_json(results, meta=None):
     _sc = is_self_consistent(meta)
+    _n_ind, _n_marked, _n_stub = independence_counts(results)
+    _verified = verified_count(results, _sc)
+    if not _n_marked:
+        _n_stub = len(results) if _sc else 0
     out = {
         "meta": dict(meta or {}, self_consistent=_sc),
         "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
@@ -79,7 +135,10 @@ def format_json(results, meta=None):
             "passed": sum(1 for r in results if r.passed),
             # 自证闭环下 passed 无验证含义，机器可读地钉死这一点
             "self_consistent": _sc,
-            "verified": (0 if _sc else sum(1 for r in results if r.passed)),
+            "verified": _verified,
+            # 自证桩项数：外部验货者据此判断「48 项里到底几项真被验证过」
+            "self_consistent_stub_count": _n_stub,
+            "independent_candidate_count": _n_ind,
         },
         "results": [
             {
@@ -87,6 +146,8 @@ def format_json(results, meta=None):
                 "source": r.source, "golden": r.golden,
                 "candidate": r.candidate,
                 "tol": r.tol, "passed": r.passed, "note": r.note,
+                # True=独立候选 / False=占位自证 / null=未标注（旧路径）
+                "independent": getattr(r, "independent", None),
             }
             for r in results
         ],

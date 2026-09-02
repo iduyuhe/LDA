@@ -1,16 +1,18 @@
 {
   "meta": {
     "L0_IR": "(内置默认 B1–B4,B8)",
-    "candidate": "ReferenceCandidate",
+    "candidate": "IndependentCandidateRouter(独立候选 4 道: B25,B26,B27,B9)",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "self_consistent": true
   },
-  "generated_at": "2026-09-02T07:25:09",
+  "generated_at": "2026-09-02T08:24:34",
   "summary": {
     "total": 48,
     "passed": 48,
     "self_consistent": true,
-    "verified": 0
+    "verified": 4,
+    "self_consistent_stub_count": 44,
+    "independent_candidate_count": 4
   },
   "results": [
     {
@@ -22,7 +24,8 @@
       "candidate": 0.0028413137328842765,
       "tol": 0.0002,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B10",
@@ -33,7 +36,8 @@
       "candidate": 0.9995834201268338,
       "tol": 0.01,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B11",
@@ -44,7 +48,8 @@
       "candidate": 0.005022766645124605,
       "tol": 0.03,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B12",
@@ -55,7 +60,8 @@
       "candidate": 10.758287072798378,
       "tol": 0.02,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B13",
@@ -66,7 +72,8 @@
       "candidate": 0.0316227766016838,
       "tol": 0.1,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B14",
@@ -77,7 +84,8 @@
       "candidate": 15.499999999999918,
       "tol": 0.5,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B15",
@@ -88,7 +96,8 @@
       "candidate": 1.5504,
       "tol": 0.01,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B16",
@@ -99,7 +108,8 @@
       "candidate": 18.58064516129032,
       "tol": 3.0,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B17",
@@ -110,7 +120,8 @@
       "candidate": 4.026709074502098e-08,
       "tol": 1e-09,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B18",
@@ -121,7 +132,8 @@
       "candidate": 8000.000000000001,
       "tol": 1.0,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B19",
@@ -132,7 +144,8 @@
       "candidate": 1.0,
       "tol": 1e-09,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B2",
@@ -143,7 +156,8 @@
       "candidate": 2.6509474264002217,
       "tol": 0.05,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B20",
@@ -154,7 +168,8 @@
       "candidate": 20.01082791937365,
       "tol": 1e-06,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B21",
@@ -165,7 +180,8 @@
       "candidate": 2214.0,
       "tol": 1e-06,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B22",
@@ -176,7 +192,8 @@
       "candidate": 7.494811449999999,
       "tol": 1e-06,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B23",
@@ -187,7 +204,8 @@
       "candidate": 2.8284271247461903,
       "tol": 1e-06,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B24",
@@ -198,7 +216,8 @@
       "candidate": -0.004000000000000001,
       "tol": 1e-06,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B25",
@@ -206,10 +225,11 @@
       "oracle": "analytical(SQUID E_J(Φ)=E_JΣ·|cos(πΦ/Φ0)| + Koch)",
       "source": "physical-law",
       "golden": 6.628203230275509,
-      "candidate": 6.628203230275509,
+      "candidate": 6.613448853504716,
       "tol": 0.05,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": true
     },
     {
       "id": "B26",
@@ -217,10 +237,11 @@
       "oracle": "analytical(Blais χ=g²α/(Δ(Δ+α)))",
       "source": "physical-law",
       "golden": -0.002307692307692308,
-      "candidate": -0.002307692307692308,
+      "candidate": -0.00226195812024077,
       "tol": 0.0001,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": true
     },
     {
       "id": "B27",
@@ -228,10 +249,11 @@
       "oracle": "analytical(t_CZ=π/(2|χ|))",
       "source": "physical-law",
       "golden": 680.6784082777884,
-      "candidate": 680.6784082777884,
+      "candidate": 694.4409415624795,
       "tol": 30.0,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": true
     },
     {
       "id": "B28",
@@ -242,7 +264,8 @@
       "candidate": 3.780967342199497,
       "tol": 0.001,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B3",
@@ -253,7 +276,8 @@
       "candidate": 120.12500000000001,
       "tol": 1.0,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B4",
@@ -264,7 +288,8 @@
       "candidate": 9.147601693260254,
       "tol": 0.3,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B5",
@@ -275,7 +300,8 @@
       "candidate": 3.4,
       "tol": 1.0,
       "passed": true,
-      "note": "overlap-estimate; theta=10.0deg"
+      "note": "overlap-estimate; theta=10.0deg",
+      "independent": false
     },
     {
       "id": "B6",
@@ -286,7 +312,8 @@
       "candidate": 0.5,
       "tol": 0.15,
       "passed": true,
-      "note": "ORACLE 不可用，回退设计守则锚"
+      "note": "ORACLE 不可用，回退设计守则锚",
+      "independent": false
     },
     {
       "id": "B7",
@@ -297,7 +324,8 @@
       "candidate": -19.73280864761468,
       "tol": 5.0,
       "passed": true,
-      "note": "2D FDTD 离线; P_thr=9307 P_cross=98.97"
+      "note": "2D FDTD 离线; P_thr=9307 P_cross=98.97",
+      "independent": false
     },
     {
       "id": "B8",
@@ -308,7 +336,8 @@
       "candidate": 1.0,
       "tol": 0.01,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "B9",
@@ -316,10 +345,11 @@
       "oracle": "analytical(transmon/Koch2007)",
       "source": "physical-law",
       "golden": 6.628203230275509,
-      "candidate": 6.628203230275509,
+      "candidate": 6.613448853504716,
       "tol": 0.05,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": true
     },
     {
       "id": "E1",
@@ -330,7 +360,8 @@
       "candidate": 4.18,
       "tol": 0.1,
       "passed": true,
-      "note": "Advanced Micro Foundry (AMF) 商用 SOI 平台；二氧化硅埋层条形波导 500x220 nm^2 | F. Garrisi et al., 'Characterization of photon pairs generated by a silicon ring resonator under electrical self-pumping,' arXiv:2011.03273 (2020), DOI 10.48550/arXiv.2011.03273 | σ=0.05 | tol=0.05 | tier=A"
+      "note": "Advanced Micro Foundry (AMF) 商用 SOI 平台；二氧化硅埋层条形波导 500x220 nm^2 | F. Garrisi et al., 'Characterization of photon pairs generated by a silicon ring resonator under electrical self-pumping,' arXiv:2011.03273 (2020), DOI 10.48550/arXiv.2011.03273 | σ=0.05 | tol=0.05 | tier=A",
+      "independent": false
     },
     {
       "id": "E2",
@@ -341,7 +372,8 @@
       "candidate": 1.892,
       "tol": 0.1,
       "passed": true,
-      "note": "LPCVD Si3N4 300nm 平台（公开文献）：热氧 SiO2 2.5um 下包层 + PECVD SiO2 2.0um 上包层，全刻蚀条形波导 | P. Munoz et al., Si3N4 300 nm photonic integration platform, Sensors (MDPI) 2017: OFDR ring-resonator group index TE=1.892 / TM=1.717; MZI transmission cross-check TE 1.90-1.92 | σ=0.03 | tol=0.03 | tier=A"
+      "note": "LPCVD Si3N4 300nm 平台（公开文献）：热氧 SiO2 2.5um 下包层 + PECVD SiO2 2.0um 上包层，全刻蚀条形波导 | P. Munoz et al., Si3N4 300 nm photonic integration platform, Sensors (MDPI) 2017: OFDR ring-resonator group index TE=1.892 / TM=1.717; MZI transmission cross-check TE 1.90-1.92 | σ=0.03 | tol=0.03 | tier=A",
+      "independent": false
     },
     {
       "id": "E3",
@@ -352,7 +384,8 @@
       "candidate": 10.44,
       "tol": 0.1,
       "passed": true,
-      "note": "SOITEC SOI 250nm 器件层 / 400nm 薄埋氧（局部衬底去除，Cornell OxideMEMS Lab） | S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850 | σ=0.1 | tol=0.1 | tier=A"
+      "note": "SOITEC SOI 250nm 器件层 / 400nm 薄埋氧（局部衬底去除，Cornell OxideMEMS Lab） | S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850 | σ=0.1 | tol=0.1 | tier=A",
+      "independent": false
     },
     {
       "id": "E4",
@@ -363,7 +396,8 @@
       "candidate": 0.18,
       "tol": 0.1,
       "passed": true,
-      "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=0.03 | tol=0.03 | tier=A"
+      "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=0.03 | tol=0.03 | tier=A",
+      "independent": false
     },
     {
       "id": "E5",
@@ -374,7 +408,8 @@
       "candidate": 0.05,
       "tol": 0.1,
       "passed": true,
-      "note": "SOI 平台（EME 设计 + 实验演示） | D. Chack & S. Hassan, Opt. Eng. 59(10), 105102 (2020), DOI 10.1117/1.OE.59.10.105102 | σ=0.05 | tol=0.05 | tier=A"
+      "note": "SOI 平台（EME 设计 + 实验演示） | D. Chack & S. Hassan, Opt. Eng. 59(10), 105102 (2020), DOI 10.1117/1.OE.59.10.105102 | σ=0.05 | tol=0.05 | tier=A",
+      "independent": false
     },
     {
       "id": "E6",
@@ -385,7 +420,8 @@
       "candidate": 0.087,
       "tol": 0.05,
       "passed": true,
-      "note": "8 英寸晶圆厚 SiN（LPCVD 两步沉积 + 退火，大马士革工艺） | 丛庆宇 等, 光子学报 53(9), 0913002 (2024), DOI 10.3788/gzxb20245309.0913002 | σ=0.01 | tol=0.01 | tier=A"
+      "note": "8 英寸晶圆厚 SiN（LPCVD 两步沉积 + 退火，大马士革工艺） | 丛庆宇 等, 光子学报 53(9), 0913002 (2024), DOI 10.3788/gzxb20245309.0913002 | σ=0.01 | tol=0.01 | tier=A",
+      "independent": false
     },
     {
       "id": "E7",
@@ -396,7 +432,8 @@
       "candidate": -41.0,
       "tol": 5.0,
       "passed": true,
-      "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=2.0 | tol=2.0 | tier=A"
+      "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=2.0 | tol=2.0 | tier=A",
+      "independent": false
     },
     {
       "id": "S1",
@@ -407,7 +444,8 @@
       "candidate": 10.5,
       "tol": 0.01,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "S10",
@@ -418,7 +456,8 @@
       "candidate": 1.0,
       "tol": 1e-09,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "S11",
@@ -429,7 +468,8 @@
       "candidate": 1.0,
       "tol": 1e-09,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "S12",
@@ -440,7 +480,8 @@
       "candidate": 1.0,
       "tol": 1e-09,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "S13",
@@ -451,7 +492,8 @@
       "candidate": 0.95475,
       "tol": 0.01,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "S2",
@@ -462,7 +504,8 @@
       "candidate": 50.0,
       "tol": 1e-06,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "S3",
@@ -473,7 +516,8 @@
       "candidate": 46.92989,
       "tol": 0.01,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "S4",
@@ -484,7 +528,8 @@
       "candidate": -0.00098602,
       "tol": 1e-06,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "S5",
@@ -495,7 +540,8 @@
       "candidate": 10.0,
       "tol": 1e-06,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "S6",
@@ -506,7 +552,8 @@
       "candidate": 11.5,
       "tol": 1e-06,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "S7",
@@ -517,7 +564,8 @@
       "candidate": 10.496913,
       "tol": 0.15,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "S8",
@@ -528,7 +576,8 @@
       "candidate": 46.929842,
       "tol": 0.2,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     },
     {
       "id": "S9",
@@ -539,7 +588,8 @@
       "candidate": 1.0,
       "tol": 1e-09,
       "passed": true,
-      "note": "确定性物理定律/解析解"
+      "note": "确定性物理定律/解析解",
+      "independent": false
     }
   ]
 }

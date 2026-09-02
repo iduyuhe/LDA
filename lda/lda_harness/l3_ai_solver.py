@@ -43,7 +43,10 @@ def _local_approx(bid, params, golden):
         return _slab_neff(params["w_core"], params["n_si"],
                           params["n_clad"], params["wl"], params.get("pol", "TE"))
     if bid == "B3":
-        # Airy FSR 正确 → PASS
+        # ⚠️ v0.9.15 订正：原注释写「Airy FSR 正确 → PASS」，但实现就是
+        # `return golden` —— 注释与实现不符，实为**自证桩**（|diff|≡0）。
+        # 保留现状（不擅自改判据），但已在 _LOCAL_INDEPENDENT_IDS 中如实
+        # 归类为「非独立」，报告不再把它计入 verified。
         return golden
     if bid == "B4":
         # 正确用群折射率 n_g → PASS
@@ -57,9 +60,26 @@ def _local_approx(bid, params, golden):
         # 但 transmon 频率内核缺陷被物理定律法官判 FAIL。
         return 8.0 * params["E_J"] * params["E_C"]
     if bid == "B10":
-        # 正确：退相干极限门保真度（与黄金参考一致）→ PASS
+        # ⚠️ v0.9.15 订正：原注释写「正确：退相干极限门保真度」，同样是
+        # `return golden` —— 自证桩。如实归类为「非独立」。
         return golden
+    # 其余 41 道：离线近似**未实现** ⇒ 直接回抄 golden（自证桩）。
+    # 这是 L3「AI 写内核」演示路径的历史产物：内核还没写到那一步，
+    # 用 golden 占位以保证演示闭环。对外暴露时必须标注，否则「全 PASS」
+    # 会被误读为「AI 内核已全部写对」。
     return golden
+
+
+# 离线近似中**真有独立实现**的锚题（其余一律 `return golden` = 自证桩）。
+# v0.9.15（P0-2）诚实分类：
+#   B1  真实现（Rayleigh 散射公式）         → 独立（PASS）
+#   B2  真实现（仅横向平板，漏 EIM 第二步）  → 独立（判 FAIL 正是演示检出能力）
+#   B3  注释写「正确」，实际 return golden  → 自证桩（注释已订正）
+#   B4  真实现（b4_ring_fsr_nm 群折射率）    → 独立（PASS）
+#   B8  常数 0.985（绝热不足的求解器输出）   → 独立（是求解输出，只是未达标 → FAIL）
+#   B9  真实现（漏平方根，缺陷版）           → 独立（FAIL）
+#   B10 注释写「正确」，实际 return golden  → 自证桩（注释已订正）
+_LOCAL_INDEPENDENT_IDS = frozenset({"B1", "B2", "B4", "B8", "B9"})
 
 
 _PROMPT_TEMPLATE = """你是光子/量子器件求解内核。给定以下器件基准，请仅用物理定律给出标量 metric 数值（不要写完整代码，直接输出结果）。
@@ -104,6 +124,20 @@ class L3AISolverCandidate:
     def llm_enabled(self):
         """是否已配置可用的 LLM 端点。"""
         return bool(self.base_url and self.api_key)
+
+    def is_independent(self, bid):
+        """该锚题的候选值是否由**独立实现**产出（而非直接回抄 golden）。
+
+        供 VerificationHarness.run 按题标注独立性 → 报告按题统计 verified。
+        修这条之前，`--ai` 模式因整体布尔判据把 41 道 `return golden` 的
+        自证桩也算成 verified（实测报 verified=45/48），是**假绿**。
+
+        ⚠️ LLM 启用时一律返回 False：项目红线是「LLM 不进判决路径」，
+        AI 产出的值不得计入 verified（该模式仅供演示判别流程）。
+        """
+        if self.llm_enabled:
+            return False
+        return bid in _LOCAL_INDEPENDENT_IDS
 
     def _call_llm(self, bid, metric, params, golden):
         """调用 OpenAI 兼容端点，解析标量 metric。失败抛异常。"""

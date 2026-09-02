@@ -35,6 +35,7 @@ sys.path.insert(0, HERE)
 from lda_harness.benchmarks import BENCHMARK_DEFS
 from lda_harness.harness import (
     VerificationHarness, ReferenceCandidate, PerturbedCandidate,
+    IndependentCandidateRouter,
 )
 from lda_harness.l3_ai_solver import L3AISolverCandidate
 from lda_harness import report as rep
@@ -70,10 +71,18 @@ def main():
         cand_name = "PerturbedCandidate(%.0f%%)" % (args.perturb * 100)
         self_consistent = False
     else:
-        # 参考候选：候选值≡黄金值 ⇒ 恒 PASS。它只验证判决回路闭合，
-        # 不验证任何求解器（D-64）。报告侧必须对此显式标注。
-        candidate = ReferenceCandidate()
-        cand_name = "ReferenceCandidate"
+        # P0-2（v0.9.15）：默认改走**独立候选路由**。
+        #   IndependentCandidateRouter 按 spec_id 把已登记的锚题分发到
+        #   BENCHMARK_CANDIDATES 中的独立求解器（严格数值法，与 golden 的
+        #   解析闭式方法学不同源）；**未登记的锚题仍落回 ReferenceCandidate**
+        #   （|diff|≡0，诚实保留自证桩，绝不假装已独立）。
+        # 效果：报告的 summary.verified 首次 > 0（v0.9.14 及之前恒为 0），
+        # 同时 self_consistent_stub_count 如实暴露剩余自证桩数量。
+        candidate = IndependentCandidateRouter()
+        _ind = candidate.describe()
+        cand_name = ("IndependentCandidateRouter(独立候选 %d 道: %s)"
+                     % (len(_ind), ",".join(_ind) or "无"))
+        # 绝大多数锚题仍是自证桩 ⇒ 警告必须继续显示（不得因 verified>0 而撤下）
         self_consistent = True
 
     results = harness.run(specs, candidate)
@@ -100,10 +109,31 @@ def main():
 
     # ---- 机器断言（本文件在 CI core 集内，退出码非 0 即 FAIL）----
     n_pass = sum(1 for r in results if r.passed)
+    # 独立候选判出的项数（P0-2）：verified 必须与之相等，
+    # 且它们**必须全部 PASS**（独立候选若挂了，说明真求解器回归了）。
+    n_independent = sum(1 for r in results if getattr(r, "independent", False))
+    # 🔴 标签 ≠ 行为：只核对 independent 标签会被「标签为真、实现已回落 golden」
+    # 骗过 —— v0.9.15 反向自检实测：把 router.__call__ 改成全回落，标签仍报
+    # 4 道独立、verified=4，断言全绿 ⇒ **假绿**。故按值复核。
+    #
+    # ⚠️ 作用域：仅对 **IndependentCandidateRouter** 生效。该路由承诺的是
+    # 「golden=解析闭式 ↔ candidate=严格数值」**方法学不同源** ⇒ |diff| 必须
+    # 非零，为 0 只可能是静默回落。而 `--ai`（L3 AI 内核）语义相反：它验证的是
+    # 「AI 写的内核对不对」，|diff|≡0 表示**内核把公式算对了**（B1/B4 即此情形），
+    # 是合法 PASS 而非回落失败 —— 一刀切会把「算对了」误判成「假独立」。
+    if isinstance(candidate, IndependentCandidateRouter):
+        _fake_independent = [r.bid for r in results
+                             if getattr(r, "independent", False)
+                             and isinstance(r.candidate, (int, float))
+                             and isinstance(r.golden, (int, float))
+                             and abs(r.candidate - r.golden) < 1e-12]
+        assert not _fake_independent, (
+            f"标为独立候选却 candidate≡golden（假独立）：{sorted(_fake_independent)}"
+            "——路由或候选实现可能已静默回落 golden，verified 会被虚报")
     if not args.ai and args.perturb <= 0:
-        # 自证闭环：判决回路必须闭合（48/48），但**不得**被读成「48 项已验证」
+        # 判决回路必须闭合（48/48），但**不得**被读成「48 项已验证」
         assert n_pass == len(results), (
-            f"自证闭环应全部 PASS，实际 {n_pass}/{len(results)}")
+            f"判决回路应全部 PASS，实际 {n_pass}/{len(results)}")
     assert rep.is_self_consistent(meta) is self_consistent, (
         "is_self_consistent(meta) 与本次候选语义不一致")
 
@@ -114,9 +144,25 @@ def main():
         assert "非验证结论" in md, "报告汇总行丢失「非验证结论」标注"
         _js = json.loads(js)
         assert _js["summary"]["self_consistent"] is True, "JSON summary.self_consistent 应为 True"
-        assert _js["summary"]["verified"] == 0, (
-            "自证闭环下 verified 必须为 0（passed 不代表已验证）")
-        print("\n[D-64] 自证标注断言通过：报告含警告 / verified=0 / 判决回路 48/48 闭合")
+        # P0-2 混合态护栏（新增）：verified 必须**恰好**等于独立候选项数。
+        # 双向护栏缺一不可：
+        #   ① verified 不得多算 —— 防止自证桩被误计为「已验证」（假绿）
+        #   ② verified 不得少算 —— 防止独立候选被悄悄降级回自证桩（倒退）
+        _verified = _js["summary"]["verified"]
+        _stub = _js["summary"]["self_consistent_stub_count"]
+        assert _verified == n_independent, (
+            f"verified({_verified}) 应恰为独立候选项数({n_independent})——"
+            "多算=把自证桩当已验证，少算=独立候选被降级")
+        assert _stub == len(results) - n_independent, (
+            f"自证桩数({_stub}) 应为 {len(results) - n_independent}")
+        assert _verified + _stub == len(results), (
+            "verified + 自证桩 必须等于总项数（不得有第三态漏算）")
+        if n_independent:
+            assert "独立候选求解器" in md, (
+                "混合态下报告必须说明「N 项独立 / M 项自证」，"
+                "否则外部读者无法区分哪些真被验证")
+        print(f"\n[D-64/P0-2] 混合态断言通过：独立候选 verified={_verified} · "
+              f"自证桩 {_stub} · 判决回路 {n_pass}/{len(results)} 闭合")
     else:
         _js = json.loads(js)
         assert _js["summary"]["self_consistent"] is False, "独立候选下 self_consistent 应为 False"

@@ -6,7 +6,7 @@
     "via": "L1 KernelGateway",
     "self_consistent": false
   },
-  "generated_at": "2026-09-02T21:41:10",
+  "generated_at": "2026-09-02T22:24:59",
   "summary": {
     "total": 48,
     "passed": 45,
@@ -20,7 +20,7 @@
     {
       "id": "B1",
       "metric": "Q_scat",
-      "oracle": "analytical(Mie/Rayleigh)",
+      "oracle": "analytical(Rayleigh-limit)",
       "source": "physical-law",
       "golden": 0.0028413137328842765,
       "candidate": 0.0028413137328842765,

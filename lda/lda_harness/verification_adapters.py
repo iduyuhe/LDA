@@ -740,6 +740,38 @@ def _b14_dc_cmt_fft_candidate(spec: VerificationSpec, oracle_value: Any) -> floa
 
 
 @_register_candidate(
+    "mie_exact",
+    "完整 Mie 级数 Q_scat（B&H 4.53 维度形式，Wiscombe 截断 nmax=x+4x^⅓+2，"
+    "纯 numpy 递推）—— 与 golden 的 Rayleigh 一阶极限方法学独立")
+def _b1_mie_exact_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B1 独立候选：米氏散射效率（完整级数 ↔ Rayleigh 一阶极限）。
+
+    golden = Rayleigh（偶极子）极限 Q=(8/3)·x⁴·r²（x≪1 只保留 a₁ 首项）
+    cand   = 完整 Mie 级数（所有多极子 a_n/b_n 求和到 nmax）
+
+    二者物理同源（麦克斯韦方程）、方法独立（一阶展开 vs 全阶求和）⇒
+    |cand−golden| = Rayleigh 固有截断误差（x⁶ 首项），随 x 单调增长
+    （-0.001%@x=0.01 → 1.388%@x=0.4）——「x≪1 精确一致」的定量边界。
+
+    ⚠️ 环境确定性：golden 的 b1_mie_qscat(use_miepython=True) 在装有
+    miepython 的环境会切换到完整 Mie（ORACLE）⇒ golden 环境相关。
+    接线后 default_params 钉死 use_miepython=False（golden 固定走
+    Rayleigh，任何环境一致），Mie ORACLE 路径保留给显式外部验货。
+
+    实测标定（m=1.33/x=0.4，golden=2.8413e-3）：
+    baseline |diff| = 3.945e-5（rel 1.388%，tol=2e-4 未动，余量 5.1×）。
+    反向扰动信号谱：m×1.1 → 2.357e-3（11.9×）✅ · x×1.1 → 1.246e-3
+    （6.2×）✅ ⇒ PERTURB 固定扰 m（最强键）。
+    递推已用 scipy.special.spherical_jn/yn 交叉验证（max|Δ|≤3e-8）。
+    """
+    _ensure_paths()
+    from mie_solver import mie_q_scat
+
+    p = spec.params
+    return float(mie_q_scat(m=float(p["m"]), x=float(p["x"])))
+
+
+@_register_candidate(
     "coupler_charge_exact",
     "双 transmon 441 维电荷基严格对角化 J（Nq=10，一般失谐提取 √((Δ/2)²−(δ/2)²)）"
     "—— 与 golden 的电荷矩阵元渐近闭式方法学独立")

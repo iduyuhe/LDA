@@ -52,11 +52,22 @@ BENCHMARK_DEFS = {
     "B1": {
         "title": "米氏散射远场散射效率 Q_scat",
         "metric": "Q_scat",
-        "oracle": "analytical(Mie/Rayleigh)",
+        "oracle": "analytical(Rayleigh-limit)",
         "tol": 2e-4,
         "default_params": {"m": 1.33, "x": 0.4},
         "golden_fn": b1_mie_qscat,
-        "note": "Rayleigh 极限（x<<1 与完整 Mie 一致）；miepython 可用时自动升级为完整 Mie ORACLE。",
+        # v0.9.21（P0 续）：接独立候选 —— 完整 Mie 级数 ↔ Rayleigh 一阶极限。
+        # 🔴 use_miepython 钉死 False：否则装有 miepython 的环境 golden 会切
+        # 完整 Mie（ORACLE）⇒ golden 环境相关、判决不可复现。
+        "candidate": "mie_exact",
+        "candidate_desc": ("完整 Mie 级数（B&H 4.53 全多极子求和，纯 numpy"
+                           "递推）↔ Rayleigh 一阶极限（仅 a₁ 首项），方法学独立"),
+        "note": "Rayleigh 极限 Q=(8/3)x⁴r²（x≪1 与完整 Mie 一致，误差 O(x²)："
+                "实测 -0.001%@x=0.01 → 1.388%@x=0.4）。【v0.9.21 P0 续】候选="
+                "自写完整 Mie 级数（lda_solver/mie_solver.py，递推经 scipy 交叉"
+                "验证 ≤3e-8）；baseline 3.945e-5（tol=2e-4 未动余量 5.1×）；"
+                "反向 m×1.1 信号 2.357e-3（11.9×）、x×1.1 信号 1.246e-3（6.2×）。"
+                "miepython 可用时仍可作显式外部 ORACLE（判决路径不依赖）。",
     },
     "B2": {
         "title": "SOI 条形波导有效折射率 n_eff",

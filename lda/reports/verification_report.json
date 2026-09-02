@@ -1,37 +1,37 @@
 {
   "meta": {
     "L0_IR": "(内置默认 B1–B4,B8)",
-    "candidate": "IndependentCandidateRouter(独立候选 15 道: B12,B13,B14,B15,B20,B22,B23,B24,B25,B26,B27,B3,B4,B9,S13；降级量级参考 1 道: E2)",
+    "candidate": "IndependentCandidateRouter(独立候选 16 道: B1,B12,B13,B14,B15,B20,B22,B23,B24,B25,B26,B27,B3,B4,B9,S13；降级量级参考 1 道: E2)",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "self_consistent": true
   },
-  "generated_at": "2026-09-02T21:48:21",
+  "generated_at": "2026-09-02T22:32:09",
   "summary": {
     "total": 48,
     "passed": 48,
     "self_consistent": true,
-    "verified": 15,
-    "self_consistent_stub_count": 32,
-    "independent_candidate_count": 15,
+    "verified": 16,
+    "self_consistent_stub_count": 31,
+    "independent_candidate_count": 16,
     "candidate_class_totals": {
-      "strict_independent": 15,
+      "strict_independent": 16,
       "degraded_ordinal": 1,
-      "self_consistent_stub": 32
+      "self_consistent_stub": 31
     }
   },
   "results": [
     {
       "id": "B1",
       "metric": "Q_scat",
-      "oracle": "analytical(Mie/Rayleigh)",
+      "oracle": "analytical(Rayleigh-limit)",
       "source": "physical-law",
       "golden": 0.0028413137328842765,
-      "candidate": 0.0028413137328842765,
+      "candidate": 0.002801864240748555,
       "tol": 0.0002,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "independent": true,
+      "candidate_class": "strict_independent"
     },
     {
       "id": "B10",

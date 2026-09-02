@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.9.21（2026-09-02 · B1 米氏散射接线 · 严格独立 15 → 16）
+
+**指令**：延续 P0 接线段（B1 米氏散射 Q_scat）。
+
+**独立候选**：新写 `lda_solver/mie_solver.py`（纯 numpy 递推，零外部依赖）
+- golden = Rayleigh（偶极子）一阶极限 Q=(8/3)·x⁴·r²（x≪1 只保留 a₁ 首项）
+- cand = 完整 Mie 级数（B&H 4.53：Q=(2/x²)Σ(2n+1)(|a_n|²+|b_n|²)，维度形式系数 + Wiscombe 截断 nmax=x+4x^⅓+2）
+- 独立性：物理同源（麦克斯韦方程）、方法独立（一阶展开 vs 全阶求和）⇒ |diff|=Rayleigh 固有截断误差，随 x 单调增长（-0.001%@x=0.01 → 1.388%@x=0.4），即「x≪1 精确一致」的定量边界
+
+**数值自检（写进实现）**：
+- x→0 收敛 Rayleigh（O(x²) 高阶项精确消失）
+- 递推 vs scipy.special.spherical_jn/yn 交叉验证 max|Δ|≤3e-8（x=0.4, nmax=6）
+
+**🔴 环境确定性修复**：golden `b1_mie_qscat(use_miepython=True)` 原会在装有 miepython 的环境自动切完整 Mie（ORACLE）⇒ **golden 环境相关、判决不可复现**。接线后 default_params 钉死 `use_miepython=False`（golden 固定 Rayleigh，任何环境一致）；Mie ORACLE 路径保留给显式外部验货，判决路径不依赖。
+
+**标定（m=1.33/x=0.4，golden=2.8413e-3）**：
+- baseline |diff| = 3.945e-5（rel 1.388%，tol=2e-4 **未动**，余量 5.1×）
+- 判据窗口：3.945e-5 < 2e-4 < min 反向信号 1.246e-3（6.2×）✓
+- 扰动谱：m×1.1→2.357e-3（11.9× 最强）· x×1.1→1.246e-3（6.2×）⇒ PERTURB 固定扰 m
+
+**接线（三处）**：adapters 注册 `mie_exact` · benchmarks B1 加 candidate 字段 + 钉死 use_miepython=False + note · smoke `MIN_INDEPENDENT 15→16` + `PERTURB_SPEC` 加 B1@m
+
+**验证证据链**：可证伪性 smoke **8/8 PASS**（严格独立 16 · 自证桩 31 · B1 反向 FAIL✅ d=2.357e-3/tol=2e-4）· `run_harness.py` RC=0（B1 行 0.00284131 vs 0.00280186 / diff=3.945e-05 / PASS、verified=16）· 全量 core 回归 **85 PASS / 0 SKIP / 0 FAIL（1385.9s，REGRESSION_RC=0）**
+
 ## v0.9.20（2026-09-02 · B14 定向耦合器接线 + golden 语义修正 · 严格独立 14 → 15）
 
 **指令**：延续 P0 接线段（B14 定向耦合器 3dB 耦合长度）。

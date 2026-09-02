@@ -1,12 +1,12 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-02T08:17:42
+- 生成时间：2026-09-02T09:48:12
 - L0_IR：(内置默认)
 - candidate：L3AISolverCandidate
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - via：L1 KernelGateway
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`），其余 **43 项**仍走 ReferenceCandidate占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **43 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
 
 ## 汇总：45/48 通过（独立候选 5 项中 **2 项通过=已验证** · 43 项自证闭环，**非验证结论**）
 

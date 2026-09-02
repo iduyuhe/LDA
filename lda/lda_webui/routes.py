@@ -477,13 +477,14 @@ def h_verification_ledger(h, p, q, path):
                     "candidate": ("IndependentCandidateRouter（按 spec_id 路由到已登记独立候选；"
                                   "未登记者仍回落参考候选，诚实保留自证桩）"),
                     "verified": len(_indep),
-                    # ⚠️ 口径差异（v0.9.15 实测登记，非笔误）：
-                    # 三分类把 E2 归 degraded_ordinal（1 道），路径② 却只按
-                    # `independent` 标志二分 ⇒ E2 在路径② **回落到参考候选**
-                    # （`fdfd_ng` 未登记进 BENCHMARK_CANDIDATES），被计入
-                    # 「非独立」⇒ CLI 报告的 stub = 三分类 stub(43) + degraded(1) = 44。
-                    # 此处必须照实写 44，否则对外宣称与报告实际差 1（同类漂移缺陷）。
-                    "self_consistent_stub_count": len(_stub) + len(_degraded),
+                    # v0.9.16（P0-3 已闭合）：此前 CLI stub 要写成
+                    # `len(_stub) + len(_degraded)`（43+1=44）—— 因为 E2 的
+                    # `fdfd_ng` 当时**未登记**进 BENCHMARK_CANDIDATES，路径②
+                    # 只能按 `independent` 二分，把降级锚 E2 塞进自证桩。
+                    # 现在 path ② 走 `candidate_class` 三分类（判序与此处同源），
+                    # E2 在两条路径都是 degraded ⇒ stub 回归真实值 43→（接线后）40，
+                    # 与三分类口径**逐项相等**，不再需要「44 vs 43」的散文解释。
+                    "self_consistent_stub_count": len(_stub),
                     "trichotomy_totals": {
                         "strict_independent": len(_indep),
                         "degraded_ordinal": len(_degraded),
@@ -492,12 +493,14 @@ def h_verification_ledger(h, p, q, path):
                     "detail": ("run_harness.py 默认走 IndependentCandidateRouter：已登记的锚题由"
                                "独立求解器判出并计入 summary.verified，其余仍走 ReferenceCandidate"
                                "占位自证。报告头部按题分列说明，避免「N/N 通过」被读成「N 项已验证」。"
-                               "该口径由 run_harness.py 的双向护栏守护（多算=假绿 / 少算=倒退）。"
-                               "⚠️ 已知缺口（P0-3）：E2 的 fdfd_ng 未登记进 BENCHMARK_CANDIDATES，"
-                               "故它在**路径①**（build_harness_specs，实测 |diff|=0.0667）是真独立候选，"
-                               "在**路径②**（本字段描述的 CLI 报告）却回落为自证桩 ⇒ 路径② 少接一道。"
-                               "属低估不属虚报（verified 计数不受影响），修复需同时让 is_independent "
-                               "尊重 candidate_status=degraded_ordinal，否则 E2 会被误计入 verified。"),
+                               "该口径由 run_harness.py 的**三分类双向护栏**守护："
+                               "非自证桩者 |diff| 必须非零（回落 golden 即穿帮）、"
+                               "自证桩者 |diff| 必须为零（分类表与实现脱节即穿帮）。"
+                               "✅ P0-3 已于 v0.9.16 闭合：E2 的 `fdfd_ng` 已登记，且 "
+                               "`IndependentCandidateRouter.candidate_class` **先判降级再查登记表**"
+                               "⇒ E2 在路径① / 路径② 都跑真 FDFD 候选（|diff|=0.0667），"
+                               "但**不计入 verified**（降级锚不进死标量判决）。"
+                               "若判序写反（先查表），E2 会被误计为独立 ⇒ verified 虚报 +1。"),
                 },
             },
             "cpo_scale": {

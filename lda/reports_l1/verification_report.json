@@ -6,14 +6,15 @@
     "via": "L1 KernelGateway",
     "self_consistent": true
   },
-  "generated_at": "2026-09-02T08:17:44",
+  "generated_at": "2026-09-02T09:48:14",
   "summary": {
     "total": 2,
     "passed": 2,
     "self_consistent": true,
     "verified": 0,
     "self_consistent_stub_count": 2,
-    "independent_candidate_count": 0
+    "independent_candidate_count": 0,
+    "candidate_class_totals": null
   },
   "results": [
     {
@@ -26,7 +27,8 @@
       "tol": 0.05,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": null
+      "independent": null,
+      "candidate_class": null
     },
     {
       "id": "B4",
@@ -38,7 +40,8 @@
       "tol": 0.3,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": null
+      "independent": null,
+      "candidate_class": null
     }
   ]
 }

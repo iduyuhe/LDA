@@ -1,4 +1,5 @@
-"""锚题可证伪性 smoke（v0.9.14 立项 · P0-1；v0.9.15 补 ⑦ 对外口径护栏 · P0-2）。
+"""锚题可证伪性 smoke（v0.9.14 立项 · P0-1；v0.9.15 补 ⑦⑧ 对外口径护栏 · P0-2；
+v0.9.16 补 P0-3 三分类双向复核 · P0 续光子侧 B3/B4/B20 接线）。
 
 背景（2026-09-02 战略审计实测）：48 锚实跑 48 PASS，其中 **47 道是自证桩**
 ——candidate 走 `_harness_reference_candidate`（直接返回 golden），
@@ -22,6 +23,14 @@
 
 为什么③比②重要：②只能证明"没坏"，③才能证明"坏了能发现"。
 只做②不做③，等于把「放宽容差」变成「取消验证」——这正是自证桩的翻版。
+
+🔴 ⑧ 的**双向**复核（v0.9.16 · P0-3 加强，仍守「标签 ≠ 行为」教训）：
+   · 非自证桩（strict / degraded）⇒ |cand−golden| 必须 **非零**
+     （若恒为零 = 静默回落 golden，verified 虚报）
+   · 自证桩 ⇒ |cand−golden| 必须 **为零**
+     （若非零 = 分类表与实现脱节，该道实际已接线却被算进自证桩，verified 少算）
+  只做前半条时，v0.9.15 曾放过「路由已改坏、标签仍为真」的假绿；
+  只做前半条也放得过「新接线被误分类成自证桩」的漏算 —— 故必须双向。
 
 ⚠️ 诚实边界（实测发现，2026-09-02）：
   B26 在 g 扰动 +1% 处 diff=1.68e-6，反而**小于**未扰动时的 4.57e-5
@@ -65,13 +74,17 @@ PERTURB_SPEC = [
     ("B25", "phi_frac", "add"),
     ("B26", "g_ghz", "mul"),
     ("B27", "g_ghz", "mul"),
+    # v0.9.16（P0 续）：光子侧 FSR 三兄弟（FSR ∝ 1/光程 ⇒ 光程 +10% ⇒ FSR −9%）
+    ("B3", "L", "mul"),
+    ("B4", "R", "mul"),
+    ("B20", "deltaL_um", "mul"),
 ]
 PERTURB_REL = 0.10          # 反向测试扰动幅度（10%）
 SENSITIVITY_GRID = (0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20)
 SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 
-# 独立候选数下限（随 P0-1 推进递增：v0.9.14 起步 = 4）
-MIN_INDEPENDENT = 4
+# 独立候选数下限（随 P0 推进递增：v0.9.14 起步 4 → v0.9.16 光子侧接线后 7）
+MIN_INDEPENDENT = 7
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:
@@ -141,8 +154,11 @@ def main() -> int:
             cv = cand_map[bid](sp, ov)
             out = run_verification(sp, cand_map[bid], oracle_value=ov)
             rel = abs(cv - ov) / abs(ov) * 100 if ov else 0.0
+            # 一并披露 |diff|/tol：残差相对容差越小，说明该道验证**越灵敏**
+            # （容差放水到残差的 1e6 倍时，等于几乎抓不到任何东西）
+            ratio = abs(cv - ov) / sp.tol if sp.tol else float("inf")
             ok_pos.append(out.passed)
-            detail_pos.append(f"{bid}:{rel:.3f}%")
+            detail_pos.append(f"{bid}:{rel:.3e}%(d/tol={ratio:.1e})")
         except Exception as e:
             ok_pos.append(False)
             detail_pos.append(f"{bid}:ERR {str(e)[:30]}")
@@ -242,10 +258,11 @@ def main() -> int:
             _diff.append(f"总数={_tot.get('anchors')}≠{len(specs)}")
         if _cli.get("verified") != len(strict):
             _diff.append(f"CLI verified={_cli.get('verified')}≠{len(strict)}")
-        # 路径② 只按 independent 二分 ⇒ E2（degraded）被计入「非独立」，
-        # 故 CLI 的 stub 应为 三分类 stub + degraded（实测 43+1=44）。
-        # v0.9.15 实测：端点曾写 43、与报告实际的 44 差 1 ⇒ 补断言钉死。
-        _expect_stub = len(stub) + len(degraded)
+        # P0-3（v0.9.16）闭合后路径② 也走三分类 ⇒ CLI stub 应**恰好等于**
+        # 三分类 stub（E2 在两条路径都是 degraded，不再被塞进自证桩）。
+        # v0.9.15 时此处是 stub+degraded（43+1=44），是分类能力缺失的补丁，
+        # 不是真实口径；现在按真实口径断言，混淆会被立刻抓住。
+        _expect_stub = len(stub)
         if _cli.get("self_consistent_stub_count") != _expect_stub:
             _diff.append(f"CLI stub={_cli.get('self_consistent_stub_count')}≠{_expect_stub}")
         _tri = _cli.get("trichotomy_totals") or {}
@@ -277,21 +294,36 @@ def main() -> int:
         _n_ind2 = sum(1 for r in _r2 if getattr(r, "independent", False))
         _verified2 = rep.verified_count(_r2, True)
         _n_marked2 = rep.independence_counts(_r2)[1]
+        _n_strict2, _n_deg2, _n_stub2, _n_cls2 = rep.candidate_class_counts(_r2)
         _bad8 = []
         if _n_ind2 != len(strict):
             _bad8.append(f"独立数={_n_ind2}≠路径①{len(strict)}")
         if _verified2 != _n_ind2:
             _bad8.append(f"verified={_verified2}≠独立数{_n_ind2}")
-        # 🔴 标签 ≠ 行为：只查 independent 标签会被"标签为真、实现已回落 golden"
-        # 骗过（反向自检实测：把 router.__call__ 改成全回落，标签仍报 4 道独立
-        # ⇒ 假绿）。故必须**按值复核**——标独立的题 |cand−golden| 必须非零。
+        if _n_cls2 != len(_r2):
+            _bad8.append(f"三分类标注{_n_cls2}/{len(_r2)}（有未标注=口径退化）")
+        if (_n_strict2, _n_deg2, _n_stub2) != (len(strict), len(degraded), len(stub)):
+            _bad8.append(f"路径②三分类=({_n_strict2},{_n_deg2},{_n_stub2})"
+                         f"≠路径①({len(strict)},{len(degraded)},{len(stub)})")
+        # 🔴 标签 ≠ 行为（v0.9.15 血案）+ 三分类双向复核（v0.9.16 加强）：
+        # 只查 independent 标签会被"标签为真、实现已回落 golden"骗过 ⇒ 按值复核。
+        #   ① 非自证桩（strict/degraded）⇒ |diff| 必须非零（回落 golden 即穿帮）
+        #   ② 自证桩 ⇒ |diff| 必须为零（分类表与实现脱节、新接线被吞即穿帮）
         _labeled_stub = [r.bid for r in _r2
-                         if getattr(r, "independent", False)
+                         if getattr(r, "candidate_class", None)
+                         not in (None, "self_consistent_stub")
                          and isinstance(r.candidate, (int, float))
                          and isinstance(r.golden, (int, float))
                          and abs(r.candidate - r.golden) < 1e-12]
         if _labeled_stub:
-            _bad8.append(f"标独立却 |diff|≡0 的假独立={sorted(_labeled_stub)}")
+            _bad8.append(f"标非自证桩却 |diff|≡0 的假独立={sorted(_labeled_stub)}")
+        _mislabeled_stub = [r.bid for r in _r2
+                            if getattr(r, "candidate_class", None) == "self_consistent_stub"
+                            and isinstance(r.candidate, (int, float))
+                            and isinstance(r.golden, (int, float))
+                            and abs(r.candidate - r.golden) >= 1e-12]
+        if _mislabeled_stub:
+            _bad8.append(f"标自证桩却 |diff|≠0 的漏算={sorted(_mislabeled_stub)}")
         if _n_marked2 != len(_r2):
             _bad8.append(f"按题标注{_n_marked2}/{len(_r2)}（有未标注项=口径退化）")
         if len(_r2) != len(specs):

@@ -259,8 +259,21 @@ def _harness_reference_candidate(spec: VerificationSpec, oracle_value: Any) -> f
     return oracle_value
 
 
+@_register_candidate(
+    "fdfd_ng",
+    "标量亥姆霍兹 FDFD 本征模 n_eff(λ) → 中心差分 n_g（独立频域求解）"
+    " ⚠️降级：直波导候选 vs 环器件 golden **几何不同源**，仅作量级参考"
+    "（candidate_status=degraded_ordinal，不进死标量判决）")
 def _fdfd_ng_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
     """独立候选：标量亥姆霍兹 FDFD 本征模算 n_eff(λ) → 中心差分得 n_g。
+
+    ⚠️ 本候选虽已登记，但 E2 在 benchmarks.py 中标了
+    `candidate_status="degraded_ordinal"` ⇒ 它**不计入 verified**
+    （IndependentCandidateRouter.candidate_class 先判降级再查登记表）。
+    v0.9.16（P0-3）之前它**未登记**，导致 E2 在路径①（build_harness_specs）
+    真跑本候选、在路径②（run_harness.py）却回落成自证桩 —— 两条路径各说各话。
+    登记本身不会让 verified 虚报（降级判定优先），但会让 E2 在路径②也真跑。
+
 
     与实测 golden **完全独立**（不读取任何测量数据），构成真交叉验证：
         实测侧：OFDR 环腔群延迟 / MZI 传输谱（实验）
@@ -291,6 +304,164 @@ def _fdfd_ng_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
     n2 = _neff(wl + d)
     # n_g = n_eff − λ·dn_eff/dλ（中心差分）
     return (n1 + n2) / 2.0 - wl * (n2 - n1) / (2.0 * d)
+
+
+# ---------------------------------------------------------------------------
+# 1c. 光子侧 FSR 族：数值响应谱**频域峰周期**拟合（v0.9.16 · P0 续）
+# ---------------------------------------------------------------------------
+# 方法学 independence 的依据（B3/B4/B20 通用）：
+#   谐振/干涉峰满足（光程）= m·λ ⇒ **1/λ_m = m/(光程) 严格等距**；
+#   教科书闭式 FSR_λ = λ²/(光程) 只是该频域等距性在 λ0 处的**一阶连续化**。
+#   候选全程**不调用**该闭式：数值扫描响应谱 → 定峰 → 对 1/λ 做等距最小二乘
+#   → 单位换算。故 |cand−golden| 反映的是「闭式一阶近似 + 数值定峰」的真实
+#   残差，可证伪（改错公式/少个 2π/用错折射率，残差立刻爆炸到 tol 外）。
+#
+# ⚠️ 网格规模是**刻意标定**的（实测扫描，n_grid=50001）：
+#   - 太粗 ⇒ 残差超过 tol（B20 的 tol=1e-6 最紧）⇒ 假红
+#   - 太精 ⇒ 残差掉到 1e-12 以下，与「自证桩」按值不可区分 ⇒ 护栏会误报假独立
+#   实测三道残差 1.7e-8 / 1.9e-8 / 4.7e-10，离 1e-12 判据有 ≥467× 余量。
+_FSR_GRID_N = 50001          # 数值谱网格点数（标定值，勿随意改）
+_FSR_MIN_PEAKS = 5           # 最少峰数（不足则自适应加倍开窗）
+_FSR_HALF_REL = 0.05         # 初始开窗半宽（相对 λ0）
+
+
+def _peaks_parabolic(lam, T):
+    """局部极大 + 三点抛物线亚网格细化，返回按 λ **降序**排列的峰位。
+
+    只做抛物线细化、**不做**牛顿/二分精化：候选值相对 golden 的残差正来自
+    这份数值误差。若把候选打磨到机器精度，|diff| 会掉到 1e-12 以下，自动
+    护栏将无法把它和「直接 return golden 的自证桩」区分开（宁可粗糙可辨）。
+    """
+    lam = np.asarray(lam, dtype=float)
+    T = np.asarray(T, dtype=float)
+    idx = np.flatnonzero((T[1:-1] > T[:-2]) & (T[1:-1] >= T[2:])) + 1
+    if idx.size < 3:
+        return np.array([])
+    y1, y2, y3 = T[idx - 1], T[idx], T[idx + 1]
+    den = y1 - 2.0 * y2 + y3
+    safe = np.where(np.abs(den) > 0, den, 1.0)
+    shift = np.where(np.abs(den) > 0, 0.5 * (y1 - y3) / safe, 0.0)
+    h = lam[1] - lam[0]
+    pk = lam[idx] + shift * h
+    return pk[np.argsort(pk)[::-1]]
+
+
+def _fit_fsr_peak_periodicity(response_fn, wl0_um, n_grid=_FSR_GRID_N,
+                              min_peaks=_FSR_MIN_PEAKS,
+                              half_rel=_FSR_HALF_REL) -> float:
+    """从数值响应谱 T(λ) 的**频域峰周期**反推波长域 FSR（nm）。
+
+    步骤（全程闭式无关）：
+      ① 自适应开窗（初始 ±5%·λ0，峰数不足则加倍，最多 6 次）
+      ② 等距网格扫描响应谱、三点抛物线定峰
+      ③ 对 u=1/λ 关于级次序号做**最小二乘等距拟合**，slope = Δu
+      ④ FSR_λ(λ0) = λ0² · Δu · 1000（频域周期 → 波长域的一阶换算，单位 nm）
+
+    开窗宽度**不依赖**任何闭式 FSR 估计（否则循环论证）—— 只按「峰数够不够」
+    自适应加宽，故该候选与 golden 的方法学 independence 成立。
+    """
+    half = wl0_um * half_rel
+    pk = np.array([])
+    for _ in range(6):
+        lam = np.linspace(wl0_um - half, wl0_um + half, int(n_grid))
+        pk = _peaks_parabolic(lam, np.asarray(response_fn(lam), dtype=float))
+        if pk.size >= min_peaks:
+            break
+        half *= 2.0
+    if pk.size < min_peaks:
+        raise RuntimeError(
+            f"数值响应谱峰数不足（{pk.size}<{min_peaks}）：无法独立定 FSR"
+            f"（λ0={wl0_um}，开窗已扩至 ±{half:.4g} um）")
+    u = 1.0 / pk                       # λ 降序 ⇒ u=1/λ 升序
+    slope, _ = np.polyfit(np.arange(u.size, dtype=float), u, 1)
+    return float(wl0_um ** 2 * slope * 1000.0)
+
+
+@_register_candidate(
+    "fp_fsr_peakfit",
+    "数值 Airy 响应谱峰周期拟合 FSR（自适应开窗 + 抛物线定峰 + 1/λ 等距最小二乘）"
+    "—— 与 golden 的 Airy 闭式 FSR=λ²/(2nL) 方法学独立")
+def _fp_fsr_peakfit_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B3 独立候选：FP 标准具 FSR（数值峰周期 ↔ 解析闭式 λ²/(2nL)）。
+
+    golden = Airy 解析闭式 FSR = λ²/(2nL)（一阶连续化，误差 O(1/m)）
+    cand   = 数值扫 Airy 透射谱 T=1/(1+F·sin²(δ/2))，δ=4πnL/λ，
+             定峰后对 1/λ 做等距拟合得 Δu=1/(2nL)，换算 FSR_λ=λ0²·Δu
+
+    反射率 R（⇒ 精细度系数 F=4R/(1−R)²）**只影响峰宽、不影响峰位**
+    （Airy 分母在 sin²(δ/2)=0 处恒取极大，与 F 无关），故取 R=0.5
+    （F=8，精细度≈4.4，峰可分辨）不影响被测物理量。
+    """
+    p = spec.params
+    wl0 = float(p["wavelength"])
+    n = float(p["n"])
+    L = float(p["L"])
+    R = float(p.get("R_mirror", 0.5))          # 镜面反射率（仅定峰宽）
+    coef = 4.0 * R / (1.0 - R) ** 2            # Airy 精细度系数 F
+
+    def _T(lam):
+        delta = 4.0 * math.pi * n * L / lam    # 往返相位
+        return 1.0 / (1.0 + coef * np.sin(delta / 2.0) ** 2)
+
+    return _fit_fsr_peak_periodicity(_T, wl0)
+
+
+@_register_candidate(
+    "ring_fsr_peakfit",
+    "数值 add-drop 环传递函数（drop 口）峰周期拟合 FSR"
+    "—— 与 golden 的环形闭式 FSR=λ²/(n_g·2πR) 方法学独立")
+def _ring_fsr_peakfit_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B4 独立候选：add-drop 环形谐振器 FSR（数值峰周期 ↔ 解析闭式）。
+
+    golden = 解析传递函数闭式 FSR = λ²/(n_g·2πR)
+    cand   = 数值扫 drop 口传递 D ∝ 1/|1 − a·t·e^{−iφ}|²，φ=2π·n_g·L/λ，
+             L=2πR；定峰后对 1/λ 等距拟合得 Δu=1/(n_g·L)，换算 FSR_λ=λ0²·Δu
+
+    drop 口极大恒在 φ=2πm（分母 |1−a·t·e^{−iφ}|² = 1+(at)²−2at·cosφ 最小），
+    **与耦合系数 κ、往返损耗 a 无关** ⇒ 二者取 κ=0.3 / a=0.99 只影响峰宽，
+    不改变被测的峰位周期性。
+    """
+    p = spec.params
+    wl0 = float(p["wavelength"])
+    ng = float(p["n_g"])
+    L = 2.0 * math.pi * float(p["R"])
+    kappa = float(p.get("kappa", 0.3))         # 耦合系数（仅定峰宽）
+    a_rt = float(p.get("a_rt", 0.99))          # 往返振幅损耗（仅定峰宽）
+    t_rt = math.sqrt(max(0.0, 1.0 - kappa ** 2))
+
+    def _drop(lam):
+        phi = 2.0 * math.pi * ng * L / lam
+        return (kappa ** 4 * a_rt) / (1.0 + (a_rt * t_rt) ** 2
+                                      - 2.0 * a_rt * t_rt * np.cos(phi))
+
+    return _fit_fsr_peak_periodicity(_drop, wl0)
+
+
+@_register_candidate(
+    "mzi_fsr_peakfit",
+    "数值 MZI 干涉谱 T=½(1+cos φ) 峰周期拟合 FSR"
+    "—— 与 golden 的闭式 FSR=λ²/(n_eff·ΔL) 方法学独立")
+def _mzi_fsr_peakfit_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B20 独立候选：MZI 干涉 FSR（数值峰周期 ↔ 解析闭式 λ²/(n_eff·ΔL)）。
+
+    golden = 闭式（干涉解的一阶连续化）FSR = λ²/(n_eff·ΔL)
+    cand   = 数值扫 T=½(1+cos(2π·n_eff·ΔL/λ))，定峰后对 1/λ 等距拟合得
+             Δu=1/(n_eff·ΔL)，换算 FSR_λ=λ0²·Δu
+
+    本锚**无自由参数**（无需 κ/R/a 之类仅定峰宽的量），是三道里最干净的一道。
+    ⚠️ B20 的 tol=1e-6 是「自证桩容差」量级（相对量 5e-8），实测残差 4.7e-10
+    （d/tol≈4.7e-4，余量 2000×）—— 正说明真独立候选能满足它，且该容差事实上
+    能抓住 5e-8 相对量以上的任何公式错误（三道里最灵敏的一道）。
+    """
+    p = spec.params
+    wl0 = float(p["wl0_um"])
+    n_eff = float(p["n_core"])                 # 与 golden 同一物理输入（n_eff≡n_core）
+    dL = float(p["deltaL_um"])
+
+    def _T(lam):
+        return 0.5 * (1.0 + np.cos(2.0 * math.pi * n_eff * dL / lam))
+
+    return _fit_fsr_peak_periodicity(_T, wl0)
 
 
 def harness_perturbed_candidate(rel_err: float):

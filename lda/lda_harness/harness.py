@@ -35,9 +35,20 @@ def _default_empirical_anchor():
     return EmpiricalAnchor(corpus)
 
 
+# 候选三分类（v0.9.16 · P0-3）：与对外账本 /api/verification_ledger 同一判序，
+# 全库唯一定义处。判序固定为「先判降级 → 再查登记表 → 否则自证桩」。
+#   strict_independent   = 走方法学不同源的独立求解，|diff|≠0，计入 verified
+#   degraded_ordinal     = 有独立候选但与 golden 几何不同源/精度不足，仅量级参考，
+#                          **不计入 verified**（否则接线越多越假绿）
+#   self_consistent_stub = candidate≡golden，|diff|≡0 恒 PASS，零验证价值
+CANDIDATE_CLASS_STRICT = "strict_independent"
+CANDIDATE_CLASS_DEGRADED = "degraded_ordinal"
+CANDIDATE_CLASS_STUB = "self_consistent_stub"
+
+
 class BenchmarkResult:
     def __init__(self, bid, metric, golden, candidate, tol, oracle, passed,
-                 note="", source="", independent=None):
+                 note="", source="", independent=None, candidate_class=None):
         self.bid = bid
         self.metric = metric
         self.golden = golden
@@ -54,6 +65,11 @@ class BenchmarkResult:
         # 三态设计是为渐进式改造：只有显式路由的候选才改变 verified 语义，
         # 其余路径行为完全不变（避免一次性改动波及 MCP/L1/CLI 各调用方）。
         self.independent = independent
+        # v0.9.16（P0-3）：细粒度三分类（strict/degraded/stub），None=旧路径未标注。
+        # 有了它，报告不必再靠「independent 的补集」去猜自证桩数量
+        # （此前 E2 是 degraded 却被算进 stub，导致路径② stub=44、三分类 stub=43
+        # 两套口径打架，只能靠注释解释；现在三分类本身就是一等公民）。
+        self.candidate_class = candidate_class
 
 
 class VerificationHarness:
@@ -151,8 +167,19 @@ class VerificationHarness:
         for s in specs:
             # P0-2：若候选对象能自证独立性（IndependentCandidateRouter），按题标注；
             # 否则保持 None，报告沿用旧的整体判定（对既有路径零影响）。
-            _probe = getattr(candidate, "is_independent", None)
-            _indep = bool(_probe(s["id"])) if callable(_probe) else None
+            # P0-3：优先消费**三分类** API（candidate_class）——只有它才能把
+            # degraded 与 stub 分开；旧对象（L3 AI / Perturbed）只有 is_independent，
+            # 退化为二态、candidate_class 留 None，行为与 v0.9.15 完全一致。
+            _cls_probe = getattr(candidate, "candidate_class", None)
+            _ind_probe = getattr(candidate, "is_independent", None)
+            if callable(_cls_probe):
+                _cls = _cls_probe(s["id"])
+                _indep = (_cls == CANDIDATE_CLASS_STRICT)
+            elif callable(_ind_probe):
+                _cls = None
+                _indep = bool(_ind_probe(s["id"]))
+            else:
+                _cls, _indep = None, None
             if not s.get("resolved"):
                 results.append(BenchmarkResult(
                     s["id"], s.get("metric"), None, None, s.get("tol"),
@@ -182,15 +209,15 @@ class VerificationHarness:
                 results.append(BenchmarkResult(
                     s["id"], s["metric"], golden, candidate_val, s["tol"],
                     s["oracle"], passed, src_note, source,
-                    independent=_indep))
+                    independent=_indep, candidate_class=_cls))
                 continue
             golden, source, src_note = golden_with_source(s["id"], s["params"])
             candidate_val = candidate(s, golden, s["params"])
             passed = _cmp_ok(candidate_val, golden, s["tol"], s.get("cmp", "abs"))
             results.append(BenchmarkResult(
                 s["id"], s["metric"], golden, candidate_val, s["tol"],
-                s["oracle"], passed, src_note, source,
-                independent=_indep))
+                    s["oracle"], passed, src_note, source,
+                    independent=_indep, candidate_class=_cls))
         return results
 
 
@@ -264,11 +291,35 @@ class IndependentCandidateRouter:
         from .benchmarks import BENCHMARK_DEFS
         return (BENCHMARK_DEFS.get(bid) or {}).get("candidate")
 
-    def is_independent(self, bid):
-        """该锚题是否具备**已登记**的独立候选。"""
+    def candidate_class(self, bid):
+        """候选三分类（v0.9.16 · P0-3）——全库唯一判序，与对外账本同源。
+
+        判序**必须**先判 `candidate_status=degraded_ordinal` 再查登记表：
+        E2 的 fdfd_ng 一旦登记，若先查表就会被判成 strict ⇒ verified 从 4
+        虚报成 5（**假绿**）。降级锚「有候选、跑了真求解器」，但不进死标量判决。
+        """
         from .verification_adapters import BENCHMARK_CANDIDATES
-        key = self.resolve_key(bid)
-        return bool(key) and key in BENCHMARK_CANDIDATES
+        from .benchmarks import BENCHMARK_DEFS
+        d = BENCHMARK_DEFS.get(bid) or {}
+        if d.get("candidate_status") == CANDIDATE_CLASS_DEGRADED:
+            return CANDIDATE_CLASS_DEGRADED
+        key = d.get("candidate")
+        if key and key in BENCHMARK_CANDIDATES:
+            return CANDIDATE_CLASS_STRICT
+        return CANDIDATE_CLASS_STUB
+
+    def is_independent(self, bid):
+        """该锚题是否由**进死标量判决**的独立候选判出（= strict，不含降级）。"""
+        return self.candidate_class(bid) == CANDIDATE_CLASS_STRICT
+
+    def describe_trichotomy(self):
+        """供报告 meta 显示三分类明细（strict / degraded / stub 各有哪些题）。"""
+        from .benchmarks import BENCHMARK_DEFS
+        out = {CANDIDATE_CLASS_STRICT: [], CANDIDATE_CLASS_DEGRADED: [],
+               CANDIDATE_CLASS_STUB: []}
+        for b in sorted(BENCHMARK_DEFS):
+            out[self.candidate_class(b)].append(b)
+        return out
 
     def __call__(self, spec, golden, params):
         from .verification_adapters import BENCHMARK_CANDIDATES

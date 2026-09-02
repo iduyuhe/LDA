@@ -79,9 +79,14 @@ def main():
         # 效果：报告的 summary.verified 首次 > 0（v0.9.14 及之前恒为 0），
         # 同时 self_consistent_stub_count 如实暴露剩余自证桩数量。
         candidate = IndependentCandidateRouter()
-        _ind = candidate.describe()
-        cand_name = ("IndependentCandidateRouter(独立候选 %d 道: %s)"
-                     % (len(_ind), ",".join(_ind) or "无"))
+        _tri = candidate.describe_trichotomy()
+        from lda_harness.harness import (CANDIDATE_CLASS_STRICT,
+                                         CANDIDATE_CLASS_DEGRADED)
+        cand_name = ("IndependentCandidateRouter(独立候选 %d 道: %s；降级量级参考 %d 道: %s)"
+                     % (len(_tri[CANDIDATE_CLASS_STRICT]),
+                        ",".join(_tri[CANDIDATE_CLASS_STRICT]) or "无",
+                        len(_tri[CANDIDATE_CLASS_DEGRADED]),
+                        ",".join(_tri[CANDIDATE_CLASS_DEGRADED]) or "无"))
         # 绝大多数锚题仍是自证桩 ⇒ 警告必须继续显示（不得因 verified>0 而撤下）
         self_consistent = True
 
@@ -122,14 +127,28 @@ def main():
     # 「AI 写的内核对不对」，|diff|≡0 表示**内核把公式算对了**（B1/B4 即此情形），
     # 是合法 PASS 而非回落失败 —— 一刀切会把「算对了」误判成「假独立」。
     if isinstance(candidate, IndependentCandidateRouter):
+        from lda_harness.harness import CANDIDATE_CLASS_STUB
+        # 按**三分类**双向复核（v0.9.16 · P0-3 加强）：
+        #   ① 非自证桩（独立/降级）⇒ |diff| 必须非零（回落 golden 即穿帮）
+        #   ② 自证桩 ⇒ |diff| 必须为零（若非零，说明分类表与实现脱节）
+        # 只查 ① 不查 ②，就无法发现「某道被误标成自证桩、实际已接线」的漏算。
         _fake_independent = [r.bid for r in results
-                             if getattr(r, "independent", False)
+                             if getattr(r, "candidate_class", None)
+                             not in (None, CANDIDATE_CLASS_STUB)
                              and isinstance(r.candidate, (int, float))
                              and isinstance(r.golden, (int, float))
                              and abs(r.candidate - r.golden) < 1e-12]
         assert not _fake_independent, (
-            f"标为独立候选却 candidate≡golden（假独立）：{sorted(_fake_independent)}"
+            f"标为独立/降级候选却 candidate≡golden（假独立）：{sorted(_fake_independent)}"
             "——路由或候选实现可能已静默回落 golden，verified 会被虚报")
+        _mislabeled_stub = [r.bid for r in results
+                            if getattr(r, "candidate_class", None) == CANDIDATE_CLASS_STUB
+                            and isinstance(r.candidate, (int, float))
+                            and isinstance(r.golden, (int, float))
+                            and abs(r.candidate - r.golden) >= 1e-12]
+        assert not _mislabeled_stub, (
+            f"标为自证桩却 |diff|≠0（分类表与实现脱节）：{sorted(_mislabeled_stub)}"
+            "——该道实际已跑真求解器，却被算进自证桩，verified 会被少算")
     if not args.ai and args.perturb <= 0:
         # 判决回路必须闭合（48/48），但**不得**被读成「48 项已验证」
         assert n_pass == len(results), (
@@ -150,19 +169,24 @@ def main():
         #   ② verified 不得少算 —— 防止独立候选被悄悄降级回自证桩（倒退）
         _verified = _js["summary"]["verified"]
         _stub = _js["summary"]["self_consistent_stub_count"]
+        # 三分类（P0-3）：verified + 降级 + 自证桩 == 总项数，三者不得互相吞并
+        _tri_sum = _js["summary"].get("candidate_class_totals") or {}
+        _n_deg = _tri_sum.get("degraded_ordinal", 0)
         assert _verified == n_independent, (
             f"verified({_verified}) 应恰为独立候选项数({n_independent})——"
-            "多算=把自证桩当已验证，少算=独立候选被降级")
-        assert _stub == len(results) - n_independent, (
-            f"自证桩数({_stub}) 应为 {len(results) - n_independent}")
-        assert _verified + _stub == len(results), (
-            "verified + 自证桩 必须等于总项数（不得有第三态漏算）")
+            "多算=把自证桩/降级锚当已验证，少算=独立候选被降级")
+        assert _stub == len(results) - n_independent - _n_deg, (
+            f"自证桩数({_stub}) 应为 {len(results) - n_independent - _n_deg}")
+        assert _verified + _stub + _n_deg == len(results), (
+            f"verified({_verified}) + 自证桩({_stub}) + 降级({_n_deg}) "
+            f"必须等于总项数({len(results)})——三分类不得互相吞并或漏算")
         if n_independent:
             assert "独立候选求解器" in md, (
                 "混合态下报告必须说明「N 项独立 / M 项自证」，"
                 "否则外部读者无法区分哪些真被验证")
         print(f"\n[D-64/P0-2] 混合态断言通过：独立候选 verified={_verified} · "
-              f"自证桩 {_stub} · 判决回路 {n_pass}/{len(results)} 闭合")
+              f"降级量级参考 {_n_deg} · 自证桩 {_stub} · "
+              f"判决回路 {n_pass}/{len(results)} 闭合")
     else:
         _js = json.loads(js)
         assert _js["summary"]["self_consistent"] is False, "独立候选下 self_consistent 应为 False"

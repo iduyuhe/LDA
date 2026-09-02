@@ -1,5 +1,129 @@
 # Changelog
 
+## v0.9.16（2026-09-02 · P0-3 闭合 + 光子侧低成本批次 · 严格独立 4 → 7）
+
+**指令**：v0.9.15 收口后，杜先生拍板下一步 = **P0-3 + 光子侧低成本批次（B3/B4/B20）**。
+理由：严格侧求解器早已躺在代码库，P0 是**接线段工作**，不需等 C 期解锁；风险可控、见效快。
+
+**结果**：严格独立候选 **4 → 7**（B3/B4/B9/B20/B25/B26/B27）· 降级量级参考 **1**（E2）· 自证桩 **43 → 40**。
+
+---
+
+### 改动一：P0-3 闭合（`fdfd_ng` 登记 + 三分类判序）
+
+v0.9.15 遗留缺口：端点 `harness_cli.self_consistent_stub_count` 写 44，
+而路径①（内部 smoke）真实自证桩是 43 —— 因为 `fdfd_ng` **没登记进** `BENCHMARK_CANDIDATES`，
+E2 在路径①是真 FDFD 候选（golden 1.892 / cand 1.9587 / |diff|=0.0667），在路径②却回落成自证桩。
+
+- `verification_adapters.py`：`_fdfd_ng_candidate` 用 `@_register_candidate("fdfd_ng", ...)` **正式登记**，
+  docstring 写明「直波导候选 vs 环器件 golden **几何不同源**，仅作量级参考」。
+- `harness.py`：新增三分类常量 —— **全库唯一定义处**：
+  ```python
+  CANDIDATE_CLASS_STRICT   = "strict_independent"
+  CANDIDATE_CLASS_DEGRADED = "degraded_ordinal"
+  CANDIDATE_CLASS_STUB     = "self_consistent_stub"
+  ```
+  新增 `IndependentCandidateRouter.candidate_class(bid)` / `describe_trichotomy()`；
+  `is_independent(bid)` 改为 `candidate_class(bid) == CANDIDATE_CLASS_STRICT`。
+- `BenchmarkResult.__init__` 加 `candidate_class` 字段；`VerificationHarness.run` 优先消费三分类 API
+  （`getattr` 探测，兼容未改造的旧 candidate 对象）。
+- `report.py`：新增 `candidate_class_counts()`；`independence_counts` 在三分类可用时取**真实自证桩数**
+  （degraded 不再混进来）；`_MIXED_WARNING` 拆出「仅自证桩」与「含降级」两种措辞；
+  `format_json` summary 增 `candidate_class_totals`、results 每项增 `candidate_class`。
+- `routes.py`：`self_consistent_stub_count` 从 `len(_stub)+len(_degraded)` 改回 `len(_stub)`
+  （闭合后不再需要「44 vs 43」的散文解释）；`detail` 改写为「✅ P0-3 已于 v0.9.16 闭合」。
+
+🔴 **判序是本改动的命门**（`candidate_class` 内固定为「先降级 → 再查表 → 否则自证桩」）：
+
+| 判序 | E2 结果 | `verified` | 性质 |
+|---|---|---|---|
+| 先判降级 ✅（本版） | degraded | 7 | 真实 |
+| 先查登记表 ❌ | strict 且 PASS | **8** | **假绿** |
+
+「接线越多越容易假绿」的典型：登记动作本身是**对的**，但少了「先判降级」这一步，
+登记就会把降级项抬成独立项。反向自检 A 精确复现（见下）。
+
+---
+
+### 改动二：光子侧 B3/B4/B20 接线（频域峰周期拟合）
+
+新增 `verification_adapters.py` 1c 节，三个候选：
+
+| 锚题 | 候选 | 数值响应 | 残差 rel | d/tol |
+|---|---|---|---|---|
+| B3 | `fp_fsr_peakfit` | Airy `T=1/(1+F·sin²(δ/2))`，δ=4πnL/λ | 1.4e-8 % | 1.7e-08 |
+| B4 | `ring_fsr_peakfit` | add-drop drop 口 `D∝1/|1−a·t·e^{−iφ}|²` | 2.0e-7 % | 6.2e-08 |
+| B20 | `mzi_fsr_peakfit` | `T=½(1+cos(2π·n_eff·ΔL/λ))` | 2.3e-9 % | 4.7e-04 |
+
+🔬 **关键方法学：FSR 必须按「频域周期」取值，不能按「相邻峰波长间距」。**
+谐振/干涉峰满足 光程 = m·λ ⇒ **1/λ_m 严格等距**；教科书闭式 FSR_λ = λ²/光程
+只是该频域等距性在 λ0 处的**一阶连续化**，与「相邻峰实测波长间距」相差 O(1/m)：
+
+| 锚题 | m | 闭式 vs 实测峰间距 | 若按波长间距取值 |
+|---|---|---|---|
+| B3 | ≈12.9 | **6.7 %**（8.1 nm） | 假红（超 tol=1.0） |
+| B4 | ≈169 | 0.59 % | 假红 |
+| B20 | ≈77.5 | 1.29 %（0.26 nm） | 假红（tol=1e-6 的 **26 万倍**） |
+
+🔧 **网格规模是刻意标定的**：`_FSR_GRID_N = 50001`。太粗 ⇒ 残差超 tol（B20 的 tol=1e-6 最紧）⇒ 假红；
+太精 ⇒ 残差掉到 1e-12 以下、**与自证桩按值不可区分** ⇒ 护栏误报假独立。
+实测扫描 20001/50001/100001/200001 后选 50001：三道残差 1.7e-8 / 1.9e-8 / 4.7e-10，
+离 1e-12 判据有 ≥467× 余量，同时远低于各自 tol。
+
+🚫 **峰位只做三点抛物线亚网格细化，不做牛顿/二分精化** —— 打磨到机器精度会让 |diff| < 1e-12，
+与自证桩不可区分，反而毁掉可证伪性（理由写进代码注释，防止后人"优化"掉）。
+
+🔴 **三道 tol 一律未放宽**。放宽 tol 等于取消验证，是 P0 纪律红线；实测余量充足（B20 达 2000×）。
+
+---
+
+### 改动三：护栏升级为三分类双向复核
+
+`run_harness.py` 假独立断言 + `run_benchmark_falsifiability_smoke.py` 第 ⑧ 项，
+均从**单向**（只查「标独立者 |diff| 非零」）升级为**双向**：
+
+| 方向 | 判据 | 抓什么 |
+|---|---|---|
+| ① | 非自证桩 ⇒ \|diff\| 必须 **非零** | 回落 golden 的**假独立** |
+| ② | 自证桩 ⇒ \|diff\| 必须 **为零** | 新接线被误分类吞掉的**漏算** |
+
+只做 ① 会放过「路由已改坏、标签仍为真」的假绿（v0.9.15 血案）；只做 ① 也放过
+「某道已接独立候选却被标成自证桩」的漏算。
+
+smoke 同步：`MIN_INDEPENDENT` 4 → 7；`PERTURB_SPEC` 新增 B3@L、B4@R、B20@deltaL_um 三道 10% 扰动；
+正向检查额外披露 `d/tol` 比值。
+
+---
+
+### 反向自检：五处篡改全部被抓（护栏真的会响）
+
+| # | 篡改手法 | 实测报错 |
+|---|---|---|
+| A | `candidate_class` 判序反转（先查表后判降级） | `独立数=8≠路径①7；路径②三分类=(8,0,40)≠路径①(7,1,40)` |
+| B | B20 候选静默回落 golden | `标非自证桩却 \|diff\|≡0 的假独立=['B20']` |
+| C | B1 漏分类（已接线却标自证桩） | `标自证桩却 \|diff\|≠0 的漏算=['B1']` |
+| D | 对外 stub 口径改回旧值 41 | `CLI stub=41≠40` |
+| E | CLI 自身断言（同 B 手法） | `AssertionError: 标为独立/降级候选却 candidate≡golden（假独立）：['B20']` |
+
+全部 `finally` 还原，`grep` 确认无残留。自检脚本 `_tamper_check.py` 保留在工作区（可复用）。
+
+---
+
+### 实测验收
+
+- **可证伪性 smoke 8/8 PASS**：
+  `严格独立=7 ['B20','B25','B26','B27','B3','B4','B9'] · 降级=['E2'] · 自证桩=40/48`；
+  正向 d/tol 全量披露；反向 10% 扰动三道全 FAIL（B20 灵敏度 ≤0.1%）；全量 48 锚无回归。
+- **路径②三模式全通**（exit=0）：默认 `verified=7 / 降级 1 / 自证 40`；
+  `--perturb 0.10` → 10；`--ai` → **2**（诚实值，未误伤）。
+- **版本号**：`pyproject.toml` 0.9.15 → 0.9.16。
+
+⚠️ **诚实边界（未变）**：严格独立 **7/48**，自证桩 **40/48**。提高的是「可被外部验货的比例」
+而非单道验证强度；光子侧新接三道验证的是**峰位周期性**（干涉/谐振的基本物理），
+不是器件全物理。剩余 40 道按 P0 计划继续接线。
+
+---
+
 ## v0.9.15（2026-09-02 · P0-2 独立性接到对外验货面）
 
 **指令**：战略审计（v0.9.13 基线）→ 杜先生拍板 E1=A「锚题独立候选化」→ P0-1 已完成，续做 P0-2。

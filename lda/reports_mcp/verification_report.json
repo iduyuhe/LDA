@@ -6,14 +6,15 @@
     "via": "L1 KernelGateway",
     "self_consistent": false
   },
-  "generated_at": "2026-09-02T08:17:42",
+  "generated_at": "2026-09-02T09:48:12",
   "summary": {
     "total": 48,
     "passed": 45,
     "self_consistent": false,
     "verified": 2,
     "self_consistent_stub_count": 43,
-    "independent_candidate_count": 5
+    "independent_candidate_count": 5,
+    "candidate_class_totals": null
   },
   "results": [
     {
@@ -26,7 +27,8 @@
       "tol": 0.0002,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": true
+      "independent": true,
+      "candidate_class": null
     },
     {
       "id": "B10",
@@ -38,7 +40,8 @@
       "tol": 0.01,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B11",
@@ -50,7 +53,8 @@
       "tol": 0.03,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B12",
@@ -62,7 +66,8 @@
       "tol": 0.02,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B13",
@@ -74,7 +79,8 @@
       "tol": 0.1,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B14",
@@ -86,7 +92,8 @@
       "tol": 0.5,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B15",
@@ -98,7 +105,8 @@
       "tol": 0.01,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B16",
@@ -110,7 +118,8 @@
       "tol": 3.0,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B17",
@@ -122,7 +131,8 @@
       "tol": 1e-09,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B18",
@@ -134,7 +144,8 @@
       "tol": 1.0,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B19",
@@ -146,7 +157,8 @@
       "tol": 1e-09,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B2",
@@ -158,7 +170,8 @@
       "tol": 0.05,
       "passed": false,
       "note": "确定性物理定律/解析解",
-      "independent": true
+      "independent": true,
+      "candidate_class": null
     },
     {
       "id": "B20",
@@ -170,7 +183,8 @@
       "tol": 1e-06,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B21",
@@ -182,7 +196,8 @@
       "tol": 1e-06,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B22",
@@ -194,7 +209,8 @@
       "tol": 1e-06,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B23",
@@ -206,7 +222,8 @@
       "tol": 1e-06,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B24",
@@ -218,7 +235,8 @@
       "tol": 1e-06,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B25",
@@ -230,7 +248,8 @@
       "tol": 0.05,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B26",
@@ -242,7 +261,8 @@
       "tol": 0.0001,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B27",
@@ -254,7 +274,8 @@
       "tol": 30.0,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B28",
@@ -266,7 +287,8 @@
       "tol": 0.001,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B3",
@@ -278,7 +300,8 @@
       "tol": 1.0,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B4",
@@ -290,7 +313,8 @@
       "tol": 0.3,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": true
+      "independent": true,
+      "candidate_class": null
     },
     {
       "id": "B5",
@@ -302,7 +326,8 @@
       "tol": 1.0,
       "passed": true,
       "note": "overlap-estimate; theta=10.0deg",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B6",
@@ -314,7 +339,8 @@
       "tol": 0.15,
       "passed": true,
       "note": "ORACLE 不可用，回退设计守则锚",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B7",
@@ -326,7 +352,8 @@
       "tol": 5.0,
       "passed": true,
       "note": "2D FDTD 离线; P_thr=9307 P_cross=98.97",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "B8",
@@ -338,7 +365,8 @@
       "tol": 0.01,
       "passed": false,
       "note": "确定性物理定律/解析解",
-      "independent": true
+      "independent": true,
+      "candidate_class": null
     },
     {
       "id": "B9",
@@ -350,7 +378,8 @@
       "tol": 0.05,
       "passed": false,
       "note": "确定性物理定律/解析解",
-      "independent": true
+      "independent": true,
+      "candidate_class": null
     },
     {
       "id": "E1",
@@ -362,7 +391,8 @@
       "tol": 0.1,
       "passed": true,
       "note": "Advanced Micro Foundry (AMF) 商用 SOI 平台；二氧化硅埋层条形波导 500x220 nm^2 | F. Garrisi et al., 'Characterization of photon pairs generated by a silicon ring resonator under electrical self-pumping,' arXiv:2011.03273 (2020), DOI 10.48550/arXiv.2011.03273 | σ=0.05 | tol=0.05 | tier=A",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "E2",
@@ -374,7 +404,8 @@
       "tol": 0.1,
       "passed": true,
       "note": "LPCVD Si3N4 300nm 平台（公开文献）：热氧 SiO2 2.5um 下包层 + PECVD SiO2 2.0um 上包层，全刻蚀条形波导 | P. Munoz et al., Si3N4 300 nm photonic integration platform, Sensors (MDPI) 2017: OFDR ring-resonator group index TE=1.892 / TM=1.717; MZI transmission cross-check TE 1.90-1.92 | σ=0.03 | tol=0.03 | tier=A",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "E3",
@@ -386,7 +417,8 @@
       "tol": 0.1,
       "passed": true,
       "note": "SOITEC SOI 250nm 器件层 / 400nm 薄埋氧（局部衬底去除，Cornell OxideMEMS Lab） | S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850 | σ=0.1 | tol=0.1 | tier=A",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "E4",
@@ -398,7 +430,8 @@
       "tol": 0.1,
       "passed": true,
       "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=0.03 | tol=0.03 | tier=A",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "E5",
@@ -410,7 +443,8 @@
       "tol": 0.1,
       "passed": true,
       "note": "SOI 平台（EME 设计 + 实验演示） | D. Chack & S. Hassan, Opt. Eng. 59(10), 105102 (2020), DOI 10.1117/1.OE.59.10.105102 | σ=0.05 | tol=0.05 | tier=A",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "E6",
@@ -422,7 +456,8 @@
       "tol": 0.05,
       "passed": true,
       "note": "8 英寸晶圆厚 SiN（LPCVD 两步沉积 + 退火，大马士革工艺） | 丛庆宇 等, 光子学报 53(9), 0913002 (2024), DOI 10.3788/gzxb20245309.0913002 | σ=0.01 | tol=0.01 | tier=A",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "E7",
@@ -434,7 +469,8 @@
       "tol": 5.0,
       "passed": true,
       "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=2.0 | tol=2.0 | tier=A",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "S1",
@@ -446,7 +482,8 @@
       "tol": 0.01,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "S10",
@@ -458,7 +495,8 @@
       "tol": 1e-09,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "S11",
@@ -470,7 +508,8 @@
       "tol": 1e-09,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "S12",
@@ -482,7 +521,8 @@
       "tol": 1e-09,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "S13",
@@ -494,7 +534,8 @@
       "tol": 0.01,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "S2",
@@ -506,7 +547,8 @@
       "tol": 1e-06,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "S3",
@@ -518,7 +560,8 @@
       "tol": 0.01,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "S4",
@@ -530,7 +573,8 @@
       "tol": 1e-06,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "S5",
@@ -542,7 +586,8 @@
       "tol": 1e-06,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "S6",
@@ -554,7 +599,8 @@
       "tol": 1e-06,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "S7",
@@ -566,7 +612,8 @@
       "tol": 0.15,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "S8",
@@ -578,7 +625,8 @@
       "tol": 0.2,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     },
     {
       "id": "S9",
@@ -590,7 +638,8 @@
       "tol": 1e-09,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false
+      "independent": false,
+      "candidate_class": null
     }
   ]
 }

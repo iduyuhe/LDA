@@ -1,14 +1,14 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-02T08:24:34
+- 生成时间：2026-09-02T09:55:07
 - L0_IR：(内置默认 B1–B4,B8)
-- candidate：IndependentCandidateRouter(独立候选 4 道: B25,B26,B27,B9)
+- candidate：IndependentCandidateRouter(独立候选 7 道: B20,B25,B26,B27,B3,B4,B9；降级量级参考 1 道: E2)
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - self_consistent：True
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **4 项**由**独立候选求解器**判出（计入 `summary.verified`），其余 **44 项**仍走 ReferenceCandidate占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 4 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **7 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余项中 **40 项**走 ReferenceCandidate 占位自证（候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**），**1 项**为降级量级参考（有独立候选但与 golden 几何不同源/精度不足，**不进死标量判决**）。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 7 项。
 
-## 汇总：48/48 通过（独立候选 4 项中 **4 项通过=已验证** · 44 项自证闭环，**非验证结论**）
+## 汇总：48/48 通过（独立候选 7 项中 **7 项通过=已验证** · 40 项自证闭环 · 1 项降级量级参考（不进判决），**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -24,7 +24,7 @@
 | B18 | F_purcell | physical-law | 8000 | 8000 | 0 | 1 | ✅ PASS |
 | B19 | max|T(λ)| over all transfer paths | physical-law | 1 | 1 | 0 | 1e-09 | ✅ PASS |
 | B2 | n_eff | physical-law | 2.65095 | 2.65095 | 0 | 0.05 | ✅ PASS |
-| B20 | FSR_nm | physical-law | 20.0108 | 20.0108 | 0 | 1e-06 | ✅ PASS |
+| B20 | FSR_nm | physical-law | 20.0108 | 20.0108 | 4.671e-10 | 1e-06 | ✅ PASS |
 | B21 | cavity_wl_nm | physical-law | 2214 | 2214 | 0 | 1e-06 | ✅ PASS |
 | B22 | qres_f_ghz | physical-law | 7.49481 | 7.49481 | 0 | 1e-06 | ✅ PASS |
 | B23 | fluxonium_f01_ghz | physical-law | 2.82843 | 2.82843 | 0 | 1e-06 | ✅ PASS |
@@ -33,15 +33,15 @@
 | B26 | dispersive_chi_ghz | physical-law | -0.00230769 | -0.00226196 | 4.573e-05 | 0.0001 | ✅ PASS |
 | B27 | cz_gate_time_ns | physical-law | 680.678 | 694.441 | 13.76 | 30 | ✅ PASS |
 | B28 | Vpi_volts | physical-law | 3.78097 | 3.78097 | 0 | 0.001 | ✅ PASS |
-| B3 | FSR_nm | physical-law | 120.125 | 120.125 | 0 | 1 | ✅ PASS |
-| B4 | FSR_nm | physical-law | 9.1476 | 9.1476 | 0 | 0.3 | ✅ PASS |
+| B3 | FSR_nm | physical-law | 120.125 | 120.125 | 1.664e-08 | 1 | ✅ PASS |
+| B4 | FSR_nm | physical-law | 9.1476 | 9.1476 | 1.853e-08 | 0.3 | ✅ PASS |
 | B5 | split_loss_dB | numpy-overlap-offline | 3.4 | 3.4 | 0 | 1 | ✅ PASS |
 | B6 | coupling_eff | design-anchor | 0.5 | 0.5 | 0 | 0.15 | ✅ PASS |
 | B7 | crosstalk_dB | numpy-fdtd-offline | -19.7328 | -19.7328 | 0 | 5 | ✅ PASS |
 | B8 | T_taper | physical-law | 1 | 1 | 0 | 0.01 | ✅ PASS |
 | B9 | f01_GHz | physical-law | 6.6282 | 6.61345 | 0.01475 | 0.05 | ✅ PASS |
 | E1 | n_g | empirical-measurement | 4.18 | 4.18 | 0 | 0.1 | ✅ PASS |
-| E2 | n_g | empirical-measurement | 1.892 | 1.892 | 0 | 0.1 | ✅ PASS |
+| E2 | n_g | empirical-measurement | 1.892 | 1.95869 | 0.06669 | 0.1 | ✅ PASS |
 | E3 | FSR_nm | empirical-measurement | 10.44 | 10.44 | 0 | 0.1 | ✅ PASS |
 | E4 | insertion_loss_dB | empirical-measurement | 0.18 | 0.18 | 0 | 0.1 | ✅ PASS |
 | E5 | excess_loss_dB | empirical-measurement | 0.05 | 0.05 | 0 | 0.1 | ✅ PASS |

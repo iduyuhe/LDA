@@ -73,18 +73,36 @@ BENCHMARK_DEFS = {
         "metric": "FSR_nm",
         "oracle": "analytical(Airy)",
         "tol": 1.0,
+        # v0.9.16（P0 续）：接入独立候选 —— 数值扫 Airy 透射谱、定峰后对 1/λ
+        # 做等距拟合（频域周期 Δu=1/(2nL)），再换算回波长域。**不调用**闭式。
+        "candidate": "fp_fsr_peakfit",
+        "candidate_desc": ("数值 Airy 响应谱峰周期拟合 FSR（自适应开窗 + 抛物线定峰"
+                           " + 1/λ 等距最小二乘）—— 与 golden 闭式方法学独立"),
         "default_params": {"wavelength": 1.55, "n": 1.0, "L": 10.0},
         "golden_fn": b3_fp_fsr_nm,
-        "note": "Airy 解析公式 FSR=λ²/(2nL)。",
+        "note": ("Airy 解析公式 FSR=λ²/(2nL)。"
+                 "⚠️ 口径澄清（v0.9.16 接线时实测）：峰满足 2nL=mλ ⇒ 1/λ 严格等距，"
+                 "闭式 λ²/(2nL) 是该频域等距性的**一阶连续化**，与「相邻峰的波长实测间距」"
+                 "相差 O(1/m)。本锚 m=2nL/λ≈12.9 ⇒ 该差约 6.7%（8.1nm，超出 tol=1.0）。"
+                 "故候选统一按**频域周期**口径取值（与闭式同一物理量），"
+                 "而非量「相邻峰波长差」——后者测的是另一个量，会假红。"),
     },
     "B4": {
         "title": "add-drop 环形谐振器 FSR",
         "metric": "FSR_nm",
         "oracle": "analytical(ring)/sax",
         "tol": 0.3,
+        # v0.9.16（P0 续）：接入独立候选 —— 数值扫 add-drop 环 drop 口传递函数、
+        # 定峰后对 1/λ 做等距拟合（频域周期 Δu=1/(n_g·2πR)），再换算回波长域。
+        "candidate": "ring_fsr_peakfit",
+        "candidate_desc": ("数值 add-drop 环传递函数（drop 口）峰周期拟合 FSR"
+                           "—— 与 golden 闭式方法学独立"),
         "default_params": {"wavelength": 1.55, "n_g": 4.18, "R": 10.0},
         "golden_fn": b4_ring_fsr_nm,
-        "note": "环形传递函数 FSR=λ²/(n_g·2πR)；SAX 电路级 ORACLE 可作交叉验证（见 oracle_sax）。",
+        "note": ("环形传递函数 FSR=λ²/(n_g·2πR)；SAX 电路级 ORACLE 可作交叉验证（见 oracle_sax）。"
+                 "⚠️ 同 B3 口径：闭式是频域等距性的一阶连续化，本锚 m=n_g·2πR/λ≈169 "
+                 "⇒ 与「相邻峰波长实测间距」相差约 0.59%（0.054nm）。"
+                 "候选按频域周期口径取值，与闭式同一物理量。"),
     },
     "B8": {
         "title": "绝热锥度（taper）传输效率",
@@ -258,11 +276,22 @@ BENCHMARK_DEFS = {
         "metric": "FSR_nm",
         "oracle": "analytical(MZI interference)",
         "tol": 1e-6,
+        # v0.9.16（P0 续）：接入独立候选 —— 数值扫 MZI 干涉谱、定峰后对 1/λ 做
+        # 等距拟合（频域周期 Δu=1/(n_eff·ΔL)），再换算回波长域。**不调用**闭式。
+        # ⚠️ tol=1e-6 原是「自证桩容差」量级（相对量 5e-8）；接线前担心真独立候选
+        # 满足不了，实测残差 4.7e-10（d/tol≈4.7e-4，余量 2000×）⇒ 无需动 tol。
+        "candidate": "mzi_fsr_peakfit",
+        "candidate_desc": ("数值 MZI 干涉谱 T=½(1+cos φ) 峰周期拟合 FSR"
+                           "—— 与 golden 闭式方法学独立"),
         "default_params": {"wl0_um": 1.55, "n_core": 3.48, "deltaL_um": 34.5},
         "golden_fn": b20_mzi_fsr,
         "note": ("MZI 干涉传输 T=½(1+cos(2π·n_eff·ΔL/λ))；FSR=λ²/(n_eff·ΔL)"
                  "（干涉型，与 B4 环形谐振型并列对照）。确定性物理定律锚，"
-                 "LLM 不进判决路径；harness 默认 ReferenceCandidate 自洽 PASS。"),
+                 "LLM 不进判决路径。"
+                 "⚠️ 同 B3 口径：闭式是频域等距性的一阶连续化，本锚 m=n_eff·ΔL/λ≈77.5 "
+                 "⇒ 与「相邻峰波长实测间距」相差约 1.29%（0.26nm，是 tol=1e-6 的 26 万倍）。"
+                 "候选按频域周期口径取值，与闭式同一物理量；**tol 未因接线而放宽**"
+                 "（放宽 tol 等于取消验证，是 P0 的纪律红线）。"),
     },
     # ---- 内核纵深（v0.8.3）：光子晶体腔 Fabry–Perot 共振波长物理定律锚 ----
     "B21": {

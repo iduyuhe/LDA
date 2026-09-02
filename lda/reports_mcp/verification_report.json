@@ -6,7 +6,7 @@
     "via": "L1 KernelGateway",
     "self_consistent": false
   },
-  "generated_at": "2026-09-02T09:48:12",
+  "generated_at": "2026-09-02T12:34:22",
   "summary": {
     "total": 48,
     "passed": 45,
@@ -76,7 +76,7 @@
       "source": "physical-law",
       "golden": 0.0316227766016838,
       "candidate": 0.0316227766016838,
-      "tol": 0.1,
+      "tol": 0.002,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
@@ -232,7 +232,7 @@
       "source": "physical-law",
       "golden": -0.004000000000000001,
       "candidate": -0.004000000000000001,
-      "tol": 1e-06,
+      "tol": 3e-05,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,

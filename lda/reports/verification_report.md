@@ -1,22 +1,22 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-02T09:55:07
+- 生成时间：2026-09-02T12:42:32
 - L0_IR：(内置默认 B1–B4,B8)
-- candidate：IndependentCandidateRouter(独立候选 7 道: B20,B25,B26,B27,B3,B4,B9；降级量级参考 1 道: E2)
+- candidate：IndependentCandidateRouter(独立候选 12 道: B12,B13,B20,B22,B23,B24,B25,B26,B27,B3,B4,B9；降级量级参考 1 道: E2)
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - self_consistent：True
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **7 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余项中 **40 项**走 ReferenceCandidate 占位自证（候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**），**1 项**为降级量级参考（有独立候选但与 golden 几何不同源/精度不足，**不进死标量判决**）。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 7 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **12 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余项中 **35 项**走 ReferenceCandidate 占位自证（候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**），**1 项**为降级量级参考（有独立候选但与 golden 几何不同源/精度不足，**不进死标量判决**）。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 12 项。
 
-## 汇总：48/48 通过（独立候选 7 项中 **7 项通过=已验证** · 40 项自证闭环 · 1 项降级量级参考（不进判决），**非验证结论**）
+## 汇总：48/48 通过（独立候选 12 项中 **12 项通过=已验证** · 35 项自证闭环 · 1 项降级量级参考（不进判决），**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
 | B1 | Q_scat | physical-law | 0.00284131 | 0.00284131 | 0 | 0.0002 | ✅ PASS |
 | B10 | F_gate | physical-law | 0.999583 | 0.999583 | 0 | 0.01 | ✅ PASS |
 | B11 | spectrum_match | physical-law | 0.00502277 | 0.00502277 | 0 | 0.03 | ✅ PASS |
-| B12 | f0_GHz | physical-law | 10.7583 | 10.7583 | 0 | 0.02 | ✅ PASS |
-| B13 | J_GHz | physical-law | 0.0316228 | 0.0316228 | 0 | 0.1 | ✅ PASS |
+| B12 | f0_GHz | physical-law | 10.7583 | 10.7583 | 6.913e-06 | 0.02 | ✅ PASS |
+| B13 | J_GHz | physical-law | 0.0316228 | 0.0303097 | 0.001313 | 0.002 | ✅ PASS |
 | B14 | L_3dB_um | physical-law | 15.5 | 15.5 | 0 | 0.5 | ✅ PASS |
 | B15 | lambda_B_um | physical-law | 1.5504 | 1.5504 | 0 | 0.01 | ✅ PASS |
 | B16 | L_mmi_um | physical-law | 18.5806 | 18.5806 | 0 | 3 | ✅ PASS |
@@ -26,9 +26,9 @@
 | B2 | n_eff | physical-law | 2.65095 | 2.65095 | 0 | 0.05 | ✅ PASS |
 | B20 | FSR_nm | physical-law | 20.0108 | 20.0108 | 4.671e-10 | 1e-06 | ✅ PASS |
 | B21 | cavity_wl_nm | physical-law | 2214 | 2214 | 0 | 1e-06 | ✅ PASS |
-| B22 | qres_f_ghz | physical-law | 7.49481 | 7.49481 | 0 | 1e-06 | ✅ PASS |
-| B23 | fluxonium_f01_ghz | physical-law | 2.82843 | 2.82843 | 0 | 1e-06 | ✅ PASS |
-| B24 | tcoup_geff_ghz | physical-law | -0.004 | -0.004 | 0 | 1e-06 | ✅ PASS |
+| B22 | qres_f_ghz | physical-law | 7.49481 | 7.49481 | 4.982e-08 | 1e-06 | ✅ PASS |
+| B23 | fluxonium_f01_ghz | physical-law | 2.82843 | 2.82843 | 7.752e-09 | 1e-06 | ✅ PASS |
+| B24 | tcoup_geff_ghz | physical-law | -0.004 | -0.00398728 | 1.272e-05 | 3e-05 | ✅ PASS |
 | B25 | tunable_f01_ghz | physical-law | 6.6282 | 6.61345 | 0.01475 | 0.05 | ✅ PASS |
 | B26 | dispersive_chi_ghz | physical-law | -0.00230769 | -0.00226196 | 4.573e-05 | 0.0001 | ✅ PASS |
 | B27 | cz_gate_time_ns | physical-law | 680.678 | 694.441 | 13.76 | 30 | ✅ PASS |

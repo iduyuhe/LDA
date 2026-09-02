@@ -78,13 +78,24 @@ PERTURB_SPEC = [
     ("B3", "L", "mul"),
     ("B4", "R", "mul"),
     ("B20", "deltaL_um", "mul"),
+    # v0.9.17（P0 续）：量子侧五道（离散 TL 本征 / 电荷基 / HO 基 / 三模 Fock）
+    ("B12", "l", "mul"),            # λ/4 谐振器长度 ⇒ f0 ∝ 1/l
+    ("B22", "L_um", "mul"),         # 同上（CPW 读出腔）
+    ("B23", "el_ghz", "mul"),       # f01=√(8EcEl) ⇒ El +10% ⇒ f01 +4.9%
+    ("B24", "wq_ghz", "mul"),       # Δ=wq−wc ⇒ g_eff 随失谐变化（实测信号最强键）
+    # 🔴 B13 必须扰 C1（信号 4.07e-3，唯一稳超 tol=2.0e-3 的强键）。
+    #   实测逐键信号：C1/C2 4.07e-3 ✅ · E_C1/E_C2 2.06e-3 ✅ · Cc 1.72e-3 ❌
+    #   · E_J1/E_J2 5.50e-4 ❌（比基线 1.31e-3 还小 —— 扰动与近似误差偶然抵消，
+    #   同 B26 现象）。盲区已写入 benchmarks.py 的 note，不掩盖。
+    ("B13", "C1", "mul"),
 ]
 PERTURB_REL = 0.10          # 反向测试扰动幅度（10%）
 SENSITIVITY_GRID = (0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20)
 SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 
-# 独立候选数下限（随 P0 推进递增：v0.9.14 起步 4 → v0.9.16 光子侧接线后 7）
-MIN_INDEPENDENT = 7
+# 独立候选数下限（随 P0 推进递增：v0.9.14 起步 4 → v0.9.16 光子侧 7
+# → v0.9.17 量子侧接 B12/B13/B22/B23/B24 后 12）
+MIN_INDEPENDENT = 12
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

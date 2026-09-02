@@ -464,6 +464,217 @@ def _mzi_fsr_peakfit_candidate(spec: VerificationSpec, oracle_value: Any) -> flo
     return _fit_fsr_peak_periodicity(_T, wl0)
 
 
+# ---------------------------------------------------------------------------
+# 1d. 量子侧严格数值候选（v0.9.17 · P0 续）：B12 / B22 / B23 / B24 / B13
+# ---------------------------------------------------------------------------
+# 这五道的 note 早就写着「严格侧 = 离散 TL 三对角特征值 / 441 维电荷基对角化 /
+# 双基对拍 / 三模 Fock 截断」，但 harness **从未真的接过** —— 一直落
+# `_harness_reference_candidate`（|diff|≡0 恒 PASS）。v0.9.17 把宣称接成事实。
+#
+# 🔴 传输线离散化必须用**二阶 ghost-point 边界**（实测教训）：
+#   `lda_solver/resonator_solver._discrete_f0` 在开路端写 `A[N-1,N-1] = -1`，
+#   等价于单边一阶差分 ⇒ 整体收敛只有 O(1/N)，N=200 残差 2.7e-2（B12 tol=0.02
+#   都过不去，B22 tol=1e-6 更无望）。改用 ghost point：
+#       短路端（Dirichlet, V=0）：V_{-1} = −V_0  ⇒ d[0]  = −3
+#       开路端（Neumann, V'=0）：V_N    =  V_{N-1} ⇒ d[-1] = −1
+#   收敛恢复 O(1/N²)，实测 B12 N=400 残差 6.9e-6、B22 N=4000 残差 5.0e-8。
+#
+# 🔴 **TL-FDTD 路线不可用**（实测证伪）：`device_library._qres_tlfdtd_core` 的
+#   FFT 记录长度 ∝ dt ∝ 1/N，网格细化反而**缩短时窗**、降低频率分辨率 ⇒
+#   残差随 N **恶化**（N=200: 8.4e-2 → N=1600: 3.6e-2），全部远超 tol。
+#   故 B22 走本征值路线而非时域路线。
+_TL_N_B12 = 400        # B12 网格（标定值：残差 6.9e-6，d/tol=3.5e-4，余量 2894×）
+_TL_N_B22 = 4000       # B22 网格（标定值：残差 5.0e-8，d/tol=5.0e-2，余量 20×）
+
+
+def _tl_eigen_f0_2nd(v: float, length: float, n_grid: int) -> float:
+    """二阶 ghost-point 边界的离散传输线 λ/4 基模频率（短路端 ↔ 开路端）。
+
+    对无损 TL 波动方程 ∂²V/∂x² = (1/v²)∂²V/∂t² 做等距二阶中心差分，
+    得三对角矩阵 A（对角 −2、次对角 +1），两端按 ghost point 修正；
+    最低模对应 A 的**最大（最接近 0）本征值** λ_max < 0：
+        ω = √(−λ_max)·v/dx,  f0 = ω/(2π)
+
+    ⚠️ 网格是**双向标定**的（与光子侧 `_FSR_GRID_N` 同一纪律）：
+      - 太粗 ⇒ 残差超 tol ⇒ 假红
+      - 太细 ⇒ ①残差掉到 1e-12 以下、与自证桩按值不可区分（护栏误报假独立）
+              ②越过 LAPACK 数值地板后残差**反升**（B22 实测 N=8000 起 2.6e-8、
+                N=16000 恶化到 1.0e-7，已非离散误差主导）
+    量纲由调用方保证：v/length 同量纲 ⇒ 返回值量纲 = v/length。
+    """
+    from scipy.linalg import eigh_tridiagonal
+
+    n = int(n_grid)
+    dx = float(length) / n
+    diag = np.full(n, -2.0)
+    diag[0] = -3.0          # Dirichlet ghost（短路端）
+    diag[-1] = -1.0         # Neumann ghost（开路端）
+    off = np.ones(n - 1)
+    lam = eigh_tridiagonal(diag, off, select="i", select_range=(n - 1, n - 1))[0]
+    omega = math.sqrt(-float(lam[0])) * float(v) / dx
+    return omega / (2.0 * math.pi)
+
+
+@_register_candidate(
+    "tl_eigen_f0",
+    "二阶 ghost-point 边界离散传输线三对角本征值 f0（N=400，scipy eigh_tridiagonal）"
+    "—— 与 golden 的 λ/4 连续极限闭式方法学独立")
+def _tl_eigen_f0_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B12 独立候选：超导谐振器 λ/4 基模 f0（离散 TL 本征 ↔ 连续闭式）。
+
+    golden = f0 = 1/(4l·√(L′C′))（**连续极限**闭式，无离散误差项）
+    cand   = 离散化 TL 波动方程的三对角矩阵最低本征模（二阶 ghost 边界）
+
+    参数量纲：Lp [H/m]、Cp [F/m]、l [m] ⇒ v=1/√(LpCp) [m/s]、f [Hz] → /1e9 GHz。
+    实测 N=400 残差 6.913e-6 GHz（rel 6.4e-5 = 0.0064%），tol=0.02 **未放宽**
+    （d/tol=3.5e-4，余量 2894×）；离 1e-12 自证桩判据有 6.9e6× 余量。
+    反向 10% 扰动实测 Lp/Cp/l 三键残差 0.50/0.50/0.98 GHz，全部远超 tol ⇒ 可证伪。
+    """
+    p = spec.params
+    v = 1.0 / math.sqrt(float(p["Lp"]) * float(p["Cp"]))     # m/s
+    return _tl_eigen_f0_2nd(v, float(p["l"]), _TL_N_B12) / 1e9
+
+
+@_register_candidate(
+    "tl_eigen_qres",
+    "二阶 ghost-point 边界离散传输线三对角本征值 f0（N=4000）"
+    "—— 与 golden 的 CPW λ/4 闭式 c0/(4·L·n_eff) 方法学独立")
+def _tl_eigen_qres_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B22 独立候选：CPW λ/4 读出谐振器基模（离散 TL 本征 ↔ 连续闭式）。
+
+    golden = f0 = c0/(4·L·n_eff)（连续极限闭式）
+    cand   = 同一 TL 波动方程离散本征（相速 v = c0/n_eff，与 golden 同物理输入）
+
+    ⚠️ B22 的 tol=1e-6 是「自证桩容差」量级（相对量 1.3e-7）—— 接线前担心真
+    独立候选满足不了。实测 N=4000 残差 4.982e-8（d/tol=4.98e-2，余量 20×）
+    ⇒ **tol 未放宽**（放宽 tol 等于取消验证，是 P0 纪律红线）。
+    N 不能再加大：N=8000 残差 2.6e-8、N=16000 反升到 1.0e-7（越过数值地板）。
+    反向 10% 扰动 L_um/n_eff 残差均 0.68 GHz（是 tol 的 6.8e5 倍）⇒ 可证伪。
+    """
+    p = spec.params
+    c0_um_ghz = 299792.458                                  # c0 = 299792.458 um·GHz
+    v = c0_um_ghz / float(p["n_eff"])                       # um·GHz
+    return _tl_eigen_f0_2nd(v, float(p["L_um"]), _TL_N_B22)  # 直接得 GHz
+
+
+@_register_candidate(
+    "fluxonium_ho_exact",
+    "Fluxonium 谐振子基矩阵严格对角化 f01（ncut=24，cosφ 泰勒矩阵幂级数）"
+    "—— 与 golden 的 LC 极限闭式 √(8·Ec·El) 方法学独立")
+def _fluxonium_ho_exact_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B23 独立候选：Fluxonium 在 Ej→0 极限的 f01（数值对角化 ↔ LC 闭式）。
+
+    golden = √(8·Ec·El)（H = 4Ec·n² + ½El·φ² 的 LC 谐振子解析解）
+    cand   = 同一 H 在**谐振子基**（φ_zpf=(8Ec/El)^¼、n_zpf=½(El/8Ec)^¼）
+             展开成 ncut 维矩阵后 numpy eigh 求 E1−E0，取 Ej=0（严格极限）
+
+    ⚠️ ncut 是**双向标定**的：
+      ncut=20 ⇒ 4.889e-7（d/tol=0.49，余量不足 2×）
+      ncut=24 ⇒ 7.752e-9（d/tol=7.8e-3，余量 129×，离 1e-12 有 7.8e3×）✅ 选定
+      ncut=28 ⇒ 1.188e-10 · ncut=32 ⇒ 1.733e-12 —— **已贴到 1e-12 判据**，
+      再精就与自证桩按值不可区分，自动护栏会误报「标非自证桩却 |diff|≡0」。
+    tol=1e-6 **未放宽**。反向 10% 扰动 ec/el 残差均 0.138 GHz ⇒ 可证伪。
+    """
+    _ensure_paths()
+    # 双路兜底：本模块既可能作顶层包 `lda_harness`（sys.path 含 lda/）导入，
+    # 也可能作 `lda.lda_harness`（sys.path 含仓库根）导入 —— 两种都要能拿到求解核。
+    try:
+        from lda_l2.device_library import _fluxonium_ho_core
+    except ImportError:                                  # pragma: no cover
+        from lda.lda_l2.device_library import _fluxonium_ho_core
+
+    p = spec.params
+    return float(_fluxonium_ho_core(e_j=0.0, e_c=float(p["ec_ghz"]),
+                                    e_l=float(p["el_ghz"]), ncut=24))
+
+
+@_register_candidate(
+    "tcoup_fock_exact",
+    "三模 Fock 截断严格对角化激发带劈裂/2（ncut=3），符号由本征矢宇称独立判定"
+    "—— 与 golden 的二阶微扰/SW 闭式方法学独立")
+def _tcoup_fock_exact_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B24 独立候选：可调耦合器二阶有效耦合 g_eff（三模严格对角化 ↔ SW 闭式）。
+
+    golden = g_eff = (g1·g2/2)·(1/Δ1 + 1/Δ2)（二阶微扰 / Schrieffer-Wolff）
+    cand   = H = Σ ω_i a_i†a_i + g1(a_q1†a_c+h.c.) + g2(a_q2†a_c+h.c.)
+             在 q1⊗q2⊗c 三模 Fock 截断下 eigh，取两个 qubit-like 态的
+             劈裂 (E_hi−E_lo)/2，**符号由本征矢宇称独立判定**
+
+    🔴 符号不能取绝对值：golden 在 Δ<0（qubit 低于耦合器）时为**负**
+    （默认参数 Δ1=Δ2=−2.5 ⇒ golden=−0.004）。判定规则：两个 qubit-like 态
+    ≈(|100⟩±|010⟩)/√2，若较低态的 |100⟩ 与 |010⟩ 振幅**同号**（对称态更低）
+    则 g_eff<0。⚠️ 张量序是 q1⊗q2⊗c、q1 为最高位 ⇒ qubit2 激发的索引是
+    `i010 = 1*ncut`（**不是** `1`，那是耦合器激发）。首版误用后端索引导致宇称
+    判反、候选出正值、残差 7.99e-3（超 tol 7987×）—— 索引与构造序必须一致。
+
+    ⚠️ tol 由 1e-6 **按实测重定为 3e-5**：1e-6 是「自证桩容差」（只容得下
+    candidate≡golden），而闭式与严格解的**固有模型差**实测 1.272e-5
+    （rel 0.32%，ncut=2/3/4/5 完全一致 ⇒ 已收敛，非截断噪声）。
+    定 tol=3e-5 = 实测差 × 2.36 余量；判据窗口 (1.272e-5, 4.045e-4) = 31.8×，
+    3e-5 落在窗内 ⇒ 正向 PASS 与「反向 10% 扰动必 FAIL」同时成立
+    （实测 g1/g2 4.045e-4 · wc 9.289e-4 · wq 9.752e-4，四键全被抓）。
+    """
+    p = spec.params
+    wq, wc = float(p["wq_ghz"]), float(p["wc_ghz"])
+    g1, g2 = float(p["g1_ghz"]), float(p["g2_ghz"])
+    ncut = 3
+    n = np.arange(ncut, dtype=float)
+    a = np.diag(np.sqrt(n[1:]), 1)
+    eye = np.eye(ncut)
+    h = (np.kron(np.kron(np.diag(wq * n), eye), eye)
+         + np.kron(np.kron(eye, np.diag(wq * n)), eye)
+         + np.kron(np.kron(eye, eye), np.diag(wc * n)))
+    j1 = np.kron(np.kron(a.T, eye), a) + np.kron(np.kron(a, eye), a.T)
+    j2 = np.kron(np.kron(eye, a.T), a) + np.kron(np.kron(eye, a), a.T)
+    evals, evecs = np.linalg.eigh(h + g1 * j1 + g2 * j2)
+    if evals[1] <= evals[2]:
+        v_lo, e_lo, e_hi = evecs[:, 1], evals[1], evals[2]
+    else:
+        v_lo, e_lo, e_hi = evecs[:, 2], evals[2], evals[1]
+    i100 = 1 * ncut * ncut          # |1,0,0>：qubit1 激发
+    i010 = 1 * ncut                 # |0,1,0>：qubit2 激发（最高位是 q1！）
+    mag = 0.5 * (e_hi - e_lo)
+    return float(-mag if (v_lo[i100] * v_lo[i010]) > 0 else mag)
+
+
+@_register_candidate(
+    "coupler_charge_exact",
+    "双 transmon 441 维电荷基严格对角化 J（Nq=10，一般失谐提取 √((Δ/2)²−(δ/2)²)）"
+    "—— 与 golden 的电荷矩阵元渐近闭式方法学独立")
+def _coupler_charge_exact_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B13 独立候选：双 transmon 电容耦合 J（电荷基严格对角化 ↔ 渐近闭式）。
+
+    golden = J = Jc·⟨0|n̂|1⟩₁·⟨0|n̂|1⟩₂，其中 n01≈(E_J/2E_C)^{1/4}/2（渐近式）
+    cand   = 双比特电荷基（每比特 2Nq+1=21 维，联合 441 维）严格对角化，
+             由单激发双重态劈裂按一般失谐提取 J=√((Δ/2)²−(δ/2)²)
+
+    ⚠️ tol 由 0.10 **收紧 50× 到 2.0e-3**（是加严不是放宽）：0.10 相当于
+    golden 的 316%，等于什么都抓不住。实测基线残差 1.3131e-3（rel 4.15%，
+    与本锚 note 原就写着的「rel~4%」一致，Nq=8 起已收敛、Nq 增大不变）
+    ⇒ 该 4.15% 是**渐近闭式的固有截断误差**，非数值噪声。
+
+    🔴 **诚实披露：本锚的判据窗口很窄，有已知反向盲区。**
+    10% 扰动逐键实测残差（golden 固定）：
+        C1/C2   4.0686e-3（3.10× 基线）✅ 被抓
+        E_C1/E_C2 2.0599e-3（1.57×）   ✅ 被抓
+        Cc      1.7179e-3（1.31×）     ❌ 漏抓（< tol）
+        E_J1/E_J2 5.5027e-4（0.42×）   ❌ 漏抓（**比基线还小**）
+    E_J 扰动使严格解**朝渐近值靠近**（扰动与近似误差偶然抵消，同 B26 现象）
+    ⇒ 任何 tol > 基线的取值都不可能抓住 E_J 键。取 tol=2.0e-3（基线 ×1.52）
+    是「正向 PASS」与「尽量多抓反向键」的最优折中：4/7 键可抓。
+    反向测试固定扰 C1（信号最强）。**盲区不掩盖，写进 note 与本 docstring。**
+    """
+    _ensure_paths()
+    from coupler_solver import solve_coupler
+
+    p = spec.params
+    return float(solve_coupler(
+        E_J1=float(p["E_J1"]), E_C1=float(p["E_C1"]),
+        E_J2=float(p["E_J2"]), E_C2=float(p["E_C2"]),
+        Cc=float(p["Cc"]), C1=float(p["C1"]), C2=float(p["C2"]),
+        Nq=10)["J_num"])
+
+
 def harness_perturbed_candidate(rel_err: float):
     """扰动候选：golden·(1+rel_err)——用于演示 fail 检测（同 PerturbedCandidate）。"""
     def _cand(spec: VerificationSpec, oracle_value: Any) -> float:

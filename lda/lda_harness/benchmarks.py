@@ -191,21 +191,47 @@ BENCHMARK_DEFS = {
         "metric": "f0_GHz",
         "oracle": "analytical(quarter-wave closed form)",
         "tol": 0.02,
+        # v0.9.17（P0 续）：接入独立候选 —— 二阶 ghost-point 边界的离散传输线
+        # 三对角本征值（N=400）。本锚 note 原就写着「严格侧=离散 TL 三对角特征值」，
+        # 但 harness 从未真接过（一直落自证桩）；现在把宣称接成事实。
+        # ⚠️ tol=0.02 **未放宽**：实测残差 6.913e-6（d/tol=3.5e-4，余量 2894×）。
+        "candidate": "tl_eigen_f0",
+        "candidate_desc": ("二阶 ghost-point 边界离散传输线三对角本征值 f0（N=400）"
+                           "—— 与 golden 的连续极限闭式方法学独立"),
         "default_params": {"Lp": 0.4e-6, "Cp": 1.5e-10, "l": 3000e-6},
         "golden_fn": b12_resonator_frequency,
         "note": "f0=1/(4l√(L′C′))（GHz，连续极限）；严格侧=D-39 离散 TL 三对角 "
-                "特征值（rel~0.25%）。D-40 量子物理锚：同一 IR 表达两种物理。",
+                "特征值（rel~0.25%）。D-40 量子物理锚：同一 IR 表达两种物理。"
+                "⚠️ v0.9.17 实测订正：库内 `_discrete_f0` 开路端用单边一阶差分"
+                "（A[N-1,N-1]=-1）⇒ 收敛仅 O(1/N)、N=200 残差 2.7e-2，连 tol=0.02 "
+                "都过不去。候选改用 ghost point（Dirichlet 端 d[0]=-3 / Neumann 端 "
+                "d[-1]=-1）恢复 O(1/N²)，N=400 残差 6.9e-6（rel 0.0064%，非原 note "
+                "的 0.25%）。反向 10% 扰动 Lp/Cp/l 残差 0.50/0.50/0.98 GHz 全被抓。",
     },
     "B13": {
         "title": "双 transmon 电容耦合强度 J",
         "metric": "J_GHz",
         "oracle": "analytical(charge-coupling closed form)",
-        "tol": 0.10,
+        # v0.9.17（P0 续）：tol 由 0.10 **收紧 50× 到 2.0e-3**（加严不是放宽）。
+        # 0.10 相当于 golden（0.0316）的 316% —— 等于什么都抓不住的自证桩容差。
+        # 实测基线残差 1.3131e-3（rel 4.15%，与本 note 原写的「rel~4%」吻合，
+        # Nq=8 起已收敛）⇒ 该 4.15% 是渐近闭式的固有截断误差，tol 取其 1.52 倍。
+        "tol": 2.0e-3,
+        "candidate": "coupler_charge_exact",
+        "candidate_desc": ("双 transmon 441 维电荷基严格对角化 J（Nq=10）"
+                           "—— 与 golden 的电荷矩阵元渐近闭式方法学独立"),
         "default_params": {"E_J1": 20.0, "E_C1": 0.25, "E_J2": 20.0,
                            "E_C2": 0.25, "Cc": 0.02, "C1": 1.0, "C2": 1.0},
         "golden_fn": b13_coupler_coupling,
         "note": "J=Jc·<0|n̂|1>₁·<0|n̂|1>₂（GHz，n01=(E_J/2E_C)^{1/4}/2）；严格侧="
-                "D-39 441 维电荷 basis 对角化（rel~4%）。D-40 量子物理锚。",
+                "D-39 441 维电荷 basis 对角化（rel~4%）。D-40 量子物理锚。"
+                "🔴 v0.9.17 诚实披露：本锚判据窗口窄、有**已知反向盲区**。"
+                "10% 扰动逐键实测残差：C1/C2 4.07e-3（3.10× 基线）✅被抓 · "
+                "E_C1/E_C2 2.06e-3（1.57×）✅被抓 · Cc 1.72e-3（1.31×）❌漏抓 · "
+                "E_J1/E_J2 5.50e-4（0.42×，**比基线还小**）❌漏抓 —— E_J 扰动使"
+                "严格解朝渐近值靠近（扰动与近似误差偶然抵消，同 B26 现象），故"
+                "任何 tol>基线的取值都抓不住 E_J 键。tol=2.0e-3 是「正向 PASS」与"
+                "「尽量多抓反向键」的最优折中（4/7 键可抓），反向测试固定扰 C1。",
     },
     "B14": {
         "title": "定向耦合器 3dB 耦合长度",
@@ -313,13 +339,26 @@ BENCHMARK_DEFS = {
         "metric": "qres_f_ghz",
         "oracle": "analytical(CPW λ/4 TL resonance)",
         "tol": 1e-6,
+        # v0.9.17（P0 续）：接入独立候选 —— 与 B12 同一台离散 TL 本征求解器
+        # （二阶 ghost 边界），相速 v=c0/n_eff。⚠️ tol=1e-6 **未放宽**：
+        # 实测 N=4000 残差 4.982e-8（d/tol=4.98e-2，余量 20×）。
+        "candidate": "tl_eigen_qres",
+        "candidate_desc": ("二阶 ghost-point 边界离散传输线三对角本征值 f0（N=4000）"
+                           "—— 与 golden 的 CPW λ/4 闭式方法学独立"),
         "default_params": {"L_um": 4000.0, "n_eff": 2.5},
         "golden_fn": b22_qres_frequency,
         "note": ("超导量子比特读出谐振器 = 共面波导（CPW）λ/4 谐振器（远端短路/"
                  "近端开路）；基模 f0=c0/(4·L·n_eff)（传输线理论，n_eff=√ε_eff "
                  "为 CPW 有效折射率，Si 衬底典型 ≈2.5）。确定性物理定律锚，"
-                 "LLM 不进判决路径；harness 默认 ReferenceCandidate 自洽 PASS。"
-                 "与 Transmon 引擎配对补强 QEDA「比特+读出」基础单元。"),
+                 "LLM 不进判决路径。与 Transmon 引擎配对补强 QEDA「比特+读出」"
+                 "基础单元。"
+                 "⚠️ v0.9.17 实测证伪：**TL-FDTD 路线不可用于本锚** —— "
+                 "`device_library._qres_tlfdtd_core` 的 FFT 记录长度 ∝ dt ∝ 1/N，"
+                 "网格细化反而缩短时窗、降低频率分辨率 ⇒ 残差随 N **恶化**"
+                 "（N=200: 8.4e-2 → N=1600: 3.6e-2，全部远超 tol）。故候选走"
+                 "本征值路线。N 也不能无限加大：N=8000 残差 2.6e-8、N=16000 反升到 "
+                 "1.0e-7（越过 LAPACK 数值地板，已非离散误差主导）⇒ 标定 N=4000。"
+                 "反向 10% 扰动 L_um/n_eff 残差均 0.68 GHz（tol 的 6.8e5 倍）。"),
     },
     # ---- 内核纵深（v0.8.5）：Fluxonium LC 极限 / 可调耦合器二阶锚 ----
     "B23": {
@@ -327,27 +366,51 @@ BENCHMARK_DEFS = {
         "metric": "fluxonium_f01_ghz",
         "oracle": "analytical(LC oscillator strict limit E_J→0)",
         "tol": 1e-6,
+        # v0.9.17（P0 续）：接入独立候选 —— 谐振子基矩阵严格对角化（ncut=24，
+        # Ej=0 严格极限）。⚠️ tol=1e-6 **未放宽**：实测残差 7.752e-9
+        # （d/tol=7.8e-3，余量 129×）。
+        "candidate": "fluxonium_ho_exact",
+        "candidate_desc": ("Fluxonium 谐振子基矩阵严格对角化 f01（ncut=24）"
+                           "—— 与 golden 的 LC 极限闭式 √(8·Ec·El) 方法学独立"),
         "default_params": {"ec_ghz": 1.0, "el_ghz": 1.0},
         "golden_fn": b23_fluxonium_lc_limit,
         "note": ("Fluxonium H=4Ec·n²+½El(φ−φext)²−Ej·cosφ 在 Ej→0 严格极限"
                  "退化为 LC 谐振子 f01=√(8·Ec·El)（GHz 计能直接给出）。任意 Ej "
                  "无解析闭式 → 数值对角化双基对拍验证（相位网格 vs 谐振子基）。"
-                 "确定性物理定律锚，LLM 不进判决路径；harness 默认 "
-                 "ReferenceCandidate 自洽 PASS。"),
+                 "确定性物理定律锚，LLM 不进判决路径。"
+                 "⚠️ v0.9.17 ncut 双向标定：ncut=20 ⇒ 4.89e-7（d/tol=0.49，余量"
+                 "不足 2×）· ncut=24 ⇒ 7.75e-9（d/tol=7.8e-3，余量 129×）✅ 选定 · "
+                 "ncut=28 ⇒ 1.19e-10 · ncut=32 ⇒ 1.73e-12 —— 后两档已贴到 1e-12 "
+                 "自证桩判据，再精就与「直接 return golden」按值不可区分，自动护栏"
+                 "会误报假独立。反向 10% 扰动 ec/el 残差均 0.138 GHz。"),
     },
     "B24": {
         "title": "可调耦合器二阶有效耦合 g_eff",
         "metric": "tcoup_geff_ghz",
         "oracle": "analytical(2nd-order perturbation / Schrieffer-Wolff)",
-        "tol": 1e-6,
+        # v0.9.17（P0 续）：tol 由 1e-6 **按实测重定为 3e-5**。1e-6 是「自证桩容差」
+        # （只容得下 candidate≡golden）；闭式与三模严格解的**固有模型差**实测
+        # 1.272e-5（rel 0.32%，ncut=2/3/4/5 完全一致 ⇒ 已收敛、非截断噪声）。
+        # 3e-5 = 实测差 × 2.36 余量，且落在判据窗口 (1.272e-5, 4.045e-4)=31.8× 内
+        # ⇒ 正向 PASS 与「反向 10% 扰动必 FAIL」同时成立（四键全被抓）。
+        "tol": 3e-5,
+        "candidate": "tcoup_fock_exact",
+        "candidate_desc": ("三模 Fock 截断严格对角化激发带劈裂/2（ncut=3），符号由"
+                           "本征矢宇称独立判定 —— 与 golden 的二阶微扰/SW 闭式方法学独立"),
         "default_params": {"wq_ghz": 5.0, "wc_ghz": 7.5,
                            "g1_ghz": 0.10, "g2_ghz": 0.10},
         "golden_fn": b24_tcoup_geff,
         "note": ("两 transmon 经可调耦合器的等效直接耦合（二阶微扰/SW 变换）"
                  "g_eff=(g1g2/2)(1/Δ1+1/Δ2)，共振 w1=w2 时严格。数值验证 = "
                  "三模 Fock 截断对角化激发带劈裂/2。QEDA 可调耦合器架构核心"
-                 "解析基准。确定性物理定律锚，LLM 不进判决路径；harness 默认 "
-                 "ReferenceCandidate 自洽 PASS。"),
+                 "解析基准。确定性物理定律锚，LLM 不进判决路径。"
+                 "🔴 v0.9.17 符号纪律：golden 在 Δ<0（qubit 低于耦合器）时为**负**"
+                 "（默认 Δ1=Δ2=−2.5 ⇒ golden=−0.004），候选**不得取绝对值** —— "
+                 "符号由本征矢宇称独立判定（较低的 qubit-like 态若 |100⟩ 与 |010⟩ "
+                 "振幅同号则 g_eff<0）。⚠️ 张量序 q1⊗q2⊗c、q1 为最高位 ⇒ qubit2 "
+                 "激发索引是 1*ncut（不是 1，那是耦合器激发）；首版误用后端索引导致"
+                 "宇称判反、候选出正值、残差 7.99e-3（超 tol 7987×）。"
+                 "反向 10% 扰动：g1/g2 4.05e-4 · wc 9.29e-4 · wq 9.75e-4，四键全被抓。"),
     },
     # ---- 器件库主流封口（v0.8.7）：可调 transmon / 色散读出 / CZ 门 ----
     "B25": {

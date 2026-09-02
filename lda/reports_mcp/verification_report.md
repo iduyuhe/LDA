@@ -1,6 +1,6 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-02T09:48:12
+- 生成时间：2026-09-02T12:34:22
 - L0_IR：(内置默认)
 - candidate：L3AISolverCandidate
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
@@ -16,7 +16,7 @@
 | B10 | F_gate | physical-law | 0.999583 | 0.999583 | 0 | 0.01 | ✅ PASS |
 | B11 | spectrum_match | physical-law | 0.00502277 | 0.00502277 | 0 | 0.03 | ✅ PASS |
 | B12 | f0_GHz | physical-law | 10.7583 | 10.7583 | 0 | 0.02 | ✅ PASS |
-| B13 | J_GHz | physical-law | 0.0316228 | 0.0316228 | 0 | 0.1 | ✅ PASS |
+| B13 | J_GHz | physical-law | 0.0316228 | 0.0316228 | 0 | 0.002 | ✅ PASS |
 | B14 | L_3dB_um | physical-law | 15.5 | 15.5 | 0 | 0.5 | ✅ PASS |
 | B15 | lambda_B_um | physical-law | 1.5504 | 1.5504 | 0 | 0.01 | ✅ PASS |
 | B16 | L_mmi_um | physical-law | 18.5806 | 18.5806 | 0 | 3 | ✅ PASS |
@@ -28,7 +28,7 @@
 | B21 | cavity_wl_nm | physical-law | 2214 | 2214 | 0 | 1e-06 | ✅ PASS |
 | B22 | qres_f_ghz | physical-law | 7.49481 | 7.49481 | 0 | 1e-06 | ✅ PASS |
 | B23 | fluxonium_f01_ghz | physical-law | 2.82843 | 2.82843 | 0 | 1e-06 | ✅ PASS |
-| B24 | tcoup_geff_ghz | physical-law | -0.004 | -0.004 | 0 | 1e-06 | ✅ PASS |
+| B24 | tcoup_geff_ghz | physical-law | -0.004 | -0.004 | 0 | 3e-05 | ✅ PASS |
 | B25 | tunable_f01_ghz | physical-law | 6.6282 | 6.6282 | 0 | 0.05 | ✅ PASS |
 | B26 | dispersive_chi_ghz | physical-law | -0.00230769 | -0.00230769 | 0 | 0.0001 | ✅ PASS |
 | B27 | cz_gate_time_ns | physical-law | 680.678 | 680.678 | 0 | 30 | ✅ PASS |

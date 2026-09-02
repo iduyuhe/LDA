@@ -83,6 +83,11 @@ PERTURB_SPEC = [
     ("B22", "L_um", "mul"),         # 同上（CPW 读出腔）
     ("B23", "el_ghz", "mul"),       # f01=√(8EcEl) ⇒ El +10% ⇒ f01 +4.9%
     ("B24", "wq_ghz", "mul"),       # Δ=wq−wc ⇒ g_eff 随失谐变化（实测信号最强键）
+    # v0.9.18（P0 续）：S13 设计良率（解析 Φ ↔ 蒙特卡洛双算法互证）。
+    # 🔴 必须扰 delta（规格窗口 ±x%，信号 1.73e-2，51× 最强键）。
+    #   实测逐键信号：delta 1.73e-2 ✅ · sigma_rel 2.39e-2 ✅ · fsr_nom 3.37e-4 ❌
+    #   （yield 对 fsr_nom 免疫，σ 按比例缩放 ⇒ 盲区已写入 note，不掩盖）。
+    ("S13", "delta", "mul"),
     # 🔴 B13 必须扰 C1（信号 4.07e-3，唯一稳超 tol=2.0e-3 的强键）。
     #   实测逐键信号：C1/C2 4.07e-3 ✅ · E_C1/E_C2 2.06e-3 ✅ · Cc 1.72e-3 ❌
     #   · E_J1/E_J2 5.50e-4 ❌（比基线 1.31e-3 还小 —— 扰动与近似误差偶然抵消，
@@ -94,8 +99,9 @@ SENSITIVITY_GRID = (0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20)
 SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 
 # 独立候选数下限（随 P0 推进递增：v0.9.14 起步 4 → v0.9.16 光子侧 7
-# → v0.9.17 量子侧接 B12/B13/B22/B23/B24 后 12）
-MIN_INDEPENDENT = 12
+# → v0.9.17 量子侧接 B12/B13/B22/B23/B24 后 12
+# → v0.9.18 接 S13（解析 Φ ↔ 蒙特卡洛双算法互证，S7/S8 伪独立陷阱已证否）后 13）
+MIN_INDEPENDENT = 13
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

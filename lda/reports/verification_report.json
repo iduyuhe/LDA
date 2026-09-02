@@ -1,22 +1,22 @@
 {
   "meta": {
     "L0_IR": "(内置默认 B1–B4,B8)",
-    "candidate": "IndependentCandidateRouter(独立候选 12 道: B12,B13,B20,B22,B23,B24,B25,B26,B27,B3,B4,B9；降级量级参考 1 道: E2)",
+    "candidate": "IndependentCandidateRouter(独立候选 13 道: B12,B13,B20,B22,B23,B24,B25,B26,B27,B3,B4,B9,S13；降级量级参考 1 道: E2)",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "self_consistent": true
   },
-  "generated_at": "2026-09-02T12:42:32",
+  "generated_at": "2026-09-02T17:00:03",
   "summary": {
     "total": 48,
     "passed": 48,
     "self_consistent": true,
-    "verified": 12,
-    "self_consistent_stub_count": 35,
-    "independent_candidate_count": 12,
+    "verified": 13,
+    "self_consistent_stub_count": 34,
+    "independent_candidate_count": 13,
     "candidate_class_totals": {
-      "strict_independent": 12,
+      "strict_independent": 13,
       "degraded_ordinal": 1,
-      "self_consistent_stub": 35
+      "self_consistent_stub": 34
     }
   },
   "results": [
@@ -403,7 +403,7 @@
       "oracle": "empirical-measurement(E-SIN-NG-300)",
       "source": "empirical-measurement",
       "golden": 1.892,
-      "candidate": 1.9586884217642513,
+      "candidate": 1.9586884217642597,
       "tol": 0.1,
       "passed": true,
       "note": "LPCVD Si3N4 300nm 平台（公开文献）：热氧 SiO2 2.5um 下包层 + PECVD SiO2 2.0um 上包层，全刻蚀条形波导 | P. Munoz et al., Si3N4 300 nm photonic integration platform, Sensors (MDPI) 2017: OFDR ring-resonator group index TE=1.892 / TM=1.717; MZI transmission cross-check TE 1.90-1.92 | σ=0.03 | tol=0.03 | tier=A",
@@ -533,12 +533,12 @@
       "oracle": "statistical(monte-carlo, seed-fixed) + analytical(gaussian-integral)",
       "source": "physical-law",
       "golden": 0.95475,
-      "candidate": 0.95475,
+      "candidate": 0.954413362100162,
       "tol": 0.01,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "independent": true,
+      "candidate_class": "strict_independent"
     },
     {
       "id": "S2",

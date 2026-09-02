@@ -638,6 +638,36 @@ def _tcoup_fock_exact_candidate(spec: VerificationSpec, oracle_value: Any) -> fl
 
 
 @_register_candidate(
+    "yield_analytic",
+    "S13 设计良率解析闭式（高斯积分 Φ 精确解，保留 1/L 非线性）↔ 蒙特卡洛双算法互证，"
+    "与 golden 的 MC 仿真方法学独立（同一物理定律两种算法 = 非 AI ground）")
+def _s13_yield_analytic_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """S13 独立候选：环形 FSR 命中规格窗口的设计良率（解析高斯积分）。
+
+    golden = 蒙特卡洛仿真良率（固定种子 1313，采样 20000 点）
+    cand   = 解析闭式 Y = Φ((L_hi−L0)/σ_L) − Φ((L_lo−L0)/σ_L)
+             （FSR=c/L 单调 ⇒ 规格窗口逆变换为 L 区间 ⇒ 误差函数精确积分，
+              非 δ/σ 一阶线性化，1/L 非线性完整保留）
+
+    ⚠️ 实测（v0.9.18）：golden=0.954750、candidate=0.954413、baseline|diff|=3.37e-4
+    （rel 0.035%，tol=0.01 余量 29.7×）。反向扰动信号谱：
+    delta×1.1 → |cand−golden0|=1.73e-2（51×）✅ · sigma_rel×1.1 → 2.39e-2（71×）✅
+    · fsr_nom×1.1 → 3.37e-4（=baseline，漏抓：yield 对 fsr_nom 免疫，因 σ 按比例缩放）
+    ⇒ 盲区 fsr_nom_nm 已诚实披露，PERTURB 固定扰 delta（最强键）。
+    """
+    try:
+        from lda_harness.yield_anchor import yield_analytic
+    except ImportError:
+        from lda.lda_harness.yield_anchor import yield_analytic
+    p = spec.params
+    return float(yield_analytic(
+        fsr_nom_nm=float(p["fsr_nom_nm"]),
+        delta=float(p["delta"]),
+        sigma_rel=float(p["sigma_rel"]),
+    ))
+
+
+@_register_candidate(
     "coupler_charge_exact",
     "双 transmon 441 维电荷基严格对角化 J（Nq=10，一般失谐提取 √((Δ/2)²−(δ/2)²)）"
     "—— 与 golden 的电荷矩阵元渐近闭式方法学独立")

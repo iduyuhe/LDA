@@ -95,10 +95,23 @@ def main():
         r = subprocess.run([*base, "push", "gitee", "main"], cwd=REPO, env=env2)
         print(f"  gitee exit={r.returncode}")
     if "github.com" in creds:
-        print("[PUSH] github main (via socks5h proxy) ...")
-        r = subprocess.run([*base, "-c", "http.proxy=socks5h://127.0.0.1:7890",
+        # 🔴 v0.9.24 实测订正：github **直连常常就是通的**。
+        # 旧版无条件加 `-c http.proxy=socks5h://127.0.0.1:7890`，一旦本地代理没开
+        # 就必然 `Failed to connect to github.com:443 over proxy`（exit=128），
+        # 而同一次直连 `curl --noproxy '*' https://github.com` 返回 **200**。
+        # ⇒ **先直连（显式清空代理），失败再退回 SOCKS5 代理**，两条路都留着。
+        # 直连也走不通时（DNS 污染 / SNI 过滤）的兜底仍是：paramiko 借生产服务器
+        # 115.191.20.92 起 SOCKS5 中继（见项目记忆「代理没开时的备用通路」）。
+        print("[PUSH] github main (direct, proxy cleared) ...")
+        r = subprocess.run([*base, "-c", "http.proxy=", "-c", "https.proxy=",
                             "push", "github", "main"], cwd=REPO, env=env2)
-        print(f"  github exit={r.returncode}")
+        print(f"  github direct exit={r.returncode}")
+        if r.returncode != 0:
+            print("[PUSH] github main (fallback: socks5h://127.0.0.1:7890) ...")
+            r = subprocess.run([*base,
+                                "-c", "http.proxy=socks5h://127.0.0.1:7890",
+                                "push", "github", "main"], cwd=REPO, env=env2)
+            print(f"  github proxy exit={r.returncode}")
 
     try:
         os.remove(STORE)

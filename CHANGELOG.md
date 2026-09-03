@@ -1,5 +1,72 @@
 # Changelog
 
+## v0.9.29（2026-09-03 · T-3 S7/S8 换指标 均值→p5 · 严格独立 21 → 23）
+
+**指令**：「T-3」（技术侧路线图第三项：S7/S8 统计锚由均值指标切到 p5 最坏情况，并接入方法学独立的闭式高斯候选）。
+
+**三分类刷新**：**严格独立 23 道 · 降级量级参考 0 道 · 自证桩 25 道（三类和 = 48）**
+
+---
+
+### 一、为什么换：均值锚是假独立
+
+S7/S8 此前只比「分布均值」（margin_mean_dB / OSNR_mean_dB）。两处致命缺陷：
+
+1. **与确定性锚语义重叠**：S7 均值=解析 10.5、S8 均值=解析 46.93，闭式即可得
+   ——不携带任何验证信息，落在自证桩候选下时零价值。
+2. **最坏情况维度一直空着**：note 早就承认「p5=9.41/45.93 携带最坏情况下界」
+   却没用上。确定性锚（S1/S3/S5）回答「通不通」，统计锚该回答「多稳」——**稳定性
+   恰恰在尾部**，不在中心。
+
+⇒ 指标切到 **p5（5% 分位 = 最坏情况下界）**。
+
+### 二、候选设计：闭式高斯 p5（与 MC 方法学独立）
+
+`golden = 蒙特卡洛经验 5% 分位`（随机采样、固定种子）；
+`cand   = 闭式高斯 p5 = μ − 1.645σ`，μ/σ 由组件容差解析叠加。
+
+**方法学独立性（两题分布都是精确高斯）**：
+- **S7**：margin = p_tx + Σ(−lossᵢ) − Sens，各 lossᵢ 是独立高斯 ⇒ margin 是独立
+  正态之和 ⇒ **严格高斯**，μ/σ 闭式可得。
+- **S8**：OSNR = p_sig − 10·log10(hνbwN·F)，F=10^((nf+δ)/10) ⇒
+  10·log10(F) = nf + δ（**恰为高斯**！δ~N(0,σ_nf)）⇒ OSNR **严格高斯**。
+
+⇒ p5=μ−1.645σ 是**闭式精确值**（非近似）。golden 与 candidate 是两种不同算法：
+**若分布非高斯，MC p5 与闭式 p5 将偏离 tol ⇒ 本锚能抓错** —— 这才是真可证伪验证
+（自证桩 |diff|≡0 不携带任何信息）。与 S13 的 `yield_analytic`（闭式 Φ ↔ MC 双算法
+互证）同型：闭式候选不进判据 D（无离散参数），但基线残差 >1e-12 + 反向扰动必 FAIL
+⇒ 真独立。
+
+### 三、实测凭据
+
+| 锚 | 项 | 数值 | 判定 |
+|---|---|---|---|
+| S7 | 闭式 μ/σ | 10.5 / 0.6633 | σ=√(2·0.3²+(0.5·1)²+0.1²) |
+| S7 | 候选 p5=μ−1.645σ | 9.409 | golden(MC p5)≈9.41 |
+| S7 | 基线 \|Δ\| | ≈0.001 < tol 0.15 | ≫1e-12 双向可标定 |
+| S7 | 反向 detector_sens_dbm −20→−22 | \|Δμ\|=2.0（13×tol） | 必 FAIL ✅（min_detect=0.01） |
+| S8 | 闭式 μ/σ | 46.930 / 0.5831 | σ=√(0.5²+0.3²) |
+| S8 | 候选 p5=μ−1.645σ | 45.971 | golden(MC p5)≈45.93 |
+| S8 | 基线 \|Δ\| | ≈0.04 < tol 0.20 | ≫1e-12 双向可标定 |
+| S8 | 反向 nf_db 5.0→5.5 | \|Δμ\|=0.5（2.5×tol） | 必 FAIL ✅（min_detect=0.05） |
+
+### 四、接线与护栏
+
+- `benchmarks.py` S7/S8：metric 改 `margin_p5_dB`/`OSNR_p5_dB`，golden_fn 指向
+  新 `s7/s8_statistical_*_p5_anchor`（MC 经验 5% 分位），default_params 补全物理参，
+  挂 `candidate: "gauss_p5_margin"`/`"gauss_p5_osnr"`。
+- `golden.py` S7/S8 映射改指向 p5 锚（harness oracle 源）。
+- `verification_adapters.py` 注册 `gauss_p5_margin`/`gauss_p5_osnr`（闭式高斯 p5）。
+- `statistical_anchor.py` 新增 `GAUSS_Z05`、`s7/s8_gaussian_moments`、p5 golden 锚；
+  原均值锚保留（供 distribution_report / convergence_scan / 统计 smoke 复用）。
+- 护栏同步：`run_benchmark_falsifiability_smoke.py` MIN_INDEPENDENT 21→23、
+  PERTURB_SPEC 增 S7(detector_sens_dbm)/S8(nf_db)；`run_d_criterion_smoke.py`
+  indep_ids 增 S7/S8、20→22。
+- 原均值锚语义不丢：S7/S8 的 `distribution_report` 方向性断言（p5<解析<p95）仍由
+  统计 smoke 守护，确认「分布 indeed 高斯、p5 是最坏情况」这一前提。
+
+---
+
 ## v0.9.28（2026-09-03 · T-2 B28 数值零点拟合接线 · 严格独立 20 → 21）
 
 **指令**：「T-2」（技术侧路线图第二项：B28 接线，必须避开判据 D 抓出的代数恒等陷阱）。

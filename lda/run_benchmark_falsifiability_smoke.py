@@ -126,6 +126,14 @@ PERTURB_SPEC = [
     ("B10", "t_gate", "mul"),
     ("B10", "T1", "mul"),
     ("B10", "T2", "mul"),
+    # v0.9.29（T-3）：S7/S8 统计锚换 p5 + 闭式高斯独立候选（gauss_p5_*）。
+    # 🔴 S7 扰 detector_sens_dbm（信号 |Δμ|=2.0，13×tol，1% 即抓，min_detect=0.01）；
+    #   实测逐键：detector_sens_dbm −20→−22 |Δ|2.0 ✅ · wg_loss_db_cm 3.0→3.3 |Δ|0.30 ✅
+    #   · grating_db 全键均被抓；ring_il_db 信号仅 0.05（<tol）已不取。固定扰 detector_sens_dbm。
+    ("S7", "detector_sens_dbm", "mul"),
+    # 🔴 S8 扰 nf_db（信号 |Δμ|=0.5，2.5×tol，min_detect=0.05）；
+    #   bw_ghz 5.0→5.5 |Δ|0.41 ✅ · n_amp 信号仅 0.04（<tol）已不取。固定扰 nf_db。
+    ("S8", "nf_db", "mul"),
 ]
 PERTURB_REL = 0.10          # 反向测试扰动幅度（10%）
 SENSITIVITY_GRID = (0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20)
@@ -155,7 +163,10 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 #   7.5 个网格 ⇒ 锥度被离散成 8 次突跳；③倏逝模 sqrt 取主值 +i|β| ⇒
 #   exp(+|β|dz) **指数增长**（L=5µm 溢出到 4e30）。三条都写在 eme_taper.py 里。
 # v0.9.28（T-2）：B28 数值零点拟合候选接线 ⇒ 20 → 21
-MIN_INDEPENDENT = 21
+# v0.9.29（T-3）：S7/S8 由均值锚换 p5 锚 + 接入闭式高斯 p5 独立候选
+#   （gauss_p5_margin / gauss_p5_osnr，μ−1.645σ 与 MC 经验分位方法学独立）
+#   ⇒ 已接线独立候选 21 → 23，自证桩 27 → 25（48 守恒）。
+MIN_INDEPENDENT = 23
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

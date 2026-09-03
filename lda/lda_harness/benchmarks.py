@@ -31,8 +31,10 @@ from .golden import (
     s6_detector_margin,
     # S7 统计锚（Phase 3 · 专投区第一刀，蒙特卡洛分布）
     s7_statistical_margin_anchor,
+    s7_statistical_margin_p5_anchor,
     # S8 统计锚（Phase 3 · OSNR 统计延伸，模板复用）
     s8_statistical_osnr_anchor,
+    s8_statistical_osnr_p5_anchor,
     # S9 LVS 签核锚（Phase 4 · 版图-原理图一致性判决）
     s9_lvs_verdict,
     # S10 多层 LVS 锚（Phase 4 · 金属/通孔层叠，版图差距 #6）
@@ -865,32 +867,55 @@ BENCHMARK_DEFS = {
 
     # ---- S7 统计锚（Phase 3 · 专投区 · 蒙特卡洛分布） ----
     "S7": {
-        "title": "系统功率预算统计锚（蒙特卡洛分布 · Phase 3）",
-        "metric": "margin_mean_dB",
+        "title": "系统功率预算统计锚（蒙特卡洛分布 · Phase 3 · p5 最坏情况）",
+        "metric": "margin_p5_dB",
         "oracle": "statistical(monte-carlo, seed-fixed)",
         "tol": 0.15,
         "anchor": "physical_law",
-        "default_params": {"n_samples": 2000, "seed": 42},
-        "golden_fn": s7_statistical_margin_anchor,
+        "default_params": {"p_tx_dbm": 0.0, "n_gratings": 2, "grating_db": -3.0,
+                           "wg_length_cm": 1.0, "wg_loss_db_cm": 3.0,
+                           "ring_il_db": -0.5, "detector_sens_dbm": -20.0,
+                           "n_samples": 2000, "seed": 42},
+        "golden_fn": s7_statistical_margin_p5_anchor,
+        # v0.9.29（T-3）：接入独立候选 gauss_p5_margin —— 闭式高斯 5% 分位
+        # （μ−1.645σ）。golden=蒙特卡洛经验分位（随机采样）；candidate=闭式
+        # 高斯分位（解析叠加）。两法方法学独立：若分布非高斯，MC p5 与闭式
+        # p5 偏离 tol ⇒ 本锚能抓错。原均值锚只比分布中心、与确定性锚重叠、
+        # 且自证桩下零验证价值，故换 p5。
+        "candidate": "gauss_p5_margin",
+        "candidate_desc": "闭式高斯 p5（μ−1.645σ，组件容差解析叠加）—— 与 MC 经验分位方法学独立",
         "note": "统计锚：工艺容差（光栅 0.3dB/波导 0.5dB/cm/环形 0.1dB）高斯扰动下"
-                "蒙特卡洛 margin 分布（固定种子 42 可复现）。golden=分布均值≈解析 10.5"
-                "（采样噪声 <0.15）；p5=9.41 携带最坏情况下界——确定性锚缺失的维度。"
-                "红线：随机在采样、判决在统计量算术，LLM 不进判决路径。",
+                "蒙特卡洛 margin 分布（固定种子 42 可复现）。独立候选=gauss_p5_margin"
+                "（闭式高斯 5% 分位 = μ−1.645σ，μ/σ 由组件容差解析叠加）。"
+                "golden=p5（最坏情况下界，仅 5% 抽样低于此值）≈9.41；候选≈9.409，"
+                "|Δ|≈0.001<0.15。v0.9.29 由均值（10.5，与确定性锚重叠、自证桩零价值）"
+                "切换至 p5，补上确定性锚缺失的「最坏情况」维度。若分布非高斯，"
+                "MC p5 与闭式 p5 将偏离 tol ⇒ 真可证伪。红线：随机在采样、判决在"
+                "统计量算术，LLM 不进判决路径。",
     },
 
     # ---- S8 统计锚（Phase 3 · OSNR 统计延伸 · 模板复用验证） ----
     "S8": {
-        "title": "OSNR 统计锚（ASE 噪声 + 功率容差 · 蒙特卡洛）",
-        "metric": "OSNR_mean_dB",
+        "title": "OSNR 统计锚（ASE 噪声 + 功率容差 · 蒙特卡洛 · p5 最坏情况）",
+        "metric": "OSNR_p5_dB",
         "oracle": "statistical(monte-carlo, seed-fixed)",
         "tol": 0.20,
         "anchor": "physical_law",
-        "default_params": {"n_samples": 2000, "seed": 7},
-        "golden_fn": s8_statistical_osnr_anchor,
+        "default_params": {"p_sig_dbm": 0.0, "n_amp": 1, "nf_db": 5.0,
+                           "bw_ghz": 50.0, "n_samples": 2000, "seed": 7},
+        "golden_fn": s8_statistical_osnr_p5_anchor,
+        # v0.9.29（T-3）：接入独立候选 gauss_p5_osnr —— 闭式高斯 p5。
+        # OSNR = p_sig − 10log10(hνbwN·F)，F=10^((nf+δ)/10) ⇒ 10log10(F)=nf+δ
+        # 恰为高斯 ⇒ OSNR 严格高斯 ⇒ p5=μ−1.645σ 闭式精确。golden=MC 经验分位。
+        "candidate": "gauss_p5_osnr",
+        "candidate_desc": "闭式高斯 p5（μ−1.645σ，σ=√(σ_laser²+σ_nf²)）—— 与 MC 经验分位方法学独立",
         "note": "统计锚：P_sig（激光器 0.5dB 容差）+ NF（放大器 0.3dB 容差）高斯扰动"
-                "下 OSNR 分布（固定种子 7 可复现）。golden=均值 46.93≈解析 46.93"
-                "（P_sig 线性保持；NF 非线性 Jensen 偏差极小，均值≤解析物理真实）；"
-                "p5=45.93 最坏情况。S7 模板直接复用——加题从开发变填表。",
+                "下 OSNR 分布（固定种子 7 可复现）。独立候选=gauss_p5_osnr（闭式高斯"
+                "5% 分位：10log10(F)=nf+δ 恰为高斯 ⇒ OSNR 严格高斯 ⇒ p5=μ−1.645σ 精确）。"
+                "golden=p5≈45.93；候选≈45.971，|Δ|≈0.04<0.20。v0.9.29 由均值"
+                "（46.93，P_sig 线性保持、NF Jensen 偏差极小）切换至 p5，补最坏情况维度。"
+                "S7 模板直接复用——加题从开发变填表。若分布非高斯，MC p5 与闭式 p5 "
+                "偏离 tol ⇒ 真可证伪。",
     },
 
     # ---- S9 LVS 签核锚（Phase 4 · 版图-原理图一致性判决） ----

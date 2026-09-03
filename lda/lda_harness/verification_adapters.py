@@ -1388,3 +1388,81 @@ def _mzm_vpi_nullfit_candidate(spec: VerificationSpec, oracle_value: Any) -> flo
         L_um=float(p["L_um"]),
         d_um=float(p["d_um"]),
         n_voltage=mv.DEFAULT_N_VOLTAGE))
+
+
+# ---------------------------------------------------------------------------
+# S7 / S8 统计锚独立候选（v0.9.29 · T-3）：闭式高斯 p5（μ − 1.645σ）
+# ---------------------------------------------------------------------------
+# golden = 蒙特卡洛经验 5% 分位（随机采样、固定种子）；
+# cand   = 闭式高斯 5% 分位（组件容差解析叠加得 μ/σ，p5 = μ − z·σ）。
+# 方法学独立性：两题分布都是**精确高斯**（S7 独立正态损耗之和；S8 的
+# 10log10(F)=nf+δ 恰为高斯 ⇒ OSNR 严格高斯）⇒ p5=μ−1.645σ 是闭式精确值，
+# 与「抽样 + 经验分位」是两种不同算法。若分布非高斯，两者偏离 tol ⇒ 能抓错。
+# 与 S13 的 `yield_analytic`（闭式 Φ ↔ MC 双算法互证）同型：闭式候选不进
+# 判据 D（无离散参数），但基线残差 >1e-12 + 反向扰动必 FAIL ⇒ 真独立。
+@_register_candidate(
+    "gauss_p5_margin",
+    "闭式高斯 p5 = μ−1.645σ（组件容差解析叠加 μ/σ）—— 与 MC 经验 5% 分位方法学独立")
+def _s7_gauss_p5_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """S7 独立候选：闭式高斯最坏情况 p5（margin_p5_dB）。
+
+    golden = 蒙特卡洛 margin 分布经验 5% 分位（固定种子 42）；
+    cand   = μ − 1.645σ，μ/σ 由组件工艺容差解析叠加。
+
+    实测（默认参数）：μ=10.5、σ=√(2·0.3²+(0.5·1)²+0.1²)=0.6633、
+    p5=10.5−1.6449·0.6633=9.409；golden(MC p5)≈9.41，
+    |Δ|≈0.001<tol 0.15（基线属抽样噪声，非恒等）。
+
+    反向 10% 扰动信号谱（candidate 对参数真实响应、golden 取原值）：
+    detector_sens_dbm −20→−22 ⇒ μ+2.0 ⇒ |Δ|≈2.0（13×tol）✅
+    wg_loss_db_cm 3.0→3.3 ⇒ μ−0.3 ⇒ |Δ|≈0.30（2×）✅
+    ⇒ PERTURB 固定扰 detector_sens_dbm（最强键，1% 即抓、min_detect=0.01）。
+
+    ⚠️ 已知边界：候选假设分布为高斯（由独立正态之和的闭式保证），不做
+    分布形态检验；「高斯性是否成立」由 s7 distribution_report 方向性断言 +
+    实测语料背书，不在本题死标量判决内。
+    """
+    from .statistical_anchor import s7_gaussian_moments
+    p = spec.params
+    mu, sigma = s7_gaussian_moments(
+        p_tx_dbm=float(p.get("p_tx_dbm", 0.0)),
+        n_gratings=int(p.get("n_gratings", 2)),
+        grating_db=float(p.get("grating_db", -3.0)),
+        wg_length_cm=float(p.get("wg_length_cm", 1.0)),
+        wg_loss_db_cm=float(p.get("wg_loss_db_cm", 3.0)),
+        ring_il_db=float(p.get("ring_il_db", -0.5)),
+        detector_sens_dbm=float(p.get("detector_sens_dbm", -20.0)))
+    from .statistical_anchor import GAUSS_Z05
+    return float(mu - GAUSS_Z05 * sigma)
+
+
+@_register_candidate(
+    "gauss_p5_osnr",
+    "闭式高斯 p5 = μ−1.645σ（σ=√(σ_laser²+σ_nf²)）—— 与 MC 经验 5% 分位方法学独立")
+def _s8_gauss_p5_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """S8 独立候选：闭式高斯最坏情况 p5（OSNR_p5_dB）。
+
+    golden = 蒙特卡洛 OSNR 分布经验 5% 分位（固定种子 7）；
+    cand   = μ − 1.645σ，其中 10log10(F)=nf+δ 恰为高斯 ⇒ OSNR 严格高斯，
+            μ = p_sig − 30 − 10log10(hνbwN) − nf，σ=√(σ_laser²+σ_nf²)。
+
+    实测（默认参数）：μ=46.930、σ=√(0.5²+0.3²)=0.5831、
+    p5=46.930−1.6449·0.5831=45.971；golden(MC p5)≈45.93，
+    |Δ|≈0.04<tol 0.20（基线属抽样噪声，非恒等）。
+
+    反向 10% 扰动信号谱：
+    nf_db 5.0→5.5 ⇒ μ−0.5 ⇒ |Δ|≈0.5（2.5×tol）✅（min_detect=0.05）
+    bw_ghz 50→55 ⇒ μ−0.414 ⇒ |Δ|≈0.41（2.1×）✅
+    ⇒ PERTURB 固定扰 nf_db（最强键）。
+
+    ⚠️ 已知边界：同 S7，候选假设 OSNR 为高斯（10log10(F)=nf+δ 闭式保证），
+    不做形态检验；高斯性由 s8 osnr_distribution_report 方向性断言背书。
+    """
+    from .statistical_anchor import s8_gaussian_moments, GAUSS_Z05
+    p = spec.params
+    mu, sigma = s8_gaussian_moments(
+        p_sig_dbm=float(p.get("p_sig_dbm", 0.0)),
+        n_amp=int(p.get("n_amp", 1)),
+        nf_db=float(p.get("nf_db", 5.0)),
+        bw_ghz=float(p.get("bw_ghz", 50.0)))
+    return float(mu - GAUSS_Z05 * sigma)

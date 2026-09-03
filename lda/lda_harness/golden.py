@@ -19,7 +19,9 @@ from .system_budget import (  # noqa: E402  # S 系统锚
 )
 from .statistical_anchor import (  # noqa: E402  # Phase 3 统计锚
     s7_statistical_margin_anchor,
+    s7_statistical_margin_p5_anchor,
     s8_statistical_osnr_anchor,
+    s8_statistical_osnr_p5_anchor,
 )
 from .lvs_anchor import (  # noqa: E402  # S9/S10 LVS 签核锚（Phase 4）
     s9_lvs_verdict,
@@ -602,8 +604,8 @@ _GOLDEN_DISPATCH = {
     "S4": s4_fidelity_budget,
     "S5": s5_worst_case_budget,
     "S6": s6_detector_margin,
-    "S7": s7_statistical_margin_anchor,
-    "S8": s8_statistical_osnr_anchor,
+    "S7": s7_statistical_margin_p5_anchor,    # v0.9.29（T-3）：均值→p5（最坏情况）
+    "S8": s8_statistical_osnr_p5_anchor,    # v0.9.29（T-3）：均值→p5（最坏情况）
     "S9": s9_lvs_verdict,
     "S10": s10_lvs_multilayer_verdict,
     "S11": s11_large_scale_verdict,

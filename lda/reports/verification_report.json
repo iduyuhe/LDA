@@ -1,22 +1,22 @@
 {
   "meta": {
     "L0_IR": "(内置默认 B1–B4,B8)",
-    "candidate": "IndependentCandidateRouter(独立候选 21 道: B1,B10,B12,B13,B14,B15,B19,B20,B22,B23,B24,B25,B26,B27,B28,B3,B4,B8,B9,E2,S13；降级量级参考 0 道: 无)",
+    "candidate": "IndependentCandidateRouter(独立候选 23 道: B1,B10,B12,B13,B14,B15,B19,B20,B22,B23,B24,B25,B26,B27,B28,B3,B4,B8,B9,E2,S13,S7,S8；降级量级参考 0 道: 无)",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "self_consistent": true
   },
-  "generated_at": "2026-09-04T05:46:42",
+  "generated_at": "2026-09-04T06:53:49",
   "summary": {
     "total": 48,
     "passed": 48,
     "self_consistent": true,
-    "verified": 21,
-    "self_consistent_stub_count": 27,
-    "independent_candidate_count": 21,
+    "verified": 23,
+    "self_consistent_stub_count": 25,
+    "independent_candidate_count": 23,
     "candidate_class_totals": {
-      "strict_independent": 21,
+      "strict_independent": 23,
       "degraded_ordinal": 0,
-      "self_consistent_stub": 27
+      "self_consistent_stub": 25
     }
   },
   "results": [
@@ -403,7 +403,7 @@
       "oracle": "empirical-measurement(E-SIN-NG-300)",
       "source": "empirical-measurement",
       "golden": 1.892,
-      "candidate": 1.957176784009568,
+      "candidate": 1.9571767840095324,
       "tol": 0.1,
       "passed": true,
       "note": "LPCVD Si3N4 300nm 平台（公开文献）：热氧 SiO2 2.5um 下包层 + PECVD SiO2 2.0um 上包层，全刻蚀条形波导 | P. Munoz et al., Si3N4 300 nm photonic integration platform, Sensors (MDPI) 2017: OFDR ring-resonator group index TE=1.892 / TM=1.717; MZI transmission cross-check TE 1.90-1.92 | σ=0.03 | tol=0.03 | tier=A",
@@ -607,29 +607,29 @@
     },
     {
       "id": "S7",
-      "metric": "margin_mean_dB",
+      "metric": "margin_p5_dB",
       "oracle": "statistical(monte-carlo, seed-fixed)",
       "source": "physical-law",
-      "golden": 10.496913,
-      "candidate": 10.496913,
+      "golden": 9.413468,
+      "candidate": 9.408927536869351,
       "tol": 0.15,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "independent": true,
+      "candidate_class": "strict_independent"
     },
     {
       "id": "S8",
-      "metric": "OSNR_mean_dB",
+      "metric": "OSNR_p5_dB",
       "oracle": "statistical(monte-carlo, seed-fixed)",
       "source": "physical-law",
-      "golden": 46.929842,
-      "candidate": 46.929842,
+      "golden": 45.92462,
+      "candidate": 45.97078383840511,
       "tol": 0.2,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "independent": true,
+      "candidate_class": "strict_independent"
     },
     {
       "id": "S9",

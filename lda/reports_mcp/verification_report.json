@@ -6,7 +6,7 @@
     "via": "L1 KernelGateway",
     "self_consistent": false
   },
-  "generated_at": "2026-09-04T05:43:00",
+  "generated_at": "2026-09-04T06:56:27",
   "summary": {
     "total": 48,
     "passed": 45,
@@ -604,11 +604,11 @@
     },
     {
       "id": "S7",
-      "metric": "margin_mean_dB",
+      "metric": "margin_p5_dB",
       "oracle": "statistical(monte-carlo, seed-fixed)",
       "source": "physical-law",
-      "golden": 10.496913,
-      "candidate": 10.496913,
+      "golden": 9.413468,
+      "candidate": 9.413468,
       "tol": 0.15,
       "passed": true,
       "note": "确定性物理定律/解析解",
@@ -617,11 +617,11 @@
     },
     {
       "id": "S8",
-      "metric": "OSNR_mean_dB",
+      "metric": "OSNR_p5_dB",
       "oracle": "statistical(monte-carlo, seed-fixed)",
       "source": "physical-law",
-      "golden": 46.929842,
-      "candidate": 46.929842,
+      "golden": 45.92462,
+      "candidate": 45.92462,
       "tol": 0.2,
       "passed": true,
       "note": "确定性物理定律/解析解",

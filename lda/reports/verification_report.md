@@ -1,14 +1,14 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-04T05:46:42
+- 生成时间：2026-09-04T06:53:49
 - L0_IR：(内置默认 B1–B4,B8)
-- candidate：IndependentCandidateRouter(独立候选 21 道: B1,B10,B12,B13,B14,B15,B19,B20,B22,B23,B24,B25,B26,B27,B28,B3,B4,B8,B9,E2,S13；降级量级参考 0 道: 无)
+- candidate：IndependentCandidateRouter(独立候选 23 道: B1,B10,B12,B13,B14,B15,B19,B20,B22,B23,B24,B25,B26,B27,B28,B3,B4,B8,B9,E2,S13,S7,S8；降级量级参考 0 道: 无)
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - self_consistent：True
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **21 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **27 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 21 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **23 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **25 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 23 项。
 
-## 汇总：48/48 通过（独立候选 21 项中 **21 项通过=已验证** · 27 项自证闭环，**非验证结论**）
+## 汇总：48/48 通过（独立候选 23 项中 **23 项通过=已验证** · 25 项自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -57,8 +57,8 @@
 | S4 | margin | physical-law | -0.00098602 | -0.00098602 | 0 | 1e-06 | ✅ PASS |
 | S5 | margin_dB | physical-law | 10 | 10 | 0 | 1e-06 | ✅ PASS |
 | S6 | margin_dB | physical-law | 11.5 | 11.5 | 0 | 1e-06 | ✅ PASS |
-| S7 | margin_mean_dB | physical-law | 10.4969 | 10.4969 | 0 | 0.15 | ✅ PASS |
-| S8 | OSNR_mean_dB | physical-law | 46.9298 | 46.9298 | 0 | 0.2 | ✅ PASS |
+| S7 | margin_p5_dB | physical-law | 9.41347 | 9.40893 | 0.00454 | 0.15 | ✅ PASS |
+| S8 | OSNR_p5_dB | physical-law | 45.9246 | 45.9708 | 0.04616 | 0.2 | ✅ PASS |
 | S9 | verdict(ACCEPT=1, REJECT=0) | physical-law | 1 | 1 | 0 | 1e-09 | ✅ PASS |
 
 ---

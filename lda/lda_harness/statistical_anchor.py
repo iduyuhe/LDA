@@ -30,6 +30,10 @@ GRATING_SIGMA_DB = 0.30      # 光栅耦合器耦合效率容差
 WG_SIGMA_DB_CM = 0.50        # 波导传播损耗容差（dB/cm）
 RING_IL_SIGMA_DB = 0.10      # 环形 through 插损容差
 
+# 标准正态 5% 分位 |z|（单侧 5% 最坏情况：p5 = μ − z·σ）
+# scipy.stats.norm.ppf(0.05) = −1.6448536269514722
+GAUSS_Z05 = 1.6448536269514722
+
 
 def monte_carlo_margins(
         p_tx_dbm: float = 0.0,
@@ -170,6 +174,112 @@ def s8_statistical_osnr_anchor(
     return round(statistics.fmean(monte_carlo_osnr(
         p_sig_dbm=p_sig_dbm, n_amp=n_amp, nf_db=nf_db, bw_ghz=bw_ghz,
         n_samples=n_samples, seed=seed)), 6)
+
+
+# ---------------------------------------------------------------------------
+# v0.9.29（T-3）：S7/S8 换指标 均值 → p5（最坏情况下界）
+# ---------------------------------------------------------------------------
+# 🔴 为什么换：原均值锚只比「分布中心」，与确定性锚（S1/S3）语义重叠、且
+# 落在自证桩候选下时零验证价值（mean 是解析值 10.5/46.93，闭式即可得，
+# 不构成独立验证）。确定性锚缺失的真正维度是「最坏情况」——分布尾部 p5。
+# note 早就承认「p5=9.41/45.93 携带最坏情况下界」却一直没用上。
+#
+# 🔴 方法学独立性（与蒙特卡洛 golden 完全独立）：
+#   S7 margin = p_tx + Σ(−loss_i) − Sens，各 loss_i 是**独立高斯**扰动
+#     ⇒ margin 是独立正态之和 ⇒ **严格高斯**，μ/σ 闭式可得。
+#   S8 OSNR = p_sig − 10·log10(h·ν·bw·N·F)，F=10^((nf+δ)/10)
+#     ⇒ 10·log10(F) = nf + δ（恰为高斯！δ~N(0,σ_nf)），
+#     ⇒ OSNR = (p_sig − 30 − 10log10(hνbwN) − nf) + (ξ − δ)，
+#       ξ~N(0,σ_laser)、δ~N(0,σ_nf) 均高斯 ⇒ OSNR **严格高斯**。
+#   故两题分布都是精确高斯 ⇒ p5 = μ − z·σ 是**闭式精确值**（非近似），
+#   与「固定种子蒙特卡洛抽样 + 经验分位」是**两种不同算法**：
+#     若分布非高斯（重尾/偏态），MC p5 与高斯 p5 会偏离 tol ⇒ 本锚能抓错。
+#   这正是真可证伪验证（自证桩 |diff|≡0 不携带任何信息）。
+#
+# ⚠️ 已知边界（与结论一起读）：高斯 p5 候选对分布「高斯性」本身不做检验，
+#   它验证的是「给定高斯性假设下，最坏情况 p5 的闭合值是否与抽样一致」。
+#   分布是否真高斯由 s7/s8 的 `distribution_report` 方向性断言 + 实测语料背书，
+#   不在本题死标量判决内。
+
+def s7_gaussian_moments(
+        p_tx_dbm: float = 0.0,
+        n_gratings: int = 2,
+        grating_db: float = -3.0,
+        wg_length_cm: float = 1.0,
+        wg_loss_db_cm: float = 3.0,
+        ring_il_db: float = -0.5,
+        detector_sens_dbm: float = -20.0
+        ) -> Tuple[float, float]:
+    """S7 闭式高斯矩（候选侧）：μ/σ 由组件容差解析叠加，不碰任何采样。
+
+    margin = p_tx + (n_g·grating_db − wg_loss·wg_len + ring_il) − Sens。
+    各损耗项独立高斯 ⇒ 方差直接相加（独立正态线性组合仍正态）：
+      var = n_g·σ_grating² + (σ_wg·wg_len)² + σ_ring²
+    σ_grating/σ_wg/σ_ring 为模块级工艺容差常量（与 monte_carlo_margins 同源）。
+    """
+    mu = (p_tx_dbm
+          + (n_gratings * grating_db - wg_loss_db_cm * wg_length_cm + ring_il_db)
+          - detector_sens_dbm)
+    var = (n_gratings * GRATING_SIGMA_DB ** 2
+           + (WG_SIGMA_DB_CM * wg_length_cm) ** 2
+           + RING_IL_SIGMA_DB ** 2)
+    return mu, math.sqrt(var)
+
+
+def s8_gaussian_moments(
+        p_sig_dbm: float = 0.0,
+        n_amp: int = 1,
+        nf_db: float = 5.0,
+        bw_ghz: float = 50.0
+        ) -> Tuple[float, float]:
+    """S8 闭式高斯矩（候选侧）：OSNR 高斯性的闭式 μ/σ（见上方推导）。
+
+    μ = p_sig − 30 − 10·log10(h·ν·bw·N) − nf
+    σ = sqrt(σ_laser² + σ_nf²)   （ξ 与 δ 独立正态）
+    """
+    h = 6.626e-34
+    nu = 3.0e8 / (1.55e-6)
+    mu = (p_sig_dbm - 30.0
+          - 10.0 * math.log10(h * nu * (bw_ghz * 1e9) * n_amp)
+          - nf_db)
+    sigma = math.sqrt(LASER_PWR_SIGMA_DB ** 2 + NF_SIGMA_DB ** 2)
+    return mu, sigma
+
+
+def s7_statistical_margin_p5_anchor(
+        p_tx_dbm: float = 0.0,
+        n_gratings: int = 2,
+        grating_db: float = -3.0,
+        wg_length_cm: float = 1.0,
+        wg_loss_db_cm: float = 3.0,
+        ring_il_db: float = -0.5,
+        detector_sens_dbm: float = -20.0,
+        n_samples: int = 2000,
+        seed: int = 42) -> float:
+    """S7 golden（v0.9.29 · T-3）：固定种子下蒙特卡洛 margin 分布 5% 分位。
+
+    语义：最坏情况下界——只有 5% 的工艺漂移抽样会让 margin 低于此值。
+    判决（harness tol=0.15）：|cand(闭式高斯 p5) − golden(本函数)| ≤ tol。
+    """
+    margins = monte_carlo_margins(
+        p_tx_dbm=p_tx_dbm, n_gratings=n_gratings, grating_db=grating_db,
+        wg_length_cm=wg_length_cm, wg_loss_db_cm=wg_loss_db_cm,
+        ring_il_db=ring_il_db, detector_sens_dbm=detector_sens_dbm,
+        n_samples=n_samples, seed=seed)
+    return margin_stats(margins)["p5"]
+
+
+def s8_statistical_osnr_p5_anchor(
+        p_sig_dbm: float = 0.0,
+        n_amp: int = 1,
+        nf_db: float = 5.0,
+        bw_ghz: float = 50.0,
+        n_samples: int = 2000,
+        seed: int = 7) -> float:
+    """S8 golden（v0.9.29 · T-3）：固定种子下 OSNR 分布 5% 分位（最坏情况）。"""
+    return margin_stats(monte_carlo_osnr(
+        p_sig_dbm=p_sig_dbm, n_amp=n_amp, nf_db=nf_db, bw_ghz=bw_ghz,
+        n_samples=n_samples, seed=seed))["p5"]
 
 
 def osnr_distribution_report() -> Dict[str, object]:

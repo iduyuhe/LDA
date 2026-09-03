@@ -582,17 +582,31 @@ BENCHMARK_DEFS = {
         "metric": "Vpi_volts",
         "oracle": "analytical(MZM Pockels half-wave) + integral-bisect cross-check",
         "tol": 1e-3,
+        # v0.9.28（T-2）：接入独立候选 mzm_vpi_nullfit —— 传输谱 T(V)=cos²(Δφ)
+        # 数值采样 + 首个零点三点抛物线定顶（= 实验 Measure Vπ 流程数值化）。
+        # 🔴 判据 D 实测（T-1 单一定义处）：残差 1.91e-3→2.34e-8 随 n_voltage
+        # 真实收敛 ⇒ 真数值离散化。**同锚旧候选沿程积分（mzm_vpi_integral）
+        # 是判据 D 的反例**：均匀段剖分守恒 ⇒ 与闭式代数恒等（残差恒
+        # 4.44e-16、扰动同步响应）⇒ 沿程积分仅保留为报告侧交叉验证，
+        # 不作 harness 独立候选（虚报）。
+        "candidate": "mzm_vpi_nullfit",
+        "candidate_desc": "数值零点拟合：传输谱采样 + 抛物线定顶（与解析反解方法学独立）",
         "default_params": {"lambda_vac_um": 1.55, "n_eff": 2.2,
                            "r_eff": 30.8e-12, "gamma": 0.5,
                            "L_um": 10000.0, "d_um": 8.0},
         "golden_fn": b28_modulator_vpi,
         "note": ("MZM 半波电压 Vπ=λ₀·d/(2·n_eff³·r_eff·Γ·L)（推挽 Pockels 电光"
-                 "相位调制确定性物理定律，零模型假设）。golden=解析闭式；ORACLE"
-                 "交叉验证=沿程积分+二分（通用 Γ(z)），均匀段退化等于闭式、"
-                 "机器精度一致（Δ<1e-6V）→ 非 AI ground。实证量级（LiNbO3 "
-                 "x-cut MZM Vπ≈3.8V）仅作 honest-sanity，不进死标量判决。与 "
-                 "B20 无源 MZI-FSR 双锚闭合「MZI 无源+有源」。LLM 不进判决路径；"
-                 "harness 默认 ReferenceCandidate 自洽 PASS。"),
+                 "相位调制确定性物理定律，零模型假设）。golden=解析闭式。"
+                 "v0.9.28 独立候选=数值零点拟合（`lda_solver/mzm_vpi_nullfit.py`）："
+                 "按 Pockels 相位链算 T(V) 谱、采样找首个传输零点、三点抛物线"
+                 "定顶——与 B3/B4/B20「数值谱特征拟合 vs 解析闭式」同族已判定"
+                 "独立模式。基线残差 7.6e-9 V（tol 1e-3 的 0.0008%）；判据 D："
+                 "n_voltage 2→512 残差 1.91e-3→2.34e-8 真实收敛。"
+                 "旧 ORACLE 沿程积分+二分（通用 Γ(z)）保留于报告侧：均匀段与"
+                 "闭式代数恒等（剖分守恒，判据 D 反例），仅作实现自洽检查，"
+                 "**不构成独立验证**。实证量级（LiNbO3 x-cut MZM Vπ≈3.8V）仅作 "
+                 "honest-sanity，不进死标量判决。与 B20 无源 MZI-FSR 双锚闭合"
+                 "「MZI 无源+有源」。LLM 不进判决路径。"),
     },
     # ---- D-62 实证大数据锚（第二道非 AI ground：真实测量语料）----
     # anchor=empirical 的题：golden 来自 EmpiricalCorpus 实测语料（seed_empirical.json

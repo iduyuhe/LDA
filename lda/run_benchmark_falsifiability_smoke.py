@@ -154,7 +154,8 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 #   ⇒ T 与 L 完全无关（零判别力）；②折射率剖面用硬判据 ⇒ dx=0.02 时半宽只跨
 #   7.5 个网格 ⇒ 锥度被离散成 8 次突跳；③倏逝模 sqrt 取主值 +i|β| ⇒
 #   exp(+|β|dz) **指数增长**（L=5µm 溢出到 4e30）。三条都写在 eme_taper.py 里。
-MIN_INDEPENDENT = 20
+# v0.9.28（T-2）：B28 数值零点拟合候选接线 ⇒ 20 → 21
+MIN_INDEPENDENT = 21
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:
@@ -348,6 +349,29 @@ def main() -> int:
                   False, "B8 不在 specs（BENCHMARK_DEFS 缺失）")
     except Exception as e:  # noqa: BLE001 —— 反向自检失败即判 FAIL，不静默跳过
         check("B8 反向：破坏绝热（w2=3.0/L=1.0µm）⇒ T≪0.99 必被抓",
+              False, f"反向自检异常：{str(e)[:80]}")
+
+    # ③‴ B28 反向（v0.9.28 · T-2 接线）：扰 r_eff +10% ⇒ Vπ ∝ 1/r_eff
+    #   ⇒ cand≈3.437 vs golden 3.781，|Δ|≈0.344 ≫ tol=1e-3 ⇒ 必 FAIL。
+    #   注意 B28 已在 PERTURB_SPEC 之外——这里显式钉死 + 常驻（防未来
+    #   candidate 悄悄换回沿程积分（代数恒等，判据 D 反例）后仍 PASS）。
+    try:
+        if "B28" in by_id:
+            _sp28 = _clone_with(by_id["B28"], "r_eff",
+                                by_id["B28"].params["r_eff"] * 1.1)
+            _ov28 = by_id["B28"].oracle_fn(by_id["B28"].params)
+            _cv28 = cand_map["B28"](_sp28, _ov28)
+            _out28 = run_verification(_sp28, cand_map["B28"], oracle_value=_ov28)
+            _caught28 = (not _out28.passed)
+            check("B28 反向：r_eff+10% ⇒ Vπ 变 ~9% 必被抓（tol=1e-3）",
+                  _caught28,
+                  f"|ΔVπ|={abs(_cv28 - _ov28):.4f} > tol 判 FAIL✅"
+                  if _caught28 else f"cand={_cv28:.6f} 仍 PASS❌（护栏失效）")
+        else:
+            check("B28 反向：r_eff+10% ⇒ Vπ 变 ~9% 必被抓（tol=1e-3）",
+                  False, "B28 不在 specs（BENCHMARK_DEFS 缺失）")
+    except Exception as e:  # noqa: BLE001
+        check("B28 反向：r_eff+10% ⇒ Vπ 变 ~9% 必被抓（tol=1e-3）",
               False, f"反向自检异常：{str(e)[:80]}")
 
     # ④ 灵敏度登记：最小可检出扰动（把验证强度显式化）

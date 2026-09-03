@@ -1340,3 +1340,51 @@ def build_solver_writer_specs(spec, candidate_code: str
         source="tmm.py 解析透射谱（外部物理定律锚）",
         candidate_desc="AI-dev 候选求解核（沙箱执行）")]
     return specs, {spec.spec_id: _cand}
+
+
+# ============================================================================
+# B28 独立候选：数值零点拟合 Vπ（v0.9.28 · T-2）
+# ============================================================================
+@_register_candidate(
+    "mzm_vpi_nullfit",
+    "推挽 MZM 传输谱 T(V)=cos²(Δφ_arm(V)) 数值采样 + 首个传输零点三点抛物线"
+    "定顶 —— 与 golden 的解析反解闭式 Vπ=λ₀d/(2n³rΓL) 方法学独立"
+    "（数值观测谱零点测量 vs 解析求根，与 B3/B4/B20 峰拟合同族）")
+def _mzm_vpi_nullfit_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B28 独立候选：数值零点拟合半波电压 Vπ。
+
+    golden = 解析闭式（对 T(V)=0 条件解析反解）
+    cand   = 按 Pockels 相位链算传输谱 T(V)，采样 → 找首个局部极小 →
+             三点抛物线定顶（= 实验 Measure Vπ 标准流程的数值化）。
+             **从不求值闭式**，也不含任何剖分守恒结构。
+
+    🔴 判据 D 实测（2026-09-03，判据 D 单一定义处复算）：
+    n_voltage 2→512 残差 1.91e-3 → 2.34e-8，粗端（n≤8，零点两侧采样对称
+    抵消）后 N 加倍误差降 ~8-87×（cos² 四次修正项），**真数值离散化**。
+    对照：同锚的沿程积分候选（mzm_vpi_integral）残差恒 4.44e-16 = 代数恒等
+    （判据 D 反例，T-1 已证）——**同锚两候选恰成判据 D 的教学对照**。
+
+    基线（生产档位 n_voltage=400）：残差 7.6e-9 V（tol=1e-3 的 0.0008%，
+    ≫1e-12 噪声地板，双向可标定）。
+
+    ⚠️ 诚实边界：①同一 1D Pockels 模型，独立性在「解法」不在「模型」（与
+    B20 同档）；②扫描上界由相位链 Δφ=π 反解（=2·Vπ），仅括住零点不影响
+    定位（上界取 3π 反解结果不变）；③均匀 Γ 假设（求解器支持任意 Γ(z)）。
+
+    ⚠️ 失败即抛异常上浮，绝不静默回退（IndependentCandidateRouter 既定原则）。
+    """
+    try:
+        from lda.lda_solver import mzm_vpi_nullfit as mv
+    except ImportError:
+        _ensure_paths()
+        import mzm_vpi_nullfit as mv
+
+    p = spec.params
+    return float(mv.mzm_vpi_nullfit(
+        lambda_vac_um=float(p["lambda_vac_um"]),
+        n_eff=float(p["n_eff"]),
+        r_eff=float(p["r_eff"]),
+        gamma=float(p["gamma"]),
+        L_um=float(p["L_um"]),
+        d_um=float(p["d_um"]),
+        n_voltage=mv.DEFAULT_N_VOLTAGE))

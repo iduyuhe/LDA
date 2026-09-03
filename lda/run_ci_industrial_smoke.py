@@ -1,11 +1,25 @@
-"""D-77 验证合约工业化 smoke：3 例（回归子集全过 + 性能基准 PASS + FAIL 检测）。
+"""D-77 验证合约工业化 smoke：3 例（回归入口 PASS 聚合契约 + 性能基准 PASS + FAIL 检测）。
+
+设计纪律（v0.9.28 修订 · 解决门禁负载诱发抖动）：
+- 本文件本身是 CORE_SMOKES 的一条。门禁 `run_ci_regression --tag core` 已直接
+  跑完全部 core smoke（含本文件）。因此本文件的「回归子集」例**绝不再嵌套重跑
+  整个 core 子集**——旧实现 `run_ci_regression(tag="core", exclude=_SLOW_CORE)`
+  等于在机器已被前序 smoke 压载时，把 ~40 个 smoke 再跑一遍，负载诱发某道超时/
+  数值抖动 → 本例 FAIL → 整文件退出 1 → 外层门禁误把本文件标红（v0.9.28 全量
+  回归实测 1 FAIL @695s，单独复跑 3/3 全绿 @558s，证为负载抖动而非真实缺陷）。
+- 修订后：case 1 只跑一个**小的、固定、快速的「代表子集」**验证「回归入口能
+  正确聚合多 smoke 的 PASS」这条契约；真实的全量 core 覆盖仍由门禁直接跑，
+  **一分未减，不掩盖任何失败**。case 3 同理只跑那一个坏 smoke 验证 FAIL 检测。
+  `_SLOW_CORE` 机制随之废弃（不再有嵌套全量重跑，无需为它登记慢 smoke）。
 
 运行：C:/Users/Administrator/.workbuddy/binaries/python/envs/default/Scripts/python.exe run_ci_industrial_smoke.py
-（性能基准 greens numpy 约 35s，总量 <2min）
+（代表子集 ~20s + 性能基准 greens ~35s，总量 <2min，且负载无关）
 """
 import os
 import sys
 import tempfile
+import shutil
+import time
 
 sys.path.insert(0, ".")
 
@@ -26,51 +40,22 @@ def run(name, fn, expect_ok):
         cases.append((name, status, False, f"异常: {str(e)[:80]}"))
 
 
-# 1) 正例：回归统一入口 core 快速子集（harness + IR + GDS + DRC + 系统级）全过
-# 注意：必须排除自身（run_ci_industrial_smoke.py）——内部递归调 core 回归，
-# 若不排除自身会造成无限递归（内部回归又启动 industrial → 又启动 core → …）
-# 导致 300s 超时（v0.8.x 新增 smoke 入 core 后暴露）。新增慢 smoke 也须纳入。
-_SLOW_CORE = {
-    "run_ring_fdtd_smoke.py", "run_ring_double_verify_smoke.py",
-    "run_device_fdtd_smoke.py", "run_dc_transmission_smoke.py",
-    "run_layout_sim_smoke.py", "run_pipeline_smoke.py",
-    "run_pipeline_multidevice_smoke.py", "run_pipeline_realize_smoke.py",
-    "run_coupler_band_smoke.py", "run_ir_spec_smoke.py",
-    "run_tunable_wdm_smoke.py", "run_qeda_topology_smoke.py",
-    "run_large_scale_smoke.py", "run_primitives_smoke.py",
-    "run_gc_smoke.py", "run_drc_fix_smoke.py", "run_drc_pdk_smoke.py",
-    "run_d06_smoke.py", "run_d10_smoke.py", "run_pdk_smoke.py",
-    # v0.9.1 新增（量子侧入 core）：这两项含 FDTD 场级仿真，单项 180-200s。
-    # 若不排除，本脚本内部递归的 core 子集会突破 600s 超时上限
-    # （2026-08-30 实测：未排除时 TIMEOUT 600s → 排除后回落）
-    "run_splitter_readout_smoke.py", "run_splitter_readout_cal_smoke.py",
-    # 🔴 v0.9.24 补登：v0.9.23 把 `run_semivec_mode_smoke.py`（2D 半矢量本征模，
-    # 5 次本征解，实测 **~97s**）加入 CORE_SMOKES 时**漏了同步本表** ⇒ 内部
-    # 递归的 core 子集从 ~570s 涨到 **667.62s**，撑破外层 600s 上限 ⇒ 全量
-    # `--tag core` 回归实测 **TIMEOUT**（v0.9.24 首跑 86 PASS / 1 TIMEOUT）。
-    # 本表的设计意图就是「排除慢 smoke 以保住内部子集的可完成性」——semivec 是
-    # 除两项 FDTD 外最慢的一条，**本就该在表里**。
-    # 🔴 教训：**新增慢 smoke 入 CORE_SMOKES 时，必须同步检查所有「内部递归跑
-    # core 子集」的脚本**（本文件是全库唯一一处）。
-    "run_semivec_mode_smoke.py",
-    # 🔴 v0.9.26 同步补登：`run_eme_taper_smoke.py`（EME 逐片本征解 + 三次收敛
-    # 扫描，实测 **~33s**）入 CORE_SMOKES 时即刻登记本表，不再重演 v0.9.24 的
-    # 「semivec 漏登记 ⇒ 子回归 667.62s 撑破 600s ⇒ 全量 core TIMEOUT」。
-    "run_eme_taper_smoke.py",
-    # 🔴 v0.9.27（T-1）同步补登：`run_d_criterion_smoke.py`（判据 D 护栏，
-    # 20 道基线普查 + 双例验证，实测 **~15s**）。铁律同上：入 CORE_SMOKES
-    # 必须同步登记本表。
-    "run_d_criterion_smoke.py",
-    # 递归保护：本文件自身
-    "run_ci_industrial_smoke.py",
-}
+# 1) 正例：回归入口 PASS 聚合契约 —— 跑一个小的固定快速子集（负载无关、<~30s）。
+#    真实的全量 core 覆盖由门禁 `run_ci_regression --tag core` 直接提供，本例只
+#    验证「入口能把多个真实 smoke 聚合成全 PASS」这一 machinery，不重复跑全量
+#    （v0.9.28 前嵌套重跑全量 core 子集是门禁负载抖动的根因，已废弃）。
+_SUBSET_CONTRACT = [
+    "run_count_consistency_smoke.py",   # 元/记账，瞬时
+    "run_d_criterion_smoke.py",        # 验证 harness，~15s
+    "run_b28_nullfit_smoke.py",        # 光子求解器，~3s
+]
 
 
 def _reg_subset():
-    return run_ci_regression(tag="core", exclude=list(_SLOW_CORE))
+    return run_ci_regression(scripts=list(_SUBSET_CONTRACT))
 
 
-run("正例-回归core快速子集", _reg_subset, True)
+run("正例-回归入口PASS聚合契约", _reg_subset, True)
 
 
 # 2) 正例：性能基准（greens numpy→numba 加速比 + 物理一致；GPU SKIP 非失败）
@@ -102,13 +87,11 @@ def _detect_fail():
     # 把坏脚本复制到 lda/ 下（发现制），跑完删除
     dst = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                        "run_zz_bad_smoke.py")
-    import shutil
     shutil.copy(tmp, dst)
     try:
-        r = run_ci_regression(tag="all", exclude=[s for s in
-                             os.listdir(os.path.dirname(os.path.abspath(__file__)))
-                             if s.startswith("run_") and s.endswith("_smoke.py")
-                             and s != "run_zz_bad_smoke.py"])
+        # 只跑这一个坏 smoke（显式 scripts 清单，不再重跑整个 tag=all），
+        # 验证「入口能把坏 smoke 判为 FAIL」这条契约。
+        r = run_ci_regression(scripts=["run_zz_bad_smoke.py"])
         detected = r["summary"]["fail"] >= 1
         return {"ok": True,
                 "acceptance": {"passed": detected, "checks": []},
@@ -119,7 +102,6 @@ def _detect_fail():
         # → 文件残留且每次 all 集重新创建（D-101 曾清理一次）。多重删除策略：
         #   os.remove（可能被钩子拦截）→ os.unlink 兜底 → 仍失败则改名 .bak
         #   隔离（不再被 _discover_all 发现），绝不残留可被发现的坏 smoke。
-        import time
         for _ in range(3):
             if not os.path.exists(dst):
                 break

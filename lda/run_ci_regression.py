@@ -162,17 +162,21 @@ CORE_SMOKES: List[str] = [
     # 含 5 次 2D 本征解，实测 ~89s ⇒ 配 timeout override。
     "run_semivec_mode_smoke.py",
     # 🔴 v0.9.26：EME 锥度求解器（B8 候选）自校锚，9 条含 3 条收敛扫描，实测 ~33s。
-    #   **入 CORE_SMOKES 的同时必须登记 `run_ci_industrial_smoke._SLOW_CORE`**
-    #   （v0.9.24 血案：semivec 漏登记 ⇒ 内部子回归 667.62s 撑破 600s ⇒ 全量
-    #   core 回归 TIMEOUT）。本条已同步登记。
+    #   （注：v0.9.24 曾要求新慢 smoke 入 CORE 时登记
+    #   `run_ci_industrial_smoke._SLOW_CORE` 以撑住内部嵌套子回归；v0.9.28 起
+    #   industrial 不再嵌套重跑全量 core，该机制已废弃，无需再登记。）
     "run_eme_taper_smoke.py",
     # 🔴 v0.9.27（T-1）：判据 D 常驻护栏（代数恒等 vs 真数值离散化）。
     #   现行行为判据拦不住「数学等价的另一种写法」（实测反例 B28：沿程积分
     #   与闭式均匀段剖分守恒 ⇒ 残差恒 4.44e-16 但扰动同步响应 ⇒ 会被误判
     #   独立候选）。本 smoke 守护 candidate_discretization_responds（定义于
     #   lda_harness/harness.py 单一定义处）+ 全 20 道基线残差普查。实测 ~15s。
-    #   **已同步登记 run_ci_industrial_smoke._SLOW_CORE**（v0.9.24 铁律）。
+    #   （v0.9.24 的「入 CORE 须登记 _SLOW_CORE」铁律已于 v0.9.28 废弃：
+    #   industrial 不再嵌套重跑全量 core。）
     "run_d_criterion_smoke.py",
+    # 🔴 v0.9.28（T-2）：B28 数值零点拟合候选护栏（判据 D 双对照：nullfit
+    #   收敛 vs 沿程积分代数恒等）。实测 ~3s。
+    "run_b28_nullfit_smoke.py",
     # ---- Lindblad 门保真度求解器（v0.9.24 · P0 自证）----
     # B10 接线 + golden 语义修正（D-66 第 8 例）的**凭据守护**：没有它，
     # ①「旧式 exp(−t(1/T1+1/(2T2))) 已被证否」②「tol 由 0.01 收紧到 1e-8 后
@@ -212,12 +216,11 @@ def _discover_all() -> List[str]:
 # 被误判为 FAIL（TIMEOUT 与真 FAIL 必须区分开）。调用方可通过 timeout_override 再覆盖。
 _BUILTIN_TIMEOUT_OVERRIDE = {
     # 内部含子回归 + greens 基准。
-    # 🔴 v0.9.24：600 → **900s**。原 600s 已被实测撑破——v0.9.23 把
-    # `run_semivec_mode_smoke.py`（~97s）加入 CORE_SMOKES 时**没同步**
-    # `run_ci_industrial_smoke._SLOW_CORE` ⇒ 内部子回归 570s → **667.62s**
-    # ⇒ 全量 core 回归实测 **TIMEOUT @600s**（86 PASS / 1 TIMEOUT）。
-    # 已同步补登 _SLOW_CORE（子回归回落到 ~570s），但 600s 的上限原本就只剩
-    # 个位数量级的余量 ⇒ 顺手放宽到 900s（1.5× 余量）防慢机器抖动。
+    # 🔴 v0.9.24：600 → **900s**（1.5× 余量防慢机器抖动）。历史：v0.9.23 把
+    # `run_semivec_mode_smoke.py`（~97s）加入 CORE_SMOKES 时，industrial 当时
+    # 内部嵌套重跑全量 core 子集，导致子回归 570s → 667.62s 撑破 600s ⇒ TIMEOUT。
+    # 该嵌套重跑已于 v0.9.28 废弃（industrial 改为跑小的固定代表子集，~90s 且
+    # 负载无关），900s 余量纯属保守，不含任何判据放宽。
     # ⚠️ 这不是「放宽判据掩盖失败」：TIMEOUT 与 FAIL 是两种状态（见 _run_one），
     # 本项实测单独跑 **3/3 ALL PASS**，是纯耗时问题，不含任何物理/数值判据。
     "run_ci_industrial_smoke.py": 900.0,
@@ -233,6 +236,7 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_eme_taper_smoke.py": 400.0,
     # 判据 D：20 道基线普查 + B10/B28 双向 + 抽验，实测 ~15s
     "run_d_criterion_smoke.py": 180.0,
+    "run_b28_nullfit_smoke.py": 120.0,
 }
 
 
@@ -266,7 +270,8 @@ def _run_one(python: str, script: str, timeout: float) -> Dict[str, Any]:
 def run_ci_regression(python: Optional[str] = None, tag: str = "all",
                       timeout: float = 300.0, fail_fast: bool = False,
                       exclude: Optional[List[str]] = None,
-                      timeout_override: Optional[Dict[str, float]] = None
+                      timeout_override: Optional[Dict[str, float]] = None,
+                      scripts: Optional[List[str]] = None
                       ) -> Dict[str, Any]:
     """全量/核心回归。返回 {results, summary, acceptance, verdict}。
 
@@ -274,9 +279,18 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
     单独放宽时限（如 run_ci_industrial_smoke 内部含子回归+greens 基准，
     约 300-315s 浮动，全局 300s 常顶到边界；覆盖 600s 根治偶发抖动，
     不掩盖其它 smoke 的真实超时）。
+
+    scripts：显式脚本清单（优先级高于 tag）。供「子集契约校验」类调用
+    （如 run_ci_industrial_smoke 只跑几个固定快速 smoke 验证回归入口的
+    PASS/FAIL 聚合逻辑），避免整段嵌套重跑导致负载诱发抖动。清单内不存在
+    的文件会被静默跳过（与 tag 分支行为一致）。
     """
     python = python or sys.executable
-    if tag == "core":
+    if scripts is not None:
+        # 显式清单优先：仅保留当前目录内真实存在的脚本
+        scripts = [s for s in scripts
+                   if os.path.exists(os.path.join(_HERE, s))]
+    elif tag == "core":
         scripts = [s for s in CORE_SMOKES
                    if os.path.exists(os.path.join(_HERE, s))]
     else:

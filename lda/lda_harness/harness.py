@@ -205,7 +205,10 @@ class VerificationHarness:
                         s["oracle"], False, src_note, source))
                     continue
                 candidate_val = candidate(s, golden, s["params"])
-                passed = abs(candidate_val - golden) <= s["tol"]
+                # 🔴 v0.9.25：empirical 分支曾硬编码 abs——与 path①/empirical smoke
+                # 同根的 cmp_abs 副本（latent，当前 E 锚全为 abs 故未炸）。统一走
+                # _cmp_ok 分发（cmp 字段语义与 path① 一致）。
+                passed = _cmp_ok(candidate_val, golden, s["tol"], s.get("cmp", "abs"))
                 results.append(BenchmarkResult(
                     s["id"], s["metric"], golden, candidate_val, s["tol"],
                     s["oracle"], passed, src_note, source,

@@ -122,10 +122,15 @@ def main():
           abs(goldens["E3"] - _analytic) <= 0.1,
           f"实测={goldens['E3']} 解析={_analytic:.3f} 差={abs(goldens['E3']-_analytic):.3f} nm")
 
-    # ② 参考候选全 PASS（45/45）
+    # ② 注册候选全 PASS（48/48）。🔴 v0.9.25：此处曾硬编码 abs(cand−golden)，
+    # 与 path① 的 cmp_abs 硬编码同根——B19 接线后 cand_map["B19"] 是真实候选
+    # （link_passivity，≈0.9999，cmp='le'），套绝对误差口径 ⇒ 1.04e-4 > tol 1e-9
+    # 假 FAIL（全量回归 2/87 失败的根因，并经 industrial smoke 内部递归传导）。
+    # 判据必须单一定义处：一律用 spec.compare_fn(candidate, oracle)。
     npass = sum(1 for s in specs
-                if abs(cand_map[s.spec_id](s, s.oracle_fn(s.params)) - s.oracle_fn(s.params)) <= s.tol)
-    check("参考候选 48/48 PASS（双 ground）", npass == len(specs) == 48,
+                if s.compare_fn(cand_map[s.spec_id](s, s.oracle_fn(s.params)),
+                                s.oracle_fn(s.params)) <= s.tol)
+    check("注册候选 48/48 PASS（双 ground · cmp 分发口径）", npass == len(specs) == 48,
           f"{npass}/{len(specs)}")
 
     # ③ 扰动候选：实证锚题 FAIL 检测（自适应扰动幅度）

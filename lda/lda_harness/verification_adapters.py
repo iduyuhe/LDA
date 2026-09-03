@@ -18,7 +18,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import numpy as np
 
 from .verification_spec import (
-    VerificationSpec, cmp_abs, cmp_rel, cmp_abs_balance,
+    VerificationSpec, cmp_abs, cmp_rel, cmp_abs_balance, compare_fn_for,
 )
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -110,7 +110,7 @@ def build_harness_specs(defs: Optional[Dict] = None
             metric=d["metric"],
             oracle_kind="physical_law",
             oracle_fn=_oracle,
-            compare_fn=cmp_abs,
+            compare_fn=compare_fn_for(d.get("cmp", "abs")),
             tol=d["tol"],
             tol_mode="abs",
             target_desc=d.get("title", ""),
@@ -925,6 +925,102 @@ def _coupler_charge_exact_candidate(spec: VerificationSpec, oracle_value: Any) -
         E_J2=float(p["E_J2"]), E_C2=float(p["E_C2"]),
         Cc=float(p["Cc"]), C1=float(p["C1"]), C2=float(p["C2"]),
         Nq=10)["J_num"])
+
+
+# ---------------------------------------------------------------------------
+# B19 链路无源上界候选的网格常数（🔴 **单一定义处**，v0.9.25）
+#   窗口 = [min(λ)−100nm, max(λ)+100nm]，步长 0.01 nm。
+#   步长由实测标定（收敛自校锚见下方 step 扫描数值）：
+#     step 0.6 / 0.3 / 0.15 / 0.075 / 0.0375 / **0.02 / 0.01 / 0.005** / 0.0025
+#     → 0.9998905 / 0.9997835 / 0.9995947 / 0.9998871 / 0.9998970 /
+#       **0.9998962 / 0.9998962 / 0.9998962** / 0.9998978
+#   ⚠️ **非单调**：max|T| 是「采样是否命中窄共振峰尖」的问题，不是光滑收敛。
+#      step ≤ 0.01 后稳定到 1e-12（N≈26001，实测 0.034s）⇒ 取 0.01。
+#   不要为省时间调粗 —— 粗网格会**低估** max|T|（0.99959 vs 0.99990），
+#   让本锚的判据余量看起来比实际大 3 倍。
+_LINK_PASSIVITY_WL_MARGIN_NM = 100.0
+_LINK_PASSIVITY_WL_STEP_NM = 0.01
+
+
+@_register_candidate(
+    "link_passivity",
+    "lda_chain 链路引擎端到端级联（构建→布局→自动布线→带布线损耗→传递谱）"
+    "在**全部传递路径 × 全部采样波长**上的 max|T| —— 与 golden 无源上界 1.0 "
+    "死标量比对（cmp='le'）")
+def _link_passivity_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B19 独立候选：无源链路无增益上界（max|T| ≤ 1）。
+
+    golden = 常量 **1.0**（无源线性网络无外部泵浦 ⇒ 所有传递增益 |T(λ)| ≤ 1；
+             能量守恒是其无损特例）。cmp='le'。
+    cand   = `lda_chain` 引擎真跑一遍完整链路：
+             `build_wdm_link` 建 N 环 WDM 级联 → `route_and_simulate` 布局 +
+             自动布线（产出逐 net 的 `net_loss_db`）→ `engine.simulate` 级联
+             → 取所有路径 × 所有波长上的 max|T|。
+
+    **方法学独立性（最强一档）**：golden 是一个**不依赖任何模型的物理硬约束**
+    （无源性/能量守恒），候选是一整套工程师序（耦合模谱 × 布线损耗 × 级联）。
+    候选不可能"复述" golden —— 它甚至不知道 golden 是多少。
+
+    🔴 **v0.9.25 诚实边界（三条，均已实测）：**
+    1. **判据余量仅 ~1.04e-4**。max|T| 的真值 ≈ 0.9998962，缺口几乎全部来自
+       环的弯曲损耗。若某天把损耗模型关掉，max|T| → 1.0，本锚会**顶到边界**
+       （cmp='le' 下 1.0 恰好 PASS，但任何数值噪声都可能顶穿）。
+    2. **网格非单调 + 覆盖盲区**。max|T| 随网格密度**非单调**（采样是否命中窄
+       共振峰尖），粗网格会**低估** max ⇒ 步长固定 0.01 nm（已标定稳定）。
+       即便如此，若存在 >1 的尖峰恰好落在采样点之间，仍会漏检 —— **加细网格
+       只能缓解，不能根除**。这是本锚的结构性盲区，不掩盖。
+    3. **`alpha_cm` 对本锚的指标无影响**。它确实被消费（bus0/1/2 的
+       `net_loss_db` 随 alpha 增长，实测 alpha=2.5/25/250 时 ring3.out 的
+       max|T| 0.9801→0.9594→0.7752），但**全局 max 落在 `ring0.in->ring0.drop`
+       这条不经过任何 bus 的路径上**（三档 alpha 下恒为 0.9995947013）。
+       ⇒ 候选对 alpha_cm 零响应；判据靠 gap_um / n_g 两键成立（Δ ~1e-4）。
+    4. **只判合法性，不判精度**。本锚只回答"链路有没有产生增益"，不回答
+       "级联算得准不准"。后者由 `link_harness.link_cascade_check` 负责，但
+       它用**引擎同源**模型重建期望 ⇒ **不是独立验证，不得当独立凭据**。
+
+    ⚠️ 布线被阻塞（`blocked_nets` 非空）时**抛异常上浮**，绝不静默回退 ——
+    否则又变成自证桩（IndependentCandidateRouter 的既定设计原则）。
+    """
+    try:
+        from lda_chain import build_wdm_link
+        from lda_chain import route_sim
+        from lda_chain.link_harness import max_transfer_of
+    except ImportError:
+        # 🔴 `lda_chain` 内部用**绝对**导入（`from lda_ir import ObjectiveSpec`），
+        #    所以 `from lda.lda_chain import ...` 必然 ModuleNotFoundError；
+        #    必须把 lda/ 根目录放进 sys.path，再按顶层包名导入。
+        _root = os.path.dirname(_HERE)
+        if _root not in sys.path:
+            sys.path.insert(0, _root)
+        from lda_chain import build_wdm_link
+        from lda_chain import route_sim
+        from lda_chain.link_harness import max_transfer_of
+
+    p = spec.params
+    if str(p.get("type", "wdm")) != "wdm":
+        raise ValueError(f"B19 候选仅支持 type='wdm'，收到 {p.get('type')!r}")
+    channels_nm = [float(c) for c in p["channels_nm"]]
+    Rs_um = [float(r) for r in p["Rs_um"]]
+    if not channels_nm or len(channels_nm) != len(Rs_um):
+        raise ValueError(
+            f"B19 候选 channels_nm({len(channels_nm)}) 与 "
+            f"Rs_um({len(Rs_um)}) 必须非空且等长")
+
+    lo = min(channels_nm) - _LINK_PASSIVITY_WL_MARGIN_NM
+    hi = max(channels_nm) + _LINK_PASSIVITY_WL_MARGIN_NM
+    n = int(round((hi - lo) / _LINK_PASSIVITY_WL_STEP_NM)) + 1
+    wls = [(lo + (hi - lo) * i / (n - 1)) / 1000.0 for i in range(n)]
+
+    link = build_wdm_link(channels_nm, Rs_um,
+                          gap=float(p["gap_um"]), n_g=float(p["n_g"]))
+    res = route_sim.route_and_simulate(
+        link, wls, straight_loss_db_cm=float(p["alpha_cm"]))
+    blocked = res.get("blocked_nets") or []
+    if blocked:
+        raise RuntimeError(f"B19 链路布线不完整 blocked_nets={blocked}"
+                           f" —— 级联结果不可信，拒绝出数")
+    # 🔴 float() 包裹：判决链上不许出现 numpy 标量（v0.9.24 B10 同类坑）
+    return float(max_transfer_of(res["sim"]))
 
 
 def harness_perturbed_candidate(rel_err: float):

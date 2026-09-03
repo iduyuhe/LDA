@@ -146,3 +146,41 @@ def cmp_rel(candidate: float, oracle: float) -> float:
 def cmp_abs_balance(candidate: float, oracle: float) -> float:
     """平衡度：candidate 为某端口占比，oracle 为理想占比（0.5）。"""
     return abs(float(candidate) - float(oracle))
+
+
+def cmp_le(candidate: float, oracle: float) -> float:
+    """不等式锚（上界）：candidate ≤ oracle 的**越界量**。
+
+    返回 0 = 满足（candidate ≤ oracle）；正值 = 超出上界的幅度。
+    与 `err_ok(err) = err <= tol` 配合 ⇒ 判定 `candidate ≤ oracle + tol`。
+
+    用途：物理定律不等式锚（如 B19 无源无增益 |T| ≤ 1），损耗合法、
+    增益判 FAIL。cmp_abs 会把这个「单向合法」误判成绝对误差。
+    """
+    return max(0.0, float(candidate) - float(oracle))
+
+
+def cmp_ge(candidate: float, oracle: float) -> float:
+    """不等式锚（下界）：candidate ≥ oracle 的**缺口量**。
+
+    返回 0 = 满足（candidate ≥ oracle）；正值 = 低于下界的幅度。
+    与 `err_ok(err) = err <= tol` 配合 ⇒ 判定 `candidate ≥ oracle - tol`。
+    """
+    return max(0.0, float(oracle) - float(candidate))
+
+
+# 比较函数按 cmp 语义分发（build_harness_specs 等适配器消费）。
+# 🔴 cmp='le'/'ge' 是**单向**不等式，绝不能用 cmp_abs 替代——B19（无源上界）
+# 的 candidate=0.9999 在 cmp_abs 下 |0.9999−1.0|=1e-4 > tol=1e-9 会假 FAIL。
+_CMP_FN_MAP = {
+    "abs": cmp_abs,
+    "rel": cmp_rel,
+    "abs_balance": cmp_abs_balance,
+    "le": cmp_le,
+    "ge": cmp_ge,
+}
+
+
+def compare_fn_for(cmp_mode: str) -> Callable:
+    """按 cmp 语义取比较函数；未知值回落 cmp_abs（向后兼容）。"""
+    return _CMP_FN_MAP.get(cmp_mode, cmp_abs)

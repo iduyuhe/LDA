@@ -280,6 +280,18 @@ def candidate_responds(spec, cand_fn, oracle_value, rel=0.10,
     旧判据既会**误伤**「残差恰好小」的真候选（B10），也会**漏过**「残差恰好
     大」的自证桩（例如某个桩被加了常数扰动）。
 
+    🔴🔴🔴 **v0.9.25 再升级：响应必须相对「候选自己的基线」，不是相对 golden**
+    上一版（v0.9.24）比的是 `|cand(p·(1±rel)) − **golden**| > thresh`。这在
+    等式型锚上碰巧对（真候选 ≈ golden，残差 ≲1e-12），但在**不等式型锚**
+    （`cmp='le'`，如 B19 无源上界 golden=1.0）上是**漏的**：
+        cand(任何 params) = golden × 0.99988   ← 常量缩放候选，完全不看 params
+    它每个扰动下都返回同一个数，与 golden 差 1.2e-4 ≫ thresh ⇒ 旧版判
+    「有响应」⇒ **常量桩被放行**。
+    实测攻击演示（v0.9.25）：常量缩放 old=**True（漏过）** / new=**False（抓到）**；
+    纯自证桩 `return golden` 两版都 False。且 18 道现有独立锚（B1/B3/B4/B9/B10/
+    B12-B15/B20/B22-B27/E2/S13）在新旧判据下**结果完全一致 ⇒ 零回归**。
+    代价：多算一次基线 `base = cand_fn(spec, oracle_value)`（每个锚 +1 次求解）。
+
     参数
     ----
     spec : 有 `.params` 映射的对象（VerificationSpec 或 _SpecShim）
@@ -295,6 +307,14 @@ def candidate_responds(spec, cand_fn, oracle_value, rel=0.10,
     params = getattr(spec, "params", None)
     if not isinstance(params, dict):
         return False
+    # 🔴 基线必须自己算（v0.9.25）：响应 = 候选**自己**在扰动下的变化量，
+    # 不是「候选与 golden 的差」。否则常量缩放候选会靠 |cand−golden|≠0 蒙混过关。
+    try:
+        base = cand_fn(spec, oracle_value)
+    except Exception:  # noqa: BLE001 —— 基线就抛异常的不按桩处理（上游判据会抓）
+        return True
+    if not isinstance(base, (int, float)):
+        return True   # 非标量结果无法用残差判，放行（与 run_harness 口径一致）
     for key, val in params.items():
         if isinstance(val, bool) or not isinstance(val, (int, float)):
             continue
@@ -306,7 +326,7 @@ def candidate_responds(spec, cand_fn, oracle_value, rel=0.10,
                 cv2 = cand_fn(sp2, oracle_value)
             except Exception:  # noqa: BLE001 —— 扰动后求解器报错=有响应
                 return True
-            if isinstance(cv2, (int, float)) and abs(cv2 - oracle_value) > thresh:
+            if isinstance(cv2, (int, float)) and abs(cv2 - base) > thresh:
                 return True
     return False
 

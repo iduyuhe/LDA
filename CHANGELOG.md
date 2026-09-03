@@ -1,5 +1,42 @@
 # Changelog
 
+## v0.9.25（2026-09-03 · B19 无源无增益接线 · 首开不等式锚 cmp='le' · 严格独立 18 → 19）
+
+**指令**：延续 P0 接线段（B19 无源链路无增益上界锚）。
+
+**三分类刷新**：**严格独立 19 道 · 降级量级参考 0 道 · 自证桩 29 道（三类和 = 48）**
+
+---
+
+### 一、B19 候选接线：`link_passivity`（首开不等式锚 cmp='le'）
+
+| 项 | 内容 |
+|---|---|
+| golden | 常量上界 1.0（`b19_link_passivity_bound`，无源性/能量守恒硬约束，**不依赖任何模型**）|
+| 候选 | `lda_chain` 真实链路引擎端到端级联：`build_wdm_link → route_and_simulate → max_transfer_of`（消费 `alpha_cm` 布线损耗 → `net_loss_db` → 级联）|
+| 比较 | `cmp='le'`（越界量 `max(0, cand−oracle)`），损耗合法、增益 FAIL |
+| 方法学独立 | 最强一档：golden 是物理硬约束常量，候选是整条工程师序，候选甚至不知道 golden 是多少 |
+
+### 二、🔴 path① cmp 分发修复（B19 假 FAIL 根因）
+
+`build_harness_specs` 对所有物理定律锚硬编码 `compare_fn=cmp_abs`，把 B19 的 `cmp='le'` 上界当绝对误差判定 ⇒ candidate=0.9998962、golden=1.0 判 `|0.9999−1.0|=1.04e-4 > tol 1e-9` 假 FAIL。
+
+修复：`verification_spec.py` 新增 `cmp_le`/`cmp_ge`/`compare_fn_for`，`verification_adapters.py` 按 `d.get("cmp", "abs")` 分发。修复后 forward `passed=True err=0.0`。
+
+### 三、🔴 行为判据 v0.9.25 升级（抓常量缩放桩）
+
+`candidate_responds` 从「比 golden」改为「比候选自己基线 `base=cand_fn(spec, oracle)`」。否则「返回 golden×0.99988 的常量缩放桩」（完全不看 params）在不等式锚上会被误判「有响应」而漏过——实测攻击演示 old=True 漏过、new=False 抓到，且 **18 道现有独立锚口径零回归**。
+
+### 四、B19 反向测试 = 注入负增益（非参数 ±10%）
+
+不等式锚的「参数 ±10% 扰动」仍无源（不会让 max|T| 越过 1），必须 monkeypatch 弯曲损耗翻负注入增益：注入 −0.3/−0.5/−1.0 dB/cm ⇒ max|T| 1.0033/1.0056/1.0112 全部 >1 判 FAIL。smoke 第 ③′ 项钉死。
+
+### 五、⚠️ 诚实边界
+
+余量仅 **1.2e-4**（离共振 thru 路径的残余弯曲损耗），已写入 note。全量 smoke `run_benchmark_falsifiability_smoke.py` **11/11 PASS · 严格独立 19 · 自证桩 29/48**。
+
+---
+
 ## v0.9.24（2026-09-03 · B10 门保真度接线 + D-66 第 8 例 · 严格独立 17 → 18）
 
 **指令**：延续 P0 自证段（B10 量子门保真度锚接线）。用户明确要求：**本轮自证完成前不发布、不部署** ⇒ 全程零 commit / 零 push / 零部署。

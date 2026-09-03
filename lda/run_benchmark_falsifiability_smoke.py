@@ -143,7 +143,11 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 # → v0.9.24 接 B10（Lindblad 4×4 超算子 RK4 积分 ↔ 解析闭式；伴 golden 语义
 #   修正 D-66 第 8 例 + tol 由 0.01 收紧 1e6 倍至 1e-8）后 18。
 #   本轮是**真新增**（B10 此前为自证桩）⇒ strict +1、stub −1（48 守恒）。）
-MIN_INDEPENDENT = 18
+# → v0.9.25 接 B19（无源链路无增益上界：lda_chain 真跑全链路 max|T| ↔ 常量
+#   上界 1.0，cmp='le'）后 19。🔴 本轮**首开不等式锚（cmp='le'）接线**——
+#   golden 是常量上界 1.0，candidate 是整条工程师序，方法学独立最强一档；
+#   且顺带修掉 path ① 硬编码 cmp_abs 导致 B19 假 FAIL 的缺陷（compare_fn_for）。
+MIN_INDEPENDENT = 19
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:
@@ -282,6 +286,37 @@ def main() -> int:
             detail_neg.append(f"{bid}:ERR {str(e)[:30]}")
     check(f"反向测试：{PERTURB_REL:.0%} 参数扰动必被抓（tol 未放水）",
           all(ok_neg) and len(ok_neg) > 0, " ".join(detail_neg))
+
+    # ③′ B19 反向（专用 · 不等式锚的"坏"不是参数扰动，是**注入增益**）：
+    #   扰 gap_um/n_g ±10% 仍无源（max|T|<1，cmp='le' 恒 PASS），只有把环的
+    #   弯曲损耗翻成**负增益**（有源）才会让 max|T|>1 顶穿上界。故 monkeypatch
+    #   `bending_loss_db_per_cm` 返回常量负增益 −0.5 dB/cm，复跑候选 ⇒
+    #   max|T|≈1.0056 > 1.0 ⇒ cmp='le' 必 FAIL。
+    #   🔴 这证明「无源无增益」护栏真能抓增益，而不是只会给无源链发 PASS。
+    #   （B19 不能进 PERTURB_SPEC 的逐参数扰动表：任何 ±10% 参数扰动都仍无源。）
+    try:
+        if "B19" in by_id:
+            from lda_agent import ring_adddrop as _ra
+            _orig_bend = _ra.bending_loss_db_per_cm
+            try:
+                _ra.bending_loss_db_per_cm = lambda R_um, A=0.0, B=0.0: -0.5
+                _ov19 = by_id["B19"].oracle_fn(by_id["B19"].params)
+                _cv19 = cand_map["B19"](by_id["B19"], _ov19)
+                _out19 = run_verification(by_id["B19"], cand_map["B19"],
+                                          oracle_value=_ov19)
+                _caught19 = (not _out19.passed)
+                check("B19 反向：注入增益（弯曲损耗翻负）⇒ max|T|>1 必被抓（cmp='le' 未放水）",
+                      _caught19,
+                      f"max|T|={_cv19:.6f}（>1 判 FAIL✅）" if _caught19
+                      else f"max|T|={_cv19:.6f} 仍 PASS❌（护栏抓不住增益）")
+            finally:
+                _ra.bending_loss_db_per_cm = _orig_bend
+        else:
+            check("B19 反向：注入增益（弯曲损耗翻负）⇒ max|T|>1 必被抓（cmp='le' 未放水）",
+                  False, "B19 不在 specs（BENCHMARK_DEFS 缺失）")
+    except Exception as e:  # noqa: BLE001 —— 反向自检失败即判 FAIL，不静默跳过
+        check("B19 反向：注入增益（弯曲损耗翻负）⇒ max|T|>1 必被抓（cmp='le' 未放水）",
+              False, f"反向自检异常：{str(e)[:80]}")
 
     # ④ 灵敏度登记：最小可检出扰动（把验证强度显式化）
     sens_rows = []
@@ -470,6 +505,47 @@ def main() -> int:
               "；".join(_json_bad) if _json_bad else "48 题 format_json 通过且 passed 均为 Python bool")
     except Exception as e:  # noqa: BLE001
         check("路径② 报告可 JSON 序列化（判决链无 numpy 标量泄漏）",
+              False, f"检查自身异常：{str(e)[:80]}")
+
+    # ⑩ 行为判据反向自检（v0.9.25 新增 · **验证判据本身，不是验证锚题**）：
+    #   用三个**合成候选**钉死 `candidate_responds` 的判定方向。若有人把判据
+    #   改回「比 |cand − golden|」的老写法，第 (b) 条会立刻变红。
+    #   🔴 根因（v0.9.24 版判据的洞）：老判据比的是候选与 **golden** 的差，
+    #     但响应性该比的是候选与**它自己未扰动时**的差。对不等式型锚
+    #     （cmp='le'，如 B19 golden=1.0），一个 `return golden*0.99988` 的
+    #     **常量缩放桩**每个扰动下都返回同一个数，与 golden 差 1.2e-4 ≫ thresh
+    #     ⇒ 老判据判「有响应」⇒ 常量桩被放行。
+    #   🔴 本项是**判据的护栏**：判据漏了 ⇒ 全库 48 道锚的分类都不可信。
+    try:
+        from lda_harness.harness import _SpecShim, candidate_responds as _cr
+        _syn_spec = _SpecShim("SYNTH", {"gap_um": 0.3, "n_g": 4.2,
+                                        "alpha_cm": 2.5})
+        _oracle = 1.0
+
+        def _stub_pure(sp, g):        # 纯自证桩：直接回 golden，完全不看 params
+            return g
+
+        def _stub_scaled(sp, g):      # 常量缩放桩：golden×const，同样不看 params
+            return g * 0.9998834104746449
+
+        def _real_cand(sp, g):        # 真候选：读 params 并真实响应
+            return g * (1.0 - 0.001 * float(sp.params["gap_um"])
+                        - 1e-5 * float(sp.params["alpha_cm"]))
+
+        _cases = [("纯自证桩(return golden)", _stub_pure, False),
+                  ("常量缩放桩(golden×0.99988)", _stub_scaled, False),
+                  ("真候选(读 params)", _real_cand, True)]
+        _bad10 = []
+        for _nm, _fn, _want in _cases:
+            _got = _cr(_syn_spec, _fn, _oracle)
+            if _got is not _want:
+                _bad10.append(f"{_nm}: 期望 {_want} 实得 {_got}")
+        check("行为判据反向自检（纯桩/常量缩放桩→False，真候选→True）",
+              not _bad10,
+              "；".join(_bad10) if _bad10 else
+              "3/3 合成候选判定正确（常量缩放桩被抓 ⇒ 判据未退回 golden-相对版）")
+    except Exception as e:  # noqa: BLE001
+        check("行为判据反向自检（纯桩/常量缩放桩→False，真候选→True）",
               False, f"检查自身异常：{str(e)[:80]}")
 
     # ⑥ 诚实披露剩余自证桩（不构成失败，但必须可见）

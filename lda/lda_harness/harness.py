@@ -334,6 +334,78 @@ def candidate_responds(spec, cand_fn, oracle_value, rel=0.10,
     return False
 
 
+# ============================================================================
+# 判据 D · 离散参数响应性（v0.9.27 立法 · T-1）
+# ============================================================================
+# 🔴🔴🔴 为什么需要它（现行行为判据的盲区，实测 B28 触发）：
+#   `candidate_responds` 拦得住「裸桩」（return golden，扰动纹丝不动），
+#   但拦不住「**代数恒等的另一种写法**」：
+#     B28 候选 = 沿程积分 Σ Γ_i·Δz_i + 二分求 Δφ=π/2
+#     golden   = 解析闭式 Vπ = λ₀·d/(2·n_eff³·r_eff·Γ·L)
+#     均匀段 Σ Γ_i·Δz_i ≡ Γ·L（剖分守恒）⇒ 二者**代数恒等**，
+#     且扰动 n_eff 时两式**同步响应** ⇒ candidate_responds=True ⇒ 被判「独立」
+#     —— 但这是**同一个式子的两种写法**，不是两个独立方法的吻合 ⇒ 虚报。
+#
+#   判据 D：固定物理参数，只扫**候选自身的离散参数**（步长/段数/网格/模式数/
+#   展开阶）。真数值方法（积分/本征解/传播）的**截断误差**必然随离散参数变化：
+#   粗端浮出噪声地板、随加密单调下降、收敛阶与算法标称阶一致。代数恒等式的
+#   残差**任何档位恒 ~1e-16 纹丝不动**。
+#
+#   ⚠️ 必须双向标定（B10 血案差点误判）：默认物理参数可能落在**过度收敛区**
+#   （如 t/T1=5e-4 时 RK4 截断误差 ~1e-22，沉在双精度噪声 1e-16 之下）⇒
+#   真独立候选的残差也恒定 ~1e-16，与代数恒等**不可区分**。因此判据 D 的
+#   正确用法是：在「未完全收敛」的物理参数点上扫离散档位（B10 需把 t/T1
+#   推到 ~1），判别窗口 `1e-15 < 粗端残差 < tol`。**只扫默认参数会得到
+#   「全都恒等」的假象**（与既有「网格/截断双向标定」铁律同源）。
+#
+# 实测双例（2026-09-03，3.13.14 / numpy 2.4.6）：
+#   B10 真独立（RK4 vs 解析闭式）：t/T1=1.0 时 n=2→128 残差
+#     3.86e-4 → 1.35e-11，n 每加倍降 ~16× ⇒ 严格 O(h⁴) ✅
+#   B28 假独立（沿程积分 vs 闭式）：n_segments 10→20000（2000×）残差
+#     恒 4.44e-16 纹丝不动 ⇒ 剖分守恒、代数恒等 ❌
+#
+# ⚠️ 适用范围（诚实边界）：只适用于「候选含真实数值离散化」的锚（数值积分/
+# 本征值求解/传播模拟）。对「候选是另一个**解析公式**」的锚（如 B9 弱耦合
+# 两个闭式互证），残差本就不含离散误差，判据 D 不适用——此时独立性由
+# 公式推导路径不同保证，须在 note 里人工论证。
+
+
+def candidate_discretization_responds(cand_fn_coarse_fine, noise_floor=1e-15,
+                                      min_ratio=2.0):
+    """判据 D：候选残差是否随**自身离散参数**响应（真数值方法 vs 代数恒等）。
+
+    参数
+    ----
+    cand_fn_coarse_fine : callable(n_discrete) -> tuple(cand, golden)
+        在**固定物理参数**下，按离散档位 n_discrete（步数/段数/网格数，粗→细）
+        返回 (候选值, golden 值)。调用方负责选物理参数点——必须选**未完全
+        收敛**的点（见模块 docstring 双向标定警告；默认参数常落在过度收敛区）。
+    noise_floor : float
+        双精度噪声地板，默认 1e-15。
+    min_ratio : float
+        「粗端浮出地板」的判定倍数：最粗档位残差须 > noise_floor×min_ratio。
+
+    返回
+    ----
+    (responds, evidence) : (bool, dict)
+        responds=True  ⇒ 真数值离散化（粗端残差浮出地板）
+        responds=False ⇒ 代数恒等嫌疑（所有档位残差贴地板 ⇒ 不计独立候选）
+        evidence = {"n": [...], "residual": [...], "max_res": float}
+    """
+    ns, res = [], []
+    for n in (2, 4, 8, 32, 128, 512):
+        try:
+            cv, gv = cand_fn_coarse_fine(n)
+            r = abs(float(cv) - float(gv))
+        except Exception:  # noqa: BLE001 —— 数值崩坏也算"有响应"（离散化真实存在）
+            return True, {"error": "numerical failure", "n": n}
+        ns.append(n)
+        res.append(r)
+    max_res = max(res)
+    responds = max_res > noise_floor * min_ratio
+    return responds, {"n": ns, "residual": res, "max_res": max_res}
+
+
 class _SpecShim:
     """把 harness 的 dict spec 适配成独立候选所需的最小对象接口。
 

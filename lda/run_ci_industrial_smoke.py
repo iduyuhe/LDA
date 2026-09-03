@@ -57,6 +57,10 @@ _SLOW_CORE = {
     # 扫描，实测 **~33s**）入 CORE_SMOKES 时即刻登记本表，不再重演 v0.9.24 的
     # 「semivec 漏登记 ⇒ 子回归 667.62s 撑破 600s ⇒ 全量 core TIMEOUT」。
     "run_eme_taper_smoke.py",
+    # 🔴 v0.9.27（T-1）同步补登：`run_d_criterion_smoke.py`（判据 D 护栏，
+    # 20 道基线普查 + 双例验证，实测 **~15s**）。铁律同上：入 CORE_SMOKES
+    # 必须同步登记本表。
+    "run_d_criterion_smoke.py",
     # 递归保护：本文件自身
     "run_ci_industrial_smoke.py",
 }

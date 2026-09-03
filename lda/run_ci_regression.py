@@ -166,6 +166,13 @@ CORE_SMOKES: List[str] = [
     #   （v0.9.24 血案：semivec 漏登记 ⇒ 内部子回归 667.62s 撑破 600s ⇒ 全量
     #   core 回归 TIMEOUT）。本条已同步登记。
     "run_eme_taper_smoke.py",
+    # 🔴 v0.9.27（T-1）：判据 D 常驻护栏（代数恒等 vs 真数值离散化）。
+    #   现行行为判据拦不住「数学等价的另一种写法」（实测反例 B28：沿程积分
+    #   与闭式均匀段剖分守恒 ⇒ 残差恒 4.44e-16 但扰动同步响应 ⇒ 会被误判
+    #   独立候选）。本 smoke 守护 candidate_discretization_responds（定义于
+    #   lda_harness/harness.py 单一定义处）+ 全 20 道基线残差普查。实测 ~15s。
+    #   **已同步登记 run_ci_industrial_smoke._SLOW_CORE**（v0.9.24 铁律）。
+    "run_d_criterion_smoke.py",
     # ---- Lindblad 门保真度求解器（v0.9.24 · P0 自证）----
     # B10 接线 + golden 语义修正（D-66 第 8 例）的**凭据守护**：没有它，
     # ①「旧式 exp(−t(1/T1+1/(2T2))) 已被证否」②「tol 由 0.01 收紧到 1e-8 后
@@ -224,6 +231,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_lindblad_gate_smoke.py": 180.0,
     # EME 逐片本征解：9 条自校锚（含 dz/模式数/窗口三次收敛扫描），实测 ~33s
     "run_eme_taper_smoke.py": 400.0,
+    # 判据 D：20 道基线普查 + B10/B28 双向 + 抽验，实测 ~15s
+    "run_d_criterion_smoke.py": 180.0,
 }
 
 

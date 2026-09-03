@@ -1,0 +1,22 @@
+{
+  "repo": "iduyuhe/LDA",
+  "fetched_at": "2026-09-03T14:27:21.565807+00:00",
+  "rate_limit_status": {
+    "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1028)>"
+  },
+  "contributors_visible": {
+    "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1028)>"
+  },
+  "issues_total": {
+    "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1028)>"
+  },
+  "issues_open": {
+    "error": "The read operation timed out"
+  },
+  "prs_total": {
+    "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1028)>"
+  },
+  "prs_open": {
+    "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1028)>"
+  }
+}

@@ -44,6 +44,15 @@ _SLOW_CORE = {
     # 若不排除，本脚本内部递归的 core 子集会突破 600s 超时上限
     # （2026-08-30 实测：未排除时 TIMEOUT 600s → 排除后回落）
     "run_splitter_readout_smoke.py", "run_splitter_readout_cal_smoke.py",
+    # 🔴 v0.9.24 补登：v0.9.23 把 `run_semivec_mode_smoke.py`（2D 半矢量本征模，
+    # 5 次本征解，实测 **~97s**）加入 CORE_SMOKES 时**漏了同步本表** ⇒ 内部
+    # 递归的 core 子集从 ~570s 涨到 **667.62s**，撑破外层 600s 上限 ⇒ 全量
+    # `--tag core` 回归实测 **TIMEOUT**（v0.9.24 首跑 86 PASS / 1 TIMEOUT）。
+    # 本表的设计意图就是「排除慢 smoke 以保住内部子集的可完成性」——semivec 是
+    # 除两项 FDTD 外最慢的一条，**本就该在表里**。
+    # 🔴 教训：**新增慢 smoke 入 CORE_SMOKES 时，必须同步检查所有「内部递归跑
+    # core 子集」的脚本**（本文件是全库唯一一处）。
+    "run_semivec_mode_smoke.py",
     # 递归保护：本文件自身
     "run_ci_industrial_smoke.py",
 }

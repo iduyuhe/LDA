@@ -655,11 +655,11 @@
         "w_core_um": 1.2,
         "h_core_um": 0.3,
         "n_sin": 1.9963,
-        "n_clad": 1.44,
+        "n_clad": 2.2,
         "wl_um": 1.55,
         "R_um": 100.0,
         "L_um": 640.3,
-        "clad": "SiOC + PECVD SiO2",
+        "clad": "SiOC (n=2.2, 350nm) + PECVD SiO2 (n=1.45)",
         "polarization": "TM"
       },
       "tags": [
@@ -668,7 +668,7 @@
         "group_index",
         "measured"
       ],
-      "note": "D-66 逐字核实（2026-09-01）：原 E-SIN-NEFF-300 声称 500x300 SiO2 包层 SiN 的 n_eff=1.53，未找到可公开溯源的实测出处（文献中同类几何的 n_eff 多为 COMSOL 仿真值，非测量）。故本条**改判为群折射率 n_g 锚**，并**按文献照实改写几何**为 1.2x0.3 um^2 SiOC 涂覆 Si3N4、R=100 um 环 —— golden 与 geometry 严格同源（同一器件的同一测量）。"
+      "note": "D-66 逐字核实（2026-09-01）：原 E-SIN-NEFF-300 声称 500x300 SiO2 包层 SiN 的 n_eff=1.53，未找到可公开溯源的实测出处（文献中同类几何的 n_eff 多为 COMSOL 仿真值，非测量）。故本条**改判为群折射率 n_g 锚**，并**按文献照实改写几何**为 1.2x0.3 um^2 SiOC 涂覆 Si3N4、R=100 um 环 —— golden 与 geometry 严格同源（同一器件的同一测量）。🔴 **D-66 第 7 例（2026-09-03 二次逐字核实修正）**：geometry.n_clad 原标 1.44 **是错的**。原文三处逐字：①'The refractive index of the deposited SiOC film at standard telecom wavelength 1550 nm was measured as n = 2.2'（SiOC 折射率**高于** Si3N4 芯 1.9963，不是低折射率包层）；②'The SiOC/Si3N4 structures were covered by PECVD silica with n = 1.45'（SiOC 层厚 350 nm，其上另有 PECVD silica）；③'Figure 3 ... TE mode ... is leaky and ... stable propagation of TM mode'（TE 在此结构中泄漏，只有 TM 稳定 —— 与本条 polarization=TM 一致）。已据此把 n_clad 由 1.44 改为 2.2 并把 clad 改写为双层描述。⚠️ **本条当前不作为任何锚题的 golden**（BENCHMARK_DEFS 中无引用），仅入库备查；修正属数据完整性整修，不改变任何判决结果。另注：本器件口径**不自洽**（λ²/(FSR·L)=2.3305 ≠ 原文 2.2834），明文禁止拿它做精度判定 —— 需要 Si3N4 n_g 实证对照时改用同文 Figure 5 的**纯净对照组**（无 SiOC，全 silica 包层，n_g=1.9666，λ²/(FSR·L)=1.9667 自洽），见 lda/lda_solver/semivec_mode_solver.py 自校锚③。"
     }
   ],
   "adversarial": [

@@ -44,6 +44,7 @@ v0.9.16 补 P0-3 三分类双向复核 · P0 续光子侧 B3/B4/B20 接线）。
 """
 from __future__ import annotations
 
+import json
 import os
 import sys
 
@@ -104,6 +105,27 @@ PERTURB_SPEC = [
     # v0.9.21（P0 续）：B1 米氏散射（完整 Mie 级数 ↔ Rayleigh 一阶极限）。
     # 扰 m（信号 2.357e-3，11.9× 最强键）；x×1.1→1.246e-3（6.2×）。
     ("B1", "m", "mul"),
+    # v0.9.23（P0 续）：E2 由「降级量级参考」**升为严格独立候选**
+    # （候选 fdfd_ng → semivec_ng，2D 半矢量本征模；FDFD 的 ±0.04~0.08 窗口
+    #  散射缺陷被解决，半矢量散射 <1e-5）。
+    # 🔴 必须扰 n_core（信号 0.3600，3.6× tol）。实测逐键信号（|Δ| vs golden）：
+    #   n_core×1.1 0.3600 ✅ · n_clad×0.9 0.1212 ✅ · h_um×1.1 0.1032 ✅(仅 1.03×，不用)
+    #   w_um×1.1 0.0764 ❌ · w_um×0.9 0.0511 ❌ · h_um×0.9 0.0191 ❌ · n_clad×1.1 0.0173 ❌
+    #   ⇒ 四个弱键**抓不住**，已如实登记在此，不掩盖、不改用弱键充数。
+    ("E2", "n_core", "mul"),
+    # v0.9.24（P0 续）：B10 门保真度（Lindblad 数值积分 ↔ 解析闭式）
+    #   + **golden 语义修正（D-66 第 8 例）**：旧式 exp(−t(1/T1+1/(2T2))) 被证否
+    #     （一阶系数是严格解的 2.727×，比值 30/11 无物理来源），改 Lindblad 严格
+    #     平均门保真度闭式 (3+2e^(−t/T2)+e^(−t/T1))/6。
+    #   + **tol 收紧 1e6 倍**（0.01 → 1e-8）：旧 tol 下六路 10% 扰动信号
+    #     （1.5e-5~4.2e-5）比 tol 小 240~660 倍，一根都抓不住 ⇒ 该锚零判别力。
+    # 🔴 收紧后**三键六路全部可抓**（与 E2 的四个弱键形成对照）：
+    #   t_gate±10% 1.527e-5（1527×）· T2±10% 1.010e-5/1.234e-5（1010×/1234×）
+    #   T1±10% 3.787e-6/4.628e-6（379×/463×）
+    #   ⇒ 这里登记全部三键（都稳超 tol），不做"挑强键"的取舍。
+    ("B10", "t_gate", "mul"),
+    ("B10", "T1", "mul"),
+    ("B10", "T2", "mul"),
 ]
 PERTURB_REL = 0.10          # 反向测试扰动幅度（10%）
 SENSITIVITY_GRID = (0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20)
@@ -114,8 +136,14 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 # → v0.9.18 接 S13（解析 Φ ↔ 蒙特卡洛双算法互证，S7/S8 伪独立陷阱已证否）后 13
 # → v0.9.19 接 B15（Bloch 本征值 ↔ 相位匹配闭式，tmm 物理对象错配已绕开）后 14
 # → v0.9.20 接 B14（FFT 拍频谱峰 ↔ 解析闭式；golden 语义修正 15.5→7.75）后 15
-# → v0.9.21 接 B1（完整 Mie 级数 ↔ Rayleigh 一阶极限；golden 钉死环境无关）后 16）
-MIN_INDEPENDENT = 16
+# → v0.9.21 接 B1（完整 Mie 级数 ↔ Rayleigh 一阶极限；golden 钉死环境无关）后 16
+# → v0.9.23 接 E2（2D 半矢量本征模 ↔ Si3N4 实测 n_g；由降级锚升为 strict）后 17
+#   注意：E2 是**升级**不是新增 —— 它原本就在 independent 里，只是被算进
+#   degraded。故本轮 strict +1、degraded −1、stub 不变（48 守恒）。
+# → v0.9.24 接 B10（Lindblad 4×4 超算子 RK4 积分 ↔ 解析闭式；伴 golden 语义
+#   修正 D-66 第 8 例 + tol 由 0.01 收紧 1e6 倍至 1e-8）后 18。
+#   本轮是**真新增**（B10 此前为自证桩）⇒ strict +1、stub −1（48 守恒）。）
+MIN_INDEPENDENT = 18
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:
@@ -135,6 +163,36 @@ def _perturb(base: float, rel: float, mode: str) -> float:
     return base * (1.0 + rel) if mode == "mul" else base + rel
 
 
+def _candidate_responds(sp, cand_fn, oracle_value) -> bool:
+    """候选是否对参数扰动有**物理响应** —— 真候选 vs 自证桩的行为判据。
+
+    🔴🔴 铁律「标签 ≠ 行为」的升级版（v0.9.24 · 由 B10 触发）
+
+    原判据 `|cand − golden| < 1e-12 ⇒ 自证桩` 在 B10 上**误判**：B10 的候选是
+    真的 4×4 Liouvillian 超算子 RK4 积分（三条**可标定**自校锚 + 六路反向扰动
+    全部抓住，信号 1.5e-5），但生产档位 t_gate=0.02 µs、T1/T2~60-80 µs ⇒
+    无量纲演化量 |L|·t ≈ 2.5e-4 ⇒ RK4 从 N=5 到 N=400 残差**恒为 1.11e-16**，
+    与步数无关。即该锚的残差**物理上不可标定**，必然落在 1e-12 以内。
+
+    自证桩的**充要特征**其实不是「残差小」，而是「**跟着 golden 走**」：
+    `_harness_reference_candidate(spec, oracle_value)` 直接 `return oracle_value`，
+    **完全不看 spec.params** ⇒ 扰动参数后候选值纹丝不动，|cand − golden(原)| ≡ 0。
+    真候选扰动后会给出真实物理响应。
+
+    ⇒ 判据改为（仍是**值上**判定，不查标签）：
+        残差 ≡ 0 **且** 对全部数值参数做 ±10% 扰动都无响应 ⇒ 自证桩
+    这比原来的单点启发式**更严**：原判据会被「残差恰好小」的真候选误伤，
+    也会被「残差恰好大」（如浮点抖动）的自证桩漏过；新判据两者都不会。
+
+    🔴 **本函数只做薄委托**：权威实现在 `lda_harness.harness.candidate_responds`。
+    v0.9.24 实测教训——smoke 里写一份、`run_harness.py` 里再写一份，只升级
+    前者 ⇒ smoke 8/8 全绿而 CLI 断言 `假独立=['B10']` 崩掉。**判据必须单一
+    定义处**，这里保留签名兼容（VerificationSpec 与 _SpecShim 都吃）。
+    """
+    from lda_harness.harness import candidate_responds
+    return candidate_responds(sp, cand_fn, oracle_value)
+
+
 def main() -> int:
     print("=" * 70)
     print("LDA 锚题可证伪性 smoke（反自证桩护栏）")
@@ -144,6 +202,9 @@ def main() -> int:
     by_id = {s.spec_id: s for s in specs}
 
     # ① 独立性普查：区分「真独立求解」与「自证桩」
+    # 🔴 v0.9.24：判据不再只看 |cand−golden|<1e-12（该启发式对 B10 误判，
+    # 见 _candidate_responds 的 docstring），加**行为**条件：残差 ≡0 且扰动
+    # 无响应才算自证桩。
     independent, stub = [], []
     for sp in specs:
         try:
@@ -151,7 +212,8 @@ def main() -> int:
             cv = cand_map[sp.spec_id](sp, ov)
             is_stub = (isinstance(cv, (int, float))
                        and isinstance(ov, (int, float))
-                       and abs(cv - ov) < 1e-12)
+                       and abs(cv - ov) < 1e-12
+                       and not _candidate_responds(sp, cand_map[sp.spec_id], ov))
         except Exception:
             is_stub = True
         (stub if is_stub else independent).append(sp.spec_id)
@@ -340,12 +402,19 @@ def main() -> int:
         # 只查 independent 标签会被"标签为真、实现已回落 golden"骗过 ⇒ 按值复核。
         #   ① 非自证桩（strict/degraded）⇒ |diff| 必须非零（回落 golden 即穿帮）
         #   ② 自证桩 ⇒ |diff| 必须为零（分类表与实现脱节、新接线被吞即穿帮）
+        # 🔴 v0.9.24：① 的判据加**行为**条件（同路径①，见 _candidate_responds）。
+        #   B10 的 |diff|=1.11e-16（物理上不可标定，非回落 golden），靠
+        #   「扰动 T1/T2/t_gate 有 1.5e-5 响应」证明是真候选。
         _labeled_stub = [r.bid for r in _r2
                          if getattr(r, "candidate_class", None)
                          not in (None, "self_consistent_stub")
                          and isinstance(r.candidate, (int, float))
                          and isinstance(r.golden, (int, float))
-                         and abs(r.candidate - r.golden) < 1e-12]
+                         and abs(r.candidate - r.golden) < 1e-12
+                         and not (r.bid in by_id
+                                  and _candidate_responds(by_id[r.bid],
+                                                          cand_map[r.bid],
+                                                          r.golden))]
         if _labeled_stub:
             _bad8.append(f"标非自证桩却 |diff|≡0 的假独立={sorted(_labeled_stub)}")
         _mislabeled_stub = [r.bid for r in _r2
@@ -367,6 +436,41 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 —— 路径②复现失败即判 FAIL
         check("路径②（CLI 对外主报告）verified 口径与路径①一致且按题全标注",
               False, f"路径②复现异常：{str(e)[:80]}")
+
+    # ⑨ 报告可序列化护栏（v0.9.24 新增 · **被同一类 bug 咬了两次**）：
+    #   v0.9.17 B24：候选返回 numpy 标量 ⇒ run_harness JSON 序列化 TypeError
+    #   v0.9.24 B10：候选返回 np.float64 ⇒ `passed` 变 **np.bool_** ⇒ 同一个 TypeError
+    # 根因：路径⑧ 在进程内复现路径② 时**刻意不写报告文件**（避免污染工作区）
+    #   ⇒ `report.format_json` 从未被执行 ⇒ 全量回归里 run_harness.py 才第一次撞上。
+    # 🔴 教训：**进程内复现 ≠ 覆盖真实出口**；省掉的那一步就是盲区。
+    # 这里**只在内存里序列化、不落盘**（保留原「不污染工作区」的设计）。
+    try:
+        from lda_harness import report as rep
+        _meta = {"generated_by": "run_benchmark_falsifiability_smoke",
+                 "candidate": "IndependentCandidateRouter"}
+        try:
+            _js = rep.format_json(_r2, _meta)
+            _ok9, _err9 = True, ""
+        except Exception as _e9:  # noqa: BLE001
+            _js, _ok9, _err9 = "", False, f"{type(_e9).__name__}: {_e9}"
+        _json_bad = [] if _ok9 else [_err9]
+        if _ok9:
+            try:
+                _parsed = json.loads(_js)
+            except Exception as _e9:  # noqa: BLE001
+                _parsed, _json_bad = None, [f"JSON 回读失败：{_e9}"]
+            if _parsed is not None:
+                # 标量类型回归检查：判决链上不许出现 numpy 标量
+                _np = [r.get("bid", "?") for r in _parsed.get("results", [])
+                       if not isinstance(r.get("passed"), (bool, type(None)))]
+                if _np:
+                    _json_bad.append(f"passed 非 Python bool 的题={sorted(_np)}（numpy 标量泄漏进判决链）")
+        check("路径② 报告可 JSON 序列化（判决链无 numpy 标量泄漏）",
+              not _json_bad,
+              "；".join(_json_bad) if _json_bad else "48 题 format_json 通过且 passed 均为 Python bool")
+    except Exception as e:  # noqa: BLE001
+        check("路径② 报告可 JSON 序列化（判决链无 numpy 标量泄漏）",
+              False, f"检查自身异常：{str(e)[:80]}")
 
     # ⑥ 诚实披露剩余自证桩（不构成失败，但必须可见）
     print()

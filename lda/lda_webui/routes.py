@@ -404,10 +404,12 @@ def h_verification_ledger(h, p, q, path):
             for _bid in sorted(BENCHMARK_DEFS):
                 _d = BENCHMARK_DEFS[_bid]
                 _key = _d.get("candidate")
-                # 先判降级：E2 的 fdfd_ng 走独立分支、未登记进
-                # BENCHMARK_CANDIDATES，但它是「有候选、已降级」而非自证桩；
-                # 若按登记表判断会被误分到 stub（三分类口径须与
-                # run_benchmark_falsifiability_smoke 一致：严格 4 / 降级 1 / 自证 43）。
+                # 先判降级：candidate_status=degraded_ordinal 的锚「有候选、跑了真
+                # 求解器」但几何不同源/精度不足 ⇒ 既不进 strict 也不算自证桩；
+                # 若先查登记表就会被误分成 strict ⇒ verified 虚报（假绿）。
+                # ⚠️ v0.9.23 起**降级档为空**（E2 换 semivec_ng 后升为 strict），
+                # 该分支是**防回归保留**：将来再出现降级锚时口径仍须与
+                # run_benchmark_falsifiability_smoke 逐项相等（当前 18 / 0 / 30）。
                 if _d.get("candidate_status") == "degraded_ordinal":
                     _degraded.append(_bid)
                 elif _key and _key in BENCHMARK_CANDIDATES:
@@ -432,7 +434,8 @@ def h_verification_ledger(h, p, q, path):
                 "dispatch_ids": list(dispatch.keys()),
             },
             # D-64：golden 真实只是必要条件，candidate 还必须**独立求解**。
-            # 7 道实证锚里只有 E2 接通了独立候选求解器，其余 6 道候选≡黄金（恒 PASS）。
+            # 7 道实证锚里只有 E2 接通了独立候选求解器（v0.9.23 起为 2D 半矢量
+            # 本征模 semivec_ng），其余 6 道候选≡黄金（恒 PASS）。
             # 这是对外验货面必须自己说出口的事——宁可难看，不可假绿。
             "judgment_paths": {
                 "note": ("判决路径独立性：golden 可溯源只是必要不充分条件。"
@@ -456,20 +459,34 @@ def h_verification_ledger(h, p, q, path):
                     },
                     "definitions": (
                         "strict_independent=候选走与 golden 方法学不同源的独立求解路径"
-                        "（如 Koch 解析闭式 ↔ 电荷基严格对角化），|diff|≠0，真可证伪；"
+                        "（如 Koch 解析闭式 ↔ 电荷基严格对角化），真可证伪；"
                         "degraded_ordinal=有独立候选但与 golden 几何不同源/精度不足，"
                         "仅作量级参考，**不进死标量判决**；"
-                        "self_consistent_stub=candidate≡golden，|diff|≡0 恒 PASS，零验证价值。"),
+                        "self_consistent_stub=candidate≡golden，|diff|≡0 恒 PASS，零验证价值。"
+                        "🔴 v0.9.24 判据升级：区分独立/自证桩不只看 |diff| 是否 <1e-12，"
+                        "还要求**行为**证据——自证桩的充要特征是「跟着 golden 走」"
+                        "（直接 return oracle_value、不看 params ⇒ 扰动参数后候选值不变），"
+                        "真候选扰动后会给出真实物理响应。B10 即典型：|diff|=1.11e-16"
+                        "（物理上不可标定，因 |L|·t≈2.5e-4），但其扰动响应达 1.5e-5，"
+                        "另有三条可标定自校锚 ⇒ 判为独立。"),
                 },
                 "empirical": {
                     "independent_candidate": [b for b in _indep if b.startswith("E")],
                     "degraded_ordinal": [b for b in _degraded if b.startswith("E")],
                     "self_consistent_placeholder": [b for b in _stub if b.startswith("E")],
-                    "detail": ("E2 状态已在 v0.9.14 订正：golden=实测 n_g（Munoz Sensors 17,2088，"
-                               "可公开溯源），candidate=标量亥姆霍兹 FDFD 本征模独立求解，"
-                               "|diff|=0.067 ≤ tol 0.10；但 R16 实测证伪后确认 FDFD 直波导候选 "
-                               "与环器件 golden **几何不同源**、求解器精度不足 ⇒ 降级为 "
-                               "**量级参考（degraded_ordinal），不进死标量判决**。"
+                    "detail": ("E2 状态（v0.9.23 刷新）：golden=实测 n_g（Munoz Sensors 17,2088，"
+                               "可公开溯源），candidate=**2D 半矢量本征模独立求解**"
+                               "（semivec_ng，准 TE 方程 + 界面调和通量 + Dirichlet ghost-point "
+                               "+ Sellmeier 色散 + λ 中心差分），|diff|=0.0652 ≤ tol 0.10 ⇒ "
+                               "**已由「降级量级参考」升为「严格独立候选」，重新进死标量判决**。"
+                               "升级凭据（两条实测，由 run_semivec_mode_smoke.py 常驻守护）："
+                               "①计算窗口散射 <1e-5（换下的 FDFD 候选是 ±0.04~0.08，其 PASS 可能"
+                               "只是窗口挑得好）；②精度由 A 级实证对照端到端校准到 Δ=8.4e-5"
+                               "（Si3N4 1.2×0.3 纯净对照组，实测 n_g=1.9666）。"
+                               "🔴 残差 0.0652 **不等于精度已验证**：主成分=对象不对齐"
+                               "（golden 来自环腔、候选解直波导）+ 制造公差（h ±10% 移动 n_g "
+                               "∓0.046）⇒ tol 0.10 中没有多少物理裕度，只宣称"
+                               "「独立求解 + 判决可证伪 + 量级与公差内一致」。"
                                "其余 6 道 candidate≡golden，PASS 只能算「自洽」不算「验证」。"),
                 },
                 "harness_cli": {
@@ -482,8 +499,10 @@ def h_verification_ledger(h, p, q, path):
                     # `fdfd_ng` 当时**未登记**进 BENCHMARK_CANDIDATES，路径②
                     # 只能按 `independent` 二分，把降级锚 E2 塞进自证桩。
                     # 现在 path ② 走 `candidate_class` 三分类（判序与此处同源），
-                    # E2 在两条路径都是 degraded ⇒ stub 回归真实值 43→（接线后）40，
                     # 与三分类口径**逐项相等**，不再需要「44 vs 43」的散文解释。
+                    # ⚠️ v0.9.23：**降级档已清零**（E2 换 semivec_ng 后升为 strict）
+                    # ⚠️ v0.9.24：再接 B10（Lindblad 数值积分 ↔ 解析闭式）
+                    # ⇒ stub 为真实值 30、verified=18，三类和仍 = 48。
                     "self_consistent_stub_count": len(_stub),
                     "trichotomy_totals": {
                         "strict_independent": len(_indep),
@@ -496,11 +515,30 @@ def h_verification_ledger(h, p, q, path):
                                "该口径由 run_harness.py 的**三分类双向护栏**守护："
                                "非自证桩者 |diff| 必须非零（回落 golden 即穿帮）、"
                                "自证桩者 |diff| 必须为零（分类表与实现脱节即穿帮）。"
-                               "✅ P0-3 已于 v0.9.16 闭合：E2 的 `fdfd_ng` 已登记，且 "
-                               "`IndependentCandidateRouter.candidate_class` **先判降级再查登记表**"
-                               "⇒ E2 在路径① / 路径② 都跑真 FDFD 候选（|diff|=0.0667），"
-                               "但**不计入 verified**（降级锚不进死标量判决）。"
-                               "若判序写反（先查表），E2 会被误计为独立 ⇒ verified 虚报 +1。"),
+                               "✅ P0-3 已于 v0.9.16 闭合：`IndependentCandidateRouter."
+                               "candidate_class` **先判降级再查登记表**"
+                               "⇒ 降级锚在两条路径都跑真候选但**不计入 verified**；"
+                               "若判序写反（先查表），降级锚会被误计为独立 ⇒ verified 虚报。"
+                               "⚠️ v0.9.23：E2 候选由 `fdfd_ng` 换为 **`semivec_ng`**"
+                               "（2D 半矢量本征模）并**移除降级标记** ⇒ 重新计入 verified"
+                               "（|diff|=0.0652，判据窗口 baseline 0.0652 < tol 0.10 "
+                               "< n_core×1.1 信号 0.3600），**降级档由 1 清零为 0**；"
+                               "`fdfd_ng` 因无锚题再引用而取消登记（失配护栏本就该响）。"
+                               "⚠️ v0.9.24：新接 **B10**（单比特门保真度），候选="
+                               "`lindblad_gate_f`（Lindblad 4×4 超算子 RK4 数值积分 → "
+                               "完整 PTM → 平均门保真度）↔ golden=Lindblad 解析闭式。"
+                               "本道同时做了两件事：①**golden 语义修正（D-66 第 8 例）**"
+                               "——旧式 F=exp(−t(1/T1+1/(2T2))) 被证否（一阶系数是严格解的 "
+                               "2.727×，比值 30/11 无物理来源），改为 "
+                               "F=(3+2e^(−t/T2)+e^(−t/T1))/6；②**tol 由 0.01 收紧 1e6 倍 "
+                               "至 1e-8**（旧 tol 下六路 10% 扰动信号比 tol 小 240~660 倍，"
+                               "一根都抓不住 ⇒ 该锚实际零判别力）。判据窗口："
+                               "baseline 1.11e-16 < 1e-8 < min 信号 3.787e-6。"
+                               "🔴 诚实边界：生产档位 |L|·t≈2.5e-4 ⇒ RK4 残差**恒为 "
+                               "1.11e-16 且与步数无关**，物理上**不可标定**；「候选真在工作」"
+                               "由三条可标定自校锚证明（PTM 非对角元 Λ_Z,I≈−2.5e-4 逐元素"
+                               "比对 / 敏感 regime t=200µs 残差 5.6e-9 且 N 加倍降 16.3× / "
+                               "t→∞ 稳态 F→0.5），**不是**靠生产档位的残差。"),
                 },
             },
             "cpo_scale": {

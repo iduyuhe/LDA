@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LDA 商业计划书 · 开源光子/量子 EDA 商业闭环</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --muted:#475569; --line:#e2e7f0; --brand:#2563eb;
+    --soft:#f1f5f9; --warn:#ea580c; --good:#16a34a; --bg:#ffffff;
+    --deep:#1e3a8a; --purple:#7c3aed;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+       color:var(--ink); background:#f7f9fc; margin:0; padding:28px;}
+  .wrap{max-width:1000px; margin:0 auto; background:var(--bg); padding:36px 40px; border-radius:16px; box-shadow:0 2px 14px rgba(0,0,0,.06);}
+  h1{font-size:26px; margin:0 0 6px; color:var(--deep); letter-spacing:.5px;}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:6px;}
+  .meta{color:var(--muted); font-size:12px; margin-bottom:24px; border-bottom:1px solid var(--line); padding-bottom:14px;}
+  h2{font-size:19px; margin:30px 0 12px; color:var(--deep); border-left:4px solid var(--brand); padding-left:10px;}
+  h3{font-size:15px; margin:18px 0 8px; color:var(--brand);}
+  p{line-height:1.75; margin:8px 0; font-size:14px;}
+  table{width:100%; border-collapse:collapse; font-size:13px; margin:10px 0 18px;}
+  th,td{border:1px solid var(--line); padding:10px 12px; vertical-align:top; line-height:1.55;}
+  th{background:#eef2ff; font-weight:700; text-align:center; color:var(--deep);}
+  td.dim{font-weight:600; background:var(--soft); width:130px;}
+  .tag{display:inline-block; padding:1px 9px; border-radius:999px; font-size:11px; font-weight:600;}
+  .t-a{background:#dbeafe; color:#1e40af;} .t-b{background:#fef9c3; color:#854d0e;}
+  .t-c{background:#f3e8ff; color:#6b21a8;} .t-d{background:#dcfce7; color:#166534;}
+  .t-warn{background:#fee2e2; color:#991b1b;} .t-open{background:#dbeafe; color:#1e40af;}
+  .card{background:var(--soft); border-radius:10px; padding:16px 18px; margin:12px 0;}
+  .card.warn{background:#fff7ed; border-left:4px solid var(--warn);}
+  .card.good{background:#f0fdf4; border-left:4px solid var(--good);}
+  .card.blue{background:#eff6ff; border-left:4px solid var(--brand);}
+  .pill{background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin:8px 0; font-size:13px;}
+  ul{margin:6px 0 0; padding-left:20px;} li{margin:5px 0; font-size:13px; line-height:1.6;}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:12px 0;}
+  .box{border:1px solid var(--line); border-radius:12px; padding:14px 16px;}
+  .box h4{margin:0 0 6px; font-size:14px; color:var(--deep);}
+  .num{font-size:26px; font-weight:800; color:var(--brand);}
+  .small{font-size:12px; color:var(--muted);}
+  .footnotes{color:var(--muted); font-size:12px; margin-top:26px; line-height:1.6; border-top:1px dashed var(--line); padding-top:14px;}
+  .bar{display:flex; align-items:center; margin:6px 0;}
+  .bar .lab{width:90px; font-size:12px; color:var(--muted);}
+  .bar .track{flex:1; background:#eef2ff; border-radius:6px; height:22px; overflow:hidden;}
+  .bar .fill{height:100%; background:var(--brand); display:flex; align-items:center; justify-content:flex-end; color:#fff; font-size:11px; padding-right:6px;}
+  strong{color:var(--deep);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LDA 商业计划书 · 开源光子 / 量子 EDA 商业闭环</h1>
+  <div class="sub">定位：开源 Agent-native 光电 / 量子芯片设计平台（PDA + QEDA）</div>
+  <div class="meta">版本 v0.8.55 · 编制日期 2026-08-29 · 编制视角：客观中立（含诚实边界与未决假设）· 数据来源见文末</div>
+
+  <h2>一、执行摘要</h2>
+  <p>LDA 是一套<strong>开源</strong>的光子/量子芯片设计平台，采用「物理定律锚」作为唯一判决基准（LLM 不进判决路径），遵循「主权优先、国产自主」红线。本项目已完成底层验证资产（<strong>46 个物理定律锚 + 58 个货架 + 完整下单/支付/交付管道并已端到端跑通</strong>），现进入「商业闭环」落地阶段。</p>
+  <p>核心命题：西方光子 EDA（如依赖西方 Foundry NDA 的工具）在中国市场存在合规与获取软肋，LDA 以「开源内核 + 自主可控 PDK 供给 + 私有化定制」作为差异化切口，走 Open-Core 商业化路径——这是 gdsfactory、Luceda 已验证的可持续模式。</p>
+  <div class="card good">
+    一句话定位：「<strong>开源光子/量子 EDA 内核 + 自主可控 PDK 供给 + 私有化定制</strong>」——用西方工具在中国的合规软肋，做国产替代切口。
+  </div>
+
+  <h2>二、商业模式：两条主轴 · 四类收入</h2>
+  <p>把「卖什么」按 <strong>交付物 vs 平台</strong> 两轴、<strong>标准化 vs 定制</strong> 两态拆分，避免把不同定价逻辑混在一个报价单。</p>
+  <table>
+    <thead>
+      <tr><th>主轴</th><th>标准化（Std）</th><th>定制（Custom）</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="dim">卖交付物（轻）</td>
+        <td><span class="tag t-a">A 货架现成包</span> 开源货架 + 付费设计包，自助下载<br><span class="small">状态：已闭环，仅差上线</span></td>
+        <td><span class="tag t-b">B 定制器件/芯片</span> 按客户特殊需求做设计，交付 GDS/仿真/版图<br><span class="small">状态：待建接单流（复用订单机）</span></td></tr>
+      <tr><td class="dim">卖平台（重）</td>
+        <td><span class="tag t-c">C 平台 SaaS</span> 托管订阅，客户在线自助设计<br><span class="small">状态：远期</span></td>
+        <td><span class="tag t-d">D 定制平台</span> 开源内核 + 企业需求，私有化部署 + 授权<br><span class="small">状态：核心诉求，单独立项</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>定价分层（对标 gdsfactory：按席位订阅 / 年·月付 / 多年折扣 / 学术优惠 / PO）</h3>
+  <table>
+    <thead><tr><th>用户类型</th><th>定价</th><th>发票/支付</th><th>支持级别</th><th>价值交换</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">开源内核</td><td>免费</td><td>—</td><td>社区</td><td>流量入口 + 生态贡献</td></tr>
+      <tr><td class="dim">学术个人</td><td>低价或免费</td><td>微信/支付宝（轻量自动）</td><td>社区支持</td><td>论文引用 + 上传货架/PDK（补「货」）</td></tr>
+      <tr><td class="dim">机构席位</td><td>年付 + 多年折扣</td><td>对公转账 + 增值税专票</td><td>SLA + 专属</td><td>合规可控 + 可开发票</td></tr>
+      <tr><td class="dim">私有化</td><td>项目制 + 年维护</td><td>采购 PO / 对公</td><td>专属 + SLA</td><td>自主可控部署</td></tr>
+    </tbody>
+  </table>
+  <p class="small">说明：Stripe 仅作海外个人可选；中国机构一律走对公通道（store 已支持 2B）。「学术/机构」分开是聪明的一步——学术个人用社区换增长，机构用预算换合规。</p>
+
+  <h2>三、竞争对标（避免闭门造车）</h2>
+  <table>
+    <thead><tr><th>维度</th><th>GDSFactory</th><th>Luceda/IPKISS</th><th>Efabless/OpenLane</th><th>LDA（我们）</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">开源内核</td><td><span class="tag t-open">开源免费</span> 200万+下载</td><td>闭源商业</td><td><span class="tag t-open">开源</span> 180+流片</td><td><span class="tag t-open">开源</span> 46 物理锚</td></tr>
+      <tr><td class="dim">商业层</td><td>GDSFactory+（GUI/PDK/仿真）</td><td>授权+PDK+培训（被广立微收购）</td><td>开源免费+商业流片</td><td>A/B/C/D</td></tr>
+      <tr><td class="dim">自主可控(中国)</td><td><span class="tag t-warn">依赖西方 Foundry NDA</span></td><td>已被广立微收购</td><td>美系生态</td><td><span class="tag t-b">主权优先·国产自主</span></td></tr>
+    </tbody>
+  </table>
+  <div class="card blue"><strong>可借鉴的 4 个玩法：</strong>
+    <ul>
+      <li>Open-Core 分层：免费内核做漏斗，付费层卖 GUI/PDK/仿真/验证/支持。</li>
+      <li>PDK 是变现杠杆也是护城河：做自研开源 PDK + 供给层，切西方工具合规软肋。</li>
+      <li>按席位订阅 + 机构/学术分层；私有化/空气隔离天然高溢价。</li>
+      <li>社区 + 样例做漏斗：用免费内核/货架养生态，再转商业。</li>
+    </ul>
+  </div>
+
+  <h2>四、「有店无货」诊断与对策（核心问题）</h2>
+  <div class="card warn">
+    <strong>问题本质（不是代码问题，是库存/内容问题）：</strong>
+    「店」已完备——会员注册、下单、微信/对公支付、后台一键审批、兑换码授权、自动打包 zip 全链路已验证通过。
+    「货」目前是空的：58 个货架的 <code>honest_tier</code> 均为「前瞻预研」，是预设计模板而非可制造设计 IP；ship_package 生成的 GDS 为「主权近似几何」，无真实 PDK，DRC 未覆盖非标准 kind。客户进来看到「毛坯模板」，即「有店无货」。
+  </div>
+  <h3>解决路径（按投入从小到大）</h3>
+  <div class="grid">
+    <div class="box"><h4>1. 货架分级（零成本）</h4><p class="small">把 58 个「前瞻预研」模板明确定义为免费引流层，不标「可买成品」，诚实即信任。</p></div>
+    <div class="box"><h4>2. 设计就绪套件（中投入）</h4><p class="small">挑 5–10 个高频货架（如 IM-800G-DR8、IM-PSM4、IM-CWDM4、IM-CPO-OCS）补全参数化脚本+已跑通说明+工艺假设，做成「可信起点」。</p></div>
+    <div class="box"><h4>3. 可信验证基元库（零成本）</h4><p class="small">把 46 个物理定律锚 + golden benchmark 打包成「可信基准库（带溯源与审计报告）」——机构为「确定性」付费，把验证资产变成「货」。</p></div>
+    <div class="box"><h4>4. 主权 PDK 供给（最大杠杆）</h4><p class="small">短期做 PDK-ready 模板，长期自建/合作开源 PDK——国产替代根本，属 C 阶段。</p></div>
+    <div class="box"><h4>5. 学术/退休专家贡献者计划</h4><p class="small">学生/退休专家提交审核通过的设计/PDK/教程，成为货架并换授权或分成——用生态反哺「货」，把「货从哪来」交给社区。</p></div>
+  </div>
+
+  <h2>五、货从哪来：三源闭环（而非单看学术/退休/学生）</h2>
+  <p>「学术/退休/学生」解决的是<strong>供给侧产能（谁来造）</strong>，但「造什么」「对标什么」必须另有两个上游输入，否则货架会脱离国家刚需与国际坐标，沦为自嗨。完整闭环是三源驱动：</p>
+  <div class="grid">
+    <div class="box"><h4>① 政策驱动源（自上而下 · 定义「该造什么」）</h4>
+      <p class="small">对接「十五五」攻关清单与「卡脖子」技术目录（如高端光芯片、先进封装、量子器件）。国家刚需 = 需求清单，直接转化为货架优先级与 B 定制需求的接单入口——我们卖的「货」不是凭空想象，而是政策明确要突破的方向，需求确定性最高、最容易拿到机构/政府预算。</p></div>
+    <div class="box"><h4>② 国际前沿源（由外而内 · 定义「对标什么」）</h4>
+      <p class="small">跟踪国际竞争中的前沿项目、预研项目（如海外大厂的下一代光互连、量子工艺路线）。其公开规格/基准成为我们的 golden 基准与货架锚点——既保证「货」站在世界坐标上不打偏，也反向证明自主可控的差距与机会。</p></div>
+    <div class="box"><h4>③ 社区供给源（自下而上 · 定义「谁来造」）</h4>
+      <p class="small">学术个人 / 退休人员 / 学生：提交审核通过的设计、PDK、教程成为货架并换授权或分成。退休人员有 domain 经验 + 时间，是低成本填「真货」的主力产能。</p></div>
+  </div>
+  <div class="card blue">
+    <strong>完整飞轮：</strong>十五五刚需 + 国际前沿 → 定义货架/定制需求 → 社区供给生产「真货」 → 机构/政府付费 → 收入反哺内核与社区 → 吸引更多贡献者。
+    <br><strong>为什么更全面：</strong>单看学术/退休/学生会「有产能但方向散」；加入政策清单保「需求确定性」、加入国际前沿保「技术坐标」——三者合起来，供给侧与需求侧、国内与国外同时闭环，才是「货从哪来」的完整答案。
+  </div>
+
+  <h2>六、目标客户画像与定价（市场调查为依据）</h2>
+
+  <h3>6.1 目标客户画像（5 类）</h3>
+  <table>
+    <thead><tr><th>类型</th><th>核心痛点</th><th>对应产品</th><th>付费特征</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">高校/科研院所课题组</td><td>缺 PDK 与流片经验，要低成本快速出成果</td><td>货架包 + 学术授权</td><td>预算小、要学术优惠；是贡献者主力</td></tr>
+      <tr><td class="dim">国产光芯片创业公司</td><td>要快速设计、要自主可控</td><td>B 定制 + D 私有化</td><td>预算来自融资/政府，决策快</td></tr>
+      <tr><td class="dim">系统厂商（数通/算力/汽车）</td><td>想做硅光互连/光电集成，缺专业团队</td><td>B 定制 + 机构席位</td><td>有预算、要专票</td></tr>
+      <tr><td class="dim">自主可控刚需单位</td><td>受西方 NDA/出口管制约束，要国产化</td><td>D 私有化 + 对公</td><td>预算刚性、要合规</td></tr>
+      <tr><td class="dim">独立设计师/退休专家</td><td>有经验有时间，缺产出渠道</td><td>贡献者计划</td><td>换授权/分成，填「真货」产能</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 各档单价（市场调查）</h3>
+  <table>
+    <thead><tr><th>档位</th><th>建议单价（CNY）</th><th>调研依据</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">学术个人</td><td>货架包 ¥0–999（免费/低价）；平台社区版免费</td><td>GDSFactory+ 有学术档；JePPIX 学术 50% 折；国内个人付费意愿低</td></tr>
+      <tr><td class="dim">机构席位（A 货架）</td><td>¥2999–9999/包（一次性）或 ¥999/月/席位</td><td>JePPIX standard cell €5.5k≈¥4.3万（定制级），货架半成品定价更低</td></tr>
+      <tr><td class="dim">B 定制器件/芯片</td><td>¥8万–30万/单（学术 50% off）</td><td>JePPIX custom €11k–14k≈¥8.5–11万；国内人力低可下探，复杂系统上探 50万</td></tr>
+      <tr><td class="dim">D 定制平台</td><td>NRE ¥50万–300万 + 年维护 ¥10–30万</td><td>Custom PDK NRE $50万–数百万美元（Dataintelo）；国内项目制谈判</td></tr>
+      <tr><td class="dim">C SaaS（远期）</td><td>¥999/月/席位，年付按 10 个月计价</td><td>GDSFactory+ 订阅制 + 多年折扣</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.3 可售真货数量</h3>
+  <p>现状：58 个货架（OPEN_SHELVES 50）均为「前瞻预研」模板，46 个物理定律锚。<strong>建议首发 8 个高频货架</strong>（IM-800G-DR8 / IM-PSM4 / IM-CWDM4 / IM-CPO-OCS 等）升级为「设计就绪套件」作为首批真货；46 个锚打包成「可信基准库」整体授权；长期把 58 货架全部升级。国内光模块 2025 年中国市场 ¥429 亿（+30%）、硅光渗透率 35%+，且山东/甘肃等已将其列入「十五五」重点——需求侧有明确刚需。</p>
+
+  <h3>6.4 本次落地范围（由我拍板）</h3>
+  <div class="card blue">
+    <ul>
+      <li><strong>A 货架</strong>：本次上线（代码已端到端闭环）。</li>
+      <li><strong>B 定制器件/芯片</strong>：本次一并落地——store 加「定制需求」入口 + 后台接单，复用现有订单状态机，成本极低。</li>
+      <li><strong>D 定制平台</strong>：单列立项（私有化部署包 + 授权），不在本次轻量范围，需另排期。</li>
+      <li><strong>C SaaS</strong>：远期。</li>
+    </ul>
+  </div>
+
+  <h2>七、收入预测框架（参数待你填，非事实承诺）</h2>
+  <p>模型：访客 → 注册 → 下单 → 付款 → 复购。L1+L2 是近期现金流，L3 是远期乘数。以下为情景假设，需你补目标客户画像、可售数量、转化率、单价。</p>
+  <div class="card">
+    <h3>12 个月累计收入情景（示意，单位：¥）</h3>
+    <div class="bar"><div class="lab">保守</div><div class="track"><div class="fill" style="width:30%">≈ 30 万</div></div></div>
+    <div class="bar"><div class="lab">中性</div><div class="track"><div class="fill" style="width:55%">≈ 80 万</div></div></div>
+    <div class="bar"><div class="lab">乐观</div><div class="track"><div class="fill" style="width:90%">≈ 200 万</div></div></div>
+    <p class="small">组成示意：A 货架（¥1999/包 × 数量）+ B 定制（¥5万–50万/单）+ D 私有化（¥? 项目制）。订阅/年付在采用度起来后才成为主收入。</p>
+  </div>
+
+  <h2>八、落地路线图</h2>
+  <div class="card good">
+    <strong>建议顺序（由短到长）：</strong>
+    <ul>
+      <li><strong>A 上线（最短路径，立刻能收钱）</strong>：把 store.html / admin.html / store.py + app.py 路由部署到生产 <code>/opt/lda</code>，首页加「创新超市」入口。代码已端到端验证。</li>
+      <li><strong>B 轻量叠加</strong>：store 加「定制需求」入口 + 后台接单，复用现有订单状态机。</li>
+      <li><strong>D 定制平台</strong>：私有化部署包 + 授权/年维护，单独立项产品化。</li>
+      <li><strong>学术/退休贡献者计划</strong>：与 A/B 并行，解决「货」的供给侧。</li>
+    </ul>
+  </div>
+
+  <h2>九、风险与诚实边界（LDA 红线）</h2>
+  <div class="card warn">
+    <ul>
+      <li>不把「对标性能」当收入承诺；不承诺未实证的流片结果。</li>
+      <li>开源主权下，收入来自「供给 + 服务 + 生态」，不是「闭源代码」。</li>
+      <li>订阅隐含持续服务承诺——只有机构档给 SLA，学术个人只给社区支持。</li>
+      <li>必须先有「真货」才能谈订阅/定价；采用度从 0 起步，不能指望上线即变现。</li>
+      <li>自研 PDK 需控制范围，避免纯咨询式 churn。</li>
+    </ul>
+  </div>
+
+  <h2>十、阶段性里程碑（Phase / Milestone）</h2>
+  <p>把前面所有讨论沉淀为可追踪的里程碑。本阶段（本轮讨论）已完成「模型梳理 + 技术验证」两项硬成果，下面给出从「能收钱」到「生态飞轮」的递进路径。</p>
+  <table>
+    <thead><tr><th>里程碑</th><th>目标</th><th>范围 / 交付物</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">M0 · 本期成果</td><td>商业模型 + 技术闭环验证</td><td>两条主轴四线模型、定价分层、同业对标、三源闭环、客户画像、调研定价成文；store 会员/订单/支付/审批/兑换码/下载端到端跑通（本地 8799 验证）</td><td><span class="tag t-d">已完成</span></td></tr>
+      <tr><td class="dim">M1 · 商业化上线（A）</td><td>立刻能收银</td><td>生产部署 store.html / admin.html / store.py + 首页「创新超市」入口</td><td><span class="tag t-warn">待执行</span></td></tr>
+      <tr><td class="dim">M2 · 定制接单（B）</td><td>接 B 定制需求</td><td>store 加「定制需求」入口 + 后台接单，复用订单状态机</td><td><span class="tag t-warn">待执行</span></td></tr>
+      <tr><td class="dim">M3 · 真货填充</td><td>货架变「真货」</td><td>首批 8 个设计就绪套件（高频货架升级）+ 46 锚打包「可信基准库」</td><td><span class="tag t-warn">待执行</span></td></tr>
+      <tr><td class="dim">M4 · 生态飞轮</td><td>供给侧闭环</td><td>学术/退休/学生贡献者计划上线，审核→上架→分成</td><td><span class="tag t-warn">待执行</span></td></tr>
+      <tr><td class="dim">M5 · 私有化（D）</td><td>平台授权收入</td><td>私有化部署包 + 授权 + 年维护，单独立项产品化</td><td><span class="tag t-c">远期</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>十一、具体执行计划（待审核）</h2>
+  <p>本计划为 <strong>Plan</strong> 形态——经你审核确认后再开干。下面给出步骤分解，每步标注依赖与风险。</p>
+  <div class="card blue">
+    <h3>Phase 1 · 商业化上线 + 定制接单（本次执行，A + B）</h3>
+    <ol>
+      <li><strong>1.1 生产部署（A 上线）</strong>：SSH 到生产服务器 <code>115.191.20.92:/opt/lda</code>，执行 git pull（必要时走代理）→ 强制重装 <code>pip install --force-reinstall --no-deps .</code> → 重启 <code>lda-webui.service</code>。依赖：需要生产 Git 凭据与 sudo 权限。<span class="small">风险：生产环境操作，需先确认备份；GitHub 直连需 socks5h 代理。</span></li>
+      <li><strong>1.2 首页入口（A 入口）</strong>：在 <code>index.html</code> 导航加「创新超市」按钮指向 <code>/store.html</code>，并标注后台 <code>/admin.html</code>。后端白名单已登记，无需改路由。</li>
+      <li><strong>1.3 定制需求入口（B）</strong>：在 store 加「定制需求」提交（需求描述/目标指标/预算区间），复用现有订单状态机（created→paid_unverified→approved→rejected），后台「确认接单」一键流转。后端改动小，前台加表单。</li>
+      <li><strong>1.4 生产端到端复测</strong>：注册 → 下单 → 凭证 → 审批 → 兑换码 → 下载，以及 B 定制单流转。</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h3>Phase 2 · 真货填充（M3）</h3>
+    <ol>
+      <li><strong>2.1 设计就绪套件</strong>：从 OPEN_SHELVES 选 8 个高频货架（IM-800G-DR8 / IM-PSM4 / IM-CWDM 4 / IM-CPO-OCS 等），补全参数化脚本 + 已跑通说明 + 明确工艺假设，升级为「设计就绪套件」。</li>
+      <li><strong>2.2 可信基准库</strong>：46 个物理定律锚 + golden benchmark 打包成「可信基准库（带溯源与审计报告）」整体授权，作为零成本「真货」先落地。</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h3>Phase 3 · 私有化平台（M5，远期）</h3>
+    <ol>
+      <li>3.1 私有化部署包（含一键安装 + 授权激活）；3.2 年维护/SLA 机制；3.3 与采购 PO 流程对接。</li>
+    </ol>
+  </div>
+
+  <h2>十二、决策确认（已决）</h2>
+  <div class="pill">
+    <ul>
+      <li>✅ 「可信验证基元库」<strong>作为 M3 首个零成本「真货」先落地</strong>（46 个物理定律锚 + golden benchmark 打包，带溯源与审计报告）。</li>
+      <li>✅ D 定制平台排期维持「远期」，报价采用建议区间 <strong>¥50万–300万（项目制谈判）</strong>。</li>
+      <li>✅ 首批「设计就绪套件」货架选型按建议的 <strong>4–8 个高频货架</strong>（IM-800G-DR8 / IM-PSM4 / IM-CWDM4 / IM-CPO-OCS 等）执行。</li>
+      <li>✅ 执行计划审核通过，进入 Craft 执行 Phase 1（A+B）。</li>
+    </ul>
+  </div>
+
+  <div class="footnotes">
+    数据来源：gdsfactory.com 及官方 FAQ、Efabless/OpenLane 文档、Luceda 与广立微公开资料、LDA 仓库（innovation_market.py / ship_package.py / store.py 实际代码审计）。
+    注：香港、中国澳门、中国台湾均属中国；文中涉及国家主权表述以官方立场为准。
+  </div>
+</div>
+</body>
+</html>

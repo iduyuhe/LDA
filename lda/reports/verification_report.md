@@ -1,19 +1,19 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-02T22:32:09
+- 生成时间：2026-09-03T16:07:26
 - L0_IR：(内置默认 B1–B4,B8)
-- candidate：IndependentCandidateRouter(独立候选 16 道: B1,B12,B13,B14,B15,B20,B22,B23,B24,B25,B26,B27,B3,B4,B9,S13；降级量级参考 1 道: E2)
+- candidate：IndependentCandidateRouter(独立候选 18 道: B1,B10,B12,B13,B14,B15,B20,B22,B23,B24,B25,B26,B27,B3,B4,B9,E2,S13；降级量级参考 0 道: 无)
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - self_consistent：True
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **16 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余项中 **31 项**走 ReferenceCandidate 占位自证（候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**），**1 项**为降级量级参考（有独立候选但与 golden 几何不同源/精度不足，**不进死标量判决**）。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 16 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **18 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **30 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 18 项。
 
-## 汇总：48/48 通过（独立候选 16 项中 **16 项通过=已验证** · 31 项自证闭环 · 1 项降级量级参考（不进判决），**非验证结论**）
+## 汇总：48/48 通过（独立候选 18 项中 **18 项通过=已验证** · 30 项自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
 | B1 | Q_scat | physical-law | 0.00284131 | 0.00280186 | 3.945e-05 | 0.0002 | ✅ PASS |
-| B10 | F_gate | physical-law | 0.999583 | 0.999583 | 0 | 0.01 | ✅ PASS |
+| B10 | F_gate | physical-law | 0.999847 | 0.999847 | 1.11e-16 | 1e-08 | ✅ PASS |
 | B11 | spectrum_match | physical-law | 0.00502277 | 0.00502277 | 0 | 0.03 | ✅ PASS |
 | B12 | f0_GHz | physical-law | 10.7583 | 10.7583 | 6.913e-06 | 0.02 | ✅ PASS |
 | B13 | J_GHz | physical-law | 0.0316228 | 0.0303097 | 0.001313 | 0.002 | ✅ PASS |
@@ -41,7 +41,7 @@
 | B8 | T_taper | physical-law | 1 | 1 | 0 | 0.01 | ✅ PASS |
 | B9 | f01_GHz | physical-law | 6.6282 | 6.61345 | 0.01475 | 0.05 | ✅ PASS |
 | E1 | n_g | empirical-measurement | 4.18 | 4.18 | 0 | 0.1 | ✅ PASS |
-| E2 | n_g | empirical-measurement | 1.892 | 1.95869 | 0.06669 | 0.1 | ✅ PASS |
+| E2 | n_g | empirical-measurement | 1.892 | 1.95718 | 0.06518 | 0.1 | ✅ PASS |
 | E3 | FSR_nm | empirical-measurement | 10.44 | 10.44 | 0 | 0.1 | ✅ PASS |
 | E4 | insertion_loss_dB | empirical-measurement | 0.18 | 0.18 | 0 | 0.1 | ✅ PASS |
 | E5 | excess_loss_dB | empirical-measurement | 0.05 | 0.05 | 0 | 0.1 | ✅ PASS |

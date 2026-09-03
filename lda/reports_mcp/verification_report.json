@@ -6,7 +6,7 @@
     "via": "L1 KernelGateway",
     "self_consistent": false
   },
-  "generated_at": "2026-09-02T22:24:59",
+  "generated_at": "2026-09-03T15:58:35",
   "summary": {
     "total": 48,
     "passed": 45,
@@ -33,11 +33,11 @@
     {
       "id": "B10",
       "metric": "F_gate",
-      "oracle": "analytical(decoherence-limit)",
+      "oracle": "analytical(lindblad-closed-form)",
       "source": "physical-law",
-      "golden": 0.9995834201268338,
-      "candidate": 0.9995834201268338,
-      "tol": 0.01,
+      "golden": 0.9998472459465827,
+      "candidate": 0.9998472459465827,
+      "tol": 1e-08,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LDA 商业平台 · 系统化实施蓝图</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Cpath d='M8 10h2l2 11h10l1.5-8H11' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='13' cy='25' r='1.8' fill='white'/%3E%3Ccircle cx='20' cy='25' r='1.8' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root{--bg:#f4f6fb;--panel:#fff;--txt:#1a2030;--mut:#5b6478;--line:#e2e7f0;--accent:#2563eb;--green:#16a34a;--red:#dc2626;--amber:#d97706;--purple:#7c3aed}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);line-height:1.65;padding:24px}
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 6px}
+  .sub{color:var(--mut);font-size:14px;margin-bottom:24px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:16px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  h2{font-size:19px;margin:0 0 12px;padding-left:12px;border-left:4px solid var(--accent)}
+  h3{font-size:16px;margin:18px 0 8px}
+  .tag{display:inline-block;font-size:12px;padding:2px 9px;border-radius:999px;color:#fff;vertical-align:middle}
+  .t-a{background:var(--accent)} .t-b{background:var(--purple)} .t-c{background:#0891b2} .t-d{background:var(--amber)}
+  .t-done{background:var(--green)} .t-warn{background:var(--amber)} .t-far{background:#94a3b8}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#eef2fb;color:var(--txt)}
+  td.dim{font-weight:600}
+  code{background:#eef2fb;padding:1px 6px;border-radius:5px;font-size:12px}
+  .pill{background:#eef2fb;border-radius:12px;padding:14px 18px;font-size:14px}
+  .pill li{margin:6px 0}
+  .warn-box{background:#fff7ed;border:1px solid #fdba74;border-radius:12px;padding:14px 18px;color:#9a3412}
+  .ok{color:var(--green);font-weight:600}
+  .gap{color:var(--red);font-weight:600}
+  .axis{display:flex;gap:14px;flex-wrap:wrap;margin:12px 0}
+  .axis .node{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;flex:1;min-width:200px}
+  .axis .node b{display:block;margin-bottom:4px}
+  .mut{color:var(--mut);font-size:13px}
+  .small{font-size:12px;color:var(--mut)}
+  ol li{margin:8px 0}
+  .spine{font-size:14px}
+  .spine li{margin:6px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LDA 商业平台 · 系统化实施蓝图</h1>
+  <div class="sub">把「开源光子/量子 EDA · Open-Core 商业化」创业意图，落到可执行的代码主线。本文件为 Plan 形态，经你确认后再开干。</div>
+
+  <div class="card">
+    <h2>一、创业意图（一句话主线）</h2>
+    <p>LDA 要做的是：用「<b>开源内核 + 自主可控 PDK 供给 + 私有化定制</b>」切西方 EDA 在中国市场的合规/获取软肋，走 gdsfactory 验证过的 Open-Core 路径——<b>免费内核养生态，付费交付与授权变现</b>。所有商业化动作必须服务于一个飞轮：<span class="ok">政策/国际前沿需求 → 社区供给「真货」 → 机构/政府付费 → 反哺内核与社区</span>。</p>
+    <p class="small">红线：香港/澳门/台湾是 parts of China；物理定律锚为唯一判决基准，LLM 不进判决路径；核心求解器自主、主权优先。</p>
+  </div>
+
+  <div class="card">
+    <h2>二、为什么之前「东一榔头西一棒槌」</h2>
+    <p>根因：我们先后上线了货架页、下单页、定制入口、审批后台，但<span class="gap">缺了一个把它们串起来的「会员/计费中枢」</span>——没有用户身份类型（学术/机构）、没有定价分层、没有订阅/授权。四条收入线各自孤悬，所以看起来零散。蓝图先把这条中枢补齐，再让 A/B/C/D 挂上去，结构就立起来了。</p>
+    <div class="warn-box">⚠️ 已确认：当前生产已上线的是「渠道外壳」（A+B 下单/定制），但<b>计费身份中枢、真货、C/D 平台</b>尚未落地，属于「能收钱、但卖不出差异化价值」的阶段。</div>
+  </div>
+
+  <div class="card">
+    <h2>三、统一架构主线：一个中枢 + 四条收入线</h2>
+    <div class="axis">
+      <div class="node"><b>① 计费身份中枢（此前缺失）</b><span class="mut">会员账户 · user_type · 定价分层 · 订阅 · 授权/兑换码<br>被 A/B/C/D 四类收入共同复用</span></div>
+      <div class="node"><b><span class="tag t-a">A</span> 货架现成包</b><span class="mut">开源货架 + 付费设计包，自助下载<br>状态：已上线</span></div>
+      <div class="node"><b><span class="tag t-b">B</span> 定制器件/芯片</b><span class="mut">按需求设计，交付 GDS/仿真<br>状态：接单流已通</span></div>
+      <div class="node"><b><span class="tag t-c">C</span> 平台 SaaS</b><span class="mut">托管订阅，在线自助设计<br>状态：远期</span></div>
+      <div class="node"><b><span class="tag t-d">D</span> 定制平台</b><span class="mut">私有化部署 + 授权<br>状态：单独立项</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>四、能力地图（商业能力 → 模块 → 现状）</h2>
+    <table>
+      <thead><tr><th>商业能力</th><th>对应模块</th><th>代码现状</th><th>缺口</th></tr></thead>
+      <tbody>
+        <tr><td class="dim">会员注册/登录</td><td><code>store.py register/login</code> · <code>/api/store/me</code></td><td class="ok">已完成</td><td>无 user_type，无法区分学术/机构</td></tr>
+        <tr><td class="dim">定价分层</td><td>计费中枢（新建）</td><td class="gap">未做</td><td>学术/机构/席位的单价、折扣、发票规则</td></tr>
+        <tr><td class="dim">订阅/席位</td><td>计费中枢（新建）</td><td class="gap">未做</td><td>年/月付、多年折扣、Stripe/PO</td></tr>
+        <tr><td class="dim">A 货架浏览+下单</td><td><code>store.html</code> · <code>/api/shelf</code></td><td class="ok">已上线</td><td>货架仍为「毛坯模板」</td></tr>
+        <tr><td class="dim">B 定制接单</td><td><code>store.py custom</code> 订单</td><td class="ok">已上线</td><td>缺交付回溯、缺报价单</td></tr>
+        <tr><td class="dim">真货填充</td><td>设计就绪套件 + 可信基准库</td><td class="gap">未做</td><td>46 锚未打包、8 货架未升级</td></tr>
+        <tr><td class="dim">C 平台 SaaS</td><td>（规划中）</td><td class="gap">远期</td><td>在线设计工作台</td></tr>
+        <tr><td class="dim">D 私有化</td><td>部署包（规划中）</td><td class="gap">远期</td><td>授权激活 + 年维护</td></tr>
+        <tr><td class="dim">贡献者计划</td><td>供给侧（规划中）</td><td class="gap">未做</td><td>审核→上架→分成</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>五、重新排序的路线图（按依赖，而非按时间点）</h2>
+
+    <h3>🔧 Track 0 · 计费身份中枢（补回缺失的主线，最先做）</h3>
+    <ol>
+      <li><b>0.1 用户类型字段</b>：注册增加「学术个人 / 机构 / 其他」（必选），<code>store.py</code> 写入 user_type、机构名称、开票信息字段。</li>
+      <li><b>0.2 定价引擎</b>：在 <code>store.py config</code> 定义四类单价/折扣（学术个人 ¥0–999、机构 ¥2999–9999/包 或 ¥999/月/席位、B ¥8万–30万、D ¥50万–300万），下单按 user_type 取价。</li>
+      <li><b>0.3 会员中心页面</b>：可见「我的类型/会员状态/订阅/订单」，维护机构信息。</li>
+      <li><b>0.4 订阅与授权</b>：席位订阅（年/月付、多年折扣）、激活 Stripe（海外个人）+ 对公 PO（机构）。</li>
+    </ol>
+    <p class="small">依赖：无前置。风险低，纯增量。这是让 A/B/C/D 不再散的「骨架」。</p>
+
+    <h3>📦 Track 1 · 货架与真货（A + M3）</h3>
+    <ol>
+      <li><b>1.1 货架分级</b>：58 个「前瞻预研」明确定义为免费引流层。</li>
+      <li><b>1.2 设计就绪套件</b>：挑 4–8 个高频货架（IM-800G-DR8 / IM-PSM4 / IM-CWDM4 / IM-CPO-OCS 等）补全参数化脚本 + 工艺假设，升级为「设计就绪套件」。</li>
+      <li><b>1.3 可信基准库</b>：46 个物理定律锚 + golden benchmark 打包，带溯源与审计报告，作为零成本「真货」先落地。</li>
+    </ol>
+
+    <h3>🛠 Track 2 · 定制履约（B 完整化）</h3>
+    <ol>
+      <li><b>2.1 定制需求表单</b>：需求描述/目标指标/预算区间（已上线入口，补报价单与状态回流）。</li>
+      <li><b>2.2 交付管理</b>：审批后回填交付物链接、状态机闭环到「已交付」。</li>
+    </ol>
+
+    <h3>🌐 Track 3 · 平台与私有化（C + D，远期）</h3>
+    <ol>
+      <li><b>3.1 C 平台 SaaS</b>：在线设计工作台（托管订阅）。</li>
+      <li><b>3. 2 D 私有化</b>：部署包 + 授权激活 + 年维护，单独立项产品化。</li>
+    </ol>
+
+    <p class="small">发布节奏建议：Track 0 → Track 1 → Track 2 串行进，Track 3 单独排期（已在商业计划书中定为远期）。</p>
+  </div>
+
+  <div class="card">
+    <h2>六、当前里程碑对齐</h2>
+    <table>
+      <thead><tr><th>里程碑</th><th>目标</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td class="dim">M0 · 模型+技术验证</td><td>商业模型、定价、闭环跑通（本地）</td><td><span class="tag t-done">已完成</span></td></tr>
+        <tr><td class="dim">M1 · 商业化上线 A</td><td>生产部署 store/admin/首页入口</td><td><span class="tag t-done">已完成</span>（已上线）</td></tr>
+        <tr><td class="dim">M2 · 定制接单 B</td><td>定制入口 + 后台接单</td><td><span class="tag t-done">已完成</span>（已上线）</td></tr>
+        <tr><td class="dim">M0.5 · 计费身份中枢</td><td>user_type + 定价 + 订阅（本蓝图新增）</td><td><span class="tag t-warn">待执行</span></td></tr>
+        <tr><td class="dim">M3 · 真货填充</td><td>8 套件 + 可信基准库</td><td><span class="tag t-warn">待执行</span></td></tr>
+        <tr><td class="dim">M4 · 生态飞轮</td><td>贡献者计划</td><td><span class="tag t-warn">待执行</span></td></tr>
+        <tr><td class="dim">M5 · 私有化 D</td><td>平台授权</td><td><span class="tag t-far">远期</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>七、待你确认</h2>
+    <div class="pill">
+      <ul>
+        <li>蓝图方向是否认可？尤其「<b>计费身份中枢优先</b>」的排序（先补 user_type/定价，再谈 C/D）。</li>
+        <li>Track 0 是否本次一并做（注册加「学术/机构」必选 + 定价引擎 + 会员中心）？</li>
+        <li>D 维持远期、报价 ¥50万–300万 是否不变？</li>
+        <li>是否创建「LDA 商业闭环」专家/技能，固化这套「商业意图→代码」工作流，避免以后再散？</li>
+      </ul>
+    </div>
+    <p class="small">确认后我切到 Craft 模式，按 Track 0 → Track 1 → Track 2 顺序落地并逐项交付。</p>
+  </div>
+</div>
+</body>
+</html>

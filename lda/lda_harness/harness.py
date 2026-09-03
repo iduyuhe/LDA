@@ -256,6 +256,61 @@ class PerturbedCandidate:
         return golden * (1.0 + self.rel_err)
 
 
+def candidate_responds(spec, cand_fn, oracle_value, rel=0.10,
+                       thresh=1e-12) -> bool:
+    """候选是否对参数扰动有**物理响应** —— 真候选 vs 自证桩的**行为判据**。
+
+    🔴🔴🔴 **全库唯一权威定义处**（v0.9.24）。`run_harness.py`（路径②）与
+    `run_benchmark_falsifiability_smoke.py`（路径①⑧）**必须都调这里**，
+    否则两处判据漂移会当场打架（v0.9.24 实测：只升 smoke 没升 CLI ⇒
+    smoke 8/8 全绿而 `run_harness.py` 断言 AssertionError 报 `假独立=['B10']`）。
+
+    **为什么需要它**（v0.9.24 · 由 B10 触发）：
+    原判据 `|cand − golden| < 1e-12 ⇒ 自证桩` 在 B10 上**误判**。B10 的候选是
+    真的 4×4 Liouvillian 超算子 RK4 积分（三条**可标定**自校锚 + 六路反向扰动
+    全部抓住，信号 1.5e-5），但生产档位 t_gate=0.02 µs、T1/T2~60-80 µs ⇒
+    无量纲演化量 |L|·t ≈ 2.5e-4 ⇒ RK4 从 N=5 到 N=400 残差**恒为 1.11e-16**、
+    与步数无关。即**该锚的残差物理上不可标定**，必然落在 1e-12 以内。
+
+    **自证桩的充要特征其实不是「残差小」，而是「跟着 golden 走」**：
+    `ReferenceCandidate.__call__` 直接 `return golden`、**完全不看 params**
+    ⇒ 扰动参数后候选值纹丝不动（|cand − golden(原)| ≡ 0）。
+
+    新判据 =「**残差 ≡0 且 扰动无响应** ⇒ 自证桩」，比旧判据**严格更严**：
+    旧判据既会**误伤**「残差恰好小」的真候选（B10），也会**漏过**「残差恰好
+    大」的自证桩（例如某个桩被加了常数扰动）。
+
+    参数
+    ----
+    spec : 有 `.params` 映射的对象（VerificationSpec 或 _SpecShim）
+    cand_fn : 候选函数，签名 (spec, oracle_value) -> float
+    oracle_value : 原 golden 值（扰动后不再重算 golden，模拟「求解器算错」）
+    rel : 相对扰动幅度，默认 ±10%
+    thresh : 判定「有响应」的阈值，默认 1e-12
+
+    返回
+    ----
+    True = 候选对参数有物理响应（真候选）；False = 纹丝不动（自证桩特征）。
+    """
+    params = getattr(spec, "params", None)
+    if not isinstance(params, dict):
+        return False
+    for key, val in params.items():
+        if isinstance(val, bool) or not isinstance(val, (int, float)):
+            continue
+        for direction in (+rel, -rel):
+            try:
+                p2 = dict(params)
+                p2[key] = float(val) * (1.0 + direction)
+                sp2 = _SpecShim(getattr(spec, "spec_id", ""), p2)
+                cv2 = cand_fn(sp2, oracle_value)
+            except Exception:  # noqa: BLE001 —— 扰动后求解器报错=有响应
+                return True
+            if isinstance(cv2, (int, float)) and abs(cv2 - oracle_value) > thresh:
+                return True
+    return False
+
+
 class _SpecShim:
     """把 harness 的 dict spec 适配成独立候选所需的最小对象接口。
 

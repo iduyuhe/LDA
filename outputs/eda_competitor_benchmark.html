@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LDA 商业模式同业对标报告</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --muted:#475569; --line:#e2e7f0; --brand:#2563eb;
+    --soft:#f1f5f9; --warn:#ea580c; --good:#16a34a; --bg:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+       color:var(--ink); background:#f7f9fc; margin:0; padding:28px;}
+  .wrap{max-width:980px; margin:0 auto; background:var(--bg); padding:32px 36px; border-radius:14px; box-shadow:0 2px 14px rgba(0,0,0,.06);}
+  h1{font-size:24px; margin:0 0 6px; color:#1e3a8a;}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:22px;}
+  h2{font-size:18px; margin:28px 0 12px; color:#1e3a8a; border-left:4px solid var(--brand); padding-left:10px;}
+  table{width:100%; border-collapse:collapse; font-size:13px; margin:8px 0 18px;}
+  th,td{border:1px solid var(--line); padding:10px 12px; vertical-align:top; line-height:1.5;}
+  th{background:#eef2ff; font-weight:700; text-align:center; color:#1e3a8a;}
+  td.dim{font-weight:600; background:var(--soft); width:120px;}
+  .tag{display:inline-block; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:600;}
+  .t-open{background:#dbeafe; color:#1e40af;}
+  .t-paid{background:#fff7ed; color:#9a3412;}
+  .t-warn{background:#fee2e2; color:#991b1b;}
+  .t-own{background:#fef9c3; color:#854d0e;}
+  .card{background:var(--soft); border-radius:10px; padding:16px 18px; margin:10px 0;}
+  .card h3{margin:0 0 8px; font-size:15px; color:var(--brand);}
+  .card ul{margin:6px 0 0; padding-left:18px;}
+  .card li{margin:5px 0; font-size:13px; color:var(--ink);}
+  .pill{background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin:8px 0; font-size:13px;}
+  .warn{background:#fff7ed; border-left:4px solid var(--warn);}
+  .good{background:#f0fdf4; border-left:4px solid var(--good);}
+  .footnotes{color:var(--muted); font-size:12px; margin-top:24px; line-height:1.6;}
+  strong{color:#1e3a8a;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LDA 「创新超市 / 开源定制」同业对标报告</h1>
+  <div class="sub">调研日期 2026-08-29 · 对标对象：gdsfactory / Luceda(IPKISS) / Efabless(OpenLane) · 目的：避免闭门造车，校准商业模式</div>
+
+  <h2>一、核心结论（客观）</h2>
+  <div class="pill good">
+    <strong>开源 + 商业增值层（Open-Core）是这条赛道被验证的唯一可持续路径。</strong>
+    gdsfactory 用「免费开源内核 + 付费 GDSFactory+」跑通了 200 万+ 下载量与商业转化；Luceda(IPKISS) 凭「PDK 开发 + 设计流程 + 培训」被中国广立微（上市公司）收购——说明「光子 EDA + PDK 供给 + 服务」组合具备真实估值。LDA 已有的开源物理锚内核，正好站在同一条起跑线上。
+  </div>
+
+  <h2>二、四家对标表</h2>
+  <table>
+    <thead>
+      <tr><th style="width:120px">维度</th><th>GDSFactory（gdsfactory）</th><th>Luceda / IPKISS</th><th>Efabless / OpenLane</th><th>LDA（我们 · 规划）</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="dim">开源内核</td>
+        <td><span class="tag t-open">开源免费</span> Python 库，200万+下载，100+贡献者</td>
+        <td><span class="tag t-paid">闭源商业</span> 仅 2012 年放出过有限版本</td>
+        <td><span class="tag t-open">开源</span> RTL→GDS（基于 OpenROAD），180+ 流片</td>
+        <td><span class="tag t-open">开源</span> 物理定律锚内核（46 锚），主权红线</td></tr>
+      <tr><td class="dim">商业层</td>
+        <td>GDSFactory+：GUI、43+ PDK 访问、仿真、DRC/LVS、数据分析、AI Agent</td>
+        <td>商业授权 + PDK 开发 + 设计流程优化 + 培训（被广立微收购）</td>
+        <td>MPW/社区/云；OpenLane 开源，chipIgnite 商业</td>
+        <td>A 货架 / B 定制器件 / C SaaS / D 私有化（待建）</td></tr>
+      <tr><  td class="dim">定价 / 收费</td>
+        <td>按席位订阅（年/月付）、多年折扣、学术优惠、Stripe + 采购 PO</td>
+        <td>商业报价（未公开），并购退出</td>
+        <td>开源免费 + 免费 Shuttle（Google 出资）；Tiny Tapeout ≈ $1000/格</td>
+        <td>货架 ¥1999/包、定制项目制、平台授权（待定）</td></tr>
+      <tr><td class="dim">PDK 策略</td>
+        <td>开放 PDK 免费；NDA 工艺 PDK 需订阅 + 工厂授权（不从 GDSFactory 分发）</td>
+        <td>自研 PDK + Foundry 合作，SiFab 教学 PDK</td>
+        <td>开源 PDK（Sky130 / GF180），降低流片门槛</td>
+        <td>自研开源 PDK + 主权供给（不借商业 NDA-PDK）</td></tr>
+      <tr><td class="dim">私有化 / 合规</td>
+        <td>GovCloud / 空气隔离部署（国防/政府）</td>
+        <td>企业部署</td>
+        <td>云端为主</td>
+        <td>D 定制平台：私有化部署 + 定制（你的核心诉求）</td></tr>
+      <tr><td class="dim">自主可控（中国）</td>
+        <td><span class="tag t-warn">依赖西方 Foundry NDA</span> 中国客户有合规/获取风险</td>
+        <td>已被中国广立微收购，本土化强</td>
+        <td>美系开源生态</td>
+        <td><span class="tag t-own">主权优先·国产自主</span> 差异化 wedge</td></tr>
+    </tbody>
+  </table>
+
+  <h2>三、可借鉴的 4 个玩法</h2>
+  <div class="card">
+    <h3>1. Open-Core 分层（最该抄）</h3>
+    <ul>
+      <li>免费开源内核做「流量入口」，付费层卖 GUI / PDK 访问 / 仿真 / 验证 / 支持。</li>
+      <li>我们的物理锚内核（L0/L1/L3）对等 gdsfactory 开源库；变现层 = 你的 A/B/C/D。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>2. PDK 是变现杠杆也是护城河</h3>
+    <ul>
+      <li>GDSFactory 把 NDA 工艺 PDK 锁在订阅后；Luceda 靠 PDK 开发服务被并购。</li>
+      <li>我们主权红线「不借商业 PDK」反而可转成卖点：做<strong>自研开源 PDK + 供给层</strong>，主打「自主可控」，正好切 GDSFactory 在中国的合规软肋。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>3. 按席位订阅 + 机构/学术分层</h3>
+    <ul>
+      <li>per-user 席位、年/月付、企业 PO、学术优惠——这套定价模型可直接借鉴到 C/D。</li>
+      <li>私有化 / 空气隔离（GovCloud）天然是高溢价档，对应你的「D 定制平台」。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>4. 社区 + 流片/样例做漏斗</h3>
+    <ul>
+      <li>Efabless 用免费 Shuttle / 开源流程养社区，再转商业。我们的「货架样例 / 免费内核」同理可当获客漏斗。</li>
+    </ul>
+  </div>
+
+  <h2>四、我们的差异化与诚实风险</h2>
+  <div class="pill warn">
+    <strong>真实风险（不说清楚会翻车）：</strong>
+    <ul style="margin:6px 0 0">
+      <li>采用度差距巨大：gdsfactory 200 万+ 下载，我们仍是 0——必须先建社区/漏斗，不能指望上线即变现。</li>
+      <li>「有店无货」：货架目前是验证资产，不是可售设计包。能拿出几个真能卖的设计包，决定 L1 能否进商业计划书。</li>
+      <li>自研 PDK 成本高，需要合作/范围控制，避免纯咨询式 churn。</li>
+      <li>LDA 核心护城河是「物理定律锚验证」，不是广度——不承诺未实证结果，不与商业求解器比拼。</li>
+    </ul>
+  </div>
+
+  <h2>五、落点建议（与你的四模式对齐）</h2>
+  <div class="pill good">
+    A 货架现成包 = 开源 PDK/样例（免费引流） + 付费设计包；
+    B 定制器件/芯片 = PDK 开发/设计服务（对标 Luceda 服务）；
+    D 定制平台 = 私有化部署 + 订阅（对标 GDSFactory GovCloud），是我们的「自主可控」主船；
+    C SaaS 远期。
+    <br><br>
+    <strong>一句话定位：</strong>「开源光子/量子 EDA 内核 + 自主可控 PDK 供给 + 私有化定制」——用西方工具在中国市场的合规软肋，做国产替代切口。
+  </div>
+
+  <div class="footnotes">
+    数据来源：gdsfactory.com 及官方 FAQ、GitHub gdsfactory/gdsfactory、Efabless 博客与 OpenLane 文档、Luceda 发布说明与广立微 2025 年报、OpenROAD 公开资料。
+    注：中国香港/中国台湾/中国澳门均属中国；文中涉及国家主权表述以官方立场为准。
+  </div>
+</div>
+</body>
+</html>

@@ -60,13 +60,17 @@ def main():
     # ---- D-64 核心：候选求解器独立性（把「真验证」钉进 smoke）----
     # 背景：_harness_reference_candidate 直接 return golden ⇒ |candidate−golden|≡0，
     #       恒 PASS 但零验证价值（D-64 实测 E1/E3-E7 均为 0.0）。
-    # E2 是首道接入独立候选（FDFD 本征模 n_eff(λ) 中心差分）的实证锚。
+    # E2 是首道接入独立候选的实证锚。
+    # 🔴 v0.9.23：候选由 FDFD（标量亥姆霍兹）**换成 semivec_ng**（2D 半矢量本征模）
+    # —— 原 FDFD 候选的 n_g 随计算窗口散射 ±0.04~0.08，PASS 可能只是窗口挑得好；
+    # 半矢量同口径散射 <1e-5，且辨 TE/TM ⇒ E2 由「降级量级参考」升为「严格独立候选」。
     _s2 = next(s for s in emp if s.spec_id == "E2")
     _g2 = _s2.oracle_fn(_s2.params)
     _c2 = cand_map["E2"](_s2, _g2)
-    check("D-64 E2 candidate 为独立 FDFD 求解（非 golden 自证，且落在容差内）",
+    check("D-64 E2 candidate 为独立半矢量本征模求解（非 golden 自证，且落在容差内）",
           abs(_c2 - _g2) > 1e-6 and abs(_c2 - _g2) <= _s2.tol,
-          f"golden(实测)={_g2} candidate(FDFD)={_c2:.4f} |diff|={abs(_c2-_g2):.4f} tol={_s2.tol}")
+          f"golden(实测)={_g2} candidate(semivec)={_c2:.4f} "
+          f"|diff|={abs(_c2-_g2):.4f} tol={_s2.tol}")
     # 反向断言：其余 E 题仍为占位自证（如实标注，不得假装已验证）
     _still_self = [s.spec_id for s in emp
                    if s.spec_id != "E2"
@@ -76,10 +80,16 @@ def main():
           sorted(_still_self) == ["E1", "E3", "E4", "E5", "E6", "E7"],
           f"自证={sorted(_still_self)}")
 
-    # ---- D-65 判定窗口鲁棒性：E2 的 PASS 不能是「挑了个好窗口」凑出来的 ----
+    # ---- D-65 判定窗口鲁棒性（**历史候选 fdfd_ng** 的证据，v0.9.23 起不再管辖 E2）----
     # 实测：FDFD 候选的 n_g 随计算窗口（clad_um）在 1.878~1.962 间散射（网格过粗所致，
     # 见 E2 note）。若只测默认窗口，PASS 可能只是运气。故断言**所有**窗口都必须落在
     # 容差内，并对散射设上界护栏（防止网格实现退化让不确定度失控）。
+    # 🔴 2026-09-03（v0.9.23）：E2 的候选已由 fdfd_ng 换成 **semivec_ng**（2D 半矢量
+    # 本征模），其窗口散射实测 **<1e-5**（对比 FDFD 的 ±0.04~0.08）——这正是 E2 得以
+    # 从「降级量级参考」升为「严格独立候选」的核心凭据。本段**保留**为历史证据：
+    # ①证明换候选是有实测理由的，不是拍脑袋；②若有人想换回 FDFD，这段会立刻提醒
+    # 他要重新面对 ±0.04~0.08 的不确定度。新候选的窗口鲁棒性由
+    # run_semivec_mode_smoke.py 常驻守护（L=5.0/6.0/8.0 三窗口散射 <1e-3）。
     try:
         from lda_harness.verification_adapters import _fdfd_ng_candidate
 
@@ -93,14 +103,15 @@ def main():
                 _P(dict(_s2.params, clad_um=_clad)), _g2)
         _worst = max(abs(v - _g2) for v in _ngs.values())
         _spread = max(_ngs.values()) - min(_ngs.values())
-        check("D-65 E2 判定窗口鲁棒（5 个计算窗口全部落在容差内，PASS 非窗口凑巧）",
+        check("D-65 [历史候选 fdfd_ng] 5 个计算窗口全部落在容差内（散射证据留存）",
               _worst <= _s2.tol,
               " ".join(f"clad{k}={v:.4f}" for k, v in _ngs.items())
               + f" | 最大|diff|={_worst:.4f} tol={_s2.tol}")
-        check("D-65 E2 数值不确定度护栏（窗口散射不得恶化；R16 已证伪：±0.04~0.08 实为窗口扫描非网格，FDFD 精度不足，E2 仅判量级一致）",
+        check("D-65 [历史候选 fdfd_ng] 数值不确定度护栏（散射不得恶化；R16 已证伪："
+              "±0.04~0.08 实为窗口扫描非网格）——E2 已于 v0.9.23 换用 semivec_ng，本条仅存证",
               _spread <= 0.12,
-              f"散射={_spread:.4f}（≈±{_spread/2:.3f}；0.10 容差中大部分是数值不确定度，"
-              f"非物理裕度——故 E2 只判『量级一致』不宣称『精度验证』）")
+              f"散射={_spread:.4f}（≈±{_spread/2:.3f}；这正是 FDFD 被换下的原因——"
+              f"半矢量同口径散射 <1e-5，小 4 个数量级）")
     except Exception as _e:  # noqa: BLE001 求解器不可用时显式 FAIL，不静默放过
         check("D-65 E2 窗口鲁棒性检查可运行", False, f"{type(_e).__name__}: {_e}")
     # 实测↔解析交叉验证：E3 实测 10.44 vs 解析 λ²/(ng·2πR)=10.46，差 0.02 nm（≤tol）

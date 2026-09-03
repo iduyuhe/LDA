@@ -1,0 +1,39 @@
+{
+  "repo": "iduyuhe/LDA",
+  "fetched_at": "2026-09-01T22:20:32.963329+00:00",
+  "rate_limit_status": {
+    "core": {
+      "limit": 60,
+      "remaining": 55,
+      "reset": 1788304426,
+      "used": 5
+    },
+    "search": {
+      "limit": 10,
+      "remaining": 10,
+      "reset": 1788301296,
+      "used": 0
+    }
+  },
+  "stars": 1,
+  "forks": 1,
+  "watchers": 1,
+  "subscribers": 0,
+  "open_issues_incl_pr": 4,
+  "network_count": 1,
+  "license": "MIT",
+  "language": "Python",
+  "created_at": "2026-08-19T00:07:58Z",
+  "pushed_at": "2026-09-01T17:56:16Z",
+  "updated_at": "2026-09-01T18:03:39Z",
+  "default_branch": "main",
+  "size_kb": 4421,
+  "contributors_visible": 0,
+  "last_commit_sha": "2dda10ccf668c08c589b60fef3be5b79e024879b",
+  "last_commit_date": "2026-09-01T17:52:03Z",
+  "last_commit_message": "v0.9.13 R16 实测证伪 + 诚实边界 C 降级\n\n- R16（FDFD 亚网格 ε 平均）于 2026-09-01 实测证伪：sub-cell averaging + 网格细化 dl=24→64 均无效（SOI n_g 3.776",
+  "issues_total": 3,
+  "issues_open": 3,
+  "prs_total": 2,
+  "prs_open": 1
+}

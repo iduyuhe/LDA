@@ -248,15 +248,26 @@ def _quantum_al_fixed_approx() -> PDK:
         bids=["B10", "B9"],
         objective_bid="B10",
         target_metric="F_gate",
-        target=0.99,
-        target_tol=0.01,
+        # 🔴 v0.9.24 目标与区间改动（B10 golden 语义修正 D-66 第 8 例的连带影响）：
+        #   旧 golden F=exp(−t(1/T1+1/(2T2))) 下 target=0.99 对应 t_gate≈0.48µs。
+        #   新 golden F=(3+2e^(−t/T2)+e^(−t/T1))/6 下，T1/T2=80/60µs 的门在
+        #   t_gate∈[0.05,1.0]µs 内 F 只能取 [0.99242, 0.99962] ⇒ **0.99 不可达**
+        #   （要 F=0.99 需 t_gate≈1.33µs，远超超导单比特门的物理区间 10~50ns）。
+        #   ⇒ target 改为 0.9999（对应 t_gate≈13.1ns，物理合理），
+        #     bounds 下界 0.05µs→0.001µs（1ns），target_tol 0.01→5e-4
+        #     （F 的可达跨度只有 7.2e-3，旧 tol=0.01 比整个跨度还大，无意义）。
+        target=0.9999,
+        target_tol=5e-4,
         tunable="t_gate",
-        bounds=(0.05, 1.0),
+        bounds=(0.001, 1.0),
         fixed_params={"T1": 80.0, "T2": 60.0, "E_J": 20.0, "E_C": 0.30},
         decreasing=True,                # F 随 t_gate 增大而减小
         constraint_bids=["B9"],         # transmon 频率须过物理定律验证
-        note="调门时长 t_gate 命中保真度 0.99（F=exp(−t_gate·(1/T1+1/2T2))），"
-             "且 transmon 频率 B9 须过验证；l3_ai 的 B9 缺陷使约束失败、双判据分离。",
+        note="调门时长 t_gate 命中保真度 0.9999"
+             "（F=(3+2e^(−t/T2)+e^(−t/T1))/6，Lindblad 严格平均门保真度），"
+             "且 transmon 频率 B9 须过验证；l3_ai 的 B9 缺陷使约束失败、双判据分离。"
+             "（v0.9.24：旧目标 0.99 在新 golden 下需 t_gate≈1.33µs 才可达，"
+             "已改为物理合理的 0.9999≈13ns。）",
     ))
     return pdk
 

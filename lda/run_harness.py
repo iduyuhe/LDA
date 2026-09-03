@@ -132,12 +132,41 @@ def main():
         #   ① 非自证桩（独立/降级）⇒ |diff| 必须非零（回落 golden 即穿帮）
         #   ② 自证桩 ⇒ |diff| 必须为零（若非零，说明分类表与实现脱节）
         # 只查 ① 不查 ②，就无法发现「某道被误标成自证桩、实际已接线」的漏算。
+        #
+        # 🔴🔴 v0.9.24 升级（由 B10 触发，**必须**）：
+        #   ① 的判据从「|diff|≡0」升级为「**|diff|≡0 且 扰动无响应**」。
+        #   B10 的候选是真的 4×4 Liouvillian 超算子 RK4 积分，但生产档位
+        #   |L|·t≈2.5e-4 ⇒ 残差**恒为 1.11e-16、与步数无关** ⇒ 物理上不可标定，
+        #   必然落进 1e-12。旧判据会把它误判成「假独立」（实测 AssertionError:
+        #   `假独立=['B10']`）。自证桩的充要特征是「**跟着 golden 走**」
+        #   （ReferenceCandidate 直接 return golden、**不看 params** ⇒ 扰动后
+        #   纹丝不动），不是「残差小」。
+        #   🔴 判据必须与 `run_benchmark_falsifiability_smoke` 路径①⑧ **同源**
+        #   —— 两处若判据不同会当场打架（v0.9.24 实测：只升 smoke 没升 CLI ⇒
+        #   smoke 8/8 全绿而本文件断言失败）。故统一调 `harness.candidate_responds`。
+        from lda_harness.harness import _SpecShim, candidate_responds
+        from lda_harness.verification_adapters import BENCHMARK_CANDIDATES
+        _spec_by_id = {s.get("id"): s for s in specs}
+
+        def _behaves_independently(r):
+            """该锚的候选是否真在算（||diff|| 非零 **或** 对扰动有物理响应）。"""
+            if not (isinstance(r.candidate, (int, float))
+                    and isinstance(r.golden, (int, float))):
+                return True   # 非标量结果（如 dict/复数）无法用残差判，放行
+            if abs(r.candidate - r.golden) >= 1e-12:
+                return True
+            _sp = _spec_by_id.get(r.bid)
+            _key = candidate.resolve_key(r.bid)
+            _fn = BENCHMARK_CANDIDATES.get(_key) if _key else None
+            if _sp is None or _fn is None:
+                return False  # 拿不到 spec 或候选 ⇒ 无法自证，按假独立报
+            return candidate_responds(
+                _SpecShim(r.bid, dict(_sp.get("params") or {})), _fn, r.golden)
+
         _fake_independent = [r.bid for r in results
                              if getattr(r, "candidate_class", None)
                              not in (None, CANDIDATE_CLASS_STUB)
-                             and isinstance(r.candidate, (int, float))
-                             and isinstance(r.golden, (int, float))
-                             and abs(r.candidate - r.golden) < 1e-12]
+                             and not _behaves_independently(r)]
         assert not _fake_independent, (
             f"标为独立/降级候选却 candidate≡golden（假独立）：{sorted(_fake_independent)}"
             "——路由或候选实现可能已静默回落 golden，verified 会被虚报")

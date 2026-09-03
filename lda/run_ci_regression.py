@@ -155,6 +155,19 @@ CORE_SMOKES: List[str] = [
     "run_readout_chain_smoke.py",         # 读出链路
     "run_splitter_readout_smoke.py",      # D-63 方向耦合器×量子读出（含 FDTD，~198s）
     "run_splitter_readout_cal_smoke.py",  # D-66 标定版读出（含 FDTD，~179s）
+    # ---- 2D 半矢量本征模求解器（v0.9.23 · P0 自证）----
+    # E2 由「降级量级参考」升为「严格独立候选」的**凭据守护**：没有它，升级所依据的
+    # 「窗口散射 <1e-5」「实证对照 Δ=8.4e-5」两条实测就只是 note 里的散文，
+    # 改网格/窗口/ARPACK 参数会静默失效（铁律：没被验证过的护栏不算护栏）。
+    # 含 5 次 2D 本征解，实测 ~89s ⇒ 配 timeout override。
+    "run_semivec_mode_smoke.py",
+    # ---- Lindblad 门保真度求解器（v0.9.24 · P0 自证）----
+    # B10 接线 + golden 语义修正（D-66 第 8 例）的**凭据守护**：没有它，
+    # ①「旧式 exp(−t(1/T1+1/(2T2))) 已被证否」②「tol 由 0.01 收紧到 1e-8 后
+    # 六路扰动信号仍全部可抓」这两条就只是 note 里的散文，下次有人把 golden
+    # 改回旧式、或把 tol 放宽，都会静默失效（铁律：没被验证过的护栏不算护栏）。
+    # 纯 4×4 矩阵运算，实测 <3s。
+    "run_lindblad_gate_smoke.py",
 ]
 
 # D-63 收紧：旧判定只看「输出里是否含未安装/无 GPU 等字样」→ 副作用是把真失败
@@ -186,12 +199,24 @@ def _discover_all() -> List[str]:
 # 内置 per-script 超时覆盖（秒）：实测耗时 + 安全边际，防慢机器上偶发 TIMEOUT
 # 被误判为 FAIL（TIMEOUT 与真 FAIL 必须区分开）。调用方可通过 timeout_override 再覆盖。
 _BUILTIN_TIMEOUT_OVERRIDE = {
-    # 内部含子回归 + greens 基准（~300-315s 浮动），内置放宽根治偶发 TIMEOUT
-    "run_ci_industrial_smoke.py": 600.0,
+    # 内部含子回归 + greens 基准。
+    # 🔴 v0.9.24：600 → **900s**。原 600s 已被实测撑破——v0.9.23 把
+    # `run_semivec_mode_smoke.py`（~97s）加入 CORE_SMOKES 时**没同步**
+    # `run_ci_industrial_smoke._SLOW_CORE` ⇒ 内部子回归 570s → **667.62s**
+    # ⇒ 全量 core 回归实测 **TIMEOUT @600s**（86 PASS / 1 TIMEOUT）。
+    # 已同步补登 _SLOW_CORE（子回归回落到 ~570s），但 600s 的上限原本就只剩
+    # 个位数量级的余量 ⇒ 顺手放宽到 900s（1.5× 余量）防慢机器抖动。
+    # ⚠️ 这不是「放宽判据掩盖失败」：TIMEOUT 与 FAIL 是两种状态（见 _run_one），
+    # 本项实测单独跑 **3/3 ALL PASS**，是纯耗时问题，不含任何物理/数值判据。
+    "run_ci_industrial_smoke.py": 900.0,
     # 含 FDTD 分束仿真，实测 ~198s（v0.9.1 入 core）
     "run_splitter_readout_smoke.py": 400.0,
     # 含 FDTD 标定仿真，实测 ~179s（v0.9.1 入 core）
     "run_splitter_readout_cal_smoke.py": 400.0,
+    # 5 次 2D 半矢量本征解（ARPACK shift-invert）实测 ~89s（v0.9.23 入 core）
+    "run_semivec_mode_smoke.py": 400.0,
+    # 纯 4×4 Liouvillian RK4，实测 <3s；放宽只为慢机器上的解释器启动开销
+    "run_lindblad_gate_smoke.py": 180.0,
 }
 
 

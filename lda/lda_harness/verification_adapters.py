@@ -84,17 +84,12 @@ def build_harness_specs(defs: Optional[Dict] = None
                 source=(d.get("oracle", "empirical-measurement")
                         + (" ⚠️B级·待溯源（无 DOI/URL，不计入可溯源实证锚）"
                            if unverified else "")),
-                candidate_desc=(
-                    ("FDFD 本征模 n_eff(λ) 中心差分（独立频域求解，非 golden 自证）"
-                     + (" ⚠️降级：直波导候选 vs 环器件 golden **几何不同源**、"
-                        "求解器精度不足，仅作量级参考，不进死标量判决"
-                        "（诚实边界 C · R16 已证伪）"
-                        if d.get("candidate_status") == "degraded_ordinal" else ""))
-                    if d.get("candidate") == "fdfd_ng"
-                    else "harness 参考候选（占位自证：candidate≡golden，恒 PASS，无验证价值）")))
-            cand_map[bid] = (_fdfd_ng_candidate
-                             if d.get("candidate") == "fdfd_ng"
-                             else _harness_reference_candidate)
+                candidate_desc=_emp_candidate_desc(d)))
+            # v0.9.23：实证锚的候选分发改为**查登记表**（与 B 类物理定律锚同构）。
+            # 此前此处硬编码 `== "fdfd_ng"` ⇒ 每接一种新候选就要改一遍分支，
+            # 且「登记表里登记了却没被任何锚引用」这类失配无法被发现。
+            cand_map[bid] = (BENCHMARK_CANDIDATES.get(d.get("candidate"))
+                             or _harness_reference_candidate)
             continue
 
         def _oracle(p, bid=bid):
@@ -224,6 +219,51 @@ def _cz_exact_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
     return math.pi / (2.0 * abs(chi))
 
 
+@_register_candidate(
+    "lindblad_gate_f",
+    "Lindblad 主方程 4×4 超算子 RK4 数值积分 → 完整 PTM → 平均门保真度"
+    "（不套衰减率闭式、不假设 PTM 对角）—— 与 golden 的解析闭式方法学独立")
+def _lindblad_gate_f_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B10 独立候选：数值积分 Lindblad 主方程求平均门保真度。
+
+    golden = 闭式 (3 + 2e^(−t/T2) + e^(−t/T1))/6（golden.py 内 math.exp 实现）
+    cand   = 构造 4×4 Liouvillian（γ₁·D[σ₋] + γ_φ·D[σ_z]）→ 对 4 个 Pauli 基
+             各 RK4 积分一次 ⇒ 完整 PTM 矩阵 → F_avg = ½ + (Λ_xx+Λ_yy+Λ_zz)/6
+
+    **方法学独立**：候选不套任何衰减率公式、不假设 PTM 对角结构，是从
+    超算子积分出来的。PTM 实际**非对角**（振幅阻尼的 Λ_Z,I = −(1−e^(−t/T1))
+    ≈ −2.5e-4，布居转移特征），候选会真实遇到这些非对角元。
+
+    🔴 **v0.9.24 诚实边界 —— 生产档位残差落在机器精度**：
+    默认参数 t_gate=0.02 µs、T1/T2 ~ 60-80 µs ⇒ 无量纲演化量 |L|·t ≈ 2.5e-4，
+    RK4 从 N=5 到 N=400 残差恒为 **1.11e-16**，与步数无关 ⇒ 该残差**不可标定**
+    （与自证桩的 |Δ|≡0 在数值上无法区分）。因此「候选真在工作」不是靠生产
+    档位的残差证明的，而是靠三条**可标定**的自校锚（见
+    `lda_solver/lindblad_gate_fidelity.py`）：
+      · PTM 非对角元 Λ_Z,I ≈ −2.5e-4 逐元素比对（不是机器精度）
+      · 敏感 regime（t=200 µs，|L|t≈2.5）残差 5.6e-9，N 加倍降 16.3×（O(h⁴)）
+      · t→∞ 稳态极限 F → 0.5（完全退相干通道的平均保真度）
+    外加 harness 的反向扰动测试（自证桩扰动后 |Δ|≡0 会 FAIL）。
+
+    ⚠️ 已知边界：①T=0 热库（未含 n_th 热激发）②H=0 idle 门口径（未含脉冲
+    形状误差/泄漏/串扰）③T2 > 2·T1 属非物理输入，抛 ValueError 而非 clamp。
+    """
+    try:
+        from lda.lda_solver import lindblad_gate_fidelity as lg
+    except ImportError:  # 包内相对导入兜底（与 semivec_ng 同构）
+        _ensure_paths()
+        import lindblad_gate_fidelity as lg
+
+    p = spec.params
+    # 🔴 float() 双重包裹（v0.9.24 全量回归实测）：候选若返回 np.float64，
+    # 下游 `passed = abs(cand-golden) <= tol` 会变成 np.bool_，进而在
+    # report.format_json 抛 TypeError（与 v0.9.17 B24 同类）。模块内部已包
+    # 一层，这里再包一层作双保险——**判决链上不许出现 numpy 标量**。
+    return float(lg.average_gate_fidelity(float(p["T1"]), float(p["T2"]),
+                                          float(p["t_gate"]),
+                                          n_steps=lg.N_STEPS))
+
+
 def _load_empirical_anchor():
     """加载实证语料锚（seed_empirical.json + 社区落库增量 empirical_contributions.json）。
 
@@ -248,36 +288,56 @@ def _load_empirical_anchor():
     return EmpiricalAnchor(corpus)
 
 
+def _emp_candidate_desc(d: dict) -> str:
+    """实证锚（E 族）的候选描述串（v0.9.23 · 查登记表，不再硬编码 fdfd_ng）。
+
+    🔴 与 B 类锚走**同一张** BENCHMARK_CANDIDATES 登记表：
+    此前 E 族分支硬编码 `== "fdfd_ng"`，接新候选要改分支，且「登记了却无人引用」
+    的失配不可见。现在两边同构，`run_benchmark_falsifiability_smoke` 的
+    「已登记候选类型与实测独立锚一致」护栏即可同时覆盖 E 族。
+    """
+    fn = BENCHMARK_CANDIDATES.get(d.get("candidate")) if d.get("candidate") else None
+    if fn is None:
+        return ("harness 参考候选（占位自证：candidate≡golden，"
+                "恒 PASS，无验证价值）")
+    desc = getattr(fn, "candidate_desc", "独立候选求解器")
+    if d.get("candidate_status") == "degraded_ordinal":
+        desc += (" ⚠️降级：候选与 golden **几何不同源/精度不足**，"
+                 "仅作量级参考，不进死标量判决（诚实边界 C · R16 已证伪）")
+    return desc
+
+
 def _harness_reference_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
     """参考候选：返回 ORACLE 真值本身（正确求解器语义，同 ReferenceCandidate）。
 
     ⚠️ 占位语义：|candidate − golden| ≡ 0 ⇒ 恒 PASS，**不产生验证价值**
     （D-64 实测：E1-E7 七道 |diff| 全为 0.0）。任何宣称「锚题 PASS」的结论，
     若走的是本候选，都只能算「自洽」而不能算「验证」。
-    需要真验证的锚题须在 benchmarks.py 里显式指定 `candidate` 字段（如 fdfd_ng）。
+    需要真验证的锚题须在 benchmarks.py 里显式指定 `candidate` 字段
+    （如 semivec_ng / fdfd_ng）。
     """
     return oracle_value
 
 
-@_register_candidate(
-    "fdfd_ng",
-    "标量亥姆霍兹 FDFD 本征模 n_eff(λ) → 中心差分 n_g（独立频域求解）"
-    " ⚠️降级：直波导候选 vs 环器件 golden **几何不同源**，仅作量级参考"
-    "（candidate_status=degraded_ordinal，不进死标量判决）")
+# 🔴 v0.9.23：`fdfd_ng` **取消登记**（不再 @_register_candidate），仅保留函数。
+# 原因：E2 改用半矢量候选后，全库再无锚题引用 fdfd_ng；而
+# run_benchmark_falsifiability_smoke 护栏②断言
+#   set(BENCHMARK_CANDIDATES) ⊆ {BENCHMARK_DEFS[*].candidate}
+# （「已登记候选类型与实测独立锚一致（无登记未接线）」）
+# ⇒ 继续登记会直接判 FAIL。这是**故意的**：登记了却无人用 = 接口失配，
+#   护栏本来就该响。函数本身保留，供 run_empirical_anchor_smoke.py 直接调用
+#   复现 D-65（窗口散射 ±0.04~0.08）与 R16 证伪证据。
 def _fdfd_ng_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
     """独立候选：标量亥姆霍兹 FDFD 本征模算 n_eff(λ) → 中心差分得 n_g。
 
-    ⚠️ 本候选虽已登记，但 E2 在 benchmarks.py 中标了
-    `candidate_status="degraded_ordinal"` ⇒ 它**不计入 verified**
-    （IndependentCandidateRouter.candidate_class 先判降级再查登记表）。
-    v0.9.16（P0-3）之前它**未登记**，导致 E2 在路径①（build_harness_specs）
-    真跑本候选、在路径②（run_harness.py）却回落成自证桩 —— 两条路径各说各话。
-    登记本身不会让 verified 虚报（降级判定优先），但会让 E2 在路径②也真跑。
-
-
-    与实测 golden **完全独立**（不读取任何测量数据），构成真交叉验证：
-        实测侧：OFDR 环腔群延迟 / MZI 传输谱（实验）
-        计算侧：频域本征值 + 数值微分（独立物理求解）
+    ⚠️ **已退出判决路径**（v0.9.23）：E2 改用 semivec_ng 后本函数不再被任何
+    锚题引用，仅作历史候选保留（D-64/D-65/R16 证据复现）。
+    其已知缺陷（**保留在此，不得遗忘**）：
+      · 标量近似不辨 TE/TM（实测 TE 1.892 / TM 1.717，标量解偏高）
+      · **窗口散射 ±0.04~0.08**（仅改计算窗口 clad=1.5→4.0 µm，n_g 在
+        1.878~1.962 间散射）—— 与半矢量的 <1e-5 形成鲜明对比，
+        这正是它被换下的**首要原因**（D-65）
+      · R16（亚网格 ε 平均 + dl=24→64 细化）实测**无效**（n_g 纹丝不动）
 
     ⚠️ 网格 dl 必须由**中心波长**固定：若 dl 随扫描波长变化，差分测到的是
     网格伪变化而非物理色散（实测曾致 n_g 乱跳 5.93 / 1.85 / 1.61）。
@@ -304,6 +364,64 @@ def _fdfd_ng_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
     n2 = _neff(wl + d)
     # n_g = n_eff − λ·dn_eff/dλ（中心差分）
     return (n1 + n2) / 2.0 - wl * (n2 - n1) / (2.0 * d)
+
+
+@_register_candidate(
+    "semivec_ng",
+    "2D 半矢量本征模（准 TE，界面调和通量 + Dirichlet ghost-point）"
+    "n_eff(λ) → 中心差分 n_g —— 与实测 golden 完全独立，"
+    "低对比度段已由 A 级实证对照校准到 1e-4")
+def _semivec_ng_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """E2 独立候选：2D 半矢量本征模 n_eff(λ) → 中心差分得 n_g（v0.9.23）。
+
+    ═══ 为什么它能从「降级量级参考」升为「严格独立候选」═══
+    被换下的 fdfd_ng 有两条致命缺陷，半矢量逐个解决：
+
+      ① **窗口散射**（D-65，最致命）：FDFD 仅改计算窗口（clad 1.5→4.0 µm）
+         n_g 在 1.878~1.962 间散射 **±0.04~0.08**，几乎吃掉 tol=0.10 的全部
+         预算 ⇒ 「PASS」可能只是窗口挑得好，判决不可信。
+         半矢量实测（E2 几何，h=0.015）L=6.0/7.5/9.0 → 1.957177 / 1.957174 /
+         1.957174，**窗口散射 < 1e-5**（比 FDFD 小 4 个数量级）。
+      ② **不辨 TE/TM**：标量亥姆霍兹只有一个解，无法对上实测的 TE 1.892。
+         半矢量按偏振求解（准 TE / 准 TM 分离），与实测口径对齐。
+
+    ═══ 独立性的凭据（不读任何测量数据）═══
+      实测侧：OFDR 环腔群延迟 / MZI 传输谱（实验）
+      计算侧：2D 半矢量本征值问题 + Sellmeier 材料色散 + λ 中心差分
+      两条路径方法学不同源，|cand−golden| 是真残差。
+
+    ═══ 精度凭据（A 级实证对照，唯一凭据，缺此不可宣称）═══
+      semivec_mode_solver 自校锚③：Si₃N₄ 1.2×0.3 纯净对照组（无 SiOC，
+      全 silica 包层，R=100 µm 无弯曲，λ²/(FSR·L)=1.9666 自洽），
+      实测 n_g=1.9666 vs 计算 1.966684 ⇒ **Δ=+8.4e-5**。
+      该对照与本锚同材料体系（Si₃N₄/SiO₂）、同尺寸量级（1.2×0.3 vs 1.0×0.3），
+      故它端到端校准了「算子 + 色散 + 数值微分」整条链路。
+
+    ═══ 🔴 已知边界（必须与结论一起读）═══
+      · **残差 +0.0652 不等于精度已验证**：残差的主成分是「ring golden vs
+        直波导候选」的对象不对齐 + 制造公差（h_um ±10% 就移动 n_g ∓0.046，
+        300 nm LPCVD 膜厚公差轻松达 ±5%）。tol=0.10 里**没有多少物理裕度**。
+      · **不得用于 SOI 高对比度**：半矢量是约束变分问题 ⇒ β² 系统性偏高，
+        SOI（3.478/1.444）实测偏差 +0.0276。E1 仍保持自证桩即因于此。
+      · 材料色散：采用 Sellmeier（Si₃N₄ / SiO₂）。若关掉色散 n_g=1.9218
+        （Δ=+0.0298，反而更近）——**不据此择优**，色散是物理事实。
+    """
+    # 双路兜底（项目铁律：包内模块导入不得只依赖单一路径）
+    try:  # 优先按包路径（仓库根在 sys.path 时）
+        from lda.lda_solver import semivec_mode_solver as sv   # noqa: F401
+    except ImportError:  # 回退：把 lda_solver 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import semivec_mode_solver as sv                        # noqa: F401
+
+    p = spec.params
+    # 🔴 h_grid / L 取模块生产档位且**不随参数变化**：三个 λ 上网格与窗口必须
+    # 完全相同，否则差分测到的是网格伪变化而非物理色散（实测曾致 n_g 乱跳
+    # 5.93 / 1.85 / 1.61）。参数扰动只改几何/折射率，不改网格。
+    return sv.group_index(
+        float(p["w_um"]), float(p["h_um"]), float(p["wl_um"]),
+        n_core=float(p["n_core"]), n_clad=float(p["n_clad"]),
+        core_material="Si3N4", clad_material="SiO2",
+        h_grid=sv.H_GRID, L=sv.L_WIN)
 
 
 # ---------------------------------------------------------------------------

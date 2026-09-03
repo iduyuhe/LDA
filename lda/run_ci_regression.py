@@ -161,6 +161,11 @@ CORE_SMOKES: List[str] = [
     # 改网格/窗口/ARPACK 参数会静默失效（铁律：没被验证过的护栏不算护栏）。
     # 含 5 次 2D 本征解，实测 ~89s ⇒ 配 timeout override。
     "run_semivec_mode_smoke.py",
+    # 🔴 v0.9.26：EME 锥度求解器（B8 候选）自校锚，9 条含 3 条收敛扫描，实测 ~33s。
+    #   **入 CORE_SMOKES 的同时必须登记 `run_ci_industrial_smoke._SLOW_CORE`**
+    #   （v0.9.24 血案：semivec 漏登记 ⇒ 内部子回归 667.62s 撑破 600s ⇒ 全量
+    #   core 回归 TIMEOUT）。本条已同步登记。
+    "run_eme_taper_smoke.py",
     # ---- Lindblad 门保真度求解器（v0.9.24 · P0 自证）----
     # B10 接线 + golden 语义修正（D-66 第 8 例）的**凭据守护**：没有它，
     # ①「旧式 exp(−t(1/T1+1/(2T2))) 已被证否」②「tol 由 0.01 收紧到 1e-8 后
@@ -217,6 +222,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_semivec_mode_smoke.py": 400.0,
     # 纯 4×4 Liouvillian RK4，实测 <3s；放宽只为慢机器上的解释器启动开销
     "run_lindblad_gate_smoke.py": 180.0,
+    # EME 逐片本征解：9 条自校锚（含 dz/模式数/窗口三次收敛扫描），实测 ~33s
+    "run_eme_taper_smoke.py": 400.0,
 }
 
 

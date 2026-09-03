@@ -53,6 +53,10 @@ _SLOW_CORE = {
     # 🔴 教训：**新增慢 smoke 入 CORE_SMOKES 时，必须同步检查所有「内部递归跑
     # core 子集」的脚本**（本文件是全库唯一一处）。
     "run_semivec_mode_smoke.py",
+    # 🔴 v0.9.26 同步补登：`run_eme_taper_smoke.py`（EME 逐片本征解 + 三次收敛
+    # 扫描，实测 **~33s**）入 CORE_SMOKES 时即刻登记本表，不再重演 v0.9.24 的
+    # 「semivec 漏登记 ⇒ 子回归 667.62s 撑破 600s ⇒ 全量 core TIMEOUT」。
+    "run_eme_taper_smoke.py",
     # 递归保护：本文件自身
     "run_ci_industrial_smoke.py",
 }

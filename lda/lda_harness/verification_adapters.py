@@ -1023,6 +1023,58 @@ def _link_passivity_candidate(spec: VerificationSpec, oracle_value: Any) -> floa
     return float(max_transfer_of(res["sim"]))
 
 
+@_register_candidate(
+    "taper_eme",
+    "本征模展开（EME）逐切片解完整 Helmholtz + 模式重叠矩阵级联 —— 每片解的是"
+    "**无旁轴假设的精确横向本征问题**，与 golden 的「绝热极限 T→1」死标量比对")
+def _taper_eme_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B8 独立候选：绝热锥度传输效率 T（EME 本征模展开）。
+
+    golden = 常量 **1.0**（绝热极限：锥度足够缓变时局部基模绝热跟随 ⇒ T→1，
+             这是**能量守恒给出的物理上界**，不是任何引擎的输出）。
+    cand   = `lda_solver.eme_taper` 真解一遍：把锥度切成 N 片，每片解
+             一维横向 Helmholtz 本征问题（scipy `eigh_tridiagonal`），片内
+             精确模态传播 exp(−iβ·dz)，片间用模式重叠矩阵投影级联，
+             T = |c_out,0|²（末片基模功率占比）。
+
+    **方法学独立性**：候选全程不知道 golden 是多少，也不调用任何闭式传输公式；
+    它只解亥姆霍兹方程。golden 的「1.0」是上界，候选的 0.999953 是从
+    Maxwell 方程算出来的**实测缺口**。
+
+    🔴 **v0.9.26 四条诚实边界（均已实测）：**
+    1. **判据余量只有 4.65e-5（占 tol 1e-2 的 0.47%）**。深度绝热区 T 离 1
+       极近，本锚实际只回答「是否进入绝热极限」，**不回答精度**。
+       ⚠️ 这与 B19（余量 1.04e-4）同型：两个"上界型"锚的余量都极小。
+    2. **0.2→0.5 µm 这个几何的损耗上限仅 ~1.5%**（突变结模式重叠 0.9853）。
+       ⇒ **单独扰动 L 无法击穿 tol**：L 缩到 0.2 µm 也只到 0.993。反向测试
+       必须改成 w2=3.0/L=1.0 µm（T≈0.435）。这是几何本身的性质，非缺陷。
+    3. **短锥度区（L≲2 µm）未收敛**：箱模谱在 Δβ·L≪1 时欠采样，窗口 8/16/32
+       的 T 相差达 4e-3，且 EME 给出的 T（0.993）**高于**突变结重叠下界
+       （0.9853）。已收敛区（L≥5 µm）窗口 16→32 只差 1.4e-5。
+       单调性自校锚因此**只取 L≥5**。
+    4. **EIM 降维 + 单向近似**：垂向压成常数 n_eff ⇒ 不含垂向辐射与极化耦合；
+       只算前向模式不算背向反射。反射只会**降低** T ⇒ 对上界 golden 不会虚高。
+
+    ⚠️ 失败即抛异常上浮，绝不静默回退（IndependentCandidateRouter 既定原则）。
+    """
+    try:
+        from lda.lda_solver import eme_taper
+    except ImportError:
+        _ensure_paths()
+        import eme_taper
+
+    p = spec.params
+    # 🔴 float() 包裹：判决链上不许出现 numpy 标量（v0.9.24 B10 同类坑）
+    return float(eme_taper.taper_transmission(
+        w1=float(p["w1"]), w2=float(p["w2"]), L=float(p["L"]),
+        wl=float(p["wl"]), n_eff=float(p["n_eff"]),
+        n_clad=float(p["n_clad"]),
+        # 🔴 数值档位取**求解器生产档位常量**，不随 spec 参数变化：
+        #    参数扰动只改几何/波长，不改网格（同 semivec 的网格纪律）。
+        dz=eme_taper.DEFAULT_DZ, m_modes=eme_taper.DEFAULT_MMODES,
+        dx=eme_taper.DEFAULT_DX, window=eme_taper.DEFAULT_WINDOW_UM))
+
+
 def harness_perturbed_candidate(rel_err: float):
     """扰动候选：golden·(1+rel_err)——用于演示 fail 检测（同 PerturbedCandidate）。"""
     def _cand(spec: VerificationSpec, oracle_value: Any) -> float:

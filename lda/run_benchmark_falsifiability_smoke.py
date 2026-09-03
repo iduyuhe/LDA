@@ -145,9 +145,16 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 #   本轮是**真新增**（B10 此前为自证桩）⇒ strict +1、stub −1（48 守恒）。）
 # → v0.9.25 接 B19（无源链路无增益上界：lda_chain 真跑全链路 max|T| ↔ 常量
 #   上界 1.0，cmp='le'）后 19。🔴 本轮**首开不等式锚（cmp='le'）接线**——
-#   golden 是常量上界 1.0，candidate 是整条工程师序，方法学独立最强一档；
-#   且顺带修掉 path ① 硬编码 cmp_abs 导致 B19 假 FAIL 的缺陷（compare_fn_for）。
-MIN_INDEPENDENT = 19
+# → v0.9.26 接 B8（绝热锥度传输效率：EME 逐切片解完整 Helmholtz + 模式重叠
+#   级联 ↔ 绝热极限常量上界 1.0）后 20。
+#   🔴 本轮的**真教训是两次证否**：首选方案 BPM（分步傅里叶旁轴束传播）先因
+#   dz 过大掉到 T=0.33，修完仍**物理趋势反号**（L↑⇒T↓：0.9936@25→0.9729@200），
+#   且减小 dz 不收敛 ⇒ 判为**模型误差**弃用（旁轴展开参数在窄端达 65%）。
+#   换 EME 后又连撞三个坑：①固定 n_slices ⇒ Δw 与 L 无关且 Δβ·dz 欠 5 倍采样
+#   ⇒ T 与 L 完全无关（零判别力）；②折射率剖面用硬判据 ⇒ dx=0.02 时半宽只跨
+#   7.5 个网格 ⇒ 锥度被离散成 8 次突跳；③倏逝模 sqrt 取主值 +i|β| ⇒
+#   exp(+|β|dz) **指数增长**（L=5µm 溢出到 4e30）。三条都写在 eme_taper.py 里。
+MIN_INDEPENDENT = 20
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:
@@ -316,6 +323,31 @@ def main() -> int:
                   False, "B19 不在 specs（BENCHMARK_DEFS 缺失）")
     except Exception as e:  # noqa: BLE001 —— 反向自检失败即判 FAIL，不静默跳过
         check("B19 反向：注入增益（弯曲损耗翻负）⇒ max|T|>1 必被抓（cmp='le' 未放水）",
+              False, f"反向自检异常：{str(e)[:80]}")
+
+    # ③″ B8 反向（专用 · 上界型锚的"坏"是**破坏绝热性**）：
+    #   🔴 **不能只扰 L**：0.2→0.5 µm 这个几何的损耗上限只有 ~1.5%（突变结模式
+    #   重叠 0.9853），L 从 200 µm 缩到 0.2 µm 也只到 0.993 —— **仍在 tol=1e-2
+    #   内**，逐参数 ±10% 扰动更是纹丝不动。故反向用例取同一参数空间内的
+    #   **粗暴突变结** w2=3.0 / L=1.0 µm ⇒ T≈0.435 ⇒ |T−1|=0.565 ≫ tol ⇒ 必 FAIL。
+    #   这证明本锚抓的是"绝热性"这个物理量，而不是恒定发 PASS。
+    #   （同理 B8 不进 PERTURB_SPEC 的逐参数扰动表：任何 ±10% 扰动都仍绝热。）
+    try:
+        if "B8" in by_id:
+            _sp8 = _clone_with(_clone_with(by_id["B8"], "w2", 3.0), "L", 1.0)
+            _ov8 = by_id["B8"].oracle_fn(by_id["B8"].params)
+            _cv8 = cand_map["B8"](_sp8, _ov8)
+            _out8 = run_verification(_sp8, cand_map["B8"], oracle_value=_ov8)
+            _caught8 = (not _out8.passed)
+            check("B8 反向：破坏绝热（w2=3.0/L=1.0µm）⇒ T≪0.99 必被抓",
+                  _caught8,
+                  f"T={_cv8:.5f}（|T−1|={abs(_cv8 - 1.0):.4f} > tol 判 FAIL✅）"
+                  if _caught8 else f"T={_cv8:.5f} 仍 PASS❌（护栏抓不住非绝热）")
+        else:
+            check("B8 反向：破坏绝热（w2=3.0/L=1.0µm）⇒ T≪0.99 必被抓",
+                  False, "B8 不在 specs（BENCHMARK_DEFS 缺失）")
+    except Exception as e:  # noqa: BLE001 —— 反向自检失败即判 FAIL，不静默跳过
+        check("B8 反向：破坏绝热（w2=3.0/L=1.0µm）⇒ T≪0.99 必被抓",
               False, f"反向自检异常：{str(e)[:80]}")
 
     # ④ 灵敏度登记：最小可检出扰动（把验证强度显式化）

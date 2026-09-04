@@ -34,6 +34,15 @@ _MIXED_TAIL_WITH_DEGRADED = (
     "「误差」列恒为 0、恒 PASS，**零验证价值**），**{n_deg} 项**为降级量级参考"
     "（有独立候选但与 golden 几何不同源/精度不足，**不进死标量判决**）。")
 
+# C-1 口径分裂诚实披露（v0.9.30 · T-5）：路径①（本报告默认）与路径②（--ai）是两套候选体系，
+# 对外只写一个数字会制造「宣称 vs 可复现」缺口。在路径①报告里显式交代路径②的口径。
+_DUAL_PATH_NOTE = (
+    "> 📌 **两条判决路径口径不同（C-1 诚实披露 · v0.9.30 · T-5）**：本报告的 `verified` "
+    "来自**路径①**（`IndependentCandidateRouter`，方法学不同源的独立频域候选）。\n"
+    "> **路径②** `run_harness.py --ai`（L3 AI 写内核 demo，离线回退 `_local_approx`）实测 "
+    "`verified=2/48`（仅 B1/B4 真实现且 PASS，余 46 道为 `return golden` 自证桩）。\n"
+    "> 两路径候选体系本就不同，**均为如实口径、不构成虚报**；对外「独立候选 {n_ind}/48」特指路径①。")
+
 
 def is_self_consistent(meta):
     """判断本次运行是否走占位自证候选（candidate≡golden）。"""
@@ -117,6 +126,11 @@ def format_markdown(results, meta=None):
             _tail = ((_MIXED_TAIL_WITH_DEGRADED if _n_deg else _MIXED_TAIL_STUB_ONLY)
                      .format(n_stub=_n_stub, n_deg=_n_deg))
             lines.append(_MIXED_WARNING.format(n_ind=_n_ind, tail=_tail))
+            # C-1 口径分裂诚实披露（v0.9.30 · T-5）：仅在路径①报告里交代路径②口径，
+            # 避免两份报告各说各话、读者误以为「23 vs 2」是虚报。
+            _cand_name = str((meta or {}).get("candidate", ""))
+            if "IndependentCandidateRouter" in _cand_name:
+                lines.append(_DUAL_PATH_NOTE.format(n_ind=_n_ind))
             lines.append("")
     elif _sc:
         lines.append(_SELF_CONSISTENT_WARNING)

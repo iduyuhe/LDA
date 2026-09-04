@@ -1,12 +1,15 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-04T06:53:49
+- 生成时间：2026-09-04T07:46:08
 - L0_IR：(内置默认 B1–B4,B8)
 - candidate：IndependentCandidateRouter(独立候选 23 道: B1,B10,B12,B13,B14,B15,B19,B20,B22,B23,B24,B25,B26,B27,B28,B3,B4,B8,B9,E2,S13,S7,S8；降级量级参考 0 道: 无)
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - self_consistent：True
 
 > ⚠️ **本报告不构成验证结论**：本次运行中 **23 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **25 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 23 项。
+> 📌 **两条判决路径口径不同（C-1 诚实披露 · v0.9.30 · T-5）**：本报告的 `verified` 来自**路径①**（`IndependentCandidateRouter`，方法学不同源的独立频域候选）。
+> **路径②** `run_harness.py --ai`（L3 AI 写内核 demo，离线回退 `_local_approx`）实测 `verified=2/48`（仅 B1/B4 真实现且 PASS，余 46 道为 `return golden` 自证桩）。
+> 两路径候选体系本就不同，**均为如实口径、不构成虚报**；对外「独立候选 23/48」特指路径①。
 
 ## 汇总：48/48 通过（独立候选 23 项中 **23 项通过=已验证** · 25 项自证闭环，**非验证结论**）
 

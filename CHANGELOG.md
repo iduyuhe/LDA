@@ -1,5 +1,36 @@
 # Changelog
 
+## v0.9.37（2026-09-04 · T-7 一键复现 · 一条命令复现「验证可信度」 · 三分类不变：23 / 0 / 25）
+
+**动机**：外部人（含杜先生本人跨会话）长期无法低成本复现 LDA 的验证可信度——知道 README 宣称「23 道严格独立」，但要自己跑出这个数需要知道跑哪几个脚本、装对版本、翻 JSON。T-7 把它压成一条命令：**`pip install lda-design` 之后 `python lda/quickverify.py`**。
+
+### 交付：`lda/quickverify.py` 编排壳（~330 行，零新判据）
+
+四步流水（全部 subprocess 隔离、cwd=lda/、临时目录收 harness 报告）：
+
+1. **环境自检**：Python ≥ 3.12（PEP 701 语法下界）+ 必装 numpy/scipy/jsonschema；可选 torch/numba/matplotlib/pandas/networkx/tqdm 缺席**仅告警不阻断**（全仓延迟导入已优雅降级）。
+2. **版本核对**：pyproject 声明版本 ≡ 运行时 `importlib.metadata` 版本，不一致即 FAIL。
+3. **核心验证**（复用 CI core 守护的既有 smoke/harness 权威入口——**编排壳不重写判据，杜绝第二套判决路径**）：
+   - `run_harness.py`：48 锚三分类实跑，从报告 `summary.candidate_class_totals` 读权威三分类（非顶层 verified）；
+   - `run_count_consistency_smoke.py`：README 宣称计数 ≡ 代码实数；
+   - `run_requires_python_smoke.py`：requires-python 声明 ≥ 语法下界。
+4. `--full` 追加 `run_ci_regression.py --tag core`（95 条，~25min）。
+
+**实测快验三步全绿**：run_harness 15.71s + count 0.3s + requires_python 0.65s，48 锚三分类 **23 严格独立 / 0 降级 / 25 自证桩 · 判决回路 48/48 闭合**。`--json out.json` 出机器可读摘要。
+
+### 🔴 首跑即抓真实外部坑（T-7 最有价值的第一手证据）
+
+quickverify 开发期在 CI 环境实测：**`lda-design` 已装版本停留在 0.8.28**（比 pyproject 0.9.36 落后 8 个版本）⇒ 版本核对当场 FAIL ⇒ `pip install --force-reinstall --no-deps .` 修复。这正是外部人最容易踩的坑——README 拉的是最新代码、pip 装的是 PyPI 旧包，代码与声明版本错位时行为不可预期；从此由机器**显式捕获**而非静默错版本。
+
+### 护栏会响（反向测试证明）
+
+- `--selfcheck` 内建三判据：**A** 正向环境必装齐全；**B** 反向——注入 blocked 集合模拟缺 numpy/scipy/jsonschema ⇒ `_check_env` 必须报 missing（屏蔽后仍 ok=True 即假护栏）；**C** pyproject 版本串解析非空（守卫前提不空）。
+- 新 CI 包装 `lda/run_quickverify_smoke.py`（秒级，不跑子进程验证——那部分归 quickverify 主模式覆盖），退出码非 0 或输出无 PASS 即 FAIL。入 CI core **94→95**。
+
+### 本版未动
+
+验证强度零变化（未加锚、未改判据、未动 tol），三分类保持 23/0/25。规模基线、P0-2b 产出全部原样。README 顶行 + 快速开始 ⓪ + 账本 94→95 同步。
+
 ## v0.9.36（2026-09-04 · P0-2b LVS 短路检测宽相根治 · 近线性 O(n^1.0) · 判决语义零变化 · 三分类不变：23 / 0 / 25）
 
 **起因**：v0.9.34 常数优化后 1M LVS 仍 88.93s（O(n^1.74)），狭长阵列（32 列×数万行链）下标量 cell 被长轴拉爆导致跨行候选对爆炸。

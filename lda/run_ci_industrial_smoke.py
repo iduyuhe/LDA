@@ -98,24 +98,28 @@ def _detect_fail():
                 "verdict": f"坏 smoke 被检出（fail={r['summary']['fail']}）"
                            if detected else "坏 smoke 漏检（FAIL）"}
     finally:
-        # D-109 根治：沙箱安全删除钩子可能抛 SAFE_DELETE_FAIL 致 os.remove 失效
-        # → 文件残留且每次 all 集重新创建（D-101 曾清理一次）。多重删除策略：
-        #   os.remove（可能被钩子拦截）→ os.unlink 兜底 → 仍失败则改名 .bak
-        #   隔离（不再被 _discover_all 发现），绝不残留可被发现的坏 smoke。
+        # D-109 根治：沙箱安全删除钩子可能抛 SAFE_DELETE_FAIL / SystemExit 致
+        # os.remove 失效 → 文件残留且每次 all 集重新创建（D-101 曾清理一次）。
+        # 多重删除策略：os.remove（可能被钩子拦截）→ os.unlink 兜底 → 仍失败
+        # 则改名 .bak 隔离（不再被 _discover_all 发现），绝不残留可被发现的
+        # 坏 smoke。
+        # 🔴 v0.9.37 加固：钩子实测抛 **SystemExit(1)**（BaseException 家族，
+        #    非 Exception）——`except Exception` 捕获不到 ⇒ 进程裸退出且 .bak
+        #    隔离兜底不执行 ⇒ 残留 + 本 smoke 假 FAIL。故全部改捕 BaseException。
         for _ in range(3):
             if not os.path.exists(dst):
                 break
             try:
                 os.remove(dst)
-            except Exception:  # noqa: BLE001
+            except BaseException:  # noqa: BLE001  # SystemExit 亦须兜住
                 try:
                     os.unlink(dst)
-                except Exception:  # noqa: BLE001
+                except BaseException:  # noqa: BLE001
                     time.sleep(0.5)
         if os.path.exists(dst):
             try:
                 os.rename(dst, dst + ".bak")
-            except Exception:  # noqa: BLE001
+            except BaseException:  # noqa: BLE001
                 pass
 
 

@@ -37,6 +37,10 @@ CORE_SMOKES: List[str] = [
     # 裁判 + 标准题
     "run_harness.py",                        # B1-B13 物理定律锚 + E1-E3 实证锚（21 题）
     "run_benchmark_falsifiability_smoke.py",  # 反自证桩护栏：独立候选数 + 10% 扰动必 FAIL（v0.9.14 P0-1，84→85）
+    # 🔴 v0.9.37（T-7）：一键复现入口 quickverify 自身守护——正向环境 OK +
+    #   反向（注入 blocked 模拟缺依赖）必须报 missing + 版本核对非空。
+    #   秒级（不跑子进程验证，那部分由 quickverify 主模式覆盖）。core 94→95。
+    "run_quickverify_smoke.py",
     "run_mcp_smoke.py",                      # L1 协议层（MCP 工具路径，D-104 入 core）
     "run_l1_agent_smoke.py",                 # L1 协议层全链路（KernelGateway + L0 IR + candidate，D-105 入 core）
     "run_agent_loop_smoke.py",               # agent 自迭代设计闭环（DesignAgent「AI for AI」最小实证，D-106 入 core）

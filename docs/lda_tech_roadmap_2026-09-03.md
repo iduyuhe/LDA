@@ -154,7 +154,7 @@ n 每加倍残差降 ~16× ⇒ **严格 O(h⁴)**，与 RK4 标称阶一致 ⇒ 
 |---|---|---|---|
 | **T-7** 🔥 | **一键复现** | 外部人现在跑不起来：① `requires-python` 错 ② `fdtd3d_numba.py:27` numba **硬 import** 无 try 兜底 ③ DC/YBranch **硬依赖 torch CUDA** ④ CI 解释器混乱（3.11 vs 3.13） | `pip install lda-design` + 一条命令 → 复现「88/88 + 独立候选 N/48」。并把 T-1 的普查逻辑一并开放 |
 | **T-8** | **device 交叉验证去 GPU** | `DeviceLibrary().verify_all(mode='live')` 无 GPU 时**只能演示 1 个**（Ring），其余 4 个 SKIP | 5 个器件全部可现场演示 + 全进 CI（DC/YBranch 改 numpy/numba-CPU 候选；WG/Bragg 加 `medium` 轻量档） |
-| **T-9** | **锚题覆盖矩阵** | 22 引擎 + 11 包 = 33 类，48 道锚。但「哪类被覆盖、哪类是空白」**从未做过矩阵** | 产出覆盖矩阵，标出零覆盖区 —— 这比再加 4 道锚更能说明验证体系的完备性 |
+| **T-9** ✅ | **锚题覆盖矩阵** | 22 引擎 + 11 包 = 33 类，48 道锚。但「哪类被覆盖、哪类是空白」**从未做过矩阵** | ✅ 已产出 `docs/lda_anchor_coverage_matrix_2026-09-04.md`（生成器 `lda/run_anchor_coverage_matrix.py` 可复现）：覆盖 21/22 引擎 + 7/11 包；**零覆盖** = PhaseShifter（唯一零锚引擎，建议 D-73 升格 B29）+ readout_fidelity/mixed_system/wdm_coupler/splitter_readout；标出 K 证据（E-YBRANCH-LOSS/E-GRATING-EFF/D-73 判决锚在 48 集外）与名义覆盖桩 |
 
 ### 3.3 不做（维持纪律）
 

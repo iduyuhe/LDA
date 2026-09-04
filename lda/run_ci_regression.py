@@ -145,6 +145,14 @@ CORE_SMOKES: List[str] = [
     "run_second_tier_smoke.py",
     # LVS 签核（v0.8.24：版图-原理图一致性 · 签核级 · 版图差距 #5 + S9 锚）
     "run_lvs_smoke.py",
+    # LVS 短路检测宽相等价护栏（P0-2b · v0.9.36：几何均值 cell 退化根治守卫）
+    #   生产 _collect_cross_shorts（线段网格宽相）vs naive O(n²) 双重循环真值
+    #   逐字节一致。防「提速改 cell 却悄悄改变短路集合」的静默回归（铁律：
+    #   没被验证过的护栏不算护栏）。覆盖单集合/跨层/共享端点/长跨/狭长阵列
+    #   含反例。实测 <60s（elongated 800 行 naive 超时会止步 200 行）。
+    #   🔴 教训：根级 verify_lvs_cross_equiv.py 曾内嵌旧标量 cell 副本、
+    #   根本没测生产代码 ⇒ 护栏必须测真实现，不是「看起来像实现」的副本。
+    "run_lvs_cross_equiv_smoke.py",
     # 千器件规模扩展（v0.8.26：版图差距 #7 收官 · S11 规模锚）
     "run_scale_smoke.py",
     # 千器件芯片级演示（v0.8.27：千器件版图接入演示 · GDS/DRC/LVS 双闸）

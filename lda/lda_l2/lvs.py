@@ -227,14 +227,16 @@ def _paths_cross(pts1, pts2, bb1=None, bb2=None) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# v0.8.44 · 线段网格短路检测（cross_shorts O(n²) → O(n) · 判决语义零变化）
-#   旧 v0.8.39 按「路径整体 bbox」分桶：长链/跨行跳线的 bbox 横跨整版图 →
-#   触发退化全对回退，规模翻倍耗时 ×12（实测 cProfile）。
-#   新法按「线段（segment）」分桶：每条线段落入其真实覆盖的所有 cell。
-#   相交的两线段必共享 ≥1 个 cell（交点所在 cell 或相邻）→ 候选对是真实
-#   相交对的【超集】→ 精确判决仍走 _paths_cross → 短路集合逐字节一致。
-#   纯 stdlib，cell = 总 bbox 跨度 / sqrt(线段总数)，自适应规模。
-#   等价性由 verify_lvs_cross_equiv.py（46 组随机/边界/长链断言）铁证。
+# v0.9.36 · 线段网格宽相（几何均值 cell · 狭长阵列退化根治 · 判决语义零变化）
+#   v0.8.44 单标量 cell = max(span_x,span_y)/√N：狭长版图 span_y 巨大 → cell 被
+#   拉到数百µm → 每行落同格 → 跨行候选爆炸（1M≈88.93s，O(n^1.74)）。
+#   v0.9.35 试过按轴独立 cell_x/cell_y：把全宽段碎成上千 x 格 → 1M 实测 771s
+#   （8.7× 回退，已废弃）。正确做法：**几何均值 cell = √(span_x·span_y)/√N**，
+#   即均匀网格目标（每格≈1段）。狭长版图 span_x 小 → cell 自动缩到行距量级
+#   （~28µm），跨行不再同格，退化根除；同时保「真相交对」超集。共线（一维）
+#   几何均值→0，退回 max(span)/√N 防 cell 塌成 1e-6。相交两段必共享 ≥1 个 cell
+#   （交点所在 cell）→ 候选对是【超集】→ 精确判决仍走 _paths_cross ⇒
+#   短路集合逐字节一致。等价性由 run_lvs_cross_equiv_smoke.py 铁证。
 # ---------------------------------------------------------------------------
 def _collect_cross_shorts(paths_by_id: Dict[str, List[Tuple[float, float]]],
                           other: Optional[Dict[str, List[Tuple[float, float]]]] = None,
@@ -270,7 +272,7 @@ def _collect_cross_shorts(paths_by_id: Dict[str, List[Tuple[float, float]]],
     if not segs:
         return []
 
-    # 总 bbox → 自适应 cell
+    # 总 bbox → 自适应 cell（v0.9.36：几何均值，根治狭长退化）
     xmin = ymin = float("inf")
     xmax = ymax = float("-inf")
     for (_, _, a, b) in segs:
@@ -283,9 +285,17 @@ def _collect_cross_shorts(paths_by_id: Dict[str, List[Tuple[float, float]]],
                 xmax = px
             if py > ymax:
                 ymax = py
-    span = max(xmax - xmin, ymax - ymin, 1e-9)
+    span_x = max(xmax - xmin, 0.0)
+    span_y = max(ymax - ymin, 0.0)
     nseg = len(segs)
-    cell = max(span / max(math.sqrt(nseg), 1.0), 1e-6)
+    denom = max(math.sqrt(nseg), 1.0)
+    # 几何均值 cell = √(span_x·span_y)/√N：均匀网格目标（每格≈1段）。
+    # 狭长版图 span_y 巨大但 span_x 小 → cell 缩到行距量级，跨行不再同格。
+    # 共线（一维，min span≈0）时几何均值→0，退回 max(span)/√N 防 cell 塌成 1e-6。
+    if min(span_x, span_y) < 1e-9:
+        cell = max(max(span_x, span_y) / denom, 1e-6)   # 1D 退化
+    else:
+        cell = max(math.sqrt(span_x * span_y) / denom, 1e-6)
 
     # 入格：每条线段落入其覆盖的所有 cell（交点必落共享 cell）
     grid: Dict[Tuple[int, int], List[int]] = {}
@@ -301,7 +311,6 @@ def _collect_cross_shorts(paths_by_id: Dict[str, List[Tuple[float, float]]],
     p_a = paths_by_id
     p_b = paths_by_id if other is None else other
     # v0.9.34：每条折线的 bbox **只算一次**并复用（见 _paths_cross 说明）。
-    # 同一 net 会在大量候选对里被重复比较，按对重算是纯常数浪费。语义零变化。
     bb_a = {nid: _bbox_of(pts) for nid, pts in p_a.items()}
     bb_b = bb_a if other is None else {nid: _bbox_of(pts)
                                        for nid, pts in p_b.items()}

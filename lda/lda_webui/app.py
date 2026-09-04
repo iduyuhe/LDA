@@ -2790,26 +2790,76 @@ def capability_demos_run():
     }
 
 
+class EcosystemBusy(Exception):
+    """/api/ecosystem 的 harness 重算正被别的请求占用（并发护栏 → 429）。"""
+
+
+_ECO_HARNESS_LOCK = threading.Lock()
+_ECO_HARNESS_CACHE = {}          # {"v": (total, passed), "ts": float}
+_ECO_HARNESS_TTL = 300.0
+
+
+def _eco_harness_snapshot():
+    """48 道物理定律锚全量实跑快照。
+
+    🔴 v0.9.33 性能/可用性修复：本函数本地实测 **15.3s**
+    （E2 半矢量本征解单道 12.0s + B8 2.7s，其余 46 道合计仅 0.57s）。
+    而 /api/ecosystem 是**无鉴权公开 GET**，每次请求都全量重跑 48 道锚，
+    等于在 ThreadingHTTPServer 下一个请求占满线程 15s，并发即打爆进程——
+    与 /api/cpo_array、/api/benchmark_crosscheck 属同一类敞口，此前加固漏掉本端点。
+
+    纪律（与 _BMCC_* 同款）：串行锁（同时至多一个重算在跑，其余快速失败）
+    + TTL 缓存。**只缓存 harness 部分**：community 是活数据
+    （contributions.json / landed.json），缓存整包会让刚提交的提案在快照里缺席。
+    """
+    def _fresh():
+        return (_ECO_HARNESS_CACHE.get("v") is not None
+                and (time.time() - _ECO_HARNESS_CACHE.get("ts", 0.0))
+                < _ECO_HARNESS_TTL)
+
+    if _fresh():
+        v = _ECO_HARNESS_CACHE["v"]
+        return v[0], v[1], True
+    if not _ECO_HARNESS_LOCK.acquire(timeout=1.0):
+        raise EcosystemBusy("harness 重算忙，请 1-2 秒后重试")
+    try:
+        if _fresh():        # 双检：等锁期间可能已被别的线程算完
+            v = _ECO_HARNESS_CACHE["v"]
+            return v[0], v[1], True
+        from lda_harness.verification_adapters import build_harness_specs
+        from lda_harness.verification_spec import run_verification
+        specs, cand_map = build_harness_specs()
+        total = len(specs)
+        passed = 0
+        for spec in specs:
+            try:
+                out = run_verification(spec, cand_map[spec.spec_id])
+                if out.passed:
+                    passed += 1
+            except Exception:  # noqa: BLE001
+                pass
+        _ECO_HARNESS_CACHE["v"] = (total, passed)
+        _ECO_HARNESS_CACHE["ts"] = time.time()
+        return total, passed, False
+    finally:
+        _ECO_HARNESS_LOCK.release()
+
+
 def ecosystem_status():
     """D-93 生态共建框架快照：harness 题库(含 B14-B18) + 主权依赖 A/B/C + Registry 接口自检。
 
     诚实边界：真实晶圆厂 NDA-PDK 对接属发动期事项(D-62)，暂缓；本接口只暴露
     Registry 地基与主权分级清单，供社区/退休专家/晶圆厂经统一入口流入真实数据，
     不在此硬编码任何商业 PDK 参数。
+
+    v0.9.33：harness 题库改走 `_eco_harness_snapshot()`（TTL 300s 缓存 + 串行锁），
+    响应新增 `harness.cached` / `harness.compute_ms` **如实标注本次是否命中缓存**，
+    不做「秒回即假装刚跑过」的假象。
     """
     # --- harness 题库（物理定律锚，B1-B18）---
-    from lda_harness.verification_adapters import build_harness_specs
-    from lda_harness.verification_spec import run_verification
-    specs, cand_map = build_harness_specs()
-    total = len(specs)
-    passed = 0
-    for spec in specs:
-        try:
-            out = run_verification(spec, cand_map[spec.spec_id])
-            if out.passed:
-                passed += 1
-        except Exception:
-            pass
+    _t0 = time.time()
+    total, passed, _h_cached = _eco_harness_snapshot()
+    _h_ms = round((time.time() - _t0) * 1000, 2)
     new_ids = ["B14", "B15", "B16", "B17", "B18"]
     new_benchmarks = [{
         "id": k, "title": BENCHMARK_DEFS[k].get("title"),
@@ -2888,7 +2938,14 @@ def ecosystem_status():
         rpolicy = {}
 
     return {
-        "harness": {"total": total, "passed": passed, "new_ids": new_ids},
+        "harness": {"total": total, "passed": passed, "new_ids": new_ids,
+                    "cached": _h_cached, "compute_ms": _h_ms,
+                    "cache_ttl_s": _ECO_HARNESS_TTL,
+                    "honest_note": (
+                        "48 道锚全量实跑本地实测 15.3s（E2 半矢量本征解 12.0s + "
+                        "B8 2.7s），本端点为无鉴权公开 GET，故按 TTL 缓存复用；"
+                        "cached=true 表示本次直接返回 TTL 内的上次实跑结果，"
+                        "非本次重算。")},
         "new_benchmarks": new_benchmarks,
         "sovereign": {**sov, "total": sov_total},
         "registry": {"added": added, "query_soi": len(q_soi), "stats": stats},

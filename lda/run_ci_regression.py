@@ -92,6 +92,17 @@ CORE_SMOKES: List[str] = [
     "run_benchmark_crosscheck_report.py",
     # 芯片级版图导出增强（v0.8.11d：IO 光栅接入 + 版图统计 + 芯片级 DRC 正负例）
     "run_chip_layout_smoke.py",
+    # 🔴 v0.9.33（P0-1）：层次化 GDS 导出。重复单元 → cell + AREF（CPO 250k
+    #   实测 897,600 元素/97.45MB → 331 元素/36KB，降 99.96%）。判据含
+    #   **几何零丢失**（最危险失败模式是压缩时悄悄丢几何，元素数变小反而
+    #   更像"成功"）、非规则设计回退 flat 逐字节一致、DRC/LVS 判决不受影响。
+    #   反向测试：删一个 cell 几何 ⇒ 判据精确报 74 个缺失。实测 ~10s。
+    "run_hier_gds_smoke.py",
+    # 🔴 v0.9.32（P0-0）：IO 光栅耦合器几何定位。此前 boundary 分支漏加端口
+    #   偏移 ⇒ 光栅齿全堆局部原点（CPO 250k 有 174,080 个齿错位、占元素
+    #   19.4%），而体积/元素数断言因器件主体走 path 恒 PASS，缺陷潜伏至今。
+    #   判据 A/B/C/D 经反向测试（缺陷态 5/10 亮红）证明会响。实测 <5s。
+    "run_io_grating_offset_smoke.py",
     # loss/效率类引擎（v0.8.11e：实证锚 9 条语料全对照 + 物理合理性）
     "run_loss_engine_smoke.py",
     # 系统级锚（Phase 0 · Merge-0：S1 功率预算 + 防自证负例）

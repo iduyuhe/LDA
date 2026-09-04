@@ -140,13 +140,43 @@ def main() -> int:
           lvs_mis["verdict"] == "REJECT", f"{lvs_mis['verdict']}")
 
     # ⑨ GDS round-trip
+    # 🔴 v0.9.33 断言语义修正：层次化后 `n_elements` 是**压缩后**的编码元素数
+    #    （384 器件小阵列 → 203，CPO 250k → 331），**不再 ≥ 器件数**。
+    #    原断言 `n_elements >= expect_dev` 隐含「flat 展开」假设，层次化下必然
+    #    假红。改为按 **parse_gds_polygons 展开后的几何数** 判决 —— 这样
+    #    flat 与层次化两条路径用同一判据，且比原断言更强（验证几何完整性，
+    #    而非编码记录数；若 AREF 展开有 bug，这里会直接暴露）。
     g = export_chip_gds(link, placement, routes)
     st = g["gds_stats"]
-    check("⑨ GDS round-trip 可解析",
+    g_flat = export_chip_gds(link, placement, routes, with_hierarchy=False)
+    n_flat_elem = g_flat["gds_stats"]["n_elements"]
+    from lda_l2.gds_export import parse_gds_polygons   # 默认 expand_refs=True
+    # 🔴 只统计 **top_structures**（未被引用者）。展开后 cell 结构仍保留自身
+    #    几何，全结构求和会把 cell 那份重复计入（实测多 202 个）。
+    pg = parse_gds_polygons(g["gds_bytes"])
+    n_geo = sum(len(pg["structures"][n]) for n in pg["top_structures"])
+    check("⑨ GDS round-trip 可解析（按展开几何计数，兼容层次化）",
           isinstance(g["gds_parse"], dict)
           and g["gds_parse"].get("n_structures", 0) >= 1
-          and st["n_elements"] >= expect_dev,
-          f"struct={st.get('n_structures')} elem={st['n_elements']}")
+          and n_geo >= expect_dev,
+          f"struct={st.get('n_structures')} 编码元素={st['n_elements']} "
+          f"展开几何={n_geo}")
+
+    # ⑨b/c 层次化：等价性 + 降幅（两条路径各有断言，不会因未触发而空过）
+    if g["hierarchy"]["applied"]:
+        check("⑨b 层次化：展开几何数 ≡ flat 元素数（几何零丢失）",
+              n_geo == n_flat_elem,
+              f"展开 {n_geo} vs flat {n_flat_elem}")
+        check("⑨c 层次化降幅 > 50%（小阵列）",
+              st["n_elements"] < n_flat_elem * 0.5,
+              f"{st['n_elements']} vs {n_flat_elem} "
+              f"（降 {(1 - st['n_elements'] / n_flat_elem) * 100:.1f}%）")
+    else:
+        check("⑨b 层次化未触发时逐字节回退 flat（如实标注原因）",
+              st["n_elements"] == n_flat_elem
+              and g["gds_bytes"] == g_flat["gds_bytes"]
+              and bool(g["hierarchy"]["reason"]),
+              f"reason={g['hierarchy']['reason']}")
 
     # ⑩ 十万配置推导（不实跑，CI 快）
     big = CPOArrayConfig()

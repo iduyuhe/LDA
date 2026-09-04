@@ -1,6 +1,6 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-04T08:18:38
+- 生成时间：2026-09-04T12:52:32
 - L0_IR：(内置默认 B1–B4,B8)
 - candidate：IndependentCandidateRouter(独立候选 23 道: B1,B10,B12,B13,B14,B15,B19,B20,B22,B23,B24,B25,B26,B27,B28,B3,B4,B8,B9,E2,S13,S7,S8；降级量级参考 0 道: 无)
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）

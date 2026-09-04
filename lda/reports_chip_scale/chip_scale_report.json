@@ -2,7 +2,7 @@
   "title": "千器件芯片级演示（n=1000 · 版图 7 差距收官）",
   "n_devices": 1000,
   "n_nets": 999,
-  "gds_bytes": 95136,
+  "gds_bytes": 91198,
   "chip_bbox_um": [
     -10.0,
     -5.0,
@@ -44,6 +44,6 @@
       }
     }
   },
-  "time_total_s": 0.08,
+  "time_total_s": 0.09,
   "accepted": true
 }

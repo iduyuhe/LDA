@@ -48,6 +48,14 @@ HEAVY_GET = {
     "cpo_array",
 }
 
+# v0.9.33：冷启动耗时的重计算 GET——进入断言循环前必须先各打一次把 TTL 缓存
+# 预热（耗时给足 120s）。否则通用 GET 循环会用 15s 超时硬撞冷启动，得到一个
+# 与代码质量无关的 flaky 红（v0.9.33 首轮回归即连中 ecosystem / benchmark_crosscheck
+# 两个端点，二者冷启动实测 15.3s / 9.1s，均与本次改动无关）。
+# ⚠️ 预热不是放宽标准：真正被断言的是「第二次必须命中缓存且秒回」
+# （见 `_check_heavy_get_caches`），那才是无鉴权公开 GET 的 DoS 护栏。
+HEAVY_WARMUP = ["/api/ecosystem", "/api/benchmark_crosscheck"]
+
 
 def _extract_routes():
     """P2 路由拆分后，/api/* 路由表已外置到 lda_webui/routes.py。
@@ -168,7 +176,8 @@ ECOSYSTEM_REQUIRED_FIELDS = [
     "community.review_policy.min_quorum",
     "community.review_policy.strict_dedup",
     "community.published", "community.publish_pending",
-    "community.landed_count", "community.honest_note",
+    # v0.9.33 新增：缓存契约字段——无鉴权公开 GET 不得每次请求都重跑 48 道锚
+    "harness.cached", "harness.compute_ms", "harness.cache_ttl_s",
 ]
 
 # D-108 实证锚字段存在性断言（面板 57 渲染硬依赖，D-62 新增端点此前无字段门禁）：
@@ -213,9 +222,45 @@ def _check_empirical_fields(base):
     return checks
 
 
+def _check_heavy_get_caches(base):
+    """v0.9.33 重计算 GET 的**缓存护栏**断言（无鉴权公开 GET 的 DoS 护栏）。
+
+    被断言的性质：这些端点冷启动要跑 9~15s 的真内核，属无鉴权公开 GET，
+    因此**重复请求必须命中 TTL 缓存秒回**，绝不能每次请求都重算——
+    否则一个请求就占满 ThreadingHTTPServer 一个线程十秒级，并发即打爆进程。
+
+    判据（死标量，不依赖机器负载）：`cached is True` 且响应耗时 < 3s。
+    （冷启动已在 main() ⓪ 完成，此处跑的必然是缓存命中路径。）
+    """
+    checks = []
+    for ep in HEAVY_WARMUP:
+        t0 = time.time()
+        try:
+            with urllib.request.urlopen(f"{base}{ep}", timeout=15) as r:
+                d = json.load(r)
+        except Exception as e:
+            checks.append(("FAIL", "perf", f"{ep} 缓存命中路径读取失败: {e}"))
+            continue
+        dt = time.time() - t0
+        cached = d.get("cached")
+        # /api/ecosystem 把 cached 放在 harness 子对象里（只缓存 harness 部分）
+        if cached is None and isinstance(d.get("harness"), dict):
+            cached = d["harness"].get("cached")
+        checks.append(("PASS" if cached is True else "FAIL", "perf",
+                       f"{ep} cached is True（未重复重算）"))
+        checks.append(("PASS" if dt < 3.0 else "FAIL", "perf",
+                       f"{ep} 缓存命中耗时 {dt:.2f}s < 3.0s"))
+    return checks
+
+
 def _check_ecosystem_fields(base):
     """生态字段存在性断言（D-103）：GET /api/ecosystem 真实响应中逐一解析
-    前端面板 53-56 渲染硬依赖的关键字段路径，字段删除/改名即 FAIL。"""
+    前端面板 53-56 渲染硬依赖的关键字段路径，字段删除/改名即 FAIL。
+
+    v0.9.33 追加 `harness.cached` / `harness.compute_ms` / `harness.cache_ttl_s`
+    三个缓存契约字段——本端点 harness 全量实跑 48 道锚需 15.3s，属无鉴权公开
+    GET，必须能被外部观察「本次是否命中缓存」，禁止「秒回即假装刚跑过」。
+    （缓存是否真的生效由 `_check_heavy_get_caches()` 统一断言，不在此重复。）"""
     try:
         with urllib.request.urlopen(f"{base}/api/ecosystem", timeout=15) as r:
             d = json.load(r)
@@ -272,6 +317,18 @@ def main():
         if not ready:
             print("[FATAL] WebUI 服务未就绪")
             return 1
+
+        # ⓪ 冷启动预热（v0.9.33）：重计算 GET 首次请求要跑真内核
+        #    （/api/ecosystem 全量实跑 48 道物理定律锚 15.3s，其中 E2 半矢量
+        #     本征解单道 12.0s；/api/benchmark_crosscheck 9.1s）。
+        #    二者都已有 TTL 缓存，但**首次**仍是冷启动，必须先跑完再进断言循环。
+        for _ep in HEAVY_WARMUP:
+            _t0 = time.time()
+            code, text = _http("GET", f"{base}{_ep}", timeout=120)
+            if code != 200:
+                print(f"[FATAL] {_ep} 冷启动失败 code={code} {text[:120]}")
+                return 1
+            print(f"[INFO] {_ep} 冷启动实跑耗时 {time.time() - _t0:.2f}s")
 
         ok, info, fail = [], [], []
         # 0) 鉴权端点凭据准备（v0.8.55 起弱默认管理员令牌已失效，硬编码 dev token 不再被接受）
@@ -342,6 +399,12 @@ def main():
                 ok.append(("FIELD", r, d))
             else:
                 fail.append(("FIELD", r, d))
+        # 3a) v0.9.33 重计算 GET 缓存护栏（无鉴权公开 GET 的 DoS 护栏）
+        for kind, r, d in _check_heavy_get_caches(base):
+            if kind == "PASS":
+                ok.append(("PERF", r, d))
+            else:
+                fail.append(("PERF", r, d))
         # 3b) 实证锚字段存在性断言（D-108：面板 57 渲染硬依赖）
         for kind, r, d in _check_empirical_fields(base):
             if kind == "PASS":

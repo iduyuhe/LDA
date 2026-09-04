@@ -122,7 +122,17 @@ def h_pdks(h, p, q, path):
 
 
 def h_ecosystem(h, p, q, path):
-    return (200, _app.ecosystem_status())
+    """D-93 生态快照。
+
+    v0.9.33：harness 部分（48 道锚全量实跑 ~15.3s）已加串行锁 + TTL 缓存；
+    锁被占用时按并发护栏纪律返回 429，而不是让请求排到 15s 后（无鉴权公开
+    GET 绝不允许单请求占满线程十秒级）。"""
+    try:
+        return (200, _app.ecosystem_status())
+    except _app.EcosystemBusy as e:
+        return (429, {"endpoint": "/api/ecosystem", "accepted": False,
+                      "error": f"harness 重算忙，请 1-2 秒后重试（并发护栏）：{e}",
+                      "retry_after": 2})
 
 
 def h_empirical(h, p, q, path):

@@ -105,6 +105,39 @@ def sref(sname: str, origin_um: Sequence[float], layer: int = LIB_LAYER_SI) -> b
     return out
 
 
+def aref(sname: str, origin_um: Sequence[float], dx_um: float, dy_um: float,
+         nx: int, ny: int, layer: int = LIB_LAYER_SI) -> bytes:
+    """AREF 阵列引用（二维等间距矩形阵列，无旋转/镜像）· v0.9.33 P0-1。
+
+    一条 AREF 记录即可表达 nx×ny 个单元实例——这是层次化压缩的关键：
+    CPO 250k 的 2,720 个相同通道由 **1 条 AREF** 表示（flat 需 897,600 个元素）。
+
+    GDSII 标准 XY 为三点（DBU 整数）：
+      P1 = 阵列原点 (ox, oy)
+      P2 = (ox + dx·nx, oy)          —— 列方向总跨度
+      P3 = (ox, oy + dy·ny)          —— 行方向总跨度
+    单点间距由 (P2−P1)/nx、(P3−P1)/ny 推出，故 dx/dy 是**间距**而非总跨度。
+
+    ⚠️ 与既有 `sref` 一致，本记录也写了 LAYER（0x0D）。严格 GDSII 中
+    SREF/AREF 不含 LAYER，此处的 LAYER 是 LDA 内部约定（便于按层过滤），
+    保持与 sref 的既有行为一致以免破坏已生成的版图。
+
+    ⚠️ **解析器必须能展开引用**：`parse_gds_polygons(expand_refs=True)`
+    会把 AREF 还原成 nx×ny 份实际几何。若不展开，层次化 GDS 喂给
+    `gds_drc` / `parasitic_rc` 只会看到 1 个元素 ⇒ **DRC 假绿**。
+    """
+    ox, oy = float(origin_um[0]), float(origin_um[1])
+    out = _rec(0x0B, 0, b"")                       # AREF
+    out += _rec(0x12, 6, _ascii(sname))            # SNAME
+    out += _rec(0x0D, 2, _int2(layer))             # LAYER（LDA 内部约定，见上）
+    out += _rec(0x1A, 2, _int2(0))                 # STRANS（无变换）
+    out += _rec(0x13, 2, _int2(int(nx)) + _int2(int(ny)))   # COLROW
+    xy = [ox, oy, ox + dx_um * nx, oy, ox, oy + dy_um * ny]
+    out += _rec(0x10, 3, _int4_list([_to_dbu(v) for v in xy]))
+    out += _rec(0x11, 0, b"")                      # ENDEL
+    return out
+
+
 def gds_library(name: str, structures: Dict[str, List[bytes]]) -> bytes:
     """GDSII 库文件：库头 + 各结构（单元名 → 元素记录列表）。
 
@@ -365,7 +398,7 @@ def parse_gds(data: bytes) -> Dict:
             sname = payload.decode("ascii", "ignore").rstrip("\x00")
             cur = {"elements": 0, "layers": set()}
             structures[sname] = cur
-        elif rectype in (0x08, 0x09, 0x0A):       # BOUNDARY/PATH/SREF
+        elif rectype in (0x08, 0x09, 0x0A, 0x0B):  # BOUNDARY/PATH/SREF/AREF
             if cur is not None:
                 cur["elements"] += 1
         elif rectype == 0x0D:                     # LAYER
@@ -377,7 +410,8 @@ def parse_gds(data: bytes) -> Dict:
             "n_structures": len(structures)}
 
 
-def parse_gds_polygons(data: bytes) -> Dict:
+def parse_gds_polygons(data: bytes,
+                       expand_refs: bool = True) -> Dict:
     """解析 GDSII 字节 → 每结构多边形几何（主权最小解析器扩展 · v0.8.30）。
 
     与 parse_gds（只取摘要）互补：本函数还原每个元素的多边形顶点（µm）与层，
@@ -386,30 +420,60 @@ def parse_gds_polygons(data: bytes) -> Dict:
     记录类型：BOUNDARY(0x08) / PATH(0x09) 元素 + LAYER(0x0D) + WIDTH(0x0F,
     PATH 宽) + XY(0x10, INT4 顶点) + ENDEL(0x11) 闭合。坐标 DBU→µm（×1e-3）。
     仅覆盖本编码器写出的标准子集；遇未知记录安全跳过。
+
+    v0.9.33 P0-1 层次化支持：
+      - 识别 SREF(0x0A) / AREF(0x0B) + SNAME(0x12) + STRANS(0x1A) +
+        COLROW(0x13)，解析为 kind='sref'/'aref' 的元素（带 `sname`/
+        `colrow`/`points_um`）。
+      - **`expand_refs=True`（默认）把引用还原成实际几何**：AREF 展开为
+        nx×ny 份被引单元的多边形（按 P1/P2/P3 推单点间距），SREF 按原点平移；
+        支持嵌套引用（带环检测，遇环返回空而不死循环）。
+      - 🔴 **为何默认展开**：不展开的话层次化 GDS 在 `gds_drc` /
+        `parasitic_rc` 眼里只有 1 条 AREF 记录 ⇒ 几何检查几乎全空 ⇒
+        **DRC 假绿**。宁可解析慢，不可假绿。
+      - 对**不含任何引用**的 GDS（当前全部既有版图即如此），展开逻辑空转，
+        输出与旧版 **bit-exact 一致**（零回归）。
     """
     i, n = 0, len(data)
     libname = ""
     structures: Dict[str, List[Dict]] = {}
     cur: List[Dict] | None = None
     cur_layer = 0
-    cur_kind = None          # 0x08 / 0x09
+    cur_kind = None          # 0x08 / 0x09 / 0x0A / 0x0B
     cur_width = None
     cur_pts: List[Tuple[int, int]] = []
+    cur_sname = ""
+    cur_colrow: Optional[Tuple[int, int]] = None
     out = {"libname": libname, "structures": structures}
 
     def _flush() -> None:
-        nonlocal cur_kind, cur_layer, cur_width, cur_pts
-        if cur is not None and cur_pts and cur_kind is not None:
-            cur.append({
-                "layer": cur_layer,
-                "kind": "boundary" if cur_kind == 0x08 else "path",
-                "width": cur_width,
-                "points_um": [(x * DBU, y * DBU) for x, y in cur_pts],
-            })
+        nonlocal cur_kind, cur_layer, cur_width, cur_pts, cur_sname, cur_colrow
+        if cur is not None and cur_kind is not None:
+            if cur_kind in (0x08, 0x09) and cur_pts:
+                cur.append({
+                    "layer": cur_layer,
+                    "kind": "boundary" if cur_kind == 0x08 else "path",
+                    "width": cur_width,
+                    "points_um": [(x * DBU, y * DBU) for x, y in cur_pts],
+                })
+            elif cur_kind in (0x0A, 0x0B) and cur_sname:
+                el = {
+                    "layer": cur_layer,
+                    "kind": "sref" if cur_kind == 0x0A else "aref",
+                    "width": None,
+                    "sname": cur_sname,
+                    "points_um": [(x * DBU, y * DBU) for x, y in cur_pts],
+                }
+                if cur_kind == 0x0B:
+                    el["colrow"] = cur_colrow or (1, 1)
+                cur.append(el)
         cur_kind = None
         cur_layer = 0
         cur_width = None
         cur_pts = []
+        cur_sname = ""
+        cur_colrow = None
+
 
     while i < n:
         if i + 4 > n:
@@ -427,12 +491,18 @@ def parse_gds_polygons(data: bytes) -> Dict:
             sname = payload.decode("ascii", "ignore").rstrip("\x00")
             cur = []
             structures[sname] = cur
-        elif rectype in (0x08, 0x09):             # BOUNDARY / PATH（新元素）
+        elif rectype in (0x08, 0x09, 0x0A, 0x0B):   # BOUNDARY/PATH/SREF/AREF
             _flush()
             cur_kind = rectype
             cur_layer = 0
             cur_width = None
             cur_pts = []
+        elif rectype == 0x12:                     # SNAME（引用的单元名）
+            cur_sname = payload.decode("ascii", "ignore").rstrip("\x00")
+        elif rectype == 0x13:                     # COLROW（AREF 阵列行列数）
+            if len(payload) >= 4:
+                cx, cy = struct.unpack_from(">hh", payload, 0)
+                cur_colrow = (int(cx), int(cy))
         elif rectype == 0x0D:                     # LAYER
             if len(payload) >= 2:
                 (cur_layer,) = struct.unpack_from(">h", payload, 0)
@@ -449,7 +519,77 @@ def parse_gds_polygons(data: bytes) -> Dict:
         i += ln
     _flush()
     out["libname"] = libname
+
+    # 顶层结构 = 未被任何其他结构引用的结构（展开**前**判定）。
+    # 🔴 下游必须按 `top_structures` 取几何：展开后 cell 自身的结构仍保留
+    #    自己的几何，若把所有结构求和会把 cell 那份**重复计入**
+    #    （实测 CPO 小阵列：CHANNEL 202 + TOP 展开 1616 = 1818，而真实
+    #    几何是 1616 —— 凭空多出 202）。flat 版图只有一个结构，不受影响。
+    referenced = {el.get("sname")
+                  for v in structures.values() for el in v
+                  if el.get("kind") in ("sref", "aref")}
+    top_structures = [n for n in structures if n not in referenced]
+
+    if expand_refs:
+        _expand_references(structures)
+    out["expanded"] = bool(expand_refs)
+    out["top_structures"] = top_structures
     return out
+
+
+def _shift_element(el: Dict, dx: float, dy: float) -> Dict:
+    """元素平移（引用展开用；只平移顶点，不改层/宽/类型）。"""
+    out = dict(el)
+    out["points_um"] = [(x + dx, y + dy) for x, y in el["points_um"]]
+    return out
+
+
+def _expand_references(structures: Dict[str, List[Dict]]) -> None:
+    """就地展开全部结构的 SREF / AREF 引用（v0.9.33 P0-1）。
+
+    AREF 的单点间距由三点推出：P1=原点、P2=(x1+dx·nx, y1)、P3=(x1, y1+dy·ny)
+    ⇒ dx=(P2.x−P1.x)/nx、dy=(P3.y−P1.y)/ny（dx/dy 是**间距**非总跨度）。
+
+    支持嵌套引用（cell 引用 cell）；带环检测（遇环该分支返回空，不死循环）。
+    不含引用的结构原样保留 —— 保证 flat 版图输出 bit-exact 不变。
+    """
+    memo: Dict[str, List[Dict]] = {}
+
+    def _resolve(name: str, stack: frozenset) -> List[Dict]:
+        if name in memo:
+            return memo[name]
+        if name in stack:                      # 环：截断，不递归
+            return []
+        out: List[Dict] = []
+        for el in structures.get(name, []):
+            k = el.get("kind")
+            if k == "sref":
+                pts = el.get("points_um") or [(0.0, 0.0)]
+                ox, oy = pts[0]
+                out.extend(_shift_element(se, ox, oy)
+                           for se in _resolve(el["sname"], stack | {name}))
+            elif k == "aref":
+                pts = el.get("points_um") or []
+                if len(pts) < 3:
+                    continue
+                nx, ny = el.get("colrow", (1, 1))
+                nx, ny = max(1, int(nx)), max(1, int(ny))
+                p1, p2, p3 = pts[0], pts[1], pts[2]
+                dx = (p2[0] - p1[0]) / nx
+                dy = (p3[1] - p1[1]) / ny
+                sub = _resolve(el["sname"], stack | {name})
+                for b in range(ny):
+                    for a in range(nx):
+                        sx, sy = p1[0] + a * dx, p1[1] + b * dy
+                        out.extend(_shift_element(se, sx, sy) for se in sub)
+            else:
+                out.append(el)
+        if name not in stack:                  # 只缓存完整解（避免环污染）
+            memo[name] = out
+        return out
+
+    for sname in list(structures.keys()):
+        structures[sname] = _resolve(sname, frozenset())
 
 
 def write_gds(path: str, data: bytes) -> None:

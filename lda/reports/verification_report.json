@@ -5,7 +5,7 @@
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "self_consistent": true
   },
-  "generated_at": "2026-09-04T08:18:38",
+  "generated_at": "2026-09-04T12:52:32",
   "summary": {
     "total": 48,
     "passed": 48,
@@ -403,7 +403,7 @@
       "oracle": "empirical-measurement(E-SIN-NG-300)",
       "source": "empirical-measurement",
       "golden": 1.892,
-      "candidate": 1.957176784009542,
+      "candidate": 1.9571767840094907,
       "tol": 0.1,
       "passed": true,
       "note": "LPCVD Si3N4 300nm 平台（公开文献）：热氧 SiO2 2.5um 下包层 + PECVD SiO2 2.0um 上包层，全刻蚀条形波导 | P. Munoz et al., Si3N4 300 nm photonic integration platform, Sensors (MDPI) 2017: OFDR ring-resonator group index TE=1.892 / TM=1.717; MZI transmission cross-check TE 1.90-1.92 | σ=0.03 | tol=0.03 | tier=A",

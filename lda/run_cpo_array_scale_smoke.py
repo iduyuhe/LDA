@@ -101,11 +101,29 @@ def main() -> int:
     g = export_chip_gds(link, placement, routes)
     st = g["gds_stats"]
     t_gds = time.perf_counter() - t0
-    check("④ GDS round-trip 可解析",
+    # 🔴 v0.9.33 断言语义修正：层次化后 `n_elements` 是**压缩后**的编码元素数
+    #    （250k 器件 → 331），不再 ≥ 器件数。原断言隐含 flat 假设，必然假红。
+    #    改为按 **展开后的几何数** 判决（flat 与层次化同一判据）。
+    from lda_l2.gds_export import parse_gds_polygons
+    pg = parse_gds_polygons(g["gds_bytes"])
+    n_geo = sum(len(pg["structures"][n]) for n in pg["top_structures"])
+    check("④ GDS round-trip 可解析（按展开几何计数，兼容层次化）",
           isinstance(g["gds_parse"], dict)
           and g["gds_parse"].get("n_structures", 0) >= 1
-          and st["n_elements"] >= expect,
-          f"struct={st.get('n_structures')} elem={st['n_elements']:,}")
+          and n_geo >= expect,
+          f"struct={st.get('n_structures')} 编码元素={st['n_elements']:,} "
+          f"展开几何={n_geo:,}")
+    # ④b 层次化降幅守护：250k 是收益最大的场景（99.96%），必须守住
+    n_flat_elem = g["hierarchy"].get("n_elements_flat") or expect
+    if g["hierarchy"]["applied"]:
+        check("④b 层次化降幅 > 99%（250k 器件）",
+              st["n_elements"] < n_flat_elem * 0.01,
+              f"{st['n_elements']:,} vs flat {n_flat_elem:,} "
+              f"（降 {(1 - st['n_elements'] / n_flat_elem) * 100:.2f}%）")
+    else:
+        check("④b 层次化未触发时元素数 ≡ flat",
+              st["n_elements"] == n_flat_elem,
+              f"reason={g['hierarchy']['reason']}")
     print(f"  [计时] GDS: {t_gds:.2f}s "
           f"({st['gds_bytes'] / 1e6:.1f} MB / {st['n_elements']:,} 元素)")
 

@@ -148,15 +148,22 @@ def _query_nearest_port_grid(x: float, y: float,
     return best if best_d <= tol else None
 
 
+def _ccw(p, q, r):
+    """叉积符号（v0.9.34：从 _segments_intersect 内提到模块级）。
+
+    原来每次调用都重建两个闭包函数对象；短路检测在百万器件下会调用千万次，
+    这部分是纯开销。语义零变化。"""
+    return (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
+
+
+def _on_seg(p, q, r):
+    """q 是否落在 pr 线段上（含端点，带 1e-9 容差）。模块级，同上。"""
+    return (min(p[0], r[0]) - 1e-9 <= q[0] <= max(p[0], r[0]) + 1e-9
+            and min(p[1], r[1]) - 1e-9 <= q[1] <= max(p[1], r[1]) + 1e-9)
+
+
 def _segments_intersect(a, b, c, d) -> bool:
     """线段 ab 与 cd 是否相交（含端点触碰；不含共享端点本身——调用方排除）。"""
-    def _ccw(p, q, r):
-        return (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
-
-    def _on_seg(p, q, r):
-        return (min(p[0], r[0]) - 1e-9 <= q[0] <= max(p[0], r[0]) + 1e-9
-                and min(p[1], r[1]) - 1e-9 <= q[1] <= max(p[1], r[1]) + 1e-9)
-
     o1, o2, o3, o4 = _ccw(a, b, c), _ccw(a, b, d), _ccw(c, d, a), _ccw(c, d, b)
     if o1 == 0 and _on_seg(a, c, b):
         return True
@@ -190,9 +197,20 @@ def _seg_bbox_intersect(a, b, c, d) -> bool:
                 or max(c[1], d[1]) < min(a[1], b[1]))
 
 
-def _paths_cross(pts1, pts2) -> bool:
-    """两折线是否相交（bbox 预检 + 段级 bbox 预检 + 精确判断）。"""
-    if not _bbox_overlap(_bbox_of(pts1), _bbox_of(pts2)):
+def _paths_cross(pts1, pts2, bb1=None, bb2=None) -> bool:
+    """两折线是否相交（bbox 预检 + 段级 bbox 预检 + 精确判断）。
+
+    v0.9.34 性能：`bb1`/`bb2` 允许调用方**预计算并复用**折线 bbox。
+    同一条折线在候选对里会被比较很多次，每次重建两个列表再 min/max 是纯浪费
+    （实测 128k 器件：`_bbox_of` 316 万次调用、占 `_paths_cross` 开销的 76%）。
+    🔴 **判决语义零变化**：bbox 是纯函数，预计算与现算结果恒等；不传参时行为
+    与旧版逐字节一致（等价性由 `verify_lvs_cross_equiv.py` 46 组断言守护）。
+    """
+    if bb1 is None:
+        bb1 = _bbox_of(pts1)
+    if bb2 is None:
+        bb2 = _bbox_of(pts2)
+    if not _bbox_overlap(bb1, bb2):
         return False
     for k in range(len(pts1) - 1):
         a, b = pts1[k], pts1[k + 1]
@@ -282,6 +300,11 @@ def _collect_cross_shorts(paths_by_id: Dict[str, List[Tuple[float, float]]],
 
     p_a = paths_by_id
     p_b = paths_by_id if other is None else other
+    # v0.9.34：每条折线的 bbox **只算一次**并复用（见 _paths_cross 说明）。
+    # 同一 net 会在大量候选对里被重复比较，按对重算是纯常数浪费。语义零变化。
+    bb_a = {nid: _bbox_of(pts) for nid, pts in p_a.items()}
+    bb_b = bb_a if other is None else {nid: _bbox_of(pts)
+                                       for nid, pts in p_b.items()}
     tested: set = set()
     result: set = set()
     for occ in grid.values():
@@ -299,7 +322,7 @@ def _collect_cross_shorts(paths_by_id: Dict[str, List[Tuple[float, float]]],
                     if key in tested:
                         continue
                     tested.add(key)
-                    if _paths_cross(p_a[na], p_a[nb]):
+                    if _paths_cross(p_a[na], p_a[nb], bb_a[na], bb_a[nb]):
                         result.add(key)
                 else:
                     if sa == sb:
@@ -309,7 +332,8 @@ def _collect_cross_shorts(paths_by_id: Dict[str, List[Tuple[float, float]]],
                     if key in tested:
                         continue
                     tested.add(key)
-                    if _paths_cross(p_a[a_net], p_b[b_net]):
+                    if _paths_cross(p_a[a_net], p_b[b_net],
+                                    bb_a[a_net], bb_b[b_net]):
                         result.add(key)
     return sorted(result)
 

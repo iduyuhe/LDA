@@ -22,7 +22,7 @@ body:
     id: env
     attributes:
       label: 环境（python / torch / 系统）
-      placeholder: python 3.11, torch 2.11+cu128, win11
+      placeholder: python 3.12, torch 2.11+cu128, win11
     validations:
       required: false
   - type: textarea

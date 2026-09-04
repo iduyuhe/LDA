@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.9.31（2026-09-04 · T-6 修 requires-python 3.11→≥3.12 · 三分类不变：23 / 0 / 25）
+
+**指令**：「T-6 修 requires-python」——路线图第六项：消除外部可验货的硬阻塞。`pyproject.toml` 曾声明 `requires-python >=3.11`，但全仓 178+ 个文件用了 **PEP 701 跨行 f-string（3.12+ 语法）**，按声明用 3.11 安装会在 `import` 时直接 SyntaxError（实测 `lda_cuda_venv` 的 Python 3.11.9 在 `lda_l2/chip_layout_export.py:248` 等抛出 SyntaxError，v0.9.26 首跑因此报 9 个假 FAIL）。
+
+**改动**
+- `pyproject.toml`：`requires-python` `>=3.11` → `>=3.12`（与生产 3.12.9 / CI 3.13.14 一致）；`version` `0.9.30` → `0.9.31`。
+- `.github/workflows/ci.yml`：`python-version` 两处 `3.11` → `3.12`（其中 line 292 是真正的 core 回归 runner，3.11 下会 import 崩溃）。
+- `.github/ISSUE_TEMPLATE/bug_report.yml`：环境占位符 `python 3.11` → `python 3.12`（一致性）。
+- 新增常驻护栏 `lda/run_requires_python_smoke.py`（**CI core 90→91**）：静态扫描 `lda/**/*.py` 的 `ast.JoinedStr` 跨行节点，断言 `requires-python` 声明下限 **≥ 代码实际语法下界**。声明谎报即 FAIL——把「声明可装 3.11 实则 3.12 才跑得起来」的对外硬阻塞关进机器断言。
+- README 顶行新增 v0.9.31（T-6）块；当前账本 `CI core 90→91 条`；T-5 块降为历史。
+
+**三分类不变**：**严格独立 23 道 · 降级量级参考 0 道 · 自证桩 25 道（三类和 = 48）**（本轮不改验证强度，只消外部安装阻塞）。
+
+**护栏自检（证明它会响）**：把 `requires-python` 临时改回 `>=3.11` 重跑 ⇒ 该 smoke 报 `[FAIL] requires-python 3.11 低于代码实际语法下界 3.12`，exit=1。
+
+**影响范围**：纯元数据 + CI 配置 + 一条新增 guardrail smoke，**不涉及任何验证判据或锚题逻辑**，48 锚三分类、判据 D、可证伪性护栏均不受影响。
+
 ## v0.9.30（2026-09-04 · T-5 修 C-1 口径分裂 · 三分类不变：23 / 0 / 25）
 
 **指令**：「T-5 口径分裂」（技术侧路线图第五项：修复 C-1 口径分裂——harness 两套判决路径对外的「宣称 vs 可复现」缺口）。

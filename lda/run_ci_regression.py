@@ -84,6 +84,10 @@ CORE_SMOKES: List[str] = [
     "run_tapeout_smoke.py",
     # 计数一致性门禁（v0.8.10：引擎/包/题库/CI 条数 vs README 宣传串机器断言，防计数漂移根治）
     "run_count_consistency_smoke.py",
+    # 🔴 v0.9.31（T-6）：requires-python 声明下限 ≥ 代码实际语法下界（PEP 701 跨行
+    #   f-string 须 3.12+）。静态扫描 lda/**/*.py 的 JoinedStr 跨行节点，断言声明不谎报。
+    #   防「声明可装 3.11 实则 3.12 才跑得起来」的对外硬阻塞。实测 <2s。
+    "run_requires_python_smoke.py",
     # 基准对照验证闭环报告（v0.8.11c：15 引擎解析锚 rel + 实证语料覆盖矩阵 + ORACLE 状态）
     "run_benchmark_crosscheck_report.py",
     # 芯片级版图导出增强（v0.8.11d：IO 光栅接入 + 版图统计 + 芯片级 DRC 正负例）

@@ -15,15 +15,31 @@ VerificationSpec，ORACLE 全部为确定性物理定律锚，LLM 不进判决�
 
 验收分层：
   mode="contract" —— 注册表 + 契约 + 管道验证（快，CI 用；候选自洽不跑数值）
-  mode="live"     —— 跑真实 ORACLE + 已验证求解器（本机用；需 GPU 项无 GPU 诚实 SKIP；
-                     重项 waveguide/bragg 默认跳过，可 verify_one(force_heavy=True) 单跑）
+  mode="live"     —— 跑真实 ORACLE + 已验证求解器（本机用；缺失的**运行时**
+                    （如 torch 未安装）诚实 SKIP；不再要求 GPU）
+
+🔴 T-8（v0.9.38）：**去 GPU 硬门禁**。实测推翻了「DC/YB 必须 CUDA、WG/Bragg
+是 heavy 重项」的旧假设——
+  · DC/YB 的 torch 后端内部本就有 `dev="cuda" if available else "cpu"` 回退，
+    CPU 实测 15.3s / 19.1s 且判据余量巨大（err 2.48% vs tol 25%）⇒ GPU 由
+    「必需」降为「可选加速」，门禁改为「torch 是否可导入」。
+  · Bragg 实测仅 19.9s（原误判 heavy）。
+  · Waveguide 是唯一真重项（numpy 161~389s）⇒ 新增同物理的 numba-CPU 内核
+    （`fdtd3d_waveguide_numba.py`，秒级；与 numpy 交叉验证 4.775e-16，物理
+    网格/测量窗一律不变）。
+  ⇒ 5 器件全部 light，无 GPU 环境 `verify_all(mode="live")` 5/5 真跑，全部进 CI。
 
 零顶层外部依赖：verification_spec / 求解器 / ORACLE 均在调用时懒加载。
 
 真实物理一等验收入口（D-32 及延伸）：光子 verify_ring_fdtd / verify_waveguide_fdtd
 / verify_bragg_fdtd（解析契约 + 真实 FDTD 自洽）；量子 verify_transmon（Koch 解析
 ↔ 严格对角化双验证，纯 numpy CPU 可跑）——均为「解析契约验设计目标 + 真实数值
-物理验自洽」两层结构（Ring 需 torch CUDA；WG/Bragg/Transmon 纯 numpy）。
+物理验自洽」两层结构。
+
+🔴 GPU 状态（v0.9.38 T-8 后）：**没有任何器件再要求 GPU**。Ring 的 D-31 深度
+FDTD 与 CouplerBand 全波段属「CPU 能跑但慢」档（Ring CPU 实测 ~74.6s/波长，
+21 点 ≈ 26min），默认跳过、`LDA_FORCE_RING_FDTD=1` 可显式启用，不再是
+「无 CUDA 即禁」。
 """
 from __future__ import annotations
 
@@ -60,7 +76,16 @@ class DeviceSpec:
     verify_spec: Any                            # VerificationSpec（D-04 统一契约）
     candidate_fn: Optional[Callable] = None     # 已验证求解器（懒加载真实实现）
     candidate_desc: str = ""
-    requires_gpu: bool = False                  # live 候选是否需 torch CUDA
+    requires_gpu: bool = False                  # 【v0.9.38 语义变更】恒 False：
+                                                #   原义「live 候选需 torch CUDA」，T-8 实测
+                                                #   torch 后端内部已有 cuda→cpu 回退（DC
+                                                #   15.3s / YB 19.1s CPU 实测 PASS），GPU 由
+                                                #   「必需」降为「可选加速」。保留字段仅供
+                                                #   旧调用方/面板展示兼容，不再作门禁。
+    backend: str = "numpy"                      # 候选计算后端（门禁与诚实披露用）：
+                                                #   "numpy"      —— 纯 numpy，CPU 恒可跑
+                                                #   "torch"      —— torch，cuda 有则用、无则 CPU
+                                                #   "numba→numpy" —— numba 优先，缺失回退 numpy
     live_weight: str = "light"                  # 'light'（live 默认跑）| 'heavy'（可选）
     extra: Dict[str, Any] = field(default_factory=dict)
 
@@ -95,8 +120,8 @@ class DeviceLibrary:
                     description="方向耦合器（D-01 验收锚：FDFD 超模 κ ↔ FDTD 超模投影）",
                     verify_spec=sp,
                     candidate_fn=cand_map[sp.spec_id],
-                    candidate_desc="标量 3D FDTD 超模投影递推（torch GPU）",
-                    requires_gpu=True, live_weight="light"))
+                    candidate_desc="标量 3D FDTD 超模投影递推（torch，GPU 可选/CPU 回退）",
+                    backend="torch", live_weight="light"))
             else:
                 self.register(DeviceSpec(
                     name="SymmetricYBranch",
@@ -107,12 +132,14 @@ class DeviceLibrary:
                     description="对称 Y 分支分束器（D-01：对称性定理 50/50 ↔ FDTD 能流平衡）",
                     verify_spec=sp,
                     candidate_fn=cand_map[sp.spec_id],
-                    candidate_desc="标量 3D FDTD 能流功率测量（torch GPU）",
-                    requires_gpu=True, live_weight="light"))
+                    candidate_desc="标量 3D FDTD 能流功率测量（torch，GPU 可选/CPU 回退）",
+                    backend="torch", live_weight="light"))
 
     def _register_waveguide(self):
+        # T-8（v0.9.38）：backend="auto" ⇒ numba 优先、numpy 回退，物理与默认档位
+        # 完全不变，仅换计算内核（实测 389.0s → 秒级，见 docs/）。
         from lda_harness.verification_adapters import build_waveguide_specs
-        specs, cand_map = build_waveguide_specs()
+        specs, cand_map = build_waveguide_specs(backend="auto")
         sp = specs[0]  # 标准契约取首例（真 2D 波导 neff）
         self.register(DeviceSpec(
             name="Waveguide",
@@ -121,8 +148,8 @@ class DeviceLibrary:
             description="真 2D 波导（FDFD 本征 ORACLE ↔ FDTD neff）",
             verify_spec=sp,
             candidate_fn=cand_map[sp.spec_id],
-            candidate_desc="标量 3D FDTD 双监视点相位差（numpy，重项）",
-            requires_gpu=False, live_weight="heavy"))
+            candidate_desc="标量 3D FDTD 双监视点相位差（numba-CPU/numpy 同物理）",
+            backend="numba→numpy", live_weight="light"))
 
     def _register_ring(self):
         from lda_harness.verification_spec import VerificationSpec, cmp_rel
@@ -159,7 +186,7 @@ class DeviceLibrary:
             description="环形谐振器谱形（D-11：解析 FSR ↔ 洛伦兹梳谱提取）",
             verify_spec=spec, candidate_fn=_cand,
             candidate_desc="洛伦兹梳谱峰提取（解析）",
-            requires_gpu=False, live_weight="light"))
+            backend="numpy", live_weight="light"))
 
     def _register_bragg(self):
         from lda_harness.verification_spec import VerificationSpec, cmp_abs
@@ -205,8 +232,8 @@ class DeviceLibrary:
             params_schema={"periods": (1, 12)},
             description="布拉格镜宽带谱形（D-03：TMM 阻带 ↔ FDTD 全波段验收）",
             verify_spec=spec, candidate_fn=_cand,
-            candidate_desc="自写 FDTD 宽带谱形（numpy，重项）",
-            requires_gpu=False, live_weight="heavy"))
+            candidate_desc="自写 FDTD 宽带谱形（numpy，实测 19.9s）",
+            backend="numpy", live_weight="light"))
 
     def register(self, dev: DeviceSpec) -> None:
         self._devices[dev.name] = dev
@@ -243,9 +270,19 @@ class DeviceLibrary:
             out.extra["ir_kinds"] = dev.ir_kinds
             return out
         # live
-        if dev.candidate_fn is None or dev.requires_gpu and not self._cuda_ok():
-            return self._skipped(dev, "live 候选需 torch CUDA（当前无 GPU）→ 诚实 SKIP")
-        return run_verification(spec, dev.candidate_fn)
+        if dev.candidate_fn is None:
+            return self._skipped(dev, "live 候选未注册 → 诚实 SKIP")
+        runnable, used, why = self.resolve_backend(dev)
+        if not runnable:
+            return self._skipped(dev, why)
+        out = run_verification(spec, dev.candidate_fn)
+        # 诚实披露：本次实际走的后端/设备（GPU 有则 cuda，无则 cpu/numba/numpy）
+        try:
+            out.extra["backend"] = dev.backend
+            out.extra["device"] = used
+        except Exception:  # noqa: BLE001
+            pass
+        return out
 
     def verify_coupler_band(self, kind: str = "dc", mode: str = "live",
                             wl_min_um: float = 1.50, wl_max_um: float = 1.60,
@@ -253,8 +290,9 @@ class DeviceLibrary:
         """D-23：耦合器件全波段多波长验收（DC / YB）。
 
         contract：注册表 + 契约自检 + 波长扫描逻辑验证（不跑数值，快，CI 用）。
-        live    ：真实 CouplerBandAgent 全波段 FDTD（DC 需 torch CUDA，
-                  无 GPU 诚实 SKIP——与 verify_one live 同纪律）。
+        live    ：真实 CouplerBandAgent 全波段 FDTD。**T-8 后 DC/YB 无需
+                  GPU**（torch backend cuda→cpu 自适应），仅「torch 未安装」
+                  才诚实 SKIP——与 verify_one live 同纪律。
         验收判据（全波段）：DC max_λ κ 相对偏差 ≤ 容差；YB max_λ 平衡度 ≤ 容差
         且全波段功率为正。
         """
@@ -281,10 +319,10 @@ class DeviceLibrary:
                             "（数值验收请用 live 模式）"),
             }
         # live
-        if dev.requires_gpu and not self._cuda_ok():
+        runnable, _used, why = self.resolve_backend(dev)
+        if not runnable:
             return {"device": name, "kind": kind, "mode": "live",
-                    "passed": None, "skipped": True,
-                    "verdict": "live 全波段需 torch CUDA（当前无 GPU）→ 诚实 SKIP"}
+                    "passed": None, "skipped": True, "verdict": why}
         from lda_agent.coupler_band_loop import (CouplerBandAgent,
                                                  CouplerBandTarget)
         t = CouplerBandTarget(kind=kind, wl_min_um=wl_min_um,
@@ -314,7 +352,10 @@ class DeviceLibrary:
           ② 真实 FDTD（D-31 verify_ring_fdtd）：drop 谱谐振峰 → FSR(FDTD) ↔
              解析 FSR(n_g=n_core) 相对偏差 ≤ tol_rel（物理行为自洽，2D 平板
              群折射率≈材料折射率，诚实标注）
-          passed = 两层皆过；FDTD 需 torch CUDA，无 GPU 诚实 SKIP。
+          passed = 两层皆过。
+          🔴 T-8 后：D-31 FDTD 层在 CPU 上可跑但慢（~74.6s/波长，21 点 ≈
+          26min）⇒ 无 CUDA 时默认跳过并可 `LDA_FORCE_RING_FDTD=1` 强制启用；
+          解析契约层（RING-fsr）始终快跑，属 verify_all 的 5/5 之一。
         """
         dev = self.get(name)
         if mode == "contract":
@@ -342,10 +383,18 @@ class DeviceLibrary:
                             "fdtd2d_ring 可导入 OK（数值验收请用 live 模式）"),
             }
         # live
-        if not self._cuda_ok():
+        # T-8（v0.9.38）：此处原为「无 CUDA 即 SKIP」——**文案不实**。实测
+        # fdtd2d_ring backend="auto" 在无 CUDA 时会落到 numpy 且能跑完，只是慢：
+        # CPU 实测 ~74.6s/波长（21 点 ≈ 26min，且点数过少时峰提取会因谱分辨率
+        # 不足而 accepted=False）。故改为「可跑但慢 ⇒ 默认跳过、可显式启用」，
+        # 与 verify_all 的 5/5 快验收（RING-fsr 解析层）分层，不混为一谈。
+        force = os.environ.get("LDA_FORCE_RING_FDTD", "") not in ("", "0", "false")
+        if not self._cuda_ok() and not force:
             return {"device": name, "mode": "live", "passed": None,
                     "skipped": True,
-                    "verdict": "live FDTD 需 torch CUDA（当前无 GPU）→ 诚实 SKIP"}
+                    "verdict": ("D-31 环形真实 FDTD：CPU 可跑但慢（实测 ~74.6s/波长，"
+                                "21 点 ≈ 26min）⇒ 默认跳过。设 LDA_FORCE_RING_FDTD=1 "
+                                "可强制启用；有 CUDA 时（~10-20s/波长）自动启用")}
         # ① 解析契约（设计目标命中，fast）
         analytic = self.verify_one(name, mode="live")
         # ② 真实 FDTD（物理行为自洽）
@@ -764,8 +813,14 @@ class DeviceLibrary:
                    live_heavy: bool = False) -> Tuple[Dict[str, Any], List[str]]:
         """验收全部器件。返回 (outcomes, skipped)。
 
-        contract 全部跑；live 默认只跑 light（DC/YB 无 GPU 时 SKIP），
-        heavy（waveguide/bragg）需 live_heavy=True 才跑。
+        contract 全部跑；live 默认跑 light。
+
+        T-8（v0.9.38）后 **5 个器件全部是 light，无 GPU 亦全部真跑**：
+          DC / YB  —— torch 后端 cuda→cpu 自适应（CPU 实测 15.3s / 19.1s）
+          Waveguide—— numba-CPU（numpy 389s → 秒级，交叉验证 4.8e-16）
+          Bragg    —— numpy（实测 19.9s，原误判为 heavy）
+          Ring     —— 解析（<0.1s）
+        live_heavy 保留仅为向后兼容与未来重项；当前无 heavy 器件。
         """
         outcomes: Dict[str, Any] = {}
         skipped: List[str] = []
@@ -784,7 +839,8 @@ class DeviceLibrary:
                 "params_schema": {k: list(v) for k, v in dev.params_schema.items()},
                 "metric": dev.verify_spec.metric,
                 "oracle_kind": dev.verify_spec.oracle_kind,
-                "requires_gpu": dev.requires_gpu,
+                "requires_gpu": dev.requires_gpu,   # 兼容旧字段（T-8 后恒 False）
+                "backend": dev.backend,
                 "live_weight": dev.live_weight,
             }
             for name, dev in self._devices.items()
@@ -797,6 +853,45 @@ class DeviceLibrary:
             return torch.cuda.is_available()
         except Exception:
             return False
+
+    @staticmethod
+    def _torch_ok() -> bool:
+        """torch 是否可用（不要求 CUDA——CPU 亦可跑，仅慢些）。"""
+        try:
+            import torch  # noqa: F401
+            return True
+        except Exception:
+            return False
+
+    @staticmethod
+    def _numba_ok() -> bool:
+        try:
+            from fdtd3d_waveguide_numba import backend_info
+            return bool(backend_info()["have_numba"])
+        except Exception:
+            return False
+
+    def resolve_backend(self, dev: "DeviceSpec") -> Tuple[bool, str, str]:
+        """判定 live 候选能否运行 + 实际后端/设备（诚实披露，不做静默降级）。
+
+        返回 (可运行, 实际后端串, 不可运行时原因)。
+        T-8 前：requires_gpu=True 且无 GPU ⇒ SKIP。T-8 后 GPU 是「可选加速」：
+          "torch"        —— torch 不可导入才 SKIP；有 CUDA 用 cuda，否则 cpu。
+          "numpy"        —— 恒可跑。
+          "numba→numpy"  —— 恒可跑（numba 缺失时回退 numpy，物理与档位不变）。
+        """
+        b = (dev.backend or "numpy").lower()
+        if b == "torch":
+            if not self._torch_ok():
+                return False, "", "live 候选需 torch（当前环境无 torch）→ 诚实 SKIP"
+            return True, ("cuda" if self._cuda_ok() else "cpu"), ""
+        if b == "numba→numpy":
+            used = "numba" if self._numba_ok() else "numpy"
+            return True, used, ""
+        if b == "numpy":
+            return True, "numpy", ""
+        # 未知后端：宁可显式报不可运行，也不静默放行（IRONLAWS：宁红不假绿）
+        return False, "", f"未知 backend {dev.backend!r} → 诚实 SKIP"
 
     def _skipped(self, dev: DeviceSpec, reason: str) -> Any:
         from lda_harness.verification_spec import VerificationOutcome

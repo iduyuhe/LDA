@@ -30,7 +30,8 @@
     }
   },
   "live": {
-    "skipped": true
+    "skipped": true,
+    "reason": "默认跳过（CPU 可跑但 21 点 ≈26min，属耗时取舍非能力限制；LDA_FORCE_RING_FDTD=1 可强制启用）"
   },
   "all_green": true
 }

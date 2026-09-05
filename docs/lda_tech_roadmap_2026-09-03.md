@@ -153,7 +153,7 @@ n 每加倍残差降 ~16× ⇒ **严格 O(h⁴)**，与 RK4 标称阶一致 ⇒ 
 | # | 动作 | 现状（实测） | 目标 |
 |---|---|---|---|
 | **T-7** 🔥 | **一键复现** | 外部人现在跑不起来：① `requires-python` 错 ② `fdtd3d_numba.py:27` numba **硬 import** 无 try 兜底 ③ DC/YBranch **硬依赖 torch CUDA** ④ CI 解释器混乱（3.11 vs 3.13） | `pip install lda-design` + 一条命令 → 复现「88/88 + 独立候选 N/48」。并把 T-1 的普查逻辑一并开放 |
-| **T-8** | **device 交叉验证去 GPU** | `DeviceLibrary().verify_all(mode='live')` 无 GPU 时**只能演示 1 个**（Ring），其余 4 个 SKIP | 5 个器件全部可现场演示 + 全进 CI（DC/YBranch 改 numpy/numba-CPU 候选；WG/Bragg 加 `medium` 轻量档） |
+| **T-8** ✅ | **device 交叉验证去 GPU** | `DeviceLibrary().verify_all(mode='live')` 无 GPU 时**只能演示 1 个**（Ring），其余 4 个 SKIP | ✅ 2026-09-05 完成（v0.9.38）：**5/5 全跑、零 SKIP、全部进 CI 且在 CI 里真跑**。🔴 **实测推翻原方案**（原计划「DC/YB 改 numpy/numba-CPU 候选；WG/Bragg 加 medium 档」三条全不成立）：①DC/YB 的 torch 后端内部本就有 `cuda→cpu` 回退，**卡点只是 `requires_gpu` 门禁**，改门禁即可（CPU 实测 DC 15.3s / YB 19.1s PASS，物理零改动）；②Bragg 实测仅 19.9s，从来不该是 heavy；③唯一真重项只有 WG（numpy 161–389s）⇒ 新写同物理 numba-CPU 核（交叉验证 4.775e-16，加速 45.8×）；测量窗五档扫描证明 neff 波动 <0.2% ⇒ **不做 medium 档**。顺带修两处同类伪门禁（`coupler_loop.py` 无 CUDA 即走未实现的 numpy 路径而 raise；`verify_ring_fdtd` 文案「需 torch CUDA」不实，实为 CPU 慢 ~74.6s/波长，改为默认跳过 + `LDA_FORCE_RING_FDTD=1` 可启用）。护栏升级：`run_device_library_smoke.py` 断言由「至少 1 个能跑」→「5/5 零 SKIP」，新增三组反向测试 |
 | **T-9** ✅ | **锚题覆盖矩阵** | 22 引擎 + 11 包 = 33 类，48 道锚。但「哪类被覆盖、哪类是空白」**从未做过矩阵** | ✅ 已产出 `docs/lda_anchor_coverage_matrix_2026-09-04.md`（生成器 `lda/run_anchor_coverage_matrix.py` 可复现）：覆盖 21/22 引擎 + 7/11 包；**零覆盖** = PhaseShifter（唯一零锚引擎，建议 D-73 升格 B29）+ readout_fidelity/mixed_system/wdm_coupler/splitter_readout；标出 K 证据（E-YBRANCH-LOSS/E-GRATING-EFF/D-73 判决锚在 48 集外）与名义覆盖桩 |
 
 ### 3.3 不做（维持纪律）

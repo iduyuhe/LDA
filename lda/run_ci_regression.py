@@ -264,14 +264,48 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 判据 D：20 道基线普查 + B10/B28 双向 + 抽验，实测 ~15s
     "run_d_criterion_smoke.py": 180.0,
     "run_b28_nullfit_smoke.py": 120.0,
+    # T-8（v0.9.38）：live 从「无 GPU 即 SKIP（秒级）」变为「CPU 真跑」——
+    # DC 全波段 7 波长 123.1s + YB 163.8s ≈ 287s，正好压原默认 300s 线 ⇒ 配
+    # 600s（≈2× 余量）。这不是放宽判据：判据一个字未改，只是给慢机器留耗时余量。
+    # 2026-09-05 再调：本项曾**两次在 20 线程满载下触发整机硬掉电**
+    # （Kernel-Power 41 / BugcheckCode=0 + Kernel-Processor-Power 37 固件限速；
+    # 内存 63GB 充足已排除 OOM）⇒ 由 lda_solver/threads.py 把并发压到一半核心
+    # （上限 10）降功耗峰值。代价是耗时上升，故预算提到 1200s。
+    "run_coupler_band_smoke.py": 1200.0,
+    # T-8：5 器件 live 全跑（DC 15.3s / YB 19.1s / WG numba 秒级 / Bragg 19.9s
+    # / Ring <0.1s），干净实测 ~60-80s；配 600s 只为 numba 首次 JIT 编译（冷
+    # 缓存 ~30s）与慢机器抖动留余量。
+    "run_device_library_smoke.py": 600.0,
 }
+
+
+def _child_env() -> Dict[str, Any]:
+    """子进程环境：注入线程预算（env 在进程启动时即存在 ⇒ 早于任何内核初始化，
+    对 numpy/MKL/numba/torch 全部生效）。
+
+    2026-09-05 血案：20 线程满载跑 3D FDTD 两次触发整机硬掉电（Kernel-Power 41 /
+    BugcheckCode=0 + Kernel-Processor-Power 37 固件限速）。压到一半核心（上限 10）
+    后实测**反而更快**（全波段 287s → 235s）且判据逐位一致。此处统一注入，使
+    **所有** smoke 受益（不只是手动调用 apply_thread_budget 的那两个）。
+    """
+    import os as _os
+    env = dict(_os.environ)
+    try:
+        from lda_solver.threads import budget_threads, _ENV_KEYS
+        n = budget_threads()
+        for k in _ENV_KEYS:
+            env.setdefault(k, str(n))
+        env.setdefault("LDA_FDTD_THREADS", str(n))
+    except Exception:                                  # 预算模块不可用 ⇒ 不阻断
+        pass
+    return env
 
 
 def _run_one(python: str, script: str, timeout: float) -> Dict[str, Any]:
     t0 = time.perf_counter()
     try:
         p = subprocess.run(
-            [python, script], cwd=_HERE,
+            [python, script], cwd=_HERE, env=_child_env(),
             capture_output=True, text=True, timeout=timeout)
         rc, out = p.returncode, (p.stdout or "") + (p.stderr or "")
         dt = time.perf_counter() - t0
@@ -335,6 +369,11 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
         r = _run_one(python, s, to)
         results.append(r)
         print(f"  [{r['status']:<6}] {r['script']}  ({r['elapsed_s']}s)")
+        if r["status"] in ("FAIL", "ERROR", "TIMEOUT"):
+            # 故障可见性（2026-09-05 血案）：非 PASS 项必须当场打印子进程 tail，
+            # 否则日志只剩一行 FAIL，排查要重跑 30 分钟全量回归才能拿到原因。
+            for ln in (r.get("tail") or "(无输出)").splitlines():
+                print(f"           │ {ln}")
         if fail_fast and r["status"] in ("FAIL", "ERROR", "TIMEOUT"):
             break
     total_s = round(time.perf_counter() - t_total0, 2)

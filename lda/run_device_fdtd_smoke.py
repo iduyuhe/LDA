@@ -6,8 +6,12 @@
 分层（与 D-12/D-23 同纪律）：
   contract —— 注册表 + RING-fsr 契约 + fdtd2d_ring 可导入 + 解析 FSR 量级（快，CI 用）
   live     —— 真实 FDTD（R=6 复用 D-27 已验证参数，21 点，GPU ~7min）；
-              无 GPU 诚实 SKIP 不算失败。LDA_SKIP_LIVE=1 可本地强制跳过
+              **CPU 亦可跑但慢**：实测 ~74.6s/波长 ⇒ 21 点 ≈ 26min，故无 CUDA
+              时默认跳过（`LDA_FORCE_RING_FDTD=1` 可强制启用），SKIP 诚实标注、
+              不算失败。LDA_SKIP_LIVE=1 可本地强制跳过
               （本机 CUDA_VISIBLE_DEVICES="" 对 torch 无效）。
+              ⚠️ 与 device_library 的 5/5 live 快验收区分：后者走 RING-fsr
+              解析契约层，T-8 后 DC/YB/WG/Bragg/Ring **全部零 GPU 现场可跑**。
 """
 import json
 import os
@@ -57,16 +61,21 @@ def main() -> int:
                 f"{a.oracle_value if a.oracle_value is not None else '?'} "
                 f"(err={a.err:.2e} ≤ tol {a.tol})", report, "analytic_live")
 
-    # 4) live FDTD 双验证（GPU；无 GPU / LDA_SKIP_LIVE=1 诚实 SKIP）
+    # 4) live FDTD 双验证（21 点深度谱：CPU 能跑但 ≈26min ⇒ 默认跳过；
+    #    LDA_FORCE_RING_FDTD=1 强制启用；LDA_SKIP_LIVE=1 优先强制跳过）
     if os.environ.get("LDA_SKIP_LIVE") == "1":
-        cuda = False
+        run_live, reason = False, "LDA_SKIP_LIVE=1 强制跳过"
+    elif os.environ.get("LDA_FORCE_RING_FDTD", "") not in ("", "0", "false"):
+        run_live, reason = True, "LDA_FORCE_RING_FDTD=1 强制启用"
     else:
         try:
             import torch
-            cuda = torch.cuda.is_available()
+            run_live = torch.cuda.is_available()
         except Exception:
-            cuda = False
-    if cuda:
+            run_live = False
+        reason = ("默认跳过（CPU 可跑但 21 点 ≈26min，属耗时取舍非能力限制；"
+                  "LDA_FORCE_RING_FDTD=1 可强制启用）")
+    if run_live:
         r = lib.verify_ring_fdtd(mode="live", R_um=6.0, n_points=21,
                                  tol_rel=0.30)
         report["live"] = r
@@ -83,8 +92,8 @@ def main() -> int:
                     f"FDTD drop 谱 {len(r['fdtd']['peaks_um'])} 个谐振峰",
                     report, "live_peaks")
     else:
-        print("SKIP live FDTD 双验证（无 GPU / LDA_SKIP_LIVE=1）")
-        report["live"] = {"skipped": True}
+        print(f"SKIP live FDTD 双验证（{reason}）")
+        report["live"] = {"skipped": True, "reason": reason}
 
     # 5) Waveguide 真实 FDTD 双验证（D-32 延伸，纯 numpy CPU 可跑）
     wg = lib.verify_waveguide_fdtd(mode="contract", width_um=0.5)

@@ -1,4 +1,4 @@
-"""quickverify.py · 一键复现（T-7 · v0.9.37）
+"""quickverify.py · 一键复现（T-7 · 版本随 pyproject 动态显示）
 
 外部人拿到仓库后，一条命令复现「核心验证可信度」：
 
@@ -105,8 +105,33 @@ def _importable(mod: str, blocked: frozenset | None = None) -> bool:
 # ---------------------------------------------------------------------------
 # 2. 版本核对
 # ---------------------------------------------------------------------------
+def _dist_path() -> str:
+    """lda-design 分发元数据所在目录；未安装返回 ''。"""
+    try:
+        d = _md.distribution("lda-design")
+        return str(getattr(d, "_path", "") or "")
+    except Exception:
+        return ""
+
+
+def _is_repo_build_artifact(path: str, repo: str) -> bool:
+    """路径是否位于仓库内 —— 若是，那是 pip 构建残留（*.egg-info），**不算真实安装**。
+
+    血案（2026-09-05）：仓库内遗留 `lda/lda_design.egg-info`（gitignore 的本地
+    构建产物）会被 importlib.metadata 发现，导致版本核对读到残留版本号，而真实
+    site-packages 里根本没装 ⇒ 「已安装 X」是假阳性。判据必须落到「装在哪」。
+    """
+    if not path:
+        return False
+    return os.path.abspath(path).startswith(os.path.abspath(repo) + os.sep)
+
+
 def _versions() -> tuple:
-    """返回 (declared, installed)。installed 不可得时为 None（源码运行）。"""
+    """返回 (declared, installed)。installed 不可得时为 None（源码运行）。
+
+    只认**真实安装**（site-packages 等仓库外路径）；仓库内 egg-info 构建残留
+    一律视同未安装，避免假阳性。
+    """
     declared = None
     pp = os.path.join(_ROOT, "pyproject.toml")
     if os.path.exists(pp):
@@ -117,10 +142,12 @@ def _versions() -> tuple:
                     declared = ls.split("=", 1)[1].strip().strip('"').strip("'")
                     break
     installed = None
-    try:
-        installed = _md.version("lda-design")
-    except Exception:
-        installed = None
+    p = _dist_path()
+    if p and not _is_repo_build_artifact(p, _ROOT):
+        try:
+            installed = _md.version("lda-design")
+        except Exception:
+            installed = None
     return declared, installed
 
 
@@ -200,8 +227,16 @@ def _selfcheck() -> int:
     dec, inst = _versions()
     if not dec:
         fails.append("pyproject 版本串解析为空")
+    # D. 反向-构建残留不算安装（2026-09-05 血案：仓库内 egg-info 造成「已安装」假阳性）
+    if not _is_repo_build_artifact(os.path.join(_HERE, "lda_design.egg-info"), _ROOT):
+        fails.append("反向：仓库内 egg-info 未判为构建残留（假护栏/假阳性）")
+    outside = os.path.join(tempfile.gettempdir(), "site-packages",
+                           "lda_design-9.9.9.dist-info")
+    if _is_repo_build_artifact(outside, _ROOT):
+        fails.append("反向：仓库外真实安装被误判为构建残留（假护栏）")
 
-    print("[quickverify --selfcheck] 正向环境 OK + 反向缺依赖会响 + 版本解析非空",
+    print("[quickverify --selfcheck] 正向环境 OK + 反向缺依赖会响 + 版本解析非空"
+          " + 反向构建残留不算安装",
           "-> " + ("PASS" if not fails else f"FAIL: {fails}"))
     return 1 if fails else 0
 
@@ -223,7 +258,7 @@ def main() -> int:
         return _selfcheck()
 
     _say("=" * 74)
-    _say("LDA 一键复现（T-7 · v0.9.37） · quickverify")
+    _say(f"LDA 一键复现（T-7 · {_versions()[0] or '?'}） · quickverify")
     _say("=" * 74)
 
     steps: list[dict] = []
@@ -248,7 +283,12 @@ def main() -> int:
         _say("\n[2/4] 版本核对  未找到 pyproject.toml", _C.RED)
         ver_ok = False
     elif inst is None:
-        _say(f"\n[2/4] 版本核对  pyproject={dec} · 未 pip 安装（源码直跑，OK）")
+        p = _dist_path()
+        if p and _is_repo_build_artifact(p, _ROOT):
+            _say(f"\n[2/4] 版本核对  pyproject={dec} · 未 pip 安装"
+                 f"（仓库内 {os.path.basename(p)} 是构建残留、不算安装）⇒ 源码直跑 OK")
+        else:
+            _say(f"\n[2/4] 版本核对  pyproject={dec} · 未 pip 安装（源码直跑，OK）")
     elif dec == inst:
         _say(f"\n[2/4] 版本核对  pyproject={dec} = 已安装 {inst}  OK")
     else:

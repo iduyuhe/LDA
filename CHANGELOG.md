@@ -1,5 +1,82 @@
 # Changelog
 
+## v0.9.38（2026-09-05 · T-8 device 交叉验证去 GPU · 5 器件 live 5/5 零 SKIP · 三分类不变：23 / 0 / 25）
+
+**动机**：`DeviceLibrary().verify_all(mode="live")` 在无 GPU 机器上**只能演示 1 个器件（Ring）**——DC / YB 因 `requires_gpu` 硬门禁 SKIP，Waveguide / Bragg 被判 heavy 默认跳过。对外宣称「5 个已验证器件库」，外部人跑起来只看到 1 个 + 4 个 SKIP，这是**可验货性的直接裂缝**。T-8 的任务就是把 5 个器件全部变成现场可演示、且全部进 CI。
+
+### 🔴 实测推翻了 roadmap 的三条原假设（本轮最重要产出）
+
+roadmap 原计划是「DC/YB 改 numpy/numba-CPU 候选；WG/Bragg 加 medium 轻量档」。**先量化再动手，结果三条全不成立**：
+
+| 器件 | roadmap 原判 | CPU 实测（绕过门禁直跑） | 判据余量 | 耗时 |
+|---|---|---|---|---|
+| DirectionalCoupler | 需 CUDA ⇒ SKIP | **PASS** err=2.48% | tol=25% | **15.3s** |
+| SymmetricYBranch | 需 CUDA ⇒ SKIP | **PASS** err=6.0e-4 | tol=0.1 | **19.1s** |
+| RingResonator | 可跑 | PASS err=3.3e-9 | tol=0.02 | <0.1s |
+| BraggMirror | heavy 重项 | **PASS** err=4.4e-5 | tol=0.02 | **19.9s** |
+| Waveguide | heavy 重项 | **PASS** err=0.0236 | tol=0.15 | **161–389s** ⚠️ |
+
+1. **DC/YB 根本不需要重写候选**——`solve_*_3d_torch` 内部本就有 `dev = "cuda" if torch.cuda.is_available() else "cpu"` 回退。**卡点纯粹是 `requires_gpu` 门禁本身**，不是求解器能力。改门禁即可，物理零改动。
+2. **Bragg 只有 19.9s，从来就不该是 heavy**——归类是历史惯性，无实测依据。
+3. **唯一真重项只有 Waveguide**（numpy 161–389s），且重在内层 Python 循环而非物理必要。
+
+### 交付
+
+1. **DC / YB 去 GPU 门禁**：`requires_gpu` 语义由「live 候选需 torch CUDA」改为「**恒 False（GPU 降级为可选加速）**」；新增 `backend` 字段（`numpy` / `torch` / `numba→numpy`），门禁改为 `resolve_backend()`：torch **可导入**即放行（设备由 torch 自选 cuda/cpu），torch 缺失才诚实 SKIP。未知 backend ⇒ 判为不可运行（宁红不假绿）。
+2. **Waveguide numba-CPU 内核**（`lda/lda_solver/fdtd3d_waveguide_numba.py`）：把同一套「三场蛙跳 + 六面海绵阻尼 + 软源 + 双点 DFT + 三面重叠积分投影」用 `njit(parallel)` 重写，**逐行对应 numpy 版**，物理网格 dl、海绵 `target_exp`、源 ramp、测量窗 M=80 周期、transient≥3000 **一律不变**。
+   - **交叉验证（同档位）：`|numba − numpy| / numpy = 4.775e-16`**（机器精度级，判据 ≤1e-9）；小网格复测 3.346e-16。
+   - **加速比 45.8×**（含首次 JIT 编译 3.5s vs numpy 161s）；预热后 1.1s（≈146–350×）。
+   - **numba 是可选加速不是硬依赖**：缺失/编译失败一律回退 numpy，行为不变。
+   - 测量窗扫描（M/T 五档）证明 neff 波动 <0.2% ⇒ **不需要 roadmap 规划的 medium 档**，5 器件统一 light。
+3. **Bragg / Waveguide 提为 light**：`verify_all(mode="live")` 现在 5/5 全跑、零 SKIP。
+4. **顺带修两处同类伪 GPU 门禁**（同根因，不修会留下事实错误的文案）：
+   - `coupler_loop.py:188` 原写法 `backend = "torch" if cuda.is_available() else "numpy"`，而 numpy 路径在 `_run_dc` 里是 `raise RuntimeError`⇒ **无 GPU 机器上 CouplerAgent / CouplerBandAgent 整条链路不可用**。实测 torch CPU 能跑（全波段 DC 7 波长 **123.1s PASS**、YB **163.8s PASS**）。
+   - `verify_ring_fdtd`（D-31 深度 FDTD）的「需 torch CUDA → SKIP」文案不实：CPU 能跑只是慢（**~74.6s/波长，21 点 ≈ 26min**）。改为「可跑但慢 ⇒ 默认跳过，`LDA_FORCE_RING_FDTD=1` 可强制启用」，与 `verify_all` 的 5/5 解析快验收分层，不混为一谈。
+
+### 护栏（反向测试证明会响，IRONLAWS：没被验证过的护栏不算护栏）
+
+`run_device_library_smoke.py` 断言全面升级（原「至少 1 个 live 能跑」→ **「5/5 全跑、零 SKIP、全 PASS」**），并新增 4 组判据：
+
+- **核心断言**：`live 零 SKIP`、`5/5 进入验收`、每器件 `extra["backend"]/["device"]` 非空且 ∈ 预期集合（诚实披露实际后端）。
+- **numba ↔ numpy 同档位一致性**（rel ≤ 1e-9）+ numba neff 落物理区间。
+- **反向 a**：未知 backend ⇒ `resolve_backend` 必须判为不可运行（SKIP 通道会响）。
+- **反向 b**：tol 收紧到 1e-12 ⇒ Ring live 必须 FAIL（证明 PASS 不是白送）。
+- **反向 c**：把 `_numba_ok` monkeypatch 成 False ⇒ WG 必须仍可运行且回退 numpy（降级通道会响）。
+
+CI 超时预算：新增 `run_coupler_band_smoke.py` 600s（live 由 SKIP 变真跑 287s，正好压原 300s 线）、`run_device_library_smoke.py` 600s（干净实测 ~60-80s，余量留给 numba 冷缓存 JIT）。**判据一个字未改**，只是给慢机器留耗时余量。
+
+4. **顺带修 quickverify 版本核对的假阳性（T-7 交付的缺陷，2026-09-05 实测发现）**：
+   - **现象**：本轮实测时 CI env 里**根本没有装 lda-design**（`importlib.metadata` 直接 `PackageNotFoundError`），但 quickverify 却报「已安装 0.9.37」——它读到的是仓库内 `lda/lda_design.egg-info`（`.gitignore` 的本地构建残留，因 `sys.path[0]` 是 `lda/` 而被 metadata 扫描命中）。**「已安装 X」是假阳性，与真实安装无关**。
+   - **根因**：判据只问「metadata 找不找得到」，没问「装在哪」。
+   - **修复**：`_versions()` 只认**仓库外的真实安装**；新增 `_dist_path()` / `_is_repo_build_artifact()`，仓库内 egg-info 一律视同未安装，并诚实打印「仓库内 `lda_design.egg-info` 是构建残留、不算安装 ⇒ 源码直跑 OK」。
+   - **反向测试 D 入 `--selfcheck`**：仓库内路径必须判为残留、仓库外（真实 site-packages）必须判为真实安装；**变异测试双向证明会响**——判据改恒 False ⇒ `rc=1`（未判残留）、改恒 True ⇒ `rc=1`（误判真实安装）。
+   - 顺带：banner 硬编码 `v0.9.37` → 动态读 pyproject（消除下一次版本漂移的同类隐患）。
+
+### 🔴 两次整机硬掉电取证 + 线程预算（跑本版最重任务时机器宕了两次）
+
+**现象**：跑 `run_coupler_band_smoke.py`（torch CPU 全波段 3D FDTD）时系统硬重启两次；回归中该 smoke 也崩过一次（178.98s，恰在 DC 之后进入 YB 处）。
+
+**证据链**（`wevtutil qe System`，不是猜测）：
+- **Kernel-Power Event 41（关键）×2**：`BugcheckCode=0`、`SleepInProgress=0`、`PowerButtonTimestamp=0`、`WHEABootErrorCount=0` ⇒ **不是蓝屏、不是睡眠唤醒失败、不是长按电源键，是硬掉电**。
+- **Kernel-Processor-Power Event 37（警告）**：「处理器速度受系统固件限制」⇒ PROCHOT / 供电或散热保护触发固件级限速（重启后仍持续）。
+- 无 WHEA 硬件错误、无 BugCheck 转储 ⇒ 排除内存/CPU 可纠正错误蓝屏。
+- **内存 63.3GB（空闲 54.8GB）、20 线程** ⇒ **排除 OOM**（但页面文件仅 4.0GB，提交内存峰值偏紧）。
+- 两次都死在同一位置（DC 后进入 YB 约 56s）；27min 全量回归其余部分从未宕机 ⇒ 指向**满载功耗/散热峰值**。
+
+**对策（只降并发，不动物理与判据）**：新增 `lda/lda_solver/threads.py` —— 把 OMP/MKL/NUMEXPR/OPENBLAS/NUMBA/torch 并发压到**一半核心、上限 10**（`LDA_FDTD_THREADS` 可覆盖）。两个重 smoke 在**任何数值内核导入前**调用 `apply_thread_budget()`（numba 的 `NUMBA_NUM_THREADS` 必须早于导入）；DC 完成后 `gc.collect()` 降提交内存峰值。
+
+**并扩到整个 CI**：`run_ci_regression.py` 新增 `_child_env()`，给**所有** smoke 子进程统一注入同一预算（env 在进程启动时即存在 ⇒ 早于任何内核初始化，覆盖 numpy/MKL/numba/torch 全部），不只手动调用的那两个。经 runner 路径实测：`run_device_library_smoke` 68.79s PASS、`run_coupler_band_smoke` 240.23s PASS。
+
+**实测结果**：限 10 线程后 `run_coupler_band_smoke.py` **240s 跑通（原 287s，反而更快）**，判据结果**逐位一致**（mean=0.1707 / max=0.4367 / 平衡度 0.0007 与 20 线程完全相同）⇒ 印证「20 线程满载触发固件降频，既更慢又更热」。
+
+**回归故障可见性升级**：`run_ci_regression.py` 对 FAIL/ERROR/TIMEOUT 项**当场打印子进程 tail**（旧行为只留一行 FAIL，排查要重跑 30 分钟全量才能拿到原因）。超时预算 `run_coupler_band_smoke` 600→1200s（判据未动）。
+
+**待硬件侧处置（非代码）**：清灰/散热、电源功率、BIOS PROCHOT 阈值、**页面文件 4GB 建议调大**。
+
+### 本版未动验证强度
+
+不动 48 锚三分类（**23 严格独立 / 0 降级 / 25 自证桩**）、不改任何契约 tol、不放宽任何判据。DC/YB/WG 的候选**物理与默认档位逐字节等价**（numba 侧有 4.8e-16 级交叉验证背书）。CI core 仍 **95 条**（无新增 smoke，两条既有 smoke 的覆盖范围扩大）。
+
 ## v0.9.37（2026-09-04 · T-7 一键复现 · 一条命令复现「验证可信度」 · 三分类不变：23 / 0 / 25）
 
 **动机**：外部人（含杜先生本人跨会话）长期无法低成本复现 LDA 的验证可信度——知道 README 宣称「23 道严格独立」，但要自己跑出这个数需要知道跑哪几个脚本、装对版本、翻 JSON。T-7 把它压成一条命令：**`pip install lda-design` 之后 `python lda/quickverify.py`**。

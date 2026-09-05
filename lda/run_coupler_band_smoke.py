@@ -1,17 +1,31 @@
 """LDA · D-23 多波长耦合器件验收 smoke。
 
+T-8 后（v0.9.38）：**无 GPU 亦可跑 live**。原写法把「无 CUDA」映射成 numpy
+后端，而 CouplerAgent 的 numpy 路径未实现（直接 raise）⇒ 整条链路在无 GPU
+机器上不可用——实测这是伪门禁：torch 后端内部本就有 cuda→cpu 回退，器件库侧
+实测 DC 15.3s / YB 19.1s 已 PASS。现改为：**有 torch 就跑**（设备由 torch
+自选 cuda/cpu），torch 缺失才诚实 SKIP。
 分层：
-  - contract：注册表 + 契约 + 波长扫描逻辑自检（快，CI 无 GPU 也可跑）
-  - live：真实 CouplerBandAgent 全波段 FDTD（DC/YB 各 7 波长；需 torch CUDA，
-          无 GPU 诚实 SKIP 并打印说明，不 FAIL）
+  - contract：注册表 + 契约 + 波长扫描逻辑自检（快，CI 无 torch 也可跑）
+  - live：真实 CouplerBandAgent 全波段 FDTD（DC/YB 各 7 波长；CPU 实测数分钟，
+          配 timeout override；无 torch 诚实 SKIP 并打印说明，不 FAIL）
   - 附加验证：耦合强度波长依赖趋势（κ 随 λ 单调变化，证明不是走过场）
 """
+import gc
 import json
 import os
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
+
+# 🔴 线程预算必须在任何数值内核（torch/numba/MKL）初始化之前落下去。
+# 2026-09-05 血案：本 smoke 是本仓**最重的 CPU 任务**（torch CPU 全波段 3D FDTD，
+# DC 7 波长 ~123s + YB ~164s），20 线程满载时两次触发整机硬掉电
+# （Kernel-Power 41 / BugcheckCode=0 + Kernel-Processor-Power 37 固件限速），
+# 内存 63GB 充足已排除 OOM ⇒ 满载功耗/散热峰值。压到一半核心（上限 10）。
+from lda_solver.threads import apply_thread_budget  # noqa: E402
+THREAD_INFO = apply_thread_budget(verbose=True)
 
 from lda_agent.coupler_band_loop import CouplerBandAgent, CouplerBandTarget  # noqa: E402
 from lda_l2.device_library import get_default_library  # noqa: E402
@@ -25,16 +39,20 @@ def check(cond: bool, msg: str, out: dict, key: str) -> bool:
 
 
 def main() -> int:
-    report: dict = {"d05_d23": "coupler band acceptance", "checks": []}
+    report: dict = {"d05_d23": "coupler band acceptance", "checks": [],
+                    "thread_budget": THREAD_INFO}
     ok = True
 
-    # 0) 环境
+    # 0) 环境：torch 可用即可跑（GPU 仅加速，T-8 后不再是门禁）
     try:
         import torch
         cuda = torch.cuda.is_available()
+        have_torch = True
     except Exception:
         cuda = False
-    print(f"torch.cuda.is_available() = {cuda}")
+        have_torch = False
+    print(f"torch 可用={have_torch}  cuda.is_available()={cuda}"
+          f"  ⇒ live 设备={'cuda' if cuda else 'cpu'}")
 
     # 1) contract 自检（始终）
     lib = get_default_library()
@@ -46,11 +64,11 @@ def main() -> int:
     ok &= check(c_yb["passed"] and c_yb["checks"]["wavelength_scan"]["n_points"] == 7,
                 f"contract YB：{c_yb['verdict'][:60]}", report, "contract_yb")
 
-    # 2) live 全波段（仅 torch CUDA）
-    if not cuda:
-        print("[SKIP] live 全波段 FDTD 需 torch CUDA（当前无 GPU）→ 诚实 SKIP")
-        report["live"] = {"skipped": True,
-                          "reason": "no torch CUDA in this environment"}
+    # 2) live 全波段（有 torch 即跑；cuda 仅决定设备，不决定能否跑）
+    if not have_torch:
+        print("[SKIP] live 全波段 FDTD 需 torch（当前环境无 torch）→ 诚实 SKIP"
+              "（注意：**不再要求 CUDA**，CPU 亦可跑，只是慢）")
+        report["live"] = {"skipped": True, "reason": "no torch in this environment"}
     else:
         dc = CouplerBandAgent().run(
             CouplerBandTarget(kind="dc", gap_um=0.3, n_points=7,
@@ -70,6 +88,11 @@ def main() -> int:
                     f" ≤ 0.25（方法一致性，非走过场）",
                     report, "dc_mean_rel")
 
+        # DC 完成后主动回收：DC 的 7 个波长点各持有一份 3D 场张量（torch CPU），
+        # 若一直握到 YB 跑完，峰值提交内存会叠加。本机 RAM 63GB 但**页面文件仅
+        # 4GB**，提交内存峰值是两次硬掉电的诱因之一 ⇒ 显式 gc 降峰（不是修 bug，
+        # 是降资源峰值）。
+        gc.collect()
         yb = CouplerBandAgent().run(
             CouplerBandTarget(kind="ybranch", sep_um=1.6, n_points=7,
                               label="YB 对称分束器多波长"))

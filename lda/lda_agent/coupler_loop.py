@@ -183,9 +183,17 @@ class CouplerAgent:
         dl = t.dl_um if (t.dl_um and t.dl_um > 0) else t.wl_um / t.dl_factor
         backend = t.backend
         if backend == "auto":
+            # 🔴 T-8（v0.9.38）修正：原写法 `torch.cuda.is_available()` 把「无 GPU」
+            # 直接映射成 numpy 后端，而 DC/YB 的 numpy 路径在本模块里根本没实现
+            # （`_run_dc` 直接 raise）⇒ 无 GPU 机器上 CouplerAgent / CouplerBandAgent
+            # **整条链路不可用**。实测 torch 后端内部本就有
+            # `dev = "cuda" if torch.cuda.is_available() else "cpu"` 回退，
+            # 单波长 CPU 实测 DC 15.3s / YB 19.1s 且判据余量充足
+            # （err 2.48% vs tol 25%）。故改为：**有 torch 就用 torch**（设备由
+            # torch 自己选 cuda/cpu），torch 缺失才退 numpy（小网格兜底）。
             try:
-                import torch
-                backend = "torch" if torch.cuda.is_available() else "numpy"
+                import torch  # noqa: F401
+                backend = "torch"
             except Exception:
                 backend = "numpy"
         if t.kind == "dc":

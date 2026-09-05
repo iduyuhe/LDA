@@ -110,7 +110,7 @@ def main() -> int:
             f"<td>{metric}</td><td>{pwin}</td>"
             f"<td><span class='v {'ok' if c.get('passed') else 'fail'}'>"
             f"{'PASS' if c.get('passed') else 'FAIL'}</span></td>"
-            f"<td>{s.get('live_weight')}</td><td>{'是' if s.get('requires_gpu') else '否'}</td></tr>"
+            f"<td>{s.get('live_weight')}</td><td>{s.get('backend', 'numpy')}</td></tr>"
         )
 
     # Ring 双验证
@@ -190,10 +190,10 @@ def main() -> int:
 <style>{CSS}</style></head>
 <body><div class="wrap">
 <h1>LDA 器件库真实物理验证面板</h1>
-<p class="sub">演示证据固化页 · 与 WebUI ⑬ 面板同源数据（D-34 WG/Bragg + D-35 量子 Transmon）· 生成于本地自举求解器，零 GPU 依赖（Ring 除外）</p>
+<p class="sub">演示证据固化页 · 与 WebUI ⑬ 面板同源数据（D-34 WG/Bragg + D-35 量子 Transmon）· 生成于本地自举求解器，T-8 后零 GPU 依赖（DC/YB torch CPU 回退 · WG numba-CPU · Bragg/Ring 纯 numpy）</p>
 
 <div class="sec"><h2>器件全景表（D-12 固化 · D-04 统一契约）</h2>
-<table><tr><th>器件</th><th>验收锚</th><th>参数窗口</th><th>契约</th><th>live_weight</th><th>需 GPU</th></tr>
+<table><tr><th>器件</th><th>验收锚</th><th>参数窗口</th><th>契约</th><th>live_weight</th><th>后端</th></tr>
 {table_rows}</table></div>
 
 <div class="sec"><h2>RingResonator 双验证（解析契约 + 真实 FDTD）</h2>{ring_block}</div>

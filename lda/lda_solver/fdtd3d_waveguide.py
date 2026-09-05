@@ -65,12 +65,19 @@ def solve_waveguide_neff_3d(eps3: np.ndarray, dl: float, wl_um: float, n_clad: f
                             n_core: float = None, sponge: int = 60, target_exp: float = 12.0,
                             courant: float = 0.95, dz_um: float = 0.6, ramp: int = 400,
                             z1_frac: float = 0.45, src_frac: float = 0.12,
-                            mode_source: np.ndarray = None, debug: bool = False):
+                            mode_source: np.ndarray = None, debug: bool = False,
+                            M_periods: int = 80, transient_min: int = 3000):
     """3D 标量波动 FDTD 求真 2D 矩形波导基模 neff（双监视点 DFT 相位差法）。
 
     eps3 : (Nx,Ny,Nz) 折射率平方场（x,y 截面约束，z 传播）；dl : 网格 µm。
     n_clad/n_core : 包/芯折射率（物理区间上下界）；缺省 n_core 取 eps3 最大平方根。
     返回基模 neff（float）；debug 时额外返回 (neff, beta, m, snr)。
+
+    M_periods / transient_min（v0.9.38 T-8 新增，**默认值即历史硬编码值**）：
+      M = M_periods·period_steps、transient = max(ramp+5·period_steps,
+      transient_min)。不改物理网格/海绵/源，只控制 DFT 测量窗长度——供
+      numba 后端做同档位逐位交叉验证（见 fdtd3d_waveguide_numba.py）。
+      缺省调用行为与新增前**完全一致**。
     """
     eps3 = np.asarray(eps3, dtype=float)
     Nx, Ny, Nz = eps3.shape
@@ -164,8 +171,8 @@ def solve_waveguide_neff_3d(eps3: np.ndarray, dl: float, wl_um: float, n_clad: f
 
     # ---- DFT 窗 ----
     period_steps = int(round(2.0 * math.pi / (omega * dt)))
-    transient = max(ramp + 5 * period_steps, 3000)
-    M = 80 * period_steps
+    transient = max(ramp + 5 * period_steps, transient_min)
+    M = M_periods * period_steps
     nsteps = transient + M
     meas0 = transient
 

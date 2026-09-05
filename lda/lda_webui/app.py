@@ -567,7 +567,7 @@ def run_dc_transmission_demo(payload=None):
 def run_device_library_demo(payload=None):
     """D-12/D-32/D-33 器件库验收（webui ⑬ 面板）。
 
-    返回：器件库全景（5 器件：验收锚 / 参数窗口 / live_weight / 需 GPU /
+    返回：器件库全景（5 器件：验收锚 / 参数窗口 / live_weight / 计算后端 /
     IR kind）+ 每器件 contract 快验收状态 + Ring 真实 FDTD 双验证（预计算
     D-32 smoke live 结果：解析契约 + FDTD drop 谱 4 峰 / FSR 对拍）+ WG/Bragg
     真实 FDTD 双验证（D-34 预计算）+ 量子 Transmon 双验证（D-35：Koch 解析
@@ -688,7 +688,9 @@ def run_device_library_demo(payload=None):
                 "（D-28 Ring / D-34 WG-Bragg，纯 numpy 离线生成），"
                 "解析契约层现场快跑（秒级）；量子 Transmon 双验证（D-35）"
                 "现场跑 Koch 解析 + 严格对角化自洽（纯 numpy，<1s，零 GPU）；"
-                "实时重算 Ring 需 GPU 不阻塞 HTTP",
+                "T-8（v0.9.38）后器件库 5 器件 live 全部零 GPU 可跑"
+                "（DC/YB torch-CPU · WG numba-CPU · Bragg/Ring numpy）；"
+                "仅 D-31 Ring 深度 FDTD（CPU ~74.6s/波长）仍用预计算数据不阻塞 HTTP",
     }
 
 

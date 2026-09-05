@@ -1085,12 +1085,39 @@ def harness_perturbed_candidate(rel_err: float):
 # ---------------------------------------------------------------------------
 # 2. waveguide_loop（真 2D 波导 neff · FDFD 本征 ORACLE）
 # ---------------------------------------------------------------------------
-def build_waveguide_specs(cases: Optional[List] = None
+def build_waveguide_specs(cases: Optional[List] = None,
+                          backend: str = "numpy"
                           ) -> Tuple[List[VerificationSpec], Dict[str, Callable]]:
+    """WG neff 契约构造。
+
+    backend（v0.9.38 T-8）：
+      "numpy" —— 原生产 numpy 实现（默认，**行为与新增前完全一致**）；
+      "numba" —— 强制 numba-CPU 后端（缺 numba 直接抛错，不静默降级）；
+      "auto"  —— numba 可用则用 numba，否则回退 numpy（DeviceLibrary live 用）。
+    三种后端**同一物理、同一默认测量窗**（M=80 周期 / transient≥3000），
+    差异只在计算内核，见 fdtd3d_waveguide_numba.py 的交叉验证判据。
+    """
     _ensure_paths()
     from waveguide_loop import WaveguideTarget, _default_cases
     from fdtd3d_waveguide import build_waveguide_field_3d, solve_waveguide_neff_3d
     from oracle_mode import fdfd_mode_field
+
+    if backend not in ("numpy", "numba", "auto"):
+        raise ValueError(f"backend 必须是 numpy/numba/auto，收到 {backend!r}")
+
+    _backend_used = {"name": "numpy"}
+    if backend in ("numba", "auto"):
+        try:
+            from fdtd3d_waveguide_numba import (solve_waveguide_neff_3d_numba,
+                                                backend_info)
+            if backend_info()["have_numba"]:
+                _backend_used["name"] = "numba"
+            elif backend == "numba":
+                raise RuntimeError("backend='numba' 但 numba 不可用："
+                                   + backend_info()["import_error"])
+        except ImportError:
+            if backend == "numba":
+                raise
 
     cases = cases if cases is not None else _default_cases()
     specs: List[VerificationSpec] = []
@@ -1117,11 +1144,15 @@ def build_waveguide_specs(cases: Optional[List] = None
                 p["w_um"], p["h_um"], p["n_core"], p["n_clad"], p["wl_um"],
                 dl=p["dl"], clad_um=p["clad_um"], Lz_um=p["Lz_um"])
             ne_oracle, mode2d = fdfd_mode_field(eps3, meta["dl"], p["wl_um"])
-            ne = solve_waveguide_neff_3d(
+            solver = (solve_waveguide_neff_3d_numba
+                      if _backend_used["name"] == "numba"
+                      else solve_waveguide_neff_3d)
+            return solver(
                 eps3, meta["dl"], p["wl_um"], n_clad=p["n_clad"],
                 n_core=p["n_core"], mode_source=mode2d)
-            return ne
 
+        # 诚实披露：候选实际走哪个后端（供 DeviceLibrary / CI 报告）
+        _cand.backend_used = lambda: _backend_used["name"]  # type: ignore[attr-defined]
         specs.append(VerificationSpec(
             spec_id=sid, metric="neff", oracle_kind="fdfd_eigen",
             oracle_fn=_oracle, compare_fn=cmp_abs,

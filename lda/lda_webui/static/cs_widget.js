@@ -2,6 +2,8 @@
  * LDA 智能体客服前台组件（Craft 模式生成）
  * 浮动气泡 + 对话面板；调用 /api/agent/chat（解答问题 + 收集线索）。
  * 自带配色（深底浅字），在明/暗主题页均清晰；不依赖页面 CSS 变量。
+ * 引导型升级：面板内置「🚀 引导」入口 + 引导 banner（对话式带路），
+ * 并与 guide_widget.js 的 window.LDA_GUIDE 联动打开对应步聚光灯。
  */
 (function () {
   "use strict";
@@ -59,7 +61,20 @@
       'display:flex;align-items:center;justify-content:space-between">' +
       '<b style="color:' + C.txt + ';font-size:14px">LDA 智能体客服</b>' +
       '<span style="color:' + C.mut + ';font-size:11px">解答 · 留资</span>' +
+      '<span id="csGuideCta" style="cursor:pointer;color:' + C.accent + ';font-size:12px;margin-left:6px">🚀 引导</span>' +
       '<span id="csClose" style="cursor:pointer;color:' + C.mut + ';font-size:18px">&times;</span></div>' +
+      '<div id="csGuideBanner" style="display:none;padding:10px 12px;border-bottom:1px solid ' + C.line + ';background:' + C.panel2 + '">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+      '<b id="csGuideTitle" style="color:' + C.txt + ';font-size:13px">引导</b>' +
+      '<span id="csGuideProg" style="color:' + C.mut + ';font-size:11px">1/7</span></div>' +
+      '<div id="csGuideIntro" style="color:' + C.txt + ';font-size:12px;line-height:1.55;white-space:pre-wrap;max-height:128px;overflow:auto"></div>' +
+      '<div id="csGuideTip" style="color:' + C.mut + ';font-size:11px;margin-top:6px;line-height:1.5"></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' +
+      '<button id="csGuideVisual" style="background:' + C.accent + ';color:#fff;border:0;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer">🎯 可视化引导</button>' +
+      '<button id="csGuidePrev" style="background:' + C.panel + ';color:' + C.txt + ';border:1px solid ' + C.line + ';border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer">上一步</button>' +
+      '<button id="csGuideNext" style="background:' + C.accent + ';color:#fff;border:0;border-radius:8px;padding:6px 12px;font-weight:700;font-size:12px;cursor:pointer">下一步 →</button>' +
+      '<button id="csGuideExit" style="background:transparent;color:' + C.mut + ';border:0;cursor:pointer;font-size:12px;padding:6px 8px">退出</button>' +
+      '</div></div>' +
       '<div id="csBody" style="flex:1;overflow:auto;padding:12px 14px;color:' + C.txt + ';font-size:13px;line-height:1.6"></div>' +
       '<div id="csSug" style="display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 8px"></div>' +
       '<div id="csLead" style="display:none;padding:0 12px 8px;border-top:1px solid ' + C.line + ';margin-top:2px;padding-top:8px">' +
@@ -178,6 +193,52 @@
         });
     }
 
+    // 引导模式（智能体做成引导型）：对话式带路 + 与 guide_widget 聚光灯联动
+    function startGuide() {
+      guideState.active = true; guideState.step = 0;
+      fetch(API, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guide_cmd: "start", history: [] })
+      }).then(function (r) { return r.json(); })
+        .then(function (d) { if (d.guide) renderGuide(d.guide); })
+        .catch(function () { addMsg("bot", "引导加载失败，请稍后重试。"); });
+    }
+    function renderGuide(g) {
+      guideState.step = g.step; guideState.total = g.total;
+      var banner = panel.querySelector("#csGuideBanner");
+      if (banner) banner.style.display = "block";
+      var t = panel.querySelector("#csGuideTitle"); if (t) t.textContent = g.title;
+      var p = panel.querySelector("#csGuideProg"); if (p) p.textContent = (g.step + 1) + "/" + g.total;
+      var intro = panel.querySelector("#csGuideIntro"); if (intro) intro.textContent = g.intro;
+      var tip = panel.querySelector("#csGuideTip"); if (tip) tip.textContent = g.tip;
+      var prev = panel.querySelector("#csGuidePrev"); if (prev) prev.style.visibility = g.step === 0 ? "hidden" : "visible";
+      var next = panel.querySelector("#csGuideNext"); if (next) next.textContent = g.step === g.total - 1 ? "完成 ✓" : "下一步 →";
+    }
+    function fetchGuideStep(step) {
+      fetch(API, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guide_step: step, message: "", history: history.slice(-6) })
+      }).then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.guide) renderGuide(d.guide);
+          if (d.reply) addMsg("bot", d.reply);
+          if (d.lead_captured) { var lt = panel.querySelector("#csLeadToggle"); if (lt) lt.textContent = "✓ 已收到您的联系方式"; }
+        })
+        .catch(function () { addMsg("bot", "引导加载失败，请稍后重试。"); });
+    }
+    function guideNext() {
+      if (guideState.step >= guideState.total - 1) { exitGuide(); return; }
+      fetchGuideStep(guideState.step + 1);
+    }
+    function guidePrev() { if (guideState.step > 0) fetchGuideStep(guideState.step - 1); }
+    function exitGuide() {
+      guideState.active = false;
+      var banner = panel.querySelector("#csGuideBanner"); if (banner) banner.style.display = "none";
+    }
+    function openVisual() {
+      if (window.LDA_GUIDE && window.LDA_GUIDE.goTo) window.LDA_GUIDE.goTo(guideState.step);
+    }
+
     // 事件
     bubble.onclick = function () {
       panel.style.display = panel.style.display === "flex" ? "none" : "flex";
@@ -186,7 +247,7 @@
         addMsg("bot", "您好，我是 LDA 智能体客服 👋 可解答产品定位、验证红线、光子/量子能力、"
           + "上手方式、开源与商用、能力边界等问题；也可直接留姓名+公司+邮箱安排专人对接。");
         showSug(["产品是什么", "验证为什么可信", "光子能力", "量子能力",
-          "如何快速上手", "价格与商用", "能力边界", "留个联系方式"]);
+          "如何快速上手", "价格与商用", "能力边界", "留个联系方式", "🚀 带我 3 分钟上手"]);
       }
     };
     panel.querySelector("#csClose").onclick = function () { panel.style.display = "none"; };
@@ -199,6 +260,11 @@
       ld.style.display = ld.style.display === "none" ? "block" : "none";
     };
     panel.querySelector("#csLeadSubmit").onclick = submitLead;
+    panel.querySelector("#csGuideCta").onclick = startGuide;
+    panel.querySelector("#csGuideVisual").onclick = openVisual;
+    panel.querySelector("#csGuidePrev").onclick = guidePrev;
+    panel.querySelector("#csGuideNext").onclick = guideNext;
+    panel.querySelector("#csGuideExit").onclick = exitGuide;
   }
 
   if (document.readyState === "loading") {

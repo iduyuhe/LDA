@@ -231,6 +231,7 @@
     if (hole) hole.style.display = "none";
     if (tip) tip.style.display = "none";
     try { localStorage.setItem(KEY, "1"); } catch (e) {}
+    if (window.LDA_ONBOARD) window.LDA_ONBOARD.markStep(1);
   }
 
   function skip() { finish(); }

@@ -244,6 +244,7 @@
       panel.style.display = panel.style.display === "flex" ? "none" : "flex";
       if (panel.style.display === "flex" && !body.dataset.greeted) {
         body.dataset.greeted = "1";
+        if (window.LDA_ONBOARD) window.LDA_ONBOARD.markStep(3);
         addMsg("bot", "您好，我是 LDA 智能体客服 👋 可解答产品定位、验证红线、光子/量子能力、"
           + "上手方式、开源与商用、能力边界等问题；也可直接留姓名+公司+邮箱安排专人对接。");
         showSug(["产品是什么", "验证为什么可信", "光子能力", "量子能力",

@@ -39,7 +39,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>验证实力 · 自证看板 <span class="pill" id="gen">—</span></h1>
+  <h1>验证实力 · 自证看板 <span class="pill" id="ver">—</span> <span class="pill" id="gen">—</span></h1>
   <div class="sub">LDA 开源 Agent 原生芯片设计软件 · 所有数字均由运行源码实时计算，非营销话术</div>
   <div id="app"><div class="err">读取中…</div></div>
 </div>
@@ -57,6 +57,7 @@
   }
   function render(d){
     var v=d.version||"—", a=d.assets||{}, c=d.ci||{}, ver=(d.verification||{});
+    var pr=(d.product||{});
     var html='';
     html+='<div class="grid">'
       + card(fmt(v), "软件版本")
@@ -65,6 +66,33 @@
       + card(fmt(a.shelves_total), "创新货架（总计）")
       + card(fmt(c.core_smokes), "CI core 冒烟")
       + '</div>';
+
+    // —— 关于 LDA（产品基本说明：定位 + 亮点 + 边界）——
+    if(pr.tagline || pr.description){
+      html+='<section><h2>关于 LDA</h2>';
+      html+='<div class="principle" style="border-left-color:var(--green)">'
+        + (pr.full_name?('<b>'+esc(pr.full_name)+'</b><br>'):'')
+        + (pr.tagline?('<span style="color:var(--accent);font-weight:700">'+esc(pr.tagline)+'</span><br>'):'')
+        + (pr.description?esc(pr.description):'') + '</div>';
+      var hl=(pr.highlights||[]);
+      if(hl.length){
+        html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0">';
+        hl.forEach(function(x){ html+='<div class="note" style="margin:0">'+esc(x)+'</div>'; });
+        html+='</div>';
+      }
+      var bd=(pr.boundaries||[]);
+      if(bd.length){
+        html+='<div class="note" style="margin-top:10px"><b>能力边界（诚实披露）：</b><ul style="margin:6px 0 0;padding-left:18px">';
+        bd.forEach(function(x){ html+='<li>'+esc(x)+'</li>'; });
+        html+='</ul></div>';
+      }
+      if(pr.repository){
+        html+='<div class="note" style="margin-top:10px">开源仓库：<a href="'+esc(pr.repository)
+          +'" target="_blank" rel="noopener" style="color:var(--accent)">'+esc(pr.repository)+'</a>'
+          + ' · 许可 '+esc(pr.license||"MIT")+'</div>';
+      }
+      html+='</section>';
+    }
 
     html+='<section><h2>为什么可信 · 验证原则</h2>';
     (ver.principles||[]).forEach(function(p){ html+='<div class="principle">'+esc(p)+'</div>'; });
@@ -97,6 +125,7 @@
         + '随代码库自更新。验证原则为 LDA 不可逾越的红线：物理定律锚 + 死标量比对 + LLM 不进判决路径。</div>';
 
     document.getElementById("app").innerHTML=html;
+    document.getElementById("ver").textContent="v"+(d.version||"—");
     document.getElementById("gen").textContent=(d.generated_at||"").slice(0,19).replace("T"," ")+" UTC";
   }
   fetch("/api/public/stats")
@@ -106,6 +135,7 @@
 })();
 </script>
 <script src="/nav.js"></script>
+<script src="/cs_widget.js"></script>
 </script>
 </body>
 </html>

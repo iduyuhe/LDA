@@ -874,8 +874,12 @@ def h_public_stats(h, p, q, path):
     inv["assets"]["anchors_by_class"] = byc
     # CI core
     inv["ci"]["core_smokes"] = _ci_core_count()
-    inv["ci"]["note"] = ("CI core 全量回归最近一次：82 PASS / 0 SKIP / 0 FAIL"
-                         "（与 README 当前账本段一致）；重 FDTD/GPU 项走 --tag all。")
+    n_core = inv["ci"]["core_smokes"] or 0
+    inv["ci"]["note"] = ("CI core 全量回归：%d 条冒烟全绿（0 SKIP / 0 FAIL，"
+                         "与 README 当前账本段一致）；重 FDTD/GPU 项走 --tag all。" % n_core)
+    # 产品基本说明（版本号 + 定位 + 边界），供公开自证看板渲染
+    inv["product"] = _app.PRODUCT_INFO
+    inv["version"] = _app.LDA_VERSION
     return (200, inv)
 
 
@@ -1412,6 +1416,20 @@ def _ok_code(obj):
     return (obj.get("code") or 200) if isinstance(obj, dict) else 200
 
 
+# ============================ GET · 产品说明 / 智能体客服 ============================
+def h_about(h, p, q, path):
+    """GET /api/about —— 公开产品说明（版本号 + 基本说明 + 边界），供前端与白皮书取用。"""
+    return (200, _app.about_info())
+
+
+def h_agent_chat(h, p, q, path):
+    """POST /api/agent/chat —— 智能体客服：解答问题 + 收集客户线索（不进验证判决路径）。
+
+    纯用户侧 Agent 层；无 LLM 配置时回退内置 FAQ 知识库（零外部依赖可跑）。
+    客户线索落盘 dist/customer_leads.json（gitignored，按邮箱去重）。"""
+    return (200, _app.cs_chat(p))
+
+
 # ============================ 路由表 ============================
 # 精确路径 -> handler
 GET_ROUTES = {
@@ -1443,6 +1461,7 @@ GET_ROUTES = {
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,
+    "/api/about": h_about,
 }
 
 # 后缀/前缀匹配：顺序须与原 do_GET 一致（html → js/css → proofs → img → shelf → store/order）
@@ -1535,6 +1554,7 @@ POST_ROUTES = {
     "/api/admin/unlock_login": h_admin_unlock,
     "/api/store/order": h_store_order_create,
     "/api/admin/config": h_admin_config_set,
+    "/api/agent/chat": h_agent_chat,
 }
 
 # 前缀匹配：顺序须与原 do_POST 一致

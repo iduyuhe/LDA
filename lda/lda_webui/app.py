@@ -49,12 +49,70 @@ if LDA_ROOT not in sys.path:
     sys.path.insert(0, LDA_ROOT)
 
 # --- 版本与启动时间（P2.1 健康检查用）---
-try:
-    from importlib.metadata import version as _pkg_version
-    LDA_VERSION = _pkg_version("lda-design")
-except Exception:  # noqa: BLE001
-    LDA_VERSION = "0.7.0"
+def _read_pyproject_version():
+    """从仓库 pyproject.toml 解析 [project].version（零依赖，避免未安装时回退错版本）。
+
+    生产以 `python app.py` 直接运行、包未 pip 安装，importlib.metadata 会抛
+    PackageNotFoundError 落到旧回退值 "0.7.0"，导致对外展示版本与真实不符。
+    改为优先读 pyproject.toml 单一真源。"""
+    try:
+        _pp = os.path.join(os.path.dirname(LDA_ROOT), "pyproject.toml")
+        with open(_pp, encoding="utf-8") as f:
+            for line in f:
+                s = line.strip()
+                if s.startswith("version") and "=" in s and not s.startswith("["):
+                    val = s.split("=", 1)[1].strip().strip('"').strip("'").strip()
+                    if val:
+                        return val
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+# 优先级：pyproject.toml（发布单一真源）> 已安装包元数据 > 兜底常量。
+# 生产以 git pull + 重启部署、不重装包，importlib.metadata 会滞留旧版本，
+# 故以 pyproject.toml 为准，确保对外展示版本与本次发布一致。
+LDA_VERSION = _read_pyproject_version()
+if not LDA_VERSION:
+    try:
+        from importlib.metadata import version as _pkg_version
+        LDA_VERSION = _pkg_version("lda-design")
+    except Exception:  # noqa: BLE001
+        LDA_VERSION = None
+if not LDA_VERSION:
+    LDA_VERSION = "0.9.39"
 _START_TIME = time.time()
+
+# --- 产品基本说明（生产环境公开面向；版本号 + 一句话定位 + 边界）---
+PRODUCT_INFO = {
+    "name": "LDA",
+    "full_name": "LDA · 开源 Agent 原生光子 / 量子芯片设计软件",
+    "tagline": "开源 · Agent 原生 · 验证红线 · 光子(PDA) + 量子(QEDA) 双栈",
+    "description": (
+        "LDA 是面向硅光子（PDA）与超导量子（QEDA）芯片的开源、Agent 原生设计软件："
+        "覆盖设计→仿真→版图→DRC/LVS→工艺角→几何寄生的全闭环，并用 50 道验证锚"
+        "（物理定律锚 + 实证大数据锚 + 系统级锚）对每一步做死标量可复现验证。"
+        "核心红线是「LLM 不进判决路径」——PASS/FAIL 由解析闭式与麦克斯韦方程的"
+        "确定性比对决定，而非模型自证，因而对外可被 curl 活体验货。"
+    ),
+    "highlights": [
+        "双栈统一：同一套 IR 与验证框架表达光子与量子器件",
+        "验证红线：物理定律锚 + 死标量比对 + LLM 不进判决路径",
+        "可被外部验货：/api/cpo_array 死锚判决可 curl 复现",
+        "主权可控：GPL 零污染，22 类端到端设计引擎 + 27 个自研求解核",
+        "开源优先：MIT 许可，代码 / 锚清单 / CI 全绿证据全公开",
+    ],
+    "boundaries": [
+        "适合科研 / 教学 / 预研 / 中小设计空间探索 / 方法学验证",
+        "暂不直接交付晶圆厂量产 signoff（需接真实 PDK + 商业签核）",
+        "大模型只用于编排与文档生成，绝不进入求解与判决路径",
+        "真实流片属 C 期规划，当前以开源内核与验证可信度立身",
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/iduyuhe/LDA",
+    "repository": "https://github.com/iduyuhe/LDA",
+    "open_source": True,
+    "agent_native": True,
+}
 
 from lda_harness.benchmarks import BENCHMARK_DEFS
 from lda_harness.harness import (
@@ -2388,6 +2446,38 @@ def health_check():
         },
         "uptime_s": int(time.time() - _START_TIME),
     }
+
+
+def about_info():
+    """公开产品说明（版本号 + 基本说明 + 边界），供 /api/about 与前端渲染。"""
+    return {
+        "version": LDA_VERSION,
+        "product": PRODUCT_INFO,
+        "verification_ledger": {
+            "anchors_total": len(BENCHMARK_DEFS),
+            "ci_core_smokes": _ci_core_smokes_count(),
+        },
+    }
+
+
+def _ci_core_smokes_count():
+    try:
+        from run_ci_regression import CORE_SMOKES
+        return len(CORE_SMOKES)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def cs_chat(payload):
+    """智能体客服入口：解答客户问题 + 收集客户信息（不进验证判决路径）。
+
+    纯用户侧 Agent 层，复用 cs_agent 模块；LLM 仅用于对话生成，绝不参与
+    求解 / 判决。无 LLM 配置时自动回退内置 FAQ 知识库（零外部依赖可跑）。"""
+    try:
+        from . import cs_agent
+    except ImportError:
+        from lda_webui import cs_agent
+    return cs_agent.chat(payload or {})
 
 
 def gc_benchmarks_status(run: bool = False):

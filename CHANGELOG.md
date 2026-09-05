@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.9.40（2026-09-05 · 生产版本号 + 产品说明公开化 + 智能体客服（解答 + 线索收集，不进验证判决路径））
+
+**动机**：对外叙事要兑现 agent-native——客户/访客到生产环境（public 页）应能**看到当前发布版本号与产品基本说明**，并能**用自然语言向智能体客服提问、留下联系方式**。两块均为用户侧产品能力，未触及验证判决路径、未新增任何判据。
+
+### 生产环境版本号 + 产品说明公开化
+- 版本真源修复：原 `LDA_VERSION = importlib.metadata.version("lda-design")` 读的是已安装旧包元数据，生产不重装即滞留旧值（实测对外展示 0.9.37）。改为**优先解析 `pyproject.toml` `[project].version` 为单一真源**，importlib 仅作回退。复测 `/api/about` 与 `/api/health` 均正确返回 0.9.40。
+- 新增 `PRODUCT_INFO` dict（`app.py`）：一句话定位 + 能力亮点 5 条 + 诚实边界 4 条 + 开源/许可/仓库链接，全为对外如实披露。
+- 新增 `GET /api/about` 端点（`routes.py` → `app.about_info()`）：返回 `{version, product, verification_ledger{anchors_total, ci_core_smokes}}`。
+- `public.html` 新增「关于 LDA」section（full_name / tagline / description / highlights 网格 / boundaries 列表 / 仓库链接）；标题加版本 pill `id="ver"`；页尾挂客服组件。
+- `nav.js` 全站导航 LDA logo 后加版本 pill，构建时 `fetch("/api/about")` 填充（全站可见当前版本）。
+- `/api/public/stats` 富化：`inv["product"] = PRODUCT_INFO`、`inv["version"] = LDA_VERSION`，CI note 同步为「CI core 全量回归：97 条冒烟全绿（0 SKIP / 0 FAIL）」。
+
+### 智能体客服（解答 + 线索收集）
+- 新增 `cs_agent.py`（纯标准库 json/re/os/threading/time/uuid，零新依赖）：`FAQ` 10 条关键词→回答（产品介绍/验证红线/光子能力/量子能力/上手/价格/开源/边界/agent/联系）；`extract_lead()` 正则抽 email/phone/wechat/公司/姓名，需有可联系信息才落盘；`collect_lead()` 写 `dist/customer_leads.json`（按 email 去重、上限 2000、`source="cs_agent"`）；`_rule_reply()` FAQ 命中；`_llm_reply()` 读 `LDA_CS_LLM_BASE_URL/API_KEY/MODEL` 升级为模型驱动（OpenAI 兼容），失败回退 FAQ；`chat()` 主入口：抽线索→落盘→生成回复→线索确认话术，返回 `{reply, lead_captured, suggestions}`。
+- 新增 `cs_widget.js` 浮动客服组件（自包含跨明暗主题配色）：浮动气泡 💬 + 面板，调 `POST /api/agent/chat`；含「留个联系方式」折叠表单（姓名/公司/邮箱/电话/需求）走同一接口；欢迎语 + 建议 chips；挂 public/index 双页。
+- 新增 `POST /api/agent/chat` 端点（`routes.py` → `app.cs_chat()`）。
+- 🔴 **红线**：客服 LLM 只做对话生成，**绝不进入验证判决路径**；线索落 `dist/`（gitignored，第 8 行）不入库、不污染验证账本与任何判据。
+
+### 护栏与账本
+- CI core 仍 **97 条**（未新增判据，本次为产品 / 用户侧能力，非验证强度改动）。
+- 已知小瑕疵：`about_info()` 的 `_ci_core_smokes_count()` 在 `lda/lda_webui/` 下运行时 `from run_ci_regression import CORE_SMOKES` 因 run_ci_regression 在父目录 `lda/` 而失败，已 try/except 捕获返回 None（不影响主流程，public/stats 的 `_ci_core_count()` 已提供 97 条计数）。
+
 ## v0.9.39（2026-09-05 · T-9 锚题覆盖矩阵接线空白点 · B29+B30 两道真·可接空白点锚 · 题库 48→50 · 三分类：25 / 0 / 25）
 
 **动机**：T-9 锚题覆盖矩阵（33 引擎 × 48 锚）暴露两类**零覆盖品类**——①热光相移效率（D-73 升格，原仅量化口径、无独立候选）；②`readout_fidelity` 包（钉子 E，零覆盖）。两道此前是「空白点」：有物理定律/实证可锚，但 harness 里根本没有 B 类锚题，更无独立候选。本轮按七步接线法把它们落成**真·可接**（非自证桩）锚。

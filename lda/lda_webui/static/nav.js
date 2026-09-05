@@ -50,6 +50,7 @@
     nav.innerHTML =
       '<div style="display:flex;gap:18px;align-items:center">' +
       '<span style="font-weight:800;color:var(--accent);font-size:16px;letter-spacing:.5px">LDA</span>' +
+      '<span id="lda-nav-ver" style="font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-left:2px">v…</span>' +
       link("/index.html", "首页", "home") +
       link("/insights.html", "能力展示", "insights") +
       link("/public.html", "验证实力", "public") +
@@ -60,6 +61,14 @@
       "</div>" +
       '<div id="lda-nav-auth" style="display:flex;gap:8px;align-items:center"></div>';
     document.body.insertBefore(nav, document.body.firstChild);
+    // 版本号实时填充（来自 /api/about，公开端点，零鉴权）
+    fetch("/api/about", { headers: { "Content-Type": "application/json" } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var v = document.getElementById("lda-nav-ver");
+        if (v && d && d.version) v.textContent = "v" + d.version;
+      })
+      .catch(function () {});
   }
 
   function authButtons() {

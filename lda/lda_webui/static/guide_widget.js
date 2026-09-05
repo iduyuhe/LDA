@@ -10,8 +10,8 @@
   var KEY = "lda_onboard_v1_done";
   // 自包含配色（暗底浅字，明/暗主题页均清晰）
   var C = {
-    panel: "#0e1525", panel2: "#16203a", line: "#2a3658",
-    txt: "#e8eefb", mut: "#9fb0d4", accent: "#38bdf8", accent2: "#3b82f6",
+    panel: "#1b2c4d", panel2: "#22375e", line: "#3f5e93",
+    txt: "#eaf2ff", mut: "#b4c2dc", accent: "#38bdf8", accent2: "#3b82f6",
     dim: "rgba(8,12,24,.66)"
   };
 
@@ -102,7 +102,7 @@
       "border:2px solid " + C.accent + ";box-shadow:0 0 0 9999px " + C.dim + ";");
     tip = el("div", "position:fixed;z-index:2147483002;width:344px;max-width:calc(100vw - 20px);" +
       "display:none;background:" + C.panel + ";border:1px solid " + C.line + ";border-radius:14px;" +
-      "box-shadow:0 12px 48px rgba(4,10,30,.6);color:" + C.txt + ";" +
+      "box-shadow:0 0 0 2px " + C.line + ",0 0 38px rgba(56,189,248,.32),0 16px 54px rgba(2,6,20,.7);color:" + C.txt + ";" +
       "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;font-size:13px;");
     tip.innerHTML =
       '<div style="padding:10px 14px;border-bottom:1px solid ' + C.line + ';display:flex;align-items:center;justify-content:space-between">' +

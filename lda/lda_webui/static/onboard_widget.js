@@ -10,8 +10,8 @@
   var KEY_PROG = "lda_onboard_progress";   // {1:true,2:true,...}
   var KEY_QS = "lda_quickstart_done";
   var C = {
-    bg: "#0e1525", panel: "#13203a", line: "#23345c", txt: "#e2e8f0",
-    mut: "#93a4bf", accent: "#08A6F6", accent2: "#08A6F6",
+    bg: "#0f1830", panel: "#1b2c4d", line: "#3f5e93", txt: "#eaf2ff",
+    mut: "#b4c2dc", accent: "#1ea0f0", accent2: "#1ea0f0",
     ok: "#34d399", bad: "#f87171", warn: "#fbbf24"
   };
 
@@ -63,7 +63,7 @@
     panel = el("div",
       "width:760px;max-width:96vw;max-height:88vh;overflow:auto;background:" + C.panel +
       ";border:1px solid " + C.line + ";border-radius:16px;color:" + C.txt +
-      ";font:14px/1.6 'Microsoft YaHei',Arial,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.5)");
+      ";font:14px/1.6 'Microsoft YaHei',Arial,sans-serif;box-shadow:0 0 0 1px " + C.line + ",0 0 40px rgba(30,160,240,.28),0 22px 64px rgba(2,6,20,.62)");
     panel.appendChild(el("div",
       "display:flex;align-items:center;justify-content:space-between;padding:16px 20px;" +
       "border-bottom:1px solid " + C.line,
@@ -243,7 +243,7 @@
     var wrap = el("div", "padding:10px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid " + C.line);
     wrap.appendChild(el("span", "color:" + C.mut + ";font-size:12px", "LDA 双模："));
     wrap.appendChild(el("span", "background:" + C.accent + ";color:#04122a;font-weight:700;font-size:13px;padding:6px 13px;border-radius:999px", "器件级 · 组件设计闭环（你在这）"));
-    var sys = el("a", "background:" + C.panel + ";color:" + C.warn + ";border:1px solid #5b4a1e;font-weight:700;font-size:13px;padding:6px 13px;border-radius:999px;text-decoration:none;cursor:pointer", "系统级 · 护城河（展厅）→");
+    var sys = el("a", "background:#fbbf24;color:#1a1205;border:1px solid #b0841a;font-weight:700;font-size:13px;padding:6px 13px;border-radius:999px;text-decoration:none;cursor:pointer", "系统级 · 护城河（展厅）→");
     sys.href = "/insights.html";
     wrap.appendChild(sys);
     return wrap;

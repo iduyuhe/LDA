@@ -10,8 +10,8 @@
   var API = "/api/agent/chat";
   // 配色（自包含，跨主题可读）
   var C = {
-    panel: "#0e1525", panel2: "#16203a", line: "#2a3658",
-    txt: "#e8eefb", mut: "#9fb0d4", accent: "#3b82f6", green: "#22c55e",
+    panel: "#1b2c4d", panel2: "#22375e", line: "#3f5e93",
+    txt: "#eaf2ff", mut: "#b4c2dc", accent: "#3b82f6", green: "#22c55e",
     bubble: "#3b82f6"
   };
 
@@ -54,7 +54,7 @@
       "position:fixed;right:18px;bottom:86px;z-index:2147483000;width:340px;max-width:calc(100vw - 36px);" +
       "height:460px;max-height:calc(100vh - 110px);background:" + C.panel +
       ";border:1px solid " + C.line + ";border-radius:14px;overflow:hidden;" +
-      "display:none;flex-direction:column;box-shadow:0 10px 40px rgba(10,20,40,.45);" +
+      "display:none;flex-direction:column;box-shadow:0 0 0 1px " + C.line + ",0 0 32px rgba(59,130,246,.28),0 12px 44px rgba(6,12,28,.55);" +
       "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif");
     panel.innerHTML =
       '<div style="padding:12px 14px;background:' + C.panel2 + ';border-bottom:1px solid ' + C.line + ';' +

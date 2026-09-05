@@ -28,18 +28,26 @@
   var history = [];
 
   function buildWidget() {
-    // 气泡
+    // 呼吸脉冲动画（提升可见性，避免被忽略）
+    try {
+      var st = document.createElement("style");
+      st.textContent = "@keyframes csPulse{0%{box-shadow:0 0 0 0 rgba(59,130,246,.55)}" +
+        "70%{box-shadow:0 0 0 18px rgba(59,130,246,0)}100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}}";
+      document.head.appendChild(st);
+    } catch (e) {}
+
+    // 气泡（z-index 拉到极大值，确保不被任何页面浮层/遮罩遮挡）
     var bubble = el("div",
-      "position:fixed;right:18px;bottom:18px;z-index:300;width:56px;height:56px;" +
+      "position:fixed;right:18px;bottom:18px;z-index:2147483000;width:56px;height:56px;" +
       "border-radius:50%;background:" + C.bubble + ";color:#fff;cursor:pointer;" +
       "display:flex;align-items:center;justify-content:center;font-size:24px;" +
-      "box-shadow:0 6px 20px rgba(20,40,90,.35);user-select:none");
+      "box-shadow:0 6px 20px rgba(20,40,90,.35);user-select:none;animation:csPulse 2.4s infinite");
     bubble.textContent = "💬";
     bubble.title = "LDA 智能体客服";
 
     // 面板
     var panel = el("div",
-      "position:fixed;right:18px;bottom:86px;z-index:300;width:340px;max-width:calc(100vw - 36px);" +
+      "position:fixed;right:18px;bottom:86px;z-index:2147483000;width:340px;max-width:calc(100vw - 36px);" +
       "height:460px;max-height:calc(100vh - 110px);background:" + C.panel +
       ";border:1px solid " + C.line + ";border-radius:14px;overflow:hidden;" +
       "display:none;flex-direction:column;box-shadow:0 10px 40px rgba(10,20,40,.45);" +

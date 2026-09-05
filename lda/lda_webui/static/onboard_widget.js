@@ -69,9 +69,11 @@
       "border-bottom:1px solid " + C.line,
       "<b style='font-size:16px'>🚀 新手起步 · 一学一懂，一用就通</b>" +
       "<span style='cursor:pointer;color:" + C.mut + ";font-size:20px;line-height:1' onclick='this.closest(\"div\").parentNode.parentNode.style.display=\"none\"'>×</span>"));
+    panel.appendChild(buildModeBar());
     panel.appendChild(buildQuickstart());
     panel.appendChild(buildTemplates());
     panel.appendChild(buildChecklist());
+    panel.appendChild(buildExplore());
     mask.appendChild(panel);
     document.body.appendChild(mask);
   }
@@ -234,6 +236,39 @@
   }
   function celebrate() {
     toast("🎉 入门通关！你现在可以独立用 LDA 设计→验证光子/量子芯片了");
+  }
+
+  // ---------- 双模指示 ----------
+  function buildModeBar() {
+    var wrap = el("div", "padding:10px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid " + C.line);
+    wrap.appendChild(el("span", "color:" + C.mut + ";font-size:12px", "LDA 双模："));
+    wrap.appendChild(el("span", "background:" + C.accent + ";color:#04122a;font-weight:700;font-size:13px;padding:6px 13px;border-radius:999px", "器件级 · 组件设计闭环（你在这）"));
+    var sys = el("a", "background:" + C.panel + ";color:" + C.warn + ";border:1px solid #5b4a1e;font-weight:700;font-size:13px;padding:6px 13px;border-radius:999px;text-decoration:none;cursor:pointer", "系统级 · 护城河（展厅）→");
+    sys.href = "/insights.html";
+    wrap.appendChild(sys);
+    return wrap;
+  }
+
+  // ---------- ④ 逛 LDA：展厅与超市 ----------
+  function buildExplore() {
+    var wrap = el("div", "padding:16px 20px;border-top:1px solid " + C.line);
+    wrap.appendChild(el("div", "font-weight:700;margin-bottom:6px", "④ 逛 LDA · 展厅与超市（进阶探索）"));
+    wrap.appendChild(el("div", "color:" + C.mut + ";font-size:12px;margin-bottom:10px", "想看懂 LDA 的「系统级护城河」与「商业货架」，去这两个地方："));
+    var grid = el("div", "display:flex;gap:12px;flex-wrap:wrap");
+    grid.appendChild(exploreCard("🏛 展厅 · 能力展示", "系统级护城河：GC 整芯片对标 / 万级规模实测 / 验证账本 / CPO 十万级死锚", "/insights.html"));
+    grid.appendChild(exploreCard("🛒 创新超市", "58 货架设计就绪包（光子 50 开放下载 · 量子 8 咨询制）· 免费看、付费下", "/store.html"));
+    wrap.appendChild(grid);
+    return wrap;
+  }
+  function exploreCard(title, sub, url) {
+    var card = el("div",
+      "flex:1;min-width:220px;background:" + C.bg + ";border:1px solid " + C.line +
+      ";border-radius:12px;padding:12px 14px;cursor:pointer");
+    card.innerHTML = "<div style='font-weight:700;margin-bottom:4px;color:" + C.txt + "'>" + title + "</div>" +
+      "<div style='color:" + C.mut + ";font-size:12px;margin-bottom:8px'>" + sub + "</div>" +
+      "<div style='color:" + C.accent + ";font-size:12px;font-weight:700'>▶ 去看看</div>";
+    card.onclick = function () { window.open(url, "_blank"); };
+    return card;
   }
 
   // ============================ 全局联动 ============================

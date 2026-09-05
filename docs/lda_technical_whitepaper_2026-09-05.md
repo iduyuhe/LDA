@@ -203,3 +203,16 @@ LDA 不是又一个光子布局库，而是把「**验证可证伪 + Agent 原�
 - Flexcompute Tidy3D 基准（docs.flexcompute.com，商业 SaaS）
 - Qiskit（qiskit.org，Apache 2.0）/ PennyLane（pennylane.ai，Apache 2.0）/ QuTiP（qutip.org，BSD）/ Cirq（Apache 2.0）/ Strawberry Fields（Apache 2.0）/ AWS Braket（Apache 2.0）
 - LDA 内部运行账本（v0.9.40）：50 锚 / 22 引擎 / 97 CI core / 5 pdks / 8 layers / 58 货架 / 规模基线
+
+---
+
+## 版权所有
+
+© 2026 **上海杜特企业管理咨询有限公司**. 保留所有权利。
+
+- **版权所有方**：上海杜特企业管理咨询有限公司
+- **联系人**：杜玉河（上海杜特企业管理咨询有限公司）
+- **联系方式**：13311602075
+- **微信**：gongyhlw
+
+本白皮书所述 LDA 技术内容基于开源仓库（MIT 计划许可）公开信息整理，版权方对文档编排与品牌内容享有著作权。任何转载、摘编或商业使用，须经版权方书面授权。

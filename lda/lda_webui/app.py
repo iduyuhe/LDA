@@ -2454,6 +2454,13 @@ def about_info():
         "version": LDA_VERSION,
         "product": PRODUCT_INFO,
         "whitepaper_url": "/lda_whitepaper_v0.9.40.docx",
+        "whitepaper_pdf_url": "/lda_whitepaper_v0.9.40.pdf",
+        "organization": {
+            "copyright": "上海杜特企业管理咨询有限公司",
+            "contact": "杜玉河（上海杜特企业管理咨询有限公司）",
+            "phone": "13311602075",
+            "wechat": "gongyhlw",
+        },
         "verification_ledger": {
             "anchors_total": len(BENCHMARK_DEFS),
             "ci_core_smokes": _ci_core_smokes_count(),

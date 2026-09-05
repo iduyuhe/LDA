@@ -249,16 +249,49 @@
     return wrap;
   }
 
-  // ---------- ④ 逛 LDA：展厅与超市 ----------
+  // ---------- ④ 逛 LDA：展厅 / 超市 / 验证实力 ----------
   function buildExplore() {
     var wrap = el("div", "padding:16px 20px;border-top:1px solid " + C.line);
-    wrap.appendChild(el("div", "font-weight:700;margin-bottom:6px", "④ 逛 LDA · 展厅与超市（进阶探索）"));
-    wrap.appendChild(el("div", "color:" + C.mut + ";font-size:12px;margin-bottom:10px", "想看懂 LDA 的「系统级护城河」与「商业货架」，去这两个地方："));
+    wrap.appendChild(el("div", "font-weight:700;margin-bottom:6px", "④ 逛 LDA · 展厅 / 超市 / 验证实力（进阶探索）"));
+    wrap.appendChild(el("div", "color:" + C.mut + ";font-size:12px;margin-bottom:10px", "想看懂 LDA 的「系统级护城河」「商业货架」和「为什么结果可信」，去这三个地方："));
     var grid = el("div", "display:flex;gap:12px;flex-wrap:wrap");
-    grid.appendChild(exploreCard("🏛 展厅 · 能力展示", "系统级护城河：GC 整芯片对标 / 万级规模实测 / 验证账本 / CPO 十万级死锚", "/insights.html"));
+    grid.appendChild(exploreCard("🏛 展厅 · 能力展示", "系统级护城河：GC 整芯片对标 / 万级规模实测 / CPO 十万级死锚", "/insights.html"));
     grid.appendChild(exploreCard("🛒 创新超市", "58 货架设计就绪包（光子 50 开放下载 · 量子 8 咨询制）· 免费看、付费下", "/store.html"));
+    var vbody = el("div", "margin-top:8px;font-size:12px;color:" + C.mut, "");
+    grid.appendChild(verifyCard(vbody));
     wrap.appendChild(grid);
     return wrap;
+  }
+  function verifyCard(body) {
+    var card = el("div",
+      "flex:1;min-width:220px;background:" + C.bg + ";border:1px solid " + C.line +
+      ";border-radius:12px;padding:12px 14px;cursor:pointer");
+    card.innerHTML = "<div style='font-weight:700;margin-bottom:4px;color:" + C.txt + "'>🔬 验证实力 · 外部可验货</div>" +
+      "<div style='color:" + C.mut + ";font-size:12px;margin-bottom:8px'>现场拉真实账本：CI 守护 / 物理定律锚 / 死标量比对</div>" +
+      "<div style='color:" + C.accent + ";font-size:12px;font-weight:700'>▶ 看真实数字</div>";
+    card.onclick = function () { loadVerify(body); };
+    card.appendChild(body);
+    return card;
+  }
+  function loadVerify(body) {
+    body.innerHTML = "⏳ 拉取验证账本中…";
+    fetch("/api/verification_ledger").then(function (r) { return r.json(); }).then(function (L) {
+      if (L.error) { body.innerHTML = "⚠️ " + L.error; return; }
+      var ci = (L.ci_core && L.ci_core.count) || 0;
+      var total = (L.anchors && L.anchors.total) || 0;
+      var phys = (L.anchors && L.anchors.by_kind && L.anchors.by_kind["physical-law"] && L.anchors.by_kind["physical-law"].count) || 0;
+      var indep = (L.judgment_paths && L.judgment_paths.derived && L.judgment_paths.derived.totals && L.judgment_paths.derived.totals.strict_independent) || 0;
+      var cpo = (L.cpo_scale && L.cpo_scale.default_devices) || 0;
+      body.innerHTML =
+        "✅ 验证实力（真实账本）：<br>" +
+        "&nbsp;· CI core 守护 <b style='color:" + C.ok + "'>" + ci + "</b> 条死标量冒烟<br>" +
+        "&nbsp;· 验证锚 <b style='color:" + C.ok + "'>" + total + "</b> 道（物理定律锚 " + phys + "）<br>" +
+        "&nbsp;· 严格独立候选 <b style='color:" + C.ok + "'>" + indep + "</b> 道（真可证伪）<br>" +
+        "&nbsp;· CPO <b style='color:" + C.ok + "'>" + cpo.toLocaleString() + "</b> 器件死锚判决 ACCEPT<br>" +
+        "<span style='color:" + C.mut + ";font-size:11px'>红线：LLM 不进判决路径，PASS/FAIL 一律死标量比对。点上方「🏛 展厅」看完整账本与诚实边界。</span>";
+    }).catch(function (e) {
+      body.innerHTML = "⚠️ 调用失败：" + e;
+    });
   }
   function exploreCard(title, sub, url) {
     var card = el("div",

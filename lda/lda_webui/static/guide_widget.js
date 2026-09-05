@@ -73,6 +73,8 @@
           + "（GC 整芯片对标 / 万级规模实测 / 验证账本 / CPO 十万级死锚），去 "
           + "<a href='/store.html' style='color:" + C.accent + "'>🛒 创新超市</a> 挑 58 条设计就绪包；"
           + "点底部「技术白皮书」下载，或访问 <b>关于 LDA</b> 看完整产品说明。右下角蓝色气泡随时帮你。</p>"
+          + "<p>最硬的底气在 <a href='/insights.html#verify' style='color:" + C.accent + "'>🔬 验证实力</a>："
+          + "物理定律当法官、LLM 不进判决路径、死标量比对，现场可复现。</p>"
           + "<p style='color:" + C.mut + ";font-size:12px'>提示：本引导可重复观看——点左下角「🎯 3分钟引导」随时重开。</p>",
       sel: null
     }

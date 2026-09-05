@@ -132,6 +132,7 @@
       if (text === GUIDE_CTA) { startGuide(); return; }
       if (text === "🏛 去展厅看看") { window.open("/insights.html", "_blank"); return; }
       if (text === "🛒 去超市逛逛") { window.open("/store.html", "_blank"); return; }
+      if (text === "🔬 验证实力") { window.open("/insights.html#verify", "_blank"); return; }
       var input = panel.querySelector("#csInput");
       if (!text && input) text = input.value.trim();
       if (!text) return;
@@ -250,7 +251,7 @@
         addMsg("bot", "您好，我是 LDA 智能体客服 👋 可解答产品定位、验证红线、光子/量子能力、"
           + "上手方式、开源与商用、能力边界等问题；也可直接留姓名+公司+邮箱安排专人对接。");
         showSug(["产品是什么", "验证为什么可信", "光子能力", "量子能力",
-          "如何快速上手", "价格与商用", "能力边界", "🏛 去展厅看看", "🛒 去超市逛逛", "留个联系方式", "🚀 带我 3 分钟上手"]);
+          "如何快速上手", "价格与商用", "能力边界", "🏛 去展厅看看", "🛒 去超市逛逛", "🔬 验证实力", "留个联系方式", "🚀 带我 3 分钟上手"]);
       }
     };
     panel.querySelector("#csClose").onclick = function () { panel.style.display = "none"; };

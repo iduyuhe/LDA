@@ -137,7 +137,7 @@
     "band_all_power_positive": null,
     "oracle_monotonic": true,
     "verdict": "全波段验收 PASS：ORACLE κ(λ) 单调递增（真值谱形），FDTD 平均偏差 0.1707 ≤ 0.25，最差 0.4367 ≤ 0.75，7 点全提取成功",
-    "elapsed_s": 101.3
+    "elapsed_s": 95.6
   },
   "live_yb": {
     "label": "YB 对称分束器多波长",
@@ -224,6 +224,6 @@
     "band_all_power_positive": true,
     "oracle_monotonic": true,
     "verdict": "全波段验收 PASS：max_λ 平衡度 0.0007 ≤ 容差 0.1，全波段功率为正，7 波长点全 PASS",
-    "elapsed_s": 137.4
+    "elapsed_s": 128.5
   }
 }

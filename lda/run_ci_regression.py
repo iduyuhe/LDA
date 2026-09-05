@@ -211,6 +211,11 @@ CORE_SMOKES: List[str] = [
     # 改回旧式、或把 tol 放宽，都会静默失效（铁律：没被验证过的护栏不算护栏）。
     # 纯 4×4 矩阵运算，实测 <3s。
     "run_lindblad_gate_smoke.py",
+    # 🔴 v0.9.39（T-9）：B29 热光相移效率 / B30 读出保真度 两道真·可接空白点锚护栏。
+    #   各 4 判据（登记防回退 / 正向 PASS / 判据 D 单调收敛+基线>1e-12 / 反向必 FAIL），
+    #   镜像 run_b28_nullfit_smoke。实测均 ~3s。CI core 95→97。
+    "run_b29_thermal_phase_smoke.py",
+    "run_b30_readout_smoke.py",
 ]
 
 # D-63 收紧：旧判定只看「输出里是否含未安装/无 GPU 等字样」→ 副作用是把真失败

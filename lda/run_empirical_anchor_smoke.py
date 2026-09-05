@@ -1,7 +1,7 @@
 """D-62 实证大数据锚 smoke：harness 实证锚题（E1-E7 第二道非 AI ground）+ 语料评审流。
 
 覆盖：
-  ① harness 实证锚题解析（BENCHMARK_DEFS 45 = B1-B27 + E1-E7 + S1-S11；E 题 golden 来自实测语料；
+  ① harness 实证锚题解析（BENCHMARK_DEFS 50 = B1-B30 + E1-E7 + S1-S13；E 题 golden 来自实测语料；
      B19 为 P1-M4 新增链路级无源无增益物理定律锚；B20-B27 为 v0.8 内核纵深新增）
   ② 参考候选 34/34 PASS（物理定律 + 实证锚双 ground）
   ③ 扰动候选：实证锚题 FAIL 检测（自适应扰动幅度，实证锚能抓偏离）
@@ -34,7 +34,7 @@ def check(name, ok, detail=""):
 def main():
     # ① 实证锚题解析
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
-    check("BENCHMARK_DEFS 48 题（B1-B28+E1-E7+S1-S13）", len(BENCHMARK_DEFS) == 48
+    check("BENCHMARK_DEFS 50 题（B1-B30+E1-E7+S1-S13）", len(BENCHMARK_DEFS) == 50
           and e_ids == ["E1", "E2", "E3", "E4", "E5", "E6", "E7"],
           f"defs={len(BENCHMARK_DEFS)} e={e_ids}")
     specs, cand_map = build_harness_specs()
@@ -131,7 +131,7 @@ def main():
           abs(goldens["E3"] - _analytic) <= 0.1,
           f"实测={goldens['E3']} 解析={_analytic:.3f} 差={abs(goldens['E3']-_analytic):.3f} nm")
 
-    # ② 注册候选全 PASS（48/48）。🔴 v0.9.25：此处曾硬编码 abs(cand−golden)，
+    # ② 注册候选全 PASS（50/50）。🔴 v0.9.25：此处曾硬编码 abs(cand−golden），
     # 与 path① 的 cmp_abs 硬编码同根——B19 接线后 cand_map["B19"] 是真实候选
     # （link_passivity，≈0.9999，cmp='le'），套绝对误差口径 ⇒ 1.04e-4 > tol 1e-9
     # 假 FAIL（全量回归 2/87 失败的根因，并经 industrial smoke 内部递归传导）。
@@ -139,7 +139,7 @@ def main():
     npass = sum(1 for s in specs
                 if s.compare_fn(cand_map[s.spec_id](s, s.oracle_fn(s.params)),
                                 s.oracle_fn(s.params)) <= s.tol)
-    check("注册候选 48/48 PASS（双 ground · cmp 分发口径）", npass == len(specs) == 48,
+    check("注册候选 50/50 PASS（双 ground · cmp 分发口径）", npass == len(specs) == 50,
           f"{npass}/{len(specs)}")
 
     # ③ 扰动候选：实证锚题 FAIL 检测（自适应扰动幅度）

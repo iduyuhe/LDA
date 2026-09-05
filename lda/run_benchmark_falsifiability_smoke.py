@@ -134,6 +134,12 @@ PERTURB_SPEC = [
     # 🔴 S8 扰 nf_db（信号 |Δμ|=0.5，2.5×tol，min_detect=0.05）；
     #   bw_ghz 5.0→5.5 |Δ|0.41 ✅ · n_amp 信号仅 0.04（<tol）已不取。固定扰 nf_db。
     ("S8", "nf_db", "mul"),
+    # v0.9.39（T-9 接线 #1/#2）：B29 热光相移 / B30 读出保真度 两道新严格独立锚。
+    # 🔴 B29 扰 dn_dt（信号 |Δ|=3.8° @ tol 2e-2，190× tol，1% 即抓）。
+    # 🔴 B30 扰 nbar（信号 |ΔF|=3.4e-3 @ tol 1e-3，3.4× tol）；实测逐键
+    #   nbar/eta/N_amp 均 ~3.4e-3（中等 SNR≈2.2 工作点，饱和区会失敏已规避）。
+    ("B29", "dn_dt", "mul"),
+    ("B30", "nbar", "mul"),
 ]
 PERTURB_REL = 0.10          # 反向测试扰动幅度（10%）
 SENSITIVITY_GRID = (0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20)
@@ -166,7 +172,9 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 # v0.9.29（T-3）：S7/S8 由均值锚换 p5 锚 + 接入闭式高斯 p5 独立候选
 #   （gauss_p5_margin / gauss_p5_osnr，μ−1.645σ 与 MC 经验分位方法学独立）
 #   ⇒ 已接线独立候选 21 → 23，自证桩 27 → 25（48 守恒）。
-MIN_INDEPENDENT = 23
+# v0.9.39（T-9）：B29 热光相移 + B30 读出保真度两道真·可接空白点落定
+#   ⇒ 严格独立 23 → 25，自证桩 25 → 25（50 守恒）。
+MIN_INDEPENDENT = 25
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

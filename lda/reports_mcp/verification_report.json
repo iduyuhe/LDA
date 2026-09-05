@@ -6,13 +6,13 @@
     "via": "L1 KernelGateway",
     "self_consistent": false
   },
-  "generated_at": "2026-09-05T07:54:07",
+  "generated_at": "2026-09-05T10:27:18",
   "summary": {
-    "total": 48,
-    "passed": 45,
+    "total": 50,
+    "passed": 47,
     "self_consistent": false,
     "verified": 2,
-    "self_consistent_stub_count": 43,
+    "self_consistent_stub_count": 45,
     "independent_candidate_count": 5,
     "candidate_class_totals": null
   },
@@ -291,6 +291,19 @@
       "candidate_class": null
     },
     {
+      "id": "B29",
+      "metric": "phase_efficiency_deg_per_mW",
+      "oracle": "analytical(1D fin PDE closed-form) + FDM cross-check",
+      "source": "physical-law",
+      "golden": 38.88019612769657,
+      "candidate": 38.88019612769657,
+      "tol": 0.02,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
       "id": "B3",
       "metric": "FSR_nm",
       "oracle": "analytical(Airy)",
@@ -298,6 +311,19 @@
       "golden": 120.12500000000001,
       "candidate": 120.12500000000001,
       "tol": 1.0,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
+      "id": "B30",
+      "metric": "readout_fidelity_F",
+      "oracle": "analytical(erfc readout chain) + gaussian-overlap quad cross-check",
+      "source": "physical-law",
+      "golden": 0.9859921113026036,
+      "candidate": 0.9859921113026036,
+      "tol": 0.001,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,

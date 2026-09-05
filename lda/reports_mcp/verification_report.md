@@ -1,14 +1,14 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-05T07:54:07
+- 生成时间：2026-09-05T10:27:18
 - L0_IR：(内置默认)
 - candidate：L3AISolverCandidate
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - via：L1 KernelGateway
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **43 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **45 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
 
-## 汇总：45/48 通过（独立候选 5 项中 **2 项通过=已验证** · 43 项自证闭环，**非验证结论**）
+## 汇总：47/50 通过（独立候选 5 项中 **2 项通过=已验证** · 45 项自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -33,7 +33,9 @@
 | B26 | dispersive_chi_ghz | physical-law | -0.00230769 | -0.00230769 | 0 | 0.0001 | ✅ PASS |
 | B27 | cz_gate_time_ns | physical-law | 680.678 | 680.678 | 0 | 30 | ✅ PASS |
 | B28 | Vpi_volts | physical-law | 3.78097 | 3.78097 | 0 | 0.001 | ✅ PASS |
+| B29 | phase_efficiency_deg_per_mW | physical-law | 38.8802 | 38.8802 | 0 | 0.02 | ✅ PASS |
 | B3 | FSR_nm | physical-law | 120.125 | 120.125 | 0 | 1 | ✅ PASS |
+| B30 | readout_fidelity_F | physical-law | 0.985992 | 0.985992 | 0 | 0.001 | ✅ PASS |
 | B4 | FSR_nm | physical-law | 9.1476 | 9.1476 | 0 | 0.3 | ✅ PASS |
 | B5 | split_loss_dB | numpy-overlap-offline | 3.4 | 3.4 | 0 | 1 | ✅ PASS |
 | B6 | coupling_eff | design-anchor | 0.5 | 0.5 | 0 | 0.15 | ✅ PASS |

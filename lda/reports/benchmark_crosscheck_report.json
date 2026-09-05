@@ -16,7 +16,7 @@
         "E-SOI-NG-220",
         "E-SIN-NG-1200"
       ],
-      "elapsed_s": 11.43,
+      "elapsed_s": 11.47,
       "empirical": {
         "E-SOI-NG-220": {
           "measured": 4.18,
@@ -44,7 +44,7 @@
       "analytical_rel_pct": null,
       "verdict": "布拉格 FDTD 双验证 PASS（解析 TMM 契约物理合理 + FDTD R_min=0.99903 ↔ TMM=0.99922 abs=1.95e-04 ≤ 2%）",
       "empirical_ids": [],
-      "elapsed_s": 38.56,
+      "elapsed_s": 39.08,
       "empirical": {}
     },
     {
@@ -113,7 +113,7 @@
       "analytical_rel_pct": 0.41,
       "verdict": "PhC 腔 2D FDTD 双验证 PASS（B21 锚 λ_res=2164.8nm ↔ FDTD λ_res=2155.9nm rel=0.41% ≤ 3%）",
       "empirical_ids": [],
-      "elapsed_s": 3.94,
+      "elapsed_s": 3.89,
       "empirical": {}
     },
     {
@@ -143,7 +143,7 @@
       "analytical_rel_pct": 0.0241,
       "verdict": "Fluxonium 双基对拍 PASS（相位基 f01=5.983GHz ↔ HO 基 f01=5.984GHz rel=0.0241% ≤ 1%；B23 LC 边界锚=2.828GHz 单调上界成立）",
       "empirical_ids": [],
-      "elapsed_s": 0.06,
+      "elapsed_s": 0.04,
       "empirical": {}
     },
     {
@@ -233,7 +233,7 @@
       "analytical_rel_pct": 1.98,
       "verdict": "读出配对 PASS（B26 锚 χ=-0.002308GHz ↔ 严格对角化 χ=-0.002262GHz rel=1.98% ≤ 5%）",
       "empirical_ids": [],
-      "elapsed_s": 0.01,
+      "elapsed_s": 0.0,
       "empirical": {}
     },
     {
@@ -248,7 +248,7 @@
       "analytical_rel_pct": 2.02,
       "verdict": "CZ 门 PASS（B27 锚 t=680.7ns ↔ 对角化 t=694.4ns rel=2.02% ≤ 3%；2|χ|·t=π 精确成立）",
       "empirical_ids": [],
-      "elapsed_s": 0.01,
+      "elapsed_s": 0.0,
       "empirical": {}
     },
     {

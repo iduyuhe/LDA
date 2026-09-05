@@ -49,6 +49,12 @@ from .golden import (
 from .b28_modulator_vpi_anchor import (  # noqa: E402  # B28 MZM Vπ 锚（v0.9.1 · 钉子 D1b=A）
     b28_modulator_vpi, b28_modulator_vpi_report,
 )
+from .b29_thermal_phase_anchor import (  # noqa: E402  # B29 热光相移效率锚（v0.9.39 · T-9 接线）
+    b29_thermal_phase_efficiency, b29_thermal_phase_report,
+)
+from .b30_readout_anchor import (  # noqa: E402  # B30 读出保真度锚（v0.9.39 · T-9 接线）
+    b30_readout_fidelity, b30_readout_report,
+)
 
 BENCHMARK_DEFS = {
     "B1": {
@@ -610,6 +616,57 @@ BENCHMARK_DEFS = {
                  "honest-sanity，不进死标量判决。与 B20 无源 MZI-FSR 双锚闭合"
                  "「MZI 无源+有源」。LLM 不进判决路径。"),
     },
+    # ---- B29 / B30（v0.9.39 · T-9 锚题覆盖矩阵暴露的接线空白点）----
+    "B29": {
+        "title": "热光相移效率（热光系数 dn/dT · 1D 散热鳍 PDE 相移）",
+        "metric": "phase_efficiency_deg_per_mW",
+        "oracle": "analytical(1D fin PDE closed-form) + FDM cross-check",
+        "tol": 2e-2,
+        # v0.9.39（T-9 接线 #1）：D-73 升格为严格独立锚。golden = 1D 散热鳍
+        # 稳态 PDE 闭式（cosh 解析积分）；candidate = 同 PDE 三对角 FDM + 梯形
+        # 积分（不反解闭式）。判据 D 实测：N=50→6400 残差 0.45°→3.4e-3°
+        # 单调收敛（O(1/N)，边界引线匹配斜率间断，一阶合理）= 真数值离散化。
+        "candidate": "thermal_phase_fdm",
+        "candidate_desc": "1D 散热鳍 FDM 求解 + 梯形相位积分（与闭式方法学独立）",
+        "default_params": {"lambda_um": 1.55, "dn_dt": 1.86e-4, "h_p": 1.0,
+                           "healing_length_um": 100.0, "L_um": 1000.0,
+                           "P_mw": 1.0},
+        "golden_fn": b29_thermal_phase_efficiency,
+        "note": ("热光相移器在 P=1mW 下的相移效率（度/毫瓦）：Δφ=2π/λ·(dn/dT)·∫θ(z)dz，"
+                 "θ(z) 由 1D 散热鳍方程控制（对称加热器 + 两端衰减引线）。golden=确定性"
+                 "物理定律闭式（cosh 解析积分）。v0.9.39 独立候选=thermal_phase_fdm：同 PDE"
+                 "三对角 FDM（Thomas）+ 梯形积分——与 golden 是同一物理定律的两种算法"
+                 "（解析 vs 离散），判据 D 真数值收敛。基线残差（N=8000）≈2.7e-3°"
+                 "（tol 2e-2 的 0.013%，≫1e-12 噪声地板，双向可标定）。归一化鳍模型"
+                 "（h_p=1.0 W/K, healing=100µm）绝对温标为示意、非 PDK 声明（θ_avg≈0.9K）。"
+                 "反向 dn_dt±10% ⇒ Δ=3.8°≫tol 必 FAIL。LLM 不进判决路径。"),
+    },
+    "B30": {
+        "title": "读出保真度 F（色散读出 SNR → erfc 误判链 · Krantz 2019）",
+        "metric": "readout_fidelity_F",
+        "oracle": "analytical(erfc readout chain) + gaussian-overlap quad cross-check",
+        "tol": 1e-3,
+        # v0.9.39（T-9 接线 #2）：readout_fidelity 零覆盖锚升格为严格独立锚。
+        # golden = ε=½erfc(SNR/√2) 闭式链；candidate = 误判概率 ε 的高斯重叠
+        # 数值积分（两高斯均值 ±SNR、σ=1 ⇒ 重叠积分=erfc(SNR/√2)=2ε）。
+        # 判据 D 实测：nx=2001→2e6 残差 9.4e-7→8e-13 单调收敛（真数值离散化，
+        # 非代数恒等）。🔴 工作点取中等 SNR≈2.2（ε≈1.4e-2）而非 t_m* 饱和区
+        # （ε≈4e-5）——饱和区 ±10% 扰动在 tol 内不可见，反向测试失敏。
+        "candidate": "readout_fidelity_quad",
+        "candidate_desc": "误判概率 ε 的高斯重叠数值积分（与 erfc 闭式方法学独立）",
+        "default_params": {"chi_ghz": 0.05, "kappa_r_ghz": 0.005, "nbar": 2.0,
+                           "eta": 0.5, "N_amp": 5.0,
+                           "t_m_s": 4.236705e-9, "T1_s": 20e-6},
+        "golden_fn": b30_readout_fidelity,
+        "note": ("色散读出单发保真度 F=(1-ε+(1-ε)(1-t_m/T1))/2，ε=½erfc(SNR/√2)，"
+                 "SNR=2χ_rad√(n̄ηt_m/(κ_rad(1+2N_amp)))（Krantz 2019）。golden=确定性"
+                 "物理定律闭式。v0.9.39 独立候选=readout_fidelity_quad：ε 的高斯重叠"
+                 "数值积分（erfc 闭式 vs 梯形积分，方法学独立），判据 D 真收敛。默认"
+                 "工作点 SNR≈2.2、ε≈1.4e-2（固定 t_m_s 反解，非饱和 t_m*）保证反向"
+                 "判别力：nbar/eta/N_amp±10% ⇒ ΔF≈3.4e-3≫tol 1e-3 必 FAIL。与 B10 门"
+                 "保真度（Lindblad 数值 vs 闭式）同族「数值积分 ↔ 解析」独立模式。"
+                 "LLM 不进判决路径。"),
+    },
     # ---- D-62 实证大数据锚（第二道非 AI ground：真实测量语料）----
     # anchor=empirical 的题：golden 来自 EmpiricalCorpus 实测语料（seed_empirical.json
     # + 社区经评审流落库的语料），非解析函数（golden_fn=None）。
@@ -1011,7 +1068,7 @@ BENCHMARK_DEFS = {
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
-                   "B26", "B27", "B28",
+                   "B26", "B27", "B28", "B29", "B30",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                    "S9", "S10", "S11", "S12", "S13"]  # S 系统锚（Phase 0-4；S9=LVS/S10=多层/S11=规模/S12=阵列分布/S13=设计良率）

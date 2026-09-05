@@ -1,20 +1,20 @@
 {
   "meta": {
     "L0_IR": "(内置默认 B1–B4,B8)",
-    "candidate": "IndependentCandidateRouter(独立候选 23 道: B1,B10,B12,B13,B14,B15,B19,B20,B22,B23,B24,B25,B26,B27,B28,B3,B4,B8,B9,E2,S13,S7,S8；降级量级参考 0 道: 无)",
+    "candidate": "IndependentCandidateRouter(独立候选 25 道: B1,B10,B12,B13,B14,B15,B19,B20,B22,B23,B24,B25,B26,B27,B28,B29,B3,B30,B4,B8,B9,E2,S13,S7,S8；降级量级参考 0 道: 无)",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "self_consistent": true
   },
-  "generated_at": "2026-09-05T07:51:26",
+  "generated_at": "2026-09-05T10:24:40",
   "summary": {
-    "total": 48,
-    "passed": 48,
+    "total": 50,
+    "passed": 50,
     "self_consistent": true,
-    "verified": 23,
+    "verified": 25,
     "self_consistent_stub_count": 25,
-    "independent_candidate_count": 23,
+    "independent_candidate_count": 25,
     "candidate_class_totals": {
-      "strict_independent": 23,
+      "strict_independent": 25,
       "degraded_ordinal": 0,
       "self_consistent_stub": 25
     }
@@ -78,7 +78,7 @@
       "oracle": "analytical(charge-coupling closed form)",
       "source": "physical-law",
       "golden": 0.0316227766016838,
-      "candidate": 0.030309650035324154,
+      "candidate": 0.03030965003528152,
       "tol": 0.002,
       "passed": true,
       "note": "确定性物理定律/解析解",
@@ -104,7 +104,7 @@
       "oracle": "analytical(Bragg condition)",
       "source": "physical-law",
       "golden": 1.5504,
-      "candidate": 1.5504083559262356,
+      "candidate": 1.550408355922985,
       "tol": 0.01,
       "passed": true,
       "note": "确定性物理定律/解析解",
@@ -294,6 +294,19 @@
       "candidate_class": "strict_independent"
     },
     {
+      "id": "B29",
+      "metric": "phase_efficiency_deg_per_mW",
+      "oracle": "analytical(1D fin PDE closed-form) + FDM cross-check",
+      "source": "physical-law",
+      "golden": 38.88019612769657,
+      "candidate": 38.877495494328855,
+      "tol": 0.02,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": true,
+      "candidate_class": "strict_independent"
+    },
+    {
       "id": "B3",
       "metric": "FSR_nm",
       "oracle": "analytical(Airy)",
@@ -301,6 +314,19 @@
       "golden": 120.12500000000001,
       "candidate": 120.12499998335774,
       "tol": 1.0,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": true,
+      "candidate_class": "strict_independent"
+    },
+    {
+      "id": "B30",
+      "metric": "readout_fidelity_F",
+      "oracle": "analytical(erfc readout chain) + gaussian-overlap quad cross-check",
+      "source": "physical-law",
+      "golden": 0.9859921113026036,
+      "candidate": 0.9859921112088695,
+      "tol": 0.001,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
@@ -403,7 +429,7 @@
       "oracle": "empirical-measurement(E-SIN-NG-300)",
       "source": "empirical-measurement",
       "golden": 1.892,
-      "candidate": 1.9571767840095338,
+      "candidate": 1.9571767840095167,
       "tol": 0.1,
       "passed": true,
       "note": "LPCVD Si3N4 300nm 平台（公开文献）：热氧 SiO2 2.5um 下包层 + PECVD SiO2 2.0um 上包层，全刻蚀条形波导 | P. Munoz et al., Si3N4 300 nm photonic integration platform, Sensors (MDPI) 2017: OFDR ring-resonator group index TE=1.892 / TM=1.717; MZI transmission cross-check TE 1.90-1.92 | σ=0.03 | tol=0.03 | tier=A",

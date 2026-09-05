@@ -4,7 +4,7 @@
 run_agent.py 的 CLI 演示路径（KernelGateway 直接调用 + L0 IR 驱动 + 三种 candidate +
 benchmarks 过滤）无 smoke 覆盖。本 smoke 以库方式走同一 KernelGateway 全链路：
 
-  1) reference 候选 → 46/46 PASS（B1-B27 物理定律 + E1-E7 实证锚 + S1-S12 系统锚，D-104 注入实证锚后；
+  1) reference 候选 → 50/50 PASS（B1-B30 物理定律 + E1-E7 实证锚 + S1-S13 系统锚，D-104 注入实证锚后；
      B19 为 P1-M4 新增链路级无源无增益物理定律锚；B20-B27 为 v0.8 内核纵深新增；
      E4-E7 为 v0.8.11 实证语料扩充：crossing IL/XT + MMI EL + SiN 传播损耗；
      S9 为 v0.8.24 LVS 签核锚）；
@@ -42,11 +42,11 @@ def main() -> int:
         return gw.handle(AgentRequest(action=action, payload=payload,
                                       meta={"requester": "smoke"}))
 
-    # 1) reference → 46/46（物理定律 + 实证锚双 ground；B1-B27 + E1-E7 + S1-S12）
+    # 1) reference → 50/50（物理定律 + 实证锚双 ground；B1-B30 + E1-E7 + S1-S13）
     r = run("verify_design", {"candidate": {"type": "reference"}})
     s = r.result["summary"]
-    check("verify_design(reference) 47/47",
-          r.status == "ok" and s.get("passed") == s.get("total") == 48,
+    check("verify_design(reference) 50/50",
+          r.status == "ok" and s.get("passed") == s.get("total") == 50,
           f"{s.get('passed')}/{s.get('total')} PASS")
 
     # 2) perturbed(rel=0.10) → 抓 FAIL（死标量）
@@ -67,10 +67,10 @@ def main() -> int:
     r = run("list_benchmarks", {})
     bm = r.result.get("benchmarks", [])
     ids = [b.get("id") for b in bm] if bm else []
-    check("list_benchmarks 48 题",
-          len(ids) == 48 and "B27" in ids and "E7" in ids
+    check("list_benchmarks 50 题",
+          len(ids) == 50 and "B30" in ids and "E7" in ids
           and "S12" in ids and "S13" in ids,
-          f"{len(ids)} 题（B1-B27 + E1-E7 + S1-S13）")
+          f"{len(ids)} 题（B1-B30 + E1-E7 + S1-S13）")
 
     # 5) benchmarks 过滤（B1,B2,B4）→ 3/3
     r = run("verify_design", {"candidate": {"type": "reference"},

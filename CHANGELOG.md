@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.9.39（2026-09-05 · T-9 锚题覆盖矩阵接线空白点 · B29+B30 两道真·可接空白点锚 · 题库 48→50 · 三分类：25 / 0 / 25）
+
+**动机**：T-9 锚题覆盖矩阵（33 引擎 × 48 锚）暴露两类**零覆盖品类**——①热光相移效率（D-73 升格，原仅量化口径、无独立候选）；②`readout_fidelity` 包（钉子 E，零覆盖）。两道此前是「空白点」：有物理定律/实证可锚，但 harness 里根本没有 B 类锚题，更无独立候选。本轮按七步接线法把它们落成**真·可接**（非自证桩）锚。
+
+### B29 热光相移效率锚（D-73 升格）
+- golden = 1D 散热鳍稳态 PDE `θ''−m²θ = −m²θ_p`（`θ_p=P/(L·h_p)`、`m=1/healing_length`）的 cosh 解析闭式：`θ(z)=θ_p·(1−exp(−mL)·cosh(m(z−L/2))/cosh(mL/2))`、`∫θ = θ_p·(L−(1−exp(−mL))/m)`、`Δφ = 2π/λ·dn/dT·∫θ`（单位换度）。
+- candidate = 同 PDE **三对角 FDM（Thomas 算法）+ 梯形相位积分**，`lda_solver/thermal_phase_efficiency.py`。**判据 D 真数值离散化**：取非均匀 θ(z)（B28 沿程积分反例是均匀段剖分守恒→代数恒等，故 B29 避开通用陷阱）。实测 N=50→6400 残差 0.45°→3.4e-3° 单调收敛（一阶，边界引线斜率间断）；基线（N=8000）2.7e-3°（tol 2e-2 的 0.013%，≫1e-12 双向可标定）；反向 dn_dt±10% ⇒ Δ=3.8°≫tol 必 FAIL。
+
+### B30 读出保真度锚（钉子 E → readout_fidelity 零覆盖）
+- golden = 色散读出闭式链：`SNR=2·χ_rad·√(n̄·η·t_m/(κ_rad·(1+2N_amp)))`、`ε=½erfc(SNR/√2)`、`F=(1−ε+(1−ε)(1−t_m/T1))/2`（Krantz 2019）。
+- candidate = 误判概率 ε 的**高斯重叠数值积分**：`ε=½·∫min(𝒩(x;−SNR,1), 𝒩(x;+SNR,1))dx`（梯形积分），`lda_solver/readout_fidelity_quad.py`。判据 D 实测 nx=2001→2e6 残差 9.4e-7→8e-13 单调收敛（非代数恒等）。🔴 **工作点取中等 SNR≈2.2**（固定 `t_m_s=4.236705e-9` 反解），**非** `optimize_readout_time` 的 t_m* 饱和区（SNR≈6、ε≈1e-9，±10% 扰动在 tol 内不可见、反向失敏）——饱和区会让护栏形同虚设，故选中等 SNR 保反向判别力：nbar/eta/N_amp±10% ⇒ ΔF≈3.4e-3≫tol 1e-3 必 FAIL。
+
+### 护栏与账本
+- 新增 `run_b29_thermal_phase_smoke.py` / `run_b30_readout_smoke.py`（各 4 判据：登记防回退 / 正向 PASS / 判据 D 单调收敛+基线>1e-12 / 反向必 FAIL），镜像 `run_b28_nullfit_smoke`。CI core 95→97。
+- 三分类刷新：**严格独立 25 · 降级 0 · 自证桩 25（三类和 = 50）**；判据窗口铁律、行为判据、双路径口径均零回归。
+- 🔴 诚实边界：B29/B30 是「解法独立」非「模型独立」——同一 1D 稳态 PDE / 同一色散读出物理，独立在数值积分 vs 解析闭式；只宣称方法学可证伪 + 判据窗口成立，不宣称精度验证。
+- 🔴 计数漂移连带修复：B29/B30 使题库 48→50，以下 6 道 smoke 内含**硬编码「48 题」计数断言**（未受 `run_count_consistency_smoke` 覆盖）首跑 FAIL，已统一升 50 题 + 标签 `B1-B30`：`run_l1_agent_smoke.py`、`run_empirical_anchor_smoke.py`、`run_system_budget_smoke.py`、`run_statistical_anchor_smoke.py`、`run_lvs_smoke.py`、`run_scale_smoke.py`。二次全量回归 97/0（含此 6 道）。
+
 ## v0.9.38（2026-09-05 · T-8 device 交叉验证去 GPU · 5 器件 live 5/5 零 SKIP · 三分类不变：23 / 0 / 25）
 
 **动机**：`DeviceLibrary().verify_all(mode="live")` 在无 GPU 机器上**只能演示 1 个器件（Ring）**——DC / YB 因 `requires_gpu` 硬门禁 SKIP，Waveguide / Bragg 被判 heavy 默认跳过。对外宣称「5 个已验证器件库」，外部人跑起来只看到 1 个 + 4 个 SKIP，这是**可验货性的直接裂缝**。T-8 的任务就是把 5 个器件全部变成现场可演示、且全部进 CI。

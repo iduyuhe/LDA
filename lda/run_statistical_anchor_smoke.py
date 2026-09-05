@@ -8,7 +8,7 @@
      agent/llm 模块；harness S7 的 oracle_kind 为确定性统计量）
   ⑤ S7 harness reference PASS（golden 自洽）
   ⑥ 扰动负例：损耗整体 +1dB → 分布下移 → candidate 偏离 golden > tol 被 FAIL 抓
-  ⑦ 题库计数 45（B1-B27 27 + E1-E7 7 + S1-S11 11）
+  ⑦ 题库计数 50（B1-B30 30 + E1-E7 7 + S1-S13 13）
   ⑧ S8 OSNR 统计锚（模板复用：Jensen 方向 + golden 收敛）
   ⑨ 蒙特卡洛收敛性（N 扫描收敛带）
 
@@ -111,8 +111,8 @@ def main() -> int:
     b_ids = [b for b in BENCHMARK_ORDER if b.startswith("B")]
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
     s_ids = [b for b in BENCHMARK_ORDER if b.startswith("S")]
-    check("题库 48 题（B1-B28 28 + E1-E7 7 + S1-S13 13）",
-          len(BENCHMARK_ORDER) == 48 and len(b_ids) == 28
+    check("题库 50 题（B1-B30 30 + E1-E7 7 + S1-S13 13）",
+          len(BENCHMARK_ORDER) == 50 and len(b_ids) == 30
           and len(e_ids) == 7 and len(s_ids) == 13,
           f"总={len(BENCHMARK_ORDER)} B={len(b_ids)} E={len(e_ids)} S={len(s_ids)}")
 

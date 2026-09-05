@@ -1422,6 +1422,76 @@ def _mzm_vpi_nullfit_candidate(spec: VerificationSpec, oracle_value: Any) -> flo
 
 
 # ---------------------------------------------------------------------------
+# B29 独立候选（v0.9.39 · T-9 接线 #1）：1D 散热鳍 FDM 相移
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "thermal_phase_fdm",
+    "1D 散热鳍 FDM 求解 + 梯形相位积分（同 PDE 三对角离散）—— 与 golden 的 "
+    "cosh 解析闭式方法学独立（离散 vs 解析，判据 D 真数值收敛）")
+def _b29_thermal_phase_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B29 独立候选：1D 散热鳍 FDM。
+
+    golden = 闭合形式（cosh 解析积分，见 b29_thermal_phase_anchor）；
+    cand   = 同一 PDE 三对角 FDM（Thomas）+ 梯形相位积分，从不反解闭式。
+    判据 D 实测（v0.9.39）：N=50→6400 残差 0.45°→3.4e-3° 单调收敛（一阶，
+    边界引线斜率间断），**真数值离散化**——对照 B28 沿程积分（均匀 integrand
+    梯形恒精确 = 代数恒等反例）。基线（N=8000）残差 2.7e-3°（tol 2e-2 的
+    0.013%，≫1e-12，双向可标定）。反向 dn_dt±10% ⇒ Δ=3.8°≫tol 必 FAIL。
+
+    ⚠️ 失败即抛异常上浮，绝不静默回退（IndependentCandidateRouter 既定原则）。
+    """
+    try:
+        from lda.lda_solver import thermal_phase_efficiency as tp
+    except ImportError:
+        _ensure_paths()
+        import thermal_phase_efficiency as tp
+    p = spec.params
+    return float(tp.thermal_phase_efficiency_fdm(
+        lambda_um=float(p["lambda_um"]),
+        dn_dt=float(p["dn_dt"]),
+        h_p=float(p["h_p"]),
+        healing_length_um=float(p["healing_length_um"]),
+        L_um=float(p["L_um"]),
+        P_mw=float(p["P_mw"]),
+        n=tp.DEFAULT_N))
+
+
+# ---------------------------------------------------------------------------
+# B30 独立候选（v0.9.39 · T-9 接线 #2）：读出误判概率 ε 高斯重叠数值积分
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "readout_fidelity_quad",
+    "误判概率 ε 的高斯重叠数值积分（两高斯均值 ±SNR）—— 与 golden 的 erfc "
+    "闭式方法学独立（梯形积分 vs 闭式，判据 D 真数值收敛）")
+def _b30_readout_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B30 独立候选：读出误判概率 ε 的高斯重叠数值积分 → F。
+
+    golden = ε=½erfc(SNR/√2) 闭式（见 b30_readout_anchor）；
+    cand   = ε=½·∫min(𝒩(x;-SNR,1), 𝒩(x;+SNR,1))dx（梯形积分）→ F。
+    判据 D 实测（v0.9.39）：nx=2001→2e6 残差 9.4e-7→8e-13 单调收敛（真数值
+    离散化，非代数恒等）。🔴 工作点取中等 SNR≈2.2（非 t_m* 饱和区）以保证
+    反向判别力：nbar/eta/N_amp±10% ⇒ ΔF≈3.4e-3≫tol 1e-3 必 FAIL。
+
+    ⚠️ 失败即抛异常上浮，绝不静默回退（IndependentCandidateRouter 既定原则）。
+    """
+    try:
+        from lda.lda_solver import readout_fidelity_quad as rq
+    except ImportError:
+        _ensure_paths()
+        import readout_fidelity_quad as rq
+    p = spec.params
+    return float(rq.readout_fidelity_quad(
+        chi_ghz=float(p["chi_ghz"]),
+        kappa_r_ghz=float(p["kappa_r_ghz"]),
+        nbar=float(p["nbar"]),
+        eta=float(p["eta"]),
+        N_amp=float(p["N_amp"]),
+        t_m_s=float(p["t_m_s"]),
+        T1_s=float(p["T1_s"]),
+        nx=rq.DEFAULT_NX))
+
+
+# ---------------------------------------------------------------------------
 # S7 / S8 统计锚独立候选（v0.9.29 · T-3）：闭式高斯 p5（μ − 1.645σ）
 # ---------------------------------------------------------------------------
 # golden = 蒙特卡洛经验 5% 分位（随机采样、固定种子）；

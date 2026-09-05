@@ -114,6 +114,79 @@ FAQ = [
     },
 ]
 
+# --------------------------------------------------------------------------
+# 引导型对话流（智能体做成引导型）：带用户走 3 分钟上手主线。
+# 顺序与 static/guide_widget.js 的 STEPS 一一对应（0 欢迎 / 1 健康 / 2 设计 /
+# 3 版图仿真 / 4 验证 / 5 客服 / 6 完成），anchor 选择器保持一致以便联动。
+# 注意：引导只是对话/导航辅助，绝不进入验证判决路径。
+# --------------------------------------------------------------------------
+GUIDE_STEPS = [
+    {
+        "title": "欢迎 · 3 分钟上手",
+        "intro": (
+            "我是你的 3 分钟向导 🚀 LDA 是开源、Agent 原生的光子+量子芯片设计软件，"
+            "核心红线：LLM 不进判决路径，PASS/FAIL 由物理定律锚的死标量比对决定。\n"
+            "我们走一条主线：设计 → 仿真/版图 → 验证。点「下一步」我带你逐站看。"
+        ),
+        "tip": "途中任何一步卡住，直接在这里问我；也可点「🎯 可视化引导」看聚光灯高亮。",
+        "anchor": None,
+    },
+    {
+        "title": "① 一眼看懂系统健康",
+        "intro": (
+            "顶部四张实时卡是系统真面目：验证 harness 通过数、AI 内核候选、锚覆盖(S1–S12)、"
+            "已落地真地基层。它们由后端实时真跑，不是装饰。"
+        ),
+        "tip": "通过数越高、真地基越多，可验货底子越厚。诚实边界：当前 50 锚中严格独立候选约 25 道。",
+        "anchor": "#cards",
+    },
+    {
+        "title": "② 设计：给目标，出统一设计包",
+        "intro": (
+            "在「旗舰流程·设计闭环端到端」选器件、填目标，点运行设计闭环→出设计包。"
+            "LDA 生成候选、物理锚即提即验、确定性排序，给出可下载统一设计包 JSON。"
+        ),
+        "tip": "关键：AI 生成候选，物理定律当法官——这就是「生成与判决分离」。想看细节问我就行。",
+        "anchor": "#runDesignOutcome",
+    },
+    {
+        "title": "③ 版图 → DRC → 仿真 流水线",
+        "intro": (
+            "「版图→DRC→仿真 流水线」一键贯通：参数→GDS 版图(SVG 预览)→DRC 自查→"
+            "FDTD 仿真 neff→物理锚验收。从设计意图到「可制造+已仿真验收」一条命令走完。"
+        ),
+        "tip": "无 GPU 时诚实退回 ORACLE 真值演示，不谎报算力。",
+        "anchor": "#runLp",
+    },
+    {
+        "title": "④ 验证：物理定律当法官",
+        "intro": (
+            "「验证裁判控制台」选候选求解器、点运行验证：真调 LDA harness，用物理定律锚逐题比对，"
+            "给 PASS/FAIL 死标量。这是护城河——判决落非 AI ground，可外部 curl 复现验货。"
+        ),
+        "tip": "想亲眼验？运行后或访问 /api/cpo_array 一行 curl 复现十万级 DRC+LVS 死锚判决。",
+        "anchor": "#runVerify",
+    },
+    {
+        "title": "⑤ 智能体客服：随时提问 + 留资",
+        "intro": (
+            "就是我啦 😊 我解答产品定位、验证红线、光子/量子能力、上手方式、开源与商用、能力边界；"
+            "也能留姓名+公司+邮箱安排专人对接。注意：我只对话，绝不进求解/判决。"
+        ),
+        "tip": "想对接商务或要白皮书，留个联系方式即可。",
+        "anchor": 'div[title="LDA 智能体客服"]',
+    },
+    {
+        "title": "完成 · 你已走完主线",
+        "intro": (
+            "✅ 设计→仿真/版图→验证 这条闭环你看完了。深入了解：底部「技术白皮书」下载，"
+            "或「关于 LDA」看产品说明与验证账本；我随时在。"
+        ),
+        "tip": "要正式对接或拿源码：留联系方式，或访问 github.com/iduyuhe/LDA。",
+        "anchor": None,
+    },
+]
+
 _FALLBACK = (
     "我是 LDA 智能体客服，可解答产品定位、验证红线、光子/量子能力、上手方式、"
     "开源与商用、边界等问题。您也可以直接留下姓名+公司+邮箱，我们安排专人对接。"
@@ -300,6 +373,32 @@ def chat(payload):
     lead_captured = False
     if lead:
         lead_captured = collect_lead(lead)
+
+    # 1.5) 引导模式（智能体做成引导型）：带用户走 3 分钟上手主线
+    guide_step = payload.get("guide_step")
+    guide_cmd = payload.get("guide_cmd")
+    if guide_cmd == "start" or isinstance(guide_step, int):
+        step = 0 if guide_cmd == "start" else max(0, min(int(guide_step), len(GUIDE_STEPS) - 1))
+        s = GUIDE_STEPS[step]
+        reply = ""
+        if message:
+            faq = _rule_reply(message)
+            if faq != _FALLBACK:
+                reply = faq
+            else:
+                llm = _llm_reply(message, history)
+                if llm:
+                    reply = llm
+        if lead_captured:
+            reply = (reply + "\n已记录您的联系方式，团队会尽快与您联系 🙌").strip()
+        return {
+            "reply": reply,
+            "lead_captured": lead_captured,
+            "guide": {"step": step, "total": len(GUIDE_STEPS),
+                      "title": s["title"], "intro": s["intro"], "tip": s["tip"],
+                      "anchor": s.get("anchor")},
+            "suggestions": [],
+        }
 
     # 2) 对话生成（LLM 优先，失败回退 FAQ）
     if not message and not lead:

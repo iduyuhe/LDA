@@ -26,6 +26,8 @@
   }
 
   var history = [];
+  var guideState = { active: false, step: 0, total: 7 };
+  var GUIDE_CTA = "🚀 带我 3 分钟上手";
 
   function buildWidget() {
     // 呼吸脉冲动画（提升可见性，避免被忽略）
@@ -112,6 +114,7 @@
 
     function send(text) {
       text = (text || "").trim();
+      if (text === GUIDE_CTA) { startGuide(); return; }
       var input = panel.querySelector("#csInput");
       if (!text && input) text = input.value.trim();
       if (!text) return;
@@ -120,10 +123,12 @@
       history.push({ role: "user", content: text });
       // 乐观占位
       var wait = addMsg("bot", "…");
+      var payload = { message: text, history: history.slice(-6) };
+      if (guideState.active) payload.guide_step = guideState.step;
       fetch(API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history: history.slice(-6) })
+        body: JSON.stringify(payload)
       })
         .then(function (r) { return r.json(); })
         .then(function (d) {

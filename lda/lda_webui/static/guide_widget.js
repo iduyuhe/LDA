@@ -245,6 +245,18 @@
     document.body.appendChild(b);
   }
 
+  // 暴露给客服组件（cs_widget）联动：在对话引导中一键打开对应步聚光灯
+  window.LDA_GUIDE = {
+    start: function () { start(); },
+    goTo: function (i) {
+      build();
+      active = true;
+      blk.style.display = "block";
+      tip.style.display = "block";
+      showStep(Math.max(0, Math.min(i | 0, STEPS.length - 1)));
+    }
+  };
+
   // ============================ 启动 ============================
   function boot() {
     buildLauncher();

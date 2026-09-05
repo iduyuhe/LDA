@@ -69,6 +69,30 @@ def h_static_asset(h, p, q, path):
     return None
 
 
+def h_static_doc(h, p, q, path):
+    """GET /<file>.docx|pdf —— 公开文档下载（白皮书等），attachment 触发浏览器下载。
+
+    仅服务 static/ 下以 .docx / .pdf 结尾的文件，basename 拼路径天然防目录穿越；
+    其余后缀（含 .md / .py）一律 404，不暴露源码与内部文档。"""
+    name = os.path.basename(path)
+    if not name.lower().endswith((".docx", ".pdf")):
+        h._send(404, {"error": "not found"})
+        return None
+    fp = os.path.join(_app.WEBUI_DIR, "static", name)
+    if not os.path.exists(fp):
+        h._send(404, {"error": "not found"})
+        return None
+    ext = name.rsplit(".", 1)[-1].lower()
+    ctype = {"docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+             "pdf": "application/pdf"}[ext]
+    with open(fp, "rb") as _f:
+        data = _f.read()
+    h._send(200, body=data, ctype=ctype,
+            headers={"Content-Disposition": 'attachment; filename="%s"' % name,
+                      "Cache-Control": "public, max-age=86400"})
+    return None
+
+
 def h_proofs(h, p, q, path):
     fname = path[len("/proofs/"):]
     if not re.fullmatch(r"[0-9a-f]{32}\.(png|jpg)", fname):
@@ -1470,6 +1494,7 @@ GET_PREFIX = [
     ("endswith", (".js", ".css"), h_static_asset),
     ("startswith", "/proofs/", h_proofs),
     ("endswith", (".jpg", ".jpeg", ".png", ".gif"), h_static_img),
+    ("endswith", (".docx", ".pdf"), h_static_doc),
     ("startswith", "/api/shelf/", h_shelf_dispatch),
     ("startswith", "/api/store/order/", h_store_order_get),
 ]

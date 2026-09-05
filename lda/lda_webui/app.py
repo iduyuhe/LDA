@@ -2453,6 +2453,7 @@ def about_info():
     return {
         "version": LDA_VERSION,
         "product": PRODUCT_INFO,
+        "whitepaper_url": "/lda_whitepaper_v0.9.40.docx",
         "verification_ledger": {
             "anchors_total": len(BENCHMARK_DEFS),
             "ci_core_smokes": _ci_core_smokes_count(),

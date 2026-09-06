@@ -1,7 +1,7 @@
 # LDA 创新超市（Innovation Marketplace）· 前瞻预研货架目录
 
 > 生成口径：每个货架 = 已锚定基元（产品级基准库 GP-*）+ 公开信号驱动的**前瞻预研**预设计。
-> **58/58 货架通过结构可行 + 系统预算不破检查**。
+> **75/75 货架通过结构可行 + 系统预算不破检查**。
 
 **诚实边界（红线下护栏）**：
 > 创新超市货架为**前瞻预研**预设计：组合已锚定基元（产品级基准库 GP-*）+ 公开信号驱动（行业 roadmap / 标准草案 / 厂商公开动向）。属等效验证（复用已锚定基元 + 系统预算不破），**非本团队流片验证**、**非对未来的承诺**。信号源可溯源；判决复用 system_type 已验证闭环，LLM 不进判决路径。
@@ -71,6 +71,23 @@
 | IM-MDM-MUX | 模分复用器（Mode-division Multiplexer）前端预设计 | 少模光纤 MDM 收发前端、数据中心空分复用扩容、单模 Shannon 极限突破、模群延时补偿 | link | GP-YBRANCH, GP-SIN-PL | OK |
 | IM-OPTCOMB | 芯片级光频梳（Microcomb）前端预设计 | DWDM 多波长光源、时频同步、相干光通信梳状源、量子频率计量 | link | GP-GRATING-EFF, GP-SIN-PL | OK |
 | IM-POL-ROTATOR | 片上偏振旋转器（Polarization Rotator）前端预设计 | 偏振分集接收、相干收发器偏振管理、硅光集成偏振操控、CPO 偏振耦合接口 | link | GP-CROSSING, GP-SIN-PL | OK |
+| IM-3.2T-DR8 | 3.2T DR8 硅光收发前端预设计（8×400G PAM4） | AI 数据中心 3.2T 光模块、DR8 多通道并行互连、CPO 光引擎通道 | link | GP-GRATING-EFF, GP-SIN-PL | OK |
+| IM-1.6T-LPO | 1.6T LPO 线性直驱光模块前端预设计（8×200G） | AI 数据中心 1.6T LPO 可插拔、线性直驱低功耗互连、交换机近封装 | link | GP-GRATING-EFF, GP-SIN-PL | OK |
+| IM-1.6T-ZR | 1.6T 相干 ZR 光模块前端预设计（相干 400ZR/1.6ZR） | DCI 相干互连、1.6ZR 长距离传输、城域/骨干相干收发 | link | GP-GRATING-EFF, GP-SIN-PL | OK |
+| IM-CPO-16CH | CPO 16 通道 WDM 光引擎前端预设计 | 共封装光学（CPO）16 通道 WDM 解复用、高密度片上光 IO、AI 交换机共封装 | wdm_demux | GP-MMI-1X2, GP-SIN-PL | OK |
+| IM-UCIE-OPTICAL | UCIe-Optical 光 chiplet 互连前端预设计 | die-to-die 光互连、光 chiplet/ONoC、异构集成封装内光互连 | wdm_demux | GP-MMI-1X2, GP-SIN-PL | OK |
+| IM-LIDAR-FULL | FMCW 固态激光雷达全前端预设计（TX+RX 一体） | 车载/机器人 FMCW 固态 LiDAR、光探测与测距全光前端、同轴 TX/RX | sensor_frontend | GP-GRATING-EFF, GP-YBRANCH, GP-SIN-PL | OK |
+| IM-POC-BIOSENSE | POCT 生物/气体 Lab-on-Chip 传感前端预设计 | 即时诊断（POCT）生物传感、片上气体/化学传感、医疗即时检测微流控光路 | sensor_frontend | GP-GRATING-EFF, GP-YBRANCH, GP-SIN-PL | OK |
+| IM-FTTR-PLC32 | 50G-PON / FTTR 32 路 PLC 分路前端预设计 | 家庭/企业全光组网（FTTR）、50G-PON 无源分光、接入网无源光分路 | sensor_frontend | GP-GRATING-EFF, GP-YBRANCH, GP-SIN-PL | OK |
+| IM-TTD-5G | 微波光子真时延（TTD）波束成形前端预设计 | 5G/6G 毫米波波束成形、微波光子真时延、相控阵光控时延网络 | sensor_frontend | GP-GRATING-EFF, GP-YBRANCH, GP-SIN-PL | OK |
+| IM-QKD-FULL-LINK | QKD 干线收发全链路前端预设计（BB84 态制备/测量） | 量子密钥分发（QKD）干线、城域/骨干量子保密通信、BB84 收发前端 | qkd_link | GP-GRATING-EFF, GP-SIN-PL | OK |
+| IM-QCTRL-32Q | 32 量子比特读出控制芯片前端预设计 | 超导量子计算读出/控制、NISQ 规模扩展、多量子比特复用读出链 | quantum_fidelity | GP-YBRANCH, GP-SIN-PL | OK |
+| IM-OPA-2D | 2D 光学相控阵（OPA）固态雷达前端预设计 | 固态激光雷达光束 steering、光通信光束成形、自由空间光互连波束控制 | link | GP-GRATING-EFF, GP-SIN-PL | OK |
+| IM-OPTCOMB-WDM | WDM 锁定芯片级光频梳（DWDM-grid Microcomb）预设计 | DWDM 多波长相干源、WDM-PON 梳状光源、信道化射频光子学、量子频率梳分发 | link | GP-GRATING-EFF, GP-SIN-PL, GP-MMI-1X2 | OK |
+| IM-CPO-OIO-8CH | CPO 硅光 I/O 光引擎预设计（8×200G = 1.6T，标准 250 µm 光纤阵列） | 共封装光学（CPO）光引擎 I/O、AI 交换机/XPU 光接口、51.2T+ 以太网与 InfiniBand 光互连 | cpo_optical_io | GP-GRATING-EFF, GP-SIN-PL, GP-YBRANCH | OK |
+| IM-CPO-OIO-16CH | CPO 高密度光引擎预设计（16×200G = 3.2T，127 µm 细间距光纤阵列） | 3.2T/6.4T CPO 光引擎、超大规模 AI 集群 scale-up 光互连、高密光纤阵列（FAU）耦合 | cpo_optical_io | GP-GRATING-EFF, GP-SIN-PL, GP-YBRANCH | OK |
+| IM-CPO-OIO-CHIPLET | chiplet 间光 I/O 预设计（UCIe-Optical 类，8×32G 光栅阵列直连，无光纤） | chiplet 间光互连（die-to-die 光 I/O）、UCIe-Optical 光桥、光 CXL/内存池化、AI 加速器分解式互连 | cpo_optical_io | GP-GRATING-EFF, GP-SIN-PL | OK |
+| IM-CPO-ELS-FIBER | CPO 外置可更换激光源（ELS）+ 光纤 I/O 前端预设计（OIF 3.2T IA 类 8×400G） | CPO 可维护性方案（前面板可更换光源）、OIF 3.2T 光引擎、NPO/CPO 混合演进、规避「光器件故障导致整交换机报废」的运维痛点 | cpo_optical_io | GP-GRATING-EFF, GP-SIN-PL, GP-YBRANCH, GP-CROSSING | OK |
 
 ## 货架设计说明（诚实标注）
 
@@ -132,6 +149,23 @@
 - **IM-MDM-MUX**：模分复用前端 = 非对称 Y 分支模式合/分器（GP-YBRANCH 模式转换近似） + SiN 少模波导（GP-SIN-PL）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 MDM 量级。
 - **IM-OPTCOMB**：光频梳前端 = 高效光栅耦合 IO（GP-GRATING-EFF） + SiN 微环梳谐振波导（GP-SIN-PL，高 Q 色散工程）；泵浦/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开芯片级微梳量级。
 - **IM-POL-ROTATOR**：偏振旋转器前端 = 波导交叉路由（GP-CROSSING） + SiN 双折射/非对称波导偏振旋转段（GP-SIN-PL）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开偏振旋转器量级。
+- **IM-3.2T-DR8**：3.2T DR8 前端 = 高效光栅耦合阵列（GP-GRATING-EFF）+ SiN 波导引出（GP-SIN-PL）；8×400G PAM4 并行，调制器/激光器按黑箱（负面清单）。判决复用 link 系统预算锚死标量；复用已锚定无源网，无量级新物理。对标公开 DR8 量级。
+- **IM-1.6T-LPO**：1.6T LPO 前端 = 高效光栅耦合（GP-GRATING-EFF）+ SiN 波导引出（GP-SIN-PL）；线性直驱省 retimer，调制器按黑箱。判决复用 link 系统预算锚死标量；复用已锚定无源网，无量级新物理。对标公开 LPO 量级。
+- **IM-1.6T-ZR**：1.6T ZR 前端 = 高效光栅耦合（GP-GRATING-EFF）+ SiN 波导引出（GP-SIN-PL）；相干 DSP/调制器按黑箱。判决复用 link 系统预算锚死标量；复用已锚定无源网，无量级新物理。对标公开相干 ZR 量级。
+- **IM-CPO-16CH**：CPO 16 通道 WDM 前端 = MMI 星形耦合（GP-MMI-1X2）+ SiN 阵列波导（GP-SIN-PL）；判决复用 wdm_demux 已验证闭环（B4 锚：drop IL≤3dB / XT≥15dB）。复用已锚定无源网，无量级新物理。对标公开 CPO WDM 量级。
+- **IM-UCIE-OPTICAL**：UCIe-Optical 前端 = MMI 星形耦合（GP-MMI-1X2）+ SiN 波导（GP-SIN-PL）；判决复用 wdm_demux 已验证闭环（B4 锚）。复用已锚定无源网，无量级新物理。对标公开光 chiplet 互连量级。
+- **IM-LIDAR-FULL**：FMCW LiDAR 全前端 = 光栅耦合（GP-GRATING-EFF）+ SiN 波导（GP-SIN-PL）+ Y-branch 路由（GP-YBRANCH）；OPA 扫描/相干混频按黑箱（负面清单）。判决复用 sensor_frontend 自带死标量锚 S1（预算）/S5（能量守恒下界·D-67）/S7（统计 p5）；复用已锚定无源网，无量级新物理。对标公开 FMCW LiDAR 链路量级。
+- **IM-POC-BIOSENSE**：POCT 传感前端 = 光栅耦合（GP-GRATING-EFF）+ Y-branch 分/合束（GP-YBRANCH）+ SiN 波导传感臂（GP-SIN-PL）；传感元件按参数化黑箱（负面清单）。判决复用 sensor_frontend 自带死标量锚 S1/S5/S7；复用已锚定无源网，无量级新物理。对标公开传感链路预算量级。
+- **IM-FTTR-PLC32**：FTTR 32 路 PLC = 5 级 Y-branch 级联（GP-YBRANCH，2^5=32 支路，含理想 5×3.01 dB 分光）+ SiN 波导（GP-SIN-PL）；判决复用 sensor_frontend 自带死标量锚 S1/S5/S7。复用已锚定无源网，无量级新物理。对标 ITU-T/G.671 公开规格。
+- **IM-TTD-5G**：TTD 前端 = 光栅耦合（GP-GRATING-EFF）+ 2×crossing 时延路由（GP-SIN-PL 延迟线）+ SiN 波导（GP-SIN-PL）；电光调制按黑箱（负面清单）。判决复用 sensor_frontend 自带死标量锚 S1/S5/S7；复用已锚定无源网，无量级新物理。对标公开微波光子 TTD 链路量级。
+- **IM-QKD-FULL-LINK**：QKD 干线收发前端 = 高效光栅耦合（GP-GRATING-EFF）+ SiN 波导引出（GP-SIN-PL）；QKD 本质是信息论安全问题，按物理诚实映射到 qkd_link 系统类型（decoy-BB84 安全密钥率锚 S-QKD-SKR），不冒用量子比特读出锚。判决复用 decoy-BB84 渐近下界（Lo–Ma–Chen 2005）已验证闭环，零新物理；含 Q-D67 护栏。对标公开 QKD 密钥率量级（等效验证）。
+- **IM-QCTRL-32Q**：32-qubit 复用读出链 = Y-branch 路由（GP-YBRANCH）+ SiN 波导（GP-SIN-PL）读出网络；判决复用 quantum_fidelity 已验证闭环（D-46×D-47）。复用已锚定无源网，无量级新物理。对标公开超导量子系统读出保真度量级。
+- **IM-OPA-2D**：OPA 2D 前端 = 高效光栅耦合（GP-GRATING-EFF）+ SiN 波导阵列（GP-SIN-PL）；OPA 是光波束控器件，按物理诚实映射到 link 系统类型（IL 基），不冒用量子比特读出锚。判决复用 link 系统预算锚死标量；复用已锚定无源网，无量级新物理。对标公开 OPA 光路量级。
+- **IM-OPTCOMB-WDM**：WDM 锁定微梳 = 高效光栅耦合 IO（GP-GRATING-EFF） + SiN 高 Q 微环梳（GP-SIN-PL，色散工程 锁 ITU 网格） + MMI 分束复用（GP-MMI-1X2）；泵浦/探测/锁相环按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。与 IM-OPTCOMB（通用微梳前端）区分：本货架专攻 WDM/ITU 网格锁定的多波长相干源，compositions 多纳入 MMI 复用，规格面向信道化 WDM。
+- **IM-CPO-OIO-8CH**：CPO 光 I/O = 光栅耦合器阵列 IO（GP-GRATING-EFF）+ SiN 低损波导扇出（GP-SIN-PL）+ Y-branch 分光/监控支路（GP-YBRANCH）；判决走新系统类型 cpo_optical_io 三道死标量锚：每通道插损 S-CPO-IL（GP-* 级联，D-67 能量守恒下界护栏）+ 海岸线带宽密度 S-CPO-DENSITY（= 单通道速率/通道间距，P-CPO 间距几何下界护栏）+ 功率预算 S-CPO-BUDGET（S1 同式）。与 IM-CPO-WDM5（WDM 级联 B4 锚）/IM-CPO-16CH（通道数扩展）区分。EIC/驱动器/激光器按黑箱（有源不物理级建模，负面清单）。
+- **IM-CPO-OIO-16CH**：把通道间距从 250 µm 压到 127 µm（标准光纤阵列细间距档）→ 总带宽 3.2 Tbps 而海岸线仅 2.03 mm，密度复现 1574.80 Gbps/mm。⚠️ 该复现值**已达 P-CPO 物理上界 1600 的 98.4%**（上界 = 200 Gbps / 125 µm G.652 包层直径）—— 再密就违反几何必然，护栏直接抛错拦截。本货架兼作 P-CPO 护栏的贴身回归用例。与 IM-CPO-16CH（既有，通道数扩展口径）区分。
+- **IM-CPO-OIO-CHIPLET**：couple_mode=grating_array（片间光栅阵列**直连，无光纤**）⇒ P-CPO 间距物理下界由 G.652 包层直径 125 µm 换为**模场直径 MFD@1550 = 10.3 µm**，故 45 µm 间距合法。这验证 P-CPO 护栏**按耦合方式分档守下界**：一刀切用 125 µm 会误杀片间直连，放松到无下界则可虚报密度。片间短距无分束/交叉 → 插损仅 2×光栅耦合 + 0.2 cm 波导。与 IM-UCIE-OPTICAL（既有，电学接口标准口径）/IM-CHIPLET-IO（既有）区分。
+- **IM-CPO-ELS-FIBER**：可维护性导向：把温度敏感的激光器外置为可现场更换模块（ELS/ELSFP），光经光纤送入CPO 引擎 ⇒ 光栅耦合 IO（GP-GRATING-EFF）+ SiN 波导（GP-SIN-PL）+ crossing 交叉（GP-CROSSING，ELS 光路与本地环路交汇）+ Y-branch 分光。8×400G = 3.2 Tbps 正对OIF 3.2T IA 光口配置，密度复现 1600 Gbps/mm（= 200G 档物理上界的 2 倍，因单通道速率翻倍，上界同步升至 3200）。与 IM-LASER-INT（片上异质集成光源黑箱）区分。
 
 ## 信号来源（可溯源）
 
@@ -193,6 +227,23 @@
 - **IM-MDM-MUX** · 模分复用器（Mode-division Multiplexer）前端预设计：Few-Mode Fibers $10.74B(2025) CAGR 6.86%；MDM Equipment $1.42B(2024)→$4.16B(2033) CAGR 12.6%；Market Intelo →$6.89B CAGR 18.9%；Growth Market Reports CAGR 13.7%（突破单模容量极限）。
 - **IM-OPTCOMB** · 芯片级光频梳（Microcomb）前端预设计：Intel Market Research $58M(2025)→$108M(2034) CAGR 7.4%；全球光频梳 $1.87B(2026) 年增 31.7%；Archive Market Research $1.8B(2025) CAGR 11%；芯片级微梳 CAGR 47.8%（DWDM/时频同步/量子）。
 - **IM-POL-ROTATOR** · 片上偏振旋转器（Polarization Rotator）前端预设计：光偏振控制器 $480M(2026) 增 12.3% / $4.72B(2026) 增 12.9%；Polarization Rotator CAGR 10.3%(2026-2033)；Stats N Data CAGR 6%；集成波导型增速 28%（硅光量产拉动）。
+- **IM-3.2T-DR8** · 3.2T DR8 硅光收发前端预设计（8×400G PAM4）：中际旭创/新易盛 1.6T&3.2T OSFP DR8 公开规格（单通道插损 ≤4.5 dB）；Hyperphotonix 800G/1.6T DR8 平台；IEEE 802.3df 800G/1.6T 进程
+- **IM-1.6T-LPO** · 1.6T LPO 线性直驱光模块前端预设计（8×200G）：新易盛/云晖 1.6T LPO 公开规格（单通道插损 ≤4.5 dB）；LPO 线性直驱 MSA 路线
+- **IM-1.6T-ZR** · 1.6T 相干 ZR 光模块前端预设计（相干 400ZR/1.6ZR）：光迅/Acacia 相干 400ZR/1.6ZR 公开规格；OIF 400ZR/800ZR/1.6ZR 标准
+- **IM-CPO-16CH** · CPO 16 通道 WDM 光引擎前端预设计：OIF CPO 3.2T/6.4T 白皮书；CPO 共封装光学（Azure/Google/AWS）从试点转早期量产
+- **IM-UCIE-OPTICAL** · UCIe-Optical 光 chiplet 互连前端预设计：UCIe 2.0 新增光互连（UCIe-Optical）标准草案；Intel/Ayarl 光 chiplet 公开路线
+- **IM-LIDAR-FULL** · FMCW 固态激光雷达全前端预设计（TX+RX 一体）：Optics Express 34, 7415 (2026) 公开论文：片上 FMCW LiDAR 单方向链路损耗 ≈3.3 dB；FMCW 固态雷达产业（Aeva/Mobileye）公开路线
+- **IM-POC-BIOSENSE** · POCT 生物/气体 Lab-on-Chip 传感前端预设计：公开 PICS / 生物光子传感综述：干涉型传感前端全链路插损预算通常 ≤15 dB；POCT 生物传感产业（国内外 IVD）公开路线
+- **IM-FTTR-PLC32** · 50G-PON / FTTR 32 路 PLC 分路前端预设计：ITU-T G.671 / Telcordia GR-1209：1×32 PLC 每支路最大插损 ≤14.0 dB；50G-PON（ITU-T G.hsp.50Gpon）公开路线
+- **IM-TTD-5G** · 微波光子真时延（TTD）波束成形前端预设计：微波光子 TTD 公开综述：真时延网络片上光路损耗典型 ≤10 dB；5G/6G 相控阵（国内外射频光子系统）公开路线
+- **IM-QKD-FULL-LINK** · QKD 干线收发全链路前端预设计（BB84 态制备/测量）：npj Quantum Information 3, e1700262 (2017) 公开论文：QKD Alice/Bob 芯片总插损 15/8 dB；国内量子保密通信干线（京沪/武合）公开路线
+- **IM-QCTRL-32Q** · 32 量子比特读出控制芯片前端预设计：IBM Heron R2 (2024, 156 qubit) 公开读数保真度 98.5%；本源悟空-180 读数 99.0%；NISQ 典型单发读出 ≥97.5%（PostQuantum 2026 基准）
+- **IM-OPA-2D** · 2D 光学相控阵（OPA）固态雷达前端预设计：公开 OPA 硅光相控阵综述：片上 OPA 光路损耗典型 ≤12 dB；固态雷达（国内外 OPA 路线）公开路线
+- **IM-OPTCOMB-WDM** · WDM 锁定芯片级光频梳（DWDM-grid Microcomb）预设计：Intel Market Research 光频梳 $58M(2025)→$108M(2034) CAGR 7.4%；芯片级微梳 CAGR 47.8%（DWDM/时频同步/量子）；ITU-T G.694.1 DWDM 网格需求。
+- **IM-CPO-OIO-8CH** · CPO 硅光 I/O 光引擎预设计（8×200G = 1.6T，标准 250 µm 光纤阵列）：OIF-Co-Packaging-3.2T-Module-01.0（3.2T 引擎 = 32×CEI-112G-XSR 电 + 8×400G FR4/DR4 光口）；Broadcom TH5-Bailly CPO 已部署；NVIDIA Quantum-X Photonics Q3450-LD（144×800G InfiniBand，液冷）2026 出货；Spectrum-X Ethernet Photonics 2H2026 爬坡
+- **IM-CPO-OIO-16CH** · CPO 高密度光引擎预设计（16×200G = 3.2T，127 µm 细间距光纤阵列）：OIF-Co-Packaging-3.2T-Module-01.0（3.2T CPO 引擎，8×400G 光口，~140 G/mm 海岸线）；Semiconductor Engineering：缩小光纤阵列间距（FAU scaling）是提升 CPO 带宽密度的两条主路径之一（另一为 WDM），「fiber pitches often exceed 100 microns」；OIF EEI Panel OFC26：超大规模 scale-up 目标区 CPO 3 pJ/b @ 2.0 Tbps/mm
+- **IM-CPO-OIO-CHIPLET** · chiplet 间光 I/O 预设计（UCIe-Optical 类，8×32G 光栅阵列直连，无光纤）：OIF EEI Panel OFC26 官方表（oiforum.com）：ASIC UCIe-32G 标准封装 95 µm pitch 记 2.0 Tbps/mm，ASIC SerDes-200G 记 1.9–2.7 Tbps/mm；Semiconductor Engineering：AI chiplet（UCIe/OIF）边缘带宽密度 ≈3 Tbps/mm，与 CPO ≈0.5 Tbps/mm 存在 6× 差距；OIF Compute Optics Interface（COI）面向 AI scale-up；Intel OCI 光计算互连 chiplet
+- **IM-CPO-ELS-FIBER** · CPO 外置可更换激光源（ELS）+ 光纤 I/O 前端预设计（OIF 3.2T IA 类 8×400G）：OIF-Co-Packaging-3.2T-Module-01.0（3.2T = 32×CEI-112G-XSR + 8×400G FR4/DR4 光口）；Broadcom 第三代 102.4T Davisson（TH6）CPO 交换机引入**前面板可现场更换激光源**，规避 CPO 维护痛点；锐捷 25.6T 硅光 NPO、Ragile RA-BC6932 引入 ELSFP 接口；CPO 单端口功耗 5.5–7W（800G），较可插拔降低 50–70%（Yole/OIF 公开汇总）
 
 ---
 _LDA · 开源 Agent-native EDA（光子 PDA + 量子 QEDA）· 物理定律锚红线 · LLM 不进判决路径_

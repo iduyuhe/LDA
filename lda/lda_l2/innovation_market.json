@@ -2750,5 +2750,954 @@
         "source": "光偏振控制器市场报告"
       }
     ]
+  },
+  {
+    "id": "IM-3.2T-DR8",
+    "title": "3.2T DR8 硅光收发前端预设计（8×400G PAM4）",
+    "target_app": "AI 数据中心 3.2T 光模块、DR8 多通道并行互连、CPO 光引擎通道",
+    "signal_ref": "中际旭创/新易盛 1.6T&3.2T OSFP DR8 公开规格（单通道插损 ≤4.5 dB）；Hyperphotonix 800G/1.6T DR8 平台；IEEE 802.3df 800G/1.6T 进程",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 8,
+      "channel_spacing_ghz": 100.0,
+      "filter_bw_ghz": 50.0,
+      "link_budget_db": 3.0,
+      "p_tx_dbm": 6.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "3.2T DR8 前端 = 高效光栅耦合阵列（GP-GRATING-EFF）+ SiN 波导引出（GP-SIN-PL）；8×400G PAM4 并行，调制器/激光器按黑箱（负面清单）。判决复用 link 系统预算锚死标量；复用已锚定无源网，无量级新物理。对标公开 DR8 量级。",
+    "ci_status": "",
+    "features": [
+      "复用已验证 link 闭环（S1 功率预算 / S5 能量守恒下界 / S7 统计最坏情况）",
+      "8×400G PAM4 并行通道，光栅+SiN 全锚定基元组装，零新物理",
+      "调制器/激光器按黑名单处理，判决只认无源链路死标量"
+    ],
+    "applications": [
+      "AI 数据中心 3.2T 光模块",
+      "DR8 多通道并行互连",
+      "CPO 光引擎通道"
+    ],
+    "specs": {
+      "通道数": "8（8×400G PAM4）",
+      "单通道插损": "≤4.5dB（对标公开·仿真预期）",
+      "判决锚": "link / S1·S5·S7"
+    },
+    "peers": [
+      {
+        "vendor": "中际旭创",
+        "product": "1.6T/3.2T OSFP DR8",
+        "specs": {
+          "单通道插损": "≤4.5dB"
+        },
+        "note": "公开规格（仿真预期·前瞻预研·未流片验证）",
+        "source": "中际旭创 2024 年报 / 公开产品规格"
+      }
+    ]
+  },
+  {
+    "id": "IM-1.6T-LPO",
+    "title": "1.6T LPO 线性直驱光模块前端预设计（8×200G）",
+    "target_app": "AI 数据中心 1.6T LPO 可插拔、线性直驱低功耗互连、交换机近封装",
+    "signal_ref": "新易盛/云晖 1.6T LPO 公开规格（单通道插损 ≤4.5 dB）；LPO 线性直驱 MSA 路线",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 8,
+      "channel_spacing_ghz": 100.0,
+      "filter_bw_ghz": 50.0,
+      "link_budget_db": 3.0,
+      "p_tx_dbm": 6.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "1.6T LPO 前端 = 高效光栅耦合（GP-GRATING-EFF）+ SiN 波导引出（GP-SIN-PL）；线性直驱省 retimer，调制器按黑箱。判决复用 link 系统预算锚死标量；复用已锚定无源网，无量级新物理。对标公开 LPO 量级。",
+    "ci_status": "",
+    "features": [
+      "复用已验证 link 闭环（S1/S5/S7 死标量锚）",
+      "8×200G 线性直驱通道，光栅+SiN 全锚定基元组装",
+      "线性直驱省 retimer，调制器按黑名单处理"
+    ],
+    "applications": [
+      "AI 数据中心 1.6T LPO 可插拔",
+      "线性直驱低功耗互连",
+      "交换机近封装"
+    ],
+    "specs": {
+      "通道数": "8（8×200G）",
+      "单通道插损": "≤4.5dB（对标公开·仿真预期）",
+      "判决锚": "link / S1·S5·S7"
+    },
+    "peers": [
+      {
+        "vendor": "新易盛",
+        "product": "1.6T LPO",
+        "specs": {
+          "单通道插损": "≤4.5dB"
+        },
+        "note": "公开规格（仿真预期·前瞻预研·未流片验证）",
+        "source": "新易盛公开产品规格 / 公告"
+      }
+    ]
+  },
+  {
+    "id": "IM-1.6T-ZR",
+    "title": "1.6T 相干 ZR 光模块前端预设计（相干 400ZR/1.6ZR）",
+    "target_app": "DCI 相干互连、1.6ZR 长距离传输、城域/骨干相干收发",
+    "signal_ref": "光迅/Acacia 相干 400ZR/1.6ZR 公开规格；OIF 400ZR/800ZR/1.6ZR 标准",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 4,
+      "channel_spacing_ghz": 100.0,
+      "filter_bw_ghz": 50.0,
+      "link_budget_db": 3.0,
+      "p_tx_dbm": 6.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "1.6T ZR 前端 = 高效光栅耦合（GP-GRATING-EFF）+ SiN 波导引出（GP-SIN-PL）；相干 DSP/调制器按黑箱。判决复用 link 系统预算锚死标量；复用已锚定无源网，无量级新物理。对标公开相干 ZR 量级。",
+    "ci_status": "",
+    "features": [
+      "复用已验证 link 闭环（S1/S5/S7 死标量锚）",
+      "相干 400ZR/1.6ZR 通道，光栅+SiN 全锚定基元组装",
+      "相干 DSP/调制器按黑名单处理"
+    ],
+    "applications": [
+      "DCI 相干互连",
+      "1.6ZR 长距离传输",
+      "城域/骨干相干收发"
+    ],
+    "specs": {
+      "通道数": "4（相干 1.6ZR）",
+      "单通道插损": "≤4.5dB（对标公开·仿真预期）",
+      "判决锚": "link / S1·S5·S7"
+    },
+    "peers": [
+      {
+        "vendor": "光迅科技",
+        "product": "相干 400ZR/1.6ZR",
+        "specs": {
+          "单通道插损": "≤4.5dB"
+        },
+        "note": "公开规格（仿真预期·前瞻预研·未流片验证）",
+        "source": "光迅科技公开 datasheet"
+      }
+    ]
+  },
+  {
+    "id": "IM-CPO-16CH",
+    "title": "CPO 16 通道 WDM 光引擎前端预设计",
+    "target_app": "共封装光学（CPO）16 通道 WDM 解复用、高密度片上光 IO、AI 交换机共封装",
+    "signal_ref": "OIF CPO 3.2T/6.4T 白皮书；CPO 共封装光学（Azure/Google/AWS）从试点转早期量产",
+    "domain": "photon",
+    "system_type": "wdm_demux",
+    "composition": [
+      "GP-MMI-1X2",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 16,
+      "spacing_nm": 2.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "CPO 16 通道 WDM 前端 = MMI 星形耦合（GP-MMI-1X2）+ SiN 阵列波导（GP-SIN-PL）；判决复用 wdm_demux 已验证闭环（B4 锚：drop IL≤3dB / XT≥15dB）。复用已锚定无源网，无量级新物理。对标公开 CPO WDM 量级。",
+    "ci_status": "",
+    "features": [
+      "复用已验证 wdm_demux 闭环（B4：drop IL≤3dB / XT≥15dB）",
+      "16 通道 @ 2.0nm WDM，MMI+SiN 全锚定基元组装",
+      "光源/探测按黑名单处理，判决只认 WDM 死标量"
+    ],
+    "applications": [
+      "共封装光学（CPO）WDM 解复用",
+      "高密度片上光 IO",
+      "AI 交换机共封装"
+    ],
+    "specs": {
+      "通道数": "16",
+      "通道间隔": "2.0nm",
+      "drop 插损": "≤3dB（B4 锚·仿真预期）",
+      "串扰": "≥15dB（B4 锚·仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "Broadcom",
+        "product": "TH5-Bailly 6.4T CPO",
+        "specs": {
+          "片上损耗": "量级 ≤12dB"
+        },
+        "note": "公开 roadmap（仿真预期·前瞻预研·未流片验证）",
+        "source": "Broadcom 公开 roadmap"
+      }
+    ]
+  },
+  {
+    "id": "IM-UCIE-OPTICAL",
+    "title": "UCIe-Optical 光 chiplet 互连前端预设计",
+    "target_app": "die-to-die 光互连、光 chiplet/ONoC、异构集成封装内光互连",
+    "signal_ref": "UCIe 2.0 新增光互连（UCIe-Optical）标准草案；Intel/Ayarl 光 chiplet 公开路线",
+    "domain": "photon",
+    "system_type": "wdm_demux",
+    "composition": [
+      "GP-MMI-1X2",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "n_channels": 8,
+      "spacing_nm": 2.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "UCIe-Optical 前端 = MMI 星形耦合（GP-MMI-1X2）+ SiN 波导（GP-SIN-PL）；判决复用 wdm_demux 已验证闭环（B4 锚）。复用已锚定无源网，无量级新物理。对标公开光 chiplet 互连量级。",
+    "ci_status": "",
+    "features": [
+      "复用已验证 wdm_demux 闭环（B4：drop IL≤3dB / XT≥15dB）",
+      "8 通道光 chiplet 互连，MMI+SiN 全锚定基元组装",
+      "die 间耦合/探测按黑名单处理"
+    ],
+    "applications": [
+      "die-to-die 光互连",
+      "光 chiplet / ONoC",
+      "异构集成封装内光互连"
+    ],
+    "specs": {
+      "通道数": "8",
+      "通道间隔": "2.0nm",
+      "drop 插损": "≤3dB（B4 锚·仿真预期）",
+      "串扰": "≥15dB（B4 锚·仿真预期）"
+    },
+    "peers": [
+      {
+        "vendor": "Intel",
+        "product": "UCIe-Optical 光 chiplet",
+        "specs": {
+          "单通道插损": "≤4.5dB"
+        },
+        "note": "公开路线（仿真预期·前瞻预研·未流片验证）",
+        "source": "Intel 公开 roadmap / UCIe 2.0 草案"
+      }
+    ]
+  },
+  {
+    "id": "IM-LIDAR-FULL",
+    "title": "FMCW 固态激光雷达全前端预设计（TX+RX 一体）",
+    "target_app": "车载/机器人 FMCW 固态 LiDAR、光探测与测距全光前端、同轴 TX/RX",
+    "signal_ref": "Optics Express 34, 7415 (2026) 公开论文：片上 FMCW LiDAR 单方向链路损耗 ≈3.3 dB；FMCW 固态雷达产业（Aeva/Mobileye）公开路线",
+    "domain": "photon",
+    "system_type": "sensor_frontend",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "app": "lidar",
+      "n_gratings": 2,
+      "wg_length_cm": 0.5,
+      "n_ybranch": 0,
+      "n_crossing": 0,
+      "budget_db": 9.0,
+      "tol_db": 2.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "FMCW LiDAR 全前端 = 光栅耦合（GP-GRATING-EFF）+ SiN 波导（GP-SIN-PL）+ Y-branch 路由（GP-YBRANCH）；OPA 扫描/相干混频按黑箱（负面清单）。判决复用 sensor_frontend 自带死标量锚 S1（预算）/S5（能量守恒下界·D-67）/S7（统计 p5）；复用已锚定无源网，无量级新物理。对标公开 FMCW LiDAR 链路量级。",
+    "ci_status": "",
+    "features": [
+      "复用 sensor_frontend 闭环（S1 预算 / S5 能量守恒下界 / S7 统计 p5）",
+      "TX+RX 一体 FMCW 前端，光栅+Ybranch+SiN 全锚定基元组装",
+      "OPA 扫描/调制器/探测器按黑名单处理"
+    ],
+    "applications": [
+      "车载/机器人 FMCW 固态 LiDAR",
+      "光探测与测距全光前端",
+      "同轴 TX/RX"
+    ],
+    "specs": {
+      "链路插损预算": "≤9dB（S1·仿真预期）",
+      "判决锚": "sensor_frontend / S1·S5·S7",
+      "复用基元": "GP-GRATING-EFF+GP-YBRANCH+GP-SIN-PL"
+    },
+    "peers": [
+      {
+        "vendor": "Aeva",
+        "product": "FMCW 固态 LiDAR",
+        "specs": {
+          "单方向链路": "≈3.3dB"
+        },
+        "note": "公开论文量级（仿真预期·前瞻预研·未流片验证）",
+        "source": "Optics Express 34, 7415 (2026)"
+      }
+    ]
+  },
+  {
+    "id": "IM-POC-BIOSENSE",
+    "title": "POCT 生物/气体 Lab-on-Chip 传感前端预设计",
+    "target_app": "即时诊断（POCT）生物传感、片上气体/化学传感、医疗即时检测微流控光路",
+    "signal_ref": "公开 PICS / 生物光子传感综述：干涉型传感前端全链路插损预算通常 ≤15 dB；POCT 生物传感产业（国内外 IVD）公开路线",
+    "domain": "photon",
+    "system_type": "sensor_frontend",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "app": "poc",
+      "n_gratings": 2,
+      "wg_length_cm": 2.0,
+      "n_ybranch": 2,
+      "n_crossing": 0,
+      "budget_db": 15.0,
+      "tol_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "POCT 传感前端 = 光栅耦合（GP-GRATING-EFF）+ Y-branch 分/合束（GP-YBRANCH）+ SiN 波导传感臂（GP-SIN-PL）；传感元件按参数化黑箱（负面清单）。判决复用 sensor_frontend 自带死标量锚 S1/S5/S7；复用已锚定无源网，无量级新物理。对标公开传感链路预算量级。",
+    "ci_status": "",
+    "features": [
+      "复用 sensor_frontend 闭环（S1/S5/S7 死标量锚）",
+      "MZI 干涉传感前端，光栅+Ybranch+SiN 全锚定基元组装",
+      "生物/气体传感元件按参数化黑箱处理"
+    ],
+    "applications": [
+      "即时诊断（POCT）生物传感",
+      "片上气体/化学传感",
+      "医疗即时检测微流控光路"
+    ],
+    "specs": {
+      "链路插损预算": "≤15dB（S1·仿真预期）",
+      "判决锚": "sensor_frontend / S1·S5·S7",
+      "复用基元": "GP-GRATING-EFF+GP-YBRANCH+GP-SIN-PL"
+    },
+    "peers": [
+      {
+        "vendor": "公开 PICS 综述",
+        "product": "干涉型光子传感前端",
+        "specs": {
+          "全链路插损": "≤15dB"
+        },
+        "note": "公开综述量级（仿真预期·前瞻预研·未流片验证）",
+        "source": "PICS / FBG 光纤传感链路预算综述"
+      }
+    ]
+  },
+  {
+    "id": "IM-FTTR-PLC32",
+    "title": "50G-PON / FTTR 32 路 PLC 分路前端预设计",
+    "target_app": "家庭/企业全光组网（FTTR）、50G-PON 无源分光、接入网无源光分路",
+    "signal_ref": "ITU-T G.671 / Telcordia GR-1209：1×32 PLC 每支路最大插损 ≤14.0 dB；50G-PON（ITU-T G.hsp.50Gpon）公开路线",
+    "domain": "photon",
+    "system_type": "sensor_frontend",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "app": "fttr",
+      "n_gratings": 0,
+      "wg_length_cm": 0.0,
+      "n_ybranch": 5,
+      "n_crossing": 0,
+      "budget_db": 17.5,
+      "tol_db": 1.5
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "FTTR 32 路 PLC = 5 级 Y-branch 级联（GP-YBRANCH，2^5=32 支路，含理想 5×3.01 dB 分光）+ SiN 波导（GP-SIN-PL）；判决复用 sensor_frontend 自带死标量锚 S1/S5/S7。复用已锚定无源网，无量级新物理。对标 ITU-T/G.671 公开规格。",
+    "ci_status": "",
+    "features": [
+      "复用 sensor_frontend 闭环（S1/S5/S7 死标量锚）",
+      "1×32 PLC 5 级 Y-branch 级联，Ybranch+SiN 全锚定基元组装",
+      "PON OLT/ONU 有源按黑名单处理"
+    ],
+    "applications": [
+      "家庭/企业全光组网（FTTR）",
+      "50G-PON 无源分光",
+      "接入网无源光分路"
+    ],
+    "specs": {
+      "分路比": "1×32（5 级 Y-branch）",
+      "每支路插损": "≤17.5dB（S1·对标 G.671·仿真预期）",
+      "判决锚": "sensor_frontend / S1·S5·S7"
+    },
+    "peers": [
+      {
+        "vendor": "ITU-T",
+        "product": "1×32 PLC（G.671/GR-1209）",
+        "specs": {
+          "每支路插损": "≤14.0dB"
+        },
+        "note": "公开标准量级（仿真预期·前瞻预研·未流片验证）",
+        "source": "ITU-T G.671 / Telcordia GR-1209"
+      }
+    ]
+  },
+  {
+    "id": "IM-TTD-5G",
+    "title": "微波光子真时延（TTD）波束成形前端预设计",
+    "target_app": "5G/6G 毫米波波束成形、微波光子真时延、相控阵光控时延网络",
+    "signal_ref": "微波光子 TTD 公开综述：真时延网络片上光路损耗典型 ≤10 dB；5G/6G 相控阵（国内外射频光子系统）公开路线",
+    "domain": "photon",
+    "system_type": "sensor_frontend",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "app": "ttd",
+      "n_gratings": 2,
+      "wg_length_cm": 1.0,
+      "n_ybranch": 0,
+      "n_crossing": 2,
+      "budget_db": 10.0,
+      "tol_db": 2.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "TTD 前端 = 光栅耦合（GP-GRATING-EFF）+ 2×crossing 时延路由（GP-SIN-PL 延迟线）+ SiN 波导（GP-SIN-PL）；电光调制按黑箱（负面清单）。判决复用 sensor_frontend 自带死标量锚 S1/S5/S7；复用已锚定无源网，无量级新物理。对标公开微波光子 TTD 链路量级。",
+    "ci_status": "",
+    "features": [
+      "复用 sensor_frontend 闭环（S1/S5/S7 死标量锚）",
+      "真时延网络，光栅+2×crossing+SiN 全锚定基元组装",
+      "电光调制器按黑名单处理"
+    ],
+    "applications": [
+      "5G/6G 毫米波波束成形",
+      "微波光子真时延",
+      "相控阵光控时延网络"
+    ],
+    "specs": {
+      "链路插损预算": "≤10dB（S1·仿真预期）",
+      "判决锚": "sensor_frontend / S1·S5·S7",
+      "复用基元": "GP-GRATING-EFF+GP-SIN-PL+GP-YBRANCH"
+    },
+    "peers": [
+      {
+        "vendor": "公开微波光子 TTD 综述",
+        "product": "真时延网络片上光路",
+        "specs": {
+          "链路损耗": "≤10dB"
+        },
+        "note": "公开综述量级（仿真预期·前瞻预研·未流片验证）",
+        "source": "微波光子 TTD 公开综述"
+      }
+    ]
+  },
+  {
+    "id": "IM-QKD-FULL-LINK",
+    "title": "QKD 干线收发全链路前端预设计（BB84 态制备/测量）",
+    "target_app": "量子密钥分发（QKD）干线、城域/骨干量子保密通信、BB84 收发前端",
+    "signal_ref": "npj Quantum Information 3, e1700262 (2017) 公开论文：QKD Alice/Bob 芯片总插损 15/8 dB；国内量子保密通信干线（京沪/武合）公开路线",
+    "domain": "photon",
+    "system_type": "qkd_link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "distance_km": 50.0,
+      "target_distance_km": 50.0,
+      "published_floor_bps": 200.0,
+      "fiber_loss_db_km": 0.2,
+      "alice_il_db": 15.0,
+      "bob_il_db": 8.0,
+      "detector_eff": 0.1,
+      "dark_count_prob": 1e-06,
+      "misalignment": 0.015,
+      "mu": 0.5,
+      "f_ec": 1.1,
+      "rep_rate_hz": 1000000000.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "QKD 干线收发前端 = 高效光栅耦合（GP-GRATING-EFF）+ SiN 波导引出（GP-SIN-PL）；QKD 本质是信息论安全问题，按物理诚实映射到 qkd_link 系统类型（decoy-BB84 安全密钥率锚 S-QKD-SKR），不冒用量子比特读出锚。判决复用 decoy-BB84 渐近下界（Lo–Ma–Chen 2005）已验证闭环，零新物理；含 Q-D67 护栏。对标公开 QKD 密钥率量级（等效验证）。",
+    "ci_status": "",
+    "features": [
+      "物理诚实映射：QKD 是密钥分发 → qkd_link 系统类型（decoy-BB84 安全密钥率信息论锚），非 qubit 读出锚",
+      "Alice/Bob 收发前端，光栅+SiN 全锚定基元组装",
+      "单光子源/探测器按黑名单处理"
+    ],
+    "applications": [
+      "量子密钥分发（QKD）干线",
+      "城域/骨干量子保密通信",
+      "BB84 收发前端"
+    ],
+    "specs": {
+      "安全密钥率@50km": "≥200 bps（S-QKD-SKR·对标 IDQ Clavis 类公开量级）",
+      "判决锚": "qkd_link / S-QKD-SKR",
+      "复用基元": "GP-GRATING-EFF+GP-SIN-PL"
+    },
+    "peers": [
+      {
+        "vendor": "公开 QKD 芯片论文",
+        "product": "BB84 Alice/Bob 芯片",
+        "specs": {
+          "总插损": "15/8dB"
+        },
+        "note": "公开论文量级（仿真预期·前瞻预研·未流片验证）",
+        "source": "npj Quantum Information 3, e1700262 (2017)"
+      }
+    ]
+  },
+  {
+    "id": "IM-QCTRL-32Q",
+    "title": "32 量子比特读出控制芯片前端预设计",
+    "target_app": "超导量子计算读出/控制、NISQ 规模扩展、多量子比特复用读出链",
+    "signal_ref": "IBM Heron R2 (2024, 156 qubit) 公开读数保真度 98.5%；本源悟空-180 读数 99.0%；NISQ 典型单发读出 ≥97.5%（PostQuantum 2026 基准）",
+    "domain": "hybrid",
+    "system_type": "quantum_fidelity",
+    "composition": [
+      "GP-YBRANCH",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "f01s": [
+        4.6,
+        4.8,
+        5.0,
+        5.2,
+        5.4,
+        5.6,
+        5.8,
+        6.0,
+        6.2,
+        6.4,
+        6.6,
+        6.8,
+        7.0,
+        7.2,
+        7.4,
+        7.6,
+        7.8,
+        8.0,
+        8.2,
+        8.4,
+        8.6,
+        8.8,
+        9.0,
+        9.2,
+        9.4,
+        9.6,
+        9.8,
+        10.0,
+        10.2,
+        10.4,
+        10.6,
+        10.8
+      ]
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "32-qubit 复用读出链 = Y-branch 路由（GP-YBRANCH）+ SiN 波导（GP-SIN-PL）读出网络；判决复用 quantum_fidelity 已验证闭环（D-46×D-47）。复用已锚定无源网，无量级新物理。对标公开超导量子系统读出保真度量级。",
+    "ci_status": "",
+    "features": [
+      "复用 quantum_fidelity 闭环（D-46 频率复用 + D-47 保真度）",
+      "32-qubit 复用读出链，Ybranch+SiN 全锚定基元组装",
+      "量子比特/读出腔按黑名单处理"
+    ],
+    "applications": [
+      "超导量子计算读出/控制",
+      "NISQ 规模扩展",
+      "多量子比特复用读出链"
+    ],
+    "specs": {
+      "比特数": "32",
+      "读出保真度": "≥97.5%（D-46×D-47·仿真预期·对标公开）",
+      "判决锚": "quantum_fidelity / D-46·D-47"
+    },
+    "peers": [
+      {
+        "vendor": "IBM",
+        "product": "Heron R2 (156 qubit)",
+        "specs": {
+          "读出保真度": "98.5%"
+        },
+        "note": "公开指标（仿真预期·前瞻预研·未流片验证）",
+        "source": "IBM Quantum 公开披露 / 上海科技情报研究所对比表"
+      }
+    ]
+  },
+  {
+    "id": "IM-OPA-2D",
+    "title": "2D 光学相控阵（OPA）固态雷达前端预设计",
+    "target_app": "固态激光雷达光束 steering、光通信光束成形、自由空间光互连波束控制",
+    "signal_ref": "公开 OPA 硅光相控阵综述：片上 OPA 光路损耗典型 ≤12 dB；固态雷达（国内外 OPA 路线）公开路线",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "p_tx_dbm": 6.0,
+      "wg_length_cm": 1.0,
+      "link_budget_db": 3.0,
+      "n_channels": 4
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "OPA 2D 前端 = 高效光栅耦合（GP-GRATING-EFF）+ SiN 波导阵列（GP-SIN-PL）；OPA 是光波束控器件，按物理诚实映射到 link 系统类型（IL 基），不冒用量子比特读出锚。判决复用 link 系统预算锚死标量；复用已锚定无源网，无量级新物理。对标公开 OPA 光路量级。",
+    "ci_status": "",
+    "features": [
+      "物理诚实映射：OPA 是光波束控 → link 系统类型（IL 基），非 qubit 读出锚",
+      "2D 相控阵前端，光栅+SiN 全锚定基元组装",
+      "相位调制阵列按黑名单处理"
+    ],
+    "applications": [
+      "固态激光雷达光束 steering",
+      "光通信光束成形",
+      "自由空间光互连波束控制"
+    ],
+    "specs": {
+      "光路损耗预算": "≤12dB（S1·对标公开·仿真预期）",
+      "判决锚": "link / S1·S5·S7",
+      "复用基元": "GP-GRATING-EFF+GP-SIN-PL"
+    },
+    "peers": [
+      {
+        "vendor": "公开 OPA 综述",
+        "product": "硅光 2D 相控阵",
+        "specs": {
+          "片上光路损耗": "≤12dB"
+        },
+        "note": "公开综述量级（仿真预期·前瞻预研·未流片验证）",
+        "source": "OPA 硅光相控阵公开综述"
+      }
+    ]
+  },
+  {
+    "id": "IM-OPTCOMB-WDM",
+    "title": "WDM 锁定芯片级光频梳（DWDM-grid Microcomb）预设计",
+    "target_app": "DWDM 多波长相干源、WDM-PON 梳状光源、信道化射频光子学、量子频率梳分发",
+    "signal_ref": "Intel Market Research 光频梳 $58M(2025)→$108M(2034) CAGR 7.4%；芯片级微梳 CAGR 47.8%（DWDM/时频同步/量子）；ITU-T G.694.1 DWDM 网格需求。",
+    "domain": "photon",
+    "system_type": "link",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL",
+      "GP-MMI-1X2"
+    ],
+    "default_req": {
+      "p_tx_dbm": 3.0,
+      "wg_length_cm": 1.0,
+      "link_budget_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "WDM 锁定微梳 = 高效光栅耦合 IO（GP-GRATING-EFF） + SiN 高 Q 微环梳（GP-SIN-PL，色散工程 锁 ITU 网格） + MMI 分束复用（GP-MMI-1X2）；泵浦/探测/锁相环按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。与 IM-OPTCOMB（通用微梳前端）区分：本货架专攻 WDM/ITU 网格锁定的多波长相干源，compositions 多纳入 MMI 复用，规格面向信道化 WDM。",
+    "ci_status": "",
+    "features": [
+      "锁定 ITU-T G.694.1 DWDM 网格的多波长相干梳源（与通用微梳前端区分）",
+      "SiN 高 Q 微环梳 + 光栅 IO，复用已锚定无源网，无量级新物理",
+      "面向 WDM-PON / 相干光通信 / 信道化射频光子学的梳状光源"
+    ],
+    "applications": [
+      "DWDM 多波长相干光通信（单梳替代多激光器阵列）",
+      "WDM-PON 与数据中心内梳状光源",
+      "信道化射频光子学与量子频率梳分发"
+    ],
+    "specs": {
+      "波长网格": "ITU-T G.694.1 DWDM（100/200 GHz 可选）",
+      "梳齿间隔": "≥100 GHz（相干 WDM 兼容）",
+      "复用基元": "GP-GRATING-EFF + GP-SIN-PL + GP-MMI-1X2",
+      "诚实等级": "前瞻预研（等效验证，非流片）"
+    },
+    "peers": [
+      {
+        "vendor": "Intel / NTT",
+        "product": "芯片级微梳（DWDM 锁定研究型）",
+        "specs": {
+          "网格": "ITU DWDM"
+        },
+        "note": "对标公开研究型微梳量级，非本团队流片",
+        "source": "Intel Market Research 光频梳报告 / NTT 微梳公开文献"
+      }
+    ]
+  },
+  {
+    "id": "IM-CPO-OIO-8CH",
+    "title": "CPO 硅光 I/O 光引擎预设计（8×200G = 1.6T，标准 250 µm 光纤阵列）",
+    "target_app": "共封装光学（CPO）光引擎 I/O、AI 交换机/XPU 光接口、51.2T+ 以太网与 InfiniBand 光互连",
+    "signal_ref": "OIF-Co-Packaging-3.2T-Module-01.0（3.2T 引擎 = 32×CEI-112G-XSR 电 + 8×400G FR4/DR4 光口）；Broadcom TH5-Bailly CPO 已部署；NVIDIA Quantum-X Photonics Q3450-LD（144×800G InfiniBand，液冷）2026 出货；Spectrum-X Ethernet Photonics 2H2026 爬坡",
+    "domain": "photon",
+    "system_type": "cpo_optical_io",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL",
+      "GP-YBRANCH"
+    ],
+    "default_req": {
+      "couple_mode": "fau",
+      "n_channels": 8,
+      "lane_rate_gbps": 200.0,
+      "pitch_um": 250.0,
+      "n_gratings": 2,
+      "wg_length_cm": 1.0,
+      "n_ybranch": 1,
+      "n_crossing": 1,
+      "p_tx_dbm": 0.0,
+      "detector_sens_dbm": -20.0,
+      "il_budget_db": 12.0,
+      "density_floor_gbps_mm": 100.0,
+      "min_margin_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "CPO 光 I/O = 光栅耦合器阵列 IO（GP-GRATING-EFF）+ SiN 低损波导扇出（GP-SIN-PL）+ Y-branch 分光/监控支路（GP-YBRANCH）；判决走新系统类型 cpo_optical_io 三道死标量锚：每通道插损 S-CPO-IL（GP-* 级联，D-67 能量守恒下界护栏）+ 海岸线带宽密度 S-CPO-DENSITY（= 单通道速率/通道间距，P-CPO 间距几何下界护栏）+ 功率预算 S-CPO-BUDGET（S1 同式）。与 IM-CPO-WDM5（WDM 级联 B4 锚）/IM-CPO-16CH（通道数扩展）区分。EIC/驱动器/激光器按黑箱（有源不物理级建模，负面清单）。",
+    "ci_status": "",
+    "features": [
+      "以**海岸线带宽密度**为判据（CPO 真实竞争维度），非单一插损",
+      "两道物理护栏对称夹逼：D-67 能量守恒下界防漏算 + P-CPO 间距几何下界（G.652 包层 125 µm）防虚报密度",
+      "标准 250 µm 光纤阵列 pitch，工程可制造（非实验室极限值）"
+    ],
+    "applications": [
+      "51.2T/102.4T AI 以太网与 InfiniBand 交换机光引擎",
+      "XPU/GPU 光 I/O（scale-up 光互连）",
+      "可插拔向共封装演进的过渡评估（CPO vs LPO vs NPO 量化对比）"
+    ],
+    "specs": {
+      "通道配置": "8×200 Gbps = 1.6 Tbps",
+      "光纤阵列间距": "250 µm（标准 FAU）",
+      "每通道插损": "≤12 dB（复现 10.63 dB·对标公开 6–12 dB 区间）",
+      "海岸线带宽密度": "≥100 Gbps/mm（复现 800 Gbps/mm；物理上界 1600）",
+      "判决锚": "cpo_optical_io / S-CPO-IL·S-CPO-DENSITY·S-CPO-BUDGET",
+      "诚实等级": "前瞻预研（等效验证，非流片）"
+    },
+    "peers": [
+      {
+        "vendor": "Broadcom",
+        "product": "TH5-Bailly CPO（6.4T 光引擎）",
+        "specs": {
+          "形态": "CPO 交换芯片共封装"
+        },
+        "note": "公开已部署产品量级（非本团队流片，仅作规格标注与对标参照）",
+        "source": "Broadcom 公开 CPO 路线 / 公开报道"
+      },
+      {
+        "vendor": "NVIDIA",
+        "product": "Quantum-X Photonics Q3450-LD",
+        "specs": {
+          "端口": "144×800G InfiniBand"
+        },
+        "note": "公开 2026 出货信息（非本团队流片）",
+        "source": "NVIDIA 公开披露 / 公开报道"
+      }
+    ]
+  },
+  {
+    "id": "IM-CPO-OIO-16CH",
+    "title": "CPO 高密度光引擎预设计（16×200G = 3.2T，127 µm 细间距光纤阵列）",
+    "target_app": "3.2T/6.4T CPO 光引擎、超大规模 AI 集群 scale-up 光互连、高密光纤阵列（FAU）耦合",
+    "signal_ref": "OIF-Co-Packaging-3.2T-Module-01.0（3.2T CPO 引擎，8×400G 光口，~140 G/mm 海岸线）；Semiconductor Engineering：缩小光纤阵列间距（FAU scaling）是提升 CPO 带宽密度的两条主路径之一（另一为 WDM），「fiber pitches often exceed 100 microns」；OIF EEI Panel OFC26：超大规模 scale-up 目标区 CPO 3 pJ/b @ 2.0 Tbps/mm",
+    "domain": "photon",
+    "system_type": "cpo_optical_io",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL",
+      "GP-YBRANCH"
+    ],
+    "default_req": {
+      "couple_mode": "fau",
+      "n_channels": 16,
+      "lane_rate_gbps": 200.0,
+      "pitch_um": 127.0,
+      "n_gratings": 2,
+      "wg_length_cm": 1.0,
+      "n_ybranch": 1,
+      "n_crossing": 1,
+      "p_tx_dbm": 0.0,
+      "detector_sens_dbm": -20.0,
+      "il_budget_db": 12.0,
+      "density_floor_gbps_mm": 100.0,
+      "min_margin_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "把通道间距从 250 µm 压到 127 µm（标准光纤阵列细间距档）→ 总带宽 3.2 Tbps 而海岸线仅 2.03 mm，密度复现 1574.80 Gbps/mm。⚠️ 该复现值**已达 P-CPO 物理上界 1600 的 98.4%**（上界 = 200 Gbps / 125 µm G.652 包层直径）—— 再密就违反几何必然，护栏直接抛错拦截。本货架兼作 P-CPO 护栏的贴身回归用例。与 IM-CPO-16CH（既有，通道数扩展口径）区分。",
+    "ci_status": "",
+    "features": [
+      "细间距 FAU（127 µm）逼近 ITU-T G.652 包层直径几何下界（125 µm）",
+      "复现密度 1574.80 Gbps/mm = 物理上界 1600 的 98.4%，护栏贴身（判据非摆设）",
+      "16 通道 3.2 Tbps 仅占 2.03 mm 海岸线"
+    ],
+    "applications": [
+      "3.2T/6.4T CPO 光引擎（OIF 3.2T IA 目标形态）",
+      "超大规模 AI 集群 scale-up 光互连（OIF 目标 2.0 Tbps/mm）",
+      "高密度 FAU 耦合方案可行性预评估"
+    ],
+    "specs": {
+      "通道配置": "16×200 Gbps = 3.2 Tbps",
+      "光纤阵列间距": "127 µm（细间距 FAU，物理下界 125 µm）",
+      "海岸线宽度": "2.03 mm",
+      "海岸线带宽密度": "≥100 Gbps/mm（复现 1574.80；物理上界 1600，占 98.4%）",
+      "判决锚": "cpo_optical_io / S-CPO-IL·S-CPO-DENSITY·S-CPO-BUDGET",
+      "诚实等级": "前瞻预研（等效验证，非流片）"
+    },
+    "peers": [
+      {
+        "vendor": "OIF",
+        "product": "Co-Packaging 3.2T Module IA",
+        "specs": {
+          "光口": "8×400G FR4/DR4",
+          "海岸线": "~140 G/mm"
+        },
+        "note": "公开实施协议（非本团队流片，口径为模块级海岸线）",
+        "source": "OIF-Co-Packaging-3.2T-Module-01.0"
+      },
+      {
+        "vendor": "Semiconductor Engineering",
+        "product": "CPO 带宽密度现状综述",
+        "specs": {
+          "当前最先进 CPO": "≈0.5 Tbps/mm",
+          "AI chiplet": "≈3 Tbps/mm"
+        },
+        "note": "公开综述量级（非本团队流片）",
+        "source": "semiengineering.com CPO 异构集成综述"
+      }
+    ]
+  },
+  {
+    "id": "IM-CPO-OIO-CHIPLET",
+    "title": "chiplet 间光 I/O 预设计（UCIe-Optical 类，8×32G 光栅阵列直连，无光纤）",
+    "target_app": "chiplet 间光互连（die-to-die 光 I/O）、UCIe-Optical 光桥、光 CXL/内存池化、AI 加速器分解式互连",
+    "signal_ref": "OIF EEI Panel OFC26 官方表（oiforum.com）：ASIC UCIe-32G 标准封装 95 µm pitch 记 2.0 Tbps/mm，ASIC SerDes-200G 记 1.9–2.7 Tbps/mm；Semiconductor Engineering：AI chiplet（UCIe/OIF）边缘带宽密度 ≈3 Tbps/mm，与 CPO ≈0.5 Tbps/mm 存在 6× 差距；OIF Compute Optics Interface（COI）面向 AI scale-up；Intel OCI 光计算互连 chiplet",
+    "domain": "photon",
+    "system_type": "cpo_optical_io",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL"
+    ],
+    "default_req": {
+      "couple_mode": "grating_array",
+      "n_channels": 8,
+      "lane_rate_gbps": 32.0,
+      "pitch_um": 45.0,
+      "n_gratings": 2,
+      "wg_length_cm": 0.2,
+      "n_ybranch": 0,
+      "n_crossing": 0,
+      "p_tx_dbm": 0.0,
+      "detector_sens_dbm": -20.0,
+      "il_budget_db": 10.0,
+      "il_tol_db": 3.0,
+      "density_floor_gbps_mm": 300.0,
+      "min_margin_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "couple_mode=grating_array（片间光栅阵列**直连，无光纤**）⇒ P-CPO 间距物理下界由 G.652 包层直径 125 µm 换为**模场直径 MFD@1550 = 10.3 µm**，故 45 µm 间距合法。这验证 P-CPO 护栏**按耦合方式分档守下界**：一刀切用 125 µm 会误杀片间直连，放松到无下界则可虚报密度。片间短距无分束/交叉 → 插损仅 2×光栅耦合 + 0.2 cm 波导。与 IM-UCIE-OPTICAL（既有，电学接口标准口径）/IM-CHIPLET-IO（既有）区分。",
+    "ci_status": "",
+    "features": [
+      "按耦合方式分档的间距物理下界（无光纤直连 → MFD 10.3 µm 而非包层 125 µm）",
+      "片间短距低损：仅 2×光栅耦合 + 0.2 cm 波导（复现 7.27 dB）",
+      "面向 UCIe-Optical / OIF COI 的 die-to-die 光互连口径"
+    ],
+    "applications": [
+      "chiplet 间光互连（die-to-die optical I/O）",
+      "UCIe-Optical 光桥与封装内光网络",
+      "光 CXL / 内存池化（分解式 AI 互连）"
+    ],
+    "specs": {
+      "通道配置": "8×32 Gbps（UCIe-32G 类）",
+      "耦合方式": "光栅阵列直连（无光纤）",
+      "通道间距": "45 µm（物理下界 = MFD@1550 10.3 µm）",
+      "海岸线带宽密度": "≥300 Gbps/mm（复现 711.11；物理上界 3106.8）",
+      "判决锚": "cpo_optical_io / S-CPO-IL·S-CPO-DENSITY·S-CPO-BUDGET",
+      "诚实等级": "前瞻预研（等效验证，非流片）"
+    },
+    "peers": [
+      {
+        "vendor": "OIF",
+        "product": "EEI Panel OFC26 · UCIe-32G 标准封装",
+        "specs": {
+          "pitch": "95 µm",
+          "边缘带宽密度": "2.0 Tbps/mm"
+        },
+        "note": "⚠️ 公开值为 **2D 凸点阵列口径**，本货架 711 Gbps/mm 为**单排 1D 海岸线口径**，两者不可直接比较（golden 已按 1D 折算取值）",
+        "source": "oiforum.com OIF_EEI_Panel_OFC26.pdf"
+      },
+      {
+        "vendor": "Intel",
+        "product": "OCI（Optical Compute Interconnect）chiplet",
+        "specs": {
+          "形态": "光计算互连 chiplet"
+        },
+        "note": "公开产品动向（非本团队流片）",
+        "source": "Intel 公开披露 / 公开报道"
+      }
+    ]
+  },
+  {
+    "id": "IM-CPO-ELS-FIBER",
+    "title": "CPO 外置可更换激光源（ELS）+ 光纤 I/O 前端预设计（OIF 3.2T IA 类 8×400G）",
+    "target_app": "CPO 可维护性方案（前面板可更换光源）、OIF 3.2T 光引擎、NPO/CPO 混合演进、规避「光器件故障导致整交换机报废」的运维痛点",
+    "signal_ref": "OIF-Co-Packaging-3.2T-Module-01.0（3.2T = 32×CEI-112G-XSR + 8×400G FR4/DR4 光口）；Broadcom 第三代 102.4T Davisson（TH6）CPO 交换机引入**前面板可现场更换激光源**，规避 CPO 维护痛点；锐捷 25.6T 硅光 NPO、Ragile RA-BC6932 引入 ELSFP 接口；CPO 单端口功耗 5.5–7W（800G），较可插拔降低 50–70%（Yole/OIF 公开汇总）",
+    "domain": "photon",
+    "system_type": "cpo_optical_io",
+    "composition": [
+      "GP-GRATING-EFF",
+      "GP-SIN-PL",
+      "GP-YBRANCH",
+      "GP-CROSSING"
+    ],
+    "default_req": {
+      "couple_mode": "fau",
+      "n_channels": 8,
+      "lane_rate_gbps": 400.0,
+      "pitch_um": 250.0,
+      "n_gratings": 2,
+      "wg_length_cm": 1.0,
+      "n_ybranch": 1,
+      "n_crossing": 1,
+      "p_tx_dbm": 0.0,
+      "detector_sens_dbm": -20.0,
+      "il_budget_db": 12.0,
+      "density_floor_gbps_mm": 100.0,
+      "min_margin_db": 3.0
+    },
+    "honest_tier": "前瞻预研",
+    "design_note": "可维护性导向：把温度敏感的激光器外置为可现场更换模块（ELS/ELSFP），光经光纤送入CPO 引擎 ⇒ 光栅耦合 IO（GP-GRATING-EFF）+ SiN 波导（GP-SIN-PL）+ crossing 交叉（GP-CROSSING，ELS 光路与本地环路交汇）+ Y-branch 分光。8×400G = 3.2 Tbps 正对OIF 3.2T IA 光口配置，密度复现 1600 Gbps/mm（= 200G 档物理上界的 2 倍，因单通道速率翻倍，上界同步升至 3200）。与 IM-LASER-INT（片上异质集成光源黑箱）区分。",
+    "ci_status": "",
+    "features": [
+      "外置可更换激光源（ELS）：规避 CPO「光器件故障 = 整机报废」运维痛点",
+      "8×400G = 3.2 Tbps，正对 OIF 3.2T IA 光口配置",
+      "密度随单通道速率线性提升（物理上界同步，非虚报）"
+    ],
+    "applications": [
+      "OIF 3.2T CPO 光引擎（标准形态）",
+      "NPO/CPO 混合演进与可维护性方案评估",
+      "AI 交换机前面板可更换光源（ELSFP）前端"
+    ],
+    "specs": {
+      "通道配置": "8×400 Gbps = 3.2 Tbps（OIF 3.2T IA 光口形态）",
+      "光源方案": "外置可更换激光源（ELS / ELSFP）",
+      "每通道插损": "≤12 dB（复现 10.63 dB·对标公开 6–12 dB 区间）",
+      "海岸线带宽密度": "≥100 Gbps/mm（复现 1600；物理上界 3200）",
+      "判决锚": "cpo_optical_io / S-CPO-IL·S-CPO-DENSITY·S-CPO-BUDGET",
+      "诚实等级": "前瞻预研（等效验证，非流片）"
+    },
+    "peers": [
+      {
+        "vendor": "Broadcom",
+        "product": "Davisson（TH6）102.4T CPO 交换机",
+        "specs": {
+          "光源": "前面板可现场更换激光源",
+          "功耗": "1.6T 下降低 70%"
+        },
+        "note": "公开产品动向（非本团队流片）",
+        "source": "Broadcom 公开披露 / 公开报道"
+      },
+      {
+        "vendor": "OIF",
+        "product": "Co-Packaging 3.2T Module IA",
+        "specs": {
+          "光口": "8×400G FR4/DR4",
+          "电接口": "32×CEI-112G-XSR"
+        },
+        "note": "公开实施协议（非本团队流片）",
+        "source": "OIF-Co-Packaging-3.2T-Module-01.0"
+      }
+    ]
   }
 ]

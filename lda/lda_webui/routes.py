@@ -423,11 +423,15 @@ def h_verification_ledger(h, p, q, path):
         empirical_ids = [f"E{i}" for i in range(1, empirical_seed + 1)]
         # ci_core 动态取 CORE_SMOKES 长度：此前写死 82，实际已 83，
         # 对外验货端点出现与 README 账本不一致的数字（同一类漂移第二次）。
+        # 🔴 v0.9.41：兜底值原为**写死 82**（v0.9.9 前主路径遗留）。失败时静默报
+        #   一个过时常数 = 对外验货面失真，悖「宁红不可假绿」。改为显式 None +
+        #   可机读 stale 标记（前端显示 '?' 而非假数字）。
+        ci_core_stale = False
         try:
             from run_ci_regression import CORE_SMOKES as _core
             ci_core = len(_core)
-        except Exception:  # noqa: BLE001
-            ci_core = 82
+        except Exception:  # noqa: BLE001 —— 取不到就如实说取不到
+            ci_core, ci_core_stale = None, True
         # P0-2（v0.9.15）：判决路径独立性**动态推导** —— 从 BENCHMARK_DEFS 的
         # `candidate` 字段与 BENCHMARK_CANDIDATES 登记表实时算出三分类，
         # 杜绝「写死在端点里、与代码实际状态脱节」的漂移（ci_core 曾犯同类错）。
@@ -454,8 +458,10 @@ def h_verification_ledger(h, p, q, path):
             _indep, _degraded, _stub = [], [], []
         ledger = {
             "endpoint": "/api/verification_ledger",
-            "ci_core": {"count": ci_core, "tag": "core",
-                        "note": "run_ci_regression.py --tag core；计数一致性由 run_count_consistency_smoke 守护"},
+            "ci_core": {"count": ci_core, "tag": "core", "stale": ci_core_stale,
+                        "note": "run_ci_regression.py --tag core；计数一致性由 run_count_consistency_smoke 守护"
+                               + ("；⚠️ 取数失败，count=None（如实暴露，不回落过时常数）"
+                                  if ci_core_stale else "")},
             "anchors": {
                 "total": len(dispatch) + empirical_seed,
                 "by_kind": {

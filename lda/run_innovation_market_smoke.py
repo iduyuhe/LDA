@@ -89,7 +89,9 @@ def main() -> int:
                                              TIER_STANDARD, build_price_map)
         pm = build_price_map()
         tiered = set(TIER_BASIC) | set(TIER_STANDARD) | set(TIER_PREMIUM) | set(TIER_CONSULT)
-        check("定价覆盖：全部 58 货架均已归档价档（无漏定价）",
+        # 🔴 v0.9.41：文案里的「58」是硬编码的历史货架数，货架扩容后文案会失真
+        #   （虽不影响判据，但会误导人审）。改为动态取当前货架数。
+        check(f"定价覆盖：全部 {len(SHELF_IDS)} 货架均已归档价档（无漏定价）",
               set(pm) == SHELF_IDS,
               f"已定价={len(pm)} 货架={len(SHELF_IDS)} 差={sorted(SHELF_IDS ^ set(pm))[:5]}")
         check("定价无孤儿 id（定价表不含不存在的货架）",

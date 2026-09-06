@@ -83,7 +83,7 @@
         "kappa_oracle": 0.03295,
         "kappa_fdtd": 0.04189,
         "kappa_method": "recurrence",
-        "kappa_rel_dev": 0.2716,
+        "kappa_rel_dev": 0.2715,
         "error": null
       },
       {
@@ -131,13 +131,13 @@
         "error": null
       }
     ],
-    "band_mean_kappa_rel": 0.17067142857142859,
+    "band_mean_kappa_rel": 0.17065714285714287,
     "band_max_kappa_rel": 0.4367,
     "band_max_balance": null,
     "band_all_power_positive": null,
     "oracle_monotonic": true,
     "verdict": "全波段验收 PASS：ORACLE κ(λ) 单调递增（真值谱形），FDTD 平均偏差 0.1707 ≤ 0.25，最差 0.4367 ≤ 0.75，7 点全提取成功",
-    "elapsed_s": 95.6
+    "elapsed_s": 105.3
   },
   "live_yb": {
     "label": "YB 对称分束器多波长",
@@ -224,6 +224,6 @@
     "band_all_power_positive": true,
     "oracle_monotonic": true,
     "verdict": "全波段验收 PASS：max_λ 平衡度 0.0007 ≤ 容差 0.1，全波段功率为正，7 波长点全 PASS",
-    "elapsed_s": 128.5
+    "elapsed_s": 141.4
   }
 }

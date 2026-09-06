@@ -62,6 +62,11 @@ TIER_STANDARD = [
     "IM-PON-50G",          # 50G-PON 光前端
     "IM-XGS-PON",          # XGS-PON 光前端
     "IM-CPO-OCS",          # OCS 直连光交换（含交换矩阵黑箱）
+    # —— v0.9.41 补档（M3/M3+/D 赛道扩货架后漏定价的 17 条，按同一三维规则归档）——
+    "IM-LIDAR-FULL",       # FMCW TX+RX 一体前端（生态有零件无成品；车载市场大，非稀缺）
+    "IM-FTTR-PLC32",       # 1×32 PLC 分光（级数多，需均匀性/损耗工程迭代，非纯拼件）
+    "IM-POC-BIOSENSE",     # POCT 生物传感芯片（干涉 + 光栅耦合，需生化封装 know-how）
+    "IM-TTD-5G",           # 微波光子真延时·5G 场景（同 TTD 技术，但客户价值低于国防相控阵）
 ]
 
 # ---- 高端档 ¥4999：系统级 + 生态无现成 + 高客户价值（前沿稀缺赛道）----
@@ -83,6 +88,19 @@ TIER_PREMIUM = [
     "IM-OPTO-COMPUTE",     # 光计算/光神经网络（前沿稀缺）
     "IM-OPTCOMB",          # 芯片级光频梳（稀缺高价值）
     "IM-TRUE-TIME-DELAY",  # 微波光子真延时（相控阵/国防）
+    # —— v0.9.41 补档：高速数通 + D 赛道 CPO 硅光 I/O（系统级，生态无现成）——
+    "IM-3.2T-DR8",         # 3.2T 最前沿（1.6T 之上，技术门槛最高）
+    "IM-1.6T-LPO",         # 1.6T LPO 线性直驱（112G LPO 之上，最前沿）
+    "IM-1.6T-ZR",          # 相干 1.6ZR（同 400ZR 类，DCI 壁垒最高）
+    "IM-CPO-16CH",         # CPO 16 通道光引擎（系统级，生态无现成）
+    "IM-UCIE-OPTICAL",     # UCIe 光接口（chiplet 光互连，XPU 赛道前沿）
+    "IM-OPA-2D",           # 2D 光学相控阵（同 IM-OPA-LIDAR，固态雷达前沿）
+    "IM-OPTCOMB-WDM",      # WDM 锁定微梳（同 IM-OPTCOMB，稀缺高价值）
+    # —— D 赛道（v0.9.41）：CPO 硅光 I/O 共封装，判据含海岸线带宽密度 ——
+    "IM-CPO-OIO-8CH",      # CPO 光引擎 8×200G（系统级 + 带宽密度判据）
+    "IM-CPO-OIO-16CH",     # CPO 高密度 16×200G（127 µm 细间距 FAU，贴物理下界）
+    "IM-CPO-OIO-CHIPLET",  # chiplet 间光 I/O（UCIe-Optical 类）
+    "IM-CPO-ELS-FIBER",    # OIF 3.2T IA 形态 + 外置可更换光源（4 基元系统级）
 ]
 
 # ---- 量子 8 项：咨询制（出口管制合规红线），起步价同高端档 ----
@@ -90,6 +108,9 @@ TIER_CONSULT = [
     "IM-QKD-TX-SHELF", "IM-QKD-RX-SHELF", "IM-QKD-MULTI4",
     "IM-QCTRL-ZC3-10Q", "IM-QCTRL-HERON-16Q", "IM-QCTRL-WILLOW-12Q",
     "IM-QCHIP-INT", "IM-QCOM-LINK",
+    # —— v0.9.41 补档：M3/M3+ 新增的量子类，同受出口管制红线约束（咨询制）——
+    "IM-QKD-FULL-LINK",    # QKD 收发一体干线（安全密钥率信息论锚）
+    "IM-QCTRL-32Q",        # 32 qubit 大规模量子读出/控制
 ]
 
 

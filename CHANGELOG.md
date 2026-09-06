@@ -1,5 +1,44 @@
 # Changelog
 
+## v0.9.41（2026-09-06 · D 赛道 CPO 硅光 I/O 共封装 · QKD 安全密钥率信息论锚 · CI 门禁缺口清零（六处潜伏断裂）· CI core 118 条）
+
+**动机**：① CPO（硅光 I/O 共封装）的真实竞争维度是**海岸线带宽密度**，而既有 8 条 CPO 相关货架**没有一条判密度**、A 赛道口径覆盖不到 ⇒ 立 D 赛道新类；② QKD 本质是**信息论安全**问题而非光子损耗问题，须从"借光子 IL 判据"升级为安全密钥率判决；③ 全量回归全绿后追问"这 97 条是不是全部"，查出**六处潜伏断裂**（含 production smoke 从未进 CI）。
+
+### 一、D 赛道：`cpo_optical_io` 系统类型（硅光 I/O 共封装）
+- 新增 `lda/lda_design/cpo_engines.py`：三死标量锚 **S-CPO-IL**（每通道插损，GP-* 级联，与 GC-CPO-8CH 同源）/ **S-CPO-DENSITY**（海岸线带宽密度 = lane_rate ÷ pitch，纯几何）/ **S-CPO-BUDGET**（链路功率余量，S1 同式）。零新物理。
+- 🔴 **P-CPO 间距几何下界护栏**（与 D-67 对称夹逼）：`le` 方向（插损越小越 PASS）由 D-67 能量守恒下界防漏算损耗；`ge` 方向（密度越大越 PASS）由 P-CPO 防把间距写小虚报密度。**间距下界按耦合方式分档**——`fau` = 125 µm（ITU-T G.652 单模光纤包层直径 125.0±1.0 µm）、`grating_array` = 10.3 µm（G.652 模场直径 MFD@1550 = 10.3±0.4 µm）。一刀切会误杀片间直连，放松到无下界则可虚报。
+- golden **45→48**：`GC-CPO-OIO-8CH`（800 Gbps/mm）/ `GC-CPO-OIO-16CH`（**1574.8 Gbps/mm = 物理上界 1600 的 98.4%，护栏贴身证明判据有效**）/ `GC-CPO-OIO-CHIPLET`（711 Gbps/mm）。
+- 货架 **71→75**：`IM-CPO-OIO-8CH` / `IM-CPO-OIO-16CH` / `IM-CPO-OIO-CHIPLET` / `IM-CPO-ELS-FIBER`；生产系统 `TRACK_SYSTEM["D"]="cpo_optical_io"`，《2027 产品规划》新增 §2.4 赛道 D，任务 **13→17（A5/B4/C4/D4）**。
+- 🔴 **主动放弃一个判据**：**不判决能效 pJ/bit**。该量由电域 SerDes/DSP 主导（OIF：CPO 3 pJ/b vs OSFP 19 pJ/b），LDA 无电域锚；拿光域激光功率比会低约 4 个数量级 ⇒ **恒过 = 必假绿**。只作规格标注，不进判决。
+
+### 二、QKD 安全密钥率信息论锚（方法学扩展，上一轮完成、随本版发布）
+- 新增 `lda/lda_design/qkd_engines.py`：decoy-state BB84 渐近下界（Lo–Ma–Chen 2005 公开公式）`R = q·[Q₁·(1−H₂(e₁)) − Q_μ·f·H₂(E_μ)]`。**这是 LDA 第一类信息论类死标量锚**（此前只有光子损耗类 / 量子保真度类）。零新物理、判决纯死标量。
+- **Q-D67 护栏**：① 密钥率 ≤ 单光子贡献上界（漏算误纠错惩罚项 / 错用 Q_μ 替代 Q₁ 必突破）；② 等效探测效率 η ≤ 1。
+- `SYSTEM_TYPES` 新增 **`qkd_link`**（domain=qkd，三道锚：SKR>0 / 安全距离达标 / 达公开下限）；`IM-QKD-FULL-LINK` 由 `link` 升级为 `qkd_link`。
+- golden **43→45**：`GC-QKD-SKR-50KM`（InGaAs，1514 bps / 安全距离 58.2 km）、`GC-QKD-SKR-100KM`（SNSPD，4803 bps / 204.7 km），均对标公开 datasheet/论文量级。
+
+### 三、CI 门禁缺口清零（六处潜伏断裂，四处在本轮之前即已存在）
+1. 🔴🔴 **`run_production_smoke.py` 从未进过 CI** —— 设计文档 / `production_plan.py` 注释 / 项目记忆**三处都写「进 CI 防回归」**，而 `run_ci_regression.py` 里**零引用**（能被 `--tag all` 发现，但真门禁是 `--tag core`）。研发生产系统四赛道 17 任务 + D-67/Q-D67/P-CPO 三道反向测试**长期裸奔**，却在 97 条全绿下溜过。
+2. `run_system_types_smoke.py` 等值断言 `types == [3 类]` —— **从 M2 加 sensor_frontend 起就 FAIL**，而它在 `CORE_SMOKES` 内 ⇒ **core 门禁从 M2 起就破着**。改为包含式 + 新增「每个类型必须自带死标量锚（禁止无锚假类型）」门禁，7→**15 PASS**。
+3. 定价归档只覆盖 **58/75** 条（货架 58→75 过程中无人同步 `shelf_pricing.py`）⇒ 按既定三维规则补齐 17 条（标准档 4 / 高端档 11 / **咨询制 2：IM-QKD-FULL-LINK、IM-QCTRL-32Q，量子出口管制红线**），现 **75/75**。
+4. README「当前账本」计数漂移（97 ≠ 117）—— 由 `run_count_consistency_smoke.py` **护栏按设计生效**抓到，非新缺陷。
+5. `routes.py` `/api/verification_ledger` 的 `except` 兜底写死 `ci_core = 82`（v0.9.9 前遗留）⇒ 失败时静默对外报过时数字，悖「宁红不假绿」。改为 `count=None` + 可机读 `stale=true`。
+6. 🔴 **失败状态分类缺失**：`run_coupler_band_smoke.py` 在持续负载下被硬杀（136.4s + **零输出**，单独重跑 267s ALL GREEN），却报成普通 `FAIL`。Python stdout 重定向到管道为块缓冲 ⇒ 被杀则缓冲全丢，「异常短 + 零输出」是**进程被杀的指纹**。若与断言失败混为一谈，后人会去"修"一条根本没错的物理判据。故单列 **`CRASH`** 状态（语义：需人工复验，不是判据错）。
+
+### 四、机制级防复发（不是补一次）
+- **`NON_CORE_SMOKES` 豁免登记表**（18 项，每项必附**实测耗时 + 理由**）。准则：**<5s 且无重依赖者无权豁免**。附证：**排除理由会腐化**——旧注释称 `wdm_coupler` 属「重 FDTD/GPU 项」，实测 **0.30s**。
+- **`lda/run_ci_coverage_gate_smoke.py`**（6 判据，自食其规则、自身在 core 内）：发现的 smoke 必须在 core 或豁免表内，否则 FAIL；含反向测试（撤一项登记 ⇒ 立刻报缺口）。
+- **`lda/run_ci_crash_classify_smoke.py`**（7 判据，含反向测试）：守护 `_FAIL_STATUSES` 记账 —— **新增状态漏登记 ⇒ `n_fail` 统计不到 ⇒ 红灯变绿 = 静默假绿，比红更危险**。
+- **36 个孤儿 smoke 逐项实测**（非估计）：A 组快 <5s 共 **18** 条（真门禁 · 纯 numpy · 失败会 `return 1` · 合计仅 **9.6s**，含 **4 条锚 smoke**）⇒ **全接入 core**；B 组慢 13 条 + C 组 60s 超时 5 条（延至 300s 复测判明**慢而能完成、非卡死**：164s/119s/73s 均 rc=0）⇒ 登记豁免。
+- 铁律升级为**同步五处**：① 条目库 ② CI 断言计数 ③ 派生表（定价/白名单/覆盖矩阵）④ **回归集登记** ⑤ **对外账本计数**。
+
+### 五、验证
+- 终版全量 `--tag core` 回归：**118 PASS / 0 SKIP / 0 FAIL，1827.51s，EXIT=0**（改动前基数 97 条）。
+- 关键确认：`run_coupler_band_smoke.py` **249.78s PASS** —— 证实上一轮 136.4s 的「零输出 FAIL」确属偶发硬杀（flaky），**判据本身无病**。
+- 定向：coverage_gate 6/6 · crash_classify 7/7 · production 17/17 done（A5/B4/C4/D4，golden 48/48，货架 75，三道反向测试全命中，0.84s）· golden_product 48/48 · count_consistency 11/11 · industrial 3/3 · webui_api 89/89。
+
+红线全程未破：LLM 不进判决路径 · 不调 tapeout · honest_tier=前瞻预研 · 判决纯死标量比对 · 不放宽任何既有判据。
+
 ## v0.9.40（2026-09-05 · 生产版本号 + 产品说明公开化 + 智能体客服（解答 + 线索收集，不进验证判决路径））
 
 **动机**：对外叙事要兑现 agent-native——客户/访客到生产环境（public 页）应能**看到当前发布版本号与产品基本说明**，并能**用自然语言向智能体客服提问、留下联系方式**。两块均为用户侧产品能力，未触及验证判决路径、未新增任何判据。

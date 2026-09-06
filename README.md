@@ -4,6 +4,8 @@
 > 核心主张：**底层核心求解器由 AI agent 递归自举开发**，人类做架构与验证，AI 不进入判决路径。
 > **📦 v0.9.0 完整发布说明：`docs/RELEASE_v0.9.0.md`**（15 commit 全量变更 · 商务闭环四要素 · 安全审计 · 已知限制）
 > 
+> 当前版本：**v0.9.41**（2026-09-06 · **D 赛道 CPO 硅光 I/O 共封装 · QKD 安全密钥率信息论锚 · CI 门禁缺口清零（六处潜伏断裂）· CI core 98→118**：①**D 赛道 `cpo_optical_io` 系统类型**（硅光 I/O 共封装）——既有 8 条 CPO 相关货架**没有一条判带宽密度**，而 OIF/SE 公开数据表明 CPO 的真实竞争维度正是海岸线带宽密度（当前最先进 ≈0.5 Tbps/mm vs AI chiplet UCIe ≈3 Tbps/mm，**6× 差距**），A 赛道口径覆盖不到 ⇒ 立新类。三锚 **S-CPO-IL**（每通道插损）/ **S-CPO-DENSITY**（海岸线密度 = lane_rate ÷ pitch，纯几何）/ **S-CPO-BUDGET**（链路余量，S1 同式），零新物理。🔴 核心是 **P-CPO 间距几何下界护栏**，与 D-67 **对称夹逼**：`le` 方向（插损越小越 PASS）由 D-67 能量守恒下界防漏算损耗；`ge` 方向（密度越大越 PASS）由 P-CPO 防把间距写小虚报密度——**下界按耦合方式分档**（`fau`=125 µm 取 ITU-T G.652 单模光纤包层直径 125.0±1.0 µm；`grating_array`=10.3 µm 取 G.652 模场直径 MFD@1550 = 10.3±0.4 µm），一刀切会误杀片间直连、放松则恒过。golden **45→48**：`GC-CPO-OIO-16CH` 复现 **1574.8 Gbps/mm = 物理上界 1600 的 98.4%（护栏贴身，判据有效）**。货架 71→75（`IM-CPO-OIO-8CH/-16CH/-CHIPLET`、`IM-CPO-ELS-FIBER`），生产任务 13→17（A5/B4/C4/D4）。🔴 **主动放弃一个判据：不判决能效 pJ/bit**——该量由电域 SerDes/DSP 主导（OIF：CPO 3 pJ/b vs OSFP 19 pJ/b），LDA 无电域锚，拿光域激光功率比会低约 4 个数量级 ⇒ **恒过 = 必假绿**，只作规格标注。②**QKD 安全密钥率信息论锚**（方法学扩展）：decoy-state BB84 渐近下界（Lo–Ma–Chen 2005 公开公式）`R = q·[Q₁·(1−H₂(e₁)) − Q_μ·f·H₂(E_μ)]`，**LDA 第一类信息论类死标量锚**；**Q-D67 护栏**（密钥率 ≤ 单光子贡献上界 + 等效探测效率 η ≤ 1）；新增 `qkd_link` 系统类型，`IM-QKD-FULL-LINK` 由 `link` 升级；golden 43→45（`GC-QKD-SKR-50KM` 1514 bps/58.2 km、`GC-QKD-SKR-100KM` 4803 bps/204.7 km）。③**CI 门禁缺口清零**：全量 97 条全绿后追问「这 97 条是不是全部」，查出**六处潜伏断裂**——🔴🔴 **`run_production_smoke.py` 从未进过 CI**（文档/注释/记忆三处都写「进 CI 防回归」，`run_ci_regression.py` 里零引用 ⇒ 四赛道 17 任务 + 三道反向测试长期裸奔）· `run_system_types_smoke` 等值断言从 M2 起就红着却在 CORE 内（**core 门禁从 M2 起就破**）· 定价归档只覆盖 58/75 · README 计数漂移（由 count_consistency 护栏按设计抓到）· `routes.py` 兜底写死 `ci_core=82` · **失败状态分类缺失**（`run_coupler_band_smoke` 被硬杀却报成普通 FAIL：「异常短 + 零输出」是进程被杀的指纹，单列 `CRASH` 防后人去"修"没错的物理判据）。**机制级防复发**：`NON_CORE_SMOKES` 豁免登记表（18 项必附实测理由，<5s 无重依赖者无权豁免）+ `run_ci_coverage_gate_smoke.py`（发现必须归类）+ `run_ci_crash_classify_smoke.py`（守护 `_FAIL_STATUSES` 记账，漏登记 = 红变绿）；**36 个孤儿 smoke 逐项实测**（非估计）后 18 条快速真门禁（含 **4 条锚 smoke**，合计仅 9.6s）接入 core。铁律升级为**同步五处**：条目库 / CI 断言计数 / 派生表 / **回归集登记** / 对外账本计数。终版全量回归 **118 PASS / 0 SKIP / 0 FAIL**（改动前基数 97）。）
+>
 > 当前版本：**v0.9.40**（2026-09-05 · **生产环境版本号 + 产品说明公开化 + 智能体客服（解答 + 线索收集，不进验证判决路径）**：两块用户侧产品能力落地，让 agent-native 叙事对外兑现——①**生产版本号 / 产品说明公开化**：版本真源改 `pyproject.toml` 单一优先（修复此前 importlib.metadata 读已装旧包致对外展示 0.9.37 的失真）；新增 `PRODUCT_INFO` dict + `/api/about` 端点 + public.html「关于 LDA」section + 全站导航版本 pill，对外公开展示版本号、一句话定位、能力亮点与诚实边界；`/api/public/stats` 同步富化 `product` / `version` 字段。②**智能体客服**：新增 `cs_agent.py`（纯标准库、零新依赖，FAQ 规则回复 + 可选 LLM 升级——读 `LDA_CS_LLM_BASE_URL/API_KEY/MODEL` 环境变量走 OpenAI 兼容接口，失败回退 FAQ）+ `cs_widget.js` 浮动客服组件（挂 public/index 双页）；`POST /api/agent/chat` 既解答客户产品问题、又正则抽取并落盘客户线索（`dist/customer_leads.json`，`dist/` 在第 8 行 gitignored、不入库、不污染验证账本）。🔴 **红线**：客服 LLM 只做对话生成，**绝不进入验证判决路径**；线索数据不入仓、不改任何判据。CI core 仍 **97 条**（未新增判据，本次为产品 / 用户侧能力，非验证强度改动）。）·
 > 
 > 当前版本：**v0.9.39**（2026-09-05 · **T-9 锚题覆盖矩阵接线空白点收官 · B29+B30 两道真·可接空白点锚落地 · 题库 48→50 · 严格独立 23→25 · CI core 95→97**：T-9 覆盖矩阵（33 引擎 × 48 锚）暴露两类零覆盖品类——①**D-73 升格热光相移效率锚 B29**（原仅量化口径、无独立候选）；②**readout_fidelity 包零覆盖钉子 E→B30 读出保真度锚**。两道按七步接线法落**方法学独立候选**（非自证桩）：B29 golden=1D 散热鳍稳态 PDE `θ''−m²θ=−m²θ_p` cosh 解析闭式 `Δφ=2π/λ·dn/dT·∫θdz`，candidate=同 PDE 三对角 FDM（Thomas）+ 梯形相位积分，**判据 D 实测 N=50→6400 残差 0.45°→3.4e-3° 真实收敛**（对照 B28 沿程积分代数恒等反例，B29 取非均匀 θ(z) 真数值离散化）；基线（N=8000）2.7e-3°、反向 dn_dt±10% ⇒ Δ=3.8°≫tol 2e-2 必 FAIL。B30 golden=色散读出闭式 `F=(1−ε+(1−ε)(1−t_m/T1))/2`、`ε=½erfc(SNR/√2)`，candidate=误判概率 ε 的**高斯重叠数值积分** `ε=½∫min(𝒩(x;−SNR,1),𝒩(x;+SNR,1))dx`（梯形积分），判据 D 实测 nx=2001→2e6 残差 9.4e-7→8e-13 单调收敛；🔴 **工作点取中等 SNR≈2.2**（非 t_m* 饱和区）保反向判别力——nbar/eta/N_amp±10% ⇒ ΔF≈3.4e-3≫tol 1e-3 必 FAIL。两道护栏 `run_b29_thermal_phase_smoke.py` / `run_b30_readout_smoke.py` 各 4 判据（登记防回退 / 正向 PASS / 判据 D 单调收敛+基线>1e-12 / 反向必 FAIL）全绿，CI core 95→97。三分类刷新：**严格独立 25 道 · 降级量级参考 0 道 · 自证桩 25 道（三类和 = 50）**；判据窗口铁律、行为判据、双路径口径零回归。·
@@ -199,7 +201,7 @@ docs/                    ir_spec.md + ir_schema.json（L0 开放标准）· desi
 ```bash
 # ⓪ 一键复现（T-7 · 外部人验货首选，~30s：环境自检 + 版本核对 + 48 锚三分类 + 计数门禁）
 python lda/quickverify.py
-#    加 --full 追加全量 CI core 97 条回归（~25min）；--json out.json 出机器可读摘要
+#    加 --full 追加全量 CI core 118 条回归（~32min）；--json out.json 出机器可读摘要
 
 # ① 设计→验证闭环（4 器件：WG/Bragg/Transmon/Ring）
 python lda/run_design_demo.py
@@ -278,7 +280,7 @@ lda gf my_gf_component.py --out reports
 ```
 红线：CLI 不做任何判决，仅对既有引擎 / layout / harness 的真实计算结果做格式化呈现（LLM 不进路径，死标量判决不变）。`lda check --gds` 主权 DRC 仅覆盖几何维度**子集**（最小线宽/间距/面积），诚实标注非晶圆厂官方 DRC deck 全量。
 
-## 当前账本：CI 机器断言守护（动态，FAIL=0 即绿）· **CI core 97 条**
+## 当前账本：CI 机器断言守护（动态，FAIL=0 即绿）· **CI core 118 条**
 
 - **22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）**
 - **50 题（B1-B30 物理定律锚 + E1-E7 实证锚 + S1-S13 系统锚）**

@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import itertools
+import math
 from typing import Any, Dict, List, Tuple
 
 # ---- 行为级黑箱参数（system_budget 同源，文献典型值） ----
@@ -298,6 +299,27 @@ SYSTEM_TYPES = {
         "anchors": ["D-46", "D-47", "B9", "B12"],
         "honest_tier": "已验证闭环(D-46×D-47)",
     },
+    "sensor_frontend": {
+        "domain": "photon",
+        "title": "传感/车载/接入光子前端（FMCW LiDAR / PON / 生物传感 / 真时延）",
+        "engine": "proposal_compiler._design_sensor_frontend",
+        "anchors": ["S1-sensor-budget", "S5-energy-floor", "S7-statistical-p5"],
+        "honest_tier": "已验证闭环(光子级联+S1/S5/S7)",
+    },
+    "qkd_link": {
+        "domain": "qkd",
+        "title": "QKD 量子密钥分发链路（安全密钥率信息论锚）",
+        "engine": "proposal_compiler._design_qkd_link",
+        "anchors": ["S-QKD-SKR"],
+        "honest_tier": "已验证闭环(decoy-BB84 下界)",
+    },
+    "cpo_optical_io": {
+        "domain": "cpo",
+        "title": "CPO 硅光 I/O 共封装光引擎（带宽密度 + 插损 + 功率预算）",
+        "engine": "proposal_compiler._design_cpo_optical_io",
+        "anchors": ["S-CPO-IL", "S-CPO-DENSITY", "S-CPO-BUDGET"],
+        "honest_tier": "已验证闭环(D-67×P-CPO 双向物理护栏)",
+    },
 }
 
 
@@ -374,6 +396,266 @@ def _design_quantum_fidelity(req: Dict[str, Any], n_top: int = 3,
     }
 
 
+def _design_sensor_frontend(req: Dict[str, Any], n_top: int = 3,
+                             generator: str = "grid") -> Dict[str, Any]:
+    """B 赛道传感/车载/接入光子前端系统类型（M2 新增，自带死标量锚）。
+
+    物理：传感前端本质是一条光子级联（与 GC-SENSE / GC-LIDAR-FMCW 同源，
+    零新物理）——用 GP-* 已锚定基元的 dB 级联（S1 同构）算全链路插入损耗，
+    再对传感应用各自的公开链路预算比对。判决共用同一条死标量红线。
+
+    自带三道死标量锚（与 link 共用物理，但锚集合与阈值按传感应用独立声明）：
+      S1-sensor-budget  全链路 IL ≤ 应用预算（le）
+      S5-energy-floor   分束器每级 ≥ 3.0103 dB 能量守恒下界（D-67 复用）
+      S7-statistical-p5 统计最坏情况 margin p5 > 0（蒙特卡洛，固定种子确定性）
+    LLM 不进判决路径（generator 仅占位，本类型当前为解析级联）。
+    """
+    from lda_design.loss_engines import ENGINE_FUNCS, SPLIT_LOSS_3DB
+
+    app = req.get("app", "lidar")
+    n_g = int(req.get("n_gratings", 2))
+    L = float(req.get("wg_length_cm", 1.0))
+    n_yb = int(req.get("n_ybranch", 2))
+    n_cr = int(req.get("n_crossing", 0))
+    budget = float(req.get("budget_db", 15.0))
+    tol = float(req.get("tol_db", 3.0))
+
+    # 标准基元几何（与 GP-* 标杆一致，保证级联复现值同源）
+    _G_GEOM = {"ff": 0.5, "theta_deg": 8.0, "tilt_sigma_deg": 15.0}
+    _SIN_GEOM = {"w_core_um": 0.8, "h_core_um": 0.8, "roughness_nm": 0.3}
+    _YB_GEOM = {"theta_deg": 5.0, "excess_coef": 0.004}
+    _CR_GEOM = {"w_core_um": 0.5, "taper_w_ratio": 2.5}
+
+    g = ENGINE_FUNCS["engine_grating_eff"](_G_GEOM)["value"]
+    grating_il = -10.0 * math.log10(g)
+    sil = ENGINE_FUNCS["engine_sin_pl"](_SIN_GEOM)["value"]
+    yb = ENGINE_FUNCS["engine_ybranch_split"](_YB_GEOM)["value"]
+    cr = ENGINE_FUNCS["engine_crossing"](_CR_GEOM)["value"]
+    total = n_g * grating_il + sil * L + n_yb * yb + n_cr * cr
+
+    # 🔴 D-67 能量守恒下界护栏（与 ChipBenchmark._photon_cascade_il 同式）
+    if n_yb > 0 and yb < SPLIT_LOSS_3DB - 1e-9:
+        raise AssertionError(
+            f"[sensor:{app}] 分束器单级插损 {yb:.4f} dB 低于能量守恒下界 "
+            f"{SPLIT_LOSS_3DB:.4f} dB（1×2 功率均分的几何必然）——"
+            f"疑似漏算分光损耗（见 D-67 回归）")
+    floor = n_yb * SPLIT_LOSS_3DB
+    if total < floor - 1e-9:
+        raise AssertionError(
+            f"[sensor:{app}] 链路插损 {total:.4f} dB 低于能量守恒下界 "
+            f"{floor:.4f} dB（{n_yb} 级 1×2 分光 × 3.0103 dB）——"
+            f"疑似漏算分光损耗（见 D-67 回归）")
+
+    # S7 统计最坏情况：margin = budget − total，蒙特卡洛（固定种子，确定性）
+    import random as _rnd
+    _rng = _rnd.Random(42)
+    _margins = [budget - (total + _rng.gauss(0.0, 0.3)) for _ in range(1000)]
+    _p5 = sorted(_margins)[int(0.05 * len(_margins)) - 1]
+
+    checks = [
+        {"anchor": "S1-sensor-budget",
+         "name": "传感前端链路损耗 ≤ 应用预算",
+         "value": round(total, 3), "threshold": budget,
+         "passed": total <= budget + tol},
+        {"anchor": "S5-energy-floor",
+         "name": "能量守恒下界(分束器每级≥3.0103dB)",
+         "value": round(total, 3), "threshold": round(floor, 3),
+         "passed": total >= floor - 1e-9},
+        {"anchor": "S7-statistical-p5",
+         "name": "统计最坏情况 margin p5 > 0（蒙特卡洛）",
+         "value": round(_p5, 3), "threshold": 0.0,
+         "passed": _p5 > 0},
+    ]
+    accepted = all(c["passed"] for c in checks)
+    return {
+        "input_req": req,
+        "system_type": "sensor_frontend",
+        "compiled": {"system_type": "sensor_frontend", "app": app,
+                     "cascade": {"n_gratings": n_g, "wg_length_cm": L,
+                                 "n_ybranch": n_yb, "n_crossing": n_cr}},
+        "feasible_domain": {"feasible": bool(accepted),
+                            "note": "传感前端光子级联 + 死标量锚 S1/S5/S7"},
+        "n_domain_candidates": 1,
+        "ranked": [{"rank": 1,
+                    "proposal": {"system_type": "sensor_frontend"},
+                    "screening": {"accepted": accepted, "checks": checks},
+                    "screening_summary":
+                        (f"{'ACCEPT' if accepted else 'REJECT'} · "
+                         f"{app} 传感前端 S1/S5/S7")}],
+        "n_accepted": 1 if accepted else 0,
+        "honest_note": ("传感前端 = 光子级联（GP-* 已锚定基元 dB 级联）+ 死标量锚 "
+                        "S1（预算）/S5（能量守恒下界·D-67）/S7（统计 p5）；"
+                        "LLM 不进判决路径。对标对象是全链路插入损耗死标量，"
+                        "传感元件（OPA/调制器/探测器）按黑箱（负面清单）。"),
+    }
+
+
+def _design_qkd_link(req: Dict[str, Any], n_top: int = 3,
+                     generator: str = "grid") -> Dict[str, Any]:
+    """QKD 量子密钥分发链路系统类型（v0.9.40 新增，自带安全密钥率信息论死标量锚）。
+
+    物理：QKD 不是光子损耗问题，而是**信息论安全问题**——用 decoy-state BB84 渐近
+    下界（Lo–Ma–Chen 2005）算安全密钥率 R 与最大安全传输距离 L_max，对标公开
+    datasheet / 论文量级（等效验证）。复用 lda_design.qkd_engines 已验证闭环。
+
+    自带一道信息论死标量锚（S-QKD-SKR），拆三道可人审的检查：
+      S-QKD-SKR-secure     目标距离 R > 0（密钥率非负 = 抗束分割攻击成钥）
+      S-QKD-SKR-distance   L_max ≥ 目标距离（安全传输距离达标）
+      S-QKD-SKR-published  R ≥ 公开量级下界（等效验证：复现公开系统密钥率量级）
+    LLM 不进判决路径（generator 仅占位，本类型当前为解析公式）。
+    """
+    from lda_design.qkd_engines import decoy_bb84_skr
+
+    # 从需求提取 QKD 几何 + 目标（缺省用公开典型值；探测器按公开参数黑箱）
+    geom = {
+        "distance_km": float(req.get("distance_km", 50.0)),
+        "fiber_loss_db_km": float(req.get("fiber_loss_db_km", 0.2)),
+        "alice_il_db": float(req.get("alice_il_db", 15.0)),
+        "bob_il_db": float(req.get("bob_il_db", 8.0)),
+        "detector_eff": float(req.get("detector_eff", 0.1)),
+        "dark_count_prob": float(req.get("dark_count_prob", 1e-6)),
+        "misalignment": float(req.get("misalignment", 0.015)),
+        "mu": float(req.get("mu", 0.5)),
+        "f_ec": float(req.get("f_ec", 1.1)),
+        "rep_rate_hz": float(req.get("rep_rate_hz", 1e9)),
+    }
+    target_distance = float(req.get("target_distance_km",
+                                   geom["distance_km"]))
+    published_floor = float(req.get("published_floor_bps", 200.0))
+
+    r = decoy_bb84_skr(geom)
+    skr = float(r["secure_key_rate_bps"])
+    lmax = float(r["max_secure_distance_km"])
+
+    checks = [
+        {"anchor": "S-QKD-SKR-secure",
+         "name": f"目标距离 {geom['distance_km']:.0f}km 密钥率 > 0（可成钥）",
+         "value": round(skr, 3), "threshold": 0.0,
+         "passed": skr > 0.0},
+        {"anchor": "S-QKD-SKR-distance",
+         "name": f"最大安全距离 ≥ 目标 {target_distance:.0f}km",
+         "value": round(lmax, 3), "threshold": target_distance,
+         "passed": lmax >= target_distance},
+        {"anchor": "S-QKD-SKR-published",
+         "name": f"密钥率 ≥ 公开量级下界 {published_floor:.0f} bps（等效验证）",
+         "value": round(skr, 3), "threshold": published_floor,
+         "passed": skr >= published_floor},
+    ]
+    accepted = all(c["passed"] for c in checks)
+    return {
+        "input_req": req,
+        "system_type": "qkd_link",
+        "compiled": {"system_type": "qkd_link", "geom": geom,
+                     "target_distance_km": target_distance,
+                     "published_floor_bps": published_floor},
+        "feasible_domain": {"feasible": bool(accepted),
+                            "note": "QKD 安全密钥率信息论锚 S-QKD-SKR（decoy-BB84 下界）"},
+        "n_domain_candidates": 1,
+        "ranked": [{"rank": 1,
+                    "proposal": {"system_type": "qkd_link"},
+                    "screening": {"accepted": accepted, "checks": checks},
+                    "screening_summary":
+                        (f"{'ACCEPT' if accepted else 'REJECT'} · "
+                         f"QKD SKR@{geom['distance_km']:.0f}km={skr:.1f}bps "
+                         f"Lmax={lmax:.1f}km")}],
+        "n_accepted": 1 if accepted else 0,
+        "honest_note": ("QKD 链路 = decoy-BB84 渐近下界（Lo–Ma–Chen 2005）安全密钥率 "
+                        "信息论锚 S-QKD-SKR；复用 lda_design.qkd_engines 已验证闭环，"
+                        "零新物理，含 Q-D67 护栏（密钥率≤单光子贡献上界 + η≤1 物理界）。"
+                        "LLM 不进判决路径。对标公开 datasheet / 论文密钥率量级（等效验证）。"),
+    }
+
+
+def _design_cpo_optical_io(req: Dict[str, Any], n_top: int = 3,
+                           generator: str = "grid") -> Dict[str, Any]:
+    """CPO 硅光 I/O 共封装光引擎系统类型（v0.9.41 新增，D 赛道，自带死标量锚）。
+
+    物理：CPO 光 I/O 的竞争维度不是单一插损，而是**海岸线带宽密度**（OIF/Semiconductor
+    Engineering 公开：当前最先进 CPO ≈0.5 Tbps/mm，AI chiplet UCIe ≈3 Tbps/mm，6× 差距）。
+    零新物理 —— 三项判据全由已锚定基元与公开标准几何推出：
+      ① 每通道插入损耗 = GP-* 已锚定基元 dB 级联（与 GC-CPO-8CH 同源，S1 同构）
+      ② 海岸线带宽密度 = 单通道速率 / 通道间距（纯几何算术）
+      ③ 链路功率余量 = P_tx − IL − 探测器灵敏度（S1 同式）
+
+    自带三道死标量锚：
+      S-CPO-IL       每通道插入损耗 ≤ 预算（le；D-67 能量守恒下界护栏防漏算）
+      S-CPO-DENSITY  海岸线带宽密度 ≥ 下界（ge；P-CPO 间距几何下界护栏防虚报）
+      S-CPO-BUDGET   链路功率余量 ≥ 最小余量（ge；S1 同式）
+    LLM 不进判决路径（generator 仅占位，本类型当前为解析级联 + 几何算术）。
+    """
+    from lda_design.cpo_engines import cpo_optical_io_metrics
+
+    geom = {
+        "couple_mode": str(req.get("couple_mode", "fau")),
+        "n_channels": int(req.get("n_channels", 8)),
+        "lane_rate_gbps": float(req.get("lane_rate_gbps", 200.0)),
+        "pitch_um": float(req.get("pitch_um", 250.0)),
+        "n_gratings": int(req.get("n_gratings", 2)),
+        "wg_length_cm": float(req.get("wg_length_cm", 1.0)),
+        "n_ybranch": int(req.get("n_ybranch", 1)),
+        "n_crossing": int(req.get("n_crossing", 1)),
+        "p_tx_dbm": float(req.get("p_tx_dbm", 0.0)),
+        "detector_sens_dbm": float(req.get("detector_sens_dbm", -20.0)),
+    }
+    il_budget = float(req.get("il_budget_db", 12.0))
+    il_tol = float(req.get("il_tol_db", 3.0))
+    density_floor = float(req.get("density_floor_gbps_mm", 100.0))
+    min_margin = float(req.get("min_margin_db", 3.0))
+
+    r = cpo_optical_io_metrics(geom)
+    il = float(r["per_channel_il_dB"])
+    dens = float(r["bandwidth_density_gbps_mm"])
+    margin = float(r["link_margin_db"])
+
+    checks = [
+        {"anchor": "S-CPO-IL",
+         "name": f"每通道插入损耗 ≤ {il_budget} dB（含 D-67 能量守恒下界）",
+         "value": round(il, 3), "threshold": il_budget,
+         "passed": il <= il_budget + il_tol},
+        {"anchor": "S-CPO-DENSITY",
+         "name": f"海岸线带宽密度 ≥ {density_floor} Gbps/mm"
+                 f"（物理上界 {r['density_ceiling_gbps_mm']}）",
+         "value": round(dens, 3), "threshold": density_floor,
+         "passed": dens >= density_floor},
+        {"anchor": "S-CPO-BUDGET",
+         "name": f"链路功率余量 ≥ {min_margin} dB（S1 同式）",
+         "value": round(margin, 3), "threshold": min_margin,
+         "passed": margin >= min_margin},
+    ]
+    accepted = all(c["passed"] for c in checks)
+    return {
+        "input_req": req,
+        "system_type": "cpo_optical_io",
+        "compiled": {"system_type": "cpo_optical_io", "geom": geom,
+                     "il_budget_db": il_budget, "il_tol_db": il_tol,
+                     "density_floor_gbps_mm": density_floor,
+                     "min_margin_db": min_margin,
+                     "guardrail_evidence": {
+                         "energy_floor_dB": r["energy_floor_dB"],
+                         "pitch_floor_um": r["pitch_floor_um"],
+                         "density_ceiling_gbps_mm": r["density_ceiling_gbps_mm"],
+                     }},
+        "feasible_domain": {"feasible": bool(accepted),
+                            "note": "CPO 光 I/O 三项死标量锚 + D-67×P-CPO 双向物理护栏"},
+        "n_domain_candidates": 1,
+        "ranked": [{"rank": 1,
+                    "proposal": {"system_type": "cpo_optical_io"},
+                    "screening": {"accepted": accepted, "checks": checks},
+                    "screening_summary":
+                        (f"{'ACCEPT' if accepted else 'REJECT'} · "
+                         f"{geom['n_channels']}×{geom['lane_rate_gbps']:.0f}G "
+                         f"IL={il:.2f}dB 密度={dens:.0f}Gbps/mm")}],
+        "n_accepted": 1 if accepted else 0,
+        "honest_note": ("CPO 光 I/O = GP-* 已锚定基元 dB 级联（IL）+ 通道间距几何算术（密度）"
+                        "+ S1 预算（余量）；零新物理。两道物理护栏对称夹逼：D-67 能量守恒下界"
+                        "（防 le 方向漏算损耗）+ P-CPO 间距几何下界（ITU-T G.652 包层直径 125 µm / "
+                        "MFD@1550 10.3 µm，防 ge 方向虚报密度）。LLM 不进判决路径。"
+                        "🔴 诚实边界：**不判决能效 pJ/bit** —— 该量由电域 SerDes/TIA/DSP 主导"
+                        "（OIF 公开：CPO ≈3 pJ/b vs OSFP ≈19 pJ/b），LDA 无电域锚，"
+                        "若以光域功率比对将低 4 个数量级导致恒过（必假绿），故能效仅作规格标注。"),
+    }
+
+
 def design_pipeline(req: Dict[str, Any], n_top: int = 3,
                     generator: str = "grid",
                     system_type: str = "link") -> Dict[str, Any]:
@@ -383,6 +665,10 @@ def design_pipeline(req: Dict[str, Any], n_top: int = 3,
       "link"（默认）       → 原点对点光链路闭环（零回归）
       "wdm_demux"          → WDM 多环解复用（复用 design_wdm_advanced）
       "quantum_fidelity"   → 量子复用读出保真度（复用 design_multiqubit_fidelity）
+      "sensor_frontend"    → 传感/车载/接入光子前端（M2，自带 S1/S5/S7 死标量锚）
+      "qkd_link"           → QKD 量子密钥分发链路（v0.9.40，自带 S-QKD-SKR 信息论死标量锚）
+      "cpo_optical_io"     → CPO 硅光 I/O 共封装光引擎（v0.9.41 D 赛道，自带
+                             S-CPO-IL/S-CPO-DENSITY/S-CPO-BUDGET 死标量锚 + P-CPO 护栏）
     所有类型共享同一条死标量红线：LLM 只生成候选，不进判决。
     """
     if system_type == "link":
@@ -391,5 +677,11 @@ def design_pipeline(req: Dict[str, Any], n_top: int = 3,
         return _design_wdm_demux(req, n_top=n_top, generator=generator)
     if system_type == "quantum_fidelity":
         return _design_quantum_fidelity(req, n_top=n_top, generator=generator)
-    raise ValueError(f"未知 system_type={system_type!r}；"
+    if system_type == "sensor_frontend":
+        return _design_sensor_frontend(req, n_top=n_top, generator=generator)
+    if system_type == "qkd_link":
+        return _design_qkd_link(req, n_top=n_top, generator=generator)
+    if system_type == "cpo_optical_io":
+        return _design_cpo_optical_io(req, n_top=n_top, generator=generator)
+    raise ValueError(f"未知 system_type={system_type!r};"
                      f"可用：{supported_system_types()}")

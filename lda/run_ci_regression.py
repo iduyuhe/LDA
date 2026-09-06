@@ -1,6 +1,6 @@
 """D-77 · 验证合约工业化 —— 持续集成全量回归统一入口。
 
-把 LDA 全部验证（74 个 run_*smoke*.py + run_harness.py B1-B18+E1-E3）收敛到
+把 LDA 全部验证（130 个 run_*smoke*.py + run_harness.py B1-B18+E1-E3）收敛到
 **一条命令、一份机器可读报告**——降低社区协作门槛（新贡献者/第三方跑
 `python run_ci_regression.py` 即可看全量回归红绿），对齐 D-04 三套裁判统一。
 
@@ -131,6 +131,15 @@ CORE_SMOKES: List[str] = [
     "run_parasitic_rc_smoke.py",
     # 产品级基准对照库（v0.8.32：实证锚产品级扩展 + B 生态播种，免流片）
     "run_golden_product_smoke.py",
+    # 🔴 研发生产系统（M3 · v0.9.41 补登）：解析《2027 产品规划》→ 四赛道生产任务
+    #   全跑通（A5/B4/C4/D4）→ 反向验证护栏 → 断言任务全 done + golden 库不破 +
+    #   货架全锚定 + 定价无缺口。含 **D-67 能量守恒 / Q-D67 密钥率上界 / P-CPO
+    #   间距几何下界** 三道反向测试（注入回归必须命中，否则判护栏失效）。
+    #   ⚠️ 血案：本 smoke 自 M3（v0.9.39）建成起一直**未注册进任何 CI 集**，
+    #   而设计文档与 memory 均记载「进 CI 防回归」⇒ 生产链路 17 任务长期裸奔，
+    #   坏了不响。典型「标签≠行为」（文档说有门禁 ≠ 门禁真在跑）。
+    #   今补登为 CORE 常驻，杜绝「写了 smoke 却没接线」的静默缺口。实测 ~30s。
+    "run_production_smoke.py",
     # 对照报告飞轮（v0.8.30：多源死标量对照 + 历史归档 + 覆盖度趋势）
     "run_crosscheck_flywheel_smoke.py",
     # Phase 3 统计锚（S7/S8 蒙特卡洛分布 + 收敛性：红线 + 防自证负例）
@@ -216,7 +225,80 @@ CORE_SMOKES: List[str] = [
     #   镜像 run_b28_nullfit_smoke。实测均 ~3s。CI core 95→97。
     "run_b29_thermal_phase_smoke.py",
     "run_b30_readout_smoke.py",
+    # 🔴 v0.9.41 门禁缺口清零：以下 18 项为审计实测「<1.3s + 纯 numpy（无
+    #   torch/numba/cupy/meep/tidy3d）+ 失败会 return 1 的真门禁」，却从未进过
+    #   core ⇒ 与 production smoke 同类静默缺口。合计仅 **9.6s**，无理由豁免。
+    #   其中含 4 条**锚 smoke**（mzi/qres/fluxonium/transmon_double_verify）——
+    #   锚失真是最危险失败模式（v0.9.10 漏算 3.0103dB 在 84 全绿下溜过），
+    #   锚不在门禁内 = 失真无警报。core 98→116。
+    "run_mzi_anchor_smoke.py",          # MZI FSR × 物理定律锚 B20 死标量比对（unittest 6 断言）
+    "run_qres_anchor_smoke.py",         # qubit-resonator 锚（unittest 7 断言）
+    "run_fluxonium_anchor_smoke.py",    # fluxonium 锚（unittest 13 断言）
+    "run_transmon_double_verify_smoke.py",  # transmon 双路互证
+    "run_qeda_depth_smoke.py",          # QEDA 纵深三件套（含负例）
+    "run_qubit_resonator_smoke.py",     # qubit-resonator 求解器（含色散区失效负例）
+    "run_mixed_system_smoke.py",        # 光-量混合巨型系统（2 正例 + 3 负例）
+    "run_ir_solve_smoke.py",            # L0/L3 直接消费 IR 真值计算
+    "run_wdm_coupler_smoke.py",         # ⚠️ 文件头旧注称其「重」→ 实测 0.30s，属过时排除
+    "run_wdm_coupler_wl_smoke.py",
+    "run_wdm_coupler_grid_smoke.py",
+    "run_wdm_depth_smoke.py",
+    "run_wdm_system_smoke.py",
+    "run_api_v1_smoke.py",              # v1 API：租户隔离 / 认证 / 插件安全 / license
+    "run_data_layer_smoke.py",          # 多用户数据层：隔离 / API Key / 用量计量
+    "run_ecosystem_review_smoke.py",    # 生态共建社区评审流
+    "run_ecosystem_review2_smoke.py",
+    "run_ecosystem_review3_smoke.py",
+    # 门禁覆盖门禁（自食其规则：它自己也在 core 集内，见下方 NON_CORE_SMOKES 注）
+    "run_ci_coverage_gate_smoke.py",
+    # 失败状态分类门禁（守护 _FAIL_STATUSES 记账：漏登记 = 红灯变绿 = 静默假绿）
+    "run_ci_crash_classify_smoke.py",
 ]
+
+# 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
+#
+# 血案（v0.9.41 全量 core 回归后审计发现）：`run_production_smoke.py` 自 M3
+# （v0.9.39）建成起就**从未进过任何回归集**，而设计文档、production_plan 注释
+# 与项目 memory 三处都写着「进 CI 防回归」⇒ 生产链路四赛道 17 任务长期裸奔，
+# 坏了不响。典型「标签≠行为」：文档说有门禁 ≠ 门禁真在跑。
+#
+# 根因：`_discover_all()` 只负责发现，没有任何机制要求「新 smoke 必须进 core
+# 或显式声明不进」。于是扩库时漏接线成为静默默认。
+#
+# 本表是**唯一合法的不进 core 通道**，且必须附实测理由。准入准则见文件头：
+# core = 纯 numpy 快速（ubuntu CI 可跑）。凡实测 <5s 且无 torch/numba/cupy/
+# meep/tidy3d 依赖者，**无权豁免**，必须进 core。
+#
+# 判据由 `run_ci_coverage_gate_smoke.py` 强制（且该 smoke 自身在 core 集内，
+# 自食其规则）：lda/ 下每个 run_*_smoke.py 必须 ∈ CORE_SMOKES 或本表，且本表
+# 每项理由非空 ⇒ 否则 FAIL。新增 smoke 不接线 = 立刻红。
+#
+# 实测基准：managed python 3.13，2026-09-06。理由中的耗时为审计实测值。
+NON_CORE_SMOKES: Dict[str, str] = {
+    # ---- 重仿真（实测 ≥25s，远超 CI 快速集预算）----
+    "run_design_outcome_smoke.py": "重仿真：设计闭环全链路，实测 59.7s",
+    "run_adjoint_loop_smoke.py": "重仿真：伴随优化迭代循环，实测 57.1s",
+    "run_coupler_design_smoke.py": "重仿真：耦合器参数扫描反解，实测 55.6s",
+    "run_adjoint_design_smoke.py": "重仿真：伴随法设计，实测 40.6s",
+    "run_shape_design_smoke.py": "重仿真：形状优化迭代，实测 32.7s",
+    "run_spectral_design_smoke.py": "重仿真：谱响应设计扫描，实测 27.6s",
+    "run_adjoint3d_smoke.py": "3D 伴随仿真（重），实测 27.2s",
+    "run_sparams_smoke.py": "FDTD 分束仿真（重），实测 25.7s",
+    # ---- 中量（5~25s，超出 core 快速预算但非极限）----
+    "run_ir_smoke.py": "IR 全量求解回归，实测 20.2s",
+    "run_inverse_design_smoke.py": "逆向设计迭代，实测 19.8s",
+    "run_hybrid_design_smoke.py": "混合参数化设计扫描，实测 17.3s",
+    "run_port_acceptance_smoke.py": "端口验收 3D 判据，实测 10.6s",
+    "run_phc_anchor_smoke.py": "光子晶体本征解（ARPACK 迭代），实测 6.8s",
+    # ---- 超长/需 numba JIT（实测 >60s 超时，非卡死：numba 首次编译或重网格）----
+    "run_sparams_3d_smoke.py": "3D 端口 S 参数仿真（重），实测 >60s 超时",
+    "run_sparams_loop_smoke.py": "需 numba JIT（首次编译慢）+ 3D 仿真，实测 >60s 超时",
+    # ---- 极重设计闭环（60s 审计超时，延长至 300s 实测**能跑完、非卡死**，
+    #      判明为「慢」而非「缺陷」后才准豁免；理由须含真实耗时，不得写「超时」了事）
+    "run_wdm_splitter_smoke.py": "重设计闭环：WDM×分束树联合，实测 164s 完成（非卡死）",
+    "run_design_package_smoke.py": "重设计闭环：4 类设计包 schema 全链路，实测 119s 完成（非卡死）",
+    "run_hybrid_multi_smoke.py": "重设计闭环：多波长加权联合，实测 73s 完成（非卡死）",
+}
 
 # D-63 收紧：旧判定只看「输出里是否含未安装/无 GPU 等字样」→ 副作用是把真失败
 # 误记成 SKIP（例如断言失败但正文里恰好提到「gdsfactory 未安装」的 PASS 行）。
@@ -243,6 +325,10 @@ def _discover_all() -> List[str]:
         files.add("run_harness.py")
     return sorted(files)
 
+
+# 🔴 失败状态全集：任何新增状态（如 CRASH）**必须**登记于此，否则
+# `n_fail` 统计不到 ⇒ 红灯变绿 ⇒ 静默假绿。这是「宁红不假绿」的记账底线。
+_FAIL_STATUSES = ("FAIL", "ERROR", "TIMEOUT", "CRASH")
 
 # 内置 per-script 超时覆盖（秒）：实测耗时 + 安全边际，防慢机器上偶发 TIMEOUT
 # 被误判为 FAIL（TIMEOUT 与真 FAIL 必须区分开）。调用方可通过 timeout_override 再覆盖。
@@ -322,6 +408,17 @@ def _run_one(python: str, script: str, timeout: float) -> Dict[str, Any]:
             if has_skip_line or (has_env_marker and not has_fail_evidence):
                 status = "SKIP"
         tail = "\n".join(out.strip().splitlines()[-4:])
+        if status not in ("PASS", "SKIP") and not out.strip():
+            # 🔴 2026-09-06 血案：run_coupler_band_smoke 在持续负载下被硬杀
+            # （136s 后 rc≠0 且零输出；单独重跑 267s ALL GREEN）。Python 重定向到
+            # 管道时 stdout 为块缓冲 ⇒ 被 SIGKILL/掉电干掉则缓冲全部丢失，故
+            # 「非零 rc + 零输出」= 进程被外部杀死（OOM / Kernel-Power 掉电 / 热保护），
+            # **不是断言失败**。若与断言 FAIL 混为一谈，后人会去"修"物理判据来
+            # 对付一次硬件抖动 —— 那是本项目最危险的失真通道（参 v0.9.10 漏算
+            # 3.0103dB 血案）。故单列 CRASH 状态，语义：需人工复验，不是判据错。
+            status = "CRASH"
+            tail = (f"子进程异常终止：rc={rc} 且零输出 —— 多为外部硬杀"
+                    f"(OOM/掉电/热保护)，非断言失败。请单独重跑该 smoke 复验。")
         return {"script": script, "rc": rc, "status": status,
                 "elapsed_s": round(dt, 2), "tail": tail}
     except subprocess.TimeoutExpired:
@@ -374,19 +471,20 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
         r = _run_one(python, s, to)
         results.append(r)
         print(f"  [{r['status']:<6}] {r['script']}  ({r['elapsed_s']}s)")
-        if r["status"] in ("FAIL", "ERROR", "TIMEOUT"):
+        # 🔴 CRASH 必须在内：新状态若漏进此元组 ⇒ 不计入失败 ⇒ 静默假绿。
+        if r["status"] in _FAIL_STATUSES:
             # 故障可见性（2026-09-05 血案）：非 PASS 项必须当场打印子进程 tail，
             # 否则日志只剩一行 FAIL，排查要重跑 30 分钟全量回归才能拿到原因。
             for ln in (r.get("tail") or "(无输出)").splitlines():
                 print(f"           │ {ln}")
-        if fail_fast and r["status"] in ("FAIL", "ERROR", "TIMEOUT"):
+        if fail_fast and r["status"] in _FAIL_STATUSES:
             break
     total_s = round(time.perf_counter() - t_total0, 2)
 
     n_pass = sum(1 for r in results if r["status"] == "PASS")
     n_skip = sum(1 for r in results if r["status"] == "SKIP")
-    n_fail = sum(1 for r in results if r["status"] in ("FAIL", "ERROR", "TIMEOUT"))
-    failed = [r for r in results if r["status"] in ("FAIL", "ERROR", "TIMEOUT")]
+    n_fail = sum(1 for r in results if r["status"] in _FAIL_STATUSES)
+    failed = [r for r in results if r["status"] in _FAIL_STATUSES]
     skipped = [r for r in results if r["status"] == "SKIP"]
     checks = [
         {"name": f"回归通过（{n_pass}/{len(results)}，FAIL=0）",

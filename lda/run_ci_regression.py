@@ -255,6 +255,9 @@ CORE_SMOKES: List[str] = [
     "run_ci_crash_classify_smoke.py",
     # 创新超市分类体系护栏（v0.9.42：标签漏标 / 派生表漂移 / 前端回潮 / facets 计数失真）
     "run_shelf_taxonomy_smoke.py",
+    # 超市前端登录门禁护栏（v0.9.43 D-78：防「已登录却被要求二次登录」回潮 ——
+    #   P2-5 改 HttpOnly Cookie 时废用 store_token 却漏改 4 处门禁的同类改造留半截）
+    "run_store_auth_gate_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="zh-CN" data-page-node-id="ucrYZgUpVNEiLjsc04i6IS">
+<head data-page-node-id="TT4JcBUziNsMJ5Nw0jiKcI">
+<meta charset="utf-8" data-page-node-id="wzNfO4KPNC6QCxxdEfEbUM">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="vqbjT6Acmt0ES39KGNH9cs">
 <title>LDA 创新超市 · 商业闭环</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Cpath d='M8 10h2l2 11h10l1.5-8H11' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='13' cy='25' r='1.8' fill='white'/%3E%3Ccircle cx='20' cy='25' r='1.8' fill='white'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Cpath d='M8 10h2l2 11h10l1.5-8H11' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='13' cy='25' r='1.8' fill='white'/%3E%3Ccircle cx='20' cy='25' r='1.8' fill='white'/%3E%3C/svg%3E" data-page-node-id="UmjIBfwzi9D8rK6jzLyzFZ">
 <style>
   :root{--bg:#f4f6fb;--panel:#fff;--txt:#1a2030;--mut:#5b6478;--line:#e2e7f0;--accent:#2563eb;--green:#16a34a;--red:#dc2626;--amber:#d97706}
   *{box-sizing:border-box}
@@ -99,193 +99,213 @@
   .seg button.on{background:var(--accent);color:#fff}
 </style>
 </head>
-<body>
+<body data-page-node-id="WBfGmHfTQgHfAIjGqqn3s1">
   <!-- 统一导航由 nav.js 注入（顶部导航条 + 会员态） -->
-  <div class="wrap">
+  <div class="wrap" data-page-node-id="CmvBrYMbCZCllX5Z0pwNXe">
     <!-- 会员中心 -->
-    <div class="panel hide" id="memberPanel">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <h2 id="memberTitle">我的账户</h2>
-        <button class="ghost btn-sm" onclick="logout()">退出登录</button>
+    <div class="panel hide" id="memberPanel" data-page-node-id="5p9HcGxPT1omWQACSxo08X">
+      <div style="display:flex;justify-content:space-between;align-items:center" data-page-node-id="UuYAeGvlAxi22HkasJs6BE">
+        <h2 id="memberTitle" data-page-node-id="ImpT7V3V7GRa9xcER9k64d">我的账户</h2>
+        <button class="ghost btn-sm" onclick="logout()" data-page-node-id="0CAXJDC7NFPiAWsRl4dtGl">退出登录</button>
       </div>
-      <div class="msg mut" id="memberInfo"></div>
-      <div style="margin-top:10px">
-        <button class="btn-sm" onclick="location.href='/mine.html'">进入「我的」→</button>
-        <span class="mut" style="font-size:12px;margin-left:8px">许可证资产 · 定制进度 · 资料与密码</span>
+      <div class="msg mut" id="memberInfo" data-page-node-id="Au81bXgFllzH5E6wGBGqSz"></div>
+      <div style="margin-top:10px" data-page-node-id="SQRCeOyFqkCAzCvnKlCI4Y">
+        <button class="btn-sm" onclick="location.href='/mine.html'" data-page-node-id="VxolHNHaPhe7nBaDwe6XIn">进入「我的」→</button>
+        <span class="mut" style="font-size:12px;margin-left:8px" data-page-node-id="qdnQEH7QyB8CzEnUOA256W">许可证资产 · 定制进度 · 资料与密码</span>
       </div>
     </div>
 
     <!-- 货架 -->
-    <div class="panel">
-      <h2 style="display:flex;justify-content:space-between;align-items:center;gap:10px">创新货架（开放下载的设计就绪包）<button class="ghost btn-sm" onclick="openCustom()">🛠 提交定制需求</button></h2>
+    <div class="panel" data-page-node-id="p1ENneH9vAiWwLhUpBbzHG">
+      <h2 style="display:flex;justify-content:space-between;align-items:center;gap:10px" data-page-node-id="m9H6VMpkDekYrZG5udCQP4">创新货架（开放下载的设计就绪包）<button class="ghost btn-sm" onclick="openCustom()" data-page-node-id="BVeJ4bm8wb9GUthdHeilRD">🛠 提交定制需求</button></h2>
       <!-- 筛选器（v0.9.42）：筛选项与计数由 /api/shelf facets 动态渲染，前端零硬编码 -->
-      <div class="filt-bar" id="filtBar" style="display:none">
-        <div class="filt-row"><span class="filt-lab">赛道</span><div class="filt-chips" id="fTrack"></div></div>
-        <div class="filt-row"><span class="filt-lab">应用域</span><div class="filt-chips" id="fDomain"></div></div>
-        <div class="filt-row"><span class="filt-lab">价档</span><div class="filt-chips" id="fTier"></div></div>
-        <div class="filt-row">
-          <span class="filt-lab">搜索</span>
-          <input class="filt-q" id="fQ" type="search" placeholder="关键词：货架 ID / 名称 / 用途 / 特点（如 CPO、QKD、激光雷达）" oninput="onFiltInput()">
-          <select class="filt-sel" id="fSort" onchange="onFiltInput()">
-            <option value="default">默认排序</option>
-            <option value="price_asc">价格 低→高</option>
-            <option value="price_desc">价格 高→低</option>
-            <option value="name">按 ID</option>
-            <option value="open">可下载优先</option>
+      <div class="filt-bar" id="filtBar" style="display:none" data-page-node-id="KbwvFY5imamD61VQDAv7fW">
+        <div class="filt-row" data-page-node-id="4BrWAMDjnWhT11JmcrTeFL"><span class="filt-lab" data-page-node-id="9OIHvXQdTEEMEXeBkotKMk">赛道</span><div class="filt-chips" id="fTrack" data-page-node-id="VXvRniKH65OyauZoKdSXQU"></div></div>
+        <div class="filt-row" data-page-node-id="nnDI8YaG1faNqXvgsKpCFa"><span class="filt-lab" data-page-node-id="HNtX6l91O3IG0BGfp7SGbE">应用域</span><div class="filt-chips" id="fDomain" data-page-node-id="lJfjAoWc97aJkOsHedsi9F"></div></div>
+        <div class="filt-row" data-page-node-id="Gi7EAjDxHOum8ED3j6s37N"><span class="filt-lab" data-page-node-id="kpLcCPXxzNCCdk25TZDBkq">价档</span><div class="filt-chips" id="fTier" data-page-node-id="JA02bnRtcpL8tFcuPmxz1V"></div></div>
+        <div class="filt-row" data-page-node-id="7wRzoVjTHno6vSr9RUh53O">
+          <span class="filt-lab" data-page-node-id="ANbzu9HRSGm2Eis9bH5CHN">搜索</span>
+          <input class="filt-q" id="fQ" type="search" placeholder="关键词：货架 ID / 名称 / 用途 / 特点（如 CPO、QKD、激光雷达）" oninput="onFiltInput()" data-page-node-id="C3sr9nDFbvlKbQIn9rFh6U">
+          <select class="filt-sel" id="fSort" onchange="onFiltInput()" data-page-node-id="AR5NUaozwjvykMExOXHDis">
+            <option value="default" data-page-node-id="isIzKoV9yb7KjCQtAKIXEP">默认排序</option>
+            <option value="price_asc" data-page-node-id="ohixfSC8Dm3P9LMGapbmQU">价格 低→高</option>
+            <option value="price_desc" data-page-node-id="sJYZAB5h5jf1DKEyRjqV4g">价格 高→低</option>
+            <option value="name" data-page-node-id="Hthd7vSMMPQOgEnl88SByO">按 ID</option>
+            <option value="open" data-page-node-id="f1fmkvuwDFFVjwMVohDvG4">可下载优先</option>
           </select>
-          <span class="filt-sum" id="fSum"></span>
-          <button class="filt-reset" id="fReset" onclick="resetFilt()">清空筛选</button>
+          <span class="filt-sum" id="fSum" data-page-node-id="XwiCcLHpZpg3lDKF5uIFZZ"></span>
+          <button class="filt-reset" id="fReset" onclick="resetFilt()" data-page-node-id="N0nduHvVbX6nqyuLE5zkRp">清空筛选</button>
         </div>
       </div>
-      <div id="shelfGrid"></div>
+      <div id="shelfGrid" data-page-node-id="wlsJXYA02Md3yDZJtcUbAR"></div>
     </div>
 
     <!-- 我的订单 -->
-    <div class="panel" id="ordersPanel">
-      <h2>我的订单</h2>
-      <div id="orderList"><span class="mut">登录后可查看订单。</span></div>
+    <div class="panel" id="ordersPanel" data-page-node-id="ccbnTWVr3UztvMd3rSCElJ">
+      <h2 data-page-node-id="upTAPhgk3OfYKHLhHbTNuz">我的订单</h2>
+      <div id="orderList" data-page-node-id="SDeUZ0Tq7CQ8KTXFuLrsGv"><span class="mut" data-page-node-id="Kp9tnsrwRUCnbTi0oE3J9W">登录后可查看订单。</span></div>
     </div>
   </div>
 
 <!-- 登录/注册 弹窗 -->
-<div class="modal" id="authModal" onclick="if(event.target===this)closeAuth()">
-  <div class="modal-box">
-    <span class="close" onclick="closeAuth()">&times;</span>
-    <h3 id="authTitle">登录</h3>
-    <label>邮箱 *</label>
-    <input id="a-email" placeholder="you@company.com">
-    <div id="nameWrap">
-      <label>姓名 *</label>
-      <input id="a-name" placeholder="您的称谓">
+<div class="modal" id="authModal" onclick="if(event.target===this)closeAuth()" data-page-node-id="6bhLRwVeY3lxqG2NdsFbpU">
+  <div class="modal-box" data-page-node-id="3d0S1MxE2vNb0o1BWtd8Md">
+    <span class="close" onclick="closeAuth()" data-page-node-id="cFRP3NJy3ny6k3ckRSSCwv">&times;</span>
+    <h3 id="authTitle" data-page-node-id="6z1ePXbCqZjh9PlZIxryJx">登录</h3>
+    <label data-page-node-id="6wfrbADyWcXbCLAFa4Xtmr">邮箱 *</label>
+    <input id="a-email" placeholder="you@company.com" data-page-node-id="SzE9la4kM77u1KZx9UdRa3">
+    <div id="nameWrap" data-page-node-id="u7qJGdCr5bHoq0mvzptYVr">
+      <label data-page-node-id="vavFXAAfFPccO7D0WlAmYP">姓名 *</label>
+      <input id="a-name" placeholder="您的称谓" data-page-node-id="NLxzZJhTsfe4A0hiBn5tfW">
     </div>
-    <label>密码 *（至少 6 位）</label>
-    <input id="a-pass" type="password" placeholder="设置或输入密码">
-      <div id="phoneWrap">
-      <label>手机号（选填）</label>
-      <input id="a-phone" placeholder="选填">
+    <label data-page-node-id="pQC0BaME7fAYbbhPFVO4ec">密码 *（至少 6 位）</label>
+    <input id="a-pass" type="password" placeholder="设置或输入密码" data-page-node-id="s1lWYDSQNkapGPborZBcoI">
+      <div id="phoneWrap" data-page-node-id="i8wX6DbnObFEXfieHDfaqQ">
+      <label data-page-node-id="ztxuGmoWujFBTNgKLNhcub">手机号（选填）</label>
+      <input id="a-phone" placeholder="选填" data-page-node-id="ucdO6OwA7MvtZkQyRHeS5K">
       </div>
-      <label>账户身份 *</label>
-      <div class="seg" id="regTypeWrap">
-        <button type="button" class="on" data-t="standard" onclick="setRegType('standard')">标准个人</button>
-        <button type="button" onclick="setRegType('academic')">学术个人</button>
-        <button type="button" onclick="setRegType('institution')">机构席位</button>
+      <label data-page-node-id="kvRP8qFurcvgAO7HVIwCGH">账户身份 *</label>
+      <div class="seg" id="regTypeWrap" data-page-node-id="zZbhQHbYfUArpkrfaoAg4T">
+        <button type="button" class="on" data-t="standard" onclick="setRegType('standard')" data-page-node-id="rA2SRL04eCoyLqa401rRV1">标准个人</button>
+        <button type="button" onclick="setRegType('academic')" data-page-node-id="wwnAR3yioBQaOzc0bs743O">学术个人</button>
+        <button type="button" onclick="setRegType('institution')" data-page-node-id="FMDeDOFkUCIf25ldHaUk0R">机构席位</button>
       </div>
-      <label id="orgLabel" style="display:none">机构 / 单位名称（机构席位必填）</label>
-      <input id="a-org" style="display:none" placeholder="例如：某某大学光电实验室">
-      <div class="msg" id="authMsg"></div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="ghost" onclick="closeAuth()">取消</button>
-      <button id="authSubmit" onclick="submitAuth()">确定</button>
+      <label id="orgLabel" style="display:none" data-page-node-id="GiQCmT8LrCOSBl7jFwD1xs">机构 / 单位名称（机构席位必填）</label>
+      <input id="a-org" style="display:none" placeholder="例如：某某大学光电实验室" data-page-node-id="uMBQUhfISzHFUy0wWrBAHh">
+      <div class="msg" id="authMsg" data-page-node-id="xp8X8lIKu7B1XHeSxGwwrp"></div>
+    <div style="display:flex;gap:8px;margin-top:10px" data-page-node-id="3Vxmfdnn9GHIC0PkD4V6nD">
+      <button class="ghost" onclick="closeAuth()" data-page-node-id="FmZfAihoujcCMTCg25g95f">取消</button>
+      <button id="authSubmit" onclick="submitAuth()" data-page-node-id="wT9ykOfpOpUfVt7huTj6qg">确定</button>
     </div>
-    <div class="msg mut" style="margin-top:8px;font-size:12px" id="authSwitch"></div>
+    <div class="msg mut" style="margin-top:8px;font-size:12px" id="authSwitch" data-page-node-id="GYNG840KONtAOdl0kJZDTK"></div>
   </div>
 </div>
 
 <!-- 下单 弹窗 -->
-<div class="modal" id="buyModal" onclick="if(event.target===this)closeBuy()">
-  <div class="modal-box">
-    <span class="close" onclick="closeBuy()">&times;</span>
-    <h3>购买 · <span id="buyShelf">—</span></h3>
-    <div class="seg">
-      <button id="segPersonal" class="on" onclick="setType('personal')">个人（微信收款）</button>
-      <button id="segBusiness" onclick="setType('business')">企业（对公转账）</button>
-      <button id="segCustom" onclick="setType('custom')">定制需求（按需设计）</button>
+<div class="modal" id="buyModal" onclick="if(event.target===this)closeBuy()" data-page-node-id="yHaXeLHH0MAggxX3nlzg5s">
+  <div class="modal-box" data-page-node-id="v8ii51XyRJAcoF5T7IrUxG">
+    <span class="close" onclick="closeBuy()" data-page-node-id="4ojIZYrP0cUF636UN0XSeH">&times;</span>
+    <h3 data-page-node-id="r99J4fKhdxc9KU2GN6FilE">购买 · <span id="buyShelf" data-page-node-id="wJynibGk9SzI2QKOSivREs">—</span></h3>
+    <div class="seg" data-page-node-id="p5GHdaB0DFscaQi2Iq4UuD">
+      <button id="segPersonal" class="on" onclick="setType('personal')" data-page-node-id="Ly3gdQj3qbDkMUdF8eAL58">个人（微信收款）</button>
+      <button id="segBusiness" onclick="setType('business')" data-page-node-id="94va1a9xX647obqtgiqX95">企业（对公转账）</button>
+      <button id="segCustom" onclick="setType('custom')" data-page-node-id="6Wri9rhuKSiiZu8zSYZLpx">定制需求（按需设计）</button>
     </div>
-    <div id="buyEmail" class="msg mut">下单前请先登录或注册（用于交付与下载）。</div>
+    <div id="buyEmail" class="msg mut" data-page-node-id="muWUPnL7CXCc4ldLPCZTzx">下单前请先登录或注册（用于交付与下载）。</div>
 
-    <div id="buyPrice" class="msg" style="font-weight:700"></div>
+    <div id="buyPrice" class="msg" style="font-weight:700" data-page-node-id="g3J6AJ8DjjAXDzfb9mJslU"></div>
 
-    <div id="personalPane">
-      <div class="msg" style="font-size:13px">① 微信扫码支付（个人收款，扫后请按显示金额付款）：</div>
-      <div class="qr" id="qrBox"><span class="mut">加载中…</span></div>
-      <div class="msg" id="payAmount" style="font-weight:700;font-size:15px"></div>
-      <div class="msg mut" id="payeeInfo"></div>
-      <div class="msg mut" style="margin:2px 0 6px">付款时请备注您的注册手机号后 4 位，便于对账。</div>
-      <label>支付凭证（微信交易单号 / 备注，便于对账）</label>
+    <div id="personalPane" data-page-node-id="d9v1vGlEk6uHbUZyyrRpMh">
+      <div class="msg" style="font-size:13px" data-page-node-id="KKvC0fAXZymj9WEf9AA8Tp">① 微信扫码支付（个人收款，扫后请按显示金额付款）：</div>
+      <div class="qr" id="qrBox" data-page-node-id="vPufmcLlANM9BpU0vtERnA"><span class="mut" data-page-node-id="5tpEiVxzJb1B4BltnHwM5r">加载中…</span></div>
+      <div class="msg" id="payAmount" style="font-weight:700;font-size:15px" data-page-node-id="bD765cGDCWCrYauUC2djM3"></div>
+      <div class="msg mut" id="payeeInfo" data-page-node-id="pfaFhDxPOqbnPb9QeEnKDX"></div>
+      <div class="msg mut" style="margin:2px 0 6px" data-page-node-id="KK6s0aAsTUtXWFrzx7wrU5">付款时请备注您的注册手机号后 4 位，便于对账。</div>
+      <label data-page-node-id="BY42sFpNfmPMkIfPYhXS87">支付凭证（微信交易单号 / 备注，便于对账）</label>
       <textarea id="b-proof" placeholder="付款后填写：微信转账单号或备注信息"></textarea>
-      <div class="msg mut">② 提交后我们将在收款确认后自动发放兑换码，可在「我的订单」下载。</div>
+      <div class="msg mut" data-page-node-id="8jkiuLALQiS5i8dOoAQq55">② 提交后我们将在收款确认后自动发放兑换码，可在「我的订单」下载。</div>
     </div>
 
-    <div id="businessPane" class="hide">
-      <div class="msg" style="font-size:13px">① 对公转账（可开增值税发票）：</div>
-      <div class="msg mut" id="bankInfo">加载中…</div>
-      <label>公司名称 *</label>
-      <input id="b-company" placeholder="与对公转账账户一致的公司全称">
-      <div class="msg mut">② 提交后管理员确认到账即发货。</div>
+    <div id="businessPane" class="hide" data-page-node-id="bEFhC7GBDH2QZQw1lqpERk">
+      <div class="msg" style="font-size:13px" data-page-node-id="mYcisMMS8MANJMVoBi8vgb">① 对公转账（可开增值税发票）：</div>
+      <div class="msg mut" id="bankInfo" data-page-node-id="u2GyfVYdyiAg6Si0m2qex1">加载中…</div>
+      <label data-page-node-id="KsDDdtzJlCI6Ftk9gldm4u">公司名称 *</label>
+      <input id="b-company" placeholder="与对公转账账户一致的公司全称" data-page-node-id="AzIaGxIe4rZHTdSFvIV4xO">
+      <div class="msg mut" data-page-node-id="iDYKwDYmriwf8EYyvCDOwr">② 提交后管理员确认到账即发货。</div>
     </div>
 
-    <div id="customPane" class="hide">
-      <div class="msg" style="font-size:13px">① 提出你的设计需求，工程师评估后接单：</div>
-      <label>需求方向（点选，可跳过）</label>
-      <div class="dir-chips" id="dirChips"></div>
-      <div class="dir-shelf" id="dirShelf" style="display:none"></div>
-      <label>需求标题 *</label>
-      <input id="b-title" placeholder="例：800G 硅光收发模块布局优化">
-      <label>需求描述 *</label>
+    <div id="customPane" class="hide" data-page-node-id="9HhxPC7UuteYoSGsvKcEND">
+      <div class="msg" style="font-size:13px" data-page-node-id="xENkw4WoMfQYi51FXuCRLQ">① 提出你的设计需求，工程师评估后接单：</div>
+      <label data-page-node-id="CuqB7q9JUlpHlW1NyH20n0">需求方向（点选，可跳过）</label>
+      <div class="dir-chips" id="dirChips" data-page-node-id="Cuin2Xn56PUf3kzT2YAoeC"></div>
+      <div class="dir-shelf" id="dirShelf" style="display:none" data-page-node-id="0SUMxseNS6UB87rV0pbxKv"></div>
+      <label data-page-node-id="DV8kQSliAJmfZecBKh0Q0Z">需求标题 *</label>
+      <input id="b-title" placeholder="例：800G 硅光收发模块布局优化" data-page-node-id="CkAbul0LF2gSodvj97TCPO">
+      <label data-page-node-id="T9r7OWjcstN8OpBBQW0XwG">需求描述 *</label>
       <textarea id="b-req" placeholder="目标指标、工艺约束、交付形式（GDS/版图/仿真报告/文档）等"></textarea>
-      <label>目标指标（可选）</label>
-      <input id="b-spec" placeholder="例：插入损耗 &lt; 3dB，带宽 56GBaud">
-      <label>预算区间（可选）</label>
-      <input id="b-budget" placeholder="例：¥8万–15万">
-      <div class="msg mut">② 提交后进入「待接单」，管理员确认接单后将联系您推进。</div>
+      <label data-page-node-id="ZhDPUoRjJmeL24rEB4P9l9">目标指标（可选）</label>
+      <input id="b-spec" placeholder="例：插入损耗 &lt; 3dB，带宽 56GBaud" data-page-node-id="RgXAoN38Ms1tjgvhOHGyZZ">
+      <label data-page-node-id="1YEp01ss9zP11PXCS7Pqii">预算区间（可选）</label>
+      <input id="b-budget" placeholder="例：¥8万–15万" data-page-node-id="h6i2iivmwtlHnucHw9lZN5">
+      <div class="msg mut" data-page-node-id="KsUEOnTnAXbfho7IxQnZlS">② 提交后进入「待接单」，管理员确认接单后将联系您推进。</div>
     </div>
 
-    <label>联系人 *</label>
-    <input id="b-contact" placeholder="姓名">
-    <label>联系电话 *</label>
-    <input id="b-phone" placeholder="手机或固话">
-    <label>电子邮箱 *</label>
-    <input id="b-email" placeholder="用于接收交付通知">
+    <label data-page-node-id="fFLmH9bdQmklLG3wd2GdLq">联系人 *</label>
+    <input id="b-contact" placeholder="姓名" data-page-node-id="vmPOedMyj1eg6fMslCAolF">
+    <label data-page-node-id="yw59RHYtASTvtyp8TRbkeZ">联系电话 *</label>
+    <input id="b-phone" placeholder="手机或固话" data-page-node-id="0R0IiMz9PZ9E0o7RBFgQ25">
+    <label data-page-node-id="IhQEt4cjvF0pbtIi6sWpyz">电子邮箱 *</label>
+    <input id="b-email" placeholder="用于接收交付通知" data-page-node-id="TZXVGaVZNeIoFP76iefiAw">
 
-    <div class="msg" id="buyMsg"></div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="ghost" onclick="closeBuy()">取消</button>
-      <button id="buySubmit" onclick="submitBuy()">提交订单</button>
+    <div class="msg" id="buyMsg" data-page-node-id="Jz2rGQroBMfYIGinUgwGmA"></div>
+    <div style="display:flex;gap:8px;margin-top:10px" data-page-node-id="BjtriW1ii7JZ867xDswEfF">
+      <button class="ghost" onclick="closeBuy()" data-page-node-id="dMBYFQnRKsi02L59S0SjyC">取消</button>
+      <button id="buySubmit" onclick="submitBuy()" data-page-node-id="CTfUKkix61YgxlV78bn5zr">提交订单</button>
     </div>
   </div>
 </div>
 
 <!-- 评价/意见 弹窗 -->
-<div class="modal" id="opinionModal" onclick="if(event.target===this)closeOpinion()">
-  <div class="modal-box">
-    <span class="close" onclick="closeOpinion()">&times;</span>
-    <h3 id="opTitle">评价 / 提意见</h3>
-    <p style="color:var(--mut);font-size:12px;margin:0 0 10px">你的意见直接进入我们改进货架的优先级清单——这是需求收集的重要渠道。</p>
+<div class="modal" id="opinionModal" onclick="if(event.target===this)closeOpinion()" data-page-node-id="btqhQtpIErLo8yDzdq54oh">
+  <div class="modal-box" data-page-node-id="M2hwM8DXqlWc0q6PxDYREg">
+    <span class="close" onclick="closeOpinion()" data-page-node-id="q9TkErCXMTIdmoeNzdKv4o">&times;</span>
+    <h3 id="opTitle" data-page-node-id="zsnvINNOzqoH58XA9xZ0fO">评价 / 提意见</h3>
+    <p style="color:var(--mut);font-size:12px;margin:0 0 10px" data-page-node-id="4MJsDPk0vWbN8uvc0Uz8ey">你的意见直接进入我们改进货架的优先级清单——这是需求收集的重要渠道。</p>
     <textarea id="opContent" rows="4" placeholder="例如：希望增加更宽带宽版本 / 需要 8 通道扩展 / 插损能否更低…（上限 500 字）"></textarea>
-    <label>联系方式（选填，仅管理员可见，便于后续答复）</label>
-    <input id="opContact" placeholder="邮箱或微信号">
-    <div class="msg" id="opMsg"></div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="ghost" onclick="closeOpinion()">取消</button>
-      <button id="opSubmit" onclick="submitOpinion()">提交意见</button>
+    <label data-page-node-id="RHCNCsmsRENY764coJTKtd">联系方式（选填，仅管理员可见，便于后续答复）</label>
+    <input id="opContact" placeholder="邮箱或微信号" data-page-node-id="9lztURdcZrEDBIuFdvw5nv">
+    <div class="msg" id="opMsg" data-page-node-id="KijFyt7CtlEMqaWB1Dj2Az"></div>
+    <div style="display:flex;gap:8px;margin-top:10px" data-page-node-id="reb0Dyt6P0wjRcEEUSjGIV">
+      <button class="ghost" onclick="closeOpinion()" data-page-node-id="dWS0JpBi9g4egvGFr7uV5R">取消</button>
+      <button id="opSubmit" onclick="submitOpinion()" data-page-node-id="CUEF0pMBYrhLYupZZxbYtn">提交意见</button>
     </div>
-    <div id="opList" style="margin-top:14px"></div>
+    <div id="opList" style="margin-top:14px" data-page-node-id="uG6VXbRruiFfYi3SnMbv0F"></div>
   </div>
 </div>
 
 <!-- 同类对比：底部悬浮栏 -->
-<div class="cmp-bar hide" id="cmpBar">
-  <span style="font-weight:600;color:#4338ca">对比</span>
-  <div class="tags" id="cmpTags"></div>
-  <button style="background:#4338ca;color:#fff;border:none;border-radius:6px;padding:7px 16px;cursor:pointer;font-size:13px" onclick="openCompare()">开始对比</button>
-  <button class="btn-cmp" onclick="clearCompare()">清空</button>
+<div class="cmp-bar hide" id="cmpBar" data-page-node-id="dlg65lE9qAJyF8alWeiN7l">
+  <span style="font-weight:600;color:#4338ca" data-page-node-id="exrEBfLyNA2Tj3OzdMyX7R">对比</span>
+  <div class="tags" id="cmpTags" data-page-node-id="wmAdDD0Q7bhZV7sm6ZpdhM"></div>
+  <button style="background:#4338ca;color:#fff;border:none;border-radius:6px;padding:7px 16px;cursor:pointer;font-size:13px" onclick="openCompare()" data-page-node-id="Ao1EtmC5vmOg5gqsDAaOEW">开始对比</button>
+  <button class="btn-cmp" onclick="clearCompare()" data-page-node-id="Lts7zWvtx9dJC7X5BZsjYd">清空</button>
 </div>
 
 <!-- 同类对比 弹窗 -->
-<div class="modal" id="cmpModal" onclick="if(event.target===this)closeCompare()">
-  <div class="modal-box" style="max-width:900px">
-    <span class="close" onclick="closeCompare()">&times;</span>
-    <h3>货架对比</h3>
-    <div class="cmp-wrap" style="overflow-x:auto">
-      <table class="cmp-table" id="cmpTable"></table>
+<div class="modal" id="cmpModal" onclick="if(event.target===this)closeCompare()" data-page-node-id="AjSD71uMkUnNJ1sphsKVjj">
+  <div class="modal-box" style="max-width:900px" data-page-node-id="M1ElglKwnl5T3b3x7UP8r3">
+    <span class="close" onclick="closeCompare()" data-page-node-id="ZTL2EdGeWFboIyenZpvAho">&times;</span>
+    <h3 data-page-node-id="ddvRBsOoVFSKoBYpmq95rx">货架对比</h3>
+    <div class="cmp-wrap" style="overflow-x:auto" data-page-node-id="ySNUtbjQYqps5Jslc8xH7H">
+      <table class="cmp-table" id="cmpTable" data-page-node-id="WH2sX0aYnLsLIy5AbA9NLt"></table>
     </div>
-    <div class="msg mut" id="cmpMsg" style="margin-top:8px;font-size:11px">注：LDA 货架数值为仿真预期（前瞻预研·未流片），与国际流片实测值性质不同，仅作定位与规格对照。</div>
+    <div class="msg mut" id="cmpMsg" style="margin-top:8px;font-size:11px" data-page-node-id="Gb8rSZUfKYYi6v5cTeup1r">注：LDA 货架数值为仿真预期（前瞻预研·未流片），与国际流片实测值性质不同，仅作定位与规格对照。</div>
   </div>
 </div>
 
 <script>
 var $ = function(id){ if(typeof id==='string' && id.charAt(0)==='#'){id=id.slice(1);} return document.getElementById(id); }
-var store_token = "";  // P2-5：会话令牌改由 HttpOnly Cookie 承载，前端不再持有令牌字符串
+// P2-5：会话令牌改由 HttpOnly Cookie 承载，前端不再持有令牌字符串。
+// 🔴🔴 v0.9.43 缺陷修复（D-78）：改造时废用了 store_token，但 4 处 `if(!store_token)`
+//    门禁**忘了同步改** ⇒ 该变量恒为空字符串 ⇒ **已登录用户点「提交定制需求 / 购买 /
+//    咨询」一律被判成未登录、强制二次登录**；且登录成功后没有重放被中断的动作 ⇒
+//    用户看到「输完账号密码却什么都没发生」。典型「标签≠行为」+「改造留半截」。
+//    现由 STORE_USER（/api/store/me 探活结果）承担登录态真值，requireAuth() 统一门禁。
+var STORE_USER = null;           // 登录态真值（null = 未登录/未探活）
+var PENDING_ACTION = null;       // 登录后自动重放被中断的动作
+function requireAuth(action){
+  // 统一登录门禁：已登录⇒立即执行；未登录⇒弹登录框并记住待办，登录成功后自动重放。
+  // 自带一次探活（页面加载时 refreshAuth 是异步的，用户在探活返回前点按钮会误判）。
+  if(STORE_USER){ action(); return; }
+  PENDING_ACTION = action;
+  fetch('/api/store/me', {headers: authHeaders(), credentials:'include'})
+    .then(function(r){return r.json()})
+    .then(function(d){
+      if(d && d.user){ STORE_USER = d.user; PENDING_ACTION = null; action(); }
+      else { showLogin(); }
+    })
+    .catch(function(){ showLogin(); });   // 探活失败 ⇒ 保守起见要求登录（宁可多登一次，不可放行未鉴权操作）
+}
 var authMode = "login";          // login | register
 var regType = "standard";        // standard | academic | institution
 var buyType = "personal";
@@ -316,6 +336,7 @@ function authHeaders(){ return {"Content-Type":"application/json"} }  // P2-5：
 function refreshAuth(){
   // P2-5：不再依赖 JS 可读的令牌；直接凭 HttpOnly Cookie 探活 /api/store/me
   fetch('/api/store/me', {headers: authHeaders(), credentials: 'include'}).then(function(r){return r.json()}).then(function(d){
+    STORE_USER = (d && d.user) ? d.user : null;   // v0.9.43（D-78）：登录态真值唯一来源
     if(d.user){
       $("#memberPanel").classList.remove('hide');
       var tier = TIER_LABELS[d.user.user_type] || "标准个人";
@@ -323,6 +344,8 @@ function refreshAuth(){
       $("#memberInfo").innerHTML = '邮箱 '+esc(d.user.email)+' · 身份：'+tier+org+' · 注册于 '+(d.user.created_at||'').slice(0,10);
       loadOrders();
       loadShelves();   // 登录态变化后重拉货架价（身份价）
+      // 登录成功后自动重放被门禁中断的动作（修「输完密码没进定制画面」）
+      if(PENDING_ACTION){ var act = PENDING_ACTION; PENDING_ACTION = null; act(); }
     }else{
       $("#memberPanel").classList.add('hide');
       $("#orderList").innerHTML='<span class="mut">登录后可查看订单。</span>';
@@ -402,7 +425,7 @@ function submitAuth(){
 function logout(){
   // P2-5：清除服务端 HttpOnly Cookie，再重置前端匿名态
   fetch('/api/store/logout', {method:'POST', credentials:'include'}).catch(function(){}).finally(function(){
-    store_token="";
+    STORE_USER=null; PENDING_ACTION=null;   // v0.9.43（D-78）：登出时清登录态真值（原清的是已废用的 store_token）
     $("#memberPanel").classList.add('hide');
     $("#orderList").innerHTML='<span class="mut">登录后可查看订单。</span>';
     refreshAuth();  // 重置为匿名态（货架回到匿名价）
@@ -710,7 +733,7 @@ function submitOpinion(){
 
 function openConsult(shelfId){
   // 咨询制货架（未开放下载）→ 引导到定制需求流，预填意向货架 + 自动带方向
-  if(!store_token){ showLogin(); return; }
+  requireAuth(function(){          // v0.9.43（D-78）：原 `if(!store_token)` 恒真 ⇒ 已登录也被要求二次登录
   $("#buyShelf").textContent='定制需求';
   $("#b-title").value="【咨询】"+shelfId;
   $("#b-req").value="";
@@ -719,20 +742,21 @@ function openConsult(shelfId){
   $("#buyPrice").textContent="咨询制货架 · 按需求评估报价";
   var dir = Object.keys(DIR_MAP).find(function(d){ return (DIR_MAP[d].shelves||[]).indexOf(shelfId)>=0; }) || "";
   renderDirChips(dir);
-  fetch('/api/store/me', {headers: authHeaders()}).then(function(r){return r.json()}).then(function(d){
+  fetch('/api/store/me', {headers: authHeaders(), credentials:'include'}).then(function(r){return r.json()}).then(function(d){
     if(d.user){ $("#b-email").value=d.user.email||""; $("#b-contact").value=d.user.name||""; $("#b-phone").value=d.user.phone||""; }
   });
   setType('custom');
   $("#buyModal").classList.add('show');
+  });
 }
 
 function openBuy(shelfId){
-  if(!store_token){ showLogin(); return; }
+  requireAuth(function(){          // v0.9.43（D-78）：同上，改用真实登录态门禁
   $("#buyShelf").textContent=shelfId;
   $("#buyPrice").textContent = (SHELF_PRICE[shelfId]!=null) ? ("应付：¥"+SHELF_PRICE[shelfId]) : "";
   $("#b-proof").value=""; $("#b-company").value=""; $("#buyMsg").textContent="";
   // 预填邮箱/姓名
-  fetch('/api/store/me', {headers: authHeaders()}).then(function(r){return r.json()}).then(function(d){
+  fetch('/api/store/me', {headers: authHeaders(), credentials:'include'}).then(function(r){return r.json()}).then(function(d){
     if(d.user){ $("#b-email").value=d.user.email||""; $("#b-contact").value=d.user.name||""; $("#b-phone").value=d.user.phone||""; }
   });
   // 微信收款码 + 对公账户
@@ -757,6 +781,7 @@ function openBuy(shelfId){
   });
   setType('personal');
   $("#buyModal").classList.add('show');
+  });
 }
 function setType(t){
   buyType=t;
@@ -775,16 +800,17 @@ function updatePayAmount(){
   el.textContent=(buyType!=='custom' && amt!=null)?('本次支付：¥'+amt):'';
 }
 function openCustom(){
-  if(!store_token){ showLogin(); return; }
+  requireAuth(function(){          // v0.9.43（D-78）：「提交定制需求」按钮走这里；修二次登录 + 登录后不进画面
   $("#buyShelf").textContent='定制需求';
   $("#b-title").value=""; $("#b-req").value=""; $("#b-spec").value=""; $("#b-budget").value="";
   $("#b-contact").value=""; $("#b-phone").value=""; $("#b-email").value=""; $("#b-company").value=""; $("#b-proof").value="";
   renderDirChips("");
-  fetch('/api/store/me', {headers: authHeaders()}).then(function(r){return r.json()}).then(function(d){
+  fetch('/api/store/me', {headers: authHeaders(), credentials:'include'}).then(function(r){return r.json()}).then(function(d){
     if(d.user){ $("#b-email").value=d.user.email||""; $("#b-contact").value=d.user.name||""; $("#b-phone").value=d.user.phone||""; }
   });
   setType('custom');
   $("#buyModal").classList.add('show');
+  });
 }
 
 // —— 定制需求方向 chips + 该方向开放货架导流 ——
@@ -867,14 +893,15 @@ function submitBuy(){
 }
 
 function loadOrders(){
-  if(!store_token){ $("#orderList").innerHTML='<span class="mut">登录后可查看订单。</span>'; return; }
-  fetch('/api/store/orders/mine',{headers:authHeaders()}).then(function(r){return r.json()}).then(function(d){
+  requireAuth(function(){          // v0.9.43（D-78）：同上
+  fetch('/api/store/orders/mine',{headers:authHeaders(),credentials:'include'}).then(function(r){return r.json()}).then(function(d){
     if(!d.ok){ $("#orderList").innerHTML='<span class="mut">登录后可查看订单。</span>'; return; }
     if(!d.orders.length){ $("#orderList").innerHTML='<span class="mut">暂无订单，去上方货架下单吧。</span>'; return; }
     $("#orderList").innerHTML = d.orders.map(function(o){
       if(o.type==='custom') return renderCustomOrder(o);
       return renderShelfOrder(o);
     }).join('');
+  });
   });
 }
 

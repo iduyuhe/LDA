@@ -15,6 +15,7 @@ from lda_l2 import gds_export
 from lda_chain import engine
 from lda_layout.placement import device_bbox, place_row, port_abs
 from lda_layout.router import RouteResult, route_net
+from lda_layout.router_p1 import route_net_p1  # P1 重写：空间索引+局部窗口，与 route_net 逐位一致且更快
 
 
 def route_and_simulate(link, wavelengths_um, wg_width=0.5, bend_radius=5.0,
@@ -43,7 +44,7 @@ def route_and_simulate(link, wavelengths_um, wg_width=0.5, bend_radius=5.0,
                        or abs(o[1] - placement[i0][1]) > 1e-6)
                    and (abs(o[0] - placement[i1][0]) > 1e-6
                         or abs(o[1] - placement[i1][1]) > 1e-6)]
-            rr = route_net(net.id, src, dst, obstacles=obs,
+            rr = route_net_p1(net.id, src, dst, obstacles=obs,
                            wg_width=wg_width, bend_radius=bend_radius,
                            corner=corner, straight_loss_db_cm=straight_loss_db_cm)
             routes[net.id] = rr
@@ -98,7 +99,7 @@ def layout_only(link, wavelengths_um=None, wg_width=0.5, bend_radius=5.0,
                        or abs(o[1] - placement[i0][1]) > 1e-6)
                    and (abs(o[0] - placement[i1][0]) > 1e-6
                         or abs(o[1] - placement[i1][1]) > 1e-6)]
-            rr = route_net(net.id, src, dst, obstacles=obs,
+            rr = route_net_p1(net.id, src, dst, obstacles=obs,
                            wg_width=wg_width, bend_radius=bend_radius,
                            corner=corner, straight_loss_db_cm=straight_loss_db_cm)
             routes[net.id] = rr

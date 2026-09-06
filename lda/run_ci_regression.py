@@ -154,6 +154,9 @@ CORE_SMOKES: List[str] = [
     "run_astar_route_smoke.py",
     # B1 批量并行布线（v0.8.44：route_batch 语义一致 + 收益边界 + 诚实拒绝）
     "run_parallel_routing_smoke.py",
+    # P1 全量自动布线器重写（v0.9.52：空间索引+局部窗口 A*+增量占位，
+    #   根除旧 router O(N^3.57) 增量瓶颈、实测 O(N^2.59)→O(N^1.16)、正确性零回归）
+    "run_router_p1_smoke.py",
     # 第二梯队-2 三件套（多端网 Steiner + 2D 放置 + 有源基元）
     "run_second_tier_smoke.py",
     # LVS 签核（v0.8.24：版图-原理图一致性 · 签核级 · 版图差距 #5 + S9 锚）

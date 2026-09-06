@@ -135,8 +135,39 @@ def _git_mismatch(items, truth: Dict[str, str]) -> List[str]:
 
 
 def _public_mismatch(items) -> List[str]:
+    """⑤ `to_public()` 对外契约。"""
     return [f"{s.id}" for s in items
             if s.to_public().get("listed_at") != getattr(s, "listed_at", "")]
+
+
+def _api_mismatch(items, rows_provider=None) -> List[str]:
+    """⑤b 🔴 **真跑 `app.shelf_status()`**，校验 `/api/shelf` 的 rows 真的带 listed_at。
+    `rows_provider` 供反向测试注入退化版 rows（证明判据会响）。
+
+    由来（v0.9.44 实证）：`shelf_status()` 是**手工组装 rows 字典**的，根本不走
+    `to_public()`。上一版护栏只断言 `to_public()` 输出该字段 ⇒ 判据全绿，而生产
+    `/api/shelf` 75 条 `listed_at` 全为 None。
+    ⇒ **契约判据必须打在真实端点上**，打在数据类的 to_public 上是自我比对。
+    （与 taxonomy smoke 判据 ⑦ 同一原则：调生产代码，不在 smoke 里另写同式复算。）
+    """
+    if rows_provider is None:
+        from lda_webui.app import shelf_status  # noqa: E402（延迟导入，避免 import 期副作用）
+        try:
+            d = shelf_status(None)
+        except Exception as exc:                  # 端点跑不起来 ⇒ 必须红，不能跳过
+            return [f"shelf_status() 调用失败: {exc!r}"]
+        raw_rows = d.get("rows") or []
+    else:
+        raw_rows = rows_provider() or []
+    rows = {r.get("id"): r for r in raw_rows}
+    out: List[str] = []
+    for s in items:
+        r = rows.get(s.id)
+        if r is None:
+            out.append(f"{s.id}: /api/shelf 无此行")
+        elif r.get("listed_at") != getattr(s, "listed_at", ""):
+            out.append(f"{s.id}: API {r.get('listed_at')!r} ≠ 数据 {s.listed_at!r}")
+    return out
 
 
 def _frontend_gaps(html: str) -> List[str]:
@@ -193,9 +224,14 @@ def main() -> int:
     rc |= not check(f"④ listed_at 与 git 历史复算逐条一致（{len(shelf)} 条）",
                     not gm, str(gm[:5]))
 
-    # ⑤ 对外 API 契约
+    # ⑤ 对外契约：数据类 to_public()（数据层）
     pm = _public_mismatch(shelf)
-    rc |= not check(f"⑤ to_public() 对外输出含 listed_at 且与数据一致", not pm, str(pm[:5]))
+    rc |= not check("⑤ to_public() 对外输出含 listed_at 且与数据一致", not pm, str(pm[:5]))
+
+    # ⑤b 🔴 对外契约：真跑 /api/shelf（端点层）——防"字段加了、端点没带"
+    am = _api_mismatch(shelf)
+    rc |= not check("⑤b /api/shelf 实际返回含 listed_at（真跑端点，非自我比对）",
+                    not am, str(am[:5]))
 
     # ⑥ 前端已接
     html = open(_HTML, encoding="utf-8").read() if os.path.exists(_HTML) else ""
@@ -229,6 +265,22 @@ def main() -> int:
     stripped = html.replace('value="newest"', 'value="xxx"')
     rc |= not check("⑩ 反向 D：抽掉前端 newest 选项 ⇒ ⑥ 必须报",
                     any("newest" in x for x in _frontend_gaps(stripped)))
+
+    # ⑪ 反向 E：端点 rows 缺 listed_at ⇒ ⑤b 必须报
+    #    （v0.9.44 实证：这正是"字段加了、端点没带"的真实形态 —— 生产 75 条全为 None
+    #     而判据 ⑤ 全绿，就是漏在这一层。）
+    def degraded_rows():
+        from lda_webui.app import shelf_status
+        d = shelf_status(None)
+        out = []
+        for r in (d.get("rows") or []):
+            r2 = dict(r)
+            r2.pop("listed_at", None)
+            out.append(r2)
+        return out
+    # 断言按 id 判定（mismatch 文案形如 "IM-XXX: API None ≠ 数据 '2026-08-27'"，不含字段名）
+    rc |= not check("⑪ 反向 E：/api/shelf rows 缺 listed_at ⇒ ⑤b 必须报",
+                    any(shelf[0].id in x for x in _api_mismatch(shelf, degraded_rows)))
 
     n_pass = sum(1 for c in CHECKS if c["ok"])
     print("-" * 74)

@@ -2549,6 +2549,8 @@ def shelf_status(user_type=None):
             "honest_tier": s.honest_tier,
             # 分类标签（v0.9.42：分类下沉到数据层，前端不再写死目录）
             "track": s.track, "app_domain": s.app_domain,
+            # 上架日期（v0.9.43 · N-1）：口径 = 该货架首次进入仓库的提交日期，可 git 复算
+            "listed_at": getattr(s, "listed_at", ""),
             "open": is_download_open(s.id),
             "price_cny": price,
             "base_price": base,

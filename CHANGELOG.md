@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.9.48（2026-09-06 · N-3 管理员令牌 fail-closed + N-4 三分类对外一致性护栏 · CI core 124→126 条）
+
+### N-3 管理员令牌 fail-open 漏洞封堵
+- `app.py:_admin_token()` 原先在 `LDA_ADMIN_TOKEN` 未设置时**回退到硬编码默认串 `LDA-ADMIN-DEV-TOKEN-CHANGE-ME`**——任何部署若漏设环境变量，该公开弱令牌即成为管理员万能钥匙（fail-open）。
+- 改为 **fail-closed**：未配置即返回空串，任何令牌都无法通过管理员鉴权。生产经 systemd drop-in（`admin-token.conf`）注入强令牌，**不受影响**（已 SSH 核实 `Environment=` 含 `LDA_ADMIN_TOKEN=强令牌`）。
+- 护栏 `run_admin_token_smoke.py`（7 判据含反向）：源码静态查无默认串 + 未设 env 子进程返回 `''` + 起服务正确令牌登录 200 / 错误 401 / 历史 dev 默认串 **401（不再是万能钥匙）** + 掺回默认串必 FAIL。
+
+### N-4 三分类对外一致性
+- 三分类（严格独立 / 降级量级参考 / 自证桩）是诚实边界核心陈述，对外有三面：**README 账本**、**本机 harness 推导**、**`/api/verification_ledger` 端点**。端点已动态推导、harness 为权威源，但 README 是静态手写，历史上曾因写死数字与代码脱节（ci_core=82 同类漂移）。
+- README 账本补实时三分类陈述（严格独立 25 / 降级 0 / 自证桩 25 / 和 50）。
+- 新增 `run_three_class_consistency_smoke.py`（4 判据含反向）：README ≡ harness ≡ 端点三分类任一漂移即红，篡改 README 数字必 FAIL。
+
 ## v0.9.47（2026-09-06 · stats.html 数据看板接线挂回导航 + 智能体客服「选择后真正回复」修复 · CI core 122→124 条）
 
 杜先生拍板 v0.9.46 遗留的孤儿页处置：「接线挂回导航」。stats.html（管理员数据看板）此前既路由 404 又导航不链。

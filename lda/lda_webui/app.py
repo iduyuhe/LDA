@@ -268,11 +268,16 @@ def _save_purchases(data: dict) -> None:
 
 
 def _admin_token() -> str:
-    """管理员令牌：优先环境变量 LDA_ADMIN_TOKEN，否则使用显式弱默认值并警告。"""
-    tok = os.environ.get("LDA_ADMIN_TOKEN", "")
-    if not tok:
-        tok = "LDA-ADMIN-DEV-TOKEN-CHANGE-ME"
-    return tok
+    """管理员令牌：仅从环境变量 LDA_ADMIN_TOKEN 读取。
+
+    🔴 安全铁律（N-3，v0.9.48）：**不再回退任何硬编码默认串**。
+    未配置环境变量时返回空串（fail-closed）——任何令牌（含历史上的
+    dev 默认串 `LDA-ADMIN-DEV-TOKEN-CHANGE-ME`）都无法通过管理员鉴权，
+    杜绝「部署时漏设环境变量即用公开弱令牌登录」的 fail-open 漏洞。
+    生产经 systemd drop-in（admin-token.conf）注入强令牌；本地开发未设
+    则该环境无管理员登录能力（有意 fail-closed，而非静默放行）。
+    """
+    return os.environ.get("LDA_ADMIN_TOKEN", "").strip()
 
 
 def _check_admin(headers) -> bool:

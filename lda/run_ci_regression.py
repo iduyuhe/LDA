@@ -270,6 +270,13 @@ CORE_SMOKES: List[str] = [
     #   return m 致 wait=undefined、removeChild 抛错、回复永远卡「…」；含真跑往返 +
     #   addMsg 必须 return m 静态守卫 + 反向污染测试）
     "run_cs_agent_chat_smoke.py",
+    # 管理员令牌 fail-closed 护栏（v0.9.48 N-3：_admin_token() 移除硬编码默认串，
+    #   未设 LDA_ADMIN_TOKEN 即返回空串 fail-closed，杜绝漏设环境变量即用公开弱令牌
+    #   登录的 fail-open 漏洞；含源码静态查 + 子进程行为 + 起服务登录真跑 + 反向）
+    "run_admin_token_smoke.py",
+    # 三分类对外一致性护栏（v0.9.48 N-4：README 账本 ≡ 本机 harness 推导 ≡
+    #   /api/verification_ledger 端点三分类，任一漂移即红；含反向篡改测试）
+    "run_three_class_consistency_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

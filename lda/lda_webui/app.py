@@ -2529,8 +2529,11 @@ def gc_benchmarks_status(run: bool = False):
 
 def shelf_status(user_type=None):
     """A2 · 创新超市货架元数据（快，零计算）。含按当前身份计算的实付价。"""
-    from lda_l2.innovation_market import DEFAULT_SHELF
+    from lda_l2.innovation_market import (
+        DEFAULT_SHELF, SHELF_TRACKS, SHELF_APP_DOMAINS,
+    )
     from lda_l2.ship_package import is_download_open
+    from lda_webui.shelf_pricing import tier_of, TIER_LABELS
     store = _get_store()
     rows = []
     for s in DEFAULT_SHELF:
@@ -2544,17 +2547,39 @@ def shelf_status(user_type=None):
             "composition": list(s.composition),
             "default_req": s.default_req,
             "honest_tier": s.honest_tier,
+            # 分类标签（v0.9.42：分类下沉到数据层，前端不再写死目录）
+            "track": s.track, "app_domain": s.app_domain,
             "open": is_download_open(s.id),
             "price_cny": price,
             "base_price": base,
             "price_tier": ("standard" if price == base else user_type) or "standard",
+            "tier": tier_of(s.id),
             # 商品化字段（v0.8.56）
             "features": list(getattr(s, "features", [])),
             "applications": list(getattr(s, "applications", [])),
             "specs": dict(getattr(s, "specs", {})),
             "peers": [dict(p) for p in getattr(s, "peers", [])],
         })
-    return {"count": len(rows), "rows": rows,
+    # ---- facets（v0.9.42）：筛选项与计数全部由数据层算出 ----
+    # 前端只渲染，不硬编码任何分类与中文标签；新增赛道/应用域会自动出现在 UI。
+    facets = {"track": {}, "app_domain": {}, "tier": {}}
+    for s in DEFAULT_SHELF:
+        if s.track:
+            facets["track"][s.track] = facets["track"].get(s.track, 0) + 1
+        if s.app_domain:
+            facets["app_domain"][s.app_domain] = facets["app_domain"].get(s.app_domain, 0) + 1
+        t = tier_of(s.id)
+        if t:
+            facets["tier"][t] = facets["tier"].get(t, 0) + 1
+    labels = {
+        "track": dict(SHELF_TRACKS),
+        "app_domain": {d: lab for doms in SHELF_APP_DOMAINS.values()
+                       for d, lab in doms.items()},
+        "tier": dict(TIER_LABELS),
+        # 赛道 → 该赛道允许的应用域（供前端做二级联动）
+        "track_app_domains": {k: dict(v) for k, v in SHELF_APP_DOMAINS.items()},
+    }
+    return {"count": len(rows), "rows": rows, "facets": facets, "labels": labels,
             "honest_tier": "全部为前瞻预研货架：组合已锚定基元（GP-*）+ 公开信号驱动，未流片。"}
 
 

@@ -128,6 +128,31 @@ def build_price_map():
     return out
 
 
+#: 价档 key → 中文标签（供 /api/shelf facets 用，禁止前端再写死中文）
+TIER_LABELS = {
+    "basic": "入门 ¥599",
+    "standard": "标准 ¥1999",
+    "premium": "高端 ¥4999",
+    "consult": "咨询制（另议）",
+}
+
+
+def tier_of(shelf_id: str) -> str:
+    """返回货架价档 key（basic/standard/premium/consult）；未归档返回 ""。
+
+    UI / API / CI 共用同一份判据，防「价格分档」在多处各判一套导致口径漂移。
+    """
+    if shelf_id in TIER_BASIC:
+        return "basic"
+    if shelf_id in TIER_STANDARD:
+        return "standard"
+    if shelf_id in TIER_CONSULT:
+        return "consult"
+    if shelf_id in TIER_PREMIUM:
+        return "premium"
+    return ""
+
+
 if __name__ == "__main__":
     import sys
     import os

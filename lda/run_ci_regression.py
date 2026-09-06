@@ -253,6 +253,8 @@ CORE_SMOKES: List[str] = [
     "run_ci_coverage_gate_smoke.py",
     # 失败状态分类门禁（守护 _FAIL_STATUSES 记账：漏登记 = 红灯变绿 = 静默假绿）
     "run_ci_crash_classify_smoke.py",
+    # 创新超市分类体系护栏（v0.9.42：标签漏标 / 派生表漂移 / 前端回潮 / facets 计数失真）
+    "run_shelf_taxonomy_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

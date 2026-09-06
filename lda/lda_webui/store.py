@@ -75,6 +75,67 @@ DIRECTION_LABELS = {
     "pon": "接入网 / PON",
 }
 
+# 需求方向 → 货架 id（定制下单弹窗的「该方向已有现成货架」导流用）。
+#
+# 🔴 v0.9.42：这份映射原先写死在前端 store.html，随货架扩张而静默漂移
+#    （75 条里漏了 17 条，均为近三轮新增），导致这些货架点「咨询此货架」时
+#    方向推断为空、且拿不到「先看现成的」导流。
+# 现下沉到后端（与 CUSTOM_DIRECTIONS 白名单同源），前端由 /api/store/config
+# 动态取；ID 合法性由 run_shelf_taxonomy_smoke.py 断言守护，漏/错 ID 即红。
+CUSTOM_DIRECTION_SHELVES = {
+    "ai_io": [
+        "IM-800G-DR8", "IM-1.6T-DR8", "IM-400G-DR4", "IM-PSM4-SHELF",
+        "IM-FR4-SHELF", "IM-CWDM4-SHELF", "IM-LPO-112G", "IM-800G-FR4",
+        "IM-1.6T-FR4", "IM-CHIPLET-IO", "IM-PHOTONIC-INTERPOSER",
+        "IM-ONCHIP-NOC", "IM-GRATING-COUPLE", "IM-CPO-OCS", "IM-MCF-FANOUT",
+        "IM-OSW-1X8",
+        # 补齐（原前端漏标）：
+        "IM-3.2T-DR8", "IM-1.6T-LPO", "IM-CPO-16CH", "IM-CPO-OIO-8CH",
+        "IM-CPO-OIO-16CH", "IM-CPO-OIO-CHIPLET", "IM-CPO-ELS-FIBER",
+        "IM-UCIE-OPTICAL",
+    ],
+    "wdm": [
+        "IM-CPO-WDM5", "IM-DWDM-40CH", "IM-WDM-8CH-1D", "IM-AWG-DEMUX",
+        "IM-MRR-FILTER", "IM-WSS-1X9", "IM-VOA", "IM-100G-LR4",
+        # 补齐：
+        "IM-OPTCOMB-WDM",
+    ],
+    "sensing": [
+        "IM-SENSE-RING", "IM-SENS-MZI", "IM-BIOSENSE", "IM-GAS-SENSE",
+        "IM-OPTICAL-GYRO", "IM-OCT", "IM-ONCHIP-SPECTROMETER", "IM-LIDAR-TX",
+        "IM-LIDAR-RX", "IM-OPA-LIDAR", "IM-MDM-MUX",
+        # 补齐：
+        "IM-OPA-2D", "IM-LIDAR-FULL", "IM-POC-BIOSENSE", "IM-TTD-5G",
+    ],
+    "coherent": [
+        "IM-COHERENT-400ZR", "IM-COHERENT-RX", "IM-MZI-MOD", "IM-RING-MOD",
+        "IM-PSR", "IM-POL-ROTATOR", "IM-OPTCOMB", "IM-TRUE-TIME-DELAY",
+        "IM-OPTO-COMPUTE",
+        # 补齐：
+        "IM-1.6T-ZR",
+    ],
+    "quantum": [
+        "IM-QCOM-LINK", "IM-QCHIP-INT", "IM-QKD-TX-SHELF", "IM-QKD-RX-SHELF",
+        "IM-QKD-MULTI4", "IM-QCTRL-ZC3-10Q", "IM-QCTRL-HERON-16Q",
+        "IM-QCTRL-WILLOW-12Q",
+        # 补齐：
+        "IM-QKD-FULL-LINK", "IM-QCTRL-32Q",
+    ],
+    "pon": [
+        "IM-FTTH-PLC8", "IM-FTTH-PLC16", "IM-PON-50G", "IM-XGS-PON",
+        "IM-SPLITTER-TREE", "IM-LASER-INT",
+        # 补齐：
+        "IM-FTTR-PLC32",
+    ],
+}
+
+
+def custom_directions() -> dict:
+    """需求方向 → {label, shelves}（前端定制弹窗消费，不再写死在 JS）。"""
+    return {k: {"label": DIRECTION_LABELS.get(k, k),
+                "shelves": list(v)}
+            for k, v in CUSTOM_DIRECTION_SHELVES.items()}
+
 # —— 登录/注册安全基线（2026-08-29 审计后引入）——
 # 邮箱：比旧的 `"@" in email` 严格，杜绝 `a@.b`、`@.` 之类的畸形值入库。
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$")
@@ -1112,7 +1173,9 @@ def public_config() -> dict:
     return {"payee": wc.get("payee", ""), "qr": wc.get("qr", ""),
             "amount_note": wc.get("amount_note", ""),
             "bank": bank,
-            "tiers": tiers, "default_tier": DEFAULT_TIER}
+            "tiers": tiers, "default_tier": DEFAULT_TIER,
+            # v0.9.42：需求方向映射下沉到后端，前端不再写死 ID 列表
+            "directions": custom_directions()}
 
 
 def order_download(order_id: str, token: str) -> dict:

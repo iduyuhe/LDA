@@ -43,6 +43,79 @@ HONEST_BANNER = (
 )
 
 
+# ===========================================================================
+# 分类体系（v0.9.42 · 分类从前端 JS 下沉到数据层）
+#
+# 背景：store.html 曾硬编码一套目录分组，只覆盖 58/75 条，17 条新增货架用户
+#       在目录视图里看不到。根因是「扩货架只改数据层，不改消费方」。
+# 解法：分类存数据层，前端改由 /api/shelf 的 facets 动态渲染；新增货架漏标签
+#       ⇒ run_shelf_taxonomy_smoke.py 直接红，从根上不可能再漏。
+#
+# 🔴 同步纪律（四处）：① .py 枚举与字段 ② .json 派生表 ③ 前端（已改为动态）
+#    ④ CI 断言。见 run_shelf_taxonomy_smoke.py。
+# ===========================================================================
+
+#: 一级：赛道（用户心智里最自然的一级分类）
+SHELF_TRACKS: Dict[str, str] = {
+    "datacom":   "数通与电信",
+    "sensing":   "传感与测量",
+    "quantum":   "量子",
+    "cpo":       "CPO 光 I/O",
+    "component": "器件与接口",
+}
+
+#: 二级：应用域（赛道内细分；key 全局唯一，防 facets 计数跨赛道合并）
+SHELF_APP_DOMAINS: Dict[str, Dict[str, str]] = {
+    "datacom": {
+        "transceiver": "收发引擎",
+        "wdm_roadm":   "WDM 与 ROADM",
+        "pon":         "接入网 PON",
+        "coherent":    "相干与长距",
+        "switching":   "光交换与路由",
+    },
+    "sensing": {
+        "biochem":  "生化传感",
+        "lidar":    "激光雷达",
+        "microwave": "微波光子与雷达",
+        "inertial": "惯性与物理量",
+        "medical":  "医疗与成像",
+        "spectrum": "光谱与成像",
+    },
+    "quantum": {
+        "qc_readout": "量子计算读出",
+        "qkd":        "量子保密通信",
+    },
+    "cpo": {
+        "cpo_engine":      "CPO 光引擎",
+        "chiplet":         "chiplet 与中介层",
+        "optical_switch":  "OCS 光交换",
+        "optical_compute": "光计算与新型互连",
+    },
+    "component": {
+        "light_source": "光源与频梳",
+        "modulation":   "调制与开关",
+        "passive":      "无源与耦合",
+        "polarization": "偏振与旋转",
+        "fiber_io":     "光纤接口与扇出",
+        "filtering":    "滤波与波分",
+        "multiplexing": "复用与多维度",
+    },
+}
+
+
+def taxonomy_check(track: str, app_domain: str) -> str:
+    """校验 (track, app_domain) 组合合法；返回 "" 表示合法，否则返回原因。
+
+    UI / API / CI 共用同一份判据，防出现「三处各判一套」的口径漂移。
+    """
+    if track not in SHELF_TRACKS:
+        return f"未知 track={track!r}"
+    if app_domain not in SHELF_APP_DOMAINS.get(track, {}):
+        return (f"app_domain={app_domain!r} 不属于 track={track!r}"
+                f"（允许：{sorted(SHELF_APP_DOMAINS.get(track, {}))}）")
+    return ""
+
+
 @dataclass
 class ShelfItem:
     """单个创新超市货架（前瞻预研预设计）。"""
@@ -57,6 +130,9 @@ class ShelfItem:
     honest_tier: str = HONEST_TIER      # 强制 = 前瞻预研
     design_note: str = ""               # 设计说明/扩展路径（诚实标注）
     ci_status: str = ""
+    # —— 分类标签（v0.9.42：分类从前端 JS 下沉到数据层）——
+    track: str = ""                     # 一级赛道 key ∈ SHELF_TRACKS
+    app_domain: str = ""                # 二级应用域 key ∈ SHELF_APP_DOMAINS[track]
     # —— 商品化字段（v0.8.56 起，首批 10 货架填充，随后铺开）——
     features: List[str] = field(default_factory=list)          # 特点（1~3 条，专业表述）
     applications: List[str] = field(default_factory=list)      # 典型用途（可含场景）
@@ -77,6 +153,7 @@ class ShelfItem:
             "domain": self.domain, "system_type": self.system_type,
             "composition": list(self.composition),
             "honest_tier": self.honest_tier, "design_note": self.design_note,
+            "track": self.track, "app_domain": self.app_domain,
             "features": list(self.features),
             "applications": list(self.applications),
             "specs": dict(self.specs),
@@ -130,6 +207,7 @@ class ShelfItem:
 DEFAULT_SHELF: List[ShelfItem] = [
     ShelfItem(
         id="IM-CPO-WDM5",
+        track="cpo", app_domain="cpo_engine",
         title="CPO 多通道 WDM 共封装光模块预设计（5 通道基准）",
         target_app="共封装光学（CPO）/ 数据中心光互连，单光纤多波长并行",
         signal_ref="OIF CPO 2.0 共封装光学路线图（公开草案）；业界 8× 100G/200G WDM "
@@ -145,6 +223,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-QCHIP-INT",
+        track="quantum", app_domain="qc_readout",
         title="量子芯片间读出互联模板（多比特保真度链）",
         target_app="超导量子芯片读出总线 / 多比特频率复用读出链",
         signal_ref="量子计算多比特频率复用读出公开路线（IBM/Google 公开架构文档）；"
@@ -160,6 +239,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     # —— 以下为 v0.8.35 货架库扩展（仍严守"组合已锚定基元"护栏）——
     ShelfItem(
         id="IM-SENSE-RING",
+        track="sensing", app_domain="biochem",
         title="微环折射率传感前端预设计（复用光链路拓扑）",
         target_app="生物/化学折射率传感、光纤传感前端、实验室芯片（LoC）片上传感",
         signal_ref="微环谐振传感公开路线（硅光折射率/生物传感 roadmap、公开文献与标准草案）；"
@@ -177,6 +257,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-LASER-INT",
+        track="component", app_domain="light_source",
         title="片上激光源集成发射模板（异质集成黑箱源 + 已锚定无源网）",
         target_app="共封装光模块发射端、硅光异质集成光源、片上收发前端",
         signal_ref="异质集成 III-V/Si 片上光源公开路线图（AIM Photonics 等公开 PDK 动向 / "
@@ -196,6 +277,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-QCOM-LINK",
+        track="quantum", app_domain="qc_readout",
         title="量子计算频率复用读出链路（5 比特保真度链）",
         target_app="超导量子计算多比特频率复用读出、量子处理器读出总线",
         signal_ref="IBM/Google 公开多比特频率复用读出架构；D-46×D-47 已验证保真度预算框架",
@@ -213,6 +295,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     #   system_type ∈ {link, wdm_demux, quantum_fidelity}，判决复用已验证闭环，零新物理。
     ShelfItem(
         id="IM-800G-DR8",
+        track="datacom", app_domain="transceiver",
         title="800G DR8 硅光发射引擎预设计（8×100G PAM4）",
         target_app="AI 数据中心 800G 光互连、1.6T DR8 前代平台",
         signal_ref="Hyperphotonix Hyper Silicon™ 公开平台（400G DR4/800G DR8/1.6T DR8 PIC 路线）；"
@@ -228,6 +311,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-WDM-8CH-1D",
+        track="datacom", app_domain="wdm_roadm",
         title="8 通道 CWDM/DWDM 解复用前端预设计（8×λ）",
         target_app="800G FR8/LR8 类 WDM 模块解复用端、DWDM 城域前传",
         signal_ref="IEEE 802.3bs 400GBASE-FR8/LR8（8 波 WDM 信道 IL 6.3 dB 上限，公开标准）；"
@@ -242,6 +326,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-DWDM-40CH",
+        track="datacom", app_domain="wdm_roadm",
         title="40 通道 DWDM 阵列解复用预设计（C 波段 100GHz ITU 网格）",
         target_app="DWDM 城域/骨干、40ch 无热 AWG 替代方案、波长路由",
         signal_ref="Qualinet/NTT-ID 40ch 100GHz Athermal AWG 公开 datasheet（插损 typ 4.5/max 6.0 dB）；"
@@ -256,6 +341,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-FTTH-PLC8",
+        track="datacom", app_domain="pon",
         title="FTTH 1×8 PLC 分光预设计（PON 无源分光网）",
         target_app="GPON/XGS-PON 光分配网（ODN）、楼宇/园区 FTTH 部署",
         signal_ref="ITU-T G.671 / Telcordia GR-1209 公开典型最大插损 1×8 ≤10.7 dB；"
@@ -271,6 +357,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-FTTH-PLC16",
+        track="datacom", app_domain="pon",
         title="FTTH 1×16 PLC 分光预设计（高密度分光）",
         target_app="高密度 FTTH/FTTB、MDU 多住户单元部署",
         signal_ref="ITU-T G.671 / Telcordia GR-1209 公开典型最大插损 1×16 ≤14.0 dB；"
@@ -285,6 +372,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-CPO-OCS",
+        track="cpo", app_domain="optical_switch",
         title="OCS 直连光交换前端预设计（收发 + 交换矩阵黑箱）",
         target_app="AI 集群 OCS 直连（Google Jupiter/Palomar 类架构）、CPO+OCS 混合互连",
         signal_ref="UC Berkeley EECS-2024-213：Polatis 576×576 中位 1.4/max 3 dB、Google 136×136 ≤2 dB；"
@@ -300,6 +388,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-LIDAR-TX",
+        track="sensing", app_domain="lidar",
         title="FMCW 激光雷达发射前端预设计（1550nm 相干探测）",
         target_app="汽车/机器人 4D 感知、OPA 固态扫描 FMCW LiDAR",
         signal_ref="Optics Express 34, 7415 (2026)：片上 FMCW 单方向全光链路 ≈3.3 dB 实测；"
@@ -315,6 +404,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-QKD-TX-SHELF",
+        track="quantum", app_domain="qkd",
         title="QKD 发射端货架（Alice BB84 态制备）",
         target_app="量子密钥分发网络发射端、城际 QKD 干线",
         signal_ref="npj Quantum Information 3, e1700262 (2017)：Alice 芯片总插损 15 dB 实测；"
@@ -330,6 +420,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-QKD-RX-SHELF",
+        track="quantum", app_domain="qkd",
         title="QKD 接收端货架（Bob 基矢测量）",
         target_app="量子密钥分发网络接收端、MDI-QKD 不信节点",
         signal_ref="npj Quantum Information 3, e1700262 (2017)：Bob 芯片总插损 8 dB 实测；"
@@ -345,6 +436,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-QKD-MULTI4",
+        track="quantum", app_domain="qkd",
         title="多用户 QKD 接收机货架（4 用户选路）",
         target_app="量子密钥分发接入网、多用户 QKD 星形分发",
         signal_ref="Optics Express 28, 18449 (2020)：4 用户 MZI 选路接收机总损耗 13 dB 实测（公开）",
@@ -360,6 +452,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-SENS-MZI",
+        track="sensing", app_domain="biochem",
         title="MZI 干涉传感前端货架（生物化学折射率感测）",
         target_app="生物/化学传感、Lab-on-Chip 干涉检测、环境监测",
         signal_ref="公开 PICS/FBG 传感链路综述：干涉型传感前端全链路插损预算通常 ≤15 dB"
@@ -376,6 +469,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-CHIPLET-IO",
+        track="cpo", app_domain="chiplet",
         title="光 chiplet 互连前端货架（XPU 光 IO）",
         target_app="AI 加速器光互连、CPO XPU attach、chiplet 间光 IO",
         signal_ref="Broadcom 公开 CPO 路线（TH5-Bailly 6.4T 引擎，XPU 光连接演示）；"
@@ -391,6 +485,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-QCTRL-ZC3-10Q",
+        track="quantum", app_domain="qc_readout",
         title="10 比特频率复用读出链货架（祖冲之三号量级）",
         target_app="超导量子处理器读出总线、中等规模 NISQ 读出扩展",
         signal_ref="上海科技情报研究所公开对比表：电子科大祖冲之三号 (2024, 105 qubit) "
@@ -405,6 +500,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-QCTRL-HERON-16Q",
+        track="quantum", app_domain="qc_readout",
         title="16 比特频率复用读出链货架（IBM Heron R2 量级）",
         target_app="超导量子处理器读出总线、heavy-hex 架构读出段",
         signal_ref="上海科技情报研究所公开对比表：IBM Heron R2 (2024, 156 qubit) "
@@ -419,6 +515,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-QCTRL-WILLOW-12Q",
+        track="quantum", app_domain="qc_readout",
         title="12 比特频率复用读出链货架（Google Willow 量级）",
         target_app="超导量子处理器读出总线、QEC 码字读出段（Willow 类架构）",
         signal_ref="Applied Quantum 公开技术分析：Google Willow (2024, 105 qubit) "
@@ -434,6 +531,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     # —— v0.8.45 货架小幅扩（20→24）：覆盖主流收发链路类型，仍严守组合已锚定基元护栏 ——
     ShelfItem(
         id="IM-PSM4-SHELF",
+        track="datacom", app_domain="transceiver",
         title="100G PSM4 硅光收发前端预设计（4×25G，500m SMF）",
         target_app="100G PSM4 数据中心光模块、边缘耦合低损并行光互连",
         signal_ref="IEEE 802.3bm 100GBASE-PSM4（4×25G，500m SMF）公开标准；商用 PSM4 平台 datasheet 单通道插损 ≤4.0 dB",
@@ -446,6 +544,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-FR4-SHELF",
+        track="datacom", app_domain="transceiver",
         title="400G FR4 硅光收发前端预设计（4×100G PAM4，2km）",
         target_app="400G FR4 数据中心光模块、中距（2km）光互连",
         signal_ref="IEEE 802.3bs 400GBASE-FR4（clause 121）单通道插损预算 ≤4.5 dB；Hyperphotonix 平台同量级",
@@ -458,6 +557,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-CWDM4-SHELF",
+        track="datacom", app_domain="wdm_roadm",
         title="100G CWDM4 解复用前端预设计（4×25G，2km）",
         target_app="100G CWDM4 数据中心光模块、粗波分短距互连",
         signal_ref="CWDM4 MSA（100G CWDM4：4×25G，2km）单通道插损 ≤4.0 dB；商用 100G CWDM4 光模块 datasheet 一致",
@@ -470,6 +570,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-LPO-112G",
+        track="datacom", app_domain="transceiver",
         title="LPO 线性直驱光模块前端预设计（112G 单通道）",
         target_app="Linear Pluggable Optics（LPO）112G/通道 短距线性直驱互连、AI 机柜内光互连",
         signal_ref="LPO（线性可插拔光模块）公开产业路线（业界 112G/通道 线性直驱，去 Retimer/DSP 降功耗）：链路预算量级与 FR4/DR 同源",
@@ -482,6 +583,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-1.6T-DR8",
+        track="datacom", app_domain="transceiver",
         title="1.6T DR8 硅光发射引擎预设计（16×100G PAM4）",
         target_app="1.6T DR8 数据中心光模块、AI 集群 scale-out 互连（16×100G PAM4）",
         signal_ref="1.6T DR8（16×100G PAM4）公开产业路线（OIF / 光模块厂商 1.6T DR8 MSA 量级）：单通道 100G PAM4，链路预算与 800G DR8 同源、通道翻倍",
@@ -498,6 +600,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     #   闭环，零新物理。量子 8 货架维持咨询制（出口管制红线），本批全为光子非管制品类。
     ShelfItem(
         id="IM-800G-FR4",
+        track="datacom", app_domain="transceiver",
         title="800G FR4 硅光收发前端预设计（4×200G PAM4，2km）",
         target_app="800G FR4 数据中心光模块、中距（2km）AI 互连（200G 每通道）",
         signal_ref="OIF/光模块厂商 800G FR4（4×200G PAM4）公开路线：2026 均价 $400–480（硅光方案）；"
@@ -514,6 +617,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-1.6T-FR4",
+        track="datacom", app_domain="transceiver",
         title="1.6T FR4 硅光发射引擎预设计（4×400G PAM4）",
         target_app="1.6T FR4 数据中心光模块、AI 集群 scale-out 互连（400G 每通道）",
         signal_ref="1.6T FR4（4×400G PAM4）公开产业路线：NVIDIA GB300 标配、2026 量产拐点"
@@ -528,6 +632,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-400G-DR4",
+        track="datacom", app_domain="transceiver",
         title="400G DR4 硅光收发前端预设计（4×100G PAM4，500m）",
         target_app="400G DR4 数据中心光模块、短距（500m SMF）并行光互连",
         signal_ref="IEEE 802.3bs 400GBASE-DR4（4×100G，500m SMF）公开标准；"
@@ -544,6 +649,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-100G-LR4",
+        track="datacom", app_domain="transceiver",
         title="100G LR4 解复用前端预设计（4×25G LAN-WDM，10km）",
         target_app="100G LR4 数据中心/城域/5G 前传光模块、长距（10km）粗波分",
         signal_ref="IEEE 802.3cu-2021 100GBASE-LR4（4×25G LAN-WDM，10km）公开标准；"
@@ -559,6 +665,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-PON-50G",
+        track="datacom", app_domain="pon",
         title="50G-PON 光前端预设计（OLT/ONU 无源网，ITU-T G.9804）",
         target_app="50G-PON 万兆光网 OLT/ONU 光前端、下一代接入网（园区/工厂/小区）",
         signal_ref="ITU-T G.9804（Higher Speed PON）50G-PON 标准 2021 发布、2023 增补对称型；"
@@ -576,6 +683,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-OSW-1X8",
+        track="datacom", app_domain="switching",
         title="1×8 可重构光开关前端预设计（OCS/dOCS 趋势）",
         target_app="数据中心可重构光交换（OCS/dOCS）、AI 超节点拓扑实时重构、故障快速恢复",
         signal_ref="数据中心可重构光交换（OCS/dOCS）趋势：Cignal AI 预测 OCS 全球市场 2029 ≥$25 亿；"
@@ -593,6 +701,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-LIDAR-RX",
+        track="sensing", app_domain="lidar",
         title="FMCW 激光雷达相干接收前端预设计（90° 混频）",
         target_app="汽车/机器人 4D 感知、FMCW LiDAR 相干接收（与 IM-LIDAR-TX 配套）",
         signal_ref="FMCW 激光雷达相干接收机公开路线（Aeva/Bosch 等全固态 FMCW）；与 IM-LIDAR-TX"
@@ -609,6 +718,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-BIOSENSE",
+        track="sensing", app_domain="biochem",
         title="环形谐振生物/化学传感前端预设计（Lab-on-Chip）",
         target_app="生物/化学折射率传感、Lab-on-Chip 干涉检测、医疗/环境即时检测（POCT）",
         signal_ref="公开 Lab-on-Chip 环形谐振传感文献综述：微环折射率传感在生物/化学检测"
@@ -628,6 +738,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     #   量子 8 货架维持咨询制（出口管制红线），本批全为光子非管制品类。
     ShelfItem(
         id="IM-COHERENT-400ZR",
+        track="datacom", app_domain="coherent",
         title="400G ZR/ZR+ 相干收发前端预设计（DCI 120km，QSFP-DD/OSFP）",
         target_app="数据中心互联（DCI）400G ZR/ZR+ 相干可插拔、城域相干传输",
         signal_ref="OIF 800ZR 互操作 IA（2024-11 发布）公开；IEEE 802.3dj 1600ZR 预计 2026 中定稿；"
@@ -645,6 +756,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-RING-MOD",
+        track="component", app_domain="modulation",
         title="微环调制器（MRM）前端预设计（200Gbps/lane，CPO 高带宽密度）",
         target_app="共封装光学（CPO）微环调制器、高密度硅光发射、AI 机柜内光互连",
         signal_ref="NVIDIA CPO 采用微环调制器（MRM，带宽密度 >1 Tbps/mm 公开路线）；"
@@ -661,6 +773,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-XGS-PON",
+        track="datacom", app_domain="pon",
         title="XGS-PON 光前端预设计（OLT/ONU 无源网，ITU-T G.9807.1，10G 对称）",
         target_app="XGS-PON 万兆对称光网 OLT/ONU 光前端、下一代接入网（园区/工厂/小区）",
         signal_ref="ITU-T G.9807.1（XGS-PON，10G 对称）标准；Dell'Oro：PON 设备营收 $8.3B(2021)→$9.8B(2026)，"
@@ -679,6 +792,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-WSS-1X9",
+        track="datacom", app_domain="wdm_roadm",
         title="1×9 波长选择开关（WSS）前端预设计（ROADM 波长路由）",
         target_app="可重构光分插复用（ROADM）波长选择开关、城域/骨干波长路由与功率均衡",
         signal_ref="MarkWide：ROADM WSS 市场 $1.8B(2026)→$4.76B(2035) CAGR 11.4%；"
@@ -694,6 +808,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-VOA",
+        track="component", app_domain="passive",
         title="可变光衰减器（VOA）前端预设计（ROADM 功率均衡）",
         target_app="可重构光网络动态功率均衡、ROADM 通道衰减、测试仪表可调衰减",
         signal_ref="MEMS VOA 市场 $215.5M(2025)→$320.89M(2032) CAGR 5.85%；"
@@ -710,6 +825,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-MZI-MOD",
+        track="component", app_domain="modulation",
         title="马赫-曾德尔调制器（MZM）前端预设计（相干/直检发射）",
         target_app="高速光发射机调制前端、相干 400ZR/800ZR 调制器、硅光收发共封装调制核",
         signal_ref="硅基 MZM 市场 $1.51B(2025)→$7.24B(2034) CAGR 19.0%（Growth Market Reports 2026-06）；"
@@ -727,6 +843,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-PSR",
+        track="component", app_domain="polarization",
         title="偏振分束旋转器（PSR）前端预设计（TE/TM 复用）",
         target_app="硅光收发器偏振解复用、CPO 前端偏振路由、片上偏振复用链路",
         signal_ref="Sama et al. Optics and Laser Technology 2026 vol 203，高隔离 PSR（SOI 220nm+70nm 部分刻蚀），"
@@ -743,6 +860,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-PHOTONIC-INTERPOSER",
+        track="cpo", app_domain="chiplet",
         title="光子中介层/共封装（CPO）前端预设计（2.5D 光互连）",
         target_app="CPU/GPU 共封装光互连、2.5D 硅中介层光路由面、chiplet 间光 I/O 背板",
         signal_ref="IDTechEx 预测 CPO 市场 2036 破 $20B、CAGR 37%；TSMC COUPE 2026-04 量产；"
@@ -759,6 +877,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-OPTO-COMPUTE",
+        track="cpo", app_domain="optical_compute",
         title="光计算/光神经网络（ONN）前端预设计（模拟矩阵乘）",
         target_app="光神经网络推理加速、模拟矩阵-向量乘前端、光互连-计算混合芯片",
         signal_ref="光神经网络处理器市场 Lightmatter/Lightelligence/Celestial AI/Intel/Ayar Labs 占 56.3%"
@@ -775,6 +894,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-OCT",
+        track="sensing", app_domain="medical",
         title="光学相干层析（OCT）前端预设计（医疗成像干涉仪）",
         target_app="眼科 OCT 成像干涉前端、医疗诊断光相干层析、工业无损检测",
         signal_ref="OCT 市场 $2.36B(2026)→$4.01B(2032) CAGR 9.08%（Research and Markets）；"
@@ -790,6 +910,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-OPA-LIDAR",
+        track="sensing", app_domain="lidar",
         title="光学相控阵（OPA）固态激光雷达前端预设计（无惯量大角度光束扫描）",
         target_app="固态 LiDAR 光束赋形发射阵、ADAS/机器人无机械扫描感知、芯片化波导 OPA",
         signal_ref="OPA LiDAR 市场 Dataintelo $1.8B(2025)→$9.6B(2034) CAGR 20.4%；单芯片集成 OPA 占 63.7%（2025）；"
@@ -806,6 +927,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-COHERENT-RX",
+        track="datacom", app_domain="coherent",
         title="相干接收机（90° 光混频器）前端预设计（相干探测本振耦合）",
         target_app="400G/800G/1.6T 相干接收 90° 混频前端、本振-信号干涉耦合、相干探测",
         signal_ref="Optical Hybrid 市场 $483.33M(2025)→$1.10B(2032) CAGR 12.48%；90° 光混频占 67.3%（2025）；"
@@ -822,6 +944,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-ONCHIP-NOC",
+        track="cpo", app_domain="chiplet",
         title="片上光网络（ONoC）路由前端预设计（chiplet 光互连 fabric）",
         target_app="AI 加速器/CPU-GPU chiplet 片上光互连、低能耗高带宽 NoC 路由网格",
         signal_ref="Chiplet 互连光子市场 $1.8B(2025)→$52.1B(2034) CAGR 38.5%（Market Intelo）；"
@@ -838,6 +961,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-MCF-FANOUT",
+        track="component", app_domain="fiber_io",
         title="多芯光纤扇出（MCF Fan-out）前端预设计（空分复用 SDM 过渡）",
         target_app="多芯光纤（SDM）到单芯设备的无源扇出/扇入、AI 数据中心高密度互连",
         signal_ref="MCF Fanouts 市场 $640M(2025)→$1.25B(2032) CAGR 11.8%（Strategic Market Research）；"
@@ -854,6 +978,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-OPTICAL-GYRO",
+        track="sensing", app_domain="inertial",
         title="光纤陀螺（FOG/Sagnac 干涉仪）前端预设计（高精度角速率传感）",
         target_app="干涉型光纤陀螺 Sagnac 干涉前端、惯性导航/无人机/船舶 AHRS 角速率传感",
         signal_ref="FOG 市场 $1.2B(2026)→$2.0B(2033) CAGR 7.5%（Persistence）；或 $1.96B(2025)→$4.60B(2034) CAGR 9.93%；"
@@ -869,6 +994,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-MRR-FILTER",
+        track="component", app_domain="filtering",
         title="微环谐振滤波器（可重构光滤波 / add-drop）前端预设计",
         target_app="WDM 灵活栅格信道选择、ROADM 滤波、相干收发器波长滤波、微波光子窄带滤波",
         signal_ref="Silicon Microring Resonators 市场 $450M(2025)→$1.66B(2032) CAGR 20.5%（PMarketResearch）；"
@@ -885,6 +1011,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-SPLITTER-TREE",
+        track="component", app_domain="passive",
         title="1×N 功分树（PLC 功分网络）前端预设计",
         target_app="FTTH/FTTR 光分路、数据中心 fan-out、PON ODN 功率均分",
         signal_ref="PLC Splitter 市场 $2.8B(2025)→$5.6B(2034) CAGR 8.1%（Dataintelo）；"
@@ -900,6 +1027,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-TRUE-TIME-DELAY",
+        track="sensing", app_domain="microwave",
         title="微波光子真延时（TTD）波束成形网络前端预设计",
         target_app="5G-A/6G 基站波束成形、相控阵雷达、卫星通信 TTD 延时网络",
         signal_ref="Phased Array Antenna 市场 $3.90B(2026)→$8.38B(2034) CAGR 10.04%（ValueMarketResearch）；"
@@ -916,6 +1044,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-GAS-SENSE",
+        track="sensing", app_domain="biochem",
         title="波导气体/吸收光谱传感前端预设计（SiN 宽波段）",
         target_app="环境 VOC/温室气体监测、医疗呼气诊断、工业排放多 analyte 检测",
         signal_ref="SiN PIC 市场 $320M(2025)→$1113.58M(2032) CAGR 19.5%（PW Consulting）；"
@@ -932,6 +1061,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-GRATING-COUPLE",
+        track="component", app_domain="fiber_io",
         title="光栅耦合阵列 / 光纤贴装接口前端预设计（CPO 光 IO）",
         target_app="硅光芯片-光纤阵列耦合、CPO 片上级联光 IO、多通道高密度封装接口",
         signal_ref="Grating Coupler Array 市场 $1.45B(2024)→$3.07B(2033) CAGR 8.7%（GrowthMarketReports）；"
@@ -948,6 +1078,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-AWG-DEMUX",
+        track="datacom", app_domain="wdm_roadm",
         title="阵列波导光栅解复用器（AWG DeMUX）前端预设计",
         target_app="DWDM 信道解复用、CPO/光模块波分合分波、ROADM 波长路由、光谱处理前端",
         signal_ref="AWG MUX/DeMUX 市场 $735M(2025)→$1.375B(2031) CAGR 8.14%；Arrayed Waveguide "
@@ -967,6 +1098,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-ONCHIP-SPECTROMETER",
+        track="sensing", app_domain="spectrum",
         title="片上微型光谱仪（Chip-scale Spectrometer）前端预设计",
         target_app="便携式光谱检测、消费电子/医疗即时诊断、环境气体监测、工业过程光谱分析",
         signal_ref="Chip-scale Spectrometer $2.44B(2025)→$8.7B(2033) CAGR 17.2%；Chip/Modular "
@@ -985,6 +1117,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-MDM-MUX",
+        track="component", app_domain="multiplexing",
         title="模分复用器（Mode-division Multiplexer）前端预设计",
         target_app="少模光纤 MDM 收发前端、数据中心空分复用扩容、单模 Shannon 极限突破、模群延时补偿",
         signal_ref="Few-Mode Fibers $10.74B(2025) CAGR 6.86%；MDM Equipment $1.42B(2024)→$4.16B"
@@ -1002,6 +1135,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-OPTCOMB",
+        track="component", app_domain="light_source",
         title="芯片级光频梳（Microcomb）前端预设计",
         target_app="DWDM 多波长光源、时频同步、相干光通信梳状源、量子频率计量",
         signal_ref="Intel Market Research $58M(2025)→$108M(2034) CAGR 7.4%；全球光频梳 $1.87B"
@@ -1020,6 +1154,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-POL-ROTATOR",
+        track="component", app_domain="polarization",
         title="片上偏振旋转器（Polarization Rotator）前端预设计",
         target_app="偏振分集接收、相干收发器偏振管理、硅光集成偏振操控、CPO 偏振耦合接口",
         signal_ref="光偏振控制器 $480M(2026) 增 12.3% / $4.72B(2026) 增 12.9%；Polarization "
@@ -1040,6 +1175,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     #   严守红线：仅由已锚定基元组装、复用 system_type 已验证闭环、LLM 不进判决路径、诚实标注前瞻预研。
     ShelfItem(
         id="IM-3.2T-DR8",
+        track="datacom", app_domain="transceiver",
         title="3.2T DR8 硅光收发前端预设计（8×400G PAM4）",
         target_app="AI 数据中心 3.2T 光模块、DR8 多通道并行互连、CPO 光引擎通道",
         signal_ref="中际旭创/新易盛 1.6T&3.2T OSFP DR8 公开规格（单通道插损 ≤4.5 dB）；"
@@ -1067,6 +1203,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-1.6T-LPO",
+        track="datacom", app_domain="transceiver",
         title="1.6T LPO 线性直驱光模块前端预设计（8×200G）",
         target_app="AI 数据中心 1.6T LPO 可插拔、线性直驱低功耗互连、交换机近封装",
         signal_ref="新易盛/云晖 1.6T LPO 公开规格（单通道插损 ≤4.5 dB）；LPO 线性直驱 MSA 路线",
@@ -1093,6 +1230,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-1.6T-ZR",
+        track="datacom", app_domain="coherent",
         title="1.6T 相干 ZR 光模块前端预设计（相干 400ZR/1.6ZR）",
         target_app="DCI 相干互连、1.6ZR 长距离传输、城域/骨干相干收发",
         signal_ref="光迅/Acacia 相干 400ZR/1.6ZR 公开规格；OIF 400ZR/800ZR/1.6ZR 标准",
@@ -1119,6 +1257,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-CPO-16CH",
+        track="cpo", app_domain="cpo_engine",
         title="CPO 16 通道 WDM 光引擎前端预设计",
         target_app="共封装光学（CPO）16 通道 WDM 解复用、高密度片上光 IO、AI 交换机共封装",
         signal_ref="OIF CPO 3.2T/6.4T 白皮书；CPO 共封装光学（Azure/Google/AWS）从试点转早期量产",
@@ -1144,6 +1283,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-UCIE-OPTICAL",
+        track="cpo", app_domain="chiplet",
         title="UCIe-Optical 光 chiplet 互连前端预设计",
         target_app="die-to-die 光互连、光 chiplet/ONoC、异构集成封装内光互连",
         signal_ref="UCIe 2.0 新增光互连（UCIe-Optical）标准草案；Intel/Ayarl 光 chiplet 公开路线",
@@ -1169,6 +1309,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-LIDAR-FULL",
+        track="sensing", app_domain="lidar",
         title="FMCW 固态激光雷达全前端预设计（TX+RX 一体）",
         target_app="车载/机器人 FMCW 固态 LiDAR、光探测与测距全光前端、同轴 TX/RX",
         signal_ref="Optics Express 34, 7415 (2026) 公开论文：片上 FMCW LiDAR 单方向链路损耗 ≈3.3 dB；"
@@ -1197,6 +1338,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-POC-BIOSENSE",
+        track="sensing", app_domain="biochem",
         title="POCT 生物/气体 Lab-on-Chip 传感前端预设计",
         target_app="即时诊断（POCT）生物传感、片上气体/化学传感、医疗即时检测微流控光路",
         signal_ref="公开 PICS / 生物光子传感综述：干涉型传感前端全链路插损预算通常 ≤15 dB；"
@@ -1225,6 +1367,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-FTTR-PLC32",
+        track="datacom", app_domain="pon",
         title="50G-PON / FTTR 32 路 PLC 分路前端预设计",
         target_app="家庭/企业全光组网（FTTR）、50G-PON 无源分光、接入网无源光分路",
         signal_ref="ITU-T G.671 / Telcordia GR-1209：1×32 PLC 每支路最大插损 ≤14.0 dB；"
@@ -1252,6 +1395,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-TTD-5G",
+        track="sensing", app_domain="microwave",
         title="微波光子真时延（TTD）波束成形前端预设计",
         target_app="5G/6G 毫米波波束成形、微波光子真时延、相控阵光控时延网络",
         signal_ref="微波光子 TTD 公开综述：真时延网络片上光路损耗典型 ≤10 dB；"
@@ -1280,6 +1424,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-QKD-FULL-LINK",
+        track="quantum", app_domain="qkd",
         title="QKD 干线收发全链路前端预设计（BB84 态制备/测量）",
         target_app="量子密钥分发（QKD）干线、城域/骨干量子保密通信、BB84 收发前端",
         signal_ref="npj Quantum Information 3, e1700262 (2017) 公开论文：QKD Alice/Bob 芯片总插损 15/8 dB；"
@@ -1312,6 +1457,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-QCTRL-32Q",
+        track="quantum", app_domain="qc_readout",
         title="32 量子比特读出控制芯片前端预设计",
         target_app="超导量子计算读出/控制、NISQ 规模扩展、多量子比特复用读出链",
         signal_ref="IBM Heron R2 (2024, 156 qubit) 公开读数保真度 98.5%；本源悟空-180 读数 99.0%；"
@@ -1338,6 +1484,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-OPA-2D",
+        track="sensing", app_domain="lidar",
         title="2D 光学相控阵（OPA）固态雷达前端预设计",
         target_app="固态激光雷达光束 steering、光通信光束成形、自由空间光互连波束控制",
         signal_ref="公开 OPA 硅光相控阵综述：片上 OPA 光路损耗典型 ≤12 dB；"
@@ -1368,6 +1515,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     #   规格面向信道化 WDM，与通用微梳前端明确区分；严守红线（仅已锚定基元、link 闭环、前瞻预研）。
     ShelfItem(
         id="IM-OPTCOMB-WDM",
+        track="component", app_domain="light_source",
         title="WDM 锁定芯片级光频梳（DWDM-grid Microcomb）预设计",
         target_app="DWDM 多波长相干源、WDM-PON 梳状光源、信道化射频光子学、量子频率梳分发",
         signal_ref="Intel Market Research 光频梳 $58M(2025)→$108M(2034) CAGR 7.4%；芯片级微梳 CAGR 47.8%"
@@ -1415,6 +1563,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     #   🔴 不判决能效 pJ/bit（电域主导，LDA 无电域锚 ⇒ 只作规格标注，不进判决）。
     ShelfItem(
         id="IM-CPO-OIO-8CH",
+        track="cpo", app_domain="cpo_engine",
         title="CPO 硅光 I/O 光引擎预设计（8×200G = 1.6T，标准 250 µm 光纤阵列）",
         target_app="共封装光学（CPO）光引擎 I/O、AI 交换机/XPU 光接口、51.2T+ 以太网与 InfiniBand 光互连",
         signal_ref="OIF-Co-Packaging-3.2T-Module-01.0（3.2T 引擎 = 32×CEI-112G-XSR 电 + 8×400G "
@@ -1468,6 +1617,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-CPO-OIO-16CH",
+        track="cpo", app_domain="cpo_engine",
         title="CPO 高密度光引擎预设计（16×200G = 3.2T，127 µm 细间距光纤阵列）",
         target_app="3.2T/6.4T CPO 光引擎、超大规模 AI 集群 scale-up 光互连、高密光纤阵列（FAU）耦合",
         signal_ref="OIF-Co-Packaging-3.2T-Module-01.0（3.2T CPO 引擎，8×400G 光口，~140 G/mm 海岸线）；"
@@ -1520,6 +1670,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-CPO-OIO-CHIPLET",
+        track="cpo", app_domain="chiplet",
         title="chiplet 间光 I/O 预设计（UCIe-Optical 类，8×32G 光栅阵列直连，无光纤）",
         target_app="chiplet 间光互连（die-to-die 光 I/O）、UCIe-Optical 光桥、光 CXL/内存池化、"
                    "AI 加速器分解式互连",
@@ -1575,6 +1726,7 @@ DEFAULT_SHELF: List[ShelfItem] = [
     ),
     ShelfItem(
         id="IM-CPO-ELS-FIBER",
+        track="cpo", app_domain="cpo_engine",
         title="CPO 外置可更换激光源（ELS）+ 光纤 I/O 前端预设计（OIF 3.2T IA 类 8×400G）",
         target_app="CPO 可维护性方案（前面板可更换光源）、OIF 3.2T 光引擎、NPO/CPO 混合演进、"
                    "规避「光器件故障导致整交换机报废」的运维痛点",

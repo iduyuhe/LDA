@@ -47,6 +47,24 @@
   .dir-shelf .ds-row:last-child{border-bottom:none}
   .dir-shelf b{color:#4338ca}
   .dir-shelf button{margin-left:auto;background:#4338ca;color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer}
+  /* v0.9.42 筛选器：选项与计数全部由 /api/shelf 的 facets 动态渲染 */
+  .filt-bar{background:#f8fafc;border:1px solid #e2e7f0;border-radius:10px;padding:10px 12px;margin-bottom:12px}
+  .filt-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .filt-row:last-child{margin-bottom:0}
+  .filt-lab{font-size:12px;color:var(--mut);min-width:52px;flex-shrink:0}
+  .filt-chips{display:flex;gap:6px;flex-wrap:wrap}
+  .filt-chips button{border:1px solid #cbd5e1;background:#fff;color:#475569;border-radius:999px;padding:4px 11px;font-size:12px;cursor:pointer;transition:.12s}
+  .filt-chips button:hover{border-color:#4338ca;color:#4338ca}
+  .filt-chips button.on{background:#4338ca;color:#fff;border-color:#4338ca}
+  .filt-chips button .n{opacity:.65;font-size:11px;margin-left:3px}
+  .filt-chips button:disabled{opacity:.35;cursor:not-allowed}
+  .filt-q{flex:1;min-width:160px;border:1px solid #cbd5e1;border-radius:8px;padding:5px 10px;font-size:12px}
+  .filt-sel{border:1px solid #cbd5e1;border-radius:8px;padding:5px 8px;font-size:12px;background:#fff;color:#475569}
+  .filt-sum{font-size:12px;color:var(--mut);margin-left:auto}
+  .filt-reset{border:1px solid #cbd5e1;background:#fff;color:#b91c1c;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer}
+  .trk{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .trk-t{font-size:11px;padding:2px 8px;border-radius:6px;background:#4338ca;color:#fff}
+  .trk-d{font-size:11px;padding:2px 8px;border-radius:6px;background:#eef2ff;color:#4338ca}
   .shelf-detail{margin-top:8px;border:1px solid #e2e7f0;border-radius:8px;overflow:hidden}
   .shelf-detail-h{font-size:12px;color:#4338ca;background:#f8fafc;padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
   .shelf-detail-b{padding:8px 10px;font-size:12px;background:#fff}
@@ -100,6 +118,25 @@
     <!-- 货架 -->
     <div class="panel">
       <h2 style="display:flex;justify-content:space-between;align-items:center;gap:10px">创新货架（开放下载的设计就绪包）<button class="ghost btn-sm" onclick="openCustom()">🛠 提交定制需求</button></h2>
+      <!-- 筛选器（v0.9.42）：筛选项与计数由 /api/shelf facets 动态渲染，前端零硬编码 -->
+      <div class="filt-bar" id="filtBar" style="display:none">
+        <div class="filt-row"><span class="filt-lab">赛道</span><div class="filt-chips" id="fTrack"></div></div>
+        <div class="filt-row"><span class="filt-lab">应用域</span><div class="filt-chips" id="fDomain"></div></div>
+        <div class="filt-row"><span class="filt-lab">价档</span><div class="filt-chips" id="fTier"></div></div>
+        <div class="filt-row">
+          <span class="filt-lab">搜索</span>
+          <input class="filt-q" id="fQ" type="search" placeholder="关键词：货架 ID / 名称 / 用途 / 特点（如 CPO、QKD、激光雷达）" oninput="onFiltInput()">
+          <select class="filt-sel" id="fSort" onchange="onFiltInput()">
+            <option value="default">默认排序</option>
+            <option value="price_asc">价格 低→高</option>
+            <option value="price_desc">价格 高→低</option>
+            <option value="name">按 ID</option>
+            <option value="open">可下载优先</option>
+          </select>
+          <span class="filt-sum" id="fSum"></span>
+          <button class="filt-reset" id="fReset" onclick="resetFilt()">清空筛选</button>
+        </div>
+      </div>
       <div id="shelfGrid"></div>
     </div>
 
@@ -256,19 +293,19 @@ var SHELF_PRICE = {};            // 货架 → 当前身份实付价
 var CMP = {};                    // 对比列表：shelf_id → shelf 数据
 var SHELF_ROWS = [];             // /api/shelf 全部行（对比渲染用）
 var CUSTOM_DIR = {};             // 当前选中的定制需求方向
-// 定制需求方向 → 货架 id 映射（用于「该方向已有开放货架」导流推荐）
-var DIR_SHELVES = {
-  "ai_io":    ["IM-800G-DR8","IM-1.6T-DR8","IM-400G-DR4","IM-PSM4-SHELF","IM-FR4-SHELF","IM-CWDM4-SHELF","IM-LPO-112G","IM-800G-FR4","IM-1.6T-FR4","IM-CHIPLET-IO","IM-PHOTONIC-INTERPOSER","IM-ONCHIP-NOC","IM-GRATING-COUPLE","IM-CPO-OCS","IM-MCF-FANOUT","IM-OSW-1X8"],
-  "wdm":      ["IM-CPO-WDM5","IM-DWDM-40CH","IM-WDM-8CH-1D","IM-AWG-DEMUX","IM-MRR-FILTER","IM-WSS-1X9","IM-VOA","IM-100G-LR4"],
-  "sensing":  ["IM-SENSE-RING","IM-SENS-MZI","IM-BIOSENSE","IM-GAS-SENSE","IM-OPTICAL-GYRO","IM-OCT","IM-ONCHIP-SPECTROMETER","IM-LIDAR-TX","IM-LIDAR-RX","IM-OPA-LIDAR","IM-MDM-MUX"],
-  "coherent": ["IM-COHERENT-400ZR","IM-COHERENT-RX","IM-MZI-MOD","IM-RING-MOD","IM-PSR","IM-POL-ROTATOR","IM-OPTCOMB","IM-TRUE-TIME-DELAY","IM-OPTO-COMPUTE"],
-  "quantum":  ["IM-QCOM-LINK","IM-QCHIP-INT","IM-QKD-TX-SHELF","IM-QKD-RX-SHELF","IM-QKD-MULTI4","IM-QCTRL-ZC3-10Q","IM-QCTRL-HERON-16Q","IM-QCTRL-WILLOW-12Q"],
-  "pon":      ["IM-FTTH-PLC8","IM-FTTH-PLC16","IM-PON-50G","IM-XGS-PON","IM-SPLITTER-TREE","IM-LASER-INT"],
-};
-var DIR_LABELS = {
-  "ai_io": "光互连 / AI 集群", "wdm": "WDM 波分复用", "sensing": "传感与检测",
-  "coherent": "相干与调制", "quantum": "量子计算 / QKD", "pon": "接入网 / PON",
-};
+// 定制需求方向 → 货架 id：v0.9.42 起由 /api/store.config 的 directions 动态下发。
+// 🔴 原先写死在本文件，随货架扩张静默漂移（75 条漏 17 条）；现由后端 store.py
+//    CUSTOM_DIRECTION_SHELVES 单一真源提供，ID 合法性由 CI 断言守护。
+var DIR_MAP = {};
+function loadDirMap(){
+  fetch('/api/store/config').then(function(r){return r.json()}).then(function(c){
+    if(c && c.directions) DIR_MAP = c.directions;
+  }).catch(function(){});
+}
+// —— 筛选器状态（v0.9.42）· 与 URL query 双向同步，可分享可回退 ——
+var FACETS = {track:{}, app_domain:{}, tier:{}};
+var LABELS = {track:{}, app_domain:{}, tier:{}, track_app_domains:{}};
+var FILT = {track:[], domain:[], tier:[], q:"", sort:"default"};
 var TIER_LABELS = {standard:"标准个人", academic:"学术个人", institution:"机构席位"};
 $("#buyShelf");
 
@@ -374,10 +411,119 @@ function logout(){
 
 function loadShelves(){
   fetch('/api/shelf').then(function(r){return r.json()}).then(function(d){
-    var h='';
-    SHELF_ROWS = d.rows;
-    d.rows.forEach(function(s){
-      SHELF_PRICE[s.id]=s.price_cny;
+    SHELF_ROWS = d.rows||[];
+    SHELF_ROWS.forEach(function(s){ SHELF_PRICE[s.id]=s.price_cny; });
+    FACETS = d.facets || FACETS;
+    LABELS = d.labels || LABELS;
+    readFiltFromUrl();     // URL 优先（可分享/可回退）
+    renderFilters();       // 筛选项与计数全部来自 facets
+    renderShelves();
+  });
+}
+
+// ---- 筛选：URL ↔ 状态双向同步 ----
+function readFiltFromUrl(){
+  var q=new URLSearchParams(location.search);
+  FILT.track  = (q.get('track')||'').split(',').filter(Boolean);
+  FILT.domain = (q.get('domain')||'').split(',').filter(Boolean);
+  FILT.tier   = (q.get('tier')||'').split(',').filter(Boolean);
+  FILT.q      = q.get('q')||'';
+  FILT.sort   = q.get('sort')||'default';
+  var qi=$("#fQ"), si=$("#fSort");
+  if(qi) qi.value=FILT.q;
+  if(si) si.value=FILT.sort;
+}
+function writeFiltToUrl(){
+  var q=new URLSearchParams();
+  if(FILT.track.length)  q.set('track', FILT.track.join(','));
+  if(FILT.domain.length) q.set('domain',FILT.domain.join(','));
+  if(FILT.tier.length)   q.set('tier',  FILT.tier.join(','));
+  if(FILT.q)             q.set('q',     FILT.q);
+  if(FILT.sort!=='default') q.set('sort',FILT.sort);
+  var s=q.toString();
+  try{ history.replaceState(null,'', s ? ('?'+s+location.hash) : (location.pathname+location.hash)); }catch(e){}
+}
+function filtActive(){
+  return !!(FILT.track.length||FILT.domain.length||FILT.tier.length||FILT.q||FILT.sort!=='default');
+}
+function resetFilt(){
+  FILT={track:[],domain:[],tier:[],q:"",sort:"default"};
+  var qi=$("#fQ"), si=$("#fSort");
+  if(qi) qi.value=""; if(si) si.value="default";
+  writeFiltToUrl(); renderFilters(); renderShelves();
+}
+function onFiltInput(){
+  FILT.q    = ($("#fQ")||{}).value||"";
+  FILT.sort = ($("#fSort")||{}).value||"default";
+  writeFiltToUrl(); renderShelves();
+}
+function toggleFilt(kind,key){
+  var arr=FILT[kind]||[], i=arr.indexOf(key);
+  if(i>=0) arr.splice(i,1); else arr.push(key);
+  FILT[kind]=arr;
+  // 赛道变化 ⇒ 清掉不属于当前赛道的应用域选择（防"选了 A 赛道却留着 D 的应用域"组合出空结果）
+  if(kind==='track' && FILT.domain.length){
+    var allowed={};
+    (FILT.track.length?FILT.track:Object.keys(LABELS.track||{})).forEach(function(t){
+      Object.keys((LABELS.track_app_domains||{})[t]||{}).forEach(function(d){ allowed[d]=1; });
+    });
+    FILT.domain=FILT.domain.filter(function(d){ return allowed[d]; });
+  }
+  writeFiltToUrl(); renderFilters(); renderShelves();
+}
+function chipHtml(kind,keys,counts,labels,disabled){
+  return keys.map(function(k){
+    var on=(FILT[kind]||[]).indexOf(k)>=0;
+    var n=counts[k]!=null?('<span class="n">'+counts[k]+'</span>'):'';
+    return '<button type="button" class="'+(on?'on':'')+'"'+(disabled?' disabled':'')+
+           ' onclick="toggleFilt(\''+kind+'\',\''+esc(k)+'\')">'+esc(labels[k]||k)+n+'</button>';
+  }).join('');
+}
+function renderFilters(){
+  var bar=$("#filtBar"); if(!bar) return;
+  if(!Object.keys(FACETS.track||{}).length){ bar.style.display='none'; return; }
+  bar.style.display='';
+  // 赛道
+  $("#fTrack").innerHTML = chipHtml('track', Object.keys(FACETS.track||{}), FACETS.track, LABELS.track||{});
+  // 应用域：只显示当前已选赛道（未选则全部）下的域；计数为该域总数
+  var tracks = FILT.track.length ? FILT.track : Object.keys(LABELS.track||{});
+  var allow={}, order=[];
+  tracks.forEach(function(t){
+    Object.keys((LABELS.track_app_domains||{})[t]||{}).forEach(function(d){
+      if(!allow[d]){ allow[d]=1; order.push(d); }
+    });
+  });
+  $("#fDomain").innerHTML = order.length
+    ? chipHtml('domain', order, FACETS.app_domain||{}, LABELS.app_domain||{})
+    : '<span class="mut" style="font-size:12px">选赛道后显示细分应用域</span>';
+  // 价档
+  $("#fTier").innerHTML = chipHtml('tier', Object.keys(FACETS.tier||{}), FACETS.tier, LABELS.tier||{});
+}
+function filteredRows(){
+  var kw=(FILT.q||'').trim().toLowerCase();
+  var rows=SHELF_ROWS.filter(function(s){
+    if(FILT.track.length  && FILT.track.indexOf(s.track)<0)      return false;
+    if(FILT.domain.length && FILT.domain.indexOf(s.app_domain)<0) return false;
+    if(FILT.tier.length   && FILT.tier.indexOf(s.tier)<0)         return false;
+    if(kw){
+      var hay=[s.id,s.title,s.target_app,(s.features||[]).join(' '),(s.applications||[]).join(' '),
+               (s.composition||[]).join(' ')].join(' ').toLowerCase();
+      if(hay.indexOf(kw)<0) return false;
+    }
+    return true;
+  });
+  var st=FILT.sort;
+  if(st==='price_asc')  rows.sort(function(a,b){return (a.price_cny||0)-(b.price_cny||0);});
+  else if(st==='price_desc') rows.sort(function(a,b){return (b.price_cny||0)-(a.price_cny||0);});
+  else if(st==='name')  rows.sort(function(a,b){return a.id<b.id?-1:(a.id>b.id?1:0);});
+  else if(st==='open')  rows.sort(function(a,b){return (b.open?1:0)-(a.open?1:0);});
+  return rows;
+}
+function renderShelves(){
+  var list=filteredRows(), h='';
+  $("#fSum").textContent = '显示 '+list.length+' / '+SHELF_ROWS.length+' 个货架'+(filtActive()?'（已筛选）':'');
+  $("#fReset").style.display = filtActive()?'':'none';
+  list.forEach(function(s){
       var comp=s.composition.map(function(x){return '<span class="tag">'+esc(x)+'</span>'}).join('');
       var discountTag = (s.price_tier && s.price_tier!=="standard")
         ? ' <span class="tag" style="background:#fee2e2;color:#b91c1c">'+esc(TIER_LABELS[s.price_tier]||s.price_tier)+'价</span>' : '';
@@ -425,11 +571,17 @@ function loadShelves(){
          '<button class="btn-sm ghost" onclick="evalShelf(\''+esc(s.id)+'\',this)">评估</button>'+
          '<button class="btn-sm ghost" onclick="openOpinion(\''+esc(s.id)+'\')">评价/意见</button>'+
          '<button class="btn-cmp'+(CMP[s.id]?' on':'')+'" id="cmpb-'+esc(s.id)+'" onclick="toggleCompare(\''+esc(s.id)+'\')">对比</button>'+btn+
-         '</div>'+
+         '</div>'+ trackTags(s) +
          '</div>';
     });
-    $("#shelfGrid").innerHTML=h||'<span class="mut">暂无开放货架</span>';
-  });
+    $("#shelfGrid").innerHTML = h || '<span class="mut">没有符合条件的货架，试试放宽筛选条件。</span>';
+}
+// 分类标签（便于用户确认自己筛到了什么、以及后续按标签检索）
+function trackTags(s){
+  if(!s.track) return '';
+  var tl=(LABELS.track||{})[s.track]||s.track;
+  var dl=(LABELS.app_domain||{})[s.app_domain]||s.app_domain||'';
+  return '<div class="trk"><span class="trk-t">'+esc(tl)+'</span>'+(dl?('<span class="trk-d">'+esc(dl)+'</span>'):'')+'</div>';
 }
 
 function toggleDetail(btn){
@@ -565,7 +717,7 @@ function openConsult(shelfId){
   $("#b-spec").value=""; $("#b-budget").value="";
   $("#b-contact").value=""; $("#b-phone").value=""; $("#b-email").value=""; $("#b-company").value=""; $("#b-proof").value="";
   $("#buyPrice").textContent="咨询制货架 · 按需求评估报价";
-  var dir = Object.keys(DIR_SHELVES).find(function(d){ return DIR_SHELVES[d].indexOf(shelfId)>=0; }) || "";
+  var dir = Object.keys(DIR_MAP).find(function(d){ return (DIR_MAP[d].shelves||[]).indexOf(shelfId)>=0; }) || "";
   renderDirChips(dir);
   fetch('/api/store/me', {headers: authHeaders()}).then(function(r){return r.json()}).then(function(d){
     if(d.user){ $("#b-email").value=d.user.email||""; $("#b-contact").value=d.user.name||""; $("#b-phone").value=d.user.phone||""; }
@@ -639,9 +791,9 @@ function openCustom(){
 function renderDirChips(sel){
   CUSTOM_DIR = sel||"";
   var box=$("#dirChips"); if(!box) return;
-  box.innerHTML = Object.keys(DIR_LABELS).map(function(k){
-    return '<button type="button" class="'+(CUSTOM_DIR===k?'on':'')+'" onclick="pickDir(\''+k+'\')">'+esc(DIR_LABELS[k])+'</button>';
-  }).join('');
+  box.innerHTML = Object.keys(DIR_MAP).map(function(k){
+    return '<button type="button" class="'+(CUSTOM_DIR===k?'on':'')+'" onclick="pickDir(\''+k+'\')">'+esc((DIR_MAP[k]||{}).label||k)+'</button>';
+  }).join('') || '<span class="mut" style="font-size:12px">方向加载中…</span>';
   renderDirShelves();
 }
 function pickDir(k){
@@ -650,7 +802,7 @@ function pickDir(k){
 function renderDirShelves(){
   var box=$("#dirShelf"); if(!box) return;
   if(!CUSTOM_DIR){ box.style.display='none'; return; }
-  var ids=DIR_SHELVES[CUSTOM_DIR]||[];
+  var ids=(DIR_MAP[CUSTOM_DIR]||{}).shelves||[];
   var open=[];
   SHELF_ROWS.forEach(function(s){ if(ids.indexOf(s.id)>=0 && s.open) open.push(s); });
   if(!open.length){ box.style.display='none'; return; }
@@ -703,8 +855,8 @@ function submitBuy(){
       closeBuy(); loadOrders();
       // 定制需求提交成功 → 二次导流：该方向若有开放货架，提示先看现成的
       var guide="";
-      if(buyType==='custom' && CUSTOM_DIR && DIR_SHELVES[CUSTOM_DIR]){
-        var cnt=(DIR_SHELVES[CUSTOM_DIR]||[]).filter(function(id){
+      if(buyType==='custom' && CUSTOM_DIR && DIR_MAP[CUSTOM_DIR]){
+        var cnt=((DIR_MAP[CUSTOM_DIR]||{}).shelves||[]).filter(function(id){
           var r=SHELF_ROWS.find(function(x){return x.id===id;}); return r&&r.open;
         }).length;
         if(cnt>0){ guide='\n\n💡 该方向有 '+cnt+' 个开放货架可直接下载。先看现成的再决定？→ /store.html#shelfGrid'; }
@@ -823,6 +975,7 @@ function downloadOrder(id){
 }
 
 loadShelves();
+loadDirMap();   // v0.9.42：需求方向映射由后端下发（不再写死在前端）
 refreshAuth();
 </script>
 <script src="/nav.js"></script>

@@ -7,6 +7,8 @@
   严禁模板或 LLM 杜撰规格数字。
 - 反向：乱码/无意义查询优雅返回 count=0（不抛错、不假匹配）；
   篡改 parse_query（如把赛道别名清空）后，原本命中的需求应失准（INFO/反向 FAIL）。
+- 中文预算解析护城河：「预算N以内/以下」必须解析出 price_max，且超预算项标 over_budget 一致
+  （防 Unicode 词边界 \b 在中文后失效导致 price_max=None 的回归）。
 """
 from __future__ import annotations
 
@@ -143,6 +145,29 @@ def main():
         hit_cpo = any("CPO" in (r.get("track_label") or "") for r in d2.get("results", []))
         results.append(("POST /api/store/guide「CPO 预算」返回命中且含 CPO 赛道",
                         ok and hit_cpo, f"code={code} count={d2.get('count')} hit_cpo={hit_cpo}"))
+
+        # ②b 中文预算解析（回归护城河）：「预算N以内」必须解析出 price_max，且超预算项标 over_budget 一致
+        code, body = _http("POST", f"{base}/api/store/guide", timeout=15,
+                           headers={"Content-Type": "application/json"},
+                           body=json.dumps({"text": "数通 预算2000以内"}))
+        try:
+            d5 = json.loads(body)
+        except Exception:
+            d5 = {}
+        qpm = (d5.get("query") or {}).get("price_max")
+        ok_pm = code == 200 and qpm == 2000.0
+        budget_consistent = True
+        for r in d5.get("results", []):
+            p = r.get("price_cny")
+            ob = r.get("over_budget")
+            if p is not None and qpm is not None:
+                if p > qpm and not ob:
+                    budget_consistent = False
+                if p <= qpm and ob:
+                    budget_consistent = False
+        results.append(("中文预算解析「预算2000以内」→ price_max=2000 且超预算标红一致",
+                        ok_pm and budget_consistent,
+                        f"code={code} price_max={qpm} consistent={budget_consistent}"))
 
         # ③ 反向：乱码/无意义 → 优雅返回 count=0，不抛错、不假匹配
         code, body = _http("POST", f"{base}/api/store/guide", timeout=15,

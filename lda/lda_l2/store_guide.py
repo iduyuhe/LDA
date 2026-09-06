@@ -152,7 +152,7 @@ def parse_query(text: str) -> Query:
         if m:
             q.price_max = float(m.group(1)) * 10000
         else:
-            m = re.search(r"(?:¥|[\$￥]|预算|价格|不超过|低于|以内)\D*?(\d{3,7})\b", t)
+            m = re.search(r"(?:¥|[\$￥]|预算|价格|不超过|低于|以内)\D*?(\d{3,7})(?!\d)", t)
             if m:
                 q.price_max = float(m.group(1))
             else:

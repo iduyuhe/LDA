@@ -225,6 +225,11 @@ CORE_SMOKES: List[str] = [
     #   镜像 run_b28_nullfit_smoke。实测均 ~3s。CI core 95→97。
     "run_b29_thermal_phase_smoke.py",
     "run_b30_readout_smoke.py",
+    # 🔴 v0.9.50（任务①补锚题覆盖死角）：覆盖死角闭合护栏。把 PhaseShifter/readout_fidelity
+    #   + 3 复合包的「覆盖闭合」从文档散文变成机器可验证死标量断言（B29/B30 已 strict 且登记宿主、
+    #   3 复合包组成严格锚 B14/B4/B22/B26 + S1-S13 + GC-* 覆盖 link/quantum_fidelity、零覆盖集恰为
+    #   3 复合包、反向撤 B29 必回落）。~2s，无重依赖。CI core 127→128。
+    "run_coverage_deadzone_closure_smoke.py",
     # 🔴 v0.9.41 门禁缺口清零：以下 18 项为审计实测「<1.3s + 纯 numpy（无
     #   torch/numba/cupy/meep/tidy3d）+ 失败会 return 1 的真门禁」，却从未进过
     #   core ⇒ 与 production smoke 同类静默缺口。合计仅 **9.6s**，无理由豁免。

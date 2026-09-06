@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""T-9 锚题覆盖矩阵生成器（33 类 × 48 锚）
+"""T-9 锚题覆盖矩阵生成器（33 类 × 50 锚）
 
 用法（仓库根，CI 解释器）：
-    python lda/run_anchor_coverage_matrix.py            # 写 docs/lda_anchor_coverage_matrix_2026-09-04.md
+    python lda/run_anchor_coverage_matrix.py            # 写 docs/lda_anchor_coverage_matrix_2026-09-06.md
 
 事实来源（全为权威单一来源，程序化读取）：
-  * 48 锚列序/判据字段：lda_harness/benchmarks.py 的 BENCHMARK_ORDER / BENCHMARK_DEFS
+  * 50 锚列序/判据字段：lda_harness/benchmarks.py 的 BENCHMARK_ORDER / BENCHMARK_DEFS
   * 接线态三分类：spec['candidate'] ∈ BENCHMARK_CANDIDATES（verification_adapters.py）= 严格独立
                   （与 lda_harness/harness.py candidate_class() 同一判序）
   * 33 类（22 引擎 + 11 包）：lda_design/design_package.py 的 ENGINE_KINDS / PACKAGE_KINDS /
@@ -36,7 +36,7 @@ from lda_design.design_package import (                          # noqa: E402
     ENGINE_KINDS, PACKAGE_KINDS, ENGINE_KIND_MAP, ENGINE_DOMAIN, _ENGINE_TITLE,
 )
 
-DOC_PATH = os.path.join(_LDA, "docs", "lda_anchor_coverage_matrix_2026-09-04.md")
+DOC_PATH = os.path.join(_LDA, "docs", "lda_anchor_coverage_matrix_2026-09-06.md")
 
 # 域顺序（光子在前、量子在后，引擎保持 ENGINE_KINDS 内部序分组展示）
 _DOMAIN_ORDER = ["photon", "quantum"]
@@ -83,6 +83,13 @@ ANCHOR_HOSTS: dict[str, list[tuple[str, str, str]]] = {
     "B20": [("engine_mzi", "inferred", "MZI FSR=λ²/(n_eff·ΔL) 同式（engine note 即 B20 物理）")],
     "B21": [("engine_phc", "code", "引擎 cheap=b21_phc_resonance，note 显式 B21（结构性不可接 C2）")],
     "B28": [("engine_mzimod", "inferred", "引擎目标 V_π（Pockels）与 B28 同物理量同闭式")],
+    # ---- v0.9.39 落地：T-9 接线空白点 #1/#2（D-73 升格 + 读出 SNR 锚）----
+    "B29": [("engine_phaseshifter", "title",
+             "热光相移效率锚（D-73 升格）：引擎 specs 标「D-73 同源锚」、cheap=phase_efficiency_deg_per_mW；"
+             "B29=同 PDE 散热鳍稳态解 cosh 闭式（thermal_phase_fdm 独立候选）。v0.9.39 已落地，严格独立。")],
+    "B30": [("readout_fidelity", "title",
+             "单发读出保真度 F 锚（Krantz 2019 色散读出链 erfc 闭式）；包名 readout_fidelity 即 B30 物理对象，"
+             "候选=误判概率 ε 高斯重叠数值积分（readout_fidelity_quad）。v0.9.39 已落地，严格独立。")],
     # ---- 量子 B 锚 ----
     "B9":  [("engine_transmon", "code", "引擎 cheap=koch_f01 即 B9 golden 同式"),
             ("quantum", "inferred", "量子逆设计包（Transmon）同物理")],
@@ -151,6 +158,31 @@ def domain_of_kind(kind: str) -> str:
     return _pkg_dom.get(kind, "hybrid")
 
 
+def build_kind_anchors() -> dict[str, dict[str, list[str]]]:
+    """kind → {锚id: [证据标签,...]}（排除伪宿主）。供 main() 与闭合护栏 smoke 复用。"""
+    kind_anchors: dict[str, dict[str, list[str]]] = {}
+    for aid, hostlist in ANCHOR_HOSTS.items():
+        for host in hostlist:
+            kind, ev = host[0], host[1]
+            if kind in PSEUDO:
+                continue
+            kind_anchors.setdefault(kind, {})[aid] = kind_anchors.get(kind, {}).get(aid, []) + [ev]
+    return kind_anchors
+
+
+def compute_zero_coverage() -> list[str]:
+    """返回 48/50 集内零宿主（kind_anchors 为空）的品类 snake 键列表。"""
+    kind_anchors = build_kind_anchors()
+    eng_rows = []
+    for dom in _DOMAIN_ORDER:
+        for k in ENGINE_KINDS:
+            if ENGINE_DOMAIN[ENGINE_KIND_MAP[k]] == dom:
+                eng_rows.append(k)
+    pkg_rows = [k for k in PACKAGE_KINDS]
+    rows = [(k, "engine") for k in eng_rows] + [(k, "package") for k in pkg_rows]
+    return [k for (k, _kt) in rows if not kind_anchors.get(k)]
+
+
 def main() -> None:
     strict, stubs = strict_stub_sets()
     STATE = {}
@@ -167,14 +199,7 @@ def main() -> None:
     rows = [(k, "engine") for k in eng_rows] + [(k, "package") for k in pkg_rows]
 
     # kind → hosts anchors（含证据）
-    kind_anchors: dict[str, dict[str, list[str]]] = {}   # kind -> aid -> evidence tags
-    for aid, hostlist in ANCHOR_HOSTS.items():
-        for host in hostlist:
-            kind, ev = host[0], host[1]
-            note = host[2] if len(host) > 2 else ""
-            if kind in PSEUDO:
-                continue
-            kind_anchors.setdefault(kind, {})[aid] = kind_anchors.get(kind, {}).get(aid, []) + [ev]
+    kind_anchors = build_kind_anchors()
 
     # 锚 → hosts（含伪宿主）
     anchor_kinds: dict[str, list[tuple[str, str, str]]] = {a: list(ANCHOR_HOSTS.get(a, [])) for a in BENCHMARK_ORDER}
@@ -186,11 +211,11 @@ def main() -> None:
 
     out = io.open(DOC_PATH, "w", encoding="utf-8")
     W = out.write
-    W("# LDA 锚题覆盖矩阵（33 类 × 48 锚 · T-9）\n\n")
-    W("> 生成：2026-09-04 · 生成器 `lda/run_anchor_coverage_matrix.py`（可复现：改归属表后重跑）\n")
+    W("# LDA 锚题覆盖矩阵（33 类 × 50 锚 · T-9）\n\n")
+    W("> 生成：2026-09-06 · 生成器 `lda/run_anchor_coverage_matrix.py`（可复现：改归属表后重跑）\n")
     W("> 口径：**品类×锚覆盖** = 该锚的物理对象/判决对象落在该设计品类上。覆盖 ≠ 已接独立候选；"
       "●=严格独立已接、◐=自证桩（名义覆盖）。证据分级：**C**=引擎 specs 代码显式引用（最权威）"
-      "· **T**=锚 title/metric 明写该品类 · **K**=引擎真判决锚在 48 集外（语料锚），所列 48 锚仅为名义邻居"
+      "· **T**=锚 title/metric 明写该品类 · **K**=引擎真判决锚在 50 集外（语料锚），所列 50 锚仅为名义邻居"
       "· **i**=编辑推断 · **P**=横向/系统层。\n\n")
 
     # ---------- 摘要 ----------
@@ -199,15 +224,15 @@ def main() -> None:
     pseudo_only = [a for a in BENCHMARK_ORDER if anchor_kinds.get(a) and all(ev == "pseudo" for _, ev, _ in anchor_kinds[a])]
     no_host = [a for a in BENCHMARK_ORDER if not anchor_kinds.get(a)]
     W("## 0 · 摘要\n\n")
-    W(f"- 33 类 = 22 引擎（光子 15 + 量子 7）+ 11 包；48 锚（B28 + E7 + S13）；严格独立 **{len(strict)}** / 自证桩 **{len(stubs)}**\n")
-    W(f"- 有 ≥1 锚宿主（48 集内）：引擎 **{n_eng_hit}/22**、包 **{n_pkg_hit}/11**\n")
+    W(f"- 33 类 = 22 引擎（光子 15 + 量子 7）+ 11 包；50 锚（B28 + E7 + S13 + B29 + B30）；严格独立 **{len(strict)}** / 自证桩 **{len(stubs)}**\n")
+    W(f"- 有 ≥1 锚宿主（50 集内）：引擎 **{n_eng_hit}/22**、包 **{n_pkg_hit}/11**\n")
     W(f"- 横向/系统层锚（无单一品类宿主）**{len(pseudo_only)}**：{', '.join(pseudo_only)}\n")
     W(f"- 零覆盖品类与接线建议见 §3；完整归属见 §2。\n\n")
 
     # ---------- 矩阵：按行（品类） ----------
     W("## 1 · 品类 → 锚覆盖矩阵（33 行）\n\n")
-    W("每类一行：命中锚序列 `锚id(符号·证据)`；**空 = 48 集内零覆盖**。\n\n")
-    W("| # | 品类（域） | 48 集覆盖锚 | 覆盖数 |\n|---|---|---|---|\n")
+    W("每类一行：命中锚序列 `锚id(符号·证据)`；**空 = 50 集内零覆盖**。\n\n")
+    W("| # | 品类（域） | 50 集覆盖锚 | 覆盖数 |\n|---|---|---|---|\n")
     idx = 0
     for kind, kt in rows:
         idx += 1
@@ -263,23 +288,23 @@ def main() -> None:
 
     # ---------- 零覆盖区 ----------
     W("\n## 3 · 零覆盖区与缺口清单\n\n")
-    W("### 3.1 品类零覆盖（48 集内无任何锚宿主）\n\n")
+    W("### 3.1 品类零覆盖（50 集内无任何锚宿主）\n\n")
     zero_rows = [(k, kt) for (k, kt) in rows if not kind_anchors.get(k)]
     if zero_rows:
         W("| 品类 | 类型 | 缺口说明 |\n|---|---|---|\n")
         for (k, kt) in zero_rows:
             note = ""
-            if k == "engine_phaseshifter":
-                note = ("热光相移器：唯一零覆盖引擎。引擎自锚 D-73（相移效率 deg/mW）在 48 集外；"
-                        "48 集最近邻 B28 为电光 Pockels（机制不同，不可顶替）⇒ 建议新锚 B29（热光相位效率，D-73 升格）")
-            elif k == "readout_fidelity":
-                note = "单发读出保真度预算：48 集无读出 SNR/保真度物理锚（gapdoc 08-29 已列缺口「钉子 E 读出 SNR 锚」）"
-            elif k == "mixed_system":
-                note = "多环 WDM × 量子读出混合巨型系统：组合系统无直接锚；组成器件锚在宿主品类，整系统验收走 GC-*（48 外）"
+            if k == "mixed_system":
+                note = ("多环 WDM × 量子读出混合巨型系统（装配级）。非「零锚」真死角——组成器件锚已在宿主品类接严格独立候选："
+                        "B4（环 FSR，ring_fsr_peakfit）、B14（方向耦合器，dc_cmt_fft）、B22（CPW λ/4，tl_eigen_qres）、"
+                        "B26（色散位移 χ，chi_exact）；系统级预算走 S 层锚（S1 链路 dB 级联 / S4 保真度乘积预算 / S7-S8 统计 p5 / S12 阵列分布）；"
+                        "整芯片验收走 GC-* 整芯片对标（system_type=link / quantum_fidelity，29 条 48 外）。稀疏是装配级预期，非不可验货。")
             elif k == "wdm_coupler":
-                note = "耦合器×WDM 组合（FDTD 标定 gap）：复合弱；组成锚 B14（DC）与 B4（环）在其宿主品类"
+                note = ("耦合器×WDM 组合（装配级，复合弱）。组成严格锚已在宿主品类：B14（方向耦合器 3dB 耦合长度，dc_cmt_fft）、"
+                        "B4（环形 FSR，ring_fsr_peakfit）；WDM 信道规划走 S2（信道间隔−带宽>0）。整系统验收走 GC-*（system_type=link）。")
             elif k == "splitter_readout":
-                note = "方向耦合器×量子读出（分束供电控制）：复合弱；组成锚 B14/B22 在宿主品类"
+                note = ("方向耦合器×量子读出（分束供电控制，装配级，复合弱）。组成严格锚已在宿主品类：B14（方向耦合器，dc_cmt_fft）、"
+                        "B22（CPW λ/4 读出谐振器，tl_eigen_qres）、B26（色散位移 χ，chi_exact）。整系统验收走 GC-*（system_type=quantum_fidelity）。")
             W(f"| {k}（{kind_display(k) if k.startswith('engine_') else k}） | {'引擎' if kt=='engine' else '包'} | {note} |\n")
     else:
         W("（无）\n")
@@ -313,14 +338,20 @@ def main() -> None:
             note += ("；" if note else "") + ORPHAN_NOTES[a]
         W(f"| {a} | {st} | {note} |\n")
 
-    W("\n### 3.4 接线优先级建议\n\n")
-    W("1. **热光相移器零锚 → 新锚 B29**（D-73 升格进 48 集）：唯一零覆盖引擎，工作量小；与 B28 电光并列构成有源调制双锚。\n")
-    W("2. **readout_fidelity 零锚 → 读出 SNR 锚**（gapdoc 钉子 E）：单发读出保真度是量子读出货架卖点，缺物理 ground。\n")
+    W("\n### 3.4 接线优先级建议（历史记录 · 含已落地项）\n\n")
+    W("1. ~~热光相移器零锚 → 新锚 B29（D-73 升格）~~ **✅ 已落地 v0.9.39**：B29=1D 散热鳍稳态 PDE cosh 闭式，"
+      "candidate=thermal_phase_fdm（FDM 数值解，判据 D 真收敛）；严格独立、CI core 95→97。\n")
+    W("2. ~~readout_fidelity 零锚 → 读出 SNR 锚（钉子 E）~~ **✅ 已落地 v0.9.39**：B30=色散读出 erfc 闭式链，"
+      "candidate=readout_fidelity_quad（ε 高斯重叠数值积分，判据 D 真收敛）；严格独立。\n")
     W("3. **B5/B6/B7 守则桩**：非接线问题而是 ORACLE 缺口（Meep/Tidy3D 场级，C 期锁）；解锁后 YbranchLoss/GratingEff/Crossing "
       "引擎获得集内真锚。\n")
-    W("4. **引擎真判决锚入集**：E-YBRANCH-LOSS / E-GRATING-EFF / D-73 三处引擎级判决锚在 48 集外 ⇒ 建议评估升格，"
-      "否则 48 锚口径对 YbranchLoss / GratingEff / PhaseShifter 三类覆盖失真（矩阵 K 证据即此）。\n")
+    W("4. **引擎真判决锚入集**：E-YBRANCH-LOSS / E-GRATING-EFF / D-73 三处引擎级判决锚在 50 集外 ⇒ 建议评估升格，"
+      "否则 50 锚口径对 YbranchLoss / GratingEff / PhaseShifter 三类覆盖失真（矩阵 K 证据即此；注 B29 已部分回应 PhaseShifter）。\n")
     W("5. taper（B8）与散射（B1）两无载体锚指向品类缺口：无「锥度/散射体」设计引擎 ⇒ 可评估新增品类，或明示 B8 归互连级。\n")
+    W("\n> **覆盖死角收口结论（2026-09-06）**：原 §3.1 五处零覆盖中，PhaseShifter（B29）+ readout_fidelity（B30）"
+      "已于 v0.9.39 接严格独立候选，本矩阵已登记宿主；剩余 mixed_system / wdm_coupler / splitter_readout 三处为"
+      "**装配级弱复合包**，其组成器件锚（B14/B4/B22/B26 等）已在宿主品类接严格独立候选，系统级预算走 S 层锚、"
+      "整芯片验收走 GC-*（48/50 集外，29 条）——稀疏为装配级预期，**非真死角**。零覆盖集现恰为这 3 个复合包。\n")
 
     # ---------- 口径与方法 ----------
     W("\n## 4 · 口径、方法与诚实边界\n\n")

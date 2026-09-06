@@ -847,6 +847,43 @@ BENCHMARK_DEFS = {
         "golden_fn": None,
         "note": "实证锚：golden=语料实测值 −41±2 dB（CMOS 兼容 crossing 串扰，Zhang PTL 2013）；比对=|candidate−measured|≤tol。",
     },
+    "E8": {
+        "title": "光栅耦合器峰值耦合效率（实证语料锚升格 · 严格独立）",
+        "metric": "coupling_eff",
+        "oracle": "empirical-measurement(E-GRATING-EFF)",
+        "tol": 0.06,
+        "anchor": "empirical",
+        "empirical_id": "E-GRATING-EFF",
+        "candidate": "engine_grating_eff",
+        "default_params": {"ff": 0.5, "theta_deg": 8.0, "tilt_sigma_deg": 15.0},
+        "golden_fn": None,
+        "note": "实证锚升格（v0.9.51 · 任务②）：此前 E-GRATING-EFF 仅作 corpus 语料对照、"
+                "未正式进判决口径（覆盖矩阵标 K 失真）。现升格为**严格独立**判决锚："
+                "candidate=engine_grating_eff 解析模型（0.5·sin²(π·ff)·exp(−θ²/2σ²)）"
+                "vs 实测 golden 0.42±0.05（Liu APL 96, 051126, 2010）；"
+                "比对=|candidate−measured|≤tol=0.06（实测 |0.4337−0.42|=0.0137，rel≈3.3%，"
+                "真可证伪，判据 D 满足：残差≠0、扰动有响应）。",
+    },
+    "E9": {
+        "title": "Y-branch 分束器过量损耗（实证语料锚升格 · 降级量级参考）",
+        "metric": "excess_loss_dB",
+        "oracle": "empirical-measurement(E-YBRANCH-LOSS)",
+        "tol": 0.13,
+        "anchor": "empirical",
+        "empirical_id": "E-YBRANCH-LOSS",
+        "candidate": "engine_ybranch_split",
+        "candidate_status": "degraded_ordinal",
+        "default_params": {"theta_deg": 10.0, "excess_coef": 0.004},
+        "golden_fn": None,
+        "note": "实证锚升格（v0.9.51 · 任务②）：此前 E-YBRANCH-LOSS 仅作 corpus 语料对照、"
+                "未正式进判决口径（覆盖矩阵标 K 失真）。现升格为**降级量级参考**判决锚："
+                "candidate=engine_ybranch_split 解析模型（c1·θ²，c1=0.004 dB/deg² 工艺标定唯象系数）"
+                "vs 实测 golden 0.28±0.02（Zhang Opt. Express 21, 1310, 2013）；"
+                "比对=|candidate−measured|≤tol=0.13（实测 |0.40−0.28|=0.12，rel≈43% 模型粗糙度）。"
+                "🔴 诚实边界：c1 未就真实 PDK 标定 ⇒ 残差主成分为模型粗糙度而非数值噪声，"
+                "故标 degraded_ordinal 不进死标量判决列；不得为变绿而放宽判据去拟合实测"
+                "（拟合=循环自证，见 E6 教训）。",
+    },
 
     # ---- S 系统锚（Phase 0 · Merge-0，2026-08-26）----
     "S1": {
@@ -1069,7 +1106,7 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                    "B26", "B27", "B28", "B29", "B30",
-                   "E1", "E2", "E3", "E4", "E5", "E6", "E7",
+                   "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                    "S9", "S10", "S11", "S12", "S13"]  # S 系统锚（Phase 0-4；S9=LVS/S10=多层/S11=规模/S12=阵列分布/S13=设计良率）
 

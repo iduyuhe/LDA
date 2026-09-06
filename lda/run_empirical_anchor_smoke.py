@@ -1,12 +1,12 @@
-"""D-62 实证大数据锚 smoke：harness 实证锚题（E1-E7 第二道非 AI ground）+ 语料评审流。
+"""D-62 实证大数据锚 smoke：harness 实证锚题（E1-E9 第二道非 AI ground）+ 语料评审流。
 
 覆盖：
-  ① harness 实证锚题解析（BENCHMARK_DEFS 50 = B1-B30 + E1-E7 + S1-S13；E 题 golden 来自实测语料；
+  ① harness 实证锚题解析（BENCHMARK_DEFS 52 = B1-B30 + E1-E9 + S1-S13；E 题 golden 来自实测语料；
      B19 为 P1-M4 新增链路级无源无增益物理定律锚；B20-B27 为 v0.8 内核纵深新增）
   ② 参考候选 34/34 PASS（物理定律 + 实证锚双 ground）
   ③ 扰动候选：实证锚题 FAIL 检测（自适应扰动幅度，实证锚能抓偏离）
   ④ 语料评审流：提交（citation/数值/σ 门禁 + 防重）→ 具名评审（缺评审人拒）→ 落地 → reload 生效
-  ⑤ harness 键集一致性（E1-E7 全部可解析）
+  ⑤ harness 键集一致性（E1-E9 全部可解析，动态由 BENCHMARK_ORDER 派生）
   ⑥ measurement_stats 自洽
 """
 import os
@@ -34,13 +34,15 @@ def check(name, ok, detail=""):
 def main():
     # ① 实证锚题解析
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
-    check("BENCHMARK_DEFS 50 题（B1-B30+E1-E7+S1-S13）", len(BENCHMARK_DEFS) == 50
-          and e_ids == ["E1", "E2", "E3", "E4", "E5", "E6", "E7"],
+    n_e_total = len(e_ids)
+    check(f"BENCHMARK_DEFS 题数 = BENCHMARK_ORDER 长度（含 E1-E{n_e_total} 实证锚）",
+          len(BENCHMARK_DEFS) == len(BENCHMARK_ORDER)
+          and e_ids == [f"E{i}" for i in range(1, n_e_total + 1)],
           f"defs={len(BENCHMARK_DEFS)} e={e_ids}")
     specs, cand_map = build_harness_specs()
     emp = [s for s in specs if s.oracle_kind == "empirical_measurement"]
-    check("实证锚题解析（E1-E7 oracle_kind=empirical_measurement）",
-          len(emp) == 7 and all(s.spec_id in ("E1", "E2", "E3", "E4", "E5", "E6", "E7") for s in emp),
+    check(f"实证锚题解析（E1-E{n_e_total} oracle_kind=empirical_measurement）",
+          len(emp) == n_e_total and all(s.spec_id in e_ids for s in emp),
           f"emp={len(emp)}")
     goldens = {s.spec_id: s.oracle_fn(s.params) for s in emp}
     # D-63：E3 golden 由「解析公式反算的 9.15」换成「实测 FSR 10.44」
@@ -49,7 +51,7 @@ def main():
     # （300nm LPCVD Si3N4 平台 1.0×0.3um，OFDR 环腔实测 + MZI 交叉验证，几何已对齐）
     # D-66：E1 golden 由「n_eff 2.63（经核实为错值，真值 2.44~2.46）」换成
     # 「群折射率 n_g 4.18」（SOI 500×220nm racetrack L=66.8um，arXiv:2011.03273
-    # 实测 FSR=8.6nm 反演，含 DOI → A 级）。至此 E1-E7 golden 全部 A 级可溯源。
+    # 实测 FSR=8.6nm 反演，含 DOI → A 级）。至此 E1-E9 golden 全部 A 级可溯源（含 v0.9.51 升格的 E8/E9）。
     check("E 题 golden=语料值（4.18/1.892/10.44/0.18/0.05/0.087/-41）",
           abs(goldens["E1"] - 4.18) < 1e-9 and abs(goldens["E2"] - 1.892) < 1e-9
           and abs(goldens["E3"] - 10.44) < 1e-9
@@ -139,7 +141,8 @@ def main():
     npass = sum(1 for s in specs
                 if s.compare_fn(cand_map[s.spec_id](s, s.oracle_fn(s.params)),
                                 s.oracle_fn(s.params)) <= s.tol)
-    check("注册候选 50/50 PASS（双 ground · cmp 分发口径）", npass == len(specs) == 50,
+    check(f"注册候选全部 PASS（双 ground · cmp 分发口径，{npass}/{len(specs)}）",
+          npass == len(specs),
           f"{npass}/{len(specs)}")
 
     # ③ 扰动候选：实证锚题 FAIL 检测（自适应扰动幅度）
@@ -151,7 +154,7 @@ def main():
         abs((goldens[s.spec_id] * (1.0 + max(0.10, 2.0 * s.tol / max(abs(goldens[s.spec_id]), 1e-12))))
             - goldens[s.spec_id]) > s.tol
         for s in emp)
-    check("实证锚题扰动 FAIL 检测（自适应 rel，全部 7 题）", emp_fail,
+    check(f"实证锚题扰动 FAIL 检测（自适应 rel，全部 {n_e_total} 题）", emp_fail,
           "实证锚能抓候选偏离实测（死标量比对，扰动≥2×tol）")
 
     # ④ 语料评审流（临时库）
@@ -199,15 +202,14 @@ def main():
 
     # ⑤ harness 键集一致性（D-63：区分可溯源 A 级 / 待溯源 B 级）
     _anchors = {b: BENCHMARK_DEFS[b].get("anchor")
-                for b in ("E1", "E2", "E3", "E4", "E5", "E6", "E7")}
+                for b in e_ids}
     # D-64：E2 换用可公开溯源的实测群折射率语料（E-SIN-NG-300）→ 升 A 级。
     # D-66：E1 原用 E-SOI-NEFF-220（n_eff=2.63）经逐字核实系错值（真值 2.44~2.46），
     #       改判为 n_g 实测锚 E-SOI-NG-220（4.18±0.05，arXiv:2011.03273 racetrack
     #       实测 FSR 反演，含 DOI）→ **E1 同步升 A 级**。
-    #       至此 E1-E7 全部为 A 级可公开溯源实证锚（B 级清零）。
-    check("E1-E7 anchor 分型（D-66 后全部 = empirical(A级可公开溯源)，B 级清零）",
-          all(_anchors[b] == "empirical"
-              for b in ("E1", "E2", "E3", "E4", "E5", "E6", "E7")),
+    #       至此 E1-E{n_e_total} 全部为 A 级可公开溯源实证锚（B 级清零）。
+    check(f"E1-E{n_e_total} anchor 分型（D-66 后全部 = empirical(A级可公开溯源)，B 级清零）",
+          all(_anchors[b] == "empirical" for b in e_ids),
           str(_anchors))
 
     # ⑦ D-63 来源边界门禁：仅限公开论文/datasheet/公开测量数据集，且必须可公开溯源

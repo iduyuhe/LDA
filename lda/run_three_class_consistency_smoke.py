@@ -54,8 +54,10 @@ def _harness_three_class():
 
 def _readme_three_class():
     txt = open(README, encoding="utf-8").read()
+    # 🔴 锚定到「当前账本」段的「验证三分类（...）：...」唯一标记，避免误匹配历史版本链里
+    # 同样句式（v0.9.39 等历史条目也含「严格独立 N 道 · 降级量级参考 M 道 · 自证桩 K 道」）。
     m = re.search(
-        r"严格独立\s*(\d+)\s*道.*?降级量级参考\s*(\d+)\s*道.*?自证桩\s*(\d+)\s*道",
+        r"验证三分类（[^）]*）\s*：\s*严格独立\s*(\d+)\s*道.*?降级量级参考\s*(\d+)\s*道.*?自证桩\s*(\d+)\s*道",
         txt, re.S)
     if not m:
         return None
@@ -130,13 +132,13 @@ def _run():
 
     # C4 反向：篡改 README 数字 ⇒ C2 必须 FAIL
     txt = open(README, encoding="utf-8").read()
-    polluted = txt.replace("严格独立 25 道", "严格独立 99 道")
+    polluted = txt.replace(f"严格独立 {h_strict} 道", f"严格独立 99 道")
     tmp = README + ".pollute_tmp"
     try:
         open(tmp, "w", encoding="utf-8").write(polluted)
         # 用污染副本重算 README 三分类（绕过真实 README 路径，直接测正则判定）
         m = re.search(
-            r"严格独立\s*(\d+)\s*道.*?降级量级参考\s*(\d+)\s*道.*?自证桩\s*(\d+)\s*道",
+            r"验证三分类（[^）]*）[^\n]*?严格独立\s*(\d+)\s*道[^\n]*?降级量级参考\s*(\d+)\s*道[^\n]*?自证桩\s*(\d+)\s*道",
             polluted, re.S)
         pol_tc = tuple(int(m.group(i)) for i in range(1, 4)) if m else None
         ok = pol_tc != (h_strict, h_deg, h_stub)

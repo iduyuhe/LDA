@@ -34,18 +34,19 @@ def main():
     e_bench = {b: d for b, d in BENCHMARK_DEFS.items()
                if d.get("anchor") in ("empirical", "empirical_unverified")}
     e_trace = {b: d for b, d in e_bench.items() if d.get("anchor") == "empirical"}
-    check("双 ground：48 题（B1-B28 物理定律 + E1-E7 实证 + S1-S13 系统）",
-          len(BENCHMARK_DEFS) == 48 and len(e_bench) == 7,
-          f"total={len(BENCHMARK_DEFS)} empirical={sorted(e_bench)}")
+    _n_e = len([b for b in BENCHMARK_DEFS if b.startswith("E")])
+    check(f"双 ground：{len(BENCHMARK_DEFS)} 题（B* 物理定律 + E* 实证 + S* 系统，动态计数）",
+          len(e_bench) == _n_e,
+          f"total={len(BENCHMARK_DEFS)} E={_n_e} empirical={sorted(e_bench)}")
     # D-64：E2 换用可公开溯源的实测群折射率语料（E-SIN-NG-300）→ 升 A 级。
     # D-66：E1 原 n_eff=2.63 经逐字核实为错值 → 改判 n_g 实测锚 E-SOI-NG-220
     #       （4.18，arXiv:2011.03273）→ **E1 同步升 A 级**。
     #       至此 A 级 7 道 / B 级 0 道，全部走「必须可溯源」的严格门禁。
-    check("实证锚题 golden 全部可 resolve（D-66 后 A 级 7 道，B 级清零）",
+    check("实证锚题 golden 全部可 resolve（D-66 后 A 级全量，B 级清零）",
           all(anchor.resolve(d.get("empirical_id"),
                              require_traceable=(d.get("anchor") == "empirical"))[0]
               is not None for d in e_bench.values())
-          and len(e_trace) == 7,
+          and len(e_trace) == len(e_bench),
           f"A级={sorted(e_trace)} | golden="
           f"{ {b: anchor.resolve(d.get('empirical_id'), require_traceable=(d.get('anchor') == 'empirical'))[0] for b, d in e_bench.items()} }")
 

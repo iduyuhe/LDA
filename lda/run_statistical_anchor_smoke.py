@@ -107,13 +107,13 @@ def main() -> int:
           abs(bad_mean - golden) > 0.15,
           f"Δ={abs(bad_mean - golden):.3f} > 0.15")
 
-    # ⑦ 题库计数 47（B27 27 + E7 7 + S13 13）
+    # ⑦ 题库计数（B+E+S 动态，v0.9.51 起不再硬编码 50/7）
     b_ids = [b for b in BENCHMARK_ORDER if b.startswith("B")]
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
     s_ids = [b for b in BENCHMARK_ORDER if b.startswith("S")]
-    check("题库 50 题（B1-B30 30 + E1-E7 7 + S1-S13 13）",
-          len(BENCHMARK_ORDER) == 50 and len(b_ids) == 30
-          and len(e_ids) == 7 and len(s_ids) == 13,
+    check("题库（B1-B30 + E1-E* + S1-S13 动态计数）",
+          len(b_ids) == 30 and len(s_ids) == 13
+          and e_ids == [f"E{i}" for i in range(1, len(e_ids) + 1)],
           f"总={len(BENCHMARK_ORDER)} B={len(b_ids)} E={len(e_ids)} S={len(s_ids)}")
 
     # ⑧ S8 OSNR 统计锚（模板复用验证）

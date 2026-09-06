@@ -71,8 +71,8 @@ ANCHOR_HOSTS: dict[str, list[tuple[str, str, str]]] = {
     "B3":  [("engine_ringresonator", "inferred", "Airy 腔 FSR 无独立品类；FSR 口径方法学挂谐振腔家族（与 B4/B20 并列对照）")],
     "B4":  [("engine_ringresonator", "code", "引擎 FSR 解析锚 λ²/(n_g·2πR)，engine note 同式"),
             ("add_drop", "title", "锚对象即 add-drop 环形谐振器 drop 口传递函数")],
-    "B5":  [("engine_ybranchloss", "corpus", "引擎真判决锚 E-YBRANCH-LOSS 在 48 集外；B5=理想 50/50 下限 3.0dB 守则桩（同器件名义覆盖）")],
-    "B6":  [("engine_gratingeff", "corpus", "引擎真判决锚 E-GRATING-EFF 在 48 集外；B6=成熟工艺可达效率 0.5 守则桩（同器件名义覆盖）")],
+    "B5":  [("engine_ybranchloss", "code", "引擎真判决锚已升格为 E9（E-YBRANCH-LOSS，degraded_ordinal 量级参考，c1 未标定唯象系数 rel≈43%）；B5=理想 50/50 下限 3.0dB 守则桩（同器件名义覆盖）")],
+    "B6":  [("engine_gratingeff", "code", "引擎真判决锚已升格为 E8（E-GRATING-EFF，strict 严格独立，rel≈3.3%）；B6=成熟工艺可达效率 0.5 守则桩（同器件名义覆盖）")],
     "B7":  [("engine_crossing", "title", "波导交叉串扰；引擎 IL+XT 双出口，E7=实测 XT 同器件（守则桩 vs 实证桩）")],
     "B11": [("engine_ringresonator", "title", "环形谐振器 drop 口透射谱谱形 L2（结构性不可接，见 T-4 侦察）")],
     "B14": [("engine_dcoupler", "code", "引擎 cheap=b14_dc_coupling_length，note 显式 B14"),
@@ -345,8 +345,8 @@ def main() -> None:
       "candidate=readout_fidelity_quad（ε 高斯重叠数值积分，判据 D 真收敛）；严格独立。\n")
     W("3. **B5/B6/B7 守则桩**：非接线问题而是 ORACLE 缺口（Meep/Tidy3D 场级，C 期锁）；解锁后 YbranchLoss/GratingEff/Crossing "
       "引擎获得集内真锚。\n")
-    W("4. **引擎真判决锚入集**：E-YBRANCH-LOSS / E-GRATING-EFF / D-73 三处引擎级判决锚在 50 集外 ⇒ 建议评估升格，"
-      "否则 50 锚口径对 YbranchLoss / GratingEff / PhaseShifter 三类覆盖失真（矩阵 K 证据即此；注 B29 已部分回应 PhaseShifter）。\n")
+    W("4. ~~引擎真判决锚入集~~ **✅ 已落地 v0.9.51**：E-YBRANCH-LOSS→E9 / E-GRATING-EFF→E8 升格进 52 题集，"
+      "K 证据失真（原 corpus 在集外）消除；D-73 已于 v0.9.39 升格为 B29。可被外部验货比例 25/50 → 26/52。\n")
     W("5. taper（B8）与散射（B1）两无载体锚指向品类缺口：无「锥度/散射体」设计引擎 ⇒ 可评估新增品类，或明示 B8 归互连级。\n")
     W("\n> **覆盖死角收口结论（2026-09-06）**：原 §3.1 五处零覆盖中，PhaseShifter（B29）+ readout_fidelity（B30）"
       "已于 v0.9.39 接严格独立候选，本矩阵已登记宿主；剩余 mixed_system / wdm_coupler / splitter_readout 三处为"

@@ -418,9 +418,10 @@ def h_verification_ledger(h, p, q, path):
         phys_ids, anchor_ids = [], []
         for bid in dispatch:
             (phys_ids if bid in phys else anchor_ids).append(bid)
-        # 实证大数据锚：文件背载、运行期由 harness 装载；此处声明存在 + 文档计数
-        empirical_seed = 7  # E1–E7（README 账本）；真实器件实测语料
-        empirical_ids = [f"E{i}" for i in range(1, empirical_seed + 1)]
+        # 实证大数据锚：文件背载、运行期由 harness 装载；此处声明存在 + 文档计数。
+        # 🔴 v0.9.51：动态推导，不写死数量（曾写死 7，E8/E9 升格后端点口径脱节
+        # = 对外验货失真，同类「写死数字」漂移的第二次根治）。
+        empirical_ids, empirical_seed, empirical_stale = [], 0, False
         # ci_core 动态取 CORE_SMOKES 长度：此前写死 82，实际已 83，
         # 对外验货端点出现与 README 账本不一致的数字（同一类漂移第二次）。
         # 🔴 v0.9.41：兜底值原为**写死 82**（v0.9.9 前主路径遗留）。失败时静默报
@@ -445,17 +446,21 @@ def h_verification_ledger(h, p, q, path):
                 # 先判降级：candidate_status=degraded_ordinal 的锚「有候选、跑了真
                 # 求解器」但几何不同源/精度不足 ⇒ 既不进 strict 也不算自证桩；
                 # 若先查登记表就会被误分成 strict ⇒ verified 虚报（假绿）。
-                # ⚠️ v0.9.23 起**降级档为空**（E2 换 semivec_ng 后升为 strict），
-                # 该分支是**防回归保留**：将来再出现降级锚时口径仍须与
-                # run_benchmark_falsifiability_smoke 逐项相等（当前 18 / 0 / 30）。
+                # ⚠️ v0.9.51：降级档**不再为空**（E9 以 degraded_ordinal 升格为
+                # 量级参考候选，因唯象系数 c1 未标定 rel≈43%）；该分支是**防回归保留**：
+                # 降级锚口径仍须与 run_benchmark_falsifiability_smoke 逐项相等
+                # （三分类全量动态推导，不写死任何数字）。
                 if _d.get("candidate_status") == "degraded_ordinal":
                     _degraded.append(_bid)
                 elif _key and _key in BENCHMARK_CANDIDATES:
                     _indep.append(_bid)
                 else:
                     _stub.append(_bid)
+                empirical_ids = sorted([b for b in BENCHMARK_DEFS if b.startswith("E")])
+                empirical_seed = len(empirical_ids)
         except Exception:  # noqa: BLE001 —— 推导失败时**不猜**：留空并暴露错误
             _indep, _degraded, _stub = [], [], []
+            empirical_ids, empirical_seed, empirical_stale = [], None, True
         ledger = {
             "endpoint": "/api/verification_ledger",
             "ci_core": {"count": ci_core, "tag": "core", "stale": ci_core_stale,
@@ -463,18 +468,20 @@ def h_verification_ledger(h, p, q, path):
                                + ("；⚠️ 取数失败，count=None（如实暴露，不回落过时常数）"
                                   if ci_core_stale else "")},
             "anchors": {
-                "total": len(dispatch) + empirical_seed,
+                "total": (len(dispatch) + empirical_seed) if empirical_seed is not None else None,
                 "by_kind": {
                     "physical-law": {"count": len(phys_ids), "ids": phys_ids},
                     "oracle-dependent": {"count": len(anchor_ids), "ids": anchor_ids,
                                          "note": "B5/B6/B7 依赖外部 ORACLE（meep/tidy3d 真场级或 numpy 离线近似），ORACLE 缺失时回退设计守则下限——非纯物理定律，属 R4 开放缺口"},
                     "empirical": {"count": empirical_seed, "ids": empirical_ids,
-                                  "note": "LDA 实证大数据锚（真实器件实测语料），文件背载，运行期由 harness 装载"},
+                                  "stale": empirical_stale,
+                                  "note": "LDA 实证大数据锚（真实器件实测语料），文件背载，运行期由 harness 装载"
+                                          + ("；⚠️ 推导失败，count=None（如实暴露，不回落过时常数）" if empirical_stale else "")},
                 },
                 "dispatch_ids": list(dispatch.keys()),
             },
             # D-64：golden 真实只是必要条件，candidate 还必须**独立求解**。
-            # 7 道实证锚里只有 E2 接通了独立候选求解器（v0.9.23 起为 2D 半矢量
+            # 9 道实证锚里只有 E2 接通了独立候选求解器（v0.9.23 起为 2D 半矢量；v0.9.51 升格 E8/E9 后共 9 道）
             # 本征模 semivec_ng），其余 6 道候选≡黄金（恒 PASS）。
             # 这是对外验货面必须自己说出口的事——宁可难看，不可假绿。
             "judgment_paths": {

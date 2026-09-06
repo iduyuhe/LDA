@@ -319,6 +319,87 @@ def _harness_reference_candidate(spec: VerificationSpec, oracle_value: Any) -> f
     return oracle_value
 
 
+# ---------------------------------------------------------------------------
+# 1a2. 实证锚（E 族）独立候选：引擎解析模型 vs 实测 golden（v0.9.51 · 任务②）
+# ---------------------------------------------------------------------------
+# 把 corpus 失真区（E-YBRANCH-LOSS / E-GRATING-EFF 此前仅作语料对照、未正式
+# 升格进判决口径）补进 50 题集，作为真·独立判决锚（死标量比对），
+# 直接提升「可被外部验货的比例」。两处候选走 lda_design.loss_engines 的解析模型，
+# 与实测 golden 方法学不同源 ⇒ |cand−golden| 是真残差（判据 D 满足：残差≠0、
+# 扰动有响应、双向标定）。E8=严格独立；E9 因唯象系数 c1 未标定（rel≈43%）诚实
+# 标为降级量级参考（degraded_ordinal），不进死标量判决列。
+@_register_candidate(
+    "engine_grating_eff",
+    "光栅耦合器峰值耦合效率：0.5·sin²(π·ff)·exp(−θ²/2σ²) 解析模型"
+    "—— 与实测 golden E-GRATING-EFF (APL 96, 051126, 0.42±0.05) 死标量比对，"
+    "rel≤3.3%，真可证伪")
+def _grating_eff_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """E8 独立候选：光栅耦合器峰值耦合效率解析模型（v0.9.51）。
+
+    golden = 实测 0.42±0.05（fully-etched PC grating coupler，SOI 220nm，
+             Liu APL 96, 051126 (2010) 峰值耦合效率）
+    cand   = 0.5·sin²(π·ff)·exp(−θ²/(2σ²))（ff 占空比 / θ 倾斜角 / σ 倾斜散布）
+
+    两条路径方法学不同源：解析唯象模型 vs 真实器件表征，
+    |cand−golden| 是真残差（不读测量数据即可复算）。
+
+    ⚠️ 已知边界：模型为「理想 Bragg×占空比×倾斜损耗」简化式，不含波导-光纤
+    模场失配、偏振串扰、背向反射；对 fully-etched PC 孔阵结构属近似对照，
+    不构成精确判决输入（结构差异已在 seed_empirical.json 注明）。
+    """
+    try:  # 优先按扁平包路径（lda/ 在 sys.path 时，如 run_*_smoke.py）
+        from lda_design import loss_engines as le
+    except ImportError:
+        try:  # 回退：仓库根在 sys.path 时（如 run_harness.py）
+            from lda.lda_design import loss_engines as le
+        except ImportError:  # 最终回退：把 lda_design 目录塞进 sys.path 后裸导入
+            _ensure_paths()
+            import loss_engines as le  # type: ignore
+    p = spec.params
+    geom = {
+        "ff": float(p.get("ff", 0.5)),
+        "theta_deg": float(p.get("theta_deg", 8.0)),
+        "tilt_sigma_deg": float(p.get("tilt_sigma_deg", 15.0)),
+    }
+    return float(le.engine_grating_eff(geom).get("value"))
+
+
+@_register_candidate(
+    "engine_ybranch_split",
+    "Y-branch 过量损耗：c1·θ² 解析模型（c1=0.004 dB/deg² 工艺标定唯象系数）"
+    "—— 与实测 golden E-YBRANCH-LOSS (Opt. Express 21,1310, 0.28±0.02) 死标量比对；"
+    "⚠️ rel≈43% 模型粗糙度，c1 未标定，仅作量级参考（降级档），待真实 PDK 标定")
+def _ybranch_split_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """E9 独立候选（降级量级参考）：Y-branch 过量损耗解析模型（v0.9.51）。
+
+    golden = 实测 **过量损耗** 0.28±0.02 dB（Y-branch 1x2 SOI，Vermeulen
+             Opt. Express 21, 1310 (2013)；原 3.4 dB 含分光插损、无出处，已弃）
+    cand   = c1·θ²（c1=0.004 dB/deg² 工艺标定唯象系数，θ 分束角）
+
+    🔴 诚实边界（R16 同构）：候选与 golden 几何不同源、方法独立，但残差的主成分
+    是「c1 唯象系数未就真实 PDK 标定」的模型粗糙度（|0.40−0.28|=0.12 dB，rel≈43%），
+    而非数值噪声。故本锚标记为 **降级量级参考**（degraded_ordinal），不进死标量
+    判决列，仅证明「引擎在场、方向正确、量级吻合」。
+    ⚠️ 不得为变绿而放宽判据去拟合实测（拟合 = 循环自证，见 E6 教训）。
+    取 excess_loss_dB（器件品质量），而非 split_loss_dB（含 3.0103 分光插损，
+    那是对链路预算的量，不能拿去比过量损耗 golden）。
+    """
+    try:  # 优先按扁平包路径（lda/ 在 sys.path 时，如 run_*_smoke.py）
+        from lda_design import loss_engines as le
+    except ImportError:
+        try:  # 回退：仓库根在 sys.path 时（如 run_harness.py）
+            from lda.lda_design import loss_engines as le
+        except ImportError:  # 最终回退：把 lda_design 目录塞进 sys.path 后裸导入
+            _ensure_paths()
+            import loss_engines as le  # type: ignore
+    p = spec.params
+    geom = {
+        "theta_deg": float(p.get("theta_deg", 10.0)),
+        "excess_coef": float(p.get("excess_coef", 0.004)),
+    }
+    return float(le.engine_ybranch_split(geom).get("excess_loss_dB"))
+
+
 # 🔴 v0.9.23：`fdfd_ng` **取消登记**（不再 @_register_candidate），仅保留函数。
 # 原因：E2 改用半矢量候选后，全库再无锚题引用 fdfd_ng；而
 # run_benchmark_falsifiability_smoke 护栏②断言

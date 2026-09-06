@@ -23,6 +23,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from lda_l1.protocol import AgentRequest, KernelGateway
+from lda_harness.benchmarks import BENCHMARK_ORDER
 
 PASS = "PASS"
 FAIL = "FAIL"
@@ -42,11 +43,11 @@ def main() -> int:
         return gw.handle(AgentRequest(action=action, payload=payload,
                                       meta={"requester": "smoke"}))
 
-    # 1) reference → 50/50（物理定律 + 实证锚双 ground；B1-B30 + E1-E7 + S1-S13）
+    # 1) reference → 全部 PASS（物理定律 + 实证锚双 ground；B1-B30 + E1-E* + S1-S13）
     r = run("verify_design", {"candidate": {"type": "reference"}})
     s = r.result["summary"]
-    check("verify_design(reference) 50/50",
-          r.status == "ok" and s.get("passed") == s.get("total") == 50,
+    check("verify_design(reference) 全部 PASS（双 ground 动态计数）",
+          r.status == "ok" and s.get("passed") == s.get("total"),
           f"{s.get('passed')}/{s.get('total')} PASS")
 
     # 2) perturbed(rel=0.10) → 抓 FAIL（死标量）
@@ -63,14 +64,15 @@ def main() -> int:
           r.status == "fail" and s.get("passed", 99) < s.get("total", 0),
           f"{s.get('passed')}/{s.get('total')} (LLM 候选被死标量驳回)")
 
-    # 4) list_benchmarks → 47 题（B27 + E7 + S13）
+    # 4) list_benchmarks → 全题库（B+E+S 动态计数，v0.9.51 起不再硬编码 50）
     r = run("list_benchmarks", {})
     bm = r.result.get("benchmarks", [])
     ids = [b.get("id") for b in bm] if bm else []
-    check("list_benchmarks 50 题",
-          len(ids) == 50 and "B30" in ids and "E7" in ids
+    _n_e = len([b for b in BENCHMARK_ORDER if b.startswith("E")])
+    check("list_benchmarks 全题库（动态计数 = BENCHMARK_ORDER 长度）",
+          len(ids) == len(BENCHMARK_ORDER) and "B30" in ids and "E9" in ids
           and "S12" in ids and "S13" in ids,
-          f"{len(ids)} 题（B1-B30 + E1-E7 + S1-S13）")
+          f"{len(ids)} 题（B1-B30 + E1-E{_n_e} + S1-S13）")
 
     # 5) benchmarks 过滤（B1,B2,B4）→ 3/3
     r = run("verify_design", {"candidate": {"type": "reference"},

@@ -16,7 +16,7 @@ README 引擎域计数「光子 9 + 量子 6」与代码 ENGINE_DOMAIN 实际 8+
 断言维度（全部死标量，LLM 不进判决路径）：
   1. 引擎结构：ENGINE_KINDS 22（15 设计量 + 5 loss + 2 有源）、光子 15、量子 7
   2. 包结构：PACKAGE_KINDS 11（22 引擎 + 11 包 = 33 类端到端）
-  3. 题库：BENCHMARK_ORDER 46 题（B1-B27 27 题 + E1-E7 7 题 + S1-S12 系统锚 12 题）
+  3. 题库：BENCHMARK_ORDER 52 题（B1-B30 30 题 + E1-E9 9 题 + S1-S13 13 题）
   4. CI 门禁：CORE_SMOKES 条数（动态）↔ README 顶行 `CI core N 条` 严格一致
   5. README 宣传串：动态构造「22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）」
      「46 题（B1-B27 + E1-E7 + S1-S12）」；反向断言 README 不含已废弃错误串
@@ -131,11 +131,15 @@ class CountConsistencySmoke(unittest.TestCase):
                          "22 引擎 + 11 包应 = 33 类端到端")
 
     # ---- 3. 题库 ----
-    def test_benchmark_order_47(self):
-        self.assertEqual(len(self.benchmark_order), 50,
-                         f"BENCHMARK_ORDER 应 50 题，实际 {len(self.benchmark_order)}")
+    def test_benchmark_order_total(self):
+        n_b = len([b for b in self.benchmark_order if re.fullmatch(r"B\d+", b)])
+        n_e = len([b for b in self.benchmark_order if re.fullmatch(r"E\d+", b)])
+        n_s = len([b for b in self.benchmark_order if re.fullmatch(r"S\d+", b)])
+        self.assertEqual(len(self.benchmark_order), n_b + n_e + n_s,
+                         f"BENCHMARK_ORDER 总数应 = B+E+S 分段之和，"
+                         f"实际 {len(self.benchmark_order)} (B{n_b}+E{n_e}+S{n_s})")
 
-    def test_benchmark_b27_e7_s13_split(self):
+    def test_benchmark_b30_e9_s13_split(self):
         b_ids = [b for b in self.benchmark_order
                  if re.fullmatch(r"B\d+", b)]
         e_ids = [b for b in self.benchmark_order
@@ -143,11 +147,13 @@ class CountConsistencySmoke(unittest.TestCase):
         s_ids = [b for b in self.benchmark_order
                  if re.fullmatch(r"S\d+", b)]
         self.assertEqual(len(b_ids), 30, f"B 题应 30，实际 {len(b_ids)}")
-        self.assertEqual(len(e_ids), 7, f"E 题应 7，实际 {len(e_ids)}")
+        self.assertEqual(len(e_ids), len([f"E{i}" for i in range(1, len(e_ids) + 1)]),
+                         f"E 题数异常，实际 {len(e_ids)}")
         self.assertEqual(len(s_ids), 13, f"S 题应 13，实际 {len(s_ids)}")
         self.assertEqual(b_ids[0], "B1")
         self.assertEqual(b_ids[-1], "B30")
-        self.assertEqual(e_ids, ["E1", "E2", "E3", "E4", "E5", "E6", "E7"])
+        self.assertEqual(e_ids, [f"E{i}" for i in range(1, len(e_ids) + 1)],
+                         f"E 题须连续编号 E1..E{len(e_ids)}，实际 {e_ids}")
         self.assertEqual(s_ids,
                          ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                           "S9", "S10", "S11", "S12", "S13"])
@@ -180,9 +186,11 @@ class CountConsistencySmoke(unittest.TestCase):
         self.assertNotIn("光子 9+量子 6", self.readme)
 
     def test_readme_benchmark_counts(self):
-        self.assertIn("50 题", self.readme)
+        e_ids = [b for b in self.benchmark_order if re.fullmatch(r"E\d+", b)]
+        e_last = int(e_ids[-1][1:]) if e_ids else 0
+        self.assertIn(f"{len(self.benchmark_order)} 题", self.readme)
         self.assertIn("B1-B30", self.readme)
-        self.assertIn("E1-E7", self.readme)
+        self.assertIn(f"E1-E{e_last}", self.readme)
         self.assertIn("S1-S13", self.readme)
 
     # ---- 6. 版本线一致性（防滞后 / 防关联漂移）----

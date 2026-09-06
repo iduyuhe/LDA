@@ -263,6 +263,13 @@ CORE_SMOKES: List[str] = [
     # 豁免表理由防腐化护栏（v0.9.46 N-2：理由必须含真实实测耗时，
     #   禁「超时」式搪塞 —— N-2 复测抓到两条旧注「>60s 超时」实为 47.2s/64.3s 完成）
     "run_noncore_reason_smoke.py",
+    # stats.html 数据看板接线护栏（v0.9.47：路由白名单 + HttpOnly Cookie 探活显示，
+    #   取代可被 XSS 伪造的 localStorage 影子标志；含真跑 + 反向测试）
+    "run_stats_nav_wiring_smoke.py",
+    # 智能体客服「选择后能真正回复」护栏（v0.9.47：根因 = cs_widget.js addMsg 漏写
+    #   return m 致 wait=undefined、removeChild 抛错、回复永远卡「…」；含真跑往返 +
+    #   addMsg 必须 return m 静态守卫 + 反向污染测试）
+    "run_cs_agent_chat_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

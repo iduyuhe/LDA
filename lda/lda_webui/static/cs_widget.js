@@ -113,6 +113,7 @@
         esc(text));
       body.appendChild(m);
       body.scrollTop = body.scrollHeight;
+      return m;
     }
 
     function showSug(sugs) {
@@ -150,7 +151,7 @@
       })
         .then(function (r) { return r.json(); })
         .then(function (d) {
-          body.removeChild(wait);
+          if (wait && wait.parentNode) body.removeChild(wait);
           addMsg("bot", d.reply || "（无回复）");
           history.push({ role: "assistant", content: d.reply || "" });
           showSug(d.suggestions);
@@ -160,7 +161,7 @@
           }
         })
         .catch(function () {
-          body.removeChild(wait);
+          if (wait && wait.parentNode) body.removeChild(wait);
           addMsg("bot", "网络异常，请稍后重试。");
         });
     }
@@ -185,13 +186,13 @@
       })
         .then(function (r) { return r.json(); })
         .then(function (d) {
-          body.removeChild(wait);
+          if (wait && wait.parentNode) body.removeChild(wait);
           addMsg("bot", d.reply || "已收到，我们会尽快联系您。");
           history.push({ role: "assistant", content: d.reply || "" });
           panel.querySelector("#csLead").style.display = "none";
         })
         .catch(function () {
-          body.removeChild(wait);
+          if (wait && wait.parentNode) body.removeChild(wait);
           addMsg("bot", "提交失败，请稍后重试或直接邮件到开源仓库。");
         });
     }

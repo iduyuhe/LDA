@@ -49,7 +49,7 @@ def h_static_html(h, p, q, path):
     name = os.path.basename(path)
     fp = os.path.join(_app.WEBUI_DIR, "static", name)
     if name in ("index.html", "insights.html", "admin.html", "store.html",
-                "mine.html", "public.html") and os.path.exists(fp):
+                "mine.html", "public.html", "stats.html") and os.path.exists(fp):
         with open(fp, "rb") as f:
             h._send(200, body=f.read(), ctype="text/html", nocache=True)
     else:
@@ -792,6 +792,20 @@ def h_stats(h, p, q, path):
     return (_ok_code(obj), obj)
 
 
+def h_admin_me(h, p, q, path):
+    """GET /api/admin/me —— 管理员态轻量探活（v0.9.47 接线 stats.html 数据看板）。
+
+    P2-5：凭 HttpOnly Cookie（lda_admin_token）判断，零计算、零数据泄露。
+    用途：导航条凭真值决定是否显示「数据看板」链接，取代可被 XSS 伪造的
+    localStorage 影子标志（旧 nav.js 依赖 lda_admin_logged_in 的同类改造留半截）。
+    未登录 / 非管理员 → 401（与 /api/admin/* 一致的鉴权有效行为）；
+    已登录管理员 → 200 {"ok":true,"admin":true}。"""
+    store = _app._get_store()
+    if not store.is_admin(_app._token_from_request(h.headers)):
+        return (401, {"ok": False, "error": "需管理员登录"})
+    return (200, {"ok": True, "admin": True})
+
+
 # ---------- 公开自证看板（无需鉴权）----------
 # 设计约束：WebUI 进程零依赖（不 import numpy）。锚清单(BENCHMARK_ORDER)与
 # CI core 清单(CORE_SMOKES)的真实来源模块会经 golden/numpy 间接 import，
@@ -1483,6 +1497,7 @@ GET_ROUTES = {
     "/api/store/me/licenses": h_store_me_licenses,
     "/api/admin/orders": h_admin_orders,
     "/api/admin/users": h_admin_users,
+    "/api/admin/me": h_admin_me,
     "/api/stats": h_stats,
     "/api/public/stats": h_public_stats,
     "/api/admin/config": h_admin_config_get,

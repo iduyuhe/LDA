@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.9.47（2026-09-06 · stats.html 数据看板接线挂回导航 + 智能体客服「选择后真正回复」修复 · CI core 122→124 条）
+
+杜先生拍板 v0.9.46 遗留的孤儿页处置：「接线挂回导航」。stats.html（管理员数据看板）此前既路由 404 又导航不链。
+
+### 接线两处（均为「标签 ≠ 行为」类缺口）
+1. **路由白名单**：`routes.py:h_static_html` 的白名单缺 `"stats.html"` ⇒ GET /stats.html 恒 404。补入。
+2. **导航显示条件**：旧 `nav.js` 用 `localStorage("lda_admin_logged_in")` 决定「数据看板」显隐——这是 P2-5 改 HttpOnly Cookie 时**改造留半截**的同类缺陷（与 D-78 同源）：影子标志可被 XSS 伪造，且 admin Cookie 过期后 localStorage 仍为真 ⇒ 点了 401。改为**新建轻量探活端点 `GET /api/admin/me`**（凭 HttpOnly Cookie `lda_admin_token`，零计算、零数据泄露）：200+`admin:true` ⇒ 显示；否则隐藏。nav 内 `revealStatsIfAdmin()` 异步探活。
+3. **页面自身**：stats.html 引入 `/nav.js`（进去后能返回各页），`:root` 与六页暗色家族统一（补 `--tint/--tint-ink`，body 改 `var(--bg)`）。
+
+### 护栏（防回潮）
+- 新增 `run_stats_nav_wiring_smoke.py`（**9 判据含 4 道反向**，入 core 122→123）：真跑 WebUI 起服务断言 `/stats.html`=200 且含「数据看板」、`/nope.html`=404（证白名单生效非恒 200）、`/api/admin/me` 无凭据=401、带 admin Cookie=200 `admin:true`；静态判据 routes 白名单含 stats.html、nav 不依赖 localStorage、含 `/api/admin/me` 探活、stats 链接默认隐藏、stats.html 引 nav.js；**反向**：白名单移除/N 改路径/不引 nav.js/nav 回潮 localStorage 四种污染副本重跑对应判据必须 FAIL。
+
+### ④ 智能体客服「选择后不能真正回复」修复（杜先生报障）
+- **症状**：点右下角「LDA 智能体客服」气泡 → 点建议或输入发送后，回复永远卡在「…」、无真实回答，控制台报 `Failed to execute 'removeChild' on 'Node': parameter 1 is not of type 'Node'`。
+- **根因**：`lda_webui/static/cs_widget.js` 的 `addMsg()` **漏写 `return m;`**——它把消息节点 `m` 加进对话区却没返回。于是 `var wait = addMsg("bot", "…")` 拿到 `undefined`，随后 `body.removeChild(wait)` 抛 `参数不是 Node`；`.then` 在 `removeChild` 处抛错 ⇒ 真实 `reply` 那段 `addMsg("bot", d.reply)` 永远执行不到；`.catch` 再 `removeChild(undefined)` 同样抛错 ⇒ 页面级异常。后端 `cs_agent.chat` 经 curl + 单测验证**始终正常返回 reply**，问题纯在前端返回链断点（典型「标签 ≠ 行为 / 改造留半截」，与 D-78 同源）。
+- **修复**：① `addMsg()` 补 `return m;`；② 三处 `body.removeChild(wait)`（`send` 的 `.then`/`.catch` + `submitLead` 的 `.catch`）加 `if (wait && wait.parentNode)` 守卫（双保险，即使 wait 异常也不抛）。
+- **证据**：playwright 真浏览器复现「点建议→卡在…+页面报错」，修复后同路径拿到真实 reply、报错消失；后端 `cs_agent.chat` 各输入（含留资、引导）单独验证均正常。
+- **护栏**：新增 `run_cs_agent_chat_smoke.py`（**7 判据含 2 道反向**，入 core 123→124）：真跑 `/api/agent/chat` 发问→真实 reply、留资→`lead_captured`、引导→`guide` 结构；静态守卫 `addMsg` 必须 `return m` + `removeChild(wait)` 不得裸调用；**反向**删 `return m`/去守卫副本重跑对应判据必须 FAIL（防止本次漏写复发）。
+
+### 同步账本
+CI core 122→**123**；README 当前版本与账本行同步。
+
+### 遗留
+- stats.html 的 `/api/stats` 真实数据聚合依赖 `store.stats_summary`，生产 admin 登录后可见；本版仅完成「可达 + 可导航」，数据口径未改。
+
 ## v0.9.46（2026-09-06 · 全站视觉统一暗色 + 对公收款说明迁「我的」+ N-2 豁免表复测 · CI core 121→122 条）
 
 杜先生报两件事：①「首页、能力展示、验证实力、创新超市、我的、管理后台的背景颜色是两种风格，确认一下是否需要统一，无论采用哪种都要符合人的视觉习惯」；②「对公收款说明」放在能力展示页顶部不对劲，应挪到更合适的位置（如「我的」）。随后按排期做 N-2（豁免表理由复测）。

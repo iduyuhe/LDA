@@ -1,6 +1,6 @@
 /*
  * LDA 统一站点导航（Craft 模式生成）
- * 注入到 index.html / insights.html / store.html / mine.html / admin.html，
+ * 注入到 index.html / insights.html / store.html / mine.html / admin.html / stats.html，
  * 提供跨页导航 + 实时会员态 + 全局登录/注册弹窗（任何页面点登录直接弹窗，
  * 不再跳转到 store.html 二次点击——历史缺陷修复）。
  * 依赖页面已定义的 CSS 变量（--panel/--line/--txt/--mut/--accent），自动跟随主题。
@@ -57,7 +57,7 @@
       link("/store.html", "创新超市", "store") +
       '<a id="lda-nav-mine" href="/mine.html" style="display:none;text-decoration:none;font-size:14px">我的</a>' +
       link("/admin.html", "管理后台", "admin") +
-      (localStorage.getItem("lda_admin_logged_in") ? link("/stats.html", "数据看板", "stats") : "") +
+      '<a id="lda-nav-stats" href="/stats.html" style="display:none;text-decoration:none;font-size:14px;color:var(--mut)">数据看板</a>' +
       "</div>" +
       '<div id="lda-nav-auth" style="display:flex;gap:8px;align-items:center"></div>';
     document.body.insertBefore(nav, document.body.firstChild);
@@ -81,6 +81,26 @@
   }
 
   var TIER_LABELS = { standard: "标准个人", academic: "学术个人", institution: "机构席位" };
+
+  // v0.9.47：数据看板（stats.html）凭真值探活显示 —— 取代可被 XSS 伪造的
+  // localStorage lda_admin_logged_in 影子标志（P2-5 改造留半截同类缺陷）。
+  function revealStatsIfAdmin() {
+    var el = document.getElementById("lda-nav-stats");
+    if (!el) return;
+    fetch("/api/admin/me", { headers: { "Content-Type": "application/json" }, credentials: "include" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (d && d.ok && d.admin) {
+          el.style.display = "inline";
+          var on = currentKey() === "stats";
+          el.style.color = on ? "var(--accent)" : "var(--mut)";
+          el.style.fontWeight = on ? "700" : "400";
+        } else {
+          el.style.display = "none";
+        }
+      })
+      .catch(function () { el.style.display = "none"; });
+  }
 
   function renderAuth() {
     var box = document.getElementById("lda-nav-auth");
@@ -110,6 +130,7 @@
         }
       })
       .catch(function () { box.innerHTML = authButtons(); });
+    revealStatsIfAdmin();
   }
 
   window.navLogout = function () {

@@ -277,6 +277,10 @@ CORE_SMOKES: List[str] = [
     # 三分类对外一致性护栏（v0.9.48 N-4：README 账本 ≡ 本机 harness 推导 ≡
     #   /api/verification_ledger 端点三分类，任一漂移即红；含反向篡改测试）
     "run_three_class_consistency_smoke.py",
+    # 导购二期护栏（v0.9.49 N-5：无 LLM 可降级版；自然语言 → /api/store/guide 对 75 货架
+    #   实跑匹配；数字必来自货架数据（price_cny/specs），严禁模板/LLM 杜撰规格数字；
+    #   含真跑往返 + 价格真实性核对 + 乱码/空文本优雅返回 + 别名污染失准反向）
+    "run_store_guide_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

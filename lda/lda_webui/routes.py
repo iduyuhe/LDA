@@ -999,6 +999,11 @@ def h_proposal_design(h, p, q, path):
     return (200, _app.run_proposal_design(p))
 
 
+def h_store_guide(h, p, q, path):
+    """POST /api/store/guide —— N-5 导购二期（无 LLM 可降级版）：自然语言需求 → 货架实跑匹配。"""
+    return (200, _app.store_guide(p))
+
+
 def h_agent_loop(h, p, q, path):
     return (200, _app.run_agent_loop(p))
 
@@ -1601,6 +1606,7 @@ POST_ROUTES = {
     "/api/store/order": h_store_order_create,
     "/api/admin/config": h_admin_config_set,
     "/api/agent/chat": h_agent_chat,
+    "/api/store/guide": h_store_guide,
 }
 
 # 前缀匹配：顺序须与原 do_POST 一致

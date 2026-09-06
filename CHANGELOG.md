@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.9.49（2026-09-06 · N-5 导购二期（无 LLM 可降级版）上线 · CI core 126→127 条）
+
+### N-5 导购二期（D-2=A · 锚定导购、无 LLM 可降级版）
+- 按杜先生拍板 D-2=A 落地「导购先做无 LLM 可降级版」：自然语言需求 → `POST /api/store/guide` → 对 75 货架 facets **实跑匹配**。
+- 新增 `lda/lda_l2/store_guide.py`（确定性，零密钥）：
+  - `parse_query()` 把自由文本解析为结构化查询（赛道 / 应用域 / 价档 / 关键词 / 预算上限），关键词别名涵盖中英缩写；预算解析仅在有价格信号词时生效，避免把「800G」误当 ¥800。
+  - `score_shelf()` 多因子打分（赛道 +4 / 应用域 +3 / 价档 +2 / 标题命中 +2 / 正文命中 +1；超预算 −100），`recommend()` 排序取 top8。
+  - **铁律：数字一律从货架数据渲染**——价格来自 `price_of` 实付价、规格来自 `item.specs`，`build_reason()` 解释文案只拼变量，**严禁模板或 LLM 杜撰规格数字**；LLM 仅预留「解析+解释润色」扩展点（当前未启用）。
+- `routes.py` 注册 `POST /api/store/guide → h_store_guide`；`app.py` 新增 `store_guide(payload)`（注入 `store.price_of`）。
+- 超市页 `store.html` 新增「🧭 智能导购」卡片（输入框 + 示例短语 + 命中结果卡）；结果卡点击 `jumpToShelf()` 滚动并高亮对应货架（货架卡加 `id="shelf-<id>"`）；暗色主题一致。
+- 护栏 `run_store_guide_smoke.py`（**9 判据含 4 道反向**，入 core 126→127）：源码数字必来自数据、UI 已接线、真跑往返（QKD / CPO+预算）、价格与 `/api/shelf` 实付价一致、乱码/空文本优雅返回 count=0、清空 quantum 赛道别名后 QKD 货架分数下降（判据对污染响应）。
+
 ## v0.9.48（2026-09-06 · N-3 管理员令牌 fail-closed + N-4 三分类对外一致性护栏 · CI core 124→126 条）
 
 ### N-3 管理员令牌 fail-open 漏洞封堵

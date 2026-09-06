@@ -62,6 +62,28 @@
   .filt-sel{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:12px;background:var(--panel);color:var(--mut)}
   .filt-sum{font-size:12px;color:var(--mut);margin-left:auto}
   .filt-reset{border:1px solid var(--line);background:var(--panel);color:var(--red);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer}
+  /* N-5 导购二期（无 LLM 可降级版）：自然语言 → 货架实跑匹配 */
+  .guide-card{background:linear-gradient(135deg,var(--panel2),var(--tint));border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+  .guide-card h3{margin:0 0 4px;font-size:15px;color:var(--txt)}
+  .guide-sub{font-size:12px;color:var(--mut);margin-bottom:10px}
+  .guide-row{display:flex;gap:8px;flex-wrap:wrap}
+  .guide-q{flex:1;min-width:200px;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;background:var(--panel);color:var(--txt)}
+  .guide-q::placeholder{color:var(--mut)}
+  .guide-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;cursor:pointer;font-weight:600}
+  .guide-btn:disabled{opacity:.6;cursor:wait}
+  .guide-ex{font-size:11px;color:var(--mut);margin-top:8px;line-height:1.6}
+  .guide-ex b{color:var(--tint-ink)}
+  .guide-res{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+  .guide-item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel);cursor:pointer;transition:.12s}
+  .guide-item:hover{border-color:var(--tint-ink);background:var(--panel2)}
+  .guide-item .gi-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .guide-item .gi-id{font-weight:700;font-size:13px;color:var(--txt)}
+  .guide-item .gi-score{font-size:11px;color:var(--mut);background:var(--tint);padding:1px 8px;border-radius:999px}
+  .guide-item .gi-title{font-size:12px;color:var(--txt2);margin:3px 0}
+  .guide-item .gi-reason{font-size:12px;color:var(--mut);line-height:1.55}
+  .guide-item .gi-price{font-size:12px;color:var(--accent);font-weight:600}
+  .guide-item .gi-over{color:var(--red);font-weight:600}
+  .guide-item .gi-chips{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
   .trk{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
   .trk-t{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--chip-on);color:#fff}
   .trk-d{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--tint);color:var(--tint-ink)}
@@ -118,6 +140,17 @@
     <!-- 货架 -->
     <div class="panel" data-page-node-id="p1ENneH9vAiWwLhUpBbzHG">
       <h2 style="display:flex;justify-content:space-between;align-items:center;gap:10px" data-page-node-id="m9H6VMpkDekYrZG5udCQP4">创新货架（开放下载的设计就绪包）<button class="ghost btn-sm" onclick="openCustom()" data-page-node-id="BVeJ4bm8wb9GUthdHeilRD">🛠 提交定制需求</button></h2>
+      <!-- N-5 导购二期（无 LLM 可降级版）：一句话需求 → 对 75 货架实跑匹配；数字均来自货架数据 -->
+      <div class="guide-card" data-page-node-id="guideCard">
+        <h3 data-page-node-id="guideH">🧭 智能导购</h3>
+        <div class="guide-sub">用一句话描述需求，我帮你从货架里挑最匹配的（确定性匹配，不靠大模型瞎编；价格/规格数字来自货架真实数据）。</div>
+        <div class="guide-row">
+          <input class="guide-q" id="guideQ" type="text" placeholder="例如：我要做 CPO 共封装光模块，预算 3 万" onkeydown="if(event.key==='Enter')runGuide()" data-page-node-id="guideInput">
+          <button class="guide-btn" id="guideBtn" onclick="runGuide()" data-page-node-id="guideBtn2">智能导购</button>
+        </div>
+        <div class="guide-ex">试试：<b>量子保密通信 QKD</b> · <b>激光雷达传感</b> · <b>CPO 光引擎 预算2万</b> · <b>WDM 波分复用</b></div>
+        <div class="guide-res" id="guideRes" data-page-node-id="guideRes"></div>
+      </div>
       <!-- 筛选器（v0.9.42）：筛选项与计数由 /api/shelf facets 动态渲染，前端零硬编码 -->
       <div class="filt-bar" id="filtBar" style="display:none" data-page-node-id="KbwvFY5imamD61VQDAv7fW">
         <div class="filt-row" data-page-node-id="4BrWAMDjnWhT11JmcrTeFL"><span class="filt-lab" data-page-node-id="9OIHvXQdTEEMEXeBkotKMk">赛道</span><div class="filt-chips" id="fTrack" data-page-node-id="VXvRniKH65OyauZoKdSXQU"></div></div>
@@ -617,7 +650,7 @@ function renderShelves(){
           (_isNewListing(s.listed_at)?' <span class="tag" style="background:var(--ok-tint);color:var(--ok-ink)">NEW</span>':'')+
           '</div>'
         : '';
-      h+='<div class="shelf"><h3>'+esc(s.id)+'</h3>'+
+      h+='<div class="shelf" id="shelf-'+esc(s.id)+'"><h3>'+esc(s.id)+'</h3>'+
          '<div class="app">'+esc(s.title)+'</div>'+
          '<div class="meta">'+esc(s.domain)+' · '+esc(s.system_type)+' · '+esc(s.honest_tier)+(s.open?'':' · 咨询制')+'</div>'+
          listedHtml+
@@ -640,6 +673,52 @@ function trackTags(s){
   var tl=(LABELS.track||{})[s.track]||s.track;
   var dl=(LABELS.app_domain||{})[s.app_domain]||s.app_domain||'';
   return '<div class="trk"><span class="trk-t">'+esc(tl)+'</span>'+(dl?('<span class="trk-d">'+esc(dl)+'</span>'):'')+'</div>';
+}
+
+// —— N-5 导购二期（无 LLM 可降级版）：自然语言需求 → POST /api/store/guide → 实跑匹配结果 ——
+function runGuide(){
+  var box=$("#guideQ"), res=$("#guideRes"), btn=$("#guideBtn");
+  var text=(box.value||'').trim();
+  if(!text){ res.innerHTML='<span class="mut" style="font-size:12px">请先描述你的需求，例如「我要做 CPO 共封装光模块」。</span>'; return; }
+  btn.disabled=true; btn.textContent='匹配中…';
+  res.innerHTML='<span class="mut" style="font-size:12px">正在对 75 个货架实跑匹配…</span>';
+  fetch('/api/store/guide',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({text:text}),credentials:'include'})
+    .then(function(r){return r.json();})
+    .then(function(d){ btn.disabled=false; btn.textContent='智能导购'; renderGuide(d); })
+    .catch(function(){ btn.disabled=false; btn.textContent='智能导购';
+        res.innerHTML='<span class="err" style="font-size:12px">导购服务暂不可用，请稍后重试。</span>'; });
+}
+function renderGuide(d){
+  var res=$("#guideRes");
+  if(!d || !d.results || !d.results.length){
+    res.innerHTML='<span class="mut" style="font-size:12px">没有匹配到货架。试试更具体的描述（如赛道、用途、预算）。</span>';
+    return;
+  }
+  var h='<div class="mut" style="font-size:12px;margin-bottom:6px">为你匹配 '+d.results.length+
+         ' 个货架（确定性实跑匹配，价格/规格来自货架真实数据）：</div>';
+  d.results.forEach(function(it){
+    var chips='<span class="trk-t">'+esc(it.track_label||'')+'</span>'+
+              (it.app_domain_label?'<span class="trk-d">'+esc(it.app_domain_label)+'</span>':'');
+    var price = it.over_budget
+      ? '<span class="gi-over">标准价 ¥'+esc(it.price_cny)+'（超预算）</span>'
+      : (it.price_cny!=null ? '标准价 ¥'+esc(it.price_cny) : '咨询制');
+    h+='<div class="guide-item" onclick="jumpToShelf(\''+esc(it.id)+'\')">'+
+         '<div class="gi-top"><span class="gi-id">'+esc(it.id)+'</span>'+
+         '<span class="gi-score">匹配度 '+esc(it.score)+'</span></div>'+
+         '<div class="gi-title">'+esc(it.title||'')+'</div>'+
+         '<div class="gi-reason">'+esc(it.reason||'')+'</div>'+
+         '<div class="gi-price">'+price+'</div>'+
+         '<div class="gi-chips">'+chips+'</div>'+
+       '</div>';
+  });
+  res.innerHTML=h;
+}
+function jumpToShelf(id){
+  var el=document.getElementById('shelf-'+id);
+  if(el){ el.scrollIntoView({behavior:'smooth',block:'center'});
+    el.style.outline='2px solid var(--accent)';
+    setTimeout(function(){ el.style.outline=''; }, 2000); }
 }
 
 function toggleDetail(btn){

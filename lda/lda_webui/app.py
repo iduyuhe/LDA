@@ -2606,6 +2606,21 @@ def shelf_evaluate(payload):
     return {"error": f"货架 {sid} 不存在"}
 
 
+def store_guide(payload):
+    """N-5 导购二期（无 LLM 可降级版）：自然语言需求 → 对 75 货架 facets 实跑匹配。
+
+    数字一律来自货架数据（price_of 实付价 / item.specs 规格），LLM 不进判决路径。
+    """
+    from lda_l2.innovation_market import DEFAULT_SHELF
+    from lda_l2.store_guide import recommend
+
+    text = (payload or {}).get("text", "") or ""
+    store = _get_store()
+    def price_of(sid):
+        return store.price_of(sid, None)
+    return recommend(text, DEFAULT_SHELF, price_of=price_of)
+
+
 # ---------------------------------------------------------------------------
 # A2 · 对公购买申请（v0.8.54 · 直接对公收款适配）
 # ---------------------------------------------------------------------------

@@ -148,9 +148,9 @@
       '<div id="navAuthTypeWrap">' +
       '<label style="' + _LB + '">账户身份 *</label>' +
       '<div style="display:flex;gap:6px;margin:6px 0 10px">' +
-      '<button type="button" data-v="standard" onclick="navSetType(this)" style="flex:1;background:#eef2ff;color:#4338ca;border:0;border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-weight:600">标准个人</button>' +
-      '<button type="button" data-v="academic" onclick="navSetType(this)" style="flex:1;background:#eef2ff;color:#4338ca;border:0;border-radius:8px;padding:8px;font-size:12px;cursor:pointer">学术个人</button>' +
-      '<button type="button" data-v="institution" onclick="navSetType(this)" style="flex:1;background:#eef2ff;color:#4338ca;border:0;border-radius:8px;padding:8px;font-size:12px;cursor:pointer">机构席位</button>' +
+      '<button type="button" data-v="standard" onclick="navSetType(this)" style="flex:1;background:var(--tint,#1b2440);color:var(--tint-ink,#a5b4fc);border:0;border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-weight:600">标准个人</button>' +
+      '<button type="button" data-v="academic" onclick="navSetType(this)" style="flex:1;background:var(--tint,#1b2440);color:var(--tint-ink,#a5b4fc);border:0;border-radius:8px;padding:8px;font-size:12px;cursor:pointer">学术个人</button>' +
+      '<button type="button" data-v="institution" onclick="navSetType(this)" style="flex:1;background:var(--tint,#1b2440);color:var(--tint-ink,#a5b4fc);border:0;border-radius:8px;padding:8px;font-size:12px;cursor:pointer">机构席位</button>' +
       '</div></div>' +
       '<div id="navAuthOrgWrap" style="display:none">' +
       '<label style="' + _LB + '">机构 / 单位名称（机构席位必填）</label>' +
@@ -203,8 +203,8 @@
     navAuthType = btn.getAttribute("data-v");
     var btns = btn.parentNode.querySelectorAll("button");
     btns.forEach(function (b) {
-      b.style.background = b === btn ? "var(--accent)" : "#eef2ff";
-      b.style.color = b === btn ? "#fff" : "#4338ca";
+      b.style.background = b === btn ? "var(--accent)" : "var(--tint,#1b2440)";
+      b.style.color = b === btn ? "#fff" : "var(--tint-ink,#a5b4fc)";
       b.style.fontWeight = b === btn ? "600" : "400";
     });
     document.getElementById("navAuthOrgWrap").style.display =

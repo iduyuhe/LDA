@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LDA 创新超市 · 管理后台</title>
 <style>
-  :root{--bg:#0f1320;--panel:#171c2c;--txt:#e6e9f2;--mut:#9aa3b8;--line:#28304a;--accent:#3b82f6;--green:#22c55e;--red:#ef4444;--amber:#f59e0b}
-  @media (prefers-color-scheme: light){:root{--bg:#f4f6fb;--panel:#fff;--txt:#1a2030;--mut:#5b6478;--line:#e2e7f0;--accent:#2563eb;--green:#16a34a;--red:#dc2626;--amber:#d97706}}
+  :root{--bg:#0b1020;--panel:#141b2e;--panel2:#1b2440;--txt:#e6edf7;--txt2:#c5cfe3;--mut:#8aa0c6;--line:#26304d;--accent:#3b82f6;--green:#4ade80;--red:#f87171;--amber:#fbbf24;--ok-tint:#123024;--ok-ink:#4ade80;--warn-tint:#33270f;--warn-ink:#fbbf24;--err-tint:#3a161c;--err-ink:#f87171}
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);padding:18px}
   h1{font-size:20px;margin:0 0 4px}
@@ -473,7 +472,7 @@ async function loadOpAdmin(){
       html+='<div style="border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px">'+
             '<b>'+esc(sid)+'</b> <span class="dl">('+list.length+' 条)</span>'+
             '<div style="margin-top:6px">'+list.map(function(o){
-              return '<div style="background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px">'+
+              return '<div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px">'+
                 esc(o.content)+
                 '<div class="dl" style="font-size:11px;margin-top:3px">'+(o.contact?('📮 '+esc(o.contact)+' · '):'')+(o.created_at||'').slice(0,16)+'</div></div>';
             }).join('')+'</div></div>';
@@ -502,8 +501,8 @@ async function loadUsers(){
       '<th>机构</th><th>注册时间</th><th>最近登录</th><th>状态</th><th>操作</th></tr></thead><tbody>'+
       j.users.map(function(u){
         const flag = u.must_change_password
-          ? '<span class="tag" style="background:#fef3c7;color:#92400e">待改密</span>'
-          : '<span class="tag" style="background:#dcfce7;color:#166534">正常</span>';
+          ? '<span class="tag" style="background:var(--warn-tint);color:var(--warn-ink)">待改密</span>'
+          : '<span class="tag" style="background:var(--ok-tint);color:var(--ok-ink)">正常</span>';
         const tier = TIER_CN[u.user_type] || "标准个人";
         const last = u.last_login_at ? (u.last_login_at||"").replace("T"," ").slice(0,19) : "—";
         return '<tr>'+
@@ -541,7 +540,7 @@ async function resetPwd(){
     if(r.status===200 && j.ok){
       $("rst-msg").innerHTML='<span class="ok">已重置</span>';
       $("rst-result").innerHTML =
-        '<div style="border:1px solid var(--line);border-radius:10px;padding:12px;background:#f8fafc">'+
+        '<div style="border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--panel2)">'+
         '<div class="mut" style="font-size:12px">临时密码（请复制并通过微信/邮件告知用户）</div>'+
         '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap">'+
         '<code id="tmpPwd" style="font-size:18px;font-weight:700;letter-spacing:1px">'+esc(j.temp_password)+'</code>'+

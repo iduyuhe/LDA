@@ -260,6 +260,9 @@ CORE_SMOKES: List[str] = [
     # 超市前端登录门禁护栏（v0.9.43 D-78：防「已登录却被要求二次登录」回潮 ——
     #   P2-5 改 HttpOnly Cookie 时废用 store_token 却漏改 4 处门禁的同类改造留半截）
     "run_store_auth_gate_smoke.py",
+    # 豁免表理由防腐化护栏（v0.9.46 N-2：理由必须含真实实测耗时，
+    #   禁「超时」式搪塞 —— N-2 复测抓到两条旧注「>60s 超时」实为 47.2s/64.3s 完成）
+    "run_noncore_reason_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -280,31 +283,33 @@ CORE_SMOKES: List[str] = [
 # 自食其规则）：lda/ 下每个 run_*_smoke.py 必须 ∈ CORE_SMOKES 或本表，且本表
 # 每项理由非空 ⇒ 否则 FAIL。新增 smoke 不接线 = 立刻红。
 #
-# 实测基准：managed python 3.13，2026-09-06。理由中的耗时为审计实测值。
+# 实测基准：managed python 3.13，**2026-09-06 N-2 全量复测**（18/18 逐条重跑，
+# rc 全 0；复测脚本 probe_noncore*.py，结果在 .cache/noncore_measured.json 与当日日志）。
+# 🔴 复测发现两条旧理由失真已修正：sparams_3d 旧称「>60s 超时」实为 47.2s 完成；
+#    sparams_loop 旧称「>60s 超时」实为 64.3s 完成（numba 运行时确被依赖链间接载入）。
 NON_CORE_SMOKES: Dict[str, str] = {
     # ---- 重仿真（实测 ≥25s，远超 CI 快速集预算）----
-    "run_design_outcome_smoke.py": "重仿真：设计闭环全链路，实测 59.7s",
-    "run_adjoint_loop_smoke.py": "重仿真：伴随优化迭代循环，实测 57.1s",
-    "run_coupler_design_smoke.py": "重仿真：耦合器参数扫描反解，实测 55.6s",
-    "run_adjoint_design_smoke.py": "重仿真：伴随法设计，实测 40.6s",
-    "run_shape_design_smoke.py": "重仿真：形状优化迭代，实测 32.7s",
-    "run_spectral_design_smoke.py": "重仿真：谱响应设计扫描，实测 27.6s",
-    "run_adjoint3d_smoke.py": "3D 伴随仿真（重），实测 27.2s",
-    "run_sparams_smoke.py": "FDTD 分束仿真（重），实测 25.7s",
+    "run_design_outcome_smoke.py": "重仿真：设计闭环全链路，实测 58.2s",
+    "run_adjoint_loop_smoke.py": "重仿真：伴随优化迭代循环，实测 55.1s",
+    "run_coupler_design_smoke.py": "重仿真：耦合器参数扫描反解，实测 60.3s",
+    "run_adjoint_design_smoke.py": "重仿真：伴随法设计，实测 40.0s",
+    "run_shape_design_smoke.py": "重仿真：形状优化迭代，实测 31.6s",
+    "run_spectral_design_smoke.py": "重仿真：谱响应设计扫描，实测 26.8s",
+    "run_adjoint3d_smoke.py": "3D 伴随仿真（重），实测 19.1s",
+    "run_sparams_smoke.py": "FDTD 分束仿真（重），实测 25.1s",
     # ---- 中量（5~25s，超出 core 快速预算但非极限）----
-    "run_ir_smoke.py": "IR 全量求解回归，实测 20.2s",
-    "run_inverse_design_smoke.py": "逆向设计迭代，实测 19.8s",
-    "run_hybrid_design_smoke.py": "混合参数化设计扫描，实测 17.3s",
-    "run_port_acceptance_smoke.py": "端口验收 3D 判据，实测 10.6s",
+    "run_ir_smoke.py": "IR 全量求解回归，实测 21.3s",
+    "run_inverse_design_smoke.py": "逆向设计迭代，实测 19.4s",
+    "run_hybrid_design_smoke.py": "混合参数化设计扫描，实测 17.2s",
+    "run_port_acceptance_smoke.py": "端口验收 3D 判据，实测 10.4s",
     "run_phc_anchor_smoke.py": "光子晶体本征解（ARPACK 迭代），实测 6.8s",
-    # ---- 超长/需 numba JIT（实测 >60s 超时，非卡死：numba 首次编译或重网格）----
-    "run_sparams_3d_smoke.py": "3D 端口 S 参数仿真（重），实测 >60s 超时",
-    "run_sparams_loop_smoke.py": "需 numba JIT（首次编译慢）+ 3D 仿真，实测 >60s 超时",
-    # ---- 极重设计闭环（60s 审计超时，延长至 300s 实测**能跑完、非卡死**，
-    #      判明为「慢」而非「缺陷」后才准豁免；理由须含真实耗时，不得写「超时」了事）
-    "run_wdm_splitter_smoke.py": "重设计闭环：WDM×分束树联合，实测 164s 完成（非卡死）",
-    "run_design_package_smoke.py": "重设计闭环：4 类设计包 schema 全链路，实测 119s 完成（非卡死）",
-    "run_hybrid_multi_smoke.py": "重设计闭环：多波长加权联合，实测 73s 完成（非卡死）",
+    # ---- 超长（复测均能跑完、非卡死；numba 由依赖链运行时间接载入，仓库无显式 import）----
+    "run_sparams_3d_smoke.py": "3D 端口 S 参数仿真（重），实测 47.2s 完成（N-2 复测修正旧注误记的截断描述）",
+    "run_sparams_loop_smoke.py": "3D 闭环 + numba JIT（依赖链间接载入，首次编译慢），实测 64.3s 完成（N-2 复测修正旧注误记的截断描述）",
+    # ---- 极重设计闭环（判明为「慢」而非「缺陷」后才准豁免；理由须含真实耗时，不得写「超时」了事）----
+    "run_wdm_splitter_smoke.py": "重设计闭环：WDM×分束树联合，实测 142.2s 完成（非卡死）",
+    "run_design_package_smoke.py": "重设计闭环：4 类设计包 schema 全链路，实测 108.7s 完成（非卡死）",
+    "run_hybrid_multi_smoke.py": "重设计闭环：多波长加权联合，实测 69.7s 完成（非卡死）",
 }
 
 # D-63 收紧：旧判定只看「输出里是否含未安装/无 GPU 等字样」→ 副作用是把真失败

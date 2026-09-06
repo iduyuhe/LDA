@@ -26,6 +26,14 @@
   ⑧ 🔴 反向测试 A：注入无 track 货架 ⇒ ① 必须报缺口
   ⑨ 🔴 反向测试 B：注入跨赛道 app_domain ⇒ ② 必须报非法
   ⑩ 🔴 反向测试 C：方向映射注入脏 ID ⇒ ⑤ 必须报脏
+  ⑪ 对外文档（README/CHANGELOG）里的「N 应用域」与代码实际一致
+  ⑫ 🔴 反向测试 D：文档写错数字 ⇒ ⑪ 必须报
+
+判据 ⑪ 由来（v0.9.42 实证）：文档写「5 赛道 + 20 应用域」，代码实际 **24** 个应用域
+（datacom 5 + sensing 6 + quantum 2 + cpo 4 + component 7）。散文里的数字是**对外账本**，
+会随代码演进静默失真 —— 与 CI core 97≠117 属同一类，故一并纳入门禁。
+注：只锁「N 应用域」（该表述在两份文档里各只出现一次，无歧义）；
+「N 赛道」不锁，因 CHANGELOG 历史文案里另有「4 赛道」表述，断言会误报。
 
 运行：python lda/run_shelf_taxonomy_smoke.py
 """
@@ -33,6 +41,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from typing import Any, Dict, List, Set
 
@@ -47,6 +56,9 @@ from lda_webui.shelf_pricing import tier_of  # noqa: E402
 
 _JSON = os.path.join(_LDA, "lda_l2", "innovation_market.json")
 _HTML = os.path.join(_LDA, "lda_webui", "static", "store.html")
+_ROOT = os.path.dirname(_LDA)
+_README = os.path.join(_ROOT, "README.md")
+_CHANGELOG = os.path.join(_ROOT, "CHANGELOG.md")
 
 CHECKS: List[Dict[str, Any]] = []
 
@@ -167,6 +179,32 @@ def _facet_mismatch(shelf) -> List[str]:
     return out
 
 
+def _prose_app_domain_numbers(text: str) -> List[int]:
+    """从散文里抽取「N 应用域」形式写出的数字。
+
+    用途：README / CHANGELOG 是**对外账本**，里面的数字若描述代码实体，
+    就会随代码演进而静默失真（本轮实测：文档写「20 应用域」，实际 24 个）。
+    """
+    return [int(m) for m in re.findall(r"(\d+)\s*应用域", text or "")]
+
+
+def _prose_mismatch(shelf) -> List[str]:
+    """⑪ 返回对外文档里与代码不符的「N 应用域」数字。"""
+    want = sum(len(v) for v in SHELF_APP_DOMAINS.values())
+    out: List[str] = []
+    for f in (_README, _CHANGELOG):
+        if not os.path.exists(f):
+            out.append(f"{os.path.basename(f)} 不存在")
+            continue
+        nums = _prose_app_domain_numbers(open(f, encoding="utf-8").read())
+        bad = [n for n in nums if n != want]
+        if bad:
+            out.append(f"{os.path.basename(f)} 写 {bad}，代码实际 {want}")
+        elif not nums:
+            out.append(f"{os.path.basename(f)} 未出现「N 应用域」（应写明以便核对）")
+    return out
+
+
 def main() -> int:
     rc = 0
     shelf = DEFAULT_SHELF
@@ -210,6 +248,18 @@ def main() -> int:
     fm = _facet_mismatch(shelf)
     rc |= not check("⑦ facets 计数与实数据一致且均有中文标签",
                     not fm, f"{fm[:3]}")
+
+    # ⑪ 对外文档里的数字（散文里的数字会随代码演进静默失真）
+    pm = _prose_mismatch(shelf)
+    n_dom = sum(len(v) for v in SHELF_APP_DOMAINS.values())
+    rc |= not check(f"⑪ 对外文档「N 应用域」与代码一致（代码实际 {n_dom} 个）",
+                    not pm, f"{pm}")
+
+    # ⑫ 反向测试 D：文档写错数字 ⇒ ⑪ 必须报
+    fake = f"超市按 999 应用域分类（错写）"
+    n_fake = _prose_app_domain_numbers(fake)
+    rc |= not check("⑫ 反向测试 D：文档写错「N 应用域」⇒ ⑪ 必须报",
+                    n_fake == [999] and 999 != n_dom, f"抽到 {n_fake}")
 
     # ⑧ 反向测试 A：注入无 track 货架
     from dataclasses import replace as _replace

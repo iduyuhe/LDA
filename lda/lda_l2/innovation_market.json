@@ -18,6 +18,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "面向 8 通道 CPO 的预研货架；以 5ch@2.0nm 单 FSR 闭环（B4：drop IL≤3 / XT≥15 / 单 FSR 防混叠）验证基元可行性。8 通道扩展需 FSR 扩展（更小环 R）属参数化下一迭代，不破现有已验证闭环。",
     "ci_status": "",
+    "listed_at": "2026-08-27",
     "track": "cpo",
     "app_domain": "cpo_engine",
     "features": [
@@ -71,6 +72,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "4 比特频率复用读出链（D-46 复用 + D-47 保真度，已验证闭环）。基元复用 Y-branch（分束）+ SiN 低损波导（量子光路互联）。",
     "ci_status": "",
+    "listed_at": "2026-08-27",
     "track": "quantum",
     "app_domain": "qc_readout",
     "features": [
@@ -121,6 +123,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "环谐振器作折射率传感单元，复用 link 拓扑（激光→grating→SiN 波导→ring→探测器）+ 系统预算锚 S1/S2/S5/S7。基元复用 grating coupler（GP-GRATING-EFF）+ SiN 低损波导（GP-SIN-PL）。传感灵敏度由环 Q / 波长偏移换算，属参数化下一迭代，不破现有已验证闭环。",
     "ci_status": "",
+    "listed_at": "2026-08-27",
     "track": "sensing",
     "app_domain": "biochem",
     "features": [
@@ -168,6 +171,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "激光源作为**异质集成黑箱源**（有源器件不物理级建模——负面清单：有源不物理级建模，行为黑箱 + 文献锚走完闭环），本货架组合其余已锚定基元：grating coupler（GP-GRATING-EFF）+ SiN 低损波导（GP-SIN-PL）。判决复用 link 系统预算锚 S1/S2/S5/S7（死标量，LLM 不进路径）。激光源本身**非本团队新锚定器件**——如要将其纳入锚集，须先按 v0.8.32 方式新增 golden 基准（待发动期/社区贡献）；本货架严守『组合创新、不新增未锚定基元』。",
     "ci_status": "",
+    "listed_at": "2026-08-27",
     "track": "component",
     "app_domain": "light_source",
     "features": [
@@ -219,6 +223,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "5 比特频率复用读出链（D-46 复用 + D-47 保真度，已验证闭环）。基元复用Y-branch（分束，GP-YBRANCH）+ SiN 低损波导（GP-SIN-PL，量子光路互联）。与 IM-QCHIP-INT（4 比特）互补，演示库随比特数扩展仍零新物理。",
     "ci_status": "",
+    "listed_at": "2026-08-27",
     "track": "quantum",
     "app_domain": "qc_readout",
     "features": [
@@ -270,6 +275,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "8×100G 并行单波长方案（DR8）：每通道 = 光栅 + 2cm SiN + crossing，链路预算锚 S1/S2/S5/S7 死标量判决。对标 GC-DR4-TX/ONCHIP 公开规格量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "transceiver",
     "features": [
@@ -321,6 +327,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "8 通道解复用：wdm_demux 闭环（B4：drop IL≤3 / XT≥15 / 单 FSR / DRC）。对标 LR8 信道预算 6.3 dB（GC-LR8-CH 同源公开标准）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "wdm_roadm",
     "features": [
@@ -369,6 +376,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "40 通道 DWDM 解复用：wdm_demux 闭环（B4 锚）演示大规模波长数扩展。对标 GC-AWG-40CH（商用 AWG datasheet 6.0 dB 死标量）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "wdm_roadm",
     "features": [
@@ -421,6 +429,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "1×8 = 3 级 Y-branch 级联 + SiN 波导；对标 GC-PLC-1X8（G.671 死标量）。PON 上行突发时序按黑箱，判决只认链路预算锚 S1/S2/S5/S7。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "pon",
     "features": [
@@ -471,6 +480,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "1×16 = 4 级 Y-branch 级联；对标 GC-PLC-1X16（G.671 死标量）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "pon",
     "features": [
@@ -521,6 +531,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "OCS 收发前端：光栅 + SiN 波导，交换矩阵/MEMS 按黑箱（非片上器件）。对标 GC-OCS-FABRIC（2×FR4 预算 4.0 dB 公开死标量）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "cpo",
     "app_domain": "optical_switch",
     "features": [
@@ -571,6 +582,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "FMCW 发射前端：光栅 + 0.5cm SiN（相干混频/OPA 按黑箱）。对标 GC-LIDAR-FMCW（OE 2026 实测 3.3 dB 死标量）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "sensing",
     "app_domain": "lidar",
     "features": [
@@ -623,6 +635,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "Alice 态制备 = 2×光栅 + 2×Y-branch（MZI）+ SiN；单光子衰减/调制按黑箱。对标 GC-QKD-TX（npj QI 实测 15 dB 死标量）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "quantum",
     "app_domain": "qkd",
     "features": [
@@ -673,6 +686,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "Bob 基矢测量 = 2×光栅 + crossing + SiN；单光子探测器按黑箱。对标 GC-QKD-RX（npj QI 实测 8 dB 死标量）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "quantum",
     "app_domain": "qkd",
     "features": [
@@ -722,6 +736,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "4 用户接收 = 3×光栅 + 5cm SiN（MZI 选路按黑箱）；SPD 按黑箱。判决用标准链路余量锚 S1/S2/S5/S7（要求 3 dB）；整芯片 13 dB 总插损对标见 GC-QKD-MULTI（OE 2020 实测死标量）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "quantum",
     "app_domain": "qkd",
     "features": [
@@ -772,6 +787,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "MZI 传感 = 2×光栅 + 2×Y-branch（分/合束）+ 2cm SiN 双臂；传感元件按黑箱。判决用标准链路余量锚 S1/S2/S5/S7（要求 3 dB）；整芯片全链路 ≤15 dB 预算对标见 GC-SENSE（公开传感链路预算区间）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "sensing",
     "app_domain": "biochem",
     "features": [
@@ -823,6 +839,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "XPU 光 IO 前端 = 光栅 + SiN + crossing（EIC/PIC 键合按黑箱）。对标 GC-CPO-8CH 同源（CPO 每通道 6–12 dB 公开区间）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "cpo",
     "app_domain": "chiplet",
     "features": [
@@ -879,6 +896,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "10 比特复用读出链（D-46 复用 + D-47 保真度）。对标 GC-QCTRL-ZC3（公开 99.18% 死标量），演示读出链规模扩展零新物理。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "quantum",
     "app_domain": "qc_readout",
     "features": [
@@ -941,6 +959,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "16 比特复用读出链；对标 GC-QCTRL-HERON（公开 98.5% 死标量）。156 比特整芯片按 heavy-hex 分段，本货架为单段代表。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "quantum",
     "app_domain": "qc_readout",
     "features": [
@@ -998,6 +1017,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "12 比特复用读出链；对标 GC-QCTRL-WILLOW（公开 99.33% 死标量）。JPA 放大链按黑箱（有源不物理级建模，负面清单）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "quantum",
     "app_domain": "qc_readout",
     "features": [
@@ -1045,6 +1065,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "PSM4 单通道 = 光栅 + 2cm SiN（边缘耦合低损）+ crossing；链路预算锚 S1/S2/S5/S7 死标量判决。对标 GC-PSM4-CH（IEEE 802.3bm 4.0 dB 死标量）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "transceiver",
     "features": [
@@ -1094,6 +1115,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "FR4 单通道 = 光栅 + 1cm SiN；WDM 复用/串行器按黑箱（非片上器件），判决复用 link 系统预算锚死标量。对标 GC-FR4-CH（IEEE 802.3bs 4.5 dB 死标量）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "transceiver",
     "features": [
@@ -1143,6 +1165,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "4 通道 CWDM 解复用：wdm_demux 闭环（B4：drop IL≤3 / XT≥15 / 单 FSR / DRC）。对标 GC-CWDM4-CH（CWDM-MSA 4.0 dB 死标量）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "wdm_roadm",
     "features": [
@@ -1192,6 +1215,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "LPO 线性直驱前端 = 光栅 + SiN 波导（去 DSP 后链路裕度收窄，链路预算锚 S1/S2/S5/S7 死标量判决）；无量级新物理，复用已锚定基元。对标公开 LPO 链路预算量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "transceiver",
     "features": [
@@ -1240,6 +1264,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "1.6T DR8 = 800G DR8 的 16 通道扩展（composition 同源 GP-*），复用已锚定无源网 + 光栅耦合死标量；无量级新物理。对标公开 1.6T DR8 链路预算量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "transceiver",
     "features": [
@@ -1287,6 +1312,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "800G FR4 = 4×200G PAM4 并行（与 800G DR8 同源无源网 + 光栅耦合，composition 同源 GP-*）；200G/lane DSP+SiPh 2026 成熟。对标公开 800G FR4 链路预算量级（单通道 ≤4.5 dB 量级）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "transceiver",
     "features": [
@@ -1336,6 +1362,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "1.6T FR4 = 1.6T DR8 的 4×400G 变体（composition 同源 GP-*），复用已锚定无源网 + 光栅耦合死标量；无量级新物理。对标公开 1.6T FR4 链路预算量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "transceiver",
     "features": [
@@ -1385,6 +1412,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "400G DR4 = 4×100G 并行单波长（与 800G DR8 同源无源网 + 光栅耦合，composition 同源 GP-*）；链路预算锚 S1/S2/S5/S7 死标量判决。对标 IEEE 802.3bs 400G DR4 单通道 4.0 dB 量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "transceiver",
     "features": [
@@ -1432,6 +1460,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "4 通道 LAN-WDM 解复用：wdm_demux 闭环（B4：drop IL≤3 / XT≥15 / 单 FSR / DRC）。与 CWDM4-SHELF 同属 4ch 解复用前端，但面向 10km 长距 LAN-WDM（vs CWDM4 2km）。对标 IEEE 802.3cu 100G LR4 单通道 4.5 dB 量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "transceiver",
     "features": [
@@ -1483,6 +1512,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "50G-PON 光前端 = 光栅耦合 + Y-branch 分束 + SiN 波导（OLT 发射/ONU 接收无源网）。PIC 自身 IL 预算 6 dB；整系统 29/32 dB 功率预算由 ODN 1:64 分光主导（黑箱，非片上器件），判决复用 link 系统预算锚 S1/S2/S5/S7。对标 G.9804 死标量量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "pon",
     "features": [
@@ -1533,6 +1563,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "1×8 光开关无源前端 = Y-branch/MMI 分束 + SiN 波导；MZI 热光开关矩阵按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。对标公开 SiPh MZI 矩阵开关 0.5 dB/级量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "switching",
     "features": [
@@ -1583,6 +1614,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "FMCW 相干接收前端 = 光栅 + 0.5cm SiN + crossing（90° 混频/平衡探测按黑箱）。与 IM-LIDAR-TX 同源无源网，链路预算锚 3.3 dB（OE 2026 实测死标量）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "sensing",
     "app_domain": "lidar",
     "features": [
@@ -1633,6 +1665,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "环谐振生物传感前端 = 光栅 + 1cm SiN（环形谐振腔传感单元，复用 SENSE-RING 拓扑）。传感灵敏度由环 Q / 波长偏移换算，属参数化下一迭代；判决复用 link 系统预算锚。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "sensing",
     "app_domain": "biochem",
     "features": [
@@ -1681,6 +1714,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "400G ZR/ZR+ 相干收发 PIC 前端 = 光栅耦合 + 1cm SiN（低损）+ crossing；相干 DSP / IQ 调制器 / 平衡探测按黑箱（有源不物理级建模，负面清单）。PIC 自身 IL 预算 6 dB（非整系统 120km 链路，链路预算锚 S1/S2/S5/S7 死标量判决）。复用已锚定无源网 + 光栅耦合，无量级新物理。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "coherent",
     "features": [
@@ -1732,6 +1766,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "MRM 发射前端 = 光栅耦合 + 1cm SiN 波导；环形谐振调制单元（有源）按黑箱（有源不物理级建模，负面清单），其谐振/调制行为由文献锚走完闭环。判决复用 link 系统预算锚 S1/S2/S5/S7 死标量。复用已锚定无源网，无量级新物理。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "component",
     "app_domain": "modulation",
     "features": [
@@ -1784,6 +1819,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "XGS-PON 光前端 = 光栅耦合 + Y-branch 分束 + SiN 波导（OLT 发射/ONU 接收无源网）。PIC 自身 IL 预算 6 dB；整系统功率预算由 ODN 1:64 分光主导（黑箱，非片上器件），判决复用 link 系统预算锚 S1/S2/S5/S7。对标 G.9807.1 量级（与 50G-PON 同族，速率 10G 对称）。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "pon",
     "features": [
@@ -1831,6 +1867,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "1×9 WSS 无源前端 = 光栅耦合 + MMI 分束 + SiN 波导；波长选择/切换矩阵（LCOS/MEMS）按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 ROADM WSS 量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "wdm_roadm",
     "features": [
@@ -1877,6 +1914,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "VOA 前端 = 光栅耦合 + 1cm SiN 波导；可变衰减单元（MEMS/热光）按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚 S1/S2/S5/S7 死标量。复用已锚定无源网，无量级新物理。对标公开 VOA 量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "component",
     "app_domain": "passive",
     "features": [
@@ -1924,6 +1962,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "MZM 前端 = 光栅耦合 + 1×2 MMI 分束（两相位臂）+ SiN 波导臂 + 1×2 MMI 合束（复用分束基元作合束）+ 光栅耦合出。电光调制相移单元按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚 S1/S2/S5/S7 死标量。复用已锚定无源网，无量级新物理。对标公开硅 MZM 量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "component",
     "app_domain": "modulation",
     "features": [
@@ -1972,6 +2011,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "PSR 前端 = 光栅耦合 + 非对称 Y 分支偏振路由 + SiN 波导；偏振旋转/耦合的亚波长结构按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 PSR 量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "component",
     "app_domain": "polarization",
     "features": [
@@ -2024,6 +2064,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "光子中介层前端 = 光栅阵列 I/O + MMI 扇出 + 交叉矩阵 + Y 分支 + SiN 波导面；TSV/微环驱动按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 CPO 光互连量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "cpo",
     "app_domain": "chiplet",
     "features": [
@@ -2071,6 +2112,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "ONN 前端 = 1×2 MMI 分光权重分配 + 交叉干涉网格（MZI mesh）+ SiN 波导；相移/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光计算量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "cpo",
     "app_domain": "optical_compute",
     "features": [
@@ -2120,6 +2162,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "OCT 前端 = 光栅耦合 + 1×2 MMI 分光（样品/参考臂）+ Y 分支 + SiN 波导干涉臂；扫描/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 OCT 量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "sensing",
     "app_domain": "medical",
     "features": [
@@ -2169,6 +2212,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "OPA 前端 = 光栅发射阵列 + Y 分支功分馈入阵元 + SiN 波导 + 交叉路由；相位调制单元按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 OPA LiDAR 量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "sensing",
     "app_domain": "lidar",
     "features": [
@@ -2217,6 +2261,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "相干接收前端 = 光栅耦合（信号+本振双入）+ 1×2 MMI 4×4 混频（两 MMI 作分/合）+ SiN 波导；平衡探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开相干接收量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "datacom",
     "app_domain": "coherent",
     "features": [
@@ -2265,6 +2310,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "ONoC 前端 = 交叉矩阵（路由） + Y 分支功分 + 1×2 MMI + SiN 波导 fabric；调制/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开片上光互连量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "cpo",
     "app_domain": "chiplet",
     "features": [
@@ -2312,6 +2358,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "MCF 扇出前端 = 光栅耦合阵列（多芯入） + Y 分支扇出到单芯 + SiN 波导；多芯对准按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 MCF 扇出量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "component",
     "app_domain": "fiber_io",
     "features": [
@@ -2360,6 +2407,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "FOG 前端 = 光栅耦合 + 交叉环形（Sagnac 环） + Y 分支分/合 + SiN 波导；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光纤陀螺量级。",
     "ci_status": "",
+    "listed_at": "2026-08-28",
     "track": "sensing",
     "app_domain": "inertial",
     "features": [
@@ -2407,6 +2455,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "微环滤波前端 = 光栅耦合进/出 + 1×2 MMI 总线分光 + SiN 波导环形谐振（调谐/探测按黑箱，有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开微环滤波器量级。",
     "ci_status": "",
+    "listed_at": "2026-08-29",
     "track": "component",
     "app_domain": "filtering",
     "features": [
@@ -2456,6 +2505,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "功分树前端 = Y 分支级联 + 1×2 MMI 均分 + SiN 波导；纯无源功率分配（调制/探测按黑箱）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开功分器量级。",
     "ci_status": "",
+    "listed_at": "2026-08-29",
     "track": "component",
     "app_domain": "passive",
     "features": [
@@ -2504,6 +2554,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "TTD 前端 = 长 SiN 波导延迟线（不同长度阶梯） + Y 分支选择 + 交叉布线；RF 调制/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开微波光子 TTD 量级。",
     "ci_status": "",
+    "listed_at": "2026-08-29",
     "track": "sensing",
     "app_domain": "microwave",
     "features": [
@@ -2552,6 +2603,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "气体传感前端 = SiN 长波导吸收臂 + 光栅耦合进/出 + Y 分支参考/样品臂；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开波导气体传感量级。",
     "ci_status": "",
+    "listed_at": "2026-08-29",
     "track": "sensing",
     "app_domain": "biochem",
     "features": [
@@ -2600,6 +2652,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "光栅耦合阵列前端 = 高效光栅耦合器（GP-GRATING-EFF 核心） + SiN 波导引出；光纤阵列对准/封装按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开光栅耦合量级。",
     "ci_status": "",
+    "listed_at": "2026-08-29",
     "track": "component",
     "app_domain": "fiber_io",
     "features": [
@@ -2647,6 +2700,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "AWG 解复用前端 = 输入/输出 MMI 星形耦合器（GP-MMI-1X2 近似） + SiN 阵列波导（GP-SIN-PL 自由色散长度）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 AWG DeMUX 量级。",
     "ci_status": "",
+    "listed_at": "2026-08-29",
     "track": "datacom",
     "app_domain": "wdm_roadm",
     "features": [
@@ -2696,6 +2750,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "片上光谱仪前端 = MMI 分光（GP-MMI-1X2） + Y 分支路由阵列（GP-YBRANCH） + SiN 波导色散/干涉臂（GP-SIN-PL）；探测器按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开微型光谱仪量级。",
     "ci_status": "",
+    "listed_at": "2026-08-29",
     "track": "sensing",
     "app_domain": "spectrum",
     "features": [
@@ -2744,6 +2799,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "模分复用前端 = 非对称 Y 分支模式合/分器（GP-YBRANCH 模式转换近似） + SiN 少模波导（GP-SIN-PL）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开 MDM 量级。",
     "ci_status": "",
+    "listed_at": "2026-08-29",
     "track": "component",
     "app_domain": "multiplexing",
     "features": [
@@ -2791,6 +2847,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "光频梳前端 = 高效光栅耦合 IO（GP-GRATING-EFF） + SiN 微环梳谐振波导（GP-SIN-PL，高 Q 色散工程）；泵浦/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开芯片级微梳量级。",
     "ci_status": "",
+    "listed_at": "2026-08-29",
     "track": "component",
     "app_domain": "light_source",
     "features": [
@@ -2839,6 +2896,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "偏振旋转器前端 = 波导交叉路由（GP-CROSSING） + SiN 双折射/非对称波导偏振旋转段（GP-SIN-PL）；光源/探测按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。复用已锚定无源网，无量级新物理。对标公开偏振旋转器量级。",
     "ci_status": "",
+    "listed_at": "2026-08-29",
     "track": "component",
     "app_domain": "polarization",
     "features": [
@@ -2888,6 +2946,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "3.2T DR8 前端 = 高效光栅耦合阵列（GP-GRATING-EFF）+ SiN 波导引出（GP-SIN-PL）；8×400G PAM4 并行，调制器/激光器按黑箱（负面清单）。判决复用 link 系统预算锚死标量；复用已锚定无源网，无量级新物理。对标公开 DR8 量级。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "datacom",
     "app_domain": "transceiver",
     "features": [
@@ -2938,6 +2997,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "1.6T LPO 前端 = 高效光栅耦合（GP-GRATING-EFF）+ SiN 波导引出（GP-SIN-PL）；线性直驱省 retimer，调制器按黑箱。判决复用 link 系统预算锚死标量；复用已锚定无源网，无量级新物理。对标公开 LPO 量级。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "datacom",
     "app_domain": "transceiver",
     "features": [
@@ -2988,6 +3048,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "1.6T ZR 前端 = 高效光栅耦合（GP-GRATING-EFF）+ SiN 波导引出（GP-SIN-PL）；相干 DSP/调制器按黑箱。判决复用 link 系统预算锚死标量；复用已锚定无源网，无量级新物理。对标公开相干 ZR 量级。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "datacom",
     "app_domain": "coherent",
     "features": [
@@ -3035,6 +3096,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "CPO 16 通道 WDM 前端 = MMI 星形耦合（GP-MMI-1X2）+ SiN 阵列波导（GP-SIN-PL）；判决复用 wdm_demux 已验证闭环（B4 锚：drop IL≤3dB / XT≥15dB）。复用已锚定无源网，无量级新物理。对标公开 CPO WDM 量级。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "cpo",
     "app_domain": "cpo_engine",
     "features": [
@@ -3083,6 +3145,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "UCIe-Optical 前端 = MMI 星形耦合（GP-MMI-1X2）+ SiN 波导（GP-SIN-PL）；判决复用 wdm_demux 已验证闭环（B4 锚）。复用已锚定无源网，无量级新物理。对标公开光 chiplet 互连量级。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "cpo",
     "app_domain": "chiplet",
     "features": [
@@ -3137,6 +3200,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "FMCW LiDAR 全前端 = 光栅耦合（GP-GRATING-EFF）+ SiN 波导（GP-SIN-PL）+ Y-branch 路由（GP-YBRANCH）；OPA 扫描/相干混频按黑箱（负面清单）。判决复用 sensor_frontend 自带死标量锚 S1（预算）/S5（能量守恒下界·D-67）/S7（统计 p5）；复用已锚定无源网，无量级新物理。对标公开 FMCW LiDAR 链路量级。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "sensing",
     "app_domain": "lidar",
     "features": [
@@ -3190,6 +3254,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "POCT 传感前端 = 光栅耦合（GP-GRATING-EFF）+ Y-branch 分/合束（GP-YBRANCH）+ SiN 波导传感臂（GP-SIN-PL）；传感元件按参数化黑箱（负面清单）。判决复用 sensor_frontend 自带死标量锚 S1/S5/S7；复用已锚定无源网，无量级新物理。对标公开传感链路预算量级。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "sensing",
     "app_domain": "biochem",
     "features": [
@@ -3243,6 +3308,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "FTTR 32 路 PLC = 5 级 Y-branch 级联（GP-YBRANCH，2^5=32 支路，含理想 5×3.01 dB 分光）+ SiN 波导（GP-SIN-PL）；判决复用 sensor_frontend 自带死标量锚 S1/S5/S7。复用已锚定无源网，无量级新物理。对标 ITU-T/G.671 公开规格。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "datacom",
     "app_domain": "pon",
     "features": [
@@ -3296,6 +3362,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "TTD 前端 = 光栅耦合（GP-GRATING-EFF）+ 2×crossing 时延路由（GP-SIN-PL 延迟线）+ SiN 波导（GP-SIN-PL）；电光调制按黑箱（负面清单）。判决复用 sensor_frontend 自带死标量锚 S1/S5/S7；复用已锚定无源网，无量级新物理。对标公开微波光子 TTD 链路量级。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "sensing",
     "app_domain": "microwave",
     "features": [
@@ -3353,6 +3420,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "QKD 干线收发前端 = 高效光栅耦合（GP-GRATING-EFF）+ SiN 波导引出（GP-SIN-PL）；QKD 本质是信息论安全问题，按物理诚实映射到 qkd_link 系统类型（decoy-BB84 安全密钥率锚 S-QKD-SKR），不冒用量子比特读出锚。判决复用 decoy-BB84 渐近下界（Lo–Ma–Chen 2005）已验证闭环，零新物理；含 Q-D67 护栏。对标公开 QKD 密钥率量级（等效验证）。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "quantum",
     "app_domain": "qkd",
     "features": [
@@ -3432,6 +3500,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "32-qubit 复用读出链 = Y-branch 路由（GP-YBRANCH）+ SiN 波导（GP-SIN-PL）读出网络；判决复用 quantum_fidelity 已验证闭环（D-46×D-47）。复用已锚定无源网，无量级新物理。对标公开超导量子系统读出保真度量级。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "quantum",
     "app_domain": "qc_readout",
     "features": [
@@ -3481,6 +3550,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "OPA 2D 前端 = 高效光栅耦合（GP-GRATING-EFF）+ SiN 波导阵列（GP-SIN-PL）；OPA 是光波束控器件，按物理诚实映射到 link 系统类型（IL 基），不冒用量子比特读出锚。判决复用 link 系统预算锚死标量；复用已锚定无源网，无量级新物理。对标公开 OPA 光路量级。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "sensing",
     "app_domain": "lidar",
     "features": [
@@ -3530,6 +3600,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "WDM 锁定微梳 = 高效光栅耦合 IO（GP-GRATING-EFF） + SiN 高 Q 微环梳（GP-SIN-PL，色散工程 锁 ITU 网格） + MMI 分束复用（GP-MMI-1X2）；泵浦/探测/锁相环按黑箱（有源不物理级建模，负面清单）。判决复用 link 系统预算锚死标量。与 IM-OPTCOMB（通用微梳前端）区分：本货架专攻 WDM/ITU 网格锁定的多波长相干源，compositions 多纳入 MMI 复用，规格面向信道化 WDM。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "component",
     "app_domain": "light_source",
     "features": [
@@ -3590,6 +3661,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "CPO 光 I/O = 光栅耦合器阵列 IO（GP-GRATING-EFF）+ SiN 低损波导扇出（GP-SIN-PL）+ Y-branch 分光/监控支路（GP-YBRANCH）；判决走新系统类型 cpo_optical_io 三道死标量锚：每通道插损 S-CPO-IL（GP-* 级联，D-67 能量守恒下界护栏）+ 海岸线带宽密度 S-CPO-DENSITY（= 单通道速率/通道间距，P-CPO 间距几何下界护栏）+ 功率预算 S-CPO-BUDGET（S1 同式）。与 IM-CPO-WDM5（WDM 级联 B4 锚）/IM-CPO-16CH（通道数扩展）区分。EIC/驱动器/激光器按黑箱（有源不物理级建模，负面清单）。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "cpo",
     "app_domain": "cpo_engine",
     "features": [
@@ -3661,6 +3733,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "把通道间距从 250 µm 压到 127 µm（标准光纤阵列细间距档）→ 总带宽 3.2 Tbps 而海岸线仅 2.03 mm，密度复现 1574.80 Gbps/mm。⚠️ 该复现值**已达 P-CPO 物理上界 1600 的 98.4%**（上界 = 200 Gbps / 125 µm G.652 包层直径）—— 再密就违反几何必然，护栏直接抛错拦截。本货架兼作 P-CPO 护栏的贴身回归用例。与 IM-CPO-16CH（既有，通道数扩展口径）区分。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "cpo",
     "app_domain": "cpo_engine",
     "features": [
@@ -3734,6 +3807,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "couple_mode=grating_array（片间光栅阵列**直连，无光纤**）⇒ P-CPO 间距物理下界由 G.652 包层直径 125 µm 换为**模场直径 MFD@1550 = 10.3 µm**，故 45 µm 间距合法。这验证 P-CPO 护栏**按耦合方式分档守下界**：一刀切用 125 µm 会误杀片间直连，放松到无下界则可虚报密度。片间短距无分束/交叉 → 插损仅 2×光栅耦合 + 0.2 cm 波导。与 IM-UCIE-OPTICAL（既有，电学接口标准口径）/IM-CHIPLET-IO（既有）区分。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "cpo",
     "app_domain": "chiplet",
     "features": [
@@ -3807,6 +3881,7 @@
     "honest_tier": "前瞻预研",
     "design_note": "可维护性导向：把温度敏感的激光器外置为可现场更换模块（ELS/ELSFP），光经光纤送入CPO 引擎 ⇒ 光栅耦合 IO（GP-GRATING-EFF）+ SiN 波导（GP-SIN-PL）+ crossing 交叉（GP-CROSSING，ELS 光路与本地环路交汇）+ Y-branch 分光。8×400G = 3.2 Tbps 正对OIF 3.2T IA 光口配置，密度复现 1600 Gbps/mm（= 200G 档物理上界的 2 倍，因单通道速率翻倍，上界同步升至 3200）。与 IM-LASER-INT（片上异质集成光源黑箱）区分。",
     "ci_status": "",
+    "listed_at": "2026-09-06",
     "track": "cpo",
     "app_domain": "cpo_engine",
     "features": [

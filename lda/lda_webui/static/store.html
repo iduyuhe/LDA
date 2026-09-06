@@ -132,6 +132,8 @@
             <option value="price_desc" data-page-node-id="sJYZAB5h5jf1DKEyRjqV4g">价格 高→低</option>
             <option value="name" data-page-node-id="Hthd7vSMMPQOgEnl88SByO">按 ID</option>
             <option value="open" data-page-node-id="f1fmkvuwDFFVjwMVohDvG4">可下载优先</option>
+            <option value="newest" data-page-node-id="qk7Lnd2vRb8YwTEx5ZgH4p">最新上架</option>
+            <option value="oldest" data-page-node-id="cM4zpR9vNt2yHsWb7Kj6Qd">最早上架</option>
           </select>
           <span class="filt-sum" id="fSum" data-page-node-id="XwiCcLHpZpg3lDKF5uIFZZ"></span>
           <button class="filt-reset" id="fReset" onclick="resetFilt()" data-page-node-id="N0nduHvVbX6nqyuLE5zkRp">清空筛选</button>
@@ -522,6 +524,28 @@ function renderFilters(){
   // 价档
   $("#fTier").innerHTML = chipHtml('tier', Object.keys(FACETS.tier||{}), FACETS.tier, LABELS.tier||{});
 }
+// 日期排序：YYYY-MM-DD 字典序即时序；空值恒沉底（不冒充最新/最老）。
+// 「新上架」判定：listed_at 距今 ≤30 天。
+// 未来日期不打 NEW —— 那说明数据腐化或时钟异常，宁可不显示也不显示错的。
+function _isNewListing(d){
+  if(!d || d.length!==10) return false;
+  var t=new Date();
+  var today=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);
+  if(d>today) return false;
+  var ms=t.getTime()-new Date(d+'T00:00:00').getTime();
+  return ms>=0 && ms<=30*86400000;
+}
+// 🔴 空值恒沉底，且**不随 asc/desc 反转**——若用「反转比较器」实现升序，
+//    空值会跟着翻到最前，缺日期的货架就冒充"最早上架"了。
+//    沉底是绝对规则，不是排序方向的一部分。
+function _cmpDate(a,b,desc){
+  if(!a && !b) return 0;
+  if(!a) return 1;            // 空值恒在后
+  if(!b) return -1;
+  if(a===b) return 0;
+  var r = a<b ? -1 : 1;       // 升序
+  return desc ? -r : r;
+}
 function filteredRows(){
   var kw=(FILT.q||'').trim().toLowerCase();
   var rows=SHELF_ROWS.filter(function(s){
@@ -540,6 +564,10 @@ function filteredRows(){
   else if(st==='price_desc') rows.sort(function(a,b){return (b.price_cny||0)-(a.price_cny||0);});
   else if(st==='name')  rows.sort(function(a,b){return a.id<b.id?-1:(a.id>b.id?1:0);});
   else if(st==='open')  rows.sort(function(a,b){return (b.open?1:0)-(a.open?1:0);});
+  // v0.9.43（N-1）：按上架日期（YYYY-MM-DD，字典序即时序）排序。
+  // 缺 listed_at 的一律沉底——不冒充最新，也不冒充最老。
+  else if(st==='newest') rows.sort(function(a,b){return _cmpDate(a.listed_at,b.listed_at,true);});
+  else if(st==='oldest') rows.sort(function(a,b){return _cmpDate(a.listed_at,b.listed_at,false);});
   return rows;
 }
 function renderShelves(){
@@ -583,9 +611,16 @@ function renderShelves(){
         }
         merch+='</div></div>';
       }
+      // v0.9.43（N-1）：上架日期（口径=该货架在仓库中首次出现的提交日期，可溯源）
+      var listedHtml = s.listed_at
+        ? '<div class="meta">上架 '+esc(s.listed_at)+
+          (_isNewListing(s.listed_at)?' <span class="tag" style="background:#dcfce7;color:#15803d">NEW</span>':'')+
+          '</div>'
+        : '';
       h+='<div class="shelf"><h3>'+esc(s.id)+'</h3>'+
          '<div class="app">'+esc(s.title)+'</div>'+
          '<div class="meta">'+esc(s.domain)+' · '+esc(s.system_type)+' · '+esc(s.honest_tier)+(s.open?'':' · 咨询制')+'</div>'+
+         listedHtml+
          '<div>'+comp+'</div>'+
          price+
          merch+

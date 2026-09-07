@@ -301,6 +301,13 @@ CORE_SMOKES: List[str] = [
     #   NotImplementedError、反向②篡改注册表删 kind→闭环不通过（路由到真注册表非副本）。
     #   实测 ~20s（Bragg 3D FDTD 终验）。CI core 131→132。
     "run_ir_inverse_design_smoke.py",
+    # 🔴 v0.9.56 ②：MMI 1×2 EME 求解核 smoke（**负结果结论锁**）。
+    #   E5（golden 0.05 dB / tol 0.1 dB）两条独立路线探测均实测不合格
+    #   （2D FDTD 直波导控制失败；2D-EIM EME 自成像保真度 0.875 + 对 L_π
+    #   病态敏感 ±1%⇒2×tol）。本 smoke 11 判据把「求解核是对的」与
+    #   「E5 目前确实判不了」**同时钉死**：后者是已知缺口锁，模型够格时
+    #   **转红**提醒更新账本。纯 numpy，实测 ~17s。CI core 132→133。
+    "run_mmi_eme_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

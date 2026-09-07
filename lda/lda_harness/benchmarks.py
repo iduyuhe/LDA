@@ -823,7 +823,22 @@ BENCHMARK_DEFS = {
         "empirical_id": "E-MMI-1X2-EL",
         "default_params": {"w_um": 0.5, "h_um": 0.22, "wl_um": 1.55},
         "golden_fn": None,
-        "note": "实证锚：golden=语料实测值 0.05 dB（SOI MMI 1×2，TE 1550nm，Chack & Hassan OE 2020）；比对=|candidate−measured|≤tol。",
+        "note": ("实证锚：golden=语料实测值 0.05 dB（SOI MMI 1×2，TE 1550nm，"
+                 "Chack & Hassan OE 2020，device 字段 footprint 2.8×27 µm²）；"
+                 "比对=|candidate−measured|≤tol。"
+                 "🔴 v0.9.56 独立候选探测结论（实测，非推断）：两条路线均判不合格，"
+                 "本锚**保持自证桩**，不挂 candidate 字段。①2D FDTD 全场时域："
+                 "直波导控制实验都无法让导模沿线保幅（≈0.7 dB/µm 虚假衰减且非单调），"
+                 "实现已删除不入库。②2D-EIM 本征模展开 EME（lda_solver/mmi_eme.py，"
+                 "已入库作可复用能力，本征分解与解析超越方程交叉校验 max|Δn_eff|=4.4e-3）："
+                 "自成像保真度仅 0.8746（理论上限 0.9898）；对拍长 L_π 病态敏感——"
+                 "±1% 误差 ⇒ excess 摆动 0.199 dB = 2×tol，±5% ⇒ 2.82 dB = 28×tol"
+                 "（本模型 dl 0.04→0.005 时 L_π 即漂 2%）；L=27 µm 实测 excess=4.33 dB，"
+                 "放开 (L, y_split) 全平面寻优后模型自身最优仍 0.436 dB（T=0.90）。"
+                 "⇒ roadmap 已判 C2+C5（geometry 缺 W/L、0.05 dB 与数值噪声地板同量级）"
+                 "的**实测确认**：tol=0.1 dB 的 E5 需 L_π 优于 ~1%，2D-EIM 及任何非"
+                 "三维矢量模型都给不出。护栏见 run_mmi_eme_smoke.py（11 判据，"
+                 "含已知缺口锁：模型够格时该断言转红提醒更新账本）。"),
     },
     "E6": {
         "title": "厚 SiN 波导传播损耗（实证语料锚）",

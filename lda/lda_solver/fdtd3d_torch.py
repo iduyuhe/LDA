@@ -16,7 +16,13 @@ from __future__ import annotations
 import math
 
 import numpy as np
-import torch
+
+try:  # torch 为可选性能后端（[torch] extra）；缺失时模块仍可导入，调用入口明确报错
+    import torch
+    _HAVE_TORCH = True
+except Exception:  # noqa: BLE001
+    torch = None
+    _HAVE_TORCH = False
 
 import fdtd3d as base  # numpy sovereign 参考实现（几何构造源）
 
@@ -230,6 +236,8 @@ def solve_spectrum_torch(spec, device=None, dl_factor=80.0, courant=0.95,
                          ramp=400, sponge=320, target_exp=12.0, ny=2, nz=2,
                          angle=0.0):
     """与 fdtd3d.solve_spectrum 同签名；device=None 自动选 cuda（若可用）否则 cpu。"""
+    if not _HAVE_TORCH:
+        raise ImportError("torch 后端不可用：请安装可选依赖 `pip install 'lda-design[torch]'`")
     if device is None:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
     layers = spec["layers"]
@@ -264,6 +272,8 @@ def run_greens_test_torch(wl=2.0, n=1.0, N=120, sponge=28, dl_factor=20.0,
                           courant=0.95, ramp=400, target_exp=12.0,
                           radii=None, device=None):
     """与 fdtd3d.run_greens_test 同签名；返回 [(r, |Ez_dft|·r), ...]。"""
+    if not _HAVE_TORCH:
+        raise ImportError("torch 后端不可用：请安装可选依赖 `pip install 'lda-design[torch]'`")
     if device is None:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
     (eps, sigma, dampE, dampHx, dampHy, dampHz, dl, dt, omega) = \

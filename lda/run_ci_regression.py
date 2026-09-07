@@ -157,6 +157,12 @@ CORE_SMOKES: List[str] = [
     # P1 全量自动布线器重写（v0.9.52：空间索引+局部窗口 A*+增量占位，
     #   根除旧 router O(N^3.57) 增量瓶颈、实测 O(N^2.59)→O(N^1.16)、正确性零回归）
     "run_router_p1_smoke.py",
+    # torch/numba 可选依赖反向护栏（v0.9.53：fdtd3d_numba/fdtd3d_torch 模块级 import
+    #   改为优雅降级，核心导入链不再硬依赖 torch/numba；屏蔽环境子进程反向验证）
+    "run_torch_numba_optional_smoke.py",
+    # B5/B7 回退下限反向护栏（v0.9.53：ORACLE 全不可用时回退设计守则锚下限
+    #   B5=3.0dB / B7=-40.0dB 须精确持有+诚实标注 design-anchor；ORACLE 在场须绕开下限）
+    "run_b5b7_rollback_floor_smoke.py",
     # 第二梯队-2 三件套（多端网 Steiner + 2D 放置 + 有源基元）
     "run_second_tier_smoke.py",
     # LVS 签核（v0.8.24：版图-原理图一致性 · 签核级 · 版图差距 #5 + S9 锚）

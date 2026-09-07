@@ -24,7 +24,17 @@ from __future__ import annotations
 import math
 
 import numpy as np
-from numba import njit, prange
+
+try:  # numba 为可选加速后端（[numba] extra）；缺失时自动回退纯 numpy（与 fdtd3d_waveguide_numba 同范式）
+    from numba import njit, prange
+    _HAVE_NUMBA = True
+except Exception:  # noqa: BLE001
+    def njit(*_args, **_kwargs):  # 无 numba：no-op 装饰器，被装饰函数退化为纯 python
+        def _wrap(f):
+            return f
+        return _wrap
+    prange = range
+    _HAVE_NUMBA = False
 
 from fdtd3d import (_avg_sigma, _build_interior, _grid_constants, _sponge_1d)
 

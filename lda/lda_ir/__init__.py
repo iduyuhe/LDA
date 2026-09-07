@@ -10,8 +10,9 @@ from __future__ import annotations
 from .core import (
     Component, FoundryPlan, IRModel, Net, ObjectiveSpec, Port, SpectrumSpec,
 )
-from .photon import (DirectionalCoupler, GratingCoupler, RingResonator,
-                     Splitter, SymmetricYBranch, Waveguide)
+from .photon import (BraggMirror, DirectionalCoupler, GratingCoupler,
+                     RingAddDrop, RingResonator, Splitter, SymmetricYBranch,
+                     Waveguide)
 from .quantum import Coupler, Resonator, Transmon
 from .dsl import dumps, from_dict, loads, to_dict, to_dsl
 from .validate import validate
@@ -20,7 +21,7 @@ __all__ = [
     "IRModel", "Component", "Port", "Net", "ObjectiveSpec",
     "SpectrumSpec", "FoundryPlan",
     "RingResonator", "Waveguide", "GratingCoupler", "Splitter",
-    "DirectionalCoupler", "SymmetricYBranch",
+    "DirectionalCoupler", "SymmetricYBranch", "BraggMirror", "RingAddDrop",
     "Transmon", "Resonator", "Coupler",
     "to_dict", "from_dict", "dumps", "loads", "to_dsl", "validate",
 ]

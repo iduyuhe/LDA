@@ -13,11 +13,16 @@ DesignAgent 现只消费 dict 意图，故本层输出 intent dict 而非 Design
           "同一设计意图落在不同工艺窗口 → 不同收敛落点"（多晶圆厂共建闭环）。
 
 当前 DesignAgent 能力边界（诚实声明）：
-  支持光子 Waveguide(kind) → 真 2D 波导验收闭环（geo_kind="waveguide_2d"，
-  FDTD neff ↔ slab ORACLE）；RingResonator → 环形谱形逆设计闭环（D-11，
-  解析环形传递函数 + 谱形提取交叉验收）。耦合器/分束器/量子逆设计需经
-  D-01 CouplerAgent 专用闭环接入（规划 D-09）——对不支持 kind 抛
-  NotImplementedError，不静默返回假 intent。
+  路径 A（L1 DesignAgent.run）：光子 Waveguide(kind) → 真 2D 波导验收闭环
+  （geo_kind="waveguide_2d"，FDTD neff ↔ slab ORACLE）；RingResonator →
+  环形谱形逆设计闭环（D-11，解析环形传递函数 + 谱形提取交叉验收）。
+  路径 B（D-38 声明式注册表 run_inverse_design，本桥 ir_to_inverse_design）：
+  复用同一框架落地 RingResonator / BraggMirror / RingAddDrop / Transmon 四类
+  已验证器件（跨光子/量子、跨 match/threshold、跨连续/离散；C 级自主，零外部
+  求解器）。新器件接入 = 注册表加一条 spec，本桥零改动——这是"逆设计扩面"
+  的主通道。其余 kind（GratingCoupler / Splitter / DirectionalCoupler /
+  SymmetricYBranch）逆设计需经对应专用闭环（规划 D-09/D-01）——对不支持
+  kind 抛 NotImplementedError，不静默返回假 intent。
 
 另提供 ir_eval：L3 直接消费 IR 算真值 + 判定（不经 agent 闭环），这是
 "IR 即事实源"的活路径（与 DesignAgent 无关，始终可用）。
@@ -151,6 +156,110 @@ def ir_to_multifoundry(model: IRModel, registry,
             out.append((k, intent))
         except Exception as e:  # 单 foundry 失败不阻断整体多 foundry 对比
             print(f"[bridge] 跳过 foundry '{k}'：{e}")
+    return out
+
+
+# --------------------------------------------------------------------------
+# IR → D-38 声明式逆设计注册表（逆设计扩面主通道）
+# --------------------------------------------------------------------------
+# IR kind 与 D-38 注册表 kind 命名一致（零翻译层）：本集合即"桥接层认可的
+# 可经 run_inverse_design 闭环的 IR kind"。新增器件 = 注册表加一条 spec（
+# 见 lda_agent/inverse_design.py），本桥零改动。
+_INVERSE_KINDS = ("RingResonator", "BraggMirror", "RingAddDrop", "Transmon")
+
+
+def _resolve_inverse_kind(model: IRModel) -> str:
+    """取 IR 主器件并解析其 D-38 逆设计注册表 kind；不支持则诚实抛 NotImplementedError。"""
+    prim = model.primary_component
+    if prim is None:
+        raise ValueError("IR 无 component，无法构造逆设计意图")
+    if prim.kind in _INVERSE_KINDS:
+        return prim.kind
+    raise NotImplementedError(
+        f"kind={prim.kind} 未接入逆设计注册表：当前支持 {list(_INVERSE_KINDS)}"
+        "（其余 kind 逆设计需经对应专用闭环，见规划）。")
+
+
+def ir_to_inverse_design(model: IRModel, registry, foundry_key: str,
+                         backend: str = "numpy") -> Dict:
+    """由 IR 构造 D-38 逆设计意图并执行 run_inverse_design 闭环。
+
+    与 ir_to_intent（L1 DesignAgent.run 路径）互补：本函数复用 D-38 声明式
+    注册表（run_inverse_design），落地 RingResonator / BraggMirror / RingAddDrop
+    / Transmon 四类已验证器件。foundry 工艺窗口注入 extra（与 _inject_process_params
+    同源），保证"经闭环优化"与"L3 直接算真值"两路径一致。
+
+    返回 run_inverse_design 的报告 dict（含 ok / accepted / final_params /
+    method_err / elapsed_s）——调用方据此判定闭环成败，不静默返回空。
+    """
+    kind = _resolve_inverse_kind(model)
+    pdk = registry.get(foundry_key)
+    prim = model.primary_component
+    p = prim.params
+    spec = model.spectrum
+
+    extra: Dict[str, float] = {}
+    if kind == "RingResonator":
+        extra["n_g"] = float(p.get("n_g", pdk.n_si if model.domain == "photon" else 4.2))
+        extra["wl0_um"] = float(spec.wl0_um if spec else p.get("wl0_um", 1.55))
+        extra["Q"] = float(p.get("Q", 1.0e4))
+        extra["kappa"] = float(p.get("kappa", 0.05))
+        extra["n_points"] = int(p.get("n_points", 81))
+        target = float(spec.target_fsr_nm if spec else p.get("target_fsr_nm", 9.15))
+    elif kind == "BraggMirror":
+        extra["wl0_um"] = float(p.get("wl0_um", 1.55))
+        extra["n_si"] = float(p.get("n_si", pdk.n_si))
+        extra["n_sio"] = float(p.get("n_sio", getattr(pdk, "n_clad", 1.44)))
+        extra["dl_factor"] = float(p.get("dl_factor", 60.0))
+        target = float(p.get("target_r_min", 0.99))
+    elif kind == "RingAddDrop":
+        extra["R_um"] = float(p.get("R", 6.0))
+        extra["wg_width"] = float(p.get("wg_width", 0.5))
+        extra["n_g"] = float(p.get("n_g", pdk.n_si if model.domain == "photon" else 4.2))
+        extra["wl0_um"] = float(spec.wl0_um if spec else p.get("wl0_um", 1.55))
+        extra["n_points"] = int(p.get("n_points", 401))
+        target = float(p.get("target_Q", 2500.0))
+    else:  # Transmon（量子域）
+        ec = p.get("E_C")
+        if ec is None and getattr(pdk, "quantum_window", None):
+            ec = pdk.quantum_window.get("ec_default")
+        extra["E_C"] = float(ec if ec is not None else 0.30)
+        extra["N"] = int(p.get("N", 20))
+        extra["n_g"] = float(p.get("n_g", 0.0))
+        target = float(p.get("target_f01", 5.0))
+
+    from lda_agent.inverse_design import run_inverse_design
+    return run_inverse_design(kind, target_metric=target, extra=extra)
+
+
+def ir_to_multifoundry_inverse(model: IRModel, registry,
+                               backend: str = "numpy") -> List[Tuple[str, Dict]]:
+    """按 FoundryPlan 遍历 foundry，对每个 foundry 跑 ir_to_inverse_design。
+
+    与 ir_to_multifoundry 对称；域过滤同规则（光子 IR 不派发到量子 foundry，
+    反之）。单 foundry 失败跳过并告警（不阻断整体）。
+    """
+    _resolve_inverse_kind(model)  # 整体不可逆设计 → 直接抛，不静默返回空
+
+    if model.foundry_plan is None:
+        keys = [model.pdk_ref] if model.pdk_ref else registry.list_pdks()
+    elif model.foundry_plan.mode == "all":
+        keys = registry.list_pdks()
+    else:
+        keys = [k for k in model.foundry_plan.foundries if k in registry.list_pdks()]
+
+    if model.domain == "photon":
+        keys = [k for k in keys if "量子" not in k]
+    elif model.domain == "quantum":
+        keys = [k for k in keys if "量子" in k]
+
+    out: List[Tuple[str, Dict]] = []
+    for k in keys:
+        try:
+            rep = ir_to_inverse_design(model, registry, k, backend=backend)
+            out.append((k, rep))
+        except Exception as e:
+            print(f"[bridge-inverse] 跳过 foundry '{k}'：{e}")
     return out
 
 

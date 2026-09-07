@@ -142,8 +142,59 @@ def SymmetricYBranch(id: str = "yb", width: float = 0.5, split_angle: float = 10
     )
 
 
+def BraggMirror(id: str = "bm", periods: float = 8.0, target_r_min: float = 0.99,
+                wl0_um: float = 1.55, n_si: float = 3.48, n_sio: float = 1.44,
+                periods_bounds: tuple = (4, 12),
+                r_min_bounds: tuple = (0.5, 0.999)) -> Component:
+    """布拉格反射镜（D-03 逆设计锚的对口 IR 表达）。
+
+    目标：最少周期数使阻带 R_min 命中 target_r_min。桥接层经 D-38 声明式
+    注册表 BraggMirror 闭环（TMM 搜索最少周期达标 + 真实 3D FDTD vs TMM
+    方法一致性终验；C 级自主，零外部求解器）。foundry 工艺窗口（n_si/n_sio）
+    由桥接层按 PDK 注入，工厂默认值仅作 fallback。
+    """
+    params: Dict[str, float] = {"periods": periods, "target_r_min": target_r_min,
+                               "wl0_um": wl0_um, "n_si": n_si, "n_sio": n_sio}
+    bounds: Dict[str, tuple] = {"periods": tuple(periods_bounds),
+                                "target_r_min": tuple(r_min_bounds)}
+    return Component(
+        id=id,
+        kind="BraggMirror",
+        params=params,
+        param_bounds=bounds,
+        ports=[Port("in"), Port("out")],
+    )
+
+
+def RingAddDrop(id: str = "rad", R: float = 6.0, gap: float = 0.30,
+                wg_width: float = 0.5, n_g: Optional[float] = None,
+                target_Q: float = 2500.0,
+                R_bounds: tuple = (4.0, 12.0), gap_bounds: tuple = (0.15, 0.80),
+                Q_bounds: tuple = (500.0, 1.0e5)) -> Component:
+    """环形 add-drop 滤波器（D-37 逆设计锚的对口 IR 表达）。
+
+    目标：调耦合间隙 gap 使加载 Q_L 命中 target_Q。桥接层经 D-38 注册表
+    RingAddDrop 闭环（drop 谱线宽反解 Q_L，Q 分解解析 ORACLE；C 级自主）。
+    n_g 默认 None 由桥接层按 foundry 工艺折射率注入（跨 foundry 落点差异
+    来源）；显式给定则跨 foundry 固定。
+    """
+    params: Dict[str, float] = {"R": R, "gap": gap, "wg_width": wg_width,
+                                "target_Q": target_Q}
+    if n_g is not None:
+        params["n_g"] = n_g
+    bounds: Dict[str, tuple] = {"R": tuple(R_bounds), "gap": tuple(gap_bounds),
+                                "target_Q": tuple(Q_bounds)}
+    return Component(
+        id=id,
+        kind="RingAddDrop",
+        params=params,
+        param_bounds=bounds,
+        ports=[Port("in"), Port("thru"), Port("drop"), Port("add")],
+    )
+
+
 # 领域词汇表（便于校验 / 渲染时识别已知 Kind）
 KNOWN_KINDS: List[str] = [
     "RingResonator", "Waveguide", "GratingCoupler", "Splitter",
-    "DirectionalCoupler", "SymmetricYBranch",
+    "DirectionalCoupler", "SymmetricYBranch", "BraggMirror", "RingAddDrop",
 ]

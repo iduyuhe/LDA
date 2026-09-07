@@ -178,9 +178,11 @@ class IRModel:
         if not self.components:
             return None
         # 优先取 kind 含 Resonator / Grating / Splitter / Waveguide /
-        # Coupler / YBranch 的设计主体（v0.2 新增方向耦合器 / 对称 Y 分支）
+        # Coupler / YBranch / Transmon / Bragg / AddDrop 的设计主体
+        # （v0.2 新增方向耦合器 / 对称 Y 分支；逆设计扩面新增 Bragg/AddDrop/
+        # Transmon 识别）
         for k in ("Resonator", "Grating", "Splitter", "Waveguide",
-                  "Coupler", "YBranch"):
+                  "Coupler", "YBranch", "Transmon", "Bragg", "AddDrop"):
             for c in self.components:
                 if k in c.kind:
                     return c

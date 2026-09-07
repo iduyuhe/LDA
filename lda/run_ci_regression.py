@@ -295,6 +295,12 @@ CORE_SMOKES: List[str] = [
     #   实跑匹配；数字必来自货架数据（price_cny/specs），严禁模板/LLM 杜撰规格数字；
     #   含真跑往返 + 价格真实性核对 + 乱码/空文本优雅返回 + 别名污染失准反向）
     "run_store_guide_smoke.py",
+    # L0 IR 逆设计扩面护栏（v0.9.55 ①：IR → D-38 声明式注册表四类已验证器件
+    #   闭环 RingResonator/BraggMirror/RingAddDrop/Transmon。含真跑 accepted +
+    #   真实 final_params、Bragg 方法一致性<0.1（C 级自主）、反向①未知 kind→
+    #   NotImplementedError、反向②篡改注册表删 kind→闭环不通过（路由到真注册表非副本）。
+    #   实测 ~20s（Bragg 3D FDTD 终验）。CI core 131→132。
+    "run_ir_inverse_design_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -578,11 +584,17 @@ def main() -> int:
     r = run_ci_regression(python=a.python, tag=a.tag, timeout=a.timeout,
                           fail_fast=a.fail_fast, exclude=excl)
     print(r["verdict"])
+    rc = 0 if r["acceptance"]["passed"] else 1
     if a.out:
-        with open(a.out, "w", encoding="utf-8") as f:
-            json.dump(r, f, ensure_ascii=False, indent=2)
-        print(f"[written] {a.out}")
-    return 0 if r["acceptance"]["passed"] else 1
+        try:
+            _d = os.path.dirname(a.out) or "."
+            os.makedirs(_d, exist_ok=True)
+            with open(a.out, "w", encoding="utf-8") as f:
+                json.dump(r, f, ensure_ascii=False, indent=2)
+            print(f"[written] {a.out}")
+        except Exception as _e:  # noqa: BLE001 —— 报告写入失败不得掩盖判决
+            print(f"[warn] 报告写入失败（不影响判决 rc={rc}）：{_e}", file=sys.stderr)
+    return rc
 
 
 if __name__ == "__main__":

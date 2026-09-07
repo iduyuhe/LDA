@@ -1,20 +1,20 @@
-# LDA 锚题覆盖矩阵（33 类 × 50 锚 · T-9）
+# LDA 锚题覆盖矩阵（33 类 × 52 锚 · T-9）
 
-> 生成：2026-09-06 · 生成器 `lda/run_anchor_coverage_matrix.py`（可复现：改归属表后重跑）
-> 口径：**品类×锚覆盖** = 该锚的物理对象/判决对象落在该设计品类上。覆盖 ≠ 已接独立候选；●=严格独立已接、◐=自证桩（名义覆盖）。证据分级：**C**=引擎 specs 代码显式引用（最权威）· **T**=锚 title/metric 明写该品类 · **K**=引擎真判决锚在 50 集外（语料锚），所列 50 锚仅为名义邻居· **i**=编辑推断 · **P**=横向/系统层。
+> 生成：2026-09-07 · 生成器 `lda/run_anchor_coverage_matrix.py`（可复现：改归属表后重跑）
+> 口径：**品类×锚覆盖** = 该锚的物理对象/判决对象落在该设计品类上。覆盖 ≠ 已接独立候选；●=严格独立已接、△=降级量级参考（有候选但不进死标量判决）、◐=自证桩（名义覆盖）。证据分级：**C**=引擎 specs 代码显式引用（最权威）· **T**=锚 title/metric 明写该品类 · **K**=引擎真判决锚在 52 集外（语料锚），所列 52 锚仅为名义邻居· **i**=编辑推断 · **P**=横向/系统层。
 
 ## 0 · 摘要
 
-- 33 类 = 22 引擎（光子 15 + 量子 7）+ 11 包；50 锚（B28 + E7 + S13 + B29 + B30）；严格独立 **25** / 自证桩 **25**
-- 有 ≥1 锚宿主（50 集内）：引擎 **22/22**、包 **8/11**
+- 33 类 = 22 引擎（光子 15 + 量子 7）+ 11 包；52 锚（含 v0.9.39 B29/B30、v0.9.51 E8/E9 升格）；严格独立 **26** / 降级量级参考 **1** / 自证桩 **25**
+- 有 ≥1 锚宿主（52 集内）：引擎 **22/22**、包 **8/11**
 - 横向/系统层锚（无单一品类宿主）**13**：B1, B8, B17, B19, S1, S3, S5, S6, S7, S8, S9, S10, S11
 - 零覆盖品类与接线建议见 §3；完整归属见 §2。
 
 ## 1 · 品类 → 锚覆盖矩阵（33 行）
 
-每类一行：命中锚序列 `锚id(符号·证据)`；**空 = 50 集内零覆盖**。
+每类一行：命中锚序列 `锚id(符号·证据)`；**空 = 52 集内零覆盖**。
 
-| # | 品类（域） | 50 集覆盖锚 | 覆盖数 |
+| # | 品类（域） | 52 集覆盖锚 | 覆盖数 |
 |---|---|---|---|
 | 1 | **Waveguide**（引擎） | B2◐i · E1◐i · E2●C | 3 |
 | 2 | **BraggMirror**（引擎） | B15●i | 1 |
@@ -24,8 +24,8 @@
 | 6 | **Mmi1x2**（引擎） | B16◐C | 1 |
 | 7 | **GratingCoupler2**（引擎） | B15●i | 1 |
 | 8 | **DirectionalCoupler2**（引擎） | B14●C | 1 |
-| 9 | **YbranchLoss**（引擎） | B5◐K | 1 |
-| 10 | **GratingEff**（引擎） | B6◐K | 1 |
+| 9 | **YbranchLoss**（引擎） | B5◐C · E9△T | 2 |
+| 10 | **GratingEff**（引擎） | B6◐C · E8●T | 2 |
 | 11 | **Crossing**（引擎） | B7◐T · E4◐K · E7◐K | 3 |
 | 12 | **MmiEl**（引擎） | E5◐K | 1 |
 | 13 | **SinPl**（引擎） | E2●i · E6◐K | 2 |
@@ -72,7 +72,7 @@
 | S12 | ⟂统计·阵列分布 | 均值+下界+离群三锚 AND；宿主=WDM/CPO 多通道、量子多比特阵列（wdm/multiqubit/multiqubit_fidelity） | ◐ |
 | S13 | ⟂统计·设计良率 DFY | 环形 FSR 光刻容差命中概率（已接=严格独立）；宿主=环类产品（add_drop/wdm） | ● |
 
-## 2 · 锚 → 归属明细（48 行）
+## 2 · 锚 → 归属明细（52 行）
 
 | 锚 | 判据态 | oracle | 宿主（品类 / 横向层） | 证据 |
 |---|---|---|---|---|
@@ -80,8 +80,8 @@
 | B2 | 自证桩 | analytical(EIM) | Waveguide | i ｜ Waveguide: EIM/slab 有效折射率；引擎 cheap=_slab_te_neff 同族（gapdoc: 波导） |
 | B3 | 严格独立 | analytical(Airy) | RingResonator | i ｜ RingResonator: Airy 腔 FSR 无独立品类；FSR 口径方法学挂谐振腔家族（与 B4/B20 并列对照） |
 | B4 | 严格独立 | analytical(ring)/sax | RingResonator、add_drop | CT ｜ RingResonator: 引擎 FSR 解析锚 λ²/(n_g·2πR)，engine note 同式；add_drop: 锚对象即 add-drop 环形谐振器 drop 口传递函数 |
-| B5 | 自证桩 | design-rule(Meep/Tidy3D field 预留) | YbranchLoss | K ｜ YbranchLoss: 引擎真判决锚 E-YBRANCH-LOSS 在 48 集外；B5=理想 50/50 下限 3.0dB 守则桩（同器件名义覆盖） |
-| B6 | 自证桩 | design-rule(Tidy3D/Meep field 预留) | GratingEff | K ｜ GratingEff: 引擎真判决锚 E-GRATING-EFF 在 48 集外；B6=成熟工艺可达效率 0.5 守则桩（同器件名义覆盖） |
+| B5 | 自证桩 | design-rule(Meep/Tidy3D field 预留) | YbranchLoss | C ｜ YbranchLoss: 引擎真判决锚已升格为 E9（E-YBRANCH-LOSS，degraded_ordinal 量级参考，c1 未标定唯象系数 rel≈43%）；B5=理想 50/50 下限 3.0dB 守则桩（同器件名义覆盖） |
+| B6 | 自证桩 | design-rule(Tidy3D/Meep field 预留) | GratingEff | C ｜ GratingEff: 引擎真判决锚已升格为 E8（E-GRATING-EFF，strict 严格独立，rel≈3.3%）；B6=成熟工艺可达效率 0.5 守则桩（同器件名义覆盖） |
 | B7 | 自证桩 | design-rule(Meep field 预留) | Crossing | T ｜ Crossing: 波导交叉串扰；引擎 IL+XT 双出口，E7=实测 XT 同器件（守则桩 vs 实证桩） |
 | B8 | 严格独立 | analytical(adiabatic-limit) | ⟂求解核·绝热锥度 EME | P ｜ ⟂求解核·绝热锥度 EME: T→1 绝热极限（已接=严格独立）；33 类无锥度品类 ⇒ 求解核/互连级锚（EME 核，taper 内嵌于布局路由） |
 | B9 | 严格独立 | analytical(transmon/Koch2007) | Transmon、quantum | Ci ｜ Transmon: 引擎 cheap=koch_f01 即 B9 golden 同式；quantum: 量子逆设计包（Transmon）同物理 |
@@ -109,10 +109,12 @@
 | E1 | 自证桩 | empirical-measurement(E-SOI-NG-220) | Waveguide | i ｜ Waveguide: SOI 波导群折射率实测 4.18±0.05（AMF racetrack 反演）；波导模式核（gapdoc） |
 | E2 | 严格独立 | empirical-measurement(E-SIN-NG-300) | Waveguide、SinPl | Ci ｜ Waveguide: 候选 semivec_ng=半矢量求解核 vs 实测 n_g（SiN 300nm 平台）；引擎 cheap 同 slab 核；SinPl: 同为 SiN 平台（但 E2=群折射率、E6=传播损耗，物理量不同） |
 | E3 | 自证桩 | empirical-measurement(E-TBOX-FSR-TM) | RingResonator | T ｜ RingResonator: 薄埋氧 SOI 微环 FSR 实测 10.44nm（结构性不可接 C4 循环） |
-| E4 | 自证桩 | empirical-measurement(E-SOI-CROSS-IL) | Crossing | K ｜ Crossing: corpus E-SOI-CROSS-IL = 48 集 E4；crossing 插入损耗实测 0.18±0.03dB |
-| E5 | 自证桩 | empirical-measurement(E-MMI-1X2-EL) | MmiEl | K ｜ MmiEl: corpus E-MMI-1X2-EL = 48 集 E5；MMI 过量损耗实测 0.05dB |
-| E6 | 自证桩 | empirical-measurement(E-SIN-PL-800) | SinPl | K ｜ SinPl: corpus E-SIN-PL-800 = 48 集 E6；厚 SiN 传播损耗实测 0.087dB/cm |
-| E7 | 自证桩 | empirical-measurement(E-SOI-CROSS-XT) | Crossing | K ｜ Crossing: corpus E-SOI-CROSS-XT = 48 集 E7；crossing 串扰实测 −41±2dB |
+| E4 | 自证桩 | empirical-measurement(E-SOI-CROSS-IL) | Crossing | K ｜ Crossing: corpus E-SOI-CROSS-IL = 52 集 E4；crossing 插入损耗实测 0.18±0.03dB |
+| E5 | 自证桩 | empirical-measurement(E-MMI-1X2-EL) | MmiEl | K ｜ MmiEl: corpus E-MMI-1X2-EL = 52 集 E5；MMI 过量损耗实测 0.05dB |
+| E6 | 自证桩 | empirical-measurement(E-SIN-PL-800) | SinPl | K ｜ SinPl: corpus E-SIN-PL-800 = 52 集 E6；厚 SiN 传播损耗实测 0.087dB/cm |
+| E7 | 自证桩 | empirical-measurement(E-SOI-CROSS-XT) | Crossing | K ｜ Crossing: corpus E-SOI-CROSS-XT = 52 集 E7；crossing 串扰实测 −41±2dB |
+| E8 | 严格独立 | empirical-measurement(E-GRATING-EFF) | GratingEff | T ｜ GratingEff: E8=E-GRATING-EFF 严格独立判决锚（v0.9.51 升格进 52 题集）；光栅耦合器引擎真判决锚，取代 B6 名义守则桩的覆盖角色（B6 仍为理想 0.5 下限守则桩，作名义邻居并行保留）。 |
+| E9 | 降级量级参考 | empirical-measurement(E-YBRANCH-LOSS) | YbranchLoss | T ｜ YbranchLoss: E9=E-YBRANCH-LOSS 降级量级参考判决锚（v0.9.51 升格，candidate_status=degraded_ordinal）；Y-branch 引擎真判决锚，取代 B5 名义守则桩的覆盖角色（诚实边界：c1 未标定真实 PDK，不进死标量判决列）。 |
 | S1 | 自证桩 | physical-law(dB-budget-cascade) | ⟂系统层·光链路预算 | P ｜ ⟂系统层·光链路预算: 纯算术 dB 级联判决；宿主=lda_chain 全部光链路设计（wdm/add_drop/耦合器/…），不细分品类 |
 | S2 | 自证桩 | physical-law(channel-plan) | ⟂系统层·WDM 信道规划、wdm | PT ｜ ⟂系统层·WDM 信道规划: 信道间隔−滤波器带宽>0 纯算术；宿主=wdm 包信道规划（title 明示 WDM 信道）；wdm: 信道间隔−滤波器带宽 无碰撞=wdm 信道规划判决 |
 | S3 | 自证桩 | physical-law(ASE-cascade) | ⟂系统层·OSNR | P ｜ ⟂系统层·OSNR: ASE 级联解析；宿主=含放大光链路设计流 |
@@ -129,24 +131,22 @@
 
 ## 3 · 零覆盖区与缺口清单
 
-### 3.1 品类零覆盖（50 集内无任何锚宿主）
+### 3.1 品类零覆盖（52 集内无任何锚宿主）
 
 | 品类 | 类型 | 缺口说明 |
 |---|---|---|
-| mixed_system（mixed_system） | 包 | 多环 WDM × 量子读出混合巨型系统（装配级）。非「零锚」真死角——组成器件锚已在宿主品类接严格独立候选：B4（环 FSR，ring_fsr_peakfit）、B14（方向耦合器，dc_cmt_fft）、B22（CPW λ/4，tl_eigen_qres）、B26（色散位移 χ，chi_exact）；系统级预算走 S 层锚（S1 链路 dB 级联 / S4 保真度乘积预算 / S7-S8 统计 p5 / S12 阵列分布）；整芯片验收走 GC-* 整芯片对标（system_type=link / quantum_fidelity，29 条 48 外）。稀疏是装配级预期，非不可验货。 |
+| mixed_system（mixed_system） | 包 | 多环 WDM × 量子读出混合巨型系统（装配级）。非「零锚」真死角——组成器件锚已在宿主品类接严格独立候选：B4（环 FSR，ring_fsr_peakfit）、B14（方向耦合器，dc_cmt_fft）、B22（CPW λ/4，tl_eigen_qres）、B26（色散位移 χ，chi_exact）；系统级预算走 S 层锚（S1 链路 dB 级联 / S4 保真度乘积预算 / S7-S8 统计 p5 / S12 阵列分布）；整芯片验收走 GC-* 整芯片对标（system_type=link / quantum_fidelity，29 条 52 外）。稀疏是装配级预期，非不可验货。 |
 | wdm_coupler（wdm_coupler） | 包 | 耦合器×WDM 组合（装配级，复合弱）。组成严格锚已在宿主品类：B14（方向耦合器 3dB 耦合长度，dc_cmt_fft）、B4（环形 FSR，ring_fsr_peakfit）；WDM 信道规划走 S2（信道间隔−带宽>0）。整系统验收走 GC-*（system_type=link）。 |
 | splitter_readout（splitter_readout） | 包 | 方向耦合器×量子读出（分束供电控制，装配级，复合弱）。组成严格锚已在宿主品类：B14（方向耦合器，dc_cmt_fft）、B22（CPW λ/4 读出谐振器，tl_eigen_qres）、B26（色散位移 χ，chi_exact）。整系统验收走 GC-*（system_type=quantum_fidelity）。 |
 
-### 3.2 仅名义覆盖（宿主锚全为自证桩 / corpus 判决锚在 48 外）
+### 3.2 仅名义覆盖（宿主锚全为自证桩 / corpus 判决锚在 52 外）
 
 | 品类 | 名义锚 | 判据态 | 说明 |
 |---|---|---|---|
 | PhCCavity | B21 | 全桩 | 引擎 cheap=b21_phc_resonance，note 显式 B21（结构性不可接 C2） |
 | Mmi1x2 | B16 | 全桩 | 引擎 note 显式 B16 锚（结构性不可接 C5+C3） |
-| YbranchLoss | B5 | 全桩 | 引擎真判决锚 E-YBRANCH-LOSS 在 48 集外；B5=理想 50/50 下限 3.0dB 守则桩（同器件名义覆盖） |
-| GratingEff | B6 | 全桩 | 引擎真判决锚 E-GRATING-EFF 在 48 集外；B6=成熟工艺可达效率 0.5 守则桩（同器件名义覆盖） |
-| Crossing | B7, E4, E7 | 全桩 | 波导交叉串扰；引擎 IL+XT 双出口，E7=实测 XT 同器件（守则桩 vs 实证桩）；corpus E-SOI-CROSS-IL = 48 集 E4；crossing 插入损耗实测 0.18±0.03dB；corpus E-SOI-CROSS-XT = 48 集 E7；crossing 串扰实测 −41±2dB |
-| MmiEl | E5 | 全桩 | corpus E-MMI-1X2-EL = 48 集 E5；MMI 过量损耗实测 0.05dB |
+| Crossing | B7, E4, E7 | 全桩 | 波导交叉串扰；引擎 IL+XT 双出口，E7=实测 XT 同器件（守则桩 vs 实证桩）；corpus E-SOI-CROSS-IL = 52 集 E4；crossing 插入损耗实测 0.18±0.03dB；corpus E-SOI-CROSS-XT = 52 集 E7；crossing 串扰实测 −41±2dB |
+| MmiEl | E5 | 全桩 | corpus E-MMI-1X2-EL = 52 集 E5；MMI 过量损耗实测 0.05dB |
 | multiqubit_fidelity | S12, S4 | 全桩 | 多比特保真度预算同族；逐 qubit 保真度分布判决（均值+下界+离群三锚） |
 
 ### 3.3 横向/无载体锚（不归属单一品类）
@@ -172,16 +172,17 @@
 1. ~~热光相移器零锚 → 新锚 B29（D-73 升格）~~ **✅ 已落地 v0.9.39**：B29=1D 散热鳍稳态 PDE cosh 闭式，candidate=thermal_phase_fdm（FDM 数值解，判据 D 真收敛）；严格独立、CI core 95→97。
 2. ~~readout_fidelity 零锚 → 读出 SNR 锚（钉子 E）~~ **✅ 已落地 v0.9.39**：B30=色散读出 erfc 闭式链，candidate=readout_fidelity_quad（ε 高斯重叠数值积分，判据 D 真收敛）；严格独立。
 3. **B5/B6/B7 守则桩**：非接线问题而是 ORACLE 缺口（Meep/Tidy3D 场级，C 期锁）；解锁后 YbranchLoss/GratingEff/Crossing 引擎获得集内真锚。
-4. **引擎真判决锚入集**：E-YBRANCH-LOSS / E-GRATING-EFF / D-73 三处引擎级判决锚在 50 集外 ⇒ 建议评估升格，否则 50 锚口径对 YbranchLoss / GratingEff / PhaseShifter 三类覆盖失真（矩阵 K 证据即此；注 B29 已部分回应 PhaseShifter）。
+4. ~~引擎真判决锚入集~~ **✅ 锚集升格 v0.9.51**：E-YBRANCH-LOSS→E9 / E-GRATING-EFF→E8 升格进 52 题集，K 证据失真（原 corpus 在集外）消除；D-73 已于 v0.9.39 升格为 B29。可被外部验货比例 25/50 → 26/52。
+   **✅ 覆盖矩阵层面收尾 v0.9.54（治理①）**：E8/E9 已登记为 GratingEff / YbranchLoss 宿主（取代 B6/B5 名义守则桩的覆盖角色），矩阵 §1 现同时展示真判决锚（E8●/E9△）与名义桩（B6◐/B5◐），K 证据口径失真在矩阵层面闭合；`run_coverage_deadzone_closure_smoke.py` 增 E8/E9 反向护栏。
 5. taper（B8）与散射（B1）两无载体锚指向品类缺口：无「锥度/散射体」设计引擎 ⇒ 可评估新增品类，或明示 B8 归互连级。
 
-> **覆盖死角收口结论（2026-09-06）**：原 §3.1 五处零覆盖中，PhaseShifter（B29）+ readout_fidelity（B30）已于 v0.9.39 接严格独立候选，本矩阵已登记宿主；剩余 mixed_system / wdm_coupler / splitter_readout 三处为**装配级弱复合包**，其组成器件锚（B14/B4/B22/B26 等）已在宿主品类接严格独立候选，系统级预算走 S 层锚、整芯片验收走 GC-*（48/50 集外，29 条）——稀疏为装配级预期，**非真死角**。零覆盖集现恰为这 3 个复合包。
+> **覆盖死角收口结论（2026-09-06）**：原 §3.1 五处零覆盖中，PhaseShifter（B29）+ readout_fidelity（B30）已于 v0.9.39 接严格独立候选，本矩阵已登记宿主；剩余 mixed_system / wdm_coupler / splitter_readout 三处为**装配级弱复合包**，其组成器件锚（B14/B4/B22/B26 等）已在宿主品类接严格独立候选，系统级预算走 S 层锚、整芯片验收走 GC-*（52 集外，29 条）——稀疏为装配级预期，**非真死角**。零覆盖集现恰为这 3 个复合包。
 
 ## 4 · 口径、方法与诚实边界
 
 - **数据源**：BENCHMARK_ORDER/DEFS（benchmarks.py）、BENCHMARK_CANDIDATES（verification_adapters.py）、ENGINE_KINDS/PACKAGE_KINDS/ENGINE_DOMAIN/_ENGINE_TITLE（design_package.py）、引擎 specs（design_engine.py）。接线态判序与 `harness.candidate_class()` 同源：`spec.candidate ∈ 登记表 ⇒ strict`。
-- **包级品类注意**：包是装配级设计流，其整包验收门 = S 层系统/统计/签核锚 + GC-* 整芯片对标（29 条，48 集外）；本矩阵只标「组成器件的物理锚」→ 包行稀疏是预期的，不直接等于「包不可验货」。
-- **K 证据含义**：corpus 类引擎（YbranchLoss/GratingEff 等）的引擎级判决锚（E-YBRANCH-LOSS/E-GRATING-EFF）不在 48 锚集内 ⇒ 表中宿主为名义/物理邻居（B5/B6），勿误读为「该品类已被 48 锚严格覆盖」。
+- **包级品类注意**：包是装配级设计流，其整包验收门 = S 层系统/统计/签核锚 + GC-* 整芯片对标（29 条，52 集外）；本矩阵只标「组成器件的物理锚」→ 包行稀疏是预期的，不直接等于「包不可验货」。
+- **K 证据含义（v0.9.54 已收尾）**：原 corpus 类引擎（YbranchLoss/GratingEff）的引擎级判决锚（E-YBRANCH-LOSS/E-GRATING-EFF）在 52 锚集外、表中宿主仅为名义邻居（B5/B6），构成口径失真。**v0.9.51 已将 E9/E8 升格进 52 题集、v0.9.54 进一步登记为宿主**⇒ 该失真已闭合（YbranchLoss/GratingEff 现同时展示真判决锚 E9△/E8● 与名义桩 B5◐/B6◐）。剩余 K 证据（E4/E5/E6/E7）为 corpus 实测锚本身的名义覆盖，属既定诚实边界。
 - **推断标记**：所有 `i`（inferred）归属为编辑判断，供评审；`T/C` 为代码/标题直接证据。修正归属 = 改 `run_anchor_coverage_matrix.py` 的 ANCHOR_HOSTS 后重跑。
 - 结构性不可接桩依据：`docs/anchor_wiring_survey_2026-09-03.md`（S9/S10 违 C1+C3、E3 违 C4、B21 违 C2、B16 违 C5+C3、B11 C1/C2/C4）。
 - 无载体锚 B1/B8/B17 虽零品类宿主，但 B1/B8 为严格独立（求解核级验证）、B17 为确定性基础量 —— 属「能力有、品类载体缺」，非验证缺口。

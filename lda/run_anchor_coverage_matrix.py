@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""T-9 锚题覆盖矩阵生成器（33 类 × 50 锚）
+"""T-9 锚题覆盖矩阵生成器（33 类 × 52 锚）
 
 用法（仓库根，CI 解释器）：
     python lda/run_anchor_coverage_matrix.py            # 写 docs/lda_anchor_coverage_matrix_2026-09-06.md
 
 事实来源（全为权威单一来源，程序化读取）：
-  * 50 锚列序/判据字段：lda_harness/benchmarks.py 的 BENCHMARK_ORDER / BENCHMARK_DEFS
+  * 52 锚列序/判据字段：lda_harness/benchmarks.py 的 BENCHMARK_ORDER / BENCHMARK_DEFS
   * 接线态三分类：spec['candidate'] ∈ BENCHMARK_CANDIDATES（verification_adapters.py）= 严格独立
                   （与 lda_harness/harness.py candidate_class() 同一判序）
   * 33 类（22 引擎 + 11 包）：lda_design/design_package.py 的 ENGINE_KINDS / PACKAGE_KINDS /
@@ -15,7 +15,7 @@
 编辑性归属（本文件内 ANCHOR_HOSTS，人工维护，证据分级见证据标签）：
   code   = 引擎 specs 代码显式引用该锚（最权威）
   title  = 锚 title/metric/note 明写该器件品类（语义强对应）
-  corpus = 该品类的引擎级判决锚在 48 集之外（语料锚），所列 48 锚仅为名义/物理邻居
+  corpus = 该品类的引擎级判决锚在 52 集之外（语料锚），所列 52 锚仅为名义/物理邻居
   inferred = 编辑推断（组合/弱宿主）
 
 重新生成 = 把 ANCHOR_HOSTS 改对后重跑本脚本即可（锚增删后统计自动重算）。
@@ -73,6 +73,13 @@ ANCHOR_HOSTS: dict[str, list[tuple[str, str, str]]] = {
             ("add_drop", "title", "锚对象即 add-drop 环形谐振器 drop 口传递函数")],
     "B5":  [("engine_ybranchloss", "code", "引擎真判决锚已升格为 E9（E-YBRANCH-LOSS，degraded_ordinal 量级参考，c1 未标定唯象系数 rel≈43%）；B5=理想 50/50 下限 3.0dB 守则桩（同器件名义覆盖）")],
     "B6":  [("engine_gratingeff", "code", "引擎真判决锚已升格为 E8（E-GRATING-EFF，strict 严格独立，rel≈3.3%）；B6=成熟工艺可达效率 0.5 守则桩（同器件名义覆盖）")],
+    # ---- v0.9.54 治理①：K 证据收尾 —— 引擎真判决锚升格后补登记为宿主（消除覆盖矩阵口径失真）----
+    "E8":  [("engine_gratingeff", "title",
+             "E8=E-GRATING-EFF 严格独立判决锚（v0.9.51 升格进 52 题集）；光栅耦合器引擎真判决锚，"
+             "取代 B6 名义守则桩的覆盖角色（B6 仍为理想 0.5 下限守则桩，作名义邻居并行保留）。")],
+    "E9":  [("engine_ybranchloss", "title",
+             "E9=E-YBRANCH-LOSS 降级量级参考判决锚（v0.9.51 升格，candidate_status=degraded_ordinal）；"
+             "Y-branch 引擎真判决锚，取代 B5 名义守则桩的覆盖角色（诚实边界：c1 未标定真实 PDK，不进死标量判决列）。")],
     "B7":  [("engine_crossing", "title", "波导交叉串扰；引擎 IL+XT 双出口，E7=实测 XT 同器件（守则桩 vs 实证桩）")],
     "B11": [("engine_ringresonator", "title", "环形谐振器 drop 口透射谱谱形 L2（结构性不可接，见 T-4 侦察）")],
     "B14": [("engine_dcoupler", "code", "引擎 cheap=b14_dc_coupling_length，note 显式 B14"),
@@ -112,10 +119,10 @@ ANCHOR_HOSTS: dict[str, list[tuple[str, str, str]]] = {
     "E2":  [("engine_waveguide", "code", "候选 semivec_ng=半矢量求解核 vs 实测 n_g（SiN 300nm 平台）；引擎 cheap 同 slab 核"),
             ("engine_sinpl", "inferred", "同为 SiN 平台（但 E2=群折射率、E6=传播损耗，物理量不同）")],
     "E3":  [("engine_ringresonator", "title", "薄埋氧 SOI 微环 FSR 实测 10.44nm（结构性不可接 C4 循环）")],
-    "E4":  [("engine_crossing", "corpus", "corpus E-SOI-CROSS-IL = 48 集 E4；crossing 插入损耗实测 0.18±0.03dB")],
-    "E5":  [("engine_mmiel", "corpus", "corpus E-MMI-1X2-EL = 48 集 E5；MMI 过量损耗实测 0.05dB")],
-    "E6":  [("engine_sinpl", "corpus", "corpus E-SIN-PL-800 = 48 集 E6；厚 SiN 传播损耗实测 0.087dB/cm")],
-    "E7":  [("engine_crossing", "corpus", "corpus E-SOI-CROSS-XT = 48 集 E7；crossing 串扰实测 −41±2dB")],
+    "E4":  [("engine_crossing", "corpus", "corpus E-SOI-CROSS-IL = 52 集 E4；crossing 插入损耗实测 0.18±0.03dB")],
+    "E5":  [("engine_mmiel", "corpus", "corpus E-MMI-1X2-EL = 52 集 E5；MMI 过量损耗实测 0.05dB")],
+    "E6":  [("engine_sinpl", "corpus", "corpus E-SIN-PL-800 = 52 集 E6；厚 SiN 传播损耗实测 0.087dB/cm")],
+    "E7":  [("engine_crossing", "corpus", "corpus E-SOI-CROSS-XT = 52 集 E7；crossing 串扰实测 −41±2dB")],
     # ---- S 锚中落单品类的显式宿主 ----
     "S2":  [("wdm", "title", "信道间隔−滤波器带宽 无碰撞=wdm 信道规划判决")],
     "S4":  [("quantum", "inferred", "门序列保真度预算 ∏fᵢ"), ("multiqubit_fidelity", "inferred", "多比特保真度预算同族")],
@@ -130,12 +137,36 @@ ORPHAN_NOTES = {
 }
 
 
+def candidate_class_of(bid: str) -> str:
+    """三分类（镜像 harness.candidate_class 判序，不重新推导真值）。
+
+    判序：先查 `candidate_status == "degraded_ordinal"`（降级量级参考，有候选但不进死标量判决），
+    再查 candidate 是否在 BENCHMARK_CANDIDATES 登记表（严格独立），否则自证桩。
+    """
+    d = BENCHMARK_DEFS.get(bid, {})
+    if d.get("candidate_status") == "degraded_ordinal":
+        return "degraded"
+    key = d.get("candidate")
+    if key and key in BENCHMARK_CANDIDATES:
+        return "strict"
+    return "stub"
+
+
 def strict_stub_sets() -> tuple[list[str], list[str]]:
+    """向后兼容：严格独立（不含降级）。"""
     strict, stubs = [], []
     for b in BENCHMARK_ORDER:
-        cand = str(BENCHMARK_DEFS[b].get("candidate", ""))
-        (strict if cand and cand in BENCHMARK_CANDIDATES else stubs).append(b)
+        (strict if candidate_class_of(b) == "strict" else stubs).append(b)
     return strict, stubs
+
+
+def trichotomy() -> tuple[list[str], list[str], list[str]]:
+    """三分类：严格独立 / 降级量级参考 / 自证桩。"""
+    strict, degraded, stub = [], [], []
+    for b in BENCHMARK_ORDER:
+        c = candidate_class_of(b)
+        (strict if c == "strict" else degraded if c == "degraded" else stub).append(b)
+    return strict, degraded, stub
 
 
 def kind_display(kind: str) -> str:
@@ -171,7 +202,7 @@ def build_kind_anchors() -> dict[str, dict[str, list[str]]]:
 
 
 def compute_zero_coverage() -> list[str]:
-    """返回 48/50 集内零宿主（kind_anchors 为空）的品类 snake 键列表。"""
+    """返回 52 集内零宿主（kind_anchors 为空）的品类 snake 键列表。"""
     kind_anchors = build_kind_anchors()
     eng_rows = []
     for dom in _DOMAIN_ORDER:
@@ -184,10 +215,10 @@ def compute_zero_coverage() -> list[str]:
 
 
 def main() -> None:
-    strict, stubs = strict_stub_sets()
+    strict, degraded, stubs = trichotomy()
     STATE = {}
     for b in BENCHMARK_ORDER:
-        STATE[b] = "strict" if b in strict else "stub"
+        STATE[b] = "degraded" if b in degraded else ("strict" if b in strict else "stub")
 
     # 行序：photon 引擎 → quantum 引擎 → 包
     eng_rows = []
@@ -206,16 +237,16 @@ def main() -> None:
     for a, (lab, note) in PSEUDO.items():
         anchor_kinds.setdefault(a, []).insert(0, (lab, "pseudo", note))
 
-    sym = {"strict": "●", "stub": "◐"}
+    sym = {"strict": "●", "degraded": "△", "stub": "◐"}
     ev_badge = {"code": "C", "title": "T", "corpus": "K", "inferred": "i", "pseudo": "P"}
 
     out = io.open(DOC_PATH, "w", encoding="utf-8")
     W = out.write
-    W("# LDA 锚题覆盖矩阵（33 类 × 50 锚 · T-9）\n\n")
-    W("> 生成：2026-09-06 · 生成器 `lda/run_anchor_coverage_matrix.py`（可复现：改归属表后重跑）\n")
+    W("# LDA 锚题覆盖矩阵（33 类 × 52 锚 · T-9）\n\n")
+    W("> 生成：2026-09-07 · 生成器 `lda/run_anchor_coverage_matrix.py`（可复现：改归属表后重跑）\n")
     W("> 口径：**品类×锚覆盖** = 该锚的物理对象/判决对象落在该设计品类上。覆盖 ≠ 已接独立候选；"
-      "●=严格独立已接、◐=自证桩（名义覆盖）。证据分级：**C**=引擎 specs 代码显式引用（最权威）"
-      "· **T**=锚 title/metric 明写该品类 · **K**=引擎真判决锚在 50 集外（语料锚），所列 50 锚仅为名义邻居"
+      "●=严格独立已接、△=降级量级参考（有候选但不进死标量判决）、◐=自证桩（名义覆盖）。证据分级：**C**=引擎 specs 代码显式引用（最权威）"
+      "· **T**=锚 title/metric 明写该品类 · **K**=引擎真判决锚在 52 集外（语料锚），所列 52 锚仅为名义邻居"
       "· **i**=编辑推断 · **P**=横向/系统层。\n\n")
 
     # ---------- 摘要 ----------
@@ -224,15 +255,16 @@ def main() -> None:
     pseudo_only = [a for a in BENCHMARK_ORDER if anchor_kinds.get(a) and all(ev == "pseudo" for _, ev, _ in anchor_kinds[a])]
     no_host = [a for a in BENCHMARK_ORDER if not anchor_kinds.get(a)]
     W("## 0 · 摘要\n\n")
-    W(f"- 33 类 = 22 引擎（光子 15 + 量子 7）+ 11 包；50 锚（B28 + E7 + S13 + B29 + B30）；严格独立 **{len(strict)}** / 自证桩 **{len(stubs)}**\n")
-    W(f"- 有 ≥1 锚宿主（50 集内）：引擎 **{n_eng_hit}/22**、包 **{n_pkg_hit}/11**\n")
+    W(f"- 33 类 = 22 引擎（光子 15 + 量子 7）+ 11 包；52 锚（含 v0.9.39 B29/B30、v0.9.51 E8/E9 升格）；"
+      f"严格独立 **{len(strict)}** / 降级量级参考 **{len(degraded)}** / 自证桩 **{len(stubs)}**\n")
+    W(f"- 有 ≥1 锚宿主（52 集内）：引擎 **{n_eng_hit}/22**、包 **{n_pkg_hit}/11**\n")
     W(f"- 横向/系统层锚（无单一品类宿主）**{len(pseudo_only)}**：{', '.join(pseudo_only)}\n")
     W(f"- 零覆盖品类与接线建议见 §3；完整归属见 §2。\n\n")
 
     # ---------- 矩阵：按行（品类） ----------
     W("## 1 · 品类 → 锚覆盖矩阵（33 行）\n\n")
-    W("每类一行：命中锚序列 `锚id(符号·证据)`；**空 = 50 集内零覆盖**。\n\n")
-    W("| # | 品类（域） | 50 集覆盖锚 | 覆盖数 |\n|---|---|---|---|\n")
+    W("每类一行：命中锚序列 `锚id(符号·证据)`；**空 = 52 集内零覆盖**。\n\n")
+    W("| # | 品类（域） | 52 集覆盖锚 | 覆盖数 |\n|---|---|---|---|\n")
     idx = 0
     for kind, kt in rows:
         idx += 1
@@ -264,11 +296,11 @@ def main() -> None:
         W(f"| {aid} | {lab} | {note} | {sym[STATE[aid]]} |\n")
 
     # ---------- 锚宿主表 ----------
-    W("\n## 2 · 锚 → 归属明细（48 行）\n\n")
+    W("\n## 2 · 锚 → 归属明细（52 行）\n\n")
     W("| 锚 | 判据态 | oracle | 宿主（品类 / 横向层） | 证据 |\n|---|---|---|---|---|\n")
     for aid in BENCHMARK_ORDER:
         d = BENCHMARK_DEFS[aid]
-        st = "严格独立" if STATE[aid] == "strict" else "自证桩"
+        st = "严格独立" if STATE[aid] == "strict" else ("降级量级参考" if STATE[aid] == "degraded" else "自证桩")
         hostcells = []
         for (kind, ev, note) in anchor_kinds.get(aid, []):
             if ev == "pseudo":
@@ -288,7 +320,7 @@ def main() -> None:
 
     # ---------- 零覆盖区 ----------
     W("\n## 3 · 零覆盖区与缺口清单\n\n")
-    W("### 3.1 品类零覆盖（50 集内无任何锚宿主）\n\n")
+    W("### 3.1 品类零覆盖（52 集内无任何锚宿主）\n\n")
     zero_rows = [(k, kt) for (k, kt) in rows if not kind_anchors.get(k)]
     if zero_rows:
         W("| 品类 | 类型 | 缺口说明 |\n|---|---|---|\n")
@@ -298,7 +330,7 @@ def main() -> None:
                 note = ("多环 WDM × 量子读出混合巨型系统（装配级）。非「零锚」真死角——组成器件锚已在宿主品类接严格独立候选："
                         "B4（环 FSR，ring_fsr_peakfit）、B14（方向耦合器，dc_cmt_fft）、B22（CPW λ/4，tl_eigen_qres）、"
                         "B26（色散位移 χ，chi_exact）；系统级预算走 S 层锚（S1 链路 dB 级联 / S4 保真度乘积预算 / S7-S8 统计 p5 / S12 阵列分布）；"
-                        "整芯片验收走 GC-* 整芯片对标（system_type=link / quantum_fidelity，29 条 48 外）。稀疏是装配级预期，非不可验货。")
+                        "整芯片验收走 GC-* 整芯片对标（system_type=link / quantum_fidelity，29 条 52 外）。稀疏是装配级预期，非不可验货。")
             elif k == "wdm_coupler":
                 note = ("耦合器×WDM 组合（装配级，复合弱）。组成严格锚已在宿主品类：B14（方向耦合器 3dB 耦合长度，dc_cmt_fft）、"
                         "B4（环形 FSR，ring_fsr_peakfit）；WDM 信道规划走 S2（信道间隔−带宽>0）。整系统验收走 GC-*（system_type=link）。")
@@ -308,7 +340,7 @@ def main() -> None:
             W(f"| {k}（{kind_display(k) if k.startswith('engine_') else k}） | {'引擎' if kt=='engine' else '包'} | {note} |\n")
     else:
         W("（无）\n")
-    W("\n### 3.2 仅名义覆盖（宿主锚全为自证桩 / corpus 判决锚在 48 外）\n\n")
+    W("\n### 3.2 仅名义覆盖（宿主锚全为自证桩 / corpus 判决锚在 52 外）\n\n")
     W("| 品类 | 名义锚 | 判据态 | 说明 |\n|---|---|---|---|\n")
     rows_nominal = []
     for (k, kt) in rows:
@@ -345,23 +377,27 @@ def main() -> None:
       "candidate=readout_fidelity_quad（ε 高斯重叠数值积分，判据 D 真收敛）；严格独立。\n")
     W("3. **B5/B6/B7 守则桩**：非接线问题而是 ORACLE 缺口（Meep/Tidy3D 场级，C 期锁）；解锁后 YbranchLoss/GratingEff/Crossing "
       "引擎获得集内真锚。\n")
-    W("4. ~~引擎真判决锚入集~~ **✅ 已落地 v0.9.51**：E-YBRANCH-LOSS→E9 / E-GRATING-EFF→E8 升格进 52 题集，"
+    W("4. ~~引擎真判决锚入集~~ **✅ 锚集升格 v0.9.51**：E-YBRANCH-LOSS→E9 / E-GRATING-EFF→E8 升格进 52 题集，"
       "K 证据失真（原 corpus 在集外）消除；D-73 已于 v0.9.39 升格为 B29。可被外部验货比例 25/50 → 26/52。\n")
+    W("   **✅ 覆盖矩阵层面收尾 v0.9.54（治理①）**：E8/E9 已登记为 GratingEff / YbranchLoss 宿主（取代 B6/B5 名义守则桩的覆盖角色），"
+      "矩阵 §1 现同时展示真判决锚（E8●/E9△）与名义桩（B6◐/B5◐），K 证据口径失真在矩阵层面闭合；"
+      "`run_coverage_deadzone_closure_smoke.py` 增 E8/E9 反向护栏。\n")
     W("5. taper（B8）与散射（B1）两无载体锚指向品类缺口：无「锥度/散射体」设计引擎 ⇒ 可评估新增品类，或明示 B8 归互连级。\n")
     W("\n> **覆盖死角收口结论（2026-09-06）**：原 §3.1 五处零覆盖中，PhaseShifter（B29）+ readout_fidelity（B30）"
       "已于 v0.9.39 接严格独立候选，本矩阵已登记宿主；剩余 mixed_system / wdm_coupler / splitter_readout 三处为"
       "**装配级弱复合包**，其组成器件锚（B14/B4/B22/B26 等）已在宿主品类接严格独立候选，系统级预算走 S 层锚、"
-      "整芯片验收走 GC-*（48/50 集外，29 条）——稀疏为装配级预期，**非真死角**。零覆盖集现恰为这 3 个复合包。\n")
+      "整芯片验收走 GC-*（52 集外，29 条）——稀疏为装配级预期，**非真死角**。零覆盖集现恰为这 3 个复合包。\n")
 
     # ---------- 口径与方法 ----------
     W("\n## 4 · 口径、方法与诚实边界\n\n")
     W("- **数据源**：BENCHMARK_ORDER/DEFS（benchmarks.py）、BENCHMARK_CANDIDATES（verification_adapters.py）、"
       "ENGINE_KINDS/PACKAGE_KINDS/ENGINE_DOMAIN/_ENGINE_TITLE（design_package.py）、引擎 specs（design_engine.py）。"
       "接线态判序与 `harness.candidate_class()` 同源：`spec.candidate ∈ 登记表 ⇒ strict`。\n")
-    W("- **包级品类注意**：包是装配级设计流，其整包验收门 = S 层系统/统计/签核锚 + GC-* 整芯片对标（29 条，48 集外）"
+    W("- **包级品类注意**：包是装配级设计流，其整包验收门 = S 层系统/统计/签核锚 + GC-* 整芯片对标（29 条，52 集外）"
       "；本矩阵只标「组成器件的物理锚」→ 包行稀疏是预期的，不直接等于「包不可验货」。\n")
-    W("- **K 证据含义**：corpus 类引擎（YbranchLoss/GratingEff 等）的引擎级判决锚（E-YBRANCH-LOSS/E-GRATING-EFF）"
-      "不在 48 锚集内 ⇒ 表中宿主为名义/物理邻居（B5/B6），勿误读为「该品类已被 48 锚严格覆盖」。\n")
+    W("- **K 证据含义（v0.9.54 已收尾）**：原 corpus 类引擎（YbranchLoss/GratingEff）的引擎级判决锚（E-YBRANCH-LOSS/E-GRATING-EFF）"
+      "在 52 锚集外、表中宿主仅为名义邻居（B5/B6），构成口径失真。**v0.9.51 已将 E9/E8 升格进 52 题集、v0.9.54 进一步登记为宿主**"
+      "⇒ 该失真已闭合（YbranchLoss/GratingEff 现同时展示真判决锚 E9△/E8● 与名义桩 B5◐/B6◐）。剩余 K 证据（E4/E5/E6/E7）为 corpus 实测锚本身的名义覆盖，属既定诚实边界。\n")
     W("- **推断标记**：所有 `i`（inferred）归属为编辑判断，供评审；`T/C` 为代码/标题直接证据。"
       "修正归属 = 改 `run_anchor_coverage_matrix.py` 的 ANCHOR_HOSTS 后重跑。\n")
     W("- 结构性不可接桩依据：`docs/anchor_wiring_survey_2026-09-03.md`（S9/S10 违 C1+C3、E3 违 C4、B21 违 C2、B16 违 C5+C3、B11 C1/C2/C4）。\n")

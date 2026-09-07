@@ -113,6 +113,45 @@ def main() -> int:
     check("🔴 反向：撤 B29 后 phaseshifter 必重新落入零覆盖",
           "engine_phaseshifter" in zc2, "zc_without_B29=%s" % zc2)
 
+    # ------------------------------------------------ ⑥ K 证据收尾：E8/E9 已升格进集且登记为宿主
+    # （GratingEff / YbranchLoss 引擎真判决锚；补 v0.9.51 锚集升格在覆盖矩阵层面的收口，治理① v0.9.54）
+    def _cls(bid):
+        d = BENCHMARK_DEFS.get(bid, {})
+        if d.get("candidate_status") == "degraded_ordinal":
+            return "degraded"
+        if d.get("candidate") in CAND:
+            return "strict"
+        return "stub"
+
+    for aid, host in (("E8", "engine_gratingeff"), ("E9", "engine_ybranchloss")):
+        present = aid in BENCHMARK_ORDER
+        cls = _cls(aid)
+        hosted = aid in _hosts_of(host, kind_anchors)
+        check(f"{aid} 在 52 题集且为进集锚（class={cls}）→ 宿主 {host}",
+              present and cls in ("strict", "degraded") and hosted,
+              "present=%s class=%s hosted=%s" % (present, cls, hosted))
+
+    # B5/B6 维持自证桩（名义守则桩，不被升格冒充真判决锚）
+    for s in ("B5", "B6"):
+        check(f"{s} 仍为自证桩（名义守则桩，不被升格）", _cls(s) == "stub",
+              "class=%s" % _cls(s))
+
+    # 🔴 反向：撤 E8/E9 → GratingEff/YbranchLoss 重新只剩名义桩（无进集锚宿主）
+    modified = {k: [h for h in v if k not in ("E8", "E9")]
+                for k, v in m.ANCHOR_HOSTS.items()}
+    ka3 = {}
+    for aid, hl in modified.items():
+        for host in hl:
+            if host[0] in m.PSEUDO:
+                continue
+            ka3.setdefault(host[0], {})[aid] = ka3.get(host[0], {}).get(aid, []) + [host[1]]
+    check("🔴 反向：撤 E8/E9 后 GratingEff 无进集锚宿主",
+          "E8" not in _hosts_of("engine_gratingeff", ka3),
+          "hosts=%s" % sorted(_hosts_of("engine_gratingeff", ka3)))
+    check("🔴 反向：撤 E9 后 YbranchLoss 无进集锚宿主",
+          "E9" not in _hosts_of("engine_ybranchloss", ka3),
+          "hosts=%s" % sorted(_hosts_of("engine_ybranchloss", ka3)))
+
     print("=" * 72)
     if FAIL:
         print(f"覆盖死角闭合护栏：{PASS} PASS / {FAIL} FAIL —— 🔴 收口回退")

@@ -301,6 +301,17 @@ CORE_SMOKES: List[str] = [
     #   NotImplementedError、反向②篡改注册表删 kind→闭环不通过（路由到真注册表非副本）。
     #   实测 ~20s（Bragg 3D FDTD 终验）。CI core 131→132。
     "run_ir_inverse_design_smoke.py",
+    # 🔴 v0.9.57 ②：2D TEz FDTD 求解核 smoke（E5 的**第二条独立求解路线**）。
+    #   与 run_mmi_eme_smoke.py 的 EME 路线方法学独立（时域全场 Yee 步进 vs
+    #   代数本征模展开），核心判据是**两法在同一离散结构上的对账 |Δ|<0.15 dB**。
+    #   同时修正 v0.9.56 的错误结论：那条"2D FDTD 直波导控制实验失败"是**我的
+    #   实现缺陷**（scipy eig_banded 对称三对角存储应为 (2,N) 误用 (3,N) ⇒
+    #   n_eff 解成 16.18；且入射监测面落在初始波包内部 ⇒ 27% 能量不穿过该面），
+    #   不是 FDTD 方法之病。修掉后直波导 10 µm 上 −0.00001 dB。
+    #   实测 ~145s（主跑 dl=0.05/t_max=1200 约 62s + 判据 D 两次 dl=0.06 约 78s
+    #   + C1 控制实验约 3s + 解析色散预算瞬时）。
+    #   CI core 133→134。
+    "run_fdtd2d_mmi_smoke.py",
     # 🔴 v0.9.56 ②：MMI 1×2 EME 求解核 smoke（**负结果结论锁**）。
     #   E5（golden 0.05 dB / tol 0.1 dB）两条独立路线探测均实测不合格
     #   （2D FDTD 直波导控制失败；2D-EIM EME 自成像保真度 0.875 + 对 L_π
@@ -405,6 +416,9 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_splitter_readout_cal_smoke.py": 400.0,
     # 5 次 2D 半矢量本征解（ARPACK shift-invert）实测 ~89s（v0.9.23 入 core）
     "run_semivec_mode_smoke.py": 400.0,
+    # v0.9.57：2D TEz FDTD 全场时域（主跑 dl=0.05 t_max=1200 + 判据 D 两次
+    # dl=0.06 t_max=900），实测 ~95s ⇒ 配 400s（4× 余量，防慢机器抖动）。
+    "run_fdtd2d_mmi_smoke.py": 400.0,
     # 纯 4×4 Liouvillian RK4，实测 <3s；放宽只为慢机器上的解释器启动开销
     "run_lindblad_gate_smoke.py": 180.0,
     # EME 逐片本征解：9 条自校锚（含 dz/模式数/窗口三次收敛扫描），实测 ~33s

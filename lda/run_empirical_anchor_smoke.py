@@ -8,6 +8,11 @@
   ④ 语料评审流：提交（citation/数值/σ 门禁 + 防重）→ 具名评审（缺评审人拒）→ 落地 → reload 生效
   ⑤ harness 键集一致性（E1-E9 全部可解析，动态由 BENCHMARK_ORDER 派生）
   ⑥ measurement_stats 自洽
+  ⑦ 全部实证语料可公开溯源（A 级含定位符）
+  ⑧ E5 原文防回潮（v0.9.58）：DOI=10.1117/1.OE.59.10.105102 / device 含 2.8x27 /
+     h=0.22 / 含实验实测 / value=0.05；且未混入同作者另一篇
+     （Microelectronics Journal 104, 104887 = 2.6x6.6 / 340nm / 纯仿真）
+  ⑨ 仿真类 ground truth 必须在 note 显式声明非实测
 """
 import os
 import sys
@@ -288,6 +293,60 @@ def main():
           str(s))
     check("list_measurements 含审计", any(m["id"] == "E-TEST-1" and m["audit"]
           for m in list_measurements(proposals_path=pp)))
+
+    # ⑦ 实证语料「来源性质与溯源」门禁（v0.9.58 · E5 回原文核实后新增）
+    #    背景：v0.9.58 回原文核实 E5。⚠️ 核实过程本身出过一次**严重事故**——
+    #    搜索命中了同组作者（Chack & Hassan）2020 年的**另一篇**论文
+    #    （Microelectronics Journal 104, 104887：2.6×6.6 µm² / 340 nm / 纯仿真 /
+    #    TE 0.04-TM 0.06 dB），未核对 DOI 本身就反过来说语料「张冠李戴」，
+    #    据此把**本来正确的 4 个字段全部改错**并写进对外账本。
+    #    复核后确认：**语料原始记录逐字正确**（Opt. Eng. 59(10) 105102：
+    #    2.8×27 µm² / 220 nm / experimentally demonstrated / TE 0.05 dB），
+    #    已全部回滚。⇒ 本断言改为**守护原文正确值**，并显式钉死易混的另一篇，
+    #    防止重演「同组作者多论文串台」。
+    import json as _json
+    from lda_harness.provenance import classify_citation as _classify
+    _seed = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         "lda_harness", "seed_empirical.json")
+    with open(_seed, encoding="utf-8") as _f:
+        _corpus = _json.load(_f)["corpus"]
+    _tiers = [_classify(x["citation"], x.get("source_url", "")) for x in _corpus]
+    _nA = sum(1 for t in _tiers if t["traceable"])
+    check(f"⑦ 全部实证语料可公开溯源（{_nA}/{len(_corpus)} 为 A 级含定位符）",
+          _nA == len(_corpus) and len(_corpus) >= 30,
+          f"corpus={len(_corpus)} A级={_nA}")
+
+    _e5 = next((x for x in _corpus if x["id"] == "E-MMI-1X2-EL"), None)
+    _g5 = (_e5 or {}).get("geometry", {})
+    # 原文正确值（Opt. Eng. 59(10) 105102，4 个独立书目库交叉确认）
+    _ok_doi = _e5 is not None and "10.1117/1.OE.59.10.105102" in _e5["citation"]
+    _ok_dev = _e5 is not None and "2.8x27" in _e5["device"]
+    _ok_geo = _g5.get("h_core_um") == 0.22 and _g5.get("w_core_um") == 0.5
+    # 原文摘要 "experimentally demonstrated" ⇒ 必须是实测类，不得改成仿真
+    _ok_fab = _e5 is not None and "实验" in _e5["fab_source"]
+    _ok_val = _e5 is not None and abs(_e5["measured_value"] - 0.05) < 1e-12
+    # ⚠️ 同组作者 2020 年另一篇（易混）：Microelectronics Journal 104, 104887
+    #    = 2.6x6.6 µm² / 340 nm / 纯仿真 / TE 0.04-TM 0.06 dB。不得混入本条。
+    _conflict = _e5 is not None and ("10.1016/j.mejo.2020.104887" in _e5["citation"]
+                                     or "2.6x6.6" in _e5["device"])
+    check("⑧ E5 原文防回潮：DOI=10.1117/1.OE.59.10.105102 且 device 含 2.8x27 "
+          "且 h=0.22 且含实验实测 且 value=0.05；且未混入同作者另一篇"
+          "(MeJo 104,104887 / 2.6x6.6 / 340nm / 纯仿真)",
+          (_ok_doi and _ok_dev and _ok_geo and _ok_fab and _ok_val
+           and not _conflict),
+          f"doi={_ok_doi} dev2.8x27={_ok_dev} geo={_ok_geo}"
+          f"(h={_g5.get('h_core_um')},w={_g5.get('w_core_um')}) "
+          f"fab实测={_ok_fab} value0.05={_ok_val} 混入另一篇={_conflict}")
+
+    # ⑨ 通用：ground truth 为「仿真」的语料必须显式声明性质。
+    #    否则后人会把「别人的仿真」当「物理实测」用，稀释实证锚红线。
+    _sim = [x for x in _corpus
+            if any(k in x.get("fab_source", "") for k in ("仿真", "模拟", "simulation"))]
+    _sim_declared = [x for x in _sim if "仿真" in x.get("note", "")]
+    check("⑨ 仿真类 ground truth 必须在 note 显式声明性质（非实测）",
+          len(_sim_declared) == len(_sim),
+          f"仿真类 {len(_sim)} 条，已声明 {len(_sim_declared)} 条："
+          f"{[x['id'] for x in _sim]}")
 
     npass_t = sum(1 for c in CHECKS if c[1])
     print("-" * 60)

@@ -201,7 +201,10 @@ body{padding-top:56px}
     <div class="hint" data-page-node-id="fk57cWiEO7vlSdDTKvjf93">这是 LDA 作为"系统"而非"组件集"的核心：你给一个目标指标，系统在参数空间用物理定律 ORACLE 搜索，仅对 top-K 候选跑真实求解器双重验证，返回被求解器确认可用的最优器件，并自动包成机器可校验的统一 DesignPackage（可下载）。<b data-page-node-id="1HRrFF9lr9NLaMv4hiRnQe">LLM 不进判决路径。</b> 闭环器件目录来自 <code data-page-node-id="RHtS5uLkZKyoG4wDKgspl7">/api/design_catalog</code>。下拉含两类：<b data-page-node-id="TfK80E8GWEwmchYKTmBtDJ">● 闭环引擎</b>（给目标值 → 网格搜索最优器件）与 <b data-page-node-id="t9bc5RgDgOyuTwiSQglnE6">○ 参数驱动包</b>（11 类成熟器件，用默认参数直接出统一设计包）。</div>
     <div class="row" data-page-node-id="Pd3ZfmrJrfK9RNB9i5orAJ">
       <label data-page-node-id="tpqP0V7RXTMz4gQHWOVR40">器件类型（闭环入口）
-        <select id="doKind" data-page-node-id="fNwXlPuii64YwARnNsOpkK"></select>
+        <select id="doKind" data-page-node-id="fNwXlPuii64YwARnNsOpkK">
+          <option value="" disabled selected>加载器件目录中…</option>
+        </select>
+        <a id="doKindRetry" href="javascript:void(0)" style="display:none;margin-left:8px;font-size:12px;color:var(--accent,#2563eb);cursor:pointer">⟳ 重试加载目录</a>
       </label>
       <label data-page-node-id="jj2mG3bEoOmi1O66TU0Gws">目标值 <span id="doUnit" class="tag" data-page-node-id="a8nDXavV7rz02z94Mdscd2"></span>
         <input type="number" id="doTarget" step="0.001" data-page-node-id="eZ0DEzCeSrTfshe2OaLDUE" />
@@ -3952,31 +3955,91 @@ $('runGeoDrc').onclick = runGeoDrc;
 
 // ---- ★ 旗舰 · 设计闭环端到端（给目标 → 出统一设计包）----
 let _outcomePkg = null;
+
+// 内置静态兜底目录（与后端 engine_catalog/package_catalog 同源：22 闭环引擎 + 11 参数驱动包）
+// 作用：/api/design_catalog 不可达或返回空时，select 仍可用，杜绝"下拉空白"。
+const EMERGENCY_ENGINE = [
+  {kind:'engine_waveguide',      title:'直波导 · 目标有效折射率 neff',           unit:'',      def:3.25},
+  {kind:'engine_braggmirror',    title:'布拉格镜 · 目标反射率 R_min',             unit:'',      def:0.999},
+  {kind:'engine_transmon',       title:'Transmon 量子比特 · 目标频率 f01',        unit:'GHz',   def:5.0},
+  {kind:'engine_ringresonator',  title:'环形谐振器 · 目标 FSR（解析锚）',         unit:'nm',    def:9.0},
+  {kind:'engine_mzi',            title:'MZI 干涉仪 · 目标 FSR',                   unit:'nm',    def:20.0},
+  {kind:'engine_phc',            title:'光子晶体腔 · 目标共振波长 λ_res',        unit:'nm',    def:2200.0},
+  {kind:'engine_qres',           title:'CPW λ/4 读出谐振器 · 目标基模 f0',       unit:'GHz',   def:7.5},
+  {kind:'engine_fluxonium',      title:'Fluxonium 量子比特 · 目标频率 f01',      unit:'GHz',   def:6.0},
+  {kind:'engine_tcoup',          title:'可调耦合器 · 目标有效耦合 |g_eff|',      unit:'GHz',   def:0.005},
+  {kind:'engine_mmi',            title:'MMI 1×2 · 目标自映像长 L_mmi',            unit:'um',    def:100.0},
+  {kind:'engine_gcoupler',       title:'光栅耦合器 · 目标 Bragg 波长 λ_B',       unit:'um',    def:2.38},
+  {kind:'engine_dcoupler',       title:'方向耦合器 · 目标 3dB 长 L_3dB',          unit:'um',    def:20.0},
+  {kind:'engine_tuntransmon',    title:'可调 transmon · 目标 f01',               unit:'GHz',   def:6.0},
+  {kind:'engine_readoutpair',    title:'比特-读出配对 · 目标 |χ|',                unit:'GHz',   def:0.002},
+  {kind:'engine_czgate',         title:'色散 CZ 门 · 目标 t_CZ',                 unit:'ns',    def:700.0},
+  {kind:'engine_ybranchloss',    title:'Y-branch 分束损耗 · 实证锚',              unit:'dB',    def:0.28},
+  {kind:'engine_gratingeff',     title:'光栅耦合效率 · 实证锚',                   unit:'',      def:0.42},
+  {kind:'engine_crossing',       title:'crossing 插入损耗+串扰 · 实证锚',         unit:'dB',    def:0.18},
+  {kind:'engine_mmiel',          title:'MMI 1×2 过量损耗 · 实证锚',               unit:'dB',    def:0.05},
+  {kind:'engine_sinpl',          title:'SiN 传播损耗 · 实证锚',                   unit:'dB/cm', def:0.087},
+  {kind:'engine_phaseshifter',   title:'热光相移器 · 目标相移效率',              unit:'deg/mW',def:10.0},
+  {kind:'engine_mzimod',         title:'MZI 电光调制器 · 目标 V_π',              unit:'V',     def:5.0},
+];
+const EMERGENCY_PACKAGE = [
+  {kind:'add_drop',          title:'环形 add-drop 可制造设计包'},
+  {kind:'quantum',           title:'量子逆设计包（Transmon）'},
+  {kind:'wdm',               title:'WDM 多环级联系统'},
+  {kind:'readout_chain',     title:'光子-量子混合读出链路'},
+  {kind:'multiqubit',        title:'N-qubit 频率复用读出'},
+  {kind:'readout_fidelity',  title:'单发读出保真度预算'},
+  {kind:'multiqubit_fidelity',title:'N-qubit 复用读出保真度'},
+  {kind:'mixed_system',      title:'WDM×量子读出混合巨型系统'},
+  {kind:'coupler',           title:'方向耦合器设计闭环'},
+  {kind:'wdm_coupler',       title:'耦合器×WDM 组合'},
+  {kind:'splitter_readout',  title:'分束网络供电读出'},
+];
+function _fillDoKind(catalog, source){
+  const sel = $('doKind'); sel.innerHTML = '';
+  // 兼容两种字段名：内置兜底用 unit/def；后端 API 用 target_unit/default_target
+  const normUnit = k => (k.unit!=null ? k.unit : (k.target_unit||''));
+  const normDef  = k => (k.def!=null  ? k.def  : (k.default_target||''));
+  (catalog.engine||[]).forEach(k=>{
+    const o = document.createElement('option');
+    o.value = k.kind; o.dataset.mode='engine';
+    o.textContent = `● ${k.title}${normUnit(k)?('（'+normUnit(k)+'）'):''}`;
+    o.dataset.unit = normUnit(k); o.dataset.def = normDef(k);
+    sel.appendChild(o);
+  });
+  (catalog.package||[]).forEach(k=>{
+    const o = document.createElement('option');
+    o.value = k.kind; o.dataset.mode='package';
+    o.textContent = `○ ${k.title}（参数驱动包）`;
+    o.dataset.unit=''; o.dataset.def='';
+    sel.appendChild(o);
+  });
+  // 默认选中 Transmon（numpy 对角化，快速；避免首屏预热跑 FDTD）
+  if([...sel.options].some(o=>o.value==='engine_transmon')) sel.value='engine_transmon';
+  _syncDoKindUI();
+  sel.onchange = ()=>{ _syncDoKindUI(); };
+}
+// 同步预填：脚本解析即填好内置静态清单（33 项），不依赖任何接口成功与否，
+// 杜绝"下拉空白"。后续 loadDesignCatalog 成功时用后端权威数据覆盖。
+_fillDoKind({engine:EMERGENCY_ENGINE, package:EMERGENCY_PACKAGE}, 'embedded');
 async function loadDesignCatalog(){
+  // ① 先用内置静态兜底填好：保证首屏与 API 失败时 select 永远可用（不再空白）
+  // 注：同步预填已在本函数下方脚本解析时执行一次，此处为刷新/重试入口。
+  $('doKindRetry').style.display='none';
   try{
     const c = await api('/api/design_catalog');
-    const sel = $('doKind'); sel.innerHTML = '';
-    // 闭环引擎（target 驱动）：4 类
-    (c.engine||[]).forEach(k=>{
-      const o = document.createElement('option');
-      o.value = k.kind; o.dataset.mode='engine';
-      o.textContent = `● ${k.title}（${k.metric_name}${k.target_unit?(' / '+k.target_unit):''}）`;
-      o.dataset.unit = k.target_unit||''; o.dataset.def = k.default_target;
-      sel.appendChild(o);
-    });
-    // 统一设计包（params 驱动）：11 类 —— 补齐面板"具体类型"完整性
-    (c.package||[]).forEach(k=>{
-      const o = document.createElement('option');
-      o.value = k.kind; o.dataset.mode='package';
-      o.textContent = `○ ${k.title}（参数驱动包）`;
-      o.dataset.unit=''; o.dataset.def='';
-      sel.appendChild(o);
-    });
-    // 默认选中 Transmon（numpy 对角化，快速；避免首屏预热跑 FDTD）
-    if([...sel.options].some(o=>o.value==='engine_transmon')) sel.value='engine_transmon';
-    _syncDoKindUI();
-    sel.onchange = ()=>{ _syncDoKindUI(); };
-  }catch(e){ $('doSummary').textContent='目录加载失败：'+e; }
+    // ② API 返回空（异常分支返回 {engine:[],package:[]}）也视为失败 → 保留兜底
+    if(!c || ((!c.engine || !c.engine.length) && (!c.package || !c.package.length))){
+      $('doKindRetry').style.display='inline';
+      $('doSummary').innerHTML = '<span class="note" style="color:var(--warn,#b45309)">⚠ 目录接口返回为空，已用内置静态清单（33 项）。可点「重试加载目录」。</span>';
+      return;
+    }
+    _fillDoKind(c, 'api');                 // 用后端权威数据覆盖
+    $('doKindRetry').style.display='none';
+  }catch(e){
+    $('doKindRetry').style.display='inline';
+    $('doSummary').innerHTML = `<span class="note" style="color:var(--warn,#b45309)">⚠ 目录接口不可用，已用内置静态清单（33 项）：${escapeHtml(String(e))}。可点「重试加载目录」。</span>`;
+  }
 }
 function _syncDoKindUI(){
   const sel=$('doKind'); const o=sel.options[sel.selectedIndex]; if(!o) return;
@@ -3990,7 +4053,8 @@ function _syncDoKindUI(){
 async function runDesignOutcome(){
   const btn=$('runDesignOutcome'); btn.disabled=true; $('doDownload').disabled=true; _outcomePkg=null;
   const sel=$('doKind'); const o=sel.options[sel.selectedIndex];
-  const kind=sel.value; const mode=o?o.dataset.mode:'engine';
+  if(!o || !sel.value){ $('doSummary').textContent='请先在上方选择器件类型'; btn.disabled=false; $('doDownload').disabled=true; return; }
+  const kind=sel.value; const mode=o.dataset.mode;
   const payload={kind};
   if(mode==='engine'){
     payload.target=parseFloat($('doTarget').value); payload.top_k=parseInt($('doTopk').value)||3;
@@ -4114,6 +4178,7 @@ $('runProposal').onclick = runProposalDesign;
   const st = await api('/api/status');
   renderStatus(st);
   await loadDesignCatalog();
+  $('doKindRetry').onclick = ()=>{ loadDesignCatalog(); };
   runVerify();        // HERO ② 验证裁判控制台
   runLp();            // HERO ⑧ 版图→DRC→仿真流水线
   runDesignOutcome(); // HERO ★ 旗舰设计闭环

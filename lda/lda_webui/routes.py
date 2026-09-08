@@ -1111,6 +1111,14 @@ def h_drc_fix_demo(h, p, q, path):
     return (200, _app.run_drc_fix_demo(p))
 
 
+def h_tapeout_check(h, p, q, path):
+    return (200, _app.run_tapeout_check(p))
+
+
+def h_geometry_drc(h, p, q, path):
+    return (200, _app.run_geometry_drc(p))
+
+
 def h_coupler_loop(h, p, q, path):
     return (200, _app.run_coupler_loop(p))
 
@@ -1564,6 +1572,8 @@ POST_ROUTES = {
     "/api/design_package": h_design_package,
     "/api/design_outcome": h_design_outcome,
     "/api/drc_fix_demo": h_drc_fix_demo,
+    "/api/tapeout": h_tapeout_check,
+    "/api/geometry_drc": h_geometry_drc,
     "/api/coupler_loop": h_coupler_loop,
     "/api/ir_demo": h_ir_demo,
     "/api/adjoint_design": h_adjoint_design,

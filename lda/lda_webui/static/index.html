@@ -336,6 +336,22 @@
     <div class="conclusion" id="fxConclusion" data-page-node-id="rcfAcxKB0AGYTy8Z7AOuYe"></div>
   </div>
 
+  <div class="sec" data-page-node-id="LDA_TPGEO_001">
+    <h2 data-page-node-id="LDA_TPGEO_002">⑮ 流片签核 Tapeout + 几何 DRC 快查</h2>
+    <div class="hint" data-page-node-id="LDA_TPGEO_003">流片级验证全链路（DRC 工艺角 / LVS / S3.5 寄生 / S3.6 几何 DRC）与几何 DRC 快查，均消费 LDA 主权几何内核（非 foundry deck）。输入器件字典 JSON，后端自动生成版图 GDS 喂入签核。</div>
+    <div class="row" data-page-node-id="LDA_TPGEO_004">
+      <label data-page-node-id="LDA_TPGEO_005">器件字典 (JSON)
+        <input type="text" id="tpDevices" value='{"RingAddDrop":{"R":10.0,"gap":0.3}}' style="width:320px" data-page-node-id="LDA_TPGEO_006"/>
+      </label>
+      <button class="btn" id="runTapeout" data-page-node-id="LDA_TPGEO_007">运行流片签核</button>
+      <button class="btn" id="runGeoDrc" data-page-node-id="LDA_TPGEO_008">几何 DRC 快查</button>
+    </div>
+    <div id="tpSummary" class="summary" data-page-node-id="LDA_TPGEO_009"></div>
+    <div id="tpBody" data-page-node-id="LDA_TPGEO_010"></div>
+    <div id="tpGeo" data-page-node-id="LDA_TPGEO_011"></div>
+    <div class="conclusion" id="tpConclusion" data-page-node-id="LDA_TPGEO_012"></div>
+  </div>
+
   <div class="sec" data-page-node-id="Vvw1NSjIGPCp1DGsc5mkOe">
     <h2 data-page-node-id="b7BanxAcUyMbNAfm4ubIiF">⑪ 环形 FDTD 透射谱（D-27/D-28 · 真实仿真 ↔ 解析锚对拍）</h2>
     <div class="hint" data-page-node-id="KgH1mk9s8i35CYhFQiANlw">D-27 环形 FDTD 仿真核（2D TM add-drop 环形，CW 稳态逐波长）——drop 端口透射谱出现谐振峰（等间距 = FSR），与解析环形传递函数对拍。数据为预计算演示（GPU ~6min 一次，webui 秒回）。</div>
@@ -3784,6 +3800,61 @@ function renderIr(d){
 }
 $('runIr').onclick = runIr;
 
+// ---- ⑮ 流片签核 Tapeout + 几何 DRC 快查 ----
+async function runTapeout(){
+  const btn = $('runTapeout'); if(btn) btn.disabled = true;
+  $('tpSummary').innerHTML = '<span class="spin"></span> 正在跑流片级验证管道（DRC/工艺角/LVS/几何DRC/寄生）…';
+  try{
+    const devices = JSON.parse($('tpDevices').value || '{}');
+    const d = await api('/api/tapeout', {devices});
+    renderTapeout(d);
+  }catch(e){ $('tpSummary').textContent = '错误：'+e; }
+  finally{ if(btn) btn.disabled = false; }
+}
+function renderTapeout(d){
+  $('tpSummary').innerHTML = `PDK：<b>${d.pdk_key}</b> · DRC 全器件：<span class="verdict ${d.drc_passed?'ok':'fail'}">${d.drc_passed?'PASS':'FAIL'}</span> · 三角落：<span class="verdict ${d.corners_all_pass?'ok':'fail'}">${d.corners_all_pass?'PASS':'FAIL'}</span> · 签核：<span class="verdict ${d.accepted?'ok':'fail'}">${d.verdict}</span>`;
+  let body = '<div class="summary">工艺角扫描：</div><table><tr><th>角</th><th>判定</th><th>备注</th></tr>'
+    + (d.corners||[]).map(c=>`<tr><td>${c.corner}</td><td><span class="verdict ${c.passed?'ok':'fail'}">${c.passed?'PASS':'FAIL'}</span></td><td>${c.note}</td></tr>`).join('')
+    + '</table>';
+  const g = d.geometry_drc_result;
+  if(g){
+    body += `<div class="summary">S3.6 几何 DRC（真实 GDS 多边形）：<span class="verdict ${g.passed?'ok':'fail'}">${g.passed?'PASS':'FAIL'}</span> · ${g.n_elements} 元素 · ${g.n_polys} 多边形</div>`;
+    if(g.violations && g.violations.length) body += `<div class="note">${g.violations.map(x=>escapeHtml(x)).join('<br>')}</div>`;
+    if(g.honest_note) body += `<div class="note">${escapeHtml(g.honest_note)}</div>`;
+  }
+  const p = d.parasitic_result;
+  if(p){
+    body += `<div class="summary">S3.5 几何寄生估算：<span class="verdict ${p.passed?'ok':'fail'}">${p.passed?'PASS':'FAIL'}</span> · R=${fmt(p.total_r_ohm)}Ω · C=${fmt(p.total_c_ff)}fF</div>`;
+    if(p.violations && p.violations.length) body += `<div class="note">${p.violations.map(x=>escapeHtml(x)).join('<br>')}</div>`;
+  }
+  if(d.gds_skipped_devices && d.gds_skipped_devices.length) body += `<div class="note">无 2D 版图几何、跳过几何检查的器件：${d.gds_skipped_devices.join(', ')}</div>`;
+  $('tpBody').innerHTML = body;
+  $('tpConclusion').innerHTML = `<strong>结论：</strong>${d.honest_note||d.verdict}`;
+}
+async function runGeoDrc(){
+  const btn = $('runGeoDrc'); if(btn) btn.disabled = true;
+  $('tpGeo').innerHTML = '<span class="spin"></span> 正在跑几何 DRC 快查…';
+  try{
+    const devices = JSON.parse($('tpDevices').value || '{}');
+    const d = await api('/api/geometry_drc', {devices});
+    renderGeoDrc(d);
+  }catch(e){ $('tpGeo').textContent = '错误：'+e; }
+  finally{ if(btn) btn.disabled = false; }
+}
+function renderGeoDrc(d){
+  if(!d.ok){
+    $('tpGeo').innerHTML = `<div class="note">${escapeHtml(d.error||'不可用')}${(d.skipped&&d.skipped.length)?('（跳过：'+d.skipped.join(', ')+'）'):''}</div>`;
+    return;
+  }
+  const r = d.report;
+  let html = `<div class="summary">几何 DRC：<span class="verdict ${r.all_pass?'ok':'fail'}">${r.all_pass?'PASS':'FAIL'}</span> · ${r.n_elements} 元素 · ${r.n_polys} 多边形</div>`;
+  if(r.violations && r.violations.length) html += `<div class="note">${r.violations.map(x=>escapeHtml(x)).join('<br>')}</div>`;
+  html += `<pre style="white-space:pre-wrap;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px;color:var(--mut)">${escapeHtml(d.markdown)}</pre>`;
+  $('tpGeo').innerHTML = html;
+}
+$('runTapeout').onclick = runTapeout;
+$('runGeoDrc').onclick = runGeoDrc;
+
 // ---- ★ 旗舰 · 设计闭环端到端（给目标 → 出统一设计包）----
 let _outcomePkg = null;
 async function loadDesignCatalog(){
@@ -3974,6 +4045,8 @@ $('runProposal').onclick = runProposalDesign;
   runWs();
   runIr();
   runLk();
+  runTapeout();
+  runGeoDrc();
 })();
 </script>
 <script src="/nav.js"></script>

@@ -144,6 +144,10 @@ CORE_SMOKES: List[str] = [
     #   （n_eff 来自平面波导求解器 < 体材料 3.48，≠ 器件库一维 TMM 锚）。
     #   反向 A/B：窄波导与近距独立结构必须被抓。CI core 137→138。
     "run_bragg_gds_smoke.py",
+    # WebUI 流片签核 / 几何 DRC 端点接线（v0.9.62）：/api/tapeout + /api/geometry_drc
+    #   消费 tapeout_pipeline.run_tapeout_pipeline / gds_drc.check_geometry（真实主权内核，
+    #   非副本）；正向实跑 GDS 生成→S3.5 寄生/S3.6 几何 DRC，反向极细波导必触发 FAIL。CI core 138→139。
+    "run_webui_tapeout_drc_smoke.py",
     # 产品级基准对照库（v0.8.32：实证锚产品级扩展 + B 生态播种，免流片）
     "run_golden_product_smoke.py",
     # 🔴 研发生产系统（M3 · v0.9.41 补登）：解析《2027 产品规划》→ 四赛道生产任务

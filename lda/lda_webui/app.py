@@ -1544,6 +1544,97 @@ def run_drc_fix_demo(payload):
     return fix
 
 
+def run_tapeout_check(payload):
+    """⑮ 流片级签核 WebUI 入口：器件字典 → 流片管道全链路。
+
+    消费 lda_pdk.tapeout_pipeline.run_tapeout_pipeline：DRC 全器件自查（S1/S2）、
+    工艺角扫描（S3）、几何级 RC 寄生估算（S3.5）、几何级 DRC（S3.6，主权
+    gds_drc 真实多边形）、LVS（S4）、性能工艺角（S3b）。版图 GDS 由后端自动从
+    器件几何生成（layout_elements→gds_library），喂入 S3.5/S3.6；无 2D 版图
+    几何的器件诚实跳过几何检查（不造假）。
+    """
+    from lda_l2.gds_export import layout_elements, gds_library
+    from lda_pdk.tapeout_pipeline import run_tapeout_pipeline, tapeout_to_dict
+
+    raw = payload.get("devices") or {}
+    if not raw:
+        raw = {"RingAddDrop": {"R": 10.0, "gap": 0.3}}
+    devices = {k: {kk: float(vv) for kk, vv in v.items()} for k, v in raw.items()}
+    pdk_key = payload.get("pdk_key")
+    perf_cases = payload.get("perf_cases")
+
+    gds_bytes = None
+    skipped = []
+    structs: dict = {}
+    for kind, params in devices.items():
+        try:
+            polys = layout_elements(kind, params)
+            if polys:
+                structs[kind] = polys
+            else:
+                skipped.append(kind)
+        except Exception:
+            skipped.append(kind)
+    if structs:
+        gds_bytes = gds_library("LDA_WEBUI", structs)
+
+    try:
+        res = run_tapeout_pipeline(devices, pdk_key=pdk_key,
+                                   gds=gds_bytes, perf_cases=perf_cases)
+    except ValueError as e:
+        # 器件 kind 不在 DRC 支持列表（拼写错误 / 未实现器件）→ 友好拒绝，
+        # 而非抛出 500。诚实标注，不假绿。
+        return {
+            "ok": False,
+            "verdict": "REJECT",
+            "error": f"流片签核不支持的器件：{e}",
+            "gds_generated": bool(gds_bytes),
+            "gds_skipped_devices": skipped,
+        }
+    out = tapeout_to_dict(res)
+    out["gds_generated"] = bool(gds_bytes)
+    out["gds_skipped_devices"] = skipped
+    return out
+
+
+def run_geometry_drc(payload):
+    """⑯ 几何 DRC 快查 WebUI 入口：器件字典 → 主权几何 DRC 子集。
+
+    消费 lda_l2.gds_drc.check_geometry（最小线宽/间距/面积，真实 GDS 多边形），
+    返回结构化报告 + Markdown 渲染。版图 GDS 由后端自动生成；无几何表达的器件
+    诚实跳过（与 tapeout S3.6 同一主权内核，非 foundry deck）。
+    """
+    from lda_l2.gds_export import layout_elements, gds_library, parse_gds_polygons
+    from lda_l2.gds_drc import check_geometry, geometry_drc_markdown
+
+    raw = payload.get("devices") or {}
+    if not raw:
+        raw = {"RingResonator": {"R": 10.0, "wg_width": 0.5}}
+    devices = {k: {kk: float(vv) for kk, vv in v.items()} for k, v in raw.items()}
+
+    structs: dict = {}
+    skipped = []
+    for kind, params in devices.items():
+        try:
+            polys = layout_elements(kind, params)
+            if polys:
+                structs[kind] = polys
+            else:
+                skipped.append(kind)
+        except Exception:
+            skipped.append(kind)
+    if not structs:
+        return {"ok": False,
+                "error": "无可用 2D 版图几何（这些器件无 GDS 表达）",
+                "skipped": skipped}
+
+    gds_bytes = gds_library("LDA_WEBUI", structs)
+    structures = parse_gds_polygons(gds_bytes).get("structures", {})
+    report = check_geometry(structures)
+    return {"ok": True, "report": report,
+            "markdown": geometry_drc_markdown(report), "skipped": skipped}
+
+
 def run_coupler_loop(payload):
     """D-01 多端口耦合器件验收锚（设计→仿真→验收 可视化）。
 

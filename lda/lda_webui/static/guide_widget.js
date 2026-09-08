@@ -97,10 +97,13 @@
 
   function build() {
     if (blk) return;
-    blk = el("div", "position:fixed;inset:0;z-index:2147482999;background:transparent;");
+    // 关键修复（2026-09-08）：blk 原为 pointer-events:auto 的全屏透明层，首次访问自动启动引导后
+    // 会静默吞掉整页点击（目录/角色/卡1-4 全部"点不动"）。改为 pointer-events:none 让引导变成
+    // "非阻断式 coachmark"——页面始终可点，引导浮窗/跳过/×/Esc 仍可交互。这是唯一遮挡元凶。
+    blk = el("div", "position:fixed;inset:0;z-index:2147482999;background:transparent;pointer-events:none;");
     hole = el("div", "position:fixed;z-index:2147483001;pointer-events:none;display:none;" +
       "border:2px solid " + C.accent + ";box-shadow:0 0 0 9999px " + C.dim + ";");
-    tip = el("div", "position:fixed;z-index:2147483002;width:344px;max-width:calc(100vw - 20px);" +
+    tip = el("div", "position:fixed;z-index:2147483002;pointer-events:none;width:344px;max-width:calc(100vw - 20px);" +
       "display:none;background:" + C.panel + ";border:1px solid " + C.line + ";border-radius:14px;" +
       "box-shadow:0 0 0 2px " + C.line + ",0 0 38px rgba(56,189,248,.32),0 16px 54px rgba(2,6,20,.7);color:" + C.txt + ";" +
       "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;font-size:13px;");
@@ -132,6 +135,11 @@
     dotsBox = tip.querySelector("#gDots");
     prevBtn = tip.querySelector("#gPrev");
     nextBtn = tip.querySelector("#gNext");
+
+    // 关键修复（2026-09-08）：引导浮窗本身设 pointer-events:none（穿透），仅按钮与正文链接可交互。
+    // 否则欢迎步居中的 tip 会盖住英雄区右侧卡（卡2/卡4），复现"卡1-4 点不动"。blk 已同改为穿透。
+    [tip.querySelector("#gClose"), tip.querySelector("#gSkip"), prevBtn, nextBtn].forEach(function (b) { if (b) b.style.pointerEvents = "auto"; });
+    tip.querySelectorAll("#gBody a").forEach(function (a) { a.style.pointerEvents = "auto"; });
 
     tip.querySelector("#gClose").onclick = skip;
     tip.querySelector("#gSkip").onclick = skip;

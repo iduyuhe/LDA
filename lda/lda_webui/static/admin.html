@@ -125,13 +125,20 @@
     <div class="msg" id="rst-msg"></div>
     <div id="rst-result" style="margin-top:10px"></div>
 
+    <!-- 找回密码申请（用户从登录框自助提交，工单直达此处） -->
+    <h2 style="margin-top:20px">找回密码申请</h2>
+    <div class="mut" style="font-size:12px;margin-bottom:8px">
+      用户在登录框点「忘记密码」提交的申请。点「重置」带入上方重置框生成临时密码，
+      重置成功后该申请自动标记已处理。
+    </div>
+    <div id="pwdReqList"><span class="mut">请输入并保存管理员令牌后刷新</span></div>
+
     <h2 style="margin-top:20px">用户列表</h2>
     <div class="mut" style="font-size:12px;margin-bottom:8px">
       点击「重置」可把该用户邮箱带入上方输入框。
     </div>
     <div id="userList"><span class="mut">请输入并保存管理员令牌后刷新</span></div>
   </div>
-
   <!-- 收款配置：微信个人 + 对公账户 -->
   <div class="panel hide" id="panel-cfg">
     <h2>收款配置 · 微信个人收款</h2>
@@ -215,7 +222,7 @@ function switchTab(t){ currentTab=t;
   $("panel-opinions").classList.toggle('hide',t!="opinions");
   if(t=="cfg") loadConfig();
   if(t=="purchase") loadPurchases();
-  if(t=="users") loadUsers();
+  if(t=="users"){ loadUsers(); loadPwdReqs(); }
   if(t=="opinions") loadOpAdmin();
   if(t=="orders") refresh();
 }
@@ -528,6 +535,54 @@ function pickUser(email){
   $("rst-pwd").focus();
 }
 
+// —— 找回密码申请（工单）：加载 / 一键带入重置框 / 手动标记已处理 ——
+async function loadPwdReqs(){
+  const box=$("pwdReqList");
+  if(!box) return;
+  if(!loadTok()){ box.innerHTML='<span class="mut">请输入并保存管理员令牌</span>'; return; }
+  box.innerHTML='<span class="mut">加载中…</span>';
+  try{
+    const r=await fetch("/api/admin/pwd_reset_requests",{method:"POST",headers:authHeaders()});
+    const j=await r.json();
+    if(r.status!==200 || !j.ok){
+      box.innerHTML='<span class="err">读取失败：'+esc(j.error||("HTTP "+r.status))+'</span>';
+      return;
+    }
+    if(!j.requests.length){ box.innerHTML='<span class="mut">暂无找回申请</span>'; return; }
+    box.innerHTML = '<table><thead><tr><th>邮箱</th><th>说明</th><th>提交时间</th><th>状态</th><th>操作</th></tr></thead><tbody>'+
+      j.requests.map(function(q){
+        const st = q.status==="pending"
+          ? '<span class="tag" style="background:var(--warn-tint);color:var(--warn-ink)">待处理</span>'
+          : '<span class="tag" style="background:var(--ok-tint);color:var(--ok-ink)">已处理</span>';
+        const reg = q.registered===false
+          ? ' <span class="tag" style="background:var(--err-tint);color:var(--err-ink)">未注册</span>' : '';
+        const tm = (q.created_at||"").replace("T"," ").slice(0,19);
+        const act = q.status==="pending"
+          ? '<button class="ghost" onclick="pickUser(\''+esc(q.email)+'\')">重置</button> '+
+            '<button class="ghost" onclick="resolvePwdReq(\''+esc(q.id)+'\')">标记已处理</button>'
+          : '—';
+        return '<tr>'+
+          '<td class="code">'+esc(q.email)+reg+'</td>'+
+          '<td>'+esc(q.note||"—")+'</td>'+
+          '<td class="dl">'+esc(tm)+'</td>'+
+          '<td>'+st+'</td>'+
+          '<td>'+act+'</td>'+
+        '</tr>';
+      }).join('')+'</tbody></table>';
+  }catch(e){ box.innerHTML='<span class="err">请求失败：'+esc(e.message)+'</span>'; }
+}
+
+async function resolvePwdReq(id){
+  if(!confirm("把该申请标记为已处理？（适用于误填/无需重置的申请）")) return;
+  try{
+    const r=await fetch("/api/admin/pwd_reset_requests/resolve",{method:"POST",headers:authHeaders(),
+      body:JSON.stringify({request_id:id})});
+    const j=await r.json();
+    if(r.status===200 && j.ok){ loadPwdReqs(); }
+    else{ alert("失败："+(j.error||("HTTP "+r.status))); }
+  }catch(e){ alert("请求失败："+e.message); }
+}
+
 async function resetPwd(){
   const email=$("rst-email").value.trim();
   if(!email){ $("rst-msg").innerHTML='<span class="err">请填写用户邮箱</span>'; return; }
@@ -547,7 +602,7 @@ async function resetPwd(){
         '<button class="ghost" onclick="copyTemp()">复制</button></div>'+
         '<div class="mut" style="font-size:12px;margin-top:8px">'+esc(j.note||"")+'</div></div>';
       loadUsers();
-    }else{
+      loadPwdReqs();    }else{
       $("rst-msg").innerHTML='<span class="err">'+esc(j.error||("HTTP "+r.status))+'</span>';
       $("rst-result").innerHTML="";
     }

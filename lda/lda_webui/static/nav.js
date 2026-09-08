@@ -195,6 +195,14 @@
       '<label style="' + _LB + '">机构 / 单位名称（机构席位必填）</label>' +
       '<input id="navAuthOrg" placeholder="例如：某某大学光电实验室" style="' + _IN + '"></div>' +
       '<div id="navAuthMsg" style="font-size:13px;color:var(--red);min-height:16px;margin-top:2px"></div>' +
+      '<div id="navAuthForgot" style="display:none;margin-top:6px">' +
+      '<label style="' + _LB + '">注册邮箱 *</label>' +
+      '<input id="navForgotEmail" placeholder="you@company.com" style="' + _IN + '">' +
+      '<label style="' + _LB + '">补充说明（选填，≤200 字）</label>' +
+      '<input id="navForgotNote" placeholder="便于管理员核实身份的信息" style="' + _IN + '">' +
+      '<button type="button" onclick="navSubmitForgot()" style="width:100%;background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px;cursor:pointer;font-size:13px;font-weight:600;margin-top:4px">提交找回申请</button>' +
+      '<div id="navForgotMsg" style="font-size:12px;color:var(--mut);min-height:14px;margin-top:6px"></div>' +
+      '</div>' +
       '<div style="display:flex;gap:8px;margin-top:10px">' +
       '<button id="navAuthCancel" style="flex:1;background:transparent;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:9px;cursor:pointer;font-size:13px">取消</button>' +
       '<button id="navAuthSubmit" onclick="navSubmitAuth()" style="flex:1;background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px;cursor:pointer;font-size:13px;font-weight:600">登录</button>' +
@@ -228,7 +236,10 @@
     document.getElementById("navAuthPhoneWrap").style.display = isReg ? "" : "none";
     document.getElementById("navAuthTypeWrap").style.display = isReg ? "" : "none";
     document.getElementById("navAuthOrgWrap").style.display = "none";
-    document.getElementById("navAuthMsg").textContent = "";
+    // 登录模式显示「忘记密码」入口；注册模式隐藏（找回面板随链接切换）
+    document.getElementById("navAuthForgot").style.display = "none";
+    document.getElementById("navAuthMsg").innerHTML = isReg ? "" :
+      '<a style="color:var(--mut);font-size:12px;cursor:pointer;text-decoration:underline" onclick="navToggleForgot()">忘记密码？</a>';
     document.getElementById("navAuthSubmit").textContent = isReg ? "注册" : "登录";
     document.getElementById("navAuthSubmit").disabled = false;
     document.getElementById("navAuthSwitch").innerHTML = isReg
@@ -236,6 +247,52 @@
       : '没有账号？<a style="color:var(--accent);cursor:pointer" onclick="navAuth(\'register\')">去注册</a>';
     var m = document.getElementById("navAuthModal");
     m.style.display = "flex";
+  };
+
+  // —— 忘记密码：找回申请面板（工单直达管理员，无 SMTP 自助兜底）——
+  window.navToggleForgot = function () {
+    var p = document.getElementById("navAuthForgot");
+    var show = p.style.display === "none";
+    p.style.display = show ? "" : "none";
+    if (show) {
+      // 预填当前已输入的邮箱（用户大多已敲过邮箱才点忘记密码）
+      var em = document.getElementById("navAuthEmail").value.trim();
+      if (em && !document.getElementById("navForgotEmail").value) {
+        document.getElementById("navForgotEmail").value = em;
+      }
+      document.getElementById("navForgotEmail").focus();
+    }
+  };
+
+  window.navSubmitForgot = function () {
+    var em = document.getElementById("navForgotEmail").value.trim();
+    var note = document.getElementById("navForgotNote").value.trim();
+    var box = document.getElementById("navForgotMsg");
+    if (!em || em.indexOf("@") < 0) { box.style.color = "var(--red)"; box.textContent = "请填写注册邮箱"; return; }
+    box.style.color = "var(--mut)";
+    box.textContent = "提交中…";
+    fetch("/api/store/password/reset_request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email: em, note: note })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.ok) {
+          box.style.color = "var(--ok, #16a34a)";
+          box.textContent = d.message || "申请已提交";
+          document.getElementById("navForgotEmail").value = "";
+          document.getElementById("navForgotNote").value = "";
+        } else {
+          box.style.color = "var(--red)";
+          box.textContent = d.error || "提交失败，请稍后再试";
+        }
+      })
+      .catch(function () {
+        box.style.color = "var(--red)";
+        box.textContent = "网络异常，请重试";
+      });
   };
 
   window.navSetType = function (btn) {
@@ -285,7 +342,7 @@
       .then(function (d) {
         btn.disabled = false;
         if (!d.ok) {
-          var tip = isReg ? "" : '<div style="font-size:11px;color:var(--mut);margin-top:4px">忘记密码？请联系管理员重置</div>';
+          var tip = isReg ? "" : '<div style="font-size:11px;color:var(--mut);margin-top:4px">忘记密码？<a style="color:var(--accent);cursor:pointer;text-decoration:underline" onclick="navToggleForgot()">点此提交找回申请</a></div>';
           navMsg(esc(d.error || "失败") + tip);
           return;
         }

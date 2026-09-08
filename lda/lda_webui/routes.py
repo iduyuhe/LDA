@@ -1336,6 +1336,30 @@ def h_admin_reset_pwd(h, p, q, path):
     return (_ok_code(obj), obj)
 
 
+def h_pwd_reset_request(h, p, q, path):
+    """POST /api/store/password/reset_request —— 公开：找回密码自助申请（无 SMTP 下的工单闭环）。"""
+    store = _app._get_store()
+    obj = store.submit_pwd_reset_request(p.get("email", ""),
+                                         p.get("note", ""),
+                                         _app._client_ip(h))
+    return (_ok_code(obj), obj)
+
+
+def h_admin_pwd_requests(h, p, q, path):
+    """POST /api/admin/pwd_reset_requests —— 管理员：查看找回密码申请列表。"""
+    store = _app._get_store()
+    obj = store.admin_list_pwd_reset_requests(_app._token_from_request(h.headers))
+    return (_ok_code(obj), obj)
+
+
+def h_admin_pwd_request_resolve(h, p, q, path):
+    """POST /api/admin/pwd_reset_requests/resolve —— 管理员：手动标记申请已处理。"""
+    store = _app._get_store()
+    obj = store.admin_resolve_pwd_reset_request(_app._token_from_request(h.headers),
+                                                p.get("request_id", ""))
+    return (_ok_code(obj), obj)
+
+
 def h_admin_unlock(h, p, q, path):
     store = _app._get_store()
     obj = store.admin_unlock_login(_app._token_from_request(h.headers))
@@ -1616,6 +1640,9 @@ POST_ROUTES = {
     "/api/store/login": h_store_login,
     "/api/store/logout": h_store_logout,
     "/api/store/password": h_store_password,
+    "/api/store/password/reset_request": h_pwd_reset_request,
+    "/api/admin/pwd_reset_requests": h_admin_pwd_requests,
+    "/api/admin/pwd_reset_requests/resolve": h_admin_pwd_request_resolve,
     "/api/admin/login": h_admin_login,
     "/api/admin/logout": h_admin_logout,
     "/api/admin/user/reset_password": h_admin_reset_pwd,

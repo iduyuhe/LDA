@@ -208,6 +208,15 @@
       <label id="orgLabel" style="display:none" data-page-node-id="GiQCmT8LrCOSBl7jFwD1xs">机构 / 单位名称（机构席位必填）</label>
       <input id="a-org" style="display:none" placeholder="例如：某某大学光电实验室" data-page-node-id="uMBQUhfISzHFUy0wWrBAHh">
       <div class="msg" id="authMsg" data-page-node-id="xp8X8lIKu7B1XHeSxGwwrp"></div>
+      <!-- 忘记密码：找回申请（工单直达管理员，无 SMTP 自助兜底） -->
+      <div id="forgotPanel" style="display:none;border-top:1px dashed var(--line);padding-top:10px;margin-top:6px">
+        <label>找回密码 · 注册邮箱 *</label>
+        <input id="fg-email" placeholder="you@company.com">
+        <label>补充说明（选填，≤200 字）</label>
+        <input id="fg-note" placeholder="便于管理员核实身份的信息">
+        <button onclick="submitForgot()">提交找回申请</button>
+        <div class="msg" id="fg-msg" style="font-size:12px"></div>
+      </div>
     <div style="display:flex;gap:8px;margin-top:10px" data-page-node-id="3Vxmfdnn9GHIC0PkD4V6nD">
       <button class="ghost" onclick="closeAuth()" data-page-node-id="FmZfAihoujcCMTCg25g95f">取消</button>
       <button id="authSubmit" onclick="submitAuth()" data-page-node-id="wT9ykOfpOpUfVt7huTj6qg">确定</button>
@@ -392,7 +401,8 @@ function refreshAuth(){
 function showLogin(){
   authMode="login";
   $("#authTitle").textContent="登录";
-  $("#authSwitch").innerHTML='没有账号？<a style="color:var(--accent);cursor:pointer" onclick="showRegister()">去注册</a>';
+  $("#authSwitch").innerHTML='没有账号？<a style="color:var(--accent);cursor:pointer" onclick="showRegister()">去注册</a>'+
+    '<br><a style="color:var(--mut);cursor:pointer;text-decoration:underline;font-size:12px" onclick="toggleForgot()">忘记密码？点此提交找回申请</a>';
   $("#authMsg").textContent="";
   // 登录只需要邮箱+密码：隐藏姓名/手机/身份/机构（后端 login 不使用这些字段）
   $("#regTypeWrap").style.display="none";
@@ -401,6 +411,7 @@ function showLogin(){
   $("#nameWrap").style.display="none";
   $("#phoneWrap").style.display="none";
   $("#a-pass").placeholder="输入密码";
+  $("#forgotPanel").style.display="none";   // 切回登录时收起找回面板
   $("#authModal").classList.add('show');
 }
 function showRegister(){
@@ -408,6 +419,7 @@ function showRegister(){
   $("#authTitle").textContent="注册";
   $("#authSwitch").innerHTML='已有账号？<a style="color:var(--accent);cursor:pointer" onclick="showLogin()">去登录</a>';
   $("#authMsg").textContent="";
+  $("#forgotPanel").style.display="none";   // 注册模式收起找回面板
   setRegType("standard");
   $("#regTypeWrap").style.display="";
   $("#nameWrap").style.display="";
@@ -445,7 +457,7 @@ function submitAuth(){
     .then(function(r){return r.json()}).then(function(d){
       $("#authSubmit").disabled=false;
       if(!d.ok){
-        var tip = isReg ? '' : '<br><span class="mut" style="font-size:12px">忘记密码？请联系管理员重置（当前未接入邮箱验证）</span>';
+        var tip = isReg ? '' : '<br><span class="mut" style="font-size:12px">忘记密码？<a style="color:var(--accent);cursor:pointer;text-decoration:underline" onclick="toggleForgot()">点此提交找回申请</a></span>';
         $("#authMsg").innerHTML='<span class="err">'+esc(d.error||'失败')+'</span>'+tip;
         return;
       }
@@ -456,6 +468,34 @@ function submitAuth(){
         location.href="/mine.html#pwd";
       }
     }).catch(function(e){ $("#authSubmit").disabled=false; $("#authMsg").innerHTML='<span class="err">网络异常，请重试</span>'; });
+}
+
+// —— 忘记密码：找回申请（工单直达管理员，无 SMTP 自助兜底）——
+function toggleForgot(){
+  var p=$("#forgotPanel");
+  var show = p.style.display==="none";
+  p.style.display = show ? "" : "none";
+  if(show){
+    var em=$("#a-email").value.trim();
+    if(em && !$("#fg-email").value) $("#fg-email").value=em;
+    $("#fg-email").focus();
+  }
+}
+function submitForgot(){
+  var em=$("#fg-email").value.trim(), note=$("#fg-note").value.trim(), box=$("#fg-msg");
+  if(!em || em.indexOf("@")<0){ box.innerHTML='<span class="err">请填写注册邮箱</span>'; return; }
+  box.innerHTML='<span class="mut">提交中…</span>';
+  fetch('/api/store/password/reset_request',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({email:em,note:note})})
+    .then(function(r){return r.json()}).then(function(d){
+      if(d.ok){
+        box.innerHTML='<span class="ok">'+esc(d.message||'申请已提交')+'</span>';
+        $("#fg-email").value=""; $("#fg-note").value="";
+      }else{
+        box.innerHTML='<span class="err">'+esc(d.error||'提交失败，请稍后再试')+'</span>';
+      }
+    }).catch(function(){ box.innerHTML='<span class="err">网络异常，请重试</span>'; });
 }
 function logout(){
   // P2-5：清除服务端 HttpOnly Cookie，再重置前端匿名态

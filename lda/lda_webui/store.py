@@ -1006,6 +1006,12 @@ def admin_reset_password(identifier: str, token: str,
         target["password_reset_at"] = datetime.now(timezone.utc).isoformat()
         # 清除该账号的登录锁定（含 IP 维度）：避免用户因旧的错误尝试被锁着进不来
         _clear_login_locks(target.get("email", ""))
+        # 自动闭环：把该邮箱 pending 的找回申请标记为已处理
+        for r in data.get("pwd_reset_requests", []):
+            if r.get("email") == (target.get("email") or "").lower() and r.get("status") == "pending":
+                r["status"] = "resolved"
+                r["resolved_at"] = datetime.now(timezone.utc).isoformat()
+                r["resolved_by"] = "reset"
     return {"ok": True, "email": target.get("email", ""), "user_id": target["id"],
             "temp_password": pwd, "must_change_password": True,
             "note": "请将临时密码通过原沟通渠道（微信/邮件）告知用户；"
@@ -1024,6 +1030,90 @@ def admin_unlock_login(token: str) -> dict:
         _LOGIN_GUARD.clear()
     return {"ok": True, "cleared": n,
             "note": "已清除 %d 条登录失败锁定记录（账号 + IP 维度）。" % n}
+
+
+# ---------------------------------------------------------------------------
+# 密码找回申请（自助工单：未接 SMTP 下的用户→管理员闭环通路）
+#
+# 流程：用户在登录框点「忘记密码」→ 提交邮箱(+可选说明) → 管理员在
+# admin.html「账号重置」面板看到申请 → 一键带入重置框生成临时密码 →
+# admin_reset_password 成功时自动把该邮箱的 pending 申请标记 resolved。
+# 安全：公开端点，反用户枚举（无论邮箱是否注册都返回同一句成功提示，
+# 不暴露账号存在性）；IP 维度限流防刷。
+# ---------------------------------------------------------------------------
+_PWD_REQ_MAX = 10          # 单 IP 10 分钟窗口内最多提交次数
+_PWD_REQ_WINDOW = 600      # 秒
+_PWD_REQ_NOTE_MAX = 200    # 备注长度上限
+
+
+def submit_pwd_reset_request(email: str, note: str = "", client_ip: str = "") -> dict:
+    """用户提交找回密码申请（公开端点）。
+
+    反用户枚举：不校验邮箱是否已注册，一律返回同一句成功提示——
+    邮箱是否存在的判断留给管理员在后台处理时进行。
+    """
+    email = (email or "").strip().lower()
+    note = (note or "").strip()[:_PWD_REQ_NOTE_MAX]
+    if not email or "@" not in email or len(email) > 200:
+        return {"ok": False, "error": "请填写有效的邮箱地址"}
+    # IP 维度限流（无 IP 时跳过，兼容单测直接调用）
+    if client_ip:
+        with _LOGIN_GUARD_LOCK:
+            _now = time.time()
+            key = "pwdreq:" + client_ip
+            hits = [t for t in _LOGIN_GUARD.get(key, []) if _now - t < _PWD_REQ_WINDOW]
+            if len(hits) >= _PWD_REQ_MAX:
+                return {"ok": False, "error": "提交过于频繁，请稍后再试"}
+            hits.append(_now)
+            _LOGIN_GUARD[key] = hits
+    with _locked() as data:
+        reqs = data.setdefault("pwd_reset_requests", [])
+        # 同邮箱去重：已有 pending 就刷新时间与备注，不重复堆条目
+        for r in reqs:
+            if r.get("email") == email and r.get("status") == "pending":
+                r["created_at"] = datetime.now(timezone.utc).isoformat()
+                r["note"] = note or r.get("note", "")
+                r["client_ip"] = client_ip or r.get("client_ip", "")
+                return {"ok": True, "message": "申请已提交，管理员会尽快处理并通过你的注册渠道联系你。"}
+        reqs.insert(0, {
+            "id": "pr" + secrets.token_hex(6),
+            "email": email,
+            "note": note,
+            "client_ip": client_ip,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "status": "pending",
+        })
+    return {"ok": True, "message": "申请已提交，管理员会尽快处理并通过你的注册渠道联系你。"}
+
+
+def admin_list_pwd_reset_requests(token: str) -> dict:
+    """管理员查看找回密码申请列表（pending 在前）。"""
+    if not is_admin(token):
+        return {"ok": False, "error": "unauthorized", "code": 401}
+    with _locked() as data:
+        reqs = list(data.get("pwd_reset_requests", []))
+        # 标注邮箱是否已注册（帮助管理员识别误填/恶意提交）
+        known = {u.get("email", "").lower() for u in data["users"].values()}
+    reqs.sort(key=lambda r: (r.get("status") != "pending", r.get("created_at", "")))
+    for r in reqs:
+        r["registered"] = r.get("email", "").lower() in known
+    return {"ok": True, "requests": reqs,
+            "pending": sum(1 for r in reqs if r.get("status") == "pending")}
+
+
+def admin_resolve_pwd_reset_request(token: str, request_id: str) -> dict:
+    """管理员手动标记一条申请为已处理（如判定为误填/恶意）。"""
+    if not is_admin(token):
+        return {"ok": False, "error": "unauthorized", "code": 401}
+    if not request_id:
+        return {"ok": False, "error": "缺少申请 ID"}
+    with _locked() as data:
+        for r in data.get("pwd_reset_requests", []):
+            if r.get("id") == request_id:
+                r["status"] = "resolved"
+                r["resolved_at"] = datetime.now(timezone.utc).isoformat()
+                return {"ok": True}
+    return {"ok": False, "error": "未找到该申请"}
 
 
 def my_licenses(user_token: str) -> dict:

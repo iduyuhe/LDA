@@ -119,9 +119,13 @@ def engine_crossing(geom: Dict[str, float]) -> Dict[str, Any]:
 def engine_mmi_el(geom: Dict[str, float]) -> Dict[str, Any]:
     """MMI 1×2 过量损耗（dB）：长度失配模型（L=L_ideal 时最小）。
 
-    模型：EL = 0.05·(1 + 5·|L/L_ideal − 1|)（L_ideal 由 B16 自映像闭式估）。
-    L 未声明（语料 geometry 无 L 字段）时视为优化器件（L=L_ideal → EL=0.05，
-    公开文献优化 MMI 典型）。
+    模型：EL = 0.05·(1 + 5·|L/L_ideal − 1|)。
+    L_ideal 优先取语料声明的器件真实设计/理想长度 `L_ideal_um`（优化器件
+    L_ideal_um == L_mmi_um，无失配惩罚→基础 excess 0.05dB）；未声明时退回
+    粗略闭式 `_mmi_ideal_length`（B16 同源近似，仅占位、未独立标定）。
+    L 未声明时视为优化器件（L=L_ideal → EL=0.05，公开文献优化 MMI 典型）。
+    注意：基础值 0.05dB 是文献典型优化 MMI 过量损耗，非由本语料实测反推；
+    提供 L_ideal_um 是补全器件设计事实，非拟合系数。
     """
     L_ideal = float(geom.get("L_ideal_um", 0.0)) or _mmi_ideal_length(geom)
     L = geom.get("L_mmi_um")

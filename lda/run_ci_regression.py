@@ -139,6 +139,11 @@ CORE_SMOKES: List[str] = [
     #   间距剪枝要求 bbox 重叠致真违规漏检。11 判据含反向。实测 0.18s。
     #   CI core 135→136。
     "run_gds_drc_semantics_smoke.py",
+    # BraggMirror GDS 导出收口（v0.9.61）：侧壁调制布拉格光栅波导几何可导
+    #   出、几何 DRC 不假红（同层相接连通域豁免）、寄生可跑、诚实边界
+    #   （n_eff 来自平面波导求解器 < 体材料 3.48，≠ 器件库一维 TMM 锚）。
+    #   反向 A/B：窄波导与近距独立结构必须被抓。CI core 137→138。
+    "run_bragg_gds_smoke.py",
     # 产品级基准对照库（v0.8.32：实证锚产品级扩展 + B 生态播种，免流片）
     "run_golden_product_smoke.py",
     # 🔴 研发生产系统（M3 · v0.9.41 补登）：解析《2027 产品规划》→ 四赛道生产任务

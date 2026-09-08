@@ -91,12 +91,12 @@ def main() -> int:
     from lda_l2.device_library import get_default_library
     lib_structs = layout_from_library(get_default_library())
     for expect in ("Waveguide", "RingResonator", "DirectionalCoupler",
-                   "SymmetricYBranch"):
+                   "SymmetricYBranch", "BraggMirror"):
         ok &= check(expect in lib_structs,
                     f"D-12 器件库→GDS 导出 {expect}")
     lib_data = gds_library("LDA-LIB", lib_structs)
-    ok &= check(parse_gds(lib_data)["n_structures"] >= 4,
-                "器件库 GDS 含 ≥4 结构（Bragg 一维堆叠跳过）")
+    ok &= check(parse_gds(lib_data)["n_structures"] >= 5,
+                "器件库 GDS 含 ≥5 结构（含 Bragg 光栅 GDS 导出，v0.9.61 收口）")
 
     # 4) SVG 预览（几何描述渲染，浏览器可看）
     svg = svg_preview({

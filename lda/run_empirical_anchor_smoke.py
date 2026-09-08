@@ -321,7 +321,8 @@ def main():
     # 原文正确值（Opt. Eng. 59(10) 105102，4 个独立书目库交叉确认）
     _ok_doi = _e5 is not None and "10.1117/1.OE.59.10.105102" in _e5["citation"]
     _ok_dev = _e5 is not None and "2.8x27" in _e5["device"]
-    _ok_geo = _g5.get("h_core_um") == 0.22 and _g5.get("w_core_um") == 0.5
+    _ok_geo = (_g5.get("h_core_um") == 0.22 and _g5.get("w_core_um") == 0.5
+               and _g5.get("W_mmi_um") == 2.8 and _g5.get("L_mmi_um") == 27.0)
     # 原文摘要 "experimentally demonstrated" ⇒ 必须是实测类，不得改成仿真
     _ok_fab = _e5 is not None and "实验" in _e5["fab_source"]
     _ok_val = _e5 is not None and abs(_e5["measured_value"] - 0.05) < 1e-12
@@ -330,12 +331,14 @@ def main():
     _conflict = _e5 is not None and ("10.1016/j.mejo.2020.104887" in _e5["citation"]
                                      or "2.6x6.6" in _e5["device"])
     check("⑧ E5 原文防回潮：DOI=10.1117/1.OE.59.10.105102 且 device 含 2.8x27 "
-          "且 h=0.22 且含实验实测 且 value=0.05；且未混入同作者另一篇"
+          "且 geometry 含 W_mmi=2.8 / L_mmi=27.0 / h=0.22 / w=0.5 且含实验实测 "
+          "且 value=0.05；且未混入同作者另一篇"
           "(MeJo 104,104887 / 2.6x6.6 / 340nm / 纯仿真)",
           (_ok_doi and _ok_dev and _ok_geo and _ok_fab and _ok_val
            and not _conflict),
           f"doi={_ok_doi} dev2.8x27={_ok_dev} geo={_ok_geo}"
-          f"(h={_g5.get('h_core_um')},w={_g5.get('w_core_um')}) "
+          f"(h={_g5.get('h_core_um')},w={_g5.get('w_core_um')},"
+          f"W={_g5.get('W_mmi_um')},L={_g5.get('L_mmi_um')}) "
           f"fab实测={_ok_fab} value0.05={_ok_val} 混入另一篇={_conflict}")
 
     # ⑨ 通用：ground truth 为「仿真」的语料必须显式声明性质。

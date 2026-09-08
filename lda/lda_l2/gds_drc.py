@@ -40,6 +40,35 @@ def _pt_seg_dist(p, s0, s1) -> float:
     return ((p[0] - qx) ** 2 + (p[1] - qy) ** 2) ** 0.5
 
 
+# 同层「相接」判定阈值（µm）。1 pm 远小于 GDS DBU 网格 1 nm：任何真实
+# 制造的间隙（≥nm 量级）都不会被误判成相接；只有真正共享边界 / 重合的
+# 元素才会落到接触份 => 见 v0.9.61 说明。
+_CONNECTED_TOUCH_EPS = 1e-6
+
+
+def _is_concave(poly: List[Tuple[float, float]]) -> bool:
+    """多边形凹凸性**精确**判定（叉积符号一致性，容共线零值）。
+
+    ⚠️ v0.9.61 修正：旧判定用 `len(凸包) < len(顶点)`，而 GDS BOUNDARY 普遍
+    把首点再写一遍闭合（解析到此重复点），且楔形直线的中间共线点也会被凸包
+    丢    掉 ⇒ **每个矩形都被误判为凹多边形**，`width_note` 一律声称「该值为上界、
+    可能高估」，把凸多边形的**精确**结果降级成含糊表述。改用叉积符号：去掉
+    闭合重复点后，若叉积全 ≥0（逆时针）或全 ≤0（顺时针）⇒ 凸；否则凹。
+    """
+    pts = list(poly)
+    if len(pts) > 1 and pts[0] == pts[-1]:
+        pts = pts[:-1]
+    n = len(pts)
+    if n < 4:                       # 3 点及以下必凸（退化线段也按凸处理）
+        return False
+    mn = mx = 0.0
+    for i in range(n):
+        o, a, b = pts[i], pts[(i + 1) % n], pts[(i + 2) % n]
+        c = (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+        mn, mx = min(mn, c), max(mx, c)
+    return mn < 0.0 and mx > 0.0
+
+
 # 最小宽度度量的复杂度保护：O(h·n)，超过此点数先均匀抽稀。
 _MAX_POLY_PTS_FOR_WIDTH = 600
 
@@ -185,8 +214,7 @@ def check_geometry(structures: Dict[str, List[Dict]],
                 all_polys.append((sname, e))
                 if e.get("kind") == "boundary":
                     w = _poly_width(pts)
-                    hull_n = len(_convex_hull(pts))
-                    if hull_n < len(pts):
+                    if _is_concave(pts):
                         n_concave += 1      # 凹形 → 凸包近似，宽度是上界
                     if w < min_w:
                         msg = f"{sname}: 多边形最小局部宽度 {w:.3f}µm < {min_w}µm"
@@ -203,7 +231,9 @@ def check_geometry(structures: Dict[str, List[Dict]],
     # v0.8.41：O(n²) 双重循环 → 均匀网格候选（bbox 重叠 ⟺ 至少共享一格，
     # 精确等价——与 lvs._collect_cross_shorts 同法（线段网格超集，零语义变化）；
     # 仅候选对走精确段距）。
-    spacing_checked = 0
+    spacing_checked = 0          # 跨域（不同连通域）对数
+    spacing_intra = 0            # 域内对数（按同层并集语义豁免）
+    n_components = len(all_polys)
     spacing_min = None
     if len(all_polys) > 1:
         # 网格分桶：cell = 总跨度 / sqrt(n)，每格期望 O(1) 元素
@@ -238,12 +268,47 @@ def check_geometry(structures: Dict[str, List[Dict]],
         cand = {(i, j) for i, j in cand
                 if not (ebboxes[i][2] < ebboxes[j][0] or ebboxes[j][2] < ebboxes[i][0]
                         or ebboxes[i][3] < ebboxes[j][1] or ebboxes[j][3] < ebboxes[i][1])}
-        for i, j in sorted(cand):
-            d = min(
+        # 精确段距 + **同层连通域合并**（v0.9.61）
+        # ------------------------------------------------------------------
+        # 🔴 真缺陷（布拉格光栅导出后实测暴露）：一条连续光栅被拆成 2N 个首尾
+        # 相接的矩形 ⊆ 同一层同一个铜/硅图形。真实 DRC 会先做**同层并集**
+        # （AND/OR 布尔运算），最小间距规则只对**合并后的独立图形**生效；
+        # 相接元素本身就是一个形状，不存在"间距"。旧实现对所有 pair 逐对判
+        # 距 ⇒ 13 处「间距 0.000µm」假红，任何连续（光栅/锥形骨架/总线）都
+        # 会被判违规 ⇒ 几何 DRC 在这些布局上完全不可用。
+        # 解法：先按「距离 ≤ _CONNECTED_TOUCH_EPS」做并查集，域内 pair 豁免
+        # 间距规则；跨域 pair 照旧严格判定。
+        # 🔴 诚实边界：域内豁免意味着**同一图形的凹槽/内缝**不再被最小间距
+        # 覆盖（那需 minimum-slot / min-notch 类规则，本 checker 未实现）⇒
+        # spacing_note 必须显式写出豁免对数，不静默放过。
+        parent = list(range(len(all_polys)))
+
+        def _find(a: int) -> int:
+            while parent[a] != a:
+                parent[a] = parent[parent[a]]
+                a = parent[a]
+            return a
+
+        def _union(a: int, b: int) -> None:
+            ra, rb = _find(a), _find(b)
+            if ra != rb:
+                parent[rb] = ra
+
+        dists: Dict[Tuple[int, int], float] = {}
+        for i, j in cand:
+            dists[(i, j)] = min(
                 _seg_distance(s, t)
                 for s in _segments(all_polys[i][1]["points_um"])
                 for t in _segments(all_polys[j][1]["points_um"])
             )
+        for (i, j), d in dists.items():
+            if d <= _CONNECTED_TOUCH_EPS:
+                _union(i, j)
+        for i, j in sorted(dists):
+            d = dists[(i, j)]
+            if _find(i) == _find(j):
+                spacing_intra += 1
+                continue
             spacing_checked += 1
             spacing_min = d if spacing_min is None else min(spacing_min, d)
             if d < min_sp:
@@ -251,11 +316,22 @@ def check_geometry(structures: Dict[str, List[Dict]],
                        f"间距 {d:.3f}µm < {min_sp}µm")
                 violations.append(msg)
                 sp_viol.append(msg)
-    if spacing_checked == 0:
+        n_components = len({_find(i) for i in range(len(all_polys))})
+    if spacing_checked == 0 and spacing_intra == 0:
         # 单结构或无重叠：间距规则无法严格判定 → 诚实标 "未覆盖"
         spacing_note = "未覆盖（无相邻元素，间距规则需多元素叠加）"
     else:
-        spacing_note = f"已查 {spacing_checked} 对相邻元素，最小间距 {spacing_min:.3f}µm"
+        if spacing_checked:
+            base = (f"已查 {spacing_checked} 对跨域元素"
+                    f"（{n_components} 个同层连通域），"
+                    f"最小间距 {spacing_min:.3f}µm")
+        else:
+            base = f"无跨域相邻元素（{n_components} 个同层连通域）"
+        if spacing_intra:
+            base += ("；域内 " + str(spacing_intra) + " 对首尾相接的元素按**同层"
+                     "并集语义**视为同一图形而豁免（真实 DRC 先合并同层多边形，"
+                     "最小间距只对独立图形生效）；未覆盖 min-slot/凹槽类规则")
+        spacing_note = base
 
     return {
         "all_pass": len(violations) == 0,

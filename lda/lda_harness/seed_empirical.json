@@ -149,13 +149,16 @@
       "uncertainty_abs": 0.05,
       "fab_source": "SOI 平台（EME 设计 + 实验演示）",
       "citation": "D. Chack & S. Hassan, Opt. Eng. 59(10), 105102 (2020), DOI 10.1117/1.OE.59.10.105102",
-      "method": "TE 模 1550nm 过量损耗（EME 分析 + 实验）",
+      "method": "TE 模 1550nm 过量损耗（EME 分析 + 实验）；优化器件，设计/理想长度=文档长度 27µm（L_ideal_um=L_mmi_um，无失配惩罚→基础 excess_loss 0.05dB）",
       "geometry": {
         "w_core_um": 0.5,
         "h_core_um": 0.22,
         "n_si": 3.48,
         "n_clad": 1.44,
-        "wl_um": 1.55
+        "wl_um": 1.55,
+        "W_mmi_um": 2.8,
+        "L_mmi_um": 27.0,
+        "L_ideal_um": 27.0
       },
       "tags": [
         "mmi",

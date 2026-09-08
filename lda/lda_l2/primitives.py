@@ -8,6 +8,8 @@
   euler_bend       Euler 弯（clothoid）：曲率 0→1/R→0 连续变化，无折角
   mmi              MMI 分束器（1×2 对称）：输入 taper + 多模干涉区 + 双输出 taper
   grating_coupler  光栅耦合器（GC）：波导 + 周期部分刻蚀齿
+  bragg_grating    布拉格光栅（BraggMirror 的平面实现）：侧壁调制波导，
+                   段长 λ0/(4·n_eff)（**n_eff 由 LDA 自有 slab 求解器算出**）
 
 诚实边界：本模块只交付**几何基元**（foundry 可接受的 GDS 版图形状）；
 分束比/透射谱等电磁特性属 D-72（真实 2D FDTD 端口 S 参数验收）范畴，
@@ -194,6 +196,183 @@ def grating_coupler_descs(params: Dict[str, float]) -> List[Dict]:
 
 
 # ---------------------------------------------------------------------------
+# 布拉格光栅（BraggMirror 的平面实现）：侧壁调制波导 + 四分之一波长段
+# ---------------------------------------------------------------------------
+# EIM 归约链（两级对称 slab），全部由 LDA 自有求解器算，无手工魔法数：
+#   竖向 n_core_2d = TE0(n_core, n_clad, d=h_core)      —— mmi_eme.slab_te_neff_analytic
+#   横向 n_eff(w)  = TE0(n_core_2d, n_clad, d=w)
+#   段长 L_i = λ0 / (4·n_eff(w_i))      ← 与器件库一维 TMM 模型**同构造**
+BRAGG_DEFAULTS: Dict[str, float] = {
+    "width": 0.5,          # 标称波导宽（也是引线宽）
+    "corrugation": 0.12,   # 侧壁调制峰峰值 Δw（宽段 = w+Δw/2，窄段 = w−Δw/2）
+    "periods": 6,
+    "wl0_um": 1.55,
+    "h_core_um": 0.22,     # 220nm SOI
+    "n_core": 3.48,
+    "n_clad": 1.44,
+}
+
+_SOLVER_DIR = None
+
+
+def _slab_te_neff(n_core: float, n_clad: float, d_um: float,
+                  wl_um: float, m: int = 0):
+    """取 LDA 自有对称 slab TE_m 解析 n_eff（懒加载求解核，供 EIM 归约）。
+
+    `slab_te_neff_analytic` 本身**零依赖**（超越方程二分解，纯 math），
+    位于 lda_solver.mmi_eme；此处懒加载以保持本模块零顶层依赖。
+    """
+    global _SOLVER_DIR
+    import os as _os
+    import sys as _sys
+    if _SOLVER_DIR is None:
+        _SOLVER_DIR = _os.path.join(
+            _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))),
+            "lda_solver")
+    if _SOLVER_DIR not in _sys.path:
+        _sys.path.insert(0, _SOLVER_DIR)
+    try:
+        from mmi_eme import slab_te_neff_analytic as _f   # type: ignore
+    except ImportError:                                    # pragma: no cover
+        try:
+            from lda_solver.mmi_eme import (               # type: ignore
+                slab_te_neff_analytic as _f)
+        except ImportError as exc:
+            raise ImportError(
+                "布拉格光栅需要 lda_solver.mmi_eme.slab_te_neff_analytic "
+                "才能导出真实段长（禁止回退到拍脑袋的周期）") from exc
+    return _f(n_core, n_clad, d_um, wl_um, m)
+
+
+def bragg_neff_chain(width: float, corrugation: float = 0.12,
+                     wl0_um: float = 1.55, h_core_um: float = 0.22,
+                     n_core: float = 3.48, n_clad: float = 1.44):
+    """两级 EIM + 四分之一波长段长 → 字典（物理派生结果，非拟合）。
+
+    返回 {w_hi, w_lo, v_neff, n_hi, n_lo, L_hi, L_lo, pitch_um, ...}。
+    `v_neff` = 竖向归约折射率，`n_hi/n_lo` = 宽/窄段的横向有效折射率。
+
+    🔴 诚实边界：n_eff 来自 **2D-EIM 对称 slab 抽象**（上下包层同折射率）。
+    真实 SOI（上包层空气或不同厚度的氧化层）是非对称 slab，数值会偏移；
+    2D-EIM 本身忽略拐角/矢状（corner）修正。本派生是**模型内的自洽**，
+    不是实测。
+    """
+    w = float(width)
+    dw = float(corrugation)
+    if dw <= 0:
+        raise ValueError("corrugation 必须 > 0（无侧壁调制则无布拉格反射）")
+    if dw >= w:
+        raise ValueError(f"corrugation {dw}µm 过大：窄段 w−Δw/2 会退化（w={w}µm）")
+    w_hi, w_lo = w + dw / 2.0, w - dw / 2.0
+    v_neff = _slab_te_neff(n_core, n_clad, h_core_um, wl0_um, 0)
+    if v_neff is None:
+        raise ValueError(
+            f"竖向 slab 无导模：h_core={h_core_um}µm @ λ={wl0_um}µm "
+            f"（n_core={n_core}/n_clad={n_clad}）")
+    n_hi = _slab_te_neff(v_neff, n_clad, w_hi, wl0_um, 0)
+    n_lo = _slab_te_neff(v_neff, n_clad, w_lo, wl0_um, 0)
+    if n_hi is None or n_lo is None:
+        raise ValueError(
+            f"横向无导模：宽段 {w_hi:.3f}µm 或窄段 {w_lo:.3f}µm @ λ={wl0_um}µm")
+    # 四分之一波长：与器件库一维 TMM（qw = λ/(4n)）**同构造**
+    L_hi = wl0_um / (4.0 * n_hi)
+    L_lo = wl0_um / (4.0 * n_lo)
+    return {"w_hi": w_hi, "w_lo": w_lo, "w_nominal": w, "corrugation": dw,
+            "v_neff": v_neff, "n_hi": n_hi, "n_lo": n_lo,
+            "L_hi": L_hi, "L_lo": L_lo, "pitch_um": L_hi + L_lo,
+            "wl0_um": wl0_um, "h_core_um": h_core_um,
+            "n_core": n_core, "n_clad": n_clad}
+
+
+def bragg_grating_report(params: Dict[str, float]) -> Dict[str, object]:
+    """布拉格光栅几何的**物理量报告**（供派生留痕 / 测试断言 / UI 展示）。
+
+    额外键：`n_periods`、`grating_len_um`、`total_len_um`、`n_elements`、
+    `honest_note`（写明本版图与器件库一维锚的差异，见下）。
+
+    🔴🔴 **与验证锚的关系（必读，防误用）**：器件库里 BraggMirror 的验收
+    契约是**一维四分之一波长堆叠 TMM**（层折射率取**体材料** n_Si=3.48 /
+    n_SiO2=1.44）。而平面波导无论怎么调宽都拿不到 3.48:1.44 的折射率比
+    （220nm SOI 横向 n_eff 上限 ≈ v_neff ≈ 2.85，下限趋向 n_clad）。
+    因此本版图**不是**那个 TMM 模型器件的几何复刻：禁止拿它的 R_min 验收
+    结果给这个 GDS 背书，反之亦然。两者共享的只有「逐层堆叠 + 四分之一
+    波长」这一**同一构造**。
+    """
+    p = dict(BRAGG_DEFAULTS)
+    p.update({k: v for k, v in params.items() if v is not None})
+    n = int(p["periods"])
+    if n < 1:
+        raise ValueError(f"periods={n} 非法（布拉格光栅至少 1 个周期）")
+    chain = bragg_neff_chain(p["width"], p["corrugation"], p["wl0_um"],
+                             p["h_core_um"], p["n_core"], p["n_clad"])
+    Lt = float(params.get("taper_len", 1.5))
+    Li = float(params.get("L_in", 2.0))
+    Lo = float(params.get("L_out", 2.0))
+    out = dict(chain)
+    out.update({
+        "n_periods": n,
+        "taper_len": Lt, "L_in": Li, "L_out": Lo,
+        "grating_len_um": n * chain["pitch_um"],
+        "total_len_um": Li + Lt + n * chain["pitch_um"] + Lt + Lo,
+        # 2 引线 PATH + 2 taper BOUNDARY + 2n 个周期 BOUNDARY
+        "n_elements": 2 + 2 + 2 * n,
+        "honest_note": (
+            "侧壁调制波导型布拉格光栅：段长由 LDA 自有 slab 求解器按 "
+            "λ0/(4·n_eff) 导出，与器件库一维 TMM 锚的体材料折射率 "
+            "(3.48/1.44) 不同 —— 220nm SOI 横向 n_eff 上限仅 ≈2.85，无法"
+            "复刻该折射率比；两者只共享「四分之一波长堆叠」构造，不可互相背书。"),
+    })
+    return out
+
+
+def bragg_grating_descs(params: Dict[str, float]) -> List[Dict]:
+    """布拉格光栅（BraggMirror 平面实现）几何描述。
+
+    沿 x：输入引线 PATH → 绝热 taper（引线宽 → 宽段宽）→ N×(宽段+窄段)
+    → taper（窄段宽 → 引线宽）→ 输出引线 PATH。
+
+    params：width / corrugation / periods / wl0_um / h_core_um / n_core /
+            n_clad / L_in / L_out / taper_len。
+    周期段的**段长不是入参**，而是 `bragg_neff_chain` 从模式求解器算出的
+    λ0/(4·n_eff) —— 避免「周期」被当成可随意填的自由量（那是造假的入口）。
+
+    ⚠️ 相邻周期段**首尾相接**（连续光栅，同一层合并语义）。几何 DRC 的间距
+    规则对此必须按「同层连通域」豁免，否则会假红；见 gds_drc.
+    `_CONNECTED_TOUCH_EPS`。
+    """
+    rep = bragg_grating_report(params)
+    n = rep["n_periods"]
+    w = rep["w_nominal"]
+    w_hi, w_lo = rep["w_hi"], rep["w_lo"]
+    L_hi, L_lo = rep["L_hi"], rep["L_lo"]
+    Li, Lo, Lt = rep["L_in"], rep["L_out"], rep["taper_len"]
+
+    descs: List[Dict] = []
+    # 输入引线（宽=标称值，与 taper 起点同宽 ⇒ 无台阶）
+    descs.append({"kind": "path", "layer": 1, "width_um": w,
+                  "points_um": [(-Li, 0.0), (0.0, 0.0)]})
+    # 输入 taper：引线宽 → 宽段宽
+    descs.append({"kind": "boundary", "layer": 1,
+                  "rings_um": [taper_polygon(w, w_hi, Lt, profile="adiabatic")]})
+    # N 个周期：先宽段后窄段（与 DBR 惯例一致：高低折射率交替，自高起）
+    x = Lt
+    for _i in range(n):
+        for wseg, Lseg in ((w_hi, L_hi), (w_lo, L_lo)):
+            descs.append({"kind": "boundary", "layer": 1,
+                          "rings_um": [_poly_rect(x, -wseg / 2.0,
+                                                  x + Lseg, wseg / 2.0)]})
+            x += Lseg
+    # 输出 taper：窄段宽 → 引线宽（x 已是光栅末端）
+    xe = x
+    descs.append({"kind": "boundary", "layer": 1,
+                  "rings_um": [taper_polygon(w_lo, w, Lt, x0=xe,
+                                             profile="adiabatic")]})
+    descs.append({"kind": "path", "layer": 1, "width_um": w,
+                  "points_um": [(xe + Lt, 0.0), (xe + Lt + Lo, 0.0)]})
+    return descs
+
+
+# ---------------------------------------------------------------------------
 # 统一入口：kind + params → geometry_desc 风格 desc 列表
 # ---------------------------------------------------------------------------
 def _poly_rect(x0, y0, x1, y1):
@@ -293,6 +472,8 @@ def primitive_descs(kind: str, params: Dict[str, float]) -> List[Dict]:
         return modulator_descs(params)
     if kind in ("photodetector", "photo_detector"):
         return photodetector_descs(params)
+    if kind in ("braggmirror", "bragg", "bragggrating", "bragg_grating"):
+        return bragg_grating_descs(params)
     raise ValueError(f"真实版图基元暂不支持 kind={kind}")
 
 
@@ -317,4 +498,9 @@ def primitive_geometry(kind: str, params: Dict[str, float]) -> Dict[str, float]:
         dc = float(params.get("duty", 0.5))
         return {"min_width": Lam * dc,
                 "min_space": Lam * (1.0 - dc)}
+    if kind in ("braggmirror", "bragg", "bragggrating", "bragg_grating"):
+        # 参数级 DRC 只管**横向宽度**（波导宽的意义）；周期段长是**纵向**
+        # 特征，交给几何 DRC（gds_drc 对真实多边形做最小平行带宽度检查）。
+        rep = bragg_grating_report(params)
+        return {"min_width": min(rep["w_hi"], rep["w_lo"])}
     raise ValueError(f"真实版图基元暂不支持 kind={kind}")

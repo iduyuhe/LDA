@@ -207,6 +207,9 @@ def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
     RingAddDrop{R, wg_width, gap}（D-37 环形 add-drop：环 + through/drop 双 bus，
     端口：input→through（下 bus，y=-off）、add→drop（上 bus，y=+off），
     off = R + wg_width/2 + gap）。
+    BraggMirror{periods, width, corrugation, wl0_um, h_core_um}（v0.9.61 侧壁调制
+    布拉格光栅：段长 λ0/(4·n_eff) 由 LDA 自有 slab 求解器导出，见 primitives.
+    bragg_grating_report 的诚实边界——它**不是**器件库一维 TMM 锚的几何复刻）。
     """
     core_w = float(params.get("width", 0.5))
     descs: List[Dict] = []
@@ -271,7 +274,8 @@ def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
                                     (x0 + arm * math.cos(half),
                                      -arm * math.sin(half))]})
     # ---- D-71 真实版图基元（foundry-ready；几何交付，电特性归 D-72）----
-    elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler"):
+    elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler",
+                  "BraggMirror"):
         from lda_l2.primitives import primitive_descs as _prim
         descs.extend(_prim(kind, params))
     else:
@@ -308,8 +312,11 @@ def layout_from_library(library=None) -> Dict[str, List[bytes]]:
     """D-12 已验证器件库 → GDS 结构（各器件取参数窗口默认值/中值）。
 
     串联 D-12（器件库）→ D-14（GDS 出口）：注册表里每个有几何表达的已验证
-    器件都导出为一个 GDS 单元。一维堆叠器件（BraggMirror，无 2D 版图几何）
-    跳过并提示。
+    器件都导出为一个 GDS 单元。
+
+    v0.9.61：BraggMirror 已不再跳过——它有了**侧壁调制布拉格光栅**的真实平面
+    几何（段长由模式求解器导出）。至此器件库全部器件均可进入几何 DRC（S3.6）
+    与寄生估算（S3.5），无 "一维堆叠无 2D 几何" 的豁免口子。
     """
     if library is None:
         from lda_l2.device_library import get_default_library

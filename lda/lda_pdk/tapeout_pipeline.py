@@ -74,6 +74,35 @@ class ParasiticResult:
 
 
 @dataclass
+class GeometryDrcResult:
+    """（v0.9.60 S3.6）版图**几何级** DRC 结果——真实 GDS 多边形的最小
+    线宽/间距/面积，与 S1-S3 的**参数级** DRC 互补：参数级查器件窗口参数，
+    几何级查实际画出来的多边形。"""
+
+    passed: bool
+    n_elements: int = 0
+    n_polys: int = 0
+    violations: List[str] = field(default_factory=list)
+    width_note: str = ""
+    spacing_note: str = ""
+    honest_note: str = ""
+
+
+@dataclass
+class PerfCornerResult:
+    """（v0.9.60 S3b）**性能**工艺角结果——角缩放后重算锚指标（FSR/f01…），
+    与 S3 的「DRC 工艺角」（缩放后只复检 DRC）区分开。"""
+
+    device: str
+    bid: str
+    passed: bool
+    max_drift_pct: float = 0.0
+    corners: Dict[str, Any] = field(default_factory=dict)
+    note: str = ""
+    error: Optional[str] = None
+
+
+@dataclass
 class TapeoutResult:
     """流片级验证管道整体结果。"""
 
@@ -88,6 +117,8 @@ class TapeoutResult:
     empirical_submission: Optional[Dict[str, Any]]
     accepted: bool
     honest_note: str
+    geometry_drc_result: Optional[GeometryDrcResult] = None      # v0.9.60 S3.6
+    perf_corners: List[PerfCornerResult] = field(default_factory=list)  # S3b
 
 
 def _load_pdk(pdk_key: Optional[str] = None):
@@ -119,7 +150,9 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
                          pdk_key: Optional[str] = None,
                          submit_empirical: bool = False,
                          link=None, placement=None, routes=None,
-                         gds: Optional[bytes] = None) -> TapeoutResult:
+                         gds: Optional[bytes] = None,
+                         perf_cases: Optional[List[Dict[str, Any]]] = None
+                         ) -> TapeoutResult:
     """流片级验证管道主入口。
 
     devices   : {kind: params}，如 {"RingAddDrop": {"R": 10.0, "gap": 0.3}}
@@ -128,8 +161,13 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
                       真实流片前不做占位提交，诚实标注）
     link/placement/routes : （v0.8.24 S4）LVS 签核输入——提供则实跑
                       run_lvs（版图-原理图一致性），缺省 None 诚实跳过。
-    gds       : （v0.8.31 S3.5）版图 GDSII 字节——提供则实跑几何级 RC 寄生
-                      估算（parasitic_rc）；缺省 None 诚实跳过（不造假）。
+    gds       : （v0.8.31 S3.5 / v0.9.60 S3.6）版图 GDSII 字节——提供则
+                      实跑 ①几何级 RC 寄生估算（parasitic_rc）
+                      ②**几何级 DRC**（gds_drc：真实多边形最小线宽/间距/面积）；
+                      缺省 None 诚实跳过（不造假）。
+    perf_cases: （v0.9.60 S3b）性能工艺角用例 [{device,bid,params,tol_pct,domain}]，
+                      提供则角缩放后重算锚指标（FSR/f01 等），缺省 None 跳过。
+                      🔴 与 S3 的 DRC 工艺角不同：S3 只复检规则，S3b 评估**性能漂移**。
     """
     from lda_l2.drc import drc_check_device, rules_from_pdk
     pdk = _load_pdk(pdk_key)
@@ -176,12 +214,43 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
     # 注意：寄生估算为设计侧深度洞察（几何护栏），不进入 accepted 硬门
     # （不替代 foundry 签核），但如实写进报告供设计者参考。
     para_res: Optional[ParasiticResult] = None
+    geom_res: Optional[GeometryDrcResult] = None
     if gds is not None:
         from lda_l2.gds_export import parse_gds_polygons
         from lda_l2.parasitic_rc import (
             estimate_parasitics, check_parasitic, parasitic_rc_markdown,
         )
+        from lda_l2.gds_drc import check_geometry     # v0.9.60 S3.6
         structs = parse_gds_polygons(gds).get("structures", {})
+
+        # S3.6：几何级 DRC（真实多边形最小线宽/间距/面积）
+        g_rep = check_geometry(structs)
+        n_elem = int(g_rep.get("n_elements", 0))
+        if n_elem == 0:
+            # 🔴 零元素 = 层次化未展开（v0.9.33 血案：250k 元素被 AREF 压成 1 条
+            # 记录）⇒ 什么都不查却 all_pass=True 就是**假绿**。此处判 FAIL 并
+            # 诚实标注「无法判定」，宁红不假绿。
+            geom_res = GeometryDrcResult(
+                passed=False, n_elements=0, n_polys=0,
+                violations=["解析出 0 个几何元素 ⇒ 无法判定（疑似层次化 GDS "
+                            "未展开引用，见 v0.9.33 P0-1）"],
+                width_note=g_rep.get("width_note", ""),
+                spacing_note=g_rep.get("spacing_note", ""),
+                honest_note="S3.6 几何 DRC 因 0 元素判 FAIL（不假绿）——"
+                            "请确认 GDS 引用已展开。",
+            )
+        else:
+            geom_res = GeometryDrcResult(
+                passed=bool(g_rep.get("all_pass")),
+                n_elements=n_elem,
+                n_polys=int(g_rep.get("n_polys", 0)),
+                violations=list(g_rep.get("violations", [])),
+                width_note=g_rep.get("width_note", ""),
+                spacing_note=g_rep.get("spacing_note", ""),
+                honest_note="S3.6 几何级 DRC：真实 GDS 多边形的最小线宽/间距/"
+                            "面积（主权几何内核，非 foundry 签核）。",
+            )
+
         para_rep = estimate_parasitics(structs)
         para_chk = check_parasitic(para_rep)
         para_res = ParasiticResult(
@@ -199,6 +268,34 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
             honest_note="S3.5 几何寄生估算未提供版图 GDS 输入，本次诚实跳过"
                        "——不造假。传 gds 字节即实跑。",
         )
+    if geom_res is None:
+        geom_res = GeometryDrcResult(
+            passed=True, honest_note="S3.6 几何级 DRC 未提供版图 GDS 输入，"
+                                     "本次诚实跳过——不造假。传 gds 字节即实跑。")
+
+    # S3b：性能工艺角（v0.9.60）——与 S3 的 DRC 角互补
+    perf_res: List[PerfCornerResult] = []
+    for pc in (perf_cases or []):
+        try:
+            from lda_pdk.corner_performance import corner_scan_case
+            cs = corner_scan_case(pc.get("device", ""), pc.get("bid", ""),
+                                  dict(pc.get("params", {})),
+                                  tol_pct=float(pc.get("tol_pct", 5.0)),
+                                  domain=pc.get("domain"))
+            perf_res.append(PerfCornerResult(
+                device=pc.get("device", ""), bid=pc.get("bid", ""),
+                passed=bool(cs.get("passed")),
+                max_drift_pct=float(cs.get("max_drift_pct", 0.0)),
+                corners=dict(cs.get("corners", {})),
+                note=str(cs.get("note", "")),
+                error=cs.get("error"),
+            ))
+        except Exception as exc:      # 未登记 bid 等 → 显式记错，不静默
+            perf_res.append(PerfCornerResult(
+                device=pc.get("device", ""), bid=pc.get("bid", ""),
+                passed=False, error=f"{type(exc).__name__}: {exc}",
+                note="性能角用例执行异常（已记录，不静默）"))
+    perf_all_pass = all(p.passed for p in perf_res)
 
     # S4：LVS 签核（版图 vs 原理图一致性，v0.8.24）
     # 语义：提供版图 → 实跑（REJECT 阻断签核）；未提供 → SKIP 不阻断但
@@ -234,12 +331,16 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
             "proposed_by": "tapeout-pipeline",
         })
 
-    accepted = bool(drc_ok and corners_ok and lvs_ok)
+    accepted = bool(drc_ok and corners_ok and lvs_ok
+                    and (geom_res.passed if geom_res is not None else True)
+                    and perf_all_pass)
     para_v = "实跑" if gds is not None else "跳过（未提供版图 GDS）"
     honest = (
         f"流片级验证管道（门3 接口就绪）：PDK={pdk.foundry}::{pdk.node}；"
         f"S1-S3 用公开工艺参数示例（真实 NDA-PDK 属发动期）；"
         f"S3.5 几何寄生估算={para_v}（主权几何级，非 foundry 工艺级）；"
+        f"S3.6 几何级 DRC={'实跑 ' + ('PASS' if geom_res.passed else 'FAIL') + f'（{geom_res.n_elements} 元素）' if gds is not None else '跳过（未提供版图 GDS）'}；"
+        f"S3b 性能角={'实跑 ' + ('PASS' if perf_all_pass else 'FAIL') + f'（{len(perf_res)} 例）' if perf_cases else '跳过（未提供用例）'}；"
         f"S4 LVS={'实跑 ACCEPT' if lvs_res.get('verdict') == 'ACCEPT' else ('实跑 REJECT' if lvs_res.get('verdict') == 'REJECT' else '跳过（未提供版图输入）')}；"
         f"S5 实测回流在真实流片前不占位提交。判定死标量，LLM 不进判决路径。"
     )
@@ -255,6 +356,8 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
         empirical_submission=emp_sub,
         accepted=accepted,
         honest_note=honest,
+        geometry_drc_result=geom_res,
+        perf_corners=perf_res,
     )
 
 
@@ -281,6 +384,20 @@ def tapeout_to_dict(res: TapeoutResult) -> Dict[str, Any]:
         "accepted": res.accepted,
         "honest_note": res.honest_note,
         "verdict": "ACCEPT" if res.accepted else "REJECT",
+        "geometry_drc_result": (None if res.geometry_drc_result is None else {
+            "passed": res.geometry_drc_result.passed,
+            "n_elements": res.geometry_drc_result.n_elements,
+            "n_polys": res.geometry_drc_result.n_polys,
+            "violations": res.geometry_drc_result.violations,
+            "width_note": res.geometry_drc_result.width_note,
+            "spacing_note": res.geometry_drc_result.spacing_note,
+            "honest_note": res.geometry_drc_result.honest_note,
+        }),
+        "perf_corners": [{
+            "device": p.device, "bid": p.bid, "passed": p.passed,
+            "max_drift_pct": p.max_drift_pct, "corners": p.corners,
+            "note": p.note, "error": p.error,
+        } for p in res.perf_corners],
     }
 
 

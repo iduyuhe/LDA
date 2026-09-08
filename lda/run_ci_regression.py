@@ -86,6 +86,11 @@ CORE_SMOKES: List[str] = [
     "run_chip_design_demo.py",
     # 流片级验证管道（门3 接口细化：PDK→DRC→工艺角→实测回流）
     "run_tapeout_smoke.py",
+    # 🔴 v0.9.60：流片**全链路收口**——S3.5 寄生 / S3.6 几何 DRC / S3b 性能角 /
+    #   S4 LVS 四段「在管道里真跑起来」的端到端证据（旧 tapeout smoke 只覆盖了
+    #   S1-S3 参数级 DRC，四段重路径无端到端断言）。15 判据，每条配反向个案，
+    #   含 v0.9.33 层次化零元素假绿防回潮。实测 0.23s。CI core 136→137。
+    "run_tapeout_fullchain_smoke.py",
     # 计数一致性门禁（v0.8.10：引擎/包/题库/CI 条数 vs README 宣传串机器断言，防计数漂移根治）
     "run_count_consistency_smoke.py",
     # 🔴 v0.9.31（T-6）：requires-python 声明下限 ≥ 代码实际语法下界（PEP 701 跨行
@@ -129,6 +134,11 @@ CORE_SMOKES: List[str] = [
     "run_gdsfactory_bridge_smoke.py",
     # 版图几何级 RC 寄生估算（v0.8.31：设计侧主权闭环收口 S3.5）
     "run_parasitic_rc_smoke.py",
+    # 🔴 v0.9.60：几何级 DRC 语义——旧度量把「多边形细分步长」当线宽（Y 分支
+    #   0.039µm 假红）、min_width_ok/min_spacing_ok 两个标志恒 True（假绿）、
+    #   间距剪枝要求 bbox 重叠致真违规漏检。11 判据含反向。实测 0.18s。
+    #   CI core 135→136。
+    "run_gds_drc_semantics_smoke.py",
     # 产品级基准对照库（v0.8.32：实证锚产品级扩展 + B 生态播种，免流片）
     "run_golden_product_smoke.py",
     # 🔴 研发生产系统（M3 · v0.9.41 补登）：解析《2027 产品规划》→ 四赛道生产任务

@@ -29,14 +29,84 @@ def _bbox(poly: List[Tuple[float, float]]) -> Tuple[float, float, float, float]:
     return min(xs), min(ys), max(xs), max(ys)
 
 
+def _pt_seg_dist(p, s0, s1) -> float:
+    """点到线段最短距离（几何内核原语，供线宽/间距共用）。"""
+    dx, dy = s1[0] - s0[0], s1[1] - s0[1]
+    L2 = dx * dx + dy * dy
+    if L2 == 0:
+        return ((p[0] - s0[0]) ** 2 + (p[1] - s0[1]) ** 2) ** 0.5
+    t = max(0.0, min(1.0, ((p[0] - s0[0]) * dx + (p[1] - s0[1]) * dy) / L2))
+    qx, qy = s0[0] + t * dx, s0[1] + t * dy
+    return ((p[0] - qx) ** 2 + (p[1] - qy) ** 2) ** 0.5
+
+
+# 最小宽度度量的复杂度保护：O(h·n)，超过此点数先均匀抽稀。
+_MAX_POLY_PTS_FOR_WIDTH = 600
+
+
+def _convex_hull(poly: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+    """Andrew monotone chain 凸包（逆时针，去掉共线中间点）。"""
+    pts = sorted(set(poly))
+    if len(pts) <= 2:
+        return pts
+
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    lower = []
+    for p in pts:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+    upper = []
+    for p in reversed(pts):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+    return lower[:-1] + upper[:-1]
+
+
 def _poly_width(poly: List[Tuple[float, float]]) -> float:
-    """简单多边形最小边宽（带符号闭合 → 用相邻顶点距离近似 PATH 等效线宽）。"""
-    if len(poly) < 2:
+    """多边形最小宽度 = 最小平行带宽度（凸包上取到，标准定义）。
+
+    ⚠️ v0.9.60 修正（DRC 全链路盘点实测抓出）：
+    旧实现取「相邻顶点最小距离」，把**多边形细分步长**当成了线宽——
+    SymmetricYBranch 的 boundary 沿 x 以 0.039µm 步长离散（67 点），旧度量报
+    「最小边 0.039µm < 0.12µm」而实际波导宽 0.5µm ⇒ **几何 DRC 假红**。
+    新度量 = 凸包的最小平行带宽度（对凸多边形必在某条边处取到）：
+      · 细线矩形（5×0.04）→ 0.040µm，真违规照抓；
+      · 锥形/梯形波导（0.5µm 宽）→ ≈0.65µm，细分步长不再参与 ⇒ 假红消除。
+    🔴 诚实边界：凹多边形（如带 V 形缺口的分叉结构）的凸包会填平凹口，
+    本度量给出的是**上界**，可能高估局部最小宽度 ⇒ 调用方须看
+    `width_note`（凹形时标注「按凸包近似，可能高估」），不假称精确覆盖。
+    """
+    n = len(poly)
+    if n < 2:
         return 0.0
-    return min(
-        ((poly[i][0] - poly[i - 1][0]) ** 2 + (poly[i][1] - poly[i - 1][1]) ** 2) ** 0.5
-        for i in range(1, len(poly))
-    )
+    if n < 3:
+        x0, y0, x1, y1 = _bbox(poly)
+        return min(x1 - x0, y1 - y0)
+    if n > _MAX_POLY_PTS_FOR_WIDTH:
+        step = int(n / _MAX_POLY_PTS_FOR_WIDTH) + 1
+        poly = poly[::step]
+        n = len(poly)
+    hull = _convex_hull(poly)
+    h = len(hull)
+    if h < 3:
+        x0, y0, x1, y1 = _bbox(hull)
+        return min(x1 - x0, y1 - y0)
+    best = float("inf")
+    for i in range(h):
+        a, b = hull[i], hull[(i + 1) % h]
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        L = (dx * dx + dy * dy) ** 0.5
+        if L == 0:
+            continue
+        # 所有顶点到该边所在直线的距离最大值 = 该方向平行带宽度
+        far = max(abs((p[0] - a[0]) * dy - (p[1] - a[1]) * dx) / L for p in hull)
+        if far < best:
+            best = far
+    return best if best != float("inf") else 0.0
 
 
 def _segments(poly: List[Tuple[float, float]]) -> List[Tuple[Tuple[float, float], Tuple[float, float]]]:
@@ -55,16 +125,8 @@ def _seg_distance(a: Tuple[Tuple[float, float], Tuple[float, float]],
     → **锁定纯 Python 为最优路径**，不做 numba 化（不引入无效依赖）。
     批量级热点（CongestionMap 标记 / 大数组）才值得 numba，见 router。
     """
-    def d_pt_seg(p, s0, s1) -> float:
-        dx, dy = s1[0] - s0[0], s1[1] - s0[1]
-        L2 = dx * dx + dy * dy
-        if L2 == 0:
-            return ((p[0] - s0[0]) ** 2 + (p[1] - s0[1]) ** 2) ** 0.5
-        t = max(0.0, min(1.0, ((p[0] - s0[0]) * dx + (p[1] - s0[1]) * dy) / L2))
-        qx, qy = s0[0] + t * dx, s0[1] + t * dy
-        return ((p[0] - qx) ** 2 + (p[1] - qy) ** 2) ** 0.5
-    cand = [d_pt_seg(a[0], b[0], b[1]), d_pt_seg(a[1], b[0], b[1]),
-            d_pt_seg(b[0], a[0], a[1]), d_pt_seg(b[1], a[0], a[1])]
+    cand = [_pt_seg_dist(a[0], b[0], b[1]), _pt_seg_dist(a[1], b[0], b[1]),
+            _pt_seg_dist(b[0], a[0], a[1]), _pt_seg_dist(b[1], a[0], a[1])]
     if a[0] != a[1] and b[0] != b[1]:
         # 简单交叉检测（近似）
         return min(cand)
@@ -76,18 +138,30 @@ def check_geometry(structures: Dict[str, List[Dict]],
     """对 GDS 结构字典（parse_gds_polygons 输出）做几何 DRC 快查。
 
     返回 {all_pass, min_width_ok, min_spacing_ok, min_area_ok,
-          violations[], n_elements, rules}。诚实标注 "未覆盖" 项。
+          violations[], n_*_violations, n_elements, n_polys, spacing_note,
+          rules}。三个 *_ok 标志与 violations 分类累积同源（不会自相矛盾）。
+    诚实标注 "未覆盖" 项。
     """
     r = dict(DEFAULT_GEOM_RULES)
     if rules:
         r.update(rules)
     violations: List[str] = []
+    # v0.9.60：违规**分类累积**（非事后字符串反解）。旧实现用
+    # `v.startswith(("PATH 线宽","多边形最小边"))` 判定 min_width_ok，而实际字符串
+    # 以「结构名: 」开头 ⇒ 恒不匹配 ⇒ min_width_ok **恒 True**；min_spacing_ok
+    # 更把正则 ".*↔" 当字面量传给 startswith ⇒ 同样恒 True。两个标志位是死的
+    # （实测：构造 2 条线宽违规 + 1 条间距违规，两标志仍报 True —— 假绿）。
+    # 无人消费只是运气；改为分类累积后标志与 violations 必然自洽。
+    w_viol: List[str] = []
+    sp_viol: List[str] = []
+    a_viol: List[str] = []
     min_w = float(r["min_width_um"])
     min_sp = float(r["min_spacing_um"])
     min_a = float(r["min_area_um2"])
 
     all_polys: List[Tuple[str, Dict]] = []
     n_elements = 0
+    n_concave = 0
     for sname, elems in structures.items():
         for e in elems:
             n_elements += 1
@@ -96,23 +170,34 @@ def check_geometry(structures: Dict[str, List[Dict]],
                 # PATH：用其 WIDTH 判线宽（更可靠）
                 w = e["width"]
                 if w < min_w:
-                    violations.append(f"{sname}: PATH 线宽 {w:.3f}µm < {min_w}µm")
+                    msg = f"{sname}: PATH 线宽 {w:.3f}µm < {min_w}µm"
+                    violations.append(msg)
+                    w_viol.append(msg)
                 # PATH 面积近似 = 长度×宽
                 segs = _segments(pts)
                 length = sum(((s[0][0] - s[1][0]) ** 2 + (s[0][1] - s[1][1]) ** 2) ** 0.5
                              for s in segs)
                 if length * w < min_a:
-                    violations.append(f"{sname}: PATH 面积 ≈ {length * w:.3f}µm² < {min_a}µm²")
+                    msg = f"{sname}: PATH 面积 ≈ {length * w:.3f}µm² < {min_a}µm²"
+                    violations.append(msg)
+                    a_viol.append(msg)
             elif len(pts) >= 2:
                 all_polys.append((sname, e))
                 if e.get("kind") == "boundary":
                     w = _poly_width(pts)
+                    hull_n = len(_convex_hull(pts))
+                    if hull_n < len(pts):
+                        n_concave += 1      # 凹形 → 凸包近似，宽度是上界
                     if w < min_w:
-                        violations.append(f"{sname}: 多边形最小边 {w:.3f}µm < {min_w}µm")
+                        msg = f"{sname}: 多边形最小局部宽度 {w:.3f}µm < {min_w}µm"
+                        violations.append(msg)
+                        w_viol.append(msg)
                     x0, y0, x1, y1 = _bbox(pts)
                     area = (x1 - x0) * (y1 - y0)
                     if area < min_a:
-                        violations.append(f"{sname}: 面积 {area:.3f}µm² < {min_a}µm²")
+                        msg = f"{sname}: 面积 {area:.3f}µm² < {min_a}µm²"
+                        violations.append(msg)
+                        a_viol.append(msg)
 
     # 最小间距（仅相邻 bbox 重叠者计算，近似）
     # v0.8.41：O(n²) 双重循环 → 均匀网格候选（bbox 重叠 ⟺ 至少共享一格，
@@ -129,8 +214,16 @@ def check_geometry(structures: Dict[str, List[Dict]],
         all_y1 = max(b[3] for b in bboxes.values())
         span = max(all_x1 - all_x0, all_y1 - all_y0, 1e-9)
         cell = max(span / max(len(all_polys) ** 0.5, 1.0), 1e-6)
+        # v0.9.60 修正：旧剪枝要求「bbox 重叠」才查间距，而**间距违规恰好发生在
+        # 不重叠但过近**的元素之间（bbox 一重叠通常已是短路/相交）⇒ 真违规被
+        # 成片剪掉（实测：两块间距 0.03µm 的图形 n_spacing=0，漏检）。改为
+        # bbox **外扩 min_spacing** 后相交才保留——数学上保证「距离 < min_sp」
+        # 的对无一漏检，同时仍剪掉远距对（保留 O(n) 网格加速）。
+        pad = min_sp
+        ebboxes = {i: (b[0] - pad, b[1] - pad, b[2] + pad, b[3] + pad)
+                   for i, b in bboxes.items()}
         grid: Dict[Tuple[int, int], List[int]] = {}
-        for i, (x0, y0, x1, y1) in bboxes.items():
+        for i, (x0, y0, x1, y1) in ebboxes.items():
             for cx in range(int(x0 // cell), int(x1 // cell) + 1):
                 for cy in range(int(y0 // cell), int(y1 // cell) + 1):
                     grid.setdefault((cx, cy), []).append(i)
@@ -141,10 +234,10 @@ def check_geometry(structures: Dict[str, List[Dict]],
                 for b in range(a + 1, m):
                     i, j = occupants[a], occupants[b]
                     cand.add((i, j) if i < j else (j, i))
-        # 精确化：仅 bbox 重叠对（与旧语义一致——间距只在相邻元素间计算）
+        # 精确化：外扩 bbox 相交者才走精确段距
         cand = {(i, j) for i, j in cand
-                if not (bboxes[i][2] < bboxes[j][0] or bboxes[j][2] < bboxes[i][0]
-                        or bboxes[i][3] < bboxes[j][1] or bboxes[j][3] < bboxes[i][1])}
+                if not (ebboxes[i][2] < ebboxes[j][0] or ebboxes[j][2] < ebboxes[i][0]
+                        or ebboxes[i][3] < ebboxes[j][1] or ebboxes[j][3] < ebboxes[i][1])}
         for i, j in sorted(cand):
             d = min(
                 _seg_distance(s, t)
@@ -154,8 +247,10 @@ def check_geometry(structures: Dict[str, List[Dict]],
             spacing_checked += 1
             spacing_min = d if spacing_min is None else min(spacing_min, d)
             if d < min_sp:
-                violations.append(
-                    f"{all_polys[i][0]}↔{all_polys[j][0]}: 间距 {d:.3f}µm < {min_sp}µm")
+                msg = (f"{all_polys[i][0]}↔{all_polys[j][0]}: "
+                       f"间距 {d:.3f}µm < {min_sp}µm")
+                violations.append(msg)
+                sp_viol.append(msg)
     if spacing_checked == 0:
         # 单结构或无重叠：间距规则无法严格判定 → 诚实标 "未覆盖"
         spacing_note = "未覆盖（无相邻元素，间距规则需多元素叠加）"
@@ -164,13 +259,27 @@ def check_geometry(structures: Dict[str, List[Dict]],
 
     return {
         "all_pass": len(violations) == 0,
-        "min_width_ok": all(not v.startswith(("PATH 线宽", "多边形最小边")) for v in violations),
-        "min_spacing_ok": not any(v.startswith((".*↔",)) for v in violations),
-        "min_area_ok": not any("面积" in v for v in violations),
+        "min_width_ok": len(w_viol) == 0,
+        "min_spacing_ok": len(sp_viol) == 0,
+        "min_area_ok": len(a_viol) == 0,
+        "n_width_violations": len(w_viol),
+        "n_spacing_violations": len(sp_viol),
+        "n_area_violations": len(a_viol),
         "violations": violations,
         "n_elements": n_elements,
         "n_polys": len(all_polys),
         "spacing_note": spacing_note,
+        "width_note": (
+            "最小宽度 = 凸包最小平行带宽度；本版图无 BOUNDARY 多边形，"
+            "宽度检查仅覆盖 PATH 声明线宽（未覆盖多边形局部宽度）"
+            if not all_polys else
+            "最小宽度 = 凸包最小平行带宽度"
+            + f"（{len(all_polys)} 个 BOUNDARY 多边形参与）"
+            + (f"；其中 {n_concave} 个为凹多边形，凸包会填平凹口 ⇒ 该值为上界、"
+               f"可能高估局部最小宽度（不假称精确覆盖）" if n_concave else
+               "；全部为凸多边形 ⇒ 该值为精确最小宽度")
+        ),
+        "n_concave_polys": n_concave,
         "rules": r,
     }
 
@@ -187,6 +296,8 @@ def geometry_drc_markdown(report: Dict[str, Any]) -> str:
              f"最小间距 {report['rules']['min_spacing_um']}µm · "
              f"最小面积 {report['rules']['min_area_um2']}µm²")
     L.append(f"- 间距判定：{report['spacing_note']}")
+    if report.get("width_note"):
+        L.append(f"- 宽度判定：{report['width_note']}")
     for v in report["violations"][:12]:
         L.append(f"  - ❌ {v}")
     L.append("")

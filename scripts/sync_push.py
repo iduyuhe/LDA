@@ -89,6 +89,15 @@ def main():
             "-c", "http.sslBackend=openssl", "-c", "http.version=HTTP/1.1"]
     env2 = {**os.environ, "GIT_CONFIG_GLOBAL": "/dev/null",
             "GIT_CONFIG_SYSTEM": "/dev/null", "GIT_TERMINAL_PROMPT": "0"}
+    # 🔴 v0.9.60 实测订正：**必须在环境变量层**清代理，只清 git config 不够。
+    # 沙箱会注入 http_proxy/https_proxy=http://127.0.0.1:<随机端口>，且环境变量
+    # 优先级高于 `-c http.proxy=`（空值不覆盖已存在的环境变量）⇒ git 仍走那条链路。
+    # 该端口未必可达（如刚过一次意外重启），症状是「直连 + 代理两条支路全报
+    # Could not connect」，而同一时刻 `env -u http_proxy ... git ls-remote` 却成功
+    # ⇒ 是脚本的锅，不是网络的锅。故直连分支用「无代理环境」。
+    _PROXY_ENV_KEYS = ("http_proxy", "https_proxy", "all_proxy", "no_proxy",
+                       "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY")
+    env_noproxy = {k: v for k, v in env2.items() if k not in _PROXY_ENV_KEYS}
 
     if "gitee.com" in creds:
         print("[PUSH] gitee main ...")
@@ -99,18 +108,20 @@ def main():
         # 旧版无条件加 `-c http.proxy=socks5h://127.0.0.1:7890`，一旦本地代理没开
         # 就必然 `Failed to connect to github.com:443 over proxy`（exit=128），
         # 而同一次直连 `curl --noproxy '*' https://github.com` 返回 **200**。
-        # ⇒ **先直连（显式清空代理），失败再退回 SOCKS5 代理**，两条路都留着。
+        # ⇒ **先直连（环境变量层清空代理），失败再退回 SOCKS5 代理**，两条路都留着。
         # 直连也走不通时（DNS 污染 / SNI 过滤）的兜底仍是：paramiko 借生产服务器
         # 115.191.20.92 起 SOCKS5 中继（见项目记忆「代理没开时的备用通路」）。
         print("[PUSH] github main (direct, proxy cleared) ...")
-        r = subprocess.run([*base, "-c", "http.proxy=", "-c", "https.proxy=",
-                            "push", "github", "main"], cwd=REPO, env=env2)
+        r = subprocess.run([*base, "push", "github", "main"],
+                           cwd=REPO, env=env_noproxy)
         print(f"  github direct exit={r.returncode}")
         if r.returncode != 0:
             print("[PUSH] github main (fallback: socks5h://127.0.0.1:7890) ...")
+            # 同样要在环境变量层排除，否则注入的 5xxxx 端口会盖掉 socks5h 配置
             r = subprocess.run([*base,
                                 "-c", "http.proxy=socks5h://127.0.0.1:7890",
-                                "push", "github", "main"], cwd=REPO, env=env2)
+                                "push", "github", "main"],
+                               cwd=REPO, env=env_noproxy)
             print(f"  github proxy exit={r.returncode}")
 
     try:

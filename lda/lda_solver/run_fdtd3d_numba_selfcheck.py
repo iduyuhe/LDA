@@ -11,7 +11,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))))
-from lda.lda_solver.fdtd3d_numba import solve_spectrum_numba, run_greens_test_numba
+from lda.lda_solver.fdtd3d_numba import (solve_spectrum_numba, run_greens_test_numba,
+                                         _HAVE_NUMBA)
 from lda.lda_solver.tmm import solve_spectrum as tmm_solve_spectrum
 
 
@@ -52,6 +53,12 @@ def _report_greens(name, tol):
 
 
 def main():
+    if not _HAVE_NUMBA:
+        print(">>> 未安装 numba（可选依赖）：Numba-CPU 加速核交叉校验需要它。")
+        print(">>> 安装：pip install numba")
+        print(">>> 纯 numpy sovereign 核（run_fdtd3d_selfcheck.py）不依赖 numba，可照常跑。")
+        return 2
+
     print(">> LDA 自研 3D FDTD · Numba-CPU 加速核 · 物理定律锚交叉校验")
     print(">> ORACLE = TMM 多层膜解析解（一维退化极限）+ 点源球面波（真三维）")
 

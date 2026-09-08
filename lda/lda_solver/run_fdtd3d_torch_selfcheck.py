@@ -15,11 +15,17 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 from lda.lda_solver.fdtd3d_torch import (solve_spectrum_torch,
                                          run_greens_test_torch)
 from lda.lda_solver.tmm import solve_spectrum as tmm_solve_spectrum
-import torch
+
+try:  # torch 为可选性能后端（[torch] extra）；缺失时本脚本仍可导入，main() 打印指引后退出码 2
+    import torch
+    _HAVE_TORCH = True
+except Exception:  # noqa: BLE001
+    torch = None
+    _HAVE_TORCH = False
 
 
 def _device():
-    return 'cuda' if torch.cuda.is_available() else 'cpu'
+    return 'cuda' if (torch is not None and torch.cuda.is_available()) else 'cpu'
 
 
 def _tmm_T(layers, wls):
@@ -59,6 +65,12 @@ def _report_greens(name, tol, device):
 
 
 def main():
+    if not _HAVE_TORCH:
+        print(">>> 未安装 torch（可选依赖）：3D FDTD PyTorch 后端交叉校验需要它。")
+        print(">>> 安装：pip install torch --index-url https://mirrors.tuna.tsinghua.edu.cn/pytorch/whl/cu128")
+        print(">>> 纯 numpy sovereign 核（run_fdtd3d_selfcheck.py）不依赖 torch，可照常跑。")
+        return 2
+
     device = _device()
     print(f">> LDA 自研 3D FDTD · PyTorch 后端（device={device}）交叉校验")
     print(">> ORACLE = TMM 多层膜解析解（一维退化极限）+ 点源球面波（真三维）")

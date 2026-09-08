@@ -19,7 +19,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))  # 项目根 D:\agent_LDA（lda 包所在）
 sys.path.insert(0, ROOT)
 
-import torch
+try:  # torch 为可选性能后端（[torch] extra）；缺失时本脚本仍可导入，main() 打印指引后退出码 2
+    import torch
+    _HAVE_TORCH = True
+except Exception:  # noqa: BLE001
+    torch = None
+    _HAVE_TORCH = False
+
 from lda.lda_solver.fdtd3d_torch import run_greens_test_torch
 
 
@@ -36,6 +42,12 @@ def main():
     ap.add_argument("--n", type=float, default=1.0)
     ap.add_argument("--tol", type=float, default=0.20, help="|Ez|·r 常数校验公差")
     args = ap.parse_args()
+
+    if not _HAVE_TORCH:
+        print(">>> 未安装 torch（可选依赖）：本超大网格实跑脚本需要它。")
+        print(">>> 安装：pip install torch --index-url https://mirrors.tuna.tsinghua.edu.cn/pytorch/whl/cu128")
+        print(">>> CPU 路径不受影响；核心求解链不依赖 torch。")
+        return 2
 
     device = ("cuda" if torch.cuda.is_available() else "cpu") if args.device == "auto" else args.device
 

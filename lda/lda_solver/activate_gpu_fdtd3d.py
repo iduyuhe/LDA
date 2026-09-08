@@ -25,7 +25,13 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))))
 
-import torch  # noqa: E402
+try:  # torch 为可选性能后端（[torch] extra）；缺失时本脚本仍可导入，main() 打印指引后退出码 2
+    import torch  # noqa: E402
+    _HAVE_TORCH = True
+except Exception:  # noqa: BLE001
+    torch = None
+    _HAVE_TORCH = False
+
 from lda.lda_solver.fdtd3d_torch import (solve_spectrum_torch,  # noqa: E402
                                          run_greens_test_torch)
 from lda.lda_solver.tmm import solve_spectrum as tmm_solve_spectrum  # noqa: E402
@@ -69,7 +75,9 @@ def _max_rel(a, b):
     return max(abs(x - y) / (abs(y) + 1e-12) for x, y in zip(a, b))
 
 
-def _guide_and_exit():
+def _guide_and_exit(reason=""):
+    if reason:
+        print(f"\n>>> {reason}")
     print("\n>>> CUDA 不可用：主权 3D 核 GPU 路径尚未激活。")
     print(">>> 安装 CUDA 版 torch 轮子（在'自配 GPU 算力'的部署机上执行）：")
     print("    方式一（官方源）：")
@@ -84,6 +92,9 @@ def _guide_and_exit():
 
 
 def main():
+    if not _HAVE_TORCH:
+        return _guide_and_exit("未安装 torch（可选依赖）：GPU 激活脚本需要它。")
+
     if not torch.cuda.is_available():
         return _guide_and_exit()
 

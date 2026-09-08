@@ -20,6 +20,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 SYS_PY = sys.executable
 
+try:  # torch 为可选性能后端（[torch] extra）；缺失时本脚本跳过 torch 后端而非裸崩
+    import torch
+    _HAVE_TORCH = True
+except Exception:  # noqa: BLE001
+    torch = None
+    _HAVE_TORCH = False
+
 # 每个后端在独立子进程中运行的 worker 代码（只 import 自己，互不污染）
 WORKER = r'''
 import sys, time, json
@@ -66,11 +73,13 @@ def main():
     print(">> L2-B 第二步基准 (N=%d greens)" % N)
     backends = ["numpy", "numba-cpu", "torch-cpu"]
     # torch-cuda 仅在可用时加入
-    import torch as _t
-    has_gpu = _t.cuda.is_available()
-    if has_gpu:
+    if not _HAVE_TORCH:
+        backends = ["numpy", "numba-cpu"]
+        print("   torch 未安装（可选依赖）— torch-cpu / torch-cuda 后端跳过，"
+              "numpy / numba-cpu 基准照常")
+    elif torch.cuda.is_available():
         backends.append("torch-cuda")
-        print("   CUDA available: %s" % _t.cuda.get_device_name(0))
+        print("   CUDA available: %s" % torch.cuda.get_device_name(0))
     else:
         print("   CUDA unavailable (wheel blocked in this sandbox) — torch-cuda 跳过")
 

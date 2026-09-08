@@ -319,6 +319,17 @@ CORE_SMOKES: List[str] = [
     #   「E5 目前确实判不了」**同时钉死**：后者是已知缺口锁，模型够格时
     #   **转红**提醒更新账本。纯 numpy，实测 ~17s。CI core 132→133。
     "run_mmi_eme_smoke.py",
+    # 🔴 v0.9.59 治理⑤收尾：可选后端（torch/numba/cupy）模块级硬依赖**全包**护栏。
+    #   ① 静态：ast 扫描 lda/ 全包（393 文件）在模块级（非 try / 非函数类体内）
+    #      不得裸 import torch/numba/cupy —— 范围是全包而非硬编码清单，新增文件
+    #      自动纳入，杜绝「清单会增长 ⇒ 断言静默漂移」的定时炸弹（v0.9.41 铁律）。
+    #   ② 动态：屏蔽 torch/numba/cupy 的子进程里 runpy 实跑 4 个顶层 GPU 脚本
+    #      （activate_gpu_fdtd3d / run_fdtd3d_torch_selfcheck / run_large_grid /
+    #      verify_gpu_focused），断言「打印指引后退出码 2」而非 ImportError 裸崩。
+    #   ③ 反向测试 R1（扫描器双向标定：坏样本必被抓 / 好样本必放行）+ R2（顶层
+    #      裸 import 的坏脚本必须裸崩，证明步骤②真能区分优雅降级与硬依赖）。
+    #   CI core 134→135。
+    "run_optional_import_guard_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

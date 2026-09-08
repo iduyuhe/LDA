@@ -7,7 +7,13 @@
 """
 import os, sys, time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-import torch
+try:  # torch 为可选性能后端（[torch] extra）；缺失时本脚本仍可导入，main() 打印指引后退出码 2
+    import torch
+    _HAVE_TORCH = True
+except Exception:  # noqa: BLE001
+    torch = None
+    _HAVE_TORCH = False
+
 from lda.lda_solver.fdtd3d_torch import solve_spectrum_torch, run_greens_test_torch
 from lda.lda_solver.tmm import solve_spectrum as tmm_solve
 from activate_gpu_fdtd3d import _cases, _tmm_T, _max_rel
@@ -16,7 +22,14 @@ NUMBA_CPU_BASELINE_S = 20.08
 TORCH_CPU_BASELINE_S = 102.86
 
 def main():
-    assert torch.cuda.is_available(), "CUDA 不可用"
+    if not _HAVE_TORCH:
+        print(">>> 未安装 torch（可选依赖）：本 GPU 聚焦验证脚本需要它。")
+        print(">>> 安装：pip install torch --index-url https://mirrors.tuna.tsinghua.edu.cn/pytorch/whl/cu128")
+        print(">>> CPU 路径（numba-cpu / torch-cpu 基线）不受影响；核心求解链不依赖 torch。")
+        return 2
+    if not torch.cuda.is_available():
+        print(">>> CUDA 不可用：本脚本需要 NVIDIA GPU + CUDA 版 torch。")
+        return 2
     dev = torch.cuda.get_device_name(0)
     cap = torch.cuda.get_device_capability(0)
     print("=" * 60)
@@ -63,6 +76,8 @@ def main():
     total = ok_all and eq_ok
     print("\n>> GPU 激活总判定:", "PASS" if total else "FAIL",
           f"(selfcheck={'PASS' if ok_all else 'FAIL'}, equiv={'PASS' if eq_ok else 'FAIL'})")
+    return 0 if total else 1
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

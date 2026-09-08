@@ -93,6 +93,22 @@
 .wb-demo .wb-tag{font-size:11px;color:#0F6E56;margin-left:6px}
 .wb-collapsed{display:none}
 .wb-flash{outline:3px solid #185FA5;outline-offset:4px;border-radius:8px}
+.wb-hero{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 14px}
+.wb-hcard{position:relative;border:1px solid #3f5e93;border-radius:12px;padding:14px 16px;background:#16243f;box-shadow:0 8px 24px rgba(2,6,20,.35);overflow:hidden}
+.wb-hcard.feat{background:#1b3a6b;border-color:#3b82f6}
+.wb-hcard.eco{background:#241a3d;border-color:#6d28d9}
+.wb-hcard h3{margin:0 0 6px;font-size:15px;color:#eaf2ff;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wb-hcard .tag{font-size:11px;padding:2px 9px;border-radius:999px;background:#0f6e56;color:#eafff7;font-weight:600;white-space:nowrap}
+.wb-hcard .tag.sys{background:#b0841a;color:#1a1205}
+.wb-hcard .tag.eco{background:#6d28d9;color:#f3e8ff}
+.wb-hcard p{margin:0 0 8px;font-size:12.5px;line-height:1.5;color:#c4d2ec}
+.wb-hcard p.you{font-size:12px;color:#9fb0d4;margin:0 0 10px}
+.wb-hcard p.you b{color:#eaf2ff}
+.wb-hcard .cta{display:inline-flex;align-items:center;gap:6px;background:#185FA5;color:#fff;border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600}
+.wb-hcard .cta:hover{background:#1f74c4}
+.wb-hcard.eco .cta{background:#6d28d9}
+.wb-hcard.eco .cta:hover{background:#7c3aed}
+@media(max-width:720px){.wb-hero{grid-template-columns:1fr}}
 body{padding-top:56px}
 </style>
 </head>
@@ -116,17 +132,43 @@ body{padding-top:56px}
   <span class="sub" data-page-node-id="hOlhnGZztFBOepku4YdCE3">agent-native 光子 + 量子芯片设计 · 验证内核实时预览（L4）</span>
 </header>
 
-  <!-- LDA 双模横幅：器件级（当前）/ 系统级（→展厅 insights），并引导去展厅与超市 -->
-  <div id="ldaModeBar" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 18px;margin:0 0 14px;background:#1b2c4d;border:1px solid #3f5e93;border-radius:12px;box-shadow:0 0 0 1px rgba(63,94,147,.35),0 10px 30px rgba(2,6,20,.4)" data-page-node-id="RnvvlA8V6pQLbZiHW633mT">
-    <span style="color:#9fb0d4;font-size:12px" data-page-node-id="kCMEVyuwDJLtmAvIZDHlOR">LDA 双模工作台：</span>
-    <div style="display:flex;gap:8px" data-page-node-id="jQmKdDFeBWq4M49svdTl7w">
-      <span style="background:#3b82f6;color:#04122a;font-weight:700;font-size:13px;padding:6px 14px;border-radius:999px" data-page-node-id="DYyFPnCAR9KmJpIni08pJM">器件级 · 组件设计闭环（你在这）</span>
-      <a href="/insights.html" style="background:#fbbf24;color:#1a1205;border:1px solid #b0841a;font-weight:700;font-size:13px;padding:6px 14px;border-radius:999px;text-decoration:none;display:inline-flex;align-items:center" data-page-node-id="1qCwzMyF6tBNB2StooDWBj">系统级 · 护城河（展厅）→</a>
+  <!-- LDA 英雄区：2×2 四卡（内循环项目交付 + 外循环生态闭环），不照搬诚实边界，文案做角色翻译 -->
+  <div class="wb-hero" data-page-node-id="wbHero">
+    <!-- 卡1 ★ 旗舰流程（器件级 · 内循环 · 项目交付） -->
+    <div class="wb-hcard feat" data-page-node-id="wbH1">
+      <h3>★ 旗舰流程 · 设计闭环 <span class="tag">器件级</span></h3>
+      <p>给一个目标指标，系统在参数空间用物理定律搜索，仅对 top-K 候选跑真实求解器双重验证，返回被求解器确认可用的最优器件，并自动包成机器可校验的统一设计包。LLM 不进判决路径。</p>
+      <p class="you">你会得到：一个<b>可直接下载的 DesignPackage（JSON）</b>——不是 PPT，是机器可跑的真实设计。</p>
+      <button class="cta" onclick="wbGo('runDesignOutcome')">立即试用 →</button>
     </div>
-    <div style="margin-left:auto;display:flex;gap:8px" data-page-node-id="Z7GE0soQI4ooV85FqP730g">
-      <a href="/insights.html" style="background:transparent;color:#eaf2ff;border:1px solid #3f5e93;border-radius:8px;padding:6px 12px;font-size:13px;text-decoration:none" data-page-node-id="klKIxJj1v8F2ia2CmVhN9Z">🏛 展厅 · 能力展示</a>
-      <a href="/store.html" style="background:transparent;color:#eaf2ff;border:1px solid #3f5e93;border-radius:8px;padding:6px 12px;font-size:13px;text-decoration:none" data-page-node-id="QGw8qdPqCrRhLud4IDG78C">🛒 创新超市</a>
+    <!-- 卡2 提案编译器（系统级 · 内循环 · 提案） -->
+    <div class="wb-hcard" data-page-node-id="wbH2">
+      <h3>系统级提案编译器 <span class="tag sys">系统级</span></h3>
+      <p>把功能需求（信道数 / 间隔 / 带宽 / 余量 / 功率…）喂进去：锚前置剪枝可行域 → 域内候选生成 → 即提即验 → 确定性排序。生成与判决分离，终审选择权在人。</p>
+      <p class="you">你会得到：一份<b>过锚的可行提案</b>——哪些指标能做到、哪些做不到，一眼看清。</p>
+      <button class="cta" onclick="wbGo('runProposal')">运行提案编译器 →</button>
     </div>
+    <!-- 卡3 生态共建框架（生态地基 · 外循环） -->
+    <div class="wb-hcard eco" data-page-node-id="wbH3">
+      <h3>生态共建框架 <span class="tag eco">生态地基</span></h3>
+      <p>开源 Agent 原生 EDA 的护城河：harness 题库从 B13 扩到 B18（5 道新物理定律锚）、主权依赖三级分级（A 永不借 / B 借今踢后 / C 第一天自主）、开放 PDK/器件 Registry 入口。生态干净可验证。</p>
+      <p class="you">你会得到：一套<b>可经代码评审 + golden 注册</b>的贡献标准——你提交的锚/PDK 不靠 LLM 判决，靠物理定律。</p>
+      <button class="cta" onclick="wbGo('runEco')">查看生态快照 →</button>
+    </div>
+    <!-- 卡4 社区提交入口（生态入口 · 外循环） -->
+    <div class="wb-hcard eco" data-page-node-id="wbH4">
+      <h3>社区提交入口 <span class="tag eco">生态入口</span></h3>
+      <p>在 D-93 地基之上，向社区 / 退休专家 / 晶圆厂开放统一提交通道：提交器件本体（自动推断主权分级 + 冲突感知）、批量导入器件 JSON、提案新物理定律锚（仅登记 pending，需评审 + golden 注册）。</p>
+      <p class="you">你会得到：你的贡献进入<b>持久化 contributions.json</b>——开源生态因你而生长。</p>
+      <button class="cta" onclick="wbGo('submitDev')">去贡献 →</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 14px;color:#9fb0d4;font-size:12px">
+    <span>LDA 双模工作台：</span>
+    <span style="background:#3b82f6;color:#04122a;font-weight:700;padding:3px 10px;border-radius:999px">器件级（你在这）</span>
+    <span style="background:#fbbf24;color:#1a1205;font-weight:700;padding:3px 10px;border-radius:999px">系统级 → 护城河</span>
+    <a href="/insights.html" style="color:#eaf2ff;border:1px solid #3f5e93;border-radius:8px;padding:4px 10px;text-decoration:none">🏛 展厅</a>
+    <a href="/store.html" style="color:#eaf2ff;border:1px solid #3f5e93;border-radius:8px;padding:4px 10px;text-decoration:none">🛒 创新超市</a>
   </div>
 
 <div class="wrap" data-page-node-id="ZSb14R166GTEpeT15LSGPz">
@@ -1029,7 +1071,7 @@ body{padding-top:56px}
     <div class="conclusion" id="tpTopoConclusion" data-page-node-id="EXIWM1LjxExcqgYgMCWffZ"></div>
   </div>
 
-  <div class="sec" data-stage="init" data-stack="both" data-roles="customer,engineer" id="sec-eco" data-page-node-id="9OQ9oErLxX8YL4BwU9FrmA">
+  <div class="sec" data-stage="init" data-stack="both" data-roles="customer,engineer,expert" id="sec-eco" data-page-node-id="9OQ9oErLxX8YL4BwU9FrmA">
     <h3 data-page-node-id="zLZaLp4Ekd93C6dp0OCKGa">53 生态共建框架（D-93 · harness 题库 B14-B18 + 主权依赖 A/B/C + Registry 入口）</h3>
     <div class="hint" data-page-node-id="MbpBUBjE9LnH2C1HptYWCG">生态共建地基接口：① harness 题库从 B13 扩充到 B18（5 道新物理定律锚：定向耦合器 3dB 长 / Bragg 波长 / MMI 自成像长 / 约瑟夫森临界电流 / Purcell 因子）；② 主权依赖三级分级（A 永不借 / B 借今踢后 fork Gitee / C 第一天自主）；③ 开放 PDK/器件本体 Registry 入口（社区/退休专家/晶圆厂经统一入口流入真实 PDK）。<b data-page-node-id="0HlmzpUdbYFp6GC4g2JnSZ">诚实边界：真实晶圆厂 NDA-PDK 对接属发动期 D-62，暂缓，不在此硬编码。</b></div>
     <div class="row" data-page-node-id="pOVeWK5HXpU45sNhfAXNgv">
@@ -1040,7 +1082,7 @@ body{padding-top:56px}
     <div class="conclusion" id="ecoConclusion" data-page-node-id="AvCDSWZgl0dJArtpxaWDex"></div>
   </div>
 
-  <div class="sec" id="sec-ecosub" data-page-node-id="N8mpyfeu3dSBHnHA69YAOA">
+  <div class="sec" id="sec-ecosub" data-stage="init" data-stack="both" data-roles="engineer,expert" data-page-node-id="N8mpyfeu3dSBHnHA69YAOA">
     <h3 data-page-node-id="XwIhmMEk127N37xpNlFlwb">54 社区提交入口（D-94 · 真实 PDK/器件本体与 harness 提案的统一提交通道）</h3>
     <div class="hint" data-page-node-id="a9mfIBWigGDh7q0WpHjrGb">在 D-93 Registry 地基之上，向社区/退休专家/晶圆厂开放「提交入口」：① 提交器件本体（自动推断主权分级 A/B/C + 冲突感知 + 持久化贡献库 contributions.json）；② 批量导入器件 JSON；③ 提案新的物理定律锚（仅登记 pending，需代码评审 + golden 函数注册后方可纳入回归——LLM 不进判决路径）。<b data-page-node-id="rnTtxJxLhTC8C5QKcVSr9B">诚实边界：真实晶圆厂 NDA-PDK 对接仍属发动期 D-62 暂缓，本入口仅登记元数据，不硬编码商业 PDK。</b></div>
 
@@ -4150,6 +4192,14 @@ $('runProposal').onclick = runProposalDesign;
     document.getElementById('wbDrawer').innerHTML=html;
   }
   function openDrawer(o){document.getElementById('wbDrawer').classList.toggle('open',o);document.getElementById('wbScrim').classList.toggle('open',o);}
+  window.wbGo=function(id){
+    var btn=document.getElementById(id);
+    if(!btn) return;
+    btn.scrollIntoView({behavior:'smooth',block:'center'});
+    var sec=btn.closest('.sec');
+    if(sec){sec.classList.add('wb-flash');setTimeout(function(){sec.classList.remove('wb-flash');},1600);}
+    if(id==='runDesignOutcome'){try{btn.click();}catch(e){}}
+  };
   document.getElementById('wbMenuBtn').addEventListener('click',function(){openDrawer(!document.getElementById('wbDrawer').classList.contains('open'));});
   document.getElementById('wbScrim').addEventListener('click',function(){openDrawer(false);});
   document.getElementById('wbSearch').addEventListener('input',render);

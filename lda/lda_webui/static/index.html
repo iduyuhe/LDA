@@ -502,11 +502,11 @@
     <h2 data-page-node-id="JpxTezUtkxm9xVrTSlZb6r">⑳ 统一设计包（D-44 · design outcome 统一交付格式）</h2>
     <div class="hint" data-page-node-id="ZmTtNrrjDFNpCb5GoNjD2e">把 D-37（add-drop）/ D-41（量子）/ D-42（WDM）/ D-43（readout 混合链路）四类设计结果统一为<b data-page-node-id="kopMYwhCfJlck97XwwEnYj">同一份 DesignPackage</b>——无论设计什么，交付物格式一致、机器可校验、可汇总：`ir`（设计意图回溯）+ `design`（目标/参数/反解）+ `verification`（死标量验收门 + verdict）+ `artifacts`（SVG/谱/GDS）+ `honest_notes`（诚实标注必填）。<b data-page-node-id="PWgpymFKQIK4YUr6vGtzUx">verification.passed 是唯一验收门（LLM 不进判决路径）。</b></div>
     <div class="row" data-page-node-id="1lvbvLkvKSUsD8gb7bCyDI">
-      <button class="btn" id="runDp" data-page-node-id="Lz7D9v8cAdtccBHiX8ywws">构建全部 4 类设计包</button>
+      <button class="btn" id="runDpPkg" data-page-node-id="Lz7D9v8cAdtccBHiX8ywws">构建全部 4 类设计包</button>
     </div>
-    <div id="dpSummary" class="summary" data-page-node-id="f6fRXYlEWo4wA0PgHqSCyG"></div>
-    <div id="dpBody" data-page-node-id="kYL9hikvTS3lzFofXZrM5o"></div>
-    <div class="conclusion" id="dpConclusion" data-page-node-id="arSB2AWGIpQQG806MVOyNI"></div>
+    <div id="dpPkgSummary" class="summary" data-page-node-id="f6fRXYlEWo4wA0PgHqSCyG"></div>
+    <div id="dpPkgBody" data-page-node-id="kYL9hikvTS3lzFofXZrM5o"></div>
+    <div class="conclusion" id="dpPkgConclusion" data-page-node-id="arSB2AWGIpQQG806MVOyNI"></div>
   </div>
 
   <div class="sec" data-page-node-id="5L9nmOaUjYW2fEpAfpqUIm">
@@ -537,10 +537,10 @@
       <label data-page-node-id="I6h79jRWf3X4mN4JiRkfs4">n̄<input id="rfNbar" type="number" step="1" value="10" style="width:50px" data-page-node-id="FASpZGAqj4TtO75Brbn3qc"></label>
       <button class="btn" id="runRf" data-page-node-id="R16M6n08rdrrgzTdeHT3pI">预算读出保真度</button>
     </div>
-    <div id="rfSummary" class="summary" data-page-node-id="1maALW5TwRgKYyFGjpDW8q"></div>
-    <div id="rfBody" data-page-node-id="Ww77tyecoMVSxHSqx7CfEB"></div>
+    <div id="rfReadSummary" class="summary" data-page-node-id="1maALW5TwRgKYyFGjpDW8q"></div>
+    <div id="rfReadBody" data-page-node-id="Ww77tyecoMVSxHSqx7CfEB"></div>
     <div id="rfCurve" style="margin-top:10px" data-page-node-id="rRBzhQ4PC726aOJVICX2WP"></div>
-    <div class="conclusion" id="rfConclusion" data-page-node-id="WHhlxPRZEu1HVEvWkMrWHz"></div>
+    <div class="conclusion" id="rfReadConclusion" data-page-node-id="WHhlxPRZEu1HVEvWkMrWHz"></div>
   </div>
 
   <div class="sec" data-page-node-id="apzKaea1Dk3RgEf29T4nPs">
@@ -926,11 +926,11 @@
       <label data-page-node-id="BZK869D8b9oS3tUygXkikO">控制点:<input id="spNc" value="8" size="3" data-page-node-id="nyVhhAULZnRKDHSTCIumhV"></label>
       <label data-page-node-id="JDyrSMwDFO3CcSltk0Jy6i">迭代:<input id="spIters" value="10" size="3" data-page-node-id="xeo17O39sfb7Mm4udPkp8F"></label>
       <label data-page-node-id="kBroNmJj1K4L0sUEw5stF6">波长(,分隔):<input id="spWls" value="1.5,1.6" size="10" data-page-node-id="vO4luwPus3E4DdNqEBneTr"></label>
-      <button class="btn" id="runSp" data-page-node-id="0C55bIYAazwRUScbYq4Y2g">谱形×3D 逆设计</button>
+      <button class="btn" id="runSpInv" data-page-node-id="0C55bIYAazwRUScbYq4Y2g">谱形×3D 逆设计</button>
     </div>
-    <div id="spSummary" class="summary" data-page-node-id="K6cQkUghLFUMA0blTkk3kY"></div>
-    <div id="spBody" data-page-node-id="uOs58ehJ1TGE1qswmr8oYW"></div>
-    <div class="conclusion" id="spConclusion" data-page-node-id="wrj8v5U66dHjLgqj2WLTZR"></div>
+    <div id="spInvSummary" class="summary" data-page-node-id="K6cQkUghLFUMA0blTkk3kY"></div>
+    <div id="spInvBody" data-page-node-id="uOs58ehJ1TGE1qswmr8oYW"></div>
+    <div class="conclusion" id="spInvConclusion" data-page-node-id="wrj8v5U66dHjLgqj2WLTZR"></div>
   </div>
 
   <div class="sec" id="sec-perf3d" data-page-node-id="ktERBV6fAYoe3k672iGiIC">
@@ -969,11 +969,11 @@
       <label data-page-node-id="GI1AVULu1cJSlrX8LsjWKR">δd:<input id="qdDd" value="0.4" size="4" data-page-node-id="cnlGNcdWNC9DPwgnGHnZqW"></label>
       <label data-page-node-id="6UCKzKqFJZ19LTlbOLTlrC">f_q2:<input id="qdFq2" value="5.2" size="4" data-page-node-id="r01fdVmmsLg8qTBtIsAhPG"></label>
       <label data-page-node-id="iBf0LBS1HrHwwL4EGnYO6X">g2:<input id="qdG2" value="0.08" size="4" data-page-node-id="rcSWis9RO0g4DNmVt9i2X4"></label>
-      <button class="btn" id="runQd" data-page-node-id="glQeZnmoKFw7MAX8VHgk8E">QEDA 纵深求解</button>
+      <button class="btn" id="runQdDepth" data-page-node-id="glQeZnmoKFw7MAX8VHgk8E">QEDA 纵深求解</button>
     </div>
-    <div id="qdSummary" class="summary" data-page-node-id="eSQsu7lkUPDCvxUzGGrzeV"></div>
-    <div id="qdBody" data-page-node-id="VCatbYspNAQeeDNBDWxY3Y"></div>
-    <div class="conclusion" id="qdConclusion" data-page-node-id="Vgf6ZgDE8A8dXIZhx9GjH5"></div>
+    <div id="qdDepthSummary" class="summary" data-page-node-id="eSQsu7lkUPDCvxUzGGrzeV"></div>
+    <div id="qdDepthBody" data-page-node-id="VCatbYspNAQeeDNBDWxY3Y"></div>
+    <div class="conclusion" id="qdDepthConclusion" data-page-node-id="Vgf6ZgDE8A8dXIZhx9GjH5"></div>
   </div>
 
   <div class="sec" id="sec-topo3d" data-page-node-id="GYjeWxzNhpzCT02OhGzojj">
@@ -985,9 +985,9 @@
       <label data-page-node-id="r51INog8DNueCEFh0jrGxt">迭代:<input id="tpIters" value="14" size="3" data-page-node-id="XZPZcs8THmncSsoYvmCNmp"></label>
       <button class="btn" id="runTp" data-page-node-id="dLTKl9qpgunHfrywyNrING">3D 拓扑逆设计</button>
     </div>
-    <div id="tpSummary" class="summary" data-page-node-id="3GsJrb1mXZf8JqTI1emrvY"></div>
-    <div id="tpBody" data-page-node-id="rhkln4pxvjCOJRrbzHMuqD"></div>
-    <div class="conclusion" id="tpConclusion" data-page-node-id="EXIWM1LjxExcqgYgMCWffZ"></div>
+    <div id="tpTopoSummary" class="summary" data-page-node-id="3GsJrb1mXZf8JqTI1emrvY"></div>
+    <div id="tpTopoBody" data-page-node-id="rhkln4pxvjCOJRrbzHMuqD"></div>
+    <div class="conclusion" id="tpTopoConclusion" data-page-node-id="EXIWM1LjxExcqgYgMCWffZ"></div>
   </div>
 
   <div class="sec" id="sec-eco" data-page-node-id="9OQ9oErLxX8YL4BwU9FrmA">
@@ -1242,7 +1242,18 @@ async function api(path, body){
   const opt = body ? {method:'POST', headers:{'Content-Type':'application/json'},
                        body: JSON.stringify(body)} : {};
   const r = await fetch(path, opt);
-  return r.json();
+  let data = null;
+  try { data = await r.json(); } catch(e) { data = null; }
+  // 代码质量审计修复（v0.9.x）：重计算端点鉴权失败/并发护栏会返回 401/429 +
+  // {error:"..."} 而非 200+业务数据。此前 api() 直接 return r.json()，调用方
+  // 拿到错误对象后访问 d.acceptance.passed / d.examples.length 等嵌套字段即抛
+  // TypeError 并被 catch 吞成"错误：TypeError"。统一在此抛服务端消息，由各函数
+  // 既有 try/catch 优雅展示，避免崩溃。
+  if(!r.ok){
+    const msg = (data && (data.error || data.detail)) ? (data.error || data.detail) : ('HTTP ' + r.status);
+    throw new Error(msg);
+  }
+  return data;
 }
 async function apiGet(path){
   const r = await fetch(path);
@@ -1252,6 +1263,9 @@ async function apiGet(path){
 // post 别名（修复既有潜伏 bug：20+ 处调用 post() 但此前未定义，
 // 点击相关按钮即抛 ReferenceError；v0.8.11g 浏览器实测暴露）
 const post = api;
+// postJson 别名（同一类潜伏 bug：约 20 处面板调用 postJson() 但此前未定义，
+// 点击即抛 ReferenceError: postJson is not defined；本次代码质量审计浏览器实测暴露）
+const postJson = api;
 
 function fmt(v){ return (typeof v==='number') ? (Math.abs(v)<1e-3 ? v.toExponential(3) : v.toPrecision(7)) : v; }
 
@@ -2066,28 +2080,28 @@ function renderRc(d){
 $('runRc').onclick = runRc;
 
 // ---- ⑳ D-44 统一设计包 ----
-async function runDp(){
-  const btn = $('runDp'); btn.disabled = true;
-  $('dpSummary').innerHTML = '<span class="spin"></span> 构建全部 4 类统一设计包（add_drop / quantum / wdm / readout_chain）…';
-  $('dpBody').innerHTML = '';
+async function runDpPkg(){
+  const btn = $('runDpPkg'); btn.disabled = true;
+  $('dpPkgSummary').innerHTML = '<span class="spin"></span> 构建全部 4 类统一设计包（add_drop / quantum / wdm / readout_chain）…';
+  $('dpPkgBody').innerHTML = '';
   try{
     const d = await api('/api/design_package', {kind:'all'});
-    renderDp(d);
-  }catch(e){ $('dpSummary').innerHTML = '运行失败：'+e; }
+    renderDpPkg(d);
+  }catch(e){ $('dpPkgSummary').innerHTML = '运行失败：'+e; }
   finally{ btn.disabled = false; }
 }
-function renderDp(d){
+function renderDpPkg(d){
   const pkgs = d.packages || {};
   const kinds = Object.keys(pkgs);
-  $('dpSummary').innerHTML = `统一设计包 schema=<b>${d.schema_version}</b> · ${kinds.length} 类包 · schema 全通过：<span class="verdict ${d.all_schema_ok?'ok':'fail'}">${d.all_schema_ok?'PASS':'FAIL'}</span>`;
+  $('dpPkgSummary').innerHTML = `统一设计包 schema=<b>${d.schema_version}</b> · ${kinds.length} 类包 · schema 全通过：<span class="verdict ${d.all_schema_ok?'ok':'fail'}">${d.all_schema_ok?'PASS':'FAIL'}</span>`;
   const rows = kinds.map(k=>{
     const v = pkgs[k]||{};
     return `<tr><td><b>${k}</b></td><td>${v.package_id||'—'}</td><td><span class="verdict ${v.passed?'ok':'fail'}">${v.passed?'PASS':'FAIL'}</span></td><td><span class="verdict ${v.schema_ok?'ok':'fail'}">${v.schema_ok?'OK':'ERR'}</span></td></tr>`;
   }).join('');
-  $('dpBody').innerHTML = `<table class="tbl"><thead><tr><th>设计包 kind</th><th>package_id</th><th>验收（verification.passed）</th><th>schema 校验</th></tr></thead><tbody>${rows}</tbody></table>`;
-  $('dpConclusion').innerHTML = `<b>统一设计包意义：</b>无论设计环形 add-drop、量子 Transmon、WDM 系统还是 readout 混合链路，交付物都是同一份机器可校验的 DesignPackage（ir+design+verification+artifacts+honest_notes）——agent 与人都用同一格式验收，这是"design outcome"的统一交付规范。`;
+  $('dpPkgBody').innerHTML = `<table class="tbl"><thead><tr><th>设计包 kind</th><th>package_id</th><th>验收（verification.passed）</th><th>schema 校验</th></tr></thead><tbody>${rows}</tbody></table>`;
+  $('dpPkgConclusion').innerHTML = `<b>统一设计包意义：</b>无论设计环形 add-drop、量子 Transmon、WDM 系统还是 readout 混合链路，交付物都是同一份机器可校验的 DesignPackage（ir+design+verification+artifacts+honest_notes）——agent 与人都用同一格式验收，这是"design outcome"的统一交付规范。`;
 }
-$('runDp').onclick = runDp;
+$('runDpPkg').onclick = runDpPkg;
 
 // ---- ㉑ D-46 N-qubit 频率复用读出 ----
 async function runMq(){
@@ -2152,12 +2166,12 @@ async function runRf(){
   const kw = {f01:parseFloat($('rfF01').value), delta:parseFloat($('rfDelta').value),
     g:parseFloat($('rfG').value), kappa_r:parseFloat($('rfKr').value),
     T1_us:parseFloat($('rfT1').value), nbar:parseFloat($('rfNbar').value)};
-  $('rfSummary').innerHTML = '<span class="spin"></span> 单发读出保真度预算中（SNR(t_m) 模型 → T1 污染 → 最优读出时间扫描 → 验收）…';
-  $('rfBody').innerHTML=''; $('rfCurve').innerHTML='';
+  $('rfReadSummary').innerHTML = '<span class="spin"></span> 单发读出保真度预算中（SNR(t_m) 模型 → T1 污染 → 最优读出时间扫描 → 验收）…';
+  $('rfReadBody').innerHTML=''; $('rfCurve').innerHTML='';
   try{
     const d = await api('/api/readout_fidelity', kw);
     renderRf(d);
-  }catch(e){ $('rfSummary').innerHTML = '运行失败：'+e; }
+  }catch(e){ $('rfReadSummary').innerHTML = '运行失败：'+e; }
   finally{ btn.disabled = false; }
 }
 function rfCurveSvg(d){
@@ -2183,18 +2197,18 @@ function rfCurveSvg(d){
   </svg>`;
 }
 function renderRf(d){
-  if(!d.ok){ $('rfSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
+  if(!d.ok){ $('rfReadSummary').innerHTML = '<span class="warn">'+(d.error||'失败')+'</span>'; return; }
   const acc = d.acceptance||{}, b = d.budget||{};
   const checks = (acc.checks||[]).map(c=>`<div class="note"><span class="verdict ${c.ok?'ok':'fail'}">${c.ok?'PASS':'FAIL'}</span> ${c.name}：${c.detail}</div>`).join('');
   const rows = (d.sweep||[]).map(s=>`<tr><td>${(s.t_m_s*1e9).toFixed(0)}</td><td>${s.snr.toFixed(2)}</td><td>${s.F0.toFixed(4)}</td><td>${s.F1.toFixed(4)}</td><td>${s.F.toFixed(4)}</td><td>${(s.t1_pollution*100).toFixed(2)}%</td></tr>`).join('');
-  $('rfSummary').innerHTML = `单发读出保真度预算：χ=<b>${d.chi_ghz}</b>GHz · κ_r=<b>${d.kappa_r_ghz}</b>GHz（χ/κ=<b>${(d.chi_ghz/d.kappa_r_ghz).toFixed(1)}</b>）· T1=<b>${d.T1_us}µs</b> · n̄=<b>${d.nbar}</b> · 最优 t_m*=<b>${d.t_m_star_ns}ns</b> → SNR=<b>${b.snr.toFixed(2)}</b> · F=<b>${b.F.toFixed(4)}</b> · <span class="verdict ${acc.passed?'ok':'fail'}">${acc.passed?'PASS':'FAIL'}</span>`;
-  $('rfBody').innerHTML = `
+  $('rfReadSummary').innerHTML = `单发读出保真度预算：χ=<b>${d.chi_ghz}</b>GHz · κ_r=<b>${d.kappa_r_ghz}</b>GHz（χ/κ=<b>${(d.chi_ghz/d.kappa_r_ghz).toFixed(1)}</b>）· T1=<b>${d.T1_us}µs</b> · n̄=<b>${d.nbar}</b> · 最优 t_m*=<b>${d.t_m_star_ns}ns</b> → SNR=<b>${b.snr.toFixed(2)}</b> · F=<b>${b.F.toFixed(4)}</b> · <span class="verdict ${acc.passed?'ok':'fail'}">${acc.passed?'PASS':'FAIL'}</span>`;
+  $('rfReadBody').innerHTML = `
     <div class="subhead">预算表（t_m 扫描）</div>
     <table class="tbl"><thead><tr><th>t_m(ns)</th><th>SNR</th><th>F0</th><th>F1(T1 污染)</th><th>F</th><th>污染%</th></tr></thead><tbody>${rows}</tbody></table>
     <div class="subhead">系统验收（死标量比对）</div>
     ${checks}`;
   $('rfCurve').innerHTML = rfCurveSvg(d);
-  $('rfConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
+  $('rfReadConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note)}</div>`;
 }
 $('runRf').onclick = runRf;
 
@@ -3263,9 +3277,9 @@ async function runQr(){
 $('runQr').onclick = runQr;
 
 // ---- 51 D-91 QEDA 纵深三件套（多能级展开 · 驱动场 · 读出串扰）----
-async function runQd(){
-  const btn = $('runQd'); btn.disabled = true;
-  $('qdSummary').innerHTML = '<span class="spin"></span> QEDA 纵深三件套（多能级收敛 + 驱动场 + 串扰 ZZ 耦合）运行中…';
+async function runQdDepth(){
+  const btn = $('runQdDepth'); btn.disabled = true;
+  $('qdDepthSummary').innerHTML = '<span class="spin"></span> QEDA 纵深三件套（多能级收敛 + 驱动场 + 串扰 ZZ 耦合）运行中…';
   const payload = {
     f_q: $('qdFq').value, alpha: $('qdAlpha').value, f_r: $('qdFr').value,
     g: $('qdG').value, Omega: $('qdOm').value, delta_d: $('qdDd').value,
@@ -3275,9 +3289,9 @@ async function runQd(){
     const d = await postJson('/api/qeda_depth', payload);
     const passed = d.acceptance ? d.acceptance.passed : false;
     const c = d.convergence||{}, dr = d.drive||{}, x = d.crosstalk||{};
-    $('qdSummary').innerHTML = `QEDA 纵深三件套：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（收敛 ${c.conv_rel_3_to_max!=null?(c.conv_rel_3_to_max*100).toFixed(2)+'%':'?'} · Rabi rel ${dr.rabi_self_rel_err!=null?(dr.rabi_self_rel_err*100).toFixed(2)+'%':'?'} · J_zz=${x.jzz_coupling_ghz!=null?x.jzz_coupling_ghz.toFixed(6)+' GHz':'?'}）`;
+    $('qdDepthSummary').innerHTML = `QEDA 纵深三件套：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（收敛 ${c.conv_rel_3_to_max!=null?(c.conv_rel_3_to_max*100).toFixed(2)+'%':'?'} · Rabi rel ${dr.rabi_self_rel_err!=null?(dr.rabi_self_rel_err*100).toFixed(2)+'%':'?'} · J_zz=${x.jzz_coupling_ghz!=null?x.jzz_coupling_ghz.toFixed(6)+' GHz':'?'}）`;
     const chk = (d.acceptance?d.acceptance.checks:[]).map(c2=>`<tr><td>${c2.name}</td><td class="${c2.ok?'ok':'fail'}">${c2.ok?'✓':'✗'}</td><td>${escapeHtml(c2.detail)}</td></tr>`).join('');
-    $('qdBody').innerHTML = `
+    $('qdDepthBody').innerHTML = `
       <div class="subhead">① 多能级电荷基底展开（色散读出收敛性）</div>
       <table class="tbl"><tbody>
         <tr><td>χ(L=3) → χ(L=6)</td><td class="ok">${c.chi_3level!=null?c.chi_3level.toFixed(6):'?'} → ${c.chi_maxlevel!=null?c.chi_maxlevel.toFixed(6):'?'} GHz（变化 ${c.conv_rel_3_to_max!=null?(c.conv_rel_3_to_max*100).toFixed(2)+'%':'?'} < 1% 收敛）</td></tr>
@@ -3295,17 +3309,17 @@ async function runQd(){
       </tbody></table>
       <div class="subhead">死标量验收</div>
       <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
-    $('qdConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+    $('qdDepthConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
   } catch(e){
-    $('qdSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+    $('qdDepthSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
   } finally { btn.disabled = false; }
 }
-$('runQd').onclick = runQd;
+$('runQdDepth').onclick = runQdDepth;
 
 // ---- 52 D-92 3D voxel 拓扑逆设计（3D 纵深最后一环）----
 async function runTp(){
   const btn = $('runTp'); btn.disabled = true;
-  $('tpSummary').innerHTML = '<span class="spin"></span> 3D voxel 拓扑逆设计（潜伏密度 + 二值化投影）运行中…';
+  $('tpTopoSummary').innerHTML = '<span class="spin"></span> 3D voxel 拓扑逆设计（潜伏密度 + 二值化投影）运行中…';
   const payload = {
     mode: 'topology',
     Nx: $('tpNx').value, Ny: $('tpNy').value, Nz: $('tpNz').value,
@@ -3315,9 +3329,9 @@ async function runTp(){
     const d = await postJson('/api/adjoint3d', payload);
     const passed = d.acceptance ? d.acceptance.passed : false;
     const o = d.optimization || {}, v = d.verify || {};
-    $('tpSummary').innerHTML = `3D voxel 拓扑：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（improvement=${o.improvement!=null?o.improvement.toFixed(2)+'×':'?'} · 设计体素 ${d.design_voxels||'?'}）`;
+    $('tpTopoSummary').innerHTML = `3D voxel 拓扑：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（improvement=${o.improvement!=null?o.improvement.toFixed(2)+'×':'?'} · 设计体素 ${d.design_voxels||'?'}）`;
     const chk = (d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
-    $('tpBody').innerHTML = `
+    $('tpTopoBody').innerHTML = `
       <div class="subhead">3D voxel 拓扑优化</div>
       <table class="tbl"><tbody>
         <tr><td>域 / 设计体素</td><td>${d.grid?d.grid.Nx+'×'+d.grid.Ny+'×'+d.grid.Nz:'?'} · ${d.design_voxels||'?'} voxel（核心层）</td></tr>
@@ -3329,9 +3343,9 @@ async function runTp(){
       </tbody></table>
       <div class="subhead">死标量验收</div>
       <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
-    $('tpConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+    $('tpTopoConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
   } catch(e){
-    $('tpSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+    $('tpTopoSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
   } finally { btn.disabled = false; }
 }
 $('runTp').onclick = runTp;
@@ -3735,9 +3749,9 @@ $('emLandBtn').onclick = emLand;
 refreshEmp();
 
 // ---- ㊽ D-87 谱形目标 × 3D 截面（多波长加权联合）----
-async function runSp(){
-  const btn = $('runSp'); btn.disabled = true;
-  $('spSummary').innerHTML = '<span class="spin"></span> 谱形目标 × 3D 截面（多波长加权联合）运行中…';
+async function runSpInv(){
+  const btn = $('runSpInv'); btn.disabled = true;
+  $('spInvSummary').innerHTML = '<span class="spin"></span> 谱形目标 × 3D 截面（多波长加权联合）运行中…';
   const wls = $('spWls').value.split(',').map(s=>parseFloat(s.trim())).filter(x=>!isNaN(x));
   const payload = {
     mode: 'spectral',
@@ -3750,9 +3764,9 @@ async function runSp(){
     const passed = d.acceptance ? d.acceptance.passed : false;
     const o = d.optimization || {}, v = d.verify || {};
     const per = (o.per_wavelength||[]).map(p=>`λ${p.wl_um}:${p.improvement.toFixed(2)}×`).join(' · ');
-    $('spSummary').innerHTML = `谱形目标 × 3D 截面：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（加权 imp=<b>${o.weighted_improvement!=null?o.weighted_improvement.toFixed(2)+'×':'?'}</b> ≥1.5 · 逐波长 ${per}）`;
+    $('spInvSummary').innerHTML = `谱形目标 × 3D 截面：<span class="verdict ${passed?'ok':'fail'}">${passed?'PASS':'FAIL'}</span>（加权 imp=<b>${o.weighted_improvement!=null?o.weighted_improvement.toFixed(2)+'×':'?'}</b> ≥1.5 · 逐波长 ${per}）`;
     const chk = (d.acceptance?d.acceptance.checks:[]).map(c=>`<tr><td>${c.name}</td><td class="${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</td><td>${escapeHtml(c.detail)}</td></tr>`).join('');
-    $('spBody').innerHTML = `
+    $('spInvBody').innerHTML = `
       <div class="subhead">多波长加权联合（物理网格固定只变 ω）</div>
       <table class="tbl"><tbody>
         <tr><td>3D 域 / 波长数</td><td>${d.grid?d.grid.Nx+'×'+d.grid.Ny+'×'+d.grid.Nz:'?'} · ${d.n_wavelengths!=null?d.n_wavelengths+' 波长':'?'}（设计体素 ${d.design_voxels!=null?d.design_voxels:'?'}）</td></tr>
@@ -3765,12 +3779,12 @@ async function runSp(){
       </tbody></table>
       <div class="subhead">死标量验收</div>
       <table class="tbl"><thead><tr><th>判据</th><th>结果</th><th>明细</th></tr></thead><tbody>${chk}</tbody></table>`;
-    $('spConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
+    $('spInvConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}<div class="note">${escapeHtml(d.note||'')}</div>`;
   } catch(e){
-    $('spSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
+    $('spInvSummary').innerHTML = '<span class="fail">请求失败：'+e+'</span>';
   } finally { btn.disabled = false; }
 }
-$('runSp').onclick = runSp;
+$('runSpInv').onclick = runSpInv;
 
 // ---- ⑥ D-05 L0 统一 IR（v0.2）----
 async function runIr(){

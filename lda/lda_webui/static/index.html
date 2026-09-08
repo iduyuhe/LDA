@@ -70,8 +70,47 @@
     border-radius:0 8px 8px 0;font-size:13px;margin-top:12px;color:var(--txt)}
   .footer{color:var(--mut);font-size:12px;text-align:center;margin-top:30px;line-height:1.7}
 </style>
+
+<style id="wb-nav-css">
+.wb-topbar{position:fixed;top:0;left:0;right:0;height:56px;display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--color-background-primary,#fff);border-bottom:1px solid rgba(0,0,0,.12);z-index:1000;font:13px/1.4 system-ui,sans-serif}
+.wb-topbar strong{font-size:14px;font-weight:600;white-space:nowrap}
+.wb-btn{border:1px solid rgba(0,0,0,.2);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px}
+.wb-btn:hover{background:#f0f4ff}
+.wb-search{flex:1;max-width:340px;padding:7px 10px;border:1px solid rgba(0,0,0,.2);border-radius:8px;font-size:13px}
+.wb-roles{display:flex;gap:4px}
+.wb-role{border:1px solid rgba(0,0,0,.2);background:#fff;border-radius:14px;padding:5px 12px;cursor:pointer;font-size:12px}
+.wb-role.wb-active{background:#185FA5;color:#fff;border-color:#185FA5}
+.wb-cta{margin-left:auto;background:#185FA5;color:#fff;border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;text-decoration:none;white-space:nowrap}
+.wb-drawer{position:fixed;top:56px;left:0;bottom:0;width:320px;background:#fff;border-right:1px solid rgba(0,0,0,.12);z-index:999;transform:translateX(-100%);transition:transform .2s ease;overflow-y:auto;padding:12px}
+.wb-drawer.open{transform:none}
+.wb-scrim{position:fixed;inset:56px 0 0 0;background:rgba(0,0,0,.25);z-index:998;display:none}
+.wb-scrim.open{display:block}
+.wb-stage{font-weight:600;font-size:13px;margin:14px 0 6px;color:#185FA5;cursor:pointer;display:flex;justify-content:space-between;user-select:none}
+.wb-stage:first-child{margin-top:4px}
+.wb-stage .wb-cnt{color:#888;font-weight:400;font-size:12px}
+.wb-demo{padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:#222}
+.wb-demo:hover{background:#eef3ff}
+.wb-demo .wb-tag{font-size:11px;color:#0F6E56;margin-left:6px}
+.wb-collapsed{display:none}
+.wb-flash{outline:3px solid #185FA5;outline-offset:4px;border-radius:8px}
+body{padding-top:56px}
+</style>
 </head>
 <body data-page-node-id="i69LcL95lB0ED5NUoKNJav">
+<div class="wb-topbar">
+  <button id="wbMenuBtn" class="wb-btn">目录</button>
+  <strong>LDA · 光子/量子芯片设计工作台</strong>
+  <input id="wbSearch" class="wb-search" placeholder="搜索能力（如 环形 / 逆设计 / DRC）">
+  <div class="wb-roles">
+    <button data-role="customer" class="wb-role">客户</button>
+    <button data-role="engineer" class="wb-role wb-active">工程师</button>
+    <button data-role="expert" class="wb-role">专家</button>
+  </div>
+  <a class="wb-cta" href="#runProposal">进入工作台 →</a>
+</div>
+<div class="wb-drawer" id="wbDrawer"></div>
+<div class="wb-scrim" id="wbScrim"></div>
+
 <header data-page-node-id="cQ3vTa1guC30BOEHtrOEcv">
   <span class="logo" data-page-node-id="D8G47GOhdfGTSvFeXPiLxs">LDA</span>
   <span class="sub" data-page-node-id="hOlhnGZztFBOepku4YdCE3">agent-native 光子 + 量子芯片设计 · 验证内核实时预览（L4）</span>
@@ -98,7 +137,7 @@
     <div class="card g" data-page-node-id="26Xw0uvhJlqL4ObIZyXJNK"><div class="n" id="c-layers" data-page-node-id="AURD7fkWAm5vFQNSHzDyYR">—</div><div class="l" data-page-node-id="7aI8xp2kNAEQMLRH86j8IB">已落地真地基层</div></div>
   </div>
 
-  <div class="sec" data-page-node-id="CBy8ierNfxFQLdoZPn1uPi">
+  <div class="sec" data-stage="init" data-stack="photonic" data-roles="customer,engineer,expert" data-page-node-id="CBy8ierNfxFQLdoZPn1uPi">
     <h2 data-page-node-id="IR98yWxkGTiE1SPUjL3Y82">㊿ 系统级提案编译器（Phase 4 · 功能需求 → 过锚提案 → 人终审）</h2>
     <div class="hint" data-page-node-id="ICMGBCJsvirxd5bCDwg4jv">生成-验证范式落地：锚前置剪枝可行域（S1 功率/S2 频率/S5 最坏情况）→ 域内候选生成 → 即提即验（含 S7 蒙特卡洛统计锚 p5）→ 确定性排序。生成与判决分离——LLM 生成器为发动期替换件，判决路径零 LLM；终审选择权在人。</div>
     <div class="row" data-page-node-id="5i2Bl9rF5nZTRQUajTZYVT">
@@ -115,7 +154,7 @@
     <div id="pcNote" class="note" data-page-node-id="y6HqNY7LAZGenUDCtm6wB3"></div>
   </div>
 
-  <div class="sec" style="border-color:#2563eb" data-page-node-id="eDbFnpWJN3wUR1lvOWPCyP">
+  <div class="sec" data-stage="tapeout" data-stack="photonic" data-roles="engineer" style="border-color:#2563eb" data-page-node-id="eDbFnpWJN3wUR1lvOWPCyP">
     <h2 data-page-node-id="fhiGeH75MHNdEaEN1RwUbR">★ 旗舰流程 · 设计闭环端到端：给目标 → 出统一设计包</h2>
     <div class="hint" data-page-node-id="fk57cWiEO7vlSdDTKvjf93">这是 LDA 作为"系统"而非"组件集"的核心：你给一个目标指标，系统在参数空间用物理定律 ORACLE 搜索，仅对 top-K 候选跑真实求解器双重验证，返回被求解器确认可用的最优器件，并自动包成机器可校验的统一 DesignPackage（可下载）。<b data-page-node-id="1HRrFF9lr9NLaMv4hiRnQe">LLM 不进判决路径。</b> 闭环器件目录来自 <code data-page-node-id="RHtS5uLkZKyoG4wDKgspl7">/api/design_catalog</code>。下拉含两类：<b data-page-node-id="TfK80E8GWEwmchYKTmBtDJ">● 闭环引擎</b>（给目标值 → 网格搜索最优器件）与 <b data-page-node-id="t9bc5RgDgOyuTwiSQglnE6">○ 参数驱动包</b>（11 类成熟器件，用默认参数直接出统一设计包）。</div>
     <div class="row" data-page-node-id="Pd3ZfmrJrfK9RNB9i5orAJ">
@@ -147,7 +186,7 @@
   </div>
 
   <div class="cols" data-page-node-id="yKMOdMGrU56YmILwpCQCrv">
-    <div class="sec" data-page-node-id="TGDAMHnO0wix3A5OzoNXBw">
+    <div class="sec" data-stage="verify" data-stack="both" data-roles="engineer,expert" data-page-node-id="TGDAMHnO0wix3A5OzoNXBw">
       <h2 data-page-node-id="A8wDIGWa9Jct803IEwWnel">② 验证裁判控制台</h2>
       <div class="hint" data-page-node-id="aWBYgeeTIwSQKAA2T1SJGC">选候选求解器，点"运行验证"——真调 LDA harness，用物理定律锚逐题比对。</div>
       <div class="row" data-page-node-id="aTFEIFW0qddvfLzKayU2AR">
@@ -168,7 +207,7 @@
       <div class="note" id="verifyNote" data-page-node-id="zFVCoY6tpJsmBOjmC2YWh7"></div>
     </div>
 
-    <div class="sec" data-page-node-id="C3cMCqtIw6EjwXmHATCyci">
+    <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" data-page-node-id="C3cMCqtIw6EjwXmHATCyci">
       <h2 data-page-node-id="O3ldCg7c2B8vwwCiBfVyjR">③ agent 自迭代设计闭环</h2>
       <div class="hint" data-page-node-id="4u24honLHbR0nMhh371rf6">agent 提案 → L1 驱动内核 → 物理定律法官验证 → 诊断迭代（布拉格镜单波长验收）。</div>
       <div class="row" data-page-node-id="y5wmYrz0QPDVW9OQ6pikhd">
@@ -187,7 +226,7 @@
     </div>
   </div>
 
-  <div class="sec" data-page-node-id="sFQjoGwn8ZfQUJ4sfQZaRM">
+  <div class="sec" data-stage="sim" data-stack="photonic" data-roles="engineer,expert" data-page-node-id="sFQjoGwn8ZfQUJ4sfQZaRM">
     <h2 data-page-node-id="LiBsmuyp4yC0Wr5PnuYZ41">④ 多端口耦合器件验收锚（D-01）</h2>
     <div class="hint" data-page-node-id="d684amFVO3yFCz0yyEX5hv">方向耦合器（DC）：FDFD 超模法 ORACLE（κ、Lc）↔ FDTD 超模投影 κ_fdtd 交叉对拍；对称 Y 分支分束器（YB）：对称性定理 ORACLE（50/50）↔ FDTD 两臂能流平衡度。实时 FDTD 需 GPU 演示机；无 GPU 时展示 ORACLE 真值。</div>
     <div class="row" data-page-node-id="u7VCvDEnTnebJpr5fuLBOO">
@@ -209,7 +248,7 @@
     <div id="couplerBody" data-page-node-id="iymOGdHfr3nlh9cixJT0MX"></div>
   </div>
 
-  <div class="sec" data-page-node-id="p7yLrYdth6mLzYCsUi6BLV">
+  <div class="sec" data-stage="sim" data-stack="photonic" data-roles="engineer" data-page-node-id="p7yLrYdth6mLzYCsUi6BLV">
     <h2 data-page-node-id="2AAcdhSQaF8HLi7u6qgLGK">⑤ 多波长 / 宽带设计闭环（D-03）</h2>
     <div class="hint" data-page-node-id="JEtHFJ8p9DKW3yRkxuwRTR">agent 增减布拉格周期数，使整个 λ 扫描范围阻带都达标（R≥阈值）且与 TMM 物理定律锚全波段谱形一致（max|ΔR|≤容差）。从“单点达标”升级到“给定目标谱形达标”。</div>
     <div class="row" data-page-node-id="GhBrOhXh2nCVuIPHuSfhPy">
@@ -230,7 +269,7 @@
     <div class="conclusion" id="bandConclusion" data-page-node-id="1F083LcEXzzzwDBmZVlCY3"></div>
   </div>
 
-  <div class="sec" data-page-node-id="CBfnWgAFQ6VLZshAyLXUZG">
+  <div class="sec" data-stage="sim" data-stack="photonic" data-roles="engineer" data-page-node-id="CBfnWgAFQ6VLZshAyLXUZG">
     <h2 data-page-node-id="LLHcMIUjXIPc8Uro7qRow9">⑦ 环形谱形逆设计闭环（D-11）</h2>
     <div class="hint" data-page-node-id="UnBdZ8Oey3VKuCgyC6bMoI">agent 调半径 R 使环形 drop 谱 FSR 命中目标谱形——解析环形传递函数与逐波长洛伦兹梳谱提取交叉对拍（双判据）。纯解析、秒级出结果。</div>
     <div class="row" data-page-node-id="3Vb9e84FELbTiVCpOjViBF">
@@ -251,7 +290,7 @@
     <div class="conclusion" id="ringConclusion" data-page-node-id="ccBjlGnjbAhFNVumFTARBN"></div>
   </div>
 
-  <div class="sec" data-page-node-id="7dwPswREm9VUmgRQHMJ37J">
+  <div class="sec" data-stage="layout" data-stack="photonic" data-roles="engineer" data-page-node-id="7dwPswREm9VUmgRQHMJ37J">
     <h2 data-page-node-id="mjzSMYuC5knrfQTDk19kOu">⑧ 版图 → DRC → 仿真 流水线（D-14/D-15/D-16）</h2>
     <div class="hint" data-page-node-id="9Dj8H41PBQHhYUYoZf1pCO">一键贯通：器件参数 → GDS 版图（SVG 预览）→ 可制造性 DRC 自查 → FDTD 仿真 neff → 物理锚验收。参数取自 D-12 器件库工艺窗口（可覆盖）。</div>
     <div class="row" data-page-node-id="3LdnoEah19LsTKIA3B31um">
@@ -275,7 +314,7 @@
     <div class="conclusion" id="lpConclusion" data-page-node-id="rhJlqE3sFXT3CmsVaso69h"></div>
   </div>
 
-  <div class="sec" data-page-node-id="f1lJLFtO9l7nUIh3VZGjGK">
+  <div class="sec" data-stage="design" data-stack="photonic" data-roles="engineer" data-page-node-id="f1lJLFtO9l7nUIh3VZGjGK">
     <h2 data-page-node-id="Aufgmf55PMNp8t4ajA5hj7">⑨ 一键设计流水线（D-19/D-25/D-26 · 全部器件）</h2>
     <div class="hint" data-page-node-id="3yKG0FrXPLzeKOvq0I34xo">输入设计意图 → 自动完成：逆设计（Ring FSR→R / Waveguide neff→width）→ 版图 GDS → DRC 自查 → agent 自动整改 → 仿真验收 → 设计包。一条命令交付"可制造 + 已仿真验收"的设计，覆盖全部已验证器件。</div>
     <div class="row" data-page-node-id="HcFN0AjozkVShLZZVSfFyi">
@@ -305,7 +344,7 @@
     <div class="conclusion" id="dpConclusion" data-page-node-id="0ZJPRLkl0SFQqpYHUMNnpi"></div>
   </div>
 
-  <div class="sec" data-page-node-id="BtbMzZKB01P5Pd1aC33pAr">
+  <div class="sec" data-stage="verify" data-stack="both" data-roles="engineer,expert" data-page-node-id="BtbMzZKB01P5Pd1aC33pAr">
     <h2 data-page-node-id="EtjCirJdahbdjyvLjk4zWW">⑩ 可制造性面板（D-18/D-21）</h2>
     <div class="hint" data-page-node-id="LOoaCXbIo0j2zCTD2saSTa">给一个 DRC 违规初值 → agent 读 violation 自动整改到可制造；并展示整改后设计在三个光子 foundry 工艺规则下的差异化可制造性（工艺窗口驱动）。</div>
     <div class="row" data-page-node-id="11owIKS3qqa0sSa5bWtDfA">
@@ -336,7 +375,7 @@
     <div class="conclusion" id="fxConclusion" data-page-node-id="rcfAcxKB0AGYTy8Z7AOuYe"></div>
   </div>
 
-  <div class="sec" data-page-node-id="LDA_TPGEO_001">
+  <div class="sec" data-stage="tapeout" data-stack="photonic" data-roles="engineer,expert" data-page-node-id="LDA_TPGEO_001">
     <h2 data-page-node-id="LDA_TPGEO_002">⑮ 流片签核 Tapeout + 几何 DRC 快查</h2>
     <div class="hint" data-page-node-id="LDA_TPGEO_003">流片级验证全链路（DRC 工艺角 / LVS / S3.5 寄生 / S3.6 几何 DRC）与几何 DRC 快查，均消费 LDA 主权几何内核（非 foundry deck）。输入器件字典 JSON，后端自动生成版图 GDS 喂入签核。</div>
     <div class="row" data-page-node-id="LDA_TPGEO_004">
@@ -352,7 +391,7 @@
     <div class="conclusion" id="tpConclusion" data-page-node-id="LDA_TPGEO_012"></div>
   </div>
 
-  <div class="sec" data-page-node-id="Vvw1NSjIGPCp1DGsc5mkOe">
+  <div class="sec" data-stage="sim" data-stack="photonic" data-roles="engineer,expert" data-page-node-id="Vvw1NSjIGPCp1DGsc5mkOe">
     <h2 data-page-node-id="b7BanxAcUyMbNAfm4ubIiF">⑪ 环形 FDTD 透射谱（D-27/D-28 · 真实仿真 ↔ 解析锚对拍）</h2>
     <div class="hint" data-page-node-id="KgH1mk9s8i35CYhFQiANlw">D-27 环形 FDTD 仿真核（2D TM add-drop 环形，CW 稳态逐波长）——drop 端口透射谱出现谐振峰（等间距 = FSR），与解析环形传递函数对拍。数据为预计算演示（GPU ~6min 一次，webui 秒回）。</div>
     <div class="row" data-page-node-id="7MYjtXpES9FTTGmxEp32j6">
@@ -364,7 +403,7 @@
     <div class="conclusion" id="rfConclusion" data-page-node-id="9JnIBt11buVAeHG1XsDMRs"></div>
   </div>
 
-  <div class="sec" data-page-node-id="FsXoYdWMGt0NhKp5lBT1AT">
+  <div class="sec" data-stage="sim" data-stack="photonic" data-roles="engineer" data-page-node-id="FsXoYdWMGt0NhKp5lBT1AT">
     <h2 data-page-node-id="2C9oem0vSyOMlXd7Cn04mz">⑫ DC 全场透射谱（D-29/D-30 · 2D FDTD 功率交换）</h2>
     <div class="hint" data-page-node-id="gg5xysGpZR65vnrwrVfPfb">D-29 DC 全场透射谱仿真核（2D FDTD 双平行波导，CW 稳态逐波长）——thru/cross 功率交换 vs 波长（cross_frac 单调递增 = CMT 趋势），反解 κ_fdtd(λ) 物理量级。数据为预计算演示（numpy ~1min 一次，webui 秒回）。</div>
     <div class="row" data-page-node-id="9QJUjA1kmB9PnFeFmShZeH">
@@ -376,7 +415,7 @@
     <div class="conclusion" id="dtConclusion" data-page-node-id="WRVAhGZjHRN04iXeI4DuUS"></div>
   </div>
 
-  <div class="sec" data-page-node-id="qmEpfPeC7FhtcKf5uK1s6E">
+  <div class="sec" data-stage="verify" data-stack="both" data-roles="engineer,expert" data-page-node-id="qmEpfPeC7FhtcKf5uK1s6E">
     <h2 data-page-node-id="pdd8R70BAXnsC248ypO9qC">⑬ 器件库验收（D-12/D-32 · 已验证器件 + 真实 FDTD 入口）</h2>
     <div class="hint" data-page-node-id="p21gRwVXpkxDp4oRvQJvO8">D-12 器件库把已验证器件固化为可复用资产（参数窗口 + D-04 统一验收契约 + 求解器），D-32 为 Ring 挂上真实 FDTD 验收，D-34 延伸至 Waveguide / BraggMirror——器件库每个成员都有一等真实物理验证入口；D-35/D-39 把量子域 Transmon / Resonator / Coupler 都带上一等真实物理验证入口（解析闭式 ↔ 严格数值，与光子栈同构）。面板展示：器件全景表（验收锚 / 参数窗口 / live_weight / 需 GPU）+ 每器件 contract 契约状态 + Ring/WG/Bragg 三器件真实 FDTD 双验证 + Transmon/Resonator/Coupler 量子双验证（解析契约设计目标命中 + 真实数值物理行为自洽）。</div>
     <div class="row" data-page-node-id="DC8igaBxmRiaFMFwROsi3q">
@@ -391,7 +430,7 @@
     <div class="conclusion" id="dlConclusion" data-page-node-id="aqeeAvtPYI0hsDpTFHwD0X"></div>
   </div>
 
-  <div class="sec" data-page-node-id="AuCN1Aka7S2dmkdng5z2y9">
+  <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" data-page-node-id="AuCN1Aka7S2dmkdng5z2y9">
     <h2 data-page-node-id="uNjK9Ot9eAvWhMkamGswur">⑭ 设计→验证闭环（D-36 · 给定目标，返回已验证最优器件）</h2>
     <div class="hint" data-page-node-id="JJN3GcBg6lBkESsq74Atli">这是 LDA 作为"系统"而非"组件集"的核心：给定设计目标（器件类型 + 目标指标），引擎在参数网格用<b data-page-node-id="Cb0vkZYif9L9vHly2CDV9M">物理定律 ORACLE</b>（瞬时）快速逼近，仅对 top-K 候选跑<b data-page-node-id="9UjrdXh9liUAJJhjyrCwM4">真实求解器双重验证</b>（解析契约 + 真实数值物理自洽，纯 numpy 零 GPU），返回的"最优设计"是被求解器<b data-page-node-id="RkEhaOqEQpMJGjzSAkXoCa">真正验证过</b>的——LLM 不进判决路径。与 ⑨ 设计流水线（逆设计→版图→DRC）互补：本面板聚焦"严格物理锚定的设计→验证闭环"。</div>
     <div class="row" data-page-node-id="rVCM1ygJjPL29gFf8FJ2Ej">
@@ -412,7 +451,7 @@
     <div class="conclusion" id="dlDesignConclusion" data-page-node-id="PtDvHP3t9xCtIeHApEd1Zy"></div>
   </div>
 
-  <div class="sec" data-page-node-id="066dDDetVa51zd4wB15JBW">
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" data-page-node-id="066dDDetVa51zd4wB15JBW">
     <h2 data-page-node-id="jP0pS9PNj8LAcIqDrVl75m">㊾ 基准对照验证闭环（v0.8.16 · 22 引擎 × 解析锚/实证锚/ORACLE + 模型精度分级）</h2>
     <div class="hint" data-page-node-id="KPdpQ6dwGycP3DxRWUXDt3">把「验证可信」变成<b data-page-node-id="fYIXM2RW91JUMBsIO02ncc">跨源死标量对照证据</b>：20 引擎（15 设计量 + 5 loss）设计闭环验证 rel + 实证锚 9 条真实文献语料全对照 + 第三方 ORACLE 状态——解析锚/实证锚双 ground 引擎验收，LLM 不进判决路径。<b data-page-node-id="3ITCFpXaFB2LU0alI1oKx5">诚实边界</b>：loss 引擎为半解析近似（工艺标定参数可替换）；Tidy3D 无 Key 自动回退设计守则锚。</div>
     <button class="btn" id="runCrosscheck" data-page-node-id="SfFYkx4AvJFvAdos1EWeKE">运行基准对照 → 生成报告</button>
@@ -422,7 +461,7 @@
     <div id="ccOracle" class="summary" data-page-node-id="sQPMc2xrbGh5Zk5c7fkjZB"></div>
   </div>
 
-  <div class="sec" data-page-node-id="WsxeXejIhQUDknpAR6Vq1t">
+  <div class="sec" data-stage="tapeout" data-stack="photonic" data-roles="engineer" data-page-node-id="WsxeXejIhQUDknpAR6Vq1t">
     <h2 data-page-node-id="htmtfZvxsZlk1NNvcYMGOY">⑮ 环形 add-drop 产品链路（D-37 · 一键可制造设计包）</h2>
     <div class="hint" data-page-node-id="Kc2dn2VOmZeLtAH6iicIzI">把 D-36 的设计闭环推到<b data-page-node-id="HC6HfEFCHlSyKlWnBSqiu7">产品级交付</b>：给定目标 FSR（或半径/gap），一键产出<b data-page-node-id="jZ3QnfubVL4DBjSvcgSgJH">可制造设计包</b>——双 bus add-drop 版图（GDSII + SVG）→ DRC 可制造性 → bus 波导<b data-page-node-id="95dNDoeKgucrU2CIfOCdCk">真实 FDTD</b> 验收（neff↔slab ORACLE）+ FSR 物理定律契约 + FDTD 锚点对拍 → <b data-page-node-id="XAlnuDmNUMplMaXKV0dxV8">耦合/损耗预算</b>（κ(gap) 模型、弯曲损耗、Q 分解、drop IL、消光比）→ 验收判决（LLM 不进判决路径）。耦合/损耗模型取文献典型 SOI 220nm（PDK 接入后校准），诚实标注。</div>
     <div class="row" data-page-node-id="WCWOV46n32ppEoYuPvlRSX">
@@ -437,7 +476,7 @@
     <div class="conclusion" id="rpConclusion" data-page-node-id="WMcXQkXrEoDCGk1EJgapuf"></div>
   </div>
 
-  <div class="sec" data-page-node-id="wB15vfVctAUXmCnMRWBJTs">
+  <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" data-page-node-id="wB15vfVctAUXmCnMRWBJTs">
     <h2 data-page-node-id="aMPKeH94BJFy5Af6d2MrzC">⑯ agent 逆设计通用框架（D-38 · 同一框架落地 4 器件）</h2>
     <div class="hint" data-page-node-id="c3w5rfHWPuGqGFRaO7x1yh">D-24 的 `SpectrumInverseDesignAgent` 是<b data-page-node-id="FMuqCKkOB4Jz04yUGbxdMX">通用谱形逆设计框架</b>（engine / metric / oracle 三函数即插即用）；D-38 把它升级为<b data-page-node-id="syab7tEjPTt3s0OgatPI6a">声明式注册表</b>，用<b data-page-node-id="LAJA3VG77mVA5MMeGEEhyM">同一套 agent</b> 落地 4 个真实器件——跨光子/量子、跨 match/threshold、跨连续/离散：<br data-page-node-id="bT8TCcQXeXk5nEYaDWqgPg">① RingResonator：参数 R_um → 目标 FSR（match + 黄金分割）② BraggMirror：参数 periods → 目标 R_min 阻带（threshold + 离散扫描，TMM 搜索 + 终验真实 3D FDTD vs TMM）③ Transmon（量子域）：参数 E_J → 目标 f01（match，严格对角化 ↔ Koch 解析）④ RingAddDrop（D-37 器件）：参数 gap → 目标加载 Q_L（match，谱线宽反解 ↔ Q 分解解析）。<b data-page-node-id="4qhp9oKVfIk94oEuVBtU8V">新器件接入 = 注册一条 spec，零框架改动——跨场景复用，非单点 hack。LLM 不进判决路径。</b></div>
     <div class="row" data-page-node-id="WTZsTQJQUeVT5bFY1UGRjM">
@@ -448,7 +487,7 @@
     <div class="conclusion" id="invConclusion" data-page-node-id="zTZwHt3ZK0BKfDIYmBrRvf"></div>
   </div>
 
-  <div class="sec" data-page-node-id="fhwz6ylfPfSrA4VaV4982D">
+  <div class="sec" data-stage="design" data-stack="quantum" data-roles="engineer" data-page-node-id="fhwz6ylfPfSrA4VaV4982D">
     <h2 data-page-node-id="ittJ1C5EqcHaB04eG1keXv">⑰ 量子 agent 逆设计闭环（D-41 · 目标频率/耦合 → IR → 数值验证 PASS）</h2>
     <div class="hint" data-page-node-id="fyAkZkMioYF88Bu5BHadcu">把 D-38 框架 + D-39 求解器 + D-40 物理锚串成<b data-page-node-id="D1np8qWDFE3iy6zAffUGlt">量子 agent 逆设计最小闭环</b>：给定目标 f01/f0/J → 构造 D-40 量子 IR（PhysicsAnchor + objective）→ 校验 → <b data-page-node-id="qucYqgCjYNWE6Dm57ED4b2">闭式物理定律反解</b>（Transmon E_J=(f+E_C)²/8E_C · Resonator l=1/(4f₀√(L′C′)) · Coupler Cc=J·C₁C₂/n01₁n01₂）→ D-39 <b data-page-node-id="OxsNscwdBKYNXuAijwXUB4">严格数值双验证</b>（对角化/离散本征值/441 维 vs 解析契约）→ PASS 判决。与光子 D-37 产品链路同构，LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="kYjj8yRR5G77OIM6juerSc">
@@ -467,7 +506,7 @@
     <div class="conclusion" id="qdConclusion" data-page-node-id="pgvK5ZthPwPQSEXuD6Wb2m"></div>
   </div>
 
-  <div class="sec" data-page-node-id="GESQphNaPeQ9gHXpRHmPE0">
+  <div class="sec" data-stage="design" data-stack="photonic" data-roles="engineer" data-page-node-id="GESQphNaPeQ9gHXpRHmPE0">
     <h2 data-page-node-id="FHT1z9HC1lFxgAFHyWrKTd">⑱ WDM 多环级联系统设计（D-42 · 系统级纵深）</h2>
     <div class="hint" data-page-node-id="kATggXzJFkFCUSQVNx4FN7">把 D-36~D-41 的单器件闭环升级为<b data-page-node-id="FuRZfvn69KJS71ZQpyHBSl">系统级</b>：一条 bus 串联 N 个 add-drop 环，每环谐振对齐一个 WDM 信道 → input 到各 drop 端口分波（数据中心光模块核心器件）。<b data-page-node-id="ulJBz1KfDzRI0PdZjY8JKY">IR 网表</b>（N 环 + bus 链，D-40）→ 信道逆设计（谐振对齐闭式 R=m·λ/2πn_g）→ <b data-page-node-id="ioSgJkrosRwkc8sd4AmF74">级联传递</b>（drop_i=T_drop_i·ΠT_thru_j）→ 系统验收（每信道 drop IL ≤ 3dB、邻信道串扰 XT ≥ 15dB、DRC、单 FSR 防混叠——<b data-page-node-id="6FDMYKAs5jNgEkDQ9aEIGJ">超规格用例会被正确拒绝</b>）→ N 环级联 GDS+SVG。<b data-page-node-id="TbTxmta6H5CDbH5qCqrJW6">D-45 纵深：给定 XT 指标反解 gap（bisection）、级联插损预算表（drop IL+前序环 thru 残差）、单 FSR 信道上限。</b>LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="H08bSzBVgmRVAyTcT0c7Hf">
@@ -483,7 +522,7 @@
     <div class="conclusion" id="wdmConclusion" data-page-node-id="acPgRfw8aAwr87JNNblstx"></div>
   </div>
 
-  <div class="sec" data-page-node-id="7arJGbRFPW1Uxag8V4p3vV">
+  <div class="sec" data-stage="design" data-stack="quantum" data-roles="engineer" data-page-node-id="7arJGbRFPW1Uxag8V4p3vV">
     <h2 data-page-node-id="nEhb9cw06rQGvdcHx0VoUD">⑲ 光子-量子混合链路（D-43 · 芯片级 dispersive readout）</h2>
     <div class="hint" data-page-node-id="Hh1vgy6CusBxqrvkgYt0AJ">量子芯片标准读出架构，也是"跨光子+量子统一"的<b data-page-node-id="4frAg7oda6WzWoLTiJSChy">系统级</b>落地：<b data-page-node-id="hG2Im6tEF8pgZKa0mA7u64">Transmon qubit ↔ 电容耦合(g) ↔ readout 谐振器(f_r=f01+Δ) ↔ 读出力线(feedline, κ_r)</b>——同一 IR 网表（domain=<b data-page-node-id="NG4I7uP39lhKiVCqtFlzHF">hybrid</b>）连接微波光子器件与量子器件。闭式反解（E_J / l / Cc / Q_ext）→ 三器件双验证（D-39）→ <b data-page-node-id="m82QVgs714Gnhd6qfnjT0Y">JC 哈密顿量精确对角化</b> ↔ 色散近似 χ=g²/Δ 交叉验证 → 系统验收（Δ/g≥5、χ≥κ_r、Q_ext）。负例会正确拒绝（色散失效/读出不可分辨）。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="Ng6bz222yr3L1GUOVDaw17">
@@ -498,7 +537,7 @@
     <div class="conclusion" id="rcConclusion" data-page-node-id="2IFoJwDhKoWNYZEzlKFrkv"></div>
   </div>
 
-  <div class="sec" data-page-node-id="yCktPqbh8MZ9TTEAVgrpZU">
+  <div class="sec" data-stage="tapeout" data-stack="both" data-roles="engineer" data-page-node-id="yCktPqbh8MZ9TTEAVgrpZU">
     <h2 data-page-node-id="JpxTezUtkxm9xVrTSlZb6r">⑳ 统一设计包（D-44 · design outcome 统一交付格式）</h2>
     <div class="hint" data-page-node-id="ZmTtNrrjDFNpCb5GoNjD2e">把 D-37（add-drop）/ D-41（量子）/ D-42（WDM）/ D-43（readout 混合链路）四类设计结果统一为<b data-page-node-id="kopMYwhCfJlck97XwwEnYj">同一份 DesignPackage</b>——无论设计什么，交付物格式一致、机器可校验、可汇总：`ir`（设计意图回溯）+ `design`（目标/参数/反解）+ `verification`（死标量验收门 + verdict）+ `artifacts`（SVG/谱/GDS）+ `honest_notes`（诚实标注必填）。<b data-page-node-id="PWgpymFKQIK4YUr6vGtzUx">verification.passed 是唯一验收门（LLM 不进判决路径）。</b></div>
     <div class="row" data-page-node-id="1lvbvLkvKSUsD8gb7bCyDI">
@@ -509,7 +548,7 @@
     <div class="conclusion" id="dpPkgConclusion" data-page-node-id="arSB2AWGIpQQG806MVOyNI"></div>
   </div>
 
-  <div class="sec" data-page-node-id="5L9nmOaUjYW2fEpAfpqUIm">
+  <div class="sec" data-stage="design" data-stack="quantum" data-roles="engineer" data-page-node-id="5L9nmOaUjYW2fEpAfpqUIm">
     <h2 data-page-node-id="6HLHANbeAlEDksTxFYZcyj">㉑ N-qubit 频率复用读出（D-46 · 光子-量子混合系统）</h2>
     <div class="hint" data-page-node-id="HfPD38phk4PjssGIsxuNFF">把 D-42（级联/信道错开）+ D-43（色散读出）组合成<b data-page-node-id="MSDmRIoBcXdkXfeccA3avz">多 qubit 频率复用读出</b>：N 个 Transmon 各自耦合专属 readout 谐振器（f_r=f01+Δ），谐振器沿公共读出力线（feedline）<b data-page-node-id="HAwVlEH2XCfnd1fCip9CJh">错开读出频率（间隔≥3×κ_r 防串扰）</b>——WDM 的量子版。逐 qubit 严格数值双验证 + <b data-page-node-id="EwkBuJBtzeFZOIeRi6mzc9">JC 精确对角化↔色散 χ=g²/Δ</b>（复用 D-43）；力线透射 = N 个 hanger 型 dip 级联（Goppl 2008 标准形式），<b data-page-node-id="dXuewEDASA6IKrXhernD3y">可分辨判据=相邻 dip 中点透射&gt;0.5</b>；混合 IR 网表（3N+1 器件，D-40 v0.3）。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="AAdA2QcNrwRRD9DwrFhxX5">
@@ -525,7 +564,7 @@
     <div class="conclusion" id="mqConclusion" data-page-node-id="ycVsRozduQYl5FfMxnQkmK"></div>
   </div>
 
-  <div class="sec" data-page-node-id="3Aflw5RVipxfaoXgDQHQcv">
+  <div class="sec" data-stage="sim" data-stack="quantum" data-roles="engineer,expert" data-page-node-id="3Aflw5RVipxfaoXgDQHQcv">
     <h2 data-page-node-id="9QUmHUMrYfeUcTJh7KWS7j">㉒ 单发读出保真度预算（D-47 · T1 限制 · SNR/保真度）</h2>
     <div class="hint" data-page-node-id="0s5DeHPbM6LqmYNeZ5shGn">在 D-43/D-46 色散读出架构上推进到<b data-page-node-id="dGtZHqCv0uPDXm9TdLBpqK">读出保真度可预算</b>：相位积分（匹配滤波）单发 SNR = 2·χ_rad·√(n̄·η·t_m/(κ_rad·(1+2N_amp)))，误判 ε=½erfc(SNR/√2)，<b data-page-node-id="XAHPpl8s5dXus5Gl8TIhlN">T1 弛豫污染</b> F1=(1−ε)(1−t_m/T1)；扫描 t_m 得<b data-page-node-id="Y4cKZgNdYv2E6I8NChJ1T5">最优读出时间 t_m*</b>（SNR 增长 vs 污染增长权衡）。死标量验收：SNR≥2 · F≥0.95 · <b data-page-node-id="zZhujy6dmWw6vcHbqMoN9v">F1≥0.95（|1⟩ 态 T1 污染直接门槛）</b> · t_m*/T1≤0.1 · n̄≤100（非破坏） · χ≥κ_r · Δ/g≥5。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="Ym2UaRdFMgE2UIOGpSg8QS">
@@ -543,7 +582,7 @@
     <div class="conclusion" id="rfReadConclusion" data-page-node-id="WHhlxPRZEu1HVEvWkMrWHz"></div>
   </div>
 
-  <div class="sec" data-page-node-id="apzKaea1Dk3RgEf29T4nPs">
+  <div class="sec" data-stage="sim" data-stack="quantum" data-roles="engineer,expert" data-page-node-id="apzKaea1Dk3RgEf29T4nPs">
     <h2 data-page-node-id="qjr4GDeYBCUvyIBuPd8kmY">㉓ N-qubit 复用读出逐 qubit 保真度（D-51 · D-46×D-47 集成）</h2>
     <div class="hint" data-page-node-id="2MdPJk0kpx2rVTEAX4HbKp">把 D-46（频率复用：信道错开 ≥3×κ_r + dip 可分辨）与 D-47（单发保真度：SNR/T1 污染/t_m* 优化）合并为<b data-page-node-id="AiyJdhLugOc3Yv6T7oS3H9">一个系统闭环</b>：N qubit 沿公共力线复用读出，每 qubit 独立 T1 / 读出光子数 → 逐 qubit 保真度预算（t_m*、SNR、F0/F1/F）→ 系统级联合验收（复用 + 逐 qubit 全过）。<b data-page-node-id="kqwdOYyY1Da7MwQw8YDegH">坏 qubit 独立 FAIL，不影响他者</b>。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="k7V0EPOsT5alezsl5utxQy">
@@ -559,7 +598,7 @@
     <div class="conclusion" id="mqfConclusion" data-page-node-id="GDuToj6ppqbMvAYcegdC7L"></div>
   </div>
 
-  <div class="sec" data-page-node-id="p2RD1uud71VitFNHF1PAdY">
+  <div class="sec" data-stage="design" data-stack="quantum" data-roles="engineer" data-page-node-id="p2RD1uud71VitFNHF1PAdY">
     <h2 data-page-node-id="Z7DEqBA0DznbEivUrQZ94b">㉔ 多环 WDM × 量子读出混合巨型系统（D-52 · 光子分波 + 量子读出同一网表）</h2>
     <div class="hint" data-page-node-id="1J7m1EjTVjjOCHPIrw8Pvi">把 D-42（WDM 多环分波，1550nm）与 D-51（N-qubit 频率复用读出，GHz）放进<b data-page-node-id="cWm6xm4kBqN9mmxdOD8fWR">同一个 IR 网表、同一个设计包</b>：光子子网络验收（IL≤3dB/XT≥15dB/DRC/单 FSR）+ 量子子网络验收（错开≥3κ_r/dip 可分辨/逐 qubit 保真度）+ <b data-page-node-id="XtDSi8I0Z6Z3jWVlskBMSA">WDM 信道 ↔ qubit 读出 1:1 映射</b>联合验收。诚实标注：光↔微波物理独立，桥接为芯片级接口规划（光电转换不在模型内）。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="lH1xRmlhbQ4RcN3DGIn9qx">
@@ -573,7 +612,7 @@
     <div class="conclusion" id="msConclusion" data-page-node-id="NmABWtud2SIBLBfPhStjPT"></div>
   </div>
 
-  <div class="sec" data-page-node-id="N1S4KFddFHgwxIgLRZ2TAP">
+  <div class="sec" data-stage="design" data-stack="photonic" data-roles="engineer" data-page-node-id="N1S4KFddFHgwxIgLRZ2TAP">
     <h2 data-page-node-id="Scy6ivwor3HPqi6XIgZb9n">㉕ 方向耦合器设计闭环（D-55 · 2D FDTD 真实求解器验证）</h2>
     <div class="hint" data-page-node-id="wWbilc5y0V8BJ8S7fMo2UE">补上光子域基础器件空白：目标分束比 → <b data-page-node-id="0CgNJykoJQ2Bf1KBuAORqR">2D FDTD 双点标定 κ</b>（D-29 已验收 dc_port_powers，秒级真实求解器）→ 耦合模理论反解耦合长度 L=asin(√R)/κ（<b data-page-node-id="FcvuiXYdorgkj1xtD8jt12">物理长度=有效长度+源/测量面 offset</b>）→ <b data-page-node-id="6KlBhGsMhnGN2J8JACTAd3">实测-修正迭代</b>（≤3 轮）收敛到目标分束比 → 死标量验收（分束比命中/κ 物理量级/L≤200µm/IR）。诚实标注：2D 无材料损耗；3D FDTD 为可选深度确认。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="DAbsmfh2vWNiDHcirL4X93">
@@ -587,7 +626,7 @@
     <div class="conclusion" id="cdConclusion" data-page-node-id="39r9exYgKM6Bn5nY1kRdvM"></div>
   </div>
 
-  <div class="sec" data-page-node-id="zKdqkgRwpT6JQZU3aS1E0A">
+  <div class="sec" data-stage="design" data-stack="photonic" data-roles="engineer" data-page-node-id="zKdqkgRwpT6JQZU3aS1E0A">
     <h2 data-page-node-id="4WwBdUYYfGD9j5E2fD5xU1">㉖ 耦合器 × WDM 组合（D-57 · FDTD 标定驱动 gap）</h2>
     <div class="hint" data-page-node-id="A6sy0mYTLKPugneurgVraK">bus↔ring 耦合本质是方向耦合器：κ_c(gap) 由 <b data-page-node-id="ew0CfuuNWnETrCwYyx3F5J">2D FDTD 双点标定</b>（D-55）实测并沉淀为 <b data-page-node-id="XfjPxVE7OaCh47BrnCSa14">PDK 标定文件</b>（一次性后台标定 ~20 分钟，设计时秒级加载）→ k_ring=sin(κ_c·2√(2R·gap)) → <b data-page-node-id="RyNamqOLueT8ntVFcFQZnd">gap 扫描设计</b>驱动 WDM（D-42 级联传递）→ 系统验收 + <b data-page-node-id="QpfiUshaP1o2jULoSCDTCa">诚实偏差报告</b>（D-57 实测 k_ring vs 解析 gap_to_kappa 比值 0.218——解析假设偏乐观 4.6 倍）。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="5TLmBL8Ctqi8ye2FoDDHEf">
@@ -600,7 +639,7 @@
     <div class="conclusion" id="wcConclusion" data-page-node-id="tVABz6fxDKjMyaVykoSVv9"></div>
   </div>
 
-  <div class="sec" data-page-node-id="kDhtxrQOw326yYNvItzS9P">
+  <div class="sec" data-stage="design" data-stack="quantum" data-roles="engineer" data-page-node-id="kDhtxrQOw326yYNvItzS9P">
     <h2 data-page-node-id="fiUsgK5QjWiICUCoAuLapR">㉗ 方向耦合器 × 量子读出（D-63 · 分束网络供电控制线）</h2>
     <div class="hint" data-page-node-id="SuU2El0RtzFz7oAdqYqudX">光子 <b data-page-node-id="NHDu1hxxpznLjkLz77bABf">二叉树级联 DC 分束网络</b>（每级 D-55 真实 2D FDTD 设计闭环，分束比取实测 cross_val_fdtd）供电量子读出控制线：每 qubit 读出 n̄ 按实际功率权重缩放（微波功分器：P ∝ n̄、SNR ∝ √n̄）→ D-47 保真度预算 + 统一 IR 网表（光子分束 + 量子读出同一网表）+ 联合验收。<b data-page-node-id="exAZHBSa6TIv4fMb1xFA59">诚实标注：光↔微波物理独立，功率→读出为拓扑同构 / 接口规划</b>。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="UJJJ7hHirVdSh42Bsg55CD">
@@ -613,7 +652,7 @@
     <div class="conclusion" id="srConclusion" data-page-node-id="KZsEcXKGil2NW7LubiFAjY"></div>
   </div>
 
-  <div class="sec" data-page-node-id="glUOgIdSNY3u7GvdG8dxmM">
+  <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" data-page-node-id="glUOgIdSNY3u7GvdG8dxmM">
     <h2 data-page-node-id="2Nc0kaOIbsLybyrgoNjTmm">㉘ 分束网络×WDM（D-67 · WDM 解复用 → 每信道 DC 分束树）</h2>
     <div class="hint" data-page-node-id="Os2lppWUhkzg9cVB0diaI3">光子域功率分配与分波联合：WDM 多环级联（D-42 + D-57 标定库驱动 gap）把 λ 分到独立 drop 口 → 每信道 drop 接二叉树级联 DC 分束树（D-63 复用，每级 D-55 真实 2D FDTD 设计）→ 信道输入 = drop 扣除实测 IL 的剩余功率（10^(-IL/10) 诚实标注）→ 每信道分束命中 + 统一 IR 网表（Ring×N + DC×M）+ 联合验收。纯光子域，无跨物理域声称。</div>
     <div class="row" data-page-node-id="W0opL3GYVP9B4AEJRzMIev">
@@ -626,7 +665,7 @@
     <div class="conclusion" id="wsConclusion" data-page-node-id="dRExGCn4z0pYzoTtFDm5fh"></div>
   </div>
 
-  <div class="sec" data-page-node-id="r8Z4i0elgxNY1TMQphgFJs">
+  <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" data-page-node-id="r8Z4i0elgxNY1TMQphgFJs">
     <h2 data-page-node-id="yw8TnrjGKGSi0VWyTo6Ylh">㉙ 伴随法拓扑逆设计（D-69 · 主权 adjoint FDTD）</h2>
     <div class="hint" data-page-node-id="oazoRZKT1wW3uVK03w3gHg">把"参数扫描 + 闭式反解"升级为<b data-page-node-id="z30vKrchMFNGPnkqbN1DyJ">梯度驱动拓扑逆设计</b>：主权 2D FDTD（TEz，Yee 网格 + 海绵 PML）的<b data-page-node-id="VIkiyfNATZPBY4SqcfBeD4">显式转置伴随</b>（数值 Mᵀ 对拍至 1e-15）求 dFOM/dε → 验证锚：<b data-page-node-id="MZea9ZhiNdqMU6s2AVl2Mf">adjoint vs 中心有限差分方向对拍 max_rel_err ≤ 0.15</b> → 高斯脉冲源 + 窄孔径<b data-page-node-id="PmJyWnZZ8PnDNCl40U2hhc">收集场能</b> FOM（能量有界，杜绝 CW 谐振病态）→ 密度投影（beta 延拓二值化）+ 回溯线搜索梯度上升（FOM 单调不降，improvement ≥ 1.5）。诚实标注：T 为归一化收集场能，聚焦增益可 &gt;1，非功率透射。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="amNlUVimAO9glxZZESsZy5">
@@ -642,7 +681,7 @@
     <div class="conclusion" id="ajConclusion" data-page-node-id="aPKoP0587YTmij1TGV8Pks"></div>
   </div>
 
-  <div class="sec" data-page-node-id="ABbs0m6UukI3B3eB95DfrB">
+  <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" data-page-node-id="ABbs0m6UukI3B3eB95DfrB">
     <h2 data-page-node-id="QNHH2WLRlEFJNYRS0QgvZR">㉚ 逆设计接入设计→验证引擎（D-70 · method=adjoint）</h2>
     <div class="hint" data-page-node-id="Oi0ELsHIl4JfvMIsIqUKBX">把伴随梯度逆设计<b data-page-node-id="5hpGmHRpAfYistUplG2vJE">泛化接入 D-36 设计→验证闭环引擎</b>：DesignAgent 统一入口按 <b data-page-node-id="xGXZDTPBCxniGPQhJbfMK1">method</b> 分流（默认 scan=布拉格参数扫描；adjoint=梯度拓扑逆设计）——目标泛化为<b data-page-node-id="npJCtVbEkDezWbZBvaDDNp">「把指定孔径内的收集场能最大化」</b>（设计区/孔径/材料对比度/波长/分辨率全部由意图透传）→ 均匀平板初值 → 验证锚（adjoint vs 中心有限差分 max_rel_err ≤ 0.15）→ 密度投影 + 回溯线搜索梯度优化（improvement ≥ 1.5）→ 死标量验收输出 <b data-page-node-id="ymO5yW7BMxtLda4LUzqS2w">DesignOutcomeReport</b>（target/accepted/iterations/loop_trace/verdict）。布拉格扫描路径零改动。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="cwoFWUq62OZ022GYc8sp6c">
@@ -658,7 +697,7 @@
     <div class="conclusion" id="alConclusion" data-page-node-id="nswEWGLEGg9tVxADWYsfZ1"></div>
   </div>
 
-  <div class="sec" data-page-node-id="4COuBrGJMFp75TZTLE5BUW">
+  <div class="sec" data-stage="layout" data-stack="both" data-roles="engineer" data-page-node-id="4COuBrGJMFp75TZTLE5BUW">
     <h2 data-page-node-id="11boNzx9iONrTYnBN1fpD7">㉛ 真实版图基元库（D-71 · foundry-ready 几何）</h2>
     <div class="hint" data-page-node-id="nwkzLjmXThr1BMre5O7RCu">替代玩具几何（直线/圆环）的<b data-page-node-id="FcsXkAecS6zU3C0R5ia9Oo">可流片级版图基元</b>：① <b data-page-node-id="2DxPkheoBbKdsBld9JVKou">Taper</b> 线性/绝热（余弦）轮廓（两端斜率 0 减模式失配）② <b data-page-node-id="PqD4vk29x0LCKAG3jPeyWH">Euler 弯</b>（clothoid：曲率 0→1/R→0 连续，无折角尖点，90° 弯终点角误差 &lt;0.01°）③ <b data-page-node-id="UWj6wj81kNHC1zagHGRFNe">MMI</b> 1×2 对称分束（输入 taper + 多模干涉区 + 双输出 taper）④ <b data-page-node-id="oBdMDpIhPdGeUsTlTzcSyt">光栅耦合器</b>（周期部分刻蚀齿，齿宽=Λ·duty）。每个基元 → <b data-page-node-id="9K5U6mjUiFZPSUC92RdPse">GDSII 编码（round-trip 回读一致）+ DRC 可制造性自查</b>（min_width / min_space / min_bend_R，典型 SOI 180nm 规则）+ SVG 预览。诚实边界：只交付几何，分束比/透射谱等电特性归 D-72 2D FDTD 端口 S 参数验收。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="9DYy2lBkoEhLj7NXABaLLf">
@@ -669,7 +708,7 @@
     <div class="conclusion" id="primConclusion" data-page-node-id="ZblMeluLemByEP2FvmVP7N"></div>
   </div>
 
-  <div class="sec" data-page-node-id="4YgSG6gUCi1ovDDN9Iwq5D">
+  <div class="sec" data-stage="sim" data-stack="photonic" data-roles="engineer,expert" data-page-node-id="4YgSG6gUCi1ovDDN9Iwq5D">
     <h2 data-page-node-id="zGjbUq1P1e40e5R11g7B2A">㉜ 端口 S 参数验收（D-72 · MMI 2D FDTD + ORACLE 对拍）</h2>
     <div class="hint" data-page-node-id="cC3r1tLvGOpQfefRvJoZyf">对 D-71 真实基元（MMI 1×2 对称分束器）做<b data-page-node-id="OrrTViBOg5VkOjbiCn6ExN">全 2D FDTD 端口透反射谱</b>验收：输入 CW 激励 → 输出/回波端口 DFT 收集 → 输入功率归一 → <b data-page-node-id="uRm6aDQQyKNyF1RPX1FugT">S 参数谱</b>（|S11|² 回波 / |S21|² 上输出 / |S31|² 下输出，能量守恒自动满足）→ 死标量验收（<b data-page-node-id="1ANj8j9djjCHxZ9QJGx0by">仿真有效 + 双输出平衡度 ≤ 0.15 + 透射 ≥ 0.05</b>，自成像对称 ORACLE 物理定律锚）+ <b data-page-node-id="B2oI6lq3KnPbaGMFdwdd8B">DRC 工艺规则从真实 SOI 180nm PDK 注入</b>（NOEIC/CUMEC/SITRI）。诚实边界：2D TEz 近似；分束比绝对值依赖自成像长度精确设计，不声称与商业 EDA 数值库逐点一致。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="ENwpxl5NNQVejHRogEpeCw">
@@ -684,7 +723,7 @@
     <div class="conclusion" id="spConclusion" data-page-node-id="mRjY7PVGGdxZpM8DL5dB54"></div>
   </div>
 
-  <div class="sec" data-page-node-id="SokGyItLW9F9tMmGimGyl9">
+  <div class="sec" data-stage="sim" data-stack="photonic" data-roles="engineer,expert" data-page-node-id="SokGyItLW9F9tMmGimGyl9">
     <h2 data-page-node-id="BHnAMhyuaVYKRPnznamE4m">㉝ 3D 端口 S 参数验收（D-72 深化 · SOI 220nm · numba 核）</h2>
     <div class="hint" data-page-node-id="T25G5FmuIerOmKDsJchGAu">把 2D 端口验收<b data-page-node-id="6f59didahl95C97SbyqrC8">深化到 3D</b>：<b data-page-node-id="acvVaZiZ6Mlfn41MvNTnNi">MMI / 方向耦合器(DC) / 环形谐振器(Ring)</b>（SOI 220nm 波导层 + 上下包层）全 <b data-page-node-id="ErMaCrNCBNsvjDThFQ1gTa">3D FDTD</b> 端口透反射谱（复用已验证 numba 核 <code data-page-node-id="NscbgYl2BFZoeOAE6y5M03">_fdtd3d_core</code>，零新依赖）——3D 波导截面匹配源注入（TE 主极化 Ez）→ 多端口 DFT 收集 → 输入功率归一 → S 参数谱 → 死标量验收：<b data-page-node-id="nfiwITiVrYXVtwLPFPl16H">MMI</b> 平衡度 ≤0.15、<b data-page-node-id="HwwiRoJpme0WysqKwFmgOZ">DC</b> cross_frac 端点趋势（CMT 物理）、<b data-page-node-id="79dH9CVw8Pa4t6EKQSg84b">Ring</b> drop 谐振峰检出（Lorentzian ORACLE），均 + 透射 ≥0.05 + 仿真有效；附 <b data-page-node-id="y5O9ISMusLH6JsZQpaiLuq">2D↔3D 连续性对拍诊断</b>（3D 垂直模式约束使 S 参数与 2D 系统性不同，物理差异非 bug，不作判据）。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="HNSFWna4lYStPkHIQPO895">
@@ -702,7 +741,7 @@
     <div class="conclusion" id="sp3Conclusion" data-page-node-id="g7kKXOdtiNcOBgQ6CIMxj8"></div>
   </div>
 
-  <div class="sec" data-page-node-id="ncTbQLyjmGzLHxKXYGi25s">
+  <div class="sec" data-stage="sim" data-stack="photonic" data-roles="engineer,expert" data-page-node-id="ncTbQLyjmGzLHxKXYGi25s">
     <h2 data-page-node-id="TKGpKLb2IGvnh2aG8XwJEk">㉞ 光栅耦合器端口验收（D-78 · 光栅方程 ORACLE）</h2>
     <div class="hint" data-page-node-id="jDppSlFJKwCexS4CWZx0iD">4 基元中<b data-page-node-id="wFRLBmu0rWi0pgEX2FzayY">最后一块电特性验收</b>：GC（周期部分刻蚀齿，D-78 修正为真实方波光栅：齿=硅、凹槽=包层）全 <b data-page-node-id="X86vgfJrqiw5D7FVtFNexm">2D FDTD</b> 端口透射谱——CW 注入 → thru/in 归一 → <b data-page-node-id="Fj3m7wvMH6GIYOrpHlCB4N">透射谷检测</b>（周期调制耦合损耗）→ 谷位置 vs <b data-page-node-id="UIP4BMnhyTi5mg2HVUY2wB">光栅方程</b> λ_rad=Λ·n_eff 解析预测对拍（n_eff 由同宽直波导 FDTD 相位差法独立测得，<b data-page-node-id="0GrX1zK71sPL5Abq6msIYG">非拟合</b>）+ <b data-page-node-id="twdZomxmERTROM0fVtaYrm">Λ 扫描趋势锚</b>（dλ/dΛ=周期结构 n_eff）。死标量验收：<b data-page-node-id="PcMScGyrJUClnlyTJSBAuE">谷检出 depth≥0.10 + 谷位置 rel≤0.15 + 趋势斜率 rel≤0.10</b>。诚实标注：谷位对直波导 neff 系统性负偏 ~9%（凹槽微扰，物理）；2D 方波 ≠ 3D 光纤耦合，不声称耦合效率。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="bWoBxznlXgHFniXDUXxUcp">
@@ -717,7 +756,7 @@
     <div class="conclusion" id="gcConclusion" data-page-node-id="2edEJVBq2Bzo9MD2opCxdq"></div>
   </div>
 
-  <div class="sec" data-page-node-id="Zg62OWKKWMbzTxgMAgFUfi">
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" data-page-node-id="Zg62OWKKWMbzTxgMAgFUfi">
     <h2 data-page-node-id="AfFTGxlnD2XFmu2LMQiCkC">㉟ 真实基元接入设计流水线（D-79 · Track B 收口 · v0.4 门槛）</h2>
     <div class="hint" data-page-node-id="BrfrvHB4d5UwOrr7NW7iYb">把 D-14/D-19 版图流水线的默认几何从<b data-page-node-id="sIKcIybxqJx3XB92A6IOHk">玩具矩形/圆形切换到 D-71 真实基元</b>：Ring/AddDrop 实心环带 → <b data-page-node-id="uFu1FEHgJ11klJR5GozbVY">真实波导环</b>（中心线 PATH，foundry 弯曲波导标准表达）、YBranch 裸分叉 → <b data-page-node-id="AGEkFlgOkYt5SFYWfSejhJ">输入绝热 taper</b> + 双 arm、DC/Waveguide 已是 PATH 波导、Taper/EulerBend/MMI/GC 沿用基元（GC=D-78 方波光栅）。全 9 kind <b data-page-node-id="Z3ALx1X04D3xInomDqVc8R">真实 GDS 出图 + round-trip + 3×SOI PDK DRC 复查</b>（NOEIC/CUMEC/SITRI 规则注入）。诚实边界：环为圆弧中心线（曲率恒定），Euler 弯无缝拼合留作深化；几何真实化不改变电特性判据（归 D-72/D-78）。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="tgNTGI3GSr87wTsswDrrM4">
@@ -728,7 +767,7 @@
     <div class="conclusion" id="realConclusion" data-page-node-id="K37xpCL5ng2Y1zRIpHjdnw"></div>
   </div>
 
-  <div class="sec" data-page-node-id="PGBzAIKG0CV4JtKIhqqU85">
+  <div class="sec" data-stage="design" data-stack="photonic" data-roles="engineer" data-page-node-id="PGBzAIKG0CV4JtKIhqqU85">
     <h2 data-page-node-id="3GiHyYQZ96XXOO18GezKII">㊱ 热光可调 WDM（D-73 · Track D 系统级 · M7）</h2>
     <div class="hint" data-page-node-id="jc7r4IAsDECylzphMCMM85">把 D-42/D-57 静态 WDM 升级为<b data-page-node-id="sZZu8ltva9lFhth4H4LYP5">运行时可重构</b>：每条 add-drop 环叠加<b data-page-node-id="BvhOcyp8tH55JQvMlvvOIT">热光相位 shifter</b>，通过热光效应实时移动每环谐振波长，实现可调信道分配。物理定律锚：Δλ/λ = (dn/dT)·R_th·P/n_eff（dn/dT=1.86e-4/K 材料常数，n_eff 波导有效折射率，<b data-page-node-id="g3xcczuuORwQNRxGrwB8Yi">非拟合</b>），ORACLE 比对真实 Si 加热器调谐斜率区间 [0.02,0.5] nm/mW；信道重分配验证 |P|≤P_max 且 |Δλ|≤FSR/2（无 FSR 混叠）。诚实边界：未建模环间热串扰、仅热光（非电光载流子注入）、静态重配置非高速调制。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="hlWnarRyhbs09VXlOqsdfq">
@@ -744,7 +783,7 @@
     <div class="conclusion" id="twConclusion" data-page-node-id="c0SeY4MAttjbWFKvFQryto"></div>
   </div>
 
-  <div class="sec" data-page-node-id="SlrFlAqZFCjV6LeWu5m70A">
+  <div class="sec" data-stage="design" data-stack="quantum" data-roles="engineer" data-page-node-id="SlrFlAqZFCjV6LeWu5m70A">
     <h2 data-page-node-id="sUXh9DTMH1GGdsFgpIfsl5">㊲ 量子门 / 纠错拓扑（D-74 · Track D 系统级 · M7）</h2>
     <div class="hint" data-page-node-id="yTaZIHhasmxfCd6p9eWbWG">量子域从「读出」走向「计算」：组合①量子门库（I/X/Y/Z/H/S/T/CNOT/CZ/SWAP/Toffoli 解析矩阵，幺正性 ‖U†U−I‖≤1e-12 精确 + {H,T,CNOT} 通用性 T∉24元Clifford 群论死标量锚）②rotated surface code（d² 数据比特、全对易、GF(2) 秩验证 k=1、阈值标度 p_L=A·(p/p_th)^((d+1)/2)）③cross-resonance 门（g_CR=2J²Δ/(α²−Δ²) 有效模型 + t_CR≤T2）。ORACLE：|g_CR|∈[0.02,10]MHz、p<p_th（阈值门）。诚实边界：CR 为 SW 主导阶非多能级数值、σ_zz 由 echoed-CR 抵消、表面码 p_th=1% 为公认模拟常数非本系统解码仿真。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="a7YmlXqM0LpmWNjYfNEtA8">
@@ -761,7 +800,7 @@
     <div class="conclusion" id="qedaConclusion" data-page-node-id="BWzr0gpuDL0T6sxcklNAGH"></div>
   </div>
 
-  <div class="sec" data-page-node-id="pcXWZzXeLylxUZnDUL7Q54">
+  <div class="sec" data-stage="sim" data-stack="both" data-roles="engineer" data-page-node-id="pcXWZzXeLylxUZnDUL7Q54">
     <h2 data-page-node-id="QgVBJ4QAZYRFmsH8QxF9IT">㊳ 大规模系统基准（D-75 · Track D 系统级 · M7 第三件）</h2>
     <div class="hint" data-page-node-id="WGqJZ0aemCBFwxflsVbq8J">把 WDM 级联（D-42/45）+ 多 qubit 读出（D-51）+ 混合巨型系统（D-52）推进到 <b data-page-node-id="pAzXRPVlFgIfnyBNeokVDS">N≥8 大规模</b>并做<b data-page-node-id="KH3jM3GwEIJD3vcizj9gJp">性能与精度边界压测</b>：① WDM 8 信道（间隔 1.2nm 密集 DWDM grid、gap=0.4µm 弱耦合高 XT）级联 + 插损预算；② 8-qubit 沿公共力线频率复用读出（间隔 50MHz ≫ 3κ_r=22.5MHz）；③ 联合 8×8 混合巨型系统；④ 边界压测：<b data-page-node-id="Gpdoiu9U1xlWqxIZkwPTsd">容量自洽</b>（实际最大可行 N == 理论 floor(FSR/间隔)+1）、<b data-page-node-id="Oxp4HaHvWRGiUHUolukuFe">IL 级联模型余量</b>（thru 残差累积 vs 3dB 预算）、<b data-page-node-id="S56BBYAwcue1kyLWIO4Vnl">qubit 间隔临界</b>（dip 融合/3κ_r 失效点）、<b data-page-node-id="AWf6ZbBcFgSzr9OH8RhzcJ">标定网格分辨率</b>（κ_c 网格 λ 间距 25nm vs 信道间隔 1.2nm）。诚实边界：级联为解析物理模型（FSR 2D 容差 30% 已知）；性能为解析模型耗时。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="JBMEgi8z2p1IwaFmHCuKPr">
@@ -777,7 +816,7 @@
     <div class="conclusion" id="lsConclusion" data-page-node-id="U3wAlc5uuwHMj4RFuvxEPE"></div>
   </div>
 
-  <div class="sec" data-page-node-id="NayMIHNIm4Ax0dm2wPSwpF">
+  <div class="sec" data-stage="verify" data-stack="photonic" data-roles="engineer,expert" data-page-node-id="NayMIHNIm4Ax0dm2wPSwpF">
     <h2 data-page-node-id="rQUkMpzTJspiKdNBtdHdPB">㊴ L0 IR 开放标准（D-76 · 护城河与标准层 · v0.3 定稿）</h2>
     <div class="hint" data-page-node-id="nsyTY0yPEuag2GJFP3jWqD">把 schema 0.3 固化为<b data-page-node-id="x4eOtF707U0CtfTNhnSBKT">开放标准</b>（社区共建起点）：`docs/ir_spec.md`（规范文档）+ `docs/ir_schema.json`（JSON Schema draft-07 机器可读）与 `lda_ir` 代码实现做<b data-page-node-id="ABsguLTZ5Xlfj8mNP3t9hM">零漂移校验</b>——① Schema↔代码 kind 注册表一致（光子 6 + 量子 3 = <b data-page-node-id="aIDoY1FBsZm5UmAkOYunP5">9 kind</b>）；② JSON Schema draft-07 合法；③ 全 9 kind 示例 conforms；④ schema_version=0.2 遗留向后兼容；⑤ <b data-page-node-id="vxTGHubsWG5ZYVnxOlmzy8">physics 物理锚 round-trip 保留</b>（D-76 修复：to_dict/from_dict 此前丢物理锚，已修复）；⑥ validate 7 规则负例全部检出。"标准文档即真值"——第三方/社区按 spec 接入即共建 L0 标准（护城河 = 标准 + 生态 + PDK 供给）。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="CUN2QUxmEX1dCAh5p925vg">
@@ -788,7 +827,7 @@
     <div class="conclusion" id="irSpecConclusion" data-page-node-id="Fmqs45qvDnkGmEVqnIhxqK"></div>
   </div>
 
-  <div class="sec" data-page-node-id="PGD4Mjf1OYzdMaaxQTPSAE">
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" data-page-node-id="PGD4Mjf1OYzdMaaxQTPSAE">
     <h2 data-page-node-id="k76YX3QuwmaqPvGabaj0UF">㊵ 验证合约工业化（D-77 · 护城河与标准层第二件 · CI 全量回归 + 性能基准）</h2>
     <div class="hint" data-page-node-id="0JBhC4AYO7Q3NrZOELutpE">把全部验证收敛到<b data-page-node-id="piDp1FGXuGIsgShMWGF09b">一条命令、一份机器可读报告</b>（降低社区协作门槛）：`run_ci_regression.py` 自动发现 54+ smoke + harness B1-B13 统一回归（SKIP=无 GPU/numba 优雅降级，FAIL=真失败，新增 smoke 零配置纳入）；`run_perf_bench.py` 求解器性能基准（numpy→numba 加速比 + 物理一致 bit-equivalence + 历史基线漂移监控 ±30%）。实测：core 集 <b data-page-node-id="OBDTKHfMvoWQvGhNYZ3hUg">27 PASS / 0 FAIL</b>（358s）；greens numpy→numba <b data-page-node-id="0vfPNprqI6aHflYErcoFFv">34.7×</b>（rel=4.8e-16 物理一致）。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="A43FMKzp4xLX8C7tTk3PqH">
@@ -800,7 +839,7 @@
     <div class="conclusion" id="ciConclusion" data-page-node-id="5W3HYFFfjTgAtkPJ02XKyk"></div>
   </div>
 
-  <div class="sec" data-page-node-id="ygp7uhJGcNMXRjwO7cYny0">
+  <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" data-page-node-id="ygp7uhJGcNMXRjwO7cYny0">
     <h2 data-page-node-id="gihVPVRYF5kdoiPKuy5LrR">㊶ 谱形目标逆设计（D-80 · Track A 深化 · 目标从收集场能泛化到分束/模式/谱形）</h2>
     <div class="hint" data-page-node-id="jOF6WuxKXGRddKNJl2ZPfQ">把伴随梯度拓扑逆设计（D-69/D-70「孔径收集场能最大化」）泛化为三类<b data-page-node-id="6pJTvqCi0RABanLpUk6wXw">谱形目标 FOM</b>（逼近商业 EDA adjoint 逆设计核心卖点）：①<b data-page-node-id="xj27PAHsCE7PuSELukqMwP">split_ratio 分束比</b>（双输出监视器，FOM=a·log E_A+b·log E_B，优化后 FDTD 实测分束比命中 target±0.10）；②<b data-page-node-id="1oYCc5W4xBylAfhLL1KDgn">mode_match 模式匹配</b>（目标场分布投影 FOM=proj²/‖p‖²）；③<b data-page-node-id="GFRLrzlb5yB66oRSRmMauR">spectrum 多波长谱形</b>（FOM=Σw_λ·FOM_λ 加权联合，设计对目标波长带整体可用）。死标量验收：adjoint vs 有限差分对拍 ≤0.15 + improvement≥1.5（分束器 1.2）+ 分束比命中。实测：50:50 分束比命中 0.498（err 0.0016）、improvement 7.1×；3 波长谱形 2.0×。诚实边界：FOM 为收集场能（T>1 聚焦增益，非功率透射）、2D TEz、窄带谱形物理窗口。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="81IDWt5KLogbQT1Rxr6eW8">
@@ -821,7 +860,7 @@
     <div class="conclusion" id="sdConclusion" data-page-node-id="WTJtGQ8s1ftsjFJF9GB4eQ"></div>
   </div>
 
-  <div class="sec" data-page-node-id="hoj1nzTuLnxKqie38EJGMb">
+  <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" data-page-node-id="hoj1nzTuLnxKqie38EJGMb">
     <h2 data-page-node-id="hffJTRdlFMDYSp9gC7Iwlb">㊷ 形状逆设计 + 多目标联合（D-81 · Track A 纵深 · 从拓扑到形状、从单目标到多目标）</h2>
     <div class="hint" data-page-node-id="WvmBjUuC4eT5N4j5lWWWZQ">把 voxel 拓扑逆设计升级为<b data-page-node-id="9DB6Qg1HtrGDtjhS5FyK81">连续形状逆设计</b>（K 控制点宽度曲线 w(x) + sigmoid 软边界，可制造性内建：宽度界 + 平滑约束 + DRC 验收）与<b data-page-node-id="MJRQ8BwhBjvFpsiGKFGRKS">多目标联合</b>（多波长透射加权 FOM + Pareto 前端扫描）。形状梯度经链式 dFOM/dw=Σgeps·dε/dw 投影，FD 对拍验证。实测：形状逆设计 FOM improvement <b data-page-node-id="eCg3MlfL1t65xgxuh8qijS">10.3×</b>（宽度曲线 taper 成形）；多目标 2 波长加权 <b data-page-node-id="NQdwSJpvY4mmiyvhwPm0pW">8.7×</b>（λ1.53:9.7×/λ1.57:7.7×）+ Pareto 前端 3 点。诚实边界：形状=单芯宽度曲线（分叉/多芯归拓扑域 D-80）；Pareto 为有限权重网格近似；FOM 为收集场能（T>1 聚焦增益非功率透射）。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="q5bGRgBgMGrKqMK84kB8t8">
@@ -839,7 +878,7 @@
     <div class="conclusion" id="shConclusion" data-page-node-id="FtOrwdK0TECyuTmk4nzC7Y"></div>
   </div>
 
-  <div class="sec" data-page-node-id="Ioda74zMRws5dQdjhjnRj1">
+  <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" data-page-node-id="Ioda74zMRws5dQdjhjnRj1">
     <h2 data-page-node-id="eKbS5JQgOsp4TnLflufeFt">㊸ 形状+拓扑混合逆设计（D-82 · Track A 纵深 · 分层表达：形状主干 + 拓扑微调带）</h2>
     <div class="hint" data-page-node-id="yCfBWoWbM7PcG4cgDyfoes">把形状逆设计（可制造性好）与拓扑逆设计（表达自由）**分层混合**：**形状主干**（宽度曲线 K 控制点，可制造内建 DRC）+ **拓扑微调带**（紧贴形状边界的 voxel 密度，概率 OR 光滑组合——"任一有材料即材料"处处可导）。联合梯度 [形状链式 ⊕ 拓扑] + 回溯线搜索。**实测：混合 imp 29.5× vs 纯形状基线 10.2×（混合增益 2.89×）**——拓扑微调带提供局部自由度大幅提升性能。死标量验收：混合梯度 FD 对拍 + improvement + **混合 ≥ 纯形状** + DRC。诚实边界：3D 形状（宽+高截面）需 3D adjoint 核（2D TEz 限制，归后续）；FOM 为收集场能（T>1 聚焦增益非功率透射）。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="pJv0qsSwroFY0KSQeBE0kw">
@@ -853,7 +892,7 @@
     <div class="conclusion" id="hyConclusion" data-page-node-id="x1g5RIK3xegtkzLGyFeVGF"></div>
   </div>
 
-  <div class="sec" data-page-node-id="xCD2ygAz0bAMVS3WS9wBam">
+  <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" data-page-node-id="xCD2ygAz0bAMVS3WS9wBam">
     <h2 data-page-node-id="dVuc4K7L8Y52boGZZ7AqyP">㊹ 混合×多波长加权联合（D-83 · Track A 纵深收官 · 参数化×目标矩阵全打通）</h2>
     <div class="hint" data-page-node-id="9j4d19zdavGZjn82yizqiH">Track A 四阶链的**笛卡尔积收敛**：参数化 ∈ {拓扑, 形状, 混合} × 目标 ∈ {单场能, 谱形目标, 多波长}——本面板 = **混合参数化 × 多波长谱形**。形状主干（宽度曲线）+ 拓扑微调带共享同一参数，多波长加权 FOM=Σw_λ·FOM_λ（固定 dl 只变 omega）；**分块归一化**（形状/拓扑各自尺度）保证拓扑带参与度。死标量验收：联合梯度 FD 对拍 ≤0.15 + 加权 improvement ≥1.5 + 各波长 ≥1.2 + **混合 ≥ 纯形状多波长基线** + DRC；Pareto 前端权重网格扫描。诚实边界：3D 形状需 3D adjoint 核；FOM 为收集场能（T&gt;1 聚焦增益非功率透射）。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="MGEULa8A1b9n6VN2iTQHvo">
@@ -867,7 +906,7 @@
     <div class="conclusion" id="hmConclusion" data-page-node-id="zLqTFPmFnA9YBvQTjClnbV"></div>
   </div>
 
-  <div class="sec" data-page-node-id="D475BSsCYZuk0sORKkZE1U">
+  <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" data-page-node-id="D475BSsCYZuk0sORKkZE1U">
     <h2 data-page-node-id="O4na59H20KHKAr4Hqa19z1">㊺ 3D adjoint 形状逆设计（D-84 · 破 3D 诚实边界 · 3D Yee 显式转置伴随）</h2>
     <div class="hint" data-page-node-id="eMw1RTC3wBtpHjV0CS1UqR">Track A 纵深新线：把 adjoint 从 2D 推向 **3D Yee 交错网格**（6 分量 Ex/Ey/Ez+Hx/Hy/Hz）——更新算子**显式转置**伴随（数值 Mᵀ 随机对拍 **1e-15** 级），不依赖 torch/jax。设计域 = 平板波导（z 核心薄层）+ **宽度曲线形状** w(x)（K 控制点软边界，可制造 DRC 内建）。死标量验收：3D adjoint FD 对拍 + 形状梯度链式对拍 + improvement + DRC。诚实边界：z 截面暂均匀（截面变化归 D-85+）；FOM 为收集场能（T&gt;1 聚焦增益非功率透射）；小 3D 域（内存/算力）。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="SC0cTEGpH5sknDvdEdCXh9">
@@ -883,7 +922,7 @@
     <div class="conclusion" id="a3Conclusion" data-page-node-id="LGdB5IaQ5RUPyvBNswAZoc"></div>
   </div>
 
-  <div class="sec" data-page-node-id="pSQF4Lrio4M9VokyrmUhOy">
+  <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" data-page-node-id="pSQF4Lrio4M9VokyrmUhOy">
     <h2 data-page-node-id="HtYGFRWTCdDjYy0xtKci2n">㊻ 3D 截面形状逆设计（D-85 · 宽度 × 厚度双软边界 · 3D adjoint 纵深）</h2>
     <div class="hint" data-page-node-id="rY9GzmVfcow6NuYjbcVhDO">D-84 的纵深：把平板波导的 **z 截面也变成形状自由度**——宽度 w(x) × 厚度 h(x) 双曲线参数化（z 底固定 0、顶 z_top=h(x)，双 sigmoid 软边界，处处可导）。联合梯度 = [dFOM/dw ⊕ dFOM/dh]（3D Yee 显式转置链式）+ 回溯线搜索 + 双可行性投影。死标量验收：3D adjoint FD 对拍 + 截面梯度（w+h）链式对拍 + improvement + **宽度/厚度双界 DRC**。诚实边界：小 3D 域；FOM 为收集场能（T&gt;1 聚焦增益非功率透射）。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="EJouYy7rllEMqEg8iw7b0u">
@@ -899,7 +938,7 @@
     <div class="conclusion" id="s3Conclusion" data-page-node-id="NLZczmFKTfRFV5RfBzeuMt"></div>
   </div>
 
-  <div class="sec" data-page-node-id="fyuUIQrGjRyE7eZkpjqAWR">
+  <div class="sec" data-stage="sim" data-stack="photonic" data-roles="engineer,expert" data-page-node-id="fyuUIQrGjRyE7eZkpjqAWR">
     <h2 data-page-node-id="BvomAQKinEpZPuR5pjrhly">㊼ 3D 逆设计 × 端口 S 参数联合验收（D-86 · 补闭环最大缺口 · 双独立确认）</h2>
     <div class="hint" data-page-node-id="aHtnhy9hWXGUGGLsxz5UQz">战略审计（LDA-ST-001）指出的最大缺口：3D 逆设计结果此前只有**监视器收集场能 FOM**，无端口级验收。本面板打通 **3D adjoint 逆设计 → 独立 3D CW 端口核**（S11/S21 端口功率系数）→ **双独立确认**：场能 FOM improvement ≥1.5 **且** 端口 S21 improvement ≥1.5。🔴 探针发现的物理：聚焦 FOM 与透射 S21 可能不一致（两端收窄 taper 模式失配）→ 用可制造宽度界 w_min=4 + 初始宽度 init_w=6 对齐，实测 FOM 1.88× **且** S21 1.60× 同向双过。诚实标注：S 参数为两端口功率占比（非严格模式分解）；FOM 为收集场能。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="gSwQAKIeSq0uJATaX3Zfm7">
@@ -917,7 +956,7 @@
     <div class="conclusion" id="paConclusion" data-page-node-id="eeR94HtX1RWd52y2Ws8i9p"></div>
   </div>
 
-  <div class="sec" id="sec-spectral3d" data-page-node-id="hU66qkyoxbRVFBeZ4b9BTv">
+  <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" id="sec-spectral3d" data-page-node-id="hU66qkyoxbRVFBeZ4b9BTv">
     <h3 data-page-node-id="rjCFuPZSU5sH7fIAB1JLgY">㊽ 谱形目标 × 3D 截面（多波长加权联合）</h3>
     <div class="ctrl" data-page-node-id="dGxxEVHM1jGx8r2d81N0TS">
       <label data-page-node-id="AVP7wmMLbkiugzxVg2Mv4z">Nx:<input id="spNx" value="40" size="3" data-page-node-id="fOjbzq9lxrn53aoBGcgsxo"></label>
@@ -933,7 +972,7 @@
     <div class="conclusion" id="spInvConclusion" data-page-node-id="wrj8v5U66dHjLgqj2WLTZR"></div>
   </div>
 
-  <div class="sec" id="sec-perf3d" data-page-node-id="ktERBV6fAYoe3k672iGiIC">
+  <div class="sec" data-stage="verify" data-stack="both" data-roles="engineer" id="sec-perf3d" data-page-node-id="ktERBV6fAYoe3k672iGiIC">
     <h3 data-page-node-id="imxEixqngeIjHPhtrrOSGt">㊾ 3D adjoint numba 性能基准（大域 20×+）</h3>
     <div class="row" data-page-node-id="zmKwFHyfdFBMhHutzWrYLY">
       <button class="btn" id="runPf" data-page-node-id="CsZloJf34tR6EbJnx47lNX">运行性能基准</button>
@@ -943,7 +982,7 @@
     <div class="conclusion" id="pfConclusion" data-page-node-id="svHAJfjbn65yxHf1d5S3Af"></div>
   </div>
 
-  <div class="sec" id="sec-qubit-res" data-page-node-id="hMMFbgM5wQ1T16reBGa49V">
+  <div class="sec" data-stage="sim" data-stack="quantum" data-roles="engineer,expert" id="sec-qubit-res" data-page-node-id="hMMFbgM5wQ1T16reBGa49V">
     <h3 data-page-node-id="hB6wMW8JdMoOXYi7QOr06J">㊿ QEDA 求解器级补强 · transmon-resonator 色散读出（三能级严格求解）</h3>
     <div class="row" data-page-node-id="7YI9SXkmwa5x1GkaHy9CDy">
       <label data-page-node-id="gqhBPzQkTgEiHfKPyS5khU">f_q:<input id="qrFq" value="5.0" size="4" data-page-node-id="ascSIBE7zP8MenccbyCsMO"></label>
@@ -958,7 +997,7 @@
     <div class="conclusion" id="qrConclusion" data-page-node-id="QwVU6nKUBBsPonDlX6lcSG"></div>
   </div>
 
-  <div class="sec" id="sec-qeda-depth" data-page-node-id="8n3INAXpQJaH7Y9UdenFkl">
+  <div class="sec" data-stage="sim" data-stack="quantum" data-roles="engineer,expert" id="sec-qeda-depth" data-page-node-id="8n3INAXpQJaH7Y9UdenFkl">
     <h3 data-page-node-id="71C9Yau0vvG8X31vdC6VlA">51 QEDA 纵深三件套（多能级展开 · 驱动场 Rabi/AC Stark · 读出串扰 ZZ 耦合）</h3>
     <div class="row" data-page-node-id="PY9iBYi3rlahh78R31OQPU">
       <label data-page-node-id="4Q5aAb3UC4hj6DuhUt7SjK">f_q:<input id="qdFq" value="5.0" size="4" data-page-node-id="udpjPODyGdLJ74a0UZIJhJ"></label>
@@ -976,7 +1015,7 @@
     <div class="conclusion" id="qdDepthConclusion" data-page-node-id="Vgf6ZgDE8A8dXIZhx9GjH5"></div>
   </div>
 
-  <div class="sec" id="sec-topo3d" data-page-node-id="GYjeWxzNhpzCT02OhGzojj">
+  <div class="sec" data-stage="design" data-stack="both" data-roles="engineer" id="sec-topo3d" data-page-node-id="GYjeWxzNhpzCT02OhGzojj">
     <h3 data-page-node-id="hfLwsXSrURPUr7o6uswLK1">52 3D voxel 拓扑逆设计（3D 纵深最后一环 · 潜伏密度 + 二值化投影）</h3>
     <div class="row" data-page-node-id="FAAffup6wvyAwX4IrEGoPX">
       <label data-page-node-id="wR0GP0RF5T7hEQSbCE7qNt">Nx:<input id="tpNx" value="40" size="3" data-page-node-id="YPY4AEOt2ETI16frgsqAiV"></label>
@@ -990,7 +1029,7 @@
     <div class="conclusion" id="tpTopoConclusion" data-page-node-id="EXIWM1LjxExcqgYgMCWffZ"></div>
   </div>
 
-  <div class="sec" id="sec-eco" data-page-node-id="9OQ9oErLxX8YL4BwU9FrmA">
+  <div class="sec" data-stage="init" data-stack="both" data-roles="customer,engineer" id="sec-eco" data-page-node-id="9OQ9oErLxX8YL4BwU9FrmA">
     <h3 data-page-node-id="zLZaLp4Ekd93C6dp0OCKGa">53 生态共建框架（D-93 · harness 题库 B14-B18 + 主权依赖 A/B/C + Registry 入口）</h3>
     <div class="hint" data-page-node-id="MbpBUBjE9LnH2C1HptYWCG">生态共建地基接口：① harness 题库从 B13 扩充到 B18（5 道新物理定律锚：定向耦合器 3dB 长 / Bragg 波长 / MMI 自成像长 / 约瑟夫森临界电流 / Purcell 因子）；② 主权依赖三级分级（A 永不借 / B 借今踢后 fork Gitee / C 第一天自主）；③ 开放 PDK/器件本体 Registry 入口（社区/退休专家/晶圆厂经统一入口流入真实 PDK）。<b data-page-node-id="0HlmzpUdbYFp6GC4g2JnSZ">诚实边界：真实晶圆厂 NDA-PDK 对接属发动期 D-62，暂缓，不在此硬编码。</b></div>
     <div class="row" data-page-node-id="pOVeWK5HXpU45sNhfAXNgv">
@@ -1171,7 +1210,7 @@
     <div id="emReviewRes" class="summary" data-page-node-id="nqDFiVD2BzVfDCj9hizMwd"></div>
   </div>
 
-  <div class="sec" data-page-node-id="nBwSrrmmsMjLMKoMEvbXbN">
+  <div class="sec" data-stage="design" data-stack="quantum" data-roles="engineer" data-page-node-id="nBwSrrmmsMjLMKoMEvbXbN">
     <h2 data-page-node-id="YYEnStZBVjsYgKcyrrcGqq">㊽ 链路设计→验证闭环（P1-M4 · 双 ground 上提 · 芯片级 Agent 编排）</h2>
     <div class="hint" data-page-node-id="2Zj65jii0vNHucvQY81JOx">把 M1–M3 的通用链路框架 / 自动布线 / 四-Agent 元编排，经 <b data-page-node-id="uN9mqDOvTwNvTYOdOMBRHB">链路级物理定律锚 B19</b>（无源无增益，经 VerificationHarness 死标量比对）正式上提为 harness 一等公民。四 Agent（规划→综合→布线→验证）确定性协作，输出 GDS + 系统报告。诚实边界：链路级<b data-page-node-id="EQue6pB5XMkiETehMtnn73">仅物理定律锚</b>（缺系统级实证语料，不判 E 题）；LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="jrcw3xZz2QwhLmum2DH8En">
@@ -1188,7 +1227,7 @@
     <div class="conclusion" id="lkConclusion" data-page-node-id="cjznvxKmn9R4lT98mIPZov"></div>
   </div>
 
-  <div class="sec" data-page-node-id="BgsJG5K8vFlqToVVM21jxe">
+  <div class="sec" data-stage="verify" data-stack="both" data-roles="engineer,expert" data-page-node-id="BgsJG5K8vFlqToVVM21jxe">
     <h2 data-page-node-id="MNsYSMmttH4CfQ0sLKbdaF">LVS 签核（v0.8.25 · 版图-原理图一致性 · 单层 + 多层 M1/VIA12/M2）</h2>
     <div class="hint" data-page-node-id="csTQ6EXFDQ2gwU1kwf7MTL">标准 EDA 签核双闸：DRC 保证「版图可制造」，<b data-page-node-id="qtjfMrWlWz7U9jalMKCI6l">LVS 保证「版图即原理图」</b>。版图网表<b data-page-node-id="Hbt47MtY5vqBMQkGraPzxp">从布线几何独立恢复</b>（布线端点→端口锚点归属，不读原理图声明——才能发现「实现≠意图」）。<b data-page-node-id="K8YtFiHaOtJZ1t68xTJTFT">多层版图（v0.8.25）</b>：M1 段只接 M1 端口、跨层段端点重合自动发现 <b data-page-node-id="M372BRYGgPPt06hNjWzT7o">via 桥接</b>；短路判定层叠化——<b data-page-node-id="Au05blNmJvgUOycU1UwVwO">同层相交才 short，跨层垂直投影重叠安全</b>（介质隔离，多层可叠布线的物理依据）。配套 harness <b data-page-node-id="ucAHjmgikjFubFpEn4CVDd">S9/S10 锚</b>。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="jc5WZM5GKUidUygQgLBOiX">
@@ -1217,7 +1256,7 @@
     <div class="conclusion" id="lvsConclusion" data-page-node-id="2NMSrZayVF1Q0XP9gkfNxm"></div>
   </div>
 
-  <div class="sec" data-page-node-id="PmIYKt1hiHKOsGGFTcskxq">
+  <div class="sec" data-stage="verify" data-stack="photonic" data-roles="engineer,expert" data-page-node-id="PmIYKt1hiHKOsGGFTcskxq">
     <h2 data-page-node-id="ZlF3HIkss3dOzWXV66zRFr">⑥ L0 统一 IR（D-05 v0.2 / D-40 v0.3 · 同一 IR 表达两种物理）</h2>
     <div class="hint" data-page-node-id="iZqrKzLgPRNwPqt114GV8K">同一套 IR 机器语言精确表达光子与量子器件——导出 DSL（设计意图事实源）并跑静态校验；D-40 受控升级 v0.3：量子器件（Transmon/Resonator/Coupler）全部带 <b data-page-node-id="A4xuHyx4kAlk4R15XH8Xkt">PhysicsAnchor</b> 一等字段（B9 Koch f01 / B12 λ/4 f0 / B13 耦合 J），"IR → 物理锚 → 求解器双验证"链路与光子完全一致。耦合器/分束器 IR 是 D-01 验收锚的事实源，环形 IR 是 D-03 多波长闭环的事实源。</div>
     <div class="row" data-page-node-id="ifjUqeAfYO99gVix9yfkl9">
@@ -4075,5 +4114,66 @@ $('runProposal').onclick = runProposalDesign;
   <a href="/lda_whitepaper_v0.9.40.pdf" download style="color:#60a5fa;font-weight:700;text-decoration:none" data-page-node-id="TSLU8ZXIxC0ndBxajM8SgN">PDF 下载</a>
   <span style="margin-left:auto;opacity:.82" data-page-node-id="ugtnB87kKDKWSDTcAThIDy">版权所有：上海杜特企业管理咨询有限公司 · 联系人杜玉河 · 13311602075 · 微信 gongyhlw</span>
 </div>
+
+<script id="wb-nav-js">
+(function(){
+  var STAGES=[['init','① 立项选型'],['design','② 设计'],['sim','③ 仿真'],['layout','④ 版图'],['verify','⑤ 验证'],['tapeout','⑥ 流片交付'],['accept','⑦ 验货']];
+  var STACK_LABEL={photonic:'光',quantum:'量',both:'光+量'};
+  var curRole='engineer';
+  var collapsed={};
+  function collect(){
+    return Array.prototype.slice.call(document.querySelectorAll('button[id^="run"]')).map(function(b){
+      var sec=b.closest('.sec');
+      return {id:b.id,title:b.textContent.trim(),stage:(sec&&sec.dataset.stage)||'design',stack:(sec&&sec.dataset.stack)||'photonic',roles:((sec&&sec.dataset.roles)||'engineer').split(',')};
+    });
+  }
+  function render(){
+    var q=(document.getElementById('wbSearch').value||'').trim().toLowerCase();
+    var demos=collect().filter(function(d){
+      if(d.roles.indexOf(curRole)<0) return false;
+      if(q && d.title.toLowerCase().indexOf(q)<0) return false;
+      return true;
+    });
+    var html='';
+    STAGES.forEach(function(s){
+      var items=demos.filter(function(d){return d.stage===s[0];});
+      if(!items.length) return;
+      var open=collapsed[s[0]]?'wb-collapsed':'';
+      html+='<div class="wb-stage" data-stage="'+s[0]+'"><span>'+s[1]+'</span><span class="wb-cnt">'+items.length+'</span></div>';
+      html+='<div class="'+open+'" data-group="'+s[0]+'">';
+      items.forEach(function(d){
+        html+='<div class="wb-demo" data-target="'+d.id+'">'+d.title+'<span class="wb-tag">'+STACK_LABEL[d.stack]+'</span></div>';
+      });
+      html+='</div>';
+    });
+    if(!demos.length) html='<div style="padding:16px;color:#888">无匹配能力</div>';
+    document.getElementById('wbDrawer').innerHTML=html;
+  }
+  function openDrawer(o){document.getElementById('wbDrawer').classList.toggle('open',o);document.getElementById('wbScrim').classList.toggle('open',o);}
+  document.getElementById('wbMenuBtn').addEventListener('click',function(){openDrawer(!document.getElementById('wbDrawer').classList.contains('open'));});
+  document.getElementById('wbScrim').addEventListener('click',function(){openDrawer(false);});
+  document.getElementById('wbSearch').addEventListener('input',render);
+  Array.prototype.slice.call(document.querySelectorAll('.wb-role')).forEach(function(b){
+    b.addEventListener('click',function(){
+      curRole=b.dataset.role;
+      Array.prototype.slice.call(document.querySelectorAll('.wb-role')).forEach(function(x){x.classList.remove('wb-active');});
+      b.classList.add('wb-active');
+      render();
+    });
+  });
+  document.getElementById('wbDrawer').addEventListener('click',function(e){
+    var st=e.target.closest('.wb-stage');
+    if(st){collapsed[st.dataset.stage]=!collapsed[st.dataset.stage];render();return;}
+    var d=e.target.closest('.wb-demo');
+    if(d){
+      var btn=document.getElementById(d.dataset.target);
+      if(btn){btn.scrollIntoView({behavior:'smooth',block:'center'});var sec=btn.closest('.sec');if(sec){sec.classList.add('wb-flash');setTimeout(function(){sec.classList.remove('wb-flash');},1600);}}
+      openDrawer(false);
+    }
+  });
+  render();
+})();
+</script>
+
 </body>
 </html>

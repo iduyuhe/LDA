@@ -72,14 +72,13 @@
 </style>
 
 <style id="wb-nav-css">
-.wb-topbar{position:fixed;top:0;left:0;right:0;height:56px;display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--color-background-primary,#fff);border-bottom:1px solid rgba(0,0,0,.12);z-index:1000;font:13px/1.4 system-ui,sans-serif}
-.wb-topbar strong{font-size:14px;font-weight:600;white-space:nowrap}
 .wb-btn{border:1px solid rgba(0,0,0,.2);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px}
 .wb-btn:hover{background:#f0f4ff}
 .wb-search{flex:1;max-width:340px;padding:7px 10px;border:1px solid rgba(0,0,0,.2);border-radius:8px;font-size:13px}
 .wb-roles{display:flex;gap:4px}
 .wb-role{border:1px solid rgba(0,0,0,.2);background:#fff;border-radius:14px;padding:5px 12px;cursor:pointer;font-size:12px}
 .wb-role.wb-active{background:#185FA5;color:#fff;border-color:#185FA5}
+.wb-role-hidden{display:none !important}
 .wb-cta{margin-left:auto;background:#185FA5;color:#fff;border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;text-decoration:none;white-space:nowrap}
 .wb-drawer{position:fixed;top:56px;left:0;bottom:0;width:320px;background:#fff;border-right:1px solid rgba(0,0,0,.12);z-index:999;transform:translateX(-100%);transition:transform .2s ease;overflow-y:auto;padding:12px}
 .wb-drawer.open{transform:none}
@@ -113,24 +112,8 @@ body{padding-top:56px}
 </style>
 </head>
 <body data-page-node-id="i69LcL95lB0ED5NUoKNJav">
-<div class="wb-topbar">
-  <button id="wbMenuBtn" class="wb-btn">目录</button>
-  <strong>LDA · 光子/量子芯片设计工作台</strong>
-  <input id="wbSearch" class="wb-search" placeholder="搜索能力（如 环形 / 逆设计 / DRC）">
-  <div class="wb-roles">
-    <button data-role="customer" class="wb-role">客户</button>
-    <button data-role="engineer" class="wb-role wb-active">工程师</button>
-    <button data-role="expert" class="wb-role">专家</button>
-  </div>
-  <a class="wb-cta" href="#runProposal">进入工作台 →</a>
-</div>
 <div class="wb-drawer" id="wbDrawer"></div>
 <div class="wb-scrim" id="wbScrim"></div>
-
-<header data-page-node-id="cQ3vTa1guC30BOEHtrOEcv">
-  <span class="logo" data-page-node-id="D8G47GOhdfGTSvFeXPiLxs">LDA</span>
-  <span class="sub" data-page-node-id="hOlhnGZztFBOepku4YdCE3">agent-native 光子 + 量子芯片设计 · 验证内核实时预览（L4）</span>
-</header>
 
   <!-- LDA 英雄区：2×2 四卡（内循环项目交付 + 外循环生态闭环），不照搬诚实边界，文案做角色翻译 -->
   <div class="wb-hero" data-page-node-id="wbHero">
@@ -1334,6 +1317,11 @@ async function api(path, body){
   // TypeError 并被 catch 吞成"错误：TypeError"。统一在此抛服务端消息，由各函数
   // 既有 try/catch 优雅展示，避免崩溃。
   if(!r.ok){
+    // P0 修复（代码质量审计）：登录闸门 401 统一转友好提示，
+    // 避免「需登录后才能触发重计算…」裸错直接展出到面板。
+    if(r.status === 401){
+      throw new Error('请先登录后体验完整功能（实时版图 / 仿真 / 验收等重计算需登录）');
+    }
     const msg = (data && (data.error || data.detail)) ? (data.error || data.detail) : ('HTTP ' + r.status);
     throw new Error(msg);
   }
@@ -1412,7 +1400,7 @@ async function runVerify(){
                                       : {candidate:cand};
     const d = await api('/api/verify', payload);
     renderVerify(d);
-  }catch(e){ $('verifySummary').textContent = '错误：'+e; }
+  }catch(e){ $('verifySummary').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ btn.disabled = false; }
 }
 
@@ -1422,7 +1410,7 @@ async function runLoop(){
   try{
     const d = await api('/api/agent_loop', {solver:$('solver').value, dual:$('dual').checked});
     renderLoop(d);
-  }catch(e){ $('loopSummary').textContent = '错误：'+e; }
+  }catch(e){ $('loopSummary').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ btn.disabled = false; }
 }
 
@@ -1440,7 +1428,7 @@ async function runCoupler(){
     else body.sep = parseFloat($('couplerSep').value);
     const d = await api('/api/coupler_loop', body);
     renderCoupler(d);
-  }catch(e){ $('couplerSummary').textContent = '错误：'+e; }
+  }catch(e){ $('couplerSummary').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ btn.disabled = false; }
 }
 function renderCoupler(d){
@@ -1498,7 +1486,7 @@ async function runBand(){
       periods: parseInt($('bandPer').value),
     });
     renderBand(d);
-  }catch(e){ $('bandSummary').textContent = '错误：'+e; }
+  }catch(e){ $('bandSummary').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ btn.disabled = false; }
 }
 function renderBand(d){
@@ -1542,7 +1530,7 @@ async function runRing(){
       R_bounds: [parseFloat($('ringRlo').value), parseFloat($('ringRhi').value)],
     });
     renderRing(d);
-  }catch(e){ $('ringSummary').textContent = '错误：'+e; }
+  }catch(e){ $('ringSummary').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ btn.disabled = false; }
 }
 function renderRing(d){
@@ -1585,7 +1573,7 @@ async function runLp(){
       params: parseParams($('lpParams').value),
     });
     renderLp(d);
-  }catch(e){ $('lpSummary').textContent = '错误：'+e; }
+  }catch(e){ $('lpSummary').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ btn.disabled = false; }
 }
 function parseParams(s){
@@ -1619,7 +1607,7 @@ async function runDp(){
   try{
     const d = await api('/api/design_pipeline', payload);
     renderDp(d);
-  }catch(e){ $('dpSummary').textContent = '错误：'+e; }
+  }catch(e){ $('dpSummary').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ btn.disabled = false; }
 }
 function renderDp(d){
@@ -1658,7 +1646,7 @@ async function runFx(){
       foundry: $('fxFoundry').value,
     });
     renderFx(d);
-  }catch(e){ $('fxSummary').textContent = '错误：'+e; }
+  }catch(e){ $('fxSummary').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ btn.disabled = false; }
 }
 function renderFx(d){
@@ -1690,7 +1678,7 @@ async function runRingFdtd(){
       ${d.peaks_um.map((p,i)=>`<tr><td>${i+1}</td><td>${fmt(p)}</td></tr>`).join('')}
     </table>`;
     $('rfConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}`;
-  }catch(e){ $('rfSummary').textContent = '错误：'+e; }
+  }catch(e){ $('rfSummary').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ btn.disabled = false; }
 }
 function rfSvg(d){
@@ -1729,7 +1717,7 @@ async function runDcTrans(){
       ${d.wavelengths_um.map((w,i)=>`<tr><td>${w}</td><td>${fmt(d.cross_frac[i])}</td><td>${fmt(d.thru_power[i]/1e4)}e4</td><td>${fmt(d.kappa_fdtd[i])}</td></tr>`).join('')}
     </table>`;
     $('dtConclusion').innerHTML = `<strong>结论：</strong>${d.verdict}`;
-  }catch(e){ $('dtSummary').textContent = '错误：'+e; }
+  }catch(e){ $('dtSummary').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ btn.disabled = false; }
 }
 function dtSvg(d){
@@ -1759,7 +1747,7 @@ async function runDevLib(){
     const d = await api('/api/device_library', {});
     if(!d.available){ $('dlSummary').textContent = '不可用：'+d.error; return; }
     renderDevLib(d);
-  }catch(e){ $('dlSummary').textContent = '错误：'+e; }
+  }catch(e){ $('dlSummary').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ btn.disabled = false; }
 }
 function renderDevLib(d){
@@ -3877,7 +3865,7 @@ async function runIr(){
   try{
     const d = await api('/api/ir_demo', {});
     renderIr(d);
-  }catch(e){ $('irSummary').textContent = '错误：'+e; }
+  }catch(e){ $('irSummary').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ btn.disabled = false; }
 }
 function escapeHtml(s){
@@ -3906,7 +3894,7 @@ async function runTapeout(){
     const devices = JSON.parse($('tpDevices').value || '{}');
     const d = await api('/api/tapeout', {devices});
     renderTapeout(d);
-  }catch(e){ $('tpSummary').textContent = '错误：'+e; }
+  }catch(e){ $('tpSummary').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ if(btn) btn.disabled = false; }
 }
 function renderTapeout(d){
@@ -3936,7 +3924,7 @@ async function runGeoDrc(){
     const devices = JSON.parse($('tpDevices').value || '{}');
     const d = await api('/api/geometry_drc', {devices});
     renderGeoDrc(d);
-  }catch(e){ $('tpGeo').textContent = '错误：'+e; }
+  }catch(e){ $('tpGeo').textContent = '错误：'+(e&&e.message?e.message:e); }
   finally{ if(btn) btn.disabled = false; }
 }
 function renderGeoDrc(d){
@@ -4174,25 +4162,35 @@ async function runProposalDesign(){
 $('runProposal').onclick = runProposalDesign;
 
 (async ()=>{
-  // —— 首屏必跑：状态卡(引导①锚点) + 3 个 HERO 旗舰演示(引导②/③/④锚点) + 2 个重名函数(避免 selector 歧义) ——
+  // —— 首屏必跑：状态卡(引导①锚点) + 验证裁判(引导②) ——
   const st = await api('/api/status');
   renderStatus(st);
   await loadDesignCatalog();
   $('doKindRetry').onclick = ()=>{ loadDesignCatalog(); };
-  runVerify();        // HERO ② 验证裁判控制台
-  runLp();            // HERO ⑧ 版图→DRC→仿真流水线
-  runDesignOutcome(); // HERO ★ 旗舰设计闭环
-  runQd();            // 重名函数(runQd 两处定义)，保留立即跑确保确定性
-  runDp();            // 重名函数(runDp 两处定义)，同上
+  runVerify();        // HERO ② 验证裁判控制台（公开端点，始终跑）
+
+  // —— 登录态门控（P4 修复）：重计算类端点受 v0.9.7 登录闸门保护，
+  // 未登录即 401。为避免首屏/滚动自动触发产生「需登录后才能触发重计算」裸错噪声，
+  // 仅在已登录(存在 lda_store_token cookie)时才自动跑 HERO 旗舰演示与懒加载面板；
+  // 未登录时按钮始终可用，用户点击会收到 api() 统一转发的友好登录提示（见 P0）。
+  const LDA_AUTHED = /(?:^|;\s*)lda_store_token=/.test(document.cookie);
+
+  if (LDA_AUTHED) {
+    runLp();            // HERO ⑧ 版图→DRC→仿真流水线
+    runDesignOutcome(); // HERO ★ 旗舰设计闭环
+    runQd();            // 重名函数(runQd 两处定义)，保留立即跑确保确定性
+    runDp();            // 重名函数(runDp 两处定义)，同上
+  }
 
   // —— 懒加载：其余 23 个演示面板改为「滚动进视口才自动跑」——
   // 每个函数对应同名静态按钮 id(按钮始终存在)；即使懒加载失效，用户点按钮照样跑全部功能。
   // 兜底：浏览器不支持 IntersectionObserver 或找不到按钮时，退化为立即跑——功能绝不丢失。
+  // 同样受 LDA_AUTHED 门控：未登录不自动触发登录闸门端点，避免 401 噪声。
   const LAZY = [runCoupler, runBand, runRing, runRingFdtd, runDcTrans, runDevLib,
                 runDesignLoop, runRingPkg, runInvDesign, runWdm, runRc, runMq, runRf,
                 runMqf, runMs, runCd, runWc, runSr, runWs, runIr, runLk, runTapeout, runGeoDrc];
   const fire = (fn) => { try { fn(); } catch (e) { console.warn('[lazy-demo]', fn && fn.name, e); } };
-  if ('IntersectionObserver' in window) {
+  if (LDA_AUTHED && 'IntersectionObserver' in window) {
     const io = new IntersectionObserver((entries, obs) => {
       entries.forEach(en => {
         if (en.isIntersecting && en.target.__lazyFn) {
@@ -4206,9 +4204,10 @@ $('runProposal').onclick = runProposalDesign;
       if (elt) { elt.__lazyFn = fn; io.observe(elt); }
       else { fire(fn); }
     });
-  } else {
+  } else if (LDA_AUTHED) {
     LAZY.forEach(fire);
   }
+  // 未登录：不注册自动跑；用户手动点击任意演示按钮仍可触发（走 P0 友好登录提示）。
 })();
 </script>
 <script src="/nav.js"></script>
@@ -4268,12 +4267,20 @@ $('runProposal').onclick = runProposalDesign;
   document.getElementById('wbMenuBtn').addEventListener('click',function(){openDrawer(!document.getElementById('wbDrawer').classList.contains('open'));});
   document.getElementById('wbScrim').addEventListener('click',function(){openDrawer(false);});
   document.getElementById('wbSearch').addEventListener('input',render);
+  function applyRoleToPage(){
+    // P2：角色切换真正过滤主页面（此前只过滤抽屉，主区 .sec 不变 → 用户感知"没变化"）
+    Array.prototype.slice.call(document.querySelectorAll('.sec')).forEach(function(s){
+      var roles=(s.dataset.roles||'engineer').split(',');
+      s.classList.toggle('wb-role-hidden', roles.indexOf(curRole)<0);
+    });
+  }
   Array.prototype.slice.call(document.querySelectorAll('.wb-role')).forEach(function(b){
     b.addEventListener('click',function(){
       curRole=b.dataset.role;
       Array.prototype.slice.call(document.querySelectorAll('.wb-role')).forEach(function(x){x.classList.remove('wb-active');});
       b.classList.add('wb-active');
       render();
+      applyRoleToPage();
     });
   });
   document.getElementById('wbDrawer').addEventListener('click',function(e){
@@ -4287,6 +4294,7 @@ $('runProposal').onclick = runProposalDesign;
     }
   });
   render();
+  applyRoleToPage();
 })();
 </script>
 

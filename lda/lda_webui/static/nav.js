@@ -45,11 +45,28 @@
       "style",
       "position:sticky;top:0;z-index:60;" +
         "display:flex;align-items:center;justify-content:space-between;gap:16px;" +
-        "padding:12px 18px;background:var(--panel);border-bottom:1px solid var(--line)"
+        "padding:10px 18px;min-height:56px;box-sizing:border-box;flex-wrap:wrap;" +
+        "background:var(--panel);border-bottom:1px solid var(--line)"
     );
+    // 首页专用控件（仅 index.html 存在 #wbDrawer 时注入）：目录/搜索/角色/进入工作台
+    // —— 与 wb-nav-js 按 id/class 接线（事件监听在 index.html 挂载），合并原 wb-topbar，消除双导航。
+    var isHome = !!document.getElementById("wbDrawer");
+    var homeControls = isHome ? (
+      '<button id="wbMenuBtn" class="wb-btn" style="margin-right:4px">目录</button>' +
+      '<input id="wbSearch" class="wb-search" placeholder="搜索能力（如 环形 / 逆设计 / DRC）">' +
+      '<div class="wb-roles" style="margin:0 4px">' +
+        '<button data-role="customer" class="wb-role">客户</button>' +
+        '<button data-role="engineer" class="wb-role wb-active">工程师</button>' +
+        '<button data-role="expert" class="wb-role">专家</button>' +
+      "</div>"
+    ) : "";
+    var cta = isHome
+      ? '<a class="wb-cta" href="#runProposal" style="margin-left:14px">进入工作台 →</a>'
+      : "";
     nav.innerHTML =
-      '<div style="display:flex;gap:18px;align-items:center">' +
+      '<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">' +
       '<span style="font-weight:800;color:var(--accent);font-size:16px;letter-spacing:.5px">LDA</span>' +
+      homeControls +
       '<span id="lda-nav-ver" style="font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-left:2px">v…</span>' +
       link("/index.html", "首页", "home") +
       link("/insights.html", "能力展示", "insights") +
@@ -58,6 +75,7 @@
       '<a id="lda-nav-mine" href="/mine.html" style="display:none;text-decoration:none;font-size:14px">我的</a>' +
       link("/admin.html", "管理后台", "admin") +
       '<a id="lda-nav-stats" href="/stats.html" style="display:none;text-decoration:none;font-size:14px;color:var(--mut)">数据看板</a>' +
+      cta +
       "</div>" +
       '<div id="lda-nav-auth" style="display:flex;gap:8px;align-items:center"></div>';
     document.body.insertBefore(nav, document.body.firstChild);

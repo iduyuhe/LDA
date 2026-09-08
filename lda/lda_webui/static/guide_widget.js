@@ -137,7 +137,7 @@
     nextBtn = tip.querySelector("#gNext");
 
     // 关键修复（2026-09-08）：引导浮窗本身设 pointer-events:none（穿透），仅按钮与正文链接可交互。
-    // 否则欢迎步居中的 tip 会盖住英雄区右侧卡（卡2/卡4），复现"卡1-4 点不动"。blk 已同改为穿透。
+    // 欢迎步 tip 已改右下角固定（见 position()），不再居中盖住英雄区右侧卡（卡2/卡4）。blk 已同改为穿透。
     [tip.querySelector("#gClose"), tip.querySelector("#gSkip"), prevBtn, nextBtn].forEach(function (b) { if (b) b.style.pointerEvents = "auto"; });
     tip.querySelectorAll("#gBody a").forEach(function (a) { a.style.pointerEvents = "auto"; });
 
@@ -204,8 +204,11 @@
       if (top < 10) top = 10;
       left = rect.left + rect.width / 2 - tw / 2;
     } else {
-      top = vh / 2 - th / 2;
-      left = vw / 2 - tw / 2;
+      // P3 修复（代码质量审计）：无 target 的欢迎/完成步，浮窗固定右下角而非居中，
+      // 避免居中遮罩盖住英雄区(卡2/卡4)与首屏 CTA。后续 Math.max/min 兜底不越界。
+      var m = 22;
+      left = vw - tw - m;
+      top = vh - th - m;
     }
     left = Math.max(10, Math.min(left, vw - tw - 10));
     top = Math.max(10, Math.min(top, vh - th - 10));

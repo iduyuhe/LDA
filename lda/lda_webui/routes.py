@@ -319,6 +319,11 @@ HEAVY_POST_PATHS = {
     "/api/hybrid_multi", "/api/adjoint3d", "/api/port_acceptance",
     "/api/adjoint3d_perf", "/api/qubit_resonator", "/api/qeda_depth",
     "/api/pdk_design", "/api/pdk_compare",
+    # 权限审计 2026-09-09 补录：6 个漏网重计算端点并入登录闸门
+    # （agent_loop 直调 34.9s / band_loop 19.9s，匿名可触发且无并发护栏；语义与
+    #  design_loop/ring_fdtd 同类）。agent/chat 为轻量 FAQ 留公开。
+    "/api/agent_loop", "/api/band_loop", "/api/ring_loop",
+    "/api/geometry_drc", "/api/tapeout", "/api/proposal_design",
 }
 # 每端点独立锁 + 缓存，预先建好避免请求期竞态
 _HEAVY_GUARDS = {p: {"lock": threading.Lock(), "cache": {}, "ttl": _HEAVY_TTL}

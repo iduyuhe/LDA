@@ -451,7 +451,9 @@ def get_config() -> dict:
 
 def set_config(config: dict, token: str) -> dict:
     if not is_admin(token):
-        return {"ok": False, "error": "unauthorized"}
+        # code:401 必带——h_admin_config_set 经 _ok_code 提取，漏带会以 HTTP 200
+        # 返回 unauthorized（监控/日志按状态码统计会漏记未授权尝试）
+        return {"ok": False, "error": "unauthorized", "code": 401}
     with _locked() as data:
         # 仅接受已知字段
         wc = config.get("wechat") or {}

@@ -468,6 +468,11 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # / Ring <0.1s），干净实测 ~60-80s；配 600s 只为 numba 首次 JIT 编译（冷
     # 缓存 ~30s）与慢机器抖动留余量。
     "run_device_library_smoke.py": 600.0,
+    # 反自证桩护栏：路径① 8 类断言 + 52 锚重计算（正向/反向/灵敏度/无回归/对外账本/
+    # 路径② 复现/JSON 序列化/行为判据自检）。CI 实测 ~159s，纯 CPU 慢机 >300s
+    # ⇒ 走默认 300s 会被误 TIMEOUT/CRASH（非零 rc + 零输出 = CRASH 语义，非断言失败）。
+    # 配 600s（≈4× 余量）防慢机假死；判据一字未改，纯耗时余量。
+    "run_benchmark_falsifiability_smoke.py": 600.0,
 }
 
 

@@ -19,7 +19,7 @@ v0.9.16 补 P0-3 三分类双向复核 · P0 续光子侧 B3/B4/B20 接线）。
      新接的 4 道一道没出现；改为动态推导后仍须钉死，防"动态"悄悄失效
   ⑧ 路径②一致：CLI 对外主报告（VerificationHarness + IndependentCandidateRouter）
      的 verified 口径必须等于路径①，且 48 题**全部按题标注**独立性
-     —— ci.yml 直跑 run_harness.py，但本地 `--tag core` 不跑它，存在覆盖盲区
+     —— ci.yml 直跑 run_harness.py，本 smoke 与 run_harness.py 均已入 CORE_SMOKES（run_ci_regression.py:38-39），本地 `--tag core` 与 ci.yml 双重守护路径②口径，无覆盖盲区
 
 为什么③比②重要：②只能证明"没坏"，③才能证明"坏了能发现"。
 只做②不做③，等于把「放宽容差」变成「取消验证」——这正是自证桩的翻版。
@@ -66,6 +66,7 @@ CHECKS = []
 def check(name, ok, detail=""):
     CHECKS.append((name, bool(ok), detail))
     print(f"[{'PASS' if ok else 'FAIL'}] {name} {('| ' + detail) if detail else ''}")
+    sys.stdout.flush()  # 心跳：防纯 CPU 慢机长跑时 stdout 缓冲掩盖真实进度
 
 
 # 独立候选锚题的**反向测试配置**：(锚题, 扰动参数, 扰动方式)
@@ -230,6 +231,9 @@ def main() -> int:
     print("=" * 70)
 
     specs, cand_map = build_harness_specs()
+    print(f"  [心跳] build_harness_specs 完成，载入 {len(specs)} 道锚题，"
+          f"开始 ① 独立性普查…（纯 CPU 慢机本 smoke 实测 >300s，CI ~159s）",
+          flush=True)
     by_id = {s.spec_id: s for s in specs}
 
     # ① 独立性普查：区分「真独立求解」与「自证桩」
@@ -485,8 +489,8 @@ def main() -> int:
     # ⑧ 路径②（CLI 对外主报告）护栏（v0.9.15/P0-2 新增）：
     # ①–⑤ 守护的是**路径①**（内部 smoke 的 build_harness_specs + cand_map），
     # 但对外主报告走**路径②**（VerificationHarness.run + IndependentCandidateRouter）。
-    # ci.yml 第 29 行会直跑 run_harness.py，但**本地 `--tag core` 门禁不跑它**
-    # ⇒ 本地存在覆盖盲区（与 v0.9.10「脚本在 ci.yml 却不在本地 core」同类）。
+    # ci.yml 第 29 行会直跑 run_harness.py，但本地 `--tag core` 与 ci.yml 双重守护路径②口径（无盲区）
+    # ⇒ 本 smoke 自身在 CORE_SMOKES（:39）、run_harness.py 亦在 core（:38），路径②口径已双重守护，无覆盖盲区（早版「本地不跑它」已过时）。
     # 这里在进程内复现路径②（**不写报告文件**，避免每次回归污染工作区），
     # 断言其 verified 口径与路径①一致，杜绝「两条路径各说各话」。
     try:

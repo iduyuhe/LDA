@@ -1048,6 +1048,39 @@ _PWD_REQ_WINDOW = 600      # 秒
 _PWD_REQ_NOTE_MAX = 200    # 备注长度上限
 
 
+# ---------------------------------------------------------------------------
+# 公开写端点 IP 限流（P3 审计 2026-09-09）
+# 获客/生态投稿端点（opinion/purchase/ecosystem/submit、store/guide）**故意
+# 无鉴权**（公开促进转化），用 IP 限流防匿名连打堆垃圾淹后台（实测 20~30
+# 连打全 200）。复用 _LOGIN_GUARD 桶（同锁、同清理路径），key 前缀 "pub:"
+# 区分作用域；滑动窗口只留 window 内时间戳，天然自清理无定时任务。
+# ---------------------------------------------------------------------------
+_PUB_GUARD_MAX = 10          # 单 IP 窗口内最多请求次数
+_PUB_GUARD_WINDOW = 600.0    # 秒
+
+
+def public_write_guard(scope: str, client_ip: str,
+                       limit: int = _PUB_GUARD_MAX,
+                       window: float = _PUB_GUARD_WINDOW):
+    """公开写端点限流闸门：返回 None=放行；返回 str=拒绝消息（调用方转 429）。
+
+    - scope：端点路径（如 /api/opinion/submit），不同端点独立计数；
+    - client_ip：为空（单测直调/无对端地址）时跳过限流，与找回申请同款语义；
+    - 滑动窗口内超限即拒；窗口过期自动放行（旧时间戳被滤除）。
+    """
+    if not client_ip:
+        return None
+    key = "pub:" + scope + ":" + client_ip
+    with _LOGIN_GUARD_LOCK:
+        _now = time.time()
+        hits = [t for t in _LOGIN_GUARD.get(key, []) if _now - t < window]
+        if len(hits) >= limit:
+            return "操作过于频繁，请 %d 分钟后再试" % max(1, int(window // 60))
+        hits.append(_now)
+        _LOGIN_GUARD[key] = hits
+        return None
+
+
 def submit_pwd_reset_request(email: str, note: str = "", client_ip: str = "") -> dict:
     """用户提交找回密码申请（公开端点）。
 

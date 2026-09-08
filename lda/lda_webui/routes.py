@@ -324,6 +324,11 @@ HEAVY_POST_PATHS = {
     #  design_loop/ring_fdtd 同类）。agent/chat 为轻量 FAQ 留公开。
     "/api/agent_loop", "/api/band_loop", "/api/ring_loop",
     "/api/geometry_drc", "/api/tapeout", "/api/proposal_design",
+    # P2.5 审计 2026-09-09 再补录（run_heavy_post_gate_smoke 启发扫出）：
+    # verify 跑全 48 锚判决回路（candidate=perturb/l3_ai 触发真求解器）——
+    # 匿名可触发重计算。GET 验货端点（cpo_array 等读结果）不受影响；
+    # 外部 ORACLE 带管理员 Bearer 仍可达（登录闸门对 _check_admin 放行）。
+    "/api/verify",
 }
 # 每端点独立锁 + 缓存，预先建好避免请求期竞态
 _HEAVY_GUARDS = {p: {"lock": threading.Lock(), "cache": {}, "ttl": _HEAVY_TTL}
@@ -404,6 +409,37 @@ def _heavy_guard(name, payload, handler_fn, self, query, path):
             g["lock"].release()
     finally:
         _HEAVY_GLOBAL_SEM.release()
+
+
+# --------------------------------------------------------------------------
+# 公开写端点 IP 限流（v0.9.6x · P3 审计 2026-09-09）
+# 背景：获客/生态投稿入口（意见、询价、生态投稿、导购）**故意无鉴权**（公开
+#       促进转化/播种），但匿名连打可无限堆垃圾（实测 20~30 连打全 200），
+#       管理员后台会被淹没。→ IP 维度 10 次/10 分钟（与找回密码申请同款，
+#       复用 store._LOGIN_GUARD 桶；client_ip 为空时跳过，兼容单测直调）。
+# 与 HEAVY_POST_PATHS（登录闸门）互斥：公开端点用「限流」而非「登录」——
+#   两者意图不同（获客开放 vs 重计算保护），并集覆盖全部 POST 写入口。
+# --------------------------------------------------------------------------
+PUBLIC_RATE_PATHS = {
+    "/api/opinion/submit", "/api/purchase/request",
+    "/api/ecosystem/submit", "/api/store/guide",
+}
+_PUBLIC_RATE_LIMIT = 10
+_PUBLIC_RATE_WINDOW = 600.0
+
+
+def _public_write_guard(name, payload, handler_fn, self, query, path):
+    """对公开写端点施 IP 限流，返回 (code, body)。超限 429，未超转发原 handler。
+
+    client_ip 经 _client_ip 严格取对端地址（仅可信代理采信 XFF），与登录限流
+    同源，外部无法伪造 XFF 绕过。
+    """
+    store = _app._get_store()
+    err = store.public_write_guard(name, _app._client_ip(self),
+                                   _PUBLIC_RATE_LIMIT, _PUBLIC_RATE_WINDOW)
+    if err:
+        return (429, {"endpoint": name, "accepted": False, "error": err})
+    return handler_fn(self, payload, query, path)
 
 
 def h_verification_ledger(h, p, q, path):

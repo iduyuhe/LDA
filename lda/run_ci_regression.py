@@ -307,6 +307,18 @@ CORE_SMOKES: List[str] = [
     #   未设 LDA_ADMIN_TOKEN 即返回空串 fail-closed，杜绝漏设环境变量即用公开弱令牌
     #   登录的 fail-open 漏洞；含源码静态查 + 子进程行为 + 起服务登录真跑 + 反向）
     "run_admin_token_smoke.py",
+    # 🔴 v0.9.6x 权限审计 2026-09-09：重计算 POST 登录闸门完备性护栏（P2.5）。
+    #   防「重计算须登录」纪律回潮：凡 handler 直调 _app.run_* 的 POST 端点必须
+    #   ∈ HEAVY_POST_PATHS。审计时 grep 全部 smoke 无任何判据守护该集合——
+    #   正是设计启发扫出第 7 个漏网点 /api/verify（跑全 48 锚判决回路）。
+    #   纯静态 ast 扫描 <1s；C4 反向剔除 agent_loop/verify 必须 FAIL。
+    "run_heavy_post_gate_smoke.py",
+    # 🔴 v0.9.6x 权限审计 2026-09-09：公开写端点 IP 限流护栏（P3）。
+    #   获客/生态投稿端点（opinion/purchase/ecosystem.submit、store/guide）
+    #   故意无鉴权但审计实测匿名 20~30 连打全 200 → store.public_write_guard
+    #   10 次/10 分钟 + 端到端转发验证（10×200+第11×429+换IP恢复）。
+    #   store.STORE_PATH 先隔离到临时目录再 import，全程不碰 dev 库。
+    "run_public_write_limit_smoke.py",
     # 三分类对外一致性护栏（v0.9.48 N-4：README 账本 ≡ 本机 harness 推导 ≡
     #   /api/verification_ledger 端点三分类，任一漂移即红；含反向篡改测试）
     "run_three_class_consistency_smoke.py",

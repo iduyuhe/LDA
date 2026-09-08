@@ -3380,6 +3380,10 @@ class Handler(BaseHTTPRequestHandler):
         if path in exact:
             if method == "POST" and path in getattr(_rmod, "HEAVY_POST_PATHS", ()):
                 res = _rmod._heavy_guard(path, payload, exact[path], self, query, path)
+            elif method == "POST" and path in getattr(_rmod, "PUBLIC_RATE_PATHS", ()):
+                # P3 审计 2026-09-09：公开写端点（获客/生态投稿）无鉴权但有
+                # IP 限流（10 次/10 分钟），防匿名连打堆垃圾淹后台。
+                res = _rmod._public_write_guard(path, payload, exact[path], self, query, path)
             else:
                 res = exact[path](self, payload, query, path)
         else:

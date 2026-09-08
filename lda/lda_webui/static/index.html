@@ -4015,39 +4015,41 @@ async function runProposalDesign(){
 $('runProposal').onclick = runProposalDesign;
 
 (async ()=>{
+  // —— 首屏必跑：状态卡(引导①锚点) + 3 个 HERO 旗舰演示(引导②/③/④锚点) + 2 个重名函数(避免 selector 歧义) ——
   const st = await api('/api/status');
   renderStatus(st);
   await loadDesignCatalog();
-  runVerify();
-  // 首屏预热：自动演示真闭环（耦合器验收锚 + 多波长 + 环形谱形 + 版图流水线 + 环形 FDTD），让闭环可视化立即可见
-  runCoupler();
-  runBand();
-  runRing();
-  runLp();
-  runRingFdtd();
-  runDcTrans();
-  runDevLib();
-  runDesignLoop();
-  runDesignOutcome();
-  runRingPkg();
-  runInvDesign();
-  runQd();
-  runWdm();
-  runRc();
-  runDp();
-  runMq();
-  runRf();
-  runMqf();
-  runMs();
-  runCd();
-  runWc();
-  runSr();
-  runWs();
-  runIr();
-  runLk();
-  runTapeout();
-  runGeoDrc();
-})();
+  runVerify();        // HERO ② 验证裁判控制台
+  runLp();            // HERO ⑧ 版图→DRC→仿真流水线
+  runDesignOutcome(); // HERO ★ 旗舰设计闭环
+  runQd();            // 重名函数(runQd 两处定义)，保留立即跑确保确定性
+  runDp();            // 重名函数(runDp 两处定义)，同上
+
+  // —— 懒加载：其余 23 个演示面板改为「滚动进视口才自动跑」——
+  // 每个函数对应同名静态按钮 id(按钮始终存在)；即使懒加载失效，用户点按钮照样跑全部功能。
+  // 兜底：浏览器不支持 IntersectionObserver 或找不到按钮时，退化为立即跑——功能绝不丢失。
+  const LAZY = [runCoupler, runBand, runRing, runRingFdtd, runDcTrans, runDevLib,
+                runDesignLoop, runRingPkg, runInvDesign, runWdm, runRc, runMq, runRf,
+                runMqf, runMs, runCd, runWc, runSr, runWs, runIr, runLk, runTapeout, runGeoDrc];
+  const fire = (fn) => { try { fn(); } catch (e) { console.warn('[lazy-demo]', fn && fn.name, e); } };
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries, obs) => {
+      entries.forEach(en => {
+        if (en.isIntersecting && en.target.__lazyFn) {
+          fire(en.target.__lazyFn);
+          obs.unobserve(en.target);
+        }
+      });
+    }, { rootMargin: '160px 0px' });
+    LAZY.forEach(fn => {
+      const elt = document.getElementById(fn.name);
+      if (elt) { elt.__lazyFn = fn; io.observe(elt); }
+      else { fire(fn); }
+    });
+  } else {
+    LAZY.forEach(fire);
+  }
+});
 </script>
 <script src="/nav.js"></script>
 <script src="/cs_widget.js"></script>

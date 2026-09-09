@@ -181,6 +181,8 @@ CORE_SMOKES: List[str] = [
     "run_llm_proposer_value_smoke.py",
     # 红队自动化 + 假独立（对抗命题注入 + 红队模型≠生成器模型，防同脑假独立；0.31s）
     "run_redteam_automation_smoke.py",
+    # T0 LLM 红队实证（蓝队生成/红队出题闭环：GLM 对抗候选经三层判卷零漏过+多锚覆盖；0.4s）
+    "run_redteam_llm_smoke.py",
     # 系统类型注册表（v0.8.33：link/wdm_demux/quantum_fidelity 分发，复用已验证闭环）
     "run_system_types_smoke.py",
     # 创新超市货架（v0.8.34：前瞻预研货架 · 组合已锚定基元 + 公开信号驱动，红线下护栏）

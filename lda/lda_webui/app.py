@@ -397,11 +397,9 @@ def build_results_json(results, meta):
     }
 
 
-def run_proposal_design(payload):
-    """Phase 4 生成侧：功能需求 → 过锚提案列表（人终审材料）。"""
-    sys.path.insert(0, LDA_ROOT)
-    from lda_harness.proposal_compiler import design_pipeline
-    req = {
+def _proposal_req_from_payload(payload):
+    """从请求体抽取 WDM 链路需求（与 proposal_compiler 约定键一致）。"""
+    return {
         "n_channels": int(payload.get("n_channels", 4) or 4),
         "channel_spacing_ghz": float(payload.get("channel_spacing_ghz", 100.0) or 100.0),
         "filter_bw_ghz": float(payload.get("filter_bw_ghz", 50.0) or 50.0),
@@ -409,14 +407,68 @@ def run_proposal_design(payload):
         "p_tx_dbm": float(payload.get("p_tx_dbm", 0.0) or 0.0),
         "wg_length_cm": float(payload.get("wg_length_cm", 1.0) or 1.0),
     }
+
+
+def run_proposal_design(payload):
+    """Phase 4 生成侧：功能需求 → 过锚提案列表（人终审材料）。
+
+    默认在返回设计结果的同时，自动触发红队(GLM)出题轰炸当前需求、锚判卷出
+    死标量并写入趋势（redteam_probe 字段）。红队失败/未配优雅降级，绝不阻断
+    设计返回；可传 redteam_probe:false 关闭自动轰炸。
+    """
+    sys.path.insert(0, LDA_ROOT)
+    from lda_harness.proposal_compiler import design_pipeline
+    req = _proposal_req_from_payload(payload)
     # 生成器 opt-in：默认 grid（确定性/零成本/零延迟）；传 "llm" 启用 LLM 提案器
     # （需生产 drop-in 注入 LDA_LLM_*，未配置自动降级网格）。红线：LLM 只出参数，
     # 判决全在四锚，不进路径。任意非法值回退 grid 防注入。
     gen = payload.get("generator", "grid")
     if gen not in ("grid", "llm"):
         gen = "grid"
-    return design_pipeline(req, n_top=int(payload.get("n_top", 3) or 3),
-                           generator=gen)
+    result = design_pipeline(req, n_top=int(payload.get("n_top", 3) or 3),
+                             generator=gen)
+    # —— 自动红队轰炸（默认开；LLM 失败/未配优雅降级，不阻断设计返回）——
+    if bool(payload.get("redteam_probe", True)):
+        try:
+            sys.path.insert(0, WEBUI_DIR)
+            from redteam_probe import run_redteam_probe as _rtp
+            rt = _rtp(req, n=int(payload.get("redteam_n", 6) or 6), generator=gen)
+            if isinstance(result, dict):
+                result["redteam_probe"] = rt
+            else:
+                result = {"design": result, "redteam_probe": rt}
+        except Exception as e:  # noqa: BLE001
+            _rt = {"status": "error", "detail": str(e)[:200]}
+            if isinstance(result, dict):
+                result["redteam_probe"] = _rt
+            else:
+                result = {"design": result, "redteam_probe": _rt}
+    return result
+
+
+def run_redteam_probe(payload):
+    """周期化自动攻击端点：红队(GLM)出题轰炸需求，锚判卷出死标量 + 趋势。
+
+    可与 /api/proposal_design 解耦独立调用（如 cron 周期触发）；返回含当前结果
+    与最近趋势快照。无 LDA_REDTEAM_* 时返回 skipped（不联网）。
+    """
+    sys.path.insert(0, LDA_ROOT)
+    sys.path.insert(0, WEBUI_DIR)
+    from redteam_probe import run_redteam_probe as _rtp
+    req = _proposal_req_from_payload(payload)
+    gen = payload.get("generator", "grid")
+    if gen not in ("grid", "llm"):
+        gen = "grid"
+    n = int(payload.get("n", 6) or 6)
+    return _rtp(req, n=n, generator=gen)
+
+
+def run_redteam_trend(payload):
+    """读取红队攻击趋势（hit_rate / attack_ratio 时间序列）。"""
+    sys.path.insert(0, WEBUI_DIR)
+    from redteam_probe import read_trend
+    limit = int(payload.get("limit", 50) or 50)
+    return read_trend(limit=limit)
 
 
 def run_verify(payload):

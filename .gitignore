@@ -45,3 +45,6 @@ lda/reports/crosscheck_history/
 # ---- 外部 ORACLE 隔离环境配置（含本机绝对路径，由 scripts/setup_oracle_env.sh 生成）----
 .oracle_env
 
+# ---- 红队自动攻击趋势数据（运行时生成，绝不入库）----
+lda/lda_webui/data/
+

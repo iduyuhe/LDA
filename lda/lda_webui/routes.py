@@ -329,6 +329,7 @@ HEAVY_POST_PATHS = {
     # 匿名可触发重计算。GET 验货端点（cpo_array 等读结果）不受影响；
     # 外部 ORACLE 带管理员 Bearer 仍可达（登录闸门对 _check_admin 放行）。
     "/api/verify",
+    "/api/redteam_probe", "/api/redteam_trend",
 }
 # 每端点独立锁 + 缓存，预先建好避免请求期竞态
 _HEAVY_GUARDS = {p: {"lock": threading.Lock(), "cache": {}, "ttl": _HEAVY_TTL}
@@ -1047,6 +1048,14 @@ def h_proposal_design(h, p, q, path):
     return (200, _app.run_proposal_design(p))
 
 
+def h_redteam_probe(h, p, q, path):
+    return (200, _app.run_redteam_probe(p))
+
+
+def h_redteam_trend(h, p, q, path):
+    return (200, _app.run_redteam_trend(p))
+
+
 def h_store_guide(h, p, q, path):
     """POST /api/store/guide —— N-5 导购二期（无 LLM 可降级版）：自然语言需求 → 货架实跑匹配。"""
     return (200, _app.store_guide(p))
@@ -1612,6 +1621,8 @@ POST_ROUTES = {
     "/api/purchase/upload_proof": h_purchase_upload_proof,
     "/api/opinion/submit": h_opinion_submit,
     "/api/proposal_design": h_proposal_design,
+    "/api/redteam_probe": h_redteam_probe,
+    "/api/redteam_trend": h_redteam_trend,
     "/api/agent_loop": h_agent_loop,
     "/api/band_loop": h_band_loop,
     "/api/ring_loop": h_ring_loop,

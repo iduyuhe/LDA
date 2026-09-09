@@ -175,6 +175,8 @@ CORE_SMOKES: List[str] = [
     "run_compact_model_smoke.py",
     # T1-2 SPICE 兼容网表生成器 + Cadence Spectre 适配（参数变→网表变 / 悬空报错 / Spectre 结构异）
     "run_spice_netlist_smoke.py",
+    # 名誉榜台账护栏（结构合法 + 得分一致 + confirmed 缺陷必挂锚，防刷分/自证；0.23s）
+    "run_bounty_ledger_smoke.py",
     # 系统类型注册表（v0.8.33：link/wdm_demux/quantum_fidelity 分发，复用已验证闭环）
     "run_system_types_smoke.py",
     # 创新超市货架（v0.8.34：前瞻预研货架 · 组合已锚定基元 + 公开信号驱动，红线下护栏）

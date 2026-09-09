@@ -4,7 +4,7 @@
 > 核心主张：**底层核心求解器由 AI agent 递归自举开发**，人类做架构与验证，AI 不进入判决路径。
 > **📦 v0.9.0 完整发布说明：`docs/RELEASE_v0.9.0.md`**（15 commit 全量变更 · 商务闭环四要素 · 安全审计 · 已知限制）
 > 
-> 当前版本：**v0.9.63**（2026-09-09 · **WebUI 权限管理审计补漏（四关）· CI core 139→141**：杜先生指令「再审计权限管理」→ 抓出并修掉四类问题——①**P1 `POST /api/admin/config` 未授权返 HTTP 200**（`store.set_config` 拒绝分支漏带 `code:401`，监控按状态码统计漏记全部未授权尝试）→ 补 `code:401`；②**P2 六个重计算端点游离登录闸门**（`agent_loop` 直调 34.9s / `band_loop` 19.9s 匿名可触发且无并发护栏，与 `ring_fdtd/design_loop` 同类漏网）→ 并入 `HEAVY_POST_PATHS` 登录闸门；③**P2.5 新护栏启发扫出第 7 个漏网点 `/api/verify`**（跑全 48 锚判决回路，`candidate=perturb/l3_ai` 触发真求解器）——审计 grep 全部 smoke 发现**无任何判据守护「重计算端点须入闸门」纪律**，补 `run_heavy_post_gate_smoke.py`（5 判据纯静态 ast：HEAVY 成员⊆POST_ROUTES 注册 / run_* 内核端点全部入闸门 / 与 PUBLIC_RATE_PATHS 互斥 / 剔除 agent_loop·verify 双反向必须 FAIL）；④**P3 公开写端点无限流**（`opinion/submit` 30 连打全 200，垃圾可无限堆后台）→ 4 个获客/生态投稿端点（opinion/purchase/ecosystem.submit/store/guide）加 IP 限流 10 次/10 分钟（`store.public_write_guard`，复用登录限流桶；`_dispatch` 加 PUBLIC_RATE_PATHS 分支），补 `run_public_write_limit_smoke.py`（9 判据含反向 limit=1、端到端 10×200+第11×429+换IP恢复、**先隔离 STORE_PATH 临时目录再 import 全程不碰 dev 库**）。agent/chat 经读码+实测判轻量 FAQ 豁免留公开。审计实测教训：改 routes/store 后**必须先重启被测实例**再实测（旧实例 import 期加载旧代码，曾误判「修复未生效」，重启后全 401——「标签≠行为」第 8 次血案入铁律）。四条相关回归全绿（api_v1 19/19 · admin_token 7/7 · store_auth_gate 10/10 · webui_api 90实跑+78静态）。**CI core 146 条**）
+> 当前版本：**v0.9.63**（2026-09-09 · **WebUI 权限管理审计补漏（四关）· CI core 139→141**：杜先生指令「再审计权限管理」→ 抓出并修掉四类问题——①**P1 `POST /api/admin/config` 未授权返 HTTP 200**（`store.set_config` 拒绝分支漏带 `code:401`，监控按状态码统计漏记全部未授权尝试）→ 补 `code:401`；②**P2 六个重计算端点游离登录闸门**（`agent_loop` 直调 34.9s / `band_loop` 19.9s 匿名可触发且无并发护栏，与 `ring_fdtd/design_loop` 同类漏网）→ 并入 `HEAVY_POST_PATHS` 登录闸门；③**P2.5 新护栏启发扫出第 7 个漏网点 `/api/verify`**（跑全 48 锚判决回路，`candidate=perturb/l3_ai` 触发真求解器）——审计 grep 全部 smoke 发现**无任何判据守护「重计算端点须入闸门」纪律**，补 `run_heavy_post_gate_smoke.py`（5 判据纯静态 ast：HEAVY 成员⊆POST_ROUTES 注册 / run_* 内核端点全部入闸门 / 与 PUBLIC_RATE_PATHS 互斥 / 剔除 agent_loop·verify 双反向必须 FAIL）；④**P3 公开写端点无限流**（`opinion/submit` 30 连打全 200，垃圾可无限堆后台）→ 4 个获客/生态投稿端点（opinion/purchase/ecosystem.submit/store/guide）加 IP 限流 10 次/10 分钟（`store.public_write_guard`，复用登录限流桶；`_dispatch` 加 PUBLIC_RATE_PATHS 分支），补 `run_public_write_limit_smoke.py`（9 判据含反向 limit=1、端到端 10×200+第11×429+换IP恢复、**先隔离 STORE_PATH 临时目录再 import 全程不碰 dev 库**）。agent/chat 经读码+实测判轻量 FAQ 豁免留公开。审计实测教训：改 routes/store 后**必须先重启被测实例**再实测（旧实例 import 期加载旧代码，曾误判「修复未生效」，重启后全 401——「标签≠行为」第 8 次血案入铁律）。四条相关回归全绿（api_v1 19/19 · admin_token 7/7 · store_auth_gate 10/10 · webui_api 90实跑+78静态）。**CI core 147 条**）
 
 > 上一版：**v0.9.62**（2026-09-08 · **⑮ WebUI 消费 tapeout / geometry_drc 接口（遗留③收口）· CI core 138→139**：把 v0.9.60 已做好的主权几何内核（`lda_pdk.tapeout_pipeline.run_tapeout_pipeline` 流片管道全链路 + `lda_l2.gds_drc.check_geometry` 几何 DRC）从「仅 API 层」接到 WebUI——新增 `/api/tapeout` 与 `/api/geometry_drc` 两个 HTTP 端点，后端自动从器件几何生成版图 GDS 喂入 S3.5 寄生 / S3.6 几何 DRC；前端 index.html 新增「⑮ 流片签核 Tapeout + 几何 DRC 快查」面板，输入器件字典 JSON 即展示 DRC/工艺角/LVS/寄生/几何 DRC 全流程与诚实边界。新护栏 `run_webui_tapeout_drc_smoke.py`（14 判据，含反向：极细波导 width=0.01µm 必触发 drc_passed=False + 几何违规，证端点接真实内核非假绿；不存在的器件 kind 诚实拒绝而非 500）。**CI core 139 条**）
 
@@ -300,7 +300,7 @@ lda gf my_gf_component.py --out reports
 ```
 红线：CLI 不做任何判决，仅对既有引擎 / layout / harness 的真实计算结果做格式化呈现（LLM 不进路径，死标量判决不变）。`lda check --gds` 主权 DRC 仅覆盖几何维度**子集**（最小线宽/间距/面积），诚实标注非晶圆厂官方 DRC deck 全量。
 
-## 当前账本：CI 机器断言守护（动态，FAIL=0 即绿）· **CI core 146 条**
+## 当前账本：CI 机器断言守护（动态，FAIL=0 即绿）· **CI core 147 条**
 
 - **22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）**
 - **52 题（B1-B30 物理定律锚 + E1-E9 实证锚 + S1-S13 系统锚）**

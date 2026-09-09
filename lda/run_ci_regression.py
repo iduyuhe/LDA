@@ -177,6 +177,10 @@ CORE_SMOKES: List[str] = [
     "run_spice_netlist_smoke.py",
     # 名誉榜台账护栏（结构合法 + 得分一致 + confirmed 缺陷必挂锚，防刷分/自证；0.23s）
     "run_bounty_ledger_smoke.py",
+    # T0 LLM 价值实证（LLM 开启后 Pareto 前沿须出现网格外新非支配点，防开了等于没开；0.31s）
+    "run_llm_proposer_value_smoke.py",
+    # 红队自动化 + 假独立（对抗命题注入 + 红队模型≠生成器模型，防同脑假独立；0.31s）
+    "run_redteam_automation_smoke.py",
     # 系统类型注册表（v0.8.33：link/wdm_demux/quantum_fidelity 分发，复用已验证闭环）
     "run_system_types_smoke.py",
     # 创新超市货架（v0.8.34：前瞻预研货架 · 组合已锚定基元 + 公开信号驱动，红线下护栏）

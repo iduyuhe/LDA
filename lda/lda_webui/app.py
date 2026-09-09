@@ -409,7 +409,14 @@ def run_proposal_design(payload):
         "p_tx_dbm": float(payload.get("p_tx_dbm", 0.0) or 0.0),
         "wg_length_cm": float(payload.get("wg_length_cm", 1.0) or 1.0),
     }
-    return design_pipeline(req, n_top=int(payload.get("n_top", 3) or 3))
+    # 生成器 opt-in：默认 grid（确定性/零成本/零延迟）；传 "llm" 启用 LLM 提案器
+    # （需生产 drop-in 注入 LDA_LLM_*，未配置自动降级网格）。红线：LLM 只出参数，
+    # 判决全在四锚，不进路径。任意非法值回退 grid 防注入。
+    gen = payload.get("generator", "grid")
+    if gen not in ("grid", "llm"):
+        gen = "grid"
+    return design_pipeline(req, n_top=int(payload.get("n_top", 3) or 3),
+                           generator=gen)
 
 
 def run_verify(payload):

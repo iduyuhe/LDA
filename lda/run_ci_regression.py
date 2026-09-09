@@ -185,6 +185,8 @@ CORE_SMOKES: List[str] = [
     "run_redteam_llm_smoke.py",
     # T0 红队自动攻击端点（/api/redteam_probe 周期化：无key降级不联网+趋势落盘可读；有key断言死标量；<1s）
     "run_redteam_probe_smoke.py",
+    # T0 红队 cron 告警定级（classify 反向测试会响：漏过>0/hit_rate>0→CRITICAL，error/skipped/弱攻击→WARN，健康→OK；<0.1s）
+    "run_redteam_cron_smoke.py",
     # 系统类型注册表（v0.8.33：link/wdm_demux/quantum_fidelity 分发，复用已验证闭环）
     "run_system_types_smoke.py",
     # 创新超市货架（v0.8.34：前瞻预研货架 · 组合已锚定基元 + 公开信号驱动，红线下护栏）

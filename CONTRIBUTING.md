@@ -2,7 +2,9 @@
 
 感谢关注 **LDA**——一个 Agent-native 的光子芯片（PDA）+ 量子芯片（QEDA）开源设计软件，核心是 **AI agent 递归自举主权求解器**，人类做架构与验证，AI 不进判决路径。
 
-当前版本：**v0.8.37** · 账本：**22 引擎（光子 15 + 量子 7）+ 11 包 = 33 类端到端 · 45 题锚（B1-B27 + E1-E7 + S1-S11）· CI core 68 条**。
+当前版本：**v0.9.63** · 账本：**22 引擎（光子 15 + 量子 7）+ 11 包 = 33 类端到端 · 52 道锚（严格独立 26 / 降级 1 / 自证桩 25）· CI core 146 条**。
+
+> ⚠️ 账本以 `README.md` 顶行权威账本为准。如与本页不一致，以 README 为准，并欢迎提 PR 修正本页。
 
 ## 三条不可逾越的红线（红线即护城河）
 
@@ -22,7 +24,7 @@
 ```bash
 # 用项目 venv（Python 3.13），不要系统 3.14
 cd lda
-python run_ci_regression.py --tag core      # CI core 全量（65 条 smoke）
+python run_ci_regression.py --tag core      # CI core 全量（141 条 smoke）
 python run_count_consistency_smoke.py        # 计数守护：账本与 pyproject 一致性
 python run_parasitic_rc_smoke.py             # 几何寄生估算
 ```

@@ -14,14 +14,16 @@
 诚实边界：
   - 生成器当前为确定性网格（MVP）——「AI 提案」的接口已就位，LLM 接入属
     发动期（且仅替换 generate_candidates 一处，判决层零改动）；
-  - 锚覆盖 S1/S2/S5（功率/频率/最坏情况）——统计锚（S7/S8）留作
-    提案筛选的下一层（Phase 4 后续）；
+  - 锚覆盖 S1/S2/S5（功率/频率/最坏情况）+ **S7 统计锚已接入**
+    （S7-statistical-p5：蒙特卡洛最坏情况 margin p5 > 0，固定种子确定性；
+    见 screen_proposal 第 4 锚与 feasible_domain）——**S8 仍未纳入**（Phase 4 后续）；
   - 人终审：输出 ranked 提案列表 + 逐案锚证据，选择权在人。
 """
 from __future__ import annotations
 
 import itertools
 import math
+import re
 from typing import Any, Dict, List, Tuple
 
 # ---- 行为级黑箱参数（system_budget 同源，文献典型值） ----
@@ -34,6 +36,111 @@ DETECTOR_SENS_DBM = -20.0
 # ---------------------------------------------------------------------------
 # ① 功能需求 → 结构化提案（编译入口）
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# ⓪ NLP 需求入口（WBS-T0-2）：自然语言需求 → 结构化提案 req
+#    规则式解析（正则 + 中文数字），只提取用户明确给出的数字；
+#    缺失字段用典型默认值并标注 source=default——**绝不杜撰数字**。
+#    复用 /api/store/guide 的「自然语言→结构化」思路，但不碰货架匹配，
+#    直接映射到 design_pipeline 的 req 字段。
+# ---------------------------------------------------------------------------
+_CN_NUM = {'一': 1, '二': 2, '两': 2, '三': 3, '四': 4, '五': 5,
+           '六': 6, '七': 7, '八': 8, '九': 9, '十': 10}
+
+
+def _re_float(text: str, *patterns) -> "float | None":
+    for pat in patterns:
+        m = re.search(pat, text, re.I)
+        if m:
+            return float(m.group(1))
+    return None
+
+
+def _extract_pair(text: str, keywords, unit: str) -> "float | None":
+    """双向提取：支持「关键词 数字单位」与「数字单位 关键词」两种语序。
+
+    例：'50GHz spacing' 与 'spacing: 50GHz' 都应命中 50。
+    裸数字（无关键词上下文）不匹配——避免间隔/带宽歧义杜撰。
+    """
+    for kw in keywords:
+        m = re.search(rf'{kw}\s*[:：]?\s*(\d+(?:\.\d+)?)\s*{unit}', text, re.I)
+        if m:
+            return float(m.group(1))
+    for kw in keywords:
+        m = re.search(rf'(\d+(?:\.\d+)?)\s*{unit}\s*(?:of\s+|for\s+)?{kw}', text, re.I)
+        if m:
+            return float(m.group(1))
+    return None
+
+
+def parse_nlp_requirement(text: str) -> Dict[str, Any]:
+    """自然语言需求 → 结构化提案 req（规则式，不杜撰数字）。
+
+    返回 {req, source, raw_text}：
+      req     可直接喂 design_pipeline；
+      source  每个字段的来源（parsed / parsed_cn / default），供人审与合规。
+    缺失字段一律回退典型默认值并标注 default——绝不编造物理数字。
+    """
+    src: Dict[str, str] = {}
+
+    # 信道数
+    n_ch = None
+    m = re.search(r'(\d+)\s*个?\s*信[道道]', text)
+    if m:
+        n_ch, src['n_channels'] = int(m.group(1)), 'parsed'
+    elif (m := re.search(r'(\d+)\s*channel', text, re.I)):
+        n_ch, src['n_channels'] = int(m.group(1)), 'parsed'
+    elif (m := re.search(r'([一二三四五六七八九十])\s*信[道道]', text)):
+        n_ch, src['n_channels'] = _CN_NUM.get(m.group(1)), 'parsed_cn'
+
+    sp = _extract_pair(text, ['间隔', 'spacing', 'channel spacing'], 'GHz')
+    if sp is not None:
+        src['channel_spacing_ghz'] = 'parsed'
+    bw = _extract_pair(text, ['带宽', 'bandwidth', 'bw'], 'GHz')
+    if bw is not None:
+        src['filter_bw_ghz'] = 'parsed'
+    mb = _extract_pair(text, ['余量', 'margin', 'budget'], 'dB')
+    if mb is not None:
+        src['link_budget_db'] = 'parsed'
+    ptx = _extract_pair(text, ['功率', 'power', 'tx'], 'dBm')
+    if ptx is not None:
+        src['p_tx_dbm'] = 'parsed'
+    wgl = _re_float(text, r'(?:波导长度|wg[_\s]?length)\s*[:：]?\s*(\d+(?:\.\d+)?)\s*cm')
+    if wgl is not None:
+        src['wg_length_cm'] = 'parsed'
+
+    req: Dict[str, Any] = {}
+    if n_ch is not None:
+        req['n_channels'] = n_ch
+    if sp is not None:
+        req['channel_spacing_ghz'] = sp
+    if bw is not None:
+        req['filter_bw_ghz'] = bw
+    if mb is not None:
+        req['link_budget_db'] = mb
+    if ptx is not None:
+        req['p_tx_dbm'] = ptx
+    if wgl is not None:
+        req['wg_length_cm'] = wgl
+
+    # 缺字段来源标注（供人审：凡 default 即 AI 未从原文取得，需人确认）
+    for k in ('n_channels', 'channel_spacing_ghz', 'filter_bw_ghz',
+              'link_budget_db', 'p_tx_dbm', 'wg_length_cm'):
+        src.setdefault(k, 'default')
+    return {"req": req, "source": src, "raw_text": text}
+
+
+def design_pipeline_from_nlp(text: str, n_top: int = 3,
+                             generator: str = "grid",
+                             system_type: str = "link",
+                             weights: "Dict[str, float] | None" = None):
+    """NLP 便捷入口：自然语言 → design_pipeline（人终审材料）。"""
+    parsed = parse_nlp_requirement(text)
+    result = design_pipeline(parsed["req"], n_top=n_top, generator=generator,
+                             system_type=system_type, weights=weights)
+    result["nlp_source"] = parsed["source"]
+    return result
+
+
 def compile_proposal(req: Dict[str, Any]) -> Dict[str, Any]:
     """把功能需求编译成结构化提案。
 
@@ -65,10 +172,18 @@ def compile_proposal(req: Dict[str, Any]) -> Dict[str, Any]:
             "wg_loss_db_cm": WG_LOSS_DB_CM,
             "ring_il_db": RING_IL_DB,
             "detector_sens_dbm": DETECTOR_SENS_DBM,
+            # S8 可选 OSNR 链路参数（仅含放大器链路提供；纯 WDM 不杜撰）
+            "osnr": {
+                "p_sig_dbm": req.get("p_sig_dbm"),
+                "n_amp": req.get("n_amp"),
+                "nf_db": req.get("nf_db"),
+                "bw_ghz": req.get("bw_ghz"),
+            },
         },
         "acceptance_spec": {
             "min_margin_db": float(req.get("link_budget_db", 3.0)),
             "worst_case_il_db": 10.0,  # S5 同式（SS 角最坏插损合计）
+            "min_osnr_p5_db": float(req.get("min_osnr_p5_db", 15.0)),
         },
         "req_source": dict(req),
     }
@@ -184,7 +299,7 @@ def screen_proposal(proposal: Dict[str, Any]) -> Dict[str, Any]:
     # 第 4 锚：统计锚 S7-p5（蒙特卡洛最坏情况下界 > 0——Phase 4c）
     # 用提案自身参数采样（固定种子，确定性可复现）；确定性锚抓不到的
     # 「名义过但统计挂」案例在此被剪（margin 刚好压线的提案 p5 必为负）。
-    from .statistical_anchor import margin_stats, monte_carlo_margins
+    from .statistical_anchor import margin_stats, monte_carlo_margins, s8_gaussian_moments
     ls_full = proposal["link_spec"]
     margins = monte_carlo_margins(
         p_tx_dbm=ls_full["p_tx_dbm"],
@@ -215,6 +330,26 @@ def screen_proposal(proposal: Dict[str, Any]) -> Dict[str, Any]:
          "value": p5, "threshold": 0.0,
          "passed": p5 > 0},
     ]
+    # 第 5 锚：统计锚 S8（OSNR 统计 p5 最坏情况下界 ≥ 需求）
+    # 激活条件：提案显式提供 OSNR 链路参数（p_sig/n_amp/nf/bw）才启用；
+    # 纯 WDM 无放大器链路不杜撰 → S8 标记 N/A，不参与判决（passed=True 占位）。
+    # 方法学：候选=闭式高斯 p5（s8_gaussian_moments，v0.9.29 T-3 已证伪独立），
+    # 与蒙特卡洛 golden 是两种算法；此处作预算阈值检查（同构 S1/S5/S7 死标量）。
+    _osnr = proposal["link_spec"].get("osnr") or {}
+    _s8 = {"anchor": "S8-osnr-p5",
+           "name": "OSNR 统计最坏 p5 ≥ 需求（闭式高斯）",
+           "value": None, "threshold": None,
+           "passed": True, "applicable": False}
+    if all(_osnr.get(k) is not None
+           for k in ("p_sig_dbm", "n_amp", "nf_db", "bw_ghz")):
+        _mu, _sig = s8_gaussian_moments(
+            p_sig_dbm=float(_osnr["p_sig_dbm"]), n_amp=int(_osnr["n_amp"]),
+            nf_db=float(_osnr["nf_db"]), bw_ghz=float(_osnr["bw_ghz"]))
+        _p5 = _mu - 1.6448536269514722 * _sig  # 高斯 5% 分位
+        _need = float(proposal["acceptance_spec"].get("min_osnr_p5_db", 15.0))
+        _s8.update(value=round(_p5, 4), threshold=_need,
+                   passed=_p5 >= _need, applicable=True)
+    checks.append(_s8)
     accepted = all(c["passed"] for c in checks)
     return {"accepted": accepted, "checks": checks,
             "margin_db": round(margin, 3), "p5_db": p5}
@@ -247,10 +382,127 @@ def rank_proposals(candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 # ---------------------------------------------------------------------------
+# ⑤b 多目标帕累托排序（T0-1 · 替换单目标余量降序）
+# ---------------------------------------------------------------------------
+# 目标向量（全部「越低越好」，minimization）：
+#   power   : 激光器功率 p_tx_dbm（功耗代理）
+#   cost    : p_tx_dbm + n_gratings（成本代理：激光 + 光栅数；T1/T3 接真实模型前
+#             为透明代理，避免在此杜撰未经验证的成本数字）
+#   area    : spacing_ghz * filter_bw_ghz（版图占位代理）
+#   margin  : -margin_db（余量越大越好 ⇒ 取负）
+#   p5      : -p5_db（统计最坏情况余量越大越好 ⇒ 取负）
+# 「可封装性」维度 T3 接入（预留接口），当前不计入目标向量。
+PARETO_OBJECTIVES = ("power", "cost", "area", "margin", "p5")
+DEFAULT_PARETO_WEIGHTS = {"power": 1.0, "cost": 1.0, "area": 1.0,
+                         "margin": 1.0, "p5": 1.0}
+
+
+def _pareto_objective_vector(cand: Dict[str, Any],
+                             screen: Dict[str, Any]) -> Dict[str, float]:
+    """从候选 + 锚证据提取目标向量（全最小化）。"""
+    ls = cand["link_spec"]
+    cp = cand["channel_plan"]
+    return {
+        "power": float(ls["p_tx_dbm"]),
+        "cost": float(ls["p_tx_dbm"]) + float(ls["n_gratings"]),
+        "area": float(cp["spacing_ghz"]) * float(cp["filter_bw_ghz"]),
+        "margin": -float(screen["margin_db"]),
+        "p5": -float(screen["p5_db"]),
+    }
+
+
+def _dominates(a: Dict[str, float], b: Dict[str, float]) -> bool:
+    """a 支配 b（a 在所有目标 ≤ b 且至少一维严格 <）。"""
+    le = all(a[k] <= b[k] for k in PARETO_OBJECTIVES)
+    lt = any(a[k] < b[k] for k in PARETO_OBJECTIVES)
+    return le and lt
+
+
+def _pareto_fronts(vecs: List[Dict[str, float]]) -> List[List[int]]:
+    """非支配排序，返回 front 列表（front[0] 最优）。"""
+    n = len(vecs)
+    remaining = list(range(n))
+    fronts: List[List[int]] = []
+    while remaining:
+        front = []
+        for i in remaining:
+            dominated = False
+            for j in remaining:
+                if i == j:
+                    continue
+                if _dominates(vecs[j], vecs[i]):
+                    dominated = True
+                    break
+            if not dominated:
+                front.append(i)
+        front_set = set(front)
+        remaining = [x for x in remaining if x not in front_set]
+        fronts.append(front)
+    return fronts
+
+
+def _weighted_scores(vecs: List[Dict[str, float]],
+                     weights: Dict[str, float]) -> Dict[int, float]:
+    """min-max 归一化后加权求和（权重变 ⇒ 分数变 ⇒ 排序变）。"""
+    mins = {k: min(v[k] for v in vecs) for k in PARETO_OBJECTIVES}
+    maxs = {k: max(v[k] for v in vecs) for k in PARETO_OBJECTIVES}
+    scores: Dict[int, float] = {}
+    for i, v in enumerate(vecs):
+        s = 0.0
+        for k in PARETO_OBJECTIVES:
+            rng = maxs[k] - mins[k]
+            norm = (v[k] - mins[k]) / (rng if rng > 0 else 1.0)
+            s += weights.get(k, 1.0) * norm
+        scores[i] = s
+    return scores
+
+
+def rank_proposals_pareto(candidates: List[Dict[str, Any]],
+                          weights: Dict[str, float] = None) -> List[Dict[str, Any]]:
+    """多目标帕累托排序：先按非支配 front 分层，front 内按加权标量排序。
+
+    与单目标 rank_proposals 的区别：单目标只看 margin 降序；本函数引入
+    功耗/成本/面积/余量/统计余量 五维目标，权重由调用方给定——
+    **改变权重必须改变排序（防常数假绿，见 run_pareto_rank_smoke.py 反向测试）**。
+
+    输出 schema 与 rank_proposals 兼容（rank/proposal/screening/screening_summary
+    + 新增 pareto_front 字段），可直接替换管线中的排序调用。
+    """
+    w = dict(DEFAULT_PARETO_WEIGHTS)
+    if weights:
+        w.update(weights)
+    scored = []
+    for cand in candidates:
+        s = screen_proposal(cand)
+        scored.append((cand, s))
+    vecs = [_pareto_objective_vector(c, s) for c, s in scored]
+    fronts = _pareto_fronts(vecs)
+    front_of: Dict[int, int] = {}
+    for fi, front in enumerate(fronts):
+        for idx in front:
+            front_of[idx] = fi
+    scores = _weighted_scores(vecs, w)
+    order = sorted(range(len(scored)),
+                   key=lambda i: (front_of[i], scores[i]))
+    return [{
+        "rank": i + 1,
+        "proposal": scored[j][0],
+        "screening": scored[j][1],
+        "pareto_front": front_of[j] + 1,
+        "screening_summary": (
+            f"{'ACCEPT' if scored[j][1]['accepted'] else 'REJECT'} · "
+            f"margin={scored[j][1]['margin_db']}dB · "
+            f"front={front_of[j] + 1} · "
+            f"{sum(ch['passed'] for ch in scored[j][1]['checks'])}/4 锚过"),
+    } for i, j in enumerate(order)]
+
+
+# ---------------------------------------------------------------------------
 # 端到端入口：需求 → 过锚提案列表（人终审材料）
 # ---------------------------------------------------------------------------
 def _design_pipeline_link(req: Dict[str, Any], n_top: int = 3,
-                       generator: str = "grid") -> Dict[str, Any]:
+                       generator: str = "grid",
+                       weights: Dict[str, float] = None) -> Dict[str, Any]:
     """完整管线：编译 → 剪枝 → 生成 → 逐案锚验 → 排序 → 人审材料。
 
     诚实边界：输出是「过了系统锚的候选列表」，不是「最优架构」——
@@ -259,7 +511,7 @@ def _design_pipeline_link(req: Dict[str, Any], n_top: int = 3,
     proposal = compile_proposal(req)
     domain = feasible_domain(proposal)
     cands = generate_candidates(proposal, n_top=n_top, generator=generator)
-    ranked = rank_proposals(cands)[:n_top]
+    ranked = rank_proposals_pareto(cands, weights=weights)[:n_top]
     accepted = [r for r in ranked if r["screening"]["accepted"]]
     return {"input_req": req,
             "compiled": proposal,
@@ -658,7 +910,8 @@ def _design_cpo_optical_io(req: Dict[str, Any], n_top: int = 3,
 
 def design_pipeline(req: Dict[str, Any], n_top: int = 3,
                     generator: str = "grid",
-                    system_type: str = "link") -> Dict[str, Any]:
+                    system_type: str = "link",
+                    weights: Dict[str, float] = None) -> Dict[str, Any]:
     """完整管线（系统类型分发版）：编译 → 剪枝 → 生成 → 逐案锚验 → 排序。
 
     system_type：
@@ -672,7 +925,8 @@ def design_pipeline(req: Dict[str, Any], n_top: int = 3,
     所有类型共享同一条死标量红线：LLM 只生成候选，不进判决。
     """
     if system_type == "link":
-        return _design_pipeline_link(req, n_top=n_top, generator=generator)
+        return _design_pipeline_link(req, n_top=n_top, generator=generator,
+                                    weights=weights)
     if system_type == "wdm_demux":
         return _design_wdm_demux(req, n_top=n_top, generator=generator)
     if system_type == "quantum_fidelity":

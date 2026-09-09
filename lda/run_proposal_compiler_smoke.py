@@ -61,12 +61,14 @@ def main() -> int:
     check("域内生成：候选全部可行（剪枝前置）",
           len(cands) > 0 and all_in_domain, f"{len(cands)} 候选")
 
-    # ③ 即提即验（逐案四锚证据链：S1/S5/S2/S7）
+    # ③ 即提即验（逐案锚证据链：S1/S5/S2/S7 四核心锚 + S8 已接入）
     s = screen_proposal(good)
-    check("即提即验：4/4 锚过（S1/S2/S5/S7 证据链）",
-          s["accepted"] and len(s["checks"]) == 4
-          and all(c["passed"] for c in s["checks"]),
-          f"margin={s['margin_db']} p5={s['p5_db']}")
+    s8 = [c for c in s["checks"] if c["anchor"] == "S8-osnr-p5"][0]
+    check("即提即验：核心锚 S1/S2/S5/S7 全过 + S8 接入(N/A 不误伤)",
+          s["accepted"] and len(s["checks"]) == 5
+          and all(c["passed"] for c in s["checks"])
+          and s8["applicable"] is False,   # 纯 WDM 链路 S8 必须 N/A，不杜撰
+          f"margin={s['margin_db']} p5={s['p5_db']} s8={s8['applicable']}")
 
     # ③b 统计锚独有价值：名义过但统计挂（S1 margin>0 但 p5<0）
     borderline = compile_proposal({"wg_length_cm": 3.6, "link_budget_db": 0.0})

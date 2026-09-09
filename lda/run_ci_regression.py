@@ -165,6 +165,16 @@ CORE_SMOKES: List[str] = [
     "run_statistical_anchor_smoke.py",
     # Phase 4 提案编译器（生成侧：锚前置剪枝 + 即提即验 + 人终审）
     "run_proposal_compiler_smoke.py",
+    # T0-1 多目标帕累托排序护栏（权重反转 ⇒ 前沿位移，防常数假绿；0.33s）
+    "run_pareto_rank_smoke.py",
+    # T0-2 NLP 需求入口护栏（中/英双向语序 + 缺字段回退默认不杜撰 + 反常数假绿）
+    "run_nlp_requirement_smoke.py",
+    # T0-3 S8 锚接入护栏（合理链路 PASS / 退化 FAIL / 纯WDM N/A / 反向 nf 扰动）
+    "run_s8_anchor_smoke.py",
+    # T1 紧凑模型 schema + 反向护栏（参数±20%响应必变，防悬空死参数 / 接 B29/B30）
+    "run_compact_model_smoke.py",
+    # T1-2 SPICE 兼容网表生成器 + Cadence Spectre 适配（参数变→网表变 / 悬空报错 / Spectre 结构异）
+    "run_spice_netlist_smoke.py",
     # 系统类型注册表（v0.8.33：link/wdm_demux/quantum_fidelity 分发，复用已验证闭环）
     "run_system_types_smoke.py",
     # 创新超市货架（v0.8.34：前瞻预研货架 · 组合已锚定基元 + 公开信号驱动，红线下护栏）

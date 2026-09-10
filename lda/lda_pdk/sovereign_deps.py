@@ -38,6 +38,8 @@ SOVEREIGN_DEPS: List[Dependency] = [
     # ---------- B 级：借今踢后（MIT/BSD，fork 主权副本） ----------
     Dependency("gdsfactory 内核", "B", "MIT", "fork 到 Gitee/GitCode 主权副本", "Gitee"),
     Dependency("Meep", "B", "GPL", "仅当 ORACLE 校验、零硬编码；后期被自写 FDTD 取代", "Gitee"),
+    Dependency("DEVSIM (TCAD 内核)", "B", "Apache-2.0",
+               "漂移-扩散载流子求解（T1 内核），fork 主权副本/自研替换", "Gitee"),
     Dependency("KLayout", "B", "GPL", "版图查看/DRC，fork 主权副本", "Gitee"),
     Dependency("SAX", "B", "MIT", "电路级 ORACLE（sax 库）", "Gitee"),
     Dependency("MPB", "B", "GPL", "光子能带 ORACLE", "Gitee"),

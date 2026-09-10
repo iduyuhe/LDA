@@ -1,0 +1,55 @@
+<Slide style={{ width: '1280px', height: '720px', background: '#FFFFFF', padding: '44px 56px 40px 56px', position: 'relative' }}>
+  {/* B 标题块 */}
+  <Box style={{ paddingBottom: 12, borderBottom: '1px solid #000000' }}>
+    <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#061F32' }}>对比全球工具，LDA 占据「验证独立 + 主权自主 + Agent 原生」的结构性空白</Text>
+  </Box>
+
+  {/* C 内容区：左 Table + 右洞察 */}
+  <Box style={{ marginTop: 14, flexDirection: 'row', gap: 36, height: 510 }}>
+    {/* 左：对比矩阵 */}
+    <Box style={{ width: '62%' }}>
+      <Table
+        style={{ width: '100%', height: '100%' }}
+        defaultTextStyle={{ fontSize: 15, textAlign: 'center', color: '#1f2a37' }}
+        defaultCellStyle={{ border: { left: { width: 1, color: '#E7E6E6' }, right: { width: 1, color: '#E7E6E6' }, top: { width: 1, color: '#E7E6E6' }, bottom: { width: 1, color: '#E7E6E6' } } }}
+        cells={[
+          [
+            { text: '工具', textStyle: { bold: true, color: '#FFFFFF' }, cellStyle: { background: { color: '#061F32' } } },
+            { text: '开源', textStyle: { bold: true, color: '#FFFFFF' }, cellStyle: { background: { color: '#061F32' } } },
+            { text: 'Agent 原生', textStyle: { bold: true, color: '#FFFFFF' }, cellStyle: { background: { color: '#061F32' } } },
+            { text: '验证独立', textStyle: { bold: true, color: '#FFFFFF' }, cellStyle: { background: { color: '#061F32' } } },
+            { text: '主权自主', textStyle: { bold: true, color: '#FFFFFF' }, cellStyle: { background: { color: '#061F32' } } },
+            { text: '成熟度', textStyle: { bold: true, color: '#FFFFFF' }, cellStyle: { background: { color: '#061F32' } } },
+          ],
+          [
+            { text: 'LDA', textStyle: { bold: true, color: '#08A6F6' } },
+            { text: '✓', textStyle: { bold: true, color: '#08A6F6' } },
+            { text: '✓', textStyle: { bold: true, color: '#08A6F6' } },
+            { text: '✓', textStyle: { bold: true, color: '#08A6F6' } },
+            { text: '✓', textStyle: { bold: true, color: '#08A6F6' } },
+            { text: '中（未流片）', textStyle: { color: '#44546A' } },
+          ],
+          ['gdsfactory', '✓', '—', '—', '借今踢后', '高'],
+          ['Meep', '✓', '—', '—', 'GPL 隔离', '中（仿真）'],
+          ['Luceda', '商业', '—', '—', '受许可', '高'],
+          ['Lumerical', '—', '—', '—', '受许可', '高'],
+          ['Tidy3D', 'SaaS', '—', '—', 'ORACLE 锁', '高'],
+          ['COMSOL', '—', '—', '—', '受许可', '高'],
+        ]}
+      />
+    </Box>
+
+    {/* 右：洞察 */}
+    <Box style={{ width: '38%', justifyContent: 'center' }}>
+      <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#001965', lineHeight: 1.4, marginBottom: 14 }}>诚实标注：差异化在维度，不在精度</Text>
+      <Text style={{ fontSize: 21, color: '#1f2a37', lineHeight: 1.5 }}>
+        LDA 列第 1，不是求解精度已超越 Lumerical / Qiskit（成熟度仍低、未流片），而是「验证独立 + 主权自主 + Agent 原生」是现有工具的<span style={{ fontWeight: 'bold', color: '#001965' }}>结构性空白</span>——这是差异化维度，不是精度维度。<br/><br/>
+        商业求解器定位为<span style={{ fontWeight: 'bold' }}>外部 ORACLE 基准</span>，而非黑盒真理来源。
+      </Text>
+    </Box>
+  </Box>
+
+  {/* D 页脚 */}
+  <Text style={{ position: 'absolute', left: 56, bottom: 22, fontSize: 14, color: '#808080' }}>Source：LDA 技术白皮书 v0.9.40 · 全球光子 / 量子 EDA 对比（2026-09 检索）</Text>
+  <Text style={{ position: 'absolute', right: 56, bottom: 22, fontSize: 14, color: '#808080' }}>11</Text>
+</Slide>

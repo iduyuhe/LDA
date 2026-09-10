@@ -1,0 +1,50 @@
+<Slide style={{ width: '1280px', height: '720px', background: '#FFFFFF', padding: '44px 56px 40px 56px', position: 'relative' }}>
+  {/* B 标题块 */}
+  <Box style={{ paddingBottom: 12, borderBottom: '1px solid #000000' }}>
+    <Text style={{ fontSize: 33, fontWeight: 'bold', color: '#061F32' }}>现有光子 / 量子设计工具存在三道无法靠补丁填补的空白</Text>
+  </Box>
+
+  {/* C 内容区：左标题栏 + 右问题树 */}
+  <Box style={{ marginTop: 14, flexDirection: 'row', gap: 36, height: 510 }}>
+    {/* 左标题栏 */}
+    <Box style={{ width: '30%', background: '#061F32', borderRadius: 6, padding: '36px 28px', justifyContent: 'center' }}>
+      <Text style={{ fontSize: 30, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1.3 }}>三道结构性空白</Text>
+      <Box style={{ width: 60, height: 3, background: '#08A6F6', margin: '18px 0' }} />
+      <Text style={{ fontSize: 21, color: '#99BDED', lineHeight: 1.5 }}>不是功能缺口，是现有商业工具的架构决定的、补不上的空白。</Text>
+    </Box>
+
+    {/* 右问题树（Box+Text 形状层 + SVG 连线） */}
+    <Box style={{ width: '70%', position: 'relative' }}>
+      <svg style={{ position: 'absolute', left: 0, top: 0 }} width={760} height={510} viewBox='0 0 760 510'>
+        <path d='M200 255 H330 V95 H470' stroke='#061F32' strokeWidth='1.5' fill='none' />
+        <path d='M200 255 H470' stroke='#061F32' strokeWidth='1.5' fill='none' />
+        <path d='M200 255 H330 V415 H470' stroke='#061F32' strokeWidth='1.5' fill='none' />
+      </svg>
+
+      {/* 核心框 */}
+      <Box style={{ position: 'absolute', left: 0, top: 195, width: 200, height: 120, background: '#061F32', borderRadius: 6, justifyContent: 'center', padding: '0 18px' }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1.3 }}>现有工具的<br/>结构性空白</Text>
+      </Box>
+
+      {/* 叶子 1 */}
+      <Box style={{ position: 'absolute', left: 470, top: 30, width: 280, height: 130, background: '#FFFFFF', border: '1px solid #061F32', borderRadius: 6, padding: '16px 20px', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#001965' }}>① 验证不独立</Text>
+        <Text style={{ fontSize: 16, color: '#44546A', marginTop: 8, lineHeight: 1.4 }}>PASS/FAIL 由商业求解器黑盒或人判断，结果不可证伪。</Text>
+      </Box>
+      {/* 叶子 2 */}
+      <Box style={{ position: 'absolute', left: 470, top: 192, width: 280, height: 130, background: '#FFFFFF', border: '1px solid #061F32', borderRadius: 6, padding: '16px 20px', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#001965' }}>② 非 Agent 原生</Text>
+        <Text style={{ fontSize: 16, color: '#44546A', marginTop: 8, lineHeight: 1.4 }}>设计靠专家手写脚本，AI 只做辅助而非设计主体。</Text>
+      </Box>
+      {/* 叶子 3 */}
+      <Box style={{ position: 'absolute', left: 470, top: 354, width: 280, height: 130, background: '#FFFFFF', border: '1px solid #061F32', borderRadius: 6, padding: '16px 20px', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#001965' }}>③ 主权依赖</Text>
+        <Text style={{ fontSize: 16, color: '#44546A', marginTop: 8, lineHeight: 1.4 }}>高端求解器受许可与地缘约束，缺自主可验底座。</Text>
+      </Box>
+    </Box>
+  </Box>
+
+  {/* D 页脚 */}
+  <Text style={{ position: 'absolute', left: 56, bottom: 22, fontSize: 14, color: '#808080' }}>Source：LDA 技术白皮书 v0.9.40 · 验证方法论章节</Text>
+  <Text style={{ position: 'absolute', right: 56, bottom: 22, fontSize: 14, color: '#808080' }}>05</Text>
+</Slide>

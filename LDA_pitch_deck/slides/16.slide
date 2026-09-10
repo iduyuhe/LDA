@@ -1,0 +1,53 @@
+<Slide style={{ width: '1280px', height: '720px', background: '#061F32', position: 'relative', overflow: 'hidden' }}>
+  {/* 右侧光子电路几何装饰 */}
+  <svg style={{ position: 'absolute', right: 0, top: 0, opacity: 0.5 }} width={360} height={720} viewBox='0 0 360 720'>
+    <path d='M40 90 Q 180 30 320 90' stroke='#08A6F6' strokeWidth='2' fill='none' opacity='0.5' />
+    <path d='M40 170 Q 180 110 320 170' stroke='#08A6F6' strokeWidth='2' fill='none' opacity='0.35' />
+    <path d='M40 560 Q 180 500 320 560' stroke='#99BDED' strokeWidth='2' fill='none' opacity='0.3' />
+    <circle cx='320' cy='90' r='6' fill='#08A6F6' />
+    <circle cx='320' cy='170' r='6' fill='#08A6F6' />
+    <circle cx='320' cy='560' r='5' fill='#99BDED' />
+  </svg>
+
+  {/* 左：金句 */}
+  <Box style={{ position: 'absolute', left: 80, top: 150, width: 620 }}>
+    <Text style={{ fontSize: 56, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1.25 }}>
+      与 LDA 一起，<br/>定义光子与量子芯片<br/>设计的下一代基础设施
+    </Text>
+    <Box style={{ width: 110, height: 4, background: '#08A6F6', margin: '30px 0 22px' }} />
+    <Text style={{ fontSize: 24, color: '#99BDED' }}>试用 / 对接 / 投资，欢迎联系</Text>
+  </Box>
+
+  {/* 右：联系卡 */}
+  <Box style={{ position: 'absolute', right: 80, top: 170, width: 460, background: '#0E2A45', borderRadius: 10, padding: '32px 36px' }}>
+    <Text style={{ fontSize: 26, fontWeight: 'bold', color: '#08A6F6', marginBottom: 20 }}>联系方式</Text>
+    <Box style={{ flexDirection: 'row', gap: 14, marginBottom: 14 }}>
+      <Text style={{ fontSize: 19, color: '#99BDED', width: 90 }}>版权所有</Text>
+      <Text style={{ fontSize: 19, color: '#FFFFFF' }}>上海杜特企业管理咨询有限公司</Text>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 14, marginBottom: 14 }}>
+      <Text style={{ fontSize: 19, color: '#99BDED', width: 90 }}>联系人</Text>
+      <Text style={{ fontSize: 19, color: '#FFFFFF' }}>杜玉河</Text>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 14, marginBottom: 14 }}>
+      <Text style={{ fontSize: 19, color: '#99BDED', width: 90 }}>电话</Text>
+      <Text style={{ fontSize: 19, color: '#FFFFFF' }}>13311602075</Text>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 14, marginBottom: 14 }}>
+      <Text style={{ fontSize: 19, color: '#99BDED', width: 90 }}>微信</Text>
+      <Text style={{ fontSize: 19, color: '#FFFFFF' }}>gongyhlw</Text>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 14, marginBottom: 14 }}>
+      <Text style={{ fontSize: 19, color: '#99BDED', width: 90 }}>邮箱</Text>
+      <Text style={{ fontSize: 19, color: '#FFFFFF' }}>duyuhe@shdute.cn</Text>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 14, marginBottom: 14 }}>
+      <Text style={{ fontSize: 17, color: '#99BDED', width: 90 }}>国内仓库</Text>
+      <Text style={{ fontSize: 17, color: '#FFFFFF' }}>Gitee · gitee.com/i4hub/LDA</Text>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 14 }}>
+      <Text style={{ fontSize: 17, color: '#99BDED', width: 90 }}>国际仓库</Text>
+      <Text style={{ fontSize: 17, color: '#FFFFFF' }}>GitHub · github.com/iduyuhe/LDA</Text>
+    </Box>
+  </Box>
+</Slide>

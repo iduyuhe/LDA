@@ -1,0 +1,8 @@
+<Slide style={{ width: '1280px', height: '720px', background: '#062032', position: 'relative', overflow: 'hidden' }}>
+  <Text style={{ position: 'absolute', left: 56, top: 200, fontSize: 300, fontWeight: 'bold', color: '#FFFFFF', opacity: 0.16, lineHeight: 1 }}>04</Text>
+  <Box style={{ position: 'absolute', right: 80, top: 0, bottom: 0, width: 640, justifyContent: 'center', alignItems: 'flex-start' }}>
+    <Box style={{ width: 90, height: 4, background: '#08A6F6', marginBottom: 28 }} />
+    <Text style={{ fontSize: 48, fontWeight: 'bold', color: '#FFFFFF' }}>市场 · 商业 · 团队</Text>
+    <Text style={{ fontSize: 22, color: '#99BDED', marginTop: 18, lineHeight: 1.5 }}>Market · Business · Team —— 机会与路径</Text>
+  </Box>
+</Slide>

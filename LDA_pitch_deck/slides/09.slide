@@ -1,0 +1,45 @@
+<Slide style={{ width: '1280px', height: '720px', background: '#FFFFFF', padding: '44px 56px 40px 56px', position: 'relative' }}>
+  {/* B 标题块 */}
+  <Box style={{ paddingBottom: 12, borderBottom: '1px solid #000000' }}>
+    <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#061F32' }}>账本即证据：50 道验证锚、22 类引擎、97 条 CI 全绿，构成可审计底座</Text>
+  </Box>
+
+  {/* C 内容区：左巨型锚点 + 右 KPI 列表 */}
+  <Box style={{ marginTop: 16, flexDirection: 'row', gap: 48, height: 500 }}>
+    {/* 左巨型 */}
+    <Box style={{ width: '38%', background: '#061F32', borderRadius: 8, justifyContent: 'center', alignItems: 'center', padding: '0 20px' }}>
+      <Text style={{ fontSize: 150, fontWeight: 'bold', color: '#08A6F6', lineHeight: 1 }}>50</Text>
+      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', marginTop: 6 }}>道验证锚</Text>
+      <Text style={{ fontSize: 21, color: '#99BDED', marginTop: 18, textAlign: 'center', lineHeight: 1.5 }}>25 严格独立 / 0 降级 / 25 自证桩<br/>双路径披露，确为可证伪</Text>
+    </Box>
+
+    {/* 右 KPI 列表 */}
+    <Box style={{ width: '62%', justifyContent: 'center', gap: 22 }}>
+      <Box style={{ flexDirection: 'row', alignItems: 'baseline', gap: 24, borderBottom: '1px solid #E7E6E6', paddingBottom: 18 }}>
+        <Text style={{ fontSize: 60, fontWeight: 'bold', color: '#001965', width: 150 }}>22</Text>
+        <Box>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#061F32' }}>类引擎（光 15 + 量 7）+ 11 包 = 33 类</Text>
+          <Text style={{ fontSize: 19, color: '#44546A', marginTop: 4 }}>口径 = 设计品类，覆盖光子与量子双栈</Text>
+        </Box>
+      </Box>
+      <Box style={{ flexDirection: 'row', alignItems: 'baseline', gap: 24, borderBottom: '1px solid #E7E6E6', paddingBottom: 18 }}>
+        <Text style={{ fontSize: 60, fontWeight: 'bold', color: '#001965', width: 150 }}>97</Text>
+        <Box>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#061F32' }}>条 CI core 冒烟全绿</Text>
+          <Text style={{ fontSize: 19, color: '#44546A', marginTop: 4 }}>0 SKIP / 0 FAIL，回归门禁真实生效</Text>
+        </Box>
+      </Box>
+      <Box style={{ flexDirection: 'row', alignItems: 'baseline', gap: 24, paddingBottom: 4 }}>
+        <Text style={{ fontSize: 60, fontWeight: 'bold', color: '#001965', width: 150 }}>58</Text>
+        <Box>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#061F32' }}>货架超市（设计品类覆盖）</Text>
+          <Text style={{ fontSize: 19, color: '#44546A', marginTop: 4 }}>可复用组件供给，加速设计链拼装</Text>
+        </Box>
+      </Box>
+    </Box>
+  </Box>
+
+  {/* D 页脚 */}
+  <Text style={{ position: 'absolute', left: 56, bottom: 22, fontSize: 14, color: '#808080' }}>Source：LDA 技术白皮书 v0.9.40 · 当前账本</Text>
+  <Text style={{ position: 'absolute', right: 56, bottom: 22, fontSize: 14, color: '#808080' }}>09</Text>
+</Slide>

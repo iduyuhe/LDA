@@ -1,0 +1,35 @@
+<Slide style={{ width: '1280px', height: '720px', background: '#061F32', position: 'relative', overflow: 'hidden' }}>
+  {/* 左侧光子波导装饰 */}
+  <svg style={{ position: 'absolute', left: 0, top: 0 }} width={440} height={720} viewBox='0 0 440 720'>
+    <path d='M30 110 Q 150 50 260 110 T 420 110' stroke='#08A6F6' strokeWidth='2' fill='none' opacity='0.45' />
+    <path d='M30 200 Q 150 140 260 200 T 420 200' stroke='#08A6F6' strokeWidth='2' fill='none' opacity='0.35' />
+    <path d='M30 560 Q 150 500 260 560 T 420 560' stroke='#99BDED' strokeWidth='2' fill='none' opacity='0.3' />
+    <path d='M30 640 Q 150 580 260 640 T 420 640' stroke='#99BDED' strokeWidth='2' fill='none' opacity='0.25' />
+    <circle cx='260' cy='110' r='7' fill='#08A6F6' />
+    <circle cx='260' cy='200' r='7' fill='#08A6F6' />
+    <circle cx='260' cy='560' r='6' fill='#99BDED' />
+    <circle cx='260' cy='640' r='6' fill='#99BDED' />
+    <line x1='260' y1='117' x2='260' y2='193' stroke='#08A6F6' strokeWidth='1.5' opacity='0.4' />
+    <line x1='260' y1='567' x2='260' y2='633' stroke='#99BDED' strokeWidth='1.5' opacity='0.35' />
+  </svg>
+
+  {/* 右上角标 */}
+  <Text style={{ position: 'absolute', right: 64, top: 56, fontSize: 22, color: '#08A6F6', fontWeight: 'bold', letterSpacing: 2 }}>LDA</Text>
+
+  {/* 主内容 */}
+  <Box style={{ position: 'absolute', left: 96, top: 188, width: 980 }}>
+    <Text style={{ fontSize: 76, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1.12 }}>
+      开源、Agent 原生的<br/>光子与量子芯片设计平台
+    </Text>
+    <Box style={{ width: 120, height: 4, background: '#08A6F6', margin: '28px 0 26px' }} />
+    <Text style={{ fontSize: 28, color: '#99BDED', lineHeight: 1.5 }}>
+      验证可证伪 · 主权自主 —— 对标 EDA 的下一代设计基础设施
+    </Text>
+  </Box>
+
+  {/* 落款 */}
+  <Box style={{ position: 'absolute', left: 96, bottom: 60, flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+    <Box style={{ width: 8, height: 8, background: '#08A6F6', borderRadius: 2 }} />
+    <Text style={{ fontSize: 18, color: '#808080' }}>上海杜特企业管理咨询有限公司 · 杜玉河 · 产品版本 v0.9.40</Text>
+  </Box>
+</Slide>

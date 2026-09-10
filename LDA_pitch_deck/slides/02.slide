@@ -1,0 +1,41 @@
+<Slide style={{ width: '1280px', height: '720px', background: '#FFFFFF', padding: '44px 56px 40px 56px', position: 'relative' }}>
+  {/* B 标题块 */}
+  <Box style={{ paddingBottom: 12, borderBottom: '1px solid #000000' }}>
+    <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#061F32' }}>本次汇报的四个部分</Text>
+  </Box>
+
+  {/* C 内容区：4 章节条目 */}
+  <Box style={{ marginTop: 16, flexDirection: 'column', gap: 18 }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 28, height: 116, borderBottom: '1px solid #E7E6E6' }}>
+      <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#08A6F6', width: 64 }}>01</Text>
+      <Box style={{ flex: 1 }}>
+        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#061F32' }}>机会与痛点（Why Now）</Text>
+        <Text style={{ fontSize: 22, color: '#44546A', marginTop: 6 }}>光子与量子设计的范式拐点，现有工具的三道结构性空白</Text>
+      </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 28, height: 116, borderBottom: '1px solid #E7E6E6' }}>
+      <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#08A6F6', width: 64 }}>02</Text>
+      <Box style={{ flex: 1 }}>
+        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#061F32' }}>LDA 是什么（产品与技术）</Text>
+        <Text style={{ fontSize: 22, color: '#44546A', marginTop: 6 }}>开源、Agent 原生的光子 + 量子设计平台，验证可证伪的设计闭环</Text>
+      </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 28, height: 116, borderBottom: '1px solid #E7E6E6' }}>
+      <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#08A6F6', width: 64 }}>03</Text>
+      <Box style={{ flex: 1 }}>
+        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#061F32' }}>为什么是我们（差异化与可信）</Text>
+        <Text style={{ fontSize: 22, color: '#44546A', marginTop: 6 }}>全球对比差异化、主权自主、可审计账本构成信任底座</Text>
+      </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 28, height: 116 }}>
+      <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#08A6F6', width: 64 }}>04</Text>
+      <Box style={{ flex: 1 }}>
+        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#061F32' }}>市场 · 商业 · 团队</Text>
+        <Text style={{ fontSize: 22, color: '#44546A', marginTop: 6 }}>指数级市场机会、开源商业模式与路线图、团队与联系方式</Text>
+      </Box>
+    </Box>
+  </Box>
+
+  {/* D 页脚页码 */}
+  <Text style={{ position: 'absolute', right: 56, bottom: 24, fontSize: 14, color: '#808080' }}>02</Text>
+</Slide>

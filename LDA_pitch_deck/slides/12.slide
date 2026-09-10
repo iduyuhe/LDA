@@ -1,0 +1,45 @@
+<Slide style={{ width: '1280px', height: '720px', background: '#FFFFFF', padding: '44px 56px 40px 56px', position: 'relative' }}>
+  {/* B 标题块 */}
+  <Box style={{ paddingBottom: 12, borderBottom: '1px solid #000000' }}>
+    <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#061F32' }}>主权纪律：高端求解器要么自主、要么隔离外挂，绝不让许可卡住设计闭环</Text>
+  </Box>
+
+  {/* C 内容区：左三级依赖图 + 右文字 */}
+  <Box style={{ marginTop: 14, flexDirection: 'row', gap: 40, height: 510 }}>
+    {/* 左：三级依赖 */}
+    <Box style={{ width: '52%', position: 'relative' }}>
+      <svg style={{ position: 'absolute', left: 286, top: 0 }} width={20} height={510} viewBox='0 0 20 510'>
+        <line x1='10' y1='150' x2='10' y2='180' stroke='#061F32' strokeWidth='1.5' />
+        <polygon points='10,182 5,172 15,172' fill='#061F32' />
+        <line x1='10' y1='310' x2='10' y2='340' stroke='#061F32' strokeWidth='1.5' />
+        <polygon points='10,342 5,332 15,332' fill='#061F32' />
+      </svg>
+      <Box style={{ position: 'absolute', left: 0, top: 20, width: 560, height: 130, background: '#061F32', borderRadius: 6, padding: '20px 26px', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 26, fontWeight: 'bold', color: '#FFFFFF' }}>A 级 · 永不借</Text>
+        <Text style={{ fontSize: 19, color: '#99BDED', marginTop: 8 }}>核心求解 / 判决 —— 自主可控，绝不使用外部依赖</Text>
+      </Box>
+      <Box style={{ position: 'absolute', left: 0, top: 180, width: 560, height: 130, background: '#E7F1FB', borderRadius: 6, padding: '20px 26px', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 26, fontWeight: 'bold', color: '#001965' }}>B 级 · 借今踢后</Text>
+        <Text style={{ fontSize: 19, color: '#44546A', marginTop: 8 }}>gdsfactory / KLayout / SAX —— 暂借，路线图上逐步替换</Text>
+      </Box>
+      <Box style={{ position: 'absolute', left: 0, top: 340, width: 560, height: 130, background: '#FFFFFF', border: '1px solid #061F32', borderRadius: 6, padding: '20px 26px', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 26, fontWeight: 'bold', color: '#001965' }}>C 级 · 第一天自主</Text>
+        <Text style={{ fontSize: 19, color: '#44546A', marginTop: 8 }}>Tidy3D 仅外部 ORACLE / Meep GPL 隔离（subprocess 只回标量）</Text>
+      </Box>
+    </Box>
+
+    {/* 右：文字 */}
+    <Box style={{ width: '48%', justifyContent: 'center', gap: 14 }}>
+      <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#001965', lineHeight: 1.4, marginBottom: 6 }}>架构第一天就为「主权自主」设计</Text>
+      <Text style={{ fontSize: 21, color: '#1f2a37', lineHeight: 1.5 }}>① A 级（核心求解 / 判决）永不借外部，规避许可与地缘断供风险。</Text>
+      <Text style={{ fontSize: 21, color: '#1f2a37', lineHeight: 1.5 }}>② B 级（gdsfactory / KLayout / SAX）借今踢后，逐步替换为自研。</Text>
+      <Text style={{ fontSize: 21, color: '#1f2a37', lineHeight: 1.5 }}>③ C 级第一天自主：Meep=GPL v2 已隔离（subprocess 只回标量），Tidy3D 仅作外部 ORACLE 基准。</Text>
+      <Box style={{ width: 100, height: 3, background: '#08A6F6', margin: '10px 0' }} />
+      <Text style={{ fontSize: 21, color: '#1f2a37', lineHeight: 1.5 }}>在出口管制背景下，<span style={{ fontWeight: 'bold', color: '#001965' }}>「自主可验」是国产光量子设计底座的刚需</span>。</Text>
+    </Box>
+  </Box>
+
+  {/* D 页脚 */}
+  <Text style={{ position: 'absolute', left: 56, bottom: 22, fontSize: 14, color: '#808080' }}>Source：LDA 技术白皮书 v0.9.40 · 主权依赖纪律</Text>
+  <Text style={{ position: 'absolute', right: 56, bottom: 22, fontSize: 14, color: '#808080' }}>12</Text>
+</Slide>

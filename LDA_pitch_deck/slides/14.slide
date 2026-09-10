@@ -1,0 +1,44 @@
+<Slide style={{ width: '1280px', height: '720px', background: '#FFFFFF', padding: '44px 56px 40px 56px', position: 'relative' }}>
+  {/* B 标题块 */}
+  <Box style={{ paddingBottom: 12, borderBottom: '1px solid #000000' }}>
+    <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#061F32' }}>市场拐点已至：光子 EDA 与 CPO 同步爆发，开源 + 云交付正重写获客规则</Text>
+  </Box>
+
+  {/* C 内容区：左 Chart + 右洞察 */}
+  <Box style={{ marginTop: 14, flexDirection: 'row', gap: 40, height: 510 }}>
+    {/* 左：增长柱图 */}
+    <Box style={{ width: '55%', background: '#F5F8FB', borderRadius: 8, padding: '16px 18px' }}>
+      <Chart
+        chartType='barChart'
+        title='光子 EDA 与 CPO 模块市场规模（十亿美元）'
+        style={{ height: 460 }}
+        showLegend={true}
+        showDataLabels={true}
+        titleColor='#061F32'
+        legendColor='#44546A'
+        axisColor='#808080'
+        dataLabelColor='#1f2a37'
+        colors={['#001965', '#08A6F6']}
+        data={[
+          ['年份', '光子 EDA', 'CPO 模块'],
+          ['2025', 18, 5.6],
+          ['2030', 34, 80],
+          ['2032', 48, 326.8],
+        ]}
+      />
+    </Box>
+
+    {/* 右：洞察 */}
+    <Box style={{ width: '45%', justifyContent: 'center', gap: 14 }}>
+      <Text style={{ fontSize: 21, color: '#1f2a37', lineHeight: 1.5 }}>① 光子 EDA 软件 2025 约 <span style={{ fontWeight: 'bold', color: '#001965' }}>18 亿美元</span>，CAGR 13.5%，量子应用子段 22.4% 最快。</Text>
+      <Text style={{ fontSize: 21, color: '#1f2a37', lineHeight: 1.5 }}>② CPO 模块 2025 年 5.6 亿 → 2032 年 <span style={{ fontWeight: 'bold', color: '#001965' }}>326.8 亿美元</span>（CAGR 76.5%）。</Text>
+      <Text style={{ fontSize: 21, color: '#1f2a37', lineHeight: 1.5 }}>③ 云交付把永久许可 15–50 万美元 → 2500 美元/座/月，用户 2022–2025 <span style={{ fontWeight: 'bold', color: '#001965' }}>+42%</span>；开源（GDSFactory/KLayout）已成商业厂商结构性威胁。</Text>
+      <Box style={{ width: 100, height: 3, background: '#08A6F6', margin: '8px 0' }} />
+      <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#061F32', lineHeight: 1.4 }}>LDA 站在算力需求 / 开源替代 / 云交付三条曲线的交叉点。</Text>
+    </Box>
+  </Box>
+
+  {/* D 页脚 */}
+  <Text style={{ position: 'absolute', left: 56, bottom: 22, fontSize: 14, color: '#808080' }}>Source：Dataintelo / PMarketResearch / 中研普华 2026</Text>
+  <Text style={{ position: 'absolute', right: 56, bottom: 22, fontSize: 14, color: '#808080' }}>14</Text>
+</Slide>

@@ -1,0 +1,51 @@
+<Slide style={{ width: '1280px', height: '720px', background: '#FFFFFF', padding: '44px 56px 40px 56px', position: 'relative' }}>
+  {/* B 标题块 */}
+  <Box style={{ paddingBottom: 12, borderBottom: '1px solid #000000' }}>
+    <Text style={{ fontSize: 31, fontWeight: 'bold', color: '#061F32' }}>商业模式：开源核心建生态护城河，企业版与 PDK 服务变现；路线图直指真实流片</Text>
+  </Box>
+
+  {/* C 内容区：左商业模式 3 卡 + 右时间轴 */}
+  <Box style={{ marginTop: 14, flexDirection: 'row', gap: 40, height: 500 }}>
+    {/* 左：商业模式 3 卡 */}
+    <Box style={{ width: '46%', flexDirection: 'column', gap: 16, justifyContent: 'center' }}>
+      <Box style={{ background: '#061F32', borderRadius: 6, padding: '18px 22px' }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#08A6F6' }}>① 开源核心（获客引擎）</Text>
+        <Text style={{ fontSize: 17, color: '#99BDED', marginTop: 8, lineHeight: 1.4 }}>设计链 Apache-2.0 开源，建生态、拿信任、降获客成本。</Text>
+      </Box>
+      <Box style={{ background: '#FFFFFF', border: '1px solid #061F32', borderRadius: 6, padding: '18px 22px' }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#001965' }}>② 企业版 + 服务（变现）</Text>
+        <Text style={{ fontSize: 17, color: '#44546A', marginTop: 8, lineHeight: 1.4 }}>私有部署 / SLA / 合规 + PDK 与工艺服务订阅。</Text>
+      </Box>
+      <Box style={{ background: '#FFFFFF', border: '1px solid #061F32', borderRadius: 6, padding: '18px 22px' }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#001965' }}>③ 生态市场（网络效应）</Text>
+        <Text style={{ fontSize: 17, color: '#44546A', marginTop: 8, lineHeight: 1.4 }}>货架 / 插件供给，护城河 = 标准 + 生态 + PDK。</Text>
+      </Box>
+    </Box>
+
+    {/* 右：时间轴 */}
+    <Box style={{ width: '54%', position: 'relative' }}>
+      <svg style={{ position: 'absolute', left: 40, top: 60, width: 560, height: 40 }} viewBox='0 0 560 40'>
+        <line x1='40' y1='20' x2='520' y2='20' stroke='#061F32' strokeWidth='2' />
+        <circle cx='40' cy='20' r='14' fill='#061F32' />
+        <circle cx='280' cy='20' r='14' fill='#08A6F6' />
+        <circle cx='520' cy='20' r='14' fill='#99BDED' />
+      </svg>
+      <Box style={{ position: 'absolute', left: 0, top: 110, width: 170, height: 320 }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#061F32' }}>A 期 · 已发布</Text>
+        <Text style={{ fontSize: 18, color: '#44546A', marginTop: 10, lineHeight: 1.45 }}>v0.9.40 已上线<br/>50 验证锚 / 97 CI<br/>开源可申请试用</Text>
+      </Box>
+      <Box style={{ position: 'absolute', left: 240, top: 110, width: 170, height: 320 }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#001965' }}>B 期 · 生态播种</Text>
+        <Text style={{ fontSize: 18, color: '#44546A', marginTop: 10, lineHeight: 1.45 }}>真实 PDK 接入<br/>头部客户 Pilot<br/>社区与货架扩容</Text>
+      </Box>
+      <Box style={{ position: 'absolute', left: 480, top: 110, width: 170, height: 320 }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#001965' }}>C 期 · 真实流片</Text>
+        <Text style={{ fontSize: 18, color: '#44546A', marginTop: 10, lineHeight: 1.45 }}>设计→流片闭环<br/>商业客户规模复制<br/>护城河成型</Text>
+      </Box>
+    </Box>
+  </Box>
+
+  {/* D 页脚 */}
+  <Text style={{ position: 'absolute', left: 56, bottom: 22, fontSize: 14, color: '#808080' }}>Source：LDA 技术白皮书 v0.9.40 · 商业模式与路线图</Text>
+  <Text style={{ position: 'absolute', right: 56, bottom: 22, fontSize: 14, color: '#808080' }}>15</Text>
+</Slide>

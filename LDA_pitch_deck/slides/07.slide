@@ -1,0 +1,46 @@
+<Slide style={{ width: '1280px', height: '720px', background: '#FFFFFF', padding: '44px 56px 40px 56px', position: 'relative' }}>
+  {/* B 标题块 */}
+  <Box style={{ paddingBottom: 12, borderBottom: '1px solid #000000' }}>
+    <Text style={{ fontSize: 33, fontWeight: 'bold', color: '#061F32' }}>LDA 是开源、Agent 原生的光子与量子芯片设计平台，设计闭环全程可验</Text>
+  </Box>
+
+  {/* C 内容区：左架构闭环图 + 右文字 */}
+  <Box style={{ marginTop: 14, flexDirection: 'row', gap: 36, height: 510 }}>
+    {/* 左：闭环图 */}
+    <Box style={{ width: '60%', position: 'relative', background: '#F5F8FB', borderRadius: 8 }}>
+      <svg style={{ position: 'absolute', left: 0, top: 0 }} width={680} height={510} viewBox='0 0 680 510'>
+        <rect x='150' y='60' width='380' height='390' rx='10' stroke='#08A6F6' strokeWidth='2' fill='none' opacity='0.7' />
+        <path d='M530 60 L530 255' stroke='#08A6F6' strokeWidth='2' fill='none' opacity='0.7' />
+        <path d='M150 450 L150 255' stroke='#08A6F6' strokeWidth='2' fill='none' opacity='0.7' />
+        <polygon points='150,255 142,243 158,243' fill='#08A6F6' />
+        <polygon points='530,255 538,243 522,243' fill='#08A6F6' />
+        <polygon points='150,255 162,250 162,260' fill='#08A6F6' />
+      </svg>
+      <Box style={{ position: 'absolute', left: 60, top: 30, width: 180, height: 60, background: '#061F32', borderRadius: 6, justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' }}>设计</Text></Box>
+      <Box style={{ position: 'absolute', left: 250, top: 30, width: 180, height: 60, background: '#061F32', borderRadius: 6, justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' }}>仿真</Text></Box>
+      <Box style={{ position: 'absolute', left: 440, top: 30, width: 180, height: 60, background: '#061F32', borderRadius: 6, justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' }}>版图</Text></Box>
+      <Box style={{ position: 'absolute', left: 60, top: 420, width: 180, height: 60, background: '#061F32', borderRadius: 6, justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' }}>DRC / LVS</Text></Box>
+      <Box style={{ position: 'absolute', left: 250, top: 420, width: 180, height: 60, background: '#061F32', borderRadius: 6, justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' }}>工艺角</Text></Box>
+      <Box style={{ position: 'absolute', left: 440, top: 420, width: 180, height: 60, background: '#061F32', borderRadius: 6, justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' }}>几何寄生</Text></Box>
+      <Text style={{ position: 'absolute', left: 250, top: 232, fontSize: 18, color: '#08A6F6', fontWeight: 'bold' }}>闭环 · 每步可量化</Text>
+    </Box>
+
+    {/* 右：文字 */}
+    <Box style={{ width: '40%', justifyContent: 'center', gap: 18 }}>
+      <Text style={{ fontSize: 25, fontWeight: 'bold', color: '#001965', lineHeight: 1.35 }}>LDA = 光 PDA + 量 QEDA<br/>开源优先 · Agent 原生 · AI 自写核心</Text>
+      <Box style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
+        <Text style={{ fontSize: 22, color: '#1f2a37', lineHeight: 1.5 }}>① 覆盖光子（15+ 引擎）与量子（7 引擎）双栈，口径 = 设计品类。</Text>
+      </Box>
+      <Box style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
+        <Text style={{ fontSize: 22, color: '#1f2a37', lineHeight: 1.5 }}>② 22 类引擎 + 11 包，构成完整设计链。</Text>
+      </Box>
+      <Box style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
+        <Text style={{ fontSize: 22, color: '#1f2a37', lineHeight: 1.5 }}>③ 闭环每一步都落到可量化判据，别人卖工具，LDA 交付可证伪的设计闭环。</Text>
+      </Box>
+    </Box>
+  </Box>
+
+  {/* D 页脚 */}
+  <Text style={{ position: 'absolute', left: 56, bottom: 22, fontSize: 14, color: '#808080' }}>Source：LDA 技术白皮书 v0.9.40 · 技术架构闭环</Text>
+  <Text style={{ position: 'absolute', right: 56, bottom: 22, fontSize: 14, color: '#808080' }}>07</Text>
+</Slide>

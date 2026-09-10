@@ -1,0 +1,39 @@
+<Slide style={{ width: '1280px', height: '720px', background: '#FFFFFF', padding: '44px 56px 40px 56px', position: 'relative' }}>
+  {/* B 标题块 */}
+  <Box style={{ paddingBottom: 12, borderBottom: '1px solid #000000' }}>
+    <Text style={{ fontSize: 33, fontWeight: 'bold', color: '#061F32' }}>AI 算力把光子与量子设计推上指数曲线，工具链却仍是旧范式</Text>
+  </Box>
+
+  {/* C 内容区：左巨型数字 + 右洞察 */}
+  <Box style={{ marginTop: 14, flexDirection: 'row', gap: 48, height: 510 }}>
+    {/* 左：数字锚点 */}
+    <Box style={{ width: '46%', justifyContent: 'center', gap: 18 }}>
+      <Text style={{ fontSize: 90, fontWeight: 'bold', color: '#001965', lineHeight: 1 }}>76.5%</Text>
+      <Text style={{ fontSize: 22, color: '#44546A', marginTop: 4 }}>CPO 共封装光学模块市场 CAGR（2025 → 2032）</Text>
+      <Box style={{ width: 220, height: 2, background: '#E7E6E6', margin: '14px 0' }} />
+      <Box style={{ flexDirection: 'row', gap: 36, alignItems: 'baseline' }}>
+        <Box>
+          <Text style={{ fontSize: 46, fontWeight: 'bold', color: '#08A6F6', lineHeight: 1 }}>13.5%</Text>
+          <Text style={{ fontSize: 18, color: '#44546A' }}>光子 EDA CAGR</Text>
+        </Box>
+        <Box>
+          <Text style={{ fontSize: 46, fontWeight: 'bold', color: '#08A6F6', lineHeight: 1 }}>22.4%</Text>
+          <Text style={{ fontSize: 18, color: '#44546A' }}>量子应用子段（最快）</Text>
+        </Box>
+      </Box>
+    </Box>
+
+    {/* 右：洞察 */}
+    <Box style={{ width: '54%', justifyContent: 'center' }}>
+      <Text style={{ fontSize: 26, fontWeight: 'bold', color: '#061F32', marginBottom: 16 }}>不是线性增长，是范式切换</Text>
+      <Text style={{ fontSize: 23, color: '#1f2a37', lineHeight: 1.5 }}>
+        光子 EDA 软件 2025 年约 <span style={{ fontWeight: 'bold', color: '#001965' }}>18 亿美元</span>，量子计算应用子段以 <span style={{ fontWeight: 'bold', color: '#001965' }}>22.4%</span> 领跑；CPO 模块更从 2025 年 5.6 亿美元冲向 2032 年 326.8 亿美元。<br/><br/>
+        算力需求驱动的，是设计工具链的同步爆发——但现有工具仍是「专家手写脚本 + 商业求解器黑盒」的旧范式，<span style={{ fontWeight: 'bold' }}>供给与需求出现结构性错配</span>。
+      </Text>
+    </Box>
+  </Box>
+
+  {/* D 页脚 */}
+  <Text style={{ position: 'absolute', left: 56, bottom: 22, fontSize: 14, color: '#808080' }}>Source：Dataintelo / PMarketResearch / 中研普华 2026</Text>
+  <Text style={{ position: 'absolute', right: 56, bottom: 22, fontSize: 14, color: '#808080' }}>04</Text>
+</Slide>

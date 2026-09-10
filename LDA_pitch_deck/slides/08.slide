@@ -1,0 +1,47 @@
+<Slide style={{ width: '1280px', height: '720px', background: '#FFFFFF', padding: '44px 56px 40px 56px', position: 'relative' }}>
+  {/* B 标题块 */}
+  <Box style={{ paddingBottom: 12, borderBottom: '1px solid #000000' }}>
+    <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#061F32' }}>验证红线：PASS/FAIL 由物理定律锚与实证大数据锚判定，大模型不进判决路径</Text>
+  </Box>
+
+  {/* C 内容区：上判据图 + 下 3 卡 */}
+  <Box style={{ marginTop: 14, flexDirection: 'column', height: 500 }}>
+    {/* 上：判据结构图 */}
+    <Box style={{ position: 'relative', height: 300, background: '#F5F8FB', borderRadius: 8 }}>
+      <svg style={{ position: 'absolute', left: 0, top: 0 }} width={1168} height={300} viewBox='0 0 1168 300'>
+        <path d='M250 130 H330' stroke='#061F32' strokeWidth='1.5' fill='none' />
+        <path d='M250 190 H330' stroke='#061F32' strokeWidth='1.5' fill='none' />
+        <path d='M510 160 H600' stroke='#061F32' strokeWidth='1.5' fill='none' />
+        <polygon points='600,160 590,153 590,167' fill='#061F32' />
+        <path d='M790 160 H870' stroke='#061F32' strokeWidth='1.5' fill='none' />
+        <polygon points='870,160 860,153 860,167' fill='#061F32' />
+      </svg>
+      <Box style={{ position: 'absolute', left: 40, top: 90, width: 210, height: 80, background: '#061F32', borderRadius: 6, justifyContent: 'center', padding: '0 16px' }}><Text style={{ fontSize: 20, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1.25 }}>物理定律锚<br/><span style={{ fontSize: 15, color: '#99BDED', fontWeight: 'normal' }}>非 AI ground</span></Text></Box>
+      <Box style={{ position: 'absolute', left: 40, top: 150, width: 210, height: 80, background: '#061F32', borderRadius: 6, justifyContent: 'center', padding: '0 16px' }}><Text style={{ fontSize: 20, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1.25 }}>实证大数据锚<br/><span style={{ fontSize: 15, color: '#99BDED', fontWeight: 'normal' }}>独立数据集</span></Text></Box>
+      <Box style={{ position: 'absolute', left: 330, top: 120, width: 180, height: 80, background: '#08A6F6', borderRadius: 6, justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: 21, fontWeight: 'bold', color: '#FFFFFF' }}>死标量比对</Text></Box>
+      <Box style={{ position: 'absolute', left: 600, top: 120, width: 190, height: 80, background: '#061F32', borderRadius: 6, justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' }}>PASS / FAIL</Text></Box>
+      <Text style={{ position: 'absolute', left: 820, top: 128, fontSize: 15, color: '#44546A' }}>可证伪<br/>判决</Text>
+      <Text style={{ position: 'absolute', left: 330, top: 210, fontSize: 15, color: '#808080' }}>双路径独立锚定，大模型只做生成、不表态</Text>
+    </Box>
+
+    {/* 下：3 卡 */}
+    <Box style={{ flexDirection: 'row', gap: 24, marginTop: 18, height: 182 }}>
+      <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #061F32', borderRadius: 6, padding: '18px 22px', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#001965' }}>大模型不进判决</Text>
+        <Text style={{ fontSize: 16, color: '#44546A', marginTop: 10, lineHeight: 1.45 }}>LLM 只做生成与对话，判决落非 AI ground，由死标量比对定 PASS/FAIL。</Text>
+      </Box>
+      <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #061F32', borderRadius: 6, padding: '18px 22px', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#001965' }}>判据 D 双向标定</Text>
+        <Text style={{ fontSize: 16, color: '#44546A', marginTop: 10, lineHeight: 1.45 }}>残差≡0 且扰动无响应、双向标定，杜绝「假独立」自证桩（v0.9.27）。</Text>
+      </Box>
+      <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #061F32', borderRadius: 6, padding: '18px 22px', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#001965' }}>全绿 ≠ 无失真</Text>
+        <Text style={{ fontSize: 16, color: '#44546A', marginTop: 10, lineHeight: 1.45 }}>设反向测试护栏（v0.9.10 漏算 3.01dB 在 84 全绿下溜过的教训）。</Text>
+      </Box>
+    </Box>
+  </Box>
+
+  {/* D 页脚 */}
+  <Text style={{ position: 'absolute', left: 56, bottom: 22, fontSize: 14, color: '#808080' }}>Source：LDA 技术白皮书 v0.9.40 · 验证方法论红线</Text>
+  <Text style={{ position: 'absolute', right: 56, bottom: 22, fontSize: 14, color: '#808080' }}>08</Text>
+</Slide>

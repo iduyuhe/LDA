@@ -1,0 +1,491 @@
+{
+  "total": 20,
+  "expected_extreme": 12,
+  "in_domain_suspect": 8,
+  "suspects": [
+    {
+      "bid": "B2",
+      "as_strict": true,
+      "params": {
+        "w_core": 0.5,
+        "h_core": 0.187,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl": 1.55
+      },
+      "oracle": 2.53311305382976,
+      "cand": 2.6556631143342053,
+      "err": 0.12255006050444539,
+      "tol": 0.05,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B24",
+      "as_strict": true,
+      "params": {
+        "wq_ghz": 5.75,
+        "wc_ghz": 7.5,
+        "g1_ghz": 0.1,
+        "g2_ghz": 0.1
+      },
+      "oracle": -0.005714285714285715,
+      "cand": -0.005677447530896718,
+      "err": 3.683818338899754e-05,
+      "tol": 3e-05,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B24",
+      "as_strict": true,
+      "params": {
+        "wq_ghz": 5.0,
+        "wc_ghz": 6.375,
+        "g1_ghz": 0.1,
+        "g2_ghz": 0.1
+      },
+      "oracle": -0.0072727272727272745,
+      "cand": -0.007197378534165022,
+      "err": 7.534873856225241e-05,
+      "tol": 3e-05,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B26",
+      "as_strict": true,
+      "params": {
+        "f_q_ghz": 5.75,
+        "alpha_ghz": -0.3,
+        "f_r_ghz": 6.0,
+        "g_ghz": 0.1
+      },
+      "oracle": -0.02181818181818182,
+      "cand": -0.01613611876600629,
+      "err": 0.005682063052175529,
+      "tol": 0.0001,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B26",
+      "as_strict": true,
+      "params": {
+        "f_q_ghz": 5.0,
+        "alpha_ghz": -0.3,
+        "f_r_ghz": 5.1,
+        "g_ghz": 0.1
+      },
+      "oracle": -0.07500000000000034,
+      "cand": -0.03160708958444758,
+      "err": 0.043392910415552766,
+      "tol": 0.0001,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B27",
+      "as_strict": true,
+      "params": {
+        "f_q_ghz": 4.25,
+        "alpha_ghz": -0.3,
+        "f_r_ghz": 6.0,
+        "g_ghz": 0.1
+      },
+      "oracle": 1878.4106074588967,
+      "cand": 1834.5072662483549,
+      "err": 43.90334121054184,
+      "tol": 30.0,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B27",
+      "as_strict": true,
+      "params": {
+        "f_q_ghz": 5.0,
+        "alpha_ghz": -0.3,
+        "f_r_ghz": 6.8999999999999995,
+        "g_ghz": 0.1
+      },
+      "oracle": 2188.6428820008873,
+      "cand": 2144.349223752608,
+      "err": 44.29365824827937,
+      "tol": 30.0,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "S8",
+      "as_strict": true,
+      "params": {
+        "p_sig_dbm": 0.0,
+        "n_amp": 1.15,
+        "nf_db": 5.0,
+        "bw_ghz": 50.0,
+        "n_samples": 2000,
+        "seed": 7
+      },
+      "oracle": 45.317642,
+      "cand": 45.97078383840511,
+      "err": 0.6531418384051122,
+      "tol": 0.2,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    }
+  ],
+  "records": [
+    {
+      "bid": "B1",
+      "as_strict": true,
+      "params": {
+        "m": 1.729,
+        "x": 0.4
+      },
+      "oracle": 0.010853430825532301,
+      "cand": 0.011237531315734474,
+      "err": 0.0003841004902021723,
+      "tol": 0.0002,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B1",
+      "as_strict": true,
+      "params": {
+        "m": 1.33,
+        "x": 0.52
+      },
+      "oracle": 0.008115076152490784,
+      "cand": 0.007904194352430723,
+      "err": 0.00021088180006006117,
+      "tol": 0.0002,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B2",
+      "as_strict": true,
+      "params": {
+        "w_core": 0.35,
+        "h_core": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl": 1.55
+      },
+      "oracle": 2.514769377165065,
+      "cand": 2.6491370405141463,
+      "err": 0.13436766334908112,
+      "tol": 0.05,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B2",
+      "as_strict": true,
+      "params": {
+        "w_core": 0.5,
+        "h_core": 0.187,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl": 1.55
+      },
+      "oracle": 2.53311305382976,
+      "cand": 2.6556631143342053,
+      "err": 0.12255006050444539,
+      "tol": 0.05,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B24",
+      "as_strict": true,
+      "params": {
+        "wq_ghz": 5.75,
+        "wc_ghz": 7.5,
+        "g1_ghz": 0.1,
+        "g2_ghz": 0.1
+      },
+      "oracle": -0.005714285714285715,
+      "cand": -0.005677447530896718,
+      "err": 3.683818338899754e-05,
+      "tol": 3e-05,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B24",
+      "as_strict": true,
+      "params": {
+        "wq_ghz": 6.5,
+        "wc_ghz": 7.5,
+        "g1_ghz": 0.1,
+        "g2_ghz": 0.1
+      },
+      "oracle": -0.010000000000000002,
+      "cand": -0.009807621135329292,
+      "err": 0.00019237886467071003,
+      "tol": 3e-05,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B24",
+      "as_strict": true,
+      "params": {
+        "wq_ghz": 5.0,
+        "wc_ghz": 5.25,
+        "g1_ghz": 0.1,
+        "g2_ghz": 0.1
+      },
+      "oracle": -0.04000000000000001,
+      "cand": -0.03187293044088424,
+      "err": 0.008127069559115768,
+      "tol": 3e-05,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B24",
+      "as_strict": true,
+      "params": {
+        "wq_ghz": 5.0,
+        "wc_ghz": 6.375,
+        "g1_ghz": 0.1,
+        "g2_ghz": 0.1
+      },
+      "oracle": -0.0072727272727272745,
+      "cand": -0.007197378534165022,
+      "err": 7.534873856225241e-05,
+      "tol": 3e-05,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B24",
+      "as_strict": true,
+      "params": {
+        "wq_ghz": 5.0,
+        "wc_ghz": 7.5,
+        "g1_ghz": 0.06999999999999999,
+        "g2_ghz": 0.1
+      },
+      "oracle": -0.0028,
+      "cand": -0.0029729293528499845,
+      "err": 0.00017292935284998453,
+      "tol": 3e-05,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B26",
+      "as_strict": true,
+      "params": {
+        "f_q_ghz": 5.75,
+        "alpha_ghz": -0.3,
+        "f_r_ghz": 6.0,
+        "g_ghz": 0.1
+      },
+      "oracle": -0.02181818181818182,
+      "cand": -0.01613611876600629,
+      "err": 0.005682063052175529,
+      "tol": 0.0001,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B26",
+      "as_strict": true,
+      "params": {
+        "f_q_ghz": 6.5,
+        "alpha_ghz": -0.3,
+        "f_r_ghz": 6.0,
+        "g_ghz": 0.1
+      },
+      "oracle": -0.030000000000000002,
+      "cand": -0.019976159647249414,
+      "err": 0.010023840352750588,
+      "tol": 0.0001,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B26",
+      "as_strict": true,
+      "params": {
+        "f_q_ghz": 5.0,
+        "alpha_ghz": -0.3,
+        "f_r_ghz": 4.199999999999999,
+        "g_ghz": 0.1
+      },
+      "oracle": -0.007499999999999984,
+      "cand": -0.0067998931604651425,
+      "err": 0.0007001068395348416,
+      "tol": 0.0001,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B26",
+      "as_strict": true,
+      "params": {
+        "f_q_ghz": 5.0,
+        "alpha_ghz": -0.3,
+        "f_r_ghz": 5.1,
+        "g_ghz": 0.1
+      },
+      "oracle": -0.07500000000000034,
+      "cand": -0.03160708958444758,
+      "err": 0.043392910415552766,
+      "tol": 0.0001,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B26",
+      "as_strict": true,
+      "params": {
+        "f_q_ghz": 5.0,
+        "alpha_ghz": -0.3,
+        "f_r_ghz": 6.0,
+        "g_ghz": 0.13
+      },
+      "oracle": -0.0039000000000000003,
+      "cand": -0.0037440508022834607,
+      "err": 0.0001559491977165396,
+      "tol": 0.0001,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B27",
+      "as_strict": true,
+      "params": {
+        "f_q_ghz": 3.5,
+        "alpha_ghz": -0.3,
+        "f_r_ghz": 6.0,
+        "g_ghz": 0.1
+      },
+      "oracle": 3665.191429188091,
+      "cand": 3412.052334939265,
+      "err": 253.13909424882604,
+      "tol": 30.0,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B27",
+      "as_strict": true,
+      "params": {
+        "f_q_ghz": 4.25,
+        "alpha_ghz": -0.3,
+        "f_r_ghz": 6.0,
+        "g_ghz": 0.1
+      },
+      "oracle": 1878.4106074588967,
+      "cand": 1834.5072662483549,
+      "err": 43.90334121054184,
+      "tol": 30.0,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B27",
+      "as_strict": true,
+      "params": {
+        "f_q_ghz": 5.0,
+        "alpha_ghz": -0.3,
+        "f_r_ghz": 6.8999999999999995,
+        "g_ghz": 0.1
+      },
+      "oracle": 2188.6428820008873,
+      "cand": 2144.349223752608,
+      "err": 44.29365824827937,
+      "tol": 30.0,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B27",
+      "as_strict": true,
+      "params": {
+        "f_q_ghz": 5.0,
+        "alpha_ghz": -0.3,
+        "f_r_ghz": 7.800000000000001,
+        "g_ghz": 0.1
+      },
+      "oracle": 4544.837372193235,
+      "cand": 4330.162796704953,
+      "err": 214.67457548828224,
+      "tol": 30.0,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "S8",
+      "as_strict": true,
+      "params": {
+        "p_sig_dbm": 0.0,
+        "n_amp": 1.15,
+        "nf_db": 5.0,
+        "bw_ghz": 50.0,
+        "n_samples": 2000,
+        "seed": 7
+      },
+      "oracle": 45.317642,
+      "cand": 45.97078383840511,
+      "err": 0.6531418384051122,
+      "tol": 0.2,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "S8",
+      "as_strict": true,
+      "params": {
+        "p_sig_dbm": 0.0,
+        "n_amp": 1.3,
+        "nf_db": 5.0,
+        "bw_ghz": 50.0,
+        "n_samples": 2000,
+        "seed": 7
+      },
+      "oracle": 44.785187,
+      "cand": 45.97078383840511,
+      "err": 1.185596838405111,
+      "tol": 0.2,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    }
+  ],
+  "clean": false
+}

@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="szt014PMe7uhN6H2NtpL5b">
+<head data-page-node-id="nkxGGR5PnutHbIsCGMGPyi">
+<meta charset="UTF-8" data-page-node-id="BEyKE0EcN3UVADdxqdrOLp">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="1L4DQDNzDXnjKkmwwsQoil">
+<title>LDA 项目统筹工作台 · 光子产业设计联盟</title>
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#2a3340;
+    --txt:#e6edf3; --muted:#8b97a7; --dim:#5b6675;
+    --accent:#3b82f6; --accent2:#22d3ee; --gold:#fbbf24;
+    --ok:#34d399; --warn:#f59e0b; --bad:#f87171; --p0:#f472b6;
+    --shadow:0 4px 24px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);line-height:1.55;font-size:14px}
+  header{background:linear-gradient(180deg,#10161f,#0d1117);border-bottom:1px solid var(--line);padding:18px 28px;position:sticky;top:0;z-index:50}
+  header h1{font-size:19px;font-weight:700;letter-spacing:.5px}
+  header h1 .tag{color:var(--accent2);font-weight:600}
+  header .sub{color:var(--muted);font-size:12.5px;margin-top:4px}
+  .stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+  .stat{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:8px 14px;min-width:96px}
+  .stat .n{font-size:20px;font-weight:700;color:var(--accent2)}
+  .stat .l{font-size:11px;color:var(--muted)}
+  nav{background:var(--bg2);border-bottom:1px solid var(--line);padding:0 18px;position:sticky;top:74px;z-index:40;display:flex;gap:4px;overflow-x:auto}
+  nav a{color:var(--muted);text-decoration:none;padding:11px 14px;font-size:13px;white-space:nowrap;border-bottom:2px solid transparent}
+  nav a:hover{color:var(--txt);border-bottom-color:var(--accent)}
+  main{max-width:1180px;margin:0 auto;padding:24px 22px 80px}
+  section{margin-bottom:38px;scroll-margin-top:130px}
+  h2{font-size:17px;border-left:4px solid var(--accent);padding-left:11px;margin-bottom:6px}
+  h2 .en{color:var(--dim);font-size:12px;font-weight:400;margin-left:8px}
+  .sec-sub{color:var(--muted);font-size:12.5px;margin-bottom:16px}
+  .card{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:880px){.g2,.g3{grid-template-columns:1fr}}
+  /* map */
+  #mapwrap{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+  #mapcard{flex:1 1 460px;min-width:320px}
+  .legend{flex:1 1 280px;font-size:12.5px;color:var(--muted)}
+  .legend b{color:var(--txt)}
+  .legend .p0{color:var(--p0);font-weight:600}
+  svg .node{cursor:pointer;transition:.15s}
+  svg .node:hover circle{stroke-width:3;filter:drop-shadow(0 0 6px var(--accent2))}
+  svg text{pointer-events:none;font-family:inherit}
+  /* tables */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;background:var(--bg3)}
+  tr:hover td{background:rgba(59,130,246,.06)}
+  .pill{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11px;font-weight:600}
+  .pill.p0{background:rgba(244,114,182,.16);color:var(--p0);border:1px solid rgba(244,114,182,.4)}
+  .pill.p1{background:rgba(59,130,246,.14);color:var(--accent);border:1px solid rgba(59,130,246,.35)}
+  .pill.ok{background:rgba(52,211,153,.14);color:var(--ok);border:1px solid rgba(52,211,153,.35)}
+  .pill.warn{background:rgba(245,158,11,.14);color:var(--warn);border:1px solid rgba(245,158,11,.35)}
+  .pill.bad{background:rgba(248,113,113,.14);color:var(--bad);border:1px solid rgba(248,113,113,.35)}
+  .pill.blk{background:rgba(91,102,117,.18);color:var(--dim);border:1px solid var(--line)}
+  a.flink{color:var(--accent2);text-decoration:none;border-bottom:1px dotted var(--accent2)}
+  a.flink:hover{color:#67e8f9}
+  .layer-block{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px}
+  .layer-head{background:var(--bg3);padding:11px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+  .layer-head .t{font-weight:600}
+  .layer-head .c{font-size:12px;color:var(--accent2);font-weight:700}
+  .layer-body{padding:6px 16px 14px}
+  .kv{font-size:12.5px;color:var(--muted);margin:8px 0}
+  .kv b{color:var(--txt)}
+  .stage{border-left:3px solid var(--line);padding:10px 0 10px 16px;margin:10px 0;position:relative}
+  .stage.done{border-left-color:var(--ok)}
+  .stage h3{font-size:14px;display:flex;align-items:center;gap:10px}
+  .stage .acts{font-size:12.5px;color:var(--muted);margin-top:6px;display:grid;gap:3px}
+  .stage label{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--txt);cursor:pointer}
+  .visit{border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .visit .org{font-weight:600;font-size:13.5px}
+  .visit .meta{font-size:11.5px;color:var(--muted);margin:4px 0 8px}
+  select,textarea,input[type=text]{background:var(--bg3);color:var(--txt);border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-size:12.5px;font-family:inherit}
+  textarea{width:100%;resize:vertical;min-height:54px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+  button{background:var(--bg3);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12.5px;font-family:inherit}
+  button:hover{border-color:var(--accent);color:var(--accent2)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  button.primary:hover{background:#2f6fd6}
+  .cmd{background:#0a0e14;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-family:"SF Mono",Consolas,monospace;font-size:12px;color:#a5d6ff;overflow-x:auto;white-space:pre}
+  .doc-group{margin-bottom:18px}
+  .doc-group h4{font-size:13px;color:var(--gold);margin-bottom:8px;border-bottom:1px dashed var(--line);padding-bottom:5px}
+  .doc-item{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:7px;background:var(--bg2);gap:10px}
+  .doc-item .nm{font-size:12.5px;word-break:break-all}
+  .doc-item .btns{display:flex;gap:6px;flex-shrink:0}
+  .doc-item button{padding:4px 9px;font-size:11.5px}
+  .note{font-size:11.5px;color:var(--dim);margin-top:10px}
+  .progressbar{height:6px;background:var(--bg3);border-radius:4px;overflow:hidden;margin:8px 0}
+  .progressbar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .footer-note{color:var(--dim);font-size:11.5px;text-align:center;margin-top:30px;border-top:1px solid var(--line);padding-top:16px}
+  .toggle{font-size:12px;color:var(--muted);cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:2px 9px}
+  .collapsed .layer-body{display:none}
+</style>
+</head>
+<body data-page-node-id="W0B1zXhAjHVBEBqAshIQIx">
+<header data-page-node-id="w8O84ZspDDSGwpZXzeesPi">
+  <h1 data-page-node-id="xKPw3HUzuMe0ULqavIFI1T">LDA 项目统筹工作台 <span class="tag" data-page-node-id="50Nk5H55foKNcuQNcahlFA">· 光子产业设计联盟</span></h1>
+  <div class="sub" data-page-node-id="tTNpEDwpnA2wrxrJREMxBJ">开源 Agent 原生 EDA（光子/量子芯片设计自动化 + 物理定律锚仿真验证）｜ 牵头组建光子产业设计联盟 · 资源地图 / 规划 / 研发生产 / 对接行动 一站式统筹</div>
+  <div class="stat-row" id="statRow" data-page-node-id="frqnHlb5J0N7y0oB9c0xpk"></div>
+</header>
+
+<nav id="nav" data-page-node-id="EeKupBK2EBcWvbDfBwakG9">
+  <a href="#sec-map" data-page-node-id="dQx1EbMRhV8PqzTq83Aj3N">资源图谱</a>
+  <a href="#sec-res" data-page-node-id="aSQxJIhxEAqDBWIjCE6Jgo">资源总览</a>
+  <a href="#sec-plan" data-page-node-id="NvOre5Dv1CWZCOZHOZdeSs">规划进度</a>
+  <a href="#sec-prod" data-page-node-id="jxSvvzpTqJPLNWJdxXnkUA">研发生产</a>
+  <a href="#sec-visit" data-page-node-id="aK9jLvq6HOGfn9s34JPG5l">对接行动</a>
+  <a href="#sec-doc" data-page-node-id="Xk6aupT6hIPiAXytHSC7KF">文档地图</a>
+  <a href="#sec-memo" data-page-node-id="gqeIyKK0KpvBlBk2NlvoXG">我的备忘</a>
+</nav>
+
+<main data-page-node-id="X6kCPPDdzozAfzE8NLlaN0">
+
+<!-- ============ 资源图谱 ============ -->
+<section id="sec-map" data-page-node-id="50YJK9R91nxAYRGcudyoVW">
+  <h2 data-page-node-id="xi2zRB2CEUUU3ofu1054B1">九层资源图谱 <span class="en" data-page-node-id="k8ZfW2w5Wlbw5Ob8rAxB5g">Resource Map · 中心辐射</span></h2>
+  <div class="sec-sub" data-page-node-id="xI6Xw4TN1mYBxbHnQQDBsh">中心为 LDA（开源 EDA · 设计入口）。点击任一资源层节点，跳转到下方该层详情。谁掌握「设计入口」谁就是隐形链主。</div>
+  <div id="mapwrap" data-page-node-id="6muGC6ZTYbBzHm84cHw2vN">
+    <div class="card" id="mapcard" data-page-node-id="VzHJuGqyXFWculbFhFAERl"><div id="svgbox" data-page-node-id="ubMLVr4QA3YTGNRw4aDQaT"></div></div>
+    <div class="legend card" data-page-node-id="8lECNrFELBes2xyjYAHfX5">
+      <b data-page-node-id="dP2jmH8myxeOsVJ9Ql9Lgm">九层资源（已普查数量）</b>
+      <div id="legendList" style="margin-top:8px" data-page-node-id="jCD7lGQ4KlVXcj2ouoxnl0"></div>
+      <hr style="border:none;border-top:1px solid var(--line);margin:12px 0" data-page-node-id="QQQZKU9c7dm36AgvZK8Hrg">
+      <div data-page-node-id="C7d4pdH7gQzkjaOSKlQbb4"><b data-page-node-id="51yr2PxFDzGurQief55i1y">核心论点：政策双维度叠加</b></div>
+      <div style="margin-top:5px" data-page-node-id="qqTbaMZ57pFxdFe5MqCHhx">产业专项政策 <b data-page-node-id="9vJQa6qpo8bocaCBM8xMpx">46</b> 项 + 项目对口政策 <b data-page-node-id="Yvr8tgPwmdRT62wGWds9vZ">41</b> 项 = 同时命中 <span class="p0" data-page-node-id="YdKSPIgvHZjupZ3lcBL9DO">五口</span>：工业智能体 / 开源 / 工业软件 / 中小企业 / 光电子。</div>
+      <div style="margin-top:6px" data-page-node-id="58USR2AsggfpHGKb3AX7ZT">设计联盟飞轮：资源地图 → 反向验证 → 产品设计 → 超市丰富 → 四漏斗销售 → 收入反哺。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 资源总览 ============ -->
+<section id="sec-res" data-page-node-id="J8li6YBVi1MeJXSCfR6ZGC">
+  <h2 data-page-node-id="o9SobgdRNEXxCmIlKZJLvo">资源总览 <span class="en" data-page-node-id="2TdQYrH19d5wJfs5cvi35b">Resource Overview · 九层 × P0 节点</span></h2>
+  <div class="sec-sub" data-page-node-id="KwIvlpNF0M6bab4IEMC1CC">每层给出规模、最该对接的 P0 节点、与 LDA 的卡位点、原始分册入口。点击表头可折叠。</div>
+  <div id="layersBox" data-page-node-id="vG1MO5GD06NOYyiRBY8mhk"></div>
+</section>
+
+<!-- ============ 规划进度 ============ -->
+<section id="sec-plan" data-page-node-id="6436b9vpyi9ElyZofw1Dst">
+  <h2 data-page-node-id="MqHMI2TLtqSKnO4jpZdDSC">规划与进度 <span class="en" data-page-node-id="m5LHfSmvN9FjPo9ZXiuU5A">Roadmap · 2026Q4 → 2027Q4</span></h2>
+  <div class="sec-sub" data-page-node-id="yEAsugu0MOGLS4yXlK4db4">基于《资源规划总报告 §7》资源→工作映射。勾选「已完成」会记入本地（刷新不丢），用于实时汇报进度。</div>
+  <div class="card" data-page-node-id="zSeNfDTLUlm6BFs3QHu6pg">
+    <div class="toolbar" data-page-node-id="h2gPnLwnQ6O8TwClP5r4UY">
+      <span id="planProgressTxt" style="color:var(--muted);font-size:12.5px" data-page-node-id="Au8Md1juvU5M4yLUMdquXl"></span>
+      <button onclick="resetPlan()" data-page-node-id="S04ZRNiuwgjTS66WCgTSqx">重置勾选</button>
+    </div>
+    <div class="progressbar" data-page-node-id="m6LEbOPtPWKbBW3LdVwjMu"><i id="planBar" style="width:0%" data-page-node-id="Ckv0AxfyUEp0XtTDxPPY23"></i></div>
+    <div id="stagesBox" data-page-node-id="mFP0Rsjin0HfbnK2oTHvkE"></div>
+  </div>
+</section>
+
+<!-- ============ 研发生产 ============ -->
+<section id="sec-prod" data-page-node-id="Fh4lzsO6IjGWEFSrN8YUij">
+  <h2 data-page-node-id="UvaD6qCEcrBj6jc3mHoYGX">研发生产系统 <span class="en" data-page-node-id="TRyCWewCFtyFhXRBqOccRN">Production System · M1 已跑通</span></h2>
+  <div class="sec-sub" data-page-node-id="mHnsg8Hgx4ifoXzgO3zd4Q">LDA 自己按研发计划批量产出设计方案的生产系统。现状：M1 骨架已落地、端到端跑通；B 赛道（传感）待 M2 补 system_type。</div>
+  <div class="grid g2" data-page-node-id="8ZLM8JY4MDJUa4dfuM9zh6">
+    <div class="card" data-page-node-id="OUVehYAhweDeXyUGIrYQWN">
+      <h3 style="font-size:14px;margin-bottom:10px" data-page-node-id="E39CRQYEZlWE3QAyhqjJIi">M1 运行状态</h3>
+      <div id="prodStatus" data-page-node-id="uYJcT0VzLmWtCsFSkeuXSF"></div>
+      <div class="note" data-page-node-id="S5TUKWRAoyVB6G3VUdKweT">红线：不调 tapeout_pipeline（真实流片属 C 期）｜ LLM 不进判决｜ 每次产出过 golden 反向验证、FAIL 即 blocked ｜ honest_tier 固定「前瞻预研（等效验证）」。</div>
+    </div>
+    <div class="card" data-page-node-id="REVg4sEWjk0loeeAbO3mIL">
+      <h3 style="font-size:14px;margin-bottom:10px" data-page-node-id="lfBp7DzFIeiZjeyeWbBocd">在终端运行生产（A / C 赛道可直接跑）</h3>
+      <div class="cmd" id="runCmd" data-page-node-id="GRyC0AdiKbfOaz7nQvuFHA"></div>
+      <div class="note" data-page-node-id="Klw51AmO9CUckrT904bzyp">说明：工作台为静态页面，运行生产需在项目根目录开终端执行上述命令（CI 解释器）。选中的任务 ID 会回填到命令框。</div>
+      <div style="margin-top:10px" data-page-node-id="hxaOIVZoIwxiXEnqvYBnGX">
+        <label style="font-size:12.5px;color:var(--muted)" data-page-node-id="44tsoHlb2MklKwFqH3omb8">选择可运行任务：
+          <select id="taskSel" onchange="fillCmd()" style="margin-left:6px" data-page-node-id="3ryXEhfHyD87wz8kQwvFer"></select>
+        </label>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px" data-page-node-id="HiHZeT2nGvN4wwrrgOgQNv">
+    <h3 style="font-size:14px;margin-bottom:10px" data-page-node-id="shsblAFqLA7TEdSju1ml46">13 条生产任务（解析自 2027 产品规划）</h3>
+    <table id="prodTable" data-page-node-id="CCR1eYgQBM7oDHLnFIKTTi">
+      <thead data-page-node-id="MgUX5EpyDwAxZbemt47G9v"><tr data-page-node-id="OFIB8qxDBzJYin1UBoij1m"><th data-page-node-id="CMoJ0bCFQDc8rSSK2fneWT">货架 ID</th><th data-page-node-id="NwCzmmpJ2tt7GNBnwiKGOV">赛道</th><th data-page-node-id="hMtzAA3nmBUMI356pgdcx6">system_type</th><th data-page-node-id="DAjtMTSzbA9jTOJpZ0QFOO">状态</th><th data-page-node-id="MpjJxsdY2OsCx1on86UbAs">操作</th></tr></thead>
+      <tbody data-page-node-id="rAKzJE6CtX0Czw90P1X58V"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 对接行动 ============ -->
+<section id="sec-visit" data-page-node-id="yDDEGdOYiNM2Kk31zgvFf4">
+  <h2 data-page-node-id="Lu4Mv868HjsWiUfkmJ1zF9">对接行动 <span class="en" data-page-node-id="4rmecCWYWqw0lEBirlVVmi">Engagement · 找人 + 跑资质</span></h2>
+  <div class="sec-sub" data-page-node-id="lxQ4sjLacnX7bBz38UYYOR">两条线齐头并进：首批 10 家拜访包（找人）+ 政策双口申报作战图（跑资质）。状态可下拉标记，记入本地。</div>
+  <div class="grid g2" data-page-node-id="7M9Qjc88WacKGTBA4qfdDj">
+    <div class="card" data-page-node-id="kdLMOBCSD5xVcfRGJ7sIuj">
+      <h3 style="font-size:14px;margin-bottom:12px" data-page-node-id="NPpH2SAWRu0tMsCXNse7GM">首批 10 家拜访（地方4 / 龙头4 / 院校2）</h3>
+      <div id="visitBox" class="grid" style="gap:10px" data-page-node-id="KIUE6PL9t6sl55VGPKLWpy"></div>
+    </div>
+    <div class="card" data-page-node-id="RlHRyBDqoIHx3dhqcXbqBi">
+      <h3 style="font-size:14px;margin-bottom:12px" data-page-node-id="LPq1f2qZBfrQsELBAk0pwj">政策申报窗口（紧迫度）</h3>
+      <div id="policyBox" data-page-node-id="g7zX6nFDukDqgpUqCEAieG"></div>
+      <div class="note" data-page-node-id="1ETw4QwADvDUtbdBfbW2IO">🔴 首版次窗口（2026-01 截）按当前日期已过，须立即核实 2027 批次预研占位，勿空等。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 文档地图 ============ -->
+<section id="sec-doc" data-page-node-id="BYc9y0j6O650FVHfgh5mBo">
+  <h2 data-page-node-id="WW6A11ydW7d8VIFrULIxYw">文档地图 <span class="en" data-page-node-id="FJ6MEH7SXNYIW355iXKEAz">Document Map · 20 份资料</span></h2>
+  <div class="sec-sub" data-page-node-id="DeI9RfIn90JkrWCIS4OP20">所有散落资料的统一索引。点击「打开」用浏览器本地方式打开（file://），「复制路径」便于在终端/IM 转发。</div>
+  <div id="docBox" data-page-node-id="9eIpa8TqKf3Sjq8WXdlhCR"></div>
+</section>
+
+<!-- ============ 我的备忘 ============ -->
+<section id="sec-memo" data-page-node-id="mE3N74KvdqAKamwezUq9z1">
+  <h2 data-page-node-id="ffGOV8RFoIBgd6HyRFWHDy">我的备忘 / 统筹笔记 <span class="en" data-page-node-id="VWLRTSwRqm68KAQk2S6aDU">Memo</span></h2>
+  <div class="sec-sub" data-page-node-id="h2pbwUz2lMp7LekHeo8nDL">随手记关键决策、待决事项、风险。自动存入本地，可导出 / 导入 JSON 备份。</div>
+  <div class="card" data-page-node-id="XhEwEiuCDhkCOf8ghBOHBp">
+    <textarea id="memo" placeholder="例如：M2 优先级高于新展会；首版次须本周核实 2027 批次；CIOE 9月参展物料由谁负责……"></textarea>
+    <div class="toolbar" style="margin-top:10px" data-page-node-id="IDAqEsRBEd0ZFIjI3yGmfK">
+      <button class="primary" onclick="saveAll()" data-page-node-id="m5q3ywJnSAscCkHOKQoOH1">保存全部状态</button>
+      <button onclick="exportJSON()" data-page-node-id="qz7VFlTPpHUe4NYQrTyV1v">导出统筹状态(JSON)</button>
+      <button onclick="importJSON()" data-page-node-id="KHn16t9MVZ6qZHtUwVLC1k">导入JSON</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none" onchange="doImport(event)" data-page-node-id="T02PhFJEnmDEC5q6IamMnY">
+      <span id="saveHint" style="color:var(--ok);font-size:12px" data-page-node-id="GaMtjUuMSn4sWgd6exkEOl"></span>
+    </div>
+    <div class="note" data-page-node-id="tFPssUSoNG5OyQe3qeKar9">所有勾选/下拉/备忘均保存在本浏览器 localStorage（key: lda_workbench_v1），换设备需导出导入。不涉及任何云端。</div>
+  </div>
+</section>
+
+<div class="footer-note" data-page-node-id="ruW3bsJNCEm1oOVtFQgW7G">
+  LDA 项目统筹工作台 · 数据口径 2024–2026 公开资料 + 生产系统 M1 实跑结果 · 正式对接前请二次核实营收/股权/PDK 版本/现任职务<br data-page-node-id="FhJaffgAZGWqCFJX26NFeJ">
+  反向验证护栏：golden 29/29（M1 实跑未破）｜ 设计联盟定位：中立设计入口，不与制造/流片业务冲突
+</div>
+
+</main>
+
+<script>
+/* ===================== 聚合数据（来自各普查/规划/生产文件） ===================== */
+const LAYERS = [
+  {id:'l1',name:'地方集聚地',en:'Clusters',count:'10 处',p0:['武汉光谷','上海张江','苏州纳米城','重庆 CUMEC','成都双流'],
+   role:'联盟地域载体 · 招商/政策落地',file:'design_alliance_census.md',
+   note:'武汉最完整（1.6万企业/6500亿/196小巨人）；苏州供应链最猛；上海政策资本最浓；CUMEC 是制造底座（已发 180/130nm 硅光 PDK）。'},
+  {id:'l2',name:'龙头企业',en:'Leaders',count:'30+ 家',p0:['中际旭创(刘圣)','新易盛(高光荣)','光迅(黄宣泽)','华工(马新强)','CUMEC(韩建忠)'],
+   role:'标杆合作 / 联盟理事会',file:'census_industry_leaders.md',
+   note:'光模块双雄（旭创300308苏州/新易盛300502成都）；全链 IDM 光迅(002281)；激光大族(002008)；代工 CUMEC/中芯/三安集成。'},
+  {id:'l3',name:'院校平台',en:'Academia',count:'20+ 单位',p0:['华科(张新亮)','上交 CHIPX(金贤敏)','九峰山实验室','西安光机所-先导院'],
+   role:'标准源/PDK源/基准锚源/人才源',file:'design_alliance_census_academia.md',
+   note:'华科光学工程软科全国第1 + 武汉光电国家研究中心；上交 CHIPX 国内首条光子芯片中试线（110nm）；九峰山 8寸薄膜铌酸锂。'},
+  {id:'l4',name:'学术带头人',en:'Academics',count:'32 位(院士18)',p0:['郑婉华','金贤敏','张新亮'],
+   role:'学术顾问 / 标准话语权',file:'census_academic_leaders.md',
+   note:'P0 三角：郑婉华（半导体所 90nm 8寸硅光混合平台 PDK 基线）、金贤敏（上交 CHIPX 中试线）、张新亮（华科光电国研枢纽）。'},
+  {id:'l5',name:'产业带头人',en:'Executives',count:'30 位',p0:['刘圣','黄宣泽','马新强'],
+   role:'可签标杆 / 理事会成员',file:'census_industry_leaders.md',
+   note:'P0：中际旭创刘圣、光迅黄宣泽、华工马新强；CUMEC 韩建忠/王涛是硅光 PDK 接口核心。'},
+  {id:'l6',name:'展会窗口',en:'Exhibitions',count:'14 个',p0:['CIOE 深圳(9月)','SiPC 光谷(5月)','OFC 美国(3月)'],
+   role:'品牌曝光 / 联盟招募 / 现场 demo 转线索',file:'census_exhibitions.md',
+   note:'年度三叉戟：CIOE 旗舰主场、SiPC 光谷根据地、OFC 国际化窗口；另含慕尼黑上海、ECOC、CLEO 等。'},
+  {id:'l7',name:'政策红利',en:'Policies',count:'87 项(46+41)',p0:['首版次(过窗)','政府首购(财库13号)','国发8号','279号(1000智能体)','专精特新新标'],
+   role:'资质 / 资金 / 合规',file:'census_policies.md',
+   note:'双维度：产业专项46 + 项目对口41；五口并行。最紧窗口：首版次（2026-01截，已过→核实2027批次）、政府首购、工业智能体标杆。'},
+  {id:'l8',name:'资本/协会/标准',en:'Eco-Org',count:'23 类',p0:['中科创星','NOEIC(公司+联盟)','CCSA TC6','电子标准院'],
+   role:'钱 / 组织 / 规则',file:'census_ecosystem_others.md',
+   note:'资本：中科创星已投 200+ 光子企业；协会：NOEIC「公司+联盟」模式、ICC 讯石 SiPC 论坛；标准：CCSA TC6、电子标准院 CPO 标准。'},
+  {id:'l9',name:'投资人',en:'Investors',count:'34机构+38人',p0:['米磊(中科创星)','白熠(华为哈勃)','宓群(光速光合)'],
+   role:'早期融资 / 理事会产业资本 / LP',file:'census_investors.md',
+   note:'P0 机构：中科创星、上海硅光芯源、国家创投引导基金；P0 人：米磊（光子旗手）、白熠（华为哈勃）、宓群（光速光合）。'}
+];
+
+const STAGES = [
+  {phase:'2026 Q4',acts:['反向验证扩库 29→41（A/C 赛道）','打通在线支付，转化 ≥1 付费用户','备齐《首版次》2027批次材料 + 启动专精特新递进','CIOE 9月设摊 + 同步发首批拜访函']},
+  {phase:'2027 Q1',acts:['M2 补 B 赛道 sensor_* system_type','货架 58→70 批量上架','政府首购切入（财库13号）','完成首批 10 家首轮拜访闭环']},
+  {phase:'2027 Q2',acts:['三赛道全跑通、进 CI（run_production_smoke）','工业智能体标杆申报（联科279号）','院校合作框架落地（华科/上交 CHIPX）','设计联盟章程 + 理事会组建']},
+  {phase:'2027 Q3',acts:['设计联盟正式成立','光子专项基金对接（中科创星/地方）','参与 CPO 标准（CCSA/电子标准院）','销售漏斗规模化（展会+在线）']},
+  {phase:'2027 Q4',acts:['自举闭环验证（LDA 设计自身互连）','收入反哺研发飞轮成型','生态伙伴 ≥30 家','年度战略复盘 + 十五五承接']}
+];
+
+const PROD = {
+  m1:'已跑通',
+  ran:'IM-3.2T-DR8',
+  ranRes:{feasible:true,n_accepted:3,golden:'29/29'},
+  gap:'B 赛道 sensor_* system_type 待 M2 新增',
+  tasks:[
+    {id:'IM-3.2T-DR8',track:'A',st:'link',status:'done'},
+    {id:'IM-1.6T-LPO',track:'A',st:'link',status:'pending'},
+    {id:'IM-1.6T-ZR',track:'A',st:'link',status:'pending'},
+    {id:'IM-CPO-16CH',track:'A',st:'wdm_demux',status:'pending'},
+    {id:'IM-UCIE-OPTICAL',track:'A',st:'wdm_demux',status:'pending'},
+    {id:'IM-LIDAR-FULL',track:'B',st:'(M2待补)',status:'blocked'},
+    {id:'IM-POC-BIOSENSE',track:'B',st:'(M2待补)',status:'blocked'},
+    {id:'IM-FTTR-PLC32',track:'B',st:'(M2待补)',status:'blocked'},
+    {id:'IM-TTD-5G',track:'B',st:'(M2待补)',status:'blocked'},
+    {id:'IM-QKD-FULL-LINK',track:'C',st:'quantum_fidelity',status:'pending'},
+    {id:'IM-QCTRL-32Q',track:'C',st:'quantum_fidelity',status:'pending'},
+    {id:'IM-OPTCOMB-WDM',track:'C',st:'quantum_fidelity',status:'pending'},
+    {id:'IM-OPA-2D',track:'C',st:'quantum_fidelity',status:'pending'}
+  ]
+};
+
+const VISITS = [
+  {org:'CUMEC 联合微电子中心',grp:'地方',who:'韩建忠/王涛',note:'硅光 PDK 接口核心，制造底座',fid:'design_alliance_visit_package.md'},
+  {org:'武汉光谷管委会 + 九峰山实验室',grp:'地方',who:'管委会/实验室',note:'同城闭环最完整，联盟策源地',fid:'design_alliance_visit_package.md'},
+  {org:'苏州纳米城 / 工业园集成创新中心',grp:'地方',who:'创新中心',note:'供应链最猛、一小时配套圈',fid:'design_alliance_visit_package.md'},
+  {org:'上海张江硅光芯源',grp:'地方',who:'芯源平台',note:'政策+资本浓度最高',fid:'design_alliance_visit_package.md'},
+  {org:'中际旭创',grp:'龙头',who:'刘圣(董事长)',note:'全球光模块第一，标杆',fid:'census_industry_leaders.md'},
+  {org:'光迅科技',grp:'龙头',who:'黄宣泽',note:'全链 IDM，国产替代关键',fid:'census_industry_leaders.md'},
+  {org:'华工科技',grp:'龙头',who:'马新强',note:'激光+传感龙头',fid:'census_industry_leaders.md'},
+  {org:'新易盛',grp:'龙头',who:'高光荣',note:'全球光模块第三（成都）',fid:'census_industry_leaders.md'},
+  {org:'华中科技大学',grp:'院校',who:'张新亮',note:'光学工程全国第1',fid:'design_alliance_census_academia.md'},
+  {org:'上海交大 CHIPX',grp:'院校',who:'金贤敏/余明斌',note:'国内首条光子芯片中试线',fid:'design_alliance_census_academia.md'}
+];
+
+const POLICIES = [
+  {n:'首版次软件申报',ref:'工信厅信发函〔2025〕529号',urg:'bad',act:'2026-01 截（已过）→ 立即核实 2027 批次并预研占位'},
+  {n:'专精特新四级递进',ref:'工信部企业〔2026〕2号',urg:'warn',act:'科技型→高企→专精特新→小巨人，逐级申报'},
+  {n:'政府首购',ref:'财库〔2024〕13号',urg:'warn',act:'面向中小企业+首购，包装 LDA 货架为合规参考设计'},
+  {n:'工业智能体标杆',ref:'联科〔2025〕279号（1000个）',urg:'ok',act:'LDA 即 Agent 原生 EDA，申报标杆企业/典型场景'},
+  {n:'开源奖励 + EDA 国创中心',ref:'十四五软件规划 / 国创中心',urg:'ok',act:'开放原子托管、地方开源奖励、共建 EDA 国创中心'}
+];
+
+const DOCS = [
+  {g:'总览类',items:[
+    {n:'design_alliance_resources_index.md',d:'九层资源总索引'},
+    {n:'design_alliance_resources_master.md',d:'整合主册（一本看全貌）'},
+    {n:'design_alliance_resource_planning_report.md',d:'资源规划总报告'},
+    {n:'design_alliance_resource_map.html',d:'九层资源图谱（可视化）'}
+  ]},
+  {g:'资源普查类',items:[
+    {n:'design_alliance_census.md',d:'产业集群普查'},
+    {n:'design_alliance_census_academia.md',d:'院校普查'},
+    {n:'census_academic_leaders.md',d:'学术带头人(32位)'},
+    {n:'census_industry_leaders.md',d:'产业带头人(30位)'},
+    {n:'census_exhibitions.md',d:'展会(14个)'},
+    {n:'census_policies.md',d:'产业专项政策(46)'},
+    {n:'census_policies_project_fit.md',d:'项目对口政策(41)'},
+    {n:'census_ecosystem_others.md',d:'资本/协会/标准'},
+    {n:'census_investors.md',d:'投资机构+投资人'}
+  ]},
+  {g:'产品 / 生产类',items:[
+    {n:'lda_product_plan_2027.md',d:'2027 产品设计规划'},
+    {n:'lda_production_system_design.md',d:'研发生产系统设计方案'},
+    {n:'lda/lda_l3/production_plan.py',d:'生产调度层代码(M1)'},
+    {n:'lda/lda_l3/production_report.md',d:'M1 生产报告'},
+    {n:'lda/lda_l3/production_tasks.json',d:'确认门任务清单'}
+  ]},
+  {g:'行动类',items:[
+    {n:'design_alliance_visit_package.md',d:'首批10家拜访包+发函'},
+    {n:'policy_application_war_map.md',d:'政策双口申报作战图'}
+  ]}
+];
+
+/* ===================== 渲染 ===================== */
+const LS = 'lda_workbench_v1';
+let state = loadState();
+function loadState(){try{return JSON.parse(localStorage.getItem(LS))||{}}catch(e){return{}}}
+function persist(){localStorage.setItem(LS,JSON.stringify(state))}
+
+function buildStats(){
+  const s = document.getElementById('statRow');
+  const items = [
+    ['9','资源层'],['87','政策项(46+41)'],['20','资料文件'],
+    ['13','生产任务'],['29/29','反向验证'],['10','首批拜访']
+  ];
+  s.innerHTML = items.map(i=>`<div class="stat"><div class="n">${i[0]}</div><div class="l">${i[1]}</div></div>`).join('');
+}
+
+function buildMap(){
+  const cx=300, cy=220, R=150;
+  const n=LAYERS.length;
+  let nodes='', lines='';
+  LAYERS.forEach((l,i)=>{
+    const ang = (-90 + i*360/n)*Math.PI/180;
+    const x = cx + R*Math.cos(ang), y = cy + R*Math.sin(ang);
+    lines += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#2a3340" stroke-width="1.5"/>`;
+    const col = i%2? '#22d3ee':'#3b82f6';
+    nodes += `<g class="node" onclick="gotoLayer('${l.id}')">
+      <circle cx="${x}" cy="${y}" r="30" fill="#161b22" stroke="${col}" stroke-width="2"/>
+      <text x="${x}" y="${y-3}" text-anchor="middle" fill="${col}" font-size="13" font-weight="700">${l.count.split(' ')[0]}</text>
+      <text x="${x}" y="${y+11}" text-anchor="middle" fill="#e6edf3" font-size="9">${l.name}</text>
+    </g>`;
+  });
+  const svg = `<svg viewBox="0 0 600 440" width="100%" style="max-width:560px;display:block;margin:auto">
+    <line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy}" stroke="none"/>
+    ${lines}
+    <circle cx="${cx}" cy="${cy}" r="46" fill="#0d1117" stroke="#fbbf24" stroke-width="2.5"/>
+    <text x="${cx}" y="${cy-6}" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="700">LDA</text>
+    <text x="${cx}" y="${cy+10}" text-anchor="middle" fill="#8b97a7" font-size="8">设计入口</text>
+    <text x="${cx}" y="${cy+22}" text-anchor="middle" fill="#8b97a7" font-size="7">链主</text>
+    ${nodes}
+  </svg>`;
+  document.getElementById('svgbox').innerHTML = svg;
+  document.getElementById('legendList').innerHTML = LAYERS.map(l=>
+    `<div style="margin:3px 0"><span style="color:var(--accent2);font-weight:600">${l.name}</span> · ${l.count} · <span class="p0">P0:</span> ${l.p0.slice(0,2).join('/')}</div>`
+  ).join('');
+}
+function gotoLayer(id){document.getElementById('sec-res').scrollIntoView({behavior:'smooth'});
+  const el=document.getElementById(id); if(el){el.classList.add('hl');setTimeout(()=>el.classList.remove('hl'),1600);}}
+
+function buildLayers(){
+  const box=document.getElementById('layersBox');
+  box.innerHTML = LAYERS.map(l=>`
+    <div class="layer-block" id="${l.id}">
+      <div class="layer-head" onclick="this.parentNode.classList.toggle('collapsed')">
+        <span class="t">${l.name} <span style="color:var(--dim);font-weight:400;font-size:12px">${l.en}</span></span>
+        <span class="c">${l.count}</span>
+      </div>
+      <div class="layer-body">
+        <div class="kv"><b>联盟角色：</b>${l.role}</div>
+        <div class="kv"><b>P0 节点：</b>${l.p0.map(p=>`<span class="pill p0">${p}</span>`).join(' ')}</div>
+        <div class="kv">${l.note}</div>
+        <div class="kv"><b>分册：</b><a class="flink" href="#" onclick="openFile('${l.file}');return false">${l.file}</a></div>
+      </div>
+    </div>`).join('');
+}
+
+function buildStages(){
+  const box=document.getElementById('stagesBox');
+  box.innerHTML = STAGES.map((s,i)=>{
+    const key='stage'+i; state[key]=state[key]||false;
+    const acts = s.acts.map((a,j)=>{
+      const ak=key+'_'+j; state[ak]=state[ak]||false;
+      return `<label><input type="checkbox" data-k="${ak}" ${state[ak]?'checked':''} onchange="onCheck(this)"> ${a}</label>`;
+    }).join('');
+    return `<div class="stage ${state[key]?'done':''}" id="${key}">
+      <h3><input type="checkbox" data-k="${key}" ${state[key]?'checked':''} onchange="onCheck(this)"> ${s.phase} ${state[key]?'<span class="pill ok">已完成</span>':''}</h3>
+      <div class="acts">${acts}</div>
+    </div>`;
+  }).join('');
+  updatePlanProgress();
+}
+function onCheck(el){const k=el.dataset.k;state[k]=el.checked;persist();
+  if(k.startsWith('stage')){const st=document.getElementById(k);if(st)st.classList.toggle('done',state[k]);}
+  updatePlanProgress();
+}
+function updatePlanProgress(){
+  let total=0,done=0;
+  STAGES.forEach((s,i)=>{const key='stage'+i;total++;if(state[key])done++;});
+  const pct=Math.round(done/total*100);
+  document.getElementById('planBar').style.width=pct+'%';
+  document.getElementById('planProgressTxt').textContent=`阶段完成度：${done}/${total}（${pct}%）`;
+}
+function resetPlan(){if(!confirm('确认重置所有规划勾选？'))return;
+  STAGES.forEach((s,i)=>{const key='stage'+i;state[key]=false;s.acts.forEach((a,j)=>state[key+'_'+j]=false);});
+  persist();buildStages();}
+
+function buildProd(){
+  const r=PROD.ranRes;
+  document.getElementById('prodStatus').innerHTML = `
+    <div class="kv"><b>状态：</b><span class="pill ok">${PROD.m1}</span></div>
+    <div class="kv"><b>已执行样例：</b>${PROD.ran} → feasible=${r.feasible}, n_accepted=${r.n_accepted}, golden=${r.golden}</div>
+    <div class="kv"><b>M2 缺口：</b><span class="pill blk">${PROD.gap}</span></div>`;
+  // task select (only runnable A/C)
+  const sel=document.getElementById('taskSel');
+  sel.innerHTML = PROD.tasks.filter(t=>t.status!=='blocked')
+    .map(t=>`<option value="${t.id}">${t.id}（${t.track}·${t.st}）</option>`).join('');
+  fillCmd();
+  // table
+  const tb=document.querySelector('#prodTable tbody');
+  tb.innerHTML = PROD.tasks.map(t=>{
+    const pc = t.status==='done'?'ok':t.status==='blocked'?'blk':'warn';
+    const lbl = t.status==='done'?'已跑通':t.status==='blocked'?'待M2':'待运行';
+    return `<tr><td><a class="flink" href="#" onclick="selTask('${t.id}');return false">${t.id}</a></td>
+      <td>${t.track}</td><td>${t.st}</td><td><span class="pill ${pc}">${lbl}</span></td>
+      <td>${t.status!=='blocked'?`<button onclick="selTask('${t.id}')">填命令</button>`:'—'}</td></tr>`;
+  }).join('');
+}
+function fillCmd(){
+  const id=document.getElementById('taskSel').value;
+  document.getElementById('runCmd').textContent =
+    `# 在项目根目录 D:\\agent_LDA 执行（CI 解释器）\n`+
+    `"C:/Users/Administrator/.workbuddy/binaries/python/envs/default/Scripts/python.exe" lda/lda_l3/production_plan.py ${id}`;
+}
+function selTask(id){document.getElementById('taskSel').value=id;fillCmd();
+  document.getElementById('sec-prod').scrollIntoView({behavior:'smooth'});}
+
+function buildVisits(){
+  const box=document.getElementById('visitBox');
+  box.innerHTML = VISITS.map((v,i)=>{
+    const k='visit'+i; state[k]=state[k]||'未启动';
+    return `<div class="visit">
+      <div class="org">${v.org}</div>
+      <div class="meta">${v.grp} · ${v.who}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${v.note}</div>
+      <label style="font-size:12px;color:var(--muted)">状态：
+        <select data-k="${k}" onchange="onSelect(this)">
+          ${['未启动','已约','已访','已合作'].map(o=>`<option ${state[k]===o?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </label>
+      <div style="margin-top:6px"><a class="flink" href="#" onclick="openFile('${v.fid}');return false">查看对接卡</a></div>
+    </div>`;
+  }).join('');
+}
+function onSelect(el){state[el.dataset.k]=el.value;persist();}
+
+function buildPolicies(){
+  const box=document.getElementById('policyBox');
+  box.innerHTML = POLICIES.map((p,i)=>{
+    const k='pol'+i; state[k]=state[k]||'未启动';
+    const pc = p.urg==='bad'?'bad':p.urg==='warn'?'warn':'ok';
+    return `<div class="visit" style="margin-bottom:10px">
+      <div class="org" style="font-size:13px">${p.n} <span class="pill ${pc}">${p.urg==='bad'?'已过窗':p.urg==='warn'?'紧迫':'可申报'}</span></div>
+      <div class="meta">${p.ref}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${p.act}</div>
+      <label style="font-size:12px;color:var(--muted)">进度：
+        <select data-k="${k}" onchange="onSelect(this)">
+          ${['未启动','准备中','已申报','已获批'].map(o=>`<option ${state[k]===o?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </label>
+    </div>`;
+  }).join('');
+}
+
+function buildDocs(){
+  const box=document.getElementById('docBox');
+  box.innerHTML = DOCS.map(g=>{
+    const items=g.items.map(it=>`
+      <div class="doc-item">
+        <span class="nm">${it.n} <span style="color:var(--dim)">— ${it.d}</span></span>
+        <span class="btns">
+          <button onclick="openFile('${it.n}')">打开</button>
+          <button onclick="copyPath('${it.n}')">复制路径</button>
+        </span>
+      </div>`).join('');
+    return `<div class="doc-group"><h4>${g.g}</h4>${items}</div>`;
+  }).join('');
+}
+
+function openFile(p){
+  // 工作台放在 D:\agent_LDA，相对路径打开
+  const url = 'file:///D:/agent_LDA/'+p.replace(/\//g,'/');
+  window.open(url,'_blank');
+}
+function copyPath(p){
+  const full='D:\\\\agent_LDA\\\\'+p;
+  navigator.clipboard.writeText(full).then(()=>{
+    showHint('已复制：'+full);
+  }).catch(()=>showHint('复制失败，路径：'+full));
+}
+function showHint(t){const h=document.getElementById('saveHint');h.textContent=t;setTimeout(()=>h.textContent='',2600);}
+
+/* memo */
+function loadMemo(){document.getElementById('memo').value=state.memo||'';}
+document.getElementById('memo').addEventListener('input',e=>{state.memo=e.target.value;persist();});
+function saveAll(){persist();showHint('已保存全部统筹状态 ✓');}
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='lda_workbench_state_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+}
+function importJSON(){document.getElementById('importFile').click();}
+function doImport(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{try{state=JSON.parse(rd.result);persist();location.reload();}catch(err){alert('JSON 解析失败');}};
+  rd.readAsText(f);}
+
+/* init */
+buildStats();buildMap();buildLayers();buildStages();buildProd();buildVisits();buildPolicies();buildDocs();loadMemo();
+</script>
+<style>
+.layer-block.hl .layer-head{background:rgba(59,130,246,.18);transition:.3s}
+</style>
+</body>
+</html>

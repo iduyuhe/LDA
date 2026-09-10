@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="wFSupqG3CTvUBkOSBAlura">
+<head data-page-node-id="IETRLGHfp5RAbOlEa98GTC">
+<meta charset="UTF-8" data-page-node-id="l44PgMvkZpK3WsmJ60xXzp">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="IcyYBlpFGqDygsnl6Ogh1I">
+<title>LDA 研发规划与实施计划（2026-09-11 红线重排版）</title>
+<style>
+  :root{ --ink:#1f2933; --muted:#52606d; --line:#d9e2ec; --bg:#ffffff; --accent:#2563eb; --warn:#b91c1c; --warnbg:#fef2f2; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; padding:40px 48px; background:var(--bg); color:var(--ink); font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; line-height:1.7; font-size:15px; }
+  h1{ font-size:26px; border-bottom:3px solid var(--accent); padding-bottom:10px; margin-bottom:6px; }
+  h2{ font-size:20px; margin-top:34px; border-left:5px solid var(--accent); padding-left:12px; }
+  h3{ font-size:16px; margin-top:24px; color:var(--accent); }
+  blockquote{ background:var(--warnbg); border-left:5px solid var(--warn); margin:14px 0; padding:10px 16px; color:#7f1d1d; border-radius:4px; }
+  blockquote strong{ color:var(--warn); }
+  table{ border-collapse:collapse; width:100%; margin:16px 0; font-size:13.5px; }
+  th,td{ border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th{ background:#f0f4f8; color:var(--ink); font-weight:600; }
+  tr:nth-child(even) td{ background:#f7fafc; }
+  code{ background:#eef2f7; padding:1px 5px; border-radius:4px; font-size:13px; }
+  ul,ol{ padding-left:22px; } li{ margin:4px 0; }
+  .meta{ color:var(--muted); font-size:13px; }
+  .tag{ display:inline-block; background:var(--accent); color:#fff; font-size:12px; padding:1px 8px; border-radius:10px; margin-right:6px; }
+  .tag-red{ background:var(--warn); }
+  hr{ border:none; border-top:1px solid var(--line); margin:28px 0; }
+  em{ color:var(--muted); }
+</style>
+</head>
+<body data-page-node-id="RjPNIEAItpkjQzEoR8BcBb">
+<h1 data-page-node-id="ECyktoXkhi9lpIErOgH9FB">LDA 研发规划与实施计划（2026-09-11 红线重排版）</h1>
+<p class="meta" data-page-node-id="VgkykLJni8vaJgR57gKGlb">文档性质：执行视角（姊妹文档 BP 修订版为融资/商业视角）。本版依据：<code data-page-node-id="QFimLemmnmuviAMM2BCcfu">LDA_研发规划与实施计划_2026-09-09.md</code> + 2026-09-10/11 杜先生终审裁定（<code data-page-node-id="cXLwEG2I1FyQxPTa4waFJX">docs/lda_active_device_redline_clarification_2026-09-10.md</code> §七/§八/§九）。</p>
+
+<h2 data-page-node-id="MQHu6rQT4z91DmpKdrkmLE">0. 一句话定位</h2>
+<p data-page-node-id="H4E5VBI6KsSBrNBrAlxBPA"><strong data-page-node-id="mPcPkbgTX9ELK29VTylcm5">LDA = 光电接缝上的可证伪设计入口。</strong> 不做整条链，只做「封装测试占 79.9% 成本的那一格」。红线重排后新增：原禁区「电域求解器 / Foundry TCAD」的 <strong data-page-node-id="Yc3dTI32DY9nIFxKpafEdo">T1 数值内核（载流子输运 PDE 求解）现已解锁</strong>——可在主权可控（B 级 DEVSIM fork / C 级自研）前提下做电-光器件载流子分布真求解，但<strong data-page-node-id="7Yv4FPEq2w4NU4SGjOz7OL">输出不作真值 ORACLE</strong>，且 T2 工艺真值 / 电-光耦合增益 / 封测产线 / 流片仍锁死。</p>
+
+<h2 data-page-node-id="HGUEfgC0ijM2UKJEfoq94P">1. 战略边界（🔴 本版核心修订：三不做 → 分层边界）</h2>
+<h3 data-page-node-id="I4DAlHXMaiMEbep9e7sZV0">1.1 分层边界：T1 可解锁 / T2 锁死 / 封测锁死</h3>
+<table data-page-node-id="9acHVK6dZ8OngVVHDQuTn9">
+<tr data-page-node-id="gSMPMGcArUs8oFOj9WD4YJ"><th data-page-node-id="Ag3kdZ0J0d4VbFyLFxqAAt">原「三不做」项</th><th data-page-node-id="aRFOoXwdUiaesWZnBtSqqJ">新分层口径</th><th data-page-node-id="0cFZTf8EtImLtkXApZ9jZa">T1（可解锁）</th><th data-page-node-id="NdU1Q4B1n1uJklQng8zdvQ">T2（永久锁死）</th></tr>
+<tr data-page-node-id="xYUzKLtHcVH4VTHtcfhrV2"><td data-page-node-id="3KKDSzl57X250jmDJW2SIN"><strong data-page-node-id="AuYnlqjPB80cFPDl2G8U10">电域求解器</strong></td><td data-page-node-id="1jbYlr1PsyvKBTnSRkw7rw">拆 T1/T2</td><td data-page-node-id="7NrF9PatSKwksitfOm1dS4"><strong data-page-node-id="8gqghhJm2Yv8GxMvyFNkxr">T1 电学内核</strong>：泊松+漂移-扩散+连续性方程，求 N(x)。DEVSIM（Apache-2.0）fork 或自研 → B/C 级，不破 A 级。</td><td data-page-node-id="9ipcy0GIZG8pMkyBHES57P">电-光耦合增益当真值（激光 L-I / SOA 增益 / 增益谱）、A 级商业电学求解器（Sentaurus/Lumerical/COMSOL）、foundry 工艺真值、封测产线、流片。</td></tr>
+<tr data-page-node-id="IsKSrj6IkWMqEheVlIc1xa"><td data-page-node-id="CfAaLW5u5gkFmDKrGfYjKA"><strong data-page-node-id="B5my1KZ7qjJHX0wQHozt7c">Foundry TCAD</strong></td><td data-page-node-id="YRWdFyiEDcoG5i5wn8q8qO">拆 T1/T2</td><td data-page-node-id="YyXx81sdaUFn4EePC50L5W"><strong data-page-node-id="0yaOTgWh0Rkkj2LvT2HRzU">T1 数值内核</strong>：漂移-扩散+载流子输运 PDE（与电域 T1 同一内核）。DEVSIM fork 或自研 → B/C 级。</td><td data-page-node-id="R93dYgQazwA4vj0IKF4yST">foundry 专有工艺模型（implant/diffusion/etch/stress）+ 流片实测 ORACLE。LDA 只消费 PDK 接口。</td></tr>
+<tr data-page-node-id="cMU9N03Tj1qhBwjUvn0LDf"><td data-page-node-id="mKyJGFhPH1MvsOYKSRaydr"><strong data-page-node-id="PnyYClPTH9Z37kRfc1VQTP">封测实体产线</strong></td><td data-page-node-id="xXGwqjCkkmCRgNL7ETjgzU">维持原样</td><td data-page-node-id="rB2mAs3KuT6mnT97qb5Mqb">—</td><td data-page-node-id="4LdwWamJR4G5Gddz3NAMDf"><strong data-page-node-id="9ApBJ9rWfYkFraFwqh6SKI">完全锁死</strong>（C 期能力）。先委托测试、后自建。</td></tr>
+</table>
+<p data-page-node-id="j5GoRGN4LVAFwa1Cketlv1"><strong data-page-node-id="1BY68HZE64hFxjy25bVgYw">A 级永不借（维持不变）</strong>：Lumerical / Ansys / Synopsys / Cadence 不采用。DEVSIM（Apache-2.0）属 B 级，fork 镜像冷备即合规。</p>
+<blockquote data-page-node-id="a9hhWNf4ErDl5oPp8MdFrs"><strong data-page-node-id="3Bied1hAHf24yg3JFt3okc">T1 解锁 5 条铁律（须同时满足，否则破 IRONLAWS）</strong>：① 成熟节点用途声明（规避 EAR 744.23）；② 仅开源/自研内核 + 公开文献/PDK 标定，禁 import A 级商业；③ T1 输出<strong data-page-node-id="hd5DHB2tSMTlAnd8tA7o7M">不作真值 ORACLE</strong>，判决仍落 foundry 实测/文献/标准；④ 不流片不抢制造；⑤ subprocess 仅回标量不污染核心。</blockquote>
+<blockquote data-page-node-id="rBl8v4jqUbgzNsb48OqBFJ"><strong data-page-node-id="fwExF0LkDp5sVRQp6mH5ex">🔴 EAR 744.23 出口管制诚实提醒（钉入红线）</strong>：按「用途（先进节点）」管制 ECAD/TCAD，非按代码许可。开源 TCAD 技术主权不受美系绑定，但<strong data-page-node-id="NL0wZWmdqb9LMRBDCvdw7p">明知用于中国先进制程仍可能触线</strong>；成熟节点/非先进用途不在范围。「开源 ≠ 完全不受 IP 影响」。</blockquote>
+<p data-page-node-id="2bQMOdoZU17ln0sKDuEQr2"><strong data-page-node-id="HaPOsSF5uPjr0EwT8ulDI4">影响范围</strong>：B 档「载流子动力学 / 探测器带宽真求解」经 T1 可做；激光 L-I / 增益谱 / SOA 仍维持禁区；A 档（闭式/行为层）早已授权且不依赖 T1 内核。</p>
+
+<h3 data-page-node-id="uEOVv6ZdT13F3xHJqh1CoX">1.2–1.5 其余边界（维持 09-09 版，新增项见下）</h3>
+<ul data-page-node-id="FwjukottxjbfEzWRQjCszb">
+<li data-page-node-id="pdMQ6WDdur7K8RTMXFeH04"><strong data-page-node-id="Hv8n0B7ZSBO6HhKd3JqLgT">全生命周期 3–5 段</strong>：T1 内核解锁后第 3 段（设计实现）扩到载流子分布级，但仍不碰第 6 段（封测验证，委托伙伴）。</li>
+<li data-page-node-id="2V0XFubJeRw5GGrr3VpLJa"><strong data-page-node-id="bbr4mVE7ueBpYByHMUAOR7">AI 分工铁律</strong>：AI 出题、物理定律判卷；T1 内核输出不进死标量判决。</li>
+<li data-page-node-id="4ZYECr1YvrAjMDiksFwtiT"><strong data-page-node-id="LJsnX9zMnAO6hdAsVfdvC2">生态开放</strong>：新增 T1 内核 PR 主权扫描（DEVSIM Apache-2.0 合规 + 离线构建证据）。</li>
+<li data-page-node-id="ACJICpu2pzY4z2JmIFBKaU"><strong data-page-node-id="Zazi1iLmHmcvdwNBt4GaVi">跨期工程铁律</strong>：新增 <strong data-page-node-id="cIfAmTbZ9KWqQAu8Gs6VUn">EAR 744.23 合规门禁</strong>（用途声明 + 离线构建证据缺失即 CI 红）。</li>
+</ul>
+
+<h2 data-page-node-id="poWGTCSA7Fs3Th84hqgZgU">2. 研发五期总览（T0–T4 · T1 纳入解锁层）</h2>
+<table data-page-node-id="A0ZGaR5v6LgdKToJsvklhY">
+<tr data-page-node-id="A1AZvEnGb3PXZZS2GyvANL"><th data-page-node-id="DXa99dyAVMw7lRx8FKnJem">期</th><th data-page-node-id="4xrftGk8iRdrIz6LclIxxy">目标</th><th data-page-node-id="h8F0DGgMoOMVk0n02YoR6H">工期</th><th data-page-node-id="jyGERRdPCYJiF84B7gAzKs">我方研发投入</th><th data-page-node-id="Nu0TLXYaKIDxYIr7polRMv">对外口径</th><th data-page-node-id="tB7Wwi5k32j9cGHNdEITA8">核心交付</th><th data-page-node-id="B7hom0rnMp6b41i1AY0xFz">可证伪验收</th></tr>
+<tr data-page-node-id="UjsIp6TvQrb3ch5VsUKdae"><td data-page-node-id="BSTsOXC2SNG7GCecuTjZH6"><strong data-page-node-id="NNuY1xRQFl6V6ha9udHKNp">T0</strong> 需求架构层</td><td data-page-node-id="gaZm0yGm6h4f8wzLWaQVa8">需求→架构 交付起点</td><td data-page-node-id="pr8C8KcVuizSYhMASzV6VP">0–9 月</td><td data-page-node-id="krFIXVsnZEFPu1aJ0CAqER">60 万</td><td data-page-node-id="XjtyxUVsa5YSDEd25rvUAz">能力</td><td data-page-node-id="PFpzpj2b1CCAue3FwXHAh6">proposal_compiler 升级（Pareto/NLP/S8/红蓝队）</td><td data-page-node-id="8U6G8tgYC9p6KYScIwkxVf">权重变→Pareto 位移；无锚证据不进 ranked</td></tr>
+<tr data-page-node-id="A0ZR51pkjKGlxVe0autWmZ"><td data-page-node-id="Ql65oJMwizs60vvqoCC5pP"><strong data-page-node-id="YImPMTzdNE25kfzOZ1RT62">T1</strong> 光电接口层 + 电学/TCAD 数值内核（T1 解锁层）</td><td data-page-node-id="heTGoB2JhAhlIowQoia4NU">紧凑模型 + Cadence + T1 载流子内核 + 主动扩锚</td><td data-page-node-id="0WGd8L8wDjUiQA8cJh8TEU">0–18 月</td><td data-page-node-id="KLOxIQcALEVy3ussnBla8P"><strong data-page-node-id="BdM1uPyXTypBebDGwtI8Xd">170–190 万</strong>（原110+内核60–80）</td><td data-page-node-id="x90icRJ2QyqCd8uVQDMJyV">A 档订单 150–300 万 + T1 内核能力</td><td data-page-node-id="YCkDlmsobfYObRueC4DvTb">紧凑模型 + DEVSIM fork/自研 drift-diffusion + A 档 ~8 锚 + B 档载流子动力学/探测器带宽真求解</td><td data-page-node-id="4vWNk81DdERYo0riWQf7jq">参数±20%响应必变；N(x)与DEVSIM双向标定；<strong data-page-node-id="E5RgN9U8ctKpVUbB03XMLE">T1 输出不作 ORACLE 守卫必响</strong></td></tr>
+<tr data-page-node-id="wJiN6pwHWRmjDp3DI5TlYb"><td data-page-node-id="c0uWVz7KWRydEC9qQYIGq0"><strong data-page-node-id="adaBnxfG8yMAaxfcO5Uq4s">T2</strong> 真值链</td><td data-page-node-id="BxOG39h6rwSMkA2vcYMP4e">自有实测回流换自证桩（T1 已做部分 B 档真求解，真值仍靠此期）</td><td data-page-node-id="eykx9bKLAVXPFoXo7lCX7C">6–24 月</td><td data-page-node-id="BzAsOS1jW3DDc8DVo4bgLI">240 万</td><td data-page-node-id="6CtG0B4ZNvgMUWfxFfrgH7">B 档主体</td><td data-page-node-id="OVbyeKoIzU4FwEoTsdpFsU">3–4 轮 MPW + 委托封测（T2 工艺真值仍锁死）</td><td data-page-node-id="U6TRFyK09i0QXvBkhxaHP2">≥5 自证桩换真锚；工艺角假设→实测</td></tr>
+<tr data-page-node-id="6E89YwxBFDBlt442eNETJ1"><td data-page-node-id="DK7DD91CaBc9MiWEmMRXqw"><strong data-page-node-id="5IlmDPsyDqrsqF2EbA2aY8">T3</strong> 设计侧虚拟制造 2.0</td><td data-page-node-id="y7Rkp9ZcUGUiZHVHl2EEHN">工艺波动 + 可封装性 + 载流子→封装良率（T1-B 赋能）</td><td data-page-node-id="6RvTSwvNYsrIDJjKLuH9nR">12–30 月</td><td data-page-node-id="4sT72V1hAekqVYvZmqGfcU">研发人力</td><td data-page-node-id="FLNZxqE6lrBuo5HM6oLXGF">能力</td><td data-page-node-id="dUNQLQU9Iw8ug25y9XgAVj">S13 + P-CPO + 载流子分布驱动设计反馈</td><td data-page-node-id="p2Pe3UAIvNCOrqomEOnZ4T">设计改动→封装良率同向可复现</td></tr>
+<tr data-page-node-id="7o2eRt2aJRm9NRB4XexmgA"><td data-page-node-id="p1AhGTXQFDzm0nOcVNOfud"><strong data-page-node-id="3OXEqfmoXaO9gdER0JhrUm">T4</strong> 标准位与生态</td><td data-page-node-id="erf08AeACW8PVshpAonNrM">L0 IR 推标准位</td><td data-page-node-id="BLB6rIn1xPAfr0vEWCMp1e">24–36 月</td><td data-page-node-id="QCu3nYOx6rdf2qjSfYAtFB">40 万</td><td data-page-node-id="68yCC3j9t9eyBGHfEpgLDw">能力</td><td data-page-node-id="I4H5SUoyu0anuZRSh5uS11">L0 IR / DesignPackage JSON 外部采用</td><td data-page-node-id="BmCi10PSZea6FaXn7qfLGs">≥2 外部采用 + ≥1 foundry 签 PDK</td></tr>
+</table>
+<p data-page-node-id="pJHs0m7wHCuv4jF7b5hGSs"><strong data-page-node-id="oAAQ4mTcgTxAdACvPDmw5A">资金对齐</strong>：原框架 1000 万；T1 内核解锁追加 ~60–80 万（优先 T1 研发 + 预备金调剂），完整 DEVSIM 自主 fork 需追加至 ~1070 万（待拍板）。3 人编制 450 万；5 人需 750 万，总额升至 ~1300–1370 万（待拍板）。</p>
+
+<h2 data-page-node-id="LxgS2HwVOLwKqb3sprImoQ">3. 逐期实施计划（WBS + 验收 + 风险）</h2>
+<h3 data-page-node-id="XbBgbNg3QFff6owtgo9Rcm">T0 需求架构层（基本完成）</h3>
+<p data-page-node-id="67yLMx1UEvTd7IAUmQTMmd">已完成：Pareto（CORE）、NLP 入口（4/4）、S8 接入（4/4）、红蓝队闭环（DeepSeek 蓝队+GLM 红队+锚判卷+30min cron，CI 152）。剩余：人终审 UI 收口 + 演示物料。</p>
+
+<h3 data-page-node-id="Pk9XhvuhmRHgkgOsAtqO0E">T1 光电接口层 + 电学/TCAD 数值内核（T1 解锁层）— 🔴 最大变化</h3>
+<p data-page-node-id="EKDgXGJQGm5fW64Mwx3wBw"><span class="tag" data-page-node-id="jSLuJyWOPRY4pEAKCCyUFd">T1-A</span> 光电接口层（原·110 万）：紧凑模型 schema / SPICE 网表 + Cadence 适配 / 参数↔物理校准接 B29+B30+B33 / 反向护栏 参数±20%响应必变。明确不做 SerDes/DSP/眼图/BER（T2 锁死）。</p>
+<p data-page-node-id="FQWTlgJha63CdFrYcmNHe5"><span class="tag tag-red" data-page-node-id="m3pEDICMl06WzctA06HQXa">T1-B</span> 电学/TCAD 数值内核（🔴 新增）：① DEVSIM Apache-2.0 fork 镜像冷备 + 离线构建验证；② 自研 drift-diffusion+连续性 1D 内核（Gummel/Newton 求电势→N(x)），Sze 教科书闭式作 golden；③ N(x)与 DEVSIM 双向标定 + T1 输出不作 ORACLE 守卫 + EAR 744.23 用途声明；④ subprocess 隔离（沿用 Meep 纪律）。验收：N(x)双向标定 Δ≤容差且网格收敛单调；ORACLE 守卫必响；离线构建+用途声明齐备；零 A 级。</p>
+<p data-page-node-id="ck3xeirXnVB2V71Hje5bum"><span class="tag" data-page-node-id="L2CpKMmJJRT1o2ofZh1YWL">T1-C</span> 主动器件扩展：<strong data-page-node-id="9NzOWYMUA1kyJFU2TAd6HL">A 档（闭式，已授权）</strong> Si 载流子色散 Vπ / EAM-QCSE / 探测器带宽 τ=RC（B33 已立）/ 激光器 FSR·布拉格·线宽，各立物理定律锚 + 独立交叉候选（先评审后写码）。<strong data-page-node-id="vzkrJeq0FNd1hcjCFyPpFW">B 档部分真求解（经 T1-B）</strong> 载流子动力学 / 探测器带宽真求解，与闭式下限交叉验证；<strong data-page-node-id="4FiZsa69ivFGPUVwVwxH5b">激光 L-I/增益/SOA 仍锁死</strong>。</p>
+
+<h3 data-page-node-id="I7sbXI8Gnka1ZqzHyVSAHC">T2 真值链</h3>
+<p data-page-node-id="ILEKhl77Rpd2SgUhZy6VM7">3–4 轮 MPW + 委托封测（ficonTEC 年产能 30–40 台，交期 5–7 月，须早锁）+ 实测回流规范。🔴 <strong data-page-node-id="zprBYzyG1k2UZpYokxnEf6">T2 工艺真值仍永久锁死</strong>，只消费 PDK。🔴 <strong data-page-node-id="NTjytMJ9iTN9UolLCkKePH">与 T1-B 衔接</strong>：B 档真求解在 T1-B 算出但输出不作 ORACLE；T2 的 MPW 实测是这些真求解的标定与验收来源，互补不替代。</p>
+
+<h3 data-page-node-id="c7gIFATRdq6D0EuiQ1bZrT">T3 设计侧虚拟制造 2.0</h3>
+<p data-page-node-id="hrp5SCcVymIxvcVLeaatl3">工艺波动链路（巩固）+ 可封装性链路（新建）+ <strong data-page-node-id="mVz92sJzTIP9GUgCi9xzmH">载流子分布→封装良率链路（T1-B 赋能，新增）</strong> + 设计决策反向追溯。验收：设计改动→封装良率同向可复现。</p>
+
+<h3 data-page-node-id="kClIeCUfPIhpruiGAHVNMA">T4 标准位与生态</h3>
+<p data-page-node-id="nSoU72HSVIj9klYsFVQuHG">L0 IR schema 冻结 + ≥2 外部采用 + ≥1 foundry 签 PDK + 生态治理三件套（含 DEVSIM/T1 内核许可扫描）。</p>
+
+<h2 data-page-node-id="abjEDYMc0Tce3QAT1FURNj">4. 融资节奏与里程碑解锁</h2>
+<table data-page-node-id="TXfwY3kN1Fp7ZqRxdBzU5N">
+<tr data-page-node-id="x41hjKp1HKAhPnMAUZBhqW"><th data-page-node-id="XSy8A5xQsQ86dJIa7Y0Vjq">笔</th><th data-page-node-id="neDrC4vYygM0arReJr2oNU">金额</th><th data-page-node-id="po2kMkRoOkQ9EpFpxhvvku">工期</th><th data-page-node-id="MvUjWE4lkgBWAbF5bSvOTD">解锁条件</th></tr>
+<tr data-page-node-id="qppJBvMSXD6aCKOndPthH0"><td data-page-node-id="4QslaxKTmSE7VRfHhst1Rt">验证轮</td><td data-page-node-id="L0urHbZdtDx3xf80GuCv4q">100–150 万</td><td data-page-node-id="9VTUKHuv8yH8PxX2bx1V1i">12 月</td><td data-page-node-id="aBfdxwgXWtKkquFLRnzJmT">① 2 轮 MPW 自有实测 ② ≥5 自证桩换真锚 ③ 1 个付费客户（A 档优先）</td></tr>
+<tr data-page-node-id="lxRD1TABOOHBICqR4LDy6T"><td data-page-node-id="WXGnskFDYjPEx81NC0QUEX">主力轮</td><td data-page-node-id="aeH7WEdbgaadk4uiAuIMD1">800–1000 万（+T1 内核追加）</td><td data-page-node-id="OiMKjDxCTE6jnGPRt5WWPg">24 月</td><td data-page-node-id="aR5c59FL9d72LASEHGN423">以验证轮里程碑实际结果为锚</td></tr>
+</table>
+<p data-page-node-id="DGLc4H5DggTbbTpyrmJKFB">🔑 第一笔不锁估值（SAFE/可转债）；A 档是订单非融资；<strong data-page-node-id="CNRvUKrFkyHFAbNqGS68ti">T1 内核对验证轮增强</strong>：B 档真求解从禁区变可演示，作差异化技术资产（诚实标注 ORACLE 纪律 + T2 锁死）。</p>
+
+<h2 data-page-node-id="XpYNbuhCI8FiVFkQryES6N">5. 跨期治理与 CI 纪律</h2>
+<ul data-page-node-id="PzE4ztIkZucqAdqly8LGnz">
+<li data-page-node-id="WbqS19I7meCbshWGyGGBud">发版前必跑 <code data-page-node-id="12emL6lyeq49YAll0K4Stu">--tag core</code> 全量回归看 <code data-page-node-id="anDhstnXSI4JvlCKoFfz89">rc</code>。</li>
+<li data-page-node-id="xO6HmRi5ihlxFA00UaNnzo">每个新护栏必须有反向测试证明会响。</li>
+<li data-page-node-id="KPR6x8dbVsVxPYYJ6OX8Ep">判据先于代码；主权扫描 import+license 双扫（含 DEVSIM/T1 内核 Apache-2.0 合规扫描）。</li>
+<li data-page-node-id="K93KZ2TlsTnRqlQj3piENx">🔴 <strong data-page-node-id="2UvSvwMB1nmDzqrnqV5ZAY">EAR 744.23 合规门禁</strong>：T1 内核交付/演示/文档缺成熟节点用途声明 + 离线构建证据 → CI 红。</li>
+<li data-page-node-id="Qd7AGbteVT7VMACltiCw2S">三分类一致性：README ≡ harness ≡ <code data-page-node-id="pC6Z41YmsGdGPHDpd4XrAj">/api/verification_ledger</code>，漂移即红。</li>
+</ul>
+
+<h2 data-page-node-id="kY751eGlIRw6zdsy69m6jj">6. 近期行动清单</h2>
+<p data-page-node-id="9ZCwqMbxNdkj7mUbawI37K"><strong data-page-node-id="ZyvDY9I6rtrTBDjmHC4gk2">Sprint 1（0–90 天 · 基本完成）</strong>：T0 全链路（CI 152）· T1-A 紧凑模型+SPICE+Cadence（CI 146）· T1-C A 档首锚 B33 发版 v0.9.67 · 验证轮物料草稿。</p>
+<p data-page-node-id="F6xRYK038C6oxFXnuurGPP"><strong data-page-node-id="j6yelkkzz9dSgNHWjXxYAG">Sprint 2（90–180 天 · 🔴 红线重排后新增/重排）</strong>：</p>
+<ul data-page-node-id="aJuPjcX6NXCLgicWsxUy87">
+<li data-page-node-id="lRsMBVfo765wA89s8ZAFdX"><strong data-page-node-id="CwTT9ukGDf88GAl1Hs3bA0">90–120 天</strong>：T1-B DEVSIM fork 冷备+离线构建；自研 1D drift-diffusion（Sze golden）；N(x)双向标定+ORACLE 守卫+EAR 声明；A 档扩展清单锚题契约评审。</li>
+<li data-page-node-id="yxzo22nECjlGEXH3ozzEAF"><strong data-page-node-id="5QsENOHWMEZfECzOpPrVeC">120–150 天</strong>：A 档 4 类闭式锚落地进 VMM；T1-B 2D 载流子输运扩面；T2 MPW 询价发出+封测锁单。</li>
+<li data-page-node-id="7AydBdU4j8ta8CEz8LmwHZ"><strong data-page-node-id="zcW1Kn5LYTcdEXtXmNr6kl">150–180 天</strong>：B 档载流子动力学/探测器带宽真求解（经 T1-B）+交叉验证；T2 首轮 MPW 排期；验证轮物料更新（含 T1 内核差异化资产）。</li>
+</ul>
+
+<h2 data-page-node-id="Y6jq30Pp1QMLf4J423BBJC">7. 外部事实与数字对齐</h2>
+<table data-page-node-id="dLjdtDAIHHgAtdH6HJDvZn">
+<tr data-page-node-id="BAJrf1tv7HHskbLnJHac8C"><th data-page-node-id="oatT8UK3vFrqapzbUNbInO">项</th><th data-page-node-id="PJhPB7bZEFS4KMkOyzCXF0">正确现值（2026-09-11 复核）</th><th data-page-node-id="O8lkHGThZVvOotZVLevZXH">作废旧值</th></tr>
+<tr data-page-node-id="BrHVMli1szfu0hy5dQPSIh"><td data-page-node-id="SGjQSDsWFoEN6qWhNMwo2R">版本</td><td data-page-node-id="dyvurmuf2Z4DGA0dryb3Cr"><strong data-page-node-id="mjmQegMm1qJGpybjvQUzGp">v0.9.67</strong></td><td data-page-node-id="WwLJE4FTceMW4zhi2DjUHE">v0.9.66 及更早</td></tr>
+<tr data-page-node-id="aXOSZ44h4nGeOH5HrtKSXQ"><td data-page-node-id="bVU7EDiBXC35FxAF0RW0jg">CI core</td><td data-page-node-id="FXz56S2z0Dx3D2Cn4gyK4l"><strong data-page-node-id="eh6zlPXHizlJbZ0yefUATI">157</strong></td><td data-page-node-id="xjH4QVrZqRVFcbjcWD6ldV">152 / 141</td></tr>
+<tr data-page-node-id="ow13RYi2eGUmF6rgqbUhtj"><td data-page-node-id="GSvsN9hCk9DAvZLmEHaqBt">锚三分类</td><td data-page-node-id="ZlC0SF90oFRwHeiK7BzydA"><strong data-page-node-id="GD64iRVXFRwBtbVfFe0Qy1">53（28 严格 / 1 降级 / 24 自证）</strong></td><td data-page-node-id="7jfkbl0enLQG3Fqj0IYVB4">52（26/1/25）</td></tr>
+<tr data-page-node-id="SlfIHXou5rxUXbvjWr7w0e"><td data-page-node-id="KnylPzE211cFeIfqryHGuz">可被外部验货</td><td data-page-node-id="PqBRC9tMFbCRPtb8IXoAwW"><strong data-page-node-id="FjFKJ97P0JeATD26iAxcDV">28/53</strong></td><td data-page-node-id="IPdZlFnruU6v3HXWL6seUo">26/52</td></tr>
+<tr data-page-node-id="IxZUiQwdLT654kEzu0a4BZ"><td data-page-node-id="ciqnYCt2EpkyZXV7d71Ixe">货架</td><td data-page-node-id="p2nDI58UbaIP7qmhPoPCay"><strong data-page-node-id="zJ6Mu4BD7ElDU0cJlgritE">75</strong></td><td data-page-node-id="G8HEuBgdgPilD4TAGmUR0T">58 / 65</td></tr>
+<tr data-page-node-id="X1Agb4QMnF2loDTmR3EDkb"><td data-page-node-id="lH0HKc7mSzQrtsguszKcA4">GC-*</td><td data-page-node-id="YjpbDIcm7naPK8TgEwYXbJ"><strong data-page-node-id="ikjwYSNeGzNJGx91qW5QFB">48 全 PASS</strong></td><td data-page-node-id="hyB9K346FxAb0GUiCLeYtq">—</td></tr>
+<tr data-page-node-id="aQTM97O8zQquj3vmWSDtjf"><td data-page-node-id="QxPVvXimZSE2npvpkaP1af">三不做</td><td data-page-node-id="yaJXTL7OYrAYFUaHklArPB"><strong data-page-node-id="LSJgCjkpaimBZGYsce1o6q">T1 可解锁 / T2 锁死 / 封测锁死（分层）</strong></td><td data-page-node-id="9ABD3YL5r5b3yGj04T8naE">电域/TCAD 全不做</td></tr>
+</table>
+<blockquote data-page-node-id="Lx1D6ctNYUFj6yNmFHYXMn">🔴 账本订正：README 发布注「24→23」系笔误；本机按 <code data-page-node-id="DQV9hYEtV27F24fLLg7cgD">candidate_class</code> 权威判序实跑 = <strong data-page-node-id="EXYHUPbsvEIQ7XpFQEAKNA">28/1/24/53</strong>（B33 新增严格独立锚，自证桩 24 不变），以本机复核为准。</blockquote>
+
+<h2 data-page-node-id="3cENWsyqvefnduIWN1zkxH">8. 风险总表（新增项标红）</h2>
+<table data-page-node-id="cPDz4A6fsv4rqRIgVIZD34">
+<tr data-page-node-id="y67Ec8FDjfTrs8rZuxoDdR"><th data-page-node-id="gvjiwEVG2EmdpCqBo1qoeL">风险</th><th data-page-node-id="3GDOoNN5uBy1GzXF2ofbUU">等级</th><th data-page-node-id="XsQGTyQBcEvnsifsSYDv9T">规避</th></tr>
+<tr data-page-node-id="HU22BrU1lFKS6CAY3jAxzL"><td data-page-node-id="byxT21wEvSftk9NHbvo391">自证桩假绿</td><td data-page-node-id="SGGGqqBbN6QDxSQBP9Vp7z">🔴🔴</td><td data-page-node-id="YPWBjeTOS150cs8DufomRg">判据先于代码 + 反向测试必响</td></tr>
+<tr data-page-node-id="u7kt9A7VPA7nAbLAR55tAd"><td data-page-node-id="xC3w5PXK3CpzcoRCTt8bln">标签≠行为（8 次血案）</td><td data-page-node-id="5eXHPYmc0xp31ApfsiiCwi">🔴🔴</td><td data-page-node-id="YJIGWcTbFLH9k7BHdpsp1j">grep 调用点；真跑生产代码</td></tr>
+<tr data-page-node-id="C5BbM5YSTMAl9wMq8vXPQ4"><td data-page-node-id="OlomDDf4hW7t33N8hHnplQ">主权污染（Meep / DEVSIM 误引 A 级）</td><td data-page-node-id="KxVTko2b6rMLvlCN5zGmpF">🔴</td><td data-page-node-id="tpOtc3nUhGCtHTDccOjaon">import+license 双扫（含 T1 内核合规扫描）</td></tr>
+<tr data-page-node-id="Ea6WLEp85LOKi226t42aKe"><td data-page-node-id="BZQxGpUDNHuEIsIEpMWDWt"><strong data-page-node-id="fRi2V8CADMAu2dgsH0PvYj">T1 内核破 ORACLE 纪律</strong></td><td data-page-node-id="9uMuNp63I77Qf29EiZQ8fL">🔴🔴</td><td data-page-node-id="KAhCKkvggO9zGsN5hPXcca"><strong data-page-node-id="U9NwyEoa6opbcWtpgzc5Z7">输出不作 ORACLE 守卫 + 反向必响</strong></td></tr>
+<tr data-page-node-id="NEGAUU3Ac1h2lQEk5BFyCA"><td data-page-node-id="pQ4jehtKBdPkBG2R4c4Ekj"><strong data-page-node-id="9yXqfebmumcSN2poT8SeLz">EAR 744.23 出口管制</strong></td><td data-page-node-id="VyhVss3g3DivZHs4LGs3jC">🔴🔴</td><td data-page-node-id="W2FzT1ZmMhfqAx1ObXGWnN"><strong data-page-node-id="3kGedwd9BMyYnXvNFTT3WD">成熟节点声明 + 离线构建证据 + CI 门禁</strong></td></tr>
+<tr data-page-node-id="orDCCe0AiBHdBTharahOYd"><td data-page-node-id="nmLHA72ED7F7r9epFo7tH2">融资边界模糊</td><td data-page-node-id="6RreSERsO2JgLGcSftsBUu">🔴</td><td data-page-node-id="caa1jFAMnlifw5VoO0ZjF2">第一笔不锁估值；A 档自造血</td></tr>
+<tr data-page-node-id="FECCeCqOucawbH2lHoaP9J"><td data-page-node-id="QGMwy1rkUVEwOv0mNuiUGD">封测 lead time 堵真值</td><td data-page-node-id="MANiEXFp36JOowlUVKjmBS">🔴</td><td data-page-node-id="LlvGalKAvaTEFGrN2kmbIP">T2 第 1 月锁 MPW+封测</td></tr>
+</table>
+
+<hr data-page-node-id="5tRynKJfDttIAG0Cwf5OIq">
+<p class="meta" data-page-node-id="RR5wjVRSzuBGfbEKR0Cxmc">附录速查：判据 D（假独立扫描+双向标定）· S7 统计锚 · P-CPO/D-67 间距下界 · S13 良率锚 · L0 IR/DesignPackage JSON · <strong data-page-node-id="RqOmREpaKJXFSlPgT1hgs6">T1/T2 分层</strong>（T1=可解锁载流子输运 PDE，B/C 级；T2=锁死工艺真值/增益/A级/封测/流片）· DEVSIM（Apache-2.0，T1 B 级依赖）· GC-*（48 全 PASS）。</p>
+</body>
+</html>

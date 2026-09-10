@@ -56,7 +56,9 @@ def main():
     args = ap.parse_args()
 
     rev_range = resolve_range(args)
-    log_args = ["log", "--pretty=%H%x1f%B"]
+    # %x1f = field sep (hash|body); %x1e = record sep (between commits).
+    # Using %x1e makes machine parsing robust regardless of newlines inside bodies.
+    log_args = ["log", "--pretty=%H%x1f%B%x1e"]
     if args.ignore_merges:
         log_args.append("--no-merges")
     log_args.append(rev_range)
@@ -67,7 +69,7 @@ def main():
         print(f"DCO: could not resolve range {rev_range}; nothing to check.")
         return 0
 
-    commits = [c for c in raw.split("\n") if c.strip()] if raw else []
+    commits = [c for c in raw.split("\x1e") if c.strip()] if raw else []
     if not commits:
         print(f"DCO: no commits found in range {rev_range} (nothing to check).")
         return 0

@@ -1,0 +1,10 @@
+# LDA commit message template
+#
+# Every commit MUST end with a Signed-off-by line (DCO 1.1 gate):
+#   git commit -s        # auto-adds it from your git user.name / user.email
+#
+# Subject: one line, [GFI]/[fix]/[feat] prefix, <= 72 chars
+#
+# Body: what + why; tie to a red line / anchor count.
+#
+# Signed-off-by: Your Real Name <you@example.com>

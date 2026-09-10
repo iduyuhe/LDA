@@ -278,6 +278,40 @@ jobs:
           cd lda
           python run_d10_smoke.py
 
+  # DCO 签名闸门（B 方案）：每条提交须带 Signed-off-by，保全未来双许可/商业授权权。
+  # GitHub 端自动按事件算 range；Gitee 端无原生 DCO 强制，复用 run_dco_check.py 同脚本兜底。
+  dco-check:
+    name: DCO sign-off gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve commit range
+        id: range
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "from=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"
+            echo "to=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            B="${{ github.event.before }}"
+            if [ "$B" = "0000000000000000000000000000000000000000" ]; then
+              echo "from=HEAD~30" >> "$GITHUB_OUTPUT"
+            else
+              echo "from=$B" >> "$GITHUB_OUTPUT"
+            fi
+            echo "to=${{ github.event.after }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run DCO checker
+        run: python run_dco_check.py --from ${{ steps.range.outputs.from }} --to ${{ steps.range.outputs.to }} --no-ignore-merges
+
   # D-77 验证合约工业化：统一入口一键全量回归（自动发现 54+ smoke + harness），
   # 机器可读 JSON 报告（core 集 = CI 安全纯 numpy；all 集含重 FDTD/GPU 本机跑）。
   industrial-regression:

@@ -407,6 +407,11 @@ CORE_SMOKES: List[str] = [
     #   预期极值分叉(±30% 有效域外·非缺陷) / 域内疑点(升级 BOUNTY 复核)，把「可证伪」做成
     #   活体信任墙。仅消费 fuzz 落盘、秒级、纯 numpy，无权豁免，必须进 core。CI core 155→156。
     "run_redteam_adjudication_smoke.py",
+    # 可封装性链（T3 设计侧虚拟制造 2.0 · v0.9.65+）：耦合容差/对准预算/封装良率，
+    #   公开高斯重叠 + Rayleigh CDF（复用 S13 闭式族），含反向测试(σ_align↑→良率↓、
+    #   MFD↑→良率↑、可复现、解析↔MC 互证、P-CPO 间距合规不假绿)。provenance 标
+    #   self_authored_with_check，σ_align/MFD 为公开假设值、待 T2 实测回填。CI core 156→157。
+    "run_packaging_tolerance_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

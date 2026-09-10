@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="zh-CN" data-page-node-id="uYrd2Y96wdcBqIeq2FAei4">
+<head data-page-node-id="2VTRXxuCfjPhrH33T0ShYf">
+<meta charset="utf-8" data-page-node-id="WrNBQ4zTGLsPfz67eNtsLl">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="Yd7IWcrDYgyyLnDd6BW12G">
 <title>LDA · 验证实力自证看板</title>
 <style>
   :root{
@@ -50,11 +50,11 @@
         padding:2px 8px;border-radius:6px;font-size:12px;font-variant-numeric:tabular-nums}
 </style>
 </head>
-<body>
-<div class="wrap">
-  <h1>验证实力 · 自证看板 <span class="pill" id="ver">—</span> <span class="pill" id="gen">—</span></h1>
-  <div class="sub">LDA 开源 Agent 原生芯片设计软件 · 所有数字均由运行源码实时计算，非营销话术</div>
-  <div id="app"><div class="err">读取中…</div></div>
+<body data-page-node-id="vaU6yfMiYGKNHDfWFaQzCH">
+<div class="wrap" data-page-node-id="ybVnSHGtMmEjVyrqwXIR0I">
+  <h1 data-page-node-id="Aue2nbELOz7jvQLOPBR2CJ">验证实力 · 自证看板 <span class="pill" id="ver" data-page-node-id="gFhBir8p0DutiIFCBBTgd6">—</span> <span class="pill" id="gen" data-page-node-id="3JPv0XXFFbWcRmFTHpgGY9">—</span></h1>
+  <div class="sub" data-page-node-id="l3PSFqUw3PmobIB42TrsRL">LDA 开源 Agent 原生芯片设计软件 · 所有数字均由运行源码实时计算，非营销话术</div>
+  <div id="app" data-page-node-id="CfAQDqJ6HQQ22R5mr6v8k6"><div class="err" data-page-node-id="9zhUOAhZsKY81Q4ZEiDRlw">读取中…</div></div>
 </div>
 <script>
 (function(){
@@ -182,6 +182,10 @@
     html+='<div class="principle" style="border-left-color:var(--green)">'
       + '<b>可证伪 = 信用替代品。</b>一人公司的设计判断，靠「你能自己 curl 验一遍」取信客户——'
       + '而不是靠品牌与资历。下面每个数字都来自运行源码的死标量比对，不是自卖自夸。</div>';
+
+    html+='<div class="principle" style="border-left-color:var(--green);margin-top:12px">'
+      + '<b>虚拟制造 1.0 已就位（2026-09-10 正式标注）</b> · 工艺波动链路 = <code>tapeout_pipeline.py</code> S1–S5 + <code>yield_anchor.py</code> S13（解析 Φ 闭式 ↔ 固定种子 Monte-Carlo 互证），已在 CI core 长期实跑。'
+      + ' <b>2.0 可封装性链 bootstrap</b>：<code>packaging_tolerance.py</code>（耦合容差 / 对准预算 / 封装良率 Rayleigh CDF，provenance = <code>self_authored_with_check</code>，σ_align·MFD 为公开假设值，待 T2 实测回填）。</div>';
 
     html+='<div class="grid">'
       + card(fmt(t.strict_independent), "严格独立（真·可证伪）")

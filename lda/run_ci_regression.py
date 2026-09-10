@@ -383,6 +383,30 @@ CORE_SMOKES: List[str] = [
     #      裸 import 的坏脚本必须裸崩，证明步骤②真能区分优雅降级与硬依赖）。
     #   CI core 134→135。
     "run_optional_import_guard_smoke.py",
+    # 🔴 v0.9.62：验证成熟度模型（VMM）底线护栏——守护三分类 26/1/25 不被越级谎报 +
+    #   provenance 完整性（每锚 maturity_tier/provenance/upgrade_path 齐备 + Tier-1 必含
+    #   upgrade_path）+ 低置信「self_authored_closed_form」锚显式可见（19 道，防 B16 型
+    #   安静翻车：因子 3 错 33% 混在自证桩里无人盯）。纯分类循环（52 锚），实测 0.42s，
+    #   亚秒级无重依赖，按准入准则无权豁免，必须进 core。⚠️ 防止「写了护栏却没进 CI」血案：
+    #   本 smoke 建成时漏登 CORE_SMOKES（与上轮 B16 假绿同属「标签≠行为」纪律缺口），
+    #   今补登常驻。CI core 152→153。
+    "run_maturity_baseline_smoke.py",
+    # 红队锚面 fuzz（C · v0.9.62）：攻击面从 S 系列预算锚扩展到全部 52 锚（重点 26 严独
+    #   + 25 自证桩）。规则式参数扰动（±30%）+ 可选 LLM 增强（env 门控，复用 RedTeamProposer
+    #   同款 HTTP 模式，LLM 只出题不判卷），统一死标量执行器 run_verification 判卷。硬门禁=
+    #   严独覆盖 26/26（攻击面必须全覆盖）；发散点作待 BOUNTY 人工复核情报（落盘
+    #   redteam_anchor_fuzz_defects_pending.json），不硬判 FAIL（防误报哭狼）。实测 ~94s，
+    #   亚 300s 默认超时，按准入准则无权豁免，必须进 core。CI core 153→154。
+    "run_redteam_anchor_fuzz_smoke.py",
+    # 验证账本(VMM) 端点 + 前端接线（C · v0.9.64）：GET /api/verification_ledger 的 vmm 块
+    #   由生产代码动态推导，与 README 文档账本(26/1/25·低置信 15·provenance 6 类)交叉核对；
+    #   并校验 public.html 已接线到该端点（删接线必 FAIL，守「标签≠行为」）。纯 numpy、
+    #   秒级、无重依赖，无权豁免，必须进 core。CI core 154→155。
+    "run_webui_verification_ledger_smoke.py",
+    # 红队 fuzz 发散点裁决（C · v0.9.64）：对 18 处 pending 发散点死标量重判，分类为
+    #   预期极值分叉(±30% 有效域外·非缺陷) / 域内疑点(升级 BOUNTY 复核)，把「可证伪」做成
+    #   活体信任墙。仅消费 fuzz 落盘、秒级、纯 numpy，无权豁免，必须进 core。CI core 155→156。
+    "run_redteam_adjudication_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

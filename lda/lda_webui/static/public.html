@@ -6,7 +6,7 @@
 <title>LDA · 验证实力自证看板</title>
 <style>
   :root{
-    --panel:#141b2e; --panel2:#1b2440; --line:#26304d; --txt:#e6edf7; --txt2:#c5cfe3; --mut:#8aa0c6; --accent:#3b82f6; --green:#4ade80;
+    --panel:#141b2e; --panel2:#1b2440; --line:#26304d; --txt:#e6edf7; --txt2:#c5cfe3; --mut:#8aa0c6; --accent:#3b82f6; --green:#4ade80; --warn:#fbbf24; --red:#f87171;
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
@@ -31,6 +31,23 @@
              border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.6;margin-bottom:10px}
   .err{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px;text-align:center;color:var(--mut)}
   .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;background:rgba(37,99,235,.1);color:var(--accent);margin-left:6px}
+  .code{background:#0d1426;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+        font-size:12.5px;color:#9fe6c4;white-space:pre-wrap;word-break:break-all;line-height:1.6}
+  .scroll{max-height:440px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+  .scroll table{border:0;border-radius:0}
+  .tag{display:inline-block;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:600}
+  .tag.si{background:rgba(74,222,128,.12);color:var(--green)}
+  .tag.de{background:rgba(251,191,36,.12);color:var(--warn)}
+  .tag.sc{background:rgba(138,160,198,.14);color:var(--mut)}
+  .tag.lc{background:rgba(248,113,113,.14);color:var(--red)}
+  .tag.ok{background:rgba(74,222,128,.12);color:var(--green)}
+  .tag.mi{background:rgba(59,130,246,.12);color:var(--accent)}
+  .tag.dr{background:rgba(139,92,246,.14);color:#c4b5fd}
+  .tag.et{background:rgba(45,212,191,.12);color:#5eead4}
+  .tag.ic{background:rgba(96,165,250,.12);color:#93c5fd}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:var(--red);
+        padding:2px 8px;border-radius:6px;font-size:12px;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -42,16 +59,49 @@
 <script>
 (function(){
   "use strict";
+  var PROV_LABEL = {
+    "external_textbook":"外部教科书/教材",
+    "external_empirical":"外部实证（论文实测）",
+    "independent_cross_check":"独立交叉验证",
+    "design_rule_anchor":"行业设计规则锚",
+    "self_authored_closed_form":"自写闭式（低置信·必要验证）",
+    "self_authored_closed_form_with_check":"自写闭式（已内验·中置信）"
+  };
+  var TIER_LABEL = {
+    "strict_independent":"严格独立",
+    "degraded_ordinal":"降级量级参考",
+    "self_certified":"自证桩"
+  };
+  var PROV_TAG = {
+    "self_authored_closed_form":"lc",
+    "self_authored_closed_form_with_check":"mi",
+    "design_rule_anchor":"dr",
+    "external_empirical":"et",
+    "independent_cross_check":"ic",
+    "external_textbook":"ok"
+  };
+  var TIER_TAG = {
+    "strict_independent":"si",
+    "degraded_ordinal":"de",
+    "self_certified":"sc"
+  };
   function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
   function fmt(n){ return (n==null?"—":n).toLocaleString("en-US"); }
   function card(n,label){ return '<div class="card"><div class="n">'+esc(n)+'</div><div class="l">'+esc(label)+'</div></div>'; }
   function rowTable(head, rows){
     if(!rows.length) return '<div class="note">无数据</div>';
-    var h='<table><thead><tr><th>'+esc(head[0])+'</th><th style="text-align:right">'+esc(head[1])+'</th></tr></thead><tbody>';
-    rows.forEach(function(r){ h+='<tr><td>'+esc(r[0])+'</td><td class="num">'+esc(r[1])+'</td></tr>'; });
+    var h='<table><thead><tr><th>'+esc(head[0])+'</th>';
+    for(var i=1;i<head.length;i++) h+='<th style="text-align:right">'+esc(head[i])+'</th>';
+    h+='</tr></thead><tbody>';
+    rows.forEach(function(r){
+      h+='<tr><td>'+esc(r[0])+'</td>';
+      for(var i=1;i<r.length;i++) h+='<td class="num">'+esc(r[i])+'</td>';
+      h+='</tr>';
+    });
     return h+'</tbody></table>';
   }
-  function render(d){
+  function tag(cls,label){ return '<span class="tag '+cls+'">'+esc(label)+'</span>'; }
+  function renderStats(d){
     var v=d.version||"—", a=d.assets||{}, c=d.ci||{}, ver=(d.verification||{});
     var pr=(d.product||{});
     var html='';
@@ -63,7 +113,6 @@
       + card(fmt(c.core_smokes), "CI core 冒烟")
       + '</div>';
 
-    // —— 关于 LDA（产品基本说明：定位 + 亮点 + 边界）——
     if(pr.tagline || pr.description){
       html+='<section><h2>关于 LDA</h2>';
       html+='<div class="principle" style="border-left-color:var(--green)">'
@@ -120,18 +169,86 @@
     html+='<section><h2>CI 回归</h2>';
     html+='<div class="note">'+esc(c.note||"")+'</div>';
     html+='</section>';
+    return html;
+  }
+  function renderVMM(vmm, origin){
+    if(!vmm || vmm.stale){
+      return '<section><h2>验证成熟度 · 可证伪看板（VMM）</h2>'
+        + '<div class="note">VMM 推导暂不可用（'+esc((vmm&&vmm.error)||"服务端未返回")+'）。端点：'
+        + '<code>/api/verification_ledger</code>。可稍后刷新或直连 API 复验。</div></section>';
+    }
+    var t=vmm.tiers||{}, bp=vmm.by_provenance||{}, lc=vmm.low_confidence_self_authored||[], pa=vmm.per_anchor||{};
+    var html='<section><h2>验证成熟度 · 可证伪看板（VMM）</h2>';
+    html+='<div class="principle" style="border-left-color:var(--green)">'
+      + '<b>可证伪 = 信用替代品。</b>一人公司的设计判断，靠「你能自己 curl 验一遍」取信客户——'
+      + '而不是靠品牌与资历。下面每个数字都来自运行源码的死标量比对，不是自卖自夸。</div>';
 
-    html+='<div class="note">本页所有计数由服务端实时解析运行源码（锚清单 / CI core 清单 / 货架 / 引擎）得出，'
-        + '随代码库自更新。验证原则为 LDA 不可逾越的红线：物理定律锚 + 死标量比对 + LLM 不进判决路径。</div>';
+    html+='<div class="grid">'
+      + card(fmt(t.strict_independent), "严格独立（真·可证伪）")
+      + card(fmt(t.degraded_ordinal), "降级量级参考")
+      + card(fmt(t.self_certified), "自证桩（Tier-1）")
+      + card(fmt((bp["self_authored_closed_form"]||0)), "低置信·必要验证")
+      + '</div>';
 
+    html+='<section style="margin-top:18px"><h2>来源分布 · provenance 6 类</h2>';
+    var rows=[];
+    Object.keys(PROV_LABEL).forEach(function(k){
+      rows.push([PROV_LABEL[k] + (k==="self_authored_closed_form"?' <span class="tag lc">必要验证</span>':''), bp[k]||0]);
+    });
+    html+=rowTable(["来源类别","锚数"], rows);
+    html+='<div class="note" style="margin-top:10px">'
+      + '只有 <b>自写闭式（低置信）</b> 属于「必要验证」——须接独立求解器 / 外部 ORACLE 才能升 Tier-3。'
+      + '行业设计规则锚（B5/B6/B7）与实证锚（E 系）已有外部共识 / 实测背书，<b>不必我们重复验证</b>。</div>';
+    html+='</section>';
+
+    if(lc.length){
+      html+='<section style="margin-top:18px"><h2>低置信 · 必要验证（'+lc.length+' 道）</h2>';
+      html+='<div class="note">以下自证桩是真正未经验证的自写闭式，正按环境可用性接独立求解器 / 外部 ORACLE 升 Tier-3：'
+        + '<span class="chip">B2</span> 为近可升（独立 1D 平板解已存在，仅未接线）。</div>';
+      html+='<div class="chips">';
+      lc.slice().sort().forEach(function(b){ html+='<span class="chip">'+esc(b)+'</span>'; });
+      html+='</div></section>';
+    }
+
+    html+='<section style="margin-top:18px"><h2>全 '+Object.keys(pa).length+' 锚逐锚明细</h2>';
+    html+='<div class="scroll"><table><thead><tr>'
+      + '<th>锚</th><th>层级</th><th>来源</th><th>升级路径（升 Tier-3 所需）</th></tr></thead><tbody>';
+    Object.keys(pa).sort().forEach(function(b){
+      var m=pa[b];
+      var tl=TIER_LABEL[m.tier]||m.tier, tc=TIER_TAG[m.tier]||"sc";
+      var pl=PROV_LABEL[m.provenance]||m.provenance, pc=PROV_TAG[m.provenance]||"ok";
+      html+='<tr><td><b>'+esc(b)+'</b></td>'
+        + '<td>'+tag(tc,tl)+'</td>'
+        + '<td>'+tag(pc,pl)+'</td>'
+        + '<td style="color:var(--mut);font-size:12px">'+esc(m.upgrade_path||"—")+'</td></tr>';
+    });
+    html+='</tbody></table></div></section>';
+
+    var url=(origin||"")+'/api/verification_ledger';
+    html+='<section style="margin-top:18px"><h2>自己验一遍（可证伪的入口）</h2>';
+    html+='<div class="code">curl -s '+esc(url)+' | python -m json.tool</div>';
+    html+='<div class="note" style="margin-top:10px">死标量判决回路（CPO 规模 DRC+LVS+断路反例）亦可活体复验：'
+      + '<span class="code" style="display:block;margin-top:6px">curl -s '+esc((origin||"")+'/api/cpo_array')+' | python -m json.tool</span>'
+      + ' LLM 不进任何判决路径，PASS/FAIL 一律由物理死标量比对决定。</div>';
+    html+='</section>';
+    return html;
+  }
+  function render(d, ledger){
+    var html=renderStats(d)+renderVMM(ledger && ledger.vmm, window.location.origin);
     document.getElementById("app").innerHTML=html;
     document.getElementById("ver").textContent="v"+(d.version||"—");
     document.getElementById("gen").textContent=(d.generated_at||"").slice(0,19).replace("T"," ")+" UTC";
   }
-  fetch("/api/public/stats")
-    .then(function(r){ return r.json(); })
-    .then(render)
-    .catch(function(){ document.getElementById("app").innerHTML='<div class="err">加载失败，请稍后重试</div>'; });
+  function load(){
+    var statsP=fetch("/api/public/stats").then(function(r){return r.json();});
+    var ledgerP=fetch("/api/verification_ledger").then(function(r){return r.json();}).catch(function(){return null;});
+    Promise.all([statsP, ledgerP]).then(function(res){
+      render(res[0]||{}, res[1]||null);
+    }).catch(function(){
+      document.getElementById("app").innerHTML='<div class="err">加载失败，请稍后重试</div>';
+    });
+  }
+  load();
 })();
 </script>
 <script src="/nav.js"></script>

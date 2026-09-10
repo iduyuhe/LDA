@@ -479,6 +479,7 @@ def h_verification_ledger(h, p, q, path):
         # `candidate` 字段与 BENCHMARK_CANDIDATES 登记表实时算出三分类，
         # 杜绝「写死在端点里、与代码实际状态脱节」的漂移（ci_core 曾犯同类错）。
         _indep, _degraded, _stub = [], [], []
+        _vmm = None  # VMM（验证成熟度模型）每锚来源/层级暴露（v0.9.62）
         try:
             from lda_harness.benchmarks import BENCHMARK_DEFS
             from lda_harness.verification_adapters import BENCHMARK_CANDIDATES
@@ -498,11 +499,35 @@ def h_verification_ledger(h, p, q, path):
                     _indep.append(_bid)
                 else:
                     _stub.append(_bid)
+                # —— VMM：每锚拉取 maturity_tier / provenance / upgrade_path ——
+                if _vmm is None:
+                    _vmm = {"model": "Verification Maturity Model (VMM, v0.9.62)",
+                            "doc": "docs/verification_maturity_model.md",
+                            "tiers": {"strict_independent": 0, "degraded_ordinal": 0,
+                                      "self_certified": 0},
+                            "by_provenance": {}, "low_confidence_self_authored": [],
+                            "per_anchor": {}}
+                if _d.get("candidate_status") == "degraded_ordinal":
+                    _vmm["tiers"]["degraded_ordinal"] += 1
+                elif _key and _key in BENCHMARK_CANDIDATES:
+                    _vmm["tiers"]["strict_independent"] += 1
+                else:
+                    _vmm["tiers"]["self_certified"] += 1
+                _prov = _d.get("provenance", "?")
+                _vmm["by_provenance"][_prov] = _vmm["by_provenance"].get(_prov, 0) + 1
+                if _prov == "self_authored_closed_form":
+                    _vmm["low_confidence_self_authored"].append(_bid)
+                _vmm["per_anchor"][_bid] = {
+                    "tier": _d.get("maturity_tier"),
+                    "provenance": _prov,
+                    "upgrade_path": _d.get("upgrade_path", ""),
+                }
                 empirical_ids = sorted([b for b in BENCHMARK_DEFS if b.startswith("E")])
                 empirical_seed = len(empirical_ids)
         except Exception:  # noqa: BLE001 —— 推导失败时**不猜**：留空并暴露错误
             _indep, _degraded, _stub = [], [], []
             empirical_ids, empirical_seed, empirical_stale = [], None, True
+            _vmm = {"stale": True, "error": "VMM 推导失败，详见服务端日志"}
         ledger = {
             "endpoint": "/api/verification_ledger",
             "ci_core": {"count": ci_core, "tag": "core", "stale": ci_core_stale,
@@ -630,6 +655,7 @@ def h_verification_ledger(h, p, q, path):
                                "t→∞ 稳态 F→0.5），**不是**靠生产档位的残差。"),
                 },
             },
+            "vmm": _vmm,
             "cpo_scale": {
                 "endpoint": "/api/cpo_array",
                 "default_devices": 100096, "scale_devices": 250240,

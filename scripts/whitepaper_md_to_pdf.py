@@ -12,6 +12,7 @@
 
 import os
 import re
+import sys
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
@@ -26,8 +27,8 @@ from reportlab.pdfbase.pdfmetrics import registerFontFamily
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-SRC = os.path.join(ROOT, "docs", "lda_technical_whitepaper_2026-09-05.md")
-OUT = os.path.join(ROOT, "lda", "lda_webui", "static", "lda_whitepaper_v0.9.40.pdf")
+SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "docs", "lda_technical_whitepaper_2026-09-05.md")
+OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, "lda", "lda_webui", "static", "lda_whitepaper_v0.9.40.pdf")
 
 FONT_DIR = "C:/Windows/Fonts"
 pdfmetrics.registerFont(TTFont("MSYH", os.path.join(FONT_DIR, "msyh.ttc"), subfontIndex=0))
@@ -172,7 +173,7 @@ def build():
 
     doc = SimpleDocTemplate(OUT, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm,
                             topMargin=16 * mm, bottomMargin=16 * mm,
-                            title="LDA 技术白皮书 v0.9.40",
+                            title=("LDA 商业计划书 v0.9.40" if "business_plan" in OUT else "LDA 技术白皮书 v0.9.40"),
                             author="上海杜特企业管理咨询有限公司")
     doc.build(flow)
     print("WROTE", OUT, os.path.getsize(OUT), "bytes")

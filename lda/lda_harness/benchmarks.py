@@ -349,7 +349,17 @@ BENCHMARK_DEFS = {
         "tol": 3.0,
         "default_params": {"W_e": 2.0, "n_eff": 2.4, "wl": 1.55},
         "golden_fn": b16_mmi_length,
-        "note": "L=3·L_π，L_π=n_eff·W_e²/λ0（自映像简化，设计守则锚）；精确真值待 FEM ORACLE。",
+        "note": ("【v0.9.62·修正·诚实边界】历史 golden 因子 3（=3·n_eff·W²/λ）系统性高估 "
+                 "33–55%（W=2.8µm 真实器件实测 ~27µm，旧 golden 给 ~36µm）。已修正为 "
+                 "标准 MMI 自成像 1×2 第一双像长度 L=(9/4)·n_eff·W²/λ=(9/8)·L_π^wg "
+                 "（L_π^wg=2·n_eff·W²/λ）；W=2.8/n_eff=2.4→27.3µm≈实测 27µm（<1%）。"
+                 "🔴 **仍是自证桩，未接独立候选**：repo `mmi_eme` 求解核建模的是「对称平板 "
+                 "波导」（slab），而真实器件是「脊形(rib) MMI」——建模对象不同 ⇒ 其 EME "
+                 "解（~24µm @W=2.8）与抛物线闭式 golden（27µm）差 ~13%，且在器件宽度处 "
+                 "diff> tol 3.0µm，余量仅 ~1.3×，远低于本项目严格锚 100–1000× 标准。"
+                 "沿用「B21 教训」：独立求解器必须建模同一物理对象，symmetric-slab EME ≠ "
+                 "rib MMI，故不作为 B16 的合法独立候选（宁可如实留自证桩，不可假绿）。"
+                 "待有 rib-MMI 全波/严格 EIM 求解器且与其余量达标，再升格严格独立。"),
     },
     "B17": {
         "title": "约瑟夫森结临界电流 I_c",
@@ -1129,6 +1139,91 @@ BENCHMARK_DEFS = {
                 " —— 盲区 fsr_nom_nm 已诚实披露，PERTURB 固定扰 delta（最强键）。",
     },
 }
+
+
+# ===========================================================================
+# 验证成熟度模型（VMM, v0.9.62）：maturity_tier / provenance / upgrade_path
+# ---------------------------------------------------------------------------
+# 详见 docs/verification_maturity_model.md。三字段为**作者声明 + 护栏强制**，
+# 使「自证是合法第一阶段」可见、可追溯、可升级，且禁止越级谎报。
+# 底线 6 条由 run_maturity_baseline_smoke.py 守护。
+# ===========================================================================
+# Tier-1（自证）的 provenance 与升级路径显式覆盖；其余按 DEFAULT 推导。
+_VMM_OVERRIDES = {
+    # id: (provenance, upgrade_path)
+    "B2":  ("self_authored_closed_form",
+            "🔴 不可接 strict（2026-09-10 实测证伪）：方法学独立的半矢量 FDM 全波求解器基模 n_eff≈2.53，与 EIM golden 2.651 差≈0.12>tol0.05，判据窗口 C5 立不起来；provenance 设想的『1D 平板超越方程两步解』即 EIM 本尊核心步骤（判据 D 假独立，且无对应代码）；维持自证桩。待 MPB/FEM ORACLE 真值回流、或放宽 tol（红线不推荐）方可升 Tier-3"),
+    "B5":  ("design_rule_anchor",
+            "行业设计规则锚（几何无关下限：理想 50/50 分光 3.0dB，源自硅光几十年论文与流片经验共识，非自写）；精确几何相关真值待 Meep/Tidy3D 场级 ORACLE 动态升格（B 级借今踢后）；已有回退下限护栏（D-66 澄清：含 3.01dB 理想分光，与实证锚 E-YBRANCH-LOSS 过量损耗非同一量）"),
+    "B6":  ("design_rule_anchor",
+            "行业设计规则锚（几何无关下限：0.5 成熟工艺可达效率≈-3dB，源自硅光光栅耦合器论文与流片经验）；精确真值待 Tidy3D 场级 ORACLE 动态升格（B 级借今踢后）；已有回退下限护栏"),
+    "B7":  ("design_rule_anchor",
+            "行业设计规则锚（几何无关上限：-40dB 典型交叉串扰，源自硅光交叉器件论文与流片经验）；精确真值待 Meep 场级 ORACLE 动态升格（B 级借今踢后）；已有回退下限护栏"),
+    "B11": ("self_authored_closed_form",
+            "需正交独立求解器（判据 D 陷阱：当前 candidate≡golden 残差≡0，须双向标定）"),
+    "B16": ("self_authored_closed_form",
+            "rib-MMI 严格求解器（symmetric-slab EME 非同对象不可用）；golden 因子已修 3→9/4"),
+    "B17": ("self_authored_closed_form",
+            "本就不升：定义同义反复（terminal Tier-1）"),
+    "B18": ("self_authored_closed_form",
+            "本就不升：regime 越界（terminal Tier-1）"),
+    "B21": ("self_authored_closed_form_with_check",
+            "弱调制布拉格 FP 腔一阶近似 (n_core+n_clad)/2；已有 2D FDTD 全波内验吻合~2%（非外部 ORACLE，但已内验，置信度中·非低置信·待再审计）；待特定结构外部 ORACLE 标定升 Tier-3"),
+    "E1":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
+    "E3":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
+    "E4":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
+    "E5":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
+    "E6":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
+    "E7":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
+    "E9":  ("external_empirical", "用真实 PDK 标定 c1 工艺系数后升 Tier-3"),
+    "S1":  ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
+    "S2":  ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
+    "S3":  ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
+    "S4":  ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
+    "S5":  ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
+    "S6":  ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
+    "S9":  ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
+    "S10": ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
+    "S11": ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
+    "S12": ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
+}
+
+
+def _vmm_classify(defn: dict) -> str:
+    """与 harness（IndependentCandidateRouter.candidate_class）同构的分类。"""
+    if defn.get("candidate_status") == "degraded_ordinal":
+        return "degraded"
+    if "candidate" in defn:
+        return "strict_independent"
+    return "self_certified"
+
+
+def _vmm_provenance(bid: str, defn: dict) -> str:
+    if bid in _VMM_OVERRIDES:
+        return _VMM_OVERRIDES[bid][0]
+    tier = _vmm_classify(defn)
+    if tier == "strict_independent":
+        return "independent_cross_check"
+    if tier == "degraded":
+        return "external_empirical"
+    # self_certified 默认保守诚实：自写闭式（低置信·待 ORACLE）
+    return "self_authored_closed_form"
+
+
+def _vmm_upgrade_path(bid: str, defn: dict) -> str:
+    if bid in _VMM_OVERRIDES:
+        return _VMM_OVERRIDES[bid][1]
+    tier = _vmm_classify(defn)
+    if tier in ("strict_independent", "degraded"):
+        return ""
+    return "接独立候选 / 外部 ORACLE（按环境可用性做专题攻关）"
+
+
+for _bid, _def in BENCHMARK_DEFS.items():
+    _def.setdefault("maturity_tier", _vmm_classify(_def))
+    _def.setdefault("provenance", _vmm_provenance(_bid, _def))
+    _def.setdefault("upgrade_path", _vmm_upgrade_path(_bid, _def))
+
 
 # 对齐顺序（报告展示用）
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",

@@ -1864,24 +1864,28 @@ def _mmi_multimode_core(W_e_um: float = 4.0, n_eff: float = 3.30,
                         ) -> Optional[float]:
     """MMI 1×2 自映像长度数值核（多模干涉模式叠加，纯 numpy）。
 
-    多模波导横向本征模（近似硬壁波导 TE 模），各模传播常数差
-    β_m − β_0 = m(m+2)·π/(3·L_pi)，干涉图样在 L_pi = n_eff·W²/λ0 处
-    再现、3·L_pi 处 1×2 自映像（B16 锚同源）。返回自映像长 3·L_pi
-    （um），失败 None。相位复核降级为诊断（数值自洽，非硬门禁）。
+    ⚠️ 历史因子 3 为系统性高估（v0.9.62 前），与旧 B16 锚同错；已随 B16 锚
+    修正为 9/4，使引擎数值核与物理正确锚一致（真实 SOI 220nm MMI W=2.8um →
+    27um，旧因子给出 ~36um）。
+
+    标准 MMI 自成像（抛物线色散）：波导拍长 L_π^wg = n_eff·W²/λ0，
+    1×2 第一双像成像长度 L = (9/4)·L_π = (9/4)·n_eff·W²/λ0。
+    返回自映像长 (9/4)·L_pi（um），失败 None。相位复核降级为诊断。
     """
     import numpy as np
     try:
         L_pi = n_eff * (W_e_um ** 2) / wl_um
         if not (L_pi > 0 and math.isfinite(L_pi)):
             return None
-        # 数值自洽诊断：3·L_pi 处各模相位 2π 整数倍（非门禁，报告用）
+        # 数值自洽诊断：9·L_pi/4 处各模相位 2π 整数倍（非门禁，报告用）
+        L_img = 2.25 * L_pi
         phase_err = 0.0
         for m in range(1, n_modes):
             dbeta = m * (m + 2) * math.pi / (3.0 * L_pi)
-            phase = dbeta * (3.0 * L_pi)
+            phase = dbeta * L_img
             frac = abs(phase / (2.0 * math.pi) - round(phase / (2.0 * math.pi)))
             phase_err = max(phase_err, frac)
-        return 3.0 * L_pi
+        return L_img
     except Exception:  # noqa: BLE001
         return None
 

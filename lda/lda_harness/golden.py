@@ -45,6 +45,9 @@ from .b29_thermal_phase_anchor import (  # noqa: E402  # B29 热光相移效率�
 from .b30_readout_anchor import (  # noqa: E402  # B30 读出保真度锚（v0.9.39 · T-9 接线）
     b30_readout_fidelity, b30_readout_report,
 )
+from .b33_detector_bandwidth_anchor import (  # noqa: E402  # B33 探测器 RC 带宽锚（v0.9.67 · A 档有源）
+    b33_detector_bandwidth, b33_detector_bandwidth_report,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -618,6 +621,7 @@ _GOLDEN_DISPATCH = {
     "B28": b28_modulator_vpi,                  # v0.9.1 MZM 调制器半波电压 Vπ（Pockels 电光）
     "B29": b29_thermal_phase_efficiency,       # v0.9.39 热光相移效率（1D 散热鳍 PDE 闭式 · D-73 升格）
     "B30": b30_readout_fidelity,               # v0.9.39 读出保真度 F（色散读出 SNR→erfc 链）
+    "B33": b33_detector_bandwidth,             # v0.9.67 探测器 3dB 带宽（RC 限制 · 电路闭式 · A 档有源首锚）
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -637,7 +641,7 @@ _GOLDEN_DISPATCH = {
 _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                  "B19", "B20", "B21", "B22", "B23", "B24", "B25",
-                 "B26", "B27", "B28", "B29", "B30",
+                 "B26", "B27", "B28", "B29", "B30", "B33",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

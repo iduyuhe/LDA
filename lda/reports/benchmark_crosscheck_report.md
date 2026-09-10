@@ -1,6 +1,6 @@
 # LDA 基准对照验证闭环报告
 
-> 生成时间：2026-09-07 05:16:21 · 方法：跨源死标量对照（解析契约锚 rel + 实证语料实测值 + loss 类引擎对照 + ORACLE 状态）
+> 生成时间：2026-09-10 17:58:24 · 方法：跨源死标量对照（解析契约锚 rel + 实证语料实测值 + loss 类引擎对照 + ORACLE 状态）
 
 ## 一、引擎验证对照（22 引擎设计闭环验证证据：15 设计量解析锚 + 5 loss 实证锚 + 2 有源双出口）
 
@@ -16,7 +16,7 @@
 | ReadoutResonator | L0-解析 | B22 | 7.5253 | 0.41 | ✅ | 读出谐振器 1D TL-FDTD 双验证 PASS（B22 锚 f0=7.495GHz ↔ FDTD f0=7.525GHz rel=0.41% ≤ 3%） |
 | Fluxonium | L0-解析 | B23 | 5.9827 | 0.02 | ✅ | Fluxonium 双基对拍 PASS（相位基 f01=5.983GHz ↔ HO 基 f01=5.984GHz rel=0.0241% ≤ 1%；B23 LC 边界锚=2.828GHz 单调上界成立） |
 | TunableCoupler | L0-解析 | B24 | 0.004861 | 1.27 | ✅ | 可调耦合器三模对角化 PASS（B24 锚 |g_eff|=0.0048GHz ↔ 数值 |g_eff|=0.0049GHz rel=1.27% ≤ 3%） |
-| Mmi1x2 | L0-解析 | B16 | 102.194 | 0.00 | ✅ | MMI 自映像 PASS（B16 锚 L=102.2um ↔ 模式叠加 L=102.2um rel=0.00% ≤ 5%） |
+| Mmi1x2 | L0-解析 | B16 | 97.004 | 0.00 | ✅ | MMI 自映像 PASS（B16 锚 L=97.0um ↔ 模式叠加 L=97.0um rel=0.00% ≤ 5%） |
 | GratingCoupler2 | L0-解析 | B15 | 2.352 | 0.00 | ✅ | 光栅耦合器 Bragg PASS（锚 λ_B=2.352um ↔ 数值 λ_B=2.352um rel=0.00% ≤ 5%） |
 | DirectionalCoupler2 | L0-解析 | B14 | 19.375 | 0.00 | ✅ | 方向耦合器 3dB PASS（B14 锚 L=19.4um ↔ 超模拍频 L=19.4um rel=0.00% ≤ 5%） |
 | TunableTransmon | L0-解析 | B25 | 5.9316 | 0.00 | ✅ | 可调 transmon PASS（B25 锚 f01=5.932GHz ↔ koch f01=5.932GHz rel=0.00% ≤ 3%） |
@@ -41,7 +41,7 @@
 | E-GRATING-EFF | 0.42 | engine_grating_eff | 0.4337 | 3.26 | 0.5·sin²(π·0.5)·exp(−θ²/2σ²) (θ=8.0°) |
 | E-SOI-CROSS-IL | 0.18 | engine_crossing | 0.18 | 0.0 | IL=0.35·w/L+0.04, XT=−(28+4·L/w) (L=1.25µm) |
 | E-SOI-CROSS-XT | -41.0 | engine_crossing | -38.0 | 7.32 | IL=0.35·w/L+0.04, XT=−(28+4·L/w) (L=1.25µm) |
-| E-MMI-1X2-EL | 0.05 | engine_mmi_el | 0.05 | 0.0 | 0.05·(1+5·|L/L_ideal−1|) (L=23.5µm, L_ideal=23.5µm |
+| E-MMI-1X2-EL | 0.05 | engine_mmi_el | 0.05 | 0.0 | 0.05·(1+5·|L/L_ideal−1|) (L=27.0µm, L_ideal=27.0µm |
 | E-SIN-PL-800 | 0.087 | engine_sin_pl | 0.087 | 0.0 | PL0·((w0/w+h0/h)/2)²·(σ/σ0)² (σ=0.3nm) |
 
 ## 三、第三方 ORACLE 状态

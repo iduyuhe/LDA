@@ -1,22 +1,22 @@
 {
   "meta": {
     "L0_IR": "(内置默认 B1–B4,B8)",
-    "candidate": "IndependentCandidateRouter(独立候选 26 道: B1,B10,B12,B13,B14,B15,B19,B20,B22,B23,B24,B25,B26,B27,B28,B29,B3,B30,B4,B8,B9,E2,E8,S13,S7,S8；降级量级参考 1 道: E9)",
+    "candidate": "IndependentCandidateRouter(独立候选 28 道: B1,B10,B12,B13,B14,B15,B19,B2,B20,B22,B23,B24,B25,B26,B27,B28,B29,B3,B30,B33,B4,B8,B9,E2,E8,S13,S7,S8；降级量级参考 1 道: E9)",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "self_consistent": true
   },
-  "generated_at": "2026-09-07T04:58:35",
+  "generated_at": "2026-09-10T23:06:47",
   "summary": {
-    "total": 52,
-    "passed": 52,
+    "total": 53,
+    "passed": 53,
     "self_consistent": true,
-    "verified": 26,
-    "self_consistent_stub_count": 25,
-    "independent_candidate_count": 26,
+    "verified": 28,
+    "self_consistent_stub_count": 24,
+    "independent_candidate_count": 28,
     "candidate_class_totals": {
-      "strict_independent": 26,
+      "strict_independent": 28,
       "degraded_ordinal": 1,
-      "self_consistent_stub": 25
+      "self_consistent_stub": 24
     }
   },
   "results": [
@@ -78,7 +78,7 @@
       "oracle": "analytical(charge-coupling closed form)",
       "source": "physical-law",
       "golden": 0.0316227766016838,
-      "candidate": 0.03030965003528152,
+      "candidate": 0.030309650035324154,
       "tol": 0.002,
       "passed": true,
       "note": "确定性物理定律/解析解",
@@ -104,7 +104,7 @@
       "oracle": "analytical(Bragg condition)",
       "source": "physical-law",
       "golden": 1.5504,
-      "candidate": 1.550408355922985,
+      "candidate": 1.5504083559262356,
       "tol": 0.01,
       "passed": true,
       "note": "确定性物理定律/解析解",
@@ -116,8 +116,8 @@
       "metric": "L_mmi_um",
       "oracle": "design-rule(general-interference)",
       "source": "physical-law",
-      "golden": 18.58064516129032,
-      "candidate": 18.58064516129032,
+      "golden": 13.935483870967742,
+      "candidate": 13.935483870967742,
       "tol": 3.0,
       "passed": true,
       "note": "确定性物理定律/解析解",
@@ -169,12 +169,12 @@
       "oracle": "analytical(EIM)",
       "source": "physical-law",
       "golden": 2.6509474264002217,
-      "candidate": 2.6509474264002217,
+      "candidate": 2.6453253668813312,
       "tol": 0.05,
       "passed": true,
       "note": "确定性物理定律/解析解",
-      "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "independent": true,
+      "candidate_class": "strict_independent"
     },
     {
       "id": "B20",
@@ -333,6 +333,19 @@
       "candidate_class": "strict_independent"
     },
     {
+      "id": "B33",
+      "metric": "f3dB_Hz",
+      "oracle": "analytical(RC bandwidth closed-form) + timestep-ODE-fit cross-check",
+      "source": "physical-law",
+      "golden": 3182937168.62974,
+      "candidate": 3182938826.411011,
+      "tol": 4000.0,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": true,
+      "candidate_class": "strict_independent"
+    },
+    {
       "id": "B4",
       "metric": "FSR_nm",
       "oracle": "analytical(ring)/sax",
@@ -429,7 +442,7 @@
       "oracle": "empirical-measurement(E-SIN-NG-300)",
       "source": "empirical-measurement",
       "golden": 1.892,
-      "candidate": 1.9571767840095324,
+      "candidate": 1.95717678400956,
       "tol": 0.1,
       "passed": true,
       "note": "LPCVD Si3N4 300nm 平台（公开文献）：热氧 SiO2 2.5um 下包层 + PECVD SiO2 2.0um 上包层，全刻蚀条形波导 | P. Munoz et al., Si3N4 300 nm photonic integration platform, Sensors (MDPI) 2017: OFDR ring-resonator group index TE=1.892 / TM=1.717; MZI transmission cross-check TE 1.90-1.92 | σ=0.03 | tol=0.03 | tier=A",

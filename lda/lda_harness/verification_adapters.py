@@ -1692,6 +1692,36 @@ def _b30_readout_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
 
 
 # ---------------------------------------------------------------------------
+# B33 独立候选（v0.9.67 · A 档有源扩展 #1）：RC 暂态梯形法数值积分 + 拟合 τ
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "rc_bandwidth_timestep",
+    "RC 暂态梯形法数值积分 + 最小二乘拟合 τ（与解析闭式 1/(2π·R·C) 方法学独立"
+    "—— 数值 ODE 拟合 vs 解析公式，判据 D 真数值收敛（n_time 加密残差单调下降）")
+def _b33_detector_bandwidth_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B33 独立候选：RC 一阶暂态时域数值积分 → 拟合 τ → f_3dB。
+
+    golden = f_3dB = 1/(2π·R·C)（解析闭式，见 b33_detector_bandwidth_anchor）；
+    cand   = 模拟 V(t)=V0(1−e^{−t/τ})（τ=R·C，梯形法数值积分）+ 最小二乘
+             拟合 ln(V0−V) 得斜率 −1/τ ⇒ f_3dB=1/(2π·τ)。
+    判据 D 实测（v0.9.67）：n_time 4→512 残差 5.5e8→2.5e4 Hz 单调收敛
+    （梯形法 O(dt²)，真数值离散化）。基线（n_time=2000）残差 1.66e3 Hz
+    （tol=4e3 的 ~2.4× 余量，≫1e-12 噪声地板）。反向 R±10% ⇒ f_3dB∝1/R
+    信号 ~2.9e8 Hz ≫ tol 必 FAIL。
+
+    ⚠️ 失败即抛异常上浮，绝不静默回退（IndependentCandidateRouter 既定原则）。
+    """
+    from lda_harness.b33_detector_bandwidth_anchor import b33_rc_bandwidth_candidate
+    p = spec.params
+    return float(b33_rc_bandwidth_candidate(
+        R=float(p["R"]),
+        eps=float(p["eps"]),
+        A=float(p["A"]),
+        d=float(p["d"]),
+        n_time=int(p.get("n_time", 2000))))
+
+
+# ---------------------------------------------------------------------------
 # S7 / S8 统计锚独立候选（v0.9.29 · T-3）：闭式高斯 p5（μ − 1.645σ）
 # ---------------------------------------------------------------------------
 # golden = 蒙特卡洛经验 5% 分位（随机采样、固定种子）；

@@ -107,8 +107,8 @@ def main() -> int:
     specs, cand = build_harness_specs()
     indep_ids = [
         "B1", "B3", "B4", "B8", "B9", "B10", "B12", "B13", "B14", "B15",
-        "B19", "B20", "B22", "B23", "B24", "B25", "B26", "B27", "E2", "S13",
-        "S7", "S8",
+        "B19", "B20", "B22", "B23", "B24", "B25", "B26", "B27", "B33", "E2",
+        "S13", "S7", "S8",
     ]
     noise_exempt = {"B10"}  # 过度收敛区特例：基线=0，判据 D 深验已通过（①）
     n_wired, violators = 0, []
@@ -125,10 +125,10 @@ def main() -> int:
         d = abs(float(cv) - float(ov))
         if sp.spec_id not in noise_exempt and d <= 1e-12:
             violators.append((sp.spec_id, "基线残差 %.2e 贴地板（恒等嫌疑）" % d))
-    check("已接线候选 %d/22 全部登记" % n_wired, n_wired == 22)
+    check("已接线候选 %d/23 全部登记" % n_wired, n_wired == 23)
     check("基线残差全部 > 1e-12（B10 特例豁免，见①）", not violators,
           "; ".join("%s: %s" % v for v in violators) if violators else
-          "19 道残差 1.85e-8 ~ 1.5e-2，全部远高于 1e-15 恒等特征")
+          "20 道残差 1.66e3 ~ 1.5e-2，全部远高于 1e-15 恒等特征")
 
     # ---------------------------------------------------------------
     print("④ 抽验对角化类候选的截断收敛（证据留痕）")
@@ -159,6 +159,28 @@ def main() -> int:
               r23[4] < 1e-11, "ncut=32 残差 %.1e" % r23[4])
 
     # ---------------------------------------------------------------
+    print("④′ B33 时域 RC 阶跃响应收敛（v0.9.67 · A 档有源扩展 #1）")
+    from lda_harness.b33_detector_bandwidth_anchor import (
+        b33_detector_bandwidth, b33_rc_bandwidth_candidate,
+    )
+    _R, _eps, _A, _d = 50.0, 1.036e-10, 9.653e-9, 1.0e-6
+
+    def b33_pair(n: int):
+        return (b33_rc_bandwidth_candidate(_R, _eps, _A, _d, n_time=n),
+                b33_detector_bandwidth(_R, _eps, _A, _d))
+
+    ok33, ev33 = candidate_discretization_responds(b33_pair, min_ratio=1.0)
+    r33 = ev33.get("residual", [])
+    check("B33 扫 n_time：梯形法积分误差响应（真数值离散化）", ok33,
+          "残差 " + " → ".join("%.1e" % r for r in r33) if r33 else
+          "（n=2 梯形法退化触发数值失效 ⇒ 判据 D 视为有响应）")
+    if len(r33) >= 2 and r33[0] > 0 and r33[-1] > 0:
+        # 粗端 (n=4) → 细端 (n=512) 应单调收敛（梯形法 O(dt²)）
+        check("B33 残差随 n_time 加密单调下降（非代数恒等）",
+              r33[1] > r33[-1] and r33[1] > r33[2],
+              "n=4→512 残差 %.1e→%.1e" % (r33[1], r33[-1]))
+
+    # ---------------------------------------------------------------
     print("⑤ 判据 D 单一定义处（harness.py，防两份定义漂移）")
     import lda_harness.harness as H
     check("candidate_discretization_responds 定义于 harness.py",
@@ -169,7 +191,7 @@ def main() -> int:
         print(f"判据 D 冒烟：{PASS} PASS / {FAIL} FAIL —— 🔴 存在假独立或护栏失效")
         return 1
     print(f"判据 D 冒烟：{PASS} PASS / 0 FAIL —— 全绿")
-    print("结论：22 道独立候选中 0 道代数恒等（21 道基线残差 1.85e-8~1.5e-2 值域排除；")
+    print("结论：23 道独立候选中 0 道代数恒等（22 道基线残差 1.66e3~1.5e-2 值域排除；")
     print("     B10 基线=0 属过度收敛区特例，判据 D 深验 O(h⁴) 收敛通过）。")
     print("     B28 型假独立已被判据 D 抓获（②证明护栏会响）——B28 若要接线必须")
     print("     改用非均匀 Γ(z) 剖面，使积分与闭式不再剖分守恒。")

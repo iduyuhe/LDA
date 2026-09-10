@@ -1,14 +1,14 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-06T12:49:33
+- 生成时间：2026-09-10T17:43:38
 - L0_IR：(内置默认)
 - candidate：L3AISolverCandidate
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - via：L1 KernelGateway
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **45 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **47 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
 
-## 汇总：47/50 通过（独立候选 5 项中 **2 项通过=已验证** · 45 项自证闭环，**非验证结论**）
+## 汇总：49/52 通过（独立候选 5 项中 **2 项通过=已验证** · 47 项自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -19,7 +19,7 @@
 | B13 | J_GHz | physical-law | 0.0316228 | 0.0316228 | 0 | 0.002 | ✅ PASS |
 | B14 | L_3dB_um | physical-law | 7.75 | 7.75 | 0 | 0.25 | ✅ PASS |
 | B15 | lambda_B_um | physical-law | 1.5504 | 1.5504 | 0 | 0.01 | ✅ PASS |
-| B16 | L_mmi_um | physical-law | 18.5806 | 18.5806 | 0 | 3 | ✅ PASS |
+| B16 | L_mmi_um | physical-law | 13.9355 | 13.9355 | 0 | 3 | ✅ PASS |
 | B17 | I_c_A | physical-law | 4.02671e-08 | 4.02671e-08 | 0 | 1e-09 | ✅ PASS |
 | B18 | F_purcell | physical-law | 8000 | 8000 | 0 | 1 | ✅ PASS |
 | B19 | max|T(λ)| over all transfer paths | physical-law | 1 | 1 | 0 | 1e-09 | ✅ PASS |
@@ -49,6 +49,8 @@
 | E5 | excess_loss_dB | empirical-measurement | 0.05 | 0.05 | 0 | 0.1 | ✅ PASS |
 | E6 | propagation_loss_dBcm | empirical-measurement | 0.087 | 0.087 | 0 | 0.05 | ✅ PASS |
 | E7 | crosstalk_dB | empirical-measurement | -41 | -41 | 0 | 5 | ✅ PASS |
+| E8 | coupling_eff | empirical-measurement | 0.42 | 0.42 | 0 | 0.06 | ✅ PASS |
+| E9 | excess_loss_dB | empirical-measurement | 0.28 | 0.28 | 0 | 0.13 | ✅ PASS |
 | S1 | margin_dB | physical-law | 10.5 | 10.5 | 0 | 0.01 | ✅ PASS |
 | S10 | verdict(ACCEPT=1, REJECT=0) | physical-law | 1 | 1 | 0 | 1e-09 | ✅ PASS |
 | S11 | verdict(ACCEPT=1, REJECT=0) | physical-law | 1 | 1 | 0 | 1e-09 | ✅ PASS |

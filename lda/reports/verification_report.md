@@ -1,17 +1,17 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-07T04:58:35
+- 生成时间：2026-09-10T23:06:47
 - L0_IR：(内置默认 B1–B4,B8)
-- candidate：IndependentCandidateRouter(独立候选 26 道: B1,B10,B12,B13,B14,B15,B19,B20,B22,B23,B24,B25,B26,B27,B28,B29,B3,B30,B4,B8,B9,E2,E8,S13,S7,S8；降级量级参考 1 道: E9)
+- candidate：IndependentCandidateRouter(独立候选 28 道: B1,B10,B12,B13,B14,B15,B19,B2,B20,B22,B23,B24,B25,B26,B27,B28,B29,B3,B30,B33,B4,B8,B9,E2,E8,S13,S7,S8；降级量级参考 1 道: E9)
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - self_consistent：True
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **26 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余项中 **25 项**走 ReferenceCandidate 占位自证（候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**），**1 项**为降级量级参考（有独立候选但与 golden 几何不同源/精度不足，**不进死标量判决**）。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 26 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **28 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余项中 **24 项**走 ReferenceCandidate 占位自证（候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**），**1 项**为降级量级参考（有独立候选但与 golden 几何不同源/精度不足，**不进死标量判决**）。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 28 项。
 > 📌 **两条判决路径口径不同（C-1 诚实披露 · v0.9.30 · T-5）**：本报告的 `verified` 来自**路径①**（`IndependentCandidateRouter`，方法学不同源的独立频域候选）。
 > **路径②** `run_harness.py --ai`（L3 AI 写内核 demo，离线回退 `_local_approx`）实测 `verified=2/48`（仅 B1/B4 真实现且 PASS，余 46 道为 `return golden` 自证桩）。
-> 两路径候选体系本就不同，**均为如实口径、不构成虚报**；对外「独立候选 26/48」特指路径①。
+> 两路径候选体系本就不同，**均为如实口径、不构成虚报**；对外「独立候选 28/48」特指路径①。
 
-## 汇总：52/52 通过（独立候选 26 项中 **26 项通过=已验证** · 25 项自证闭环 · 1 项降级量级参考（不进判决），**非验证结论**）
+## 汇总：53/53 通过（独立候选 28 项中 **28 项通过=已验证** · 24 项自证闭环 · 1 项降级量级参考（不进判决），**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -22,11 +22,11 @@
 | B13 | J_GHz | physical-law | 0.0316228 | 0.0303097 | 0.001313 | 0.002 | ✅ PASS |
 | B14 | L_3dB_um | physical-law | 7.75 | 7.74984 | 0.0001563 | 0.25 | ✅ PASS |
 | B15 | lambda_B_um | physical-law | 1.5504 | 1.55041 | 8.356e-06 | 0.01 | ✅ PASS |
-| B16 | L_mmi_um | physical-law | 18.5806 | 18.5806 | 0 | 3 | ✅ PASS |
+| B16 | L_mmi_um | physical-law | 13.9355 | 13.9355 | 0 | 3 | ✅ PASS |
 | B17 | I_c_A | physical-law | 4.02671e-08 | 4.02671e-08 | 0 | 1e-09 | ✅ PASS |
 | B18 | F_purcell | physical-law | 8000 | 8000 | 0 | 1 | ✅ PASS |
 | B19 | max|T(λ)| over all transfer paths | physical-law | 1 | 0.999896 | 0.0001038 | 1e-09 | ✅ PASS |
-| B2 | n_eff | physical-law | 2.65095 | 2.65095 | 0 | 0.05 | ✅ PASS |
+| B2 | n_eff | physical-law | 2.65095 | 2.64533 | 0.005622 | 0.05 | ✅ PASS |
 | B20 | FSR_nm | physical-law | 20.0108 | 20.0108 | 4.671e-10 | 1e-06 | ✅ PASS |
 | B21 | cavity_wl_nm | physical-law | 2214 | 2214 | 0 | 1e-06 | ✅ PASS |
 | B22 | qres_f_ghz | physical-law | 7.49481 | 7.49481 | 4.982e-08 | 1e-06 | ✅ PASS |
@@ -39,6 +39,7 @@
 | B29 | phase_efficiency_deg_per_mW | physical-law | 38.8802 | 38.8775 | 0.002701 | 0.02 | ✅ PASS |
 | B3 | FSR_nm | physical-law | 120.125 | 120.125 | 1.664e-08 | 1 | ✅ PASS |
 | B30 | readout_fidelity_F | physical-law | 0.985992 | 0.985992 | 9.373e-11 | 0.001 | ✅ PASS |
+| B33 | f3dB_Hz | physical-law | 3.18294e+09 | 3.18294e+09 | 1658 | 4000 | ✅ PASS |
 | B4 | FSR_nm | physical-law | 9.1476 | 9.1476 | 1.853e-08 | 0.3 | ✅ PASS |
 | B5 | split_loss_dB | numpy-overlap-offline | 3.4 | 3.4 | 0 | 1 | ✅ PASS |
 | B6 | coupling_eff | design-anchor | 0.5 | 0.5 | 0 | 0.15 | ✅ PASS |

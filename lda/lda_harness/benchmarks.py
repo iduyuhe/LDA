@@ -55,6 +55,9 @@ from .b29_thermal_phase_anchor import (  # noqa: E402  # B29 热光相移效率�
 from .b30_readout_anchor import (  # noqa: E402  # B30 读出保真度锚（v0.9.39 · T-9 接线）
     b30_readout_fidelity, b30_readout_report,
 )
+from .b33_detector_bandwidth_anchor import (  # noqa: E402  # B33 探测器 RC 带宽锚（v0.9.67 · A 档有源）
+    b33_detector_bandwidth, b33_detector_bandwidth_report,
+)
 
 BENCHMARK_DEFS = {
     "B1": {
@@ -681,6 +684,37 @@ BENCHMARK_DEFS = {
                  "保真度（Lindblad 数值 vs 闭式）同族「数值积分 ↔ 解析」独立模式。"
                  "LLM 不进判决路径。"),
     },
+    # ---- B33（v0.9.67 · A 档有源扩展 #1）：探测器 RC 限制 3dB 带宽 ----
+    "B33": {
+        "title": "探测器 3dB 带宽（RC 限制 · 电路闭式）",
+        "metric": "f3dB_Hz",
+        "oracle": "analytical(RC bandwidth closed-form) + timestep-ODE-fit cross-check",
+        "tol": 4e3,
+        # v0.9.67（A 档有源开放后第一道真·新增严格独立锚）：golden = 反偏结
+        # 电容 C=ε·A/d 的 RC 低通 3dB 带宽闭式 f_3dB=1/(2π·R·C)；candidate =
+        # RC 一阶暂态 V(t)=V0(1−e^{−t/τ}) 梯形法数值积分 + 最小二乘拟合 τ
+        # （与解析闭式方法学独立，判据 D 真数值收敛，n_time 2→512 残差单调下降）。
+        # 纯电路闭式 + 数值积分，无光子有源物理 / 无载流子动力学 / 无 TCAD /
+        # 无 A 级工具 ⇒ 不破三不做 / 主权 / 验证纪律任何红线（A 档授权依据见
+        # docs/lda_active_device_redline_clarification_2026-09-10.md §七裁定①）。
+        "candidate": "rc_bandwidth_timestep",
+        "candidate_desc": ("RC 暂态梯形法数值积分 + 最小二乘拟合 τ（与解析闭式 "
+                           "1/(2π·R·C) 方法学独立）—— 判据 D 真数值收敛"),
+        "default_params": {"R": 50.0, "eps": 1.036e-10, "A": 9.653e-9, "d": 1.0e-6},
+        "golden_fn": b33_detector_bandwidth,
+        "note": ("pin/APD 探测器 RC 限制 3dB 带宽 f_3dB=1/(2π·R·C)，C=ε·A/d"
+                 "（反偏结电容闭式，ε=1.036e-10 F/m ≈ Si ε_r·ε0）。默认 R=50Ω、"
+                 "C≈1pF ⇒ f_3dB≈3.18 GHz（典型 pin 量级）。golden=确定性物理"
+                 "定律闭式。v0.9.67 独立候选=rc_bandwidth_timestep：模拟 RC 一阶"
+                 "暂态（梯形法数值积分）+ 拟合 τ ⇒ 1/(2π·τ)——与 golden 是同一"
+                 "物理定律的两种算法（数值 ODE 拟合 vs 解析公式），判据 D 真数值"
+                 "收敛（n_time 4→512 残差 5.5e8→2.5e4 Hz 单调下降）。基线残差"
+                 "1.66e3 Hz（tol=4e3 的 ~2.4× 余量，≫1e-12 噪声地板）。反向 "
+                 "R±10% ⇒ f_3dB∝1/R 信号 ~2.9e8 Hz ≫ tol 必 FAIL。诚实边界："
+                 "仅 RC 限制带宽，不含渡越时间/暗电流/APD 倍增（B 档禁区）。"
+                 "A 档闭式/行为层有源，纯电路无光子有源物理 ⇒ 不破红线。"
+                 "LLM 不进判决路径。"),
+    },
     # ---- D-62 实证大数据锚（第二道非 AI ground：真实测量语料）----
     # anchor=empirical 的题：golden 来自 EmpiricalCorpus 实测语料（seed_empirical.json
     # + 社区经评审流落库的语料），非解析函数（golden_fn=None）。
@@ -1259,7 +1293,7 @@ for _bid, _def in BENCHMARK_DEFS.items():
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
-                   "B26", "B27", "B28", "B29", "B30",
+                   "B26", "B27", "B28", "B29", "B30", "B33",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                    "S9", "S10", "S11", "S12", "S13"]  # S 系统锚（Phase 0-4；S9=LVS/S10=多层/S11=规模/S12=阵列分布/S13=设计良率）

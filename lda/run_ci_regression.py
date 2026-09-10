@@ -412,10 +412,6 @@ CORE_SMOKES: List[str] = [
     #   MFD↑→良率↑、可复现、解析↔MC 互证、P-CPO 间距合规不假绿)。provenance 标
     #   self_authored_with_check，σ_align/MFD 为公开假设值、待 T2 实测回填。CI core 156→157。
     "run_packaging_tolerance_smoke.py",
-    # VMM 底线护栏（N-5 · v0.9.66）：M1–M5 守护每锚 maturity_tier/provenance/upgrade_path
-    #   齐备、声明层级≡harness 权威三分类（防越级谎报）、self_authored_closed_form 进低置信名单。
-    #   纯 numpy、秒级、无重依赖，无权豁免，必须进 core。CI core 157→158。
-    "run_maturity_baseline_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

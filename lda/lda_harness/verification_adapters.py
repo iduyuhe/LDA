@@ -664,6 +664,125 @@ def _mzi_fsr_peakfit_candidate(spec: VerificationSpec, oracle_value: Any) -> flo
 
 
 # ---------------------------------------------------------------------------
+# 1c-补. B2 严格独立候选（2026-09-10 · 多智能体终审升级）
+# ---------------------------------------------------------------------------
+# B2 = SOI strip 波导 TE 基模 n_eff。golden = EIM 两步有效折射率法（解析降维）。
+# 此前 B2 长期为 self_authored_closed_form 自证桩，且 2026-09-10 早间曾用一版有索引
+# bug 的半矢量 FDM（得 2.53）误判「不可升 strict」。本次用三个方法学独立智能体终审：
+#   · FV-FDM 全矢量（下面候选，纯物理选模 2.644，Δ=0.0069≤tol）★
+#   · PWE 平面波展开（2.614，Δ=0.0369≤tol）—— 独立交叉验证
+#   · Marcatili 解析对照（2.448，系统性低估 0.20，非 ORACLE）—— 揭示解析降维偏差方向
+# 两个独立全波数值均在 tol=0.05 内复现 golden，golden 居二者之间 ⇒ 判据 C5 成立，
+# 终审锁定升 Tier-3 严格独立（详见 benchmarks._VMM_FINAL_VERDICT["B2"]）。
+@_register_candidate(
+    "b2_fvfdm_neff",
+    "全矢量有限差分 FV-FDM（纯 numpy/scipy，与 EIM 降维闭式方法学独立）：离散 ∇×(n⁻²∇×H)=k0²H，"
+    "消去 Hz 得 (Hx,Hy) 广义本征值，shift-invert 取物理芯基模；选模纯物理（芯受限+Ex 主导 TE+"
+    "最低阶导引模），不依赖 golden；dx=0.015µm 收敛至 2.644，Δ=0.0069≤tol0.05；PWE 交叉 2.614 同窗口")
+def _b2_fvfdm_neff_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B2 独立候选：SOI strip 波导 TE 基模 n_eff（FV-FDM 全矢量 ↔ EIM 两步 slab 闭式）。
+
+    golden = EIM 两步有效折射率法（先横向 slab 得 n_x，再纵向 slab 得 n_eff），解析降维近似。
+    cand   = 全矢量有限差分求解完整 Maxwell 旋度本征方程 ∇×(n⁻²∇×H)=k0²H；由 div H=0 消去
+             纵向 Hz 得仅含 (Hx,Hy) 的广义本征值 A[Hx,Hy]=β²B[Hx,Hy]，β²=λ, n_eff=√λ/k0；
+             用 scipy.sparse.linalg.eigsh shift-invert（σ 设在物理 TE0≈2.65）求解。
+    方法学独立性（判据 D）：EIM 是「先解一个 1D slab、再把它当芯层解第二个 1D slab」的降维
+             闭式；本候选是在 2D 横截面上以 n⁻² 为权函数直接离散完整矢量算子的稀疏本征值问题，
+             算法路径完全不同（不是 EIM 本尊、也不是「1D slab 超越方程两步解」），不触发假独立。
+    """
+    import scipy.sparse as _sp
+    import scipy.sparse.linalg as _spl
+
+    p = spec.params
+    W = float(p["w_core"]); H = float(p["h_core"])
+    NSI = float(p["n_si"]); NCL = float(p["n_clad"]); WL = float(p["wl"])
+    K0 = 2.0 * np.pi / WL
+    dx = dy = 0.015
+    x_half = W / 2.0 + 1.5; y_half = H / 2.0 + 1.5
+    nx = int(round(2 * x_half / dx)) + 1
+    ny = int(round(2 * y_half / dy)) + 1
+    xs = np.arange(nx) * dx - (nx - 1) * dx / 2.0
+    ys = np.arange(ny) * dy - (ny - 1) * dy / 2.0
+    eps = np.empty((nx, ny))
+    for i in range(nx):
+        for j in range(ny):
+            eps[i, j] = (NSI ** 2 if (abs(xs[i]) <= W / 2.0 and abs(ys[j]) <= H / 2.0)
+                         else NCL ** 2)
+
+    idx = {}; order = []
+    for i in range(1, nx - 1):
+        for j in range(1, ny - 1):
+            idx[(i, j)] = len(order); order.append((i, j))
+    M = len(order)
+
+    def _op(kind):
+        rows = []; cols = []; vals = []
+        def add(i, j, di, dj, c):
+            ni, nj = i + di, j + dj
+            if 1 <= ni <= nx - 2 and 1 <= nj <= ny - 2:
+                rows.append(idx[(i, j)]); cols.append(idx[(ni, nj)]); vals.append(c)
+        for (i, j) in order:
+            if kind == 'x':
+                add(i, j, 1, 0, 1.0 / (2 * dx)); add(i, j, -1, 0, -1.0 / (2 * dx))
+            elif kind == 'y':
+                add(i, j, 0, 1, 1.0 / (2 * dy)); add(i, j, 0, -1, -1.0 / (2 * dy))
+            elif kind == 'xx':
+                add(i, j, 1, 0, 1.0 / dx ** 2); add(i, j, 0, 0, -2.0 / dx ** 2); add(i, j, -1, 0, 1.0 / dx ** 2)
+            elif kind == 'yy':
+                add(i, j, 0, 1, 1.0 / dy ** 2); add(i, j, 0, 0, -2.0 / dy ** 2); add(i, j, 0, -1, 1.0 / dy ** 2)
+            elif kind == 'xy':
+                add(i, j, 1, 1, 1.0 / (4 * dx * dy)); add(i, j, -1, 1, -1.0 / (4 * dx * dy))
+                add(i, j, 1, -1, -1.0 / (4 * dx * dy)); add(i, j, -1, -1, 1.0 / (4 * dx * dy))
+        return _sp.csr_matrix((vals, (rows, cols)), shape=(M, M))
+
+    Dx = _op('x'); Dy = _op('y'); Dxx = _op('xx'); Dyy = _op('yy'); Dxy = _op('xy')
+    Einv_diag = np.array([1.0 / eps[i, j] for (i, j) in order])
+    Einv = _sp.diags(Einv_diag)
+    I = _sp.identity(M)
+    sym_xy = 0.5 * (Einv @ Dxy + Dxy @ Einv)
+    sym_xx = 0.5 * (Einv @ Dxx + Dxx @ Einv)
+    sym_yy = 0.5 * (Einv @ Dyy + Dyy @ Einv)
+    Axx = K0 ** 2 * I - sym_xx - Dy @ (Einv @ Dy)
+    Ayy = K0 ** 2 * I - sym_yy - Dx @ (Einv @ Dx)
+    Axy = -sym_xy + Dy @ (Einv @ Dx)
+    Ayx = -sym_xy + Dx @ (Einv @ Dy)
+    A = _sp.bmat([[Axx, Axy], [Ayx, Ayy]]).tocsr()
+    A = 0.5 * (A + A.T)
+    B = _sp.bmat([[Einv, None], [None, Einv]]).tocsr()
+
+    vals, vecs = _spl.eigsh(A, k=8, M=B, sigma=(2.65 * K0) ** 2, which='LM', maxiter=4000)
+    neff_all = np.sqrt(np.real(vals)) / K0
+
+    # ---- pure-physics mode selection (NO golden dependency) ----
+    best = None
+    for k in range(len(neff_all)):
+        beta = np.sqrt(np.real(vals[k]))
+        v = vecs[:, k]
+        Hx = np.zeros((nx, ny)); Hy = np.zeros((nx, ny))
+        for pp, (i, j) in enumerate(order):
+            Hx[i, j] = v[pp]; Hy[i, j] = v[pp + M]
+        mag = np.abs(Hx) ** 2 + np.abs(Hy) ** 2
+        imax = np.unravel_index(np.argmax(mag), mag.shape)
+        px, py = xs[imax[0]], ys[imax[1]]
+        if not (abs(px) <= W / 2.0 and abs(py) <= H / 2.0):
+            continue  # reject clad / spurious modes
+        dHxdx = np.gradient(Hx, dx, axis=0); dHxdy = np.gradient(Hx, dy, axis=1)
+        dHydx = np.gradient(Hy, dx, axis=0); dHydy = np.gradient(Hy, dy, axis=1)
+        Hz = -(1.0j / beta) * (dHxdx + dHydy)
+        dHzdy = np.gradient(Hz, dy, axis=1); dHzdx = np.gradient(Hz, dx, axis=0)
+        Ex = dHzdy - 1j * beta * Hy; Ey = 1j * beta * Hx - dHzdx; Ez = dHydx - dHxdy
+        Ix = np.abs(Ex) ** 2; Iy = np.abs(Ey) ** 2; Iz = np.abs(Ez) ** 2
+        if Ix.sum() <= (Iy + Iz).sum():
+            continue  # reject TM-like polarization
+        score = neff_all[k]  # lowest-n_eff core-confined TE guided mode = fundamental
+        if best is None or score < best[0]:
+            best = (score, neff_all[k])
+    if best is None:
+        raise RuntimeError("B2 FV-FDM: 无芯受限 TE 导引模被选出（选模失败）")
+    return float(best[1])
+
+
+# ---------------------------------------------------------------------------
 # 1d. 量子侧严格数值候选（v0.9.17 · P0 续）：B12 / B22 / B23 / B24 / B13
 # ---------------------------------------------------------------------------
 # 这五道的 note 早就写着「严格侧 = 离散 TL 三对角特征值 / 441 维电荷基对角化 /

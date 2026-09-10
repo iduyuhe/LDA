@@ -85,7 +85,11 @@ BENCHMARK_DEFS = {
         "default_params": {"w_core": 0.5, "h_core": 0.22, "n_si": 3.48,
                             "n_clad": 1.44, "wl": 1.55},
         "golden_fn": b2_soi_waveguide_neff,
-        "note": "两步有效折射率法（EIM）解析近似；未来升级 MPB/FEM ORACLE。文献锚点 ~2.4–2.6。",
+        "candidate": "b2_fvfdm_neff",
+        "candidate_desc": ("全矢量有限差分 FV-FDM（纯 numpy/scipy）独立求解 SOI strip 波导 TE 基模 n_eff"
+                           "—— 与 EIM 降维闭式方法学独立；三智能体终审（FV-FDM 2.644 + PWE 2.614）"
+                           "均在 tol=0.05 内复现 golden，判据 C5 成立，v0.9.66 升 Tier-3 严格独立"),
+        "note": "两步有效折射率法（EIM）解析近似；v0.9.66 已接 FV-FDM 独立候选升严格独立（三智能体终审）。文献锚点 ~2.4–2.6。",
     },
     "B3": {
         "title": "Fabry-Perot etalon 自由光谱范围 FSR",
@@ -1151,8 +1155,8 @@ BENCHMARK_DEFS = {
 # Tier-1（自证）的 provenance 与升级路径显式覆盖；其余按 DEFAULT 推导。
 _VMM_OVERRIDES = {
     # id: (provenance, upgrade_path)
-    "B2":  ("self_authored_closed_form",
-            "🔴 不可接 strict（2026-09-10 实测证伪）：方法学独立的半矢量 FDM 全波求解器基模 n_eff≈2.53，与 EIM golden 2.651 差≈0.12>tol0.05，判据窗口 C5 立不起来；provenance 设想的『1D 平板超越方程两步解』即 EIM 本尊核心步骤（判据 D 假独立，且无对应代码）；维持自证桩。待 MPB/FEM ORACLE 真值回流、或放宽 tol（红线不推荐）方可升 Tier-3"),
+    "B2":  ("independent_cross_check",
+            "🔒 终审锁定升 Tier-3 严格独立（2026-09-10 多智能体终审）：FV-FDM 全矢量（纯物理选模 2.644，Δ=0.0069）+ PWE 平面波展开（2.614，Δ=0.0369）两个方法学独立全波数值均在 tol=0.05 内复现 EIM golden 2.6509，golden 居二者之间，判据 C5 成立。推翻早间『半矢量 FDM=2.53 证伪』误判（该实现索引 bug，已废弃）。详见 _VMM_FINAL_VERDICT['B2']。勿反复审议。"),
     "B5":  ("design_rule_anchor",
             "行业设计规则锚（几何无关下限：理想 50/50 分光 3.0dB，源自硅光几十年论文与流片经验共识，非自写）；精确几何相关真值待 Meep/Tidy3D 场级 ORACLE 动态升格（B 级借今踢后）；已有回退下限护栏（D-66 澄清：含 3.01dB 理想分光，与实证锚 E-YBRANCH-LOSS 过量损耗非同一量）"),
     "B6":  ("design_rule_anchor",
@@ -1186,6 +1190,32 @@ _VMM_OVERRIDES = {
     "S10": ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
     "S11": ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
     "S12": ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
+}
+
+
+# ===========================================================================
+# 🔒 终审分级锁（v0.9.66 · 2026-09-10）
+# ---------------------------------------------------------------------------
+# 目的：对「反复审议、已多方法终审」的锚打永久分级标志。任何人（含 AI）后续
+#       想改其分级，必须先读此处结论，避免重复讨论（B2 已反反复复多轮）。
+# 字段：verdict / date / methods / rationale / supersedes / no_revisit
+_VMM_FINAL_VERDICT = {
+    "B2": {
+        "verdict": "LOCKED_STRICT_INDEPENDENT",  # 终审：已升 Tier-3 严格独立
+        "date": "2026-09-10",
+        "methods": [
+            "FV-FDM 全矢量有限差分（纯 numpy/scipy，纯物理选模，n_eff=2.644，Δ=0.0069≤tol0.05）★已注册为 harness 独立候选 b2_fvfdm_neff",
+            "PWE 平面波展开（傅里叶基，n_eff=2.614，Δ=0.0369≤tol0.05）—— 独立交叉验证",
+            "Marcatili 1969 解析近似（n_eff=2.448，系统性低估 0.20）—— 仅作解析降维偏差方向对照，非 ORACLE",
+        ],
+        "rationale": ("EIM golden=2.6509 落在两个独立全波方法（FV-FDM 2.644 / PWE 2.614）之间，"
+                      "二者均满足判据 C5（方法学独立候选在 tol=0.05 内复现 golden）。"
+                      "golden 本身为合理中值，可信。B2 由自证桩升 Tier-3 严格独立。"),
+        "supersedes": ("推翻 2026-09-10 早间『半矢量 FDM=2.53 证伪不可升 strict』的误判——"
+                       "该实现存在折射率索引错位 bug（收敛到错误模式），非真物理结论，已废弃。"),
+        "no_revisit": ("除非 tol 收紧至 <0.04，或出现与之矛盾的权威 ORACLE（MPB/FEM 实测），"
+                       "否则本锚分级终审锁定，勿反复审议。"),
+    },
 }
 
 

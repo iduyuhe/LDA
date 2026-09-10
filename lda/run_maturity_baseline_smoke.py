@@ -16,7 +16,7 @@
      越级谎报即 FAIL（同 C2 防标签≠行为）。
   M4 provenance=self_authored_closed_form（纯未验自写闭式）的锚落入「低置信·待再审计」名单并显式披露
      （信息项，不 FAIL——已内验的 self_authored_closed_form_with_check 与行业 design_rule_anchor 不进此名单）。
-  M5 三分类计数与 README/C2 口径一致（26/1/25，和=52）。
+  M5 三分类计数与 README/C2 口径一致（27/1/24，和=52；B2 于 2026-09-10 经 FV-FDM+PWE 双独立全波终审升严格独立）。
 """
 import os
 import sys
@@ -85,8 +85,8 @@ def main():
     total = len(BENCHMARK_DEFS)
     if h_strict + h_deg + h_stub != total:
         fails.append(f"M5 三分类和 {h_strict+h_deg+h_stub}≠题数 {total}")
-    if (h_strict, h_deg, h_stub) != (26, 1, 25):
-        infos.append(f"M5 三分类口径=({h_strict},{h_deg},{h_stub})（期望 (26,1,25)）")
+    if (h_strict, h_deg, h_stub) != (27, 1, 24):
+        infos.append(f"M5 三分类口径=({h_strict},{h_deg},{h_stub})（期望 (27,1,24)）")
 
     # 输出
     print("=" * 64)

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="eJc5r1FwIeO8sgeIafVtdq">
+<head data-page-node-id="3noPn1hKMXtPkVIKZA2uBt">
+<meta charset="UTF-8" data-page-node-id="Pz9LelE12vCC0hZjlcYzEy">
+<title>LDA 对外话术手册 · 打印版</title>
+<style>
+  @page { size: A4; margin: 14mm 13mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei","PingFang SC","Source Han Sans SC",sans-serif;
+         font-size: 10pt; line-height: 1.55; color:#111; background:#fff; margin:0; padding:0; }
+  .page { max-width: 184mm; margin: 0 auto; }
+  h1 { font-size:19pt; margin:0 0 3mm; letter-spacing:.5px; border-bottom:2.2pt solid #111; padding-bottom:2.5mm; }
+  .sub { font-size:8.5pt; color:#555; margin:0 0 5mm; line-height:1.6; }
+  h2 { font-size:13pt; margin:6mm 0 2.5mm; padding:1.6mm 3mm; background:#111; color:#fff; }
+  h2.pagebreak { page-break-before: always; }
+  h3 { font-size:10.8pt; margin:4mm 0 1.5mm; color:#111; border-left:3pt solid #111; padding-left:2.5mm; }
+  h4 { font-size:10.2pt; margin:3.5mm 0 1mm; color:#444; padding-left:2.5mm; }
+  p { margin:0 0 2mm; text-align:justify; }
+  table { width:100%; border-collapse:collapse; margin:2mm 0 3.5mm; font-size:8.8pt; page-break-inside:avoid; }
+  th { background:#ececec; border:.6pt solid #999; padding:1.6mm 2mm; text-align:left; font-weight:700; }
+  td { border:.6pt solid #bbb; padding:1.5mm 2mm; vertical-align:top; }
+  tr:nth-child(even) td { background:#fafafa; }
+  .say { background:#f4f6f8; border-left:2.5pt solid #666; padding:2mm 3mm; margin:1.5mm 0 3mm; font-size:9.4pt;
+         page-break-inside:avoid; }
+  .say p { margin:0 0 1.5mm; }
+  .say p:last-child { margin-bottom:0; }
+  .key { font-weight:700; }
+  ul, ol { margin:1mm 0 2.5mm; padding-left:5mm; }
+  li { margin-bottom:1mm; }
+  .foot { margin-top:5mm; padding-top:2mm; border-top:.6pt solid #999; font-size:8pt; color:#666; }
+  .noprint { text-align:center; margin:0 auto 5mm; padding:3mm; background:#fffbe6;
+             border:1pt dashed #c90; font-size:9.5pt; }
+  @media print {
+    .noprint { display:none !important; }
+    h2, th, .say { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body data-page-node-id="Q1IvyocAVsWLDBkymZqFVk">
+<div class="page" data-page-node-id="jIWxGoZ03IrtkzHkFFWB2f">
+<div class="noprint" data-page-node-id="svlFAcEHyzm3EHRXlytpWu">打印提示：按 <b data-page-node-id="fWH270MZ6qijfsFpuiAYAE">Ctrl + P</b> → 目标选「另存为 PDF」或直接打印 → 纸张 A4、边距「默认」、<b data-page-node-id="SEWHY8DCMcVe8b5vFXgPgP">勾选「背景图形」</b>。打印时本提示不会出现在纸上。</div>
+<h1 data-page-node-id="bIpnUJUPCm2RR2jBtCF2yI">LDA 商业计划书与技术研发规划 · 修订版 v2</h1>
+<p class="sub" data-page-node-id="LCVrndXdCo3O9IKiPxhvq2">版本：v0.9.63 · 2026-09-09 · <b data-page-node-id="jDJwxMjnBLCoSM92wnK3OG">由 12 轮真实客户追问驱动修订</b> 使用方式：本版为<b data-page-node-id="eB4D0UDdzv7llea8VmXTQU">对投资人/战略方可直接出示</b>的版本。MD 为真源，另有 A4 打印版与 Word 版。 铁律：<b data-page-node-id="KDxCOjcM9hInUvG5NaMykM">宁可说「不知道，我给你测」，不可说「应该没问题」。</b> 对外讲任何数字前，先现场核对 README 顶行权威账本。</p>
+<h2 data-page-node-id="CgrtNOP3icPDPNfSikhUrx">0. 本版修订说明：客户 12 问改变了什么</h2>
+<p data-page-node-id="TFqle4vGVMwkqX0GVGSRaV">原商业计划书（2026-09-05）成立，但<b data-page-node-id="fQ6FBE3Hx5RxomeofjJqPD">未经真实客户压力测试</b>。本轮客户连续追问 12 轮，等于替我们做了一次免费尽调，暴露四类问题：</p>
+<table data-page-node-id="yVAX6GV7vfKcou0dTeKlDY">
+<tr data-page-node-id="hafltDGueLlAfpDKBf3YYB"><th data-page-node-id="mlwesiaaECBuMjmB3otorm">#</th><th data-page-node-id="PtDnu5qA9U9LG5FDjgpqfW">原 BP（09-05）</th><th data-page-node-id="BJlKnTgw5Z6HnvJcsx2EqH">本版修订</th><th data-page-node-id="UtNk4NQRC5eIRZX5F5yaJP">依据（客户追问 / 实测）</th></tr>
+<tr data-page-node-id="vVw85cPmCZEA8pSyxpD4M0"><td data-page-node-id="gQjtQsEcyyzb4bR6eVfIEL">1</td><td data-page-node-id="zm7xnVYKULejJOPj0EzA8W">融资 <b data-page-node-id="At5NVPDrCpDLM4vPS9dQ4j">300–500 万</b></td><td data-page-node-id="y4YeXpGGBc8HjuAFh0r9M4"><b data-page-node-id="kIORVqBad5TqemjYFsFj0L">1000 万（B 档）</b>，且拆成「验证轮 100–150 万 + 主力轮 800–1000 万」两笔</td><td data-page-node-id="ln9aghAL5AfRKykRSTPPDQ">1000 万 ≈ 140 万美元；MPW 单轮 $8k–95k，真值链才跑得动</td></tr>
+<tr data-page-node-id="rBPg4xUGoDbmL3Yh4w1wqv"><td data-page-node-id="vm8U6DYP5MSFFe7GJOynmQ">2</td><td data-page-node-id="3rAGwYfUBdFiXe4zhR8es5">定位「光/量设计软件」</td><td data-page-node-id="lRALTqtXopmzHpaIccbvcS"><b data-page-node-id="2lrP4LPsHzYMeGmBggeBXz">「光电接缝上的可证伪设计入口」</b></td><td data-page-node-id="DaA4CAQDt0jDP8HEnR3tsf">成本真相：封装·测试·组装占硅光模块 <b data-page-node-id="0iqhztpVp5pAEy4jWa5F0w">79.9%</b>，钱在接缝</td></tr>
+<tr data-page-node-id="MXRVpuDyQoGtxfKN12NbOA"><td data-page-node-id="FMuV2xwIKg8pXqJVFqTe0N">3</td><td data-page-node-id="tLeLrOtJB038OdQizTo65p">未提电域接口</td><td data-page-node-id="Z5dxH1JidmDLcmBYtpCkQA">新增 <b data-page-node-id="GQdrEEwVoxv2Ukoxi5epq1">光电接口层</b>为第一研发优先级</td><td data-page-node-id="Bs772hboNiY5Mt0rft44G2">客户划范围：「电域只是 ADC/DAC，没那么复杂」</td></tr>
+<tr data-page-node-id="95S2YWrcXtLpLekccA9SGq"><td data-page-node-id="VDDCPADC5McVtT2xBmK1ld">4</td><td data-page-node-id="X3IN8bhx1z5OcfEP5DT2dQ">研发路线无「可封装性」</td><td data-page-node-id="IkNlbeqacXPSnUdemrI6EK">虚拟制造从「只做工艺波动」扩到 <b data-page-node-id="rRSkhhsH7YrdPzMQUh39vV">工艺波动 + 可封装性</b></td><td data-page-node-id="Ou1X172gl1Au0BUEslzvpZ">八成成本在封装 ⇒ 值钱的设计优化是可封装性</td></tr>
+<tr data-page-node-id="akFCZHzluIsFT5siA3CnUk"><td data-page-node-id="6xWASYgoy1mg8UO82ExfqY">5</td><td data-page-node-id="2em73x1LCJZ4uHIAc8F8BN">数字 50 锚 / 97 CI / 58 货架</td><td data-page-node-id="ivxrxAeDqZK8zKtGzzVi6w"><b data-page-node-id="nCveh8dG9KxgDODp3ynwu8">52 锚（26/1/25）/ CI core 141 / 75 货架 / 产品级对标 48/48</b></td><td data-page-node-id="1hLUA8poAB8S770BilbRX2">README 顶行权威账本，2026-09-09 实测</td></tr>
+<tr data-page-node-id="ia7p4OgQMkErqxezS0sfu0"><td data-page-node-id="R18aHbppSdOz1pMNobEOP7">6</td><td data-page-node-id="Fn2P5MUzSPuD8eyWcRmrbz">未披露交付短板</td><td data-page-node-id="mXqUHtOU8TGvXN1PLkHBmX">主动披露：<b data-page-node-id="AFWSDws2yNXVU7MprGfRcb">当前 SPICE 网表只是拓扑骨架，无器件参数</b></td><td data-page-node-id="ZTsafdNGYAmGs3oUZNRwdI">核实 `lda_l2/ship_package.py::_render_netlist`</td></tr>
+<tr data-page-node-id="hZwRlEqbwRJLcz9OZEVvdG"><td data-page-node-id="6zSmPqeicWeCqqkruNSFFX">7</td><td data-page-node-id="0nHVfQ8s63AYMSovVropql"><b data-page-node-id="WjdnbOaNpfZ340Opt4tmci">无「需求 → 架构」章节</b></td><td data-page-node-id="poL0Hnxa3tRUAhqqZ9uXLD">新增 <b data-page-node-id="2CWsUvyfbuoA5LQbolhv6B">T0 需求架构层</b>，列为交付链起点</td><td data-page-node-id="OEgNSsekUvbAJcfqk6P1K5">核实发现 `lda_harness/proposal_compiler.py`（687 行 · 15 判据 smoke）已在 CI，此前被严重低估</td></tr>
+<tr data-page-node-id="crirFQoePvO9E25G87kWjS"><td data-page-node-id="R6xw7smzyDRvaE3GXJIm1d">8</td><td data-page-node-id="9L4wXhfuurMA8OI2bRoS0F">无全生命周期视角</td><td data-page-node-id="3EvCvAaPSOorzSIIkA6COu">新增 <b data-page-node-id="MxufCSm9f9eR4EAFtn169W">§2.3 全生命周期评估 + 责任边界声明</b>（只承担第 3–5 段）</td><td data-page-node-id="MbtIsO36Om6bAWM3dRyEtV">8 阶段逐段核对；项目管理 / 配置管理 / 商务<b data-page-node-id="IYkiLGo7GTlscNITUdeK0q">横切能力零命中</b></td></tr>
+<tr data-page-node-id="5JMDcfWD7rNI1zMD5vFu5d"><td data-page-node-id="eAYDXEjpZho5qeCJYxx4dg">9</td><td data-page-node-id="QAoTQi4GmSCEEY7nra4dGF"><b data-page-node-id="NkGR1sMrMKnORUyaAM3Ij5">无「基线」概念</b></td><td data-page-node-id="ThKgWlZ7P09KNeD1PoYF5F">补入 §2.3，并建议补阶段 1（需求冻结与验收标准）</td><td data-page-node-id="KD1fekZXbrCB1Lq4HKe1mS">🔴 「可证伪」的前提是<b data-page-node-id="YHJLlRPSfipkpAEZ3C1FQh">证伪对象固定</b>；需求不冻结则 52 道锚无的放矢</td></tr>
+<tr data-page-node-id="tlz29TUipcDCdWFQsaCkgH"><td data-page-node-id="aSgNK990pHlx4582brMPum">10</td><td data-page-node-id="1qZIVdzzXjXCF661jztT6o">生态开放只有 BOUNTY 一层</td><td data-page-node-id="IeiTtNXPZ9g0az78OJyVZS">新增 <b data-page-node-id="swEBtS0boNEnYmLi1uCEzJ">§3.4 四层开放光谱 + 风险规避</b>（定位为获客引擎）</td><td data-page-node-id="lLHpAhttLHHhCiAGaG16vp">`CONTRIBUTING.md` 数字全旧（v0.8.37 / 45 锚 / CI 68 条）已修</td></tr>
+<tr data-page-node-id="Ys2pNCm4VOQ3G2ugPBdCIg"><td data-page-node-id="3084FbvRVxK7KqCqWk1L0l">11</td><td data-page-node-id="WaoxgkcUsgNdyPWQBaC1wD">生成器只有确定性网格</td><td data-page-node-id="h06loZL64ApULDcdZ0ooz4">T0 新增 <b data-page-node-id="kPAbBV43GjuVwTX1qFDyLo">红蓝队分离</b>（蓝队生成 / 红队出题 / 锚裁判 / 人终审）</td><td data-page-node-id="AQOXVqxrl2E25OErgVuy9g">代码已有答案：`llm_proposer.py:66`「只出参数不判对错」+ 源码级红线断言</td></tr>
+</table>
+<p data-page-node-id="nOYpen3bYG4RGByaJGcega"><b data-page-node-id="cA6eBrRxCCoq0sGGPJ4pH3">一句话概括修订逻辑</b>：客户没有推翻我们的战略，他<b data-page-node-id="hpOrtolsyzHk1aGDTomTEz">把我们的战略边界踩实了</b>——原来写在纸上的定位，现在有了真实买单范围来印证。</p>
+<h2 data-page-node-id="o8GUjiBHYk4yVDUEGEhU4B">1. 客户尽调的五个发现（把追问转成 BP 资产）</h2>
+<h3 data-page-node-id="OdfpGWm1DcTkgNtwHcquEO">1.1 客户替我们划定了首个可接订单的范围</h3>
+<p data-page-node-id="T8UZ2SCRu3pwh2jgTJCRxY">客户说「电域也就是 ADC/DAC，不是最复杂的部分」——<b data-page-node-id="8iZ0ZgV1FqyWTYTjasQlpx">这不是刁难，是在划范围。</b></p>
+<p data-page-node-id="1VKloGSpUn0MRXyXBvREgS">⇒ 于是有 <b data-page-node-id="hdkH8ZcQXw6kX7CFEJv345">A 档：光电接口层，150–300 万（2–3 人 / 12–18 月）</b>。这是<b data-page-node-id="bs66qLh3isCSkoO4cTkZkA">订单</b>，不是融资。客户一旦签，我们就有自造血。</p>
+<h3 data-page-node-id="INLsQB5t1sI1dXnnqvBLRM">1.2 成本真相：钱不在光，也不在电，在接缝</h3>
+<table data-page-node-id="iJaeHGkcLwUAYIbmY0qSpn">
+<tr data-page-node-id="i8j4dymCUECzI0Kphbo4vf"><th data-page-node-id="Q0G2pAd97kNfc9MMYRxm6c">硅光模块成本项</th><th data-page-node-id="lSAwxMdQv42SblXz4gMkpD">占比</th></tr>
+<tr data-page-node-id="DDmD6yMOvZcLZ1dD9TfG1x"><td data-page-node-id="DAGCNZElDDsME52BfjUJFo"><b data-page-node-id="nF95HP4LGKLHghdnWt1ab0">封装 · 测试 · 组装</b></td><td data-page-node-id="dtKqMoUcnRfiYmANxLCPPz"><b data-page-node-id="lsDkMMvooUZojyhoYoDIbh">79.9%</b></td></tr>
+<tr data-page-node-id="ZGeDagUwyZKWxJC6zF3OWD"><td data-page-node-id="DDRk4Q0weHc58GMq3XcF9L">硅光芯片（Tx + Rx die）</td><td data-page-node-id="H4zBQmNTm0wi3pEeqaHMnp">11.4%</td></tr>
+<tr data-page-node-id="ocaqxGHGdVeTkbe7uBgBaR"><td data-page-node-id="UYtiucY3vi780nJAUdiJKB">电芯片（Driver / TIA / LDD 等）</td><td data-page-node-id="dpui2DlKp44acN4HXapKOb">8.6%</td></tr>
+</table>
+<div class="say" data-page-node-id="qIyYEj3lFwneL4sow5FEsn">
+<p data-page-node-id="fIMCxyn9HuTGH7z1BYcIEo">数据来源：Yole Développement（IEEE 802.3cz 公开材料，Ogura 2021）；天风证券 2024 同口径「芯片约 10%、封装约 80%」。</p>
+</div>
+<p data-page-node-id="wQw7WH6oowgcbsgnaeW3PG"><b data-page-node-id="sfWmWHkp4woX5Kcsqye4kA">推论（对客户、对投资人都成立）</b>：光电集成不是更便宜，是更贵——因为单模光纤 MFD ≈ 10 µm、硅波导亚微米，对准容差 &lt; 0.5 µm，<b data-page-node-id="O2cyAkbnQxhGe9t396bmAu">主动对准是串行逐器件的，无法像晶圆制造那样并行扩产</b>。产业实证：ficonTEC 高端全自动耦合设备<b data-page-node-id="FKRFdIAXmnqKyf1sBUZjmp">年产能仅 30–40 台，交期 5–7 个月</b>。</p>
+<p data-page-node-id="fVI7yBW9FTFihBGDKHWRaN"><b data-page-node-id="AgDHMXlfX9lGXjpx5unNyb">⇒ 这恰恰证明我们占的那一格是对的。</b></p>
+<h3 data-page-node-id="GXbXS3WHdS4svC4OEZ7SdI">1.3 判决锚决定 AI 能进哪一段（Ricursive 反证）</h3>
+<p data-page-node-id="aX4xkSZGEwU1cVxFhoHYmf">业界确实有人在挑战「链」——AlphaChip 创造者创立的 <b data-page-node-id="QuC10fYCLgAapvaKTz2g6W">Ricursive Intelligence</b>，累计融资约 <b data-page-node-id="FOs7OZfxYyZGHxXNRBAhEA">$985M</b>，明确说「不是 EDA 公司、不用标准 EDA 工具链」，目标 workload → GDSII 端到端。</p>
+<p data-page-node-id="NFVjglzBWmZZ5qqzBaEO4R"><b data-page-node-id="FrkSgFDvhdsJqU7w99jvZ2">但它打的是电子链，不是光电链。</b> 分野在于：</p>
+<div class="say" data-page-node-id="PnhUeSXKGDIDGRFopBcrtg">
+<p data-page-node-id="FH35Eh32DaBESdd9ejnA7r"><b data-page-node-id="5jlFXaXWHuONXPBRUZLjYq">AI 能进入一个环节的前提，是那个环节有可精确计算的判决信号（reward）。</b></p>
+</div>
+<ul data-page-node-id="1yL4nEKGkQ4RcpHD5KOeJg"><li data-page-node-id="msdRCJlPzIVhQOmUfAiPhg"><b data-page-node-id="ZQjQVwRBB3Hu6cPXiTtgcq">电子链</b>：PPA / 时序 / 线长 / 拥塞 / DRC 全是可精确计算的死标量 ⇒ AI 全链渗透。</li><li data-page-node-id="91JZOXf5cwfAMuNzUZUhLN"><b data-page-node-id="MWtk1EMXui0uB5AxF6dveC">光子链</b>：器件有 Maxwell 锚、链路有功率预算；但<b data-page-node-id="EUwVIz3UDl0s5B2TZ0wijm">工艺角是假设值、封装测试无锚、无统一语义交换标准</b> ⇒ RL 到这里没有 reward。</li></ul>
+<p data-page-node-id="SDaFqjmTGkdSXG0eTo3GfZ"><b data-page-node-id="i4OllehGsuqt9UYFd0gR8Y">⇒ AI 设计芯片走通了，不是因为 AI 变强，是因为电子链的判决锚成熟。瓶颈是判决锚，不是算力。</b></p>
+<p data-page-node-id="F3rmBKlgdczjZAQ5DBvXOC">这也正是我们把钱投在<b data-page-node-id="TSp8siOiAtnRtRjGVWvPI4">真值</b>而不是<b data-page-node-id="FXeYIjjKkOuy6AtrpElf24">电域</b>的根本原因：补判决锚，是光子链上唯一别人做不了、且卡住所有人的那一格。</p>
+<h3 data-page-node-id="PZqAUx2ee2zfWt5JTQpiA0">1.4 暴露的真短板：网表只是骨架（必须主动披露）</h3>
+<p data-page-node-id="rva2oQZnj9f4MHjMh8d58K">核实代码确认：我们交付的 SPICE 网表目前<b data-page-node-id="q2tAflUT3stZr6gvvkSU0K">只有 `X1 in out WAVEGUIDE` 这类结构行，端口语义为占位，没有 VπL、带宽、结电容、响应度等器件参数</b>。</p>
+<p data-page-node-id="zcLqXy8Yj2pJ6nOiNZo2Fs"><b data-page-node-id="DciOraDI2q0AciMdX6MLBA">⇒ 这是缺口，不是资产。</b> 已在话术手册与本文档主动披露。客户追问参数时主动说出来，反而是加分项。</p>
+<h3 data-page-node-id="rUKq4tTkcZo9IOlrQgKHHS">1.5 客户替我们做了定位</h3>
+<p data-page-node-id="svAUczQxq5C6zQm5iEigqW">客户问「只有光没有电，怎么适应市场」——这个问题本身说明：<b data-page-node-id="51riEnLklGd8CIGU8o1AH8">市场认为光电之间的接口是缺的。</b> 电子有 OpenAccess、有 IBIS-AMI；<b data-page-node-id="p9GyoITrwHdCaQlVhAHdTC">光子界到今天没有统一的语义交换标准</b>。我们要占的不是「电」，是<b data-page-node-id="UEiJWgUGKVTPlaUKaBb03q">光电之间的接口</b>。做接口比做电更值钱。</p>
+<h2 class="pagebreak" data-page-node-id="wQukuBLL3WQkaah4NxVNgv">2. 战略定位修订</h2>
+<div class="say" data-page-node-id="GeEzRaG7ZXz0ls7KBLJReb">
+<p data-page-node-id="EDoAEIZRdJkAwDyACGsDIB"><b data-page-node-id="C3YFoM3FtLSkrZ2XbuLoTQ">LDA = 光电接缝上的可证伪设计入口。</b></p>
+<p data-page-node-id="PHkwkDldUicJwrcyqEzMWn">我们不打算做整条链，我们做的是这条链上<b data-page-node-id="xvX0hHDA2xRKwDSkTgOEqV">唯一既没有可证伪工具、也没有统一接口的那一格</b>。</p>
+</div>
+<h3 data-page-node-id="LwikCncilSdoBI519iCc1L">2.1 三不做及其产业根因</h3>
+<table data-page-node-id="FyQa6D33T5cKTX9szRaixO">
+<tr data-page-node-id="AZGAhFG8wSr2xdx5wZnQvx"><th data-page-node-id="k2784kxEeIvvUiFW8pvBL9">不做</th><th data-page-node-id="1jPvnrByX96Ddft838LGrW">根因</th></tr>
+<tr data-page-node-id="PWbmliqoNXDcIfiP1K6iej"><td data-page-node-id="TpF1ny2bevCMAtZXG5eXxb"><b data-page-node-id="8ZAF7CvjaNHh5axn3loq0Q">不做电域求解器</b>（SerDes / DSP / 眼图 / BER）</td><td data-page-node-id="cbTUfJNgJ7xTNMaFJn1rFf">没有电域锚 ⇒ 做出来的数必然是假绿；且客户已有 Cadence，做了也不会换</td></tr>
+<tr data-page-node-id="Zj2SGZMxyAgBck9SGbevqE"><td data-page-node-id="h8lLAhjpns84Pd50ADINcw"><b data-page-node-id="2NPOkIRXX8hpwAW9zzFKZm">不做 foundry TCAD / 工艺仿真</b></td><td data-page-node-id="sKG5lL7ajJ2bnB7t8i4xV2">foundry 核心资产，不外给；护城河在设计→验证数据层</td></tr>
+<tr data-page-node-id="QMDZysiidyNKQOaF6uOrAE"><td data-page-node-id="X5Z4x1MDDlfFp6e58R932C"><b data-page-node-id="Cb4JPbGl26GQPgQg6ynZmu">不做封装 / 测试实体产线</b></td><td data-page-node-id="1LO6FQ7JseZ5OlxgeUnc9o">设备与校准黑箱 + NDA + 成本周期；属 C 期，先委托后自建</td></tr>
+</table>
+<p data-page-node-id="qH8k7EjlY8IuMgypFSMtRp"><b data-page-node-id="UBSmoHcf1td7PUU4x0AL7d">「不做」不是能力不足，是结构性选择</b> —— 每一条都有根因，这是内行的答法。</p>
+<h3 data-page-node-id="EQ0MrJVO29qCvSBCpf8bzf">2.2 交付链全景：我们从「需求」就开始管</h3>
+<p data-page-node-id="QCRS90w1WsZiE4LEqe3KF4">客户第一个问题永远是「我要什么架构」。这一段答不好，后面所有环节都建立在错误的需求上。<b data-page-node-id="h8Jzt7ALIeE8lgWcZw2dlJ">LDA 不是从仿真开始的，是从需求编译开始的</b>：</p>
+<p data-page-node-id="8OyRPHOqgZ9Xh0ybudra4D">``` 功能需求 → ① 锚约束剪枝 → ② 域内生成候选 → ③ 逐案过死锚 → ④ 确定性排序 → ⑤ 人终审 （先锚定可行域）  （AI 在此出题）   （物理定律判卷）   （无随机无 LLM） ```</p>
+<p data-page-node-id="u1nisSZ94MDQmTeGWqS4rg">这条链已在生产代码里落地（`lda_harness/proposal_compiler.py`，687 行，15 判据 smoke 在 CI），已支持 <b data-page-node-id="XIIez0YcueZrcY6CIiinaS">6 条系统类型流水线</b>：`link` / `wdm_demux` / `quantum_fidelity` / `sensor_frontend` / `qkd_link` / `cpo_optical_io`。</p>
+<div class="say" data-page-node-id="S6TCUKb64StUCGWnpKZCbg">
+<p data-page-node-id="s4eesYqUx9AFlXdlytRBRM"><b data-page-node-id="bpKXNESP3pCJuG6Nl8FPix">这是「AI 出题、物理定律判卷」最完整的落地样板</b>——AI 只在可行域内生成候选，每一个候选都必须过死锚，排序完全确定性，最终选择权在人。<b data-page-node-id="8U0GrZWKxPlDbiaJ8koNA1">LLM 不进判决路径这条红线，在这里是代码级的，不是口号。</b></p>
+</div>
+<h3 data-page-node-id="9H4DsCoMYMso7b5AnUevf0">2.3 全生命周期能力评估：我们只承担 3–5 段</h3>
+<p data-page-node-id="EqVJeF6wp3YT9sxzpaC4vo">一家设计公司跑一个项目要经 8 个阶段。逐段核对后，<b data-page-node-id="UqMVOw8ZG4rqgijszikQqX">我们覆盖的是「技术链」，不是「项目链」</b>：</p>
+<table data-page-node-id="uDA2PaNKbVDLcn3qA9DSBg">
+<tr data-page-node-id="KaeiFx4pGDzBnI1BKTjxWU"><th data-page-node-id="SkO0DEM7Kpd5hG6vp38Abo">阶段</th><th data-page-node-id="2qSfFIl2p4DALZVEbbYod0">内容</th><th data-page-node-id="lMLzOxqSyXEvnITGRVhMRO">LDA 现状</th><th data-page-node-id="TnSVrJuYlgFffLEYm0e8Nv">归属</th></tr>
+<tr data-page-node-id="YLetOB3tODZFOg7lMan42B"><td data-page-node-id="3d5ImQwcJLI1MqBGMeH3Cb">0</td><td data-page-node-id="QBIqxtZTe1c8DOXtHh96LL">商机、报价、SOW、立项</td><td data-page-node-id="RWzzWswIaRleR6reKJhW3K">❌ 零</td><td data-page-node-id="BnTdLH2QEGBqvAmF3fseH9">最简商务模板，<b data-page-node-id="CmfrzqAJ7Ya7I1cDkkUl0c">不投入研发</b></td></tr>
+<tr data-page-node-id="ubUYw6GwfZAlYSHtAdKnWA"><td data-page-node-id="SgQWlD8FQKMzqxwwaVSvHD">1</td><td data-page-node-id="wWrZclA15ckJajRUKeQsUw"><b data-page-node-id="t1aHzzhT9oAwPGrX6djM5n">需求冻结与验收标准</b></td><td data-page-node-id="LP2NS11OYlieGjGFsNBjVh">🔴 <b data-page-node-id="P4JgAcCSPLGPIzL35AGpxp">断点</b></td><td data-page-node-id="36iztKjHJnGHZkCxAdw6qv"><b data-page-node-id="TUO6m1SFcMP3Q6LqIlzfhx">必须补</b>（见下）</td></tr>
+<tr data-page-node-id="kbqHFQFl0t4gzLp6VRDn3k"><td data-page-node-id="CPKknCOCo78NndB2MT4hYC">2</td><td data-page-node-id="AnP9muX4eAU48GbesgFxyv">架构与方案权衡</td><td data-page-node-id="FE8HfHDRCg4FVTKRhDX048">🟠 有编译器、<b data-page-node-id="kesVu4oJfybrSb8Yo1v9cQ">无多目标权衡</b></td><td data-page-node-id="MXZpCGIAK3mYexuRvVG6d4"><b data-page-node-id="09yZXJPmPpgfMNUa5OrPuy">T0 覆盖</b></td></tr>
+<tr data-page-node-id="Lijqi3MRCpglQvGfcJzqgp"><td data-page-node-id="moMebkt8l7kNv0OIyqyCd4">3</td><td data-page-node-id="UDrOoFGvu3caksc497TlIP">设计实现（器件 / 参数）</td><td data-page-node-id="XiHFSXocnp8979WYuR8Par">✅ 强：22 引擎、52 道锚</td><td data-page-node-id="sigGDoFEgfZifqu068x1rE"><b data-page-node-id="hW0Ce8GXXvTfbOUppoGlra">我们承担</b></td></tr>
+<tr data-page-node-id="BXvZUW0MQXKBVg9C63WUPo"><td data-page-node-id="er4DNDfXqUuD9sqnGvcApl">4</td><td data-page-node-id="6dIMc209eed0VQVqPh86Sz">版图与签核（GDS / DRC / LVS / 寄生 / 工艺角）</td><td data-page-node-id="LYMdr9Qc7NF7Bc7uNxFcUH">✅ 强：全链已通</td><td data-page-node-id="uHG7G6I1a0wfXjIKZR0pR0"><b data-page-node-id="FWXQTrwZEHjPj5QVZGl5B0">我们承担</b></td></tr>
+<tr data-page-node-id="B7ircAM5nvpMFCQD6cZIjB"><td data-page-node-id="hiwRqo84FGN1SpsXRzdN3a">5</td><td data-page-node-id="FZcmDbeNn77ApFn3TqfFvj">出带包与交付</td><td data-page-node-id="CP645Z09A8Bq89jPAFM9hm">✅ 已有 DesignPackage + HONESTY.md</td><td data-page-node-id="k5NBKroCTmuUeXmEbZfUW6"><b data-page-node-id="dFjddfoo0rbPZfS8G5QH3k">我们承担</b></td></tr>
+<tr data-page-node-id="H56VSsBmwacrttGPOhvJTh"><td data-page-node-id="0ERDeNxm599JhKcs3EObaD">6</td><td data-page-node-id="vnzzSsHhLAzWblsA2vTNUe">封测验证（耦合 / 测试 / 实测回流）</td><td data-page-node-id="GkKGekONZRhlvDZ7SHeMLE">🔴 <b data-page-node-id="BCDooYeq2IlxvaDdlMW2EK">整段空白</b></td><td data-page-node-id="P8XZRReVWwlfb9Effiv8N2">委托 + 伙伴，<b data-page-node-id="Bqfbegr1ABPseZTLlhiGDD">T2 部分覆盖</b></td></tr>
+<tr data-page-node-id="oFEFV5DLZrJhLysoXOLZCC"><td data-page-node-id="WwmwMr4MXB1PGFgy299JEd">7–8</td><td data-page-node-id="AVG2xq1SWQ1IdtsnrEX5wl">量产、可靠性、收尾复盘</td><td data-page-node-id="74JdwDRDHckVHQnTszUCJI">❌ 零 / 🟠 75 货架</td><td data-page-node-id="133CaWuWC1BUtePSkX1bJv">不做 / 轻量复用</td></tr>
+</table>
+<p data-page-node-id="ZM6EKpCLwoQGNzEM74u4rp"><b data-page-node-id="kZtKfmICN1y6f6y0PL6gEN">横切能力几乎全空</b>：项目管理（进度、里程碑、风险台账、变更管理）、配置管理（基线、版本、变更追溯）、商务（报价模型、SOW、合同、IP 条款）在代码与文档中<b data-page-node-id="65FujYRZBiiZ4C3KGYqDDq">关键词零命中</b>；质量仅 CI 141 条（代码质量，非项目质量）。</p>
+<h4 data-page-node-id="I6boz3G5DjOjZF7aR7OD7S">🔴 最隐蔽也最要命的缺陷：我们没有「基线」</h4>
+<p data-page-node-id="3apOGDPyloA2BLJvI70kfT">设计公司靠基线活着：<b data-page-node-id="TBuEGSwsAaGKBwa78Wm9Zl">需求基线 → 设计基线 → 出带基线</b>，改需求即改基线，须签字并重估工期与费用。</p>
+<div class="say" data-page-node-id="3jH94MYslSIkZDHfS7DwE9">
+<p data-page-node-id="QpSfYFFd9EeeqrT4LypQyp"><b data-page-node-id="mbby5VrGB6gy5XIIuzBGxs">「可证伪」的前提是「证伪的对象是固定的」。</b> 需求不冻结、验收标准不签字，客户可以一直改指标——那时 52 道锚也没用，因为<b data-page-node-id="LERoXCy6ARowuKlUUizCGC">判的对象在变</b>。</p>
+</div>
+<p data-page-node-id="3nkHKLxJGe5Bp3Q0YRagis">这不是流程洁癖，是「可证伪」能否落地的前提。</p>
+<h4 data-page-node-id="9FwliwusxeODfarbcccyGa">责任边界声明（可直接作为客户洽谈附件）</h4>
+<div class="say" data-page-node-id="pux6Q1vFlHdK8oDyEL8Ixv">
+<p data-page-node-id="SNXF7QqToGLHYKJHErGqeB"><b data-page-node-id="TRVUPtXNv1M2S8BnOSw2z6">LDA 定位为「可证伪的设计与验证能力提供方」，在项目全生命周期中只承担第 3–5 段（设计实现 → 版图签核 → 出带包）。</b> 第 1 段（需求冻结）我们提供模板与流程并要求签字；第 2 段由需求架构工作台覆盖；第 0/6/7/8 段由客户或伙伴承担，<b data-page-node-id="1bciD0nr889OFLFLpU0oTY">我们不承接，也不对其结果负责。</b> <b data-page-node-id="FIJcktQtvmk7iIEYRkgzZ4">封测验证（第 6 段）当前为空白，我们明确不自建产线，采用委托 + 伙伴模式</b>——这也是「0 真值」的根因，由 T2 部分补上。</p>
+</div>
+<p data-page-node-id="HIzYnuD21muj7aYx26lPpl"><b data-page-node-id="1Jw80kC893umFIDnBOIAGp">补完整项目链的成本远超 1000 万，且不是我们的护城河。</b> 生命周期评估从另一个方向撞出了与 §1.5 相同的结论，说明该生态位选择是经得起交叉验证的。</p>
+<h4 data-page-node-id="4e3Mh2ME4HzFFxsioOx3C0">唯一建议补的项目链环节：阶段 1</h4>
+<table data-page-node-id="MPWwHxaNxKMdUlTrfZ3WCd">
+<tr data-page-node-id="I3o0nBI62it4NCZg284WJd"><th data-page-node-id="DjGIfNoTl9dL2IPkCGDDI5">理由</th><th data-page-node-id="LKXMK9bhwydEuHYwEdS2pe">说明</th></tr>
+<tr data-page-node-id="bJEnd80B9YD8cRZfemXbHZ"><td data-page-node-id="gV4gX86jDPjkbqwpFJg6QA">它是「可证伪」的入口</td><td data-page-node-id="vF9RUj9w3x5KnZyvkCahHP">没有它，核心卖点是空的</td></tr>
+<tr data-page-node-id="LMBq9nkAybtzteoEFebNVq"><td data-page-node-id="CkjF4NbdR7f8npz2hnnNGg">成本极低</td><td data-page-node-id="6t3N1l23T39onoDMVAGrXu">一套模板 + 一个签字流程，<b data-page-node-id="rB0GdWaqJQ1NhI7CaiILVH">不需要写求解器</b></td></tr>
+<tr data-page-node-id="hZLsFwMCYoW5HVKFtvOxO1"><td data-page-node-id="ixjwADuNVfCFt7shp214WV">天然可对外</td><td data-page-node-id="uxOa4NFEQ0k7S0hIAA6Fq7">「开工前先把验收标准签字画押」这句话本身就很有说服力</td></tr>
+</table>
+<h2 class="pagebreak" data-page-node-id="JR643L66vkVwCpsABb89LF">3. 市场与切口重算</h2>
+<p data-page-node-id="fCWfFBewgbJefTdiaEsGkf">原 BP 用 EDA 软件市场规模做 TAM。本版<b data-page-node-id="d5VLpBD9uKmDtyWh9NlGfM">增加一层成本结构倒推</b>，因为它直接指向我们的定价能力：</p>
+<div class="say" data-page-node-id="E9u5125H0DG1HkKIg9Y816">
+<p data-page-node-id="SXWWfqBX96bJ5bD6BqnSep">若硅光模块 <b data-page-node-id="E4f1w2wdWzCLwRTJPr7Zdj">79.9%</b> 的成本在封装测试与耦合对准，而设计决策（耦合容差、间距、端口布局）能显著影响这部分成本 ⇒ <b data-page-node-id="EllxTAZh5xGC8yKKocNZpU">设计侧工具的价值锚定在八成的成本池上，而不是一成多的芯片成本池上。</b></p>
+</div>
+<p data-page-node-id="Bo8tbcttzdGgpkBzLDP1j3"><b data-page-node-id="zGFjXKE02Aato4DGDH2qRM">切口（SOM）明确为三层</b>：</p>
+<table data-page-node-id="2ZuB37e9xez6WzpKyJPYBY">
+<tr data-page-node-id="vrGrIQMrnFvlc1GwMKdfeG"><th data-page-node-id="MWjQcwHOsEBzSI2m8pgAty">层</th><th data-page-node-id="61D9TXWOJWo52MWwIPxDek">客户</th><th data-page-node-id="iWAJjkIQ3TYHS8dl1ttiiB">我们给什么</th><th data-page-node-id="bbrHxIBuCiSJxVBj0oySQG">与电域关系</th></tr>
+<tr data-page-node-id="lHfJibHvZwpvl3uYjWCOWS"><td data-page-node-id="qmTGfNDafKdQgXjtYBvFQw">① 超节点 / AI 服务器</td><td data-page-node-id="goP4TfO0NfWTNTYCREry8d">NVIDIA 类、国内系统集成商</td><td data-page-node-id="9rbKWGuPwozrtxD0XKBUCI"><b data-page-node-id="fbzlNcJoH5gIp5RT3hyCYV">验货</b>（48 条龙头规格对标，核对供应商规格书）</td><td data-page-node-id="On1gQfF7jWgBJNhZzj2Hy8">无关</td></tr>
+<tr data-page-node-id="ba8K8evVKCloEp8BAi2oh8"><td data-page-node-id="gqeMNoOHaKSdiIabit4QU0">② 光引擎 / 光模块厂</td><td data-page-node-id="lCutdPljiC1miDXDGo0XJy">中际旭创、新易盛类</td><td data-page-node-id="Ked6zKD3UoNeBFcYVclLhh"><b data-page-node-id="s5jAHgCIr2kxDWaYLf6NAx">设计入口</b>（主战场）</td><td data-page-node-id="2TTVU6Ts7g6WxRMKDaIHxT">接口喂给他的电域</td></tr>
+<tr data-page-node-id="VdPX44vaoOywLQU7huIGOX"><td data-page-node-id="WZ9D0jDLniyrXdWyMP2404">③ Foundry / PDK</td><td data-page-node-id="NwFp1V2RUHsL8DpCBx5yIc">国内外硅光线</td><td data-page-node-id="TWi68VcjaUBcrrAWBOKDkD"><b data-page-node-id="tcxdtJQgswsyKszmZP9cp8">设计侧预检</b>，减少打回</td><td data-page-node-id="NtHtaqLn1Zny4etMs0Fwtd">无关</td></tr>
+</table>
+<h3 data-page-node-id="AZarzOmYNAi3gImCzOnw7h">3.4 生态开放：定位为获客引擎，不是研发外包</h3>
+<p data-page-node-id="1s6yX1rs7wLvOQsTNlcDIh">开源是我们的形态，但<b data-page-node-id="XS6zTX4kbH1orognMScuCJ">「开放任务给生态并行做」的第一目标应是获客与真值，不是省研发人力</b>——因为 `users=1`、真实访客≈0，<b data-page-node-id="aRW6Q4rTBODsJZZk0MKzkk">开放 ≠ 有人接</b>。而在 EDA 圈，<b data-page-node-id="M5e9NMu0oDkQ5yGcclxek2">来提 PR 的工程师往往就是潜在使用者</b>，一个 PR 比一条冷线索值钱。</p>
+<h4 data-page-node-id="0FXrEAuDJl7nHinS3qdCPD">四层开放光谱（开放到哪一层，必须先划清）</h4>
+<table data-page-node-id="EazDQQ0pZF8Oj95v7TBUIE">
+<tr data-page-node-id="VMIDzTyD0F3WB2XKreLA4Z"><th data-page-node-id="d1SmbLbcTOA9cZgBRjxafB">层</th><th data-page-node-id="ViuoowFIzY57IVc0M4pBIC">内容</th><th data-page-node-id="a8ZzeFIXRbD6nkW9jODuJM">风险</th><th data-page-node-id="4YPR4DxqmMrNxIUgOV5oCB">当前状态</th></tr>
+<tr data-page-node-id="v68SVbGWy8mkNdnNHlVOI6"><td data-page-node-id="r9IktSrHAqkMauR2cdZiuQ">① <b data-page-node-id="gK8kKUsmrDCLhoPeFDCYEX">实测语料 / 对抗题</b>（teal）</td><td data-page-node-id="TuGpMK6KyEG2qp1CBDQ2iz">征集公开实测数据、对抗性验证题</td><td data-page-node-id="SeLL0DHCg8mmRZtjPwdTE9">最低</td><td data-page-node-id="gOqAnszjxAlcKHB8n8Uc0I">✅ <b data-page-node-id="cliaQnvnXCAuQ2oeRp2uMQ">已在做</b>（BOUNTY.md），<b data-page-node-id="2heiPHSDP4ULyCRcvvA5Ay">应加大投入</b></td></tr>
+<tr data-page-node-id="eXTLp0eXBJeIdNYpQ6gtOG"><td data-page-node-id="ByLnDLHhpKZ1kmIl2o1P0B">② <b data-page-node-id="3r30jsfy2K8he6CmtzFxiw">PDK 适配 / 器件库 / 文档</b></td><td data-page-node-id="p0kOxoBfmussTqDNOuRvQ2">工作量大、好坏易判</td><td data-page-node-id="clgiNGvHOM678RonL8WdUD">低</td><td data-page-node-id="Ul6W5hpVuoOpGNyLNDeYC1">可开放，<b data-page-node-id="Qr7PTftkZucZ3QR2rrUhpc">判据我们写</b></td></tr>
+<tr data-page-node-id="541pTHKEVIIMuxi1WsR7GI"><td data-page-node-id="L20CpTmBE73kfBPkXtyRLR">③ <b data-page-node-id="3OKKnR1p0cWuyFbA3sUHXk">边缘求解模块 + 新增锚</b></td><td data-page-node-id="OlSV4LDBMHFBGxZmsYlEum">并行价值最高</td><td data-page-node-id="OYVAg0ZMVNOMoASFz7Bhqs"><b data-page-node-id="87PtQ6uDOlavZ6L2QJev5D">最高（假绿）</b></td><td data-page-node-id="rhPEclM7GbUJaGPsmeUdSW">需「先判据后代码」</td></tr>
+<tr data-page-node-id="eTtzwXw2cpbiWbpylUf8jf"><td data-page-node-id="rVVwJjyrFBCn8fOOmelKtp">④ <b data-page-node-id="xV7ApAqt4vXk8DDCVPq3Wn">核心求解器 / 判决路径 / 锚库</b></td><td data-page-node-id="wOeckvze20dUCC4FDNq2od">—</td><td data-page-node-id="iFj6QXmGZvzuQ2I3NSPwHD">不可逆</td><td data-page-node-id="bIUrTgYNsmj3FRKWQAkTOV">🔴 <b data-page-node-id="2h6d4V8JMquWpHEmWmNvJN">不开放代码，只开放对抗</b></td></tr>
+</table>
+<p data-page-node-id="5hRtu2pgBov7SajPqLf5Ky"><b data-page-node-id="oewNY4ll6iKnPk0kHnBi7B">一个反直觉判断</b>：没钱的时候开放「重活」是白 open——荣誉只能吸引学生与爱好者。现阶段应优先开放<b data-page-node-id="IDBYXup3WjGr2riWv3xqDz">高荣誉感、低工作量</b>任务（破壁者徽章、对抗题、语料）；要让第 2/3 层真正跑起来，<b data-page-node-id="8PAoRYcVYZbHjujRjhFvP5">需从融资中单列一小笔 bounty 现金池</b>。</p>
+<h4 data-page-node-id="zbWtaal97jFTJhbJBEsd2i">🔴 最大风险：假绿（自证桩的批量生产）</h4>
+<p data-page-node-id="b0MjQJn2TzkqYNDGP5lnPG">外部贡献者「自己写代码 + 自己写 smoke 证明自己对」= <b data-page-node-id="QAoF2IZYHfR9AUCnprhcxb">典型的自证桩</b>，正是 52 道锚里 25 个的老病，而外部贡献会<b data-page-node-id="4VetNmSPwXjz675ZpsFbqu">成批生产</b>这种东西。</p>
+<div class="say" data-page-node-id="ixR5cb56ox5AsTAi5xde1T">
+<p data-page-node-id="RF7PdGtWCAYS7YQCDtSOul"><b data-page-node-id="TxaJ4GCKge2TpOpRlENPeG">规避机制只有一条：判据先于代码，且判据由 maintainer 写。</b> 贡献者写实现，我们写判据——与「AI 出题、物理定律判卷」完全同构：<b data-page-node-id="wD6q1BfSk5bfYWIlhKv5bT">生态出题（写代码），锚判卷。</b></p>
+</div>
+<p data-page-node-id="kQ27UCHx574QBvCwnDPD7M">硬要求：<b data-page-node-id="Zg5ccmu2y2tJjANIClGBUc">没有验收判据的任务不许发布</b>；判据必须含<b data-page-node-id="7UEZ02JGXvpBuWBfXXTbzA">反向测试</b>（扰动必须响，同判据 D 思路）。</p>
+<h4 data-page-node-id="RD63KRqIBsuIVae3wYCiVn">其余四个风险与规避</h4>
+<table data-page-node-id="RZWLDQ6KWDtoE0Em6hqPef">
+<tr data-page-node-id="gSbGfv8kHHQISdx4qHLS2q"><th data-page-node-id="MZ7ozyVSHeyLwWinbSLwhz">风险</th><th data-page-node-id="5UzTlvZfwIcHiesDtkv3qy">为什么危险</th><th data-page-node-id="3B9qYZeBci4T9Flwh2AvTV">规避</th></tr>
+<tr data-page-node-id="vp6uobHTr4GePzoPio2jPN"><td data-page-node-id="LhoFegAUDADQjQUsNkJwg9"><b data-page-node-id="0YhWnfEBQmRiI1mbhOHWoG">主权污染</b></td><td data-page-node-id="nlJ4BPFPWPgB2kIL7hDv02">外部 PR 带进 GPL 依赖（<b data-page-node-id="DCfdtXILhB8s0zKvbwfTow">Meep 为 GPL v2+</b>，进核心即不可逆、需重写）</td><td data-page-node-id="hqsHiNfAGpHD6dUlGASLqp">复用 `run_optional_import_guard_smoke.py` 的 <b data-page-node-id="XBWrItw3umPzxsPcrre6UR">ast 全包静态扫描（393 个 .py）</b>做成 PR 门禁，<b data-page-node-id="QnYKRITkfHYvoVP0gLPJDq">import + license 双扫</b></td></tr>
+<tr data-page-node-id="Bp4aVPrskEntzwtRtXgXKz"><td data-page-node-id="HwOoFYKFgLWZuwrS1hE9n2">🔴 <b data-page-node-id="yxFAR4gdIjY72DLs0s2WBL">许可不可逆</b></td><td data-page-node-id="j5hwtnRyr2DQtRWGTefUiM">MIT 下现在不签 DCO/CLA，将来做<b data-page-node-id="HSFf61gUwK3Xqp0Pmbspgk">商业授权变现</b>须追溯每一位贡献者授权（<b data-page-node-id="aOWQkfA4cIDcDO8G6rV58P">Redis、MongoDB 均吃过此亏</b>）</td><td data-page-node-id="vagsZdjQueFnDrVE0LKvCh"><b data-page-node-id="IMruewLEPKQXJN19RFVSwq">现在就加最轻量 DCO</b>（PR 模板加一行 `Signed-off-by`），成本近乎零，<b data-page-node-id="To5H6JWDenJJkUYbiP9MM7">但这是现在不补、将来补不回来的事</b></td></tr>
+<tr data-page-node-id="fc1eVsdRWqZoSsG3Py6ff1"><td data-page-node-id="0cGoqCcKVFaoTJN8rYeRNF"><b data-page-node-id="TuqSd0wz2MJGT0VWBeokTe">分叉跑马圈地</b></td><td data-page-node-id="JuQWIJdsAzGXYyVwVVtzux">MIT 允许 fork 后闭源商用</td><td data-page-node-id="WyI2DDzors1vvgTELBhecC"><b data-page-node-id="WRpjdErvbRxPz8hCED2o5B">判决资产留在中心</b>：锚库 / 语料库 / CI 由核心团队维护。<b data-page-node-id="EJPR7HjEsyhcdhE5cDPMyu">fork 出去没有锚 = 没有信任 = 没有价值</b>——这正是第 4 层绝不开放的根本原因，也是天然护城河</td></tr>
+<tr data-page-node-id="LVNDkZYUZseBJZ7Q7mmwxt"><td data-page-node-id="qJyOIIhGGL5CfhBGXeAfkm"><b data-page-node-id="ARbRKkAUDyYtcHK6nwnGSz">维护债</b></td><td data-page-node-id="WqqtFDdRMwM4EfKHdXAL3e">早期收 PR 的成本常高于自己写</td><td data-page-node-id="UCCyA5n6KMJ9U3Hu42JugL">只开「判据明确、边界清晰」的任务，模糊任务不开</td></tr>
+</table>
+<p data-page-node-id="JcqS6CoihyKo9802S3C6og"><b data-page-node-id="Qdgn0WwWLRDzdZ2asp8ueW">已执行</b>：`CONTRIBUTING.md` 的过时数字已修（原 v0.8.37 / 45 锚 / CI 68 条 → 现 v0.9.63 / 52 锚 / CI 141 条），并加「以 README 顶行权威账本为准」提示——<b data-page-node-id="yVSQSm2s60ko8PFo0ycrdq">这是外部贡献者看到的第一道门面</b>。</p>
+<h2 class="pagebreak" data-page-node-id="bmWuKjx0L4ZqLJoUqnVSTG">4. 融资规划</h2>
+<h3 data-page-node-id="uqum3cLxHl3iQJLmdt8KSt">4.1 三档投入与产出（回答「到底需要多少钱」）</h3>
+<table data-page-node-id="F2sfxYZkFseuKSn0FBp81m">
+<tr data-page-node-id="ewDNXYCtyA4ZvRuheOtw4y"><th data-page-node-id="QCH17euXjxK9H5PT0CzIbl">档</th><th data-page-node-id="aZW7PSURjRF4YS4cZkaBJN">做什么</th><th data-page-node-id="gGDEba85UDY8kX3CCszdo6">需要多少</th><th data-page-node-id="UEJi36SE69M2F0nTFiWQ3a">判断</th></tr>
+<tr data-page-node-id="Hav1bVSGhDHBPJ0M7CO51O"><td data-page-node-id="4bS6UXvZleQFT8M4weQHrA"><b data-page-node-id="2DMQUgXgTfYNBUicxs8hIR">A 光电接口层</b></td><td data-page-node-id="toyPlaKF0XIDIsGUKNENNL">Driver/TIA/ADC-DAC 行为级模型 + 带参数网表 + 接进 Cadence</td><td data-page-node-id="awkriW9CHCixKXyFbRJBhO"><b data-page-node-id="5pwDPenOspVaYp1jkGh5tJ">150–300 万</b>（2–3 人 / 12–18 月）</td><td data-page-node-id="fUeYW1OpVohfG9rs2SNMn2"><b data-page-node-id="a4iUtAgO39dbY9szW5Iu3n">这是订单，不是融资</b></td></tr>
+<tr data-page-node-id="PJrZKIJIfOzhqt2kyjJetR"><td data-page-node-id="Gp13hMPq9QFB1v4HTI5Oos"><b data-page-node-id="EexaXN4DbhdnYKhLAUIkpb">B 真值 + 接口</b></td><td data-page-node-id="XpxLOTd4CiI45rqKymvy6V">A + 3–4 轮 MPW + 委托封测 + 测试能力</td><td data-page-node-id="3HCwtRflNkyU1vFLJ48VGj"><b data-page-node-id="FGQEFjlgJ27O1CNVF1aXz6">700–1200 万</b></td><td data-page-node-id="Nt0VHqyljzgZDVqMzFXWee"><b data-page-node-id="r7kNWpabT7xcSqlwKZSQo2">本轮融资标的</b></td></tr>
+<tr data-page-node-id="mtYMK5KQsMrJjL0qZBs1Fl"><td data-page-node-id="o4hPJwgSf3mA3nxJjvSc47"><b data-page-node-id="QKSgCryDyLM46QdhRt4lnD">C 光电一体化平台</b></td><td data-page-node-id="swWDr6CZCmUH4ne4XFlTVd">B + 封装设计 + 自建测试产线 + 可靠性</td><td data-page-node-id="WZN9BFhE1c1yW1iNGWYS0c"><b data-page-node-id="FgJR85Dr3GP6AMkrgQFF6s">6000 万 – 1.5 亿</b></td><td data-page-node-id="SEYgJe8FdZCCbxpX05IgnO">下一轮，且需 B 档验证后</td></tr>
+</table>
+<p data-page-node-id="VFiOabwMHEQ8AGW2zHnJKA"><b data-page-node-id="q5kI27lq96H8PK2oSNhz9u">核心命题：1000 万不是不够，是「够做正确的事，不够做客户想象的事」。</b></p>
+<h3 data-page-node-id="QRgF1Wxe3S8jCBfpefXPpl">4.2 建议融资节奏：拆两笔，不一次拿</h3>
+<table data-page-node-id="A7xSvzMDBWRz419y6o6qnI">
+<tr data-page-node-id="6dKRIAT5XOHSp3xXvE8yPS"><th data-page-node-id="AcnIcyU0twArM8OhxHkHc5">笔</th><th data-page-node-id="dfeygyucYYrSQ7NnI38dko">金额</th><th data-page-node-id="tVQ11ZdMR6P5oC4srgsDkA">周期</th><th data-page-node-id="Xs7MSMbZorEcg2EiYRV2xQ">三个可证伪里程碑（不达成不解锁下一笔）</th></tr>
+<tr data-page-node-id="Kw7Im6pDCqtIvs2BpZg3ph"><td data-page-node-id="rrRWLBx8VMkxrn4FqM39oL"><b data-page-node-id="dVwwMUuMfxPAx3qGl0Z5Az">验证轮</b></td><td data-page-node-id="7Yh8lmT1dSoEBiIlBWz5NM">100–150 万</td><td data-page-node-id="ejK7CbpptkvkSMLnNEZAkh">12 个月</td><td data-page-node-id="d6XRp6JizNzZS3kP1r3WqT">① 跑 2 轮 MPW，拿到自有实测数据 ② ≥5 个自证桩换成严格独立真锚 ③ 拿下 1 个付费客户</td></tr>
+<tr data-page-node-id="udwR2Q7wo7YKwob0vEHhjX"><td data-page-node-id="nu5pHL4ldrK75uXSa6FlzJ"><b data-page-node-id="qXV9tRnUgYL2e64ezzmX9K">主力轮</b></td><td data-page-node-id="SUR0YFkrDPKuYCsDxhw5MP">800–1000 万</td><td data-page-node-id="QTkHUSiQd09rBHJAf2DUo5">24 个月</td><td data-page-node-id="5E5yx7FB6JnnFdVvW0RLiP">里程碑达成后释放，用于 B 档全量执行</td></tr>
+</table>
+<p data-page-node-id="OPxiLC1AKTa3AL13dbzGCL"><b data-page-node-id="ZObx8CjExi8dXR6hHsq6EB">为什么拆</b>：现在不是钱不够，是<b data-page-node-id="QOddhgsHY2Fols9rIAULnS">「不知道钱该往哪打」——这个问题只能靠小步实测回答，不能靠一次性投入回答。</b></p>
+<h3 data-page-node-id="1wxD0XQTzLontJ0AjEXAV1">4.3 资金用途（B 档 1000 万 / 36 个月）</h3>
+<table data-page-node-id="RG5mJ5UMyNEXxF7rh03bsp">
+<tr data-page-node-id="70pFe5foCqHEi7l7U0GoFU"><th data-page-node-id="CV1ikXGzdThKGtcQSk5yJR">科目</th><th data-page-node-id="B5WHJEfLglM77DJIVK2CBl">金额</th><th data-page-node-id="VQrDFha0og5WgHoTlCqIi0">说明</th></tr>
+<tr data-page-node-id="1RQ3OD1UGnpwEA3sPZFDsu"><td data-page-node-id="bCcK6INj3F7dOZkS6350Yh">人力（核心团队）</td><td data-page-node-id="xkndlg8PHVqmpRmBJMVmd3">450 万</td><td data-page-node-id="L1u5YMjJfR3ZwdB0CuXYa2">3 人 × 3 年 @ 50 万/人年（EDA 工程师市场价 40–80 万）；<b data-page-node-id="AeiNiUUFnfjSPA1S1KSrxU">含 T3 虚拟制造研发</b></td></tr>
+<tr data-page-node-id="qwpf6cj5eSnXsWsQ2ApvP8"><td data-page-node-id="kuD23f2KbmEyLPPMeNMyAQ"><b data-page-node-id="5JK5XGTBCkFCKa6czsLwW3">真值链</b>（T2：MPW 3–4 轮 + 委托封测 + 测试）</td><td data-page-node-id="rJevk4Qn081aLfUAZLU8Vw">240 万</td><td data-page-node-id="oDoIMdv5EUZDE6z8vxNGYT">先委托测试、后自建（自建需几百万至上千万）</td></tr>
+<tr data-page-node-id="2auYfEu7pNwSIuUSOuKLIP"><td data-page-node-id="bYvIPjcLO31GfTOaGyfFPK"><b data-page-node-id="b1BtPDdzZmdNhFhXvUH4tV">光电接口层</b>（T1）研发</td><td data-page-node-id="OpiK1kVkDogiFvP1LMH8Qf">110 万</td><td data-page-node-id="zCopA2fi4njAkClzIIOFfZ">含 EDA 互操作验证所需的工具访问</td></tr>
+<tr data-page-node-id="pFkf8JwPGuZ1GT51o1v5I3"><td data-page-node-id="RKgIrxroj5Kra9aA5a4FZt"><b data-page-node-id="1GaY247Vh2WDyl7KmdpwuG">需求架构层</b>（T0）研发</td><td data-page-node-id="p7sUZJWl9MJMsOSuOxZozJ">60 万</td><td data-page-node-id="FQyjbIf9PNtclNfR6D7VpF">多目标权衡 + 需求入口 + 扩锚覆盖</td></tr>
+<tr data-page-node-id="eF3FM4kDCVZwqc0BNHGCf1"><td data-page-node-id="4hyEZcihcTXujWpi9jiEKE">标杆客户（倒贴 1–2 个案例）</td><td data-page-node-id="TeGu9FuX6oCMCgMraHZNvR">80 万</td><td data-page-node-id="BAi9tds3Lan6Qax5ESvzAw">换可公开实测数据与可引用案例</td></tr>
+<tr data-page-node-id="LyH8gjgX37IAyEQGY4MYeY"><td data-page-node-id="bEs64cphG0hfYC4wNCH5ZL">生态与标准（T4：PDK 合作、社区、L0 IR 推广）</td><td data-page-node-id="gCxPlKnBTWyS4GC03mMtTR">40 万</td><td data-page-node-id="duJ0GEfFEztMt7PXZs1x5u"></td></tr>
+<tr data-page-node-id="tbLIiEv0gP648yxeYgLjst"><td data-page-node-id="xqkUmCkuT3RApC6CqUXlCM">云算力与基础设施</td><td data-page-node-id="eOjx1eL4hwLC8ArvaIYpbz">10 万</td><td data-page-node-id="ahlaVb2JMxBabYLmJOlD6f">ORACLE 按量 + 生产部署</td></tr>
+<tr data-page-node-id="PNxCYGLJ7vibM4Urq7iUvX"><td data-page-node-id="UGeU7HBlt7AxWb7HXO5IkH">管理与预备费</td><td data-page-node-id="iwmCwPrC8BLbCOKgZC9pQn">10 万</td><td data-page-node-id="U7CkznAGZQWGwHYcJXHzgL"></td></tr>
+<tr data-page-node-id="9QMPJT5OermtSrBelhbgta"><td data-page-node-id="QdSmTioiTaNyZTCyK3U2fn"><b data-page-node-id="XnUx9PAWPvD21Us7buaWxZ">合计</b></td><td data-page-node-id="r3GjKQ9JkMRODDsLhRVDSP"><b data-page-node-id="D8ztVV4CKSiNyEORjGcPpM">1000 万</b></td><td data-page-node-id="271BWa5iJQFbUcEvCPJ2r2"></td></tr>
+</table>
+<p data-page-node-id="HRXYhnboYJuUGYmvamaBTt">🔴 <b data-page-node-id="30kV6QIMBxFo811ZNOaCEy">诚实边界</b>：450 万按 3 人编制。<b data-page-node-id="DBpyFTGXAEbvntFQtYh678">若要 5 人团队，人力需 750 万，总额升至约 1300 万。</b> 本表按 3 人编制，缺口由 A 档订单收入与生态合作补足。</p>
+<h3 data-page-node-id="IAeZ4RXDHCuORQjGLJmt9q">4.4 估值与股权</h3>
+<ul data-page-node-id="n87BucdLXPrKVYigsoYl5b"><li data-page-node-id="rEzx3rrq8Ejn7BdkIiA02o"><b data-page-node-id="EAypYnq0YhvWEay7BKpcB8">建议第一笔不锁死估值</b>——用可转债 / SAFE 或小额天使。理由：当前 users=1、0 成交，估值缺乏可验证支撑，此时锁估值对双方都不利。</li><li data-page-node-id="079iAoHaMIfTWhyGsN6UAs"><b data-page-node-id="CR9FBJS3Kt2ftMzGhQlPxi">第二笔再谈估值</b>，以三个里程碑的实际结果为锚。</li><li data-page-node-id="QAlfOPyxot6uLZsKuc57Pf">股权结构已定：<b data-page-node-id="EiGpOOn6qOFHNvE9I9trFm">保留创始人控股，单轮出让 ≤ 10%</b>。</li></ul>
+<h2 class="pagebreak" data-page-node-id="KEWLClKgFECRmRXtSDtNls">5. 技术研发规划（36 个月，五期）</h2>
+<div class="say" data-page-node-id="Z5MB3tAvr8OEQpln9569i7">
+<p data-page-node-id="vmk10dscRre8o211YFUAho">每一期都有<b data-page-node-id="zzWD4JI1qbTpsDVY67fkXF">可证伪验收判据</b>——通不过就是没做完，不允许用「已完成」描述。</p>
+</div>
+<h3 data-page-node-id="qLonAO4cvyyumSFSxVnVKd">T0 · 需求架构层（0–9 月 · 60 万 · 交付链起点）</h3>
+<table data-page-node-id="RwJYCnxwPz1XNeUByx9NQ8">
+<tr data-page-node-id="4jsquBzjDi86tsdd5JeOi4"><th data-page-node-id="8RrGTHndo1YNhYqSIhtb4S">项</th><th data-page-node-id="fGCap5QE9UEDL25N97GG2b">内容</th></tr>
+<tr data-page-node-id="fUVUezrsXPqXRdcNMiNnPH"><td data-page-node-id="aBZFF2lmlD6n8xJ8O4jr0a"><b data-page-node-id="OOobFjqh52tkjGMYwAsxSa">为什么单列</b></td><td data-page-node-id="oyylJUPAG0EqD3bOL748uG">客户第一个问题永远是「我要什么架构」。这一段答不好，后面所有环节都建立在错误的需求上</td></tr>
+<tr data-page-node-id="KYNaXCFQKID9vcvCR4476G"><td data-page-node-id="5yfuBCujYGg6OP0Oom9c7c"><b data-page-node-id="M05iS6E72jMMs7xAL8C2QL">已有资产（此前被低估）</b></td><td data-page-node-id="J4G3yiEI7hpCE3KC5fob8w">`lda_harness/proposal_compiler.py` <b data-page-node-id="7G5N0I5tDsS5zHEwih7dO1">687 行</b>，<b data-page-node-id="1N89EvrRFoDPgUjYRnvnQD">15 判据 smoke 已在 CI</b>。管线完整：编译 → 锚约束剪枝 → 域内生成 → 逐案锚验 → 确定性排序 → 人终审；已支持 <b data-page-node-id="EHVGSYQBXBFxMuw56j6ync">6 条系统类型流水线</b></td></tr>
+<tr data-page-node-id="VFYuSMf4RVB1daI2hFjzxm"><td data-page-node-id="usBozLkgjt5X0Aejl1qjAS"><b data-page-node-id="aXFEyLu2vqs1bWqyPB9QKT">已有红线（代码级）</b></td><td data-page-node-id="YBGWasZeZd2h5F8kE3JP5i">先锚定可行域 → AI 域内提案 → 死锚验每一案 → 人终审选优。<b data-page-node-id="L0cYCF7FZHKWRBQACEl7YA">LLM 只生成候选，不进判决</b></td></tr>
+<tr data-page-node-id="ARFHss7G8CY0ATBtxk1VKr"><td data-page-node-id="eoXcii0OQTKWU0BkWpjqmt"><b data-page-node-id="6zyFswDg9yflBXebcQx3Nq">还缺什么</b></td><td data-page-node-id="DfKdbMusafFymDF1f3XYGC">① 候选生成器仍是<b data-page-node-id="X2YfehzDTMEety4QxZpufE">确定性网格</b>（MVP），LLM 生成器接口已就位但<b data-page-node-id="O37W8b8ZL0EDrw8uA5R0Q9">未启用</b> ② 只有<b data-page-node-id="Wu6UN4i8dNbswfFJQPz9rE">单目标排序</b>（链路余量降序 + 词典序 tiebreak），<b data-page-node-id="IMG457U0w8Vqo6XkCpHJ9K">无多目标权衡</b>（成本 / 功耗 / 面积 / 良率 / 可封装性的 Pareto 前沿）③ 锚覆盖 <b data-page-node-id="Imb9oL2C0q1L21qjeA7ct4">S1/S2/S5 + S7</b>（功率 / 频率 / 最坏情况 / 统计最坏情况 p5，<b data-page-node-id="bCH1Nxdu4jB0ah06879DGp">S7 已接入</b>），<b data-page-node-id="BMt3GSdMb4BwxOv1nIZlx5">S8 未纳入</b> ④ <b data-page-node-id="AjwdERcP1x8MbXuYZKy4Ww">无自然语言需求 → 结构化需求</b>入口 ⑤ 无「可封装性」权衡维度 ⑥ <b data-page-node-id="ADyk0IgAltNFZJ8YJrNmkV">无红队</b>：只有生成侧，没有自动化的攻击 / 对抗侧</td></tr>
+<tr data-page-node-id="uAvhpMR1EL5bU3KTYbphMW"><td data-page-node-id="iNw2L74V9CJuwGezBHTTlv"><b data-page-node-id="3UOkfDBLdo9MLUT0g9WHEv">做什么</b></td><td data-page-node-id="bzyacFfCSPnbagFJnfdkIf">① <b data-page-node-id="Q8IVD7HuO0Oa4Q29gZpyqH">多目标权衡</b>：出 Pareto 前沿而非单一排序 ② <b data-page-node-id="fOJjvLC1l2PnCPE3NPwm10">需求入口</b>：自然语言 / 规格表 → 结构化需求 → 提案 ③ 扩锚覆盖至 <b data-page-node-id="LgeI2KoHpI7b93IFPPaNTc">S8</b>（S7 已接入） ④ 预留「可封装性」维度（T3 产出后接入） ⑤ <b data-page-node-id="6rfBNcaBBCEo9il8YDlchJ">红蓝队分离</b>：启用 LLM 生成器（蓝队）+ 新增红队自动出题攻击</td></tr>
+<tr data-page-node-id="6gI5iGgw4365aJDA8sMF1m"><td data-page-node-id="FZH7c1SF6jgCbaeGeVSrT5"><b data-page-node-id="lYhrsHmSrENxSlFCfyQdhs">🔴 红蓝队纪律</b></td><td data-page-node-id="ie5FoUhWgzcU8BzIVacxKP">「审核」有两种，<b data-page-node-id="PMI0PAdlQ2FnjqTs0xNAbh">只能把第二种给 LLM</b>：❌ <b data-page-node-id="cpTntnYVTWNBR0uFfSjycQ">判 PASS/FAIL</b> → LLM 由此进入判决路径，<b data-page-node-id="e0dOuh3Fo8KVx5EEKEL5Is">破最核心红线</b>；✅ <b data-page-node-id="fDD0juBKaG3OCERvTfu9od">找可能错的地方（出题 / 攻击）</b> → 属生成侧，可以给。⇒ 架构为 <b data-page-node-id="JMMbdLeIP8wXJm99q3vlLd">蓝队生成 / 红队出题攻击 / 锚裁判（死标量）/ 人终审</b> 四层，<b data-page-node-id="ehbOEU0zZngDlBMLJYCClX">红队不判对错，只扩大被检验的覆盖面</b>。代码已给出答案：`llm_proposer.py:66`「只出参数，不判对错（判决在锚管线）」；`run_proposal_compiler_smoke.py` 有<b data-page-node-id="akhhr6OgDGRPDfqp7NOdAP">源码级断言</b>「红线：LLMProposer 零 PASS/FAIL 判决逻辑」</td></tr>
+<tr data-page-node-id="HpZCHHNiRnUcVlKR0aEDLv"><td data-page-node-id="Ka0jaAKDFRKc2ep01dFUnk"><b data-page-node-id="nZ61oGCeBuEIYq9dztl60B">🔴 假独立陷阱</b></td><td data-page-node-id="wYSrjCBqCi4IIO2trDstdL">红蓝若同源模型则共享偏见 ⇒「第二意见其实是同一个脑子」——<b data-page-node-id="3IWXaMUFYdux7H0ixVJGzN">这是判据 D 的组织版</b>。⇒ 须<b data-page-node-id="3I7XJ4CdPOp9jlX34z7380">不同模型 / 不同提示 / 不同数据源</b>，且红队有效性须由锚标定、不可自评</td></tr>
+<tr data-page-node-id="O5yZDDAAbIpoAVu3YK1WDy"><td data-page-node-id="JWHn2R7LfCxzXA1ltv7iSw"><b data-page-node-id="GPVKEux4jw4dck7hdRgco6">红队也要被证伪</b></td><td data-page-node-id="In23uocOra83NMpJfRmm6B"><b data-page-node-id="kPE2Ii11dlBoB76Kv8wBR8">命中率 = 被锚确认的真实缺陷数 ÷ 出题数</b>（死标量）。否则红队自身退化成新的自证桩</td></tr>
+<tr data-page-node-id="bXWt5BaPxPOy7aRrPGDbni"><td data-page-node-id="Cn9UlEU0OguH6v73eCB7JC"><b data-page-node-id="xlogsyLxylmDxMPBZ5QHJr">终止条件</b></td><td data-page-node-id="fmtNSh75vek5q9CwDzEU8t">须显式设定：轮次上限 / 命中率阈值 / 时间预算，三者至少其一，防无限抬杠不收敛</td></tr>
+<tr data-page-node-id="k38eUCQGO2BwAHHhDN6zZc"><td data-page-node-id="4EGJiIohun003R4bzBwTjK"><b data-page-node-id="5I1V2Zg0WdgxMMlmVt8USC">交付物</b></td><td data-page-node-id="xPytcVnqWK6hcDfF13xBQz">需求→架构工作台（WebUI）+ 结构化需求 schema + 多目标权衡报告（含逐案锚证据）</td></tr>
+<tr data-page-node-id="9xKe7wYRYPGvHoYsgmBW0J"><td data-page-node-id="7kExQ4TBaTWm6aRLUYG5fP"><b data-page-node-id="y9dckmznqJXr5kMNbwB25r">可证伪验收</b></td><td data-page-node-id="s4KqVDjnByFiwLhWxR15Jl">① <b data-page-node-id="TcBwZQBOXMH72gpMJvxnCU">同一需求下改变成本权重，Pareto 前沿必须位移</b>（防常数假绿，同判据 D 思路）② 任一候选必须带逐案锚证据，<b data-page-node-id="H9GJCEgQ6GDODu0mRH3HP4">无证据者不得进入 ranked 列表</b> ③ 域外候选（违反功率预算）<b data-page-node-id="XJGY28QvmSSprfKsNdTzEl">必须被剪枝</b>，不得进入排序</td></tr>
+<tr data-page-node-id="G04mIe2hJsQUKDD1mobW2H"><td data-page-node-id="kY2DNUFAUCpWEi8cU8GfyN"><b data-page-node-id="nWncwDy26HtDNCY7CFFde4">🔴 不做</b></td><td data-page-node-id="ozp6bHEz8tTGowAOzI4xoi">不让 LLM 决定架构；不让 AI 跳过判卷直接给结论</td></tr>
+<tr data-page-node-id="iS6inmnc2C1BA3jBDtDImF"><td data-page-node-id="X8BeF1Efdkjvz13TFWmdVb"><b data-page-node-id="NzlEqFUaPofMdkymRUug7a">为什么便宜</b></td><td data-page-node-id="fvaPF6vp2jfi2TZH6IDpEx">核心引擎已存在且有 CI 守护，本期是<b data-page-node-id="Z2k7LXo77wScPL3B1Qm3Fm">升级</b>不是新建——这也是它能放在最前面做的原因</td></tr>
+</table>
+<h3 data-page-node-id="QrtAwracCATSFzS38Riunr">T1 · 光电接口层（0–12 月 · 110 万 · 与 T0 并行）</h3>
+<table data-page-node-id="O9b2Ry5dq3kiW5n9u2PjQI">
+<tr data-page-node-id="JBmPh9kwUGTeoNj2d3jAss"><th data-page-node-id="f0TLndZwTALLzp8yT9AJkK">项</th><th data-page-node-id="oND614ytNgmsl1waoB9mbM">内容</th></tr>
+<tr data-page-node-id="9EtjQl5y6yy1UU33PZEt9z"><td data-page-node-id="PkgaVjAKCedd7fAsEgGs4W"><b data-page-node-id="zGauztStHkDlAz41xp2mE1">做什么</b></td><td data-page-node-id="XYhJoEscCmKQzWuNBMzEMl">把 SPICE 网表从「拓扑骨架」升级为<b data-page-node-id="4eDwzCwCT03rEcs1Dg8SWV">带参数紧凑模型</b>：VπL、3 dB 带宽、结电容、响应度、暗电流、电极 RC；接进 Cadence/Spectre 做互操作验证</td></tr>
+<tr data-page-node-id="NqTDFyv968JyCSrjApAx7g"><td data-page-node-id="bX8uCGzYIaouoZWEKC1yZY"><b data-page-node-id="bORoAmqegEpeLkFnzoj1Ul">交付物</b></td><td data-page-node-id="2qD7DwZT9ifcn1aI8BS2ZP">带参数网表导出器 + 互操作验证报告 + 三类器件（调制器 / 探测器 / 热相移器）行为级模型</td></tr>
+<tr data-page-node-id="wGycZrYQKmIb6lwTQZ6uwZ"><td data-page-node-id="K5ZFJPzIYZW4E0xJ9ZDjSn"><b data-page-node-id="85VsKAUmA6LECIvCc6g4Bn">已有基础</b></td><td data-page-node-id="j5A1puGZa4og5SJ9odBYXW">`lda_l2/parasitic_rc.py`（寄生 RC，有 smoke）；B29 热光相移效率锚（真锚）</td></tr>
+<tr data-page-node-id="7p7LH8mt5kciwnpHqrCkyR"><td data-page-node-id="y891Lt6gkpAZ7mXFq835i1"><b data-page-node-id="Rsuwto0RxCbreHfcioETgB">可证伪验收</b></td><td data-page-node-id="EHPODCV1Na5b1zeh0RrBBg">① 网表参数字段非空且<b data-page-node-id="jvNcYFESk93FIpJCm7iShA">可溯源</b>（文献 / datasheet / 实测）② 在 Cadence 中跑通一条环型调制器链路 ③ <b data-page-node-id="DKyXxCf7REPTPk0hdDOvyP">参数扰动 ±20%，时域响应必须变化</b>（防常数假绿，同判据 D 思路）</td></tr>
+<tr data-page-node-id="GY6HlncB4OV6jxpZMOXVaR"><td data-page-node-id="UXnUVe1vt61U2jNQ2VfGXz"><b data-page-node-id="tIWfEb6STUTFg9ZzpHDuCx">🔴 明确不做</b></td><td data-page-node-id="sGWviN0x1JCYdJfLLWOhkZ">SerDes、DSP、眼图 / BER 求解器——无电域锚，做了必假绿</td></tr>
+<tr data-page-node-id="FYW6FAxEE59V8RnwZPLrv6"><td data-page-node-id="L0gYoNvOwBwHZeDUI3RUXj"><b data-page-node-id="bdthECOyRlWb3dTozHYnfT">风险</b></td><td data-page-node-id="ULQFtPEdHj6iBOZR2JHFrQ">需 EDA 工具访问权（可与高校 / 伙伴合作解决）</td></tr>
+<tr data-page-node-id="U2zb8AeM6nhccZxvgS3Nis"><td data-page-node-id="YDH7DrRNBx3RQoTL2lJKDT"><b data-page-node-id="oIBTwHk1Uke42hGB2GmvWT">与 A 档的关系</b></td><td data-page-node-id="3f60HqedQ56WirqcLDUQC9">A 档对外报价 150–300 万（<b data-page-node-id="OCRiK9YIRhG4jrJd3a2iG4">客户订单</b>），本表 110 万是<b data-page-node-id="zLBLQu6qV7lIVvzyWi7SoA">我方研发投入</b>。差额不是毛利，需覆盖人力与迭代成本</td></tr>
+</table>
+<h3 data-page-node-id="J1EzSGGHjtokvDNedsgGg6">T2 · 真值链（6–24 月 · 240 万 · 补判决锚）</h3>
+<table data-page-node-id="olYT4zr7EsP5JUv3eW8XBM">
+<tr data-page-node-id="k40GvsYAXeScC6zEO9k82W"><th data-page-node-id="UofwsxZTPcYydzPEqundon">项</th><th data-page-node-id="g7wvtX6kk1Rc0mb3UlEoM3">内容</th></tr>
+<tr data-page-node-id="TqVKosqHYrFWAuBmgu97nl"><td data-page-node-id="JtG1GXrHzfpGyTIsa2E8r7"><b data-page-node-id="SRH44Qy7ZgnHnQECbLifVi">做什么</b></td><td data-page-node-id="EDMKyk2okBTvuc9sLGpziD">3–4 轮 MPW + 委托封测 + 测试；建立<b data-page-node-id="l2sTjY8PpQ9TK8jnBHPtuA">实测数据回流规范</b>（脱敏 + 测试条件 + 校准溯源）</td></tr>
+<tr data-page-node-id="I6CUOq8QUx4ay9GDlZxtQF"><td data-page-node-id="z90JmMAZM6w8O0rUYd2Bhq"><b data-page-node-id="IlNwghfHMp040GAnJgDEGV">交付物</b></td><td data-page-node-id="9W37Zi5he6PpGDOcpiKG08">自有硅实测数据集（CD / 膜厚 / 插损 / 耦合效率分布）+ 入 `provenance.py` 三级溯源 + <b data-page-node-id="3bJZNwoxWhkqC61NamXAy4">工艺角从 SS/TT/FF 假设升级为实测分布</b></td></tr>
+<tr data-page-node-id="LLvaIMPOJagCPYysEVKNXA"><td data-page-node-id="DEcXWG31II51dTgF7Xhmd7"><b data-page-node-id="vX9YnAANTjEnV4B6Lsq0VR">可证伪验收</b></td><td data-page-node-id="60nROH7ADbvIx4QT8MTowB">① ≥5 道自证桩换成严格独立真锚 ② 工艺角分布有可查溯源 ③ <b data-page-node-id="iM3Zq9mUlGlTXd1HZOjLvU">实测与仿真偏差公开标注，不修饰</b></td></tr>
+<tr data-page-node-id="BM3TfKgpd3ZtbNeeB2ecif"><td data-page-node-id="cqF7CB9ucnsQhc48NVUrcM"><b data-page-node-id="FZBu3YG0NlZX3yVGwMK9gB">风险</b></td><td data-page-node-id="nQIIx62KdoVOvnmORKgp1L">MPW 排期（数月）、封测产能（ficonTEC 交期 5–7 月、定制 &gt; 9 月）⇒ 需提前锁定</td></tr>
+</table>
+<h3 data-page-node-id="17esihW2ZITKXKhRBMnjgR">T3 · 设计侧虚拟制造 2.0（12–30 月 · 研发人力承担，不单列预算）</h3>
+<table data-page-node-id="vIXqeEygWImtKdmAvtOODW">
+<tr data-page-node-id="akZ1aUrY3KbXUiB3vPNpiD"><th data-page-node-id="6BBUaEzy1VW6HA9ENwnlRq">项</th><th data-page-node-id="BgAMpePrhGNp1CEyd3aKl8">内容</th></tr>
+<tr data-page-node-id="RWyM6yPVuFn3H3lOcGcmBz"><td data-page-node-id="nsAZrS0iZL1j59vlhGPhr8"><b data-page-node-id="N7P9c41QtlGIw9wtdXGm6b">做什么</b></td><td data-page-node-id="tcIc9ap857Z3R8rLhfJc2h">两部分：① <b data-page-node-id="F4yPG04lmUW2FCRBEQuV5c">工艺波动</b>（光刻 / 刻蚀 → CD 偏差 → 工艺角）② <b data-page-node-id="ahxITwbKDp76AGi0CZ6Xym">可封装性</b>（耦合容差、对准失配、封装良率）——② 是本轮新增，因为八成成本在封装</td></tr>
+<tr data-page-node-id="8cMarA4PKzAOVjHsOQynhd"><td data-page-node-id="rmVGWr0FqoxOPo26ga2eAw"><b data-page-node-id="ejIX87R0Q693bqj762hK6K">交付物</b></td><td data-page-node-id="NDw8U5cptCEP2PvDmg29Ei">设计包新增「<b data-page-node-id="riocu5T55DusALpxqPNLVw">可封装性报告</b>」：耦合容差窗口、预期封装良率、间距几何下界校验</td></tr>
+<tr data-page-node-id="NZLc9rgSAsIroxlSABc9NA"><td data-page-node-id="f8IVplgW37xGSyuSje8WwE"><b data-page-node-id="CzwwbvLkKaGHlKEjpXLIpt">已有基础</b></td><td data-page-node-id="pAEQr4tagJY9fUyEnyTqO1">S13 设计良率锚（解析 0.954413 ↔ MC 0.954750）、P-CPO 间距几何下界护栏（125 µm / 10.3 µm）</td></tr>
+<tr data-page-node-id="FRwUYIZPhNAjBYZP1a3G6t"><td data-page-node-id="nqRCB3l0vR5ujWCgUC1G6Y"><b data-page-node-id="8O1YzR8kS33RGRXdNTlUuK">可证伪验收</b></td><td data-page-node-id="w6PdgAnbYrnLfWF04azMyw">① 良率预测<b data-page-node-id="m4eCstEO7C3N8SOl79NpyB">随设计输入单调响应</b>（把线宽推到 DRC 边缘，预测良率必须下降）② 与 T2 实测对准偏差落在标注不确定度内</td></tr>
+<tr data-page-node-id="ewgdy0FqvD8kCQIzt9SXhr"><td data-page-node-id="Yu27bL4txgPbkHtKvxrBtT"><b data-page-node-id="g3ifbwOXcR3RO6q0M5LJdz">🔴 不做</b></td><td data-page-node-id="4g1Ff5WXOusSWc0C13AKpm">foundry TCAD / 工艺配方仿真</td></tr>
+</table>
+<h3 data-page-node-id="Hy15LLS2xkgSRhylEcNwaO">T4 · 标准位与生态（24–36 月 · 40 万）</h3>
+<table data-page-node-id="EJXIsSip3nN2IFB1SQaAM4">
+<tr data-page-node-id="Ond6fbqxS4dfk37wnEcG2V"><th data-page-node-id="xzdTUIvGkka3LsxXUicg6N">项</th><th data-page-node-id="ky7YDOUpAflKyguhAPGMVG">内容</th></tr>
+<tr data-page-node-id="zNcwqWk3gqADfHQdU9hrLM"><td data-page-node-id="clBjmtbFCMvpN6fwWUW0AS"><b data-page-node-id="zJGT2PyAFN5YWfAiiGXeDK">做什么</b></td><td data-page-node-id="9oj8C48knFlFuKMDF0DUUe">L0 IR / DesignPackage JSON 推向<b data-page-node-id="XNoDiZMMTyRZRqcVabfseK">光子语义交换标准</b>位；PDK 合作；开源社区运营</td></tr>
+<tr data-page-node-id="TQr9iFwBnduv50gQpUbg8T"><td data-page-node-id="xLQDMnfV4Wn9BS0IlBdA9B"><b data-page-node-id="9GpIb0K5vITrL9rHMS0YJy">可证伪验收</b></td><td data-page-node-id="v7Q0SjtbeFCLuepSmucZwJ">① ≥2 家外部机构采用 L0 IR 做交换 ② ≥1 家 foundry 签署 PDK 合作</td></tr>
+<tr data-page-node-id="yvAwu6p5AkJVurD3LEHQM4"><td data-page-node-id="EF5axvRxJJdx3d1Fj0YqY3"><b data-page-node-id="zBH6PKveX1Soap0CgWoUjF">🔴 诚实边界</b></td><td data-page-node-id="DdgGFA20DnVdEXe4WCTQGP"><b data-page-node-id="mC8n3I9ZHcwjoTWxTNInBc">标准不是写出来的，是被采用出来的。</b> 当前 users=1，占标准位的前提是有人用</td></tr>
+</table>
+<h2 data-page-node-id="HXz2Fq8zyMDURLvBmK9d1z">6. 财务模型修订（收入与成本对齐）</h2>
+<p data-page-node-id="8si7B1ewE9OlW9cUOBZCOV">原 BP 的 Y1–Y3 只有收入侧。本版补上<b data-page-node-id="WUULPtKBrBvaIyX55bP7Ys">收入来源与成本结构的对齐</b>：</p>
+<table data-page-node-id="9Lwc0CTSFtILqToRlFmJRQ">
+<tr data-page-node-id="SKQ7oPeDAoucpqxSbHr6aP"><th data-page-node-id="CGKd2rsp19AwoR0X3yGQyY">年</th><th data-page-node-id="1TyTtjGfQdqTByyl2LjlB9">收入来源</th><th data-page-node-id="jYddtgYXjuYrgwfF7nRKqh">量级（人民币）</th><th data-page-node-id="39RsPQakX5W6BnnUqYMI7R">主要支出</th></tr>
+<tr data-page-node-id="5ziQsEHDRYLYY8anwarulh"><td data-page-node-id="QOt8MryfmySE3M780tycoS"><b data-page-node-id="NlMkoxWczfYstJbBXZgmIe">Y1</b></td><td data-page-node-id="mFq0O1FXYJI7Fdt2lqJN5j">A 档订单（光电接口层）+ 三档订阅</td><td data-page-node-id="pesakQDU6o55A9J2Lhh7P3">150–300 万（订单）+ 十万级（订阅）</td><td data-page-node-id="b1J4Qygv5akJtXA6nhHfEm">人力 150 万 + 首轮 MPW 60 万</td></tr>
+<tr data-page-node-id="lcnXtvzg05MdTLp96EYdtM"><td data-page-node-id="V24o7aNsTlr79Idr6xHEH8"><b data-page-node-id="sv62j4dXGezBHf0QB9eg0L">Y2</b></td><td data-page-node-id="JFRt11kxHysSabkd7xIZwZ">A 档续单 + 企业订阅 + 生态咨询</td><td data-page-node-id="s5hiswGMd2DkJbQCivLwyY">300–600 万</td><td data-page-node-id="MIv7zUqktF0dPHdt5QqXUE">人力 150 万 + 真值链 100 万</td></tr>
+<tr data-page-node-id="zW4N0XYi2ZckFpQ3C7OPZ5"><td data-page-node-id="ZMUqr0tHxkovn4864Qiel3"><b data-page-node-id="Syqir7iKI2PHPoemsi7xIN">Y3</b></td><td data-page-node-id="tQH3HRBZAY3beo6tjuMX87">企业订阅 + PDK 服务 + 标准位授权</td><td data-page-node-id="qHLE4gG0gfBddKoLwJWvfj">千万级潜力</td><td data-page-node-id="6Ypqyg1FL2sZV8pkRDrH3h">人力 150 万 + 生态 60 万</td></tr>
+</table>
+<p data-page-node-id="jQfG7roIakVkPRoZE25F4R"><b data-page-node-id="og6Cudfk31fFLjBY9XFCqA">单位经济</b>：三档 ¥599 / 1999 / 4999 毛利高（软件边际成本近零）；企业订阅对标 ¥1.8 万/座/月。<b data-page-node-id="oMms1BuN1XuuC8pFi9AEBT">所有定价不得越 5000 元红线。</b></p>
+<p data-page-node-id="G9W4bsYpH1HUAouvTNmBt6">🔴 <b data-page-node-id="MNfw8DTdXHqFV0ia0XuVxV">诚实边界</b>：以上为<b data-page-node-id="8uvVd7Nlt1EcjUnoch3gqQ">模型假设，非业绩承诺</b>。当前付费客户为 0。</p>
+<h2 data-page-node-id="Fnvjq93QVgpW4UL32KnSqh">7. 风险与缓解（新增三条）</h2>
+<table data-page-node-id="vUzUOgNgILjvieBhaC0TWf">
+<tr data-page-node-id="siBHE6VNOjfmTPXeDGEkPu"><th data-page-node-id="LQTxqAVbSMoBVNUVQP5frU">风险</th><th data-page-node-id="JqupCDDXkvIBbR6f1j3UHh">说明</th><th data-page-node-id="lQ4ng5QlZ93CdT7SjIyMxK">缓解</th></tr>
+<tr data-page-node-id="JqAnEwMHRTTSDCnZIyuM8z"><td data-page-node-id="n8Dn6BkRO7JYUGTxUHX2gD"><b data-page-node-id="eSySS8z7Ktk2wtx1gGI2cN">客户划范围风险</b>（新增）</td><td data-page-node-id="SZwibqZ71T0eSHTJn6NSzJ">客户只买 A 档接口层，不买设计入口</td><td data-page-node-id="j1SpPMWZf3a9cnxu0UHXld">A 档本身即高毛利订单，且是进入客户流程的入口；合同中加<b data-page-node-id="8aUtD8ByWXGG5KAfhYpeBi">实测数据回流条款</b></td></tr>
+<tr data-page-node-id="q1QZA4WkMAtYipAY7j5aHI"><td data-page-node-id="1jTMJoW9gnRvclpQ2T4bin"><b data-page-node-id="vItsLiR5Em6GGY8iYTI9PW">封测成本失控</b>（新增）</td><td data-page-node-id="t8ZBk4uJW6Xa1Fdk0dAufb">封测占近八成，MPW 后才发现钱不够</td><td data-page-node-id="nVj5v8TpDlfE3RzBx67Lvw"><b data-page-node-id="gUDcpnFs6nQ01mCGfjh5pJ">先委托测试、后自建</b>；T2 启动前必须完成询价</td></tr>
+<tr data-page-node-id="FjVh0e9HFV0VxVTdCYeSVG"><td data-page-node-id="aMCflFA6sfSBCEt4K7dwiM"><b data-page-node-id="gExgqYYoCtDCuBxARKeBxr">Ricursive 类降维竞争</b>（新增）</td><td data-page-node-id="dZv6BbG28zArvELxLSxKcE">端到端 AI 设计公司向光子延伸</td><td data-page-node-id="aH0CZjA17BZeptmMLl6Pof">判据：光子链缺乏可计算 reward，AI 进不来。若出现「AI 端到端做出光子芯片并流片验证」或「光子统一语义标准 + 公开工艺分布」，立即重估</td></tr>
+<tr data-page-node-id="VVWCog28XuIIEmgPGEf3Dd"><td data-page-node-id="jZzUCuLDLTbepzUTadWZQI">出口管制双刃剑</td><td data-page-node-id="iQgTLEgqwG1NVhExBpTv1N">利好国产替代，也可能限制国际组件</td><td data-page-node-id="FWjK06Pb1BneWDFOiBtA3g">主权分级（C 级自主）+ 国内 Gitee 仓库优先</td></tr>
+<tr data-page-node-id="itZLjJWqHc06sr8GYAVQpU"><td data-page-node-id="V2cGftAhZQ6YQzxWqF4ywL">早期阶段</td><td data-page-node-id="3w81uBkD4Scuiepn27uMcb">尚无规模付费客户</td><td data-page-node-id="ABybogWODLKrmAFYn59v49">开源获客 + 试点优先，不夸大</td></tr>
+<tr data-page-node-id="oYE8tMUMmSLFbJaEqhHDF1"><td data-page-node-id="kmyoZsVxTxkICHo8xWq08q">流片未验证</td><td data-page-node-id="pB2tdpb4FguFXls0foe4gG">T2 完成前无自有流片背书</td><td data-page-node-id="oTWdtG8AhVb7FiHiS5oBsZ">诚实披露，路线图明确 T2 节点</td></tr>
+</table>
+<h2 data-page-node-id="0EVR5Sg4qzPv876bt5uCfg">8. 诚实边界（投资人必读）</h2>
+<ul data-page-node-id="mEkXIc0KeyrnaEP9R3atS1"><li data-page-node-id="3v5H7VlI77GMkQgFk2iLX6"><b data-page-node-id="x4ph8C6h9ZaAEA9sreXdxk">没有流片过，一次都没有。</b> 现有 golden 全部来自公开可溯源实测（论文 DOI、厂商 datasheet、IEEE/ITU/OIF 标准），属<b data-page-node-id="4FFPk8nGrY1ja6OXMNhtn6">等效验证</b>，非本团队流片，也非厂商认证。</li><li data-page-node-id="aDsNSIDSupjD3TQMClYYiP"><b data-page-node-id="WFphjBVhIrWrE87XBKsCkZ">52 道锚：严格独立 26 / 降级量级参考 1 / 自证桩 25。</b> 自证桩指候选与 golden 恒等、残差恒为 0、恒 PASS，无验证价值——我们主动标出来。</li><li data-page-node-id="HVWs8UzjDNr82enlYjKCa1"><b data-page-node-id="fxnd7O3yFTGSSFF5qtiVJM">不宣称精度优于商业求解器。</b> 差异在可证伪、可外部验货、LLM 不进判决路径。</li><li data-page-node-id="aOo7xqNoxy1uogbzkXjPq7"><b data-page-node-id="o1vbkSqTXvEFDyhpEGxs7m">不判决 pJ/bit、TOPS、pJ/op</b>——这些量由电域主导，我们没有电域锚，比了必假绿。</li><li data-page-node-id="mrGpJtpo4nDDctKGgHs8T9"><b data-page-node-id="S21VSkS4loBTgFYmm3Awav">当前 SPICE 网表只是拓扑骨架</b>，无器件参数；电域接口能力待 T1 建成。</li><li data-page-node-id="ix7AxFf4Yv8emKoaCZPGvO"><b data-page-node-id="21ETACZrPmG29Xbbr14J3g">当前 users=1、付费客户 0。</b> 财务预测为模型假设，非业绩承诺。</li><li data-page-node-id="HQCrdYIFnEGKfCQYJFCp0O"><b data-page-node-id="b0CPDJeNBIvlfjHXaOpPw3">48/48 产品级对标</b>是对标公开规格的等效验证（NVIDIA CPO / Broadcom 6.4T / Google OCS / OIF 3.2T），<b data-page-node-id="7E1SDVPt0sE1ruH76qRFKD">不得表述为「NVIDIA 认可我们」</b>。</li></ul>
+<h2 data-page-node-id="nh8Xptt6AHlVoao87yriCo">9. 待杜先生拍板（十件）</h2>
+<p data-page-node-id="NbwCUpADCxE5Te3PtFWcQj"><b data-page-node-id="IJDYryUsuojN20YcgHgRjl">方向类</b></p>
+<ol data-page-node-id="NyxVDAShvCMhVfqJQtWIgt"><li data-page-node-id="EoAYT9BY70Z25Ji3y3NtNw"><b data-page-node-id="nvEs0CNrfXsvarAoZnG7Gh">是否接受「不投电域、先投真值」</b>这个方向？</li><li data-page-node-id="ZCIRSowOTH3RcqJiJU4MKd"><b data-page-node-id="r2urxQNvg2Wz4yPdiaKOqW">是否接受「验证轮 100–150 万 / 12 个月 + 主力轮 800–1000 万」</b>两笔节奏？</li></ol>
+<p data-page-node-id="fqNzm67tefBTrnhh97a2aF"><b data-page-node-id="Bjuwp8krnwVHtOIodGi21j">商务类</b></p>
+<ol data-page-node-id="0YjfkJfz3C38JUW3JBq6F7"><li data-page-node-id="bdFMZ3m9lq4KDjzLqDhCvc"><b data-page-node-id="hFZzlb0btezGzXVohk4lBI">A 档（150–300 万光电接口层）是否作为首个可接订单报出去？</b> 客户已把范围划好，这是当前最可能落地的一单。</li><li data-page-node-id="sISSI0UEB4x3GLf8OFrTzC"><b data-page-node-id="S7c3CVMt2AnqtD8C6IZ2JW">客户侧是否把「实测数据回流条款」写进标准合同？</b>（把 0 真值变成有真值的最快路径）</li><li data-page-node-id="83s161AqdhXkd4wUn2X2MT"><b data-page-node-id="Grj8okIYbsXiyvHECHmIP7">是否采用 §2.3 的责任边界声明</b>（只承担 3–5 段）作为客户洽谈的标准附件？</li></ol>
+<p data-page-node-id="QIsQg5MuiPvc2S4Cgn9fCt"><b data-page-node-id="qOlMfcpNkcac7Ea4gRFJWK">执行类</b></p>
+<ol data-page-node-id="Rb50VInFZncyH5xuWi6EWZ"><li data-page-node-id="nT4d0DAGOGBRgwHcMrDA0g"><b data-page-node-id="Jv5y75hKWPaZcSBoayHsqX">是否授权启动 MPW 询价？</b>（IMEC / Cornerstone / AIM / 国内平台——零成本，但不知真实价格，预算表就是纸上的）</li><li data-page-node-id="BrW1IdoTTjQF8ANGckcRn0"><b data-page-node-id="EmV2dgM2Z6Ahbtw0XDzpb7">团队编制</b>：3 人（预算 1000 万）还是 5 人（需 1300 万）？</li></ol>
+<p data-page-node-id="iMcHuVbrdDmWwlkH4PbZ6T"><b data-page-node-id="wL9LzEeLGD4JozU9bbagwI">生态与治理类</b></p>
+<ol data-page-node-id="tOhassS34OQcWjGGV2qabg"><li data-page-node-id="bJxffdDdz05aZQflN7Teby"><b data-page-node-id="5Lx1DFGdiJZNvlFN9xtxVK">是否现在就加最轻量 DCO？</b>（PR 模板加一行 `Signed-off-by`，成本近乎零；🔴 这是现在不补、将来补不回来的事——Redis / MongoDB 前车之鉴）</li><li data-page-node-id="noxCWJJFodyImO4V38rAF8"><b data-page-node-id="Be403jsLzlJsoBpOlfMtg1">是否从融资中单列 bounty 现金池？</b>（没有它，生态开放第 2/3 层只能停在纸面）</li><li data-page-node-id="F5tSUQuhbbcICZr01pL5PB"><b data-page-node-id="EjBMqQSiDQ3m8qDxYlLsW6">「生态开放」的定位确认</b>：写入 BP 的<b data-page-node-id="RQkp0ZjgCdnE8dzdlT6bet">获客</b>章节（本版已如此处理），而非研发效率章节——因为它打的是 0 成交，不是省人力</li></ol>
+<div class="say" data-page-node-id="BCuuAMuDXUmLtd6wkHoxHG">
+<p data-page-node-id="BuDqXjAVeYwJK0EaEsrxai"><b data-page-node-id="ykfYIuevlwlTOGodFttMtk">已明确排除本轮规划的内容</b>：「一人公司（OPC）模式」相关讨论按要求<b data-page-node-id="kTfpVNregoCwazUB09Typn">仅作讨论，不进规划文档</b>。</p>
+</div>
+<h2 data-page-node-id="FA3QpQCULTprcMylznnNy4">数据来源</h2>
+<ul data-page-node-id="dew7FX6Dfv1olcrc0cHHNN"><li data-page-node-id="YkzUZEnC1X98MQrKFywcKz">Yole Développement（IEEE 802.3cz 公开材料，Ogura 2021）：硅光模块成本结构 79.9% / 11.4% / 8.6%；天风证券 2024 同口径印证</li><li data-page-node-id="eP17ZbMyvXv1DmvcNk4fKN">ficonTEC 产能与交期、硅光晶圆测试系统单机价值：公开产业报道</li><li data-page-node-id="heHg7dGiDVGqh5XjgXB8bh">Cadence 白皮书 Overcoming Signal Integrity Challenges of 112G Connections：make-or-buy 结论</li><li data-page-node-id="XKFccAZFN42P4ucOw3FsTn">112G SerDes IP 授权 $8M–$15M（5nm，2025 行情）；硅光 MPW $8k–$95k / reticle block</li><li data-page-node-id="BescYjDzHE09emZ6uBCGNj">Ricursive Intelligence 融资与定位：EE Times 专访、公开融资报道</li><li data-page-node-id="laFAhZZXvEjEK6AbJkj15W">Dataintelo / PMarketResearch / The Insight Partners / MarketsandMarkets：光子 EDA 与硅光子市场规模</li><li data-page-node-id="aTbZn7g9kRuUTE3gCfunJY">LDA 内部账本（v0.9.63 源码实测 2026-09-09）：52 锚 26/1/25 · CI core 141 · 22 引擎 + 11 包 = 33 类 · 75 货架 · 30 条 A 级语料 · 产品级对标 48/48</li></ul>
+<p class="foot" data-page-node-id="5W8aHtWROMFNymOh1TFRWP">本册为对外认知装备，不含任何内部资产信息（服务器地址、令牌、内部路径均未收录）。</p>
+</div></body></html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="7N5ZGkxfPeI1OZgQtZFD5J">
+<head data-page-node-id="LUR4hQ8vZn1fMHbrWidf5q">
+<meta charset="UTF-8" data-page-node-id="6VVrKPjjIAlzdxYeNKfroS">
+<title>LDA 对外话术手册 · 打印版</title>
+<style>
+  @page { size: A4; margin: 14mm 13mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei","PingFang SC","Source Han Sans SC",sans-serif;
+         font-size: 10pt; line-height: 1.55; color:#111; background:#fff; margin:0; padding:0; }
+  .page { max-width: 184mm; margin: 0 auto; }
+  h1 { font-size:19pt; margin:0 0 3mm; letter-spacing:.5px; border-bottom:2.2pt solid #111; padding-bottom:2.5mm; }
+  .sub { font-size:8.5pt; color:#555; margin:0 0 5mm; line-height:1.6; }
+  h2 { font-size:13pt; margin:6mm 0 2.5mm; padding:1.6mm 3mm; background:#111; color:#fff; }
+  h2.pagebreak { page-break-before: always; }
+  h3 { font-size:10.8pt; margin:4mm 0 1.5mm; color:#111; border-left:3pt solid #111; padding-left:2.5mm; }
+  p { margin:0 0 2mm; text-align:justify; }
+  table { width:100%; border-collapse:collapse; margin:2mm 0 3.5mm; font-size:8.8pt; page-break-inside:avoid; }
+  th { background:#ececec; border:.6pt solid #999; padding:1.6mm 2mm; text-align:left; font-weight:700; }
+  td { border:.6pt solid #bbb; padding:1.5mm 2mm; vertical-align:top; }
+  tr:nth-child(even) td { background:#fafafa; }
+  .say { background:#f4f6f8; border-left:2.5pt solid #666; padding:2mm 3mm; margin:1.5mm 0 3mm; font-size:9.4pt;
+         page-break-inside:avoid; }
+  .say p { margin:0 0 1.5mm; }
+  .say p:last-child { margin-bottom:0; }
+  .key { font-weight:700; }
+  ul, ol { margin:1mm 0 2.5mm; padding-left:5mm; }
+  li { margin-bottom:1mm; }
+  .foot { margin-top:5mm; padding-top:2mm; border-top:.6pt solid #999; font-size:8pt; color:#666; }
+  .noprint { text-align:center; margin:0 auto 5mm; padding:3mm; background:#fffbe6;
+             border:1pt dashed #c90; font-size:9.5pt; }
+  @media print {
+    .noprint { display:none !important; }
+    h2, th, .say { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body data-page-node-id="F7113c2eR0tzwNi7XsooV1">
+<div class="page" data-page-node-id="9RPIGDIkTRYsWrr64gcVqZ">
+<div class="noprint" data-page-node-id="r6rM47T1WEtpHgxDFeLJx6">打印提示：按 <b data-page-node-id="M6iTZ2WFBprUSX1OMgkDg0">Ctrl + P</b> → 目标选「另存为 PDF」或直接打印 → 纸张 A4、边距「默认」、<b data-page-node-id="SdwV0RGJS7ZNxGXqmsuTE4">勾选「背景图形」</b>。打印时本提示不会出现在纸上。</div>
+<h1 data-page-node-id="bsVH4mHwVvO14C5yOtQLDd">LDA 1000 万投资决策备忘录</h1>
+<p class="sub" data-page-node-id="z6akg2pXuUR4ha1xjq6nM5">主题：要不要投 1000 万做电域、实现「光电一体化」｜日期 2026-09-09｜对象：杜先生 / 潜在投资人 结论：<b data-page-node-id="WkZrDZrqFrm38UAb6CX8nj">钱要，但不用于攻电域。</b> 建议投向真值链与生态，并先以 100 万做 12 个月的可证伪验证。 ⚠️ 文中成本为<b data-page-node-id="AHDfm7LP0oTyIu9M5yIpUO">公开行情量级估算</b>，实际以询价为准；所有对外引用前须复核 README 顶行权威账本。</p>
+<h2 data-page-node-id="AQsfK9oWzFJrY9YFkYMSCx">0. 一句话结论</h2>
+<p data-page-node-id="2drthTDBZlsEdcfhj10gVQ"><b data-page-node-id="mVPcJPe1rZVrCI0QebTVL1">行业领袖不是功能最全的那一家，是「别人引用你的数」的那一家。</b></p>
+<p data-page-node-id="kjfb8bmCp3Rers3IQdf3Th">1000 万投进电域，三年后我们会多一个谁都不用的电域求解器和一堆更漂亮的假绿；投进真值，三年后我们的每一个数字后面都能跟一句「这个数是硅上测出来的」。</p>
+<h2 data-page-node-id="oXF3M6g2WphN5XaXtbXfGP">1. 为什么不建议投电域：三个硬数字</h2>
+<table data-page-node-id="MCcnJeqwEUh9A35W9bza7E">
+<tr data-page-node-id="uCAIfRwOzLM4AQ7VjvduLA"><th data-page-node-id="qWMstiktMHT3CaL8kvEi3q">#</th><th data-page-node-id="6oPtmCIZBKi0BaSaiwH1BR">数字</th><th data-page-node-id="GNPKOsWoxW3YKuXdi3SKXI">含义</th></tr>
+<tr data-page-node-id="e0BBREkzFOgKhuheHrv6uG"><td data-page-node-id="Ajn1qibqKyYtqSQqPSrPQb">1</td><td data-page-node-id="CeFETmy55ixiAcP6xVdUcB">1000 万 ≈ <b data-page-node-id="rbn4xzqN9m3gRRGdcxQIRs">140 万美元</b></td><td data-page-node-id="QgqdDb6Nu5irJhZp32Q5Bo">而一个 <b data-page-node-id="QEy2pj7uEyxtyEIHagKaNe">112G SerDes IP 授权 $8M–$15M</b>（5nm，2025 行情，且常不外卖）⇒ <b data-page-node-id="aZsbaOjhXVMenixrf5RIxb">连买一个都不够，更别说自研</b></td></tr>
+<tr data-page-node-id="4FRAP8F3UxTSb9CaabGoBA"><td data-page-node-id="xaAOGHZKdc9GyQwcMXNiEO">2</td><td data-page-node-id="Gs2DABb5H6tPrDkkZl3zDD">Cadence 官方立场</td><td data-page-node-id="HJ8wG6Vup2ADnUXOE741i6">112G SerDes 的 make-or-buy，<b data-page-node-id="CxLN7RaDOUWmYuTyEo43Bd">答案永远是 buy</b>。理由：只有最有经验的团队才敢尝试，且<b data-page-node-id="2fceA6vtLA9xSau1OZST2q">必须做 test chip 验证</b>。参考 Alphawave：2017 成立专攻高端 SerDes，2019 才有份额，靠的是创始团队带出来的经验</td></tr>
+<tr data-page-node-id="myPLiGBd423Edy1hQ6NCjD"><td data-page-node-id="E9tRSZEhaWGqWciFuJKl5S">3</td><td data-page-node-id="3kCjme9eiUnd4v7k1iDz9H">硅光 <b data-page-node-id="igf2DFay0bmeCOhVeWNk2a">MPW $8k–95k/次</b></td><td data-page-node-id="i1DoffykyCAixNFxyQQzoG">IMEC / CEA-Leti 200mm：$8k–$30k；TSMC / GF 300mm：$45k–$95k ⇒ <b data-page-node-id="G97JKAEFLdGCH4zWDs5gIV">同样 140 万美元可跑几十轮流片</b></td></tr>
+</table>
+<p data-page-node-id="0w9grsGbWrXVLvXXRcJmvL"><b data-page-node-id="nA8Wq1yO0v3T5bZsrMa9Lv">同样一笔钱：在电域连入场券都摸不到，在真值上能跑几十轮设计-制造-测试循环。</b></p>
+<h2 class="pagebreak" data-page-node-id="Z6Dftn24i8V1GjGnbwaem1">2. AI 智能体为什么救不了这个场</h2>
+<p data-page-node-id="HH7jcXMylfYg3KTth7dbuM">LDA 的 40+ 求解模块确由 AI agent 自举写成——这是事实。但电域的卡点<b data-page-node-id="UrDLNIrJDHEALxNVZbiKha">不在写代码</b>：</p>
+<table data-page-node-id="ycF2QKZ9iIak2wcwz3w385">
+<tr data-page-node-id="rWbaZP2wmndR5Od34dV42G"><th data-page-node-id="rbqvRfChCA3Fc8FVGQVSuz">电域真正缺的</th><th data-page-node-id="VF5s7BIdnnAvBM2J7ACeuI">AI agent 能生成吗</th></tr>
+<tr data-page-node-id="T2zVB1sRH2s9WxttGLOGlm"><td data-page-node-id="uzjZOnvbKa4qr2TFJnXa0y">工艺统计模型（由 PDK 提供）</td><td data-page-node-id="6WHoFvvZ2dycVhhZUV0loq">❌ 生成不出来；foundry 给不给取决于关系与合规，不取决于钱</td></tr>
+<tr data-page-node-id="OKs2nvhCkEEGV7LkxqTCdo"><td data-page-node-id="kMv33N7QZ37xINZ9AvykuV">实测真值（流片 + 封测 + 测试）</td><td data-page-node-id="PQSvcgS1EvTGAM4I03oRDi">❌ 生成不出来，要硅</td></tr>
+<tr data-page-node-id="TOjVbc5JyzSk1sFpAMWSyb"><td data-page-node-id="IRyqcWpZCyumZGJEeZnDWS">客户信任与生态锁定</td><td data-page-node-id="D0GI0DNPPe1L0l0qSPFeMD">❌ 生成不出来</td></tr>
+</table>
+<div class="say" data-page-node-id="qIX9S5UVJC25axQEedH5RO">
+<p data-page-node-id="JIREClPorBjfe640JdJmGO"><b data-page-node-id="FqH4gTT4GxSDP0aoY8LuxB">AI agent 能生成代码，但生成不了真值和信任。</b></p>
+</div>
+<p data-page-node-id="kEUmk4SrazxAs4Cn0T4m1G">更深一层：<b data-page-node-id="z0PPYAApQzY5hk3MzenrpV">光域 AI 做得动，是因为判决锚来自物理定律</b>（麦克斯韦方程给出解析解与守恒量，天然可证伪）。<b data-page-node-id="CJi3OpfZRZHdWnebuMp56f">电域的判决锚来自工艺统计模型和量产实测</b>，那不是方程能给的。</p>
+<p data-page-node-id="3MBBt2asEb6qvkuDuUC5zH">⇒ 没有可证伪的判决锚，AI 写出来的东西<b data-page-node-id="6pwXZZiGCSCWrX1bJYOFxr">进不了 LDA 的判决路径</b>——那就成了我们最忌讳的东西：<b data-page-node-id="a76ki5FHKvB2Gmfxc7dEC1">一个更漂亮的自证桩</b>（52 锚中已有 25 个，教训深刻）。</p>
+<h3 data-page-node-id="gWuwf7y91S81S30FLliWZK">2.1 一个必须交出的反证：Ricursive 与「designless」</h3>
+<p data-page-node-id="8B5H2aFtF54WfmfqMPpF4R"><b data-page-node-id="TA0APqiZagUevcO05rtxNt">事实（2026-09-09 公开检索）</b>：AlphaChip 的两位创造者 Anna Goldie 与 Azalia Mirhoseini 于 2025 年 12 月创立 <b data-page-node-id="EYbHnOfFDDK7ZWsB3e8wCv">Ricursive Intelligence</b>，公开宣称「<b data-page-node-id="T53TJD8kpSXXoXCfPhwl3F">我们不是 EDA 公司，不与 EDA 竞争，不使用标准 EDA 工具链</b>」，目标为端到端（workload → GDSII），把行业从 fabless 推向 <b data-page-node-id="Qh9w7FnmCZhHZKup9qbbwj">designless</b>。</p>
+<table data-page-node-id="PY0VEEzsmq2e1A6DeZhizy">
+<tr data-page-node-id="OZWZJH39kS692ZKcCVgYDO"><th data-page-node-id="pn5AnUkBIdJTJDgtifOQis">时间</th><th data-page-node-id="qe9InUP3gDtivgRFALKM1I">轮次</th><th data-page-node-id="yhX8QZWyeHrUrCjMcJ8Vke">金额</th><th data-page-node-id="nDQaY9V2doSlhbPy5pAJoq">投后估值</th></tr>
+<tr data-page-node-id="MU9H9wb4EuCP4XqaFKZwpm"><td data-page-node-id="mCFUZyH7VhQgJHIrHsrwtA">2025-12</td><td data-page-node-id="6vVBr2zJpoaxemCcHjeP3N">种子（红杉领投）</td><td data-page-node-id="9NLel1xFiEQqUJwjMOsoAL">$35M</td><td data-page-node-id="NWxHzoqwzR19wETpqZKHFX">$750M</td></tr>
+<tr data-page-node-id="CjB2xL1Lm0HCJrmCDYgz1N"><td data-page-node-id="hw263gei5jn63chGWpdtbG">2026-01</td><td data-page-node-id="1718qEcbF7nFJl63piAgD7">A 轮（Lightspeed 领投）</td><td data-page-node-id="h77BSlRt9LjemML780P8cl">$300M</td><td data-page-node-id="Zz1w0eB8TutlypCqBSArFX">$4B</td></tr>
+<tr data-page-node-id="h49b0rmyFaQdEoli7PXwaO"><td data-page-node-id="y3VlKnhRW3NAYu6TwqYJRL">2026-05</td><td data-page-node-id="2j3ejkDcipUKyT1uwAw1OJ">A 轮扩展（GV 领投）</td><td data-page-node-id="WT4KI8ph23gvuYEGu6dHgE">$650M+</td><td data-page-node-id="Ohx0pQGosKkilDO73Y2oIP">$4.65B</td></tr>
+</table>
+<p data-page-node-id="yeiH1etzGchLUmaB8zzMB8">累计约 <b data-page-node-id="mWeJvZcTR4KAs2AlnecZZ2">$985M</b>；投资方含 <b data-page-node-id="lVO4SPRsDD35xOwnWo6YMU">NVentures（英伟达）、AMD Ventures、GV（谷歌风投）、红杉、Lightspeed、DST</b>。三阶段：阶段一（当前）承接物理设计与设计验证；阶段二端到端；阶段三 designless。</p>
+<p data-page-node-id="oo5tRPEEBi0RJcy2CdVNik"><b data-page-node-id="vuALteyJBTVvxRKbLES7EX">这组事实说明什么：</b></p>
+<ol data-page-node-id="Asyu2FOUzAbvPoWGou2FgQ"><li data-page-node-id="e4y0wYMMoclV9JPV0BAOQu">「打破链」确实有人在做，且有顶级资本下注 ⇒ 关于「链」的判断<b data-page-node-id="rGdyBKAnkzyq4THVIXaQXc">必须加限定</b>：<b data-page-node-id="QQqLjz5zY9Tk26wErYVJYH">今天没被打破，但正在被试图打破</b>。</li><li data-page-node-id="fSJhxbX3mnBGMvKxp8OWpk"><b data-page-node-id="Gl62gmHUUKJIhtUKKsPkd4">但它打的是电子链，不是光电链。</b></li><li data-page-node-id="T9KbrZlLMk1I6M5PbkjaKz">它<b data-page-node-id="S0hgUYqBgyShHtewyLpEKZ">印证「钱不够」</b>：Ricursive 累计融资近 $985M，且公开说明资金<b data-page-node-id="yqFfFh55Y7w3ivdKYArGa8">主要花在 GPU 算力小时</b>上；1000 万人民币（≈$1.4M）是该赛道的零头。</li></ol>
+<p data-page-node-id="kHHxqDyy1QcUrfCBfdioMw"><b data-page-node-id="igNTzxQkCmpigrzPFOn7OD">最关键的分野：为什么电子链能被 AI 端到端打，光子链不能</b></p>
+<p data-page-node-id="eAwTBLvXioNN4JVrnRqZd3">AI（尤其强化学习）能进入一个环节的前提，是<b data-page-node-id="C8xwElAwejbnwJPKjTlTpE">该环节有可精确计算的判决信号（reward）</b>。</p>
+<table data-page-node-id="vYICXqUb0YqM9qAigSmxse">
+<tr data-page-node-id="qopERulGoDIe7EvvUh3QVP"><th data-page-node-id="MyZyHBSgUKNrGe1d1uPnZT"></th><th data-page-node-id="odJL5H5bO2VVqosS79eMYG">电子链</th><th data-page-node-id="oxACr8jExjpq8m3CZDIZrn">光子链</th></tr>
+<tr data-page-node-id="CTRwP39dbwF0Ywhb1vD056"><td data-page-node-id="5veIsaFhFlNCEZmJwJCAWI">判决信号</td><td data-page-node-id="pdXogbnQ9yD2dXr4LHWAQX">PPA（性能/功耗/面积）、时序、线长、拥塞、DRC——<b data-page-node-id="gyXRanNquNfKJ7oa8XfFBh">全是可精确计算的死标量</b></td><td data-page-node-id="qFlXHmQTbt002k4AIxEzMP">器件有 Maxwell 方程锚、链路有功率预算；但<b data-page-node-id="EziiIhEhZZRtVyexUHJxSK">工艺角是假设值、封装测试无锚、无统一语义交换标准</b></td></tr>
+<tr data-page-node-id="LIhJT2lksTy5WsKv9GuVB5"><td data-page-node-id="ln3uT2FsPqOLEmsr2bVUEn">AI 渗透</td><td data-page-node-id="w3GZb1AVTOsrvCScwTOXpP">已全链渗透（AlphaChip / Synopsys DSO.ai / Cadence Cerebrus）</td><td data-page-node-id="unfGppBb9NYBC0oTqxiqX3">只能进前半段，<b data-page-node-id="jm6kK2WbSNzzHLa1s6OWYi">断在工艺角与封测</b></td></tr>
+</table>
+<div class="say" data-page-node-id="OJl4hMtwELSU526n7bhSdY">
+<p data-page-node-id="7WNS62HUkcEid9bNtLKcnE"><b data-page-node-id="OwYjiNc23uOzoWr4Jcx58j">AI 设计芯片走通了，不是因为 AI 变强了，是因为电子链的判决锚成熟。瓶颈是判决锚，不是算力。</b></p>
+</div>
+<p data-page-node-id="1S54wTbdqnq7kpBqFrUc8q"><b data-page-node-id="NyNPiXQGzjQ7vaIDZUTYNZ">方法论分歧</b>：Ricursive 是「AI 做设计决策」，LDA 是「<b data-page-node-id="3fnDIUxOiZt3zQya1WqLO3">AI 出题、物理定律判卷</b>」。电子领域 PPA 可计算 ⇒ Ricursive 的路可行；<b data-page-node-id="B8hV140JubmMp0XtUud6Cn">光子领域没有可计算的 reward</b> ⇒ 只能靠物理定律锚 + 公开实证锚。<b data-page-node-id="djY7eiaeCtBkUQLeItFNpg">这正是 LDA 在光子侧的护城河，也是把钱投在真值而非电域的根本原因。</b></p>
+<p data-page-node-id="quu8k7KeAsLXtk6hrBYxIU"><b data-page-node-id="fNHgtaccMKiLc0i7sv5XLV">补充事实</b>：Google 是最垂直整合的公司，但 AlphaChip 也只做 floorplanning 中<b data-page-node-id="C5bjkzBOkuHYbxNaCrkqjR">有限的一组 block</b>，Google 与 MediaTek 仍由人类工程师承担大部分工作；该成果在 EDA 社区<b data-page-node-id="ECE262SdUdvwo1aovrpXRx">存在公开争议</b>（ISPD 2023 质疑；Google 反驳称对方未训练至收敛且算力仅 1/20）。</p>
+<p data-page-node-id="Qa2qlaG10bKVPLIVaQyOGM"><b data-page-node-id="CZLGo4FOrROSeEk8I7yYiI">可证伪条件（出现任一条，本备忘录结论即须改口）：</b></p>
+<ol data-page-node-id="VwMALM94BIkj360vwQA4kX"><li data-page-node-id="UrYfuz0eMteu1rvc56sLKm">有公司用 AI <b data-page-node-id="tyxWEnO9AyO2ouy1DSLcsE">端到端做出光子芯片</b>（需求 → GDSII）并<b data-page-node-id="3v4Qqk3MATGWkMtpdeVOZA">流片验证</b>，第三方可复现；</li><li data-page-node-id="6o4wrR6nmjrixdrdoOTMaW">光子界出现<b data-page-node-id="ADCoh0RDWIbvNCFCkdAO30">统一的语义交换标准</b> + 公开可查的<b data-page-node-id="C3yP1TBKHDlW0swj7r9G5f">工艺统计分布</b>，使「接口」与「工艺角」两格不再空缺。</li></ol>
+<h3 data-page-node-id="Qj4U9YkdSBO8VOqDTnrfXO">2.2 客户反驳与成本真相：钱不在电，也不在光，在接缝</h3>
+<p data-page-node-id="zNTtPRzeKlZv5mWTXWeVPU"><b data-page-node-id="pGbVSgBYCN1NgA5xMUdV0f">客户的反驳（成立）</b>：「电域其实就是 ADC/DAC、Driver/TIA 那一块，不是最复杂的，限在这个领域根本不需要那么多钱；所以整个光电集成的成本应该比单纯电子更容易。」</p>
+<p data-page-node-id="Y3QXhr6HcfOknhsAN833zj"><b data-page-node-id="dm605uZLaH40RdqJn5ksc8">我必须承认的论证错误</b>：此前用 <b data-page-node-id="ydWZPVVubsevk0VuAYwfn5">112G SerDes</b>（授权 $8M–15M）代表整个「电域」，属于<b data-page-node-id="LfXg8Ok7wMJJ4BdRMbJdE7">用最难的代表整体、偷换范围</b>。光电集成里的电接口是 Driver、TIA、LDD、偏置 DAC、加热器驱动，不是 112G SerDes。</p>
+<p data-page-node-id="y0Z8E8gXMDFoPBa3nBvKCt"><b data-page-node-id="uQqCswVDvnlQA7E0uSygAZ">数据支持客户的「电不贵」</b>：</p>
+<table data-page-node-id="c5qHLVIJ8OfiEoQLqKNSn8">
+<tr data-page-node-id="Uiu589qDElS9r2SGR9jGXn"><th data-page-node-id="EFaWGvPshkzoVh9FVXGoCw">口径</th><th data-page-node-id="QdXZaBsgxPeP4DpTU8Pyrr">电芯片占硅光模块成本</th></tr>
+<tr data-page-node-id="KpQobpo9rbxrR2Oc4JV217"><td data-page-node-id="kynJB0n6Lz3psPKGuS3cAC">单模硅光收发模块（Yole，IEEE 802.3cz 公开材料）</td><td data-page-node-id="xgGZgD607U20oUuR54JwxS"><b data-page-node-id="r6BStdzDMtywgq8ol6cUEG">8.6%</b>（含 Driver/TIA/LDD 等）</td></tr>
+<tr data-page-node-id="x2FjUCJ2vJKBuDKaHFnWHg"><td data-page-node-id="jU4vJ6gmBWkc6MJNdw11Io">1.6T 模块（较宽口径，2026）</td><td data-page-node-id="PdTOYBkB4JYFDEhOWGqzhb">15%–20%，其中 <b data-page-node-id="kqeLlo3J9GcAvuAOANx8mS">DSP 占电芯片成本 60%–70%</b>（7nm DSP 单颗 $130，博通/Marvell 垄断）⇒ Driver/TIA 只是零头</td></tr>
+</table>
+<p data-page-node-id="aLNv11RlwWR5nepFOmiuTL"><b data-page-node-id="U9Tr70TFWsTVuCzWEMDiD8">但客户的推论是反的：光电集成不是更便宜，是更贵。</b></p>
+<table data-page-node-id="k5F77q5wG3q5sJvWGdYNUe">
+<tr data-page-node-id="uWBWDpEjeiBO2J7cMER11T"><th data-page-node-id="XDn2F0UqLRgjMqNLzx6ByI">项</th><th data-page-node-id="b3ABZOsTQyS2bpS2obZ2OC">单模硅光收发模块成本占比</th></tr>
+<tr data-page-node-id="SsUBpiO7v2s6nwwoiYuPQb"><td data-page-node-id="FpcCVnUIu0niuDqs5fUmb5"><b data-page-node-id="66vPTHwvHUDsfKWLcZ8PsQ">封装 · 测试 · 组装</b></td><td data-page-node-id="5GKpjKs4mcc6dVQPokcD55"><b data-page-node-id="MzWSDVsDRaNJYDgT1N59ut">79.9%</b></td></tr>
+<tr data-page-node-id="r0aQ1EEG74BxGdFPuhPXKC"><td data-page-node-id="1cb6i26K12NudJrQzAsbxM">硅光芯片（发射 + 接收）</td><td data-page-node-id="aY9EVqQ8SMDKbVn9mcGsCv">11.4%</td></tr>
+<tr data-page-node-id="j6LABDyCfvcIiuUWtYRYAK"><td data-page-node-id="ZSqP152FbNSfkVMoOyXNYl">电芯片（Driver / TIA / LDD 等）</td><td data-page-node-id="f42LGjCJDEJ8sPdk8agbs8">8.6%</td></tr>
+</table>
+<p data-page-node-id="lFbscQmVHM53auoE8T3XEr"><b data-page-node-id="jCWWePD9WkFWfJK9hPhXyn">为什么封装这么贵</b>：单模光纤模场直径约 <b data-page-node-id="VEzbWPZ816PgkXDdLD5hYg">10 µm</b>，硅波导<b data-page-node-id="M3RmoYrwrKXtMuH6w2KEdn">亚微米</b>，对准容差 <b data-page-node-id="Uq4u1dsC5CB8rkMbUrT71f">&lt;0.5 µm</b>（CPO 要求亚微米、误差 ≤0.3 µm）。<b data-page-node-id="kRmu6KuZBBH9DHAVCvJuNT">主动对准是串行逐器件的</b>，每个器件占机时、端口越多越慢，<b data-page-node-id="6u1o9trKVeLhh6tlCfq6F1">无法像晶圆级制造那样并行扩展</b>。</p>
+<p data-page-node-id="W5FRD77EDol05jLpwDjS15"><b data-page-node-id="S7JKnCMNQfR68jVyXswDQH">产业实证</b>：德国 ficonTEC 高端全自动耦合设备<b data-page-node-id="SXcWel84izqIOJl4rsAYHC">年产能仅 30–40 台，交期 5–7 个月，定制机型超 9 个月</b>；硅光晶圆测试系统<b data-page-node-id="9WiGemfR6bUoajFMLoPvIq">单机价值超 1000 万元</b>；2026 年国内硅光封装市场规模约 170.3 亿元（CPO 封装产值 28.6 亿元，同比 +195.9%）。</p>
+<div class="say" data-page-node-id="5jxXBk5tbm2OFEBGqo54cs">
+<p data-page-node-id="TO5MT4si33Rue54xGBeCPB"><b data-page-node-id="TjRT8UkxsThSf8yysdpQAI">⇒ 光电集成的成本大头，既不在光、也不在电，而在二者的「接缝」——封装与耦合对准。这恰恰是 LDA 要占的那一格。</b></p>
+</div>
+<p data-page-node-id="68r2UAcivAoGADfvQYxLC6"><b data-page-node-id="REDbdt7f7zcnYQWcieBDWN">三档投入（回答「到底需要多少钱」）</b></p>
+<table data-page-node-id="NoiDVZRbHkRzpmVz7ISFzK">
+<tr data-page-node-id="UCHw09WcRXsT6HE1KBlol3"><th data-page-node-id="UHNNbAbWZg7FkqYe3msz0o">档</th><th data-page-node-id="QzkCNVBjEJGvr6RojArS8b">做什么</th><th data-page-node-id="KGJJ3Il5hCb2SHnHliXkGt">需要多少</th><th data-page-node-id="IYSMxseXvE7qyPRzjjqt71">判断</th></tr>
+<tr data-page-node-id="N5HTAKpRGxVhuwt4DdPbCV"><td data-page-node-id="D8pv2OKe9sdWw2J8YG5MXB"><b data-page-node-id="PpEiynO6E2TPhIn9fDWQpM">A 光电接口层</b>（客户划定的范围）</td><td data-page-node-id="5EJgIIUpBddhDdxSZZChNj">Driver/TIA/ADC-DAC 行为级模型 + 带参数网表 + 接进 Cadence 流程</td><td data-page-node-id="tbR96ym1cUnJKUxn0VTFeP"><b data-page-node-id="a6qemEa56bUa9mX1EWVBaE">150–300 万</b>（2–3 人 / 12–18 个月）</td><td data-page-node-id="vBOXTIKDNFMWIPYfGQj0Yl">客户说得对，不贵；1000 万绰绰有余</td></tr>
+<tr data-page-node-id="ouE7FEmG690gY3pJ0rB0mm"><td data-page-node-id="WMQD3ESGwjQRQ2D3COmtdY"><b data-page-node-id="ZSIWKWFeQzAqS3tuMKQC1Y">B 真值 + 接口</b>（LDA 该做的）</td><td data-page-node-id="s6xLzzkzrFbyJvqUocRrlS">A + 3–4 轮 MPW + 封测 + 测试能力</td><td data-page-node-id="vrrT8i3fsqOIC5VUUY9LXj"><b data-page-node-id="xnydfhjbOcLlA5gspYhg6c">700–1200 万</b></td><td data-page-node-id="YlEvDgeJdpX8lSLZmCSLCm">1000 万刚好够，略紧</td></tr>
+<tr data-page-node-id="r4XuEY5ycJopwnEftWVpK1"><td data-page-node-id="ydXZO2Gg7c8MF1jYILQme5"><b data-page-node-id="EhSACu21rVlMUunoEwHzf7">C 光电一体化平台</b>（含封装测试工程能力）</td><td data-page-node-id="gwxkkDzGGfcmmyzB34QhUF">B + 封装设计 + 测试产线 + 可靠性</td><td data-page-node-id="oyOaNyxW0PvmBoEACN5UZf"><b data-page-node-id="HSZrqkbwpKkcIDCtwvZzHu">6000 万 – 1.5 亿</b></td><td data-page-node-id="dLLB7SOkWrVmo4gkNGfRXr">1000 万远远不够</td></tr>
+</table>
+<p data-page-node-id="CHgeLqseYfxyLg6lFVT5Lg">🔑 <b data-page-node-id="SJFV8BSigE63v4RBZimsHW">结论：1000 万不是不够，是「够做正确的事，不够做客户想象的事」。</b></p>
+<p data-page-node-id="qfBS8ngBTyH8Dr8bbUxvU4">🔴 <b data-page-node-id="BmNKHzLRLENCmf7Y7wXrMl">B 档新发现</b>：封装测试占近八成 ⇒ 跑完 MPW 之后<b data-page-node-id="aNAeYA3nfaizEni2qN1JLI">封测才是花钱大头</b>。建议<b data-page-node-id="F8XiKIZisAEjoWpB2BH3CS">先委托测试、后自建</b>（自建耦合/测试能力需几百万至上千万）。</p>
+<p data-page-node-id="U2CRzE8glzyR8g9yjO0Dxa">🔴 <b data-page-node-id="rvFfl8OwScfZO6xEEWaIDr">战略修正（对我们自己的路线）</b>：「设计侧虚拟制造」<b data-page-node-id="zRNYkpjMDqSCxaGj5DprTt">不能只做工艺波动</b>（光刻/刻蚀 → CD 偏差 → 工艺角）。既然八成成本在封装与耦合，<b data-page-node-id="F2dEFlHRnNPZ5Q4HpDcV1p">真正值钱的设计优化是「可封装性」</b>——设计阶段就算清耦合容差、对准失配、封装良率。这正是 <b data-page-node-id="Qsk653FX40LV8YrD7q7IEV">S13 设计良率锚 + P-CPO 间距几何下界护栏</b>能做之事，也解释了硅光平台那条 7 工位封装产线值得改造的原因。</p>
+<p data-page-node-id="JtdXMfpid5MGMaVw4yvnV3"><b data-page-node-id="Alw7k2A6GAx5t3FP7rmGyT">对客户的答法</b></p>
+<div class="say" data-page-node-id="0daDLSYaE1fPUSpLmstYcE">
+<p data-page-node-id="pzeqRCmjIFOoN8MJMfQIdr">「您说得对，我上次举 112G SerDes 是用最难的代表了整体，范围用错了。数据也支持您——电芯片只占硅光模块成本不到一成，1.6T 宽口径下大头还是 DSP，不是 driver/TIA。 但有个结论我得反过来讲：<b data-page-node-id="dKZG2hsMJq2as17ffPebA5">光电集成不是比纯电子便宜，是更贵。</b> 硅光模块成本里<b data-page-node-id="zxHs4xb0yiwZgwc9Zikft6">封装、测试、组装占八成</b>——光纤模场十微米、硅波导亚微米，对准容差零点几微米，而主动对准是串行逐器件的，没法像晶圆那样并行扩产；全球最顶尖的耦合设备一年只产三四十台，交期九个月。 <b data-page-node-id="7YTgPXKT2RgdUkRjzSzNwi">所以真正的成本不在光、也不在电，在光与电的接缝上。</b> 我们做的正是那一格——不是想做整个光电一体化，是因为那一格又贵又没人管。 好消息是：<b data-page-node-id="idg0aPu9vVGhBPHxHc8yXP">您把范围限定在接口这一层，这单我们能接，两三百万、一年半就够。</b> 一千万不够的是『自己建封装测试能力』，那要六千万到一个半亿。」</p>
+</div>
+<h2 class="pagebreak" data-page-node-id="FhkQY1esIrL2BnUKEdFdt9">3. 领袖地位从哪里来</h2>
+<ul data-page-node-id="DW3nSrHfk6YNw2XcoLYqhG"><li data-page-node-id="CceJ5kG5GVrgCyHdziqN33">Synopsys 的领袖地位来自它<b data-page-node-id="8QhYI1mwByBTItCpTdxjUa">定义了格式与流程</b>，不是因为它做得多。<b data-page-node-id="W0DrpyufIIEFLs65AHl0dZ">光电一体化不会让我们成为领袖，只会让我们成为一家功能齐全但没人用的公司。</b></li><li data-page-node-id="XEwd3iv5QH2P4WYCevdWAA">我们手上唯一有领袖相的资产：<b data-page-node-id="ubYDCzPluRK2PXzBmcgcyE">L0 IR / DesignPackage JSON</b>。电子有 OpenAccess、有 IBIS-AMI，<b data-page-node-id="rSy7x8gSEGQswtbipxlSBC">光子界至今没有统一的语义交换标准</b>——这个位今天空着。</li><li data-page-node-id="lHlzBtjqBXEHKfDAlMPyxC">🔴 但占标准位的前提是<b data-page-node-id="Knl2pAXyEiiNXfbuGBACTU">有人用</b>。当前 <b data-page-node-id="YwHE43jKDwApHW8XVAt1Bj">users = 1</b>。⇒ <b data-page-node-id="FfwMcxF4e6qKNPKrBugzsS">标准不是写出来的，是被采用出来的。</b></li><li data-page-node-id="C1GzsvtnAlLS85WXw3PFSV">LDA 定位原文：<b data-page-node-id="FrFpquAWJx9yi7IxZkdwv1">护城河 = 标准 + 生态 + PDK 供给</b>——三件都不靠「功能齐全」。</li></ul>
+<h2 class="pagebreak" data-page-node-id="qyxBjLigcuV8NiyFAL0FUH">4. 建议配置（3 年，量级估算）</h2>
+<table data-page-node-id="CMeKKJUoeAnqitG1CLbkzm">
+<tr data-page-node-id="ane5LrKH4I5wvUSekiUox5"><th data-page-node-id="lVdEVKr5BGJdJq5x9pS5h0">项</th><th data-page-node-id="5Jo2YDGSJzRJBEBUEAukkW">预算</th><th data-page-node-id="yz9YBByi6f3AvPUIVmgkA6">买到什么</th></tr>
+<tr data-page-node-id="1frhz2wPZDPu3SnX6qlAtA"><td data-page-node-id="MNQaE504oSoFtPm6Do7zVM"><b data-page-node-id="Idzjxt31yZEdPvbGWy8wIq">真值链</b></td><td data-page-node-id="FFQEuKGiHjA0m9RzEWL6mF">300–400 万</td><td data-page-node-id="OtNnO1FpGtQUufDBkRwTM5">3–4 轮 MPW + 封测 + 测试能力，跑完整「设计-制造-测试」循环。目标：换掉一批自证桩；工艺角从 SS/TT/FF 假设变<b data-page-node-id="kUr5EvRHQIsb9KOPyDGFen">实测分布</b></td></tr>
+<tr data-page-node-id="8HEyU2BAYXEmRjDMZ7i4jz"><td data-page-node-id="wn4BCl6C9aBEuHHcIKRrIM"><b data-page-node-id="1gwJw693L2gbdvfDxGPDmA">人</b></td><td data-page-node-id="JTDquDAnXrWpivxdsAZPjd">400–500 万</td><td data-page-node-id="QQSQ9BOkNoVR6yduLaW3EH">3–5 人核心团队（硅光设计 / 封测 / 工具开发 / 生态）。诚实说：在中国这够 5 人干 2–3 年</td></tr>
+<tr data-page-node-id="15vsOiReORgtmbUpNQ9UIq"><td data-page-node-id="M12MhAQhrJU9fpO9Elf4u6"><b data-page-node-id="9NHGRktoACajlioe4tB4nm">标杆客户</b></td><td data-page-node-id="BmTFr4V58n86qBOUy1YS9i">100–200 万</td><td data-page-node-id="1HNRUVgq10tMcJ9oe2WHT3">倒贴做 1–2 个案例，换<b data-page-node-id="6qWuv5ErDNHks6FtyTcdDq">可公开的实测数据 + 可引用案例</b></td></tr>
+<tr data-page-node-id="qiAbiM65IgbAxELabzVKKV"><td data-page-node-id="Rv1pvpIGVt0G5qDvjudBOe"><b data-page-node-id="9g4JOaCG7RChJC5FgIHGXx">光电接口层</b></td><td data-page-node-id="5uAQBN9T7i2S5yKmDik6DH">150–200 万</td><td data-page-node-id="iq5GNwK91BxBcN4OeEyoaW">网表从「拓扑骨架」升级为<b data-page-node-id="sC35QR5avamfcyy9m2nRQb">带参数紧凑模型</b>（VπL / 带宽 / 结电容 / 响应度）+ 接进 Cadence 流程。便宜且客户会用</td></tr>
+<tr data-page-node-id="RcFhxyejjkxgncUxh57A3a"><td data-page-node-id="hSQeFvyTL6486ui7k970q7"><b data-page-node-id="w4lzfiaBDSTcVpKOOkcDoM">生态与标准</b></td><td data-page-node-id="eQGhyqz6ZTHV35UpzIjGU6">100 万</td><td data-page-node-id="eWLjBIie1qnwmcmQn8N9D1">PDK 合作、开源社区、把 L0 IR 推出去</td></tr>
+</table>
+<p data-page-node-id="MqThV3kZ0smCeUHKXtNLmN"><b data-page-node-id="SVqDC2HpELsf9uKjuJtrSR">三年后的成果不是「光电一体化 EDA」，而是：一个有实测背书、有标杆客户、定义了光子语义交换格式的光设计入口。</b></p>
+<h2 class="pagebreak" data-page-node-id="kk1Yr11r6XY9nD7TheWt56">5. 反向提议：先给我 100 万，不要 1000 万</h2>
+<div class="say" data-page-node-id="QNkVl8Y1Ebv2xK7vOskc2k">
+<p data-page-node-id="eH9w3EqoFJOh3jSlIL4qEv"><b data-page-node-id="sOUu62ONefqOaN1D27scFz">现在不是钱不够，是「不知道钱该往哪打」——这个问题只能靠小步实测回答，不能靠一次性投入回答。</b></p>
+</div>
+<p data-page-node-id="OTisa2tMhYk5XRSvXEOZ3H">100 万 + 12 个月，做三件可证伪的事：</p>
+<ol data-page-node-id="xFAYw4V6KG7DfmVR4QoRCf"><li data-page-node-id="a4FNCAmuyM99ESIB3MfkDv">跑 <b data-page-node-id="MZf4eDlEJDN30Jx6VTJaG2">2 轮 MPW</b>，拿到本团队自己的实测数据</li><li data-page-node-id="nssoURO2oi6COCH7JeOv6h">把至少 <b data-page-node-id="rlxc8tLO1r5gb4GBW93NTX">5 个自证桩换成真锚</b></li><li data-page-node-id="7NQVn9Hpfz8WgVCFzOA15R">拿下 <b data-page-node-id="5PKPLskODCfxPLuTictgVF">1 个付费客户</b></li></ol>
+<ul data-page-node-id="A4Y6odjpf48NcLBYagqcnH"><li data-page-node-id="4vBjGvmG3Kz9JvxIlX9HKm"><b data-page-node-id="6UwJATJOr7LX2gyS5j9MoK">做到了</b> ⇒ 剩下 900 万投进来的胜率与估值完全不同</li><li data-page-node-id="2PnnyATfKgLkrUvSQaIzQm"><b data-page-node-id="JB8esbKTHX5nuUNpBxhwPh">做不到</b> ⇒ 1000 万投进去也是打水漂，<b data-page-node-id="8QBEub4CylH433Xx3z7gnf">而且是在我们最不确定的时候把钱烧掉</b></li></ul>
+<h2 data-page-node-id="3nhAu4LxgNyvP0Hxmqygta">6. 什么时候可以做电域：三个触发条件</h2>
+<table data-page-node-id="EfGMd8zKm9XYZEK6aQd2XC">
+<tr data-page-node-id="MlHcUCzt0ILiHo3vEIpAID"><th data-page-node-id="skBZcJdN9err0n8EApU5i8">#</th><th data-page-node-id="41Yax3Lt0jDSGxIjwspgsV">条件</th><th data-page-node-id="HhdW10sjkzahKhVNmJRaWV">钱能买到吗</th></tr>
+<tr data-page-node-id="tHXiBlDYzQrnVfHA3H3jeo"><td data-page-node-id="4QJNSto4dGyZ74fVi91hAO">1</td><td data-page-node-id="P5JwmiY1JryIsryhzfHqGb">有<b data-page-node-id="w6Onh6tRUrrVsLCXKkHdhF">可对齐</b>的电域实测真值</td><td data-page-node-id="6UYM2SaEBjPwVSamEKCF2E">🟠 部分可以（买 IP 授权做对标、买 test chip）</td></tr>
+<tr data-page-node-id="4Fz2oSjuDWIIyHqd8znh4S"><td data-page-node-id="c6wCegbFsBEFF8DfI45kil">2</td><td data-page-node-id="Hu8GnIXiEOxNBkPmLGkdqz">有电域 PDK 的<b data-page-node-id="fGtu9Qrtd9pBoNPoAvRnXs">工艺统计模型</b></td><td data-page-node-id="TOY18PeGa5WfpLiCOJWh5j">❌ 买不到（取决于与 foundry 的关系与合规）</td></tr>
+<tr data-page-node-id="unyIAefsGUq6sx1GGrAF99"><td data-page-node-id="kJDQnQLv3UHTkyw51MBvrU">3</td><td data-page-node-id="ashq9eQ0iMZuonr82UnZNJ">有客户<b data-page-node-id="cYSpNZKzimeQgawDxf3KKQ">签字</b>说「你做了我就换」</td><td data-page-node-id="4J7xcdnYeaj0st4YPqnM3a">❌ 买不到（取决于信任）</td></tr>
+</table>
+<p data-page-node-id="rhTzjgCP1YOW0fvGRft8WD"><b data-page-node-id="YwxzR5eR3GCDqTCIxkfH5P">⇒ 钱能买到的部分，恰好是不够的那部分。</b> 今天三个条件一个都不满足。</p>
+<p data-page-node-id="UlD19ahVq5SfAQFliRvVkV">补充：即便三条满足，优先做的也应是<b data-page-node-id="h3eAqN65JsaOiCfripb9eA">光电接口层</b>（便宜、可证伪、客户会用），而非自研电域求解器。</p>
+<h2 data-page-node-id="IpMWjzOqDxs3KCjn4b4CTv">7. 诚实边界与数据来源</h2>
+<p data-page-node-id="td1kdAMBxLj8AHU2JFYaWe"><b data-page-node-id="6jEWD3zhPlgGAHP4kyXinR">必须同时说明的边界：</b></p>
+<ul data-page-node-id="nDzKhRe9jE3O13TlkQihu8"><li data-page-node-id="4QFgcZIgVt5yCciCgAOdY6">本备忘录的成本数字为<b data-page-node-id="KA2WpMgojHdXj49yncVk4q">公开行情的量级估算</b>，非报价；MPW 价格随平台、面积、封测方式差异极大，实际以询价为准。</li><li data-page-node-id="DcNQkuCGgpihEYhZAoEOqk">「48 条产品级对标全通过」是<b data-page-node-id="35sQW35jtIqZGI52YvOpxL">对标公开规格的等效验证</b>（公开 roadmap / 技术报告 / OIF 实施协议 / 论文 DOI），<b data-page-node-id="g5mggn0J3VTRlYgGEQfxM5">非本团队流片验证，亦非厂商认证</b>。</li><li data-page-node-id="yRLLF1KpFs5mnyvlEwAXQR">LDA 当前<b data-page-node-id="G1MAgDz4Xu4AuBEmxXVYRa">一次都没有流片过</b>；52 道锚中 <b data-page-node-id="fJsMUeXoHQDxl4Yew1wtMJ">26 严格独立 / 1 降级 / 25 自证桩</b>。</li><li data-page-node-id="YcfDrRSFnxjFdghLhX1Qlp">对外讲任何数字前，<b data-page-node-id="EOrDKIFYWrE8l16TEp5cEp">须现场核对 README 顶行权威账本</b>。</li></ul>
+<p data-page-node-id="JDEnlGYMOTwmUr6TpiofHC"><b data-page-node-id="TTr8CQCano0BRLpWUeLZKi">数据来源（均为公开可溯源）：</b></p>
+<table data-page-node-id="aDDtsjoYAzj7gqKeJ5ANv8">
+<tr data-page-node-id="ihd5GT3vHF9k1PGE5KE8lR"><th data-page-node-id="jE5pcDencjUcga5EtWrhKH">数据</th><th data-page-node-id="14CX9FFLVohtUzXZL6w3Vo">来源</th></tr>
+<tr data-page-node-id="5DOXH4fWQnqFuFXVpvT786"><td data-page-node-id="NnGPwyl90PC7SntdUvKAuS">MPW shuttle $8k–$95k/reticle block（2025）；专用 wafer run $400k–$1M+</td><td data-page-node-id="sVKsSp2uxdm9F04MMlifaL">硅光 MPW 代工市场公开调研（含 IMEC / CEA-Leti / TSMC / GF / AMF 平台）</td></tr>
+<tr data-page-node-id="uAJFbwFKWT7lW9w2dPzJRe"><td data-page-node-id="xYFco4In3ZQEYYMYxmDi3p">112G SerDes IP 授权 $8M–$15M（5nm）</td><td data-page-node-id="lJvVNkbGmWnEDL9uLyWR3b">高速 SerDes IP 市场公开报告（2025）</td></tr>
+<tr data-page-node-id="axhMCqLYEuLS6wyJAU6pBP"><td data-page-node-id="HqZN8mdHbNDru0stVwxHuD">「112G SerDes make-or-buy 答案永远是 buy」</td><td data-page-node-id="NqMldq2GG8tHRoz3mklgY7">Cadence 官方白皮书 Overcoming Signal Integrity Challenges of 112G Connections</td></tr>
+<tr data-page-node-id="JwrVyf72ICIHZlE2TMKMv3"><td data-page-node-id="R1o4eD9RokJJQXIc7cIOg7">Alphawave 发展轨迹（2017 成立、2019 起份额）</td><td data-page-node-id="43bfCX9DfugPZfLCowrBgR">IPnest / Design-Reuse 公开分析</td></tr>
+<tr data-page-node-id="dGPhe70woZj4SpFOBimv7Q"><td data-page-node-id="UuT1FZLJGcuN0CjCXtbWFL">Ricursive 融资节奏（种子 $35M / A 轮 $300M / 扩展 $650M+，累计 ~$985M）及其「非 EDA、不用标准工具链」定位</td><td data-page-node-id="i2LZ2tKOmWBl0w1QrXZ9m4">EE Times 独家专访；TechCrunch / NYT 融资报道</td></tr>
+<tr data-page-node-id="TawVDpZxs0GXAk2x4mF9e0"><td data-page-node-id="u3FNZJe9z7UWMlmGHk3DXM">AlphaChip 仅覆盖 floorplanning 有限 block、人类仍承担大部分工作；存在 EDA 社区公开争议</td><td data-page-node-id="x1wXKqkA9GaFTCDnBs7ORc">行业媒体与 ISPD 2023 相关争议报道</td></tr>
+<tr data-page-node-id="B1Z4uqSGqCpLPaM27lrM5N"><td data-page-node-id="UKV1VDMF3XABfr6WFGAfTW">单模硅光收发模块成本结构（封装·测试·组装 79.9% / 硅光芯片 11.4% / 电芯片 8.6%）</td><td data-page-node-id="jphXHkGV3P2vTCd9WpLvGH">Yole Développement，IEEE 802.3cz 公开会议材料（Ogura, 2021）；天风证券 2024 报告同指「硅光芯片约 10%、封装约 80%」</td></tr>
+<tr data-page-node-id="FHpgSdXoPVf19h3wlPhNko"><td data-page-node-id="aoTsyX43bt4GMoU32NN03E">1.6T 模块宽口径成本（电芯片 15%–20%，其中 DSP 占 60%–70%；7nm DSP 单颗 $130）</td><td data-page-node-id="7a6x014Nwh7QDubVyOoUWJ">2026 硅光产业链成本拆解公开报道</td></tr>
+<tr data-page-node-id="l1PPsfHCVqHnPjQBnM9gSi"><td data-page-node-id="dJPavGANmDHH0h6sgTSpC6">ficonTEC 耦合设备年产能 30–40 台、交期 5–7 个月（定制超 9 个月）；硅光晶圆测试系统单机超 1000 万元</td><td data-page-node-id="gqC2oPQB8ax444EklQ4j8k">2026 硅光封测设备产业公开报道（罗博特科 / 燕麦科技等）</td></tr>
+</table>
+<h2 data-page-node-id="Bvkw4vvN1Ajpakg2qaO4gB">8. 待杜先生定的事</h2>
+<ol data-page-node-id="5JXOYuGlrK9udlNsqbeHOl"><li data-page-node-id="Y3qPcuZVgQVCWJBNQAborF"><b data-page-node-id="4nHiQ2aocGAuBYboqXcJyM">是否接受「不投电域、先投真值」这个方向？</b></li><li data-page-node-id="hF1kPrhCGJVWznjdTPuAs1"><b data-page-node-id="mSEBEQDwYSc5MsRlnLKuvP">是否接受「先 100 万 / 12 个月验证，再决定剩下 900 万」这个节奏？</b></li><li data-page-node-id="YWz4qa8lKklbCABsLxUSUq"><b data-page-node-id="vaAvmBAunlKhGRY05ksiAd">这 1000 万的性质</b>：自有资金 / 意向投资 / 政府项目配套？——性质不同，可承受的失败率和退出条件完全不同。</li><li data-page-node-id="UVZlgBHxVOBpoGMBUEXY7c"><b data-page-node-id="mvjbyqOuClzCvRk3tuDX6r">是否授权启动 MPW 询价？</b>（IMEC / Cornerstone / AIM / 国内平台）——这一步零成本，但要先知道真实价格才能做预算。</li><li data-page-node-id="a0kUZaTUfL9L9TDqwuy6OS"><b data-page-node-id="UFbjll4FW2fDN2XBztSaBU">接受 A 档（150–300 万光电接口层）作为首个可接订单吗？</b>——客户已把范围划小，这是当下最可能落地的一单。</li><li data-page-node-id="UubmxvkOmkHYn3b5F85Tmk"><b data-page-node-id="PcBtG0BYOBMcbA2KORF3UP">虚拟制造的优先级要不要调整？</b>（从「只做工艺波动」扩展到「纳入耦合/封装容差」——因为八成成本在那里）</li></ol>
+<p class="foot" data-page-node-id="RwBqCsGGnv5dIzC4KzNwHY">本册为对外认知装备，不含任何内部资产信息（服务器地址、令牌、内部路径均未收录）。</p>
+</div></body></html>

@@ -6,7 +6,7 @@
     spec ──▶ Generator(AI-dev 写求解核代码)
               │
               ▼
-        SandboxExecutor(子进程沙箱执行候选代码)
+        SandboxExecutor(子进程隔离沙箱执行候选代码；真沙箱见 sandbox.py)
               │
               ▼
         Verifier(对物理定律锚 ORACLE 比对 → max_abs_err → PASS/FAIL + 诊断)
@@ -23,9 +23,10 @@
 - l1_protocol.SolverAgent 硬编码调已验证核 —— 核是现成的，没有「写→验→重写」环。
 本模块补上的正是这一环：AI-dev **写出求解核代码**，由 ORACLE 当裁判，失败退回重写。
 
-许可证红线：候选代码在子进程沙箱执行，绝不 import 任何 GPL/商业求解器；ORACLE
-（tmm / FDFD）为外部物理定律锚，LLM 端点为外部服务，符合《白皮书》§11 接入纪律。
-LLM 不进**判决路径**：是否 PASS 由死代码（标量比对 ORACLE）决定，与谁写的代码无关。
+许可证红线：候选代码在子进程隔离沙箱（sandbox.py，Linux strong / Windows weak）执行，
+绝不 import 任何 GPL/商业求解器；ORACLE（tmm / FDFD）为外部物理定律锚，LLM 端点为
+外部服务，符合《白皮书》§11 接入纪律。LLM 不进**判决路径**：是否 PASS 由死代码
+（标量比对 ORACLE）决定，与谁写的代码无关。
 """
 from __future__ import annotations
 
@@ -39,6 +40,8 @@ import textwrap
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
+
+from .sandbox import IsolatedExecutor
 
 
 # ---------------------------------------------------------------------------
@@ -209,75 +212,28 @@ class _UnconfiguredGenerator(Generator):
 
 
 # ---------------------------------------------------------------------------
-# 沙箱执行器：子进程执行候选代码，捕获输出/异常/超时
+# 沙箱执行器：门面，委托 sandbox.IsolatedExecutor（真沙箱）
 # ---------------------------------------------------------------------------
 class SandboxExecutor:
-    """把候选代码 + 受信 driver 写入临时目录，子进程执行，返回每用例结果或错误。
+    """隔离执行候选代码，返回与 Verifier 兼容的结果字典（门面）。
 
-    安全边界：候选代码在独立 python 子进程运行（不共享主进程状态），仅能访问
-    numpy/math；driver 由 harness 控制，负责调用 entrypoint 并落 JSON 结果。
+    内部委托 ``sandbox.IsolatedExecutor``（真沙箱，见 sandbox.py）：
+    - strong 隔离（Linux）：用户/网络命名空间 + 降权 nobody + 资源上限
+    - weak 隔离（Windows）：仅演示用；执行不可信候选须显式 allow_weak_isolation=True
+      （仅离线 Scripted 可信候选），否则构造即抛 RuntimeError——以代码守住
+      「接外部 LLM 前必须强隔离」红线。
+
+    安全边界：候选代码在独立 python 子进程运行（不共享主进程状态）；Linux 下
+    无网络、非 root、受 rlimit 约束，无法读写宿主敏感路径（~/.ssh、/etc/shadow 等）。
+    driver 由 harness 控制，负责调用 entrypoint 并落 JSON 结果。
     """
 
-    def __init__(self, timeout: float = 120.0):
-        self.timeout = timeout
+    def __init__(self, timeout: float = 120.0, allow_weak_isolation: bool = False):
+        self._iso = IsolatedExecutor(timeout=timeout,
+                                     allow_weak_isolation=allow_weak_isolation)
 
     def run(self, code: str, spec: SolverSpec) -> Dict[str, Any]:
-        tmp = tempfile.mkdtemp(prefix="lda_solver_writer_")
-        cand_path = os.path.join(tmp, "candidate.py")
-        drv_path = os.path.join(tmp, "driver.py")
-        try:
-            with open(cand_path, "w", encoding="utf-8") as f:
-                f.write(code)
-            # 受信 driver：调用候选 entrypoint，逐用例跑，落 JSON
-            drv = textwrap.dedent(f"""\
-            import json, sys, traceback
-            try:
-                import candidate as C
-                fn = getattr(C, {spec.entrypoint!r}, None)
-                if fn is None:
-                    print(json.dumps({{"ok": False, "error":
-                        f"候选未定义函数 {spec.entrypoint!r}"}}))
-                    sys.exit(0)
-                out = []
-                cases = json.loads(sys.argv[1])
-                for c in cases:
-                    try:
-                        val = fn(**c["inputs"])
-                        out.append({{"name": c["name"], "ok": True, "value": val}})
-                    except Exception as e:
-                        out.append({{"name": c["name"], "ok": False,
-                                    "error": traceback.format_exc()}})
-                print(json.dumps({{"ok": True, "results": out}}))
-            except Exception:
-                print(json.dumps({{"ok": False, "error": traceback.format_exc()}}))
-            """)
-            with open(drv_path, "w", encoding="utf-8") as f:
-                f.write(drv)
-            cases_payload = json.dumps([
-                {"name": c.name, "inputs": c.inputs} for c in spec.test_cases
-            ])
-            proc = subprocess.run(
-                [sys.executable, drv_path, cases_payload],
-                capture_output=True, text=True, timeout=self.timeout, cwd=tmp,
-            )
-            if proc.returncode != 0 and not proc.stdout.strip():
-                return {"ok": False,
-                        "error": f"子进程异常退出 {proc.returncode}\n"
-                                 f"STDERR:\n{proc.stderr}"}
-            try:
-                return json.loads(proc.stdout.strip().splitlines()[-1])
-            except Exception as e:
-                return {"ok": False,
-                        "error": f"无法解析候选输出: {e}\nSTDOUT:\n{proc.stdout}"
-                                 f"\nSTDERR:\n{proc.stderr}"}
-        except subprocess.TimeoutExpired:
-            return {"ok": False, "error": f"执行超时（>{self.timeout}s）"}
-        finally:
-            try:
-                import shutil
-                shutil.rmtree(tmp, ignore_errors=True)
-            except Exception:
-                pass
+        return self._iso.run(code, spec)
 
 
 # ---------------------------------------------------------------------------
@@ -699,7 +655,8 @@ def run_demo(prefer_llm: bool = True, max_iters: int = 5) -> LoopReport:
     """运行 1.4 AI-dev 自举写核闭环演示。"""
     spec = _build_1d_fdtd_spec()
     gen = get_generator(prefer_llm=prefer_llm)
-    if isinstance(gen, _UnconfiguredGenerator):
+    offline = isinstance(gen, _UnconfiguredGenerator)
+    if offline:
         # 离线：用脚本化 AI-dev 候选（v0 带 bug → v1 修复）
         gen = build_offline_generator()
         print("[1.4 demo] 离线模式：使用 ScriptedAIDevGenerator "
@@ -709,8 +666,13 @@ def run_demo(prefer_llm: bool = True, max_iters: int = 5) -> LoopReport:
               f"(model={gen.model})")
     print(f"[1.4 demo] spec={spec.spec_id}  ORACLE={spec.oracle_kind}  "
           f"用例数={len(spec.test_cases)}")
-    loop = BootstrapLoop(SandboxExecutor(timeout=120.0), Verifier(),
-                         max_iters=max_iters, verbose=True)
+    # 离线 Scripted 候选由本 harness 提供、可信任 → 允许 weak 隔离演示；
+    # 在线 LLM 候选不可信 → weak 环境（Windows）下 SandboxExecutor 会直接拒绝，
+    # 强制上 Linux strong 隔离。
+    loop = BootstrapLoop(
+        SandboxExecutor(timeout=120.0, allow_weak_isolation=offline),
+        Verifier(), max_iters=max_iters, verbose=True,
+    )
     report = loop.run(spec, gen)
     print("\n[1.4 demo] 终判：", report.verdict)
     return report

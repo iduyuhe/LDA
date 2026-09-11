@@ -417,6 +417,14 @@ CORE_SMOKES: List[str] = [
     # 同一标量（B4 同族谱拟合族，方法学独立）。四判据 + 纯 numpy 亚秒级，无权豁免必进 core。
     # CI core 157->158。
     "run_b11_fsr_peakfit_smoke.py",
+    # v0.9.69（P0 沙箱隔离护栏正式注册进 core）：solver_writer 候选代码执行已从「伪沙箱」
+    #  升级为「真沙箱」的事实固化进 CI 门禁。四判据：①隔离等级可报告（Linux→strong /
+    #  Windows→weak）②weak 红线（allow_weak_isolation 不为真即拒构造）/ strong 默认可构造
+    #  ③轻量闭环 v0 FAIL→v1 PASS（沙箱不改变判卷语义）④strong 真隔离（仅 Linux）：降权
+    #  nobody 读 /etc/shadow 被拒 + 网络命名空间禁外网。Windows CI 走 weak（④自动跳过）、
+    #  强隔离仅生产 Linux 验证。纯 numpy 秒级、零新物理、零回归，无权豁免必进 core。
+    #  CI core 158->159。
+    "run_solver_writer_sandbox_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

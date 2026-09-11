@@ -11,10 +11,12 @@
 隔离等级（isolation_level）
 -------------------------
 - ``"strong"``（Linux，推荐生产）：
-    * 用户命名空间隔离（``unshare --user --map-root-user``）
     * 无网命名空间（``unshare --net``，无默认路由 → 外网 connect 失败）
     * 降权到 ``nobody``（``setpriv --reuid/--regid nobody``，无 root、无写宿主敏感路径权限）
     * 资源上限（``RLIMIT_CPU/AS/NOFILE/FSIZE``，防 OOM / fork bomb / 超算）
+    * 说明：以 root 直接建 net 命名空间（不建 user 命名空间，避免 nobody uid 未映射
+      导致降权失败）；nobody 对 world-readable 的解释器/库有读权限，但无权读
+      ``/etc/shadow``、也无网 → 读密钥/外传均被拒。
 - ``"weak"``（Windows 开发机 / 无 unshare 的 Linux）：
     * 仅进程组 + cwd 限制 + timeout。**明确不安全**，禁止执行不可信候选；
       仅允许离线 Scripted 演示（候选由本 harness 提供、可信任）。
@@ -150,7 +152,12 @@ class IsolatedExecutor:
                     "error": f"无法解析候选输出: {e}\nSTDOUT:\n{proc.stdout}"
                              f"\nSTDERR:\n{proc.stderr}"}
 
-    # -- strong：unshare 用户/网络命名空间 + 降权 nobody + 资源上限 ---------
+    # -- strong：网络命名空间（无网）+ 降权 nobody + 资源上限 -----------------
+    # 说明：以 root 直接 `unshare --net` 创建无网命名空间（无需 user namespace），
+    # 再用 setpriv 降权到系统 nobody。若改用 `--user --map-root-user`，命名空间内只映射
+    # uid 0，setpriv 到 nobody(65534) 会因 uid 未映射而失败（候选根本无法执行）。
+    # nobody 是真实系统 uid：对 world-readable 的 /opt/lda 与 numpy 有读权限，
+    # 但无权读 /etc/shadow、也无网命名空间 → 读密钥/外传均被拒。
     def _run_strong(self, drv_path: str, payload: str, tmp: str) -> subprocess.CompletedProcess:
         py = sys.executable
         env = {**os.environ, "LDA_SOLVER_CASES": payload}
@@ -161,7 +168,7 @@ class IsolatedExecutor:
         if not _bins_present("setpriv") and _bins_present("su"):
             drop = ["su", "nobody", "-s", py, "-c", f"{py} {drv_path!r}"]
         inner = ["sh", "-c", 'cd "$0" && exec "$@"', tmp] + drop
-        cmd = ["unshare", "--user", "--map-root-user", "--net"] + inner
+        cmd = ["unshare", "--net"] + inner
         return subprocess.run(cmd, capture_output=True, text=True,
                               timeout=self.timeout, cwd=tmp, env=env)
 

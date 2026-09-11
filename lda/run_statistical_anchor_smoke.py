@@ -8,7 +8,7 @@
      agent/llm 模块；harness S7 的 oracle_kind 为确定性统计量）
   ⑤ S7 harness reference PASS（golden 自洽）
   ⑥ 扰动负例：损耗整体 +1dB → 分布下移 → candidate 偏离 golden > tol 被 FAIL 抓
-  ⑦ 题库计数 50（B1-B30 30 + E1-E7 7 + S1-S13 13）
+  ⑦ 题库计数 53（B1-B30 + B33 = 31 + E1-E9 = 9 + S1-S13 = 13）
   ⑧ S8 OSNR 统计锚（模板复用：Jensen 方向 + golden 收敛）
   ⑨ 蒙特卡洛收敛性（N 扫描收敛带）
 
@@ -107,12 +107,15 @@ def main() -> int:
           abs(bad_mean - golden) > 0.15,
           f"Δ={abs(bad_mean - golden):.3f} > 0.15")
 
-    # ⑦ 题库计数（B+E+S 动态，v0.9.51 起不再硬编码 50/7）
+    # ⑦ 题库计数（B+E+S 动态，v0.9.51 起不再硬编码 50/7；
+    #    v0.9.67 新增 B33 真·严格独立锚 → B 类 30→31、总数 52→53，此守卫须精确跟账本）
     b_ids = [b for b in BENCHMARK_ORDER if b.startswith("B")]
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
     s_ids = [b for b in BENCHMARK_ORDER if b.startswith("S")]
-    check("题库（B1-B30 + E1-E* + S1-S13 动态计数）",
-          len(b_ids) == 30 and len(s_ids) == 13
+    expected_b = [f"B{i}" for i in range(1, 31)] + ["B33"]
+    check("题库（B1-B30 + B33 + E1-E9 + S1-S13 动态计数）",
+          b_ids == expected_b
+          and s_ids == [f"S{i}" for i in range(1, 14)]
           and e_ids == [f"E{i}" for i in range(1, len(e_ids) + 1)],
           f"总={len(BENCHMARK_ORDER)} B={len(b_ids)} E={len(e_ids)} S={len(s_ids)}")
 

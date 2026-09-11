@@ -182,7 +182,10 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 #   ⇒ 严格独立 23 → 25，自证桩 25 → 25（50 守恒）。
 # v0.9.67（A 档有源扩展 #1）：B33 探测器 RC 带宽 真·新增严格独立锚
 #   ⇒ 严格独立 25 → 26，自证桩 25 → 24（51 守恒；再加 B15 复用不增题数）。
-MIN_INDEPENDENT = 26
+# v0.9.68（P1①）：B11 环形谐振器 drop 端口谱形匹配 接入 ring_fsr_peakfit_b11
+#   同族谱拟合独立候选（方法学独立于闭式 FSR）⇒ 严格独立 26 → 27，自证桩 24 → 23
+#   （53 守恒；B16 如实留自证桩，不随升级）。
+MIN_INDEPENDENT = 27
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

@@ -45,9 +45,9 @@ def main() -> int:
     pa = vmm.get("per_anchor") or {}
 
     # ---- 2. 与 README 文档账本交叉核对（非同式复算，是外部事实锚）----
-    check("严格独立 == 28（文档账本）", tiers.get("strict_independent") == 28, tiers)
+    check("严格独立 == 29（文档账本）", tiers.get("strict_independent") == 29, tiers)
     check("降级量级参考 == 1（文档账本）", tiers.get("degraded_ordinal") == 1, tiers)
-    check("自证桩 == 24（文档账本）", tiers.get("self_certified") == 24, tiers)
+    check("自证桩 == 23（文档账本）", tiers.get("self_certified") == 23, tiers)
     check("三分类和 == 53 锚总数", sum(tiers.values()) == 53, tiers)
     check("逐锚明细 == 53 条", len(pa) == 53, len(pa))
 
@@ -60,7 +60,7 @@ def main() -> int:
     check("provenance 均为 6 类宇宙子集（无未知来源泄漏）",
           set(bp.keys()) <= expect_prov, list(bp.keys()))
     check("provenance 各类计数和 == 53 锚总数", sum(bp.values()) == 53, (bp, sum(bp.values())))
-    check("低置信自写闭式 == 14（必要验证集）", len(lc) == 14, len(lc))
+    check("低置信自写闭式 == 13（必要验证集）", len(lc) == 13, len(lc))
     check("低置信数 == by_provenance[self_authored_closed_form]",
           bp.get("self_authored_closed_form") == len(lc), (bp.get("self_authored_closed_form"), len(lc)))
 

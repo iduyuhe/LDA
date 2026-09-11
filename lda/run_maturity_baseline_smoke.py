@@ -85,8 +85,8 @@ def main():
     total = len(BENCHMARK_DEFS)
     if h_strict + h_deg + h_stub != total:
         fails.append(f"M5 三分类和 {h_strict+h_deg+h_stub}≠题数 {total}")
-    if (h_strict, h_deg, h_stub) != (28, 1, 24):
-        infos.append(f"M5 三分类口径=({h_strict},{h_deg},{h_stub})（期望 (28,1,24)）")
+    if (h_strict, h_deg, h_stub) != (29, 1, 23):
+        infos.append(f"M5 三分类口径=({h_strict},{h_deg},{h_stub})（期望 (29,1,23)）")
 
     # 输出
     print("=" * 64)

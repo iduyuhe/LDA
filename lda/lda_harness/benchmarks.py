@@ -255,10 +255,18 @@ BENCHMARK_DEFS = {
         "metric": "spectrum_match",
         "oracle": "analytical(ring-transfer-function)",
         "tol": 0.03,
+        # v0.9.68（P1①）：接入独立候选 —— 数值扫 add-drop 环 drop 口传递函数、
+        # 定峰后对 1/λ 做等距拟合（频域周期 Δu=1/(n_g·2πR)），换算 FSR_λ=λ0²·Δu，
+        # 再算 |FSR−target|/target 与 golden 同一标量（B4 同族谱拟合法，方法学独立）。
+        "candidate": "ring_fsr_peakfit_b11",
+        "candidate_desc": ("数值 add-drop 环传递函数（drop 口）峰周期拟合 FSR"
+                           "—— 与 golden 闭式 FSR 方法学独立，同一标量"),
         "default_params": {"R": 10.0, "n_g": 4.2},
         "golden_fn": b11_ring_spectrum_match,
         "note": "误差=计算谱与目标洛伦兹梳谱形的逐波长 L2 距离；调 R 命中目标 FSR "
-                "即匹配谱形。确定性物理定律（环形传递函数）。逆设计'目标谱形'基准。",
+                "即匹配谱形。确定性物理定律（环形传递函数）。逆设计'目标谱形'基准。"
+                "⚠️ 独立候选已接（v0.9.68）：数值峰周期拟合法与闭式 FSR 方法学独立，"
+                "基线残差 ~1e-9 << tol=0.03，余量 >>1000×，判据 D 不触发假独立。",
     },
     "B12": {
         "title": "超导谐振器 λ/4 最低模 f0",
@@ -1197,8 +1205,11 @@ _VMM_OVERRIDES = {
             "行业设计规则锚（几何无关下限：0.5 成熟工艺可达效率≈-3dB，源自硅光光栅耦合器论文与流片经验）；精确真值待 Tidy3D 场级 ORACLE 动态升格（B 级借今踢后）；已有回退下限护栏"),
     "B7":  ("design_rule_anchor",
             "行业设计规则锚（几何无关上限：-40dB 典型交叉串扰，源自硅光交叉器件论文与流片经验）；精确真值待 Meep 场级 ORACLE 动态升格（B 级借今踢后）；已有回退下限护栏"),
-    "B11": ("self_authored_closed_form",
-            "需正交独立求解器（判据 D 陷阱：当前 candidate≡golden 残差≡0，须双向标定）"),
+    "B11": ("independent_cross_check",
+            "🔒 v0.9.68 升 Tier-3 严格独立：数值 add-drop 环 drop 口传递函数峰周期拟合"
+            "FSR（同 B4 谱拟合族），再算 |FSR−target|/target 与 golden 同一标量。"
+            "方法学独立于闭式 FSR；基线残差 ~1e-9 << tol=0.03，余量 >>1000×，判据 D 不触发。"
+            "（原 self_authored_closed_form 升级路径已打通）"),
     "B16": ("self_authored_closed_form",
             "rib-MMI 严格求解器（symmetric-slab EME 非同对象不可用）；golden 因子已修 3→9/4"),
     "B17": ("self_authored_closed_form",

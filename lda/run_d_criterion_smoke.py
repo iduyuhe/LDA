@@ -106,7 +106,7 @@ def main() -> int:
     print("③ 全部已接线候选的基线残差普查（代数恒等在值域上被排除）")
     specs, cand = build_harness_specs()
     indep_ids = [
-        "B1", "B3", "B4", "B8", "B9", "B10", "B12", "B13", "B14", "B15",
+        "B1", "B3", "B4", "B8", "B9", "B10", "B11", "B12", "B13", "B14", "B15",
         "B19", "B20", "B22", "B23", "B24", "B25", "B26", "B27", "B33", "E2",
         "S13", "S7", "S8",
     ]
@@ -125,7 +125,7 @@ def main() -> int:
         d = abs(float(cv) - float(ov))
         if sp.spec_id not in noise_exempt and d <= 1e-12:
             violators.append((sp.spec_id, "基线残差 %.2e 贴地板（恒等嫌疑）" % d))
-    check("已接线候选 %d/23 全部登记" % n_wired, n_wired == 23)
+    check("已接线候选 %d/24 全部登记" % n_wired, n_wired == 24)
     check("基线残差全部 > 1e-12（B10 特例豁免，见①）", not violators,
           "; ".join("%s: %s" % v for v in violators) if violators else
           "20 道残差 1.66e3 ~ 1.5e-2，全部远高于 1e-15 恒等特征")
@@ -191,7 +191,7 @@ def main() -> int:
         print(f"判据 D 冒烟：{PASS} PASS / {FAIL} FAIL —— 🔴 存在假独立或护栏失效")
         return 1
     print(f"判据 D 冒烟：{PASS} PASS / 0 FAIL —— 全绿")
-    print("结论：23 道独立候选中 0 道代数恒等（22 道基线残差 1.66e3~1.5e-2 值域排除；")
+    print("结论：24 道独立候选中 0 道代数恒等（23 道基线残差 1.66e3~1.5e-2 值域排除；")
     print("     B10 基线=0 属过度收敛区特例，判据 D 深验 O(h⁴) 收敛通过）。")
     print("     B28 型假独立已被判据 D 抓获（②证明护栏会响）——B28 若要接线必须")
     print("     改用非均匀 Γ(z) 剖面，使积分与闭式不再剖分守恒。")

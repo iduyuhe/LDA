@@ -412,6 +412,11 @@ CORE_SMOKES: List[str] = [
     #   MFD↑→良率↑、可复现、解析↔MC 互证、P-CPO 间距合规不假绿)。provenance 标
     #   self_authored_with_check，σ_align/MFD 为公开假设值、待 T2 实测回填。CI core 156→157。
     "run_packaging_tolerance_smoke.py",
+    # v0.9.68（P1①）：B11 环形谐振器 drop 端口谱形匹配 独立候选护栏（ring_fsr_peakfit_b11）。
+    # 数值扫 add-drop 环 drop 口传递函数、峰周期拟合 FSR、再算 |FSR-target|/target 与 golden
+    # 同一标量（B4 同族谱拟合族，方法学独立）。四判据 + 纯 numpy 亚秒级，无权豁免必进 core。
+    # CI core 157->158。
+    "run_b11_fsr_peakfit_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

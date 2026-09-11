@@ -637,6 +637,43 @@ def _ring_fsr_peakfit_candidate(spec: VerificationSpec, oracle_value: Any) -> fl
 
 
 @_register_candidate(
+    "ring_fsr_peakfit_b11",
+    "数值 add-drop 环 drop 口传递函数峰周期拟合 FSR，再算 |FSR−target|/target"
+    "误差标量 —— 与 golden 闭式 FSR 方法学独立（同 B4 谱拟合族）")
+def _ring_fsr_peakfit_b11_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B11 独立候选：环形谐振器 drop 端口透射谱「目标谱形」匹配误差标量。
+
+    golden = 闭式 FSR = λ²/(n_g·2πR)·1000，再算 |FSR_c − target|/target
+    cand   = 数值扫 drop 口传递 D ∝ 1/|1 − a·t·e^{−iφ}|²（φ=2π·n_g·L/λ，L=2πR），
+             定峰对 1/λ 等距拟合得 Δu=1/(n_g·L)，换算 FSR_λ=λ0²·Δu，
+             再算 |FSR_num − target|/target —— 与 golden **同一标量**、方法学独立。
+
+    二者只差「数值定峰 + 频域→波长域一阶换算」的截断误差（实测 ~1e-9 量级），
+    可证伪：把 φ 里漏掉 2π、用错折射率、或定峰精度压到机器精度，残差立刻爆到 tol 外
+    （判据 D：基线残差恒 ~1e-9 >> 1e-12，非代数恒等假独立）。
+    drop 口峰位极与耦合系数 κ、往返损耗 a 无关（仅定峰宽），取 κ=0.3 / a=0.99。
+    λ0 / target_fsr 取 golden 同款默认值（1.55 / 9.15），保证与 golden 同物理对象。
+    """
+    p = spec.params
+    wl0 = float(p.get("wavelength", 1.55))
+    ng = float(p["n_g"])
+    R = float(p["R"])
+    target_fsr = float(p.get("target_fsr", 9.15))
+    L = 2.0 * math.pi * R
+    kappa = float(p.get("kappa", 0.3))          # 耦合系数（仅定峰宽）
+    a_rt = float(p.get("a_rt", 0.99))           # 往返振幅损耗（仅定峰宽）
+    t_rt = math.sqrt(max(0.0, 1.0 - kappa ** 2))
+
+    def _drop(lam):
+        phi = 2.0 * math.pi * ng * L / lam
+        return (kappa ** 4 * a_rt) / (1.0 + (a_rt * t_rt) ** 2
+                                      - 2.0 * a_rt * t_rt * np.cos(phi))
+
+    fsr_num = _fit_fsr_peak_periodicity(_drop, wl0)
+    return float(abs(fsr_num - target_fsr) / target_fsr)
+
+
+@_register_candidate(
     "mzi_fsr_peakfit",
     "数值 MZI 干涉谱 T=½(1+cos φ) 峰周期拟合 FSR"
     "—— 与 golden 的闭式 FSR=λ²/(n_eff·ΔL) 方法学独立")

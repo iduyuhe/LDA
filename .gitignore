@@ -48,3 +48,17 @@ lda/reports/crosscheck_history/
 # ---- 红队自动攻击趋势数据（运行时生成，绝不入库）----
 lda/lda_webui/data/
 
+# ---- 临时 / 诊断 / 缓存（本仓库不发布，防误提交）----
+.cache/
+_githelper.py
+_gitprobe.txt
+_pstest.txt
+ci_core_report.json
+lda/ci_core_report.json
+
+# ---- 红队待处理缺陷原始数据（含漏洞信息，加密保管于 .secrets/，绝不入版本库）----
+lda/redteam_anchor_fuzz_defects_pending.json
+
+# ---- 本地加密保管目录（密钥+密文，不进版本库）----
+.secrets/
+

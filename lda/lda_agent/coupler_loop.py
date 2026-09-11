@@ -192,7 +192,7 @@ class CouplerAgent:
             # （err 2.48% vs tol 25%）。故改为：**有 torch 就用 torch**（设备由
             # torch 自己选 cuda/cpu），torch 缺失才退 numpy（小网格兜底）。
             try:
-                import torch  # noqa: F401
+                import torch  # 可用性探测：成功→backend="torch"，失败→except→backend="numpy"
                 backend = "torch"
             except Exception:
                 backend = "numpy"

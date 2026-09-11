@@ -15,8 +15,6 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-_TRACE: List[Dict[str, Any]] = []
-
 
 @dataclass
 class AgentMsg:

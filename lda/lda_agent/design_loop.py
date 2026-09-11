@@ -313,6 +313,11 @@ class DesignAgent:
             iterations=len(trace),
             final_doc_id=f"sparams3d-{kind}",
             final_layers=[],
+            # sparams3d 分支语义澄清（P1② 评审 P2）：本分支不产"误差"标量，
+            # 端口验收 verdict 由 link_physics_harness 物理锚给出。
+            #   final_metric         = 中心波长传输 T_total（功率 0~1）
+            #   final_metric_err     = 传输谱 T_total 的 *下沿*(min) —— 带宽信息，非真·误差
+            #   final_max_metric_err = 传输谱 T_total 的 *上沿*(max)
             final_metric=float(ctr["T_total"]),
             final_oracle_metric=float(ctr["S11_2"]),  # oracle 参考 = 回波
             final_metric_err=float(min(p["T_total"] for p in pts)),

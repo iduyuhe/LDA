@@ -454,8 +454,15 @@ CORE_SMOKES: List[str] = [
     # v0.9.70（T1-B-W4）：2D p-n 结漂移-扩散+连续性内核（Gummel/SG）vs Sze 短二极管闭式。
     #  4 判据：①正向 I(V) 比对短二极管 golden（实测 ~4.6% < 8%）②判据D 网格收敛单调
     #  ③反向 N_A×1.1 信号 ~1.7% ≫ 噪声 ④T1 不作 ORACLE 守卫。纯 numpy+scipy 秒级、零新
-    #  物理、零 A 级/DEVSIM 依赖，无权豁免必进 core。CI core 173->174。
+    #  物理、零 A 级/DEVSIM 依赖，无权豁免必进 core。CI core 164->165。
     "run_t1b_drift_diffusion_2d_smoke.py",
+    # v0.9.71（T1-C-W5）：探测器带宽 B 档真求解（经 T1 电学内核：耗尽区真实场剖面 E(x)
+    #  + 速度饱和 v(E) 逐时步漂移 Ramo-Shockley 感应电流 → FFT 频响 3dB）vs B33 RC 闭式
+    #  + Sze/Lucovsky 渡越闭式 0.44·v_sat/W。4 判据：①正向 f_tr(数值)≤闭式且 f_total≤f_rc
+    #  （渡越惩罚≥0）+ 与 B33 锚跨模块一致 ②判据D 加密单调收敛 ③反向 W↑⇒f_tr↓ 且惩罚↑
+    #  ④T1 不作 ORACLE 守卫。纯 numpy 秒级、零新物理、零 A 级/DEVSIM 依赖，必进 core。
+    #  CI core 165->166。
+    "run_t1c_w5_detector_bandwidth_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

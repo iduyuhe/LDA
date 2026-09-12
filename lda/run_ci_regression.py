@@ -184,6 +184,11 @@ CORE_SMOKES: List[str] = [
     #   提交锁定 43b41ca(r2.11.0) + LICENSE(Apache-2.0) + subprocess 隔离纪律。闭合 T1-B-W3
     #   收尾「离线构建证据 CI 门禁」缺口。DEVSIM 未安装→跨校验 SKIP 不破 CI。CI core 160→161。
     "run_t1b_devsim_cold_backup_smoke.py",
+    # T1-C-W1 B33-APD 探测器带宽 APD 闭式倍增扩展护栏（A 档行为层）：golden=Miller √M
+    #   折减闭式 ≒ candidate 阶跃响应数值积分（判据 D n_time 单调收敛）；反向 V_bias↑⇒带宽↓；
+    #   红线 V≥V_br 击穿必 raise + APD 带宽<PIN 带宽。纯 math 零依赖、不破三不做/主权/验证纪律。
+    #   CI core 161→162。
+    "run_b33_apd_smoke.py",
     # 名誉榜台账护栏（结构合法 + 得分一致 + confirmed 缺陷必挂锚，防刷分/自证；0.23s）
     "run_bounty_ledger_smoke.py",
     # T0 LLM 价值实证（LLM 开启后 Pareto 前沿须出现网格外新非支配点，防开了等于没开；0.31s）

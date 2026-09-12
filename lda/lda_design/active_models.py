@@ -128,3 +128,38 @@ def detector_response(P_dbm: float, eta: float = 0.8,
     return {"P_dbm": P_dbm, "P_w": p_w, "responsivity_AW": r_a,
             "photocurrent_uA": round(i_ua, 4),
             "note": f"R_A={r_a:.3f} A/W（η={eta}, λ={wl_um}µm，量子效率解析）"}
+
+
+# ---- APD 雪崩光电探测器（T1-C W1 · 闭式行为层 · 雪崩动力学留 B 档） ----
+def apd_miller_gain(V_bias: float, V_br: float, n_miller: float = 3.0) -> float:
+    """APD 雪崩倍增因子 M（Miller 经验闭式）：M = 1/(1 − V/V_br)^n。
+
+    纯 textbook 行为层闭式（design_rule_anchor，行业共识），非载流子动力学求解。
+    V 接近 V_br ⇒ M 发散（击穿），调用方须保证 V_bias < V_br。典型 Si APD：n≈3。
+    """
+    if V_bias >= V_br or n_miller <= 0.0:
+        raise ValueError("APD 雪崩击穿区：须 V_bias < V_br 且 n_miller > 0")
+    x = 1.0 - V_bias / V_br
+    if x <= 0.0:
+        raise ValueError("APD 雪崩击穿区：1 − V/V_br ≤ 0")
+    return 1.0 / (x ** n_miller)
+
+
+def apd_responsivity(eta: float = 0.8, wl_um: float = WL_UM,
+                     M: float = 1.0) -> float:
+    """APD 响应度（A/W）：R_APD = η·q·λ/(h·c) · M（增益直接乘到响应度）。"""
+    return detector_responsivity(eta, wl_um) * M
+
+
+def apd_bandwidth(R: float = 50.0, eps: float = 1.036e-10, A: float = 9.653e-9,
+                  d: float = 1.0e-6, V_bias: float = 22.0, V_br: float = 25.0,
+                  n_miller: float = 3.0) -> float:
+    """APD 3dB 带宽（Hz，Miller 增益带宽折减闭式）：f_3dB = 1/(2π·R·C·√M)。
+
+    C = ε·A/d（反偏结电容）；M = 1/(1−V/V_br)^n（Miller）；
+    APD 增益带宽积经验律 f·M^0.5 ≈ const（Si，textbook）⇒ 带宽按 √M 折减。
+    纯闭式行为层，**不含**载流子动力学 / 雪崩输运 / TCAD（留 B 档禁区）。
+    """
+    C = eps * A / d
+    M = apd_miller_gain(V_bias, V_br, n_miller)
+    return 1.0 / (2.0 * math.pi * R * C * math.sqrt(M))

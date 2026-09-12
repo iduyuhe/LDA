@@ -356,6 +356,11 @@ BENCHMARK_DEFS = {
                 "8.356e-6（tol=0.01 未动，余量 1196×）；反向 n_eff×1.1 信号 "
                 "1.55e-1（15.5×）。网格 N=240 双向标定（N=480 偶然抵消点 5.4e-8、"
                 "N=960 越 LAPACK 地板反升，均避开，详 bragg_solver.py）。",
+        "reuse_aliases": ["B35 (DBR/DFB 激光光栅布拉格波长 · 复用本锚)"],
+        "reuse_note": ("B35 复用本锚（T1-C 评审 2026-09-12 裁决：零新锚、不重复投入、"
+                       "不计入独立锚计数）。物理对象完全同一（λ_B=2·n_eff·Λ），仅应用场景"
+                       "从被动 Bragg 反射镜变主动激光器腔镜（DBR/DFB）。B35 的 golden/candidate"
+                       "委托 B15，守护由 run_bragg_gds_smoke.py 覆盖，判据 D 框架复用本锚候选。"),
     },
     "B16": {
         "title": "MMI 1×2 自映像长度",

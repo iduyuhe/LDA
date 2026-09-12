@@ -1060,6 +1060,20 @@ def _b15_bragg_bloch_candidate(spec: VerificationSpec, oracle_value: Any) -> flo
 
 
 @_register_candidate(
+    "b35_reuse_b15",
+    "B35 复用 B15：DBR/DFB 激光光栅布拉格波长，委托 B15 的反周期 Bloch 本征值"
+    "候选（零新锚、不重复投入、不计入独立锚计数）")
+def _b35_bragg_reuse_b15_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B35（DBR/DFB 激光光栅布拉格波长）复用 B15 的独立候选。
+
+    物理对象与 B15 完全同一（λ_B=2·n_eff·Λ），仅应用场景从被动反射镜变
+    主动腔镜，故直接委托 B15 的 Bloch 反周期本征值候选，不另写求解代码
+    （评审裁决：零新锚）。标签≠行为纪律：本候选可解析、真实委托到 B15 实现。
+    """
+    return _b15_bragg_bloch_candidate(spec, oracle_value)
+
+
+@_register_candidate(
     "dc_cmt_fft",
     "数值传播 + FFT 拍频谱峰提取 L_3dB（增量 2×2 复传播矩阵 + Hann 窗 rFFT"
     " + 三点抛物线细化）—— 与 golden 的耦合模解析闭式反解方法学独立")

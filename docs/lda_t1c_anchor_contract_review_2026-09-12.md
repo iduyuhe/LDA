@@ -53,7 +53,11 @@
     - 体材料 → Kane 1956 FK 闭式；
     - MQW → QCSE 吸收边位移闭式（阶跃场下 ΔE_g ≈ 一阶 QCSE 公式，须引对应文献）。
 - **红线自检**：纯电磁/能带闭式 + 数值带结构，无载流子动力学 → 不破。
-- **裁决：GO（条件）**——写码（W4）前须完成「器件类型 → golden 公式」锁定，记入锚 note。
+- **🔒 写码前锁定裁决（2026-09-12 · W4 写码时落定）**：**器件类型锁定 = MQW-QCSE（多量子阱 · 量子限制 Stark 效应）**。
+  - 理由：① 锚名即 "EAM-**QCSE**"，物理对象明确为量子限制 Stark；② 体材料 FK（Kane）在 Si 光子平台 @1550nm 因 Si 间接带隙（E_g≈1.1eV ≫ 0.8eV 光子能）吸收边位移可忽略，非实用 Si EAM——若锁 FK 则锚判错（与物理现实脱节）；③ QCSE 是 Ge/SiGe MQW on Si 的实际 EAM 机制（Handwiki/Stanford 均载 Ge/SiGe QW 实验）。
+  - golden 公式锁定：`ΔE ≈ -24·(2/3π)⁶·e²·F²·(m_e*·Le⁴ + m_h*·Lh⁴)/ℏ²`，const=24·(2/3π)⁶≈2.1924e-3（与专利 C1=-2.19e-3 一致，WebSearch 双重佐证）。
+  - MQW 外延（生长）属 foundry T2 工艺真值——本锚仅消费 L / 有效质量（文献/PDK），**不求解**生长/带结构第一性原理 → 红线安全（行为层 A 档，同 B28/B29/B31 范式）。honest_tier=qcse-closed-form。
+  - **裁决：GO（已锁）。** 写码见 `b32_qcse_anchor.py`（W4）。
 
 ---
 

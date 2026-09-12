@@ -61,6 +61,9 @@ from .b33_detector_bandwidth_anchor import (  # noqa: E402  # B33 探测器 RC �
 from .b31_soref_bennett_anchor import (  # noqa: E402  # B31 Si 载流子色散相移锚（v0.9.69 · T1-C W3）
     b31_soref_bennett_phase_shift, b31_phase_shift_report,
 )
+from .b32_qcse_anchor import (  # noqa: E402  # B32 EAM-QCSE 吸收边位移锚（v0.9.69 · T1-C W4）
+    b32_qcse_edge_shift_meV, b32_qcse_report,
+)
 
 BENCHMARK_DEFS = {
     "B1": {
@@ -766,6 +769,44 @@ BENCHMARK_DEFS = {
                  "→ 各自独立。零载流子求解/增益动力学/TCAD/A 级 ⇒ 不破三不做/主权/"
                  "验证纪律。LLM 不进判决路径；golden 闭式非真值（T1 不作 ORACLE）。"),
     },
+    # ---- B32（v0.9.69 · T1-C W4 · A 档有源扩展 #3）：EAM-QCSE 吸收边位移 ----
+    "B32": {
+        "title": "EAM-QCSE 吸收边位移（MQW 量子限制 Stark · 数值对角化独立候选）",
+        "metric": "qcse_shift_meV",
+        "oracle": ("analytical(QCSE 二阶微扰闭式 Miller 1985) + "
+                   "1D Schrodinger finite-difference diagonalization independent_cross_check"),
+        "tol": 0.3,
+        # v0.9.69（T1-C W4 · 评审 §2 GO-条件已锁）：器件类型锁定 MQW-QCSE
+        # （评审初稿误锁 FK 体材料；锚名 EAM-QCSE + 体 Si FK@1550nm 因间接带隙可
+        #  忽略 => 锁定 MQW-QCSE）。golden = QCSE 吸收边位移二阶微扰闭式
+        #  ΔE ≈ -24*(2/3π)^6 * e^2 * F^2 * (m_e*Le^4+m_h*Lh^4)/hbar^2
+        #  (const≈2.1924e-3, 与专利 C1=-2.19e-3 一致)；candidate = 无穷深方势阱
+        #  1D 薛定谔有限差分数值对角化（直接对角化含场项, 取基态 -> 扫 F 定
+        #  (E_e+E_h) 跃迁位移），方法学独立（数值 vs 解析）-> 判据 D 不撞。
+        #  V_mod -> F = V_mod/d_stack 闭式 (零 TCAD)；MQW 外延属 foundry T2,
+        #  经 L/mass 文献消费非求解 => 红线安全。honest_tier=qcse-closed-form。
+        # ⚠️ tol=0.3（30%）反映「方法学独立验证（量级一致）」：数值对角化为精确解,
+        #  闭式为二阶微扰, 中等场下偏差 <~2%（higher-order 修正）, ratio≠1 恰证非
+        #  恒等、捕捉同一 QCSE 物理。严格验证见 run_b32_qcse_smoke.py。
+        "candidate": "b32_qcse_numerical",
+        "candidate_desc": ("1D 薛定谔有限差分数值对角化（数值 vs 解析微扰，判据 D 不撞）"),
+        "default_params": {"V_mod": 3.0, "d_stack": 5e-7,
+                           "m_e": 0.12 * 9.1093837015e-31,
+                           "m_h": 0.20 * 9.1093837015e-31,
+                           "L": 8e-9},
+        "golden_fn": b32_qcse_edge_shift_meV,
+        "note": ("EAM-QCSE 吸收边位移（MQW 量子限制 Stark 效应）：反偏 V_mod -> 场强 "
+                 "F=V_mod/d_stack（d_stack=MQW 栈厚, 文献消费, 闭式零 TCAD）-> QCSE 二阶"
+                 "微扰闭式 ΔE≈-24*(2/3π)^6·e²·F²·(m_e*Le⁴+m_h*Lh⁴)/hbar²（@ 无穷深方势阱,"
+                 "const≈2.1924e-3, red shift 吸收边向长波移）。golden=确定性物理定律闭式"
+                 "（design_rule_anchor）。v0.9.69 独立候选=b32_qcse_numerical：无穷深方势阱"
+                 "1D 薛定谔有限差分数值对角化（直接对角化含场项 -eFz/+eFz, 取基态 -> 扫 F"
+                 "定 (E_e+E_h) 跃迁位移）—与闭式方法学不同源（数值 vs 解析, 判据 D 不撞）。"
+                 "适用域 L 1-50nm；扰动失效阈 |ΔE|>0.3·E_conf 或 F>1e6 V/cm 必 raise；"
+                 "honest_tier=qcse-closed-form（MQW 外延 foundry T2 消费非求解）。零载流子"
+                 "动力学/增益/TCAD/A 级 ⇒ 不破三不做/主权/验证纪律。LLM 不进判决路径；"
+                 "golden 闭式非真值（T1 不作 ORACLE）。"),
+    },
     # ---- D-62 实证大数据锚（第二道非 AI ground：真实测量语料）----
     # anchor=empirical 的题：golden 来自 EmpiricalCorpus 实测语料（seed_empirical.json
     # + 社区经评审流落库的语料），非解析函数（golden_fn=None）。
@@ -1347,7 +1388,7 @@ for _bid, _def in BENCHMARK_DEFS.items():
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
-                   "B26", "B27", "B28", "B29", "B30", "B31", "B33",
+                   "B26", "B27", "B28", "B29", "B30", "B31", "B32", "B33",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                    "S9", "S10", "S11", "S12", "S13"]  # S 系统锚（Phase 0-4；S9=LVS/S10=多层/S11=规模/S12=阵列分布/S13=设计良率）

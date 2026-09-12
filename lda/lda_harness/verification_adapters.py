@@ -1706,6 +1706,37 @@ def _b31_drude_phase_shift_candidate(spec: VerificationSpec, oracle_value: Any) 
 
 
 # ---------------------------------------------------------------------------
+# B32 独立候选（v0.9.69 · T1-C W4）：EAM-QCSE 吸收边位移（1D 薛定谔数值对角化）
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "b32_qcse_numerical",
+    "无穷深方势阱 1D 薛定谔有限差分数值对角化（直接对角化 Hamiltonian 含场项 "
+    "-eFz/+eFz，取基态 -> 扫 F 定 (E_e+E_h) 跃迁位移）—— 与 golden 的 QCSE 二阶微扰"
+    "闭式方法学独立（数值对角化 vs 解析微扰，判据 D 真数值收敛，非代数恒等）")
+def _b32_qcse_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B32 独立候选：QCSE 吸收边位移的数值对角化。
+
+    golden = QCSE 二阶微扰闭式 (Miller 1985 / Bastard)；cand = 1D 薛定谔有限差分
+    直接对角化（无穷深方势阱，含场项），方法学不同源、数值 vs 解析 -> 判据 D 不撞。
+    两者在中等场下偏差 <~2% 即证捕捉同一 QCSE 物理。评审 §2「判据 D 不撞」。
+
+    ⚠️ 失败即抛异常上浮，绝不静默回退（IndependentCandidateRouter 既定原则）。
+    """
+    try:
+        from lda.lda_harness import b32_qcse_anchor as ba
+    except ImportError:
+        _ensure_paths()
+        import b32_qcse_anchor as ba
+    p = spec.params
+    return float(ba.b32_qcse_edge_shift_meV_numerical(
+        V_mod=float(p["V_mod"]),
+        d_stack=float(p.get("d_stack", 5e-7)),
+        m_e=float(p.get("m_e", ba.B32_M_E_DEFAULT)),
+        m_h=float(p.get("m_h", ba.B32_M_H_DEFAULT)),
+        L=float(p.get("L", ba.B32_L_DEFAULT))))
+
+
+# ---------------------------------------------------------------------------
 # B29 独立候选（v0.9.39 · T-9 接线 #1）：1D 散热鳍 FDM 相移
 # ---------------------------------------------------------------------------
 @_register_candidate(

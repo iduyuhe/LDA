@@ -51,6 +51,9 @@ from .b33_detector_bandwidth_anchor import (  # noqa: E402  # B33 探测器 RC �
 from .b31_soref_bennett_anchor import (  # noqa: E402  # B31 Soref-Bennett 载流子色散相移锚（v0.9.68 · T1-C W3 · A 档有源）
     b31_soref_bennett_phase_shift, b31_phase_shift_report,
 )
+from .b32_qcse_anchor import (  # noqa: E402  # B32 EAM-QCSE 吸收边位移锚（v0.9.69 · T1-C W4 · A 档有源）
+    b32_qcse_edge_shift_meV, b32_qcse_report,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -642,6 +645,7 @@ _GOLDEN_DISPATCH = {
     "B30": b30_readout_fidelity,               # v0.9.39 读出保真度 F（色散读出 SNR→erfc 链）
     "B33": b33_detector_bandwidth,             # v0.9.67 探测器 3dB 带宽（RC 限制 · 电路闭式 · A 档有源首锚）
     "B31": b31_soref_bennett_phase_shift,      # v0.9.68 Soref-Bennett 载流子色散相移（PN 耗尽 · 幂律闭式 · A 档有源）
+    "B32": b32_qcse_edge_shift_meV,            # v0.9.69 EAM-QCSE 吸收边位移（MQW 量子限制 Stark · 二阶微扰闭式 · A 档有源）
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -661,7 +665,7 @@ _GOLDEN_DISPATCH = {
 _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                  "B19", "B20", "B21", "B22", "B23", "B24", "B25",
-                 "B26", "B27", "B28", "B29", "B30", "B31", "B33", "B35",
+                 "B26", "B27", "B28", "B29", "B30", "B31", "B32", "B33", "B35",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

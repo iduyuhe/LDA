@@ -363,6 +363,12 @@ BENCHMARK_DEFS = {
                 "1.55e-1（15.5×）。网格 N=240 双向标定（N=480 偶然抵消点 5.4e-8、"
                 "N=960 越 LAPACK 地板反升，均避开，详 bragg_solver.py）。",
         "reuse_aliases": ["B35 (DBR/DFB 激光光栅布拉格波长 · 复用本锚)"],
+        # 🔴 v0.9.73：机器可读的「复用携带候选」声明（此前只有人类可读的 reuse_aliases，
+        # 而 BENCHMARK_CANDIDATES 里登记的 b35_reuse_b15 无人引用 ⇒ 可证伪性护栏的
+        # 「已登记候选类型与实测独立锚一致（无登记未接线）」判 FAIL，自 v0.9.67/68
+        # 起 CI core 一直红而未察觉）。B35 非独立锚（复用 B15）、其候选仅作委托记录，
+        # 故以本字段显式豁免；真「登记了却没人用」的孤儿候选仍会被抓（见 fdfd_ng 先例）。
+        "reuse_alias_candidates": ["b35_reuse_b15"],
         "reuse_note": ("B35 复用本锚（T1-C 评审 2026-09-12 裁决：零新锚、不重复投入、"
                        "不计入独立锚计数）。物理对象完全同一（λ_B=2·n_eff·Λ），仅应用场景"
                        "从被动 Bragg 反射镜变主动激光器腔镜（DBR/DFB）。B35 的 golden/candidate"
@@ -793,7 +799,14 @@ BENCHMARK_DEFS = {
         "default_params": {"V_mod": 3.0, "d_stack": 5e-7,
                            "m_e": 0.12 * 9.1093837015e-31,
                            "m_h": 0.20 * 9.1093837015e-31,
-                           "L": 8e-9},
+                           # 🔴 v0.9.73 修「标签≠行为」（同类第 N 次）：golden 闭式
+                           # b32_qcse_edge_shift_meV 的形参是 **L_e/L_h**，而候选适配器
+                           # _b32_qcse_candidate 读的是 **L** ⇒ 原 default_params 只给 `L`，
+                           # 使 golden(**params) 抛 TypeError（unexpected keyword 'L'），
+                           # 该锚在 harness 默认路径**根本跑不起来**、被行为判据误判成自证桩
+                           # （专属 smoke 直接调函数、绕过 default_params，故长期未暴露）。
+                           # 键名对齐 golden 形参；候选侧改用 p["L_e"]（见 verification_adapters）。
+                           "L_e": 8e-9, "L_h": 8e-9},
         "golden_fn": b32_qcse_edge_shift_meV,
         "note": ("EAM-QCSE 吸收边位移（MQW 量子限制 Stark 效应）：反偏 V_mod -> 场强 "
                  "F=V_mod/d_stack（d_stack=MQW 栈厚, 文献消费, 闭式零 TCAD）-> QCSE 二阶"

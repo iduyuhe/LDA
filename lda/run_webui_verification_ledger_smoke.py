@@ -4,7 +4,9 @@
 
 验收：
   - GET /api/verification_ledger 的 vmm 块真实由生产代码推导（非写死常数），
-    且对外账本口径自洽、与 README 账本(26/1/25、低置信 15、provenance 6 类)一致。
+    且对外账本口径自洽、与 README「当前账本」段(严格独立 31 / 降级 1 / 自证桩 23
+    / 三类和 55、低置信 13、provenance 6 类宇宙)一致。🔴 总数类断言一律**动态**
+    推导（`len(BENCHMARK_DEFS)`），仅「文档账本」显式数字作第二把锁。
   - 前端 public.html 确实接线到该端点（fetch + 渲染 VMM 段），删接线即 FAIL。
 
 运行：python lda/run_webui_verification_ledger_smoke.py
@@ -17,6 +19,16 @@ if LDA_ROOT not in sys.path:
     sys.path.insert(0, LDA_ROOT)
 
 from lda_webui import routes  # 生产路径（非副本）
+from lda_harness.benchmarks import BENCHMARK_DEFS
+
+# 动态锚总数：题库增长时自动跟随。🔴 铁律「等价断言 + 会增长集合 = 定时炸弹」
+# ⇒ 总数类断言一律动态推导，只有「文档账本」的显式数字保留为第二把锁。
+_N_ANCHORS = len(BENCHMARK_DEFS)
+# 文档账本（README「当前账本」段 · v0.9.73）：严格独立 31 · 降级 1 · 自证桩 23。
+# 由 run_three_class_consistency_smoke.py 守护「README ≡ harness ≡ 端点」三面一致；
+# 此处显式数字作第二把锁——账本若漂移必须显式同步，不允许静默通过。
+_DOC_TIERS = {"strict_independent": 31, "degraded_ordinal": 1, "self_certified": 23}
+_DOC_LOW_CONF = 13
 
 
 def main() -> int:
@@ -45,22 +57,27 @@ def main() -> int:
     pa = vmm.get("per_anchor") or {}
 
     # ---- 2. 与 README 文档账本交叉核对（非同式复算，是外部事实锚）----
-    check("严格独立 == 29（文档账本）", tiers.get("strict_independent") == 29, tiers)
-    check("降级量级参考 == 1（文档账本）", tiers.get("degraded_ordinal") == 1, tiers)
-    check("自证桩 == 23（文档账本）", tiers.get("self_certified") == 23, tiers)
-    check("三分类和 == 53 锚总数", sum(tiers.values()) == 53, tiers)
-    check("逐锚明细 == 53 条", len(pa) == 53, len(pa))
+    check("严格独立 == %d（文档账本）" % _DOC_TIERS["strict_independent"],
+          tiers.get("strict_independent") == _DOC_TIERS["strict_independent"], tiers)
+    check("降级量级参考 == %d（文档账本）" % _DOC_TIERS["degraded_ordinal"],
+          tiers.get("degraded_ordinal") == _DOC_TIERS["degraded_ordinal"], tiers)
+    check("自证桩 == %d（文档账本）" % _DOC_TIERS["self_certified"],
+          tiers.get("self_certified") == _DOC_TIERS["self_certified"], tiers)
+    check("三分类和 == %d 锚总数（动态）" % _N_ANCHORS, sum(tiers.values()) == _N_ANCHORS,
+          (tiers, _N_ANCHORS))
+    check("逐锚明细 == %d 条（动态）" % _N_ANCHORS, len(pa) == _N_ANCHORS, len(pa))
 
     # ---- 3. provenance 6 类 + 低置信不变量（必要验证纪律）----
     expect_prov = {"external_textbook", "external_empirical", "independent_cross_check",
                    "design_rule_anchor", "self_authored_closed_form",
                    "self_authored_closed_form_with_check"}
     # 模型定义 6 类；填充集是 6 类宇宙的子集（external_textbook 当前 0 锚亦合法）。
-    # 真不变量：不出现未知 provenance + 各类计数和 == 53 锚总数。
+    # 真不变量：不出现未知 provenance + 各类计数和 == 锚总数。
     check("provenance 均为 6 类宇宙子集（无未知来源泄漏）",
           set(bp.keys()) <= expect_prov, list(bp.keys()))
-    check("provenance 各类计数和 == 53 锚总数", sum(bp.values()) == 53, (bp, sum(bp.values())))
-    check("低置信自写闭式 == 13（必要验证集）", len(lc) == 13, len(lc))
+    check("provenance 各类计数和 == %d 锚总数（动态）" % _N_ANCHORS,
+          sum(bp.values()) == _N_ANCHORS, (bp, sum(bp.values())))
+    check("低置信自写闭式 == %d（必要验证集）" % _DOC_LOW_CONF, len(lc) == _DOC_LOW_CONF, len(lc))
     check("低置信数 == by_provenance[self_authored_closed_form]",
           bp.get("self_authored_closed_form") == len(lc), (bp.get("self_authored_closed_form"), len(lc)))
 

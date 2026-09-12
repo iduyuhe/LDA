@@ -22,7 +22,8 @@
      且收敛阶 ~O(h⁴)（残差比 n=2→4 应 ~16×）
   ② 反例 B28（沿程积分 vs 闭式，均匀段剖分守恒）：判据 D 必须 FAIL
      ——证明护栏会响（没被验证过的护栏不算护栏）
-  ③ 全 20 道已接线候选的**基线残差普查**：全部 > 1e-12
+  ③ 全部**已接线严格独立候选**（清单由 harness 权威三分类动态推导）的
+     **基线残差普查**：全部 > 1e-12
      ——代数恒等只能给 ~1e-16；>1e-12 即从值域上排除恒等（除非该锚
        恰好落在过度收敛区，见 B10 特例：基线=0 但判据 D 深验通过）
   ④ 抽验两条对角化类候选（B9 扫 N / B23 扫 ncut）：截断收敛证据留痕
@@ -44,9 +45,18 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE / "lda_solver"))
+# 🔴 v0.9.73：部分候选（B31/B32 等）内部用 `from lda.lda_harness import ...` 或
+# 回退 `import <mod>` ⇒ 需同时有「仓库根」（给出 `lda` 包）与 `lda_harness` 目录
+# （给出裸模块名回退）。此前清单硬编码、从未覆盖 B31/B32，故该缺口长期未暴露。
+sys.path.append(str(HERE.parent))
+sys.path.append(str(HERE / "lda_harness"))
 
-from lda_harness.harness import candidate_discretization_responds  # noqa: E402
+from lda_harness.harness import (  # noqa: E402
+    candidate_discretization_responds, IndependentCandidateRouter,
+    CANDIDATE_CLASS_STRICT,
+)
 from lda_harness.verification_adapters import build_harness_specs  # noqa: E402
+from lda_harness.benchmarks import BENCHMARK_DEFS  # noqa: E402
 
 PASS = 0
 FAIL = 0
@@ -105,11 +115,14 @@ def main() -> int:
     # ---------------------------------------------------------------
     print("③ 全部已接线候选的基线残差普查（代数恒等在值域上被排除）")
     specs, cand = build_harness_specs()
-    indep_ids = [
-        "B1", "B3", "B4", "B8", "B9", "B10", "B11", "B12", "B13", "B14", "B15",
-        "B19", "B20", "B22", "B23", "B24", "B25", "B26", "B27", "B33", "E2",
-        "S13", "S7", "S8",
-    ]
+    # 🔴 v0.9.73 改动态推导：原硬编码清单（24 项）漏了 B2/B28/B29/B30/B31/B32/E8
+    # 共 7 道严格独立锚，使「已接线候选 24/24 全部登记」退化为**自证式等值断言**
+    # （等价断言 + 会增长集合 = 定时炸弹）。真值锚 = harness 权威三分类
+    # （IndependentCandidateRouter.candidate_class，与 /api/verification_ledger 同源），
+    # 随接线自动扩展、无需人工维护清单。
+    _router = IndependentCandidateRouter()
+    indep_ids = sorted(bid for bid in BENCHMARK_DEFS
+                       if _router.candidate_class(bid) == CANDIDATE_CLASS_STRICT)
     noise_exempt = {"B10"}  # 过度收敛区特例：基线=0，判据 D 深验已通过（①）
     n_wired, violators = 0, []
     for sp in specs:
@@ -125,10 +138,11 @@ def main() -> int:
         d = abs(float(cv) - float(ov))
         if sp.spec_id not in noise_exempt and d <= 1e-12:
             violators.append((sp.spec_id, "基线残差 %.2e 贴地板（恒等嫌疑）" % d))
-    check("已接线候选 %d/24 全部登记" % n_wired, n_wired == 24)
+    check("已接线候选 %d/%d 全部登记（动态）" % (n_wired, len(indep_ids)),
+          n_wired == len(indep_ids))
     check("基线残差全部 > 1e-12（B10 特例豁免，见①）", not violators,
           "; ".join("%s: %s" % v for v in violators) if violators else
-          "20 道残差 1.66e3 ~ 1.5e-2，全部远高于 1e-15 恒等特征")
+          "%d 道残差全部远高于 1e-15 恒等特征" % n_wired)
 
     # ---------------------------------------------------------------
     print("④ 抽验对角化类候选的截断收敛（证据留痕）")
@@ -191,8 +205,9 @@ def main() -> int:
         print(f"判据 D 冒烟：{PASS} PASS / {FAIL} FAIL —— 🔴 存在假独立或护栏失效")
         return 1
     print(f"判据 D 冒烟：{PASS} PASS / 0 FAIL —— 全绿")
-    print("结论：24 道独立候选中 0 道代数恒等（23 道基线残差 1.66e3~1.5e-2 值域排除；")
-    print("     B10 基线=0 属过度收敛区特例，判据 D 深验 O(h⁴) 收敛通过）。")
+    print("结论：全部**已接线严格独立候选**（数量动态推导）0 道代数恒等 —— 基线残差")
+    print("     全部远高于 1e-15 恒等特征、从值域上排除恒等（B10 基线=0 属过度收敛区")
+    print("     特例，判据 D 深验 O(h⁴) 收敛通过）。")
     print("     B28 型假独立已被判据 D 抓获（②证明护栏会响）——B28 若要接线必须")
     print("     改用非均匀 Γ(z) 剖面，使积分与闭式不再剖分守恒。")
     return 0

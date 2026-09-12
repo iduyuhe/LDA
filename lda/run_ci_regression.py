@@ -471,6 +471,19 @@ CORE_SMOKES: List[str] = [
     #  ③反向 N_D↓⇒V_br↑ / V↑⇒M·F↑ / 固定种子可复现 ④T1 不作 ORACLE + 击穿区必 raise。
     #  纯 numpy+stdlib 秒级、零新物理、零 A 级/DEVSIM 依赖，必进 core。CI core 166->167。
     "run_t1c_w6_apd_avalanche_smoke.py",
+    # v0.9.73（T2 第3阶段 · 自证桩换锚 sprint U4+U5+U6）：把实证语料
+    #  E-GE-PD-RESP（Ge p-i-n 响应度）/ E-MZM-VPI-18（Si 耗尽 MZM Vπ·L）从「未接线语料」
+    #  升级为**经 T1 内核的独立候选**，量子 T1 诚实降级为量级带。13 判据（每段 4 条）：
+    #  U4：①正向 R=0.997 落实测 1.1 量级带（|diff|=2.06σ 显式披露）②判据D n_x 加密
+    #      |R−R_ref| O(dx²) 单调 ③反向 L_Ge↓⇒R↓ ④T1 不作 ORACLE 双向
+    #  U5：①正向 Vπ·L=0.712 落量级带 + E_max 比↔解析 √(Vbi(V)/Vbi(0)) 1.84% 物理校验
+    #      ②判据D 峰值|Δn| O(dx²) 单调（Δn_eff 网格无关 1.2e-3）③反向 N_A↑⇒Vπ·L↓ ④守卫
+    #  U6：①语料 A 级 ②量级带判定器真可证伪（带内 PASS/带外 FAIL）③诚实门禁：量子 T1
+    #      锚未虚报进 BENCHMARK_DEFS ④honest_tier=order-of-magnitude-band。
+    #  🔴 诚实档 degraded_ordinal：U4/U5 残差主成分为未公开器件几何/材料假设（模式分布/
+    #  结位、收集窗口、Soref 高掺杂端适用域），非数值误差；不放宽 tol 去凑。
+    #  纯 numpy、零新物理、零 A 级/DEVSIM 依赖，必进 core。CI core 167->168。
+    "run_t2_anchor_upgrade_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

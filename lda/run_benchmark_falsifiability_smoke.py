@@ -18,7 +18,7 @@ v0.9.16 补 P0-3 三分类双向复核 · P0 续光子侧 B3/B4/B20 接线）。
      —— 外部验货面曾把独立候选硬编码成 ["E2"]（而 E2 恰是已降级那道），
      新接的 4 道一道没出现；改为动态推导后仍须钉死，防"动态"悄悄失效
   ⑧ 路径②一致：CLI 对外主报告（VerificationHarness + IndependentCandidateRouter）
-     的 verified 口径必须等于路径①，且 48 题**全部按题标注**独立性
+     的 verified 口径必须等于路径①，且**全部锚题**（数量随题库增长，当前 55）按题标注独立性
      —— ci.yml 直跑 run_harness.py，本 smoke 与 run_harness.py 均已入 CORE_SMOKES（run_ci_regression.py:38-39），本地 `--tag core` 与 ci.yml 双重守护路径②口径，无覆盖盲区
 
 为什么③比②重要：②只能证明"没坏"，③才能证明"坏了能发现"。
@@ -185,7 +185,18 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 # v0.9.68（P1①）：B11 环形谐振器 drop 端口谱形匹配 接入 ring_fsr_peakfit_b11
 #   同族谱拟合独立候选（方法学独立于闭式 FSR）⇒ 严格独立 26 → 27，自证桩 24 → 23
 #   （53 守恒；B16 如实留自证桩，不随升级）。
-MIN_INDEPENDENT = 27
+#   ⚠️ 本文件此前的版本史用「注册候选行为口径」计数，与 README 版本链的
+#   「三分类口径」数值不同步（README 该时点为 28→29/24→23）——两套口径不必相等，
+#   但都不该被当作唯一真值。**权威真值 = harness 动态推导（见 /api/verification_ledger）。**
+# v0.9.69/v0.9.70（T1-C W3/W4）：B31（Soref-Bennett 载流子色散相移，Drude 独立候选）
+#   + B32（EAM-QCSE 吸收边位移，1D 薛定谔数值对角化）两道 A 档有源严格锚
+#   ⇒ harness 严格独立 29 → 31，题数 53 → 55（降级 1(E9)、自证桩 23 不变）。
+# v0.9.73（T2 换锚 sprint 收口）：①账本同步 —— README 仍停在 29/53，harness 实为
+#   31/55（本次更正）。②🔴 **B32 harness 接线修复**：golden 闭式形参是 L_e/L_h，
+#   而 default_params 只给 L ⇒ golden(**params) 抛 TypeError，B32 在 harness 默认
+#   路径跑不起来、被行为判据误判成自证桩（专属 smoke 直接调函数故未暴露）⇒ 行为
+#   口径由 30 回到 31。**当前：严格独立 31 · 降级 1(E9) · 自证桩 23 · 和 55。**
+MIN_INDEPENDENT = 31
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:
@@ -277,11 +288,16 @@ def main() -> int:
           f"严格独立={n_ind} {sorted(strict)} · 降级量级参考={degraded} "
           f"· 自证桩={len(stub)}/{len(specs)}")
 
-    check("已登记候选类型与实测独立锚一致（无登记未接线）",
-          set(BENCHMARK_CANDIDATES) <= {
-              d.get("candidate") for d in BENCHMARK_DEFS.values()
-              if d.get("candidate")},
-          f"登记表={sorted(BENCHMARK_CANDIDATES)}")
+    # 🔴 v0.9.73：豁免「显式声明的复用携带候选」（B35 复用 B15、非独立锚，
+    # b35_reuse_b15 仅作委托记录）——此前该断言自 v0.9.67/68 起一直 FAIL 未被察觉。
+    # 真·孤儿候选（登记了却无任何锚引用）仍必 FAIL（fdfd_ng 先例）。
+    _alias_cands = {c for d in BENCHMARK_DEFS.values()
+                    for c in (d.get("reuse_alias_candidates") or [])}
+    _used_cands = {d.get("candidate") for d in BENCHMARK_DEFS.values()
+                   if d.get("candidate")} | _alias_cands
+    check("已登记候选类型与实测独立锚一致（无登记未接线·复用别名已豁免）",
+          set(BENCHMARK_CANDIDATES) <= _used_cands,
+          f"孤儿登记={sorted(set(BENCHMARK_CANDIDATES) - _used_cands)}")
 
     # ② 正向：独立候选锚必须在各自 tol 内 PASS（只查进判决的严格独立锚）
     ok_pos, detail_pos = [], []
@@ -591,7 +607,8 @@ def main() -> int:
                     _json_bad.append(f"passed 非 Python bool 的题={sorted(_np)}（numpy 标量泄漏进判决链）")
         check("路径② 报告可 JSON 序列化（判决链无 numpy 标量泄漏）",
               not _json_bad,
-              "；".join(_json_bad) if _json_bad else "48 题 format_json 通过且 passed 均为 Python bool")
+              "；".join(_json_bad) if _json_bad else
+              "%d 题 format_json 通过且 passed 均为 Python bool" % len(_r2))
     except Exception as e:  # noqa: BLE001
         check("路径② 报告可 JSON 序列化（判决链无 numpy 标量泄漏）",
               False, f"检查自身异常：{str(e)[:80]}")

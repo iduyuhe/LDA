@@ -27,7 +27,12 @@ _AGENT_DIR = os.path.join(os.path.dirname(_HERE), "lda_agent")
 
 
 def _ensure_paths():
-    for p in (_SOLVER_DIR, _AGENT_DIR):
+    # 🔴 v0.9.73：必须也加入 `_HERE`（lda_harness 自身目录）。B31/B32 的候选用
+    # `from lda.lda_harness import <mod>`，失败时回退 `import <mod>`——后者要求
+    # lda_harness 目录在 sys.path 上。原先只加 solver/agent 目录 ⇒ 直接 `python
+    # run_harness.py`（仓库根不在 sys.path）时 B31 候选 ImportError **裸崩**，
+    # 主对外报告生成失败（CI 主入口）。见 run_harness.py B31 崩溃复现。
+    for p in (_SOLVER_DIR, _AGENT_DIR, _HERE):
         if p not in sys.path:
             sys.path.insert(0, p)
 
@@ -1728,12 +1733,14 @@ def _b32_qcse_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
         _ensure_paths()
         import b32_qcse_anchor as ba
     p = spec.params
+    # 🔴 v0.9.73：键名对齐 golden 形参 L_e/L_h（原读 "L" 与 default_params 只给 L
+    # 曾使 harness 路径 golden 抛 TypeError；见 benchmarks.py B32 注记）。
     return float(ba.b32_qcse_edge_shift_meV_numerical(
         V_mod=float(p["V_mod"]),
         d_stack=float(p.get("d_stack", 5e-7)),
         m_e=float(p.get("m_e", ba.B32_M_E_DEFAULT)),
         m_h=float(p.get("m_h", ba.B32_M_H_DEFAULT)),
-        L=float(p.get("L", ba.B32_L_DEFAULT))))
+        L=float(p.get("L_e", p.get("L", ba.B32_L_DEFAULT)))))
 
 
 # ---------------------------------------------------------------------------

@@ -175,6 +175,15 @@ CORE_SMOKES: List[str] = [
     "run_compact_model_smoke.py",
     # T1-2 SPICE 兼容网表生成器 + Cadence Spectre 适配（参数变→网表变 / 悬空报错 / Spectre 结构异）
     "run_spice_netlist_smoke.py",
+    # T1-B 电学/TCAD 数值内核（C 级自主 · v0.9.69+）：1D 漂移-扩散+连续性（热平衡）
+    #   自研求解 N(x) 与 Sze 教科书 p-n 结闭式双向标定（判据 D 网格收敛 + 峰值电场误差
+    #   ≤10% + 反向 N_D±20% 必变 + T1 输出不作 ORACLE 守卫）。纯 numpy 亚秒级、零 A 级/
+    #   DEVSIM import，无权豁免必进 core。CI core 159→160。
+    "run_t1b_drift_diffusion_smoke.py",
+    # T1-B-W1 DEVSIM 主权镜像冷备门禁（B 级 Apache-2.0）：vendor/devsim_mirror 存在 +
+    #   提交锁定 43b41ca(r2.11.0) + LICENSE(Apache-2.0) + subprocess 隔离纪律。闭合 T1-B-W3
+    #   收尾「离线构建证据 CI 门禁」缺口。DEVSIM 未安装→跨校验 SKIP 不破 CI。CI core 160→161。
+    "run_t1b_devsim_cold_backup_smoke.py",
     # 名誉榜台账护栏（结构合法 + 得分一致 + confirmed 缺陷必挂锚，防刷分/自证；0.23s）
     "run_bounty_ledger_smoke.py",
     # T0 LLM 价值实证（LLM 开启后 Pareto 前沿须出现网格外新非支配点，防开了等于没开；0.31s）

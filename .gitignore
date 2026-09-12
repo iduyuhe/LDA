@@ -62,3 +62,10 @@ lda/redteam_anchor_fuzz_defects_pending.json
 # ---- 本地加密保管目录（密钥+密文，不进版本库）----
 .secrets/
 
+# ---- DEVSIM 主权镜像冷备（B 级 Apache-2.0，本地离线副本，不进版本库）----
+vendor/devsim_mirror/
+vendor/devsim_wheels/
+_devsim_clone.log
+_devsim_probe.txt
+_devsim_wheels.txt
+

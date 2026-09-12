@@ -3,6 +3,7 @@
 > 配套 `docs/lda_active_device_redline_clarification_2026-09-10.md` §七裁定①。
 > **本文件定义契约与落地状态。** B33 已于 2026-09-10 评审通过并落地（严格独立 27→28，自证桩 24 不变，题数 52→53，CI 全绿）；其余待评审，评审通过后逐道注册到 `benchmarks.py` + `verification_adapters.py` + 对应 smoke。
 > 全部 A 档锚共同前提：**纯物理定律闭式 + 独立交叉候选，零载流子求解器、零增益动力学、零 TCAD、零 A 级工具 → 不破三不做 / 主权 / 验证纪律任何一条红线。**
+> 📌 **终审裁决见 `docs/lda_t1c_anchor_contract_review_2026-09-12.md`**（Sprint 2 第1阶段 · 先评审后写码）：B31 GO / B32 GO(写码前锁器件类型) / B33+APD 闭式扩展 GO / B34→并入 B3 不单列 / B35 复用 B15 GO / 线宽 待杜先生拍板。代码留待第2阶段 W1~W4。
 
 ---
 

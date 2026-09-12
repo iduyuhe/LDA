@@ -12,5 +12,8 @@
 """
 from .fdtd1d import solve_spectrum as fdtd1d_spectrum
 from .tmm import solve_spectrum as tmm_spectrum
+from .drift_diffusion_1d import solve_pn_junction_1d as t1b_solve_pn
+from .drift_diffusion_1d import sze_pn_junction_closed_form as t1b_sze_closed_form
 
-__all__ = ["fdtd1d_spectrum", "tmm_spectrum"]
+__all__ = ["fdtd1d_spectrum", "tmm_spectrum", "t1b_solve_pn",
+           "t1b_sze_closed_form"]

@@ -463,6 +463,14 @@ CORE_SMOKES: List[str] = [
     #  ④T1 不作 ORACLE 守卫。纯 numpy 秒级、零新物理、零 A 级/DEVSIM 依赖，必进 core。
     #  CI core 165->166。
     "run_t1c_w5_detector_bandwidth_smoke.py",
+    # v0.9.72（T1-C-W6）：APD 雪崩载流子输运 B 档真求解（经 T1 电学内核：反偏耗尽
+    #  三角场 E(x) + van Overstraeten–de Man 电离系数 → 精确 1D 局部电离积分 M(V)
+    #  （两解析极限机器精度退化）+ 固定种子 MC 雪崩链（母载流子存活分支）→ M/F）
+    #  vs Miller/McIntyre 闭式（B33 同源）。4 判据：①正向解析极限+MC↔ODE（<5%）
+    #  +F↔McIntyre（<10%）+跨模块一致+n_eff 误差公开 ②判据D n_x 加密单调收敛
+    #  ③反向 N_D↓⇒V_br↑ / V↑⇒M·F↑ / 固定种子可复现 ④T1 不作 ORACLE + 击穿区必 raise。
+    #  纯 numpy+stdlib 秒级、零新物理、零 A 级/DEVSIM 依赖，必进 core。CI core 166->167。
+    "run_t1c_w6_apd_avalanche_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

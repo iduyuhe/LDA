@@ -5,6 +5,13 @@
 > W6 APD 雪崩输运真求解，v0.9.70–0.9.72）。
 > 路线图要求（研发规划 §第3阶段）：「≥5 自证桩换锚路线细化」——本文件即该项交付物。
 
+> **施工状态（2026-09-13 收口 · v0.9.73 · commit f5ccfdf）**
+> - ✅ **U4**（E-GE-PD-RESP）：`lda/lda_solver/ge_pd_responsivity_true.py` 落地，复用 T1-W5 电学内核换锚。
+> - ✅ **U5**（E-MZM-VPI）：`lda/lda_solver/mzm_vpi_depletion_true.py` 落地，复用 T1-W4 2D DD 内核换锚。
+> - ✅ **U6**（量子 T1）：按本表「不改锚改判据」执行，诚实降级 `degraded_ordinal`（E9 占位）。
+> - 三桩均**复用 T1 内核、零新增独立锚**；`run_t2_anchor_upgrade_smoke.py`（13 判据）登记 CORE_SMOKES，CI core 166→168。
+> - ⏳ **U1 / U2 / U3 未开工**（B16 MMI 三方独立 / E5 双引擎损耗 / 环 FSR）：属下一 sprint。
+
 ## 0. 现状与目标
 
 | 分类 | 桩数 | 性质 |

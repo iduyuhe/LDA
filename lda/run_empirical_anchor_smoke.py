@@ -1,7 +1,7 @@
 """D-62 实证大数据锚 smoke：harness 实证锚题（E1-E9 第二道非 AI ground）+ 语料评审流。
 
 覆盖：
-  ① harness 实证锚题解析（BENCHMARK_DEFS 52 = B1-B30 + E1-E9 + S1-S13；E 题 golden 来自实测语料；
+  ① harness 实证锚题解析（BENCHMARK_DEFS 55 = B1-B33 + E1-E9 + S1-S13；E 题 golden 来自实测语料；
      B19 为 P1-M4 新增链路级无源无增益物理定律锚；B20-B27 为 v0.8 内核纵深新增）
   ② 参考候选 34/34 PASS（物理定律 + 实证锚双 ground）
   ③ 扰动候选：实证锚题 FAIL 检测（自适应扰动幅度，实证锚能抓偏离）

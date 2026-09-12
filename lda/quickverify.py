@@ -3,7 +3,7 @@
 外部人拿到仓库后，一条命令复现「核心验证可信度」：
 
     python lda/quickverify.py            # 快验：48 锚三分类 + 计数/语法门禁（~30s）
-    python lda/quickverify.py --full     # 全量：再跑 CI core 95 条回归（~25min）
+    python lda/quickverify.py --full     # 全量：再跑 CI core 168 条回归（~40min）
     python lda/quickverify.py --json out.json   # 机器可读摘要
 
 做什么（按序）：
@@ -247,7 +247,7 @@ def _selfcheck() -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description="LDA 一键复现（T-7）")
     ap.add_argument("--full", action="store_true",
-                    help="快验后再跑 CI core 95 条全量回归（~25min）")
+                    help="快验后再跑 CI core 168 条全量回归（~40min）")
     ap.add_argument("--selfcheck", action="store_true",
                     help="只跑环境自检+版本核对逻辑（CI core 用，秒级，不做子进程验证）")
     ap.add_argument("--json", default=None, metavar="PATH",

@@ -4,7 +4,7 @@
   ① golden 正确性：S1 = 独立手算（dB 加法级联），非调用自身
   ② reference 候选 PASS：harness spec 解析 + 与 golden 死标量比对
   ③ 扰动候选 FAIL 被抓：任一级损耗 +2dB → margin 偏移 2dB > tol=0.01
-  ④ 题库计数：50 题（B1-B30 + E1-E7 + S1-S13），S 前缀接入 golden 分发
+  ④ 题库计数：55 题（B1-B33 + E1-E9 + S1-S13），S 前缀接入 golden 分发
   ⑤ 预算语义物理合理性：损耗级增加 → margin 严格递减；余量域判定
   ⑥ 行为黑箱参数边界：p_tx/灵敏度参数化（文献典型值，诚实标注）
 
@@ -74,7 +74,7 @@ def main() -> int:
           "预算锚能抓候选偏离（死标量）")
 
     # ④ 题库计数（B+E+S 动态，v0.9.51 起不再硬编码 50）
-    check("题库（B1-B30 + E1-E* + S1-S13 动态计数）",
+    check("题库（B1-B33 + E1-E* + S1-S13 动态计数）",
           len(BENCHMARK_ORDER) == len([b for b in BENCHMARK_ORDER if b[:1] in ("B", "E", "S")])
           and BENCHMARK_ORDER[-1] == "S13",
           f"{len(BENCHMARK_ORDER)} 题")

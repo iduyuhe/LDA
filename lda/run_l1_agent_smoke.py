@@ -4,7 +4,7 @@
 run_agent.py 的 CLI 演示路径（KernelGateway 直接调用 + L0 IR 驱动 + 三种 candidate +
 benchmarks 过滤）无 smoke 覆盖。本 smoke 以库方式走同一 KernelGateway 全链路：
 
-  1) reference 候选 → 50/50 PASS（B1-B30 物理定律 + E1-E7 实证锚 + S1-S13 系统锚，D-104 注入实证锚后；
+  1) reference 候选 → 50/50 PASS（B1-B33 物理定律 + E1-E7 实证锚 + S1-S13 系统锚，D-104 注入实证锚后；
      B19 为 P1-M4 新增链路级无源无增益物理定律锚；B20-B27 为 v0.8 内核纵深新增；
      E4-E7 为 v0.8.11 实证语料扩充：crossing IL/XT + MMI EL + SiN 传播损耗；
      S9 为 v0.8.24 LVS 签核锚）；
@@ -43,7 +43,7 @@ def main() -> int:
         return gw.handle(AgentRequest(action=action, payload=payload,
                                       meta={"requester": "smoke"}))
 
-    # 1) reference → 全部 PASS（物理定律 + 实证锚双 ground；B1-B30 + E1-E* + S1-S13）
+    # 1) reference → 全部 PASS（物理定律 + 实证锚双 ground；B1-B33 + E1-E* + S1-S13）
     r = run("verify_design", {"candidate": {"type": "reference"}})
     s = r.result["summary"]
     check("verify_design(reference) 全部 PASS（双 ground 动态计数）",
@@ -72,7 +72,7 @@ def main() -> int:
     check("list_benchmarks 全题库（动态计数 = BENCHMARK_ORDER 长度）",
           len(ids) == len(BENCHMARK_ORDER) and "B30" in ids and "E9" in ids
           and "S12" in ids and "S13" in ids,
-          f"{len(ids)} 题（B1-B30 + E1-E{_n_e} + S1-S13）")
+          f"{len(ids)} 题（B1-B33 + E1-E{_n_e} + S1-S13）")
 
     # 5) benchmarks 过滤（B1,B2,B4）→ 3/3
     r = run("verify_design", {"candidate": {"type": "reference"},

@@ -448,9 +448,14 @@ CORE_SMOKES: List[str] = [
     #  Windows→weak）②weak 红线（allow_weak_isolation 不为真即拒构造）/ strong 默认可构造
     #  ③轻量闭环 v0 FAIL→v1 PASS（沙箱不改变判卷语义）④strong 真隔离（仅 Linux）：降权
     #  nobody 读 /etc/shadow 被拒 + 网络命名空间禁外网。Windows CI 走 weak（④自动跳过）、
-    #  强隔离仅生产 Linux 验证。纯 numpy 秒级、零新物理、零回归，无权豁免必进 core。
-    #  CI core 158->159。
+#  强隔离仅生产 Linux 验证。纯 numpy 秒级、零新物理、零回归，无权豁免必进 core。
+#  CI core 158->159。
     "run_solver_writer_sandbox_smoke.py",
+    # v0.9.70（T1-B-W4）：2D p-n 结漂移-扩散+连续性内核（Gummel/SG）vs Sze 短二极管闭式。
+    #  4 判据：①正向 I(V) 比对短二极管 golden（实测 ~4.6% < 8%）②判据D 网格收敛单调
+    #  ③反向 N_A×1.1 信号 ~1.7% ≫ 噪声 ④T1 不作 ORACLE 守卫。纯 numpy+scipy 秒级、零新
+    #  物理、零 A 级/DEVSIM 依赖，无权豁免必进 core。CI core 173->174。
+    "run_t1b_drift_diffusion_2d_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

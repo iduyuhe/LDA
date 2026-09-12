@@ -1673,6 +1673,39 @@ def _mzm_vpi_nullfit_candidate(spec: VerificationSpec, oracle_value: Any) -> flo
 
 
 # ---------------------------------------------------------------------------
+# B31 独立候选（v0.9.69 · T1-C W3）：Si 载流子色散 Drude 等离子体相移
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "b31_drude_phase_shift",
+    "Drude 自由电子气模型相移（V→ΔN_eff 电子项→Drude Δn→Δφ）—— 与 golden 的 "
+    "Soref-Bennett 唯象幂律闭式方法学独立（微观等离子体动力学 vs 宏观经验拟合，"
+    "故意非代数恒等，判据 D 不撞；不含空穴项与 many-body 修正）")
+def _b31_drude_phase_shift_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B31 独立候选：Drude 自由电子气相移。
+
+    golden = Soref & Bennett 1987 幂律闭式（唯象经验，含空穴 0.8 次幂）；
+    cand   = Drude 经典等离子体（仅电子线性项，微观动力学）。
+    两者方法学不同源，Drude 缺空穴效应与 many-body 修正 → 与 SB 故意非恒等
+    （比值 ~1-2× 即证明捕捉同一等离子体色散物理）。评审 §1「判据 D 不撞」。
+
+    ⚠️ 失败即抛异常上浮，绝不静默回退（IndependentCandidateRouter 既定原则）。
+    """
+    try:
+        from lda.lda_harness import b31_soref_bennett_anchor as ba
+    except ImportError:
+        _ensure_paths()
+        import b31_soref_bennett_anchor as ba
+    p = spec.params
+    return float(ba.b31_drude_phase_shift(
+        V_R=float(p["V_R"]),
+        V_bi=float(p.get("V_bi", 0.85)),
+        N0=float(p.get("N0", 2e17)),
+        lambda_um=float(p.get("lambda_um", 1.55)),
+        L_um=float(p.get("L_um", 1000.0)),
+        n_eff=float(p.get("n_eff", 2.4))))
+
+
+# ---------------------------------------------------------------------------
 # B29 独立候选（v0.9.39 · T-9 接线 #1）：1D 散热鳍 FDM 相移
 # ---------------------------------------------------------------------------
 @_register_candidate(

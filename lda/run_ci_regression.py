@@ -189,6 +189,12 @@ CORE_SMOKES: List[str] = [
     #   红线 V≥V_br 击穿必 raise + APD 带宽<PIN 带宽。纯 math 零依赖、不破三不做/主权/验证纪律。
     #   CI core 161→162。
     "run_b33_apd_smoke.py",
+    # T1-C-W3 B31 Si 载流子色散相移锚护栏（A 档有源 #2）：golden=Soref-Bennett 1987
+    #   幂律闭式（design_rule_anchor）↔ candidate=Drude 自由电子气（independent_cross_check，
+    #   方法学不同源、故意非恒等 → 判据 D 不撞）；ΔN(V) 一维耗尽近似闭式（零漂移-扩散，红线）；
+    #   反向 V_R↑⇒|Δφ|↑；耗尽近似失效阈 10¹⁸ cm⁻³ 必 raise；honest_tier=depletion-approx。
+    #   纯 math 零依赖、不破三不做/主权/验证纪律。CI core 162→163（净增 1 严格独立锚）。
+    "run_b31_soref_bennett_smoke.py",
     # 名誉榜台账护栏（结构合法 + 得分一致 + confirmed 缺陷必挂锚，防刷分/自证；0.23s）
     "run_bounty_ledger_smoke.py",
     # T0 LLM 价值实证（LLM 开启后 Pareto 前沿须出现网格外新非支配点，防开了等于没开；0.31s）

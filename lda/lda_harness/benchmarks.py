@@ -58,6 +58,9 @@ from .b30_readout_anchor import (  # noqa: E402  # B30 读出保真度锚（v0.9
 from .b33_detector_bandwidth_anchor import (  # noqa: E402  # B33 探测器 RC 带宽锚（v0.9.67 · A 档有源）
     b33_detector_bandwidth, b33_detector_bandwidth_report,
 )
+from .b31_soref_bennett_anchor import (  # noqa: E402  # B31 Si 载流子色散相移锚（v0.9.69 · T1-C W3）
+    b31_soref_bennett_phase_shift, b31_phase_shift_report,
+)
 
 BENCHMARK_DEFS = {
     "B1": {
@@ -728,6 +731,41 @@ BENCHMARK_DEFS = {
                  "A 档闭式/行为层有源，纯电路无光子有源物理 ⇒ 不破红线。"
                  "LLM 不进判决路径。"),
     },
+    # ---- B31（v0.9.69 · T1-C W3 · A 档有源扩展 #2）：Si 载流子色散相移 ----
+    "B31": {
+        "title": "Si 载流子色散相移（Soref-Bennett 幂律 · Drude 独立候选）",
+        "metric": "phase_shift_rad",
+        "oracle": ("analytical(Soref-Bennett 1987 @1550nm 幂律闭式) + "
+                   "Drude 等离子体 independent_cross_check"),
+        "tol": 1.5,
+        # v0.9.69（T1-C W3 · 评审 §1 GO）：golden = Soref & Bennett 1987 幂律闭式
+        # Δn=c1·ΔN_e + c2·(ΔN_h)^0.8（design_rule_anchor，@1550nm 文献常数，
+        # 严禁拟合回算）；candidate = Drude 自由电子气（independent_cross_check，
+        # 微观等离子体动力学 vs 宏观经验拟合，方法学不同源、故意非代数恒等 →
+        # 判据 D 不撞）。ΔN(V) 为一维耗尽近似闭式（零漂移-扩散，红线）。
+        # ⚠️ tol=1.5（150%）反映「方法学独立验证（量级一致）」而非「精确恒等」：
+        #   SB 电子项与 Drude 电子项同号同量级（偏差 ~1-2×，Drude 缺 many-body
+        #   修正），比值≠1 恰证非恒等、捕捉同一等离子体色散物理。严格验证见
+        #   run_b31_soref_bennett_smoke.py（交叉验证 + 反向 + 红线 + honest_tier）。
+        "candidate": "b31_drude_phase_shift",
+        "candidate_desc": ("Drude 自由电子气相移（微观等离子体 vs SB 唯象拟合，"
+                           "故意非恒等，判据 D 不撞）"),
+        "default_params": {"V_R": 3.0, "V_bi": 0.85, "N0": 2e17,
+                           "dN_h_ratio": 0.0, "lambda_um": 1.55,
+                           "L_um": 1000.0, "n_eff": 2.4},
+        "golden_fn": b31_soref_bennett_phase_shift,
+        "note": ("PN 耗尽型 Si 相位调制器：反偏 V_R → 耗尽近似 ΔN_eff(V)（零漂移-"
+                 "扩散，红线）→ Soref-Bennett 1987 幂律 Δn=C1·ΔN_e+C2·(ΔN_h)^0.8"
+                 "（@1550nm，C1=−8.8e-22 cm³, C2=−8.5e-18 cm^2.4，文献常数严禁拟合）"
+                 "→ Δφ=2π·|Δn|·L/λ（等价 Vπ=使 Δφ=π 的 V_R）。golden=确定性物理"
+                 "定律闭式（design_rule_anchor）。v0.9.69 独立候选=b31_drude_phase_"
+                 "shift：Drude 经典等离子体（仅电子线性项，微观动力学）—与 SB 方法"
+                 "学不同源、故意非恒等（比值~1-2×，判据 D 不撞）。适用域 10¹⁷-10²⁰"
+                 " cm⁻³（原论文显式）；耗尽近似失效阈值 10¹⁸ cm⁻³（honest_tier="
+                 "depletion-approx）。与 B28（LiNbO3 Pockels Vπ）同接口不同物理机制"
+                 "→ 各自独立。零载流子求解/增益动力学/TCAD/A 级 ⇒ 不破三不做/主权/"
+                 "验证纪律。LLM 不进判决路径；golden 闭式非真值（T1 不作 ORACLE）。"),
+    },
     # ---- D-62 实证大数据锚（第二道非 AI ground：真实测量语料）----
     # anchor=empirical 的题：golden 来自 EmpiricalCorpus 实测语料（seed_empirical.json
     # + 社区经评审流落库的语料），非解析函数（golden_fn=None）。
@@ -1309,7 +1347,7 @@ for _bid, _def in BENCHMARK_DEFS.items():
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
-                   "B26", "B27", "B28", "B29", "B30", "B33",
+                   "B26", "B27", "B28", "B29", "B30", "B31", "B33",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                    "S9", "S10", "S11", "S12", "S13"]  # S 系统锚（Phase 0-4；S9=LVS/S10=多层/S11=规模/S12=阵列分布/S13=设计良率）

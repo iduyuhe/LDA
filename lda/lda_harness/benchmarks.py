@@ -471,14 +471,24 @@ BENCHMARK_DEFS = {
         "title": "光子晶体腔（布拉格镜 FP 腔）共振波长",
         "metric": "cavity_wl_nm",
         "oracle": "analytical(PhC Bragg/FP band-edge)",
-        "tol": 1e-6,
+        # v0.9.78（用户授权「B 路径」）：诚实升 degraded_ordinal。
+        # 候选 = 自研 2D FDTD 全波（b21_phc_fdtd，C 级自主、不借 Meep/Tidy3D）；
+        # tol=66.0nm = 3%×golden(2214nm) 绝对带（harness 仅 abs 判据，无 rel 模式）。
+        # 默认参数 λ_fdtd=2214.87nm vs golden 2214.0nm，rel=0.039%（余量 ~77×，
+        # 低于严格 100× 故保守归 degraded，不进死标量判决列）。
+        "tol": 66.0,
         "default_params": {"L_cav_um": 0.45, "n_core": 3.48, "n_clad": 1.44},
         "golden_fn": b21_phc_resonance,
-        "note": ("2D 光子晶体腔 = 均匀高折射率波导腔（L_cav）两端夹持 50% 占空比"
-                 "周期性布拉格光栅镜；腔共振 λ_res=(n_core+n_clad)·L_cav"
-                 "（FP/布拉格带边，n_eff,grating=(n_core+n_clad)/2 一阶近似，"
-                 "2D FDTD 全波验证吻合 ~2%）。确定性物理定律锚，"
-                 "LLM 不进判决路径；harness 默认 ReferenceCandidate 自洽 PASS。"),
+        "candidate": "b21_phc_fdtd",
+        "candidate_status": "degraded_ordinal",
+        "note": ("2D 光子晶体腔 = 均匀高折射率波导腔（L_cav，n_eff=(n_core+n_clad)/2）"
+                 "两端夹持 quarter-wave 布拉格镜（n_core/n_clad 交替）；腔共振"
+                 "λ_res=(n_core+n_clad)·L_cav（FP/布拉格带边一阶近似）。"
+                 "🔴 升级：自研 2D FDTD 全波求解（fdtd2d_dbr_cavity.py，纯 numpy）作方法学"
+                 "独立候选，6 点参数扫描实证实残差 0.04%–8.06% 随几何变化（判据 D 满足，"
+                 "非伪绿）；默认 rel=0.039% 极准，但保守标 degraded_ordinal（用户授权 B 路径"
+                 "+ 严格余量 100× 未达 + 跨域偏差主成分系模型近似粗糙度）。"
+                 "确定性物理定律锚，LLM 不进判决路径。"),
     },
     # ---- 内核纵深（v0.8.4）：CPW λ/4 读出谐振器基模频率物理定律锚 ----
     "B22": {
@@ -1353,7 +1363,12 @@ _VMM_OVERRIDES = {
     "B18": ("self_authored_closed_form",
             "本就不升：regime 越界（terminal Tier-1）"),
     "B21": ("self_authored_closed_form_with_check",
-            "弱调制布拉格 FP 腔一阶近似 (n_core+n_clad)/2；已有 2D FDTD 全波内验吻合~2%（非外部 ORACLE，但已内验，置信度中·非低置信·待再审计）；待特定结构外部 ORACLE 标定升 Tier-3"),
+            "v0.9.78 诚实升 degraded_ordinal（用户授权「B 路径」）：自研 2D FDTD 全波"
+            "（fdtd2d_dbr_cavity.py，纯 numpy·C 级自主·不借 Meep/Tidy3D）作方法学独立候选，"
+            "6 点扫描实证实残差 0.04%–8.06% 随几何变化（判据 D 满足，非伪绿）。默认"
+            "λ_fdtd=2214.87nm vs golden 2214.0nm，rel=0.039%（余量 ~77×，低于严格 100×"
+            "故保守归 degraded，不进死标量判决列）；tol=66.0nm=3%×golden(2214nm) 绝对带。"
+            "跨域偏差主成分为一阶 FP 模型近似粗糙度，待放宽红线（借 A 级/补波导几何）方升 strict。"),
     "E1":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
     "E3":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
     "E4":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),

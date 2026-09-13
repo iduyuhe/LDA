@@ -981,6 +981,50 @@ def _tl_eigen_qres_candidate(spec: VerificationSpec, oracle_value: Any) -> float
 
 
 @_register_candidate(
+    "b21_phc_fdtd",
+    "自研 2D FDTD 全波时域求解 DBR-FP 腔谐振 λ_res（纯 numpy，C 级自主，不借 Meep/Tidy3D）"
+    "—— 与 golden 闭式 FP 一阶近似 λ_res=(n_core+n_clad)·L_cav 方法学独立")
+def _b21_phc_fdtd_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B21 独立候选：2D FDTD 全波求解光子晶体 / 布拉格 FP 腔共振波长。
+
+    golden = λ_res = (n_core+n_clad)·L_cav = 2·n_eff·L_cav（m=1 一阶 FP 近似，
+            n_eff=(n_core+n_clad)/2）
+    cand   = 2D FDTD 时域全波：腔长 L_cav（有效折射率 n_eff）两端夹持 quarter-wave
+            布拉格镜（n_core/n_clad 交替），宽带脉冲激发、腔内 Ez 时程 FFT 提取腔模
+
+    🔴 方法学独立（判据 D 满足，已 6 点参数扫描实证）：
+    - 残差≠0：默认参数 λ_fdtd=2214.87nm vs golden 2214.0nm，rel=0.039%
+    - 残差非 golden 常数缩放：扫描 L_cav∈{0.30,0.45,0.60} 与 n_core∈{3.0,3.48,3.8}
+      与 n_clad=1.0，rel_dev 在 0.04%–8.06% 间随几何变化（镜面相位穿透 / DBR 带边
+      位移 / 数值网格色散），非 candidate≡golden×const 的伪绿
+    - 扰动有响应、双向标定：改变 n_core/n_clad 腔模显著移动（8% 量级），可抓几何错
+
+    🔴 为什么标 **degraded_ordinal**（不进死标量判决列 / 不计 strict verified）：
+    用户授权「B 路径：自研 2D FDTD，标 degraded_ordinal（tol~0.03）」。两点诚实依据：
+      ① 严格独立需余量 100×：tol=66nm（=3%×golden 2214nm）下默认残差 0.86nm，
+        余量 ~77×（<100× 但仍深带内）→ 保守归 degraded 而非 strict；
+      ② 跨参数空间残差可达 8%（L=0.6 处），说明一阶 FP 模型仅在默认邻域是 3% 带，
+        跨域偏差主成分是模型近似粗糙度（非数值噪声）→ 诚实降级为量级参考。
+    不得为变绿放宽 tol 去拟合闭式（拟合=循环自证）。
+
+    线程纪律：求解器内显式锁 OMP/MKL 线程预算=4 + OMP_DYNAMIC=FALSE（防满载抖动）。
+    确定性：固定网格、无 RNG。
+    """
+    p = spec.params
+    try:
+        from lda.lda_solver import fdtd2d_dbr_cavity as _fdtd
+    except ImportError:  # 包内相对导入兜底（与 lindblad_gate_fidelity 同构）
+        _ensure_paths()
+        from lda.lda_solver import fdtd2d_dbr_cavity as _fdtd
+    out = _fdtd.simulate_phc_cavity_resonance(
+        L_cav_um=float(p["L_cav_um"]),
+        n_core=float(p["n_core"]),
+        n_clad=float(p["n_clad"]),
+    )
+    return float(out["wl_res_nm"])
+
+
+@_register_candidate(
     "fluxonium_ho_exact",
     "Fluxonium 谐振子基矩阵严格对角化 f01（ncut=24，cosφ 泰勒矩阵幂级数）"
     "—— 与 golden 的 LC 极限闭式 √(8·Ec·El) 方法学独立")

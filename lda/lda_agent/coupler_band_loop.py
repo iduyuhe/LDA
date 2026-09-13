@@ -131,6 +131,7 @@ class CouplerBandAgent:
                     "kappa_fdtd": m.get("kappa_fdtd"),
                     "kappa_method": m.get("kappa_method"),
                     "kappa_rel_dev": m.get("kappa_rel_dev"),
+                    "kappa_rel_dev_basis": m.get("kappa_rel_dev_basis"),
                     "error": m.get("error"),
                 }
                 if entry["kappa_rel_dev"] is None:
@@ -142,6 +143,7 @@ class CouplerBandAgent:
                     "wl_um": round(float(wl), 4), "passed": bool(out.passed),
                     "fracA": m.get("fracA"), "fracB": m.get("fracB"),
                     "balance_abs": m.get("balance_abs"),
+                    "balance_abs_basis": m.get("balance_abs_basis"),
                     "total_power_positive": m.get("total_power_positive"),
                     "error": m.get("error"),
                 }

@@ -88,6 +88,28 @@ def main() -> int:
                     f" ≤ 0.25（方法一致性，非走过场）",
                     report, "dc_mean_rel")
 
+        # 🔴 派生量纯度护栏（方案 A / v0.9.78）：kappa_rel_dev 必须能由**已发布的 5 位 κ**
+        #    精确反算 ⇒ 它是「已发布值的纯函数」，而非由未取整 κ 计算。后者会让显示粒度
+        #    （1e-4 rel ≈ 3.3e-6 κ）细于 κ 的发布粒度（5e-6），把 κ 分辨率以下的 FDTD
+        #    抖动暴露成报告末位漂移（实测 0.1746↔0.1745 / 0.2715↔0.2716，同机同线程同码）。
+        #    本判据 = 可证伪的回归闸：若有人把 rel 改回由原始 κ 计算必红。
+        purity_bad = []
+        for e in dc.per_wl:
+            ko, kf, rp = (e.get("kappa_oracle"), e.get("kappa_fdtd"),
+                          e.get("kappa_rel_dev"))
+            if None in (ko, kf, rp):
+                continue
+            expect = round(abs(kf - ko) / ko, 4)
+            if rp != expect:
+                purity_bad.append((e.get("wl_um"), rp, expect))
+        ok &= check(not purity_bad,
+                    f"DC rel 纯度：kappa_rel_dev 均可由已发布 κ 精确反算"
+                    f"（bad={purity_bad[:2]}）", report, "dc_rel_purity")
+        ok &= check(all(e.get("kappa_rel_dev_basis") == "published_kappa_5dp"
+                        for e in dc.per_wl if e.get("kappa_rel_dev") is not None),
+                    "DC rel 派生基准已声明 = published_kappa_5dp（防暗改回归）",
+                    report, "dc_rel_basis")
+
         # DC 完成后主动回收：DC 的 7 个波长点各持有一份 3D 场张量（torch CPU），
         # 若一直握到 YB 跑完，峰值提交内存会叠加。本机 RAM 63GB 但**页面文件仅
         # 4GB**，提交内存峰值是两次硬掉电的诱因之一 ⇒ 显式 gc 降峰（不是修 bug，
@@ -98,6 +120,17 @@ def main() -> int:
                               label="YB 对称分束器多波长"))
         report["live_yb"] = yb.to_dict()
         ok &= check(yb.passed, f"YB 全波段验收 PASS：{yb.verdict}", report, "live_yb")
+        # 派生量纯度护栏（同 DC）：balance_abs 必须由已发布 frac 精确反算
+        yb_bad = []
+        for e in yb.per_wl:
+            fa, fb, ba = e.get("fracA"), e.get("fracB"), e.get("balance_abs")
+            if None in (fa, fb, ba):
+                continue
+            if ba != round(abs(fa - 0.5), 4):
+                yb_bad.append((e.get("wl_um"), ba))
+        ok &= check(not yb_bad,
+                    f"YB balance 纯度：balance_abs 均可由已发布 frac 精确反算"
+                    f"（bad={yb_bad[:2]}）", report, "yb_balance_purity")
 
     # 3) 报告落盘
     out_path = os.path.join(_HERE, "reports", "coupler_band_report.json")

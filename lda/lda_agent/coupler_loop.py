@@ -11,6 +11,14 @@
   DC：|κ_fdtd − κ_oracle| / κ_oracle ≤ tol_kappa（默认 0.25，覆盖网格色散）
   YB：|fracA − 0.5| ≤ tol_balance（默认 0.10），且总功率传输为正
 
+发布口径（v0.9.78 · 方案 A）：
+  **判决**一律用原始未取整标量（铁律：判决不可被粗化）；一切**对外发布**的派生量
+  ——DC 的 `kappa_rel_dev` / `Lc_fdtd_um`、YB 的 `balance_abs`——一律由**已发布值**
+  反算（`round(κ,5)` / `round(frac,4)`），使报告成为「已发布值的纯函数」。
+  缘由：直接用未取整 κ 计算的派生量，其显示粒度（1e-4 rel ≈ 3.3e-6 κ）**细于** κ 自身
+  的发布粒度（5e-6），会把 κ 分辨率以下的 FDTD 抖动（β 递推 acos 在比值→±1 附近的
+  病态放大）暴露成报告末位漂移（实测同机同线程同代码三次：κ 列恒然而 rel 抖 ±1e-4）。
+
 后端：默认 GPU（torch.cuda）——大规模网格纯 numpy 不可行；numpy 后端保留
 供 CPU 小网格冒烟 / CI。
 """
@@ -267,19 +275,37 @@ class CouplerAgent:
             method = "bidi_fit"
         if kappa_fdtd is None or kappa_fdtd <= 0:
             return CouplerOutcome(t.label or f"dc gap={t.gap_um}", "dc", False, {
-                "error": "β 提取失败", "kappa_oracle": kappa_o, "Lc_oracle": Lc_o}, 0.0)
-        rel = abs(kappa_fdtd - kappa_o) / kappa_o
-        passed = rel <= t.tol_kappa
+                "error": "β 提取失败",
+                "kappa_oracle": round(float(kappa_o), 5),
+                "Lc_oracle": round(float(Lc_o), 2)}, 0.0)
+        # 🔴 判决：仍用**原始未取整标量**（铁律——判决不可被粗化；tol_kappa 0.25 对
+        #    rel≈0.17 余量极大，粗化显示不会翻转判决）。
+        passed = abs(kappa_fdtd - kappa_o) / kappa_o <= t.tol_kappa
+        # 🔴 对外发布量一律由「已发布值」派生（方案 A，v0.9.78）：
+        #   若 rel / Lc_fdtd 直接用**未取整** κ 计算，其显示粒度（1e-4 rel ≈ 3.3e-6 κ、
+        #   0.01µm Lc）会**细于** κ 自身的发布粒度（5 位小数 = 5e-6），从而把 κ 分辨率
+        #   以下的 FDTD 抖动暴露成报告末位漂移——实测同机/同线程/同代码三次运行，
+        #   κ_oracle 与 κ_fdtd 的显示值**全部恒定**，唯 kappa_rel_dev 抖 ±1e-4
+        #   （0.1746↔0.1745、0.2715↔0.2716）；抖动源为 β 递推 acos 在比值→±1 附近的
+        #   病态放大（浮点 eps 级→rel 级），裕量仅 ~5×（铁律要求 ≥100×）。
+        #   改为由 round(kappa,5) 反算 ⇒ 派生量成为「已发布 κ 的纯函数」，报告自洽；
+        #   CI 侧由 run_coupler_band_smoke 的「纯度不变量」判据守护防回归。
+        #   残留边界（诚实披露）：若 FDTD κ 本身跨越 5 位显示边界仍会变，届时 κ 列
+        #   与 rel 列**同变**，属真变化而非孤立末位噪声。
+        k_or_pub = round(float(kappa_o), 5)
+        k_fd_pub = round(float(kappa_fdtd), 5)
+        rel_pub = abs(k_fd_pub - k_or_pub) / k_or_pub
         metrics = {
             "gap_um": t.gap_um,
             "neff_s": round(float(orc["neff_s"]), 5),
             "neff_a": round(float(orc["neff_a"]), 5),
-            "kappa_oracle": round(kappa_o, 5),
-            "kappa_fdtd": round(kappa_fdtd, 5),
+            "kappa_oracle": k_or_pub,
+            "kappa_fdtd": k_fd_pub,
             "kappa_method": method,
-            "kappa_rel_dev": round(rel, 4),
+            "kappa_rel_dev": round(rel_pub, 4),
+            "kappa_rel_dev_basis": "published_kappa_5dp",
             "Lc_oracle_um": round(Lc_o, 2),
-            "Lc_fdtd_um": round(math.pi / (2.0 * kappa_fdtd), 2),
+            "Lc_fdtd_um": round(math.pi / (2.0 * k_fd_pub), 2),
             "bs_bidi": None if bs_bidi is None else round(bs_bidi, 5),
             "ba_bidi": None if ba_bidi is None else round(ba_bidi, 5),
             "bs_rec": None if bs_rec is None else round(bs_rec, 5),
@@ -335,12 +361,16 @@ class CouplerAgent:
         fracA = float(np.mean(fa[-n_avg:]))
         fracB = float(np.mean(fb[-n_avg:]))
         total_pos = bool(np.mean(pa[-n_avg:]) > 0 and np.mean(pb[-n_avg:]) > 0)
-        balance = abs(fracA - 0.5)
-        passed = (balance <= t.tol_balance) and total_pos
+        # 判决：原始值（铁律）；发布量：由已发布 frac 派生（同 DC 纪律，v0.9.78）
+        passed = (abs(fracA - 0.5) <= t.tol_balance) and total_pos
+        fA_pub = round(float(fracA), 4)
+        fB_pub = round(float(fracB), 4)
+        bal_pub = round(abs(fA_pub - 0.5), 4)
         metrics = {
-            "fracA": round(fracA, 4),
-            "fracB": round(fracB, 4),
-            "balance_abs": round(balance, 4),
+            "fracA": fA_pub,
+            "fracB": fB_pub,
+            "balance_abs": bal_pub,
+            "balance_abs_basis": "published_frac_4dp",
             "total_power_positive": total_pos,
             "target_frac": orc["target_frac"],
             "tol_balance": t.tol_balance,

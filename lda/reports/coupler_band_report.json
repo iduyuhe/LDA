@@ -14,7 +14,7 @@
     {
       "key": "live_dc",
       "ok": true,
-      "msg": "DC 全波段验收 PASS：全波段验收 PASS：ORACLE κ(λ) 单调递增（真值谱形），FDTD 平均偏差 0.1707 ≤ 0.25，最差 0.4367 ≤ 0.75，7 点全提取成功"
+      "msg": "DC 全波段验收 PASS：全波段验收 PASS：ORACLE κ(λ) 单调递增（真值谱形），FDTD 平均偏差 0.1707 ≤ 0.25，最差 0.4368 ≤ 0.75，7 点全提取成功"
     },
     {
       "key": "oracle_kappa_trend",
@@ -27,9 +27,24 @@
       "msg": "FDTD↔ORACLE 平均相对偏差 mean=0.1707 ≤ 0.25（方法一致性，非走过场）"
     },
     {
+      "key": "dc_rel_purity",
+      "ok": true,
+      "msg": "DC rel 纯度：kappa_rel_dev 均可由已发布 κ 精确反算（bad=[]）"
+    },
+    {
+      "key": "dc_rel_basis",
+      "ok": true,
+      "msg": "DC rel 派生基准已声明 = published_kappa_5dp（防暗改回归）"
+    },
+    {
       "key": "live_yb",
       "ok": true,
       "msg": "YB 全波段验收 PASS：全波段验收 PASS：max_λ 平衡度 0.0007 ≤ 容差 0.1，全波段功率为正，7 波长点全 PASS"
+    },
+    {
+      "key": "yb_balance_purity",
+      "ok": true,
+      "msg": "YB balance 纯度：balance_abs 均可由已发布 frac 精确反算（bad=[]）"
     }
   ],
   "thread_budget": {
@@ -62,7 +77,8 @@
         "kappa_oracle": 0.02943,
         "kappa_fdtd": 0.02429,
         "kappa_method": "recurrence",
-        "kappa_rel_dev": 0.1745,
+        "kappa_rel_dev": 0.1747,
+        "kappa_rel_dev_basis": "published_kappa_5dp",
         "error": null
       },
       {
@@ -73,7 +89,8 @@
         "kappa_oracle": 0.03115,
         "kappa_fdtd": 0.03137,
         "kappa_method": "recurrence",
-        "kappa_rel_dev": 0.0068,
+        "kappa_rel_dev": 0.0071,
+        "kappa_rel_dev_basis": "published_kappa_5dp",
         "error": null
       },
       {
@@ -84,7 +101,8 @@
         "kappa_oracle": 0.03295,
         "kappa_fdtd": 0.04189,
         "kappa_method": "recurrence",
-        "kappa_rel_dev": 0.2716,
+        "kappa_rel_dev": 0.2713,
+        "kappa_rel_dev_basis": "published_kappa_5dp",
         "error": null
       },
       {
@@ -95,7 +113,8 @@
         "kappa_oracle": 0.0348,
         "kappa_fdtd": 0.03528,
         "kappa_method": "recurrence",
-        "kappa_rel_dev": 0.0137,
+        "kappa_rel_dev": 0.0138,
+        "kappa_rel_dev_basis": "published_kappa_5dp",
         "error": null
       },
       {
@@ -107,6 +126,7 @@
         "kappa_fdtd": 0.02709,
         "kappa_method": "recurrence",
         "kappa_rel_dev": 0.2625,
+        "kappa_rel_dev_basis": "published_kappa_5dp",
         "error": null
       },
       {
@@ -117,7 +137,8 @@
         "kappa_oracle": 0.03872,
         "kappa_fdtd": 0.0376,
         "kappa_method": "recurrence",
-        "kappa_rel_dev": 0.0288,
+        "kappa_rel_dev": 0.0289,
+        "kappa_rel_dev_basis": "published_kappa_5dp",
         "error": null
       },
       {
@@ -128,16 +149,17 @@
         "kappa_oracle": 0.04077,
         "kappa_fdtd": 0.05858,
         "kappa_method": "recurrence",
-        "kappa_rel_dev": 0.4367,
+        "kappa_rel_dev": 0.4368,
+        "kappa_rel_dev_basis": "published_kappa_5dp",
         "error": null
       }
     ],
-    "band_mean_kappa_rel": 0.170657143,
-    "band_max_kappa_rel": 0.4367,
+    "band_mean_kappa_rel": 0.170728571,
+    "band_max_kappa_rel": 0.4368,
     "band_max_balance": null,
     "band_all_power_positive": null,
     "oracle_monotonic": true,
-    "verdict": "全波段验收 PASS：ORACLE κ(λ) 单调递增（真值谱形），FDTD 平均偏差 0.1707 ≤ 0.25，最差 0.4367 ≤ 0.75，7 点全提取成功"
+    "verdict": "全波段验收 PASS：ORACLE κ(λ) 单调递增（真值谱形），FDTD 平均偏差 0.1707 ≤ 0.25，最差 0.4368 ≤ 0.75，7 点全提取成功"
   },
   "live_yb": {
     "label": "YB 对称分束器多波长",
@@ -160,6 +182,7 @@
         "fracA": 0.5003,
         "fracB": 0.4997,
         "balance_abs": 0.0003,
+        "balance_abs_basis": "published_frac_4dp",
         "total_power_positive": true,
         "error": null
       },
@@ -169,6 +192,7 @@
         "fracA": 0.4995,
         "fracB": 0.5005,
         "balance_abs": 0.0005,
+        "balance_abs_basis": "published_frac_4dp",
         "total_power_positive": true,
         "error": null
       },
@@ -178,6 +202,7 @@
         "fracA": 0.4993,
         "fracB": 0.5007,
         "balance_abs": 0.0007,
+        "balance_abs_basis": "published_frac_4dp",
         "total_power_positive": true,
         "error": null
       },
@@ -187,6 +212,7 @@
         "fracA": 0.4994,
         "fracB": 0.5006,
         "balance_abs": 0.0006,
+        "balance_abs_basis": "published_frac_4dp",
         "total_power_positive": true,
         "error": null
       },
@@ -196,6 +222,7 @@
         "fracA": 0.4999,
         "fracB": 0.5001,
         "balance_abs": 0.0001,
+        "balance_abs_basis": "published_frac_4dp",
         "total_power_positive": true,
         "error": null
       },
@@ -205,6 +232,7 @@
         "fracA": 0.5003,
         "fracB": 0.4997,
         "balance_abs": 0.0003,
+        "balance_abs_basis": "published_frac_4dp",
         "total_power_positive": true,
         "error": null
       },
@@ -214,6 +242,7 @@
         "fracA": 0.5001,
         "fracB": 0.4999,
         "balance_abs": 0.0001,
+        "balance_abs_basis": "published_frac_4dp",
         "total_power_positive": true,
         "error": null
       }

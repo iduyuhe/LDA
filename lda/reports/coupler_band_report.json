@@ -62,7 +62,7 @@
         "kappa_oracle": 0.02943,
         "kappa_fdtd": 0.02429,
         "kappa_method": "recurrence",
-        "kappa_rel_dev": 0.1746,
+        "kappa_rel_dev": 0.1745,
         "error": null
       },
       {
@@ -84,7 +84,7 @@
         "kappa_oracle": 0.03295,
         "kappa_fdtd": 0.04189,
         "kappa_method": "recurrence",
-        "kappa_rel_dev": 0.2715,
+        "kappa_rel_dev": 0.2716,
         "error": null
       },
       {

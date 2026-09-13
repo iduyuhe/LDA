@@ -501,6 +501,13 @@ CORE_SMOKES: List[str] = [
     #   v0.9.77 · 反向偏压模型局限诚实护栏：正偏 V≥0 收敛可用 / 反偏 V<0 必带 reverse_bias_unvalidated
     #   标志（防未来重构静默移除局限披露）。纯 numpy/scipy 亚秒级、零新物理、零 A 级/DEVSIM 依赖，必进 core。CI core 170->171。
     "run_t1_reverse_bias_limitation_smoke.py",
+    # v0.9.77（P1(b)）：agent_verify ↔ link_physics_harness 隐式 dict 契约结构断言守护。
+    #   生产者 link_physics_harness 返回 {status,b19,energy_conservation,no_missing_models,
+    #   routing_complete,...}，消费者 agent_verify.py:96,105-108 按 key 取 → 任一侧改名即
+    #   KeyError 且无门禁保护（① 评审残留 P1）。本 smoke 断言返回 dict ⊇ 消费 key 集 +
+    #   类型/取值域符合，7/7 PASS。纯标准库 + lda_chain/lda_harness import，亚秒级、无
+    #   torch/numba/cupy/meep 重依赖，无权豁免必进 core。CI core 171->172。
+    "run_agent_verify_link_contract_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

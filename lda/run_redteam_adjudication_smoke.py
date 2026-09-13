@@ -169,12 +169,11 @@ def main() -> int:
         "records": records,
         "clean": len(suspect) == 0,
     }
-    with open(_REPORT_JSON, "w", encoding="utf-8") as f:
-        json.dump(rep, f, ensure_ascii=False, indent=2, default=str)
+    from lda_harness import deterministic as _det
+    _det.write_json(_REPORT_JSON, rep, default=str)
 
     # 人类可读信任墙记录
     lines = ["# 红队对抗裁决 · 活体记录（自动生成）", "",
-             f"- 裁决时间：{(__import__('datetime').datetime.now()).strftime('%Y-%m-%d %H:%M:%S')}",
              f"- 总发散点：**{len(records)}**",
              f"- 预期极值分叉（有效域外，非缺陷）：**{len(expected)}**",
              f"- 域内疑点（升级 BOUNTY 复核）：**{len(suspect)}**", "",
@@ -190,8 +189,7 @@ def main() -> int:
         lines.append(f"- {r['bid']} 扰动={r['max_perturbation']:.2f} err={r['err']:.3e}")
     if len(expected) > 30:
         lines.append(f"- …（其余 {len(expected)-30} 条略）")
-    with open(_REPORT_MD, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
+    _det.write_text(_REPORT_MD, "\n".join(lines))
 
     print("-" * 60)
     print(f"  预期极值分叉 = {len(expected)}（非缺陷）")

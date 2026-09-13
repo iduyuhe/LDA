@@ -36,7 +36,8 @@
     "threads": 10,
     "cpu_count": 20,
     "torch_threads": 10,
-    "source": "LDA_FDTD_THREADS"
+    "source": "LDA_FDTD_THREADS",
+    "dynamic_threads_disabled": true
   },
   "live_dc": {
     "label": "DC gap=0.3µm 多波长",
@@ -131,13 +132,12 @@
         "error": null
       }
     ],
-    "band_mean_kappa_rel": 0.17065714285714287,
+    "band_mean_kappa_rel": 0.170657143,
     "band_max_kappa_rel": 0.4367,
     "band_max_balance": null,
     "band_all_power_positive": null,
     "oracle_monotonic": true,
-    "verdict": "全波段验收 PASS：ORACLE κ(λ) 单调递增（真值谱形），FDTD 平均偏差 0.1707 ≤ 0.25，最差 0.4367 ≤ 0.75，7 点全提取成功",
-    "elapsed_s": 102.7
+    "verdict": "全波段验收 PASS：ORACLE κ(λ) 单调递增（真值谱形），FDTD 平均偏差 0.1707 ≤ 0.25，最差 0.4367 ≤ 0.75，7 点全提取成功"
   },
   "live_yb": {
     "label": "YB 对称分束器多波长",
@@ -223,7 +223,6 @@
     "band_max_balance": 0.0007,
     "band_all_power_positive": true,
     "oracle_monotonic": true,
-    "verdict": "全波段验收 PASS：max_λ 平衡度 0.0007 ≤ 容差 0.1，全波段功率为正，7 波长点全 PASS",
-    "elapsed_s": 138.6
+    "verdict": "全波段验收 PASS：max_λ 平衡度 0.0007 ≤ 容差 0.1，全波段功率为正，7 波长点全 PASS"
   }
 }

@@ -253,7 +253,7 @@ def _fmt_report(data: dict) -> str:
     L = []
     L.append("# LDA 基准对照验证闭环报告")
     L.append("")
-    L.append(f"> 生成时间：{time.strftime('%Y-%m-%d %H:%M:%S')} · 方法：{data['method']}")
+    L.append(f"> 方法：{data['method']}")
     L.append("")
     L.append("## 一、引擎验证对照（22 引擎设计闭环验证证据：15 设计量解析锚 + 5 loss 实证锚 + 2 有源双出口）")
     L.append("")

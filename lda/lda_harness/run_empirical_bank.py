@@ -18,6 +18,10 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+try:
+    from lda_harness import deterministic as _det  # noqa: E402
+except ImportError:  # 直接以脚本运行（脚本目录=lda_harness）
+    import deterministic as _det  # noqa: E402
 
 from empirical_bank import (
     EmpiricalCorpus, AdversarialBenchmarkBank, EmpiricalAnchor,
@@ -110,8 +114,7 @@ def main():
     md.append("")
     md.append("*实证锚=真实器件测量语料；LLM 不进判决路径。种子为公开文献量级，须社区/退休专家补真实测量。*")
     md_path = os.path.join(args.out, "empirical_anchor_report.md")
-    with open(md_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(md))
+    _det.write_text(md_path, "\n".join(md))
     print(f"\n报告已写入：{md_path}")
 
 

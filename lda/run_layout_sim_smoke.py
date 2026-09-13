@@ -23,6 +23,7 @@ from lda_l2.gds_export import geometry_desc
 from lda_l2.layout_sim import (find_waveguide_width, simulate_layout,
                                simulate_layout_from_ir, build_eps_from_layout)
 from lda_ir import IRModel, Waveguide, RingResonator
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 
 def check(cond: bool, msg: str) -> bool:
@@ -77,8 +78,7 @@ def main() -> int:
         "ir_end_to_end": r3,
     }
     path = os.path.join(rep_dir, "layout_sim_report.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(report, f, ensure_ascii=False, indent=2)
+    _det.write_json(path, report)
     print(f"OK  导出仿真报告 -> {path}")
 
     print("\n=== D-16 版图 → 仿真闭环 smoke: "

@@ -484,6 +484,14 @@ CORE_SMOKES: List[str] = [
     #  结位、收集窗口、Soref 高掺杂端适用域），非数值误差；不放宽 tol 去凑。
     #  纯 numpy、零新物理、零 A 级/DEVSIM 依赖，必进 core。CI core 167->168。
     "run_t2_anchor_upgrade_smoke.py",
+    # v0.9.75「根治提交噪声」：受跟踪报告必须是输入的**确定性函数**（相同输入 ⇒
+    #   字节一致）。此前每次跑 harness/smoke 都把 reports*/ 下的证据重写成带
+    #   wall-clock 时间戳、耗时、浮点末位抖动的新内容 ⇒ git status 常红、提交噪声。
+    #   本 smoke 正反两面守：① canon 去 volatile 键 + 浮点归一 ② report.format_*
+    #   双跑字节一致 ③ 反向——改真实 golden 必须产生 diff（不可过度归一掩盖真变化）
+    #   ④ 写入器源码 lint（不得再有 生成时间/裁决时间/闭环耗时/datetime.now）。
+    #   纯标准库、秒级、零依赖 ⇒ 必进 core。CI core 168->169。
+    "run_report_determinism_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -591,6 +599,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 判据 D：20 道基线普查 + B10/B28 双向 + 抽验，实测 ~15s
     "run_d_criterion_smoke.py": 180.0,
     "run_b28_nullfit_smoke.py": 120.0,
+    # v0.9.75：报告确定性护栏，纯标准库单元级，实测 <2s
+    "run_report_determinism_smoke.py": 120.0,
     # T-8（v0.9.38）：live 从「无 GPU 即 SKIP（秒级）」变为「CPU 真跑」——
     # DC 全波段 7 波长 123.1s + YB 163.8s ≈ 287s，正好压原默认 300s 线 ⇒ 配
     # 600s（≈2× 余量）。这不是放宽判据：判据一个字未改，只是给慢机器留耗时余量。
@@ -623,11 +633,11 @@ def _child_env() -> Dict[str, Any]:
     import os as _os
     env = dict(_os.environ)
     try:
-        from lda_solver.threads import budget_threads, _ENV_KEYS
-        n = budget_threads()
-        for k in _ENV_KEYS:
-            env.setdefault(k, str(n))
-        env.setdefault("LDA_FDTD_THREADS", str(n))
+        # 线程预算 + 确定性开关（OMP_DYNAMIC/MKL_DYNAMIC=FALSE）一次落齐，
+        # 与环境变量在进程启动时即存在 ⇒ 早于 torch/MKL 初始化，全部生效。
+        from lda_solver.threads import thread_env_overrides
+        for k, v in thread_env_overrides().items():
+            env.setdefault(k, v)
     except Exception:                                  # 预算模块不可用 ⇒ 不阻断
         pass
     return env

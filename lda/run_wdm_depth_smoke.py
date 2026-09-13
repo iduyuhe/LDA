@@ -14,6 +14,7 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 from lda_agent.wdm_system import (channel_capacity,  # noqa: E402
                                   design_wdm_advanced, insertion_loss_budget,
@@ -70,17 +71,15 @@ def main() -> int:
 
     print("=" * 70)
     print("D-45 smoke 全绿:", ok)
-    with open(os.path.join(_HERE, "reports", "wdm_depth_d45.json"), "w",
-              encoding="utf-8") as f:
-        json.dump({"all_passed": ok,
-                   "xt_to_gap": {str(x): xt_to_gap(CH, x) for x in (15, 20, 25, 30)},
-                   "insertion_loss_budget": ilb,
-                   "channel_capacity_20db_2p5nm": cap,
-                   "advanced_4ch": {k: adv[k] for k in
-                                    ("channels_nm", "gap_um", "xt_solve",
-                                     "insertion_loss_budget", "channel_capacity",
-                                     "acceptance", "verdict")}},
-                  f, ensure_ascii=False, indent=2)
+    _det.write_json(os.path.join(_HERE, "reports", "wdm_depth_d45.json"),
+                    {"all_passed": ok,
+                     "xt_to_gap": {str(x): xt_to_gap(CH, x) for x in (15, 20, 25, 30)},
+                     "insertion_loss_budget": ilb,
+                     "channel_capacity_20db_2p5nm": cap,
+                     "advanced_4ch": {k: adv[k] for k in
+                                      ("channels_nm", "gap_um", "xt_solve",
+                                       "insertion_loss_budget", "channel_capacity",
+                                       "acceptance", "verdict")}})
     return 0 if ok else 1
 
 

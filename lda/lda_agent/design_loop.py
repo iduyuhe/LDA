@@ -20,7 +20,6 @@ agent 直接驱动；器件级（voxel_field + GDSII）、多 agent 并发编排
 """
 from __future__ import annotations
 
-import time
 from typing import Dict, Any, List, Optional
 
 from lda_agent.l1_protocol import (
@@ -42,7 +41,6 @@ class DesignAgent:
         self.geo_kind = geo_kind
 
     def run(self, intent: Dict[str, Any]) -> DesignOutcomeReport:
-        t0 = time.time()
         target = InterpreterAgent.parse(intent)
         # D-70：伴随梯度拓扑逆设计走专用闭环（目标 → 梯度优化 → 双验证 → PASS）
         if target.method == "adjoint":
@@ -94,7 +92,6 @@ class DesignAgent:
             # 未达标：周期数 +1（布拉格 R 随周期数单调升，必然收敛到有界内）
             periods += 1
 
-        elapsed = time.time() - t0
         report = DesignOutcomeReport(
             target=target.__dict__,
             accepted=accepted,
@@ -106,7 +103,7 @@ class DesignAgent:
             final_metric_err=final_verify.metric_abs_err,
             final_max_metric_err=final_verify.max_metric_abs_err,
             loop_trace=trace,
-            verdict=self._verdict(accepted, final_verify, elapsed),
+            verdict=self._verdict(accepted, final_verify),
         )
         return report
 
@@ -133,7 +130,6 @@ class DesignAgent:
             spectrum_optimize,
         )
 
-        t0 = time.time()
         ex = target.extra
         geo = {k: v for k, v in ex.items()
                if k in ("Nx", "Ny", "dl_factor", "sponge", "i_src", "i_mon",
@@ -225,8 +221,7 @@ class DesignAgent:
                        f"（improvement={opt['improvement'] if ttype != 'spectrum' else opt['weighted_improvement']:.2f}× ≥ 1.5），"
                        f"adjoint 对拍 max_rel_err={vr['max_rel_err']:.4f} "
                        f"（≤0.15）{extra_s}；设计区 "
-                       f"{int(problem.design_mask.sum())} 体素。"
-                       f"闭环耗时 {time.time() - t0:.1f}s。结果已可由「人」验收。")
+                       f"{int(problem.design_mask.sum())} 体素，结果已可由「人」验收。")
         else:
             fails = []
             if not ok_anchor:
@@ -235,8 +230,7 @@ class DesignAgent:
                 fails.append(f"improvement 未达 1.5（{opt.get('improvement', opt.get('weighted_improvement', 0)):.2f}×）")
             if not ratio_ok:
                 fails.append(f"分束比 err={opt.get('ratio_err', 1.0):.3f} 超 0.10")
-            verdict = (f"逆设计（{ttype}）未全过：" + "；".join(fails) +
-                       f"。闭环耗时 {time.time() - t0:.1f}s。")
+            verdict = (f"逆设计（{ttype}）未全过：" + "；".join(fails) + "。")
 
         return DesignOutcomeReport(
             target=target.__dict__,
@@ -265,7 +259,6 @@ class DesignAgent:
         依赖 numba（python envs/default venv）；当前环境无 numba 时优雅
         FAIL（报告错误，不崩）。LLM 不进判决路径。
         """
-        t0 = time.time()
         ex = target.extra
         kind = str(ex.get("kind", "mmi")).lower()
         params = {k: float(v) for k, v in ex.items()
@@ -304,9 +297,8 @@ class DesignAgent:
         wl0 = float(params.get("wl0_um", 1.55))
         ctr = min(pts, key=lambda p: abs(p["wl_um"] - wl0))
         verdict = (vr["verdict"] +
-                   f"（闭环 method=sparams3d，耗时 {time.time() - t0:.1f}s，"
-                   f"结果已可由「人」验收。）" if accepted else
-                   vr["verdict"] + f"（闭环耗时 {time.time() - t0:.1f}s。）")
+                   "（闭环 method=sparams3d，结果已可由「人」验收。）" if accepted else
+                   vr["verdict"] + "（闭环 method=sparams3d。）")
         return DesignOutcomeReport(
             target=target.__dict__,
             accepted=accepted,
@@ -327,23 +319,21 @@ class DesignAgent:
         )
 
     @staticmethod
-    def _verdict(accepted: bool, verify, elapsed: float) -> str:
+    def _verdict(accepted: bool, verify) -> str:
         if verify.metric == "neff":
             # 真 2D 波导验收：以"对 slab ORACLE 的 neff 相对误差"为准
             if accepted:
                 return (f"真2D 波导验收达标：neff(FDTD)={verify.metric_value:.4f}，"
                         f"对 slab ORACLE neff={verify.oracle_value:.4f}，"
-                        f"相对误差 {verify.max_rel_T:.2%} 在公差内；"
-                        f"闭环耗时 {elapsed:.1f}s。结果已可由「人」验收。")
+                        f"相对误差 {verify.max_rel_T:.2%} 在公差内，结果已可由「人」验收。")
             return (f"真2D 波导未达验收：相对误差 {verify.max_rel_T:.2%} 超公差；"
-                    f"请提高分辨率后重跑。闭环耗时 {elapsed:.1f}s。")
+                    f"请提高分辨率后重跑。")
         if accepted:
             return (f"设计达标：R(FDTD)={verify.metric_value:.4f} ≥ 阈值，"
-                    f"且对 TMM 物理定律锚 |ΔR|={verify.metric_abs_err:.2e} 在公差内；"
-                    f"闭环耗时 {elapsed:.1f}s。结果已可由「人」验收。")
+                    f"且对 TMM 物理定律锚 |ΔR|={verify.metric_abs_err:.2e} 在公差内，"
+                    f"结果已可由「人」验收。")
         return (f"未在迭代上限内达标：R(FDTD)={verify.metric_value:.4f}；"
-                f"请放宽阈值 / 增 material 对比度 / 提高分辨率后重跑。"
-                f"闭环耗时 {elapsed:.1f}s。")
+                f"请放宽阈值 / 增 material 对比度 / 提高分辨率后重跑。")
 
 
 # ---------------------------------------------------------------------------

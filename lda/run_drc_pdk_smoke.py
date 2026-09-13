@@ -18,6 +18,7 @@ import sys
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 from lda_l2.drc import drc_check_device, rules_from_pdk
 from lda_l2.pdk import get_default_registry
@@ -84,8 +85,7 @@ def main() -> int:
         "foundry_rules": {k: v for k, v in rules.items()},
     }
     path = os.path.join(rep_dir, "drc_pdk_report.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(report, f, ensure_ascii=False, indent=2)
+    _det.write_json(path, report)
     print(f"OK  导出多 foundry DRC 对比报告 -> {path}")
 
     print("\n=== D-21 DRC 工艺规则从 PDK 注入 smoke: "

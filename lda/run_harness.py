@@ -101,13 +101,12 @@ def main():
     md = rep.format_markdown(results, meta)
     js = rep.format_json(results, meta)
 
+    from lda_harness import deterministic as _det
     os.makedirs(args.out, exist_ok=True)
     md_path = os.path.join(args.out, "verification_report.md")
     js_path = os.path.join(args.out, "verification_report.json")
-    with open(md_path, "w", encoding="utf-8") as f:
-        f.write(md)
-    with open(js_path, "w", encoding="utf-8") as f:
-        f.write(js)
+    _det.write_text(md_path, md)
+    _det.write_text(js_path, js)
 
     print(md)
     print(f"\n报告已写入：\n  {md_path}\n  {js_path}")

@@ -19,6 +19,7 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 
 def check(cond, msg, report, key):
@@ -135,16 +136,14 @@ def main() -> int:
                 "⑬ 面板加载此 JSON 秒回展示，避免 HTTP 阻塞。解析契约层由 "
                 "WebUI 现场跑 contract 模式（秒级）。",
     }
-    with open(os.path.join(_HERE, "reports", "device_fdtd_wg_bragg.json"),
-              "w", encoding="utf-8") as f:
-        json.dump(precomp, f, ensure_ascii=False, indent=2)
+    _det.write_json(os.path.join(_HERE, "reports", "device_fdtd_wg_bragg.json"),
+                    precomp)
     print("OK  预计算 reports/device_fdtd_wg_bragg.json 已写入（WG/Bragg 真实 FDTD）")
 
     report["all_green"] = ok
     os.makedirs(os.path.join(_HERE, "reports"), exist_ok=True)
-    with open(os.path.join(_HERE, "reports", "device_fdtd_smoke.json"),
-              "w", encoding="utf-8") as f:
-        json.dump(report, f, ensure_ascii=False, indent=2)
+    _det.write_json(os.path.join(_HERE, "reports", "device_fdtd_smoke.json"),
+                    report)
     print("ALL GREEN" if ok else "HAS FAIL")
     return 0 if ok else 1
 

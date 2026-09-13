@@ -12,6 +12,7 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 from lda_agent.design_pipeline import run_pipeline  # noqa: E402
 
@@ -74,8 +75,7 @@ def main() -> int:
 
     out_path = os.path.join(_HERE, "reports", "pipeline_multidevice_report.json")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(report, f, indent=2, ensure_ascii=False)
+    _det.write_json(out_path, report)
     print(f"\n报告：{out_path}")
     print("D-25 一键设计流水线多器件扩展 smoke:", "ALL GREEN" if ok else "HAS FAILURE")
     return 0 if ok else 1

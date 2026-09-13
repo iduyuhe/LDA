@@ -18,6 +18,7 @@ import numpy as np  # noqa: F401  (find_resonances/fsr_from_resonances 依赖)
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 
 def check(cond, msg, report, key):
@@ -99,9 +100,8 @@ def main() -> int:
 
     report["all_green"] = ok
     os.makedirs(os.path.join(_HERE, "reports"), exist_ok=True)
-    with open(os.path.join(_HERE, "reports", "ring_double_verify_smoke.json"),
-              "w", encoding="utf-8") as f:
-        json.dump(report, f, ensure_ascii=False, indent=2)
+    _det.write_json(os.path.join(_HERE, "reports", "ring_double_verify_smoke.json"),
+                    report)
     print("ALL GREEN" if ok else "HAS FAIL")
     return 0 if ok else 1
 

@@ -18,6 +18,7 @@ import sys
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 from lda_agent.drc_fix_loop import DrcFixAgent
 from lda_l2.drc import drc_check_device
@@ -61,10 +62,9 @@ def main() -> int:
     rep_dir = os.path.join(_HERE, "reports")
     os.makedirs(rep_dir, exist_ok=True)
     path = os.path.join(rep_dir, "drc_fix_report.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump({k: {"accepted": v["accepted"], "iterations": v["iterations"],
-                       "final_params": v["final_params"], "trace": v["trace"]}
-                   for k, v in results.items()}, f, ensure_ascii=False, indent=2)
+    _det.write_json(path, {k: {"accepted": v["accepted"], "iterations": v["iterations"],
+                               "final_params": v["final_params"], "trace": v["trace"]}
+                           for k, v in results.items()})
     print(f"OK  导出整改报告 -> {path}")
 
     print("\n=== D-18 DRC 回读整改闭环 smoke: "

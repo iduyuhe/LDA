@@ -1,4 +1,5 @@
 {
+  "schema": "lda-verification-report/1",
   "meta": {
     "L0_IR": "0.1.0-draft",
     "candidate": "ReferenceCandidate",
@@ -6,7 +7,6 @@
     "via": "L1 KernelGateway",
     "self_consistent": true
   },
-  "generated_at": "2026-09-10T17:43:41",
   "summary": {
     "total": 2,
     "passed": 2,
@@ -22,8 +22,8 @@
       "metric": "n_eff",
       "oracle": "analytical",
       "source": "physical-law",
-      "golden": 2.6509474264002217,
-      "candidate": 2.6509474264002217,
+      "golden": 2.65094743,
+      "candidate": 2.65094743,
       "tol": 0.05,
       "passed": true,
       "note": "确定性物理定律/解析解",
@@ -35,8 +35,8 @@
       "metric": "FSR_nm",
       "oracle": "sax",
       "source": "physical-law",
-      "golden": 9.147601693260254,
-      "candidate": 9.147601693260254,
+      "golden": 9.14760169,
+      "candidate": 9.14760169,
       "tol": 0.3,
       "passed": true,
       "note": "确定性物理定律/解析解",

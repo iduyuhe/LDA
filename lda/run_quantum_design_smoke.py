@@ -14,6 +14,7 @@ sys.path.insert(0, _HERE)
 from lda_agent.quantum_design import (design_from_ir, design_quantum)  # noqa: E402
 from lda_ir import (Coupler, IRModel, ObjectiveSpec, Resonator,  # noqa: E402
                     Transmon, validate)
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 CASES = [
     ("Transmon", 5.0, {}),
@@ -57,13 +58,11 @@ def main() -> int:
               f"({d['kind']}) → params={d['inverse_design']['params']}")
     print("=" * 70)
     print("D-41 全绿:", ok)
-    with open(os.path.join(_HERE, "reports", "quantum_design_d41.json"), "w",
-              encoding="utf-8") as f:
-        json.dump({"all_passed": ok,
-                   "cases": [{c[0]: {"target": c[1],
-                                     "passed": design_quantum(c[0], c[1], c[2])
-                                     .get("passed")}} for c in CASES]},
-                  f, ensure_ascii=False, indent=2)
+    _det.write_json(os.path.join(_HERE, "reports", "quantum_design_d41.json"),
+                    {"all_passed": ok,
+                     "cases": [{c[0]: {"target": c[1],
+                                       "passed": design_quantum(c[0], c[1], c[2])
+                                       .get("passed")}} for c in CASES]})
     return 0 if ok else 1
 
 

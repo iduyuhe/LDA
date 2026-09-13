@@ -17,6 +17,7 @@ import sys
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 from lda_l2.drc import (DEFAULT_RULES, drc_check_device, drc_from_library,
                         drc_summary)
@@ -82,8 +83,7 @@ def main() -> int:
         ],
     }
     path = os.path.join(rep_dir, "drc_report.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(report, f, ensure_ascii=False, indent=2)
+    _det.write_json(path, report)
     print(f"OK  导出 DRC 报告 -> {path}")
 
     print("\n=== D-15 版图 DRC 自查 smoke: "

@@ -26,6 +26,7 @@ from lda_ir import (DirectionalCoupler, SymmetricYBranch, RingResonator,
                     to_dsl, validate)
 from lda_ir.photon import KNOWN_KINDS
 from lda_ir.bridge import ir_to_intent  # 轻量：仅构造 intent dict，不跑逆设计
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 
 def check(cond: bool, msg: str) -> bool:
@@ -125,8 +126,7 @@ def main() -> int:
     }
     rep_dir = os.path.join(_HERE, "reports")
     os.makedirs(rep_dir, exist_ok=True)
-    with open(os.path.join(rep_dir, "ir_d05_examples.json"), "w", encoding="utf-8") as f:
-        json.dump(out, f, ensure_ascii=False, indent=2)
+    _det.write_json(os.path.join(rep_dir, "ir_d05_examples.json"), out)
     print("OK  导出示例 IR JSON -> lda/reports/ir_d05_examples.json")
 
     print("\n=== L0 IR v0.2 smoke: " + ("ALL GREEN" if ok else "HAS FAIL") + " ===")

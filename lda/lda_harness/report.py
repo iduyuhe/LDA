@@ -1,6 +1,10 @@
-"""LDA 验证 harness · 报告格式化（Markdown + JSON）。"""
-import json
-import datetime
+"""LDA 验证 harness · 报告格式化（Markdown + JSON）。
+
+🔴 确定性铁律（v0.9.75）：受跟踪报告**不得含 wall-clock 时间戳/耗时**，
+浮点一律经 `deterministic.canon` 归一 ⇒ 相同输入产出字节一致。
+生成时刻以 git 提交时间为准。护栏见 `run_report_determinism_smoke.py`。
+"""
+from . import deterministic
 
 # 占位自证候选：直接返回黄金值本身 ⇒ |候选 − 黄金| ≡ 0，恒 PASS。
 # 用于验证「判决回路闭合」，**不产生任何验证价值**（D-64）。
@@ -112,7 +116,6 @@ def format_markdown(results, meta=None):
     lines = []
     lines.append("# LDA 验证锚点 · 报告（Verification Harness Report）")
     lines.append("")
-    lines.append(f"- 生成时间：{datetime.datetime.now().isoformat(timespec='seconds')}")
     if meta:
         for k, v in meta.items():
             lines.append(f"- {k}：{v}")
@@ -158,12 +161,16 @@ def format_markdown(results, meta=None):
             gv = "—"
             cv = "—"
         else:
-            err = f"{abs(r.candidate - r.golden):.4g}"
-            gv = f"{r.golden:.6g}"
-            cv = f"{r.candidate:.6g}"
+            # 归一后再格式化：否则浮点末位抖动会泄漏进 markdown（护栏 ⑥ 抓到过）。
+            _g = deterministic.round_float(r.golden)
+            _c = deterministic.round_float(r.candidate)
+            err = f"{abs(_c - _g):.4g}"
+            gv = f"{_g:.6g}"
+            cv = f"{_c:.6g}"
         verdict = "✅ PASS" if r.passed else "❌ FAIL"
         lines.append(
-            f"| {r.bid} | {r.metric} | {r.source} | {gv} | {cv} | {err} | {r.tol:.4g} | {verdict} |")
+            f"| {r.bid} | {r.metric} | {r.source} | {gv} | {cv} | {err} | "
+            f"{deterministic.round_float(r.tol):.4g} | {verdict} |")
     lines.append("")
     fails = [r for r in results if not r.passed]
     if fails:
@@ -173,6 +180,8 @@ def format_markdown(results, meta=None):
         lines.append("")
     lines.append("---")
     lines.append("*本报告由 LDA 验证 harness 生成；黄金参考为确定性物理定律锚（非 AI）。*")
+    lines.append("")
+    lines.append(deterministic.DETERMINISM_FOOTNOTE)
     return "\n".join(lines)
 
 
@@ -184,8 +193,9 @@ def format_json(results, meta=None):
     if not _n_marked:
         _n_stub = len(results) if _sc else 0
     out = {
+        # 确定性 schema 标记（替代原 generated_at）：受跟踪产物不含 wall-clock。
+        "schema": "lda-verification-report/1",
         "meta": dict(meta or {}, self_consistent=_sc),
-        "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
         "summary": {
             "total": len(results),
             "passed": sum(1 for r in results if r.passed),
@@ -218,4 +228,4 @@ def format_json(results, meta=None):
             for r in results
         ],
     }
-    return json.dumps(out, indent=2, ensure_ascii=False)
+    return deterministic.dumps(out)

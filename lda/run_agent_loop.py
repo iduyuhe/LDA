@@ -16,7 +16,6 @@ truth 求解器的收敛闭环。
 from __future__ import annotations
 
 import argparse
-import json
 import os
 
 from lda_agent.design_loop import DesignAgent, json_report, main as design_main
@@ -33,10 +32,10 @@ def main() -> int:
     rep = design_main()
     d = rep.to_dict()
 
+    from lda_harness import deterministic as _det
     os.makedirs(args.out, exist_ok=True)
     rep_path = os.path.join(args.out, "agent_loop_report.json")
-    with open(rep_path, "w", encoding="utf-8") as f:
-        json.dump(d, f, ensure_ascii=False, indent=2)
+    _det.write_json(rep_path, d)
 
     # 终端摘要
     print(f"[agent 自迭代设计闭环 · bragg_mirror]")

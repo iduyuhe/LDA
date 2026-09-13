@@ -328,8 +328,8 @@ def main():
         "divergence_rate": divergence_rate,
         "findings": findings,
     }
-    with open(_REPORT_PATH, "w", encoding="utf-8") as f:
-        json.dump(report, f, ensure_ascii=False, indent=2, default=str)
+    from lda_harness import deterministic as _det
+    _det.write_json(_REPORT_PATH, report, default=str)
 
     # BOUNTY 待复核缺陷候选：仅汇总统发发散点，交人工确认后再 land（守
     # 「LLM 不进判决路径」——此处不自动 confirmed）。每个含 bid/params/err/tol，
@@ -343,9 +343,9 @@ def main():
                                 "err": s.get("err"), "tol": s.get("tol"),
                                 "status": "pending_human_review"})
     if pending:
-        with open(_DEFECTS_PATH, "w", encoding="utf-8") as f:
-            json.dump({"n_pending": len(pending), "defects": pending},
-                      f, ensure_ascii=False, indent=2, default=str)
+        _det.write_json(_DEFECTS_PATH,
+                        {"n_pending": len(pending), "defects": pending},
+                        default=str)
         print(f"  [BOUNTY] {len(pending)} 个待复核缺陷候选 → {_DEFECTS_PATH}")
 
     print("-" * 60)

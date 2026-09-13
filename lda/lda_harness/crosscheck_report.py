@@ -56,10 +56,9 @@ def build_report(quick: bool = False,
     md_path = os.path.join(out_dir, f"benchmark_crosscheck_report.md")
     js_path = os.path.join(out_dir, f"benchmark_crosscheck_report.json")
     md = _fmt_report(data)
-    with open(md_path, "w", encoding="utf-8") as f:
-        f.write(md)
-    with open(js_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    from lda_harness import deterministic as _det
+    _det.write_text(md_path, md)
+    _det.write_json(js_path, data)
 
     snapshot = {
         "ts": ts,
@@ -75,8 +74,7 @@ def build_report(quick: bool = False,
         hist_dir = os.path.join(out_dir, "crosscheck_history")
         os.makedirs(hist_dir, exist_ok=True)
         hist_path = os.path.join(hist_dir, f"crosscheck_{ts}.json")
-        with open(hist_path, "w", encoding="utf-8") as f:
-            json.dump(snapshot, f, ensure_ascii=False, indent=2)
+        _det.write_json(hist_path, snapshot)
         result["history_path"] = hist_path
         # 覆盖度趋势（读历史最近一条做 diff）
         try:

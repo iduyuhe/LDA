@@ -13,6 +13,7 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 from lda_agent.wdm_system import design_wdm  # noqa: E402
 
@@ -58,13 +59,11 @@ def main() -> int:
           f"{x4[0]:.2f}dB(≈53.16) 末环 xt={x4[3]:.2f}dB(≈18.41, 旧bug=53.16)")
     # 4 信道结果落盘证据
     r4 = design_wdm([1550.0, 1552.5, 1555.0, 1557.5], gap=0.3)
-    with open(os.path.join(_HERE, "reports", "wdm_system.json"), "w",
-              encoding="utf-8") as f:
-        json.dump({"all_passed": ok,
-                   "case_4ch": {k: r4[k] for k in
-                                ("channels_nm", "ring_radii_um", "metrics",
-                                 "acceptance", "verdict", "gds")}},
-                  f, ensure_ascii=False, indent=2)
+    _det.write_json(os.path.join(_HERE, "reports", "wdm_system.json"),
+                    {"all_passed": ok,
+                     "case_4ch": {k: r4[k] for k in
+                                  ("channels_nm", "ring_radii_um", "metrics",
+                                   "acceptance", "verdict", "gds")}})
     print("=" * 70)
     print("WDM 系统 smoke 全绿:", ok)
     return 0 if ok else 1

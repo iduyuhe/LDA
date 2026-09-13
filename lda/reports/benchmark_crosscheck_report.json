@@ -16,7 +16,6 @@
         "E-SOI-NG-220",
         "E-SIN-NG-1200"
       ],
-      "elapsed_s": 11.37,
       "empirical": {
         "E-SOI-NG-220": {
           "measured": 4.18,
@@ -44,7 +43,6 @@
       "analytical_rel_pct": null,
       "verdict": "布拉格 FDTD 双验证 PASS（解析 TMM 契约物理合理 + FDTD R_min=0.99903 ↔ TMM=0.99922 abs=1.95e-04 ≤ 2%）",
       "empirical_ids": [],
-      "elapsed_s": 39.19,
       "empirical": {}
     },
     {
@@ -59,7 +57,6 @@
       "analytical_rel_pct": 0.09,
       "verdict": "Transmon 双验证 PASS（B9 Koch 命中 + 对角化 f01=4.9953 ↔ Koch=5.0000 rel=0.09% ≤ 3%）",
       "empirical_ids": [],
-      "elapsed_s": 0.0,
       "empirical": {}
     },
     {
@@ -76,7 +73,6 @@
       "empirical_ids": [
         "E-RING-FSR"
       ],
-      "elapsed_s": 0.0,
       "empirical": {
         "E-RING-FSR": {
           "measured": 8.6,
@@ -98,7 +94,6 @@
       "analytical_rel_pct": null,
       "verdict": "contract 自检：MZI 干涉谱 + MZI-fsr 契约 OK；ΔL=35.0μm → FSR≈19.72nm（干涉谱提取 53.07nm 一致）",
       "empirical_ids": [],
-      "elapsed_s": 0.0,
       "empirical": {}
     },
     {
@@ -113,7 +108,6 @@
       "analytical_rel_pct": 0.41,
       "verdict": "PhC 腔 2D FDTD 双验证 PASS（B21 锚 λ_res=2164.8nm ↔ FDTD λ_res=2155.9nm rel=0.41% ≤ 3%）",
       "empirical_ids": [],
-      "elapsed_s": 3.85,
       "empirical": {}
     },
     {
@@ -128,7 +122,6 @@
       "analytical_rel_pct": 0.41,
       "verdict": "读出谐振器 1D TL-FDTD 双验证 PASS（B22 锚 f0=7.495GHz ↔ FDTD f0=7.525GHz rel=0.41% ≤ 3%）",
       "empirical_ids": [],
-      "elapsed_s": 0.12,
       "empirical": {}
     },
     {
@@ -143,7 +136,6 @@
       "analytical_rel_pct": 0.0241,
       "verdict": "Fluxonium 双基对拍 PASS（相位基 f01=5.983GHz ↔ HO 基 f01=5.984GHz rel=0.0241% ≤ 1%；B23 LC 边界锚=2.828GHz 单调上界成立）",
       "empirical_ids": [],
-      "elapsed_s": 0.04,
       "empirical": {}
     },
     {
@@ -158,7 +150,6 @@
       "analytical_rel_pct": 1.27,
       "verdict": "可调耦合器三模对角化 PASS（B24 锚 |g_eff|=0.0048GHz ↔ 数值 |g_eff|=0.0049GHz rel=1.27% ≤ 3%）",
       "empirical_ids": [],
-      "elapsed_s": 0.0,
       "empirical": {}
     },
     {
@@ -173,7 +164,6 @@
       "analytical_rel_pct": 0.0,
       "verdict": "MMI 自映像 PASS（B16 锚 L=97.0um ↔ 模式叠加 L=97.0um rel=0.00% ≤ 5%）",
       "empirical_ids": [],
-      "elapsed_s": 0.0,
       "empirical": {}
     },
     {
@@ -188,7 +178,6 @@
       "analytical_rel_pct": 0.0,
       "verdict": "光栅耦合器 Bragg PASS（锚 λ_B=2.352um ↔ 数值 λ_B=2.352um rel=0.00% ≤ 5%）",
       "empirical_ids": [],
-      "elapsed_s": 0.0,
       "empirical": {}
     },
     {
@@ -203,7 +192,6 @@
       "analytical_rel_pct": 0.0,
       "verdict": "方向耦合器 3dB PASS（B14 锚 L=19.4um ↔ 超模拍频 L=19.4um rel=0.00% ≤ 5%）",
       "empirical_ids": [],
-      "elapsed_s": 0.0,
       "empirical": {}
     },
     {
@@ -218,7 +206,6 @@
       "analytical_rel_pct": 0.0,
       "verdict": "可调 transmon PASS（B25 锚 f01=5.932GHz ↔ koch f01=5.932GHz rel=0.00% ≤ 3%）",
       "empirical_ids": [],
-      "elapsed_s": 0.0,
       "empirical": {}
     },
     {
@@ -233,7 +220,6 @@
       "analytical_rel_pct": 1.98,
       "verdict": "读出配对 PASS（B26 锚 χ=-0.002308GHz ↔ 严格对角化 χ=-0.002262GHz rel=1.98% ≤ 5%）",
       "empirical_ids": [],
-      "elapsed_s": 0.01,
       "empirical": {}
     },
     {
@@ -248,7 +234,6 @@
       "analytical_rel_pct": 2.02,
       "verdict": "CZ 门 PASS（B27 锚 t=680.7ns ↔ 对角化 t=694.4ns rel=2.02% ≤ 3%；2|χ|·t=π 精确成立）",
       "empirical_ids": [],
-      "elapsed_s": 0.0,
       "empirical": {}
     },
     {
@@ -265,7 +250,6 @@
       "empirical_ids": [
         "E-YBRANCH-LOSS"
       ],
-      "elapsed_s": 0.0,
       "empirical": {
         "E-YBRANCH-LOSS": {
           "measured": 0.28,
@@ -289,7 +273,6 @@
       "empirical_ids": [
         "E-GRATING-EFF"
       ],
-      "elapsed_s": 0.0,
       "empirical": {
         "E-GRATING-EFF": {
           "measured": 0.42,
@@ -314,7 +297,6 @@
         "E-SOI-CROSS-IL",
         "E-SOI-CROSS-XT"
       ],
-      "elapsed_s": 0.0,
       "empirical": {
         "E-SOI-CROSS-IL": {
           "measured": 0.18,
@@ -344,7 +326,6 @@
       "empirical_ids": [
         "E-MMI-1X2-EL"
       ],
-      "elapsed_s": 0.0,
       "empirical": {
         "E-MMI-1X2-EL": {
           "measured": 0.05,
@@ -368,7 +349,6 @@
       "empirical_ids": [
         "E-SIN-PL-800"
       ],
-      "elapsed_s": 0.0,
       "empirical": {
         "E-SIN-PL-800": {
           "measured": 0.087,
@@ -390,7 +370,6 @@
       "analytical_rel_pct": 8.0,
       "verdict": "相移效率对照 PASS（10.800 deg/mW ↔ 目标 10.0 rel=8.00% ≤ 10%）",
       "empirical_ids": [],
-      "elapsed_s": 0.0,
       "empirical": {}
     },
     {
@@ -398,14 +377,13 @@
       "model_class": "L0-解析",
       "ok": true,
       "passed": true,
-      "metric": 4.899357710008597,
+      "metric": 4.89935771,
       "metric_dim": "V_pi",
       "empirical_dim_note": "",
       "bid": null,
       "analytical_rel_pct": 2.01,
       "verdict": "V_π 对照 PASS（4.899 V ↔ 目标 5.0 rel=2.01% ≤ 10%）",
       "empirical_ids": [],
-      "elapsed_s": 0.0,
       "empirical": {}
     }
   ],

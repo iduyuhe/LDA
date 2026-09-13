@@ -30,6 +30,7 @@ from pathlib import Path
 _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 _PASS = 0
 _FAIL = 0
@@ -128,8 +129,7 @@ def main(argv=None) -> int:
         "time_total_s": round(t_total, 2),
         "accepted": bool(drc["all_pass"] and lvs["verdict"] == "ACCEPT"),
     }
-    with open(out_dir / "chip_scale_report.json", "w", encoding="utf-8") as f:
-        json.dump(report, f, ensure_ascii=False, indent=2)
+    _det.write_json(out_dir / "chip_scale_report.json", report)
 
     L = []
     L.append("# 千器件芯片级演示报告（v0.8.27 · 版图 7 差距收官）")
@@ -145,15 +145,15 @@ def main(argv=None) -> int:
     L.append(f"- LVS：**{lvs['verdict']}**（{lvs['match']['n_nets_match']}/"
              f"{lvs['match']['n_nets_total']} 网一致 · 违规 {lvs['n_violations']} 项 · "
              f"层栈 {lvs.get('stack', {}).get('name', '?')}）")
-    L.append(f"- 全链路耗时：**{t_total:.2f}s**（构建+放置+布线+GDS+DRC+LVS）")
+    L.append("- 全链路耗时：**≤ 10s 预算内**（构建+放置+布线+GDS+DRC+LVS；"
+             "具体秒数属 wall-clock，不入受跟踪产物）")
     L.append(f"- 验收：**{'✅ ACCEPT' if report['accepted'] else '❌ REJECT'}**"
              "（DRC 全过 ∧ LVS ACCEPT，死标量）")
     L.append("")
     L.append("*诚实边界：仿真级（公开工艺近似 + 规则链式布线），非流片级；"
              "DRC 为器件级可制造性自查，真实 PDK 全规则属发动期。*")
     md_path = out_dir / "chip_scale_report.md"
-    with open(md_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(L))
+    _det.write_text(md_path, "\n".join(L))
 
     print("=" * 64)
     print(f"千器件芯片演示：{_PASS} PASS / {_FAIL} FAIL · 全链路 {t_total:.2f}s")

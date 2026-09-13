@@ -102,8 +102,8 @@ def main() -> int:
     # 3) 报告落盘
     out_path = os.path.join(_HERE, "reports", "coupler_band_report.json")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(report, f, indent=2, ensure_ascii=False)
+    from lda_harness import deterministic as _det
+    _det.write_json(out_path, report)
     print(f"\n报告：{out_path}")
     print("D-23 多波长耦合器件验收 smoke:", "ALL GREEN" if ok else "HAS FAILURE")
     return 0 if ok else 1

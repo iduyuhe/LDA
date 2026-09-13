@@ -163,13 +163,12 @@ class KernelGateway:
             "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
             "via": "L1 KernelGateway",
         }
+        from lda_harness import deterministic as _det
         os.makedirs(self.out_dir, exist_ok=True)
         md_path = os.path.join(self.out_dir, "verification_report.md")
         json_path = os.path.join(self.out_dir, "verification_report.json")
-        with open(md_path, "w", encoding="utf-8") as f:
-            f.write(rep.format_markdown(results, meta))
-        with open(json_path, "w", encoding="utf-8") as f:
-            f.write(rep.format_json(results, meta))
+        _det.write_text(md_path, rep.format_markdown(results, meta))
+        _det.write_text(json_path, rep.format_json(results, meta))
 
         details = [
             {"id": r.bid, "metric": r.metric, "golden": r.golden,

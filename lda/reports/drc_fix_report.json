@@ -61,7 +61,7 @@
     "accepted": true,
     "iterations": 2,
     "final_params": {
-      "gap": 0.22000000000000003,
+      "gap": 0.22,
       "width": 0.5
     },
     "trace": [
@@ -79,7 +79,7 @@
       {
         "iteration": 2,
         "params": {
-          "gap": 0.22000000000000003,
+          "gap": 0.22,
           "width": 0.5
         },
         "n_violations": 0,
@@ -92,7 +92,7 @@
     "iterations": 2,
     "final_params": {
       "width": 0.5,
-      "split_angle": 27.27272727272727
+      "split_angle": 27.2727273
     },
     "trace": [
       {
@@ -110,7 +110,7 @@
         "iteration": 2,
         "params": {
           "width": 0.5,
-          "split_angle": 27.27272727272727
+          "split_angle": 27.2727273
         },
         "n_violations": 0,
         "violations": []

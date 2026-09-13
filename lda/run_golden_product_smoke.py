@@ -12,6 +12,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 from lda_l2.golden_product_benchmarks import (  # noqa: E402
     evaluate_all, to_markdown, save_library_json, HONEST_BANNER,
@@ -187,8 +188,7 @@ def main() -> int:
     out_md = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
                           "docs", "golden_product_benchmarks_report.md")
     os.makedirs(os.path.dirname(out_md), exist_ok=True)
-    with open(out_md, "w", encoding="utf-8") as f:
-        f.write(report)
+    _det.write_text(out_md, report)
     print(f"\n报告已写: {out_md}")
     print(f"库已落盘: {lib}")
     print(f"\n汇总: {n_pass}/{n_total} 产品级对标 PASS")

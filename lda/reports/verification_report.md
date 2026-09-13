@@ -1,6 +1,5 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
-- 生成时间：2026-09-13T06:31:06
 - L0_IR：(内置默认 B1–B4,B8)
 - candidate：IndependentCandidateRouter(独立候选 31 道: B1,B10,B11,B12,B13,B14,B15,B19,B2,B20,B22,B23,B24,B25,B26,B27,B28,B29,B3,B30,B31,B32,B33,B4,B8,B9,E2,E8,S13,S7,S8；降级量级参考 1 道: E9)
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
@@ -16,33 +15,33 @@
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
 | B1 | Q_scat | physical-law | 0.00284131 | 0.00280186 | 3.945e-05 | 0.0002 | ✅ PASS |
-| B10 | F_gate | physical-law | 0.999847 | 0.999847 | 1.11e-16 | 1e-08 | ✅ PASS |
-| B11 | spectrum_match | physical-law | 0.00502277 | 0.00502277 | 4.351e-09 | 0.03 | ✅ PASS |
-| B12 | f0_GHz | physical-law | 10.7583 | 10.7583 | 6.913e-06 | 0.02 | ✅ PASS |
+| B10 | F_gate | physical-law | 0.999847 | 0.999847 | 0 | 1e-08 | ✅ PASS |
+| B11 | spectrum_match | physical-law | 0.00502277 | 0.00502277 | 4.35e-09 | 0.03 | ✅ PASS |
+| B12 | f0_GHz | physical-law | 10.7583 | 10.7583 | 6.9e-06 | 0.02 | ✅ PASS |
 | B13 | J_GHz | physical-law | 0.0316228 | 0.0303097 | 0.001313 | 0.002 | ✅ PASS |
 | B14 | L_3dB_um | physical-law | 7.75 | 7.74984 | 0.0001563 | 0.25 | ✅ PASS |
-| B15 | lambda_B_um | physical-law | 1.5504 | 1.55041 | 8.356e-06 | 0.01 | ✅ PASS |
+| B15 | lambda_B_um | physical-law | 1.5504 | 1.55041 | 8.36e-06 | 0.01 | ✅ PASS |
 | B16 | L_mmi_um | physical-law | 13.9355 | 13.9355 | 0 | 3 | ✅ PASS |
 | B17 | I_c_A | physical-law | 4.02671e-08 | 4.02671e-08 | 0 | 1e-09 | ✅ PASS |
 | B18 | F_purcell | physical-law | 8000 | 8000 | 0 | 1 | ✅ PASS |
 | B19 | max|T(λ)| over all transfer paths | physical-law | 1 | 0.999896 | 0.0001038 | 1e-09 | ✅ PASS |
 | B2 | n_eff | physical-law | 2.65095 | 2.64533 | 0.005622 | 0.05 | ✅ PASS |
-| B20 | FSR_nm | physical-law | 20.0108 | 20.0108 | 4.671e-10 | 1e-06 | ✅ PASS |
+| B20 | FSR_nm | physical-law | 20.0108 | 20.0108 | 0 | 1e-06 | ✅ PASS |
 | B21 | cavity_wl_nm | physical-law | 2214 | 2214 | 0 | 1e-06 | ✅ PASS |
-| B22 | qres_f_ghz | physical-law | 7.49481 | 7.49481 | 4.982e-08 | 1e-06 | ✅ PASS |
-| B23 | fluxonium_f01_ghz | physical-law | 2.82843 | 2.82843 | 7.752e-09 | 1e-06 | ✅ PASS |
+| B22 | qres_f_ghz | physical-law | 7.49481 | 7.49481 | 5e-08 | 1e-06 | ✅ PASS |
+| B23 | fluxonium_f01_ghz | physical-law | 2.82843 | 2.82843 | 0 | 1e-06 | ✅ PASS |
 | B24 | tcoup_geff_ghz | physical-law | -0.004 | -0.00398728 | 1.272e-05 | 3e-05 | ✅ PASS |
 | B25 | tunable_f01_ghz | physical-law | 6.6282 | 6.61345 | 0.01475 | 0.05 | ✅ PASS |
 | B26 | dispersive_chi_ghz | physical-law | -0.00230769 | -0.00226196 | 4.573e-05 | 0.0001 | ✅ PASS |
 | B27 | cz_gate_time_ns | physical-law | 680.678 | 694.441 | 13.76 | 30 | ✅ PASS |
-| B28 | Vpi_volts | physical-law | 3.78097 | 3.78097 | 7.607e-09 | 0.001 | ✅ PASS |
+| B28 | Vpi_volts | physical-law | 3.78097 | 3.78097 | 1e-08 | 0.001 | ✅ PASS |
 | B29 | phase_efficiency_deg_per_mW | physical-law | 38.8802 | 38.8775 | 0.002701 | 0.02 | ✅ PASS |
-| B3 | FSR_nm | physical-law | 120.125 | 120.125 | 1.664e-08 | 1 | ✅ PASS |
-| B30 | readout_fidelity_F | physical-law | 0.985992 | 0.985992 | 9.373e-11 | 0.001 | ✅ PASS |
+| B3 | FSR_nm | physical-law | 120.125 | 120.125 | 0 | 1 | ✅ PASS |
+| B30 | readout_fidelity_F | physical-law | 0.985992 | 0.985992 | 0 | 0.001 | ✅ PASS |
 | B31 | phase_shift_rad | physical-law | 0.804939 | 1.57947 | 0.7745 | 1.5 | ✅ PASS |
 | B32 | qcse_shift_meV | physical-law | -1.35714 | -1.37528 | 0.01815 | 0.3 | ✅ PASS |
-| B33 | f3dB_Hz | physical-law | 3.18294e+09 | 3.18294e+09 | 1658 | 4000 | ✅ PASS |
-| B4 | FSR_nm | physical-law | 9.1476 | 9.1476 | 1.853e-08 | 0.3 | ✅ PASS |
+| B33 | f3dB_Hz | physical-law | 3.18294e+09 | 3.18294e+09 | 1660 | 4000 | ✅ PASS |
+| B4 | FSR_nm | physical-law | 9.1476 | 9.1476 | 2e-08 | 0.3 | ✅ PASS |
 | B5 | split_loss_dB | numpy-overlap-offline | 3.4 | 3.4 | 0 | 1 | ✅ PASS |
 | B6 | coupling_eff | design-anchor | 0.5 | 0.5 | 0 | 0.15 | ✅ PASS |
 | B7 | crosstalk_dB | numpy-fdtd-offline | -19.7328 | -19.7328 | 0 | 5 | ✅ PASS |
@@ -73,3 +72,5 @@
 
 ---
 *本报告由 LDA 验证 harness 生成；黄金参考为确定性物理定律锚（非 AI）。*
+
+*本报告为**确定性生成物**：相同输入 ⇒ 字节一致，不含 wall-clock 时间戳与耗时。生成时刻以 git 提交时间为准。*

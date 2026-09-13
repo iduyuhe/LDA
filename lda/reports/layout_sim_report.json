@@ -1,9 +1,9 @@
 {
   "waveguide_layout": {
     "width_um": 0.5,
-    "neff_fdtd": 3.2299655783336036,
-    "neff_oracle": 3.2756153221562645,
-    "rel_err": 0.013936234671356539,
+    "neff_fdtd": 3.22996558,
+    "neff_oracle": 3.27561532,
+    "rel_err": 0.0139362347,
     "dl_um": 0.0484375,
     "n_core": 3.48,
     "n_clad": 1.44,
@@ -13,9 +13,9 @@
   },
   "ring_bus_layout": {
     "width_um": 0.5,
-    "neff_fdtd": 3.2299655783336036,
-    "neff_oracle": 3.2756153221562645,
-    "rel_err": 0.013936234671356539,
+    "neff_fdtd": 3.22996558,
+    "neff_oracle": 3.27561532,
+    "rel_err": 0.0139362347,
     "dl_um": 0.0484375,
     "n_core": 3.48,
     "n_clad": 1.44,
@@ -25,9 +25,9 @@
   },
   "ir_end_to_end": {
     "width_um": 0.5,
-    "neff_fdtd": 3.2299655783336036,
-    "neff_oracle": 3.2756153221562645,
-    "rel_err": 0.013936234671356539,
+    "neff_fdtd": 3.22996558,
+    "neff_oracle": 3.27561532,
+    "rel_err": 0.0139362347,
     "dl_um": 0.0484375,
     "n_core": 3.48,
     "n_clad": 1.44,

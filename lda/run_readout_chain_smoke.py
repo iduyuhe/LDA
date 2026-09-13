@@ -13,6 +13,7 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 from lda_agent.qubit_readout_chain import design_chain  # noqa: E402
 
@@ -49,12 +50,10 @@ def main() -> int:
     print("=" * 70)
     print("D-43 smoke 全绿:", ok)
     r0 = design_chain(**CASES[0][0])
-    with open(os.path.join(_HERE, "reports", "readout_chain.json"), "w",
-              encoding="utf-8") as f:
-        json.dump({k: r0[k] for k in ("title", "f01_ghz", "f_r_ghz", "params",
-                                      "verification", "ir", "acceptance",
-                                      "verdict")},
-                  f, ensure_ascii=False, indent=2)
+    _det.write_json(os.path.join(_HERE, "reports", "readout_chain.json"),
+                    {k: r0[k] for k in ("title", "f01_ghz", "f_r_ghz", "params",
+                                        "verification", "ir", "acceptance",
+                                        "verdict")})
     return 0 if ok else 1
 
 

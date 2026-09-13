@@ -16,6 +16,7 @@ import sys
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
+from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 from lda_harness.benchmark_report import run_crosscheck, _fmt_report  # noqa: E402
 
@@ -34,10 +35,8 @@ def main(argv=None) -> int:
     os.makedirs(args.out, exist_ok=True)
     md_path = os.path.join(args.out, "benchmark_crosscheck_report.md")
     js_path = os.path.join(args.out, "benchmark_crosscheck_report.json")
-    with open(md_path, "w", encoding="utf-8") as f:
-        f.write(_fmt_report(data))
-    with open(js_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    _det.write_text(md_path, _fmt_report(data))
+    _det.write_json(js_path, data)
 
     s = data["summary"]
     print(f"引擎 {s['engines_passed']}/{s['engines_total']} PASS · "

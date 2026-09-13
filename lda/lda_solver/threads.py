@@ -36,6 +36,19 @@ _ENV_KEYS = (
     "NUMBA_NUM_THREADS",            # numba parallel（须在 numba 导入前设好）
 )
 
+# 🔴 确定性铁律（v0.9.75「根治提交噪声」）：**禁止动态线程调整**。
+# 血案：torch 在 Windows 上随包分发 Intel OpenMP（libiomp5md.dll），其
+# `OMP_DYNAMIC` 默认 **TRUE**（MKL 亦然）⇒ 并行区线程数会**随系统负载自动
+# 增减** ⇒ 归约（`torch.sum` 等）的分段与求和顺序随之变化 ⇒ float32 结果
+# run-to-run 抖动。D-23 的 κ=(βs−βa)/2 是「大数小差」量（放大 ~180×），
+# 该抖动被放大到 ~1e-5，**足以翻写受跟踪报告**（本地 0.1706571 / CI
+# 0.1706428 即此）。显式关掉动态调整 ⇒ 线程数严格固定 ⇒ 归约顺序固定 ⇒
+# 相同输入字节一致。必须在任何数值内核（torch/MKL）初始化**之前**落 env。
+_ENV_FLAGS = (
+    ("OMP_DYNAMIC", "FALSE"),       # Intel/GNU OpenMP：禁止动态线程调整
+    ("MKL_DYNAMIC", "FALSE"),       # MKL：禁止按负载动态选线程数
+)
+
 
 def budget_threads(default_cap: int = DEFAULT_CAP) -> int:
     """目标并发线程数：env 显式指定优先，否则 = min(cap, cpu//2)。"""
@@ -51,6 +64,20 @@ def budget_threads(default_cap: int = DEFAULT_CAP) -> int:
     return max(1, min(default_cap, max(1, cpu // 2)))
 
 
+def thread_env_overrides(default_cap: int = DEFAULT_CAP) -> dict:
+    """线程预算 + 确定性开关的**完整 env 覆盖表**（供 smoke 与 CI 子进程共用）。
+
+    调用方一律用 `os.environ.setdefault(k, v)` 落地：外部显式设置优先，
+    不由本模块覆盖（便于人工诊断时临时改）。
+    """
+    n = budget_threads(default_cap)
+    env = {k: str(n) for k in _ENV_KEYS}
+    env[ENV_N] = str(n)
+    for k, v in _ENV_FLAGS:
+        env[k] = v
+    return env
+
+
 def apply_thread_budget(default_cap: int = DEFAULT_CAP,
                         verbose: bool = False) -> dict:
     """落线程预算到 env + torch，返回披露信息（供 report 诚实记录）。
@@ -59,8 +86,8 @@ def apply_thread_budget(default_cap: int = DEFAULT_CAP,
     故调用点应尽量靠前（smoke 顶部）。torch 侧额外运行时设置（总是生效）。
     """
     n = budget_threads(default_cap)
-    for k in _ENV_KEYS:
-        os.environ.setdefault(k, str(n))   # 外部显式设置优先，不覆盖
+    for k, v in thread_env_overrides(default_cap).items():
+        os.environ.setdefault(k, v)        # 外部显式设置优先，不覆盖
 
     torch_n = None
     try:
@@ -75,6 +102,9 @@ def apply_thread_budget(default_cap: int = DEFAULT_CAP,
         "cpu_count": os.cpu_count(),
         "torch_threads": torch_n,
         "source": ENV_N if (os.environ.get(ENV_N) or "").strip() else "auto",
+        # 动态线程调整**是否已显式关闭**（确定性前提；label==behavior 披露）。
+        # 注意字段名带 `_disabled`：True = 已关闭（好），False = 仍可能随负载伸缩。
+        "dynamic_threads_disabled": (os.environ.get("OMP_DYNAMIC", "").upper() == "FALSE"),
     }
     if verbose:
         tail = f"，torch {torch_n} 线程" if torch_n else ""

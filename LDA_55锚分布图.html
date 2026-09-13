@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>LDA · 验证 harness 55 锚分布</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --line:#30363d; --txt:#e6edf3; --muted:#8b949e;
+    --blue:#388bfd; --green:#3fb950; --red:#f85149; --gold:#d29922; --gray:#6e7681;
+  }
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:"Segoe UI","Microsoft YaHei",sans-serif;}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 48px;}
+  h1{font-size:22px;margin:0 0 4px;font-weight:600;}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:18px;}
+  svg{width:100%;height:auto;display:block;}
+  .axis{stroke:#30363d;stroke-width:1.5;}
+  .bar{stroke:#0d1117;stroke-width:1.5;}
+  .t{fill:var(--txt);font-size:13px;font-weight:600;}
+  .ts{fill:var(--muted);font-size:11px;}
+  .num{fill:var(--txt);font-size:13px;font-weight:700;}
+  .legend{margin-top:14px;font-size:12px;color:var(--muted);line-height:1.7;}
+  .legend b{color:var(--txt);}
+  .chip{display:inline-block;width:11px;height:11px;border-radius:2px;margin:0 5px -1px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LDA · 验证 harness · 55 锚分布</h1>
+  <div class="sub">按领域维度（B/E/S 系列）与成熟度维度（VMM）双视角展开。含 1 个降级锚 E9 → 严格独立 31 + 降级 1 + 自证桩 23 = 55。</div>
+  <svg viewBox="0 0 1140 540" xmlns="http://www.w3.org/2000/svg">
+
+    <!-- ===== 左：领域维度柱状 ===== -->
+    <text class="t" x="40" y="40">① 领域维度（按锚系列）</text>
+    <line class="axis" x1="40" y1="480" x2="460" y2="480"/>
+    <!-- 光子 B 20 -->
+    <rect class="bar" x="50" y="120" width="80" height="360" fill="#388bfd"/>
+    <text class="num" x="90" y="108" text-anchor="middle">20</text>
+    <text class="ts" x="90" y="500" text-anchor="middle">光子 B 锚</text>
+    <text class="ts" x="90" y="516" text-anchor="middle">B1–B8,B11,</text>
+    <text class="ts" x="90" y="531" text-anchor="middle">B13–B16,B20,</text>
+    <text class="ts" x="90" y="546" text-anchor="middle">B21,B28–B29,</text>
+    <text class="ts" x="90" y="561" text-anchor="middle">B31–B33</text>
+    <!-- 量子 B 13 -->
+    <rect class="bar" x="170" y="246" width="80" height="234" fill="#bc8cff"/>
+    <text class="num" x="210" y="234" text-anchor="middle">13</text>
+    <text class="ts" x="210" y="500" text-anchor="middle">量子 B 锚</text>
+    <text class="ts" x="210" y="516" text-anchor="middle">B9,B10,B12,</text>
+    <text class="ts" x="210" y="531" text-anchor="middle">B17–B19,B22–</text>
+    <text class="ts" x="210" y="546" text-anchor="middle">B27,B30</text>
+    <!-- 系统 S 13 -->
+    <rect class="bar" x="290" y="246" width="80" height="234" fill="#3fb950"/>
+    <text class="num" x="330" y="234" text-anchor="middle">13</text>
+    <text class="ts" x="330" y="500" text-anchor="middle">系统·LVS·良率</text>
+    <text class="ts" x="330" y="516" text-anchor="middle">S1–S13</text>
+    <text class="ts" x="330" y="531" text-anchor="middle">(含 LVS/统计/</text>
+    <text class="ts" x="330" y="546" text-anchor="middle">DFY/阵列)</text>
+    <!-- 实证 E 10 -->
+    <rect class="bar" x="410" y="300" width="80" height="180" fill="#d29922"/>
+    <text class="num" x="450" y="288" text-anchor="middle">10</text>
+    <text class="ts" x="450" y="500" text-anchor="middle">实证 E 锚</text>
+    <text class="ts" x="450" y="516" text-anchor="middle">E1–E10</text>
+    <text class="ts" x="450" y="531" text-anchor="middle">(外部验货)</text>
+
+    <!-- ===== 右：成熟度维度堆叠 ===== -->
+    <text class="t" x="560" y="40">② 成熟度维度（VMM）</text>
+    <text class="ts" x="560" y="62">横条总长 = 55 锚（单位长度 9px）</text>
+    <rect class="bar" x="560" y="100" width="279" height="48" fill="#3fb950"/>
+    <text class="num" x="700" y="130" text-anchor="middle" fill="#0d1117">严格独立 31</text>
+    <rect class="bar" x="839" y="100" width="9" height="48" fill="#f85149"/>
+    <text class="num" x="848" y="84" text-anchor="middle" fill="#f85149">1</text>
+    <text class="ts" x="848" y="166" text-anchor="middle">E9</text>
+    <rect class="bar" x="848" y="100" width="207" height="48" fill="#6e7681"/>
+    <text class="num" x="951" y="130" text-anchor="middle" fill="#0d1117">自证桩 23</text>
+
+    <text class="t" x="560" y="230">③ 三层判据护栏（CORE_SMOKES = 169 条）</text>
+    <rect x="560" y="248" width="520" height="34" rx="5" fill="#161b22" stroke="#30363d"/>
+    <text class="ts" x="576" y="270">· 物理定律锚（B1–B11）：闭式/解析 ORACLE 对拍</text>
+    <rect x="560" y="290" width="520" height="34" rx="5" fill="#161b22" stroke="#30363d"/>
+    <text class="ts" x="576" y="312">· 实证锚（E1–E10）：外部实测 / 文献交叉验证</text>
+    <rect x="560" y="332" width="520" height="34" rx="5" fill="#161b22" stroke="#30363d"/>
+    <text class="ts" x="576" y="354">· 系统锚（S1–S13）：预算/LVS/统计蒙特卡洛</text>
+
+    <text class="t" x="560" y="412">④ 红线纪律</text>
+    <rect x="560" y="428" width="520" height="30" rx="5" fill="#161b22" stroke="#f85149"/>
+    <text class="ts" x="576" y="448" fill="#f85149">LLM 不进判决路径 · PASS/FAIL 由死标量定</text>
+    <rect x="560" y="466" width="520" height="30" rx="5" fill="#161b22" stroke="#f85149"/>
+    <text class="ts" x="576" y="486" fill="#f85149">外部 ORACLE（Meep/Tidy3D）子进程隔离 · GPL 不进核心</text>
+    <rect x="560" y="504" width="520" height="30" rx="5" fill="#161b22" stroke="#f85149"/>
+    <text class="ts" x="576" y="524" fill="#f85149">A 级主权永不借 · T2 换锚诚实 degraded_ordinal 不虚报</text>
+  </svg>
+
+  <div class="legend">
+    <span class="chip" style="background:#388bfd"></span><b>光子物理锚</b>
+    &nbsp;&nbsp;<span class="chip" style="background:#bc8cff"></span><b>量子物理锚</b>
+    &nbsp;&nbsp;<span class="chip" style="background:#3fb950"></span><b>系统/LVS/良率锚</b>
+    &nbsp;&nbsp;<span class="chip" style="background:#d29922"></span><b>实证锚（外部验货）</b>
+    &nbsp;&nbsp;<span class="chip" style="background:#6e7681"></span><b>自证桩（方法学待升级）</b>
+    &nbsp;&nbsp;<span class="chip" style="background:#f85149"></span><b>降级锚 E9</b>
+    <br/><br/>
+    说明：55 锚按 VMM 成熟度统计为 <b>严格独立 31 + 降级 1(E9) + 自证桩 23 = 55</b>；ID 层面为 B1–B33（33 含光子 20 / 量子 13）、E1–E10（10）、S1–S13（13）。自证桩为合法第一阶段非缺陷，每锚带 maturity_tier + provenance + upgrade_path，待接方法学独立候选后升 strict。
+  </div>
+</div>
+</body>
+</html>

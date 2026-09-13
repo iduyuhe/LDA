@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDA 能力图谱 · Capability Atlas</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#121b2e; --panel2:#0f1828; --line:#22324d;
+    --txt:#e6edf7; --dim:#8aa0bd; --dim2:#5f7390;
+    --green:#34d399; --green2:#0f6b4f;
+    --blue:#3b82f6; --blue2:#163a6b;
+    --red:#f87171; --red2:#6b1f23;
+    --gray:#64748b; --gray2:#2a3647;
+    --amber:#fbbf24;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#16243c 0%,var(--bg) 60%);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;padding:28px 22px 60px;}
+  .wrap{max-width:1180px;margin:0 auto;}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:1px;}
+  .sub{color:var(--dim);font-size:13.5px;line-height:1.7;margin-bottom:22px;}
+  .section-title{font-size:15px;color:var(--txt);margin:34px 0 14px;padding-left:11px;border-left:3px solid var(--blue);letter-spacing:.5px;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px;}
+  /* ---- 分层塔 ---- */
+  .tower{display:flex;flex-direction:column;gap:10px;}
+  .trow{display:flex;align-items:center;gap:16px;}
+  .tbar{flex:1;display:flex;align-items:center;justify-content:space-between;
+    border-radius:11px;padding:14px 18px;border:1px solid var(--line);}
+  .tbar .lv{font-size:12px;color:var(--dim);font-weight:600;letter-spacing:1px;}
+  .tbar .nm{font-size:16px;font-weight:700;}
+  .tbar .ct{font-size:22px;font-weight:800;padding:2px 14px;border-radius:9px;}
+  .tbar .ds{font-size:12px;color:var(--dim);margin-top:2px;line-height:1.5;}
+  .l4{background:linear-gradient(90deg,#13314a,#0f2236);border-color:#1d4a6b;}
+  .l3{background:linear-gradient(90deg,#13361f,#0f2417);border-color:#1d6b3f;}
+  .l2{background:linear-gradient(90deg,#2a2a13,#1a1a0c);border-color:#5c5320;}
+  .l1{background:linear-gradient(90deg,#13283a,#0e1d2c);border-color:#1d4360;}
+  .l0{background:linear-gradient(90deg,#13243d,#0e1a2c);border-color:#23456b;}
+  .c-green{background:var(--green2);color:var(--green);}
+  .c-blue{background:var(--blue2);color:#8db8ff;}
+  .c-amber{background:#3a320f;color:var(--amber);}
+  .c-cyan{background:#0e3a3a;color:#5eead4;}
+  .c-gray{background:var(--gray2);color:#a8b6c8;}
+  .arrow{text-align:center;color:var(--dim);font-size:11px;letter-spacing:2px;margin:-2px 0;}
+  /* ---- 领域图谱 ---- */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .dom{background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:15px 16px;position:relative;overflow:hidden;}
+  .dom::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;}
+  .d0::before{background:var(--blue);} .d1::before{background:var(--green);}
+  .d2::before{background:var(--red);} .d3::before{background:var(--amber);}
+  .d4::before{background:#5eead4;} .d5::before{background:var(--gray);}
+  .dom h3{margin:0 0 2px;font-size:15px;}
+  .dom .big{font-size:30px;font-weight:800;line-height:1;}
+  .dom .unit{font-size:12px;color:var(--dim);}
+  .dom .rest{font-size:11.5px;color:var(--dim);margin:8px 0 9px;line-height:1.55;border-top:1px dashed var(--line);padding-top:8px;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{font-size:11px;background:#16233a;border:1px solid var(--line);color:#bcd0ee;padding:3px 8px;border-radius:20px;}
+  .chip b{color:var(--txt);font-weight:700;}
+  /* ---- 成熟度 / 红线 ---- */
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin-bottom:16px;}
+  .lg{display:flex;align-items:center;gap:8px;font-size:13px;}
+  .dot{width:13px;height:13px;border-radius:50%;}
+  .redlines{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:6px;}
+  .rl{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--dim);line-height:1.6;
+    background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--red);border-radius:9px;padding:11px 13px;}
+  .rl b{color:var(--red);}
+  .foot{margin-top:26px;font-size:11.5px;color:var(--dim);text-align:center;line-height:1.7;}
+  @media(max-width:820px){.grid{grid-template-columns:repeat(2,1fr);}.redlines{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LDA 能力图谱 · Capability Atlas</h1>
+  <div class="sub">
+    从「基元 → 求解 → 设计 → 验证 → 货架」的五层能力全景，按领域（光子 / 量子混合 / 系统）与成熟度铺开。
+    数据来自真实代码库：<code>lda/lda_l2/innovation_market.json</code>（75 货架）、<code>ship_package.py</code>（GP-* 基元）、<code>benchmarks.py</code>（55 锚）、<code>lda_l3</code>（求解核）。
+  </div>
+
+  <!-- ============ 一、能力分层塔 ============ -->
+  <div class="section-title">一 · 能力分层塔（自底向上，下层是上层的能力地基）</div>
+  <div class="panel">
+    <div class="tower">
+      <div class="trow">
+        <div class="tbar l4" style="flex:1">
+          <div>
+            <div class="lv">L4 · 货架产出层</div>
+            <div class="nm">创新超市 · 设计就绪包</div>
+            <div class="ds">75 个 IM-* 货架 · 全部 honest_tier=「前瞻预研」· 非 foundry 认证 / 非本团队流片</div>
+          </div>
+          <div class="ct c-blue">75</div>
+        </div>
+      </div>
+      <div class="arrow">▲ 由下层能力组装而成</div>
+
+      <div class="trow">
+        <div class="tbar l3" style="flex:1">
+          <div>
+            <div class="lv">L3 · 验证锚层</div>
+            <div class="nm">物理定律锚 + 实证锚 + 系统锚</div>
+            <div class="ds">B1–B33（光子20/量子13）· E1–E10 实证 · S1–S13 系统/LVS/良率 · VMM 成熟度 31严格独立+1降级+23自证桩</div>
+          </div>
+          <div class="ct c-green">55</div>
+        </div>
+      </div>
+      <div class="arrow">▲ 死标量判决，LLM 不进路径</div>
+
+      <div class="trow">
+        <div class="tbar l2" style="flex:1">
+          <div>
+            <div class="lv">L2 · 设计引擎层</div>
+            <div class="nm">领域设计器家族</div>
+            <div class="ds">逆设计 / 链路级联 / 布线 / 量子栈(QEDA) / 光电接口 / 有源B档 / 电学内核 · 22+ 类设计器</div>
+          </div>
+          <div class="ct c-amber">22+</div>
+        </div>
+      </div>
+      <div class="arrow">▲ 调用求解核与基元</div>
+
+      <div class="trow">
+        <div class="tbar l1" style="flex:1">
+          <div>
+            <div class="lv">L1 · 求解核层</div>
+            <div class="nm">C 级自主求解器</div>
+            <div class="ds">fdtd1d · tmm · drift_diffusion · 零依赖 numpy · 物理定律锚 · 不借 GPL / Meep / Tidy3D</div>
+          </div>
+          <div class="ct c-cyan">3</div>
+        </div>
+      </div>
+      <div class="arrow">▲ 作用于基元几何</div>
+
+      <div class="trow">
+        <div class="tbar l0" style="flex:1">
+          <div>
+            <div class="lv">L0 · 基元积木层</div>
+            <div class="nm">GP-* 已映射几何基元</div>
+            <div class="ds">GP-GRATING-EFF(GratingCoupler) · GP-MMI-1X2(MMI) · GP-CROSSING · GP-YBRANCH(SymmetricYBranch) · GP-SIN-PL(SiN Waveguide) · 持续扩展</div>
+          </div>
+          <div class="ct c-gray">5+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 二、领域能力图谱 ============ -->
+  <div class="section-title">二 · 领域能力图谱（75 货架按应用域聚类 · 标注其依赖的已验证锚）</div>
+  <div class="grid">
+
+    <div class="dom d0">
+      <h3>数据中心光互连</h3>
+      <div><span class="big">33</span> <span class="unit">货架</span></div>
+      <div class="rest">依赖锚：B4 wdm_demux 闭环（drop IL≤3 / XT≥15 / 单 FSR / DRC）· 系统预算锚 S1/S2/S5/S7 死标量<br>子域：transceiver 12 · wdm_roadm 5 · cpo_engine 4 · chiplet 5 · coherent 3 · optical_switch/switching/multiplexing/spectrum 4</div>
+      <div class="chips">
+        <span class="chip">PSM4 <b>4×25G</b></span><span class="chip">FR4 <b>4×100G</b></span>
+        <span class="chip">DR8 <b>8×100G</b></span><span class="chip">1.6T <b>DR8/FR4</b></span>
+        <span class="chip">CWDM4/LR4</span><span class="chip">800G FR4 <b>4×200G</b></span>
+        <span class="chip">ZR/ZR+ 相干</span><span class="chip">CPO 引擎</span><span class="chip">光 chiplet IO</span>
+      </div>
+    </div>
+
+    <div class="dom d3">
+      <h3>传感与 LiDAR</h3>
+      <div><span class="big">12</span> <span class="unit">货架</span></div>
+      <div class="rest">依赖锚：链路预算锚 S1/S2/S5/S7 · 微环谐振传感复用 SENSE-RING 拓扑<br>子域：lidar 5 · biochem 5 · medical 1 · inertial 1</div>
+      <div class="chips">
+        <span class="chip">FMCW TX <b>3.3dB</b></span><span class="chip">FMCW RX 90°混频</span>
+        <span class="chip">微环折射率</span><span class="chip">MZI 干涉</span><span class="chip">环形生物</span>
+        <span class="chip">Lab-on-Chip</span><span class="chip">惯性</span>
+      </div>
+    </div>
+
+    <div class="dom d2">
+      <h3>量子与 QKD</h3>
+      <div><span class="big">10</span> <span class="unit">货架</span></div>
+      <div class="rest">依赖锚：D-46 频率复用 × D-47 保真度框架（已验证）· QKD 15/8/13 dB 实测死标量<br>子域：qc_readout 6（祖冲之三号/IBM Heron/Google Willow 量级）· qkd 4（Alice/Bob/多用户）<br>⚠ 出口管制红线：量子相关暂列「咨询制/即将开放」，不进自动下载白名单</div>
+      <div class="chips">
+        <span class="chip">QCOM 5比特 <b>99.3%</b></span><span class="chip">ZC3 10比特</span>
+        <span class="chip">Heron 16比特</span><span class="chip">Willow 12比特</span>
+        <span class="chip">QKD TX</span><span class="chip">QKD RX</span><span class="chip">多用户 4</span>
+      </div>
+    </div>
+
+    <div class="dom d1">
+      <h3>接入网 PON</h3>
+      <div><span class="big">5</span> <span class="unit">货架</span></div>
+      <div class="rest">依赖锚：ITU-T G.671 / G.9804 / G.9807.1 死标量 · 系统预算锚 S1/S2/S5/S7<br>子域：pon 5（GPON/XGS-PON/50G-PON/PLC 1×8·1×16）</div>
+      <div class="chips">
+        <span class="chip">FTTH 1×8 <b>≤10.7dB</b></span><span class="chip">1×16 <b>≤14dB</b></span>
+        <span class="chip">50G-PON</span><span class="chip">XGS-PON</span><span class="chip">GPON ODN</span>
+      </div>
+    </div>
+
+    <div class="dom d4">
+      <h3>光计算与前沿</h3>
+      <div><span class="big">9</span> <span class="unit">货架</span></div>
+      <div class="rest">依赖锚：GP-* 基元 + 链路预算锚 · 部分有源按黑箱<br>子域：optical_compute 1 · microwave 2 · filtering 1 · fiber_io 2 · light_source 3</div>
+      <div class="chips">
+        <span class="chip">光计算 ONN</span><span class="chip">异质集成光源</span>
+        <span class="chip">光纤 IO</span><span class="chip">微波光子</span><span class="chip">滤波</span>
+      </div>
+    </div>
+
+    <div class="dom d5">
+      <h3>无源与调制基础</h3>
+      <div><span class="big">6</span> <span class="unit">货架</span></div>
+      <div class="rest">依赖锚：GP-* 基元全映射 · 有源调制单元按黑箱（负面清单）<br>子域：passive 2 · modulation 2 · polarization 2</div>
+      <div class="chips">
+        <span class="chip">MZM 调制器</span><span class="chip">MRM 微环 <b>200G/lane</b></span>
+        <span class="chip">PSR 偏振</span><span class="chip">VOA 衰减</span><span class="chip">WSS 1×9</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ 三、成熟度与红线 ============ -->
+  <div class="section-title">三 · 成熟度语义 与 能力红线</div>
+  <div class="panel">
+    <div class="legend">
+      <div class="lg"><span class="dot" style="background:var(--green)"></span> 已实现闭环（锚定验证，死标量判决）</div>
+      <div class="lg"><span class="dot" style="background:var(--blue)"></span> 货架化产出（前端预研级设计交付）</div>
+      <div class="lg"><span class="dot" style="background:var(--amber)"></span> 设计引擎（方法学独立候选，待接线升级）</div>
+      <div class="lg"><span class="dot" style="background:var(--red)"></span> 锁死 / 黑箱 / 出口管制（不物理级建模）</div>
+      <div class="lg"><span class="dot" style="background:var(--gray)"></span> 不在范围 / 待扩展</div>
+    </div>
+    <div style="font-size:13px;color:var(--dim);line-height:1.7;margin-bottom:12px;">
+      <b style="color:var(--amber)">诚实边界：</b>全部 75 货架统一标注 <code>honest_tier = 前瞻预研</code>——组合已锚定基元与死标量判据，<b style="color:var(--txt)">不虚报「已流片 / foundry 认证」</b>。
+      有源器件（激光源、调制器、探测器、开关矩阵、相干 DSP）一律按<b style="color:var(--red)">黑箱</b>处理，行为由文献锚走完闭环，不进物理级求解。
+    </div>
+    <div class="redlines">
+      <div class="rl"><b>①</b> LLM 不进判决路径：PASS/FAIL 由死标量（物理定律锚）定，AI 仅出题/编排。</div>
+      <div class="rl"><b>②</b> 有源不物理级建模：激光/调制/探测/开关矩阵按黑箱，负面清单锁死。</div>
+      <div class="rl"><b>③</b> 出口管制红线：量子相关（QKD×3+保真度链×5）暂列咨询制，不进自动下载白名单。</div>
+      <div class="rl"><b>④</b> 主权分级：A 级永不借 · B 级借今踢后 · C 级自主（Meep/Tidy3D 子进程隔离，GPL 不进核心）。</div>
+      <div class="rl"><b>⑤</b> 验证纪律：受跟踪报告确定性生成（9 位有效数字）+ 线程环境确定性（OMP_DYNAMIC=FALSE）。</div>
+      <div class="rl"><b>⑥</b> 组合创新不新增未锚定基元：货架 composition⊂GP-*，零新物理。</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    LDA · 开源 Agent 原生 EDA（光子 PDA + 量子 QEDA）· 能力图谱 v0.9.75 · 数据核验于代码库 lda/ 包<br>
+    与《系统架构图》《部署拓扑图》《55 锚分布图》《应用架构图》共同构成 LDA 全视角文档集（均位于 D:\agent_LDA\）
+  </div>
+</div>
+</body>
+</html>

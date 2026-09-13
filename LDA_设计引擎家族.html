@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDA · 22+ 设计引擎家族</title>
+<style>
+  :root{
+    --bg:#0c1018; --bg2:#121826; --card:#161e2e; --card2:#1b2536;
+    --bd:#243049; --txt:#e6edf7; --dim:#8aa0bd; --dim2:#5f7390;
+    --blue:#3b82f6; --blue2:#60a5fa; --grn:#22c55e; --grn2:#4ade80;
+    --red:#ef4444; --red2:#f87171; --amb:#f59e0b; --pur:#a78bfa; --cy:#22d3ee;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:linear-gradient(180deg,#0a0e16,#0c1018 60%);color:var(--txt);
+    font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.5;
+    padding:28px 24px 56px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto}
+  h1{font-size:27px;font-weight:800;text-align:center;
+    background:linear-gradient(90deg,#4ade80,#22d3ee);-webkit-background-clip:text;
+    background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{text-align:center;color:var(--dim);font-size:13.5px;margin:8px 0 4px}
+  .sum{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:18px 0 6px}
+  .sc{background:var(--card);border:1px solid var(--bd);border-radius:12px;
+    padding:12px 18px;text-align:center;min-width:120px}
+  .sc b{display:block;font-size:24px;font-weight:800;color:var(--grn2)}
+  .sc span{font-size:11.5px;color:var(--dim)}
+  .sec{margin-top:30px}
+  .sec-h{font-size:15px;font-weight:700;padding-left:12px;border-left:3px solid var(--c,#3b82f6);
+    margin-bottom:14px;letter-spacing:.5px}
+  .sec-h small{color:var(--dim2);font-weight:400;font-size:12px;margin-left:8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:13px}
+  .eng{background:var(--card);border:1px solid var(--bd);border-radius:11px;padding:13px 14px;
+    border-left:3px solid var(--c,#3b82f6);transition:.15s}
+  .eng:hover{background:var(--card2);transform:translateY(-2px)}
+  .eng .id{font-family:"SFMono-Regular",Consolas,monospace;font-size:13px;font-weight:700;color:var(--c,#60a5fa)}
+  .eng .t{font-size:12px;color:var(--dim);margin:4px 0 7px;line-height:1.45}
+  .eng .row{display:flex;justify-content:space-between;font-size:11px;margin-top:5px}
+  .eng .row span:first-child{color:var(--dim2)}
+  .eng .row span:last-child{color:var(--txt);font-weight:600}
+  .anch{display:inline-block;margin-top:7px;font-size:10.5px;padding:2px 7px;border-radius:6px;
+    background:var(--bg2);border:1px solid var(--bd);color:var(--grn2);font-family:monospace}
+  .fam{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px 18px;
+    border-top:3px solid var(--c,#a78bfa)}
+  .fam h3{font-size:15px;font-weight:700;color:var(--c,#a78bfa);margin-bottom:3px}
+  .fam .code{font-family:monospace;font-size:11px;color:var(--dim2);margin-bottom:8px}
+  .fam ul{list-style:none;margin-top:6px}
+  .fam li{font-size:12px;color:var(--dim);padding:3px 0 3px 14px;position:relative;line-height:1.45}
+  .fam li:before{content:"▸";position:absolute;left:0;color:var(--c,#a78bfa)}
+  .fam li b{color:var(--txt)}
+  .fam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+  .note{margin-top:26px;background:var(--bg2);border:1px solid var(--bd);border-radius:12px;
+    padding:15px 18px;font-size:12.5px;color:var(--dim);line-height:1.65}
+  .note b{color:var(--amb)}
+  .back{display:block;text-align:center;margin-top:24px;color:var(--blue2);font-size:13px;text-decoration:none}
+  .back:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>22+ 设计引擎家族</h1>
+  <div class="sub">lda_design · agent-native design→verify 闭环引擎（LLM 不进判决路径）</div>
+  <div class="sum">
+    <div class="sc"><b>22</b><span>核心器件引擎<br>(design_engine.py)</span></div>
+    <div class="sc"><b>4</b><span>系统级域引擎族<br>(CPO/QKD/loss/active)</span></div>
+    <div class="sc"><b>5</b><span>损耗/效率基元<br>(loss_engines)</span></div>
+    <div class="sc"><b>9</b><span>依赖锚<br>(B14/B16/B21–B27 + E-/D-)</span></div>
+  </div>
+
+  <!-- 光子无源 -->
+  <div class="sec">
+    <div class="sec-h" style="--c:var(--blue)">光子无源器件引擎 <small>13 类 · 设计量 / 解析 ORACLE + FDTD 双验证</small></div>
+    <div class="grid">
+      <div class="eng" style="--c:var(--blue)"><div class="id">Waveguide</div><div class="t">直波导 · 目标有效折射率 neff</div><div class="row"><span>搜索</span><span>slab 闭式 ORACLE</span></div><div class="row"><span>验证</span><span>FDTD neff 自洽</span></div><span class="anch">slab neff</span></div>
+      <div class="eng" style="--c:var(--blue)"><div class="id">BraggMirror</div><div class="t">布拉格镜 · 目标反射率 R_min（最少周期）</div><div class="row"><span>搜索</span><span>TMM 闭式</span></div><div class="row"><span>验证</span><span>FDTD 阻带</span></div><span class="anch">TMM ORACLE</span></div>
+      <div class="eng" style="--c:var(--blue)"><div class="id">RingResonator</div><div class="t">环形谐振器 · 目标 FSR (nm)</div><div class="row"><span>搜索</span><span>λ²/(n_g·2πR)</span></div><div class="row"><span>验证</span><span>解析契约(诚实)</span></div><span class="anch">FSR 物理定律</span></div>
+      <div class="eng" style="--c:var(--blue)"><div class="id">MziInterferometer</div><div class="t">MZI 干涉仪 · 目标 FSR (干涉谱)</div><div class="row"><span>搜索</span><span>λ²/(n_eff·ΔL)</span></div><div class="row"><span>验证</span><span>解析干涉谱</span></div><span class="anch">干涉 FSR</span></div>
+      <div class="eng" style="--c:var(--blue)"><div class="id">PhCCavity</div><div class="t">光子晶体腔 · 目标共振 λ_res (2D FDTD)</div><div class="row"><span>搜索</span><span>B21 布拉格带边</span></div><div class="row"><span>验证</span><span>2D FDTD 全波</span></div><span class="anch">B21</span></div>
+      <div class="eng" style="--c:var(--blue)"><div class="id">Mmi1x2</div><div class="t">MMI 1×2 · 目标自映像长 L_mmi</div><div class="row"><span>搜索</span><span>3·n_eff·W²/λ</span></div><div class="row"><span>验证</span><span>模式叠加核</span></div><span class="anch">B16</span></div>
+      <div class="eng" style="--c:var(--blue)"><div class="id">GratingCoupler2</div><div class="t">光栅耦合器 · 目标 Bragg λ_B</div><div class="row"><span>搜索</span><span>Λ·n_eff</span></div><div class="row"><span>验证</span><span>数值复核</span></div><span class="anch">Bragg</span></div>
+      <div class="eng" style="--c:var(--blue)"><div class="id">DirectionalCoupler2</div><div class="t">方向耦合器 · 目标 3dB 长 L_3dB</div><div class="row"><span>搜索</span><span>λ/(4|n_e−n_o|)</span></div><div class="row"><span>验证</span><span>超模拍频核</span></div><span class="anch">B14</span></div>
+      <div class="eng" style="--c:var(--grn)"><div class="id">YbranchLoss</div><div class="t">Y-branch 过量损耗 · 目标 excess_loss</div><div class="row"><span>搜索</span><span>c1·θ² 唯象</span></div><div class="row"><span>验证</span><span>实证语料</span></div><span class="anch">E-YBRANCH-LOSS</span></div>
+      <div class="eng" style="--c:var(--grn)"><div class="id">GratingEff</div><div class="t">光栅耦合效率 · 目标 coupling_eff</div><div class="row"><span>搜索</span><span>Bragg×占空比×倾斜</span></div><div class="row"><span>验证</span><span>实证语料</span></div><span class="anch">E-GRATING-EFF</span></div>
+      <div class="eng" style="--c:var(--grn)"><div class="id">Crossing</div><div class="t">波导 crossing · 目标插入损耗 IL / 串扰</div><div class="row"><span>搜索</span><span>taper 参数化</span></div><div class="row"><span>验证</span><span>实证语料</span></div><span class="anch">E-SOI-CROSS-IL/XT</span></div>
+      <div class="eng" style="--c:var(--grn)"><div class="id">MmiEl</div><div class="t">MMI 1×2 过量损耗 · 目标 excess_loss</div><div class="row"><span>搜索</span><span>0.05·(1+5|L/L₀−1|)</span></div><div class="row"><span>验证</span><span>实证语料</span></div><span class="anch">E-MMI-1X2-EL</span></div>
+      <div class="eng" style="--c:var(--grn)"><div class="id">SinPl</div><div class="t">SiN 波导传播损耗 · 目标 PL (dB/cm)</div><div class="row"><span>搜索</span><span>Payne-Lacey 粗糙度</span></div><div class="row"><span>验证</span><span>实证语料</span></div><span class="anch">E-SIN-PL-800</span></div>
+    </div>
+  </div>
+
+  <!-- 光子有源 -->
+  <div class="sec">
+    <div class="sec-h" style="--c:var(--amb)">光子有源器件引擎 <small>2 类 · 行为黑箱（不物理级建模）</small></div>
+    <div class="grid">
+      <div class="eng" style="--c:var(--amb)"><div class="id">PhaseShifter</div><div class="t">热光相移器 · 目标相移效率 deg/mW</div><div class="row"><span>模型</span><span>Δφ=2π/λ·dn/dT·R_th·P·L</span></div><div class="row"><span>验证</span><span>解析对照(诚实)</span></div><span class="anch">D-73 同源</span></div>
+      <div class="eng" style="--c:var(--amb)"><div class="id">MziModulator</div><div class="t">MZI 电光调制器 · 目标 V_π (Pockels)</div><div class="row"><span>模型</span><span>V_π=λ·g/(L·r·n³)</span></div><div class="row"><span>验证</span><span>解析对照(黑箱)</span></div><span class="anch">Pockels r=30</span></div>
+    </div>
+  </div>
+
+  <!-- 量子器件 -->
+  <div class="sec">
+    <div class="sec-h" style="--c:var(--pur)">量子器件引擎 (QEDA) <small>7 类 · 比特/读出/耦合/门时间 · Koch/SW/相位对角化</small></div>
+    <div class="grid">
+      <div class="eng" style="--c:var(--pur)"><div class="id">Transmon</div><div class="t">Transmon 比特 · 目标 f01 (GHz)</div><div class="row"><span>搜索</span><span>Koch 反解 E_J</span></div><div class="row"><span>验证</span><span>严格对角化</span></div><span class="anch">koch_f01</span></div>
+      <div class="eng" style="--c:var(--pur)"><div class="id">ReadoutResonator</div><div class="t">CPW λ/4 读出 · 目标 f0 (GHz)</div><div class="row"><span>搜索</span><span>c0/(4·L·n_eff)</span></div><div class="row"><span>验证</span><span>1D TL-FDTD</span></div><span class="anch">B22</span></div>
+      <div class="eng" style="--c:var(--pur)"><div class="id">Fluxonium</div><div class="t">Fluxonium 比特 · 目标 f01（相位对角化）</div><div class="row"><span>搜索</span><span>粗相位网格 f01</span></div><div class="row"><span>验证</span><span>401点+HO 对拍</span></div><span class="anch">B23 LC 极限</span></div>
+      <div class="eng" style="--c:var(--pur)"><div class="id">TunableCoupler</div><div class="t">可调耦合器 · 目标 |g_eff| (GHz)</div><div class="row"><span>搜索</span><span>二阶微扰 g_eff</span></div><div class="row"><span>验证</span><span>三模 Fock 对角化</span></div><span class="anch">B24</span></div>
+      <div class="eng" style="--c:var(--pur)"><div class="id">TunableTransmon</div><div class="t">可调 transmon · 目标 f01（SQUID 调谐）</div><div class="row"><span>搜索</span><span>√(8Ec·EJ(Φ))−Ec</span></div><div class="row"><span>验证</span><span>koch 复核</span></div><span class="anch">B25</span></div>
+      <div class="eng" style="--c:var(--pur)"><div class="id">ReadoutPair</div><div class="t">比特-读出配对 · 目标色散位移 χ</div><div class="row"><span>搜索</span><span>g²α/(Δ(Δ+α))</span></div><div class="row"><span>验证</span><span>多能级严格对角化</span></div><span class="anch">B26</span></div>
+      <div class="eng" style="--c:var(--pur)"><div class="id">CzGate</div><div class="t">色散 CZ 门 · 目标门时间 t_CZ (ns)</div><div class="row"><span>搜索</span><span>π/(2|χ|)</span></div><div class="row"><span>验证</span><span>对角化 χ 复核</span></div><span class="anch">B27</span></div>
+    </div>
+  </div>
+
+  <!-- 系统级域引擎族 -->
+  <div class="sec">
+    <div class="sec-h" style="--c:var(--cy)">系统级域引擎族 <small>4 大模块 · 组合创新零新物理 · 公开标准几何算术</small></div>
+    <div class="fam-grid">
+      <div class="fam" style="--c:var(--cy)">
+        <h3>CPO 硅光 I/O 共封装</h3>
+        <div class="code">lda_design.cpo_engines.cpo_optical_io_metrics</div>
+        <ul>
+          <li><b>每通道插入损耗</b> = GP-* 已锚定基元 dB 级联（S1 同构）</li>
+          <li><b>海岸线带宽密度</b> = lane_rate / pitch（纯几何算术）</li>
+          <li><b>链路功率余量</b> = P_tx − IL − 探测器灵敏度（S1 同式）</li>
+          <li>🔴 护栏① D-67 能量守恒下界（分束≤3.0103dB/级）</li>
+          <li>🔴 护栏② P-CPO 间距几何下界（ITU-T G.652 125/10.3µm）</li>
+          <li>⚠ 不判决能效 pJ/bit（电域，无锚）；EIC 黑箱</li>
+        </ul>
+      </div>
+      <div class="fam" style="--c:var(--red2)">
+        <h3>QKD 安全密钥率</h3>
+        <div class="code">lda_design.qkd_engines.decoy_bb84_skr</div>
+        <ul>
+          <li><b>安全密钥率 R</b> = q·[Q₁(1−H₂(e₁)) − Q_μ·f·H₂(E_μ)]</li>
+          <li>Lo–Ma–Chen 2005 decoy-BB84 渐近下界（信息论类锚）</li>
+          <li><b>最大安全距离</b> = R(L)=0 的二分上界（km）</li>
+          <li>🔴 Q-D67 护栏① 密钥率≤单光子贡献上界</li>
+          <li>🔴 Q-D67 护栏② 等效探测效率 η≤1</li>
+          <li>对标公开 datasheet / 论文量级（等效验证，非本团队流片）</li>
+        </ul>
+      </div>
+      <div class="fam" style="--c:var(--grn2)">
+        <h3>损耗/效率引擎基元</h3>
+        <div class="code">lda_design.loss_engines.ENGINE_FUNCS (5)</div>
+        <ul>
+          <li><b>engine_ybranch_split</b> 分束损耗 3.0103+c1·θ²</li>
+          <li><b>engine_grating_eff</b> 耦合效率 0.5·sin²(π·ff)·exp</li>
+          <li><b>engine_crossing</b> 插入损耗 + 串扰（taper 参数化）</li>
+          <li><b>engine_mmi_el</b> MMI 过量损耗（长度失配模型）</li>
+          <li><b>engine_sin_pl</b> SiN 传播损耗（Payne-Lacey 粗糙度）</li>
+          <li>全部独立物理表达式，对照=近似 vs 真实测量</li>
+        </ul>
+      </div>
+      <div class="fam" style="--c:var(--amb)">
+        <h3>有源器件模型</h3>
+        <div class="code">lda_design.active_models (3)</div>
+        <ul>
+          <li><b>phase_efficiency_deg_per_mW</b> 热光相移效率</li>
+          <li><b>power_for_pi</b> 半波功率 P_π</li>
+          <li><b>vpi_electrooptic</b> 电光 V_π（Pockels）</li>
+          <li>供 PhaseShifter / MziModulator 黑箱消费</li>
+          <li>不物理级建模仿真（有源负面清单）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>闭环机制：</b> 每个引擎两阶段——① <b>搜索</b>用物理定律 ORACLE（slab 闭式 / TMM / Koch / FSR）在参数网格上瞬时逼近目标；② <b>验证</b>仅对 top-K 候选跑真实求解器（FDTD/TMM/对角化）双重验证，返回的"最优设计"是被求解器验证过的。<br>
+    <b>红线：</b> LLM 不进判决路径，passed 由死标量比对决定；loss 类引擎首次把<b>实证语料</b>（E1–E7）引入引擎级判决（D-66/D-67 同量纲纪律）。
+  </div>
+
+  <a class="back" href="LDA_架构图合集.html">← 返回架构图合集</a>
+</div>
+</body>
+</html>

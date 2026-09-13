@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LDA 系统整体架构图</title>
+<style>
+  html,body{margin:0;background:#0b1020;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;}
+  .page{max-width:1100px;margin:0 auto;padding:28px 20px 60px;}
+  h1{color:#38bdf8;font-size:22px;margin:0 0 4px;font-weight:600;}
+  .sub{color:#8aa0c6;font-size:13px;margin-bottom:18px;}
+  svg{width:100%;height:auto;display:block;}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>LDA 系统整体架构图</h1>
+  <div class="sub">光 PDA + 量 QEDA 双栈 · 开源 Agent-native EDA · 物理定律锚红线 · LLM 不进判决路径</div>
+
+  <svg viewBox="0 0 1040 980" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif">
+    <defs>
+      <marker id="arw" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+        <path d="M0,0 L10,5 L0,10 Z" fill="#3b4a6b"/>
+      </marker>
+    </defs>
+
+    <!-- ===== 连接线 ===== -->
+    <g stroke="#3b4a6b" stroke-width="2" fill="none">
+      <line x1="520" y1="98" x2="520" y2="114" marker-end="url(#arw)"/>
+      <line x1="520" y1="178" x2="520" y2="194" marker-end="url(#arw)"/>
+      <line x1="520" y1="246" x2="520" y2="262" marker-end="url(#arw)"/>
+      <line x1="270" y1="382" x2="270" y2="398" marker-end="url(#arw)"/>
+      <line x1="770" y1="382" x2="770" y2="398" marker-end="url(#arw)"/>
+      <line x1="520" y1="558" x2="520" y2="574" marker-end="url(#arw)"/>
+      <line x1="520" y1="634" x2="520" y2="650" marker-end="url(#arw)"/>
+      <line x1="520" y1="728" x2="520" y2="744" marker-end="url(#arw)"/>
+      <line x1="270" y1="838" x2="270" y2="854" marker-end="url(#arw)"/>
+      <line x1="770" y1="838" x2="770" y2="854" marker-end="url(#arw)"/>
+    </g>
+
+    <!-- ===== L0 用户/商业层 (全宽) ===== -->
+    <g transform="translate(40,36)">
+      <rect x="0" y="0" width="960" height="62" rx="12" fill="#16213e" stroke="#26304d"/>
+      <text x="20" y="26" fill="#e6edf7" font-size="15" font-weight="600">用户 · 社区 · 商业闭环</text>
+      <text x="20" y="48" fill="#8aa0c6" font-size="12">人操作壳 / 多智能体编排(MCP)　·　创新超市 (会员 / 订单 / 货架 75)　·　管理后台 / 数据看板</text>
+    </g>
+
+    <!-- ===== L1 WebUI 访问层 (全宽) ===== -->
+    <g transform="translate(40,116)">
+      <rect x="0" y="0" width="960" height="62" rx="12" fill="#141b2e" stroke="#26304d"/>
+      <text x="20" y="26" fill="#38bdf8" font-size="15" font-weight="600">WebUI 访问层 · lda_webui</text>
+      <text x="20" y="48" fill="#8aa0c6" font-size="12">app.py / api_v1 / routes　|　index · insights · public · store · mine · admin · stats (nav.js 统一导航)　|　deploy.py → 115.191.20.92:3006 (systemd)</text>
+    </g>
+
+    <!-- ===== L2 L1 协议层 (咽喉, 全宽, 强调) ===== -->
+    <g transform="translate(40,196)">
+      <rect x="0" y="0" width="960" height="50" rx="12" fill="#0c1d3a" stroke="#1e40af"/>
+      <text x="20" y="22" fill="#93c5fd" font-size="14" font-weight="600">L1 · agent 协议层（咽喉）· lda_l1</text>
+      <text x="20" y="41" fill="#60a5fa" font-size="11.5">protocol: AgentRequest/Response 信封 + KernelGateway + MCP 风格工具声明　|　确定性 · 批处理 · 可验证 · 无交互原语</text>
+    </g>
+
+    <!-- ===== L3 双栏: L0 IR / L2 PDK ===== -->
+    <!-- 左 L0 IR -->
+    <g transform="translate(40,264)">
+      <rect x="0" y="0" width="460" height="118" rx="12" fill="#141b2e" stroke="#26304d"/>
+      <text x="18" y="26" fill="#38bdf8" font-size="14" font-weight="600">L0 · 统一 IR / DSL · lda_ir</text>
+      <text x="18" y="48" fill="#c5cfe3" font-size="11.5">core / photon / quantum / dsl / validate / bridge</text>
+      <text x="18" y="70" fill="#8aa0c6" font-size="11.5">机器优先 · JSON 可序列化 · 携目标谱形 + 多晶圆厂意图</text>
+      <text x="18" y="92" fill="#8aa0c6" font-size="11.5">光子 + 量子共用一套 core/校验/桥接 —</text>
+      <text x="18" y="110" fill="#8aa0c6" font-size="11.5">"统一光子+量子"差异化底座</text>
+    </g>
+    <!-- 右 L2 PDK Registry -->
+    <g transform="translate(540,264)">
+      <rect x="0" y="0" width="460" height="118" rx="12" fill="#141b2e" stroke="#26304d"/>
+      <text x="18" y="26" fill="#38bdf8" font-size="14" font-weight="600">L2 · 开放 PDK / 器件本体 Registry · lda_l2</text>
+      <text x="18" y="48" fill="#c5cfe3" font-size="11.5">registry / sovereign_deps(A·B·C) / submit</text>
+      <text x="18" y="68" fill="#c5cfe3" font-size="11.5">review / publish / empirical(实证语料)</text>
+      <text x="18" y="90" fill="#8aa0c6" font-size="11.5">生态共建：社区提交 → 评审 → 落地 → 发布</text>
+      <text x="18" y="110" fill="#8aa0c6" font-size="11.5">主权扫描纪律 · B级 fork 到 Gitee/GitCode</text>
+    </g>
+
+    <!-- ===== L4 领域能力层 (6块 2x3) ===== -->
+    <g transform="translate(40,400)">
+      <rect x="0" y="0" width="960" height="158" rx="12" fill="#10182b" stroke="#26304d"/>
+      <text x="18" y="26" fill="#e6edf7" font-size="14" font-weight="600">领域能力层 · Domain Capabilities</text>
+      <!-- 块 1 -->
+      <g transform="translate(18,38)">
+        <rect x="0" y="0" width="300" height="52" rx="9" fill="#1b2440" stroke="#26304d"/>
+        <text x="12" y="20" fill="#a5b4fc" font-size="12.5" font-weight="600">lda_design</text>
+        <text x="12" y="40" fill="#8aa0c6" font-size="10.5">逆设计 / CPO / QKD / 有源 (design_engine·cpo·loss·qkd·active)</text>
+      </g>
+      <!-- 块 2 -->
+      <g transform="translate(328,38)">
+        <rect x="0" y="0" width="300" height="52" rx="9" fill="#1b2440" stroke="#26304d"/>
+        <text x="12" y="20" fill="#a5b4fc" font-size="12.5" font-weight="600">lda_chain</text>
+        <text x="12" y="40" fill="#8aa0c6" font-size="10.5">通用链路框架 LinkModel + engine + photon_link</text>
+      </g>
+      <!-- 块 3 -->
+      <g transform="translate(638,38)">
+        <rect x="0" y="0" width="300" height="52" rx="9" fill="#1b2440" stroke="#26304d"/>
+        <text x="12" y="20" fill="#a5b4fc" font-size="12.5" font-weight="600">lda_layout</text>
+        <text x="12" y="40" fill="#8aa0c6" font-size="10.5">布线 router / router_p1 + 放置 placement</text>
+      </g>
+      <!-- 块 4 -->
+      <g transform="translate(18,100)">
+        <rect x="0" y="0" width="300" height="52" rx="9" fill="#1b2440" stroke="#26304d"/>
+        <text x="12" y="20" fill="#a5b4fc" font-size="12.5" font-weight="600">lda_qeda</text>
+        <text x="12" y="40" fill="#8aa0c6" font-size="10.5">量子 gates / surface_code / cross_resonance</text>
+      </g>
+      <!-- 块 5 -->
+      <g transform="translate(328,100)">
+        <rect x="0" y="0" width="300" height="52" rx="9" fill="#1b2440" stroke="#26304d"/>
+        <text x="12" y="20" fill="#a5b4fc" font-size="12.5" font-weight="600">lda_solver</text>
+        <text x="12" y="40" fill="#8aa0c6" font-size="10.5">求解包装层（对接 L3 / 外部 ORACLE）</text>
+      </g>
+      <!-- 块 6 -->
+      <g transform="translate(638,100)">
+        <rect x="0" y="0" width="300" height="52" rx="9" fill="#1b2440" stroke="#26304d"/>
+        <text x="12" y="20" fill="#a5b4fc" font-size="12.5" font-weight="600">lda_agent</text>
+        <text x="12" y="40" fill="#8aa0c6" font-size="10.5">agent 与内核之间的机器优先操作接口</text>
+      </g>
+    </g>
+
+    <!-- ===== L5 L3 自研求解核 (全宽) ===== -->
+    <g transform="translate(40,576)">
+      <rect x="0" y="0" width="960" height="58" rx="12" fill="#141b2e" stroke="#26304d"/>
+      <text x="20" y="24" fill="#38bdf8" font-size="14" font-weight="600">L3 · 自研求解核 · lda_l3（C 级第一天自主）</text>
+      <text x="20" y="46" fill="#8aa0c6" font-size="11.5">fdtd1d (Yee + 海绵吸收)　·　tmm (传输矩阵)　·　drift_diffusion_1d (泊松-玻尔兹曼)　|　零依赖 numpy · 机器优先接口 · 不 import 任何 GPL/商业求解器</text>
+    </g>
+
+    <!-- ===== L6 验证 harness (横贯, 绿边强调) ===== -->
+    <g transform="translate(40,652)">
+      <rect x="0" y="0" width="960" height="76" rx="12" fill="#0f2417" stroke="#166534"/>
+      <text x="20" y="26" fill="#4ade80" font-size="14" font-weight="600">验证锚 harness · lda_harness — 质量门 / 非 AI ground</text>
+      <text x="20" y="48" fill="#86efac" font-size="11.5">B1–B11 物理定律锚 + 场级 ORACLE (Meep / Tidy3D 外部)　·　E 题实证锚 (第二道非 AI ground)</text>
+      <text x="20" y="68" fill="#86efac" font-size="11.5">候选 vs 黄金 + 容差判定　|　CI 护栏 (计数 / 确定性 / 线程环境)　|　VMM 成熟度　|　主权扫描</text>
+    </g>
+
+    <!-- ===== L7 双栏: 出带包 / 外部 ORACLE ===== -->
+    <!-- 左 出带包 -->
+    <g transform="translate(40,746)">
+      <rect x="0" y="0" width="460" height="92" rx="12" fill="#141b2e" stroke="#26304d"/>
+      <text x="18" y="26" fill="#38bdf8" font-size="14" font-weight="600">出带包 · tapeout_pipeline</text>
+      <text x="18" y="50" fill="#c5cfe3" font-size="11.5">S1–S5 全链路 + 几何 DRC</text>
+      <text x="18" y="72" fill="#8aa0c6" font-size="11.5">WebUI 签核面板已接　·　层次化 GDS / LVS / 寄生</text>
+    </g>
+    <!-- 右 外部 ORACLE 隔离 -->
+    <g transform="translate(540,746)">
+      <rect x="0" y="0" width="460" height="92" rx="12" fill="#2a0f0f" stroke="#7f1d1d"/>
+      <text x="18" y="26" fill="#fca5a5" font-size="14" font-weight="600">外部 ORACLE · ext_oracle（严格隔离）</text>
+      <text x="18" y="50" fill="#fca5a5" font-size="11.5">Meep (GPLv2+ 子进程, 只回标量)</text>
+      <text x="18" y="72" fill="#f87171" font-size="11.5">Tidy3D (key 门控, 3D 光栅)　·　GPL 绝不进核心</text>
+    </g>
+
+    <!-- ===== L8 红线纪律条 (全宽, 红边) ===== -->
+    <g transform="translate(40,856)">
+      <rect x="0" y="0" width="960" height="72" rx="12" fill="#1a0e10" stroke="#7f1d1d"/>
+      <text x="20" y="24" fill="#f87171" font-size="13.5" font-weight="600">贯穿全栈的红线 · 护城河 = 标准 + 生态 + PDK</text>
+      <text x="20" y="44" fill="#fca5a5" font-size="11">① 物理定律锚：LLM 不进判决路径，PASS / FAIL 由死标量定</text>
+      <text x="20" y="62" fill="#fca5a5" font-size="11">② 主权：A 级永不借 · B 级借今踢后 · C 级自主　③ VMM 成熟度：自证桩合法第一阶段，每锚带 tier + provenance + upgrade_path</text>
+    </g>
+
+    <!-- 图例 -->
+    <g transform="translate(40,944)" font-size="10.5">
+      <rect x="0" y="-10" width="12" height="12" rx="3" fill="#0c1d3a" stroke="#1e40af"/>
+      <text x="18" y="0" fill="#8aa0c6">协议/IR/求解层</text>
+      <rect x="150" y="-10" width="12" height="12" rx="3" fill="#0f2417" stroke="#166534"/>
+      <text x="168" y="0" fill="#8aa0c6">验证/已实现</text>
+      <rect x="290" y="-10" width="12" height="12" rx="3" fill="#2a0f0f" stroke="#7f1d1d"/>
+      <text x="308" y="0" fill="#8aa0c6">锁死/隔离/外部</text>
+      <rect x="450" y="-10" width="12" height="12" rx="3" fill="#1b2440" stroke="#26304d"/>
+      <text x="468" y="0" fill="#8aa0c6">领域能力</text>
+      <text x="600" y="0" fill="#5f6e8c">LDA v0.9.75 · 22 引擎 + 11 包 · 55 锚 · 48 GC-* 全 PASS</text>
+    </g>
+  </svg>
+</div>
+</body>
+</html>

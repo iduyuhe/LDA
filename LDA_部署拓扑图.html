@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>LDA · 部署拓扑图（本地 → 三端 → 生产）</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --line:#30363d; --txt:#e6edf3; --muted:#8b949e;
+    --blue:#388bfd; --green:#3fb950; --red:#f85149; --gold:#d29922; --purple:#bc8cff;
+  }
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:"Segoe UI","Microsoft YaHei",sans-serif;}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 48px;}
+  h1{font-size:22px;margin:0 0 4px;font-weight:600;}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:22px;}
+  svg{width:100%;height:auto;display:block;}
+  .node{fill:var(--panel);stroke:var(--line);stroke-width:1.5;}
+  .node.blue{stroke:var(--blue);}
+  .node.green{stroke:var(--green);}
+  .node.red{stroke:var(--red);}
+  .node.gold{stroke:var(--gold);}
+  .node.purple{stroke:var(--purple);}
+  .ntitle{fill:var(--txt);font-size:14px;font-weight:600;}
+  .ntext{fill:var(--muted);font-size:11px;}
+  .ntext.b{fill:var(--txt);font-size:11px;}
+  .arrow{stroke:var(--muted);stroke-width:2;fill:none;marker-end:url(#ah);}
+  .arrow.hot{stroke:var(--red);}
+  .lab{fill:var(--muted);font-size:11px;}
+  .lab.hot{fill:var(--red);}
+  .legend{margin-top:18px;font-size:12px;color:var(--muted);}
+  .legend b{color:var(--txt);}
+  .chip{display:inline-block;width:11px;height:11px;border-radius:2px;margin:0 5px -1px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LDA · 生产部署拓扑图</h1>
+  <div class="sub">本地开发 → 三端同步 → CI 护栏 → 生产服务（root@115.191.20.92）。凭据全程不落仓库、不写记忆明文。</div>
+  <svg viewBox="0 0 1140 560" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="ah" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#8b949e"/>
+      </marker>
+      <marker id="ahr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#f85149"/>
+      </marker>
+    </defs>
+
+    <!-- ===== 列 1：本地开发 ===== -->
+    <rect class="node blue" x="20" y="40" width="250" height="470" rx="10"/>
+    <text class="ntitle" x="40" y="68">① 本地开发</text>
+    <text class="ntext b" x="40" y="92">D:/agent_LDA · Windows</text>
+    <line x1="40" y1="104" x2="250" y2="104" stroke="#30363d"/>
+    <text class="ntext" x="40" y="128">· git commit（沙箱禁用，须</text>
+    <text class="ntext" x="40" y="144">  dangerouslyDisableSandbox）</text>
+    <text class="ntext" x="40" y="172">· py_compile 自检（避开 .html）</text>
+    <text class="ntext" x="40" y="200">· 改动落盘必引 deterministic</text>
+    <text class="ntext" x="40" y="216">  （9 位有效数字 / UTF-8-LF）</text>
+    <text class="ntext" x="40" y="244">· 本地收尾：跑全量 core smoke</text>
+    <text class="ntext" x="40" y="260">  （169 条 · CORE_SMOKES）</text>
+    <text class="ntext" x="40" y="288">· remote_deploy 脚本在 skills 目录</text>
+    <text class="ntext" x="40" y="304">  （不在仓库 scripts/）</text>
+    <rect class="node" x="40" y="330" width="210" height="60" rx="6"/>
+    <text class="ntext b" x="54" y="352">scripts/sync_push.py</text>
+    <text class="ntext" x="54" y="370">三端同步推送入口</text>
+    <text class="ntext" x="40" y="420">红线：git 沙箱不真实写 index</text>
+    <text class="ntext hot" x="40" y="436">→ 提交/推送必非沙箱复核</text>
+
+    <!-- ===== 列 2：三端同步 ===== -->
+    <rect class="node gold" x="300" y="40" width="250" height="470" rx="10"/>
+    <text class="ntitle" x="320" y="68">② 三端同步</text>
+    <text class="ntext b" x="320" y="92">scripts/sync_push.py</text>
+    <line x1="320" y1="104" x2="530" y2="104" stroke="#30363d"/>
+    <text class="ntext" x="320" y="128">读 Windows 凭据管理器 PAT：</text>
+    <text class="ntext b" x="320" y="146">· git:https://gitee.com (i4hub)</text>
+    <text class="ntext b" x="320" y="162">· git:https://github.com (iduyuhe)</text>
+    <text class="ntext" x="320" y="190">推送（环境变量层清代理）：</text>
+    <rect class="node" x="320" y="200" width="210" height="46" rx="6"/>
+    <text class="ntext b" x="334" y="222">gitee  i4hub/LDA</text>
+    <text class="ntext" x="334" y="238">main 分支 · 直推</text>
+    <rect class="node" x="320" y="256" width="210" height="46" rx="6"/>
+    <text class="ntext b" x="334" y="278">github iduyuhe/LDA</text>
+    <text class="ntext" x="334" y="294">直连优先 → socks5h:7890 兜底</text>
+    <text class="ntext" x="320" y="330">收尾：删除临时 cred store</text>
+    <text class="ntext hot" x="320" y="346">（[CLEAN] store 已删除）</text>
+    <text class="ntext" x="320" y="378">SSH 密码固化 GENERIC 凭据</text>
+    <text class="ntext" x="320" y="394">target=115.191.20.92</text>
+    <text class="ntext hot" x="320" y="424">🔴 令牌不落仓库 / 不写明文</text>
+    <text class="ntext hot" x="320" y="440">🔴 代理没开时借生产机 SOCKS5 中继</text>
+
+    <!-- ===== 列 3：CI 护栏 ===== -->
+    <rect class="node purple" x="580" y="40" width="250" height="470" rx="10"/>
+    <text class="ntitle" x="600" y="68">③ CI 护栏</text>
+    <text class="ntext b" x="600" y="92">确定性 + 计数护栏</text>
+    <line x1="600" y1="104" x2="810" y2="104" stroke="#30363d"/>
+    <text class="ntext" x="600" y="128">· 全量 core smoke 收口</text>
+    <text class="ntext b" x="600" y="144">  169 条（W5/W6/T2/护栏各+1）</text>
+    <text class="ntext" x="600" y="172">· 受跟踪报告确定性生成</text>
+    <text class="ntext" x="600" y="188">  deterministic.py · 浮点 9 位</text>
+    <text class="ntext" x="600" y="214">· 线程环境确定性</text>
+    <text class="ntext" x="600" y="230">  OMP_DYNAMIC=FALSE 等</text>
+    <text class="ntext" x="600" y="256">· 计数护栏=会增长集合</text>
+    <text class="ntext" x="600" y="272">  总数类断言改动态推导</text>
+    <text class="ntext" x="600" y="300">· 反向可证伪 + 线程环境</text>
+    <text class="ntext" x="600" y="316">  双反向测试（17 判据）</text>
+    <rect class="node" x="600" y="340" width="210" height="46" rx="6"/>
+    <text class="ntext b" x="614" y="362">run_report_determinism_smoke</text>
+    <text class="ntext" x="614" y="378">覆盖 31 个报告写入者</text>
+    <text class="ntext hot" x="600" y="424">🔴 蓝屏=满载断电，勿连续对拍</text>
+    <text class="ntext hot" x="600" y="440">🔴 降线程(4)·单实例·分批冷却</text>
+
+    <!-- ===== 列 4：生产服务 ===== -->
+    <rect class="node green" x="860" y="40" width="260" height="470" rx="10"/>
+    <text class="ntitle" x="880" y="68">④ 生产服务</text>
+    <text class="ntext b" x="880" y="92">root@115.191.20.92</text>
+    <line x1="880" y1="104" x2="1100" y2="104" stroke="#30363d"/>
+    <text class="ntext" x="880" y="128">remote_deploy.py（paramiko）</text>
+    <text class="ntext" x="880" y="146">SSH → cd /opt/lda</text>
+    <text class="ntext" x="880" y="162">git checkout -- . &amp;&amp; git pull</text>
+    <rect class="node" x="880" y="176" width="220" height="46" rx="6"/>
+    <text class="ntext b" x="894" y="198">/opt/lda_env/bin/python</text>
+    <text class="ntext" x="894" y="214">pip install --force-reinstall</text>
+    <text class="ntext" x="880" y="244">systemctl restart lda-webui</text>
+    <text class="ntext" x="880" y="260">（systemd drop-in 注入 env）</text>
+    <text class="ntext b" x="880" y="290">· 内网 127.0.0.1:3006</text>
+    <text class="ntext b" x="880" y="306">  GET /api/health</text>
+    <text class="ntext b" x="880" y="334">· nginx → lda.weomnitech</text>
+    <text class="ntext" x="880" y="350">  .com.cn:443 外网</text>
+    <text class="ntext" x="880" y="378">自检：/api/health 版本串</text>
+    <text class="ntext" x="880" y="394">+ /api/shelf 计数</text>
+    <text class="ntext hot" x="880" y="424">🔴 服务读源码运行，须重装</text>
+    <text class="ntext hot" x="880" y="440">  元数据否则 version 停旧版</text>
+
+    <!-- ===== 箭头 ===== -->
+    <path class="arrow" d="M270,275 L298,275"/>
+    <path class="arrow" d="M550,275 L578,275"/>
+    <path class="arrow" d="M830,275 L858,275"/>
+  </svg>
+
+  <div class="legend">
+    <span class="chip" style="background:#388bfd"></span><b>本地/入口</b>
+    &nbsp;&nbsp;<span class="chip" style="background:#d29922"></span><b>三端同步</b>
+    &nbsp;&nbsp;<span class="chip" style="background:#bc8cff"></span><b>CI 护栏</b>
+    &nbsp;&nbsp;<span class="chip" style="background:#3fb950"></span><b>生产服务</b>
+    &nbsp;&nbsp;<span class="chip" style="background:#f85149"></span><b>红线 / 凭据纪律</b>
+    <br/><br/>
+    关键事实：生产 <b>读源码运行</b>（WorkingDirectory=/opt/lda），故 git pull + systemctl restart 即生效；但因 LDA_VERSION 取自 importlib.metadata，须重装包元数据版本串才更新（失败无害）。SSH 密码 / PAT 固化于 Windows 凭据管理器，绝不落仓库、绝不写记忆明文。
+  </div>
+</div>
+</body>
+</html>

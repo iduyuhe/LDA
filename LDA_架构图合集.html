@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDA 架构图合集 · 导航首页</title>
+<style>
+  :root{
+    --bg:#0c1018; --bg2:#121826; --card:#161e2e; --card2:#1b2536;
+    --bd:#243049; --txt:#e6edf7; --dim:#8aa0bd; --dim2:#5f7390;
+    --blue:#3b82f6; --blue2:#60a5fa; --grn:#22c55e; --grn2:#4ade80;
+    --red:#ef4444; --red2:#f87171; --amb:#f59e0b; --pur:#a78bfa; --cy:#22d3ee;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:linear-gradient(180deg,#0a0e16,#0c1018 60%);color:var(--txt);
+    font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.55;
+    padding:30px 26px 60px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto}
+  header{text-align:center;margin-bottom:8px}
+  h1{font-size:30px;font-weight:800;letter-spacing:.5px;
+    background:linear-gradient(90deg,#60a5fa,#a78bfa,#4ade80);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{color:var(--dim);font-size:14px;margin-top:6px}
+  .ph{display:inline-block;margin-top:14px;padding:5px 14px;border:1px solid var(--bd);
+    border-radius:20px;font-size:12px;color:var(--dim2);background:var(--bg2)}
+  .grp{margin-top:30px}
+  .grp-h{font-size:15px;font-weight:700;color:var(--blue2);margin-bottom:14px;
+    padding-left:12px;border-left:3px solid var(--blue);letter-spacing:.5px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:16px}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;
+    padding:18px;cursor:pointer;transition:.18s;position:relative;overflow:hidden}
+  .card:hover{border-color:var(--blue);transform:translateY(-3px);
+    box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .card .gly{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;
+    justify-content:center;font-size:20px;font-weight:800;margin-bottom:12px}
+  .card h3{font-size:16px;font-weight:700;margin-bottom:6px}
+  .card p{font-size:12.5px;color:var(--dim);line-height:1.5}
+  .card .meta{margin-top:12px;font-size:11px;color:var(--dim2);
+    display:flex;gap:8px;flex-wrap:wrap}
+  .tag{padding:2px 8px;border-radius:6px;background:var(--bg2);border:1px solid var(--bd)}
+  .modal{position:fixed;inset:0;background:rgba(5,8,14,.92);display:none;
+    align-items:center;justify-content:center;z-index:50;padding:24px}
+  .modal.on{display:flex}
+  .mbox{width:100%;max-width:1280px;height:88vh;background:var(--bg);
+    border:1px solid var(--bd);border-radius:14px;display:flex;flex-direction:column;overflow:hidden}
+  .mbar{display:flex;align-items:center;justify-content:space-between;
+    padding:12px 18px;border-bottom:1px solid var(--bd);background:var(--bg2)}
+  .mbar h2{font-size:16px;font-weight:700}
+  .mbar .acts{display:flex;gap:10px;align-items:center}
+  .mbar a{color:var(--blue2);font-size:13px;text-decoration:none;padding:5px 12px;
+    border:1px solid var(--bd);border-radius:8px}
+  .mbar a:hover{background:var(--card2)}
+  .close{background:none;border:1px solid var(--bd);color:var(--dim);font-size:20px;
+    width:34px;height:34px;border-radius:8px;cursor:pointer;line-height:1}
+  .close:hover{color:var(--txt);border-color:var(--red)}
+  iframe{flex:1;width:100%;border:0;background:#fff}
+  footer{margin-top:40px;text-align:center;color:var(--dim2);font-size:12px}
+  .legend{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--dim)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:10px;height:10px;border-radius:50%}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>LDA 架构图合集</h1>
+    <div class="sub">开源 Agent 原生光子/量子芯片设计软件 · 9 张视角互补的架构图</div>
+    <div class="ph">点击任意卡片查看大图 · 全部基于代码实际结构绘制</div>
+  </header>
+
+  <div class="grp">
+    <div class="grp-h">内核与工程</div>
+    <div class="grid">
+      <div class="card" data-file="LDA_系统架构图.html">
+        <div class="gly" style="background:rgba(59,130,246,.15);color:var(--blue2)">⌬</div>
+        <h3>系统分层架构</h3>
+        <p>自顶向下全分层：用户壳 / WebUI / L1 咽喉 / L0 IR / L2 PDK / 领域能力 / L3 求解核 / 验证 harness / 出带包，红线贯穿。</p>
+        <div class="meta"><span class="tag">17 子包</span><span class="tag">分层</span></div>
+      </div>
+      <div class="card" data-file="LDA_部署拓扑图.html">
+        <div class="gly" style="background:rgba(34,211,238,.15);color:var(--cy)">⇉</div>
+        <h3>部署拓扑</h3>
+        <p>本地开发 → 三端同步 → CI 护栏 → 生产 115.191.20.92 的四段发布流水线，含令牌/明文红线纪律。</p>
+        <div class="meta"><span class="tag">4 段</span><span class="tag">CI 173</span></div>
+      </div>
+      <div class="card" data-file="LDA_55锚分布图.html">
+        <div class="gly" style="background:rgba(34,197,94,.15);color:var(--grn2)">✦</div>
+        <h3>55 锚分布</h3>
+        <p>验证资产按领域（光子20/量子13/系统13/实证10）与成熟度 VMM（严格31/降级1/自证桩23）双视角。</p>
+        <div class="meta"><span class="tag">56 锚</span><span class="tag">VMM</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grp">
+    <div class="grp-h">应用与能力</div>
+    <div class="grid">
+      <div class="card" data-file="LDA_应用架构图.html">
+        <div class="gly" style="background:rgba(167,139,250,.15);color:var(--pur)">▦</div>
+        <h3>应用架构</h3>
+        <p>用户怎么用：7 页面 + API 层 + 六大应用模块（智能体客服/创新超市/生态共建/插件缝/红队/邮件）+ 编排层。</p>
+        <div class="meta"><span class="tag">7 页面</span><span class="tag">6 模块</span></div>
+      </div>
+      <div class="card" data-file="LDA_能力图谱.html">
+        <div class="gly" style="background:rgba(245,158,11,.15);color:var(--amb)">◈</div>
+        <h3>能力图谱</h3>
+        <p>系统能做什么：能力分层塔（GP 基元→求解核→设计引擎→验证锚→货架）+ 75 货架领域聚类 + 成熟度红线。</p>
+        <div class="meta"><span class="tag">75 货架</span><span class="tag">6 域</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grp">
+    <div class="grp-h">战略与价值链</div>
+    <div class="grid">
+      <div class="card" data-file="LDA_战略愿景与成熟度路线图.html">
+        <div class="gly" style="background:rgba(239,68,68,.15);color:var(--red2)">✦</div>
+        <h3>战略愿景与成熟度路线图</h3>
+        <p>为什么做/做到什么程度/往哪走：愿景+护城河+三不做、VMM 56 锚甜甜圈、T0–T4 五期路线 + 资金对齐。</p>
+        <div class="meta"><span class="tag">T0–T4</span><span class="tag">资金</span></div>
+      </div>
+      <div class="card" data-file="LDA_能力状态一盘棋.html">
+        <div class="gly" style="background:rgba(34,197,94,.15);color:var(--grn2)">◉</div>
+        <h3>能力状态一盘棋</h3>
+        <p>全过程价值链（8 阶段 0–8）与能力状态：绿=已实现/蓝=可做/红=锁死/灰=不承接，含责任边界声明与真实账本矩阵。</p>
+        <div class="meta"><span class="tag">9 节点</span><span class="tag">责任边界</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grp">
+    <div class="grp-h">二级展开（能力内核深挖）</div>
+    <div class="grid">
+      <div class="card" data-file="LDA_设计引擎家族.html">
+        <div class="gly" style="background:rgba(34,197,94,.15);color:var(--grn2)">⚙</div>
+        <h3>22+ 设计引擎家族</h3>
+        <p>design_engine.py 的 22 类器件引擎 + CPO/QKD/损耗基元/有源模型 4 大系统级域引擎族，每类标职责与依赖锚。</p>
+        <div class="meta"><span class="tag">22 核心</span><span class="tag">4 域族</span></div>
+      </div>
+      <div class="card" data-file="LDA_QEDA量子栈.html">
+        <div class="gly" style="background:rgba(167,139,250,.15);color:var(--pur)">⊛</div>
+        <h3>量子栈 QEDA 二级图</h3>
+        <p>量子域两级栈：器件 QEDA（8 引擎：比特/读出/耦合/门时间）+ 量子信息 QEDA（门库/CR/surface code/保真度框架）。</p>
+        <div class="meta"><span class="tag">8 器件</span><span class="tag">容错码</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot" style="background:var(--blue)"></i>协议/IR/求解层</span>
+    <span><i class="dot" style="background:var(--grn)"></i>验证/已实现</span>
+    <span><i class="dot" style="background:var(--red)"></i>锁死/隔离/外部</span>
+    <span><i class="dot" style="background:var(--pur)"></i>领域能力</span>
+    <span><i class="dot" style="background:var(--amb)"></i>成熟度/路线</span>
+  </div>
+
+  <footer>LDA 架构图合集 · 9 图均位于 D:\agent_LDA\ · dark 主题可直接浏览器打开</footer>
+</div>
+
+<div class="modal" id="modal">
+  <div class="mbox">
+    <div class="mbar">
+      <h2 id="mTitle">预览</h2>
+      <div class="acts">
+        <a id="mOpen" href="#" target="_blank">新标签打开 ↗</a>
+        <button class="close" id="mClose">×</button>
+      </div>
+    </div>
+    <iframe id="mFrame" src="about:blank" title="diagram preview"></iframe>
+  </div>
+</div>
+
+<script>
+  var modal=document.getElementById('modal'),
+      frame=document.getElementById('mFrame'),
+      title=document.getElementById('mTitle'),
+      open=document.getElementById('mOpen');
+  document.querySelectorAll('.card').forEach(function(c){
+    c.addEventListener('click',function(){
+      var f=c.getAttribute('data-file');
+      title.textContent=c.querySelector('h3').textContent;
+      frame.src=f;
+      open.href=f;
+      modal.classList.add('on');
+    });
+  });
+  function close(){modal.classList.remove('on');frame.src='about:blank';}
+  document.getElementById('mClose').addEventListener('click',close);
+  modal.addEventListener('click',function(e){if(e.target===modal)close();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+</script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDA 愿景战略与实施策略（光子量子计算芯片）</title>
+<style>
+  :root{
+    --ink:#0f172a; --sub:#475569; --line:#e2e8f0; --bg:#ffffff;
+    --blue:#2563eb; --bluebg:#eff6ff; --green:#16a34a; --greenbg:#f0fdf4;
+    --red:#dc2626; --redbg:#fef2f2; --gray:#64748b; --graybg:#f8fafc;
+    --purple:#7c3aed; --purplebg:#f5f3ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.7;padding:48px 24px;}
+  .wrap{max-width:920px;margin:0 auto;}
+  h1{font-size:28px;line-height:1.3;margin-bottom:6px;letter-spacing:-.5px;}
+  .sub{color:var(--sub);font-size:14px;margin-bottom:28px;padding-bottom:18px;border-bottom:2px solid var(--line);}
+  h2{font-size:21px;margin:38px 0 14px;padding-left:12px;border-left:4px solid var(--blue);color:var(--ink);}
+  h3{font-size:16px;margin:24px 0 10px;color:var(--ink);}
+  p{margin:10px 0;font-size:15px;color:var(--ink);}
+  .lead{background:var(--bluebg);border:1px solid #bfdbfe;border-radius:10px;padding:16px 18px;margin:16px 0;font-size:15px;}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top;}
+  th{background:var(--blue);color:#fff;font-weight:600;}
+  tr:nth-child(even) td{background:var(--graybg);}
+  code{background:#f1f5f9;padding:1px 6px;border-radius:4px;font-size:13px;color:#be123c;}
+  .red{color:var(--red);font-weight:600;}
+  .green{color:var(--green);font-weight:600;}
+  .blue{color:var(--blue);font-weight:600;}
+  .box{border-radius:10px;padding:14px 16px;margin:14px 0;font-size:14px;}
+  .box.red{background:var(--redbg);border:1px solid #fecaca;}
+  .box.green{background:var(--greenbg);border:1px solid #bbf7d0;}
+  .box.purple{background:var(--purplebg);border:1px solid #ddd6fe;}
+  .box.gray{background:var(--graybg);border:1px solid var(--line);}
+  ul,ol{margin:10px 0 10px 22px;font-size:15px;}
+  li{margin:5px 0;}
+  .check{font-family:ui-monospace,Menlo,monospace;background:#0f172a;color:#e2e8f0;padding:12px 14px;border-radius:8px;font-size:12.5px;line-height:1.8;white-space:pre;overflow-x:auto;}
+  .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--gray);font-size:12.5px;}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--bluebg);color:var(--blue);margin-right:6px;}
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>LDA 愿景·战略·实施策略<br><span style="font-size:18px;color:var(--sub)">光子计算与量子计算芯片设计</span></h1>
+<div class="sub">正式战略文档 · 基线 2026-09-11（里程碑交流后升格）· 配套：研发规划红线重排版 / 商业计划 / 真机ORACLE清单 / 全能力盘点</div>
+
+<div class="lead"><b>一句话：</b>在红线不可破的前提下，把「设计光子/量子计算芯片」升格为正式愿景；战略姿态＝<b>先铺体系、找条件验证、机会来即闭环</b>；系统研发不受限、验证受限——窗口来临时只灌数据、不补系统。</div>
+
+<h2>0. 红线前提（不可破）</h2>
+<p>升格不等于放松约束。以下红线为全部战略展开前提，任何工作流开工前必须过红线闸门（§7.3）：</p>
+<table>
+<tr><th>红线</th><th>内容</th><th>对本文档约束</th></tr>
+<tr><td>A 级永不借</td><td>美系 A 级求解器绝不 import</td><td>增益物理不借，自研</td></tr>
+<tr><td>T2 工艺真值锁死</td><td>foundry 专有工艺/产线实测 ORACLE 永久锁</td><td>真值只消费接口</td></tr>
+<tr><td>封测实体产线锁死</td><td>不自建封装测试产线</td><td>验证靠 foundry/MPW</td></tr>
+<tr><td>流片锁死</td><td>自主流片/抢制造永久锁</td><td>设计入口不抢制造</td></tr>
+<tr><td>G 类增益介质禁区</td><td>激光 L-I/增益/SOA 当真值维持禁区</td><td>除非边界裁定（§6）</td></tr>
+<tr><td>验证纪律</td><td>LLM 不进判决路径，死标量定 PASS/FAIL</td><td>判卷永远交 ORACLE</td></tr>
+</table>
+
+<h2>1. 愿景（Vision）</h2>
+<h3>1.1 三层愿景递进</h3>
+<ul>
+<li><b>L0 双栈 EDA（底座·已部分做实）</b>：光子学 PDA + 量子 QEDA 开源 Agent 原生设计软件。</li>
+<li><b>L1 能算数的硅（目标）</b>：用双栈设计出光子计算芯片与量子计算芯片——把已会造的「砖」垒成「能算数的楼」。</li>
+<li><b>L2 可持续体系（护城河）</b>：开源 + Agent 原生 + 物理判卷 + <span class="blue">社区可独立验货</span>（华为闭源路线做不到）。</li>
+</ul>
+<h3>1.2 为什么是这两个目标</h3>
+<p>用户长期诉求；与 LDA 底层同源（天花板方向，非另起炉灶）；商业上计算芯片是硅光价值链溢价最高环节。</p>
+
+<h2>2. 战略定位（Strategy）</h2>
+<div class="box blue"><b>核心姿态：先铺体系、找条件验证、机会来即闭环。</b><br>风险隔离（验证卡脖不拖垮建设）；机会窗口（体系 ready 可控，窗口来临时只灌数据）；护城河不丢（开源+独立验货不向闭源妥协）。</div>
+<h3>2.2 与产业路径差异化</h3>
+<table>
+<tr><th>维度</th><th>华为/海思（闭源内化）</th><th>国内 EDA（闭源商用）</th><th>LDA（开源+独立验货）</th></tr>
+<tr><td>真机 ORACLE</td><td>自有产线自产</td><td>代工 PDK（NDA）</td><td>foundry/MPW 只读消费</td></tr>
+<tr><td>是否对外</td><td>闭源</td><td>闭源卖钱</td><td class="green">开源可复验</td></tr>
+<tr><td>可复核性</td><td>不可外部复核</td><td>不可外部复核</td><td class="green">可独立验货</td></tr>
+</table>
+<p class="sub" style="border:none;padding:0">结论：产业界无「开源+独立验货」成功对标，差异化护城河在此，战略不妥协。</p>
+
+<h2>3. 能力基线（v0.9.67）</h2>
+<table>
+<tr><th>状态</th><th>内容</th><th>红线</th></tr>
+<tr><td class="green">已做实</td><td>33 类 / CI 157 / 53 锚(28-1-24) / 75 货架 / GC-*48 全 PASS</td><td>—</td></tr>
+<tr><td class="blue">还能做</td><td>D 电学内核 N(x) / E 有源 A 档 / F 有源 B 档（合成数据铺管道）</td><td>系统研发不受限</td></tr>
+<tr><td class="red">不能做</td><td>⑥封测验证 / ⑦⑧量产 / 封测产线 / 流片 / G 激光增益 / 单光子源</td><td>锁死</td></tr>
+</table>
+
+<h2>4. 差距分析（楼模型）</h2>
+<div class="box purple" style="font-family:ui-monospace,Menlo,monospace;white-space:pre;font-size:12px;line-height:1.7">
+        楼顶（紫·目标）：光子计算芯片 / 量子计算芯片
+   ┌──────────────────────────────────────────┐
+   │ 四层系统缺口（蓝）：①架构综合 ②编译映射   │
+   │   ③控制校准 ④协同仿真  ← LDA 当前全无      │
+   └──────────────────────────────────────────┘
+        地基（绿·已有）：无源光子/光电接口/QEDA
+   ┌────────────┐            ┌────────────┐
+   │ 右柱(红锁死) │            │ 左柱(灰·等B) │
+   │ 片上光源G类  │            │ 真机验收ORACLE│
+   └────────────┘            └────────────┘
+</div>
+<table>
+<tr><th>路线</th><th>光源需求</th><th>能否绕行</th><th>可启动性</th></tr>
+<tr><td>光子（经典）计算</td><td>相干激光（外置即可）</td><td class="green">外置可绕·降级不阻断</td><td class="green">现在可铺四层（合成数据）</td></tr>
+<tr><td>量子（光量子）计算</td><td>非经典单光子源</td><td class="red">外置也救不了</td><td>系统层可铺·源柱硬卡</td></tr>
+</table>
+
+<h2>5. 实施策略（务实三阶段）</h2>
+<h3>阶段 1（现在·全速铺体系）</h3>
+<table>
+<tr><th>工作流</th><th>内容</th><th>红线</th><th>验证</th></tr>
+<tr><td>1.1 四层系统铺管道</td><td>架构综合/编译映射/控制校准/协同仿真（合成数据）</td><td>不碰</td><td>物理定律+实证锚</td></tr>
+<tr><td>1.2 T1-B 载流子内核</td><td>泊松+漂扩+连续性 PDE 求 N(x)</td><td>T1 解锁</td><td>Sze golden</td></tr>
+<tr><td>1.3 真机 ORACLE 框架</td><td>C1–C5 + 6 闸门（零真实数据）</td><td>已留口</td><td>框架自洽</td></tr>
+<tr><td>1.4 增益介质自研设计层</td><td>待边界裁定（§6）</td><td>待拍板</td><td>公开物理</td></tr>
+</table>
+<div class="box gray"><b>纪律但②（防纸糊楼）</b>：四层每层必须挂物理定律/实证锚（复用 VMM），不允许「合成数据跑通＝体系成立」。</div>
+<h3>阶段 2（并行撬窗口·您现实推动）</h3>
+<ul>
+<li><b>2.1 Path A</b> 消费 foundry PDK 只读接口（GC-*48 入口已 PASS）。</li>
+<li><b>2.2 Path B</b> 推动 MPW 流片回流，实测数据当 ORACLE。</li>
+</ul>
+<div class="box gray"><b>纪律但③（主动创造）</b>：foundry/MPW 是主动创造的窗口，非守株待兔；系统侧随时待命。</div>
+<h3>阶段 3（机会来即闭环）</h3>
+<p>真机 ORACLE 注入 → 闭环验证；T1-B 输出被真机 ORACLE <b>单向</b>标定（G1 闸门），不反向当真值。</p>
+<div class="box blue"><b>纪律但①（最高杠杆）</b>：先铺光子计算「编译映射层」——外置激光可跑、最短路径到 bench 级演示、不破红线、对外可演示。量子系统层照铺但不优先。</div>
+
+<h2>6. 光源专项（片上激光 G 类）</h2>
+<div class="box red"><b>锁死本质</b>：锁的是「变光那一步」（增益耦合 T2），不是「算载流子」那一步（已解锁 T1）。</div>
+<table>
+<tr><th>部分</th><th>可解性</th><th>说明</th></tr>
+<tr><td>激光 L-I 行为层</td><td class="green">已授权（A 档）</td><td>速率方程闭式+公开参数，现在能做</td></tr>
+<tr><td>增益介质自研设计层</td><td class="green">可划出 G 类（待裁定）</td><td>公开物理+公开参数+输出不作ORACLE+C级自主</td></tr>
+<tr><td>真值/流片/外延</td><td class="red">永久锁死</td><td>触主权/T2/验证纪律/定位</td></tr>
+</table>
+<div class="lead">建议裁定：将「增益介质自研设计层」从 G 类禁区划出、并入 A 档扩展——不开锁死红线，只把「用公开科学自研的激光模型」明确归为合法设计层。</div>
+
+<h2>7. 实战化建议（助理提议·待拍板）</h2>
+<div class="box green">
+<p><b>A. 四层系统每层设成熟度门</b>：复用 VMM，每层≥self_certified，明确「谁验证、差多少余量」。</p>
+<p><b>B. 定义阶段1成功证明点（MVP demo）</b>：合成数据下 MZI 网格矩阵乘 + 物理定律锚对拍——客户/投资人可看的最小实证。</p>
+<p><b>C. 新工作流红线闸门自检清单</b>（见下）。</p>
+<p><b>D. 路径 A/B 推进列为您现实 KPI</b>：系统侧随时待命，不等不靠。</p>
+<p><b>E. 光子优先对外叙事</b>：近期讲「光子计算芯片设计（开源+可验货）」，可演示、不破红线；量子作中长期同步研发。</p>
+</div>
+<div class="check">[ ] 是否 import 美系 A 级求解器？      → 否
+[ ] 是否自算 foundry T2 工艺真值？     → 否
+[ ] 是否自建封测产线 / 自主流片？      → 否
+[ ] 是否把 AI(LLM) 放进判决路径？      → 否
+[ ] 输出是否可能被误当真值 ORACLE？    → 否（G1 守卫）
+[ ] 每层是否挂物理定律/实证锚自检？    → 是</div>
+
+<h2>8. 待拍板事项</h2>
+<table>
+<tr><th>#</th><th>事项</th><th>建议</th></tr>
+<tr><td>①</td><td>增益介质自研设计层边界裁定</td><td class="blue">划出 G 类（不破红线）</td></tr>
+<tr><td>②</td><td>T1 内核投入深度</td><td>轻量自研 / DEVSIM 全 fork（依资金）</td></tr>
+<tr><td>③</td><td>编制</td><td>3 人 / 5 人（影响 1000→~1370 万）</td></tr>
+<tr><td>④</td><td>光子 vs 量子优先级</td><td class="blue">光子优先</td></tr>
+<tr><td>⑤</td><td>DCO</td><td>已定 B 方案（完成）</td></tr>
+</table>
+
+<h2>9. 与既有文档关系</h2>
+<p><span class="tag">愿景战略</span>定方向 → <span class="tag">研发规划红线重排版</span>战术 Sprint → <span class="tag">商业计划融资</span>资金节奏 → <span class="tag">真机ORACLE清单</span>验证闸门 → <span class="tag">全能力盘点</span>现状基线。三层一致、互不矛盾。</p>
+
+<h2>10. 近期行动清单（Next 30/60/90 天）</h2>
+<table>
+<tr><th>窗口</th><th>动作</th></tr>
+<tr><td>30 天</td><td>拍板①④ · 光子编译映射层立项 + 红线闸门通过 · 四层系统各登记 VMM 锚</td></tr>
+<tr><td>60 天</td><td>MZI 网格矩阵乘原型（MVP demo）· T1-B 端到端（合成）· Path A foundry 接触</td></tr>
+<tr><td>90 天</td><td>MVP 对外可演示 · Path B MPW 排期推进 · 真机 ORACLE 注入口就绪复检</td></tr>
+</table>
+
+<div class="foot">LDA 愿景战略与实施策略 · 2026-09-11 · 红线前提（§0）对所有工作流具约束力 · 未写入的畅想内容以可交叉验证产业事实为准，不构成本文档承诺。</div>
+
+</div></body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDA 能力状态一盘棋 · 全过程价值链与能力状态</title>
+<style>
+  :root{
+    --bg:#0c1018; --bg2:#121826; --card:#161e2e; --card2:#1b2536;
+    --bd:#243049; --txt:#e6edf7; --dim:#8aa0bd; --dim2:#5f7390;
+    --blue:#3b82f6; --blue2:#60a5fa; --grn:#22c55e; --grn2:#4ade80;
+    --red:#ef4444; --red2:#f87171; --amb:#f59e0b; --pur:#a78bfa; --cy:#22d3ee;
+    --gray:#64748b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:linear-gradient(180deg,#0a0e16,#0c1018 60%);color:var(--txt);
+    font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.55;
+    padding:30px 26px 60px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1200px;margin:0 auto}
+  header{text-align:center;margin-bottom:6px}
+  h1{font-size:30px;font-weight:800;letter-spacing:.5px;
+    background:linear-gradient(90deg,#60a5fa,#a78bfa,#4ade80);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{color:var(--dim);font-size:14px;margin-top:6px}
+  .legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--dim)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .sec-h{font-size:15px;font-weight:700;color:var(--blue2);margin:34px 0 16px;
+    padding-left:12px;border-left:3px solid var(--blue);letter-spacing:.5px}
+  /* 价值链横向流水线 */
+  .chain{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:6px 2px 16px}
+  .node{flex:0 0 168px;background:var(--card);border:1px solid var(--bd);border-radius:13px;
+    padding:15px 14px;display:flex;flex-direction:column;gap:9px;position:relative}
+  .node .top{display:flex;align-items:center;gap:9px}
+  .badge{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:13px;font-weight:800;color:#fff;flex:0 0 auto}
+  .node h3{font-size:13.5px;font-weight:700;line-height:1.35}
+  .st{font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px;text-align:center}
+  .own{font-size:10.5px;color:var(--dim2);padding:2px 8px;border:1px solid var(--bd);border-radius:6px;display:inline-block}
+  .data{font-size:11px;color:var(--dim);line-height:1.45;margin-top:auto;
+    border-top:1px dashed var(--bd);padding-top:8px}
+  .arrow{flex:0 0 26px;display:flex;align-items:center;justify-content:center;color:var(--dim2);font-size:18px}
+  .g{background:var(--grn)} .g2{background:rgba(34,197,94,.16);color:var(--grn2);border:1px solid rgba(34,197,94,.4)}
+  .b{background:var(--blue)} .b2{background:rgba(59,130,246,.16);color:var(--blue2);border:1px solid rgba(59,130,246,.4)}
+  .r{background:var(--red)} .r2{background:rgba(239,68,68,.16);color:var(--red2);border:1px solid rgba(239,68,68,.4)}
+  .gy{background:var(--gray)} .gy2{background:rgba(100,116,139,.18);color:#94a3b8;border:1px solid rgba(100,116,139,.45)}
+  /* 能力地基矩阵 */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+  .mcard{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px}
+  .mcard .num{font-size:26px;font-weight:800;color:var(--blue2)}
+  .mcard h4{font-size:13px;font-weight:700;margin:4px 0 7px}
+  .mcard p{font-size:11.5px;color:var(--dim);line-height:1.5}
+  .lock{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.4)}
+  .lock .num{color:var(--red2)}
+  .banner{margin-top:30px;background:linear-gradient(90deg,rgba(167,139,250,.12),rgba(34,211,238,.10));
+    border:1px solid var(--bd);border-left:4px solid var(--pur);border-radius:12px;padding:18px 20px}
+  .banner h4{font-size:14px;font-weight:700;color:var(--pur);margin-bottom:8px}
+  .banner p{font-size:12.5px;color:var(--dim);line-height:1.65}
+  footer{margin-top:40px;text-align:center;color:var(--dim2);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>LDA 能力状态一盘棋</h1>
+    <div class="sub">全过程价值链（8 阶段 0–8）与能力状态 · 基于战略文件全生命周期能力评估表 + 最新真实账本</div>
+  </header>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--grn)"></i>绿 = 已实现</span>
+    <span><i class="dot" style="background:var(--blue)"></i>蓝 = 可做·前瞻</span>
+    <span><i class="dot" style="background:var(--red)"></i>红 = 锁死</span>
+    <span><i class="dot" style="background:var(--gray)"></i>灰 = 不承接</span>
+  </div>
+
+  <div class="sec-h">全过程价值链 · 9 节点（0→8）</div>
+  <div class="chain">
+    <div class="node">
+      <div class="top"><div class="badge gy">0</div><h3>商机·报价·SOW·立项</h3></div>
+      <div class="st gy2">不承接</div>
+      <span class="own">零研发</span>
+      <div class="data">最简商务模板，不投入研发。客户/伙伴承担。</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="top"><div class="badge g">1</div><h3>需求冻结与验收标准</h3></div>
+      <div class="st g2">已实现 ✅</div>
+      <span class="own">T0 覆盖</span>
+      <div class="data">模板+签字流程；proposal_compiler 6 条流水线（link/wdm_demux/quantum_fidelity/sensor/qkd/cpo）。可证伪入口。</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="top"><div class="badge g">2</div><h3>架构与方案权衡</h3></div>
+      <div class="st g2">已实现 ✅</div>
+      <span class="own">T0 覆盖</span>
+      <div class="data">需求架构工作台；锚约束剪枝编译器已落地。诚实边界：无多目标权衡。</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="top"><div class="badge g">3</div><h3>设计实现（器件/参数）</h3></div>
+      <div class="st g2">已实现 ✅</div>
+      <span class="own">我们承担</span>
+      <div class="data">22 设计引擎 + 56 验证锚（B33/E10/S13）。无源/量子/光电/有源B档/电学内核全通。</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="top"><div class="badge g">4</div><h3>版图与签核</h3></div>
+      <div class="st g2">已实现 ✅</div>
+      <span class="own">我们承担</span>
+      <div class="data">GDS / DRC / LVS / 寄生 / 工艺角全链已通（S1-S5 + 几何 DRC）。</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="top"><div class="badge g">5</div><h3>出带包与交付</h3></div>
+      <div class="st g2">已实现 ✅</div>
+      <span class="own">我们承担</span>
+      <div class="data">DesignPackage + HONESTY.md 诚实交付包；S-CPO 间距下界等死标量。</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="top"><div class="badge r">6</div><h3>封测验证</h3></div>
+      <div class="st r2">锁死 + 部分</div>
+      <span class="own">委托+伙伴</span>
+      <div class="data">🔴 封测实体产线整段空白（三不做）。🟦 T3 可封装性解析闭式就位；T2 真值回流换锚中。</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="top"><div class="badge gy">7-8</div><h3>量产·可靠性·收尾</h3></div>
+      <div class="st gy2">不承接</div>
+      <span class="own">零 / 轻量</span>
+      <div class="data">不做量产。🟦 75 货架前瞻预研可轻量复用。客户/伙伴承担。</div>
+    </div>
+  </div>
+
+  <div class="sec-h">能力地基 · 真实账本</div>
+  <div class="grid">
+    <div class="mcard"><div class="num">56</div><h4>验证锚（VMM）</h4><p>31 严格独立 / 3 降级(E9,E10,B21) / 22 自证桩。物理定律判卷，LLM 不进判决路径。</p></div>
+    <div class="mcard"><div class="num">22</div><h4>设计引擎家族</h4><p>器件引擎（光子无源13/有源2/量子7）+ 系统级域引擎族（CPO/QKD/损耗/有源）。</p></div>
+    <div class="mcard"><div class="num">75</div><h4>创新货架</h4><p>GC-* 48 全 PASS；统一 honest_tier=前瞻预研，不虚报流片/认证。</p></div>
+    <div class="mcard"><div class="num">173</div><h4>CI 护栏</h4><p>CORE_SMOKES 173 条；确定性报告 9 位有效数字 + 线程环境确定性纪律。</p></div>
+    <div class="mcard lock"><div class="num">3</div><h4>三不做（锁死）</h4><p>① 链路级电域判决(SerDes/DSP/BER) ② foundry TCAD ③ 封测实体产线。底层电学内核已解锁。</p></div>
+    <div class="mcard"><div class="num">40+</div><h4>求解核模块</h4><p>L3 零依赖 numpy 求解（fdtd1d/tmm/drift_diffusion），C 级自主，不借 GPL/Meep/Tidy3D。</p></div>
+  </div>
+
+  <div class="banner">
+    <h4>责任边界声明（可直接作客户洽谈附件）</h4>
+    <p>LDA 定位为「可证伪的设计与验证能力提供方」，在全生命周期中只承担 <b>第 3–5 段</b>（设计实现 → 版图签核 → 出带包）。第 1 段（需求冻结）提供模板与流程并要求签字；第 2 段由需求架构工作台覆盖；第 0/6/7/8 段由客户或伙伴承担，<b>我们不承接，也不对其结果负责</b>。封测验证（第 6 段）明确不自建产线，采用委托 + 伙伴模式——这也是「0 真值」的根因，由 T2 部分补上。补完整项目链成本远超 1000 万，且非护城河。</p>
+  </div>
+
+  <footer>LDA 能力状态一盘棋 · 数据来自战略文件全生命周期能力评估表 + 最新 CI 账本（56 锚 / T0 已覆盖 / T3 可封装性就位）· dark 主题</footer>
+</div>
+</body>
+</html>

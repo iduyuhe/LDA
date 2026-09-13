@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDA 战略审计报告 · 先夯实基础（2026-09-11）</title>
+<style>
+  :root{--bg:#0f1115;--card:#171a21;--ink:#e8eaed;--mut:#9aa0a6;--line:#2a2f3a;--acc:#3b82f6;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7;padding:32px 18px}
+  .wrap{max-width:920px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 4px}
+  .sub{color:var(--mut);font-size:13px;margin-bottom:24px}
+  h2{font-size:19px;margin:34px 0 12px;padding-left:10px;border-left:3px solid var(--acc)}
+  h3{font-size:15px;color:var(--mut);margin:22px 0 8px}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--card);color:var(--mut);font-weight:600}
+  tr:nth-child(even) td{background:#13161c}
+  code{background:#1d2129;padding:1px 6px;border-radius:4px;font-size:12.5px;color:#cbd5e1}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600}
+  .p0{background:rgba(52,211,153,.15);color:var(--ok)}
+  .p1{background:rgba(251,191,36,.15);color:var(--warn)}
+  .p2{background:rgba(154,160,166,.15);color:var(--mut)}
+  .ok{color:var(--ok);font-weight:600}
+  .box{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:16px 18px;margin:14px 0}
+  pre{background:#13161c;border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto;font-size:12.5px;color:#cbd5e1;line-height:1.5}
+  .note{color:var(--mut);font-size:12.5px}
+  ul{margin:8px 0;padding-left:20px}
+  li{margin:5px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LDA 战略审计报告 · 先夯实基础</h1>
+  <div class="sub">v0.9.67 基线 · 审计日 2026-09-11 · 愿景升格后、启动后续工作前的地基盘点</div>
+
+  <div class="box">
+    <b>方法</b>：所有数字均实跑受控 Python 直跑获取（shell coreutils 缺失，绕开 <code>cd/wc/ls</code>），不靠记忆复述。
+  </div>
+
+  <h2>1. 真实盘点（账本复核 · 实跑）</h2>
+  <h3>1.1 代码规模</h3>
+  <table>
+    <tr><th>指标</th><th>数值</th></tr>
+    <tr><td>.py 文件总数（排除 reports/__pycache__）</td><td>426</td></tr>
+    <tr><td>总行数</td><td>92,387</td></tr>
+    <tr><td>根目录 run_*.py 脚本/演示</td><td>190</td></tr>
+    <tr><td>引擎/库代码（排除根脚本）</td><td>236 文件 / 68,000 行</td></tr>
+  </table>
+  <pre>lda_agent    12,813  ← AI 递归自举核心（最大、最复杂）
+lda_solver   12,130  ← 求解器
+lda_l2       12,119  ← 版图/GDS/DRC/LVS/tapeout
+lda_harness  10,294  ← 验证机械
+lda_webui     8,061
+lda_pdk       2,512
+lda_qeda        428  ← 量子 QEDA 栈</pre>
+
+  <h3>1.2 验证账本（与 README 一致 ✓）</h3>
+  <table>
+    <tr><th>项</th><th>实跑值</th></tr>
+    <tr><td>53 锚</td><td>严格独立 <span class="ok">28</span> / 降级 1 / 自证桩 24（合计 53）</td></tr>
+    <tr><td>B 类</td><td>31（B1–B30 + B33，B31/B32 跳号）</td></tr>
+    <tr><td>CORE_SMOKES 注册</td><td>157 条</td></tr>
+    <tr><td>22 引擎 + 11 包</td><td>33 类端到端；光子 15 + 量子 7</td></tr>
+  </table>
+
+  <h3>1.3 本轮已修的真实基础失真</h3>
+  <div class="box">
+    <b>🔴 计数一致性核心守卫漂移</b>：<code>run_count_consistency_smoke.py</code>（在 157 条 CORE 内）原硬编码 <code>B=30 / 末位 B30</code>，v0.9.67 加 B33 后实际 B=31 → 该守卫<b>全新运行即 RED</b>，README「CI core 157 全绿」不可从干净运行复现（假绿风险）。
+    <br><br><b>已修并提交 <code>8453d65</code></b>（带 Signed-off-by）：B 计数 30→31、末位 B30→B33；重跑 <span class="ok">11/11 OK</span>，守卫重新反映代码事实、可自动拦截未来漂移。
+  </div>
+
+  <h2>2. 代码审计</h2>
+  <table>
+    <tr><th>维度</th><th>结果</th></tr>
+    <tr><td>语法健康</td><td class="ok">426 文件 py_compile 全过，0 语法错误</td></tr>
+    <tr><td>NotImplementedError</td><td>10 处，全部为意图明确的抽象/留口（非缺陷）</td></tr>
+    <tr><td>TODO/FIXME</td><td class="ok">0 处</td></tr>
+    <tr><td>占位注释</td><td>41 处，多为 smoke 分阶段交付记录（合法）</td></tr>
+    <tr><td>导入健康</td><td class="ok">harness/golden/real_machine_oracle 均可干净 import</td></tr>
+    <tr><td>主权与安全</td><td>DCO 闸门就位；敏感文件已 .gitignore 排除</td></tr>
+  </table>
+
+  <h2>3. 功能审计（验证机械 + 工作流）</h2>
+  <table>
+    <tr><th>验证项</th><th>结果</th></tr>
+    <tr><td>run_harness（53 锚三分类 + 判决回路）</td><td class="ok">PASS（53/53 闭合）</td></tr>
+    <tr><td>run_maturity_baseline（VMM M1–M5）</td><td class="ok">PASS</td></tr>
+    <tr><td>run_real_machine_oracle_contract（ORACLE C1–C5）</td><td class="ok">PASS</td></tr>
+    <tr><td>run_count_consistency（修复后）</td><td class="ok">11/11 OK</td></tr>
+  </table>
+  <h3>各工作流能力</h3>
+  <table>
+    <tr><th>工作流</th><th>状态</th><th>结论</th></tr>
+    <tr><td>A 无源光子</td><td>28 严格独立锚，GC-*48 全 PASS</td><td class="ok">扎实</td></tr>
+    <tr><td>B 光电接口</td><td>31 B 锚含 5 道严格独立有源</td><td class="ok">扎实</td></tr>
+    <tr><td>C 量子 QEDA</td><td>独立候选 + QKD 信息论锚</td><td class="ok">扎实</td></tr>
+    <tr><td>D 电学内核 / E·F 有源</td><td>框架就位，验证受限（T2）</td><td>管道就绪</td></tr>
+    <tr><td>G 激光增益</td><td>锁死（红线）</td><td>禁区</td></tr>
+  </table>
+
+  <h2>4. 薄弱点清单（优先级）</h2>
+  <p><span class="pill p0">P0 已修</span> 计数一致性守卫漂移 → <code>8453d65</code>，复验绿。</p>
+  <p><span class="pill p1">P1 近期夯实</span> 优先于新功能：</p>
+  <ul>
+    <li><b>24/53 自证桩升级</b>：方法学独立验货占比仅 53%（28/53）。最大实质短板，延续 P0 接线程序升级 B11/B16/B17/B18/S1–S13 等。</li>
+    <li><b>lda_agent 专项评审</b>：12.8k 行/53 文件，最大最复杂 AI 自举核心，建议独立代码评审。</li>
+    <li><b>完整 157 core 回归</b>：本轮仅抽样重跑，建议触发一次完整 CI 回归确认整体可复现。</li>
+  </ul>
+  <p><span class="pill p2">P2 观察</span> 10 处 NotImplementedError + 41 处占位注释均为意图明确留口（非缺陷），建议建"留口清单"追踪；190 个 run_* 脚本需季度复核 CI 覆盖。</p>
+
+  <h2>5. 夯实路线图</h2>
+  <div class="box">
+    <b>阶段 0 · 夯实基础</b>：P1①自证桩升级（53%→70%+）· P1② lda_agent 评审 · P1③ 完整 CI 回归。<br>
+    状态门禁：阶段 0 未完成前，<b>不启动</b>愿景文档里的四层系统/光子计算 MVP 等新功能。<br><br>
+    <b>阶段 1 · 底层稳固后</b>：铺设四层系统管道（架构综合/编译映射/控制校准/协同仿真），严守"系统研发不受限/验证受限"；光子路线优先。
+  </div>
+
+  <h2>6. 结论</h2>
+  <ul>
+    <li><b>地基扎实</b>：0 语法错误、验证机械健康、53 锚与账本一致、A/B/C 已做实。</li>
+    <li><b>发现并修复 1 处真实基础失真</b>（计数守卫），消除"README 绿但干净运行 RED"的假绿风险——已闭环。</li>
+    <li><b>最大待夯实项</b> = 24 自证桩升级 + lda_agent 评审，二者优先于新功能。</li>
+    <li><b>建议</b>：先完成阶段 0，再启动愿景后续工作——契合"先把现有底层做好"。</li>
+  </ul>
+  <p class="note">本轮修复 8453d65 已本机提交（带 DCO 签名），因沙箱网络限制未推送；需在本机 <code>git push gitee main &amp;&amp; git push github main</code>。</p>
+</div>
+</body>
+</html>

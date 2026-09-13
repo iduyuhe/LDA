@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDA · 量子栈 QEDA 二级图</title>
+<style>
+  :root{
+    --bg:#0c1018; --bg2:#121826; --card:#161e2e; --card2:#1b2536;
+    --bd:#243049; --txt:#e6edf7; --dim:#8aa0bd; --dim2:#5f7390;
+    --blue:#3b82f6; --blue2:#60a5fa; --grn:#22c55e; --grn2:#4ade80;
+    --red:#ef4444; --red2:#f87171; --amb:#f59e0b; --pur:#a78bfa; --cy:#22d3ee;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:linear-gradient(180deg,#0a0e16,#0c1018 60%);color:var(--txt);
+    font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.5;
+    padding:28px 24px 56px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto}
+  h1{font-size:27px;font-weight:800;text-align:center;
+    background:linear-gradient(90deg,#a78bfa,#22d3ee);-webkit-background-clip:text;
+    background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{text-align:center;color:var(--dim);font-size:13.5px;margin:8px 0 4px}
+  .arch{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative}
+  .stage{display:grid;grid-template-columns:170px 1fr;gap:16px;align-items:stretch;
+    padding:16px 0;border-top:1px dashed var(--bd)}
+  .stage:first-of-type{border-top:none}
+  .sl{display:flex;flex-direction:column;justify-content:center}
+  .sl .num{font-size:34px;font-weight:800;color:var(--c,#a78bfa);line-height:1;opacity:.85}
+  .sl .nm{font-size:13px;font-weight:700;color:var(--c,#a78bfa);margin-top:4px}
+  .sl .en{font-size:10.5px;color:var(--dim2)}
+  .box{background:var(--card);border:1px solid var(--bd);border-left:3px solid var(--c,#a78bfa);
+    border-radius:11px;padding:14px 16px}
+  .box h3{font-size:13.5px;font-weight:700;color:var(--txt);margin-bottom:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:9px}
+  .chip{background:var(--bg2);border:1px solid var(--bd);border-radius:9px;
+    padding:8px 11px;min-width:150px;flex:1 1 160px}
+  .chip .t{font-size:12px;font-weight:700;color:var(--c,#a78bfa);font-family:monospace}
+  .chip .d{font-size:11px;color:var(--dim);margin-top:3px;line-height:1.4}
+  .chip .f{font-size:10.5px;color:var(--dim2);margin-top:4px;font-family:monospace}
+  .flow{text-align:center;color:var(--dim2);font-size:12px;padding:2px 0}
+  .flow b{color:var(--pur)}
+  .side{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:26px}
+  .panel{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:15px 17px}
+  .panel h3{font-size:13.5px;font-weight:700;margin-bottom:9px;color:var(--cy)}
+  .panel.red h3{color:var(--red2)}
+  .panel ul{list-style:none}
+  .panel li{font-size:12px;color:var(--dim);padding:4px 0 4px 15px;position:relative;line-height:1.5}
+  .panel li:before{content:"▸";position:absolute;left:0;color:var(--cy)}
+  .panel.red li:before{color:var(--red2)}
+  .panel li b{color:var(--txt)}
+  .panel code{font-family:monospace;color:var(--grn2);font-size:11px}
+  .note{margin-top:24px;background:var(--bg2);border:1px solid var(--bd);border-radius:12px;
+    padding:14px 17px;font-size:12.5px;color:var(--dim);line-height:1.65}
+  .note b{color:var(--amb)}
+  .back{display:block;text-align:center;margin-top:22px;color:var(--blue2);font-size:13px;text-decoration:none}
+  .back:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>量子栈 QEDA 二级图</h1>
+  <div class="sub">lda_design（量子器件引擎）× lda_qeda（量子信息 QEDA）· 两层级栈 · 零外部依赖 numpy</div>
+
+  <div class="arch">
+    <!-- Stage 1 态制备 -->
+    <div class="stage" style="--c:var(--pur)">
+      <div class="sl"><div class="num">①</div><div class="nm">态制备</div><div class="en">Qubit</div></div>
+      <div class="box">
+        <h3>比特 (Qubit) 家族 · 目标频率 f01</h3>
+        <div class="chips">
+          <div class="chip" style="--c:var(--pur)"><div class="t">Transmon</div><div class="d">固定频率比特 · Koch 反解 E_J</div><div class="f">f01=√(8Ec·EJ)−Ec</div></div>
+          <div class="chip" style="--c:var(--pur)"><div class="t">Fluxonium</div><div class="d">任意 E_J 无解析闭式 · 相位对角化</div><div class="f">H=4Ec n²+½El φ²−Ej cosφ</div></div>
+          <div class="chip" style="--c:var(--pur)"><div class="t">TunableTransmon</div><div class="d">SQUID 磁通调谐 · 可调频</div><div class="f">f01(Φ)=√(8Ec·EJ(Φ))−Ec</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="flow">▲ 制备比特态 ▲&nbsp;&nbsp;<b>依赖锚</b> B23(LC极限) · B25(SQUID f01)</div>
+
+    <!-- Stage 2 演化与门 -->
+    <div class="stage" style="--c:var(--blue)">
+      <div class="sl"><div class="num">②</div><div class="nm">演化 / 门</div><div class="en">Gates</div></div>
+      <div class="box">
+        <h3>量子门库 + 通用性（lda_qeda.gates）</h3>
+        <div class="chips">
+          <div class="chip" style="--c:var(--blue)"><div class="t">11 门矩阵</div><div class="d">I,X,Y,Z,H,S,T,CNOT,CZ,SWAP,Toffoli</div><div class="f">numpy 精确闭式</div></div>
+          <div class="chip" style="--c:var(--blue)"><div class="t">幺正性 ‖U†U−I‖≤1e-12</div><div class="d">闭式矩阵乘法 · 精确死标量</div><div class="f">all_unitary</div></div>
+          <div class="chip" style="--c:var(--blue)"><div class="t">通用性 {H,T,CNOT}</div><div class="d">Clifford 群恰 24 元；T∉Clifford ⇒ Solovay-Kitaev 稠密</div><div class="f">universality_proven</div></div>
+          <div class="chip" style="--c:var(--blue)"><div class="t">cross_resonance</div><div class="d">两固定频 transmon 经 J 耦合的有效 ZX</div><div class="f">g_CR=2J²Δ/(α²−Δ²)</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="flow">▲ 施加门演化 ▲&nbsp;&nbsp;<b>ORACLE</b> |g_CR|∈[0.02,10]MHz · t_CR≤T2 · |Δ|&lt;|α|</div>
+
+    <!-- Stage 3 耦合/读出/门时间 -->
+    <div class="stage" style="--c:var(--cy)">
+      <div class="sl"><div class="num">③</div><div class="nm">耦合/读出</div><div class="en">Couple/Read</div></div>
+      <div class="box">
+        <h3>耦合 · 读出 · 门时间（器件级 QEDA）</h3>
+        <div class="chips">
+          <div class="chip" style="--c:var(--cy)"><div class="t">TunableCoupler</div><div class="d">可调耦合器 · 目标 |g_eff|</div><div class="f">g_eff=(g1g2/2)(1/Δ1+1/Δ2)</div></div>
+          <div class="chip" style="--c:var(--cy)"><div class="t">ReadoutResonator</div><div class="d">CPW λ/4 读出 · 目标 f0</div><div class="f">f0=c0/(4·L·n_eff)</div></div>
+          <div class="chip" style="--c:var(--cy)"><div class="t">ReadoutPair</div><div class="d">比特-读出配对 · 目标色散 χ</div><div class="f">χ=g²α/(Δ(Δ+α))</div></div>
+          <div class="chip" style="--c:var(--cy)"><div class="t">CzGate</div><div class="d">色散 CZ 门 · 目标 t_CZ</div><div class="f">t_CZ=π/(2|χ|)</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="flow">▲ 读出 / 判定耦合 ▲&nbsp;&nbsp;<b>依赖锚</b> B22/B24/B26/B27</div>
+
+    <!-- Stage 4 容错码 -->
+    <div class="stage" style="--c:var(--grn)">
+      <div class="sl"><div class="num">④</div><div class="nm">容错码</div><div class="en">FT Code</div></div>
+      <div class="box">
+        <h3>Rotated Surface Code + 阈值标度（lda_qeda.surface_code）</h3>
+        <div class="chips">
+          <div class="chip" style="--c:var(--grn)"><div class="t">拓扑生成</div><div class="d">d×d 数据比特 + d²−1 稳定子（去一角 ⇒ k=1）</div><div class="f">rotated_surface_code(d)</div></div>
+          <div class="chip" style="--c:var(--grn)"><div class="t">对易性</div><div class="d">X/Z 型稳定子共享偶数比特 ⇒ 全对易（Pauli 代数）</div><div class="f">stabilizers_commute</div></div>
+          <div class="chip" style="--c:var(--grn)"><div class="t">编码 k=1</div><div class="d">GF(2) 秩 k=n−rank_X−rank_Z，精确=1</div><div class="f">logical_qubits</div></div>
+          <div class="chip" style="--c:var(--grn)"><div class="t">阈值标度</div><div class="d">p_L(d)=A·(p/p_th)^((d+1)/2)；p&lt;p_th 才抑制</div><div class="f">p_th≈1% · A≈0.03</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="side">
+    <div class="panel">
+      <h3>死标量验收锚（物理定律）</h3>
+      <ul>
+        <li><b>器件级</b> B22 读出 f0 · B23 Fluxonium LC 极限 · B24 二阶微扰 g_eff · B25 SQUID f01 · B26 色散 χ · B27 CZ 门时间</li>
+        <li><b>门库</b> 幺正性 <code>‖U†U−I‖≤1e-12</code>（精确闭式）</li>
+        <li><b>通用性</b> T∉24 元单比特 Clifford（精确群论）</li>
+        <li><b>CR 门</b> ORACLE 区间 + 不等式（|g_CR|∈[0.02,10]MHz）</li>
+        <li><b>表面码</b> 对易 + GF(2) 秩 k=1 + 阈值门 p&lt;p_th</li>
+        <li><b>保真度框架</b> D-46 × D-47（量子与 QKD 验收）</li>
+      </ul>
+    </div>
+    <div class="panel red">
+      <h3>诚实边界 / 红线纪律</h3>
+      <ul>
+        <li>🔴 <b>LLM 不进判决路径</b>：passed 由死标量比对决定，零拟合</li>
+        <li>⚠ <b>CR 为有效模型</b>（SW 主导阶）：高阶寄生项（YY/附加ZX）未建模，仅固定频 transmon</li>
+        <li>⚠ <b>σ_zz 为估计</b>：真实器件用 echoed-CR 抵消（诚实标注）</li>
+        <li>⚠ <b>不声称脉冲实现保真度</b>：门库验证代数正确性与通用性，非物理门脉冲层</li>
+        <li>⚠ <b>出口管制红线</b>：量子域暂列咨询制，不对外交付真值</li>
+        <li>🔴 全部零外部依赖（仅 numpy），C 级自主</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>两级栈关系：</b> ① <b>量子器件 QEDA</b>（lda_design 的 8 个量子引擎）= 把比特/读出/耦合/门时间当<b>可验证设计量</b>，命中 B22–B27 锚；② <b>量子信息 QEDA</b>（lda_qeda）= 门代数、CR 有效模型、表面码容错，提供<b>通用计算的正确性框架</b>。
+    两层通过 <b>D-46×D-47 保真度框架</b> 统一验收——器件层给"能做出来且物理真"的比特，信息层给"算得对且可容错"的门与码。组合创新零新物理。
+  </div>
+
+  <a class="back" href="LDA_架构图合集.html">← 返回架构图合集</a>
+</div>
+</body>
+</html>

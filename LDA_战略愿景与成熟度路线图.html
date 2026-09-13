@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDA 系统战略愿景与能力成熟度图谱与进阶路线图</title>
+<style>
+  :root{
+    --bg:#0b1220; --bg2:#0e1626; --card:#141d2e; --card2:#18243a;
+    --line:#223049; --txt:#e6edf7; --dim:#8aa0bd; --dim2:#5f7392;
+    --blue:#3b82f6; --blue2:#60a5fa;
+    --green:#22c55e; --green2:#34d399;
+    --amber:#f59e0b; --amber2:#fbbf24;
+    --gray:#64748b; --gray2:#94a3b8;
+    --red:#ef4444; --red2:#f87171;
+    --purple:#a78bfa; --purple2:#c4b5fd;
+    --cyan:#22d3ee;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--txt);
+    font-family:"Segoe UI","Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    line-height:1.55;padding:34px 22px 70px;}
+  .wrap{max-width:1180px;margin:0 auto;}
+  h1{font-size:27px;font-weight:800;letter-spacing:.5px;}
+  h1 .ac{color:var(--purple2);}
+  .sub{color:var(--dim);font-size:14px;margin-top:8px;max-width:880px;}
+  .tagline{margin:18px 0 6px;padding:18px 22px;border-radius:14px;
+    background:linear-gradient(110deg,#1a1530,#141d2e);
+    border:1px solid #2e2a4d;border-left:4px solid var(--purple);}
+  .tagline b{color:var(--purple2);font-size:18px;}
+  .tagline p{color:var(--dim);font-size:13.5px;margin-top:8px;}
+  section{margin-top:34px;}
+  .sec-h{display:flex;align-items:center;gap:10px;margin-bottom:16px;
+    border-bottom:1px solid var(--line);padding-bottom:10px;}
+  .sec-h .num{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;
+    background:var(--card2);color:var(--blue2);font-weight:800;border:1px solid var(--line);}
+  .sec-h h2{font-size:19px;font-weight:700;}
+  .sec-h .h-sub{color:var(--dim2);font-size:12.5px;margin-left:auto;font-weight:400;}
+  .grid{display:grid;gap:14px;}
+  .g2{grid-template-columns:1fr 1fr;}
+  .g3{grid-template-columns:repeat(3,1fr);}
+  .g4{grid-template-columns:repeat(4,1fr);}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 16px;}
+  .card h3{font-size:14.5px;font-weight:700;margin-bottom:9px;display:flex;align-items:center;gap:7px;}
+  .card p{font-size:12.8px;color:var(--dim);}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;margin:3px 4px 0 0;}
+  .pill.b{background:rgba(59,130,246,.16);color:var(--blue2);border:1px solid rgba(59,130,246,.35);}
+  .pill.g{background:rgba(34,197,94,.15);color:var(--green2);border:1px solid rgba(34,197,94,.35);}
+  .pill.a{background:rgba(245,158,11,.15);color:var(--amber2);border:1px solid rgba(245,158,11,.35);}
+  .pill.r{background:rgba(239,68,68,.15);color:var(--red2);border:1px solid rgba(239,68,68,.35);}
+  .pill.p{background:rgba(167,139,250,.15);color:var(--purple2);border:1px solid rgba(167,139,250,.35);}
+  .pill.gy{background:rgba(100,116,139,.16);color:var(--gray2);border:1px solid rgba(100,116,139,.35);}
+  .kv{font-size:12.5px;color:var(--dim);margin-top:6px;}
+  .kv b{color:var(--txt);}
+  /* maturity bar */
+  .mat-row{margin:11px 0;}
+  .mat-row .lab{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;}
+  .mat-row .lab .v{color:var(--dim);}
+  .bar{height:14px;border-radius:7px;background:#0e1626;overflow:hidden;display:flex;border:1px solid var(--line);}
+  .bar i{display:block;height:100%;}
+  .seg-s{background:var(--green);}
+  .seg-d{background:var(--amber);}
+  .seg-f{background:var(--gray);}
+  .seg-l{background:var(--red);}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--dim);margin-top:14px;padding-top:12px;border-top:1px solid var(--line);}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block;}
+  /* donut */
+  .donut-wrap{display:flex;align-items:center;gap:18px;}
+  .donut-txt{font-size:12.5px;color:var(--dim);}
+  .donut-txt .big{font-size:30px;color:var(--txt);font-weight:800;display:block;line-height:1.1;}
+  /* road map timeline */
+  .roadmap{position:relative;margin-top:8px;}
+  .tl{position:relative;padding-left:26px;}
+  .tl::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,var(--blue),var(--purple));}
+  .tl-item{position:relative;margin-bottom:18px;}
+  .tl-item::before{content:"";position:absolute;left:-22px;top:6px;width:14px;height:14px;border-radius:50%;
+    background:var(--bg);border:3px solid var(--blue);}
+  .tl-item.done::before{border-color:var(--green);background:var(--green);}
+  .tl-item.prog::before{border-color:var(--amber);background:var(--amber);}
+  .tl-item.fut::before{border-color:var(--gray);}
+  .tl-card{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 16px;}
+  .tl-card .th{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .tl-card .th .pn{font-size:15px;font-weight:800;color:var(--blue2);}
+  .tl-card .th .pt{font-size:12.5px;color:var(--dim);}
+  .tl-card .th .st{margin-left:auto;font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;}
+  .st.done{background:rgba(34,197,94,.15);color:var(--green2);}
+  .st.prog{background:rgba(245,158,11,.15);color:var(--amber2);}
+  .st.fut{background:rgba(100,116,139,.16);color:var(--gray2);}
+  .tl-card ul{margin:8px 0 0 2px;font-size:12.3px;color:var(--dim);list-style:none;}
+  .tl-card li{padding:2px 0 2px 14px;position:relative;}
+  .tl-card li::before{content:"▸";position:absolute;left:0;color:var(--blue);}
+  .tl-card li b{color:var(--txt);}
+  .fund{margin-top:16px;padding:14px 18px;border-radius:12px;background:var(--card2);border:1px solid var(--line);}
+  .fund h4{font-size:13.5px;color:var(--amber2);margin-bottom:8px;}
+  .fund .row{display:flex;flex-wrap:wrap;gap:8px;font-size:12.3px;color:var(--dim);}
+  .fund .chip{background:#0e1626;border:1px solid var(--line);border-radius:8px;padding:5px 11px;}
+  .fund .chip b{color:var(--txt);}
+  .verline{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .ver{font-size:11.5px;border:1px solid var(--line);border-radius:9px;padding:7px 12px;background:var(--card);}
+  .ver b{color:var(--blue2);}
+  .ver small{color:var(--dim2);display:block;font-size:10.5px;margin-top:2px;}
+  .foot{margin-top:40px;color:var(--dim2);font-size:11.5px;text-align:center;border-top:1px solid var(--line);padding-top:16px;}
+  @media(max-width:820px){.g2,.g3,.g4{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>LDA 系统<span class="ac">战略愿景</span> · 能力成熟度图谱 · 进阶路线图</h1>
+  <div class="sub">开源 Agent 原生光电/量子芯片设计软件（光 PDA + 量 QEDA）。本图聚焦「为什么做、做到什么程度、下一步往哪走」，与前五张（系统分层 / 部署 / 55 锚 / 应用 / 能力）互补。数据截至 2026-09-14，来自项目规划文件与 CI 账本。</div>
+
+  <!-- ╔═ 战略愿景 ═╗ -->
+  <div class="tagline">
+    <b>愿景一句话：光电接缝上的可证伪设计入口。</b>
+    <p>我们不做整条链——只做这条链上「唯一既没有可证伪工具、也没有统一接口的那一格」。护城河 = 标准 + 生态 + PDK；判决权在物理定律锚，签字权在人，LLM 不进判决路径（代码级红线，不是口号）。</p>
+  </div>
+
+  <section>
+    <div class="sec-h"><div class="num">1</div><h2>战略定位与红线</h2><span class="h-sub">Positioning · Red Lines</span></div>
+    <div class="grid g2">
+      <div class="card">
+        <h3><span class="pill p">护城河</span> 标准 + 生态 + PDK</h3>
+        <p>验证红线：判决落非 AI ground（物理定律锚 + 实证大数据锚）；AI 出题、物理定律判卷；PASS/FAIL 由死标量定，排序完全确定性、无随机无 LLM。</p>
+        <div class="kv"><b>责任边界：</b>全生命周期 8 段，只承担 <b>3–5 段</b>（设计实现→版图签核→出带包）。断点 1（需求冻结）由 T0 模板补、断点 6（封测）委托伙伴。</div>
+      </div>
+      <div class="card">
+        <h3><span class="pill r">主权红线</span> 借 / 锁分层（电域已解锁）</h3>
+        <p>🔓 <b>电学器件内核</b>（泊松-玻尔兹曼 / 漂移-扩散 / 载流子连续性）：已解锁自研 —— T1-B：DEVSIM 冷备 + 自研 1D 泊松 + 2D 漂移-扩散（均 4 判据 smoke），C 级自主。</p>
+        <p>🔒 <b>链路级电域判决</b>（SerDes/DSP/BER/眼图）：仍锁死 —— 无工艺统计锚 ⇒ 硬做必假绿，客户已有 Cadence。</p>
+        <p>🔒 <b>foundry TCAD 工艺真值</b>：数值内核已解锁，工艺真值永久锁死（NDA 不给）。<br>🔒 <b>封测实体产线</b>：全锁，先委托后自建。</p>
+        <div class="kv">「不做」每一条都有产业根因；电学内核已按 Foundry TCAD 分层解锁裁定（2026-09-11）解锁自研。</div>
+      </div>
+      <div class="card">
+        <h3><span class="pill b">主权分级</span> A 永不借 · B 借今踢后 · C 自主</h3>
+        <p>A 级（核心求解器/判决路径/锚库）：<b>永不借</b>代码。<br>B 级（边缘求解/新增锚）：<b>借今踢后</b>——先用、限成熟节点、逐步自研替换。<br>C 级（如自研 FDTD）：<b>完全自主</b>。</p>
+        <div class="kv">Meep=GPLv2+ 已隔离：subprocess 只回标量，不进核心。Foundry TCAD 分层解锁（2026-09-11）：T1 数值内核允许，T2 工艺真值永久锁死。</div>
+      </div>
+      <div class="card">
+        <h3><span class="pill p">生态开放四层光谱</span> 获客引擎，不是研发外包</h3>
+        <p>① 实测语料/对抗题（已在做·风险最低）<br>② PDK 适配/器件库/文档（判据我们写）<br>③ 边缘求解模块+新增锚（先判据后代码）<br>④ 核心求解器/判决路径/锚库（不开放代码，只开放对抗）</p>
+        <div class="kv">最大风险 = <b>假绿</b>（自证桩批量生产）。规避机制：<b>判据先于代码，且判据由 maintainer 写</b>——与「AI 出题、物理判卷」同构。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ╔═ 能力成熟度图谱 ═╗ -->
+  <section>
+    <div class="sec-h"><div class="num">2</div><h2>能力成熟度图谱（VMM）</h2><span class="h-sub">验证成熟度模型 · 56 锚账本 2026-09-14</span></div>
+
+    <div class="grid g2">
+      <div class="card">
+        <h3><span class="pill g">成熟度总览</span> 56 锚 · 三分类</h3>
+        <div class="donut-wrap">
+          <svg width="150" height="150" viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="60" fill="none" stroke="#0e1626" stroke-width="20"/>
+            <!-- 31 strict green 55.4% / 3 degraded amber 5.4% / 22 self-proof gray 39.3% -->
+            <circle cx="75" cy="75" r="60" fill="none" stroke="#22c55e" stroke-width="20"
+              stroke-dasharray="207.3 339.3" stroke-dashoffset="0" transform="rotate(-90 75 75)"/>
+            <circle cx="75" cy="75" r="60" fill="none" stroke="#f59e0b" stroke-width="20"
+              stroke-dasharray="20.2 319.1" stroke-dashoffset="-207.3" transform="rotate(-90 75 75)"/>
+            <circle cx="75" cy="75" r="60" fill="none" stroke="#64748b" stroke-width="20"
+              stroke-dasharray="146.1 193" stroke-dashoffset="-227.5" transform="rotate(-90 75 75)"/>
+            <text x="75" y="70" text-anchor="middle" fill="#e6edf7" font-size="26" font-weight="800">56</text>
+            <text x="75" y="90" text-anchor="middle" fill="#8aa0bd" font-size="11">验证锚</text>
+          </svg>
+          <div class="donut-txt">
+            <span class="big">31</span>严格独立死标量（strict）
+            <div style="margin-top:8px"><span style="color:var(--amber2);font-weight:700">3</span> 降级（degraded：E9/E10/B21）</div>
+            <div style="margin-top:4px"><span style="color:var(--gray2);font-weight:700">22</span> 自证桩（self_proof，合法第一阶段）</div>
+          </div>
+        </div>
+        <div class="legend">
+          <span><i class="dot" style="background:var(--green)"></i>严格独立（余量≥100×）</span>
+          <span><i class="dot" style="background:var(--amber)"></i>降级/量级带</span>
+          <span><i class="dot" style="background:var(--gray)"></i>自证桩</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="pill b">领域成熟度分布</span> 按物理域拆 56 锚</h3>
+        <div class="mat-row">
+          <div class="lab"><span>光子 B 锚（无源/光接口/有源B档）</span><span class="v">20</span></div>
+          <div class="bar"><i class="seg-s" style="width:60.6%"></i><i class="seg-f" style="width:39.4%"></i></div>
+        </div>
+        <div class="mat-row">
+          <div class="lab"><span>量子 B 锚（QEDA 保真度/器件）</span><span class="v">13</span></div>
+          <div class="bar"><i class="seg-s" style="width:46%"></i><i class="seg-f" style="width:54%"></i></div>
+        </div>
+        <div class="mat-row">
+          <div class="lab"><span>系统·LVS·良率 S 锚</span><span class="v">13</span></div>
+          <div class="bar"><i class="seg-s" style="width:53%"></i><i class="seg-f" style="width:47%"></i></div>
+        </div>
+        <div class="mat-row">
+          <div class="lab"><span>实证 E 锚（实测/规范交叉）</span><span class="v">10</span></div>
+          <div class="bar"><i class="seg-s" style="width:30%"></i><i class="seg-d" style="width:20%"></i><i class="seg-f" style="width:50%"></i></div>
+        </div>
+        <div class="kv">B1–B33（33）· S1–S13（13）· E1–E10（10）= <b>56</b>。可外部验货 <b>31/56</b>。</div>
+      </div>
+    </div>
+
+    <div class="grid g3" style="margin-top:14px">
+      <div class="card">
+        <h3><span class="pill b">能力地基</span> 求解核 / 引擎 / 货架</h3>
+        <div class="kv">求解核 L3：<b>40+</b> 模块 · <b>3</b> 类零依赖 numpy（fdtd1d/tmm/drift_diffusion）· <b>C 级自主</b></div>
+        <div class="kv">设计引擎：<b>22+</b> 类 · <b>11</b> 包 = 33 类</div>
+        <div class="kv">创新超市：<b>75</b> 个 IM-* 货架 · <b>48</b> 个 GC-* 全 PASS · 统一 honest_tier=<b>前瞻预研</b></div>
+      </div>
+      <div class="card">
+        <h3><span class="pill a">CI 护栏与纪律</span> 真假绿闸门</h3>
+        <div class="kv">CORE_SMOKES = <b>173</b> 条（P1-3 四层红线闸门）</div>
+        <div class="kv">实证语料 <b>30</b> 全 A</div>
+        <div class="kv">确定性报告 9 位有效数字 · 线程环境 OMP_DYNAMIC=FALSE · 计数护栏动态推导 · 凡落盘必引 deterministic</div>
+      </div>
+      <div class="card">
+        <h3><span class="pill p">主权矩阵</span> 借 / 自主边界</h3>
+        <div class="kv"><span class="pill r">A 级</span> 核心求解/判决/锚库 · <b>永不借</b></div>
+        <div class="kv"><span class="pill a">B 级</span> 边缘求解/新增锚 · <b>借今踢后</b></div>
+        <div class="kv"><span class="pill g">C 级</span> 自研 numpy FDTD 等 · <b>自主</b></div>
+        <div class="kv">主权红线（借/锁分层）：<b>电学内核已解锁自研</b>（T1-B）；<b>链路级电域判决 / foundry 工艺真值 / 封测产线</b> 仍永久锁死</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ╔═ 进阶路线图 ═╗ -->
+  <section>
+    <div class="sec-h"><div class="num">3</div><h2>进阶路线图（研发五期 T0–T4）</h2><span class="h-sub">36 月 · 1000 万（3 人）/ 1300 万（5 人待拍板）</span></div>
+
+    <div class="roadmap">
+      <div class="tl">
+        <div class="tl-item done">
+          <div class="tl-card">
+            <div class="th"><span class="pn">T0</span><span class="pt">需求架构层 · 0–9 月 · 60 万</span><span class="st done">已延伸完成</span></div>
+            <ul>
+              <li>升级 <b>proposal_compiler</b>：多目标 Pareto / 自然语言入口 / S8 接入</li>
+              <li><b>红蓝队闭环</b>（2026-09-09 晚）：DeepSeek 蓝队生成 + GLM 红队出题 + 锚判卷死标量 + 周期化看门狗</li>
+              <li>验收：改成本权重→Pareto 前沿必须位移；域外候选必被剪枝；4 道护栏进 CORE（CI 147→152）</li>
+            </ul>
+          </div>
+        </div>
+        <div class="tl-item done">
+          <div class="tl-card">
+            <div class="th"><span class="pn">T1</span><span class="pt">光电接口层 · 0–12 月 · 110 万 · A 档订单 150–300 万</span><span class="st done">已完成 ✅</span></div>
+            <ul>
+              <li><b>T1-A 光电接口</b>：紧凑模型 / 参数化网表 + Cadence 适配（B28/B29 锚；GC-*48 全 PASS）✅ 已实现</li>
+              <li><b>T1-B 电学内核</b>：DEVSIM 冷备 + 自研 1D 泊松-玻尔兹曼 / 2D 漂移-扩散+连续性（均 4 判据 smoke）✅ 解锁完成</li>
+              <li><b>T1-C 主动器件</b>：W5/W6 B 档真求解 + W1 B33/APD + W3 B31 + W4 B32 全部落地 ✅ 闭环完成（S7 审计 ✅）</li>
+              <li>验收：参数扰动 ±20% 时域响应必须变（防常数假绿）</li>
+              <li>🔴 诚实边界：T1-B 反偏 V&lt;0 非物理（已文档化 + 护栏，正向/近平衡可用）；链路级电域判决 SerDes/DSP/BER/眼图 仍锁死（无工艺统计锚必假绿，不属 T1 责任）</li>
+            </ul>
+          </div>
+        </div>
+        <div class="tl-item prog">
+          <div class="tl-card">
+            <div class="th"><span class="pn">T2</span><span class="pt">真值链 · 6–24 月 · 240 万 · B 档主体</span><span class="st prog">换锚进行中</span></div>
+            <ul>
+              <li><b>已换锚（degraded_ordinal，不虚报 strict）共 5 道</b>：U4 Ge-PD 响应度 / U5 MZM Vπ / U6 量子 T1 量级带 / <b>E10 环 FSR</b>(v0.9.76·独立 n_g 闭式交叉) / <b>B21 光子晶体腔</b>(v0.9.77·自研 2D FDTD 全波·rel 0.039%)</li>
+              <li><b>诚实不可接·保持自证桩</b>：U1=B16 MMI 自映像（slab≠rib MMI，余量 ~1.3×）/ U2=E5 过量损耗（tol=±0.05dB 与实测不确定度相等，判据窗口为零）</li>
+              <li><b>仍挂外部通道未启动</b>：E4–E7（依赖外部 ORACLE / 实测扩样回流）</li>
+              <li>⚠ 真值回流缺口：0 轮 MPW（等 foundry/封测窗口）；环类锚全库可升 strict = <b>0 道</b>（弯曲效应余量 ~28× &lt;&lt; 100×），70% strict 红线内不可达</li>
+            </ul>
+          </div>
+        </div>
+        <div class="tl-item done">
+          <div class="tl-card">
+            <div class="th"><span class="pn">T3</span><span class="pt">设计侧虚拟制造 2.0 · 12–30 月 · 人力承担</span><span class="st done">解析闭式已就位</span></div>
+            <ul>
+              <li><b>虚拟制造 1.0 已就位</b>（2026-09-10）：tapeout_pipeline S1–S5 + yield_anchor S13（Φ 闭式↔固定种子 MC 互证，CI 长期实跑）</li>
+              <li><b>2.0 可封装性链 bootstrap</b>（v0.9.65+）：packaging_tolerance.py 耦合容差/对准预算/封装良率 Rayleigh CDF，已登 CORE_SMOKES，单调性+设计旋钮反馈反向测试 PASS</li>
+              <li>验收（T3 核心）：MFD↑→容差↑→封装良率↑（单调、确定、可复现）✅ 已验证</li>
+              <li>🔴 诚实边界：σ_align·MFD 为公开假设值，待 T2 实测回流升级 Tier-3 严独锚（系统骨架不变）</li>
+            </ul>
+          </div>
+        </div>
+        <div class="tl-item fut">
+          <div class="tl-card">
+            <div class="th"><span class="pn">T4</span><span class="pt">标准位与生态 · 24–36 月 · 40 万</span><span class="st fut">未启</span></div>
+            <ul>
+              <li>L0 IR 推标准位：DesignPackage JSON 成为外部采用标准</li>
+              <li>验收：≥2 家外部采用 + ≥1 家 foundry 签 PDK</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fund">
+      <h4>资金对齐（36 月 1000 万 · 3 人编制）</h4>
+      <div class="row">
+        <div class="chip">人力 <b>450</b></div>
+        <div class="chip">T2 真值链 <b>240</b></div>
+        <div class="chip">T1 光电接口 <b>110</b></div>
+        <div class="chip">T0 需求架构 <b>60</b></div>
+        <div class="chip">标杆客户 <b>80</b></div>
+        <div class="chip">生态标准 <b>40</b></div>
+        <div class="chip">算力 <b>10</b></div>
+        <div class="chip">预备 <b>10</b></div>
+      </div>
+      <div class="kv" style="margin-top:9px">🔴 诚实边界：450 万按 3 人（@50 万/人年）；若 5 人团队需 750 万，总额升至约 <b>1300 万</b>（待杜先生拍板 3 vs 5 人）。</div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h3><span class="pill b">版本里程碑线</span> 验证纪律演进</h3>
+      <div class="verline">
+        <div class="ver"><b>v0.9.62</b>VMM 验证成熟度模型落地<small>自证桩=合法第一阶段</small></div>
+        <div class="ver"><b>v0.9.65</b>可封装性链就位<small>packaging_tolerance · T3</small></div>
+        <div class="ver"><b>v0.9.73</b>修 B32 标签≠行为<small>计数护栏去 stale</small></div>
+        <div class="ver"><b>v0.9.74</b>CI 计数护栏全量同步<small>B 题 31→33</small></div>
+        <div class="ver"><b>v0.9.75</b>根治提交噪声<small>确定性+线程环境</small></div>
+        <div class="ver"><b>v0.9.76</b>E10 环 FSR 接线<small>live-green</small></div>
+        <div class="ver"><b>v0.9.77</b>B21 升 degraded<small>当前·生产仍 0.9.75</small></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    LDA 系统战略愿景与能力成熟度图谱与进阶路线图 · 数据截至 2026-09-14 · 来源：LDA_商业计划书与研发融资规划（2026-09-09 修订版）/ LDA_研发规划与实施计划（2026-09-09、2026-09-11 红线重排版）/ 项目 CI 账本（CORE_SMOKES 173 · 56 锚 31/3/22）。本图为第六张架构图，与前五张互补。
+  </div>
+
+</div>
+</body>
+</html>

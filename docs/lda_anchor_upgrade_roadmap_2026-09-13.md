@@ -10,7 +10,12 @@
 > - ✅ **U5**（E-MZM-VPI）：`lda/lda_solver/mzm_vpi_depletion_true.py` 落地，复用 T1-W4 2D DD 内核换锚。
 > - ✅ **U6**（量子 T1）：按本表「不改锚改判据」执行，诚实降级 `degraded_ordinal`（E9 占位）。
 > - 三桩均**复用 T1 内核、零新增独立锚**；`run_t2_anchor_upgrade_smoke.py`（13 判据）登记 CORE_SMOKES，CI core 166→168。
-> - ⏳ **U1 / U2 / U3 未开工**（B16 MMI 三方独立 / E5 双引擎损耗 / 环 FSR）：属下一 sprint。
+> - ✅ **U3（E-RING-FSR 环 FSR）已完成（v0.9.76）**：`lda/lda_harness/verification_adapters.py:ring_fsr_independent_ng` 落地——独立半矢量求解器算**直波导** n_g（Sellmeier 色散）→ 闭式 FSR=λ²/(n_g·L)；n_g 由求解器独立算出（4.0228），**非**由 8.6nm 反推 4.18（C4 防火墙）。实测 FSR=8.913nm vs 实测 8.6nm，残差 +0.31nm(+3.6%) 诚实归因**弯曲效应几何不对齐**（环 n_g=4.18 vs 直波导 4.023，Δ=−0.157），标 `degraded_ordinal`（不进死标量判决列，不宣称精度验证）。`run_e10_ring_fsr_smoke.py`（12 判据）登记 CORE_SMOKES，CI core 169→170。
+>
+> 🔴 **2026-09-13 晚间订正（诚实重分类）**：U1 / U2 **不可接，不再列入换锚**，与 B21/E4-E7 同列「诚实挂起」：
+> - **U1 = B16 MMI 自映像长度**：`benchmarks.py:388-394` 已钉死——`mmi_eme` 求解核建模对象为 **slab 对称平板**，真实器件是 **rib MMI**，二者非同一物理对象 ⇒ EME ≈24µm vs golden 27µm，diff>tol，**余量仅 ~1.3×**（远低于项目 100–1000× 标准）。按「B21 教训」：**独立求解器必须建模同一物理对象**，故 B16 保持自证桩，「宁可如实留自证桩，不可假绿」。待有 rib-MMI 全波/严格 EIM 求解器再升。
+> - **U2 = E5（E-MMI-1X2-EL）MMI 过量损耗**：tol=0.05 dB 与实测不确定度 ±0.05 dB **相等 ⇒ 判据窗口为零**；`mmi_eme.py:4` 与 `run_fdtd2d_mmi_smoke.py:162` 均确认 EME/FDTD 2D 双路线均**判不了**（残差落在数值噪声地板）。本就在「已判不可接」清单（E4/E5/E6/E7）。保持自证桩 + 已知缺口锁。
+> - ⚠️ 因此原「strict 29→35」预期**作废**：U1/U2 不可接；U3 已落地但为**实证交叉验证降级**（degraded_ordinal，不计入 strict 基线增量）；U4/U5/U6 已在 v0.9.73 落地（U6 降级）。故本表全部可换锚桩**无新增 strict 锚**，strict 维持 31；降级量级参考由 1→2（E9+E10）。
 
 ## 0. 现状与目标
 
@@ -31,7 +36,7 @@
 |---|---|---|---|---|---|---|---|---|
 | U1 | **B16** | MMI 1×2 自映像长度 | Soldano & Pennings 抛物线色散闭式（因子已修 3→9/4） | **复用 v0.9.56 双引擎**：`mmi_eme.py`（EIM+EME 解析传播）与 `fdtd2d_mmi.py`（Yee 时域全场）已知 L 处输出重叠 ⇒ 数值自映像长度（fidelity 峰值位置）；golden 仍是闭式 | EME 模数加密 / FDTD 网格加密 → 峰位收敛单调 | 中（引擎已建，需接 harness 候选 + 峰位提取） | ①峰位提取噪声（sponge 反射）②两引擎共享 2D-EIM 抽象（同源偏差，与 golden 闭式比才算三方独立） | strict（三方：闭式 vs EME vs FDTD） |
 | U2 | **E-MMI-1X2-EL（E5）** | MMI 1×2 过量损耗 | 实测 0.05 dB ±0.05（SOI 2.8×27 µm²） | **双引擎交叉验证已建未判**（mmi_eme vs fdtd2d_mmi，v0.9.56 结论「暂不足以判决」）→ 细化：判据改为**双引擎一致性区间**（两法差 < tol 且均落在实测 ±2σ 内 ⇒ 升 external-empirical-verified） | FDTD 网格加密 → excess loss 收敛；EME 模数加密 | 中（需重新跑收敛扫描，峰位 tol 细化） | 数值缺陷与抽象缺陷混杂（须先 U1 定峰位再判损耗） | strict（实证+双引擎） |
-| U3 | **E-RING-FSR** | add-drop racetrack FSR | 实测 8.6 nm ±0.1（L=66.8 µm SOI） | **复用 B4/B11 同族谱拟合**：`fdtd2d_ring.py`（v0.9.56 已有）扫 add 口透射谱 → 峰周期拟合 FSR；golden=闭式 FSR=c/(n_g·L_r)；实证=8.6nm | 环 FDTD 网格/时步加密 → 峰周期拟合收敛 | 中大（环形 FDTD 跑谱慢，需参数化 L 扫描） | racetrack 直波段+弯段 n_g 不同 ⇒ golden 需两段加权（文献公式） | strict（实证+数值谱拟合） |
+| U3 | **E-RING-FSR** | add-drop racetrack FSR | 实测 8.6 nm ±0.1（L=66.8 µm SOI） | **独立 n_g 闭式交叉验证**：`ring_fsr_independent_ng`=半矢量求解器算直波导 n_g（Sellmeier 色散）→ 闭式 FSR=λ²/(n_g·L)；n_g 由求解器独立算出（4.0228），非由 8.6nm 反推 4.18（C4 防火墙）；实证=8.6nm | 判据D：L 扰动 ⇒ FSR 单调响应；L=90µm 判决翻转 FAIL（证明非自证桩） | 小（纯 numpy/scipy 亚秒级，复用 semivec_mode_solver） | 残差 +3.6% 主成分为弯曲效应几何不对齐（环 vs 直波导 n_g 差 0.157），非数值噪声 | degraded_ordinal（实证交叉验证降级·不进死标量判决列） |
 | U4 | **E-GE-PD-RESP** | Ge p-i-n 探测器响应度 | 实测 1.1 A/W ±0.05 | **T1-W5 内核直接换锚**：`detector_bandwidth_true.py` 同族——响应度 R=η·qλ/hc 的 η 由**载流子收集效率数值解**替代标称 η=0.8：耗尽区场剖面 E(x)（T1 电学内核）+ 光生载流子输运（W5 漂移模块）⇒ 收集效率 η_col；R_cand = η_col·qλ/hc | 载流子数/时步加密 → η_col 收敛 | 小中（W5 模块复用，几何参数化） | Ge 材料参数（文献值）；探测区几何假设 | strict（实证+T1 内核） |
 | U5 | **E-MZM-VPI-18 / E-MRM-VPI-098** | MZM/MRM 载流子耗尽 Vπ·L | 实测 1.8 V·cm ±0.2（MZM） | **T1-W4 2D DD 内核换锚**：p-n 结耗尽电荷 Q_dep(V)（2D Gummel 数值）⇒ dQ/dV ⇒ C_j(V) ⇒ Vπ·L = ...·C_j/(d n_eff/dN)（Soref-Bennett B31 系数，文献）⇒ 与实测 1.8 比对 | 2D 网格加密 → Q_dep/C_j 收敛（W4 smoke 已有） | 中（W4 内核复用，需接 B31 系数与实测锚） | Soref-Bennett 系数适用域（1e17-1e20）；MZM 掺杂剖面未公开（须文献典型值，诚实标注） | strict（实证+T1 内核+文献系数） |
 | U6 | **E1/E3/E4（量子 T1·Q 系列）→ 降级替代：E-Q-TTRANS-T1** | 2D Ta transmon T1=300µs | 实测 300 µs ±50 | **不改锚，改判据**：量子 T1 属 T2 工艺真值禁区边沿（介质损耗 tanδ 是工艺参数）→ 判据从「数值解出 T1」降级为「能量弛豫时间量级带判定」（1σ 带内 = PASS），诚实标注 honest_tier=order-of-magnitude；**换锚推迟到 QEDA 数值核（T1 量子区）立项后** | 无判据D（量级带无收敛性） | 小（改 harness 判据字段） | 不虚报 strict；公开降级理由 | degraded-empirical（诚实降级） |
@@ -80,10 +85,10 @@ U5 E-MZM-VPI ─────┼─ 小中工作量，T1 内核直接受益，先
 U6 量子T1降级 ────┘
 U1 B16 三方独立 ─────── 中工作量，Ⅰ类唯一曾错桩，最高独立性价值
 U2 E5 双引擎损耗 ─────── 依赖 U1
-U3 E-RING-FSR ────────── 中大工作量（谱扫描）
+U3 E-RING-FSR ────────── ✅ 已完成（v0.9.76 · 独立 n_g 闭式降级）
                         E4/E6/E7 + B21 → 挂 T2 实测/ORACLE 通道
 ```
 
-- **建议节奏**：U4+U5+U6 一个 sprint（全复用 T1 内核）；U1+U2 一个 sprint（MMI 三方独立）；U3 视 CI 时长预算。
-- 全部完成后 strict 预期 29→**35**（+U1 +U2 +U3 +U4 +U5；U6 为降级不计入），可外部验货比例 35/58。
+- **建议节奏**：U4+U5+U6 一个 sprint（全复用 T1 内核，已完成于 v0.9.73）；U3 已完成于 v0.9.76（独立 n_g 闭式降级）；U1+U2 **诚实否决**（不可接，不列入换锚）。
+- 收口结论：本表可换锚桩**无新增 strict 锚**——U3 为实证交叉验证降级（degraded_ordinal），U4/U5/U6 于 v0.9.73 落地（U6 降级）。strict 维持 **31**；降级量级参考 1→**2**（E9+E10）；U1/U2 与 B21/E4-E7 同列「诚实挂起」，待 T2 ORACLE/求解器。
 ```

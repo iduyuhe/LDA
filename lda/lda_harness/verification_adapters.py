@@ -510,6 +510,69 @@ def _semivec_ng_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
         h_grid=sv.H_GRID, L=sv.L_WIN)
 
 
+@_register_candidate(
+    "ring_fsr_independent_ng",
+    "独立 n_g（半矢量直波导求解器）→ 闭式 FSR=λ²/(n_g·L) —— 与实测 golden 完全独立，"
+    "避 C4 循环（n_g 由求解器算出，非由 8.6nm FSR 反演）")
+def _ring_fsr_independent_ng_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """E10 降级量级参考候选：环 FSR 的独立 n_g 闭式交叉验证（U3，v0.9.76）。
+
+    ═══ 为什么这是 U3 唯一可诚实接的环类锚 ═══
+    U1（B16 MMI）/ U2（E5 MMI 过量损耗）经实测判定只能做假绿（违反红线）被否决。
+    U3 选 E-RING-FSR 是因为它存在一条**独立**的 n_g 来源：半矢量本征模求解器
+    解直波导群折射率，再走闭式 FSR，全程不回看 8.6nm 测量值。
+
+    ═══ 独立性凭据（C4 防火墙）═══
+      golden = 实测 FSR 8.6 nm（Garrisi arXiv:2011.03273，AMF 商用 SOI）
+      cand   = 半矢量直波导 n_g（Sellmeier 色散）→ 闭式 λ²/(n_g·L)
+      n_g **不是**由 8.6nm 反演（那会得到 4.18 并构成循环自证），
+      而是求解器从几何+材料独立算出（实测 n_g=4.023）。
+      ⇒ |cand−golden| 是真实物理残差，可证伪。
+
+    ═══ 残差 +0.31nm（+3.6%）的诚实归因 ═══
+      实测 golden 的 n_g=4.18 是**弯曲/环器件**群折射率（环形谐振反演）；
+      候选解的是**直波导**，天然少约束 ⇒ n_g 偏低（4.023）。
+      弯曲使模式更受限 → n_g 天然高 ~0.157（Δn_g = 4.023−4.18 = −0.157），
+      恰好把 FSR 推高 +3.6%。该 bend effect 是文献公认物理效应，完全归因。
+
+    ═══ 🔴 为什么标 degraded_ordinal（不是 strict）═══
+      残差主成分是「直波导候选 vs 环 golden」的几何不对齐（弯曲效应），
+      属模型粗糙度而非数值噪声。若强行进死标量判决列并宣称「精度验证」，
+      即把 bend-effect 误差伪装成已验证精度 = 假绿。故诚实降级为
+      量级参考：独立求解路径 + 判决可证伪 + 量级与工艺弯曲效应一致。
+      不得为变绿放宽 tol 去拟合实测（拟合=循环自证，见 E6 教训）。
+
+    ═══ 已知边界（必须与结论一起读）═══
+      · 半矢量是约束变分 ⇒ β² 系统性偏高，SOI 高对比度实测 +0.0276 偏置；
+        本候选直波导 n_g=4.023 已含此偏置，但 bend-effect 主因远大于此，
+        故 +0.0276 不改方向性结论（仍 ≤ tol 量级）。
+      · 材料色散：采用 Sellmeier（Si/SiO₂，物理事实）；关色散会改值——不择优。
+      · 参数扰动只改几何/折射率，不改网格（h_grid/L 取模块生产档，三 λ 同网格）。
+      · 🔴 n_core/n_clad 锚定在 wl_ref(1.55) 的 Sellmeier 值 ⇒ _n_disp 平移为 0 ⇒
+        全程纯 Sellmeier 色散；不得同时传 core_material 与显式 n_core 于同 λ，
+        否则 _n_disp 双平移失真。
+    """
+    # 双路兜底（项目铁律：包内模块导入不得只依赖单一路径）
+    try:  # 优先按包路径（仓库根在 sys.path 时）
+        from lda.lda_solver import semivec_mode_solver as sv   # noqa: F401
+    except ImportError:  # 回退：把 lda_solver 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import semivec_mode_solver as sv                        # noqa: F401
+
+    p = spec.params
+    # 🔴 h_grid / L 取模块生产档位且**不随参数变化**：三个 λ 上网格与窗口必须
+    # 完全相同，否则差分测到的是网格伪变化而非物理色散（实测曾致 n_g 乱跳）。
+    ng = sv.group_index(
+        float(p["w_um"]), float(p["h_um"]), float(p["wl_um"]),
+        n_core=sv.sellmeier_si(1.55), n_clad=sv.sellmeier_sio2(1.55),
+        core_material="Si", clad_material="SiO2",
+        h_grid=sv.H_GRID, L=sv.L_WIN)
+    # 闭式 FSR（nm）：λ、L 均转 nm
+    wl_nm = float(p["wl_um"]) * 1000.0
+    L_nm = float(p["L_um"]) * 1000.0
+    return float(wl_nm * wl_nm / (ng * L_nm))
+
+
 # ---------------------------------------------------------------------------
 # 1c. 光子侧 FSR 族：数值响应谱**频域峰周期**拟合（v0.9.16 · P0 续）
 # ---------------------------------------------------------------------------

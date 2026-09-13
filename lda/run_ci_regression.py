@@ -492,6 +492,15 @@ CORE_SMOKES: List[str] = [
     #   ④ 写入器源码 lint（不得再有 生成时间/裁决时间/闭环耗时/datetime.now）。
     #   纯标准库、秒级、零依赖 ⇒ 必进 core。CI core 168->169。
     "run_report_determinism_smoke.py",
+    # v0.9.76（U3 · 自证桩换锚 sprint）：E10 微环 FSR 独立 n_g 闭式交叉验证护栏。
+    #   独立半矢量直波导 n_g → 闭式 FSR=λ²/(n_g·L) 与实测 8.6nm 残差 +0.31nm(+3.6%)，
+    #   诚实降级 degraded_ordinal（残差主成分=弯曲效应几何不对齐，非数值噪声）。
+    #   12 判据（登记防回退 / 正向 PASS / C4 防火墙非循环 / 判据D 几何可证伪 / 反向 L=90µm 翻转 FAIL）。
+    #   纯 numpy/scipy 亚秒级、零新物理、零 A 级/DEVSIM 依赖，无权豁免必进 core。CI core 169->170。
+    "run_e10_ring_fsr_smoke.py",
+    #   v0.9.77 · 反向偏压模型局限诚实护栏：正偏 V≥0 收敛可用 / 反偏 V<0 必带 reverse_bias_unvalidated
+    #   标志（防未来重构静默移除局限披露）。纯 numpy/scipy 亚秒级、零新物理、零 A 级/DEVSIM 依赖，必进 core。CI core 170->171。
+    "run_t1_reverse_bias_limitation_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

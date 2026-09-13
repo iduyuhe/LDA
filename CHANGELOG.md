@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.9.77（2026-09-13 · 反向偏压模型局限文档 + 诚实护栏 · CI core 170→171 条）
+
+### 反向偏压模型局限（Task #4 · 已知缺口诚实披露）
+- 文档化 `lda/lda_solver/drift_diffusion_2d.py` 中 2D Gummel 漂移-扩散电流内核 `solve_pn_junction_2d_bias` 的**反向偏压局限**：仅在正偏 / 近平衡（V ≥ 0）经实测验证可用；反偏（V < 0）下非物理、不可用。
+- 根因（实测）：连续性方程 `_solve_continuity_sg` 取 **稳态 G=R（无复合-产生）**，接触少数载流子 **Dirichlet BC 钉在低注入理想二极管律** `n_i²/N_A·exp(V/V_T)`；反偏时该 BC 坍塌 → 0，耗尽区又无 R-G 供给反向饱和电流的物理来源，Gummel 每轮由 n/p 反推准费米势再解泊松在反偏下正反馈发散。实测：V=−0.5V → I≈−1.4e-3 A（饱和电流应为 −5.8e-12 A，**约 2.4×10⁹ 倍且完全不饱和**）；V≤−1V → Gummel 不收敛（conv=False）、空穴密度越界 p_max>N_A、电流达数百安非物理。
+- 交付：`docs/lda_reverse_bias_limitation.md`（根因 / 受影响代码 / 实测症状 / 已验证 vs 未验证区间 / 项目如何规避 / 升级路径 / 机器可发现护栏）；模块 docstring 加 🔴 反向偏压局限横幅；`solve_pn_junction_2d_bias` 返回 dict 新增 `reverse_bias_unvalidated` 标志（V<0 时 True，非破坏性，仅诚实标记）。
+- 护栏 `run_t1_reverse_bias_limitation_smoke.py`（**8 判据**，入 core 170→171）：正偏 V=+0.6 收敛且电流符号/量级符合短二极管闭式、reverse_bias_unvalidated=False；反偏 V=−1.0/−2.0 必带 reverse_bias_unvalidated=True；反偏电流非饱和（|I|≫I_s）且 V=−2.0 不收敛——印证局限文档。纯 numpy/scipy 亚秒级、零新物理、零 A 级/DEVSIM 依赖，必进 core。
+- 红线守住：U3（v0.9.76）与本项目已验证反偏分析（MZM Vπ 耗尽 / APD 雪崩 / 探测器带宽）均**不依赖本 2D 反偏电流解**，局限不影响任何已发布锚题诚实性。
+
+## v0.9.76（2026-09-13 · U3 微环 FSR 独立 n_g 闭式交叉验证 · CI core 169→170 条）
+
+### U3 · 自证桩换锚 sprint（E-RING-FSR）
+- 把实证语料 **E-RING-FSR**（AMF 商用 SOI 500×220nm²、add-drop racetrack L=66.8µm、实测 FSR 8.6nm）从「未接线语料」升级为**诚实降级量级参考判决锚 E10**。
+- 独立候选 `ring_fsr_independent_ng`：半矢量本征模求解器解**直波导**群折射率 n_g（Sellmeier 色散，纯数值、零 A 级/DEVSIM 依赖）→ 闭式 FSR=λ²/(n_g·L)。
+- 实测：独立 n_g=4.0228（vs 环器件 golden n_g=4.18）→ FSR=8.913nm vs 实测 8.6nm，**残差 +0.31nm（+3.6%）**。
+- 🔴 **诚实边界（红线）**：残差主成分 = 「直波导候选 vs 环 golden」的**弯曲效应几何不对齐**（弯曲使模式更受限 ⇒ 环 n_g 天然高 ~0.157），属模型粗糙度非数值噪声；标 `degraded_ordinal` **不进死标量判决列**，不宣称精度验证、不放宽 tol 去拟合实测（拟合=循环自证，见 E6/E9 教训）。
+- 🔴 **C4 防火墙**：n_g 由求解器从几何+材料独立算出（4.0228），**不是**由 8.6nm 反演的 4.18（否则即循环自证）；故 |cand−golden| 是真实物理残差，可证伪。
+- 🔴 U1（B16 MMI）/U2（E5 MMI 过量损耗）经实测判定只能做假绿（违反红线）已否决，U3 选本锚即因其存在独立 n_g 源、可避 C4 循环。
+- 护栏 `run_e10_ring_fsr_smoke.py`（**12 判据**，入 core 169→170）：登记防回退 / 正向 PASS / C4 防火墙非循环 / 判据D 几何可证伪（L=90µm 判决翻转 FAIL）/ 基线残差严格非零。纯 numpy+scipy 亚秒级、零新物理、零 A 级/DEVSIM 依赖，无权豁免必进 core。
+- 账本刷新：56 题（E1-E10）、CI core 170 条、verified=31/56（严格独立 31 · 降级 2 · 自证桩 23）、降级量级参考 1→2 道（E9+Y3→E9+E10）。
+
 ## v0.9.49（2026-09-06 · N-5 导购二期（无 LLM 可降级版）上线 · CI core 126→127 条）
 
 ### N-5 导购二期（D-2=A · 锚定导购、无 LLM 可降级版）

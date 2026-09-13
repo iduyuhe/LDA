@@ -14,6 +14,21 @@
   `T1_OUTPUT_IS_ORACLE=False` 为铁律开关；`guard_t1_not_oracle()` 为反向测试守卫。
 - 🔴 **EAR 744.23 成熟节点用途声明**：本内核声明仅用于成熟节点 /
   非先进用途半导体器件设计仿真。见 docs/ 合规件（T1-B-W3）。
+- 🔴 **反向偏压局限（已验证·已知缺口，不进方法学比对）**：本 2D 内核的输运
+  求解（`solve_pn_junction_2d_bias`）**仅在正偏 / 近平衡（V ≥ 0）经实测验证可用**；
+  **反偏（V < 0）下非物理、不可用**。根因：连续性方程 `_solve_continuity_sg`
+  为 **稳态 G=R（无复合-产生项）**，且接触少数载流子被 **Dirichlet BC 钉在低注入
+  理想二极管律** `n_i²/N_A·exp(V/V_T)`。反偏时该 BC 坍塌 → 0，耗尽区又无 R-G 供给
+  反向饱和电流的物理来源，Gummel 每轮由 n/p 反推准费米势再解泊松（见函数内
+  φ_n/φ_p 重推导）在反偏下正反馈发散。实测：V=−0.5V → I≈−1.4e-3 A（饱和电流应
+  为 −5.8e-12 A，**约 2.4×10⁹ 倍且完全不饱和**）；V≤−1V → Gummel 不收敛
+  （conv=False）、空穴密度越界 p_max>N_A、I 达数百安非物理。
+  ⇒ 函数对 V<0 返回 **`reverse_bias_unvalidated=True`** 标志（非破坏性，仅诚实标记），
+  **该输出绝不可作为验证结果 / ORACLE 使用**。完整根因、受影响代码、已验证 vs 未验证
+  区间与升级路径见 **`docs/lda_reverse_bias_limitation.md`**。
+  🔴 本项目已验证的反偏分析（MZM Vπ 耗尽、APD 雪崩、探测器带宽）**刻意绕开本解算器
+  的反偏电流路径**：改用 1D 平衡/耗尽内核 + n_i 等价缩放（仅取耗尽场/剖面）+ 教科书
+  闭式耗尽物理，从不在此 2D 电流求解器上施反偏。
 
 物理（Sze《Physics of Semiconductor Devices》§2.2 突变 p-n 结）：
 - 平衡：泊松 ∇²φ = −(q/ε)(n − p + N_D − N_A)；电中性 + 质量作用 +
@@ -508,6 +523,9 @@ def solve_pn_junction_2d_bias(V: float, N_A: float = N_A_DEFAULT, N_D: float = N
         "n": n, "p": p, "phi": phi.reshape(nx, ny), "I": I,
         "I_s_short_closed": gold["I_s_short"], "I_s_long_closed": gold["I_s"],
         "V": V, "converged": converged,
+        # 🔴 反向偏压诚实标记：V<0 时本解算器非物理（见模块 docstring + docs 局限文档），
+        # 该输出绝不可作为验证结果 / ORACLE。正偏 V≥0 为 False（已验证可用区间）。
+        "reverse_bias_unvalidated": bool(V < 0.0),
         "provenance": "self_authored_t1_candidate", "is_oracle": False,
     }
 

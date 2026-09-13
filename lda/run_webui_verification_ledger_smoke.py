@@ -24,10 +24,10 @@ from lda_harness.benchmarks import BENCHMARK_DEFS
 # 动态锚总数：题库增长时自动跟随。🔴 铁律「等价断言 + 会增长集合 = 定时炸弹」
 # ⇒ 总数类断言一律动态推导，只有「文档账本」的显式数字保留为第二把锁。
 _N_ANCHORS = len(BENCHMARK_DEFS)
-# 文档账本（README「当前账本」段 · v0.9.73）：严格独立 31 · 降级 1 · 自证桩 23。
+# 文档账本（README「当前账本」段 · v0.9.77 U3 后）：严格独立 31 · 降级 2（E9 + U3 E10）· 自证桩 23。
 # 由 run_three_class_consistency_smoke.py 守护「README ≡ harness ≡ 端点」三面一致；
 # 此处显式数字作第二把锁——账本若漂移必须显式同步，不允许静默通过。
-_DOC_TIERS = {"strict_independent": 31, "degraded_ordinal": 1, "self_certified": 23}
+_DOC_TIERS = {"strict_independent": 31, "degraded_ordinal": 2, "self_certified": 23}
 _DOC_LOW_CONF = 13
 
 

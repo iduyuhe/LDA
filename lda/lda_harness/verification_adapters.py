@@ -22,6 +22,7 @@ from .verification_spec import (
 )
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.path.dirname(os.path.dirname(_HERE))  # 项目根（lda/ 的父目录）：使 `from lda.lda_solver import` 绝对包导入可用
 _SOLVER_DIR = os.path.join(os.path.dirname(_HERE), "lda_solver")
 _AGENT_DIR = os.path.join(os.path.dirname(_HERE), "lda_agent")
 
@@ -32,7 +33,7 @@ def _ensure_paths():
     # lda_harness 目录在 sys.path 上。原先只加 solver/agent 目录 ⇒ 直接 `python
     # run_harness.py`（仓库根不在 sys.path）时 B31 候选 ImportError **裸崩**，
     # 主对外报告生成失败（CI 主入口）。见 run_harness.py B31 崩溃复现。
-    for p in (_SOLVER_DIR, _AGENT_DIR, _HERE):
+    for p in (_ROOT, _SOLVER_DIR, _AGENT_DIR, _HERE):
         if p not in sys.path:
             sys.path.insert(0, p)
 

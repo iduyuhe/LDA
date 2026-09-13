@@ -508,6 +508,12 @@ CORE_SMOKES: List[str] = [
     #   类型/取值域符合，7/7 PASS。纯标准库 + lda_chain/lda_harness import，亚秒级、无
     #   torch/numba/cupy/meep 重依赖，无权豁免必进 core。CI core 171->172。
     "run_agent_verify_link_contract_smoke.py",
+    # P1-3 四层系统 S9 立项前红线闸门自检（建议 A：每层挂 VMM 锚 ≥ self_certified）：
+    # G1 主权(C级不借Meep/Tidy3D) / G2 LLM不进判决 / G3 四层全 ADMISSIBLE
+    # （L1 B14方法学独立 + L2 Reck定理 高于门槛；L3/L4 Tier-1 自证桩，不虚报）/
+    # G4 不虚报 / G5 外置激光可绕；并断言引擎重构机器精度。
+    # 纯 numpy、零 A 级/DEVSIM 依赖，无权豁免必进 core。CI core 172->173。
+    "run_four_layer_redline_gate_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

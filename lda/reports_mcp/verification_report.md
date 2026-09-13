@@ -24,7 +24,7 @@
 | B19 | max|T(λ)| over all transfer paths | physical-law | 1 | 1 | 0 | 1e-09 | ✅ PASS |
 | B2 | n_eff | physical-law | 2.65095 | 3.27562 | 0.6247 | 0.05 | ❌ FAIL |
 | B20 | FSR_nm | physical-law | 20.0108 | 20.0108 | 0 | 1e-06 | ✅ PASS |
-| B21 | cavity_wl_nm | physical-law | 2214 | 2214 | 0 | 1e-06 | ✅ PASS |
+| B21 | cavity_wl_nm | physical-law | 2214 | 2214 | 0 | 66 | ✅ PASS |
 | B22 | qres_f_ghz | physical-law | 7.49481 | 7.49481 | 0 | 1e-06 | ✅ PASS |
 | B23 | fluxonium_f01_ghz | physical-law | 2.82843 | 2.82843 | 0 | 1e-06 | ✅ PASS |
 | B24 | tcoup_geff_ghz | physical-law | -0.004 | -0.004 | 0 | 3e-05 | ✅ PASS |

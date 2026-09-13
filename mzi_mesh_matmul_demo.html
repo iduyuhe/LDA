@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LDA · MZI 网格矩阵乘 MVP demo</title>
+<style>
+ body{font-family:-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;
+   margin:0;background:#f8fafc;color:#0f172a;line-height:1.6}
+ .wrap{max-width:880px;margin:0 auto;padding:32px 20px}
+ h1{font-size:24px;margin:0 0 4px}
+ .sub{color:#64748b;font-size:14px;margin-bottom:20px}
+ .card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin:14px 0}
+ .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+ .m{background:#eff6ff;border-radius:8px;padding:10px;text-align:center}
+ .m .v{font-size:20px;font-weight:700;color:#2563eb}
+ .m .l{font-size:11px;color:#475569}
+ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+ th,td{border:1px solid #e2e8f0;padding:6px 8px;text-align:center}
+ th{background:#f1f5f9}
+ .dis{background:#f1f5f9;border-left:4px solid #2563eb;border-radius:6px;padding:12px 16px;font-size:13px}
+ .dis ul{margin:6px 0 0;padding-left:18px}
+ .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+ .ok{background:#dcfce7;color:#166534} .warn{background:#fef9c3;color:#854d0e}
+ .gate{background:#fff7ed;border-left:4px solid #f59e0b}
+ h2{font-size:16px;margin:0 0 8px}
+ .foot{color:#94a3b8;font-size:12px;margin-top:18px}
+</style></head>
+<body><div class="wrap">
+<h1>LDA · MZI 网格矩阵乘 MVP</h1>
+<div class="sub">四层系统 S9 · L1 被动前端 + L2 编译映射 · 对外可演示 · C 级自主（纯 numpy）</div>
+
+<div class="card">
+ <div class="metrics">
+  <div class="m"><div class="v">4</div><div class="l">维度 N</div></div>
+  <div class="m"><div class="v">6</div><div class="l">MZI 单元数</div></div>
+  <div class="m"><div class="v">1.000000</div><div class="l">重构保真度</div></div>
+  <div class="m"><div class="v">14.40</div><div class="l">级联插损(dB)</div></div>
+  <div class="m"><div class="v">7.750</div><div class="l">50/50 耦合长(µm)</div></div>
+  <div class="m"><div class="v">25.00</div><div class="l">首相移电压(V)</div></div>
+  <div class="m"><div class="v">4.90899399e-16</div><div class="l">重构误差(‖·‖_F)</div></div>
+  <div class="m"><div class="v">DFT</div><div class="l">目标酉</div></div>
+ </div>
+</div>
+
+<div class="card">
+ <h2>光学矩阵乘演示（输入端口 0 单热 → 输出幅值）</h2>
+ <svg viewBox='0 0 520 215' width='100%' style='max-width:560px'><g><rect x="30" y="50.0" width="36" height="120.0" fill="#2563eb" rx="3"/><text x="48" y="188.0" font-size="11" fill="#475569" text-anchor="middle">0.500</text><text x="48" y="200" font-size="11" fill="#475569" text-anchor="middle">port 0</text></g><g><rect x="100" y="50.0" width="36" height="120.0" fill="#2563eb" rx="3"/><text x="118" y="188.0" font-size="11" fill="#475569" text-anchor="middle">0.500</text><text x="118" y="200" font-size="11" fill="#475569" text-anchor="middle">port 1</text></g><g><rect x="170" y="50.0" width="36" height="120.0" fill="#2563eb" rx="3"/><text x="188" y="188.0" font-size="11" fill="#475569" text-anchor="middle">0.500</text><text x="188" y="200" font-size="11" fill="#475569" text-anchor="middle">port 2</text></g><g><rect x="240" y="50.0" width="36" height="120.0" fill="#2563eb" rx="3"/><text x="258" y="188.0" font-size="11" fill="#475569" text-anchor="middle">0.500</text><text x="258" y="200" font-size="11" fill="#475569" text-anchor="middle">port 3</text></g></svg>
+</div>
+
+<div class="card">
+ <h2>Reck 分解 · MZI 网格（6 单元）</h2>
+ <table><thead><tr><th>#</th><th>行(i,j)</th><th>θ(rad)</th><th>φ(rad)</th><th>分束比 sin²(θ/2)</th></tr></thead><tbody><tr><td>1</td><td>0,1</td><td>1.57079633</td><td>3.14159265</td><td>0.5</td></tr><tr><td>2</td><td>0,2</td><td>1.23095942</td><td>3.14159265</td><td>0.333333333</td></tr><tr><td>3</td><td>0,3</td><td>1.04719755</td><td>3.14159265</td><td>0.25</td></tr><tr><td>4</td><td>1,2</td><td>1.82347658</td><td>4.24874137</td><td>0.625</td></tr><tr><td>5</td><td>1,3</td><td>1.23095942</td><td>5.49778714</td><td>0.333333333</td></tr><tr><td>6</td><td>2,3</td><td>1.57079633</td><td>4.24874137</td><td>0.5</td></tr></tbody></table>
+ <p style="font-size:12px;color:#64748b">每个 MZI 单元 = 50/50 定向耦合器（CMT 耦合长度由 B14 锚定）
+ + 相移器（Vπ·L 物理定律）。网格精确重构目标酉（数学定理，机器精度）。</p>
+</div>
+
+<div class="card gate">
+ <h2>红线闸门自检 · GateReport = <span class="tag ok">PASS</span></h2>
+ <table><thead><tr><th>闸门</th><th>状态</th><th>判词</th></tr></thead><tbody><tr><td>G1</td><td><b>PASS</b></td><td style='text-align:left'>C 级自主（纯 numpy），未借 Meep/Tidy3D（A 级禁）</td></tr><tr><td>G2</td><td><b>PASS</b></td><td style='text-align:left'>矩阵运算全为 numpy 死标量，LLM 不进判决路径</td></tr><tr><td>G3</td><td><b>PASS</b></td><td style='text-align:left'>四层均挂 VMM 锚 ≥ self_certified（建议 A 达成）：L1 B14 方法学独立 / L2 Reck 定理（均高于门槛）；L3 相位标定 / L4 电-热-光协同 为 Tier-1 自证桩（明确升级路径与验证责任方，不虚报为已验证）。</td></tr><tr><td>G4</td><td><b>PASS</b></td><td style='text-align:left'>诚实边界已声明真实相干实测未含、不声称已实现相干光学计算机，且 L3/L4 明确标 Tier-1 自证桩</td></tr><tr><td>G5</td><td><b>BYPASSABLE</b></td><td style='text-align:left'>L3 相干激光+探测器+相位标定闭环对经典光子计算属外置可绕，不破红线（光子学经典计算无需内置相干源）；L3 待建时不阻断 L1/L2 演示。</td></tr></tbody></table>
+ <table><thead><tr><th>四层系统</th><th>VMM 锚</th><th>成熟度 tier</th><th>准入</th></tr></thead><tbody><tr><td style='text-align:left'>L1_passive_frontend</td><td>B14</td><td>methodologically_independent</td><td><b>ADMISSIBLE</b></td></tr><tr><td style='text-align:left'>L2_compilation</td><td>Reck</td><td>mathematical_theorem</td><td><b>ADMISSIBLE</b></td></tr><tr><td style='text-align:left'>L3_control_calibration</td><td>L3-PHASE-CAL-STUB</td><td>self_certified</td><td><b>ADMISSIBLE</b></td></tr><tr><td style='text-align:left'>L4_cosim</td><td>L4-ETO-COSIM-STUB</td><td>self_certified</td><td><b>ADMISSIBLE</b></td></tr></tbody></table>
+ <p style="font-size:12px;color:#64748b">建议 A：四层系统每层各挂 VMM 锚且成熟度 ≥ self_certified。
+ L1(B14 方法学独立) / L2(Reck 定理) 高于门槛；L3/L4 为 <b>Tier-1 自证桩</b>（非已验证，
+ 明确升级路径与验证责任方）——自证桩是合法的第一验证阶段（VMM, v0.9.62）。</p>
+</div>
+
+<div class="card">
+ <h2>诚实边界披露（防纸糊楼 / 不虚报）</h2>
+ <div class="dis"><ul><li><b>layer1_passive_physics</b>：MZI 单元 50/50 耦合器长度由 dc_cmt_solver.dc_3dB_fft (B14 方法学独立候选) 锚定；相移器由 Vπ·L 物理定律给出。</li><li><b>layer2_compilation</b>：目标酉经 Reck 分解精确实现（数学定理，非验证锚）。</li><li><b>layer3_control_calibration</b>：本 demo **未含**真实相干光学测量（相干激光 + 探测器 + 相位标定闭环）；L3 控制/标定链路仅登记 Tier-1 自证桩（V↔φ↔T 闭环模型自洽），对经典光子外置可绕（不破红线）。</li><li><b>layer4_cosim</b>：系统级协同仿真仅登记 Tier-1 自证桩（电-热-光链式模型自洽）；真实多域协同仿真与器件实测未含。</li><li><b>sovereignty</b>：C 级自主（纯 numpy），不借 Meep/Tidy3D（A 级禁）；LLM 不进判决路径。</li><li><b>honest_boundary</b>：本 demo 演示 MZI 网格实现目标酉的'编译+被动前端'核心与级联插损预算；L3/L4 为立项前 Tier-1 自证桩（非已验证），**不声称**已实现相干光学计算机。</li></ul></div>
+</div>
+
+<div class="foot">LDA 开源 Agent 原生光子/量子芯片设计软件 · 四层系统 S9 立项前红线自检 demo ·
+本页为确定性生成（无 wall-clock），浮点 9 位有效数字。</div>
+</div></body></html>

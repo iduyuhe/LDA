@@ -2,7 +2,7 @@
   "schema": "lda-verification-report/1",
   "meta": {
     "L0_IR": "(内置默认 B1–B4,B8)",
-    "candidate": "IndependentCandidateRouter(独立候选 31 道: B1,B10,B11,B12,B13,B14,B15,B19,B2,B20,B22,B23,B24,B25,B26,B27,B28,B29,B3,B30,B31,B32,B33,B4,B8,B9,E2,E8,S13,S7,S8；降级量级参考 2 道: E10,E9)",
+    "candidate": "IndependentCandidateRouter(独立候选 31 道: B1,B10,B11,B12,B13,B14,B15,B19,B2,B20,B22,B23,B24,B25,B26,B27,B28,B29,B3,B30,B31,B32,B33,B4,B8,B9,E2,E8,S13,S7,S8；降级量级参考 3 道: B21,E10,E9)",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "self_consistent": true
   },
@@ -11,12 +11,12 @@
     "passed": 56,
     "self_consistent": true,
     "verified": 31,
-    "self_consistent_stub_count": 23,
+    "self_consistent_stub_count": 22,
     "independent_candidate_count": 31,
     "candidate_class_totals": {
       "strict_independent": 31,
-      "degraded_ordinal": 2,
-      "self_consistent_stub": 23
+      "degraded_ordinal": 3,
+      "self_consistent_stub": 22
     }
   },
   "results": [
@@ -195,12 +195,12 @@
       "oracle": "analytical(PhC Bragg/FP band-edge)",
       "source": "physical-law",
       "golden": 2214.0,
-      "candidate": 2214.0,
-      "tol": 1e-06,
+      "candidate": 2214.87,
+      "tol": 66.0,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "degraded_ordinal"
     },
     {
       "id": "B22",

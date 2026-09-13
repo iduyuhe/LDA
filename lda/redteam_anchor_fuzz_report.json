@@ -2,11 +2,11 @@
   "strict_total": 31,
   "strict_attacked": 31,
   "strict_coverage": 1.0,
-  "attacks_total": 678,
+  "attacks_total": 665,
   "genuine_div": 30,
   "cand_limitation": 12,
   "golden_unstable": 17,
-  "divergence_rate": 0.0693215339,
+  "divergence_rate": 0.0706766917,
   "findings": [
     {
       "bid": "B1",

@@ -1,16 +1,16 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
 - L0_IR：(内置默认 B1–B4,B8)
-- candidate：IndependentCandidateRouter(独立候选 31 道: B1,B10,B11,B12,B13,B14,B15,B19,B2,B20,B22,B23,B24,B25,B26,B27,B28,B29,B3,B30,B31,B32,B33,B4,B8,B9,E2,E8,S13,S7,S8；降级量级参考 1 道: E9)
+- candidate：IndependentCandidateRouter(独立候选 31 道: B1,B10,B11,B12,B13,B14,B15,B19,B2,B20,B22,B23,B24,B25,B26,B27,B28,B29,B3,B30,B31,B32,B33,B4,B8,B9,E2,E8,S13,S7,S8；降级量级参考 2 道: E10,E9)
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - self_consistent：True
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **31 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余项中 **23 项**走 ReferenceCandidate 占位自证（候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**），**1 项**为降级量级参考（有独立候选但与 golden 几何不同源/精度不足，**不进死标量判决**）。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 31 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **31 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余项中 **23 项**走 ReferenceCandidate 占位自证（候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**），**2 项**为降级量级参考（有独立候选但与 golden 几何不同源/精度不足，**不进死标量判决**）。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 31 项。
 > 📌 **两条判决路径口径不同（C-1 诚实披露 · v0.9.30 · T-5）**：本报告的 `verified` 来自**路径①**（`IndependentCandidateRouter`，方法学不同源的独立频域候选）。
 > **路径②** `run_harness.py --ai`（L3 AI 写内核 demo，离线回退 `_local_approx`）实测 `verified=2/48`（仅 B1/B4 真实现且 PASS，余 46 道为 `return golden` 自证桩）。
 > 两路径候选体系本就不同，**均为如实口径、不构成虚报**；对外「独立候选 31/48」特指路径①。
 
-## 汇总：55/55 通过（独立候选 31 项中 **31 项通过=已验证** · 23 项自证闭环 · 1 项降级量级参考（不进判决），**非验证结论**）
+## 汇总：56/56 通过（独立候选 31 项中 **31 项通过=已验证** · 23 项自证闭环 · 2 项降级量级参考（不进判决），**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -48,6 +48,7 @@
 | B8 | T_taper | physical-law | 1 | 0.999954 | 4.65e-05 | 0.01 | ✅ PASS |
 | B9 | f01_GHz | physical-law | 6.6282 | 6.61345 | 0.01475 | 0.05 | ✅ PASS |
 | E1 | n_g | empirical-measurement | 4.18 | 4.18 | 0 | 0.1 | ✅ PASS |
+| E10 | FSR_nm | empirical-measurement | 8.6 | 8.91282 | 0.3128 | 0.6 | ✅ PASS |
 | E2 | n_g | empirical-measurement | 1.892 | 1.95718 | 0.06518 | 0.1 | ✅ PASS |
 | E3 | FSR_nm | empirical-measurement | 10.44 | 10.44 | 0 | 0.1 | ✅ PASS |
 | E4 | insertion_loss_dB | empirical-measurement | 0.18 | 0.18 | 0 | 0.1 | ✅ PASS |

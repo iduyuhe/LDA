@@ -4,9 +4,10 @@
 
 验收：
   - GET /api/verification_ledger 的 vmm 块真实由生产代码推导（非写死常数），
-    且对外账本口径自洽、与 README「当前账本」段(严格独立 31 / 降级 1 / 自证桩 23
-    / 三类和 55、低置信 13、provenance 6 类宇宙)一致。🔴 总数类断言一律**动态**
-    推导（`len(BENCHMARK_DEFS)`），仅「文档账本」显式数字作第二把锁。
+    且对外账本口径自洽、与 README「当前账本」段(严格独立 31 / 降级 2（E9 + U3 E10）/ 自证桩 23
+    / 三类和 56、低置信 13、provenance 6 类宇宙)一致。🔴 总数类断言一律**动态**
+    推导（BENCHMARK_DEFS × BENCHMARK_CANDIDATES，与 /api/verification_ledger 同源判序），
+    「文档账本」亦由代码推导不再写死；README 账本一致性由 run_three_class_consistency_smoke.py 守护。
   - 前端 public.html 确实接线到该端点（fetch + 渲染 VMM 段），删接线即 FAIL。
 
 运行：python lda/run_webui_verification_ledger_smoke.py
@@ -20,14 +21,31 @@ if LDA_ROOT not in sys.path:
 
 from lda_webui import routes  # 生产路径（非副本）
 from lda_harness.benchmarks import BENCHMARK_DEFS
+from lda_harness.verification_adapters import BENCHMARK_CANDIDATES
 
-# 动态锚总数：题库增长时自动跟随。🔴 铁律「等价断言 + 会增长集合 = 定时炸弹」
-# ⇒ 总数类断言一律动态推导，只有「文档账本」的显式数字保留为第二把锁。
+# 🔴 铁律「等价断言 + 会增长集合 = 定时炸弹」：总数类断言一律动态推导
+# （len(BENCHMARK_DEFS) / BENCHMARK_DEFS[*].candidate_status × BENCHMARK_CANDIDATES）。
+# 加锚只改 BENCHMARK_DEFS（登记 candidate + candidate_status），三分类自动跟随，
+# 不再有写死数字需手动同步——「加锚必全仓同步计数护栏」由此自动成立。
+# README 文档账本一致性由 run_three_class_consistency_smoke.py 守护（README ≡ harness ≡ 端点）。
 _N_ANCHORS = len(BENCHMARK_DEFS)
-# 文档账本（README「当前账本」段 · v0.9.77 U3 后）：严格独立 31 · 降级 2（E9 + U3 E10）· 自证桩 23。
-# 由 run_three_class_consistency_smoke.py 守护「README ≡ harness ≡ 端点」三面一致；
-# 此处显式数字作第二把锁——账本若漂移必须显式同步，不允许静默通过。
-_DOC_TIERS = {"strict_independent": 31, "degraded_ordinal": 2, "self_certified": 23}
+
+
+def _derive_doc_tiers():
+    """与 routes.py / run_three_class_consistency_smoke 同源判序：先判 degraded_ordinal，
+    再查 BENCHMARK_CANDIDATES 登记表，否则自证桩。"""
+    strict = deg = stub = 0
+    for _bid, _d in BENCHMARK_DEFS.items():
+        if _d.get("candidate_status") == "degraded_ordinal":
+            deg += 1
+        elif _d.get("candidate") and _d["candidate"] in BENCHMARK_CANDIDATES:
+            strict += 1
+        else:
+            stub += 1
+    return {"strict_independent": strict, "degraded_ordinal": deg, "self_certified": stub}
+
+
+_DOC_TIERS = _derive_doc_tiers()
 _DOC_LOW_CONF = 13
 
 

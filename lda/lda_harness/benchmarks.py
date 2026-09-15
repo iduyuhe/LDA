@@ -64,6 +64,9 @@ from .b31_soref_bennett_anchor import (  # noqa: E402  # B31 Si 载流子色散�
 from .b32_qcse_anchor import (  # noqa: E402  # B32 EAM-QCSE 吸收边位移锚（v0.9.69 · T1-C W4）
     b32_qcse_edge_shift_meV, b32_qcse_report,
 )
+from ._batch_b_numeric import (  # noqa: E402  # Batch B-1 双方法独立锚数值核（v0.9.79 · 路径 B 扩基）
+    golden_b34, golden_b36, golden_b37, golden_b40, golden_b41,
+)
 
 BENCHMARK_DEFS = {
     "B1": {
@@ -391,7 +394,9 @@ BENCHMARK_DEFS = {
                  "diff> tol 3.0µm，余量仅 ~1.3×，远低于本项目严格锚 100–1000× 标准。"
                  "沿用「B21 教训」：独立求解器必须建模同一物理对象，symmetric-slab EME ≠ "
                  "rib MMI，故不作为 B16 的合法独立候选（宁可如实留自证桩，不可假绿）。"
-                 "待有 rib-MMI 全波/严格 EIM 求解器且与其余量达标，再升格严格独立。"),
+                 "待有 rib-MMI 全波/严格 EIM 求解器且与其余量达标，再升格严格独立。"
+                 "【v0.9.80·2026-09-16 P1-1 重审】数值复核 golden(2.8,2.4,1.55)=27.314µm≈实测27µm；"
+                 "mmi_eme 确认建模 symmetric slab（非 rib）→ 对象不匹配判定不变，留桩。"),
     },
     "B17": {
         "title": "约瑟夫森结临界电流 I_c",
@@ -749,6 +754,111 @@ BENCHMARK_DEFS = {
                  "仅 RC 限制带宽，不含渡越时间/暗电流/APD 倍增（B 档禁区）。"
                  "A 档闭式/行为层有源，纯电路无光子有源物理 ⇒ 不破红线。"
                  "LLM 不进判决路径。"),
+    },
+    # ---- Batch B-1（v0.9.79 · 路径 B 扩基：5 道双方法严格独立新锚）----
+    # 设计纪律：每个锚 = 确定性解析闭式 golden 对拍 方法学不同源真实数值候选，
+    # 残差 = 近似/离散固有误差（持久、随参数变化、可证伪），非代数恒等、非噪声地板。
+    # 复用 B12/B22 已验证 FD 本征核（判据 D 由 run_d_criterion_smoke 已证）；
+    # B34 为超越方程二分（无离散参数，判据 D 不适用，同 B9 闭式互证先例）。
+    "B34": {
+        "title": "条形介质波导 TE0 有效折射率（Marcatili 近似 vs 严格超越方程二分）",
+        "metric": "n_eff",
+        "oracle": ("analytical(Marcatili 1969 等效宽度近似) + "
+                   "strict_transverse_resonance_bisection independent_cross_check"),
+        "tol": 0.01,
+        # v0.9.79（路径 B 扩基 · Batch B-1）：golden = Marcatili 一阶等效宽度近似
+        # n_eff≈n_f·sqrt(1-(λ/(2·w_eff·n_f))²)（w_eff=t+2d, d 为横向衰减深度）；
+        # candidate = 严格横向谐振超越方程 tan(κ·t/2)=γ/κ 二分求根（同一物理定律
+        # 的两种算法，方法学不同源）。判据 D：B34 为解析超越方程二分（无离散网格
+        # 参数）→ 不适用，同 B9 闭式互证先例于 note 论证。
+        "candidate": "slab_te0_neff_exact",
+        "candidate_desc": ("严格横向谐振超越方程二分求根 n_eff（解析近似 vs 数值超越"
+                           "方程，方法学不同源，判据 D 不适用同 B9）"),
+        "default_params": {"n_f": 3.48, "n_c": 1.44, "t": 0.5, "wl": 1.55},
+        "golden_fn": golden_b34,
+        "note": ("条形介质波导（SOI/SiN 脊型近似为对称条形）TE0 有效折射率。"
+                 "golden=Marcatili 1969 一阶等效宽度近似（w_eff=t+2/√(k0²(n_f²−n_c²))，"
+                 "n_eff≈n_f·sqrt(1−(λ/(2·w_eff·n_f))²)）。candidate=严格横向谐振超越方程"
+                 " tan(κt/2)=γ/κ 二分求根（同一物理定律的两种算法）。基线残差 2.46e-3"
+                 "（tol=0.01 的 ~4× 余量，≫1e-12 噪声地板）；判据 D 不适用（二分无离散"
+                 "参数，同 B9 先例）。反向 t×1.1 ⇒ 候选 3.304 vs golden 3.273，|Δ|≈0.031"
+                 "> tol 必 FAIL。零商业依赖、纯 numpy/scipy、LLM 不进判决路径。"),
+    },
+    "B36": {
+        "title": "矩形金属波导 TE10 截止频率（c/(2a) 闭式 vs 1D FD 本征）",
+        "metric": "fc_Hz",
+        "oracle": ("analytical(TE10 cutoff c/(2a)) + "
+                   "1D FD eigenmode_bisection independent_cross_check"),
+        "tol": 0.01e9,   # 0.01 GHz
+        # v0.9.79（路径 B 扩基 · Batch B-1）：golden = TE10 截止 c/(2a)；candidate =
+        # 1D Dirichlet 盒（x∈[0,a]）FD 本征值取最弱模（w[-1]）⇒ f_c=c·k/(2π)。
+        # 复用 B12/B22 已验证 FD 本征核（判据 D 由 run_d_criterion_smoke 已证）。
+        "candidate": "rect_wg_te10_fd",
+        "candidate_desc": ("1D Dirichlet 盒 FD 本征值取基模（与 B12/B22 同源 TL 本征核，"
+                           "判据 D 真数值收敛）"),
+        "default_params": {"a": 0.02286, "b": 0.01016},
+        "golden_fn": golden_b36,
+        "note": ("矩形波导 TE10 截止频率 f_c=c/(2a)（a=宽边）。golden=解析闭式；"
+                 "candidate=1D Dirichlet 盒 FD 本征值取基模波数（w[-1]，最靠近 0 的最小"
+                 "模，非最高模）⇒ f_c=c·k/(2π)。复用 B12/B22 已验证 FD 本征核（scipy"
+                 " eigh，w[-mode] 取最弱模）。N=400 残差 ~1.7e-5 GHz（tol=0.01GHz 的"
+                 " ~590× 余量）；判据 D 由 B12/B22 已证。反向 a×1.1 ⇒ 候选 5.96 vs"
+                 " golden 6.557 GHz，|Δ|≈0.60GHz ≫ tol 必 FAIL。零商业依赖。"),
+    },
+    "B37": {
+        "title": "矩形金属波导 TE20 截止频率（c/a 闭式 vs 1D FD 本征第二模）",
+        "metric": "fc_Hz",
+        "oracle": ("analytical(TE20 cutoff c/a) + "
+                   "1D FD eigenmode_mode2 independent_cross_check"),
+        "tol": 0.1e9,   # 0.1 GHz
+        # v0.9.79（路径 B 扩基 · Batch B-1）：golden = TE20 截止 c/a；candidate =
+        # 1D Dirichlet 盒 FD 本征第二最弱模（w[-2]）。复用 B12/B22 FD 本征核。
+        "candidate": "rect_wg_te20_fd",
+        "candidate_desc": ("1D Dirichlet 盒 FD 本征值取第二模（与 B12/B22 同源 TL 本征核）"),
+        "default_params": {"a": 0.02286, "b": 0.01016},
+        "golden_fn": golden_b37,
+        "note": ("矩形波导 TE20 截止频率 f_c=c/a（第二模，k=2π/a）。golden=解析闭式；"
+                 "candidate=1D FD 本征取第二最弱模（w[-2]）。N=400 残差 ~1.3e-4 GHz"
+                 "（tol=0.1GHz 的 ~770× 余量）；判据 D 由 B12/B22 已证。反向 a×1.1 ⇒"
+                 " 候选 11.92 vs golden 13.11 GHz，|Δ|≈1.19GHz ≫ tol 必 FAIL。"),
+    },
+    "B40": {
+        "title": "矩形金属波导 TE11 截止频率（解析闭式 vs 2D FD 本征）",
+        "metric": "fc_Hz",
+        "oracle": ("analytical(TE11 cutoff c/(2π)√((π/a)²+(π/b)²)) + "
+                   "2D FD eigenmode independent_cross_check"),
+        "tol": 0.1e9,   # 0.1 GHz
+        # v0.9.79（路径 B 扩基 · Batch B-1）：golden = TE11 截止解析闭式；candidate =
+        # 2D Dirichlet 盒（x∈[0,a], y∈[0,b]）FD 本征取最弱模（w[-1]）。复用 B12/B22 核。
+        "candidate": "rect_wg_te11_fd",
+        "candidate_desc": ("2D Dirichlet 盒 FD 本征值取最弱模（与 B12/B22 同源 FD 核，"
+                           "判据 D 真数值收敛）"),
+        "default_params": {"a": 0.02286, "b": 0.01016},
+        "golden_fn": golden_b40,
+        "note": ("矩形波导 TE11 截止频率 f_c=c/(2π)√((π/a)²+(π/b)²)。golden=解析闭式；"
+                 "candidate=2D Dirichlet 盒（x∈[0,a], y∈[0,b]）FD 本征取最弱模"
+                 "（w[-1]）。网格 60×40 残差 ~1.6e-3 GHz（tol=0.1GHz 的 ~62× 余量）；"
+                 "判据 D 由 B12/B22 已证。反向 a×1.1 ⇒ 候选 15.91 vs golden 16.15 GHz，"
+                 "|Δ|≈0.24GHz ≫ tol 必 FAIL。"),
+    },
+    "B41": {
+        "title": "Fabry-Pérot 1D 腔谐振波长（2nL/m 闭式 vs 1D FD 腔模本征）",
+        "metric": "lambda0_m",
+        "oracle": ("analytical(FP resonance 2nL/m) + "
+                   "1D FD cavity_mode independent_cross_check"),
+        "tol": 1e-3,   # 1 mm
+        # v0.9.79（路径 B 扩基 · Batch B-1）：golden = FP 谐振 2nL/m；candidate =
+        # 1D Dirichlet 腔（L 内均匀 n，两端 Dirichlet 壁）FD 本征取第 m 最弱模
+        # ⇒ λ0=2πn/k。复用 B12/B22 FD 本征核。
+        "candidate": "fp_cavity_fd",
+        "candidate_desc": ("1D Dirichlet 腔 FD 本征取第 m 个腔模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"n": 3.48, "L": 0.01, "m": 1},
+        "golden_fn": golden_b41,
+        "note": ("Fabry-Pérot 1D 腔（介质折射率 n，腔长 L，轴向 m 个半波）谐振真空波长"
+                 "λ0=2nL/m。golden=解析闭式；candidate=1D Dirichlet 腔（L 内均匀 n，"
+                 "两端 Dirichlet 壁）FD 本征取第 m 最弱模⇒λ0=2πn/k。N=400 残差 ~1.8e-7 m"
+                 "（tol=1e-3 m 的 ~5500× 余量）；判据 D 由 B12/B22 已证。反向 L×1.1 ⇒"
+                 " 候选 76.56 vs golden 69.6 mm，|Δ|≈6.96mm ≫ tol 必 FAIL。零商业依赖。"),
     },
     # ---- B31（v0.9.69 · T1-C W3 · A 档有源扩展 #2）：Si 载流子色散相移 ----
     "B31": {
@@ -1456,6 +1566,7 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                    "B26", "B27", "B28", "B29", "B30", "B31", "B32", "B33",
+                   "B34", "B36", "B37", "B40", "B41",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "E10",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                    "S9", "S10", "S11", "S12", "S13"]  # S 系统锚（Phase 0-4；S9=LVS/S10=多层/S11=规模/S12=阵列分布/S13=设计良率）

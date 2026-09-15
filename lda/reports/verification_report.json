@@ -2,19 +2,19 @@
   "schema": "lda-verification-report/1",
   "meta": {
     "L0_IR": "(内置默认 B1–B4,B8)",
-    "candidate": "IndependentCandidateRouter(独立候选 31 道: B1,B10,B11,B12,B13,B14,B15,B19,B2,B20,B22,B23,B24,B25,B26,B27,B28,B29,B3,B30,B31,B32,B33,B4,B8,B9,E2,E8,S13,S7,S8；降级量级参考 3 道: B21,E10,E9)",
+    "candidate": "IndependentCandidateRouter(独立候选 36 道: B1,B10,B11,B12,B13,B14,B15,B19,B2,B20,B22,B23,B24,B25,B26,B27,B28,B29,B3,B30,B31,B32,B33,B34,B36,B37,B4,B40,B41,B8,B9,E2,E8,S13,S7,S8；降级量级参考 3 道: B21,E10,E9)",
     "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
     "self_consistent": true
   },
   "summary": {
-    "total": 56,
-    "passed": 56,
+    "total": 61,
+    "passed": 61,
     "self_consistent": true,
-    "verified": 31,
+    "verified": 36,
     "self_consistent_stub_count": 22,
-    "independent_candidate_count": 31,
+    "independent_candidate_count": 36,
     "candidate_class_totals": {
-      "strict_independent": 31,
+      "strict_independent": 36,
       "degraded_ordinal": 3,
       "self_consistent_stub": 22
     }
@@ -372,6 +372,45 @@
       "candidate_class": "strict_independent"
     },
     {
+      "id": "B34",
+      "metric": "n_eff",
+      "oracle": "analytical(Marcatili 1969 等效宽度近似) + strict_transverse_resonance_bisection independent_cross_check",
+      "source": "physical-law",
+      "golden": 3.27315702,
+      "candidate": 3.27561532,
+      "tol": 0.01,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": true,
+      "candidate_class": "strict_independent"
+    },
+    {
+      "id": "B36",
+      "metric": "fc_Hz",
+      "oracle": "analytical(TE10 cutoff c/(2a)) + 1D FD eigenmode_bisection independent_cross_check",
+      "source": "physical-law",
+      "golden": 6557140380.0,
+      "candidate": 6557123610.0,
+      "tol": 10000000.0,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": true,
+      "candidate_class": "strict_independent"
+    },
+    {
+      "id": "B37",
+      "metric": "fc_Hz",
+      "oracle": "analytical(TE20 cutoff c/a) + 1D FD eigenmode_mode2 independent_cross_check",
+      "source": "physical-law",
+      "golden": 13114280800.0,
+      "candidate": 13114146600.0,
+      "tol": 100000000.0,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": true,
+      "candidate_class": "strict_independent"
+    },
+    {
       "id": "B4",
       "metric": "FSR_nm",
       "oracle": "analytical(ring)/sax",
@@ -379,6 +418,32 @@
       "golden": 9.14760169,
       "candidate": 9.14760171,
       "tol": 0.3,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": true,
+      "candidate_class": "strict_independent"
+    },
+    {
+      "id": "B40",
+      "metric": "fc_Hz",
+      "oracle": "analytical(TE11 cutoff c/(2π)√((π/a)²+(π/b)²)) + 2D FD eigenmode independent_cross_check",
+      "source": "physical-law",
+      "golden": 16145085800.0,
+      "candidate": 16141493600.0,
+      "tol": 100000000.0,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": true,
+      "candidate_class": "strict_independent"
+    },
+    {
+      "id": "B41",
+      "metric": "lambda0_m",
+      "oracle": "analytical(FP resonance 2nL/m) + 1D FD cavity_mode independent_cross_check",
+      "source": "physical-law",
+      "golden": 0.0696,
+      "candidate": 0.069600178,
+      "tol": 0.001,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,

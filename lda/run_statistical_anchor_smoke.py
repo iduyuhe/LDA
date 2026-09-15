@@ -109,12 +109,14 @@ def main() -> int:
 
     # ⑦ 题库计数（B+E+S 动态，v0.9.51 起不再硬编码 50/7；
     #    v0.9.67 新增 B33；v0.9.69/v0.9.70 启用 B31/B32 → B 类连续 B1-B33、
-    #    总数 55，此守卫须精确跟账本）
+    #    v0.9.79 路径 B 扩基新增 B34/B36/B37/B40/B41（末位跳至 B41，B35 复用、
+    #    B38/B39 预留缺口）→ 总数 61，此守卫须精确跟账本）
     b_ids = [b for b in BENCHMARK_ORDER if b.startswith("B")]
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
     s_ids = [b for b in BENCHMARK_ORDER if b.startswith("S")]
-    expected_b = [f"B{i}" for i in range(1, 34)]  # B1-B33（连续编号）
-    check("题库（B1-B33 + E1-E9 + S1-S13 动态计数）",
+    expected_b = ([f"B{i}" for i in range(1, 34)]
+                  + ["B34", "B36", "B37", "B40", "B41"])  # B1-B33 + Batch B-1 五锚
+    check("题库（B1-B41 含 Batch B-1 五锚 + E1-E9 + S1-S13 动态计数）",
           b_ids == expected_b
           and s_ids == [f"S{i}" for i in range(1, 14)]
           and e_ids == [f"E{i}" for i in range(1, len(e_ids) + 1)],

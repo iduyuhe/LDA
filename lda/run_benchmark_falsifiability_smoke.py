@@ -146,6 +146,17 @@ PERTURB_SPEC = [
     #   f_3dB∝1/R，R+10% ⇒ 候选随 R 同比例降、与未扰动 golden 差 ~2.9e8 Hz。
     #   （C=ε·A/d 由闭式给定，不扰 C 的参数——扰动 R 即最强键。）
     ("B33", "R", "mul"),
+    # v0.9.79（路径 B 扩基 · Batch B-1）：B34/B36/B37/B40/B41 五道双方法严格独立新锚。
+    # 🔴 B34 扰 t（信号 |Δ|≈0.031 @ tol 0.01，3.1× tol）；t×1.1 → cand 3.304 vs golden 3.273。
+    ("B34", "t", "mul"),
+    # 🔴 B36 扰 a（信号 |Δ|≈0.60GHz @ tol 0.01GHz，60× tol）；a×1.1 → cand 5.96 vs golden 6.557。
+    ("B36", "a", "mul"),
+    # 🔴 B37 扰 a（信号 |Δ|≈1.19GHz @ tol 0.1GHz，11.9× tol）；a×1.1 → cand 11.92 vs golden 13.11。
+    ("B37", "a", "mul"),
+    # 🔴 B40 扰 a（信号 |Δ|≈0.24GHz @ tol 0.1GHz，2.4× tol）；a×1.1 → cand 15.91 vs golden 16.15。
+    ("B40", "a", "mul"),
+    # 🔴 B41 扰 L（信号 |Δ|≈6.96mm @ tol 1e-3m，6960× tol）；L×1.1 → cand 76.56 vs golden 69.6。
+    ("B41", "L", "mul"),
 ]
 PERTURB_REL = 0.10          # 反向测试扰动幅度（10%）
 SENSITIVITY_GRID = (0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20)
@@ -195,8 +206,8 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 #   31/55（本次更正）。②🔴 **B32 harness 接线修复**：golden 闭式形参是 L_e/L_h，
 #   而 default_params 只给 L ⇒ golden(**params) 抛 TypeError，B32 在 harness 默认
 #   路径跑不起来、被行为判据误判成自证桩（专属 smoke 直接调函数故未暴露）⇒ 行为
-#   口径由 30 回到 31。**当前：严格独立 31 · 降级 1(E9) · 自证桩 23 · 和 55。**
-MIN_INDEPENDENT = 31
+#   口径由 30 回到 31。**当前：严格独立 36 · 降级 3(E9+E10+B21) · 自证桩 22 · 和 61。**
+MIN_INDEPENDENT = 36
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

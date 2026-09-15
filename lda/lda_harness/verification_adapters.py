@@ -2027,3 +2027,116 @@ def _s8_gauss_p5_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
         nf_db=float(p.get("nf_db", 5.0)),
         bw_ghz=float(p.get("bw_ghz", 50.0)))
     return float(mu - GAUSS_Z05 * sigma)
+
+
+# ---------------------------------------------------------------------------
+# Batch B-1（v0.9.79 · 路径 B 扩基）：5 道双方法严格独立新锚候选
+#   B34 条形波导 TE0 n_eff（Marcatili 近似 vs 严格超越方程二分）
+#   B36 矩形波导 TE10 截止（c/(2a) vs 1D FD 本征基模）
+#   B37 矩形波导 TE20 截止（c/a vs 1D FD 本征第二模）
+#   B40 矩形波导 TE11 截止（解析闭式 vs 2D FD 本征）
+#   B41 FP 1D 腔谐振波长（2nL/m vs 1D FD 腔模本征）
+# 全部纯 numpy/scipy（C 级自主），复用 B12/B22 已验证 FD 本征核；判据 D 由
+# run_d_criterion_smoke（B12/B22）已证；B34 为超越方程二分（无离散参数，
+# 判据 D 不适用，同 B9 闭式互证先例）。golden 闭式非真值（T1 不作 ORACLE）。
+# ---------------------------------------------------------------------------
+_BATCH_B_MOD = None
+
+
+def _get_batch_b():
+    """双路兜底导入 Batch B-1 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B_MOD
+    if _BATCH_B_MOD is not None:
+        return _BATCH_B_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b_numeric as _m
+    _BATCH_B_MOD = _m
+    return _m
+
+
+@_register_candidate(
+    "slab_te0_neff_exact",
+    "严格横向谐振超越方程二分求根 n_eff（Marcatili 解析近似 vs 数值超越方程，方法学不同源）")
+def _b34_slab_neff_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B34 独立候选：条形介质波导 TE0 n_eff（Marcatili 近似 vs 超越方程二分）。
+
+    golden = Marcatili 1969 等效宽度近似（w_eff=t+2d, d=1/(k0√(n_f²−n_c²))）；
+    cand   = 严格横向谐振超越方程 tan(κt/2)=γ/κ 二分求根（同一物理定律的
+             两种算法，方法学不同源）。
+
+    基线（默认参数）残差 2.46e-3（tol=0.01 的 ~4× 余量，≫1e-12 噪声地板）。
+    判据 D 不适用（解析超越方程二分无离散参数，同 B9 闭式互证先例）。
+    反向 t×1.1 ⇒ 候选 3.304 vs golden 3.273，|Δ|≈0.031 > tol 必 FAIL。
+    """
+    p = spec.params
+    m = _get_batch_b()
+    return float(m.exact_slab_neff(
+        float(p["n_f"]), float(p["n_c"]), float(p["t"]), float(p["wl"])))
+
+
+@_register_candidate(
+    "rect_wg_te10_fd",
+    "1D Dirichlet 盒 FD 本征值取基模（与 B12/B22 同源 TL 本征核，判据 D 真数值收敛）")
+def _b36_rect_te10_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B36 独立候选：矩形波导 TE10 截止频率（c/(2a) 闭式 vs 1D FD 本征基模）。
+
+    golden = c/(2a)；cand = 1D Dirichlet 盒（x∈[0,a]）FD 本征取最弱模（w[-1]）
+             ⇒ f_c = c·k/(2π)。复用 B12/B22 已验证 FD 本征核（scipy eigh，
+             w[-mode] 取最靠近 0 的最小模，非最高模）。
+    N=400 残差 ~1.7e-5 GHz（tol=0.01GHz 的 ~590× 余量）；判据 D 由 B12/B22 已证。
+    反向 a×1.1 ⇒ 候选 5.96 vs golden 6.557 GHz，|Δ|≈0.60GHz ≫ tol 必 FAIL。
+    """
+    p = spec.params
+    m = _get_batch_b()
+    return float(m.fd1d_rect_te10_fc(float(p["a"])))
+
+
+@_register_candidate(
+    "rect_wg_te20_fd",
+    "1D Dirichlet 盒 FD 本征值取第二模（与 B12/B22 同源 TL 本征核）")
+def _b37_rect_te20_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B37 独立候选：矩形波导 TE20 截止频率（c/a 闭式 vs 1D FD 本征第二模）。
+
+    golden = c/a（第二模，k=2π/a）；cand = 1D FD 本征取第二最弱模（w[-2]）。
+    N=400 残差 ~1.3e-4 GHz（tol=0.1GHz 的 ~770× 余量）；判据 D 由 B12/B22 已证。
+    反向 a×1.1 ⇒ 候选 11.92 vs golden 13.11 GHz，|Δ|≈1.19GHz ≫ tol 必 FAIL。
+    """
+    p = spec.params
+    m = _get_batch_b()
+    return float(m.fd1d_rect_te20_fc(float(p["a"])))
+
+
+@_register_candidate(
+    "rect_wg_te11_fd",
+    "2D Dirichlet 盒 FD 本征值取最弱模（与 B12/B22 同源 FD 本征核，判据 D 真数值收敛）")
+def _b40_rect_te11_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B40 独立候选：矩形波导 TE11 截止频率（解析闭式 vs 2D FD 本征）。
+
+    golden = c/(2π)√((π/a)²+(π/b)²)；cand = 2D Dirichlet 盒（x∈[0,a], y∈[0,b]）
+             FD 本征取最弱模（w[-1]）。网格 60×40 残差 ~1.6e-3 GHz（tol=0.1GHz
+             的 ~62× 余量）；判据 D 由 B12/B22 已证。反向 a×1.1 ⇒ 候选 15.91 vs
+             golden 16.15 GHz，|Δ|≈0.24GHz ≫ tol 必 FAIL。
+    """
+    p = spec.params
+    m = _get_batch_b()
+    return float(m.fd2d_rect_te11_fc(float(p["a"]), float(p["b"])))
+
+
+@_register_candidate(
+    "fp_cavity_fd",
+    "1D Dirichlet 腔 FD 本征取第 m 腔模（与 B12/B22 同源 FD 本征核）")
+def _b41_fp_cavity_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B41 独立候选：Fabry-Pérot 1D 腔谐振波长（2nL/m 闭式 vs 1D FD 腔模本征）。
+
+    golden = 2nL/m；cand = 1D Dirichlet 腔（L 内均匀 n，两端 Dirichlet 壁）FD
+             本征取第 m 最弱模 ⇒ λ0 = 2πn/k。N=400 残差 ~1.8e-7 m（tol=1e-3 m
+             的 ~5500× 余量）；判据 D 由 B12/B22 已证。反向 L×1.1 ⇒ 候选 76.56
+             vs golden 69.6 mm，|Δ|≈6.96mm ≫ tol 必 FAIL。
+    """
+    p = spec.params
+    m = _get_batch_b()
+    return float(m.fd1d_cavity_lambda(
+        float(p["n"]), float(p["L"]), int(p.get("m", 1))))

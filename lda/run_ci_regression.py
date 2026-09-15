@@ -93,6 +93,11 @@ CORE_SMOKES: List[str] = [
     "run_tapeout_fullchain_smoke.py",
     # 计数一致性门禁（v0.8.10：引擎/包/题库/CI 条数 vs README 宣传串机器断言，防计数漂移根治）
     "run_count_consistency_smoke.py",
+    # 🔴 v0.9.79（P0-2 固化必查项）：三分类硬编码护栏同步纪律机器守护——动态推导真值后
+    #   grep README 当前账本三分类 / ledger smoke docstring / CONTRIBUTING 顶部账本块，凡数字与
+    #   真值不符（或缺失）即 FAIL，并带反向篡改测试证明会响。任何加 degraded_ordinal/严格锚的
+    #   PR 必须同步这四处硬编码护栏，否则本 smoke 当场拦截。CI core 176→177。
+    "run_p0_count_guard_sync_smoke.py",
     # 🔴 v0.9.31（T-6）：requires-python 声明下限 ≥ 代码实际语法下界（PEP 701 跨行
     #   f-string 须 3.12+）。静态扫描 lda/**/*.py 的 JoinedStr 跨行节点，断言声明不谎报。
     #   防「声明可装 3.11 实则 3.12 才跑得起来」的对外硬阻塞。实测 <2s。

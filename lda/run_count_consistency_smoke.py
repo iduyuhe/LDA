@@ -16,7 +16,7 @@ README 引擎域计数「光子 9 + 量子 6」与代码 ENGINE_DOMAIN 实际 8+
 断言维度（全部死标量，LLM 不进判决路径）：
   1. 引擎结构：ENGINE_KINDS 22（15 设计量 + 5 loss + 2 有源）、光子 15、量子 7
   2. 包结构：PACKAGE_KINDS 11（22 引擎 + 11 包 = 33 类端到端）
-  3. 题库：BENCHMARK_ORDER 55 题（B1-B33 共 33 题 + E1-E9 9 题 + S1-S13 13 题）
+  3. 题库：BENCHMARK_ORDER 56 题（B1-B33 共 33 题 + E1-E10 10 题 + S1-S13 13 题）
   4. CI 门禁：CORE_SMOKES 条数（动态）↔ README 顶行 `CI core N 条` 严格一致
   5. README 宣传串：动态构造「22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）」
      「46 题（B1-B27 + E1-E7 + S1-S12）」；反向断言 README 不含已废弃错误串

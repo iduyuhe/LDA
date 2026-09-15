@@ -5,6 +5,7 @@
 > **📦 v0.9.0 完整发布说明：`docs/RELEASE_v0.9.0.md`**（15 commit 全量变更 · 商务闭环四要素 · 安全审计 · 已知限制）
 > 
 > **当前版本：v0.9.79**（2026-09-16 · **P0-1 代码评审覆盖护栏：3 个 lda_agent 验收入口 smoke 登 core · CI core 173→176**：把 P0-1 专项评审（导入健康/异常路径/死代码/覆盖）识别的「3 个独立验证脚本仅能手动 `python xxx.py` 跑、CI 覆盖门禁无感知」缺口闭合——新增 `run_verify_waveguide_2d_smoke.py`/`run_verify_voxel_pipeline_smoke.py`/`run_calibrate_kappa_grid_smoke.py` 三个最小护栏（各 3 判据，均 3/3 PASS、RC=0）注册进 `CORE_SMOKES`，CI core 173→176，`run_ci_coverage_gate_smoke` 无缺口；同步把 `coupler_loop._beta_from_bidi_fit` 静默 `except Exception: return None`（P0-1 最高风险）改为 `_log.warning` 显式记录根因、仍按 `Optional[float]` 契约返回 None（调用方 fail-closed 不变）。零物理判据改动、零判决行为改动。）
+> **🔴 本地未发版（2026-09-16 · P0-2 计数护栏同步纪律固化）**：把「任何加 `degraded_ordinal`/严格独立锚的 PR，必须全仓同步所有硬编码计数护栏（ledger smoke / README 三分类 / three_class / count_consistency）」从人工纪律升级为**机器断言**——新增 `run_p0_count_guard_sync_smoke.py`（动态推导三分类真值后 grep README 当前账本三分类 / ledger smoke docstring / CONTRIBUTING 顶部账本块，凡数字与真值不符或缺失即 FAIL，并带反向篡改测试证明会响）；修 ledger smoke docstring 与 CONTRIBUTING 顶部账本块滞后（降级 2→3（E9+E10+B21）、自证桩 23→22）；CONTRIBUTING 补「P0-2 计数护栏同步纪律（PR 必查）」章节与自查命令。`run_count_consistency_smoke` / `run_three_class_consistency_smoke` / `run_webui_verification_ledger_smoke` 仍守护引擎/包/题库/CI core 与端点三分类。CI core 176→177。零物理判据改动、零判决行为改动。
 > 上一版：**v0.9.78**（2026-09-14 · **修报告确定性残留缺口：耦合器报告派生量改由「已发布值」反算（方案 A）** —— 起因：受跟踪的 `reports/coupler_band_report.json` 在**同机/同线程/同代码**下三次运行中，`kappa_rel_dev` 抖 ±1e-4（`0.1746↔0.1745`、`0.2715↔0.2716`）而 κ 列**恒定**。溯源（`coupler_loop.py`）：`rel=|κ_fdtd−κ_oracle|/κ_oracle`、`Lc_fdtd=π/2κ` 直接用**未取整** κ 计算 ⇒ 其显示粒度（1e-4 rel ≈ 2.9e-6 κ、0.01µm Lc）**细于** κ 自身的发布粒度（5 位小数 = 5e-6），把 κ 分辨率以下的 FDTD 抖动（β 递推 `acos` 在比值→±1 附近病态放大）暴露成**孤立的末位漂移**；且旧报告因此**自相矛盾**——发布的 `rel=0.1745` 与其自身 κ 反算值 `0.1747` 不符（差 2e-4）。本版按**方案 A**修：①`coupler_loop.py` DC 段 `kappa_rel_dev`/`Lc_fdtd_um` 一律由 `round(κ,5)` 反算、YB 段 `balance_abs` 由 `round(frac,4)` 反算 ⇒ 派生量成为「已发布值的纯函数」，报告自洽；②**判决仍用原始未取整标量**（铁律：判决不可被粗化，tol 0.25 vs rel≈0.17 余量极大，粗化不翻转判决）；③β 提取失败分支同步量化（原样输出未取整 κ 的泄漏路径）；④`kappa_rel_dev_basis`/`balance_abs_basis` 落盘自证口径；⑤`run_coupler_band_smoke.py` 新增 **3 道可证伪「派生量纯度」判据**（DC rel / DC basis / YB balance 必须能由已发布值**精确反算**——改回原始 κ 计算必红）。**诚实边界**：本版消除的是「κ 恒定而 rel 孤立漂移」这一主导 flake 与报告自相矛盾；κ 第 5 位本身跨环境（CI 注入线程预算）仍有 ~2× 裕量（< 铁律 100×）的残留翻转风险，**彻底闭合需方案 C**（让 β 提取本身可复现：float64/固定归约序），未在本版实施。零物理判据改动、零容差放宽、零判决行为改动。
 > 上一版：**v0.9.77**（2026-09-13 · **U3 微环 FSR 独立 n_g 闭式交叉验证 + 反向偏压模型局限文档 + 诚实护栏 + P1 契约守护 smoke 登 core · CI core 170→172**）
 > 上一版：**v0.9.76**（2026-09-13 · **U3 微环 FSR 独立 n_g 闭式交叉验证 · CI core 169→170**）
@@ -322,7 +323,7 @@ lda gf my_gf_component.py --out reports
 ```
 红线：CLI 不做任何判决，仅对既有引擎 / layout / harness 的真实计算结果做格式化呈现（LLM 不进路径，死标量判决不变）。`lda check --gds` 主权 DRC 仅覆盖几何维度**子集**（最小线宽/间距/面积），诚实标注非晶圆厂官方 DRC deck 全量。
 
-## 当前账本：CI 机器断言守护（动态，FAIL=0 即绿）· **CI core 176 条**
+## 当前账本：CI 机器断言守护（动态，FAIL=0 即绿）· **CI core 177 条**
 
 - **22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）**
 - **56 题（B1-B33 物理定律锚 + E1-E10 实证锚 + S1-S13 系统锚）**

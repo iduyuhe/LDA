@@ -4,8 +4,10 @@
 
 验收：
   - GET /api/verification_ledger 的 vmm 块真实由生产代码推导（非写死常数），
-    且对外账本口径自洽、与 README「当前账本」段(严格独立 31 / 降级 2（E9 + U3 E10）/ 自证桩 23
-    / 三类和 56、低置信 13、provenance 6 类宇宙)一致。🔴 总数类断言一律**动态**
+    且对外账本口径自洽、与 README「当前账本」段(严格独立 31 / 降级 3（E9 + E10 + B21）/ 自证桩 22
+    / 三类和 56、低置信 13、provenance 6 类宇宙)一致。🔴 本段数字**非真值源**——三分类由
+    `_derive_doc_tiers()` 动态推导（与 routes.py / run_three_class_consistency_smoke 同源判序），
+    加锚只改 BENCHMARK_DEFS，此处须随 README 同步（**P0-2 计数护栏同步纪律**）。总数类断言一律**动态**
     推导（BENCHMARK_DEFS × BENCHMARK_CANDIDATES，与 /api/verification_ledger 同源判序），
     「文档账本」亦由代码推导不再写死；README 账本一致性由 run_three_class_consistency_smoke.py 守护。
   - 前端 public.html 确实接线到该端点（fetch + 渲染 VMM 段），删接线即 FAIL。

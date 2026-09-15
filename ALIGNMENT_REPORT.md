@@ -141,7 +141,7 @@
 
 ### 🔴 P0（立即）
 - **P0-1**：`lda_agent` 专项代码评审（导入健康 / 异常路径 / 死代码 / 覆盖）——前次 P1② 挂起过久，是全仓最大未量化风险面。
-- **P0-2**：任何加 `degraded_ordinal`/严格锚的 PR，必须 `grep degraded_ordinal` + `grep strict_independent` 全仓同步所有硬编码计数护栏（ledger smoke / README 三分类 / three_class / count_consistency）——B21 已显式同步为 3，固化必查项。
+- **P0-2（✅ 已落地 v0.9.79）**：任何加 `degraded_ordinal`/严格锚的 PR，必须 `grep degraded_ordinal` + `grep strict_independent` 全仓同步所有硬编码计数护栏（ledger smoke / README 三分类 / three_class / count_consistency）——B21 已显式同步为 3（降级 2→3：E9+E10+B21；自证桩 23→22），固化必查项。实现：新增 `run_p0_count_guard_sync_smoke.py`（动态推导三分类真值后 grep 四处硬编码护栏 ≡ 真值，带反向篡改测试证明会响）注册进 `CORE_SMOKES`（CI core 176→177）；修 ledger smoke docstring 与 CONTRIBUTING 顶部账本块滞后（降级 2→3 / 自证桩 23→22）；CONTRIBUTING 补「P0-2 计数护栏同步纪律（PR 必查）」章节与自查命令；修 count_consistency smoke docstring 题库计数（55→56 / E1-E9→E1-E10）。四处护栏全绿：P0 sync 6/6 · count_consistency 11/11 · three_class 4/4 · ledger 15/15。
 
 ### 🟠 P1（近期，优先于新功能）
 - **P1-1**：自证桩升级冲刺 70%（当前 55.4%）——优先 B16 重审留桩、B17-B19/S1-S13 方法学独立候选。

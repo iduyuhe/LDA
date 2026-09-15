@@ -2,7 +2,7 @@
 
 感谢关注 **LDA**——一个 Agent-native 的光子芯片（PDA）+ 量子芯片（QEDA）开源设计软件，核心是 **AI agent 递归自举主权求解器**，人类做架构与验证，AI 不进判决路径。
 
-当前版本：**v0.9.63** · 账本：**22 引擎（光子 15 + 量子 7）+ 11 包 = 33 类端到端 · 52 道锚（严格独立 26 / 降级 1 / 自证桩 25）· CI core 146 条**。
+当前版本：**v0.9.79** · 账本：**22 引擎（光子 15 + 量子 7）+ 11 包 = 33 类端到端 · 56 道锚（严格独立 31 / 降级 3 / 自证桩 22）· CI core 177 条**。
 
 > ⚠️ 账本以 `README.md` 顶行权威账本为准。如与本页不一致，以 README 为准，并欢迎提 PR 修正本页。
 
@@ -30,6 +30,37 @@ python run_parasitic_rc_smoke.py             # 几何寄生估算
 ```
 
 > 新增代码必须带自测并让 CI core 全绿（FAIL=0 即绿）。计数守护会校验「当前账本」与 `pyproject` 版本，改动账本请同步 README 与 `pyproject.toml`。
+
+## P0-2 计数护栏同步纪律（PR 必查 · 固化必查项）
+
+> 🔴 **任何加 `degraded_ordinal` / 严格独立锚的 PR，必须全仓同步所有硬编码计数护栏。**
+> 加锚只改 `lda/lda_harness/benchmarks.py` 的 `BENCHMARK_DEFS`（登记 `candidate` + `candidate_status`），
+> 三分类（严格 / 降级 / 自证桩）**自动跟随、逻辑无需手改**；但下列含**硬编码数字**的陈述必须手动同步，
+> 否则会静默失真（历史血案：v0.9.74 计数护栏欠账、`ci_core=82` 漂移、`run_three_class_consistency_smoke` 红 4+1 条）。
+
+**必查四处护栏（grep 同步）：**
+
+1. **README 当前账本三分类** —— `## 当前账本` 段 + `验证三分类（...）：严格独立 N 道 · 降级量级参考 M 道 · 自证桩 K 道`
+   机器守护：`run_three_class_consistency_smoke.py` C2（README ≡ harness ≡ `/api/verification_ledger`）。
+2. **ledger smoke 文档串** —— `lda/run_webui_verification_ledger_smoke.py` 模块 docstring 中的三分类数字
+   机器守护：`run_p0_count_guard_sync_smoke.py`（grep 校验必须等于动态真值，会响）。
+3. **three_class smoke** —— `lda/run_three_class_consistency_smoke.py`（README ≡ harness ≡ 端点）。
+4. **count_consistency smoke** —— `lda/run_count_consistency_smoke.py`（引擎 / 包 / 题库 / CI core 条数 ≡ 代码）。
+
+**PR 自查命令（必跑，FAIL=0 即绿）：**
+
+```bash
+cd lda
+grep -rn "degraded_ordinal" . | grep -v "candidate_status"   # 定位降级锚登记点
+grep -rn "strict_independent" .                              # 定位严格独立陈述
+python run_p0_count_guard_sync_smoke.py                      # 机器校验四处硬编码护栏 ≡ 动态真值
+python run_three_class_consistency_smoke.py                  # README ≡ harness ≡ 端点
+python run_count_consistency_smoke.py                        # CI core / 引擎 / 包 / 题库计数
+```
+
+> 动态真值源（唯一真相）：`BENCHMARK_DEFS` + `BENCHMARK_CANDIDATES` 按「先判 `degraded_ordinal`、再查登记表、否则自证桩」推导。
+> 当前真值（v0.9.79）：**严格独立 31 · 降级 3（E9 + E10 + B21）· 自证桩 22 · 三类和 56**。
+> 改完锚后，若 README 当前账本数字或 CI core 条数滞后，上述 smoke 会**当场红**拦截。
 
 ## PR 约定
 

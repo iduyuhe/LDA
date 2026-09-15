@@ -24,12 +24,15 @@
 """
 from __future__ import annotations
 
+import logging
 import math
 import os
 import sys
 import time
 from dataclasses import dataclass
 from typing import List, Optional
+
+_log = logging.getLogger(__name__)
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_HERE, "..", "lda_solver"))
@@ -78,7 +81,11 @@ def _beta_from_bidi_fit(Os: np.ndarray, z_um: np.ndarray) -> Optional[float]:
     try:
         res = least_squares(resid, x0=[beta0, A0, Ai0, B0, Bi0],
                             max_nfev=2000, xtol=1e-12, ftol=1e-12)
-    except Exception:
+    except Exception as _exc:
+        # P0-1（2026-09-16）：拟合失败**不得静默**——记录根因，仍按 Optional[float]
+        # 契约返回 None（调用方 _run_dc 以「β 提取失败」FAIL，fail-closed 不变）。
+        _log.warning("β 双向拟合失败（least_squares 异常）：%r；上游将以 β 提取失败 FAIL",
+                     _exc)
         return None
     if not res.success:
         return None

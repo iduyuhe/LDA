@@ -514,6 +514,15 @@ CORE_SMOKES: List[str] = [
     # G4 不虚报 / G5 外置激光可绕；并断言引擎重构机器精度。
     # 纯 numpy、零 A 级/DEVSIM 依赖，无权豁免必进 core。CI core 172->173。
     "run_four_layer_redline_gate_smoke.py",
+    # 🔴 v0.9.78（P0-1 覆盖护栏）：lda_agent 三处独立验收入口此前无 CI 护栏，
+    # 与全库「CORE_SMOKES 强护栏」叙事不一致。各自最小门禁（单点/单基准，轻量）：
+    # ① 真 2D 波导 dual-PASS（时域 FDTD × 频域 slab ORACLE 双法互验）② 器件级
+    # voxel_field 几何闭环（stack vs voxel 逐位一致）③ κ_c(gap,λ) PDK 标定单点
+    # 有限+物理合理带。均纯 numpy、零 A 级/DEVSIM 依赖、无权豁免必进 core。
+    # CI core 173->176。
+    "run_verify_waveguide_2d_smoke.py",
+    "run_verify_voxel_pipeline_smoke.py",
+    "run_calibrate_kappa_grid_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

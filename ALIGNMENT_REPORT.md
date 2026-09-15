@@ -1,6 +1,7 @@
 # LDA 战略审计与功能审计（完整版 · v0.9.78）
 
 > 审计日：2026-09-16 · 基线版本：v0.9.78（2026-09-14 部署 · commit `ae836dc`）
+> 当前生产：v0.9.79（2026-09-16 SSH 部署 · commit `d15cd4c`，内/外网 health 版本串一致）
 > 方法：所有状态均来自**代码实测 / 测试输出**，不采信文档声明（铁律：文档声明=会腐化的派生数据）。
 > 对照基线：2026-09-14 战略审计报告（v0.9.77）
 
@@ -142,6 +143,7 @@
 ### 🔴 P0（立即）
 - **P0-1**：`lda_agent` 专项代码评审（导入健康 / 异常路径 / 死代码 / 覆盖）——前次 P1② 挂起过久，是全仓最大未量化风险面。
 - **P0-2（✅ 已落地 v0.9.79）**：任何加 `degraded_ordinal`/严格锚的 PR，必须 `grep degraded_ordinal` + `grep strict_independent` 全仓同步所有硬编码计数护栏（ledger smoke / README 三分类 / three_class / count_consistency）——B21 已显式同步为 3（降级 2→3：E9+E10+B21；自证桩 23→22），固化必查项。实现：新增 `run_p0_count_guard_sync_smoke.py`（动态推导三分类真值后 grep 四处硬编码护栏 ≡ 真值，带反向篡改测试证明会响）注册进 `CORE_SMOKES`（CI core 176→177）；修 ledger smoke docstring 与 CONTRIBUTING 顶部账本块滞后（降级 2→3 / 自证桩 23→22）；CONTRIBUTING 补「P0-2 计数护栏同步纪律（PR 必查）」章节与自查命令；修 count_consistency smoke docstring 题库计数（55→56 / E1-E9→E1-E10）。四处护栏全绿：P0 sync 6/6 · count_consistency 11/11 · three_class 4/4 · ledger 15/15。
+- **部署（2026-09-16 · SSH）**：HEAD 对齐 `d15cd4c`，内/外网 `/api/health` 版本串均 `0.9.79`、`shelf=75`、`is-active=active`，生产已落地 v0.9.79。⚠️ 订正此前「remote_deploy.py 不在本环境、未部署」误记——脚本实存于技能目录 `C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/remote_deploy.py`，前次仅检索路径有误（误以为在仓库 `scripts/` 与技能目录缺失），实际可直接复用，无需手动 SSH 等价流程。
 
 ### 🟠 P1（近期，优先于新功能）
 - **P1-1**：自证桩升级冲刺 70%（当前 55.4%）——优先 B16 重审留桩、B17-B19/S1-S13 方法学独立候选。

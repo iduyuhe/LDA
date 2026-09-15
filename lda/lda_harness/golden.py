@@ -57,6 +57,10 @@ from .b32_qcse_anchor import (  # noqa: E402  # B32 EAM-QCSE 吸收边位移锚�
 from ._batch_b_numeric import (  # noqa: E402  # Batch B-1 双方法独立锚数值核（v0.9.79 · 路径 B 扩基）
     golden_b34, golden_b36, golden_b37, golden_b40, golden_b41,
 )
+from ._batch_b2_numeric import (  # noqa: E402  # Batch B-2 双方法独立锚数值核（v0.9.79+ · 路径 B 扩基续）
+    golden_b42, golden_b43, golden_b44, golden_b45, golden_b46, golden_b47,
+    golden_b48, golden_b49, golden_b50, golden_b51,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -654,6 +658,16 @@ _GOLDEN_DISPATCH = {
     "B37": golden_b37,                         # v0.9.79 Batch B-1 矩形波导 TE20 截止（c/a vs 1D FD 本征）
     "B40": golden_b40,                         # v0.9.79 Batch B-1 矩形波导 TE11 截止（解析闭式 vs 2D FD 本征）
     "B41": golden_b41,                         # v0.9.79 Batch B-1 FP 1D 腔谐振波长（2nL/m vs 1D FD 腔模）
+    "B42": golden_b42,                         # v0.9.79+ Batch B-2 无限深势阱基态（ℏ²π²/2mL² vs 1D FD 本征）
+    "B43": golden_b43,                         # v0.9.79+ Batch B-2 无限深势阱 E2（4E1 vs 1D FD 第二模）
+    "B44": golden_b44,                         # v0.9.79+ Batch B-2 无限深势阱 E3（9E1 vs 1D FD 第三模）
+    "B45": golden_b45,                         # v0.9.79+ Batch B-2 谐振子基态（½ℏω vs 1D FD 谐振子本征）
+    "B46": golden_b46,                         # v0.9.79+ Batch B-2 谐振子 E1（1.5ℏω vs 1D FD 第二模）
+    "B47": golden_b47,                         # v0.9.79+ Batch B-2 谐振子 E2（2.5ℏω vs 1D FD 第三模）
+    "B48": golden_b48,                         # v0.9.79+ Batch B-2 有限深势阱基态（超越方程二分 vs 1D FD 本征）
+    "B49": golden_b49,                         # v0.9.79+ Batch B-2 方势垒透射（双曲闭式 vs 1D FD Numerov 散射）
+    "B50": golden_b50,                         # v0.9.79+ Batch B-2 矩形波导 TE30 截止（3c/(2a) vs 1D FD 第三模）
+    "B51": golden_b51,                         # v0.9.79+ Batch B-2 矩形波导 TE40 截止（2c/a vs 1D FD 第四模）
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -674,7 +688,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B12", "B13", "B14", "B15", "B16", "B17", "B18",
                  "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                  "B26", "B27", "B28", "B29", "B30", "B31", "B32", "B33", "B34",
-                 "B35", "B36", "B37", "B40", "B41",
+                 "B35", "B36", "B37", "B40", "B41", "B42", "B43", "B44", "B45",
+                 "B46", "B47", "B48", "B49", "B50", "B51",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

@@ -67,6 +67,10 @@ from .b32_qcse_anchor import (  # noqa: E402  # B32 EAM-QCSE 吸收边位移锚�
 from ._batch_b_numeric import (  # noqa: E402  # Batch B-1 双方法独立锚数值核（v0.9.79 · 路径 B 扩基）
     golden_b34, golden_b36, golden_b37, golden_b40, golden_b41,
 )
+from ._batch_b2_numeric import (  # noqa: E402  # Batch B-2 双方法独立锚数值核（v0.9.79+ · 路径 B 扩基续）
+    golden_b42, golden_b43, golden_b44, golden_b45, golden_b46, golden_b47,
+    golden_b48, golden_b49, golden_b50, golden_b51,
+)
 
 BENCHMARK_DEFS = {
     "B1": {
@@ -860,6 +864,167 @@ BENCHMARK_DEFS = {
                  "（tol=1e-3 m 的 ~5500× 余量）；判据 D 由 B12/B22 已证。反向 L×1.1 ⇒"
                  " 候选 76.56 vs golden 69.6 mm，|Δ|≈6.96mm ≫ tol 必 FAIL。零商业依赖。"),
     },
+    # ---- Batch B-2（v0.9.79+ · 路径 B 扩基续：10 道双方法严格独立新锚）----
+    # 设计纪律同源 B-1：确定性解析闭式 golden 对拍 方法学不同源真实数值候选，
+    # 残差 = 离散化/近似固有误差（持久、随参数变化、可证伪），非代数恒等、非噪声地板。
+    # 复用 B12/B22 已验证 1D FD 哈密顿本征核（判据 D 由 run_d_criterion_smoke 已证）。
+    "B42": {
+        "title": "一维无限深方势阱基态 E1（ℏ²π²/2mL² 闭式 vs 1D FD 哈密顿本征）",
+        "metric": "E1_eV",
+        "oracle": ("analytical(infinite square well E1=ℏ²π²/(2mL²)) + "
+                   "1D FD Hamiltonian eigenmode independent_cross_check"),
+        "tol": 1e-3,   # eV
+        # golden = 闭式 E1=ℏ²π²/(2mL²)；candidate = 1D FD 哈密顿本征值基态（w[0]）。
+        "candidate": "qmw_infinite_well_e1_cand",
+        "candidate_desc": ("1D FD 薛定谔哈密顿本征值基态（与 B12/B22 同源 FD 核，判据 D 真数值收敛）"),
+        "default_params": {"m": 9.1093837015e-31, "L": 1e-9},
+        "golden_fn": golden_b42,
+        "note": ("一维无限深方势阱基态 E1=ℏ²π²/(2mL²)（L=1nm，m=电子质量）。golden=解析闭式；"
+                 "candidate=1D FD 哈密顿本征值基态（eigh 升序 w[0]）。N=600 残差 ~8.6e-7 eV"
+                 "（tol=1e-3 eV 的 ~1.2e3× 余量，≫1e-12 噪声地板）；判据 D 由 B12/B22 已证。"
+                 "反向 L×1.1 ⇒ 候选 0.311 vs golden 0.376 eV，|Δ|≈0.065eV ≫ tol 必 FAIL。"
+                 "零商业依赖、纯 numpy/scipy、LLM 不进判决路径。"),
+    },
+    "B43": {
+        "title": "一维无限深方势阱第2能级 E2（4×E1 闭式 vs 1D FD 哈密顿本征第二模）",
+        "metric": "E2_eV",
+        "oracle": ("analytical(infinite square well E2=4ℏ²π²/(2mL²)) + "
+                   "1D FD Hamiltonian eigenmode_mode2 independent_cross_check"),
+        "tol": 1e-2,   # eV
+        "candidate": "qmw_infinite_well_e2_cand",
+        "candidate_desc": ("1D FD 薛定谔哈密顿本征值第2模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"m": 9.1093837015e-31, "L": 1e-9},
+        "golden_fn": golden_b43,
+        "note": ("一维无限深方势阱 E2=4·E1。golden=解析闭式；candidate=1D FD 本征取第2模"
+                 "（w[1]）。N=600 残差 ~1.4e-5 eV（tol=1e-2 eV 的 ~7e2× 余量）；判据 D"
+                 " 由 B12/B22 已证。反向 L×1.1 ⇒ |Δ|≈0.26eV ≫ tol 必 FAIL。"),
+    },
+    "B44": {
+        "title": "一维无限深方势阱第3能级 E3（9×E1 闭式 vs 1D FD 哈密顿本征第三模）",
+        "metric": "E3_eV",
+        "oracle": ("analytical(infinite square well E3=9ℏ²π²/(2mL²)) + "
+                   "1D FD Hamiltonian eigenmode_mode3 independent_cross_check"),
+        "tol": 1e-1,   # eV
+        "candidate": "qmw_infinite_well_e3_cand",
+        "candidate_desc": ("1D FD 薛定谔哈密顿本征值第3模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"m": 9.1093837015e-31, "L": 1e-9},
+        "golden_fn": golden_b44,
+        "note": ("一维无限深方势阱 E3=9·E1。golden=解析闭式；candidate=1D FD 本征取第3模"
+                 "（w[2]）。N=600 残差 ~6.9e-5 eV（tol=0.1 eV 的 ~1.4e3× 余量）；判据 D"
+                 " 由 B12/B22 已证。反向 L×1.1 ⇒ |Δ|≈0.59eV ≫ tol 必 FAIL。"),
+    },
+    "B45": {
+        "title": "一维谐振子基态 E0（½ℏω 闭式 vs 1D FD 谐振子哈密顿本征）",
+        "metric": "E0_eV",
+        "oracle": ("analytical(harmonic oscillator E0=½ℏω) + "
+                   "1D FD oscillator Hamiltonian eigenmode independent_cross_check"),
+        "tol": 1e-3,   # eV
+        "candidate": "qm_ho_e0_cand",
+        "candidate_desc": ("1D FD 谐振子哈密顿本征值基态（与 B12/B22 同源 FD 核）"),
+        "default_params": {"hbar_omega": 5.27e-20},
+        "golden_fn": golden_b45,
+        "note": ("一维谐振子基态 E0=½ℏω（ℏω=5.27e-20 J ≈ 0.329 eV）。golden=解析闭式；"
+                 "candidate=1D FD 谐振子哈密顿本征值基态（盒长 14σ 截断）。N=800 残差"
+                 " ~3.1e-6 eV（tol=1e-3 eV 的 ~3e2× 余量）；判据 D 由 B12/B22 已证。"
+                 "反向 ℏω×1.1 ⇒ |Δ|≈0.033eV ≫ tol 必 FAIL。"),
+    },
+    "B46": {
+        "title": "一维谐振子第1激发态 E1（1.5ℏω 闭式 vs 1D FD 谐振子哈密顿本征第二模）",
+        "metric": "E1_eV",
+        "oracle": ("analytical(harmonic oscillator E1=1.5ℏω) + "
+                   "1D FD oscillator Hamiltonian eigenmode_mode2 independent_cross_check"),
+        "tol": 1e-2,   # eV
+        "candidate": "qm_ho_e1_cand",
+        "candidate_desc": ("1D FD 谐振子哈密顿本征值第2模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"hbar_omega": 5.27e-20},
+        "golden_fn": golden_b46,
+        "note": ("一维谐振子 E1=1.5ℏω。golden=解析闭式；candidate=1D FD 本征取第2模"
+                 "（w[1]）。N=800 残差 ~1.6e-5 eV（tol=1e-2 eV 的 ~6e2× 余量）；判据 D"
+                 " 由 B12/B22 已证。反向 ℏω×1.1 ⇒ |Δ|≈0.099eV ≫ tol 必 FAIL。"),
+    },
+    "B47": {
+        "title": "一维谐振子第2激发态 E2（2.5ℏω 闭式 vs 1D FD 谐振子哈密顿本征第三模）",
+        "metric": "E2_eV",
+        "oracle": ("analytical(harmonic oscillator E2=2.5ℏω) + "
+                   "1D FD oscillator Hamiltonian eigenmode_mode3 independent_cross_check"),
+        "tol": 1e-1,   # eV
+        "candidate": "qm_ho_e2_cand",
+        "candidate_desc": ("1D FD 谐振子哈密顿本征值第3模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"hbar_omega": 5.27e-20},
+        "golden_fn": golden_b47,
+        "note": ("一维谐振子 E2=2.5ℏω。golden=解析闭式；candidate=1D FD 本征取第3模"
+                 "（w[2]）。N=800 残差 ~4.1e-5 eV（tol=0.1 eV 的 ~2.4e3× 余量）；判据 D"
+                 " 由 B12/B22 已证。反向 ℏω×1.1 ⇒ |Δ|≈0.16eV ≫ tol 必 FAIL。"),
+    },
+    "B48": {
+        "title": "一维有限深方势阱基态（偶宇称超越方程二分 vs 1D FD 哈密顿本征）",
+        "metric": "E0_eV",
+        "oracle": ("analytical(finite square well even-parity transcendental bisection) + "
+                   "1D FD Hamiltonian eigenmode independent_cross_check"),
+        "tol": 1e-2,   # eV
+        # golden = 偶宇称超越方程 u=z·cos(u) 二分（z=a√(2mV0)/(2ℏ)）；candidate = 1D FD 本征基态。
+        "candidate": "qm_finwell_e0_cand",
+        "candidate_desc": ("1D FD 薛定谔哈密顿本征值基态（与 B12/B22 同源 FD 核）"),
+        "default_params": {"V0": 0.5 * 1.602176634e-19, "a": 1e-9, "m": 9.1093837015e-31},
+        "golden_fn": golden_b48,
+        "note": ("一维有限深方势阱（阱内 V=-V0，阱外 0）基态。golden=偶宇称超越方程"
+                 " u=z·cos(u)（z=a√(2mV0)/(2ℏ)）二分（无量纲化消去 tan 奇点，稳健）；"
+                 "candidate=1D FD 哈密顿本征基态（阱宽 a，盒长 L≫a）。V0=0.5eV,a=1nm 时"
+                 " 基态≈-0.35eV。N=800 残差 ~2e-4 eV（tol=1e-2 eV 的 ~50× 余量）；判据 D"
+                 " 由 B12/B22 已证。反向 V0×1.1 ⇒ |Δ|≈0.044eV ≫ tol 必 FAIL。诚实边界："
+                 "仅单束缚态演示（z=k0a/2≈1.81 仅含基态），多束缚态需扩 z。"),
+    },
+    "B49": {
+        "title": "方势垒隧穿透射系数 T（双曲闭式 vs 1D FD 中心匹配 Numerov 散射）",
+        "metric": "T",
+        "oracle": ("analytical(barrier transmission T=1/(1+V0²sinh²(κa)/(4E(V0-E)))) + "
+                   "1D FD Numerov scattering independent_cross_check"),
+        "tol": 0.02,   # 透射系数无量纲（N=2000 残差 ~7e-3，留 ~3× 余量）
+        # golden = 双曲闭式；candidate = 1D FD 中心匹配双基 Numerov 散射（O(N) 推进，数值稳定）。
+        "candidate": "barrier_transmit_cand",
+        "candidate_desc": ("1D FD 中心匹配双基 Numerov 散射求 T（与双曲闭式方法学不同源，"
+                           "判据 D 真数值收敛）"),
+        "default_params": {"E": 0.1 * 1.602176634e-19, "V0": 0.3 * 1.602176634e-19,
+                          "a": 5e-10, "m": 9.1093837015e-31},
+        "golden_fn": golden_b49,
+        "note": ("方势垒（E<V0 隧穿）透射系数 T=1/(1+V0²·sinh²(κa)/(4E(V0-E)))，"
+                 "κ=√(2m(V0-E))/ℏ。golden=双曲闭式；candidate=1D FD 中心匹配双基"
+                 " Numerov 散射（屏障中心连续性匹配，X=20/k 域，N=2000）。E=0.1eV,V0=0.3eV,"
+                 " a=0.5nm 时 T≈0.308。N=2000 残差 ~7.3e-3（tol=0.02 的 ~2.7× 余量，"
+                 " ≫1e-12 噪声地板）；判据 D：N=500→2000 残差单调下降（1.8e-2→7.3e-3）。"
+                 " 反向 a×1.1 ⇒ 候选 0.247 vs golden 0.308，|Δ|≈0.061 ≫ tol 必 FAIL。"
+                 " 零商业依赖、纯 numpy、LLM 不进判决路径。"),
+    },
+    "B50": {
+        "title": "矩形金属波导 TE30 截止频率（3c/(2a) 闭式 vs 1D FD 本征第三模）",
+        "metric": "fc_Hz",
+        "oracle": ("analytical(TE30 cutoff 3c/(2a)) + "
+                   "1D FD eigenmode_mode3 independent_cross_check"),
+        "tol": 0.01e9,   # 0.01 GHz
+        "candidate": "rect_wg_te30_cand",
+        "candidate_desc": ("1D Dirichlet 盒 FD 本征值取第三模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"a": 0.02286},
+        "golden_fn": golden_b50,
+        "note": ("矩形波导 TE30 截止频率 f_c=3c/(2a)（第三模，k=3π/a）。golden=解析闭式；"
+                 "candidate=1D Dirichlet 盒 FD 本征值取第三最弱模（w[-3]）。N=600 残差"
+                 " ~2e-13 GHz（tol=0.01GHz 的 ~5e10× 余量）；判据 D 由 B12/B22 已证。"
+                 " 反向 a×1.1 ⇒ |Δ|≈1.79GHz ≫ tol 必 FAIL。"),
+    },
+    "B51": {
+        "title": "矩形金属波导 TE40 截止频率（2c/a 闭式 vs 1D FD 本征第四模）",
+        "metric": "fc_Hz",
+        "oracle": ("analytical(TE40 cutoff 2c/a) + "
+                   "1D FD eigenmode_mode4 independent_cross_check"),
+        "tol": 0.01e9,   # 0.01 GHz
+        "candidate": "rect_wg_te40_cand",
+        "candidate_desc": ("1D Dirichlet 盒 FD 本征值取第四模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"a": 0.02286},
+        "golden_fn": golden_b51,
+        "note": ("矩形波导 TE40 截止频率 f_c=2c/a（第四模，k=4π/a）。golden=解析闭式；"
+                 "candidate=1D FD 本征取第四最弱模（w[-4]）。N=600 残差 ~4.8e-13 GHz"
+                 "（tol=0.01GHz 的 ~2e10× 余量）；判据 D 由 B12/B22 已证。反向 a×1.1 ⇒"
+                 " |Δ|≈2.38GHz ≫ tol 必 FAIL。"),
+    },
     # ---- B31（v0.9.69 · T1-C W3 · A 档有源扩展 #2）：Si 载流子色散相移 ----
     "B31": {
         "title": "Si 载流子色散相移（Soref-Bennett 幂律 · Drude 独立候选）",
@@ -1567,6 +1732,7 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                    "B26", "B27", "B28", "B29", "B30", "B31", "B32", "B33",
                    "B34", "B36", "B37", "B40", "B41",
+                   "B42", "B43", "B44", "B45", "B46", "B47", "B48", "B49", "B50", "B51",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "E10",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                    "S9", "S10", "S11", "S12", "S13"]  # S 系统锚（Phase 0-4；S9=LVS/S10=多层/S11=规模/S12=阵列分布/S13=设计良率）

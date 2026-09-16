@@ -2172,6 +2172,7 @@ def _get_batch_b2():
 # ---------------------------------------------------------------------------
 _BATCH_B3_MOD = None
 _BATCH_B4_MOD = None
+_BATCH_B5_MOD = None
 
 
 def _get_batch_b3():
@@ -2627,6 +2628,164 @@ def _b88_dbbar_T_detune_v2(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b4()
     return float(m.cand_double_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, p["b_nm"] * 1e-9, m.ME))
+
+
+def _get_batch_b5():
+    """双路兜底导入 Batch B-5 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B5_MOD
+    if _BATCH_B5_MOD is not None:
+        return _BATCH_B5_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b5_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b5_numeric as _m
+    _BATCH_B5_MOD = _m
+    return _m
+
+
+@_register_candidate(
+    "b89_hydrogen_1s_cand",
+    "氢原子径向 FD 薛定谔本征第 0 径向态（Dirichlet 盒 1D 径向 ODE 数值积分）↔ 解析闭式 E_n=-RYDBERG·Z²/n²，方法学独立")
+def _b89_hydrogen_1s(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_hydrogen(0, 0, float(p["Z"])))
+
+
+@_register_candidate(
+    "b90_hydrogen_2s_cand",
+    "氢原子径向 FD 薛定谔本征第 1 径向态 ↔ 解析闭式 E_2=-RYDBERG·Z²/4，方法学独立")
+def _b90_hydrogen_2s(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_hydrogen(0, 1, float(p["Z"])))
+
+
+@_register_candidate(
+    "b91_hydrogen_2p_cand",
+    "氢原子径向 FD 薛定谔本征（l=1, n_r=0）↔ 解析闭式 E_2=-RYDBERG·Z²/4，方法学独立")
+def _b91_hydrogen_2p(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_hydrogen(1, 0, float(p["Z"])))
+
+
+@_register_candidate(
+    "b92_hydrogen_3s_cand",
+    "氢原子径向 FD 薛定谔本征第 2 径向态 ↔ 解析闭式 E_3=-RYDBERG·Z²/9，方法学独立")
+def _b92_hydrogen_3s(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_hydrogen(0, 2, float(p["Z"])))
+
+
+@_register_candidate(
+    "b93_hydrogen_3p_cand",
+    "氢原子径向 FD 薛定谔本征（l=1, n_r=1）↔ 解析闭式 E_3=-RYDBERG·Z²/9，方法学独立")
+def _b93_hydrogen_3p(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_hydrogen(1, 1, float(p["Z"])))
+
+
+@_register_candidate(
+    "b94_hydrogen_3d_cand",
+    "氢原子径向 FD 薛定谔本征（l=2, n_r=0）↔ 解析闭式 E_3=-RYDBERG·Z²/9，方法学独立")
+def _b94_hydrogen_3d(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_hydrogen(2, 0, float(p["Z"])))
+
+
+@_register_candidate(
+    "b95_ho3d_l0_cand",
+    "3D 各向同性谐振子径向 FD 薛定谔本征第 0 径向态 ↔ 解析闭式 E=(3/2)·ℏω，方法学独立")
+def _b95_ho3d_l0(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_ho3d(0, 0, float(p["hbar_omega"])))
+
+
+@_register_candidate(
+    "b96_ho3d_l1_cand",
+    "3D 各向同性谐振子径向 FD 薛定谔本征（l=1, n_r=0）↔ 解析闭式 E=(5/2)·ℏω，方法学独立")
+def _b96_ho3d_l1(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_ho3d(0, 1, float(p["hbar_omega"])))
+
+
+@_register_candidate(
+    "b97_ho3d_l2_cand",
+    "3D 各向同性谐振子径向 FD 薛定谔本征（l=2, n_r=0）↔ 解析闭式 E=(7/2)·ℏω，方法学独立")
+def _b97_ho3d_l2(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_ho3d(0, 2, float(p["hbar_omega"])))
+
+
+@_register_candidate(
+    "b98_circ_wg_TE21_cand",
+    "圆波导 TE21 截止由径向 Helmholtz ODE 数值积分 + 边界根搜索导出 X ↔ 解析 Bessel 零点 X'_21，方法学独立")
+def _b98_circ_wg_TE21(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_circ(2, "TE", float(p["a_nm"])))
+
+
+@_register_candidate(
+    "b99_circ_wg_TM01_cand",
+    "圆波导 TM01 截止由径向 Helmholtz ODE 数值积分 + 边界根搜索导出 X ↔ 解析 Bessel 零点 X_01，方法学独立")
+def _b99_circ_wg_TM01(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_circ(0, "TM", float(p["a_nm"])))
+
+
+@_register_candidate(
+    "b100_circ_wg_TE01_cand",
+    "圆波导 TE01 截止由径向 Helmholtz ODE 数值积分 + 边界根搜索导出 X ↔ 解析 Bessel 零点 X'_01，方法学独立")
+def _b100_circ_wg_TE01(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_circ(0, "TE", float(p["a_nm"])))
+
+
+@_register_candidate(
+    "b101_rect_wg_TE12_cand",
+    "矩形波导 TE12 截止由二盒 1D FD 乘积数值积分导出 ↔ 解析闭式 fc=c/2·√((m/a)²+(n/b)²)，方法学独立")
+def _b101_rect_wg_TE12(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_rect(1, 2, float(p["a"]), float(p["b"])))
+
+
+@_register_candidate(
+    "b102_rect_wg_TE22_cand",
+    "矩形波导 TE22 截止由二盒 1D FD 乘积数值积分导出 ↔ 解析闭式 fc=c/2·√((m/a)²+(n/b)²)，方法学独立")
+def _b102_rect_wg_TE22(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_rect(2, 2, float(p["a"]), float(p["b"])))
+
+
+@_register_candidate(
+    "b103_rect_wg_TE31_cand",
+    "矩形波导 TE31 截止由二盒 1D FD 乘积数值积分导出 ↔ 解析闭式 fc=c/2·√((m/a)²+(n/b)²)，方法学独立")
+def _b103_rect_wg_TE31(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_rect(3, 1, float(p["a"]), float(p["b"])))
+
+
+@_register_candidate(
+    "b104_rect_wg_TE13_cand",
+    "矩形波导 TE13 截止由二盒 1D FD 乘积数值积分导出 ↔ 解析闭式 fc=c/2·√((m/a)²+(n/b)²)，方法学独立")
+def _b104_rect_wg_TE13(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b5()
+    return float(m.cand_rect(1, 3, float(p["a"]), float(p["b"])))
 
 
 # ---------------------------------------------------------------------------

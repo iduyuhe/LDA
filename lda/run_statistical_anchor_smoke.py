@@ -111,7 +111,8 @@ def main() -> int:
     #    v0.9.67 新增 B33；v0.9.69/v0.9.70 启用 B31/B32 → B 类连续 B1-B33、
     #    v0.9.79 路径 B 扩基新增 B34/B36/B37/B40/B41（末位跳至 B41，B35 复用、
     #    B38/B39 预留缺口）→ 总数 61；v0.9.84 路径 B-4 扩基新增 B65-B68/B70-B71/
-    #    B73-B88（缺口 B69 相移/B72 线宽预留）→ 总数 83，此守卫须精确跟账本）
+    #    B73-B88（缺口 B69 相移/B72 线宽预留）→ 总数 83；v0.9.85 路径 B-5 扩基新增
+    #    B89-B104（氢原子径向/3D-HO/圆波导/矩形波导族）→ 总数 99，此守卫须精确跟账本）
     b_ids = [b for b in BENCHMARK_ORDER if b.startswith("B")]
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
     s_ids = [b for b in BENCHMARK_ORDER if b.startswith("S")]
@@ -121,8 +122,9 @@ def main() -> int:
                   + [f"B{i}" for i in range(52, 65)]        # B52-B64 = Batch B-3 十三锚
                   + [f"B{i}" for i in range(65, 69)]        # B65-B68 = Batch B-4 四锚
                   + ["B70", "B71"]                          # 缺口 B69 相移预留
-                  + [f"B{i}" for i in range(73, 89)])       # B73-B88 = Batch B-4 十六锚（缺口 B72 线宽预留）
-    check("题库（B1-B88 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + E1-E10 + S1-S13 动态计数）",
+                  + [f"B{i}" for i in range(73, 89)]        # B73-B88 = Batch B-4 十六锚（缺口 B72 线宽预留）
+                  + [f"B{i}" for i in range(89, 105)])       # B89-B104 = Batch B-5 十六锚（氢原子径向/3D-HO/圆波导/矩形波导）
+    check("题库（B1-B104 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + E1-E10 + S1-S13 动态计数）",
           b_ids == expected_b
           and s_ids == [f"S{i}" for i in range(1, 14)]
           and e_ids == [f"E{i}" for i in range(1, len(e_ids) + 1)],

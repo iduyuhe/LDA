@@ -88,6 +88,12 @@ from ._batch_b7_numeric import (  # noqa: E402  # Batch B-7 双方法独立锚�
     golden_b129, golden_b130, golden_b131, golden_b132,
     golden_b133, golden_b134, golden_b135, golden_b136,
 )
+from ._batch_b8_numeric import (  # noqa: E402  # Batch B-8 双方法独立锚数值核（路径 B 扩基续七 · 2D 类氢/2D 圆环+AB 通量/3D 有限深球形势阱/各向异性 3D 谐振子族 · v0.9.88 · 腿① 续加锚稀释 terminal）
+    golden_b137, golden_b138, golden_b139, golden_b140,
+    golden_b141, golden_b142, golden_b143, golden_b144,
+    golden_b145, golden_b146, golden_b147, golden_b148,
+    golden_b149, golden_b150, golden_b151, golden_b152,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -737,6 +743,10 @@ _GOLDEN_DISPATCH = {
     "B125": golden_b125, "B126": golden_b126, "B127": golden_b127, "B128": golden_b128,
     "B129": golden_b129, "B130": golden_b130, "B131": golden_b131, "B132": golden_b132,
     "B133": golden_b133, "B134": golden_b134, "B135": golden_b135, "B136": golden_b136,
+    "B137": golden_b137, "B138": golden_b138, "B139": golden_b139, "B140": golden_b140,  # Batch B-8（v0.9.88 · 腿① 续加锚）
+    "B141": golden_b141, "B142": golden_b142, "B143": golden_b143, "B144": golden_b144,
+    "B145": golden_b145, "B146": golden_b146, "B147": golden_b147, "B148": golden_b148,
+    "B149": golden_b149, "B150": golden_b150, "B151": golden_b151, "B152": golden_b152,
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -771,6 +781,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B118", "B119", "B120",  # Batch B-6（v0.9.86 · 稀释 terminal · 闭式 golden × FD 候选）
                  "B121", "B122", "B123", "B124", "B125", "B126", "B127", "B128",
                  "B129", "B130", "B131", "B132", "B133", "B134", "B135", "B136",  # Batch B-7（v0.9.87 · 腿① 续加锚 · 闭式 golden × FD 候选）
+                 "B137", "B138", "B139", "B140", "B141", "B142", "B143", "B144",
+                 "B145", "B146", "B147", "B148", "B149", "B150", "B151", "B152",  # Batch B-8（v0.9.88 · 腿① 续加锚 · 闭式 golden/超越方程 × FD 候选）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

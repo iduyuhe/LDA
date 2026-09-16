@@ -8,7 +8,7 @@
      agent/llm 模块；harness S7 的 oracle_kind 为确定性统计量）
   ⑤ S7 harness reference PASS（golden 自洽）
   ⑥ 扰动负例：损耗整体 +1dB → 分布下移 → candidate 偏离 golden > tol 被 FAIL 抓
-  ⑦ 题库计数 154 题（B1-B136 = 131 + E1-E10 = 10 + S1-S13 = 13）
+  ⑦ 题库计数 170 题（B1-B152 = 147 + E1-E10 = 10 + S1-S13 = 13）
   ⑧ S8 OSNR 统计锚（模板复用：Jensen 方向 + golden 收敛）
   ⑨ 蒙特卡洛收敛性（N 扫描收敛带）
 
@@ -128,8 +128,9 @@ def main() -> int:
                   + [f"B{i}" for i in range(73, 89)]        # B73-B88 = Batch B-4 十六锚（缺口 B72 线宽预留）
                   + [f"B{i}" for i in range(89, 105)]       # B89-B104 = Batch B-5 十六锚（氢原子径向/3D-HO/圆波导/矩形波导）
                   + [f"B{i}" for i in range(105, 121)]      # B105-B120 = Batch B-6 十六锚（刚性转子/2D 方势阱/三角势阱/球形势阱）
-                  + [f"B{i}" for i in range(121, 137)])     # B121-B136 = Batch B-7 十六锚（Morse 势/2D 各向异性谐振子/3D 长方体势阱/类氢激发态）
-    check("题库（B1-B136 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + Batch B-7 十六锚 + E1-E10 + S1-S13 动态计数）",
+                  + [f"B{i}" for i in range(121, 137)]      # B121-B136 = Batch B-7 十六锚（Morse 势/2D 各向异性谐振子/3D 长方体势阱/类氢激发态）
+                  + [f"B{i}" for i in range(137, 153)])     # B137-B152 = Batch B-8 十六锚（2D 类氢/2D 圆环+AB 通量/3D 有限深球形阱/各向异性 3D 谐振子）
+    check("题库（B1-B152 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + Batch B-7 十六锚 + Batch B-8 十六锚 + E1-E10 + S1-S13 动态计数）",
           b_ids == expected_b
           and s_ids == [f"S{i}" for i in range(1, 14)]
           and e_ids == [f"E{i}" for i in range(1, len(e_ids) + 1)],

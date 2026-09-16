@@ -2175,6 +2175,7 @@ _BATCH_B4_MOD = None
 _BATCH_B5_MOD = None
 _BATCH_B6_MOD = None
 _BATCH_B7_MOD = None
+_BATCH_B8_MOD = None
 
 
 def _get_batch_b3():
@@ -2674,6 +2675,20 @@ def _get_batch_b7():
     return _m
 
 
+def _get_batch_b8():
+    """双路兜底导入 Batch B-8 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B8_MOD
+    if _BATCH_B8_MOD is not None:
+        return _BATCH_B8_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b8_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b8_numeric as _m
+    _BATCH_B8_MOD = _m
+    return _m
+
+
 @_register_candidate(
     "b89_hydrogen_1s_cand",
     "氢原子径向 FD 薛定谔本征第 0 径向态（Dirichlet 盒 1D 径向 ODE 数值积分）↔ 解析闭式 E_n=-RYDBERG·Z²/n²，方法学独立")
@@ -3113,6 +3128,156 @@ def _b136_h_5d(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b7()
     return float(m.cand_hydrogen(2, 2, float(p["Z"])))   # H 5d: l=2, n_r=2
+
+
+# ---------------------------------------------------------------------------
+# Batch B-8（v0.9.88 · 腿① 续加锚稀释 terminal）：2D 类氢 / 2D 圆环+AB 通量 /
+#   3D 有限深球形势阱 / 各向异性 3D 谐振子 共 16 道严格独立候选。
+#   golden 走「解析闭式 / Bessel 交叉积零点 / 超越方程根 / 可分离闭式」，
+#   候选走「PDE 离散本征（径向 FD / 3D Kronecker 和）」，方法学不同源。
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "b137_h2d_m2_cand",
+    "2D 类氢 (m=2,n_r=0) 由 2D 径向 FD 本征（u=√r·R，(m²−¼)ℏ²/2mr²−Ze²/4πε₀r）导出 ↔ 2D Coulomb 闭式 E=−Z²Ry/(N−½)²，方法学独立")
+def _b137_h2d_m2(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_hydrogen2d(2, 0, float(p["Z"])))
+
+
+@_register_candidate(
+    "b138_h2d_m2n1_cand",
+    "2D 类氢 (m=2,n_r=1) 由 2D 径向 FD 本征导出 ↔ 2D Coulomb 闭式，方法学独立")
+def _b138_h2d_m2n1(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_hydrogen2d(2, 1, float(p["Z"])))
+
+
+@_register_candidate(
+    "b139_h2d_m4_cand",
+    "2D 类氢 (m=4) 强离心态由 2D 径向 FD 本征导出 ↔ 2D Coulomb 闭式，方法学独立")
+def _b139_h2d_m4(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_hydrogen2d(4, 0, float(p["Z"])))
+
+
+@_register_candidate(
+    "b140_h2d_z2_cand",
+    "2D 类氢 (Z=2,m=2,n_r=0) 由 2D 径向 FD 本征导出 ↔ 2D Coulomb 闭式，方法学独立")
+def _b140_h2d_z2(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_hydrogen2d(2, 0, float(p["Z"])))
+
+
+@_register_candidate(
+    "b141_annulus_nu0_cand",
+    "2D 圆环 (ν=0) 由径向 FD 本征（(ν²−¼)/r² 离心项，u(R_i)=u(R_o)=0）导出 ↔ Bessel 交叉积零点闭式，方法学独立")
+def _b141_annulus_nu0(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_annulus(0.0, 1, float(p["ri_nm"]), float(p["ro_nm"])))
+
+
+@_register_candidate(
+    "b142_annulus_nu1_cand",
+    "2D 圆环 (ν=1) 由径向 FD 本征导出 ↔ Bessel 交叉积零点闭式，方法学独立")
+def _b142_annulus_nu1(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_annulus(1.0, 1, float(p["ri_nm"]), float(p["ro_nm"])))
+
+
+@_register_candidate(
+    "b143_annulus_ab05_cand",
+    "2D 圆环 (ν=½，Aharonov-Bohm 通量 Φ=½Φ₀) 由径向 FD 本征（半整数阶离心项）导出 ↔ 半整数阶 Bessel 交叉积零点闭式，方法学独立")
+def _b143_annulus_ab05(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_annulus(0.5, 1, float(p["ri_nm"]), float(p["ro_nm"])))
+
+
+@_register_candidate(
+    "b144_annulus_ab15_cand",
+    "2D 圆环 (ν=3/2，Aharonov-Bohm 通量 Φ=½Φ₀) 由径向 FD 本征导出 ↔ 半整数阶 Bessel 交叉积零点闭式，方法学独立")
+def _b144_annulus_ab15(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_annulus(1.5, 1, float(p["ri_nm"]), float(p["ro_nm"])))
+
+
+@_register_candidate(
+    "b145_fsph_v1_cand",
+    "3D 有限深球形阱 (V₀=1eV) 由 3D 径向 FD 本征（V=−V₀ 内 / 0 外，大盒）导出 ↔ 超越方程 k·cot(kR)=−κ 匹配闭式，方法学独立")
+def _b145_fsph_v1(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_finite_sphere(float(p["V0_eV"]), float(p["R_nm"]), 1))
+
+
+@_register_candidate(
+    "b146_fsph_v5_cand",
+    "3D 有限深球形阱 (V₀=5eV) 由 3D 径向 FD 本征导出 ↔ 超越方程闭式，方法学独立")
+def _b146_fsph_v5(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_finite_sphere(float(p["V0_eV"]), float(p["R_nm"]), 1))
+
+
+@_register_candidate(
+    "b147_fsph_v10_cand",
+    "3D 有限深球形阱 (V₀=10eV) 由 3D 径向 FD 本征导出 ↔ 超越方程闭式，方法学独立")
+def _b147_fsph_v10(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_finite_sphere(float(p["V0_eV"]), float(p["R_nm"]), 1))
+
+
+@_register_candidate(
+    "b148_fsph_v10n2_cand",
+    "3D 有限深球形阱 (V₀=10eV, ℓ=0 第 2 态) 由 3D 径向 FD 本征导出 ↔ 超越方程闭式，方法学独立")
+def _b148_fsph_v10n2(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_finite_sphere(float(p["V0_eV"]), float(p["R_nm"]), 2))
+
+
+@_register_candidate(
+    "b149_ho3d_iso_cand",
+    "3D 各向同性谐振子基态由三个 1D HO FD 谱 Kronecker 和导出 ↔ 可分离解析闭式，方法学独立")
+def _b149_ho3d_iso(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_ho3d_aniso(0, 0, 0, float(p["ox"]), float(p["oy"]), float(p["oz"])))
+
+
+@_register_candidate(
+    "b150_ho3d_aniso000_cand",
+    "各向异性 3D 谐振子基态由三个 1D HO FD 谱 Kronecker 和导出 ↔ 可分离解析闭式，方法学独立")
+def _b150_ho3d_aniso000(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_ho3d_aniso(0, 0, 0, float(p["ox"]), float(p["oy"]), float(p["oz"])))
+
+
+@_register_candidate(
+    "b151_ho3d_aniso100_cand",
+    "各向异性 3D 谐振子 (1,0,0) 由 Kronecker 和导出 ↔ 可分离解析闭式，方法学独立")
+def _b151_ho3d_aniso100(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_ho3d_aniso(1, 0, 0, float(p["ox"]), float(p["oy"]), float(p["oz"])))
+
+
+@_register_candidate(
+    "b152_ho3d_aniso111_cand",
+    "各向异性 3D 谐振子 (1,1,1) 由 Kronecker 和导出 ↔ 可分离解析闭式，方法学独立")
+def _b152_ho3d_aniso111(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b8()
+    return float(m.cand_ho3d_aniso(1, 1, 1, float(p["ox"]), float(p["oy"]), float(p["oz"])))
 
 
 # ---------------------------------------------------------------------------

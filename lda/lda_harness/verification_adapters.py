@@ -2174,6 +2174,7 @@ _BATCH_B3_MOD = None
 _BATCH_B4_MOD = None
 _BATCH_B5_MOD = None
 _BATCH_B6_MOD = None
+_BATCH_B7_MOD = None
 
 
 def _get_batch_b3():
@@ -2659,6 +2660,20 @@ def _get_batch_b6():
     return _m
 
 
+def _get_batch_b7():
+    """双路兜底导入 Batch B-7 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B7_MOD
+    if _BATCH_B7_MOD is not None:
+        return _BATCH_B7_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b7_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b7_numeric as _m
+    _BATCH_B7_MOD = _m
+    return _m
+
+
 @_register_candidate(
     "b89_hydrogen_1s_cand",
     "氢原子径向 FD 薛定谔本征第 0 径向态（Dirichlet 盒 1D 径向 ODE 数值积分）↔ 解析闭式 E_n=-RYDBERG·Z²/n²，方法学独立")
@@ -2950,6 +2965,154 @@ def _b120_spherical_l2n1(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b6()
     return float(m.cand_spherical(2, 1, float(p["R_nm"])))
+
+
+# ---------------------------------------------------------------------------
+# P1-1 · Batch B-7（2026-09-17 · v0.9.87 · 腿① 续加锚稀释 terminal）：16 道严格独立候选
+#   Morse 势振动 / 2D 各向异性谐振子 / 3D 长方体势阱 / 类氢激发态（n=4/5 高激发 + 高 l）
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "b121_morse_n0_cand",
+    "Morse 势振动能级由 1D FD 薛定谔本征（V=D_e(1−e^{−a(r−r_e)})²，Dirichlet 盒）导出 ↔ 解析非谐谱 E_n=ℏω(n+½)−[ℏω(n+½)]²/(4D_e)，方法学独立")
+def _b121_morse_n0(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_morse(0, float(p["de_ev"])))
+
+
+@_register_candidate(
+    "b122_morse_n1_cand",
+    "Morse 势振动能级由 1D FD 薛定谔本征（第 2 束缚态）导出 ↔ 解析非谐谱闭式，方法学独立")
+def _b122_morse_n1(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_morse(1, float(p["de_ev"])))
+
+
+@_register_candidate(
+    "b123_morse_n2_cand",
+    "Morse 势振动能级由 1D FD 薛定谔本征（第 3 束缚态）导出 ↔ 解析非谐谱闭式，方法学独立")
+def _b123_morse_n2(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_morse(2, float(p["de_ev"])))
+
+
+@_register_candidate(
+    "b124_morse_n3_cand",
+    "Morse 势振动能级由 1D FD 薛定谔本征（第 4 束缚态）导出 ↔ 解析非谐谱闭式，方法学独立")
+def _b124_morse_n3(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_morse(3, float(p["de_ev"])))
+
+
+@_register_candidate(
+    "b125_ho2d_00_cand",
+    "二维各向异性谐振子能级由 2D FD 本征（两 1D FD 谐振子本征值 Kronecker 和）导出 ↔ 闭式 E=ℏω_x(n_x+½)+ℏω_y(n_y+½)，方法学独立")
+def _b125_ho2d_00(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_ho2d(0, 0, float(p["ox"]), float(p["oy"])))
+
+
+@_register_candidate(
+    "b126_ho2d_10_cand",
+    "二维各向异性谐振子能级由 2D FD 本征（Kronecker 和）导出 ↔ 闭式，方法学独立")
+def _b126_ho2d_10(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_ho2d(1, 0, float(p["ox"]), float(p["oy"])))
+
+
+@_register_candidate(
+    "b127_ho2d_01_cand",
+    "二维各向异性谐振子能级由 2D FD 本征（Kronecker 和）导出 ↔ 闭式，方法学独立")
+def _b127_ho2d_01(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_ho2d(0, 1, float(p["ox"]), float(p["oy"])))
+
+
+@_register_candidate(
+    "b128_ho2d_11_cand",
+    "二维各向异性谐振子能级由 2D FD 本征（Kronecker 和）导出 ↔ 闭式，方法学独立")
+def _b128_ho2d_11(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_ho2d(1, 1, float(p["ox"]), float(p["oy"])))
+
+
+@_register_candidate(
+    "b129_box3d_111_cand",
+    "三维长方体势阱能级由 3D FD 拉普拉斯本征（三路 1D Dirichlet 本征值 Kronecker 和）导出 ↔ 闭式 E=(π²ℏ²/2m)(n_x²/L_x²+n_y²/L_y²+n_z²/L_z²)，方法学独立")
+def _b129_box3d_111(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_box3d(1, 1, 1, float(p["a"]), float(p["b"]), float(p["c"])))
+
+
+@_register_candidate(
+    "b130_box3d_211_cand",
+    "三维长方体势阱能级由 3D FD 拉普拉斯本征（Kronecker 和）导出 ↔ 闭式，方法学独立")
+def _b130_box3d_211(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_box3d(2, 1, 1, float(p["a"]), float(p["b"]), float(p["c"])))
+
+
+@_register_candidate(
+    "b131_box3d_121_cand",
+    "三维长方体势阱能级由 3D FD 拉普拉斯本征（Kronecker 和）导出 ↔ 闭式，方法学独立")
+def _b131_box3d_121(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_box3d(1, 2, 1, float(p["a"]), float(p["b"]), float(p["c"])))
+
+
+@_register_candidate(
+    "b132_box3d_112_cand",
+    "三维长方体势阱能级由 3D FD 拉普拉斯本征（Kronecker 和）导出 ↔ 闭式，方法学独立")
+def _b132_box3d_112(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_box3d(1, 1, 2, float(p["a"]), float(p["b"]), float(p["c"])))
+
+
+@_register_candidate(
+    "b133_h_4s_cand",
+    "类氢离子激发态能级由径向 FD 薛定谔本征（Coulomb 势，n_r=n−l−1 径向节点）导出 ↔ Rydberg 闭式 E_n=−RYDBERG·Z²/n²，方法学独立")
+def _b133_h_4s(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_hydrogen(0, 3, float(p["Z"])))   # H 4s: l=0, n_r=n−l−1=3
+
+
+@_register_candidate(
+    "b134_he_4d_cand",
+    "类氢离子激发态能级由径向 FD 薛定谔本征（Z=2 Coulomb + l=2 离心项）导出 ↔ Rydberg 闭式，方法学独立")
+def _b134_he_4d(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_hydrogen(2, 1, float(p["Z"])))   # He⁺ 4d: l=2, n_r=1
+
+
+@_register_candidate(
+    "b135_li_4f_cand",
+    "类氢离子激发态能级由径向 FD 薛定谔本征（Z=3 Coulomb + l=3 强离心势垒）导出 ↔ Rydberg 闭式，方法学独立")
+def _b135_li_4f(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_hydrogen(3, 0, float(p["Z"])))   # Li²⁺ 4f: l=3, n_r=0
+
+
+@_register_candidate(
+    "b136_h_5d_cand",
+    "类氢离子激发态能级由径向 FD 薛定谔本征（H n=5 d 态，l=2）导出 ↔ Rydberg 闭式，方法学独立")
+def _b136_h_5d(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b7()
+    return float(m.cand_hydrogen(2, 2, float(p["Z"])))   # H 5d: l=2, n_r=2
 
 
 # ---------------------------------------------------------------------------

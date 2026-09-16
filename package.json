@@ -1,0 +1,21 @@
+{
+  "name": "lda-asset-build",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LDA 对外物料（白皮书 DOCX / 路演 PPTX）的 Node 构建脚本依赖。仅用于 build_whitepaper_docx.js 与 build_pitch_deck.js，不参与 Python 主项目。",
+  "comments": {
+    "usage": "仓库根执行 `npm install` 后，`npm run build:whitepaper` / `npm run build:deck` 即可产出 docx / pptx。若本机已在共享 node_modules（如 C:/Users/Administrator/node_modules）装过同名依赖，脚本会自动回退到该路径，无需重复安装。"
+  },
+  "scripts": {
+    "build:whitepaper": "node build_whitepaper_docx.js",
+    "build:deck": "node build_pitch_deck.js"
+  },
+  "dependencies": {
+    "docx": "^9.7.1",
+    "pptxgenjs": "^4.0.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-icons": "^5.7.0",
+    "sharp": "^0.35.3"
+  }
+}

@@ -1,9 +1,24 @@
 const fs = require("fs");
+const path = require("path");
+
+// ---- 依赖解析：本地 node_modules 优先，回退到共享安装目录 ----
+// 仓库根执行 `npm install` 后走第一条；本机若已在共享目录装过同名依赖，自动回退。
+// 两条都失败则抛明确中文错误，而不是让 require 抛含绝对路径的原始栈。
+const SHARED_NODE_MODULES = "C:/Users/Administrator/node_modules";
+function loadPkg(name) {
+  const cands = [name, path.join(SHARED_NODE_MODULES, name)];
+  const errs = [];
+  for (const c of cands) {
+    try { return require(c); } catch (e) { errs.push(c + ": " + e.message.split("\n")[0]); }
+  }
+  throw new Error("缺少 Node 依赖 \"" + name + "\" —— 请在仓库根执行 `npm install` 后重试。\n  " + errs.join("\n  "));
+}
+
 const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   Header, Footer, AlignmentType, LevelFormat, HeadingLevel, BorderStyle,
   WidthType, ShadingType, PageNumber, PageBreak, TableOfContents
-} = require("C:/Users/Administrator/node_modules/docx");
+} = loadPkg("docx");
 
 // ---- palette ----
 const BLUE = "1F4E79";      // headings
@@ -49,8 +64,9 @@ content.push(new Paragraph({ spacing:{before:600}, alignment:AlignmentType.CENTE
 content.push(new Paragraph({ spacing:{before:120}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"开源 · Agent 原生的光芯片与量子芯片设计底座", size:26, color:"404040"}) ]}));
 content.push(new Paragraph({ spacing:{before:40}, alignment:AlignmentType.CENTER, border:{bottom:{style:BorderStyle.SINGLE,size:12,color:ACCENT,space:8}}, children:[ new TextRun({text:""}) ]}));
 content.push(new Paragraph({ spacing:{before:360}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"面向产业界 · 学界 · 投资界的生态共建邀请", size:22, color:"595959"}) ]}));
-content.push(new Paragraph({ spacing:{before:200}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"文档编号：LDA-IW-001   |   版本 v1.0（对外公开）   |   2026-08-16", size:20, color:"808080"}) ]}));
-content.push(new Paragraph({ spacing:{before:40}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"编制：LDA 领域研究室 · 工业5点0产业生态联盟（杜玉河）", size:20, color:"808080"}) ]}));
+content.push(new Paragraph({ spacing:{before:200}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"文档编号：LDA-IW-001   |   版本：v1.1（2026-08-23 · 系统级里程碑落地）", size:20, color:"808080"}) ]}));
+content.push(new Paragraph({ spacing:{before:40}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"编制日期：2026-08-16（v1.1 更新：2026-08-23）   |   密级：对外公开", size:20, color:"808080"}) ]}));
+content.push(new Paragraph({ spacing:{before:40}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"编制：LDA 领域研究室（工业5点0产业生态联盟 · 杜玉河）", size:20, color:"808080"}) ]}));
 content.push(new Paragraph({ children:[new PageBreak()] }));
 
 // ---------- TOC ----------
@@ -219,6 +235,14 @@ content.push(bullet("晶圆厂 / 器件企业：提供 PDK 或实测语料，共
 content.push(bullet("投资 / 产业方：联合点亮 GPU 算力与垂直场景，共享定义标准与自主可控的红利。"));
 content.push(quote("联系：工业5点0产业生态联盟 · 杜玉河（微信号：gongyhlw）"));
 
+// ---------- 附录 A（v1.1）----------
+content.push(h1("附录 A · v1.1 更新（2026-08-23 · v0.5 系统级里程碑）"));
+content.push(para("v0.5（git tag v0.5）在 v0.4 真实化之上新增三块能力，形成“设计目标 → 已验证器件/系统/标准/逆设计”完整开源基线："));
+content.push(num("系统级（M7 三件）：热光可调 WDM（Δλ/λ=(dn/dT)·R_th·P/n_eff 物理定律锚 + 信道重分配）、量子门/纠错拓扑（门库幺正性 + surface code k=1 + CR 门）、大规模系统基准（8 WDM×8 qubit 联合压测 + 容量自洽 + IL/间隔/网格四边界）。"));
+content.push(num("护城河两件：L0 IR 开放标准 v0.3 定稿（docs/ir_spec.md + JSON Schema + 零漂移校验——社区共建起点，标准文档即真值）；验证合约工业化（run_ci_regression.py 一键全量回归 27 PASS/0 FAIL + 性能基准 + 基线漂移监控——协作门槛降低）。"));
+content.push(num("逆设计纵深四阶（Track A）：谱形目标（分束比 0.574 / 3 波长谱形 11.7× / 模式匹配 8.6×）→ 形状逆设计（宽度曲线控制点，可制造性内建 DRC，imp 6.6× + Pareto 多目标）→ 形状+拓扑混合（分层表达，概率 OR 光滑组合，混合 imp 18.3× vs 纯形状 6.0×，增益 3.06×）——逼近商业 EDA adjoint 逆设计核心卖点。"));
+content.push(para("WebUI 四十三面板，全部交付三端（本地/Gitee/GitHub）tree 级零差异同步。诚实边界：2D TEz 求解为主（3D 端口验收小几何）、系统级链路为解析物理模型、实证大数据锚待发动期数据（D-62 暂缓）、不宣称签核级。"));
+
 // ---------- footer note ----------
 content.push(new Paragraph({ spacing:{before:200}, border:{top:{style:BorderStyle.SINGLE,size:6,color:"BFBFBF",space:8}}, children:[ new TextRun({text:"本白皮书依据 LDA 前期战略文档包（可行性分析、技术白皮书、市场竞争与赛道分析、发展里程碑与路线图）提炼对外版本，关键技术结论均来自真实运行的自研代码与确定性验证脚本。", size:18, color:"808080", italics:true}) ]}));
 
@@ -240,7 +264,7 @@ const doc = new Document({
   sections: [{
     properties: { page: { size:{ width:11906, height:16838 }, margin:{ top:1440, right:1300, bottom:1300, left:1300 } } },
     footers: { default: new Footer({ children:[ new Paragraph({ alignment:AlignmentType.CENTER, children:[
-      new TextRun({ text:"LDA 产业共建白皮书 v1.0 · 工业5点0产业生态联盟  ", size:16, color:"808080" }),
+      new TextRun({ text:"LDA 产业共建白皮书 v1.1 · 工业5点0产业生态联盟  ", size:16, color:"808080" }),
       new TextRun({ children:[PageNumber.CURRENT], size:16, color:"808080" }),
     ]}) ]}) },
     children: content

@@ -1,8 +1,21 @@
-const pptxgen = require("C:/Users/Administrator/node_modules/pptxgenjs");
-const React = require("C:/Users/Administrator/node_modules/react");
-const ReactDOMServer = require("C:/Users/Administrator/node_modules/react-dom/server");
-const sharp = require("C:/Users/Administrator/node_modules/sharp");
-const FA = require("C:/Users/Administrator/node_modules/react-icons/fa");
+const path = require("path");
+
+// ---- 依赖解析：本地 node_modules 优先，回退到共享安装目录 ----
+const SHARED_NODE_MODULES = "C:/Users/Administrator/node_modules";
+function loadPkg(name) {
+  const cands = [name, path.join(SHARED_NODE_MODULES, name)];
+  const errs = [];
+  for (const c of cands) {
+    try { return require(c); } catch (e) { errs.push(c + ": " + e.message.split("\n")[0]); }
+  }
+  throw new Error("缺少 Node 依赖 \"" + name + "\" —— 请在仓库根执行 `npm install` 后重试。\n  " + errs.join("\n  "));
+}
+
+const pptxgen = loadPkg("pptxgenjs");
+const React = loadPkg("react");
+const ReactDOMServer = loadPkg("react-dom/server");
+const sharp = loadPkg("sharp");
+const FA = loadPkg("react-icons/fa");
 
 // ---------- palette (Midnight Executive) ----------
 const NAVY = "13203A";      // dominant dark

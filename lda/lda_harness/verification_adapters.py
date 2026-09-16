@@ -2171,6 +2171,7 @@ def _get_batch_b2():
 # 复用 B12/B22 已验证 1D FD 哈密顿本征核（判据 D 由 run_d_criterion_smoke 已证）。
 # ---------------------------------------------------------------------------
 _BATCH_B3_MOD = None
+_BATCH_B4_MOD = None
 
 
 def _get_batch_b3():
@@ -2185,6 +2186,21 @@ def _get_batch_b3():
         import _batch_b3_numeric as _m
     _BATCH_B3_MOD = _m
     return _m
+
+
+def _get_batch_b4():
+    """双路兜底导入 Batch B-4 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B4_MOD
+    if _BATCH_B4_MOD is not None:
+        return _BATCH_B4_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b4_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b4_numeric as _m
+    _BATCH_B4_MOD = _m
+    return _m
+
 
 
 @_register_candidate(
@@ -2404,6 +2420,213 @@ def _b64_bragg_lambda_candidate(spec: VerificationSpec, oracle_value: Any) -> fl
     m = _get_batch_b3()
     return float(m.bragg_peak_lambda(
         float(p["n1"]), float(p["n2"]), float(p["Lambda"]), 60))
+
+
+# ---------------------------------------------------------------------------
+# Batch B-4（路径 B 扩基续三 · v0.9.84 · 量子隧穿 / 一维散射族）
+# 候选 = 切片转移矩阵数值法（方法学不同源 vs 解析闭式 golden）。残差=切片收敛误差。
+# B69 相移 / B72 线宽 无独立数值候选 ⇒ 不注册（避免落入 self_certified 触发棘轮）。
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "b65_sqbarrier_T_deep_cand",
+    "切片转移矩阵数值透射（深隧穿 E<V0）↔ 方势垒解析闭式 sinh²，方法学独立")
+def _b65_sqbarrier_T_deep(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b66_sqbarrier_T_neartop_cand",
+    "切片转移矩阵数值透射（近顶 E<V0）↔ 方势垒解析闭式 sinh²，方法学独立")
+def _b66_sqbarrier_T_neartop(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b67_sqbarrier_T_osc_cand",
+    "切片转移矩阵数值透射（E>V0 振荡区）↔ 方势垒解析闭式 sin²，方法学独立")
+def _b67_sqbarrier_T_osc(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b68_sqbarrier_R_cand",
+    "1 − 切片转移矩阵数值透射 ↔ 方势垒解析反射 R=1−T（E<V0），方法学独立")
+def _b68_sqbarrier_R(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return 1.0 - float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b70_dbbar_Tpeak_cand",
+    "数值扫 E 取切片转移矩阵透射最大 ↔ 双势垒谐振峰解析 T_peak≈1，方法学独立")
+def _b70_dbbar_Tpeak(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return float(m.cand_double_barrier_T_peak(p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, p["b_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b71_dbbar_T_detune_cand",
+    "切片转移矩阵双势垒透射 ↔ 双势垒总转移矩阵闭式（失谐 E≠E_r），方法学独立")
+def _b71_dbbar_T_detune(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return float(m.cand_double_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, p["b_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b73_finwell_Tpeak_cand",
+    "数值扫 E 取切片转移矩阵透射最大 ↔ 有限深势阱散射解析共振峰，方法学独立")
+def _b73_finwell_Tpeak(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return float(m.cand_finwell_scatter_T_peak(p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b74_finwell_Tmin_cand",
+    "数值扫 E 取切片转移矩阵透射最小 ↔ 有限深势阱散射解析反共振谷，方法学独立")
+def _b74_finwell_Tmin(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return float(m.cand_finwell_scatter_T_min(p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b75_delta_T_cand",
+    "极薄高超薄片近似 δ 极限切片转移矩阵透射 ↔ δ 势垒精确闭式，方法学独立")
+def _b75_delta_T(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    alpha_Jm = float(p["alpha_eVnm"]) * m.EV * 1e-9
+    return float(m.cand_delta_T(p["E_eV"] * m.EV, alpha_Jm, m.ME))
+
+
+@_register_candidate(
+    "b76_delta_R_cand",
+    "1 − δ 极限切片转移矩阵透射 ↔ δ 势垒解析反射 R=1−T，方法学独立")
+def _b76_delta_R(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    alpha_Jm = float(p["alpha_eVnm"]) * m.EV * 1e-9
+    return 1.0 - float(m.cand_delta_T(p["E_eV"] * m.EV, alpha_Jm, m.ME))
+
+
+@_register_candidate(
+    "b77_step_T_cand",
+    "阶跃剖面切片转移矩阵透射 ↔ 阶跃势解析透射 T=4k1k2/(k1+k2)²（E>V0），方法学独立")
+def _b77_step_T(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return float(m.cand_step_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, m.ME))
+
+
+@_register_candidate(
+    "b78_step_R_cand",
+    "1 − 阶跃剖面切片转移矩阵透射 ↔ 阶跃势全反射解析 R=1（E<V0），方法学独立")
+def _b78_step_R(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return 1.0 - float(m.cand_step_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, m.ME))
+
+
+@_register_candidate(
+    "b79_periodic_T_cand",
+    "N 胞切片转移矩阵连乘数值透射 ↔ Kronig-Penney 精确闭式（单胞矩阵幂），方法学独立")
+def _b79_periodic_T(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    E = 0.5 * p["V0_eV"] * m.EV  # 带边
+    return float(m.cand_periodic_T(E, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, p["d_nm"] * 1e-9, int(p["N"]), m.ME))
+
+
+@_register_candidate(
+    "b80_asym_dbbar_T_cand",
+    "非对称双势垒切片转移矩阵透射 ↔ 非对称双势垒总转移矩阵闭式（异高 V1≠V2），方法学独立")
+def _b80_asym_dbbar_T(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return float(m.cand_asym_double_barrier_T(p["E1_eV"] * m.EV, p["E2_eV"] * m.EV, p["a_nm"] * 1e-9, p["b_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b81_sqbarrier_T_v2_cand",
+    "切片转移矩阵数值透射（异参数深隧穿）↔ 方势垒解析闭式，方法学独立")
+def _b81_sqbarrier_T_v2(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b82_sqbarrier_R_v2_cand",
+    "1 − 切片转移矩阵数值透射（异参数深隧穿）↔ 方势垒解析反射 R=1−T，方法学独立")
+def _b82_sqbarrier_R_v2(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return 1.0 - float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b83_sqbarrier_T_v3_cand",
+    "切片转移矩阵数值透射（异参数 E>V0 振荡）↔ 方势垒解析闭式 sin²，方法学独立")
+def _b83_sqbarrier_T_v3(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b84_finwell_R_cand",
+    "1 − 切片转移矩阵数值透射 ↔ 有限深势阱散射解析反射 R=1−T（异参数），方法学独立")
+def _b84_finwell_R(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return 1.0 - float(m.cand_finwell_scatter_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b85_delta_T_v2_cand",
+    "δ 极限切片转移矩阵透射（异参数）↔ δ 势垒精确闭式，方法学独立")
+def _b85_delta_T_v2(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    alpha_Jm = float(p["alpha_eVnm"]) * m.EV * 1e-9
+    return float(m.cand_delta_T(p["E_eV"] * m.EV, alpha_Jm, m.ME))
+
+
+@_register_candidate(
+    "b86_step_R_v2_cand",
+    "1 − 阶跃剖面切片转移矩阵透射 ↔ 阶跃势全反射解析 R=1（异参数 E<V0），方法学独立")
+def _b86_step_R_v2(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return 1.0 - float(m.cand_step_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, m.ME))
+
+
+@_register_candidate(
+    "b87_sqbarrier_T_v4_cand",
+    "切片转移矩阵数值透射（异参数极深隧穿）↔ 方势垒解析闭式，方法学独立")
+def _b87_sqbarrier_T_v4(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+
+
+@_register_candidate(
+    "b88_dbbar_T_detune_v2_cand",
+    "切片转移矩阵双势垒透射（异参数）↔ 双势垒总转移矩阵闭式，方法学独立")
+def _b88_dbbar_T_detune_v2(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b4()
+    return float(m.cand_double_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, p["b_nm"] * 1e-9, m.ME))
 
 
 # ---------------------------------------------------------------------------

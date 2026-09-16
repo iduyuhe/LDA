@@ -16,7 +16,7 @@
      越级谎报即 FAIL（同 C2 防标签≠行为）。
   M4 provenance=self_authored_closed_form（纯未验自写闭式）的锚落入「低置信·待再审计」名单并显式披露
      （信息项，不 FAIL——已内验的 self_authored_closed_form_with_check 与行业 design_rule_anchor 不进此名单）。
-  M5 三分类计数与 README/C2 口径一致（63/3/18，和=84；B2 于 2026-09-10 经 FV-FDM+PWE 双独立全波终审升严格独立；B33 于 2026-09-10 A 档有源扩展 #1 真·新增严格独立锚）。
+  M5 三分类计数与 README/C2 口径一致（85/3/18，和=106；B2 于 2026-09-10 经 FV-FDM+PWE 双独立全波终审升严格独立；B33 于 2026-09-10 A 档有源扩展 #1 真·新增严格独立锚；B-4 于 2026-09-16 扩基 22 道严格独立锚达 85）。
 """
 import os
 import sys

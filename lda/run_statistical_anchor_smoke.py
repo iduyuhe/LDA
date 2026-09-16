@@ -8,7 +8,7 @@
      agent/llm 模块；harness S7 的 oracle_kind 为确定性统计量）
   ⑤ S7 harness reference PASS（golden 自洽）
   ⑥ 扰动负例：损耗整体 +1dB → 分布下移 → candidate 偏离 golden > tol 被 FAIL 抓
-  ⑦ 题库计数 84（B1-B64 = 61 + E1-E10 = 10 + S1-S13 = 13）
+  ⑦ 题库计数 106 题（B1-B88 = 83 + E1-E10 = 10 + S1-S13 = 13）
   ⑧ S8 OSNR 统计锚（模板复用：Jensen 方向 + golden 收敛）
   ⑨ 蒙特卡洛收敛性（N 扫描收敛带）
 
@@ -110,15 +110,19 @@ def main() -> int:
     # ⑦ 题库计数（B+E+S 动态，v0.9.51 起不再硬编码 50/7；
     #    v0.9.67 新增 B33；v0.9.69/v0.9.70 启用 B31/B32 → B 类连续 B1-B33、
     #    v0.9.79 路径 B 扩基新增 B34/B36/B37/B40/B41（末位跳至 B41，B35 复用、
-    #    B38/B39 预留缺口）→ 总数 61，此守卫须精确跟账本）
+    #    B38/B39 预留缺口）→ 总数 61；v0.9.84 路径 B-4 扩基新增 B65-B68/B70-B71/
+    #    B73-B88（缺口 B69 相移/B72 线宽预留）→ 总数 83，此守卫须精确跟账本）
     b_ids = [b for b in BENCHMARK_ORDER if b.startswith("B")]
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
     s_ids = [b for b in BENCHMARK_ORDER if b.startswith("S")]
     expected_b = ([f"B{i}" for i in range(1, 35)]          # B1-B34
                   + ["B36", "B37", "B40", "B41"]            # 缺口 B35 预留
                   + [f"B{i}" for i in range(42, 52)]        # B42-B51 = Batch B-2 十锚
-                  + [f"B{i}" for i in range(52, 65)])       # B52-B64 = Batch B-3 十三锚
-    check("题库（B1-B64 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + E1-E10 + S1-S13 动态计数）",
+                  + [f"B{i}" for i in range(52, 65)]        # B52-B64 = Batch B-3 十三锚
+                  + [f"B{i}" for i in range(65, 69)]        # B65-B68 = Batch B-4 四锚
+                  + ["B70", "B71"]                          # 缺口 B69 相移预留
+                  + [f"B{i}" for i in range(73, 89)])       # B73-B88 = Batch B-4 十六锚（缺口 B72 线宽预留）
+    check("题库（B1-B88 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + E1-E10 + S1-S13 动态计数）",
           b_ids == expected_b
           and s_ids == [f"S{i}" for i in range(1, 14)]
           and e_ids == [f"E{i}" for i in range(1, len(e_ids) + 1)],

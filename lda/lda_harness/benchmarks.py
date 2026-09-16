@@ -71,6 +71,10 @@ from ._batch_b2_numeric import (  # noqa: E402  # Batch B-2 双方法独立锚�
     golden_b42, golden_b43, golden_b44, golden_b45, golden_b46, golden_b47,
     golden_b48, golden_b49, golden_b50, golden_b51,
 )
+from ._batch_b3_numeric import (  # noqa: E402  # Batch B-3 双方法独立锚数值核（v0.9.79++ · 路径 B 扩基续二）
+    golden_b52, golden_b53, golden_b54, golden_b55, golden_b56, golden_b57,
+    golden_b58, golden_b59, golden_b60, golden_b61, golden_b62, golden_b63, golden_b64,
+)
 
 BENCHMARK_DEFS = {
     "B1": {
@@ -1025,6 +1029,206 @@ BENCHMARK_DEFS = {
                  "（tol=0.01GHz 的 ~2e10× 余量）；判据 D 由 B12/B22 已证。反向 a×1.1 ⇒"
                  " |Δ|≈2.38GHz ≫ tol 必 FAIL。"),
     },
+    # ---- Batch B-3（v0.9.79++ · 路径 B 扩基续二：13 道双方法严格独立新锚）----
+    # 设计纪律同源 B-1/B-2：确定性解析闭式/超越方程 golden 对拍 方法学不同源真实数值候选，
+    # 残差 = 离散化/建模固有误差（持久、随参数变化、判据 D 可证伪），非代数恒等、非噪声地板。
+    # 复用 B12/B22 已验证 1D FD 哈密顿本征核（判据 D 由 run_d_criterion_smoke 已证）。
+    "B52": {
+        "title": "一维有限深方势阱第1激发态 E1（奇宇称超越方程二分 vs 1D FD 本征第二模）",
+        "metric": "E1_eV",
+        "oracle": ("analytical(finite square well odd-parity transcendental bisection) + "
+                   "1D FD Hamiltonian eigenmode_mode2 independent_cross_check"),
+        "tol": 5e-2,   # eV
+        "candidate": "qm_finwell_e1_cand",
+        "candidate_desc": ("1D FD 薛定谔哈密顿本征值第2模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"V0": 2.0 * 1.602176634e-19, "a": 1.5e-9, "m": 9.1093837015e-31},
+        "golden_fn": golden_b52,
+        "note": ("有限深方势阱（V0=2eV，a=1.5nm）第1激发态（奇宇称）。golden=连续形式超越方程"
+                 " 二分（k·sin(ka/2)=κ·cos(ka/2)，符号变号定位，稳健）；candidate=1D FD 本征取"
+                 " 第2模（w[1]）。L=2e-8, N=1000 残差 ~9.9e-3 eV（tol=5e-2 eV 的 ~5× 余量）；"
+                 " 判据 D 由 B12/B22 已证。反向 a×1.1 ⇒ |Δ|≈0.055eV ≫ tol 必 FAIL。"),
+    },
+    "B53": {
+        "title": "一维有限深方势阱第2激发态 E2（偶宇称超越方程二分 vs 1D FD 本征第三模）",
+        "metric": "E2_eV",
+        "oracle": ("analytical(finite square well even-parity transcendental bisection) + "
+                   "1D FD Hamiltonian eigenmode_mode3 independent_cross_check"),
+        "tol": 5e-2,   # eV
+        "candidate": "qm_finwell_e2_cand",
+        "candidate_desc": ("1D FD 薛定谔哈密顿本征值第3模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"V0": 2.0 * 1.602176634e-19, "a": 1.5e-9, "m": 9.1093837015e-31},
+        "golden_fn": golden_b53,
+        "note": ("有限深方势阱（V0=2eV，a=1.5nm）第2激发态（偶宇称）。golden=连续形式超越方程"
+                 " 二分（奇宇称根后取偶宇称 -k·cos(ka/2)=κ·sin(ka/2)）；candidate=1D FD 本征取"
+                 " 第3模（w[2]）。L=2e-8, N=1000 残差 ~2.1e-2 eV（tol=5e-2 eV 的 ~2.4× 余量）；"
+                 " 判据 D 由 B12/B22 已证。反向 a×1.1 ⇒ |Δ|≈0.10eV ≫ tol 必 FAIL。"),
+    },
+    "B54": {
+        "title": "一维无限深方势阱第4能级 E4（16E1 闭式 vs 1D FD 本征第四模）",
+        "metric": "E4_eV",
+        "oracle": ("analytical(infinite square well E4=16ℏ²π²/(2mL²)) + "
+                   "1D FD Hamiltonian eigenmode_mode4 independent_cross_check"),
+        "tol": 1e-2,   # eV
+        "candidate": "qmw_infinite_well_e4_cand",
+        "candidate_desc": ("1D FD 薛定谔哈密顿本征值第4模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"m": 9.1093837015e-31, "L": 1e-9},
+        "golden_fn": golden_b54,
+        "note": ("一维无限深方势阱 E4=16·E1（L=1nm）。golden=解析闭式；candidate=1D FD 本征取"
+                 " 第4模（w[3]）。N=600 残差 ~2.2e-4 eV（tol=1e-2 eV 的 ~45× 余量）；判据 D"
+                 " 由 B12/B22 已证。反向 L×1.1 ⇒ |Δ|≈1.04eV ≫ tol 必 FAIL。"),
+    },
+    "B55": {
+        "title": "一维无限深方势阱第5能级 E5（25E1 闭式 vs 1D FD 本征第五模）",
+        "metric": "E5_eV",
+        "oracle": ("analytical(infinite square well E5=25ℏ²π²/(2mL²)) + "
+                   "1D FD Hamiltonian eigenmode_mode5 independent_cross_check"),
+        "tol": 1e-2,   # eV
+        "candidate": "qmw_infinite_well_e5_cand",
+        "candidate_desc": ("1D FD 薛定谔哈密顿本征值第5模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"m": 9.1093837015e-31, "L": 1e-9},
+        "golden_fn": golden_b55,
+        "note": ("一维无限深方势阱 E5=25·E1（L=1nm）。golden=解析闭式；candidate=1D FD 本征取"
+                 " 第5模（w[4]）。N=600 残差 ~5.4e-4 eV（tol=1e-2 eV 的 ~19× 余量）；判据 D"
+                 " 由 B12/B22 已证。反向 L×1.1 ⇒ |Δ|≈1.63eV ≫ tol 必 FAIL。"),
+    },
+    "B56": {
+        "title": "一维谐振子第3能级 E3（3.5ℏω 闭式 vs 1D FD 谐振子本征第四模）",
+        "metric": "E3_eV",
+        "oracle": ("analytical(harmonic oscillator E3=3.5ℏω) + "
+                   "1D FD oscillator Hamiltonian eigenmode_mode4 independent_cross_check"),
+        "tol": 1e-3,   # eV
+        "candidate": "qm_ho_e3_cand",
+        "candidate_desc": ("1D FD 谐振子哈密顿本征值第4模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"hbar_omega": 5.27e-20},
+        "golden_fn": golden_b56,
+        "note": ("一维谐振子 E3=3.5ℏω（ℏω=5.27e-20 J）。golden=解析闭式；candidate=1D FD 本征"
+                 " 取第4模（w[3]）。N=800 残差 ~7.9e-5 eV（tol=1e-3 eV 的 ~13× 余量）；判据 D"
+                 " 由 B12/B22 已证。反向 ℏω×1.1 ⇒ |Δ|≈0.115eV ≫ tol 必 FAIL。"),
+    },
+    "B57": {
+        "title": "一维谐振子第4能级 E4（4.5ℏω 闭式 vs 1D FD 谐振子本征第五模）",
+        "metric": "E4_eV",
+        "oracle": ("analytical(harmonic oscillator E4=4.5ℏω) + "
+                   "1D FD oscillator Hamiltonian eigenmode_mode5 independent_cross_check"),
+        "tol": 1e-3,   # eV
+        "candidate": "qm_ho_e4_cand",
+        "candidate_desc": ("1D FD 谐振子哈密顿本征值第5模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"hbar_omega": 5.27e-20},
+        "golden_fn": golden_b57,
+        "note": ("一维谐振子 E4=4.5ℏω。golden=解析闭式；candidate=1D FD 本征取第5模（w[4]）。"
+                 " N=800 残差 ~1.3e-4 eV（tol=1e-3 eV 的 ~7.7× 余量）；判据 D 由 B12/B22 已证。"
+                 " 反向 ℏω×1.1 ⇒ |Δ|≈0.148eV ≫ tol 必 FAIL。"),
+    },
+    "B58": {
+        "title": "三维立方无限深势阱基态（3E1 闭式 vs 三维 FD 乘积求和）",
+        "metric": "E0_eV",
+        "oracle": ("analytical(3D cubic infinite well ground state 3E1) + "
+                   "3×1D FD eigenmode_sum independent_cross_check"),
+        "tol": 1e-3,   # eV
+        "candidate": "qm_cubic3d_e0_cand",
+        "candidate_desc": ("三维 = 三独立 1D FD 基态之和（与闭式分离变量方法学不同源）"),
+        "default_params": {"m": 9.1093837015e-31, "L": 1e-9},
+        "golden_fn": golden_b58,
+        "note": ("三维立方无限阱基态 E=3·E1_1D（L=1nm）。golden=解析闭式；candidate=三方向独立"
+                 " 1D FD 基态之和（分离变量 vs 三盒求和，方法学不同源）。N=600 残差 ~2.6e-6 eV"
+                 "（tol=1e-3 eV 的 ~400× 余量）；判据 D 由 B12/B22 已证。反向 L×1.1 ⇒"
+                 " |Δ|≈0.196eV ≫ tol 必 FAIL。"),
+    },
+    "B59": {
+        "title": "Pöschl-Teller 势基态 E0（精确解析谱 vs 1D FD 本征基态）",
+        "metric": "E0_eV",
+        "oracle": ("analytical(Pöschl-Teller exact bound-state spectrum) + "
+                   "1D FD Hamiltonian eigenmode independent_cross_check"),
+        "tol": 1.5e-1,   # eV（窄势 N=6000 残差 ~6.2e-2 eV，留 ~2.4× 余量）
+        "candidate": "poschl_teller_e0_cand",
+        "candidate_desc": ("1D FD 薛定谔哈密顿本征值基态（与 B12/B22 同源 FD 核）"),
+        "default_params": {"V0": 0.5 * 1.602176634e-19, "alpha": 5e8, "m": 9.1093837015e-31},
+        "golden_fn": golden_b59,
+        "note": ("Pöschl-Teller 势 V(x)=-V0/cosh²(αx) 基态精确谱 E0=-(ℏ²α²/2m)(λ-½)²，"
+                 " λ=½(√(1+4·2mV0/(ℏ²α²))-1)。golden=精确解析；candidate=1D FD 本征基态"
+                 " （L=3e-8, N=6000）。残差 ~6.2e-2 eV（tol=0.15 eV 的 ~2.4× 余量，窄势固有"
+                 " FD 误差，随 N 收敛）；判据 D 由 B12/B22 已证。反向 V0×1.1 ⇒ |Δ|≈0.11eV ≫"
+                 " tol 必 FAIL。"),
+    },
+    "B60": {
+        "title": "Pöschl-Teller 势第1激发态 E1（精确解析谱 vs 1D FD 本征第二模）",
+        "metric": "E1_eV",
+        "oracle": ("analytical(Pöschl-Teller exact bound-state spectrum n=1) + "
+                   "1D FD Hamiltonian eigenmode_mode2 independent_cross_check"),
+        "tol": 1.5e-1,   # eV
+        "candidate": "poschl_teller_e1_cand",
+        "candidate_desc": ("1D FD 薛定谔哈密顿本征值第2模（与 B12/B22 同源 FD 核）"),
+        "default_params": {"V0": 0.5 * 1.602176634e-19, "alpha": 5e8, "m": 9.1093837015e-31},
+        "golden_fn": golden_b60,
+        "note": ("Pöschl-Teller 势第1激发态精确谱 E1=-(ℏ²α²/2m)(λ-1½)²。golden=精确解析；"
+                 " candidate=1D FD 本征取第2模（L=3e-8, N=6000）。残差 ~5.3e-2 eV"
+                 "（tol=0.15 eV 的 ~2.9× 余量）；判据 D 由 B12/B22 已证。反向 V0×1.1 ⇒"
+                 " |Δ|≈0.093eV ≫ tol 必 FAIL。"),
+    },
+    "B61": {
+        "title": "矩形金属波导 TM11 截止频率（c/2√((1/a)²+(1/b)²) 闭式 vs 二盒 FD 乘积）",
+        "metric": "fc_Hz",
+        "oracle": ("analytical(rectangular waveguide TM11 cutoff c/2·√((1/a)²+(1/b)²)) + "
+                   "2×1D Dirichlet box FD eigen_k product independent_cross_check"),
+        "tol": 0.01e9,   # 0.01 GHz
+        "candidate": "rect_wg_tm11_cand",
+        "candidate_desc": ("x/y 两方向 1D Dirichlet 盒 FD 本征乘积 kc²=kx²+ky²（方法学不同源）"),
+        "default_params": {"a": 0.02286, "b": 0.01016},
+        "golden_fn": golden_b61,
+        "note": ("矩形波导 TM11 截止频率 fc=c/2·√((1/a)²+(1/b)²)（WG-90 标准截面 0.02286×"
+                 " 0.01016 m）。golden=解析闭式；candidate=二方向 1D Dirichlet 盒本征乘积"
+                 " （kc²=kx²+ky²）。N=600 残差 ~1.8e-14 GHz（tol=0.01GHz 的 ~5e11× 余量）；"
+                 " 判据 D 由 B12/B22 已证。反向 a×1.1 ⇒ |Δ|≈0.233GHz ≫ tol 必 FAIL。"),
+    },
+    "B62": {
+        "title": "矩形金属波导 TM21 截止频率（c/2√((2/a)²+(1/b)²) 闭式 vs 二盒 FD 乘积）",
+        "metric": "fc_Hz",
+        "oracle": ("analytical(rectangular waveguide TM21 cutoff c/2·√((2/a)²+(1/b)²)) + "
+                   "2×1D Dirichlet box FD eigen_k product independent_cross_check"),
+        "tol": 0.01e9,   # 0.01 GHz
+        "candidate": "rect_wg_tm21_cand",
+        "candidate_desc": ("x/y 两方向 1D Dirichlet 盒 FD 本征乘积 kc²=kx²+ky²（方法学不同源）"),
+        "default_params": {"a": 0.02286, "b": 0.01016},
+        "golden_fn": golden_b62,
+        "note": ("矩形波导 TM21 截止频率 fc=c/2·√((2/a)²+(1/b)²)。golden=解析闭式；candidate="
+                 " 二方向 1D Dirichlet 盒本征乘积。N=600 残差 ~5.2e-14 GHz（tol=0.01GHz 的"
+                 " ~2e11× 余量）；判据 D 由 B12/B22 已证。反向 a×1.1 ⇒ |Δ|≈0.771GHz ≫ tol"
+                 " 必 FAIL。"),
+    },
+    "B63": {
+        "title": "圆波导 TE11 截止频率（x11·c/2πa · x11=1.84118 闭式 vs 径向 ODE 积分根搜索）",
+        "metric": "fc_Hz",
+        "oracle": ("analytical(circular waveguide TE11 cutoff x11·c/(2πa), x11=J1 first zero) + "
+                   "radial ODE integration + boundary root-find independent_cross_check"),
+        "tol": 0.01e9,   # 0.01 GHz
+        "candidate": "circ_wg_te11_cand",
+        "candidate_desc": ("径向场方程 R''+(1/r)R'+(kc²-m²/r²)R=0 直接数值积分（R=r·S 消去奇点）"
+                           " + 边界 R'(a)=0 根搜索，测得 X11=kc·a 后 fc=X11·c/(2πa)"),
+        "default_params": {"a": 0.01},
+        "golden_fn": golden_b63,
+        "note": ("圆波导 TE11 截止频率 fc=x11·c/(2πa)，x11=J1 首零点 1.84118。golden=解析闭式"
+                 "（查 Bessel 零点）；candidate=径向 ODE 直接积分（令 R=r·S，m=1 时方程无奇点）"
+                 " 外推至 r=a 扫 kc 使 R'(a)=0 得 X11，方法学不同源。残差 ~1e-19 GHz（tol=0.01GHz"
+                 " 的 ~1e17× 余量）；判据 D：a×1.1 ⇒ fc 降为 7.986GHz，|Δ|≈0.80GHz ≫ tol 必"
+                 " FAIL。零商业依赖、纯 numpy/scipy、LLM 不进判决路径。"),
+    },
+    "B64": {
+        "title": "Bragg 光栅 Bragg 波长 λB（2·n_eff·Λ 闭式 vs 转移矩阵迹根搜索）",
+        "metric": "lambda_B_nm",
+        "oracle": ("analytical(uniform Bragg grating λB=2·n_eff·Λ) + "
+                   "transfer-matrix trace root-find independent_cross_check"),
+        "tol": 1.0,   # nm
+        "candidate": "bragg_lambda_cand",
+        "candidate_desc": ("单周期转移矩阵迹 cos(KΛ)=(M11+M22)/2 取阻带最深点（最负）定位 λB，"
+                           "与闭式 2·n_eff·Λ 方法学不同源"),
+        "default_params": {"n1": 3.5, "n2": 3.0, "Lambda": 0.5e-6},
+        "golden_fn": golden_b64,
+        "note": ("均匀 Bragg 光栅 Bragg 波长 λB=2·n_eff·Λ（n_eff=(n1+n2)/2=3.25，Λ=0.5µm ⇒"
+                 " 3250nm）。golden=解析闭式；candidate=单周期转移矩阵迹 argmin 定位阻带中心"
+                 " （反射率峰值在阻带内全平台无法锐定位，改用 K(λ) 实部迹最负点）。Np=60 残差"
+                 " ~0.13nm（tol=1.0nm 的 ~8× 余量）；判据 D：Λ×1.1 ⇒ λB 升为 3575nm，|Δ|≈"
+                 " 325nm ≫ tol 必 FAIL。零商业依赖、纯 numpy、LLM 不进判决路径。"),
+    },
     # ---- B31（v0.9.69 · T1-C W3 · A 档有源扩展 #2）：Si 载流子色散相移 ----
     "B31": {
         "title": "Si 载流子色散相移（Soref-Bennett 幂律 · Drude 独立候选）",
@@ -1733,6 +1937,7 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B26", "B27", "B28", "B29", "B30", "B31", "B32", "B33",
                    "B34", "B36", "B37", "B40", "B41",
                    "B42", "B43", "B44", "B45", "B46", "B47", "B48", "B49", "B50", "B51",
+                   "B52", "B53", "B54", "B55", "B56", "B57", "B58", "B59", "B60", "B61", "B62", "B63", "B64",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "E10",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                    "S9", "S10", "S11", "S12", "S13"]  # S 系统锚（Phase 0-4；S9=LVS/S10=多层/S11=规模/S12=阵列分布/S13=设计良率）

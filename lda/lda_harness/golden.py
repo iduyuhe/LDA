@@ -61,6 +61,10 @@ from ._batch_b2_numeric import (  # noqa: E402  # Batch B-2 双方法独立锚�
     golden_b42, golden_b43, golden_b44, golden_b45, golden_b46, golden_b47,
     golden_b48, golden_b49, golden_b50, golden_b51,
 )
+from ._batch_b3_numeric import (  # noqa: E402  # Batch B-3 双方法独立锚数值核（v0.9.79++ · 路径 B 扩基续二）
+    golden_b52, golden_b53, golden_b54, golden_b55, golden_b56, golden_b57,
+    golden_b58, golden_b59, golden_b60, golden_b61, golden_b62, golden_b63, golden_b64,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -668,6 +672,19 @@ _GOLDEN_DISPATCH = {
     "B49": golden_b49,                         # v0.9.79+ Batch B-2 方势垒透射（双曲闭式 vs 1D FD Numerov 散射）
     "B50": golden_b50,                         # v0.9.79+ Batch B-2 矩形波导 TE30 截止（3c/(2a) vs 1D FD 第三模）
     "B51": golden_b51,                         # v0.9.79+ Batch B-2 矩形波导 TE40 截止（2c/a vs 1D FD 第四模）
+    "B52": golden_b52,                         # v0.9.79++ Batch B-3 有限深势阱第1激发态（超越方程二分 vs 1D FD 第二模）
+    "B53": golden_b53,                         # v0.9.79++ Batch B-3 有限深势阱第2激发态（超越方程二分 vs 1D FD 第三模）
+    "B54": golden_b54,                         # v0.9.79++ Batch B-3 无限深势阱 E4（16E1 vs 1D FD 第四模）
+    "B55": golden_b55,                         # v0.9.79++ Batch B-3 无限深势阱 E5（25E1 vs 1D FD 第五模）
+    "B56": golden_b56,                         # v0.9.79++ Batch B-3 谐振子 E3（3.5ℏω vs 1D FD 第四模）
+    "B57": golden_b57,                         # v0.9.79++ Batch B-3 谐振子 E4（4.5ℏω vs 1D FD 第五模）
+    "B58": golden_b58,                         # v0.9.79++ Batch B-3 三维立方无限阱基态（3E1 vs 三维 FD 乘积）
+    "B59": golden_b59,                         # v0.9.79++ Batch B-3 Pöschl-Teller 基态（精确谱 vs 1D FD 基态）
+    "B60": golden_b60,                         # v0.9.79++ Batch B-3 Pöschl-Teller 第1激发态（精确谱 vs 1D FD 第二模）
+    "B61": golden_b61,                         # v0.9.79++ Batch B-3 矩形波导 TM11 截止（c/2√((1/a)²+(1/b)²) vs 二盒 FD）
+    "B62": golden_b62,                         # v0.9.79++ Batch B-3 矩形波导 TM21 截止（c/2√((2/a)²+(1/b)²) vs 二盒 FD）
+    "B63": golden_b63,                         # v0.9.79++ Batch B-3 圆波导 TE11 截止（x11·c/2πa vs 径向 ODE 积分根搜索）
+    "B64": golden_b64,                         # v0.9.79++ Batch B-3 Bragg 光栅 λB（2·n_eff·Λ vs 转移矩阵迹根搜索）
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -690,6 +707,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B26", "B27", "B28", "B29", "B30", "B31", "B32", "B33", "B34",
                  "B35", "B36", "B37", "B40", "B41", "B42", "B43", "B44", "B45",
                  "B46", "B47", "B48", "B49", "B50", "B51",
+                 "B52", "B53", "B54", "B55", "B56", "B57", "B58", "B59", "B60",
+                 "B61", "B62", "B63", "B64",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

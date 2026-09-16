@@ -2165,6 +2165,28 @@ def _get_batch_b2():
     return _m
 
 
+# ---------------------------------------------------------------------------
+# Batch B-3（v0.9.79++ · 路径 B 扩基续二：13 道双方法严格独立新锚）
+# 设计纪律同源 B-1/B-2：确定性解析闭式/超越方程 golden 对拍 方法学不同源真实数值候选。
+# 复用 B12/B22 已验证 1D FD 哈密顿本征核（判据 D 由 run_d_criterion_smoke 已证）。
+# ---------------------------------------------------------------------------
+_BATCH_B3_MOD = None
+
+
+def _get_batch_b3():
+    """双路兜底导入 Batch B-3 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B3_MOD
+    if _BATCH_B3_MOD is not None:
+        return _BATCH_B3_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b3_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b3_numeric as _m
+    _BATCH_B3_MOD = _m
+    return _m
+
+
 @_register_candidate(
     "qmw_infinite_well_e1_cand",
     "1D FD 薛定谔哈密顿本征值基态（无限深势阱闭式 ℏ²π²/2mL² 方法学不同源，判据 D 真数值收敛）")
@@ -2259,3 +2281,126 @@ def _b51_rect_te40_candidate(spec: VerificationSpec, oracle_value: Any) -> float
     p = spec.params
     m = _get_batch_b2()
     return float(m.rect_wg_te40_fc(float(p["a"])))
+
+
+# ---- Batch B-3 候选（B52–B64，13 道）----
+@_register_candidate(
+    "qm_finwell_e1_cand",
+    "1D FD 薛定谔哈密顿本征值第2模（有限深势阱第1激发态超越方程二分方法学不同源）")
+def _b52_finwell_e1_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b3()
+    return float(m.qm_finwell_fd_state(
+        float(p["V0"]), float(p["a"]), float(p["m"]), 2.0e-8, 1000, 1))
+
+
+@_register_candidate(
+    "qm_finwell_e2_cand",
+    "1D FD 薛定谔哈密顿本征值第3模（有限深势阱第2激发态超越方程二分方法学不同源）")
+def _b53_finwell_e2_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b3()
+    return float(m.qm_finwell_fd_state(
+        float(p["V0"]), float(p["a"]), float(p["m"]), 2.0e-8, 1000, 2))
+
+
+@_register_candidate(
+    "qmw_infinite_well_e4_cand",
+    "1D FD 薛定谔哈密顿本征值第4模（无限深势阱 E4=16E1 闭式方法学不同源）")
+def _b54_qmw_e4_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b3()
+    return float(m.qmw_infinite_well_fd(float(p["L"]), 600, float(p["m"]), 4))
+
+
+@_register_candidate(
+    "qmw_infinite_well_e5_cand",
+    "1D FD 薛定谔哈密顿本征值第5模（无限深势阱 E5=25E1 闭式方法学不同源）")
+def _b55_qmw_e5_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b3()
+    return float(m.qmw_infinite_well_fd(float(p["L"]), 600, float(p["m"]), 5))
+
+
+@_register_candidate(
+    "qm_ho_e3_cand",
+    "1D FD 谐振子哈密顿本征值第4模（E3=3.5ℏω 闭式方法学不同源）")
+def _b56_qm_ho_e3_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b3()
+    return float(m.qm_ho_fd_n(float(p["hbar_omega"]), 9.1093837015e-31, 3))
+
+
+@_register_candidate(
+    "qm_ho_e4_cand",
+    "1D FD 谐振子哈密顿本征值第5模（E4=4.5ℏω 闭式方法学不同源）")
+def _b57_qm_ho_e4_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b3()
+    return float(m.qm_ho_fd_n(float(p["hbar_omega"]), 9.1093837015e-31, 4))
+
+
+@_register_candidate(
+    "qm_cubic3d_e0_cand",
+    "三维 = 三独立 1D FD 基态之和（三维立方无限阱基态 3E1 闭式方法学不同源）")
+def _b58_cubic3d_e0_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b3()
+    return float(m.qm_cubic3d_fd(float(p["L"]), 600, float(p["m"])))
+
+
+@_register_candidate(
+    "poschl_teller_e0_cand",
+    "1D FD 薛定谔哈密顿本征值基态（Pöschl-Teller 精确谱方法学不同源）")
+def _b59_poschl_e0_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b3()
+    return float(m.poschl_teller_fd(
+        float(p["V0"]), float(p["alpha"]), float(p["m"]), 3.0e-8, 6000, 0))
+
+
+@_register_candidate(
+    "poschl_teller_e1_cand",
+    "1D FD 薛定谔哈密顿本征值第2模（Pöschl-Teller 第1激发态精确谱方法学不同源）")
+def _b60_poschl_e1_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b3()
+    return float(m.poschl_teller_fd(
+        float(p["V0"]), float(p["alpha"]), float(p["m"]), 3.0e-8, 6000, 1))
+
+
+@_register_candidate(
+    "rect_wg_tm11_cand",
+    "x/y 两方向 1D Dirichlet 盒 FD 本征乘积 kc²=kx²+ky²（TM11 闭式方法学不同源）")
+def _b61_rect_tm11_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b3()
+    return float(m.rect_wg_tm_fd(float(p["a"]), float(p["b"]), 600, 600, 1, 1))
+
+
+@_register_candidate(
+    "rect_wg_tm21_cand",
+    "x/y 两方向 1D Dirichlet 盒 FD 本征乘积 kc²=kx²+ky²（TM21 闭式方法学不同源）")
+def _b62_rect_tm21_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b3()
+    return float(m.rect_wg_tm_fd(float(p["a"]), float(p["b"]), 600, 600, 2, 1))
+
+
+@_register_candidate(
+    "circ_wg_te11_cand",
+    "径向场方程直接数值积分 + 边界根搜索测 X11（圆波导 TE11 截止闭式方法学不同源）")
+def _b63_circ_te11_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b3()
+    return float(m.circ_wg_te11_fd(float(p["a"])))
+
+
+@_register_candidate(
+    "bragg_lambda_cand",
+    "单周期转移矩阵迹 argmin 定位阻带中心 λB（Bragg λB=2·n_eff·Λ 闭式方法学不同源）")
+def _b64_bragg_lambda_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b3()
+    return float(m.bragg_peak_lambda(
+        float(p["n1"]), float(p["n2"]), float(p["Lambda"]), 60))

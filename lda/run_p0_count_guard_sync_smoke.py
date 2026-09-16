@@ -15,7 +15,7 @@
     （亦由 run_three_class_consistency_smoke C2 守护）
   - ledger smoke 文档串（run_webui_verification_ledger_smoke.py 模块 docstring）
   - CONTRIBUTING.md 顶部账本块
-  - 三分类和 == 锚总数（56）不变量
+  - 三分类和 == 锚总数（84）不变量
   注：引擎/包/题库/CI core 条数由 run_count_consistency_smoke 守护，本 smoke 不重复。
 
 动态真值源：BENCHMARK_DEFS + BENCHMARK_CANDIDATES，判序「先 degraded_ordinal、再查登记表、否则自证桩」

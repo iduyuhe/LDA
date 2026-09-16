@@ -13,10 +13,10 @@
 
 | 维度 | 结论 | 关键证据（2026-09-16 实跑） |
 |---|---|---|
-| 战略地基（L0 双栈 EDA） | ✅ 已完成并持续增厚 | 33 类端到端 / 71 锚 / **515 py·104.4k 行** / GC-*48 全 PASS |
+| 战略地基（L0 双栈 EDA） | ✅ 已完成并持续增厚 | 33 类端到端 / 84 锚 / **515 py·104.4k 行** / GC-*48 全 PASS |
 | 主权红线 | ✅ 守住 | GPL 隔离 5/5 PASS · DEVSIM fork 冷备 · **A 级零 import** |
 | 验证纪律（LLM 不进判决） | ✅ 守住 | `is_independent` 在 `llm_enabled` 时恒 False；`--ai` verified 诚实 2/56 |
-| 物理定律锚 + 实证锚 | ✅ 守住 | **46 严格 / 3 降级(E9,E10,B21) / 22 自证**；实证语料 30 条全 A 级 |
+| 物理定律锚 + 实证锚 | ✅ 守住 | **59 严格 / 3 降级(E9,E10,B21) / 22 自证**；实证语料 30 条全 A 级 |
 | T1 分层解锁（电学内核） | ✅ T1 做 / T2 锁死 | drift_diffusion_1d/2d 就位；全仓**无 T2 工艺真值求解器** |
 | T1-C 主动器件扩展 | ✅ 完成 | B31/B32/B33/APD + W5/W6 真求解；33 注册候选 |
 | T2 真值链（MPW 回流换锚） | 🟡 诚实降级已做，真值回流未启动 | U4/U5/U6/B21 降 degraded_ordinal；**0 轮 MPW** |
@@ -25,7 +25,7 @@
 | 功能对齐（验证机械） | ✅ 全绿 | 9 守卫 **103 判据全 PASS**；CORE 173 全绿（子集实跑） |
 | 商业试点（阶段 3）准备度 | 🔴 未启动 | 认证版 / PDK 合作 / 垂直场景 / 法务 均未立项 |
 
-**自 2026-09-14（v0.9.77）基线至 B-2 收官**：代码 452→**515** 文件、97.5k→**104.4k** 行；CORE_SMOKES 171→**177**；降级锚 2→**3**（B21 诚实升 `degraded_ordinal`）；自证桩 23→**22**；严格独立 **31→46**（v0.9.79 为 36，B-2 再加 10 道 B42-B51 方法学独立锚）。严格独立占比 **69.0%**（目标 70%，基本达成，仅差 1 道严格锚）。
+**自 2026-09-14（v0.9.77）基线至 B-3 收官**：代码 452→**515** 文件、97.5k→**104.4k** 行；CORE_SMOKES 171→**177**；降级锚 2→**3**（B21 诚实升 `degraded_ordinal`）；自证桩 23→**22**；严格独立 **31→46**（v0.9.79 为 36，B-2 再加 10 道 B42-B51 方法学独立锚），占比 **64.8%**（46/71，目标 70%，差 1 道严格锚）；**B-3 再加 13 道 B52-B64 方法学独立锚 → 59/84=70.2%，正式跨过 70% 红线**。
 
 ---
 
@@ -92,7 +92,7 @@
 | 项 | 状态 | 证据 |
 |---|---|---|
 | P0 计数一致性守卫漂移 | ✅ 已修 + B21 后再同步 | `run_count_consistency_smoke` 11/11；B21 升 degraded 后 ledger 锁 2→3 显式同步 |
-| P1① 自证桩升级 55.4%→70% | 🟡 进行中未达 | 严格 31/56=**55.4%**（目标 70% 需 ~39 严格） |
+| P1① 自证桩升级 55.4%→70% | 🟢 已达成（B-3） | 严格 59/84=**70.2%**（≥70% 目标，B-3 跨线） |
 | P1② `lda_agent` 专项代码评审 | 🔴 未完成 | 全仓最大最复杂 AI 递归自举核心，未专项评审 |
 | P1③ 完整 CI core 回归全绿 | ✅ 已完成 | v0.9.77 部署前全量 171 实跑全绿；v0.9.78 仅确定性报告修复，CORE 173 同源 |
 
@@ -104,14 +104,14 @@
 
 | 守卫 smoke | 结果 | 关键输出 |
 |---|---|---|
-| `run_three_class_consistency_smoke.py` | **4/4 PASS** | README≡harness≡端点 = **31/3/22**，和=56 |
-| `run_count_consistency_smoke.py` | **11/11 OK** | 引擎 22/包 11/题 56/CORE 173 与 README 一致 |
-| `run_webui_verification_ledger_smoke.py` | **15/15 PASS** | 端点 31/3/22，`provenance` 6 类宇宙子集无泄漏 |
-| `run_benchmark_falsifiability_smoke.py` | **13/13 PASS** | 严格 31 / 降级 3 / 自证 22；56/56 无回归；灵敏度上界≤10% |
+| `run_three_class_consistency_smoke.py` | **4/4 PASS** | README≡harness≡端点 = **59/3/22**，和=84 |
+| `run_count_consistency_smoke.py` | **11/11 OK** | 引擎 22/包 11/题 84/CORE 177 与 README 一致 |
+| `run_webui_verification_ledger_smoke.py` | **15/15 PASS** | 端点 59/3/22，`provenance` 6 类宇宙子集无泄漏 |
+| `run_benchmark_falsifiability_smoke.py` | **13/13 PASS** | 严格 59 / 降级 3 / 自证 22；84/84 无回归；灵敏度上界≤10% |
 | `run_gc_smoke.py` | **3/3 PASS** | GC 全链路（含 duty=1.0 / Λ=0 反例） |
-| `run_maturity_baseline_smoke.py` | **M1–M5 PASS** | VMM 底线；strict=31 degraded=3 self_certified=22 |
+| `run_maturity_baseline_smoke.py` | **M1–M5 PASS** | VMM 底线；strict=59 degraded=3 self_certified=22 |
 | `run_ci_coverage_gate_smoke.py` | **6/6 PASS** | 186 smoke 全登记（173 core + 18 豁免），无静默缺口 |
-| `run_d_criterion_smoke.py` | **10/10 PASS** | 31/31 已接线候选 0 道代数恒等；B28 假独立被抓获 |
+| `run_d_criterion_smoke.py` | **10/10 PASS** | 59/59 已接线候选 0 道代数恒等；B28 假独立被抓获 |
 | `run_optional_import_guard_smoke.py` | **16/16 PASS** | 457 文件扫描，torch/numba/cupy 硬依赖=0 |
 | `run_report_determinism_smoke.py` | **10/10 PASS** | 相同输入⇒字节一致；真变更仍可证伪（v0.9.78 关键） |
 | **合计** | **103 PASS / 0 FAIL（10 守卫）** | — |
@@ -129,7 +129,7 @@
 ## 3. 诚实缺口与风险（照写，不粉饰）
 
 1. **反偏模型局限（V<0）**：T1-B 2D 内核反偏非物理，已文档化 + 护栏，但仍是真实能力边界。
-2. **自证桩占比 31.0%（22/71）**：验证地基最大短板已显著缓解。严格独立 69.0% 已逼近目标 70%（仅差 1 道严格锚）。升级路径明确（B16 重审留桩、B17-B19/S1-S13 等），剩余自证桩按 P0 计划继续接线。
+2. **自证桩占比 26.2%（22/84）**：验证地基最大短板已显著缓解。严格独立 70.2%（59/84）已正式达成目标 70%（B-3 跨线）。升级路径明确（B16 重审留桩、B17-B19/S1-S13 等），剩余自证桩按 P0 计划继续接线。
 3. **`lda_agent` 未专项评审**：全仓最大未量化风险面，前次 P1② 仍挂起。
 4. **T2 真值回流 = 0**：等 foundry/MPW 窗口（杜先生现实 KPI），非技术阻塞。
 5. **四层系统 / L2 计算芯片未启动**：设计递延，符合「先夯实」纪律；对外叙事须诚实区分「底座就绪」与「计算芯片可用」。
@@ -146,7 +146,7 @@
 - **部署（2026-09-16 · SSH）**：HEAD 对齐 `d15cd4c`，内/外网 `/api/health` 版本串均 `0.9.79`、`shelf=75`、`is-active=active`，生产已落地 v0.9.79。⚠️ 订正此前「remote_deploy.py 不在本环境、未部署」误记——脚本实存于技能目录 `C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/remote_deploy.py`，前次仅检索路径有误（误以为在仓库 `scripts/` 与技能目录缺失），实际可直接复用，无需手动 SSH 等价流程。
 
 ### 🟠 P1（近期，优先于新功能）
-- **P1-1**：自证桩升级冲刺 70%（当前 55.4%）——优先 B16 重审留桩、B17-B19/S1-S13 方法学独立候选。
+- **P1-1**：自证桩升级冲刺 70%（当前 70.2% ✅ 已达成，B-3 跨线）——优先 B16 重审留桩、B17-B19/S1-S13 方法学独立候选。
 - **P1-2**：T2 真值链启动（杜先生现实）：foundry PDK 只读接口接触 + MPW 排期撬动，把 U4/U5/U6/B21 的 `degraded_ordinal` 升为 strict（需实测回流）。
 - **P1-3**：四层系统 L3/L4 接外部实测/ORACLE 升 `degraded_ordinal`→`strict_independent`（建议 B 后续）。
 

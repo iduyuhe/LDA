@@ -145,7 +145,7 @@ PATH / PYTHONPATH / LD_LIBRARY_PATH / LANG / LC_ALL / LC_CTYPE / TMPDIR / TMP / 
 | 优先级 | 项 | 状态 |
 |---|---|---|
 | ✅ 已闭合 | P0-1 的 P2/P3 · 09-14 的 §4.3/4.4/4.5 · §4.1 MODULE_MAP · §4.2 契约 smoke | 本轮/前轮落地 |
-| 🟠 建议 | `run_self_certified_lock_smoke.py`（self_certified=18 只减不增 + 每桩带锁定原因的机器断言） | 见 P1-1 纪律文档；用户已列为下一优先项 |
+| ✅ 已闭合 | `run_self_certified_lock_smoke.py`（自证桩锁定机器断言） | 本轮落地：棘轮上限 `≤18` + 无锁定原因 = 0 + 反向测试；登 `CORE_SMOKES`（CI core 177→178，发现 smoke 190→191） |
 | 🟡 观察 | `lda_agent` loop 家族重复膨胀（§4.1 缓解项已建图，未做结构性合并） | 结构性重构，非阻塞 |
 | 🔴 业务阻塞 | E1/E3–E7 共 6 道真候选 + B7 3D 彻底闭合 | 卡 T2 实测通道（业务 KPI） |
 

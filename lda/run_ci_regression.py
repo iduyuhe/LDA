@@ -528,6 +528,12 @@ CORE_SMOKES: List[str] = [
     "run_verify_waveguide_2d_smoke.py",
     "run_verify_voxel_pipeline_smoke.py",
     "run_calibrate_kappa_grid_smoke.py",
+    # 🔴 v0.9.83（P1-1 自证桩锁定纪律）：把「PR 必接独立候选」从人工纪律升级为机器断言。
+    # 四判据：① 三分类推导有效 ② 棘轮上限 self_certified<=18（只减不增，新增自证桩必拦）
+    # ③ 无锁定原因=0（每桩须带 terminal_tier1/design_rule_anchor/t2_blocked/re_review 之一）
+    # ④ 反向测试（无锁语义输入必须 NotImplemented->None；四类标记可识别）。纯 numpy 秒级。
+    # CI core 177->178。
+    "run_self_certified_lock_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

@@ -22,7 +22,7 @@
 | T2 真值链（MPW 回流换锚） | 🟡 诚实降级已做，真值回流未启动 | U4/U5/U6/B21 降 degraded_ordinal；**0 轮 MPW** |
 | 四层系统（L1→L2 鸿沟） | 🟡 立项前红线闸门全过 | MZI 网格矩阵乘 MVP 可演示；L1/L2 高于门槛，L3/L4 Tier-1 自证桩 |
 | 开源 + 社区独立验货护城河 | 🟡 开源已做，标准位未达 | 三端 + Apache-2.0 + DCO；**users=1，0 外部采用** |
-| 功能对齐（验证机械） | ✅ 全绿 | 10 守卫 **103 判据全 PASS**；CORE 177 全绿（子集实跑） |
+| 功能对齐（验证机械） | ✅ 全绿 | 10 守卫 **103 判据全 PASS**；CORE 178 全绿（子集实跑） |
 | 商业试点（阶段 3）准备度 | 🔴 未启动 | 认证版 / PDK 合作 / 垂直场景 / 法务 均未立项 |
 
 **自 2026-09-14（v0.9.77）基线至 B-3 收官**：代码 452→**515** 文件、97.5k→**104.4k** 行；CORE_SMOKES 171→**177**；降级锚 2→**3**（B21 诚实升 `degraded_ordinal`）；自证桩 23→**22**；严格独立 **31→46**（v0.9.79 为 36，B-2 再加 10 道 B42-B51 方法学独立锚），占比 **64.8%**（46/71，目标 70%，差 1 道严格锚）；**B-3 再加 13 道 B52-B64 方法学独立锚 → 59/84=70.2%，正式跨过 70% 红线**；**v0.9.80（2026-09-16 P1-1 B16 重审）：B16 由自证桩升 rib-MMI 全场模态重构严格独立候选 → 60/84=71.4%**；**v0.9.81（2026-09-16 P1-1 B567）：B5（Y 分支分束损耗）/ B6（光栅耦合器效率）由 `design_rule_anchor` 自证桩各接第二独立求解器升方法学独立候选 → 62/84=73.8%**（B7 因离线 golden 不收敛保持自证桩）；**v0.9.82（2026-09-16 P1-1 B7 golden 语义订正）：B7（波导交叉串扰）撤出已证失真的 2D 离线 FDTD golden（`resolve_field_oracle` 返 None、降级为机理诊断量），golden 回设计守则锚 −40 dB（有 E-SOI-CROSS-XT −41±2 dB 实证背书），接线 CMT 超模法候选 → 63/84=75.0%**（残差占 tol 窗口 93%，边缘通过）。
@@ -105,12 +105,12 @@
 | 守卫 smoke | 结果 | 关键输出 |
 |---|---|---|
 | `run_three_class_consistency_smoke.py` | **4/4 PASS** | README≡harness≡端点 = **63/3/18**，和=84 |
-| `run_count_consistency_smoke.py` | **11/11 OK** | 引擎 22/包 11/题 84/CORE 177 与 README 一致 |
+| `run_count_consistency_smoke.py` | **11/11 OK** | 引擎 22/包 11/题 84/CORE 178 与 README 一致 |
 | `run_webui_verification_ledger_smoke.py` | **15/15 PASS** | 端点 63/3/18，`provenance` 6 类宇宙子集无泄漏 |
 | `run_benchmark_falsifiability_smoke.py` | **13/13 PASS** | 严格 63 / 降级 3 / 自证 18；84/84 无回归；灵敏度上界≤10% |
 | `run_gc_smoke.py` | **3/3 PASS** | GC 全链路（含 duty=1.0 / Λ=0 反例） |
 | `run_maturity_baseline_smoke.py` | **M1–M5 PASS** | VMM 底线；strict=63 degraded=3 self_certified=18 |
-| `run_ci_coverage_gate_smoke.py` | **6/6 PASS** | 发现 smoke 190 · core 177 · 豁免 18，无静默缺口 |
+| `run_ci_coverage_gate_smoke.py` | **6/6 PASS** | 发现 smoke 191 · core 178 · 豁免 18，无静默缺口 |
 | `run_d_criterion_smoke.py` | **10/10 PASS** | 63/63 已接线候选 0 道代数恒等；B28 假独立被抓获 |
 | `run_optional_import_guard_smoke.py` | **16/16 PASS** | 457 文件扫描，torch/numba/cupy 硬依赖=0 |
 | `run_report_determinism_smoke.py` | **10/10 PASS** | 相同输入⇒字节一致；真变更仍可证伪（v0.9.78 关键） |

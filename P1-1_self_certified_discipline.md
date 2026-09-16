@@ -75,7 +75,7 @@
 | E 簇解锁 | 启动 T2 外部通道，接入**光子 PDA 实测数据集**，E1/E3-E7 升 Tier-3（=严格独立候选）；**方案详见 `P1-E_T2_unlock_plan.md`** | 卡 T2 实测通道（S8） | 🔴 高（受外部 KPI） |
 | ~~B5/B6~~ | ✅ **v0.9.81 已完成**：各接第二独立求解器升 `strict_independent`（B5=`ybranch_eme` / B6=`grating_fp`） | — | ✅ 结清 |
 | ~~B7~~ | ✅ **v0.9.82 已完成**：先修离线 golden 三层缺陷（σ 标准公式 + `exp(−σdt)` / 全程 CW + 基模匹配 / 净功率流度量）→ 判明 2D 内不可修复的模型-器件不匹配（与 E-SOI-CROSS-XT 实证差 20~30 dB）→ golden 语义订正为守则锚 −40 dB + 接线 CMT 候选升 strict（边缘通过 93%） | — | ✅ 结清 |
-| CI Enforcement | 新增 `run_self_certified_lock_smoke.py`：断言 (a) self_certified=18 且只减不增；(b) 每道 self_certified 的 defn 带 provenance + 锁定类型关键词 | 无 | 🟠 建议 |
+| ~~CI Enforcement~~ | ✅ **v0.9.83 已完成**：`run_self_certified_lock_smoke.py`（四判据，登 `CORE_SMOKES`，CI core 177→178）——(a) 棘轮上限 `self_certified ≤ 18` 只减不增；(b) 无锁定原因 = 0（每道须归入 `terminal_tier1`/`design_rule_anchor`/`t2_blocked`/`re_review` 之一，分类器不模糊兜底）；(c) 反向测试证明会响 | 无 | ✅ 结清 |
 
 ---
 
@@ -90,6 +90,7 @@
 ## 7. 关联纪律
 
 - 计数护栏同步：`run_p0_count_guard_sync_smoke.py`（84/63/3/18 动态校验，PR 必查）。
+- 自证桩锁定机器断言：`run_self_certified_lock_smoke.py`（棘轮上限 `self_certified≤18` 只减不增 + 每桩须带四类锁之一；v0.9.83 登 `CORE_SMOKES`）。
 - 锚接线流程：技能 `lda-anchor-wiring`（判据先于代码 + maintainer 写判据）。
 - 生产部署：`lda-prod-deploy`（`sync_push.py` + `remote_deploy.py --expect-head`）。
 - T2 解锁方案：`P1-E_T2_unlock_plan.md`（E1/E3-E7 逐锚所需实测数据/计量 + MPW 路径与成本 + 升 strict 验收条件）。

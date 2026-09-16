@@ -1,6 +1,6 @@
 # P1-E · T2 外部实测通道解锁方案（E1/E3-E7 六道卡口锚）
 
-> 口径来源：`lda/lda_harness/benchmarks.py` 实测推导（v0.9.81：84 锚 / 严格独立 **62** / 降级 **3** / 自证桩 **19**）。
+> 口径来源：`lda/lda_harness/benchmarks.py` 实测推导（**v0.9.83：84 锚 / 严格独立 63 / 降级 3 / 自证桩 18**，独立率 75.0%）。
 > 配套：`P1-1_self_certified_discipline.md`（常态化纪律）· `ALIGNMENT_REPORT.md` §S8（战略）· `docs/verification_maturity_model.md`（成熟度模型）。
 > 本文件只写「**要拿到什么数据、用什么判据、卡在哪**」，不替代 T2 立项决策。
 
@@ -27,6 +27,8 @@
 | **E5** | E-MMI-1X2-EL | 过量损耗 dB | 0.05 | 0.1 | 自证桩 | T2（判据窗口为零，双路线已证否） |
 | **E6** | E-SIN-PL-800 | 传播损耗 dB/cm | 0.087 ± 0.01 | 0.05 | 自证桩 | T2（粗糙度散射需工艺计量） |
 | **E7** | E-SOI-CROSS-XT | 串扰 dB | −41 ± 2 | 5.0 | 自证桩 | T2（同 E4） |
+
+> 🔗 **B7 的 3D 彻底闭合与本通道同源**：B7（波导交叉串扰）已于 v0.9.82 经 golden 语义订正升 `strict_independent`（守则锚 −40 dB + CMT 候选 −35.36，|diff|=4.64 < tol 5.0，**残差占窗口 93% 属边缘通过**）；其彻底闭合需 **3D 全波 + 真实 taper 版图**，所需器件版图/实测与 **R3/R6（E4/E7）完全同源** ⇒ 一并随本 RFQ 询价，不另立通道。
 
 > 🔴 **口径订正（v0.9.81）**：E 簇 10 道**全部是光子 PDA 锚**（SOI/SiN/TBOX/MMI/CROSS/GRATING）。
 > 此前 `benchmarks._VMM_OVERRIDES` 与两处文档把 E1/E3-E7 的升级路径写成「**量子 QEDA** 实证锚」系**标签≠行为**错配

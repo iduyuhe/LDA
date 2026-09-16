@@ -2404,3 +2404,49 @@ def _b64_bragg_lambda_candidate(spec: VerificationSpec, oracle_value: Any) -> fl
     m = _get_batch_b3()
     return float(m.bragg_peak_lambda(
         float(p["n1"]), float(p["n2"]), float(p["Lambda"]), 60))
+
+
+# ---------------------------------------------------------------------------
+# P1-1 · B16 重审（2026-09-16）：脊形 MMI 全场模态重构严格候选
+# ---------------------------------------------------------------------------
+# B16 此前为自证桩：repo `mmi_eme` 建模对称平板(slab) 而真实器件是脊形(rib) MMI，
+# 对象错配 ⇒ 即便接线也非合法独立候选（「B21 教训」）。本候选修正对象一致性：
+# 由器件给定的基模有效折射率 n_eff 反演对称平板 core 折射率，使平板基模 ≡ 器件
+# MMI 基模 ⇒ 建模同一物理对象；再精确解 TE 平板本征方程、按全部导模展开输入场、
+# 沿 z 精确传播、双度量联合定位 1×2 首像 ⇒ 与 golden 的抛物线闭式方法学不同源。
+_BATCH_B16_MOD = None
+
+
+def _get_batch_b16():
+    """双路兜底导入 B16 rib-MMI 求解核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B16_MOD
+    if _BATCH_B16_MOD is not None:
+        return _BATCH_B16_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b16_rib_mmi as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b16_rib_mmi as _m
+    _BATCH_B16_MOD = _m
+    return _m
+
+
+@_register_candidate(
+    "rib_mmi_recon",
+    "脊形 MMI 全场模态重构：反演核心折射率(基模≡器件 n_eff) + 精确解 TE 平板本征方程 "
+    "+ 输入场按全部导模展开沿 z 精确传播 + 双度量联合定位 1×2 首像 "
+    "（抛物线闭式 golden 方法学不同源；残差 = 抛物线近似固有误差，~1–4%）")
+def _b16_rib_mmi_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B16 独立候选：脊形 MMI 1×2 自成像长度（全场模态重构）。
+
+    与 golden `(9/4)·n_eff·W_e²/λ`（抛物线色散闭式）方法学独立：
+      · 反演 core 折射率使平板基模 ≡ 器件 n_eff（对象一致，修正 slab≠rib）；
+      · 精确解 tan/cot 本征方程得全部导模 {ψ_m, β_m}（非抛物线截断）；
+      · 输入场按 {ψ_m} 展开、沿 z 精确传播，用「双像重叠 + 双瓣对比」联合判据
+        定位首个 1×2 双像 ⇒ **不套用任何 (9/8)/(3) 成像因子**。
+    返回 Python 原生 float（numpy 纪律）。
+    """
+    p = spec.params
+    m = _get_batch_b16()
+    return float(m.rib_mmi_selfimaging_length(
+        float(p["W_e"]), float(p["n_eff"]), float(p["wl"])))

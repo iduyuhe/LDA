@@ -25,7 +25,7 @@
 | 功能对齐（验证机械） | ✅ 全绿 | 9 守卫 **103 判据全 PASS**；CORE 173 全绿（子集实跑） |
 | 商业试点（阶段 3）准备度 | 🔴 未启动 | 认证版 / PDK 合作 / 垂直场景 / 法务 均未立项 |
 
-**自 2026-09-14（v0.9.77）基线至 B-3 收官**：代码 452→**515** 文件、97.5k→**104.4k** 行；CORE_SMOKES 171→**177**；降级锚 2→**3**（B21 诚实升 `degraded_ordinal`）；自证桩 23→**22**；严格独立 **31→46**（v0.9.79 为 36，B-2 再加 10 道 B42-B51 方法学独立锚），占比 **64.8%**（46/71，目标 70%，差 1 道严格锚）；**B-3 再加 13 道 B52-B64 方法学独立锚 → 59/84=70.2%，正式跨过 70% 红线**。
+**自 2026-09-14（v0.9.77）基线至 B-3 收官**：代码 452→**515** 文件、97.5k→**104.4k** 行；CORE_SMOKES 171→**177**；降级锚 2→**3**（B21 诚实升 `degraded_ordinal`）；自证桩 23→**22**；严格独立 **31→46**（v0.9.79 为 36，B-2 再加 10 道 B42-B51 方法学独立锚），占比 **64.8%**（46/71，目标 70%，差 1 道严格锚）；**B-3 再加 13 道 B52-B64 方法学独立锚 → 59/84=70.2%，正式跨过 70% 红线**；**v0.9.80（2026-09-16 P1-1 B16 重审）：B16 由自证桩升 rib-MMI 全场模态重构严格独立候选 → 60/84=71.4%**。
 
 ---
 
@@ -34,7 +34,7 @@
 > 证据格式：文件:行号 / smoke 实跑 / grep 计数。状态 ✅完成 / 🟡部分 / 🔴未做。
 
 ### S1 · L0 双栈 EDA 底座做实（光子 PDA + 量子 QEDA）
-- 证据：`README.md`「22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）」；`run_count_consistency_smoke` 11/11（引擎 22 / 包 11 / 和 33）；`run_three_class_consistency_smoke` 三分类和=56。
+- 证据：`README.md`「22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）」；`run_count_consistency_smoke` 11/11（引擎 22 / 包 11 / 和 33）；`run_three_class_consistency_smoke` 三分类和=84。
 - 状态：**✅** 底座做实并持续增厚（515 py / 104.4k LOC）。
 
 ### S2 · 主权红线（A 级永不借 / B 级借今踢后 / C 级自主）
@@ -46,7 +46,7 @@
 - 状态：**✅** 守住。「AI 出题、物理定律判卷」四层架构落实。
 
 ### S4 · 物理定律锚 + 实证锚判卷
-- 证据：`run_benchmark_falsifiability_smoke.py` **13/13 PASS** → 严格 31 / 降级 3 / 自证 22（和=56），与 `run_three_class_consistency_smoke` C2 **完全一致**；实证语料 30 条全 A 级（B 级已清零）。
+- 证据：`run_benchmark_falsifiability_smoke.py` **13/13 PASS** → 严格 60 / 降级 3 / 自证 21（和=84），与 `run_three_class_consistency_smoke` C2 **完全一致**；实证语料 30 条全 A 级（B 级已清零）。
 - 状态：**✅** 守住。降级 3 道 = E9 + E10 + **B21**（v0.9.77→v0.9.78 净增）。
 
 ### S5 · T1 分层解锁（电学/TCAD T1 内核解锁 + T2 锁死）
@@ -92,7 +92,7 @@
 | 项 | 状态 | 证据 |
 |---|---|---|
 | P0 计数一致性守卫漂移 | ✅ 已修 + B21 后再同步 | `run_count_consistency_smoke` 11/11；B21 升 degraded 后 ledger 锁 2→3 显式同步 |
-| P1① 自证桩升级 55.4%→70% | 🟢 已达成（B-3） | 严格 59/84=**70.2%**（≥70% 目标，B-3 跨线） |
+| P1① 自证桩升级 55.4%→70% | 🟢 已达成（B-3） | 严格 60/84=**71.4%**（≥70% 目标；B-3 跨线 + B16 重审收官） |
 | P1② `lda_agent` 专项代码评审 | 🔴 未完成 | 全仓最大最复杂 AI 递归自举核心，未专项评审 |
 | P1③ 完整 CI core 回归全绿 | ✅ 已完成 | v0.9.77 部署前全量 171 实跑全绿；v0.9.78 仅确定性报告修复，CORE 173 同源 |
 
@@ -104,14 +104,14 @@
 
 | 守卫 smoke | 结果 | 关键输出 |
 |---|---|---|
-| `run_three_class_consistency_smoke.py` | **4/4 PASS** | README≡harness≡端点 = **59/3/22**，和=84 |
+| `run_three_class_consistency_smoke.py` | **4/4 PASS** | README≡harness≡端点 = **60/3/21**，和=84 |
 | `run_count_consistency_smoke.py` | **11/11 OK** | 引擎 22/包 11/题 84/CORE 177 与 README 一致 |
-| `run_webui_verification_ledger_smoke.py` | **15/15 PASS** | 端点 59/3/22，`provenance` 6 类宇宙子集无泄漏 |
-| `run_benchmark_falsifiability_smoke.py` | **13/13 PASS** | 严格 59 / 降级 3 / 自证 22；84/84 无回归；灵敏度上界≤10% |
+| `run_webui_verification_ledger_smoke.py` | **15/15 PASS** | 端点 60/3/21，`provenance` 6 类宇宙子集无泄漏 |
+| `run_benchmark_falsifiability_smoke.py` | **13/13 PASS** | 严格 60 / 降级 3 / 自证 21；84/84 无回归；灵敏度上界≤10% |
 | `run_gc_smoke.py` | **3/3 PASS** | GC 全链路（含 duty=1.0 / Λ=0 反例） |
-| `run_maturity_baseline_smoke.py` | **M1–M5 PASS** | VMM 底线；strict=59 degraded=3 self_certified=22 |
+| `run_maturity_baseline_smoke.py` | **M1–M5 PASS** | VMM 底线；strict=60 degraded=3 self_certified=21 |
 | `run_ci_coverage_gate_smoke.py` | **6/6 PASS** | 186 smoke 全登记（173 core + 18 豁免），无静默缺口 |
-| `run_d_criterion_smoke.py` | **10/10 PASS** | 59/59 已接线候选 0 道代数恒等；B28 假独立被抓获 |
+| `run_d_criterion_smoke.py` | **10/10 PASS** | 60/60 已接线候选 0 道代数恒等；B28 假独立被抓获 |
 | `run_optional_import_guard_smoke.py` | **16/16 PASS** | 457 文件扫描，torch/numba/cupy 硬依赖=0 |
 | `run_report_determinism_smoke.py` | **10/10 PASS** | 相同输入⇒字节一致；真变更仍可证伪（v0.9.78 关键） |
 | **合计** | **103 PASS / 0 FAIL（10 守卫）** | — |
@@ -129,7 +129,7 @@
 ## 3. 诚实缺口与风险（照写，不粉饰）
 
 1. **反偏模型局限（V<0）**：T1-B 2D 内核反偏非物理，已文档化 + 护栏，但仍是真实能力边界。
-2. **自证桩占比 26.2%（22/84）**：验证地基最大短板已显著缓解。严格独立 70.2%（59/84）已正式达成目标 70%（B-3 跨线）。升级路径明确（B16 重审留桩、B17-B19/S1-S13 等），剩余自证桩按 P0 计划继续接线。
+2. **自证桩占比 25.0%（21/84）**：验证地基最大短板已显著缓解。严格独立 71.4%（60/84）已正式达成目标 70%（B-3 跨线 + B16 重审收官）。升级路径明确：真候选为 **E1/E3-E7（卡 T2 通道）共 6 道**；B5/B6/B7 待场级 ORACLE；**B17/B18/S1-S6/S9-S12 共 12 道为 terminal Tier-1（定义/算术自检），按设计永不升、非缺口**。已转为「PR 必接独立候选」常态化纪律（见 `P1-1_self_certified_discipline.md`，口径已订正原「B17-B19/S1-S13 方法学独立候选」过时说法）。
 3. **`lda_agent` 未专项评审**：全仓最大未量化风险面，前次 P1② 仍挂起。
 4. **T2 真值回流 = 0**：等 foundry/MPW 窗口（杜先生现实 KPI），非技术阻塞。
 5. **四层系统 / L2 计算芯片未启动**：设计递延，符合「先夯实」纪律；对外叙事须诚实区分「底座就绪」与「计算芯片可用」。
@@ -146,7 +146,7 @@
 - **部署（2026-09-16 · SSH）**：HEAD 对齐 `d15cd4c`，内/外网 `/api/health` 版本串均 `0.9.79`、`shelf=75`、`is-active=active`，生产已落地 v0.9.79。⚠️ 订正此前「remote_deploy.py 不在本环境、未部署」误记——脚本实存于技能目录 `C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/remote_deploy.py`，前次仅检索路径有误（误以为在仓库 `scripts/` 与技能目录缺失），实际可直接复用，无需手动 SSH 等价流程。
 
 ### 🟠 P1（近期，优先于新功能）
-- **P1-1**：自证桩升级冲刺 70%（当前 70.2% ✅ 已达成，B-3 跨线）——优先 B16 重审留桩、B17-B19/S1-S13 方法学独立候选。
+- **P1-1（✅ B-3 已闭项；✅ B16 重审收官 v0.9.80）**：严格独立 71.4%（60/84）达标。21 自证桩转「PR 必接独立候选」常态化纪律；真候选 **E1/E3-E7（T2）共 6 道**，B17-B19/S 簇为 terminal 非候选（口径已订正，见 `P1-1_self_certified_discipline.md`）。
 - **P1-2**：T2 真值链启动（杜先生现实）：foundry PDK 只读接口接触 + MPW 排期撬动，把 U4/U5/U6/B21 的 `degraded_ordinal` 升为 strict（需实测回流）。
 - **P1-3**：四层系统 L3/L4 接外部实测/ORACLE 升 `degraded_ordinal`→`strict_independent`（建议 B 后续）。
 

@@ -94,6 +94,12 @@ from ._batch_b8_numeric import (  # noqa: E402  # Batch B-8 双方法独立锚�
     golden_b145, golden_b146, golden_b147, golden_b148,
     golden_b149, golden_b150, golden_b151, golden_b152,
 )
+from ._batch_b9_numeric import (  # noqa: E402  # Batch B-9 双方法独立锚数值核（路径 B 扩基续八 · 4阶 Euler-Bernoulli 梁/Hulthen 势/Fock-Darwin 量子点/Rosen-Morse II 势族 · v0.9.89 · 腿① 续加锚稀释 terminal）
+    golden_b153, golden_b154, golden_b155, golden_b156,
+    golden_b157, golden_b158, golden_b159, golden_b160,
+    golden_b161, golden_b162, golden_b163, golden_b164,
+    golden_b165, golden_b166, golden_b167, golden_b168,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -747,6 +753,10 @@ _GOLDEN_DISPATCH = {
     "B141": golden_b141, "B142": golden_b142, "B143": golden_b143, "B144": golden_b144,
     "B145": golden_b145, "B146": golden_b146, "B147": golden_b147, "B148": golden_b148,
     "B149": golden_b149, "B150": golden_b150, "B151": golden_b151, "B152": golden_b152,
+    "B153": golden_b153, "B154": golden_b154, "B155": golden_b155, "B156": golden_b156,  # Batch B-9（v0.9.89 · 腿① 续加锚）
+    "B157": golden_b157, "B158": golden_b158, "B159": golden_b159, "B160": golden_b160,
+    "B161": golden_b161, "B162": golden_b162, "B163": golden_b163, "B164": golden_b164,
+    "B165": golden_b165, "B166": golden_b166, "B167": golden_b167, "B168": golden_b168,
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -783,6 +793,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B129", "B130", "B131", "B132", "B133", "B134", "B135", "B136",  # Batch B-7（v0.9.87 · 腿① 续加锚 · 闭式 golden × FD 候选）
                  "B137", "B138", "B139", "B140", "B141", "B142", "B143", "B144",
                  "B145", "B146", "B147", "B148", "B149", "B150", "B151", "B152",  # Batch B-8（v0.9.88 · 腿① 续加锚 · 闭式 golden/超越方程 × FD 候选）
+                 "B153", "B154", "B155", "B156", "B157", "B158", "B159", "B160",
+                 "B161", "B162", "B163", "B164", "B165", "B166", "B167", "B168",  # Batch B-9（v0.9.89 · 腿① 续加锚 · 4阶梁超越方程/Hulthen/Fock-Darwin/Rosen-Morse II 闭式 × FEM/FD 候选）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

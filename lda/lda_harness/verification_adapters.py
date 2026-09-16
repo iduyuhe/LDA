@@ -2176,6 +2176,7 @@ _BATCH_B5_MOD = None
 _BATCH_B6_MOD = None
 _BATCH_B7_MOD = None
 _BATCH_B8_MOD = None
+_BATCH_B9_MOD = None
 
 
 def _get_batch_b3():
@@ -2686,6 +2687,20 @@ def _get_batch_b8():
         _ensure_paths()
         import _batch_b8_numeric as _m
     _BATCH_B8_MOD = _m
+    return _m
+
+
+def _get_batch_b9():
+    """双路兜底导入 Batch B-9 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B9_MOD
+    if _BATCH_B9_MOD is not None:
+        return _BATCH_B9_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b9_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b9_numeric as _m
+    _BATCH_B9_MOD = _m
     return _m
 
 
@@ -3278,6 +3293,156 @@ def _b152_ho3d_aniso111(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b8()
     return float(m.cand_ho3d_aniso(1, 1, 1, float(p["ox"]), float(p["oy"]), float(p["oz"])))
+
+
+# ---------------------------------------------------------------------------
+# Batch B-9（v0.9.89 · 路径 B 扩基续八：16 道双方法严格独立新锚）
+# 四族全新算子（同源体检已过）：4 阶 Euler-Bernoulli 梁超越方程 / Hulthen 指数屏蔽势 /
+# Fock-Darwin 含磁场量子点 / Rosen-Morse II sech²+tanh 势。
+# 纪律同源 B-1..B-8：确定性闭式 golden 对拍方法学不同源真实数值候选（FEM/径向+1D FD）。
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "b153_beam_mode1_cand",
+    "固支-固支 Euler-Bernoulli 梁第 1 阶横向振动频率由 Hermite 梁单元 FEM 广义本征 (Ne=200) 导出 ↔ 4 阶 ODE 超越方程 cos(βL)cosh(βL)=1 根闭式，方法学独立")
+def _b153_beam_mode1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_beam(1, float(p["L_um"])))
+
+
+@_register_candidate(
+    "b154_beam_mode2_cand",
+    "固支-固支梁第 2 阶频率由 Hermite 梁单元 FEM 广义本征导出 ↔ 超越方程根闭式，方法学独立")
+def _b154_beam_mode2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_beam(2, float(p["L_um"])))
+
+
+@_register_candidate(
+    "b155_beam_mode3_cand",
+    "固支-固支梁第 3 阶频率由 Hermite 梁单元 FEM 广义本征导出 ↔ 超越方程根闭式，方法学独立")
+def _b155_beam_mode3_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_beam(3, float(p["L_um"])))
+
+
+@_register_candidate(
+    "b156_beam_mode4_cand",
+    "固支-固支梁第 4 阶频率由 Hermite 梁单元 FEM 广义本征导出 ↔ 超越方程根闭式，方法学独立")
+def _b156_beam_mode4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_beam(4, float(p["L_um"])))
+
+
+@_register_candidate(
+    "b157_hulthen_n1_cand",
+    "Hulthen 势 3D s-wave 第 1 束缚态由 3D 径向 FD 薛定谔本征导出 ↔ 超几何/Jacobi 精确闭式，方法学独立")
+def _b157_hulthen_n1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_hulthen(1, float(p["V0_eV"]), float(p["a_nm"])))
+
+
+@_register_candidate(
+    "b158_hulthen_n2_cand",
+    "Hulthen 势 3D s-wave 第 2 束缚态由 3D 径向 FD 本征导出 ↔ 精确闭式，方法学独立")
+def _b158_hulthen_n2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_hulthen(2, float(p["V0_eV"]), float(p["a_nm"])))
+
+
+@_register_candidate(
+    "b159_hulthen_n3_cand",
+    "Hulthen 势 3D s-wave 第 3 束缚态由 3D 径向 FD 本征导出 ↔ 精确闭式，方法学独立")
+def _b159_hulthen_n3_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_hulthen(3, float(p["V0_eV"]), float(p["a_nm"])))
+
+
+@_register_candidate(
+    "b160_hulthen_n4_cand",
+    "Hulthen 势 3D s-wave 第 4 束缚态由 3D 径向 FD 本征导出 ↔ 精确闭式，方法学独立")
+def _b160_hulthen_n4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_hulthen(4, float(p["V0_eV"]), float(p["a_nm"])))
+
+
+@_register_candidate(
+    "b161_fock_darwin_02_cand",
+    "Fock-Darwin (n_r=0,m=2) 由 2D 径向 FD 本征 + L_z 项解析本征导出 ↔ 精确闭式，方法学独立")
+def _b161_fock_darwin_02_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_fock_darwin(0, 2, float(p["B_T"])))
+
+
+@_register_candidate(
+    "b162_fock_darwin_03_cand",
+    "Fock-Darwin (n_r=0,m=3) 由 2D 径向 FD 本征 + L_z 项导出 ↔ 精确闭式，方法学独立")
+def _b162_fock_darwin_03_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_fock_darwin(0, 3, float(p["B_T"])))
+
+
+@_register_candidate(
+    "b163_fock_darwin_04_cand",
+    "Fock-Darwin (n_r=0,m=4) 由 2D 径向 FD 本征 + L_z 项导出 ↔ 精确闭式，方法学独立")
+def _b163_fock_darwin_04_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_fock_darwin(0, 4, float(p["B_T"])))
+
+
+@_register_candidate(
+    "b164_fock_darwin_12_cand",
+    "Fock-Darwin (n_r=1,m=2) 由 2D 径向 FD 本征 + L_z 项导出 ↔ 精确闭式，方法学独立")
+def _b164_fock_darwin_12_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_fock_darwin(1, 2, float(p["B_T"])))
+
+
+@_register_candidate(
+    "b165_rosen_morse_n0_cand",
+    "Rosen-Morse II 势基态由 1D FD 本征导出 ↔ 超几何精确闭式（含奇宇称 tanh 项，非同 Pöschl-Teller），方法学独立")
+def _b165_rosen_morse_n0_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_rosen_morse(0, float(p["C_eV"]), float(p["B_eV"])))
+
+
+@_register_candidate(
+    "b166_rosen_morse_n1_cand",
+    "Rosen-Morse II 势第 1 激发态由 1D FD 本征导出 ↔ 超几何精确闭式，方法学独立")
+def _b166_rosen_morse_n1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_rosen_morse(1, float(p["C_eV"]), float(p["B_eV"])))
+
+
+@_register_candidate(
+    "b167_rosen_morse_n2_cand",
+    "Rosen-Morse II 势第 2 激发态由 1D FD 本征导出 ↔ 超几何精确闭式，方法学独立")
+def _b167_rosen_morse_n2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_rosen_morse(2, float(p["C_eV"]), float(p["B_eV"])))
+
+
+@_register_candidate(
+    "b168_rosen_morse_n3_cand",
+    "Rosen-Morse II 势第 3 激发态由 1D FD 本征导出 ↔ 超几何精确闭式，方法学独立")
+def _b168_rosen_morse_n3_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b9()
+    return float(m.cand_rosen_morse(3, float(p["C_eV"]), float(p["B_eV"])))
 
 
 # ---------------------------------------------------------------------------

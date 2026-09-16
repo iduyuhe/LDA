@@ -1886,12 +1886,12 @@ _VMM_OVERRIDES = {
             "λ_fdtd=2214.87nm vs golden 2214.0nm，rel=0.039%（余量 ~77×，低于严格 100×"
             "故保守归 degraded，不进死标量判决列）；tol=66.0nm=3%×golden(2214nm) 绝对带。"
             "跨域偏差主成分为一阶 FP 模型近似粗糙度，待放宽红线（借 A 级/补波导几何）方升 strict。"),
-    "E1":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
-    "E3":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
-    "E4":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
-    "E5":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
-    "E6":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
-    "E7":  ("external_empirical", "T2 实测数据集（量子 QEDA 实证锚）升 Tier-3"),
+    "E1":  ("external_empirical", "T2 实测数据集（光子 PDA 实证锚）升 Tier-3"),
+    "E3":  ("external_empirical", "T2 实测数据集（光子 PDA 实证锚）升 Tier-3"),
+    "E4":  ("external_empirical", "T2 实测数据集（光子 PDA 实证锚）升 Tier-3"),
+    "E5":  ("external_empirical", "T2 实测数据集（光子 PDA 实证锚）升 Tier-3"),
+    "E6":  ("external_empirical", "T2 实测数据集（光子 PDA 实证锚）升 Tier-3"),
+    "E7":  ("external_empirical", "T2 实测数据集（光子 PDA 实证锚）升 Tier-3"),
     "E9":  ("external_empirical", "用真实 PDK 标定 c1 工艺系数后升 Tier-3"),
     "S1":  ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),
     "S2":  ("self_authored_closed_form", "本就不升：系统/算术合成校验（terminal Tier-1，非物理锚）"),

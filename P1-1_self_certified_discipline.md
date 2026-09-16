@@ -25,7 +25,7 @@
 - **B. 显式锁定原因** → `defn` 必须带 `provenance` + `upgrade_path` 注明锁定类型：
   - `terminal_tier1`：定义同义反复 / 算术自检 / regime 越界——**按设计永不升**，不是缺口。
   - `design_rule_anchor`：行业经验边界（几何无关下限/上限），待场级 ORACLE 升 strict。
-  - `t2_blocked`：外部实测通道未就绪（E 簇 QEDA 实证锚），路径明确但卡通道。
+  - `t2_blocked`：外部实测通道未就绪（E 簇 光子 PDA 实证锚），路径明确但卡通道。
   - `re_review`：已有明确升级路径待执行（**当前无实例**；B16 已于 v0.9.80 重审升 `strict_independent` 结清）。
 
 **红线**
@@ -41,7 +41,7 @@
 |---|---|---|---|---|
 | **terminal Tier-1（12）** | B17, B18, S1, S2, S3, S4, S5, S6, S9, S10, S11, S12 | `terminal_tier1` | 定义同义反复 / 算术自检 / regime 越界，**永不升** | ❌ 否（按设计诚实，非缺口） |
 | **design_rule（1）** | B7 | `design_rule_anchor` | **先修 golden**（离线 2D FDTD 经四路诊断不收敛）再接 Meep 场级 ORACLE 升 strict | 🟡 低优先 |
-| **t2_blocked（6）** | E1, E3, E4, E5, E6, E7 | `t2_blocked` | T2 实测数据集（QEDA 实证锚）升 Tier-3 | ✅ 是（卡 T2 外部通道） |
+| **t2_blocked（6）** | E1, E3, E4, E5, E6, E7 | `t2_blocked` | T2 实测数据集（光子 PDA 实证锚）升 Tier-3 | ✅ 是（卡 T2 外部通道） |
 
 > 合计 12 + 1 + 6 = **19**，与 `run_p0_count_guard_sync_smoke.py` 的动态推导一致。
 >
@@ -58,7 +58,7 @@
 - **B17 = `terminal Tier-1`**（定义同义反复，本就不升）——非候选。
 - **B18 = `terminal Tier-1`**（regime 越界，本就不升）——非候选。
 - **B19 早已是 `strict_independent`**（不在 22 自证桩内）——非自证桩。
-- **S 簇**：实际为 `S1-S6` + `S9-S12` = **12 道 terminal 算术自检**，无 `S7/S8/S13`；全部 `terminal_tier1`，非候选。
+- **S 簇**：共 **13 道**（`S1-S13`）。其中 `S1-S6` + `S9-S12` = **10 道** terminal 算术自检（`terminal_tier1`，非候选）；`S7/S8/S13` **存在**且均为严格独立（T-3 统计锚 p5 指标升级；`independent_cross_check`），不在自证桩内。
 - 真正可升级的自证桩是 **E1/E3-E7（T2 实证锚）= 6 道**（B16 已于 v0.9.80 重审升 strict），并非 B17-B19/S1-S13。
 
 > 该纠正已写入 `ALIGNMENT_REPORT.md` 第 132、149 行。
@@ -70,7 +70,7 @@
 | 项 | 内容 | 阻塞 | 优先级 |
 |---|---|---|---|
 | ~~B16 重审~~ | ✅ **v0.9.80 已完成**：rib-MMI 全场模态重构候选升 strict（残差 0.26–2.21µm < tol 3.0；候选不套成像因子，方法学不同源） | — | ✅ 结清 |
-| E 簇解锁 | 启动 T2 外部通道，接入 QEDA 实测数据集，E1/E3-E7 升 Tier-3（=严格独立候选） | 卡 T2 实测通道（S8） | 🔴 高（受外部 KPI） |
+| E 簇解锁 | 启动 T2 外部通道，接入**光子 PDA 实测数据集**，E1/E3-E7 升 Tier-3（=严格独立候选）；**方案详见 `P1-E_T2_unlock_plan.md`** | 卡 T2 实测通道（S8） | 🔴 高（受外部 KPI） |
 | ~~B5/B6~~ | ✅ **v0.9.81 已完成**：各接第二独立求解器升 `strict_independent`（B5=`ybranch_eme` / B6=`grating_fp`） | — | ✅ 结清 |
 | B7 | **先修离线 golden**（2D FDTD 四路诊断不收敛：sponge 弱 ~100×、近场度量不良定义）再接 Meep 场级 ORACLE | golden 侧缺陷（非候选侧） | 🟡 低 |
 | CI Enforcement | 新增 `run_self_certified_lock_smoke.py`：断言 (a) self_certified=19 且只减不增；(b) 每道 self_certified 的 defn 带 provenance + 锁定类型关键词 | 无 | 🟠 建议 |
@@ -90,3 +90,4 @@
 - 计数护栏同步：`run_p0_count_guard_sync_smoke.py`（84/62/3/19 动态校验，PR 必查）。
 - 锚接线流程：技能 `lda-anchor-wiring`（判据先于代码 + maintainer 写判据）。
 - 生产部署：`lda-prod-deploy`（`sync_push.py` + `remote_deploy.py --expect-head`）。
+- T2 解锁方案：`P1-E_T2_unlock_plan.md`（E1/E3-E7 逐锚所需实测数据/计量 + MPW 路径与成本 + 升 strict 验收条件）。

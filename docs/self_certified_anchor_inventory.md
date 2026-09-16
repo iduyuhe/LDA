@@ -3,6 +3,7 @@
 > 配套模型：`docs/verification_maturity_model.md`
 > 数据来源：本文件由 `lda/lda_harness/benchmarks.py` 的 `maturity_tier` / `provenance` / `upgrade_path` 三字段直接导出（2026-09-10 实测），非记忆推断。
 > 三分类口径（C2 护栏守护）：严格独立 26 · 降级 1 · 自证桩 25（和 = 52）。
+> ⚠️ **本表为 2026-09-10 快照（52 锚口径已过时）**：当前口径为 84 锚 / 严格独立 62 / 降级 3 / 自证桩 19（权威见 `P1-1_self_certified_discipline.md` 与 README 当前账本）。保留本表作分层方法学追溯，**计数勿引用**。
 
 ## 一、为什么这张表存在
 
@@ -36,12 +37,12 @@
 | B6 | 光栅耦合峰值效率 | design_rule_anchor | Ⅵ·设计规则锚 | 无需重测（外部来源） | 行业设计规则锚 0.5 效率下限（硅光耦合器论文/流片共识）；Tidy3D ORACLE 命中即升格；已有回退下限护栏 | 中（外部行业背书·非低置信） |
 | B7 | 波导交叉串扰 | design_rule_anchor | Ⅵ·设计规则锚 | 无需重测（外部来源） | 行业设计规则锚 -40dB 上限（硅光交叉器件论文/流片共识）；Meep ORACLE 命中即升格；已有回退下限护栏 | 中（外部行业背书·非低置信） |
 | B21 | PhC 腔共振 | self_authored_closed_form_with_check | Ⅱ·已内验待ORACLE | 待ORACLE标定 | 弱调制布拉格 FP 一阶近似；已有 2D FDTD 全波内验~2%（已内验·非低置信·非高危）；待特定结构外部 ORACLE 标定升 Tier-3 | 中（已内验，非低置信·待再审计） |
-| E1 | 量子实证锚 | external_empirical | Ⅱ·缺数据集 | 待数据集 | T2 实测数据集（量子 QEDA 实证锚）升 Tier-3 | 中（有实证来源，待扩样） |
-| E3 | 量子实证锚 | external_empirical | Ⅱ·缺数据集 | 待数据集 | T2 实测数据集升 Tier-3 | 中 |
-| E4 | 量子实证锚 | external_empirical | Ⅱ·缺数据集 | 待数据集 | T2 实测数据集升 Tier-3 | 中 |
-| E5 | 量子实证锚 | external_empirical | Ⅱ·缺数据集 | 待数据集 | T2 实测数据集升 Tier-3 | 中 |
-| E6 | 量子实证锚 | external_empirical | Ⅱ·缺数据集 | 待数据集 | T2 实测数据集升 Tier-3 | 中 |
-| E7 | 量子实证锚 | external_empirical | Ⅱ·缺数据集 | 待数据集 | T2 实测数据集升 Tier-3 | 中 |
+| E1 | 光子实证锚 | external_empirical | Ⅱ·缺数据集 | 待数据集 | T2 实测数据集（光子 PDA 实证锚）升 Tier-3 | 中（有实证来源，待扩样） |
+| E3 | 光子实证锚 | external_empirical | Ⅱ·缺数据集 | 待数据集 | T2 实测数据集升 Tier-3 | 中 |
+| E4 | 光子实证锚 | external_empirical | Ⅱ·缺数据集 | 待数据集 | T2 实测数据集升 Tier-3 | 中 |
+| E5 | 光子实证锚 | external_empirical | Ⅱ·缺数据集 | 待数据集 | T2 实测数据集升 Tier-3 | 中 |
+| E6 | 光子实证锚 | external_empirical | Ⅱ·缺数据集 | 待数据集 | T2 实测数据集升 Tier-3 | 中 |
+| E7 | 光子实证锚 | external_empirical | Ⅱ·缺数据集 | 待数据集 | T2 实测数据集升 Tier-3 | 中 |
 | B17 | （定义类锚） | self_authored_closed_form | Ⅴ·本就不升 | 永不 | 定义同义反复（terminal Tier-1） | 高（结构性无需升） |
 | B18 | （regime 类锚） | self_authored_closed_form | Ⅴ·本就不升 | 永不 | regime 越界（terminal Tier-1） | 高 |
 | S1 | 功率预算 | self_authored_closed_form | Ⅴ·本就不升 | 永不 | 系统/算术合成校验（非物理锚） | 高 |

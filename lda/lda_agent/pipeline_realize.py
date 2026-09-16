@@ -10,7 +10,6 @@
 """
 import argparse
 import json
-import math
 import os
 import sys
 from typing import Any, Dict, List
@@ -126,9 +125,6 @@ def design_pipeline_realize(devices: List[str] | None = None,
              all(all(dr["passed"] for dr in v["drc"].values())
                  for k, v in results.items()) and \
              len(results) == len(kinds)
-    n_real = sum(1 for k in real_kinds
-                 if "boundary" not in results[k]["desc_summary"] or
-                 k in ("SymmetricYBranch",))  # YBranch taper 为边界过渡（真实基元）
     verdict = (
         f"真实基元接入流水线 PASS：{len(real_kinds)}/{len(kinds)} kind 全真实 GDS "
         f"round-trip 一致 + {len(pdk_rules)} 个 SOI PDK DRC 全绿；"

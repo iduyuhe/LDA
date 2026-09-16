@@ -27,7 +27,7 @@ import argparse
 import json
 import math
 import sys
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from lda_ir import (  # type: ignore
     IRModel, ObjectiveSpec, Resonator, Transmon, Waveguide, validate,
@@ -122,7 +122,6 @@ def design_fidelity(f01: float = _DEF_F01, delta: float = _DEF_DELTA,
     T1_s = T1_us * 1e-6
     chi = g * g / abs(delta)
     f_r = f01 + delta
-    Q_ext = f_r / kappa_r
 
     # 1) 最优读出时间 + 保真度预算
     tm_star, b_star = optimize_readout_time(chi, kappa_r, nbar, eta, N_amp, T1_s)

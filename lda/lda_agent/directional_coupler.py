@@ -23,7 +23,7 @@ import argparse
 import json
 import math
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from lda_ir import (  # type: ignore
     IRModel, ObjectiveSpec, Waveguide, validate,

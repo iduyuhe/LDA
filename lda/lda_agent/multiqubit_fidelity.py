@@ -31,7 +31,7 @@ from lda_agent.multiqubit_readout import (  # type: ignore
     dip_resolvable, feedline_spectrum,
 )
 from lda_agent.readout_fidelity import (  # type: ignore
-    optimize_readout_time, readout_fidelity,
+    optimize_readout_time,
 )
 
 # 物理默认（与 D-46/D-47 一致）

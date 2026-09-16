@@ -47,7 +47,7 @@ _LDA_ROOT = os.path.dirname(_HERE)
 if _LDA_ROOT not in sys.path:
     sys.path.insert(0, _LDA_ROOT)
 
-from lda_agent.wdm_system import (design_wdm, channel_capacity,  # noqa: E402
+from lda_agent.wdm_system import (design_wdm,  # noqa: E402
                                   insertion_loss_budget, fsr_nm,
                                   inverse_ring_for_channel)
 from lda_agent.multiqubit_fidelity import design_multiqubit_fidelity  # noqa: E402

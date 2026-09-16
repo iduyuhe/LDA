@@ -377,7 +377,9 @@ def _load_fdtd_anchor() -> Optional[Dict[str, Any]]:
             "accepted": d.get("accepted"),
             "peaks_um": d.get("peaks_um"),
         }
-    except Exception:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).warning("add-drop 摘要提取失败（%r）→ 返回 None", e)
         return None
 
 

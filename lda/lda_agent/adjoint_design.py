@@ -26,7 +26,7 @@ if _LDA_ROOT not in sys.path:
     sys.path.insert(0, _LDA_ROOT)
 
 from lda_solver.adjoint_fdtd import (  # noqa: E402
-    AdjointProblem, forward, compute_gradient,
+    AdjointProblem,
     verify_adjoint, optimize_topology,
 )
 

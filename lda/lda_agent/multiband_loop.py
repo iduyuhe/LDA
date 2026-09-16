@@ -12,7 +12,6 @@ band 模式验收判据。
 from __future__ import annotations
 
 import json
-import math
 import os
 import sys
 import time

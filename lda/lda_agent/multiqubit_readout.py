@@ -20,7 +20,6 @@
 
 import argparse
 import json
-import math
 import sys
 from typing import Any, Dict, List, Optional
 
@@ -325,8 +324,9 @@ def _ensure_path() -> None:
     try:
         from lda_l2.device_library import _ensure_solver_on_path
         _ensure_solver_on_path()
-    except Exception:
-        pass
+    except Exception as e:  # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).debug("求解器 PATH 注入失败（%r）", e)
 
 
 if __name__ == "__main__":

@@ -27,7 +27,7 @@ import json
 import os
 import sys
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _LDA_ROOT = os.path.dirname(_HERE)

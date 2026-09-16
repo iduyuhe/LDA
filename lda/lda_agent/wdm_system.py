@@ -158,7 +158,7 @@ def build_wdm_ir(channels_nm: List[float], Rs: List[float], n_g: float = 4.2
     # 网表：bus 链 ring_i.out → ring_{i+1}.in；drop 端口外接
     for i in range(len(Rs) - 1):
         m.connect(f"bus{i}", f"ring{i}.out", f"ring{i + 1}.in")
-    m.connect("in", f"ring0.in")
+    m.connect("in", "ring0.in")
     m.connect(f"drop{len(Rs)-1}", f"ring{len(Rs)-1}.drop")
     return m
 

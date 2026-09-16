@@ -14,7 +14,6 @@ from typing import Any, Dict, List, Optional
 
 import argparse
 import json
-import math
 import sys
 
 # 默认参数
@@ -66,7 +65,6 @@ def design_wdm_splitter(channels_nm: Optional[List[float]] = None,
     dc_total = 0
     for ci, ch in enumerate(channels_nm):
         # 该信道分束权重归一化
-        w = [weights[ci]] * 1  # 单信道内部均匀分给叶子的权重要按叶子数
         # 每信道分束树：把该信道功率均匀分到 k 个叶子？——按 1×k 均匀
         # （此处简化为：每信道目标 = 该信道整功，叶子数 = 1 默认；
         #  实际多叶子由 weights 扩展场景支持——见 leaves 权重）

@@ -25,7 +25,6 @@ from typing import Any, Dict, List, Optional
 
 import argparse
 import json
-import math
 import os
 import sys
 
@@ -124,7 +123,6 @@ def design_tunable_wdm(channels_nm: Optional[List[float]] = None,
     # 4) 死标量验收
     S_vals = [p["S_nm_per_mW"] for p in per_ring]
     slopes_ok = all(S_MIN_REAL <= s <= S_MAX_REAL for s in S_vals)
-    realloc_ok = all(p["within_budget"] and p["no_fsr_alias"] for p in plan)
     # 整 FSR 内可重构：最大可达位移 ≥ FSR_min/2
     S_min = min(S_vals)
     max_shift = P_max * S_min

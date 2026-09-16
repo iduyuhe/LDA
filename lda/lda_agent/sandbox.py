@@ -44,6 +44,19 @@ import textwrap
 _STRONG_BINS = ("unshare", "setpriv")
 
 
+# strong 路径 env 白名单（纵深防御）：仅保留解释器/运行时必需项，
+# **剥离 LDA_LLM_KEY / OPENAI_API_KEY 等一切密钥类** —— 即便命名空间有网也不外泄。
+_STRONG_ENV_KEEP = ("PATH", "PYTHONPATH", "LD_LIBRARY_PATH", "LANG", "LC_ALL",
+                    "LC_CTYPE", "TMPDIR", "TMP", "TEMP")
+
+
+def _minimal_env(cases_payload: str) -> "dict[str, str]":
+    """构造 strong 路径的最小 env（仅白名单键 + 用例 payload）。"""
+    env = {k: os.environ[k] for k in _STRONG_ENV_KEEP if k in os.environ}
+    env["LDA_SOLVER_CASES"] = cases_payload
+    return env
+
+
 def _bins_present(*bins: str) -> bool:
     return all(shutil.which(b) for b in bins)
 
@@ -133,8 +146,10 @@ class IsolatedExecutor:
             os.chmod(tmp, 0o755)
             os.chmod(cand_path, 0o644)
             os.chmod(drv_path, 0o644)
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001
+            import logging
+            logging.getLogger(__name__).warning(
+                "放宽 tmp 权限失败（%r）——降权 nobody 可能读不到候选，隔离执行会静默失败", e)
         cases_payload = json.dumps(
             [{"name": c.name, "inputs": c.inputs} for c in spec.test_cases]
         )
@@ -160,7 +175,7 @@ class IsolatedExecutor:
     # 但无权读 /etc/shadow、也无网命名空间 → 读密钥/外传均被拒。
     def _run_strong(self, drv_path: str, payload: str, tmp: str) -> subprocess.CompletedProcess:
         py = sys.executable
-        env = {**os.environ, "LDA_SOLVER_CASES": payload}
+        env = _minimal_env(payload)  # 最小 env：剥离父进程全部密钥（纵深防御）
         # sh -c 'cd "$0" && exec "$@"' tmp setpriv ... -- py drv
         # 所有路径/参数走 argv，不拼 shell 字符串，杜绝路径注入。
         drop = ["setpriv", "--reuid=nobody", "--regid=nobody",
@@ -169,8 +184,18 @@ class IsolatedExecutor:
             drop = ["su", "nobody", "-s", py, "-c", f"{py} {drv_path!r}"]
         inner = ["sh", "-c", 'cd "$0" && exec "$@"', tmp] + drop
         cmd = ["unshare", "--net"] + inner
-        return subprocess.run(cmd, capture_output=True, text=True,
-                              timeout=self.timeout, cwd=tmp, env=env)
+        try:
+            return subprocess.run(cmd, capture_output=True, text=True,
+                                  timeout=self.timeout, cwd=tmp, env=env)
+        except OSError as e:
+            # 非 root 部署时 unshare 会因缺 CAP_SYS_ADMIN 抛 OSError。fail-closed，
+            # 但给出可操作的友好诊断（与 weak 红线同风格），不裸抛底层异常。
+            raise RuntimeError(
+                "隔离不可用：需 root 或 unshare 权限（CAP_SYS_ADMIN）。"
+                f"`unshare --net` 启动失败：{e!r}。\n"
+                "正确做法：以具备 CAP_SYS_ADMIN 的进程运行 strong 隔离；"
+                "或仅在离线 Scripted 演示中显式 allow_weak_isolation=True。"
+            ) from e
 
     # -- weak：仅进程组 + cwd + timeout（不安全，仅演示） --------------------
     def _run_weak(self, drv_path: str, payload: str, tmp: str) -> subprocess.CompletedProcess:

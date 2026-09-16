@@ -22,7 +22,7 @@ from __future__ import annotations
 import math
 import os
 import sys
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _LDA_ROOT = os.path.dirname(_HERE)
@@ -30,7 +30,7 @@ if _LDA_ROOT not in sys.path:
     sys.path.insert(0, _LDA_ROOT)
 
 from lda_agent.spectrum_loop import (SpectrumInverseDesignAgent,  # noqa: E402
-                                     SpectrumTarget, metric_error)
+                                     SpectrumTarget)
 
 
 # ---------------------------------------------------------------------------
@@ -88,8 +88,10 @@ def _bragg_triple(lam: float, n_si: float, n_sio: float,
         try:
             from lda_l2.device_library import _ensure_solver_on_path
             _ensure_solver_on_path()
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001
+            import logging
+            logging.getLogger(__name__).debug(
+                "求解器 PATH 注入失败（%r）；若后续 TMM 数值对拍报 import 错误，根因在此", e)
 
     tmm_spec = _bragg_tmm_spectrum(lam, n_si, n_sio, wavelengths_um)
     _ensure()

@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, replace
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import numpy as np
 

@@ -32,7 +32,7 @@ import json
 import math
 import os
 import sys
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _LDA_ROOT = os.path.dirname(_HERE)
@@ -224,8 +224,9 @@ def _ensure_path() -> None:
     try:
         from lda_l2.device_library import _ensure_solver_on_path
         _ensure_solver_on_path()
-    except Exception:
-        pass
+    except Exception as e:  # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).debug("求解器 PATH 注入失败（%r）", e)
 
 
 def main() -> int:

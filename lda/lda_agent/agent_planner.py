@@ -8,7 +8,7 @@
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from .agents import AgentMsg, BaseAgent, DesignContext
 from lda_chain import LinkModel

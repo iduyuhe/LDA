@@ -357,11 +357,11 @@ def main(intent: Optional[Dict[str, Any]] = None) -> DesignOutcomeReport:
     return agent.run(intent)
 
 
-if __name__ == "__main__":
-    rep = main()
-    print(json_report(rep))
-
-
 def json_report(rep: DesignOutcomeReport) -> str:
     import json
     return json.dumps(rep.to_dict(), ensure_ascii=False, indent=2)
+
+
+if __name__ == "__main__":
+    rep = main()
+    print(json_report(rep))

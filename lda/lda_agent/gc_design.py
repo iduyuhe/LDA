@@ -21,7 +21,6 @@ def design_gc(gc: Dict[str, Any] | None = None,
     if gc:
         params.update({k: float(v) for k, v in gc.items() if v is not None})
     vr = verify_gc(params, **kw)
-    pts = vr["spectrum"]["points"]
     checks = [
         {"name": "GC 2D FDTD 端口验收（光栅方程 ORACLE）",
          "ok": bool(vr["acceptance"]["passed"]),

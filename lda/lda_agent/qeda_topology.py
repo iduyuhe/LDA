@@ -26,7 +26,7 @@ if _LDA_ROOT not in sys.path:
     sys.path.insert(0, _LDA_ROOT)
 
 from lda_qeda.gates import verify_gate_library           # noqa: E402
-from lda_qeda.surface_code import verify_surface_code, rotated_surface_code  # noqa: E402
+from lda_qeda.surface_code import verify_surface_code  # noqa: E402
 from lda_qeda.cross_resonance import cross_resonance, G_CR_MIN_REAL, G_CR_MAX_REAL  # noqa: E402
 
 P_TH_DEFAULT = 0.01          # 表面码去极化阈值（公认模拟常数）
@@ -79,7 +79,7 @@ def design_qeda_topology(d: int = 3, p_phys: float = 5e-3,
          "detail": (f"p_L(d={d})={sv['p_logical']:.2e}；阈值以下重整化群标度保证"
                     f"有限距离可达 target={target:.0e}（最小 d={sv['min_d_for_target']}）"
                     if sv["p_logical"] is not None else
-                    f"p_phys≥p_th ⇒ 阈值击穿，逻辑错误不随 d 下降（不可达）")},
+                    "p_phys≥p_th ⇒ 阈值击穿，逻辑错误不随 d 下降（不可达）")},
         {"name": "CR 有效耦合在实器件区间",
          "ok": bool(cr.get("in_real_band", False)),
          "detail": (f"|g_CR|={cr.get('abs_g_CR_MHz',0):.3f}MHz ∈ "

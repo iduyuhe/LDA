@@ -242,7 +242,6 @@ def design_splitter_readout(
                                         target=round(f_r, 4),
                                         tol=0.02, role="objective"))
     # 光子分束网络（根输入 power → DC in1 → thru1 左/thru2 右 → 递归 → 叶子接 r_i.in）
-    dc_ir = {dc["id"]: dc for dc in splitters}
 
     def ir_build(lo: int, hi: int, in_net: str) -> None:
         if hi - lo == 1:

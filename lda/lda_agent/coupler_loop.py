@@ -30,7 +30,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 _log = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ from fdtd3d_coupler import (
     solve_port_powers_3d, solve_supermode_projection_3d_torch,
 )
 from oracle_coupler import (
-    coupling_oracle, ybranch_oracle, fdfd_coupler_supermodes,
+    ybranch_oracle, fdfd_coupler_supermodes,
 )
 
 
@@ -208,6 +208,7 @@ class CouplerAgent:
             # torch 自己选 cuda/cpu），torch 缺失才退 numpy（小网格兜底）。
             try:
                 import torch  # 可用性探测：成功→backend="torch"，失败→except→backend="numpy"
+                _ = torch  # 显式引用（探测语义；非死 import，供静态检查识别）
                 backend = "torch"
             except Exception:
                 backend = "numpy"
@@ -352,7 +353,8 @@ class CouplerAgent:
         prop_steps = int(round((z_out[0] - src_um) * neff_avg / dt_f))
         transient_steps = 400 + prop_steps + 5 * period_steps
         if backend == "torch":
-            import torch as _torch
+            import torch as _torch  # 副作用 import：确保 torch 已加载供 fdtd3d_coupler 使用
+            _ = _torch  # 显式引用（副作用语义；非死 import）
             from fdtd3d_coupler import solve_port_powers_3d_torch
             fa, fb, zu, pa, pb, _srcz = solve_port_powers_3d_torch(
                 eps3, meta["dl"], t.wl_um, t.n_clad, t.n_core, mode_in,

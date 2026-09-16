@@ -128,7 +128,9 @@ def _simulate_yb(params: Dict[str, float], tol_rel: float) -> Dict:
         try:
             import torch
             return torch.cuda.is_available()
-        except Exception:
+        except Exception as e:  # noqa: BLE001
+            import logging
+            logging.getLogger(__name__).debug("torch CUDA 探测失败（%r）→ 判定无 CUDA", e)
             return False
 
     if not _cuda_ok():

@@ -198,9 +198,7 @@ def design_multi_objective(
     weighted_imp = float(sum(wt[k] * per_wl[k]["improvement"]
                              for k in range(len(wls))))
     drc = shape_drc(sps[0], best_w)
-    joint_ok = bool(weighted_imp >= 1.5 and drc["ok"]
-                    and all(per_wl[k]["improvement"] >= 1.2
-                            for k in range(len(wls))))
+    # 联合判据（加权≥1.5 ∧ 各波长≥1.2 ∧ DRC）已由下方 checks 三项分别承担，语义等价——不重复计算。
 
     # Pareto 前端扫描（近似：权重网格）
     pareto_points: List[Dict[str, Any]] = []

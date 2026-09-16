@@ -64,8 +64,10 @@ def _ensure_path() -> None:
     try:
         from lda_l2.device_library import _ensure_solver_on_path
         _ensure_solver_on_path()
-    except Exception:
-        pass
+    except Exception as e:  # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).debug(
+            "求解器 PATH 注入失败（%r）；若后续数值验证报 import 错误，根因在此", e)
 
 
 def verify_quantum(kind: str, params: Dict[str, float],

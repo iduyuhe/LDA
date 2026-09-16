@@ -1,7 +1,7 @@
 # LDA 战略审计与功能审计（完整版 · v0.9.78）
 
 > 审计日：2026-09-16 · 基线版本：v0.9.78（2026-09-14 部署 · commit `ae836dc`）
-> 当前生产：v0.9.79（2026-09-16 SSH 部署 · commit `d15cd4c`，内/外网 health 版本串一致）
+> 当前生产：v0.9.79（2026-09-16 SSH 部署 · commit `154c586`，内/外网 health 版本串一致）
 > 方法：所有状态均来自**代码实测 / 测试输出**，不采信文档声明（铁律：文档声明=会腐化的派生数据）。
 > 对照基线：2026-09-14 战略审计报告（v0.9.77）
 
@@ -22,7 +22,7 @@
 | T2 真值链（MPW 回流换锚） | 🟡 诚实降级已做，真值回流未启动 | U4/U5/U6/B21 降 degraded_ordinal；**0 轮 MPW** |
 | 四层系统（L1→L2 鸿沟） | 🟡 立项前红线闸门全过 | MZI 网格矩阵乘 MVP 可演示；L1/L2 高于门槛，L3/L4 Tier-1 自证桩 |
 | 开源 + 社区独立验货护城河 | 🟡 开源已做，标准位未达 | 三端 + Apache-2.0 + DCO；**users=1，0 外部采用** |
-| 功能对齐（验证机械） | ✅ 全绿 | 9 守卫 **103 判据全 PASS**；CORE 173 全绿（子集实跑） |
+| 功能对齐（验证机械） | ✅ 全绿 | 10 守卫 **103 判据全 PASS**；CORE 177 全绿（子集实跑） |
 | 商业试点（阶段 3）准备度 | 🔴 未启动 | 认证版 / PDK 合作 / 垂直场景 / 法务 均未立项 |
 
 **自 2026-09-14（v0.9.77）基线至 B-3 收官**：代码 452→**515** 文件、97.5k→**104.4k** 行；CORE_SMOKES 171→**177**；降级锚 2→**3**（B21 诚实升 `degraded_ordinal`）；自证桩 23→**22**；严格独立 **31→46**（v0.9.79 为 36，B-2 再加 10 道 B42-B51 方法学独立锚），占比 **64.8%**（46/71，目标 70%，差 1 道严格锚）；**B-3 再加 13 道 B52-B64 方法学独立锚 → 59/84=70.2%，正式跨过 70% 红线**；**v0.9.80（2026-09-16 P1-1 B16 重审）：B16 由自证桩升 rib-MMI 全场模态重构严格独立候选 → 60/84=71.4%**；**v0.9.81（2026-09-16 P1-1 B567）：B5（Y 分支分束损耗）/ B6（光栅耦合器效率）由 `design_rule_anchor` 自证桩各接第二独立求解器升方法学独立候选 → 62/84=73.8%**（B7 因离线 golden 不收敛保持自证桩）；**v0.9.82（2026-09-16 P1-1 B7 golden 语义订正）：B7（波导交叉串扰）撤出已证失真的 2D 离线 FDTD golden（`resolve_field_oracle` 返 None、降级为机理诊断量），golden 回设计守则锚 −40 dB（有 E-SOI-CROSS-XT −41±2 dB 实证背书），接线 CMT 超模法候选 → 63/84=75.0%**（残差占 tol 窗口 93%，边缘通过）。
@@ -38,7 +38,7 @@
 - 状态：**✅** 底座做实并持续增厚（515 py / 104.4k LOC）。
 
 ### S2 · 主权红线（A 级永不借 / B 级借今踢后 / C 级自主）
-- 证据：`run_solver_writer_sandbox_smoke.py` 实跑 **5/5 PASS**（强隔离降权 nobody 读 /etc/shadow 被拒 + 网络命名空间禁外网）；`run_optional_import_guard_smoke.py` **16/16 PASS**（全包 457 文件扫描，模块级硬依赖=0）；DEVSIM（Apache-2.0 B 级）fork 冷备 `vendor/devsim_mirror` 锁定 r2.11.0。
+- 证据：`run_solver_writer_sandbox_smoke.py` 实跑 **8/8 PASS**（强隔离降权 nobody 读 /etc/shadow 被拒 + 网络命名空间禁外网 + §4.3 最小 env 剥密钥 + §4.5 unshare 友好异常 + §4.4 无私有访问）；`run_optional_import_guard_smoke.py` **16/16 PASS**（全包 457 文件扫描，模块级硬依赖=0）；DEVSIM（Apache-2.0 B 级）fork 冷备 `vendor/devsim_mirror` 锁定 r2.11.0。
 - 状态：**✅** 守住。零 A 级商业求解器 import。
 
 ### S3 · 验证纪律（LLM 不进判决路径，PASS/FAIL 由死标量定）
@@ -93,7 +93,7 @@
 |---|---|---|
 | P0 计数一致性守卫漂移 | ✅ 已修 + B21 后再同步 | `run_count_consistency_smoke` 11/11；B21 升 degraded 后 ledger 锁 2→3 显式同步 |
 | P1① 自证桩升级 55.4%→70% | 🟢 已达成（B-3） | 严格 63/84=**75.0%**（≥70% 目标；B-3 跨线 + B16 重审 + B567 收官 + B7 语义订正） |
-| P1② `lda_agent` 专项代码评审 | 🔴 未完成 | 全仓最大最复杂 AI 递归自举核心，未专项评审 |
+| P1② `lda_agent` 专项代码评审 | ✅ 已完成（三轮闭合 2026-09-16） | pyflakes 47→0 · 安全纵深 §4.3/4.4/4.5 落地 · 沙箱护栏 ⑤⑥⑦（含反向测试）· 零行为变更（63/3/18 不变）；见 `LDA_lda_agent_code_review_closure_2026-09-16.md` |
 | P1③ 完整 CI core 回归全绿 | ✅ 已完成 | v0.9.77 部署前全量 171 实跑全绿；v0.9.78 仅确定性报告修复，CORE 173 同源 |
 
 ---
@@ -110,7 +110,7 @@
 | `run_benchmark_falsifiability_smoke.py` | **13/13 PASS** | 严格 63 / 降级 3 / 自证 18；84/84 无回归；灵敏度上界≤10% |
 | `run_gc_smoke.py` | **3/3 PASS** | GC 全链路（含 duty=1.0 / Λ=0 反例） |
 | `run_maturity_baseline_smoke.py` | **M1–M5 PASS** | VMM 底线；strict=63 degraded=3 self_certified=18 |
-| `run_ci_coverage_gate_smoke.py` | **6/6 PASS** | 186 smoke 全登记（173 core + 18 豁免），无静默缺口 |
+| `run_ci_coverage_gate_smoke.py` | **6/6 PASS** | 发现 smoke 190 · core 177 · 豁免 18，无静默缺口 |
 | `run_d_criterion_smoke.py` | **10/10 PASS** | 63/63 已接线候选 0 道代数恒等；B28 假独立被抓获 |
 | `run_optional_import_guard_smoke.py` | **16/16 PASS** | 457 文件扫描，torch/numba/cupy 硬依赖=0 |
 | `run_report_determinism_smoke.py` | **10/10 PASS** | 相同输入⇒字节一致；真变更仍可证伪（v0.9.78 关键） |
@@ -130,7 +130,7 @@
 
 1. **反偏模型局限（V<0）**：T1-B 2D 内核反偏非物理，已文档化 + 护栏，但仍是真实能力边界。
 2. **自证桩占比 21.4%（18/84）**：验证地基最大短板已显著缓解。严格独立 75.0%（63/84）已正式达成目标 70%（B-3 跨线 + B16 重审 + B567 收官 + B7 语义订正）。升级路径明确：真候选为 **E1/E3-E7（卡 T2 通道）共 6 道**；B7 已于 v0.9.82 经 golden 语义订正升严格独立（残差占 tol 窗口 93%，边缘通过，彻底闭合需 3D 全波）；B5/B6 已于 v0.9.81 升严格独立；**B17/B18/S1-S6/S9-S12 共 12 道为 terminal Tier-1（定义/算术自检），按设计永不升、非缺口**。已转为「PR 必接独立候选」常态化纪律（见 `P1-1_self_certified_discipline.md`，口径已订正原「B17-B19/S1-S13 方法学独立候选」过时说法）。
-3. **`lda_agent` 未专项评审**：全仓最大未量化风险面，前次 P1② 仍挂起。
+3. **`lda_agent` 专项评审已闭合（2026-09-16 三轮）**：原「全仓最大未量化风险面」已量化并清零——pyflakes 47→0、安全纵深 §4.3/4.4/4.5 落地、沙箱护栏 ⑤⑥⑦（含反向测试）全绿；残余仅 loop 家族结构性重复（非阻塞、已建 MODULE_MAP 标注）。见 `LDA_lda_agent_code_review_closure_2026-09-16.md`。
 4. **T2 真值回流 = 0**：等 foundry/MPW 窗口（杜先生现实 KPI），非技术阻塞。
 5. **四层系统 / L2 计算芯片未启动**：设计递延，符合「先夯实」纪律；对外叙事须诚实区分「底座就绪」与「计算芯片可用」。
 6. **标准位外部采用 = 0**：users=1，护城河差异化尚未被外部采用验证。
@@ -141,7 +141,7 @@
 ## 4. 综合优先行动清单
 
 ### 🔴 P0（立即）
-- **P0-1**：`lda_agent` 专项代码评审（导入健康 / 异常路径 / 死代码 / 覆盖）——前次 P1② 挂起过久，是全仓最大未量化风险面。
+- **P0-1（✅ 已闭合 2026-09-16 三轮）**：`lda_agent` 专项代码评审（导入健康 / 异常路径 / 死代码 / 覆盖）——P0-1 深化版 + 09-14 复评 P2 全部落地：pyflakes 47→0（31 未用 import 删 + 2 torch 探测改显式引用 + 3 typing 未定义名 + 1 前向引用 + 7 未用局部变量 + 3 f-string）；安全纵深 §4.3 最小 env / §4.4 去私有访问 / §4.5 unshare 友好异常；沙箱 guard smoke 五判据→八判据（新增 ⑤⑥⑦，含反向测试）。零行为变更（三分类 63/3/18 不变）。见 `LDA_lda_agent_code_review_closure_2026-09-16.md`。
 - **P0-2（✅ 已落地 v0.9.79）**：任何加 `degraded_ordinal`/严格锚的 PR，必须 `grep degraded_ordinal` + `grep strict_independent` 全仓同步所有硬编码计数护栏（ledger smoke / README 三分类 / three_class / count_consistency）——B21 已显式同步为 3（降级 2→3：E9+E10+B21；自证桩 23→22），固化必查项。实现：新增 `run_p0_count_guard_sync_smoke.py`（动态推导三分类真值后 grep 四处硬编码护栏 ≡ 真值，带反向篡改测试证明会响）注册进 `CORE_SMOKES`（CI core 176→177）；修 ledger smoke docstring 与 CONTRIBUTING 顶部账本块滞后（降级 2→3 / 自证桩 23→22）；CONTRIBUTING 补「P0-2 计数护栏同步纪律（PR 必查）」章节与自查命令；修 count_consistency smoke docstring 题库计数（55→56 / E1-E9→E1-E10）。四处护栏全绿：P0 sync 6/6 · count_consistency 11/11 · three_class 4/4 · ledger 15/15。
 - **部署（2026-09-16 · SSH）**：HEAD 对齐 `d15cd4c`，内/外网 `/api/health` 版本串均 `0.9.79`、`shelf=75`、`is-active=active`，生产已落地 v0.9.79。⚠️ 订正此前「remote_deploy.py 不在本环境、未部署」误记——脚本实存于技能目录 `C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/remote_deploy.py`，前次仅检索路径有误（误以为在仓库 `scripts/` 与技能目录缺失），实际可直接复用，无需手动 SSH 等价流程。
 

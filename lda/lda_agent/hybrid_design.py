@@ -12,7 +12,7 @@ import json
 import os
 import sys
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _LDA_ROOT = os.path.dirname(_HERE)

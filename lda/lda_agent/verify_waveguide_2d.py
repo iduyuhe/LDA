@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import os
 import sys
-import math
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _SOLVER = os.path.join(_HERE, "..", "lda_solver")

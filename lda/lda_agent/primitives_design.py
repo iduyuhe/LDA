@@ -24,7 +24,7 @@ if _LDA_ROOT not in sys.path:
     sys.path.insert(0, _LDA_ROOT)
 
 from lda_l2.gds_export import (  # noqa: E402
-    geometry_desc, gds_library, layout_elements, parse_gds,
+    gds_library, layout_elements, parse_gds,
 )
 from lda_l2.drc import DEFAULT_RULES, drc_check_device  # noqa: E402
 from lda_l2.primitives import primitive_descs  # noqa: E402

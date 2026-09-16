@@ -33,13 +33,11 @@ from __future__ import annotations
 import abc
 import json
 import os
-import subprocess
 import sys
-import tempfile
 import textwrap
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
 from .sandbox import IsolatedExecutor
 
@@ -364,7 +362,7 @@ class BootstrapLoop:
                 print(f"  [iter {it}] {tag}  max_abs_err="
                       f"{verdict['max_abs_err']:.4f}  ({dt:.1f}s)")
                 if not verdict["passed"]:
-                    print(f"          诊断:\n"
+                    print("          诊断:\n"
                           + "\n".join(f"            {l}"
                                       for l in verdict["diagnostics"].splitlines()))
             if verdict["passed"]:

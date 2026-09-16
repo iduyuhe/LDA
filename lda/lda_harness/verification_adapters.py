@@ -2450,3 +2450,98 @@ def _b16_rib_mmi_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
     m = _get_batch_b16()
     return float(m.rib_mmi_selfimaging_length(
         float(p["W_e"]), float(p["n_eff"]), float(p["wl"])))
+
+
+# ---------------------------------------------------------------------------
+# 1b3. Batch B5/B6 独立候选（v0.9.81 · P1-1 B567 · 原 design_rule_anchor 升严格）
+# ---------------------------------------------------------------------------
+# 与既有候选同纪律：候选须走与 golden **方法学不同源**的求解路径。
+#   B5 golden = 唯象拟合 3.0+0.4(θ/10)²（几何无关，`resolve_field_oracle` 的
+#      `_ybranch_overlap` 离线估计）
+#   B6 golden = 设计守则常数 0.5（`_b6_oracle` 无 Tidy3D key ⇒ 回退设计守则锚）
+# 两候选均为首原理求解，不读 golden、不套任何拟合/成像因子。
+_BATCH_B567_MOD = None
+
+
+def _get_batch_b567():
+    """双路兜底导入 B5/B6 求解核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B567_MOD
+    if _BATCH_B567_MOD is not None:
+        return _BATCH_B567_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b567_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b567_numeric as _m
+    _BATCH_B567_MOD = _m
+    return _m
+
+
+@_register_candidate(
+    "ybranch_eme",
+    "Y 分支双芯超模 EME：EIM 垂向降维 + 锥区逐片解**完整横向 Helmholtz 本征问题**"
+    "（无旁轴假设）+ 模式重叠矩阵级联 ⇒ 末片导模功率和 T，分束损耗 = 3.0103 "
+    "− 10log10(T)。与 golden 的唯象拟合式方法学不同源，不套任何成像/拟合因子")
+def _b5_ybranch_eme_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B5 独立候选：Y 分支 1×2 分束插入损耗（双芯超模 EME 全场传播）。
+
+    golden = `oracle_field._ybranch_overlap` 唯象离线估计 3.0 + 0.4·(θ/10)²（3.4 dB）
+    cand   = 见 `_batch_b567_numeric.ybranch_split_loss_dB`：
+             ① EIM 把垂向结构降维成横向问题芯折射率；
+             ② 锥区按 z 切片，每片解完整横向 Helmholtz 本征问题；
+             ③ 输入基模片内精确模态传播 + 片间重叠矩阵投影；
+             ④ 末片导模功率和 T ⇒ 分束损耗 = 3.0103 − 10·log10(T)。
+
+    **方法学独立性**：候选全程不知道 golden 是多少，也不调用任何拟合式；
+    它只解亥姆霍兹方程。golden 的 0.4·(θ/10)² 是唯象拟合（二次），候选的
+    excess（0.008–0.061 dB, θ∈[5°,20°]）是从 Maxwell 方程算出的实测缺口 —
+    两者的 θ 依赖**形状完全不同**（拟合二次 vs 严格近线性小量）。
+
+    ⚠️ 诚实边界：本锚 tol=1.0 dB **远宽于**候选的参数响应幅度（±10% 扰动仅
+    ~0.005 dB，因锥长随 θ 自相似、T 近乎不变）⇒ 本锚**无参数判别力**（与 B8
+    同型），只回答「是否接近理想均分下限」，不回答精度。故**不进 PERTURB_SPEC**
+    （逐参数扰动打不穿 tol，非缺陷而是几何本身性质）。
+    """
+    p = spec.params
+    m = _get_batch_b567()
+    return float(m.ybranch_split_loss_dB(
+        float(p["w_core"]), float(p["h_core"]), float(p["n_si"]),
+        float(p["n_clad"]), float(p["wl"]), float(p["theta_deg"])))
+
+
+@_register_candidate(
+    "grating_fp",
+    "光栅耦合器峰值效率首原理分解：η_dir(上下包层对称 ⇒ 一阶衍射上/下功率相等 = 1/2)"
+    " × η_ov(光栅指数辐射场 ⊗ 单模光纤高斯模 MFD=10.4µm 的模场重叠，对 α 取设计最优)"
+    " × F(ff)=sin(π·ff)（方波一阶傅里叶强度） × M=exp(−(Δβ·L_g/2)²)（光栅方程相位匹配）。"
+    "与 golden 的设计守则常数 0.5 方法学不同源，也不引用 E8 的引擎模型")
+def _b6_grating_fp_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B6 独立候选：光栅耦合器峰值耦合效率（首原理四因子分解）。
+
+    golden = 设计守则锚常数 0.5（`_b6_oracle` 需 Tidy3D key，缺失 ⇒ 回退）
+    cand   = `_batch_b567_numeric.grating_coupler_eff`：
+             η = η_dir · η_ov · F(ff) · M
+             · η_dir = 1/2 —— 无底部反射镜、上下包层对称 ⇒ 一阶衍射向上/向下
+               功率相等（**由对称性推出**，非经验常数）；
+             · η_ov = 0.7846 —— 均匀光栅辐射场（振幅 ∝ exp(−αz/2)）与高斯光纤模
+               （w0=5.2µm）的归一化模场重叠，对 α 取设计最优（「峰值」语义）；
+             · F(ff) = sin(π·ff) —— 方波光栅介电常数一阶傅里叶强度（ff=0.5 → 1）；
+             · M = exp(−(Δβ·L_g/2)²) —— 光栅方程相位匹配因子（L_g=20 周期）。
+
+    **方法学独立性**：候选不引用 0.5，也不引用 E8 的 `0.5·sin²(πff)·exp(−θ²/2σ²)`
+    （后者含 σ=15° 唯象倾斜散布参数）。本候选的每一因子都是几何/材料参数的
+    闭式或数值积分，无待标定系数。
+
+    ⚠️ 诚实边界（写进 note）：
+      1. η_dir=1/2 假设**无底部反射镜且上下包层对称**；真实 SOI 有 Si 衬底反射
+         （方向性可 >1/2），但 spec 未给 BOX 厚度 ⇒ 无法建模，取保守对称值。
+      2. 光纤模场取标准 SMF-28（MFD=10.4µm）；spec 未给光纤参数。
+      3. 残差 |0.3909−0.5| = 0.109 < tol 0.15：**物理含义明确** —— 设计守则 0.5
+         是「η_ov→1 的理想模场匹配」上限（= 无镜面光栅的理论天花板），
+         本候选给出真实均匀光栅（η_ov=0.785）的可达值 ⇒ 设计守则偏乐观 22%。
+    """
+    p = spec.params
+    m = _get_batch_b567()
+    return float(m.grating_coupler_eff(
+        float(p["wl"]), float(p["n_si"]), float(p["n_clad"]),
+        float(p["period"]), float(p["ff"]), float(p["theta_deg"])))

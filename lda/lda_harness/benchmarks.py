@@ -182,7 +182,10 @@ BENCHMARK_DEFS = {
         "default_params": {"w_core": 0.5, "h_core": 0.22, "n_si": 3.48,
                            "n_clad": 1.44, "wl": 1.55, "theta_deg": 10.0},
         "golden_fn": b5_ybranch_split_loss_dB,
-        "note": "黄金=理想 50/50 下限 3.0 dB（设计守则锚）；精确真值待 Meep/Tidy3D 场级 ORACLE。"
+        "candidate": "ybranch_eme",
+        "candidate_desc": ("Y 分支双芯超模 EME（EIM 降维 + 逐片完整 Helmholtz 本征解 "
+                           "+ 模式重叠矩阵级联）—— 与 golden 唯象拟合式方法学不同源"),
+        "note": "黄金=离线场级重叠估计（numpy-overlap-offline，默认 theta=10° 得 3.4 dB；设计守则下限 3.0 dB）；精确真值待 Meep/Tidy3D 场级 ORACLE。"
                 "D-66 澄清：本锚的 split_loss_dB **含 3.01dB 理想分光**（1×2 均分的几何必然），"
                 "与实证锚 E-YBRANCH-LOSS 的「过量损耗 excess_loss_dB=0.28±0.02dB」**非同一量**，"
                 "二者互补（本锚=下界，实证锚=实测过量），不可互相替代或相加混用。",
@@ -195,7 +198,11 @@ BENCHMARK_DEFS = {
         "default_params": {"wl": 1.55, "n_si": 3.48, "n_clad": 1.44,
                            "period": 0.63, "ff": 0.5, "theta_deg": 8.0},
         "golden_fn": b6_grating_coupling_eff,
-        "note": "黄金=成熟工艺可达效率 0.5(≈-3dB)（设计守则锚）；精确真值待 Tidy3D 场级 ORACLE。",
+        "candidate": "grating_fp",
+        "candidate_desc": ("光栅峰值效率首原理四因子分解 η_dir(辐射对称=1/2) × "
+                           "η_ov(高斯⊗指数模场重叠 0.785) × F(ff)=sin(π·ff) × "
+                           "M(光栅方程相位匹配) —— 与常数 golden / E8 引擎模型均不同源"),
+        "note": "黄金=成熟工艺可达效率 0.5(≈-3dB)（**design-anchor 回退值**：Tidy3D key 缺失时实际返回值）；精确真值待 Tidy3D 场级 ORACLE。",
     },
     "B7": {
         "title": "波导交叉串扰",
@@ -205,7 +212,7 @@ BENCHMARK_DEFS = {
         "default_params": {"w_core": 0.5, "h_core": 0.22, "n_si": 3.48,
                            "n_clad": 1.44, "wl": 1.55, "gap": 0.2},
         "golden_fn": b7_crossing_crosstalk_dB,
-        "note": "黄金=成熟交叉典型串扰 -40 dB（设计守则锚）；精确真值待 Meep 场级 ORACLE。",
+        "note": "黄金=离线 2D FDTD 估计（numpy-fdtd-offline，默认参数 -19.73 dB；设计守则上限 -40 dB）。🔴 该离线 golden 经四路收敛诊断确认**不可用**（sponge 吸收弱约 100× ⇒ 场未稳态；且 2D「cross 口」单点 Σ|E|² 度量的是交叉区近场辐射而非垂直波导导模功率 ⇒ 度量不良定义），故本锚**诚实保持 design_rule_anchor、不接独立候选**（独立 CMT/超模法给 -35.4 dB，两法分歧本身即证 golden 不可用）；证据链见 `lda_harness/_batch_b567_numeric.crossing_crosstalk_dB` docstring。",
     },
     "B9": {
         "title": "超导 transmon 跃迁频率 f01",
@@ -1834,10 +1841,24 @@ _VMM_OVERRIDES = {
     # id: (provenance, upgrade_path)
     "B2":  ("independent_cross_check",
             "🔒 终审锁定升 Tier-3 严格独立（2026-09-10 多智能体终审）：FV-FDM 全矢量（纯物理选模 2.644，Δ=0.0069）+ PWE 平面波展开（2.614，Δ=0.0369）两个方法学独立全波数值均在 tol=0.05 内复现 EIM golden 2.6509，golden 居二者之间，判据 C5 成立。推翻早间『半矢量 FDM=2.53 证伪』误判（该实现索引 bug，已废弃）。详见 _VMM_FINAL_VERDICT['B2']。勿反复审议。"),
-    "B5":  ("design_rule_anchor",
-            "行业设计规则锚（几何无关下限：理想 50/50 分光 3.0dB，源自硅光几十年论文与流片经验共识，非自写）；精确几何相关真值待 Meep/Tidy3D 场级 ORACLE 动态升格（B 级借今踢后）；已有回退下限护栏（D-66 澄清：含 3.01dB 理想分光，与实证锚 E-YBRANCH-LOSS 过量损耗非同一量）"),
-    "B6":  ("design_rule_anchor",
-            "行业设计规则锚（几何无关下限：0.5 成熟工艺可达效率≈-3dB，源自硅光光栅耦合器论文与流片经验）；精确真值待 Tidy3D 场级 ORACLE 动态升格（B 级借今踢后）；已有回退下限护栏"),
+    "B5":  ("independent_cross_check",
+            "🔒 v0.9.81 升 Tier-3 严格独立（P1-1 B567）：候选 `ybranch_eme` 双芯超模 EME"
+            "（EIM 降维 + 锥区逐片解完整横向 Helmholtz 本征问题 + 模式重叠矩阵级联），"
+            "末片导模功率和 T ⇒ 分束损耗 = 3.0103 − 10log10(T)；实测 3.0321 dB vs golden "
+            "3.4（|diff|=0.368 < tol 1.0），残差 = golden 唯象拟合式 0.4·(θ/10)² 的固有"
+            "粗糙度（严格 EME 给出 excess 仅 0.008–0.061 dB，θ 5–20°，θ 依赖形状与拟合式"
+            "完全不同源）。⚠️ tol=1.0 远宽于候选参数响应幅度（±10% 仅 ~0.005 dB）⇒ 本锚"
+            "**无参数判别力**（同 B8 型），只回答「是否接近理想均分下限」，故不进 "
+            "PERTURB_SPEC。（原 design_rule_anchor 升级路径已打通）"),
+    "B6":  ("independent_cross_check",
+            "🔒 v0.9.81 升 Tier-3 严格独立（P1-1 B567）：候选 `grating_fp` 首原理四因子"
+            "分解 η = η_dir·η_ov·F(ff)·M ——η_dir=1/2（上下包层对称 ⇒ 一阶衍射上/下功率"
+            "相等，由对称性推出）、η_ov=0.7846（指数辐射场⊗高斯光纤模 MFD=10.4µm 的"
+            "归一化模场重叠，对 α 取设计最优）、F=sin(π·ff)（方波一阶傅里叶强度）、"
+            "M=exp(−(Δβ·L_g/2)²)（光栅方程相位匹配，L_g=20 周期）。实测 0.3909 vs golden "
+            "0.5（|diff|=0.109 < tol 0.15）：残差=设计守则把 η_ov 理想化为 1 的乐观偏差"
+            "（无镜面光栅理论天花板）；不引用 E8 的 σ=15° 唯象倾斜散布系数。"
+            "（原 design_rule_anchor 升级路径已打通）"),
     "B7":  ("design_rule_anchor",
             "行业设计规则锚（几何无关上限：-40dB 典型交叉串扰，源自硅光交叉器件论文与流片经验）；精确真值待 Meep 场级 ORACLE 动态升格（B 级借今踢后）；已有回退下限护栏"),
     "B11": ("independent_cross_check",

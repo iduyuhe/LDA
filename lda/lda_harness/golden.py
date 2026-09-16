@@ -76,6 +76,12 @@ from ._batch_b5_numeric import (  # noqa: E402  # Batch B-5 双方法独立锚�
     golden_b95, golden_b96, golden_b97, golden_b98, golden_b99, golden_b100,
     golden_b101, golden_b102, golden_b103, golden_b104,
 )
+from ._batch_b6_numeric import (  # noqa: E402  # Batch B-6 双方法独立锚数值核（路径 B 扩基续五 · 刚性转子/2D 方势阱/三角势阱/球形势阱族 · v0.9.86 · 稀释 terminal）
+    golden_b105, golden_b106, golden_b107, golden_b108, golden_b109, golden_b110,
+    golden_b111, golden_b112, golden_b113, golden_b114,
+    golden_b115, golden_b116, golden_b117,
+    golden_b118, golden_b119, golden_b120,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -715,7 +721,12 @@ _GOLDEN_DISPATCH = {
     "B89": golden_b89, "B90": golden_b90, "B91": golden_b91, "B92": golden_b92,
     "B93": golden_b93, "B94": golden_b94, "B95": golden_b95, "B96": golden_b96,
     "B97": golden_b97, "B98": golden_b98, "B99": golden_b99, "B100": golden_b100,
-    "B101": golden_b101, "B102": golden_b102, "B103": golden_b103, "B104": golden_b104,
+    "B101": golden_b101, "B102": golden_b102, "B103": golden_b103, "B104": golden_b104,  # Batch B-5（v0.9.85）
+    "B105": golden_b105, "B106": golden_b106, "B107": golden_b107, "B108": golden_b108,
+    "B109": golden_b109, "B110": golden_b110,
+    "B111": golden_b111, "B112": golden_b112, "B113": golden_b113, "B114": golden_b114,
+    "B115": golden_b115, "B116": golden_b116, "B117": golden_b117,
+    "B118": golden_b118, "B119": golden_b119, "B120": golden_b120,  # Batch B-6（v0.9.86 · 稀释 terminal）
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -744,7 +755,10 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B75", "B76", "B77", "B78", "B79", "B80", "B81", "B82",
                  "B83", "B84", "B85", "B86", "B87", "B88",  # Batch B-4 双方法独立锚（解析闭式 golden × 切片转移矩阵候选 · v0.9.84）
                  "B89", "B90", "B91", "B92", "B93", "B94", "B95", "B96",
-                 "B97", "B98", "B99", "B100", "B101", "B102", "B103", "B104",  # Batch B-5 双方法独立锚（闭式 golden × 径向 FD/圆波导/矩形波导数值候选 · v0.9.85）
+                 "B97", "B98", "B99", "B100", "B101", "B102", "B103", "B104",  # Batch B-5（v0.9.85）
+                 "B105", "B106", "B107", "B108", "B109", "B110",
+                 "B111", "B112", "B113", "B114", "B115", "B116", "B117",
+                 "B118", "B119", "B120",  # Batch B-6（v0.9.86 · 稀释 terminal · 闭式 golden × FD 候选）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

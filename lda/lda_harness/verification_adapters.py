@@ -2173,6 +2173,7 @@ def _get_batch_b2():
 _BATCH_B3_MOD = None
 _BATCH_B4_MOD = None
 _BATCH_B5_MOD = None
+_BATCH_B6_MOD = None
 
 
 def _get_batch_b3():
@@ -2644,6 +2645,20 @@ def _get_batch_b5():
     return _m
 
 
+def _get_batch_b6():
+    """双路兜底导入 Batch B-6 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B6_MOD
+    if _BATCH_B6_MOD is not None:
+        return _BATCH_B6_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b6_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b6_numeric as _m
+    _BATCH_B6_MOD = _m
+    return _m
+
+
 @_register_candidate(
     "b89_hydrogen_1s_cand",
     "氢原子径向 FD 薛定谔本征第 0 径向态（Dirichlet 盒 1D 径向 ODE 数值积分）↔ 解析闭式 E_n=-RYDBERG·Z²/n²，方法学独立")
@@ -2786,6 +2801,155 @@ def _b104_rect_wg_TE13(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b5()
     return float(m.cand_rect(1, 3, float(p["a"]), float(p["b"])))
+
+
+# ---------------------------------------------------------------------------
+# Batch B-6（路径 B 扩基续五 · v0.9.86 · 稀释 terminal）：刚性转子/2D 方势阱/三角势阱/球形势阱
+#   每道锚 = 确定性解析闭式 golden × 方法学不同源 FD 数值候选；候选由关联 Legendre/2D 拉普拉斯/
+#   1D 斜坡势/3D 径向 FD 本征导出，残差 = 离散化误差（判据 D 响应）。
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "b105_rotor_J1_cand",
+    "刚性转子能级由关联 Legendre 方程 FD 本征导出 ↔ 解析闭式 E_J=ℏ²J(J+1)/(2I)，方法学独立")
+def _b105_rotor_J1(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_rotor(1, float(p["mom_47"])))
+
+
+@_register_candidate(
+    "b106_rotor_J2_cand",
+    "刚性转子能级由关联 Legendre 方程 FD 本征导出 ↔ 解析闭式 E_J=ℏ²J(J+1)/(2I)，方法学独立")
+def _b106_rotor_J2(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_rotor(2, float(p["mom_47"])))
+
+
+@_register_candidate(
+    "b107_rotor_J3_cand",
+    "刚性转子能级由关联 Legendre 方程 FD 本征导出 ↔ 解析闭式 E_J=ℏ²J(J+1)/(2I)，方法学独立")
+def _b107_rotor_J3(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_rotor(3, float(p["mom_47"])))
+
+
+@_register_candidate(
+    "b108_rotor_J4_cand",
+    "刚性转子能级由关联 Legendre 方程 FD 本征导出 ↔ 解析闭式 E_J=ℏ²J(J+1)/(2I)，方法学独立")
+def _b108_rotor_J4(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_rotor(4, float(p["mom_47"])))
+
+
+@_register_candidate(
+    "b109_rotor_J5_cand",
+    "刚性转子能级由关联 Legendre 方程 FD 本征导出 ↔ 解析闭式 E_J=ℏ²J(J+1)/(2I)，方法学独立")
+def _b109_rotor_J5(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_rotor(5, float(p["mom_47"])))
+
+
+@_register_candidate(
+    "b110_rotor_J6_cand",
+    "刚性转子能级由关联 Legendre 方程 FD 本征导出 ↔ 解析闭式 E_J=ℏ²J(J+1)/(2I)，方法学独立")
+def _b110_rotor_J6(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_rotor(6, float(p["mom_47"])))
+
+
+@_register_candidate(
+    "b111_box2d_11_cand",
+    "2D 无限方势阱能级由 2D FD 拉普拉斯本征（Kronecker 和分解）导出 ↔ 解析闭式 E=(π²ℏ²/2m)(n_x²/L_x²+n_y²/L_y²)，方法学独立")
+def _b111_box2d_11(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_box2d(1, 1, float(p["Lx_nm"]), float(p["Ly_nm"])))
+
+
+@_register_candidate(
+    "b112_box2d_21_cand",
+    "2D 无限方势阱能级由 2D FD 拉普拉斯本征导出 ↔ 解析闭式 E=(π²ℏ²/2m)(n_x²/L_x²+n_y²/L_y²)，方法学独立")
+def _b112_box2d_21(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_box2d(2, 1, float(p["Lx_nm"]), float(p["Ly_nm"])))
+
+
+@_register_candidate(
+    "b113_box2d_12_cand",
+    "2D 无限方势阱能级由 2D FD 拉普拉斯本征导出 ↔ 解析闭式 E=(π²ℏ²/2m)(n_x²/L_x²+n_y²/L_y²)，方法学独立")
+def _b113_box2d_12(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_box2d(1, 2, float(p["Lx_nm"]), float(p["Ly_nm"])))
+
+
+@_register_candidate(
+    "b114_box2d_22_cand",
+    "2D 无限方势阱能级由 2D FD 拉普拉斯本征导出 ↔ 解析闭式 E=(π²ℏ²/2m)(n_x²/L_x²+n_y²/L_y²)，方法学独立")
+def _b114_box2d_22(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_box2d(2, 2, float(p["Lx_nm"]), float(p["Ly_nm"])))
+
+
+@_register_candidate(
+    "b115_triangular_n1_cand",
+    "量子三角势阱能级由 1D 斜坡势 FD 薛定谔本征导出 ↔ Airy 零点闭式 E_n=(ℏ²(eF)²/2m_e)^{1/3}·ζ_n，方法学独立")
+def _b115_triangular_n1(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_triangular(1, float(p["F_7"])))
+
+
+@_register_candidate(
+    "b116_triangular_n2_cand",
+    "量子三角势阱能级由 1D 斜坡势 FD 薛定谔本征导出 ↔ Airy 零点闭式 E_n=(ℏ²(eF)²/2m_e)^{1/3}·ζ_n，方法学独立")
+def _b116_triangular_n2(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_triangular(2, float(p["F_7"])))
+
+
+@_register_candidate(
+    "b117_triangular_n3_cand",
+    "量子三角势阱能级由 1D 斜坡势 FD 薛定谔本征导出 ↔ Airy 零点闭式 E_n=(ℏ²(eF)²/2m_e)^{1/3}·ζ_n，方法学独立")
+def _b117_triangular_n3(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_triangular(3, float(p["F_7"])))
+
+
+@_register_candidate(
+    "b118_spherical_l0n1_cand",
+    "三维无限球形势阱能级由 3D 径向 FD 薛定谔本征导出 ↔ 球 Bessel 零点闭式 E_nl=x_nl²ℏ²/(2mR²)，方法学独立")
+def _b118_spherical_l0n1(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_spherical(0, 1, float(p["R_nm"])))
+
+
+@_register_candidate(
+    "b119_spherical_l1n1_cand",
+    "三维无限球形势阱能级由 3D 径向 FD 薛定谔本征（l=1 离心项）导出 ↔ 球 Bessel 零点闭式，方法学独立")
+def _b119_spherical_l1n1(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_spherical(1, 1, float(p["R_nm"])))
+
+
+@_register_candidate(
+    "b120_spherical_l2n1_cand",
+    "三维无限球形势阱能级由 3D 径向 FD 薛定谔本征（l=2 离心项）导出 ↔ 球 Bessel 零点闭式，方法学独立")
+def _b120_spherical_l2n1(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b6()
+    return float(m.cand_spherical(2, 1, float(p["R_nm"])))
 
 
 # ---------------------------------------------------------------------------

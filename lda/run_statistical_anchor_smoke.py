@@ -8,7 +8,7 @@
      agent/llm 模块；harness S7 的 oracle_kind 为确定性统计量）
   ⑤ S7 harness reference PASS（golden 自洽）
   ⑥ 扰动负例：损耗整体 +1dB → 分布下移 → candidate 偏离 golden > tol 被 FAIL 抓
-  ⑦ 题库计数 106 题（B1-B88 = 83 + E1-E10 = 10 + S1-S13 = 13）
+  ⑦ 题库计数 138 题（B1-B120 = 115 + E1-E10 = 10 + S1-S13 = 13）
   ⑧ S8 OSNR 统计锚（模板复用：Jensen 方向 + golden 收敛）
   ⑨ 蒙特卡洛收敛性（N 扫描收敛带）
 
@@ -112,7 +112,9 @@ def main() -> int:
     #    v0.9.79 路径 B 扩基新增 B34/B36/B37/B40/B41（末位跳至 B41，B35 复用、
     #    B38/B39 预留缺口）→ 总数 61；v0.9.84 路径 B-4 扩基新增 B65-B68/B70-B71/
     #    B73-B88（缺口 B69 相移/B72 线宽预留）→ 总数 83；v0.9.85 路径 B-5 扩基新增
-    #    B89-B104（氢原子径向/3D-HO/圆波导/矩形波导族）→ 总数 99，此守卫须精确跟账本）
+    #    B89-B104（氢原子径向/3D-HO/圆波导/矩形波导族）→ 总数 99；v0.9.86 路径 B-6 扩基
+    #    新增 B105-B120（刚性转子/2D 方势阱/三角势阱/球形势阱族，稀释 terminal）→ 总数 115，
+    #    此守卫须精确跟账本）
     b_ids = [b for b in BENCHMARK_ORDER if b.startswith("B")]
     e_ids = [b for b in BENCHMARK_ORDER if b.startswith("E")]
     s_ids = [b for b in BENCHMARK_ORDER if b.startswith("S")]
@@ -123,8 +125,9 @@ def main() -> int:
                   + [f"B{i}" for i in range(65, 69)]        # B65-B68 = Batch B-4 四锚
                   + ["B70", "B71"]                          # 缺口 B69 相移预留
                   + [f"B{i}" for i in range(73, 89)]        # B73-B88 = Batch B-4 十六锚（缺口 B72 线宽预留）
-                  + [f"B{i}" for i in range(89, 105)])       # B89-B104 = Batch B-5 十六锚（氢原子径向/3D-HO/圆波导/矩形波导）
-    check("题库（B1-B104 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + E1-E10 + S1-S13 动态计数）",
+                  + [f"B{i}" for i in range(89, 105)]       # B89-B104 = Batch B-5 十六锚（氢原子径向/3D-HO/圆波导/矩形波导）
+                  + [f"B{i}" for i in range(105, 121)])     # B105-B120 = Batch B-6 十六锚（刚性转子/2D 方势阱/三角势阱/球形势阱）
+    check("题库（B1-B120 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + E1-E10 + S1-S13 动态计数）",
           b_ids == expected_b
           and s_ids == [f"S{i}" for i in range(1, 14)]
           and e_ids == [f"E{i}" for i in range(1, len(e_ids) + 1)],

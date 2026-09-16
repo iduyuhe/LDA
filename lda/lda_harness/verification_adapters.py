@@ -2545,3 +2545,46 @@ def _b6_grating_fp_candidate(spec: VerificationSpec, oracle_value: Any) -> float
     return float(m.grating_coupler_eff(
         float(p["wl"]), float(p["n_si"]), float(p["n_clad"]),
         float(p["period"]), float(p["ff"]), float(p["theta_deg"])))
+
+# ---------------------------------------------------------------------------
+# 1b4. Batch B7 独立候选（v0.9.82 · P1-1 B7 golden 修复 · 原 design_rule_anchor）
+# ---------------------------------------------------------------------------
+# B7 golden = 设计守则锚 −40 dB（独立实证背书：E-SOI-CROSS-XT 同几何实测
+#   −41±2 dB）。原先覆盖 golden 的离线 2D FDTD 已撤出调度（模型-器件不匹配，
+#   见 `oracle_field._fdtd2d_crossing` 与 `P1-1_B7_golden_fix_report.md`）。
+# 本候选走与场级 FDTD 完全不同的路径：解双芯横向剖面的 Helmholtz 本征问题，
+#   取 even/odd 超模折射率差作拍频，不读 golden、不套任何拟合/标定系数。
+@_register_candidate(
+    "crossing_cmt",
+    "波导交叉串扰双芯超模/CMT 本征解：gap 相隔双芯横向剖面 Helmholtz 本征解 "
+    "→ even/odd 超模有效折射率 n_e/n_o → 拍频 κ=π|n_e−n_o|/λ → 串扰 "
+    "sin²(κ·L_eff)（L_eff=芯宽）。与 golden 的设计守则锚、以及已撤出的 2D "
+    "FDTD 均方法学不同源")
+def _b7_crossing_cmt_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B7 独立候选：波导交叉串扰（双波导超模 / CMT）。
+
+    golden = 设计守则锚 −40 dB（`B7_DESIGN_ANCHOR`；离线 2D FDTD 已于 v0.9.82
+             撤出 golden 调度、降级为机理诊断量）
+    cand   = `_batch_b567_numeric.crossing_crosstalk_dB`：
+             κ = π·|n_even − n_odd|/λ，串扰 = 10·log10(sin²(κ·L_eff))，
+             其中 n_even/n_odd 由双芯横向折射率剖面的**完整 Helmholtz 本征解**
+             严格给出（`eigh_tridiagonal`），L_eff = 芯宽（交叉耦合段量级估计）。
+
+    **方法学独立性**：候选不引用 −40，也不调用 FDTD；它只解本征值问题。
+    参数响应单调且物理正确：gap 0.1/0.2/0.3 µm → −24.96/−35.36/−45.72 dB；
+    w_core 0.4/0.5/0.6 µm → −32.59/−35.36/−37.75 dB。
+
+    ⚠️ 诚实边界（同时写进 `benchmarks.BENCHMARK_DEFS["B7"]["note"]`）：
+      1. |−35.36 − (−40)| = 4.64 dB 占 tol 5.0 窗口的 **93%** —— **边缘通过**；
+      2. L_eff = 芯宽 是交叉耦合段的量级估计，非严格场解；
+      3. `gap` 对 90° 十字的几何语义在原锚中未定义，本模型按「两臂间距」解释，
+         gap 响应仅供趋势参考（故本锚**进 PERTURB_SPEC 的不包含 gap 语义断言**）；
+      4. 与锚定器件实测 −41±2 dB 的彻底对齐需 **3D 全波 + 真实 taper 版图**
+         （T2 级缺口，同 E4/E7）。
+    """
+    p = spec.params
+    m = _get_batch_b567()
+    return float(m.crossing_crosstalk_dB(
+        float(p["w_core"]), float(p["gap"]), float(p["wl"]),
+        float(p["n_si"]), float(p["n_clad"])))
+

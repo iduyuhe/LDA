@@ -3,7 +3,7 @@
 > 配套模型：`docs/verification_maturity_model.md`
 > 数据来源：本文件由 `lda/lda_harness/benchmarks.py` 的 `maturity_tier` / `provenance` / `upgrade_path` 三字段直接导出（2026-09-10 实测），非记忆推断。
 > 三分类口径（C2 护栏守护）：严格独立 26 · 降级 1 · 自证桩 25（和 = 52）。
-> ⚠️ **本表为 2026-09-10 快照（52 锚口径已过时）**：当前口径为 84 锚 / 严格独立 62 / 降级 3 / 自证桩 19（权威见 `P1-1_self_certified_discipline.md` 与 README 当前账本）。保留本表作分层方法学追溯，**计数勿引用**。
+> ⚠️ **本表为 2026-09-10 快照（52 锚口径已过时）**：当前口径为 84 锚 / 严格独立 63 / 降级 3 / 自证桩 18（权威见 `P1-1_self_certified_discipline.md` 与 README 当前账本）。保留本表作分层方法学追溯，**计数勿引用**。
 
 ## 一、为什么这张表存在
 

@@ -13,7 +13,7 @@
   "候选 vs 黄金(物理定律) 比对 + 容差判定"，是人验收的质量门。
 
   ⚠️ D-64（2026-09-01）判决路径独立性：因为 ReferenceCandidate 直接返回
-  黄金值，|候选−黄金|≡0 ⇒ **恒 PASS、零验证价值**。本报告默认模式的「48/48
+  黄金值，|候选−黄金|≡0 ⇒ **恒 PASS、零验证价值**。本报告默认模式的「N/N
   通过」只证明**判决回路闭合**（黄金取值→比对→容差判定→报告），**不证明
   任何一项已被验证**。报告正文已加醒目警告并在 JSON 里给出
   `summary.self_consistent=true / summary.verified=0`；断言见本文件末尾
@@ -178,7 +178,7 @@ def main():
             f"标为自证桩却 |diff|≠0（分类表与实现脱节）：{sorted(_mislabeled_stub)}"
             "——该道实际已跑真求解器，却被算进自证桩，verified 会被少算")
     if not args.ai and args.perturb <= 0:
-        # 判决回路必须闭合（48/48），但**不得**被读成「48 项已验证」
+        # 判决回路必须闭合（N/N），但**不得**被读成「N 项已验证」
         assert n_pass == len(results), (
             f"判决回路应全部 PASS，实际 {n_pass}/{len(results)}")
     assert rep.is_self_consistent(meta) is self_consistent, (

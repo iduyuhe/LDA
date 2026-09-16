@@ -459,8 +459,16 @@ def b6_grating_coupling_eff(wl, n_si, n_clad, period, ff, theta_deg):
 def b7_crossing_crosstalk_dB(w_core, h_core, n_si, n_clad, wl, gap):
     """波导交叉串扰(dB)。
 
-    优先取场级 ORACLE（Meep 子进程 → numpy 2D-FDTD 离线真场计算）；缺失时
-    回退设计守则锚 B7_DESIGN_ANCHOR=-40 dB（典型上限）。
+    优先取场级 ORACLE（Meep 子进程真场级）；缺失时回退设计守则锚
+    B7_DESIGN_ANCHOR=-40 dB —— 该守则锚**有独立实证背书**：语料
+    E-SOI-CROSS-XT（同几何 500×220 SOI 交叉）实测 −41±2 dB，
+    Zhang 2013 IEEE PTL 25(13):1225，DOI 10.1109/LPT.2013.2241049。
+
+    ⚠️ v0.9.82：原「numpy 2D-FDTD 离线」通道已**撤出 golden 调度** ——
+    该 2D 降维（裸十字）与其锚定器件（taper 优化交叉）相差 20~30 dB，
+    作 golden 会把「模型-器件不匹配」伪装成锚真值；修复后的 2D 核保留为
+    **机理诊断量**（`oracle_field._fdtd2d_crossing`）。故 CI 路径下本函数
+    恒定返回守则锚 −40 dB。详见 `P1-1_B7_golden_fix_report.md`。
     """
     params = dict(w_core=w_core, h_core=h_core, n_si=n_si, n_clad=n_clad,
                   wl=wl, gap=gap)

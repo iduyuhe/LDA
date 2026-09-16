@@ -207,12 +207,27 @@ BENCHMARK_DEFS = {
     "B7": {
         "title": "波导交叉串扰",
         "metric": "crosstalk_dB",
-        "oracle": "design-rule(Meep field 预留)",
+        "oracle": "design-rule(+Meep field 预留)",
         "tol": 5.0,
         "default_params": {"w_core": 0.5, "h_core": 0.22, "n_si": 3.48,
                            "n_clad": 1.44, "wl": 1.55, "gap": 0.2},
         "golden_fn": b7_crossing_crosstalk_dB,
-        "note": "黄金=离线 2D FDTD 估计（numpy-fdtd-offline，默认参数 -19.73 dB；设计守则上限 -40 dB）。🔴 该离线 golden 经四路收敛诊断确认**不可用**（sponge 吸收弱约 100× ⇒ 场未稳态；且 2D「cross 口」单点 Σ|E|² 度量的是交叉区近场辐射而非垂直波导导模功率 ⇒ 度量不良定义），故本锚**诚实保持 design_rule_anchor、不接独立候选**（独立 CMT/超模法给 -35.4 dB，两法分歧本身即证 golden 不可用）；证据链见 `lda_harness/_batch_b567_numeric.crossing_crosstalk_dB` docstring。",
+        "candidate": "crossing_cmt",
+        "candidate_desc": ("双芯超模/CMT 本征解：gap 相隔双芯横向剖面 Helmholtz "
+                           "本征解给 even/odd 超模折射率 ⇒ κ=π|n_e−n_o|/λ ⇒ "
+                           "串扰=sin²(κ·L_eff)。与 golden(守则锚) 及已撤出的 "
+                           "2D FDTD 均方法学不同源，不读 golden、无标定系数"),
+        "note": ("黄金=设计守则锚 −40 dB（**有独立实证背书**：语料 E-SOI-CROSS-XT "
+                 "同几何实测 −41±2 dB，Zhang 2013 PTL 25(13):1225，"
+                 "DOI 10.1109/LPT.2013.2241049）。🔒 v0.9.82 golden 语义订正：原先"
+                 "覆盖 golden 的『离线 numpy 2D FDTD』于同版本**撤出调度**——该 2D "
+                 "降维（裸十字）与其锚定器件（taper 优化交叉）相差 20~30 dB，且源"
+                 "位置深扫 ±3 dB 无收敛趋势，作 golden 会把「模型-器件不匹配」伪装"
+                 "成锚真值；修复后的 2D 核保留为**机理诊断量**（默认 −14.43 dB，"
+                 "seg_drift 2.5e-4）。候选 crossing_cmt 给 −35.36 dB ⇒ |diff|=4.64 "
+                 "< tol 5.0 升 Tier-3（**残差占窗口 93%，属边缘通过**）。彻底闭合需 "
+                 "3D 全波 + 真实 taper 版图（T2 级缺口），见 "
+                 "`P1-1_B7_golden_fix_report.md`。"),
     },
     "B9": {
         "title": "超导 transmon 跃迁频率 f01",
@@ -1859,8 +1874,13 @@ _VMM_OVERRIDES = {
             "0.5（|diff|=0.109 < tol 0.15）：残差=设计守则把 η_ov 理想化为 1 的乐观偏差"
             "（无镜面光栅理论天花板）；不引用 E8 的 σ=15° 唯象倾斜散布系数。"
             "（原 design_rule_anchor 升级路径已打通）"),
-    "B7":  ("design_rule_anchor",
-            "行业设计规则锚（几何无关上限：-40dB 典型交叉串扰，源自硅光交叉器件论文与流片经验）；精确真值待 Meep 场级 ORACLE 动态升格（B 级借今踢后）；已有回退下限护栏"),
+    "B7":  ("independent_cross_check",
+            "🔒 v0.9.82 升 Tier-3 严格独立：golden 语义订正为设计守则锚 −40 dB"
+            "（独立实证背书 E7 同几何实测 −41±2 dB）；已证失真的 2D 离线 FDTD"
+            "（裸十字 vs 锚定 taper 交叉差 20~30 dB、源位 ±3 dB 不收敛）撤出 "
+            "golden 调度、降级为机理诊断量。候选=双芯超模/CMT 本征解"
+            "（方法学独立于场级 FDTD），|diff|=4.64 < tol 5.0 —— 残差占窗口 "
+            "93%，属边缘通过；彻底闭合需 3D 全波 + 真实版图"),
     "B11": ("independent_cross_check",
             "🔒 v0.9.68 升 Tier-3 严格独立：数值 add-drop 环 drop 口传递函数峰周期拟合"
             "FSR（同 B4 谱拟合族），再算 |FSR−target|/target 与 golden 同一标量。"

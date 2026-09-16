@@ -7,7 +7,12 @@ B5(Y 分支 50/50 分束插入损耗) 与 B7(波导交叉串扰) 是 ORACLE 依�
   - 下限须**精确等于**设计守则锚 (B5=3.0 dB, B7=-40.0 dB)，不得回落 0/None/错误数；
   - 下限须**诚实标注** source="design-anchor"（不得伪装成 physical-law / 真场级）；
   - ORACLE 在场时须**正确绕开下限**（反向护栏：smoke 会响，证明测的是回退分支而非常量）；
-  - 离线近似（CI 主路径）仍产出**几何相关真实值**（B5>3.0 单调、B7 有限负 dB）。
+  - 离线近似（CI 主路径）仍产出**几何相关真实值**（B5>3.0 单调）；
+  - ⚠️ v0.9.82：B7 的离线 2D-FDTD 因「模型-器件不匹配」已**撤出 golden 调度**
+    （裸十字 vs 锚定 taper 优化交叉差 20~30 dB、源位 ±3 dB 不收敛），CI 路径下
+    B7 golden 恒为守则锚 −40 dB（有 E7 实证 −41±2 dB 背书）；2D 核降级为**机理
+    诊断量**（有限负 dB 且与守则锚相差 >15 dB）。本 smoke 反向守此边界，防止
+    未来有人把该 2D 值静默接回 golden。
 
 铁律：测生产代码（lda_harness.golden）非内嵌副本；反向测试会响；<5s 无重依赖 ⇒ 入 CORE 不得豁免。
 """
@@ -54,16 +59,24 @@ def main():
                 f"val={r5['value']:.4f} expect={3.0 + extra:.4f}")
         r7 = resolve_field_oracle("B7", params_b7)
         ok &= _check(
-            "B7 离线近似路径可用 (numpy-fdtd-offline)",
-            r7 is not None and r7.get("source") == "numpy-fdtd-offline"
-            and isinstance(r7.get("value"), (int, float)),
-            f"source={r7.get('source') if r7 else None} val={r7.get('value') if r7 else None}")
-        if r7:
-            # 串扰为负 dB 且有限（离线 FDTD 真场计算量级合理）
-            ok &= _check(
-                "B7 离线串扰为有限负 dB（合理量级）",
-                math.isfinite(r7["value"]) and r7["value"] < 0,
-                f"val={r7['value']:.3f} dB")
+            "B7 无离线 golden 通道（2D FDTD 已撤出调度 ⇒ value=None）",
+            r7 is None, f"r7={r7}")
+        v7_real = golden.golden_value("B7", params_b7)
+        ok &= _check(
+            "B7 无 ORACLE 时 golden 恰为守则锚 -40.0 dB（E7 实证背书）",
+            v7_real == golden.B7_DESIGN_ANCHOR,
+            f"val={v7_real} expect={golden.B7_DESIGN_ANCHOR}")
+        # 反向护栏：2D 核降级为**诊断量**，仍须给出有限负 dB 且与守则锚显著不同
+        from lda_harness.oracle_field import _b7_crossing_core as _b7core
+        _ref = _b7core(0.5, 3.48, 1.44, 1.55, vertical=False, N=160, nsteps=3000)
+        _d7 = _b7core(0.5, 3.48, 1.44, 1.55, vertical=True,
+                      phi_shape=_ref["phi"], N=160, nsteps=3000)
+        _dv = float(_d7["crosstalk_dB"])
+        ok &= _check(
+            "B7 2D 核降级为诊断量（有限负 dB 且与守则锚相差 >15 dB ⇒ 不可作 golden）",
+            math.isfinite(_dv) and _dv < 0
+            and abs(_dv - golden.B7_DESIGN_ANCHOR) > 15.0,
+            f"diag={_dv:.3f} dB, |Δ|={abs(_dv - golden.B7_DESIGN_ANCHOR):.1f} dB")
 
         # --- [B] 回退下限持有（全部 ORACLE 不可用 → resolve_field_oracle 返回 None）---
         golden.resolve_field_oracle = lambda bid, p: None

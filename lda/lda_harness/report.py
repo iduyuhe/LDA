@@ -44,8 +44,8 @@ _DUAL_PATH_NOTE = (
     "> 📌 **两条判决路径口径不同（C-1 诚实披露 · v0.9.30 · T-5）**：本报告的 `verified` "
     "来自**路径①**（`IndependentCandidateRouter`，方法学不同源的独立频域候选）。\n"
     "> **路径②** `run_harness.py --ai`（L3 AI 写内核 demo，离线回退 `_local_approx`）实测 "
-    "`verified=2/48`（仅 B1/B4 真实现且 PASS，余 46 道为 `return golden` 自证桩）。\n"
-    "> 两路径候选体系本就不同，**均为如实口径、不构成虚报**；对外「独立候选 {n_ind}/48」特指路径①。")
+    "`verified=2/{n_total}`（仅 B1/B4 真实现且 PASS，余 {n_rest} 道为 `return golden` 自证桩）。\n"
+    "> 两路径候选体系本就不同，**均为如实口径、不构成虚报**；对外「独立候选 {n_ind}/{n_total}」特指路径①。")
 
 
 def is_self_consistent(meta):
@@ -133,7 +133,9 @@ def format_markdown(results, meta=None):
             # 避免两份报告各说各话、读者误以为「23 vs 2」是虚报。
             _cand_name = str((meta or {}).get("candidate", ""))
             if "IndependentCandidateRouter" in _cand_name:
-                lines.append(_DUAL_PATH_NOTE.format(n_ind=_n_ind))
+                lines.append(_DUAL_PATH_NOTE.format(
+                    n_ind=_n_ind, n_total=len(results),
+                    n_rest=max(len(results) - 2, 0)))
             lines.append("")
     elif _sc:
         lines.append(_SELF_CONSISTENT_WARNING)
@@ -202,7 +204,7 @@ def format_json(results, meta=None):
             # 自证闭环下 passed 无验证含义，机器可读地钉死这一点
             "self_consistent": _sc,
             "verified": _verified,
-            # 自证桩项数：外部验货者据此判断「48 项里到底几项真被验证过」
+            # 自证桩项数：外部验货者据此判断「N 项里到底几项真被验证过」
             "self_consistent_stub_count": _n_stub,
             "independent_candidate_count": _n_ind,
             # v0.9.16（P0-3）：三分类一并机器可读输出，杜绝「路径② 44 vs 三分类 43」

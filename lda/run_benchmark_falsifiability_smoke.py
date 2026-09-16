@@ -206,8 +206,8 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 #   31/55（本次更正）。②🔴 **B32 harness 接线修复**：golden 闭式形参是 L_e/L_h，
 #   而 default_params 只给 L ⇒ golden(**params) 抛 TypeError，B32 在 harness 默认
 #   路径跑不起来、被行为判据误判成自证桩（专属 smoke 直接调函数故未暴露）⇒ 行为
-#   口径由 30 回到 31。**当前：严格独立 62 · 降级 3(E9+E10+B21) · 自证桩 19 · 和 84**（v0.9.80 B16 重审、v0.9.81 B5/B6 各接第二独立求解器升严格独立）。
-MIN_INDEPENDENT = 62
+#   口径由 30 回到 31。**当前：严格独立 63 · 降级 3(E9+E10+B21) · 自证桩 18 · 和 84**（v0.9.80 B16 重审、v0.9.81 B5/B6 各接第二独立求解器、v0.9.82 B7 golden 语义订正升严格独立）。
+MIN_INDEPENDENT = 63
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

@@ -248,7 +248,7 @@ C 扫 `n = [8, 16, 32, 64]` ⇒ 定档 **n=64**（16/16 逐位相同，实测）
 | 2 | `lda/lda_harness/benchmarks.py` | 319399 B / 4746 行 | `+189/−0`：import 块 + 16 字典（9 字段含自动 `note`）+ `BENCHMARK_ORDER` 16 个 bid |
 | 3 | `lda/lda_harness/golden.py` | 60580 B / 972 行 | `+16/−0`：import + `_GOLDEN_DISPATCH` 16 行 + `_PHYSICAL_LAW` 16 个 bid |
 | 4 | `lda/lda_harness/verification_adapters.py` | 237753 B / 4911 行 | `+143/−0`：`_BATCH_B17_NUMERIC_MOD` + `_get_batch_b17_numeric()`（双路兜底）+ 16× `@_register_candidate` |
-| 5 | `README.md` | 262525 B / 416 行（**CRLF**） | `+7/−6`：新顶行 `v0.9.97`（`⏳ 生产部署待授权`）+ 原 v0.9.96 转「上一版」+ 题数 298→**314**、三分类 277/3/18→**293/3/18**、双路径 `277/298→293/314` / `2/298→2/314`（余 296→312 道） |
+| 5 | `README.md` | 262525 B / 416 行（**CRLF**） | `+7/−6`：新顶行 `v0.9.97`（部署后已转 `✅ 已部署生产`）+ 原 v0.9.96 转「上一版」+ 题数 298→**314**、三分类 277/3/18→**293/3/18**、双路径 `277/298→293/314` / `2/298→2/314`（余 296→312 道） |
 | 6 | `CONTRIBUTING.md` | 6975 B / 98 行 | `+2/−2`：版本行 v0.9.97 + 账本 314 道锚（严格 293）；真值行 B-17 扩基 |
 | 7 | `pyproject.toml` | 2316 B / 82 行（**CRLF**） | `+1/−1`：`version = "0.9.97"` |
 | 8 | `lda/run_count_consistency_smoke.py` | 11484 B / 213 行 | `+7/−6`：题数 314 / B 291 / 最大 B296 / README `B1-B296` |

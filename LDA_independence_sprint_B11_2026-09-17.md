@@ -224,9 +224,9 @@ B-9/B-10 报告 §7.1 已登记的三条既有红灯为**基线 HEAD 即红**。
 
 ## 9. 提交与推送
 
-- commit：*（待回填）*
-- push：*（待回填）*
-- **部署**：🔴 **未部署** —— 本轮用户指令为「选 B-11」，**未含部署授权**；B-11 属**本地未发版**，待用户明确授权后执行 `remote_deploy.py --expect-head <commit>`。
+- commit：`014d383`（14 files changed, 1467 insertions(+), 25 deletions(-)；新增报告 + `_batch_b11_numeric.py`）
+- push：`scripts/sync_push.py` —— **gitee 直连 exit=0**（`18b5f4d..014d383  main -> main`）+ **github 直连被重置（exit=128）→ SOCKS5 兜底 exit=0**（`18b5f4d..014d383  main -> main`）；三端 HEAD 一致 = `014d383`。
+- **部署**：🔴 **未部署** —— 本轮用户指令为「选 B-11」，**未含部署授权**；B-11 属**本地未发版**，待用户明确授权后执行 `remote_deploy.py --expect-head 014d383`。
 
 ---
 

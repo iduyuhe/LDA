@@ -191,8 +191,8 @@ B-9 报告 §7.1/§7.2 已登记的三条既有红灯（B-4 锚默认参数过�
 
 ## 9. 提交与推送
 
-- commit：待回填
-- push：`scripts/sync_push.py`（gitee 直连 + github 直连→SOCKS5 兜底）
+- commit：`f75c7c3`
+- push：`scripts/sync_push.py`（gitee 直连 exit=0 + github 直连被重置→SOCKS5 兜底 exit=0）
 - **部署**：本次**未部署**（用户指令不含「部署」）——完成时报备询问；如需上线：`remote_deploy.py --expect-head <commit>`。
 
 ---

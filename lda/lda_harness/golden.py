@@ -156,6 +156,12 @@ from ._batch_b18_numeric import (  # noqa: E402  # Batch B-18 双方法独立锚
     golden_b307, golden_b308, golden_b309, golden_b310, golden_b311,
     golden_b312,
 )
+from ._batch_b19_numeric import (  # noqa: E402  # Batch B-19 双方法独立锚数值核（路径 B 扩基续十七 · 广义 Lane–Emden 奇异 IVP Taylor 启动+RK4/二维 Laplace 间接单层位势 BEM/Eikonal 制造解 FMM · v0.9.99 · 腿① 续加锚稀释 terminal）
+    golden_b313, golden_b314, golden_b315, golden_b316, golden_b317,
+    golden_b318, golden_b319, golden_b320, golden_b321, golden_b322,
+    golden_b323, golden_b324, golden_b325, golden_b326, golden_b327,
+    golden_b328,
+)
 
 from .oracle_pyepr import resolve_pyepr_transmon
 
@@ -858,6 +864,13 @@ _GOLDEN_DISPATCH = {
     "B307": golden_b307,
     "B308": golden_b308, "B309": golden_b309, "B310": golden_b310, "B311": golden_b311,  # 非线性 ODE · AB4 多步
     "B312": golden_b312,
+    # ---- B-19 双方法独立锚（v0.9.99 · 腿① 续加锚）----
+    "B313": golden_b313, "B314": golden_b314, "B315": golden_b315, "B316": golden_b316,  # 广义 Lane–Emden 奇异 IVP · Taylor+RK4
+    "B317": golden_b317, "B318": golden_b318,
+    "B319": golden_b319, "B320": golden_b320, "B321": golden_b321,  # 二维 Laplace · 单层位势 BEM
+    "B322": golden_b322, "B323": golden_b323,
+    "B324": golden_b324, "B325": golden_b325, "B326": golden_b326,  # Eikonal · 快速行进法 FMM
+    "B327": golden_b327, "B328": golden_b328,
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -917,6 +930,9 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B297", "B298", "B299", "B300", "B301", "B302",  # Batch B-18（v0.9.98 · 腿① 续加锚 · 振荡积分 Filon 型求积/GL 隐式 RK4/AB4 线性多步）
                  "B303", "B304", "B305", "B306", "B307",
                  "B308", "B309", "B310", "B311", "B312",
+                 "B313", "B314", "B315", "B316", "B317", "B318",  # Batch B-19（v0.9.99 · 腿① 续加锚 · Lane–Emden 奇异 IVP/Laplace 单层位势 BEM/Eikonal FMM）
+                 "B319", "B320", "B321", "B322", "B323",
+                 "B324", "B325", "B326", "B327", "B328",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

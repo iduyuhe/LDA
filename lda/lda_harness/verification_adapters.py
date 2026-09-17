@@ -2191,6 +2191,8 @@ _BATCH_B17_NUMERIC_MOD = None
 
 _BATCH_B18_NUMERIC_MOD = None
 
+_BATCH_B19_NUMERIC_MOD = None
+
 
 
 def _get_batch_b3():
@@ -2847,6 +2849,20 @@ def _get_batch_b18_numeric():
         _ensure_paths()
         import _batch_b18_numeric as _m
     _BATCH_B18_NUMERIC_MOD = _m
+    return _m
+
+
+def _get_batch_b19_numeric():
+    """双路兜底导入 Batch B-19 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B19_NUMERIC_MOD
+    if _BATCH_B19_NUMERIC_MOD is not None:
+        return _BATCH_B19_NUMERIC_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b19_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b19_numeric as _m
+    _BATCH_B19_NUMERIC_MOD = _m
     return _m
 
 
@@ -5070,3 +5086,146 @@ def _b312_ab4_multistep_cand(spec: VerificationSpec, oracle_value: Any) -> float
     m = _get_batch_b18_numeric()
     return float(m.cand_b312(float(p["a"]), float(p["y0"]), float(p["T"])))
 
+
+@_register_candidate(
+    "b313_lane_emden_cand",
+    "广义 Lane–Emden θ''+(2/ξ)θ'+λθ^n=0 的 θ(ξ) 由原点 Taylor 级数启动 + 经典四阶 RK4 导出 ↔ 初等/超越闭式，方法学独立")
+def _b313_lane_emden_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b313(int(p["n"]), float(p["lam"]), float(p["th0"]), float(p["xi"])))
+
+
+@_register_candidate(
+    "b314_lane_emden_cand",
+    "广义 Lane–Emden θ''+(2/ξ)θ'+λθ^n=0 的 θ(ξ) 由原点 Taylor 级数启动 + 经典四阶 RK4 导出 ↔ 初等/超越闭式，方法学独立")
+def _b314_lane_emden_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b314(int(p["n"]), float(p["lam"]), float(p["th0"]), float(p["xi"])))
+
+
+@_register_candidate(
+    "b315_lane_emden_cand",
+    "广义 Lane–Emden θ''+(2/ξ)θ'+λθ^n=0 的 θ(ξ) 由原点 Taylor 级数启动 + 经典四阶 RK4 导出 ↔ 初等/超越闭式，方法学独立")
+def _b315_lane_emden_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b315(int(p["n"]), float(p["lam"]), float(p["th0"]), float(p["xi"])))
+
+
+@_register_candidate(
+    "b316_lane_emden_cand",
+    "广义 Lane–Emden θ''+(2/ξ)θ'+λθ^n=0 的 θ(ξ) 由原点 Taylor 级数启动 + 经典四阶 RK4 导出 ↔ 初等/超越闭式，方法学独立")
+def _b316_lane_emden_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b316(int(p["n"]), float(p["lam"]), float(p["th0"]), float(p["xi"])))
+
+
+@_register_candidate(
+    "b317_lane_emden_cand",
+    "广义 Lane–Emden θ''+(2/ξ)θ'+λθ^n=0 的 θ(ξ) 由原点 Taylor 级数启动 + 经典四阶 RK4 导出 ↔ 初等/超越闭式，方法学独立")
+def _b317_lane_emden_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b317(int(p["n"]), float(p["lam"]), float(p["th0"]), float(p["xi"])))
+
+
+@_register_candidate(
+    "b318_lane_emden_cand",
+    "广义 Lane–Emden θ''+(2/ξ)θ'+λθ^n=0 的 θ(ξ) 由原点 Taylor 级数启动 + 经典四阶 RK4 导出 ↔ 初等/超越闭式，方法学独立")
+def _b318_lane_emden_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b318(int(p["n"]), float(p["lam"]), float(p["th0"]), float(p["xi"])))
+
+
+@_register_candidate(
+    "b319_laplace_bem_cand",
+    "二维 Laplace Dirichlet 边值由间接单层位势边界元（常数元 + 12 点 GL）导出 ↔ 调和函数闭式 r^n·cos nθ，方法学独立")
+def _b319_laplace_bem_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b319(int(p["nb"]), float(p["r_obs"]), float(p["th_obs"])))
+
+
+@_register_candidate(
+    "b320_laplace_bem_cand",
+    "二维 Laplace Dirichlet 边值由间接单层位势边界元（常数元 + 12 点 GL）导出 ↔ 调和函数闭式 r^n·cos nθ，方法学独立")
+def _b320_laplace_bem_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b320(int(p["nb"]), float(p["r_obs"]), float(p["th_obs"])))
+
+
+@_register_candidate(
+    "b321_laplace_bem_cand",
+    "二维 Laplace Dirichlet 边值由间接单层位势边界元（常数元 + 12 点 GL）导出 ↔ 调和函数闭式 r^n·cos nθ，方法学独立")
+def _b321_laplace_bem_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b321(int(p["nb"]), float(p["r_obs"]), float(p["th_obs"])))
+
+
+@_register_candidate(
+    "b322_laplace_bem_cand",
+    "二维 Laplace Dirichlet 边值由间接单层位势边界元（常数元 + 12 点 GL）导出 ↔ 调和函数闭式 r^n·cos nθ，方法学独立")
+def _b322_laplace_bem_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b322(int(p["nb"]), float(p["r_obs"]), float(p["th_obs"])))
+
+
+@_register_candidate(
+    "b323_laplace_bem_cand",
+    "二维 Laplace Dirichlet 边值由间接单层位势边界元（常数元 + 12 点 GL）导出 ↔ 调和函数闭式 r^n·cos nθ，方法学独立")
+def _b323_laplace_bem_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b323(int(p["nb"]), float(p["r_obs"]), float(p["th_obs"])))
+
+
+@_register_candidate(
+    "b324_eikonal_fmm_cand",
+    "Eikonal 方程 |∇T|=f 的到达时由快速行进法（Godunov 一阶迎风 + 二叉堆）导出 ↔ 制造解闭式，方法学独立")
+def _b324_eikonal_fmm_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b324(float(p["f0"]), float(p["xo"]), float(p["yo"])))
+
+
+@_register_candidate(
+    "b325_eikonal_fmm_cand",
+    "Eikonal 方程 |∇T|=f 的到达时由快速行进法（Godunov 一阶迎风 + 二叉堆）导出 ↔ 制造解闭式，方法学独立")
+def _b325_eikonal_fmm_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b325(float(p["f0"]), float(p["xo"]), float(p["yo"])))
+
+
+@_register_candidate(
+    "b326_eikonal_fmm_cand",
+    "Eikonal 方程 |∇T|=f 的到达时由快速行进法（Godunov 一阶迎风 + 二叉堆）导出 ↔ 制造解闭式，方法学独立")
+def _b326_eikonal_fmm_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b326(float(p["f0"]), float(p["xo"]), float(p["yo"])))
+
+
+@_register_candidate(
+    "b327_eikonal_fmm_cand",
+    "Eikonal 方程 |∇T|=f 的到达时由快速行进法（Godunov 一阶迎风 + 二叉堆）导出 ↔ 制造解闭式，方法学独立")
+def _b327_eikonal_fmm_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b327(float(p["f0"]), float(p["xo"]), float(p["yo"])))
+
+
+@_register_candidate(
+    "b328_eikonal_fmm_cand",
+    "Eikonal 方程 |∇T|=f 的到达时由快速行进法（Godunov 一阶迎风 + 二叉堆）导出 ↔ 制造解闭式，方法学独立")
+def _b328_eikonal_fmm_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b19_numeric()
+    return float(m.cand_b328(float(p["f0"]), float(p["xo"]), float(p["yo"])))

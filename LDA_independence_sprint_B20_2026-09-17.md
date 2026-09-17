@@ -119,7 +119,7 @@
 
 红灯集合与 B-14..B-19 **逐字一致**（非本批引入）：
 - `run_d_criterion_smoke` ③ 基线残差 >1e-12 地板（B65–B88 贴 1e-16 地板，历史遗留）
-- `run_benchmark_falsifiability_smoke` ⑨ numpy bool 泄漏 JSON（历史遗留）
+- `run_benchmark_falsifiability_smoke` ⑨ numpy bool 泄漏 JSON（历史遗留，**2026-09-17 后台重跑确认：12 PASS/1 FAIL，FAIL 即 ⑨ `TypeError: Object of type bool is not JSON serializable`，与「已知缺口」逐字一致**）
 - `run_coverage_deadzone_smoke` B5/B6 期望陈旧（历史遗留）
 
 ⇒ 本批零新增红灯，7 绿 + 3 既有红为预期稳态。
@@ -164,7 +164,7 @@
   - SSH_OK；`git pull` 12 文件 +822/−20；`lda-design 0.9.99→0.9.100`（pip 重装元数据）；`dist/store.json` **2072 B 未动**；`restart rc=0`；`is-active=active`；`HEAD_MATCH=True`。
   - 内/外网 `/api/health`：`version 0.9.100 / benchmarks 362`；`/api/shelf` count **75**。
 - **ledger 核验**（`check_ledger.py 341 3 18 362 B344`）：**`RESULT: ALL_OK (fails=0)` 13/13** —— strict 341 / degraded 3 / stub 18 / total 362；honest_note 341；physical-law.ids count 350（含 B344）；dispatch_ids 353；anchors.total 363；ci_core 178（不变）；shelf 75。
-- **护栏稳态（T5 实测）**：count_consistency / three_class / maturity_baseline / statistical_anchor 全绿（statistical 34 PASS，总=362 B=339 E=10 S=13）；`d_criterion` 9PASS/1FAIL（③ 13 道 B-4 锚 B65-B88 贴 1e-16 地板，同因历史红，**B-20 十六锚未入违规表**＝无贴地板伪独立）；`coverage_deadzone` 31PASS/2FAIL（B5/B6 期望陈旧，同因历史红）；`falsifiability` ⑨ numpy-bool 泄漏（结构历史红，362 题全量极重 >600s，后台重跑确认中；B-20 真 harness 16/16 已通过，不引入新失败）。**本批零新增红灯**。
+- **护栏稳态（T5 实测）**：count_consistency / three_class / maturity_baseline / statistical_anchor 全绿（statistical 34 PASS，总=362 B=339 E=10 S=13）；`d_criterion` 9PASS/1FAIL（③ 13 道 B-4 锚 B65-B88 贴 1e-16 地板，同因历史红，**B-20 十六锚未入违规表**＝无贴地板伪独立）；`coverage_deadzone` 31PASS/2FAIL（B5/B6 期望陈旧，同因历史红）；`falsifiability` ⑨ numpy-bool 泄漏（结构历史红，362 题全量极重 >600s，已转后台重跑确认：**12 PASS/1 FAIL，FAIL 即 ⑨ `TypeError: Object of type bool is not JSON serializable`，与「已知缺口」逐字一致**；`[PASS] 全量 362 锚无回归（B1–S13）| PASS=362/362`、对外账本 独立341/降级3/自证18 总和362/362 与 ledger 口径一致；**B-20 十六锚未入任何违规/泄漏项＝不引入新失败**）。**本批零新增红灯**。
 
 ---
 

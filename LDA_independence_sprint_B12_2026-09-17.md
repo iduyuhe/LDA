@@ -211,7 +211,14 @@ EM FDTD `leapfrog`（lda_solver/fdtd*）、FFT 拍频（B14）、Bragg/Bloch（B
 
 ## 9. 提交与推送
 
-<!--PUSH-->
+- **commit**：`6135018`（12 文件，**+1163 / −22**）—— 含新增 `lda/lda_harness/_batch_b12_numeric.py` 与本报告。
+- **推送三端**：`scripts/sync_push.py D:/agent_LDA`
+  - gitee（`https://gitee.com/i4hub/LDA.git`）：**直连 exit=0**，`57e8422..6135018  main -> main`
+  - github（`https://github.com/iduyuhe/LDA.git`）：**直连 exit=0**（本轮无需 SOCKS5 兜底），`57e8422..6135018  main -> main`
+  - 临时 credential store 已删除（令牌仅驻内存，未落盘）。
+- **三端 HEAD 一致 = `6135018`**（本报告 §9 的 SHA 回填为第 2 个仅文档提交）。
+- **未部署**（本轮指令未含「部署」字样，待授权）。
+
 
 ---
 

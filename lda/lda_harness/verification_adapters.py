@@ -2189,6 +2189,8 @@ _BATCH_B16_NUMERIC_MOD = None
 
 _BATCH_B17_NUMERIC_MOD = None
 
+_BATCH_B18_NUMERIC_MOD = None
+
 
 
 def _get_batch_b3():
@@ -2831,6 +2833,20 @@ def _get_batch_b17_numeric():
         _ensure_paths()
         import _batch_b17_numeric as _m
     _BATCH_B17_NUMERIC_MOD = _m
+    return _m
+
+
+def _get_batch_b18_numeric():
+    """双路兜底导入 Batch B-18 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B18_NUMERIC_MOD
+    if _BATCH_B18_NUMERIC_MOD is not None:
+        return _BATCH_B18_NUMERIC_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b18_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b18_numeric as _m
+    _BATCH_B18_NUMERIC_MOD = _m
     return _m
 
 
@@ -4909,3 +4925,148 @@ def _b296_duffing_yoshida4_cand(spec: VerificationSpec, oracle_value: Any) -> fl
     p = spec.params
     m = _get_batch_b17_numeric()
     return float(m.cand_b296(float(p["A"]), float(p["a"]), float(p["beta"]), float(p["tstar"])))
+
+
+@_register_candidate(
+    "b297_filon_osc_cand",
+    "振荡积分 I=∫₀¹cos(ωt)e^{at}dt 由 Filon 型分段二次插值 + 段内解析 cos 核积分导出 ↔ 初等闭式，方法学独立")
+def _b297_filon_osc_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b297(float(p["w"]), float(p["a"])))
+
+
+@_register_candidate(
+    "b298_filon_osc_cand",
+    "振荡积分 I=∫₀¹cos(ωt)e^{at}dt 由 Filon 型分段二次插值 + 段内解析 cos 核积分导出 ↔ 初等闭式，方法学独立")
+def _b298_filon_osc_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b298(float(p["w"]), float(p["a"])))
+
+
+@_register_candidate(
+    "b299_filon_osc_cand",
+    "振荡积分 I=∫₀¹cos(ωt)e^{at}dt 由 Filon 型分段二次插值 + 段内解析 cos 核积分导出 ↔ 初等闭式，方法学独立")
+def _b299_filon_osc_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b299(float(p["w"]), float(p["a"])))
+
+
+@_register_candidate(
+    "b300_filon_osc_cand",
+    "振荡积分 I=∫₀¹cos(ωt)e^{at}dt 由 Filon 型分段二次插值 + 段内解析 cos 核积分导出 ↔ 初等闭式，方法学独立")
+def _b300_filon_osc_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b300(float(p["w"]), float(p["a"])))
+
+
+@_register_candidate(
+    "b301_filon_osc_cand",
+    "振荡积分 I=∫₀¹cos(ωt)e^{at}dt 由 Filon 型分段二次插值 + 段内解析 cos 核积分导出 ↔ 初等闭式，方法学独立")
+def _b301_filon_osc_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b301(float(p["w"]), float(p["a"])))
+
+
+@_register_candidate(
+    "b302_filon_osc_cand",
+    "振荡积分 I=∫₀¹cos(ωt)e^{at}dt 由 Filon 型分段二次插值 + 段内解析 cos 核积分导出 ↔ 初等闭式，方法学独立")
+def _b302_filon_osc_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b302(float(p["w"]), float(p["a"])))
+
+
+@_register_candidate(
+    "b303_gl_implicit_rk4_cand",
+    "非线性 ODE y(T) 由 Gauss–Legendre 2 级隐式 RK（4 阶，A-稳定，Newton 解隐式方程）导出 ↔ 超越初等闭式，方法学独立")
+def _b303_gl_implicit_rk4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b303(float(p["a"]), float(p["y0"]), float(p["T"])))
+
+
+@_register_candidate(
+    "b304_gl_implicit_rk4_cand",
+    "非线性 ODE y(T) 由 Gauss–Legendre 2 级隐式 RK（4 阶，A-稳定，Newton 解隐式方程）导出 ↔ 超越初等闭式，方法学独立")
+def _b304_gl_implicit_rk4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b304(float(p["a"]), float(p["y0"]), float(p["T"])))
+
+
+@_register_candidate(
+    "b305_gl_implicit_rk4_cand",
+    "非线性 ODE y(T) 由 Gauss–Legendre 2 级隐式 RK（4 阶，A-稳定，Newton 解隐式方程）导出 ↔ 超越初等闭式，方法学独立")
+def _b305_gl_implicit_rk4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b305(float(p["a"]), float(p["y0"]), float(p["T"])))
+
+
+@_register_candidate(
+    "b306_gl_implicit_rk4_cand",
+    "非线性 ODE y(T) 由 Gauss–Legendre 2 级隐式 RK（4 阶，A-稳定，Newton 解隐式方程）导出 ↔ 超越初等闭式，方法学独立")
+def _b306_gl_implicit_rk4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b306(float(p["a"]), float(p["y0"]), float(p["T"])))
+
+
+@_register_candidate(
+    "b307_gl_implicit_rk4_cand",
+    "非线性 ODE y(T) 由 Gauss–Legendre 2 级隐式 RK（4 阶，A-稳定，Newton 解隐式方程）导出 ↔ 超越初等闭式，方法学独立")
+def _b307_gl_implicit_rk4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b307(float(p["a"]), float(p["y0"]), float(p["T"])))
+
+
+@_register_candidate(
+    "b308_ab4_multistep_cand",
+    "非线性 ODE y(T) 由 Adams–Bashforth 4 阶线性多步（RK4 同阶启动 3 步）导出 ↔ 超越初等闭式，方法学独立")
+def _b308_ab4_multistep_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b308(float(p["a"]), float(p["y0"]), float(p["T"])))
+
+
+@_register_candidate(
+    "b309_ab4_multistep_cand",
+    "非线性 ODE y(T) 由 Adams–Bashforth 4 阶线性多步（RK4 同阶启动 3 步）导出 ↔ 超越初等闭式，方法学独立")
+def _b309_ab4_multistep_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b309(float(p["a"]), float(p["y0"]), float(p["T"])))
+
+
+@_register_candidate(
+    "b310_ab4_multistep_cand",
+    "非线性 ODE y(T) 由 Adams–Bashforth 4 阶线性多步（RK4 同阶启动 3 步）导出 ↔ 超越初等闭式，方法学独立")
+def _b310_ab4_multistep_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b310(float(p["a"]), float(p["y0"]), float(p["T"])))
+
+
+@_register_candidate(
+    "b311_ab4_multistep_cand",
+    "非线性 ODE y(T) 由 Adams–Bashforth 4 阶线性多步（RK4 同阶启动 3 步）导出 ↔ 超越初等闭式，方法学独立")
+def _b311_ab4_multistep_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b311(float(p["a"]), float(p["y0"]), float(p["T"])))
+
+
+@_register_candidate(
+    "b312_ab4_multistep_cand",
+    "非线性 ODE y(T) 由 Adams–Bashforth 4 阶线性多步（RK4 同阶启动 3 步）导出 ↔ 超越初等闭式，方法学独立")
+def _b312_ab4_multistep_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b18_numeric()
+    return float(m.cand_b312(float(p["a"]), float(p["y0"]), float(p["T"])))
+

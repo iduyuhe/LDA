@@ -2187,6 +2187,8 @@ _BATCH_B15_MOD = None
 
 _BATCH_B16_NUMERIC_MOD = None
 
+_BATCH_B17_NUMERIC_MOD = None
+
 
 
 def _get_batch_b3():
@@ -2815,6 +2817,20 @@ def _get_batch_b16_numeric():
         _ensure_paths()
         import _batch_b16_numeric as _m
     _BATCH_B16_NUMERIC_MOD = _m
+    return _m
+
+
+def _get_batch_b17_numeric():
+    """双路兜底导入 Batch B-17 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B17_NUMERIC_MOD
+    if _BATCH_B17_NUMERIC_MOD is not None:
+        return _BATCH_B17_NUMERIC_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b17_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b17_numeric as _m
+    _BATCH_B17_NUMERIC_MOD = _m
     return _m
 
 
@@ -4766,3 +4782,130 @@ def _b280_haar_mra_cand(spec: VerificationSpec, oracle_value: Any) -> float:
     m = _get_batch_b16_numeric()
     return float(m.cand_b280(float(p["p"]), int(p["J"]), int(p["k"])))
 
+@_register_candidate(
+    "b281_forced_etd2_cand",
+    "受迫阻尼 ODE y(T) 由指数时间差分 ETD2（线性部分精确 + forcing 段内线性插值）导出 ↔ 初等闭式，方法学独立")
+def _b281_forced_etd2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b281(float(p["a"]), float(p["b"]), float(p["w"]), float(p["y0"]), float(p["T"])))
+
+@_register_candidate(
+    "b282_forced_etd2_cand",
+    "受迫阻尼 ODE y(T) 由指数时间差分 ETD2 导出 ↔ 初等闭式，方法学独立")
+def _b282_forced_etd2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b282(float(p["a"]), float(p["b"]), float(p["w"]), float(p["y0"]), float(p["T"])))
+
+@_register_candidate(
+    "b283_forced_etd2_cand",
+    "受迫阻尼 ODE y(T) 由指数时间差分 ETD2 导出 ↔ 初等闭式，方法学独立")
+def _b283_forced_etd2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b283(float(p["a"]), float(p["b"]), float(p["w"]), float(p["y0"]), float(p["T"])))
+
+@_register_candidate(
+    "b284_forced_etd2_cand",
+    "受迫阻尼 ODE y(T) 由指数时间差分 ETD2 导出 ↔ 初等闭式，方法学独立")
+def _b284_forced_etd2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b284(float(p["a"]), float(p["b"]), float(p["w"]), float(p["y0"]), float(p["T"])))
+
+@_register_candidate(
+    "b285_forced_etd2_cand",
+    "受迫阻尼 ODE y(T) 由指数时间差分 ETD2 导出 ↔ 初等闭式，方法学独立")
+def _b285_forced_etd2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b285(float(p["a"]), float(p["b"]), float(p["w"]), float(p["y0"]), float(p["T"])))
+
+@_register_candidate(
+    "b286_forced_etd2_cand",
+    "受迫阻尼 ODE y(T) 由指数时间差分 ETD2 导出 ↔ 初等闭式，方法学独立")
+def _b286_forced_etd2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b286(float(p["a"]), float(p["b"]), float(p["w"]), float(p["y0"]), float(p["T"])))
+
+@_register_candidate(
+    "b287_zernike_rms_cand",
+    "圆域波前 RMS 由极坐标均匀中点求积（ρ/θ 双中点 + ρ 权重）导出 ↔ Zernike Parseval 闭式，方法学独立")
+def _b287_zernike_rms_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b287(int(p["n1"]), int(p["m1"]), float(p["a1"]), int(p["n2"]), int(p["m2"]), float(p["a2"])))
+
+@_register_candidate(
+    "b288_zernike_rms_cand",
+    "圆域波前 RMS 由极坐标均匀中点求积导出 ↔ Zernike Parseval 闭式，方法学独立")
+def _b288_zernike_rms_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b288(int(p["n1"]), int(p["m1"]), float(p["a1"]), int(p["n2"]), int(p["m2"]), float(p["a2"])))
+
+@_register_candidate(
+    "b289_zernike_rms_cand",
+    "圆域波前 RMS 由极坐标均匀中点求积导出 ↔ Zernike Parseval 闭式，方法学独立")
+def _b289_zernike_rms_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b289(int(p["n1"]), int(p["m1"]), float(p["a1"]), int(p["n2"]), int(p["m2"]), float(p["a2"])))
+
+@_register_candidate(
+    "b290_zernike_rms_cand",
+    "圆域波前 RMS 由极坐标均匀中点求积导出 ↔ Zernike Parseval 闭式，方法学独立")
+def _b290_zernike_rms_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b290(int(p["n1"]), int(p["m1"]), float(p["a1"]), int(p["n2"]), int(p["m2"]), float(p["a2"])))
+
+@_register_candidate(
+    "b291_zernike_rms_cand",
+    "圆域波前 RMS 由极坐标均匀中点求积导出 ↔ Zernike Parseval 闭式，方法学独立")
+def _b291_zernike_rms_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b291(int(p["n1"]), int(p["m1"]), float(p["a1"]), int(p["n2"]), int(p["m2"]), float(p["a2"])))
+
+@_register_candidate(
+    "b292_duffing_yoshida4_cand",
+    "Duffing 振子 x(t*) 由四阶组合辛积分（Yoshida 组合，辛结构保持）导出 ↔ Jacobi cn 精确解，方法学独立")
+def _b292_duffing_yoshida4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b292(float(p["A"]), float(p["a"]), float(p["beta"]), float(p["tstar"])))
+
+@_register_candidate(
+    "b293_duffing_yoshida4_cand",
+    "Duffing 振子 x(t*) 由四阶组合辛积分导出 ↔ Jacobi cn 精确解，方法学独立")
+def _b293_duffing_yoshida4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b293(float(p["A"]), float(p["a"]), float(p["beta"]), float(p["tstar"])))
+
+@_register_candidate(
+    "b294_duffing_yoshida4_cand",
+    "Duffing 振子 x(t*) 由四阶组合辛积分导出 ↔ Jacobi cn 精确解，方法学独立")
+def _b294_duffing_yoshida4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b294(float(p["A"]), float(p["a"]), float(p["beta"]), float(p["tstar"])))
+
+@_register_candidate(
+    "b295_duffing_yoshida4_cand",
+    "Duffing 振子 x(t*) 由四阶组合辛积分导出 ↔ Jacobi cn 精确解，方法学独立")
+def _b295_duffing_yoshida4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b295(float(p["A"]), float(p["a"]), float(p["beta"]), float(p["tstar"])))
+
+@_register_candidate(
+    "b296_duffing_yoshida4_cand",
+    "Duffing 振子 x(t*) 由四阶组合辛积分导出 ↔ Jacobi cn 精确解，方法学独立")
+def _b296_duffing_yoshida4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b17_numeric()
+    return float(m.cand_b296(float(p["A"]), float(p["a"]), float(p["beta"]), float(p["tstar"])))

@@ -144,6 +144,13 @@ from ._batch_b16_numeric import (  # noqa: E402  # Batch B-16 双方法独立锚
     golden_b275, golden_b276, golden_b277, golden_b278, golden_b279,
     golden_b280,
 )
+from ._batch_b17_numeric import (  # noqa: E402  # Batch B-17 双方法独立锚数值核（路径 B 扩基续十六 · 线性受迫阻尼 ODE 指数时间差分 ETD2/Zernike 圆域模态 RMS 极坐标中点求积/Duffing 硬化振子四阶组合辛积分 Yoshida · v0.9.97 · 腿① 续加锚稀释 terminal）
+    golden_b281, golden_b282, golden_b283, golden_b284, golden_b285,
+    golden_b286, golden_b287, golden_b288, golden_b289, golden_b290,
+    golden_b291, golden_b292, golden_b293, golden_b294, golden_b295,
+    golden_b296,
+)
+
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -832,6 +839,12 @@ _GOLDEN_DISPATCH = {
     "B273": golden_b273, "B274": golden_b274, "B275": golden_b275,  # 广义指数积分 E_n · 截断复合 Simpson
     "B276": golden_b276, "B277": golden_b277, "B278": golden_b278, "B279": golden_b279,  # Haar 小波多分辨投影 · 逐层低通
     "B280": golden_b280,
+    # ---- B-17 双方法独立锚（v0.9.97 · 腿① 续加锚）----
+    "B281": golden_b281, "B282": golden_b282, "B283": golden_b283, "B284": golden_b284,  # 受迫阻尼 ODE · ETD2
+    "B285": golden_b285, "B286": golden_b286, "B287": golden_b287, "B288": golden_b288,
+    "B289": golden_b289, "B290": golden_b290, "B291": golden_b291,  # Zernike 圆域 RMS · 极坐标中点求积
+    "B292": golden_b292, "B293": golden_b293, "B294": golden_b294, "B295": golden_b295,  # Duffing 硬化振子 · Yoshida 四阶组合辛
+    "B296": golden_b296,
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -885,6 +898,9 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B265", "B266", "B267", "B268", "B269", "B270",  # Batch B-16（v0.9.96 · 腿① 续加锚 · Burgers tanh 行波/广义指数积分/Haar 多分辨投影）
                  "B271", "B272", "B273", "B274", "B275",
                  "B276", "B277", "B278", "B279", "B280",
+                 "B281", "B282", "B283", "B284", "B285", "B286",  # Batch B-17（v0.9.97 · 腿① 续加锚 · 受迫阻尼 ODE ETD2/Zernike 圆域 RMS/Duffing 硬化振子组合辛）
+                 "B287", "B288", "B289", "B290", "B291",
+                 "B292", "B293", "B294", "B295", "B296",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

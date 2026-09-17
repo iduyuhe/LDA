@@ -8,7 +8,7 @@
      agent/llm 模块；harness S7 的 oracle_kind 为确定性统计量）
   ⑤ S7 harness reference PASS（golden 自洽）
   ⑥ 扰动负例：损耗整体 +1dB → 分布下移 → candidate 偏离 golden > tol 被 FAIL 抓
-  ⑦ 题库计数 298 题（B1-B280 = 275 + E1-E10 = 10 + S1-S13 = 13）
+  ⑦ 题库计数 314 题（B1-B296 = 291 + E1-E10 = 10 + S1-S13 = 13）
   ⑧ S8 OSNR 统计锚（模板复用：Jensen 方向 + golden 收敛）
   ⑨ 蒙特卡洛收敛性（N 扫描收敛带）
 
@@ -137,8 +137,9 @@ def main() -> int:
                   + [f"B{i}" for i in range(217, 233)]     # B217-B232 = Batch B-13 十六锚（Grünwald–Letnikov 分数阶导数/矩阵指数 scaling–squaring/固定步长梯度下降/第二类 Volterra 分块梯形）
                   + [f"B{i}" for i in range(233, 249)]     # B233-B248 = Batch B-14 十六锚（定常对流–扩散中心差分/第二类 Fredholm 可分核 Nyström/自然三次样条逼近/非线性两点边值打靶法）
                   + [f"B{i}" for i in range(249, 265)]    # B249-B264 = Batch B-15 十六锚（延迟泛函微分方程分步法/Kirchhoff 薄板双调和 13 点差分/一维输运半拉格朗日特征线/聚焦 NLSE 孤子分裂步 Fourier）
-                  + [f"B{i}" for i in range(265, 281)])   # B265-B280 = Batch B-16 十六锚（Burgers tanh 行波 RK4+中心差分/广义指数积分 E_n 截断复合 Simpson/Haar 小波多分辨投影逐层低通）
-    check("题库（B1-B280 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + Batch B-7 十六锚 + Batch B-8 十六锚 + Batch B-9 十六锚 + Batch B-10 十六锚 + Batch B-11 十六锚 + Batch B-12 十六锚 + Batch B-13 十六锚 + Batch B-14 十六锚 + Batch B-15 十六锚 + Batch B-16 十六锚 + E1-E10 + S1-S13 动态计数）",
+                  + [f"B{i}" for i in range(265, 281)]    # B265-B280 = Batch B-16 十六锚（Burgers tanh 行波 RK4+中心差分/广义指数积分 E_n 截断复合 Simpson/Haar 小波多分辨投影逐层低通）
+                  + [f"B{i}" for i in range(281, 297)])   # B281-B296 = Batch B-17 十六锚（线性受迫阻尼 ODE 指数时间差分 ETD2/Zernike 圆域模态 RMS 极坐标中点求积/Duffing 硬化振子四阶组合辛积分 Yoshida）
+    check("题库（B1-B296 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + Batch B-7 十六锚 + Batch B-8 十六锚 + Batch B-9 十六锚 + Batch B-10 十六锚 + Batch B-11 十六锚 + Batch B-12 十六锚 + Batch B-13 十六锚 + Batch B-14 十六锚 + Batch B-15 十六锚 + Batch B-16 十六锚 + Batch B-17 十六锚 + E1-E10 + S1-S13 动态计数）",
           b_ids == expected_b
           and s_ids == [f"S{i}" for i in range(1, 14)]
           and e_ids == [f"E{i}" for i in range(1, len(e_ids) + 1)],

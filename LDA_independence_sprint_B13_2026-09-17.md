@@ -219,7 +219,7 @@ Volterra `K=e^{−(x−t)}` n=8192 → 1.393469341170 vs 闭式 1.393469340287�
 
 ---
 
-## 9. 提交与推送
+## 9. 提交、推送与部署
 
 - **提交**：`249e455`「P1-1 B-13 扩基 16 锚（v0.9.93）：独立率 91.0%→91.6%、天花板 94.87%→95.2%」——
   **12 文件 +1192 / −22**，新增 `lda/lda_harness/_batch_b13_numeric.py` 与 `LDA_independence_sprint_B13_2026-09-17.md`；
@@ -233,8 +233,25 @@ Volterra `K=e^{−(x−t)}` n=8192 → 1.393469341170 vs 闭式 1.393469340287�
 
   `[CLEAN] store 已删除`；**三端 HEAD 一致 = `249e455`**。
 - **本地工作树**：`git status` clean（回填本行后产生的文档提交另计）。
-- **⏳ 生产部署：未执行** —— 本轮指令未含部署授权。部署时用
-  `remote_deploy.py --expect-head <回填后的 HEAD>`，并按 §10 的验收口径核对 `vmm.tiers` / `honest_note` / `physical-law.ids` 含 `B232`。
+- **✅ 生产部署**（2026-09-17 授权后执行，`remote_deploy.py --expect-head 6581e9c`）：
+  `SSH_OK` → `git pull` `2f879a1..6581e9c` **fast-forward（14 文件 +1219 / −25）** →
+  `pip install --force-reinstall --no-deps .` **`lda-design 0.9.92 → 0.9.93`**（消除 `/api/health` 版本串滞后）→
+  `dist/store.json` **未动**（2072 B）→ `systemctl restart lda-webui` rc=0 → `HEAD_MATCH=True`，`is-active → active`。
+  生产实测验收（内网 `127.0.0.1:3006` 与 nginx 域名一致）：
+
+  | 检查项 | 实测值 | 期望 | 判定 |
+  | --- | --- | --- | --- |
+  | `/api/health` version / benchmarks | `0.9.93` / `250` | 0.9.93 / 250 | ✅ |
+  | `vmm.tiers` | strict **229** / degraded **3** / self_certified **18** | 229 / 3 / 18 | ✅ |
+  | `judgment_paths.derived.totals` | anchors 250 / 229 / 3 / 18 | 250 / 229 / 3 / 18 | ✅ |
+  | `honest_note` 独立候选判出数 | **229** 道 | 229 | ✅ |
+  | `anchors.by_kind['physical-law'].ids` | count **238**，含 `B217` / `B232` | 含 B232 | ✅ |
+  | `anchors.dispatch_ids` | count **241** | 241（227 B + 13 S + 遗留 B35） | ✅ |
+  | `anchors.total` | **251** | 241 + 10 E | ✅ |
+  | `ci_core.count` | **178**（`stale=false`） | 178（不变） | ✅ |
+  | `/api/shelf` count | **75** | 75 | ✅ |
+
+  （`anchors.total`/`physical-law.count` 比题库口径各多 1，系 `_GOLDEN_DISPATCH`/`_PHYSICAL_LAW` 历史遗留键 `B35`——结构性、非缺陷；核新批次号以 `physical-law.ids` 出现 `B232` 为准。）
 
 ---
 
@@ -243,4 +260,4 @@ Volterra `K=e^{−(x−t)}` n=8192 → 1.393469341170 vs 闭式 1.393469340287�
 - 腿①「扩基加锚（稀释 terminal）」再上一档：**独立率 91.0% → 91.6%（229/250）**，**天花板 94.87% → 95.2%**。
 - terminal Tier-1 **恒 12 道**（永不升）；自证桩 **恒 18**（棘轮只减不增）；本批**纯新增**，零毕业、零判决行为改动、零 tol 放宽、零新增 CI smoke。
 - **剩余三冲刺腿态势**：①扩基加锚（纯内部，仍可继续 —— B-13 后剩余可扩空间按「天花板 − 独立率」计为 3.6 pt）②degraded 3→strict（纯内部，3 道：E9/E10/B21）③T2 解锁 6（外部 KPI，需 MPW 回流，见 `P1-E_T2_unlock_plan.md`）。
-- **⏳ 本轮指令未含部署授权** ⇒ 已本地提交并推送三端，**生产部署待杜先生明确授权后执行**（部署口径：strict 229 / degraded 3 / stub 18 / total 250、`honest_note` N 213→229、benchmarks 234→250、`dispatch_ids` 225→241、CI core 178 条不变）。
+- **✅ 已部署生产**：授权后 `remote_deploy.py --expect-head 6581e9c` 部署成功（`HEAD_MATCH=True`）——生产 `vmm.tiers` = strict **229** / degraded **3** / stub **18** / total **250**（独立率 **91.6%**）、`honest_note` **229**、`benchmarks` **250**、`dispatch_ids` **241**、`physical-law.ids` 含 `B232`、`ci_core` **178** 条不变。

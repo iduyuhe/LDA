@@ -2,6 +2,7 @@
 
 > 腿①「扩基加锚稀释 terminal」续十一 —— 纯内部确定性扩基 16 道严格独立锚。
 > 生成日期：2026-09-17 · 仓库 `D:/agent_LDA` · 锚库 B1-B216（234 道）。
+> **状态**：✅ **已于 2026-09-17 部署生产（v0.9.92 上线）** —— 详见 §9。
 
 ---
 
@@ -217,7 +218,15 @@ EM FDTD `leapfrog`（lda_solver/fdtd*）、FFT 拍频（B14）、Bragg/Bloch（B
   - github（`https://github.com/iduyuhe/LDA.git`）：**直连 exit=0**（本轮无需 SOCKS5 兜底），`57e8422..6135018  main -> main`
   - 临时 credential store 已删除（令牌仅驻内存，未落盘）。
 - **三端 HEAD 一致 = `6135018`**（本报告 §9 的 SHA 回填为第 2 个仅文档提交）。
-- **未部署**（本轮指令未含「部署」字样，待授权）。
+- **部署**：✅ **已于 2026-09-17 执行**（本报告写就时用户指令未含「部署」字样；此后用户单独明确授权「部署」，故本行为部署后回填）。`remote_deploy.py --expect-head 2f879a1` 实测：
+  - `git pull`：`57e8422..2f879a1` **Fast-forward**，**12 文件 +1170 / −22**（含新增 `_batch_b12_numeric.py` 549 行 + 本报告 230 行 + benchmarks/golden/verification_adapters 三件套 + 4 道计数 smoke + README/CONTRIBUTING/pyproject）。
+  - `pip install --force-reinstall --no-deps .`：`lda-design` **0.9.91 → 0.9.92**（成功，消除健康检查版本串滞后）。
+  - `git log -1` = `2f879a1` ⇒ **HEAD_MATCH=True**；`dist/store.json` **未动**（2072 B，Sep 9 20:52）。
+  - `systemctl restart lda-webui` rc=0、`is-active=active`（uptime 重置为 5 s）。
+  - `/api/health` **内网 + 外网**均：`{"version": "0.9.92", "benchmarks": 234, "layers_built": 8, "pdks": 5}`；`/api/shelf` `count=75`（未变）。
+  - `/api/verification_ledger`（**三分类验收**）：`vmm.tiers = {strict_independent 213, degraded_ordinal 3, self_certified 18}`；`judgment_paths.derived.totals = {anchors 234, strict_independent 213, degraded_ordinal 3, self_consistent_stub 18}`；`honest_note` N = **213**；`ci_core.count` = **178**（批次前值不变）；`anchors.by_kind['physical-law']['ids']` 含 **B201…B216**；`per_anchor` 抽查 B201/B204/B208/B212/B216 `maturity_tier` 全 `strict_independent`。**独立率 213/234 = 91.0% 上线确认**。
+  - ⚠️ `anchors.total` = **235**、`anchors.by_kind['physical-law']['count']` = **222**、`anchors.dispatch_ids` = **225** —— 三者比题库口径多 1 是**结构性**的（`_GOLDEN_DISPATCH`/`_PHYSICAL_LAW` 留有历史遗留键 `B35`，属 BENCHMARK_ORDER 缺口号 B35/38/39/69/72 之一、**不在题库**），**非 B-12 引入、未改代码**。核对一律以 `vmm.tiers` 三分类 与 `physical-law.ids` 含 `B216` 为准（该判读要点已同步进 `lda-prod-deploy` 技能）。
+- **首连瞬时失败（非故障）**：SSH 首连两次在 ~0.9 s 内报 `SSHException: Error reading SSH protocol banner`，第 3 次直接成功；同进程裸 socket 连 `115.191.20.92:22` 能正常读到 `SSH-2.0-OpenSSH_8.7` banner（0.08 s）⇒ 判定**瞬时抖动**（非沙箱拦截、非凭据/端口问题），重试即通过。已记入 `lda-prod-deploy` 技能「常见坑」。
 
 
 ---

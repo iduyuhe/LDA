@@ -2193,6 +2193,7 @@ _BATCH_B18_NUMERIC_MOD = None
 
 _BATCH_B19_NUMERIC_MOD = None
 _BATCH_B20_NUMERIC_MOD = None
+_BATCH_B21_NUMERIC_MOD = None
 
 
 
@@ -2878,6 +2879,20 @@ def _get_batch_b20_numeric():
         _ensure_paths()
         import _batch_b20_numeric as _m
     _BATCH_B20_NUMERIC_MOD = _m
+    return _m
+
+
+def _get_batch_b21_numeric():
+    """双路兜底导入 Batch B-21 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B21_NUMERIC_MOD
+    if _BATCH_B21_NUMERIC_MOD is not None:
+        return _BATCH_B21_NUMERIC_MOD
+    try:  # 优先包路径
+        from lda_harness import _batch_b21_numeric as _m
+    except ImportError:  # 回退
+        _ensure_paths()
+        import _batch_b21_numeric as _m
+    _BATCH_B21_NUMERIC_MOD = _m
     return _m
 
 
@@ -5387,5 +5402,149 @@ def _b344_rbf_interp_cand(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b20_numeric()
     return float(m.rbf_interp(float(p["a"]), float(p["x"]), 256))
+
+@_register_candidate(
+    "b345_hermite_fd_cand",
+    "Hermite 多项式 H_n(x) 由 n 阶中心差分 Rodrigues（对 e^{-x^2} 做 n 阶中心差分导数）×(−1)^n e^{x^2} 导出 ↔ numpy.polynomial.hermite 精确 oracle，方法学独立")
+def _b345_hermite_fd_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.hermite_fd(float(p["n"]), float(p["x"]), 512))
+
+
+@_register_candidate(
+    "b346_hermite_fd_cand",
+    "Hermite 多项式 H_n(x) 由 n 阶中心差分 Rodrigues（对 e^{-x^2} 做 n 阶中心差分导数）×(−1)^n e^{x^2} 导出 ↔ numpy.polynomial.hermite 精确 oracle，方法学独立")
+def _b346_hermite_fd_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.hermite_fd(float(p["n"]), float(p["x"]), 512))
+
+
+@_register_candidate(
+    "b347_hermite_fd_cand",
+    "Hermite 多项式 H_n(x) 由 n 阶中心差分 Rodrigues（对 e^{-x^2} 做 n 阶中心差分导数）×(−1)^n e^{x^2} 导出 ↔ numpy.polynomial.hermite 精确 oracle，方法学独立")
+def _b347_hermite_fd_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.hermite_fd(float(p["n"]), float(p["x"]), 512))
+
+
+@_register_candidate(
+    "b348_hermite_fd_cand",
+    "Hermite 多项式 H_n(x) 由 n 阶中心差分 Rodrigues（对 e^{-x^2} 做 n 阶中心差分导数）×(−1)^n e^{x^2} 导出 ↔ numpy.polynomial.hermite 精确 oracle，方法学独立")
+def _b348_hermite_fd_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.hermite_fd(float(p["n"]), float(p["x"]), 512))
+
+
+@_register_candidate(
+    "b349_hermite_fd_cand",
+    "Hermite 多项式 H_n(x) 由 n 阶中心差分 Rodrigues（对 e^{-x^2} 做 n 阶中心差分导数）×(−1)^n e^{x^2} 导出 ↔ numpy.polynomial.hermite 精确 oracle，方法学独立")
+def _b349_hermite_fd_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.hermite_fd(float(p["n"]), float(p["x"]), 512))
+
+
+@_register_candidate(
+    "b350_laguerre_fd_cand",
+    "Laguerre 多项式 L_n(x) 由 n 阶中心差分 Rodrigues（对 x^n e^{-x} 做 n 阶中心差分导数）×e^{x}/n! 导出 ↔ scipy.special.genlaguerre 精确 oracle，方法学独立")
+def _b350_laguerre_fd_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.laguerre_fd(float(p["n"]), float(p["x"]), 512))
+
+
+@_register_candidate(
+    "b351_laguerre_fd_cand",
+    "Laguerre 多项式 L_n(x) 由 n 阶中心差分 Rodrigues（对 x^n e^{-x} 做 n 阶中心差分导数）×e^{x}/n! 导出 ↔ scipy.special.genlaguerre 精确 oracle，方法学独立")
+def _b351_laguerre_fd_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.laguerre_fd(float(p["n"]), float(p["x"]), 512))
+
+
+@_register_candidate(
+    "b352_laguerre_fd_cand",
+    "Laguerre 多项式 L_n(x) 由 n 阶中心差分 Rodrigues（对 x^n e^{-x} 做 n 阶中心差分导数）×e^{x}/n! 导出 ↔ scipy.special.genlaguerre 精确 oracle，方法学独立")
+def _b352_laguerre_fd_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.laguerre_fd(float(p["n"]), float(p["x"]), 512))
+
+
+@_register_candidate(
+    "b353_laguerre_fd_cand",
+    "Laguerre 多项式 L_n(x) 由 n 阶中心差分 Rodrigues（对 x^n e^{-x} 做 n 阶中心差分导数）×e^{x}/n! 导出 ↔ scipy.special.genlaguerre 精确 oracle，方法学独立")
+def _b353_laguerre_fd_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.laguerre_fd(float(p["n"]), float(p["x"]), 512))
+
+
+@_register_candidate(
+    "b354_laguerre_fd_cand",
+    "Laguerre 多项式 L_n(x) 由 n 阶中心差分 Rodrigues（对 x^n e^{-x} 做 n 阶中心差分导数）×e^{x}/n! 导出 ↔ scipy.special.genlaguerre 精确 oracle，方法学独立")
+def _b354_laguerre_fd_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.laguerre_fd(float(p["n"]), float(p["x"]), 512))
+
+
+@_register_candidate(
+    "b355_bernstein_cand",
+    "Bernstein 多项式 degree-N 基求和 Σ f(k/N)·C(N,k)·t^k·(1−t)^{N−k} 逼近已知闭式 f(t) ↔ 精确 oracle，方法学独立")
+def _b355_bernstein_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.bernstein(p["name"], float(p["t"]), 512))
+
+
+@_register_candidate(
+    "b356_bernstein_cand",
+    "Bernstein 多项式 degree-N 基求和 Σ f(k/N)·C(N,k)·t^k·(1−t)^{N−k} 逼近已知闭式 f(t) ↔ 精确 oracle，方法学独立")
+def _b356_bernstein_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.bernstein(p["name"], float(p["t"]), 512))
+
+
+@_register_candidate(
+    "b357_bernstein_cand",
+    "Bernstein 多项式 degree-N 基求和 Σ f(k/N)·C(N,k)·t^k·(1−t)^{N−k} 逼近已知闭式 f(t) ↔ 精确 oracle，方法学独立")
+def _b357_bernstein_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.bernstein(p["name"], float(p["t"]), 512))
+
+
+@_register_candidate(
+    "b358_bernstein_cand",
+    "Bernstein 多项式 degree-N 基求和 Σ f(k/N)·C(N,k)·t^k·(1−t)^{N−k} 逼近已知闭式 f(t) ↔ 精确 oracle，方法学独立")
+def _b358_bernstein_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.bernstein(p["name"], float(p["t"]), 512))
+
+
+@_register_candidate(
+    "b359_bernstein_cand",
+    "Bernstein 多项式 degree-N 基求和 Σ f(k/N)·C(N,k)·t^k·(1−t)^{N−k} 逼近已知闭式 f(t) ↔ 精确 oracle，方法学独立")
+def _b359_bernstein_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.bernstein(p["name"], float(p["t"]), 512))
+
+
+@_register_candidate(
+    "b360_bernstein_cand",
+    "Bernstein 多项式 degree-N 基求和 Σ f(k/N)·C(N,k)·t^k·(1−t)^{N−k} 逼近已知闭式 f(t) ↔ 精确 oracle，方法学独立")
+def _b360_bernstein_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b21_numeric()
+    return float(m.bernstein(p["name"], float(p["t"]), 512))
+
 
 

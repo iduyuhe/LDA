@@ -170,6 +170,13 @@ from ._batch_b20_numeric import (  # Batch B-20 双方法独立锚数值核（v0
     golden_b344,
 )
 
+from ._batch_b21_numeric import (  # Batch B-21 双方法独立锚数值核（v0.9.101 · Hermite/Laguerre/Bernstein 多项式）
+    golden_b345, golden_b346, golden_b347, golden_b348, golden_b349,
+    golden_b350, golden_b351, golden_b352, golden_b353, golden_b354,
+    golden_b355, golden_b356, golden_b357, golden_b358, golden_b359,
+    golden_b360,
+)
+
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -885,6 +892,13 @@ _GOLDEN_DISPATCH = {
     "B338": golden_b338, "B339": golden_b339,
     "B340": golden_b340, "B341": golden_b341, "B342": golden_b342,  # 一维 RBF · MQ 插值
     "B343": golden_b343, "B344": golden_b344,
+    # ---- Batch B-21（v0.9.101 · Hermite 多项式中心差分 Rodrigues / Laguerre 多项式中心差分 Rodrigues / Bernstein 多项式逼近）----
+    "B345": golden_b345, "B346": golden_b346, "B347": golden_b347, "B348": golden_b348,  # Hermite H_n(x)
+    "B349": golden_b349,
+    "B350": golden_b350, "B351": golden_b351, "B352": golden_b352, "B353": golden_b353,  # Laguerre L_n(x)
+    "B354": golden_b354,
+    "B355": golden_b355, "B356": golden_b356, "B357": golden_b357,  # Bernstein 逼近 f(t)
+    "B358": golden_b358, "B359": golden_b359, "B360": golden_b360,
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -950,6 +964,9 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B329", "B330", "B331", "B332", "B333", "B334",  # Batch B-20（v0.9.100）
                  "B335", "B336", "B337", "B338", "B339",
                  "B340", "B341", "B342", "B343", "B344",
+                 "B345", "B346", "B347", "B348", "B349", "B350",
+                 "B351", "B352", "B353", "B354", "B355", "B356",
+                 "B357", "B358", "B359", "B360",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

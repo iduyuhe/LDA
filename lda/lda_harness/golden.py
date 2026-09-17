@@ -100,6 +100,12 @@ from ._batch_b9_numeric import (  # noqa: E402  # Batch B-9 双方法独立锚�
     golden_b161, golden_b162, golden_b163, golden_b164,
     golden_b165, golden_b166, golden_b167, golden_b168,
 )
+from ._batch_b10_numeric import (  # noqa: E402  # Batch B-10 双方法独立锚数值核（路径 B 扩基续九 · Mathieu 周期系数 ODE/椭圆积分与椭球静电/Fresnel 积分/线性扩散热核时间推进族 · v0.9.90 · 腿① 续加锚稀释 terminal）
+    golden_b169, golden_b170, golden_b171, golden_b172, golden_b173,
+    golden_b174, golden_b175, golden_b176, golden_b177, golden_b178,
+    golden_b179, golden_b180, golden_b181, golden_b182, golden_b183,
+    golden_b184,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -757,6 +763,10 @@ _GOLDEN_DISPATCH = {
     "B157": golden_b157, "B158": golden_b158, "B159": golden_b159, "B160": golden_b160,
     "B161": golden_b161, "B162": golden_b162, "B163": golden_b163, "B164": golden_b164,
     "B165": golden_b165, "B166": golden_b166, "B167": golden_b167, "B168": golden_b168,
+    "B169": golden_b169, "B170": golden_b170, "B171": golden_b171, "B172": golden_b172,  # Batch B-10（v0.9.90 · 腿① 续加锚 · Mathieu 周期系数 ODE）
+    "B173": golden_b173, "B174": golden_b174, "B175": golden_b175, "B176": golden_b176,  # 椭圆积分/椭球静电
+    "B177": golden_b177, "B178": golden_b178, "B179": golden_b179, "B180": golden_b180,  # 单摆椭圆积分/去极化/Fresnel
+    "B181": golden_b181, "B182": golden_b182, "B183": golden_b183, "B184": golden_b184,  # Fresnel/线性扩散热核时间推进
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -795,6 +805,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B145", "B146", "B147", "B148", "B149", "B150", "B151", "B152",  # Batch B-8（v0.9.88 · 腿① 续加锚 · 闭式 golden/超越方程 × FD 候选）
                  "B153", "B154", "B155", "B156", "B157", "B158", "B159", "B160",
                  "B161", "B162", "B163", "B164", "B165", "B166", "B167", "B168",  # Batch B-9（v0.9.89 · 腿① 续加锚 · 4阶梁超越方程/Hulthen/Fock-Darwin/Rosen-Morse II 闭式 × FEM/FD 候选）
+                 "B169", "B170", "B171", "B172", "B173", "B174", "B175", "B176",  # Batch B-10（v0.9.90 · 腿① 续加锚 · Mathieu 周期系数 ODE/椭圆积分与椭球静电/Fresnel 积分/线性扩散热核（特殊函数与初等闭式 × P1-FEM/Simpson/CN 时间推进））
+                 "B177", "B178", "B179", "B180", "B181", "B182", "B183", "B184",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

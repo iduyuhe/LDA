@@ -2177,6 +2177,7 @@ _BATCH_B6_MOD = None
 _BATCH_B7_MOD = None
 _BATCH_B8_MOD = None
 _BATCH_B9_MOD = None
+_BATCH_B10_MOD = None
 
 
 def _get_batch_b3():
@@ -2701,6 +2702,20 @@ def _get_batch_b9():
         _ensure_paths()
         import _batch_b9_numeric as _m
     _BATCH_B9_MOD = _m
+    return _m
+
+
+def _get_batch_b10():
+    """双路兜底导入 Batch B-10 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B10_MOD
+    if _BATCH_B10_MOD is not None:
+        return _BATCH_B10_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b10_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b10_numeric as _m
+    _BATCH_B10_MOD = _m
     return _m
 
 
@@ -3443,6 +3458,157 @@ def _b168_rosen_morse_n3_cand(spec: VerificationSpec, oracle_value: Any) -> floa
     p = spec.params
     m = _get_batch_b9()
     return float(m.cand_rosen_morse(3, float(p["C_eV"]), float(p["B_eV"])))
+
+
+# ---------------------------------------------------------------------------
+# Batch B-10（v0.9.90 · 腿① 续加锚稀释 terminal）：四族全新方程/特殊函数/数值方法类
+# —— Mathieu 周期系数 ODE（半周期 P1-FEM） / 椭圆积分与椭球静电（复合 Simpson） /
+# Fresnel 积分（复合 Simpson） / 线性扩散热核（双端零通量 Crank-Nicolson 时间推进）。
+# 纪律同源 B-1..B-9：确定性特殊函数/初等闭式 golden 对拍方法学不同源真实数值候选。
+# 同源体检（三条红线）详见 lda_harness/_batch_b10_numeric.py 模块 docstring。
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "b169_mathieu_a0_cand",
+    "Mathieu 偶族特征值 a₀ 由半周期 [0,π/2] P1-FEM 广义本征（BC=(N,N), k=0）导出 ↔ scipy Mathieu 特征值特殊函数，方法学独立")
+def _b169_mathieu_a0_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_mathieu("a", 0, float(p["q"])))
+
+
+@_register_candidate(
+    "b170_mathieu_a1_cand",
+    "Mathieu 偶族特征值 a₁ 由半周期 P1-FEM（BC=(N,D), k=0）导出 ↔ scipy Mathieu 特征值，方法学独立")
+def _b170_mathieu_a1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_mathieu("a", 1, float(p["q"])))
+
+
+@_register_candidate(
+    "b171_mathieu_b1_cand",
+    "Mathieu 奇族特征值 b₁ 由半周期 P1-FEM（BC=(D,N), k=0）导出 ↔ scipy Mathieu 特征值，方法学独立")
+def _b171_mathieu_b1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_mathieu("b", 1, float(p["q"])))
+
+
+@_register_candidate(
+    "b172_mathieu_b2_cand",
+    "Mathieu 奇族特征值 b₂ 由半周期 P1-FEM（BC=(D,D), k=0）导出 ↔ scipy Mathieu 特征值，方法学独立")
+def _b172_mathieu_b2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_mathieu("b", 2, float(p["q"])))
+
+
+@_register_candidate(
+    "b173_mathieu_a2_cand",
+    "Mathieu 偶族特征值 a₂ 由半周期 P1-FEM（BC=(N,N), k=1）导出 ↔ scipy Mathieu 特征值，方法学独立")
+def _b173_mathieu_a2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_mathieu("a", 2, float(p["q"])))
+
+
+@_register_candidate(
+    "b174_ellipse_perimeter_2_1_cand",
+    "椭圆截面周长（a=2 µm, b=1 µm）由纯数值复合 Simpson 4∫₀^{π/2}√(a²sin²θ+b²cos²θ)dθ 导出 ↔ 第二类椭圆积分 E(m) 特殊函数闭式，方法学独立")
+def _b174_ellipse_perimeter_2_1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_ellipse_perimeter(float(p["a_um"]), float(p["b_um"])))
+
+
+@_register_candidate(
+    "b175_ellipse_perimeter_3_1_cand",
+    "椭圆截面周长（高偏心度 a=3 µm, b=1 µm）由复合 Simpson 求积导出 ↔ 椭圆积分闭式，方法学独立")
+def _b175_ellipse_perimeter_3_1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_ellipse_perimeter(float(p["a_um"]), float(p["b_um"])))
+
+
+@_register_candidate(
+    "b176_pendulum_135_cand",
+    "大摆角单摆周期比（θ₀=135°）由纯数值复合 Simpson (2/π)∫₀^{π/2}dθ/√(1−m sin²θ) 导出 ↔ 第一类椭圆积分 K(m) 闭式，方法学独立")
+def _b176_pendulum_135_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_pendulum(float(p["theta0_deg"])))
+
+
+@_register_candidate(
+    "b177_pendulum_150_cand",
+    "大摆角单摆周期比（θ₀=150°，m→1 端点近奇异）由复合 Simpson 导出 ↔ 椭圆积分 K(m) 闭式，方法学独立")
+def _b177_pendulum_150_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_pendulum(float(p["theta0_deg"])))
+
+
+@_register_candidate(
+    "b178_oblate_depol_Nc_cand",
+    "扁椭球 c 轴去极化因子由 s→t 变换后的复合 Simpson 数值积分导出 ↔ 初等反正弦闭式，方法学独立")
+def _b178_oblate_depol_Nc_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_oblate_Nc(float(p["ar"])))
+
+
+@_register_candidate(
+    "b179_prolate_depol_Na_cand",
+    "长椭球 a 轴去极化因子由 s→t 变换后的复合 Simpson 数值积分导出 ↔ 初等对数闭式，方法学独立")
+def _b179_prolate_depol_Na_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_prolate_Na(float(p["ar"])))
+
+
+@_register_candidate(
+    "b180_fresnel_C1_cand",
+    "Fresnel 余弦积分 C(u) 由纯数值复合 Simpson 求积导出 ↔ scipy fresnel 特殊函数，方法学独立")
+def _b180_fresnel_C1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_fresnel_C(float(p["u"])))
+
+
+@_register_candidate(
+    "b181_fresnel_S1_cand",
+    "Fresnel 正弦积分 S(u) 由纯数值复合 Simpson 求积导出 ↔ scipy fresnel 特殊函数，方法学独立")
+def _b181_fresnel_S1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_fresnel_S(float(p["u"])))
+
+
+@_register_candidate(
+    "b182_diffusion_profile_50nm_cand",
+    "中心归一浓度剖面 R(x=50 nm) 由双端零通量 Crank-Nicolson 时间推进（相邻格点线性插值）导出 ↔ 高斯热核解析基础解，方法学独立")
+def _b182_diffusion_profile_50nm_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_diffusion(float(p["x_nm"])))
+
+
+@_register_candidate(
+    "b183_diffusion_profile_120nm_cand",
+    "中心归一浓度剖面 R(x=120 nm) 由 Crank-Nicolson 时间推进导出 ↔ 高斯热核解析基础解，方法学独立")
+def _b183_diffusion_profile_120nm_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_diffusion(float(p["x_nm"])))
+
+
+@_register_candidate(
+    "b184_diffusion_profile_200nm_cand",
+    "中心归一浓度剖面 R(x=200 nm，远场尾部) 由 Crank-Nicolson 时间推进导出 ↔ 高斯热核解析基础解，方法学独立")
+def _b184_diffusion_profile_200nm_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b10()
+    return float(m.cand_diffusion(float(p["x_nm"])))
 
 
 # ---------------------------------------------------------------------------

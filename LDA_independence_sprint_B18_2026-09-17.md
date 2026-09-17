@@ -239,9 +239,66 @@ B302 的 `a` 弱响应属**物理固有**：`I(ω,a)=∫₀¹cos(ω t)e^{at}dt`�
 | 9 | `lda/run_statistical_anchor_smoke.py` | 18919 B / 306 行 | **+4/−3**：`expected_b` 增 `B297-B312` 段 + 标签 |
 | 10 | `lda/run_webui_verification_ledger_smoke.py` | 6205 B / 123 行 | **+2/−2**：文档账本 309 / 三类和 330 |
 | 11 | `lda/run_maturity_baseline_smoke.py` | 5958 B / 114 行 | **+1/−1**：M5 口径 309/3/18 和=330（+ B-18 历程） |
-| 12 | `LDA_independence_sprint_B18_2026-09-17.md` | **本报告（新增）** | 纯 LF |
+| 12 | `LDA_independence_sprint_B18_2026-09-17.md` | **≈27.9 KB / 304 行（新增）** | 本报告（纯 LF） |
 
-**合计**：修改 10 文件 **+386/−21**；新增 2 文件（525 + 本报告行数）⇒ **12 文件 ≈ +911+/−21**。
+**合计**：修改 10 文件 **+386/−21**；新增 2 文件（525 + 304 行）⇒ **12 文件 +1158/−21**（与 git 提交统计一致）。
 
 **EOL 保真**：README `i/crlf w/crlf`、pyproject `i/crlf w/crlf`；
 `lda/**/*.py` 4 文件 + 4 道 smoke + 报告 + 数值核 **全纯 LF**（`lone_lf == 总行数`，**无 `w/mixed`**）。
+
+## 9. 提交与推送
+
+```
+# 1) 提交
+git add -A && git commit -m "feat(B-18): 独立率 93.3%→93.6%（293/314→309/330）· 三族 16 锚
+（振荡积分·Filon 型分段二次求积 / 非线性 ODE·Gauss–Legendre 2 级隐式 RK / 非线性 ODE·Adams–Bashforth 4 阶线性多步）"
+
+# 2) 三端推送（判定只看 [PUSH] gitee/github exit=0 + X..Y main -> main，不看整体 RC）
+python scripts/sync_push.py D:/agent_LDA
+
+# 3) 生产部署（⏳ 待用户授权，未执行）：
+#    python remote_deploy.py --expect-head 77c2998
+#    python check_ledger.py 309 3 18 330 B312
+```
+
+**§9 实测回填（2026-09-17）**：
+
+- **提交 `77c2998`**（12 文件 **+1158/−21**）：`lda_harness` 三文件 +186/+16/+161、数值核 525 行（新增）、报告（新增）、
+  README **+7/−6**、CONTRIBUTING **+2/−2**、pyproject **+1/−1**、4 道 smoke **+6/+4/+2/+1**（含各自 −）。
+- **推送**：`scripts/sync_push.py D:/agent_LDA` 实测 —— **gitee `exit=0`**；**github **direct `exit=0`**（本轮直连成功、**未触发 SOCKS5 兜底**）；`[CLEAN] store 已删除`（凭据仅驻内存、临时 store 已清）。
+  两端输出均为 `d5763fc..77c2998  main -> main`。
+- **远端抵达核验**（`git ls-remote`）：gitee `refs/heads/main` = `77c29987631a2602630f0eed3c8e74debb7739f3`；
+  github `refs/heads/main` = 同值 ⇒ **两端 ≡ 本地 HEAD `77c2998`**。
+- **EOL 复核**：README `i/crlf w/crlf`、pyproject `i/crlf w/crlf`；CONTRIBUTING / 报告 / 数值核 / 4 道 smoke 均 `i/lf w/lf` ⇒ **无 `w/mixed`**。
+- **工作区** clean（`git status --short` 空）。
+- ⏳ **生产部署待授权**（用户未下达部署指令）⇒ 本批止于「已提交 · 已推三端 · **未部署**」；README 顶行标 `⏳ 当前版本：v0.9.98（生产部署待授权）`。
+
+## 10. 结论与下一步
+
+### 10.1 验收清单
+
+| # | 验收项 | 结果 |
+| --- | --- | --- |
+| 1 | 16 道新锚全部落 `strict_independent` | ✅ 16/16（`_vmm_classify` 实测） |
+| 2 | 判据 D 严格单调（首项 ≫1e-13 + 末项 <tol + 逐档递减） | ✅ 16/16 |
+| 3 | 闭式极限自检 | ✅ 9/9（含 `scipy.integrate.quad` / `solve_ivp(DOP853)` 第三方交叉） |
+| 4 | 真 harness 路径 `BENCHMARK_ORDER`/`DEFS`/`specs`/`cand_map` | ✅ 330 / 330 / 330 / 330，16 个新 bid 全在列；`BENCHMARK_CANDIDATES=312` |
+| 5 | 反向标定（注册键 ×1.1 信号 > 1.4×tol） | ✅ 逐锚口径 16/16（最弱 3.51× B312）；**逐键口径最弱 1.49×（B302 `a`）**——主动披露 |
+| 6 | golden 量级 ≥ 13.5×tol | ✅ 最薄 **16.4×tol**（B303） |
+| 7 | 零 tol 放宽 | ✅ `_TOL_BY_BID` 全 0.01 |
+| 8 | 棘轮 `MAX_SELF_CERTIFIED=18` 不动 | ✅ 4/4 护栏守住（`self_certified=18`） |
+| 9 | B-17 十六锚零回归 | ✅ 16/16；全量 330 锚无回归 **PASS=330/330** |
+| 10 | 同源体检（数值/结构/golden 截断 三红线） | ✅ 6 组 grep 实跑全仓，三族零实质同源；被否 10 项 |
+| 11 | 10 道护栏红灯集合与 B-14..B-17 逐字一致 | ✅ **7 绿 3 红**，零新回归 |
+| 12 | 账本 12 文件 `count==1` + EOL 保真 | ✅ 全过，无 `w/mixed` |
+| 13 | 提交 + 三端推送 | ✅ `77c2998`，gitee/github 双端 ≡ HEAD |
+| 14 | 生产部署 | ⏳ **待授权**（未部署；HEAD `77c2998` 已推三端） |
+
+### 10.2 下一步（按优先级）
+
+1. **B-18 生产部署（待授权）** —— 用户下达后执行 `remote_deploy.py --expect-head 77c2998` + `check_ledger.py 309 3 18 330 B312`
+   ⇒ 预期 `ALL_OK (fails=0)`；随后 README 顶行转 `✅ 已部署生产`、本报告 §9/§10 回填实测。
+2. **腿①续批 B-19** —— 同范式再选三族（候选池须先过**同源体检**；**注意 `_BATCH_B19*` 命名避让核检**）。
+3. **腿② degraded 3→strict**（纯内部，B21 66.0× / E10 0.6× / E9 0.13×）。
+4. **三红专项清算**（`d_criterion` ③ 13 道 B-4 地板 / `falsifiability` ⑨ numpy bool 序列化 / `coverage_deadzone` B5、B6 期望陈旧）—— 均为**纯内部可修**。
+5. **腿③ T2 解锁 6 道**（需 MPW 回流，外部 KPI，非技术阻塞）。

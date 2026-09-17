@@ -124,6 +124,12 @@ from ._batch_b13_numeric import (  # noqa: E402  # Batch B-13 双方法独立锚
     golden_b227, golden_b228, golden_b229, golden_b230, golden_b231,
     golden_b232,
 )
+from ._batch_b14_numeric import (  # noqa: E402  # Batch B-14 双方法独立锚数值核（路径 B 扩基续十三 · 定常对流–扩散中心差分/第二类 Fredholm 可分核 Nyström/自然三次样条逼近/非线性两点边值打靶法族 · v0.9.94 · 腿① 续加锚稀释 terminal）
+    golden_b233, golden_b234, golden_b235, golden_b236, golden_b237,
+    golden_b238, golden_b239, golden_b240, golden_b241, golden_b242,
+    golden_b243, golden_b244, golden_b245, golden_b246, golden_b247,
+    golden_b248,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -797,6 +803,10 @@ _GOLDEN_DISPATCH = {
     "B221": golden_b221, "B222": golden_b222, "B223": golden_b223, "B224": golden_b224,  # 矩阵指数 scaling–squaring 闭式（−sin t/e^{−t}/2e^{−t}−e^{−2t}）
     "B225": golden_b225, "B226": golden_b226, "B227": golden_b227, "B228": golden_b228,  # 变分极值解析极小（−a/4 / 2√a / −e^{b−1} / c−c ln c）
     "B229": golden_b229, "B230": golden_b230, "B231": golden_b231, "B232": golden_b232,  # 第二类 Volterra 积分方程解析解
+    "B233": golden_b233, "B234": golden_b234, "B235": golden_b235, "B236": golden_b236,  # Batch B-14（v0.9.94 · 腿① 续加锚 · 定常对流–扩散方程中心差分）
+    "B237": golden_b237, "B238": golden_b238, "B239": golden_b239, "B240": golden_b240,  # 第二类 Fredholm 可分核 · Nyström 求积
+    "B241": golden_b241, "B242": golden_b242, "B243": golden_b243, "B244": golden_b244,  # 自然三次样条插值逼近
+    "B245": golden_b245, "B246": golden_b246, "B247": golden_b247, "B248": golden_b248,  # 非线性两点边值 · RK4 打靶法
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -843,6 +853,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B209", "B210", "B211", "B212", "B213", "B214", "B215", "B216",
                  "B217", "B218", "B219", "B220", "B221", "B222", "B223", "B224",  # Batch B-13（v0.9.93 · 腿① 续加锚 · 分数阶 GL/矩阵指数/变分极值/Volterra 积分方程）
                  "B225", "B226", "B227", "B228", "B229", "B230", "B231", "B232",
+                 "B233", "B234", "B235", "B236", "B237", "B238", "B239", "B240",  # Batch B-14（v0.9.94 · 腿① 续加锚 · 对流–扩散/Fredholm 积分方程/三次样条/非线性 BVP 打靶）
+                 "B241", "B242", "B243", "B244", "B245", "B246", "B247", "B248",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

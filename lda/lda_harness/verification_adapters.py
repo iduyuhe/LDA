@@ -2181,6 +2181,7 @@ _BATCH_B10_MOD = None
 _BATCH_B11_MOD = None
 _BATCH_B12_MOD = None
 _BATCH_B13_MOD = None
+_BATCH_B14_MOD = None
 
 
 def _get_batch_b3():
@@ -2762,6 +2763,20 @@ def _get_batch_b13():
         _ensure_paths()
         import _batch_b13_numeric as _m
     _BATCH_B13_MOD = _m
+    return _m
+
+
+def _get_batch_b14():
+    """双路兜底导入 Batch B-14 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B14_MOD
+    if _BATCH_B14_MOD is not None:
+        return _BATCH_B14_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b14_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b14_numeric as _m
+    _BATCH_B14_MOD = _m
     return _m
 
 
@@ -4101,6 +4116,151 @@ def _b232_volterra_ramp_cand(spec: VerificationSpec, oracle_value: Any) -> float
     p = spec.params
     m = _get_batch_b13()
     return float(m.cand_b232(float(p["lam"])))
+
+
+
+@_register_candidate(
+    "b233_conv_diff_pe35_cand",
+    "θ(0.9) 由三点中心差分 + Thomas 追赶法导出 ↔ 定常对流–扩散方程闭式解，方法学独立")
+def _b233_conv_diff_pe35_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b233(float(p["pe"])))
+
+
+@_register_candidate(
+    "b234_conv_diff_pe50_cand",
+    "θ(0.9) 由三点中心差分 + Thomas 追赶法导出 ↔ 定常对流–扩散方程闭式解，方法学独立")
+def _b234_conv_diff_pe50_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b234(float(p["pe"])))
+
+
+@_register_candidate(
+    "b235_conv_diff_pe100_cand",
+    "θ(0.9) 由三点中心差分 + Thomas 追赶法导出 ↔ 定常对流–扩散方程闭式解，方法学独立")
+def _b235_conv_diff_pe100_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b235(float(p["pe"])))
+
+
+@_register_candidate(
+    "b236_conv_diff_pe200_cand",
+    "θ(0.9) 由三点中心差分 + Thomas 追赶法导出 ↔ 定常对流–扩散方程闭式解，方法学独立")
+def _b236_conv_diff_pe200_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b236(float(p["pe"])))
+
+
+@_register_candidate(
+    "b237_fredholm_lin2_one_cand",
+    "φ(0.5) 由均匀节点梯形 Nyström 求积（稠密 (I−λWK)φ=f）导出 ↔ 第二类 Fredholm 可分核 resolvent 闭式，方法学独立")
+def _b237_fredholm_lin2_one_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b237(float(p["lam"])))
+
+
+@_register_candidate(
+    "b238_fredholm_lin2_exp_cand",
+    "φ(0.5) 由均匀节点梯形 Nyström 求积导出 ↔ 第二类 Fredholm 可分核 resolvent 闭式，方法学独立")
+def _b238_fredholm_lin2_exp_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b238(float(p["lam"])))
+
+
+@_register_candidate(
+    "b239_fredholm_lin3_one_cand",
+    "φ(0.5) 由均匀节点梯形 Nyström 求积导出 ↔ 第二类 Fredholm 可分核 resolvent 闭式，方法学独立")
+def _b239_fredholm_lin3_one_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b239(float(p["lam"])))
+
+
+@_register_candidate(
+    "b240_fredholm_lin2_cos_cand",
+    "φ(0.5) 由均匀节点梯形 Nyström 求积导出 ↔ 第二类 Fredholm 可分核 resolvent 闭式，方法学独立")
+def _b240_fredholm_lin2_cos_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b240(float(p["lam"])))
+
+
+@_register_candidate(
+    "b241_spline_e05s4_cand",
+    "x₀ 点值由均匀节点自然三次样条（三对角解 M_j + 分段落值）导出 ↔ 初等闭式精确值，方法学独立")
+def _b241_spline_e05s4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b241(float(p["xq"])))
+
+
+@_register_candidate(
+    "b242_spline_at3_cand",
+    "x₀ 点值由均匀节点自然三次样条导出 ↔ 初等闭式精确值，方法学独立")
+def _b242_spline_at3_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b242(float(p["xq"])))
+
+
+@_register_candidate(
+    "b243_spline_e2x_cand",
+    "x₀ 点值由均匀节点自然三次样条导出 ↔ 初等闭式精确值，方法学独立")
+def _b243_spline_e2x_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b243(float(p["xq"])))
+
+
+@_register_candidate(
+    "b244_spline_rec_cand",
+    "x₀ 点值由均匀节点自然三次样条导出 ↔ 初等闭式精确值，方法学独立")
+def _b244_spline_rec_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b244(float(p["xq"])))
+
+
+@_register_candidate(
+    "b245_bvp_quad_cand",
+    "y(0.5) 由 RK4 + 未知初斜率 s 打靶命中右端 BC 导出 ↔ 非线性 ODE 初等闭式 y=(1+βx)^{−2}，方法学独立")
+def _b245_bvp_quad_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b245(float(p["beta"])))
+
+
+@_register_candidate(
+    "b246_bvp_cubic_cand",
+    "y(0.5) 由 RK4 + 未知初斜率 s 打靶命中右端 BC 导出 ↔ 非线性 ODE 初等闭式 y=(1+βx)^{−1}，方法学独立")
+def _b246_bvp_cubic_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b246(float(p["beta"])))
+
+
+@_register_candidate(
+    "b247_bvp_tan_cand",
+    "y(0.5) 由 RK4 + 未知初斜率 s 打靶命中右端 BC 导出 ↔ 非线性 ODE 初等闭式 √c·tan(√c x)，方法学独立")
+def _b247_bvp_tan_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b247(float(p["cc"])))
+
+
+@_register_candidate(
+    "b248_bvp_log_cand",
+    "y(0.5) 由 RK4 + 未知初斜率 s 打靶命中右端 BC 导出 ↔ 非线性 ODE 初等闭式 ln(1+x(e^{y1}−1))，方法学独立")
+def _b248_bvp_log_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b14()
+    return float(m.cand_b248(float(p["y1"])))
 
 
 

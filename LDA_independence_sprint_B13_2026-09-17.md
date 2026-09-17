@@ -221,7 +221,20 @@ Volterra `K=e^{−(x−t)}` n=8192 → 1.393469341170 vs 闭式 1.393469340287�
 
 ## 9. 提交与推送
 
-<!-- COMMIT_SECTION -->
+- **提交**：`249e455`「P1-1 B-13 扩基 16 锚（v0.9.93）：独立率 91.0%→91.6%、天花板 94.87%→95.2%」——
+  **12 文件 +1192 / −22**，新增 `lda/lda_harness/_batch_b13_numeric.py` 与 `LDA_independence_sprint_B13_2026-09-17.md`；
+  `dist/store.json` **未动**；提交前闸门校验「白名单外零变更」通过。
+- **推送三端**（`scripts/sync_push.py D:/agent_LDA`）：
+
+| 远端 | 结果 |
+| --- | --- |
+| `gitee` | `dd9fd9c..249e455  main -> main` · **exit=0**（直连） |
+| `github` | `dd9fd9c..249e455  main -> main` · **exit=0**（直连，proxy 已清空 ⇒ **未退回 SOCKS5**） |
+
+  `[CLEAN] store 已删除`；**三端 HEAD 一致 = `249e455`**。
+- **本地工作树**：`git status` clean（回填本行后产生的文档提交另计）。
+- **⏳ 生产部署：未执行** —— 本轮指令未含部署授权。部署时用
+  `remote_deploy.py --expect-head <回填后的 HEAD>`，并按 §10 的验收口径核对 `vmm.tiers` / `honest_note` / `physical-law.ids` 含 `B232`。
 
 ---
 

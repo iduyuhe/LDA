@@ -247,12 +247,21 @@ Telegrapher / Pöschl–Teller / Laplace 数值反演 / 蒙特卡洛 —— **�
 
 ## 9. 提交与推送
 
-- **主提交**：`16a08aa`（12 文件 **+1319/−21**：修改 10 + 新增 2）· 三端推送（gitee + github）· **未部署**（等授权）
+- **主提交**：`16a08aa`（12 文件 **+1319/−21**：修改 10 + 新增 2）· 三端推送（gitee + github）· **已部署生产**（2026-09-17 · `ce94263`）
 - **推送实测**（`scripts/sync_push.py D:/agent_LDA`，**两轮**）：
   - 第 1 轮（`d7a9be2..d7c9326`）：gitee **exit=0**、github **direct exit=0** ⇒ 两端 `main -> main`
   - 第 2 轮（收口 `d7c9326..ed8fdc3`）：gitee **exit=0**；github **direct exit=128**（`Recv failure: Connection was reset`）⇒ **SOCKS5 兜底 exit=0**
   - **权威复核 `git ls-remote`**：`gitee/main = github/main = ed8fdc3a2898dc66761438a8d1ab5fa2d1c82287` **= 本地 HEAD** ⇒ 两端**均已同步到位**（github 直连时通时断属已知网络抖动，`sync_push.py` 的「直连优先 + SOCKS5 兜底」双支路按设计生效，**未依赖任一单条通路**）
-- **回填**：部署后另行回填本文件与 README 顶行的部署实证
+- **生产部署**（2026-09-17 · `remote_deploy.py --expect-head ce94263` · 密码走 Windows 凭据管理器 GENERIC 凭据免录入）：
+  - `[git pull]` rc=0：`From https://gitee.com/i4hub/LDA  73bbbb0..ce94263  main -> origin/main`，**14 文件 +1345/−31**（新增本报告 + `_batch_b19_numeric.py`）⇒ 生产端拉取成功即**权威证明三端推送到位**（不依赖本地 `ls-remote`）
+  - `[pip reinstall metadata]` rc=0：`lda-design 0.9.98 → 0.9.99`（消除 `/api/health` 版本串滞后）
+  - `[git log -1]` = `ce94263` ⇒ **`HEAD_MATCH=True`**
+  - `[dist/store.json]` rc=0：**2072 B 未动**（gitignore，pull 不影响）
+  - `[restart]` rc=0 · `[is-active]` = **active**
+  - `/api/health`（内网 `127.0.0.1:3006` + 外网 nginx 域名）均返回：`version 0.9.99 / benchmarks 346 / layers_built 8 / pdks 5`；`/api/shelf` count = **75**
+  - **账本核验**（`check_ledger.py 325 3 18 346 B328`）：**13/13 `RESULT: ALL_OK (fails=0)`** ⇒ `vmm.tiers = 325/3/18`、`derived.totals.anchors = 346`、`honest_note` = **325**、`physical-law.ids count = 334`、`dispatch_ids = 337`、`anchors.total = 347`、`ci_core.count = 178` 不变
+  - **逐锚在册复核**（拉生产 `/api/verification_ledger` 本地比对，59,914 B）：**B313-B328 在 `physical-law.by_kind['physical-law']['ids']` 与 `anchors.dispatch_ids` 均 16/16**；且 **B297-B312（B-18）与 B281-B296（B-17）仍 16/16 在册** ⇒ **三批 48 锚全部可查、零回归**
+- **回填**：本文件与 README 顶行已按上述实测回填；`lda-prod-deploy` 技能账本口径已刷至 B-19（325/3/18/346）
 - **scratch**：本轮 `D:\tmp\_b19_*` 共 **69 件 / 319,772 B** 已备份至仓库外 `D:\agent_LDA_scratch_backup_2026-09-17_b19\`（`_MANIFEST.txt` 92 行 · SHA256 复核 **0 bad**）后删除；**69/69 覆盖 · 0 missing · 0 `__dup` · tmp 残留 0 · `git status` 空**。🔴 实测**脚本按技能预警跑了两遍**（沙箱尝试 → 升级重跑）——因备份目录带批次后缀 + manifest 走 APPEND 分支，**零数据丢失、零覆盖**（见 `lda-scratch-cleanup` 技能 3) 条 warning 逐条应验）
 
 ---
@@ -273,6 +282,7 @@ Telegrapher / Pöschl–Teller / Laplace 数值反演 / 蒙特卡洛 —— **�
 | 8 | B-18 十六锚零回归 | ✅ B312 `\|Δ\|=2.145e-10` 逐位复现 |
 | 9 | 护栏红灯集合与 B-14…B-18 逐字一致 | ✅ 3 道既有红灯，零新回归 |
 | 10 | 账本 7 处同步（README/CONTRIBUTING/pyproject + 4 smoke） | ✅ `count==1` 断言全过 |
+| 11 | 生产部署（`--expect-head ce94263`） | ✅ `HEAD_MATCH=True` · health 0.9.99/346 · ledger 325/3/18/346 · **13/13 `ALL_OK`** · 三批 48 锚全在册 |
 
 ### 10.2 账本与三腿状态（`sprint_scan.py` 实跑）
 
@@ -286,4 +296,4 @@ Telegrapher / Pöschl–Teller / Laplace 数值反演 / 蒙特卡洛 —— **�
 1. **腿①续批 B-20**（同范式再选三族，先过同源体检；注意 `_BATCH_B20*` 命名避让核检）
 2. **腿② degraded 3→strict**（B21 66.0× / E10 0.6× / E9 0.13×）
 3. **三红专项清算**（`d_criterion` ③ / `falsifiability` ⑨ / `coverage_deadzone`）
-4. **scratch 专项清理**（`lda-scratch-cleanup`）
+4. ✅ **已完成**：**生产部署**（2026-09-17 · `ce94263` · 13/13 `ALL_OK` · B313-B328 16/16 在册）+ **scratch 清理**（69 件备份仓库外后删除 · 0 残留）

@@ -2179,6 +2179,7 @@ _BATCH_B8_MOD = None
 _BATCH_B9_MOD = None
 _BATCH_B10_MOD = None
 _BATCH_B11_MOD = None
+_BATCH_B12_MOD = None
 
 
 def _get_batch_b3():
@@ -2731,6 +2732,20 @@ def _get_batch_b11():
         _ensure_paths()
         import _batch_b11_numeric as _m
     _BATCH_B11_MOD = _m
+    return _m
+
+
+def _get_batch_b12():
+    """双路兜底导入 Batch B-12 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B12_MOD
+    if _BATCH_B12_MOD is not None:
+        return _BATCH_B12_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b12_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b12_numeric as _m
+    _BATCH_B12_MOD = _m
     return _m
 
 
@@ -3776,6 +3791,156 @@ def _b200_voigt_s2_g05_x3_cand(spec: VerificationSpec, oracle_value: Any) -> flo
     p = spec.params
     m = _get_batch_b11()
     return float(m.cand_b200(float(p["sigma"]), float(p["gamma"]), float(p["x"])))
+
+
+# ---------------------------------------------------------------------------
+# Batch B-12（v0.9.92 · 腿① 续加锚稀释 terminal）：四族全新数值方法/代数/特殊函数类
+# —— 正交多项式高斯求积 / 连分数有理逼近 / Durand–Kerner 同时迭代求根 / ₂F₁ 超几何 Euler 积分表示。
+# 纪律同源 B-1..B-11：确定性特殊函数/初等闭式 golden 对拍方法学不同源的真实数值候选。
+# 同源体检（三条红线）详见 lda_harness/_batch_b12_numeric.py 模块 docstring。
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "b201_gl_pow_singular_cand",
+    "端点幂奇性积分由 Gauss–Legendre n 节点高斯求积导出 ↔ 1/(1−p) 闭式，方法学独立")
+def _b201_gl_pow_singular_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b201(float(p["p"])))
+
+
+@_register_candidate(
+    "b202_lag_frac_power_cand",
+    "分数幂矩由 Gauss–Laguerre n 节点高斯求积导出 ↔ Γ(q+1) 闭式，方法学独立")
+def _b202_lag_frac_power_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b202(float(p["q"])))
+
+
+@_register_candidate(
+    "b203_herm_abs_power_cand",
+    "绝对值幂矩由 Gauss–Hermite n 节点高斯求积导出 ↔ Γ((p+1)/2) 闭式，方法学独立")
+def _b203_herm_abs_power_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b203(float(p["p"])))
+
+
+@_register_candidate(
+    "b204_cheb_lorentz_cand",
+    "Lorentz 型加权积分由 Gauss–Chebyshev n 节点高斯求积导出 ↔ π/√(1−a²) 闭式，方法学独立")
+def _b204_cheb_lorentz_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b204(float(p["a"])))
+
+
+@_register_candidate(
+    "b205_cf_tan_cand",
+    "tan x 由 Lambert 连分数 N 层截断递推导出 ↔ 初等超越闭式，方法学独立")
+def _b205_cf_tan_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b205(float(p["x"])))
+
+
+@_register_candidate(
+    "b206_cf_arctan_cand",
+    "arctan x 由 Euler 连分数 N 层截断导出 ↔ π/4 闭式，方法学独立")
+def _b206_cf_arctan_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b206(float(p["x"])))
+
+
+@_register_candidate(
+    "b207_cf_coth_cand",
+    "coth x 由双曲连分数 N 层截断（含 1/x 主项）导出 ↔ 初等闭式，方法学独立")
+def _b207_cf_coth_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b207(float(p["x"])))
+
+
+@_register_candidate(
+    "b208_cf_sqrt1p_cand",
+    "√(1+x) 由平方根连分数 N 层截断导出 ↔ 初等闭式（√2），方法学独立")
+def _b208_cf_sqrt1p_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b208(float(p["x"])))
+
+
+@_register_candidate(
+    "b209_dk_x3_27_cand",
+    "x³−27 实根由 Durand–Kerner 同时迭代导出（按实部最大选根，不借 golden）↔ a^{1/3} 闭式，方法学独立")
+def _b209_dk_x3_27_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b209(float(p["a"])))
+
+
+@_register_candidate(
+    "b210_dk_x4_16_cand",
+    "x⁴−16 实根由 Durand–Kerner 同时迭代导出 ↔ a^{1/4} 闭式，方法学独立")
+def _b210_dk_x4_16_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b210(float(p["a"])))
+
+
+@_register_candidate(
+    "b211_dk_x5_243_cand",
+    "x⁵−243 实根由 Durand–Kerner 同时迭代导出 ↔ a^{1/5} 闭式，方法学独立")
+def _b211_dk_x5_243_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b211(float(p["a"])))
+
+
+@_register_candidate(
+    "b212_dk_x6_64_cand",
+    "x⁶−64 实根由 Durand–Kerner 同时迭代导出 ↔ a^{1/6} 闭式，方法学独立")
+def _b212_dk_x6_64_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b212(float(p["a"])))
+
+
+@_register_candidate(
+    "b213_hyp_asin_cand",
+    "₂F₁(½,½;3/2;z²) 由 Euler 积分表示 + Gauss–Jacobi 求积导出 ↔ arcsin(z)/z 闭式，方法学独立")
+def _b213_hyp_asin_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b213(float(p["z"])))
+
+
+@_register_candidate(
+    "b214_hyp_atanh_cand",
+    "₂F₁(½,1;3/2;z²) 由 Euler 积分表示 + Gauss–Jacobi 求积导出 ↔ arctanh(z)/z 闭式，方法学独立")
+def _b214_hyp_atanh_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b214(float(p["z"])))
+
+
+@_register_candidate(
+    "b215_hyp_atan_cand",
+    "₂F₁(½,1;3/2;−z²) 由 Euler 积分表示 + Gauss–Jacobi 求积导出 ↔ arctan(z)/z 闭式，方法学独立")
+def _b215_hyp_atan_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b215(float(p["z"])))
+
+
+@_register_candidate(
+    "b216_hyp_asinh_cand",
+    "₂F₁(½,½;3/2;−z²) 由 Euler 积分表示 + Gauss–Jacobi 求积导出 ↔ arcsinh(z)/z 闭式，方法学独立")
+def _b216_hyp_asinh_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b12()
+    return float(m.cand_b216(float(p["z"])))
 
 
 

@@ -112,6 +112,12 @@ from ._batch_b11_numeric import (  # noqa: E402  # Batch B-11 双方法独立锚
     golden_b195, golden_b196, golden_b197, golden_b198, golden_b199,
     golden_b200,
 )
+from ._batch_b12_numeric import (  # noqa: E402  # Batch B-12 双方法独立锚数值核（路径 B 扩基续十一 · 正交多项式高斯求积/连分数有理逼近/Durand–Kerner 求根/₂F₁ 超几何 Euler 积分族 · v0.9.92 · 腿① 续加锚稀释 terminal）
+    golden_b201, golden_b202, golden_b203, golden_b204, golden_b205,
+    golden_b206, golden_b207, golden_b208, golden_b209, golden_b210,
+    golden_b211, golden_b212, golden_b213, golden_b214, golden_b215,
+    golden_b216,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -777,6 +783,10 @@ _GOLDEN_DISPATCH = {
     "B189": golden_b189, "B190": golden_b190, "B191": golden_b191, "B192": golden_b192,  # Kepler 中心力轨道闭式
     "B193": golden_b193, "B194": golden_b194, "B195": golden_b195, "B196": golden_b196,  # 辐射传热角系数闭式
     "B197": golden_b197, "B198": golden_b198, "B199": golden_b199, "B200": golden_b200,  # Voigt 谱线（scipy voigt_profile）
+    "B201": golden_b201, "B202": golden_b202, "B203": golden_b203, "B204": golden_b204,  # Batch B-12（v0.9.92 · 腿① 续加锚 · 正交多项式高斯求积）
+    "B205": golden_b205, "B206": golden_b206, "B207": golden_b207, "B208": golden_b208,  # 连分数有理逼近（tan/arctan/coth/√）
+    "B209": golden_b209, "B210": golden_b210, "B211": golden_b211, "B212": golden_b212,  # Durand–Kerner 多项式求根闭式
+    "B213": golden_b213, "B214": golden_b214, "B215": golden_b215, "B216": golden_b216,  # ₂F₁ 超几何 Euler 积分表示（asin/atanh/atan/asinh）
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -819,6 +829,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B177", "B178", "B179", "B180", "B181", "B182", "B183", "B184",
                  "B185", "B186", "B187", "B188", "B189", "B190", "B191", "B192",  # Batch B-11（v0.9.91 · 腿① 续加锚 · 量子统计积分 ζ/Kepler 轨道/角系数/Voigt）
                  "B193", "B194", "B195", "B196", "B197", "B198", "B199", "B200",
+                 "B201", "B202", "B203", "B204", "B205", "B206", "B207", "B208",  # Batch B-12（v0.9.92 · 腿① 续加锚 · 高斯求积/连分数/DK 求根/₂F₁）
+                 "B209", "B210", "B211", "B212", "B213", "B214", "B215", "B216",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

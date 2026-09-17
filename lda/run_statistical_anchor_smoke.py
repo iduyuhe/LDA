@@ -8,7 +8,7 @@
      agent/llm 模块；harness S7 的 oracle_kind 为确定性统计量）
   ⑤ S7 harness reference PASS（golden 自洽）
   ⑥ 扰动负例：损耗整体 +1dB → 分布下移 → candidate 偏离 golden > tol 被 FAIL 抓
-  ⑦ 题库计数 218 题（B1-B200 = 195 + E1-E10 = 10 + S1-S13 = 13）
+  ⑦ 题库计数 234 题（B1-B216 = 211 + E1-E10 = 10 + S1-S13 = 13）
   ⑧ S8 OSNR 统计锚（模板复用：Jensen 方向 + golden 收敛）
   ⑨ 蒙特卡洛收敛性（N 扫描收敛带）
 
@@ -132,8 +132,9 @@ def main() -> int:
                   + [f"B{i}" for i in range(137, 153)]      # B137-B152 = Batch B-8 十六锚（2D 类氢/2D 圆环+AB 通量/3D 有限深球形阱/各向异性 3D 谐振子）
                   + [f"B{i}" for i in range(153, 169)]     # B153-B168 = Batch B-9 十六锚（4阶 Euler-Bernoulli 梁/Hulthen 势/Fock-Darwin 量子点/Rosen-Morse II 势）
                   + [f"B{i}" for i in range(169, 185)]     # B169-B184 = Batch B-10 十六锚（Mathieu 周期系数 ODE/椭圆积分与椭球静电/Fresnel 积分/线性扩散热核时间推进）
-                  + [f"B{i}" for i in range(185, 201)])    # B185-B200 = Batch B-11 十六锚（量子统计积分 Γ·ζ/经典二体 Kepler 轨道/辐射传热角系数/Voigt 谱线轮廓）
-    check("题库（B1-B200 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + Batch B-7 十六锚 + Batch B-8 十六锚 + Batch B-9 十六锚 + Batch B-10 十六锚 + Batch B-11 十六锚 + E1-E10 + S1-S13 动态计数）",
+                  + [f"B{i}" for i in range(185, 201)]     # B185-B200 = Batch B-11 十六锚（量子统计积分 Γ·ζ/经典二体 Kepler 轨道/辐射传热角系数/Voigt 谱线轮廓）
+                  + [f"B{i}" for i in range(201, 217)])    # B201-B216 = Batch B-12 十六锚（正交多项式高斯求积/连分数有理逼近/Durand–Kerner 求根/₂F₁ 超几何 Euler 积分）
+    check("题库（B1-B216 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + Batch B-7 十六锚 + Batch B-8 十六锚 + Batch B-9 十六锚 + Batch B-10 十六锚 + Batch B-11 十六锚 + Batch B-12 十六锚 + E1-E10 + S1-S13 动态计数）",
           b_ids == expected_b
           and s_ids == [f"S{i}" for i in range(1, 14)]
           and e_ids == [f"E{i}" for i in range(1, len(e_ids) + 1)],

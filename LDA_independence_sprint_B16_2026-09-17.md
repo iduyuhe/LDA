@@ -2,7 +2,7 @@
 
 > 战役：腿①「扩基加锚」续批（第十五批）· 路径 B · 稀释 terminal
 > 日期：2026-09-17 · 仓库：`D:/agent_LDA` · 上一批起点 HEAD = `2b265bf`（v0.9.95 已部署生产）
-> **本批未获部署授权**（用户本轮指令仅为「续批 B-16」）⇒ 顶行标 `⏳ 生产部署待授权`。
+> **本批部署**：✅ 已于 2026-09-17 获授权执行（`--expect-head 2b740d5` · health `0.9.96 / benchmarks 298` · ledger `277/3/18/298` · `RESULT: ALL_OK (fails=0)`）。
 
 ## 1. 摘要
 
@@ -200,7 +200,7 @@
 | `lda/lda_harness/benchmarks.py` | LF | import 块 + 16 字典（B265-B280）+ `BENCHMARK_ORDER` 追加 |
 | `lda/lda_harness/golden.py` | LF | import + `_GOLDEN_DISPATCH` 5 行 + `_PHYSICAL_LAW` 双登 16 项 |
 | `lda/lda_harness/verification_adapters.py` | LF | `_BATCH_B16_NUMERIC_MOD` + `_get_batch_b16_numeric()` 双路兜底 + 16× `@_register_candidate`（**命名避让**：`_BATCH_B16_MOD`/`_get_batch_b16` 已被「B16 单锚重审 · 脊形 MMI」占用） |
-| `README.md` | **CRLF** | 新顶行 v0.9.96（`⏳ 生产部署待授权`）+ 原 v0.9.95 转「✅ 已部署生产 · 上一版」+ 原「上一版 v0.9.94」转「更早」；题数 282→**298**（`B1-B264`→`B1-B280`）；三分类 261/3/18（和 282）→ **277/3/18（和 298）**；路径① `261/282`→`277/298`；路径② `2/282`→`2/298`（余 280→296） |
+| `README.md` | **CRLF** | 新顶行 v0.9.96（部署后转 `✅ 已部署生产`）+ 原 v0.9.95 转「上一版」+ 原「上一版 v0.9.94」转「更早」；题数 282→**298**（`B1-B264`→`B1-B280`）；三分类 261/3/18（和 282）→ **277/3/18（和 298）**；路径① `261/282`→`277/298`；路径② `2/282`→`2/298`（余 280→296） |
 | `CONTRIBUTING.md` | LF | v0.9.95→v0.9.96；282 道（261/3/18）→ 298 道（277/3/18）；C2 真值行同升 |
 | `pyproject.toml` | **CRLF** | `version = "0.9.96"` |
 | `lda/run_count_consistency_smoke.py` | LF | 题库 282→298 / B 题 259→275 / maxB B264→B280 / `B1-B264`→`B1-B280` |
@@ -222,7 +222,7 @@ git commit -m "feat(B-16): 独立率 92.6%→93.0%（261/282→277/298）· 三�
 # 2) 三端推送（判定只看 [PUSH] gitee/github exit=0 + X..Y main -> main，不看整体 RC）
 python D:/tmp/_sync_push.py
 
-# 3) 生产部署 —— ⏳ 本批未获授权，待用户批准后执行：
+# 3) 生产部署（✅ 2026-09-17 已授权执行，实测见下方）：
 #    python remote_deploy.py --expect-head <HEAD短哈希>
 #    python check_ledger.py 277 3 18 298 B280
 ```
@@ -243,11 +243,20 @@ github 兜底   exit=0  2b265bf..0cb0d00  main -> main   (socks5h://127.0.0.1:78
 
 **文档回写**：本节实测的回填本身作为独立 docs-only 提交 `520b4b5`（1 文件 `+21/−1`，EOL `i/lf w/lf`）并推三端（gitee 直连 `exit=0` / github 直连 502 ⇒ SOCKS5 兜底 `exit=0`，`0cb0d00..520b4b5 main -> main`）；仅文档变更 ⇒ **无需重部署**。
 
-**生产部署**：⏳ **本批未获授权**，待用户批准后执行：
+**§9 补记**：随后又补一条 docs-only 提交 `2b740d5`（1 文件 `+2`，同款双端 `exit=0`，`520b4b5..2b740d5 main -> main`）—— 这是 B-16 的**最终 HEAD**，生产部署实际拉取到的即它。
 
-```bash
-python remote_deploy.py --expect-head 0cb0d00
-python check_ledger.py 277 3 18 298 B280
+**生产部署（✅ 2026-09-17 已授权执行 · 实测回填）**：
+
+```text
+git pull   ->  ab5d3b2..2b740d5   17 files changed, 1170 insertions(+), 31 deletions(-)
+pip        ->  lda-design 0.9.95 卸载 -> 0.9.96 安装成功
+store.json ->  2072 B 未动
+restart    ->  rc=0 ; is-active=active
+health     ->  内网 + 外网 均 {"version": "0.9.96", "kernel": {"benchmarks": 298}}
+shelf      ->  75
+ledger     ->  strict 277 / degraded 3 / stub 18 / total 298 ; honest_note 277
+               physical-law.ids 含 B280 (count 286) ; dispatch_ids 289 ; anchors.total 299 ; ci_core 178
+HEAD_MATCH ->  True (expect 2b740d5)      RESULT: ALL_OK (fails=0)
 ```
 
 
@@ -269,11 +278,11 @@ python check_ledger.py 277 3 18 298 B280
 | 10 | 账本 11 文件同步 · `count==1` 断言全过 · EOL 保真 | ✅ |
 | 11 | 10 道护栏 7 绿 3 红 · 红灯集合与 B-14/B-15 逐字一致 ⇒ **零新回归** | ✅ |
 | 12 | B-15 全 16 锚零回归（B249-B264 全 strict 且登记） | ✅ |
-| 13 | 生产部署 | ⏳ **待授权** |
+| 13 | 生产部署 | ✅ **已部署**（`2b740d5` · health `0.9.96 / 298` · ledger `277/3/18/298` `ALL_OK`） |
 
 ### 10.2 下一步（按优先级）
 
-1. **部署 B-16 到生产**（`remote_deploy.py --expect-head <hash>` + `check_ledger.py 277 3 18 298 B280`）—— 需用户授权。
+1. ~~部署 B-16 到生产~~ ✅ **已完成（2026-09-17 · `--expect-head 2b740d5` · health `0.9.96 / benchmarks 298` · ledger `277/3/18/298` `ALL_OK`）**。
 2. **腿①续批 B-17** —— 同范式再选三/四族（候选池须先过同源体检）。
 3. **腿②degraded 3→strict**（B21 66.0 / E10 0.6 / E9 0.13）。
 4. **腿③T2 解锁 6 道**（外部 KPI，需 MPW 回流）。

@@ -1,7 +1,7 @@
 # LDA 独立率冲刺 · Batch B-14 报告（v0.9.94）
 
 > 生成日期：2026-09-17 · 仓库 `D:/agent_LDA` · 锚库 B1-B248（266 道）。
-> **状态**：⏳ 本地完成（选族 / 同源体检 / 数值核 / 真 harness 验证 / 账本同步 / 护栏复跑）；**尚未部署生产**（待授权）。
+> **状态**：✅ **已部署生产**（2026-09-17 · `--expect-head 8d9b488` · ledger `245/3/18/266` · `HEAD_MATCH=True`）——本地完成项：选族 / 同源体检 / 数值核 / 真 harness 验证 / 账本同步 / 护栏复跑。
 
 ---
 
@@ -252,7 +252,7 @@ python scripts/sync_push.py D:/agent_LDA
 
 本次 **github 直连成功**（`github direct exit=0`，无需 SOCKS5 兜底）；判定口径「`[PUSH] gitee/github exit=0` + `X..Y main -> main`」**双满足**。
 
-**生产部署**：⏳ **未执行**（本轮指令未含部署授权）。部署口径见 §10 下一步第 1 项。
+**生产部署**：✅ **已于 2026-09-17 部署生产**（`--expect-head 8d9b488`）。实测：`SSH_OK` → `git pull 6581e9c..8d9b488` **Fast-forward 13 文件 +1415/−26**（`_batch_b14_numeric.py` 719 行新建、B-14 报告 283 行新建）→ `pip install --force-reinstall --no-deps .` ⇒ `lda-design 0.9.93 → 0.9.94` → `dist/store.json` **未动**（2072 B）→ `systemctl restart lda-webui` rc=0、`is-active=active` → `/api/health` **内网 + 外网**均 `version 0.9.94 / benchmarks 266`、`/api/shelf` 75 → `HEAD_MATCH=True`。`check_ledger.py 245 3 18 266 B248` ⇒ **13/13 `OK`、`RESULT: ALL_OK (fails=0)`**：`vmm.tiers` = **strict 245 / degraded 3 / self_certified 18**、`derived.totals.anchors` **266**、`honest_note` **245**、`physical-law.ids` **254**（含 **`B248`**）、`dispatch_ids` **257**、`anchors.total` **267**、`ci_core` **178 不变**。
 
 
 ---
@@ -273,10 +273,11 @@ python scripts/sync_push.py D:/agent_LDA
 | 七道核心护栏 | **全绿** |
 | 三道既有红灯 | **逐字复现，零新回归** |
 | 零 tol 放宽 / 零物理判据改动 / 零判决行为改动 | ✅ |
+| 生产部署（`--expect-head 8d9b488`） | ✅ 已上线 · ledger **245/3/18/266** · `ALL_OK` |
 
 **下一步（待用户授权）**：
 
-1. **部署 B-14 到生产** —— `python remote_deploy.py --expect-head <commit>`；部署后**必查三分类**（`/api/health` 看不到）：期望 `strict 245 / degraded 3 / stub 18 / total 266`、`honest_note` **245**、`benchmarks` **266**、`physical-law.ids` 含 **`B248`**、`dispatch_ids` **257**、`ci_core` **178**、`HEAD_MATCH=True`。可用 `scripts/check_ledger.py 245 3 18 266 B248` 一键核验。
+1. ✅ **部署 B-14 到生产 —— 已完成（2026-09-17 · `--expect-head 8d9b488` · 13/13 `ALL_OK`）**。留存口径：`python remote_deploy.py --expect-head <commit>`；部署后**必查三分类**（`/api/health` 看不到）：期望 `strict 245 / degraded 3 / stub 18 / total 266`、`honest_note` **245**、`benchmarks` **266**、`physical-law.ids` 含 **`B248`**、`dispatch_ids` **257**、`ci_core` **178**、`HEAD_MATCH=True`。可用 `scripts/check_ledger.py 245 3 18 266 B248` 一键核验。
 2. **腿①续批（B-15）** —— 继续按「实际 grep 全仓 + 同源体检 + 逐锚 C1-C5」范式选四族；天花板随 N 继续上抬（`(N−12)/N`）。
 3. **腿②（degraded 3 → strict）** —— 纯内部，B21（余量 ~77×，最有望）→ E10（~28×）→ E9（最窄）。
 4. **腿③（T2 解锁 6 道）** —— 外部 KPI：`E1 / E3-E7` 需 MPW 回流（`T2_RFQ_foundry_external.md`，发函前删附 A）。

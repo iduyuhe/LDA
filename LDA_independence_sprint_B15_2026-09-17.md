@@ -191,7 +191,7 @@
 | `lda/lda_harness/benchmarks.py` | LF | import 块 + 16 字典 + `BENCHMARK_ORDER` 追加 B249-B264 |
 | `lda/lda_harness/golden.py` | LF | import + `_GOLDEN_DISPATCH` 4 行 + `_PHYSICAL_LAW` 双登 16 项 |
 | `lda/lda_harness/verification_adapters.py` | LF | `_BATCH_B15_MOD` + `_get_batch_b15()` 双路兜底 + 16× `@_register_candidate` |
-| `README.md` | **CRLF** | 新顶行 v0.9.95（生产部署待授权）+ 原 v0.9.94 转「上一版」+ v0.9.93 转「更早」+ v0.9.92 保留；题数 266→282（`B1-B248`→`B1-B264`）；三分类 245/3/18（和 266）→ **261/3/18（和 282）**；路径① `245/266`→`261/282`；路径② `2/266`→`2/282`（余 264→280） |
+| `README.md` | **CRLF** | 新顶行 v0.9.95（✅ 已部署生产）+ 原 v0.9.94 转「上一版」+ v0.9.93 转「更早」+ v0.9.92 保留；题数 266→282（`B1-B248`→`B1-B264`）；三分类 245/3/18（和 266）→ **261/3/18（和 282）**；路径① `245/266`→`261/282`；路径② `2/266`→`2/282`（余 264→280） |
 | `CONTRIBUTING.md` | LF | v0.9.94→v0.9.95；266 道（245/3/18）→ 282 道（261/3/18）；C2 真值行同升 |
 | `pyproject.toml` | **CRLF** | `version = "0.9.95"` |
 | `lda/run_count_consistency_smoke.py` | LF | 题库 266→282 / B 题 243→259 / maxB B248→B264 / `B1-B248`→`B1-B264` |
@@ -212,8 +212,8 @@ git commit -q -m "feat(anchors): Batch B-15 扩基 16 锚 B249-B264（v0.9.95 ·
 # 2) 三端推送（判定只看 [PUSH] gitee/github exit=0 + X..Y main -> main，不看整体 RC）
 python scripts/sync_push.py D:/agent_LDA
 
-# 3) 生产部署（授权后）
-python "C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/remote_deploy.py" --expect-head <commit>
+# 3) 生产部署（2026-09-17 已执行）
+python "C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/remote_deploy.py" --expect-head ab5d3b2
 python "C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/check_ledger.py" 261 3 18 282 B264
 ```
 
@@ -221,7 +221,7 @@ python "C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/check_l
 | --- | --- |
 | 本地提交 | **`6e81b38`** `feat(anchors): Batch B-15 扩基 16 锚 B249-B264（v0.9.95 · 282/261/92.6%/95.7%）`（12 文件 **+1242 / −22**；本报告回填另起一提交） |
 | 三端推送 | **✅ 已推三端**：`python scripts/sync_push.py D:/agent_LDA` ⇒ `[PUSH] gitee main exit=0` / `[PUSH] github main (direct, proxy cleared) github direct exit=0`；远端实测 `09c0c30..a81b02f  main -> main`（gitee `i4hub/LDA` + github `iduyuhe/LDA` **均直连**，无需 SOCKS5 兜底） |
-| 生产部署 | _待填_（**本批执行时未获部署授权 ⇒ 报备待批**） |
+| 生产部署 | **✅ 2026-09-17 已部署**（`--expect-head ab5d3b2`）：`git pull 8d9b488..ab5d3b2` 14 文件 **+1249/−26**；`lda-design` **0.9.94→0.9.95**；`dist/store.json` **未动** 2072B；restart rc=0、`is-active=active`；`/api/health` **内网+外网**均 `version 0.9.95 / benchmarks 282`；`/api/shelf` 75；`check_ledger.py 261 3 18 282 B264` ⇒ **RESULT: ALL_OK (fails=0)**（`strict 261 / degraded 3 / stub 18 / total 282`、`honest_note` 261、`physical-law.ids` count 270 含 `B264`、`dispatch_ids` 273、`anchors.total` 283、`ci_core` 178；`HEAD_MATCH=True`） |
 
 ## 10. 结论与下一步
 
@@ -242,7 +242,7 @@ python "C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/check_l
 
 ### 10.2 下一步（按优先级）
 
-1. **报备部署 B-15**（本轮指令未含部署授权）：`remote_deploy.py --expect-head <最终提交>` → `check_ledger.py 261 3 18 282 B264`。
+1. ~~报备部署 B-15~~ ✅ **已于 2026-09-17 部署完成**（`--expect-head ab5d3b2` → `check_ledger.py 261 3 18 282 B264` = **ALL_OK**）；生产现役口径 **261/3/18/282 = 92.6%**、`health 0.9.95 / benchmarks 282`。
 2. **腿①续批 B-16**：同范式再选四族（候选池：非定常 2D 抛物 ADI / 小波多分辨投影 / 有限体积守恒律 / 复围道留数与解析延拓 —— 均需先过同源体检）。
 3. **腿②（degraded 3→strict）**：B21 余量 ~77× 最有望。
 4. **专项清算三道既有红灯**：`d_criterion` ③ 13 道 B-4 锚贴 1e-16 地板 / `falsifiability` ⑨ numpy bool 泄漏 JSON / `coverage_deadzone` B5/B6 陈旧期望。

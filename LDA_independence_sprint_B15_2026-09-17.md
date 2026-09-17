@@ -220,7 +220,7 @@ python "C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/check_l
 | 环节 | 状态 |
 | --- | --- |
 | 本地提交 | **`6e81b38`** `feat(anchors): Batch B-15 扩基 16 锚 B249-B264（v0.9.95 · 282/261/92.6%/95.7%）`（12 文件 **+1242 / −22**；本报告回填另起一提交） |
-| 三端推送 | _待填_ |
+| 三端推送 | **✅ 已推三端**：`python scripts/sync_push.py D:/agent_LDA` ⇒ `[PUSH] gitee main exit=0` / `[PUSH] github main (direct, proxy cleared) github direct exit=0`；远端实测 `09c0c30..a81b02f  main -> main`（gitee `i4hub/LDA` + github `iduyuhe/LDA` **均直连**，无需 SOCKS5 兜底） |
 | 生产部署 | _待填_（**本批执行时未获部署授权 ⇒ 报备待批**） |
 
 ## 10. 结论与下一步
@@ -242,7 +242,7 @@ python "C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/check_l
 
 ### 10.2 下一步（按优先级）
 
-1. **报备部署 B-15**（本轮指令未含部署授权）：`remote_deploy.py --expect-head <commit>` → `check_ledger.py 261 3 18 282 B264`。
+1. **报备部署 B-15**（本轮指令未含部署授权）：`remote_deploy.py --expect-head <最终提交>` → `check_ledger.py 261 3 18 282 B264`。
 2. **腿①续批 B-16**：同范式再选四族（候选池：非定常 2D 抛物 ADI / 小波多分辨投影 / 有限体积守恒律 / 复围道留数与解析延拓 —— 均需先过同源体检）。
 3. **腿②（degraded 3→strict）**：B21 余量 ~77× 最有望。
 4. **专项清算三道既有红灯**：`d_criterion` ③ 13 道 B-4 锚贴 1e-16 地板 / `falsifiability` ⑨ numpy bool 泄漏 JSON / `coverage_deadzone` B5/B6 陈旧期望。

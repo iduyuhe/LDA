@@ -248,7 +248,9 @@ Telegrapher / Pöschl–Teller / Laplace 数值反演 / 蒙特卡洛 —— **�
 ## 9. 提交与推送
 
 - **主提交**：`16a08aa`（12 文件 **+1319/−21**：修改 10 + 新增 2）· 三端推送（gitee + github）· **未部署**（等授权）
+- **推送实测**：`gitee` **exit=0**、`github` **direct exit=0**（`d7a9be2..d7c9326  main -> main` ×2，`scripts/sync_push.py D:/agent_LDA`；github 直连即通、未走 SOCKS5 兜底）
 - **回填**：部署后另行回填本文件与 README 顶行的部署实证
+- **scratch**：本轮 `D:\tmp\_b19_*` 共 **69 件 / 319,772 B** 已备份至仓库外 `D:\agent_LDA_scratch_backup_2026-09-17_b19\`（`_MANIFEST.txt` 92 行 · SHA256 复核 **0 bad**）后删除；**69/69 覆盖 · 0 missing · 0 `__dup` · tmp 残留 0 · `git status` 空**。🔴 实测**脚本按技能预警跑了两遍**（沙箱尝试 → 升级重跑）——因备份目录带批次后缀 + manifest 走 APPEND 分支，**零数据丢失、零覆盖**（见 `lda-scratch-cleanup` 技能 3) 条 warning 逐条应验）
 
 ---
 

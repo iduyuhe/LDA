@@ -178,14 +178,16 @@
 | 护栏 | 结果 |
 | --- | --- |
 | `run_d_criterion_smoke.py` | **9 PASS / 1 FAIL**：③ 13 道 B-4 锚（B65/66/67/68/73/74/79/81/82/83/84/87/88）基线残差贴 1e-16 地板 —— **逐字复现 B-14，非本批引入** |
-| `run_benchmark_falsifiability_smoke.py` | _待填_ |
-| `run_coverage_deadzone_closure_smoke.py` | _待填_ |
+| `run_benchmark_falsifiability_smoke.py` | **12/13 PASS**：⑨ 路径②「报告可 JSON 序列化」仍 `TypeError: Object of type bool is not JSON serializable`（`numpy bool` 泄漏 JSON，自 B-9 起**逐字复现**）；独立 **261** 道 / 降级量级参考 3 道 / 自证桩 **18/282** 道 —— **非本批引入** |
+| `run_coverage_deadzone_closure_smoke.py` | **31 PASS / 2 FAIL**：B5/B6 期望陈旧（两者已于 v0.9.81 升 strict，期望未同步）—— **逐字复现 B-14，非本批引入** |
+
+**零新回归**：B-15 新增 16 锚已纳入 `run_d_criterion_smoke` ③ 的**动态**基线残差普查（清单由 harness 权威三分类推导），**16/16 全部 > 1e-12** —— 最薄者 **B250 = 1.054939e-11**（vs 1e-12 地板 **10.6×**，本批最需盯的一道）、最厚者 B256 = 1.610e-05 ⇒ 不触发该红灯。`falsifiability` 的独立计数由 245 自动跟到 **261**、`three_class`（C1/C2）与 `p0_count_guard` 同由 harness **动态推导**（grep 复核**无硬编码需手改**）。**10 道护栏 7 绿 3 红，红灯集合与 B-14 逐字一致 ⇒ 零新回归。**
 
 ## 8. 账本变更（11 文件 · `count==1` 断言全过 · EOL 保真复核通过）
 
 | 文件 | EOL | 变更 |
 | --- | --- | --- |
-| `lda/lda_harness/_batch_b15_numeric.py` | LF | **新建**（611 行 · 16 锚数值核 + 同源体检记录 + 被否 9 + 血案 9） |
+| `lda/lda_harness/_batch_b15_numeric.py` | LF | **新建**（610 行 · 16 锚数值核 + 同源体检记录 + 被否 9 + 血案 9） |
 | `lda/lda_harness/benchmarks.py` | LF | import 块 + 16 字典 + `BENCHMARK_ORDER` 追加 B249-B264 |
 | `lda/lda_harness/golden.py` | LF | import + `_GOLDEN_DISPATCH` 4 行 + `_PHYSICAL_LAW` 双登 16 项 |
 | `lda/lda_harness/verification_adapters.py` | LF | `_BATCH_B15_MOD` + `_get_batch_b15()` 双路兜底 + 16× `@_register_candidate` |
@@ -217,7 +219,7 @@ python "C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/check_l
 
 | 环节 | 状态 |
 | --- | --- |
-| 本地提交 | _待填_ |
+| 本地提交 | **`6e81b38`** `feat(anchors): Batch B-15 扩基 16 锚 B249-B264（v0.9.95 · 282/261/92.6%/95.7%）`（12 文件 **+1242 / −22**；本报告回填另起一提交） |
 | 三端推送 | _待填_ |
 | 生产部署 | _待填_（**本批执行时未获部署授权 ⇒ 报备待批**） |
 

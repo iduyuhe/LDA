@@ -2185,6 +2185,8 @@ _BATCH_B14_MOD = None
 
 _BATCH_B15_MOD = None
 
+_BATCH_B16_NUMERIC_MOD = None
+
 
 
 def _get_batch_b3():
@@ -2794,6 +2796,25 @@ def _get_batch_b15():
         _ensure_paths()
         import _batch_b15_numeric as _m
     _BATCH_B15_MOD = _m
+    return _m
+
+
+def _get_batch_b16_numeric():
+    """双路兜底导入 Batch B-16 数值核（缓存，项目铁律：不依赖单一导入路径）。
+
+    ⚠️ 命名避让：`_get_batch_b16()` / `_BATCH_B16_MOD` 已被「B16 单锚重审（脊形 MMI）
+    的 `_batch_b16_rib_mmi`」占用；本批次（B-16，B265–B280）的数值核 `_batch_b16_numeric`
+    必须另起标识符，两者勿合并。
+    """
+    global _BATCH_B16_NUMERIC_MOD
+    if _BATCH_B16_NUMERIC_MOD is not None:
+        return _BATCH_B16_NUMERIC_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b16_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b16_numeric as _m
+    _BATCH_B16_NUMERIC_MOD = _m
     return _m
 
 
@@ -4608,4 +4629,140 @@ def _b7_crossing_cmt_candidate(spec: VerificationSpec, oracle_value: Any) -> flo
     return float(m.crossing_crosstalk_dB(
         float(p["w_core"]), float(p["gap"]), float(p["wl"]),
         float(p["n_si"]), float(p["n_clad"])))
+
+
+# ---------------------------------------------------------------------------
+# Batch B-16（v0.9.96 · 腿① 续加锚）· 16 道双方法独立锚候选注册
+#   B265–B270 Burgers 方程 tanh 行波（RK4 + 二阶中心差分）
+#   B271–B275 广义指数积分 E_n(x)（截断 [1,60] + 复合 Simpson）
+#   B276–B280 Haar 小波多分辨投影 V_J（逐层等权低通）
+# ---------------------------------------------------------------------------
+
+@_register_candidate(
+    "b265_burgers_tanh_cand",
+    "u(x*,T) 由显式 RK4 时间推进 + 二阶中心差分（对流与扩散均中心）导出 ↔ tanh 行波闭式 c·[1−tanh(cξ/2ν)]，方法学独立")
+def _b265_burgers_tanh_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b265(float(p["c"]), float(p["nu"])))
+
+@_register_candidate(
+    "b266_burgers_tanh_cand",
+    "u(x*,T) 由显式 RK4 时间推进 + 二阶中心差分（对流与扩散均中心）导出 ↔ tanh 行波闭式 c·[1−tanh(cξ/2ν)]，方法学独立")
+def _b266_burgers_tanh_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b266(float(p["c"]), float(p["nu"])))
+
+@_register_candidate(
+    "b267_burgers_tanh_cand",
+    "u(x*,T) 由显式 RK4 时间推进 + 二阶中心差分（对流与扩散均中心）导出 ↔ tanh 行波闭式 c·[1−tanh(cξ/2ν)]，方法学独立")
+def _b267_burgers_tanh_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b267(float(p["c"]), float(p["nu"])))
+
+@_register_candidate(
+    "b268_burgers_tanh_cand",
+    "u(x*,T) 由显式 RK4 时间推进 + 二阶中心差分（对流与扩散均中心）导出 ↔ tanh 行波闭式 c·[1−tanh(cξ/2ν)]，方法学独立")
+def _b268_burgers_tanh_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b268(float(p["c"]), float(p["nu"])))
+
+@_register_candidate(
+    "b269_burgers_tanh_cand",
+    "u(x*,T) 由显式 RK4 时间推进 + 二阶中心差分（对流与扩散均中心）导出 ↔ tanh 行波闭式 c·[1−tanh(cξ/2ν)]，方法学独立")
+def _b269_burgers_tanh_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b269(float(p["c"]), float(p["nu"])))
+
+@_register_candidate(
+    "b270_burgers_tanh_cand",
+    "u(x*,T) 由显式 RK4 时间推进 + 二阶中心差分（对流与扩散均中心）导出 ↔ tanh 行波闭式 c·[1−tanh(cξ/2ν)]，方法学独立")
+def _b270_burgers_tanh_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b270(float(p["c"]), float(p["nu"])))
+
+@_register_candidate(
+    "b271_expn_simpson_cand",
+    "E_n(x) 由区间 [1,60] 截断 + 复合 Simpson（2N+1 等距节点）数值求积导出 ↔ 特殊函数闭式库值，方法学独立")
+def _b271_expn_simpson_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b271(int(p["nn"]), float(p["x"])))
+
+@_register_candidate(
+    "b272_expn_simpson_cand",
+    "E_n(x) 由区间 [1,60] 截断 + 复合 Simpson（2N+1 等距节点）数值求积导出 ↔ 特殊函数闭式库值，方法学独立")
+def _b272_expn_simpson_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b272(int(p["nn"]), float(p["x"])))
+
+@_register_candidate(
+    "b273_expn_simpson_cand",
+    "E_n(x) 由区间 [1,60] 截断 + 复合 Simpson（2N+1 等距节点）数值求积导出 ↔ 特殊函数闭式库值，方法学独立")
+def _b273_expn_simpson_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b273(int(p["nn"]), float(p["x"])))
+
+@_register_candidate(
+    "b274_expn_simpson_cand",
+    "E_n(x) 由区间 [1,60] 截断 + 复合 Simpson（2N+1 等距节点）数值求积导出 ↔ 特殊函数闭式库值，方法学独立")
+def _b274_expn_simpson_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b274(int(p["nn"]), float(p["x"])))
+
+@_register_candidate(
+    "b275_expn_simpson_cand",
+    "E_n(x) 由区间 [1,60] 截断 + 复合 Simpson（2N+1 等距节点）数值求积导出 ↔ 特殊函数闭式库值，方法学独立")
+def _b275_expn_simpson_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b275(int(p["nn"]), float(p["x"])))
+
+@_register_candidate(
+    "b276_haar_mra_cand",
+    "V_J 正交投影由 2^K 等距采样逐层 Haar 低通降到 J 层后取第 k 段导出 ↔ 段内平均闭式 (b^{p+1}−a^{p+1})/((p+1)h)，方法学独立")
+def _b276_haar_mra_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b276(float(p["p"]), int(p["J"]), int(p["k"])))
+
+@_register_candidate(
+    "b277_haar_mra_cand",
+    "V_J 正交投影由 2^K 等距采样逐层 Haar 低通降到 J 层后取第 k 段导出 ↔ 段内平均闭式 (b^{p+1}−a^{p+1})/((p+1)h)，方法学独立")
+def _b277_haar_mra_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b277(float(p["p"]), int(p["J"]), int(p["k"])))
+
+@_register_candidate(
+    "b278_haar_mra_cand",
+    "V_J 正交投影由 2^K 等距采样逐层 Haar 低通降到 J 层后取第 k 段导出 ↔ 段内平均闭式 (b^{p+1}−a^{p+1})/((p+1)h)，方法学独立")
+def _b278_haar_mra_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b278(float(p["p"]), int(p["J"]), int(p["k"])))
+
+@_register_candidate(
+    "b279_haar_mra_cand",
+    "V_J 正交投影由 2^K 等距采样逐层 Haar 低通降到 J 层后取第 k 段导出 ↔ 段内平均闭式 (b^{p+1}−a^{p+1})/((p+1)h)，方法学独立")
+def _b279_haar_mra_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b279(float(p["p"]), int(p["J"]), int(p["k"])))
+
+@_register_candidate(
+    "b280_haar_mra_cand",
+    "V_J 正交投影由 2^K 等距采样逐层 Haar 低通降到 J 层后取第 k 段导出 ↔ 段内平均闭式 (b^{p+1}−a^{p+1})/((p+1)h)，方法学独立")
+def _b280_haar_mra_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b16_numeric()
+    return float(m.cand_b280(float(p["p"]), int(p["J"]), int(p["k"])))
 

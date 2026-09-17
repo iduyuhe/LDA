@@ -137,6 +137,13 @@ from ._batch_b15_numeric import (  # noqa: E402  # Batch B-15 双方法独立锚
     golden_b259, golden_b260, golden_b261, golden_b262, golden_b263,
     golden_b264,
 )
+
+from ._batch_b16_numeric import (  # noqa: E402  # Batch B-16 双方法独立锚数值核（路径 B 扩基续十五 · Burgers 方程 tanh 行波 RK4+中心差分/广义指数积分 E_n(x) 截断复合 Simpson/Haar 小波多分辨投影逐层低通 · v0.9.96 · 腿① 续加锚稀释 terminal）
+    golden_b265, golden_b266, golden_b267, golden_b268, golden_b269,
+    golden_b270, golden_b271, golden_b272, golden_b273, golden_b274,
+    golden_b275, golden_b276, golden_b277, golden_b278, golden_b279,
+    golden_b280,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -819,6 +826,12 @@ _GOLDEN_DISPATCH = {
     "B253": golden_b253, "B254": golden_b254, "B255": golden_b255, "B256": golden_b256,  # 双调和薄板 · 13 点差分
     "B257": golden_b257, "B258": golden_b258, "B259": golden_b259, "B260": golden_b260,  # 一维输运 · 半拉格朗日特征线
     "B261": golden_b261, "B262": golden_b262, "B263": golden_b263, "B264": golden_b264,  # NLSE 孤子 · 分裂步 Fourier
+    # ---- B-16 双方法独立锚（v0.9.96 · 腿① 续加锚）----
+    "B265": golden_b265, "B266": golden_b266, "B267": golden_b267, "B268": golden_b268,  # Burgers tanh 行波 · RK4+中心差分
+    "B269": golden_b269, "B270": golden_b270, "B271": golden_b271, "B272": golden_b272,
+    "B273": golden_b273, "B274": golden_b274, "B275": golden_b275,  # 广义指数积分 E_n · 截断复合 Simpson
+    "B276": golden_b276, "B277": golden_b277, "B278": golden_b278, "B279": golden_b279,  # Haar 小波多分辨投影 · 逐层低通
+    "B280": golden_b280,
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -869,6 +882,9 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B241", "B242", "B243", "B244", "B245", "B246", "B247", "B248",
                  "B249", "B250", "B251", "B252", "B253", "B254", "B255", "B256",  # Batch B-15（v0.9.95 · 腿① 续加锚 · DDE 分步法/双调和薄板 13 点差分/输运半拉格朗日/NLSE 孤子分裂步）
                  "B257", "B258", "B259", "B260", "B261", "B262", "B263", "B264",
+                 "B265", "B266", "B267", "B268", "B269", "B270",  # Batch B-16（v0.9.96 · 腿① 续加锚 · Burgers tanh 行波/广义指数积分/Haar 多分辨投影）
+                 "B271", "B272", "B273", "B274", "B275",
+                 "B276", "B277", "B278", "B279", "B280",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

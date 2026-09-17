@@ -223,7 +223,7 @@ B-8 轮立的纪律：**新族 golden 必须与既有 170 道锚的「方程 / �
 
 - commit：`10f958f`
 - push：`scripts/sync_push.py`（gitee 直连 + github 直连→SOCKS5 兜底）
-- **部署**：本次**未部署**（用户指令不含「部署」）——完成时报备询问；如需上线：`remote_deploy.py --expect-head 10f958f`。
+- **部署**：本次**未部署**（用户指令不含「部署」）——完成时报备询问；如需上线：`remote_deploy.py --expect-head 10f958f`。 ✅ **订正（2026-09-17）：本批后经授权已部署生产**（现役口径见 `README.md` 顶行）。
 
 ---
 

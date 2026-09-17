@@ -113,4 +113,4 @@
 
 - commit：`b8558ee872d8ed29c67a34131c1ddda489b26825`（10 files changed, +704 / −21）
 - push：gitee `35189be..b8558ee`（exit=0）、github `35189be..b8558ee`（直连 128 → SOCKS5 兜底 exit=0）
-- **部署**：本次**未部署**（用户未授权）；部署待明确指令（`remote_deploy.py --expect-head b8558ee`）。
+- **部署**：本次**未部署**（用户未授权）；部署待明确指令（`remote_deploy.py --expect-head b8558ee`）。 ✅ **订正（2026-09-17）：本批后经授权已部署生产**（现役口径见 `README.md` 顶行）。

@@ -120,7 +120,7 @@
 
 - commit：`79158d905fc41bd0601501f6d85ab287de488557`（12 files changed, +815 / −23）
 - push：gitee `05fdcc5..79158d9`（exit=0）、github `05fdcc5..79158d9`（直连 128 → SOCKS5 兜底 exit=0）
-- **部署**：本次**未部署**（用户未授权）；部署待明确指令（`remote_deploy.py --expect-head <commit>`）。
+- **部署**：本次**未部署**（用户未授权）；部署待明确指令（`remote_deploy.py --expect-head <commit>`）。 ✅ **订正（2026-09-17）：本批后经授权已部署生产**（现役口径见 `README.md` 顶行）。
 
 ---
 

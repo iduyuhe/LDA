@@ -106,6 +106,12 @@ from ._batch_b10_numeric import (  # noqa: E402  # Batch B-10 双方法独立锚
     golden_b179, golden_b180, golden_b181, golden_b182, golden_b183,
     golden_b184,
 )
+from ._batch_b11_numeric import (  # noqa: E402  # Batch B-11 双方法独立锚数值核（路径 B 扩基续十 · 量子统计积分与 ζ 函数/Kepler 中心力轨道 ODE/辐射传热角系数/Voigt 谱线卷积族 · v0.9.91 · 腿① 续加锚稀释 terminal）
+    golden_b185, golden_b186, golden_b187, golden_b188, golden_b189,
+    golden_b190, golden_b191, golden_b192, golden_b193, golden_b194,
+    golden_b195, golden_b196, golden_b197, golden_b198, golden_b199,
+    golden_b200,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -767,6 +773,10 @@ _GOLDEN_DISPATCH = {
     "B173": golden_b173, "B174": golden_b174, "B175": golden_b175, "B176": golden_b176,  # 椭圆积分/椭球静电
     "B177": golden_b177, "B178": golden_b178, "B179": golden_b179, "B180": golden_b180,  # 单摆椭圆积分/去极化/Fresnel
     "B181": golden_b181, "B182": golden_b182, "B183": golden_b183, "B184": golden_b184,  # Fresnel/线性扩散热核时间推进
+    "B185": golden_b185, "B186": golden_b186, "B187": golden_b187, "B188": golden_b188,  # Batch B-11（v0.9.91 · 腿① 续加锚 · 量子统计积分 Γ(s)ζ(s)）
+    "B189": golden_b189, "B190": golden_b190, "B191": golden_b191, "B192": golden_b192,  # Kepler 中心力轨道闭式
+    "B193": golden_b193, "B194": golden_b194, "B195": golden_b195, "B196": golden_b196,  # 辐射传热角系数闭式
+    "B197": golden_b197, "B198": golden_b198, "B199": golden_b199, "B200": golden_b200,  # Voigt 谱线（scipy voigt_profile）
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -807,6 +817,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B161", "B162", "B163", "B164", "B165", "B166", "B167", "B168",  # Batch B-9（v0.9.89 · 腿① 续加锚 · 4阶梁超越方程/Hulthen/Fock-Darwin/Rosen-Morse II 闭式 × FEM/FD 候选）
                  "B169", "B170", "B171", "B172", "B173", "B174", "B175", "B176",  # Batch B-10（v0.9.90 · 腿① 续加锚 · Mathieu 周期系数 ODE/椭圆积分与椭球静电/Fresnel 积分/线性扩散热核（特殊函数与初等闭式 × P1-FEM/Simpson/CN 时间推进））
                  "B177", "B178", "B179", "B180", "B181", "B182", "B183", "B184",
+                 "B185", "B186", "B187", "B188", "B189", "B190", "B191", "B192",  # Batch B-11（v0.9.91 · 腿① 续加锚 · 量子统计积分 ζ/Kepler 轨道/角系数/Voigt）
+                 "B193", "B194", "B195", "B196", "B197", "B198", "B199", "B200",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

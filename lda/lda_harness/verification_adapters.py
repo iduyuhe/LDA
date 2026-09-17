@@ -2178,6 +2178,7 @@ _BATCH_B7_MOD = None
 _BATCH_B8_MOD = None
 _BATCH_B9_MOD = None
 _BATCH_B10_MOD = None
+_BATCH_B11_MOD = None
 
 
 def _get_batch_b3():
@@ -2716,6 +2717,20 @@ def _get_batch_b10():
         _ensure_paths()
         import _batch_b10_numeric as _m
     _BATCH_B10_MOD = _m
+    return _m
+
+
+def _get_batch_b11():
+    """双路兜底导入 Batch B-11 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B11_MOD
+    if _BATCH_B11_MOD is not None:
+        return _BATCH_B11_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b11_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b11_numeric as _m
+    _BATCH_B11_MOD = _m
     return _m
 
 
@@ -3609,6 +3624,160 @@ def _b184_diffusion_profile_200nm_cand(spec: VerificationSpec, oracle_value: Any
     p = spec.params
     m = _get_batch_b10()
     return float(m.cand_diffusion(float(p["x_nm"])))
+
+
+
+# ---------------------------------------------------------------------------
+# Batch B-11（v0.9.91 · 腿① 续加锚稀释 terminal）：四族全新方程/特殊函数/数值方法类
+# —— 量子统计积分与 ζ 函数（换元复合 Simpson） / Kepler 中心力轨道 ODE（RK4 时间积分）/
+# 辐射传热角系数（4D 张量积分块复合 Simpson） / Voigt 谱线卷积（sinh 换元 + 复合 Simpson）。
+# 纪律同源 B-1..B-10：确定性特殊函数/初等闭式 golden 对拍方法学不同源的真实数值候选。
+# 同源体检（三条红线）详见 lda_harness/_batch_b11_numeric.py 模块 docstring。
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "b185_bose_moment_s4_cand",
+    "玻色矩 s=4 由 t=x/(1+x) 换元后的 [0,1] 复合 Simpson 导出 ↔ Γ(s)ζ(s) 闭式，方法学独立")
+def _b185_bose_moment_s4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b185(float(p["s"])))
+
+
+@_register_candidate(
+    "b186_bose_moment_s3_cand",
+    "玻色矩 s=3 由换元 + 复合 Simpson 导出 ↔ 2ζ(3) 闭式，方法学独立")
+def _b186_bose_moment_s3_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b186(float(p["s"])))
+
+
+@_register_candidate(
+    "b187_fermi_moment_s3_cand",
+    "费米矩 s=3 由换元 + 复合 Simpson 导出 ↔ (3/2)ζ(3) 闭式，方法学独立")
+def _b187_fermi_moment_s3_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b187(float(p["s"])))
+
+
+@_register_candidate(
+    "b188_debye_moment_s5_cand",
+    "德拜矩 s=5 由换元 + 复合 Simpson 导出 ↔ Γ(5)ζ(4)=4π⁴/15 闭式，方法学独立")
+def _b188_debye_moment_s5_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b188(float(p["s"])))
+
+
+@_register_candidate(
+    "b189_kepler_period_a1_cand",
+    "轨道周期由中心力 ODE 的 RK4 时间积分（近心点穿越时刻差）导出 ↔ Kepler 第三定律闭式，方法学独立")
+def _b189_kepler_period_a1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b189(float(p["a"])))
+
+
+@_register_candidate(
+    "b190_kepler_r_peri_cand",
+    "近心点距离由 RK4 轨迹经三次 Hermite 插值定位穿越时刻后取 |r| 导出 ↔ a(1−e) 闭式，方法学独立")
+def _b190_kepler_r_peri_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b190(float(p["a"]), float(p["ecc"])))
+
+
+@_register_candidate(
+    "b191_kepler_v_peri_cand",
+    "近心点速率由 RK4 轨迹在 Hermite 定位的穿越时刻取 |v| 导出 ↔ 活力公式闭式，方法学独立")
+def _b191_kepler_v_peri_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b191(float(p["a"]), float(p["ecc"])))
+
+
+@_register_candidate(
+    "b192_kepler_period_a2_cand",
+    "宽轨道（a=2）周期由 RK4 时间积分导出 ↔ Kepler 解析闭式，方法学独立")
+def _b192_kepler_period_a2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b192(float(p["a"])))
+
+
+@_register_candidate(
+    "b193_vf_parallel_1x1_cand",
+    "角系数由 4D 张量积复合 Simpson 直接求积导出 ↔ 平行同轴矩形解析闭式，方法学独立")
+def _b193_vf_parallel_1x1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b193(float(p["a"]), float(p["b"]), float(p["c"])))
+
+
+@_register_candidate(
+    "b194_vf_parallel_1x2_cand",
+    "非方形平行矩形角系数由 4D 复合 Simpson 求积导出 ↔ 解析闭式，方法学独立")
+def _b194_vf_parallel_1x2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b194(float(p["a"]), float(p["b"]), float(p["c"])))
+
+
+@_register_candidate(
+    "b195_vf_perp_common_edge_1x1_cand",
+    "垂直共边角系数由 4D 分块复合 Simpson 求积导出 ↔ 解析闭式（含对数/反正切），方法学独立")
+def _b195_vf_perp_common_edge_1x1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b195(float(p["a"]), float(p["b"]), float(p["c"])))
+
+
+@_register_candidate(
+    "b196_vf_perp_common_edge_2x1_cand",
+    "垂直共边角系数（A=2,B=1）由 4D 分块复合 Simpson 导出 ↔ 解析闭式，方法学独立")
+def _b196_vf_perp_common_edge_2x1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b196(float(p["a"]), float(p["b"]), float(p["c"])))
+
+
+@_register_candidate(
+    "b197_voigt_s1_g1_x0_cand",
+    "Voigt 线心值由卷积定义式数值积分（τ=x+γ·sinh u 解析换元）导出 ↔ scipy voigt_profile（Faddeeva），方法学独立")
+def _b197_voigt_s1_g1_x0_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b197(float(p["sigma"]), float(p["gamma"])))
+
+
+@_register_candidate(
+    "b198_voigt_s1_g05_x2_cand",
+    "Voigt 远翼值由卷积数值积分导出 ↔ scipy voigt_profile，方法学独立")
+def _b198_voigt_s1_g05_x2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b198(float(p["sigma"]), float(p["gamma"]), float(p["x"])))
+
+
+@_register_candidate(
+    "b199_voigt_s05_g2_x0_cand",
+    "洛伦兹主导 Voigt 线心值由卷积数值积分导出 ↔ scipy voigt_profile，方法学独立")
+def _b199_voigt_s05_g2_x0_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b199(float(p["sigma"]), float(p["gamma"])))
+
+
+@_register_candidate(
+    "b200_voigt_s2_g05_x3_cand",
+    "Voigt 深远翼值由卷积数值积分导出 ↔ scipy voigt_profile，方法学独立")
+def _b200_voigt_s2_g05_x3_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b11()
+    return float(m.cand_b200(float(p["sigma"]), float(p["gamma"]), float(p["x"])))
+
+
 
 
 # ---------------------------------------------------------------------------

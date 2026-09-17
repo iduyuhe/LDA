@@ -2192,6 +2192,7 @@ _BATCH_B17_NUMERIC_MOD = None
 _BATCH_B18_NUMERIC_MOD = None
 
 _BATCH_B19_NUMERIC_MOD = None
+_BATCH_B20_NUMERIC_MOD = None
 
 
 
@@ -2863,6 +2864,20 @@ def _get_batch_b19_numeric():
         _ensure_paths()
         import _batch_b19_numeric as _m
     _BATCH_B19_NUMERIC_MOD = _m
+    return _m
+
+
+def _get_batch_b20_numeric():
+    """双路兜底导入 Batch B-20 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B20_NUMERIC_MOD
+    if _BATCH_B20_NUMERIC_MOD is not None:
+        return _BATCH_B20_NUMERIC_MOD
+    try:  # 优先包路径
+        from lda_harness import _batch_b20_numeric as _m
+    except ImportError:  # 回退
+        _ensure_paths()
+        import _batch_b20_numeric as _m
+    _BATCH_B20_NUMERIC_MOD = _m
     return _m
 
 
@@ -5229,3 +5244,148 @@ def _b328_eikonal_fmm_cand(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b19_numeric()
     return float(m.cand_b328(float(p["f0"]), float(p["xo"]), float(p["yo"])))
+
+@_register_candidate(
+    "b329_bessel_iv_cand",
+    "修正 Bessel I_ν(x) 由修正 Bessel ODE 原点 Frobenius 级数启动 + 经典四阶 RK4 导出 ↔ scipy.special.iv 精确 oracle，方法学独立")
+def _b329_bessel_iv_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.iv_rk4(float(p["nu"]), float(p["x"]), 128))
+
+
+@_register_candidate(
+    "b330_bessel_iv_cand",
+    "修正 Bessel I_ν(x) 由修正 Bessel ODE 原点 Frobenius 级数启动 + 经典四阶 RK4 导出 ↔ scipy.special.iv 精确 oracle，方法学独立")
+def _b330_bessel_iv_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.iv_rk4(float(p["nu"]), float(p["x"]), 128))
+
+
+@_register_candidate(
+    "b331_bessel_iv_cand",
+    "修正 Bessel I_ν(x) 由修正 Bessel ODE 原点 Frobenius 级数启动 + 经典四阶 RK4 导出 ↔ scipy.special.iv 精确 oracle，方法学独立")
+def _b331_bessel_iv_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.iv_rk4(float(p["nu"]), float(p["x"]), 128))
+
+
+@_register_candidate(
+    "b332_bessel_iv_cand",
+    "修正 Bessel I_ν(x) 由修正 Bessel ODE 原点 Frobenius 级数启动 + 经典四阶 RK4 导出 ↔ scipy.special.iv 精确 oracle，方法学独立")
+def _b332_bessel_iv_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.iv_rk4(float(p["nu"]), float(p["x"]), 128))
+
+
+@_register_candidate(
+    "b333_bessel_iv_cand",
+    "修正 Bessel I_ν(x) 由修正 Bessel ODE 原点 Frobenius 级数启动 + 经典四阶 RK4 导出 ↔ scipy.special.iv 精确 oracle，方法学独立")
+def _b333_bessel_iv_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.iv_rk4(float(p["nu"]), float(p["x"]), 128))
+
+
+@_register_candidate(
+    "b334_bessel_iv_cand",
+    "修正 Bessel I_ν(x) 由修正 Bessel ODE 原点 Frobenius 级数启动 + 经典四阶 RK4 导出 ↔ scipy.special.iv 精确 oracle，方法学独立")
+def _b334_bessel_iv_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.iv_rk4(float(p["nu"]), float(p["x"]), 128))
+
+
+@_register_candidate(
+    "b335_sph_proj_cand",
+    "球谐 Y_l^m 自投影系数由均匀网格复合梯形球面积分导出 ↔ 正交归一恒等式（=1），方法学独立")
+def _b335_sph_proj_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.sph_proj_trapz(int(p["l"]), int(p["m"]), 160))
+
+
+@_register_candidate(
+    "b336_sph_proj_cand",
+    "球谐 Y_l^m 自投影系数由均匀网格复合梯形球面积分导出 ↔ 正交归一恒等式（=1），方法学独立")
+def _b336_sph_proj_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.sph_proj_trapz(int(p["l"]), int(p["m"]), 160))
+
+
+@_register_candidate(
+    "b337_sph_proj_cand",
+    "球谐 Y_l^m 自投影系数由均匀网格复合梯形球面积分导出 ↔ 正交归一恒等式（=1），方法学独立")
+def _b337_sph_proj_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.sph_proj_trapz(int(p["l"]), int(p["m"]), 160))
+
+
+@_register_candidate(
+    "b338_sph_proj_cand",
+    "球谐 Y_l^m 自投影系数由均匀网格复合梯形球面积分导出 ↔ 正交归一恒等式（=1），方法学独立")
+def _b338_sph_proj_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.sph_proj_trapz(int(p["l"]), int(p["m"]), 160))
+
+
+@_register_candidate(
+    "b339_sph_proj_cand",
+    "球谐 Y_l^m 自投影系数由均匀网格复合梯形球面积分导出 ↔ 正交归一恒等式（=1），方法学独立")
+def _b339_sph_proj_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.sph_proj_trapz(int(p["l"]), int(p["m"]), 160))
+
+
+@_register_candidate(
+    "b340_rbf_interp_cand",
+    "一维 MQ RBF 插值（形状随 h 缩放 c=0.5h + 二次多项式）由离格测试点估值导出 ↔ 已知函数闭式，方法学独立")
+def _b340_rbf_interp_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.rbf_interp(float(p["a"]), float(p["x"]), 256))
+
+
+@_register_candidate(
+    "b341_rbf_interp_cand",
+    "一维 MQ RBF 插值（形状随 h 缩放 c=0.5h + 二次多项式）由离格测试点估值导出 ↔ 已知函数闭式，方法学独立")
+def _b341_rbf_interp_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.rbf_interp(float(p["a"]), float(p["x"]), 256))
+
+
+@_register_candidate(
+    "b342_rbf_interp_cand",
+    "一维 MQ RBF 插值（形状随 h 缩放 c=0.5h + 二次多项式）由离格测试点估值导出 ↔ 已知函数闭式，方法学独立")
+def _b342_rbf_interp_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.rbf_interp(float(p["a"]), float(p["x"]), 256))
+
+
+@_register_candidate(
+    "b343_rbf_interp_cand",
+    "一维 MQ RBF 插值（形状随 h 缩放 c=0.5h + 二次多项式）由离格测试点估值导出 ↔ 已知函数闭式，方法学独立")
+def _b343_rbf_interp_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.rbf_interp(float(p["a"]), float(p["x"]), 256))
+
+
+@_register_candidate(
+    "b344_rbf_interp_cand",
+    "一维 MQ RBF 插值（形状随 h 缩放 c=0.5h + 二次多项式）由离格测试点估值导出 ↔ 已知函数闭式，方法学独立")
+def _b344_rbf_interp_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b20_numeric()
+    return float(m.rbf_interp(float(p["a"]), float(p["x"]), 256))
+
+

@@ -282,7 +282,14 @@ python scripts/sync_push.py <repo>
 `physical-law.ids` 含 `B296`（count **302**）、`dispatch_ids` **305**、`anchors.total` **315**、`ci_core` 178、`HEAD_MATCH=True`、
 `check_ledger.py 293 3 18 314 B296` ⇒ `ALL_OK (fails=0)`。
 
-**§9 回填**：提交与推送实测见下方补记。
+**§9 实测回填（2026-09-17）**：
+
+- **提交 `1445eb6`**（12 文件 **+1293/−21**）：`lda_harness` 三文件 +189/+16/+143、数值核 608 行（新增）、报告 313 行（新增）、README +13/−12（7 改 6 + 顶行新增）、CONTRIBUTING +4/−2、pyproject +1/−1、4 道 smoke +13/+2/+7/+4（含各自 −）。
+- **推送**：`scripts/sync_push.py D:/agent_LDA` 实测 —— `gitee exit=0`；`github direct exit=128`（`fatal: unable to access … Recv failure: Connection was reset`，即本地代理 502/重置拦截）⇒ **自动 SOCKS5 兜底 `socks5h://127.0.0.1:7890` → `github proxy exit=0`**；`[CLEAN] store 已删除`（凭据仅驻内存、临时 store 已清）。
+- **远端抵达核验**（`git ls-remote`，github 走 SOCKS5 探针）：gitee `refs/heads/main` = `1445eb6540ccb6f4f72c134303f7c4efbbdbc31a`；github `refs/heads/main` = 同值 ⇒ **两端 ≡ 本地 HEAD `1445eb6`**。
+- **EOL 复核**：README `i/crlf w/crlf`、pyproject `i/crlf w/crlf`；CONTRIBUTING / 报告 / `_batch_b17_numeric.py` 均 `i/lf w/lf` ⇒ **无 `w/mixed`**。
+- **工作区** clean（`git status --short` 空）。
+- ⏳ **生产部署仍未授权** ⇒ 本批止于「已提交 · 已推三端 · 未部署」。
 
 ## 10. 结论与下一步
 

@@ -2180,6 +2180,7 @@ _BATCH_B9_MOD = None
 _BATCH_B10_MOD = None
 _BATCH_B11_MOD = None
 _BATCH_B12_MOD = None
+_BATCH_B13_MOD = None
 
 
 def _get_batch_b3():
@@ -2746,6 +2747,21 @@ def _get_batch_b12():
         _ensure_paths()
         import _batch_b12_numeric as _m
     _BATCH_B12_MOD = _m
+    return _m
+
+
+
+def _get_batch_b13():
+    """双路兜底导入 Batch B-13 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B13_MOD
+    if _BATCH_B13_MOD is not None:
+        return _BATCH_B13_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b13_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b13_numeric as _m
+    _BATCH_B13_MOD = _m
     return _m
 
 
@@ -3941,6 +3957,151 @@ def _b216_hyp_asinh_cand(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b12()
     return float(m.cand_b216(float(p["z"])))
+
+
+@_register_candidate(
+    "b217_gl_dhalf_const_cand",
+    "D^0.5[1] 由 Grünwald–Letnikov 卷积差分（非整数阶、非局部算子）导出 ↔ 1/√(πt) 闭式，方法学独立")
+def _b217_gl_dhalf_const_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b217(float(p["alpha"]), float(p["t"])))
+
+
+@_register_candidate(
+    "b218_gl_dhalf_linear_cand",
+    "D^0.5[t] 由 Grünwald–Letnikov 卷积差分导出 ↔ √2/Γ(1.5) 闭式，方法学独立")
+def _b218_gl_dhalf_linear_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b218(float(p["alpha"]), float(p["t"])))
+
+
+@_register_candidate(
+    "b219_gl_dhalf_cubic_cand",
+    "D^0.5[t³] 由 Grünwald–Letnikov 卷积差分导出 ↔ 6/Γ(3.5) 闭式，方法学独立")
+def _b219_gl_dhalf_cubic_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b219(float(p["alpha"]), float(p["t"])))
+
+
+@_register_candidate(
+    "b220_gl_dquarter_quad_cand",
+    "D^0.25[t²] 由 Grünwald–Letnikov 卷积差分导出 ↔ 2/Γ(2.75) 闭式，方法学独立")
+def _b220_gl_dquarter_quad_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b220(float(p["alpha"]), float(p["t"])))
+
+
+@_register_candidate(
+    "b221_matexp_rot1_cand",
+    "exp(At)[0,1] 由自研 scaling–squaring（Taylor 截断 + 自乘 2^8）导出 ↔ −sin t 闭式，方法学独立")
+def _b221_matexp_rot1_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b221(float(p["t"])))
+
+
+@_register_candidate(
+    "b222_matexp_rot25_cand",
+    "exp(At)[0,1]（ω=2.5 旋转）由自研 scaling–squaring 导出 ↔ −sin(2.5t) 闭式，方法学独立")
+def _b222_matexp_rot25_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b222(float(p["t"])))
+
+
+@_register_candidate(
+    "b223_matexp_damp_cand",
+    "exp(At)[0,0]（A=diag(−1,−2)，t=1.5）由自研 scaling–squaring 导出 ↔ e^{−t} 闭式，方法学独立")
+def _b223_matexp_damp_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b223(float(p["t"])))
+
+
+@_register_candidate(
+    "b224_matexp_two_mode_cand",
+    "exp(At)[0,0]（A=[[0,1],[−2,−3]]）由自研 scaling–squaring 导出 ↔ 2e^{−t}−e^{−2t} 闭式，方法学独立")
+def _b224_matexp_two_mode_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b224(float(p["t"])))
+
+
+@_register_candidate(
+    "b225_gd_quartic_cand",
+    "a(x⁴/4−x²/2) 的极小值由固定步长梯度下降（x₀=1.5, η=0.25, k 步）导出 ↔ −a/4 解析极小，方法学独立")
+def _b225_gd_quartic_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b225(float(p["a"])))
+
+
+@_register_candidate(
+    "b226_gd_amgm_cand",
+    "a/x + x 的极小值由固定步长梯度下降（x₀=3, η=0.30, k 步）导出 ↔ 2√a 解析极小，方法学独立")
+def _b226_gd_amgm_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b226(float(p["a"])))
+
+
+@_register_candidate(
+    "b227_gd_free_energy_cand",
+    "x ln x − b x 的极小值由固定步长梯度下降（x₀=2, η=0.30, k 步）导出 ↔ −e^{b−1} 解析极小，方法学独立")
+def _b227_gd_free_energy_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b227(float(p["b"])))
+
+
+@_register_candidate(
+    "b228_gd_exp_potential_cand",
+    "e^x − c x 的极小值由固定步长梯度下降（x₀=0, η=0.30, k 步）导出 ↔ c−c ln c 解析极小，方法学独立")
+def _b228_gd_exp_potential_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b228(float(p["c"])))
+
+
+@_register_candidate(
+    "b229_volterra_exp_cand",
+    "φ(1) 由分块梯形递推（含 k=j 隐式项移项）导出 ↔ 积分方程解析解，方法学独立")
+def _b229_volterra_exp_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b229(float(p["lam"])))
+
+
+@_register_candidate(
+    "b230_volterra_exp_long_cand",
+    "φ(1.5) 由分块梯形递推导出 ↔ 积分方程解析解，方法学独立")
+def _b230_volterra_exp_long_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b230(float(p["lam"])))
+
+
+@_register_candidate(
+    "b231_volterra_exp2_cand",
+    "φ(1) 由分块梯形递推导出 ↔ 积分方程解析解 2−e^{−1}，方法学独立")
+def _b231_volterra_exp2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b231(float(p["lam"])))
+
+
+@_register_candidate(
+    "b232_volterra_ramp_cand",
+    "φ(1) 由分块梯形递推导出 ↔ 积分方程解析解 cosh(√λx)，方法学独立")
+def _b232_volterra_ramp_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b13()
+    return float(m.cand_b232(float(p["lam"])))
+
 
 
 

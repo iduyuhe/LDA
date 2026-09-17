@@ -118,6 +118,12 @@ from ._batch_b12_numeric import (  # noqa: E402  # Batch B-12 双方法独立锚
     golden_b211, golden_b212, golden_b213, golden_b214, golden_b215,
     golden_b216,
 )
+from ._batch_b13_numeric import (  # noqa: E402  # Batch B-13 双方法独立锚数值核（路径 B 扩基续十二 · 分数阶 Grünwald–Letnikov/矩阵指数 scaling–squaring/变分极值梯度下降/第二类 Volterra 积分方程族 · v0.9.93 · 腿① 续加锚稀释 terminal）
+    golden_b217, golden_b218, golden_b219, golden_b220, golden_b221,
+    golden_b222, golden_b223, golden_b224, golden_b225, golden_b226,
+    golden_b227, golden_b228, golden_b229, golden_b230, golden_b231,
+    golden_b232,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -787,6 +793,10 @@ _GOLDEN_DISPATCH = {
     "B205": golden_b205, "B206": golden_b206, "B207": golden_b207, "B208": golden_b208,  # 连分数有理逼近（tan/arctan/coth/√）
     "B209": golden_b209, "B210": golden_b210, "B211": golden_b211, "B212": golden_b212,  # Durand–Kerner 多项式求根闭式
     "B213": golden_b213, "B214": golden_b214, "B215": golden_b215, "B216": golden_b216,  # ₂F₁ 超几何 Euler 积分表示（asin/atanh/atan/asinh）
+    "B217": golden_b217, "B218": golden_b218, "B219": golden_b219, "B220": golden_b220,  # Batch B-13（v0.9.93 · 腿① 续加锚 · 分数阶 GL 微分）
+    "B221": golden_b221, "B222": golden_b222, "B223": golden_b223, "B224": golden_b224,  # 矩阵指数 scaling–squaring 闭式（−sin t/e^{−t}/2e^{−t}−e^{−2t}）
+    "B225": golden_b225, "B226": golden_b226, "B227": golden_b227, "B228": golden_b228,  # 变分极值解析极小（−a/4 / 2√a / −e^{b−1} / c−c ln c）
+    "B229": golden_b229, "B230": golden_b230, "B231": golden_b231, "B232": golden_b232,  # 第二类 Volterra 积分方程解析解
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -831,6 +841,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B193", "B194", "B195", "B196", "B197", "B198", "B199", "B200",
                  "B201", "B202", "B203", "B204", "B205", "B206", "B207", "B208",  # Batch B-12（v0.9.92 · 腿① 续加锚 · 高斯求积/连分数/DK 求根/₂F₁）
                  "B209", "B210", "B211", "B212", "B213", "B214", "B215", "B216",
+                 "B217", "B218", "B219", "B220", "B221", "B222", "B223", "B224",  # Batch B-13（v0.9.93 · 腿① 续加锚 · 分数阶 GL/矩阵指数/变分极值/Volterra 积分方程）
+                 "B225", "B226", "B227", "B228", "B229", "B230", "B231", "B232",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

@@ -201,7 +201,16 @@ B-9 报告 §7.1/§7.2 已登记的三条既有红灯为**基线 HEAD 即红**�
 
 - commit：`f75c7c3`
 - push：`scripts/sync_push.py`（gitee 直连 exit=0 + github 直连被重置→SOCKS5 兜底 exit=0）
-- **部署**：本次**未部署**（用户指令不含「部署」）——完成时报备询问；如需上线：`remote_deploy.py --expect-head <commit>`。
+- **部署**：✅ **已部署生产（v0.9.90）** —— `remote_deploy.py --expect-head 69434b1`：
+  - `git pull` 生产端 ：`bd884cf..69434b1  Fast-forward`（11 文件，+1252/−19，新增报告与 `_batch_b10_numeric.py`）；
+  - pip 元数据重装：`lda-design 0.9.89 → 0.9.90`（修复 /api/health 版本串滞后）；
+  - `dist/store.json` 未动（2072 B · Sep 9）；`systemctl restart` rc=0 · `is-active=active` · **`HEAD_MATCH=True`**。
+- **部署后账本核验**（生产 `/api/verification_ledger` 实测，34488 B）：
+  - `vmm.tiers` = `{strict_independent: 181, degraded_ordinal: 3, self_certified: 18}`（和 = **202**）⇒ 独立率 **89.6%**；
+  - `judgment_paths.derived.totals` = `{anchors: 202, strict_independent: 181, degraded_ordinal: 3, self_consistent_stub: 18}`；
+  - `anchors.by_kind['physical-law'].ids` 含 **B169–B184 全 16 道**（max B = **184**）；
+  - `honest_note` 已刷新为「当前真正由独立候选判出的只有 **181** 道」且编号列表含 B169–B184；
+  - `/api/health`：version `0.9.90` · benchmarks **202** · `layers_built` 8 / `pdks` 5 · `/api/shelf` **75** 货架 · `ci_core.count` **178**（条数不变、`stale=false`）。
 
 ---
 

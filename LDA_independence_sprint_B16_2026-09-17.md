@@ -227,7 +227,27 @@ python D:/tmp/_sync_push.py
 #    python check_ledger.py 277 3 18 298 B280
 ```
 
-**实际结果**：见本节下方回填。
+**实际结果（2026-09-17 实测回填）**：
+
+```text
+git commit  ->  0cb0d00  (12 files changed, 1139 insertions(+), 22 deletions(-))
+gitee  直连   exit=0  2b265bf..0cb0d00  main -> main
+github 直连   exit=128  fatal: unable to access 'https://github.com/iduyuhe/LDA.git/':
+                        CONNECT tunnel failed, response 502
+github 兜底   exit=0  2b265bf..0cb0d00  main -> main   (socks5h://127.0.0.1:7890)
+```
+
+**判定**：只看 `[PUSH]` 行 exit=0 + `X..Y main -> main` ⇒ **两端均成功抵达 `0cb0d00`**（github 直连被本地代理 502 拦截属环境常态，自动 SOCKS5 兜底成功，非仓库侧问题）。
+
+**提交后 EOL 复核**（`git ls-files --eol`）：`README.md`/`pyproject.toml` = `i/crlf w/crlf`；其余 10 文件 = `i/lf w/lf`；**无 `w/mixed`** ⇒ 提交未破坏 EOL。
+
+**生产部署**：⏳ **本批未获授权**，待用户批准后执行：
+
+```bash
+python remote_deploy.py --expect-head 0cb0d00
+python check_ledger.py 277 3 18 298 B280
+```
+
 
 ## 10. 结论与下一步
 

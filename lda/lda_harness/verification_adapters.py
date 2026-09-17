@@ -2183,6 +2183,9 @@ _BATCH_B12_MOD = None
 _BATCH_B13_MOD = None
 _BATCH_B14_MOD = None
 
+_BATCH_B15_MOD = None
+
+
 
 def _get_batch_b3():
     """双路兜底导入 Batch B-3 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
@@ -2777,6 +2780,20 @@ def _get_batch_b14():
         _ensure_paths()
         import _batch_b14_numeric as _m
     _BATCH_B14_MOD = _m
+    return _m
+
+
+def _get_batch_b15():
+    """双路兜底导入 Batch B-15 数值核（缓存，项目铁律：不依赖单一导入路径）。"""
+    global _BATCH_B15_MOD
+    if _BATCH_B15_MOD is not None:
+        return _BATCH_B15_MOD
+    try:  # 优先包路径（仓库根在 sys.path 时）
+        from lda_harness import _batch_b15_numeric as _m
+    except ImportError:  # 回退：把 lda_harness 目录塞进 sys.path 后裸导入
+        _ensure_paths()
+        import _batch_b15_numeric as _m
+    _BATCH_B15_MOD = _m
     return _m
 
 
@@ -4261,6 +4278,150 @@ def _b248_bvp_log_cand(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b14()
     return float(m.cand_b248(float(p["y1"])))
+
+@_register_candidate(
+    "b249_dde_steps_cand",
+    "y(1.2) 由分步法（每步 RK4 等效 Simpson）+ 已算出历史点的三次 Hermite 插值导出 ↔ 延迟微分方程初等闭式 e^{−rT}，方法学独立")
+def _b249_dde_steps_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b249(float(p["r"]), float(p["T"])))
+
+
+@_register_candidate(
+    "b250_dde_steps_cand",
+    "y(1.2) 由分步法 + 历史点三次 Hermite 插值导出 ↔ 延迟微分方程初等闭式 e^{−rT}，方法学独立")
+def _b250_dde_steps_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b250(float(p["r"]), float(p["T"])))
+
+
+@_register_candidate(
+    "b251_dde_steps_cand",
+    "y(1.2) 由分步法 + 历史点三次 Hermite 插值导出 ↔ 延迟微分方程初等闭式 e^{−rT}，方法学独立")
+def _b251_dde_steps_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b251(float(p["r"]), float(p["T"])))
+
+
+@_register_candidate(
+    "b252_dde_steps_cand",
+    "y(1.2) 由分步法 + 历史点三次 Hermite 插值导出 ↔ 延迟微分方程初等闭式 e^{−rT}，方法学独立")
+def _b252_dde_steps_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b252(float(p["r"]), float(p["T"])))
+
+
+@_register_candidate(
+    "b253_biharmonic_plate_cand",
+    "中心挠度由 13 点双调和模板（≡5 点 Laplacian 复合）+ 简支 ghost 消去 w_ghost=−w_mirror 导出 ↔ 初等正弦闭式 q0/(4π⁴D)，方法学独立")
+def _b253_biharmonic_plate_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b253(float(p["q0"]), float(p["dp"])))
+
+
+@_register_candidate(
+    "b254_biharmonic_plate_cand",
+    "中心挠度由 13 点双调和差分 + 简支 ghost 消去导出 ↔ 初等闭式 q0/(4π⁴D)，方法学独立")
+def _b254_biharmonic_plate_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b254(float(p["q0"]), float(p["dp"])))
+
+
+@_register_candidate(
+    "b255_biharmonic_plate_cand",
+    "中心挠度由 13 点双调和差分 + 简支 ghost 消去导出 ↔ 初等闭式 q0/(4π⁴D)，方法学独立")
+def _b255_biharmonic_plate_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b255(float(p["q0"]), float(p["dp"])))
+
+
+@_register_candidate(
+    "b256_biharmonic_plate_cand",
+    "中心挠度由 13 点双调和差分 + 简支 ghost 消去导出 ↔ 初等闭式 q0/(4π⁴D)，方法学独立")
+def _b256_biharmonic_plate_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b256(float(p["q0"]), float(p["dp"])))
+
+
+@_register_candidate(
+    "b257_transport_semilag_cand",
+    "u(0.40,0.5) 由特征线逆追踪（落点 x_j−CFL·h 非格点）+ 4 点立方 Lagrange 重构导出 ↔ 输运方程刚性平移闭式 u0(x−ct)，方法学独立")
+def _b257_transport_semilag_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b257(float(p["c"]), float(p["T"]), float(p["xs"])))
+
+
+@_register_candidate(
+    "b258_transport_semilag_cand",
+    "u(0.30,0.5) 由半拉格朗日特征线 + 4 点立方 Lagrange 重构导出 ↔ 输运方程刚性平移闭式 u0(x−ct)，方法学独立")
+def _b258_transport_semilag_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b258(float(p["c"]), float(p["T"]), float(p["xs"])))
+
+
+@_register_candidate(
+    "b259_transport_semilag_cand",
+    "u(0.30,0.5) 由半拉格朗日特征线 + 4 点立方 Lagrange 重构导出 ↔ 输运方程刚性平移闭式 u0(x−ct)，方法学独立")
+def _b259_transport_semilag_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b259(float(p["c"]), float(p["T"]), float(p["xs"])))
+
+
+@_register_candidate(
+    "b260_transport_semilag_cand",
+    "u(0.30,0.5) 由半拉格朗日特征线 + 4 点立方 Lagrange 重构导出 ↔ 输运方程刚性平移闭式 u0(x−ct)，方法学独立")
+def _b260_transport_semilag_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b260(float(p["c"]), float(p["T"]), float(p["xs"])))
+
+
+@_register_candidate(
+    "b261_nlse_soliton_cand",
+    "Re u(x*,T) 由算子分裂（NL(dt/2)→L(dt)→NL(dt/2)，NL 相位 2|u|²dt）+ FFT 谱精确线性步导出 ↔ 孤子闭式 A·sech(A(x−x0))·cos(A²T)，方法学独立")
+def _b261_nlse_soliton_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b261(float(p["A"]), float(p["x0"])))
+
+
+@_register_candidate(
+    "b262_nlse_soliton_cand",
+    "Re u(x*,T) 由分裂步 Fourier（Strang）+ FFT 谱线性步导出 ↔ 孤子闭式，方法学独立")
+def _b262_nlse_soliton_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b262(float(p["A"]), float(p["x0"])))
+
+
+@_register_candidate(
+    "b263_nlse_soliton_cand",
+    "Re u(x*,T) 由分裂步 Fourier（Strang）+ FFT 谱线性步导出 ↔ 孤子闭式，方法学独立")
+def _b263_nlse_soliton_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b263(float(p["A"]), float(p["x0"])))
+
+
+@_register_candidate(
+    "b264_nlse_soliton_cand",
+    "Re u(x*,T) 由分裂步 Fourier（Strang）+ FFT 谱线性步导出 ↔ 孤子闭式，方法学独立")
+def _b264_nlse_soliton_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b15()
+    return float(m.cand_b264(float(p["A"]), float(p["x0"])))
+
 
 
 

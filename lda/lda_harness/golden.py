@@ -130,6 +130,13 @@ from ._batch_b14_numeric import (  # noqa: E402  # Batch B-14 双方法独立锚
     golden_b243, golden_b244, golden_b245, golden_b246, golden_b247,
     golden_b248,
 )
+
+from ._batch_b15_numeric import (  # noqa: E402  # Batch B-15 双方法独立锚数值核（路径 B 扩基续十四 · 延迟泛函微分方程分步法/双调和薄板 13 点差分/一维输运半拉格朗日特征线/聚焦 NLSE 孤子分裂步 Fourier · v0.9.95 · 腿① 续加锚稀释 terminal）
+    golden_b249, golden_b250, golden_b251, golden_b252, golden_b253,
+    golden_b254, golden_b255, golden_b256, golden_b257, golden_b258,
+    golden_b259, golden_b260, golden_b261, golden_b262, golden_b263,
+    golden_b264,
+)
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -807,6 +814,11 @@ _GOLDEN_DISPATCH = {
     "B237": golden_b237, "B238": golden_b238, "B239": golden_b239, "B240": golden_b240,  # 第二类 Fredholm 可分核 · Nyström 求积
     "B241": golden_b241, "B242": golden_b242, "B243": golden_b243, "B244": golden_b244,  # 自然三次样条插值逼近
     "B245": golden_b245, "B246": golden_b246, "B247": golden_b247, "B248": golden_b248,  # 非线性两点边值 · RK4 打靶法
+    # ---- B-15 双方法独立锚（v0.9.95 · 腿① 续加锚）----
+    "B249": golden_b249, "B250": golden_b250, "B251": golden_b251, "B252": golden_b252,  # 延迟泛函微分方程 · 分步法
+    "B253": golden_b253, "B254": golden_b254, "B255": golden_b255, "B256": golden_b256,  # 双调和薄板 · 13 点差分
+    "B257": golden_b257, "B258": golden_b258, "B259": golden_b259, "B260": golden_b260,  # 一维输运 · 半拉格朗日特征线
+    "B261": golden_b261, "B262": golden_b262, "B263": golden_b263, "B264": golden_b264,  # NLSE 孤子 · 分裂步 Fourier
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -855,6 +867,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B225", "B226", "B227", "B228", "B229", "B230", "B231", "B232",
                  "B233", "B234", "B235", "B236", "B237", "B238", "B239", "B240",  # Batch B-14（v0.9.94 · 腿① 续加锚 · 对流–扩散/Fredholm 积分方程/三次样条/非线性 BVP 打靶）
                  "B241", "B242", "B243", "B244", "B245", "B246", "B247", "B248",
+                 "B249", "B250", "B251", "B252", "B253", "B254", "B255", "B256",  # Batch B-15（v0.9.95 · 腿① 续加锚 · DDE 分步法/双调和薄板 13 点差分/输运半拉格朗日/NLSE 孤子分裂步）
+                 "B257", "B258", "B259", "B260", "B261", "B262", "B263", "B264",
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

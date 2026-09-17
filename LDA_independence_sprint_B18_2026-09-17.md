@@ -1,7 +1,7 @@
 # LDA 独立率冲刺 · Batch B-18 报告（v0.9.98）
 
 > 路径 B（纯内部确定性扩基）· 腿① 续加锚稀释 terminal · 三族 16 道（B297-B312）
-> 执行日：2026-09-17 · 状态：**⏳ 生产部署待授权**
+> 执行日：2026-09-17 · 状态：**✅ 已部署生产**（HEAD `73bbbb0` · health `0.9.98`/benchmarks 330 · ledger `309/3/18/330`＝93.6% · `check_ledger` **ALL_OK (fails=0) 13/13** · B297-B312 16/16 在册）
 
 ## 1. 摘要
 
@@ -232,7 +232,7 @@ B302 的 `a` 弱响应属**物理固有**：`I(ω,a)=∫₀¹cos(ω t)e^{at}dt`�
 | 2 | `lda/lda_harness/benchmarks.py` | 333093 B / 4932 行 | **+186/−0**：import 块 + 16 字典（9 字段含自动 `note`）+ `BENCHMARK_ORDER` 16 个 bid |
 | 3 | `lda/lda_harness/golden.py` | 61921 B / 988 行 | **+16/−0**：import + `_GOLDEN_DISPATCH` 16 行 + `_PHYSICAL_LAW` 16 个 bid |
 | 4 | `lda/lda_harness/verification_adapters.py` | 244866 B / 5072 行 | **+161/−0**：`_BATCH_B18_NUMERIC_MOD` + `_get_batch_b18_numeric()`（双路兜底）+ 16× `@_register_candidate` |
-| 5 | `README.md` | 264852 B / 417 行（**CRLF**） | **+7/−6**：新顶行 `v0.9.98`（`⏳ 生产部署待授权`）+ 原 v0.9.97 转「上一版」+ 题数 314→**330**、三分类 293/3/18→**309/3/18**、双路径 `293/314→309/330` / `2/314→2/330`（余 312→328 道） |
+| 5 | `README.md` | 264852 B / 417 行（**CRLF**） | **+7/−6**：新顶行 `v0.9.98`（部署后已转 `✅ 已部署生产`）+ 原 v0.9.97 转「上一版」+ 题数 314→**330**、三分类 293/3/18→**309/3/18**、双路径 `293/314→309/330` / `2/314→2/330`（余 312→328 道） |
 | 6 | `CONTRIBUTING.md` | 6975 B / 98 行 | **+2/−2**：版本行 v0.9.98 + 账本 330 道锚（严格 309）；真值行 B-18 扩基 |
 | 7 | `pyproject.toml` | 2316 B / 82 行（**CRLF**） | **+1/−1**：`version = "0.9.98"` |
 | 8 | `lda/run_count_consistency_smoke.py` | 11521 B / 213 行 | **+6/−6**：题数 330 / B 307 / 最大 B312 / README `B1-B312` |
@@ -256,9 +256,9 @@ git add -A && git commit -m "feat(B-18): 独立率 93.3%→93.6%（293/314→309
 # 2) 三端推送（判定只看 [PUSH] gitee/github exit=0 + X..Y main -> main，不看整体 RC）
 python scripts/sync_push.py D:/agent_LDA
 
-# 3) 生产部署（⏳ 待用户授权，未执行）：
-#    python remote_deploy.py --expect-head 77c2998
-#    python check_ledger.py 309 3 18 330 B312
+# 3) 生产部署（✅ 2026-09-17 用户授权后已执行）：
+python "C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/remote_deploy.py" --expect-head 73bbbb0
+python "C:/Users/Administrator/.workbuddy/skills/lda-prod-deploy/scripts/check_ledger.py" 309 3 18 330 B312
 ```
 
 **§9 实测回填（2026-09-17）**：
@@ -271,7 +271,18 @@ python scripts/sync_push.py D:/agent_LDA
   github `refs/heads/main` = 同值 ⇒ **两端 ≡ 本地 HEAD `77c2998`**。
 - **EOL 复核**：README `i/crlf w/crlf`、pyproject `i/crlf w/crlf`；CONTRIBUTING / 报告 / 数值核 / 4 道 smoke 均 `i/lf w/lf` ⇒ **无 `w/mixed`**。
 - **工作区** clean（`git status --short` 空）。
-- ⏳ **生产部署待授权**（用户未下达部署指令）⇒ 本批止于「已提交 · 已推三端 · **未部署**」；README 顶行标 `⏳ 当前版本：v0.9.98（生产部署待授权）`。
+- ✅ **生产部署已完成**（2026-09-17 · 用户授权后）——实测回填如下：
+  - **`remote_deploy.py --expect-head 73bbbb0`** ⇒ `EXIT=0`（耗时 11 s）：
+    - `git pull` ⇒ `From https://gitee.com/i4hub/LDA  f2a8af1..73bbbb0  main -> origin/main`，**Fast-forward 13 文件 +1227/−29**（数值核 525 行、报告 304 行为 `create mode`）；
+    - `pip install --force-reinstall --no-deps .` ⇒ **`lda-design 0.9.97 → 0.9.98`**；
+    - `dist/store.json` **2072 B 未动**（Sep 9 20:52）；`systemctl restart` ⇒ `is-active = active`；
+    - `/api/health` 内网与外网均 `{"version": "0.9.98", "kernel": {"benchmarks": 330, "pdks": 5}}`；`/api/shelf` `count = 75`；
+    - **`HEAD_MATCH=True`**（expect `73bbbb0`）。
+  - **`check_ledger.py 309 3 18 330 B312`** ⇒ **`RESULT: ALL_OK (fails=0)` 13/13**：
+    - `vmm.tiers = {strict_independent: 309, degraded_ordinal: 3, self_certified: 18}`、`derived.totals.anchors = 330`；
+    - `honest_note` 已刷新为 **309**；`anchors.by_kind['physical-law'].ids` **318** 条且**含 `B312`**；`dispatch_ids` **321**；`anchors.total` **331**；`ci_core.count` **178**（`stale=false`）；`shelf` **75**。
+  - **逐锚在册核验**（拉取生产 ledger 本地比对，`_b18_led.json` 57754 B）：**B297-B312 在 `physical-law` 16/16、在 `dispatch_ids` 16/16**（missing 均为空）；**B281-B296（B-17）仍 16/16 在册**⇒ 新旧两批共 32 锚全部可查。
+  - **部署路径边界（主动披露）**：`check_ledger.py` 初版未传 `look_for_keys=False/allow_agent=False`，paramiko 默认尝试读 `~\.ssh/id_ed25519` ⇒ 被本地沙箱以「读 `.ssh` 私钥」为由整条拦截（`remote_deploy.py` 已有该参数故无影响）；**已修正技能脚本**（纯密码认证）后重跑即 `ALL_OK`，未修改任何判决行为。
 
 ## 10. 结论与下一步
 
@@ -292,12 +303,12 @@ python scripts/sync_push.py D:/agent_LDA
 | 11 | 10 道护栏红灯集合与 B-14..B-17 逐字一致 | ✅ **7 绿 3 红**，零新回归 |
 | 12 | 账本 12 文件 `count==1` + EOL 保真 | ✅ 全过，无 `w/mixed` |
 | 13 | 提交 + 三端推送 | ✅ `77c2998`，gitee/github 双端 ≡ HEAD |
-| 14 | 生产部署 | ⏳ **待授权**（未部署；HEAD `77c2998` 已推三端） |
+| 14 | 生产部署 | ✅ **已部署**（HEAD `73bbbb0`；`git pull f2a8af1..73bbbb0` 13 文件 +1227/−29；`lda-design 0.9.97→0.9.98`；health `0.9.98`/benchmarks 330；ledger `309/3/18/330`＝93.6%；`check_ledger` **ALL_OK (fails=0) 13/13**；B297-B312 16/16 在册） |
 
 ### 10.2 下一步（按优先级）
 
-1. **B-18 生产部署（待授权）** —— 用户下达后执行 `remote_deploy.py --expect-head 77c2998` + `check_ledger.py 309 3 18 330 B312`
-   ⇒ 预期 `ALL_OK (fails=0)`；随后 README 顶行转 `✅ 已部署生产`、本报告 §9/§10 回填实测。
+1. ✅ **B-18 生产部署（已完成 2026-09-17）** —— `remote_deploy.py --expect-head 73bbbb0` + `check_ledger.py 309 3 18 330 B312` ⇒ **`ALL_OK (fails=0)` 13/13**；README 顶行已转 `✅ 已部署生产`、本报告 §9/§10 已回填实测。
+
 2. **腿①续批 B-19** —— 同范式再选三族（候选池须先过**同源体检**；**注意 `_BATCH_B19*` 命名避让核检**）。
 3. **腿② degraded 3→strict**（纯内部，B21 66.0× / E10 0.6× / E9 0.13×）。
 4. **三红专项清算**（`d_criterion` ③ 13 道 B-4 地板 / `falsifiability` ⑨ numpy bool 序列化 / `coverage_deadzone` B5、B6 期望陈旧）—— 均为**纯内部可修**。

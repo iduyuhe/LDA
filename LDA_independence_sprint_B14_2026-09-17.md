@@ -240,7 +240,17 @@ git add -A && git commit -m "feat(anchors): Batch B-14 扩基 16 锚 B233-B248�
 python scripts/sync_push.py D:/agent_LDA
 ```
 
-**提交哈希**：见下方「回填」小节（提交后回填实际哈希）。
+**提交哈希**：`3f7ab6f`（`feat(anchors): Batch B-14 扩基 16 锚 B233-B248（v0.9.94 · 266/245/92.1%/95.5%）`）。
+
+**三端推送**（实测 · 2026-09-17）：
+
+```
+[PUSH] gitee  main ...                              exit=0    7c329b1..3f7ab6f  main -> main
+[PUSH] github main (direct, proxy cleared) ...      exit=0    7c329b1..3f7ab6f  main -> main
+[CLEAN] store 已删除
+```
+
+本次 **github 直连成功**（`github direct exit=0`，无需 SOCKS5 兜底）；判定口径「`[PUSH] gitee/github exit=0` + `X..Y main -> main`」**双满足**。
 
 **生产部署**：⏳ **未执行**（本轮指令未含部署授权）。部署口径见 §10 下一步第 1 项。
 

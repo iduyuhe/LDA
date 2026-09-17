@@ -241,6 +241,8 @@ github 兜底   exit=0  2b265bf..0cb0d00  main -> main   (socks5h://127.0.0.1:78
 
 **提交后 EOL 复核**（`git ls-files --eol`）：`README.md`/`pyproject.toml` = `i/crlf w/crlf`；其余 10 文件 = `i/lf w/lf`；**无 `w/mixed`** ⇒ 提交未破坏 EOL。
 
+**文档回写**：本节实测的回填本身作为独立 docs-only 提交 `520b4b5`（1 文件 `+21/−1`，EOL `i/lf w/lf`）并推三端（gitee 直连 `exit=0` / github 直连 502 ⇒ SOCKS5 兜底 `exit=0`，`0cb0d00..520b4b5 main -> main`）；仅文档变更 ⇒ **无需重部署**。
+
 **生产部署**：⏳ **本批未获授权**，待用户批准后执行：
 
 ```bash

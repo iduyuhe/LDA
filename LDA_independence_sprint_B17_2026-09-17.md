@@ -272,15 +272,19 @@ git add -A && git commit -m "feat(B-17): 独立率 93.0%→93.3%（277/298→293
 # 2) 三端推送（判定只看 [PUSH] gitee/github exit=0 + X..Y main -> main，不看整体 RC）
 python scripts/sync_push.py <repo>
 
-# 3) 生产部署（⏳ 本批未授权，待批准后执行）：
+# 3) 生产部署（✅ 2026-09-17 已执行）：
 #    python remote_deploy.py --expect-head <HEAD短哈希>
 #    python check_ledger.py 293 3 18 314 B296
 ```
 
-⏳ **生产部署待授权**。授权后预期实测：`lda-design 0.9.96→0.9.97`、`/api/health` `version 0.9.97 / benchmarks 314`、
-`/api/verification_ledger` `strict 293 / degraded 3 / stub 18 / total 314`、`honest_note` **293**、
-`physical-law.ids` 含 `B296`（count **302**）、`dispatch_ids` **305**、`anchors.total` **315**、`ci_core` 178、`HEAD_MATCH=True`、
-`check_ledger.py 293 3 18 314 B296` ⇒ `ALL_OK (fails=0)`。
+✅ **已于 2026-09-17 部署生产**（实测）：`git pull 2b740d5..f2a8af1` **13 文件 +1319/−31**
+（`_batch_b17_numeric.py` +608、`LDA_independence_sprint_B17_*.md` +320、`benchmarks.py` +189、`verification_adapters.py` +143、
+`golden.py` +16、4 道 smoke +13/+2/+7/+4、`CONTRIBUTING.md` +4/−2、`pyproject.toml` +1/−1、README +15/−12）；
+`lda-design` **0.9.96→0.9.97**；`dist/store.json` **未动** 2072B；`restart` rc=0、`is-active=active`；
+`/api/health`（**内网+外网**）均 `version 0.9.97 / benchmarks 314`；`/api/shelf` `count 75`；
+`/api/verification_ledger` ⇒ `strict 293 / degraded 3 / stub 18 / total 314`（独立率 **93.3%**）、`honest_note` **293**、
+`physical-law.ids` 含 `B296`（count **302**）、`dispatch_ids` **305**、`anchors.total` **315**、`ci_core` **178**、`HEAD_MATCH=True`；
+`check_ledger.py 293 3 18 314 B296` ⇒ **`RESULT: ALL_OK (fails=0)`（13/13 OK）**。
 
 **§9 实测回填（2026-09-17）**：
 
@@ -289,7 +293,7 @@ python scripts/sync_push.py <repo>
 - **远端抵达核验**（`git ls-remote`，github 走 SOCKS5 探针）：gitee `refs/heads/main` = `1445eb6540ccb6f4f72c134303f7c4efbbdbc31a`；github `refs/heads/main` = 同值 ⇒ **两端 ≡ 本地 HEAD `1445eb6`**。
 - **EOL 复核**：README `i/crlf w/crlf`、pyproject `i/crlf w/crlf`；CONTRIBUTING / 报告 / `_batch_b17_numeric.py` 均 `i/lf w/lf` ⇒ **无 `w/mixed`**。
 - **工作区** clean（`git status --short` 空）。
-- ⏳ **生产部署仍未授权** ⇒ 本批止于「已提交 · 已推三端 · 未部署」。
+- ✅ **生产部署已完成**（2026-09-17）⇒ 本批止于「已提交 · 已推三端 · **已部署**」。
 
 ## 10. 结论与下一步
 
@@ -309,11 +313,11 @@ python scripts/sync_push.py <repo>
 | 10 | 同源体检（数值/结构/golden 截断 三红线） | ✅ 实 grep 全仓，三族零同源；被否 13 项 |
 | 11 | 10 道护栏红灯集合与 B-16 逐字一致 | ✅ 7 绿 3 红，零新回归 |
 | 12 | 账本 12 文件 `count==1` + EOL 保真 | ✅ 全过，无 `w/mixed` |
-| 13 | 生产部署 | ⏳ **待授权**（本批未部署） |
+| 13 | 生产部署 | ✅ **已部署**（HEAD `f2a8af1` · health `0.9.97/314` · ledger `293/3/18/314` **ALL_OK 13/13**） |
 
 ### 10.2 下一步（按优先级）
 
-1. **生产部署 B-17**（需用户授权）——`remote_deploy.py --expect-head <HEAD>` + `check_ledger.py 293 3 18 314 B296`，随后 README 顶行转 `✅ 已部署生产`、报告 §9/§10 回填。
+1. ~~生产部署 B-17~~ ✅ **已完成**（2026-09-17）——`remote_deploy.py --expect-head f2a8af1` + `check_ledger.py 293 3 18 314 B296` ⇒ **`ALL_OK (fails=0)`**；README 顶行已转 `✅ 已部署生产`、报告 §9/§10 已回填。
 2. **腿①续批 B-18** —— 同范式再选三族（候选池须先过同源体检；**注意 `_BATCH_B18*` 命名避让核检**）。
 3. **腿② degraded 3→strict**（纯内部，B21 66.0× / E10 0.6× / E9 0.13×）。
 4. **三红专项清算**（`d_criterion` ③ / `falsifiability` ⑨ / `coverage_deadzone`）—— 均为纯内部可修。

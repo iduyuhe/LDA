@@ -2181,6 +2181,23 @@ def _get_batch_b24():
     return _m
 
 
+_BATCH_B25_MOD = None
+
+
+def _get_batch_b25():
+    """双路兜底导入 Batch B-25 数值核（静电/静磁有限源族，缓存，项目铁律）。"""
+    global _BATCH_B25_MOD
+    if _BATCH_B25_MOD is not None:
+        return _BATCH_B25_MOD
+    try:
+        from lda_harness import _batch_b25_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b25_numeric as _m
+    _BATCH_B25_MOD = _m
+    return _m
+
+
 # ---- Batch B-23（v0.9.105 · 腿① 扩基加锚 · 高斯光束旁轴光学族）----
 # 旁轴波方程 Crank-Nicolson FD BPM（初值传播）方法学独立于 B5/B567 本征值 Helmholtz、
 # B14/B15 2D-FFT 远场衍射；golden=解析闭式，cand=BPM 量测。残差=BPM 离散化误差
@@ -2500,6 +2517,184 @@ def _b399_disk_square_zeroratio_candidate(spec: VerificationSpec, oracle_value: 
     m = _get_batch_b24()
     return float(m.cand_disk_square_zeroratio(
         float(p["D"]), float(p["a_sq"]), float(p["wl"])))
+
+
+# ---------------------------------------------------------------------------
+# Batch B-25（v0.9.107 · 腿① 扩基加锚 · 静电/静磁有限源族：解析闭式 golden ×
+# 库仑 / Biot–Savart 求积候选）。候选均为方法学不同源的真实数值求积（Simpson）：
+# golden=闭式（含椭圆积分 K,E / 壳定理 / 安培/毕奥-萨伐尔闭式），cand=Simpson 线/面积分；
+# 残差=求积离散化误差（O(h⁴)），随 N 收敛、随物理参数变化、判据 D 响应、候选扰动必 FAIL。
+# 命名避让：批次号 B-25 专属；不与其他批次占名冲突。
+# ---------------------------------------------------------------------------
+@_register_candidate(
+    "disk_onaxis_e",
+    "带电圆盘轴线场 Simpson 1D 求积（与 golden 闭式 2πσ(1−z/√) 不同源）")
+def _b400_disk_onaxis_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B400 独立候选：带电圆盘轴线场 E(z)（库仑环贡献 Simpson 1D 求积）。
+
+    golden=闭式 2πσ(1−z/√(z²+R²))；cand=∫2πσ z r/(z²+r²)^{3/2}dr 复合 Simpson 1D。
+    残差=求积离散化误差（O(h⁴)）。余量 1515×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b25()
+    return float(m.cand_disk(float(p["R"]), float(p["sigma"]), float(p["z"])))
+
+
+@_register_candidate(
+    "washer_onaxis_e",
+    "带电圆环（washer a..b）轴线场 Simpson 1D 求积（与 golden 闭式不同源）")
+def _b401_washer_onaxis_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B401 独立候选：带电圆环轴线场 E(z)（库仑环贡献 Simpson 1D 求积）。
+
+    golden=闭式 2πσ(z/√a − z/√b)；cand=∫_{a}^{b} 2πσ z r/(z²+r²)^{3/2}dr Simpson 1D。
+    残差=求积离散化误差。余量 3226×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b25()
+    return float(m.cand_washer(float(p["a"]), float(p["b"]), float(p["sigma"]), float(p["z"])))
+
+
+@_register_candidate(
+    "line_bisector_e",
+    "有限长线电荷垂直平分线场 Simpson 1D 求积（与 golden 闭式不同源）")
+def _b402_line_bisector_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B402 独立候选：有限长线电荷垂直平分线场 E（库仑 y 分量 Simpson 1D 求积）。
+
+    golden=闭式 λL/(a√((L/2)²+a²))；cand=∫λ a/(x²+a²)^{3/2}dx Simpson 1D。
+    残差=求积离散化误差（尖峰被积 a/(x²+a²)^{3/2} 收敛较慢）。余量 441×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b25()
+    return float(m.cand_line_bisector(float(p["L"]), float(p["lam"]), float(p["a"])))
+
+
+@_register_candidate(
+    "line_endon_e",
+    "有限长线电荷端点延伸线场 Simpson 1D 求积（与 golden 闭式不同源）")
+def _b403_line_endon_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B403 独立候选：有限长线电荷端点延伸线场 E（库仑 y 分量 Simpson 1D 求积）。
+
+    golden=闭式 λL/(a√(L²+a²))；cand=∫_{0}^{L} λ a/(x²+a²)^{3/2}dx Simpson 1D。
+    残差=求积离散化误差。余量 330×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b25()
+    return float(m.cand_line_endon(float(p["L"]), float(p["lam"]), float(p["a"])))
+
+
+@_register_candidate(
+    "shell_external_e",
+    "均匀带电球壳外点场 2D Simpson 求积（与 golden 壳定理点电荷闭式不同源）")
+def _b404_shell_external_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B404 独立候选：均匀带电球壳外 off-axis 点场（库仑 2D Simpson 求 ∫KE·dq·(P−surf)/r³）。
+
+    golden=壳定理闭式 Q/(ρ²+z²)（外点=点电荷等价）；cand=球壳 2D Simpson 求积。
+    off-axis 使 r 随 θ,φ 变化（非退化陷阱）。残差=求积离散化误差。余量 7584×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b25()
+    return float(m.cand_shell(float(p["R"]), float(p["Q"]), float(p["rho"]), float(p["z"])))
+
+
+@_register_candidate(
+    "twoline_charge_e",
+    "两平行异号有限线电荷中点场 Simpson 1D 求积叠加（与 golden 闭式不同源）")
+def _b405_twoline_charge_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B405 独立候选：两平行异号有限线电荷中点场 E（库仑 y 分量 Simpson 1D 求积叠加）。
+
+    golden=闭式 2λL/((d/2)√((L/2)²+(d/2)²))；cand=双线 Simpson 1D 求积叠加。
+    残差=求积离散化误差。余量 249×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b25()
+    return float(m.cand_twoline(float(p["L"]), float(p["lam"]), float(p["d"])))
+
+
+@_register_candidate(
+    "wire_perp_b",
+    "有限长直导线 Biot–Savart Simpson 1D 求积（与 golden 闭式不同源）")
+def _b406_wire_perp_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B406 独立候选：有限长直导线垂直距离磁场 B（Biot–Savart dB_z Simpson 1D 求积）。
+
+    golden=闭式 I L/(4π d√((L/2)²+d²))；cand=∫(μ₀I/4π)d/(x²+d²)^{3/2}dx Simpson 1D。
+    残差=求积离散化误差。余量 5544×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b25()
+    return float(m.cand_wire(float(p["L"]), float(p["I"]), float(p["d"])))
+
+
+@_register_candidate(
+    "square_loop_center_b",
+    "正方形电流环四边 Biot–Savart Simpson 求积（与 golden 闭式不同源）")
+def _b407_square_loop_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B407 独立候选：正方形电流环中心磁场 B（四边 Biot–Savart Simpson 求积）。
+
+    golden=闭式 2√2 I/(π a)；cand=四边 Biot–Savart Simpson 求积取 B_z。
+    残差=求积离散化误差。余量 1747×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b25()
+    return float(m.cand_square(float(p["a"]), float(p["I"])))
+
+
+@_register_candidate(
+    "polygon_loop_center_b",
+    "正 N 边形电流环 N 边 Biot–Savart Simpson 求积（与 golden 闭式不同源）")
+def _b408_polygon_loop_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B408 独立候选：正 N 边形电流环中心磁场 B（N 边 Biot–Savart Simpson 求积）。
+
+    golden=闭式 I N tan(π/N)/(2π R)；cand=N 边 Biot–Savart Simpson 求积取 B_z。
+    残差=求积离散化误差。余量 7479×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b25()
+    return float(m.cand_polygon(int(p["N"]), float(p["R"]), float(p["I"])))
+
+
+@_register_candidate(
+    "loop_offaxis_bz",
+    "圆形电流环 off-axis B_z Biot–Savart Simpson 1D 求积（golden 用椭圆积分 K,E，不同源）")
+def _b409_loop_offaxis_bz_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B409 独立候选：圆形电流环 off-axis 轴向磁场 B_z（Biot–Savart 环绕 Simpson 1D 求积）。
+
+    golden=椭圆积分 K,E 闭式（scipy ellipk/ellipe）；cand=∫(μ₀I/4π)(R²−Rρcosφ)/r³ dφ Simpson。
+    off-axis 使被积函数随 φ 变化（非 on-axis 退化陷阱）。残差=求积离散化误差。余量 4416×。"""
+    p = spec.params
+    m = _get_batch_b25()
+    return float(m.cand_loop_Bz(float(p["R"]), float(p["I"]), float(p["rho"]), float(p["z"])))
+
+
+@_register_candidate(
+    "solenoid_onaxis_b",
+    "有限长螺线管轴线磁场 堆叠环 Biot–Savart Simpson 1D 求积（与 golden 闭式不同源）")
+def _b410_solenoid_onaxis_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B410 独立候选：有限长螺线管轴线磁场 B（堆叠环 Biot–Savart Simpson 1D 求积）。
+
+    golden=闭式 (nI/2)[(z+L/2)/√(R²+(z+L/2)²) − (z−L/2)/√(R²+(z−L/2)²)]；
+    cand=∫(μ₀nIR²/2)/(R²+(z−z')²)^{3/2} dz' Simpson 1D。
+    残差=求积离散化误差（尖峰被积收敛较慢）。余量 769×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b25()
+    return float(m.cand_solenoid(float(p["L"]), float(p["R"]), float(p["n"]),
+                                float(p["I"]), float(p["z"])))
+
+
+@_register_candidate(
+    "twowire_anti_b",
+    "两反向平行有限直导线中点磁场 Biot–Savart Simpson 1D 求积（与 golden 闭式不同源）")
+def _b411_twowire_anti_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B411 独立候选：两反向平行有限直导线中点磁场 B（Biot–Savart Simpson 1D 求积）。
+
+    golden=闭式 I L/(π d√((L/2)²+(d/2)²))（两导线各距 d/2）；cand=双线 Simpson 1D 求积。
+    残差=求积离散化误差。余量 3125×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b25()
+    return float(m.cand_twowire(float(p["L"]), float(p["I"]), float(p["d"])))
+
+
+@_register_candidate(
+    "loop_offaxis_brho",
+    "圆形电流环 off-axis B_ρ Biot–Savart Simpson 1D 求积（golden 用椭圆积分 K,E，不同源）")
+def _b412_loop_offaxis_brho_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B412 独立候选：圆形电流环 off-axis 径向磁场 B_ρ（Biot–Savart 环绕 Simpson 1D 求积）。
+
+    golden=椭圆积分 K,E 闭式；cand=∫(μ₀I/4π)R z cosφ/r³ dφ Simpson（B_x=B_ρ）。
+    off-axis 使被积函数随 φ 变化（非退化陷阱）。残差=求积离散化误差。余量 140×。"""
+    p = spec.params
+    m = _get_batch_b25()
+    return float(m.cand_loop_Brho(float(p["R"]), float(p["I"]), float(p["rho"]), float(p["z"])))
 
 
 @_register_candidate(

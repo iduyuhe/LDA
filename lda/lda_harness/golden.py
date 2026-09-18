@@ -186,6 +186,12 @@ from ._batch_b23_numeric import (  # Batch B-23 双方法独立锚数值核（v0
     golden_b379, golden_b380, golden_b381,
 )
 
+from ._batch_b24_numeric import (  # Batch B-24 双方法独立锚数值核（v0.9.106 · 腿① 扩基加锚 · 标量衍射族）
+    golden_b387, golden_b388, golden_b389, golden_b390, golden_b391,
+    golden_b392, golden_b393, golden_b394, golden_b395, golden_b396,
+    golden_b397, golden_b398, golden_b399,
+)
+
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -919,6 +925,11 @@ _GOLDEN_DISPATCH = {
     "B380": golden_b380, "B381": golden_b381,
     "B382": golden_b375, "B383": golden_b377, "B384": golden_b375,
     "B385": golden_b375, "B386": golden_b378,  # B382/B384/B385 复用 golden_b375(w(z))；B383 复用 golden_b377(θ)；B386 复用 golden_b378(q 腰)
+    # ---- Batch B-24（v0.9.106 · 腿① 扩基加锚 · 标量衍射族：解析闭式 golden × 衍射积分数值求积候选）----
+    "B387": golden_b387, "B388": golden_b388, "B389": golden_b389, "B390": golden_b390,
+    "B391": golden_b391, "B392": golden_b392, "B393": golden_b393, "B394": golden_b394,
+    "B395": golden_b395, "B396": golden_b396, "B397": golden_b397, "B398": golden_b398,
+    "B399": golden_b399,
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -991,6 +1002,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                 "B369", "B370", "B371", "B372", "B373",
                 "B374", "B375", "B376", "B377", "B378", "B379", "B380", "B381",
                 "B382", "B383", "B384", "B385", "B386",  # Batch B-23（v0.9.105 · 腿① 续加锚 · 高斯光束旁轴光学：解析闭式 golden × 旁轴 BPM 候选）
+                "B387", "B388", "B389", "B390", "B391", "B392", "B393", "B394",
+                "B395", "B396", "B397", "B398", "B399",  # Batch B-24（v0.9.106 · 腿① 续加锚 · 标量衍射：解析闭式 golden × 衍射积分数值求积候选）
                 "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

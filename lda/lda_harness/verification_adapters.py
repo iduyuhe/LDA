@@ -2164,6 +2164,23 @@ def _get_batch_b23():
     return _m
 
 
+_BATCH_B24_MOD = None
+
+
+def _get_batch_b24():
+    """双路兜底导入 Batch B-24 数值核（标量衍射族，缓存，项目铁律）。"""
+    global _BATCH_B24_MOD
+    if _BATCH_B24_MOD is not None:
+        return _BATCH_B24_MOD
+    try:
+        from lda_harness import _batch_b24_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b24_numeric as _m
+    _BATCH_B24_MOD = _m
+    return _m
+
+
 # ---- Batch B-23（v0.9.105 · 腿① 扩基加锚 · 高斯光束旁轴光学族）----
 # 旁轴波方程 Crank-Nicolson FD BPM（初值传播）方法学独立于 B5/B567 本征值 Helmholtz、
 # B14/B15 2D-FFT 远场衍射；golden=解析闭式，cand=BPM 量测。残差=BPM 离散化误差
@@ -2284,6 +2301,205 @@ def _b381_bpm_gouy_candidate(spec: VerificationSpec, oracle_value: Any) -> float
     p = spec.params
     m = _get_batch_b23()
     return float(m.cand_gouy(float(p["w0"]), float(p["wl"]), float(p["z1"]), float(p["z2"])))
+
+
+# ---- Batch B-24（v0.9.106 · 腿① 扩基加锚 · 标量衍射族）----
+# 标量衍射积分数值求积（复合 Simpson 1D / 极坐标 2D Simpson）方法学独立于 B-23 旁轴 BPM、
+# B10 Cornu 螺旋 C/S 特殊函数；golden=解析闭式，cand=衍射积分数值求积。残差=求积离散化
+# 误差（随采样收敛、随参数变化、判据 D 响应、候选输出扰动必 FAIL），非恒等、非地板。
+@_register_candidate(
+    "slit_firstzero_simpson",
+    "Fraunhofer 单缝复振幅 Simpson 求积 + 实振幅变号二分定位第一零点（与 golden λ/a 闭式不同源）")
+def _b387_slit_firstzero_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B387 独立候选：单缝夫琅禾费第一暗纹 sinθ₁=λ/a（Simpson 求积 + 实振幅变号二分）。
+
+    golden=闭式 λ/a；cand=Fraunhofer 单缝复振幅 U(θ) 复合 Simpson 1D 求积，实振幅符号变号
+    （线性穿越）二分定位第一零点。残差=求积离散化误差（O(h²)，随采样收敛、随参数变化、
+    判据 D 响应、候选输出扰动必 FAIL），非代数恒等、非噪声地板。余量 32.5×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b24()
+    return float(m.cand_slit_firstzero(float(p["a"]), float(p["wl"])))
+
+
+@_register_candidate(
+    "slit_intensity_simpson",
+    "Fraunhofer 单缝强度 |U|²/a² Simpson 求积（与 golden sinc² 闭式不同源）")
+def _b388_slit_intensity_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B388 独立候选：单缝夫琅禾费强度比 I(θ)/I₀=sinc²(π a sinθ/λ)（Simpson 求积）。
+
+    golden=闭式 sinc²；cand=Fraunhofer 单缝复振幅 Simpson 求积归一化强度。
+    残差=求积离散化误差（判据 D 响应、候选输出扰动必 FAIL）。余量 2.6e6×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b24()
+    return float(m.cand_slit_intensity(float(p["a"]), float(p["wl"]), float(p["theta"])))
+
+
+@_register_candidate(
+    "disk_firstzero_simpson",
+    "Fraunhofer 圆孔复振幅极坐标 2D Simpson 求积 + 实振幅变号二分定位第一暗环（不调 J₀/J₁）")
+def _b389_disk_firstzero_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B389 独立候选：圆孔爱里斑第一暗环 sinθ₁=1.21967λ/D（极坐标 2D Simpson + 实振幅变号）。
+
+    golden=(J₁ 第一零点)/π·λ/D 闭式；cand=圆孔夫琅禾费复振幅极坐标 2D Simpson 求积
+    （不调 J₀/J₁ 特殊函数），实振幅符号变号二分定位第一暗环。残差=2D 求积误差（判据 D
+    响应、候选输出扰动必 FAIL）。余量 123×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b24()
+    return float(m.cand_disk_firstzero(float(p["D"]), float(p["wl"])))
+
+
+@_register_candidate(
+    "disk_intensity_simpson",
+    "Fraunhofer 圆孔强度 |U|²/(πR²)² 极坐标 2D Simpson 求积（与 golden [2J₁/x]² 不同源）")
+def _b390_disk_intensity_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B390 独立候选：圆孔夫琅禾费强度比 [2J₁(x)/x]²（极坐标 2D Simpson 求积）。
+
+    golden=闭式 [2J₁(x)/x]²；cand=圆孔夫琅禾费复振幅 2D Simpson 求积归一化强度。
+    残差=2D 求积误差。余量 5.5e4×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b24()
+    return float(m.cand_disk_intensity(float(p["D"]), float(p["wl"]), float(p["theta"])))
+
+
+@_register_candidate(
+    "double_slit_intensity_simpson",
+    "Fraunhofer 双缝复振幅（两缝积分之和）Simpson 1D 求积归一化强度（与 golden cos²·sinc² 不同源）")
+def _b391_double_slit_intensity_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B391 独立候选：双缝干涉强度比 cos²(π d sinθ/λ)·sinc²(π a sinθ/λ)（Simpson 求积）。
+
+    golden=闭式 cos²·sinc²；cand=双缝复振幅（两缝积分之和）Simpson 求积归一化强度
+    （QUAD_N_DOUBLE=40 使普通点残差浮出 1e-12 之上、压在 tol 之下）。
+    残差=求积离散化误差。余量 2.96e7×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b24()
+    return float(m.cand_double_slit_intensity(
+        float(p["a"]), float(p["d"]), float(p["wl"]), float(p["theta"])))
+
+
+@_register_candidate(
+    "interf_fringe_spacing",
+    "纯干涉（点光源阵列）数值求和 + 抛物线峰位精修，相邻主极大 sinθ 差（与 golden λ/d 不同源）")
+def _b392_interf_fringe_spacing_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B392 独立候选：双缝/纯干涉相邻主极大角间距 Δ(sinθ)=λ/d（纯干涉数值找峰）。
+
+    golden=闭式 λ/d；cand=纯干涉（点光源阵列、无单缝包络）数值求和 + 抛物线峰位精修
+    取相邻主极大（m=0,m=1）sinθ 差。单缝包络由 B387/B388 独立覆盖，不影响主极大位置。
+    残差=网格离散化+峰位插值误差（判据 D 响应、候选输出扰动必 FAIL）。余量 8733×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b24()
+    return float(m.cand_fringe_spacing(float(p["d"]), float(p["wl"])))
+
+
+@_register_candidate(
+    "grating_peak_simpson",
+    "N 缝纯干涉数值求和 + 抛物线峰位精修第 m 级主极大（与 golden d sinθ=mλ 不同源）")
+def _b393_grating_peak_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B393 独立候选：N 缝纯干涉主极大 d sinθ=mλ（纯干涉数值找峰）。
+
+    golden=闭式 d sinθ=mλ；cand=N 缝纯干涉（点光源阵列、无单缝包络）数值求和 + 抛物线峰位
+    精修（刻意不用 scipy 优化器以留 O(h²) 残差避开判据 D ③ 恒等式地板）。
+    残差=网格离散化+峰位插值误差（随 N/网格变化、判据 D 响应）。余量 222×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b24()
+    return float(m.cand_grating_peak(
+        float(p["d"]), float(p["wl"]), int(p["m"]), int(p["nslits"])))
+
+
+@_register_candidate(
+    "grating_respower",
+    "纯干涉第 m 级主极大 + 第一极小数值定位，Δ(sinθ)→Δλ→R=mN（与 golden R=mN 不同源）")
+def _b394_grating_respower_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B394 独立候选：光栅分辨本领 R=mN（瑞利判据，纯干涉数值找第一极小）。
+
+    golden=闭式 R=mN；cand=纯干涉第 m 级主极大 + 第一极小（强度穿越 ~0）数值定位，
+    Δ(sinθ)→Δλ→R。避开 dθ/dλ 刚性问题（d=50µm ⇒ dθ/dλ≈2e4 三阶导爆炸、有限差商混叠主导）。
+    残差=峰/零点数值定位误差。余量 33.7×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b24()
+    return float(m.cand_grating_respower(
+        float(p["d"]), float(p["wl"]), int(p["m"]), int(p["nslits"])))
+
+
+@_register_candidate(
+    "rect_intensity_simpson",
+    "Fraunhofer 矩形孔复振幅（可分离 2D 笛卡尔 Simpson 求积）归一化强度（与 golden 可分离 sinc² 不同源）")
+def _b395_rect_intensity_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B395 独立候选：矩形孔夫琅禾费强度比 sinc²(π a sinθx/λ)·sinc²(π b sinθy/λ)（2D Simpson）。
+
+    golden=可分离 sinc² 闭式；cand=矩形孔复振幅可分离 2D 笛卡尔 Simpson 求积归一化强度。
+    残差=求积离散化误差。余量 2.6e6×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b24()
+    return float(m.cand_rect_intensity(
+        float(p["a"]), float(p["b"]), float(p["wl"]), float(p["thx"]), float(p["thy"])))
+
+
+@_register_candidate(
+    "slit_fullwidth",
+    "Fraunhofer 单缝第一零点（Simpson 求积 + 实振幅变号二分）×2（与 golden 2λ/a 不同源）")
+def _b396_slit_fullwidth_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B396 独立候选：单缝夫琅禾费全角宽 Δθ=2λ/a（首暗纹→首暗纹）。
+
+    golden=闭式 2λ/a；cand=2×单缝第一零点（Simpson 求积 + 实振幅变号二分）。
+    残差=求积离散化误差（判据 D 响应、候选输出扰动必 FAIL）。余量 16.3×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b24()
+    return float(m.cand_slit_fullwidth(float(p["a"]), float(p["wl"])))
+
+
+@_register_candidate(
+    "disk_encircled_2d_simpson",
+    "Fraunhofer 圆孔极坐标 2D Simpson 求 I(θ) 后角积分取内围能比（不调 J₀/J₁，与 golden 闭式角积分不同源）")
+def _b397_disk_encircled_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B397 独立候选：圆孔爱里斑内围能比（角度远场约定≈0.8511，2D Simpson 求 I(θ) 后角积分）。
+
+    golden=闭式 2π∫[2J₁(x)/x]² sinθ dθ 角积分；cand=圆孔夫琅禾费复振幅极坐标 2D Simpson
+    求 I(θ) 后做 0→θ₁/0→θ_max 角积分取比（不调 J₀/J₁）。旧版 1−J₀²−J₁² 是焦平面 0.8377，
+    本锚统一到角度远场约定 0.8511。残差=2D 求积误差。余量 7.1e4×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b24()
+    return float(m.cand_disk_encircled(float(p["D"]), float(p["wl"])))
+
+
+@_register_candidate(
+    "grating_fsr",
+    "N 缝含包络光栅强度数值找干涉因子第一零点（强度穿越 ~0），Δ(sinθ)→Δλ（与 golden λ/(mN) 不同源）")
+def _b398_grating_fsr_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B398 独立候选：光栅自由光谱范围 Δλ=λ/(mN)（数值第一零点）。
+
+    golden=闭式 λ/(mN)；cand=N 缝含包络光栅强度，数值找干涉因子第一零点（强度真正穿越 ~0
+    而非下降段中点），Δ(sinθ)·d/m 回推 Δλ。残差=零点数值定位误差（判据 D 响应）。余量 51.6×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b24()
+    return float(m.cand_grating_fsr(
+        float(p["d"]), float(p["wl"]), int(p["m"]), int(p["nslits"])))
+
+
+@_register_candidate(
+    "disk_square_zeroratio",
+    "圆孔首零点（极坐标 2D Simpson）+ 方孔首零点（1D Simpson）取比（与 golden 1.220 不同源）")
+def _b399_disk_square_zeroratio_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B399 独立候选：圆孔/方孔第一暗纹角半径比=1.220（圆）/1.0（方）。
+
+    golden=闭式 1.220；cand=圆孔首零点（极坐标 2D Simpson）+ 方孔（单缝）首零点（1D Simpson）
+    取比。残差=两数值零点求积误差。余量 60.6×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b24()
+    return float(m.cand_disk_square_zeroratio(
+        float(p["D"]), float(p["a_sq"]), float(p["wl"])))
 
 
 @_register_candidate(

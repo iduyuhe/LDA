@@ -2147,6 +2147,145 @@ def _b372_fiber_b2_silica_candidate(spec: VerificationSpec, oracle_value: Any) -
                                    float(p["wl"]), N=3000))
 
 
+_BATCH_B23_MOD = None
+
+
+def _get_batch_b23():
+    """双路兜底导入 Batch B-23 数值核（高斯光束旁轴光学族，缓存，项目铁律）。"""
+    global _BATCH_B23_MOD
+    if _BATCH_B23_MOD is not None:
+        return _BATCH_B23_MOD
+    try:
+        from lda_harness import _batch_b23_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b23_numeric as _m
+    _BATCH_B23_MOD = _m
+    return _m
+
+
+# ---- Batch B-23（v0.9.105 · 腿① 扩基加锚 · 高斯光束旁轴光学族）----
+# 旁轴波方程 Crank-Nicolson FD BPM（初值传播）方法学独立于 B5/B567 本征值 Helmholtz、
+# B14/B15 2D-FFT 远场衍射；golden=解析闭式，cand=BPM 量测。残差=BPM 离散化误差
+# （随网格收敛、随参数变化、判据 D 响应、候选输出扰动必 FAIL），非恒等、非地板。
+@_register_candidate(
+    "bpm_rayleigh_range_fd",
+    "1D 旁轴 BPM 初值传播量测瑞利范围 zR（双曲线最小二乘，与 golden 闭式方法学不同源）")
+def _b374_bpm_rayleigh_range_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B374 独立候选：高斯光束瑞利范围 zR=πw0²/λ（旁轴 BPM 双曲线拟合）。
+
+    golden = 闭式 zR=πw0²/λ；cand = 旁轴波方程 Crank-Nicolson FD 从腰斑初值传播，
+    多点量测 w(z) 拟合 w²(z)=A+B·z² 提取 zR=√(A/B)。残差=BPM 离散化误差
+    （O(dx²,dz²)，随网格收敛、随参数变化、判据 D 响应、候选输出扰动必 FAIL），
+    非代数恒等、非噪声地板。dx=waist/24、dz=zR/340 维持 |c|≈0.21 甜区。
+    余量 3.8×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b23()
+    return float(m.cand_rayleigh_range(float(p["w0"]), float(p["wl"])))
+
+
+@_register_candidate(
+    "bpm_waist_at_z_fd",
+    "1D 旁轴 BPM 初值传播量测 z 处 1/e² 束宽 w(z)（二阶矩法，与 golden 闭式不同源）")
+def _b375_bpm_waist_at_z_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B375/B382/B384/B385 独立候选：高斯光束束宽演化 w(z)=w0√(1+(z/zR)²)（BPM 二阶矩）。
+
+    golden = 闭式；cand = 旁轴 BPM 初值传播量测 1/e² 束宽（二阶矩法）。
+    残差=BPM 离散化误差（持久、随网格收敛、判据 D 响应、候选输出扰动必 FAIL）。
+    余量 3.2×~51×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b23()
+    return float(m.cand_waist_at_z(float(p["w0"]), float(p["wl"]), float(p["z"])))
+
+
+@_register_candidate(
+    "bpm_confocal_fd",
+    "1D 旁轴 BPM 量测共焦参数 b=2zR（与 golden 闭式不同源）")
+def _b376_bpm_confocal_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B376 独立候选：共焦参数 b=2zR=2πw0²/λ（BPM 量测 2·zR）。
+
+    golden = 闭式；cand = 旁轴 BPM 量测 2·zR（复用 cand_rayleigh_range）。
+    余量 3.8×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b23()
+    return float(m.cand_confocal(float(p["w0"]), float(p["wl"])))
+
+
+@_register_candidate(
+    "bpm_divergence_fd",
+    "1D 旁轴 BPM 远场渐近 θ≈w(z)/z 量测发散半角 θ（与 golden 闭式不同源）")
+def _b377_bpm_divergence_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B377/B383 独立候选：高斯光束发散半角 θ=λ/(πw0)（BPM 远场渐近）。
+
+    golden = 闭式 θ=λ/(πw0)；cand = 旁轴 BPM 大 z 处渐近 θ≈w(z)/z（z=20zR，
+    曲率误差→0.13%）。残差=BPM 离散化误差（判据 D 响应、候选输出扰动必 FAIL）。
+    B377 红光荣量 133×；B383 绿光荣量 326×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b23()
+    return float(m.cand_divergence(float(p["w0"]), float(p["wl"])))
+
+
+@_register_candidate(
+    "bpm_q_waist_after_lens_fd",
+    "1D 旁轴 BPM 薄透镜传播量测聚焦腰 w0'（与 golden ABCD 闭式不同源）")
+def _b378_bpm_q_waist_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B378/B386 独立候选：薄透镜 q 变换后聚焦腰 w0'=w0/√(1+(zR/f)²)（BPM 透镜传播）。
+
+    golden = ABCD 闭式；cand = 旁轴 BPM 腰斑→薄透镜相位掩膜→传播量测新最小束宽。
+    余量 1.7e3×~963×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b23()
+    return float(m.cand_q_waist_after_lens(float(p["w0"]), float(p["wl"]), float(p["f"])))
+
+
+@_register_candidate(
+    "bpm_q_zR_after_lens_fd",
+    "1D 旁轴 BPM 透镜传播量测新瑞利范围 zR'（与 golden ABCD 闭式不同源）")
+def _b379_bpm_q_zR_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B379 独立候选：薄透镜后新瑞利范围 zR'=zR/(1+(zR/f)²)（BPM 焦腰后量测）。
+
+    golden = ABCD 闭式；cand = 旁轴 BPM 透镜传播，焦腰后量测 w=√2 w0' 点距焦腰得 zR'。
+    余量 3.9×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b23()
+    return float(m.cand_q_zR_after_lens(float(p["w0"]), float(p["wl"]), float(p["f"])))
+
+
+@_register_candidate(
+    "bpm_q_waist_loc_fd",
+    "1D 旁轴 BPM 透镜传播量测焦腰位置 s（与 golden ABCD 闭式不同源）")
+def _b380_bpm_q_waist_loc_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B380 独立候选：薄透镜后焦腰位置 s=f/(1+(f/zR)²)（BPM 量测最小束宽处）。
+
+    golden = ABCD 闭式；cand = 旁轴 BPM 透镜传播量测最小束宽位置。
+    余量 7.3×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b23()
+    return float(m.cand_q_waist_loc(float(p["w0"]), float(p["wl"]), float(p["f"])))
+
+
+@_register_candidate(
+    "bpm_gouy_fd",
+    "1D 旁轴 BPM 解卷中心包络相位量测 Gouy 增量（与 golden 1D 闭式不同源）")
+def _b381_bpm_gouy_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B381 独立候选：Gouy 相位增量 Δφ_G[0,zR]=½ arctan(1)=π/4（1D 旁轴光束）。
+
+    golden = 1D 闭式 Δφ_G=½[arctan(z2/zR)−arctan(z1/zR)]；
+    cand = 旁轴 BPM 连续解卷中心包络相位 arg(Â(0,z)) 取增量（不含快变 e^{ik0z} 载波）。
+    余量 5.9×；零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b23()
+    return float(m.cand_gouy(float(p["w0"]), float(p["wl"]), float(p["z1"]), float(p["z2"])))
+
+
 @_register_candidate(
     "slab_te0_neff_exact",
     "严格横向谐振超越方程二分求根 n_eff（Marcatili 解析近似 vs 数值超越方程，方法学不同源）")

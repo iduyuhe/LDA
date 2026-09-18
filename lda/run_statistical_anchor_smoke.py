@@ -143,8 +143,9 @@ def main() -> int:
                   + [f"B{i}" for i in range(313, 329)]     # B313-B328 = Batch B-19 十六锚（广义 Lane–Emden 奇异 IVP Taylor+RK4/二维 Laplace 间接单层位势 BEM/Eikonal 制造解 FMM）
                   + [f"B{i}" for i in range(329, 345)]     # B329-B344 = Batch B-20 十六锚（修正 Bessel I_ν/球谐 Y_l^m 自投影/一维 MQ-RBF 插值）
                   + [f"B{i}" for i in range(345, 361)]      # B345-B360 = Batch B-21 十六锚（Hermite/Laguerre 多项式 + Bernstein 多项式逼近）
-                  + [f"B{i}" for i in range(361, 374)])    # B361-B373 = Batch B-22 十三锚（阶跃/渐变光纤物理定律族）
-    check("题库（B1-B328 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + Batch B-7 十六锚 + Batch B-8 十六锚 + Batch B-9 十六锚 + Batch B-10 十六锚 + Batch B-11 十六锚 + Batch B-12 十六锚 + Batch B-13 十六锚 + Batch B-14 十六锚 + Batch B-15 十六锚 + Batch B-16 十六锚 + Batch B-17 十六锚 + Batch B-18 十六锚 + Batch B-19 十六锚 + Batch B-20 十六锚 + Batch B-21 十六锚 + Batch B-22 十三锚 + E1-E10 + S1-S13 动态计数）",
+                  + [f"B{i}" for i in range(361, 374)]    # B361-B373 = Batch B-22 十三锚（阶跃/渐变光纤物理定律族）
+                  + [f"B{i}" for i in range(374, 387)])    # B374-B386 = Batch B-23 十三锚（高斯光束旁轴光学族）
+    check("题库（B1-B328 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + Batch B-7 十六锚 + Batch B-8 十六锚 + Batch B-9 十六锚 + Batch B-10 十六锚 + Batch B-11 十六锚 + Batch B-12 十六锚 + Batch B-13 十六锚 + Batch B-14 十六锚 + Batch B-15 十六锚 + Batch B-16 十六锚 + Batch B-17 十六锚 + Batch B-18 十六锚 + Batch B-19 十六锚 + Batch B-20 十六锚 + Batch B-21 十六锚 + Batch B-22 十三锚 + Batch B-23 十三锚 + E1-E10 + S1-S13 动态计数）",
           b_ids == expected_b
           and s_ids == [f"S{i}" for i in range(1, 14)]
           and e_ids == [f"E{i}" for i in range(1, len(e_ids) + 1)],

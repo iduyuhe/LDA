@@ -161,6 +161,10 @@ from ._batch_b22_numeric import (  # noqa: E402  # Batch B-22 双方法独立锚
     golden_b361, golden_b362, golden_b364, golden_b372,
 )
 
+from ._batch_b23_numeric import (  # noqa: E402  # Batch B-23 双方法独立锚数值核（v0.9.105 · 腿① 扩基加锚 · 高斯光束旁轴光学族）
+    golden_b374, golden_b375, golden_b376, golden_b377, golden_b378, golden_b379, golden_b380, golden_b381,
+)
+
 from .b28_modulator_vpi_anchor import (  # noqa: E402  # B28 MZM Vπ 锚（v0.9.1 · 钉子 D1b=A）
     b28_modulator_vpi, b28_modulator_vpi_report,
 )
@@ -5477,6 +5481,170 @@ BENCHMARK_DEFS = {
                  "（tol=20 的 11.7× 余量）；判据 D：ω 差分随 dw 收敛、候选输出扰动必 FAIL。"
                  "零商业依赖。"),
     },
+    "B374": {
+        "title": "高斯光束瑞利范围 zR = π w0²/λ（闭式 vs 旁轴 BPM 初值传播）",
+        "metric": "gaussian_rayleigh_range",
+        "oracle": ("analytical(zR=π w0²/λ) + paraxial BPM(Crank-Nicolson FD) independent_cross_check"),
+        "tol": 5e-7,
+        "default_params": {"w0": 5.0e-6, "wl": 1.55e-6},
+        "golden_fn": golden_b374,
+        "candidate": "bpm_rayleigh_range_fd",
+        "candidate_desc": ("1D 旁轴波方程 Beam Propagation Method（∂Â/∂z=(i/2k0)∂²Â/∂x²，"
+                           "Crank-Nicolson 三对角 FD）从腰斑初值传播，量测 w(z)=√2 w0 处 z=zR"
+                           "（与 golden 闭式方法学不同源：初值传播 vs 解析）"),
+        "note": ("高斯光束瑞利范围 zR=π w0²/λ（w0=5µm wl=1.55µm）。golden=闭式；"
+                 "candidate=旁轴 BPM 初值传播量测束宽翻倍点。残差=BPM 离散化误差（O(dx²,dz²)，"
+                 "随网格收敛、随参数变化、判据 D 响应、候选输出扰动必 FAIL），非恒等、非地板。"
+                 "实测 |Δ|=0.130µm（tol=5e-7 的 3.8× 余量）。零商业依赖。"),
+    },
+    "B375": {
+        "title": "高斯光束束宽 w(z=zR) = √2 w0（闭式 vs 旁轴 BPM）",
+        "metric": "gaussian_waist_at_z",
+        "oracle": ("analytical(w(z)=w0√(1+(z/zR)²)) + paraxial BPM independent_cross_check"),
+        "tol": 5e-8,
+        "default_params": {"w0": 5.0e-6, "wl": 1.55e-6, "z": 50.6708e-6},
+        "golden_fn": golden_b375,
+        "candidate": "bpm_waist_at_z_fd",
+        "candidate_desc": ("旁轴 BPM 初值传播量测 z=zR 处 1/e² 束宽 w(z)（二阶矩法，与 golden 闭式不同源）"),
+        "note": ("高斯光束束宽演化 w(z)=w0√(1+(z/zR)²) 在 z=zR 处 =√2 w0（w0=5µm）。"
+                 "golden=闭式；candidate=BPM 二阶矩量测。实测 |Δ|=3.08e-9m（tol=5e-8 的 16.2× 余量）。零商业依赖。"),
+    },
+    "B376": {
+        "title": "高斯光束共焦参数 b = 2 zR（闭式 vs 旁轴 BPM）",
+        "metric": "gaussian_confocal",
+        "oracle": ("analytical(b=2π w0²/λ) + paraxial BPM independent_cross_check"),
+        "tol": 1e-6,
+        "default_params": {"w0": 5.0e-6, "wl": 1.55e-6},
+        "golden_fn": golden_b376,
+        "candidate": "bpm_confocal_fd",
+        "candidate_desc": ("旁轴 BPM 量测 2·zR（与 golden 闭式 2πw0²/λ 不同源）"),
+        "note": ("共焦参数 b=2 zR=2π w0²/λ（w0=5µm）。golden=闭式；candidate=BPM 量测 2·zR。"
+                 "实测 |Δ|=0.261µm（tol=1e-6 的 3.8× 余量）。零商业依赖。"),
+    },
+    "B377": {
+        "title": "高斯光束发散半角 θ = λ/(π w0)（闭式 vs 旁轴 BPM 远场渐近）",
+        "metric": "gaussian_divergence",
+        "oracle": ("analytical(θ=λ/(π w0)) + paraxial BPM far-field slope independent_cross_check"),
+        "tol": 5e-3,
+        "default_params": {"w0": 5.0e-6, "wl": 1.55e-6},
+        "golden_fn": golden_b377,
+        "candidate": "bpm_divergence_fd",
+        "candidate_desc": ("旁轴 BPM 远场 (z=20zR) 渐近 θ≈w(z)/z（与 golden 闭式不同源）"),
+        "note": ("发散半角 θ=λ/(π w0)（w0=5µm wl=1.55µm → 0.0987 rad）。golden=闭式；"
+                 "candidate=BPM 远场渐近量测。实测 |Δ|=3.76e-5（tol=5e-3 的 133× 余量）。零商业依赖。"),
+    },
+    "B378": {
+        "title": "薄透镜 q 变换后聚焦腰 w0' = w0/√(1+(zR/f)²)（f=zR，闭式 vs 旁轴 BPM）",
+        "metric": "gaussian_q_waist",
+        "oracle": ("analytical(ABCD q-transform waist) + paraxial BPM lens propagation independent_cross_check"),
+        "tol": 1e-7,
+        "default_params": {"w0": 5.0e-6, "wl": 1.55e-6, "f": 50.6708e-6},
+        "golden_fn": golden_b378,
+        "candidate": "bpm_q_waist_after_lens_fd",
+        "candidate_desc": ("旁轴 BPM 腰斑→薄透镜相位掩膜→传播，量测新最小束宽 w0'（与 golden ABCD 闭式不同源）"),
+        "note": ("薄透镜 q 变换后聚焦腰 w0'=w0/√(1+(zR/f)²)（f=zR ⇒ w0/√2=3.536µm）。"
+                 "golden=ABCD 闭式；candidate=BPM 透镜传播量测新腰。实测 |Δ|=5.85e-11m"
+                 "（tol=1e-7 的 1.7e3× 余量）。零商业依赖。"),
+    },
+    "B379": {
+        "title": "薄透镜 q 变换后瑞利范围 zR' = zR/(1+(zR/f)²)（f=zR，闭式 vs 旁轴 BPM）",
+        "metric": "gaussian_q_zR",
+        "oracle": ("analytical(ABCD q-transform Rayleigh range) + paraxial BPM independent_cross_check"),
+        "tol": 1e-6,
+        "default_params": {"w0": 5.0e-6, "wl": 1.55e-6, "f": 50.6708e-6},
+        "golden_fn": golden_b379,
+        "candidate": "bpm_q_zR_after_lens_fd",
+        "candidate_desc": ("旁轴 BPM 透镜传播，焦腰后量测 w=√2 w0' 点距焦腰得 zR'（与 golden ABCD 闭式不同源）"),
+        "note": ("薄透镜后新瑞利范围 zR'=zR/(1+(zR/f)²)（f=zR ⇒ zR/2=25.34µm）。"
+                 "golden=ABCD 闭式；candidate=BPM 量测。实测 |Δ|=0.254µm（tol=1e-6 的 3.9× 余量）。零商业依赖。"),
+    },
+    "B380": {
+        "title": "薄透镜 q 变换后焦腰位置 s = f/(1+(f/zR)²)（f=zR，闭式 vs 旁轴 BPM）",
+        "metric": "gaussian_q_waist_loc",
+        "oracle": ("analytical(ABCD q-transform waist location) + paraxial BPM independent_cross_check"),
+        "tol": 5e-7,
+        "default_params": {"w0": 5.0e-6, "wl": 1.55e-6, "f": 50.6708e-6},
+        "golden_fn": golden_b380,
+        "candidate": "bpm_q_waist_loc_fd",
+        "candidate_desc": ("旁轴 BPM 透镜传播量测最小束宽位置 s（与 golden ABCD 闭式不同源）"),
+        "note": ("薄透镜后焦腰位置 s=f/(1+(f/zR)²)（f=zR ⇒ zR/2=25.34µm）。"
+                 "golden=ABCD 闭式；candidate=BPM 量测最小束宽处。实测 |Δ|=0.0686µm"
+                 "（tol=5e-7 的 7.3× 余量）。零商业依赖。"),
+    },
+    "B381": {
+        "title": "高斯光束 Gouy 相位增量 Δφ_G[0,zR] = ½ arctan(1) = π/4（1D 闭式 vs 旁轴 BPM）",
+        "metric": "gaussian_gouy_phase",
+        "oracle": ("analytical(Gouy 1D: ½[arctan(z2/zR)−arctan(z1/zR)]) + paraxial BPM phase independent_cross_check"),
+        "tol": 1e-2,
+        "default_params": {"w0": 5.0e-6, "wl": 1.55e-6, "z1": 0.0, "z2": 50.6708e-6},
+        "golden_fn": golden_b381,
+        "candidate": "bpm_gouy_fd",
+        "candidate_desc": ("旁轴 BPM 连续解卷中心包络相位 → Gouy 增量（与 golden 1D 闭式不同源）"),
+        "note": ("Gouy 相位（1D 旁轴光束 = 2D/3D 之一半）：Δφ_G=½ arctan(z/zR)，"
+                 "[0,zR]=π/4=0.3927 rad。golden=1D 闭式；candidate=BPM 解卷中心相位。"
+                 "实测 |Δ|=1.69e-3（tol=1e-2 的 5.9× 余量）。零商业依赖。"),
+    },
+    "B382": {
+        "title": "高斯光束束宽 w(z=2zR)（w0=10µm）= √5 w0（闭式 vs 旁轴 BPM）",
+        "metric": "gaussian_waist_at_z",
+        "oracle": ("analytical(w(z)=w0√(1+(z/zR)²)) + paraxial BPM independent_cross_check"),
+        "tol": 5e-8,
+        "default_params": {"w0": 10.0e-6, "wl": 1.55e-6, "z": 405.3664e-6},
+        "golden_fn": golden_b375,
+        "candidate": "bpm_waist_at_z_fd",
+        "candidate_desc": ("旁轴 BPM 量测 z=2zR 处束宽（w0=10µm，与 golden 闭式不同源）"),
+        "note": ("束宽演化 w(z)=w0√(1+(z/zR)²) 在 z=2zR、w0=10µm ⇒ √5 w0=22.36µm。"
+                 "golden=闭式；candidate=BPM 二阶矩量测。实测 |Δ|=1.56e-8m（tol=5e-8 的 3.2× 余量）。零商业依赖。"),
+    },
+    "B383": {
+        "title": "高斯光束发散半角 θ=λ/(π w0)（绿光 wl=0.6328µm，闭式 vs 旁轴 BPM 远场渐近）",
+        "metric": "gaussian_divergence",
+        "oracle": ("analytical(θ=λ/(π w0), green λ=0.6328µm) + paraxial BPM far-field asymptotic independent_cross_check"),
+        "tol": 5e-3,
+        "default_params": {"w0": 5.0e-6, "wl": 0.6328e-6},
+        "golden_fn": golden_b377,
+        "candidate": "bpm_divergence_fd",
+        "candidate_desc": ("旁轴 BPM 绿光远场 (z=20zR) 渐近 θ≈w(z)/z（与 golden 闭式不同源，合验 θ∝λ 波长标定）"),
+        "note": ("发散半角 θ=λ/(π w0) 在绿光 (wl=0.6328µm, w0=5µm) ⇒ 4.03e-2 rad。"
+                 "golden=闭式；candidate=BPM 远场渐近量测。与 B377 红光合验发散角 ∝λ 标定；"
+                 "实测 |Δ|=1.53e-5（tol=5e-3 的 326× 余量）。零商业依赖。"),
+    },
+    "B384": {
+        "title": "高斯光束束宽 w(z=zR/2) = w0√1.25（闭式 vs 旁轴 BPM）",
+        "metric": "gaussian_waist_at_z",
+        "oracle": ("analytical(w(z)=w0√(1+(z/zR)²)) + paraxial BPM independent_cross_check"),
+        "tol": 5e-8,
+        "default_params": {"w0": 5.0e-6, "wl": 1.55e-6, "z": 25.3354e-6},
+        "golden_fn": golden_b375,
+        "candidate": "bpm_waist_at_z_fd",
+        "candidate_desc": ("旁轴 BPM 量测 z=zR/2 处束宽（与 golden 闭式不同源）"),
+        "note": ("束宽 w(z=zR/2)=w0√(1+0.25)=w0√1.25=5.59µm。golden=闭式；"
+                 "candidate=BPM 二阶矩量测。实测 |Δ|=9.75e-10m（tol=5e-8 的 51× 余量）。零商业依赖。"),
+    },
+    "B385": {
+        "title": "高斯光束束宽 w(z=3zR) = w0√10（闭式 vs 旁轴 BPM）",
+        "metric": "gaussian_waist_at_z",
+        "oracle": ("analytical(w(z)=w0√(1+(z/zR)²)) + paraxial BPM independent_cross_check"),
+        "tol": 5e-8,
+        "default_params": {"w0": 5.0e-6, "wl": 1.55e-6, "z": 152.0124e-6},
+        "golden_fn": golden_b375,
+        "candidate": "bpm_waist_at_z_fd",
+        "candidate_desc": ("旁轴 BPM 量测 z=3zR 处束宽（与 golden 闭式不同源）"),
+        "note": ("束宽 w(z=3zR)=w0√10=15.81µm。golden=闭式；candidate=BPM 二阶矩量测。"
+                 "实测 |Δ|=1.24e-8m（tol=5e-8 的 4.0× 余量）。零商业依赖。"),
+    },
+    "B386": {
+        "title": "薄透镜 q 变换后聚焦腰 w0'（w0=8µm, f=zR8，闭式 vs 旁轴 BPM）",
+        "metric": "gaussian_q_waist",
+        "oracle": ("analytical(ABCD q-transform waist) + paraxial BPM lens propagation independent_cross_check"),
+        "tol": 1e-7,
+        "default_params": {"w0": 8.0e-6, "wl": 1.55e-6, "f": 129.7972e-6},
+        "golden_fn": golden_b378,
+        "candidate": "bpm_q_waist_after_lens_fd",
+        "candidate_desc": ("旁轴 BPM（w0=8µm）透镜传播量测新最小束宽（与 golden ABCD 闭式不同源）"),
+        "note": ("薄透镜后聚焦腰 w0'=w0/√(1+(zR/f)²)（w0=8µm, f=zR8=129.8µm ⇒ 5.657µm）。"
+                 "golden=ABCD 闭式；candidate=BPM 量测。实测 |Δ|=1.04e-10m（tol=1e-7 的 963× 余量）。零商业依赖。"),
+    },
 }
 
 
@@ -5688,6 +5856,8 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B357", "B358", "B359", "B360",
                    "B361", "B362", "B363", "B364", "B365", "B366", "B367", "B368",
                    "B369", "B370", "B371", "B372", "B373",
+                   "B374", "B375", "B376", "B377", "B378", "B379", "B380", "B381",
+                   "B382", "B383", "B384", "B385", "B386",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "E10",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                    "S9", "S10", "S11", "S12", "S13"]  # S 系统锚（Phase 0-4；S9=LVS/S10=多层/S11=规模/S12=阵列分布/S13=设计良率）

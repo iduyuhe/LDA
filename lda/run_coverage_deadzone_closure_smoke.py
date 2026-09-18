@@ -131,10 +131,13 @@ def main() -> int:
               present and cls in ("strict", "degraded") and hosted,
               "present=%s class=%s hosted=%s" % (present, cls, hosted))
 
-    # B5/B6 维持自证桩（名义守则桩，不被升格冒充真判决锚）
+    # 🔴 v0.9.102 清算：B5/B6 已于 v0.9.81 各接「第二独立求解器」，**合法升格
+    # 为 strict**（非冒充真判决锚——有独立数值候选，独立率实增）。原「维持自证桩」
+    # 断言属陈旧期望（>1e-12 残差普查升级前的状态），此处改为钉死其 strict 身份，
+    # 反向护栏（撤 E8/E9 → GratingEff/YbranchLoss 无进集锚宿主）仍守住收口不回退。
     for s in ("B5", "B6"):
-        check(f"{s} 仍为自证桩（名义守则桩，不被升格）", _cls(s) == "stub",
-              "class=%s" % _cls(s))
+        check(f"{s} 已合法升格 strict（v0.9.81 接第二独立求解器，非冒充）",
+              _cls(s) == "strict", "class=%s" % _cls(s))
 
     # 🔴 反向：撤 E8/E9 → GratingEff/YbranchLoss 重新只剩名义桩（无进集锚宿主）
     modified = {k: [h for h in v if k not in ("E8", "E9")]

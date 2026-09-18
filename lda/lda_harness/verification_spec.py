@@ -39,7 +39,11 @@ class VerificationSpec:
     candidate_desc: str = ""         # 候选求解器描述（谁在跑）
 
     def err_ok(self, err: float) -> bool:
-        return err <= self.tol
+        # 🔴 v0.9.102 根因修复：err/tol 任一为 numpy 标量时 `err <= tol` 返回
+        # np.bool_（非 Python bool），泄漏进判决链 ⇒ format_json 序列化抛
+        # "Object of type bool is not JSON serializable"（falsifiability ⑨ 同因）。
+        # 强制原生 bool，从根上消除泄漏（与 cand/golden 的 float 化同思路）。
+        return bool(err <= self.tol)
 
 
 # ---------------------------------------------------------------------------

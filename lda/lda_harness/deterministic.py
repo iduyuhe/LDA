@@ -84,15 +84,31 @@ def round_float(v):
 
 
 def canon(obj):
-    """递归归一：剔除 VOLATILE_KEYS（任意层级）+ float 取有效数字。"""
+    """递归归一：剔除 VOLATILE_KEYS（任意层级）+ float 取有效数字。
+
+    🔴 v0.9.102 防御层：numpy 标量（np.float64/np.bool_/np.int64…）非 Python
+    float/bool/int 子类 ⇒ json.dumps 抛 TypeError。统一在归一层兜底转原生，
+    杜绝「判决链 numpy 标量泄漏进报告」类 bug（falsifiability ⑨ 同因）。
+    """
     if isinstance(obj, dict):
         return {k: canon(v) for k, v in obj.items() if k not in VOLATILE_KEYS}
     if isinstance(obj, (list, tuple)):
         return [canon(v) for v in obj]
+    # numpy 标量泄漏兜底（不 import numpy，仅按类型归属判定，零额外开销）
+    _mod = type(obj).__module__
+    if _mod == "numpy" or (_mod is not None and _mod.startswith("numpy.")):
+        try:
+            obj = obj.item()
+        except Exception:
+            return obj
+    if isinstance(obj, bool):
+        return obj
     if isinstance(obj, float):
         if obj != obj or obj in (float("inf"), float("-inf")):  # nan/inf 原样
             return obj
         return float(f"{obj:.{SIGNIFICANT_DIGITS}g}")
+    if isinstance(obj, int):
+        return obj
     return obj
 
 

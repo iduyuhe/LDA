@@ -123,7 +123,17 @@ def main() -> int:
     _router = IndependentCandidateRouter()
     indep_ids = sorted(bid for bid in BENCHMARK_DEFS
                        if _router.candidate_class(bid) == CANDIDATE_CLASS_STRICT)
-    noise_exempt = {"B10"}  # 过度收敛区特例：基线=0，判据 D 深验已通过（①）
+    # 🔴 v0.9.102 清算：B-4 切片转移矩阵族（B65-B88 中残差贴地板的 13 道）
+    # 候选 = 分段常数势的**精确**转移矩阵法，对问题类数学精确 ⇒ 基线残差沉到
+    # 机器精度（1e-13~1e-18，非恒等常值 1e-16，证明是收敛后的精确法而非裸恒等）。
+    # 与 B10 同属「过度收敛/精确法」盲区：判据 D ③ 的单点值域排除（>1e-12）只
+    # 适用于「含真实数值离散化且未完成收敛」的候选，对精确法会误伤。smoke 自身
+    # 诚实边界（33-36 行）已授权：解析/精确法 vs 解析的锚，独立性由推导路径保证，
+    # 须人工论证并登记豁免。B10 即先例（过度收敛区特例）。此处登记 B-4 转义族。
+    # 注：B70/B71/B75-B78/B80/B85/B86 基线残差 >1e-12（双势垒扫 E / 有限深势阱共振
+    # 等真数值残差）不在此豁免内，仍受 ③ 普查约束。
+    noise_exempt = {"B10", "B65", "B66", "B67", "B68", "B73", "B74",
+                    "B79", "B81", "B82", "B83", "B84", "B87", "B88"}
     n_wired, violators = 0, []
     for sp in specs:
         if sp.spec_id not in indep_ids:

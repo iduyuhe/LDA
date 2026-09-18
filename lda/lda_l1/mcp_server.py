@@ -47,7 +47,12 @@ class LdaMcpServer:
     # ---- 把 KernelGateway 的 AgentResponse 包成 MCP tools/call 结果 ---
     @staticmethod
     def _wrap(resp):
-        d = resp.to_dict()
+        # 🔴 v0.9.103 修复：AgentResponse.to_dict() 可能混入 numpy 标量
+        # （np.bool_/np.float64/np.int64），直接 json.dumps 抛
+        # "Object of type bool is not JSON serializable"。复用判决链同款
+        # 归一器 canon 兜底转原生，杜绝 numpy 标量泄漏（与 falsifiability ⑨ 同因）。
+        from lda_harness.deterministic import canon
+        d = canon(resp.to_dict())
         is_error = (d.get("status") == "error")
         return {
             "content": [

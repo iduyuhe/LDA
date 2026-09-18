@@ -3126,6 +3126,13 @@ def _eco_harness_snapshot():
         from lda_harness.verification_adapters import build_harness_specs
         from lda_harness.verification_spec import run_verification
         specs, cand_map = build_harness_specs()
+        # 🔴 v0.9.103 修复：本端点只负责「D-93 生态共建快照」的 B1-B18 子集
+        # （acceptance 断言 `total>=18`、注释「harness 题库(含 B14-B18)」），
+        # 但 build_harness_specs() 返回**全量** harness（基准增长后现 378 道）。
+        # 实跑全量会使冷启动 >120s——既触发 smoke 120s 预热超时，又正是本函数
+        # 注释自警的「无鉴权公开 GET 占满线程」DoS 敞口。仅取 B1-B18。
+        _eco_ids = {f"B{i}" for i in range(1, 19)}
+        specs = [s for s in specs if s.spec_id in _eco_ids]
         total = len(specs)
         passed = 0
         for spec in specs:

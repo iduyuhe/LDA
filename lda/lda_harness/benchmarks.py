@@ -157,6 +157,10 @@ from ._batch_b21_numeric import (  # noqa: E402  # Batch B-21 双方法独立锚
     golden_b360,
 )
 
+from ._batch_b22_numeric import (  # noqa: E402  # Batch B-22 双方法独立锚数值核（v0.9.102 · 腿① 扩基加锚 · 阶跃/渐变光纤物理定律族）
+    golden_b361, golden_b362, golden_b364, golden_b372,
+)
+
 from .b28_modulator_vpi_anchor import (  # noqa: E402  # B28 MZM Vπ 锚（v0.9.1 · 钉子 D1b=A）
     b28_modulator_vpi, b28_modulator_vpi_report,
 )
@@ -5259,6 +5263,220 @@ BENCHMARK_DEFS = {
         "candidate_desc": "degree-N Bernstein 基求和 Σ f(k/N)·C(N,k)·t^k·(1−t)^{N−k} ↔ 已知闭式 f(t)，方法学独立",
         "note": "v0.9.101 Batch B-21：golden=+8.062258e-01 / cand |Δ|=1.15e-04（余量 87.0×）；O(h²) 收敛实测比值 2.00；扰动键 t 物理响应强。",
     },
+    # ---- Batch B-22（v0.9.102 · 腿① 扩基加锚 · 阶跃/渐变折射率光纤物理定律族）----
+    # 设计纪律（同源 B12/B34/B36 的「解析/经验闭式 golden 对拍 方法学不同源独立数值候选」）：
+    #   圆柱径向加权广义本征 A x=β²·B x（B=diag(r) 圆柱度规，物理自伴）方法学独立于
+    #   平面 slab 超越方程二分 / 笛卡尔 1D/2D FD 本征；残差为经验拟合+离散化固有误差，
+    #   非代数恒等、非噪声地板、判据 D 响应、候选输出扰动必 FAIL。全部余量 ≥2×，未放宽任何 tol。
+    "B361": {
+        "title": "阶跃光纤 LP01 有效折射率 n_eff（SiO₂ 系 V=2.76，empirical b(V) 闭式 vs 径向加权 FD 本征）",
+        "metric": "lp01_neff",
+        "oracle": ("analytical(Snyder/Marcatili empirical b(V)=(1.1428-0.996/V)² → n_eff) + "
+                   "cylindrical radial weighted-general-eigen FD independent_cross_check"),
+        "tol": 5e-3,
+        "default_params": {"n_co": 1.45, "n_cl": 1.44, "a": 4.0e-6, "wl": 1.55e-6},
+        "golden_fn": golden_b361,
+        "candidate": "fiber_lp01_neff_fd",
+        "candidate_desc": ("圆柱径向加权广义本征 A x=β²·B x（B=diag(r) 圆柱度规，物理自伴）取基模 "
+                           "n_eff=β/k0（与 golden 经验 b(V) 闭式方法学不同源）"),
+        "note": ("阶跃单模光纤 LP01 有效折射率（f1: n_co=1.45 n_cl=1.44 a=4µm wl=1.55µm, V=2.76）。"
+                 "golden=Snyder/Marcatili 经验闭式 b(V)→n_eff；candidate=圆柱坐标径向加权广义本征求解"
+                 "（scipy eigh，网格 r_i=(i+0.5)dr 避 r=0 奇点，l=0 内边界镜像 Neumann、外边界 Dirichlet "
+                 "吸收；B=diag(r) 圆柱度规保证自伴）。残差=经验式固有拟合误差+FD 离散化误差（持久、随 N "
+                 "收敛、随 V 变化、判据 D 响应、候选输出扰动必 FAIL），非代数恒等、非噪声地板。"
+                 "实测 |Δ|=2.58e-5（tol=5e-3 的 193.9× 余量）。零商业依赖、纯 numpy/scipy、LLM 不进判决路径。"),
+    },
+    "B362": {
+        "title": "阶跃光纤 LP01 有效折射率 n_eff（大模场 V=5.50，empirical b(V) 闭式 vs 径向加权 FD 本征）",
+        "metric": "lp01_neff",
+        "oracle": ("analytical(Snyder/Marcatili empirical b(V)=(1.1428-0.996/V)² → n_eff) + "
+                   "cylindrical radial weighted-general-eigen FD independent_cross_check"),
+        "tol": 5e-3,
+        "default_params": {"n_co": 1.45, "n_cl": 1.44, "a": 8.0e-6, "wl": 1.55e-6},
+        "golden_fn": golden_b361,
+        "candidate": "fiber_lp01_neff_fd",
+        "candidate_desc": ("圆柱径向加权广义本征 A x=β²·B x（B=diag(r) 圆柱度规，物理自伴）取基模 "
+                           "n_eff=β/k0（与 golden 经验 b(V) 闭式方法学不同源）"),
+        "note": ("阶跃单模光纤 LP01 有效折射率（f2: a=8µm → V=5.50）。golden=经验 b(V) 闭式；"
+                 "candidate=径向加权 FD 本征。高 V 处经验 b(V) 拟合误差增大，残差仍远小于 tol。"
+                 "实测 |Δ|=6.08e-4（tol=5e-3 的 8.2× 余量）。判据 D 由 B-22 FD 核已证。零商业依赖。"),
+    },
+    "B363": {
+        "title": "阶跃光纤 LP01 有效折射率 n_eff（高折射率差 V=2.69，empirical b(V) 闭式 vs 径向加权 FD 本征）",
+        "metric": "lp01_neff",
+        "oracle": ("analytical(Snyder/Marcatili empirical b(V)=(1.1428-0.996/V)² → n_eff) + "
+                   "cylindrical radial weighted-general-eigen FD independent_cross_check"),
+        "tol": 5e-3,
+        "default_params": {"n_co": 1.46, "n_cl": 1.43, "a": 4.0e-6, "wl": 1.55e-6},
+        "golden_fn": golden_b361,
+        "candidate": "fiber_lp01_neff_fd",
+        "candidate_desc": ("圆柱径向加权广义本征 A x=β²·B x（B=diag(r) 圆柱度规，物理自伴）取基模 "
+                           "n_eff=β/k0（与 golden 经验 b(V) 闭式方法学不同源）"),
+        "note": ("阶跃单模光纤 LP01 有效折射率（f3: n_co=1.46 n_cl=1.43 a=4µm, V=2.69）。"
+                 "golden=经验 b(V) 闭式；candidate=径向加权 FD 本征。实测 |Δ|=1.32e-3"
+                 "（tol=5e-3 的 3.8× 余量）。判据 D 由 B-22 FD 核已证。零商业依赖。"),
+    },
+    "B364": {
+        "title": "阶跃光纤 LP01 有效折射率 n_eff（高折射率差 V=1.74，empirical b(V) 闭式 vs 径向加权 FD 本征）",
+        "metric": "lp01_neff",
+        "oracle": ("analytical(Snyder/Marcatili empirical b(V)=(1.1428-0.996/V)² → n_eff) + "
+                   "cylindrical radial weighted-general-eigen FD independent_cross_check"),
+        "tol": 5e-3,
+        "default_params": {"n_co": 1.47, "n_cl": 1.45, "a": 3.0e-6, "wl": 1.55e-6},
+        "golden_fn": golden_b361,
+        "candidate": "fiber_lp01_neff_fd",
+        "candidate_desc": ("圆柱径向加权广义本征 A x=β²·B x（B=diag(r) 圆柱度规，物理自伴）取基模 "
+                           "n_eff=β/k0（与 golden 经验 b(V) 闭式方法学不同源）"),
+        "note": ("阶跃单模光纤 LP01 有效折射率（f4: n_co=1.47 n_cl=1.45 a=3µm, V=1.74）。"
+                 "golden=经验 b(V) 闭式；candidate=径向加权 FD 本征。实测 |Δ|=9.98e-5"
+                 "（tol=5e-3 的 50.1× 余量）。判据 D 由 B-22 FD 核已证。零商业依赖。"),
+    },
+    "B365": {
+        "title": "阶跃光纤 LP01 有效折射率 n_eff（大模场 V=6.88，empirical b(V) 闭式 vs 径向加权 FD 本征）",
+        "metric": "lp01_neff",
+        "oracle": ("analytical(Snyder/Marcatili empirical b(V)=(1.1428-0.996/V)² → n_eff) + "
+                   "cylindrical radial weighted-general-eigen FD independent_cross_check"),
+        "tol": 5e-3,
+        "default_params": {"n_co": 1.45, "n_cl": 1.44, "a": 10.0e-6, "wl": 1.55e-6},
+        "golden_fn": golden_b361,
+        "candidate": "fiber_lp01_neff_fd",
+        "candidate_desc": ("圆柱径向加权广义本征 A x=β²·B x（B=diag(r) 圆柱度规，物理自伴）取基模 "
+                           "n_eff=β/k0（与 golden 经验 b(V) 闭式方法学不同源）"),
+        "note": ("阶跃单模光纤 LP01 有效折射率（f5: a=10µm → V=6.88）。golden=经验 b(V) 闭式；"
+                 "candidate=径向加权 FD 本征。实测 |Δ|=8.87e-4（tol=5e-3 的 5.6× 余量）。"
+                 "判据 D 由 B-22 FD 核已证。零商业依赖。"),
+    },
+    "B366": {
+        "title": "阶跃光纤 LP01 有效折射率 n_eff（低对比度 V=1.18，empirical b(V) 闭式 vs 径向加权 FD 本征）",
+        "metric": "lp01_neff",
+        "oracle": ("analytical(Snyder/Marcatili empirical b(V)=(1.1428-0.996/V)² → n_eff) + "
+                   "cylindrical radial weighted-general-eigen FD independent_cross_check"),
+        "tol": 5e-3,
+        "default_params": {"n_co": 1.448, "n_cl": 1.444, "a": 5.0e-6, "wl": 1.55e-6},
+        "golden_fn": golden_b361,
+        "candidate": "fiber_lp01_neff_fd",
+        "candidate_desc": ("圆柱径向加权广义本征 A x=β²·B x（B=diag(r) 圆柱度规，物理自伴）取基模 "
+                           "n_eff=β/k0（与 golden 经验 b(V) 闭式方法学不同源）"),
+        "note": ("阶跃单模光纤 LP01 有效折射率（f6: n_co=1.448 n_cl=1.444 a=5µm, V=1.18，近截止低对比度）。"
+                 "golden=经验 b(V) 闭式；candidate=径向加权 FD 本征。实测 |Δ|=3.07e-6"
+                 "（tol=5e-3 的 1631.4× 余量）。判据 D 由 B-22 FD 核已证。零商业依赖。"),
+    },
+    "B367": {
+        "title": "阶跃光纤 LP01 有效折射率 n_eff（@1310nm V=2.34，empirical b(V) 闭式 vs 径向加权 FD 本征）",
+        "metric": "lp01_neff",
+        "oracle": ("analytical(Snyder/Marcatili empirical b(V)=(1.1428-0.996/V)² → n_eff) + "
+                   "cylindrical radial weighted-general-eigen FD independent_cross_check"),
+        "tol": 5e-3,
+        "default_params": {"n_co": 1.45, "n_cl": 1.44, "a": 6.0e-6, "wl": 1.31e-6},
+        "golden_fn": golden_b361,
+        "candidate": "fiber_lp01_neff_fd",
+        "candidate_desc": ("圆柱径向加权广义本征 A x=β²·B x（B=diag(r) 圆柱度规，物理自伴）取基模 "
+                           "n_eff=β/k0（与 golden 经验 b(V) 闭式方法学不同源）"),
+        "note": ("阶跃单模光纤 LP01 有效折射率（f7: wl=1.31µm a=6µm, V=2.34）。golden=经验 b(V) 闭式；"
+                 "candidate=径向加权 FD 本征。实测 |Δ|=4.68e-4（tol=5e-3 的 10.7× 余量）。"
+                 "判据 D 由 B-22 FD 核已证。零商业依赖。"),
+    },
+    "B368": {
+        "title": "阶跃光纤 LP01 有效折射率 n_eff（高对比度 V=3.00，empirical b(V) 闭式 vs 径向加权 FD 本征）",
+        "metric": "lp01_neff",
+        "oracle": ("analytical(Snyder/Marcatili empirical b(V)=(1.1428-0.996/V)² → n_eff) + "
+                   "cylindrical radial weighted-general-eigen FD independent_cross_check"),
+        "tol": 5e-3,
+        "default_params": {"n_co": 1.46, "n_cl": 1.42, "a": 4.0e-6, "wl": 1.55e-6},
+        "golden_fn": golden_b361,
+        "candidate": "fiber_lp01_neff_fd",
+        "candidate_desc": ("圆柱径向加权广义本征 A x=β²·B x（B=diag(r) 圆柱度规，物理自伴）取基模 "
+                           "n_eff=β/k0（与 golden 经验 b(V) 闭式方法学不同源）"),
+        "note": ("阶跃单模光纤 LP01 有效折射率（f8: n_co=1.46 n_cl=1.42 a=4µm, V=3.00，高对比度非弱导）。"
+                 "golden=经验 b(V) 闭式（非弱导下拟合误差偏大）；candidate=径向加权 FD 本征。"
+                 "实测 |Δ|=2.41e-3（tol=5e-3 的 2.1× 余量，为 13 锚中最薄但仍 ≥2×）。"
+                 "判据 D 由 B-22 FD 核已证。零商业依赖。"),
+    },
+    "B369": {
+        "title": "阶跃光纤 LP11 截止归一化频率 V_c（J₀ 首零 2.4048255577 闭式 vs 径向加权 FD 模出现阈值）",
+        "metric": "lp11_cutoff_V",
+        "oracle": ("analytical(J0 first zero 2.4048255577) + "
+                   "cylindrical radial weighted-general-eigen FD mode-appearance-threshold independent_cross_check"),
+        "tol": 0.1,
+        "default_params": {"n_co": 1.45, "n_cl": 1.44, "a": 4.0e-6, "wl": 1.55e-6},
+        "golden_fn": golden_b362,
+        "candidate": "fiber_lp11_vc_fd",
+        "candidate_desc": "圆柱径向加权广义本征扫 V 找 β 跨 n_cl·k0 阈值（与 golden J₀ 首零闭式方法学不同源）",
+        "note": ("阶跃光纤 LP11 模截止归一化频率 V_c=2.4048255577（J₀ 贝塞尔首零精确常数）。"
+                 "candidate=径向加权 FD 本征扫 V 检测 LP11 模出现阈值（β 跨 n_cl·k0）。"
+                 "实测 |Δ|=1.23e-2（tol=0.1 的 8.2× 余量）；判据 D 由 B-22 FD 本征核已证。"
+                 "候选输出扰动必 FAIL。零商业依赖。"),
+    },
+    "B370": {
+        "title": "SiO₂ 芯阶跃光纤群折射率 n_g @1550nm（Sellmeier 闭式 vs 径向加权 FD λ 扫描差分）",
+        "metric": "silica_core_ng",
+        "oracle": ("analytical(SiO₂ Sellmeier group index n_g=n−λ·dn/dλ, Malitson 1965) + "
+                   "cylindrical radial FD λ-scan finite-difference independent_cross_check"),
+        "tol": 1e-2,
+        "default_params": {"n_co": 1.444, "n_cl": 1.42, "a": 4.0e-6, "wl": 1.55e-6},
+        "golden_fn": golden_b364,
+        "candidate": "fiber_lp_ng_silica_fd",
+        "candidate_desc": ("SiO₂ 芯阶跃光纤（芯 n_co=Sellmeier(λ)、包层 n_cl=1.42 保证模良好约束）"
+                           "λ 中心差分群折射率 n_g（与 golden Sellmeier 闭式方法学不同源）"),
+        "note": ("SiO₂ 芯阶跃光纤 LP01 群折射率 n_g@1550nm。golden=SiO₂ Sellmeier 群折射率闭式；"
+                 "candidate=径向加权 FD 求 n_eff 后 λ 中心差分 n_g=n_eff−λ·dn_eff/dλ。"
+                 "包层取 n_cl=1.42（对比度保证模良好约束，使模 n_g 收敛到体材料值，"
+                 "修复近零对比度下测到≈0 模量的 bug）。实测 |Δ|=2.13e-3（tol=1e-2 的 4.7× 余量）。"
+                 "判据 D：λ 扫描差分随步长收敛、候选输出扰动必 FAIL。零商业依赖。"),
+    },
+    "B371": {
+        "title": "SiO₂ 芯阶跃光纤群折射率 n_g @1310nm（Sellmeier 闭式 vs 径向加权 FD λ 扫描差分）",
+        "metric": "silica_core_ng",
+        "oracle": ("analytical(SiO₂ Sellmeier group index n_g=n−λ·dn/dλ, Malitson 1965) + "
+                   "cylindrical radial FD λ-scan finite-difference independent_cross_check"),
+        "tol": 1e-2,
+        "default_params": {"n_co": 1.444, "n_cl": 1.42, "a": 4.0e-6, "wl": 1.31e-6},
+        "golden_fn": golden_b364,
+        "candidate": "fiber_lp_ng_silica_fd",
+        "candidate_desc": ("SiO₂ 芯阶跃光纤（芯 n_co=Sellmeier(λ)、包层 n_cl=1.42 保证模良好约束）"
+                           "λ 中心差分群折射率 n_g（与 golden Sellmeier 闭式方法学不同源）"),
+        "note": ("SiO₂ 芯阶跃光纤 LP01 群折射率 n_g@1310nm。golden=SiO₂ Sellmeier 群折射率闭式；"
+                 "candidate=径向加权 FD λ 扫描差分。实测 |Δ|=2.21e-3（tol=1e-2 的 4.5× 余量）。"
+                 "判据 D：λ 扫描差分随步长收敛、候选输出扰动必 FAIL。零商业依赖。"),
+    },
+    "B372": {
+        "title": "SiO₂ 芯阶跃光纤群速度色散 β₂ @1550nm（Sellmeier ω 空间二阶导闭式 vs 径向加权 FD ω 空间二阶差分，单位 ps²/km）",
+        "metric": "silica_core_beta2_ps2_per_km",
+        "oracle": ("analytical(SiO₂ Sellmeier β₂=d²β/dω², ω-space, ps²/km) + "
+                   "cylindrical radial FD ω-space 2nd-difference independent_cross_check"),
+        "tol": 20.0,
+        "default_params": {"n_co": 1.444, "n_cl": 1.42, "a": 4.0e-6, "wl": 1.55e-6},
+        "golden_fn": golden_b372,
+        "candidate": "fiber_lp_b2_silica_fd",
+        "candidate_desc": ("SiO₂ 芯阶跃光纤角频率空间 β(ω)=n_eff(λ(ω))·ω/c 二阶差分求 β₂（ps²/km）"
+                           "（与 golden Sellmeier ω 空间闭式同量纲、方法学不同源）"),
+        "note": ("SiO₂ 芯阶跃光纤 LP01 群速度色散 β₂@1550nm（光纤标准单位 ps²/km，"
+                 "1 s²/m=1e27 ps²/km）。golden=SiO₂ Sellmeier 角频率空间二阶导 β₂=d²β/dω² 闭式"
+                 "（负值，色散零点 ~1.27µm）；candidate=径向加权 FD 求 n_eff(λ(ω)) 后"
+                 "β(ω)=n_eff·ω/c 角频率空间二阶差分。同量纲、同方法学对照。包层 n_cl=1.42 保证"
+                 "模约束→β₂ 收敛到体材料值（符号正确、量级一致）。用 ps²/km 使基线残差落在自然"
+                 "量级（~ps²/km）而非 SI 的 ~1e-27，避免判据 D ③ 的 1e-12 值域排除误判为恒等。"
+                 "实测 |Δ|=6.99 ps²/km（tol=20 的 2.9× 余量）；判据 D：ω 差分随 dw 收敛、"
+                 "候选输出扰动必 FAIL。零商业依赖。"),
+    },
+    "B373": {
+        "title": "SiO₂ 芯阶跃光纤群速度色散 β₂ @1310nm（Sellmeier ω 空间二阶导闭式 vs 径向加权 FD ω 空间二阶差分，单位 ps²/km）",
+        "metric": "silica_core_beta2_ps2_per_km",
+        "oracle": ("analytical(SiO₂ Sellmeier β₂=d²β/dω², ω-space, ps²/km) + "
+                   "cylindrical radial FD ω-space 2nd-difference independent_cross_check"),
+        "tol": 20.0,
+        "default_params": {"n_co": 1.444, "n_cl": 1.42, "a": 4.0e-6, "wl": 1.31e-6},
+        "golden_fn": golden_b372,
+        "candidate": "fiber_lp_b2_silica_fd",
+        "candidate_desc": ("SiO₂ 芯阶跃光纤角频率空间 β(ω)=n_eff(λ(ω))·ω/c 二阶差分求 β₂（ps²/km）"
+                           "（与 golden Sellmeier ω 空间闭式同量纲、方法学不同源）"),
+        "note": ("SiO₂ 芯阶跃光纤 LP01 群速度色散 β₂@1310nm（光纤标准单位 ps²/km）。golden=SiO₂ "
+                 "Sellmeier 角频率空间二阶导 β₂ 闭式（色散零点 ~1.27µm，故 @1310nm 接近零、符号正）；"
+                 "candidate=径向加权 FD ω 空间二阶差分。包层 n_cl=1.42 保证模约束。用 ps²/km 单位"
+                 "使基线残差落在自然量级（避免判据 D ③ 误判恒等）。实测 |Δ|=1.70 ps²/km"
+                 "（tol=20 的 11.7× 余量）；判据 D：ω 差分随 dw 收敛、候选输出扰动必 FAIL。"
+                 "零商业依赖。"),
+    },
 }
 
 
@@ -5468,6 +5686,8 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B345", "B346", "B347", "B348", "B349", "B350",
                    "B351", "B352", "B353", "B354", "B355", "B356",
                    "B357", "B358", "B359", "B360",
+                   "B361", "B362", "B363", "B364", "B365", "B366", "B367", "B368",
+                   "B369", "B370", "B371", "B372", "B373",
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "E10",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                    "S9", "S10", "S11", "S12", "S13"]  # S 系统锚（Phase 0-4；S9=LVS/S10=多层/S11=规模/S12=阵列分布/S13=设计良率）

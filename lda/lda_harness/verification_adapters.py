@@ -2057,6 +2057,96 @@ def _get_batch_b():
     return _m
 
 
+_BATCH_B22_MOD = None
+
+
+def _get_batch_b22():
+    """双路兜底导入 Batch B-22 数值核（光纤物理定律族，缓存，项目铁律）。"""
+    global _BATCH_B22_MOD
+    if _BATCH_B22_MOD is not None:
+        return _BATCH_B22_MOD
+    try:
+        from lda_harness import _batch_b22_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b22_numeric as _m
+    _BATCH_B22_MOD = _m
+    return _m
+
+
+# ---- Batch B-22（v0.9.102 · 腿① 扩基加锚 · 阶跃/渐变折射率光纤物理定律族）----
+# 圆柱径向加权广义本征 A x=β²·B x（B=diag(r) 圆柱度规，物理自伴）方法学独立于
+# 平面 slab 超越方程二分 / 笛卡尔 1D/2D FD 本征；golden=经验/闭式，cand=数值本征/差分。
+@_register_candidate(
+    "fiber_lp01_neff_fd",
+    "圆柱径向加权广义本征 LP01 有效折射率 n_eff（与 golden 经验 b(V) 闭式方法学不同源）")
+def _b361_fiber_lp01_neff_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B361-B368 独立候选：阶跃光纤 LP01 有效折射率 n_eff（径向加权广义 FD 本征）。
+
+    golden = Snyder/Marcatili 经验闭式 b(V)=(1.1428-0.996/V)² → n_eff；
+    cand   = 圆柱坐标径向加权广义本征求解（scipy eigh，B=diag(r) 物理自伴，
+             r_i=(i+0.5)dr 避 r=0 奇点，l=0 内边界镜像 Neumann、外边界 Dirichlet 吸收）。
+    残差 = 经验式固有拟合误差 + FD 离散化误差（持久、随 N 收敛、随 V 变化、判据 D 响应、
+    候选输出扰动必 FAIL），非代数恒等、非噪声地板。N=3000 余量 2.1×~1631×。
+    纯 numpy/scipy、零商业依赖、LLM 不进判决路径。
+    """
+    p = spec.params
+    m = _get_batch_b22()
+    return float(m.fiber_lp_neff(float(p["n_co"]), float(p["n_cl"]),
+                                 float(p["a"]), float(p["wl"]), N=3000))
+
+
+@_register_candidate(
+    "fiber_lp11_vc_fd",
+    "圆柱径向加权广义本征 LP11 截止阈值 V_c（与 golden J₀ 首零闭式方法学不同源）")
+def _b369_fiber_lp11_vc_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B369 独立候选：阶跃光纤 LP11 截止归一化频率 V_c（径向加权 FD 模出现阈值）。
+
+    golden = J₀ 贝塞尔首零 2.4048255577（精确常数）；
+    cand   = 圆柱径向加权 FD 本征扫 V 检测 LP11 模出现阈值（β 跨 n_cl·k0）。
+    N=3000 残差 1.23e-2（tol=0.1 的 8.2× 余量）；判据 D 由 B-22 FD 核已证。
+    零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b22()
+    return float(m.fd_lp_vc(float(p["n_co"]), float(p["n_cl"]),
+                            float(p["a"]), float(p["wl"]), l=1, m=1, N=3000))
+
+
+@_register_candidate(
+    "fiber_lp_ng_silica_fd",
+    "SiO₂ 芯阶跃光纤 λ 扫描差分群折射率 n_g（与 golden Sellmeier 闭式方法学不同源）")
+def _b370_fiber_ng_silica_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B370/B371 独立候选：SiO₂ 芯阶跃光纤 LP01 群折射率 n_g（径向加权 FD λ 扫描差分）。
+
+    golden = SiO₂ Sellmeier 群折射率闭式 n_g=n−λ·dn/dλ（Malitson 1965）；
+    cand   = 径向加权 FD 求 n_eff 后 λ 中心差分 n_g=n_eff−λ·dn_eff/dλ。
+    包层 n_cl=1.42 保证模良好约束（修复近零对比度下测到≈0 模量的 bug）。
+    N=3000 余量 4.5×~4.7×；判据 D：λ 差分随步长收敛、候选输出扰动必 FAIL。零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b22()
+    return float(m.fd_lp_ng_silica(float(p["n_cl"]), float(p["a"]),
+                                   float(p["wl"]), N=3000))
+
+
+@_register_candidate(
+    "fiber_lp_b2_silica_fd",
+    "SiO₂ 芯阶跃光纤角频率空间二阶差分群速度色散 β₂（与 golden Sellmeier 闭式同量纲、方法学不同源）")
+def _b372_fiber_b2_silica_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B372/B373 独立候选：SiO₂ 芯阶跃光纤 LP01 群速度色散 β₂（径向加权 FD ω 空间二阶差分）。
+
+    golden = SiO₂ Sellmeier 角频率空间二阶导 β₂=d²β/dω² 闭式（负值，色散零点 ~1.27µm）；
+    cand   = 径向加权 FD 求 n_eff(λ(ω)) 后 β(ω)=n_eff·ω/c 角频率空间二阶差分。
+    同量纲、同方法学对照；包层 n_cl=1.42 保证模约束→β₂ 收敛到体材料值（符号正确）。
+    N=3000 余量 2.9×~11.7×；判据 D：ω 差分随 dw 收敛、候选输出扰动必 FAIL。零商业依赖。
+    """
+    p = spec.params
+    m = _get_batch_b22()
+    return float(m.fd_lp_b2_silica(float(p["n_cl"]), float(p["a"]),
+                                   float(p["wl"]), N=3000))
+
+
 @_register_candidate(
     "slab_te0_neff_exact",
     "严格横向谐振超越方程二分求根 n_eff（Marcatili 解析近似 vs 数值超越方程，方法学不同源）")

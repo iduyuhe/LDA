@@ -8,7 +8,7 @@
      agent/llm 模块；harness S7 的 oracle_kind 为确定性统计量）
   ⑤ S7 harness reference PASS（golden 自洽）
   ⑥ 扰动负例：损耗整体 +1dB → 分布下移 → candidate 偏离 golden > tol 被 FAIL 抓
-  ⑦ 题库计数 378 题（B1-B360 = 355 + E1-E10 = 10 + S1-S13 = 13）
+  ⑦ 题库计数 391 题（B1-B373 = 368 + E1-E10 = 10 + S1-S13 = 13）
   ⑧ S8 OSNR 统计锚（模板复用：Jensen 方向 + golden 收敛）
   ⑨ 蒙特卡洛收敛性（N 扫描收敛带）
 
@@ -142,8 +142,9 @@ def main() -> int:
                   + [f"B{i}" for i in range(297, 313)]    # B297-B312 = Batch B-18 十六锚（振荡积分 Filon 型分段二次求积/Gauss–Legendre 2 级隐式 RK 四阶 A-稳定/Adams–Bashforth 4 阶线性多步）
                   + [f"B{i}" for i in range(313, 329)]     # B313-B328 = Batch B-19 十六锚（广义 Lane–Emden 奇异 IVP Taylor+RK4/二维 Laplace 间接单层位势 BEM/Eikonal 制造解 FMM）
                   + [f"B{i}" for i in range(329, 345)]     # B329-B344 = Batch B-20 十六锚（修正 Bessel I_ν/球谐 Y_l^m 自投影/一维 MQ-RBF 插值）
-                  + [f"B{i}" for i in range(345, 361)])    # B345-B360 = Batch B-21 十六锚（Hermite/Laguerre 多项式 + Bernstein 多项式逼近）
-    check("题库（B1-B328 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + Batch B-7 十六锚 + Batch B-8 十六锚 + Batch B-9 十六锚 + Batch B-10 十六锚 + Batch B-11 十六锚 + Batch B-12 十六锚 + Batch B-13 十六锚 + Batch B-14 十六锚 + Batch B-15 十六锚 + Batch B-16 十六锚 + Batch B-17 十六锚 + Batch B-18 十六锚 + Batch B-19 十六锚 + Batch B-20 十六锚 + Batch B-21 十六锚 + E1-E10 + S1-S13 动态计数）",
+                  + [f"B{i}" for i in range(345, 361)]      # B345-B360 = Batch B-21 十六锚（Hermite/Laguerre 多项式 + Bernstein 多项式逼近）
+                  + [f"B{i}" for i in range(361, 374)])    # B361-B373 = Batch B-22 十三锚（阶跃/渐变光纤物理定律族）
+    check("题库（B1-B328 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + Batch B-7 十六锚 + Batch B-8 十六锚 + Batch B-9 十六锚 + Batch B-10 十六锚 + Batch B-11 十六锚 + Batch B-12 十六锚 + Batch B-13 十六锚 + Batch B-14 十六锚 + Batch B-15 十六锚 + Batch B-16 十六锚 + Batch B-17 十六锚 + Batch B-18 十六锚 + Batch B-19 十六锚 + Batch B-20 十六锚 + Batch B-21 十六锚 + Batch B-22 十三锚 + E1-E10 + S1-S13 动态计数）",
           b_ids == expected_b
           and s_ids == [f"S{i}" for i in range(1, 14)]
           and e_ids == [f"E{i}" for i in range(1, len(e_ids) + 1)],

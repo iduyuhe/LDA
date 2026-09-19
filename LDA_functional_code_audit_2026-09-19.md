@@ -300,7 +300,7 @@ NameError: name 'v_t' is not defined. Did you mean: 'V_T'?
 |---|---|---|---|---|
 | 1 | F-01 `review.py` 缺 `_norm_params` | P1 | ✅ 已修 | 补导入 + **补 4 条覆盖 `default_params` 分支的断言** + **反向测试**（撤掉导入 ⇒ smoke rc=1、报 `NameError: name '_norm_params' is not defined`，证明确能变红） |
 | 2 | F-02 `lda_l3` 未声明打包 | P1 | ✅ 已修 | `packages` 补 `"lda_l3"`（17 包）；声明/磁盘**双向对账零缺漏** |
-| 3 | F-03 pytest 无套件却声明 | P2 | ✅ 已修 | 补 `[tool.pytest.ini_options]`（`norecursedirs` 排除 `vendor`/`lda_cuda_venv`/`.cache`/`node_modules`/`build`/`dist`/`*.egg`） |
+| 3 | F-03 pytest 无套件却声明 | P2 | ✅ 已修 + 已验证 | 补 `[tool.pytest.ini_options]`（`norecursedirs` 排除 `vendor`/`lda_cuda_venv`/`.cache`/`node_modules`/`build`/`dist`/`*.egg`）；**实证**：`pytest --collect-only` **rc=2 → rc=5**（`no tests collected`，全无 devsim 收集错误、无 vendor 路径命中）。rc=5 是「没收集到测试」而非「收集错误」——本仓库的测试入口是 `run_ci_regression.py --tag core`（CONTRIBUTING 早有指引），故这是**预期且诚实**的结果。⚠️ 耗时仍 252s（全仓文件遍历），排除 vendor 影响的是**正确性**不是速度。 |
 | 4 | F-04 `v_t` 未定义 | P2 | ✅ 已修 | `drift_diffusion_2d.py:567` `v_t` → 模块级 `V_T`（`v_t` 仅为函数形参） |
 | 5 | F-05 `converged` 算出即丢弃 | P2 | ✅ 已修 | **保号修复**：不改签名/返回值/数值行为（T1 数值内核历史行为冻结），未收敛时发 `RuntimeWarning` |
 | 6 | F-06 三处 `rng` 死参数 | P2 | ✅ 已修 | 删死赋值 + docstring 如实改写（原称「随机」实为 **top-k 确定性采样**）；`seed` 参数保留兼容 |

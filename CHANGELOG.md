@@ -11,7 +11,7 @@
 - **F-02** `lda_l3` 未在 `pyproject.toml` 的 `packages` 声明 ⇒ pip 安装版 `run_production_smoke.py` 必 ImportError。修复：声明已补（17 包），声明/磁盘双向对账零缺漏。
 
 ### P2（8）
-- **F-03** 补 `[tool.pytest.ini_options]`（`norecursedirs` 排除 `vendor` / `lda_cuda_venv` / `.cache` 等）—— 原仓库根 `pytest --collect-only` rc=2 / 244.3s（收集期 `vendor/devsim_mirror/testing/` 的 `import devsim` 失败）。
+- **F-03** 补 `[tool.pytest.ini_options]`（`norecursedirs` 排除 `vendor` / `lda_cuda_venv` / `.cache` 等）—— 原仓库根 `pytest --collect-only` rc=2 / 244.3s（收集期 `vendor/devsim_mirror/testing/` 的 `import devsim` 失败）。**实证修复**：`rc=2 → rc=5`（`no tests collected`，无 devsim 收集错误、无 vendor 路径；rc=5 = 「没收集到测试」而非「收集错误」，本仓库测试入口是 `run_ci_regression.py --tag core`，属预期诚实结果）。
 - **F-04** `drift_diffusion_2d.py:567` 脚本模式 `v_t` 未定义（`v_t` 仅为函数形参）⇒ 改模块级 `V_T`，脚本 rc=0。
 - **F-05** `_solve_poisson_drift_diffusion` 的 `converged` 算出即丢弃、未收敛解被静默当有效解 ⇒ **保号修复**：不变更签名/返回值/数值行为（T1 数值内核历史行为冻结），未收敛时发 `RuntimeWarning`。
 - **F-06** `adjoint_fdtd.py:409` / `adjoint_fdtd3d.py:653,897` 三处 `rng = np.random.default_rng(seed)` 创建后从未使用（实现由随机采样演进为 **按 |g| 降序 top-k 确定性采样**后的残留）⇒ 删死赋值；`seed` 参数保留（API 兼容），docstring 如实改写（原称「随机」）。

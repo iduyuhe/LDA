@@ -96,7 +96,7 @@ def main():
     eff = b6_grating_coupling_eff(wl=1.55, n_si=3.48, n_clad=1.44,
                                   period=0.63, ff=0.5, theta_deg=8.0)
     assert abs(eff - 0.5) < 1e-9, "B6 无 ORACLE 时应回退设计守则锚 0.5"
-    print(f"[B6 Tidy3D 门控] oracle=None(无key) eff回退={eff} ✓ 严守 GPL 仅外部 ORACLE")
+    print(f"[B6 Tidy3D 门控] oracle=None(无key) eff回退={eff} ✓ 严守 LGPL 仅外部 ORACLE")
     print()
 
     # 4) 多晶圆厂 PDK 共建校验

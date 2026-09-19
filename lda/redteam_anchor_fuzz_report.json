@@ -1,12 +1,12 @@
 {
-  "strict_total": 357,
-  "strict_attacked": 357,
+  "strict_total": 448,
+  "strict_attacked": 448,
   "strict_coverage": 1.0,
-  "attacks_total": 3404,
-  "genuine_div": 190,
-  "cand_limitation": 58,
-  "golden_unstable": 52,
-  "divergence_rate": 0.071092832,
+  "attacks_total": 4504,
+  "genuine_div": 265,
+  "cand_limitation": 70,
+  "golden_unstable": 86,
+  "divergence_rate": 0.0779307282,
   "findings": [
     {
       "bid": "B1",
@@ -1817,6 +1817,965 @@
       ]
     },
     {
+      "bid": "B361",
+      "as_strict": true,
+      "n_attacks": 12,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 4,
+      "samples": [
+        {
+          "params": {
+            "n_co": 1.015,
+            "n_cl": 1.44,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.2325,
+            "n_cl": 1.44,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.6675,
+            "n_cl": 1.44,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.69782426,
+          "cand": 1.66176905,
+          "err": 0.036055207,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.885,
+            "n_cl": 1.44,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.95933028,
+          "cand": 1.87970889,
+          "err": 0.0796213892,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.45,
+            "n_cl": 1.008,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.51405974,
+          "cand": 1.44322559,
+          "err": 0.0708341523,
+          "tol": 0.005
+        }
+      ]
+    },
+    {
+      "bid": "B362",
+      "as_strict": true,
+      "n_attacks": 14,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 4,
+      "samples": [
+        {
+          "params": {
+            "n_co": 1.015,
+            "n_cl": 1.44,
+            "a": 8e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.2325,
+            "n_cl": 1.44,
+            "a": 8e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.6675,
+            "n_cl": 1.44,
+            "a": 8e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.71429282,
+          "cand": 1.66596521,
+          "err": 0.0483276098,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.885,
+            "n_cl": 1.44,
+            "a": 8e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.98028619,
+          "cand": 1.88361222,
+          "err": 0.0966739656,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.45,
+            "n_cl": 1.008,
+            "a": 8e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.5371127,
+          "cand": 1.44821026,
+          "err": 0.0889024367,
+          "tol": 0.005
+        }
+      ]
+    },
+    {
+      "bid": "B363",
+      "as_strict": true,
+      "n_attacks": 12,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 4,
+      "samples": [
+        {
+          "params": {
+            "n_co": 1.022,
+            "n_cl": 1.43,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.241,
+            "n_cl": 1.43,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.679,
+            "n_cl": 1.43,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.71352505,
+          "cand": 1.67327326,
+          "err": 0.0402517909,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.898,
+            "n_cl": 1.43,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.97675183,
+          "cand": 1.89273227,
+          "err": 0.0840195556,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.46,
+            "n_cl": 1.001,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.52702516,
+          "cand": 1.45325753,
+          "err": 0.0737676361,
+          "tol": 0.005
+        }
+      ]
+    },
+    {
+      "bid": "B364",
+      "as_strict": true,
+      "n_attacks": 12,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 4,
+      "samples": [
+        {
+          "params": {
+            "n_co": 1.029,
+            "n_cl": 1.45,
+            "a": 3e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.2495,
+            "n_cl": 1.45,
+            "a": 3e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.6905,
+            "n_cl": 1.45,
+            "a": 3e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.71257872,
+          "cand": 1.68083242,
+          "err": 0.0317463004,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.911,
+            "n_cl": 1.45,
+            "a": 3e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.97477311,
+          "cand": 1.90198061,
+          "err": 0.072792498,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.47,
+            "n_cl": 1.015,
+            "a": 3e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.5213601,
+          "cand": 1.45850404,
+          "err": 0.0628560585,
+          "tol": 0.005
+        }
+      ]
+    },
+    {
+      "bid": "B365",
+      "as_strict": true,
+      "n_attacks": 14,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 4,
+      "samples": [
+        {
+          "params": {
+            "n_co": 1.015,
+            "n_cl": 1.44,
+            "a": 1e-05,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.2325,
+            "n_cl": 1.44,
+            "a": 1e-05,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.6675,
+            "n_cl": 1.44,
+            "a": 1e-05,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.71763348,
+          "cand": 1.66650382,
+          "err": 0.0511296693,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.885,
+            "n_cl": 1.44,
+            "a": 1e-05,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.98450785,
+          "cand": 1.88410309,
+          "err": 0.10040476,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.45,
+            "n_cl": 1.008,
+            "a": 1e-05,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.54175534,
+          "cand": 1.44884153,
+          "err": 0.0929138135,
+          "tol": 0.005
+        }
+      ]
+    },
+    {
+      "bid": "B366",
+      "as_strict": true,
+      "n_attacks": 14,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 4,
+      "samples": [
+        {
+          "params": {
+            "n_co": 1.0136,
+            "n_cl": 1.444,
+            "a": 5e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.2308,
+            "n_cl": 1.444,
+            "a": 5e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.6652,
+            "n_cl": 1.444,
+            "a": 5e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.70076705,
+          "cand": 1.66143157,
+          "err": 0.0393354772,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.8824,
+            "n_cl": 1.444,
+            "a": 5e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.96378156,
+          "cand": 1.87894591,
+          "err": 0.0848356472,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.448,
+            "n_cl": 1.0108,
+            "a": 5e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.5203964,
+          "cand": 1.44356474,
+          "err": 0.0768316593,
+          "tol": 0.005
+        }
+      ]
+    },
+    {
+      "bid": "B367",
+      "as_strict": true,
+      "n_attacks": 14,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 4,
+      "samples": [
+        {
+          "params": {
+            "n_co": 1.015,
+            "n_cl": 1.44,
+            "a": 6e-06,
+            "wl": 1.31e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.2325,
+            "n_cl": 1.44,
+            "a": 6e-06,
+            "wl": 1.31e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.6675,
+            "n_cl": 1.44,
+            "a": 6e-06,
+            "wl": 1.31e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.71218152,
+          "cand": 1.66556824,
+          "err": 0.0466132805,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.885,
+            "n_cl": 1.44,
+            "a": 6e-06,
+            "wl": 1.31e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.97761315,
+          "cand": 1.88324856,
+          "err": 0.0943645893,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.45,
+            "n_cl": 1.008,
+            "a": 6e-06,
+            "wl": 1.31e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.53417283,
+          "cand": 1.44774343,
+          "err": 0.086429404,
+          "tol": 0.005
+        }
+      ]
+    },
+    {
+      "bid": "B368",
+      "as_strict": true,
+      "n_attacks": 12,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 4,
+      "samples": [
+        {
+          "params": {
+            "n_co": 1.022,
+            "n_cl": 1.42,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.241,
+            "n_cl": 1.42,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
+        },
+        {
+          "params": {
+            "n_co": 1.679,
+            "n_cl": 1.42,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.7154112,
+          "cand": 1.67325961,
+          "err": 0.0421515914,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.898,
+            "n_cl": 1.42,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.9785532,
+          "cand": 1.89272776,
+          "err": 0.0858254393,
+          "tol": 0.005
+        },
+        {
+          "params": {
+            "n_co": 1.46,
+            "n_cl": 0.994,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.52812287,
+          "cand": 1.45325294,
+          "err": 0.0748699211,
+          "tol": 0.005
+        }
+      ]
+    },
+    {
+      "bid": "B372",
+      "as_strict": true,
+      "n_attacks": 12,
+      "genuine_div": 3,
+      "cand_limitation": 2,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "n_co": 1.444,
+            "n_cl": 0.994,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": -27.9396772,
+          "cand": -58.3656422,
+          "err": 30.4259649,
+          "tol": 20.0
+        },
+        {
+          "params": {
+            "n_co": 1.444,
+            "n_cl": 1.207,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": -27.9396772,
+          "cand": -54.5739156,
+          "err": 26.6342384,
+          "tol": 20.0
+        },
+        {
+          "params": {
+            "n_co": 1.444,
+            "n_cl": 1.633,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "candidate_limitation",
+          "diag": "执行异常：ValueError: math domain error"
+        },
+        {
+          "params": {
+            "n_co": 1.444,
+            "n_cl": 1.846,
+            "a": 4e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "candidate_limitation",
+          "diag": "执行异常：ValueError: math domain error"
+        },
+        {
+          "params": {
+            "n_co": 1.444,
+            "n_cl": 1.42,
+            "a": 2.8e-06,
+            "wl": 1.55e-06
+          },
+          "issue": "genuine_divergence",
+          "oracle": -27.9396772,
+          "cand": 4.98343203,
+          "err": 32.9231093,
+          "tol": 20.0
+        }
+      ]
+    },
+    {
+      "bid": "B381",
+      "as_strict": true,
+      "n_attacks": 12,
+      "genuine_div": 2,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "w0": 5e-06,
+            "wl": 1.55e-06,
+            "z1": 0.1,
+            "z2": 5.06708e-05
+          },
+          "issue": "genuine_divergence",
+          "oracle": -0.39244597,
+          "cand": 0.0,
+          "err": 0.39244597,
+          "tol": 0.01
+        },
+        {
+          "params": {
+            "w0": 5e-06,
+            "wl": 1.55e-06,
+            "z1": 0.3,
+            "z2": 5.06708e-05
+          },
+          "issue": "genuine_divergence",
+          "oracle": -0.392614873,
+          "cand": 0.0,
+          "err": 0.392614873,
+          "tol": 0.01
+        }
+      ]
+    },
+    {
+      "bid": "B393",
+      "as_strict": true,
+      "n_attacks": 14,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 0.7,
+            "nslits": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.0217,
+          "cand": 0.0,
+          "err": 0.0217,
+          "tol": 1e-06
+        },
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 0.85,
+            "nslits": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.02635,
+          "cand": 0.0,
+          "err": 0.02635,
+          "tol": 1e-06
+        },
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 1.15,
+            "nslits": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.03565,
+          "cand": 0.0309999955,
+          "err": 0.00465000451,
+          "tol": 1e-06
+        },
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 1.3,
+            "nslits": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.0403,
+          "cand": 0.0309999955,
+          "err": 0.00930000451,
+          "tol": 1e-06
+        }
+      ]
+    },
+    {
+      "bid": "B394",
+      "as_strict": true,
+      "n_attacks": 14,
+      "genuine_div": 6,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 0.7,
+            "nslits": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 7.0,
+          "cand": 0.0,
+          "err": 7.0,
+          "tol": 0.01
+        },
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 0.85,
+            "nslits": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 8.5,
+          "cand": 0.0,
+          "err": 8.5,
+          "tol": 0.01
+        },
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 1.15,
+            "nslits": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 11.5,
+          "cand": 10.0002965,
+          "err": 1.4997035,
+          "tol": 0.01
+        },
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 1.3,
+            "nslits": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 13.0,
+          "cand": 10.0002965,
+          "err": 2.9997035,
+          "tol": 0.01
+        },
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 1,
+            "nslits": 8.5
+          },
+          "issue": "genuine_divergence",
+          "oracle": 8.5,
+          "cand": 8.00024062,
+          "err": 0.49975938,
+          "tol": 0.01
+        }
+      ]
+    },
+    {
+      "bid": "B398",
+      "as_strict": true,
+      "n_attacks": 14,
+      "genuine_div": 6,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 0.7,
+            "nslits": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 2.21428571e-07,
+          "cand": Infinity,
+          "err": Infinity,
+          "tol": 1e-09
+        },
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 0.85,
+            "nslits": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.82352941e-07,
+          "cand": Infinity,
+          "err": Infinity,
+          "tol": 1e-09
+        },
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 1.15,
+            "nslits": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.34782609e-07,
+          "cand": 1.54980623e-07,
+          "err": 2.01980139e-08,
+          "tol": 1e-09
+        },
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 1.3,
+            "nslits": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.19230769e-07,
+          "cand": 1.54980623e-07,
+          "err": 3.57498533e-08,
+          "tol": 1e-09
+        },
+        {
+          "params": {
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "m": 1,
+            "nslits": 8.5
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.82352941e-07,
+          "cand": 1.93725778e-07,
+          "err": 1.1372837e-08,
+          "tol": 1e-09
+        }
+      ]
+    },
+    {
+      "bid": "B408",
+      "as_strict": true,
+      "n_attacks": 13,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "N": 4.2,
+            "R": 0.1,
+            "I": 1.0
+          },
+          "issue": "genuine_divergence",
+          "oracle": 6.20231667,
+          "cand": 6.36619732,
+          "err": 0.163880653,
+          "tol": 0.001
+        },
+        {
+          "params": {
+            "N": 5.1,
+            "R": 0.1,
+            "I": 1.0
+          },
+          "issue": "genuine_divergence",
+          "oracle": 5.74583603,
+          "cand": 5.78164177,
+          "err": 0.0358057392,
+          "tol": 0.001
+        },
+        {
+          "params": {
+            "N": 6.9,
+            "R": 0.1,
+            "I": 1.0
+          },
+          "issue": "genuine_divergence",
+          "oracle": 5.3767753,
+          "cand": 5.51328909,
+          "err": 0.13651379,
+          "tol": 0.001
+        },
+        {
+          "params": {
+            "N": 7.8,
+            "R": 0.1,
+            "I": 1.0
+          },
+          "issue": "genuine_divergence",
+          "oracle": 5.28914756,
+          "cand": 5.3651488,
+          "err": 0.0760012399,
+          "tol": 0.001
+        }
+      ]
+    },
+    {
       "bid": "B41",
       "as_strict": true,
       "n_attacks": 13,
@@ -1871,6 +2830,274 @@
           "cand": 0.069600178,
           "err": 0.0160617165,
           "tol": 0.001
+        }
+      ]
+    },
+    {
+      "bid": "B413",
+      "as_strict": true,
+      "n_attacks": 9,
+      "genuine_div": 2,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "n1": 0.7,
+            "n2": 1.5
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.132231405,
+          "cand": 0.132394116,
+          "err": 0.000162711131,
+          "tol": 0.0001
+        },
+        {
+          "params": {
+            "n1": 0.85,
+            "n2": 1.5
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.076505206,
+          "cand": 0.0766647441,
+          "err": 0.000159538136,
+          "tol": 0.0001
+        }
+      ]
+    },
+    {
+      "bid": "B421",
+      "as_strict": true,
+      "n_attacks": 9,
+      "genuine_div": 2,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "n1": 1.3,
+            "n2": 1.5
+          },
+          "issue": "genuine_divergence",
+          "oracle": 49.0856168,
+          "cand": 49.0202491,
+          "err": 0.0653676545,
+          "tol": 0.05
+        },
+        {
+          "params": {
+            "n1": 1.0,
+            "n2": 1.05
+          },
+          "issue": "genuine_divergence",
+          "oracle": 46.397181,
+          "cand": 46.2641517,
+          "err": 0.133029362,
+          "tol": 0.05
+        }
+      ]
+    },
+    {
+      "bid": "B423",
+      "as_strict": true,
+      "n_attacks": 13,
+      "genuine_div": 2,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "n1": 1.05,
+            "n2": 1.0,
+            "theta_i": 60.0
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.0,
+          "cand": 0.0133944377,
+          "err": 0.986605562,
+          "tol": 0.001
+        },
+        {
+          "params": {
+            "n1": 1.5,
+            "n2": 1.3,
+            "theta_i": 60.0
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.0,
+          "cand": 0.765155165,
+          "err": 0.234844835,
+          "tol": 0.001
+        }
+      ]
+    },
+    {
+      "bid": "B426",
+      "as_strict": true,
+      "n_attacks": 9,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "wp": 0.35,
+            "w": 2.0
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.01567343,
+          "cand": 1.03279556,
+          "err": 0.0171221268,
+          "tol": 1e-05
+        },
+        {
+          "params": {
+            "wp": 0.425,
+            "w": 2.0
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.02337274,
+          "cand": 1.03279556,
+          "err": 0.00942281706,
+          "tol": 1e-05
+        },
+        {
+          "params": {
+            "wp": 0.575,
+            "w": 2.0
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.04408041,
+          "cand": 1.03279556,
+          "err": 0.01128485,
+          "tol": 1e-05
+        },
+        {
+          "params": {
+            "wp": 0.65,
+            "w": 2.0
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.05740211,
+          "cand": 1.03279556,
+          "err": 0.0246065553,
+          "tol": 1e-05
+        }
+      ]
+    },
+    {
+      "bid": "B444",
+      "as_strict": true,
+      "n_attacks": 13,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "a": 6.9,
+            "b": 6,
+            "x": 0.45
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.260685078,
+          "cand": 0.366877419,
+          "err": 0.106192341,
+          "tol": 1e-06
+        },
+        {
+          "params": {
+            "a": 7.8,
+            "b": 6,
+            "x": 0.45
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.178765272,
+          "cand": 0.260685077,
+          "err": 0.0819198051,
+          "tol": 1e-06
+        },
+        {
+          "params": {
+            "a": 6,
+            "b": 6.9,
+            "x": 0.45
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.47306976,
+          "cand": 0.366877419,
+          "err": 0.106192342,
+          "tol": 1e-06
+        },
+        {
+          "params": {
+            "a": 6,
+            "b": 7.8,
+            "x": 0.45
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.573193968,
+          "cand": 0.47306976,
+          "err": 0.100124207,
+          "tol": 1e-06
+        }
+      ]
+    },
+    {
+      "bid": "B445",
+      "as_strict": true,
+      "n_attacks": 13,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "a": 4.9,
+            "b": 8,
+            "x": 0.4
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.561821778,
+          "cand": 0.703715849,
+          "err": 0.141894071,
+          "tol": 1e-06
+        },
+        {
+          "params": {
+            "a": 5.95,
+            "b": 8,
+            "x": 0.4
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.425603577,
+          "cand": 0.561821779,
+          "err": 0.136218202,
+          "tol": 1e-06
+        },
+        {
+          "params": {
+            "a": 7,
+            "b": 5.6,
+            "x": 0.4
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.158212293,
+          "cand": 0.0993525757,
+          "err": 0.0588597169,
+          "tol": 1e-06
+        },
+        {
+          "params": {
+            "a": 7,
+            "b": 6.8,
+            "x": 0.4
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.228843953,
+          "cand": 0.158212292,
+          "err": 0.0706316605,
+          "tol": 1e-06
         }
       ]
     },

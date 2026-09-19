@@ -17,6 +17,30 @@ _val_*.log
 # ---- 诊断脚本（本仓库不发布，留在本地工作区）----
 diag_*.py
 test_wg_quick.py
+# v0.9.111（2026-09-19 全面审计 F-10）：根目录历史诊断 / 构建脚本与散落产物。
+# 均为各次分析或发布物料生成的一次性产物，非产品代码、无模块 import 它们、
+# 也不在 CI smoke 清单内（verify_lvs_cross_equiv.py 仅被 run_ci_regression.py
+# 注释引述为历史证据，实跑的是 run_lvs_cross_equiv_smoke.py）。
+# 与上面 diag_*.py 同纪律：留在本地工作区、不随仓库发布；历史提交仍可追溯。
+assess_1m_circuit.py
+assess_1m_hierarchy_poc.py
+assess_1m_layout.py
+assess_1m_route_e2e.py
+assess_p00_cpo250k_verify.py
+assess_p01_hierarchy_250k.py
+assess_p02_lvs_baseline.py
+assess_p02_lvs_profile.py
+build_rdplan_output.py
+build_resource_map.py
+build_wechat_draft.py
+decrypt_redteam.py
+md2docx_batch.py
+spike_scale_100k_v3.py
+verify_gds_library_equiv.py
+verify_lvs_cross_equiv.py
+spike_v3_out.txt
+nav-index.png
+reports_verification_ledger_sample.json
 
 # ---- 私有记忆 ----
 .workbuddy/
@@ -55,6 +79,8 @@ _gitprobe.txt
 _pstest.txt
 ci_core_report.json
 lda/ci_core_report.json
+# v0.9.111：scripts/ci_core_batched.py 的默认聚合报告（分批跑法产物，不入库）
+_ci_core_batched_report.json
 
 # ---- 红队待处理缺陷原始数据（含漏洞信息，加密保管于 .secrets/，绝不入版本库）----
 lda/redteam_anchor_fuzz_defects_pending.json

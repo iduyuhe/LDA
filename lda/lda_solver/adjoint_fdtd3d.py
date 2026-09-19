@@ -650,7 +650,11 @@ def compute_gradient3d(prob: AdjointProblem3D, fwd: Dict[str, Any],
 def verify_adjoint3d(prob: AdjointProblem3D, eps3: np.ndarray,
                      nsamples: int = 8, delta: float = 0.05,
                      seed: int = 12345) -> Dict[str, Any]:
-    rng = np.random.default_rng(seed)
+    """3D adjoint 梯度 FD 对拍（**确定性**采样：按 |g_adj| 降序取前 nsamples 体素）。
+
+    ``seed`` 为历史签名保留（当前实现不使用随机数），传参兼容不变。
+    v0.9.111（2026-09-19 全面审计 F-06）：删除创建后从未使用的 `rng` 死赋值。
+    """
     fwd0 = forward3d(prob, eps3)
     gadj = compute_gradient3d(prob, fwd0)
     dr = prob._dr
@@ -893,8 +897,12 @@ def verify_topo_gradient3d(tp: TopologyProblem3D, r0: np.ndarray,
                            beta: float = 2.0, nsamples: int = 6,
                            delta: float = 0.02,
                            seed: int = 11) -> Dict[str, Any]:
-    """3D 拓扑梯度链式 FD 对拍（潜伏密度方向采样）。"""
-    rng = np.random.default_rng(seed)
+    """3D 拓扑梯度链式 FD 对拍。
+
+    采样为**确定性**：按 |g_r| 降序取前 nsamples 个体素（非随机）。
+    ``seed`` 为历史签名保留（当前实现不使用随机数），传参兼容不变。
+    v0.9.111（2026-09-19 全面审计 F-06）：删除创建后从未使用的 `rng` 死赋值。
+    """
     g_r, _ = tp.gradient(r0, beta)
     order = np.argsort(np.abs(g_r))[::-1][:max(nsamples, 1)]
     rows = []

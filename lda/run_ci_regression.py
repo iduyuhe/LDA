@@ -25,7 +25,7 @@ import re
 import subprocess
 import sys
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _LDA_ROOT = _HERE          # 本脚本位于 lda/（包根）
@@ -655,11 +655,19 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # / Ring <0.1s），干净实测 ~60-80s；配 600s 只为 numba 首次 JIT 编译（冷
     # 缓存 ~30s）与慢机器抖动留余量。
     "run_device_library_smoke.py": 600.0,
-    # 反自证桩护栏：路径① 8 类断言 + 52 锚重计算（正向/反向/灵敏度/无回归/对外账本/
-    # 路径② 复现/JSON 序列化/行为判据自检）。CI 实测 ~159s，纯 CPU 慢机 >300s
-    # ⇒ 走默认 300s 会被误 TIMEOUT/CRASH（非零 rc + 零输出 = CRASH 语义，非断言失败）。
-    # 配 600s（≈4× 余量）防慢机假死；判据一字未改，纯耗时余量。
-    "run_benchmark_falsifiability_smoke.py": 600.0,
+    # 反自证桩护栏：路径① 8 类断言 + 全锚重计算（正向/反向/灵敏度/无回归/对外账本/
+    # 路径② 复现/JSON 序列化/行为判据自检）。判据一字未改，纯耗时余量。
+    # 🔴 v0.9.111（2026-09-19 全面审计 F-19）：实测耗时已随锚数增长远超旧预算 ——
+    #   B-25~B-28 四轮扩基（+52 锚）后本项 10 线程实跑 **1098.6s**，而旧预算 600s
+    #   （下方原注释所记 ~159s 是扩基前数据）⇒ 全量 CI 必然 TIMEOUT 并计为 FAIL
+    #   （**假红**：rc=0 功能全绿，只是耗时超预算）。独立复跑确认 rc=0：
+    #   13/13 PASS · 严格独立 448 · 全量 469 锚零回归。配 1800s（≈1.64× 余量）。
+    "run_benchmark_falsifiability_smoke.py": 1800.0,
+    # 🔴 v0.9.111（2026-09-19 全面审计 F-19 · 本项此前**无覆盖**，走默认 300s）：
+    #   红队锚面 fuzz —— 对全部 52 锚逐锚做规则式参数扰动并用 run_verification 判卷。
+    #   攻击面大 ⇒ 10 线程实跑 **1315.8s** rc=0（"红队锚面 fuzz smoke: PASS"）；
+    #   旧默认 300s 下必然 TIMEOUT 被误判 FAIL。配 2000s（≈1.52× 余量，判据未改）。
+    "run_redteam_anchor_fuzz_smoke.py": 2000.0,
 }
 
 
@@ -682,6 +690,12 @@ def _child_env() -> Dict[str, Any]:
             env.setdefault(k, v)
     except Exception:                                  # 预算模块不可用 ⇒ 不阻断
         pass
+    # 🔴 v0.9.111（2026-09-19 全面审计 §3.4）：钉死 str/bytes 哈希种子。
+    # 原状下子进程 PYTHONHASHSEED 随机 ⇒ 若某处把 set 直接序列化进报告/字典，
+    # 跨进程迭代顺序会漂移（现有 run_report_determinism_smoke 已兜底，此处把
+    # 防线从"护栏兜底"前移到"源头消除"）。必须在子进程启动前注入方生效，
+    # 故放在 env 构造处而非子进程内。
+    env.setdefault("PYTHONHASHSEED", "0")
     return env
 
 

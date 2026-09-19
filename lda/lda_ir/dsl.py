@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from .core import (
     Component, FoundryPlan, IRModel, Net, ObjectiveSpec, Port, SpectrumSpec,

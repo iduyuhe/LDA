@@ -44,7 +44,7 @@ SOVEREIGN_DEPS: List[Dependency] = [
     Dependency("SAX", "B", "MIT", "电路级 ORACLE（sax 库）", "Gitee"),
     Dependency("MPB", "B", "GPL", "光子能带 ORACLE", "Gitee"),
     Dependency("Nazca", "B", "MIT", "版图框架", "Gitee"),
-    Dependency("Tidy3D", "B", "前端 GPL/云美属",
+    Dependency("Tidy3D", "B", "前端 LGPL-2.1/云美属",
                "仅外部 ORACLE 校验、零硬编码、无 Key 自动回退", "Gitee"),
 
     # ---------- C 级：第一天自主（LDA 自有） ----------

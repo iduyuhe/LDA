@@ -4,7 +4,7 @@
 升级为**几何相关真值**——验证裁判更硬。
 
 两层 ORACLE，遵守《白皮书》§11 许可证红线：
-1. 【生产级·真场级】Meep/Tidy3D（GPL）—— 仅作**外部 ORACLE**：
+1. 【生产级·真场级】Meep（GPLv2+）/ Tidy3D（LGPL-2.1 客户端 + 商业云）—— 仅作**外部 ORACLE**：
    由 `ext_oracle/meep_oracle.py` 在 GPL 隔离环境以**子进程**运行，
    回传标量。核心**绝不 import** GPL 代码（用 env LDA_MEEP_PY 指定解释器）。
 2. 【离线·近似】本文件内的纯 numpy 2D-FDTD / 重叠估计（Apache-2.0）——
@@ -283,7 +283,7 @@ def resolve_field_oracle(bid, params):
 
 
 def _b6_oracle(params):
-    """B6 光栅耦合器：优先 Tidy3D 3D ORACLE（GPL 仅外部，需 API key）。
+    """B6 光栅耦合器：优先 Tidy3D 3D ORACLE（LGPL-2.1 客户端 / 商业云，仅外部，需 API key）。
 
     无 key / 库不可用时返回 None，由 golden.py 回退到设计守则锚（0.5）。
     """

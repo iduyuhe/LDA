@@ -1,5 +1,41 @@
 # Changelog
 
+## v0.9.111（2026-09-19 · 全面审计后集中清偿 · 不扩基 · 账本零变化 · CI core 178 条不变）
+
+### 审计来源
+- `LDA_functional_code_audit_2026-09-19.md`（只读全面功能审计 + 代码审计，18 条分级发现：P1×2 / P2×11 / P3×5）。
+- 功能宣称逐条实测 **12/12 全部与代码一致**（22 引擎 / 11 包 / 33 类 / 469 锚 / 75 货架 / 178 CI core / 119 API 端点），**账本诚实性成立**。
+
+### P1（2）
+- **F-01** `lda_pdk/review.py`：`.submit` 导入清单漏 `_norm_params` ⇒ `resubmit_proposal` 携带 `default_params` 时必 `NameError`；可达路径 = 公开 API + WebUI `POST /api/ecosystem/resubmit`（端点 500）。**CI 全绿根因 = 测试盲区**（唯一调用点只传 `{"by": "community"}`）。修复：补导入 + 补覆盖该分支的断言（`run_ecosystem_review2_smoke.py` 新增 4 条）+ **反向测试**（撤掉导入后 rc=1、报 `NameError`，证明断言真能变红）。
+- **F-02** `lda_l3` 未在 `pyproject.toml` 的 `packages` 声明 ⇒ pip 安装版 `run_production_smoke.py` 必 ImportError。修复：声明已补（17 包），声明/磁盘双向对账零缺漏。
+
+### P2（8）
+- **F-03** 补 `[tool.pytest.ini_options]`（`norecursedirs` 排除 `vendor` / `lda_cuda_venv` / `.cache` 等）—— 原仓库根 `pytest --collect-only` rc=2 / 244.3s（收集期 `vendor/devsim_mirror/testing/` 的 `import devsim` 失败）。
+- **F-04** `drift_diffusion_2d.py:567` 脚本模式 `v_t` 未定义（`v_t` 仅为函数形参）⇒ 改模块级 `V_T`，脚本 rc=0。
+- **F-05** `_solve_poisson_drift_diffusion` 的 `converged` 算出即丢弃、未收敛解被静默当有效解 ⇒ **保号修复**：不变更签名/返回值/数值行为（T1 数值内核历史行为冻结），未收敛时发 `RuntimeWarning`。
+- **F-06** `adjoint_fdtd.py:409` / `adjoint_fdtd3d.py:653,897` 三处 `rng = np.random.default_rng(seed)` 创建后从未使用（实现由随机采样演进为 **按 |g| 降序 top-k 确定性采样**后的残留）⇒ 删死赋值；`seed` 参数保留（API 兼容），docstring 如实改写（原称「随机」）。
+- **F-09** 9 处 typing 名缺失（`lda_ir/dsl.py` List · `port_sparams_3d.py` Optional · `run_ci_regression.py` ×4 Optional · `run_parasitic_rc_smoke.py` ×2 Dict）⇒ 补导入。因 `from __future__ import annotations` 此前无运行时影响，但一旦改用 `typing.get_type_hints()` 即爆。**pyflakes F821 由 10 条清零**。
+- **F-10** 根目录 16 个历史诊断/构建脚本（`assess_*` / `build_*` / `spike_*` / `md2docx_batch` / `decrypt_redteam` / `verify_*_equiv`）+ 3 个散落产物（`spike_v3_out.txt` / `nav-index.png` / `reports_verification_ledger_sample.json`）停止 git 跟踪（与既有 `diag_*.py` 同纪律：`git rm --cached` + `.gitignore`，本地文件与 git 历史均保留；`check-ignore` 19/19 命中）。**选 ignore 而非迁 `scripts/` 的理由**：迁移会破坏脚本内 `os.path.dirname(__file__)` 的根定位，且 `docs/*.md` 以文件名引用它们。
+- 去重导入：`run_loss_engine_smoke.py:112` 与模块级 L26 重复导入同一符号 ⇒ 删冗余行。
+
+### P3（随批）
+- **许可准确性与分层一致性**：依官方 `flexcompute/tidy3d` 仓库 LICENSE 核实 **Tidy3D Python 客户端为 LGPL-2.1**（非 GPL），求解服务为 Flexcompute 商业云 ⇒ 订正 **7 处**误称（`oracle_tidy3d.py` ×5 · `oracle_field.py` ×2 · `meep_oracle.py` · `sovereign_deps.py` · `run_pdk_smoke.py`）；并修正 `four_layer_redline_gate.py` / `mzi_mesh_matmul.py` 将 Meep/Tidy3D 标为「A 级 GPLv2+ 禁」的写法 —— 权威登记表 `sovereign_deps.py` 中二者均为 **B 级**（该分级已被 `run_ecosystem_smoke` 的 `classify_dependency("Meep") == "B"` 锁定）。
+- **确定性前移**：`run_ci_regression._child_env()` 注入 `PYTHONHASHSEED=0`（子进程启动前生效）。
+- 未执行并留待专项：抽公共 `check()` 助手（86 份复制）/ 巨石拆分（`verification_adapters.py` 6789 行、`benchmarks.py` 6635 行）/ 245 处 F401 批量清理（已实证存在 re-export 依赖）。
+
+### 账本
+- **零变化**：N=469 · strict 448 · degraded 3 · stub 18 · 独立率 95.5% · 天花板 97.4%。未改任何锚的定级、未动棘轮常数、未放宽任何 tol。
+
+### 验证（本机实跑）
+- **全量 CI core 单次实跑**：`python run_ci_regression.py --tag core` ⇒ **178 PASS / 0 SKIP / 0 FAIL · 5596.0s（93.3 min）**（不分批 · 不覆盖线程数 ⇒ 项目默认 10 线程 · 单实例）。
+- 🔴 **首轮假红与超时预算修复（F-19）**：首轮实跑 2 项 TIMEOUT（`run_benchmark_falsifiability_smoke.py` 600s 预算、`run_redteam_anchor_fuzz_smoke.py` 无覆盖走默认 300s），**独立复跑证实 rc=0 功能全绿**（实测 1098.6s / 1315.8s ⇒ 报的 TIMEOUT 是**假红**）。根因 = 存量超时预算未随 B-25~B-28 四轮扩基（+52 锚）同步，与本轮任何改动无关。修复：`_BUILTIN_TIMEOUT_OVERRIDE` 中 falsifiability 600→**1800**、fuzz 补 **2000**（≈1.5–1.6× 余量），**判据一字未改**。配套新增 `scripts/ci_core_batched.py`（分批防掉电跑法，默认不改线程数）。
+- **针对性 smoke 8/8 rc=0** + **账本护栏 6/6 rc=0**（清单见审计报告 §5.1）。
+- **派生报告刷新**：4 份受跟踪报告自 v0.9.104（`f10a89c`）起六轮扩基从未刷新，本版随 CI 实跑一并刷新。**逐份核对均为纯「锚数增长」刷新、零口径劣化**：主报告 378/357→**469/448**；MCP 报告（`L3AISolverCandidate` 经 `L1 KernelGateway`）378 passed 375 · verified 2→**469 passed 466 · verified 2**（同构，`independent_candidate_count` 恒 5）；fuzz 357 锚/3404 攻击→**448 锚/4504 攻击**；adjudication 20→**203**（`expected_extreme` 117 / `in_domain_suspect` 86 —— `clean:false` 系红队**情报输出**，该 smoke 自述「发散点是情报，不是测试失败」）。**⚠️ 锚的定级一个字未动**，故版面口径仍是「账本零变化」。
+
+### 证据与产物
+- 审计脚本 16 件 + 实跑日志备份于 `C:\Users\Administrator\lda_scratch_backup\2026-09-19\audit\`；本轮修复脚本与验证记录于同目录 `v09111\`（含 `_v111_ci_core_full.json` / `.log`）。
+
 ## v0.9.110（2026-09-19 · B-28 不完全 Beta 函数族 + 积分正余弦函数族扩基 +13 锚 · CI core 178 条不变）
 
 ### Batch B-28 · 不完全 Beta 族 / 积分正余弦族（腿① 扩基加锚）

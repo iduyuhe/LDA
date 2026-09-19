@@ -109,7 +109,8 @@ def main() -> int:
     check("光栅 ff 偏离 0.5→效率↓", e2 < e1, f"{e1} → {e2}")
 
     # ④ 对照报告联动：9/9 语料全 covered
-    from lda_design.loss_engines import CORPUS_ENGINE_MAP
+    # （CORPUS_ENGINE_MAP 已由模块级 L26 导入；v0.9.111 删除此处冗余重复导入 ——
+    #   2026-09-19 全面审计 F-16，pyflakes F811）
     # D-66：E-SOI-NEFF-220 → E-SOI-NG-220、E-SIN-NEFF-300 → E-SIN-NG-1200（改判 n_g）
     all9 = [eid for eid in
             ["E-SOI-NG-220", "E-SIN-NG-1200", "E-YBRANCH-LOSS", "E-RING-FSR",

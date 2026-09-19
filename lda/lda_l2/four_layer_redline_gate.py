@@ -9,7 +9,8 @@
 - L4 协同仿真：系统级协同仿真。
 
 红线（IRONLAWS.md / 愿景战略 §5）：
-- G1 主权：C 级自主，纯 numpy；**不借** Meep / Tidy3D（A 级 GPLv2+ 禁）。
+- G1 主权：C 级自主，纯 numpy；**不借** Meep / Tidy3D（二者均为 B 级依赖，仅可
+  作外部 ORACLE；本层以纯 numpy 自写实现取代，不作任何外挂调用）。
 - G2 LLM 不进判决：矩阵运算皆为死标量 / numpy，无 torch/transformers/openai。
 - G3 每层挂 VMM 锚 ≥ self_certified（建议 A）：**四层各登记 VMM 锚**，逐层标
   成熟度 tier + 「谁验证 / 升级路径」；未达门槛层诚实挂起（不虚报）。

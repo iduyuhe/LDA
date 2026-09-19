@@ -49,6 +49,7 @@ LLM 不进判决路径。
 from __future__ import annotations
 
 import math
+import warnings
 
 import numpy as np
 import scipy.sparse as sp
@@ -385,7 +386,12 @@ def _solve_poisson_drift_diffusion(phi_n_flat: np.ndarray, phi_p_flat: np.ndarra
     """非线性泊松（Gummel 内环）：∇²φ = −(q/ε)(n_i·exp((φ−φ_n)/V_T)
     − n_i·exp((φ_p−φ)/V_T) + N_D − N_A)。φ_n/φ_p 固定（来自连续性求解），
     n/p 随 φ 指数局部化 ⇒ 净电荷集中在耗尽区，解稳定（与平衡 Newton 同结构，
-    且 V=0 ↘ φ_n=φ_p=0 即退化为平衡泊松，已验证收敛）。"""
+    且 V=0 ↘ φ_n=φ_p=0 即退化为平衡泊松，已验证收敛）。
+
+    🔴 v0.9.111（2026-09-19 全面审计 F-05）：内环不收敛时发 RuntimeWarning。
+    原实现把 `converged` 算出来后直接丢弃、静默 `return phi`，未收敛解会被
+    上层当作有效解。此处**不改变签名与数值行为**（T1 数值内核历史行为冻结），
+    只把「静默」变为「可观测」。"""
     phi = np.linspace(phi_left, phi_right, nx)[:, None] * np.ones((1, ny))
     phi = phi.flatten()
     L = _build_laplacian(nx, ny, dx, dy)
@@ -414,6 +420,13 @@ def _solve_poisson_drift_diffusion(phi_n_flat: np.ndarray, phi_p_flat: np.ndarra
             converged = True
             break
         phi = phi_new
+    if not converged:
+        # 🔴 v0.9.111（2026-09-19 全面审计 F-05）：`converged` 原先「算出即丢弃」
+        # ⇒ 内环未收敛被静默当有效解。保号修复：不变更返回值与数值，仅发告警。
+        warnings.warn(
+            f"_solve_poisson_drift_diffusion 未在 max_iter={max_iter} 内收敛"
+            f"（resid_tol={resid_tol:g}）：返回最后一次迭代解，可能非物理。",
+            RuntimeWarning, stacklevel=2)
     return phi
 
 
@@ -564,7 +577,7 @@ if __name__ == "__main__":
     print(f"  {'V(V)':>6} {'I(A)':>14} {'I_s*(exp-1)':>14} {'ln|I|':>9}")
     for v in (0.2, 0.3, 0.4, 0.5):
         s = solve_pn_junction_2d_bias(v)
-        Ith = gold["I_s"] * (math.exp(v / v_t) - 1.0)
+        Ith = gold["I_s"] * (math.exp(v / V_T) - 1.0)
         print(f"  {v:>6.2f} {s['I']:>14.3e} {Ith:>14.3e} {math.log(abs(s['I'])):>9.3f}")
     guard_t1_not_oracle(sol)
     print("=== T1 不作 ORACLE 守卫：正常通过 ===")

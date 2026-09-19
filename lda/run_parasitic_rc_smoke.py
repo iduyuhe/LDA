@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 import sys
 import unittest
+from typing import Dict
 
 _LDA = os.path.dirname(os.path.abspath(__file__))
 if _LDA not in sys.path:

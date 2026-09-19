@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lda-design"
-version = "0.9.110"
+version = "0.9.111"
 description = "LDA — Agent-native open-source photon (PDA) + quantum (QEDA) chip design software"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -54,6 +54,13 @@ Documentation = "https://github.com/iduyuhe/LDA/tree/main/docs"
 [project.scripts]
 lda = "lda_design.cli:main"
 
+[tool.pytest.ini_options]
+# 本仓库测试入口是 `python run_ci_regression.py --tag core`（见 CONTRIBUTING.md），
+# 不是 pytest 套件；此处仅约束收集边界。若直接在仓库根跑 pytest，必须避开
+# 三方隔离区：vendor/devsim_mirror 内含 devsim 测试，收集期 `import devsim`
+# 失败会让 pytest 整体报 error（2026-09-19 全面审计实测 rc=2 / 244.3s）。
+norecursedirs = ["vendor", "lda_cuda_venv", "node_modules", ".cache", ".git", "build", "dist", "*.egg"]
+
 [tool.setuptools]
 # 源码树中可导入包位于 lda/ 子目录（扁平 lda_* 命名空间）
 package-dir = { "" = "lda" }
@@ -64,6 +71,7 @@ packages = [
     "lda_ir",
     "lda_l1",
     "lda_l2",
+    "lda_l3",
     "lda_layout",
     "lda_pdk",
     "lda_qeda",

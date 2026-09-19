@@ -1,16 +1,16 @@
 # LDA 验证锚点 · 报告（Verification Harness Report）
 
 - L0_IR：(内置默认 B1–B4,B8)
-- candidate：IndependentCandidateRouter(独立候选 357 道: B1,B10,B100,B101,B102,B103,B104,B105,B106,B107,B108,B109,B11,B110,B111,B112,B113,B114,B115,B116,B117,B118,B119,B12,B120,B121,B122,B123,B124,B125,B126,B127,B128,B129,B13,B130,B131,B132,B133,B134,B135,B136,B137,B138,B139,B14,B140,B141,B142,B143,B144,B145,B146,B147,B148,B149,B15,B150,B151,B152,B153,B154,B155,B156,B157,B158,B159,B16,B160,B161,B162,B163,B164,B165,B166,B167,B168,B169,B170,B171,B172,B173,B174,B175,B176,B177,B178,B179,B180,B181,B182,B183,B184,B185,B186,B187,B188,B189,B19,B190,B191,B192,B193,B194,B195,B196,B197,B198,B199,B2,B20,B200,B201,B202,B203,B204,B205,B206,B207,B208,B209,B210,B211,B212,B213,B214,B215,B216,B217,B218,B219,B22,B220,B221,B222,B223,B224,B225,B226,B227,B228,B229,B23,B230,B231,B232,B233,B234,B235,B236,B237,B238,B239,B24,B240,B241,B242,B243,B244,B245,B246,B247,B248,B249,B25,B250,B251,B252,B253,B254,B255,B256,B257,B258,B259,B26,B260,B261,B262,B263,B264,B265,B266,B267,B268,B269,B27,B270,B271,B272,B273,B274,B275,B276,B277,B278,B279,B28,B280,B281,B282,B283,B284,B285,B286,B287,B288,B289,B29,B290,B291,B292,B293,B294,B295,B296,B297,B298,B299,B3,B30,B300,B301,B302,B303,B304,B305,B306,B307,B308,B309,B31,B310,B311,B312,B313,B314,B315,B316,B317,B318,B319,B32,B320,B321,B322,B323,B324,B325,B326,B327,B328,B329,B33,B330,B331,B332,B333,B334,B335,B336,B337,B338,B339,B34,B340,B341,B342,B343,B344,B345,B346,B347,B348,B349,B350,B351,B352,B353,B354,B355,B356,B357,B358,B359,B36,B360,B37,B4,B40,B41,B42,B43,B44,B45,B46,B47,B48,B49,B5,B50,B51,B52,B53,B54,B55,B56,B57,B58,B59,B6,B60,B61,B62,B63,B64,B65,B66,B67,B68,B7,B70,B71,B73,B74,B75,B76,B77,B78,B79,B8,B80,B81,B82,B83,B84,B85,B86,B87,B88,B89,B9,B90,B91,B92,B93,B94,B95,B96,B97,B98,B99,E2,E8,S13,S7,S8；降级量级参考 3 道: B21,E10,E9)
+- candidate：IndependentCandidateRouter(独立候选 448 道: B1,B10,B100,B101,B102,B103,B104,B105,B106,B107,B108,B109,B11,B110,B111,B112,B113,B114,B115,B116,B117,B118,B119,B12,B120,B121,B122,B123,B124,B125,B126,B127,B128,B129,B13,B130,B131,B132,B133,B134,B135,B136,B137,B138,B139,B14,B140,B141,B142,B143,B144,B145,B146,B147,B148,B149,B15,B150,B151,B152,B153,B154,B155,B156,B157,B158,B159,B16,B160,B161,B162,B163,B164,B165,B166,B167,B168,B169,B170,B171,B172,B173,B174,B175,B176,B177,B178,B179,B180,B181,B182,B183,B184,B185,B186,B187,B188,B189,B19,B190,B191,B192,B193,B194,B195,B196,B197,B198,B199,B2,B20,B200,B201,B202,B203,B204,B205,B206,B207,B208,B209,B210,B211,B212,B213,B214,B215,B216,B217,B218,B219,B22,B220,B221,B222,B223,B224,B225,B226,B227,B228,B229,B23,B230,B231,B232,B233,B234,B235,B236,B237,B238,B239,B24,B240,B241,B242,B243,B244,B245,B246,B247,B248,B249,B25,B250,B251,B252,B253,B254,B255,B256,B257,B258,B259,B26,B260,B261,B262,B263,B264,B265,B266,B267,B268,B269,B27,B270,B271,B272,B273,B274,B275,B276,B277,B278,B279,B28,B280,B281,B282,B283,B284,B285,B286,B287,B288,B289,B29,B290,B291,B292,B293,B294,B295,B296,B297,B298,B299,B3,B30,B300,B301,B302,B303,B304,B305,B306,B307,B308,B309,B31,B310,B311,B312,B313,B314,B315,B316,B317,B318,B319,B32,B320,B321,B322,B323,B324,B325,B326,B327,B328,B329,B33,B330,B331,B332,B333,B334,B335,B336,B337,B338,B339,B34,B340,B341,B342,B343,B344,B345,B346,B347,B348,B349,B350,B351,B352,B353,B354,B355,B356,B357,B358,B359,B36,B360,B361,B362,B363,B364,B365,B366,B367,B368,B369,B37,B370,B371,B372,B373,B374,B375,B376,B377,B378,B379,B380,B381,B382,B383,B384,B385,B386,B387,B388,B389,B390,B391,B392,B393,B394,B395,B396,B397,B398,B399,B4,B40,B400,B401,B402,B403,B404,B405,B406,B407,B408,B409,B41,B410,B411,B412,B413,B414,B415,B416,B417,B418,B419,B42,B420,B421,B422,B423,B424,B425,B426,B427,B428,B429,B43,B430,B431,B432,B433,B434,B435,B436,B437,B438,B439,B44,B440,B441,B442,B443,B444,B445,B446,B447,B448,B449,B45,B450,B451,B46,B47,B48,B49,B5,B50,B51,B52,B53,B54,B55,B56,B57,B58,B59,B6,B60,B61,B62,B63,B64,B65,B66,B67,B68,B7,B70,B71,B73,B74,B75,B76,B77,B78,B79,B8,B80,B81,B82,B83,B84,B85,B86,B87,B88,B89,B9,B90,B91,B92,B93,B94,B95,B96,B97,B98,B99,E2,E8,S13,S7,S8；降级量级参考 3 道: B21,E10,E9)
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - self_consistent：True
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **357 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余项中 **18 项**走 ReferenceCandidate 占位自证（候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**），**3 项**为降级量级参考（有独立候选但与 golden 几何不同源/精度不足，**不进死标量判决**）。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 357 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **448 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余项中 **18 项**走 ReferenceCandidate 占位自证（候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**），**3 项**为降级量级参考（有独立候选但与 golden 几何不同源/精度不足，**不进死标量判决**）。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 448 项。
 > 📌 **两条判决路径口径不同（C-1 诚实披露 · v0.9.30 · T-5）**：本报告的 `verified` 来自**路径①**（`IndependentCandidateRouter`，方法学不同源的独立频域候选）。
-> **路径②** `run_harness.py --ai`（L3 AI 写内核 demo，离线回退 `_local_approx`）实测 `verified=2/378`（仅 B1/B4 真实现且 PASS，余 376 道为 `return golden` 自证桩）。
-> 两路径候选体系本就不同，**均为如实口径、不构成虚报**；对外「独立候选 357/378」特指路径①。
+> **路径②** `run_harness.py --ai`（L3 AI 写内核 demo，离线回退 `_local_approx`）实测 `verified=2/469`（仅 B1/B4 真实现且 PASS，余 467 道为 `return golden` 自证桩）。
+> 两路径候选体系本就不同，**均为如实口径、不构成虚报**；对外「独立候选 448/469」特指路径①。
 
-## 汇总：378/378 通过（独立候选 357 项中 **357 项通过=已验证** · 18 项自证闭环 · 3 项降级量级参考（不进判决），**非验证结论**）
+## 汇总：469/469 通过（独立候选 448 项中 **448 项通过=已验证** · 18 项自证闭环 · 3 项降级量级参考（不进判决），**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -304,14 +304,105 @@
 | B359 | bernstein_poly_approx | physical-law | 0.454545 | 0.454722 | 0.0001764 | 0.01 | ✅ PASS |
 | B36 | fc_Hz | physical-law | 6.55714e+09 | 6.55712e+09 | 1.677e+04 | 1e+07 | ✅ PASS |
 | B360 | bernstein_poly_approx | physical-law | 0.806226 | 0.80611 | 0.0001154 | 0.01 | ✅ PASS |
+| B361 | lp01_neff | physical-law | 1.44612 | 1.44609 | 2.579e-05 | 0.005 | ✅ PASS |
+| B362 | lp01_neff | physical-law | 1.44926 | 1.44865 | 0.0006082 | 0.005 | ✅ PASS |
+| B363 | lp01_neff | physical-law | 1.45622 | 1.4549 | 0.001317 | 0.005 | ✅ PASS |
+| B364 | lp01_neff | physical-law | 1.46296 | 1.46286 | 9.975e-05 | 0.005 | ✅ PASS |
+| B365 | lp01_neff | physical-law | 1.44997 | 1.44908 | 0.0008874 | 0.005 | ✅ PASS |
+| B366 | lp01_neff | physical-law | 1.44588 | 1.44589 | 3.06e-06 | 0.005 | ✅ PASS |
+| B367 | lp01_neff | physical-law | 1.44882 | 1.44836 | 0.0004683 | 0.005 | ✅ PASS |
+| B368 | lp01_neff | physical-law | 1.45704 | 1.45464 | 0.002405 | 0.005 | ✅ PASS |
+| B369 | lp11_cutoff_V | physical-law | 2.40483 | 2.41709 | 0.01226 | 0.1 | ✅ PASS |
 | B37 | fc_Hz | physical-law | 1.31143e+10 | 1.31141e+10 | 1.342e+05 | 1e+08 | ✅ PASS |
+| B370 | silica_core_ng | physical-law | 1.4626 | 1.46473 | 0.002129 | 0.01 | ✅ PASS |
+| B371 | silica_core_ng | physical-law | 1.46164 | 1.46385 | 0.002211 | 0.01 | ✅ PASS |
+| B372 | silica_core_beta2_ps2_per_km | physical-law | -27.9397 | -20.9539 | 6.986 | 20 | ✅ PASS |
+| B373 | silica_core_beta2_ps2_per_km | physical-law | -3.72529 | -5.42863 | 1.703 | 20 | ✅ PASS |
+| B374 | gaussian_rayleigh_range | physical-law | 5.06708e-05 | 5.08012e-05 | 1.303e-07 | 5e-07 | ✅ PASS |
+| B375 | gaussian_waist_at_z | physical-law | 7.07106e-06 | 7.06799e-06 | 3.079e-09 | 5e-08 | ✅ PASS |
+| B376 | gaussian_confocal | physical-law | 0.000101342 | 0.000101602 | 2.606e-07 | 1e-06 | ✅ PASS |
+| B377 | gaussian_divergence | physical-law | 0.0986761 | 0.0987136 | 3.757e-05 | 0.005 | ✅ PASS |
+| B378 | gaussian_q_waist | physical-law | 3.53553e-06 | 3.53559e-06 | 5.851e-11 | 1e-07 | ✅ PASS |
+| B379 | gaussian_q_zR | physical-law | 2.53354e-05 | 2.55896e-05 | 2.542e-07 | 1e-06 | ✅ PASS |
+| B380 | gaussian_q_waist_loc | physical-law | 2.53354e-05 | 2.5404e-05 | 6.855e-08 | 5e-07 | ✅ PASS |
+| B381 | gaussian_gouy_phase | physical-law | 0.392699 | 0.391013 | 0.001685 | 0.01 | ✅ PASS |
+| B382 | gaussian_waist_at_z | physical-law | 2.23607e-05 | 2.23451e-05 | 1.56e-08 | 5e-08 | ✅ PASS |
+| B383 | gaussian_divergence | physical-law | 0.0402853 | 0.0403006 | 1.534e-05 | 0.005 | ✅ PASS |
+| B384 | gaussian_waist_at_z | physical-law | 5.59017e-06 | 5.58919e-06 | 9.746e-10 | 5e-08 | ✅ PASS |
+| B385 | gaussian_waist_at_z | physical-law | 1.58114e-05 | 1.5799e-05 | 1.236e-08 | 5e-08 | ✅ PASS |
+| B386 | gaussian_q_waist | physical-law | 5.65859e-06 | 5.6587e-06 | 1.038e-10 | 1e-07 | ✅ PASS |
+| B387 | slit_fraunhofer_first_zero | physical-law | 0.155 | 0.155 | 3.1e-08 | 1e-06 | ✅ PASS |
+| B388 | slit_fraunhofer_intensity | physical-law | 0.406096 | 0.406096 | 1e-09 | 0.001 | ✅ PASS |
+| B389 | disk_airy_first_zero | physical-law | 0.0945244 | 0.0945244 | 8.1e-09 | 1e-06 | ✅ PASS |
+| B390 | disk_fraunhofer_intensity | physical-law | 0.0331837 | 0.0331837 | 1.83e-08 | 0.001 | ✅ PASS |
+| B391 | double_slit_intensity | physical-law | 2.50867e-05 | 2.50866e-05 | 3.38e-11 | 0.001 | ✅ PASS |
+| B392 | interf_fringe_spacing | physical-law | 0.031 | 0.031 | 1e-10 | 1e-06 | ✅ PASS |
+| B393 | grating_principal_peak | physical-law | 0.031 | 0.031 | 4.5e-09 | 1e-06 | ✅ PASS |
+| B394 | grating_resolving_power | physical-law | 10 | 10.0003 | 0.0002965 | 0.01 | ✅ PASS |
+| B395 | rect_fraunhofer_intensity | physical-law | 0.406096 | 0.406096 | 1e-09 | 0.001 | ✅ PASS |
+| B396 | slit_full_angular_width | physical-law | 0.31 | 0.31 | 6.2e-08 | 1e-06 | ✅ PASS |
+| B397 | disk_encircled_energy_ratio | physical-law | 0.851085 | 0.851085 | 1.41e-07 | 0.01 | ✅ PASS |
+| B398 | grating_free_spectral_range | physical-law | 1.55e-07 | 1.54981e-07 | 1.938e-11 | 1e-09 | ✅ PASS |
+| B399 | disk_square_zeroratio | physical-law | 0.61 | 0.609835 | 0.0001651 | 0.01 | ✅ PASS |
 | B4 | FSR_nm | physical-law | 9.1476 | 9.1476 | 2e-08 | 0.3 | ✅ PASS |
 | B40 | fc_Hz | physical-law | 1.61451e+10 | 1.61415e+10 | 3.592e+06 | 1e+08 | ✅ PASS |
+| B400 | charged_disk_onaxis_E | physical-law | 0.663334 | 0.663334 | 1e-09 | 1e-06 | ✅ PASS |
+| B401 | charged_washer_onaxis_E | physical-law | 1.11186 | 1.11186 | 0 | 1e-06 | ✅ PASS |
+| B402 | line_charge_bisector_E | physical-law | 46.4238 | 46.4238 | 0 | 1e-06 | ✅ PASS |
+| B403 | line_charge_endon_E | physical-law | 24.5145 | 24.5145 | 0 | 1e-05 | ✅ PASS |
+| B404 | charged_shell_external_E | physical-law | 96.1538 | 96.1538 | 1e-07 | 0.001 | ✅ PASS |
+| B405 | two_line_charges_E | physical-law | 196.116 | 196.116 | 0 | 1e-06 | ✅ PASS |
+| B406 | finite_wire_B | physical-law | 3.69429 | 3.69429 | 0 | 1e-06 | ✅ PASS |
+| B407 | square_loop_center_B | physical-law | 9.00316 | 9.00316 | 5.7e-07 | 0.001 | ✅ PASS |
+| B408 | polygon_loop_center_B | physical-law | 5.51329 | 5.51329 | 1.4e-07 | 0.001 | ✅ PASS |
+| B409 | loop_offaxis_Bz | physical-law | 3.20735 | 3.20735 | 0 | 1e-06 | ✅ PASS |
 | B41 | lambda0_m | physical-law | 0.0696 | 0.0696002 | 1.78e-07 | 0.001 | ✅ PASS |
+| B410 | finite_solenoid_onaxis_B | physical-law | 93.2285 | 93.2285 | 1e-07 | 1e-05 | ✅ PASS |
+| B411 | two_antiparallel_wires_B | physical-law | 15.6064 | 15.6064 | 0 | 1e-06 | ✅ PASS |
+| B412 | loop_offaxis_Brho | physical-law | 1.02787 | 1.02787 | 1e-08 | 1e-06 | ✅ PASS |
+| B413 | normal_incidence_reflectance | physical-law | 0.04 | 0.040041 | 4.097e-05 | 0.0001 | ✅ PASS |
+| B414 | s_polarized_reflectance | physical-law | 0.0771577 | 0.0771964 | 3.871e-05 | 0.0001 | ✅ PASS |
+| B415 | p_polarized_reflectance | physical-law | 0.0143095 | 0.0142929 | 1.666e-05 | 0.0001 | ✅ PASS |
+| B416 | s_polarized_transmittance | physical-law | 0.922842 | 0.922842 | 1e-08 | 0.0001 | ✅ PASS |
+| B417 | p_polarized_transmittance | physical-law | 0.98569 | 0.98569 | 9e-09 | 0.0001 | ✅ PASS |
+| B418 | unpolarized_reflectance | physical-law | 0.0457336 | 0.0457447 | 1.102e-05 | 0.0001 | ✅ PASS |
+| B419 | polarization_reflectance_contrast | physical-law | 0.0628482 | 0.0629036 | 5.537e-05 | 0.0005 | ✅ PASS |
 | B42 | E1_eV | physical-law | 0.37603 | 0.376029 | 8.56e-07 | 0.001 | ✅ PASS |
+| B420 | polarization_transmittance_ratio | physical-law | 0.936239 | 0.936239 | 1e-09 | 0.0002 | ✅ PASS |
+| B421 | brewster_angle | physical-law | 56.3099 | 56.3063 | 0.003606 | 0.05 | ✅ PASS |
+| B422 | s_transmission_amplitude | physical-law | 0.722227 | 0.722227 | 4e-09 | 0.001 | ✅ PASS |
+| B423 | total_internal_reflectance | physical-law | 1 | 1.00017 | 0.0001686 | 0.001 | ✅ PASS |
+| B424 | evanescent_decay_constant | physical-law | 0.829156 | 0.829156 | 1.4e-08 | 0.001 | ✅ PASS |
+| B425 | fresnel_energy_conservation | physical-law | 1.70986 | 1.7099 | 3.872e-05 | 0.0001 | ✅ PASS |
+| B426 | plasma_phase_velocity | physical-law | 1.0328 | 1.0328 | 0 | 1e-05 | ✅ PASS |
+| B427 | plasma_group_velocity | physical-law | 0.968246 | 0.968246 | 0 | 1e-05 | ✅ PASS |
+| B428 | plasma_group_index | physical-law | 1.0328 | 1.0328 | 0 | 1e-05 | ✅ PASS |
+| B429 | taylor_phase_velocity | physical-law | 0.664889 | 0.664889 | 0 | 1e-05 | ✅ PASS |
 | B43 | E2_eV | physical-law | 1.50412 | 1.50411 | 1.37e-05 | 0.01 | ✅ PASS |
+| B430 | plasma_group_velocity_dispersion | physical-law | -0.0344265 | -0.0344266 | 3.8e-08 | 0.0001 | ✅ PASS |
+| B431 | taylor_group_velocity | physical-law | 0.640102 | 0.640102 | 0 | 1e-05 | ✅ PASS |
+| B432 | taylor_group_delay | physical-law | 15.6225 | 15.6225 | 0 | 0.0001 | ✅ PASS |
+| B433 | lorentz_group_velocity_dispersion | physical-law | 0.0264716 | 0.0264716 | 2.74e-08 | 0.0001 | ✅ PASS |
+| B434 | lorentz_group_delay | physical-law | 10.3836 | 10.3836 | 0 | 0.0001 | ✅ PASS |
+| B435 | lorentz_dispersion_length | physical-law | 3777.63 | 3777.63 | 0.00392 | 1 | ✅ PASS |
+| B436 | lorentz_pulse_broadening | physical-law | 0.132358 | 0.132358 | 1.38e-07 | 0.001 | ✅ PASS |
+| B437 | plasma_group_delay | physical-law | 10.328 | 10.328 | 0 | 0.0001 | ✅ PASS |
+| B438 | lorentz_group_velocity | physical-law | 0.963061 | 0.963061 | 0 | 1e-05 | ✅ PASS |
+| B439 | regularized_incomplete_beta_55_60_045 | physical-law | 0.428757 | 0.428757 | 0 | 1e-06 | ✅ PASS |
 | B44 | E3_eV | physical-law | 3.38427 | 3.3842 | 6.935e-05 | 0.1 | ✅ PASS |
+| B440 | regularized_incomplete_beta_60_50_060 | physical-law | 0.633103 | 0.633103 | 0 | 1e-06 | ✅ PASS |
+| B441 | regularized_incomplete_beta_75_90_035 | physical-law | 0.198793 | 0.198793 | 0 | 1e-06 | ✅ PASS |
+| B442 | regularized_incomplete_beta_90_80_055 | physical-law | 0.562899 | 0.562899 | 1e-09 | 1e-06 | ✅ PASS |
+| B443 | regularized_incomplete_beta_100_120_042 | physical-law | 0.378116 | 0.378116 | 1e-09 | 1e-06 | ✅ PASS |
+| B444 | incomplete_beta_binomial_6_6_045 | physical-law | 0.366877 | 0.366877 | 0 | 1e-06 | ✅ PASS |
+| B445 | incomplete_beta_binomial_7_8_040 | physical-law | 0.307548 | 0.307548 | 0 | 1e-06 | ✅ PASS |
+| B446 | sine_integral_si_4 | physical-law | 1.7582 | 1.7582 | 0 | 1e-07 | ✅ PASS |
+| B447 | sine_integral_si_12 | physical-law | 1.50497 | 1.50497 | 0 | 1e-07 | ✅ PASS |
+| B448 | cosine_integral_ci_1 | physical-law | 0.337404 | 0.337404 | 0 | 1e-07 | ✅ PASS |
+| B449 | cosine_integral_ci_2 | physical-law | 0.422981 | 0.422981 | 0 | 1e-07 | ✅ PASS |
 | B45 | E0_eV | physical-law | 0.164464 | 0.164461 | 3.14e-06 | 0.001 | ✅ PASS |
+| B450 | hyperbolic_sine_integral_shi_2 | physical-law | 2.50157 | 2.50157 | 0 | 1e-07 | ✅ PASS |
+| B451 | hyperbolic_cosine_integral_chi_2 | physical-law | 2.45267 | 2.45267 | 0 | 1e-07 | ✅ PASS |
 | B46 | E1_eV | physical-law | 0.493391 | 0.493376 | 1.57e-05 | 0.01 | ✅ PASS |
 | B47 | E2_eV | physical-law | 0.822319 | 0.822278 | 4.082e-05 | 0.1 | ✅ PASS |
 | B48 | E0_eV | physical-law | -0.350171 | -0.349972 | 0.0001997 | 0.01 | ✅ PASS |

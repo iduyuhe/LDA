@@ -9,8 +9,9 @@
 - adjoint：显式实现 FDTD 更新算子的**转置**（reverse-mode 自动微分的解析等价），
   在输出监视器注入观测源（dFOM/dEz = 2·Ez），反向时间步进得 adjoint 场，
   由 adjoint 公式得 dFOM/dε。
-- 验证锚：``verify_adjoint`` 对随机设计体素做中心有限差分，与 adjoint 梯度
-  **方向对拍**（归一化相对误差 ≤ 容差），替代 LLM 判决（红线不变）。
+- 验证锚：``verify_adjoint`` 对 |g_adj| 最大的设计体素（**确定性 top-k**，非随机）
+  做中心有限差分，与 adjoint 梯度 **方向对拍**（归一化相对误差 ≤ 容差），
+  替代 LLM 判决（红线不变）。
 
 为何不用 CW 源 + DFT P_out：
 CW 源 + 全时段 P_out 目标在无源线性结构上**无上界**——优化器会构造高 Q
@@ -400,13 +401,20 @@ def compute_gradient(prob: AdjointProblem, fwd: dict):
 # ---------------------------------------------------------------------------
 def verify_adjoint(prob: AdjointProblem, eps0: np.ndarray, nsamples: int = 10,
                    delta: float = 0.05, seed: int = 12345):
-    """对随机设计体素做中心有限差分，与 adjoint 梯度比误差。
+    """对设计体素做中心有限差分，与 adjoint 梯度比误差。
+
+    采样为**确定性**：按 |g_adj| 降序取前 nsamples 个体素（非随机），以提升 FD
+    信噪比。``seed`` 为历史签名保留（当前实现不使用随机数），仍可继续传入以
+    保持调用方兼容。
+
+    🔴 v0.9.111（2026-09-19 全面审计 F-06）：原 `rng = default_rng(seed)` 创建后
+    从未使用（pyflakes F841）—— 是「实现从随机采样演进为 top-k 采样」后的残留，
+    已删除该死赋值；参数签名与数值行为均不变。
 
     返回 dict：每样本 {idx, g_adj, g_fd, rel_err}，及 max_rel_err / mean_rel_err。
     adjoint 与 FD 共享同一全局比例常数，故用**归一化方向**比对：以 |g_fd| 最大
     样本标定比例 K，再算其余样本相对误差。
     """
-    rng = np.random.default_rng(seed)
     fwd0 = forward(prob, eps0)
     gadj = compute_gradient(prob, fwd0)
     dr = prob._dr

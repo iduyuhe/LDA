@@ -2,8 +2,9 @@
 
 =====================================================================
 许可证红线（见《LDA 技术白皮书》§11）：
-  Meep / Tidy3D / MPB 均为 **GPL** 代码。LDA 核心是 Apache-2.0，
-  二者许可证不兼容——GPL 求解器**绝不能被 import 进 LDA 核心**。
+  Meep / MPB 为 **GPLv2+**、KLayout 为 **GPL**，Tidy3D 客户端为 **LGPL-2.1**
+  （求解服务为 Flexcompute 商业云）。LDA 核心是 Apache-2.0；GPL/LGPL 求解器
+  **绝不能被 import 进 LDA 核心**（Tidy3D 另因其为外部商业云而同样隔离）。
   本文件是"外部 ORACLE"：在装有 Meep 的**隔离 venv/容器**中运行，
   只把标量 metric 以 JSON 回传，LDA 核心只用其数值，永不触碰其代码。
 

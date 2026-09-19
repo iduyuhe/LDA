@@ -14,7 +14,7 @@ LLM 不进判决路径。
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 

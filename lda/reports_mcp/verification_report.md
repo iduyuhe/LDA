@@ -5,9 +5,9 @@
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - via：L1 KernelGateway
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **373 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **464 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
 
-## 汇总：375/378 通过（独立候选 5 项中 **2 项通过=已验证** · 373 项自证闭环，**非验证结论**）
+## 汇总：466/469 通过（独立候选 5 项中 **2 项通过=已验证** · 464 项自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -301,14 +301,105 @@
 | B359 | bernstein_poly_approx | physical-law | 0.454545 | 0.454545 | 0 | 0.01 | ✅ PASS |
 | B36 | fc_Hz | physical-law | 6.55714e+09 | 6.55714e+09 | 0 | 1e+07 | ✅ PASS |
 | B360 | bernstein_poly_approx | physical-law | 0.806226 | 0.806226 | 0 | 0.01 | ✅ PASS |
+| B361 | lp01_neff | physical-law | 1.44612 | 1.44612 | 0 | 0.005 | ✅ PASS |
+| B362 | lp01_neff | physical-law | 1.44926 | 1.44926 | 0 | 0.005 | ✅ PASS |
+| B363 | lp01_neff | physical-law | 1.45622 | 1.45622 | 0 | 0.005 | ✅ PASS |
+| B364 | lp01_neff | physical-law | 1.46296 | 1.46296 | 0 | 0.005 | ✅ PASS |
+| B365 | lp01_neff | physical-law | 1.44997 | 1.44997 | 0 | 0.005 | ✅ PASS |
+| B366 | lp01_neff | physical-law | 1.44588 | 1.44588 | 0 | 0.005 | ✅ PASS |
+| B367 | lp01_neff | physical-law | 1.44882 | 1.44882 | 0 | 0.005 | ✅ PASS |
+| B368 | lp01_neff | physical-law | 1.45704 | 1.45704 | 0 | 0.005 | ✅ PASS |
+| B369 | lp11_cutoff_V | physical-law | 2.40483 | 2.40483 | 0 | 0.1 | ✅ PASS |
 | B37 | fc_Hz | physical-law | 1.31143e+10 | 1.31143e+10 | 0 | 1e+08 | ✅ PASS |
+| B370 | silica_core_ng | physical-law | 1.4626 | 1.4626 | 0 | 0.01 | ✅ PASS |
+| B371 | silica_core_ng | physical-law | 1.46164 | 1.46164 | 0 | 0.01 | ✅ PASS |
+| B372 | silica_core_beta2_ps2_per_km | physical-law | -27.9397 | -27.9397 | 0 | 20 | ✅ PASS |
+| B373 | silica_core_beta2_ps2_per_km | physical-law | -3.72529 | -3.72529 | 0 | 20 | ✅ PASS |
+| B374 | gaussian_rayleigh_range | physical-law | 5.06708e-05 | 5.06708e-05 | 0 | 5e-07 | ✅ PASS |
+| B375 | gaussian_waist_at_z | physical-law | 7.07106e-06 | 7.07106e-06 | 0 | 5e-08 | ✅ PASS |
+| B376 | gaussian_confocal | physical-law | 0.000101342 | 0.000101342 | 0 | 1e-06 | ✅ PASS |
+| B377 | gaussian_divergence | physical-law | 0.0986761 | 0.0986761 | 0 | 0.005 | ✅ PASS |
+| B378 | gaussian_q_waist | physical-law | 3.53553e-06 | 3.53553e-06 | 0 | 1e-07 | ✅ PASS |
+| B379 | gaussian_q_zR | physical-law | 2.53354e-05 | 2.53354e-05 | 0 | 1e-06 | ✅ PASS |
+| B380 | gaussian_q_waist_loc | physical-law | 2.53354e-05 | 2.53354e-05 | 0 | 5e-07 | ✅ PASS |
+| B381 | gaussian_gouy_phase | physical-law | 0.392699 | 0.392699 | 0 | 0.01 | ✅ PASS |
+| B382 | gaussian_waist_at_z | physical-law | 2.23607e-05 | 2.23607e-05 | 0 | 5e-08 | ✅ PASS |
+| B383 | gaussian_divergence | physical-law | 0.0402853 | 0.0402853 | 0 | 0.005 | ✅ PASS |
+| B384 | gaussian_waist_at_z | physical-law | 5.59017e-06 | 5.59017e-06 | 0 | 5e-08 | ✅ PASS |
+| B385 | gaussian_waist_at_z | physical-law | 1.58114e-05 | 1.58114e-05 | 0 | 5e-08 | ✅ PASS |
+| B386 | gaussian_q_waist | physical-law | 5.65859e-06 | 5.65859e-06 | 0 | 1e-07 | ✅ PASS |
+| B387 | slit_fraunhofer_first_zero | physical-law | 0.155 | 0.155 | 0 | 1e-06 | ✅ PASS |
+| B388 | slit_fraunhofer_intensity | physical-law | 0.406096 | 0.406096 | 0 | 0.001 | ✅ PASS |
+| B389 | disk_airy_first_zero | physical-law | 0.0945244 | 0.0945244 | 0 | 1e-06 | ✅ PASS |
+| B390 | disk_fraunhofer_intensity | physical-law | 0.0331837 | 0.0331837 | 0 | 0.001 | ✅ PASS |
+| B391 | double_slit_intensity | physical-law | 2.50867e-05 | 2.50867e-05 | 0 | 0.001 | ✅ PASS |
+| B392 | interf_fringe_spacing | physical-law | 0.031 | 0.031 | 0 | 1e-06 | ✅ PASS |
+| B393 | grating_principal_peak | physical-law | 0.031 | 0.031 | 0 | 1e-06 | ✅ PASS |
+| B394 | grating_resolving_power | physical-law | 10 | 10 | 0 | 0.01 | ✅ PASS |
+| B395 | rect_fraunhofer_intensity | physical-law | 0.406096 | 0.406096 | 0 | 0.001 | ✅ PASS |
+| B396 | slit_full_angular_width | physical-law | 0.31 | 0.31 | 0 | 1e-06 | ✅ PASS |
+| B397 | disk_encircled_energy_ratio | physical-law | 0.851085 | 0.851085 | 0 | 0.01 | ✅ PASS |
+| B398 | grating_free_spectral_range | physical-law | 1.55e-07 | 1.55e-07 | 0 | 1e-09 | ✅ PASS |
+| B399 | disk_square_zeroratio | physical-law | 0.61 | 0.61 | 0 | 0.01 | ✅ PASS |
 | B4 | FSR_nm | physical-law | 9.1476 | 9.1476 | 0 | 0.3 | ✅ PASS |
 | B40 | fc_Hz | physical-law | 1.61451e+10 | 1.61451e+10 | 0 | 1e+08 | ✅ PASS |
+| B400 | charged_disk_onaxis_E | physical-law | 0.663334 | 0.663334 | 0 | 1e-06 | ✅ PASS |
+| B401 | charged_washer_onaxis_E | physical-law | 1.11186 | 1.11186 | 0 | 1e-06 | ✅ PASS |
+| B402 | line_charge_bisector_E | physical-law | 46.4238 | 46.4238 | 0 | 1e-06 | ✅ PASS |
+| B403 | line_charge_endon_E | physical-law | 24.5145 | 24.5145 | 0 | 1e-05 | ✅ PASS |
+| B404 | charged_shell_external_E | physical-law | 96.1538 | 96.1538 | 0 | 0.001 | ✅ PASS |
+| B405 | two_line_charges_E | physical-law | 196.116 | 196.116 | 0 | 1e-06 | ✅ PASS |
+| B406 | finite_wire_B | physical-law | 3.69429 | 3.69429 | 0 | 1e-06 | ✅ PASS |
+| B407 | square_loop_center_B | physical-law | 9.00316 | 9.00316 | 0 | 0.001 | ✅ PASS |
+| B408 | polygon_loop_center_B | physical-law | 5.51329 | 5.51329 | 0 | 0.001 | ✅ PASS |
+| B409 | loop_offaxis_Bz | physical-law | 3.20735 | 3.20735 | 0 | 1e-06 | ✅ PASS |
 | B41 | lambda0_m | physical-law | 0.0696 | 0.0696 | 0 | 0.001 | ✅ PASS |
+| B410 | finite_solenoid_onaxis_B | physical-law | 93.2285 | 93.2285 | 0 | 1e-05 | ✅ PASS |
+| B411 | two_antiparallel_wires_B | physical-law | 15.6064 | 15.6064 | 0 | 1e-06 | ✅ PASS |
+| B412 | loop_offaxis_Brho | physical-law | 1.02787 | 1.02787 | 0 | 1e-06 | ✅ PASS |
+| B413 | normal_incidence_reflectance | physical-law | 0.04 | 0.04 | 0 | 0.0001 | ✅ PASS |
+| B414 | s_polarized_reflectance | physical-law | 0.0771577 | 0.0771577 | 0 | 0.0001 | ✅ PASS |
+| B415 | p_polarized_reflectance | physical-law | 0.0143095 | 0.0143095 | 0 | 0.0001 | ✅ PASS |
+| B416 | s_polarized_transmittance | physical-law | 0.922842 | 0.922842 | 0 | 0.0001 | ✅ PASS |
+| B417 | p_polarized_transmittance | physical-law | 0.98569 | 0.98569 | 0 | 0.0001 | ✅ PASS |
+| B418 | unpolarized_reflectance | physical-law | 0.0457336 | 0.0457336 | 0 | 0.0001 | ✅ PASS |
+| B419 | polarization_reflectance_contrast | physical-law | 0.0628482 | 0.0628482 | 0 | 0.0005 | ✅ PASS |
 | B42 | E1_eV | physical-law | 0.37603 | 0.37603 | 0 | 0.001 | ✅ PASS |
+| B420 | polarization_transmittance_ratio | physical-law | 0.936239 | 0.936239 | 0 | 0.0002 | ✅ PASS |
+| B421 | brewster_angle | physical-law | 56.3099 | 56.3099 | 0 | 0.05 | ✅ PASS |
+| B422 | s_transmission_amplitude | physical-law | 0.722227 | 0.722227 | 0 | 0.001 | ✅ PASS |
+| B423 | total_internal_reflectance | physical-law | 1 | 1 | 0 | 0.001 | ✅ PASS |
+| B424 | evanescent_decay_constant | physical-law | 0.829156 | 0.829156 | 0 | 0.001 | ✅ PASS |
+| B425 | fresnel_energy_conservation | physical-law | 1.70986 | 1.70986 | 0 | 0.0001 | ✅ PASS |
+| B426 | plasma_phase_velocity | physical-law | 1.0328 | 1.0328 | 0 | 1e-05 | ✅ PASS |
+| B427 | plasma_group_velocity | physical-law | 0.968246 | 0.968246 | 0 | 1e-05 | ✅ PASS |
+| B428 | plasma_group_index | physical-law | 1.0328 | 1.0328 | 0 | 1e-05 | ✅ PASS |
+| B429 | taylor_phase_velocity | physical-law | 0.664889 | 0.664889 | 0 | 1e-05 | ✅ PASS |
 | B43 | E2_eV | physical-law | 1.50412 | 1.50412 | 0 | 0.01 | ✅ PASS |
+| B430 | plasma_group_velocity_dispersion | physical-law | -0.0344265 | -0.0344265 | 0 | 0.0001 | ✅ PASS |
+| B431 | taylor_group_velocity | physical-law | 0.640102 | 0.640102 | 0 | 1e-05 | ✅ PASS |
+| B432 | taylor_group_delay | physical-law | 15.6225 | 15.6225 | 0 | 0.0001 | ✅ PASS |
+| B433 | lorentz_group_velocity_dispersion | physical-law | 0.0264716 | 0.0264716 | 0 | 0.0001 | ✅ PASS |
+| B434 | lorentz_group_delay | physical-law | 10.3836 | 10.3836 | 0 | 0.0001 | ✅ PASS |
+| B435 | lorentz_dispersion_length | physical-law | 3777.63 | 3777.63 | 0 | 1 | ✅ PASS |
+| B436 | lorentz_pulse_broadening | physical-law | 0.132358 | 0.132358 | 0 | 0.001 | ✅ PASS |
+| B437 | plasma_group_delay | physical-law | 10.328 | 10.328 | 0 | 0.0001 | ✅ PASS |
+| B438 | lorentz_group_velocity | physical-law | 0.963061 | 0.963061 | 0 | 1e-05 | ✅ PASS |
+| B439 | regularized_incomplete_beta_55_60_045 | physical-law | 0.428757 | 0.428757 | 0 | 1e-06 | ✅ PASS |
 | B44 | E3_eV | physical-law | 3.38427 | 3.38427 | 0 | 0.1 | ✅ PASS |
+| B440 | regularized_incomplete_beta_60_50_060 | physical-law | 0.633103 | 0.633103 | 0 | 1e-06 | ✅ PASS |
+| B441 | regularized_incomplete_beta_75_90_035 | physical-law | 0.198793 | 0.198793 | 0 | 1e-06 | ✅ PASS |
+| B442 | regularized_incomplete_beta_90_80_055 | physical-law | 0.562899 | 0.562899 | 0 | 1e-06 | ✅ PASS |
+| B443 | regularized_incomplete_beta_100_120_042 | physical-law | 0.378116 | 0.378116 | 0 | 1e-06 | ✅ PASS |
+| B444 | incomplete_beta_binomial_6_6_045 | physical-law | 0.366877 | 0.366877 | 0 | 1e-06 | ✅ PASS |
+| B445 | incomplete_beta_binomial_7_8_040 | physical-law | 0.307548 | 0.307548 | 0 | 1e-06 | ✅ PASS |
+| B446 | sine_integral_si_4 | physical-law | 1.7582 | 1.7582 | 0 | 1e-07 | ✅ PASS |
+| B447 | sine_integral_si_12 | physical-law | 1.50497 | 1.50497 | 0 | 1e-07 | ✅ PASS |
+| B448 | cosine_integral_ci_1 | physical-law | 0.337404 | 0.337404 | 0 | 1e-07 | ✅ PASS |
+| B449 | cosine_integral_ci_2 | physical-law | 0.422981 | 0.422981 | 0 | 1e-07 | ✅ PASS |
 | B45 | E0_eV | physical-law | 0.164464 | 0.164464 | 0 | 0.001 | ✅ PASS |
+| B450 | hyperbolic_sine_integral_shi_2 | physical-law | 2.50157 | 2.50157 | 0 | 1e-07 | ✅ PASS |
+| B451 | hyperbolic_cosine_integral_chi_2 | physical-law | 2.45267 | 2.45267 | 0 | 1e-07 | ✅ PASS |
 | B46 | E1_eV | physical-law | 0.493391 | 0.493391 | 0 | 0.01 | ✅ PASS |
 | B47 | E2_eV | physical-law | 0.822319 | 0.822319 | 0 | 0.1 | ✅ PASS |
 | B48 | E0_eV | physical-law | -0.350171 | -0.350171 | 0 | 0.01 | ✅ PASS |

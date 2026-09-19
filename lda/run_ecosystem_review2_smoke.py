@@ -10,7 +10,8 @@ import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
 
-from lda_pdk.submit import submit_benchmark_proposal
+from lda_pdk.submit import (submit_benchmark_proposal, _load_store,
+                            _resolve_path)
 from lda_pdk.review import (review_proposal, land_proposal, resubmit_proposal,
                             review_stats, get_audit)
 
@@ -108,6 +109,28 @@ check("resubmit → pending", r["status"] == "pending", str(r))
 check("resubmit 保留审计并追加", aud_after == aud_before + 1
       and get_audit("B20", contrib_path=CP)[-1]["op"] == "resubmit",
       f"{aud_before}→{aud_after}")
+
+# 9b) 被拒重提**携带 default_params** —— 回归 F-01（2026-09-19 全面审计 P1）。
+#   根因：review.py 的 `.submit` 导入清单漏了 `_norm_params`，而本分支是运行时
+#   表达式（`from __future__ import annotations` 救不了）⇒ 一旦走到这里必
+#   NameError；可达路径为公开 API `lda_pdk.resubmit_proposal` 与 WebUI
+#   `POST /api/ecosystem/resubmit` ⇒ 端点 500。
+#   为何此前 CI 全绿：上面 9) 只传 {"by": "community"}，从未触发该分支 ——
+#   属测试盲区。此处补洞（铁律：没被验证过的护栏不算护栏）。
+r = review_proposal("B20", "reject", "评审员戊", "再拒以复测携带参数重提",
+                    contrib_path=CP)
+check("B20 二次 reject → rejected", r["status"] == "rejected", str(r))
+r = resubmit_proposal("B20", {"by": "community",
+                              "default_params": {"L_um": 120.0, "n_g": 3.5}},
+                      contrib_path=CP)
+check("resubmit 携带 default_params → pending（F-01 回归，不再 NameError）",
+      r["status"] == "pending", str(r))
+_reg, _store = _load_store(_resolve_path(CP))
+_p20 = next((x for x in _store._items if x.id == "B20"), None)
+check("resubmit 已把 default_params 规范化写入提案",
+      _p20 is not None and _p20.default_params.get("L_um") == 120.0
+      and _p20.default_params.get("n_g") == 3.5,
+      str(None if _p20 is None else _p20.default_params))
 
 # 10) review_stats 自洽（B19 landed / B20 resubmitted pending / B21 pending = 3 提案）
 s = review_stats(contrib_path=CP)

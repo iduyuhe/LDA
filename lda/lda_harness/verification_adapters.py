@@ -2232,6 +2232,28 @@ def _get_batch_b27():
     return _m
 
 
+_BATCH_B28_MOD = None
+
+
+def _get_batch_b28():
+    """双路兜底导入 Batch B-28 数值核（不完全 Beta / 积分正余弦函数族，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B28**（`b28_modulator_vpi_anchor` / `run_b28_*_smoke`）占用无连字符
+    写法 `b28_`，故批次核一律用连字符形式 `_batch_b28_numeric` / `_get_batch_b28`
+    （接手前已实 grep 核占名：`_BATCH_B28` / `_get_batch_b28` 零命中，B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B28_MOD
+    if _BATCH_B28_MOD is not None:
+        return _BATCH_B28_MOD
+    try:
+        from lda_harness import _batch_b28_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b28_numeric as _m
+    _BATCH_B28_MOD = _m
+    return _m
+
+
 # ---- Batch B-23（v0.9.105 · 腿① 扩基加锚 · 高斯光束旁轴光学族）----
 # 旁轴波方程 Crank-Nicolson FD BPM（初值传播）方法学独立于 B5/B567 本征值 Helmholtz、
 # B14/B15 2D-FFT 远场衍射；golden=解析闭式，cand=BPM 量测。残差=BPM 离散化误差
@@ -3094,6 +3116,184 @@ def _b438_lorentz_group_velocity_candidate(spec: VerificationSpec, oracle_value:
     m = _get_batch_b27()
     return float(m.cand_lorentz_group_velocity(
         float(p["w0_res"]), float(p["wp"]), float(p["F"]), float(p["w"])))
+
+
+# ---- Batch B-28（v0.9.110 · 腿① 扩基加锚 · 不完全 Beta 族 / 积分正余弦函数族）----
+# 高度精确 golden（scipy betainc/sici/shichi 精确 oracle 与整数参数二项闭式）× 方法学独立候选
+# （复合 Simpson 双重数值积分 / 四阶 RK4 积分定义 ODE）。残差 = 离散化截断误差（实测 O(h⁴)，
+# 比值收敛至 16.00；非恒等、非地板、非 golden 截断）。全部锚限定 a,b>=5（保被积函数 C⁴）；
+# Ci/Chi 候选起点取 0.1 以避 1/t 奇性导致的阶退化（B-28 血案 2）。
+@_register_candidate(
+    "incomplete_beta_simpson_439",
+    "不完全 Beta I_x(a,b) 由复合 Simpson 双重数值积分导出（分子/分母均数值，不调 scipy.beta）")
+def _b439_incomplete_beta_simpson_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B439 独立候选：I_x(5.5,6.0,0.45)（复合 Simpson 双积分）。
+
+    golden=scipy.special.betainc（精确 oracle）；cand=复合 Simpson 双积分比值（N=128）。
+    残差=Simpson 截断误差（O(h⁴)，实测比值 29.28/32.66/27.26 收敛至 16.00）。
+    余量 4132×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b28()
+    return float(m.cand_b439(float(p["a"]), float(p["b"]), float(p["x"])))
+
+
+@_register_candidate(
+    "incomplete_beta_simpson_440",
+    "不完全 Beta I_x(a,b) 由复合 Simpson 双重数值积分导出（分子/分母均数值，不调 scipy.beta）")
+def _b440_incomplete_beta_simpson_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B440 独立候选：I_x(6.0,5.0,0.60)（复合 Simpson 双积分）。
+
+    golden=scipy.special.betainc；cand=复合 Simpson 双积分（N=128）。
+    残差=Simpson 截断误差。余量 1240×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b28()
+    return float(m.cand_b440(float(p["a"]), float(p["b"]), float(p["x"])))
+
+
+@_register_candidate(
+    "incomplete_beta_simpson_441",
+    "不完全 Beta I_x(a,b) 由复合 Simpson 双重数值积分导出（分子/分母均数值，不调 scipy.beta）")
+def _b441_incomplete_beta_simpson_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B441 独立候选：I_x(7.5,9.0,0.35)（复合 Simpson 双积分）。
+
+    golden=scipy.special.betainc；cand=复合 Simpson 双积分（N=128）。
+    残差=Simpson 截断误差（实测比值 22.99/15.80/15.95，最干净一档）。余量 1567×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b28()
+    return float(m.cand_b441(float(p["a"]), float(p["b"]), float(p["x"])))
+
+
+@_register_candidate(
+    "incomplete_beta_simpson_442",
+    "不完全 Beta I_x(a,b) 由复合 Simpson 双重数值积分导出（分子/分母均数值，不调 scipy.beta）")
+def _b442_incomplete_beta_simpson_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B442 独立候选：I_x(9.0,8.0,0.55)（复合 Simpson 双积分，右偏密度）。
+
+    golden=scipy.special.betainc；cand=复合 Simpson 双积分（N=128）。
+    残差=Simpson 截断误差。余量 1296×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b28()
+    return float(m.cand_b442(float(p["a"]), float(p["b"]), float(p["x"])))
+
+
+@_register_candidate(
+    "incomplete_beta_simpson_443",
+    "不完全 Beta I_x(a,b) 由复合 Simpson 双重数值积分导出（分子/分母均数值，不调 scipy.beta）")
+def _b443_incomplete_beta_simpson_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B443 独立候选：I_x(10.0,12.0,0.42)（复合 Simpson 双积分，峰形密度）。
+
+    golden=scipy.special.betainc；cand=复合 Simpson 双积分（N=128）。
+    残差=Simpson 截断误差。余量 915×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b28()
+    return float(m.cand_b443(float(p["a"]), float(p["b"]), float(p["x"])))
+
+
+@_register_candidate(
+    "incomplete_beta_binomial_444",
+    "不完全 Beta I_x(a,b) 由复合 Simpson 双重数值积分导出（与整数参数二项闭式 golden 不同源）")
+def _b444_incomplete_beta_simpson_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B444 独立候选：整数参数 I_x(6,6,0.45)（复合 Simpson 双积分）。
+
+    golden=整数参数二项闭式 Σ_{j=a}^{n}C(n,j)x^j(1-x)^{n-j}（精确；与 scipy betainc 互校 <1e-14）；
+    cand=复合 Simpson 双积分（N=128）。残差=Simpson 截断误差。余量 2195×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b28()
+    return float(m.cand_b444(int(p["a"]), int(p["b"]), float(p["x"])))
+
+
+@_register_candidate(
+    "incomplete_beta_binomial_445",
+    "不完全 Beta I_x(a,b) 由复合 Simpson 双重数值积分导出（与整数参数二项闭式 golden 不同源）")
+def _b445_incomplete_beta_simpson_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B445 独立候选：整数参数 I_x(7,8,0.40)（复合 Simpson 双积分，n=14）。
+
+    golden=整数参数二项闭式（精确；与 scipy betainc 互校 <1e-14）；
+    cand=复合 Simpson 双积分（N=128）。残差=Simpson 截断误差。余量 1671×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b28()
+    return float(m.cand_b445(int(p["a"]), int(p["b"]), float(p["x"])))
+
+
+@_register_candidate(
+    "sine_integral_rk4_446",
+    "正弦积分 Si 由四阶 RK4 积分定义 ODE y'=sin x/x（自解析 Taylor 级数启动）导出")
+def _b446_sine_integral_rk4_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B446 独立候选：Si(4.0)（RK4 积分定义 ODE）。
+
+    golden=scipy.special.sici（精确 oracle）；cand=RK4 积分 y'=sin x/x，自 x0=1e-3 的
+    解析 Taylor 级数启动（N=64）。残差=RK4 截断误差（O(h⁴)，实测比值 16.18/16.05/16.01）。
+    余量 850×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b28()
+    return float(m.cand_b446(float(p["X"])))
+
+
+@_register_candidate(
+    "sine_integral_rk4_447",
+    "正弦积分 Si 由四阶 RK4 积分定义 ODE y'=sin x/x（自解析级数启动）导出")
+def _b447_sine_integral_rk4_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B447 独立候选：Si(12.0)（大 x 档，误差累积于整段）。
+
+    golden=scipy.special.sici；cand=RK4 积分 y'=sin x/x（N=256）。
+    残差=RK4 截断误差（O(h⁴)）。余量 759×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b28()
+    return float(m.cand_b447(float(p["X"])))
+
+
+@_register_candidate(
+    "cosine_integral_rk4_448",
+    "余弦积分 Ci 由四阶 RK4 积分定义 ODE y'=cos x/x（起点 0.1 避 1/t 奇性阶退化）导出")
+def _b448_cosine_integral_rk4_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B448 独立候选：Ci(1.0)（RK4 积分定义 ODE，起点 0.1）。
+
+    golden=scipy.special.sici（精确 oracle）；cand=RK4 积分 y'=cos x/x，自 x0=0.1 的解析
+    级数启动（N=512）。⚠️ 起点若取 1e-3 则 1/t 奇性使收敛阶退化为 ~3（B-28 血案 2）。
+    残差=RK4 截断误差（O(h⁴)）。余量 503×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b28()
+    return float(m.cand_b448(float(p["X"])))
+
+
+@_register_candidate(
+    "cosine_integral_rk4_449",
+    "余弦积分 Ci 由四阶 RK4 积分定义 ODE y'=cos x/x（起点 0.1 避 1/t 奇性阶退化）导出")
+def _b449_cosine_integral_rk4_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B449 独立候选：Ci(2.0)（RK4 积分定义 ODE，起点 0.1）。
+
+    golden=scipy.special.sici；cand=RK4 积分 y'=cos x/x（N=1024）。
+    残差=RK4 截断误差（O(h⁴)）。余量 405×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b28()
+    return float(m.cand_b449(float(p["X"])))
+
+
+@_register_candidate(
+    "hyperbolic_sine_integral_rk4_450",
+    "双曲正弦积分 Shi 由四阶 RK4 积分定义 ODE y'=sinh x/x（自解析 Taylor 级数启动）导出")
+def _b450_hyperbolic_sine_integral_rk4_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B450 独立候选：Shi(2.0)（RK4 积分定义 ODE）。
+
+    golden=scipy.special.shichi（精确 oracle）；cand=RK4 积分 y'=sinh x/x，自 x0=1e-3 的
+    解析级数启动（N=64）。残差=RK4 截断误差（O(h⁴)）。余量 486×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b28()
+    return float(m.cand_b450(float(p["X"])))
+
+
+@_register_candidate(
+    "hyperbolic_cosine_integral_rk4_451",
+    "双曲余弦积分 Chi 由四阶 RK4 积分定义 ODE y'=cosh x/x（起点 0.1 避 1/t 奇性阶退化）导出")
+def _b451_hyperbolic_cosine_integral_rk4_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B451 独立候选：Chi(2.0)（RK4 积分定义 ODE，起点 0.1）。
+
+    golden=scipy.special.shichi；cand=RK4 积分 y'=cosh x/x（N=1024）。
+    ⚠️ 起点若取 1e-3 则 1/t 奇性使收敛阶退化（B-28 血案 2）。
+    残差=RK4 截断误差（O(h⁴)）。余量 405×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b28()
+    return float(m.cand_b451(float(p["X"])))
 
 
 @_register_candidate(

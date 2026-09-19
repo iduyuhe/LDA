@@ -2215,6 +2215,23 @@ def _get_batch_b26():
     return _m
 
 
+_BATCH_B27_MOD = None
+
+
+def _get_batch_b27():
+    """双路兜底导入 Batch B-27 数值核（色散与群速度族，缓存，项目铁律）。"""
+    global _BATCH_B27_MOD
+    if _BATCH_B27_MOD is not None:
+        return _BATCH_B27_MOD
+    try:
+        from lda_harness import _batch_b27_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b27_numeric as _m
+    _BATCH_B27_MOD = _m
+    return _m
+
+
 # ---- Batch B-23（v0.9.105 · 腿① 扩基加锚 · 高斯光束旁轴光学族）----
 # 旁轴波方程 Crank-Nicolson FD BPM（初值传播）方法学独立于 B5/B567 本征值 Helmholtz、
 # B14/B15 2D-FFT 远场衍射；golden=解析闭式，cand=BPM 量测。残差=BPM 离散化误差
@@ -2887,6 +2904,196 @@ def _b425_energy_conservation_candidate(spec: VerificationSpec, oracle_value: An
     p = spec.params
     m = _get_batch_b26()
     return float(m.cand_energy_conservation(float(p["n1"]), float(p["n2"]), float(p["theta_i"])))
+
+
+# ---- Batch B-27（v0.9.109 · 腿① 扩基加锚 · 色散与群速度族）----
+# 解析闭式 golden × 中心差分数值微分候选（一阶/二阶中心差分 O(h²)）。残差=差分截断误差
+# （随 N 单调 O(h²) 收敛、随参数变化、判据 D 响应、候选输出扰动必 FAIL），非恒等、非地板。
+# 二阶差分候选用 SPAN2=2.0 避 ~1/h² 舍入地板；Taylor 三次多项式的 β2/L_D/Δt 二阶差分精确
+# （恒等陷阱）已迁出，改由非多项式的等离子体/Lorentz 模型承接。命名避让 B-16 单锚号撞批次号。
+@_register_candidate(
+    "plasma_phase_velocity",
+    "等离子体 k(ω) 离散采样，两点线性插值估值 k(w0) 后取 ω/k（与 golden 闭式方法学不同源）")
+def _b426_plasma_phase_velocity_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B426 独立候选：等离子体相速度 v_p（中心差分数值微分）。
+
+    golden=闭式 v_p=1/√(1−(ωp/ω)²)；cand=等离子体 k(ω) 离散采样，两点线性插值估值
+    k(w0)（w0 落格点中点 ⇒ 对二次 k 有 O(h²) 误差，打破恒等）后取 ω/k。
+    残差=差分截断误差（随 N 收敛、随参数变化、判据 D 响应、候选输出扰动必 FAIL）。
+    余量 1.8e6×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b27()
+    return float(m.cand_plasma_phase_velocity(float(p["wp"]), float(p["w"])))
+
+
+@_register_candidate(
+    "plasma_group_velocity",
+    "等离子体 k(ω) 离散采样，中心差分 dk/dω 取倒数得 v_g（与 golden 闭式不同源）")
+def _b427_plasma_group_velocity_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B427 独立候选：等离子体群速度 v_g（中心差分数值微分）。
+
+    golden=闭式 v_g=√(1−(ωp/ω)²)；cand=中心差分 dk/dω 取倒数。
+    残差=差分截断误差。余量 4.9e5×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b27()
+    return float(m.cand_plasma_group_velocity(float(p["wp"]), float(p["w"])))
+
+
+@_register_candidate(
+    "plasma_group_index",
+    "等离子体 k(ω) 离散采样，中心差分直取 dk/dω=n_g（因 v_g=1/(dk/dω)，n_g=dk/dω；与 golden 闭式不同源）")
+def _b428_plasma_group_index_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B428 独立候选：等离子体群折射率 n_g（中心差分数值微分直取 dk/dω）。
+
+    golden=闭式 n_g=1/√(1−(ωp/ω)²)；cand=中心差分 dk/dω（=n_g，因 v_g=1/(dk/dω)、n_g=c/v_g=dk/dω）。
+    残差=差分截断误差。余量 4.6e5×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b27()
+    return float(m.cand_plasma_group_index(float(p["wp"]), float(p["w"])))
+
+
+@_register_candidate(
+    "taylor_phase_velocity",
+    "三阶泰勒 k(ω) 离散采样，两点线性插值估值 k(w0) 后取 ω/k（与 golden 闭式不同源）")
+def _b429_taylor_phase_velocity_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B429 独立候选：三阶泰勒相速度 v_p（中心差分数值微分）。
+
+    golden=闭式 v_p=ω/k(ω)；cand=三阶泰勒 k(ω) 离散采样，两点线性插值估值 k(w0) 后取 ω/k。
+    残差=差分截断误差。余量 8.1e5×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b27()
+    return float(m.cand_taylor_phase_velocity(
+        float(p["w0"]), float(p["beta1"]), float(p["beta2"]), float(p["beta3"]), float(p["w"])))
+
+
+@_register_candidate(
+    "plasma_gvd",
+    "等离子体 k(ω) 离散采样，中心二阶差分 d²k/dω²（SPAN2 避舍入地板；与 golden 闭式不同源）")
+def _b430_plasma_gvd_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B430 独立候选：等离子体群速度色散 β2（中心二阶差分数值微分）。
+
+    golden=k=ω√(1−r)/c 解析二阶导闭式 β2=−(ωp/ω)²/[ω·(1−r)^{3/2}];
+    cand=中心二阶差分 d²k/dω²（非多项式 ⇒ 真截断；SPAN2=2.0 避 ~1/h² 舍入地板）。
+    残差=差分截断误差（随 N 单调 O(h²) 收敛）。余量 2637×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b27()
+    return float(m.cand_plasma_gvd(float(p["wp"]), float(p["w"])))
+
+
+@_register_candidate(
+    "taylor_group_velocity",
+    "三阶泰勒 k(ω) 离散采样，中心差分 dk/dω 取倒数得 v_g（与 golden 闭式不同源）")
+def _b431_taylor_group_velocity_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B431 独立候选：三阶泰勒群速度 v_g（中心差分数值微分）。
+
+    golden=闭式 v_g=1/(β1+β2Δ+½β3Δ²)；cand=中心差分 dk/dω 取倒数。
+    残差=差分截断误差。余量 8.4e5×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b27()
+    return float(m.cand_taylor_group_velocity(
+        float(p["w0"]), float(p["beta1"]), float(p["beta2"]), float(p["beta3"]), float(p["w"])))
+
+
+@_register_candidate(
+    "taylor_group_delay",
+    "三阶泰勒 k(ω) 离散采样，中心差分 k'(ω)·L 得群延迟（与 golden 闭式不同源）")
+def _b432_taylor_group_delay_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B432 独立候选：三阶泰勒群延迟 τ_g（中心差分数值微分）。
+
+    golden=闭式 τ_g=(β1+β2Δ+½β3Δ²)·L；cand=中心差分 k'(ω)·L。
+    残差=差分截断误差。余量 3.4e5×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b27()
+    return float(m.cand_taylor_group_delay(
+        float(p["w0"]), float(p["beta1"]), float(p["beta2"]), float(p["beta3"]),
+        float(p["w"]), float(p["L"])))
+
+
+@_register_candidate(
+    "lorentz_gvd",
+    "洛伦兹 k(ω)=n·ω 离散采样，中心二阶差分 d²k/dω²（SPAN2 避舍入地板；非多项式真截断）")
+def _b433_lorentz_gvd_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B433 独立候选：洛伦兹介质群速度色散 β2（中心二阶差分数值微分）。
+
+    golden=k=ω√(1+A) 解析二阶导闭式；cand=中心二阶差分 d²k/dω²（非多项式 ⇒ 真截断；
+    SPAN2=2.0 避 ~1/h² 舍入地板）。承接 Taylor 三次多项式二阶差分精确（恒等陷阱）迁出的 β2。
+    残差=差分截断误差（随 N 单调 O(h²) 收敛）。余量 3647×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b27()
+    return float(m.cand_lorentz_gvd(
+        float(p["w0_res"]), float(p["wp"]), float(p["F"]), float(p["w"])))
+
+
+@_register_candidate(
+    "lorentz_group_delay",
+    "洛伦兹 k(ω)=n·ω 离散采样，中心差分 k'(ω)·L 得群延迟（非多项式真截断）")
+def _b434_lorentz_group_delay_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B434 独立候选：洛伦兹介质群延迟 τ_g（中心差分数值微分）。
+
+    golden=闭式 (n+ωn')·L；cand=中心差分 k'(ω)·L（非多项式真截断）。
+    残差=差分截断误差。余量 6.3e5×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b27()
+    return float(m.cand_lorentz_group_delay(
+        float(p["w0_res"]), float(p["wp"]), float(p["F"]), float(p["w"]), float(p["L"])))
+
+
+@_register_candidate(
+    "lorentz_dispersion_length",
+    "洛伦兹 k(ω) 离散采样，中心二阶差分 β2 取倒数·T0² 得 L_D（SPAN2 避舍入地板；非多项式真截断）")
+def _b435_lorentz_dispersion_length_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B435 独立候选：洛伦兹介质色散长度 L_D（中心二阶差分数值微分）。
+
+    golden=闭式 L_D=T0²/|β2|；cand=中心二阶差分 β2 取倒数·T0²（非多项式真截断；
+    SPAN2=2.0 避舍入地板）。承接 Taylor 迁出的 L_D。
+    残差=差分截断误差（随 N 单调 O(h²) 收敛）。余量 256×（相对 1e-6）；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b27()
+    return float(m.cand_lorentz_dispersion_length(
+        float(p["w0_res"]), float(p["wp"]), float(p["F"]), float(p["w"]), float(p["T0"])))
+
+
+@_register_candidate(
+    "lorentz_pulse_broadening",
+    "洛伦兹 k(ω) 离散采样，中心二阶差分 β2·L·Δω 得脉冲展宽（SPAN2 避舍入地板；非多项式真截断）")
+def _b436_lorentz_pulse_broadening_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B436 独立候选：洛伦兹介质高斯脉冲展宽 Δt（中心二阶差分数值微分）。
+
+    golden=闭式 |β2|·L·Δω；cand=中心二阶差分 β2·L·Δω（非多项式真截断；SPAN2=2.0 避舍入地板）。
+    承接 Taylor 迁出的 Δt。残差=差分截断误差（随 N 单调 O(h²) 收敛）。余量 7293×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b27()
+    return float(m.cand_lorentz_pulse_broadening(
+        float(p["w0_res"]), float(p["wp"]), float(p["F"]), float(p["w"]),
+        float(p["L"]), float(p["domega"])))
+
+
+@_register_candidate(
+    "plasma_group_delay",
+    "等离子体 k(ω) 离散采样，中心差分 k'(ω)·L=n_g·L 得群延迟（与 golden 闭式不同源）")
+def _b437_plasma_group_delay_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B437 独立候选：等离子体群延迟 τ_g（中心差分数值微分）。
+
+    golden=闭式 (1/√(1−r))·L；cand=中心差分 k'(ω)·L（=n_g·L）。
+    残差=差分截断误差。余量 4.6e5×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b27()
+    return float(m.cand_plasma_group_delay(
+        float(p["wp"]), float(p["w"]), float(p["L"])))
+
+
+@_register_candidate(
+    "lorentz_group_velocity",
+    "洛伦兹 k(ω)=n·ω 离散采样，中心差分 dk/dω 取倒数得 v_g（非多项式真截断）")
+def _b438_lorentz_group_velocity_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B438 独立候选：洛伦兹介质群速度 v_g（中心差分数值微分）。
+
+    golden=闭式 v_g=1/(n+ωn')；cand=中心差分 dk/dω 取倒数（非多项式真截断）。
+    残差=差分截断误差。余量 6.8e5×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b27()
+    return float(m.cand_lorentz_group_velocity(
+        float(p["w0_res"]), float(p["wp"]), float(p["F"]), float(p["w"])))
 
 
 @_register_candidate(

@@ -16,10 +16,10 @@ README 引擎域计数「光子 9 + 量子 6」与代码 ENGINE_DOMAIN 实际 8+
 断言维度（全部死标量，LLM 不进判决路径）：
   1. 引擎结构：ENGINE_KINDS 22（15 设计量 + 5 loss + 2 有源）、光子 15、量子 7
   2. 包结构：PACKAGE_KINDS 11（22 引擎 + 11 包 = 33 类端到端）
-  3. 题库：BENCHMARK_ORDER 378 题（B1-B360 共 355 题 + E1-E10 10 题 + S1-S13 13 题）
+  3. 题库：BENCHMARK_ORDER 456 题（B1-B438 共 433 题 + E1-E10 10 题 + S1-S13 13 题）
   4. CI 门禁：CORE_SMOKES 条数（动态）↔ README 顶行 `CI core N 条` 严格一致
   5. README 宣传串：动态构造「22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）」
-     「378 题（B1-B360 + E1-E10 + S1-S13）」；反向断言 README 不含已废弃错误串
+     「456 题（B1-B438 + E1-E10 + S1-S13）」；反向断言 README 不含已废弃错误串
      「光子 9 + 量子 6」（防回退）；版本行 = pyproject 版本（防滞后）。
 """
 from __future__ import annotations
@@ -154,14 +154,14 @@ class CountConsistencySmoke(unittest.TestCase):
         # v0.9.91 B-11 加 B185-B200 → 195；v0.9.92 B-12 加 B201-B216 → 211；v0.9.93 B-13 加 B217-B232 → 227；
         # v0.9.95 B-15 加 B249-B264 → 259（B-14 加 B233-B248 → 243）；v0.9.96 B-16 加 B265-B280 → 275；
         # v0.9.97 B-17 加 B281-B296 → 291；v0.9.98 B-18 加 B297-B312 → 307；
-        # v0.9.99 B-19 加 B313-B328 → 323；v0.9.100 B-20 加 B329-B344 → 339；v0.9.104 B-22 加 B361-B373 → 373；v0.9.105 B-23 加 B374-B386 → 381；v0.9.106 B-24 加 B387-B399 → 394；v0.9.107 B-25 加 B400-B412 → 407。
-        self.assertEqual(len(b_ids), 420, f"B 题应 420（B1-B425，缺口 B35/B38/B39/B69/B72 预留），实际 {len(b_ids)}")
+        # v0.9.99 B-19 加 B313-B328 → 323；v0.9.100 B-20 加 B329-B344 → 339；v0.9.104 B-22 加 B361-B373 → 373；v0.9.105 B-23 加 B374-B386 → 381；v0.9.106 B-24 加 B387-B399 → 394；v0.9.107 B-25 加 B400-B412 → 407；v0.9.108 B-26 加 B413-B425 → 420；v0.9.109 B-27 加 B426-B438 → 433。
+        self.assertEqual(len(b_ids), 433, f"B 题应 433（B1-B438，缺口 B35/B38/B39/B69/B72 预留），实际 {len(b_ids)}")
         self.assertEqual(len(e_ids), len([f"E{i}" for i in range(1, len(e_ids) + 1)]),
                          f"E 题数异常，实际 {len(e_ids)}")
         self.assertEqual(len(s_ids), 13, f"S 题应 13，实际 {len(s_ids)}")
         self.assertEqual(b_ids[0], "B1")
         self.assertEqual(max(b_ids, key=lambda x: int(x[1:])),
-                         "B425", f"B 题最大编号应 B425，实际 {max(b_ids, key=lambda x: int(x[1:]))}")
+                         "B438", f"B 题最大编号应 B438，实际 {max(b_ids, key=lambda x: int(x[1:]))}")
         self.assertEqual(e_ids, [f"E{i}" for i in range(1, len(e_ids) + 1)],
                          f"E 题须连续编号 E1..E{len(e_ids)}，实际 {e_ids}")
         self.assertEqual(s_ids,
@@ -199,7 +199,7 @@ class CountConsistencySmoke(unittest.TestCase):
         e_ids = [b for b in self.benchmark_order if re.fullmatch(r"E\d+", b)]
         e_last = int(e_ids[-1][1:]) if e_ids else 0
         self.assertIn(f"{len(self.benchmark_order)} 题", self.readme)
-        self.assertIn("B1-B425", self.readme)
+        self.assertIn("B1-B438", self.readme)
         self.assertIn(f"E1-E{e_last}", self.readme)
         self.assertIn("S1-S13", self.readme)
 

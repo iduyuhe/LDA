@@ -203,6 +203,11 @@ from ._batch_b26_numeric import (  # Batch B-26 双方法独立锚数值核（v0
     golden_b419, golden_b420, golden_b421, golden_b422, golden_b423, golden_b424, golden_b425,
 )
 
+from ._batch_b27_numeric import (  # Batch B-27 双方法独立锚数值核（v0.9.109 · 腿① 扩基加锚 · 色散与群速度族：解析闭式 golden × 中心差分数值微分候选）
+    golden_b426, golden_b427, golden_b428, golden_b429, golden_b430, golden_b431, golden_b432,
+    golden_b433, golden_b434, golden_b435, golden_b436, golden_b437, golden_b438,
+)
+
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -951,6 +956,11 @@ _GOLDEN_DISPATCH = {
     "B417": golden_b417, "B418": golden_b418, "B419": golden_b419, "B420": golden_b420,
     "B421": golden_b421, "B422": golden_b422, "B423": golden_b423, "B424": golden_b424,
     "B425": golden_b425,
+    # ---- Batch B-27（v0.9.109 · 腿① 扩基加锚 · 色散与群速度族：解析闭式 golden × 中心差分数值微分候选）----
+    "B426": golden_b426, "B427": golden_b427, "B428": golden_b428, "B429": golden_b429,
+    "B430": golden_b430, "B431": golden_b431, "B432": golden_b432, "B433": golden_b433,
+    "B434": golden_b434, "B435": golden_b435, "B436": golden_b436, "B437": golden_b437,
+    "B438": golden_b438,
 
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
@@ -1030,6 +1040,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                 "B408", "B409", "B410", "B411", "B412",  # Batch B-25（v0.9.107 · 腿① 续加锚 · 静电/静磁有限源：解析闭式 golden × 库仑/Biot–Savart 数值求积候选）
                 "B413", "B414", "B415", "B416", "B417", "B418", "B419", "B420",
                 "B421", "B422", "B423", "B424", "B425",  # Batch B-26（v0.9.108 · 腿① 续加锚 · 单界面 Fresnel/Snell 光学：解析闭式 golden × 1D FD Helmholtz 候选）
+                "B426", "B427", "B428", "B429", "B430", "B431", "B432", "B433",
+                "B434", "B435", "B436", "B437", "B438",  # Batch B-27（v0.9.109 · 腿① 续加锚 · 色散与群速度：解析闭式 golden × 中心差分数值微分候选）
                 "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

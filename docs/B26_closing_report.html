@@ -90,9 +90,7 @@
 
   <h2>⑤ 部署状态</h2>
   <div class="note">
-    <b>本地收口完成，生产待 rollout。</b> README 顶行 HEAD 仍为 <code>PENDING</code>（待真实 commit 回填）。生产现仍 v0.9.107。
-    下一步需用户批准 <code>lda-prod-deploy</code> 技能后执行：
-    <code>remote_deploy.py --expect-head &lt;commit&gt;</code> + <code>check_ledger.py 422 3 18 443 B425</code>。
+    <b>✅ v0.9.108 已上线（2026-09-19）。</b> commit <code>ef83a74</code> → 双端 sync_push（gitee/github 均 exit=0）→ <code>remote_deploy.py --expect-head ef83a74</code> 成功（SSH_OK · git pull 20746b9..ef83a74 · pip 重装 lda-design 0.9.107→0.9.108 · 内/外网 health 均 v0.9.108/benchmarks 443 · HEAD_MATCH=True）· <code>check_ledger.py 422 3 18 443 B425</code> → <b>RESULT: ALL_OK (fails=0) 13/13</b>。README 顶行 HEAD 回填 <code>ef83a74</code>（commit 4862c7a）。回填后 7 道护栏 7/7 全绿（count 11/11 · p0 6/6 · three_class 4/4 · lock 4/4 · maturity PASS · webui 15/0 · statistical 34/0）。
   </div>
 </div>
 </body>

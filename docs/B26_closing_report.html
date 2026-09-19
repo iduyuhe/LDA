@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDA v0.9.108 · Batch B-26 收口报告（单界面 Fresnel/Snell 光学族）</title>
+<style>
+  :root{ --blue:#2563eb; --ink:#0f172a; --mut:#64748b; --bg:#f8fafc; --line:#e2e8f0; }
+  *{ box-sizing:border-box; }
+  body{ font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); margin:0; padding:32px 16px; line-height:1.6; }
+  .wrap{ max-width:920px; margin:0 auto; background:#fff; border:1px solid var(--line); border-radius:12px; padding:32px; }
+  h1{ font-size:22px; margin:0 0 4px; }
+  .sub{ color:var(--mut); font-size:13px; margin-bottom:20px; }
+  h2{ font-size:16px; margin:28px 0 10px; padding-left:10px; border-left:4px solid var(--blue); }
+  table{ width:100%; border-collapse:collapse; font-size:13px; margin:8px 0; }
+  th,td{ border:1px solid var(--line); padding:7px 9px; text-align:left; }
+  th{ background:#eff6ff; color:var(--blue); font-weight:600; }
+  tr:nth-child(even) td{ background:#f8fafc; }
+  .ok{ color:var(--blue); font-weight:700; }
+  .stat{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:12px 0; }
+  .card{ background:#eff6ff; border-radius:10px; padding:14px; text-align:center; }
+  .card .n{ font-size:24px; font-weight:800; color:var(--blue); }
+  .card .l{ font-size:12px; color:var(--mut); margin-top:4px; }
+  .note{ background:#f1f5f9; border-left:4px solid var(--mut); padding:10px 14px; font-size:13px; border-radius:0 8px 8px 0; margin:12px 0; }
+  code{ background:#f1f5f9; padding:1px 5px; border-radius:4px; font-size:12px; }
+  .pill{ display:inline-block; background:var(--blue); color:#fff; font-size:11px; padding:2px 8px; border-radius:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Batch B-26 收口报告 · LDA v0.9.108</h1>
+  <div class="sub">单界面 Fresnel/Snell 光学族（B413–B425，13 锚）· 纯内部确定性 FD 扩基 · 2026-09-19 本地收口</div>
+
+  <div class="note">
+    <b>物理族</b>：单界面 Fresnel/Snell 光学。golden = 解析闭式（Fresnel 系数 / Brewster 角 / TIR 全反射 / 倏逝波 β / 能量守恒）；
+    候选 = 方法学独立的 <b>1D FD Helmholtz 约化方程</b>求解器（<code>d/dx[P dE/dx]+Q E=0</code>；TE <code>P=1,Q=k0²n²−kz²</code>、TM <code>P=1/n²,Q=k0²−kz²/n²</code>；守恒横向波数 <code>kz=K0·n1·sinθi</code>；界面 off-node 捕捉 + 边权 P 谐波平均保证 O(h²)；复三对角 Thomas + 2 阶 ghost-node ABC）。
+    与闭式不同源，whole-repo 同源体检零命中。
+  </div>
+
+  <h2>① 13 锚真实余量（判据 D）</h2>
+  <table>
+    <tr><th>锚</th><th>物理量</th><th>golden</th><th>候选</th><th>余量</th><th>状态</th></tr>
+    <tr><td>B413</td><td>正入射反射率 R</td><td>解析闭式</td><td>1D FD</td><td class="ok">2.44×</td><td class="ok">INDEP</td></tr>
+    <tr><td>B414</td><td>s 偏振反射率 Rs</td><td>解析闭式</td><td>1D FD</td><td class="ok">2.58×</td><td class="ok">INDEP</td></tr>
+    <tr><td>B415</td><td>p 偏振反射率 Rp</td><td>解析闭式</td><td>1D FD</td><td class="ok">6.00×</td><td class="ok">INDEP</td></tr>
+    <tr><td>B416</td><td>s 透射率 Ts</td><td>解析闭式</td><td>1D FD</td><td class="ok">10239×</td><td class="ok">INDEP</td></tr>
+    <tr><td>B417</td><td>p 透射率 Tp</td><td>解析闭式</td><td>1D FD</td><td class="ok">11729×</td><td class="ok">INDEP</td></tr>
+    <tr><td>B418</td><td>非偏振反射率 (Rs+Rp)/2</td><td>解析闭式</td><td>1D FD</td><td class="ok">9.07×</td><td class="ok">INDEP</td></tr>
+    <tr><td>B419</td><td>偏振反射率对比 ΔR=Rs−Rp</td><td>解析闭式</td><td>1D FD</td><td class="ok">9.03×</td><td class="ok">INDEP</td></tr>
+    <tr><td>B420</td><td>偏振透射率比 Ts/Tp</td><td>解析闭式</td><td>1D FD</td><td class="ok">110505×</td><td class="ok">INDEP</td></tr>
+    <tr><td>B421</td><td>Brewster 角 θB</td><td>解析闭式</td><td>1D FD</td><td class="ok">13.87×</td><td class="ok">INDEP</td></tr>
+    <tr><td>B422</td><td>s 透射振幅 ts</td><td>解析闭式</td><td>1D FD</td><td class="ok">261669×</td><td class="ok">INDEP</td></tr>
+    <tr><td>B423</td><td>TIR 全反射率</td><td>解析闭式 (R=1)</td><td>1D FD</td><td class="ok">5.93×</td><td class="ok">INDEP</td></tr>
+    <tr><td>B424</td><td>倏逝波横向衰减 β</td><td>解析闭式</td><td>1D FD</td><td class="ok">74737×</td><td class="ok">INDEP</td></tr>
+    <tr><td>B425</td><td>能量守恒 R+T=1</td><td>解析闭式</td><td>1D FD</td><td class="ok">2.58×</td><td class="ok">INDEP</td></tr>
+  </table>
+  <div class="note">余量全部 ≥ 2×，基线残差全部 &gt; 1e-12（无 round-off 地板）。<b>B419/B420 由 TIR 相位观测改为 ΔR / Ts/Tp 偏振对比度</b>——绕开 TIR 反射相位随域长漂移、ABC 与 Dirichlet 同结果的判据 D ③ 地板。</div>
+
+  <h2>② 护栏全绿（5 道）</h2>
+  <div class="stat">
+    <div class="card"><div class="n">11/11</div><div class="l">count 一致性</div></div>
+    <div class="card"><div class="n">4/4</div><div class="l">three_class 一致性</div></div>
+    <div class="card"><div class="n">34/0</div><div class="l">statistical 锚</div></div>
+    <div class="card"><div class="n">13/13</div><div class="l">falsifiability</div></div>
+    <div class="card"><div class="n">422/422</div><div class="l">d_criterion</div></div>
+    <div class="card"><div class="n">443/443</div><div class="l">harness 无回归</div></div>
+  </div>
+  <div class="note">falsifiability 实测 13/13：严格独立 422 / 降级 3（B21,E9,E10）/ 自证桩 18，全量 443 锚无回归；扰动候选必 FAIL（tol 未放水）。慢机单跑 19m6s（仅此一项偏慢），其余秒级。</div>
+
+  <h2>③ 账本变化（v0.9.107 → v0.9.108）</h2>
+  <table>
+    <tr><th>指标</th><th>v0.9.107</th><th>v0.9.108</th><th>Δ</th></tr>
+    <tr><td>题数 N</td><td>430（B1–B412）</td><td>443（B1–B425）</td><td>+13</td></tr>
+    <tr><td>严格独立</td><td>409</td><td>422</td><td>+13</td></tr>
+    <tr><td>降级量级参考</td><td>3</td><td>3</td><td>0</td></tr>
+    <tr><td>自证桩</td><td>18</td><td>18</td><td>0</td></tr>
+    <tr><td>独立率</td><td>95.1%</td><td>95.3%</td><td>+0.2pp</td></tr>
+    <tr><td>天花板</td><td>97.2%</td><td>97.3%</td><td>+0.1pp</td></tr>
+    <tr><td>MIN_INDEPENDENT</td><td>396</td><td>396</td><td>零回归</td></tr>
+    <tr><td>棘轮 MAX_SELF_CERTIFIED</td><td>18</td><td>18</td><td>不动</td></tr>
+    <tr><td>CI core</td><td>178</td><td>178</td><td>不变</td></tr>
+  </table>
+
+  <h2>④ 收口四件套 + 账本手改</h2>
+  <p style="font-size:13px;">
+    <span class="pill">新文件</span> <code>lda/lda_harness/_batch_b26_numeric.py</code>（数值核）<br>
+    <span class="pill">接线</span> benchmarks.py（BENCHMARK_ORDER 13 条）· golden.py（dispatch + _PHYSICAL_LAW 双登）· verification_adapters.py（13 × @_register_candidate）<br>
+    <span class="pill">账本 7 处</span> README 顶行版本块 + 当前账本三分类 409→422 / 三类和 430→443 + line 353 计数 · CONTRIBUTING 顶行 · pyproject version 0.9.108 · run_count_consistency_smoke · run_statistical_anchor_smoke · run_webui_verification_ledger_smoke · run_benchmark_falsifiability_smoke（注释）· CHANGELOG v0.9.108 节
+  </p>
+
+  <h2>⑤ 部署状态</h2>
+  <div class="note">
+    <b>本地收口完成，生产待 rollout。</b> README 顶行 HEAD 仍为 <code>PENDING</code>（待真实 commit 回填）。生产现仍 v0.9.107。
+    下一步需用户批准 <code>lda-prod-deploy</code> 技能后执行：
+    <code>remote_deploy.py --expect-head &lt;commit&gt;</code> + <code>check_ledger.py 422 3 18 443 B425</code>。
+  </div>
+</div>
+</body>
+</html>

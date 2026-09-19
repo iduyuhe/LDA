@@ -198,6 +198,11 @@ from ._batch_b25_numeric import (  # Batch B-25 双方法独立锚数值核（v0
     golden_b410, golden_b411, golden_b412,
 )
 
+from ._batch_b26_numeric import (  # Batch B-26 双方法独立锚数值核（v0.9.108 · 腿① 扩基加锚 · 单界面 Fresnel/Snell 光学族）
+    golden_b413, golden_b414, golden_b415, golden_b416, golden_b417, golden_b418,
+    golden_b419, golden_b420, golden_b421, golden_b422, golden_b423, golden_b424, golden_b425,
+)
+
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -941,6 +946,11 @@ _GOLDEN_DISPATCH = {
     "B404": golden_b404, "B405": golden_b405, "B406": golden_b406, "B407": golden_b407,
     "B408": golden_b408, "B409": golden_b409, "B410": golden_b410, "B411": golden_b411,
     "B412": golden_b412,
+    # ---- Batch B-26（v0.9.108 · 腿① 扩基加锚 · 单界面 Fresnel/Snell 光学族：解析闭式 golden × 1D FD Helmholtz 候选）----
+    "B413": golden_b413, "B414": golden_b414, "B415": golden_b415, "B416": golden_b416,
+    "B417": golden_b417, "B418": golden_b418, "B419": golden_b419, "B420": golden_b420,
+    "B421": golden_b421, "B422": golden_b422, "B423": golden_b423, "B424": golden_b424,
+    "B425": golden_b425,
 
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
@@ -1018,6 +1028,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                 "B395", "B396", "B397", "B398", "B399",  # Batch B-24（v0.9.106 · 腿① 续加锚 · 标量衍射：解析闭式 golden × 衍射积分数值求积候选）
                 "B400", "B401", "B402", "B403", "B404", "B405", "B406", "B407",
                 "B408", "B409", "B410", "B411", "B412",  # Batch B-25（v0.9.107 · 腿① 续加锚 · 静电/静磁有限源：解析闭式 golden × 库仑/Biot–Savart 数值求积候选）
+                "B413", "B414", "B415", "B416", "B417", "B418", "B419", "B420",
+                "B421", "B422", "B423", "B424", "B425",  # Batch B-26（v0.9.108 · 腿① 续加锚 · 单界面 Fresnel/Snell 光学：解析闭式 golden × 1D FD Helmholtz 候选）
                 "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

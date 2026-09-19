@@ -2198,6 +2198,23 @@ def _get_batch_b25():
     return _m
 
 
+_BATCH_B26_MOD = None
+
+
+def _get_batch_b26():
+    """双路兜底导入 Batch B-26 数值核（单界面 Fresnel/Snell 光学族，缓存，项目铁律）。"""
+    global _BATCH_B26_MOD
+    if _BATCH_B26_MOD is not None:
+        return _BATCH_B26_MOD
+    try:
+        from lda_harness import _batch_b26_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b26_numeric as _m
+    _BATCH_B26_MOD = _m
+    return _m
+
+
 # ---- Batch B-23（v0.9.105 · 腿① 扩基加锚 · 高斯光束旁轴光学族）----
 # 旁轴波方程 Crank-Nicolson FD BPM（初值传播）方法学独立于 B5/B567 本征值 Helmholtz、
 # B14/B15 2D-FFT 远场衍射；golden=解析闭式，cand=BPM 量测。残差=BPM 离散化误差
@@ -2695,6 +2712,181 @@ def _b412_loop_offaxis_brho_candidate(spec: VerificationSpec, oracle_value: Any)
     p = spec.params
     m = _get_batch_b25()
     return float(m.cand_loop_Brho(float(p["R"]), float(p["I"]), float(p["rho"]), float(p["z"])))
+
+
+# ---- Batch B-26（v0.9.108 · 腿① 扩基加锚 · 单界面 Fresnel/Snell 光学族）----
+# 1D FD Helmholtz 总场解（界面 off-node 捕捉，O(h²)）方法学独立于 Fresnel 闭式；
+# golden=解析闭式，cand=FD 提取 r/t 或场量。残差=FD 离散化误差（随 N 收敛、
+# 随参数变化、判据 D 响应、候选输出扰动必 FAIL），非恒等、非地板。命名避让。
+@_register_candidate(
+    "normal_reflectance",
+    "单界面 1D FD Helmholtz 总场解提取垂直入射反射率（与 golden 闭式不同源）")
+def _b413_normal_reflectance_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B413 独立候选：垂直入射反射率 R0（1D FD Helmholtz 总场解）。
+
+    golden=闭式 ((n1−n2)/(n1+n2))²；cand=FD 总场解提取 R0。残差=FD 离散化误差
+    （O(h²)）。余量 2.4×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b26()
+    return float(m.cand_normal_reflectance(float(p["n1"]), float(p["n2"])))
+
+
+@_register_candidate(
+    "s_reflectance",
+    "单界面 1D FD Helmholtz TE 总场解提取 s 偏振反射率 Rs（与 golden Fresnel 闭式不同源）")
+def _b414_s_reflectance_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B414 独立候选：s 偏振反射率 Rs（1D FD Helmholtz TE 解）。
+
+    golden=Fresnel s 闭式；cand=FD Helmholtz TE 解提取 Rs。残差=FD 离散化误差。
+    余量 2.6×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b26()
+    return float(m.cand_s_reflectance(float(p["n1"]), float(p["n2"]), float(p["theta_i"])))
+
+
+@_register_candidate(
+    "p_reflectance",
+    "单界面 1D FD Helmholtz TM 总场解提取 p 偏振反射率 Rp（与 golden Fresnel 闭式不同源）")
+def _b415_p_reflectance_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B415 独立候选：p 偏振反射率 Rp（1D FD Helmholtz TM 解）。
+
+    golden=Fresnel p 闭式；cand=FD Helmholtz TM 解提取 Rp。残差=FD 离散化误差。
+    余量 6.0×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b26()
+    return float(m.cand_p_reflectance(float(p["n1"]), float(p["n2"]), float(p["theta_i"])))
+
+
+@_register_candidate(
+    "s_transmittance",
+    "单界面 1D FD Helmholtz TE 总场解提取 s 偏振透射率 Ts（与 golden 闭式不同源）")
+def _b416_s_transmittance_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B416 独立候选：s 偏振透射率 Ts（1D FD Helmholtz TE 解）。
+
+    golden=闭式 1−Rs；cand=FD Helmholtz TE 解提取 Ts（通量比修正）。残差=FD 离散化误差。
+    余量 10239×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b26()
+    return float(m.cand_s_transmittance(float(p["n1"]), float(p["n2"]), float(p["theta_i"])))
+
+
+@_register_candidate(
+    "p_transmittance",
+    "单界面 1D FD Helmholtz TM 总场解提取 p 偏振透射率 Tp（与 golden 闭式不同源）")
+def _b417_p_transmittance_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B417 独立候选：p 偏振透射率 Tp（1D FD Helmholtz TM 解）。
+
+    golden=闭式 1−Rp；cand=FD Helmholtz TM 解提取 Tp。残差=FD 离散化误差。
+    余量 11729×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b26()
+    return float(m.cand_p_transmittance(float(p["n1"]), float(p["n2"]), float(p["theta_i"])))
+
+
+@_register_candidate(
+    "unpol_reflectance",
+    "单界面 1D FD Helmholtz TE/TM 双解平均提取非偏振反射率 Runpol（与 golden 闭式不同源）")
+def _b418_unpol_reflectance_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B418 独立候选：非偏振反射率 Runpol=(Rs+Rp)/2（1D FD Helmholtz TE/TM 双解平均）。
+
+    golden=闭式；cand=FD Helmholtz TE/TM 双解分别量测后平均。残差=FD 离散化误差。
+    余量 9.1×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b26()
+    return float(m.cand_unpol_reflectance(float(p["n1"]), float(p["n2"]), float(p["theta_i"])))
+
+
+@_register_candidate(
+    "delta_R",
+    "单界面 1D FD Helmholtz TE/TM 双解取差 ΔR=Rs−Rp（与 golden 闭式不同源）")
+def _b419_delta_R_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B419 独立候选：偏振反射率对比 ΔR=Rs−Rp（1D FD Helmholtz TE/TM 双解取差）。
+
+    golden=闭式 Rs−Rp；cand=FD Helmholtz TE/TM 双解分别量测 Rs,Rp 后取差（直接观测
+    偏振对比度，连续非退化）。注：原设计 TIR 反射相位经此 FD 在可行 N 下本质病态
+    （误差随域长 L0 漂移、ABC 与 Dirichlet 同结果、纯 h 依赖），故改用相位无关的
+    偏振对比度观测。残差=FD 离散化误差。余量 9.0×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b26()
+    return float(m.cand_delta_R(float(p["n1"]), float(p["n2"]), float(p["theta_i"])))
+
+
+@_register_candidate(
+    "Ts_Tp_ratio",
+    "单界面 1D FD Helmholtz TE/TM 双解取比 Ts/Tp（与 golden 闭式不同源）")
+def _b420_Ts_Tp_ratio_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B420 独立候选：偏振透射率比 Ts/Tp（1D FD Helmholtz TE/TM 双解取比）。
+
+    golden=闭式 Ts/Tp；cand=FD Helmholtz TE/TM 双解分别量测 Ts,Tp 后取比。残差=FD
+    离散化误差。余量 110505×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b26()
+    return float(m.cand_Ts_Tp_ratio(float(p["n1"]), float(p["n2"]), float(p["theta_i"])))
+
+
+@_register_candidate(
+    "brewster_angle",
+    "两级扫描 θi 找 1D FD Helmholtz TM 反射率极小（→0）的角（与 golden atan 闭式不同源）")
+def _b421_brewster_angle_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B421 独立候选：布儒斯特角 θB=atan(n2/n1)（FD Helmholtz TM 反射率两级扫描定位极小）。
+
+    golden=闭式 atan(n2/n1)；cand=FD Helmholtz TM 反射率粗扫 90 点 + 细扫 120 点 +
+    抛物 refine 定位极小（→0）。残差=扫描数值定位误差。余量 13.9×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b26()
+    return float(m.cand_brewster_angle(float(p["n1"]), float(p["n2"])))
+
+
+@_register_candidate(
+    "s_transmission_amplitude",
+    "单界面 1D FD Helmholtz TE 总场解提取复透射振幅模 |t_s|（与 golden 闭式振幅不同源）")
+def _b422_s_transmission_amplitude_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B422 独立候选：s 偏振透射振幅 |t_s|=2n1cθi/(n1cθi+n2cθt)（FD Helmholtz TE 总场提取）。
+
+    golden=闭式振幅；cand=FD Helmholtz TE 总场解提取复透射振幅模。B416 观测功率，
+    本锚观测振幅（不同量）。残差=FD 离散化误差。余量 261669×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b26()
+    return float(m.cand_s_transmission_amplitude(float(p["n1"]), float(p["n2"]), float(p["theta_i"])))
+
+
+@_register_candidate(
+    "tir_reflectance",
+    "单界面 1D FD Helmholtz TIR 总场解提取反射率（应≈1，与 golden 闭式不同源）")
+def _b423_tir_reflectance_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B423 独立候选：全反射反射率=1（FD Helmholtz TIR 解，k2x 纯虚数倏逝）。
+
+    golden=1；cand=FD Helmholtz TIR 总场解提取反射率。残差=FD 倏逝区离散化误差。
+    余量 5.9×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b26()
+    return float(m.cand_tir_reflectance(float(p["n1"]), float(p["n2"]), float(p["theta_i"])))
+
+
+@_register_candidate(
+    "evanescent_beta",
+    "单界面 1D FD Helmholtz TIR 区域2 场指数衰减直接量测 β（与 golden 闭式不同源）")
+def _b424_evanescent_beta_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B424 独立候选：倏逝波衰减常数 β=k0√(n1²sin²θi−n2²)（FD Helmholtz 场指数衰减测量）。
+
+    golden=闭式；cand=FD Helmholtz TIR 区域2 两探针点 |E| 指数衰减直接量测 β。
+    残差=FD 倏逝区离散化误差（O(h²)）。余量 74737×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b26()
+    return float(m.cand_evanescent_beta(float(p["n1"]), float(p["n2"]), float(p["theta_i"])))
+
+
+@_register_candidate(
+    "energy_conservation",
+    "单界面 1D FD Helmholtz TE 解量测 Rs,Ts 校验能量守恒式（与 golden 闭式不同源）")
+def _b425_energy_conservation_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B425 独立候选：能量守恒 Rs+Ts·(n2cθt)/(n1cθi)=1（FD Helmholtz TE 解量测校验）。
+
+    golden=1；cand=FD Helmholtz TE 解量测 Rs,Ts 代入校验。残差=FD 离散化误差。
+    余量 2.6×；零商业依赖。"""
+    p = spec.params
+    m = _get_batch_b26()
+    return float(m.cand_energy_conservation(float(p["n1"]), float(p["n2"]), float(p["theta_i"])))
 
 
 @_register_candidate(

@@ -146,7 +146,7 @@ def main() -> int:
                   + [f"B{i}" for i in range(361, 374)]    # B361-B373 = Batch B-22 十三锚（阶跃/渐变光纤物理定律族）
                   + [f"B{i}" for i in range(374, 387)]     # B374-B386 = Batch B-23 十三锚（高斯光束旁轴光学族）
                   + [f"B{i}" for i in range(387, 400)]      # B387-B399 = Batch B-24 十三锚（标量衍射族 Fraunhofer/Fresnel Simpson 求积）
-                  + [f"B{i}" for i in range(400, 413)])    # B400-B412 = Batch B-25 十三锚（静电/静磁有限源族 库仑/Biot-Savart Simpson 求积）
+                  + [f"B{i}" for i in range(400, 426)])    # B400-B412 = Batch B-25 十三锚（静电/静磁有限源族 库仑/Biot-Savart Simpson 求积） + Batch B-26 十三锚（单界面 Fresnel/Snell 光学族 1D FD Helmholtz）
     check("题库（B1-B412 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + Batch B-7 十六锚 + Batch B-8 十六锚 + Batch B-9 十六锚 + Batch B-10 十六锚 + Batch B-11 十六锚 + Batch B-12 十六锚 + Batch B-13 十六锚 + Batch B-14 十六锚 + Batch B-15 十六锚 + Batch B-16 十六锚 + Batch B-17 十六锚 + Batch B-18 十六锚 + Batch B-19 十六锚 + Batch B-20 十六锚 + Batch B-21 十六锚 + Batch B-22 十三锚 + Batch B-23 十三锚 + Batch B-24 十三锚 + Batch B-25 十三锚 + E1-E10 + S1-S13 动态计数）",
           b_ids == expected_b
           and s_ids == [f"S{i}" for i in range(1, 14)]

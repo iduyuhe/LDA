@@ -547,7 +547,9 @@ CORE_SMOKES: List[str] = [
     #   审计记「check() 复制 86 份」；波次 2 AST 复测给出精确结论：全仓 97 处
     #   `def check(`（36 个结构类），其中 50 处抽到 `lda_harness/smoke_kit.py`、
     #   T1 红线守卫 6→1 抽到 `lda_solver/redline.py`。余量钉成棘轮（只降不升）：
-    #   `def check(` ≤53 · 逐字重复组涉及文件 ≤30 · smoke_kit 接线 ≥69。
+    #   `def check(` ≤53 · 逐字重复组涉及文件 ≤30 · smoke_kit 接线 ≥70
+    #   （v0.9.114 随本轮成果收紧 69→70：`run_bounty_ledger_smoke` 删死码时归一，
+    #   成为第 70 个接线方 —— 按「实测值即基线 · 棘轮只收紧」同步）。
     #   🔴 关键判据 **J7**：6 个 T1 数值内核的 `guard_t1_not_oracle` 必须
     #   **绑定到同一个函数对象**（`partial.func is`）——任何一处退回本地复制即红；
     #   另加 5 条反向测试（基线调低 / 合成 2 处守卫 / 接线不足 / force_oracle 必

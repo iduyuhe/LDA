@@ -78,7 +78,8 @@ _KIT_REL = "lda/lda_harness/smoke_kit.py"
 _BASELINE = {
     "max_check_defs": 53,        # HEAD 97 处 − 本轮抽走 44 处 = 53（`smoke_kit` 自身不计 · 实测）
     "max_dup_files": 30,         # 仍处于「逐字重复组」的文件数（10 组）
-    "min_kit_importers": 69,     # 50(波次2 Stage A) + 18(F-18 报告契约) + 1(本棘轮自身)
+    "min_kit_importers": 70,     # 50(波次2 Stage A) + 18(F-18 报告契约) + 1(本棘轮自身)
+                                 #   + 1(v0.9.114：`run_bounty_ledger_smoke` 删死码时归一到 make_check)
 }
 
 # 6 个 T1 数值内核（守卫文案各不同，但实现必须同一份）

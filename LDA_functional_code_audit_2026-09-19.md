@@ -310,7 +310,7 @@ NameError: name 'v_t' is not defined. Did you mean: 'V_T'?
 | 10 | F-10 根目录脚本已入库 | P2 | ✅ 已修 | 16 脚本 + 3 产物 `git rm --cached` + `.gitignore`（`check-ignore` 19/19 命中；本地文件与 git 历史均保留）。**选 ignore 而非迁 `scripts/`**：迁移会破坏脚本内 `os.path.dirname(__file__)` 的根定位，且 `docs/*.md` 以文件名引用它们 |
 | 11 | F-11 / F-12 死代码 · 245 处 F401 | P2 | ⛔ 未执行 | **已实证存在 re-export 依赖**（`run_shelf_listing_smoke.py:154,273` 与 `run_shelf_taxonomy_smoke.py:141` 均 `from lda_webui.app import shelf_status`）⇒ 盲删会破坏调用方。本报告原亦标「可分批」 |
 | 12 | F-13 空 f-string ×25 | P3 | ⛔ 未执行 | 纯风格；且 `f"{{}}"` 类需先处理转义再摘 `f`，盲改会**改变输出语义** |
-| 13 | F-14 `solver_writer` 自述数值缺陷 | P3 | ⛔ 未执行 | 需重做归一化 / 阻抗因子，属数值工程而非代码卫生 |
+| 13 | F-14 `solver_writer` 自述数值缺陷 | P3 | ❌ **误报（已证伪 · 2026-09-21）** | 🔴 **审计上下文误读**：该 `# BUG` 注释位于 `_CANDIDATE_V0` **三引号模板串内部**（L443-539），是 demo 的**刻意错误示范**；紧邻 `_CANDIDATE_V1`（L542-644）即**修复版**（L641 `T = (nL / n0) * abs(e_real / e_ref) ** 2` = 参考跑归一化 + `nL/n0` 阻抗因子）。**六条取证**：① 注释在字符串模板内（非真码） ② v1 即修复版 ③ `build_offline_generator()` docstring 明写「v0（bug）→ v1（修复），证明闭环能判 FAIL→收重写→判 PASS」 ④ **CI core 常驻门禁** `run_solver_writer_sandbox_smoke.py`（`run_ci_regression.py:458`）**判据 ③ 直接依赖它**（实跑 8 PASS / 0 FAIL） ⑤ `LDA_v0.1_Release_Notes.md:29` 记载 v0 FAIL→v1 PASS（max_err=0.0326） ⑥ **真 ORACLE 实证**：`tmm` + FDTD 实跑 `run_demo` ⇒ `[iter 1] FAIL max_abs_err=0.4109` → `[iter 2] PASS max_abs_err=0.0326`（与发布说明**逐位一致**），跑后工作区零污染。⇒ **改它 = 摧毁 L3「AI 写内核递归自举」thesis 的实物演示 + 打破门禁③**，且**零数值收益**（prod 求解核在 `lda_solver/`，该文件不在任何生产求解路径）⇒ 处置 = **判定不做**（已登记 workplan §5） |
 | 14 | F-15 / F-16 重复导入 | P3 | ✅ 部分修 | F-16（`run_loss_engine_smoke.py:112`）已删冗余行；F-15（`device_library.py` 4 处）**保留** —— 未证伪其分支必要性 |
 | 15 | F-17 Tidy3D 误称 GPL | P3 | ✅ 已修（**范围扩大**） | 核实官方 `flexcompute/tidy3d` LICENSE = **GNU LGPL-2.1**（客户端；求解服务为 Flexcompute 商业云）⇒ 全仓 **7 处**订正 |
 | 16 | F-18 两套测试范式并存 | P3 | ⛔ 未执行 | 一致性债务，不影响正确性 |
@@ -372,3 +372,4 @@ NameError: name 'v_t' is not defined. Did you mean: 'V_T'?
 - 审计时给出的两条 P1 建议**现已闭环**；§6 中「未跑全量 CI core」一项已在修复轮补齐。
 - 修复轮另发现并随批处理：**N-1**（Meep/Tidy3D 分级错写「A 级」→ 按权威表 `sovereign_deps.py` 改 **B 级**）、**N-2**（CI 子进程钉死 `PYTHONHASHSEED=0`）、**N-3**（补 `origin` 远端 —— 经核实与 `scripts/sync_push.py` 的双远端硬依赖冲突且无收益，**明确不做**）。
 - 新增配套产物：`scripts/ci_core_batched.py`（分批防掉电跑法，默认不改线程数）+ 技能 `lda-ci-batched-power-safe` 三处缺陷订正（失效脚本引用 / 条数 173→178 / 超时表与线程标定脱钩）。
+- 🔴 **后续改判（2026-09-21）**：§5.1 序 13（**F-14**）由「⛔ 未执行」改判为「❌ **误报（已证伪）**」—— 本报告以 grep 命中 `solver_writer.py` 的注释文本，**未判断该注释落在三引号模板字符串内部**（demo 的刻意错误示范）。经六条取证（含真 ORACLE `tmm` 实跑 `run_demo`：v0 FAIL 0.4109 → v1 PASS 0.0326，与发布说明逐位一致）确认其为**教材资产而非缺陷**，且是 CI 门禁 `run_solver_writer_sandbox_smoke` 判据③ 的依赖物。⇒ **波次 3 关闭 · 判定不做**。🔴 **方法论**：「自述缺陷」类发现**必须先判定注释所在容器**（真码 / 字符串模板（demo、prompt）/ 文档块）—— 三者处置完全不同，而 grep 视角**区分不了**。

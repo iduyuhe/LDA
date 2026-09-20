@@ -26,6 +26,9 @@
     python scripts/ci_core_batched.py                     # core · 10 线程 · 18 条/批
     python scripts/ci_core_batched.py --batch 24 --cooldown 20
     python scripts/ci_core_batched.py --tag all --out D:/tmp/ci_all.json
+    # T6.1 刷新超时预算基线（跨轮上界并入 · 只许 10 线程口径）
+    python scripts/ci_core_batched.py --write-baseline
+    python scripts/ci_core_batched.py --from-report _ci_core_batched_report.json
 
 结果
 ----
@@ -93,6 +96,105 @@ def _budget_margin_audit(results):
             "rows": rows}
 
 
+_BASELINE_PATH = os.path.join(_LDA, "timeout_budget_baseline.json")
+_BASELINE_SCHEMA = "lda.timeout_budget_baseline/1"
+
+
+def _write_baseline(results, *, label, threads, dst=_BASELINE_PATH):
+    """把本轮实测**并入**既有基线后写回（v0.9.118 · T6.1 的刷新闭环）。
+
+    为什么是「并入」而不是「覆盖」
+    ----------------------------
+    `elapsed_max_s` 的语义是**跨轮实测上界**（v0.9.116 立规：取历轮 `elapsed` 最大值，
+    而非最近一次）。若用单轮覆盖，上界会退化成"最近一次"⇒ 棘轮失去意义（这正是
+    v0.9.116 复查出的规则漏洞）。故本轮样本与既有样本**取并集**，上界取并集最大值。
+
+    🔴 线程口径：内置预算按 **10 线程**标定，其它线程数的实测不可比 ⇒ 非 10 线程时
+    **拒绝写基线**（否则会污染基线，让 B8/B9 的余量失真）。
+    """
+    import run_ci_regression as R
+    try:
+        from lda_harness.benchmarks import BENCHMARK_ORDER
+        anchors = len(BENCHMARK_ORDER)
+    except Exception as e:                                       # noqa: BLE001
+        anchors = -1
+        print("[warn] 读 BENCHMARK_ORDER 失败：%s" % e)
+
+    prev, prev_src = {}, []
+    try:
+        with open(dst, encoding="utf-8") as fh:
+            _p = json.load(fh)
+        prev = {r["script"]: r for r in (_p.get("rows") or [])}
+        prev_src = list(_p.get("source_reports") or [])
+    except (OSError, ValueError):
+        prev = {}
+
+    censored, fresh = {}, {}
+    for r in results:
+        s = r.get("script")
+        if s not in R._BUILTIN_TIMEOUT_OVERRIDE:
+            continue
+        if r.get("status") in ("TIMEOUT", "CRASH"):
+            censored[s] = censored.get(s, 0) + 1
+            continue
+        if r.get("elapsed_s"):
+            fresh.setdefault(s, set()).add(round(float(r["elapsed_s"]), 2))
+
+    rows = []
+    for s, b in R._BUILTIN_TIMEOUT_OVERRIDE.items():
+        old = prev.get(s) or {}
+        ss = {round(float(x), 2) for x in (old.get("samples_s") or [])}
+        if old.get("elapsed_max_s") is not None:
+            ss.add(round(float(old["elapsed_max_s"]), 2))
+        ss |= fresh.get(s, set())
+        if not ss:
+            print("[warn] 基线跳过 %s：无实测样本（该轮未覆盖）" % s)
+            continue
+        mx = max(ss)
+        rows.append({
+            "script": s,
+            "budget_s": float(b),
+            "elapsed_max_s": mx,
+            "margin_x": round(float(b) / mx, 3),
+            "samples_s": sorted(ss),
+            "n_rounds": len(ss),
+            "censored_events": int(old.get("censored_events", 0))
+                               + censored.get(s, 0),
+        })
+    rows.sort(key=lambda r: r["margin_x"])
+
+    srcs = prev_src + ([label] if label and label not in prev_src else [])
+    out = {
+        "schema": _BASELINE_SCHEMA,
+        "title": "CI core 超时预算基线（@10 线程 · 跨轮实测上界）",
+        "threads": 10,
+        "aggregation": "cross-round-max-elapsed(excluding-censored)",
+        "hard_floor_x": 2.0,
+        "target_x": 3.0,
+        "ratchet_below_target": int(
+            sum(1 for r in rows if r["margin_x"] < 3.0)),
+        "anchors_at_measurement": anchors,
+        "core_smokes_at_measurement": len(R.CORE_SMOKES),
+        "updated_at": time.strftime("%Y-%m-%d"),
+        "source_reports": srcs[-40:],
+        "rules": ("预算 ≥ 2 × 跨轮实测上界（硬闸）；目标 3×（棘轮：低于 3× 的项数只降不升）；"
+                  "锚数或 CI core 成员数变化 ⇒ 基线过期，须重跑全量并 --write-baseline 刷新"),
+        "rows": rows,
+    }
+    with open(dst, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(out, fh, ensure_ascii=False, indent=2)
+        fh.write("\n")
+    print("\n[baseline] 已并入并写回 %s（%d 项 · 锚数 %s · CI core %d）"
+          % (dst, len(rows), anchors, out["core_smokes_at_measurement"]))
+    for r in rows[:3]:
+        print("  ⚠️ 最紧：%s %.3f×（budget=%.0f / 上界 %.1f）"
+              % (r["script"], r["margin_x"], r["budget_s"], r["elapsed_max_s"]))
+    tight = [r["script"] for r in rows if r["margin_x"] < 2.0]
+    if tight:
+        print("  🔴 欠标定（<2×）：%s —— 须上调 _BUILTIN_TIMEOUT_OVERRIDE 后重跑" % tight)
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="CI 分批回归（防掉电）")
     ap.add_argument("--tag", choices=["core", "all"], default="core")
@@ -103,7 +205,23 @@ def main() -> int:
     ap.add_argument("--python", default=None, help="解释器；默认当前解释器")
     ap.add_argument("--timeout", type=float, default=300.0, help="全局兜底超时")
     ap.add_argument("--out", default=os.path.join(_ROOT, "_ci_core_batched_report.json"))
+    ap.add_argument("--write-baseline", action="store_true",
+                    help="跑完后把实测【并入】lda/timeout_budget_baseline.json"
+                         "（跨轮上界语义 · T6.1 超时预算棘轮的刷新闭环）")
+    ap.add_argument("--from-report", default=None,
+                    help="从既有报告 JSON 刷新基线（**不重跑**）")
     a = ap.parse_args()
+
+    if a.from_report:
+        print("[baseline] 从既有报告刷新：%s" % a.from_report)
+        with open(a.from_report, encoding="utf-8") as fh:
+            rep = json.load(fh)
+        if (a.threads or 0) not in (0, 10):
+            print("[refuse] 非 10 线程口径的实测不可比 ⇒ 拒绝写基线")
+            return 2
+        _write_baseline(rep.get("results") or [], label=os.path.basename(a.from_report),
+                        threads=a.threads)
+        return 0
 
     if a.threads:
         # setdefault 语义：父进程显式设了才不会被 _child_env 覆盖
@@ -185,6 +303,13 @@ def main() -> int:
         print(f"\n[written] {a.out}")
     except OSError as e:                      # 写盘失败不得掩盖判决
         print(f"[warn] 报告写入失败（不影响判决）：{e}", file=sys.stderr)
+
+    if a.write_baseline:
+        if (a.threads or 0) not in (0, 10):
+            print("[refuse] 非 10 线程口径的实测不可比 ⇒ 拒绝写基线"
+                  "（见 run_ci_regression 文件头的标定纪律）")
+        else:
+            _write_baseline(results, label=os.path.basename(a.out), threads=a.threads)
 
     audit = out["budget_audit"]
     if audit["n_items"]:

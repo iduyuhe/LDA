@@ -583,6 +583,17 @@ CORE_SMOKES: List[str] = [
     #   少加载片 ⇒ L0 红（facade NameError）。
     #   纯 AST + 一次子进程导入，实测 ≈1s。CI core 181->182。
     "run_adapter_shard_layout_smoke.py",
+    # 超时预算棘轮（v0.9.118 · 波次 6 T6.1 · 源自 v0.9.112/v0.9.116 两次同族复发）。
+    #   「耗时随锚数增长、预算未同步上调」这一缺陷**已复发两次**，且"何时该重标定"
+    #   此前只存在于本地辅助脚本 `scripts/ci_core_batched.py` 跑完打印的体检里
+    #   （不是门禁 ⇒ 没人看就不存在）。本 smoke 把它升格为 CI 会红的机器纪律：
+    #   基线 `lda/timeout_budget_baseline.json`（@10 线程 · 跨轮实测上界 · 剔截断）
+    #   ⇒ 判据：B5 覆盖完备 · B6 无死行 · B7 基线自洽 · B8 硬闸（余量 ≥2×）
+    #   · B9 目标棘轮（低于 3× 的项数只降不升）· B10/B11 基线陈旧判据
+    #   （锚数 / CI core 成员数变化 ⇒ 基线作废）
+    #   · B12~B16 五条反向测试（证明判据真会变红）· B17 自食其规则。
+    #   纯 JSON + 两次导入，实测 ≈0.5s。CI core 182->183。
+    "run_timeout_budget_ratchet_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

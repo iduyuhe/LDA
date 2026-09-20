@@ -30,10 +30,8 @@ from .golden import (
     s5_worst_case_budget,
     s6_detector_margin,
     # S7 统计锚（Phase 3 · 专投区第一刀，蒙特卡洛分布）
-    s7_statistical_margin_anchor,
     s7_statistical_margin_p5_anchor,
     # S8 统计锚（Phase 3 · OSNR 统计延伸，模板复用）
-    s8_statistical_osnr_anchor,
     s8_statistical_osnr_p5_anchor,
     # S9 LVS 签核锚（Phase 4 · 版图-原理图一致性判决）
     s9_lvs_verdict,
@@ -191,22 +189,22 @@ from ._batch_b28_numeric import (  # noqa: E402  # Batch B-28 双方法独立锚
 )
 
 from .b28_modulator_vpi_anchor import (  # noqa: E402  # B28 MZM Vπ 锚（v0.9.1 · 钉子 D1b=A）
-    b28_modulator_vpi, b28_modulator_vpi_report,
+    b28_modulator_vpi,
 )
 from .b29_thermal_phase_anchor import (  # noqa: E402  # B29 热光相移效率锚（v0.9.39 · T-9 接线）
-    b29_thermal_phase_efficiency, b29_thermal_phase_report,
+    b29_thermal_phase_efficiency,
 )
 from .b30_readout_anchor import (  # noqa: E402  # B30 读出保真度锚（v0.9.39 · T-9 接线）
-    b30_readout_fidelity, b30_readout_report,
+    b30_readout_fidelity,
 )
 from .b33_detector_bandwidth_anchor import (  # noqa: E402  # B33 探测器 RC 带宽锚（v0.9.67 · A 档有源）
-    b33_detector_bandwidth, b33_detector_bandwidth_report,
+    b33_detector_bandwidth,
 )
 from .b31_soref_bennett_anchor import (  # noqa: E402  # B31 Si 载流子色散相移锚（v0.9.69 · T1-C W3）
-    b31_soref_bennett_phase_shift, b31_phase_shift_report,
+    b31_soref_bennett_phase_shift,
 )
 from .b32_qcse_anchor import (  # noqa: E402  # B32 EAM-QCSE 吸收边位移锚（v0.9.69 · T1-C W4）
-    b32_qcse_edge_shift_meV, b32_qcse_report,
+    b32_qcse_edge_shift_meV,
 )
 from ._batch_b_numeric import (  # noqa: E402  # Batch B-1 双方法独立锚数值核（v0.9.79 · 路径 B 扩基）
     golden_b34, golden_b36, golden_b37, golden_b40, golden_b41,

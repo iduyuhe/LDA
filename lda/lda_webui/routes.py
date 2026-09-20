@@ -1024,7 +1024,6 @@ def h_store_order_download(h, p, q, path):
 def h_store_order_get(h, p, q, path):
     if path.count("/") == 5:
         parts = path.split("/")
-        oid = parts[4]
         sub = parts[5] if len(parts) > 5 else ""
         if sub == "download":
             return h_store_order_download(h, p, q, path)

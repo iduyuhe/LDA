@@ -79,7 +79,7 @@ class TapeoutPipelineSmoke(unittest.TestCase):
         # 用时间戳唯一 id 验证 accepted_pending 路径（绕过防重）
         import time as _t
         uniq = f"tapeout-sim-uniq-{int(_t.time())}"
-        r2 = run_tapeout_pipeline({"Waveguide": {"width": 0.5}},
+        run_tapeout_pipeline({"Waveguide": {"width": 0.5}},
                                   submit_empirical=True)
         # 复用管道内的 id 构造：直接调 submit 验证唯一 id 走通
         from lda_pdk.empirical import submit_measurement

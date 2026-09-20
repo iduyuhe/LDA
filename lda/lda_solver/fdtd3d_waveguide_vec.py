@@ -95,8 +95,6 @@ def solve_waveguide_neff_vec(eps3: np.ndarray, dl: float, wl_um: float, n_clad: 
         wy = max(2.0, (cols.max() - cols.min() + 1) / 2.0)
     else:
         wx = wy = max(2.0, min(Nx, Ny) * 0.1)
-    sgx = max(1, int(wx))
-    sgy = max(1, int(wy))
     ax = (np.arange(Nx) - cx) / wx
     ay = (np.arange(Ny) - cy) / wy
     prof = np.exp(-(ax[:, None] ** 2 + ay[None, :] ** 2) / 2.0)

@@ -120,7 +120,6 @@ class HybridProblem:
         j = np.arange(self.dj0, self.dj1)
         w_col = self.width_at(w_ctl)
         # 带区 ρ 修正因子（每列：|j-jmid| 在带内的 ρ 值）
-        rho_col = np.zeros(self.cols.shape)
         rho_full = np.zeros((p.Nx, p.Ny))
         rho_full.ravel()[self.topo_idx] = rho
         for k in range(K):

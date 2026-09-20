@@ -215,7 +215,7 @@ def mmi_excess_loss(w_um: float = 0.5, W_mmi: float = MMI_W_UM,
                 "L_pi_um": 拍长, "power_in_mmi_modes": 输入功率落入导模的比例, ...}
     """
     B = build_basis(w_um, W_mmi, wl_um, n_core, n_clad, dl, y_pad_um)
-    ys, psi_in, neff, phi, c = B.ys, B.psi_in, B.neff, B.phi, B.c
+    ys, neff, phi, c = B.ys, B.neff, B.phi, B.c
     y_split = out_gap / 2.0 + w_um / 2.0
 
     Eout = B.field(L_mmi, wl_um)

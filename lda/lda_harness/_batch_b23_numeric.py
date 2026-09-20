@@ -245,7 +245,6 @@ def cand_divergence(w0, wl):
 def cand_q_waist_after_lens(w0, wl, f):
     """BPM 量测薄透镜后聚焦腰 w0'。"""
     zr = _zr(w0, wl)
-    w0p = w0 / math.sqrt(1.0 + (zr / f) ** 2)
     zrp = zr / math.sqrt(1.0 + (zr / f) ** 2)
     s = f / (1.0 + (f / zr) ** 2)
     z_scan = np.linspace(0.0, s + 4.0 * zrp, 240)
@@ -261,7 +260,6 @@ def cand_q_waist_after_lens(w0, wl, f):
 def cand_q_zR_after_lens(w0, wl, f):
     """BPM 量测薄透镜后瑞利范围 zR'（焦腰 s 之后找 w=√2 w0' 的点，减 s 得 zR'）。"""
     zr = _zr(w0, wl)
-    w0p = w0 / math.sqrt(1.0 + (zr / f) ** 2)
     zrp = zr / math.sqrt(1.0 + (zr / f) ** 2)
     s = f / (1.0 + (f / zr) ** 2)
     z_scan = np.linspace(0.0, s + 8.0 * zrp, 300)
@@ -291,7 +289,6 @@ def cand_q_zR_after_lens(w0, wl, f):
 def cand_q_waist_loc(w0, wl, f):
     """BPM 量测薄透镜后焦腰位置 s。"""
     zr = _zr(w0, wl)
-    w0p = w0 / math.sqrt(1.0 + (zr / f) ** 2)
     zrp = zr / math.sqrt(1.0 + (zr / f) ** 2)
     s = f / (1.0 + (f / zr) ** 2)
     z_scan = np.linspace(0.0, s + 4.0 * zrp, 240)

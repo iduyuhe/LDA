@@ -30,7 +30,7 @@ def build_A(dx, pad=2.0):
 
 if __name__ == "__main__":
     print(f"golden EIM n_eff        = {GOLDEN_EIM:.10f}")
-    print(f"tol                     = 0.05")
+    print("tol                     = 0.05")
     print("-" * 64)
     prev = None
     for dx in (0.05, 0.04, 0.03, 0.02, 0.015):

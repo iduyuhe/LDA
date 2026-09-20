@@ -339,6 +339,10 @@ NameError: name 'v_t' is not defined. Did you mean: 'V_T'?
 🔴 **首轮实跑出现过 2 项 TIMEOUT（假红）**：`run_benchmark_falsifiability_smoke.py`（600s 预算）与 `run_redteam_anchor_fuzz_smoke.py`（原**无覆盖**、走全局默认 300s）。独立复跑取证 ⇒ 两者 **rc=0 功能全绿**（实测 1098.6s / 1315.8s），即报出的 TIMEOUT 是**超时预算不足**、非功能回归。根因：存量超时预算未随 B-25~B-28 四轮扩基（+52 锚）同步，**与本轮任何改动无关**。修复：`_BUILTIN_TIMEOUT_OVERRIDE` 中 falsifiability 600→**1800**、fuzz 补 **2000**（≈1.5–1.6× 余量），**判据一字未改**。
 
 > 纪律提示：`_FAIL_STATUSES` 含 `TIMEOUT`（「宁红不假绿」的记账底线），因此超时预算必须随锚数增长同步上调，否则会周期性产生**假红**。已把该标定写进 `lda-ci-batched-power-safe` 技能，并配套新增 `scripts/ci_core_batched.py`。
+>
+> 🔴 **补记（v0.9.112 · 2026-09-20）：上文「配 1800 / 2000（≈1.5–1.6× 余量）」的余量本身不足** —— v0.9.112 二轮全量实跑**再次假红**（`run_d_criterion_smoke.py` TIMEOUT：旧预算 180s vs 实测 173.95–175.52s ⇒ 余量仅 **1.03×**，并连带 `run_ci_industrial_smoke` FAIL）。据此**全表审计 14 项**（用本轮实测耗时算余量），发现 **5 项不足** —— 含上文刚配的 **1800 / 2000（余量仅 1.61× / 1.46×）**，即上一次的修复方案本身也建在不足的余量上。已**全表重标定至 ≥3×**：d_criterion 180→**600** · splitter_readout 400→**600** · splitter_readout_cal 400→**600** · falsifiability 1800→**3600** · fuzz 2000→**4200** ⇒ **全表最低余量 3.06×**。并把「**预算 ≥ 3× 该线程数实测耗时**」写进 `_BUILTIN_TIMEOUT_OVERRIDE` 表头作为纪律，另在 `scripts/ci_core_batched.py` 新增每次跑完自动输出的「预算余量体检」（写入报告 `budget_audit`：<2× 或 TIMEOUT 截断值即列名告警）。**判据一字未改。**
+>
+> **教训（本条比数字更重要）**：修症状时若**只修「当下踩到的那几项」而不做同类全表体检**，同类缺陷**必然复发**。本项已复发两次（v0.9.111 两项 → v0.9.112 又五项），故纪律必须**机器化**（跑完自动体检），不能停留在「写进技能文档」。
 
 ---
 

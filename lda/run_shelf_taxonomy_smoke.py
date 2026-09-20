@@ -256,7 +256,7 @@ def main() -> int:
                     not pm, f"{pm}")
 
     # ⑫ 反向测试 D：文档写错数字 ⇒ ⑪ 必须报
-    fake = f"超市按 999 应用域分类（错写）"
+    fake = "超市按 999 应用域分类（错写）"
     n_fake = _prose_app_domain_numbers(fake)
     rc |= not check("⑫ 反向测试 D：文档写错「N 应用域」⇒ ⑪ 必须报",
                     n_fake == [999] and 999 != n_dom, f"抽到 {n_fake}")

@@ -168,7 +168,6 @@ def verify_packaging_anchor(n: int = 20000, seed: int = SEED,
     积分在同一物理定律上收敛——构成「非 AI ground」的硬证据。
     """
     mfd = _mfd(mfd_um)
-    r = _tolerance_radius_um(eta_min, eta0, mfd)
     # 解析
     y_an = package_yield(mfd, eta_min, sigma_align_um, eta0)
     # 蒙特卡洛：采样 (dx,dy)~N(0,σ²)，计数 η≥η_min

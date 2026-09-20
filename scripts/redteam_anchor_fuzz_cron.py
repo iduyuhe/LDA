@@ -54,7 +54,6 @@ def _run(script: str) -> int:
 
 
 def classify(rep: dict) -> tuple:
-    total = rep.get("total", 0)
     suspect = rep.get("in_domain_suspect", 0)
     expected = rep.get("expected_extreme", 0)
     if suspect > 0:

@@ -112,7 +112,7 @@ def main(argv=None) -> int:
 
     # ⑤ 性能预算 + 报告落盘
     t_total = time.perf_counter() - t_start
-    check(f"性能预算：千器件全链路 ≤ 10s", t_total <= 10.0, f"{t_total:.2f}s")
+    check("性能预算：千器件全链路 ≤ 10s", t_total <= 10.0, f"{t_total:.2f}s")
 
     report = {
         "title": f"千器件芯片级演示（n={n} · 版图 7 差距收官）",

@@ -73,8 +73,6 @@ def main() -> int:
 
     # ③ 帕累托 front：C 被 B 支配 ⇒ C 的 front 比 B 差
     ranked = rank_proposals_pareto(cands)
-    front_of = {r["proposal"]["link_spec"]["p_tx_dbm"]: r["pareto_front"]
-                for r in ranked}
     # B 与 C 同 p_tx=6，用 wg_length 区分
     b_front = next(r["pareto_front"] for r in ranked
                    if r["proposal"]["link_spec"]["p_tx_dbm"] == 6.0

@@ -64,7 +64,6 @@ class StoreFlowSmoke(unittest.TestCase):
         email = "a1@smoke.com"
         r = store.register(email, "甲", "secret123", user_type="academic", organization="某高校")
         self.assertTrue(r["ok"], r)
-        tok = r["token"]
         self.assertEqual(r["user"]["user_type"], "academic")
         # 重复注册拒绝
         self.assertFalse(store.register(email, "乙", "secret123")["ok"])

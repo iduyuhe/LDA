@@ -17,6 +17,7 @@
 numpy>=1.24
 scipy>=1.10
 jsonschema>=4.0
+pyflakes>=3.0            # 静态卫生棘轮（run_pyflakes_ratchet_smoke · v0.9.112 起为 core 门禁依赖）
 
 # ---- 可选（性能/可视化，缺失时优雅降级或 SKIP）----
 # numba>=0.58          # 3D adjoint / FDTD numba 加速（无 numba 自动回退纯 numpy）

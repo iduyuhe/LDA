@@ -45,8 +45,6 @@ def solve_spectrum(spec):
         #   t = 2*n0 / (nL*M11 + nL*n0*M12 + M21 + n0*M22)
         denom = nL * M[0, 0] + nL * n0 * M[0, 1] + M[1, 0] + n0 * M[1, 1]
         num_t = 2.0 * n0
-        num_r = nL * M[0, 0] + nL * n0 * M[0, 1] - M[1, 0] - n0 * M[1, 1]
-        r = num_r / denom
         t = num_t / denom
         T = abs(t) ** 2 * (nL / n0) if (n0 > 0 and denom != 0) else 0.0
         Ts.append(float(T))

@@ -88,7 +88,7 @@ def main() -> int:
     _run("check", tmp, "--out", out_dir)  # 先产出一份 LDA 自身 GDS
     # 直接用 cmd_check 内部无法拿路径，这里再生成一份最小 GDS 用于 --gds 回路
     import subprocess as _sp
-    gen = _sp.run([PY, "-c",
+    _sp.run([PY, "-c",
                    "import sys;sys.path.insert(0,'.');"
                    "from lda_l2 import gds_export;"
                    "b=gds_export.gds_library('T',{'C':[gds_export.path(1,0.5,[(0,0),(20,0)]),"

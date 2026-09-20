@@ -187,7 +187,6 @@ def _solve_x11_te11() -> float:
     可用显式 RK 稳定积分）。从原点正则展开 S≈1-kc²r²/8、S'≈-kc²r/4 起手，外推至 r=a，
     扫描 kc 使 R'(a)=S(a)+aS'(a)=0 的第一根，即 X11（理论 1.84118）。结果缓存复用。
     """
-    m = 1
 
     def Rp_at_a(kc: float, a: float) -> float:
         r0 = 1e-9

@@ -102,7 +102,7 @@ def main() -> int:
           " ".join("%.1f%%" % p for p in pens))
     # 折衷证据（观察量，硬判据由上面单调量承担）：f_total 先升后降、峰值居 f_rc/f_tr 交叉处
     peak = max(range(len(f_tots)), key=lambda i: f_tots[i])
-    print(f"  [INFO] f_total(W) 折衷曲线：" +
+    print("  [INFO] f_total(W) 折衷曲线：" +
           " ".join("%.2f" % (x / 1e9) for x in f_tots) +
           f"GHz（峰值在 W≈{Ws[peak]*1e9:.0f}nm，RC↔渡越交叉处；闭式 f_rc 单调↑ 则高估）")
 

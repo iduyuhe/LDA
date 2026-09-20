@@ -11,9 +11,17 @@
   正确聚合多 smoke 的 PASS」这条契约；真实的全量 core 覆盖仍由门禁直接跑，
   **一分未减，不掩盖任何失败**。case 3 同理只跑那一个坏 smoke 验证 FAIL 检测。
   `_SLOW_CORE` 机制随之废弃（不再有嵌套全量重跑，无需为它登记慢 smoke）。
+- ⚠️ **v0.9.112 注（设计意图与现实脱节已记录）**：上条所称「小的、固定、快速」
+  的前提是子集成员都快；但 `run_d_criterion_smoke.py` 因 ③ 基线残差普查随候选
+  数（448 道）增长已到 **~174s** ⇒ 子集实为 ~176s，本文件 ~290s。后果：本例会
+  **继承该成员的超时预算不足**（2026-09-19 二轮全量：d_criterion TIMEOUT ⇒ 本例
+  2/3 FAIL，非本文件缺陷）。已上调其预算至 600s（3.4×）；是否更换子集成员以
+  恢复「小而快」设计意图，留专项裁决，本次不改构成。
 
 运行：C:/Users/Administrator/.workbuddy/binaries/python/envs/default/Scripts/python.exe run_ci_industrial_smoke.py
-（代表子集 ~20s + 性能基准 greens ~35s，总量 <2min，且负载无关）
+（代表子集 ~176s（其中判据 D 基线普查 ~174s）+ 性能基准 greens ~35s + 负例 ~?s，
+ 总量 10 线程实测 ~290s。⚠️ 已**不再**是早期文档所称「~20s · <2min · 负载无关」
+ —— 见下方 `_SUBSET_CONTRACT` 的 v0.9.112 注。本项预算 900s（≈3.1× 余量）。）
 """
 import os
 import sys
@@ -46,7 +54,15 @@ def run(name, fn, expect_ok):
 #    （v0.9.28 前嵌套重跑全量 core 子集是门禁负载抖动的根因，已废弃）。
 _SUBSET_CONTRACT = [
     "run_count_consistency_smoke.py",   # 元/记账，瞬时
-    "run_d_criterion_smoke.py",        # 验证 harness，~15s
+    # ⚠️ v0.9.112：本项含「全部已接线严格独立候选的基线残差普查」（448 道）⇒
+    #   实测 **~174s**（旧注「~15s」是候选还很少时的数据，已严重过时）。这使本
+    #   契约子集从「<30s 负载无关」变成 **~176s 且会继承 d_criterion 的超时预算**：
+    #   d_criterion 预算不足时（旧 180s / 余量 1.03×）本文件会**连带 FAIL**——
+    #   2026-09-19 二轮全量即如此（d_criterion TIMEOUT ⇒ 本例 2/3）。
+    #   已同步上调 d_criterion 预算至 600s（见 run_ci_regression 表）；本子集构成
+    #   是否换成更快项（恢复「小而快」设计意图）留待专项裁决，本次**不改构成**
+    #   （改构成会变动本文件所验证的聚合契约覆盖面）。
+    "run_d_criterion_smoke.py",        # 验证 harness，~174s（v0.9.112 实测）
     "run_b28_nullfit_smoke.py",        # 光子求解器，~3s
 ]
 

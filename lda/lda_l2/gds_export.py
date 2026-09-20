@@ -397,7 +397,7 @@ def parse_gds(data: bytes) -> Dict:
     n = len(data)
     while i < n:
         (ln,) = struct.unpack_from(">H", data, i)
-        rectype, datatype = data[i + 2], data[i + 3]
+        rectype = data[i + 2]
         payload = data[i + 4:i + ln]
         if rectype == 0x02:                       # LIBNAME
             libname = payload.decode("ascii", "ignore").rstrip("\x00")
@@ -489,7 +489,6 @@ def parse_gds_polygons(data: bytes,
         if ln < 4:
             break
         rectype = data[i + 2]
-        datatype = data[i + 3]
         payload = data[i + 4:i + ln]
         if rectype == 0x02:                       # LIBNAME
             libname = payload.decode("ascii", "ignore").rstrip("\x00")

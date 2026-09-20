@@ -161,7 +161,6 @@ def analytic_finwell_scatter_T(E_J: float, V0_J: float, a_m: float, m: float) ->
 
     阱内波数 k1=√(2m(E+V0))/ℏ，阱外 k0=√(2mE)/ℏ。T = 1/(1 + V0²·sin²(k1 a)/(4E(E+V0)))。
     """
-    k0 = cmath.sqrt(2.0 * m * E_J) / HBAR
     k1 = cmath.sqrt(2.0 * m * (E_J + V0_J)) / HBAR
     return 1.0 / (1.0 + (V0_J ** 2) * (math.sin(k1.real * a_m) ** 2) /
                   (4.0 * E_J * (E_J + V0_J)))
@@ -358,23 +357,23 @@ def golden_b72(V0_eV, a_nm, b_nm, m=ME):
 
 def golden_b73(V0_eV, a_nm, m=ME):
     # 有限深势阱首透射共振（E>0 扫，取 T 最大）
-    best_E, best_T = 0.0, 0.0
+    best_T = 0.0
     for i in range(1, 4000):
         E = V0_eV * EV * i / 4000.0
         T = analytic_finwell_scatter_T(E, V0_eV * EV, a_nm * 1e-9, m)
         if T > best_T:
-            best_T, best_E = T, E
+            best_T = T
     return best_T
 
 
 def golden_b74(V0_eV, a_nm, m=ME):
     # 有限深势阱首反共振（T 最小且 <0.5，E>0）
-    best_E, best_T = 0.0, 1.0
+    best_T = 1.0
     for i in range(1, 4000):
         E = V0_eV * EV * i / 4000.0
         T = analytic_finwell_scatter_T(E, V0_eV * EV, a_nm * 1e-9, m)
         if T < best_T:
-            best_T, best_E = T, E
+            best_T = T
     return best_T
 
 

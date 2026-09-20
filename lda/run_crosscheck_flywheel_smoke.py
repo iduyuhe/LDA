@@ -55,7 +55,7 @@ class CrosscheckFlywheelSmoke(unittest.TestCase):
 
     def test_flywheel_idempotent_rerun(self):
         from lda_harness.crosscheck_report import build_report
-        r1 = build_report(quick=True, out_dir=self.tmp, archive=True)
+        build_report(quick=True, out_dir=self.tmp, archive=True)
         n1 = len(os.listdir(self.hist))
         # 重复运行：报告文件复写、历史累加（>=n1）
         r2 = build_report(quick=True, out_dir=self.tmp, archive=True)

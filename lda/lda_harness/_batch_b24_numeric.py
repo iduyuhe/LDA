@@ -332,7 +332,6 @@ def cand_disk_firstzero(D, wl):
     强度阈值定位误差大；改用**实振幅** U(θ)=∫e^{ikr s cosφ} r dφ dr（对称盘为实数）的符号
     变号定位 —— J₁ 在零点为简单零点、振幅线性穿越 ⇒ 残差=求积离散化误差（O(h²)），与
     golden (J1 零点)/π·λ/D 余量稳。候选全程不调 j0/j1 特殊函数 ⇒ 方法学独立。"""
-    k = 2.0 * math.pi / wl
     s_max = 1.5 * (J1_FIRST_ZERO / math.pi) * wl / D
 
     def amp(s):

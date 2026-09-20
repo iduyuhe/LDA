@@ -161,7 +161,7 @@ class CircuitNetlist:
     def to_spice(self) -> str:
         self._validate()
         L: List[str] = [f"* LDA generated SPICE netlist: {self.name}",
-                        f"* schema: lda-spice/1.0  (compact-model driven)",
+                        "* schema: lda-spice/1.0  (compact-model driven)",
                         f".title {self.name}"]
         # 把 CompactModelSpec 的 Popt 参数声明（供探测器受控源消费）
         opts = [d for d in self.devices if d.kind == "photodetector"]
@@ -176,7 +176,7 @@ class CircuitNetlist:
     # —— 导出：Cadence Spectre 适配变体 ——
     def to_cadence_spectre(self) -> str:
         self._validate()
-        L: List[str] = [f"simulator lang=spectre",
+        L: List[str] = ["simulator lang=spectre",
                         f"// LDA generated Spectre netlist: {self.name}",
                         f"subckt {self.name} (vdd gnd)"]
         opts = [d for d in self.devices if d.kind == "photodetector"]

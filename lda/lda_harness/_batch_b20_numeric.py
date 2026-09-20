@@ -230,7 +230,6 @@ def _self_test(verbose=True):
         fam = _family_of(bid)
         p = _DEFAULT_PARAMS[bid]
         grid = _SCAN_GRID[fam]
-        Nfin = grid[-1]
         tol = _TOL_BY_BID[bid]
         g = _golden_by_bid(bid, p)
         errs = []

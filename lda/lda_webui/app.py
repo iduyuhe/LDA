@@ -35,7 +35,6 @@ L2 开放 PDK Registry）通过 HTTP 暴露给一个真正的产品级前端，�
 """
 import datetime
 import json
-import math
 import os
 import sys
 import threading
@@ -123,19 +122,36 @@ from lda_agent.design_loop import DesignAgent
 from lda_agent.run_demo import build_intent
 from lda_l2.pdk import get_default_registry
 from lda_pdk import (PDKRegistry, DeviceEntry, SOVEREIGN_DEPS, by_class,
-                    submit_device, submit_devices_batch,
-                    submit_benchmark_proposal, list_contributions,
-                    review_proposal, land_proposal, reload_landed,
-                    list_proposals, get_audit, list_landed,
-                    resubmit_proposal, review_stats,
-                    review_proposals_batch, land_proposals_batch,
-                    get_policy, policy_info,
-                    publish_proposal, list_published,
-                    submit_measurement, review_measurement, land_measurement,
+                    list_contributions, reload_landed, list_landed,
+                    review_stats, policy_info, list_published,
                     list_measurements, measurement_stats,
-                    list_landed_measurements)
-from lda_harness.empirical_bank import EmpiricalCorpus, EmpiricalAnchor
+                    # 🔴 以下 12 名是 routes.py 的 `_app.<name>` 契约名：
+                    #    routes.py 不做 `from lda_webui.app import ...`，而是
+                    #    `sys.modules.get("__main__")` 反查 app 模块后**按属性取用**业务
+                    #    函数（见 lda_webui/routes.py 头部注释）。它们在本文件里确实不被
+                    #    直接调用 ⇒ pyflakes 判 F401(UnusedImport)，但**删除即致命**：
+                    #    请求期抛 `AttributeError: module '__main__' has no attribute
+                    #    'submit_device'` → /api/ecosystem/* 多条路由 500。
+                    #    v0.9.112 血案实测：清理 16 个 lda_pdk 名后 run_webui_api_smoke
+                    #    9 条路由红（178P/1F）。契约完整性的机器守护见
+                    #    `run_webui_api_smoke._check_app_attr_contract`。
+                    submit_device, submit_devices_batch, submit_benchmark_proposal,
+                    review_proposal, land_proposal, resubmit_proposal,
+                    review_proposals_batch, land_proposals_batch,
+                    publish_proposal, submit_measurement, review_measurement,
+                    land_measurement)
 from lda_harness.verification_adapters import _load_empirical_anchor
+
+# 🔴 `_app` 契约显式声明（v0.9.112）：把上面那批「仅被 routes.py 属性取用」的名字
+# 汇总成一处可读清单，同时让 pyflakes 视其为「已使用」——否则静态卫生清理会再次
+# 把它们当成死导入删掉（这正是 v0.9.112 那次 9 路由 500 的成因）。
+# 变更本元组时必须同步核对 `lda_webui/routes.py` 里全部 `_app.<name>` 引用。
+_ROUTES_APP_CONTRACT = (
+    submit_device, submit_devices_batch, submit_benchmark_proposal,
+    review_proposal, land_proposal, resubmit_proposal,
+    review_proposals_batch, land_proposals_batch, publish_proposal,
+    submit_measurement, review_measurement, land_measurement,
+)
 
 # P2.3 v1 REST API（认证 + 租户隔离 + 插件 seam）；延迟导入避免循环，且不影响旧端点
 try:

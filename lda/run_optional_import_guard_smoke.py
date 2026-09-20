@@ -232,7 +232,6 @@ def main() -> int:
           len(scripts) >= 4, f"found={len(scripts)}: " + ", ".join(p.name for p in scripts))
     for p in scripts:
         code, hint, tail = run_blocked(str(p))
-        rel = p.relative_to(ROOT)
         if code == 2:
             check(f"2-{p.name} 优雅降级（退出码 2 + 打印 torch 指引）", hint, tail)
         else:

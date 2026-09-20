@@ -66,7 +66,7 @@ def main():
     amps = run_greens_test_torch(wl=args.wl, n=args.n, N=N, device=device)
     t_total = time.perf_counter() - t0
 
-    print(f"\n>> 球面波 |Ez|*r 探头 (r, |Ez|*r):")
+    print("\n>> 球面波 |Ez|*r 探头 (r, |Ez|*r):")
     vals = []
     for r, v in amps:
         print(f"   r={r:>4}  |Ez|*r={v:.5f}")

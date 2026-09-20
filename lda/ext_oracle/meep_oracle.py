@@ -39,7 +39,6 @@ def _sim_crossing(params):
 
     wl = params.get("wl", 1.55)
     w = params.get("w_core", 0.4)
-    h = params.get("h_core", 0.22)
     n_si = params.get("n_si", 3.48)
     n_clad = params.get("n_clad", 1.44)
 

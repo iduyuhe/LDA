@@ -55,7 +55,6 @@ def _perp(vx, vy):
 def _arc_points(a, b, corner, r, n=8):
     """从 a 到 b 的圆角弧（拐角顶点 corner，半径 r）。"""
     d1 = _norm(corner[0] - a[0], corner[1] - a[1])   # a→corner
-    d2 = _norm(b[0] - corner[0], b[1] - corner[1])   # corner→b
     n1 = _perp(d1[0], d1[1])
     c = (corner[0] + n1[0] * r, corner[1] + n1[1] * r)
     if abs(math.hypot(c[0] - a[0], c[1] - a[1]) - r) > 1e-6:

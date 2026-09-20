@@ -366,7 +366,6 @@ def cand_brewster_angle(n1, n2):
         denom = (x[0] - x[1]) * (x[0] - x[2]) * (x[1] - x[2])
         a_ = (x[2] * (y[0] - y[1]) + x[1] * (y[2] - y[0]) + x[0] * (y[1] - y[2])) / -denom
         b_ = (x[2] * x[2] * (y[0] - y[1]) + x[1] * x[1] * (y[2] - y[0]) + x[0] * x[0] * (y[1] - y[2])) / denom
-        c_ = y[0] - a_ * x[0] * x[0] - b_ * x[0]
         return float(-b_ / (2.0 * a_)) if a_ != 0 else float(t2[k2])
     return float(t2[k2])
 

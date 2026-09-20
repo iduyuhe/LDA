@@ -249,7 +249,7 @@ def selfcheck_rk4_convergence(T1: float = 80.0, T2: float = 80.0,
         f"|Δ|(N={n})": d1,
         f"|Δ|(N={2 * n})": d2,
         "收敛比": ratio,
-        f"可接受区间": (SENSITIVE_LO, SENSITIVE_HI),
+        "可接受区间": (SENSITIVE_LO, SENSITIVE_HI),
         "收敛比下限": CONVERGE_MIN_RATIO,
     }
     return bool(ok), d1, detail

@@ -534,6 +534,15 @@ CORE_SMOKES: List[str] = [
     # ④ 反向测试（无锁语义输入必须 NotImplemented->None；四类标记可识别）。纯 numpy 秒级。
     # CI core 177->178。
     "run_self_certified_lock_smoke.py",
+    # 🔴 v0.9.112（波次 1 · 2026-09-19 全面代码审计 F-11/F-12/F-13/F-15 清偿）：
+    #   静态卫生棘轮常驻护栏。审计实测受跟踪 507 py 有 pyflakes 告警 344 条
+    #   （F401×244 / F841×71 / F541×25 / F811×4）；波次 1 清理后把基线钉成**棘轮**
+    #   （只降不升）：F401≤201 / F841≤12 / F541=0 / F811=0 / F821=0 / OTHER=0。
+    #   两条反向测试证明「违规检测器真会响」（非假绿）。纯标准库 + pyflakes、实测 <3s，
+    #   按准入准则（<5s 且无重依赖）无权豁免，必进 core。
+    #   依赖：pyflakes（requirements.txt 必装段 + ci.yml industrial-regression pip 已同步）。
+    #   CI core 178->179。
+    "run_pyflakes_ratchet_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -615,6 +624,18 @@ _FAIL_STATUSES = ("FAIL", "ERROR", "TIMEOUT", "CRASH")
 
 # 内置 per-script 超时覆盖（秒）：实测耗时 + 安全边际，防慢机器上偶发 TIMEOUT
 # 被误判为 FAIL（TIMEOUT 与真 FAIL 必须区分开）。调用方可通过 timeout_override 再覆盖。
+#
+# 🔴🔴 标定纪律（v0.9.112 立规 · 本表已因违反它**复发两次**）：
+#   本项耗时**随锚数/规模增长**（扩基后普查面变大），预算若不同步上调 ⇒ 余量被
+#   吃掉 ⇒ 周期性**假红 TIMEOUT**（rc=0 功能全绿，仅耗时超预算）。历史两次：
+#     ① v0.9.111：falsifiability 600s（配给 ~159s 时代）与 fuzz（无覆盖走 300s）
+#        双双假红 ⇒ 提到 1800 / 2000 —— **但只修了当时踩到的那两项，未做全表审计**。
+#     ② v0.9.112：全量回归再次假红（`run_d_criterion_smoke` 余量 1.03×），全表
+#        审计 14 项后发现 **5 项余量不足**（含 ① 刚配的 1800/2000，余量仅
+#        1.61×/1.46×）⇒ 全表重标定到 **≥3× 余量**。
+#   新规：**任何进入本表的项，预算 ≥ 3× 该线程数下的实测耗时**；每次扩基后若
+#   本表某项跑进 2× 以内，必须重新实测并上调（`scripts/ci_core_batched.py` 跑完会
+#   自动打印「预算余量体检」，<2× 会列名告警）。**这是耗时余量，不含任何判据放宽**。
 _BUILTIN_TIMEOUT_OVERRIDE = {
     # 内部含子回归 + greens 基准。
     # 🔴 v0.9.24：600 → **900s**（1.5× 余量防慢机器抖动）。历史：v0.9.23 把
@@ -626,9 +647,12 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 本项实测单独跑 **3/3 ALL PASS**，是纯耗时问题，不含任何物理/数值判据。
     "run_ci_industrial_smoke.py": 900.0,
     # 含 FDTD 分束仿真，实测 ~198s（v0.9.1 入 core）
-    "run_splitter_readout_smoke.py": 400.0,
+    # 🔴 v0.9.112：实测升至 193.3 / 196.2s ⇒ 400s 仅 **2.04×** 余量，按「超时预算
+    #   须随规模同步上调」纪律提到 **600s**（≈3.06×）。判据一字未改。
+    "run_splitter_readout_smoke.py": 600.0,
     # 含 FDTD 标定仿真，实测 ~179s（v0.9.1 入 core）
-    "run_splitter_readout_cal_smoke.py": 400.0,
+    # 🔴 v0.9.112：实测 173.4 / 168.6s ⇒ 400s 仅 **2.31×**，同纪律提到 **600s**（≈3.46×）。
+    "run_splitter_readout_cal_smoke.py": 600.0,
     # 5 次 2D 半矢量本征解（ARPACK shift-invert）实测 ~89s（v0.9.23 入 core）
     "run_semivec_mode_smoke.py": 400.0,
     # v0.9.57：2D TEz FDTD 全场时域（主跑 dl=0.05 t_max=1200 + 判据 D 两次
@@ -638,8 +662,16 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_lindblad_gate_smoke.py": 180.0,
     # EME 逐片本征解：9 条自校锚（含 dz/模式数/窗口三次收敛扫描），实测 ~33s
     "run_eme_taper_smoke.py": 400.0,
-    # 判据 D：20 道基线普查 + B10/B28 双向 + 抽验，实测 ~15s
-    "run_d_criterion_smoke.py": 180.0,
+    # 🔴 v0.9.112（2026-09-19 全量回归实测）重标定 180 → **600s**。
+    #   旧 180s 对应下方原注释「~15s」——那是**独立候选还很少时**的数据；本项 ③ 是
+    #   **全部已接线严格独立候选的基线残差普查**（当前 **448 道**），耗时随候选数
+    #   线性增长 ⇒ 10 线程实测 **173.95s**（standalone）/ **175.52s**（全量内），
+    #   旧预算余量仅 **1.03×**（≈6s）。v0.9.112 二轮全量即被负载抖动拖成
+    #   **TIMEOUT 假红**，并**连带** `run_ci_industrial_smoke` FAIL（其契约代表子集
+    #   含本项，见该文件 `_SUBSET_CONTRACT`）。独立复跑 rc=0：**10 PASS / 0 FAIL**
+    #   （③ 448/448 全部登记、基线残差全 >1e-12）。配 600s（≈3.4× 余量）。
+    #   **判据一字未改**——这不是放宽判据，TIMEOUT 与 FAIL 是两种状态。
+    "run_d_criterion_smoke.py": 600.0,
     "run_b28_nullfit_smoke.py": 120.0,
     # v0.9.75：报告确定性护栏，纯标准库单元级，实测 <2s
     "run_report_determinism_smoke.py": 120.0,
@@ -661,13 +693,19 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   B-25~B-28 四轮扩基（+52 锚）后本项 10 线程实跑 **1098.6s**，而旧预算 600s
     #   （下方原注释所记 ~159s 是扩基前数据）⇒ 全量 CI 必然 TIMEOUT 并计为 FAIL
     #   （**假红**：rc=0 功能全绿，只是耗时超预算）。独立复跑确认 rc=0：
-    #   13/13 PASS · 严格独立 448 · 全量 469 锚零回归。配 1800s（≈1.64× 余量）。
-    "run_benchmark_falsifiability_smoke.py": 1800.0,
+    #   13/13 PASS · 严格独立 448 · 全量 469 锚零回归。
+    # 🔴 v0.9.112（全表超时预算审计）：v0.9.111 配的 1800s 余量仅 **1.61×**
+    #   （实测 1105.0 / 1118.7s）—— 与本表 `run_d_criterion_smoke` 同属
+    #   「预算未随规模同步」的**欠标定**，重机器/热降频下**同样会假红** ⇒
+    #   提到 **3600s**（≈3.2×）。判据一字未改。
+    "run_benchmark_falsifiability_smoke.py": 3600.0,
     # 🔴 v0.9.111（2026-09-19 全面审计 F-19 · 本项此前**无覆盖**，走默认 300s）：
     #   红队锚面 fuzz —— 对全部 52 锚逐锚做规则式参数扰动并用 run_verification 判卷。
     #   攻击面大 ⇒ 10 线程实跑 **1315.8s** rc=0（"红队锚面 fuzz smoke: PASS"）；
-    #   旧默认 300s 下必然 TIMEOUT 被误判 FAIL。配 2000s（≈1.52× 余量，判据未改）。
-    "run_redteam_anchor_fuzz_smoke.py": 2000.0,
+    #   旧默认 300s 下必然 TIMEOUT 被误判 FAIL。
+    # 🔴 v0.9.112（全表超时预算审计）：2000s 余量仅 **1.46×**（实测 1337.7 / 1367.6s）
+    #   ⇒ 提到 **4200s**（≈3.1×）。判据一字未改。
+    "run_redteam_anchor_fuzz_smoke.py": 4200.0,
 }
 
 

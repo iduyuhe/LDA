@@ -300,7 +300,6 @@ def compute_gradient(prob: AdjointProblem, fwd: dict):
     dampE, dampHx, dampHy = prob.dampE, prob.dampHx, prob.dampHy
     i_mon, m0, m1 = prob.i_mon, prob.y_mon0, prob.y_mon1
     nsteps, meas0 = fwd["nsteps"], fwd["meas0"]
-    mw = m1 - m0
     curlH_dr = fwd["curlH_dr"]
     Ez_mon = fwd["Ez_mon"]
     dr = prob._dr

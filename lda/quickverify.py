@@ -327,7 +327,7 @@ def main() -> int:
             _say("  [FAIL] 全量回归失败", _C.RED)
             ok_all = False
     else:
-        _say(f"\n[4/4] 快验完成（未含全量 core；加 --full 跑 95 条 ~25min）")
+        _say("\n[4/4] 快验完成（未含全量 core；加 --full 跑 95 条 ~25min）")
 
     # 汇总
     _say("\n" + "=" * 74)

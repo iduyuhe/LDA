@@ -90,7 +90,6 @@ def handle_v1(method: str, path: str, body: dict,
         return 401, {"error": "未认证：需 Authorization: Bearer <api_key>"}
 
     if method == "GET" and p == "me":
-        u = dl.get_user_by_email(_email_of(dl, uid)) or None
         return 200, {"user_id": uid, "orgs": [o.id for o in dl.user_orgs(uid)]}
 
     if method == "GET" and p == "usage":

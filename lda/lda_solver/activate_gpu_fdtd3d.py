@@ -98,7 +98,6 @@ def main():
     if not torch.cuda.is_available():
         return _guide_and_exit()
 
-    dev = torch.device("cuda")
     name = torch.cuda.get_device_name(0)
     cap = torch.cuda.get_device_capability(0)
     props = torch.cuda.get_device_properties(0)

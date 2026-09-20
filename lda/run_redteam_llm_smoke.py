@@ -64,7 +64,7 @@ def main():
     if not rt_enabled:
         check("红队出题：LDA_REDTEAM_* 未配置 → 跳过 LLM 出题断言（降级规则式）",
               True, "wire LDA_REDTEAM_BASE/KEY to enable")
-        print(f"\n提示：配置 LDA_REDTEAM_BASE/LDA_REDTEAM_KEY/LDA_REDTEAM_MODEL 后重跑，"
+        print("\n提示：配置 LDA_REDTEAM_BASE/LDA_REDTEAM_KEY/LDA_REDTEAM_MODEL 后重跑，"
               "本护栏将断言 GLM 出题经三层判卷零漏过。")
         print("=" * 56)
         print(f"LLM 红队实证 smoke：{_PASS} PASS / {_FAIL} FAIL")

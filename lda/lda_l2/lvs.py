@@ -85,7 +85,6 @@ def _port_anchor_table(link, placement) -> Dict[Tuple[str, str], Tuple[float, fl
     v0.8.39 提速：先建 {inst: comp} 索引，避免 port_abs 每次线性扫全组件
     （O(n·m) → O(n+m)）。判决语义不变（同一坐标计算）。
     """
-    comp_by_id = {c.id: c for c in link.ir.components}
     table: Dict[Tuple[str, str], Tuple[float, float]] = {}
     for c in link.ir.components:
         ox, oy, _ = placement[c.id]
@@ -659,7 +658,6 @@ def extract_layout_netlist_multilayer(link, placement, routes, stack=None,
     stack = stack or get_stack("soi")
     # 端口锚点（带层）：{(inst, port, layer): (x, y)}（v0.8.39：先建 comp 索引提速）
     anchors: Dict[Tuple[str, str, str], Tuple[float, float]] = {}
-    _comp_by_id = {c.id: c for c in link.ir.components}
     for c in link.ir.components:
         lay = _device_layer(c)
         ox, oy, _ = placement[c.id]

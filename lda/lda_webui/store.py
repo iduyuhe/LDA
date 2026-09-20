@@ -614,7 +614,7 @@ def create_order(user_token: str, payload: dict) -> dict:
         "paid_at": None, "approved_at": None, "accepted_at": None, "note": "",
         "reject_reason": "",
     }
-    data = _load()
+    _load()  # 确保 store 已初始化（_load 内含 _ensure_dir 副作用）
     with _locked() as wdata:
         wdata["orders"].insert(0, order)
     return {"ok": True, "order": _public_order(order)}

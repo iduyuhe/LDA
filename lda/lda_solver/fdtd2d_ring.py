@@ -80,7 +80,6 @@ def ring_port_power(eps2: np.ndarray, dl: float, wl_um: float,
     _sponge_1d = _sponge_1d_import()
 
     N = eps2.shape[0]
-    c = 1.0
     omega = 2.0 * math.pi / wl_um
     dt = dl * courant / math.sqrt(2.0)
 

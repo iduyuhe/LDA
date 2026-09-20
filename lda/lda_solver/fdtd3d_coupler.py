@@ -91,8 +91,6 @@ def build_ybranch_field_3d(w_um: float, h_um: float, n_core: float, n_clad: floa
     ys = (np.arange(Ny) - Ny / 2.0) * dl
     X, Y = np.meshgrid(xs, ys, indexing="ij")
     zs = (np.arange(Nz) + 0.5) * dl          # 每个切片中心 z
-    n_in = int(round(l_in_um / dl))
-    n_tr = int(round(l_trans_um / dl))
     half_h = h_um / 2.0
     eps3 = np.full((Nx, Ny, Nz), n_clad**2, dtype=float)
     for iz in range(Nz):
@@ -145,7 +143,6 @@ def solve_port_powers_3d(eps3: np.ndarray, dl: float, wl_um: float,
     eps3 = np.asarray(eps3, dtype=float)
     Nx, Ny, Nz = eps3.shape
 
-    c = 1.0
     omega = 2.0 * math.pi / wl_um
     dt = dl * courant / math.sqrt(3.0)
 
@@ -258,7 +255,6 @@ def solve_port_powers_3d_torch(eps3: np.ndarray, dl: float, wl_um: float,
 
     eps3 = np.asarray(eps3, dtype=float)
     Nx, Ny, Nz = eps3.shape
-    c = 1.0
     omega = 2.0 * math.pi / wl_um
     dt = dl * courant / math.sqrt(3.0)
 
@@ -403,7 +399,6 @@ def solve_supermode_projection_3d_torch(eps3: np.ndarray, dl: float, wl_um: floa
 
     eps3 = np.asarray(eps3, dtype=float)
     Nx, Ny, Nz = eps3.shape
-    c = 1.0
     omega = 2.0 * math.pi / wl_um
     dt = dl * courant / math.sqrt(3.0)
 

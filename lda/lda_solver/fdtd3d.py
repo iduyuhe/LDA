@@ -121,10 +121,8 @@ def _run_field_core(eps, dl, wl, courant, ramp, sponge, target_exp,
     i_src/i_mon/jc/kc：源 / 监视器单元索引（由调用方按几何给定）。
     """
     Nx, Ny, Nz = eps.shape
-    c = 1.0
     dt = dl * courant / math.sqrt(3.0)
     omega = 2.0 * math.pi / wl
-    k0 = omega / c
 
     sig_max = target_exp * 3.0 * (n0 ** 2) / (dt * sponge)
     sx = _sponge_1d(Nx, sponge, sig_max)

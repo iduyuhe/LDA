@@ -143,7 +143,6 @@ def _build_laplacian(nx: int, ny: int, dx: float, dy: float) -> sp.csr_matrix:
 def _solve_with_dirichlet(L: sp.csr_matrix, b: np.ndarray, nx: int, ny: int,
                           phi_left: float, phi_right: float) -> np.ndarray:
     """解 L φ = b，并把 x=0 / x=nx-1 整列钉为 Dirichlet（φ=phi_left/right）。"""
-    n = nx * ny
     A = L.tolil()
     b = b.copy()
     # 钉 Dirichlet 列

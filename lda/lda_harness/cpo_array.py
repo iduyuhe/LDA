@@ -359,7 +359,6 @@ def place_cpo_array(specs: Sequence[DevSpec], chains: Sequence[Sequence[str]],
     于是行内连接退化为纯水平段（无垂直段 → 无跨行垂落 → 零短路风险）。
     """
     pitch_x, pitch_y = _pitch(specs, cfg.pitch_margin_um)
-    by_id = {s.id: s for s in specs}
     chain_head = {c[0]: i for i, c in enumerate(chains) if c}
     placement: Dict[str, Tuple[float, float, float]] = {}
     for idx, s in enumerate(specs):

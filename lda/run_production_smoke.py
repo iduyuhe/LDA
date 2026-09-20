@@ -99,7 +99,6 @@ def _qd67_reverse_test() -> bool:
         p_d = float(geom.get("dark_count_prob", 1e-6))
         e_mis = float(geom.get("misalignment", 0.015))
         mu = float(geom.get("mu", 0.5))
-        f = float(geom.get("f_ec", 1.1))
         q = 0.5
         loss_db = alice + alpha * L + bob
         T = 10.0 ** (-loss_db / 10.0)
@@ -135,8 +134,8 @@ def _qd67_reverse_test() -> bool:
     if not _hit:
         print("FAIL: Q-D67 护栏失效 —— 注入「漏算惩罚项/错用 Q_μ」后未拦下（会伪装成安全成钥 = 假绿）")
         return False
-    print(f"[Q-D67 反向测试] 注入「漏算误纠错惩罚项 / 错用 Q_μ 替代 Q_1」回归 → "
-          f"密钥率≤单光子贡献上界护栏命中（真实有效，非纸上谈兵）")
+    print("[Q-D67 反向测试] 注入「漏算误纠错惩罚项 / 错用 Q_μ 替代 Q_1」回归 → "
+          "密钥率≤单光子贡献上界护栏命中（真实有效，非纸上谈兵）")
     return True
 
 
@@ -184,8 +183,8 @@ def _pcpo_reverse_test() -> bool:
         print(f"FAIL: P-CPO 护栏失效 —— 三注仅命中 {len(hits)}/3（已命中：{hits}）"
               f"；间距下界或能量守恒下界有一处不响，CPO 密度/插损会静默假绿")
         return False
-    print(f"[P-CPO 反向测试] 注入「间距低于物理下界 ×2 + CPO 路径漏算分光」三注回归 → "
-          f"P-CPO 间距几何下界护栏 + D-67 能量守恒下界均命中（护栏真实有效，非纸上谈兵）")
+    print("[P-CPO 反向测试] 注入「间距低于物理下界 ×2 + CPO 路径漏算分光」三注回归 → "
+          "P-CPO 间距几何下界护栏 + D-67 能量守恒下界均命中（护栏真实有效，非纸上谈兵）")
     return True
 
 

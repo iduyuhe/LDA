@@ -80,7 +80,7 @@ def solve_coupler(E_J1: float = 20.0, E_C1: float = 0.25,
             a = i * dim + j
             Htot[a, a] += Jc * ns[i] * ns[j]
     ev = np.sort(np.linalg.eigh(Htot)[0])
-    e0, e1, e2 = ev[0], ev[1], ev[2]
+    e1, e2 = ev[1], ev[2]
     # 严格单 qubit f01（用于失谐 δ；与 J 提取一致的全数值路径）
     f01_1_num = float(np.sort(np.linalg.eigvalsh(H1))[1]
                       - np.sort(np.linalg.eigvalsh(H1))[0])

@@ -53,8 +53,8 @@ def build_report(quick: bool = False,
     data = run_crosscheck(quick=quick)
     os.makedirs(out_dir, exist_ok=True)
     ts = time.strftime("%Y%m%d-%H%M%S")
-    md_path = os.path.join(out_dir, f"benchmark_crosscheck_report.md")
-    js_path = os.path.join(out_dir, f"benchmark_crosscheck_report.json")
+    md_path = os.path.join(out_dir, "benchmark_crosscheck_report.md")
+    js_path = os.path.join(out_dir, "benchmark_crosscheck_report.json")
     md = _fmt_report(data)
     from lda_harness import deterministic as _det
     _det.write_text(md_path, md)
@@ -96,7 +96,7 @@ def build_report(quick: bool = False,
 
 def print_summary(r: Dict[str, Any]) -> None:
     s = r["score"]
-    print(f"# LDA 基准对照验证闭环报告（飞轮）")
+    print("# LDA 基准对照验证闭环报告（飞轮）")
     print(f"- 引擎 {s['engines_passed']}/{s['engines_total']} PASS · "
           f"解析锚 rel {s['with_analytical_rel']} 项 · "
           f"实证语料覆盖 {s['empirical_covered']}/9（含 rel {s['empirical_with_rel']}）")

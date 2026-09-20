@@ -110,7 +110,6 @@ def main() -> int:
         p_d = float(geom.get("dark_count_prob", 1e-6))
         e_mis = float(geom.get("misalignment", 0.015))
         mu = float(geom.get("mu", 0.5))
-        f = float(geom.get("f_ec", 1.1))
         q = 0.5
         loss_db = alice + alpha * L + bob
         T = 10.0 ** (-loss_db / 10.0)
@@ -145,8 +144,8 @@ def main() -> int:
     if not _qhit:
         print("FAIL: Q-D67 护栏失效 —— 注入「漏算惩罚项/错用 Q_μ」后 QKD 密钥率未拦下")
         return 1
-    print(f"\n[Q-D67 反向测试] 注入「漏算误纠错惩罚项 / 错用 Q_μ 替代 Q_1」回归 → "
-          f"密钥率≤单光子贡献上界护栏命中（QKD 信息论锚护栏真实有效）")
+    print("\n[Q-D67 反向测试] 注入「漏算误纠错惩罚项 / 错用 Q_μ 替代 Q_1」回归 → "
+          "密钥率≤单光子贡献上界护栏命中（QKD 信息论锚护栏真实有效）")
 
     # ------------------------------------------------------------------
     # 2.7) 🔴 P-CPO 反向测试：CPO 硅光 I/O 间距几何下界护栏（v0.9.41 D 赛道）。
@@ -179,9 +178,9 @@ def main() -> int:
         print(f"FAIL: P-CPO 护栏失效 —— 三注仅命中 {len(_hits)}/3（已命中：{_hits}）"
               f"；间距下界或能量守恒下界有一处不响，密度/插损会静默假绿")
         return 1
-    print(f"\n[P-CPO 反向测试] 注入「间距低于物理下界 ×2 + CPO 路径漏算分光」三注回归 → "
-          f"P-CPO 间距几何下界护栏（fau<125µm / grating_array<10.3µm）+ D-67 能量守恒下界"
-          f"均命中（护栏真实有效，非纸上谈兵）")
+    print("\n[P-CPO 反向测试] 注入「间距低于物理下界 ×2 + CPO 路径漏算分光」三注回归 → "
+          "P-CPO 间距几何下界护栏（fau<125µm / grating_array<10.3µm）+ D-67 能量守恒下界"
+          "均命中（护栏真实有效，非纸上谈兵）")
 
     # 3) 生成对照报告（B 生态播种硬核素材）
     report = to_markdown(results)

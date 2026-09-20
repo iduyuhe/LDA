@@ -85,7 +85,6 @@ def simulate_phc_cavity_resonance(L_cav_um: float = 0.45, n_core: float = 3.48,
     eps2, dl, Ny, Nx, sponge, _, _ = _build_eps2(
         L_cav_um, n_core, n_clad, dl, n_pairs, w_um, sponge)
 
-    c = 1.0  # 无量纲（dl 同单位）
     omega0 = 2.0 * math.pi / lam0
     dt = dl * courant / math.sqrt(2.0)
     n0 = n_clad

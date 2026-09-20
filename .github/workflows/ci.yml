@@ -325,8 +325,10 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install deps (numpy + scipy + jsonschema)
-        run: python -m pip install --upgrade pip numpy scipy jsonschema
+      - name: Install deps (numpy + scipy + jsonschema + pyflakes)
+        # pyflakes：v0.9.112 起 run_pyflakes_ratchet_smoke 进 core 集（静态卫生棘轮），
+        # 缺它则 core 门禁红 —— 必须与 requirements.txt 必装段保持同步。
+        run: python -m pip install --upgrade pip numpy scipy jsonschema pyflakes
 
       - name: Run unified CI regression (core set, auto-discovered)
         run: |

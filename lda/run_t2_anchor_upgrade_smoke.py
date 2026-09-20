@@ -163,7 +163,7 @@ def main():
     out_band = (not band_pass(v_q * 10.0, v_q)) and (not band_pass(v_q * 0.1, v_q))
     check("U6② 量级带判定器真可证伪（带内 PASS / 带外 FAIL）",
           in_band and out_band,
-          f"±50% 带内(×1.3,×0.7)通过；带外(×10,×0.1)拒绝")
+          "±50% 带内(×1.3,×0.7)通过；带外(×10,×0.1)拒绝")
     # 诚实门禁：该锚**不得**虚报进 BENCHMARK_DEFS（QEDA T1 内核未立项）
     from lda_harness.benchmarks import BENCHMARK_DEFS
     wired = [b for b, d in BENCHMARK_DEFS.items()

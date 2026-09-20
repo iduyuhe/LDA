@@ -205,11 +205,11 @@ def cmd_gf(args: argparse.Namespace) -> int:
         spec_path = out_dir / f"{getattr(comp, 'name', 'gf_import')}.lda_spec.json"
         spec_path.write_text(json.dumps(lda_spec, ensure_ascii=False, indent=2),
                              encoding="utf-8")
-        print(f"# LDA ⇄ gdsfactory 兼容桥")
+        print("# LDA ⇄ gdsfactory 兼容桥")
         print(f"- 已把 gdsfactory 组件 `{getattr(comp, 'name', '?')}` 转成 LDA 链路 spec：{spec_path}")
         print(f"- 设备 {len(lda_spec['devices'])} · IO {len(lda_spec['io'])}（互连由用户显式补或 LDA 自动布线）")
         print(f"- 下一步：lda check {spec_path}  → 走 LDA 设计—验证闭环 + DRC/LVS 双闸")
-        print(f"- 或导出 GDS 校验：lda check --gds <gds>（export_gf_component 可用）")
+        print("- 或导出 GDS 校验：lda check --gds <gds>（export_gf_component 可用）")
         return 0
     except Exception as e:  # noqa: BLE001
         print(f"[错误] gdsfactory 桥处理失败：{str(e)[:160]}", file=sys.stderr)

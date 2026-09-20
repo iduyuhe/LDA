@@ -173,7 +173,6 @@ def cw3d_port_powers(eps: np.ndarray, dl: float, wl_um: float,
         np.zeros((1, 3), dtype=np.int64)
     re = np.zeros(len(probes_arr))
     im = np.zeros(len(probes_arr))
-    n_probe = len(probes_arr)
 
     period = int(round(2.0 * math.pi / (omega * dt)))
     nsteps = (transient_cycles + M_cycles) * period

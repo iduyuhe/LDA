@@ -594,7 +594,6 @@ def compute_gradient3d(prob: AdjointProblem3D, fwd: Dict[str, Any],
     curlE_dr = fwd["curlE_dr"]
     Ez_mon = fwd["Ez_mon"]
     dr = prob._dr
-    ndr = len(dr)
 
     # 观测源（仅 Ez 分量有值）
     obs = np.zeros((nsteps, Nx, Ny, Nz))

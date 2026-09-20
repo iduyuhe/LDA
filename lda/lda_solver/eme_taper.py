@@ -258,7 +258,7 @@ def selfcheck(verbose: bool = True, quick: bool = False) -> bool:
          max(d_fine) < 1e-4 and min(ratios) >= 8.0,
          "dx 0.02→0.005 |Δ|=" + "/".join(f"{a:.1e}→{b:.1e}" for a, b
                                          in zip(d_coarse, d_fine))
-         + f"  降 " + "/".join(f"{r:.0f}×" for r in ratios))
+         + "  降 " + "/".join(f"{r:.0f}×" for r in ratios))
 
     T0 = taper_transmission(**P)
     _chk("② 基线 T（L=200µm 深度绝热）", 0.99 <= T0 <= 1.0 + 1e-9,

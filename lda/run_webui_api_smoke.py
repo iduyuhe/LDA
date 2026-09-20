@@ -80,6 +80,108 @@ def _extract_routes():
     return gets, posts
 
 
+# ======== 🔴 v0.9.112：routes.py ↔ app.py 的 `_app.<name>` 契约静态断言 ========
+def _app_attr_refs():
+    """routes.py 经 `_app.<name>` 取用的全部属性名。
+
+    机制见 lda_webui/routes.py 头部：routes.py **不做** `from lda_webui.app import
+    ...`，而是用 `sys.modules.get("__main__")`（脚本形态）反查 app 模块，再按属性
+    取用业务函数——这样既避开循环导入，也避免「脚本 / 包」双实例（两个独立 store）。
+    """
+    src = open(os.path.join(HERE, "lda_webui", "routes.py"), encoding="utf-8").read()
+    return sorted(set(re.findall(r"_app\.([A-Za-z_]\w*)", src)))
+
+
+def _module_level_names(path):
+    """AST 精确收集模块**顶层**绑定的名字。
+
+    覆盖 import / from-import / def / class / 赋值，并递归 try / if / with / for 的
+    分支体（= app.py 的 `try: from . import api_v1 / except ImportError: ...` 这类
+    条件导入惯用法）。
+
+    与运行时 `hasattr(module, name)` **等价**（已对 app.py 的 103 个 `_app.X` 引用
+    逐名对账一致）；选择静态解析是为了本 smoke **不导入 app 模块**——避免与已启动的
+    服务子进程争用 store 文件 / 重复初始化 PDK 注册表等副作用。
+    """
+    import ast
+    tree = ast.parse(open(path, encoding="utf-8").read())
+    out = set()
+
+    def walk(body):
+        for node in body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                out.add(node.name)
+            elif isinstance(node, ast.Import):
+                for a in node.names:
+                    out.add((a.asname or a.name).split(".")[0])
+            elif isinstance(node, ast.ImportFrom):
+                for a in node.names:
+                    out.add(a.asname or a.name)
+            elif isinstance(node, ast.Assign):
+                for t in node.targets:
+                    if isinstance(t, ast.Name):
+                        out.add(t.id)
+            elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+                out.add(node.target.id)
+            elif isinstance(node, ast.Try):
+                walk(node.body)
+                for hd in node.handlers:
+                    walk(hd.body)
+                walk(node.orelse)
+                walk(node.finalbody)
+            elif isinstance(node, ast.If):
+                walk(node.body)
+                walk(node.orelse)
+            elif isinstance(node, (ast.With, ast.AsyncWith)):
+                walk(node.body)
+            elif isinstance(node, (ast.For, ast.AsyncFor)):
+                walk(node.body)
+                walk(node.orelse)
+
+    walk(tree.body)
+    return out
+
+
+def _contract_missing(refs, bound):
+    """纯函数：返回 refs 中不在 bound 里的名字（正/反测试共用同一判据实现）。"""
+    return [n for n in refs if n not in bound]
+
+
+def _check_app_attr_contract():
+    """🔴 v0.9.112 静态前置断言：routes.py 取用的每个 `_app.<name>` 都必须在 app.py
+    顶层绑定。
+
+    为什么必须单独守：这批名字是「看似未用、实为契约」的 re-export，pyflakes 一律判
+    F401(UnusedImport) ⇒ 静态卫生清理会顺手删掉 ⇒ 请求期抛
+    `AttributeError: module '__main__' has no attribute 'submit_device'` ⇒ 多条路由 500。
+
+    实测代价（v0.9.112 波次 1 血案）：删除 lda_pdk 的 16 个契约名后，
+    run_webui_api_smoke 报 9 条路由红（实跑 PASS=81 · FAIL=9），且要 21s 实跑 +
+    读服务器 traceback 才能定位。本断言把它前移为「启服前、按名报缺、秒级红」。
+    """
+    refs = _app_attr_refs()
+    bound = _module_level_names(os.path.join(HERE, "lda_webui", "app.py"))
+    miss = _contract_missing(refs, bound)
+    if miss:
+        return [("FAIL", "app._app 契约",
+                 f"{len(miss)}/{len(refs)} 名缺失：{', '.join(miss)}")]
+    return [("PASS", "app._app 契约",
+             f"{len(refs)} 个 `_app.X` 引用全部在 app.py 顶层绑定")]
+
+
+def _selftest_contract_negative():
+    """反向自检：证明契约断言**真能变红**。
+
+    没有这条，「契约检查恒绿」与「契约检查真在工作」不可区分（铁律：没被验证过的
+    护栏不算护栏）。喂入合成缺名输入，检查必须精确报出缺失的那个名字。
+    """
+    miss = _contract_missing(["submit_device", "review_proposal"], {"submit_device"})
+    if miss == ["review_proposal"]:
+        return [("PASS", "契约反向自检", "合成缺名输入被抓：review_proposal")]
+    return [("FAIL", "契约反向自检",
+             f"合成缺名未被抓（得 {miss}）—— 断言失效，契约守护不可信")]
+
+
 def _free_port():
     s = socket.socket()
     s.bind(("127.0.0.1", 0))
@@ -299,6 +401,20 @@ def _check_security_headers(base):
 
 
 def main():
+    # ⓪ 🔴 v0.9.112 静态前置断言（**先于启服**）：routes.py ↔ app.py 的 `_app.<name>`
+    #    契约破损 ⇒ 请求期 AttributeError ⇒ 多条路由 500。置于启服前，做「按名报缺」
+    #    的秒级红，不再靠 21s 实跑去撞一串 500（v0.9.112 实测 9 条）。
+    pre = _check_app_attr_contract() + _selftest_contract_negative()
+    pre_fail = [t for t in pre if t[0] == "FAIL"]
+    if pre_fail:
+        print("=" * 66)
+        print("WebUI 静态契约前置断言 ❌（未启服）")
+        print("=" * 66)
+        for _, r, d in pre_fail:
+            print(f"[FAIL] CONTRACT {r:<28} {d}")
+        print("存在契约破损，后续路由实跑无意义 ❌")
+        return 1
+
     gets, posts = _extract_routes()
     port = _free_port()
     env = dict(os.environ, LDA_WEBUI_PORT=str(port))
@@ -330,7 +446,7 @@ def main():
                 return 1
             print(f"[INFO] {_ep} 冷启动实跑耗时 {time.time() - _t0:.2f}s")
 
-        ok, info, fail = [], [], []
+        ok, info, fail = [("CONTRACT", r, d) for _, r, d in pre], [], []
         # 0) 鉴权端点凭据准备（v0.8.55 起弱默认管理员令牌已失效，硬编码 dev token 不再被接受）
         #    - /api/admin/* ：读环境变量 LDA_ADMIN_TOKEN（生产必设）
         #    - 需登录端点   ：临时注册一个 smoke 专用账号取 token

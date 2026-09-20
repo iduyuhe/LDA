@@ -38,7 +38,7 @@ def main() -> int:
     _det.write_json(rep_path, d)
 
     # 终端摘要
-    print(f"[agent 自迭代设计闭环 · bragg_mirror]")
+    print("[agent 自迭代设计闭环 · bragg_mirror]")
     print(f"  收敛={d.get('accepted')}  轮次={d.get('iterations')}")
     print(f"  最终 R={d.get('final_metric')} (ORACLE={d.get('final_oracle_metric')}) "
           f"误差={d.get('final_metric_err'):.4g}")

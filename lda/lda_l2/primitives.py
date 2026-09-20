@@ -178,7 +178,6 @@ def grating_coupler_descs(params: Dict[str, float]) -> List[Dict]:
     N = int(params.get("n_tooth", 20))
     Li = float(params.get("L_in", 3.0))
     tooth_w = Lam * dc
-    total = N * Lam
 
     descs: List[Dict] = []
     # 输入波导

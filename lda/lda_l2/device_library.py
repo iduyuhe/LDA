@@ -47,6 +47,7 @@ import math
 
 import sys
 import os
+import importlib
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -440,8 +441,7 @@ class DeviceLibrary:
         dev = self.get(name)
         if mode == "contract":
             try:
-                from lda_solver.fdtd2d_waveguide import (  # noqa: F401
-                    build_waveguide_field, solve_waveguide_neff)
+                importlib.import_module("lda_solver.fdtd2d_waveguide")
                 fdtd_import = True
             except Exception:
                 fdtd_import = False
@@ -520,12 +520,12 @@ class DeviceLibrary:
         dev = self.get(name)
         if mode == "contract":
             try:
-                import fdtd3d  # noqa: F401
+                importlib.import_module("fdtd3d")
                 fdtd3d_import = True
             except Exception:
                 fdtd3d_import = False
             try:
-                import tmm  # local lda_solver/tmm.py
+                importlib.import_module("tmm")  # local lda_solver/tmm.py
                 tmm_import = True
             except Exception:
                 tmm_import = False

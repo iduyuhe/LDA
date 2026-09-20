@@ -61,6 +61,38 @@ def _existing(names):
     return [s for s in names if os.path.exists(os.path.join(_LDA, s))]
 
 
+def _budget_margin_audit(results):
+    """超时预算余量体检：对 `_BUILTIN_TIMEOUT_OVERRIDE` 覆盖项算 margin=budget/elapsed。
+
+    为什么需要（v0.9.112 立）：本类缺陷已**复发两次** ——
+      ① v0.9.111 修了 falsifiability / fuzz 两项假红 TIMEOUT，**但未做全表审计**；
+      ② v0.9.112 全量回归再次假红（`run_d_criterion_smoke` 余量仅 1.03×），
+         全表审计 14 项才发现 **5 项余量不足**（含 ① 刚配的 1800/2000，
+         余量只有 1.61× / 1.46×）。
+    根因恒为：**耗时随锚数增长，预算未同步上调**。故让每次全量跑完自动体检，
+    把「什么时候该重新标定」变成机器结论，而不是靠人肉回忆（人肉已经漏了两次）。
+
+    判读：margin < 2.0 ⇒ 欠标定，必须重新实测并上调（目标 ≥3×）。
+    ⚠️ TIMEOUT / CRASH 项的 elapsed 是**被截断的**（= 当时预算，真实耗时未知且
+    ≥ 预算）⇒ 其 margin 不可信，一律强制列入 low_margin（标记 `censored`）。
+    """
+    rows = []
+    for r in results:
+        b = _BUILTIN_TIMEOUT_OVERRIDE.get(r["script"])
+        if b and r.get("elapsed_s"):
+            censored = r["status"] in ("TIMEOUT", "CRASH")
+            rows.append({"script": r["script"], "budget": float(b),
+                         "elapsed": float(r["elapsed_s"]),
+                         "status": r["status"], "censored": censored,
+                         "margin": round(float(b) / float(r["elapsed_s"]), 2)})
+    rows.sort(key=lambda x: x["margin"])
+    return {"n_items": len(rows),
+            "min_margin": rows[0]["margin"] if rows else None,
+            "low_margin": [x for x in rows
+                           if x["margin"] < 2.0 or x["censored"]],
+            "rows": rows}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="CI 分批回归（防掉电）")
     ap.add_argument("--tag", choices=["core", "all"], default="core")
@@ -137,6 +169,8 @@ def main() -> int:
                                 ("script", "status", "rc", "elapsed_s")}
                                for r in failed],
                     "skipped": [r["script"] for r in skipped]},
+        # 超时预算余量体检（v0.9.112）：<2× 即欠标定，须重新实测并上调（目标 ≥3×）。
+        "budget_audit": _budget_margin_audit(results),
         "per_batch": per_batch,
         "results": results,
         "verdict": (f"CI 分批回归 {a.tag}：{n_pass} PASS / {n_skip} SKIP / "
@@ -152,6 +186,16 @@ def main() -> int:
     except OSError as e:                      # 写盘失败不得掩盖判决
         print(f"[warn] 报告写入失败（不影响判决）：{e}", file=sys.stderr)
 
+    audit = out["budget_audit"]
+    if audit["n_items"]:
+        print(f"\n[预算余量体检] 覆盖 {audit['n_items']} 项 · 最低 {audit['min_margin']}×"
+              f"（{audit['rows'][0]['script']}） · 目标 ≥3×，<2× 视为欠标定")
+        for x in audit["low_margin"]:
+            why = ("耗时被截断（TIMEOUT/CRASH），真实值 ≥ 预算"
+                   if x["censored"] else "余量不足")
+            print(f"  ⚠️ {x['script']}: budget={x['budget']:.0f}s "
+                  f"实测={x['elapsed']:.1f}s 余量={x['margin']}× —— {why}，"
+                  f"须重新实测并上调")
     print(out["verdict"])
     return 0 if not failed else 1
 

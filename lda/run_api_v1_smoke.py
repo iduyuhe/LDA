@@ -73,7 +73,6 @@ def main() -> int:
              {"org_id": org_a, "device_type": "RingResonator",
               "params": {"r": 5.0}, "dual_verify_report": {"passed": True}}, AUTH)
     check("存设计 200", c == 200, o)
-    did = o.get("design_id")
 
     # 7. 列出设计（GET 经 query/body 传 org_id）
     c, o = H("GET", f"/api/v1/projects/{proj}/designs", {"org_id": org_a}, AUTH)

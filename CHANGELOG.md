@@ -1,5 +1,61 @@
 # Changelog
 
+## v0.9.112（2026-09-19 · 波次 1 静态卫生清理 + pyflakes 棘轮 + 超时预算全表重标定 · 不扩基 · 账本零变化 · CI core 178→179）
+
+### 来源
+- 2026-09-19 只读全面审计（`LDA_functional_code_audit_2026-09-19.md`，18 条分级发现）遗留 **8 项未执行发现**的**波次 1 清偿**；工作计划 `LDA_fix_workplan_2026-09-19.md`。
+- 账本影响：**零锚改动**（三分类 448/3/18/469 不变）、**棘轮 `MAX_SELF_CERTIFIED=18` 不动**、零 tol 放宽；仅 CI core 178→179（新增静态卫生棘轮）。
+- **本版两次全量 CI core 实跑各抓出一处真缺陷**（均属「验证副产品」，非扩基/判据改动）：① 首轮 → `_app` 属性契约血案（F401 误删，见下）；② 二轮 → 超时预算欠标定（复发类，见下）。
+
+### 静态卫生（F-11 / F-12 / F-13 / F-15）
+- pyflakes 告警 **344→213**：F401 244→201 · F841 71→12 · F541 25→0 · F811 4→0 · F821 0 持平。
+- **F401（F-12）只清两个热点**：`lda_webui/app.py` ×19、`lda_harness/golden.py` ×14（+ 传递性死亡链 `benchmarks.py` ×8）。审计已实证余量多为**合法 re-export / 契约探针**（`shelf_status` 被 `run_shelf_*_smoke` 外部导入；`s7/s8` 统计锚被 `benchmarks.py` 相对导入取走；`device_library` 三处 `# noqa: F401` 为双模式契约自检的可导入性探针）⇒ **不做全量**，避免破坏调用方。
+- **F841 清 59 处**（含第二轮暴露的级联死链 4 处：`fdtd3d.py c`、`tmm.py num_r`、`_batch_b4_numeric.py best_E`×2）。**12 处「算而未用·疑似漏用」登记不改**（`meep_oracle.p_in`、`fdtd2d`/`fdtd3d_numba` 的 `dampE`/`ez_fk`/`hz_bk`、`port_sparams_gc` 的 `dc`/`N` 等）；其中 `run_golden_product_smoke`/`run_production_smoke` 的 `Hmu` 是 **Q-D67 反向测试的故意注入项**（算了不用 = 注入"丢惩罚项"错误），删之会破坏反向测试语义。
+- **F541 清零 25 处**：`f"literal"` 及隐式拼接中的冗余 `f` 前缀（如 `print("..." f"...")` 的第二段）——行为一致，纯冗余。
+- **F811 归零（F-15）**：`lda_l2/device_library.py` 三处契约探针 `from X import A, B  # noqa: F401` / `import tmm  # noqa: F401` 改 `importlib.import_module("X")`——既消 pyflakes 报错，又**保留探针语义**。
+
+### 新增治理设施
+- **`lda/run_pyflakes_ratchet_smoke.py`**（进 CI core ⇒ 178→179）：静态卫生**棘轮**，5 判据（解析错误=0 / 逐类型 ≤ 基线 / 其它类型=0 / **两条反向测试证明违规检测器真会响**）。基线 F401≤201 · F841≤12 · F541=0 · F811=0 · F821=0 · OTHER=0，**只降不升**。
+- **`scripts/registry_snapshot.py`**（R3 前置判据）：导出 `BENCHMARK_ORDER` / `BENCHMARK_CANDIDATES` / `_PHYSICAL_LAW` 三表**有序快照 + sha256**，`--out` 存基线、`--check` 逐项比对；为 F-08 巨石拆分提供「拆前拆后注册表零漂移」的机器判据（实测 counts 469/469/437/457，正反向均验）。
+- **依赖同步**：`pyflakes>=3.0` 入 `requirements.txt` 必装段 + `ci.yml` industrial-regression 的 pip install（防「本地绿主干红」，即 v0.9.10 教训的镜像）。
+
+### 🔴 血案与补防（首轮全量 CI core 179 条实跑暴露）
+- **现象**：首轮全量实跑 **178 PASS / 1 FAIL** —— `run_webui_api_smoke.py`（rc=1，21.7s）报 **9 条路由 500**，响应体为 `module '__main__' has no attribute 'submit_device'`。
+- **根因**：`lda_webui/routes.py` **不做 `from lda_webui.app import ...`**，而是 `sys.modules.get("__main__")` 反查 app 模块后**按属性取用**业务函数——既避开循环导入，又避免「脚本 / 包」双实例导致两个独立 store。因此 `app.py` 里为它保留的 **12 个 `lda_pdk` 名字**（`submit_device` / `submit_devices_batch` / `submit_benchmark_proposal` / `review_proposal` / `land_proposal` / `resubmit_proposal` / `review_proposals_batch` / `land_proposals_batch` / `publish_proposal` / `submit_measurement` / `review_measurement` / `land_measurement`）**看似未用、实为契约**：pyflakes 一律判 F401，被本轮清理连带删除 ⇒ 请求期 `AttributeError` ⇒ 路由 500。
+- **修法**：`lda_webui/app.py` 恢复该 12 名，并以模块级显式元组 **`_ROUTES_APP_CONTRACT`** 标记为「已使用」（pyflakes 不再判 F401 ⇒ **棘轮基线 F401≤201 仍成立，未放宽**）。
+- **补防（护栏 + 反向测试；铁律：没被验证过的护栏不算护栏）**：`run_webui_api_smoke.py` 新增**静态前置断言** `_check_app_attr_contract` —— 以 AST 精确收集 `app.py` 顶层绑定，与 `routes.py` 全部 `_app.X` 引用（103 个）比对，在**启服之前**按名报缺、秒级红（不再靠 21s 实跑去撞一串 500）；并附**反向自检** `_selftest_contract_negative` 证明断言真会响。
+  - 已实证：AST 收集器与运行时 `hasattr(module, name)` **逐名一致 103/103（零分歧）**；对「删掉 2 个契约名」的 app.py 副本，断言精确报 **`3/103 名缺失：resubmit_proposal, review_proposal, submit_device`**（副本置于 scratch，**未触碰仓库本体**）。
+- **修后复验**：`run_webui_api_smoke` **PASS=92 / INFO=80 / FAIL=0**（原 81P/9F）；`run_pyflakes_ratchet_smoke` 5/5 PASS 且**实测与基线完全一致**。
+- **口径澄清（避免误伤）**：同一批同时移除了 `from lda_harness.empirical_bank import EmpiricalCorpus, EmpiricalAnchor`，经全仓核对**该移除是正确的**（各处均从 `lda_harness.empirical_bank` 直接导入，无 `_app` 属性取用、无 from-import 取用），**不是**本次血案成因。
+
+### 🔴 第二处真缺陷与修法（二轮全量 CI core 179 条实跑暴露 · 超时预算欠标定 · 复发类）
+- **现象**：修后二轮全量实跑 **177 PASS / 2 FAIL** —— `run_d_criterion_smoke.py` **TIMEOUT**（180.0s）· `run_ci_industrial_smoke.py` **FAIL**（rc=1 / 293.4s / 2-of-3）。
+- **一个根因**：`run_d_criterion_smoke.py` 的内置超时预算 **180s 严重欠标定**（表内原注释写「实测 ~15s」——那是**独立候选还很少时**的数据）。本项 ③ 是**全部已接线严格独立候选的基线残差普查**（当前 **448 道**），**耗时随候选数线性增长** ⇒ 三次独立测量 **175.52s**（首轮全量内）/ **173.95s**（standalone 复跑）/ 二轮 **>180s 撞线** ⇒ 余量仅 **1.03×**（≈6s）。standalone 复跑 **rc=0 · 10 PASS / 0 FAIL**（③ 448/448 全部登记 · 基线残差全 >1e-12）⇒ **纯耗时问题，非数值/判据缺陷**。
+  - `run_ci_industrial_smoke.py` 的 FAIL 是**连带**：其 `_SUBSET_CONTRACT`（「回归入口 PASS 聚合契约」的代表子集）**含本项** ⇒ 子集内 d_criterion TIMEOUT ⇒ 子集非全 PASS ⇒ case 1 FAIL。**该文件本身无缺陷**（其自身预算 900s / 实测 290.4–293.4s）。
+- **同族复发（关键判读）**：这正是 v0.9.111 §5.2 记录的**同一类**缺陷 —— 那次 falsifiability（600s）/ fuzz（无覆盖走 300s）假红的根因同样是「存量超时预算未随扩基同步」，**但当时只修了踩到的那两项、未做全表审计**。本轮据此**做全表审计（14 项，用两轮全量实测耗时算余量）**，结果 **5 项余量不足**：
+
+  | 脚本 | 旧预算 | 实测（两轮） | 旧余量 | 新预算 | 新余量 |
+  |---|---|---|---|---|---|
+  | `run_d_criterion_smoke.py` | 180 | 173.9–175.5 | **1.03×** | **600** | 3.4× |
+  | `run_redteam_anchor_fuzz_smoke.py` | 2000 | 1337.7–1367.6 | **1.46×** | **4200** | 3.1× |
+  | `run_benchmark_falsifiability_smoke.py` | 1800 | 1105.0–1118.7 | **1.61×** | **3600** | 3.2× |
+  | `run_splitter_readout_smoke.py` | 400 | 193.3–196.2 | 2.04× | **600** | 3.1× |
+  | `run_splitter_readout_cal_smoke.py` | 400 | 168.6–173.4 | 2.31× | **600** | 3.5× |
+
+  其余 9 项余量 3.1×–265×（不动）。**重标定后全表最低余量 3.06×。判据一字未改** —— TIMEOUT 与 FAIL 是两种状态，本表只管**耗时余量**，不含任何物理/数值判据放宽。
+- **立规（写进表头，防第三次复发）**：**任何进入 `_BUILTIN_TIMEOUT_OVERRIDE` 的项，预算 ≥ 3× 该线程数下的实测耗时**；扩基后若某项跑进 2× 以内，必须重新实测并上调。
+- **新增机器体检（把「何时该重标定」变成机器结论）**：`scripts/ci_core_batched.py` 每次跑完输出「预算余量体检」并写入报告 `budget_audit` —— 对每个覆盖项算 `margin = budget / elapsed`，**< 2× 即列名告警**；**TIMEOUT / CRASH 项的 elapsed 是被截断值（= 当时预算），其 margin 不可信 ⇒ 强制列入并标 `censored`**。已正反验证：真数据（R1 / 修后等效 R2）**0 项欠标定** · 合成 1.06× **被列** · 合成 3.6× **不列** · TIMEOUT 记录**强制列出**。
+- **设计文档订正**：`run_ci_industrial_smoke.py` 的 docstring 原称代表子集「~20s · 总量 <2min · 负载无关」、其 `_SUBSET_CONTRACT` 旧注 d_criterion「~15s」——均已订正为实测值，并记录「子集成员是否换成更快项以恢复『小而快』设计意图」留专项裁决（本次**不改子集构成**，改构成会变动该文件所验证的聚合契约覆盖面）。
+- **口径澄清**：本项**不属**「静态卫生」范畴，是二轮全量实跑**新暴露**的真缺陷；与首轮暴露的 `_app` 契约血案同属「全量实跑副产品」。
+
+### 验证（三轮全量 CI core 179 条实跑 · 分批防掉电）
+- **首轮**（改动后）：**178 PASS / 1 FAIL**（5706s）—— 暴露血案 1（`run_webui_api_smoke` 9 条路由 500）。
+- **二轮**（血案 1 修后）：**177 PASS / 2 FAIL**（5739.8s）—— ✅ `run_webui_api_smoke` 转 PASS（14.2s）；新暴露血案 2（`run_d_criterion_smoke` TIMEOUT + `run_ci_industrial_smoke` 连带 FAIL，一个根因）。
+- **三轮**（超时预算全表重标定后）：**179 PASS / 0 SKIP / 0 FAIL**（**5600.4s** · 10 批 · 批次 1–9 各 18 / 批次 10 为 17）—— ✅ **全绿**。
+- **机器体检首跑即生效**：`_ci_core_179_c.json` 的 `budget_audit` = 14 项受覆盖项 · **`low_margin` 为空（0 项欠标定）** · 全表最低余量 **2.99×**（`run_fdtd2d_mmi_smoke` 133.9s/400s，贴 3.0 目标线、远高于 2.0 告警线）。
+- **账本/契约护栏全绿**：`run_harness` 448/3/18 · 469/469 闭合 · `run_pyflakes_ratchet_smoke` 5/5（实测=基线）· `run_count_consistency_smoke`（CI core 179）· `run_p0_count_guard_sync_smoke` · `run_ci_coverage_gate_smoke` · `run_self_certified_lock_smoke`（棘轮 18 不动）· `run_benchmark_falsifiability_smoke` 13/13。
+- **修法闭环**：两处血案的修复均经「定位（运行时/定标取证）→ 修 → 反向测试证明断言真会红 → 全量复跑转绿」，**未触碰任何物理/数值判据、未放宽任何 tol**。
+
 ## v0.9.111（2026-09-19 · 全面审计后集中清偿 · 不扩基 · 账本零变化 · CI core 178 条不变）
 
 ### 审计来源

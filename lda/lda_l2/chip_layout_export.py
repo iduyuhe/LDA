@@ -77,7 +77,6 @@ def io_ports_of(link) -> List[Tuple[str, str]]:
     """链路外部 IO 端口（源 + 汇），保序去重。"""
     topo = link.topology()
     ext = [(i, p) for (i, p, _) in topo["external"]]
-    src_set = set(getattr(link, "sources", []) or [])
     seen = set()
     out = []
     for x in ext:
@@ -239,7 +238,6 @@ def chip_layout_stats(link, placement, routes) -> Dict[str, Any]:
             ys.append(py)
     x0, x1 = (min(xs), max(xs)) if xs else (0.0, 0.0)
     y0, y1 = (min(ys), max(ys)) if ys else (0.0, 0.0)
-    layers = {1}  # 默认硅层；按元素实际层补充由调用方传入
     return {
         "n_devices": len(link.ir.components),
         "n_io": len(io_ports_of(link)),

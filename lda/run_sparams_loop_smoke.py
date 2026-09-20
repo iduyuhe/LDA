@@ -18,7 +18,7 @@ def run(name, expect, intent):
     try:
         rep = DesignAgent().run(intent)
         ok = bool(rep.accepted) == expect
-    except Exception as e:  # noqa: BLE001
+    except Exception:  # noqa: BLE001
         ok, rep = False, None
     PASS.append(ok)
     tag = "PASS" if ok else "FAIL"
@@ -58,7 +58,7 @@ try:
     rep = DesignAgent().run({})
     ok = rep.iterations >= 1 and isinstance(rep.verdict, str) \
         and isinstance(rep.loop_trace, list)
-except Exception as e:  # noqa: BLE001
+except Exception:  # noqa: BLE001
     ok, rep = False, None
 PASS.append(ok)
 print(f"{'PASS' if ok else 'FAIL'} | method 默认 scan（布拉格）路径兼容"

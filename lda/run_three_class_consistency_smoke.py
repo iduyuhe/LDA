@@ -132,7 +132,7 @@ def _run():
 
     # C4 反向：篡改 README 数字 ⇒ C2 必须 FAIL
     txt = open(README, encoding="utf-8").read()
-    polluted = txt.replace(f"严格独立 {h_strict} 道", f"严格独立 99 道")
+    polluted = txt.replace(f"严格独立 {h_strict} 道", "严格独立 99 道")
     tmp = README + ".pollute_tmp"
     try:
         open(tmp, "w", encoding="utf-8").write(polluted)

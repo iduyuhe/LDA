@@ -151,7 +151,8 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
                          submit_empirical: bool = False,
                          link=None, placement=None, routes=None,
                          gds: Optional[bytes] = None,
-                         perf_cases: Optional[List[Dict[str, Any]]] = None
+                         perf_cases: Optional[List[Dict[str, Any]]] = None,
+                         proposals_path: Optional[str] = None
                          ) -> TapeoutResult:
     """流片级验证管道主入口。
 
@@ -168,6 +169,11 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
     perf_cases: （v0.9.60 S3b）性能工艺角用例 [{device,bid,params,tol_pct,domain}]，
                       提供则角缩放后重算锚指标（FSR/f01 等），缺省 None 跳过。
                       🔴 与 S3 的 DRC 工艺角不同：S3 只复检规则，S3b 评估**性能漂移**。
+    proposals_path : （v0.9.116）S5 实证语料提案库路径——缺省 None = 仓库内共享库
+                      （`lda_pdk/empirical_proposals.json`）。**测试须显式传临时路径**：
+                      smoke 写共享库会 ①非 hermetic（结果依赖历史残留）
+                      ②污染社区贡献库。语义与 `empirical.submit_measurement` 的
+                      `proposals_path` 一致（依赖注入）。
     """
     from lda_l2.drc import drc_check_device, rules_from_pdk
     pdk = _load_pdk(pdk_key)
@@ -318,6 +324,11 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
     if submit_empirical:
         from lda_pdk.empirical import submit_measurement
         # 示例：把设计目标作为「假想流片实测」提案（citation 必填占位）
+        # 🔴 v0.9.116：显式传 proposals_path（缺省 = 共享库，但调用方可注入临时路径）。
+        #    注意：下方占位 citation **不含 DOI/arXiv/公开 URL 定位符** ⇒ 必然被
+        #    D-63 溯源门禁拒（`status="rejected"`，且在 `store.add` 之前返回）
+        #     ⇒ 本路径**不写入**任何库。这是设计意图（真实流片前不占位入库），
+        #    由 `run_tapeout_smoke` 显式断言锁定。
         first_kind = next(iter(devices))
         emp_sub = submit_measurement({
             "id": f"tapeout-sim-{first_kind.lower()}",
@@ -329,7 +340,7 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
             "citation": "LDA tapeout pipeline 示例（真实流片前占位，非实测）",
             "method": "simulated",
             "proposed_by": "tapeout-pipeline",
-        })
+        }, proposals_path=proposals_path)
 
     accepted = bool(drc_ok and corners_ok and lvs_ok
                     and (geom_res.passed if geom_res is not None else True)

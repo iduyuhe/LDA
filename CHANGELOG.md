@@ -1,5 +1,127 @@
 # Changelog
 
+## v0.9.116（2026-09-20 · run_tapeout_smoke 秒级 id 假红修复 + smoke 隔离棘轮护栏 · 超时预算同项补齐 · 不扩基 · 账本零变化 · CI core 180→181）
+
+**来源**：v0.9.113 波次 2 采集时发现的**既有脆弱用例**（当时记为 backlog，v0.9.114 / v0.9.115
+两轮均标注「属断言逻辑改造，越出纯重构范围」）。本轮按用户选定的待裁 item 处置。
+
+**症状**：`run_tapeout_smoke.test_empirical_submission_interface` 偶发
+`FAILED (failures=1)`：`AssertionError: 'rejected' != 'accepted_pending'`，
+reason = `防重守卫：语料 tapeout-sim-uniq-<epoch> 已存在（pending）`。
+
+**根因（两条件叠加，缺一不复现）**
+
+| # | 成因 | 证据 |
+|---|---|---|
+| R-a | 唯一 id 用**秒级**时钟 `int(_t.time())` | 同秒两次 → 第 1 次 `accepted_pending`、第 2 次 `rejected`（防重守卫） |
+| R-b | 三处提交均**不传 `proposals_path`** ⇒ 写仓库内共享库 `lda_pdk/empirical_proposals.json`（`.gitignore` 忽略的「生态共建社区贡献库」）⇒ pending **跨进程持久** ⇒ 测试**非 hermetic** + **污染** | 该文件当日积压 **38 条 pending，100% 为 `proposed_by=tapeout-smoke`** 的测试残留（method=simulated，非真实测量） |
+
+🔴 **方法论血案（第一版证明脚本失败之处）**：把 store 改成「每跑新建」**恰好切断 R-b**
+⇒ 旧实现 **rc=0、不复现**。**复现条件写错 = 证明无效**。最终用 **2×2 冻结时钟矩阵**
+（把「同秒」从概率事件变为必然事件）：
+
+| 实现 | 每跑新建 store | 两跑共用同一 store（真实形态） |
+|---|---|---|
+| 旧（HEAD `b584a00`） | rc=0,0 | **rc=0,1 ← 假红复现** |
+| 新（本轮） | rc=0,0 | rc=0,0 ← 耦合已断 |
+
+**修复**
+
+1. `run_tapeout_smoke` 全面 hermetic：`setUp` 建 `tempfile.mkdtemp()` 临时提案库，三处提交
+   显式传 `proposals_path`（与 `run_empirical_anchor_smoke` / `run_empirical_d62_report` 同范式）。
+2. `run_tapeout_pipeline` 新增**可注入**的 `proposals_path` 形参（**追加在末位 ⇒ 向后兼容**；
+   CLI / webui 不传 = 行为不变）。
+3. 唯一 id 改用 `uuid4().hex[:10]` ⇒ 与时钟无关，同秒重跑亦必唯一。
+4. **收紧弱断言**：旧版「`accepted_pending` / `rejected` 二选一都算过」改为确定性断言 —— 管道
+   占位提交 citation 无 DOI/URL 定位符 ⇒ 必被 D-63 溯源门禁拒，且该拒发生在 `store.add`
+   **之前** ⇒ 不写库；**新增防重守卫正向断言**（同 id 重提必拒，此前只被脏库残留**偶然**覆盖）。
+5. 删掉旧版第 82-83 行的**悬空重复调用**（结果被丢弃、每次白写一条残留记录）。
+6. 移除旧版 `assertTrue(st.get("citation"))` —— 该键**并不存在于** `accepted_pending` 返回体
+   （返回体仅 `id`/`reason`/`review_status`/`status`），只因旧路径恒为 `rejected` 才从未走到
+   ⇒ 是颗**埋着的假绿地雷**。
+
+**新增护栏**：`run_smoke_isolation_ratchet_smoke.py`（core，180→181，14 判据）把两个成因
+机器化（作用域 = `lda/run_*smoke*.py`，即「测试」而非产品代码 —— 产品可合法使用默认共享库）：
+
+- **I1** empirical mutator（`submit_measurement` / `review_measurement` / `land_measurement`）
+  调用**必传**必需 path 关键字 ⇒ 结构上断绝 R-b
+- **I2** 不得出现 `int(<…>.time())`（秒级整数时间戳）⇒ 断绝 R-a。
+  🔴 **只禁「整数化」**：`time.time()` 用作**计时差值**合法、`time.time_ns()`（纳秒）合法 ——
+  误报会让护栏被绕过或被关停
+- **I3** 不得调用 `strftime`（秒级字符串时间戳）
+- **I4** 扫描非空洞（文件数 ≥ 地板 **且** 本文件确在扫描结果内 —— 防空集上空洞为真）
+- **I5** 豁免登记无悬空项（登记须对应真实违例）· **I6** 共享库无已知测试署名残留
+- **I7 / I12** 反证对照（合规样本零误报 / 合法记录不误报 —— 缺它则违例判定恒真即可让全部
+  反向判据假绿）· **I8~I11** 四条反向测试 · **I13** 自食其规则 · **I14** AST 零错误
+
+**有效性证明（同码对照）**：同一套判据跑 HEAD 旧实现 ⇒ 命中 **L81(`int-time`) +
+L89/L102(`mutator-no-path`) 恰 3 处**（与手工定位逐条一致）；新实现 **0 处**。
+**真机同秒连跑 2 次**：均 rc=0。
+
+**残留清理**：`lda_pdk/empirical_proposals.json` 中 **38 条测试残留已清除**（先备份；
+写回前做**格式保真自证**「未修改 dump == 原文」**逐字节 27503 B**；写后残留 0 条）。
+该文件被 `.gitignore` 忽略 ⇒ **版本库零影响**。
+
+**账本护栏**：零锚改动（**448/3/18/469**）· **CI core 180→181**（新增隔离棘轮）
+· 棘轮 `MAX_SELF_CERTIFIED=18` / `min_kit_importers=70` 不动 · 零 tol 放宽
+· pyflakes **F401 仍 201**（新增/删改文件净零；新棘轮与 tapeout smoke 的未用导入已即时清）
+
+**同族连带项 D —— `lda/reports/empirical_d62.json` 报告非确定性清偿**
+
+同族根因（**wall-clock 非确定性**）在**受跟踪报告**上的第二个实例：该报告**每次重跑字节必变**
+（实测连跑两次差异恰为秒数 —— `17:37:14` vs `17:37:15`）⇒ `git status` 常红，把「又跑了一次」
+误当「证据变了」。
+
+**根因（三条件，缺一不复现）**
+
+| # | 成因 | 证据 |
+|---|---|---|
+| D-a | `run_empirical_d62_report.py` 用**裸 `json.dump`** 落盘 | 违反 v0.9.75 铁律「受跟踪报告必须是**输入的确定性函数**」 |
+| D-b | 该生成器**未登记**在 `run_report_determinism_smoke.py` 的 `lint_spec` 报告写入者白名单 | 该表 L149 自述「**没登记 = 门禁缺口**」—— 铁律自称当场成立，**漏登记 19 天无感** |
+| D-c | `detail` 直接 `str(landed[0]["provenance"])` ⇒ 含 `landed_at`（`land_measurement` 的 wall-clock 时刻） | 实测跨秒即变；自 2026-09-01（v0.9.10）起未再生成 ⇒ 报告口径仍停在 **48 题** |
+
+🔴 **要点**：`deterministic.canon` 只剔**结构化** volatile 键；一旦把时间戳**序列化进字符串**
+（`str(dict)` / f-string），归一化机制**抓不到** ⇒ 必须**源头消除**。（且 `VOLATILE_KEYS` 本就不
+含 `landed_at` —— 但改它同样救不了字符串内的情况。）
+
+**修复**：① `detail` 只取确定性字段（`contributor` / `reviewer`），`landed_at` 仅以**键名提示**
+形式说明其被排除、不含实际值 ② 落盘改走 `det.write_json` ③ 登记进 `lint_spec`
+④ 删死导入 `import json`（免 F401 净增）。**顺带修正**：报告口径 48 题 → 当前 **469 题**。
+
+**反向证明（同码对照法）**：新 lint 表 × **旧实现**（`git show HEAD:` 导出，4781 B）
+⇒ `rc=1` 且红灯**精确指向** `not-using-deterministic=['run_empirical_d62_report.py']`；
+还原 ⇒ 复绿。**确定性实证**：改造后连跑两次（**强制跨秒**）⇒ **字节一致**（len=2008）。
+`numstat`：生成器 31/6 · determinism smoke 11/0（**无整文件重写**）。
+
+**🔴 本项挖出的两条方法论（已记入 `IRONLAWS.md` 十一节）**
+- **白名单型护栏不防「漏登记」**：实测粗粒度发现式扫描 **55 候选 / 30 个不在白名单**，其中
+  多数**非**真报告写入者（含 `deterministic.py`、`run_report_determinism_smoke.py` 自身）
+  ⇒ 直接做成判据会变「狼来了」而被关停 ⇒ **精确分类留待 T6.4**，本项只补最小登记。
+- **复现条件完备性**：缺陷成立所需的**全部**条件须同时满足（d62 需「跨秒」；tapeout 需
+  「同秒 **且** 同共享库」）—— **只隔离其一即切断因果、证明无效**（首版证明脚本即栽在此）。
+
+**全量 CI core 181**：**`181 PASS / 0 SKIP / 0 FAIL`（181 条 · 11 批 · 5539.2s）** —— **全绿**。
+含新护栏 `run_smoke_isolation_ratchet_smoke.py`（批次 11 · 0.2s）。
+
+**超时预算处置（`budget_audit` 全表体检 · v0.9.116 第三次同项复发）**
+- 体检报全表 14 项**最低 2.87×**（`run_fdtd2d_mmi_smoke` **156.79s / 450s**）· `low_margin` **仍空**（2× 告警线未触）。
+- **先归因**：① 本项**不 import 账本/候选表**、无 `BENCHMARK_ORDER`/`len(...)` 循环 ⇒
+  参数固定（`dl=0.05 t_max=1200` 主跑 + `dl=0.06 t_max=900` 判据 D 两次），**与锚数无关**；
+  ② 本项**不在本轮改动面内**（零因果）；③ 同轮对照 `run_d_criterion_smoke` 173.51s **低于**
+  上轮 202.79s（**−14%**）⇒ 机器状态**逐项波动**、非整机变慢。⇒ 判为**纯负载/热抖动**
+  （前四轮 128–135s → 本轮 156.79s，**+16~22%**，越出既有 ±15% 记录带）。
+- **处置**：450 → **600s**（≈**3.83×**，对齐同族档位 `run_splitter_readout_cal_smoke` /
+  `run_device_library_smoke`）⇒ 可吸收 **±27%** 抖动（≤200s 仍守 3×）。**判据一字未改 ·
+  零锚改动 · 零 tol 放宽 · 棘轮未动**；属**单调放宽**（放宽上限不可能使已 PASS 项变 FAIL）
+  ⇒ **本轮 181 PASS 结论仍有效，不重跑**。`numstat` 40/4（**无整文件重写**）。
+- **影响面取证**：全仓引用 `_BUILTIN_TIMEOUT_OVERRIDE`/`budget_audit` 的 **smoke 类文件 = 0 个**
+  ⇒ 改表**不会连带任何护栏变红**。
+- **🔴 规则细化（三轮复发的真正教训 · 已写入表头）**：同一项**第三次**踩线
+  （2.99→3.12→3.03→2.97→**2.87×**，每轮刚补齐又被下一轮抖动吃回）⇒ 暴露原规
+  「≥3× **单轮**实测」**不严谨**：谷值轮配出的预算，峰值轮即破线。新规 =
+  **预算 ≥ 3 ×「跨轮实测上界」**（取历次 `budget_audit.elapsed` **最大值**）；纯抖动型项
+  直接对齐同族档位**一次给足**。
+
 ## v0.9.115（2026-09-20 · 名誉榜台账 G2 闭环：空表判非法 + 补 R9/R10 + 新旧对照证明 · 不扩基 · 账本零变化 · CI core 180 持平）
 
 **来源**：v0.9.114 收口时登记的**策略待裁**项 G2 —— 台账表头在而**零数据行**时

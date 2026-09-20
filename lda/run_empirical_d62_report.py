@@ -1,15 +1,30 @@
 """D-62 实证大数据锚 验收报告生成器 → lda/reports/empirical_d62.json。
 
-报告维度：①双 ground 结构（物理定律 B1-B18 + 实证锚 E1-E3）；②实证锚题
+报告维度：①双 ground 结构（物理定律 B* + 实证锚 E*，动态计数）；②实证锚题
 golden=实测语料（跨多源可溯源）；③语料评审流端到端；④诚实边界。
+
+## 确定性（v0.9.116 补）
+
+`lda/reports/empirical_d62.json` 是**受版本控制的验证证据** ⇒ 必须是**输入的
+确定性函数**（相同输入 ⇒ 字节一致），见 `lda_harness/deterministic.py`。
+
+历史缺口：本生成器**未登记**在 `run_report_determinism_smoke.py` 的 `lint_spec`
+报告写入者白名单中（该表自述「没登记 = 门禁缺口」），且用裸 `json.dump` 落盘、
+把含 `landed_at`（wall-clock）的 `provenance` 整串写进 `detail` ⇒ 每次重跑字节
+必变。v0.9.116 三处置：①登记进白名单；②落盘改走 `det.write_json`；③`detail`
+只保留确定性字段（时间戳按铁律不进受跟踪产物）。
+
+🔴 要点：`deterministic.canon` 只剔**结构化** volatile 键；一旦把时间戳
+**序列化进字符串**（如 `str(dict)` / f-string），归一化机制**抓不到** ⇒
+必须在**源头**不产生它。
 """
-import json
 import os
 import sys
 import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from lda_harness import deterministic as det
 from lda_harness.benchmarks import BENCHMARK_DEFS
 from lda_harness.verification_adapters import build_harness_specs, _load_empirical_anchor
 from lda_pdk.empirical import (
@@ -75,10 +90,19 @@ def main():
           and r2["status"] == "landed",
           f"submit={r0['status']} review={r1['status']} land={r2['status']}")
     landed = list_landed_measurements(corpus_path=cp)
+    # 🔴 v0.9.116：受跟踪报告必须是**输入的确定性函数**（见 `deterministic` 模块）。
+    #   旧实现直接 `str(landed[0]["provenance"])` —— provenance 含 `landed_at`
+    #   （= `land_measurement` 的 wall-clock 时刻）⇒ 本报告**每次重跑字节必不同**
+    #   （跨秒即变，同秒才巧合一致）⇒ `git status` 常红、把「又跑了一次」误当「证据变了」。
+    #   这与 v0.9.116 主项同族（秒级时间戳非确定性）。且 `landed_at` 被**序列化进
+    #   detail 字符串**，`deterministic.canon` 只剔结构化键 ⇒ 抓不到，只能**源头消除**。
+    #   判据语义不变（仍要求 provenance 存在且含 reviewer），仅 detail 只取确定性字段。
+    prov = (landed[0].get("provenance") or {}) if landed else {}
     check("落地语料落盘（empirical_contributions.json 结构）",
           len(landed) == 1 and landed[0]["id"] == "E-REPORT-1"
-          and "provenance" in landed[0] and "reviewer" in landed[0]["provenance"],
-          str(landed[0].get("provenance")))
+          and "provenance" in landed[0] and "reviewer" in prov,
+          f"contributor={prov.get('contributor')!r} reviewer={prov.get('reviewer')!r} "
+          f"keys={sorted(prov)}「landed_at」为 wall-clock，按确定性铁律不进受跟踪产物")
     s = measurement_stats(proposals_path=pp)
     check("评审流状态自洽", s["total"] == 1 and s["by_status"]["landed"] == 1, str(s))
 
@@ -94,8 +118,9 @@ def main():
                            "→ 落库」流持续流入；落库(live)≠进版本控制，权威语料以维护者 "
                            "git 提交为准；比对=|candidate−measured|≤σ（死标量）。",
     }
-    with open(OUT, "w", encoding="utf-8") as f:
-        json.dump({"summary": summary, "checks": CHECKS}, f, indent=2, ensure_ascii=False)
+    # 🔴 v0.9.116：落盘走 `deterministic` 唯一口径（UTF-8 + LF + 缩进确定），
+    #   禁止裸 `json.dump` —— 后者是 v0.9.75 铁律点名禁止的报告写入方式。
+    det.write_json(OUT, {"summary": summary, "checks": CHECKS})
     print("-" * 60)
     npass = sum(1 for c in CHECKS if c["ok"])
     print(f"实证锚报告：{npass}/{len(CHECKS)} PASS → {OUT}")

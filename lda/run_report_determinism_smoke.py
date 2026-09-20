@@ -180,6 +180,17 @@ def main() -> int:
         "run_wdm_system_smoke.py": _WALL,
         "run_golden_product_smoke.py": _WALL,
         "lda_harness/run_empirical_bank.py": _WALL,
+        # ——— v0.9.116：补登漏网项 ———
+        #   `run_empirical_d62_report.py` 自 D-62（v0.9.x）起就是报告写入者，但
+        #   v0.9.75 建本表时**漏登记**（自述「没登记 = 门禁缺口」当场成立），且用
+        #   裸 `json.dump` 落盘 + 把含 `landed_at`（wall-clock）的 provenance 整串
+        #   写进 detail ⇒ `lda/reports/empirical_d62.json` **每次重跑字节必变**
+        #   （实测连跑两次仅秒数不同：17:37:14 vs 17:37:15）。与 v0.9.116 主项
+        #   （秒级 id）同族根因：wall-clock 非确定性。
+        #   如实测：本表**只防「已登记项违规」，不防「漏登记」**（白名单型固有
+        #   漏报面）—— 全仓粗扫有 30 个"含 reports 字面 + 写盘动作"的模块待甄别，
+        #   其中多数非真报告写入者 ⇒ 精确发现式判据留待专门一轮（见 workplan backlog）。
+        "run_empirical_d62_report.py": _WALL,
     }
     lint_bad = []
     no_det = []

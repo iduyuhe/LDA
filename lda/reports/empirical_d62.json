@@ -1,6 +1,6 @@
 {
   "summary": {
-    "total_benchmarks": 48,
+    "total_benchmarks": 469,
     "physical_law": 18,
     "empirical_anchor": 3,
     "seed_corpus": 30,
@@ -17,14 +17,14 @@
   },
   "checks": [
     {
-      "name": "双 ground：48 题（B1-B28 物理定律 + E1-E7 实证 + S1-S13 系统）",
+      "name": "双 ground：469 题（B* 物理定律 + E* 实证 + S* 系统，动态计数）",
       "ok": true,
-      "detail": "total=48 empirical=['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7']"
+      "detail": "total=469 E=10 empirical=['E1', 'E10', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', 'E9']"
     },
     {
-      "name": "实证锚题 golden 全部可 resolve（D-66 后 A 级 7 道，B 级清零）",
+      "name": "实证锚题 golden 全部可 resolve（D-66 后 A 级全量，B 级清零）",
       "ok": true,
-      "detail": "A级=['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7'] | golden={'E1': 4.18, 'E2': 1.892, 'E3': 10.44, 'E4': 0.18, 'E5': 0.05, 'E6': 0.087, 'E7': -41.0}"
+      "detail": "A级=['E1', 'E10', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', 'E9'] | golden={'E1': 4.18, 'E2': 1.892, 'E3': 10.44, 'E4': 0.18, 'E5': 0.05, 'E6': 0.087, 'E7': -41.0, 'E8': 0.42, 'E9': 0.28, 'E10': 8.6}"
     },
     {
       "name": "语料溯源完整性（citation/fab_source 全可追溯）",
@@ -39,7 +39,7 @@
     {
       "name": "落地语料落盘（empirical_contributions.json 结构）",
       "ok": true,
-      "detail": "{'contributor': '社区', 'reviewer': '杜玉河', 'landed_at': '2026-09-01T15:06:39'}"
+      "detail": "contributor='社区' reviewer='杜玉河' keys=['contributor', 'landed_at', 'reviewer']「landed_at」为 wall-clock，按确定性铁律不进受跟踪产物"
     },
     {
       "name": "评审流状态自洽",

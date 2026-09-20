@@ -1,5 +1,53 @@
 # Changelog
 
+## v0.9.113（2026-09-20 · 波次 2 助手归一（F-07）+ 测试范式统一（F-18）· 纯重构 · 不扩基 · 账本零变化 · CI core 179→180）
+
+### 来源
+- 2026-09-19 只读全面审计（`LDA_functional_code_audit_2026-09-19.md`，18 条分级发现）遗留 **8 项未执行发现**的**波次 2 清偿**；工作计划 `LDA_fix_workplan_2026-09-19.md` §2。
+- 账本影响：**零锚改动**（三分类 448/3/18/469 不变）、**棘轮 `MAX_SELF_CERTIFIED=18` 不动**、零 tol 放宽、**零判据改动**；仅 CI core 179→180（新增助手重复棘轮）。
+- 🔴 **本版是波次 2 中唯一不触及判决路径入口的一半**：用户本轮指令只点了 **F-07 与 F-18**；审计列为「唯一触及判决路径入口」的 **T2.2（F-08 巨石拆分：`verification_adapters.py` 6789 行 / `benchmarks.py` 6635 行）未在本轮范围**，仍按裁决 R3② 待专项。
+
+### F-07 助手重复（`check()`）
+- 审计记「`check()` 助手复制 **86 份**」。**AST 逐文件复测推翻该数字并给出精确结论**：全仓 **97 处 `def check(`（97 个文件，各 1 处）· 按「忽略标识符/常量/属性名的 AST 骨架」分 36 个结构类**——即 **36 个各自定制的局部助手共用一个名字**，分歧点仅三类：① 计数器机制（`global PASS/FAIL` / `_PASS/_FAIL` / `nonlocal` / `CHECKS.append` / `report[...]`）② 打印格式（缩进 / 详情分隔 / 是否无条件打印）③ 返回值（`None` vs `bool`）。
+- **抽出「输出可证明逐字等价」的部分**（**50 个 smoke**）：
+  - **`lda_harness/smoke_kit.py`**（新建）：`make_check`（按参数复现各文件原 stdout 与返回值；写调用方 `globals()` ⇒ 尾部计数器读取零改动，迁移是**单点改动**）· `check_raise` · `free_port`（原 6 份 `_free_port` 的单一定义）· `run_unittest_suite` + `Counter`。
+  - **`lda_solver/redline.py`**（新建）：🔴 **T1 红线守卫 `guard_t1_not_oracle` 6 → 1**。T1 数值内核输出**永不作 ORACLE**（`force_oracle=True` 必须 `raise`；`is_oracle=True` 亦必须 `raise`）是本项目最核心的保证之一，**复制 6 份 = 任一处漂移即削弱保护** ⇒ 单一定义 + `bind_guard(subject, ground)` 参数化文案（错误信息与归一前**逐字一致**）+ 内核侧 `_REDLINE_EXPORTS` 显式标记（pyflakes 不误判为死导入，同 `_ROUTES_APP_CONTRACT` 范式）。
+- **余量 53 处不归一是刻意决定**（逐条实测理由，非遗漏）。口径实测：`git grep -l` HEAD **97 处** → 本轮抽走 **44 处** → 余 **53 处**（`smoke_kit` 自身 1 处不计），分布 **31 个结构类**。四类主因：**① 非模块级 ×10**（嵌套 `def check` + `nonlocal passed/failed`，且**详情仅 FAIL 打印** ⇒ 格式非对称；`make_check` 只产出模块级助手）· **② 4 参调用约定 ×7**（`check(cond, msg, out/report, key)`，状态词 `OK  `/`FAIL`，结果写调用方 dict）· **③ 必须写调用方自有收集容器 ×31**（`CHECKS`/`_CHECKS`/`checks`/`_FAILED`/`_FAILS`/`_FATAL`/`(ok|fail).append`；`make_check` 只做「计数 + 打印」——其中 **4 处纯收集、无打印**，归一后反而更长）· **④ 模块级计数器但格式各异 ×5**（`global PASS/FAIL` 或 `global _PASS/_FAIL` + 无条件打详情 / 非标准分隔符 / PASS·FAIL 分行 ⇒ 需再加 2~4 个 quirk 旋钮成「参数汤」）。⇒ **用棘轮，不用 god-factory**。
+
+### 验证（逐文件字节级 stdout + rc 对照 · 全量实跑两轮）
+- **Stage A（F-07）**：51 文件全量实跑，基线 **608.9s** → 对照 **595.2s**，**rc 全一致 · 45/51 逐字节一致 · IND=0 · OTH=0**。余 22 行差异**全部为固有非确定**：计时 17（`[计时]`/`总耗时`）· torch·numba 浮点尾差 4 · 跨次累积状态 1（`before=N after=M`，每跑一次 +1）。**全部经「同码双跑」证明**（同一份代码跑两次即在同类行上出现差异 ⇒ 与本次归一改动无因果）。
+- **Stage B（F-18）**：判据 = rc + `Ran N tests` + `FAILED(...)` 计数 + 逐用例结果（**输出契约本就要变，不可按字节比**）。**19/19 全一致**（18 个迁移 + 1 个死测试特例单独判读）。
+
+### 🔴 血案 1：硬编码输出常量（字节级对照抓出 · 教训）
+- **现象**：Stage A 首轮对照，**rc 全 0**，但 **6 个文件 stdout 每行多出 2 个前导空格**（`[PASS] …` → `  [PASS] …`）。
+- **根因**：迁移脚本把打印缩进 `"  "` **硬编码在按结构类分组的参数表**里；而「同一结构类」只约束了骨架（忽略常量），**类内 6 个文件原文是无缩进的**。
+- **为何危险**：`rc` 全绿、行数一致、只有空白字符差 —— 若验证只比 rc 或只看失败数，**必然漏过**。
+- **修法**：迁移脚本改为**从原文推导** indent（`'"  ['` / `"'  ['` 检测）并**加断言**（推导值 ≠ 表值即跳过并报告，不猜、不改）；6 个文件就地修正后**逐字节复核通过**，并全表复核 51 文件「HEAD 缩进 ≡ 绑定缩进」。
+- **纪律**：**凡输出常量必须从原文推导，不得凭表假设**（与「判据必须来自实测」同源）。
+
+### 🔴 血案 2：F-18 采集器自身的解析缺口（假差异，非代码缺陷）
+- **现象**：首版对照报 3 个文件「迁移后**多出**用例」（`None -> ok`，2→5 / 4→6 / 4→7）。
+- **根因（两因叠加，均在采集器）**：① `unittest.main(verbosity=2)` **输出走 stderr**；② 对**带 docstring 的用例**输出是**两行**（描述行 + `docstring … ok`），而采集器正则要求描述与 `… ok` **在同一行** ⇒ 基线**漏计**。**既非迁移引入，也非行为变化**。
+- **修法**：采集器改为「完整 stdout+stderr 落盘 + 行状态机解析」，并把主判据换成**格式无关**的 `Ran N tests` + 最终状态行（两种跑法都打）⇒ 重跑 **19/19 全一致**。
+
+### 🔴 发现 3：既有脆弱用例（`run_tapeout_smoke` · 非本版引入 · 已入 backlog）
+- 现象：F-18 对照中 `run_tapeout_smoke` 报 `FAILED`（rc=1），断言 `'rejected' != 'accepted_pending'`，`reason` 为 **`防重守卫：语料 tapeout-sim-uniq-<ts> 已存在（pending）`**。
+- 根因：用例用 `tapeout-sim-uniq-{int(time.time())}`（**秒级**）作「唯一 id」，而防重守卫的 pending 记录**跨进程持久化** ⇒ **同一秒内的第二次调用必被拒**。
+- **证明**（同码双跑）：迁移版相隔 >1s 连跑 → 2/2 OK；**HEAD 原版**同一秒背靠背 → 跑1 OK / 跑2 FAILED；**迁移版**同一秒背靠背 → 同样跑1 OK / 跑2 FAILED ⇒ **与跑法无关、与 F-18 无因果**。
+- **处置**：本版**不修**（属测试断言逻辑改造，非纯重构 ⇒ 越出本轮范围）；CI 单次运行只跑一次，不受影响；但**同一秒重跑会假红**，判读时须知。**待裁**：改为 uuid / 微秒级刻度，或显式清理 pending。
+
+### 新增护栏
+- **`lda/run_helper_dup_ratchet_smoke.py`**（进 CI core ⇒ 179→180）：**14 判据**。J1/J2 守卫与端口助手**单一来源**（处数 + 位置）· J3 `def check(`（不含 `smoke_kit` 单一实现）**≤53 只降不升** · J3b `smoke_kit` 规范定义恰 1 处 · J4 逐字重复组涉及文件 ≤30 · J5 `smoke_kit` 接线 ≥69（防「抽了没人用」）· J6 全量 AST 解析零错误 · **J7 `T1_OUTPUT_IS_ORACLE is False` + 6 个 T1 内核的 `guard_t1_not_oracle` 绑定到同一函数对象**（`partial.func is`；任一处退回本地复制即红）· **J8 五条反向测试**（基线调低 1 ⇒ J3 必报 / 合成 2 处守卫定义 ⇒ J1 必报 / 接线不足 ⇒ J5 必报 / `force_oracle=True` 必 raise / `is_oracle=True` 必 raise）。**本 smoke 自身不新增本地 `def check`**（复用 `smoke_kit`；为此给 `make_check` 补 `detail_on="fail"` 参数表达「仅失败打详情」这一**仓库既有惯用法**）。
+- **`make_check` 新增 `detail_on`**（`both`（默认）/ `fail` / `pass`）+ `ns=None` 语义文档化；`ns[k] = ns.get(k,0)+1` 兜底（调用方计数器声明晚于 `def check` 时原 `global X; X += 1` 会 `NameError`）。
+
+### 账本护栏
+- `run_pyflakes_ratchet_smoke` **实测=基线 5/5**（F401 仍 **201**：6 处 `import socket` 原仅由 `_free_port` 使用，随之一并移除 ⇒ **净变化 0**；新增导入全部在用）。
+- `run_count_consistency_smoke` / `run_p0_count_guard_sync_smoke` / `run_three_class_consistency_smoke` 随 README/CONTRIBUTING 同步（版本 v0.9.113 · CI core 180）。
+
+### 全量 CI core 180 与预算余量体检
+- **全量分批回归（10 批 · 10 线程 · 批间冷却 12s）：`180 PASS / 0 SKIP / 0 FAIL`**（5542.9s，含新增 `run_helper_dup_ratchet_smoke`）。
+- **预算余量体检 14 项全覆盖 · `low_margin` 空 · 最低 3.12×**。首轮体检报 `run_splitter_readout_smoke` **201.46s / 600s = 2.98×**（全表唯一 <3× 者，告警线 2× 未触）：该文件**不在** F-07 迁移面内（无因果），系**负载抖动**（同轮对照采集中同类重负载项抖动达 ±15%，如 `run_e10_ring_fsr` −13.6%、`run_webui_api` −15.1%）叠加规模自然增长 ⇒ 按「余量底线 ≥3×」上调为 **660s**（≈3.28×），复算 14 项最低回升 **3.12×**。**纯耗时上限，判据一字未改**；且属**单调放宽**（放宽上限不可能使已 PASS 项变 FAIL）⇒ **本轮全量结论对改后代码仍然有效**，无需重跑。
+
 ## v0.9.112（2026-09-19 · 波次 1 静态卫生清理 + pyflakes 棘轮 + 超时预算全表重标定 · 不扩基 · 账本零变化 · CI core 178→179）
 
 ### 来源

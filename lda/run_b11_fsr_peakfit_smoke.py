@@ -22,14 +22,13 @@ PASS = 0
 FAIL = 0
 
 
-def check(name: str, ok: bool, detail: str = "") -> None:
-    global PASS, FAIL
-    tag = "PASS" if ok else "FAIL"
-    if ok:
-        PASS += 1
-    else:
-        FAIL += 1
-    print(f"  [{tag}] {name}" + (f" —— {detail}" if detail else ""))
+# 🔴 check 已归一：实现**单一定义**在 lda_harness/smoke_kit.py
+#   （v0.9.113 · 波次 2 · 源自 2026-09-19 审计 F-07）。调用方尾部
+#   （含模块级计数器读取）与输出格式**均未改**，见 smoke_kit 模块 docstring。
+from lda_harness.smoke_kit import make_check  # noqa: E402
+
+check = make_check(globals(), ok_key="PASS", bad_key="FAIL",
+                   indent="  ", detail_fmt=' —— {d}')
 
 
 def _drop_response(lam, wl0, ng, R, kappa=0.3, a_rt=0.99):

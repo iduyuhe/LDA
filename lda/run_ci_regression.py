@@ -543,6 +543,18 @@ CORE_SMOKES: List[str] = [
     #   依赖：pyflakes（requirements.txt 必装段 + ci.yml industrial-regression pip 已同步）。
     #   CI core 178->179。
     "run_pyflakes_ratchet_smoke.py",
+    # 🔴 v0.9.113（波次 2 · 审计 F-07 清偿）：**助手重复棘轮**常驻护栏。
+    #   审计记「check() 复制 86 份」；波次 2 AST 复测给出精确结论：全仓 97 处
+    #   `def check(`（36 个结构类），其中 50 处抽到 `lda_harness/smoke_kit.py`、
+    #   T1 红线守卫 6→1 抽到 `lda_solver/redline.py`。余量钉成棘轮（只降不升）：
+    #   `def check(` ≤53 · 逐字重复组涉及文件 ≤30 · smoke_kit 接线 ≥69。
+    #   🔴 关键判据 **J7**：6 个 T1 数值内核的 `guard_t1_not_oracle` 必须
+    #   **绑定到同一个函数对象**（`partial.func is`）——任何一处退回本地复制即红；
+    #   另加 5 条反向测试（基线调低 / 合成 2 处守卫 / 接线不足 / force_oracle 必
+    #   raise / is_oracle 必 raise）证明判据真会变红。纯 AST + 6 次轻量导入、实测 <3s，
+    #   按准入准则（<5s 且无重依赖）无权豁免，必进 core。
+    #   CI core 179->180。
+    "run_helper_dup_ratchet_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -649,7 +661,13 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 含 FDTD 分束仿真，实测 ~198s（v0.9.1 入 core）
     # 🔴 v0.9.112：实测升至 193.3 / 196.2s ⇒ 400s 仅 **2.04×** 余量，按「超时预算
     #   须随规模同步上调」纪律提到 **600s**（≈3.06×）。判据一字未改。
-    "run_splitter_readout_smoke.py": 600.0,
+    # 🔴 v0.9.113（全量 CI core 180 后的「预算余量体检」）：`budget_audit` 报本项
+    #   201.46s / 600s = **2.98×** —— 全表 14 项中**唯一 <3×** 者（`low_margin` 仍空，
+    #   告警线 2× 未触）。系**负载抖动**（本项不在 F-07 迁移面内，无因果；同轮
+    #   对照采集中同类重负载项抖动达 ±15%，如 e10_ring_fsr −13.6%）叠加规模自然
+    #   增长 ⇒ 按「余量底线 ≥3×」提到 **660s**（≈3.28×）。**判据一字未改**，
+    #   且属**单调放宽**（放宽上限不可能使已 PASS 项变 FAIL）⇒ 本轮全量结论仍有效。
+    "run_splitter_readout_smoke.py": 660.0,
     # 含 FDTD 标定仿真，实测 ~179s（v0.9.1 入 core）
     # 🔴 v0.9.112：实测 173.4 / 168.6s ⇒ 400s 仅 **2.31×**，同纪律提到 **600s**（≈3.46×）。
     "run_splitter_readout_cal_smoke.py": 600.0,

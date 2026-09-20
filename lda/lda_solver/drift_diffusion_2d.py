@@ -74,8 +74,19 @@ TAU_P = 1.0e-7                # 空穴寿命 (s)
 L_N = math.sqrt(D_N * TAU_N)  # 电子扩散长度 (m)
 L_P = math.sqrt(D_P * TAU_P)
 
-# 🔴 红线开关：T1 输出永不作 ORACLE
-T1_OUTPUT_IS_ORACLE = False
+# 🔴 T1 红线（铁律开关 + 守卫）：**逻辑单一定义**在 lda_solver/redline.py
+# （v0.9.113 · 波次 2 · 审计 F-07）。本模块只绑定自己的被守卫量文案，
+# 其错误信息与归一前逐字一致。
+try:  # 包内导入
+    from .redline import T1_OUTPUT_IS_ORACLE, GROUND_ANCHOR, bind_guard
+except ImportError:  # 脚本直跑自检
+    from redline import (  # type: ignore
+        T1_OUTPUT_IS_ORACLE, GROUND_ANCHOR, bind_guard)
+
+guard_t1_not_oracle = bind_guard("数值 n/p/φ/I(V)", GROUND_ANCHOR)
+# 显式 re-export 标记（pyflakes 不把 T1_OUTPUT_IS_ORACLE 误判为死导入；
+# 同 lda_webui.app 的 _ROUTES_APP_CONTRACT 范式）
+_REDLINE_EXPORTS = (T1_OUTPUT_IS_ORACLE, guard_t1_not_oracle)
 
 # 默认掺杂 / 几何（典型突变结，非对称 p+n；平面结居中）
 N_A_DEFAULT = 1.0e23           # 受主 (m^-3, 1e17 cm^-3)
@@ -542,15 +553,9 @@ def solve_pn_junction_2d_bias(V: float, N_A: float = N_A_DEFAULT, N_D: float = N
     }
 
 
-def guard_t1_not_oracle(solution: dict, force_oracle: bool = False) -> bool:
-    """🔴 T1 输出不作 ORACLE 反向测试守卫（同 W2 语义）。"""
-    if force_oracle:
-        raise RuntimeError(
-            "T1 输出禁止作为 ORACLE：数值 n/p/φ/I(V) 仅作候选，"
-            "死标量判决须由物理定律锚/文献/foundry 实测定。")
-    if solution.get("is_oracle", False):
-        raise RuntimeError("T1 解被错误标记为 ORACLE（is_oracle=True）")
-    return True
+# 🔴 guard_t1_not_oracle 已归一：逻辑单一定义在 lda_solver/redline.py
+#   （v0.9.113 · 波次 2 · 审计 F-07）。本模块在文件头以
+#   bind_guard("数值 n/p/φ/I(V)", GROUND_ANCHOR) 绑定被守卫量文案。
 
 
 if __name__ == "__main__":

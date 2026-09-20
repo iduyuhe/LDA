@@ -42,13 +42,10 @@ def _http(method, url, timeout=10, headers=None, body=None):
         return (code if code is not None else 0), msg
 
 
-def _free_port():
-    import socket
-    s = socket.socket()
-    s.bind(("127.0.0.1", 0))
-    p = s.getsockname()[1]
-    s.close()
-    return p
+# 🔴 _free_port 已归一：实现**单一定义**在 lda_harness/smoke_kit.py
+#   （v0.9.113 · 波次 2 · 源自 2026-09-19 审计 F-07）。调用方尾部
+#   （含模块级计数器读取）与输出格式**均未改**，见 smoke_kit 模块 docstring。
+from lda_harness.smoke_kit import free_port as _free_port  # noqa: E402
 
 
 def _report(results):

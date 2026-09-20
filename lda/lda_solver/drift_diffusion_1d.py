@@ -44,8 +44,19 @@ T_KELVIN = 300.0
 V_T = K_B * T_KELVIN / Q_E    # 热电压 ≈ 0.02585 V
 N_I = 1.0e16                   # Si 本征载流子浓度 (m^-3, ≈1e10 cm^-3)
 
-# 🔴 红线开关：T1 输出永不作 ORACLE
-T1_OUTPUT_IS_ORACLE = False
+# 🔴 T1 红线（铁律开关 + 守卫）：**逻辑单一定义**在 lda_solver/redline.py
+# （v0.9.113 · 波次 2 · 审计 F-07）。本模块只绑定自己的被守卫量文案，
+# 其错误信息与归一前逐字一致。
+try:  # 包内导入
+    from .redline import T1_OUTPUT_IS_ORACLE, GROUND_ANCHOR, bind_guard
+except ImportError:  # 脚本直跑自检
+    from redline import (  # type: ignore
+        T1_OUTPUT_IS_ORACLE, GROUND_ANCHOR, bind_guard)
+
+guard_t1_not_oracle = bind_guard("数值 N(x)/P(x)", GROUND_ANCHOR)
+# 显式 re-export 标记（pyflakes 不把 T1_OUTPUT_IS_ORACLE 误判为死导入；
+# 同 lda_webui.app 的 _ROUTES_APP_CONTRACT 范式）
+_REDLINE_EXPORTS = (T1_OUTPUT_IS_ORACLE, guard_t1_not_oracle)
 
 # 掺杂默认值（典型突变结，非对称 p+n）
 N_A_DEFAULT = 1.0e23           # 受主 (m^-3, 1e17 cm^-3)
@@ -187,21 +198,10 @@ def sze_pn_junction_closed_form(N_A: float = N_A_DEFAULT, N_D: float = N_D_DEFAU
     }
 
 
-def guard_t1_not_oracle(solution: dict, force_oracle: bool = False) -> bool:
-    """🔴 T1 输出不作 ORACLE 反向测试守卫。
-
-    - 正常调用：断言 solution['is_oracle']==False（候选，非真值）。
-    - 反向（force_oracle=True 模拟有人把 T1 输出当 ORACLE 喂判决回路）：
-      必须 raise RuntimeError（守卫必响），否则破红线。
-    """
-    if force_oracle:
-        # 反向测试：若判决回路误用 T1 数值解为 ORACLE ⇒ 守卫拒绝
-        raise RuntimeError(
-            "T1 输出禁止作为 ORACLE：数值 N(x)/P(x) 仅作候选，"
-            "死标量判决须由物理定律锚/文献/foundry 实测定。")
-    if solution.get("is_oracle", False):
-        raise RuntimeError("T1 解被错误标记为 ORACLE（is_oracle=True）")
-    return True
+# 🔴 guard_t1_not_oracle 已归一：逻辑单一定义在 lda_solver/redline.py
+#   （v0.9.113 · 波次 2 · 审计 F-07；本文件原为 6 份复制中唯一带反向注释的版本，
+#   其语义（force_oracle 必 raise、is_oracle=True 必 raise）现由单一定义承载）。
+#   本模块在文件头以 bind_guard("数值 N(x)/P(x)", GROUND_ANCHOR) 绑定文案。
 
 
 if __name__ == "__main__":

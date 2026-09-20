@@ -18,7 +18,6 @@ import re
 import sys
 import json
 import time
-import socket
 import subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -27,12 +26,10 @@ APP = os.path.join(ROOT, "lda", "lda_webui", "app.py")
 README = os.path.join(ROOT, "README.md")
 
 
-def _free_port():
-    s = socket.socket()
-    s.bind(("127.0.0.1", 0))
-    p = s.getsockname()[1]
-    s.close()
-    return p
+# 🔴 _free_port 已归一：实现**单一定义**在 lda_harness/smoke_kit.py
+#   （v0.9.113 · 波次 2 · 源自 2026-09-19 审计 F-07）。调用方尾部
+#   （含模块级计数器读取）与输出格式**均未改**，见 smoke_kit 模块 docstring。
+from lda_harness.smoke_kit import free_port as _free_port  # noqa: E402
 
 
 def _harness_three_class():

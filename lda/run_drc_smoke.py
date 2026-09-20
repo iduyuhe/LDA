@@ -23,12 +23,10 @@ from lda_l2.drc import (DEFAULT_RULES, drc_check_device, drc_from_library,
                         drc_summary)
 
 
-def check(cond: bool, msg: str) -> bool:
-    if cond:
-        print("OK  " + msg)
-        return True
-    print("FAIL " + msg)
-    return False
+# 🔴 check 已归一：实现**单一定义**在 lda_harness/smoke_kit.py
+#   （v0.9.113 · 波次 2 · 源自 2026-09-19 审计 F-07）。调用方尾部
+#   （含模块级计数器读取）与输出格式**均未改**，见 smoke_kit 模块 docstring。
+from lda_harness.smoke_kit import check_raise as check  # noqa: E402
 
 
 def main() -> int:

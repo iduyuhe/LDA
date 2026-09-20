@@ -61,8 +61,19 @@ except ImportError:  # 允许 `python lda_solver/mzm_vpi_depletion_true.py` 直�
         N_I,
     )
 
-# 🔴 红线开关：T1 输出永不作 ORACLE
-T1_OUTPUT_IS_ORACLE = False
+# 🔴 T1 红线（铁律开关 + 守卫）：**逻辑单一定义**在 lda_solver/redline.py
+# （v0.9.113 · 波次 2 · 审计 F-07）。本模块只绑定自己的被守卫量文案，
+# 其错误信息与归一前逐字一致。
+try:  # 包内导入
+    from .redline import T1_OUTPUT_IS_ORACLE, GROUND_LITERATURE, bind_guard
+except ImportError:  # 脚本直跑自检
+    from redline import (  # type: ignore
+        T1_OUTPUT_IS_ORACLE, GROUND_LITERATURE, bind_guard)
+
+guard_t1_not_oracle = bind_guard("数值 Vπ·L/Δn_eff", GROUND_LITERATURE)
+# 显式 re-export 标记（pyflakes 不把 T1_OUTPUT_IS_ORACLE 误判为死导入；
+# 同 lda_webui.app 的 _ROUTES_APP_CONTRACT 范式）
+_REDLINE_EXPORTS = (T1_OUTPUT_IS_ORACLE, guard_t1_not_oracle)
 
 # ---- Soref & Bennett 1987 @1550nm 文献常数（与 B31 同源；严禁拟合回算） ----
 SB_ELECTRON = -8.8e-22      # cm³（电子线性项）
@@ -244,15 +255,9 @@ def vpiL_closed_form(W_dep: float, dndN_cm3: float = abs(SB_ELECTRON),
     return lambda_m * Q_E * w_mode / (2.0 * dndN_SI * C_j) * 100.0   # V·cm
 
 
-def guard_t1_not_oracle(solution: dict, force_oracle: bool = False) -> bool:
-    """🔴 T1 输出不作 ORACLE 反向测试守卫（同 W2/W4/W5/W6 语义）。"""
-    if force_oracle:
-        raise RuntimeError(
-            "T1 输出禁止作为 ORACLE：数值 Vπ·L/Δn_eff 仅作候选，"
-            "死标量判决须由实测语料/文献闭式定。")
-    if solution.get("is_oracle", False):
-        raise RuntimeError("T1 解被错误标记为 ORACLE（is_oracle=True）")
-    return True
+# 🔴 guard_t1_not_oracle 已归一：逻辑单一定义在 lda_solver/redline.py
+#   （v0.9.113 · 波次 2 · 审计 F-07）。本模块在文件头以
+#   bind_guard("数值 Vπ·L/Δn_eff", GROUND_LITERATURE) 绑定被守卫量文案。
 
 
 if __name__ == "__main__":

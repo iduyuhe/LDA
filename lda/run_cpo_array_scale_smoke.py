@@ -34,15 +34,13 @@ _PASS = 0
 _FAIL = 0
 
 
-def check(name: str, cond: bool, detail: str = "") -> bool:
-    global _PASS, _FAIL
-    mark = "PASS" if cond else "FAIL"
-    if cond:
-        _PASS += 1
-    else:
-        _FAIL += 1
-    print(f"  [{mark}] {name}" + (f"  ({detail})" if detail else ""))
-    return cond
+# 🔴 check 已归一：实现**单一定义**在 lda_harness/smoke_kit.py
+#   （v0.9.113 · 波次 2 · 源自 2026-09-19 审计 F-07）。调用方尾部
+#   （含模块级计数器读取）与输出格式**均未改**，见 smoke_kit 模块 docstring。
+from lda_harness.smoke_kit import make_check  # noqa: E402
+
+check = make_check(globals(), ok_key="_PASS", bad_key="_FAIL",
+                   indent="  ", detail_fmt='  ({d})', return_ok=True)
 
 
 def main() -> int:

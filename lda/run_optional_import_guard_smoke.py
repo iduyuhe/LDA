@@ -36,14 +36,13 @@ PKG = ROOT / "lda"                                     # lda 包（lda_cuda_venv
 OPT_MODULES = ("torch", "numba", "cupy")
 
 
-def check(name: str, ok: bool, info: str = "") -> None:
-    global PASS, FAIL
-    if ok:
-        PASS += 1
-        print(f"  [PASS] {name}" + (f"  ({info})" if info else ""))
-    else:
-        FAIL += 1
-        print(f"  [FAIL] {name}" + (f"  ({info})" if info else ""))
+# 🔴 check 已归一：实现**单一定义**在 lda_harness/smoke_kit.py
+#   （v0.9.113 · 波次 2 · 源自 2026-09-19 审计 F-07）。调用方尾部
+#   （含模块级计数器读取）与输出格式**均未改**，见 smoke_kit 模块 docstring。
+from lda_harness.smoke_kit import make_check  # noqa: E402
+
+check = make_check(globals(), ok_key="PASS", bad_key="FAIL",
+                   indent="  ", detail_fmt='  ({d})')
 
 
 # ---------------------------------------------------------------------------

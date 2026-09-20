@@ -51,4 +51,11 @@ class PhcAnchorSmoke(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main(verbosity=2)
+    # F-18（v0.9.113 · 波次 2 · 审计：「19 个 smoke 用 unittest、其余用自研
+    # check() ⇒ 两套测试范式并存」）：本文件保留标准 unittest 写测试体，
+    # 但**报告与退出契约统一走 smoke_kit** —— 逐条 `  [PASS] <name>`，
+    # 失败/错误仍打标准 FAIL:/ERROR: 块（含 traceback，CI 判定「失败痕迹」可命中，
+    # 不会被误判 SKIP），rc 与 `unittest.main(verbosity=2)` 逐位一致。
+    from lda_harness.smoke_kit import run_unittest_suite
+
+    raise SystemExit(run_unittest_suite(PhcAnchorSmoke))

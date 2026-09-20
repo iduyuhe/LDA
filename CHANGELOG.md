@@ -1,5 +1,85 @@
 # Changelog
 
+## v0.9.117（2026-09-20 · F-08 巨石拆分收官（T2.2 专项）· 不扩基 · 零锚改动 · 账本零变化 · CI core 181→182）
+
+**来源**：`LDA_functional_code_audit_2026-09-19.md` §5 序 9 / §5.1 序 8 的 **F-08**
+（`benchmarks.py` 6633 行 · `verification_adapters.py` 6789 行），审计标注
+「**需专项 · 单独发版**」，理由 =「**唯一触及判决路径注册表**」。
+工作清单 §4 **R3 = ②**（先固化判据再拆）→ T2.4 已在 v0.9.112 落地
+（`scripts/registry_snapshot.py`）→ 本轮执行 R3 的 ①。
+
+**为什么不能简单搬家**
+`@_register_candidate` 按 **decorator 执行顺序**写入 `BENCHMARK_CANDIDATES`，
+其**插入序即全仓遍历序**；`BENCHMARK_ORDER` / `BENCHMARK_DEFS` / `_PHYSICAL_LAW`
+决定语义与遍历序。⇒ 拆分一旦改序/少项，账本三分类会**静默变化**
+（"标签≠行为"的镜像：拆完看着全绿，账本已换）。
+
+**拆法（连续切片 + 基座提升）**
+
+| 原文件 | 拆后 | 行数 |
+|---|---|---|
+| `benchmarks.py` 6633 行 | `benchmark_defs/{__init__,part1..5}.py`（94/94/94/94/93 = 469 DEFS）+ `_vmm_overrides.py` | facade 180 行 |
+| `verification_adapters.py` 6789 行 | `_adapter_core.py`（唯一注册表实例 + 装饰器 + 路径 + 24 个批加载器）+ `_adapter_p1..p6.py` | facade 57 行 |
+
+各片顶层 `@_register_candidate` 计数 = p1..p6 **17/17/71/110/122/100 = 437**，
+逐片与运行时归属数**相等**（本版把它固化为门禁判据 L4）。
+
+**四重独立验收（全通过）**
+
+| # | 闸 | 结果 |
+|---|---|---|
+| ① | `registry_snapshot.py --check`（拆前快照） | **PASS · 逐位一致** · sha256 `6de7f0c4b9b3c2f2590c7e0a090a2b070f565d7347b27a35adfe5ed0d780980d`（与拆前**完全相同**） |
+| ② | 源码字节保真（原顶层语句逐字节落位） | 530 条 **0 缺失**（新增语句仅生成器补的 import 与契约元组） |
+| ③ | 语义级指令流等价（501 个 code 对象，含嵌套/lambda/推导式） | **零差异** |
+| ④ | 运行时功能冒烟 | three_class **4/4** · golden_product **48/48** · count **11/11**；受跟踪产物**零漂移** |
+
+**新增常驻门禁 `lda/run_adapter_shard_layout_smoke.py`（13 判据 L0~L12 · CI core 181→182）**
+
+- L0 facade+分片可导入 · L1 注册表**单一实例** · L2 六片全加载 · L3 装饰器唯一
+- **L4 逐片「AST 静态装饰计数 == 运行时注册数」**（静态定义 vs 运行时生效，两侧独立取证）
+- L5 合计 == 注册表长度且键唯一 · L6 装配顺序契约 · L7 DEFS 引用完整性
+- L8 re-export 契约 · L9 磁盘片数 == 契约片数
+- **L10 反向**（子进程只加载 core+p1 ⇒ 必少项，证明判据真会变红）· L11 反证对照 · L12 自食其规则
+
+**反向突变实测（护栏有效性证明 · 同码对照法）**
+
+| 注入突变 | 期望变红 | 实测 |
+|---|---|---|
+| 换片序（import 块 p1↔p2） | **仅 L6** | **仅 L6** ✅ |
+| 片内遮蔽装饰器（p1 重定义 `_register_candidate`） | L3/L4/L5(+L7/L10/L11) | L3/L4/L5/L7/L10/L11 ✅ |
+| 少加载一片（p6 移出 import 块） | L0（facade NameError） | **仅 L0** ✅ |
+| 还原 | 全绿 | 13/13 全绿 ✅ |
+
+**🔴 三条血案（全过程留痕）**
+
+1. **`from __future__ import annotations` 是拆分语义陷阱**：它被当成普通顶层语句切进了
+   `_adapter_p1.py` 正文中部 ⇒ `SyntaxError: from __future__ imports must occur at the
+   beginning of the file`。更本质的是：future 的**模块级作用域在拆分后会被切断**
+   （`annotations` 令全部注解**延迟求值**，未重放的片会恢复**立即求值** ⇒ 前向引用
+   NameError）。⇒ 修法 = **逐模块重放**（core + 每片 + facade 的 docstring 之后）。
+2. **顶层 `import` 不得既切片又重建**：原 6 条顶层 import 被当普通语句切进 p1，
+   而生成器又按各片用名重建了一份 ⇒ 重复导入（pyflakes 报 **16 条**
+   `redefinition of unused`）。⇒ 顶层 import **一律不切片**，由 `emit_imports()`
+   按各片实际用名重建（并区分 `import M` / `import M as a` / `from L.M import n`
+   三种形态 —— 旧版把三者压成"模块名字符串"，生成过 `from .os import (os,)`）。
+3. **值级闸「过严」也是一种失真**：最初直接用 `co_code` 逐字节比对，报出 2 个函数
+   "漂移"。逐层归因（指令级 diff + 变体矩阵）后坐实：**源码拼接字节完全相同**，
+   差异只是 CPython 的**调用编码选择** —— 触发条件极窄：模块内出现
+   `from <mod> import <名>` 且该名正是被比较函数引用的全局（实测 4 组对照：
+   换名/绝对 from/`import os`/普通赋值 均**不触发**），CPython 便改
+   `PUSH_NULL;LOAD_ATTR` ↔ `LOAD_ATTR`+方法位（**语义等价**，方法位仅省一次 NULL 压栈）。
+   拆分把 core 的 `BENCHMARK_CANDIDATES` 变成 p1 的 from-import ⇒ 命中。
+   ⇒ 闸门改为**语义级指令流规范化**（剔 `PUSH_NULL` / 跳转目标掩码 /
+   嵌套 code 去 `firstlineno` / 十六进制地址掩码）+ **源码字节保真**（更直接的证据）。
+
+**补揭示（判据盲点）**
+`registry_snapshot.py` 的 `benchmark_candidates` 只记 `[key, func.__name__]`、
+`benchmark_defs_keys` 只记**键** ⇒ 「同名函数体搬错」「golden_fn 指错」这类漂移它抓不到。
+本版用**值级闸**补齐（源码字节保真 + 语义级指令流等价），并把布局契约固化为常驻门禁。
+
+**账本影响**：**零锚改动**（448/3/18/469 不变）· 棘轮 `MAX_SELF_CERTIFIED=18` / `_RATCHET` 不动 ·
+**零 tol 放宽** · 零判据改动；仅 **CI core 181→182**（已同步 README 顶行 + `## 当前账本` 段 + CONTRIBUTING）。
+
 ## v0.9.116（2026-09-20 · run_tapeout_smoke 秒级 id 假红修复 + smoke 隔离棘轮护栏 · 超时预算同项补齐 · 不扩基 · 账本零变化 · CI core 180→181）
 
 **来源**：v0.9.113 波次 2 采集时发现的**既有脆弱用例**（当时记为 backlog，v0.9.114 / v0.9.115

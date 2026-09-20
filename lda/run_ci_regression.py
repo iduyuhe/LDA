@@ -570,6 +570,19 @@ CORE_SMOKES: List[str] = [
     #   纯 AST + 一次 json 读取，实测 <0.2s，按准入准则（<5s 且无重依赖）必进 core。
     #   CI core 180->181。
     "run_smoke_isolation_ratchet_smoke.py",
+    # 适配器分片布局契约（v0.9.117 · 审计 F-08 巨石拆分 T2.2 的**专用**门禁）。
+    #   `verification_adapters.py` 拆为 `_adapter_core` + `_adapter_p1..p6` 后，
+    #   最大风险是 facade **少加载片 / 换片序 / 片内新建注册表** ⇒
+    #   `BENCHMARK_CANDIDATES` 静默少项或改序（其插入序即全仓遍历序），
+    #   而账本三分类随之变化。判据：L0 facade+分片可导入 · L1 注册表单一实例
+    #   · L2 六片全加载 · L3 装饰器唯一 · L4 逐片「AST 静态计数 == 运行时贡献数」
+    #   · L5 合计==注册表长度且键唯一 · L6 装配顺序契约 · L7 DEFS 引用完整性
+    #   · L8 re-export 契约 · L9 磁盘片数==契约片数 · L10 反向（只加载 p1
+    #   ⇒ 必少项，证明判据真会变红）· L11 反证对照 · L12 自食其规则。
+    #   反向突变实测：换片序 ⇒ 仅 L6 红；片内遮蔽装饰器 ⇒ L3/L4/L5/L7/L10/L11 红；
+    #   少加载片 ⇒ L0 红（facade NameError）。
+    #   纯 AST + 一次子进程导入，实测 ≈1s。CI core 181->182。
+    "run_adapter_shard_layout_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

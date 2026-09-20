@@ -14,6 +14,18 @@ from ctypes import wintypes
 REPO = sys.argv[1] if len(sys.argv) > 1 else "D:/agent_LDA"
 STORE = sys.argv[2] if len(sys.argv) > 2 else "/tmp/lda_cred_store_push"
 
+# 🔴 v0.9.118 实测订正：store 路径必须【正斜杠】。
+# STORE 被嵌进 `-c credential.helper=store --file={STORE}` ⇒ git 把该 helper 交给
+# `sh -c` 执行 ⇒ **Windows 反斜杠会被 sh 吃掉**：`--file=C:\Users\x\_s`
+# 实际变成 `--file=C:Usersx_s` ⇒ helper 读一个不存在的文件 ⇒ 返回空 ⇒
+# `fatal: could not read Username`（exit=128）。且本脚本自身**仍 rc=0** ⇒ 假绿。
+# 2026-09-21 实测 A/B：正斜杠 → rc=0 成功 / 反斜杠 → exit=128 /
+# 直接 `git credential-store --file=... get`（不经 shell）→ rc=0
+# ⇒ 根因锁定是 `sh -c` 吃反斜杠，与凭据、网络均无关。
+# 故此处统一归一化为正斜杠（`os.path.join` 在 Windows 上恰好生成反斜杠，
+# 是唯一的触发源；REPO 不受影响 —— 它是 subprocess 的 cwd=，不经 shell）。
+STORE = STORE.replace("\\", "/")
+
 CRED_TYPE_GENERIC = 0x1
 
 

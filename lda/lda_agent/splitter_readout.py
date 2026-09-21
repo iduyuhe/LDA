@@ -347,7 +347,7 @@ def design_splitter_readout(
 def package_from_splitter_readout(f01s: Optional[List[float]] = None,
                                   **kw: Any) -> Dict[str, Any]:
     """把方向耦合器×量子读出设计包装为 D-44 统一 DesignPackage。"""
-    from lda_design.design_package import SCHEMA_VERSION, _now_iso  # noqa: E402
+    from lda_design.design_package import SCHEMA_VERSION, _created_at  # noqa: E402
     if f01s is None:
         f01s = list(_DEF_F01S)
     r = design_splitter_readout(f01s=f01s, **kw)
@@ -360,7 +360,7 @@ def package_from_splitter_readout(f01s: Optional[List[float]] = None,
         "schema_version": SCHEMA_VERSION,
         "kind": "splitter_readout", "domain": "hybrid",
         "title": r["title"],
-        "created_at": _now_iso(),
+        "created_at": _created_at(),
         "ir": {"schema_version": r["ir"]["schema_version"],
                "domain": "hybrid",
                "n_components": r["ir"]["n_components"],

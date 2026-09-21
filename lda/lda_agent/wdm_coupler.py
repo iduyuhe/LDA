@@ -418,7 +418,7 @@ def design_wdm_with_coupler(channels_nm: Optional[List[float]] = None,
 def package_from_wdm_coupler(
         channels_nm: Optional[List[float]] = None, **kw: Any) -> Dict[str, Any]:
     """把耦合器×WDM 组合设计包装为 D-44 统一 DesignPackage。"""
-    from lda_design.design_package import SCHEMA_VERSION, _now_iso
+    from lda_design.design_package import SCHEMA_VERSION, _created_at
 
     r = design_wdm_with_coupler(channels_nm=channels_nm, **kw)
     acc = r["acceptance"]
@@ -428,7 +428,7 @@ def package_from_wdm_coupler(
         "schema_version": SCHEMA_VERSION,
         "kind": "wdm_coupler", "domain": "photon",
         "title": r["title"],
-        "created_at": _now_iso(),
+        "created_at": _created_at(),
         "ir": {"schema_version": wdm.get("ir", {}).get("schema_version", "0.3"),
                "domain": "photon",
                "n_components": wdm.get("ir", {}).get("n_components", 0),

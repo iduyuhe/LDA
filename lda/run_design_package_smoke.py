@@ -4,7 +4,6 @@
 DesignPackage schema：必填字段齐、schema 版本一致、domain 合法、
 verification.passed 验收门存在、honest_notes 必填——机器可校验的统一交付格式。
 """
-import json
 import os
 import sys
 
@@ -36,9 +35,9 @@ def main() -> int:
     ok &= bool(out["all_schema_ok"])
     print("=" * 70)
     print("D-44 smoke 全绿:", ok, "（schema v%s，4 类包）" % out["schema_version"])
-    with open(os.path.join(_HERE, "reports", "design_packages_d44.json"), "w",
-              encoding="utf-8") as f:
-        json.dump(out, f, ensure_ascii=False, indent=2)
+    # 🔴 v0.9.119（T6.4）：受跟踪报告 ⇒ 必须走 deterministic 唯一口径。
+    from lda_harness import deterministic as _det
+    _det.write_json(os.path.join(_HERE, "reports", "design_packages_d44.json"), out)
     return 0 if ok else 1
 
 

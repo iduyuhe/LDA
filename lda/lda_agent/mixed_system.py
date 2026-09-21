@@ -191,7 +191,7 @@ def package_from_mixed_system(
         wdm_channels_nm: Optional[List[float]] = None,
         qubit_f01s_ghz: Optional[List[float]] = None, **kw: Any) -> Dict[str, Any]:
     """把混合系统设计包装为 D-44 统一 DesignPackage。"""
-    from lda_design.design_package import SCHEMA_VERSION, _now_iso
+    from lda_design.design_package import SCHEMA_VERSION, _created_at
 
     r = design_mixed_system(wdm_channels_nm=wdm_channels_nm,
                             qubit_f01s_ghz=qubit_f01s_ghz, **kw)
@@ -201,7 +201,7 @@ def package_from_mixed_system(
         "schema_version": SCHEMA_VERSION,
         "kind": "mixed_system", "domain": "hybrid",
         "title": r["title"],
-        "created_at": _now_iso(),
+        "created_at": _created_at(),
         "ir": {"schema_version": r["ir"]["schema_version"],
                "domain": r["ir"]["domain"],
                "n_components": r["ir"]["n_components"],

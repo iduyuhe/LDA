@@ -16,14 +16,15 @@ D-43（readout 混合链路）四类设计结果统一成**同一份 DesignPacka
 设计包规范要点：
   - verification.passed 是唯一验收门（LLM 不进判决路径）；
   - ir 字段保证"每个包都回溯到设计意图 IR"；
-  - honest_notes 强制记录模型假设与数据来源（诚实优先）。
+  - honest_notes 强制记录模型假设与数据来源（诚实优先）；
+  - created_at 为**确定性哨兵**（不承载时刻）——受跟踪产物不得含 wall-clock，
+    生成时刻以 git 提交时间为准（详见下方 `_CREATED_AT_SENTINEL` 注释）。
 
 CLI：python -m lda_design.design_package --all（构建全部 4 类包到 reports/packages/）
 """
 from __future__ import annotations
 
 import argparse
-import datetime as _dt
 import json
 import os
 import sys
@@ -144,8 +145,27 @@ _ENGINE_TITLE = {
 }
 
 
-def _now_iso() -> str:
-    return _dt.datetime.now().isoformat(timespec="seconds")
+# 🔴 v0.9.119（波次 6 · T6.4 ⑧ 收口）：`created_at` **不再取自 wall-clock**。
+#
+# 本模块是**受跟踪报告**的写入者：`build_all(out_dir=...)` 落盘
+# `lda/reports/packages/*.json`（11 个，`git ls-files` 在册）。受
+# 「受跟踪报告必须是输入的确定性函数」铁律约束，三条依据：
+#   ① `lda_harness.deterministic.VOLATILE_KEYS` **本就含 `created_at`** ⇒ 走唯一
+#      口径落盘时该键被 `canon()` 剔除 ⇒ **其值不进入任何受跟踪产物**；
+#   ② 真实生成时刻的权威来源是 **git 提交时间**（见 `deterministic.DETERMINISM_FOOTNOTE`
+#      「生成时刻以 git 提交时间为准」）；
+#   ③ `run_report_determinism_smoke` 判据 ⑧ 要求**已登记**写入者的源码不得出现
+#      `datetime` / `time` 的 wall-clock 调用（原 `_now_iso()` 调 `.now()` 现场取
+#      时间 ⇒ ⑧ 红）。以下注释亦**不得写出该字面量**（⑧ 是子串匹配，注释同样中招）。
+# 处置：**保留字段**（`_REQUIRED` 必填，且公开契约 `docs/design_package_schema.json`
+# 要求 `format: date-time` —— 删字段等于改对外 schema、须升版本，故不动），
+# 改填**固定哨兵值**。语义 =「该字段不承载时刻信息」。
+_CREATED_AT_SENTINEL = "1970-01-01T00:00:00Z"
+
+
+def _created_at() -> str:
+    """确定性 created_at 哨兵（理由见 `_CREATED_AT_SENTINEL` 上方注释）。"""
+    return _CREATED_AT_SENTINEL
 
 
 # ---------------------------------------------------------------------------
@@ -162,7 +182,7 @@ def package_from_add_drop(target_fsr: float = 17.5, gap: float = 0.3,
         "schema_version": SCHEMA_VERSION,
         "kind": "add_drop", "domain": "photon",
         "title": "环形 add-drop 可制造设计包",
-        "created_at": _now_iso(),
+        "created_at": _created_at(),
         "ir": {"schema_version": "0.3", "domain": "photon",
                "n_components": 1, "n_nets": 0,
                "validate_errors": []},
@@ -192,7 +212,7 @@ def package_from_quantum(kind: str = "Transmon", target: float = 5.0,
         "schema_version": SCHEMA_VERSION,
         "kind": "quantum", "domain": "quantum",
         "title": f"量子逆设计包（{kind}）",
-        "created_at": _now_iso(),
+        "created_at": _created_at(),
         "ir": {"schema_version": (r.get("ir") or {}).get("schema_version", "0.3"),
                "domain": "quantum", "n_components": 1, "n_nets": 0,
                "validate_errors": (r.get("ir") or {}).get("validate_errors", [])},
@@ -222,7 +242,7 @@ def package_from_wdm(channels: Optional[List[float]] = None, gap: float = 0.3,
         "schema_version": SCHEMA_VERSION,
         "kind": "wdm", "domain": "photon",
         "title": r["title"],
-        "created_at": _now_iso(),
+        "created_at": _created_at(),
         "ir": {"schema_version": r["ir"]["schema_version"], "domain": "photon",
                "n_components": r["ir"]["n_components"],
                "n_nets": r["ir"]["n_nets"],
@@ -252,7 +272,7 @@ def package_from_readout(f01: float = 5.0, delta: float = 1.0, g: float = 0.10,
         "schema_version": SCHEMA_VERSION,
         "kind": "readout_chain", "domain": "hybrid",
         "title": r["title"],
-        "created_at": _now_iso(),
+        "created_at": _created_at(),
         "ir": {"schema_version": r["ir"]["schema_version"],
                "domain": r["ir"]["domain"],
                "n_components": r["ir"]["n_components"],
@@ -449,7 +469,7 @@ def package_from_engine(kind: str, target: Optional[float] = None,
         "schema_version": SCHEMA_VERSION,
         "kind": kind, "domain": domain,
         "title": f"设计闭环包 · {res.get('title', _ENGINE_TITLE.get(kind, ek))}",
-        "created_at": _now_iso(),
+        "created_at": _created_at(),
         "ir": {"schema_version": "0.3", "domain": domain, "n_components": 1,
                "n_nets": 0, "validate_errors": []},
         "design": {
@@ -572,11 +592,13 @@ def build_all(out_dir: Optional[str] = None) -> Dict[str, Any]:
         v["schema_ok"] for v in out["packages"].values())
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
+        from lda_harness import deterministic as _det
         for kind in PACKAGE_KINDS:
             pkg = build_package(kind)
-            with open(os.path.join(out_dir, f"{kind}.json"), "w",
-                      encoding="utf-8") as f:
-                json.dump(pkg, f, ensure_ascii=False, indent=2)
+            # 🔴 v0.9.119（T6.4 精确发现式判据连带抓出）：此处写的是**受跟踪**报告
+            #   `lda/reports/packages/*.json`，原先用裸 `json.dump` ⇒ 不受
+            #   「受跟踪报告必须是输入的确定性函数」铁律覆盖。改走唯一口径。
+            _det.write_json(os.path.join(out_dir, f"{kind}.json"), pkg)
     return out
 
 

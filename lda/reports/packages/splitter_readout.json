@@ -4,7 +4,6 @@
   "kind": "splitter_readout",
   "domain": "hybrid",
   "title": "3-qubit 读出 × 2 级 DC 分束网络",
-  "created_at": "2026-09-13T22:23:53",
   "ir": {
     "schema_version": "0.3",
     "domain": "hybrid",
@@ -79,19 +78,19 @@
       "leaves": [
         {
           "qubit_index": 0,
-          "w_target": 0.3333333333333333,
+          "w_target": 0.333333333,
           "p_actual": 0.3303234,
           "delta": 0.00301
         },
         {
           "qubit_index": 1,
-          "w_target": 0.3333333333333333,
+          "w_target": 0.333333333,
           "p_actual": 0.3329766,
           "delta": 0.00036
         },
         {
           "qubit_index": 2,
-          "w_target": 0.3333333333333333,
+          "w_target": 0.333333333,
           "p_actual": 0.3367,
           "delta": 0.00337
         }
@@ -168,19 +167,19 @@
     "power_budget": [
       {
         "qubit_index": 0,
-        "w_target": 0.3333333333333333,
+        "w_target": 0.333333333,
         "p_actual": 0.3303234,
         "delta": 0.00301
       },
       {
         "qubit_index": 1,
-        "w_target": 0.3333333333333333,
+        "w_target": 0.333333333,
         "p_actual": 0.3329766,
         "delta": 0.00036
       },
       {
         "qubit_index": 2,
-        "w_target": 0.3333333333333333,
+        "w_target": 0.333333333,
         "p_actual": 0.3367,
         "delta": 0.00337
       }

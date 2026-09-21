@@ -245,7 +245,7 @@ def design_coupler(target_cross: float = _DEF_TARGET_CROSS,
 def package_from_coupler(target_cross: float = _DEF_TARGET_CROSS,
                          **kw: Any) -> Dict[str, Any]:
     """把方向耦合器设计包装为 D-44 统一 DesignPackage。"""
-    from lda_design.design_package import SCHEMA_VERSION, _now_iso
+    from lda_design.design_package import SCHEMA_VERSION, _created_at
 
     r = design_coupler(target_cross=target_cross, **kw)
     acc = r["acceptance"]
@@ -254,7 +254,7 @@ def package_from_coupler(target_cross: float = _DEF_TARGET_CROSS,
         "schema_version": SCHEMA_VERSION,
         "kind": "coupler", "domain": "photon",
         "title": r["title"],
-        "created_at": _now_iso(),
+        "created_at": _created_at(),
         "ir": {"schema_version": r["ir"]["schema_version"],
                "domain": r["ir"]["domain"],
                "n_components": r["ir"]["n_components"],

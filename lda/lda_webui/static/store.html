@@ -1071,7 +1071,7 @@ function renderShelfOrder(o){
 }
 
 function renderCustomOrder(o){
-  var stClass = {created:'wait', developing:'wait', delivered:'done', accepted:'done', rejected:'rej'}[o.status]||'wait';
+  // v0.9.119（波次 6·④）：原此处的状态→样式映射表已废弃（下方 step 改用内联三元重建）⇒ 零引用死代码；经 eslint no-unused-vars + 全页引用扫描双重取证后删除。
   var labels = {created:'待接单', developing:'开发中', delivered:'已交付', accepted:'已验收', rejected:'已拒绝'};
   var step = '<div class="step">'+
     '<span class="'+(o.status==='created'?'wait':(o.status==='rejected'?'rej':'done'))+'">待接单</span>'+

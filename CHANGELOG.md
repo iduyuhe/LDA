@@ -1,5 +1,90 @@
 # Changelog
 
+## v0.9.119（2026-09-21 · 波次 6 T6.2/T6.3/T6.4 收口 + 超时预算「默认口径」欠标定清偿 + 前端 84 处 `no-unused-vars` 甄别 · 不扩基 · 零锚改动 · 账本零变化 · CI core 183 条）
+
+**来源**：`LDA_fix_workplan_2026-09-19.md` §2 波次 6 的 **T6.2 / T6.3 / T6.4**，外加本轮全量实跑**新暴露**的一项（「默认 300s 口径」欠标定，记为 T6.5 前哨），以及波次 4 T4.2 遗留质量信号（前端 `no-unused-vars` **84**）的闭环。
+
+**账本零变化**：严格独立 **448** / 降级 **3** / 自证桩 **18** / 总 **469** · 独立率 **95.5%** · 天花板 **97.4%** · **CI core 183 条不变**（本版**无新增 smoke**）· 零 tol 放宽 · **零判据改动** · 零锚改动。
+
+### ① T6.2 `run_ci_industrial_smoke` 代表子集**换成员**
+
+`_SUBSET_CONTRACT` 的设计意图是「**小的、固定、快速（<~30s）、负载无关**」——该意图是 v0.9.28 为消除「门禁负载诱发的抖动」而立（当时子集**嵌套重跑全量 core**，把子回归从 570s 撑到 667.62s ⇒ 撑破 600s TIMEOUT）。但成员 `run_d_criterion_smoke` 因严格独立候选达 **448 道**（③ 为**全量基线残差普查**，耗时随候选数**线性增长**）已涨到 **~174s** ⇒ 子集实为 ~176s、整个文件 ~290s，且**本文件会继承该成员的超时预算** ⇒ 2026-09-19 二轮全量即因此**连带 FAIL**。
+
+**处置（选项 ① 换成员）**：`run_d_criterion_smoke.py`（~174s）→ **`run_verify_waveguide_2d_smoke.py`**（**~7.7s** · 2D FDFD 真数值验证）。
+**实测**：`rc=0` · `SMOKE ALL PASS (3/3)` · 子集 **8.08s**（count 0.68s / verify_waveguide **6.68s** / b28_nullfit 0.71s）· greens speedup **78.73×** · 坏 smoke 检出 fail=1（门禁有效性未削弱）。
+**覆盖未减**：`run_d_criterion_smoke` 仍由**门禁本体**直接跑（它本就在 `CORE_SMOKES` 内，子集只是「代表抽样」）。
+**预算 900s 不动**（换员后实测下降 ⇒ 900s 属保守留白；**只放宽不收紧**，不重跑）。
+
+### ② T6.3 报告末位抖动根治 —— 根因**实测修正** + 线程预算下沉
+
+workplan 原记「`reports/verification_report.json` 的 **B157-B159** `candidate` 末位抖动」。**实测修正：漂移不在 B157-B159，而在 B153/B154/B155**（Hermite 梁单元 FEM 的 LAPACK 本征解）：
+
+```
+B153 175.08730(6) ↔ 175.08731(3)   B154 482.63490(1) ↔ 482.63490(5)
+B155 946.15738(6) ↔ 946.15738(5)     （golden / tol / passed 全不变）
+```
+
+**分层取证**：① 受跟踪报告 == HEAD（sha `98e58b882120`）；② **裸跑两次互相字节一致**，但与受跟踪报告差 3 锚；③ 注入 `thread_env_overrides()`（@10 线程）后 ⇒ **逐字节等于受跟踪报告**（0 差异）。
+**关键实验（晚设 env 是否有效）**：A 裸 / C1（numpy 已导入后设）⇒ 同为漂移态；B（import 前设）/ C2（BLAS 首次调用前设）⇒ 同为 canonical ⇒ **结论：env 只需早于首次 BLAS 调用即有效，与「进程级设」在 9 位有效数字上一致**。
+**修复**：把线程预算**下沉到 harness 自身**——`lda/run_harness.py` 模块级 `apply_thread_budget(verbose=True)`（早于 `from lda_harness.benchmarks import BENCHMARK_DEFS`）。
+**验收**：T1 裸跑（不注入任何线程 env）⇒ `rc=0` · `205272 B` · `sha=98e58b882120` · **identical=True**，并打出 `[thread-budget] cpu=20 → 限 10 线程…`；**T2 反向**（显式钉 4 线程）⇒ sha `88d0138ea34a` **不一致**、3 锚漂移 ⇒ **判据有区分度，非假绿**。
+边界：`lda_l1/protocol.py` 走同一 harness 但产出 `reports_l1/`（只含 B2/B4，非本征解族 ⇒ 无漂移）且被 WebUI 常驻导入 ⇒ **本轮不下沉**。
+
+### ③ T6.4 报告写入者白名单 → **精确发现式判据**（并抓出 3 处漏登记）
+
+旧 `lint_spec` 是**白名单型**护栏 ⇒ 「只防已登记项违规，**不防漏登记**」（v0.9.116 自述、`run_empirical_d62_report.py` 漏登 **19 天无感**即实证）。本轮把发现式判据**做精确**（避免粗扫 55 候选 / 30 不在表内的「狼来了」），四要素：
+
+**写上下文**（`open(P,"w")` / `write_text|write_json|write_bytes|writestr|savetxt|savefig`；`open(p, encoding=...)` 是**读**，不算写；`json.dump()` **不是**路径写 ⇒ 必须靠 `open` 节点；`mode=` 可在**关键字参数**里）+ **受跟踪 basename**（`git ls-files` ∩ `reports*/` ∩ `.json|.md`）+ **`reports` 目录语义**（排除 tmpdir 撞名）+ **def-use 展开**（变量路径如 `_BASELINE`/`OUT`）。
+
+进入 ⑤ 护栏的三条判据（`run_report_determinism_smoke.py`，12 项全绿）：**⑪** 未登记集**恰好等于**显式基线 `_KNOWN_UNREGISTERED`（新漏项红 + 偷放行红，**双向棘轮**；实测「发现 29 · 已登记 21 · 基线钉 8」）；**⑫** 反向三例（合成「写受跟踪报告」模块必报 ✅ / 只读模块必不报 ✅ / tmpdir 撞名必不报 ✅ ⇒ **证明非粗扫**）；**⑧b** 落盘写入者必须走 `deterministic` 唯一口径。
+
+**由此抓出 3 处真·漏登记**（此前从未登记、也未走唯一口径，全用裸 `json.dump` 写**受跟踪**报告）：
+`run_design_package_smoke.py` → `reports/design_packages_d44.json`、`run_inverse_design_smoke.py` → `reports/inverse_design_d38.json`、`lda_design/design_package.py` → `reports/packages/*.json`（**文件名 f-string 拼 ⇒ 字面量面看不见**，属本轮人工复核抓出，如实披露）。三者登记 + 改走 `det.write_json`（缺一即 ⑧b 红）。
+
+**🔴 收口时撞上一条真契约（血案级）**：把 `_now_iso()` 改为确定性哨兵后，7 个 `lda_agent/*` 模块（`multiqubit_readout` / `readout_fidelity` / `multiqubit_fidelity` / `mixed_system` / `directional_coupler` / `wdm_coupler` / `splitter_readout`）**当场全部 FAIL** —— 它们历史上 `from lda_design.design_package import _now_iso`，**私有助手是事实上的跨模块契约**。这正是 IRONLAWS「**re-export 双通道**」血案的同类：改名/删名前必须穷举 `git grep`（含 untracked）。处置 = **彻底改名 `_now_iso` → `_created_at` 并同步 7 处导入**（字节级替换，逐文件 `numstat 2/2`、CR 数不变、无整文件重写）。
+
+`created_at` 的确定性口径（三条依据）：① `deterministic.VOLATILE_KEYS` **本就含 `created_at`** ⇒ 走唯一口径落盘时被 `canon()` **剔除**（该值不进入任何受跟踪产物）；② 生成时刻的权威来源是 **git 提交时间**（`DETERMINISM_FOOTNOTE`）；③ 判据 ⑧ 要求已登记写入者源码无 wall-clock 标记。⇒ **保留字段**（`_REQUIRED` 必填 + 公开契约 `docs/design_package_schema.json` 要求 `format: date-time` —— **删字段等于改对外 schema、须升版本，故不动**），改填**固定哨兵** `1970-01-01T00:00:00Z`。
+**确定性实证（同码三跑）**：13 个受跟踪报告（`design_packages_d44` / `inverse_design_d38` / `packages/*.json` ×11）在 **bare（不注入任何线程 env）** 下 **before == run1 == run2，13/13 逐字节一致**。报告 diff 精确等于预期三处：删 `created_at` 行 / 补末尾 LF / 浮点 9 位有效数字归一（`0.3333333333333333→0.333333333`）。
+
+### ④ 波次 6 新发现 → **超时预算「默认口径」欠标定清偿**（T6.5 前哨）
+
+T6.1 立的门禁（`run_timeout_budget_ratchet_smoke.py`：B8 硬闸 ≥2× / B9 目标 <3×）**只覆盖 `_BUILTIN_TIMEOUT_OVERRIDE`（当时 14 项）**；而取值链是 `overrides.get(s, _BUILTIN_TIMEOUT_OVERRIDE.get(s, timeout))` ⇒ **其余 169 项一律走默认 300s，永不被门禁看见**。
+把 11 份历史全量报告与 183 个 smoke 对齐、取**跨轮实测上界**（非最近一次）后，**恰有 4 项违反「≥3× 跨轮上界」铁律，其中 3 项连 2× 硬闸都过不了**：
+
+| smoke | 跨轮上界 | 原预算 | 原余量 | 新预算 | 新余量 |
+|---|---|---|---|---|---|
+| `run_empirical_anchor_smoke.py` | 264.13s (n=11) | 300（默认） | **1.136×** ⛔ | **1200** | 4.543× |
+| `run_ecosystem_smoke.py` | 228.74s (n=11) | 300（默认） | **1.312×** ⛔ | **900** | 3.935× |
+| `run_harness.py` | 216.91s (n=11) | 300（默认） | **1.383×** ⛔ | **900** | 4.149× |
+| `run_ir_inverse_design_smoke.py` | 113.73s | 300（默认） | 2.638× | **450** | 3.957× |
+
+⇒ **口径分裂**：门禁声明的硬闸在**未覆盖面**上从未生效；这 3 项只要抖动 +15~30% 就直接 TIMEOUT 假红，而**门禁一声不响**（要跑满 300s 才可能复现）。
+
+**处置**（**只改上限、零判据改动、属单调放宽** ⇒ 已跑结论仍有效、不重跑）：4 项**纳入覆盖表**（14→18）并对齐既有「纯抖动型一次给足 ≈3.8~4.5×」档位（先例 v0.9.116 `run_fdtd2d_mmi` 600s≈3.83×）。
+**基线刷新走官方闭环**：`scripts/ci_core_batched.py --from-report <报告> --threads 10` 回放 **11 份**历史报告（**并入取并集** ⇒ 4 个新项的 `elapsed_max_s` 是**真实跨轮上界**，而非单轮「最近一次」）。
+**门禁实测**：**17/17 ALL PASS** · 覆盖项 **18** · 最低余量 **3.015×**（falsifiability，仍守 3× 目标档）· B11~B16 六条反向测试全绿。
+**🔴 诚实边界（留作 T6.5 正式项）**：本次只清偿**已实测到的 4 项**，**并未**把门禁覆盖面从 18 扩到全 183 —— 那需要基线表带上「默认预算」语义 + `--write-baseline` 为 183 项建行 + 配套反向突变证明。当前残余风险 = 「未来某项耗时越过 300s 时门禁不会红」；缓解 = 本轮所用的跨轮上界分析与 `scripts/ci_core_batched.py` 跑完打印的 `budget_audit`（覆盖全 183 项）。
+
+### ⑤ 前端 `no-unused-vars` 84 处 → **甄别后判定「无一需要清理」**
+
+复现 T4.2 管线（8 个内联 `<script>` 片段 / **5034 行 JS**，**行号表与报告逐位一致**；eslint 9.39.4）得 **84 处 `no-unused-vars` / 0 error**，与记录**逐位吻合**。
+逐项甄别（「整页引用扫描」：标记 + 该页全部内联片段 + 该页全部外链 JS，正则带词边界）：
+
+| 类别 | 处数 | 机制 |
+|---|---|---|
+| JS 拼 HTML **模板串**里的 `onclick="fn(...)"` | 主导 | eslint **不数字符串** ⇒ 报 unused；运行时浏览器点击时按**全局名**解析 ⇒ **真在用** |
+| 真 HTML 属性（`onclick=` / `oninput=` / `<modal onclick=>`） | 34 | 同上，全局可达 |
+| 跨内联片段 / 外链 JS（如 `nav.js` 的 `TIER_LABELS`） | 10+3 | 共享同一全局对象 |
+| **整页零引用** | **3** | 见下 |
+
+3 个「零引用」逐项裁决：① `index.html` `_fillDoKind(catalog, source)` 的 `source` = **有意保留的未用形参**（两个调用点分别传 `'embedded'` / `'api'` 记录来源）⇒ 不动（删则抹掉记录意图）；② `mine.html` `function token(){ return "" }` = **有意保留的兼容空壳**（源码注释自述「P2-5：令牌走 HttpOnly Cookie」）⇒ 不动；③ `store.html` `renderCustomOrder()` 内 `var stClass = {…}[o.status]||'wait'` = **确系废弃中间量**（下方 `step` 已改用内联三元重建；右值是无副作用的对象字面量索引）⇒ **唯一删除项**。
+**验证**：eslint **84 → 83**（客观判据）· 三支 WebUI 影响面护栏全绿（`run_webui_api_smoke` **92 PASS / 0 FAIL** · `run_webui_tapeout_drc_smoke` 14/0 · `run_webui_verification_ledger_smoke` 15/0）。
+**🔴 不建 CI 棘轮**：eslint **不在仓库**（家用级 `~/node_modules` 安装，T4.2 亦为隔离安装）⇒ 门禁**非 hermetic**（对照 tapeout smoke 的 hermetic 化教训）；且该指标 **81/84 = 96.4% 为误报**，做成棘轮必然「狼来了」被关停。
+
+### ⑥ 全量 CI core 183 实跑
+
+**PENDING**（本节将在实跑完成后回填 `183 PASS / 0 SKIP / 0 FAIL` 与 `total_s`、批数、`budget_audit` 最低余量）。
+
 ## v0.9.118（2026-09-21 · 超时预算棘轮升格为核心门禁（波次 6 · T6.1 专项）· 不扩基 · 零锚改动 · 账本零变化 · CI core 182→183）
 
 **来源**：`LDA_fix_workplan_2026-09-19.md` §2 波次 6 的 **T6.1**（workplan 自标优先级「高」）。

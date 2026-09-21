@@ -212,7 +212,7 @@ def design_fidelity(f01: float = _DEF_F01, delta: float = _DEF_DELTA,
 # ---------------------------------------------------------------------------
 def package_from_readout_fidelity(f01: float = _DEF_F01, **kw: Any) -> Dict[str, Any]:
     """把保真度预算包装为 D-44 统一 DesignPackage。"""
-    from lda_design.design_package import SCHEMA_VERSION, _now_iso
+    from lda_design.design_package import SCHEMA_VERSION, _created_at
 
     r = design_fidelity(f01=f01, **kw)
     acc = r["acceptance"]
@@ -221,7 +221,7 @@ def package_from_readout_fidelity(f01: float = _DEF_F01, **kw: Any) -> Dict[str,
         "schema_version": SCHEMA_VERSION,
         "kind": "readout_fidelity", "domain": "hybrid",
         "title": r["title"],
-        "created_at": _now_iso(),
+        "created_at": _created_at(),
         "ir": {"schema_version": r["ir"]["schema_version"],
                "domain": r["ir"]["domain"],
                "n_components": r["ir"]["n_components"],

@@ -195,7 +195,7 @@ def design_multiqubit_fidelity(
 def package_from_multiqubit_fidelity(
         f01s: Optional[List[float]] = None, **kw: Any) -> Dict[str, Any]:
     """把逐 qubit 保真度设计包装为 D-44 统一 DesignPackage。"""
-    from lda_design.design_package import SCHEMA_VERSION, _now_iso
+    from lda_design.design_package import SCHEMA_VERSION, _created_at
 
     if f01s is None:
         f01s = [4.8, 5.0, 5.2]
@@ -206,7 +206,7 @@ def package_from_multiqubit_fidelity(
         "schema_version": SCHEMA_VERSION,
         "kind": "multiqubit_fidelity", "domain": "hybrid",
         "title": r["title"],
-        "created_at": _now_iso(),
+        "created_at": _created_at(),
         "ir": {"schema_version": r["ir"]["schema_version"],
                "domain": r["ir"]["domain"],
                "n_components": r["ir"]["n_components"],

@@ -20,7 +20,17 @@
     "_ci_core_182",
     "_v111_ci_core",
     "_v111_ci_core_full",
-    "_ci_core_183.json"
+    "_ci_core_183.json",
+    "_v111_ci_core.json",
+    "_v111_ci_core_full.json",
+    "_ci_core_179.json",
+    "_ci_core_179_b.json",
+    "_ci_core_179_c.json",
+    "_ci_core_180_a.json",
+    "_ci_core_180_b.json",
+    "_ci_core_180_c.json",
+    "_ci_core_181_a.json",
+    "_ci_core_182.json"
   ],
   "rules": "预算 ≥ 2 × 跨轮实测上界（硬闸）；目标 3×（棘轮：低于 3× 的项数只降不升）；锚数或 CI core 成员数变化 ⇒ 基线过期，须重跑全量并 --write-baseline 刷新",
   "rows": [
@@ -42,7 +52,7 @@
         1194.19
       ],
       "n_rounds": 10,
-      "censored_events": 1
+      "censored_events": 2
     },
     {
       "script": "run_redteam_anchor_fuzz_smoke.py",
@@ -62,7 +72,7 @@
         1385.02
       ],
       "n_rounds": 10,
-      "censored_events": 1
+      "censored_events": 2
     },
     {
       "script": "run_ci_industrial_smoke.py",
@@ -124,7 +134,7 @@
         202.79
       ],
       "n_rounds": 10,
-      "censored_events": 1
+      "censored_events": 2
     },
     {
       "script": "run_splitter_readout_cal_smoke.py",
@@ -169,6 +179,27 @@
       "censored_events": 0
     },
     {
+      "script": "run_ecosystem_smoke.py",
+      "budget_s": 900.0,
+      "elapsed_max_s": 228.74,
+      "margin_x": 3.935,
+      "samples_s": [
+        194.48,
+        195.47,
+        197.01,
+        197.04,
+        197.34,
+        197.81,
+        198.16,
+        200.45,
+        206.02,
+        217.61,
+        228.74
+      ],
+      "n_rounds": 11,
+      "censored_events": 0
+    },
+    {
       "script": "run_coupler_band_smoke.py",
       "budget_s": 1200.0,
       "elapsed_max_s": 303.23,
@@ -190,6 +221,48 @@
       "censored_events": 0
     },
     {
+      "script": "run_ir_inverse_design_smoke.py",
+      "budget_s": 450.0,
+      "elapsed_max_s": 113.73,
+      "margin_x": 3.957,
+      "samples_s": [
+        75.14,
+        75.24,
+        75.27,
+        75.73,
+        75.89,
+        76.0,
+        76.04,
+        76.34,
+        77.04,
+        77.43,
+        113.73
+      ],
+      "n_rounds": 11,
+      "censored_events": 0
+    },
+    {
+      "script": "run_harness.py",
+      "budget_s": 900.0,
+      "elapsed_max_s": 216.91,
+      "margin_x": 4.149,
+      "samples_s": [
+        207.28,
+        207.51,
+        207.7,
+        208.75,
+        209.26,
+        209.63,
+        210.36,
+        210.77,
+        211.5,
+        213.27,
+        216.91
+      ],
+      "n_rounds": 11,
+      "censored_events": 0
+    },
+    {
       "script": "run_semivec_mode_smoke.py",
       "budget_s": 400.0,
       "elapsed_max_s": 91.39,
@@ -206,6 +279,27 @@
         90.03,
         91.26,
         91.39
+      ],
+      "n_rounds": 11,
+      "censored_events": 0
+    },
+    {
+      "script": "run_empirical_anchor_smoke.py",
+      "budget_s": 1200.0,
+      "elapsed_max_s": 264.13,
+      "margin_x": 4.543,
+      "samples_s": [
+        230.23,
+        233.46,
+        233.5,
+        234.37,
+        234.51,
+        234.82,
+        235.19,
+        237.74,
+        242.73,
+        263.5,
+        264.13
       ],
       "n_rounds": 11,
       "censored_events": 0

@@ -5,7 +5,6 @@
   RingResonator（光子/match/黄金分割）· BraggMirror（光子/threshold/离散+TMM 搜索
   FDTD 终验）· Transmon（量子/match）· RingAddDrop（D-37 器件/match/Q_L）。
 """
-import json
 import os
 import sys
 
@@ -44,11 +43,11 @@ def main() -> int:
             print("    verdict:", r.get("verdict"))
     print("=" * 70)
     print("全部 4 器件经同一框架 accepted:", ok)
-    with open(os.path.join(_HERE, "reports", "inverse_design_d38.json"), "w",
-              encoding="utf-8") as f:
-        json.dump({"framework": "SpectrumInverseDesignAgent (D-24/D-38)",
-                   "all_passed": ok, "devices": results},
-                  f, ensure_ascii=False, indent=2)
+    # 🔴 v0.9.119（T6.4）：受跟踪报告 ⇒ 必须走 deterministic 唯一口径。
+    from lda_harness import deterministic as _det
+    _det.write_json(os.path.join(_HERE, "reports", "inverse_design_d38.json"),
+                    {"framework": "SpectrumInverseDesignAgent (D-24/D-38)",
+                     "all_passed": ok, "devices": results})
     return 0 if ok else 1
 
 

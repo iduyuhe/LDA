@@ -32,6 +32,33 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+# 🔴 T6.3（2026-09-21 · 波次 6）线程预算**下沉到 harness 自身**
+# ---------------------------------------------------------------------------
+# 此前线程预算只由 `run_ci_regression._child_env()` 在**子进程包装层**注入 ⇒
+# **手动** `python run_harness.py` 拿不到 ⇒ 本文件产出的受跟踪报告
+# `lda/reports/verification_report.json` 在手动跑时与 CI 跑**字节不同**。
+#
+# 实测（本轮取证 · 定向复现）：裸跑与 CI 口径的差异**只在 3 个锚**上，且只动
+# candidate 的第 6-7 位有效数字 —— **Hermite 梁单元 FEM 的 LAPACK 本征解**
+# （B153/B154/B155，Euler-Bernoulli 固支梁前三阶 f_n）：
+#     B153 175.08730**6** ↔ 175.08731**3**   B154 482.63490**1** ↔ 482.63490**5**
+#     B155 946.15738**6** ↔ 946.15738**5**
+# golden / tol / passed **全不变**（三项都 PASS）⇒ 这是**判读陷阱**而非缺陷：
+# 手动跑一次就看到 `verification_report.json` 脏，会让人怀疑"回归了 / 判据变了"，
+# 而 `deterministic.canon` 的 9 位有效数字**吸收不了**第 9 位上的差。
+#
+# 处置：把 `apply_thread_budget()` 落到本入口（`setdefault` 语义 ⇒ CI 已注入的值
+# 优先，CI 行为一字不变；手动跑则自动对齐 CI 口径）。
+# 实测依据：@10 线程 + `OMP/MKL_DYNAMIC=FALSE` 下连跑 2 次与受跟踪报告
+# **逐字节一致**（sha 98e58b882120）；裸跑则 3 锚漂移。
+# ⚠️ 必须在 import numpy/MKL **之前**落 env（见 `lda_solver/threads.py` 模块头）。
+# ⚠️ 边界：`lda_l1/protocol.py` 走同一 harness 但产出 `reports_l1/`（只含 B2/B4，
+#    非本征解族 ⇒ 无此漂移），且它被 WebUI 常驻导入 ⇒ 本轮不下沉，避免在长驻
+#    服务进程里改线程数。
+from lda_solver.threads import apply_thread_budget  # noqa: E402
+
+apply_thread_budget(verbose=True)     # 把口径贴在脸上：手动跑也看得见线程数
+
 from lda_harness.benchmarks import BENCHMARK_DEFS
 from lda_harness.harness import (
     VerificationHarness, ReferenceCandidate, PerturbedCandidate,

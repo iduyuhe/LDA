@@ -7,7 +7,7 @@
   "target_x": 3.0,
   "ratchet_below_target": 0,
   "anchors_at_measurement": 469,
-  "core_smokes_at_measurement": 183,
+  "core_smokes_at_measurement": 184,
   "updated_at": "2026-09-21",
   "source_reports": [
     "_ci_core_179",
@@ -31,7 +31,8 @@
     "_ci_core_180_c.json",
     "_ci_core_181_a.json",
     "_ci_core_182.json",
-    "_ci_core_119.json"
+    "_ci_core_119.json",
+    "_ci_core_183_report.json"
   ],
   "rules": "预算 ≥ 2 × 跨轮实测上界（硬闸）；目标 3×（棘轮：低于 3× 的项数只降不升）；锚数或 CI core 成员数变化 ⇒ 基线过期，须重跑全量并 --write-baseline 刷新",
   "rows": [
@@ -51,9 +52,10 @@
         1104.96,
         1118.73,
         1122.48,
+        1130.11,
         1194.19
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 2
     },
     {
@@ -70,11 +72,12 @@
         1322.48,
         1323.85,
         1324.69,
+        1333.14,
         1337.71,
         1367.63,
         1385.02
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 2
     },
     {
@@ -83,6 +86,7 @@
       "elapsed_max_s": 293.42,
       "margin_x": 3.067,
       "samples_s": [
+        109.68,
         118.48,
         270.31,
         272.67,
@@ -96,7 +100,30 @@
         291.68,
         293.42
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
+      "censored_events": 0
+    },
+    {
+      "script": "run_splitter_readout_cal_smoke.py",
+      "budget_s": 600.0,
+      "elapsed_max_s": 193.33,
+      "margin_x": 3.104,
+      "samples_s": [
+        159.17,
+        160.6,
+        162.68,
+        166.14,
+        166.84,
+        168.57,
+        171.91,
+        172.15,
+        172.5,
+        173.41,
+        173.48,
+        173.61,
+        193.33
+      ],
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -110,6 +137,7 @@
         181.14,
         183.64,
         185.28,
+        192.76,
         193.31,
         194.77,
         196.21,
@@ -118,7 +146,7 @@
         204.28,
         206.69
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -137,31 +165,21 @@
         173.51,
         174.21,
         175.52,
+        175.97,
         202.79
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 2
     },
     {
-      "script": "run_splitter_readout_cal_smoke.py",
-      "budget_s": 600.0,
-      "elapsed_max_s": 173.61,
-      "margin_x": 3.456,
+      "script": "run_gc_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 83.7,
+      "margin_x": 3.584,
       "samples_s": [
-        159.17,
-        160.6,
-        162.68,
-        166.14,
-        166.84,
-        168.57,
-        171.91,
-        172.15,
-        172.5,
-        173.41,
-        173.48,
-        173.61
+        83.7
       ],
-      "n_rounds": 12,
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -180,10 +198,22 @@
         133.93,
         134.82,
         146.26,
+        146.53,
         156.79,
         165.44
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
+      "censored_events": 0
+    },
+    {
+      "script": "run_e10_ring_fsr_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 81.55,
+      "margin_x": 3.679,
+      "samples_s": [
+        81.55
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -201,11 +231,12 @@
         197.81,
         198.16,
         200.45,
+        202.36,
         206.02,
         217.61,
         228.74
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -222,12 +253,13 @@
         244.34,
         244.7,
         244.84,
+        253.88,
         254.71,
         274.12,
         303.14,
         303.23
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -245,11 +277,35 @@
         76.04,
         76.07,
         76.34,
+        76.55,
         77.04,
         77.43,
         113.73
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
+      "censored_events": 0
+    },
+    {
+      "script": "run_semivec_mode_smoke.py",
+      "budget_s": 400.0,
+      "elapsed_max_s": 100.22,
+      "margin_x": 3.991,
+      "samples_s": [
+        87.88,
+        88.42,
+        88.51,
+        88.7,
+        88.83,
+        89.25,
+        89.62,
+        89.73,
+        89.86,
+        90.03,
+        91.26,
+        91.39,
+        100.22
+      ],
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -269,31 +325,32 @@
         210.77,
         211.5,
         213.27,
+        214.96,
         216.91
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
-      "script": "run_semivec_mode_smoke.py",
-      "budget_s": 400.0,
-      "elapsed_max_s": 91.39,
-      "margin_x": 4.377,
+      "script": "run_redteam_adjudication_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 70.51,
+      "margin_x": 4.255,
       "samples_s": [
-        87.88,
-        88.42,
-        88.51,
-        88.7,
-        88.83,
-        89.25,
-        89.62,
-        89.73,
-        89.86,
-        90.03,
-        91.26,
-        91.39
+        70.51
       ],
-      "n_rounds": 12,
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_dc_transmission_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 66.82,
+      "margin_x": 4.49,
+      "samples_s": [
+        66.82
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -312,10 +369,55 @@
         235.19,
         237.74,
         242.73,
+        246.06,
         263.5,
         264.13
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
+      "censored_events": 0
+    },
+    {
+      "script": "run_benchmark_crosscheck_report.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 56.06,
+      "margin_x": 5.351,
+      "samples_s": [
+        56.06
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_t1b_drift_diffusion_2d_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 50.2,
+      "margin_x": 5.976,
+      "samples_s": [
+        50.2
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_scale_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 46.56,
+      "margin_x": 6.443,
+      "samples_s": [
+        46.56
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_router_p1_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 45.01,
+      "margin_x": 6.665,
+      "samples_s": [
+        45.01
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -332,11 +434,100 @@
         70.02,
         70.08,
         70.18,
+        71.0,
         73.71,
         74.8,
         78.15
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
+      "censored_events": 0
+    },
+    {
+      "script": "run_pipeline_multidevice_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 35.91,
+      "margin_x": 8.354,
+      "samples_s": [
+        35.91
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_lvs_cross_equiv_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 35.71,
+      "margin_x": 8.401,
+      "samples_s": [
+        35.71
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_agent_loop_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 34.07,
+      "margin_x": 8.805,
+      "samples_s": [
+        34.07
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_verify_voxel_pipeline_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 33.14,
+      "margin_x": 9.053,
+      "samples_s": [
+        33.14
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_cpo_array_scale_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 30.14,
+      "margin_x": 9.954,
+      "samples_s": [
+        30.14
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_crosscheck_flywheel_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 28.6,
+      "margin_x": 10.49,
+      "samples_s": [
+        28.6
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_parallel_routing_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 25.53,
+      "margin_x": 11.751,
+      "samples_s": [
+        25.53
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_device_fdtd_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 24.16,
+      "margin_x": 12.417,
+      "samples_s": [
+        24.16
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -349,6 +540,7 @@
         29.16,
         29.17,
         29.21,
+        29.29,
         29.31,
         29.36,
         29.4,
@@ -358,7 +550,117 @@
         29.76,
         32.2
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
+      "censored_events": 0
+    },
+    {
+      "script": "run_pdk_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 23.04,
+      "margin_x": 13.021,
+      "samples_s": [
+        23.04
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_layout_sim_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 18.73,
+      "margin_x": 16.017,
+      "samples_s": [
+        18.73
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_webui_api_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 18.05,
+      "margin_x": 16.62,
+      "samples_s": [
+        18.05
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_t1_reverse_bias_limitation_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 16.06,
+      "margin_x": 18.68,
+      "samples_s": [
+        16.06
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_pipeline_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 12.01,
+      "margin_x": 24.979,
+      "samples_s": [
+        12.01
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_spectrum_loop_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 11.11,
+      "margin_x": 27.003,
+      "samples_s": [
+        11.11
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_calibrate_kappa_grid_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 8.75,
+      "margin_x": 34.286,
+      "samples_s": [
+        8.75
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_cli_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 8.42,
+      "margin_x": 35.629,
+      "samples_s": [
+        8.42
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_verify_waveguide_2d_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 8.26,
+      "margin_x": 36.32,
+      "samples_s": [
+        8.26
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_mmi_eme_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 8.25,
+      "margin_x": 36.364,
+      "samples_s": [
+        8.25
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -373,9 +675,131 @@
         0.62,
         0.63,
         0.68,
+        2.02,
         2.53
       ],
-      "n_rounds": 7,
+      "n_rounds": 8,
+      "censored_events": 0
+    },
+    {
+      "script": "run_l1_agent_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 6.29,
+      "margin_x": 47.695,
+      "samples_s": [
+        6.29
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_mcp_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 3.84,
+      "margin_x": 78.125,
+      "samples_s": [
+        3.84
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_qres_anchor_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 2.41,
+      "margin_x": 124.481,
+      "samples_s": [
+        2.41
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_t2_anchor_upgrade_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 2.36,
+      "margin_x": 127.119,
+      "samples_s": [
+        2.36
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_fluxonium_anchor_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 2.31,
+      "margin_x": 129.87,
+      "samples_s": [
+        2.31
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_kernel_seal_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 2.25,
+      "margin_x": 133.333,
+      "samples_s": [
+        2.25
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_mzi_anchor_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 2.24,
+      "margin_x": 133.929,
+      "samples_s": [
+        2.24
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_statistical_anchor_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 2.23,
+      "margin_x": 134.529,
+      "samples_s": [
+        2.23
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_b28_modulator_vpi_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 2.1,
+      "margin_x": 142.857,
+      "samples_s": [
+        2.1
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_pyflakes_ratchet_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.9,
+      "margin_x": 157.895,
+      "samples_s": [
+        1.9
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_admin_token_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.83,
+      "margin_x": 163.934,
+      "samples_s": [
+        1.83
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -386,6 +810,7 @@
       "samples_s": [
         0.47,
         0.48,
+        0.49,
         0.64,
         0.66,
         0.67,
@@ -394,7 +819,51 @@
         0.71,
         0.72
       ],
-      "n_rounds": 9,
+      "n_rounds": 10,
+      "censored_events": 0
+    },
+    {
+      "script": "run_optional_import_guard_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.8,
+      "margin_x": 166.667,
+      "samples_s": [
+        1.8
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_torch_numba_optional_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.7,
+      "margin_x": 176.471,
+      "samples_s": [
+        1.7
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_quickverify_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.52,
+      "margin_x": 197.368,
+      "samples_s": [
+        1.52
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_store_flow_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.26,
+      "margin_x": 238.095,
+      "samples_s": [
+        1.26
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -404,12 +873,1388 @@
       "margin_x": 240.0,
       "samples_s": [
         0.49,
+        0.53,
         0.65,
         0.68,
         0.71,
         0.75
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
+      "censored_events": 0
+    },
+    {
+      "script": "run_b5b7_rollback_floor_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.14,
+      "margin_x": 263.158,
+      "samples_s": [
+        1.14
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_three_class_consistency_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.14,
+      "margin_x": 263.158,
+      "samples_s": [
+        1.14
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_shelf_listing_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.13,
+      "margin_x": 265.487,
+      "samples_s": [
+        1.13
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_store_guide_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.02,
+      "margin_x": 294.118,
+      "samples_s": [
+        1.02
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_helper_dup_ratchet_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.97,
+      "margin_x": 309.278,
+      "samples_s": [
+        0.97
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ring_fdtd_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.96,
+      "margin_x": 312.5,
+      "samples_s": [
+        0.96
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ring_double_verify_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.93,
+      "margin_x": 322.581,
+      "samples_s": [
+        0.93
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_data_layer_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.92,
+      "margin_x": 326.087,
+      "samples_s": [
+        0.92
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_innovation_market_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.75,
+      "margin_x": 400.0,
+      "samples_s": [
+        0.75
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_sovereign_evidence_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.72,
+      "margin_x": 416.667,
+      "samples_s": [
+        0.72
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_requires_python_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.71,
+      "margin_x": 422.535,
+      "samples_s": [
+        0.71
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_shelf_taxonomy_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.71,
+      "margin_x": 422.535,
+      "samples_s": [
+        0.71
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_stats_nav_wiring_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.7,
+      "margin_x": 428.571,
+      "samples_s": [
+        0.7
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_cs_agent_chat_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.69,
+      "margin_x": 434.783,
+      "samples_s": [
+        0.69
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_public_write_limit_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.69,
+      "margin_x": 434.783,
+      "samples_s": [
+        0.69
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_active_device_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.61,
+      "margin_x": 491.803,
+      "samples_s": [
+        0.61
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_adapter_shard_layout_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.59,
+      "margin_x": 508.475,
+      "samples_s": [
+        0.59
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_b30_readout_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.59,
+      "margin_x": 508.475,
+      "samples_s": [
+        0.59
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_api_v1_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.58,
+      "margin_x": 517.241,
+      "samples_s": [
+        0.58
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_hier_gds_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.57,
+      "margin_x": 526.316,
+      "samples_s": [
+        0.57
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_quantum_devices_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.56,
+      "margin_x": 535.714,
+      "samples_s": [
+        0.56
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_astar_route_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.54,
+      "margin_x": 555.556,
+      "samples_s": [
+        0.54
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_link_m4_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.54,
+      "margin_x": 555.556,
+      "samples_s": [
+        0.54
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_webui_tapeout_drc_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.54,
+      "margin_x": 555.556,
+      "samples_s": [
+        0.54
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_webui_verification_ledger_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.54,
+      "margin_x": 555.556,
+      "samples_s": [
+        0.54
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_link_m3_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.52,
+      "margin_x": 576.923,
+      "samples_s": [
+        0.52
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_b29_thermal_phase_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.51,
+      "margin_x": 588.235,
+      "samples_s": [
+        0.51
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_chip_design_demo.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.5,
+      "margin_x": 600.0,
+      "samples_s": [
+        0.5
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_coverage_deadzone_closure_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.49,
+      "margin_x": 612.245,
+      "samples_s": [
+        0.49
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_io_grating_offset_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.49,
+      "margin_x": 612.245,
+      "samples_s": [
+        0.49
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_lvs_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.48,
+      "margin_x": 625.0,
+      "samples_s": [
+        0.48
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_maturity_baseline_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.48,
+      "margin_x": 625.0,
+      "samples_s": [
+        0.48
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_packaging_tolerance_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.48,
+      "margin_x": 625.0,
+      "samples_s": [
+        0.48
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_system_budget_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.48,
+      "margin_x": 625.0,
+      "samples_s": [
+        0.48
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_b11_fsr_peakfit_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.47,
+      "margin_x": 638.298,
+      "samples_s": [
+        0.47
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_chip_acceptance_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.47,
+      "margin_x": 638.298,
+      "samples_s": [
+        0.47
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_chip_layout_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.47,
+      "margin_x": 638.298,
+      "samples_s": [
+        0.47
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ci_crash_classify_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.47,
+      "margin_x": 638.298,
+      "samples_s": [
+        0.47
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ecosystem_review_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.47,
+      "margin_x": 638.298,
+      "samples_s": [
+        0.47
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ecosystem_submit_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.47,
+      "margin_x": 638.298,
+      "samples_s": [
+        0.47
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_p0_count_guard_sync_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.47,
+      "margin_x": 638.298,
+      "samples_s": [
+        0.47
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_agent_verify_link_contract_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.46,
+      "margin_x": 652.174,
+      "samples_s": [
+        0.46
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_count_consistency_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.46,
+      "margin_x": 652.174,
+      "samples_s": [
+        0.46
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ecosystem_publish_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.46,
+      "margin_x": 652.174,
+      "samples_s": [
+        0.46
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ecosystem_review2_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.46,
+      "margin_x": 652.174,
+      "samples_s": [
+        0.46
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ecosystem_review3_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.46,
+      "margin_x": 652.174,
+      "samples_s": [
+        0.46
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ir_quantum_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.46,
+      "margin_x": 652.174,
+      "samples_s": [
+        0.46
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ir_solve_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.46,
+      "margin_x": 652.174,
+      "samples_s": [
+        0.46
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_provenance_audit.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.46,
+      "margin_x": 652.174,
+      "samples_s": [
+        0.46
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_self_certified_lock_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.46,
+      "margin_x": 652.174,
+      "samples_s": [
+        0.46
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_tapeout_fullchain_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.46,
+      "margin_x": 652.174,
+      "samples_s": [
+        0.46
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_tapeout_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.46,
+      "margin_x": 652.174,
+      "samples_s": [
+        0.46
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_corner_performance_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.45,
+      "margin_x": 666.667,
+      "samples_s": [
+        0.45
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_timeout_budget_ratchet_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.45,
+      "margin_x": 666.667,
+      "samples_s": [
+        0.45
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_gds_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.43,
+      "margin_x": 697.674,
+      "samples_s": [
+        0.43
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_transmon_double_verify_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.41,
+      "margin_x": 731.707,
+      "samples_s": [
+        0.41
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_drc_pdk_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.4,
+      "margin_x": 750.0,
+      "samples_s": [
+        0.4
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_drc_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.39,
+      "margin_x": 769.231,
+      "samples_s": [
+        0.39
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_quantum_design_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.36,
+      "margin_x": 833.333,
+      "samples_s": [
+        0.36
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_b32_qcse_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.32,
+      "margin_x": 937.5,
+      "samples_s": [
+        0.32
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_large_scale_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.28,
+      "margin_x": 1071.429,
+      "samples_s": [
+        0.28
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_t1c_w5_detector_bandwidth_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.24,
+      "margin_x": 1250.0,
+      "samples_s": [
+        0.24
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_smoke_isolation_ratchet_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.21,
+      "margin_x": 1428.571,
+      "samples_s": [
+        0.21
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_t1c_w6_apd_avalanche_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.2,
+      "margin_x": 1500.0,
+      "samples_s": [
+        0.2
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_cpo_array_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.18,
+      "margin_x": 1666.667,
+      "samples_s": [
+        0.18
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_four_layer_redline_gate_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.18,
+      "margin_x": 1666.667,
+      "samples_s": [
+        0.18
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_solver_writer_sandbox_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.18,
+      "margin_x": 1666.667,
+      "samples_s": [
+        0.18
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_chip_scale_demo.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.16,
+      "margin_x": 1875.0,
+      "samples_s": [
+        0.16
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_multiqubit_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.16,
+      "margin_x": 1875.0,
+      "samples_s": [
+        0.16
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_qeda_depth_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.15,
+      "margin_x": 2000.0,
+      "samples_s": [
+        0.15
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_system_types_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.15,
+      "margin_x": 2000.0,
+      "samples_s": [
+        0.15
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_proposal_compiler_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.14,
+      "margin_x": 2142.857,
+      "samples_s": [
+        0.14
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_readout_chain_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.14,
+      "margin_x": 2142.857,
+      "samples_s": [
+        0.14
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_t1b_drift_diffusion_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.14,
+      "margin_x": 2142.857,
+      "samples_s": [
+        0.14
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_golden_product_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.13,
+      "margin_x": 2307.692,
+      "samples_s": [
+        0.13
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_mixed_system_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.13,
+      "margin_x": 2307.692,
+      "samples_s": [
+        0.13
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_production_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.13,
+      "margin_x": 2307.692,
+      "samples_s": [
+        0.13
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_second_tier_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.13,
+      "margin_x": 2307.692,
+      "samples_s": [
+        0.13
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_hierarchy_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.12,
+      "margin_x": 2500.0,
+      "samples_s": [
+        0.12
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_link_loss_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.12,
+      "margin_x": 2500.0,
+      "samples_s": [
+        0.12
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_link_m1_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.12,
+      "margin_x": 2500.0,
+      "samples_s": [
+        0.12
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_link_m2_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.12,
+      "margin_x": 2500.0,
+      "samples_s": [
+        0.12
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_model_class_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.12,
+      "margin_x": 2500.0,
+      "samples_s": [
+        0.12
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_tunable_wdm_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.12,
+      "margin_x": 2500.0,
+      "samples_s": [
+        0.12
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_wdm_coupler_grid_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.12,
+      "margin_x": 2500.0,
+      "samples_s": [
+        0.12
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_wdm_coupler_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.12,
+      "margin_x": 2500.0,
+      "samples_s": [
+        0.12
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_wdm_coupler_wl_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.12,
+      "margin_x": 2500.0,
+      "samples_s": [
+        0.12
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_wdm_depth_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.12,
+      "margin_x": 2500.0,
+      "samples_s": [
+        0.12
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_wdm_system_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.12,
+      "margin_x": 2500.0,
+      "samples_s": [
+        0.12
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ir_spec_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.11,
+      "margin_x": 2727.273,
+      "samples_s": [
+        0.11
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_llm_proposer_value_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.11,
+      "margin_x": 2727.273,
+      "samples_s": [
+        0.11
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_multiqubit_fidelity_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.11,
+      "margin_x": 2727.273,
+      "samples_s": [
+        0.11
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_t1b_devsim_cold_backup_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.11,
+      "margin_x": 2727.273,
+      "samples_s": [
+        0.11
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_bragg_gds_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.1,
+      "margin_x": 3000.0,
+      "samples_s": [
+        0.1
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_qeda_topology_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.1,
+      "margin_x": 3000.0,
+      "samples_s": [
+        0.1
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_qubit_resonator_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.1,
+      "margin_x": 3000.0,
+      "samples_s": [
+        0.1
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_redteam_automation_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.1,
+      "margin_x": 3000.0,
+      "samples_s": [
+        0.1
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_heavy_post_gate_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.09,
+      "margin_x": 3333.333,
+      "samples_s": [
+        0.09
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_pareto_rank_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.09,
+      "margin_x": 3333.333,
+      "samples_s": [
+        0.09
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_redteam_probe_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.09,
+      "margin_x": 3333.333,
+      "samples_s": [
+        0.09
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_drc_fix_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.08,
+      "margin_x": 3750.0,
+      "samples_s": [
+        0.08
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_nlp_requirement_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.08,
+      "margin_x": 3750.0,
+      "samples_s": [
+        0.08
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_redteam_llm_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.08,
+      "margin_x": 3750.0,
+      "samples_s": [
+        0.08
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_s8_anchor_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.08,
+      "margin_x": 3750.0,
+      "samples_s": [
+        0.08
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_b33_apd_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.07,
+      "margin_x": 4285.714,
+      "samples_s": [
+        0.07
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_compact_model_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.07,
+      "margin_x": 4285.714,
+      "samples_s": [
+        0.07
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_d10_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.07,
+      "margin_x": 4285.714,
+      "samples_s": [
+        0.07
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_gdsfactory_bridge_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.07,
+      "margin_x": 4285.714,
+      "samples_s": [
+        0.07
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ir_d05_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.07,
+      "margin_x": 4285.714,
+      "samples_s": [
+        0.07
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ir_ring_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.07,
+      "margin_x": 4285.714,
+      "samples_s": [
+        0.07
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_parasitic_rc_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.07,
+      "margin_x": 4285.714,
+      "samples_s": [
+        0.07
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_pipeline_realize_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.07,
+      "margin_x": 4285.714,
+      "samples_s": [
+        0.07
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_primitives_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.07,
+      "margin_x": 4285.714,
+      "samples_s": [
+        0.07
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_readout_fidelity_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.07,
+      "margin_x": 4285.714,
+      "samples_s": [
+        0.07
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_redteam_cron_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.07,
+      "margin_x": 4285.714,
+      "samples_s": [
+        0.07
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "lda_harness/run_empirical_bank.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.06,
+      "margin_x": 5000.0,
+      "samples_s": [
+        0.06
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_bounty_ledger_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.06,
+      "margin_x": 5000.0,
+      "samples_s": [
+        0.06
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ci_coverage_gate_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.06,
+      "margin_x": 5000.0,
+      "samples_s": [
+        0.06
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_d06_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.06,
+      "margin_x": 5000.0,
+      "samples_s": [
+        0.06
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_gds_drc_semantics_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.06,
+      "margin_x": 5000.0,
+      "samples_s": [
+        0.06
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_loss_engine_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.06,
+      "margin_x": 5000.0,
+      "samples_s": [
+        0.06
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_spice_netlist_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.06,
+      "margin_x": 5000.0,
+      "samples_s": [
+        0.06
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_store_auth_gate_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.06,
+      "margin_x": 5000.0,
+      "samples_s": [
+        0.06
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_b31_soref_bennett_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.05,
+      "margin_x": 6000.0,
+      "samples_s": [
+        0.05
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_noncore_reason_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.05,
+      "margin_x": 6000.0,
+      "samples_s": [
+        0.05
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     }
   ]

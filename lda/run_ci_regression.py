@@ -858,6 +858,339 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 逆设计 IR smoke，跨轮实测 113.73s（n 较小）。3 × 113.73 = 341.2 ⇒ 取 450s
     #   （**3.96×**，可达 150s 仍守 3×）。
     "run_ir_inverse_design_smoke.py": 450.0,
+
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "lda_harness/run_empirical_bank.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.6s · 3.05× 取整 · 不低于默认 300s
+    "run_active_device_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.6s · 3.05× 取整 · 不低于默认 300s
+    "run_adapter_shard_layout_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 1.8s · 3.05× 取整 · 不低于默认 300s
+    "run_admin_token_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 34.1s · 3.05× 取整 · 不低于默认 300s
+    "run_agent_loop_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_agent_verify_link_contract_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.6s · 3.05× 取整 · 不低于默认 300s
+    "run_api_v1_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_astar_route_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_b11_fsr_peakfit_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 2.1s · 3.05× 取整 · 不低于默认 300s
+    "run_b28_modulator_vpi_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_b29_thermal_phase_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.6s · 3.05× 取整 · 不低于默认 300s
+    "run_b30_readout_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_b31_soref_bennett_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.3s · 3.05× 取整 · 不低于默认 300s
+    "run_b32_qcse_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_b33_apd_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 1.1s · 3.05× 取整 · 不低于默认 300s
+    "run_b5b7_rollback_floor_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 56.1s · 3.05× 取整 · 不低于默认 300s
+    "run_benchmark_crosscheck_report.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_bounty_ledger_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_bragg_gds_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 8.8s · 3.05× 取整 · 不低于默认 300s
+    "run_calibrate_kappa_grid_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_chip_acceptance_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_chip_design_demo.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_chip_layout_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.2s · 3.05× 取整 · 不低于默认 300s
+    "run_chip_scale_demo.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_ci_coverage_gate_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_ci_crash_classify_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 8.4s · 3.05× 取整 · 不低于默认 300s
+    "run_cli_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_compact_model_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_corner_performance_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_count_consistency_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_coverage_deadzone_closure_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 30.1s · 3.05× 取整 · 不低于默认 300s
+    "run_cpo_array_scale_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.2s · 3.05× 取整 · 不低于默认 300s
+    "run_cpo_array_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 28.6s · 3.05× 取整 · 不低于默认 300s
+    "run_crosscheck_flywheel_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.7s · 3.05× 取整 · 不低于默认 300s
+    "run_cs_agent_chat_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_d06_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_d10_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.9s · 3.05× 取整 · 不低于默认 300s
+    "run_data_layer_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 66.8s · 3.05× 取整 · 不低于默认 300s
+    "run_dc_transmission_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 24.2s · 3.05× 取整 · 不低于默认 300s
+    "run_device_fdtd_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_drc_fix_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.4s · 3.05× 取整 · 不低于默认 300s
+    "run_drc_pdk_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.4s · 3.05× 取整 · 不低于默认 300s
+    "run_drc_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 81.5s · 3.05× 取整 · 不低于默认 300s
+    "run_e10_ring_fsr_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_ecosystem_publish_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_ecosystem_review2_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_ecosystem_review3_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_ecosystem_review_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_ecosystem_submit_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 2.3s · 3.05× 取整 · 不低于默认 300s
+    "run_fluxonium_anchor_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.2s · 3.05× 取整 · 不低于默认 300s
+    "run_four_layer_redline_gate_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 83.7s · 3.05× 取整 · 不低于默认 300s
+    "run_gc_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_gds_drc_semantics_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.4s · 3.05× 取整 · 不低于默认 300s
+    "run_gds_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_gdsfactory_bridge_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_golden_product_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_heavy_post_gate_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 1.0s · 3.05× 取整 · 不低于默认 300s
+    "run_helper_dup_ratchet_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.6s · 3.05× 取整 · 不低于默认 300s
+    "run_hier_gds_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_hierarchy_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.8s · 3.05× 取整 · 不低于默认 300s
+    "run_innovation_market_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_io_grating_offset_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_ir_d05_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_ir_quantum_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_ir_ring_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_ir_solve_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_ir_spec_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 2.2s · 3.05× 取整 · 不低于默认 300s
+    "run_kernel_seal_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 6.3s · 3.05× 取整 · 不低于默认 300s
+    "run_l1_agent_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.3s · 3.05× 取整 · 不低于默认 300s
+    "run_large_scale_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 18.7s · 3.05× 取整 · 不低于默认 300s
+    "run_layout_sim_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_link_loss_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_link_m1_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_link_m2_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_link_m3_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_link_m4_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_llm_proposer_value_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_loss_engine_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 35.7s · 3.05× 取整 · 不低于默认 300s
+    "run_lvs_cross_equiv_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_lvs_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_maturity_baseline_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 3.8s · 3.05× 取整 · 不低于默认 300s
+    "run_mcp_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_mixed_system_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 8.2s · 3.05× 取整 · 不低于默认 300s
+    "run_mmi_eme_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_model_class_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_multiqubit_fidelity_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.2s · 3.05× 取整 · 不低于默认 300s
+    "run_multiqubit_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 2.2s · 3.05× 取整 · 不低于默认 300s
+    "run_mzi_anchor_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_nlp_requirement_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_noncore_reason_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 1.8s · 3.05× 取整 · 不低于默认 300s
+    "run_optional_import_guard_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_p0_count_guard_sync_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_packaging_tolerance_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 25.5s · 3.05× 取整 · 不低于默认 300s
+    "run_parallel_routing_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_parasitic_rc_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_pareto_rank_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 23.0s · 3.05× 取整 · 不低于默认 300s
+    "run_pdk_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 35.9s · 3.05× 取整 · 不低于默认 300s
+    "run_pipeline_multidevice_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_pipeline_realize_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 12.0s · 3.05× 取整 · 不低于默认 300s
+    "run_pipeline_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_primitives_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_production_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_proposal_compiler_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_provenance_audit.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.7s · 3.05× 取整 · 不低于默认 300s
+    "run_public_write_limit_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 1.9s · 3.05× 取整 · 不低于默认 300s
+    "run_pyflakes_ratchet_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_qeda_depth_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_qeda_topology_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 2.4s · 3.05× 取整 · 不低于默认 300s
+    "run_qres_anchor_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.4s · 3.05× 取整 · 不低于默认 300s
+    "run_quantum_design_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.6s · 3.05× 取整 · 不低于默认 300s
+    "run_quantum_devices_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_qubit_resonator_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 1.5s · 3.05× 取整 · 不低于默认 300s
+    "run_quickverify_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_readout_chain_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_readout_fidelity_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 70.5s · 3.05× 取整 · 不低于默认 300s
+    "run_redteam_adjudication_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_redteam_automation_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_redteam_cron_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_redteam_llm_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_redteam_probe_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.7s · 3.05× 取整 · 不低于默认 300s
+    "run_requires_python_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.9s · 3.05× 取整 · 不低于默认 300s
+    "run_ring_double_verify_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 1.0s · 3.05× 取整 · 不低于默认 300s
+    "run_ring_fdtd_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 45.0s · 3.05× 取整 · 不低于默认 300s
+    "run_router_p1_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_s8_anchor_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 46.6s · 3.05× 取整 · 不低于默认 300s
+    "run_scale_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_second_tier_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_self_certified_lock_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 1.1s · 3.05× 取整 · 不低于默认 300s
+    "run_shelf_listing_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.7s · 3.05× 取整 · 不低于默认 300s
+    "run_shelf_taxonomy_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.2s · 3.05× 取整 · 不低于默认 300s
+    "run_smoke_isolation_ratchet_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.2s · 3.05× 取整 · 不低于默认 300s
+    "run_solver_writer_sandbox_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.7s · 3.05× 取整 · 不低于默认 300s
+    "run_sovereign_evidence_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 11.1s · 3.05× 取整 · 不低于默认 300s
+    "run_spectrum_loop_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_spice_netlist_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 2.2s · 3.05× 取整 · 不低于默认 300s
+    "run_statistical_anchor_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.7s · 3.05× 取整 · 不低于默认 300s
+    "run_stats_nav_wiring_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_store_auth_gate_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 1.3s · 3.05× 取整 · 不低于默认 300s
+    "run_store_flow_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 1.0s · 3.05× 取整 · 不低于默认 300s
+    "run_store_guide_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_system_budget_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_system_types_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 16.1s · 3.05× 取整 · 不低于默认 300s
+    "run_t1_reverse_bias_limitation_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_t1b_devsim_cold_backup_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 50.2s · 3.05× 取整 · 不低于默认 300s
+    "run_t1b_drift_diffusion_2d_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_t1b_drift_diffusion_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.2s · 3.05× 取整 · 不低于默认 300s
+    "run_t1c_w5_detector_bandwidth_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.2s · 3.05× 取整 · 不低于默认 300s
+    "run_t1c_w6_apd_avalanche_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 2.4s · 3.05× 取整 · 不低于默认 300s
+    "run_t2_anchor_upgrade_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_tapeout_fullchain_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_tapeout_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 1.1s · 3.05× 取整 · 不低于默认 300s
+    "run_three_class_consistency_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_timeout_budget_ratchet_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 1.7s · 3.05× 取整 · 不低于默认 300s
+    "run_torch_numba_optional_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.4s · 3.05× 取整 · 不低于默认 300s
+    "run_transmon_double_verify_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_tunable_wdm_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 33.1s · 3.05× 取整 · 不低于默认 300s
+    "run_verify_voxel_pipeline_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 8.3s · 3.05× 取整 · 不低于默认 300s
+    "run_verify_waveguide_2d_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_wdm_coupler_grid_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_wdm_coupler_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_wdm_coupler_wl_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_wdm_depth_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
+    "run_wdm_system_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 18.1s · 3.05× 取整 · 不低于默认 300s
+    "run_webui_api_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_webui_tapeout_drc_smoke.py": 300.0,
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    "run_webui_verification_ledger_smoke.py": 300.0,
 }
 
 

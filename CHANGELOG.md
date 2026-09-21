@@ -83,7 +83,28 @@ T6.1 立的门禁（`run_timeout_budget_ratchet_smoke.py`：B8 硬闸 ≥2× / B
 
 ### ⑥ 全量 CI core 183 实跑
 
-**PENDING**（本节将在实跑完成后回填 `183 PASS / 0 SKIP / 0 FAIL` 与 `total_s`、批数、`budget_audit` 最低余量）。
+```
+[batched] tag=core 脚本 183 条 → 23 批（每批 8 · 冷却 45.0s） · 线程 项目默认(10)
+[batched] 内置超时覆盖 18 项；falsifiability=3600.0s fuzz=4200.0s
+CI 分批回归 core：183 PASS / 0 SKIP / 0 FAIL（183 条 · 23 批） —— 全绿
+```
+
+**结果**：`pass=183 / skip=0 / fail=0` · `total_s = 6278.5`（含 22×45s 批间冷却；逐条累加 = **5288.5s**）·
+23 批 · 默认 10 线程 · **EXIT 0**。
+**内置覆盖自检 = 18 项** ⇒ ④（T6.5 前哨）的 4 项新预算**确认已进入门禁取值链**（这是本版实跑与上版最关键的差异）。
+**基线刷新**：`--write-baseline` 按「并入而非覆盖」写回 `lda/timeout_budget_baseline.json`（**18 项 · 锚数 469 · CI core 183**）。
+
+**预算余量复核（两口径并列，🔴 勿混报）**：
+
+| 口径 | 最低余量 | 对应项 |
+|---|---|---|
+| **跨轮实测上界**（基线表 `margin_x` · v0.9.116 立规） | **3.015×** | `run_benchmark_falsifiability_smoke`（budget 3600 / 上界 **1194.2**） |
+| **本轮实测**（`budget_audit` 体检） | **3.18×** | `run_redteam_anchor_fuzz_smoke`（budget 4200 / 本轮 **1318.87**） |
+
+⇒ 两口径**均 ≥3× 目标档**，**无一触及 2× 硬闸**；同轮 B8（硬闸 ≥2×）/ B9（<3× 计数 ≤ ratchet，当前 0）/ B10
+（基线 `budget_s` == 现值）随 core 全绿同时通过——**第 183 条 `run_timeout_budget_ratchet_smoke.py` 自身 PASS**。
+**与上一版对比**：v0.9.118 `total_s = 6597.1s` → 本版 **6278.5s**（**−4.8%**）；两版同为 183 条 / 23 批 ⇒ 差异属
+**机器波动**，**非判据或覆盖变动**（覆盖集逐条一致）。
 
 ## v0.9.118（2026-09-21 · 超时预算棘轮升格为核心门禁（波次 6 · T6.1 专项）· 不扩基 · 零锚改动 · 账本零变化 · CI core 182→183）
 

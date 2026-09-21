@@ -399,8 +399,15 @@ c7 = build(
     },
 )
 
+# ── MESH4：4×4 MZI 网格 P&R（4×4 光子计算核可行性，走法一）──────────────────
+# 用户拍板「进证据集索引 + CI 护栏」。复用 build_4x4_mzi_mesh.build_mesh() 的真实
+# 主权链产出（6 MZI 单元 + 4 入 4 出 + M1/M2 跨层桥接化解交叉），作为第 8 例。
+# 该例独立于 c1-c7 的基元/组合范式，属「计算核可行性」证明。
+import build_4x4_mzi_mesh as _m4  # noqa: E402
+mesh4 = _m4.build_mesh()
+
 # ── 汇总报告 ────────────────────────────────────────────────────────────────
-circuits = [c1, c2, c3, c4, c5, c6, c7]
+circuits = [c1, c2, c3, c4, c5, c6, c7, mesh4]
 index = {
     "strategy": "降标走法 · 主权全链路（走法一，零 gdsfactory 依赖）流程跑通证据",
     "interpreter": "managed 3.14.3/python.exe (自带 numpy)",
@@ -411,19 +418,23 @@ index = {
         "ring": ["C2", "C3"],
         "interferometer": ["C6"],
         "filter_reflector": ["C7"],
+        "compute_core": ["MESH4"],
     },
     "all_drc_pass": all(c["drc_verdict"] == "PASS" for c in circuits),
     "all_lvs_accept": all(c["lvs_verdict"] == "ACCEPT" for c in circuits),
-    "honest_note": ("仅几何合法性已验证（主权子集 DRC + LVS 拓扑一致）。"
-                    "尚无光学性能表征（IL/XT/FSR 等），未注册为可售 GP-* 基元；"
-                    "不能直接进入创新超市当货架商品。"),
+    "honest_note": ("主权子集 DRC + LVS 几何合法性已验证；C4 MMI 另已有 2D-TEz 模型级"
+                    "光学表征（见 c4_mmi_characterization.json：过量损耗 4.08dB、"
+                    "不平衡 0.019dB，B16 根因显示 L=20µm 仅达理想成像长度 146µm 的 14%）。"
+                    "该表征为 2D 数值结果，非物理定律锚；依 E5 报告 MMI 过量损耗在 2D 层级"
+                    "不可判到 0.1dB tol，真锚需 3D 矢量求解器或流片。未注册为可售 GP-* 基元，"
+                    "不进创新超市当货架商品。"),
     "circuits": circuits,
 }
 idx_path = os.path.join(OUT, "sovereign_evidence_index.json")
 with open(idx_path, "w", encoding="utf-8") as f:
     json.dump(index, f, ensure_ascii=False, indent=2)
 
-print("=== 走法一 主权版图证据集（扩展版，7 例）===")
+print("=== 走法一 主权版图证据集（扩展版，8 例：7 基元/组合 + 4×4 计算核）===")
 for c in circuits:
     print(f"\n[{c['name']}] {c['title']}")
     print(f"  GDS    : {c['gds_path']}  ({c['gds_bytes']} B, {c['gds_elements']} 元素, {c['n_components']} 组件)")

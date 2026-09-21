@@ -146,11 +146,12 @@ content.push(table(
     ["C5","对称 Y 分支 1×2 分束器","4","4.2 KB","PASS","ACCEPT"],
     ["C6","Mach-Zehnder 干涉仪 2×2","7","3.9 KB","PASS","ACCEPT"],
     ["C7","Bragg 反射镜透射线","3","4.4 KB","PASS","ACCEPT"],
+    ["MESH4","4×4 MZI 网格光子计算核（Reck 6 单元）","14","12.5 KB","PASS","ACCEPT"],
   ],
   [800, 3900, 1000, 1300, 1000, 1100]
 ));
-content.push(quote("7 例跨 4 类拓扑（分束器 / 环形 / 干涉仪 / 滤波器反射镜），全部 DRC PASS + LVS ACCEPT —— 主权版图链的可重复性已被坐实，并已接入 run_ci_regression --tag core 门禁：主权链任何改动破坏任一例，CI 当场拦红。"));
-content.push(para("诚实边界：上述 7 例验证的是版图几何合法性（主权子集 DRC + LVS 拓扑一致），尚不含光学性能表征（插损 IL / 串扰 XT / 自由光谱范围 FSR 等死标量）。它们定位为工具链的“已出片流程跑通证据”与工程货架示例（examples/sovereign_evidence/），是组件化 PDK 的底座，但尚未锚定为可售 GP-* 基元，亦不进入创新超市当货架商品。光学表征锚定 → 注册 GP-* → 回灌 IM-* 货架，是明确的后续工程路径，而非摆放问题。", {run:{color:"404040", italics:true}}));
+content.push(quote("8 例跨 5 类拓扑（分束器 / 环形 / 干涉仪 / 滤波器反射镜 / 光子计算网格），全部 DRC PASS + LVS ACCEPT —— 主权版图链的可重复性已被坐实，并已接入 run_ci_regression --tag core 门禁：主权链任何改动破坏任一例，CI 当场拦红。"));
+content.push(para("诚实边界：上述 8 例验证的是版图几何合法性（主权子集 DRC + LVS 拓扑一致），尚不含光学性能表征（插损 IL / 串扰 XT / 自由光谱范围 FSR 等死标量）。它们定位为工具链的“已出片流程跑通证据”与工程货架示例（examples/sovereign_evidence/），是组件化 PDK 的底座，但尚未锚定为可售 GP-* 基元，亦不进入创新超市当货架商品；其中 MESH4（4×4 光子计算核）额外以 Reck 三角分解 6 MZI 单元实现计算核数学层（保真度≈1.0），并实证 mesh 必然的 waveguide crossing 由异层 M1/M2 跨层桥接化解（12 交叉对零未解）——仍属几何合法性证明，不含光学性能表征。光学表征锚定 → 注册 GP-* → 回灌 IM-* 货架，是明确的后续工程路径，而非摆放问题。", {run:{color:"404040", italics:true}}));
 
 // ---------- 4 架构护城河 ----------
 content.push(h1("4. 架构与护城河"));

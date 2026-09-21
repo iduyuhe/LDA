@@ -595,9 +595,10 @@ CORE_SMOKES: List[str] = [
     #   纯 JSON + 两次导入，实测 ≈0.5s。CI core 182->183。
     "run_timeout_budget_ratchet_smoke.py",
     # 🔴 v0.9.119（走法一主权版图证据集护栏）：把 examples/sovereign_evidence/ 的
-    #   7 例主权版图（DRC/LVS 双闸）接入核心门禁——主权链任何改动破坏任一例即 FAIL。
-    #   纯 numpy 亚秒级（7 例约 <2s）、无 torch/numba/meep/tidy3d 重依赖，按准入
-    #   准则无权豁免，必须进 core。CI core 183->184。
+    #   8 例主权版图（DRC/LVS 双闸，含 4×4 MZI 网格 P&R 计算核可行性证明）接入
+    #   核心门禁——主权链任何改动破坏任一例即 FAIL。纯 numpy 亚秒级（8 例约 <4s）、
+    #   无 torch/numba/meep/tidy3d 重依赖，按准入准则无权豁免，必须进 core。
+    #   CI core 183->184（计算核作为第 8 例并入同一 smoke，未新增 smoke）。
     "run_sovereign_evidence_smoke.py",
 ]
 

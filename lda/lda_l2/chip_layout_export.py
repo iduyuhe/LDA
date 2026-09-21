@@ -98,6 +98,14 @@ def _route_points(rr) -> List[Tuple[float, float]]:
     return list(getattr(rr, "points_um", []) or [])
 
 
+def _gds_layer_of(seg) -> int:
+    """段 → GDS 层常量（多层路由忠实绘制用）。M1→芯层 / M2→金属层。"""
+    name = str(getattr(seg, "layer", "M1")).upper()
+    if name == "M2":
+        return gds_export.LIB_LAYER_METAL
+    return gds_export.LIB_LAYER_SI
+
+
 def _is_multilayer_routes(routes) -> bool:
     """routes 是否多层（任一 net 值为段列表，v0.8.26 千器件跨行跳线）。"""
     for val in (routes or {}).values():
@@ -344,8 +352,15 @@ def export_chip_gds(link, placement, routes, wg_width: float = 0.5,
     # ── flat 路径（层次化未启用 / 检测失败时的基线）
     elements = device_elements(link, placement, wg_width)
     for net_id, rr in (routes or {}).items():
-        elements.append(gds_export.path(gds_export.LIB_LAYER_SI,
-                                        wg_width, _route_points(rr)))
+        # v0.8.26 多层路由忠实绘制：逐段按层绘制（M1→芯层 / M2→金属层），
+        # 而非整体硬编码 M1（旧行为会把跨层跳线画成一条 M1 折线，丢失 via 结构）。
+        if isinstance(rr, (list, tuple)):
+            for seg in rr:
+                elements.append(gds_export.path(_gds_layer_of(seg),
+                                                wg_width, _route_points(seg)))
+        else:
+            elements.append(gds_export.path(gds_export.LIB_LAYER_SI,
+                                            wg_width, _route_points(rr)))
     if with_io_grating:
         elements.extend(io_grating_elements(link, placement, wg_width))
     hier_info["n_elements_flat"] = len(elements)

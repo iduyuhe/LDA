@@ -19,6 +19,7 @@
 | `lda_c6_mzi_interferometer.*` | Mach-Zehnder 干涉仪（2×DC + 2 臂） | 7 | 组合 |
 | `lda_c7_bragg_mirror.*` | Bragg 反射镜透射线 | 3 | 基元 |
 | `lda_2x2_ring.*` | 首块最小证明件（拓扑同 C3） | 6 | 组合 |
+| `lda_4x4_mzi_mesh.*` | 4×4 MZI 网格 P&R（4×4 光子计算核可行性：6 MZI + 跨层桥接化解交叉） | 14 | 计算核 |
 
 汇总见 `sovereign_evidence_index.json`（`all_drc_pass` / `all_lvs_accept` 双布尔）。
 

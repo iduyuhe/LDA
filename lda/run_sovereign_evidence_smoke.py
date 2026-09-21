@@ -41,7 +41,18 @@ def main() -> int:
                            f"viol={c['lvs_violations']}")
     ok &= check("证据集全部电路 DRC PASS", bool(be.index.get("all_drc_pass")))
     ok &= check("证据集全部电路 LVS ACCEPT", bool(be.index.get("all_lvs_accept")))
-    ok &= check("证据集电路数 == 7", be.index.get("n_circuits") == 7)
+    ok &= check("证据集电路数 >= 8（含 4×4 计算核）", be.index.get("n_circuits") >= 8)
+    # 🔴 显式锚定 4×4 计算核已接入（防「标签≠行为」：只加数不加断言 = 静默缺口）
+    mesh4 = next((c for c in be.circuits if c["name"] == "lda_4x4_mzi_mesh"), None)
+    ok &= check("4×4 计算核 P&R 已接入证据集", mesh4 is not None)
+    if mesh4:
+        ok &= check("4×4 mesh DRC PASS", mesh4["drc_verdict"] == "PASS")
+        ok &= check("4×4 mesh 多层 LVS ACCEPT", mesh4["lvs_verdict"] == "ACCEPT")
+        ok &= check("4×4 mesh 多层路由（跨层桥接化解交叉）",
+                    bool(mesh4.get("multilayer")))
+        cc = mesh4.get("compute_core") or {}
+        ok &= check("4×4 mesh 计算核保真度≈1.0",
+                    abs((cc.get("fidelity") or 0.0) - 1.0) < 1e-3)
     # 诚实边界：主权证据集仅几何合法，不得谎称已锚定为可售 GP-*。
     ok &= check("诚实边界已声明（未冒称已锚定 GP-*）",
                 "已锚定" not in be.index.get("honest_note", "")

@@ -2,7 +2,7 @@
   "strategy": "降标走法 · 主权全链路（走法一，零 gdsfactory 依赖）流程跑通证据",
   "interpreter": "managed 3.14.3/python.exe (自带 numpy)",
   "shelf": "examples/sovereign_evidence/",
-  "n_circuits": 7,
+  "n_circuits": 8,
   "topology_classes": {
     "splitter": [
       "C1",
@@ -18,11 +18,14 @@
     ],
     "filter_reflector": [
       "C7"
+    ],
+    "compute_core": [
+      "MESH4"
     ]
   },
   "all_drc_pass": true,
   "all_lvs_accept": true,
-  "honest_note": "仅几何合法性已验证（主权子集 DRC + LVS 拓扑一致）。尚无光学性能表征（IL/XT/FSR 等），未注册为可售 GP-* 基元；不能直接进入创新超市当货架商品。",
+  "honest_note": "主权子集 DRC + LVS 几何合法性已验证；C4 MMI 另已有 2D-TEz 模型级光学表征（见 c4_mmi_characterization.json：过量损耗 4.08dB、不平衡 0.019dB，B16 根因显示 L=20µm 仅达理想成像长度 146µm 的 14%）。该表征为 2D 数值结果，非物理定律锚；依 E5 报告 MMI 过量损耗在 2D 层级不可判到 0.1dB tol，真锚需 3D 矢量求解器或流片。未注册为可售 GP-* 基元，不进创新超市当货架商品。",
   "circuits": [
     {
       "name": "lda_c1_dc_splitter",
@@ -202,6 +205,162 @@
         "gc_out.fib"
       ],
       "svg_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c7_bragg_mirror.svg"
+    },
+    {
+      "name": "lda_4x4_mzi_mesh",
+      "title": "MESH4 · 4×4 MZI 网格 P&R（4×4 光子计算核可行性, no gdsfactory）",
+      "io_ports": [
+        "in0.fib",
+        "in1.fib",
+        "in2.fib",
+        "in3.fib",
+        "out0.fib",
+        "out1.fib",
+        "out2.fib",
+        "out3.fib"
+      ],
+      "gds_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_4x4_mzi_mesh.gds",
+      "gds_bytes": 12542,
+      "n_components": 14,
+      "gds_elements": 200,
+      "bbox_um": [
+        -20.0,
+        -5.0,
+        145.0,
+        52.0
+      ],
+      "multilayer": true,
+      "drc_verdict": "PASS",
+      "drc_devices": {
+        "m0": true,
+        "m1": true,
+        "m2": true,
+        "m3": true,
+        "m4": true,
+        "m5": true,
+        "in0": true,
+        "out0": true,
+        "in1": true,
+        "out1": true,
+        "in2": true,
+        "out2": true,
+        "in3": true,
+        "out3": true
+      },
+      "lvs_verdict": "ACCEPT",
+      "lvs_nets": null,
+      "lvs_matched": null,
+      "lvs_violations": {},
+      "n_routed_nets": 16,
+      "n_crossing_pairs": 12,
+      "crossing_pairs": [
+        [
+          "n1",
+          "n2"
+        ],
+        [
+          "n3",
+          "n4"
+        ],
+        [
+          "n5",
+          "n6"
+        ],
+        [
+          "n5",
+          "n7"
+        ],
+        [
+          "n6",
+          "n7"
+        ],
+        [
+          "n7",
+          "n8"
+        ],
+        [
+          "n9",
+          "n10"
+        ],
+        [
+          "n9",
+          "n11"
+        ],
+        [
+          "n10",
+          "n11"
+        ],
+        [
+          "n11",
+          "n12"
+        ],
+        [
+          "n13",
+          "n14"
+        ],
+        [
+          "n15",
+          "n16"
+        ]
+      ],
+      "n_bridged_nets": 8,
+      "bridged_nets": [
+        "n10",
+        "n11",
+        "n14",
+        "n16",
+        "n2",
+        "n4",
+        "n6",
+        "n7"
+      ],
+      "n_unresolved_crossings": 0,
+      "unresolved_crossings": [],
+      "compute_core": {
+        "N": 4,
+        "n_mzi": 6,
+        "fidelity": 1.0,
+        "cascade_loss_db": 15.0,
+        "ops": [
+          [
+            0,
+            1,
+            1.5708,
+            3.1416
+          ],
+          [
+            0,
+            2,
+            1.231,
+            3.1416
+          ],
+          [
+            0,
+            3,
+            1.0472,
+            3.1416
+          ],
+          [
+            1,
+            2,
+            1.8235,
+            4.2487
+          ],
+          [
+            1,
+            3,
+            1.231,
+            5.4978
+          ],
+          [
+            2,
+            3,
+            1.5708,
+            4.2487
+          ]
+        ]
+      },
+      "svg_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_4x4_mzi_mesh.svg"
     }
   ]
 }

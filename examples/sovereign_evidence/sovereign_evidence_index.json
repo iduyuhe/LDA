@@ -1,0 +1,207 @@
+{
+  "strategy": "降标走法 · 主权全链路（走法一，零 gdsfactory 依赖）流程跑通证据",
+  "interpreter": "managed 3.14.3/python.exe (自带 numpy)",
+  "shelf": "examples/sovereign_evidence/",
+  "n_circuits": 7,
+  "topology_classes": {
+    "splitter": [
+      "C1",
+      "C4",
+      "C5"
+    ],
+    "ring": [
+      "C2",
+      "C3"
+    ],
+    "interferometer": [
+      "C6"
+    ],
+    "filter_reflector": [
+      "C7"
+    ]
+  },
+  "all_drc_pass": true,
+  "all_lvs_accept": true,
+  "honest_note": "仅几何合法性已验证（主权子集 DRC + LVS 拓扑一致）。尚无光学性能表征（IL/XT/FSR 等），未注册为可售 GP-* 基元；不能直接进入创新超市当货架商品。",
+  "circuits": [
+    {
+      "name": "lda_c1_dc_splitter",
+      "title": "C1 · 2x2 方向耦合器分束器 (no gdsfactory)",
+      "gds_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c1_dc_splitter.gds",
+      "gds_bytes": 3628,
+      "n_components": 4,
+      "gds_elements": 59,
+      "drc_verdict": "PASS",
+      "drc_devices": {
+        "gc_in": true,
+        "gc_thru": true,
+        "gc_drop": true,
+        "dc1": true
+      },
+      "lvs_verdict": "ACCEPT",
+      "lvs_nets": null,
+      "lvs_matched": null,
+      "lvs_violations": {},
+      "io_ports": [
+        "gc_in.fib",
+        "gc_thru.fib",
+        "gc_drop.fib"
+      ],
+      "svg_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c1_dc_splitter.svg"
+    },
+    {
+      "name": "lda_c2_ring_add_drop",
+      "title": "C2 · 环形谐振器 add-drop (no gdsfactory)",
+      "gds_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c2_ring_add_drop.gds",
+      "gds_bytes": 4150,
+      "n_components": 4,
+      "gds_elements": 60,
+      "drc_verdict": "PASS",
+      "drc_devices": {
+        "gc_in": true,
+        "gc_thru": true,
+        "gc_drop": true,
+        "ring1": true
+      },
+      "lvs_verdict": "ACCEPT",
+      "lvs_nets": null,
+      "lvs_matched": null,
+      "lvs_violations": {},
+      "io_ports": [
+        "gc_in.fib",
+        "gc_thru.fib",
+        "gc_drop.fib"
+      ],
+      "svg_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c2_ring_add_drop.svg"
+    },
+    {
+      "name": "lda_c3_dc_ring",
+      "title": "C3 · 2x2 方向耦合器 + 环形谐振器 (no gdsfactory)",
+      "gds_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c3_dc_ring.gds",
+      "gds_bytes": 5482,
+      "n_components": 6,
+      "gds_elements": 82,
+      "drc_verdict": "PASS",
+      "drc_devices": {
+        "gc_in": true,
+        "gc_add": true,
+        "gc_thru": true,
+        "gc_drop": true,
+        "dc1": true,
+        "ring1": true
+      },
+      "lvs_verdict": "ACCEPT",
+      "lvs_nets": null,
+      "lvs_matched": null,
+      "lvs_violations": {},
+      "io_ports": [
+        "gc_in.fib",
+        "gc_add.fib",
+        "gc_thru.fib",
+        "gc_drop.fib"
+      ],
+      "svg_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c3_dc_ring.svg"
+    },
+    {
+      "name": "lda_c4_mmi_splitter",
+      "title": "C4 · MMI 1x2 多模干涉分束器 (no gdsfactory)",
+      "gds_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c4_mmi_splitter.gds",
+      "gds_bytes": 5406,
+      "n_components": 4,
+      "gds_elements": 64,
+      "drc_verdict": "PASS",
+      "drc_devices": {
+        "gc_in": true,
+        "gc_a": true,
+        "gc_b": true,
+        "mmi1": true
+      },
+      "lvs_verdict": "ACCEPT",
+      "lvs_nets": null,
+      "lvs_matched": null,
+      "lvs_violations": {},
+      "io_ports": [
+        "gc_in.fib",
+        "gc_a.fib",
+        "gc_b.fib"
+      ],
+      "svg_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c4_mmi_splitter.svg"
+    },
+    {
+      "name": "lda_c5_ybranch_splitter",
+      "title": "C5 · 对称Y分支 1x2 分束器 (no gdsfactory)",
+      "gds_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c5_ybranch_splitter.gds",
+      "gds_bytes": 4180,
+      "n_components": 4,
+      "gds_elements": 60,
+      "drc_verdict": "PASS",
+      "drc_devices": {
+        "gc_in": true,
+        "gc_a": true,
+        "gc_b": true,
+        "yb1": true
+      },
+      "lvs_verdict": "ACCEPT",
+      "lvs_nets": null,
+      "lvs_matched": null,
+      "lvs_violations": {},
+      "io_ports": [
+        "gc_in.fib",
+        "gc_a.fib",
+        "gc_b.fib"
+      ],
+      "svg_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c5_ybranch_splitter.svg"
+    },
+    {
+      "name": "lda_c6_mzi_interferometer",
+      "title": "C6 · Mach-Zehnder 干涉仪 2x2 (no gdsfactory)",
+      "gds_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c6_mzi_interferometer.gds",
+      "gds_bytes": 3988,
+      "n_components": 7,
+      "gds_elements": 67,
+      "drc_verdict": "PASS",
+      "drc_devices": {
+        "gc_in": true,
+        "gc_thru": true,
+        "gc_drop": true,
+        "dc1": true,
+        "dc2": true,
+        "wg1": true,
+        "wg2": true
+      },
+      "lvs_verdict": "ACCEPT",
+      "lvs_nets": null,
+      "lvs_matched": null,
+      "lvs_violations": {},
+      "io_ports": [
+        "gc_in.fib",
+        "gc_thru.fib",
+        "gc_drop.fib"
+      ],
+      "svg_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c6_mzi_interferometer.svg"
+    },
+    {
+      "name": "lda_c7_bragg_mirror",
+      "title": "C7 · Bragg 反射镜透射线 (no gdsfactory)",
+      "gds_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c7_bragg_mirror.gds",
+      "gds_bytes": 4350,
+      "n_components": 3,
+      "gds_elements": 54,
+      "drc_verdict": "PASS",
+      "drc_devices": {
+        "gc_in": true,
+        "gc_out": true,
+        "bm1": true
+      },
+      "lvs_verdict": "ACCEPT",
+      "lvs_nets": null,
+      "lvs_matched": null,
+      "lvs_violations": {},
+      "io_ports": [
+        "gc_in.fib",
+        "gc_out.fib"
+      ],
+      "svg_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_c7_bragg_mirror.svg"
+    }
+  ]
+}

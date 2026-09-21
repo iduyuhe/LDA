@@ -1,0 +1,70 @@
+{
+  "gds_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_2x2_ring.gds",
+  "gds_bytes": 5482,
+  "n_components": 6,
+  "gds_stats": {
+    "n_elements": 82,
+    "gds_bytes": 5482,
+    "multilayer": false
+  },
+  "drc_verdict": "PASS",
+  "drc_detail": {
+    "all_pass": true,
+    "n_checked": 6,
+    "n_pass": 6,
+    "devices": {
+      "gc_in": {
+        "passed": true,
+        "brief": "[PASS] GratingCoupler: 2 项检查，0 项违规"
+      },
+      "gc_add": {
+        "passed": true,
+        "brief": "[PASS] GratingCoupler: 2 项检查，0 项违规"
+      },
+      "gc_thru": {
+        "passed": true,
+        "brief": "[PASS] GratingCoupler: 2 项检查，0 项违规"
+      },
+      "gc_drop": {
+        "passed": true,
+        "brief": "[PASS] GratingCoupler: 2 项检查，0 项违规"
+      },
+      "dc1": {
+        "passed": true,
+        "brief": "[PASS] DirectionalCoupler: 2 项检查，0 项违规"
+      },
+      "ring1": {
+        "passed": true,
+        "brief": "[PASS] RingResonator: 3 项检查，0 项违规"
+      }
+    },
+    "summary": "DRC: 6 器件 13 项检查 → DRC 全绿\n[PASS] GratingCoupler: 2 项检查，0 项违规\n[PASS] GratingCoupler: 2 项检查，0 项违规\n[PASS] GratingCoupler: 2 项检查，0 项违规\n[PASS] GratingCoupler: 2 项检查，0 项违规\n[PASS] DirectionalCoupler: 2 项检查，0 项违规\n[PASS] RingResonator: 3 项检查，0 项违规"
+  },
+  "lvs_verdict": "ACCEPT",
+  "lvs_detail": {
+    "schematic": {
+      "n_instances": 6,
+      "n_nets": 5
+    },
+    "layout": {
+      "n_instances": 6,
+      "n_nets": 5
+    },
+    "match": {
+      "n_devices_match": 6,
+      "n_nets_match": 5,
+      "n_nets_total": 5
+    },
+    "violations": {},
+    "n_violations": 0,
+    "honest_note": "LVS 签核：版图网表由布线几何独立恢复（端点→端口锚点容差 1.0µm），比对原理图 5 网 vs 版图 5 网；5/5 网一致，违规 0 项。判决全死标量（坐标几何 + 集合比对），LLM 不进判决路径。诚实边界：当前版图模型为单层波导（2 端口 net），多层金属/通孔完整 LVS 属发动期 PDK 对接后扩展。"
+  },
+  "io_ports": [
+    "gc_in.fib",
+    "gc_add.fib",
+    "gc_thru.fib",
+    "gc_drop.fib"
+  ],
+  "png_rendered": false,
+  "png_note": "No module named 'matplotlib'"
+}

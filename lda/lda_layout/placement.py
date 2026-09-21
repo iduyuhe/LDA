@@ -1,5 +1,6 @@
 """LDA L1/L2 · 器件放置（placement）+ 端口锚点 + 包围盒。
 
+
 P1-M2 配合 router 使用：把 LinkModel 的器件实例映射到芯片坐标，
 给出端口绝对坐标（供 router 布线）与器件包围盒（供 router 避障）。
 
@@ -9,6 +10,7 @@ drop bus（上，y=+off）；off = R + wg_width/2 + gap，half = R*1.5。
 """
 from __future__ import annotations
 
+import math
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:  # 仅类型标注用，避免 lda_chain ↔ lda_layout 循环导入
@@ -56,6 +58,50 @@ def port_anchor(kind: str, port: str, params: dict) -> Tuple[float, float]:
     if kind == "GratingCoupler":
         L = float(params.get("L", 10.0))
         return {"fib": (0.0, 0.0), "wg": (0.0, L)}.get(port, (0.0, 0.0))
+    if kind == "DirectionalCoupler":
+        # 与 gds_export.geometry_desc 的双波导表达逐点一致：
+        # 两臂 y=±off，x∈[0, Lc]；off=(gap+core_w)/2。
+        core_w = float(params.get("width", 0.5))
+        gap = float(params.get("gap", 0.3))
+        Lc = float(params.get("Lc", 10.0))
+        off = (gap + core_w) / 2.0
+        return {"in1": (0.0, off), "in2": (0.0, -off),
+                "out1": (Lc, off), "out2": (Lc, -off)}.get(port, (0.0, 0.0))
+    if kind == "MMI":
+        # 与 primitives.mmi_descs 逐点一致：input=(-L_tap,0)；
+        # out1/out2=(L_mmi+L_tap+L_out, ±(w/2+out_gap/2))。
+        w = float(params.get("width", 0.5))
+        L = float(params.get("L_mmi", 20.0))
+        Lt = float(params.get("L_tap", 4.0))
+        gap = float(params.get("out_gap", 0.5))
+        Lo = float(params.get("L_out", 3.0))
+        yo = w / 2.0 + gap / 2.0
+        return {"in": (-Lt, 0.0),
+                "out1": (L + Lt + Lo, yo),
+                "out2": (L + Lt + Lo, -yo)}.get(port, (0.0, 0.0))
+    if kind == "SymmetricYBranch":
+        # 与 gds_export.geometry_desc 逐点一致：input=(0,0)；
+        # 两臂 (tap_len+arm·cos(half), ±arm·sin(half))，half=split_angle/2。
+        angle = math.radians(float(params.get("split_angle", 10.0)))
+        arm = float(params.get("arm_length", 5.0))
+        half = angle / 2.0
+        tap_len = min(arm * 0.25, 2.0)
+        x0 = tap_len
+        return {"in": (0.0, 0.0),
+                "out1": (x0 + arm * math.cos(half), arm * math.sin(half)),
+                "out2": (x0 + arm * math.cos(half), -arm * math.sin(half))
+                }.get(port, (0.0, 0.0))
+    if kind == "BraggMirror":
+        # 与 primitives.bragg_grating_descs 逐点一致：input=(-L_in,0)；
+        # output=(total_len_um - L_in, 0)。段长由 LDA 自有求解器导出，
+        # 故惰性调用 bragg_grating_report 取精确末端（避免手写近似值漂移）。
+        from lda_l2.primitives import bragg_grating_report as _bgr
+        Li = float(params.get("L_in", 2.0))
+        try:
+            out_x = _bgr(params)["total_len_um"] - Li
+        except Exception:
+            out_x = 6.0
+        return {"in": (-Li, 0.0), "out": (out_x, 0.0)}.get(port, (0.0, 0.0))
     return (0.0, 0.0)
 
 

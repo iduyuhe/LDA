@@ -29,6 +29,8 @@ _DEFAULT_PORTS = {
     "Splitter": ["in", "out1", "out2"],
     "DirectionalCoupler": ["in1", "in2", "out1", "out2"],
     "SymmetricYBranch": ["in", "out1", "out2"],
+    "MMI": ["in", "out1", "out2"],
+    "BraggMirror": ["in", "out"],
     "MZI": ["in1", "in2", "out1", "out2"],
     "PhaseShifter": ["in", "out"],
     "MziModulator": ["in", "out"],

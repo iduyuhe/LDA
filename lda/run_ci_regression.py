@@ -594,6 +594,11 @@ CORE_SMOKES: List[str] = [
     #   · B12~B16 五条反向测试（证明判据真会变红）· B17 自食其规则。
     #   纯 JSON + 两次导入，实测 ≈0.5s。CI core 182->183。
     "run_timeout_budget_ratchet_smoke.py",
+    # 🔴 v0.9.119（走法一主权版图证据集护栏）：把 examples/sovereign_evidence/ 的
+    #   7 例主权版图（DRC/LVS 双闸）接入核心门禁——主权链任何改动破坏任一例即 FAIL。
+    #   纯 numpy 亚秒级（7 例约 <2s）、无 torch/numba/meep/tidy3d 重依赖，按准入
+    #   准则无权豁免，必须进 core。CI core 183->184。
+    "run_sovereign_evidence_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

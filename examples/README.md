@@ -31,6 +31,23 @@ lda report --quick
 lda gf your_component.py --out your_component.lda_spec.json
 ```
 
+## 4. 主权版图实证库（走法一，零 gdsfactory）
+
+`examples/sovereign_evidence/` 是用纯 LDA 主权链（LinkModel → placement →
+routes → chip_layout_export.export_chip_gds）跑出的**真实 GDSII 证据集**，全部经
+主权几何 DRC + LVS 双闸签核，覆盖 7 类典型光子拓扑（分束器 / 环形 / MZI / Bragg 等）
+外加 1 个最小证明件，构成「降标走法」的流程跑通证据。
+
+```bash
+# 需受管解释器（自带 numpy）：3.14.3/python.exe
+python examples/sovereign_evidence/build_sovereign_evidence.py   # 7 例证据集
+python examples/sovereign_evidence/build_2x2_ring_proof.py       # 最小证明件
+```
+
+产物（GDSII + SVG 渲染 + 汇总索引）直接落在 `examples/sovereign_evidence/`，
+自包含可复跑。详细拓扑表、LVS 硬契约、加新器件的端口名三处同步规则、以及
+**诚实边界（仅几何合法、无光学表征、未注册 GP-\*、不进创新超市）**见该目录 `README.md`。
+
 ## 诚实边界
 
 - 几何 DRC / 几何寄生估算为**主权子集**，标注"非 foundry 工艺级全量 deck"。

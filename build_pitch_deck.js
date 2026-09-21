@@ -211,6 +211,41 @@ async function build(){
   s.addText("验证底线：裁判最终判定强制落“物理定律 + 实证大数据”非 AI 真值锚 —— 纯 AI 互证（两 AI 互相点头）视为无效。这是 LDA 赢得信任的根本。", { x:0.7, y:6.1, w:11.9, h:0.6, fontFace:"Calibri", fontSize:13.5, italic:true, bold:true, color:NAVY, align:"left", margin:0 });
   footer(s,6,false);
 
+  // ============ SLIDE 7 (new) — 主权版图已出片 ============
+  s = pres.addSlide(); darkBg(s);
+  kicker(s, "已出片版图实证");
+  titleDark(s, "主权全链路 GDSII：7 例全部 DRC PASS + LVS ACCEPT（2026-09-21 增补）", 1.2);
+  const evStats = [
+    { n:"7", l:"跨 4 类拓扑的已出片版图" },
+    { n:"0", l:"gdsfactory 依赖（走法一主权链）" },
+    { n:"PASS", l:"主权子集 DRC 全绿" },
+    { n:"ACCEPT", l:"LVS 拓扑一致全绿" },
+  ];
+  let estx=0.7; const esw=2.92, esg=0.18;
+  for(const st of evStats){
+    card(s, estx, 2.35, esw, 1.3, NAVY2);
+    s.addText(st.n, { x:estx, y:2.45, w:esw, h:0.65, fontFace:"Georgia", fontSize:30, bold:true, color:CYAN, align:"center", valign:"middle", margin:0 });
+    s.addText(st.l, { x:estx+0.12, y:3.12, w:esw-0.24, h:0.45, fontFace:"Calibri", fontSize:11.5, color:ICE, align:"center", valign:"top", margin:0 });
+    estx += esw+esg;
+  }
+  const evRows = [
+    [ {text:"电路",options:{bold:true,color:WHITE,fill:{color:BLUE},align:"left"}},
+      {text:"拓扑",options:{bold:true,color:WHITE,fill:{color:BLUE},align:"left"}},
+      {text:"组件",options:{bold:true,color:WHITE,fill:{color:BLUE},align:"center"}},
+      {text:"GDS",options:{bold:true,color:WHITE,fill:{color:BLUE},align:"center"}},
+      {text:"双闸签核",options:{bold:true,color:WHITE,fill:{color:BLUE},align:"center"}} ],
+    [ "C1","2×2 方向耦合器分束器","4","3.6 KB","DRC·LVS 全绿" ],
+    [ "C2","环形 add-drop","4","4.2 KB","DRC·LVS 全绿" ],
+    [ "C3","方向耦合器 + 环形谐振器","6","5.5 KB","DRC·LVS 全绿" ],
+    [ "C4","MMI 1×2 多模干涉","4","5.4 KB","DRC·LVS 全绿" ],
+    [ "C5","对称 Y 分支 1×2","4","4.2 KB","DRC·LVS 全绿" ],
+    [ "C6","Mach-Zehnder 干涉仪 2×2","7","3.9 KB","DRC·LVS 全绿" ],
+    [ "C7","Bragg 反射镜透射线","3","4.4 KB","DRC·LVS 全绿" ],
+  ];
+  s.addTable(evRows, { x:0.7, y:3.85, w:11.9, colW:[1.1,4.7,1.2,1.6,3.3], rowH:[0.34,0.40,0.40,0.40,0.40,0.40,0.40,0.40], fontSize:13, fontFace:"Calibri", color:WHITE, valign:"middle", border:{pt:1,color:"2A3A5C"}, align:"left", fill:{color:NAVY2} });
+  s.addText("诚实边界：验证的是版图几何合法性（主权 DRC + LVS 拓扑一致），尚不含光学性能表征（IL/XT/FSR）。已接入 CI core 门禁 —— 主权链任何改动破坏任一例即当场拦红。", { x:0.7, y:7.0, w:11.9, h:0.35, fontFace:"Calibri", fontSize:11, italic:true, color:GREY, align:"left", margin:0 });
+  footer(s,7);
+
   // ============ SLIDE 7 — 架构护城河 ============
   s = pres.addSlide(); darkBg(s);
   kicker(s, "护城河");
@@ -230,7 +265,7 @@ async function build(){
     s.addText(L.d, { x:6.1, y:ly, w:6.3, h:lh, fontFace:"Calibri", fontSize:13.5, color:ICE, align:"left", valign:"middle", margin:0 });
     ly += lh+lgap;
   }
-  footer(s,7);
+  footer(s,8);
 
   // ============ SLIDE 8 — 主权策略 ============
   s = pres.addSlide(); lightBg(s);
@@ -386,7 +421,7 @@ async function build(){
     kx += kw+kg;
     if(kx>11.6){ kx=0.7; kyy+=kh+kr; }
   }
-  footer(s,14,false);
+  footer(s,15,false);
 
   // ============ SLIDE 15 — CTA ============
   s = pres.addSlide(); darkBg(s);

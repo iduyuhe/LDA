@@ -64,8 +64,8 @@ content.push(new Paragraph({ spacing:{before:600}, alignment:AlignmentType.CENTE
 content.push(new Paragraph({ spacing:{before:120}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"开源 · Agent 原生的光芯片与量子芯片设计底座", size:26, color:"404040"}) ]}));
 content.push(new Paragraph({ spacing:{before:40}, alignment:AlignmentType.CENTER, border:{bottom:{style:BorderStyle.SINGLE,size:12,color:ACCENT,space:8}}, children:[ new TextRun({text:""}) ]}));
 content.push(new Paragraph({ spacing:{before:360}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"面向产业界 · 学界 · 投资界的生态共建邀请", size:22, color:"595959"}) ]}));
-content.push(new Paragraph({ spacing:{before:200}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"文档编号：LDA-IW-001   |   版本：v1.1（2026-08-23 · 系统级里程碑落地）", size:20, color:"808080"}) ]}));
-content.push(new Paragraph({ spacing:{before:40}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"编制日期：2026-08-16（v1.1 更新：2026-08-23）   |   密级：对外公开", size:20, color:"808080"}) ]}));
+content.push(new Paragraph({ spacing:{before:200}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"文档编号：LDA-IW-001   |   版本：v1.2（2026-09-21 · 主权版图实证增补）", size:20, color:"808080"}) ]}));
+content.push(new Paragraph({ spacing:{before:40}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"编制日期：2026-08-16（v1.2 更新：2026-09-21）   |   密级：对外公开", size:20, color:"808080"}) ]}));
 content.push(new Paragraph({ spacing:{before:40}, alignment:AlignmentType.CENTER, children:[ new TextRun({text:"编制：LDA 领域研究室（工业5点0产业生态联盟 · 杜玉河）", size:20, color:"808080"}) ]}));
 content.push(new Paragraph({ children:[new PageBreak()] }));
 
@@ -132,6 +132,25 @@ content.push(para("AI 写手 + AI 裁判可以最大化，但裁判最终判定�
 content.push(bullet("① 物理定律锚：解析解、麦克斯韦方程确定性计算——方程的必然，不是某人的意见。"));
 content.push(bullet("② 实证大数据锚：跨多源真实流片 / 测量语料，众人贡献、越用越厚。"));
 content.push(quote("没有任何外部真值的“纯 AI 互证”，等于两个 AI 互相点头——错了也被确认。此线不可破。这也是 LDA 赢得产业信任的根本。"));
+
+// ---------- 3.4 已出片版图库 ----------
+content.push(h2("3.4 已出片版图库：主权全链路 GDSII 实证（走法一，零 gdsfactory）"));
+content.push(para("除了 AI 自写的求解核，LDA 的“设计 → 版图 → 签核”主权全链路也已实证落地。我们不使用 gdsfactory，而是用自研的 LinkModel（链路建模）→ placement（器件放置）→ routes（布线）→ chip_layout_export（GDSII 导出）主权链，直接产出真实 GDSII，并经主权子集 DRC（设计规则检查）与 LVS（版图-原理图一致性）双闸签核。"));
+content.push(table(
+  ["电路","拓扑","组件数","GDS 大小","主权 DRC","LVS 签核"],
+  [
+    ["C1","2×2 方向耦合器分束器","4","3.6 KB","PASS","ACCEPT"],
+    ["C2","环形谐振器 add-drop","4","4.2 KB","PASS","ACCEPT"],
+    ["C3","方向耦合器 + 环形谐振器","6","5.5 KB","PASS","ACCEPT"],
+    ["C4","MMI 1×2 多模干涉分束器","4","5.4 KB","PASS","ACCEPT"],
+    ["C5","对称 Y 分支 1×2 分束器","4","4.2 KB","PASS","ACCEPT"],
+    ["C6","Mach-Zehnder 干涉仪 2×2","7","3.9 KB","PASS","ACCEPT"],
+    ["C7","Bragg 反射镜透射线","3","4.4 KB","PASS","ACCEPT"],
+  ],
+  [800, 3900, 1000, 1300, 1000, 1100]
+));
+content.push(quote("7 例跨 4 类拓扑（分束器 / 环形 / 干涉仪 / 滤波器反射镜），全部 DRC PASS + LVS ACCEPT —— 主权版图链的可重复性已被坐实，并已接入 run_ci_regression --tag core 门禁：主权链任何改动破坏任一例，CI 当场拦红。"));
+content.push(para("诚实边界：上述 7 例验证的是版图几何合法性（主权子集 DRC + LVS 拓扑一致），尚不含光学性能表征（插损 IL / 串扰 XT / 自由光谱范围 FSR 等死标量）。它们定位为工具链的“已出片流程跑通证据”与工程货架示例（examples/sovereign_evidence/），是组件化 PDK 的底座，但尚未锚定为可售 GP-* 基元，亦不进入创新超市当货架商品。光学表征锚定 → 注册 GP-* → 回灌 IM-* 货架，是明确的后续工程路径，而非摆放问题。", {run:{color:"404040", italics:true}}));
 
 // ---------- 4 架构护城河 ----------
 content.push(h1("4. 架构与护城河"));
@@ -244,7 +263,7 @@ content.push(num("逆设计纵深四阶（Track A）：谱形目标（分束比 
 content.push(para("WebUI 四十三面板，全部交付三端（本地/Gitee/GitHub）tree 级零差异同步。诚实边界：2D TEz 求解为主（3D 端口验收小几何）、系统级链路为解析物理模型、实证大数据锚待发动期数据（D-62 暂缓）、不宣称签核级。"));
 
 // ---------- footer note ----------
-content.push(new Paragraph({ spacing:{before:200}, border:{top:{style:BorderStyle.SINGLE,size:6,color:"BFBFBF",space:8}}, children:[ new TextRun({text:"本白皮书依据 LDA 前期战略文档包（可行性分析、技术白皮书、市场竞争与赛道分析、发展里程碑与路线图）提炼对外版本，关键技术结论均来自真实运行的自研代码与确定性验证脚本。", size:18, color:"808080", italics:true}) ]}));
+content.push(new Paragraph({ spacing:{before:200}, border:{top:{style:BorderStyle.SINGLE,size:6,color:"BFBFBF",space:8}}, children:[ new TextRun({text:"本白皮书依据 LDA 前期战略文档包（可行性分析、技术白皮书、市场竞争与赛道分析、发展里程碑与路线图）提炼对外版本，关键技术结论均来自真实运行的自研代码与确定性验证脚本；v1.2 增补第 3.4 节主权全链路 GDSII 已出片版图库。", size:18, color:"808080", italics:true}) ]}));
 
 const doc = new Document({
   styles: {
@@ -264,7 +283,7 @@ const doc = new Document({
   sections: [{
     properties: { page: { size:{ width:11906, height:16838 }, margin:{ top:1440, right:1300, bottom:1300, left:1300 } } },
     footers: { default: new Footer({ children:[ new Paragraph({ alignment:AlignmentType.CENTER, children:[
-      new TextRun({ text:"LDA 产业共建白皮书 v1.1 · 工业5点0产业生态联盟  ", size:16, color:"808080" }),
+      new TextRun({ text:"LDA 产业共建白皮书 v1.2 · 工业5点0产业生态联盟  ", size:16, color:"808080" }),
       new TextRun({ children:[PageNumber.CURRENT], size:16, color:"808080" }),
     ]}) ]}) },
     children: content

@@ -33,7 +33,6 @@ IO 环等）。本模块把它们显式收集为 `top_geoms` 并在等价性验�
 """
 from __future__ import annotations
 
-import math
 import os
 import sys
 from typing import Any, Dict, List, Optional, Sequence, Tuple

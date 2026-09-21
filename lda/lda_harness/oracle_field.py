@@ -17,7 +17,6 @@ golden.py 调用它；当返回 None 时回退到设计守则锚作为下限/上
 """
 
 import os
-import sys
 import json
 import math
 import subprocess

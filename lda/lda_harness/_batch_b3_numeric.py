@@ -29,7 +29,6 @@ import math
 
 import numpy as np
 from scipy.integrate import solve_ivp
-from scipy.linalg import eigh
 
 # 复用 Batch B-2 已验证数值核（判据 D 由 run_d_criterion_smoke 已证）
 try:

@@ -28,7 +28,6 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from typing import Dict, List, Optional
 from .registry import PDKRegistry, DeviceEntry
-from .sovereign_deps import SOVEREIGN_DEPS
 
 CONTRIB_PATH = os.path.join(os.path.dirname(__file__), "contributions.json")
 

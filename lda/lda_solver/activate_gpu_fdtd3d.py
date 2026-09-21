@@ -17,7 +17,6 @@ L2-B 第三步"装轮子 -> 激活 -> 验收"的闭环。
 """
 from __future__ import annotations
 
-import math
 import os
 import sys
 import time

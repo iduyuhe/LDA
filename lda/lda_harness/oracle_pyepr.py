@@ -10,7 +10,6 @@ Platform 生态) 属强依赖/商业关联工具，LDA Apache-2.0 核心**绝不
 解析解（方程必然），EPR 对角化仅作交叉验证外挂。本演示环境未装 pyEPR，故
 恒返回 None——刻意的主权安全默认。
 """
-import os
 
 
 def resolve_pyepr_transmon(params):

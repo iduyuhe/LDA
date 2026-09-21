@@ -16,7 +16,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-import math
 
 from lda_harness.harness import VerificationHarness
 from lda_harness.benchmarks import BENCHMARK_DEFS

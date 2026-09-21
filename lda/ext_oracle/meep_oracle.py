@@ -23,7 +23,6 @@ LDA 核心调用（oracle_field.py 内，子进程，不 import）：
 为 3D 问题，预留 Tidy3D 接口（需 API key，单独脚本）。
 """
 
-import sys
 import json
 import argparse
 
@@ -92,7 +91,6 @@ def _sim_crossing(params):
                         default_material=bg)
     sim.run(until=400)
     fluxes = {k: mp.get_fluxes(v) for k, v in flux_objs.items()}
-    p_in = abs(fluxes["through"][0]) + abs(fluxes["bar_left"][0])  # 入/反
     p_thr = abs(fluxes["through"][0])
     p_cr = abs(fluxes["cross"][0])
     if p_thr <= 1e-12:

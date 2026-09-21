@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import difflib
 import os
-from datetime import datetime
 from typing import List, Optional
 
 from .submit import _load_store, _save_store, _resolve_path

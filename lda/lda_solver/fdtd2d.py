@@ -108,7 +108,6 @@ def _run_planewave(layers, wl, angle=0.0, dl_factor=40.0, courant=0.95,
         sigma = np.outer(sx, np.ones(Ny)) + np.outer(np.ones(Nx), sy)
     sigma = np.minimum(sigma, sig_max)
 
-    dampE = 1.0 / (1.0 + dt * sigma / eps2d)
     if pbc_y:
         # Hx 边在 y 方向环绕：sigma 仅 x 相关 → sigHx = sigma（全）
         sigHx = sigma
@@ -238,7 +237,6 @@ def run_greens_test(wl=2.0, n=1.0, N=320, sponge=60, dl_factor=40.0,
     sigma = np.outer(sx, np.ones(Ny)) + np.outer(np.ones(Nx), sy)
     sigma = np.minimum(sigma, sig_max)
 
-    dampE = 1.0 / (1.0 + dt * sigma / eps2d)
     sigHx = 0.5 * (sigma[:, :-1] + sigma[:, 1:])
     sigHy = 0.5 * (sigma[:-1, :] + sigma[1:, :])
     dampHx = np.ones((Nx, Ny)); dampHx[:, :Ny - 1] = 1.0 / (1.0 + dt * sigHx)

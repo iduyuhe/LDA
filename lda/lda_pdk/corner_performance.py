@@ -15,7 +15,6 @@
 """
 from __future__ import annotations
 
-import copy
 from typing import Any, Dict, List, Optional
 
 from lda_harness.golden import golden_value  # noqa: E402

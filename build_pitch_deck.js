@@ -214,9 +214,9 @@ async function build(){
   // ============ SLIDE 7 (new) — 主权版图已出片 ============
   s = pres.addSlide(); darkBg(s);
   kicker(s, "已出片版图实证");
-  titleDark(s, "主权全链路 GDSII：8 例全部 DRC PASS + LVS ACCEPT（2026-09-21 增补）", 1.2);
+  titleDark(s, "主权全链路 GDSII：9 例全部 DRC PASS + LVS ACCEPT（2026-09-21 增补）", 1.2);
   const evStats = [
-    { n:"8", l:"跨 5 类拓扑的已出片版图" },
+    { n:"9", l:"跨 5 类拓扑的已出片版图" },
     { n:"0", l:"gdsfactory 依赖（走法一主权链）" },
     { n:"PASS", l:"主权子集 DRC 全绿" },
     { n:"ACCEPT", l:"LVS 拓扑一致全绿" },
@@ -242,8 +242,9 @@ async function build(){
     [ "C6","Mach-Zehnder 干涉仪 2×2","7","3.9 KB","DRC·LVS 全绿" ],
     [ "C7","Bragg 反射镜透射线","3","4.4 KB","DRC·LVS 全绿" ],
     [ "MESH4","4×4 MZI 网格光子计算核","14","12.5 KB","DRC·LVS 全绿" ],
+    [ "MESH8","8×8 MZI 网格光子计算核","44","32.4 KB","DRC·LVS 全绿" ],
   ];
-  s.addTable(evRows, { x:0.7, y:3.85, w:11.9, colW:[1.1,4.7,1.2,1.6,3.3], rowH:[0.34,0.40,0.40,0.40,0.40,0.40,0.40,0.40], fontSize:13, fontFace:"Calibri", color:WHITE, valign:"middle", border:{pt:1,color:"2A3A5C"}, align:"left", fill:{color:NAVY2} });
+  s.addTable(evRows, { x:0.7, y:3.85, w:11.9, colW:[1.1,4.7,1.2,1.6,3.3], rowH:[0.34,0.30,0.30,0.30,0.30,0.30,0.30,0.30,0.30,0.30], fontSize:12, fontFace:"Calibri", color:WHITE, valign:"middle", border:{pt:1,color:"2A3A5C"}, align:"left", fill:{color:NAVY2} });
   s.addText("诚实边界：验证的是版图几何合法性（主权 DRC + LVS 拓扑一致），尚不含光学性能表征（IL/XT/FSR）。已接入 CI core 门禁 —— 主权链任何改动破坏任一例即当场拦红。", { x:0.7, y:7.0, w:11.9, h:0.35, fontFace:"Calibri", fontSize:11, italic:true, color:GREY, align:"left", margin:0 });
   footer(s,7);
 

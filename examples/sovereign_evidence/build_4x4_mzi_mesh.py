@@ -33,6 +33,7 @@ from lda_l2.chip_layout_export import (
 )
 from lda_l2.mzi_mesh_matmul import (
     reck_decompose, dft_matrix, assemble_mesh, unitary_fidelity, mesh_cascade_loss_db,
+    coupler_length_from_theta, voltage_from_phase, VPI_L_V_CM,
 )
 
 WG = 0.5
@@ -246,13 +247,27 @@ def render_svg(geoms, title, path, layer_colors=None):
 # 6 个 MZI 单元（Reck 三角/folded 布局：3 级各 2 个），4 入 4 出。
 # 坐标（µm）：DC 长 Lc=10，off=(gap+core_w)/2=0.4。
 def build_mesh():
+    # 计算核数学层（Reck 分解）→ 驱动每个 MZI 单元的光学真值（CMT + Vπ·L）
+    U_target = dft_matrix(4)
+    ops, D = reck_decompose(U_target)
+    if len(ops) != 6:
+        raise RuntimeError(f"4x4 Reck 应得 6 单元，得 {len(ops)}")
     link = LinkModel(domain="photon", name="lda_4x4_mzi_mesh",
                      notes="4x4 MZI mesh (Reck folded) P&R feasibility")
-    # 6 MZI 单元（DirectionalCoupler 结构代理）
+    # 6 MZI 单元（DirectionalCoupler 结构代理；几何 Lc 由 Reck op 的 θ 经 CMT 锚定）
+    m_optics = {}
     for i in range(6):
         nid = f"m{i}"
+        (mi, mj, mth, mph) = ops[i]
+        Lc_phys = coupler_length_from_theta(mth)   # CMT 锚定耦合长度（µm）
+        m_optics[nid] = {
+            "mode_pair": (int(mi), int(mj)),
+            "theta": round(mth, 4), "phi": round(mph, 4),
+            "Lc_um": round(Lc_phys, 3),
+            "V_at_1cm_arm": round(voltage_from_phase(mph), 3),
+        }
         link.add_device(nid, "DirectionalCoupler",
-                        {"width": WG, "gap": 0.3, "Lc": 10.0})
+                        {"width": WG, "gap": 0.3, "Lc": round(Lc_phys, 4)})
     # 4 入 / 4 出 光栅
     for k in range(4):
         link.add_device(f"in{k}", "GratingCoupler", {"width": WG, "L": 10.0})
@@ -399,9 +414,8 @@ def build_mesh():
                layer_colors={"M1": "#38bdf8", "M2": "#f59e0b",
                              "DEV": "#22d3ee", "IO": "#a78bfa"})
 
-    # 计算核数学层（Reck 分解）
-    U = dft_matrix(4)
-    ops, D = reck_decompose(U)
+    # 计算核数学层（复用 build_mesh 开头的 Reck ops，物理参数已注入版图）
+    U = U_target
     U_rec = assemble_mesh(ops, D, 4)
     fid = unitary_fidelity(U_rec, U)
     loss = mesh_cascade_loss_db(len(ops), n_crossings=len(crossing_pairs))
@@ -433,6 +447,8 @@ def build_mesh():
             "cascade_loss_db": round(loss, 3),
             "ops": [(int(i), int(j), round(th, 4), round(ph, 4))
                     for (i, j, th, ph) in ops],
+            "mzi_optics": [m_optics[f"m{i}"] for i in range(6)],
+            "vpi_l_v_cm": VPI_L_V_CM,
         },
         "svg_path": svg_path,
     }
@@ -459,9 +475,11 @@ if __name__ == "__main__":
                "本版图证明 4×4 光子计算核的『物理 P&R + 交叉化解』可行性：6 个 MZI 单元"
                "（Reck folded，4 入 4 出）经主权链产出真实 GDSII，DRC PASS、多层 LVS ACCEPT；"
                "mesh 的交叉由 M1/M2 跨层桥接化解（can_cross(M1,M2)=False → 异层投影不判短）。"
-               "MZI 单元用 DirectionalCoupler 作 2×2 结构代理；真实光学（θ/φ→耦合长度/相移，"
-               "CMT+Vπ·L 物理锚）在 mzi_mesh_matmul.py，计算核保真度≈1.0。仅验证几何合法性与"
-               "交叉机制，无逐器件光学表征，非 foundry deck，未锚定可售 GP-*、不进创新超市。")}
+               "升级点：每个 MZI 单元的几何耦合长度 Lc 现由 Reck 分解对应 op 的分束角 θ 经 CMT"
+               "锚定（coupler_length_from_theta，5.17–8.99µm），相移角 φ 经 Vπ·L 物理定律给出"
+               "驱动电压（25–43.75 V @1cm 臂长）——计算核已『光学可算』（保真度≈1.0）。"
+               "仍为结构代理版图：版图未含相移器几何段、无 foundry deck、无逐器件光学表征，"
+               "未锚定可售 GP-*、不进创新超市。")}
     rep_path = os.path.join(OUT, "lda_4x4_mzi_mesh_report.json")
     with open(rep_path, "w", encoding="utf-8") as f:
         json.dump(rep, f, ensure_ascii=False, indent=2)

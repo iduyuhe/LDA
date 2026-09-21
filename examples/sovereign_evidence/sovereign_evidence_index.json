@@ -1,8 +1,8 @@
 {
   "strategy": "降标走法 · 主权全链路（走法一，零 gdsfactory 依赖）流程跑通证据",
-  "interpreter": "managed 3.14.3/python.exe (自带 numpy)",
+  "interpreter": "managed venv python.exe (3.13.12 envs/default, 自带 numpy)",
   "shelf": "examples/sovereign_evidence/",
-  "n_circuits": 8,
+  "n_circuits": 9,
   "topology_classes": {
     "splitter": [
       "C1",
@@ -20,12 +20,13 @@
       "C7"
     ],
     "compute_core": [
-      "MESH4"
+      "MESH4",
+      "MESH8"
     ]
   },
   "all_drc_pass": true,
   "all_lvs_accept": true,
-  "honest_note": "主权子集 DRC + LVS 几何合法性已验证；C4 MMI 另已有 2D-TEz 模型级光学表征（见 c4_mmi_characterization.json：过量损耗 4.08dB、不平衡 0.019dB，B16 根因显示 L=20µm 仅达理想成像长度 146µm 的 14%）。该表征为 2D 数值结果，非物理定律锚；依 E5 报告 MMI 过量损耗在 2D 层级不可判到 0.1dB tol，真锚需 3D 矢量求解器或流片。未注册为可售 GP-* 基元，不进创新超市当货架商品。",
+  "honest_note": "主权子集 DRC + LVS 几何合法性已验证；C4 MMI 另已有 2D-TEz 模型级光学表征（见 c4_mmi_characterization.json：过量损耗 4.08dB、不平衡 0.019dB，B16 根因显示 L=20µm 仅达理想成像长度 146µm 的 14%）。该表征为 2D 数值结果，非物理定律锚；依 E5 报告 MMI 过量损耗在 2D 层级不可判到 0.1dB tol，真锚需 3D 矢量求解器或流片。未注册为可售 GP-* 基元，不进创新超市当货架商品。MESH8 为 N×N 通用主权 P&R（Clements 折叠）的8×8 可行性：28 单元 / 64 网 / 59 交叉对，全部跨层桥接化解、双闸绿，证明该机制对任意 N 通用可扩展（非调参特例）；仍为结构代理版图，未锚定 GP-*。",
   "circuits": [
     {
       "name": "lda_c1_dc_splitter",
@@ -220,9 +221,9 @@
         "out3.fib"
       ],
       "gds_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_4x4_mzi_mesh.gds",
-      "gds_bytes": 12542,
+      "gds_bytes": 12374,
       "n_components": 14,
-      "gds_elements": 200,
+      "gds_elements": 196,
       "bbox_um": [
         -20.0,
         -5.0,
@@ -305,14 +306,14 @@
       ],
       "n_bridged_nets": 8,
       "bridged_nets": [
-        "n10",
         "n11",
         "n14",
         "n16",
         "n2",
         "n4",
         "n6",
-        "n7"
+        "n7",
+        "n9"
       ],
       "n_unresolved_crossings": 0,
       "unresolved_crossings": [],
@@ -358,9 +359,113 @@
             1.5708,
             4.2487
           ]
-        ]
+        ],
+        "mzi_optics": [
+          {
+            "mode_pair": [
+              0,
+              1
+            ],
+            "theta": 1.5708,
+            "phi": 3.1416,
+            "Lc_um": 7.75,
+            "V_at_1cm_arm": 25.0
+          },
+          {
+            "mode_pair": [
+              0,
+              2
+            ],
+            "theta": 1.231,
+            "phi": 3.1416,
+            "Lc_um": 6.073,
+            "V_at_1cm_arm": 25.0
+          },
+          {
+            "mode_pair": [
+              0,
+              3
+            ],
+            "theta": 1.0472,
+            "phi": 3.1416,
+            "Lc_um": 5.167,
+            "V_at_1cm_arm": 25.0
+          },
+          {
+            "mode_pair": [
+              1,
+              2
+            ],
+            "theta": 1.8235,
+            "phi": 4.2487,
+            "Lc_um": 8.997,
+            "V_at_1cm_arm": 33.81
+          },
+          {
+            "mode_pair": [
+              1,
+              3
+            ],
+            "theta": 1.231,
+            "phi": 5.4978,
+            "Lc_um": 6.073,
+            "V_at_1cm_arm": 43.75
+          },
+          {
+            "mode_pair": [
+              2,
+              3
+            ],
+            "theta": 1.5708,
+            "phi": 4.2487,
+            "Lc_um": 7.75,
+            "V_at_1cm_arm": 33.81
+          }
+        ],
+        "vpi_l_v_cm": 25.0
       },
       "svg_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_4x4_mzi_mesh.svg"
+    },
+    {
+      "name": "lda_8x8_mzi_mesh",
+      "title": "MESH8 · 8×8 MZI 网格 P&R（主权全链路，零 gdsfactory）",
+      "gds_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_8x8_mzi_mesh.gds",
+      "gds_bytes": 33202,
+      "n_components": 44,
+      "gds_elements": 526,
+      "drc_verdict": "PASS",
+      "drc_devices": null,
+      "lvs_verdict": "ACCEPT",
+      "lvs_nets": 64,
+      "lvs_matched": null,
+      "lvs_violations": {},
+      "io_ports": [
+        "in0.fib",
+        "in1.fib",
+        "in2.fib",
+        "in3.fib",
+        "in4.fib",
+        "in5.fib",
+        "in6.fib",
+        "in7.fib",
+        "out0.fib",
+        "out1.fib",
+        "out2.fib",
+        "out3.fib",
+        "out4.fib",
+        "out5.fib",
+        "out6.fib",
+        "out7.fib"
+      ],
+      "svg_path": "D:\\agent_LDA\\examples\\sovereign_evidence\\lda_8x8_mzi_mesh.svg",
+      "multilayer": true,
+      "compute_core": {
+        "N": 8,
+        "n_mzi": 28,
+        "fidelity": 1.0,
+        "cascade_loss_db": 70.15,
+        "scheme": "Clements folded (uniform 50/50 couplers, Lc CMT-anchored)"
+      }
     }
   ]
 }

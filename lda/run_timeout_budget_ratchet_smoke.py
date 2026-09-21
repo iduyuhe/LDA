@@ -34,6 +34,9 @@
         而不是让基线悄悄与代码脱钩。**它是精确判据，不产生假红**。）
   B11~B16 六条反向测试（证明上面的检测器**真会变红**，非假绿）
   B17 自食其规则（本 smoke 自分属 CORE_SMOKES）
+  B18 **(T6.6 裁定：实施)** 运行时线程数 == 标定线程数(@10) —— 防「换机器后 margin
+       跌破 3× 而门禁不报警」的存量风险（基线按@10标定，运行时若≠10 则实测不可比）
+  B19 (T6.6) 反向测试（证明 B18 真会变红，非假绿）
 
 刻意**不做**的（避免「狼来了」被关停 · 与 v0.9.112 的护栏教训一致）
 --------------------------------------------------------------
@@ -70,6 +73,19 @@ _SCHEMA = "lda.timeout_budget_baseline/1"
 _CALIB_THREADS = 10          # 内置超时预算的标定线程数（见 run_ci_regression 文件头）
 HARD_FLOOR_X = 2.0           # 硬闸：低于此即"欠标定"
 TARGET_X = 3.0               # 目标档
+
+# ---------------------------------------------------------------- T6.6（D2 裁定：实施）
+def _t66_runtime_threads_match(runtime_n, cal=_CALIB_THREADS):
+    """T6.6 判据（纯函数，可反向测试）：运行时解析到的线程数 == 标定线程数(@10)。
+
+    防「换机器后 margin 可能跌破 3× 而门禁不报警」存量风险：超时预算基线按 @10
+    线程标定（CHANGELOG v0.9.118 立规「非 10 线程口径拒绝写基线」）。若 CI 实际跑在
+    ≠10 线程（cpu<20 且未设 LDA_FDTD_THREADS，或显式覆盖到别的值），实测耗时与基线
+    不可比，margin 可能悄悄跌破 3× 而本护栏(B1-B17)因只看基线文件(记为10)而不响。
+    此判据把「运行时 == 基线口径」钉成硬前提：不符即红，强制操作员设
+    LDA_FDTD_THREADS=10 或重标定基线（--write-baseline 须 @同口径）。
+    """
+    return runtime_n == cal
 
 PASS = 0
 FAIL = 0
@@ -195,6 +211,18 @@ def main() -> int:
                     thr == _CALIB_THREADS,
                     "基线记 %r —— 非同口径的实测不可比（线程数改小 ⇒ 变慢）" % thr)
 
+    # ---- B18 (T6.6) 运行时线程数 == 标定线程数（防换机器后 margin 静默跌破 3×） ----
+    from lda_solver.threads import budget_threads as _budget_threads
+    _runtime_n = _budget_threads()
+    _t66_src = os.environ.get("LDA_FDTD_THREADS")
+    _t66_src_desc = ("LDA_FDTD_THREADS=%s" % _t66_src) if _t66_src \
+        else ("auto=cpu//2=%d" % ((os.cpu_count() or 0) // 2))
+    rc |= not check(
+        "B18 (T6.6) 运行时线程数 == 标定线程数（@%d）" % _CALIB_THREADS,
+        _t66_runtime_threads_match(_runtime_n),
+        "本机解析 %d 线程（%s）⇒ 超时预算(@%d)不可比；设 LDA_FDTD_THREADS=%d 再跑，或重标定基线"
+        % (_runtime_n, _t66_src_desc, _CALIB_THREADS, _CALIB_THREADS))
+
     res = evaluate(override, rows)
     n_below_target = len(res["below_target"])
 
@@ -305,6 +333,13 @@ def main() -> int:
     in_core = _SELF in core_smokes
     rc |= not check("B17 本 smoke 自身在 CORE_SMOKES 内（自食其规则）",
                     in_core, "" if in_core else "门禁自己被漏接！")
+
+    # ---- B19 (T6.6) 反向：谓词对 畸形/空集必 False、对 合法必 True（非假绿/非永红） ----
+    _ok = _t66_runtime_threads_match
+    rc |= not check(
+        "B19 (T6.6) 反向：谓词 畸形(4)/空集(0)必 False、合法(10)必 True（非假绿/非永红）",
+        (not _ok(4)) and (not _ok(0)) and _ok(10),
+        "t66(4)=%s t66(0)=%s t66(10)=%s" % (_ok(4), _ok(0), _ok(10)))
 
     # ---- 汇总 ----
     print("-" * 78)

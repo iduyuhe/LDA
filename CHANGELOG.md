@@ -88,7 +88,7 @@ rc=0 功能全绿、只是耗时超预算，却被计入 FAIL ⇒ **假红**。�
 **改动文件**：`lda/run_ci_regression.py`（`CORE_SMOKES` 接线）·
 `scripts/ci_core_batched.py`（`--write-baseline` / `--from-report` 刷新闭环）。
 
-**全量 CI core 183 实跑**：PENDING_CI_RESULT
+**全量 CI core 183 实跑**：**`183 PASS / 0 SKIP / 0 FAIL`（183 条 · 23 批 × 8 条 · 批间冷却 45s ⇒ 墙钟 6597.1s / 110.0 分钟 · 纯 smoke 5607.0s / 93.5 分钟）** —— **全绿**。
 ## v0.9.117（2026-09-20 · F-08 巨石拆分收官（T2.2 专项）· 不扩基 · 零锚改动 · 账本零变化 · CI core 181→182）
 
 **来源**：`LDA_functional_code_audit_2026-09-19.md` §5 序 9 / §5.1 序 8 的 **F-08**

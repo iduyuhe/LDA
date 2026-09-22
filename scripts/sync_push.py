@@ -73,16 +73,59 @@ def credread(adv, target):
     return user, pwd
 
 
+def _probe(host, user, tok, remote):
+    """用该凭据真实做一次 ls-remote，判断能否认证（避免拿到过期/无效 token 仍误报成功）。"""
+    env0 = {**os.environ, "GIT_CONFIG_GLOBAL": "/dev/null",
+            "GIT_CONFIG_SYSTEM": "/dev/null"}
+    try:
+        os.remove(STORE)
+    except OSError:
+        pass
+    inp = f"protocol=https\nhost={host}\nusername={user}\npassword={tok}\n"
+    subprocess.run(["git", "credential-store", f"--file={STORE}", "store"],
+                   input=inp, cwd=REPO, env=env0, capture_output=True, text=True)
+    env_p = {**os.environ, "GIT_CONFIG_GLOBAL": "/dev/null",
+             "GIT_CONFIG_SYSTEM": "/dev/null", "GIT_TERMINAL_PROMPT": "0"}
+    for k in ("http_proxy", "https_proxy", "all_proxy", "no_proxy",
+              "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY"):
+        env_p.pop(k, None)
+    r = subprocess.run(
+        ["git", "-c", f"credential.helper=store --file={STORE}",
+         "-c", "http.sslBackend=openssl", "-c", "http.version=HTTP/1.1",
+         "ls-remote", remote, "refs/heads/main"],
+        cwd=REPO, env=env_p, capture_output=True, text=True)
+    return r.returncode == 0 and bool(r.stdout.strip())
+
+
 def main():
     adv = _setup()
+    # 🔴 凭据 target 名在不同托管平台/写入方式下不一致，且某个 token 可能已过期/无效
+    #   （如 github 的 `git:https://oauth2@github.com` 曾实测返回 128「Invalid username or
+    #   token」）。故每 host 试多个候选 target，并用 `_probe` 真实 ls-remote 认证，
+    #   命中第一个能认证成功的即用（不再「非空即采用」）。
+    _TARGETS = {
+        "gitee.com": ["git:https://gitee.com", "git:https://oauth2@gitee.com"],
+        "github.com": ["git:https://x-access-token@github.com",
+                       "git:https://oauth2@github.com",
+                       "git:https://github.com"],
+    }
     creds = {}
-    for host, target in [("gitee.com", "git:https://gitee.com"),
-                        ("github.com", "git:https://github.com")]:
-        user, tok = credread(adv, target)
-        if not tok:
-            print(f"[WARN] 未找到 {target} 凭据，跳过")
-            continue
-        creds[host] = (user, tok)
+    for host, candidates in _TARGETS.items():
+        remote = host.split(".")[0]
+        got = False
+        for target in candidates:
+            user, tok = credread(adv, target)
+            if not tok:
+                continue
+            if _probe(host, user, tok, remote):
+                print(f"[OK] {host} 凭据生效: target={target} user={user}")
+                creds[host] = (user, tok)
+                got = True
+                break
+            else:
+                print(f"[PROBE-FAIL] {host} target={target} 认证失败(过期/无效)，试下一个")
+        if not got:
+            print(f"[WARN] {host} 所有候选凭据均不可用，跳过")
     if not creds:
         print("[FATAL] 无任何凭据，无法推送")
         sys.exit(1)
@@ -135,6 +178,22 @@ def main():
                                 "push", "github", "main"],
                                cwd=REPO, env=env_noproxy)
             print(f"  github proxy exit={r.returncode}")
+
+    # 🔴 推送判据（铁律）：ls-remote sha == 本地 HEAD（勿信 rc=0）
+    local = subprocess.run(["git", "-C", REPO, "rev-parse", "HEAD"],
+                           capture_output=True, text=True).stdout.strip()
+    print(f"[VERIFY] local HEAD = {local}")
+    all_match = True
+    for remote in ("gitee", "github"):
+        if remote + ".com" not in creds:
+            continue
+        lr = subprocess.run([*base, "ls-remote", remote, "refs/heads/main"],
+                            cwd=REPO, env=env2, capture_output=True, text=True)
+        sha = lr.stdout.split()[0] if lr.stdout.strip() else ""
+        ok = (sha == local)
+        all_match = all_match and ok
+        print(f"[VERIFY] {remote} main = {sha} -> {'MATCH' if ok else 'MISMATCH'}")
+    print(f"[VERIFY] RESULT {'ALL-MATCH' if all_match else 'HAS-MISMATCH'}")
 
     try:
         os.remove(STORE)

@@ -157,8 +157,8 @@ def main() -> int:
     for s in SCEN:
         print(f"  场景 {s}: 需均衡可工作 N≤{ceiling_eq[s]}  |  "
               f"免均衡接收 N≤{ceiling_rx[s]}")
-    print(f"\n[OK] P3 tile+parasitic loss co-sim PASS "
-          f"(tile DRC/LVS ACCEPT, fidelity 1.0)")
+    print("\n[OK] P3 tile+parasitic loss co-sim PASS "
+          "(tile DRC/LVS ACCEPT, fidelity 1.0)")
 
     # 落盘原始数值
     out = os.path.join(_HERE, "_p3_tile_loss_out.txt")

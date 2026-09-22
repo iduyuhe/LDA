@@ -231,7 +231,6 @@ def _build_wdm_demux_mux(link: LinkModel, placement: dict, routes: dict,
 
     返回环几何/锚信息 + 总线 y 带（供 honest note）。
     """
-    N = planes[0]["N"]
     wg = params["wg"]; gap = params["gap"]; n_g = params["n_g"]; m_ring = params["m_ring"]
     demux_y = params["demux_y"]
     ring_dx = params["ring_dx"]

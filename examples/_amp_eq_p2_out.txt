@@ -1,0 +1,14 @@
+N=128 A: verdict=phase_only             max_att=  1.28dB | P2 tech=voa         floor=0.3dB thru=0.933 area=  1.13mm² ctrl=128 dump=0 pwr=0mW
+N=256 A: verdict=requires_amp_eq_pdk    max_att=  2.56dB | P2 tech=voa         floor=0.3dB thru=0.933 area=  2.27mm² ctrl=256 dump=0 pwr=0mW
+N=512 A: verdict=requires_amp_eq_pdk    max_att=  5.12dB | P2 tech=voa         floor=0.3dB thru=0.933 area=  4.54mm² ctrl=512 dump=0 pwr=0mW
+N=128 B: verdict=requires_amp_eq_pdk    max_att=  3.20dB | P2 tech=voa         floor=0.3dB thru=0.933 area=  1.13mm² ctrl=128 dump=0 pwr=0mW
+N=256 B: verdict=requires_amp_eq_pdk    max_att=  6.40dB | P2 tech=voa         floor=0.3dB thru=0.933 area=  2.27mm² ctrl=256 dump=0 pwr=0mW
+N=512 B: verdict=requires_amp_eq_pdk    max_att= 12.80dB | P2 tech=voa         floor=0.3dB thru=0.933 area=  4.54mm² ctrl=512 dump=0 pwr=0mW
+N=128 C: verdict=requires_amp_eq_pdk    max_att=  6.40dB | P2 tech=voa         floor=0.3dB thru=0.933 area=  1.13mm² ctrl=128 dump=0 pwr=0mW
+N=256 C: verdict=requires_amp_eq_pdk    max_att= 12.80dB | P2 tech=voa         floor=0.3dB thru=0.933 area=  2.27mm² ctrl=256 dump=0 pwr=0mW
+N=512 C: verdict=requires_amp_eq_pdk    max_att= 25.60dB | P2 tech=voa         floor=0.3dB thru=0.933 area=  4.54mm² ctrl=512 dump=0 pwr=0mW
+
+=== VOA vs MZI 强制对比（N=512 场景 B，max_att=12.80dB）===
+tech      floor  thru    area_mm2  ctrl  dump  power_mW  drive
+voa       0.3   0.933     4.54   512     0       0   3.0 V (EO depletion)
+mzi       1.2   0.759    19.99  1024   512       0   3.75 V (MZI arm bias)

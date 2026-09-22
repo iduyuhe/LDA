@@ -448,6 +448,142 @@ def amplitude_equalization_manifest(build_result: dict, pdk: dict) -> dict:
     }
 
 
+def equalizer_p2_manifest(amp_eq: dict, pdk: dict) -> dict:
+    """P2 硬件选型：每输出端口幅度均衡器 **VOA vs MZI 可变衰减器**（主权投产工艺层）。
+
+    输入：
+      amp_eq : `amplitude_equalization_manifest` 返回 dict（取 per_port[].att_db、max_att_db、verdict）
+      pdk    : P2 硬件参数（均带默认值，可 foundry 回填）：
+        equalizer_tech   : 'auto'|'voa'|'mzi'（默认 'auto'：选可行且吞吐最优者）
+        has_voa_module   : 是否具备 VOA 工艺模块（默认 True）
+        voa_type         : 'eo'|'thermal'（默认 'eo'——电光吸收，避免 D2 热串扰）
+        voa_range_db     : VOA 动态范围（默认 30.0）
+        voa_floor_db     : VOA 最小设置插损（默认 0.3）
+        voa_eo_v         : EO-VOA 驱动电压（默认 3.0 V）
+        voa_thermal_mw   : 热 VOA 偏置功耗（默认 15.0 mW）
+        voa_len_um       : VOA 单元波导长度（默认 250）
+        mzi_er_db        : MZI 作为衰减器的可用消光比上限（默认 18.0）
+        mzi_floor_db     : MZI 衰减器最小设置插损（含耦合器+dump，默认 1.2）
+        mzi_bias_v       : MZI 衰减器偏置电压（默认 3.75 V = Vπ/2 量级）
+        mzi_len_um       : MZI 衰减器单元长度（默认 1100 = Lc~600+2×arm~250）
+        rail_pitch_um    : 取自 amp_eq.pitch 或由 build 传入（默认 4.0）
+
+    模型（均衡后每端口净损耗 = floor + att；floor 对所有端口均匀叠加，决定整体吞吐）：
+      - 弱端口参考 att=0，均衡器置最小设置 ⇒ 所有端口额外损失 floor_db（VOA 0.3 / MZI 1.2）。
+      - 均衡后全端口功率 = P_in·10^(-(IL_ref + floor)/10)，故吞吐系数 = 10^(-floor/10)。
+      - MZI 作衰减器需终止「多余臂」⇒ dump 端口（LVS 须标 loss port，禁悬空波导）。
+
+    判定：
+      - 可行 tech = 对全端口 att_k ≤ 该 tech 动态范围（VOA: voa_range / MZI: mzi_er）。
+      - 'auto'：优先 VOA（floor 更低 ⇒ 吞吐更优、无相位扰动、无 dump 端口），
+                无可 VOA 模块或 VOA 范围不足则退 MZI（复用网格工艺），二者皆不足 ⇒ infeasible
+                （须先换绝热耦合器压 α_tap，见 D1 512C 边界）。
+    诚实边界：纯 P2 工艺选型，不阻塞主权 P&R；真值须 foundry PDK 回填（voa_range/mzi_er/面积）。
+    """
+    per = amp_eq.get("per_port", [])
+    N = amp_eq.get("N", len(per))
+    max_att = float(amp_eq.get("max_att_db", 0.0))
+    pitch = float(pdk.get("rail_pitch_um", amp_eq.get("col_pitch_um", 4.0)))
+
+    tech_pref = str(pdk.get("equalizer_tech", "auto")).lower()
+    has_voa = bool(pdk.get("has_voa_module", True))
+    voa_type = str(pdk.get("voa_type", "eo")).lower()
+    voa_range = float(pdk.get("voa_range_db", 30.0))
+    voa_floor = float(pdk.get("voa_floor_db", 0.3))
+    voa_eo_v = float(pdk.get("voa_eo_v", 3.0))
+    voa_thermal_mw = float(pdk.get("voa_thermal_mw", 15.0))
+    voa_len = float(pdk.get("voa_len_um", 250.0))
+    mzi_er = float(pdk.get("mzi_er_db", 18.0))
+    mzi_floor = float(pdk.get("mzi_floor_db", 1.2))
+    mzi_bias_v = float(pdk.get("mzi_bias_v", 3.75))
+    mzi_len = float(pdk.get("mzi_len_um", 1100.0))
+
+    voa_feasible = has_voa and (max_att <= voa_range)
+    mzi_feasible = max_att <= mzi_er
+
+    if tech_pref == "voa":
+        chosen = "voa" if voa_feasible else ("mzi" if mzi_feasible else "infeasible")
+    elif tech_pref == "mzi":
+        chosen = "mzi" if mzi_feasible else "infeasible"
+    else:  # auto：优先吞吐更优的 VOA
+        if voa_feasible:
+            chosen = "voa"
+        elif mzi_feasible:
+            chosen = "mzi"
+        else:
+            chosen = "infeasible"
+
+    per_port = []
+    n_voa = n_mzi = 0
+    total_area = 0.0
+    total_power = 0.0
+    if chosen in ("voa", "mzi"):
+        for p in per:
+            att = float(p["att_db"])
+            if chosen == "voa":
+                floor = voa_floor
+                ctrl = 1
+                area = pitch * voa_len
+                if voa_type == "thermal":
+                    drive = f"{voa_thermal_mw:.1f} mW (thermal)"
+                    total_power += voa_thermal_mw
+                else:
+                    drive = f"{voa_eo_v:.1f} V (EO depletion)"
+                n_voa += 1
+            else:  # mzi
+                floor = mzi_floor
+                ctrl = 2
+                area = pitch * mzi_len
+                drive = f"{mzi_bias_v:.2f} V (MZI arm bias)"
+                n_mzi += 1
+            total_area += area
+            il_total = floor + att
+            per_port.append({
+                "port": p["port"],
+                "att_db": att,
+                "tech": chosen,
+                "ctrl_lines": ctrl,
+                "floor_db": floor,
+                "il_total_db": il_total,
+                "drive": drive,
+                "area_um2": area,
+            })
+
+    dump_ports = n_mzi  # MZI 衰减器须终止多余臂
+    floor_db = {"voa": voa_floor, "mzi": mzi_floor}.get(chosen, 0.0)
+    throughput_factor = 10.0 ** (-floor_db / 10.0) if chosen in ("voa", "mzi") else 0.0
+    total_ctrl = n_voa * 1 + n_mzi * 2
+
+    return {
+        "N": N,
+        "equalizer_tech": chosen,
+        "voa_type": voa_type if chosen == "voa" else None,
+        "max_att_db": max_att,
+        "voa_feasible": voa_feasible,
+        "mzi_feasible": mzi_feasible,
+        "n_voa": n_voa,
+        "n_mzi": n_mzi,
+        "floor_db": floor_db,
+        "extra_throughput_loss_db": floor_db,
+        "throughput_factor": throughput_factor,
+        "dump_ports": dump_ports,
+        "total_eq_area_um2": total_area,
+        "total_ctrl_lines": total_ctrl,
+        "total_power_mw": total_power,
+        "verdict_p2": chosen,
+        "per_port": per_port,
+        "honest_note": (
+            "P2 工艺选型：VOA（floor %.1f dB，无相位扰动，无 dump 端口，吞吐系数 %.3f）"
+            " vs MZI 衰减器（floor %.1f dB，复用网格工艺，须 dump 端口×%d，吞吐系数 %.3f）。"
+            "auto 优先 VOA（吞吐更优）；无可 VOA 模块/范围不足退 MZI；二者皆不足 ⇒ infeasible"
+            "（须先换绝热耦合器压 α_tap）。热 VOA 增 %d 个加热器 ⇒ 复用 D2 隔离预算；"
+            "推荐 EO-VOA 免热串扰。不阻塞主权 P&R。"
+            % (voa_floor, (10 ** (-voa_floor / 10.0)),
+               mzi_floor, dump_ports, (10 ** (-mzi_floor / 10.0)), n_voa)
+        ),
+    }
+
+
 # ---------------------------------------------------------------------------
 # 2) 网格 P&R 主构造
 # ---------------------------------------------------------------------------
@@ -720,6 +856,11 @@ def build_mesh_pnr(U_target: np.ndarray, rail_pitch: float = 4.0,
             "由布线几何独立恢复（端点→端口锚点容差 %.1fµm），判决全死标量，LLM 不进路径。"
             % (vpi_l_v_mm, tol))
 
+    # ---- 幅度均衡 PDK 绑定（P2 投产前置，不阻塞主权 P&R）----
+    amp_eq = (amplitude_equalization_manifest({
+        "N": N, "ops": ops, "x_max_um": x_max, "pitch_um": pitch,
+    }, pdk) if pdk else None)
+
     return {
         "N": N,
         "n_mzi": n_mzi,
@@ -754,9 +895,8 @@ def build_mesh_pnr(U_target: np.ndarray, rail_pitch: float = 4.0,
         "drive_manifest": drive,
         "v_max": drive["v_max"],
         "vpi_volts": drive["vpi_volts"],
-        "amplitude_eq": (amplitude_equalization_manifest({
-            "N": N, "ops": ops, "x_max_um": x_max, "pitch_um": pitch,
-        }, pdk) if pdk else None),
+        "amplitude_eq": (amp_eq if pdk else None),
+        "amplitude_eq_p2": (equalizer_p2_manifest(amp_eq, pdk) if pdk else None),
         "honest_note": honest_note,
     }
 

@@ -1,0 +1,10 @@
+N,scn,verdict,max_att_db,p2_tech,voa_type,floor_db,throughput_factor,total_eq_area_mm2,total_ctrl_lines,dump_ports,total_power_mw
+128,A,phase_only,1.28,voa,eo,0.3,0.9333,1.133,128,0,0.0
+256,A,requires_amp_eq_pdk,2.56,voa,eo,0.3,0.9333,2.271,256,0,0.0
+512,A,requires_amp_eq_pdk,5.12,voa,eo,0.3,0.9333,4.544,512,0,0.0
+128,B,requires_amp_eq_pdk,3.2,voa,eo,0.3,0.9333,1.133,128,0,0.0
+256,B,requires_amp_eq_pdk,6.4,voa,eo,0.3,0.9333,2.271,256,0,0.0
+512,B,requires_amp_eq_pdk,12.8,voa,eo,0.3,0.9333,4.544,512,0,0.0
+128,C,requires_amp_eq_pdk,6.4,voa,eo,0.3,0.9333,1.133,128,0,0.0
+256,C,requires_amp_eq_pdk,12.8,voa,eo,0.3,0.9333,2.271,256,0,0.0
+512,C,requires_amp_eq_pdk,25.6,voa,eo,0.3,0.9333,4.544,512,0,0.0

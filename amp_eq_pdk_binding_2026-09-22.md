@@ -118,3 +118,17 @@ verdict   = 'phase_only'            if IL_var_b ≤ eq_threshold
   （幅度均衡）决定：256/512 主权版图已绿，投产须先有幅度均衡 PDK。
 - **收官**：P0+P1-A+P1-B+P1-B续+系统级代价(D1/D2/D3)+幅度均衡 PDK 绑定框架 全链路闭合，
   主权光子计算「编译→版图→系统级代价→投产 PDK 需求」主链路对外可演示。
+
+---
+
+## 七、P2 硬件选型（已设计，2026-09-22）
+
+幅度均衡器的**具体硬件实现**已落 `equalizer_p2_manifest`（见 `amp_eq_p2_hardware_2026-09-22.md`）：
+- 每输出端口衰减器 **VOA vs MZI 幅度调节** 技术对比 + `auto` 选型；**推荐 EO-VOA 行**
+  （floor 0.3 dB / 吞吐 0.933 / 无 dump 端口 / 4.4× 小面积 vs MZI 权重 1.2 dB / 0.759 /
+  512 dump / 19.99 mm²）；MZI 权重为 foundry-fallback（无 VOA 模块时）。
+- `build_mesh_pnr(..., pdk=pdk)` 返回键 `amplitude_eq_p2` 一并产出 P2 选型（tech / floor /
+  吞吐系数 / 面积 / 控制线 / dump 端口 / 驱动），主权版图 + 幅度需求 + 硬件选型**一次产出**。
+- 实测（D1 三场景 × N=128/256/512）：auto 全选 VOA；均衡器动态范围升级 20→30 dB（VOA 级）
+  把 512C 从「动态不足」救回「均衡可行」（残余阻断项 = 绝对总线损耗增益预算）。
+

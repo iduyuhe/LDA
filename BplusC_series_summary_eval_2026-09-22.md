@@ -84,7 +84,7 @@
 | 3 | **权重技术** | 非易失 PCM/BSO（7-bit, retention>10yr）/ MRR 权重库（面积仅 EO 9.64%） | 权重后端=可插拔接口（设计层），未物理表征 | 差异化赌注未验证 |
 | 4 | **校准固件** | 闭环 per-MZI 热/相校准 + 温补（MZI 路线刚需） | P1.5 校准固件递延（方法学独立锚待裁） | 待补（需物理锚） |
 | 5 | **真 PDK / DRC deck** | iSiPP50G / AIM / GF Fotonix 真 deck 签核 | 演示近似 PDK（典型 SOI 180nm），主权示意非签核 | 需 NDA |
-| 6 | **EIC 协同（DAC/ADC/SerDes/TIA）** | 重-EIC 集成（SerDes/DSP/BER 链路判决） | per-MZI 驱动/TIA 仅行为级；SerDes/DSP/BER 锁死 | 主权内不碰晶体管求解 |
+| 6 | **EIC 协同（DAC/ADC/SerDes/TIA）** | 重-EIC 集成（SerDes/DSP/BER 链路判决） | per-MZI 驱动/TIA 仅行为级；SerDes/DSP/BER 锁死 | 主权内：只做行为级（器件级 T1 已解锁；电路级锁死） |
 | 7 | **3D/CPO 封装** | Passage 3D 堆叠、CPO/NPO 量产 | CPO 协同网表就位，无物理 3D 封装设计 | 超 LDA 定义 |
 | 8 | **软件栈（AI 框架前端）** | PyTorch/ONNX/TVM + 编译器 + 开发者工具 | Reck/Clements matmul 编译器，无完整框架前端 | 设计缺口 |
 | 9 | **非线性光子** | Q.ANT 原生非线性（diffusion/RNN） | 线性矩阵乘法专用 | 路线选择 |

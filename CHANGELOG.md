@@ -1,6 +1,74 @@
 # Changelog
 
-## v0.9.119（2026-09-21 · 波次 6 T6.2/T6.3/T6.4 收口 + 超时预算「默认口径」欠标定清偿 + 前端 84 处 `no-unused-vars` 甄别 · 不扩基 · 零锚改动 · 账本零变化 · CI core 183 条）
+## v0.9.120（2026-09-22 · WDM 网格 P&R（Kλ×N×N 波分复用维）· 不扩基 · 零锚改动 · 账本零变化 · CI core 183→185）
+
+**来源**：B+C 自研系列收官 backlog 中的 **Task #26「升级-WDM网格（Kλ×N×N）」**——即市场差距分析「**我们缺：波长维 / WDM**」中**主权内可补**的头号项（P0.1）。目标是给已有的光子张量核（`mesh_pnr` 单波长 N×N 酉网格）**加一个波分复用维**：**K 个波长面 × N×N Clements 网格**，每个波长面独立算一个酉（默认 DFT(N)），在入口/出口用**微环 add-drop** 做解/复用，从而把聚合**带宽密度放大 ×K**，而版图仍为**单一平面前向网表**。
+
+**账本零变化**：严格独立 **448** / 降级 **3** / 自证桩 **18** / 总 **469** · 独立率 **95.5%** · 天花板 **97.4%** · 棘轮 `MAX_SELF_CERTIFIED=18` 不动 · 零 tol 放宽 · **零锚改动** · **零判据改动**。仅 **CI core 183→185**（含 v0.9.119 起主权证据集 `run_sovereign_evidence_smoke.py` 183→184，与本版 `run_wdm_mesh_pnr_smoke.py` 184→185）。
+
+### ① 新增 `lda/lda_layout/wdm_mesh_pnr.py` —— WDM 网格 P&R 主构造
+
+- **物理锚（死标量，LLM 不进判决路径）**：`wdm_ring_anchor(wl_nm, n_g, m, gap)` 返回
+  `R_um = m·λ/(2π·n_g)`（整数 m 谐振器）、`L_couple_um = 2√(2R·gap)`、`kappa_c_rad_um`（由
+  `wdm_coupler` 标定回填）、`k_ring = sin(κ_c·L_couple)`、`FSR_nm = λ/m`。
+- **`_build_plane(...)`**：单面 N×N Clements 网格（复用已证 `mesh_pnr` 的分解/版级保真度），
+  每轨链 `MMI(1×N).out_j → [MZI 链] → MMIC(N×1).in_j` ⇒ 每面独立算一个酉。
+- **`_build_wdm_demux_mux(...)`**：K 个 `RingAddDrop` 做解复用（右端）+ 镜像复用（左端）
+  + 入/出 `GratingCoupler` + 总线终结 `Waveguide` stub。
+- **`wdm_mesh_reverse_guard(rep)`**：两条**反向护栏**（D1 断下路 net ⇒ LVS REJECT；D2 非酉 U ⇒
+  分解护栏亮红），用于自证「告警真的会红」。
+- 主入口 `build_wdm_mesh_pnr(...)` / `demo_wdm_mesh_pnr(K, N)`。
+
+### ② `lda_layout/placement.py` + `lda_l2/drc.py` —— 补齐前置端口锚与 DRC 规则
+
+- `placement.port_anchor` 扩 **MMI `n_out>2`**（1×N 线性扇出，居中排布；**N=2 与旧版逐字节一致**）
+  + 新增 **`MMIC`**（N×1 合波器，`in1..inN` 左 / `out` 右）端口锚。
+- 🔴 **同时补齐 `MZI` / `PhaseShifter` 端口锚与 `device_bbox`**，并在 `lda_l2/drc.py` 的
+  `drc_check_device` 补对应可制造性规则 —— **已提交的 `lda_layout/mesh_pnr.py` 依赖这两类锚
+  （L814/L823）与 DRC（L912/L917），但此前仅在本地工作树中存在、从未入库** ⇒ 本版一并入库，
+  使已提交的 mesh 链路在**全新克隆**上可完整运行。
+
+### ③ `lda/run_wdm_mesh_pnr_smoke.py` —— 新增常驻门禁（20 判据）
+
+逐项断言（全部死标量）：K=4/N=4 · `n_mzi_total=24` · **分解级 + 版级保真度 ≈1.0（逐 4 面）** ·
+**DRC PASS** · **LVS ACCEPT** · **0 违规** · **器件/网络全匹配** · **聚合带宽密度 ×K=4** ·
+**微环半径 = m·λ/(2π·n_g)** · **FSR > 信道间隔 25nm** · GDS 非空 · **反向 D1/D2 双红**。
+
+### ④ 实测硬证据（K=4 × N=4）
+
+| 指标 | 实测 |
+|---|---|
+| `n_mzi_total` | **24**（每面 6 MZI Clements 4×4） |
+| 分解级保真度 min | **1.000000**（机器精度） |
+| 版级保真度 min | **1.000000**（机器精度） |
+| DRC | **PASS**（逐 MZI 死标量） |
+| LVS | **ACCEPT · 0 违规**（44/44 器件、82/82 网络全匹配） |
+| 聚合带宽密度 | **×4** |
+| footprint | 35547.9 µm² |
+| GDS | 60 元件 / 7482 B |
+| 环锚 | R=3.0207 µm · FSR 51.67 nm（> 25 nm 间隔） |
+
+### ⑤ 🔴 两条血案（已固化为注释 + 回归判据）
+
+1. **增量构建 × 身份缓存陈旧（静默假红）**：`placement._port_abs_comp_cache` 按
+   `(id(placement), id(link))` 身份**只建一次**；而本模块在同一 link 上**逐面增量 `add_device`**
+   ⇒ plane 1+ 及环端口查不到 ⇒ `port_abs` **静默回落器件原点** ⇒ **几何全对但 LVS 假红 135 违规**
+   （dangling/open/misconnect/short_port/short_cross）。修法 = 每次 `add_device` 后
+   `_port_abs_cache_clear()` ⇒ 81/81 net、43/43 器件全匹配。
+2. **平面路由同 x 扇入交叉**：解/复用**目标端口同 x**，直连对角必形成「扇入交叉」⇒ 判
+   `short_cross`（12 对）。修法 = **L 型走线 + 次序相反**：demux 环 x 随 k **递减**、而目标
+   `splitter.in_j` 的 y 随 k **递增** ⇒ 反序 ⇒ 平面；mux 取**对偶**（环 x 与面 y **同序**）。
+   物理不变（仅换环摆放次序，λ_k ↔ 面 k 一一对应）⇒ LVS **ACCEPT 0 违规**。
+
+### ⑥ 回归与门禁
+
+- `run_wdm_mesh_pnr_smoke` → `PASS=20 / FAIL=0`（≈0.37s）。
+- `run_ci_coverage_gate_smoke` → 6/6 PASS（发现 198 · core **185** · 豁免 18）。
+- `run_count_consistency_smoke` → 11/11 OK（README 顶行版本 = pyproject；`## 当前账本` CI core = 185）。
+- `run_sovereign_evidence_smoke` → 9/9 全绿（`placement.py` 改动无回归）。
+- 版本 bump：`README.md` 顶行 + `## 当前账本` 段、`CONTRIBUTING.md`、`pyproject.toml` ⇒ **v0.9.120**。
+
+ · 波次 6 T6.2/T6.3/T6.4 收口 + 超时预算「默认口径」欠标定清偿 + 前端 84 处 `no-unused-vars` 甄别 · 不扩基 · 零锚改动 · 账本零变化 · CI core 183 条）
 
 **来源**：`LDA_fix_workplan_2026-09-19.md` §2 波次 6 的 **T6.2 / T6.3 / T6.4**，外加本轮全量实跑**新暴露**的一项（「默认 300s 口径」欠标定，记为 T6.5 前哨），以及波次 4 T4.2 遗留质量信号（前端 `no-unused-vars` **84**）的闭环。
 

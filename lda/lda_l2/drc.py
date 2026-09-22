@@ -118,6 +118,13 @@ def drc_check_device(kind: str, params: Dict[str, float],
     elif kind == "DirectionalCoupler":
         add("min_space", "gap", params.get("gap", 0.3), rules["min_space_um"])
         add("min_width", "width", params.get("width", 0.5), rules["min_width_um"])
+    elif kind == "MZI":
+        # P0 网格 P&R · 单 MZI 单元可制造性（波导宽 + 耦合 gap，与相邻耦合约定同源）
+        add("min_width", "wg", params.get("wg", 0.5), rules["min_width_um"])
+        add("min_space", "gap", params.get("gap", 0.3), rules["min_space_um"])
+    elif kind == "PhaseShifter":
+        # P1-A 物理综合 · 输出相移器：波导宽可制造性（与相邻耦合约定同源）
+        add("min_width", "wg", params.get("wg", 0.5), rules["min_width_um"])
     elif kind == "SymmetricYBranch":
         add("min_width", "width", params.get("width", 0.5), rules["min_width_um"])
         add("max_split", "split_angle", params.get("split_angle", 10.0),

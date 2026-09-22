@@ -600,6 +600,19 @@ CORE_SMOKES: List[str] = [
     #   无 torch/numba/meep/tidy3d 重依赖，按准入准则无权豁免，必须进 core。
     #   CI core 183->184（计算核作为第 8 例并入同一 smoke，未新增 smoke）。
     "run_sovereign_evidence_smoke.py",
+    # 🔴 v0.9.120（P0.1 WDM 网格 P&R · 战略头号升级）：给光子张量核加**波分复用维**
+    #   ——每波长面独立 Clements N×N 网格（复用已证 mesh_pnr 分解/版级保真度 1.0）
+    #   + 微环 add-drop 解/复用（物理锚 R=m·λ/(2π·n_g)）+ 单 LinkModel 单次主权
+    #   DRC/LVS（ACCEPT 0 违规）。20 判据含**两条反向护栏**：断下路 net ⇒ LVS REJECT；
+    #   非酉 U ⇒ 分解/保真护栏亮红。纯 numpy，实测 ≈0.37s，按准入准则（<5s 且无重
+    #   依赖）无权豁免，必须进 core。
+    #   ⚠️ 血案固化：`port_abs` 组件索引缓存按 (placement,link) 身份**只建一次**，
+    #   而本模块在同一 link 上**逐面增量 add_device** ⇒ 后续面端口查不到、回落到
+    #   器件原点 ⇒ LVS 135 违规（几何全对，根因在缓存陈旧）；修法=每次 add_device 后
+    #   `_port_abs_cache_clear()`。另：解/复用路由须用**反序/同序 L 型走线**（目标端口
+    #   同 x ⇒ 直连对角必「扇入交叉」判 short_cross），单调性由环 x 与面 y 次序相反保证。
+    #   CI core 184->185。
+    "run_wdm_mesh_pnr_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

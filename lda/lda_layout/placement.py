@@ -67,18 +67,56 @@ def port_anchor(kind: str, port: str, params: dict) -> Tuple[float, float]:
         off = (gap + core_w) / 2.0
         return {"in1": (0.0, off), "in2": (0.0, -off),
                 "out1": (Lc, off), "out2": (Lc, -off)}.get(port, (0.0, 0.0))
+    if kind == "MZI":
+        # P0 网格 P&R · 单 MZI 单元局部端口锚（Clements 矩形网格相邻耦合约定）。
+        # 局部原点 = 下轨 (rail j) 左端；上轨 (rail j+1) 在 local y=dy（=rail_pitch）。
+        # 四端口：in1/out1 在下轨（y=0），in2/out2 在上轨（y=dy）。
+        Lu = float(params.get("Lu", 20.0))
+        dy = float(params.get("dy", 4.0))   # 下轨→上轨偏移（相邻轨间距）
+        return {"in1": (0.0, 0.0), "out1": (Lu, 0.0),
+                "in2": (0.0, dy), "out2": (Lu, dy)}.get(port, (0.0, 0.0))
+    if kind == "PhaseShifter":
+        # 输出相移器（P1-A 物理综合）：短波导段 + 片上加热/载流子相移。
+        # 端口 in/out 在局部 (0,0) / (L,0)，与 Waveguide 同向，便于串入 rail 链。
+        L = float(params.get("L", 4.0))
+        return {"in": (0.0, 0.0), "out": (L, 0.0)}.get(port, (0.0, 0.0))
     if kind == "MMI":
         # 与 primitives.mmi_descs 逐点一致：input=(-L_tap,0)；
         # out1/out2=(L_mmi+L_tap+L_out, ±(w/2+out_gap/2))。
+        # v0.9.95 · WDM 网格 P&R：支持 n_out>2 的 1×N 扇出（线性阵列，
+        # 居中排布）。N=2 时与旧版逐字节一致（out1=+yo, out2=-yo）。
         w = float(params.get("width", 0.5))
         L = float(params.get("L_mmi", 20.0))
         Lt = float(params.get("L_tap", 4.0))
         gap = float(params.get("out_gap", 0.5))
         Lo = float(params.get("L_out", 3.0))
         yo = w / 2.0 + gap / 2.0
-        return {"in": (-Lt, 0.0),
-                "out1": (L + Lt + Lo, yo),
-                "out2": (L + Lt + Lo, -yo)}.get(port, (0.0, 0.0))
+        n_out = int(params.get("n_out", 2))
+        if n_out <= 2:
+            return {"in": (-Lt, 0.0),
+                    "out1": (L + Lt + Lo, yo),
+                    "out2": (L + Lt + Lo, -yo)}.get(port, (0.0, 0.0))
+        # N>2：out{j}（j=1..N）线性阵列，居中于 y=0
+        step = yo * 2.0
+        tbl = {"in": (-Lt, 0.0)}
+        for j in range(1, n_out + 1):
+            tbl[f"out{j}"] = (L + Lt + Lo, (j - (n_out + 1) / 2.0) * step)
+        return tbl.get(port, (0.0, 0.0))
+    if kind == "MMIC":
+        # N×1 合波器（1×N 的镜像）：in1..inN 在左（线性阵列，居中），
+        # out 在右（合波输出）。供 WDM 网格 P&R 平面输出端收口用。
+        w = float(params.get("width", 0.5))
+        L = float(params.get("L_mmi", 20.0))
+        Lt = float(params.get("L_tap", 4.0))
+        gap = float(params.get("out_gap", 0.5))
+        Lo = float(params.get("L_out", 3.0))
+        yo = w / 2.0 + gap / 2.0
+        n_in = int(params.get("n_in", 2))
+        step = yo * 2.0
+        tbl = {"out": (Lt, 0.0)}
+        for j in range(1, n_in + 1):
+            tbl[f"in{j}"] = (-(L + Lt + Lo), (j - (n_in + 1) / 2.0) * step)
+        return tbl.get(port, (0.0, 0.0))
     if kind == "SymmetricYBranch":
         # 与 gds_export.geometry_desc 逐点一致：input=(0,0)；
         # 两臂 (tap_len+arm·cos(half), ±arm·sin(half))，half=split_angle/2。
@@ -117,6 +155,14 @@ def device_bbox(kind: str, params: dict) -> Tuple[float, float]:
     if kind == "Waveguide":
         length = float(params.get("length", 10.0))
         return (length / 2.0, wg_w)
+    if kind == "MZI":
+        Lu = float(params.get("Lu", 20.0))
+        dy = float(params.get("dy", 4.0))
+        return (Lu / 2.0, dy / 2.0 + 2.0)
+    if kind == "PhaseShifter":
+        L = float(params.get("L", 4.0))
+        wg_w = float(params.get("wg", 0.5))
+        return (L / 2.0, wg_w / 2.0 + 1.0)
     if kind == "GratingCoupler":
         L = float(params.get("L", 10.0))
         return (max(L / 2.0, 5.0), 5.0)

@@ -1,0 +1,27 @@
+tile N=16 fid=0.9999999999999997 drc=True lvs=ACCEPT C_total_ff=3193.9208 R_ohm=10204264.9600
+A T=1 N=16 bus=0.447 link=0.000 par=0.319 tot=0.766 eq=1 rx=1
+A T=2 N=32 bus=0.894 link=0.056 par=0.639 tot=1.589 eq=1 rx=1
+A T=4 N=64 bus=1.788 link=0.168 par=1.278 tot=3.234 eq=1 rx=1
+A T=8 N=128 bus=3.576 link=0.393 par=2.555 tot=6.524 eq=1 rx=1
+A T=16 N=256 bus=7.151 link=0.842 par=5.110 tot=13.103 eq=1 rx=1
+A T=32 N=512 bus=14.303 link=1.739 par=10.221 tot=26.263 eq=1 rx=0
+A T=64 N=1024 bus=28.605 link=3.535 par=20.441 tot=52.581 eq=0 rx=0
+A T=128 N=2048 bus=57.211 link=7.126 par=40.882 tot=105.219 eq=0 rx=0
+B T=1 N=16 bus=1.089 link=0.000 par=0.319 tot=1.408 eq=1 rx=1
+B T=2 N=32 bus=2.178 link=0.112 par=0.639 tot=2.929 eq=1 rx=1
+B T=4 N=64 bus=4.356 link=0.337 par=1.278 tot=5.970 eq=1 rx=1
+B T=8 N=128 bus=8.711 link=0.786 par=2.555 tot=12.052 eq=1 rx=1
+B T=16 N=256 bus=17.423 link=1.683 par=5.110 tot=24.216 eq=1 rx=0
+B T=32 N=512 bus=34.845 link=3.479 par=10.221 tot=48.545 eq=0 rx=0
+B T=64 N=1024 bus=69.691 link=7.070 par=20.441 tot=97.202 eq=0 rx=0
+B T=128 N=2048 bus=139.382 link=14.252 par=40.882 tot=194.516 eq=0 rx=0
+C T=1 N=16 bus=2.121 link=0.000 par=0.319 tot=2.440 eq=1 rx=1
+C T=2 N=32 bus=4.242 link=0.168 par=0.639 tot=5.049 eq=1 rx=1
+C T=4 N=64 bus=8.484 link=0.505 par=1.278 tot=10.266 eq=1 rx=1
+C T=8 N=128 bus=16.967 link=1.178 par=2.555 tot=20.700 eq=1 rx=0
+C T=16 N=256 bus=33.934 link=2.525 par=5.110 tot=41.569 eq=0 rx=0
+C T=32 N=512 bus=67.868 link=5.218 par=10.221 tot=83.307 eq=0 rx=0
+C T=64 N=1024 bus=135.736 link=10.605 par=20.441 tot=166.782 eq=0 rx=0
+C T=128 N=2048 bus=271.473 link=21.378 par=40.882 tot=333.733 eq=0 rx=0
+ceiling_eq={'A': 512, 'B': 256, 'C': 128}
+ceiling_rx={'A': 256, 'B': 128, 'C': 64}

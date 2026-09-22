@@ -1,0 +1,16 @@
+N,scenario,alpha_prop_db_cm,alpha_tap_db,IL_mean_db,IL_var_ports_db,IL_var_io_db,IL_var_binding_db,max_att_db,eq_required,eq_feasible,verdict
+4,A,1.0,0.02,0.075,0.040,0.051,0.051,0.040,False,True,phase_only
+4,B,2.0,0.05,0.179,0.100,0.123,0.123,0.100,False,True,phase_only
+4,C,3.0,0.1,0.344,0.200,0.234,0.234,0.200,False,True,phase_only
+16,A,1.0,0.02,0.355,0.160,0.332,0.332,0.160,False,True,phase_only
+16,B,2.0,0.05,0.860,0.400,0.804,0.804,0.400,False,True,phase_only
+16,C,3.0,0.1,1.665,0.800,1.555,1.555,0.800,False,True,phase_only
+128,A,1.0,0.02,2.995,1.280,2.972,2.972,1.280,False,True,phase_only
+128,B,2.0,0.05,7.261,3.200,7.204,7.204,3.200,True,True,requires_amp_eq_pdk
+128,C,3.0,0.1,14.066,6.400,13.956,13.956,6.400,True,True,requires_amp_eq_pdk
+256,A,1.0,0.02,6.011,2.560,5.987,5.987,2.560,True,True,requires_amp_eq_pdk
+256,B,2.0,0.05,14.572,6.400,14.515,14.515,6.400,True,True,requires_amp_eq_pdk
+256,C,3.0,0.1,28.233,12.800,28.122,28.122,12.800,True,True,requires_amp_eq_pdk
+512,A,1.0,0.02,12.040,5.120,12.016,12.016,5.120,True,True,requires_amp_eq_pdk
+512,B,2.0,0.05,29.190,12.800,29.133,29.133,12.800,True,True,requires_amp_eq_pdk
+512,C,3.0,0.1,56.560,25.600,56.449,56.449,25.600,True,False,amp_eq_infeasible

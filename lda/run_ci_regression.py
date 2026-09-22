@@ -422,12 +422,16 @@ CORE_SMOKES: List[str] = [
     #   本 smoke 建成时漏登 CORE_SMOKES（与上轮 B16 假绿同属「标签≠行为」纪律缺口），
     #   今补登常驻。CI core 152→153。
     "run_maturity_baseline_smoke.py",
-    # 红队锚面 fuzz（C · v0.9.62）：攻击面从 S 系列预算锚扩展到全部 52 锚（重点 26 严独
-    #   + 25 自证桩）。规则式参数扰动（±30%）+ 可选 LLM 增强（env 门控，复用 RedTeamProposer
-    #   同款 HTTP 模式，LLM 只出题不判卷），统一死标量执行器 run_verification 判卷。硬门禁=
-    #   严独覆盖 26/26（攻击面必须全覆盖）；发散点作待 BOUNTY 人工复核情报（落盘
-    #   redteam_anchor_fuzz_defects_pending.json），不硬判 FAIL（防误报哭狼）。实测 ~94s，
-    #   亚 300s 默认超时，按准入准则无权豁免，必须进 core。CI core 153→154。
+    # 红队锚面 fuzz（C · v0.9.62）：攻击面自 S 系列预算锚起步，随账本扩基到 **全部 448
+    #   严独锚**（strict_coverage 1.0）。规则式参数扰动（±30%）+ 可选 LLM 增强（env 门控，
+    #   复用 RedTeamProposer 同款 HTTP 模式，LLM 只出题不判卷），统一死标量执行器
+    #   run_verification 判卷。硬门禁 = 严独覆盖 448/448（攻击面必须全覆盖）；发散点作待
+    #   BOUNTY 人工复核情报（落盘 redteam_anchor_fuzz_defects_pending.json），不硬判 FAIL
+    #   （防误报哭狼）。⚠️ 本条曾写「实测 ~94s / 亚 300s 默认超时，无权豁免」——那是 52 锚
+    #   时代的旧值，随扩基早已失效（差 14.7×）：**现实测 1385.0s**（448 锚 · baseline 12
+    #   轮跨轮上界 / censored 2）⇒ 已远超默认 300s，故在 `_BUILTIN_TIMEOUT_OVERRIDE` 单列
+    #   **4200s（≈3.03×）**。其「必须进 core」的理由不变（核心攻击面硬门禁）。⚠️ 该注释
+    #   过时值曾误导超时预算判断，改动耗时口径时须同步订正此块。CI core 153→154。
     "run_redteam_anchor_fuzz_smoke.py",
     # 验证账本(VMM) 端点 + 前端接线（C · v0.9.64）：GET /api/verification_ledger 的 vmm 块
     #   由生产代码动态推导，与 README 文档账本(26/1/25·低置信 15·provenance 6 类)交叉核对；

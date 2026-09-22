@@ -54,6 +54,29 @@ _DEFECTS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                               "redteam_anchor_fuzz_defects_pending.json")
 
 
+def _stable_diag(diagnostics: str) -> str:
+    """报告级归一化：`执行异常：<类名>: <消息>` → `执行异常：<类名>`。
+
+    根因（2026-09-22 实测 · 报告非 hermetic）：`verification_spec.run_verification`
+    把异常**消息原文**塞进 `diagnostics`（`执行异常：{type(e).__name__}: {e}`）。
+    同一数学错误在不同来源/库版本下措辞不同 —— 实测 `ValueError: math domain
+    error`（`math.sqrt(负)`）vs `ValueError: expected a nonnegative input, got
+    -0.58…`（numpy 的 `np.sqrt(负)`）⇒ 本**受跟踪**报告在 numpy 升级后重跑必然
+    产生 diff（4 行 diag 全变），污染提交噪声。
+
+    下游只判前缀（见 `_fuzz_one`：`"执行异常" in out.diagnostics`），类名已足以
+    定位候选局限类别；扰动参数仍完整保留在 `params` ⇒ 证据链不损。消息原文留在
+    stdout（运行时可见），**不进受跟踪报告**。
+    """
+    if not diagnostics:
+        return diagnostics
+    prefix = "执行异常："
+    if diagnostics.startswith(prefix):
+        cls = diagnostics[len(prefix):].strip().split(":", 1)[0].strip()
+        return f"{prefix}{cls}" if cls else prefix.rstrip("：")
+    return diagnostics
+
+
 def _classify() -> Tuple[List[str], List[str], List[str]]:
     """三分类（与 C2 护栏 / routes.py 同源口径）。"""
     strict, degraded, stub = [], [], []
@@ -257,7 +280,7 @@ def _fuzz_one(bid: str, as_strict: bool) -> Dict[str, Any]:
             if out.candidate is None or "执行异常" in out.diagnostics:
                 cand_lim += 1
                 samples.append({"params": p, "issue": "candidate_limitation",
-                                "diag": out.diagnostics})
+                                "diag": _stable_diag(out.diagnostics)})
             else:
                 genuine_div += 1
                 samples.append({"params": p, "issue": "genuine_divergence",
@@ -367,6 +390,21 @@ def main():
         print(f"  [FAIL] 严独覆盖 < 1.0（{strict_coverage:.2f}）：攻击面缺口")
     else:
         print(f"  [PASS] 严独全覆盖（{strict_attacked}/{len(strict)}）")
+
+    # 报告 hermetic 自证（铁律8：没验证过的护栏不算护栏）：
+    #   落盘报告的每条 diag 必须是**已归一化**形态（`执行异常：<类名>`，不含消息
+    #   原文）—— 否则跨库版本重跑会产生 diff（根因见 `_stable_diag`）。
+    #   反向可证伪：把 `_stable_diag(...)` 还原为 `out.diagnostics`，本项必红。
+    _diags = [s.get("diag") for f in findings for s in f.get("samples", [])
+              if s.get("diag")]
+    _bad = [d for d in _diags
+            if not (d.startswith("执行异常：") and ":" not in d[len("执行异常："):])]
+    if _bad:
+        ok = False
+        print(f"  [FAIL] 报告 diag 未归一化（非 hermetic）{len(_bad)} 处：{_bad[:3]}")
+    else:
+        print(f"  [PASS] 报告 diag 已归一化（hermetic：候选局限 {len(_diags)} 条，"
+              f"无库版本相关原文）")
 
     print(f"  [情报] 跨方法发散 {genuine_div_total} 处（待域有效性人工复核，非确认缺陷）")
     for r in findings:

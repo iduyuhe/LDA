@@ -405,7 +405,7 @@
             "wl": 1.55
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：RuntimeError: B2 FV-FDM: 无芯受限 TE 导引模被选出（选模失败）"
+          "diag": "执行异常：RuntimeError"
         },
         {
           "params": {
@@ -416,7 +416,7 @@
             "wl": 1.55
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：RuntimeError: B2 FV-FDM: 无芯受限 TE 导引模被选出（选模失败）"
+          "diag": "执行异常：RuntimeError"
         },
         {
           "params": {
@@ -427,7 +427,7 @@
             "wl": 1.55
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：RuntimeError: B2 FV-FDM: 无芯受限 TE 导引模被选出（选模失败）"
+          "diag": "执行异常：RuntimeError"
         },
         {
           "params": {
@@ -912,7 +912,7 @@
             "k": 7
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：IndexError: index 7 is out of bounds for axis 0 with size 4"
+          "diag": "执行异常：IndexError"
         },
         {
           "params": {
@@ -979,7 +979,7 @@
             "k": 5
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：IndexError: index 5 is out of bounds for axis 0 with size 4"
+          "diag": "执行异常：IndexError"
         },
         {
           "params": {
@@ -988,7 +988,7 @@
             "k": 5
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：IndexError: index 5 is out of bounds for axis 0 with size 4"
+          "diag": "执行异常：IndexError"
         },
         {
           "params": {
@@ -1113,7 +1113,7 @@
             "k": 9
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：IndexError: index 9 is out of bounds for axis 0 with size 4"
+          "diag": "执行异常：IndexError"
         },
         {
           "params": {
@@ -1122,7 +1122,7 @@
             "k": 9
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：IndexError: index 9 is out of bounds for axis 0 with size 8"
+          "diag": "执行异常：IndexError"
         },
         {
           "params": {
@@ -1180,7 +1180,7 @@
             "a2": 0.45
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：ValueError: Zernike 要求 0<=m<=n 且 n-m 为偶数，收到 n=1 m=0"
+          "diag": "执行异常：ValueError"
         },
         {
           "params": {
@@ -1192,7 +1192,7 @@
             "a2": 0.45
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：ValueError: Zernike 要求 0<=m<=n 且 n-m 为偶数，收到 n=1 m=0"
+          "diag": "执行异常：ValueError"
         },
         {
           "params": {
@@ -1219,7 +1219,7 @@
             "a2": 0.45
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：ValueError: Zernike 要求 0<=m<=n 且 n-m 为偶数，收到 n=3 m=0"
+          "diag": "执行异常：ValueError"
         },
         {
           "params": {
@@ -1231,7 +1231,7 @@
             "a2": 0.45
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：ValueError: Zernike 要求 0<=m<=n 且 n-m 为偶数，收到 n=5 m=0"
+          "diag": "执行异常：ValueError"
         }
       ]
     },
@@ -2442,7 +2442,7 @@
             "wl": 1.55e-06
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：ValueError: math domain error"
+          "diag": "执行异常：ValueError"
         },
         {
           "params": {
@@ -2452,7 +2452,7 @@
             "wl": 1.55e-06
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：ValueError: math domain error"
+          "diag": "执行异常：ValueError"
         },
         {
           "params": {
@@ -3433,7 +3433,7 @@
             "seed": 7
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：ValueError: math domain error"
+          "diag": "执行异常：ValueError"
         },
         {
           "params": {
@@ -3445,7 +3445,7 @@
             "seed": 7
           },
           "issue": "candidate_limitation",
-          "diag": "执行异常：ValueError: math domain error"
+          "diag": "执行异常：ValueError"
         },
         {
           "params": {

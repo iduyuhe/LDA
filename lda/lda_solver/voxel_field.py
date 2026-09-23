@@ -13,10 +13,11 @@ gdsfactory 仅是 B 级 fork 副本的"可选序列化通道"，缺失时体素�
 """
 from __future__ import annotations
 
+import math
 import os
 import sys
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -35,6 +36,25 @@ class LayoutLayer:
     x1: float
     y0: Optional[float] = None
     y1: Optional[float] = None
+    z0: Optional[float] = None
+    z1: Optional[float] = None
+    comment: str = ""
+
+
+@dataclass
+class LayoutPolygon:
+    """**任意多边形**掩模（G16：非矩形几何；坐标 um，机器优先、非 GUI）。
+
+    与 `LayoutLayer`（仅 x0/x1/y0/y1 矩形）并列存在 —— 后者不删不改（既有
+    调用点零影响），本类只补「矩形表达不了」的那一半。
+
+    约定：
+      · 顶点**按顺序**给出，顺时针 / 逆时针皆可（even-odd 判据与取向无关）；
+      · **自交多边形按 even-odd（奇偶）语义**填充；**孔洞**用反向内环表达；
+      · z 方向由 `[z0, z1]` 挤出，None ⇒ z 轴全宽（与 `LayoutLayer` 同口径）。
+    """
+    material_ref: str
+    points: List[Tuple[float, float]]
     z0: Optional[float] = None
     z1: Optional[float] = None
     comment: str = ""
@@ -99,6 +119,110 @@ def voxelize_rectangular(layers: List[LayoutLayer], materials: Dict[str, float],
         k0, k1 = _interval(lay.z0, lay.z1, grid.Nz, grid.dl)
         if i1 > i0 and j1 > j0 and k1 > k0:
             eps[i0:i1, j0:j1, k0:k1] = n ** 2
+    return eps
+
+
+# ---------------------------------------------------------------------------
+# G16 · 任意多边形栅格化（非矩形几何 ⇒ G13/G14 的前置）
+# ---------------------------------------------------------------------------
+def _validate_polygon(points, who="polygon") -> None:
+    """多边形合法性检查 —— 畸形输入**必 raise**（反向护栏，见 smoke ⑤）。"""
+    if points is None or not isinstance(points, (list, tuple)):
+        raise ValueError("%s 顶点必须为序列（收到 %r）" % (who, points))
+    if len(points) < 3:
+        raise ValueError("%s 顶点数必须 ≥3（收到 %d）" % (who, len(points)))
+    for p in points:
+        if not isinstance(p, (list, tuple)) or len(p) != 2:
+            raise ValueError("%s 顶点必须形如 (x, y)（收到 %r）" % (who, p))
+        x, y = p
+        if not (isinstance(x, (int, float)) and isinstance(y, (int, float))):
+            raise ValueError("%s 顶点坐标必须为数值（收到 %r）" % (who, p))
+        if not (math.isfinite(float(x)) and math.isfinite(float(y))):
+            raise ValueError("%s 顶点坐标必须有限（收到 %r）" % (who, p))
+
+
+def polygon_area(points) -> float:
+    """鞋带公式给出的多边形面积（取绝对值）。
+
+    ⚠️ 对**自交**多边形给的是**代数面积**（各环带符号相抵），**不等于**
+    even-odd 的填充面积 —— smoke ① 对自交用例用「填充面积」而非本函数判定。
+    """
+    _validate_polygon(points)
+    n = len(points)
+    s = 0.0
+    for i in range(n):
+        x1, y1 = points[i]
+        x2, y2 = points[(i + 1) % n]
+        s += float(x1) * float(y2) - float(x2) * float(y1)
+    return abs(s) / 2.0
+
+
+def rasterize_polygon(points, nx: int, ny: int, dl: float,
+                      subpixel: int = 1) -> np.ndarray:
+    """even-odd 光线交叉法 → **面积占比**数组 `(nx, ny)` ∈ [0, 1]。
+
+    `subpixel = 1`：格心采样（0 / 1 二值 ⇒ 传统阶梯化）
+    `subpixel = s`：每格取 s×s 子采样点的平均（**亚格平均**）⇒ 边界格得到
+        分数填充；这既降低 staircase 误差，也是**判据 D 的细化参数**
+        （见 `run_polygon_voxel_smoke` ②）。
+
+    实现：交叉数法（crossing number），对每个子采样点做逐边 XOR。
+    水平边不参与计数（经典约定，避免顶点重复计入）。
+    """
+    _validate_polygon(points)
+    s = int(subpixel)
+    if s < 1:
+        raise ValueError("subpixel 必须 ≥1（收到 %r）" % subpixel)
+    if nx < 1 or ny < 1 or dl <= 0:
+        raise ValueError("网格非法：nx=%r ny=%r dl=%r" % (nx, ny, dl))
+    if nx * ny * s * s > 5e7:
+        raise ValueError("网格过大（nx·ny·s² = %d > 5e7）⇒ 请降低分辨率或 subpixel"
+                         % (nx * ny * s * s))
+
+    off = (np.arange(s, dtype=float) + 0.5) / s
+    xs = (np.arange(nx, dtype=float)[:, None] + off[None, :]) * dl   # (nx, s)
+    ys = (np.arange(ny, dtype=float)[:, None] + off[None, :]) * dl   # (ny, s)
+    X = xs[:, :, None, None]                                        # (nx, s, 1, 1)
+    Y = ys[None, None, :, :]                                        # (1, 1, ny, s)
+
+    inside = np.zeros((nx, s, ny, s), dtype=bool)
+    n = len(points)
+    for k in range(n):
+        x1, y1 = float(points[k][0]), float(points[k][1])
+        x2, y2 = float(points[(k + 1) % n][0]), float(points[(k + 1) % n][1])
+        if y1 == y2:
+            continue
+        straddle = (y1 > Y) != (y2 > Y)
+        x_cross = (x2 - x1) * (Y - y1) / (y2 - y1) + x1
+        inside ^= (straddle & (X < x_cross))
+    return inside.mean(axis=(1, 3))
+
+
+def voxelize_polygons(layers: Sequence[LayoutPolygon],
+                      materials: Dict[str, float], grid: VoxelGrid,
+                      background_ref: str = "air",
+                      subpixel: int = 1) -> np.ndarray:
+    """**任意多边形**（含凹形 / 孔洞 / 自交）→ 3D 体素折射率场（含 n²）。
+
+    先填背景，再按 layers 顺序覆盖（后者覆盖前者）；z 由 `[z0, z1]` 挤出。
+
+    🔴 亚格平均的混合规则：按 **ε（= n²）线性加权**，即
+    `ε_cell = ε_bg + frac·(ε_mat − ε_bg)`。这是显式选择（不是「显然」）：
+    分数填充格拿的是面积加权的等效介电，`frac=0/1` 时**严格退化为**背景 /
+    材料纯值 ⇒ 与 `voxelize_rectangular` 在 0° 对齐矩形上**逐位一致**
+    （由 `run_polygon_voxel_smoke` ③ 断言，保证新管线不是另起口径）。
+    """
+    n_bg = materials.get(background_ref, 1.0)
+    eps_bg = n_bg ** 2
+    eps = np.full((grid.Nx, grid.Ny, grid.Nz), eps_bg, dtype=float)
+    for lay in layers:
+        n_m = materials[lay.material_ref]
+        frac = rasterize_polygon(lay.points, grid.Nx, grid.Ny, grid.dl, subpixel)
+        k0, k1 = _interval(lay.z0, lay.z1, grid.Nz, grid.dl)
+        if k1 <= k0:
+            continue
+        block = eps_bg + frac[:, :, None] * (n_m ** 2 - eps_bg)
+        eps[:, :, k0:k1] = np.repeat(block, k1 - k0, axis=2)
     return eps
 
 

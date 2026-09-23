@@ -60,7 +60,8 @@ from lda_l2.loss_aware_compile import (  # noqa: E402
 
 PASS = 0
 FAIL = 0
-check = make_check(globals(), return_ok=True, detail_on="fail")
+check = make_check(globals(), return_ok=True, detail_fmt="  —— {d}",
+                   detail_on="fail")
 
 # ---------------------------------------------------------------------------
 # 本轮实测常量（DFT(N) · grid2d · rail_pitch=4.0 · alpha_prop=2.0 · alpha_tap=0.05）

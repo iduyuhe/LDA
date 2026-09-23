@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.9.134（2026-09-23 · P4「物理深度补齐」· 里程碑 **M-4 物理补深** · 时域色散/各向异性/非线性介质（G13）· 不扩基 · 零锚改动 · 账本零变化 · CI core 202→203）
+
+### 背景
+`LDA_internal_design_plan_2026-09-23.md` §5.5 G13 出口判据 verbatim：**「时域色散/各向异性/非线性介质中 CW 传播常数 k 与解析 ε_r(ω) 一致；Kerr 弱场退化线性、强场自相位调制；长程稳定」**。本轮把它落成**只增不改**的独立 2D 全 Yee 内核 `lda_solver/dispersive.py`（自带 `run_2d`，不修改 `fdtd2d.py`/`fdtd3d.py`），并配驻留门禁 + 突变探针。
+
+### 交付物
+- **`lda_solver/dispersive.py`**（~430 行，自检）：四类介质 —— ① `ScalarMedium`（退化正确性基线）· ② `LorentzMedium`（含 Drude 退化 w0=0；ADE 两步递归 Sullivan/Taflove，P^{n+1}=c1·P^n+c2·P^{n−1}+c0·E^n，本征 E=(D−P^{n+1})/ε∞）· ③ `AnisotropicMedium`（对角 ε，E=ε⁻¹D，单轴双折射）· ④ `KerrMedium`（χ³ 瞬时，ε_eff=ε_lin+n2|E|²，自相位调制）。每步由 `D` 经 `medium.step_E` 重算 `E`；软源注入 `D`（否则被覆盖）；E/H/D 全阻尼吸收 exp(−d·10)。
+- **`lda/run_dispersive_smoke.py`**（G13 门禁，11 判据 ALL GREEN · 1.9s）：① 标量/Lorentz/Drude k_meas 与 ω·√Re ε_r 一致（<0.5%，实测 0.07%–0.35%）· ②a/②b 各向异性 Ey(√eps_y)/Ez(√eps_z) 一致 · ②c 双折射比 k_Ey/k_Ez=√(eps_y/eps_z)（1.5022≈1.5000）· ③a Kerr 弱场精确退化线性 · ③b Kerr 强场显著偏离弱场（shift 0.19%>0.1%）· ④ 稳定性长程 145 周期 max|E| 有界（0.71<10）· ⑩ 结构零影响（fdtd2d/3d 源码不含 dispersive）· ⑪ 零 LLM/零网络（含 kernel 溯源字段）。
+- **`scripts/p4_g13_probe.py`**（突变探针，**零源码突变**、只 patch 运行时 `run_2d`）：**10/10 突变全部被对应判据捕获 + sha256 还原**（M1 标量/M2 Lorentz/M3 Drude k 虚高 ⇒ ① 各子项；M4 Ey/M5 Ez k 虚高 ⇒ ②a/②b + ②c 双折射连带漂移；M6 弱场 k 虚高 ⇒ ③a（③b 隔离仍过）；M7 强场非线性抹平 ⇒ ③b（③a 隔离仍过）；M8 稳定性 max|E| 虚标 100 ⇒ ④；M9 伪造含 dispersive 的 fdtd2d.py ⇒ ⑩；M10 登记数据注入网络 token ⇒ ⑪）。证明每条判据会响且互相隔离。
+- **CI 接线**：`run_ci_regression.py` `CORE_SMOKES` 增 `run_dispersive_smoke.py` ⇒ **202→203**；不进 `_BUILTIN_TIMEOUT_OVERRIDE`（1.9s ≪ 300s，~158× 余量）。
+
+### 🔴 关键工程结论（本轮实测坐实）
+- 双探针相位测量**长基线（~3λ）比短基线（6 格）准**：短基线把残余驻波相位误差放大成 ~4% 假偏差；长基线平均掉 ⇒ 0.3% 量级。配强吸收 exp(−d·10) 杀驻波。
+- 相位解缠必须用「期望有符号相位」选 2π 分支（下游波 φ1−φ0=−k·d_prop，用错符号会令短基线虚高 ~2×）。
+- FDTD 内核正确性经多点相位拟合交叉验证（0.39%），前述误差是测量/求解器伪影而非网格色散（λ/40 理论误差仅 ~0.5%）。
+
+### 账本
+账本零变化：严格 **448** / 降级 **3** / 自证桩 **18** / 总 **469** · 独立率 **95.5%** · 天花板 **97.4%** · 棘轮 `MAX_SELF_CERTIFIED=18` 不动 · 零 tol 放宽 · **零锚改动** · **零判据改动**。仅 **CI core 202→203**。
+
 ## v0.9.133（2026-09-23 · P4「物理深度补齐」· 里程碑 **M-4 物理补深** · 真 PML（CFS-PML）+ 任意几何 3D 网格 · 不扩基 · 零锚改动 · 账本零变化 · CI core 200→202）
 
 ### 背景

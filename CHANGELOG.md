@@ -1,5 +1,129 @@
 # Changelog
 
+## v0.9.131（2026-09-23 · P2「让别人能用」收官 · 指标 **M5 · M8** · 里程碑 **M-2 外部可用** · 修文档致命错 + 零基础 5 分钟上手 + API 参考自动生成 · 不扩基 · 零锚改动 · 账本零变化 · CI core 197→198）
+
+### 背景
+
+`LDA_internal_design_plan_2026-09-23.md` §5.3 的 P2 出口判据是：**M5 ≤5 步 · M8 ≥80% ·
+一名外部使用者零协助走通**。三项对应的都是「文档与可用性」——**这类工作最容易写完就漂移**，
+所以本版把它钉成常驻门禁（`lda/run_p2_usability_smoke.py`，12 组 38 判据，实测 4.2s）。
+零真实姓名、零锚改动、零 tol 放宽、零 LLM 进判决路径。
+
+### T2.1 修文档致命错（4 个真实致命错，其中 1 个规划未点名）
+
+- **一页纸概览「22 引擎 / 46 锚」⇒ 实为 469 锚**（差一个数量级）。原文两条主张（`22 引擎` /
+  `46 锚`）并列，读起来像「22 个引擎对应 46 道锚」；实际口径是
+  **22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）/ 469 道锚（B1–B451 + E1–E10 + S1–S13）**。
+  同处 `L14` 的命令清单漏掉 P1 刚交付的 `lda build`，`L22` 的示例路径缺一层
+  （`examples/cli_check_example.json` → 应为 `lda/examples/cli_check_example.json`）——
+  **照抄首条命令即失败**。
+- **解释器口径互斥**：`examples/README.md` 与 `examples/sovereign_evidence/README.md` 写
+  「需受管解释器 3.14.3/python.exe」，而 `CONTRIBUTING.md` 与手册口径是 **3.13 项目 venv**。
+  统一为后者（并改成跨平台的 `<venv>/Scripts/python.exe` 写法）。
+- **`pyproject.toml` 自相矛盾**：`requires-python = ">=3.12"` 而 classifiers 仍声明
+  `Programming Language :: Python :: 3.11`。改为 `3.12`。
+- 🔴 **规划未点名的第 4 个（本轮最重要发现）**：`lda/run_cli_smoke.py:26` 把
+  **作者机器的解释器绝对路径**（`C:/Users/Administrator/.workbuddy/.../python.exe`）
+  写成 `LDA_PY` 的**默认值**。外部贡献者克隆后跑 `run_ci_regression.py --tag core`
+  会在这一步**直接假红** —— 这是「别人不能用」最典型的硬阻塞，且它不在任何缺口清单里。
+  修法：`PY = os.environ.get("LDA_PY") or sys.executable`（语义上「子进程解释器」本就
+  应该等于「当前解释器」）。同族修正：`run_mcp_server.py` docstring 里可复制的 MCP
+  配置示例原写死 `D:/agent_LDA/...`，改为 `<仓库根>` / `<venv>/Scripts/python.exe` 占位符。
+
+### T2.2 零基础上手（M5：≤5 步 + 1 篇教程）
+
+- **新增 `QUICKSTART.md`** —— **5 步**：① clone ② 装环境 ③ 一条命令出 GDS ④ 看产物
+  ⑤ 换个目标再跑。**每步命令与每行输出都来自干净 `git clone` 的真机演练**（不猜）：
+  `lda build lda/examples/cli_build_goal.json --out reports` 实测 **1.8s** ⇒
+  GDS **3128 B** · DRC **3/3** · LVS **ACCEPT**（2/2 网）· 判决 **ACCEPT**，
+  4 类产物落盘；`lda design RingResonator --target 20` 实测 35 候选 / 最优 `R_um=5.5`。
+- **两条环境路径都写清楚**：路 A（有网）`pip install -e .` 得到 `lda` 命令；
+  路 B（零安装 / 离线）直接用 `python lda/lda_design/cli.py`。两者 `--help` 输出逐字相同
+  （实测已验证）。⚠️ 并**如实写明失败形态**：无网时 `pip install -e .` 会报
+  `Could not find a version that satisfies the requirement setuptools>=61`（构建依赖需联网），
+  这不是代码缺陷 —— 好过让使用者自己撞。
+- **WebUI 补「事前」未登录入口提示**（`static/index.html` 的 `#authHint`，由 `LDA_AUTHED`
+  驱动）：此前只有**事后** 401 文案（点下去才知道要登录），现在进页面就说明「哪些面板需要
+  登录 / 哪些公开验货端点免登录 / 去哪登录」。
+- 演练脚本 `tmp_qs_walkthrough.py`（`pip install -e .` 路）在沙箱被网络卡死 7.5 分钟无进展，
+  据此改用零网络依赖路重测 —— **这正是文档里必须写两条路的原因**。
+
+### T2.3 API 参考自动生成（M8：≥80%）
+
+- **新增 `scripts/gen_api_reference.py`**（生成器，零手写描述）：
+  - 端点集合 ← `routes.py` 的 `GET_ROUTES` / `POST_ROUTES` / `PATCH_ROUTES` / `GET_PREFIX` /
+    `POST_PREFIX`（**唯一真相源**）
+  - 用途描述 ← **代码 docstring 四级阶梯**：① handler 自身 docstring → ② handler 转调的
+    业务 `_app.<fn>` 的 docstring（自动跳过 `_get_store` 等私有基建，`return` 里的优先）
+    → ③ `store = _app._get_store()` 后 `store.<method>` ⇒ 取 `store.py` 同名方法 docstring
+    → ④ 都没有 ⇒ **如实标「（未描述）」并计入缺口，不编造**
+  - 参数 ← `ast` 扫 handler 的 `p.get("…")` 字面量键；鉴权 ← 是否命中 `HEAVY_POST_PATHS`
+  - 产物 `docs/API_REFERENCE.md`（人读）+ `docs/api_reference.json`（机器读，**同一函数生成**
+    ⇒ 杜绝双口径）；`--check` 模式供门禁做「重新生成 == 磁盘文件」的同源断言
+  - **实测：138 端点（精确 121 + 前缀/后缀 17）· 有描述 138/138 = 100.0%**（门槛 80%）·
+    需登录 60 · 未描述 0；来源分布 `app_docstring 74 / handler_docstring 47 / store_docstring 11`
+- **`lda/lda_webui/routes.py`：补 29 条 handler docstring**（diff **50 行纯新增、0 删除**，
+  CRLF 字节保真）。⚠️ 描述一律**如实**：例 `POST /api/pdk_design` 的 docstring 就写
+  「**501 未实现**：依赖 `DesignProblem` 抽象层（规划 D-09）」—— 不把未实现的接口描述成能用。
+- **两处生成器缺陷当场修**：① `_store_calls` 首版按链式 `_app._get_store().<method>` 解析，
+  而实际写法是 `store = _app._get_store()` 后调 `store.<method>` ⇒ 该簇端点全部无描述
+  （修正后 `store_docstring` 11 条）；② 生态簇业务函数不在 `app.py` 顶层（实在
+  `lda_pdk/{submit,review,publish,empirical}.py` / `lda_l2/pdk.py`）⇒ 增加再导出模块索引。
+- **顺带补上此前漏登的 PATCH 端点**（`PATCH /api/store/me`，`app.py:do_PATCH` 真会分发）
+  与**逐后缀通配行**：原先把元组 `(".js", ".css")` `join` 成一行 `".js / .css/*"` ——
+  那是个**不存在的路径**，人照抄必错、机器也没法跟路由表对齐（门禁首跑即报「漏 4 条通配」）。
+  渲染规则抽成 `wildcard_patterns()` 单一定义处，门禁**直接 import** 它做双向比对。
+- **`LDA_D-13_WebUI内网部署说明.md` 全量重写 v2.0**：删掉手写的 12 条端点表（改指向自动生成
+  的参考）、补**鉴权模型**（GET 验货匿名 / 重计算 60 条须登录 / 401 **不占缓存与并发** /
+  HttpOnly Cookie / 429 `retry_after` 语义）、前置条件订正（`3.11+`/`lda_cuda_venv` 作废 ⇒
+  **Python 3.13**）、systemd 生产部署流程，并新增**「作废说明」表**（5 项旧错 → 实际 → 处置）。
+
+### T2.4 环境变量集中文档
+
+- **新增 `docs/ENVIRONMENT.md`**：`ast` 穷举 `lda/**/*.py` + `scripts/**/*.py` 实际读取的
+  **29 个** `LDA_*` 变量（规划文档只列 7 个，漏 22 个），分 7 节（部署运维 / 数据后端 /
+  商业闭环 / 审核策略 / Agent·LLM / 测试 CI / 红线与诚实边界），逐项含默认值与读取点；
+  并显式声明「**LLM 不进判决路径**」与 `LDA_ADMIN_TOKEN` 的 fail-closed 语义。
+- 本轮补上 `scripts/` 侧的 `LDA_ROOT`（此前未文档化；规划亦未列）。
+
+### 新增常驻门禁 `lda/run_p2_usability_smoke.py`（38 判据 · 12 组 · 实测 4.2s）
+
+① 文档引用的仓库内路径**真实存在**（血案路径/签名双钉死）② `lda <子命令>` 与 argparse
+真实子命令一致 + `lda design` 签名为 `<kind> --target <float>` ③ 解释器口径唯一 +
+`pyproject` 不自相矛盾 ④ 教程存在且步骤 **≤5**、连续、每步有可复制命令、覆盖 `lda build`
+⑤ API 参考与代码**同源**（重跑生成器零漂移）⑥ **M8 ≥80%**——覆盖率**由端点逐条重算**
+（不信 json 里的 `counts` 自述块）+ `counts` ≡ 重算值 + 每条描述有代码来源 ⑦ 参考 ≡
+路由表**双向**（含 PATCH 与逐后缀通配）+ 鉴权标记 ≡ `HEAVY_POST_PATHS` ⑧ `LDA_*` 环境变量
+全部有**表格行**（只「文中提过一句」不算）+ 数量声明 ⑨ 部署说明现役口径无过期清单
+（**豁免「作废说明」段**：该节按作用就要逐字披露旧错词，不豁免会逼着把披露删掉）+
+指向自动生成参考 ⑩ 未登录**事前**入口提示 ⑪ `lda/**/*.py` **代码字面量**无作者机器路径
+⑫ 生成器零 LLM。
+
+🔴 **突变探针 13/13 全部会响**（每条判据各造一个真实反例：假路径 / 血案路径回潮 / 假子命令 /
+写回 3.11 / 第 6 步 / 手改生成物 1 字 / 抹空 30 条描述 / 塞多余端点 / 删 `LDA_ROOT` 表格行 /
+正文塞回 `B1–B11` / 删入口提示元素 / 改回写死解释器 / 新建含作者路径的 `.py`），
+**还原逐一 sha256 复核** ⇒ 判据非恒真。⚠️ **探针首轮还抓出一个真判据缺陷**：⑥ 原读
+`counts` 自述块 ⇒ 抹空 30/138 条描述（覆盖率 78.3%）**照样绿**；已改为逐条重算 + 反向断言。
+另有 2 条首轮「不响」实为**探针自身写错**（替换目标带反引号而后文没有 / 替换串 `LDA_ROOTX`
+**含原子串**导致 `in doc` 恒真）—— 已修正并在脚本内留注，这正是「先怀疑判据、再怀疑探针」
+两头都要查的原因。
+
+🔴 **门禁首跑的自我修正（记录在案）**：首跑 22 PASS / 9 FAIL，其中 3 个 FAIL 是**判据自身
+过朴素**造成的假红 —— README 的 `>` 引用块是**历史 changelog**（含已被修正的旧口径
+`requires-python 3.11` / `CI 3.13.14` / 已随 vendor 清理移除的 `vendor/INSTALL.md`），
+把历史引述当「现役承诺」判，等于要求「删掉变更记录才能过门禁」；② 正则 `\s+` 会跨行误匹配
+（把 `lda\ngrep` 当成子命令）。修法：抽出 `_active_lines()`（剥掉引用块 / 「作废说明」小节 /
+含「作废」的披露行），只判**当前口径**；正则改 `[ \t]+`；门禁**自身**源码含被禁字面量属自指
+假红，显式自我豁免并写明理由。
+
+### 账本影响
+
+**零锚改动** · **账本零变化**（严格独立 **448** / 降级 **3** / 自证桩 **18** / 总 **469**）·
+独立率 **95.5%** 持平 · 天花板 **97.4%** 持平 · 棘轮 `MAX_SELF_CERTIFIED=18` 不动 ·
+`_PHYSICAL_LAW`=457 不动 · 零 tol 放宽 · **零判据放宽**。
+仅 **CI core 197→198**（已同步 README 顶行 + `## 当前账本` 段 + `CONTRIBUTING.md` ×2 +
+`pyproject.toml`）。
+
 ## v0.9.130（2026-09-23 · P1-T1.1 · 设计包 → GDS 贯通（WebUI）：UI 一次点击产出**可下载 `.gds` + DRC/LVS 签核报告** · 报告与 `/api/tapeout` **同源** · 可交付 **D4 第一条** · 不扩基 · 零锚改动 · 账本零变化 · CI core 196→197）
 
 ### 新增（P1-T1.1 · 内部设计能力规划 §5.2 · 缺口 §3.3 #1「设计包与 GDS/签核不联动、GDS 不可下载」🔴 旗舰级）

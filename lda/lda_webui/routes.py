@@ -39,6 +39,7 @@ else:
 
 # ============================ 静态 / 资源 ============================
 def h_index(h, p, q, path):
+    """GET / 与 /index.html —— 主控制台单页（static/index.html，nocache）。"""
     fp = os.path.join(_app.WEBUI_DIR, "static", "index.html")
     with open(fp, "rb") as f:
         h._send(200, body=f.read(), ctype="text/html", nocache=True)
@@ -46,6 +47,11 @@ def h_index(h, p, q, path):
 
 
 def h_static_html(h, p, q, path):
+    """GET /<name>.html —— 白名单静态页（index/insights/admin/store/mine/public/stats）。
+
+        用 basename 拼路径 ⇒ 天然防目录穿越；非白名单或文件不存在一律 404，不暴露源码。
+
+    """
     name = os.path.basename(path)
     fp = os.path.join(_app.WEBUI_DIR, "static", name)
     if name in ("index.html", "insights.html", "admin.html", "store.html",
@@ -58,6 +64,7 @@ def h_static_html(h, p, q, path):
 
 
 def h_static_asset(h, p, q, path):
+    """GET /<name>.js|.css —— 静态脚本 / 样式（nocache；basename 防目录穿越）。"""
     name = os.path.basename(path)
     fp = os.path.join(_app.WEBUI_DIR, "static", name)
     if os.path.exists(fp):
@@ -94,6 +101,11 @@ def h_static_doc(h, p, q, path):
 
 
 def h_proofs(h, p, q, path):
+    """GET /proofs/<32 位十六进制>.png|jpg —— 支付凭证图（公开缓存 1 天）。
+
+        文件名格式不匹配或文件不存在即 404 ⇒ 不可枚举、不可猜。
+
+    """
     fname = path[len("/proofs/"):]
     if not re.fullmatch(r"[0-9a-f]{32}\.(png|jpg)", fname):
         h._send(404, {"error": "not found"})
@@ -110,6 +122,7 @@ def h_proofs(h, p, q, path):
 
 
 def h_static_img(h, p, q, path):
+    """GET /<name>.jpg|jpeg|png|gif —— 静态图片（公开缓存 1 天；basename 防目录穿越）。"""
     name = os.path.basename(path)
     fp = os.path.join(_app.WEBUI_DIR, "static", name)
     if os.path.exists(fp):
@@ -126,6 +139,7 @@ def h_static_img(h, p, q, path):
 
 # ============================ GET · 系统状态类 ============================
 def h_status(h, p, q, path):
+    """GET /api/status —— 系统落地状态（各层 built/planned、PDK 数等），供前端与健康检查取用。"""
     return (200, _app.system_status())
 
 
@@ -134,6 +148,7 @@ def h_health(h, p, q, path):
 
 
 def h_benchmarks(h, p, q, path):
+    """GET /api/benchmarks —— 题库定义清单（id / 标题 / 指标 / oracle / 容差），源自 `BENCHMARK_DEFS`。"""
     bm = [{"id": k, "title": v.get("title"), "metric": v.get("metric"),
            "oracle": v.get("oracle"), "tol": v.get("tol")}
           for k, v in _app.BENCHMARK_DEFS.items()]
@@ -164,6 +179,11 @@ def h_empirical(h, p, q, path):
 
 
 def h_design_catalog(h, p, q, path):
+    """GET /api/design_catalog —— 设计引擎与设计包目录（`engine_catalog` / `package_catalog`）。
+
+        导入失败时返回空目录 + `error` 字段（服务不 500）。
+
+    """
     try:
         from lda_design.design_package import engine_catalog, package_catalog
         return (200, {"engine": engine_catalog(), "package": package_catalog()})
@@ -715,6 +735,7 @@ _BMCC_CACHE_TTL = 120.0
 
 
 def h_benchmark_crosscheck(h, p, q, path):
+    """GET /api/benchmark_crosscheck —— 跨源死标量对照**重算**（~9s；TTL 缓存 + 串行锁，忙时 429）。"""
     try:
         # 缓存命中：重复 curl 秒回，不再重算 ~9s
         cached = _BMCC_CACHE.get("default")
@@ -822,10 +843,12 @@ def h_admin_purchase_reqs(h, p, q, path):
 
 
 def h_store_config(h, p, q, path):
+    """GET /api/store/config —— 前台公开配置（收款码 / 对公账户 / 身份分层），**不含管理员信息**。"""
     return (200, _app._get_store().public_config())
 
 
 def h_store_orders_mine(h, p, q, path):
+    """GET /api/store/orders/mine —— 我的订单列表（按会话令牌取用户；未登录 401）。"""
     store = _app._get_store()
     obj = store.list_orders(_app._token_from_request(h.headers), "mine")
     return (_ok_code(obj), obj)
@@ -851,6 +874,7 @@ def h_store_me_licenses(h, p, q, path):
 
 
 def h_admin_orders(h, p, q, path):
+    """GET /api/admin/orders —— 全量订单列表（管理员令牌；非管理员 401）。"""
     store = _app._get_store()
     obj = store.list_orders(_app._token_from_request(h.headers), "all")
     return (_ok_code(obj), obj)
@@ -1024,6 +1048,7 @@ def h_store_order_download(h, p, q, path):
 
 
 def h_store_order_get(h, p, q, path):
+    """GET /api/store/order/<id>[/download] —— 单订单查询；`/download` 子路径转自助下载（校验归属 + 已交付）。"""
     if path.count("/") == 5:
         parts = path.split("/")
         sub = parts[5] if len(parts) > 5 else ""
@@ -1034,6 +1059,7 @@ def h_store_order_get(h, p, q, path):
 
 
 def h_admin_config_get(h, p, q, path):
+    """GET /api/admin/config —— 读站点配置（管理员令牌，否则 401）。"""
     store = _app._get_store()
     if not store.is_admin(_app._token_from_request(h.headers)):
         return (401, {"error": "unauthorized"})
@@ -1052,6 +1078,11 @@ def h_store_me_patch(h, p, q, path):
 
 # ============================ POST · 设计闭环 / 内核 ============================
 def h_verify(h, p, q, path):
+    """POST /api/verify —— 真跑 harness 判决回路（`candidate` = reference/perturb/l3_ai，`perturb` = 扰动幅度）。
+
+        命中重计算闸门：须登录或管理员 Bearer；判决由死标量比对给出，LLM 不进路径。
+
+    """
     return (200, _app.run_verify(p))
 
 
@@ -1329,6 +1360,12 @@ def h_qeda_depth(h, p, q, path):
 
 
 def h_pdk_design(h, p, q, path):
+    """POST /api/pdk_design —— **501 未实现**：PDK 驱动逆设计依赖 `DesignProblem` 抽象层（规划 D-09）。
+
+        响应内给出当前可用端点指引（/api/verify、/api/agent_loop、/api/band_loop、
+        /api/coupler_loop、/api/ir_demo）。
+
+    """
     return (501, {"error": "not_implemented",
                   "message": "PDK 驱动逆设计依赖 DesignProblem 抽象层，规划于 D-09；"
                              "当前可用：/api/verify、/api/agent_loop、/api/band_loop、"
@@ -1336,6 +1373,7 @@ def h_pdk_design(h, p, q, path):
 
 
 def h_pdk_compare(h, p, q, path):
+    """POST /api/pdk_compare —— **501 未实现**：PDK 跨厂对比依赖 `DesignProblem` 抽象层（规划 D-09）。"""
     return (501, {"error": "not_implemented",
                   "message": "PDK 跨厂对比依赖 DesignProblem 抽象层，规划于 D-09；"
                              "当前可用：上方已落地的闭环接口。"})
@@ -1343,20 +1381,24 @@ def h_pdk_compare(h, p, q, path):
 
 # ============================ POST · 生态共建 ============================
 def h_eco_submit(h, p, q, path):
+    """POST /api/ecosystem/submit —— 提交单个器件进生态库（进评审流水线，不直接进主干）。"""
     return (200, _app.submit_device(p))
 
 
 def h_eco_import(h, p, q, path):
+    """POST /api/ecosystem/import —— 批量导入器件（`entries` 数组），返回逐条结果 + 汇总。"""
     entries = p.get("entries", []) if isinstance(p, dict) else []
     res = _app.submit_devices_batch(entries)
     return (200, {"results": res, "summary": _app._summarize_submit(res)})
 
 
 def h_eco_propose(h, p, q, path):
+    """POST /api/ecosystem/propose —— 提交基准题 / 对抗题提案（等待评审）。"""
     return (200, _app.submit_benchmark_proposal(p))
 
 
 def h_eco_review(h, p, q, path):
+    """POST /api/ecosystem/review —— 评审提案（`id` / `decision` / `reviewer` / `rationale`，可选 `oracle_fn_source`）。"""
     return (200, _app.review_proposal(
         proposal_id=p.get("id", ""),
         decision=p.get("decision", ""),
@@ -1366,6 +1408,7 @@ def h_eco_review(h, p, q, path):
 
 
 def h_eco_land(h, p, q, path):
+    """POST /api/ecosystem/land —— 已通过的提案落地（并入主干贡献路径；需 `id`）。"""
     return (200, _app.land_proposal(p.get("id", "")))
 
 
@@ -1387,6 +1430,7 @@ def h_eco_land_batch(h, p, q, path):
 
 
 def h_eco_publish(h, p, q, path):
+    """POST /api/ecosystem/publish —— 提案发布（`id` / `author` / `note`）。"""
     return (200, _app.publish_proposal(
         proposal_id=p.get("id", ""),
         author=p.get("author", ""),
@@ -1411,6 +1455,7 @@ def h_eco_measurement(h, p, q, path):
 
 # ============================ POST · 商业闭环 ============================
 def h_store_register(h, p, q, path):
+    """POST /api/store/register —— 会员注册（按客户端 IP 限频；成功即下发 HttpOnly 会话 Cookie）。"""
     store = _app._get_store()
     r = store.register(p.get("email"), p.get("name"),
                        p.get("password"), p.get("phone"),
@@ -1484,6 +1529,7 @@ def h_store_password(h, p, q, path):
 
 
 def h_store_logout(h, p, q, path):
+    """POST /api/store/logout —— 会员登出（清除 HttpOnly 会话 Cookie `lda_store_token`）。"""
     # P2-5：清除 HttpOnly 会话 Cookie（Max-Age=0）
     h._clear_cookie("lda_store_token")
     return (200, {"ok": True})
@@ -1499,17 +1545,20 @@ def h_admin_login(h, p, q, path):
 
 
 def h_admin_logout(h, p, q, path):
+    """POST /api/admin/logout —— 管理员登出（清除 `lda_admin_token` Cookie）。"""
     h._clear_cookie("lda_admin_token")
     return (200, {"ok": True})
 
 
 def h_store_order_create(h, p, q, path):
+    """POST /api/store/order —— 创建订单（type = personal/business/custom；须登录，未登录 401）。"""
     store = _app._get_store()
     r = store.create_order(_app._token_from_request(h.headers), p)
     return (r.get("code", 200) if isinstance(r, dict) else 200, r)
 
 
 def h_admin_config_set(h, p, q, path):
+    """POST /api/admin/config —— 写站点配置（仅接受已知字段；非管理员 401）。"""
     store = _app._get_store()
     r = store.set_config(p, _app._token_from_request(h.headers))
     return (r.get("code", 200) if isinstance(r, dict) else 200, r)
@@ -1517,6 +1566,7 @@ def h_admin_config_set(h, p, q, path):
 
 # ============================ 前缀路由 handler ============================
 def h_v1(h, p, q, path):
+    """POST /api/v1/** —— v1 REST 前缀入口（委派 `api_v1.handle_v1`：认证 + 租户隔离 + 插件 seam）。"""
     h._handle_v1()
     return None
 

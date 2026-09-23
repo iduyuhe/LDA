@@ -1,12 +1,13 @@
 """LDA L1 · MCP server 启动入口。
 
 由任意 MCP 客户端以 stdio 方式拉起，例如 Claude Desktop / Cursor 的
-mcpServers 配置：
+mcpServers 配置（把 `<仓库根>` 换成你的实际克隆路径；用哪个解释器就写哪个，
+须能 `import numpy`）：
   {
     "mcpServers": {
       "lda-kernel": {
-        "command": "python",
-        "args": ["D:/agent_LDA/lda/run_mcp_server.py"]
+        "command": "<venv>/Scripts/python.exe",
+        "args": ["<仓库根>/lda/run_mcp_server.py"]
       }
     }
   }

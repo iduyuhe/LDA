@@ -49,7 +49,7 @@ routes → chip_layout_export.export_chip_gds）跑出的**真实 GDSII 证据�
 外加 1 个最小证明件，构成「降标走法」的流程跑通证据。
 
 ```bash
-# 需受管解释器（自带 numpy）：3.14.3/python.exe
+# 用项目 venv（Python 3.13，须自带 numpy）：<venv>/Scripts/python.exe（Linux/macOS 为 <venv>/bin/python）
 python examples/sovereign_evidence/build_sovereign_evidence.py   # 7 例证据集
 python examples/sovereign_evidence/build_2x2_ring_proof.py       # 最小证明件
 ```

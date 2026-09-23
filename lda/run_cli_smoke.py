@@ -21,10 +21,11 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
-PY = os.environ.get(
-    "LDA_PY",
-    r"C:/Users/Administrator/.workbuddy/binaries/python/envs/default/Scripts/python.exe",
-)
+# 子进程用的解释器：默认 = **当前解释器**（`sys.executable`）。
+# 🔴 P2-T2.1 修正：旧默认值写死了作者机器的绝对路径，外部贡献者克隆后跑
+# `run_ci_regression.py --tag core` 会因该路径不存在而假红（「别人不能用」的
+# 典型硬阻塞）。语义上「子进程解释器」本就该等于「当前解释器」。
+PY = os.environ.get("LDA_PY") or sys.executable
 CLI = os.path.join(_HERE, "lda_design", "cli.py")
 
 CHECKS = []

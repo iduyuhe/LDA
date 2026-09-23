@@ -10,24 +10,31 @@
 
 ## 三句话价值
 1. **主权自研内核**：FDTD 1D/2D/3D 等求解器零依赖纯 numpy 自写，通过物理定律锚校验（非借商业 EDA）；A 级商业工具永不借，B 级（gdsfactory/Meep/KLayout）可选借用并 fork 主权副本，C 级（IR/协议/求解核/物理锚）第一天自主。
-2. **死标量判决、可独立验证**：22 引擎 / 46 锚（物理定律锚 + 实证语料锚 + 系统锚）全部用非 AI 的确定性标量比对——丢一个设计进来，一条命令告诉你 DRC/LVS/验收结论，无需信任何"AI 说它对"。
-3. **开源即生态**：设计包、统一 IR、社区提交→评审→落地→发布全链开放；开发者一条命令（`lda design` / `lda check` / `lda report`）即可复现全部闭环。
+2. **死标量判决、可独立验证**：**22 引擎 + 11 包 = 33 类端到端**（光子 15 + 量子 7）/**469 道锚**（B1–B451 物理定律锚 + E1–E10 实证锚 + S1–S13 系统锚）全部用非 AI 的确定性标量比对——丢一个设计进来，一条命令告诉你 DRC/LVS/验收结论，无需信任何"AI 说它对"。
+3. **开源即生态**：设计包、统一 IR、社区提交→评审→落地→发布全链开放；开发者一条命令（`lda build` / `lda design` / `lda check` / `lda report`）即可复现全部闭环。
 
 ## 5 分钟上手
+完整零基础教程见 **[QUICKSTART.md](QUICKSTART.md)**（clone → 第一个 GDS，5 步）。速览：
+
 ```bash
-# ① 设计闭环：跑一个器件，输出最优已验证候选
+# ① 端到端单命令：一句话目标 → 设计包 → 版图 → GDS + DRC/LVS 签核报告
+lda build lda/examples/cli_build_goal.json --out reports
+
+# ② 设计闭环：跑一个器件，输出最优已验证候选
 lda design RingResonator --target 9.0 --top-k 3
 
-# ② 版图签核：链路 JSON → DRC/LVS 双闸报告 + GDS 落盘
-lda check examples/cli_check_example.json --out reports
+# ③ 版图签核：链路 JSON → DRC/LVS 双闸报告 + GDS 落盘
+lda check lda/examples/cli_check_example.json --out reports
 
-# ③ 对照报告：设计包 vs 解析锚/实证锚/ORACLE 死标量对照
+# ④ 对照报告：设计包 vs 解析锚/实证锚/ORACLE 死标量对照
 lda report --out reports --quick
 
-# ④ 生态互通：导入任意 GDSII（含 gdsfactory 导出）做主权几何 DRC 快查
+# ⑤ 生态互通：导入任意 GDSII（含 gdsfactory 导出）做主权几何 DRC 快查
 lda check --gds your_design.gds --out reports
 ```
-（无需 GPU；纯 numpy 快速路径。gdsfactory 为可选依赖，未装不影响以上 ①/②/③。）
+（`lda` 为安装后的命令 `pip install -e .`；未安装时等价写成
+`python lda/lda_design/cli.py build …`。无需 GPU；纯 numpy 快速路径。
+gdsfactory 为可选依赖，未装不影响 ①–④。）
 
 ## 护城河（为什么是持久窗口）
 - **标准 + 生态 + PDK 供给**，而非某个求解器代码（巨头因商业模式自噬结构性不能做开放内核）。

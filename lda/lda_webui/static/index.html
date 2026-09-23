@@ -155,6 +155,13 @@ body{padding-top:56px}
   </div>
 
 <div class="wrap" data-page-node-id="ZSb14R166GTEpeT15LSGPz">
+  <!-- P2-T2.2 入口提示：未登录时显示（由首屏脚本按 lda_store_token 判定后解除 display:none）。
+       目的：事前说明「哪些面板需登录」，而不是等用户点了按钮再吃 401。 -->
+  <div id="authHint" style="display:none;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:10px 14px;margin:0 0 16px;font-size:13px;line-height:1.75;color:var(--txt)" data-page-node-id="ldaAuthHintBar">
+    🔒 <strong>部分面板需要登录</strong>：本页会<strong>真跑内核</strong>的面板（版图流水线 / FDTD / 验收 / 流片签核等）受登录闸门保护，未登录点击会返回 <code style="color:var(--accent)">401</code>。
+    <strong>公开验货端点</strong>（验证裁判 / 验证账本 / 创新超市）无需登录即可查看。
+    登录入口：顶部导航「🛒 创新超市」→ <a href="/store.html" style="color:var(--accent);text-decoration:none">注册 / 登录</a>。
+  </div>
   <div class="cards" id="cards" data-page-node-id="AxL12Q86ZR9pK1sUnJHfuS">
     <div class="card a" data-page-node-id="MxNHYna298vNeOSUChfxHC"><div class="n" id="c-harness" data-page-node-id="QYmDpHdA1VmIR4B6lDoDs3">—</div><div class="l" data-page-node-id="cIcTNN4sieSgcfHN8jUTYj">验证 harness 通过</div></div>
     <div class="card a" data-page-node-id="0JQGK8c42bSvm4Aq77NgTp"><div class="n" id="c-ai" data-page-node-id="eXkJuUQjEbQNPDvXm2K630">—</div><div class="l" data-page-node-id="YrPTsOv32Hh4ttU3Qy0BXc">L3 AI 内核候选</div></div>
@@ -4228,6 +4235,13 @@ $('runProposal').onclick = runProposalDesign;
   // 仅在已登录(存在 lda_store_token cookie)时才自动跑 HERO 旗舰演示与懒加载面板；
   // 未登录时按钮始终可用，用户点击会收到 api() 统一转发的友好登录提示（见 P0）。
   const LDA_AUTHED = /(?:^|;\s*)lda_store_token=/.test(document.cookie);
+
+  // —— P2-T2.2 入口提示（事前，而非事后 401）——
+  // 未登录即在页首显示 #authHint：说明哪些面板需登录、哪些公开端点免登录、去哪里登录。
+  if (!LDA_AUTHED) {
+    const _hint = $('authHint');
+    if (_hint) _hint.style.display = 'block';
+  }
 
   if (LDA_AUTHED) {
     runLp();            // HERO ⑧ 版图→DRC→仿真流水线

@@ -3,10 +3,12 @@
 验证 fdtd2d_coupler（2D FDTD DC 功率交换 vs 波长）：
   1. 结构自检（始终）：场构造（双波导芯区几何）+ CMT 公式
   2. 谱形验收（numpy，快）：cross 功率单调递增（CMT tan²(κL) 趋势）+
-    cross_frac 与超模法 κ(λ) CMT 预测平均偏差 ≤ 容差
+     FDTD 反解 κ 单调递增且落在物理量级 [κ_min, κ_max]
+     —— 🔴 v0.9.132 P3-T3.2 订正：原写「cross_frac 与超模法 κ(λ) CMT 预测
+     平均偏差 ≤ 容差」，该定量对拍**从未实装**（实测超模↔FDTD rel=192%，见
+     fdtd2d_coupler 模块 docstring）；本 smoke 只判**趋势 + 量级**。
   3. 报告落盘 reports/dc_transmission_report.json
 """
-import json
 import os
 import sys
 
@@ -18,7 +20,7 @@ sys.path.insert(0, os.path.join(_HERE, "lda_solver"))
 from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 from lda_solver.fdtd2d_coupler import (  # noqa: E402
-    build_dc_field, dc_transmission_spectrum, run_dc_transmission,
+    build_dc_field, run_dc_transmission,
 )
 
 

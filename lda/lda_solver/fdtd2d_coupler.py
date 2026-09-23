@@ -12,7 +12,12 @@ DC 的宽带功率行为（thru/cross vs 波长）——真实 FDTD 全场透射
   - 2D TM（E_z 标量）双波导 y 并排、x 传播；CW 稳态逐波长 + DFT。
   - 测量用**芯区能流积分**（坡印廷 S_x = Im(E*·∂E/∂x)）——对驻波免疫，
     比单点场强更接近功率（D-01 YB 同款测量纪律）。
-  - 诚实边界：2D 有效折射率 + 有限 L → CMT 定量对拍容差放 40%。
+  - 诚实边界：2D 有效折射率 + 有限 L ⇒ **CMT 定量对拍不成立**（v0.9.132 P3-T3.2 实测：
+    超模 κ=0.034802 rad/µm vs 本模块 FDTD 反解 κ=0.101610 rad/µm，**rel=192%**；
+    即 D-23 同款「大数小差」在 2D 下更敏感）⇒ 验收**只**用 FDTD 自洽 κ 的**物理
+    趋势**判据（单调性 + 量级），**不作**「与超模 CMT 预测平均偏差 ≤ 40%」的定量
+    声称。🔴 订正记录：原文写「CMT 定量对拍容差放 40%」，那个 40% 从未实装，
+    且实测偏差远超 40%（192%）—— 属文档漂移，非「容差偏松」。
 
 铁律不变：LLM 不进判决路径；PASS 由死标量比对（FDTD ↔ CMT/超模 oracle）决定。
 """
@@ -20,7 +25,7 @@ from __future__ import annotations
 
 import math
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 

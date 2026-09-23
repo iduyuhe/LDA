@@ -111,6 +111,9 @@ def _write_baseline(results, *, label, threads, dst=_BASELINE_PATH):
 
     🔴 线程口径：内置预算按 **10 线程**标定，其它线程数的实测不可比 ⇒ 非 10 线程时
     **拒绝写基线**（否则会污染基线，让 B8/B9 的余量失真）。
+
+    🔴 v0.9.132：`ratchet_below_target` **只降不升**（见下方 min(...) 处注释）——
+    刷新绝不自动放宽棘轮阈值，否则 B9 会「同源恒绿」而棘轮失效。
     """
     import run_ci_regression as R
     try:
@@ -121,11 +124,13 @@ def _write_baseline(results, *, label, threads, dst=_BASELINE_PATH):
         print("[warn] 读 BENCHMARK_ORDER 失败：%s" % e)
 
     prev, prev_src = {}, []
+    prev_ratchet = None
     try:
         with open(dst, encoding="utf-8") as fh:
             _p = json.load(fh)
         prev = {r["script"]: r for r in (_p.get("rows") or [])}
         prev_src = list(_p.get("source_reports") or [])
+        prev_ratchet = _p.get("ratchet_below_target")
     except (OSError, ValueError):
         prev = {}
 
@@ -171,8 +176,22 @@ def _write_baseline(results, *, label, threads, dst=_BASELINE_PATH):
         "aggregation": "cross-round-max-elapsed(excluding-censored)",
         "hard_floor_x": 2.0,
         "target_x": 3.0,
-        "ratchet_below_target": int(
-            sum(1 for r in rows if r["margin_x"] < 3.0)),
+        # 🔴 v0.9.132 修：`ratchet_below_target` 必须**只降不升**（棘轮本色）。
+        #   原实现 = 无条件重算为当轮实际值 ⇒ **刷新即静默放宽**：任何一项跌到 <3×，
+        #   刷新会把这个「违规」直接写成新阈值，而 B9（拿基线值与实际值比较）随即
+        #   **同源恒绿** ⇒ 棘轮在刷新通道上完全失守。实测血案（P3 全量 200 条后）：
+        #   `run_splitter_readout_smoke.py` 231.7s/660s = **2.849×** ⇒ 刷新把
+        #   `ratchet_below_target` 从 **0 写成 1**，B9 照绿，汇总行还印着
+        #   「最低 2.849×，目标 ≥3.0×」的自相矛盾结论。
+        #   ⇒ 正确语义：阈值只能被**人工**下调，绝不被刷新自动上调；当轮实际项数
+        #      **高于**历史阈值时 B9 必须红（把「欠标定」推回给人）。首刷（无基线）
+        #      无历史可锚 ⇒ 用当轮实际值起步。
+        "ratchet_below_target": (
+            int(sum(1 for r in rows if r["margin_x"] < 3.0))
+            if prev_ratchet is None
+            else min(int(prev_ratchet),
+                     int(sum(1 for r in rows if r["margin_x"] < 3.0)))
+        ),
         "anchors_at_measurement": anchors,
         "core_smokes_at_measurement": len(R.CORE_SMOKES),
         "updated_at": time.strftime("%Y-%m-%d"),

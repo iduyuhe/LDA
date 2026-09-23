@@ -1,5 +1,110 @@
 # Changelog
 
+## v0.9.126（2026-09-23 · U7 · 损耗感知编译（D1 损耗方差口径精确化 + 编译层零自由度证明）· 不扩基 · 零锚改动 · 账本零变化 · CI core 190→191）
+
+### 新增（U7 · 内部总结 §4.4 执行序第 5 项 / §4.2 第一梯队）
+
+- **`lda/lda_l2/loss_aware_compile.py`** —— 把 D1 的「路径损耗方差」从**预算报告**升级为
+  **编译目标**，并把「编译层到底有没有自由度」这个一直靠直觉回答的问题**机器化**。
+  - **复用既有已证资产作底座**（`mesh_pnr.build_mesh_pnr(layout_mode='grid2d')` 几何 ·
+    `amplitude_equalization_manifest`（既有 D1 口径实现）· `clements_rect_decompose` /
+    `_rect_column_assignment`（变体不变性实测）· `coupler_length_from_theta`（逐列宽度））
+    —— 自己只写缺失的语义层。
+  - **核心 API**：`rail_geometry`（几何抽取）· `path_length_um` / `il_db`（精确路径损耗，含
+    每 MZI 竖直绕行 `rail_pitch − gap`）· `ntap_reachable_range`（格点 DP 可达范围）·
+    `d1_conservative_io`（D1 §二 口径复现，`tap_switch_margin` 显式参数化）·
+    `manifest_io_comparison`（口径漂移对照）· `il_per_port_direct_bus`（精确逐端口核算）·
+    `refute_short_path_infeasible`（保守下界机器化证伪）· `conservative_overestimate`（高估倍率）·
+    `deg_multiset_invariance`（10 变体结构性不变量）· `percol_adaptive_width`（变长列）·
+    `area_loss_tradeoff`（权衡曲线）· `loss_aware_compile_report`（汇总）。
+
+### 实测（DFT(N) · grid2d · rail_pitch=4.0µm · gap=0.3µm · α_prop=2.0 dB/cm · α_tap=0.05 dB）
+
+| N | L_bus(µm) | col_pitch | n_cols | deg 多集 | deg_span | D1 var_io | 精确 var | 下降 | 高估倍率 | IL_short/物理最小 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 4 | 145.3333 | 30.3333 | 4 | {2,2,4,4} | 2 | 0.168000 | 0.101480 | **39.60%** | 1.6555× | 2.328× |
+| 8 | 278.6534 | 31.8317 | 8 | {4,4,8×6} | 4 | 0.454364 | 0.202960 | **55.33%** | 2.2387× | 4.589× |
+| 16 | 551.1228 | 32.9452 | 16 | {8,8,16×14} | 8 | 1.028636 | 0.405920 | **60.54%** | 2.5341× | 9.121× |
+
+- **单位抽头损耗恒定**：`dIL_per_tap = α_prop·(rail_pitch−gap)/1e4 + α_tap = 0.050740000 dB`（三 N 相同）。
+- **闭式自洽**：精确 `IL_var = deg_span × dIL_per_tap`（三 N 逐一核对，容差 1e-12）。
+- **DP 可达范围**：`n_tap ∈ [deg_min, deg_max] = [N/2, N]`，与 `deg` 完全自洽；
+  N=4 用**暴力枚举**独立重算 ⇒ 完全一致。
+- **变长列**：总宽 121.333→113.583 / 254.653→239.129 / 527.123→501.098 µm ⇒ 降
+  **6.39% / 6.10% / 4.94%**，但 **IL_var 完全不变**（只降 IL_mean：−0.00155 / −0.00310 / −0.00521 dB）。
+
+### 三条「不利结论」（本轮主交付，全部写进披露 + 判据双向锁定）
+
+1. 🔴 **D1 的 `IL_short`（`col_pitch` + 1 抽头）物理不可实现** —— grid2d 每根 rail 是
+   `gc_in(k) → MZI… → ps_out(k) → gc_out(k)` 的**水平直链**，光自 `x=mesh_x0` **单调**行进到
+   `x=x_max` ⇒ 任意 I/O 对的 `L_path ≥ L_bus > col_pitch`；`IL_min_physical / IL_short` =
+   **2.328× / 4.589× / 9.121×** ⇒ D1 §五.3 自陈的「保守」被**量化**。
+2. 🔴 **编译层对 IL_var 的真实自由度 = 0（结构性不变量）** —— `deg` 多集恒为
+   `{N/2, N/2, N…N}`，对 U 的**转置 / 共轭 / 反序 / 端口置换（10 种合法变换）完全不变**
+   （N=8/16 实测）；且直总线下 `L_bus` 项对**所有端口相同** ⇒ 对 IL_var **零贡献**
+   ⇒ **进一步降 IL_var 只能靠 PDK（α_tap↓，如绝热 MMI）或幅度均衡，编译层无路径**。
+3. 🔴 **变长列只买 IL_mean，不买 IL_var** —— 逐列自适应列宽真实降 `L_bus` 4.94–6.39%，
+   但两点 IL_var **严格相同**（`tradeoff.il_var_identical = True`，双向判据）。
+
+### 既有口径漂移（本轮发现并机器化记录，**不改既有实现**）
+
+- D1 **文档** §二 的 `n_tap ≈ ⟨deg⟩·1.3`（含轨切换余量），而既有
+  `mesh_pnr.amplitude_equalization_manifest` 的实现用 `⟨deg⟩·1` ⇒ 两者 `IL_var_io`
+  相差 `⟨deg⟩·0.3·α_tap`（实测 **0.045 / 0.105 / 0.225 dB**）；本模块默认采
+  **D1 文档口径（更保守）**，并以 `manifest_io_comparison` + 披露项
+  `d1_doc_vs_manifest_io_margin` 把差异机器化记录。（高估倍率因此渐近 **2.6 = 1.3×2**；
+  去掉 1.3 余量后渐近 **2.0**。）
+
+### 新增常驻门禁
+
+- **`lda/run_loss_aware_compile_smoke.py`（67 判据 · A–K 组 · 实测 0.32s · `PASS=67 / FAIL=0`）**
+  —— A 披露 9 键 + 7 条文本；B 几何不变量（deg 多集 / span=N/2 / n_cols=N / L_bus>col_pitch）；
+  C **13 条域校验 + 必 raise 反例 + 合法必过**（含 D1 口径**域边界**）；D 格点 DP +
+  **暴力枚举独立重算**；E **dIL 恒定 + 闭式自洽 + 下降 ≥20%**；F 保守下界证伪（含**阈值双向**）；
+  G **10 变体不变量**；H 变长列（降 L_bus **但 IL_var 不变**）；I 口径漂移对照；
+  J **保真度 / DRC / LVS 不退化**；K **4 条独立重算 + 容差锁紧 + 双向判据**。
+- 接线 `run_ci_regression.py` ⇒ **CI core 190→191**（coverage_gate ①⑦⑧ 8/8 · core=191）。
+- **突变探针 12/12**（control rc=0；12 个定向突变全部 rc=1；源文件 sha256 前后一致 ⇒ 字节级还原）
+  ⇒ 判据有效、非恒真。
+
+### 发布前门禁（17 道 · 修复后 **17/17 rc=0** · 84.5s）
+
+- 首轮实跑 **14 PASS / 3 FAIL** ⇒ 暴露**两个真实缺陷并当场修复**：
+  - 🔴 `02/03` **pyflakes 棘轮亮红** —— `percol_adaptive_width()` 内
+    `import numpy as np` 未使用（F401）+ `N = geo["N"]` 赋值未用（F841 ⇒ 计数 12→**13**，超基线 1）。
+    **根因**：模块 `__main__` 自测与 67 判据 smoke **都不做 lint** ⇒ 「0.32s 全绿」≠「静态干净」
+    （铁律 7 的原意）。修法 = 删两行（无行为影响）；复核 **pyflakes rc=0**、
+    棘轮 **5 PASS / 0 FAIL**（F401 ≤ 201 / F841 ≤ 12）。
+  - 🔴 `16` 是**我的门禁判据写错**（非仓库缺陷）：占位符守恒曾写成「README 前 40 行内
+    `PENDING_ACTION` ×2」，而该串实际出现在**前端登录门禁文案**（L88/L91）——
+    与版本占位符**同前缀但语义无关**。改为全文守恒式
+    `count('PENDING') == count('PENDING_ACTION') + count('PENDING_DEPLOY_SHA')`（**4 == 2 + 2** ✅）。
+- 全绿清单：py_compile · pyflakes 直扫（0 告警）· pyflakes 棘轮 5/5 ·
+  coverage_gate 8/8（**core=191** · 无静默缺口）· **U7 smoke 67/67** · U4 75/75 · U3 63/63 ·
+  U5 披露项 · U1 23/23 · WDM 20/20 · timeout_budget 19/19（最低余量 3.015×）·
+  optional_import 16/16 · webui_api 实跑 92 · production 四赛道 A5/B4/C4/D4 · bounty 11/11 ·
+  README/版本一致性 · EOL 字节卫生（新增 2 文件 LF-only、无 BOM、UTF-8）。
+
+### 诚实边界（9 条 · 写进模块 docstring + `LOSS_AWARE_DISCLOSURE`）
+
+- ① 只做**被动插入损耗核算**（传播 + 每抽头耦合器），不含弯曲/模场失配/偏振/温漂/热串扰；
+- ② 🔴 α_prop / α_tap 取**公开区间代表值** ⇒ 全部结论是**参数化估算（L3）**，真值须 foundry PDK
+  圆片表征回填；
+- ③ 🔴 **这是口径精确化，不是更优布局** —— 把**不可实现的下界**换成**可实现的物理下界**，
+  同一布局的物理量本身未变；
+- ④ 🔴 **编译层自由度 = 0**（结构性不变量，非实现缺陷）；
+- ⑤ **变长列只降 IL_mean**，对 IL_var 零贡献；
+- ⑥ DP 是**几何可达**范围，**不是**给定 U 的实际光子路径（实际分光由 θ 决定，是叠加态）；
+- ⑦ **不跑 FDTD、不做 3D**、不重新签核（几何不变 ⇒ DRC/LVS 结论继承）；
+- ⑧ 🔴 **原验收判据「相对当前列分配再降 ≥20%」在编译层不可达** ⇒ 本模块**不声称**该口径达标，
+  只交付「精确核算 + 零自由度证明 + 保守上界证伪」；
+- ⑨ 既有 manifest 与 D1 文档的 **1.3 余量口径漂移**已记录但**未改既有实现**。
+
+### 不变
+
+- 账本 **448 / 3 / 18 / 469** 零变化 · 独立率 95.5% 持平 · 天花板 97.4% 持平 ·
+  棘轮 `MAX_SELF_CERTIFIED=18` 不动 · 零判据放宽 · 零 tol 放宽 · 零锚改动。
+
 ## v0.9.125（2026-09-23 · U4 · 微环权重库（MRR 替 MZI 做幅度控制）· 不扩基 · 零锚改动 · 账本零变化 · CI core 189→190）
 
 ### 新增（U4 · 内部总结 §4.4 执行序第 4 项 / §4.2 第一梯队）

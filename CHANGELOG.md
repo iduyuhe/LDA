@@ -1,5 +1,59 @@
 # Changelog
 
+## v0.9.121（2026-09-23 · 电域裁定 ①②③④ 落地 · 不扩基 · 零锚改动 · 账本零变化 · CI core 185→186）
+
+**来源**：2026-09-23 电域讨论收口时由杜先生**逐条裁定**的四项决议（原文「接受你的建议」×4）——
+载于 `LDA_电域解锁与外部对标边界_讨论纪要_2026-09-23.md` §6 待裁清单。本版把四项**从纪要决定变为机器会拦的纪律**：
+能机器化的机器化（①②），属文档口径的订正（③④）。
+
+**账本零变化**：严格独立 **448** / 降级 **3** / 自证桩 **18** / 总 **469** · 独立率 **95.5%** · 天花板 **97.4%** ·
+棘轮 `MAX_SELF_CERTIFIED=18` 不动 · 零 tol 放宽 · **零锚改动** · **零判据放宽**。仅 **CI core 185→186**。
+
+### ① 商业求解器 / 自研内核解永不作 golden（含「二级 golden」）
+
+- `lda/lda_harness/real_machine_oracle.py` 新增 **`OracleKind`** 枚举：3 类**实测事实**
+  （`FOUNDRY_MEASURED` / `TAPEOUT_MEASURED` / `LITERATURE_MEASURED`）+ 2 类**仿真值**
+  （`COMMERCIAL_SOLVER_FIELD` / `SELF_KERNEL_SOLVED`）。
+- `GOLDEN_ELIGIBLE_KINDS` / `GOLDEN_INELIGIBLE_KINDS`：**互斥且并集 == 全部 kind**（smoke 断言分类完备）。
+- **`SECONDARY_GOLDEN_ALLOWED = False`**：二级 golden 机制**整体禁用** —— 否则可证伪性退化为
+  「**另一个黑盒说它对**」（判决链上多一层不可复验的黑盒）。
+- **`guard_golden_eligibility(kind, role)`** 守卫接线进 `RealMachineOracleRegistry.register()`
+  ⇒ 商业求解器场级解 / 自研内核解**注册即 raise**。与 D-63 §四·补 坑 1 同构（「两道 ground 短路 ⇒ 判决即自证」）。
+
+### ② 外部 ORACLE 标定窗口写入 `honest_tier`（超窗必 raise）
+
+- 新增 **`CalibrationWindow`**（`anchor_id` / `quantity` / `lo` / `hi` / **`signer`（人类责任方·**AI 不得代签**）** /
+  `signed_date` / `source_ref` / `note`）+ **`SIGNED_CALIBRATION_WINDOWS: Dict[str, CalibrationWindow] = {}`**
+  —— **当前空表**（反偏修复路径 ④ 未启用 ⇒ 零真值、零假绿）。
+- `RealMachineMeasurement` 新增 **`honest_tier`** 字段（口径载体）：凡声称已外部标定者，
+  必须以 `CALIBRATED_TIER_PREFIX`（`"oracle-calibrated"`）开头；`register()` 内新增
+  `_assert_within_signed_window()` 五条判据 —— **W1** 无已签字窗口 · **W2** 窗口量与注册量不符 ·
+  **W3** 无人类签字人 · **W4** 曲线类（`value=None`）· **W5** **超窗** ⇒ 逐条 `OracleGuardError`。
+
+### ③ 反偏修复次序钉死（`docs/lda_reverse_bias_limitation.md` §6）
+
+- 原文四条并行路径改为**带优先级的施工序**：**② 修反偏边界条件 → ① 加 SRH/G-R 项 → ④ 外部 ORACLE 标定（仅作最后手段）**。
+- 理由：② 是**外科级**修复（反偏电流无物理来路的根因在 BC 把接触少数载流子钉在 `exp(V/V_T)`），
+  ① 是**补物理源**，④ 依赖外部真值且须走窗口标定（成本最高、可证伪性最弱）。
+
+### ④ `docs/ir_spec.md` 格式 vs 实现口径订正
+
+- 原 L16「不绑定任何商业 EDA 格式（**GDSII/OASIS 属 A 级，永不借**）」把**格式**与**格式的库实现**
+  混为一谈，且与项目实际行为（自研编码器 `lda/lda_l2/gds_export.py` **导出真 GDSII**）矛盾。
+- 订正为：「**不 import 任何商业或第三方 GDSII/OASIS 读写库**；格式本身为**公开事实标准**，
+  由**自研编码器**兼容。」—— 对应杜先生命题「**标准可借鉴、IP/技术不可引用**」。
+
+### ⑤ 新增常驻门禁 `run_real_machine_oracle_contract_smoke.py` 入 core（14 组判据）
+
+- 🔴 **血案固化**：该 smoke 自 **2026-09-11** 建成起**从未进任何回归集**（与 `run_production_smoke`
+  同类的「守卫存在但 CI 对它无感」静默缺口）。
+- 扩至 **14 组判据**：既有 C1–C5/G1/C4/C5/G2（5） + ① 分类完备 / 正向必过 / 商业求解器必拦 /
+  自研内核必拦 / 二级 golden 必拦（5） + ② W1 / W5 超窗 / 窗内必过 / W2 / W3（5） + 诚实默认放行 + 现状断言。
+- **有效性已证明**：突变探针（把 ① 守卫与 ② 窗口守卫短路成 no-op）⇒ **7 条判据精确变红**
+  （① 反向 A/A-2/B + ② W1/W5/W2/W3）⇒ 判据非恒真、真会响。纯 import 级，实测 **<0.5s**，
+  按准入准则（无重依赖、失败 return 1）无权豁免。
+- **CI core 185→186**。零锚改动、零 tol 放宽、账本零变化。
+
 ## v0.9.120（2026-09-22 · WDM 网格 P&R（Kλ×N×N 波分复用维）· 不扩基 · 零锚改动 · 账本零变化 · CI core 183→185）
 
 **来源**：B+C 自研系列收官 backlog 中的 **Task #26「升级-WDM网格（Kλ×N×N）」**——即市场差距分析「**我们缺：波长维 / WDM**」中**主权内可补**的头号项（P0.1）。目标是给已有的光子张量核（`mesh_pnr` 单波长 N×N 酉网格）**加一个波分复用维**：**K 个波长面 × N×N Clements 网格**，每个波长面独立算一个酉（默认 DFT(N)），在入口/出口用**微环 add-drop** 做解/复用，从而把聚合**带宽密度放大 ×K**，而版图仍为**单一平面前向网表**。

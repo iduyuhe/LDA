@@ -21,6 +21,7 @@
 | 内部未公开测量 | 同上 |
 | 纯仿真结果（FDTD/FEM 计算值） | 属「另一套计算意见」，不是测量事实 |
 | 无出处的"文献量级"描述 | 无法被第三方复验 |
+| **商业求解器场级解 / 自研 T1 内核解**（含作「**二级 golden**」） | 🔴 **2026-09-23 杜先生裁定 ①**：同上「不是事实」；且一旦允许充当二级 golden，可证伪性即退化为「**另一个黑盒说它对**」。**机器化**：`lda/lda_harness/real_machine_oracle.py` 的 `OracleKind` + `GOLDEN_INELIGIBLE_KINDS` + `SECONDARY_GOLDEN_ALLOWED=False` + `guard_golden_eligibility()`（注册即 raise；二级 golden 机制整体禁用） |
 
 ---
 

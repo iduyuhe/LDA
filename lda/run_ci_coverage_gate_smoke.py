@@ -22,6 +22,18 @@ memory 三处均记载「进 CI 防回归」⇒ **研发生产系统四赛道 17
   ③ CORE_SMOKES 内不得有重复项
   ④ 本 smoke 自身必须在 CORE_SMOKES 内（自食其规则，防门禁自己被漏接）
   ⑤ 反向测试：临时移除一项登记 ⇒ 必须判 FAIL（护栏必须会响，不得纸上谈兵）
+  ⑥ 反向测试后状态复原（测试不污染真判据）
+  ⑦ CORE_SMOKES **每项文件必须真实存在于 lda/**（🔴 v0.9.121 新增）
+  ⑧ 反向测试：注入幽灵成员 ⇒ ⑦ 必须报缺
+
+血案（v0.9.121 · ⑦/⑧ 的来源）
+------------------------------
+`run_ci_regression._run_one` 以 `cwd=lda/` 调用脚本，且挑选成员时用
+`os.path.exists(...)` **静默丢弃**不存在的项（既不计 PASS 也不计 FAIL）。
+⇒ 把一个**建在项目根**（或在别处）的 smoke 登记进 CORE_SMOKES，会得到
+「账本数字 +1、判据全绿、但那条 smoke 从未执行」的**假绿**——正是本仓库
+最忌的「标签≠行为」。① 只管「lda/ 下的 smoke 有没有被登记」，管不到
+「登记的成员是不是真在 lda/ 下」，故补 ⑦/⑧ 闭合该缺口。
 
 运行：python lda/run_ci_coverage_gate_smoke.py
 """
@@ -110,10 +122,34 @@ def main() -> int:
     finally:
         R.CORE_SMOKES = saved
 
+    # ⑦ CORE_SMOKES 成员必须真实存在于 lda/（防「登记了却被静默跳过」）
+    def _missing_members() -> List[str]:
+        return [f for f in R.CORE_SMOKES
+                if not os.path.exists(os.path.join(_LDA, f))]
+
+    missing = _missing_members()
+    rc |= not check("⑦ CORE_SMOKES 成员文件均真实存在于 lda/（防静默跳过）",
+                    not missing,
+                    f"缺文件 {len(missing)} 项 {missing[:5]}" if missing
+                    else f"{len(R.CORE_SMOKES)} 项全部落位")
+
+    # ⑧ 反向测试：注入幽灵成员 ⇒ ⑦ 必须报缺（护栏必须会响）
+    saved2 = R.CORE_SMOKES
+    try:
+        ghost = "__ghost_core_member_not_on_disk__.py"
+        R.CORE_SMOKES = list(R.CORE_SMOKES) + [ghost]
+        miss2 = _missing_members()
+        hit = ghost in miss2
+        check("⑧ 反向测试：注入幽灵成员 ⇒ ⑦ 必须报缺",
+              hit, f"注入 {ghost} → 报缺 {len(miss2)} 项")
+        rc |= not hit
+    finally:
+        R.CORE_SMOKES = saved2
+
     # 收尾：恢复后必须重新全绿（防测试污染真实判据）
     o3, h3, d3 = _classify()
     rc |= not check("⑥ 反向测试后状态复原（测试不污染真判据）",
-                    not o3 and not h3 and not d3, "")
+                    not o3 and not h3 and not d3 and not _missing_members(), "")
 
     n_pass = sum(1 for c in CHECKS if c["ok"])
     print("-" * 74)

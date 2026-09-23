@@ -71,10 +71,17 @@
 
 ## 6. 升级路径（若要支持反偏，须做之一）
 
-1. **加 SRH / 产生-复合项**：连续性方程改 `∇·J_n = q(R−G)`、`∇·J_p = −q(R−G)`，耗尽区引入载流子产生率 G（与电场相关的隧道/雪崩阈值以上才开启），为反向电流提供物理源。
-2. **修正反偏边界条件**：耗尽边少数载流子取**零边界（耗尽近似）**而非接触处 `exp(V/V_T)` 钉值；准中性区用扩散方程解饱和电流，使 I 在反偏下自然饱和于 I_s。
-3. **限制使用区间**：在 `solve_pn_junction_2d_bias` 入口对 `V < 0` 直接 `raise` 或返回 `converged=False` + 明确错误，从调用层面禁止反偏误用（当前选择**仅标记** `reverse_bias_unvalidated=True`，保留调用方知情权）。
-4. **改用经反向标定的外部 ORACLE**（DEVSIM / Sentaurus，B 级）：同几何同边界双向标定，仅在标定窗口内借真值——但须遵守"LLM 不进判决路径 / T1 输出不作 ORACLE"红线。
+> 🔴 **2026-09-23 排序（杜先生裁定 ③）**：以下四条**不是并列选项**，而是**带优先级的施工序**
+> —— **② 修反偏边界条件 → ① 加 SRH / 产生-复合项 → ④ 外部 ORACLE 标定（仅作最后手段）**。
+> 理由：② 是**外科级**修复（反偏电流「无物理来路」的根因正是 BC 把接触少数载流子钉在
+> `n_i²/N_A·exp(V/V_T)`，反偏时该式 → 0）；① 是**补物理源**（耗尽区载流子产生）；
+> ④ 依赖外部真值、须走**已签字标定窗口**，成本最高而可证伪性最弱 ⇒ 只在 ①② 都做不成时才用。
+
+1. **加 SRH / 产生-复合项**（第 ①步）：连续性方程改 `∇·J_n = q(R−G)`、`∇·J_p = −q(R−G)`，耗尽区引入载流子产生率 G（与电场相关的隧道/雪崩阈值以上才开启），为反向电流提供物理源。
+2. **修正反偏边界条件**（第 ②步 · **优先**）：耗尽边少数载流子取**零边界（耗尽近似）**而非接触处 `exp(V/V_T)` 钉值；准中性区用扩散方程解饱和电流，使 I 在反偏下自然饱和于 I_s。
+3. **限制使用区间**（现状兜底）：在 `solve_pn_junction_2d_bias` 入口对 `V < 0` 直接 `raise` 或返回 `converged=False` + 明确错误，从调用层面禁止反偏误用（当前选择**仅标记** `reverse_bias_unvalidated=True`，保留调用方知情权）。
+4. **改用经反向标定的外部 ORACLE**（第 ④步 · **仅最后手段**；DEVSIM / Sentaurus，B 级）：同几何同边界双向标定，**仅在已签字标定窗口内借真值**——窗口契约见 §7 与
+   `lda/lda_harness/real_machine_oracle.py`（`CalibrationWindow` + `honest_tier`），仍须遵守「LLM 不进判决路径 / T1 输出不作 ORACLE」红线。
 
 ---
 
@@ -83,6 +90,8 @@
 - `solve_pn_junction_2d_bias(V)` 对 **V < 0** 返回 `"reverse_bias_unvalidated": True`。任何消费方**必须**检查该标志；为 `True` 时 I(V) 视为未验证、不得进入判决回路。
 - 模块顶部 docstring 含 🔴 反向偏压局限横幅，指向本文档。
 - 护栏 smoke：`lda/run_t1_reverse_bias_limitation_smoke.py` 断言 ① 正偏 V=+0.6 收敛且电流符号/量级正确；② 反偏 V=−1.0/−2.0 必带 `reverse_bias_unvalidated=True`（防止未来重构静默移除诚实标记）。
+- 🔴 **反偏路径 ④（外部 ORACLE 标定）的窗口契约已机器化（2026-09-23 · 裁定 ②）**：`lda/lda_harness/real_machine_oracle.py` 的 `CalibrationWindow`（含**人类签字人** `signer` / `signed_date` / `source_ref`）与 `SIGNED_CALIBRATION_WINDOWS`（**当前空表** ⇒ 一律视作未标定）。凡在 `honest_tier` 声称 `oracle-calibrated[...]` 的注册，必须落在**已签字**窗口内，否则按 W1/W2/W3/W4/**W5 超窗** raise；护栏 = `lda/run_real_machine_oracle_contract_smoke.py`（14 组判据，含 7 条反例）。
+- 🔴 **仿真值不作 golden（2026-09-23 · 裁定 ①）**：`OracleKind` 区分「实测事实」（foundry / 流片 / A 级公开实测）与「仿真值」（**商业求解器场级解** / 自研内核解）；后者**注册即 raise**，且「二级 golden」机制整体禁用。这条直接约束任何「拿 Sentaurus / DEVSIM 场级解当反偏 golden」的捷径。
 
 ---
 

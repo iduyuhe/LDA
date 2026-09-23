@@ -88,6 +88,13 @@ lda/redteam_anchor_fuzz_defects_pending.json
 # ---- 本地加密保管目录（密钥+密文，不进版本库）----
 .secrets/
 
+# ---- IP 材料「写而不发」（不得入库，防误公开；见 IRONLAWS §16.6）----
+# 交底书 / 论文稿 / 申请信息单一旦入库并 push，即构成「自己公开发表」⇒ 新颖性不可恢复。
+# 用户 2026-09-23 裁定：材料照写，但不申请、不发表、不阻塞平台推进。
+LDA_专利申请交底书_*.md
+LDA_IP申请信息单_*.md
+LDA_paper_*.md
+
 # ---- DEVSIM 主权镜像冷备（B 级 Apache-2.0，本地离线副本，不进版本库）----
 vendor/devsim_mirror/
 vendor/devsim_wheels/

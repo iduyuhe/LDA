@@ -7,6 +7,11 @@
 子命令：
   lda design <kind> --target <float> [--top-k N]
       跑一个器件设计闭环，输出最优已验证候选（参数 / 指标 / 目标误差）。
+  lda build <goal.json> --out <dir> [--wg W] [--top-k N]
+      端到端单命令（P1-T1.2 · 指标 M1）：**一句话目标** → 设计包（DesignEngine
+      真实闭环解参数）→ 版图 → GDS → DRC/LVS 双闸签核报告，全部落盘。
+      与 `lda check` 的区别：check 收的是**参数已写死**的链路；build 收的是**目标**
+      （参数由引擎解出），因此才是「端到端一条命令」。
   lda check  <spec.json>
       把一条链路（器件 + 互连 JSON）装配成版图，输出 DRC/LVS 双闸报告，
       并把 GDS 落盘。主权零依赖（纯标准库 + lda 内部模块）。
@@ -172,6 +177,80 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 # --------------------------------------------------------------------------
+# lda build —— 一句话目标 → 设计包 → 版图 → GDS + 签核（P1-T1.2 · M1）
+# --------------------------------------------------------------------------
+def _goal_example_path() -> Path:
+    """随包发布的「一句话目标」示例（干净 clone 下可直接跑）。"""
+    return _ROOT / "examples" / "cli_build_goal.json"
+
+
+def build_usage_hint() -> str:
+    """无参数 / 用法错误时打印的可用指引（**不是 traceback**）。"""
+    from lda_design import goal_build as gb
+    ex = _goal_example_path()
+    L = ["LDA 端到端单命令：一句话目标 → 设计包 → 版图 → GDS + 签核报告", "",
+         "用法：",
+         "  lda build <goal.json> --out <dir> [--wg 0.5] [--top-k 3]", "",
+         "最省事的第一步（示例 goal 随包发布）：",
+         f"  lda build {ex} --out reports", "",
+         "goal.json 最小结构（devices 里 design.target ⇒ 引擎闭环解参数；",
+         "params ⇒ 参数已知直接给定；两者都没有 ⇒ 用器件默认参数）：",
+         '  {"domain": "photon", "name": "demo",',
+         '   "devices": [{"id": "ring", "kind": "RingResonator",',
+         '                "design": {"target": 17.5}}],',
+         '   "nets": [], "io": [], "sources": []}', "",
+         f"当前可由目标设计出参数的器件（引擎 kind 已桥接）：{gb.bridgeable_engine_kinds()}",
+         f"其中版图 kind：{sorted(gb.LAYOUT_TO_ENGINE)}",
+         "准入标准是「设计输出**确实进入版图几何**」，不是名字对得上；其余引擎 kind "
+         "无 2D 版图表达、或与版图器件同名不同物、或设计输出在芯片级没有自由度"
+         "（如 engine_waveguide 的 width）⇒ 本命令拒绝登记并报错（不静默丢弃）。",
+         "参数已知的器件请直接用 params 给定（不受桥接表限制）。", "",
+         "同族命令：`lda check <spec.json>`（参数已写死的链路）· "
+         "`lda design <kind> --target <float>`（只出器件候选）"]
+    return "\n".join(L)
+
+
+def cmd_build(args: argparse.Namespace) -> int:
+    from lda_design import goal_build as gb
+
+    if not getattr(args, "goal", None):
+        # 用法错误一律走 stderr（stdout 只留真实产物），且**给指引不抛 traceback**
+        print(build_usage_hint(), file=sys.stderr)
+        return 2
+
+    try:
+        with open(args.goal, "r", encoding="utf-8") as f:
+            goal = json.load(f)
+    except FileNotFoundError:
+        print(f"[错误] 找不到 goal 文件：{args.goal}", file=sys.stderr)
+        print(build_usage_hint(), file=sys.stderr)
+        return 2
+    except json.JSONDecodeError as e:
+        print(f"[错误] goal 不是合法 JSON：{e}", file=sys.stderr)
+        return 2
+
+    try:
+        res = gb.build_goal(goal, args.out, wg_width=args.wg, top_k=args.top_k)
+    except Exception as e:  # noqa: BLE001
+        print(f"[错误] 构建失败：{str(e)[:200]}", file=sys.stderr)
+        return 1
+
+    if res.get("stage") == "assemble":
+        print("[错误] goal 无法装配成链路：", file=sys.stderr)
+        for e in res.get("errors", []):
+            print(f"  - {e}", file=sys.stderr)
+        print("", file=sys.stderr)
+        print(build_usage_hint(), file=sys.stderr)
+        return 2
+
+    print(res["markdown"])
+    s = res["summary"]
+    print(f"产物：{res['report_paths']}")
+    print(f"签核结论：{'✅ ACCEPT（DRC+LVS 双闸通过）' if s['verdict'] == 'ACCEPT' else '❌ REJECT（见上方明细）'}")
+    return 0 if res.get("ok") else 1
+
+
+# --------------------------------------------------------------------------
 # lda gf —— gdsfactory 组件 → LDA 链路 spec（生态互通桥）
 # --------------------------------------------------------------------------
 def cmd_gf(args: argparse.Namespace) -> int:
@@ -249,6 +328,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_c.add_argument("--out", default="reports", help="GDS/报告输出目录（默认 reports）")
     p_c.add_argument("--wg", type=float, default=0.5, help="波导宽度 µm（默认 0.5）")
     p_c.set_defaults(func=cmd_check)
+
+    p_b = sub.add_parser(
+        "build",
+        help="一句话目标 → 设计包 → 版图 → GDS + DRC/LVS 签核（端到端单命令 · M1）")
+    p_b.add_argument("goal", nargs="?",
+                     help="一句话目标 JSON；不传则打印用法指引（不抛 traceback）")
+    p_b.add_argument("--out", default="reports", help="产物输出目录（默认 reports）")
+    p_b.add_argument("--wg", type=float, default=0.5, help="波导宽度 µm（默认 0.5）")
+    p_b.add_argument("--top-k", type=int, default=3,
+                     help="引擎闭环返回前 K 候选（默认 3）")
+    p_b.set_defaults(func=cmd_build)
 
     p_g = sub.add_parser("gf", help="gdsfactory 组件 → LDA 链路 spec（生态互通桥，可选依赖）")
     p_g.add_argument("source", help="gdsfactory 组件工厂脚本（.py，导出 `component`）")

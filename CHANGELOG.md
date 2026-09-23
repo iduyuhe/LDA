@@ -1,5 +1,246 @@
 # Changelog
 
+## v0.9.130（2026-09-23 · P1-T1.1 · 设计包 → GDS 贯通（WebUI）：UI 一次点击产出**可下载 `.gds` + DRC/LVS 签核报告** · 报告与 `/api/tapeout` **同源** · 可交付 **D4 第一条** · 不扩基 · 零锚改动 · 账本零变化 · CI core 196→197）
+
+### 新增（P1-T1.1 · 内部设计能力规划 §5.2 · 缺口 §3.3 #1「设计包与 GDS/签核不联动、GDS 不可下载」🔴 旗舰级）
+
+补齐 `LDA_internal_design_plan_2026-09-23.md` §3.3 里 **Ops-Scout 十缺口第 1 条**：此前
+`POST /api/design_outcome` 只能解出动最优参数，**没有**任何路径把设计包变成可下载的
+GDS 文件 + 签核报告。本版把「设计闭环 → 流片文件」这一跳接通，并把它钉成常驻门禁。
+
+- **`lda/lda_design/goal_build.py`** —— 抽出**唯一**装配链 `signoff_from_link(...)`（不落盘）
+  与单器件入口 `signoff_single_device(kind, params, ...)`；`build_goal(...)` 重构为**只负责落盘**，
+  链委托前者。⇒ 写盘版（`lda build`）与内存版（WebUI）**共用同一条链**，杜绝 P0-0 同型
+  「同一段逻辑抄两遍、错得一样」的结构。重构经**逆向重建字节对照** 4/4 逐字节一致（无损）。
+- **`lda/lda_webui/app.py`** —— `run_design_tapeout(payload)` / `run_design_gds(query)`：
+  - 参数硬闸 `_validate_design_params`（非数 / 非有限 / `|v| > 1e4` ⇒ 拒绝）
+  - 入参解析 `_resolve_design_device`（`devices` / `engine_kind` / `kind` 三选一，**不猜**）
+  - 引擎口径桥接 `_bridge_params`（复用 `goal_build.BRIDGEABLE`，未登记键 ⇒ 拒绝静默丢弃）
+  - 下载 query 由 `_design_gds_query` 用 `repr(float)` 精确往返构造（不用 `%g`）
+  - **流片报告同源**：`run_tapeout_check({"devices": {kind: params}})` —— 与 `POST /api/tapeout`
+    **同一函数、同一入参**，不做第二份。
+- **`lda/lda_webui/routes.py`** —— `POST /api/design_tapeout`（重计算 ⇒ 进 `HEAVY_POST_PATHS`）
+  + `GET /api/design_gds`（**全仓唯一二进制响应端点**：`_send(body=..., ctype=octet-stream)`
+  + `Content-Disposition` + `X-LDA-GDS-Sha256`；失败 ⇒ **400 + JSON 用法**，不返回空文件）。
+- **`lda/lda_webui/static/index.html`** —— 旗舰面板加「→ 生成 GDS 并签核（流片文件）」按钮
+  + 「⬇ 下载 .gds（芯片级）」下载链；`_outcomeBest` 记住引擎口径最优参数，
+  **只有求解器确认过最优参数后按钮才可用**（无参默认禁用）。
+- **`lda/run_design_tapeout_smoke.py`** —— 46 判据常驻门禁（实测 <1s，无引擎求解）。
+- **`run_webui_api_smoke.py`** —— 二进制端点登记进 `BINARY_GET`（豁免）**并配专项断言**
+  `_check_binary_get`（6 判据：Content-Type / GDSII 魔数 / Content-Length 自洽 /
+  Content-Disposition / sha256 响应头 == 实体 / 无 kind ⇒ 400+JSON）。**豁免 ≠ 不测**。
+
+### 验收判据（§5.2 T1.1 两条，逐条机器化）
+
+| # | 判据 | 实现 |
+|---|---|---|
+| ① | UI 一次点击产出**可下载 .gds + DRC/LVS 报告** | 门禁 ①：芯片级双闸 ACCEPT + G4 回提 `n_params_checked>0` + `gds.available`/`bytes>0` |
+| ② | 报告与 `/api/tapeout` **同源（不得双口径）** | 门禁 ②：canonical JSON 与同一入参的 `run_tapeout_check` **逐字节相等** |
+
+### 🔴 本轮发现的诚实性缺口（已修 · 门禁钉死）
+
+honest_notes 原第 4 条写「未登记键**拒绝静默丢弃**」—— **实测只对 `engine_kind` 路径成立**：
+直连 `kind` 路径**静默接受**任何键，且「只有该器件几何真正读取的键才生效」
+（实测 `RingResonator` 加 `bogus=999` ⇒ GDS sha256 **不变**，而 `geom_params_declared`
+从 1 变 2、`geom_params_checked` 仍 1）。原文案会让读者以为两条路径同样严格 ⇒ 改为
+**分路径措辞**，并新增第 5 条披露「`declared > checked` 是**已知边界**，不是通过证据」。
+门禁以「加未知键 ⇒ sha256 不变」+「拒绝分支也必须带完整边界」把这两点钉死。
+
+> 未做（记 backlog · 不擅自扩基）：给直连 `kind` 路径加「几何键白名单」以拒绝无效键 ——
+> 真实键集散在 `geometry_desc`/`primitives` 里，无从自动导出，硬造白名单会引入
+> **会漂移的第二真相源**（P0-0 同型风险）；且 `/api/tapeout` 既有用法可能传非几何键。
+
+### 实测
+
+- `run_design_tapeout_smoke.py`：**46 PASS / 0 FAIL**（<1s）
+- **6 组定向突变探针全部精确亮红 + 还原字节级一致 + 无 `.mutbak` 残留**：
+  同源被破坏（报告加私货字段）⇒ ②红 · 下载 sha256 私改 ⇒ ③红 · 削掉「已知边界」披露
+  ⇒ ⑥红 · 前端退回版图口径 ⇒ ⑧红 · 二进制通道退化成 json ⇒ ⑧红 · 只豁免不专项断言 ⇒ ⑧红
+- `run_webui_api_smoke.py`：**PASS=98 · FAIL=0**（含 6 条 BINARY 判据全绿）
+- `run_cli_build_smoke.py`：28 PASS / 0 FAIL（装配链重构后复跑确认无回归）
+- 关键实测：下载字节 sha256 == 报告登记 sha256（同一来源）· `name` **不污染几何**
+  （两个不同 name ⇒ 同 sha256，但文件名随 name 变）· `wg` 真进链路（0.5≠0.6）·
+  `engine_kind=engine_ringresonator{R_um:10}` 与 `kind=RingResonator{R:10}` 产出**同一份 GDS**
+
+### 兼容性
+
+`lda build`（v0.9.129）落盘产物**逐字节不变**（重构经逆向重建对照 4/4 SAME）；
+`POST /api/tapeout` 行为**零变化**（`run_design_tapeout` 只是**调用**它）。
+无锚改动、无求解器改动、无新依赖。
+
+## v0.9.129（2026-09-23 · P1-T1.2 · 端到端单命令 `lda build`：一句话目标 → 设计包 → 版图 → GDS + DRC/LVS 签核 · 指标 **M1 从 0 → 1 条命令** · 不扩基 · 零锚改动 · 账本零变化 · CI core 195→196）
+
+### 新增（P1-T1.2 · 内部设计能力规划 §5.2）
+
+- **`lda/lda_design/goal_build.py`** —— 「目标 → 设计包 → 版图 → GDS + 签核」的**装配层**。
+  边界（与 `cli.py` 同一红线）：**只做装配 + 键名桥接 + 诚实登记** —— 不引入新求解器、
+  不引入新判决逻辑、不改任何判据；所有数值都来自既有 `DesignEngine` 闭环，本层只决定
+  「哪些数字喂给谁」。
+- **`lda/run_cli_build_smoke.py`** —— 28 判据常驻门禁（实测 ~20s，引擎结果缓存 + `top_k=1`）。
+- **`lda/examples/cli_build_goal.json`** —— 随包示例 goal（干净 clone 可直接跑）。
+- **`lda_design/cli.py`** —— 新增 `build` 子命令：`lda build <goal.json> --out <dir> [--wg W] [--top-k N]`。
+
+### 问题（为什么此前 M1 = 0）
+
+两端各自只走了一半，**没有任何一条路径**能从「一句话目标」走到「GDS + 签核报告」：
+
+- `lda check <spec.json>` 收的是**参数已由人写死**的链路（`_build_link`）—— 它不设计、只装配；
+- `lda design <kind> --target <f>` 只出**器件候选**（params + verdict）—— 不出版图、不喂链路。
+
+### 桥接白名单（显式 · 准入门槛 = 输出**真的落到几何**，不是「名字对得上」）
+
+| 引擎 kind | 版图 kind | 键映射 | ④a 芯片级几何敏感度 |
+|---|---|---|---|
+| `engine_ringresonator` | `RingResonator` | `R_um → R` | ✅ 实测敏感（改 R ⇒ 环半径几何随动） |
+| `engine_braggmirror` | `BraggMirror` | `periods → periods` | ✅ 实测敏感（周期数进几何） |
+
+主动排除（`EXCLUDED_ENGINE_KINDS`，逐条给原因）：
+
+| 引擎 kind | 排除原因 |
+|---|---|
+| `engine_waveguide` | 🔴 **最隐蔽的一类**：有对应版图 kind、也跑得通，**但设计输出到不了版图** —— 芯片级波导宽度是**全局参数**（`device_geom_of` 对 Waveguide 用 `wg_width`，`route_geoms` 全部布线也用 `wg_width`），器件若改用别的宽度会与布线**端口不连续** ⇒ 该设计输出对芯片版图无效 |
+
+其余 20 类：无 2D 版图表达（`geometry_desc` 直接 `raise`，**物理事实非接线缺失**）/
+`DirectionalCoupler2`·`Mmi1x2`·`GratingCoupler2` 是**同名不同物**（等价性无证据 ⇒ 拒绝自动配对）。
+⇒ 本层**拒绝自动推断**，要新增桥接项必须**逐个给出「设计输出确实进入版图几何」的证据**
+（④a / ④c 就是这条证据的机器化形式）。
+
+### 实测
+
+- **一条命令**：`lda build lda/examples/cli_build_goal.json --out reports` ⇒ 引擎闭环解出
+  `R_um = 6.5` ⇒ GDS **3128 B** · DRC **3/3** · LVS **ACCEPT** · G4 核对 **1/1 违规 0** ⇒
+  4 类产物落盘（`.gds` / `.signoff.json` / `.signoff.md` / `.design_packages.json`）。
+- **失败路径友好**（P1 出口判据 ②）：无参数 / goal 不存在 / 非法 JSON / 空 goal ⇒ 一律
+  `rc = 2` + **给可用指引、不含 Traceback**。退出码：`ACCEPT → 0` / `REJECT → 1` / goal 层问题 → 2。
+- **器件解不出 ⇒ 整条命令失败并指名道姓**（绝不静默丢弃 —— 静默丢 = 交出一份与目标不符的 GDS）。
+- 22 类引擎 kind × 版图支持全扫：仅 3 类 `geometry_desc` OK（`Waveguide` / `BraggMirror` /
+  `RingResonator`）；其中 `engine_waveguide` 宽度**几何不可回提**（G4 只含 length）、
+  `engine_braggmirror` 无 `PARAM_MEASURERS` 条目 ⇒ **仅 `RingResonator.R` 双重成立**。
+
+### 连带修复（🔴 P0-0 同型血案 · 第二次出现）
+
+`lda_chain/route_sim._build_chip_gds` 是 `chip_layout_export.device_geom_of` 的**第二份抄件**
+（path 分支施加 `(ox,oy)` 偏移、boundary 分支没有 —— **同一段逻辑抄两遍、错得一样**），
+曾让 **BOUNDARY-only 器件全部崩**：实测 `MMI` / `SymmetricYBranch` / `BraggMirror` / `Taper`
+四类全部 `KeyError: 'points_um'`（`layout_only` 对它们**长期不可用**）。
+
+- **修法**：改为**薄委托到唯一定义处** `device_geom_of`（不新写第三份副本）。
+- **实证**：① 既有调用**逐字节一致**（sha256 `6cc60707d629ef98e5d9351e6762a180802378a0094090f06e953830126068c9`，996 B）；
+  ② 四类边界器件**全部解锁**；③ 顺手删已无用的 `import math`。
+- 下游既有门禁全绿：`run_link_m1`~`m4` · `run_chip_layout_smoke` · `run_lvs_smoke`(27/0) ·
+  `run_lvs_geom_smoke`(20/0) · `run_gds_smoke` · `run_bragg_gds_smoke`(15/0)。
+
+### 反向护栏与突变探针
+
+- **反向 A**：不可桥接的器件（`PhaseShifter`）出现在 goal ⇒ **整体失败且指名**、`stage == assemble`、
+  **不产出 GDS**（宁失败不交付错版图）。
+- **反向 B**：`design.engine` 与 `devices[].kind` 不一致 ⇒ 必报 + `resolve_engine_kind` 必 `raise`
+  （必须挑**两个都已登记**的引擎才能命中「不一致」分支，否则落到反向 A 的同一分支 ⇒ 覆盖不到）。
+- **④c 已知口径分歧机器化登记**（两半同时断言）：**芯片级** `device_geom_of` **忽略**
+  `Waveguide.params['width']` vs **器件级** `geometry_desc` **读**它 —— 将来任一侧被修即变红、
+  强制重新评估 `engine_waveguide` 的排除结论。
+- **突变探针 6/6 精确捕获 + 还原字节级一致**：`silent_drop`（器件出错不记 errors）⇒ ⑦⑧ 红 ·
+  `bridge_all`（把 excluded 的也登记为可桥接）⇒ ④+④a 红 · `empty_params` ⇒ ④a+④b+⑥ 红 ·
+  `hint_always_ok`（无参数也返回 0）⇒ ② 红 · `doc_drift` ⇒ ⑪ 红 · `notes_strip`（删诚实边界）⇒ ⑨ 红。
+
+### 诚实边界（`honest_notes` 5 条 · 机器可检）
+
+① 本层只装配，装配后的**整链光学性能未做光学仿真**（版图链交付几何 + 可制造性 + 一致性）；
+② DRC 是**主权几何子集**（最小线宽/间距/面积），**不是** foundry 工艺级全量 deck（那属 D5，必须外部）；
+③ LVS 的「尺寸一致」是**代码路径级独立**，不是物理方法级独立；
+④ 无桥接引擎的器件**不会被悄悄丢掉**（整条命令失败并指名；参数已知时仍可用 `params` 直接给定）；
+⑤ 桥接门槛说明（按「输出真的落到几何」验收）。
+
+### 文档漂移修复
+
+- `README.md` 引用的示例 JSON 补**完整路径**（原少一层 `lda/`）；
+- `examples/README.md` 的 `lda design` 示例改为**真实签名**（原 `--kind/--params` 是错的）；
+- 新增 `lda/examples/cli_build_goal.json` 随包示例。
+
+### 决策登记（超时预算表）
+
+`run_cli_build_smoke.py`（实测 ~20s）**故意不入 `_BUILTIN_TIMEOUT_OVERRIDE`** —— 本表语义是
+「实测耗时 + 安全边际，防慢机器上偶发 TIMEOUT」，20s 项配 300s 行只制造审计噪声（仍受全局默认
+300s 兜底）；且基线行须有**本轮全量实测**样本（B5 拦未登记项），单项手补行会把
+`core_smokes_at_measurement` 一并刷新 ⇒ 半拉子账。按 T7-B4 **之后**入 core 的 10 条同例处理，
+**不手填数字**。
+
+**零判据放宽 · 零锚改动 · 账本零变化**（448/3/18/469）· 棘轮 `MAX_SELF_CERTIFIED=18` 不动。
+
+## v0.9.128（2026-09-23 · P1-T1.3 · **G4 器件参数几何回提**：LVS 从「连接一致」升到「连接 + **尺寸**双一致」· 不扩基 · 零锚改动 · 账本零变化 · CI core 194→195）
+
+### 问题（实测）
+
+`lvs.py:419-420` 的版图网表 `instances` 只由 `kind_of = {c.id: c.kind for c in link.ir.components}`
+恢复 ⇒ **版图侧只有「实例存在性」，没有任何几何尺寸回提** ⇒ 波导画成 30µm 而声明 20µm、
+环半径画成 8µm 而声明 10µm，**LVS 一律 ACCEPT**（连接关系没变，尺寸错了查不出）。
+⇒ 这是 D4（可交付）定义里**此前完全缺失的那一半**。
+
+### 新增（P1-T1.3）
+
+- **`lda/lda_l2/lvs_geom.py`** —— 从**版图几何独立测量**器件参数，与 IR 声明逐字段比对，
+  失配报 `device_param_mismatch`（由 `run_lvs` 注入判决）。
+- **`lda/run_lvs_geom_smoke.py`** —— 20 判据常驻门禁（实测 **0.3s**，`PASS=20 / FAIL=0`）。
+
+### 覆盖 7 类器件 / 7 参数（全部几何唯一可反推）
+
+| 器件 | 参数 | 测量口径（平移不变量 ⇒ 不依赖 placement 原点） |
+|---|---|---|
+| `Waveguide` | `length` | 单 PATH 端点距离 |
+| `GratingCoupler` | `L` | 几何跨度 |
+| `DirectionalCoupler` | `Lc` | 双 PATH x 跨度 |
+| `RingResonator` | `R` | 环形 PATH 顶点 → 形心 |
+| `RingAddDrop` | `R` | 同上 |
+| `MMI` | `L_mmi` | 多模区 4 点 BOUNDARY 的 x 跨度 |
+| `SymmetricYBranch` | `arm_length` | arm PATH 端点距离 |
+
+### 实测
+
+- **合法必过**：`build_lvs_case('consistent')` 3/3 器件、3/3 参数、**|delta| ≡ 0（机器精度）**；
+  7 类器件各构造一遍全部 `ok`。
+- **反向护栏两例**：篡改**几何**（波导 20→30µm / 环半径 10→8µm / DC Lc→25µm）⇒ 必报
+  `device_param_mismatch` 且 `measured == 篡改值`，**不连带误报**其它器件。
+- **判据升级实证**：同一篡改版图，`with_geom_check=False` ⇒ **ACCEPT（旧口径漏检）** /
+  `=True` ⇒ **REJECT** ⇒ 新判据**实质有效、非恒真自证**。
+- **测量独立性（机器可证）**：`measure_device_params` 与全部测量器**签名只收 `geoms`**、
+  源码零声明字段（`.params` / `declared` / `link`）⇒ **结构上收不到 IR 声明**。
+
+### 接线
+
+`run_lvs` / `run_lvs_multilayer` 共用单一助手 `_apply_geom_check`（**默认关闭 ⇒ 旧调用逐字节
+零影响**，实测 `run_lvs_smoke` 27/27 全绿）；`export_chip_gds` **默认开启**（芯片级签核即 D4 口径）。
+
+### 突变探针（实测有效）
+
+基线 20/0；`R` 测量器恒返回 ⇒ ④+⑬ 红 · 长度测量器恒返回 ⇒ ③⑤⑥⑨⑬ 红 · 删 MMI 覆盖 ⇒ ⑥+⑬×2 红 ·
+清单加孤儿名 ⇒ ⑬ 红 · **比对恒真** ⇒ ③④×2⑤ 红 ⇒ 判据非恒真。
+
+### 诚实边界（写进模块 docstring）
+
+① 本模块验证「版图几何与 IR 声明是否一致」，**不验证几何约定是否符合 foundry 事实**（后者需真
+PDK deck，属 D5）；② 测量与正向映射**共享几何约定先验** ⇒ 属**代码路径级独立**、非物理方法级独立；
+③ 几何不可生成的 kind（`MZI` / `MMIC` / `PhaseShifter` / `Splitter` / `MziModulator` /
+`Photodetector`）登记 `geom_failed` 且**不报违规**（不误报）；④ 不覆盖参数
+（`GratingCoupler.Lambda/duty/n_tooth`、`RingResonator.gap/wg_width`、`BraggMirror.periods/corrugation`、
+`SymmetricYBranch.split_angle`）**逐条登记原因**，且 `coverage_declared` 与 `coverage_by_table`
+分两档口径明示（**不谎报覆盖率**）。
+
+### 🔴 本轮血案（同型第三次）
+
+⑧ 首版判据写成「测量器源码零 `params` 引用」，而 `measure_device_params` **函数名自身**含
+`params` ⇒ 该断言对**唯一合法路径恒假红**（不可满足）—— 与 U8/U10「守卫键名扫描须豁免自身必需
+字段名」**同型**；正解 = **签名结构 + 文本字段**双证，并把「清单 vs 表」一致性拆给 ⑬
+（职责分离：否则清单混入孤儿名时 ⑧ 直接崩、掩盖本该给出的亮红诊断）。
+
+### 决策登记（超时预算表）
+
+`run_lvs_geom_smoke.py`（实测 0.29s）**故意不入 `_BUILTIN_TIMEOUT_OVERRIDE`** —— 比默认兜底
+300s 低 3 个数量级；本表语义是「实测耗时 + 安全边际，防慢机器上偶发 TIMEOUT」，给 0.3s 项配行
+只制造审计噪声。本表成立基础是**一次真实全量实测**（T7-B4 全量清扫 `18->184`），B5 会拦未登记项；
+按 T7-B4 **之后**入 core 的 10 条同例处理，**不手填数字**（B10 是「改预算必刷新基线」的锁）。
+
+**零判据放宽 · 零锚改动 · 账本零变化**（448/3/18/469）· 棘轮 `MAX_SELF_CERTIFIED=18` 不动。
+
 ## v0.9.127（2026-09-23 · U6 + U8 + U10 · 良率/容错映射 + 非易失权重后端（条件式设计）+ 校准固件协议设计 · 不扩基 · 零锚改动 · 账本零变化 · CI core 191→194）
 
 ### 新增（U6 · 内部总结 §4.4 执行序第 6 项 / §4.2 第一梯队）

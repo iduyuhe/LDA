@@ -239,6 +239,38 @@ CORE_SMOKES: List[str] = [
     "run_second_tier_smoke.py",
     # LVS 签核（v0.8.24：版图-原理图一致性 · 签核级 · 版图差距 #5 + S9 锚）
     "run_lvs_smoke.py",
+    # G4 器件参数几何回提（v0.9.128：版图几何**独立测量** vs IR 声明 ——
+    #   LVS 从「连接一致」升到「连接 + 尺寸双一致」，即 D4 口径的那一半）。
+    #   反向护栏两例（改波导长度 / 改环半径）+ 合法必过 + **旧口径漏检实证**
+    #   （同一篡改版图：不启用回提 ACCEPT / 启用 REJECT ⇒ 判据实质有效）。
+    #   实测 0.3s。
+    "run_lvs_geom_smoke.py",
+    # T1.2 端到端单命令（v0.9.129：M1 从 0 → **1 条命令** ——
+    #   `lda build <goal.json>` 一句话目标 → 设计包 → 版图 → GDS + DRC/LVS 签核。
+    #   28 判据：①四类产物 ②无参数 rc=2 且**给指引不抛 traceback**（L1 出口判据 ②）
+    #   ③失败路径友好 ④桥接表与引擎输出**双向**一致 + ④a **几何敏感度准入门槛**
+    #   （改设计值⇒几何必变；不敏感即「没进版图」不得登记）+ ④b 独立测量一致 +
+    #   ④c 已知口径分歧机器化登记（两半同时断言）⑤判决同口径（.md≡.json）
+    #   ⑥签核含 G4 几何回提（D4 口径）⑦反向 A 不可桥接**整体失败并指名**（不静默丢器件）
+    #   ⑧反向 B engine/kind 不一致必报 ⑨诚实边界 + 互斥完备 ⑩红线零 LLM
+    #   ⑪文档不再漂移。实测 ~20s（引擎结果缓存 + top_k=1；BraggMirror 闭环含 2D FDTD）。
+    #   🔴 本批已做过 6 组定向变异自证（silent_drop / bridge_all / empty_params /
+    #   hint_always_ok / doc_drift / notes_strip）⇒ 逐条精确亮红 + 还原字节级一致。
+    "run_cli_build_smoke.py",
+    # T1.1 设计包 → GDS 贯通（v0.9.130：可交付 D4 第一条 —— UI 一次点击产出
+    #   **可下载 .gds + DRC/LVS 签核报告**）。46 判据：①芯片级双闸 ACCEPT +
+    #   G4 回提真的跑 + gds.available/bytes>0 ②**报告与 /api/tapeout 同源**
+    #   （canonical JSON 与同一入参的 run_tapeout_check 逐字节相等 —— 「不得双口径」）
+    #   ③下载 sha256 == 报告登记（从响应 download_url **取回** query 重建，不手写）
+    #   + 无状态确定性 + 改 R 必变 + 改 name **不污染几何** + wg 真的进链路
+    #   ④engine_kind 桥接与直连版图口径产出**同一份 GDS** ⑤9 条诚实拒绝
+    #   （排除项/不可桥接/越界/非数/多器件/空 payload/下载端无 kind/非数/未知 kind）
+    #   ⑥honest_notes 5 条关键边界 + **拒绝分支也带边界** + 实测把「直连路径静默
+    #   忽略无效键」钉死（防它某天变成静默生效却无人知）⑦红线零 LLM ⑧接线完备
+    #   （routes 三表 + 二进制通道 + 失败 400 + index.html 六个接线名 + 前端真的送
+    #   engine_kind 口径 + api_smoke 豁免**配了专项断言**）。
+    #   实测 <1s（无引擎求解，纯装配+导出）。**故意不入超时覆盖表**（同 T1.2/T1.3 例）。
+    "run_design_tapeout_smoke.py",
     # LVS 短路检测宽相等价护栏（P0-2b · v0.9.36：几何均值 cell 退化根治守卫）
     #   生产 _collect_cross_shorts（线段网格宽相）vs naive O(n²) 双重循环真值
     #   逐字节一致。防「提速改 cell 却悄悄改变短路集合」的静默回归（铁律：
@@ -1107,6 +1139,16 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ci_crash_classify_smoke.py": 300.0,
     # T7-B4 新增：183-run 实测 8.4s · 3.05× 取整 · 不低于默认 300s
     "run_cli_smoke.py": 300.0,
+    # ⚠️ v0.9.129 决策（T1.2）：`run_cli_build_smoke.py` **故意不入本表** ——
+    #   实测 **~20s**（含 BraggMirror 闭环 2D FDTD），远低于默认兜底 300s；本表语义
+    #   是「实测耗时 + 安全边际，防慢机器上偶发 TIMEOUT」，20s 项配 300s 行只制造
+    #   审计噪声（它仍受全局默认 300s 兜底）。理由与 T1.3/G4 同（见下方
+    #   `run_lvs_geom_smoke.py` 处的完整决策：基线行须有**本轮全量实测**样本，
+    #   B5 拦未登记项；单项手补行会把 `core_smokes_at_measurement` 一并刷新 ⇒ 半拉子账）。
+    # ⚠️ v0.9.130 决策（T1.1）：`run_design_tapeout_smoke.py` 同样**故意不入本表** ——
+    #   实测 <1s（纯装配 + GDS 导出，无引擎求解）；同 T1.2/T1.3 例（远低于默认兜底
+    #   300s 的项配 300s 行只制造审计噪声）。
+    #   ⇒ 按 T7-B4 之后入 core 的 10 条同例处理，**不要手填数字**。
     # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s
     "run_compact_model_smoke.py": 300.0,
     # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
@@ -1213,6 +1255,18 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_lvs_cross_equiv_smoke.py": 300.0,
     # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
     "run_lvs_smoke.py": 300.0,
+    # ⚠️ v0.9.128 决策（T1.3/G4）：`run_lvs_geom_smoke.py` **故意不入本表** ——
+    #   实测 **0.29s**，比默认兜底 300s 低 3 个数量级；本表语义是「实测耗时 + 安全
+    #   边际，防慢机器上偶发 TIMEOUT」，给一个 0.3s 的项配行只制造审计噪声，不改变
+    #   任何实际保护（它仍受全局默认 300s 兜底）。
+    #   🔴 为什么不是「随手加一行」：本表的成立基础是**一次真实全量实测**（见上方
+    #   T7-B4 那段「183-run 实测 X s」注释）——基线行（`lda/timeout_budget_baseline.json`）
+    #   必须有本轮实测样本，B5 会拦未登记项。给单项补行只能用**非全量样本**，
+    #   却会把「基线过期」标记 `core_smokes_at_measurement` 一并刷新 ⇒ 制造「半拉子账」。
+    #   ⇒ 本项按 T7-B4 **之后**入 core 的 10 条同例处理（`run_wdm_mesh_pnr_smoke.py` /
+    #     `run_compiler_frontend_smoke.py` / `run_loss_aware_compile_smoke.py` … 均未入表）。
+    #   若日后要做「CI core 全量接入棘轮」（T7-B4 式清扫），须以一次真实全量回归的实测
+    #   为**全部**缺项统一补行，**不要手填数字**（B10 就是「改预算必刷新基线」的锁）。
     # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
     "run_maturity_baseline_smoke.py": 300.0,
     # T7-B4 新增：183-run 实测 3.8s · 3.05× 取整 · 不低于默认 300s

@@ -382,9 +382,14 @@ def export_chip_gds(link, placement, routes, wg_width: float = 0.5,
     if multi:
         from lda_l2.layers import get_stack
         from lda_l2.lvs import run_lvs_multilayer
-        lvs = run_lvs_multilayer(link, placement, routes, stack=get_stack("soi"))
+        lvs = run_lvs_multilayer(link, placement, routes, stack=get_stack("soi"),
+                                 with_geom_check=True)
     else:
-        lvs = run_lvs(link, placement, routes)
+        # v0.9.128（G4）：芯片级签核默认含「器件参数几何回提」——
+        # LVS 从「连接一致」升到「连接 + 尺寸双一致」（D4 口径）。
+        # 几何不可生成的 kind（MZI/MMIC/PhaseShifter…）在报告中如实标注，
+        # 不参与判决（详见 lvs_geom.GEOM_UNSUPPORTED_KINDS）。
+        lvs = run_lvs(link, placement, routes, with_geom_check=True)
     return {
         "gds_bytes": gds_bytes,
         "gds_parse": parse,

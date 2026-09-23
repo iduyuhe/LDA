@@ -309,6 +309,8 @@ HEAVY_POST_PATHS = {
     "/api/readout_fidelity", "/api/multiqubit_fidelity", "/api/mixed_system",
     "/api/coupler_design", "/api/wdm_coupler", "/api/splitter_readout",
     "/api/wdm_splitter", "/api/design_package", "/api/design_outcome",
+    # T1.1：设计包 → GDS + 签核（跑流片管道 + 芯片级导出 ⇒ 与 /api/tapeout 同级）
+    "/api/design_tapeout",
     "/api/drc_fix_demo", "/api/coupler_loop", "/api/ir_demo",
     "/api/adjoint_design", "/api/adjoint_loop", "/api/primitives",
     "/api/sparams", "/api/sparams_3d", "/api/gc_sparams",
@@ -1190,6 +1192,34 @@ def h_tapeout_check(h, p, q, path):
     return (200, _app.run_tapeout_check(p))
 
 
+def h_design_tapeout(h, p, q, path):
+    """POST /api/design_tapeout —— 设计包 → 芯片级 GDS + 签核 + 流片报告（T1.1）。
+
+    报告与 /api/tapeout **同源**（内部直接调用 `run_tapeout_check`，同一函数、
+    同一入参）；返回体里的 `gds.download_url` 给出可下载 `.gds` 的 GET 入口。
+    重计算类 ⇒ 已在 `HEAVY_POST_PATHS` 登记（登录闸门 + 并发/体积护栏）。
+    """
+    return (200, _app.run_design_tapeout(p))
+
+
+def h_design_gds(h, p, q, path):
+    """GET /api/design_gds —— 下载设计版图 .gds（T1.1 · **唯一二进制响应端点**）。
+
+    ⚠️ `run_webui_api_smoke` 的通用 GET 循环按「200 + JSON」断言，二进制响应会被
+    误判 ⇒ 该 smoke 已把本端点登记进 `BINARY_GET` 并配**专项断言**（状态码 /
+    Content-Type / GDS 魔数 / 长度自洽 / Content-Disposition / sha256 与
+    POST 报告登记值一致）。未带 kind 时返回 **400 + JSON 用法**（不返回空文件）。
+    """
+    body, meta = _app.run_design_gds(q)
+    if body is None:
+        return (400, meta)
+    h._send(200, body=body, ctype="application/octet-stream", headers={
+        "Content-Disposition": 'attachment; filename="%s"' % meta["filename"],
+        "X-LDA-GDS-Sha256": hashlib.sha256(body).hexdigest(),
+    })
+    return None
+
+
 def h_geometry_drc(h, p, q, path):
     return (200, _app.run_geometry_drc(p))
 
@@ -1605,6 +1635,8 @@ GET_ROUTES = {
     "/api/ecosystem": h_ecosystem,
     "/api/empirical": h_empirical,
     "/api/design_catalog": h_design_catalog,
+    # T1.1：设计版图 .gds 下载（**唯一二进制端点**，见 h_design_gds docstring）
+    "/api/design_gds": h_design_gds,
     "/api/gc_benchmarks": h_gc_benchmarks,
     "/api/shelf": h_shelf,
     "/api/admin/opinions": h_admin_opinions,
@@ -1672,6 +1704,8 @@ POST_ROUTES = {
     "/api/wdm_splitter": h_wdm_splitter,
     "/api/design_package": h_design_package,
     "/api/design_outcome": h_design_outcome,
+    # T1.1：设计包 → 芯片级 GDS + 签核 + 流片报告（与 /api/tapeout 同源）
+    "/api/design_tapeout": h_design_tapeout,
     "/api/drc_fix_demo": h_drc_fix_demo,
     "/api/tapeout": h_tapeout_check,
     "/api/geometry_drc": h_geometry_drc,

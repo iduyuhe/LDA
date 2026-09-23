@@ -1672,6 +1672,205 @@ def run_tapeout_check(payload):
     return out
 
 
+# ---------------------------------------------------------------------------
+# P1-T1.1 设计包 → GDS + 签核（WebUI 一键贯通）
+# ---------------------------------------------------------------------------
+# 🔴 「不得双口径」如何**在代码里**兑现（而不是靠口头承诺）：
+#   · `tapeout` 报告 —— **直接调用 `run_tapeout_check`**（与 POST /api/tapeout
+#     同一函数、同一入参）⇒ 两个入口对同一器件**不可能**给出不同口径；
+#     `run_design_tapeout_smoke` 把「canonical JSON 逐字节相等」钉成判据。
+#   · 可下载 `.gds` —— 芯片级 `goal_build.signoff_single_device`（内部即
+#     `export_chip_gds`）的产物，其 sha256 与本响应 `gds.sha256` **同一来源**；
+#     下载端点按 kind/params **确定性重建**（无状态、无临时文件、无需清理），
+#     门禁断言「下载字节 sha256 == 报告登记 sha256」。
+#   ⚠️ 二者是**两份几何、两份签核**，各自覆盖各自产物，**不交叉声明**（见 honest_notes）。
+_DESIGN_GDS_RESERVED_KEYS = ("kind", "wg", "name", "params")
+# 单参数绝对值上限：防畸形参数（如 R=1e12）造出天量多边形把进程打爆
+_DESIGN_PARAM_ABS_MAX = 1.0e4
+
+_DESIGN_TAPEOUT_NOTES = [
+    "`tapeout` 字段 = `run_tapeout_check` 的**原样返回**（与 POST /api/tapeout "
+    "同一函数、同一入参）⇒ 两个入口对同一器件不会出现双口径；门禁 "
+    "`run_design_tapeout_smoke` 以 canonical JSON 逐字节断言。",
+    "可下载 `.gds` 来自**芯片级**链路（`goal_build.signoff_single_device` → "
+    "`chip_layout_export.export_chip_gds`，含层次 / 布线 / IO 与 G4 几何回提）；"
+    "`tapeout` 报告的几何来自**器件级** `layout_elements` → `gds_library`"
+    "（即 /api/tapeout 的口径）—— **两者不是同一个文件**，各自签核各自的几何，"
+    "不得把其中一份的结论算到另一份头上。",
+    "芯片级 DRC 是**主权几何子集**（最小线宽 / 间距 / 面积），**不是** foundry "
+    "工艺级全量 deck（那属 D5，必须外部）；芯片级 LVS 的「尺寸一致」属**代码路径级"
+    "独立**（版图几何独立测量 vs IR 声明），不是物理方法级独立。",
+    "参数按**版图口径**传入（`RingResonator.R` / `BraggMirror.periods` / "
+    "`Waveguide.length` …）；引擎口径（`R_um` 等）请传 `engine_kind`，"
+    "由 `goal_build.BRIDGEABLE` 桥接 —— ⚠️ **两条路径的键检查强度不同**："
+    "`engine_kind` 路径对未登记引擎键**拒绝静默丢弃**；直连 `kind` 路径"
+    "**只有该器件几何真正读取的键才生效**（如 `RingResonator` 只认 `R`），"
+    "其余键被**静默忽略**（不报错、不进几何）。门禁 `run_design_tapeout_smoke` "
+    "以「加未知键 ⇒ GDS sha256 不变」把该事实钉死，防它某天变成静默生效却无人知。",
+    "`chip.summary.geom_params_declared` **可能大于** `geom_params_checked` —— "
+    "G4 几何回提只核对**可从版图独立测回**的声明量（如环半径），其余声明量"
+    "（含被忽略的无效键）不在回提范围。⇒ 「`declared > checked`」是**已知边界**，"
+    "**不是**通过证据；`verdict == ACCEPT` 只保证「已核对的那部分零违规」。",
+]
+
+
+def _validate_design_params(params: dict) -> list:
+    """参数合法性硬闸（返回问题清单，空 = 通过）。"""
+    bad = []
+    for k, v in (params or {}).items():
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            bad.append("参数 %s=%r 不是数（拒绝把非数值喂给版图层）" % (k, v))
+            continue
+        if f != f or f in (float("inf"), float("-inf")):
+            bad.append("参数 %s=%r 非有限值" % (k, v))
+        elif abs(f) > _DESIGN_PARAM_ABS_MAX:
+            bad.append("参数 %s=%r 越界（限 |v| ≤ %g，防畸形参数造出天量几何）"
+                       % (k, f, _DESIGN_PARAM_ABS_MAX))
+    return bad
+
+
+def _resolve_design_device(payload: dict):
+    """payload → (版图 kind, 版图参数, engine_kind, errors)。**不猜**，不一致即拒。
+
+    三种入参（都映射到**版图口径**再进链路）：
+      ① `{"devices": {"RingResonator": {...}}}` —— 与 /api/tapeout 同形（供同源断言）
+      ② `{"engine_kind": "engine_ringresonator", "params": {...}}` —— 设计包引擎口径 → 桥接
+      ③ `{"kind": "RingResonator", "params": {...}}` —— 直接版图口径
+    """
+    dev = payload.get("devices")
+    if isinstance(dev, dict) and dev:
+        if len(dev) != 1:
+            return None, None, None, [
+                "devices 只支持**单个**器件（T1.1 口径：设计包 → 单器件 GDS + 签核）"]
+        kind = next(iter(dev))
+        return kind, dict(dev[kind] or {}), None, []
+
+    from lda_design import goal_build as _gb
+    ek = payload.get("engine_kind") or payload.get("kind")
+    params = payload.get("params") or {}
+    if not ek:
+        return None, None, None, ["缺少 kind / engine_kind / devices（三选一）"]
+    if ek in _gb.BRIDGEABLE:
+        return _bridge_params(ek, params)
+    if ek in _gb.EXCLUDED_ENGINE_KINDS:
+        return None, None, ek, [
+            "引擎 %s 被**主动排除**出桥接表：%s" % (ek, _gb.EXCLUDED_ENGINE_KINDS[ek])]
+    if ek in _gb.unbridgeable_engine_kinds():
+        return None, None, ek, [
+            "引擎 %s 无对应可桥接版图器件（无 2D 版图表达 / 同名不同物、等价性无证据）"
+            "⇒ 本端点如实拒绝，不假装能出 GDS" % ek]
+    # 既非引擎 kind ⇒ 视为直接给版图 kind（③）
+    return ek, dict(params), None, []
+
+
+def _bridge_params(engine_kind: str, engine_params: dict):
+    """桥接为版图口径；未登记键 ⇒ 拒绝静默丢弃（返回 errors）。"""
+    from lda_design import goal_build as _gb
+    lk, _km = _gb.BRIDGEABLE[engine_kind]
+    m = _gb.map_engine_params(engine_kind, engine_params)
+    if m["dropped_keys"]:
+        return lk, m["layout_params"], engine_kind, [
+            "引擎参数键 %s 不在桥接表内 ⇒ **拒绝静默丢弃**（桥接表可能已过期）"
+            % m["dropped_keys"]]
+    return lk, m["layout_params"], engine_kind, []
+
+
+def _design_gds_query(kind: str, params: dict, wg: float, name: str) -> str:
+    """构造**确定性重建**同一份 GDS 的查询串（`repr(float)` 精确往返，不用 %g）。"""
+    from urllib.parse import urlencode
+    q = {"kind": kind, "wg": repr(float(wg)), "name": name}
+    for k, v in (params or {}).items():
+        q[k] = repr(float(v))
+    return urlencode(q)
+
+
+def run_design_tapeout(payload=None):
+    """T1.1 设计包 → **芯片级 GDS** + 芯片级签核 + **流片报告（与 /api/tapeout 同源）**。
+
+    入参见 `_resolve_design_device`。返回：
+      {ok, design, chip{stage,verdict,summary,signoff}, tapeout, gds{...}, errors, honest_notes}
+    `ok` = 芯片级双闸 ACCEPT（DRC 全过 + LVS ACCEPT + G4 零违规）。
+    """
+    payload = payload or {}
+    kind, params, ek, errors = _resolve_design_device(payload)
+    if errors:
+        return {"ok": False, "errors": errors, "honest_notes": _DESIGN_TAPEOUT_NOTES}
+    bad = _validate_design_params(params)
+    if bad:
+        return {"ok": False, "errors": bad, "honest_notes": _DESIGN_TAPEOUT_NOTES}
+    try:
+        wg = float(payload.get("wg") or payload.get("wg_width") or 0.5)
+    except (TypeError, ValueError):
+        return {"ok": False, "errors": ["wg 不是数"],
+                "honest_notes": _DESIGN_TAPEOUT_NOTES}
+    name = str(payload.get("name") or "design_chip")[:64]
+
+    from lda_design import goal_build as _gb
+    chip = _gb.signoff_single_device(kind, params, wg_width=wg, name=name)
+    # 🔴 流片报告：**同一函数、同一入参** ⇒ 同源（不得另写一份）
+    tapeout = run_tapeout_check({"devices": {kind: params}})
+    gds_bytes = chip.get("gds_bytes") or b""
+    import hashlib as _h
+    gds = ({"available": True, "bytes": len(gds_bytes),
+            "sha256": _h.sha256(gds_bytes).hexdigest(),
+            "filename": "%s.gds" % name,
+            "download_url": "/api/design_gds?" + _design_gds_query(kind, params, wg, name)}
+           if gds_bytes else {"available": False})
+    return {"ok": bool(chip.get("ok")),
+            "design": {"kind": kind, "params": params, "engine_kind": ek,
+                       "wg_width_um": wg},
+            "chip": {"stage": chip.get("stage"), "verdict": chip.get("verdict"),
+                     "summary": chip.get("summary"), "signoff": chip.get("signoff")},
+            "tapeout": tapeout,
+            "gds": gds,
+            "errors": list(chip.get("errors") or []),
+            "honest_notes": _DESIGN_TAPEOUT_NOTES}
+
+
+def run_design_gds(query=None):
+    """GET /api/design_gds：按 kind/params **确定性重建**同一份 .gds。
+
+    返回 `(bytes, meta)`；失败返回 `(None, 说明 dict)`（由路由层转 400 + JSON）。
+    无状态设计（不落临时文件、不需清理）⇒ 下载的字节与 `run_design_tapeout`
+    登记的 `gds.sha256` **必然一致**（门禁断言）。
+    """
+    query = dict(query or {})
+    kind = query.get("kind")
+    if not kind:
+        return None, {"ok": False, "error": "缺少 kind",
+                      "usage": "/api/design_gds?kind=RingResonator&R=10.0&wg_width=0.5",
+                      "reserved_keys": list(_DESIGN_GDS_RESERVED_KEYS),
+                      "note": "除 kind/wg/name 外的查询键一律视为该器件的**版图口径**数值参数"}
+    params = {}
+    for k, v in query.items():
+        if k in _DESIGN_GDS_RESERVED_KEYS:
+            continue
+        try:
+            params[k] = float(v)
+        except (TypeError, ValueError):
+            return None, {"ok": False, "error": "参数 %s=%r 不是数" % (k, v)}
+    bad = _validate_design_params(params)
+    if bad:
+        return None, {"ok": False, "error": "; ".join(bad)}
+    try:
+        wg = float(query.get("wg") or 0.5)
+    except (TypeError, ValueError):
+        return None, {"ok": False, "error": "wg 不是数"}
+    name = str(query.get("name") or "design_chip")[:64]
+
+    from lda_design import goal_build as _gb
+    chip = _gb.signoff_single_device(kind, params, wg_width=wg, name=name)
+    gds_bytes = chip.get("gds_bytes") or b""
+    if not gds_bytes:
+        return None, {"ok": False,
+                      "error": "无法生成版图：" + "; ".join(
+                          chip.get("errors") or ["未知原因"]),
+                      "stage": chip.get("stage")}
+    return gds_bytes, {"filename": "%s.gds" % name, "kind": kind, "params": params}
+
+
 def run_geometry_drc(payload):
     """⑯ 几何 DRC 快查 WebUI 入口：器件字典 → 主权几何 DRC 子集。
 

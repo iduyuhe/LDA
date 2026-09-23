@@ -12,17 +12,27 @@ python examples/sample_layout.py sample_layout.gds
 lda check --gds sample_layout.gds
 ```
 
-## 2. 跑一个设计（CLI 薄壳）
+## 2. 端到端单命令：一句话目标 → GDS + 签核（最省事的一条路）
 
 ```bash
-# 设计一个环形分波器，返回被验证过的设计包
-lda design --kind RingAddDrop --params '{"R":10.0,"gap":0.3}'
+# goal JSON 里 design.target 的器件 ⇒ 参数由设计引擎（DesignEngine）闭环解出；
+# params 的器件 ⇒ 参数已知，直接给定。一条命令出 GDS + DRC/LVS 签核报告。
+lda build lda/examples/cli_build_goal.json --out reports
+# 产物：reports/goal_ring_fsr.gds / .signoff.json / .signoff.md / .design_packages.json
+```
+
+## 3. 跑一个设计（CLI 薄壳）
+
+```bash
+# 签名： lda design <kind> --target <float> [--top-k N]
+# 跑一个器件设计闭环，返回被真实求解器验证过的最优候选
+lda design RingResonator --target 9.0 --top-k 3
 
 # 生成对照报告（--quick 跑子集，更快）
 lda report --quick
 ```
 
-## 3. gdsfactory 兼容（可选，B 级依赖）
+## 4. gdsfactory 兼容（可选，B 级依赖）
 
 > gdsfactory 未安装时 `lda gf` 会打印指引并优雅退出（不阻断 LDA 自有路径）。
 
@@ -31,7 +41,7 @@ lda report --quick
 lda gf your_component.py --out your_component.lda_spec.json
 ```
 
-## 4. 主权版图实证库（走法一，零 gdsfactory）
+## 5. 主权版图实证库（走法一，零 gdsfactory）
 
 `examples/sovereign_evidence/` 是用纯 LDA 主权链（LinkModel → placement →
 routes → chip_layout_export.export_chip_gds）跑出的**真实 GDSII 证据集**，全部经

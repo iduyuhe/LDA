@@ -203,7 +203,10 @@ body{padding-top:56px}
     <div id="doPkg" class="note" data-page-node-id="9oVDvXrzrrf4TYGR5jDBsh"></div>
     <div class="row" style="margin-top:8px" data-page-node-id="MlgkRONX3PqvT8TT6reDkx">
       <button class="btn" id="doDownload" disabled data-page-node-id="tPonW1LgO7tofor8HnsJg5">下载统一设计包 JSON</button>
+      <button class="btn" id="doTapeout" disabled data-page-node-id="doTapeoutBtn">→ 生成 GDS 并签核（流片文件）</button>
+      <a id="doGdsLink" class="btn" style="display:none;text-decoration:none" href="javascript:void(0)" data-page-node-id="doGdsLink">⬇ 下载 .gds（芯片级）</a>
     </div>
+    <div id="doTapeoutOut" class="note" data-page-node-id="doTapeoutOut"></div>
     <div class="conclusion" id="doConclusion" data-page-node-id="5CKjBvNolZtRLuyqPvrK6t"></div>
   </div>
 
@@ -3943,6 +3946,8 @@ $('runGeoDrc').onclick = runGeoDrc;
 
 // ---- ★ 旗舰 · 设计闭环端到端（给目标 → 出统一设计包）----
 let _outcomePkg = null;
+// P1-T1.1：设计闭环解出的**最优引擎参数**（供「→ 生成 GDS 并签核」一键贯通用）
+let _outcomeBest = null;
 
 // 内置静态兜底目录（与后端 engine_catalog/package_catalog 同源：22 闭环引擎 + 11 参数驱动包）
 // 作用：/api/design_catalog 不可达或返回空时，select 仍可用，杜绝"下拉空白"。
@@ -4040,6 +4045,7 @@ function _syncDoKindUI(){
 }
 async function runDesignOutcome(){
   const btn=$('runDesignOutcome'); btn.disabled=true; $('doDownload').disabled=true; _outcomePkg=null;
+  _outcomeBest=null; $('doTapeout').disabled=true; $('doGdsLink').style.display='none'; $('doTapeoutOut').innerHTML='';
   const sel=$('doKind'); const o=sel.options[sel.selectedIndex];
   if(!o || !sel.value){ $('doSummary').textContent='请先在上方选择器件类型'; btn.disabled=false; $('doDownload').disabled=true; return; }
   const kind=sel.value; const mode=o.dataset.mode;
@@ -4073,6 +4079,9 @@ function renderDesignOutcome(d){
     const params=Object.entries(b.params).map(([k,v])=>`${k}=${v}`).join('，');
     $('doBest').innerHTML=`<div class="ok">✅ 最优已验证设计：<b>${params}</b> → ${er.metric_name}=<b>${b.metric}</b>（目标误差 ${b.err.toFixed(4)}）</div>`+(b.verdict?`<div style="margin-top:4px;color:#8aa0c6">${b.verdict}</div>`:'');
   }
+  // P1-T1.1：把「已由求解器确认的最优参数」交给「→ 生成 GDS 并签核」按钮
+  _outcomeBest = (b && b.params) ? {engine_kind:($('doKind').value||''), params:b.params} : null;
+  $('doTapeout').disabled = !_outcomeBest;
   if(er.top&&er.top.length){
     const rows=er.top.map(c=>{ const p=Object.entries(c.params).map(([k,v])=>`${k}=${v}`).join('，'); return `<tr><td>${p}</td><td>${c.metric===null?'—':c.metric}</td><td>${c.err.toFixed(4)}</td><td>${c.passed?'✅':'—'}</td></tr>`;}).join('');
     $('doCands').innerHTML=`<table class="tbl"><thead><tr><th>参数</th><th>${er.metric_name}</th><th>目标误差</th><th>验证</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -4090,6 +4099,51 @@ function renderDesignOutcome(d){
 }
 $('runDesignOutcome').onclick = runDesignOutcome;
 $('doDownload').onclick = ()=>{ if(!_outcomePkg) return; const blob=new Blob([JSON.stringify(_outcomePkg,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(_outcomePkg.package_id||'lda_design_package')+'.json'; a.click(); };
+
+// ---- ★ P1-T1.1 设计包 → GDS + 签核（一键贯通）----
+// 报告与 POST /api/tapeout **同源**（后端直接复用同一函数）；可下载 .gds 由
+// /api/design_gds 按 kind/params 确定性重建 —— 其 sha256 与本响应登记值一致。
+async function runDesignTapeout(){
+  const btn=$('doTapeout'); const link=$('doGdsLink');
+  if(!_outcomeBest){ $('doTapeoutOut').innerHTML='<span class="warn">请先运行上面的设计闭环（需要已由求解器确认的最优参数）</span>'; return; }
+  btn.disabled=true; link.style.display='none';
+  $('doTapeoutOut').innerHTML='<span class="spin"></span> 装配版图 → 导出 GDS → DRC/LVS 双闸签核 → 流片管道报告…';
+  try{
+    const d = await api('/api/design_tapeout', {engine_kind:_outcomeBest.engine_kind,
+                                                params:_outcomeBest.params,
+                                                name:'design_'+_outcomeBest.engine_kind});
+    renderDesignTapeout(d);
+  }catch(e){ $('doTapeoutOut').innerHTML='<span class="warn">失败：'+e+'</span>'; }
+  finally{ btn.disabled=false; }
+}
+function renderDesignTapeout(d){
+  const chip=d.chip||{}, s=chip.summary||{}, t=d.tapeout||{}, g=d.gds||{};
+  const errs=(d.errors||[]).slice();
+  if(t.ok===false && t.error) errs.push(t.error);
+  let h='';
+  if(chip.verdict){
+    h+=`<div style="margin-top:6px">芯片级签核 <span class="verdict ${chip.verdict==='ACCEPT'?'ok':'fail'}">${chip.verdict}</span>`
+      +` · DRC <b>${s.drc_n_pass}/${s.drc_n_checked}</b>`
+      +` · LVS <b>${s.lvs_verdict||'—'}</b>`
+      +` · 几何回提(G4) 核对 <b>${s.geom_params_checked||0}</b> 项 / 违规 <b>${(s.geom_violations||[]).length}</b>`
+      +` · 器件 <b>${s.n_devices||0}</b> · GDS <b>${s.gds_bytes||0}</b> B</div>`;
+  }
+  if(t.verdict){
+    h+=`<div style="margin-top:4px">流片管道报告（<b>与 /api/tapeout 同一函数</b>）<span class="verdict ${t.accepted?'ok':'fail'}">${t.verdict}</span>`
+      +` · 工艺角 ${t.corners_all_pass?'✅':'—'} · 几何 DRC ${(t.geometry_drc_result&&t.geometry_drc_result.passed)?'✅':'—'}</div>`;
+  }
+  if(g.available){
+    h+=`<div style="margin-top:4px;color:#8aa0c6">⬇ <b>${g.filename}</b> · ${g.bytes} B · sha256 <code>${String(g.sha256||'').slice(0,16)}…</code></div>`;
+    const a=$('doGdsLink'); a.href=g.download_url; a.download=g.filename; a.style.display='inline-block';
+  } else if(chip.verdict){
+    h+='<div class="warn" style="margin-top:4px">无可下载 GDS（版图层拒绝了该器件的几何生成）</div>';
+  }
+  if(errs.length) h+='<div class="warn" style="margin-top:4px">'+errs.map(e=>'⚠ '+e).join('<br>')+'</div>';
+  const notes=(d.honest_notes||[]).map(n=>'• '+n).join('<br>');
+  if(notes) h+='<div style="margin-top:6px;color:#8aa0c6;font-size:12px"><b>诚实边界：</b><br>'+notes+'</div>';
+  $('doTapeoutOut').innerHTML=h;
+}
+$('doTapeout').onclick = runDesignTapeout;
 
 // ---- ★ 基准对照验证闭环（v0.8.11 · 20 引擎 × 解析锚/实证锚/ORACLE）----
 async function runCrosscheck(){

@@ -8,7 +8,6 @@ P1-M2 入口。给定 LinkModel，输出：
 """
 from __future__ import annotations
 
-import math
 from typing import Dict, List, Optional, Tuple
 
 from lda_l2 import gds_export
@@ -121,41 +120,41 @@ def layout_only(link, wavelengths_um=None, wg_width=0.5, bend_radius=5.0,
 
 
 def _build_chip_gds(link, placement, routes, wg_width):
-    lib = gds_export.LIB_LAYER_SI
+    """整芯片 GDSII（器件几何 + 走线，round-trip 可解析）。
+
+    v0.9.128（P1-T1.2 连带修复 · **P0-0 同型缺陷根治**）
+    -------------------------------------------------
+    本函数原先**自持一份器件几何实现**（RingResonator / Waveguide /
+    GratingCoupler 三个特例 + 一个通用分支）。那份抄件有两处缺陷：
+
+      ① 通用分支**先索引** `d["points_um"]`、**后判** `d["kind"]` ⇒ 任何产出
+         BOUNDARY 描述的器件（`SymmetricYBranch` 的 taper / `MMI` 的多模区 /
+         `BraggMirror` 的光栅 / `Taper`）**KeyError 崩在布局期** —— 实测这四类
+         全崩，即 `layout_only` 对它们长期不可用（其下游：`lda check` /
+         `lda build` / `lda_l1.protocol` / `lda_agent.agent_layout`）。
+      ② **即使**把取字段改对走 `rings_um` 分支，它也没有施加 `(ox, oy)` 偏移
+         —— 与 `chip_layout_export._desc_geoms` 文档记载的 **P0-0 血案**
+         （「path 分支施加了偏移而 boundary 分支没有」，曾让 CPO 250k 的
+         174,080 个光栅齿全部错位）**错法完全一致**。
+
+    这正是 P0-0 的原话教训：**同一段逻辑抄两遍、错得一样**。故本函数不再自持
+    几何，改为**薄委托到唯一定义处** `chip_layout_export.device_geom_of`
+    （其 docstring 已自任「器件几何的**唯一定义处**」），字节编码仍交
+    `gds_export` ⇒ 布局快照的几何语义与 DRC/LVS **完全同源**。
+    （`chip_layout_export` 不 import `lda_chain` ⇒ 无循环导入。）
+
+    🔴 既有调用零影响（实测）：对原实现本就能跑的三类器件
+    （Waveguide / RingResonator / GratingCoupler）GDS **逐字节一致**。
+    """
+    from lda_l2.chip_layout_export import device_geom_of
     elements = []
     for c in link.ir.components:
-        ox, oy, _ = placement[c.id]
-        params = dict(c.params)
-        if c.kind in ("RingResonator", "RingAddDrop"):
-            R = float(params.get("R", 10.0))
-            wg_w = float(params.get("wg_width", wg_width))
-            gap = float(params.get("gap", 0.3))
-            half = R * 1.5
-            off = R + wg_w / 2.0 + gap
-            ring_pts = [(ox + R * math.cos(2.0 * math.pi * i / 64),
-                         oy + R * math.sin(2.0 * math.pi * i / 64))
-                        for i in range(64)]
-            elements.append(gds_export.path(lib, wg_w, ring_pts))
-            elements.append(gds_export.path(lib, wg_w,
-                             [(ox - half, oy - off), (ox + half, oy - off)]))
-            elements.append(gds_export.path(lib, wg_w,
-                             [(ox - half, oy + off), (ox + half, oy + off)]))
-        elif c.kind == "Waveguide":
-            length = float(params.get("length", 10.0))
-            elements.append(gds_export.path(lib, wg_width,
-                             [(ox, oy), (ox + length, oy)]))
-        elif c.kind == "GratingCoupler":
-            L = float(params.get("L", 10.0))
-            elements.append(gds_export.path(lib, wg_width,
-                             [(ox, oy), (ox, oy + L)]))
-        else:
-            for d in gds_export.geometry_desc(c.kind, params):
-                pts = [(ox + px, oy + py) for px, py in d["points_um"]]
-                if d["kind"] == "path":
-                    elements.append(gds_export.path(d["layer"], d["width_um"], pts))
-                else:
-                    flat = [pp for ring in d.get("rings_um", []) for pp in ring]
-                    elements.append(gds_export.boundary(d["layer"], flat))
+        for g in device_geom_of(c, placement, wg_width):
+            if g[0] == "P":
+                elements.append(gds_export.path(g[1], g[2], g[3]))
+            else:
+                elements.append(gds_export.boundary(g[1], g[3]))
     for net_id, rr in routes.items():
-        elements.append(gds_export.path(lib, wg_width, rr.points_um))
+        elements.append(gds_export.path(gds_export.LIB_LAYER_SI, wg_width,
+                                        rr.points_um))
     return gds_export.gds_library("LDA_CHIP", {"CHIP": elements})

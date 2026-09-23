@@ -436,8 +436,26 @@ def extract_layout_netlist(link, placement, routes,
 # ---------------------------------------------------------------------------
 # 3) LVS 比对（compare）+ 判决（verdict）
 # ---------------------------------------------------------------------------
+def _apply_geom_check(link, placement, viol: Dict[str, List[Any]],
+                      with_geom_check: bool, geom_of) -> Optional[Dict[str, Any]]:
+    """器件参数几何回提 → 注入 viol（G4 · v0.9.128）。
+
+    **单层与多层共用此一处**（不在两个主入口各写一份判据逻辑）。
+    返回回提报告（未启用时为 None，供报告如实标注「未做」）。
+    """
+    if not with_geom_check:
+        return None
+    from lda_l2.lvs_geom import extract_layout_params
+    rep = extract_layout_params(link, placement, geom_of=geom_of)
+    if rep.get("violations"):
+        viol["device_param_mismatch"] = rep["violations"]
+    return rep
+
+
 def run_lvs(link, placement, routes, tol: float = 1.0,
-            net_loss_db: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
+            net_loss_db: Optional[Dict[str, float]] = None,
+            with_geom_check: bool = False,
+            geom_of: Optional[Any] = None) -> Dict[str, Any]:
     """LVS 主入口：原理图 vs 版图一致性签核。
 
     参数：
@@ -447,6 +465,18 @@ def run_lvs(link, placement, routes, tol: float = 1.0,
       tol       : 端点→端口归属容差 µm（默认 1.0）
       net_loss_db : 可选——布线损耗 dict（用于 open 判定：net 有布线但
                     损耗为 None 的异常情况；默认 None 不做该检查）
+      with_geom_check : **v0.9.128 G4** —— 是否启用「器件参数几何回提」比对
+                    （默认 False ⇒ 旧调用行为逐字节不变）。启用后从版图几何
+                    独立测量器件尺寸，与 IR 声明比对，失配报
+                    `device_param_mismatch`（这使 LVS 从「连接一致」升到
+                    「连接 + 尺寸双一致」，即 D4 口径）。
+      geom_of   : 几何生成回调 (component, placement, wg_width) → [Geom]。
+                    None ⇒ 用 `chip_layout_export.device_geom_of`。
+                    （供反向护栏注入「被篡改的几何」——注意必须篡改**几何**
+                    而非 params，否则 IR 与几何同步改动、自洽不漏。）
+                    比对容差见 `lvs_geom.extract_layout_params`
+                    （默认 rel 1e-6 / abs 1e-9，仅吸收浮点噪声；
+                    真失配是 µm 量级，不会被容差放过）。
 
     返回：
       {
@@ -455,6 +485,7 @@ def run_lvs(link, placement, routes, tol: float = 1.0,
         "layout":    {"n_instances", "n_nets"},
         "match": {"n_devices_match", "n_nets_match", "n_nets_total"},
         "violations": {类别: 明细}, "n_violations": int,
+        "geom_check": dict | None（几何回提报告；未启用时为 None）,
         "honest_note": str,
       }
     """
@@ -514,6 +545,12 @@ def run_lvs(link, placement, routes, tol: float = 1.0,
     if lay.get("loops"):
         viol["loop"] = lay["loops"]
 
+    # —— 器件参数几何回提（G4 · v0.9.128）——
+    # 这是 LVS 从「连接一致」升到「连接 + 尺寸双一致」（D4 口径）的那一半：
+    # 连接对而尺寸错（波导画长、环半径画小）此前一律 ACCEPT，现在检出。
+    geom_report = _apply_geom_check(link, placement, viol,
+                                    with_geom_check, geom_of)
+
     n_viol = sum(len(v) for v in viol.values())
     verdict = "ACCEPT" if n_viol == 0 else "REJECT"
 
@@ -521,6 +558,14 @@ def run_lvs(link, placement, routes, tol: float = 1.0,
     n_lay_nets = len(lay_nets)
     n_nets_match = sum(1 for nid in sch_nets
                        if nid in lay_nets and sch_nets[nid] == lay_nets[nid])
+    if geom_report is None:
+        geom_note = "（几何回提未启用）"
+    else:
+        geom_note = (
+            f"几何回提：{geom_report['n_devices_checked']}/"
+            f"{geom_report['n_devices']} 器件、"
+            f"{geom_report['n_params_checked']} 参数对已比对"
+            f"（失配 {len(geom_report['violations'])} 项）。")
     return {
         "verdict": verdict,
         "schematic": {"n_instances": len(sch_inst), "n_nets": n_sch_nets},
@@ -532,10 +577,12 @@ def run_lvs(link, placement, routes, tol: float = 1.0,
         },
         "violations": viol,
         "n_violations": n_viol,
+        "geom_check": geom_report,
         "honest_note": (
             f"LVS 签核：版图网表由布线几何独立恢复（端点→端口锚点容差 {tol}µm），"
             f"比对原理图 {n_sch_nets} 网 vs 版图 {n_lay_nets} 网；"
             f"{n_nets_match}/{n_sch_nets} 网一致，违规 {n_viol} 项。"
+            f"{geom_note}"
             "判决全死标量（坐标几何 + 集合比对），LLM 不进判决路径。"
             "诚实边界：当前版图模型为单层波导（2 端口 net），多层金属/通孔"
             "完整 LVS 属发动期 PDK 对接后扩展。"),
@@ -555,6 +602,7 @@ _VIOL_LABEL = {
     "short_cross": "布线交叉短路（不同网路径相交）",
     "dangling": "悬空布线（端点无端口归属）",
     "loop": "自环（布线两端同属一端口）",
+    "device_param_mismatch": "器件参数失配（版图几何回提 ≠ 原理图声明）",
 }
 
 
@@ -782,11 +830,16 @@ def extract_layout_netlist_multilayer(link, placement, routes, stack=None,
 
 
 def run_lvs_multilayer(link, placement, routes, stack=None,
-                       tol: float = 1.0) -> Dict[str, Any]:
+                       tol: float = 1.0,
+                       with_geom_check: bool = False,
+                       geom_of: Optional[Any] = None) -> Dict[str, Any]:
     """多层 LVS 签核主入口：层叠版图 vs 原理图一致性。
 
     短路语义层叠化：同层相交短路 / 跨层投影安全（介质隔离）/ 未经声明的
     跨层相接（via 短路）检出。判决全死标量，LLM 不进判决路径。
+
+    v0.9.128（G4）：新增 `with_geom_check` / `geom_of`，与单层 `run_lvs`
+    共用 `_apply_geom_check`（器件参数几何回提）。
     """
     from lda_l2.layers import get_stack
     stack = stack or get_stack("soi")
@@ -839,6 +892,10 @@ def run_lvs_multilayer(link, placement, routes, stack=None,
     if lay.get("loops"):
         viol["loop"] = lay["loops"]
 
+    # —— 器件参数几何回提（G4 · v0.9.128，与单层共用同一助手）——
+    geom_report = _apply_geom_check(link, placement, viol,
+                                    with_geom_check, geom_of)
+
     n_viol = sum(len(v) for v in viol.values())
     verdict = "ACCEPT" if n_viol == 0 else "REJECT"
     n_sch, n_lay = len(sch_nets), len(lay_nets)
@@ -858,12 +915,15 @@ def run_lvs_multilayer(link, placement, routes, stack=None,
         "violations": viol,
         "n_violations": n_viol,
         "stack": lay.get("stack", {}),
+        "geom_check": geom_report,
         "honest_note": (
             f"多层 LVS 签核（{stack_name}）：层感知几何恢复——M1 段只接 M1 端口、"
             f"跨层段端点重合自动发现 via 桥接；短路判定用层栈 can_cross 谓词"
             f"（同层相交才 short、跨层投影重叠安全=介质隔离）。"
             f"比对原理图 {n_sch} 网 vs 版图 {n_lay} 网，{n_match}/{n_sch} 一致，"
-            f"违规 {n_viol} 项。判决全死标量，LLM 不进判决路径。"
+            f"违规 {n_viol} 项。"
+            f"{'几何回提：' + str(geom_report['n_params_checked']) + ' 参数对已比对。' if geom_report else '（几何回提未启用）'}"
+            "判决全死标量，LLM 不进判决路径。"
             "诚实边界：公开工艺近似层栈（M1/VIA12/M2），真实 PDK 完整层叠属发动期。"),
     }
 

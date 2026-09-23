@@ -13,6 +13,7 @@
      review_policy / sovereign.A/B/C 等）逐一验证存在，字段被删除/改名即 FAIL。
 """
 import json
+import hashlib
 import os
 import re
 import subprocess
@@ -45,6 +46,16 @@ HEAVY_POST = {
 # 不实跑（其内核由 run_cpo_array_smoke / run_cpo_array_scale_smoke 覆盖）。
 HEAVY_GET = {
     "cpo_array",
+}
+
+# T1.1（v0.9.130）：**二进制** GET 端点（全站唯一一个：下载设计版图 .gds）。
+# 🔴 通用 GET 循环按「200 且响应体是 JSON」断言，二进制响应必然被判 FAIL ⇒
+#    必须单列，并**不能只是豁免了事**：配 `_check_binary_get` 专项断言（状态码 /
+#    Content-Type / GDSII 魔数 / Content-Length 与实体长度自洽 /
+#    Content-Disposition 附件名 / `X-LDA-GDS-Sha256` 与实体 sha256 一致 /
+#    无 kind ⇒ 400 + JSON 用法）。豁免 + 专项断言合起来才算「覆盖」，不是「跳过」。
+BINARY_GET = {
+    "design_gds": "/api/design_gds?kind=RingResonator&R=10.0&wg_width=0.5&wg=0.5",
 }
 
 # v0.9.33：冷启动耗时的重计算 GET——进入断言循环前必须先各打一次把 TTL 缓存
@@ -352,6 +363,54 @@ def _check_heavy_get_caches(base):
     return checks
 
 
+def _check_binary_get(base):
+    """T1.1 二进制下载端点专项断言（GET /api/design_gds）。
+
+    判据全部是**死标量 / 字节事实**（不依赖机器负载）：Content-Type、GDSII 魔数、
+    Content-Length 与实体长度自洽、Content-Disposition 带 .gds 附件名、
+    响应头 `X-LDA-GDS-Sha256` == 实体 sha256；另加一条反向：无 kind ⇒ **400 + JSON
+    用法**（不是返回空文件、也不是 500）。
+    """
+    path = BINARY_GET["design_gds"]
+    tag = "GET " + path
+    try:
+        with urllib.request.urlopen(f"{base}{path}", timeout=30) as r:
+            body = r.read()
+            ctype = r.headers.get("Content-Type", "")
+            cdisp = r.headers.get("Content-Disposition", "")
+            clen = r.headers.get("Content-Length", "")
+            head = r.headers.get("X-LDA-GDS-Sha256", "")
+    except Exception as e:                                        # noqa: BLE001
+        return [("FAIL", tag, f"读取失败: {e}")]
+    real = hashlib.sha256(body).hexdigest()
+    out = [
+        ("PASS" if ctype.startswith("application/octet-stream") else "FAIL",
+         tag, f"Content-Type={ctype!r}（须 application/octet-stream）"),
+        # GDSII 首条记录 = 长度 0x0006 + 记录类型 HEADER(0x0002)
+        ("PASS" if body[:4] == b"\x00\x06\x00\x02" else "FAIL",
+         tag, f"GDSII 魔数 {body[:4]!r}（须 b'\\x00\\x06\\x00\\x02'）"),
+        ("PASS" if str(clen) == str(len(body)) else "FAIL",
+         tag, f"Content-Length {clen} == 实体 {len(body)}"),
+        ("PASS" if ("attachment" in cdisp and ".gds" in cdisp) else "FAIL",
+         tag, f"Content-Disposition={cdisp!r}"),
+        ("PASS" if head == real else "FAIL",
+         tag, f"X-LDA-GDS-Sha256 {head[:12]}… == 实体 sha256 {real[:12]}…"),
+    ]
+    try:
+        urllib.request.urlopen(f"{base}/api/design_gds", timeout=15)
+        out.append(("FAIL", "GET /api/design_gds", "无 kind 未拒绝（应 400）"))
+    except urllib.error.HTTPError as e:
+        try:
+            blob = (e.read(200) or b"").lstrip()
+        except Exception:                                         # noqa: BLE001
+            blob = b""
+        out.append(("PASS" if (e.code == 400 and blob.startswith(b"{")) else "FAIL",
+                    "GET /api/design_gds", f"无 kind ⇒ {e.code} + JSON 用法"))
+    except Exception as e:                                        # noqa: BLE001
+        out.append(("FAIL", "GET /api/design_gds", f"无 kind 路径异常: {e}"))
+    return out
+
+
 def _check_ecosystem_fields(base):
     """生态字段存在性断言（D-103）：GET /api/ecosystem 真实响应中逐一解析
     前端面板 53-56 渲染硬依赖的关键字段路径，字段删除/改名即 FAIL。
@@ -455,6 +514,10 @@ def main():
 
         # 1) GET 端点实跑（快）
         for r in gets:
+            if r.replace("/api/", "") in BINARY_GET:
+                info.append(("GET", r,
+                             "二进制响应（GDS 字节）⇒ 由 _check_binary_get 专项断言"))
+                continue
             if r.replace("/api/", "") in HEAVY_GET:
                 info.append(("GET", r,
                              "静态存在（重计算 GET，内核由专用 smoke 覆盖）"))
@@ -530,6 +593,13 @@ def main():
                 ok.append(("HEADER", r, d))
             else:
                 fail.append(("HEADER", r, d))
+        # 3d) T1.1 唯一二进制端点专项断言：通用 GET 循环对 /api/design_gds 豁免
+        #     （它返回 octet-stream，不是 JSON）⇒ 豁免必须配专项覆盖，否则等于没测。
+        for kind, r, d in _check_binary_get(base):
+            if kind == "PASS":
+                ok.append(("BINARY", r, d))
+            else:
+                fail.append(("BINARY", r, d))
         # 4) 重计算 POST 端点：静态验证存在（不实跑）
         heavy = [r for r in posts
                  if any(f"/{h}" in r for h in HEAVY_POST)]

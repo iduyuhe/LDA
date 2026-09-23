@@ -1,0 +1,21 @@
+{
+  "domain": "photon",
+  "name": "goal_ring_fsr",
+  "goal": "微环 FSR 目标 17.5nm（参数由引擎闭环解出）+ 前后波导，一条命令出 GDS 并签核",
+  "devices": [
+    {"id": "wg1", "kind": "Waveguide"},
+    {"id": "ring", "kind": "RingResonator", "design": {"target": 17.5}},
+    {"id": "wg2", "kind": "Waveguide"}
+  ],
+  "nets": [
+    {"net": "n1", "from": ["wg1", "out"], "to": ["ring", "in"]},
+    {"net": "n2", "from": ["ring", "out"], "to": ["wg2", "in"]}
+  ],
+  "io": [
+    {"net": "e1", "device": "wg1", "port": "in"},
+    {"net": "e2", "device": "wg2", "port": "out"}
+  ],
+  "sources": [
+    {"device": "wg1", "port": "in"}
+  ]
+}

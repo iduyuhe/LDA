@@ -8,7 +8,7 @@
   "ratchet_below_target": 0,
   "anchors_at_measurement": 469,
   "core_smokes_at_measurement": 204,
-  "updated_at": "2026-09-24",
+  "updated_at": "2026-09-25",
   "source_reports": [
     "_ci_core_179",
     "_ci_core_179_b",
@@ -37,36 +37,11 @@
     "_ci_core_batched_report.json",
     "g12h_preseed_report.json",
     "ci_core_204_v09135.json",
-    "ci_core_204_v09135_final.json"
+    "ci_core_204_v09135_final.json",
+    "ci_137.json"
   ],
   "rules": "预算 ≥ 2 × 跨轮实测上界（硬闸）；目标 3×（棘轮：低于 3× 的项数只降不升）；锚数或 CI core 成员数变化 ⇒ 基线过期，须重跑全量并 --write-baseline 刷新",
   "rows": [
-    {
-      "script": "run_redteam_anchor_fuzz_smoke.py",
-      "budget_s": 4200.0,
-      "elapsed_max_s": 1402.14,
-      "margin_x": 2.995,
-      "samples_s": [
-        1315.96,
-        1317.57,
-        1318.87,
-        1321.93,
-        1322.17,
-        1322.36,
-        1322.48,
-        1323.85,
-        1324.69,
-        1333.14,
-        1337.71,
-        1356.65,
-        1366.3,
-        1367.63,
-        1385.02,
-        1402.14
-      ],
-      "n_rounds": 16,
-      "censored_events": 2
-    },
     {
       "script": "run_benchmark_falsifiability_smoke.py",
       "budget_s": 3600.0,
@@ -87,10 +62,11 @@
         1122.48,
         1130.11,
         1135.3,
+        1135.66,
         1164.33,
         1194.19
       ],
-      "n_rounds": 16,
+      "n_rounds": 17,
       "censored_events": 2
     },
     {
@@ -101,6 +77,7 @@
       "samples_s": [
         106.8,
         109.68,
+        115.27,
         118.48,
         121.62,
         123.19,
@@ -117,7 +94,7 @@
         291.68,
         293.42
       ],
-      "n_rounds": 17,
+      "n_rounds": 18,
       "censored_events": 0
     },
     {
@@ -138,13 +115,14 @@
         171.91,
         172.15,
         172.5,
+        172.57,
         173.41,
         173.48,
         173.61,
         173.9,
         193.33
       ],
-      "n_rounds": 17,
+      "n_rounds": 18,
       "censored_events": 0
     },
     {
@@ -166,11 +144,12 @@
         174.21,
         175.52,
         175.97,
+        180.58,
         181.54,
         182.54,
         202.79
       ],
-      "n_rounds": 16,
+      "n_rounds": 17,
       "censored_events": 2
     },
     {
@@ -192,12 +171,13 @@
         142.87,
         146.26,
         146.53,
+        147.86,
         155.76,
         156.79,
         165.44,
         174.77
       ],
-      "n_rounds": 17,
+      "n_rounds": 18,
       "censored_events": 0
     },
     {
@@ -207,12 +187,13 @@
       "margin_x": 3.538,
       "samples_s": [
         81.76,
+        82.45,
         83.7,
         83.83,
         84.44,
         84.79
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -222,25 +203,13 @@
       "margin_x": 3.679,
       "samples_s": [
         71.11,
+        73.16,
         73.31,
         73.68,
         74.26,
         81.55
       ],
-      "n_rounds": 5,
-      "censored_events": 0
-    },
-    {
-      "script": "run_full_vector_mode_smoke.py",
-      "budget_s": 400.0,
-      "elapsed_max_s": 108.4,
-      "margin_x": 3.69,
-      "samples_s": [
-        102.67,
-        105.96,
-        108.4
-      ],
-      "n_rounds": 3,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -265,10 +234,38 @@
         300.1,
         303.14,
         303.23,
+        304.88,
         322.04
       ],
-      "n_rounds": 17,
+      "n_rounds": 18,
       "censored_events": 0
+    },
+    {
+      "script": "run_redteam_anchor_fuzz_smoke.py",
+      "budget_s": 5400.0,
+      "elapsed_max_s": 1402.14,
+      "margin_x": 3.851,
+      "samples_s": [
+        1315.96,
+        1317.57,
+        1318.87,
+        1321.93,
+        1322.17,
+        1322.36,
+        1322.48,
+        1323.85,
+        1324.69,
+        1333.14,
+        1337.71,
+        1346.95,
+        1356.65,
+        1366.3,
+        1367.63,
+        1385.02,
+        1402.14
+      ],
+      "n_rounds": 17,
+      "censored_events": 2
     },
     {
       "script": "run_harness.py",
@@ -289,12 +286,13 @@
         211.5,
         212.2,
         213.27,
+        213.32,
         214.68,
         214.96,
         216.91,
         232.49
       ],
-      "n_rounds": 17,
+      "n_rounds": 18,
       "censored_events": 0
     },
     {
@@ -306,6 +304,7 @@
         178.57,
         179.35,
         181.14,
+        181.77,
         183.64,
         185.28,
         188.78,
@@ -321,7 +320,7 @@
         206.69,
         231.7
       ],
-      "n_rounds": 17,
+      "n_rounds": 18,
       "censored_events": 0
     },
     {
@@ -342,13 +341,14 @@
         198.34,
         200.45,
         202.36,
+        204.96,
         205.12,
         205.68,
         206.02,
         217.61,
         228.74
       ],
-      "n_rounds": 17,
+      "n_rounds": 18,
       "censored_events": 0
     },
     {
@@ -369,13 +369,14 @@
         76.34,
         76.55,
         77.04,
+        77.33,
         77.43,
         77.98,
         78.3,
         79.64,
         113.73
       ],
-      "n_rounds": 17,
+      "n_rounds": 18,
       "censored_events": 0
     },
     {
@@ -397,12 +398,27 @@
         89.86,
         90.01,
         90.03,
+        90.12,
         90.88,
         91.26,
         91.39,
         100.22
       ],
-      "n_rounds": 17,
+      "n_rounds": 18,
+      "censored_events": 0
+    },
+    {
+      "script": "run_full_vector_mode_smoke.py",
+      "budget_s": 600.0,
+      "elapsed_max_s": 150.14,
+      "margin_x": 3.996,
+      "samples_s": [
+        102.67,
+        105.96,
+        108.4,
+        150.14
+      ],
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -415,9 +431,10 @@
         71.01,
         71.99,
         72.0,
+        72.07,
         72.98
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -427,12 +444,13 @@
       "margin_x": 4.153,
       "samples_s": [
         46.56,
+        47.87,
         49.3,
         66.82,
         71.67,
         72.23
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -451,6 +469,7 @@
         234.82,
         235.19,
         237.74,
+        242.4,
         242.73,
         242.93,
         243.68,
@@ -459,7 +478,7 @@
         263.5,
         264.13
       ],
-      "n_rounds": 17,
+      "n_rounds": 18,
       "censored_events": 0
     },
     {
@@ -470,11 +489,12 @@
       "samples_s": [
         52.14,
         56.06,
+        56.09,
         56.89,
         57.44,
         57.54
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -484,12 +504,13 @@
       "margin_x": 5.698,
       "samples_s": [
         50.2,
+        50.79,
         50.92,
         51.32,
         51.66,
         52.65
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -501,10 +522,11 @@
         45.01,
         46.05,
         46.21,
+        46.24,
         46.88,
         49.26
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -515,11 +537,12 @@
       "samples_s": [
         44.58,
         44.73,
+        44.77,
         45.19,
         46.56,
         46.83
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -529,12 +552,13 @@
       "margin_x": 7.168,
       "samples_s": [
         35.91,
+        36.61,
         37.61,
         40.0,
         40.22,
         41.85
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -569,13 +593,14 @@
       "elapsed_max_s": 36.59,
       "margin_x": 8.199,
       "samples_s": [
+        35.35,
         35.46,
         35.71,
         36.05,
         36.13,
         36.59
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -586,26 +611,28 @@
       "samples_s": [
         34.07,
         34.17,
+        34.83,
         34.85,
         35.14,
         35.97
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
       "script": "run_verify_voxel_pipeline_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 34.26,
-      "margin_x": 8.757,
+      "elapsed_max_s": 34.28,
+      "margin_x": 8.751,
       "samples_s": [
         33.14,
         33.24,
         33.6,
         33.68,
-        34.26
+        34.26,
+        34.28
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -614,13 +641,14 @@
       "elapsed_max_s": 33.31,
       "margin_x": 9.006,
       "samples_s": [
+        20.86,
         22.92,
         28.6,
         30.59,
         31.47,
         33.31
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -631,11 +659,12 @@
       "samples_s": [
         30.14,
         32.24,
+        32.25,
         32.5,
         32.58,
         32.83
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -645,12 +674,13 @@
       "margin_x": 11.021,
       "samples_s": [
         25.2,
+        25.48,
         25.53,
         25.85,
         25.92,
         27.22
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -661,11 +691,12 @@
       "samples_s": [
         24.16,
         24.38,
+        24.55,
         24.79,
         25.75,
         26.98
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -674,13 +705,14 @@
       "elapsed_max_s": 25.47,
       "margin_x": 11.779,
       "samples_s": [
+        18.63,
         20.5,
         23.04,
         23.12,
         23.26,
         25.47
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -702,12 +734,13 @@
         29.51,
         29.52,
         29.54,
+        29.64,
         29.65,
         29.76,
         30.2,
         32.2
       ],
-      "n_rounds": 17,
+      "n_rounds": 18,
       "censored_events": 0
     },
     {
@@ -716,13 +749,14 @@
       "elapsed_max_s": 20.6,
       "margin_x": 14.563,
       "samples_s": [
+        16.05,
         17.99,
         18.15,
         18.21,
         18.73,
         20.6
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -731,13 +765,14 @@
       "elapsed_max_s": 19.55,
       "margin_x": 15.345,
       "samples_s": [
+        15.53,
         15.77,
         16.34,
         16.57,
         18.05,
         19.55
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -748,11 +783,12 @@
       "samples_s": [
         16.06,
         16.29,
+        16.42,
         16.51,
         16.53,
         17.06
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -762,12 +798,13 @@
       "margin_x": 19.595,
       "samples_s": [
         8.42,
+        11.21,
         12.64,
         14.31,
         14.46,
         15.31
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -779,10 +816,11 @@
         12.01,
         12.25,
         12.73,
+        13.45,
         14.15,
         14.45
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -794,10 +832,11 @@
         11.11,
         11.48,
         11.69,
+        12.04,
         12.18,
         12.38
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -808,25 +847,27 @@
       "samples_s": [
         6.59,
         7.98,
+        8.29,
         8.62,
         8.75,
         9.8
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
       "script": "run_mmi_eme_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 8.33,
-      "margin_x": 36.014,
+      "elapsed_max_s": 8.35,
+      "margin_x": 35.928,
       "samples_s": [
         8.13,
         8.25,
         8.28,
-        8.33
+        8.33,
+        8.35
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -839,9 +880,10 @@
         6.5,
         6.68,
         6.79,
+        7.68,
         8.26
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -860,10 +902,11 @@
         2.53,
         2.76,
         2.79,
+        2.82,
         2.85,
         2.86
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -874,10 +917,11 @@
       "samples_s": [
         6.29,
         6.4,
+        6.42,
         6.48,
         6.5
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -903,25 +947,27 @@
       "samples_s": [
         3.84,
         4.1,
+        4.12,
         4.14,
         4.17,
         4.19
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
       "script": "run_admin_token_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 3.12,
-      "margin_x": 96.154,
+      "elapsed_max_s": 3.14,
+      "margin_x": 95.541,
       "samples_s": [
         1.83,
         2.97,
         3.1,
-        3.12
+        3.12,
+        3.14
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -932,10 +978,11 @@
       "samples_s": [
         1.8,
         2.98,
+        2.99,
         3.03,
         3.1
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -946,11 +993,12 @@
       "samples_s": [
         2.41,
         2.59,
+        2.61,
         2.62,
         2.63,
         2.65
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -974,10 +1022,11 @@
       "samples_s": [
         1.52,
         1.98,
+        2.01,
         2.05,
         2.58
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -989,10 +1038,11 @@
         2.31,
         2.48,
         2.49,
+        2.5,
         2.52,
         2.53
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1061,10 +1111,11 @@
       "samples_s": [
         2.1,
         2.25,
+        2.26,
         2.29,
         2.31
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1075,11 +1126,12 @@
       "samples_s": [
         1.7,
         2.11,
+        2.13,
         2.2,
         2.21,
         2.24
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1137,16 +1189,17 @@
     {
       "script": "run_ci_crash_classify_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 1.71,
-      "margin_x": 175.439,
+      "elapsed_max_s": 1.72,
+      "margin_x": 174.419,
       "samples_s": [
         0.47,
         1.05,
         1.06,
         1.68,
-        1.71
+        1.71,
+        1.72
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1173,9 +1226,10 @@
         0.69,
         1.39,
         1.41,
+        1.42,
         1.45
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1186,9 +1240,25 @@
       "samples_s": [
         0.7,
         1.34,
+        1.36,
         1.38,
         1.39,
         1.42
+      ],
+      "n_rounds": 6,
+      "censored_events": 0
+    },
+    {
+      "script": "run_b5b7_rollback_floor_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.39,
+      "margin_x": 215.827,
+      "samples_s": [
+        1.14,
+        1.34,
+        1.35,
+        1.37,
+        1.39
       ],
       "n_rounds": 5,
       "censored_events": 0
@@ -1200,25 +1270,12 @@
       "margin_x": 217.391,
       "samples_s": [
         0.93,
+        1.21,
         1.24,
         1.25,
         1.38
       ],
-      "n_rounds": 4,
-      "censored_events": 0
-    },
-    {
-      "script": "run_b5b7_rollback_floor_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 1.37,
-      "margin_x": 218.978,
-      "samples_s": [
-        1.14,
-        1.34,
-        1.35,
-        1.37
-      ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1229,10 +1286,11 @@
       "samples_s": [
         0.97,
         1.28,
+        1.3,
         1.31,
         1.32
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1243,10 +1301,11 @@
       "samples_s": [
         0.96,
         1.2,
+        1.22,
         1.26,
         1.27
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1305,9 +1364,25 @@
         0.71,
         0.98,
         1.0,
+        1.04,
         1.05
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
+      "censored_events": 0
+    },
+    {
+      "script": "run_requires_python_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.03,
+      "margin_x": 291.262,
+      "samples_s": [
+        0.71,
+        0.97,
+        0.99,
+        1.0,
+        1.03
+      ],
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1318,24 +1393,11 @@
       "samples_s": [
         0.75,
         0.95,
+        0.97,
         0.98,
         1.0
       ],
-      "n_rounds": 4,
-      "censored_events": 0
-    },
-    {
-      "script": "run_requires_python_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 1.0,
-      "margin_x": 300.0,
-      "samples_s": [
-        0.71,
-        0.97,
-        0.99,
-        1.0
-      ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1347,10 +1409,11 @@
         0.59,
         0.9,
         0.91,
+        0.92,
         0.95,
         0.96
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1361,10 +1424,11 @@
       "samples_s": [
         0.69,
         0.88,
+        0.89,
         0.91,
         0.92
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1375,10 +1439,11 @@
       "samples_s": [
         0.61,
         0.79,
+        0.81,
         0.82,
         0.84
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1390,9 +1455,10 @@
         0.59,
         0.76,
         0.78,
+        0.79,
         0.8
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1403,11 +1469,12 @@
       "samples_s": [
         0.54,
         0.73,
+        0.74,
         0.76,
         0.79,
         0.8
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1418,11 +1485,12 @@
       "samples_s": [
         0.48,
         0.7,
+        0.72,
         0.73,
         0.75,
         0.78
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1433,10 +1501,11 @@
       "samples_s": [
         0.54,
         0.71,
+        0.72,
         0.75,
         0.78
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1474,25 +1543,27 @@
       "samples_s": [
         0.57,
         0.72,
+        0.73,
         0.75,
         0.76,
         0.77
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
       "script": "run_link_m4_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 0.76,
-      "margin_x": 394.737,
+      "elapsed_max_s": 0.77,
+      "margin_x": 389.61,
       "samples_s": [
         0.54,
         0.73,
         0.74,
-        0.76
+        0.76,
+        0.77
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1517,12 +1588,13 @@
       "margin_x": 400.0,
       "samples_s": [
         0.48,
+        0.67,
         0.68,
         0.7,
         0.71,
         0.75
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1547,9 +1619,10 @@
         0.52,
         0.7,
         0.72,
+        0.73,
         0.74
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1559,10 +1632,11 @@
       "margin_x": 410.959,
       "samples_s": [
         0.46,
+        0.67,
         0.68,
         0.73
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -1604,9 +1678,10 @@
         0.65,
         0.67,
         0.69,
+        0.7,
         0.72
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1631,11 +1706,12 @@
       "samples_s": [
         0.47,
         0.66,
+        0.67,
         0.68,
         0.7,
         0.71
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1645,12 +1721,13 @@
       "margin_x": 422.535,
       "samples_s": [
         0.48,
+        0.66,
         0.67,
         0.68,
         0.69,
         0.71
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1675,11 +1752,12 @@
       "margin_x": 428.571,
       "samples_s": [
         0.47,
+        0.67,
         0.68,
         0.69,
         0.7
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1689,12 +1767,13 @@
       "margin_x": 428.571,
       "samples_s": [
         0.46,
+        0.64,
         0.65,
         0.66,
         0.67,
         0.7
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1720,10 +1799,11 @@
       "samples_s": [
         0.48,
         0.66,
+        0.67,
         0.68,
         0.7
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1735,9 +1815,10 @@
         0.51,
         0.65,
         0.66,
+        0.67,
         0.69
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1748,11 +1829,12 @@
       "samples_s": [
         0.45,
         0.64,
+        0.65,
         0.66,
         0.67,
         0.69
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1763,11 +1845,12 @@
       "samples_s": [
         0.46,
         0.64,
+        0.65,
         0.66,
         0.68,
         0.69
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1778,10 +1861,11 @@
       "samples_s": [
         0.46,
         0.65,
+        0.66,
         0.68,
         0.69
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1894,10 +1978,11 @@
       "samples_s": [
         0.4,
         0.62,
+        0.64,
         0.65,
         0.67
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1939,10 +2024,11 @@
         0.47,
         0.61,
         0.62,
+        0.63,
         0.64,
         0.65
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1984,22 +2070,24 @@
         0.36,
         0.52,
         0.53,
+        0.54,
         0.57
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
       "script": "run_b32_qcse_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 0.49,
-      "margin_x": 612.245,
+      "elapsed_max_s": 0.51,
+      "margin_x": 588.235,
       "samples_s": [
         0.32,
         0.48,
-        0.49
+        0.49,
+        0.51
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -2065,9 +2153,10 @@
       "samples_s": [
         0.2,
         0.36,
+        0.37,
         0.39
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -2145,10 +2234,11 @@
       "margin_x": 909.091,
       "samples_s": [
         0.13,
+        0.3,
         0.31,
         0.33
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -2186,10 +2276,11 @@
       "samples_s": [
         0.12,
         0.29,
+        0.3,
         0.31,
         0.32
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -2312,10 +2403,11 @@
       "samples_s": [
         0.12,
         0.28,
+        0.29,
         0.3,
         0.31
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -2476,11 +2568,12 @@
       "margin_x": 1071.429,
       "samples_s": [
         0.07,
+        0.25,
         0.26,
         0.27,
         0.28
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -2612,9 +2705,10 @@
       "margin_x": 1153.846,
       "samples_s": [
         0.08,
+        0.25,
         0.26
       ],
-      "n_rounds": 2,
+      "n_rounds": 3,
       "censored_events": 0
     },
     {
@@ -2803,6 +2897,20 @@
       "censored_events": 0
     },
     {
+      "script": "run_store_auth_gate_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.23,
+      "margin_x": 1304.348,
+      "samples_s": [
+        0.06,
+        0.21,
+        0.22,
+        0.23
+      ],
+      "n_rounds": 4,
+      "censored_events": 0
+    },
+    {
       "script": "run_b31_soref_bennett_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.22,
@@ -2829,6 +2937,19 @@
       "censored_events": 0
     },
     {
+      "script": "run_drc_fix_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.22,
+      "margin_x": 1363.636,
+      "samples_s": [
+        0.08,
+        0.21,
+        0.22
+      ],
+      "n_rounds": 3,
+      "censored_events": 0
+    },
+    {
       "script": "run_redteam_cron_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.22,
@@ -2840,31 +2961,6 @@
         0.22
       ],
       "n_rounds": 4,
-      "censored_events": 0
-    },
-    {
-      "script": "run_store_auth_gate_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 0.22,
-      "margin_x": 1363.636,
-      "samples_s": [
-        0.06,
-        0.21,
-        0.22
-      ],
-      "n_rounds": 3,
-      "censored_events": 0
-    },
-    {
-      "script": "run_drc_fix_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 0.21,
-      "margin_x": 1428.571,
-      "samples_s": [
-        0.08,
-        0.21
-      ],
-      "n_rounds": 2,
       "censored_events": 0
     }
   ]

@@ -27,6 +27,36 @@ G12-H 立项的唯一目标：给「SOI 高对比度波导 n_eff」一个**合�
   ⑨ 网格收敛：h=0.01→0.005 |Δ| ≤ 2e-3
   ⑩ 红线段：生产模块源码 import 行不得出现第三方求解器
 
+═══ G12-A：任意 2D 截面（2026-09-24 加）═══
+既有 13 条全部走「条形波导」便捷封装 `neff_strip`。那意味着**任意形状**
+（脊形 / 多层 / 非矩形）根本没有合法入口 ⇒ G12 的能力边界被封装卡死。
+G12-A 补三层并逐条钉死：
+  ⑪ 入口存在：全矢量 `neff_2d` 与半矢量 `neff_2d` 同名可对拍（同一 n² 场双投）
+  ⑫ 退化一致：居中矩形 ε 场经任意截面入口 ⇒ 与 neff_strip **逐位同值**（tol 1e-9）
+  ⑬ 低对比度互验：同一 SiN n² 场双投，两法 |Δ| ≤ 3e-3（P3 交叉验证网再加一格）
+  ⑭ 物理必然性：脊形平板厚度 t↑ ⇒ n_eff **严格单调↑**（slab 分支真的被读进去）
+  ⑮ 反自证桩：高对比度脊形上全矢量 ≠ 半矢量（|Δ| > 1e-4；相同 = 缺陷信号）
+  ⑯ 脊形网格收敛：h=0.02→0.01 |Δ| ≤ 2e-3
+  ⑰ 反向测试：抹掉 slab 层 ⇒ n_eff 必变（> 1e-3），证明 slab 分支是承重的
+
+═══ G12-B：真 3D 空间全矢量（collocated 3D 向量拉普拉斯 FDFD，2026-09-24 加）═══
+G12-H/G12-A 是 **2D 截面**（传播方向 γ 用 β² 编码，N ~ nx·ny）。
+G12-B 把空间也离散成 3D：**γ 也离散** ⇒ 真三维本征腔模，N ~ (nx-1)(ny-1)(nz-1)
+（墙 DOF 剔除）。算子 = collocated 3D 向量拉普拉斯
+（K1 = Lx⊗Iy⊗Iz + Ix⊗Ly⊗Iz + Ix⊗Iy⊗Lz；质量矩阵 = 节点 ε 对角），
+广义本征问题 KE E = k0² M E。
+
+🔴 为何非 Yee 交错 curl-curl：原型 v4/v5 证明该 PEC 方案下含 (N-2)³ 维伪 DC 零空间
+且最低物理本征值发散（不收敛到闭环金）；collocated 向量拉普拉斯正定、无伪零空间、
+h→0 收敛到闭环金（rate=2.00）。详见 scripts/g12b_proto6.py。
+
+判什么（全部闭式/物理律 golden，无任何仿真值作 golden）：
+  ⑱ 闭式金：均匀立方腔 k0²(1,1,1) = 3(π/L)²/n²（O(h²) 残差 < 1e-2）
+            + 激发模比例 k0²(2,1,1)/k0²(1,1,1) = 2（简并比）
+  ⑲ 网格收敛 O(h²)：conv3d 收敛阶 ∈ [1.8, 2.2]
+  ⑳ 物理必然性：介质加载腔 k0²_diel < k0²_air（同几何）
+  ㉑ 反向测试：压扁 x 维 ⇒ k0² 必变（> 1e-2，几何真被读取）
+
 ═══ 诚实边界 ═══
   · FDE 2.566 与 2.570410 都是**仿真值**，按本仓铁律**不作 golden**。
     ⑥ 是**外部对标**（相对比较：全矢量比半矢量更接近 FDE），不是绝对正确性声明。
@@ -112,9 +142,12 @@ def main() -> int:
     except Exception as e:                       # noqa: BLE001
         ok_sc, rows = False, []
         print(f"  自检异常：{type(e).__name__}: {e}")
-    check("全矢量求解器自校锚全 PASS（闭式均匀极限 + 边界律 + 实证锚 + 收敛）",
-          ok_sc and len(rows) >= 9 and all(r[5] for r in rows),
-          f"{sum(1 for r in rows if r[5])}/{len(rows)} 通过")
+    check("全矢量求解器自校锚全 PASS（闭式均匀极限 + 边界律 + 实证锚 + 收敛"
+          " + G12-A 任意截面 + G12-B 真 3D）",
+          ok_sc and len(rows) >= 23 and all(r[5] for r in rows),
+          f"{sum(1 for r in rows if r[5])}/{len(rows)} 通过"
+          + ("" if len(rows) >= 23
+             else f"（登记数 {len(rows)} < 23：有自校锚被摘掉）"))
 
     # ② 精确闭式均匀极限（最强的一条闭式律，单列）
     uni = [r for r in rows if r[0].startswith("uniform[")]
@@ -197,6 +230,78 @@ def main() -> int:
                   if ln.strip().startswith(("import ", "from ")))]
     check("红线段：生产模块 import 行无第三方求解器（自研，参考实现仅作外部 oracle）",
           not bad, f"命中={bad}" if bad else "无命中")
+
+    # ══════════════ G12-A：任意 2D 截面 ══════════════
+    # ⑪ 入口可对拍（成本 0）：全矢量与半矢量都有同名 neff_2d ⇒ 同一 n² 场可双投
+    sv_has_same_entry = callable(getattr(sv, "neff_2d", None))
+    check("G12-A ⑪ 任意截面入口存在且与半矢量同签名（同一 n² 场可双投 ⇒ 方法学独立）",
+          callable(getattr(fv, "neff_2d", None)) and sv_has_same_entry
+          and "neff_2d" in getattr(fv, "__all__", []),
+          f"fv.neff_2d={'有' if callable(getattr(fv,'neff_2d',None)) else '无'} "
+          f"sv.neff_2d={'有' if sv_has_same_entry else '无'}")
+
+    # ⑫ 退化一致（新入口没改坏老路径的机器锁）
+    deg = [r for r in rows if r[0].startswith("arb_degenerate[")]
+    check("G12-A ⑫ 退化一致：任意截面入口 == 条形封装（tol 1e-9，逐位同值）",
+          bool(deg) and all(r[5] for r in deg),
+          " ".join(f"{r[0]}:Δ={r[3]:.1e}" for r in deg) or "无该行")
+
+    # ⑬ 低对比度互验（同一份场，两种物理模型）
+    alc = [r for r in rows if r[0].startswith("arb_lowcontrast[")]
+    check("G12-A ⑬ 同一 n² 场双投：低对比度 SiN 全矢量 vs 半矢量 |Δ| ≤ 3e-3",
+          bool(alc) and all(r[5] for r in alc),
+          " ".join(f"{r[0]}:Δ={r[3]:.1e}" for r in alc) or "无该行")
+
+    # ⑭ 物理必然性：slab 厚度 ↑ ⇒ n_eff 严格单调 ↑
+    mono = [r for r in rows if r[0].startswith("rib_mono[")]
+    check("G12-A ⑭ 物理必然性：脊形 slab 厚度↑ ⇒ n_eff 严格单调↑"
+          f"（{len(mono)} 段全部 >0）",
+          len(mono) >= 3 and all(r[5] for r in mono),
+          " ".join(f"{r[0]}:Δ={r[3]:+.2e}" for r in mono) or "无该行")
+
+    # ⑮ 反自证桩：高对比度脊形上两法必须不同
+    anti = [r for r in rows if r[0].startswith("rib_antistake[")]
+    check("G12-A ⑮ 反自证桩：高对比度脊形上全矢量 ≠ 半矢量（|Δ| > 1e-4）",
+          bool(anti) and all(r[5] for r in anti),
+          " ".join(f"{r[0]}:|Δ|={r[3]:.2e}（须 > {r[4]:g}）" for r in anti) or "无该行")
+
+    # ⑯ 脊形网格收敛
+    rconv = [r for r in rows if r[0].startswith("rib_conv[")]
+    check("G12-A ⑯ 脊形网格收敛：h=0.02→0.01 |Δ| ≤ 2e-3",
+          bool(rconv) and all(r[5] for r in rconv),
+          " ".join(f"{r[0]}:Δ={r[3]:.1e}" for r in rconv) or "无该行")
+
+    # ⑰ 反向测试（读 ⑨b 行，不再另解一次）：slab 分支承重
+    load = [r for r in rows if r[0].startswith("rib_slab_load[")]
+    check("G12-A ⑰ 反向测试：抹掉 slab 层 ⇒ n_eff 必变（> 1e-3，slab 分支承重）",
+          bool(load) and all(r[5] for r in load),
+          " ".join(f"{r[0]}:|Δ|={r[3]:.2e}（须 > {r[4]:g}）" for r in load)
+          or "无该行")
+
+    # ═══════════════ G12-B：真 3D 空间全矢量本征腔模 ═══════════════
+    # ⑱ 闭式物理律（最强）：均匀立方腔 k0²(1,1,1) = 3(π/L)²/n²（O(h²) 残差）+ 激发模比例
+    cb = [r for r in rows if r[0].startswith("cubic[")]
+    check("G12-B ⑱ 闭式金：立方腔 k0²(1,1,1)=3(π/L)²/n² 且 k0²(2,1,1)/k0²(1,1,1)=2",
+          bool(cb) and all(r[5] for r in cb),
+          " ".join(f"{r[0]}:d={r[3]:+.2e}" for r in cb) or "无该行")
+
+    # ⑲ 网格收敛 O(h²)
+    cb2 = [r for r in rows if r[0].startswith("conv3d[")]
+    check("G12-B ⑲ 网格收敛 O(h²)：conv3d 收敛阶 ∈ [1.8, 2.2]",
+          bool(cb2) and all(r[5] for r in cb2),
+          " ".join(f"{r[0]}:rate={r[3]:.2f}" for r in cb2) or "无该行")
+
+    # ⑳ 物理必然性：介质加载腔 k0² < 同几何空腔
+    diel = [r for r in rows if r[0].startswith("diel_lt_air[")]
+    check("G12-B ⑳ 物理判据：介质加载腔 k0²_diel < k0²_air（同几何）",
+          bool(diel) and all(r[5] for r in diel),
+          " ".join(f"{r[0]}:d={r[3]:+.3e}" for r in diel) or "无该行")
+
+    # ㉑ 反向测试：压扁一维 ⇒ 本征值必变（几何真被读取）
+    shape = [r for r in rows if r[0].startswith("shape[")]
+    check("G12-B ㉑ 反向测试：压扁 x 维 ⇒ k0² 必变（> 1e-2，几何承重）",
+          bool(shape) and all(r[5] for r in shape),
+          " ".join(f"{r[0]}:|Δ|={r[3]:.2e}" for r in shape) or "无该行")
 
     n_fail = _NF
     print()

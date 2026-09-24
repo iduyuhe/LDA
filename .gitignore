@@ -107,3 +107,20 @@ node_modules/
 npm-debug.log*
 .pnpm-store/
 
+# ---- G12-H 外部 ORACLE 镜像 + 诊断稿（本地工作区，不入库、不进 pyflakes 扫描面）----
+# 依据：与上面「DEVSIM 主权镜像冷备」「外部 ORACLE 隔离环境」同纪律。
+# `_modesolver_src/` 是公开论文（Fallahkhair, JLT 26(11) 1423-1431 (2008)）的
+# **第三方参考实现**，本仓只用它做**外部 oracle 标量对照**（一次性脚本），
+# 生产模块 `lda/lda_solver/full_vector_mode_solver.py` **不 import 它**
+# （该不变量由 `run_full_vector_mode_smoke.py` 判据⑩ 红线守卫机器化）。
+# 下面 `fv_*.py` / `g12h_*.py` 是 G12 四条失败路径 + G12-H 的**一次性诊断稿**，
+# 无模块 import 它们、不在 CI smoke 清单内；证据链见 `G12_nedelec_findings.md`。
+_modesolver_src/
+_fh2008.pdf
+_fh2008.txt
+_A_ref.npz
+# `fv_*` 同时覆盖诊断稿（.py）与其运行输出（.txt）—— 整族均为一次性本地产物。
+fv_*
+g12h_*
+_pf_all.txt
+

@@ -5,9 +5,9 @@
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - via：L1 KernelGateway
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **464 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **465 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
 
-## 汇总：466/469 通过（独立候选 5 项中 **2 项通过=已验证** · 464 项自证闭环，**非验证结论**）
+## 汇总：467/470 通过（独立候选 5 项中 **2 项通过=已验证** · 465 项自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -400,6 +400,7 @@
 | B45 | E0_eV | physical-law | 0.164464 | 0.164464 | 0 | 0.001 | ✅ PASS |
 | B450 | hyperbolic_sine_integral_shi_2 | physical-law | 2.50157 | 2.50157 | 0 | 1e-07 | ✅ PASS |
 | B451 | hyperbolic_cosine_integral_chi_2 | physical-law | 2.45267 | 2.45267 | 0 | 1e-07 | ✅ PASS |
+| B452 | driver_rc_step_voltage_at_4tau_V | physical-law | 1.96337 | 1.96337 | 0 | 1e-07 | ✅ PASS |
 | B46 | E1_eV | physical-law | 0.493391 | 0.493391 | 0 | 0.01 | ✅ PASS |
 | B47 | E2_eV | physical-law | 0.822319 | 0.822319 | 0 | 0.1 | ✅ PASS |
 | B48 | E0_eV | physical-law | -0.350171 | -0.350171 | 0 | 0.01 | ✅ PASS |

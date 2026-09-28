@@ -8,8 +8,8 @@
 from __future__ import annotations
 
 from ._adapter_core import (
-    _get_batch_b, _get_batch_b2, _get_batch_b28, _get_batch_b3, _get_batch_b4, _get_batch_b5,
-    _get_batch_b6, _get_batch_b7, _get_batch_b8, _register_candidate,
+    _get_batch_b, _get_batch_b2, _get_batch_b28, _get_batch_b29, _get_batch_b3, _get_batch_b4,
+    _get_batch_b5, _get_batch_b6, _get_batch_b7, _get_batch_b8, _register_candidate,
 )
 
 from typing import (
@@ -94,6 +94,22 @@ def _b451_hyperbolic_cosine_integral_rk4_candidate(spec: VerificationSpec, oracl
     p = spec.params
     m = _get_batch_b28()
     return float(m.cand_b451(float(p["X"])))
+
+@_register_candidate(
+    "rc_driver_step_rk4_452",
+    "驱动器一阶 RC 阶跃响应由四阶 RK4 积分定义 ODE dv/dt=(V_dd−v)/τ（自 v(0)=0）导出")
+def _b452_rc_driver_step_rk4_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B452 独立候选：驱动器 RC 阶跃 v(4τ)（RK4 积分定义 ODE）。
+
+    golden=解析闭式 v(t)=V_dd·(1−e^{−t/τ})（Kirchhoff 一阶电路瞬态，教科书物理定律）；
+    cand=四阶经典 RK4 直接积分 dv/dt=(V_dd−v)/τ（不解析求解、不调任何指数闭式，N=256）。
+    残差=RK4 截断误差（O(h⁴)，实测比值 16.86/16.42/16.21，MONO）。余量 1356×；零商业依赖。
+    ⚠️ 同源体检：与 B33 共享「一阶线性 RC 这一 ODE 形式」，但被测标量（阶跃电压值 vs
+    f3dB_Hz）、物理构型（驱动器 τ=20ps 驱动 MZI 相移臂 vs 结电容 C=εA/d 配 R=50Ω）、
+    数值格式（四阶 RK4 直接积分 vs 梯形法 2 阶 + τ 最小二乘拟合）三者均不同 ⇒ 非重复计数。"""
+    p = spec.params
+    m = _get_batch_b29()
+    return float(m.cand_b452(float(p["t_s"]), float(p["tau_s"]), float(p["v_dd"])))
 
 @_register_candidate(
     "slab_te0_neff_exact",

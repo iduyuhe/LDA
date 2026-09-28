@@ -1,5 +1,18 @@
 """P3 · 16×16 tiling + 几何寄生协同损耗预算（定天花板）。
 
+🔴 **2026-09-28（P6·T6.3）实测发现本脚本两处口径缺陷 —— 仅加注、不改历史数值**：
+  1. `L_BUS_PER_N_UM = 35.6` 是**线性外推**，与真实 grid2d 几何有偏：实测 µm/N 为
+     N=4 `38.833`（本线性律**低 8.33%**）、N=8 `36.082`、N=16 `35.070`（**高 1.51%**）、
+     N=32 `34.798`（高 2.31%）⇒ **每 N 母线长不是常数**，换档必须重算。
+  2. 本脚本**损耗模型取 grid2d 几何**（`L_TILE_X_UM = 561.1`），而**瓦片 GDS/寄生**走
+     `build_mesh_pnr` 的**默认 serpentine** 布局（N=16 `x_max = 3981.541 µm`）⇒
+     块间互连长度被**低估 7.0957×**、寄生电容取自另一个几何（`3193.92` vs `457.59` fF，
+     **6.98×**）。两模式差随 N 增长：`1.3224× / 3.1733× / 7.0957× / 15.0497×`。
+  ⇒ **权威实现已迁入库模块 `lda_l2/mesh_tiling.py`**（瓦片档位化 `TILE_TIERS=(4,8,16,32)` ·
+    单布局模式强制 · 逐档重跑 D1/D2/P3 三预算 · 「旧档数字不得复用」机器守护
+    `assert_no_tier_reuse`），由 `run_mesh_tiling_smoke.py`（34 判据）常驻守护。
+     本文件保留为 **P3 阶段历史快照**（数值可复现），新工作请改用该模块。
+
 主权零依赖；复用 build_mesh_pnr + gds_export.parse_gds_polygons + parasitic_rc。
 运行：PYTHONPATH=D:/agent_LDA/lda python examples/budget_p3_tile_loss.py
   （系统 Python 需含 numpy）

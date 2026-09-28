@@ -117,7 +117,13 @@ def analyze_wdm_dispersion(bs_list, D, U_target: np.ndarray, wl_ref_nm: float,
 def _lambda_interface_budget(wavelengths_nm: List[float], n_g: float, m_ring: int,
                              gap: float, il_per_ch_db: float, xtalk_db: float
                              ) -> Dict[str, object]:
-    """WDM 复用/解复用接口的通道预算 + 微环方案物理锚（若走微环实现）。"""
+    """WDM 复用/解复用接口的通道预算 + 微环方案物理锚（若走微环实现）。
+
+    🔴 P6·T6.2 起接入 `wdm_channel_plan` 的**严格信道规划**：原判据只查
+    `fsr_min > spacing`（**混叠的必要条件**，K≥4 时恒满足 ⇒ 不构成约束），
+    现并列给出真实验收口径 `fsr_over_comb_span ≥ 1.5` 与 `worst_xtalk_db ≤ −20 dB`。
+    旧键 `fsr_ge_spacing_ok` **保留**（U1 smoke 既有断言依赖，勿删）。
+    """
     anchors = [wdm_ring_anchor(wl, n_g=n_g, m=m_ring, gap=gap)
                for wl in wavelengths_nm]
     K = len(wavelengths_nm)
@@ -126,6 +132,11 @@ def _lambda_interface_budget(wavelengths_nm: List[float], n_g: float, m_ring: in
     fsr_min = min(a["FSR_nm"] for a in anchors)
     # 接口插入损耗（每通道，双向 = mux + demux）
     il_total_db = 2.0 * il_per_ch_db
+    # ---- 严格信道规划（T6.2）----
+    from lda_layout.wdm_channel_plan import audit_channel_plan, plan_wdm_channels
+    plan = plan_wdm_channels(K, spacing_nm=(spacing if spacing > 0 else 2.5),
+                             wl_start_nm=wavelengths_nm[0], n_g=n_g, m_ring=m_ring)
+    audit = audit_channel_plan(plan)
     return {
         "K": K, "channel_spacing_nm": float(spacing),
         "il_per_ch_db": float(il_per_ch_db),
@@ -134,6 +145,8 @@ def _lambda_interface_budget(wavelengths_nm: List[float], n_g: float, m_ring: in
         "fsr_min_nm": float(fsr_min),
         "fsr_ge_spacing_ok": bool(fsr_min > spacing),
         "ring_anchors": anchors,
+        "channel_plan": plan,
+        "channel_audit": audit,
         "note": "接口层（片外 AWG 或异质集成微环阵列）；片上网格对波长透明",
     }
 

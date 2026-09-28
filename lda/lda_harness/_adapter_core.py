@@ -171,6 +171,26 @@ def _get_batch_b28():
     _BATCH_B28_MOD = _m
     return _m
 
+_BATCH_B29_MOD = None
+
+def _get_batch_b29():
+    """双路兜底导入 Batch B-29 数值核（一阶 RC 阶跃充电，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B29**（`b29_thermal_phase_anchor` / `run_b29_*`）占用无连字符
+    写法 `b29_`，故批次核一律用连字符形式 `_batch_b29_numeric` / `_get_batch_b29`
+    （与 B-28 同规；接手前已实 grep 核占名：`_BATCH_B29` / `_get_batch_b29` 零命中）。
+    """
+    global _BATCH_B29_MOD
+    if _BATCH_B29_MOD is not None:
+        return _BATCH_B29_MOD
+    try:
+        from lda_harness import _batch_b29_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b29_numeric as _m
+    _BATCH_B29_MOD = _m
+    return _m
+
 _BATCH_B2_MOD = None
 
 def _get_batch_b2():

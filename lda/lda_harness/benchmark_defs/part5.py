@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """BENCHMARK_DEFS 数据分片 5/5（F-08 巨石治理 · v0.9.117）。
 
-覆盖 key：B359 … B451（共 93 条，按原 `benchmarks.py` 文件顺序**连续**切分）。
+覆盖 key：B359 … B452（共 94 条，按原 `benchmarks.py` 文件顺序**连续**切分）。
 
 本文件由机械拆分生成：条目正文**逐字节**取自原 BENCHMARK_DEFS 字面量，不重排、
 不重格式化。合并顺序由 `benchmark_defs/__init__.py` 保证与原文逐项一致；判据：
@@ -37,6 +37,9 @@ from .._batch_b27_numeric import (
 from .._batch_b28_numeric import (
     golden_b439, golden_b440, golden_b441, golden_b442, golden_b443, golden_b444, golden_b445,
     golden_b446, golden_b447, golden_b448, golden_b449, golden_b450, golden_b451,
+)
+from .._batch_b29_numeric import (
+    golden_b452,
 )
 DEFS = {
     "B359": {
@@ -1148,5 +1151,16 @@ DEFS = {
         "candidate": "hyperbolic_cosine_integral_rk4_451",
         "candidate_desc": "Chi 由四阶 RK4 积分 y'=cosh x/x（自 x0=0.1 的解析级数启动；起点远离 1/t 奇性以保阶）导出",
         "note": "双曲余弦积分 Chi(2.0 ⇒ 2.4526669226)。golden=scipy shichi（精确 oracle）；candidate=RK4 积分定义 ODE（起点 0.1，N=1024）。实测 |Δ|=2.47e-10（tol=1e-7 的 405× 余量）；判据 D 实测比值 15.85/15.96/15.99（O(h⁴)）。⚠️ 起点若取 1e-3 则 1/t 奇性使阶退化（血案，已修）。残差=RK4 截断误差。零商业依赖。",
+    },
+    "B452": {
+        "title": "驱动器一阶 RC 阶跃充电 v(4τ)（解析闭式 golden vs 四阶 RK4 积分定义 ODE）",
+        "metric": "driver_rc_step_voltage_at_4tau_V",
+        "oracle": "analytical(RC step-response closed-form) + RK4-defining-ODE integration independent_cross_check",
+        "tol": 1e-7,
+        "default_params": {"t_s": 8e-11, "tau_s": 2e-11, "v_dd": 2.0},
+        "golden_fn": golden_b452,
+        "candidate": "rc_driver_step_rk4_452",
+        "candidate_desc": "v(t=80ps) 由四阶 RK4 积分定义 ODE dv/dt=(V_dd−v)/τ（自 v(0)=0，N=256）导出，与解析闭式不同源",
+        "note": "驱动器 τ=20ps、V_dd=2V 时 t=4τ 的阶跃电压 ⇒ 1.9633687222 V（= 2·(1−e^{−4})）。golden=解析闭式（Kirchhoff 一阶电路瞬态，教科书物理定律/人类公共品）；candidate=四阶 RK4 积分定义 ODE（N=256）。实测 |Δ|=7.37e-11（tol=1e-7 的 1356× 余量）；判据 D 实测比值 16.86/16.42/16.21（O(h⁴)，MONO）。🔴 **同源体检（如实登记，不掩盖）**：与 **B33**（探测器 RC 限制 3dB 带宽）共享「一阶线性 RC 这一 ODE 形式」；但 ①**被测标量不同**（B33 = f3dB_Hz 由 τ 反算带宽 vs 本题 = 时刻 t 的阶跃电压值）②**物理构型不同**（探测器结电容 C=εA/d 配 R=50Ω 负载 vs 驱动器 τ=20ps 驱动 MZI 相移臂）③**数值格式不同**（B33 候选=梯形法 2 阶 + τ 最小二乘拟合 vs 本题候选=四阶 RK4 直接积分，残差量级与收敛阶均不同）⇒ **非重复计数**（本仓先例：B446–B451 同为 RK4 积分定义 ODE、B448/B449 更是同一函数 Ci 的两个 X 各计一锚）。⚠️ **诚实边界**：①参数 τ/V_dd 是**设计预算常数非实测值**，本锚**无实测锚**，结论只可用于预算与斜率，不得作性能宣称；②RK4 收敛阶 O(h⁴) 是**数值格式属性，不是器件物理**，不得据此宣称器件精度。残差=RK4 截断误差。零商业依赖。",
     },
 }

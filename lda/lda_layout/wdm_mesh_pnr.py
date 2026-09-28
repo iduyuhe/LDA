@@ -376,7 +376,7 @@ def build_wdm_mesh_pnr(wavelengths_nm: Optional[List[float]] = None,
                        N: int = 4, rail_pitch: float = 4.0, wg: float = 0.5,
                        gap: float = 0.3, Lc_margin: float = 6.0,
                        col_gap: float = 8.0, ps_len: float = 4.0,
-                       n_g: float = 2.45, m_ring: int = 30,
+                       n_g: float = 2.45, m_ring: Optional[int] = None,
                        L_mmi: float = 8.0, L_tap: float = 2.0, L_out: float = 2.0,
                        out_gap: float = 0.9, Lg: float = 5.0,
                        tol: float = 1.0, lib_name: str = "LDA_WDM_MESH",
@@ -385,13 +385,16 @@ def build_wdm_mesh_pnr(wavelengths_nm: Optional[List[float]] = None,
     """构建 K 波长 × N×N WDM 光子张量核版图 + 网表 + GDS + DRC/LVS 报告。
 
     参数：
-      wavelengths_nm : K 个波长（nm），默认 LAN-WDM 风格 4 信道。
+      wavelengths_nm : K 个波长（nm）。**默认 K=8**（LAN-WDM 2.5nm · P6·T6.2 起由 4 提到 8）。
       U_targets      : K 个 N×N 酉矩阵（每 λ 一变换）；None → 全用 DFT(N)。
       N              : 网格规模（默认 4×4）。
-    返回结构化报告 dict（含 GDS 字节、DRC/LVS 判决、每波长保真度、聚合带宽密度）。
+      m_ring         : 微环阶数；**None ⇒ 由 `wdm_channel_plan` 自动求解**
+                       （= min(项目默认 30, FSR 混叠余量反解上界)），并把预算写进报告。
+    返回结构化报告 dict（含 GDS 字节、DRC/LVS 判决、每波长保真度、聚合带宽密度、信道规划）。
     """
     if wavelengths_nm is None:
-        wavelengths_nm = [1550.0, 1552.5, 1555.0, 1557.5]
+        # P6·T6.2（U2）：K 由 4 提到 8（同 2.5nm LAN-WDM 间隔）——FSR 混叠余量仍 2.95× 达标
+        wavelengths_nm = [1550.0 + 2.5 * i for i in range(8)]
     K = len(wavelengths_nm)
     if U_targets is None:
         U_targets = [dft_matrix(N) for _ in range(K)]
@@ -400,6 +403,17 @@ def build_wdm_mesh_pnr(wavelengths_nm: Optional[List[float]] = None,
     for U in U_targets:
         if U.shape != (N, N):
             raise ValueError(f"U_targets 须全为 {N}×{N}")
+
+    # ---- 信道规划（T6.2）：FSR / 混叠余量 / FWHM / 串扰预算；m_ring 自动求解 ----
+    from lda_layout.wdm_channel_plan import audit_channel_plan, plan_wdm_channels
+    ch_plan = plan_wdm_channels(
+        K, spacing_nm=(wavelengths_nm[1] - wavelengths_nm[0]) if K > 1 else 2.5,
+        wl_start_nm=wavelengths_nm[0], n_g=n_g,
+        m_ring=m_ring,          # None ⇒ 自动
+    )
+    ch_audit = audit_channel_plan(ch_plan)
+    if m_ring is None:
+        m_ring = int(ch_plan["m_ring"])
 
     # 默认物理参数（推导 R_max 供总线 y 定位）
     R_max = max(wdm_ring_anchor(wl, n_g=n_g, m=m_ring, gap=gap)["R_um"]
@@ -466,7 +480,11 @@ def build_wdm_mesh_pnr(wavelengths_nm: Optional[List[float]] = None,
     honest_note = (
         f"P0.1 WDM 网格 P&R：K={K} 波长 × N={N}×N Clements 网格，"
         f"微环 add-drop 解/复用（环半径 R=m·λ/(2π·n_g)，m={m_ring}；"
-        f"FSR≈λ/m 远大于信道间隔 ⇒ 不串扰）。每波长面保真度（分解级）"
+        f"FSR={ch_plan['fsr_nm']:.4f} nm，FSR/梳宽="
+        f"{ch_plan['fsr_over_comb_span']:.4f}（判据 ≥1.5），"
+        f"最坏信道串扰={ch_plan['worst_xtalk_db']:.3f} dB（判据 ≤−20 dB）"
+        f"⇒ 信道规划 audit {'全绿' if ch_audit['all_ok'] else '未全绿'}）。"
+        f"每波长面保真度（分解级）"
         f"min={min_fid:.6f}、版级 min={min_layout_fid:.6f}（机器精度，"
         f"继承 mesh_pnr 已证结论）。聚合带宽密度 ×K={K}（单波长核带宽密度"
         f"不变，波分维线性叠加——逼近市场 DWDM 量级）。K 面 + 解/复用环"
@@ -476,7 +494,10 @@ def build_wdm_mesh_pnr(wavelengths_nm: Optional[List[float]] = None,
         f"N 轨扇入/扇出用 MMI 1×N/N×1（空间分路，主权内）；② 环耦合 k_ring"
         f"默认解析 κ_c 上界，精确值由 wdm_coupler 的 FDTD κ_c(gap,λ) 标定"
         f"回填；③ 单波长带宽密度为占位乘子（=1），真值须 foundry PDK 圆片"
-        f"表征；④ PDK 为演示近似 SOI。判决全死标量，LLM 不进路径。"
+        f"表征；④ PDK 为演示近似 SOI；⑤ 串扰/FSR 预算的 n_g/损耗/FWHM 为"
+        f"**设计预算常数非实测**，且串扰只覆盖单环 add-drop 泄漏（不含波导"
+        f"交叉/MMI 泄漏/反射/热串扰），详见 wdm_channel_plan.WDM_CHANNEL_DISCLOSURE。"
+        f"判决全死标量，LLM 不进路径。"
     )
 
     return {
@@ -491,6 +512,9 @@ def build_wdm_mesh_pnr(wavelengths_nm: Optional[List[float]] = None,
         "lvs_match": lvs_report["match"],
         "lvs_full": lvs_report,
         "ring_anchors": wdm["anchors"],
+        "channel_plan": ch_plan,
+        "channel_audit": ch_audit,
+        "m_ring": int(m_ring),
         "gds_bytes": gds_bytes,
         "gds_elements": len(elements),
         "gds_structures": 1,

@@ -8,11 +8,11 @@
     "self_consistent": false
   },
   "summary": {
-    "total": 469,
-    "passed": 466,
+    "total": 470,
+    "passed": 467,
     "self_consistent": false,
     "verified": 2,
-    "self_consistent_stub_count": 464,
+    "self_consistent_stub_count": 465,
     "independent_candidate_count": 5,
     "candidate_class_totals": null
   },
@@ -5068,6 +5068,19 @@
       "source": "physical-law",
       "golden": 2.45266692,
       "candidate": 2.45266692,
+      "tol": 1e-07,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
+      "id": "B452",
+      "metric": "driver_rc_step_voltage_at_4tau_V",
+      "oracle": "analytical(RC step-response closed-form) + RK4-defining-ODE integration independent_cross_check",
+      "source": "physical-law",
+      "golden": 1.96336872,
+      "candidate": 1.96336872,
       "tol": 1e-07,
       "passed": true,
       "note": "确定性物理定律/解析解",

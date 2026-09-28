@@ -1,5 +1,71 @@
 # Changelog
 
+## v0.9.138（2026-09-28 · P5「工程化与生态就绪」· 里程碑 **M-5 工程化就绪** · 不扩基 · 零锚改动 · 账本零变化 · CI core 204 持平）
+
+### 背景
+M-5 的三个出口判据（`pytest` 可收集且全绿 · `pip install -e .` 后 `lda --help` 可用 · M6 ≥60）
+此前都不是「可被别人复现的能力」：仓库只有单入口 `run_ci_regression.py`、无 packaging 实测、
+实证语料仅 30 条且实测对照只有 5 条。本版把工程化与生态就绪一次补齐。
+
+### 交付物
+- **T5.1 pytest 双入口**（新增 `tests/` 5 文件：`conftest.py` / `test_smoke_core.py` /
+  `test_ci_entry_contract.py` / `test_packaging_contract.py` / `test_m6_empirical.py`）：
+  `test_smoke_core.py` **动态派生**自 `ci.CORE_SMOKES`（不手抄清单）；默认档由
+  `pyproject.toml` 的 `addopts = "-m 'not smoke' --strict-markers"` 控制 ⇒ `pytest` =
+  **20 passed / 204 deselected**，`pytest -m smoke` 才把 CI smoke 逐条映射。
+  **pytest 永不进 `CORE_SMOKES`**（该事实由 `test_ci_entry_contract.py` 常驻守护 ⇒ 防递归/双口径漂移）。
+- **T5.2 `pip install -e .`**：实测通过（本机需 `--no-build-isolation`）；`lda --help` /
+  `lda build --help` / `lda build <goal> --out …` 契约由 `tests/test_packaging_contract.py`
+  常驻守护（**声明包集 ≡ `lda/` 真实包集**双向 · `tests/` 不进发行包 · console_script 可 import 可调用）。
+- **T5.3 实证锚扩容（M6）**：`lda/lda_harness/seed_empirical.json` 语料 **30 → 70 条**（**全部 A 级**）；
+  判据唯一机器来源 = `lda/lda_harness/empirical_m6.py`（两入口共调同一份）；
+  `run_empirical_anchor_smoke.py` 增判据⑩（`audit_m6` + `gate_m6`）⇒ 42/42 PASS；
+  `run_count_consistency_smoke.py` 增 `test_empirical_corpus_floor`（单一来源 `M6_CORPUS_MIN`）。
+- **工具**：`scripts/p5_merge_corpus.py`（A 级门禁 + **git-HEAD 基线对账守卫** ⇒ 防并行写坏语料）·
+  `scripts/p5_probe.py`（突变探针 **10/10 会响**）。
+- **文档**：`README.md` 四处同步（顶行 / 双入口表 / 安装段 / 诚实边界语料数字）；`CONTRIBUTING.md`
+  增双入口章节、`pip install -e .` 章节、实证锚纪律（M6 三档分账表 + 探针）。
+
+### 🔴 关键结论
+- **M6 全 10 闸 PASS**：语料 **70**（≥60）· A 级 **100%** · 公开定位符**去重 55**（≥40）· geometry/σ 零缺 ·
+  实测对照 **14**（≥12）= 独立 **10**（≥8）+ 跨器件交叉测量 **4**；**3 条**「标定锚」
+  （`E-SOI-CROSS-IL` / `E-MMI-1X2-EL` / `E-SIN-PL-800`，引擎常数取自该条语料 ⇒ rel≡0）**透明登记但不计入 M6**；
+  rel 中位数 **18.05%**（≤30%）· ≤25% 者 **10/14**（≥7）。**刻意保留**一条 FAIL-side 诚实项
+  `E-TBOX-QL-TM`（rel=**188.1%** · 不剔除、不粉饰）。
+- **三分类对照**：`independent`（只吃几何+常数）/ `cross_measurement`（读另一条语料）计入；
+  `calibration_anchor`（引擎常数取自本条）**排除** —— 否则 rel≡0 属自证。
+- 🔴 **本机 editable 安装链路的真 bug（已修）**：`Scripts/lda.exe` 长期 rc=1
+  （`No module named 'lda_design'`），根因 = `RECORD` 声明要装的 `__editable__.lda_design-*.pth`
+  **在 site-packages 里不存在**（dist-info 完好、`direct_url.json` 标 editable，但导入路径从未生效）。
+  手工重建该 `.pth`（内容须为**包根** `D:/agent_LDA/lda`）后三条命令全 rc=0。**非包缺陷**。
+
+### 账本
+账本零变化：严格 **448** / 降级 **3** / 自证桩 **18** / 总 **469** · 独立率 **95.5%** · 天花板 **97.4%** ·
+零 tol 放宽 · **零锚改动** · **零判据改动**。**CI core 204 持平**（只扩既有 smoke 判据数，不新增 CI 成员）。
+
+### 全量 CI core 回归
+**204 PASS / 0 SKIP / 0 FAIL**（204 条 · 12 批 · 18 条/批 · 批间冷却 12s · **5686.1s ≈ 95 min**）。
+预算余量体检：覆盖 **185 项** · 最低 **3.27×**（`run_benchmark_falsifiability_smoke`）· `low_margin` **空**
+⇒ `run_timeout_budget_ratchet_smoke` **19 PASS / 0 FAIL**（B9 目标棘轮 0 ≤ 0 · **未上调 `ratchet_below_target`**）。
+基线以 `--from-report` **并入**刷新（行 185 → 185 · `anchors_at_measurement` 469 ·
+`core_smokes_at_measurement` 204 · `censored_events` 零变化 · 仅 3 行 `elapsed_max_s` 微增且余量仍 7.9×/35.6×/15.1×）。
+
+🔴 **本轮首轮全量曾因一次「共享 venv 半卸载」环境事故报 199 PASS / 5 FAIL**（`run_quickverify_smoke` /
+`run_ir_spec_smoke` / `run_device_library_smoke` / `run_ci_industrial_smoke` / `run_torch_numba_optional_smoke`）。
+定性依据：报错**全为依赖/导入类**（`No module named 'attrs'`、`当前环境缺必装依赖: ['jsonschema']`、
+`AttributeError: module 'colorama' has no attribute 'init'` ⇒ `torch` import 崩）· **单独复跑仍红**（非 safe-delete 并发假红）·
+`pip check` 报 ~40 项依赖缺失 + `WARNING: Ignoring invalid distribution ~da-design`。
+根因：**`attrs` 整体被卸载** + **`colorama/__init__.py` 被删**（目录只剩 `ansi.py`/`ansitowin32.py`
+⇒ Python 当其为**空命名空间包**）；成因 = **T5.2「实测 `pip install -e .`」在共享 venv 裸跑**
+（「先卸载、再安装」事务，失败即留半卸载态）。**与本版代码零因果关系**。
+修复：`pip install --ignore-installed --no-deps --index-url https://pypi.org/simple attrs colorama==0.4.6`
+（`--force-reinstall` 会因损坏包无 `RECORD` 报 `uninstall-no-record-file`）。
+同一事故还**降级**了受跟踪报告 `lda/reports/coupler_band_report.json`
+（丢失 `live_dc`/`live_yb`/`oracle_kappa_trend` 等整段 · `torch_threads: 10 → null`）—— 已 `git checkout --` 还原，
+并在修复后的干净全量中重写为**与 HEAD 逐字节一致**（sha 同）。
+⇒ **本版以修复后的第二轮全量为准**（首轮结论作废）。纪律已固化：**验打包禁用共享 venv**
+（用一次性 venv 或先 `--dry-run`）；全量 CI 见 `attrs`/`jsonschema`/`torch`/`colorama` 类报错 ⇒ **先查 venv，勿改判据**。
+
 ## v0.9.137（2026-09-25 · P4「物理深度补齐」· G12 子项 **G12-B：真 3D 空间全矢量本征模求解器** · 不扩基 · 零锚改动 · 账本零变化 · CI core 204 持平）
 
 ### 背景

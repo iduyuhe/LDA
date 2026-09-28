@@ -13,6 +13,9 @@
      h=0.22 / 含实验实测 / value=0.05；且未混入同作者另一篇
      （Microelectronics Journal 104, 104887 = 2.6x6.6 / 340nm / 纯仿真）
   ⑨ 仿真类 ground truth 必须在 note 显式声明非实测
+  ⑩ M6 实证锚指标门禁（T5.3）：语料 ≥60 条全 A 级（含定位符/geometry/σ）
+     + 实测对照 ≥12 条（**真实执行**引擎并算 rel%）；三档分账，
+     `calibration_anchor` 透明登记但不计入（单一来源：`lda_harness.empirical_m6`）
 """
 import os
 import sys
@@ -310,10 +313,13 @@ def main():
                          "lda_harness", "seed_empirical.json")
     with open(_seed, encoding="utf-8") as _f:
         _corpus = _json.load(_f)["corpus"]
+    # T5.3：条数下限改为「M6 达标线的单一来源」常量（不再各写一份数字）。
+    from lda_harness.empirical_m6 import M6_CORPUS_MIN as _M6_MIN
     _tiers = [_classify(x["citation"], x.get("source_url", "")) for x in _corpus]
     _nA = sum(1 for t in _tiers if t["traceable"])
-    check(f"⑦ 全部实证语料可公开溯源（{_nA}/{len(_corpus)} 为 A 级含定位符）",
-          _nA == len(_corpus) and len(_corpus) >= 30,
+    check(f"⑦ 全部实证语料可公开溯源（{_nA}/{len(_corpus)} 为 A 级含定位符）"
+          f" 且条数 ≥ {_M6_MIN}",
+          _nA == len(_corpus) and len(_corpus) >= _M6_MIN,
           f"corpus={len(_corpus)} A级={_nA}")
 
     _e5 = next((x for x in _corpus if x["id"] == "E-MMI-1X2-EL"), None)
@@ -350,6 +356,20 @@ def main():
           len(_sim_declared) == len(_sim),
           f"仿真类 {len(_sim)} 条，已声明 {len(_sim_declared)} 条："
           f"{[x['id'] for x in _sim]}")
+
+    # ---- T5.3（P5）· M6 实证锚指标门禁 ----
+    # 「A 级实证锚 = 入库条数 / 实测对照数」从「文档里的数字」变成机器判据：
+    # ① 语料侧：条数 / 唯一性 / 全 A 级 / 定位符去重数 / 每条带 geometry+σ；
+    # ② 对照侧：**真实执行**每条登记对照并算 rel%，按三档分账
+    #    （independent / cross_measurement 计入 M6；calibration_anchor 透明登记
+    #    但**不计入**，防「用 rel≡0 的标定锚刷对照数」的虚假繁荣）。
+    # 判据定义与达标线**单一来源**于 `lda_harness.empirical_m6`，pytest 第二入口
+    # 调同一份 audit（不复制口径）。
+    from lda_harness.empirical_m6 import audit_m6, gate_m6
+
+    _m6 = audit_m6()
+    for _c in gate_m6(_m6):
+        check(f"⑩ {_c['name']}", _c["ok"], _c["detail"])
 
     npass_t = sum(1 for c in CHECKS if c[1])
     print("-" * 60)

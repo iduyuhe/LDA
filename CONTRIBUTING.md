@@ -2,7 +2,8 @@
 
 感谢关注 **LDA**——一个 Agent-native 的光子芯片（PDA）+ 量子芯片（QEDA）开源设计软件，核心是 **AI agent 递归自举主权求解器**，人类做架构与验证，AI 不进判决路径。
 
-当前版本：**v0.9.133** · 账本：**22 引擎（光子 15 + 量子 7）+ 11 包 = 33 类端到端 · 469 道锚（严格独立 448 / 降级 3 / 自证桩 18）· CI core 202 条**。
+当前版本：**v0.9.137** · 账本：**22 引擎（光子 15 + 量子 7）+ 11 包 = 33 类端到端 · 469 道锚（严格独立 448 / 降级 3 / 自证桩 18）· CI core 204 条**
+· 实证大数据锚：**70 条 A 级语料（100% 可公开溯源）· 14 条实测对照（独立 10 + 跨器件 4）**。
 
 > ⚠️ 账本以 `README.md` 顶行权威账本为准。如与本页不一致，以 README 为准，并欢迎提 PR 修正本页。
 
@@ -19,17 +20,53 @@
 - **📐 提交实测语料 / 对抗题**：见 `BOUNTY.md` 反向悬赏机制（实证大数据锚是验证的第二道非 AI ground）。
 - **📖 技术叙事**：我们在公众号「工业5点0产业生态联盟」与知乎持续发布 LDA 设计哲学与闭环演示。
 
-## 本地自测（CI core 门禁）
+## 本地自测（双入口 · 都是权威）
+
+LDA 有**两个并存的自测入口**，口径同源、互不替代：
 
 ```bash
 # 用项目 venv（Python 3.13），不要系统 3.14
+
+# ---- 入口①（主入口）：CI 回归 ----
 cd lda
-python run_ci_regression.py --tag core      # CI core 全量（202 条 smoke）
-python run_count_consistency_smoke.py        # 计数守护：账本与 pyproject 一致性
+python run_ci_regression.py --tag core      # CI core 全量（204 条 smoke）
 python run_parasitic_rc_smoke.py             # 几何寄生估算
+
+# ---- 入口②（次入口）：pytest ----
+cd ..                                        # 仓库根
+pytest                                       # 默认档：契约/单元用例，秒级
+pytest -m smoke                              # smoke 档：逐条转发 CI core 成员（分钟级，204 条）
 ```
 
+> 🔴 **两个入口口径必须一致**：`tests/test_smoke_core.py` 的 smoke 用例**动态派生**自
+> `run_ci_regression.CORE_SMOKES`（不手抄清单），逐条调用同一个 `_run_one`，
+> 语义与主入口逐位一致。**主入口 `run_ci_regression.py --tag core` 仍是权威**，
+> 新 smoke 一律注册进 `CORE_SMOKES`，pytest 侧自动跟随。
+
+**pytest 入口的纪律（由 `tests/test_ci_entry_contract.py` 常驻守护）：**
+
+1. **pytest 永不进 `CORE_SMOKES`** —— 否则 CI 会递归调 pytest，形成双口径漂移。
+2. **`CORE_SMOKES` 成员必须真实存在** —— 防「账本 +1、从未执行」的幽灵假绿。
+3. **默认档 `-m 'not smoke'`** —— 跑 `pytest` 不该裸起 200+ 子进程；要跑全量须显式 `-m smoke`。
+4. **`tests/` 不进发行包** —— 装出去的 `lda` 不带测试。
+
+> `pyproject.toml` 的 `[tool.pytest.ini_options]` 已配好 `testpaths` / 默认档 / `smoke` marker，
+> 开箱即用。若你的环境装了会崩的第三方 pytest 插件，可加
+> `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`（LDA 的 `tests/` 不依赖任何三方插件）。
+
 > 新增代码必须带自测并让 CI core 全绿（FAIL=0 即绿）。计数守护会校验「当前账本」与 `pyproject` 版本，改动账本请同步 README 与 `pyproject.toml`。
+
+## 安装为包（`pip install -e .`）
+
+```bash
+pip install -e .            # 可编辑安装（等价 -e ".[dev]" 见 pyproject）
+lda --help                  # 子命令：design / check / build / gf / report
+lda build --help            # 端到端单命令（一句话目标 → 设计包 → 版图 → GDS + DRC/LVS 签核）
+```
+
+> 打包契约由 `tests/test_packaging_contract.py` 常驻守护：**声明包集 ≡ `lda/` 真实包集**、
+> `package-dir` 映射、`[project.scripts] lda` 目标可导入可调用。删/加一个包登记项会让它当场红。
+> 若 `pip install -e .` 在受限镜像上因构建隔离失败，可加 `--no-build-isolation`。
 
 ## P0-2 计数护栏同步纪律（PR 必查 · 固化必查项）
 
@@ -59,8 +96,47 @@ python run_count_consistency_smoke.py                        # CI core / 引擎 
 ```
 
 > 动态真值源（唯一真相）：`BENCHMARK_DEFS` + `BENCHMARK_CANDIDATES` 按「先判 `degraded_ordinal`、再查登记表、否则自证桩」推导。
-> 当前真值（v0.9.100 / P1-1 B-20 扩基）：**严格独立 341 · 降级 3（E9 + E10 + B21）· 自证桩 18 · 三类和 362**。
 > 改完锚后，若 README 当前账本数字或 CI core 条数滞后，上述 smoke 会**当场红**拦截。
+
+## P5-3 实证锚纪律（M6 指标 · 语料扩容必读）
+
+**M6 = A 级实证锚数 / 实测对照数**，其判据的**唯一机器来源**是
+`lda/lda_harness/empirical_m6.py`（`audit_m6()` / `gate_m6()`），
+由 **两入口共调同一份**：`run_empirical_anchor_smoke.py` 判据⑩ 与 `tests/test_m6_empirical.py`。
+
+**语料（`lda/lda_harness/seed_empirical.json`）的准入红线：**
+
+1. **只收 A 级** —— `citation` 或 `source_url` 必须含 **DOI / arXiv / 公开 URL** 定位符
+   （由 `provenance.classify_citation` 机器判定，**LLM 不参与分级**）。
+   B 级（仅文本描述）**禁止作 golden 进判决路径**，X 级（无来源）直接拒收。
+2. **每条必须带 `geometry` + `uncertainty_abs`（σ）** —— 这是「对照可复算」的前提，
+   缺任一项会让 M6-5 / M6-6 当场红。补几何时**只补几何、不改既有数值**。
+3. **id 唯一**，且新增应让**公开定位符去重数**同步增长（M6-4 防「一个 URL 灌 30 条」刷条数）。
+4. **实测 vs 仿真**：ground truth 为仿真值的语料必须在 `note` 显式声明「非实测」。
+
+**「实测对照」的三档分账（写入 `empirical_m6._NEW_COMPARISONS` 或
+`lda_design.loss_engines.CORPUS_ENGINE_MAP`）：**
+
+| 档 | 计算路径读什么 | 计入 M6？ |
+|---|---|---|
+| `independent` | **只吃几何 + 物理常数**，不读被比较条的任何测量量（含派生字段如 `n_g`） | ✅ 真预测误差 |
+| `cross_measurement` | 读**另一条**语料的实测值（同平台跨器件一致性，如直波导损耗 → 预测微环 Q） | ✅ |
+| `calibration_anchor` | 引擎标定常数**取自本条**实测 ⇒ rel≡0、零信息量 | ❌ 透明登记但不计入 |
+
+> 对照的**独立性由突变探针证明**：`scripts/p5_probe.py` 会扰动实测值，断言
+> `independent` 档输出**逐位不动**（见下）。若引擎里藏了答案（`computed := measured`），
+> `tests/test_m6_empirical.py::test_independent_comparisons_do_not_read_measured_value` 会红。
+
+**P5 门禁突变探针（人工运行，不进 CI core）：**
+
+```bash
+python scripts/p5_probe.py     # 10 反例：每条新门禁都要证明「会响」
+```
+
+> 该脚本靠「改工作区文件 → 跑门禁 → 按原字节还原 + sha256 复核」取证，
+> 与 `scripts/p2_usability_probe.py` / `p3_matrix_probe.py` 同一纪律。
+> ⚠️ **跑探针期间语料文件会被临时改写**（如截断到 59 条），此时**不要**并行跑其它
+> 依赖 seed 的 smoke，否则会读到瞬态值而假红。
 
 ## PR 约定
 

@@ -57,11 +57,25 @@ Documentation = "https://github.com/iduyuhe/LDA/tree/main/docs"
 lda = "lda_design.cli:main"
 
 [tool.pytest.ini_options]
-# 本仓库测试入口是 `python run_ci_regression.py --tag core`（见 CONTRIBUTING.md），
-# 不是 pytest 套件；此处仅约束收集边界。若直接在仓库根跑 pytest，必须避开
-# 三方隔离区：vendor/devsim_mirror 内含 devsim 测试，收集期 `import devsim`
-# 失败会让 pytest 整体报 error（2026-09-19 全面审计实测 rc=2 / 244.3s）。
+# 🔴 T5.1（v0.9.138）· **双入口并存，主入口不变**：
+#   · 主入口（权威） = `python run_ci_regression.py --tag core`（见 CONTRIBUTING.md）
+#   · 第二入口       = `pytest`（本段配置），**只增不减**，不替换主入口
+# 两条入口跑的是**同一份判据**：pytest 的 `smoke` 档直接调用主入口的
+# `_run_one`（见 tests/test_smoke_core.py），不复制判据、不另立口径。
+#
+# testpaths：收集面锁死在 tests/。若在仓库根裸跑 pytest，会走到三方隔离区
+# vendor/devsim_mirror 内的 devsim 测试，收集期 `import devsim` 失败 ⇒ pytest
+# 整体报 error（2026-09-19 全面审计实测 rc=2 / 244.3s）。norecursedirs 保留为
+# 第二道闸：即使有人显式指定路径，也不进隔离区。
+testpaths = ["tests"]
 norecursedirs = ["vendor", "lda_cuda_venv", "node_modules", ".cache", ".git", "build", "dist", "*.egg"]
+# 默认档＝快档：排除 `smoke`（逐条跑 CORE_SMOKES 子进程，全量口径 = CI core），
+# 只跑 tests/ 下的静态契约（秒级）。`pytest -m smoke` 跑全量 smoke 档。
+# `--strict-markers`：拼错 marker 名直接报错，杜绝「悄悄全跑 / 悄悄全不跑」。
+addopts = "-m 'not smoke' --strict-markers"
+markers = [
+    "smoke: 逐条以子进程跑 CORE_SMOKES（与 `run_ci_regression --tag core` 同口径）；默认不跑，用 `pytest -m smoke` 跑全量",
+]
 
 [tool.setuptools]
 # 源码树中可导入包位于 lda/ 子目录（扁平 lda_* 命名空间）

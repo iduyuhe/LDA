@@ -79,6 +79,9 @@ class CountConsistencySmoke(unittest.TestCase):
         cls.package_kinds = tuple(PACKAGE_KINDS)
         cls.benchmark_order = tuple(BENCHMARK_ORDER)
         cls.core_smokes = tuple(CORE_SMOKES)
+        # T5.3：实证语料的权威路径（单一来源 = empirical_m6.SEED_PATH）
+        from lda_harness.empirical_m6 import SEED_PATH
+        cls._seed_path = SEED_PATH
         with open(README_PATH, encoding="utf-8") as f:
             cls.readme = f.read()
         cls.readme_top = _top_version_block(cls.readme)
@@ -202,6 +205,19 @@ class CountConsistencySmoke(unittest.TestCase):
         self.assertIn("B1-B451", self.readme)
         self.assertIn(f"E1-E{e_last}", self.readme)
         self.assertIn("S1-S13", self.readme)
+
+    # (a) 条数下限的**单一来源**：`empirical_m6.M6_CORPUS_MIN`（T5.3 起）。
+    #     此前本 smoke 在写死数字上「保持沉默」，导致语料从 30 → 70 的扩容**无护栏**
+    #     —— 若种子文件被意外截断，没有任何常驻门禁会当场红。
+    #     现改为「动态真值 vs 计划下限」双判：既防截断，又不与 M6 计划线脱节。
+    def test_empirical_corpus_floor(self):
+        from lda_harness.empirical_m6 import M6_CORPUS_MIN
+        from lda_harness.empirical_bank import EmpiricalCorpus
+        n = len(EmpiricalCorpus.load(self._seed_path)._items)
+        self.assertGreaterEqual(
+            n, M6_CORPUS_MIN,
+            f"实证语料应 ≥ {M6_CORPUS_MIN} 条（T5.3 计划下限），实际 {n}"
+            f"——若为截断，请检查 lda/lda_harness/seed_empirical.json")
 
     # ---- 6. 版本线一致性（防滞后 / 防关联漂移）----
     def test_readme_version_matches_pyproject(self):

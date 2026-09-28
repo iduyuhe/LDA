@@ -1,6 +1,6 @@
 # LDA 实证大数据锚 · 报告
 
-- corpus 条目: 30
+- corpus 条目: 70
 - adversarial 题目: 4
 
 ## 候选 vs 实测（实证锚）

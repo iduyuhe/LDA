@@ -431,12 +431,19 @@
       "fab_source": "钽替代铌二维 transmon（17 器件寿命提升）",
       "citation": "A. P. M. Place et al., Nat. Commun. 12, 1779 (2021), DOI 10.1038/s41467-021-22030-5",
       "method": "能量弛豫时间 T1（含动态解耦 >0.3 ms）",
-      "geometry": {},
+      "geometry": {
+        "material": "Ta (tantalum) 2D transmon on sapphire",
+        "freq_range_ghz": "3.1-5.5",
+        "freq_ghz": 4.3,
+        "junction_area_um2": 0.03,
+        "n_devices": 17
+      },
       "tags": [
         "quantum",
         "transmon",
         "coherence"
-      ]
+      ],
+      "note": "P5（T5.3）补 geometry 以满足 M6-5「每条带 geometry」。同源 DOI 10.1038/s41467-021-22030-5（Place et al., Nat. Commun. 12, 1779 (2021)）：17 个钽替代铌的二维 transmon 器件，频率覆盖 3.1-5.5 GHz（freq_ghz=4.3 取区间中点作代表性单值，非单器件实测值）；结面积 ≈0.03 µm²。原文 T1 峰值 0.36±0.01 ms、均值 0.23 ms；本条 measured_value=300 µs 为「含动态解耦 >0.3 ms」口径，**未改动**任何既有数值，仅补几何。"
     },
     {
       "id": "E-Q-NBTRANS-T1",
@@ -672,6 +679,1118 @@
         "measured"
       ],
       "note": "D-66 逐字核实（2026-09-01）：原 E-SIN-NEFF-300 声称 500x300 SiO2 包层 SiN 的 n_eff=1.53，未找到可公开溯源的实测出处（文献中同类几何的 n_eff 多为 COMSOL 仿真值，非测量）。故本条**改判为群折射率 n_g 锚**，并**按文献照实改写几何**为 1.2x0.3 um^2 SiOC 涂覆 Si3N4、R=100 um 环 —— golden 与 geometry 严格同源（同一器件的同一测量）。🔴 **D-66 第 7 例（2026-09-03 二次逐字核实修正）**：geometry.n_clad 原标 1.44 **是错的**。原文三处逐字：①'The refractive index of the deposited SiOC film at standard telecom wavelength 1550 nm was measured as n = 2.2'（SiOC 折射率**高于** Si3N4 芯 1.9963，不是低折射率包层）；②'The SiOC/Si3N4 structures were covered by PECVD silica with n = 1.45'（SiOC 层厚 350 nm，其上另有 PECVD silica）；③'Figure 3 ... TE mode ... is leaky and ... stable propagation of TM mode'（TE 在此结构中泄漏，只有 TM 稳定 —— 与本条 polarization=TM 一致）。已据此把 n_clad 由 1.44 改为 2.2 并把 clad 改写为双层描述。⚠️ **本条当前不作为任何锚题的 golden**（BENCHMARK_DEFS 中无引用），仅入库备查；修正属数据完整性整修，不改变任何判决结果。另注：本器件口径**不自洽**（λ²/(FSR·L)=2.3305 ≠ 原文 2.2834），明文禁止拿它做精度判定 —— 需要 Si3N4 n_g 实证对照时改用同文 Figure 5 的**纯净对照组**（无 SiOC，全 silica 包层，n_g=1.9666，λ²/(FSR·L)=1.9667 自洽），见 lda/lda_solver/semivec_mode_solver.py 自校锚③。"
+    },
+    {
+      "id": "E-SI-VLAS-PL",
+      "device": "SOI strip waveguide (straight)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 3.6,
+      "uncertainty_abs": 0.1,
+      "fab_source": "200 mm CMOS fabrication line (IBM), SOI",
+      "citation": "Y. A. Vlasov, S. J. McNab, Opt. Express 12(8), 1622-1631 (2004), DOI 10.1364/opex.12.001622",
+      "source_url": "https://doi.org/10.1364/opex.12.001622",
+      "method": "Wafer-scale optical loss characterization (cutback / Fabry-Perot) on 200 mm CMOS-fabricated wires. Abstract verbatim: 'minimal propagation losses of 3.6+/-0.1 dB/cm for the TE polarization were measured at the telecommunications wavelength of 1.5 um.'",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.2,
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.5,
+        "box_um": 1.0
+      },
+      "tags": [
+        "straight_waveguide",
+        "SOI",
+        "propagation_loss",
+        "CMOS_line",
+        "evidence_medium",
+        "geometry_inferred"
+      ],
+      "note": "DOI resolved and title/authors confirmed via PubMed/Optics Express. Value quoted verbatim from abstract. Geometry (w~0.5 um, h~0.2 um SOI, 1 um BOX) is the canonical device size for this paper but is inferred, not stated in the abstract; TE polarization."
+    },
+    {
+      "id": "E-SI-VLAS-BEND1",
+      "device": "SOI strip waveguide 90 deg bend",
+      "metric": "bend_loss_per_90deg_dB",
+      "measured_value": 0.086,
+      "uncertainty_abs": 0.005,
+      "fab_source": "200 mm CMOS fabrication line (IBM), SOI",
+      "citation": "Y. A. Vlasov, S. J. McNab, Opt. Express 12(8), 1622-1631 (2004), DOI 10.1364/opex.12.001622",
+      "source_url": "https://doi.org/10.1364/opex.12.001622",
+      "method": "On-chip bend-loss measurement (counting bends of known radius). Abstract verbatim: 'Losses per 90 deg bend are measured to be 0.086+/-0.005 dB for a bending radius of 1 um...'.",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.2,
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.5,
+        "R_um": 1.0
+      },
+      "tags": [
+        "bend",
+        "SOI",
+        "bend_loss",
+        "CMOS_line",
+        "evidence_medium",
+        "geometry_inferred"
+      ],
+      "note": "Same paper as E-SI-VLAS-PL. Value quoted verbatim for R=1 um. Geometry as noted above (inferred)."
+    },
+    {
+      "id": "E-SI-VLAS-BEND2",
+      "device": "SOI strip waveguide 90 deg bend",
+      "metric": "bend_loss_per_90deg_dB",
+      "measured_value": 0.013,
+      "uncertainty_abs": 0.005,
+      "fab_source": "200 mm CMOS fabrication line (IBM), SOI",
+      "citation": "Y. A. Vlasov, S. J. McNab, Opt. Express 12(8), 1622-1631 (2004), DOI 10.1364/opex.12.001622",
+      "source_url": "https://doi.org/10.1364/opex.12.001622",
+      "method": "On-chip bend-loss measurement. Abstract verbatim: '...as low as 0.013+/-0.005 dB for a bend radius of 2 um.'",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.2,
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.5,
+        "R_um": 2.0
+      },
+      "tags": [
+        "bend",
+        "SOI",
+        "bend_loss",
+        "CMOS_line",
+        "evidence_medium",
+        "geometry_inferred"
+      ],
+      "note": "Same paper; value for R=2 um (lowest reported). Geometry inferred as above."
+    },
+    {
+      "id": "E-SI-DUMON-PL",
+      "device": "SOI photonic wire (straight)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 2.4,
+      "uncertainty_abs": 1.6,
+      "fab_source": "248 nm deep-UV lithography + dry etching, SOI",
+      "citation": "P. Dumon, W. Bogaerts, V. Wiaux, J. Wouters, S. Beckx, J. Van Campenhout, D. Taillaert, B. Luyssaert, P. Bienstman, D. Van Thourhout, R. Baets, IEEE Photon. Technol. Lett. 16(5), 1328-1330 (2004), DOI 10.1109/LPT.2004.826025",
+      "source_url": "https://doi.org/10.1109/LPT.2004.826025",
+      "method": "Fabry-Perot cutback on cleaved samples. Authors' text (LEOS 2003 / SPIE 2004 version) verbatim: 'From the Fabry-Perot transmission spectrum we could then extract the total cavity loss... the propagation loss of the photonic wires can be extracted from the slope of the fitted straight line.' The 500 nm-wide wire gave 2.4+/-1.6 dB/cm.",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.55,
+        "box_um": 1.0
+      },
+      "tags": [
+        "straight_waveguide",
+        "SOI",
+        "propagation_loss",
+        "248nm_DUV",
+        "evidence_high"
+      ],
+      "note": "DOI resolved via IEEE/ADS; journal abstract states propagation loss 'as low as 2.4 dB/cm'. Uncertainty 1.6 dB/cm taken from the authors' Fabry-Perot cutback table (2.4+/-1.6 dB/cm for 500 nm wire) in the LEOS 2003 proceedings (SPIE DOI 10.1117/12.548266). h_core=220 nm SOI per the group's standard process."
+    },
+    {
+      "id": "E-SI-SELV-PL",
+      "device": "SOI photonic wire (straight)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 2.7,
+      "uncertainty_abs": 0.3,
+      "fab_source": "193 nm optical lithography + dry etching, SOI",
+      "citation": "S. K. Selvaraja, P. Jaenen, W. Bogaerts, P. Dumon, D. Van Thourhout, R. Baets, J. Lightwave Technol. 27(18), 4076-4083 (2009), DOI 10.1109/JLT.2009.2022282",
+      "source_url": "https://doi.org/10.1109/JLT.2009.2022282",
+      "method": "Cutback / Fabry-Perot on test wires. Abstract verbatim: 'Measurements indicate a propagation loss of 2.7 dB/cm for 500 nm photonic wire...'",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.55,
+        "box_um": 1.0
+      },
+      "tags": [
+        "straight_waveguide",
+        "SOI",
+        "propagation_loss",
+        "193nm_DUV",
+        "evidence_high"
+      ],
+      "note": "DOI resolved via IEEE/ADS; value quoted verbatim. This is the 193 nm DUV process entry. Uncertainty not given in abstract; 0.3 dB/cm is a conservative estimate consistent with similar Fabry-Perot measurements in the same paper. h_core=220 nm."
+    },
+    {
+      "id": "E-SI-GNAN-PL",
+      "device": "SOI photonic wire (straight, fully etched)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.92,
+      "uncertainty_abs": 0.14,
+      "fab_source": "electron-beam lithography (HSQ resist as direct etch mask), SOI",
+      "citation": "M. Gnan, S. Thoms, D. S. Macintyre, R. M. De La Rue, M. Sorel, Electron. Lett. 44(2), 115-116 (2008), DOI 10.1049/el:20082985",
+      "source_url": "https://doi.org/10.1049/el:20082985",
+      "method": "Fabry-Perot / cutback loss measurement on fully etched wires. Abstract verbatim: 'Fully etched photonic wires in silicon-on-insulator have been fabricated and propagation loss values as low as 0.92+/-0.14 dB/cm have been obtained.'",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.55,
+        "box_um": 1.0
+      },
+      "tags": [
+        "straight_waveguide",
+        "SOI",
+        "propagation_loss",
+        "ebeam",
+        "HSQ",
+        "evidence_high"
+      ],
+      "note": "DOI resolved via IET/OpenAIRE; value and +/-0.14 quoted verbatim from abstract. This is the e-beam (HSQ) process entry. h_core=220 nm is the standard SOI used by the Glasgow group; width ~0.5 um typical."
+    },
+    {
+      "id": "E-SI-SELV-BEND",
+      "device": "SOI photonic wire 90 deg bend",
+      "metric": "bend_loss_per_90deg_dB",
+      "measured_value": 0.013,
+      "uncertainty_abs": 0.003,
+      "fab_source": "193 nm optical lithography + dry etching, SOI",
+      "citation": "S. K. Selvaraja et al., J. Lightwave Technol. 27(18), 4076-4083 (2009), DOI 10.1109/JLT.2009.2022282",
+      "source_url": "https://doi.org/10.1109/JLT.2009.2022282",
+      "method": "Bend-loss characterization on test spirals. Abstract verbatim: '...an excess bending loss of 0.013 dB/90 degree bend of 5 um radius.'",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.55,
+        "R_um": 5.0,
+        "box_um": 1.0
+      },
+      "tags": [
+        "bend",
+        "SOI",
+        "bend_loss",
+        "193nm_DUV",
+        "evidence_high"
+      ],
+      "note": "Same 2009 JLT paper as E-SI-SELV-PL; value quoted verbatim for R=5 um. Uncertainty not given; 0.003 dB estimated. h_core=220 nm."
+    },
+    {
+      "id": "E-DC-LUO-XT",
+      "device": "Si-wire directional coupler (tapered, dual-mode)",
+      "metric": "crosstalk_dB",
+      "measured_value": -14.3,
+      "uncertainty_abs": 1.0,
+      "fab_source": "220 nm SOI CMOS-compatible process",
+      "citation": "Y. Luo, Y. Yu, M. Ye, C. Sun, X. Zhang, Sci. Rep. 6, 23516 (2016), DOI 10.1038/srep23516",
+      "source_url": "https://doi.org/10.1038/srep23516",
+      "method": "Optical-spectrum-analyzer spectral measurement of through/cross ports. Abstract verbatim: 'The crosstalks are about -14.3 dB for TM0 mode and -18.1 dB for TM1 mode.'",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.55,
+        "gap_um": 0.2,
+        "L_um": 15.2
+      },
+      "tags": [
+        "directional_coupler",
+        "SOI",
+        "crosstalk",
+        "3dB_coupler",
+        "evidence_high"
+      ],
+      "note": "DOI resolved (Nature Scientific Reports). Value quoted verbatim for TM0. Uncertainty ~1 dB estimated from measurement noise (paper reports -14.3 / -18.1 dB). Device is a tapered directional coupler; coupling length ~15.2 um (abstract). h_core=220 nm per '220-nm-high SOI platform'. gap is representative."
+    },
+    {
+      "id": "E-MMI-ROUI-EL",
+      "device": "SOI 1x2 MMI splitter (wavelength-routed demux)",
+      "metric": "excess_loss_dB",
+      "measured_value": 0.14,
+      "uncertainty_abs": 0.05,
+      "fab_source": "340 nm SOI platform",
+      "citation": "M.-S. Rouifed, C. G. Littlejohns, G. X. Tina, H. Qiu, J. Soler Penades, M. Nedeljkovic, Z. Zhang, C. Liu, D. J. Thomson, G. Z. Mashanovich, G. T. Reed, H. Wang, Opt. Express 25(10), 10893-10900 (2017), DOI 10.1364/oe.25.010893",
+      "source_url": "https://doi.org/10.1364/oe.25.010893",
+      "method": "Spectral (OSA) insertion-loss measurement on a 1x2 MMI. Abstract verbatim: 'It exhibits extremely low insertion losses of 0.14 dB and 1.2 dB at the wavelengths of 1.55 um and 2 um, respectively...'",
+      "geometry": {
+        "w_core_um": 6.0,
+        "h_core_um": 0.34,
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.55,
+        "L_um": 293.0,
+        "box_um": 2.0
+      },
+      "tags": [
+        "MMI",
+        "SOI",
+        "excess_loss",
+        "1x2_splitter",
+        "evidence_high"
+      ],
+      "note": "DOI resolved via Optics Express. Value 0.14 dB is the on-chip excess/insertion loss at 1.55 um (wavelength-routed device, so no 3 dB splitting penalty). Footprint 293x6 um^2, SOI 340 nm (from abstract). Used as the MMI 1x2 entry."
+    },
+    {
+      "id": "E-YBR-LIN-EL",
+      "device": "SOI Y-junction (arbitrary-ratio power splitter)",
+      "metric": "excess_loss_dB",
+      "measured_value": 0.5,
+      "uncertainty_abs": 0.1,
+      "fab_source": "220 nm SOI CMOS-compatible process",
+      "citation": "Z. Lin, W. Shi, Opt. Express 27(10), 14338-14346 (2019), DOI 10.1364/OE.27.014338",
+      "source_url": "https://doi.org/10.1364/OE.27.014338",
+      "method": "Optical-spectrum-analyzer measurement of Y-junction transmission. Abstract verbatim: 'Experimental results achieved using a CMOS-compatible silicon photonics process show an excess loss of lower than 0.5 dB for a splitting ratio varied from 0 to -18 dB across the entire C band.'",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.55,
+        "footprint_um": "1.4x2.3"
+      },
+      "tags": [
+        "Y_branch",
+        "SOI",
+        "excess_loss",
+        "splitter",
+        "evidence_medium",
+        "upper_bound"
+      ],
+      "note": "DOI resolved via Optics Express (open access). Value is an UPPER BOUND ('lower than 0.5 dB'); reported as 0.5 dB. 220 nm SOI, ultra-compact 1.4x2.3 um. Used as the Y-branch entry."
+    },
+    {
+      "id": "E-CR-FUKAZ-IL",
+      "device": "SOI photonic-wire waveguide crossing (elliptical intersection)",
+      "metric": "insertion_loss_dB",
+      "measured_value": 0.1,
+      "uncertainty_abs": 0.05,
+      "fab_source": "SOI (electron-beam lithography + ICP etching)",
+      "citation": "T. Fukazawa, T. Hirano, F. Ohno, T. Baba, Jpn. J. Appl. Phys. 43(2R), 646-647 (2004), DOI 10.1143/JJAP.43.646",
+      "source_url": "https://doi.org/10.1143/JJAP.43.646",
+      "method": "Optical transmission measurement of an elliptical-intersection crossing. Abstract verbatim: 'An insertion loss of less than 0.1 dB was achieved at a wavelength of 1.55 um.'",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.55,
+        "box_um": 1.0
+      },
+      "tags": [
+        "crossing",
+        "SOI",
+        "insertion_loss",
+        "photonic_wire",
+        "evidence_medium",
+        "upper_bound"
+      ],
+      "note": "DOI resolved via JJAP/IOP. Value is an UPPER BOUND ('less than 0.1 dB'); reported as 0.1 dB. Used as the waveguide-crossing insertion-loss entry. Wire width ~0.5 um / h~0.22 um representative of the Baba group's photonic-wire process."
+    },
+    {
+      "id": "E-MM-XU-PL",
+      "device": "SOI multimode rib waveguide (trapezoidal cross-section)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 1.3,
+      "uncertainty_abs": 0.2,
+      "fab_source": "SOI, KOH anisotropic wet etching (smooth trapezoidal sidewalls)",
+      "citation": "J.-S. Xia, J.-Z. Yu, Z.-C. Fan, Z.-T. Wang, S.-W. Chen, Chin. Phys. Lett. 21(1), 104 (2004), DOI 10.1088/0256-307X/21/1/032",
+      "source_url": "https://doi.org/10.1088/0256-307X/21/1/032",
+      "method": "Cutback / spectral loss measurement on KOH-etched rib waveguides (rms roughness 1.49 nm). Abstract verbatim: 'The propagation loss of the waveguide is 1.3 dB/cm at wavelength of 1.55 um.'",
+      "geometry": {
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.55,
+        "cross_section": "trapezoidal SOI rib, KOH-etched (rms roughness 1.49 nm)",
+        "note": "exact rib width/height not stated in abstract"
+      },
+      "tags": [
+        "multimode_waveguide",
+        "SOI",
+        "rib",
+        "propagation_loss",
+        "evidence_high"
+      ],
+      "note": "DOI resolved via IOP/CPI. Value quoted verbatim. This is the multimode (rib) waveguide entry. Exact rib width/height are not given in the abstract; the device is a trapezoidal SOI rib waveguide fabricated by KOH etching (rms roughness 1.49 nm). Geometry values beyond material indices are left generic to avoid fabrication."
+    },
+    {
+      "id": "E-SWG-BOCK-PL",
+      "device": "Subwavelength-grating (SWG) waveguide",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 2.1,
+      "uncertainty_abs": 0.2,
+      "fab_source": "SOI, single etch step (subwavelength grating)",
+      "citation": "P. J. Bock, P. Cheben, J. H. Schmid, J. Lapointe, A. Delage, S. Janz, G. C. Aers, D.-X. Xu, A. Densmore, T. J. Hall, Opt. Express 18(19), 20251-20262 (2010), DOI 10.1364/OE.18.020251",
+      "source_url": "https://doi.org/10.1364/OE.18.020251",
+      "method": "Cutback / Fabry-Perot loss measurement on SWG wires. Abstract verbatim: 'Experimental measurements indicate a propagation loss as low as 2.1 dB/cm for subwavelength grating waveguides with negligible polarization and wavelength dependent loss...'",
+      "geometry": {
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.55,
+        "h_core_um": 0.22,
+        "cross_section": "subwavelength grating (single etch)",
+        "note": "SWG pitch/duty per paper Fig. 2 (~period 300 nm); exact values not in abstract"
+      },
+      "tags": [
+        "SWG",
+        "SOI",
+        "propagation_loss",
+        "subwavelength",
+        "evidence_high"
+      ],
+      "note": "DOI resolved via Optics Express (open access). Value quoted verbatim. This is the subwavelength-grating-waveguide device entry. h_core~220 nm is the standard NRC SWG platform; exact SWG pitch/duty not in abstract."
+    },
+    {
+      "id": "E-SWG-BOCK-NG",
+      "device": "Subwavelength-grating (SWG) waveguide",
+      "metric": "n_g",
+      "measured_value": 1.5,
+      "uncertainty_abs": 0.1,
+      "fab_source": "SOI, single etch step (subwavelength grating)",
+      "citation": "P. J. Bock, P. Cheben, J. H. Schmid, et al., Opt. Express 18(19), 20251-20262 (2010), DOI 10.1364/OE.18.020251",
+      "source_url": "https://doi.org/10.1364/OE.18.020251",
+      "method": "Group index measured via Mach-Zehnder interferometer (SWG MZI). Abstract verbatim: 'The measured group index is nearly constant n_g ~1.5 over a wavelength range exceeding the telecom C-band.'",
+      "geometry": {
+        "n_core": 3.45,
+        "n_clad": 1.45,
+        "wl_um": 1.55,
+        "h_core_um": 0.22,
+        "cross_section": "subwavelength grating (single etch)",
+        "note": "SWG pitch/duty per paper Fig. 2; exact values not in abstract"
+      },
+      "tags": [
+        "SWG",
+        "SOI",
+        "group_index",
+        "subwavelength",
+        "evidence_high"
+      ],
+      "note": "DOI resolved via Optics Express (open access). Value quoted verbatim. Used as the n_g (group index) entry; also serves as the subwavelength-grating-waveguide device entry alongside E-SWG-BOCK-PL."
+    },
+    {
+      "id": "E-GC-ROEL-08",
+      "device": "SOI diffractive grating coupler with directionality-enhancing Si overlay (Ghent/LETI)",
+      "metric": "coupling_efficiency",
+      "measured_value": 0.55,
+      "uncertainty_abs": 0.03,
+      "fab_source": "IMEC/Ghent + CEA-LETI, standard CMOS technology",
+      "citation": "G. Roelkens et al., 'High efficiency diffractive grating couplers for interfacing a single mode optical fiber with a nanophotonic silicon-on-insulator waveguide circuit,' Appl. Phys. Lett. 92, 131101 (2008), DOI 10.1063/1.2905260",
+      "source_url": "https://doi.org/10.1063/1.2905260",
+      "method": "Measured fiber-to-chip coupling. Paper: \"55% coupling efficiency at a wavelength of 1.53μm is experimentally demonstrated on devices fabricated using standard complementary metal-oxide semiconductor technology.\"",
+      "geometry": {
+        "soi_top_um": 0.22,
+        "box_um": 2.0,
+        "feature": "thin crystalline-Si overlay added before grating definition to enhance directionality",
+        "fiber": "standard SMF",
+        "platform": "SOI"
+      },
+      "tags": [
+        "grating_coupler",
+        "SOI",
+        "coupling_efficiency",
+        "silicon_overlay",
+        "evidence_medium"
+      ],
+      "note": "Value 0.55 read directly from paper abstract (experimentally demonstrated). Geometry at platform level (220 nm SOI, 2 um BOX + Si overlay concept); exact grating period/etch not re-fetched from full text."
+    },
+    {
+      "id": "E-GC-VERM-10",
+      "device": "SOI grating coupler with amorphous-Si overlay (Ghent CMOS pilot line)",
+      "metric": "coupling_efficiency",
+      "measured_value": 0.69,
+      "uncertainty_abs": 0.02,
+      "fab_source": "200 mm CMOS pilot line, Ghent/imec",
+      "citation": "D. Vermeulen et al., 'High-efficiency fiber-to-chip grating couplers realized using an advanced CMOS-compatible silicon-on-insulator platform,' Opt. Express 18, 18278-18283 (2010), DOI 10.1364/OE.18.018278",
+      "source_url": "https://doi.org/10.1364/OE.18.018278",
+      "method": "Measured fiber-to-chip coupling. Paper: \"The fabricated fiber couplers show a coupling efficiency of −1.6dB and a 3dB bandwidth of 80nm.\" (0.69 = 10^(−1.6/10), fraction conversion of the directly measured −1.6 dB.)",
+      "geometry": {
+        "soi_top_um": 0.22,
+        "box_um": 2.0,
+        "grating_period_um": 0.69,
+        "etch_um": 0.07,
+        "overlay_um": 0.16,
+        "overlay_material": "amorphous Si",
+        "fiber_angle_deg": 13,
+        "duty_cycle": 0.35,
+        "central_wavelength_nm": 1530
+      },
+      "tags": [
+        "grating_coupler",
+        "SOI",
+        "coupling_efficiency",
+        "amorphous_Si_overlay",
+        "evidence_high"
+      ],
+      "note": "−1.6 dB directly measured; converted to 0.69 fraction. Geometry fully read from paper (period 690 nm, etch 70 nm into crystalline Si, 160 nm a-Si overlay, 13° fiber tilt)."
+    },
+    {
+      "id": "E-GC-VL07-07",
+      "device": "SOI grating coupler with gold bottom mirror (BCB wafer bonding, Ghent/St Andrews)",
+      "metric": "coupling_efficiency",
+      "measured_value": 0.69,
+      "uncertainty_abs": 0.03,
+      "fab_source": "SOI + InP membranes via Benzocyclobutene (BCB) wafer bonding with gold mirror",
+      "citation": "F. Van Laere et al., 'Compact and Highly Efficient Grating Couplers Between Optical Fiber and Nanophotonic Waveguides,' J. Lightwave Technol. 25, 151-156 (2007), DOI 10.1109/JLT.2006.888164",
+      "source_url": "https://doi.org/10.1109/JLT.2006.888164",
+      "method": "Measured fiber-to-chip coupling. Paper: \"The measured coupling efficiency to fiber is 69% for SOI grating couplers and 56% for bonded InP membrane grating couplers.\"",
+      "geometry": {
+        "soi_top_um": 0.22,
+        "box_um": 2.0,
+        "bottom_mirror": "gold mirror via BCB bonding",
+        "fiber": "vertical (normal incidence)",
+        "platform": "SOI"
+      },
+      "tags": [
+        "grating_coupler",
+        "SOI",
+        "coupling_efficiency",
+        "gold_back_mirror",
+        "evidence_medium"
+      ],
+      "note": "SOI value 0.69 (69%) used; distinct structure from E-GC-ROEL-08 / E-GC-VERM-10 (gold back-mirror not overlay). Geometry at platform level (220 nm SOI, gold/BCB mirror)."
+    },
+    {
+      "id": "E-MOD-FENG-10",
+      "device": "SOI carrier-depletion MZM, lateral PN junction, 0.25 um SOI",
+      "metric": "vpi_l_pi_Vcm",
+      "measured_value": 1.4,
+      "uncertainty_abs": 0.1,
+      "fab_source": "0.25 um thick SOI, 3 um buried oxide",
+      "citation": "N.-N. Feng et al., 'High speed carrier-depletion modulators with 1.4V-cm VπL integrated on 0.25μm silicon-on-insulator waveguides,' Opt. Express 18, 7994-7999 (2010), DOI 10.1364/OE.18.007994",
+      "source_url": "https://doi.org/10.1364/OE.18.007994",
+      "method": "DC spectral-shift measurement of π-phase-shift voltage-length product. Paper: \"We demonstrate a very efficient high speed silicon modulator with an ultralow π-phase-shift voltage-length product VπL = 1.4V-cm.\" (1 mm device at 6 V reverse bias; 5 mm device gives 1.3 V-cm.)",
+      "geometry": {
+        "soi_top_um": 0.25,
+        "w_core_um": 0.5,
+        "slab_um": 0.05,
+        "L_um": 1000,
+        "box_um": 3.0,
+        "junction": "lateral PN",
+        "bias_V": 6
+      },
+      "tags": [
+        "MZM",
+        "SOI",
+        "modulator",
+        "carrier_depletion",
+        "vpi_l",
+        "evidence_high"
+      ],
+      "note": "VπL = 1.4 V·cm quoted directly from paper (1 mm device, 6 V). Also reported 1.3 V·cm (5 mm device)."
+    },
+    {
+      "id": "E-MOD-XIAO-13",
+      "device": "SOI carrier-depletion MZM, lateral PN junction, 340 nm SOI (SMIC 0.18 um CMOS photonics)",
+      "metric": "insertion_loss_dB",
+      "measured_value": 1.9,
+      "uncertainty_abs": 0.2,
+      "fab_source": "200 mm SOI, 340 nm top Si, 2 um BOX, SMIC 0.18 um CMOS photonics process",
+      "citation": "X. Xiao et al., 'High-speed, low-loss silicon Mach–Zehnder modulators with doping optimization,' Opt. Express 21, 4116-4127 (2013), DOI 10.1364/OE.21.004116",
+      "source_url": "https://doi.org/10.1364/OE.21.004116",
+      "method": "Insertion loss from normalized transmission spectra. Paper: \"By normalizing the recorded optical spectra to a pair of reference grating couplers that are the same as those used in the modulators, a DC insertion loss of 1.9 dB is obtained as shown in Fig. 4(a).\"",
+      "geometry": {
+        "soi_top_um": 0.34,
+        "w_core_um": 0.45,
+        "slab_um": 0.08,
+        "L_um": 750,
+        "box_um": 2.0,
+        "junction": "lateral PN",
+        "bias_V": 0
+      },
+      "tags": [
+        "MZM",
+        "SOI",
+        "modulator",
+        "insertion_loss",
+        "evidence_high"
+      ],
+      "note": "On-chip DC insertion loss 1.9 dB (reference-grating normalized). Total IL including modulation-induced loss ~3.5 dB (paper)."
+    },
+    {
+      "id": "E-MRM-ROSE-12",
+      "device": "SOI microring modulator, interleaved p-n junction, racetrack add-drop",
+      "metric": "vpi_l_pi_Vcm",
+      "measured_value": 0.76,
+      "uncertainty_abs": 0.05,
+      "fab_source": "SOI (500 nm wide, 170 nm high waveguide, 50 nm slab)",
+      "citation": "J. C. Rosenberg et al., 'A 25 Gbps silicon microring modulator based on an interleaved junction,' Opt. Express 20, 26411-26423 (2012), DOI 10.1364/OE.20.026411",
+      "source_url": "https://doi.org/10.1364/OE.20.026411",
+      "method": "Electro-optic figure-of-merit (FOM) = VπL from resonance shift. Paper: \"A silicon microring modulator utilizing an interleaved p-n junction phase shifter with a VπL of 0.76 V-cm and a minimum off-resonance insertion loss of less than 0.2 dB is demonstrated.\"",
+      "geometry": {
+        "circumference_um": 301,
+        "phase_shifter_L_um": 250,
+        "gap_nm": 250,
+        "w_core_um": 0.5,
+        "h_core_um": 0.17,
+        "slab_um": 0.05,
+        "junction": "interleaved p-n",
+        "bias_range_V": "0 to -1"
+      },
+      "tags": [
+        "microring_modulator",
+        "SOI",
+        "modulator",
+        "vpi_l",
+        "resonant",
+        "evidence_high"
+      ],
+      "note": "VπL = 0.76 V·cm quoted directly (0 to −1 V swing; 0.84 at 2 V, ~0.64 in low-bias limit)."
+    },
+    {
+      "id": "E-PD-VIVI-09",
+      "device": "Ge-on-SOI waveguide PIN photodetector, butt-coupled, 15 um Ge (Paris-Sud/LETI)",
+      "metric": "responsivity_A_per_W",
+      "measured_value": 1.0,
+      "uncertainty_abs": 0.05,
+      "fab_source": "Ge epitaxially integrated on SOI rib waveguide (CMOS compatible)",
+      "citation": "L. Vivien et al., '42 GHz pin Germanium photodetector integrated in a silicon-on-insulator waveguide,' Opt. Express 17, 6252-6257 (2009), DOI 10.1364/OE.17.006252",
+      "source_url": "https://doi.org/10.1364/OE.17.006252",
+      "method": "Measured photocurrent vs optical power. Paper: \"A -3 dB bandwidth of 42 GHz has been measured at a 4V reverse bias with a responsivity as high as 1 A/W at the wavelength of 1.55 μm and a low dark current density of 60 mA/cm2.\"",
+      "geometry": {
+        "ge_L_um": 15,
+        "ge_mesa_w_um": 3,
+        "w_core_um": 0.66,
+        "h_core_um": 0.38,
+        "etch_um": 0.11,
+        "rib_waveguide": true,
+        "bias_V": -4,
+        "wavelength_um": 1.55
+      },
+      "tags": [
+        "photodetector",
+        "Ge",
+        "SOI",
+        "responsivity",
+        "waveguide_PD",
+        "evidence_high"
+      ],
+      "note": "Responsivity 1 A/W at 1.55 um, -4 V (external QE ~80%). Directly measured."
+    },
+    {
+      "id": "E-PD-CASS-09",
+      "device": "Surface-illuminated Ge-on-Si photodetector (Paris-Sud/LETI)",
+      "metric": "bandwidth_GHz",
+      "measured_value": 49,
+      "uncertainty_abs": 2,
+      "fab_source": "Ge-on-Si, C and L band",
+      "citation": "J. Osmond, L. Vivien et al., '40 Gb/s surface-illuminated Ge-on-Si photodetectors,' Appl. Phys. Lett. 95, 151116 (2009), DOI 10.1063/1.3243694",
+      "source_url": "https://doi.org/10.1063/1.3243694",
+      "method": "Measured RF/optical −3 dB cut-off from S21. Paper: \"The measured −3 dB cut-off frequency is as high as 49 GHz under a reverse bias of 5 V at a wavelength of 1.5 μm.\"",
+      "geometry": {
+        "ge_mesa_diam_um": "10-25",
+        "bias_V": -5,
+        "wavelength_um": 1.5
+      },
+      "tags": [
+        "photodetector",
+        "Ge",
+        "bandwidth",
+        "surface_illuminated",
+        "evidence_high"
+      ],
+      "note": "−3 dB BW 49 GHz at -5 V, 1.5 um. Distinct device (surface-illuminated) from E-PD-VIVI-09 waveguide PD."
+    },
+    {
+      "id": "E-PD-DERO-11",
+      "device": "Ge-on-SOI waveguide photodiode, 1.3 x 4 um^2 (Sandia CMOS-compatible)",
+      "metric": "dark_current_nA",
+      "measured_value": 3,
+      "uncertainty_abs": 0.5,
+      "fab_source": "Sandia CMOS-compatible silicon photonics process",
+      "citation": "C. T. DeRose et al., 'Ultra compact 45 GHz CMOS compatible Germanium waveguide photodiode with low dark current,' Opt. Express 19, 24897-24904 (2011), DOI 10.1364/OE.19.024897",
+      "source_url": "https://doi.org/10.1364/OE.19.024897",
+      "method": "Measured dark current under reverse bias. Paper abstract: \"This photodiode has a best-in-class 3 dB cutoff frequency of 45 GHz, responsivity of 0.8 A/W and dark current of 3 nA.\"",
+      "geometry": {
+        "ge_L_um": 4,
+        "ge_w_um": 1.3,
+        "bias_V": -1,
+        "wavelength_um": 1.55
+      },
+      "tags": [
+        "photodetector",
+        "Ge",
+        "dark_current",
+        "waveguide_PD",
+        "evidence_high"
+      ],
+      "note": "Dark current 3 nA read from paper abstract (directly measured). 45 GHz BW / 0.8 A/W also reported."
+    },
+    {
+      "id": "E-PD-CHEN-16",
+      "device": "Si-contacted lateral Ge PIN waveguide photodetector (IMEC)",
+      "metric": "bandwidth_GHz",
+      "measured_value": 67,
+      "uncertainty_abs": 2,
+      "fab_source": "IMEC Si photonics platform, 160 nm thin Ge, poly-Si taper",
+      "citation": "H. Chen et al., '-1 V bias 67 GHz bandwidth Si-contacted germanium waveguide p-i-n photodetector for optical links at 56 Gbps and beyond,' Opt. Express 24, 4622-4631 (2016), DOI 10.1364/OE.24.004622",
+      "source_url": "https://doi.org/10.1364/OE.24.004622",
+      "method": "Measured opto-electrical 3-dB bandwidth via S21. Paper: \"We demonstrate a 67 GHz bandwidth silicon-contacted germanium waveguide p-i-n photodetector operating at −1 V with 6.8 fF capacitance.\"",
+      "geometry": {
+        "ge_thk_um": 0.16,
+        "ge_w_um": 0.5,
+        "ge_L_um": 14.2,
+        "si_wg_thk_um": 0.22,
+        "si_wg_w_um": 0.45,
+        "polySi_taper_um": 0.12,
+        "Cj_fF": 6.8,
+        "bias_V": -1
+      },
+      "tags": [
+        "photodetector",
+        "Ge",
+        "bandwidth",
+        "lateral_PIN",
+        "high_speed",
+        "evidence_high"
+      ],
+      "note": "67 GHz at -1 V (1550 nm). Dark current <4 nA, responsivity 0.74 (1550 nm)/0.93 (1310 nm) A/W also reported."
+    },
+    {
+      "id": "E-PD-FLEM-24",
+      "device": "Surface-normal pseudo-planar Ge-on-Si avalanche photodiode (APD)",
+      "metric": "responsivity_A_per_W",
+      "measured_value": 0.41,
+      "uncertainty_abs": 0.02,
+      "fab_source": "Ge absorber on Si multiplication region, pseudo-planar vertical structure",
+      "citation": "F. Fleming et al., 'Surface-normal illuminated pseudo-planar Ge-on-Si avalanche photodetectors with high gain and low noise,' Opt. Express 32, 19449-19457 (2024), DOI 10.1364/OE.521417",
+      "source_url": "https://doi.org/10.1364/OE.521417",
+      "method": "Measured photocurrent at 1550 nm. Paper: \"At a wavelength of 1550 nm, 50 µm diameter devices show a responsivity of 0.41 A/W at unity gain, a maximum avalanche gain of 101 and an excess noise factor of 3.1 at a gain of 20.\"",
+      "geometry": {
+        "device_diam_um": 50,
+        "ge_absorber_um": 2.0,
+        "si_mult_um": 1.4,
+        "bias": "unity gain",
+        "wavelength_um": 1.55
+      },
+      "tags": [
+        "photodetector",
+        "Ge",
+        "APD",
+        "responsivity",
+        "avalanche_gain",
+        "evidence_high"
+      ],
+      "note": "APD; 0.41 A/W is responsivity at unity gain (max avalanche gain 101). Distinct from PIN detectors."
+    },
+    {
+      "id": "E-RING-NIJE-24",
+      "device": "SOI adiabatic microring resonator, LOCOS process, high-Q (Hebrew Univ.)",
+      "metric": "intrinsic_Q",
+      "measured_value": 2000000.0,
+      "uncertainty_abs": 200000.0,
+      "fab_source": "SOI 220 nm top Si, 2 um BOX, LOCOS (no RIE) waveguide definition",
+      "citation": "J. Nijem et al., 'High-Q and high finesse silicon microring resonator,' Opt. Express 32, 7896-7906 (2024), DOI 10.1364/OE.514080",
+      "source_url": "https://doi.org/10.1364/OE.514080",
+      "method": "Measured transmission fit for intrinsic Q. Paper: \"an ultrahigh intrinsic Q-factor of ∼2 million with a free spectral range (FSR) of 2 nm was achieved, giving rise to a finesse of ∼1100.\"",
+      "geometry": {
+        "R_outer_um": 50,
+        "wg_w_mask_um": 0.9,
+        "wg_top_um": 0.7,
+        "wg_bottom_um": 1.3,
+        "soi_top_um": 0.22,
+        "box_um": 2.0,
+        "process": "LOCOS",
+        "FSR_nm": 2.0
+      },
+      "tags": [
+        "microring",
+        "SOI",
+        "Q_factor",
+        "resonator",
+        "high_Q",
+        "evidence_high"
+      ],
+      "note": "Intrinsic Q ~2e6 directly quoted. FSR 2 nm also measured (placed in geometry)."
+    },
+    {
+      "id": "E-RING-HAN-24",
+      "device": "SOI free-form (Bezier) microring resonator, ultrahigh-Q (CAS/IOE)",
+      "metric": "FSR_nm",
+      "measured_value": 1.0,
+      "uncertainty_abs": 0.1,
+      "fab_source": "Standard foundry SOI, 220 nm top Si, 2 um BOX, full-etch strip waveguide",
+      "citation": "Z. Han et al., 'Design of ultrahigh-Q silicon microring resonators based on free-form curves,' Opt. Express 32, 9553-9561 (2024), DOI 10.1364/OE.515506",
+      "source_url": "https://doi.org/10.1364/OE.515506",
+      "method": "Measured transmission for FSR/loaded-Q. Paper: \"The MRR was manufactured using a standard process provided by foundry and measured to have an ultrahigh loaded Q factor of 1.86 × 10^6 and a FSR of about 1 nm.\"",
+      "geometry": {
+        "R_eff_um": 20,
+        "wg_h_um": 0.22,
+        "w_center_um": 0.45,
+        "w_end_um": 1.6,
+        "gap_um": 0.41,
+        "box_um": 2.0,
+        "loaded_Q": 1860000.0
+      },
+      "tags": [
+        "microring",
+        "SOI",
+        "FSR",
+        "resonator",
+        "free_form",
+        "evidence_high"
+      ],
+      "note": "FSR ~1 nm directly quoted (effective radius 20 um, compact). Loaded Q 1.86e6 also measured (in geometry)."
+    },
+    {
+      "id": "E-Q-TA-T1",
+      "device": "Ta transmon qubit (2D planar, Device 18)",
+      "metric": "T1_us",
+      "measured_value": 360.0,
+      "uncertainty_abs": 10.0,
+      "fab_source": "Sputtered tantalum (single-crystal α-Ta) on c-plane sapphire; thin Al wiring layer (Device 18 has a thinner Al layer); e-beam lithography + wet etch + piranha clean",
+      "citation": "A. P. M. Place et al., 'New material platform for superconducting transmon qubits with coherence times exceeding 0.3 milliseconds', Nat. Commun. 12, 1779 (2021). DOI 10.1038/s41467-021-22030-5",
+      "source_url": "https://doi.org/10.1038/s41467-021-22030-5",
+      "method": "Time-domain energy-relaxation: \"To determine T1, we excite the qubit with a π-pulse and measure its decay over time\" (Fig. 1c); single-exponential fit gives T1 = 0.36 ± 0.01 ms for the best device (Device 18).",
+      "geometry": {
+        "material": "Ta",
+        "substrate": "sapphire",
+        "device": "Device 18",
+        "T1_best_us": 360,
+        "T1_avg_all_devices_us": 230,
+        "T1_time_averaged_best_us": 300
+      },
+      "tags": [
+        "transmon",
+        "tantalum",
+        "sapphire",
+        "T1",
+        "superconducting-qubit",
+        "evidence_high"
+      ],
+      "note": "Directly measured T1 of best device = 0.36 ± 0.01 ms (Fig. 1c), extracted from full-text PDF. Average T1 across all 17 devices = 0.23 ms; time-averaged T1 of best device exceeds 0.3 ms. High confidence."
+    },
+    {
+      "id": "E-Q-ALSI-T1",
+      "device": "Al planar transmon on Si (thick Al wiring)",
+      "metric": "T1_us",
+      "measured_value": 270.0,
+      "uncertainty_abs": 83.0,
+      "fab_source": "Al wiring layer 300 nm (and 500 nm studied) on high-resistivity Si; e-beam lithography; planar transmon (Xmon-like) with λ/4 CPW readout resonator",
+      "citation": "Mitigation of interfacial dielectric loss in aluminum-on-silicon superconducting qubits, npj Quantum Inf. 10, 26 (2024). DOI 10.1038/s41534-024-00868-z",
+      "source_url": "https://doi.org/10.1038/s41534-024-00868-z",
+      "method": "Standard time-domain T1 (energy-relaxation) measurement. Best qubit: time-averaged T1 = 270 μs ± 83 μs (±1σ), highest observed 501 μs. Qubit frequencies 2.8–5.0 GHz; readout resonators 6.0–6.8 GHz.",
+      "geometry": {
+        "material": "Al",
+        "substrate": "Si",
+        "Al_thickness_nm": 300,
+        "qubit_freq_range_GHz": [
+          2.8,
+          5.0
+        ],
+        "resonator_freq_range_GHz": [
+          6.0,
+          6.8
+        ]
+      },
+      "tags": [
+        "transmon",
+        "aluminum",
+        "silicon",
+        "T1",
+        "superconducting-qubit",
+        "evidence_high"
+      ],
+      "note": "Best qubit time-averaged T1 = 270 ± 83 μs (±1σ), highest 501 μs, from 40+ measured qubits with 150/300/500 nm Al wiring. Directly reported in text/Fig. 1c of the paper. High confidence."
+    },
+    {
+      "id": "E-Q-NB-T1",
+      "device": "Nb transmon (Ta-encapsulated surface)",
+      "metric": "T1_us",
+      "measured_value": 161.0,
+      "uncertainty_abs": 15.0,
+      "fab_source": "Sputtered Nb film with Ta surface encapsulation (prevents lossy Nb2O5); planar transmon on Si or sapphire; capping is room-temperature compatible",
+      "citation": "M. Bal et al., 'Systematic improvements in transmon qubit coherence enabled by niobium surface encapsulation', npj Quantum Inf. 10, 13 (2024). DOI 10.1038/s41534-024-00840-x",
+      "source_url": "https://doi.org/10.1038/s41534-024-00840-x",
+      "method": "Standard T1: qubit driven from |0> to |1> by a calibrated π-pulse, then read after variable delay and fit to single exponential. For one Nb/Ta device, T1 averaged over 10 h = 161 μs with σ = 15 μs (Fig. 3). A separate Geometry-B device (sapphire) reached median 323 μs, best 586 μs.",
+      "geometry": {
+        "material": "Nb",
+        "encapsulation": "Ta",
+        "substrate": "sapphire/Si",
+        "T1_best_us": 586,
+        "T1_median_us": 323
+      },
+      "tags": [
+        "transmon",
+        "niobium",
+        "tantalum-encapsulated",
+        "T1",
+        "superconducting-qubit",
+        "evidence_high"
+      ],
+      "note": "Quoted average T1 = 161 ± 15 μs (10 h trace) for a Nb/Ta device. Best device T1 = 586 μs (median 323 μs). Substrate of the 161±15 μs device not explicitly labeled in the text (paper uses both Si and sapphire). Value is explicit with σ; confidence high on the number, medium on substrate."
+    },
+    {
+      "id": "E-Q-FLUX-T2",
+      "device": "Fluxonium qubit",
+      "metric": "T2_us",
+      "measured_value": 1480.0,
+      "uncertainty_abs": 130.0,
+      "fab_source": "Al/AlOx Josephson junctions; ~100-junction superinductance array; sapphire substrate; housed in 3D copper cavity (7.54 GHz, Q=377) for dispersive readout",
+      "citation": "A. Somoroff et al., 'Millisecond Coherence in a Superconducting Qubit', Phys. Rev. Lett. 130, 267001 (2023). DOI 10.1103/PhysRevLett.130.267001 (arXiv:2103.08578)",
+      "source_url": "https://doi.org/10.1103/PhysRevLett.130.267001",
+      "method": "Ramsey (two π/2 pulses, no echo): \"The coherence time T2* is obtained from the Ramsey sequence of two π/2-pulses separated by a variable time delay... exponentially decaying envelope\". Highest recorded T2* = 1.48 ± 0.13 ms.",
+      "geometry": {
+        "material": "Al",
+        "substrate": "sapphire",
+        "n_junctions": 100,
+        "qubit_freq_MHz": 163,
+        "readout_cavity_GHz": 7.54,
+        "cavity_Q": 377
+      },
+      "tags": [
+        "fluxonium",
+        "sapphire",
+        "T2",
+        "superconducting-qubit",
+        "coherence",
+        "evidence_high"
+      ],
+      "note": "T2* (Ramsey, no echo) = 1.48 ± 0.13 ms for the highest recorded coherence; 12-h averaged T2* = 1.16 ± 0.05 ms. Average single-qubit gate fidelity 0.99991. Directly measured. High confidence."
+    },
+    {
+      "id": "E-Q-READ-FID",
+      "device": "Transmon qubit dispersive readout",
+      "metric": "readout_fidelity",
+      "measured_value": 0.995,
+      "uncertainty_abs": 0.005,
+      "fab_source": "Al transmon (planar) with λ/4 readout resonator; frequency-multiplexed single-shot readout; no quantum-limited amplifier",
+      "citation": "L. Chen et al., 'Transmon qubit readout fidelity at the threshold for quantum error correction without a quantum-limited amplifier', npj Quantum Inf. 9, 26 (2023). DOI 10.1038/s41534-023-00689-6",
+      "source_url": "https://doi.org/10.1038/s41534-023-00689-6",
+      "method": "Single-shot frequency-multiplexed readout, 140 ns readout time, using a shelving technique + two-tone excitation + machine-learning post-processing. Assignment fidelity 99.5% (two-state), 96.9% (three-state).",
+      "geometry": {
+        "material": "Al",
+        "readout_time_ns": 140,
+        "multiplexed": true,
+        "quantum_limited_amplifier": false
+      },
+      "tags": [
+        "transmon",
+        "readout",
+        "fidelity",
+        "superconducting-qubit",
+        "evidence_high"
+      ],
+      "note": "Two-state assignment (readout) fidelity = 99.5% (0.995), three-state = 96.9%, achieved without a quantum-limited amplifier. Directly measured via single-shot readout. High confidence."
+    },
+    {
+      "id": "E-Q-ALSOI-FREQ",
+      "device": "Al transmon on SOI (Xmon with SQUID)",
+      "metric": "qubit_freq_GHz",
+      "measured_value": 5.652,
+      "uncertainty_abs": 0.001,
+      "fab_source": "Al Josephson junction + SQUID loop on silicon-on-insulator; anhydrous HF vapor etch removes buried oxide; λ/4 CPW readout resonator; planar Xmon",
+      "citation": "A. J. Keller et al., 'Al transmon qubits on silicon-on-insulator for quantum device integration', Appl. Phys. Lett. 111, 042603 (2017). DOI 10.1063/1.4994661",
+      "source_url": "https://doi.org/10.1063/1.4994661",
+      "method": "Circuit-QED dispersive spectroscopy: fq = ωq/2π = 5.652 GHz measured via a 7.143 GHz resonator (dispersive shift χ/2π = 3.5 MHz, anharmonicity η/2π = −300 MHz).",
+      "geometry": {
+        "material": "Al",
+        "substrate": "SOI",
+        "qubit_freq_GHz": 5.652,
+        "anharmonicity_MHz": -300,
+        "resonator_freq_GHz": 7.143,
+        "dispersive_shift_MHz": 3.5,
+        "EJ_over_h_GHz": 14.8
+      },
+      "tags": [
+        "transmon",
+        "aluminum",
+        "SOI",
+        "qubit-frequency",
+        "superconducting-qubit",
+        "evidence_high"
+      ],
+      "note": "Measured qubit transition frequency fq = 5.652 GHz (same device has T1 = 3.5 μs, T2* = 2.2 μs). Directly measured via dispersive spectroscopy. High confidence."
+    },
+    {
+      "id": "E-Q-ALSOI-G",
+      "device": "Al transmon on SOI (qubit–resonator coupling)",
+      "metric": "g_MHz",
+      "measured_value": 177.0,
+      "uncertainty_abs": 5.0,
+      "fab_source": "Same Al/SOI Xmon + λ/4 CPW resonator as E-Q-ALSOI-FREQ",
+      "citation": "A. J. Keller et al., Appl. Phys. Lett. 111, 042603 (2017). DOI 10.1063/1.4994661",
+      "source_url": "https://doi.org/10.1063/1.4994661",
+      "method": "Vacuum qubit–resonator coupling extracted from the dispersive shift: g ≈ −Δχ(1+Δ/η), with Δ = ωq−ωr; gives g/2π = 177 MHz.",
+      "geometry": {
+        "material": "Al",
+        "substrate": "SOI",
+        "g_over_2pi_MHz": 177,
+        "qubit_freq_GHz": 5.652,
+        "resonator_freq_GHz": 7.143,
+        "anharmonicity_MHz": -300
+      },
+      "tags": [
+        "transmon",
+        "aluminum",
+        "SOI",
+        "coupling",
+        "g",
+        "superconducting-qubit",
+        "evidence_high"
+      ],
+      "note": "Vacuum Rabi coupling g/2π = 177 MHz, derived from the measured dispersive shift (χ/2π = 3.5 MHz) and anharmonicity. Directly computed from measured circuit parameters. High confidence."
+    },
+    {
+      "id": "E-SC-QINT",
+      "device": "Superconducting Nb CPW resonator on suspended SiN membrane",
+      "metric": "resonator_Q",
+      "measured_value": 80000.0,
+      "uncertainty_abs": 20000.0,
+      "fab_source": "Nb (~125 nm) CPW resonators etched on a ~110 nm SiN layer on high-resistivity Si; bulk Si underneath etched away to form a suspended membrane (aspect ratio ~7.4×10^3). Al used only for airbridges.",
+      "citation": "T. Chistolini et al., 'Performance of Superconducting Resonators Suspended on SiN Membranes', Appl. Phys. Lett. 125, 204001 (2024). DOI 10.1063/5.0222680 (arXiv:2405.01784)",
+      "source_url": "https://doi.org/10.1063/5.0222680",
+      "method": "Internal quality factor from transmission fit: Qi = δ_i(n̄=1, T=100 mK)^{-1}. Membrane resonators had median Qi = 0.8×10^5 at single-photon power (on-substrate median 1.2×10^5).",
+      "geometry": {
+        "material": "Nb",
+        "SiN_thickness_nm": 110,
+        "substrate": "Si (etched away)",
+        "suspended": true,
+        "resonator_type": "CPW"
+      },
+      "tags": [
+        "superconducting-resonator",
+        "niobium",
+        "SiN-membrane",
+        "intrinsic-Q",
+        "CPW",
+        "evidence_high"
+      ],
+      "note": "Single-photon internal Q (median) = 8.0×10^4 for suspended-membrane resonators, 1.2×10^5 for on-substrate (same chip). Directly measured at 100 mK. Paper reports medians, not error bars; uncertainty set to ~25% as a reasonable magnitude. High confidence on value order."
+    },
+    {
+      "id": "E-SIN-RQ",
+      "device": "Si3N4 microring resonator (high confinement)",
+      "metric": "intrinsic_Q",
+      "measured_value": 3000000.0,
+      "uncertainty_abs": 300000.0,
+      "fab_source": "LPCVD Si3N4, 644 nm tall × 900 nm wide ring waveguide on SiO2; ring radii ~20 µm; telecom C-band",
+      "citation": "A. Gondarenko, M. Lipson et al., 'High confinement micron-scale silicon nitride high Q ring resonator', Opt. Express 17, 11366 (2009). DOI 10.1364/OE.17.011366",
+      "source_url": "https://doi.org/10.1364/OE.17.011366",
+      "method": "From resonant transmission: coupled Q = 244,000 with 70% on-resonance transmission → intrinsic Q = 3,000,000 and intrinsic attenuation 0.12 dB/cm. Scattering <0.065 dB/cm, absorption <0.055 dB/cm (Borselli method from resonance shift vs dropped power).",
+      "geometry": {
+        "material": "Si3N4",
+        "R_um": 20,
+        "film_thickness_nm": 644,
+        "w_core_nm": 900,
+        "wl_um": 1.55
+      },
+      "tags": [
+        "SiN",
+        "microring",
+        "intrinsic-Q",
+        "optical-resonator",
+        "evidence_high"
+      ],
+      "note": "Directly measured intrinsic Q = 3×10^6 (telecom C-band) from ring transmission fit; one ring showed up to 5.4×10^6. No formal error bar; uncertainty set to ~10% magnitude. High confidence."
+    },
+    {
+      "id": "E-SIN-FSR",
+      "device": "Si3N4 microring resonator (LPCVD)",
+      "metric": "FSR_nm",
+      "measured_value": 1.2,
+      "uncertainty_abs": 0.05,
+      "fab_source": "LPCVD (and PECVD) SiN microring, R = 80 µm, waveguide width 700 nm, coupling gap 400 nm; measured at 852 nm",
+      "citation": "J. W. Hinum-Wagner et al., 'Simulation-guided optimization of CMOS-compatible silicon nitride micro-ring resonators: design, fabrication, and wafer-level evaluation', Opt. Mater. Express 15, 2145 (2025). DOI 10.1364/ome.563484",
+      "source_url": "https://doi.org/10.1364/ome.563484",
+      "method": "Wafer-level optical characterization of microring transmission; best devices reached intrinsic Q = 4.2×10^5 and a free spectral range of 1.2 nm at 852 nm (Fig. 9, LPCVD-1 wafer, R=80 µm, W=700 nm, gap=400 nm).",
+      "geometry": {
+        "material": "Si3N4",
+        "R_um": 80,
+        "w_core_nm": 700,
+        "coupling_gap_nm": 400,
+        "wl_nm": 852,
+        "deposition": "LPCVD"
+      },
+      "tags": [
+        "SiN",
+        "microring",
+        "FSR",
+        "optical-resonator",
+        "evidence_high"
+      ],
+      "note": "Directly measured FSR = 1.2 nm at 852 nm (ring R=80 µm, W=700 nm). Intrinsic Q = 4.2×10^5. No formal error bar; uncertainty set to ~0.05 nm. High confidence."
+    },
+    {
+      "id": "E-SIN-PL-300",
+      "device": "Si3N4 strip waveguide (300 nm film)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 1.0,
+      "uncertainty_abs": 0.1,
+      "fab_source": "LPCVD stoichiometric Si3N4, 300 nm thick, 0.6 µm wide strip waveguide on SiO2; cut-back measurement at 940 nm",
+      "citation": "A versatile silicon-silicon nitride photonics platform for enhanced functionalities and applications, Appl. Sci. 9, 255 (2019). DOI 10.3390/app9020255",
+      "source_url": "https://doi.org/10.3390/app9020255",
+      "method": "Cut-back measurement (§2.2): \"1 (1.5) dB/cm at 940 nm for 300-nm-thick Si3N4 (SiNx respectively)\" — i.e., 1 dB/cm for LPCVD Si3N4 and 1.5 dB/cm for PECVD SiNx, both at 940 nm (Table 1).",
+      "geometry": {
+        "material": "Si3N4",
+        "film_thickness_um": 0.3,
+        "w_core_um": 0.6,
+        "wl_nm": 940,
+        "deposition": "LPCVD"
+      },
+      "tags": [
+        "SiN",
+        "waveguide",
+        "propagation-loss",
+        "300nm",
+        "evidence_high"
+      ],
+      "note": "Directly measured cut-back propagation loss = 1.0 dB/cm for 300 nm-thick LPCVD Si3N4 at 940 nm (PECVD SiNx counterpart 1.5 dB/cm). No formal error bar; uncertainty set to ~0.1 dB/cm. High confidence."
+    },
+    {
+      "id": "E-SIN-PL-1200",
+      "device": "Si3N4 waveguide on sapphire (SiNOS), ~1.35 µm thick",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.3,
+      "uncertainty_abs": 0.01,
+      "fab_source": "LPCVD stoichiometric Si3N4, up to 1350 nm thick, width 2.2–2.7 µm, single LPCVD step on sapphire (SiNOS)",
+      "citation": "S. Martinussen et al., 'Thick waveguides of low-stress stoichiometric silicon nitride on sapphire (SiNOS)', Opt. Express 32, 36835 (2024). DOI 10.1364/oe.536578",
+      "source_url": "https://doi.org/10.1364/oe.536578",
+      "method": "Optical characterization of proof-of-concept waveguides: propagation loss = 0.30 ± 0.01 dB/cm at 1600 nm.",
+      "geometry": {
+        "material": "Si3N4",
+        "film_thickness_um": 1.35,
+        "w_core_um": [
+          2.2,
+          2.7
+        ],
+        "substrate": "sapphire",
+        "wl_nm": 1600,
+        "deposition": "LPCVD"
+      },
+      "tags": [
+        "SiN",
+        "waveguide",
+        "propagation-loss",
+        "thick-film",
+        "sapphire",
+        "evidence_high"
+      ],
+      "note": "Directly measured propagation loss = 0.30 ± 0.01 dB/cm at 1600 nm for ~1.35 µm-thick LPCVD Si3N4 on sapphire. This is the closest directly-measured value to the requested ~1.2 µm thick-SiN class. High confidence."
+    },
+    {
+      "id": "E-SIN-GC",
+      "device": "Si3N4 grating coupler with bottom DBR",
+      "metric": "coupling_eff",
+      "measured_value": 0.56,
+      "uncertainty_abs": 0.03,
+      "fab_source": "Si3N4 grating coupler with distributed Bragg reflector (DBR) bottom mirror; designed at 1490 nm; CMOS-compatible",
+      "citation": "H. Zhang et al., 'Efficient silicon nitride grating coupler with distributed Bragg reflectors', Opt. Express 22, 21800 (2014). DOI 10.1364/OE.22.021800",
+      "source_url": "https://doi.org/10.1364/OE.22.021800",
+      "method": "Fabricated and characterized grating coupler; peak coupling efficiency ≈ −2.5 dB (i.e., 10^(−2.5/10) ≈ 0.56), with 1-dB bandwidth 53 nm.",
+      "geometry": {
+        "material": "Si3N4",
+        "wl_nm": 1490,
+        "bottom_mirror": "DBR",
+        "peak_loss_dB": -2.5,
+        "bandwidth_1dB_nm": 53
+      },
+      "tags": [
+        "SiN",
+        "grating-coupler",
+        "coupling-efficiency",
+        "fiber-chip",
+        "evidence_high"
+      ],
+      "note": "Peak fiber-chip coupling efficiency ≈ 0.56 (i.e. −2.5 dB) at 1490 nm with a DBR mirror; 1-dB bandwidth 53 nm. Directly measured. Efficiency reported as fraction = 10^(loss_dB/10). High confidence."
     }
   ],
   "adversarial": [

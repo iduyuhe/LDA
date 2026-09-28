@@ -304,7 +304,7 @@ docs/                    ir_spec.md + ir_schema.json（L0 开放标准）· desi
 ```bash
 # ⓪ 一键复现（T-7 · 外部人验货首选，~30s：环境自检 + 版本核对 + 48 锚三分类 + 计数门禁）
 python lda/quickverify.py
-#    加 --full 追加全量 CI core 208 条回归（~40min）；--json out.json 出机器可读摘要
+#    加 --full 追加全量 CI core 209 条回归（~40min）；--json out.json 出机器可读摘要
 
 # ① 设计→验证闭环（4 器件：WG/Bragg/Transmon/Ring）
 python lda/run_design_demo.py
@@ -347,7 +347,7 @@ python lda/lda_webui/deploy.py start --port 8787
 
 | 入口 | 命令 | 用途 | 口径 |
 |---|---|---|---|
-| **主入口（权威）** | `python lda/run_ci_regression.py --tag core` | 全量 CI core **208** 条 smoke 回归 | CI / 发布验收 |
+| **主入口（权威）** | `python lda/run_ci_regression.py --tag core` | 全量 CI core **209** 条 smoke 回归 | CI / 发布验收 |
 | **次入口（开发快循环）** | `pytest` | 收集 20 条**契约/口径**用例（不跑 smoke） | 本地开发 |
 | 次入口 · smoke 映射档 | `pytest -m smoke` | 把 CI smoke 逐条映射为 pytest 用例 | 抽查 |
 
@@ -431,7 +431,15 @@ goal 本身有问题（缺文件/非法 JSON/器件无法由目标解出）为 2
 ```
 红线：CLI 不做任何判决，仅对既有引擎 / layout / harness 的真实计算结果做格式化呈现（LLM 不进路径，死标量判决不变）。`lda check --gds` 主权 DRC 仅覆盖几何维度**子集**（最小线宽/间距/面积），诚实标注非晶圆厂官方 DRC deck 全量。
 
-## 当前账本：CI 机器断言守护（动态，FAIL=0 即绿）· **CI core 208 条**
+## 当前账本：CI 机器断言守护（动态，FAIL=0 即绿）· **CI core 209 条**
+
+> ⏳ **施工中（未发布）**：新增第 209 条 smoke `run_dmm_scorecard_smoke.py`（P6+）——
+> 把规划 `LDA_internal_design_plan_2026-09-23.md` 的 **DMM 设计能力成熟度打分表**从「文档文字」
+> 变为**常驻判据**：级别由 `lda/lda_harness/dmm_scorecard.py` **从事实推导**（模块存在 / 入口符号 /
+> 门禁登记 / 反向证据 / 证据门禁 / G4 硬开 / 单命令链 / 准入表），当前 **25 能力 · D3 22 · D4 3**，
+> ⇒ **M2「D4 ≥3」由机器判达**。生成 `docs/design_maturity_model.md`（文档 ≡ 重新生成，手改必红）。
+> 突变探针 `scripts/dmm_probe.py` **9/9 会响**。本条已进 `CORE_SMOKES`；顶行仍记 v0.9.139 发布时的
+> 208，属**发布历史**，将于下一版发布时另行抬头。
 
 > 📌 **P6 四件已于 v0.9.139 发布**（T6.1 光域 Pareto / T6.2 K 提升 / T6.3 瓦片档位化 / T6.4 EIC 行为级 + B452 锚）—— 逐项实测数字、诚实边界与两处「如实登记不利事实」见本轮版本行与 `CHANGELOG.md` v0.9.139 节。
 

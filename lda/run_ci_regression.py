@@ -1089,6 +1089,18 @@ CORE_SMOKES: List[str] = [
     # 突变探针 `scripts/t63_probe.py` **12/12 会响**（含 M8 天花板不复算、M9 指纹退化）。
     # 实测耗时 ~1s ⇒ 不进 `_BUILTIN_TIMEOUT_OVERRIDE`。
     "run_mesh_tiling_smoke.py",
+    #
+    # ---- P6+ · DMM 设计能力成熟度打分表（v0.9.140 · 把规划 M2 闸门机器化）----
+    # 判据 A–H：表完整性 · **逐行事实核验**（模块/入口符号/门禁登记/反向证据/证据门禁）·
+    #   级别自洽（audit 零违规）· D4 三要素（G4 硬开 · 单命令链 · 准入表内）·
+    #   **反向下调**（伪造准入 kind / 假门禁名 / 假模块名 / 假证据门禁 / 断反向证据 ⇒ 级别必降）·
+    #   合法必过（gate: M2 = D4 ≥3）· 文档同步（`docs/design_maturity_model.md` ≡ 重新生成）·
+    #   红线（scorecard 源码零 LLM 引用、零网络）。
+    # 🔴 本门禁把此前**只存在于规划文字里**的 DMM 打分表变成常驻判据：
+    #   级别由 `lda_harness/dmm_scorecard.py` **从事实推导**（当前 25 能力 · D3 22 · **D4 3**）。
+    # 突变探针 `scripts/dmm_probe.py` **9/9 会响**（含 M7 去掉事实门控 ⇒ 审计必红）。
+    # 实测耗时 ~0.6s（只读文件 + 无重依赖）⇒ 不进 `_BUILTIN_TIMEOUT_OVERRIDE`。
+    "run_dmm_scorecard_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

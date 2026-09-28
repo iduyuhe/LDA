@@ -174,6 +174,17 @@ def device_geom_of(c, placement, wg_width) -> List[Geom]:
     if c.kind == "GratingCoupler":
         L = float(params.get("L", 10.0))
         return [("P", lib, wg_width, ((ox, oy), (ox, oy + L)))]
+    if c.kind == "PhaseShifter":
+        # v0.9.141（G4/M4）：相移器端口锚点是 in=(0,0) / out=(L,0)（**左端对齐**，
+        # 见 placement.port_anchor），而基元几何以 x=0 **居中** ⇒ 导出前按
+        # bbox 左边界平移，使「画的几何」与「端口锚点表」同源。否则版图与
+        # 端口差 L/2，布线端点/LVS 锚点表会与几何错位（正是 G4 要防的失配）。
+        local: List[Geom] = []
+        for d in gds_export.geometry_desc(c.kind, params):
+            local.extend(_desc_geoms(d, 0.0, 0.0))
+        xs = [p[0] for g in local for p in g[3]]
+        dx = min(xs) if xs else 0.0
+        return [_shift_geom(g, ox - dx, oy) for g in local]
     out: List[Geom] = []
     for d in gds_export.geometry_desc(c.kind, params):
         out.extend(_desc_geoms(d, ox, oy))

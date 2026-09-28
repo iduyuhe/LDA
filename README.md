@@ -441,6 +441,17 @@ goal 本身有问题（缺文件/非法 JSON/器件无法由目标解出）为 2
 > 突变探针 `scripts/dmm_probe.py` **9/9 会响**。本条已进 `CORE_SMOKES`；顶行仍记 v0.9.139 发布时的
 > 208，属**发布历史**，将于下一版发布时另行抬头。
 
+> ⏳ **施工中（未发布 · v0.9.141 · M4 几何回提覆盖率 → 14/14 类）**：规划 §4 八指标里唯一的 ❌ 已闭合。
+> 根因不是「测不准」而是 **6 类器件在 `device_geom_of` 里直接 raise（根本没有版图几何）** ⇒ 覆盖由
+> **7 类 / 7 参数 → 14 类 / 44 参数**（新增 `primitives.splitter_descs` / `mmic_descs` / `mzi_descs`
+> + `PhaseShifter`/`MziModulator`/`Photodetector` 接线；`mmi_descs` 顺带补 `n_out > 2` 扇出，
+> `n_out ≤ 2` 逐字节不变）。门禁 `lda/run_lvs_geom_smoke.py` 判据 **20 → 31**，新增
+> `PARAM_TAXONOMY`（参数三档分类，由**几何敏感性**机器复核：`not_encoded` 者改声明几何**逐字节不变**）
+> 与 `class_coverage()`；突变探针 `scripts/g4_probe.py` **13/13 会响**。🔴 原口径「**声明参数**比例 → 100%」
+> **结构性不可达**（声明含 Q/kappa/n_g/phase_rad/target_* 等版图不编码的量）⇒ 判据改为**器件类 + 几何量**
+> 两口径（`class_coverage = 1.0` · `coverage_geometric = 1.0`），11 个非几何量**逐条**登记类别+原因。
+> **CI core 条数不变（209）· 账本不变（470）· 零锚改动**。
+
 > 📌 **P6 四件已于 v0.9.139 发布**（T6.1 光域 Pareto / T6.2 K 提升 / T6.3 瓦片档位化 / T6.4 EIC 行为级 + B452 锚）—— 逐项实测数字、诚实边界与两处「如实登记不利事实」见本轮版本行与 `CHANGELOG.md` v0.9.139 节。
 
 - **22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）**

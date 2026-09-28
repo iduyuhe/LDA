@@ -274,8 +274,13 @@ def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
                                     (x0 + arm * math.cos(half),
                                      -arm * math.sin(half))]})
     # ---- D-71 真实版图基元（foundry-ready；几何交付，电特性归 D-72）----
+    # v0.9.141（G4/M4）：补 Splitter / MMIC / MZI / PhaseShifter /
+    # MziModulator / Photodetector —— 此前这 6 类器件**无任何版图几何**
+    # （`device_geom_of` 直接 raise）⇒ 芯片级导出对含它们的链路直接崩，
+    # 且版图↔原理图尺寸一致性（G4）对这 6 类**结构性无法回提**。
     elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler",
-                  "BraggMirror"):
+                  "BraggMirror", "Splitter", "MMIC", "MZI",
+                  "PhaseShifter", "MziModulator", "Photodetector"):
         from lda_l2.primitives import primitive_descs as _prim
         descs.extend(_prim(kind, params))
     else:

@@ -1,5 +1,75 @@
 # Changelog
 
+## v0.9.141（2026-09-28 · **M4 几何回提覆盖率 → 14/14 类** · 口径更正 + 分类表机器化 · **不加锚** · 账本 470 不变 · CI core 209 不变）
+
+### 背景
+规划 §4 的 **M4「几何回提覆盖率」是八指标里唯一的 ❌**。根因不是"测不准"而是
+**6 类器件在 `device_geom_of` 里直接 raise —— 根本没有版图几何** ⇒ 这 6 类在 G4
+（版图↔原理图尺寸一致）上**结构性缺席**。首发只覆盖 **7 类 / 7 参数**，
+`RingResonator.gap`/`wg_width` 还被登记为「v2 候选（不硬凑）」。
+
+### 交付物
+- **`lda_l2/primitives.py`**：新增 `splitter_descs`（IR `length`/`width` → 基元 `L_mmi`/`W_mmi` 词汇映射 + 委托）、
+  `mmic_descs`（N×1 合波器 = MMI 镜像；**实现 `n_in`，不靠 mmi_descs 镜像**——后者固定 2 路，n>2 会"静默画错"）、
+  `mzi_descs`（Clements 单元双臂，与 `port_anchor("MZI")` 逐点一致）；`phase_shifter_descs`/`modulator_descs`/
+  `photodetector_descs` 增加 **IR 词汇回退**（`L`/`wg`/`arm_L`/`det_L`，否则几何恒用默认值 ⇒ 回提必误报）；
+  `mmi_descs` 补 **`n_out > 2` 的 1×N 扇出**（`placement.port_anchor` 早已支持而几何只画 2 路 = 声明与版图静默背离；
+  **`n_out ≤ 2` 输出顺序与坐标逐字节不变**）。
+- **`lda_l2/gds_export.py`**：`geometry_desc` 路由 `Splitter`/`MMIC`/`MZI`/`PhaseShifter`/`MziModulator`/`Photodetector`。
+- **`lda_l2/chip_layout_export.py`**：`device_geom_of` 对 `PhaseShifter` 按端口锚点**左端对齐**
+  （基元几何居中、端口表 `in=(0,0)`/`out=(L,0)` ⇒ 不对齐就差 L/2，布线端点与几何错位）。
+- **`lda_l2/lvs_geom.py`**：测量器 **5 → 30**（覆盖 **7 类/7 参数 → 14 类/44 参数**）；
+  新增 `DEVICE_CLASSES`(14) · `CANONICAL_PARAMS` · **`PARAM_TAXONOMY`（三档分类）** · `class_coverage()` ·
+  `coverage_geometric` · `unrecoverable_by_class` / `n_unclassified`；**`unrecoverable` 由含糊的"v2 候选"改为
+  「`[类别] 原因`」（含糊正是覆盖率被误读的入口）**；删 `UNRECOVERABLE_PARAMS`，`GEOM_UNSUPPORTED_KINDS` **清空**。
+- **`lda/run_lvs_geom_smoke.py`**：判据 **20 → 31**（新增 ⑮ 类覆盖+对表 · ⑯ 14 类往返 · ⑰ 分类表机器复核 ·
+  ⑱ 逐类反向证据 46 组 · ⑲ 具名构造路径源码扫描 · ⑳ 几何↔端口锚点同源；并修 ⑨ 反例（原用 MZI 作"无几何"反例，
+  补几何后会自动变假绿））。
+- **`scripts/g4_probe.py`**（新）：突变探针 **13/13 会响**（覆盖 ⑬⑭⑮⑯⑰⑱⑲⑳ 与 ③④⑧），还原后基线复绿。
+
+### 🔴 关键结论
+- **14/14 类器件 · 44/44 几何参数全部可回提**（往返 `|delta| < 1e-9`，机器精度）；`class_coverage = 1.0`。
+- **口径更正（非放宽）**：原指标「**声明参数**比例 → 100%」**结构性不可达**——声明里含 `Q`/`kappa`/`n_g`/`n_eff`/
+  `phase_rad`/`target_*` 等物理量与目标量，版图不编码它们。判据改为 **①器件类覆盖 ②几何量覆盖** 两口径；同时**收紧**：
+  未编码量必须**逐条**进分类表（漏登记即红），越界参数（几何敏感但非尺寸量）改名后**仍会被比对**。
+- **分类表由机器复核**（⑰）：`geometric` ⇒ 几何随声明变 **且** 可回提；`not_encoded` ⇒ 改声明几何**逐字节不变**；
+  `encoded_not_recovered` ⇒ 几何变但无测量器（本轮仅 `BraggMirror.wl0_um`/`h_core_um` 两项）。
+- **⑲ 具名构造路径扫描**：`BraggMirror`/`DirectionalCoupler`/`MziModulator`/`Photodetector`/`Splitter`/
+  `SymmetricYBranch` 在 `lda/**` 内**无具名 `add_device` 调用**（`NO_NAMED_ADD_DEVICE`）⇒ 如实登记：
+  这 6 类的回提能力目前**由门禁的规范声明用例演示，尚无流水线实战使用**（非"永不被实例化"：变量 kind / 工厂路径
+  不在静态扫描范围内）。
+- **诚实边界（与上述同读）**：① G4 的独立是**代码路径级**，不是物理方法级（正向与反向共用同一套几何约定）；
+  ② 「几何约定是否符合 foundry 事实」仍需**真 PDK deck（D5，外部）**；③ 33 个非几何参数仍不可回提，其中 2 项
+  「几何敏感但非尺寸量」是**如实登记的残余**，不是通过。
+
+---
+
+## v0.9.140（2026-09-28 · DMM 设计能力成熟度打分表**机器化** · 把规划 M2 闸门变成常驻判据 · CI core 208 → 209）
+
+### 背景
+规划 `LDA_internal_design_plan_2026-09-23.md` §2.2 的 DMM（VMM 的姊妹模型：把「锚的成熟度」换成
+「设计能力的成熟度」，D0–D5）与 §4 的 **M2「D4 能力数 ≥3」** 此前**只存在于文档文字里**（§2.3 是 P1 之前的
+快照）⇒ M2 **无法判定**。
+
+### 交付物
+- `lda/lda_harness/dmm_scorecard.py`（**唯一真相源**）：25 条能力表 + 事实采集（文件 / CI 登记 / 文本指纹）+
+  判级函数 + `audit()` / `gate()`（`M2_D4_MIN = 3`）。
+- `lda/run_dmm_scorecard_smoke.py`（常驻门禁 · 判据 A–H · **34 判据**）：逐行事实核验 · 级别自洽 · D4 三要素 ·
+  反向下调 5 组 · 合法必过 · 文档同步 · 红线。
+- `scripts/dmm_probe.py`（突变探针 **9/9 会响**）。
+- `docs/design_maturity_model.md`（**生成式**文档；手改必被「重新生成 == 磁盘文件」断言判红）。
+
+### 🔴 关键结论
+- **25 能力 · D3 = 22 · D4 = 3 · D0/D1/D2 = 0** ⇒ **M2「D4 ≥3」判达**。D4 三条：C01 `lda build`（目标→GDS 单命令）·
+  C02 `lda check`（链路 JSON→GDS + 签核）· C03 WebUI 设计闭环（`/api/design_tapeout` + `/api/design_gds`）。
+- 分级门控（缺一即降级）：模块存在 / 入口符号存在 / 门禁 ∈ `CORE_SMOKES` / 有反向证据 / 引用的独立证据门禁 ∈ core /
+  G4 几何回提硬开 / 单命令链存在 / 在准入表内。**D5 恒不可达**（内部上限，声明即 raise 判红）。
+- 本轮被自己的门禁抓到的两处错（均已修，即"做实"的证明）：① 首次打分 12 行**符号名不实**（模块在、API 名写错
+  ⇒ 直接塌成 D0）；② 门禁结尾 `return 0` 恒真 ⇒ 探针 8/9 抓不住（已改为 rc 由 FAIL 计数决定）。
+- 诚实边界：本表判的是**事实代理**，不是能力质量的最终裁判；D4 的「可交付」≠「foundry 能收」（D5，外部）。
+
+---
+
 ## v0.9.139（2026-09-28 · P6「系统级 / 计算架构」收官 · 里程碑 **M-6 系统级有口径** · **扩基 +1 锚（B452）** · 账本 **469 → 470** · CI core **204 → 208**）
 
 ### 背景

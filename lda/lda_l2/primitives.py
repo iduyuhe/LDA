@@ -135,7 +135,17 @@ def mmi_descs(params: Dict[str, float]) -> List[Dict]:
     Lt = float(params.get("L_tap", 4.0))
     gap = float(params.get("out_gap", 0.5))
     Lo = float(params.get("L_out", 3.0))
-    yo = w / 2.0 + gap / 2.0             # 输出波导中心 y
+    step = w + gap                       # 输出波导中心间距（= 2·yo）
+    yo = w / 2.0 + gap / 2.0             # 输出波导中心 y（n_out=2 时）
+    # v0.9.141（G4/M4）：n_out>2 的 1×N 扇出。此前 `placement.port_anchor`
+    # 已支持 n_out>2（v0.9.95 WDM 网格）而**几何仍只画 2 路** ⇒ 声明与版图
+    # 静默背离。此处补上（与 port_anchor 同一线性阵列公式，居中排布）；
+    # 🔴 n_out<=2 时输出顺序与坐标与旧版**逐字节一致**（保持 [yo, -yo]）。
+    n_out = int(params.get("n_out", 2))
+    if n_out <= 2:
+        ys_out = [yo, -yo]
+    else:
+        ys_out = [(j - (n_out + 1) / 2.0) * step for j in range(1, n_out + 1)]
 
     descs: List[Dict] = []
     # 输入波导
@@ -149,15 +159,13 @@ def mmi_descs(params: Dict[str, float]) -> List[Dict]:
     descs.append({"kind": "boundary", "layer": 1,
                   "rings_um": [[(0.0, -W / 2.0), (L, -W / 2.0),
                                 (L, W / 2.0), (0.0, W / 2.0)]]})
-    # 双输出 taper（宽 W → 窄 w，中心 ±yo）
-    for sgn in (+1.0, -1.0):
-        poly = [(x, y + sgn * yo)
+    # 输出 taper（宽 W → 窄 w，中心 yc）+ 输出波导
+    for yc in ys_out:
+        poly = [(x, y + yc)
                 for x, y in taper_polygon(W, w, Lt, x0=L, profile="linear")]
         descs.append({"kind": "boundary", "layer": 1, "rings_um": [poly]})
-        # 输出波导
         descs.append({"kind": "path", "layer": 1, "width_um": w,
-                      "points_um": [(L + Lt, sgn * yo),
-                                    (L + Lt + Lo, sgn * yo)]})
+                      "points_um": [(L + Lt, yc), (L + Lt + Lo, yc)]})
     return descs
 
 
@@ -386,9 +394,15 @@ def phase_shifter_descs(params: Dict[str, float]) -> List[Dict]:
             gap_heat(电阻与波导间距)。
     几何表达：主波导条 + 加热电阻矩形（诚实标注：实际工艺加热器在金属层/
     掺杂层，本步先交付几何，工艺层映射归真实 PDK）。
+
+    🔴 **IR 词汇回退（v0.9.141 · G4/M4）**：链路 IR（`LinkModel`）里
+    `PhaseShifter` 的声明参数是 **`L` / `wg`**（见 `mesh_pnr` 的输出相移器），
+    不是基元的 `L_heat` / `width`。二者**同一个几何量**，故此处按
+    「基元名优先、IR 名回退」解析 —— 使**声明值真正决定几何**（否则几何恒用
+    默认 40µm，与声明的 4µm 对不上，几何回提必然误报）。
     """
-    w = float(params.get("width", 0.5))
-    Lh = float(params.get("L_heat", 40.0))
+    w = float(params.get("width", params.get("wg", 0.5)))
+    Lh = float(params.get("L_heat", params.get("L", 40.0)))
     wh = float(params.get("width_heat", 2.0))
     gh = float(params.get("gap_heat", 1.0))
     y_top = w / 2.0 + gh
@@ -431,15 +445,105 @@ def photodetector_descs(params: Dict[str, float]) -> List[Dict]:
 
     params：width(输入波导宽) / det_L(吸收区长) / det_w(吸收区宽)。
     诚实标注：实际 Ge 探测器有 n+/p+ 接触与金属互联，本步只交付吸收区几何。
+    🔴 IR 词汇回退（v0.9.141 · G4/M4）：IR 侧按 `L` / `W` / `wg` 声明 ⇒
+    按「基元名优先、IR 名回退」解析（同 PhaseShifter/MziModulator）。
     """
-    w = float(params.get("width", 0.5))
-    Ld = float(params.get("det_L", 20.0))
-    Wd = float(params.get("det_w", 5.0))
+    w = float(params.get("width", params.get("wg", 0.5)))
+    Ld = float(params.get("det_L", params.get("L", 20.0)))
+    Wd = float(params.get("det_w", params.get("W", 5.0)))
     return [
         {"kind": "boundary", "layer": 1,   # 输入波导
          "rings_um": [_poly_rect(-8.0, -w / 2.0, 0.0, w / 2.0)]},
         {"kind": "boundary", "layer": 1,   # Ge 吸收区
          "rings_um": [_poly_rect(0.0, -Wd / 2.0, Ld, Wd / 2.0)]},
+    ]
+
+
+def splitter_descs(params: Dict[str, float]) -> List[Dict]:
+    """MMI 型 1×2 分束器几何（IR kind `Splitter` · v0.9.141 G4/M4）。
+
+    IR 词汇（`lda_ir.photon.Splitter`）：**`length`（多模区长）/ `width`
+    （多模区宽）**；基元词汇是 `L_mmi` / `W_mmi` ⇒ 二者同量异名，本函数只做
+    **词汇映射 + 委托**（不复制几何代码，杜绝第二份副本）。
+    输入波导宽由 `wg` 给（IR 未声明 ⇒ 取 0.5 默认），不影响被回提的
+    `length` / `width`（二者只由多模矩形决定）。
+    """
+    w_mmi = float(params.get("width", 2.0))
+    L_mmi = float(params.get("length", 5.0))
+    return mmi_descs({
+        "width": float(params.get("wg", 0.5)),
+        "W_mmi": w_mmi,
+        "L_mmi": L_mmi,
+        "L_tap": float(params.get("L_tap", 2.0)),
+        "out_gap": float(params.get("out_gap", w_mmi / 2.0)),
+        "L_out": float(params.get("L_out", 2.0)),
+    })
+
+
+def mmic_descs(params: Dict[str, float]) -> List[Dict]:
+    """N×1 合波器几何（IR kind `MMIC` · WDM 网格 P&R 平面输出收口）。
+
+    `MMIC` 是 `MMI` 的**镜像**：N 个输入在左（线性阵列，居中）、单输出在右。
+    词汇与 `MMI` 同（`L_mmi` / `L_tap` / `L_out` / `width`（= `W_mmi`）/
+    `out_gap`），多一个 **`n_in`**。
+    🔴 与 `placement.port_anchor("MMIC")` 逐点一致：out=(L_tap, 0)；
+    in{j} 中心 y=(j−(n_in+1)/2)·step、x=−(L_mmi+L_tap+L_out)，step=w+out_gap。
+    （**不**用 mmi_descs 镜像：mmi_descs 固定 2 输出，n_in>2 时几何与端口表
+    会对不上 —— 那是「静默画错」而不是「少画」。）
+    """
+    w = float(params.get("width", 0.5))
+    W = float(params.get("W_mmi", 6.0))
+    L = float(params.get("L_mmi", 20.0))
+    Lt = float(params.get("L_tap", 4.0))
+    gap = float(params.get("out_gap", 0.5))
+    Lo = float(params.get("L_out", 3.0))
+    n_in = int(params.get("n_in", 2))
+    yo = w / 2.0 + gap / 2.0
+    step = yo * 2.0
+
+    descs: List[Dict] = []
+    # 合波输出波导（右）
+    descs.append({"kind": "path", "layer": 1, "width_um": w,
+                  "points_um": [(0.0, 0.0), (Lt, 0.0)]})
+    # 输出 taper（多模区宽 W → 输出波导宽 w）
+    descs.append({"kind": "boundary", "layer": 1,
+                  "rings_um": [taper_polygon(W, w, Lt, profile="linear")]})
+    # 多模干涉区（矩形 x∈[−L, 0]，y∈[−W/2, W/2]，逆时针）
+    descs.append({"kind": "boundary", "layer": 1,
+                  "rings_um": [[(-L, -W / 2.0), (0.0, -W / 2.0),
+                                (0.0, W / 2.0), (-L, W / 2.0)]]})
+    # N 路输入：taper（窄 w → 宽 W）+ 输入波导
+    for j in range(1, n_in + 1):
+        yc = (j - (n_in + 1) / 2.0) * step
+        poly = [(x, yy + yc)
+                for x, yy in taper_polygon(w, W, Lt, x0=-L - Lt,
+                                           profile="linear")]
+        descs.append({"kind": "boundary", "layer": 1, "rings_um": [poly]})
+        descs.append({"kind": "path", "layer": 1, "width_um": w,
+                      "points_um": [(-L - Lt - Lo, yc), (-L - Lt, yc)]})
+    return descs
+
+
+def mzi_descs(params: Dict[str, float]) -> List[Dict]:
+    """Clements 网格 MZI 单元几何（IR kind `MZI` · v0.9.141 G4/M4）。
+
+    IR 词汇（`mesh_pnr` / `wdm_mesh_pnr` 的 add_device 调用）：**`Lu`（单元
+    长度）/ `dy`（上下轨间距）/ `wg`（波导宽）/ `gap`（相邻单元耦合间隙）**。
+    几何 = 两条水平臂 PATH，(0,0)→(Lu,0) 与 (0,dy)→(Lu,dy)，与
+    `placement.port_anchor("MZI")` 的 in1/out1（下轨 y=0）、in2/out2
+    （上轨 y=dy）**逐点一致**。
+    🔴 `gap` **不在本单元几何内**：网格里耦合发生在**相邻** MZI 之间
+    （单元自身不含定向耦合器几何）⇒ `gap` 属「几何不编码」类，见
+    `lvs_geom.PARAM_TAXONOMY`。
+    """
+    Lu = float(params.get("Lu", 20.0))
+    dy = float(params.get("dy", 4.0))
+    w = float(params.get("wg", params.get("width", 0.5)))
+    return [
+        {"kind": "path", "layer": 1, "width_um": w,
+         "points_um": [(0.0, 0.0), (Lu, 0.0)]},
+        {"kind": "path", "layer": 1, "width_um": w,
+         "points_um": [(0.0, dy), (Lu, dy)]},
     ]
 
 
@@ -473,6 +577,13 @@ def primitive_descs(kind: str, params: Dict[str, float]) -> List[Dict]:
         return photodetector_descs(params)
     if kind in ("braggmirror", "bragg", "bragggrating", "bragg_grating"):
         return bragg_grating_descs(params)
+    # v0.9.141（G4/M4）：三件此前无版图几何的链路器件类补几何
+    if kind == "splitter":
+        return splitter_descs(params)
+    if kind == "mmic":
+        return mmic_descs(params)
+    if kind == "mzi":
+        return mzi_descs(params)
     raise ValueError(f"真实版图基元暂不支持 kind={kind}")
 
 

@@ -124,3 +124,62 @@ fv_*
 g12h_*
 _pf_all.txt
 
+# ---- 运行产物：smoke / 演示脚本的 out_path 输出（每次跑 CI 重生成，绝不入库）----
+# 登记判据（三条须同时满足）：① 被**已跟踪**脚本用 out_path 写出；② `git log --all -- <path>`
+# 从未入库；③ 非产品代码、无模块 import、不在 CI smoke 清单内、不入发行包。
+# 与上面 `lda/reports/cli_smoke/`「阻塞生产 git pull，绝不入库」同纪律。
+# 写出者：
+#   lda/reports/adversarial_scoring_report.json     <- lda/run_adversarial_scoring_smoke.py
+#   lda/reports/cpml_absorber_report.json           <- lda/run_cpml_absorber_smoke.py
+#   lda/reports/cross_solver_matrix_report.json     <- lda/run_cross_solver_matrix_smoke.py
+#   lda/reports/dispersive_report.json              <- lda/run_dispersive_smoke.py
+#   lda/reports/polygon_voxel_report.json           <- lda/run_polygon_voxel_smoke.py
+#   demo_tapeout_report.json                        <- examples/demo_tapeout_closed_loop.py
+# （上列 5 个 smoke 均 `out_dir = os.path.join(_HERE, "reports")`。）
+# 副作用自证：本块**全为 .json** ⇒ 不改变 `run_pyflakes_ratchet_smoke` 的扫描面
+# （`git ls-files --cached --others --exclude-standard *.py`），也不改变
+# `run_report_determinism_smoke` 的受跟踪报告集（该集合取 `git ls-files` ∩ reports）。
+# 确需入库时用 `git add -f <path>`（显式覆盖 ignore ⇒ 动作可审计）。
+lda/reports/adversarial_scoring_report.json
+lda/reports/cpml_absorber_report.json
+lda/reports/cross_solver_matrix_report.json
+lda/reports/dispersive_report.json
+lda/reports/polygon_voxel_report.json
+demo_tapeout_report.json
+
+# ---- 本地-only 项目档案（有意不入库；用户 2026-09-28 裁定「修复断链 + 其余留本地」）----
+# 判据见 铁律 18（三查：公开惯例对照组 / 引用图 / 是否被已跟踪脚本 out_path 重生成）。
+# 本块是**引用图**结论：这 16 份与「已提交的 6 份」构成一个**交叉引用连通簇**；其中多份含
+# 「[待填·真实收件人] / [待填·预算]」的**对外发函 / 问询草稿**（AI 起草、人类亲发 ⇒ 公开时机
+# 由人类定，AI 不代发不代公开），以及对外机构 **NDA / 谈判**评估稿。整簇留本地 ⇒ 既不作公开
+# 增量，也不在新公开文件里自造断链（簇内互引 ⇒ 拆开会双向断链）。
+# 🔴 已归档提交（**勿**加入本块）：LDA_strategic_plan_2026-09-22.md ·
+#    LDA_design_capability_roadmap_2026-09-23.md · G12_nedelec_findings.md ·
+#    docs/B23_closing_report.html · examples/sovereign_evidence/c4_mmi_characterization.json ·
+#    examples/sovereign_evidence/characterize_c4_mmi.py
+#    —— 这 6 份经机器核验**无出边**（不引用本块任何一项），提交它们修复公开文件中的悬空引用
+#    （CHANGELOG.md · LDA_internal_design_plan_2026-09-23.md · LDA_photonic_chip_internal_summary_* ·
+#    P0_mesh_pnr_closeout_* · LDA_fix_workplan_* · sovereign_evidence_index.json · build_sovereign_evidence.py）。
+# ⚠️ 已知残留（如实登记，非本轮回归）：本块中 `LDA_wave7_closeout_plan_2026-09-21.md` 被公开代码
+#    `lda/lda_solver/bend_mode.py` §3 与 `lda/lda_harness/benchmark_defs/part1.py` 引用，
+#    `LDA_电域解锁与外部对标边界_讨论纪要_2026-09-23.md` 被 `CHANGELOG.md` 引用 ⇒ 这 2 处引用对
+#    公开读者不可跟随。要修复须连同其引用的「A1 发函家族」一并公开（用户已裁定不发）。
+# ⚠️ `scripts/t2_closing_acceptance_rehearsal.py` 是 `.py` ⇒ 登记本块会把它移出
+#    `run_pyflakes_ratchet_smoke` 的扫描面（与已有 `diag_*.py` / `assess_*.py` / `fv_*` 同纪律）。
+# 确需入库用 `git add -f <path>`（显式覆盖 ignore ⇒ 动作可审计）。
+LDA_A1_inquiry_draft_2026-09-22.md
+LDA_A1_send_decision_sheet_2026-09-23.md
+P1-E_T2_A1_ready_to_send_2026-09-19.md
+docs/wave7_A1_draft_emails.md
+LDA_nda_review_checklist_2026-09-21.md
+LDA_b21_upgrade_verdict_2026-09-19.md
+LDA_capability_audit_2026-09-22.md
+LDA_closing_roadmap_974_2026-09-19.md
+LDA_electrical_domain_consensus_2026-09-23.md
+LDA_strategic_audit_selfcert_100_2026-09-19.md
+LDA_T65_schedule_2026-09-22.md
+LDA_wave5_handoff_2026-09-21.md
+LDA_wave7_closeout_plan_2026-09-21.md
+LDA_电域解锁与外部对标边界_讨论纪要_2026-09-23.md
+G12_colocated_failure.md
+scripts/t2_closing_acceptance_rehearsal.py

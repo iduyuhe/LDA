@@ -1,0 +1,69 @@
+{
+  "dl_005": {
+    "dl_um": 0.05,
+    "fdtd": {
+      "per_arm_IL_db": {
+        "43.5um": 10.091131822653196,
+        "47.0um": 10.11017694494438
+      },
+      "per_arm_T": {
+        "43.5um": 0.09792347520234,
+        "47.0um": 0.09749499144466649
+      },
+      "total_transmission": 0.1954184666470065,
+      "total_IL_db": 7.090343987341999,
+      "excess_loss_db": 4.080043987341999,
+      "imbalance_db": 0.019045122291183603,
+      "t_end_drift_db": 0.00035837551724604566,
+      "convergence_t_ends": [
+        900.0,
+        1000.0,
+        1100.0,
+        1200.0
+      ],
+      "convergence_values_db": [
+        10.090803522366084,
+        10.091120252212121,
+        10.09077344713595,
+        10.091131822653196
+      ],
+      "n_eff_in": 2.6120741542298385,
+      "nx": 1000,
+      "ny": 121,
+      "nsteps": 26667
+    },
+    "eme": {
+      "value_db": 7.530125619599377,
+      "T": 0.17659867388133096,
+      "excess_loss_db": 4.519825619599377
+    },
+    "two_method_delta_db": 2.561006203053819
+  },
+  "b16_root_cause": {
+    "W_mmi_um": 6.0,
+    "n_eff": 2.8,
+    "wl_um": 1.55,
+    "L_pi_um": 65.03225806451613,
+    "b16_self_image_length_um": 146.32258064516128,
+    "c4_as_laid_L_mmi_um": 20.0,
+    "ratio_laid_to_image": 0.13668430335097004,
+    "interpretation": "C4 版图 L=20.0µm 仅达 B16 理想成像长度 146.3µm 的 14%，自映像未形成 → 大部分功率未耦合进两输出臂，过剩损耗 4.08 dB。两臂 50/50 仍极准（不平衡 0.019 dB）仅因几何对称，非成像成功。"
+  },
+  "geometry": {
+    "w_um": 0.5,
+    "W_mmi": 6.0,
+    "L_mmi": 20.0,
+    "out_gap": 0.5,
+    "n_core": 2.8,
+    "n_clad": 1.44,
+    "wl_um": 1.55
+  },
+  "model": "2D-TEz slab (n_core=2.80 effective index, n_clad=1.44) @ λ=1.55µm — NOT a 3D-vector or taped-out physical anchor",
+  "honest_note": "本表征为 2D 模型数值结果，非物理定律锚（golden）。依 E5 报告，MMI 1×2 过量损耗在 2D 层级对 220nm SOI 失真过大、对 L_π 病态敏感，原理上不可判到 0.1dB tol。真锚需 3D 矢量求解器或流片（E5 §六.2）。此处仅交付模型级真实 数值 + 两法（FDTD/EME）一致性 + B16 根因，作为 C4 版图光学行为的可复算证据，不冒充已锚定可售 GP-MMI-1X2。",
+  "upgrade_path_to_gp": {
+    "step1": "按 B16 将 L_mmi 设到理想成像长度（W=6 时 ≈146µm），或改用窄 MMI （W≈2.8 → L≈32µm，贴近真实 SOI PDK）。",
+    "step2": "FDTD/EME 复核过剩损耗与不平衡（2D 模型级，仍可复算）。",
+    "step3_HARD_CEILING": "即便长度正确，2D 模型对 220nm SOI 的过量损耗仍不可判到 0.1dB tol（E5 实测 EME/FDTD 给出 4.3dB 量级）。真·GP-MMI-1X2 锚定需 3D 矢量求解器或流片验证（E5 §六.2），且 device_library 当前缺 MMI DeviceSpec 注册（仅 DirectionalCoupler/Ring/Bragg）。",
+    "do_not": "不得在 2D 数值上挂 'sellable GP-*' 标签——违反项目物理锚红线。"
+  }
+}

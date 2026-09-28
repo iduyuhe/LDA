@@ -1791,6 +1791,72 @@
         "evidence_high"
       ],
       "note": "Peak fiber-chip coupling efficiency ≈ 0.56 (i.e. −2.5 dB) at 1490 nm with a DBR mirror; 1-dB bandwidth 53 nm. Directly measured. Efficiency reported as fraction = 10^(loss_dB/10). High confidence."
+    },
+    {
+      "id": "E-GE-PD-RESP-MCGILL",
+      "device": "Evanescently-coupled waveguide Ge-on-Si p-i-n photodetector (RF-optimized)",
+      "metric": "responsivity_A_per_W",
+      "measured_value": 1.09,
+      "uncertainty_abs": 0.05,
+      "fab_source": "Ge-on-Si evanescent waveguide PD, 2 V reverse bias",
+      "citation": "M. M. P. Fard, G. Cowan, O. Liboiron-Ladouceur, Opt. Express 24, 27738 (2016), DOI 10.1364/OE.24.027738",
+      "method": "Waveguide-coupled responsivity @1550nm (42.5 GHz bandwidth, 3.5 uA dark)",
+      "geometry": {
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "photodetector",
+        "ge",
+        "soi"
+      ]
+    },
+    {
+      "id": "E-SOI-PL-2UM",
+      "device": "SOI strip waveguide 220nm (200mm platform) at 2 um band",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.2,
+      "uncertainty_abs": 0.05,
+      "fab_source": "Standard 200 mm SOI photonic platform, 220nm Si",
+      "citation": "Opt. Lett. (2024), DOI 10.1364/OL.525357",
+      "method": "Cut-back propagation loss @~2000 nm (TE, 220nm SOI strip)",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 2.0
+      },
+      "tags": [
+        "waveguide",
+        "soi",
+        "loss",
+        "2um"
+      ]
+    },
+    {
+      "id": "E-RING-Q-2UM",
+      "device": "Si microring resonator (2 um band), intrinsic Q",
+      "metric": "intrinsic_Q",
+      "measured_value": 2000000,
+      "uncertainty_abs": 200000,
+      "fab_source": "Standard 200 mm SOI platform, 220nm Si, 2 um band",
+      "citation": "Opt. Lett. (2024), DOI 10.1364/OL.525357",
+      "method": "Loaded Q up to 1.1e6, intrinsic Q up to 2e6 (ring on low-loss 220nm SOI waveguide)",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "n_si": 3.48,
+        "n_clad": 1.44,
+        "wl_um": 2.0
+      },
+      "tags": [
+        "ring",
+        "resonator",
+        "soi",
+        "2um"
+      ]
     }
   ],
   "adversarial": [

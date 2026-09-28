@@ -155,6 +155,32 @@ def _p_mmi_excess(param):
     return float(d["eme_db"]), float(d["fdtd_db"])
 
 
+def _p_thermal(param):
+    """热光相移效率（°/mW）。ref=1D 散热鳍 PDE 解析闭式（cosh 积分 ∫θdz）"""
+    from lda_harness.b29_thermal_phase_anchor import b29_thermal_phase_efficiency
+    from lda_solver.thermal_phase_efficiency import thermal_phase_efficiency_fdm
+    return (float(b29_thermal_phase_efficiency()),
+            float(thermal_phase_efficiency_fdm(n=int(param))))
+
+
+def _p_pd_resp(param):
+    """Ge 探测器响应度（A/W）。ref=理想单位量子效率上界 R=λ/hc（闭式）"""
+    from lda_design.empirical_models import engine_pd_responsivity_ideal
+    from lda_solver.ge_pd_responsivity_true import ge_pd_responsivity_candidate
+    return (float(engine_pd_responsivity_ideal({"wl_um": 1.55})["value"]),
+            float(ge_pd_responsivity_candidate(n_x=int(param))["R"]))
+
+
+def _p_apd_gain(param):
+    """APD 雪崩倍增因子 M。ref=Miller 闭式；固定偏压扫描电离积分网格"""
+    from lda_solver.apd_avalanche_true import (
+        breakdown_voltage, miller_gain_closed, multiplication_exact)
+    V_br = breakdown_voltage()
+    V = 0.7 * V_br
+    return (float(miller_gain_closed(V, V_br)),
+            float(multiplication_exact(V, n_x=int(param))))
+
+
 # ---------------------------------------------------------------------------
 # 矩阵：每格 = 器件 × 物理量 × 求解器A ↔ 求解器B
 #   kind="convergent"     ⇒ 有判据 D（扫参数残差严格单调降）
@@ -246,6 +272,36 @@ CELLS = [
         "note": ("🔴 实测扫 M 残差**不变**（5.6879e-05 恒值）⇒ 误差由解析式固有近似主导，"
                  "**无判据 D**，如实登记"),
     },
+    {
+        "id": "X8-THERMAL-PI", "device": "热光相移器", "metric": "相移效率 (°/mW)",
+        "solver_a": "1D 散热鳍 PDE 解析闭式（cosh 积分 ∫θdz）",
+        "solver_b": "同 PDE 三对角有限差分（Thomas 算法）+ 梯形积分",
+        "independence": "解析闭式（连续极限）vs 离散数值（FDM 网格加密收敛）",
+        "kind": "convergent", "param": "n(FDM 网格点)", "values": (50, 200, 800, 3200),
+        "tol_rel": 2e-3, "probe": _p_thermal,
+        "note": ("B29 同构；N=50→3200 残差 1.17e-2→1.74e-4 严格单调降"
+                 "（O(1/N) 一阶，边界引线匹配引入一次斜率间断）"),
+    },
+    {
+        "id": "X9-PD-RESP", "device": "Ge 光电探测器", "metric": "响应度 (A/W)",
+        "solver_a": "理想单位量子效率上界 R=λ/hc（闭式，永不读测量值）",
+        "solver_b": "吸收效率梯形积分 × 几何收集因子（T1 输运模型）",
+        "independence": "闭式上界 vs 数值吸收+收集模型（方法学独立，上界不可被拟合）",
+        "kind": "model_limited", "param": "nx(吸收积分网格)", "values": (6400, 12800, 25600, 51200),
+        "tol_rel": 0.25, "probe": _p_pd_resp,
+        "note": ("🔴 残差恒 0.202（20.2%）：理想 η=1 上界 vs 真实器件 η_abs·η_col≈0.80，"
+                 "差即非理想量子效率（如实登记，不拟合回算）⇒ 无判据 D"),
+    },
+    {
+        "id": "M3-APD-GAIN", "device": "APD 雪崩光电二极管", "metric": "倍增因子 M",
+        "solver_a": "Miller 闭式 M=1/(1−V/V_br)^n（确定性物理定律）",
+        "solver_b": "确定性电离积分（局部模型，碰撞电离率积分）",
+        "independence": "闭式近似 vs 数值积分（同物理不同路径；局部模型已知低估陡度）",
+        "kind": "model_limited", "param": "nx(电离积分网格)", "values": (800, 1600, 3200, 6400),
+        "tol_rel": 1.0, "probe": _p_apd_gain,
+        "note": ("🔴 固定偏压 V=0.7·V_br 扫描 nx：残差恒 0.938（93.8%）。局部模型无死区"
+                 "效应 ⇒ M(V) 陡度低于 Miller（n_eff≈0.7–0.9 vs 文献 1.5–4），如实登记不冒充"),
+    },
 ]
 
 
@@ -269,6 +325,10 @@ CELL_DOMAIN = {
     "X5-LINDBLAD": "quantum",
     "M1-TRANSMON-KOCH": "quantum",
     "M2-CHI-BLAIS": "quantum",
+    # 本轮加厚（2026-09-29）：热光相移 + Ge PD + APD
+    "X8-THERMAL-PI": "photonic",
+    "X9-PD-RESP": "photonic",
+    "M3-APD-GAIN": "quantum",
 }
 
 

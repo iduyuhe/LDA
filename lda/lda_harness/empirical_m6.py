@@ -76,6 +76,8 @@ _NEW_COMPARISONS: Dict[str, Dict[str, Any]] = {
                      "metric": "coupling_efficiency", "kind": "independent"},
     "E-GE-PD-RESP": {"engine": "engine_pd_responsivity_ideal",
                      "metric": "responsivity_A_per_W", "kind": "independent"},
+    "E-GE-PD-RESP-MCGILL": {"engine": "engine_pd_responsivity_ideal",
+                            "metric": "responsivity_A_per_W", "kind": "independent"},
     # ---- 跨器件一致性档：读**另一条**语料的实测损耗 ----
     "E-RING-Q42": {"engine": "engine_ring_intrinsic_q", "metric": "intrinsic_Q",
                    "kind": "cross_measurement", "loss_from": "E-RING-PL-25",
@@ -89,6 +91,8 @@ _NEW_COMPARISONS: Dict[str, Dict[str, Any]] = {
                   "kind": "cross_measurement", "loss_from": "E-SIN-PL-800",
                   "assumed": {"w_core_um": 1.35},
                   "assume_note": "语料未声明环宽；取与膜厚同值 1.35 µm（大截面厚 SiN 微环典型）"},
+    "E-RING-Q-2UM": {"engine": "engine_ring_intrinsic_q", "metric": "intrinsic_Q",
+                     "kind": "cross_measurement", "loss_from": "E-SOI-PL-2UM"},
 }
 
 

@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import re
 import threading
-from typing import Any, Optional, Tuple
+from typing import  Optional, Tuple
 
 from lda_data.backend import get_backend
 from lda_data.service import DataLayer

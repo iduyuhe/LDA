@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "lda"))
 from lda_layout.mesh_pnr import (
     clements_decompose,
     reck_decompose,
-    assemble_clements,
+    
     mesh_clements_fidelity,
     reck_mesh_crossings,
     clements_mesh_crossings,

@@ -7,7 +7,7 @@
   4. 负例：色散区失效（Δ/g<5）或读出不可分辨（χ<κ_r）→ 系统正确拒绝
 LLM 不进判决路径。
 """
-import json
+
 import os
 import sys
 

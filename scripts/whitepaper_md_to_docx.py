@@ -11,8 +11,8 @@
 import re
 import sys
 from docx import Document
-from docx.shared import Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+
 
 
 def parse_inline(paragraph, text):

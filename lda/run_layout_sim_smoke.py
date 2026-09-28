@@ -11,7 +11,7 @@
 """
 from __future__ import annotations
 
-import json
+
 import os
 import sys
 
@@ -22,7 +22,7 @@ if _HERE not in sys.path:
 from lda_l2.gds_export import geometry_desc
 from lda_l2.layout_sim import (find_waveguide_width, simulate_layout,
                                simulate_layout_from_ir, build_eps_from_layout)
-from lda_ir import IRModel, Waveguide, RingResonator
+from lda_ir import IRModel, Waveguide
 from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 

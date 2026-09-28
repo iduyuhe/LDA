@@ -40,7 +40,7 @@ _tmp = tempfile.mkdtemp(prefix="pub_rl_smoke_")
 from lda_webui import store as _store_mod  # noqa: E402
 _store_mod.STORE_PATH = os.path.join(_tmp, "store.json")
 
-from lda_webui import app as A  # noqa: E402
+  # noqa: E402
 from lda_webui import routes as R  # noqa: E402
 
 IP_A = "203.0.113.9"

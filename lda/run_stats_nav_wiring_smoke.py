@@ -17,7 +17,7 @@ run_stats_nav_wiring_smoke.py —— stats.html 数据看板接线护栏（v0.9.
   - 反向：对每份源码做污染副本，重跑对应静态检查，必须 FAIL（证明判据会响）。
 """
 import os
-import re
+
 import sys
 import json
 import time

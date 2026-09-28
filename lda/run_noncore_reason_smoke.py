@@ -33,7 +33,7 @@ from __future__ import annotations
 import os
 import re
 import sys
-from typing import List, Tuple
+from typing import List
 
 _LDA = os.path.dirname(os.path.abspath(__file__))
 if _LDA not in sys.path:
@@ -78,7 +78,7 @@ def _ghost_entries() -> List[str]:
 
 
 def main() -> int:
-    import io
+
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     rc = 0

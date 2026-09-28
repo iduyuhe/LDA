@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, ".")
 
 from lda_ir.spec_check import run_ir_spec_check, _load_schema
-from lda_ir import IRModel, Waveguide, to_dict, validate
+from lda_ir import IRModel, Waveguide,  validate
 
 cases = []
 

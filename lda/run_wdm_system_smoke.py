@@ -7,7 +7,7 @@
   4. GDS 级联版图可解析（round-trip）
 LLM 不进判决路径。
 """
-import json
+
 import os
 import sys
 

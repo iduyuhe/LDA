@@ -9,7 +9,7 @@ CLI 在生产 wheel 安装后也能导入）。本脚本保留为 CLI 入口壳�
 from __future__ import annotations
 
 import argparse
-import json
+
 import os
 import sys
 

@@ -38,9 +38,9 @@ def main() -> int:
     from lda_solver.detector_bandwidth_true import (
         detector_bandwidth_true_solve,
         transit_bandwidth_numeric,
-        transit_bandwidth_closed_form,
+        
         t1_depletion_field,
-        rc_bandwidth,
+        
         guard_t1_not_oracle,
         R_LOAD_DEFAULT,
         EPS_CAP_DEFAULT,

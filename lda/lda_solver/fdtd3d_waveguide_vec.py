@@ -17,12 +17,12 @@ import math
 import numpy as np
 
 try:
-    from fdtd3d import (_fwd, _bwd, _sponge_1d, _avg_sigma, _grid_constants)
+    from fdtd3d import (_fwd, _bwd, _sponge_1d, _avg_sigma)
 except ModuleNotFoundError:  # 直接以脚本运行时补路径
     import os as _os
     import sys as _sys
     _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
-    from fdtd3d import (_fwd, _bwd, _sponge_1d, _avg_sigma, _grid_constants)
+    from fdtd3d import (_fwd, _bwd, _sponge_1d, _avg_sigma)
 
 
 def solve_waveguide_neff_vec(eps3: np.ndarray, dl: float, wl_um: float, n_clad: float,

@@ -35,9 +35,9 @@ PASS/FAIL 由确定性计算决定：`ACCEPT` iff 器件全匹配 ∧ 网络全�
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional,  Tuple
 
-from lda_layout.placement import device_bbox, port_abs, port_anchor
+from lda_layout.placement import   port_anchor
 
 
 # ---------------------------------------------------------------------------

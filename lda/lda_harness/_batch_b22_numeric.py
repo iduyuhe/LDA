@@ -37,7 +37,7 @@ import math
 
 import numpy as np
 from scipy.linalg import eigh
-from scipy.sparse import diags, csc_matrix
+from scipy.sparse import  csc_matrix
 from scipy.sparse.linalg import eigsh
 
 C0 = 299792458.0  # m/s

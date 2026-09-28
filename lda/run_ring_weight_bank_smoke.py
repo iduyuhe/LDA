@@ -50,7 +50,7 @@ from lda_l2.ring_weight_bank import (  # noqa: E402
     area_vs_eo_modulator,
     calibration_table_info,
     detuning_knob_bits,
-    gap_bounds_for_backend,
+    
     gap_for_kappa,
     gap_knob_bits,
     intrinsic_fwhm_floor_pm,
@@ -63,7 +63,7 @@ from lda_l2.ring_weight_bank import (  # noqa: E402
     roundtrip_amplitude,
     weight_bank_from_weights,
     weight_bank_on_shared_mesh,
-    weight_reachable_interval,
+    
 )
 
 PASS = 0

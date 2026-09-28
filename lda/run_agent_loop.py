@@ -18,7 +18,7 @@ from __future__ import annotations
 import argparse
 import os
 
-from lda_agent.design_loop import DesignAgent, json_report, main as design_main
+from lda_agent.design_loop import  json_report, main as design_main
 
 
 def main() -> int:

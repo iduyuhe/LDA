@@ -34,7 +34,7 @@ from __future__ import annotations
 
 import math
 import random
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 
 # ---- 公开标准 / 假设输入（发动期实测替换） ----
 LAMBDA_NM = 1550.0          # 工作波长 C 波段（公开）

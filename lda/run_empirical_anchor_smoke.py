@@ -24,7 +24,7 @@ import tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from lda_harness.benchmarks import BENCHMARK_DEFS, BENCHMARK_ORDER
-from lda_harness.verification_adapters import build_harness_specs, harness_perturbed_candidate
+from lda_harness.verification_adapters import build_harness_specs
 from lda_harness.empirical_bank import EmpiricalCorpus, EmpiricalAnchor
 from lda_pdk.empirical import (
     submit_measurement, review_measurement, land_measurement,
@@ -221,7 +221,7 @@ def main():
           str(_anchors))
 
     # ⑦ D-63 来源边界门禁：仅限公开论文/datasheet/公开测量数据集，且必须可公开溯源
-    from lda_harness.provenance import classify_citation, audit_items
+    from lda_harness.provenance import  audit_items
 
     # (a) B 级（无 DOI/URL 的模糊描述）提交须被拒
     r = submit_measurement({"id": "E-X4", "device": "d", "metric": "m",
@@ -259,7 +259,7 @@ def main():
     # 已无真实的 B 级样本可供断言 → 改用**合成 B 级语料**（citation 只有文本描述、
     # 无 DOI/arXiv/URL 定位符）来验证「门禁机制本身仍然生效」。
     # （不能用「语料库里没有 B 级」来证明门禁有效——那是缺样本，不是门禁通过。）
-    from lda_harness.empirical_bank import EmpiricalMeasurement  # noqa: F401
+  # noqa: F401
     _b_corpus = EmpiricalCorpus([{
         "id": "E-SYNTH-B-1", "device": "synthetic", "metric": "m",
         "measured_value": 1.0, "uncertainty_abs": 0.1, "fab_source": "X",

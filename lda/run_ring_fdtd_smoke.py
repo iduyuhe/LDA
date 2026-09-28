@@ -6,7 +6,7 @@
      解析偏差 ≤ 容差；无 GPU 诚实 SKIP（CW 稳态 numpy 逐波长太慢）
   3. 报告落盘 reports/ring_fdtd_report.json
 """
-import json
+
 import os
 import sys
 
@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.join(_HERE, "lda_solver"))
 from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 from lda_solver.fdtd2d_ring import (  # noqa: E402
-    build_add_drop_ring_field, find_resonances, fsr_from_resonances,
+    build_add_drop_ring_field,  
     ring_fsr_analytic_nm, run_ring_fdtd,
 )
 

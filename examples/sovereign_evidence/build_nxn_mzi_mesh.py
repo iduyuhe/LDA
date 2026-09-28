@@ -19,7 +19,7 @@ crossing。crossing 用主权链 can_cross(M1,M2)=False 的异层桥接化解（
 """
 from __future__ import annotations
 
-import json
+
 import math
 import os
 import sys
@@ -32,11 +32,11 @@ from lda_chain.link_model import LinkModel
 from lda_layout.placement import port_abs, device_bbox
 from lda_layout.router import route_net, RouteResult
 from lda_l2.chip_layout_export import (
-    export_chip_gds, device_geoms, io_grating_geoms, route_geoms,
+    export_chip_gds, device_geoms, io_grating_geoms, 
 )
 from lda_l2.mzi_mesh_matmul import (
     reck_decompose, dft_matrix, assemble_mesh, unitary_fidelity, mesh_cascade_loss_db,
-    coupler_length_from_theta, voltage_from_phase, VPI_L_V_CM,
+    coupler_length_from_theta,  
 )
 
 WG = 0.5

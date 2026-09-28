@@ -18,11 +18,11 @@ _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
-from lda_chain.engine import simulate  # noqa: E402
+  # noqa: E402
 from lda_chain.registry import get_response  # noqa: E402
 from lda_design.active_models import (  # noqa: E402
     mzi_mod_response,
-    phase_shift_rad,
+    
     thermo_phase_response,
     vpi_electrooptic,
 )

@@ -26,7 +26,7 @@ if str(_LDA) not in sys.path:
 
 from lda_l2.device_library import DeviceLibrary  # noqa: E402
 from lda_design.active_models import (  # noqa: E402
-    phase_efficiency_deg_per_mW, power_for_pi,
+    phase_efficiency_deg_per_mW, 
     vpi_electrooptic,
 )
 

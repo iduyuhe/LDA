@@ -29,7 +29,7 @@ from lda_chain.link_model import LinkModel
 from lda_layout.placement import port_abs, device_bbox
 from lda_layout.router import route_net, RouteResult
 from lda_l2.chip_layout_export import (
-    export_chip_gds, device_geoms, io_grating_geoms, route_geoms,
+    export_chip_gds, device_geoms, io_grating_geoms, 
 )
 from lda_l2.mzi_mesh_matmul import (
     reck_decompose, dft_matrix, assemble_mesh, unitary_fidelity, mesh_cascade_loss_db,

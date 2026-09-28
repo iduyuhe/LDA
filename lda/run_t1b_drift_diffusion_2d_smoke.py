@@ -39,7 +39,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
-import numpy as np  # noqa: E402
+  # noqa: E402
 
 from lda_solver.drift_diffusion_2d import (  # noqa: E402
     solve_pn_junction_2d_bias, sze_pn_junction_2d_closed_form,

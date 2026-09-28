@@ -7,7 +7,7 @@
 """
 import os
 
-from .golden import golden_value, golden_with_source
+from .golden import  golden_with_source
 
 
 def _default_empirical_anchor():

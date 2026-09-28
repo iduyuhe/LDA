@@ -409,7 +409,7 @@ def build_waveguide_specs(cases: Optional[List] = None,
     差异只在计算内核，见 fdtd3d_waveguide_numba.py 的交叉验证判据。
     """
     _ensure_paths()
-    from waveguide_loop import WaveguideTarget, _default_cases
+    from waveguide_loop import  _default_cases
     from fdtd3d_waveguide import build_waveguide_field_3d, solve_waveguide_neff_3d
     from oracle_mode import fdfd_mode_field
 
@@ -477,7 +477,7 @@ def build_waveguide_specs(cases: Optional[List] = None,
 def build_coupler_specs(cases: Optional[List] = None
                         ) -> Tuple[List[VerificationSpec], Dict[str, Callable]]:
     _ensure_paths()
-    from coupler_loop import CouplerTarget, _default_cases
+    from coupler_loop import  _default_cases
     from fdtd3d_coupler import (
         build_coupler_field_3d, build_ybranch_field_3d,
         solve_supermode_projection_3d_torch, solve_port_powers_3d_torch,

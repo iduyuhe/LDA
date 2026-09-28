@@ -21,7 +21,7 @@ LLM 不进判决路径（确定性级联 + 死标量比对）。
 from __future__ import annotations
 
 import argparse
-import json
+
 import os
 import sys
 import tempfile

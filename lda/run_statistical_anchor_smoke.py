@@ -22,12 +22,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from lda_harness.benchmarks import BENCHMARK_DEFS, BENCHMARK_ORDER
-from lda_harness.golden import golden_value
+
 from lda_harness.harness import VerificationHarness
 from lda_harness.statistical_anchor import (
     distribution_report, margin_stats, monte_carlo_margins,
     s7_statistical_margin_anchor, s8_statistical_osnr_anchor,
-    monte_carlo_osnr, osnr_distribution_report, convergence_scan,
+     osnr_distribution_report, convergence_scan,
 )
 from lda_harness.verification_adapters import build_harness_specs
 
@@ -236,7 +236,7 @@ def main() -> int:
 
     # ⑫ v0.9.1 S13 设计良率锚（DFY · 解析闭式 ↔ 蒙特卡洛双算法互证）
     from lda_harness.yield_anchor import (
-        monte_carlo_yield, nominal_ring_length, s13_design_yield_anchor,
+         nominal_ring_length, s13_design_yield_anchor,
         yield_analytic, yield_report, yield_vs_tolerance_scan)
 
     rep = yield_report()

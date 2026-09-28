@@ -177,7 +177,6 @@ def barrier_transmit_fd(E: float, V0: float, a: float, m: float, X: float | None
     y1 = _numerov_fwd(k2, h, 1.0, 1j * k_free)   # 左端入射基 e^{ikx}
     y2 = _numerov_fwd(k2, h, 1.0, -1j * k_free)  # 左端反射基 e^{-ikx}
     z1 = _numerov_bwd(k2, h, 1.0, 1j * k_free)   # 右端出射基 e^{ikx}
-    z2 = _numerov_bwd(k2, h, 1.0, -1j * k_free)  # 右端入射基 e^{-ikx}（D=0）
     y1c, y2c, z1c = y1[c], y2[c], z1[c]
     y1p = (y1[c + 1] - y1[c - 1]) / (2.0 * h)
     y2p = (y2[c + 1] - y2[c - 1]) / (2.0 * h)

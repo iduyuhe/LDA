@@ -68,7 +68,6 @@ def main():
                   f"{'maxatt':>7} {'req?':>5} {'feas?':>5} {'verdict':>20}")
         lines.append(header)
         lines.append("-" * len(header))
-        det_w = None
         for N in NS:
             geo = grid2d_geometry(N)
             for scn, (ap, at) in SCEN.items():

@@ -9,7 +9,7 @@
 以及 v0.9.35 特护的**狭长阵列**（全宽长段 × 多行，旧标量 cell 退化路径）。
 全部断言 naive == new（sorted 列表逐元素相等）即通过。退出码 0=PASS / 1=FAIL。
 """
-import math
+
 import os
 import random
 import sys

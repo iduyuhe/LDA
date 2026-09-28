@@ -20,7 +20,7 @@ if _HERE not in sys.path:
 
 from lda_l2.gds_export import (gds_library, layout_elements, layout_from_ir,
                                gds_bytes_for, layout_from_library, write_gds,
-                               parse_gds, svg_preview, ring_polygon,
+                               parse_gds, svg_preview, 
                                ring_ring_polygon)
 from lda_ir import (IRModel, Waveguide, RingResonator, DirectionalCoupler,
                     SymmetricYBranch)

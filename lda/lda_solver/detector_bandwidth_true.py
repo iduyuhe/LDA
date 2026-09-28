@@ -40,10 +40,10 @@ import numpy as np
 try:  # 包内导入（smoke / 生产路径）
     from .drift_diffusion_1d import (
         solve_pn_junction_1d,
-        Q_E,
-        EPS_SI,
-        V_T,
-        N_I,
+        
+        
+        
+        
         N_A_DEFAULT,
         N_D_DEFAULT,
     )
@@ -54,10 +54,10 @@ except ImportError:  # 允许 `python lda_solver/detector_bandwidth_true.py` 直
     _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
     from lda_solver.drift_diffusion_1d import (  # type: ignore
         solve_pn_junction_1d,
-        Q_E,
-        EPS_SI,
-        V_T,
-        N_I,
+        
+        
+        
+        
         N_A_DEFAULT,
         N_D_DEFAULT,
     )

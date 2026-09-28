@@ -67,7 +67,7 @@ def render_svg(geoms, title, path):
     vb = f"{mx*scale:.1f} {my*scale:.1f} {w*scale:.1f} {h*scale:.1f}"
     polys = []
     for g in geoms:
-        kind, layer, width, pts = g[0], g[1], g[2], g[3]
+        kind, _, width, pts = g[0], g[1], g[2], g[3]
         sp = " ".join(f"{px*scale:.1f},{py*scale:.1f}" for (px, py) in pts)
         if kind == "P":
             sw = max(0.6, (width or WG) * scale)

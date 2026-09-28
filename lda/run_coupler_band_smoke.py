@@ -12,7 +12,7 @@ T-8 后（v0.9.38）：**无 GPU 亦可跑 live**。原写法把「无 CUDA」�
   - 附加验证：耦合强度波长依赖趋势（κ 随 λ 单调变化，证明不是走过场）
 """
 import gc
-import json
+
 import os
 import sys
 

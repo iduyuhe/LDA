@@ -49,7 +49,7 @@ def main() -> int:
     from lda_harness.b31_soref_bennett_anchor import (
         b31_soref_bennett_dn,
         b31_drude_dn,
-        b31_depletion_dN_eff,
+        
         b31_soref_bennett_phase_shift,
         b31_drude_phase_shift,
         b31_phase_shift_report,

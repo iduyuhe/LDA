@@ -6,7 +6,7 @@
   3. Waveguide / RingResonator / DirectionalCoupler 默认参数全链路 PASS（回归）
   4. CLI 入口 --target_neff 可用
 """
-import json
+
 import os
 import sys
 

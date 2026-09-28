@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict,  Tuple
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _LDA = os.path.dirname(_HERE)
@@ -28,7 +28,7 @@ if _LDA not in sys.path:
     sys.path.insert(0, _LDA)
 
 from lda_chain.link_model import LinkModel
-from lda_layout.placement import device_bbox, place_row, port_abs
+from lda_layout.placement import  place_row, port_abs
 from lda_layout.router import route_net
 from lda_l2.lvs import run_lvs
 

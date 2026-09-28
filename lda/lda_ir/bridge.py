@@ -31,7 +31,7 @@ DesignAgent 现只消费 dict 意图，故本层输出 intent dict 而非 Design
 """
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List,  Tuple
 
 from .core import IRModel
 

@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 # 损耗参数注入约定（registry 响应读取同一键名）
 WG_LOSS_KEY = "loss_db_cm"

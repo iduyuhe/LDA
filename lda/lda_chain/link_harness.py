@@ -172,7 +172,7 @@ def link_cascade_check(link, sim: Dict[str, Any],
     """
     from lda_agent.ring_adddrop import (adddrop_spectrum,
                                         bending_loss_db_per_cm, gap_to_kappa)
-    from lda_chain.registry import _ring_response  # noqa: F401（复用于期望重建）
+  # noqa: F401（复用于期望重建）
 
     transfers = sim.get("transfers", {})
     wls = sim.get("wavelengths_um", [])

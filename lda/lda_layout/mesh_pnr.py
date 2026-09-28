@@ -18,7 +18,7 @@ from __future__ import annotations
 import cmath
 import math
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List,  Tuple
 
 import numpy as np
 
@@ -27,7 +27,7 @@ from lda_l2 import drc as drc_mod
 from lda_l2 import gds_export as gx
 from lda_l2 import lvs as lvs_mod
 from lda_l2.mzi_mesh_matmul import coupler_length_from_theta, dft_matrix
-from lda_layout.placement import port_anchor, port_abs
+from lda_layout.placement import  port_abs
 
 
 # ---------------------------------------------------------------------------

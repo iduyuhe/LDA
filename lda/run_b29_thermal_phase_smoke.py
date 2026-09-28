@@ -35,9 +35,9 @@ def main() -> int:
     print("=" * 72)
 
     from lda_solver.thermal_phase_efficiency import (
-        thermal_phase_efficiency_fdm, fdm_convergence,
+         fdm_convergence,
     )
-    from lda_harness.b29_thermal_phase_anchor import b29_thermal_phase_efficiency
+
     from lda_harness.benchmarks import BENCHMARK_DEFS
     from lda_harness.verification_adapters import build_harness_specs
     from lda_harness.verification_spec import run_verification

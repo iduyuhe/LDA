@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import time
 from concurrent.futures import ProcessPoolExecutor
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict,  Optional, Sequence, Tuple
 
 from lda_layout.router import (
     DEFAULT_STRAIGHT_LOSS_DB_CM,

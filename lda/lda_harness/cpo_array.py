@@ -68,7 +68,7 @@ WDM 解复用环 / 功率监测抽头 / 光栅耦合器 / 互连波导段）、�
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import os

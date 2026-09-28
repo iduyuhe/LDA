@@ -47,7 +47,7 @@ from __future__ import annotations
 
 import os
 import re
-import sys
+
 from typing import Any, Dict, List
 
 _LDA = os.path.dirname(os.path.abspath(__file__))

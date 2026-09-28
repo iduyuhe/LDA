@@ -38,7 +38,7 @@ def devsim_available() -> bool:
     if shutil.which("devsim"):
         return True
     try:
-        import devsim  # 可能缺失（核心 venv 不装）
+  # 可能缺失（核心 venv 不装）
         return True
     except Exception:
         return False

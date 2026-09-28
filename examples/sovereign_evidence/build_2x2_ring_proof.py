@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 import json
-import math
+
 import os
 import sys
 
@@ -33,7 +33,7 @@ from lda_layout.placement import port_abs
 from lda_l2.chip_layout_export import (
     export_chip_gds, device_geoms, io_grating_geoms, route_geoms,
 )
-from lda_l2 import gds_export
+
 
 WG = 0.5  # 波导宽 µm
 

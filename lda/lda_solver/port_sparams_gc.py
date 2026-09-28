@@ -17,8 +17,8 @@
 （无光纤模、无方向性）；本步验证"周期调制 → 光栅方程相位匹配"物理定律锚，
 不声称耦合效率/方向性与真实流片一致。
 """
-import math
-from typing import Dict, List, Optional, Sequence, Tuple
+
+from typing import Dict, List,  Sequence, Tuple
 
 import numpy as np
 
@@ -165,8 +165,6 @@ def verify_gc(params: Dict[str, float],
     params = dict(params)
     w = float(params["width"])
     Lam = float(params.get("Lambda", 0.68))
-    dc = float(params.get("duty", 0.55))
-    N = int(params.get("n_tooth", 12))
     n = int(params.get("n_wl", 7))
     span = float(params.get("span_um", 0.0))
 

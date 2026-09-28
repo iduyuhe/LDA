@@ -18,7 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 from lda_harness.empirical_bank import (  # noqa: E402
-    EmpiricalCorpus, AdversarialBenchmarkBank, EmpiricalAnchor, ImportResult,
+    EmpiricalCorpus, AdversarialBenchmarkBank, EmpiricalAnchor, 
 )
 
 

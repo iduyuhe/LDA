@@ -11,7 +11,7 @@
 """
 import random
 import sys
-import time
+
 
 _HERE = __import__("os").path.dirname(__file__)
 sys.path.insert(0, _HERE)

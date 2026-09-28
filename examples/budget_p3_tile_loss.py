@@ -48,7 +48,7 @@ for _p in (os.path.join(_ROOT, "lda"),):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import numpy as np  # noqa: E402
+  # noqa: E402
 
 from lda_layout.mesh_pnr import build_mesh_pnr, write_mesh_gds  # noqa: E402
 from lda_l2.mzi_mesh_matmul import dft_matrix  # noqa: E402

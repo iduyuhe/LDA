@@ -40,7 +40,7 @@ GF_TO_LDA_KIND = {
 
 def gdsfactory_available() -> bool:
     try:
-        import gdsfactory  # noqa: F401
+  # noqa: F401
         return True
     except Exception:
         return False

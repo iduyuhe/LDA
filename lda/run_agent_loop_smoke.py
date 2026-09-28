@@ -11,14 +11,14 @@ CI 捕获——维护深审发现的真实断链。D-106 修复 run_agent_loop.p
 
 全程确定性：LLM 不进判决路径（FDTD 真内核 vs TMM 物理定律锚死标量比对）。
 """
-import json
+
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
-from lda_agent.design_loop import DesignAgent, main as design_main
+from lda_agent.design_loop import  main as design_main
 
 PASS = "PASS"
 FAIL = "FAIL"

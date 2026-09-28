@@ -134,7 +134,7 @@ def main() -> int:
 
     # ⑧b 多层 LVS（v0.8.25 · S10 锚 · 版图差距 #6）
     from lda_harness.lvs_anchor import (build_multilayer_case, s10_report,
-                                        s10_lvs_multilayer_verdict)
+                                        )
     from lda_l2.layers import get_stack
     from lda_l2.lvs import run_lvs_multilayer
     mstack = get_stack("soi")

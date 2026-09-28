@@ -35,9 +35,9 @@ def main() -> int:
     print("=" * 72)
 
     from lda_solver.readout_fidelity_quad import (
-        readout_fidelity_quad, quad_convergence,
+         quad_convergence,
     )
-    from lda_harness.b30_readout_anchor import b30_readout_fidelity
+
     from lda_harness.benchmarks import BENCHMARK_DEFS
     from lda_harness.verification_adapters import build_harness_specs
     from lda_harness.verification_spec import run_verification

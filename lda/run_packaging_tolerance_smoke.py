@@ -22,7 +22,7 @@ if _LDA not in sys.path:
     sys.path.insert(0, _LDA)
 
 from lda_pdk.packaging_tolerance import (  # noqa: E402
-    coupling_efficiency, lateral_tolerance_um, package_yield,
+    coupling_efficiency,  package_yield,
     design_to_packaging_yield, verify_packaging_anchor,
     package_yield_with_pitch, FIBER_MFD_UM, DEFAULT_SIGMA_ALIGN_UM,
 )

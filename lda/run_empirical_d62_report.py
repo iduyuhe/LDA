@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from lda_harness import deterministic as det
 from lda_harness.benchmarks import BENCHMARK_DEFS
-from lda_harness.verification_adapters import build_harness_specs, _load_empirical_anchor
+from lda_harness.verification_adapters import  _load_empirical_anchor
 from lda_pdk.empirical import (
     submit_measurement, review_measurement, land_measurement,
     measurement_stats, list_landed_measurements,

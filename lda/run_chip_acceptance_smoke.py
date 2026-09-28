@@ -40,7 +40,7 @@ def main() -> int:
                    (ctx.verification or {}).get("status") == "ok"))
 
     # 2) 门禁为真：注入增益 → REJECT（B19 应捕获）
-    from lda_chain import engine as _eng
+
     sim_bad = dict(ctx.sim)
     bad_transfers = {k: [v * 1.5 for v in vec]
                      for k, vec in sim_bad.get("transfers", {}).items()}

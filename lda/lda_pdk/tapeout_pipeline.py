@@ -224,7 +224,7 @@ def run_tapeout_pipeline(devices: Dict[str, Dict[str, float]],
     if gds is not None:
         from lda_l2.gds_export import parse_gds_polygons
         from lda_l2.parasitic_rc import (
-            estimate_parasitics, check_parasitic, parasitic_rc_markdown,
+            estimate_parasitics, check_parasitic, 
         )
         from lda_l2.gds_drc import check_geometry     # v0.9.60 S3.6
         structs = parse_gds_polygons(gds).get("structures", {})

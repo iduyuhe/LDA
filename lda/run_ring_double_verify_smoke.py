@@ -10,11 +10,11 @@
      相对偏差 ≤ tol_rel（真实 FDTD 物理行为自洽，方法一致性）
   accepted = 两层皆过
 """
-import json
+
 import os
 import sys
 
-import numpy as np  # noqa: F401  (find_resonances/fsr_from_resonances 依赖)
+  # noqa: F401  (find_resonances/fsr_from_resonances 依赖)
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)

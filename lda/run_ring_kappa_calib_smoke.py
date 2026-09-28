@@ -259,7 +259,6 @@ def main():  # noqa: C901
 
     # ---------------------------------------- G 粗档扰动 + λ 依赖（各 ~3s）
     coarse = kappa_c_series(0.25, 1.55, dl_factors=(16,))
-    cc = convergence_report(coarse)
     check("G1 🔴 反向：粗档 gap=0.25/dl16 必被判 winding（假结果被挡住）",
           coarse["n_trusted"] == 0 and coarse["points"][0]["reason"] == "winding",
           "pt=%s" % coarse["points"][0])

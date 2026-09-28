@@ -100,7 +100,7 @@ def _fit_growth(ns, times):
 
 
 def main() -> int:
-    import sys
+
     print("P1 布线器规模基准：旧增量布线 vs 新 P1 Router（实测）", flush=True)
     print(f"  CHIP={CHIP}µm · 静态障碍={N_STATIC} · wg={WG_WIDTH}µm · seed={SEED}", flush=True)
     # 新 router 跑全序列；旧 router 为 O(N^3) 类，单 N 超预算即停止（与 doc

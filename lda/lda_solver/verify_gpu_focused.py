@@ -15,7 +15,7 @@ except Exception:  # noqa: BLE001
     _HAVE_TORCH = False
 
 from lda.lda_solver.fdtd3d_torch import solve_spectrum_torch, run_greens_test_torch
-from lda.lda_solver.tmm import solve_spectrum as tmm_solve
+
 from activate_gpu_fdtd3d import _cases, _tmm_T, _max_rel
 
 NUMBA_CPU_BASELINE_S = 20.08

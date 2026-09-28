@@ -43,7 +43,7 @@
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict
 
 # ---- Soref & Bennett 1987 @1550nm 文献常数（严禁拟合回算 · IRONLAWS 二/27）----
 SB_ELECTRON = -8.8e-22     # cm³ · 电子线性项系数（ΔN_e, cm⁻³ → Δn 无量纲）

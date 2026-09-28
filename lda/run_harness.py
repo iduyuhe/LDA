@@ -61,7 +61,7 @@ apply_thread_budget(verbose=True)     # 把口径贴在脸上：手动跑也看�
 
 from lda_harness.benchmarks import BENCHMARK_DEFS
 from lda_harness.harness import (
-    VerificationHarness, ReferenceCandidate, PerturbedCandidate,
+    VerificationHarness,  PerturbedCandidate,
     IndependentCandidateRouter,
 )
 from lda_harness.l3_ai_solver import L3AISolverCandidate

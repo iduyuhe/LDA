@@ -129,7 +129,7 @@ def _corpus_geometry(anchor, eid: str) -> dict:
 
 def run_crosscheck(quick: bool = False) -> dict:
     from lda_design.design_engine import DesignEngine
-    from lda_harness.benchmarks import BENCHMARK_DEFS
+
 
     kinds = list(ENGINE_ANCHOR_MAP)
     if quick:

@@ -21,8 +21,8 @@ IO 接入：链式链路 wg0.in（源）+ wg999.out（汇）标记外部 IO → 
 from __future__ import annotations
 
 import argparse
-import json
-import os
+
+
 import sys
 import time
 from pathlib import Path

@@ -363,7 +363,7 @@ class DeviceLibrary:
             from lda_agent.ring_loop import ring_fsr_analytic_nm
             fsr_an = ring_fsr_analytic_nm(R_um, n_core, wl0_um)
             try:
-                import lda_solver.fdtd2d_ring  # noqa: F401
+                import importlib; importlib.import_module("lda_solver.fdtd2d_ring")
                 fdtd_import = True
             except Exception:
                 fdtd_import = False
@@ -858,7 +858,7 @@ class DeviceLibrary:
     def _torch_ok() -> bool:
         """torch 是否可用（不要求 CUDA——CPU 亦可跑，仅慢些）。"""
         try:
-            import torch  # noqa: F401
+            import importlib; importlib.import_module("torch")
             return True
         except Exception:
             return False
@@ -1872,7 +1872,7 @@ def _mmi_multimode_core(W_e_um: float = 4.0, n_eff: float = 3.30,
     1×2 第一双像成像长度 L = (9/4)·L_π = (9/4)·n_eff·W²/λ0。
     返回自映像长 (9/4)·L_pi（um），失败 None。相位复核降级为诊断。
     """
-    import numpy as np
+    import importlib; importlib.import_module("numpy")
     try:
         L_pi = n_eff * (W_e_um ** 2) / wl_um
         if not (L_pi > 0 and math.isfinite(L_pi)):
@@ -1897,7 +1897,7 @@ def _grating_bragg_core(period_um: float = 0.85, n_eff: float = 2.80
     一阶 Bragg 条件（垂直接入近似）：λ_B = Λ·n_eff（光栅周期×有效折射率）。
     返回 λ_B（um），失败 None。波矢守恒复核降级为诊断。
     """
-    import numpy as np
+    import importlib; importlib.import_module("numpy")
     try:
         lam = period_um * n_eff
         if not (0.1 < lam < 10.0 and math.isfinite(lam)):
@@ -1916,7 +1916,7 @@ def _dc_supermode_core(n_e: float = 3.40, n_o: float = 3.36,
     （B14 锚 v0.9.20 语义修正：Δβ·L_3dB=π/2 → P2=sin²(π/4)=0.5）。
     数值核以传播相位复核：Δβ·L_3dB = π/2。返回 L_3dB（um），失败 None。
     """
-    import numpy as np
+    import importlib; importlib.import_module("numpy")
     try:
         L_3dB = wl_um / (4.0 * abs(n_e - n_o))
         dbeta = 2.0 * math.pi * abs(n_e - n_o) / wl_um

@@ -2,7 +2,7 @@
 """Generate .docx versions of the two business templates (dual-format delivery)."""
 from docx import Document
 from docx.shared import Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+
 
 ACCENT = RGBColor(0x25, 0x63, 0xEB)
 

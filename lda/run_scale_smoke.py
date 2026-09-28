@@ -23,8 +23,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lda_harness.benchmarks import BENCHMARK_ORDER
 from lda_harness.golden import golden_value
 from lda_harness.scale_anchor import (BUDGET_SEC, DEFAULT_N_DEVICES,
-                                      SCALE_CASES, run_scale_pipeline,
-                                      s11_large_scale_verdict, s11_report)
+                                       run_scale_pipeline,
+                                       s11_report)
 
 _PASS = 0
 _FAIL = 0

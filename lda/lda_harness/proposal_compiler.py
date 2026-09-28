@@ -24,7 +24,7 @@ from __future__ import annotations
 import itertools
 import math
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 # ---- 行为级黑箱参数（system_budget 同源，文献典型值） ----
 GRATING_DB = -3.0

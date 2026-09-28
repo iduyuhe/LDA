@@ -7,7 +7,7 @@
   3. bragg 实例（threshold 模式 + 离散扫描）：N=6，R_min≥阈值且
      逐点 max|ΔR|≤tol（与 D-03 一致，FDTD 引擎）
 """
-import json
+
 import os
 import sys
 
@@ -16,9 +16,9 @@ sys.path.insert(0, _HERE)
 from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 from lda_agent.spectrum_loop import (  # noqa: E402
-    SpectrumTarget, SpectrumInverseDesignAgent, metric_error,
+    SpectrumTarget,  metric_error,
     run_ring_spectrum, run_bragg_spectrum,
-    ring_engine, ring_metric, ring_oracle,
+      
 )
 
 

@@ -31,7 +31,7 @@ from lda_harness.cpo_array import (CPOArrayConfig, GC_COUPLING_ANGLE_DEG,
                                    LAN_WDM_CHANNELS_NM, N_EFF_SOI,
                                    RING_ORDER_M, build_cpo_array_case,
                                    inject_fault, lane_wavelengths,
-                                   ring_radius_um)
+                                   )
 from lda_l2.chip_layout_export import chip_drc_report, export_chip_gds
 from lda_l2.lvs import run_lvs
 

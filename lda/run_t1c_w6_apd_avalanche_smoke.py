@@ -39,9 +39,9 @@ def main() -> int:
 
     from lda_solver.apd_avalanche_true import (
         multiplication_exact, breakdown_voltage, mc_avalanche_gain_noise,
-        effective_ionization_ratio, miller_gain_closed,
-        mcintyre_excess_noise_closed, miller_n_effective,
-        apd_avalanche_true_solve, avalanche_profiles, guard_t1_not_oracle,
+         miller_gain_closed,
+         
+        apd_avalanche_true_solve,  guard_t1_not_oracle,
     )
     from lda_design.active_models import apd_miller_gain
 

@@ -8,12 +8,12 @@ P1-M2 入口。给定 LinkModel，输出：
 """
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict
 
 from lda_l2 import gds_export
 from lda_chain import engine
 from lda_layout.placement import device_bbox, place_row, port_abs
-from lda_layout.router import RouteResult, route_net
+from lda_layout.router import RouteResult
 from lda_layout.router_p1 import route_net_p1  # P1 重写：空间索引+局部窗口，与 route_net 逐位一致且更快
 
 

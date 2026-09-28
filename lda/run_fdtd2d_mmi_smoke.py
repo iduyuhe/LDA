@@ -42,7 +42,7 @@ v0.9.56 只跑了 EME 一条路线就判 E5「不合格」。但单路线无法�
 """
 from __future__ import annotations
 
-import math
+
 import os
 import sys
 
@@ -51,7 +51,7 @@ if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 sys.path.insert(0, os.path.join(_HERE, "lda_solver"))
 
-import numpy as np                                          # noqa: E402
+                                          # noqa: E402
 
 import fdtd2d_mmi as fd                                     # noqa: E402
 import mmi_eme as me                                        # noqa: E402

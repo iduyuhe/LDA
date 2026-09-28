@@ -4,7 +4,7 @@
 双验证 PASS」端到端闭环，覆盖 Transmon / Resonator / Coupler + 多器件 IR
 消费（design_from_ir）。LLM 不进判决路径。
 """
-import json
+
 import os
 import sys
 

@@ -17,7 +17,7 @@ from __future__ import annotations
 import math
 import os
 import sys
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional,  Tuple
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _LDA = os.path.dirname(_HERE)
@@ -25,7 +25,7 @@ if _LDA not in sys.path:
     sys.path.insert(0, _LDA)
 
 from lda_l2 import gds_export
-from lda_l2.drc import drc_check_device, drc_summary, rules_from_pdk
+from lda_l2.drc import drc_check_device, drc_summary
 from lda_l2.lvs import run_lvs, lvs_markdown
 from lda_l2.primitives import primitive_descs
 from lda_layout.placement import port_abs, device_bbox

@@ -45,7 +45,7 @@ from __future__ import annotations
 import math
 
 import numpy as np
-from scipy.special import j0, j1
+from scipy.special import  j1
 
 C0 = 299792458.0
 

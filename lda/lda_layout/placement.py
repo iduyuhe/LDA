@@ -11,7 +11,7 @@ drop bus（上，y=+off）；off = R + wg_width/2 + gap，half = R*1.5。
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Dict,  Optional, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:  # 仅类型标注用，避免 lda_chain ↔ lda_layout 循环导入
     from lda_chain.link_model import LinkModel

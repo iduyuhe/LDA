@@ -24,7 +24,7 @@ from lda_harness.proposal_compiler import (
     compile_proposal,
     design_pipeline,
     feasible_domain,
-    generate_candidates,
+    
 )
 
 _PASS = 0

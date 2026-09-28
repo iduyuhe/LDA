@@ -27,7 +27,7 @@ LLM 不进判决路径。
 """
 from __future__ import annotations
 
-import math
+
 import os
 import sys
 
@@ -35,7 +35,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
-import numpy as np  # noqa: E402
+  # noqa: E402
 
 from lda_solver.drift_diffusion_1d import (  # noqa: E402
     solve_pn_junction_1d, sze_pn_junction_closed_form, guard_t1_not_oracle,

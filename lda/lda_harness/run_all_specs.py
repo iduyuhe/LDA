@@ -30,7 +30,7 @@ for _p in (os.path.join(_ROOT, "lda_agent"),
         sys.path.insert(0, _p)
 
 from lda_harness.verification_spec import (
-    VerificationSpec, run_verification, VerificationOutcome,
+     run_verification, 
 )
 from lda_harness.verification_adapters import (
     build_harness_specs, harness_perturbed_candidate,

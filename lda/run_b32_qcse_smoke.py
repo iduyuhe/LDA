@@ -14,7 +14,7 @@ B32 EAM-QCSE 吸收边位移锚 CI 门禁 (T1-C W4, v0.9.69, A 档有源扩展 #
 红线守住: 纯能带/电磁闭式 + 数值带结构, 无载流子动力学/增益/TCAD/A 级。
 """
 import sys
-import math
+
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")

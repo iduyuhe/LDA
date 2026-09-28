@@ -14,7 +14,7 @@ import json
 import sqlite3
 from typing import Any, Optional
 
-from .auth import hash_password, verify_password, gen_api_key, hash_api_key, verify_api_key
+from .auth import hash_password, verify_password, gen_api_key, hash_api_key
 from .backend import StorageBackend
 from .models import User, Organization, Project, DesignResult, ApiKey
 

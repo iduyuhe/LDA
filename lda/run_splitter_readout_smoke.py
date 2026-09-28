@@ -1,5 +1,5 @@
 """D-63 方向耦合器 × 量子读出 smoke：正例 + 负例。"""
-import json
+
 import sys
 
 sys.path.insert(0, ".")

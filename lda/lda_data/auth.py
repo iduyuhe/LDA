@@ -15,7 +15,7 @@ import secrets
 
 def _have_bcrypt() -> bool:
     try:
-        import bcrypt  # noqa: F401
+  # noqa: F401
         return True
     except Exception:  # noqa: BLE001
         return False

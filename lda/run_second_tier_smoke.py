@@ -19,7 +19,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from lda_chain.link_model import LinkModel
-from lda_layout.placement import device_bbox, place_2d, place_row
+from lda_layout.placement import  place_2d, place_row
 from lda_l2 import gds_export as ge
 from lda_l2.primitives import primitive_descs
 from lda_layout.router import route_multi_net, route_net

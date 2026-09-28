@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lda_l3 import production_plan as pp  # noqa: E402
 from lda_l2 import innovation_market as im  # noqa: E402
 from lda_l2.golden_product_benchmarks import (  # noqa: E402
-    evaluate_all as golden_evaluate_all, HONEST_BANNER,
+    evaluate_all as golden_evaluate_all, 
 )
 
 

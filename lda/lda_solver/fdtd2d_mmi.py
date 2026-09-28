@@ -47,7 +47,7 @@ v0.9.57 重写时定位到**两处测量/实现缺陷，均非 FDTD 方法本身
 from __future__ import annotations
 
 import math
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Dict,   Sequence, Tuple
 
 import numpy as np
 

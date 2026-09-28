@@ -33,7 +33,7 @@ if _HERE not in sys.path:
 from lda_harness.benchmarks import BENCHMARK_ORDER, BENCHMARK_DEFS  # noqa: E402
 from lda_harness.verification_adapters import BENCHMARK_CANDIDATES  # noqa: E402
 from lda_design.design_package import (                          # noqa: E402
-    ENGINE_KINDS, PACKAGE_KINDS, ENGINE_KIND_MAP, ENGINE_DOMAIN, _ENGINE_TITLE,
+    ENGINE_KINDS, PACKAGE_KINDS, ENGINE_KIND_MAP, ENGINE_DOMAIN, 
 )
 
 DOC_PATH = os.path.join(_LDA, "docs", "lda_anchor_coverage_matrix_2026-09-06.md")

@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List,  Sequence, Tuple
 
 # 障碍包围盒：(center_x, center_y, half_width, half_height)
 Obstacle = Tuple[float, float, float, float]

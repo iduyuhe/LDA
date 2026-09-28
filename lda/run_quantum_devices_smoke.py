@@ -6,7 +6,7 @@
   ② Coupler（双 transmon 电容耦合）：解析 J（n01 闭式）↔ 441 维电荷 basis 严格对角化
 铁律：LLM 不进判决路径，PASS 由死标量比对决定。
 """
-import json
+
 import os
 import sys
 

@@ -162,7 +162,7 @@ def _mzimod_response(component, wls: List[float], link_params, kappa_fn):
 
     参数：V（驱动电压）、V_pi（半波电压，缺省由 L_um/g/r 解析算）。
     """
-    import math
+
     from lda_design.active_models import mzi_transmission, vpi_electrooptic
     V = float(component.params.get("V", 0.0))
     vpi = float(component.params.get("V_pi", 0.0)) or vpi_electrooptic(

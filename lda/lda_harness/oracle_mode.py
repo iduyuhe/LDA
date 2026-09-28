@@ -27,7 +27,7 @@ from __future__ import annotations
 import math
 import numpy as np
 from scipy.sparse import kron, identity, diags
-from scipy.sparse.linalg import eigsh, eigs
+from scipy.sparse.linalg import  eigs
 
 
 # --------------------------------------------------------------------------

@@ -29,7 +29,7 @@ def build_harness_specs(defs: Optional[Dict] = None
                         ) -> Tuple[List[VerificationSpec], Dict[str, Callable]]:
     from .benchmarks import BENCHMARK_DEFS
     from .golden import golden_with_source
-    from .empirical_bank import EmpiricalCorpus, EmpiricalAnchor
+
 
     defs = defs or BENCHMARK_DEFS
     specs: List[VerificationSpec] = []

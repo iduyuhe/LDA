@@ -21,12 +21,12 @@ DRC 抽检）升级为 **形状逆设计**：几何由**连续宽度曲线 w(x)*
 from __future__ import annotations
 
 import json
-import math
+
 import os
 import sys
-import time
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+
+from dataclasses import dataclass
+from typing import Any, Dict
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _LDA_ROOT = os.path.dirname(_HERE)

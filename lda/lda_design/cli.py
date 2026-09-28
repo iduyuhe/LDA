@@ -255,7 +255,7 @@ def cmd_build(args: argparse.Namespace) -> int:
 # --------------------------------------------------------------------------
 def cmd_gf(args: argparse.Namespace) -> int:
     from lda_l1.gdsfactory_bridge import (
-        gdsfactory_available, gf_component_to_spec, export_gf_component,
+        gdsfactory_available, gf_component_to_spec, 
     )
     if not gdsfactory_available():
         print("[提示] gdsfactory 未安装（B 级可选依赖，不阻塞 LDA 自有路径）。")

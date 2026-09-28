@@ -20,7 +20,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict,   Sequence, Tuple
 
 # 默认网格分辨率（与 astar_route dl 一致）
 DEFAULT_DL = 1.0

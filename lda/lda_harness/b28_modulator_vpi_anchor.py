@@ -29,7 +29,7 @@
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict,  Sequence, Tuple
 
 # ---- 默认工艺 / 几何参数（公开文献典型量级，发动期 PDK 校准替换） ----
 LAMBDA_VAC_UM = 1.55       # 工作波长（C 波段，µm）

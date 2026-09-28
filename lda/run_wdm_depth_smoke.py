@@ -8,7 +8,7 @@
   5. 负例：XT 指标超出 gap 上限可达范围 → 正确报不可达
 LLM 不进判决路径。
 """
-import json
+
 import os
 import sys
 

@@ -7,7 +7,7 @@ D3 · grid2d 规模再上探 (256/512) —— 绑定 D1 幅度均衡 PDK
 本脚本：①等价性校验 ②慢vs快计时(O(N^5)实证) ③快版实跑 4/16/128/256/512 全绿
       ④monkeypatch 后 build_mesh_pnr 真生成 256/512 grid2d GDS+驱动清单，量化 footprint。
 """
-import sys, os, math, cmath, time
+import sys,  math, cmath, time
 sys.path.insert(0, r"D:/agent_LDA/lda")
 sys.path.insert(0, r"D:/agent_LDA")
 sys.path.insert(0, r"D:/agent_LDA/examples")

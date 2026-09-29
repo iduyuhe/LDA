@@ -256,7 +256,9 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 #   ⇒ 严格独立 449 → 452（降级 3、自证桩 18 不变）。棘轮地板同步上调：449 → 452。
 # Batch B-31（量子征程再评估）：WCS/Poisson 有限维 Fock 截断族 2 道严格独立锚（B456/B457）落地
 #   ⇒ 严格独立 452 → 454（降级 3、自证桩 18 不变）。棘轮地板同步单调上调：452 → 454。
-MIN_INDEPENDENT = 454
+# Batch B-32（几何栅格化收敛）：几何类首锚 B458 落地 ⇒ 严格独立 454 → 455。
+#   棘轮地板同步单调上调：454 → 455。
+MIN_INDEPENDENT = 455
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

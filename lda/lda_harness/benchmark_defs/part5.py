@@ -47,6 +47,9 @@ from .._batch_b30_numeric import (  # Batch B-30 量子征程回填（有限维 
 from .._batch_b31_numeric import (  # Batch B-31 量子征程再评估（WCS/Poisson 有限维 Fock 截断 × 解析闭式）
     golden_b456, golden_b457,
 )
+from .._batch_b32_numeric import (  # Batch B-32 几何栅格化收敛（解析 Shoelace 闭式 × 亚格平均栅格化）
+    golden_b458,
+)
 DEFS = {
     "B359": {
         "title": "Bernstein 多项式逼近 f(t)=1/(1+2t)（t=0.6）",
@@ -1223,5 +1226,16 @@ DEFS = {
         "candidate": "b457_wcs_multiphoton_cand",
         "candidate_desc": "同 B456 的归一截断密态 → Tr(ρ·Π_{≥2}) = Σ_{n≥2}ρ_nn（D-114 `wcs_multiphoton_prob` 闭式对照）；离散参数 = Fock 截断维数 N（默认 10）",
         "note": "P(≥2) = 1 − e^{−μ}(1+μ)（WCS 多光子污染 = 单光子源关键限值，教科书闭式/人类公共品）。μ=1.0 ⇒ 0.2642411177。candidate=同 B456 路线的归一截断密态上取 POVM Π_{≥2} 迹（**与 B456 共享数值机制、被测标量不同** ⇒ 按本仓先例 B448/B449「同函数不同 X 各计一锚」计新锚，如实登记不掩盖）。实测 |Δ|=7.393e-09（tol=1e-2 的 1.35e6× 余量）；判据 D 实测比值 44.12/73.98/111.99（截断型，MONO），粗端 2.70e-03 < tol、默认档 7.39e-09 ≫ 1e-12。🔴 **同源体检**：`多光子|multiphoton` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ 零占用；与 B453 的三方分歧同 B456（标量/构型/格式均不同）。⚠️ **诚实边界**：μ 为**设计预算值**、本锚**无实测锚**；截断型收敛非幂律；结论只可用于预算与量级。残差=截断误差。零商业依赖。",
+    },
+    "B458": {
+        "title": "多边形面积·版图栅格化收敛（解析 Shoelace 闭式 golden vs 亚格平均栅格化数值候选）",
+        "metric": "polygon_area_rasterized",
+        "oracle": "analytical(shoelace closed-form area) + subpixel-averaged rasterization independent_cross_check",
+        "tol": 5e-2,
+        "default_params": {},
+        "golden_fn": golden_b458,
+        "candidate": "b458_polygon_area_cand",
+        "candidate_desc": "平台 `lda_solver.voxel_field.rasterize_polygon` 的**亚格平均**覆盖率 Σfrac·dl²（even-odd 交叉数 + s×s 子采样，s→∞ 精确）；离散参数 = subpixel（默认 16）",
+        "note": "A = |Σ(x_i·y_{i+1} − x_{i+1}·y_i)|/2（教科书 Shoelace，独立实现）⇒ 4.0250000000 µm²。candidate=平台 `rasterize_polygon` 的**亚格平均**覆盖率 Σfrac·dl²（even-odd 交叉数 + s×s 子采样）。实测 |Δ|=4.297e-04（tol=5e-2 的 116.4× 余量）；判据 D 实测比值 2.40/2.00/2.00/1.82（**线性收敛**，MONO），粗端 7.50e-03 < tol、默认档 4.30e-04 ≫ 1e-12。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`voxel|体素|rasteri|栅格|subpixel|亚像素|多边形面积|polygon.?area|shoelace` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ **几何栅格化族零锚占用（本批为本族首锚）**。与既有「几何回提」锚族 **E1–E10** 不同：E1–E10 是「版图/实测 → **器件物理参数回提**」（几何→物理量），本题是「**多边形 → 栅格覆盖率**」的**数值积分误差**（几何→面积测度），被测标量/数值机制/golden 三处均不同 ⇒ **非重复计数**。⚠️ **诚实边界**：多边形顶点与网格分辨率为**设计示例**（非实测版图）；栅格化是**面积测度**的数值近似（非电磁/量子计算），结论只可用于数值方法与量级，不得作制造/性能宣称。零商业依赖。",
     },
 }

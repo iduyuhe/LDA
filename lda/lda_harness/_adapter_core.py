@@ -546,6 +546,7 @@ def _get_batch_b30():
         import _batch_b30_numeric as _m
     _BATCH_B30_MOD = _m
     return _m
+_BATCH_B32_MOD = None
 _BATCH_B31_MOD = None
 
 def _get_batch_b31():
@@ -565,4 +566,22 @@ def _get_batch_b31():
         _ensure_paths()
         import _batch_b31_numeric as _m
     _BATCH_B31_MOD = _m
+    return _m
+
+def _get_batch_b32():
+    """B-32 数值核（几何栅格化收敛 · 解析 Shoelace × 亚格平均栅格化，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B32** 占用无连字符写法 `b32_`（`b32_cpml_reflection` 等 CPML 锚），
+    故批次核一律用连字符形式 `_batch_b32_numeric` / `_get_batch_b32`（接手前已实 grep 核占名，
+    B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B32_MOD
+    if _BATCH_B32_MOD is not None:
+        return _BATCH_B32_MOD
+    try:
+        from lda_harness import _batch_b32_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b32_numeric as _m
+    _BATCH_B32_MOD = _m
     return _m

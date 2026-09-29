@@ -10,7 +10,7 @@ from __future__ import annotations
 from ._adapter_core import (
     _get_batch_b, _get_batch_b2, _get_batch_b28, _get_batch_b29, _get_batch_b3, _get_batch_b4,
     _get_batch_b5, _get_batch_b6, _get_batch_b7, _get_batch_b8, _register_candidate,
-    _get_batch_b30, _get_batch_b31,
+    _get_batch_b30, _get_batch_b31, _get_batch_b32,
 )
 
 from typing import (
@@ -1041,3 +1041,11 @@ def _b457_wcs_multiphoton_cand(spec: VerificationSpec, oracle_value: Any) -> flo
     p = spec.params
     m = _get_batch_b31()
     return float(m.cand_b457(float(p["mu"])))
+
+
+@_register_candidate(
+    "b458_polygon_area_cand",
+    "多边形面积·版图栅格化：平台 `voxel_field.rasterize_polygon` 的**亚格平均**覆盖率 Σfrac·dl²（even-odd 交叉数 + s×s 子采样）↔ 解析闭式 Shoelace 面积，方法学独立（离散参数 = subpixel，默认 16）")
+def _b458_polygon_area_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b32()
+    return float(m.cand_b458())

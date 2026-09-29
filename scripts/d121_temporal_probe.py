@@ -14,6 +14,12 @@
   · M5 结论反转：temporal_mesh_verdict 谎称「时间复用省损耗」⇒ A1/D1 应红
   · M6 假通用晶格：fixed_lattice_programmability 可及参数改为 M²（判它通用）
              ⇒ A1/C4 应红
+  · M7 浅调度退化：critical_path_layers 退化为「一门一层」⇒ 深度 = n_mzi（O(N²)）
+             ⇒ A1/G1/G5 应红（★浅调度的存在性判据）
+  · M8 紧界谎报：tight_depth_lower_bound 抹成参数界（偶 N 回 N−1，谎称 N−1 可达）
+             ⇒ A1/G3 应红（★「N−1 不可达」这条收紧结论的判据）
+  · M9 唯一最大匹配谎报：adjacency_max_matching 对偶 N 谎报「非唯一」
+             ⇒ A1/G3 应红（去掉唯一性 ⇒ 紧界论证失效）
 🔴 教训：探针必须 patch 门禁**同一模块对象**（S.TMB）——门禁走双路兜底可能绑成
    top-level 模块，另起 `from lda_qeda import ...` 会拿到不同实例 ⇒ patch 打空 ⇒ 假绿。
 """
@@ -119,6 +125,34 @@ def main() -> int:
     TMB.fixed_lattice_programmability = _flp_fake
     rows.append(("M6 假通用晶格（可及=M²）", *run_smoke()))
     TMB.fixed_lattice_programmability = _flp
+
+    # M7 浅调度退化：关键路径分层抹成「一门一层」⇒ 深度 = n_mzi（O(N²) 假最优）
+    _cpl = TMB.critical_path_layers
+
+    def _cpl_serial(seq):
+        return [[g] for g in seq], len(seq)
+
+    TMB.critical_path_layers = _cpl_serial
+    rows.append(("M7 浅调度退化（一头一层）", *run_smoke()))
+    TMB.critical_path_layers = _cpl
+
+    # M8 紧界谎报：抹成参数界（偶 N 回 N−1）⇒ 谎称 N−1 可达
+    _tdlb = TMB.tight_depth_lower_bound
+    TMB.tight_depth_lower_bound = lambda n: TMB.universality_depth_lower_bound(n)
+    rows.append(("M8 紧界谎报（回 N−1）", *run_smoke()))
+    TMB.tight_depth_lower_bound = _tdlb
+
+    # M9 唯一最大匹配谎报：对偶 N 谎报「非唯一」⇒ 紧界论证失效
+    _amm = TMB.adjacency_max_matching
+
+    def _amm_lie(n_modes):
+        d = _amm(n_modes)
+        d["unique_max_matching"] = False
+        return d
+
+    TMB.adjacency_max_matching = _amm_lie
+    rows.append(("M9 唯一性谎报（偶 N 非唯一）", *run_smoke()))
+    TMB.adjacency_max_matching = _amm
 
     rows.append(("还原后（须复绿）", *run_smoke()))
 

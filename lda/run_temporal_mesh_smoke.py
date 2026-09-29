@@ -13,10 +13,14 @@ D-121 是本平台**唯一**把「时间复用架构」当被判对象的模块�
   ④ **Borealis 维度判死**：浅晶格可及参数 ≪ N² ⇒ 非通用（只比规模/参数计数）。
   ⑤ **任意对可寻址引理 L1**：非相邻对由延迟共轭寻址（含「置换阵必须从零阵起建」
      的踩坑点：用 np.eye 起手会残留对角 1 ⇒ 引理假红）。
+  ⑥ **★浅并行调度 + 深度界收敛**：朴素贪心 O(N²) → 关键路径分层 = **2N−3**（该 op
+     集可证最优）；且偶 N 由**唯一最大匹配**把参数界 N−1 收紧到 **N** ⇒ N−1 **不可达**。
+     有人把「N−1 可达」写成结论、或把浅调度深度改大 ⇒ 立刻变红。
 
-═══ 判什么（分六节 · 24 条）═══
+═══ 判什么（分七节 · 30 条）═══
 A 时空原语 4 · B 构造性通用性 4 · C 深度下界+元件数 4 ·
-D 损耗不省+Borealis 维度判死 4 · E 跨模块+前沿+诚实标注 4 · F 常数同源+红线 4。
+D 损耗不省+Borealis 维度判死 4 · E 跨模块+前沿+诚实标注 4 · F 常数同源+红线 4 ·
+G 浅并行调度+紧界 6。
 
 运行：python run_temporal_mesh_smoke.py（cwd=lda/）
 出口：全 PASS 退 0；任一 FAIL 退 1。LLM 不进判决路径。
@@ -66,8 +70,9 @@ def main() -> int:
     except Exception as e:                                # noqa: BLE001
         ok_a = False
         print(f"  时间复用模块自检异常：{type(e).__name__}: {e}")
-    check("A1 时间复用模块自检 13/13 PASS", ok_a,
-          "时空原语/引理L1/2模golden/护栏/构造性通用性/深度下界/资源/损耗/对标/前沿/护栏")
+    check("A1 时间复用模块自检 18/18 PASS", ok_a,
+          "时空原语/引理L1/2模golden/护栏/构造性通用性/深度下界/资源/损耗/对标/前沿/"
+          "浅调度/紧界/三口径界")
 
     bad = []
     for n in (4, 7, 216):
@@ -260,6 +265,65 @@ def main() -> int:
           isinstance(vd["loss_saving_strictly_negative"], bool)
           and isinstance(vd["depth_required_lower_bound"], int),
           "loss_saving_strictly_negative 为 bool · depth 为 int（死标量）")
+
+    # ════════════════ G 节：★浅并行调度 + 深度界收敛★ ════════════════
+    print("── G ★浅并行调度（关键路径分层）★ + 深度界收紧 ──")
+    ok_g1 = True
+    got_g1 = []
+    for n_ in (4, 5, 8, 16, 32, 64):
+        pr = TMB.temporal_shallow_profile(n_, target="dft")
+        got_g1.append(f"N={n_}:d={pr['shallow_depth']}")
+        if not (pr["shallow_depth"] == 2 * n_ - 3 and pr["layers_are_matchings"]
+                and abs(pr["fidelity"] - 1.0) < 1e-11):
+            ok_g1 = False
+    check("G1 ★浅调度★ 深度 = 关键路径 2N−3 · 每层真匹配 · 重建 fid=1.0（N=4…64）",
+          ok_g1, " · ".join(got_g1))
+
+    n_ = 12
+    U_ = TMB.random_unitary(n_, seed=21)
+    ops_, D_ = MMM.reck_triangular_mesh(U_)
+    sched_sh, depth_sh, mx_sh, ok_sh = TMB.schedule_shallow(ops_, D_, n_)
+    d_g2 = float(np.max(np.abs(TMB.schedule_unitary(sched_sh, n_)
+                               - MMM.assemble_triangular_mesh(ops_, D_, n_))))
+    check("G2 跨模块桥：浅调度重建 ≡ 平台 assemble_triangular_mesh（逐位一致）",
+          d_g2 < 1e-13 and ok_sh,
+          f"max|Δ|={d_g2:.2e} · 深度={depth_sh} · 每层最多 {mx_sh} 门")
+
+    ok_g3 = True
+    for n_ in (4, 6, 8, 16, 64):
+        mm = TMB.adjacency_max_matching(n_)
+        if not (mm["unique_max_matching"] and TMB.tight_depth_lower_bound(n_) == n_):
+            ok_g3 = False
+        if not TMB.tight_depth_lower_bound(n_) > TMB.universality_depth_lower_bound(n_):
+            ok_g3 = False
+    check("G3 ★紧界★ 偶 N 最大匹配唯一 ⇒ 紧下界 = N > 参数下界 N−1（⟹ N−1 不可达）",
+          ok_g3, f"N=216：参数界 {TMB.universality_depth_lower_bound(216)} → 紧界 "
+                  f"{TMB.tight_depth_lower_bound(216)}")
+
+    ok_g4 = True
+    got_g4 = []
+    for n_ in (4, 8, 16, 64, 216):
+        b = TMB.depth_bound_report(n_)
+        got_g4.append(f"N={n_}:{b['parameter_count_bound']}/"
+                      f"{b['tight_adjacency_bound']}/{b['reck_mesh_optimum']}")
+        if not (b["parameter_count_bound"] <= b["tight_adjacency_bound"]
+                <= b["reck_mesh_optimum"] == 2 * n_ - 3):
+            ok_g4 = False
+    check("G4 三口径界自洽：参数界 ≤ 紧界 ≤ 平台 Reck 最优(=2N−3)（含 216）",
+          ok_g4, " · ".join(got_g4))
+
+    pr64 = TMB.temporal_shallow_profile(64, target="dft")
+    b216 = TMB.depth_bound_report(216)
+    check("G5 浅调度加速：朴素串行 n_mzi → 2N−3（N=64 提速 = n_mzi/(2N−3)）",
+          pr64["naive_serial_depth"] == 64 * 63 // 2 and pr64["shallow_depth"] == 125
+          and abs(pr64["speedup_vs_serial"] - 2016.0 / 125.0) < 1e-9,
+          f"N=64：{pr64['naive_serial_depth']}→{pr64['shallow_depth']}"
+          f"（{pr64['speedup_vs_serial']:.1f}×）· N=216 最优 {b216['reck_mesh_optimum']} 层")
+
+    check("G6 浅调度判决无 LLM：深度/界全为 int · 反链由整数冲突关系判定（零模型调用）",
+          isinstance(depth_sh, int) and isinstance(b216["reck_mesh_optimum"], int)
+          and isinstance(b216["tight_adjacency_bound"], int),
+          "depth/参数界/紧界/最优 全为 int（死标量）")
 
     print()
     print(f"量子时间复用可编程酉 门禁 smoke：{PASS}/{PASS + FAIL} PASS")

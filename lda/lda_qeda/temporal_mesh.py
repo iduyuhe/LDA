@@ -40,10 +40,24 @@ N 个模 = N 个时间格（间隔 τ），光子在一根波导里以脉冲串�
       —— 同列内相邻对共享模且顺序不可换 ⇒ 朴素构造深度 O(N²)。
       故本模块的损耗判定**不依赖**构造深度，而依赖下界，见结论 2/3。）
 
-  ★ 结论 2（深度下界：参数计数，硬件无关）
+  ★ 结论 2（深度下界：参数计数，硬件无关 · **非紧下界**）
     N 模酉有 N² 个实参数；一片 2 模无损门只提供 1 个独立参数（一个 Givens 角），
-    而一层最多容纳 ⌊N/2⌋ 片不相交门 ⇒ **深度下界 D ≥ N(N−1)/2 / ⌊N/2⌋**。
-    N 偶 ⇒ 下界恰为 **N−1**；N 奇 ⇒ **N**。（本模块以精确整数恒等式验证。）
+    而一层最多容纳 ⌊N/2⌋ 片不相交门 ⇒ **参数计数下界 D ≥ N(N−1)/2 / ⌊N/2⌋**。
+    N 偶 ⇒ **N−1**；N 奇 ⇒ **N**。（本模块以精确整数恒等式验证。）
+    🔴 该下界**非紧**（2b 节给出收紧与可达性判定）。
+
+  ★ 结论 2b（🔴 浅并行调度 + 深度界收敛：下界可达吗？**否**）
+    朴素贪心构造「遇冲突即封步」⇒ 深度 = 门数 O(N²)。本模块给出**浅并行调度器**
+    `schedule_shallow`：按依赖 DAG（共享模 ⇒ 有向边）的**关键路径分层** ⇒
+    层 = 反链 = 匹配 ⇒ 深度 = 关键路径 = 任意合法调度的下界，且**达到**该下界
+    ⇒ 对该 op 集**最优**。实测：Reck op 集最优深度恰为 **2N−3**（经典 Reck 光学深度）。
+      ① **紧下界收紧**：偶 N 时相邻路径 P_N 的**唯一**最大匹配是偶数对 E ⇒
+         若每层皆最大匹配则每层皆 E ⇒ 乘积是两两配对的块对角 ⇒ 非通用 ⇒ 至少一层
+         非最大 ⇒ D·⌊N/2⌋−1 ≥ n_mzi ⇒ **D ≥ N**（> 参数下界 N−1）⇒ N−1 **不可达**。
+      ② **平台可达值**：三角 Reck op 集最优 = 2N−3（构造 fid=1.0 + 关键路径下界双证）。
+      ③ 诚实结论：D-121 的 N−1 是**合法但不紧**的下界；相邻耦合紧下界 = N；
+         平台现有网格的**最优**深度 = 2N−3（N=216：23220 → **429** 层，**54×** 加速）。
+         达 N 层需换**矩形网格分解**（登记为下一步，不在本模块声称）。
 
   ★ 结论 3（🔴 修正 M4 的口号：时间复用买元件数，**不买**深度/损耗）
     时间复用把**物理元件数**从 O(N²) 降到 O(1)（1 片 MZI + 1 条延迟）——
@@ -93,10 +107,16 @@ __all__ = [
     "matching_layer_unitary",
     "schedule_unitary",
     "schedule_from_reck_ops",
+    "critical_path_layers",
+    "schedule_shallow",
     "temporal_schedule_profile",
+    "temporal_shallow_profile",
     "random_unitary",
     "universality_gate_count",
     "universality_depth_lower_bound",
+    "adjacency_max_matching",
+    "tight_depth_lower_bound",
+    "depth_bound_report",
     "static_mesh_resources",
     "temporal_mesh_resources",
     "temporal_loss_at_depth",
@@ -334,6 +354,163 @@ def temporal_schedule_profile(n_modes: int, *, seed: int = 0,
         "n_physical_mzi": 1,
         "depth_lower_bound": dmin,
         "depth_within_bounds": bool(dmin <= int(steps) <= n_gates),
+    }
+
+
+# ---------------------------------------------------------------------------
+# 2b) ★ 浅并行调度器（把「朴素 O(N²) 构造」压到该 op 集的**最优深度**）
+# ---------------------------------------------------------------------------
+# 朴素贪心 `schedule_from_reck_ops(group=True)`「遇冲突即封步」⇒ 深度 ≈ 门数 O(N²)。
+# 本节改为**依赖 DAG 的关键路径分层**：两片门共享模 ⇒ 不可对易 ⇒ 有向边（按序列序）；
+# 层 = 反链 = 匹配 ⇒ 可同步。关键路径 = 任意合法调度的深度下界，且本分层**达到**它
+# ⇒ 对该 op 集**最优**。实测：Reck op 集的关键路径恰为 **2N−3**（经典 Reck 光学深度）。
+
+
+def _pair_share_mode(a, b) -> bool:
+    """两片门（元素至少含模索引 p，作用于相邻对 (p,p+1)）是否共享模。"""
+    pa, pb = int(a[0]), int(b[0])
+    return pa == pb or pa + 1 == pb or pb + 1 == pa
+
+
+def critical_path_layers(seq):
+    """按「最长有向路」把门序列分层。返回 (layers, depth)。
+
+    dp[i] = 1 + max{ dp[j] : j<i 且 seq[j] 与 seq[i] 共享模 }。
+    同层两门不共享模 ⇒ 对易 ⇒ 可同步；且层内**两两不相交** ⇒ 是真匹配
+    （满足 `gate_matching_ok`）。depth = 依赖 DAG 关键路径。
+    """
+    L = len(seq)
+    if L == 0:
+        raise ValueError("seq 非空")
+    dp = [1] * L
+    for i in range(L):
+        best = 0
+        for j in range(i):
+            if _pair_share_mode(seq[j], seq[i]) and dp[j] > best:
+                best = dp[j]
+        dp[i] = best + 1
+    depth = max(dp)
+    layers = [[] for _ in range(depth)]
+    for i in range(L):
+        layers[dp[i] - 1].append(seq[i])
+    return layers, int(depth)
+
+
+def schedule_shallow(ops, D, n_modes):
+    """★ 浅并行调度器：把 Reck op 集编成**关键路径最优**的时间表。
+
+    光路程序与 `schedule_from_reck_ops` **逐位一致**（对角层 D → ops 逆序穿 G†），
+    只改聚合策略：`group=False` 的最优版 —— 关键路径分层（而非贪心封步）。
+    返回 (schedule, depth, max_gates_per_layer, layers_are_matchings)。
+    """
+    n = int(n_modes)
+    if n < 2:
+        raise ValueError("n_modes ≥ 2")
+    d = np.diag(np.asarray(D, dtype=complex))
+    seq = [(int(p), float(th), float(ph), True)
+           for (_c, p, th, ph) in reversed(list(ops))]
+    layers, depth = critical_path_layers(seq)
+    ok = all(gate_matching_ok(lay, n) for lay in layers)
+    schedule = [{"kind": "diag", "diag": d}]
+    for lay in layers:
+        schedule.append({"kind": "gates", "gates": lay})
+    return schedule, int(depth), int(max((len(l) for l in layers), default=0)), bool(ok)
+
+
+def temporal_shallow_profile(n_modes, *, seed: int = 0, target: str = "random") -> dict:
+    """浅调度实测：深度 = 关键路径 2N−3 · 重建 fid = 1.0 · 相对朴素贪心的加速。"""
+    n = int(n_modes)
+    U = MMM.dft_matrix(n) if target == "dft" else random_unitary(n, seed=seed)
+    ops, D = MMM.reck_triangular_mesh(U)
+    sched, depth, mx, ok = schedule_shallow(ops, D, n)
+    U_rec = schedule_unitary(sched, n)
+    _sched_serial, naive_depth = schedule_from_reck_ops(ops, D, n, group=False)
+    n_gates = int(len(ops))
+    return {
+        "n_modes": n,
+        "target": target,
+        "n_gates": n_gates,
+        "shallow_depth": int(depth),
+        "critical_path": int(depth),
+        "max_gates_per_layer": int(mx),
+        "layers_are_matchings": bool(ok),
+        "naive_serial_depth": int(naive_depth),
+        "speedup_vs_serial": float(naive_depth) / float(depth),
+        "depth_over_2N_3": float(depth - (2 * n - 3)),
+        "fidelity": float(MMM.unitary_fidelity(U_rec, U)),
+        "unitary_ok": bool(float(np.max(np.abs(U_rec @ U_rec.conj().T - np.eye(n)))) < 1e-9),
+        "n_physical_mzi": 1,
+    }
+
+
+def adjacency_max_matching(n_modes: int) -> dict:
+    """相邻模路径 P_N（节点 0..N−1，可耦合对 (p,p+1)）的最大匹配的信息。
+
+    ⌊N/2⌋ = 最大匹配尺寸；**偶 N 时唯一**（偶数对 E={(0,1),(2,3),…}），
+    奇 N 时多解（可从端点留 1 个节点）—— 这条「唯一性」是收紧深度下界的关键。
+    """
+    n = int(n_modes)
+    if n < 2:
+        raise ValueError("n_modes ≥ 2")
+    size = n // 2
+    unique = (n % 2 == 0)
+    return {
+        "n_modes": n,
+        "max_matching_size": int(size),
+        "unique_max_matching": bool(unique),
+        "unique_pattern": ([(2 * i, 2 * i + 1) for i in range(size)] if unique else None),
+    }
+
+
+def tight_depth_lower_bound(n_modes: int) -> int:
+    """相邻耦合下的**紧**深度下界。
+
+    · 参数计数下界 ⌈n_mzi/⌊N/2⌋⌉（N 偶 ⇒ N−1）**非紧**：
+      偶 N 时 P_N 的**唯一**最大匹配是偶数对 E；若每层都是最大匹配则每层皆 E
+      ⇒ 乘积是「两两配对」的块对角 ⇒ **非通用** ⇒ 至少一层 ≤ ⌊N/2⌋−1
+      ⇒ D·⌊N/2⌋ − 1 ≥ n_mzi ⇒ D ≥ N−1 + 2/N ⇒ **D ≥ N**（D 取整）。
+    · N=2 例外（只有一对，E 即整个 2×2）⇒ 1。
+    · 奇 N：参数计数下界已是 N（唯一性论证不适用，取参数界）。
+    """
+    n = int(n_modes)
+    if n < 2:
+        raise ValueError("n_modes ≥ 2")
+    if n == 2:
+        return 1
+    return int(n)
+
+
+def depth_bound_report(n_modes: int) -> dict:
+    """★ 三口径深度界（一张表说清「下界 / 收紧 / 可达」）。
+
+      · parameter_count_bound：⌈n_mzi/⌊N/2⌋⌉（D-121 原口径；**非紧**）
+      · tight_adjacency_bound：N（偶 N 由唯一最大匹配收紧，见 tight_depth_lower_bound）
+      · reck_mesh_optimum：2N−3（平台三角 Reck op 集的**最优**深度，本模块给出调度）
+    ⇒ 诚实结论：D-121 的 N−1 **不可达**；紧下界 ≥ N；平台现有网格的最优 = 2N−3。
+    """
+    n = int(n_modes)
+    if n < 2:
+        raise ValueError("n_modes ≥ 2")
+    nm = universality_gate_count(n)
+    per = n // 2
+    pc = int(-(-nm // per))
+    tight = tight_depth_lower_bound(n)
+    mm = adjacency_max_matching(n)
+    return {
+        "n_modes": n,
+        "n_mzi": int(nm),
+        "parameter_count_bound": pc,
+        "parameter_count_tight": bool(pc == tight),
+        "tight_adjacency_bound": int(tight),
+        "unique_max_matching": mm["unique_max_matching"],
+        "reck_mesh_optimum": int(2 * n - 3),
+        "reck_over_tight": int(2 * n - 3 - tight),
+        "derivation": ("偶 N：唯一最大匹配 ⇒ 至少一层非最大 ⇒ D·⌊N/2⌋−1 ≥ n_mzi"
+                       " ⇒ D ≥ N；奇 N：参数界即 N。"),
+        "verdict": (f"参数下界 {pc}（D-121 原口径）**不可达**；相邻耦合紧下界 = {tight}；"
+                    f"平台三角 Reck op 集的最优深度 = {2 * n - 3}（本模块调度达到，"
+                    "关键路径同时给出下界）⇒ 「下界可达性」的诚实答案：**否**"
+                    "（对该网格），但可达深度已从朴素 O(N²) 压到 O(N) 的最优值。"),
     }
 
 
@@ -744,10 +921,77 @@ def run_selfchecks(verbose: bool = False) -> bool:
     res["⑬ 跨模块桥：时间表重建 ≡ 平台 assemble_triangular_mesh（逐位一致）"] = bool(
         float(np.max(np.abs(U_rec_ - U_plain))) < 1e-13)
 
+    # ⑭ ★核心★ 浅并行调度：深度 = 关键路径 2N−3 · 每层真匹配 · 重建 fid=1.0
+    ok14 = True
+    detail14 = []
+    for n_ in (4, 5, 8, 16, 32, 64):
+        for tgt in ("dft", "random"):
+            pr = temporal_shallow_profile(n_, target=tgt, seed=n_ * 3 + 1)
+            detail14.append(f"N={n_}/{tgt}:d={pr['shallow_depth']}")
+            if not (pr["shallow_depth"] == 2 * n_ - 3 and pr["layers_are_matchings"]
+                    and abs(pr["fidelity"] - 1.0) < 1e-11 and pr["unitary_ok"]):
+                ok14 = False
+    res["⑭ ★浅调度★ 深度=关键路径 2N−3 · 每层真匹配 · 重建 fid=1.0（N=4…64）"] = ok14
+
+    # ⑮ 浅调度相对朴素串行（group=False）的加速
+    ok15 = True
+    detail15 = []
+    for n_ in (8, 16, 64):
+        pr = temporal_shallow_profile(n_, target="dft")
+        detail15.append(f"N={n_}:{pr['naive_serial_depth']}→{pr['shallow_depth']}"
+                        f"({pr['speedup_vs_serial']:.1f}×)")
+        if not (pr["naive_serial_depth"] == n_ * (n_ - 1) // 2
+                and pr["speedup_vs_serial"] > 1.5):
+            ok15 = False
+    res["⑮ 浅调度加速：朴素串行 n_mzi → 2N−3（N=8/16/64 的加速比）"] = ok15
+
+    # ⑯ ★紧界论证★ 偶 N 最大匹配唯一 ⇒ 紧下界 N（> 参数下界 N−1）；N=2 例外
+    ok16 = True
+    for n_ in (4, 6, 8, 16, 32, 64):
+        mm = adjacency_max_matching(n_)
+        if not (mm["unique_max_matching"] and mm["max_matching_size"] == n_ // 2):
+            ok16 = False
+        if tight_depth_lower_bound(n_) != n_:
+            ok16 = False
+        if not (universality_depth_lower_bound(n_) == n_ - 1
+                and tight_depth_lower_bound(n_) > universality_depth_lower_bound(n_)):
+            ok16 = False
+    for n_ in (3, 5, 7):                      # 奇 N：唯一性论证不适用，取参数界 N
+        if tight_depth_lower_bound(n_) != n_:
+            ok16 = False
+    res["⑯ ★紧界★ 偶 N 唯一最大匹配 ⇒ 紧下界 = N > 参数下界 N−1（N=2 例外=1）"] = ok16
+
+    # ⑰ 三口径界自洽：参数界 ≤ 紧界 ≤ 平台网格最优(=2N−3)
+    ok17 = True
+    detail17 = []
+    for n_ in (4, 8, 16, 64, 216):
+        b = depth_bound_report(n_)
+        detail17.append(f"N={n_}:{b['parameter_count_bound']}/"
+                        f"{b['tight_adjacency_bound']}/{b['reck_mesh_optimum']}")
+        if not (b["parameter_count_bound"] <= b["tight_adjacency_bound"]
+                <= b["reck_mesh_optimum"] == 2 * n_ - 3):
+            ok17 = False
+        if n_ % 2 == 0 and (b["parameter_count_bound"] != n_ - 1
+                            or b["tight_adjacency_bound"] != n_):
+            ok17 = False
+    res["⑰ 三口径界自洽：参数界 ≤ 紧界 ≤ Reck 最优(=2N−3)（含 216）"] = ok17
+
+    # ⑱ 跨模块桥：浅调度重建 ≡ 平台 assemble_triangular_mesh（逐位一致）
+    n_ = 10
+    U_ = random_unitary(n_, seed=11)
+    ops_, D_ = MMM.reck_triangular_mesh(U_)
+    sched_sh, _d, _mx, _ok = schedule_shallow(ops_, D_, n_)
+    res["⑱ 跨模块桥：浅调度重建 ≡ 平台 assemble_triangular_mesh（逐位一致）"] = bool(
+        float(np.max(np.abs(schedule_unitary(sched_sh, n_) -
+                            MMM.assemble_triangular_mesh(ops_, D_, n_)))) < 1e-13)
+
     if verbose:
         for k, v in res.items():
             print(f"[{'PASS' if v else 'FAIL'}] {k}")
         print("⑤ 明细：" + " · ".join(detail5))
+        print("⑭ 明细：" + " · ".join(detail14))
+        print("⑮ 明细：" + " · ".join(detail15))
+        print("⑰ 明细：" + " · ".join(detail17))
     return bool(all(res.values()))
 
 

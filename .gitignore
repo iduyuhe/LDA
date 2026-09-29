@@ -183,3 +183,7 @@ LDA_wave7_closeout_plan_2026-09-21.md
 LDA_电域解锁与外部对标边界_讨论纪要_2026-09-23.md
 G12_colocated_failure.md
 scripts/t2_closing_acceptance_rehearsal.py
+
+# ---- 文档/演示生成链的中间产物（2026-09-29 新增）----
+.slidep/
+output/

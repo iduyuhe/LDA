@@ -1,11 +1,15 @@
-"""超导征程 S5 全闭环**批量** demo（D-137 路由 + D-142 频率 + D-143 规模 · 吃狗粮）。
+"""超导征程 S5 全闭环**批量** demo（P0: D-137 路由 + D-142 频率 + D-143 规模；
+P1: D-138 heavy-hex + D-139 可调耦合器 + D-140 读出 mux + D-141 控制多线 + D-144 阵列损耗 · 吃狗粮）。
 
-在多档规模上批量签核：每档产出 lda_schip_s5_<R>x<C>.gds / .svg，并汇总
-lda_schip_s5.report.json。单档闭环判定 = 路由几何 DRC + 段感知 LVS + 频率规划（含杂散 ZZ）
-+ 损耗预算 全 ACCEPT。
+批量签核两类配置族：
+  • **grid 族**（LDA 原生方阵）：每档跑 路由 DRC/LVS（G1）+ 频率规划（G6）+ 读出 mux 规划/DRC/LVS（G4）
+    + 控制多线 DRC/LVS/串扰（G5）+ 阵列损耗（G8）；产出 .gds/.svg。
+  • **heavy-hex 族**（对标 IBM）：每档跑 拓扑度统计 + DRC/LVS + 逐边物理（G2）；产出 .gds/.svg。
+  • **单元**：可调耦合器（G3）DRC/LVS/物理；产出 .gds/.svg。
 
-默认档位：2×2、7×8(56)、13×13(169)；可用环境变量覆盖：
-  S5_TIERS="2x2,7x8,13x13,21x21" python lda_schip_s5.py
+汇总 lda_schip_s5.report.json。闭环判定 = 该档全部子签核 ACCEPT。
+默认档位：grid="2x2,7x8,13x13" · hex="3x3,4x5"；可用环境变量覆盖：
+  S5_TIERS="2x2,7x8,13x13,21x21" S5_HEX_TIERS="3x3,5x6" python lda_schip_s5.py
 """
 from __future__ import annotations
 
@@ -20,6 +24,10 @@ if os.path.join(_HERE, "..") not in sys.path:
 
 from lda_qeda import sc_routing as SR                                 # noqa: E402
 from lda_qeda import sc_freq_alloc as FA                              # noqa: E402
+from lda_qeda import sc_readout_mux as MX                             # noqa: E402
+from lda_qeda import sc_control as CT                                 # noqa: E402
+from lda_qeda import sc_topology as TP                                # noqa: E402
+from lda_qeda import sc_coupler as SC                                 # noqa: E402
 
 
 def _parse_tiers(env: str):
@@ -32,75 +40,160 @@ def _parse_tiers(env: str):
     return out
 
 
-def _one(rows: int, cols: int) -> dict:
+def _write(svg_path: str, svg: str, gds_path: str, gds: bytes):
+    with open(svg_path, "w", encoding="utf-8") as f:
+        f.write(svg)
+    return len(gds)
+
+
+def _grid_one(rows: int, cols: int) -> dict:
     params = {"rows": rows, "cols": cols}
     tag = f"{rows}x{cols}"
     elems = SR.routed_array_cell(params)
     gds_path = os.path.join(_HERE, f"lda_schip_s5_{tag}.gds")
     svg_path = os.path.join(_HERE, f"lda_schip_s5_{tag}.svg")
     gds_bytes = SR.routed_gds(params, gds_path)
-    with open(svg_path, "w", encoding="utf-8") as f:
-        f.write(SR.routed_svg_preview(params, width=680))
+    _write(svg_path, SR.routed_svg_preview(params, width=680), gds_path, gds_bytes)
 
     drc = SR.run_routing_drc(elems)
     lvs = SR.routed_array_lvs(elems)
     fpl = FA.plan(params)
-    lb = SR.S4.loss_budget(params)
+    lb = SR.S4.array_loss_budget(params)
     cap = SR.routing_capacity(params)
 
-    closed = (drc["verdict"] == "ACCEPT" and lvs["verdict"] == "ACCEPT"
-              and fpl["verdict"] == "ACCEPT" and lb["verdict"] == "ACCEPT")
+    mux_cell = MX.mux_array_cell(params)
+    mux_pl = MX.mux_plan(params)
+    mdr = MX.run_mux_drc(mux_cell, mux_pl)
+    mlv = MX.mux_lvs(mux_cell, mux_pl)
+    mph = MX.mux_physics(params)
+
+    ctrl = CT.control_array_cell(params)
+    cdr = CT.run_control_drc(ctrl)
+    clv = CT.control_lvs(ctrl)
+    cxt = CT.line_xtalk_budget(params)
+
+    closed = all(x["verdict"] == "ACCEPT" for x in (drc, lvs, fpl, lb, mdr, mlv, mph, cdr, clv, cxt))
     return {
-        "tier": tag, "rows": rows, "cols": cols, "n_qubits": rows * cols,
-        "n_elements": len(elems), "gds_bytes": len(gds_bytes),
-        "drc": {"verdict": drc["verdict"], "n_rules": drc["n_rules"],
-                "n_violations": len(drc["violations"])},
-        "lvs": {"verdict": lvs["verdict"], "netlist": lvs["netlist"],
-                "n_issues": len(lvs["issues"])},
+        "family": "grid", "tier": tag, "rows": rows, "cols": cols,
+        "n_qubits": rows * cols, "n_elements": len(elems),
+        "gds_bytes": len(gds_bytes),
+        "drc": {"verdict": drc["verdict"], "n_rules": drc["n_rules"]},
+        "lvs": {"verdict": lvs["verdict"], "n_issues": len(lvs["issues"])},
         "freq": {"verdict": fpl["verdict"], "mode": fpl["mode"],
-                 "n_distinct_freqs": fpl["n_distinct_freqs"],
-                 "max_stray_zz_mhz": fpl["max_stray_zz_mhz"],
-                 "zz_stray_limit_mhz": fpl["zz_stray_limit_mhz"],
-                 "zz_path": fpl["zz_path"]},
+                 "max_stray_zz_mhz": fpl["max_stray_zz_mhz"]},
         "loss": {"verdict": lb["verdict"], "min_t1_total_us": lb["min_t1_total_us"],
-                 "t1_target_us": lb["t1_target_us"]},
+                 "yield": lb["yield"], "pkg_mode_ok": lb["pkg_mode_ok"]},
+        "mux": {"drc": mdr["verdict"], "lvs": mlv["verdict"], "phys": mph["verdict"],
+                "tone_spacing_mhz": mph["plan"]["min_tone_spacing_mhz"]},
+        "control": {"drc": cdr["verdict"], "lvs": clv["verdict"], "xtalk": cxt["verdict"],
+                    "max_intra_X": cxt["max_intra_X"]},
         "routing_capacity": {"n_signals": cap["n_signals"],
-                             "pitch_y_eff_um": cap["pitch_y_eff_um"],
-                             "pitch_y_growth": cap["pitch_y_growth"]},
+                             "pitch_y_eff_um": cap["pitch_y_eff_um"]},
         "closed_loop": closed,
     }
 
 
+def _hex_one(rows: int, cols: int) -> dict:
+    params = {"rows": rows, "cols": cols}
+    tag = f"hh{rows}x{cols}"
+    g = TP.heavy_hex_graph(rows, cols)
+    cell = TP.heavy_hex_cell(params)
+    gds_path = os.path.join(_HERE, f"lda_schip_s5_{tag}.gds")
+    svg_path = os.path.join(_HERE, f"lda_schip_s5_{tag}.svg")
+    gds_bytes = TP.heavy_hex_gds(params, gds_path)
+    _write(svg_path, TP.heavy_hex_svg_preview(params, width=680), gds_path, gds_bytes)
+
+    deg = TP.heavy_hex_degree_stats(g)
+    drc = TP.run_heavyhex_drc(cell, g)
+    lvs = TP.heavyhex_lvs(cell, g)
+    ph = TP.heavy_hex_physics(params)
+    closed = all(x["verdict"] == "ACCEPT" for x in (drc, lvs, ph))
+    return {
+        "family": "heavy-hex", "tier": tag, "rows": rows, "cols": cols,
+        "n_qubits": g["n_qubits"], "n_vertices": g["n_vertices"],
+        "n_edge_qubits": g["n_edge_qubits"], "n_couplings": g["n_edges"],
+        "max_degree": deg["max_degree"], "no_four_neighbor": deg["no_four_neighbor"],
+        "n_elements": len(cell), "gds_bytes": len(gds_bytes),
+        "drc": {"verdict": drc["verdict"], "n_rules": drc["n_rules"]},
+        "lvs": {"verdict": lvs["verdict"], "n_issues": len(lvs["issues"])},
+        "physics": {"verdict": ph["verdict"], "max_J_rel_err": ph["max_J_rel_err"]},
+        "closed_loop": closed,
+    }
+
+
+def _tunable_one() -> dict:
+    tc = SC.tunable_coupler_cell({})
+    gds_path = os.path.join(_HERE, "lda_schip_s5_tunable.gds")
+    svg_path = os.path.join(_HERE, "lda_schip_s5_tunable.svg")
+    gds_bytes = SC.tunable_coupler_gds({}, gds_path)
+    _write(svg_path, SC.tunable_coupler_svg_preview({}, width=520), gds_path, gds_bytes)
+    drc = SC.run_tunable_drc(tc)
+    lvs = SC.tunable_coupler_lvs(tc)
+    ph = SC.tunable_coupler_physics({})
+    closed = all(x["verdict"] == "ACCEPT" for x in (drc, lvs, ph))
+    return {"family": "unit", "tier": "tunable-coupler", "n_elements": len(tc),
+            "gds_bytes": len(gds_bytes),
+            "drc": {"verdict": drc["verdict"], "n_rules": drc["n_rules"]},
+            "lvs": {"verdict": lvs["verdict"], "n_issues": len(lvs["issues"])},
+            "physics": {"verdict": ph["verdict"], "J_on_mhz": ph["J_on_mhz"],
+                        "J_off_mhz": ph["J_off_mhz"], "off_ratio": ph["off_ratio"]},
+            "closed_loop": closed}
+
+
 def main() -> int:
-    tiers = _parse_tiers(os.environ.get("S5_TIERS", "2x2,7x8,13x13"))
-    print("═" * 78)
-    print("超导征程 S5 全闭环批量 demo（D-137/D-142/D-143）")
-    print("═" * 78)
+    grid_tiers = _parse_tiers(os.environ.get("S5_TIERS", "2x2,7x8,13x13"))
+    hex_tiers = _parse_tiers(os.environ.get("S5_HEX_TIERS", "3x3,4x5"))
+    print("═" * 82)
+    print("超导征程 S5 全闭环批量 demo（P0 D-137/142/143 + P1 D-138/139/140/141/144）")
+    print("═" * 82)
 
     results = []
     all_closed = True
-    for (r, c) in tiers:
+
+    print("── 单元：可调耦合器（G3 · D-139）──")
+    t0 = time.time()
+    ru = _tunable_one()
+    all_closed = all_closed and ru["closed_loop"]
+    results.append(ru)
+    print(f"  {ru['tier']:<16} DRC={ru['drc']['verdict']} LVS={ru['lvs']['verdict']} "
+          f"PHYS={ru['physics']['verdict']} · J_on={ru['physics']['J_on_mhz']:.3f}MHz "
+          f"off_ratio={ru['physics']['off_ratio']:.1f} · 元素={ru['n_elements']} · "
+          f"{time.time() - t0:.2f}s · {'✅' if ru['closed_loop'] else '❌'}")
+
+    print("── grid 族（LDA 方阵）──")
+    for (r, c) in grid_tiers:
         t0 = time.time()
-        res = _one(r, c)
-        dt = time.time() - t0
+        res = _grid_one(r, c)
         all_closed = all_closed and res["closed_loop"]
         results.append(res)
         print(f"  {res['tier']:>7} (N={res['n_qubits']:>4}) · "
               f"DRC={res['drc']['verdict']} LVS={res['lvs']['verdict']} "
               f"FREQ={res['freq']['verdict']}({res['freq']['mode']}) "
-              f"LOSS={res['loss']['verdict']} · "
-              f"杂散ZZ={res['freq']['max_stray_zz_mhz']:.3f}≤"
-              f"{res['freq']['zz_stray_limit_mhz']} · "
-              f"minT1={res['loss']['min_t1_total_us']:.1f}µs · "
-              f"元素={res['n_elements']} · {dt:.2f}s · "
-              f"{'✅' if res['closed_loop'] else '❌'}")
+              f"LOSS={res['loss']['verdict']} MUX={res['mux']['phys']} "
+              f"CTRL={res['control']['xtalk']} · 元素={res['n_elements']} · "
+              f"{time.time() - t0:.2f}s · {'✅' if res['closed_loop'] else '❌'}")
+
+    print("── heavy-hex 族（对标 IBM）──")
+    for (r, c) in hex_tiers:
+        t0 = time.time()
+        res = _hex_one(r, c)
+        all_closed = all_closed and res["closed_loop"]
+        results.append(res)
+        print(f"  {res['tier']:>7} (N={res['n_qubits']:>4}) · "
+              f"顶点={res['n_vertices']} 边{res['n_edge_qubits']} · maxDeg={res['max_degree']} · "
+              f"DRC={res['drc']['verdict']} LVS={res['lvs']['verdict']} "
+              f"PHYS={res['physics']['verdict']} · 元素={res['n_elements']} · "
+              f"{time.time() - t0:.2f}s · {'✅' if res['closed_loop'] else '❌'}")
 
     report = {
-        "module": "D-137/D-142/D-143 · 超导征程 S5 大 N P&R + 路由 + 频率避撞 + 规模压力",
-        "tiers": results,
+        "module": "S5 全闭环批量签核（P0 D-137/142/143 + P1 D-138/139/140/141/144）",
+        "configs": results,
         "all_closed_loop": all_closed,
         "red_line": {"routing": SR.RED_LINE_DISCLOSURE,
-                     "freq_alloc": FA.RED_LINE_DISCLOSURE},
+                     "freq_alloc": FA.RED_LINE_DISCLOSURE,
+                     "mux": MX.RED_LINE_DISCLOSURE,
+                     "control": CT.RED_LINE_DISCLOSURE,
+                     "topology": TP.RED_LINE_DISCLOSURE},
     }
     rep_path = os.path.join(_HERE, "lda_schip_s5.report.json")
     with open(rep_path, "w", encoding="utf-8") as f:

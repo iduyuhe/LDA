@@ -1,7 +1,29 @@
 {
-  "module": "D-137/D-142/D-143 · 超导征程 S5 大 N P&R + 路由 + 频率避撞 + 规模压力",
-  "tiers": [
+  "module": "S5 全闭环批量签核（P0 D-137/142/143 + P1 D-138/139/140/141/144）",
+  "configs": [
     {
+      "family": "unit",
+      "tier": "tunable-coupler",
+      "n_elements": 21,
+      "gds_bytes": 1264,
+      "drc": {
+        "verdict": "ACCEPT",
+        "n_rules": 7
+      },
+      "lvs": {
+        "verdict": "ACCEPT",
+        "n_issues": 0
+      },
+      "physics": {
+        "verdict": "ACCEPT",
+        "J_on_mhz": 0.3996376297336301,
+        "J_off_mhz": 0.007358964506674268,
+        "off_ratio": 54.306231450250344
+      },
+      "closed_loop": true
+    },
+    {
+      "family": "grid",
       "tier": "2x2",
       "rows": 2,
       "cols": 2,
@@ -10,45 +32,43 @@
       "gds_bytes": 2630,
       "drc": {
         "verdict": "ACCEPT",
-        "n_rules": 14,
-        "n_violations": 0
+        "n_rules": 14
       },
       "lvs": {
         "verdict": "ACCEPT",
-        "netlist": {
-          "qubit_nets": 4,
-          "feedline_segments": 2,
-          "readout": 4,
-          "control": 4,
-          "pads_control": 4,
-          "pads_total": 6,
-          "coupler": 4,
-          "ground_nets": 1,
-          "edges_bridged": 4
-        },
         "n_issues": 0
       },
       "freq": {
         "verdict": "ACCEPT",
         "mode": "distinct",
-        "n_distinct_freqs": 4,
-        "max_stray_zz_mhz": 0.3422961987002408,
-        "zz_stray_limit_mhz": 1.0,
-        "zz_path": "s4-full"
+        "max_stray_zz_mhz": 0.3422961987002408
       },
       "loss": {
         "verdict": "ACCEPT",
-        "min_t1_total_us": 46.13029972620309,
-        "t1_target_us": 20.0
+        "min_t1_total_us": 41.18258874428165,
+        "yield": 1.0,
+        "pkg_mode_ok": true
+      },
+      "mux": {
+        "drc": "ACCEPT",
+        "lvs": "ACCEPT",
+        "phys": "ACCEPT",
+        "tone_spacing_mhz": 1399.9999999999995
+      },
+      "control": {
+        "drc": "ACCEPT",
+        "lvs": "ACCEPT",
+        "xtalk": "ACCEPT",
+        "max_intra_X": 0.00042499199999999996
       },
       "routing_capacity": {
         "n_signals": 6,
-        "pitch_y_eff_um": 21.0,
-        "pitch_y_growth": 1.5
+        "pitch_y_eff_um": 21.0
       },
       "closed_loop": true
     },
     {
+      "family": "grid",
       "tier": "7x8",
       "rows": 7,
       "cols": 8,
@@ -57,45 +77,43 @@
       "gds_bytes": 32760,
       "drc": {
         "verdict": "ACCEPT",
-        "n_rules": 14,
-        "n_violations": 0
+        "n_rules": 14
       },
       "lvs": {
         "verdict": "ACCEPT",
-        "netlist": {
-          "qubit_nets": 56,
-          "feedline_segments": 7,
-          "readout": 56,
-          "control": 56,
-          "pads_control": 56,
-          "pads_total": 63,
-          "coupler": 97,
-          "ground_nets": 1,
-          "edges_bridged": 97
-        },
         "n_issues": 0
       },
       "freq": {
         "verdict": "ACCEPT",
         "mode": "reuse",
-        "n_distinct_freqs": 4,
-        "max_stray_zz_mhz": 0.3887623381526051,
-        "zz_stray_limit_mhz": 1.0,
-        "zz_path": "vectorized-closed-form"
+        "max_stray_zz_mhz": 0.3887623381526051
       },
       "loss": {
         "verdict": "ACCEPT",
-        "min_t1_total_us": 46.13029972620309,
-        "t1_target_us": 20.0
+        "min_t1_total_us": 41.18258874428165,
+        "yield": 1.0,
+        "pkg_mode_ok": true
+      },
+      "mux": {
+        "drc": "ACCEPT",
+        "lvs": "ACCEPT",
+        "phys": "ACCEPT",
+        "tone_spacing_mhz": 199.99999999999991
+      },
+      "control": {
+        "drc": "ACCEPT",
+        "lvs": "ACCEPT",
+        "xtalk": "ACCEPT",
+        "max_intra_X": 0.00042499199999999996
       },
       "routing_capacity": {
         "n_signals": 63,
-        "pitch_y_eff_um": 45.0,
-        "pitch_y_growth": 3.2142857142857144
+        "pitch_y_eff_um": 45.0
       },
       "closed_loop": true
     },
     {
+      "family": "grid",
       "tier": "13x13",
       "rows": 13,
       "cols": 13,
@@ -104,41 +122,92 @@
       "gds_bytes": 98506,
       "drc": {
         "verdict": "ACCEPT",
-        "n_rules": 14,
-        "n_violations": 0
+        "n_rules": 14
       },
       "lvs": {
         "verdict": "ACCEPT",
-        "netlist": {
-          "qubit_nets": 169,
-          "feedline_segments": 13,
-          "readout": 169,
-          "control": 169,
-          "pads_control": 169,
-          "pads_total": 182,
-          "coupler": 312,
-          "ground_nets": 1,
-          "edges_bridged": 312
-        },
         "n_issues": 0
       },
       "freq": {
         "verdict": "ACCEPT",
         "mode": "reuse",
-        "n_distinct_freqs": 4,
-        "max_stray_zz_mhz": 0.3799279712688275,
-        "zz_stray_limit_mhz": 1.0,
-        "zz_path": "vectorized-closed-form"
+        "max_stray_zz_mhz": 0.3799279712688275
       },
       "loss": {
         "verdict": "ACCEPT",
-        "min_t1_total_us": 37.34190613094199,
-        "t1_target_us": 20.0
+        "min_t1_total_us": 41.18258874428165,
+        "yield": 1.0,
+        "pkg_mode_ok": true
+      },
+      "mux": {
+        "drc": "ACCEPT",
+        "lvs": "ACCEPT",
+        "phys": "ACCEPT",
+        "tone_spacing_mhz": 116.66666666666663
+      },
+      "control": {
+        "drc": "ACCEPT",
+        "lvs": "ACCEPT",
+        "xtalk": "ACCEPT",
+        "max_intra_X": 0.00042499199999999996
       },
       "routing_capacity": {
         "n_signals": 182,
-        "pitch_y_eff_um": 65.0,
-        "pitch_y_growth": 4.642857142857143
+        "pitch_y_eff_um": 65.0
+      },
+      "closed_loop": true
+    },
+    {
+      "family": "heavy-hex",
+      "tier": "hh3x3",
+      "rows": 3,
+      "cols": 3,
+      "n_qubits": 39,
+      "n_vertices": 18,
+      "n_edge_qubits": 21,
+      "n_couplings": 42,
+      "max_degree": 3,
+      "no_four_neighbor": true,
+      "n_elements": 241,
+      "gds_bytes": 13786,
+      "drc": {
+        "verdict": "ACCEPT",
+        "n_rules": 6
+      },
+      "lvs": {
+        "verdict": "ACCEPT",
+        "n_issues": 0
+      },
+      "physics": {
+        "verdict": "ACCEPT",
+        "max_J_rel_err": 0.043137524792150786
+      },
+      "closed_loop": true
+    },
+    {
+      "family": "heavy-hex",
+      "tier": "hh4x5",
+      "rows": 4,
+      "cols": 5,
+      "n_qubits": 91,
+      "n_vertices": 40,
+      "n_edge_qubits": 51,
+      "n_couplings": 102,
+      "max_degree": 3,
+      "no_four_neighbor": true,
+      "n_elements": 561,
+      "gds_bytes": 31978,
+      "drc": {
+        "verdict": "ACCEPT",
+        "n_rules": 6
+      },
+      "lvs": {
+        "verdict": "ACCEPT",
+        "n_issues": 0
+      },
+      "physics": {
+        "verdict": "ACCEPT",
+        "max_J_rel_err": 0.043137524792150786
       },
       "closed_loop": true
     }
@@ -160,6 +229,33 @@
       "method": "distinct=阶梯贪心（小 N 不碰撞）；reuse=二维模着色 tone=(r+2c) mod M（远隔 qubit 复用频率，规模扩到千比特级）",
       "physics": "复核用 S4 全 pair 静态 ZZ ζ_zz=2J²α/(α²−Δ²)（Blais 2004 色散同口径）＋ coupler_solver 严格 J（确定性锚）；E_J 由频率经 Koch 逆式推得",
       "red_line": "纯几何 + 闭式物理（标准库 + 平台 numpy 物理锚）、零量子 SDK、LLM 不进判决路径、阈值为设计规则"
+    },
+    "mux": {
+      "role": "D-140 = 超导征程 S5 P1：读出频分复用（FDM mux）几何 + 频率规划/调度 + 签核，把 S4 的「共享馈线读出」补成「多腔共线、音互异且隔离」的真 FDM",
+      "layers": "SC_FILM=10 / SC_JJ=11 / SC_GROUND=12（gds_export 定义，非 Foundry PDK）；读出腔/馈线布 FILM 层，以 net(readout/feedline) 区分",
+      "limits": "min_tone_spacing / min_qubit_guard / min_resonator_gap 为**设计规则 · 可覆盖 · 非实测 golden**（Foundry PDK 属 D5 外部依赖）",
+      "lvs": "几何 LVS 复用 S4 九判据 + FDM 音唯一性（同端口不得重音）；对**实际 produced 几何**做 bbox 重叠/邻近网表提取",
+      "physics": "读出音规划为确定性阶梯分配（几何 ↔ λ/4 关系 L=v_ph/(4f)）；Purcell 复用 D-88 闭式 γ_P=κg²/Δ²。f_r/κ/g/ε_eff 为设计参数（非 golden）",
+      "mux": "FDM = 一馈线多腔，音域互异且与 qubit 工作点隔离；共享端口时全阵音互异",
+      "red_line": "纯几何（标准库 + 平台 numpy 物理锚）、零量子 SDK、LLM 不进判决路径、腔长为 λ/4 缩放表示（片内单元级，键合/封装片外未建模）"
+    },
+    "control": {
+      "role": "D-141 = 超导征程 S5 P1：控制多线几何（XY/Z/coupler-flux 三线分离）+ 逐线串扰预算 + 签核，把 S4 的单控制桩升级为真实多线控制",
+      "layers": "SC_FILM=10 / SC_JJ=11 / SC_GROUND=12（gds_export 定义，非 Foundry PDK）；三条控制线均布 FILM 层，以 net=control + control_role 区分",
+      "limits": "ctrl_line_pitch / min_ctrl_line_gap / min_ctrl_line_width 为**设计规则 · 可覆盖 · 非实测 golden**（Foundry PDK 属 D5 外部依赖）",
+      "lvs": "几何 LVS 复用 S4 九判据 + 「每 qubit 恰三条控制线且角色互异（xy/z/cflux）」，对**实际 produced 几何**做 bbox 重叠网表提取",
+      "physics": "逐线串扰 = 平行段 fringe 电容闭式 C_x=ε_eff·ε0·Lc·t/gap → X=C_x/C_q（复用 S4 口径）；分同 qubit 内线对与相邻 qubit 同角色线两类，各有上限",
+      "control": "XY=微波驱动、Z=磁通偏置、cflux=耦合器磁通；三线几何分离 + 逐线预算",
+      "red_line": "纯几何（标准库 + 平台 numpy 物理锚）、零量子 SDK、LLM 不进判决路径、控制线为片上 stub（键合/穿片互连片外未建模）"
+    },
+    "topology": {
+      "role": "D-138 = 超导征程 S5 P1：heavy-hex 拓扑生成器（对标 IBM）+ P&R + DRC/LVS 签核，把平台拓扑从 LDA 原生方阵扩到 IBM 全系 heavy-hex",
+      "layers": "SC_FILM=10 / SC_JJ=11 / SC_GROUND=12（gds_export 定义，非 Foundry PDK）",
+      "limits": "min_node_spacing / coupler_width 为**设计规则 · 可覆盖 · 非实测 golden**（Foundry PDK 属 D5 外部依赖）",
+      "lvs": "复用 S2 多网连通 LVS（对**实际 produced 几何**做 bbox 网表提取）+ 节点/边计数一致",
+      "physics": "逐边 J 用 coupler_solver 严格对角化↔解析闭式双验证 + cross_resonance 有效模型落 ORACLE 窗（与 S2/S3 同口径）",
+      "topology": "heavy-hex = 蜂窝顶点（度 3）+ 边中点（度 2）；最大度 3，无 4 邻居",
+      "red_line": "纯几何（标准库 + 平台 numpy 物理锚）、零量子 SDK、LLM 不进判决路径、耦合器为中心连线矩形（单元级示意）"
     }
   }
 }

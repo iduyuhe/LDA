@@ -895,3 +895,186 @@ def run_selfchecks(verbose: bool = False) -> bool:
         for n, c in msgs:
             print(f"  [{'PASS' if c else 'FAIL'}] {n}")
     return ok
+
+
+# ===========================================================================
+# G8 · D-144 阵列级 + 封装/辐射损耗预算（S5 P1）
+# ===========================================================================
+# S4 的 loss_budget 是 **per-qubit**（内部参与比 + Purcell + 辐射）。G8 把口径推到
+# **阵列级 + 封装级**：① 每 qubit 追加**封装参与比**项（芯片-封装界面/凸点介质损耗）；
+# ② 校验**封装腔模**（box/bump 模，f=c/(2h√ε_r)）不落 qubit 工作带（避免封装模与 qubit
+# 共振导致的额外损耗/串扰）；③ 阵列聚合（min/median/max T1 + 达标良率）。
+#
+# 物理（全闭式 · 确定性定律，LLM 不进判决路径）：
+#   1/T1_total = ω·(Σ tanδ_i·p_i + tanδ_pkg·p_pkg) + γ_Purcell(κg²/Δ²)
+#   封装腔模 f_box = c / (2·h·√ε_r)     （矩形腔基模；h=封装高度，ε_r=腔内介质）
+# 验收：阵列 min T1 ≥ 目标 · 每 qubit T1 ≥ 目标 · 无封装模落 qubit 工作带（保护带）。
+
+PACKAGING_TAN_DELTA = 2e-6       # 封装界面介质损耗角（设计参数）
+PACKAGING_PARTICIPATION = 0.02   # 封装参与比（设计参数）
+PACKAGE_MODE_GUARD_MHZ = 200.0   # 封装腔模到 qubit f01 最小保护带（设计规则）
+
+RED_LINE_DISCLOSURE_G8 = {
+    "role": "D-144 = 超导征程 S5 P1：阵列级 + 封装/辐射损耗预算（per-qubit → 阵列 + 封装）",
+    "limits": "tanδ_pkg / p_pkg / 封装高度为**设计参数 · 可覆盖 · 非实测 golden**（属 D5）",
+    "physics": "1/T1 = ω·(Σtanδ_i·p_i + tanδ_pkg·p_pkg) + Purcell γ_P=κg²/Δ²（D-88 闭式）；"
+               "封装腔模 f=c/(2h√ε_r) 为矩形腔基模闭式",
+    "red_line": "纯几何 + 闭式物理、零量子 SDK、LLM 不进判决路径；封装/穿片为设计预算口径",
+}
+
+
+def package_mode_freqs_ghz(params: Optional[Dict] = None) -> List[float]:
+    """封装腔模频率（GHz）：矩形腔基模 f = c/(2·h·√ε_r)（h=封装高度 mm，ε_r=腔内介质）。"""
+    p = dict(params or {})
+    h_mm = float(p.get("pkg_height_mm", 12.0))
+    er = float(p.get("pkg_eps_r", 1.0))
+    if h_mm <= 0:
+        return []
+    c_mm_per_s = 2.998e11
+    return [float(c_mm_per_s / (2.0 * h_mm * math.sqrt(er)) / 1e9)]
+
+
+def _band_limited_ej_list(n: int, ec: float,
+                          f_min_ghz: float = 5.0, f_max_ghz: float = 6.2) -> List[float]:
+    """限带默认 EJ 列表：把 n 个 qubit 的 f01 均匀落在 [f_min, f_max]（物理工作带）。
+
+    用 Koch 逆式 E_J=(f+E_C)²/(8E_C)。避免 S4 旧默认 18.0+0.3i 在大 N 时扫到
+    17 GHz 的非物理工作点（会与封装模冲突/超工作带）。
+    """
+    if n <= 1:
+        f = f_min_ghz
+        return [float((f + ec) ** 2 / (8.0 * ec))]
+    out = []
+    for i in range(n):
+        f = f_min_ghz + (f_max_ghz - f_min_ghz) * i / (n - 1)
+        out.append(float((f + ec) ** 2 / (8.0 * ec)))
+    return out
+
+
+def array_loss_budget(params: Optional[Dict] = None) -> Dict:
+    """阵列级 + 封装/辐射损耗预算（per-qubit 损耗 + 封装参与比 + 封装模规避 + 阵列聚合）。
+
+    复用 loss_budget（per-qubit：内部参与比 + Purcell），追加封装参与比项；
+    校验封装腔模不落 qubit 工作带；报阵列聚合（min/median/max + 达标良率）。
+    未给 EJ_list 时用**限带**默认（f01 ∈ [5.0, 6.2] GHz，物理工作带）。
+    """
+    p = dict(params or {})
+    rows = int(p.get("rows", 2))
+    cols = int(p.get("cols", 2))
+    n = rows * cols
+    ec = float(p.get("E_C", 0.25))
+    if p.get("EJ_list"):
+        ej_list = [float(x) for x in p["EJ_list"]]
+    else:
+        ej_list = _band_limited_ej_list(n, ec,
+                                        float(p.get("f_q_min_ghz", 5.0)),
+                                        float(p.get("f_q_max_ghz", 6.2)))
+    p = dict(p, EJ_list=ej_list)
+
+    tan_d_pkg = float(p.get("tan_delta_pkg", PACKAGING_TAN_DELTA))
+    p_pkg = float(p.get("p_pkg", PACKAGING_PARTICIPATION))
+    guard = float(p.get("pkg_mode_guard_mhz", PACKAGE_MODE_GUARD_MHZ))
+    # 每 qubit 读出腔频率 = f_q − offset（与 S4 默认 f_r=4.8/f_q≈5.75 的关系一致）
+    f_r_offset = float(p.get("f_r_offset_ghz", 0.95))
+    kappa = float(p.get("kappa_ghz", 0.003))
+    g_rq = float(p.get("g_rq_ghz", 0.05))
+
+    base = loss_budget(p)
+    per: List[Dict] = []
+    for q in base["per_qubit"]:
+        f_q = float(q["f01_ghz"])
+        f_r = f_q - f_r_offset
+        omega = 2.0 * math.pi * f_q * 1e9
+        inv_pkg = omega * tan_d_pkg * p_pkg
+        t1_pkg_us = 1e6 / inv_pkg if inv_pkg > 0 else float("inf")
+        # Purcell（per-qubit f_r，D-88 闭式）：γ_P = κ·g²/Δ²，Δ=f_r−f_q=−offset
+        delta = f_r - f_q
+        gamma_p = kappa * g_rq * g_rq / (delta * delta) if abs(delta) > 1e-9 else 1e9
+        inv_purcell = gamma_p * 1e9
+        t1_purcell_us = 1e6 / inv_purcell if inv_purcell > 0 else float("inf")
+        # 总 1/T1 = 内部（复用好参与比项）+ Purcell（per-qubit f_r）+ 封装
+        inv_int = (1e6 / q["t1_internal_us"]) if q["t1_internal_us"] else 0.0
+        inv_tot = inv_int + inv_purcell + inv_pkg
+        t1_tot_us = 1e6 / inv_tot if inv_tot > 0 else float("inf")
+        ok = bool(t1_tot_us >= T1_TARGET_US)
+        per.append({"qubit": q["qubit"], "f01_ghz": f_q, "f_r_ghz": float(f_r),
+                    "t1_internal_us": q["t1_internal_us"],
+                    "t1_purcell_us": (None if t1_purcell_us == float("inf")
+                                      else float(t1_purcell_us)),
+                    "t1_pkg_us": (None if t1_pkg_us == float("inf") else float(t1_pkg_us)),
+                    "t1_total_us": float(t1_tot_us), "ok": ok})
+
+    # 封装腔模 vs qubit 工作带
+    modes = package_mode_freqs_ghz(p)
+    min_mode_guard = float("inf")
+    for m in modes:
+        for q in base["per_qubit"]:
+            min_mode_guard = min(min_mode_guard, abs(m - float(q["f01_ghz"])) * 1000.0)
+    mode_ok = bool(min_mode_guard >= guard) if modes else True
+
+    t1s = [x["t1_total_us"] for x in per]
+    t1s_sorted = sorted(t1s)
+    med = (t1s_sorted[len(t1s_sorted) // 2] if len(t1s_sorted) % 2
+           else 0.5 * (t1s_sorted[len(t1s_sorted) // 2 - 1]
+                       + t1s_sorted[len(t1s_sorted) // 2]))
+    n_ok = sum(1 for x in per if x["ok"])
+    all_ok = bool(n_ok == n)
+    verdict = "ACCEPT" if (all_ok and mode_ok) else "REJECT"
+
+    return {
+        "verdict": verdict, "n_qubits": n,
+        "t1_target_us": T1_TARGET_US,
+        "tan_delta_pkg": tan_d_pkg, "p_pkg": p_pkg,
+        "pkg_height_mm": float(p.get("pkg_height_mm", 12.0)),
+        "package_modes_ghz": modes,
+        "min_pkg_mode_guard_mhz": (None if min_mode_guard == float("inf")
+                                   else float(min_mode_guard)),
+        "pkg_mode_guard_limit_mhz": guard, "pkg_mode_ok": mode_ok,
+        "min_t1_total_us": float(min(t1s)), "median_t1_total_us": float(med),
+        "max_t1_total_us": float(max(t1s)),
+        "n_ok": n_ok, "yield": float(n_ok) / n if n else 0.0,
+        "array_ok": all_ok, "per_qubit": per,
+        "note": ("阵列损耗 = per-qubit（Barends 参与比 + Purcell，D-88）+ **封装参与比**项；"
+                 "封装腔模 f=c/(2h√ε_r) 须离 qubit 工作带 ≥ 保护带。"
+                 "tanδ_pkg/p_pkg/封装高度为设计参数（非 golden）。LLM 不进判决路径。"),
+    }
+
+
+def run_array_loss_selfchecks(verbose: bool = False) -> bool:
+    """G8 自检（常驻断言：合法 ACCEPT；封装模落带 / 高损耗 ⇒ REJECT）。"""
+    ok = True
+    msgs: List[Tuple[str, bool]] = []
+
+    def chk(name, cond):
+        nonlocal ok
+        ok = ok and bool(cond)
+        msgs.append((name, bool(cond)))
+
+    ab = array_loss_budget({"rows": 2, "cols": 2})
+    chk("① 合法 2×2 阵列损耗 ACCEPT（per-qubit + 封装 + 封装模规避）",
+        ab["verdict"] == "ACCEPT" and ab["yield"] == 1.0)
+    chk("② 阵列聚合自洽：min ≤ median ≤ max · 达标数 = N",
+        ab["min_t1_total_us"] <= ab["median_t1_total_us"] <= ab["max_t1_total_us"]
+        and ab["n_ok"] == ab["n_qubits"])
+
+    # 封装模落 qubit 工作带（封装高度 ≈ 腔长/2 使 f_box ≈ f_q）⇒ REJECT
+    bad_mode = array_loss_budget({"rows": 2, "cols": 2, "pkg_height_mm": 25.6})
+    chk("③ 封装模落 qubit 工作带 ⇒ REJECT（pkg_mode_ok=False）",
+        bad_mode["verdict"] == "REJECT" and not bad_mode["pkg_mode_ok"])
+
+    # 高封装损耗 ⇒ T1 不足 ⇒ REJECT
+    bad_loss = array_loss_budget({"rows": 2, "cols": 2,
+                                  "tan_delta_pkg": 1e-3, "p_pkg": 0.5})
+    chk("④ 高封装损耗 ⇒ 阵列 T1 不足 ⇒ REJECT",
+        bad_loss["verdict"] == "REJECT" and bad_loss["min_t1_total_us"] < T1_TARGET_US)
+
+    # 封装高度越大 ⇒ 腔模频率越低（单调）
+    f_hi = package_mode_freqs_ghz({"pkg_height_mm": 10.0})[0]
+    f_lo = package_mode_freqs_ghz({"pkg_height_mm": 20.0})[0]
+    chk("⑤ 封装腔模闭式：h↑ ⇒ f_box↓（单调）· f(10mm)≈f(20mm)·2",
+        f_lo < f_hi and abs(f_hi / f_lo - 2.0) < 1e-9)
+
+    if verbose:
+        for n, c in msgs:
+            print(f"  [{'PASS' if c else 'FAIL'}] {n}")
+    return ok

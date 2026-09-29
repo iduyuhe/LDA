@@ -16,6 +16,15 @@
   · M5 routed_gds 返空字节           ⇒ E1（GDS 真出失败）应红
   · M6 FA.check_plan 恒 ok=True      ⇒ A2（频率自检：碰撞/共振/近邻漏检）应红
   · M7 FA.plan 恒 REJECT             ⇒ F 四个规模的频率规划应红
+  ── S5 P1（D-138/139/140/141/144）──────────────────────────────
+  · M8  MX.mux_plan 恒合规            ⇒ I3（音密）/I4（保护带）应红
+  · M9  MX.mux_lvs 恒 ACCEPT          ⇒ I5（同馈线重音）/I1 应红
+  · M10 CT.control_lvs 恒 ACCEPT      ⇒ J4（缺 Z 线）/J1 应红
+  · M11 TP.heavy_hex_degree_stats 恒 ≤3 ⇒ L4（4 邻居漏判）应红
+  · M12 S4.array_loss_budget 恒 ACCEPT ⇒ K2（封装模落带）/K3（T1 不足）应红
+  · M13 SC.run_tunable_drc 恒 ACCEPT   ⇒ H3（少一结）/H4（flux 贴环）应红
+  · M14 SC.squid_ej 恒常量             ⇒ H6（SQUID 闭式）应红
+  · M15 TP.run_heavyhex_drc 恒 ACCEPT  ⇒ L4/L5 应红
 """
 from __future__ import annotations
 
@@ -31,6 +40,11 @@ import run_schip_s5_smoke as SM                            # noqa: E402
 
 SR = SM.SR
 FA = SM.FA
+SC = SM.SC
+MX = SM.MX
+CT = SM.CT
+TP = SM.TP
+S4 = SM.S4
 
 
 def run_smoke() -> int:
@@ -109,6 +123,89 @@ def _make_mutations():
             return r
         FA.plan = bad
 
+    orig.update({
+        "mx_plan": MX.mux_plan, "mx_lvs": MX.mux_lvs,
+        "ct_lvs": CT.control_lvs, "tp_deg": TP.heavy_hex_degree_stats,
+        "s4_alb": S4.array_loss_budget, "sc_drc": SC.run_tunable_drc,
+        "sc_ej": SC.squid_ej, "tp_drc": TP.run_heavyhex_drc,
+    })
+
+    def m8():
+        o = orig["mx_plan"]
+
+        def bad(params=None):
+            r = o(params)
+            r["spacing_ok"] = True
+            r["guard_ok"] = True
+            r["verdict"] = "ACCEPT"
+            return r
+        MX.mux_plan = bad
+
+    def m9():
+        o = orig["mx_lvs"]
+
+        def bad(els, plan=None):
+            r = o(els, plan)
+            r["verdict"] = "ACCEPT"
+            r["issues"] = []
+            return r
+        MX.mux_lvs = bad
+
+    def m10():
+        o = orig["ct_lvs"]
+
+        def bad(els):
+            r = o(els)
+            r["verdict"] = "ACCEPT"
+            r["issues"] = []
+            return r
+        CT.control_lvs = bad
+
+    def m11():
+        o = orig["tp_deg"]
+
+        def bad(g):
+            r = o(g)
+            r["max_degree"] = 3
+            r["no_four_neighbor"] = True
+            return r
+        TP.heavy_hex_degree_stats = bad
+
+    def m12():
+        o = orig["s4_alb"]
+
+        def bad(params=None):
+            r = o(params)
+            r["verdict"] = "ACCEPT"
+            r["pkg_mode_ok"] = True
+            r["yield"] = 1.0
+            r["min_t1_total_us"] = 999.0
+            return r
+        S4.array_loss_budget = bad
+
+    def m13():
+        o = orig["sc_drc"]
+
+        def bad(els, limits=None):
+            r = o(els, limits)
+            r["verdict"] = "ACCEPT"
+            r["violations"] = []
+            return r
+        SC.run_tunable_drc = bad
+
+    def m14():
+        SC.squid_ej = lambda a, b, f: 7.0       # 破坏 SQUID 闭式（E_J(0)≠2E_J0）
+
+    def m15():
+        o = orig["tp_drc"]
+
+        def bad(els, graph=None, limits=None):
+            r = o(els, graph, limits)
+            r["verdict"] = "ACCEPT"
+            r["violations"] = []
+            return r
+        TP.run_heavyhex_drc = bad
+
     def restore():
         SR.run_routing_drc = orig["drc"]
         SR.routed_array_lvs = orig["lvs"]
@@ -117,17 +214,29 @@ def _make_mutations():
         SR.routed_gds = orig["gds"]
         FA.check_plan = orig["check"]
         FA.plan = orig["plan"]
+        MX.mux_plan = orig["mx_plan"]
+        MX.mux_lvs = orig["mx_lvs"]
+        CT.control_lvs = orig["ct_lvs"]
+        TP.heavy_hex_degree_stats = orig["tp_deg"]
+        S4.array_loss_budget = orig["s4_alb"]
+        SC.run_tunable_drc = orig["sc_drc"]
+        SC.squid_ej = orig["sc_ej"]
+        TP.run_heavyhex_drc = orig["tp_drc"]
 
     muts = [("M1-路由DRC恒ACCEPT", m1), ("M2-路由LVS恒ACCEPT", m2),
             ("M3-路由容量错值", m3), ("M4-路由披露缺键", m4),
             ("M5-路由GDS空", m5), ("M6-频率校验恒ok", m6),
-            ("M7-频率规划恒REJECT", m7)]
+            ("M7-频率规划恒REJECT", m7),
+            ("M8-读出mux音规划恒合规", m8), ("M9-读出mux LVS恒ACCEPT", m9),
+            ("M10-控制多线LVS恒ACCEPT", m10), ("M11-heavyhex度恒≤3", m11),
+            ("M12-阵列损耗恒ACCEPT", m12), ("M13-可调耦合器DRC恒ACCEPT", m13),
+            ("M14-SQUID闭式失效", m14), ("M15-heavyhex DRC恒ACCEPT", m15)]
     return muts, restore
 
 
 def main() -> int:
     print("=" * 78)
-    print("D-137/D-142/D-143 S5 门禁 突变探针（七突变各必红 · 还原复绿）")
+    print("D-137..D-144 S5 门禁 突变探针（15 突变各必红 · 还原复绿）")
     print("=" * 78)
 
     rc0 = run_smoke()
@@ -151,7 +260,7 @@ def main() -> int:
     print(f"[还原] smoke 返回 {rc2} · {'复绿' if restored_green else '未复绿'}")
     ok = base_green and all_red and restored_green
     print()
-    print(f"突变探针结论：基线绿={base_green} · 七突变各红={all_red} · 还原绿={restored_green}"
+    print(f"突变探针结论：基线绿={base_green} · 15 突变各红={all_red} · 还原绿={restored_green}"
           f" => {'PASS' if ok else 'FAIL'}")
     return 0 if ok else 1
 

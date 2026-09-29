@@ -6,9 +6,9 @@
   "hard_floor_x": 2.0,
   "target_x": 3.0,
   "ratchet_below_target": 0,
-  "anchors_at_measurement": 470,
-  "core_smokes_at_measurement": 209,
-  "updated_at": "2026-09-28",
+  "anchors_at_measurement": 476,
+  "core_smokes_at_measurement": 226,
+  "updated_at": "2026-09-29",
   "source_reports": [
     "_ci_core_179",
     "_ci_core_179_b",
@@ -40,7 +40,8 @@
     "ci_core_204_v09135_final.json",
     "ci_137.json",
     "_ci_core_v09138b.json",
-    "_ci_core_v09139.json"
+    "_ci_core_v09139.json",
+    "_blind_measure.json"
   ],
   "rules": "预算 ≥ 2 × 跨轮实测上界（硬闸）；目标 3×（棘轮：低于 3× 的项数只降不升）；锚数或 CI core 成员数变化 ⇒ 基线过期，须重跑全量并 --write-baseline 刷新",
   "rows": [
@@ -576,6 +577,17 @@
       "censored_events": 0
     },
     {
+      "script": "run_ring_kappa_calib_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 57.6,
+      "margin_x": 5.208,
+      "samples_s": [
+        57.6
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
       "script": "run_router_p1_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 52.98,
@@ -843,6 +855,17 @@
       "censored_events": 0
     },
     {
+      "script": "run_schip_s5_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 24.13,
+      "margin_x": 12.433,
+      "samples_s": [
+        24.13
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
       "script": "run_webui_api_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 21.9,
@@ -859,6 +882,17 @@
         21.9
       ],
       "n_rounds": 9,
+      "censored_events": 0
+    },
+    {
+      "script": "run_cli_build_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 21.64,
+      "margin_x": 13.863,
+      "samples_s": [
+        21.64
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -900,6 +934,17 @@
       "censored_events": 0
     },
     {
+      "script": "run_cpml_absorber_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 17.55,
+      "margin_x": 17.094,
+      "samples_s": [
+        17.55
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
       "script": "run_pipeline_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 15.41,
@@ -935,6 +980,17 @@
         15.31
       ],
       "n_rounds": 9,
+      "censored_events": 0
+    },
+    {
+      "script": "run_cross_solver_matrix_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 14.39,
+      "margin_x": 20.848,
+      "samples_s": [
+        14.39
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -1055,6 +1111,28 @@
       "censored_events": 0
     },
     {
+      "script": "run_p2_usability_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 5.72,
+      "margin_x": 52.448,
+      "samples_s": [
+        5.72
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_yield_fault_tolerance_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 5.39,
+      "margin_x": 55.659,
+      "samples_s": [
+        5.39
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
       "script": "run_shelf_listing_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 5.08,
@@ -1070,6 +1148,17 @@
         5.08
       ],
       "n_rounds": 8,
+      "censored_events": 0
+    },
+    {
+      "script": "run_rect_mesh_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 4.27,
+      "margin_x": 70.258,
+      "samples_s": [
+        4.27
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -1123,6 +1212,17 @@
         3.14
       ],
       "n_rounds": 8,
+      "censored_events": 0
+    },
+    {
+      "script": "run_loss_budget_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 3.13,
+      "margin_x": 95.847,
+      "samples_s": [
+        3.13
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -1298,6 +1398,28 @@
       "censored_events": 0
     },
     {
+      "script": "run_schip_s4_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 2.19,
+      "margin_x": 136.986,
+      "samples_s": [
+        2.19
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_dispersive_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 2.16,
+      "margin_x": 138.889,
+      "samples_s": [
+        2.16
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
       "script": "run_three_class_consistency_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 2.05,
@@ -1315,6 +1437,17 @@
       "censored_events": 0
     },
     {
+      "script": "run_submanifold_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 2.01,
+      "margin_x": 149.254,
+      "samples_s": [
+        2.01
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
       "script": "run_store_guide_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 1.84,
@@ -1329,6 +1462,17 @@
         1.84
       ],
       "n_rounds": 7,
+      "censored_events": 0
+    },
+    {
+      "script": "run_photon_hardware_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.83,
+      "margin_x": 163.934,
+      "samples_s": [
+        1.83
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -1459,6 +1603,17 @@
       "censored_events": 0
     },
     {
+      "script": "run_temporal_mesh_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.38,
+      "margin_x": 217.391,
+      "samples_s": [
+        1.38
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
       "script": "run_helper_dup_ratchet_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 1.35,
@@ -1490,6 +1645,17 @@
         1.27
       ],
       "n_rounds": 7,
+      "censored_events": 0
+    },
+    {
+      "script": "run_schip_s3_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.27,
+      "margin_x": 236.22,
+      "samples_s": [
+        1.27
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -1527,6 +1693,17 @@
         1.25
       ],
       "n_rounds": 6,
+      "censored_events": 0
+    },
+    {
+      "script": "run_mesh_tiling_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.19,
+      "margin_x": 252.101,
+      "samples_s": [
+        1.19
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -1578,6 +1755,28 @@
         1.05
       ],
       "n_rounds": 8,
+      "censored_events": 0
+    },
+    {
+      "script": "run_quantum_scale_bench_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.03,
+      "margin_x": 291.262,
+      "samples_s": [
+        1.03
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_design_tapeout_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.01,
+      "margin_x": 297.03,
+      "samples_s": [
+        1.01
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -1633,6 +1832,17 @@
       "censored_events": 0
     },
     {
+      "script": "run_il_basis_platform_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.86,
+      "margin_x": 348.837,
+      "samples_s": [
+        0.86
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
       "script": "run_active_device_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.84,
@@ -1647,6 +1857,17 @@
         0.84
       ],
       "n_rounds": 7,
+      "censored_events": 0
+    },
+    {
+      "script": "run_real_machine_oracle_contract_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.83,
+      "margin_x": 361.446,
+      "samples_s": [
+        0.83
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -1681,6 +1902,17 @@
         0.8
       ],
       "n_rounds": 8,
+      "censored_events": 0
+    },
+    {
+      "script": "run_adversarial_scoring_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.8,
+      "margin_x": 375.0,
+      "samples_s": [
+        0.8
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -2268,6 +2500,17 @@
       "censored_events": 0
     },
     {
+      "script": "run_calibration_protocol_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.68,
+      "margin_x": 441.176,
+      "samples_s": [
+        0.68
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
       "script": "run_drc_pdk_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.67,
@@ -2337,6 +2580,28 @@
       "censored_events": 0
     },
     {
+      "script": "run_compiler_frontend_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.61,
+      "margin_x": 491.803,
+      "samples_s": [
+        0.61
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_lvs_geom_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.58,
+      "margin_x": 517.241,
+      "samples_s": [
+        0.58
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
       "script": "run_quantum_design_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.57,
@@ -2364,6 +2629,17 @@
         0.52
       ],
       "n_rounds": 5,
+      "censored_events": 0
+    },
+    {
+      "script": "run_polygon_voxel_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.52,
+      "margin_x": 576.923,
+      "samples_s": [
+        0.52
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -2401,6 +2677,17 @@
       "censored_events": 0
     },
     {
+      "script": "run_quantum_calib_bench_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.47,
+      "margin_x": 638.298,
+      "samples_s": [
+        0.47
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
       "script": "run_large_scale_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.46,
@@ -2428,6 +2715,50 @@
         0.45
       ],
       "n_rounds": 6,
+      "censored_events": 0
+    },
+    {
+      "script": "run_schip_s2_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.45,
+      "margin_x": 666.667,
+      "samples_s": [
+        0.45
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_platform_loss_basis_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.45,
+      "margin_x": 666.667,
+      "samples_s": [
+        0.45
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_optical_pareto_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.45,
+      "margin_x": 666.667,
+      "samples_s": [
+        0.45
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ring_weight_bank_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.44,
+      "margin_x": 681.818,
+      "samples_s": [
+        0.44
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -2477,6 +2808,72 @@
       "censored_events": 0
     },
     {
+      "script": "run_qchip_case_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.4,
+      "margin_x": 750.0,
+      "samples_s": [
+        0.4
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_wdm_shared_mesh_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.4,
+      "margin_x": 750.0,
+      "samples_s": [
+        0.4
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_loss_aware_compile_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.4,
+      "margin_x": 750.0,
+      "samples_s": [
+        0.4
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_schip_s1_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.39,
+      "margin_x": 769.231,
+      "samples_s": [
+        0.39
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_drc_loss_per_mode_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.39,
+      "margin_x": 769.231,
+      "samples_s": [
+        0.39
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_nonvolatile_weight_backend_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.39,
+      "margin_x": 769.231,
+      "samples_s": [
+        0.39
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
       "script": "run_four_layer_redline_gate_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.38,
@@ -2504,6 +2901,17 @@
         0.37
       ],
       "n_rounds": 5,
+      "censored_events": 0
+    },
+    {
+      "script": "run_eic_behavioral_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.37,
+      "margin_x": 810.811,
+      "samples_s": [
+        0.37
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -2535,6 +2943,28 @@
         0.36
       ],
       "n_rounds": 6,
+      "censored_events": 0
+    },
+    {
+      "script": "run_wdm_mesh_pnr_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.36,
+      "margin_x": 833.333,
+      "samples_s": [
+        0.36
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_wdm_channel_plan_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.36,
+      "margin_x": 833.333,
+      "samples_s": [
+        0.36
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -2581,6 +3011,17 @@
         0.35
       ],
       "n_rounds": 6,
+      "censored_events": 0
+    },
+    {
+      "script": "run_loqc_states_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.35,
+      "margin_x": 857.143,
+      "samples_s": [
+        0.35
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -2875,6 +3316,17 @@
         0.31
       ],
       "n_rounds": 5,
+      "censored_events": 0
+    },
+    {
+      "script": "run_dmm_scorecard_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.31,
+      "margin_x": 967.742,
+      "samples_s": [
+        0.31
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {

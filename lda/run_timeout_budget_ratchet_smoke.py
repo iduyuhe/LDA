@@ -35,8 +35,12 @@
   B11~B16 六条反向测试（证明上面的检测器**真会变红**，非假绿）
   B17 自食其规则（本 smoke 自分属 CORE_SMOKES）
   B18 **(T6.6 裁定：实施)** 运行时线程数 == 标定线程数(@10) —— 防「换机器后 margin
-       跌破 3× 而门禁不报警」的存量风险（基线按@10标定，运行时若≠10 则实测不可比）
+      跌破 3× 而门禁不报警」的存量风险（基线按@10标定，运行时若≠10 则实测不可比）
   B19 (T6.6) 反向测试（证明 B18 真会变红，非假绿）
+  B20 **(§7 盲区清偿 · 2026-09-29)** 覆盖**反向完备**：`CORE_SMOKES` 每项都必须在
+      `_BUILTIN_TIMEOUT_OVERRIDE` 里 ⇒ 「新 smoke 不登预算」不再静默进盲区
+      （旧口径：不在覆盖表的项走批次默认 `--timeout 300s`，B5~B10 一律看不见它）
+  B21 反向测试（证明 B20 真会变红，非假绿 / 非空洞为真）
 
 刻意**不做**的（避免「狼来了」被关停 · 与 v0.9.112 的护栏教训一致）
 --------------------------------------------------------------
@@ -165,6 +169,17 @@ def evaluate(override, rows, *, hard_floor=HARD_FLOOR_X, target=TARGET_X):
             "inconsistent": inconsistent}
 
 
+# ---------------------------------------------------------------- B20 覆盖反向完备
+def _coverage_gap(core_smokes, override):
+    """超时**盲区**：`CORE_SMOKES` 里既不在 `_BUILTIN_TIMEOUT_OVERRIDE` 的成员（纯函数）。
+
+    旧口径下这些项走批次默认 `--timeout 300s`，而 B5~B10 只看"覆盖表 × 基线"两张表
+    ⇒ 盲区对门禁完全不可见（§7 记载：v0.9.118 时 14/183，v0.9.132 时 184/200）。
+    本函数把盲区**显式算出来**，供 B20 判红 / 供人工清偿。
+    """
+    return sorted(set(core_smokes or []) - set(override or {}))
+
+
 def _load_baseline(path):
     with open(path, "r", encoding="utf-8") as fh:
         return json.load(fh)
@@ -264,6 +279,26 @@ def main() -> int:
                     "不一致 %s ⇒ 重跑全量并 --write-baseline 刷新（不要手改数字）"
                     % [("%s 基线 %.0f → 现值 %.0f" % (s, a, b))
                        for s, a, b in res["budget_mismatch"]])
+
+    # ---- B20 覆盖反向完备（§7 盲区清偿）+ B21 反向证明 ----
+    gap = _coverage_gap(core_smokes, override)
+    rc |= not check("B20 覆盖反向完备：CORE_SMOKES 每项都在超时覆盖表里（盲区 ⇒ 红）",
+                    not gap,
+                    "盲区 %d 项：%s ⇒ 须在 run_ci_regression._BUILTIN_TIMEOUT_OVERRIDE "
+                    "里登记预算（只改耗时上限），随后 --from-report 刷新基线"
+                    % (len(gap), gap[:5]))
+    # 反向：① 人为从覆盖表移除一项（该项必落盲区）② 空 core 必空 ③ 覆盖表全含则空
+    _probe_core = list(core_smokes)
+    _one = _probe_core[0] if _probe_core else "run_ghost_smoke.py"
+    _probe_ov = {k: v for k, v in override.items() if k != _one}
+    _neg1 = _one in _coverage_gap(_probe_core, _probe_ov)
+    _neg2 = _coverage_gap([], override) == []
+    _neg3 = _coverage_gap(_probe_core, dict(override,
+                                            **{s: 60.0 for s in _probe_core})) == []
+    rc |= not check("B21 反向：移出一项 ⇒ 盲区必含之；空 core 必空；全覆盖必空（非假绿）",
+                    bool(_neg1 and _neg2 and _neg3),
+                    "neg1(检出)=%s neg2(空集)=%s neg3(全覆盖)=%s"
+                    % (_neg1, _neg2, _neg3))
 
     # ---- ⚠️ 提示（刻意不判红：与"预算欠标定"无一一直因果，判红即制造假红） ----
     try:

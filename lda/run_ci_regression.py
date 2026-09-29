@@ -1030,6 +1030,7 @@ CORE_SMOKES: List[str] = [
     #   300s（**17.1×** 余量，远超 ≥3× 目标与 ≥2× 硬闸）；按 v0.9.129 T1.2 先例
     #   （小项手补预算行只制造审计噪声，且把 `core_smokes_at_measurement` 半拉子
     #   刷新）⇒ 走全局默认兜底。
+    # 🔴 D-146（2026-09-29 盲区清偿）：本条**已按默认预算语义登记 300s**（仅可见化 · 不手调）；上文「不入覆盖表 / 走全局默认兜底」为历史口径。
     #
     # ② `run_polygon_voxel_smoke.py`（G16 任意几何）：`voxel_field.py` 新增
     #   `LayoutPolygon` + `rasterize_polygon`（even-odd 交叉数 + 亚格平均）+
@@ -1101,6 +1102,7 @@ CORE_SMOKES: List[str] = [
     # 无权豁免，必须进 core。**故意不入 `_BUILTIN_TIMEOUT_OVERRIDE`**：实测 1.9s ≪
     # 默认 300s（**~158×** 余量，远超 ≥3× 目标与 ≥2× 硬闸）；走全局默认兜底
     # （同 v0.9.133 G11/G16「小项手补预算行只制造审计噪声」先例）。
+    # 🔴 D-146（2026-09-29 盲区清偿）：本条**已按默认预算语义登记 300s**（仅可见化 · 不手调）；上文「不入覆盖表 / 走全局默认兜底」为历史口径。
     "run_dispersive_smoke.py",
     # =====================================================================
     # 🔴 v0.9.135（G12-H 全矢量本征模求解器 · H-field staggered + PML ·
@@ -1180,6 +1182,7 @@ CORE_SMOKES: List[str] = [
     # 🔴 零能效数字（与 cpo_engines:26 · golden_product_benchmarks:941 同源拒绝）。
     # 突变探针 `scripts/p6_probe.py` **7/7 会响**（含全局 no-op 守卫）。
     # 实测耗时 ~7s（远低于默认 300s）⇒ 不进 `_BUILTIN_TIMEOUT_OVERRIDE`（无需预算行）。
+    # 🔴 D-146（2026-09-29 盲区清偿）：本条**已按默认预算语义登记 300s**（仅可见化 · 不手调）；上文「不入覆盖表 / 走全局默认兜底」为历史口径。
     "run_optical_pareto_smoke.py",
     #
     # ---- P6 · T6.4 EIC 行为级（v0.9.139 · 系统级 / 计算架构 · U11）----
@@ -1191,6 +1194,7 @@ CORE_SMOKES: List[str] = [
     # 突变探针 `scripts/t64_probe.py` **8/8 会响**（含**跨文件** T8：清空共享令牌表
     #   ⇒ 证明能效守卫是单一真值来源）。
     # 实测耗时 0.26s（纯标准库 · 远低于默认 300s）⇒ 不进 `_BUILTIN_TIMEOUT_OVERRIDE`。
+    # 🔴 D-146（2026-09-29 盲区清偿）：本条**已按默认预算语义登记 300s**（仅可见化 · 不手调）；上文「不入覆盖表 / 走全局默认兜底」为历史口径。
     "run_eic_behavioral_smoke.py",
     #
     # ---- P6 · T6.2 WDM 信道规划（v0.9.139 · 系统级 / 计算架构 · U2）----
@@ -1201,6 +1205,7 @@ CORE_SMOKES: List[str] = [
     # 🔴 **K 提升 4 → 8**（默认波长数）；`m_ring` 由 min(默认 30, FSR 余量反解) 自动求解。
     # 突变探针 `scripts/t62_probe.py` **11/11 会响**（含 M7 折返、M10 λ₀ 建环血案复刻）。
     # 实测耗时 ~2s ⇒ 不进 `_BUILTIN_TIMEOUT_OVERRIDE`。
+    # 🔴 D-146（2026-09-29 盲区清偿）：本条**已按默认预算语义登记 300s**（仅可见化 · 不手调）；上文「不入覆盖表 / 走全局默认兜底」为历史口径。
     "run_wdm_channel_plan_smoke.py",
     #
     # ---- P6 · T6.3 网格瓦片化（v0.9.139 · 系统级 / 计算架构 · U9）----
@@ -1211,6 +1216,7 @@ CORE_SMOKES: List[str] = [
     # 🔴 解锁「瓦片档」参数化：`TILE_TIERS = (4, 8, 16, 32)`，每档用自己的几何重跑三预算。
     # 突变探针 `scripts/t63_probe.py` **12/12 会响**（含 M8 天花板不复算、M9 指纹退化）。
     # 实测耗时 ~1s ⇒ 不进 `_BUILTIN_TIMEOUT_OVERRIDE`。
+    # 🔴 D-146（2026-09-29 盲区清偿）：本条**已按默认预算语义登记 300s**（仅可见化 · 不手调）；上文「不入覆盖表 / 走全局默认兜底」为历史口径。
     "run_mesh_tiling_smoke.py",
     #
     # ---- P6+ · DMM 设计能力成熟度打分表（v0.9.140 · 把规划 M2 闸门机器化）----
@@ -1223,6 +1229,7 @@ CORE_SMOKES: List[str] = [
     #   级别由 `lda_harness/dmm_scorecard.py` **从事实推导**（当前 25 能力 · D3 22 · **D4 3**）。
     # 突变探针 `scripts/dmm_probe.py` **9/9 会响**（含 M7 去掉事实门控 ⇒ 审计必红）。
     # 实测耗时 ~0.6s（只读文件 + 无重依赖）⇒ 不进 `_BUILTIN_TIMEOUT_OVERRIDE`。
+    # 🔴 D-146（2026-09-29 盲区清偿）：本条**已按默认预算语义登记 300s**（仅可见化 · 不手调）；上文「不入覆盖表 / 走全局默认兜底」为历史口径。
     "run_dmm_scorecard_smoke.py",
 ]
 
@@ -1877,7 +1884,104 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
     "run_webui_tapeout_drc_smoke.py": 300.0,
     # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
+    # T7-B4 新增：183-run 实测 0.5s · 3.05× 取整 · 不低于默认 300s
     "run_webui_verification_ledger_smoke.py": 300.0,
+    # ══════════════════════════════════════════════════════════════════════
+    # 🔴 §7「默认口径盲区」清偿（D-146 · 2026-09-29 · CI core 226）
+    #
+    # 旧口径：**不在本表**的 CORE_SMOKES 成员走批次默认 `--timeout 300s`，
+    #   而 B5~B10 只看"覆盖表 × 基线"两张表 ⇒ 盲区对门禁完全不可见
+    #   （v0.9.118 时 14/183 → v0.9.132 时 184/200 → 本波 185/226）。
+    # 清偿口径：把盲区 41 项按**它们实际生效的预算 300s** 登记（= 原生效值，
+    #   **既不收紧也不放宽**），仅消除"看不见"。**不手调预算**——遵循
+    #   v0.9.129 T1.2 / T7-B4 先例（「小项手补预算行只制造审计噪声」）。
+    # 配套：棘轮加 **B20 覆盖反向完备**（CORE_SMOKES ⊆ 本表，否则红）
+    #   ⇒ 新 smoke 不登记即红，盲区不再复发。
+    # 实测：3 轮 @10 线程（复刻 `_child_env()`）· 每行注释给跨轮上界。
+    # 最低余量 = run_ring_kappa_calib_smoke 57.60s ⇒ 300/57.60 = **5.21×**（≥3× 目标）。
+    # ══════════════════════════════════════════════════════════════════════
+    # 实测上界 57.60s（3 轮 max · @10T）
+    "run_ring_kappa_calib_smoke.py": 300.0,
+    # 实测上界 24.13s（3 轮 max · @10T）
+    "run_schip_s5_smoke.py": 300.0,
+    # 实测上界 21.64s（3 轮 max · @10T）
+    "run_cli_build_smoke.py": 300.0,
+    # 实测上界 17.55s（3 轮 max · @10T）
+    "run_cpml_absorber_smoke.py": 300.0,
+    # 实测上界 14.39s（3 轮 max · @10T）
+    "run_cross_solver_matrix_smoke.py": 300.0,
+    # 实测上界 5.72s（3 轮 max · @10T）
+    "run_p2_usability_smoke.py": 300.0,
+    # 实测上界 5.39s（3 轮 max · @10T）
+    "run_yield_fault_tolerance_smoke.py": 300.0,
+    # 实测上界 4.27s（3 轮 max · @10T）
+    "run_rect_mesh_smoke.py": 300.0,
+    # 实测上界 3.13s（3 轮 max · @10T）
+    "run_loss_budget_smoke.py": 300.0,
+    # 实测上界 2.19s（3 轮 max · @10T）
+    "run_schip_s4_smoke.py": 300.0,
+    # 实测上界 2.16s（3 轮 max · @10T）
+    "run_dispersive_smoke.py": 300.0,
+    # 实测上界 2.01s（3 轮 max · @10T）
+    "run_submanifold_smoke.py": 300.0,
+    # 实测上界 1.83s（3 轮 max · @10T）
+    "run_photon_hardware_smoke.py": 300.0,
+    # 实测上界 1.38s（3 轮 max · @10T）
+    "run_temporal_mesh_smoke.py": 300.0,
+    # 实测上界 1.27s（3 轮 max · @10T）
+    "run_schip_s3_smoke.py": 300.0,
+    # 实测上界 1.19s（3 轮 max · @10T）
+    "run_mesh_tiling_smoke.py": 300.0,
+    # 实测上界 1.03s（3 轮 max · @10T）
+    "run_quantum_scale_bench_smoke.py": 300.0,
+    # 实测上界 1.01s（3 轮 max · @10T）
+    "run_design_tapeout_smoke.py": 300.0,
+    # 实测上界 0.86s（3 轮 max · @10T）
+    "run_il_basis_platform_smoke.py": 300.0,
+    # 实测上界 0.83s（3 轮 max · @10T）
+    "run_real_machine_oracle_contract_smoke.py": 300.0,
+    # 实测上界 0.80s（3 轮 max · @10T）
+    "run_adversarial_scoring_smoke.py": 300.0,
+    # 实测上界 0.68s（3 轮 max · @10T）
+    "run_calibration_protocol_smoke.py": 300.0,
+    # 实测上界 0.61s（3 轮 max · @10T）
+    "run_compiler_frontend_smoke.py": 300.0,
+    # 实测上界 0.58s（3 轮 max · @10T）
+    "run_lvs_geom_smoke.py": 300.0,
+    # 实测上界 0.52s（3 轮 max · @10T）
+    "run_polygon_voxel_smoke.py": 300.0,
+    # 实测上界 0.47s（3 轮 max · @10T）
+    "run_quantum_calib_bench_smoke.py": 300.0,
+    # 实测上界 0.45s（3 轮 max · @10T）
+    "run_schip_s2_smoke.py": 300.0,
+    # 实测上界 0.45s（3 轮 max · @10T）
+    "run_platform_loss_basis_smoke.py": 300.0,
+    # 实测上界 0.45s（3 轮 max · @10T）
+    "run_optical_pareto_smoke.py": 300.0,
+    # 实测上界 0.44s（3 轮 max · @10T）
+    "run_ring_weight_bank_smoke.py": 300.0,
+    # 实测上界 0.40s（3 轮 max · @10T）
+    "run_qchip_case_smoke.py": 300.0,
+    # 实测上界 0.40s（3 轮 max · @10T）
+    "run_wdm_shared_mesh_smoke.py": 300.0,
+    # 实测上界 0.40s（3 轮 max · @10T）
+    "run_loss_aware_compile_smoke.py": 300.0,
+    # 实测上界 0.39s（3 轮 max · @10T）
+    "run_schip_s1_smoke.py": 300.0,
+    # 实测上界 0.39s（3 轮 max · @10T）
+    "run_drc_loss_per_mode_smoke.py": 300.0,
+    # 实测上界 0.39s（3 轮 max · @10T）
+    "run_nonvolatile_weight_backend_smoke.py": 300.0,
+    # 实测上界 0.37s（3 轮 max · @10T）
+    "run_eic_behavioral_smoke.py": 300.0,
+    # 实测上界 0.36s（3 轮 max · @10T）
+    "run_wdm_mesh_pnr_smoke.py": 300.0,
+    # 实测上界 0.36s（3 轮 max · @10T）
+    "run_wdm_channel_plan_smoke.py": 300.0,
+    # 实测上界 0.35s（3 轮 max · @10T）
+    "run_loqc_states_smoke.py": 300.0,
+    # 实测上界 0.31s（3 轮 max · @10T）
+    "run_dmm_scorecard_smoke.py": 300.0,
 }
 
 

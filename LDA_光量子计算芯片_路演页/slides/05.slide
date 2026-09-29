@@ -1,0 +1,37 @@
+<Slide style={{ width: 1280, height: 720, background: '#0A1120', padding: '56px 72px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 14, height: 76 }}>
+        <Box style={{ width: 6, height: 32, background: '#2563EB', borderRadius: 3 }} />
+        <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#E8EEF7' }}>可信度来自哪里 · 与诚实边界</Text>
+    </Box>
+
+    <Box style={{ flexDirection: 'column', gap: 20, flex: 1, justifyContent: 'center' }}>
+        <Box style={{ flexDirection: 'row', gap: 20, height: 132 }}>
+            <Box style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 18, flexDirection: 'column', gap: 7 }}>
+                <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#2563EB' }}>判决不靠模型</Text>
+                <Text style={{ fontSize: 16, color: '#9FB3CC', lineHeight: 1.6 }}>是否通过由死标量比对（闭式物理律 vs 数值）给出，LLM 不进判决路径。</Text>
+            </Box>
+            <Box style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 18, flexDirection: 'column', gap: 7 }}>
+                <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#2563EB' }}>外部真值分层</Text>
+                <Text style={{ fontSize: 16, color: '#9FB3CC', lineHeight: 1.6 }}>仿真 / 计算值永不作基准；与 Borealis 只比规模与架构，不比数值。</Text>
+            </Box>
+            <Box style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 18, flexDirection: 'column', gap: 7 }}>
+                <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#2563EB' }}>机器可判护栏</Text>
+                <Text style={{ fontSize: 16, color: '#9FB3CC', lineHeight: 1.6 }}>每个能力配常驻门禁 + 突变探针（探针证明断言真会变红）。</Text>
+            </Box>
+        </Box>
+
+        <Box style={{ background: 'rgba(37,99,235,0.10)', borderRadius: 12, padding: '18px 22px', flexDirection: 'column', gap: 8 }}>
+            <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#E8EEF7' }}>诚实边界（随本页同步，不可省略）</Text>
+            <Text style={{ fontSize: 16, color: '#9FB3CC', lineHeight: 1.7 }}>① 设计 + 数值正确性证明，<Text style={{ fontWeight: 'bold', color: '#E8EEF7' }}>非流片后实测</Text>；② 损耗 / 效率为设计预算口径，非实测 PDK；③ 与 Borealis 只比规模 / 架构 / 参数计数，不比数值；④ 综合对标分为平台自定义量，非国际公认指标；⑤ 最优性证据限 N ≤ 8 / D ≤ 6 搜索空间；⑥ 每模口径不含波导交叉损耗，属<Text style={{ fontWeight: 'bold', color: '#E8EEF7' }}>下界</Text>。</Text>
+        </Box>
+
+        <Text style={{ fontSize: 17, color: '#9FB3CC', lineHeight: 1.7 }}>纯 numpy，零量子 SDK，零 GPU，秒级可复现：<Text style={{ fontWeight: 'bold', color: '#E8EEF7' }}>python examples/lda_qchip_m5.py</Text>。</Text>
+    </Box>
+
+    <Box style={{ flexDirection: 'column', gap: 8, borderTop: '1px solid rgba(159,179,204,0.25)', paddingTop: 14 }}>
+        <Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={{ fontSize: 16, color: '#9FB3CC' }}>LDA · 开源 Agent 原生光子 / 量子芯片设计软件（MIT）· 杜玉河 / 工业5点0产业生态联盟</Text>
+            <Text style={{ fontSize: 16, color: '#9FB3CC', fontFamily: 'Consolas' }}>05 / 05</Text>
+        </Box>
+    </Box>
+</Slide>

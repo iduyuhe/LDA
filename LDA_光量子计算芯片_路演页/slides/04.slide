@@ -1,0 +1,38 @@
+<Slide style={{ width: 1280, height: 720, background: '#0A1120', padding: '56px 72px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 14, height: 76 }}>
+        <Box style={{ width: 6, height: 32, background: '#2563EB', borderRadius: 3 }} />
+        <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#E8EEF7' }}>四条硬结论（均来自实测与反证）</Text>
+    </Box>
+
+    <Box style={{ flexDirection: 'column', gap: 22, flex: 1, justifyContent: 'center' }}>
+        <Box style={{ flexDirection: 'row', gap: 22, height: 206 }}>
+            <Box style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 20, flexDirection: 'column', gap: 8 }}>
+                <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>01</Text>
+                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#E8EEF7' }}>紧界可达</Text>
+                <Text style={{ fontSize: 17, color: '#9FB3CC', lineHeight: 1.65 }}>通用 N 模酉的相邻耦合紧下界 = N，矩形 Clements 网格深度恰 = N（每层真匹配），且元件数不增。</Text>
+            </Box>
+            <Box style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 20, flexDirection: 'column', gap: 8 }}>
+                <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>02</Text>
+                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#E8EEF7' }}>参数计数会骗人</Text>
+                <Text style={{ fontSize: 17, color: '#9FB3CC', lineHeight: 1.65 }}>「可及参数 ≈ ⌊N/2⌋·D」只是上界；实测可达维数显示全最大匹配序列恒为 2N，最优浅电路是交替砖墙。</Text>
+            </Box>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 22, height: 206 }}>
+            <Box style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 20, flexDirection: 'column', gap: 8 }}>
+                <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>03</Text>
+                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#E8EEF7' }}>通用与省损不可兼得</Text>
+                <Text style={{ fontSize: 17, color: '#9FB3CC', lineHeight: 1.65 }}>损耗墙的本质是深度墙（下界 Ω(N)）；时间复用把元件降到 1 片但更费损，只有放弃通用性的浅电路才越墙。</Text>
+            </Box>
+            <Box style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 20, flexDirection: 'column', gap: 8 }}>
+                <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>04</Text>
+                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#E8EEF7' }}>约定须精确到块级恒等式</Text>
+                <Text style={{ fontSize: 17, color: '#9FB3CC', lineHeight: 1.65 }}>相位臂不一致的「看似只差一个标量」，嵌入 N×N 后变成逐模相位注入且与邻门不对易——连全局相位都不是。</Text>
+            </Box>
+        </Box>
+    </Box>
+
+    <Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(159,179,204,0.25)', paddingTop: 14 }}>
+        <Text style={{ fontSize: 16, color: '#9FB3CC' }}>LDA · 光量子计算芯片（量子征程「吃狗粮」）</Text>
+        <Text style={{ fontSize: 16, color: '#9FB3CC', fontFamily: 'Consolas' }}>04 / 05</Text>
+    </Box>
+</Slide>

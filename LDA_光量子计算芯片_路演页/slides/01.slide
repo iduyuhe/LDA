@@ -1,0 +1,31 @@
+<Slide style={{ width: 1280, height: 720, background: '#0A1120', padding: '64px 72px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 470 }}>
+        <Box style={{ flexDirection: 'column', gap: 18, width: 620 }}>
+            <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <Box style={{ width: 6, height: 32, background: '#2563EB', borderRadius: 3 }} />
+                <Text style={{ fontSize: 19, color: '#9FB3CC' }}>LDA · 开源 Agent 原生光子 / 量子芯片设计软件</Text>
+            </Box>
+            <Text style={{ fontSize: 62, fontWeight: 'bold', color: '#E8EEF7', lineHeight: 1.12 }}>LDA 光量子计算芯片</Text>
+            <Text style={{ fontSize: 30, fontWeight: 'bold', color: '#2563EB' }}>可编程 MZI 干涉网格 · LOQC 通用处理器</Text>
+            <Text style={{ fontSize: 20, color: '#9FB3CC', lineHeight: 1.7 }}>把「任意 216×216 酉变换」编译成片上真实光路——深度恰好打到理论紧下界，全链路 DRC / LVS 签核通过。用 LDA 亲手设计。</Text>
+        </Box>
+        <Box style={{ flexDirection: 'column', gap: 16 }}>
+            <Box style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '16px 26px', width: 430, flexDirection: 'column', gap: 4 }}>
+                <Text style={{ fontSize: 68, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>216</Text>
+                <Text style={{ fontSize: 16, color: '#9FB3CC' }}>光学深度 = 相邻耦合紧下界</Text>
+            </Box>
+            <Box style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '16px 26px', width: 430, flexDirection: 'column', gap: 4 }}>
+                <Text style={{ fontSize: 68, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>23,220</Text>
+                <Text style={{ fontSize: 16, color: '#9FB3CC' }}>MZI 干涉仪单元（= N(N−1)/2）</Text>
+            </Box>
+            <Box style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '16px 26px', width: 430, flexDirection: 'column', gap: 4 }}>
+                <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>1.000000000000</Text>
+                <Text style={{ fontSize: 16, color: '#9FB3CC' }}>酉重构保真度（机器精度）</Text>
+            </Box>
+        </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(159,179,204,0.25)', paddingTop: 16 }}>
+        <Text style={{ fontSize: 16, color: '#9FB3CC' }}>LDA · 光量子计算芯片（量子征程「吃狗粮」）</Text>
+        <Text style={{ fontSize: 16, color: '#9FB3CC', fontFamily: 'Consolas' }}>01 / 05</Text>
+    </Box>
+</Slide>

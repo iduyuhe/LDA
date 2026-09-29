@@ -1,0 +1,80 @@
+<Slide style={{ width: 1280, height: 720, background: '#0A1120', padding: '56px 72px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 14, height: 76 }}>
+        <Box style={{ width: 6, height: 32, background: '#2563EB', borderRadius: 3 }} />
+        <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#E8EEF7' }}>九步征程：从酉分解到真实版图签核</Text>
+    </Box>
+
+    <Box style={{ flexDirection: 'column', gap: 30, flex: 1, justifyContent: 'center' }}>
+        <Box style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
+            <Box style={{ flex: 1, flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <Box style={{ width: 44, height: 44, borderRadius: 22, background: 'rgba(37,99,235,0.30)', border: '1px solid #2563EB', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#E8EEF7' }}>M1</Text>
+                </Box>
+                <Text style={{ fontSize: 14, color: '#9FB3CC', textAlign: 'center', lineHeight: 1.45 }}>四模全链路签核</Text>
+            </Box>
+            <Box style={{ flex: 1, flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <Box style={{ width: 44, height: 44, borderRadius: 22, background: 'rgba(37,99,235,0.30)', border: '1px solid #2563EB', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#E8EEF7' }}>M2</Text>
+                </Box>
+                <Text style={{ fontSize: 14, color: '#9FB3CC', textAlign: 'center', lineHeight: 1.45 }}>N×N 生成器</Text>
+            </Box>
+            <Box style={{ flex: 1, flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <Box style={{ width: 44, height: 44, borderRadius: 22, background: 'rgba(37,99,235,0.30)', border: '1px solid #2563EB', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#E8EEF7' }}>M3</Text>
+                </Box>
+                <Text style={{ fontSize: 14, color: '#9FB3CC', textAlign: 'center', lineHeight: 1.45 }}>量子态层</Text>
+            </Box>
+            <Box style={{ flex: 1, flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <Box style={{ width: 44, height: 44, borderRadius: 22, background: 'rgba(37,99,235,0.30)', border: '1px solid #2563EB', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#E8EEF7' }}>M3b</Text>
+                </Box>
+                <Text style={{ fontSize: 14, color: '#9FB3CC', textAlign: 'center', lineHeight: 1.45 }}>真实源 / 探测器</Text>
+            </Box>
+            <Box style={{ flex: 1, flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <Box style={{ width: 44, height: 44, borderRadius: 22, background: 'rgba(37,99,235,0.30)', border: '1px solid #2563EB', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#E8EEF7' }}>M3c</Text>
+                </Box>
+                <Text style={{ fontSize: 14, color: '#9FB3CC', textAlign: 'center', lineHeight: 1.45 }}>全链路量子签核</Text>
+            </Box>
+            <Box style={{ flex: 1, flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <Box style={{ width: 44, height: 44, borderRadius: 22, background: 'rgba(37,99,235,0.30)', border: '1px solid #2563EB', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#E8EEF7' }}>M4</Text>
+                </Box>
+                <Text style={{ fontSize: 14, color: '#9FB3CC', textAlign: 'center', lineHeight: 1.45 }}>规模对标 216 模</Text>
+            </Box>
+            <Box style={{ flex: 1, flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <Box style={{ width: 44, height: 44, borderRadius: 22, background: 'rgba(37,99,235,0.30)', border: '1px solid #2563EB', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#E8EEF7' }}>M4b</Text>
+                </Box>
+                <Text style={{ fontSize: 14, color: '#9FB3CC', textAlign: 'center', lineHeight: 1.45 }}>时间复用与深度界</Text>
+            </Box>
+            <Box style={{ flex: 1, flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <Box style={{ width: 44, height: 44, borderRadius: 22, background: '#2563EB', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#FFFFFF' }}>M5</Text>
+                </Box>
+                <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#E8EEF7', textAlign: 'center', lineHeight: 1.45 }}>矩形网格坐实紧界</Text>
+            </Box>
+            <Box style={{ flex: 1, flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <Box style={{ width: 44, height: 44, borderRadius: 22, background: 'rgba(37,99,235,0.30)', border: '1px solid #2563EB', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#E8EEF7' }}>M5b</Text>
+                </Box>
+                <Text style={{ fontSize: 14, color: '#9FB3CC', textAlign: 'center', lineHeight: 1.45 }}>真实损耗预算</Text>
+            </Box>
+        </Box>
+
+        <Box style={{ background: 'rgba(37,99,235,0.10)', borderRadius: 12, padding: '18px 24px', flexDirection: 'row', alignItems: 'center', gap: 22 }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#E8EEF7' }}>吃狗粮反向长出 9 项平台能力</Text>
+            <Text style={{ fontSize: 16, color: '#9FB3CC' }}>G_Q1–G_Q9 · 已闭合 8 项</Text>
+            <Box style={{ flex: 1, height: 10, background: 'rgba(255,255,255,0.10)', borderRadius: 5, flexDirection: 'row' }}>
+                <Box style={{ width: '89%', height: 10, background: '#2563EB', borderRadius: 5 }} />
+            </Box>
+        </Box>
+
+        <Text style={{ fontSize: 17, color: '#9FB3CC', lineHeight: 1.7 }}>全程在 LDA 内闭环：产出真实 GDSII（最大 64 模 / 650 KB）+ DRC PASS + LVS ACCEPT + 酉重构保真度 1.000000000000。这不是「用了 LDA 做设计」，而是「一颗芯片逼着平台长出一整个量子能力栈」。</Text>
+    </Box>
+
+    <Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(159,179,204,0.25)', paddingTop: 14 }}>
+        <Text style={{ fontSize: 16, color: '#9FB3CC' }}>LDA · 光量子计算芯片（量子征程「吃狗粮」）</Text>
+        <Text style={{ fontSize: 16, color: '#9FB3CC', fontFamily: 'Consolas' }}>03 / 05</Text>
+    </Box>
+</Slide>

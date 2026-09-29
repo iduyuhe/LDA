@@ -10,6 +10,7 @@ from __future__ import annotations
 from ._adapter_core import (
     _get_batch_b, _get_batch_b2, _get_batch_b28, _get_batch_b29, _get_batch_b3, _get_batch_b4,
     _get_batch_b5, _get_batch_b6, _get_batch_b7, _get_batch_b8, _register_candidate,
+    _get_batch_b30,
 )
 
 from typing import (
@@ -997,3 +998,30 @@ def _b142_annulus_nu1(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b8()
     return float(m.cand_annulus(1.0, 1, float(p["ri_nm"]), float(p["ro_nm"])))
+
+
+@_register_candidate(
+    "b453_coherent_loss_fidelity_cand",
+    "相干态经损耗通道的输入-输出保真度：截断 Fock 空间建归一 |α⟩⟨α|（D-114 coherent_dm）+ D-116 振幅阻尼 Kraus 算子求和 ⇒ F=Tr(ρ_out ρ_in) ↔ 解析闭式 exp(−|α|²(1−√η)²)，方法学独立（离散参数=Fock 截断维数 N=22）")
+def _b453_coherent_loss_fidelity_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b30()
+    return float(m.cand_b453(float(p["alpha"]), float(p["eta"])))
+
+
+@_register_candidate(
+    "b454_heralded_purity_cand",
+    "TMSS on/off 预报条件态纯度：截断 Fock 空间矩阵指数建 TMSV（D-114 tmss_numeric_state）→ on/off 投影 → 部分迹 ⇒ Tr(ρ²) ↔ 解析闭式 (1−λ²)/(1+λ²)，方法学独立（离散参数=Fock 截断维数 N=26）")
+def _b454_heralded_purity_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b30()
+    return float(m.cand_b454(float(p["lam"])))
+
+
+@_register_candidate(
+    "b455_heralded_g2_cand",
+    "TMSS on/off 预报条件态 g²(0)：同 B454 截断 Fock 空间路线 ⇒ ⟨n(n−1)⟩/⟨n⟩² ↔ 解析闭式 2λ²，方法学独立（离散参数=Fock 截断维数 N=36）")
+def _b455_heralded_g2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b30()
+    return float(m.cand_b455(float(p["lam"])))

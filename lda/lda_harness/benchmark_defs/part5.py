@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """BENCHMARK_DEFS 数据分片 5/5（F-08 巨石治理 · v0.9.117）。
 
-覆盖 key：B359 … B452（共 94 条，按原 `benchmarks.py` 文件顺序**连续**切分）。
+覆盖 key：B359 … B455（共 97 条，按原 `benchmarks.py` 文件顺序**连续**切分）。
 
 本文件由机械拆分生成：条目正文**逐字节**取自原 BENCHMARK_DEFS 字面量，不重排、
 不重格式化。合并顺序由 `benchmark_defs/__init__.py` 保证与原文逐项一致；判据：
@@ -40,6 +40,9 @@ from .._batch_b28_numeric import (
 )
 from .._batch_b29_numeric import (
     golden_b452,
+)
+from .._batch_b30_numeric import (  # Batch B-30 量子征程回填（有限维 Fock 截断 × 解析闭式）
+    golden_b453, golden_b454, golden_b455,
 )
 DEFS = {
     "B359": {
@@ -1162,5 +1165,38 @@ DEFS = {
         "candidate": "rc_driver_step_rk4_452",
         "candidate_desc": "v(t=80ps) 由四阶 RK4 积分定义 ODE dv/dt=(V_dd−v)/τ（自 v(0)=0，N=256）导出，与解析闭式不同源",
         "note": "驱动器 τ=20ps、V_dd=2V 时 t=4τ 的阶跃电压 ⇒ 1.9633687222 V（= 2·(1−e^{−4})）。golden=解析闭式（Kirchhoff 一阶电路瞬态，教科书物理定律/人类公共品）；candidate=四阶 RK4 积分定义 ODE（N=256）。实测 |Δ|=7.37e-11（tol=1e-7 的 1356× 余量）；判据 D 实测比值 16.86/16.42/16.21（O(h⁴)，MONO）。🔴 **同源体检（如实登记，不掩盖）**：与 **B33**（探测器 RC 限制 3dB 带宽）共享「一阶线性 RC 这一 ODE 形式」；但 ①**被测标量不同**（B33 = f3dB_Hz 由 τ 反算带宽 vs 本题 = 时刻 t 的阶跃电压值）②**物理构型不同**（探测器结电容 C=εA/d 配 R=50Ω 负载 vs 驱动器 τ=20ps 驱动 MZI 相移臂）③**数值格式不同**（B33 候选=梯形法 2 阶 + τ 最小二乘拟合 vs 本题候选=四阶 RK4 直接积分，残差量级与收敛阶均不同）⇒ **非重复计数**（本仓先例：B446–B451 同为 RK4 积分定义 ODE、B448/B449 更是同一函数 Ci 的两个 X 各计一锚）。⚠️ **诚实边界**：①参数 τ/V_dd 是**设计预算常数非实测值**，本锚**无实测锚**，结论只可用于预算与斜率，不得作性能宣称；②RK4 收敛阶 O(h⁴) 是**数值格式属性，不是器件物理**，不得据此宣称器件精度。残差=RK4 截断误差。零商业依赖。",
+    },
+    "B453": {
+        "title": "相干态经损耗通道的输入-输出保真度（解析闭式 golden vs 截断 Fock 空间 Kraus 算子求和）",
+        "metric": "coherent_loss_fidelity",
+        "oracle": "analytical(coherent-state overlap closed-form) + truncated-Fock Kraus operator-sum independent_cross_check",
+        "tol": 1e-2,
+        "default_params": {"alpha": 2.0, "eta": 0.6},
+        "golden_fn": golden_b453,
+        "candidate": "b453_coherent_loss_fidelity_cand",
+        "candidate_desc": "截断 Fock 空间建归一相干态 |α⟩⟨α|（D-114 `coherent_dm`）→ D-116 振幅阻尼 Kraus 通道 → F = Tr(ρ_out ρ_in)；离散参数 = Fock 截断维数 N（默认 22）",
+        "note": "F = exp(−|α|²(1−√η)²)（|α⟩ 经振幅阻尼 → |√η α⟩ 的态重叠模方，教科书闭式/人类公共品）。α=2.0、η=0.6 ⇒ F=0.8160932561。candidate=截断 Fock 空间 + Kraus 算子求和（**静态算子代数，无时间步进**）。实测 |Δ|=1.94e-09（tol=1e-2 的 5.17e6× 余量）；判据 D 实测比值 60.40/186.54/436.78（截断型超几何收敛，**非幂律** —— 比值随 N 单调增，如实登记不假称 2^k），MONO，粗端 9.53e-03 < tol、默认档 1.94e-09 ≫ 1e-12。🔴 **同源体检（如实登记）**：与 **B10**（单量子比特门保真度·退相干极限）同属「Lindblad 损耗 + 保真度」，但**三方分歧** —— ①**被测标量不同**（B10 平均门保真度 (3+2e^{−t/T2}+e^{−t/T1})/6，含 T1/T2 双通道 vs 本题纯损耗的单量 F）②**物理构型不同**（B10 二能级 qubit + 4×4 PTM vs 本题连续变量相干态 + 截断 Fock 空间 + 振幅阻尼通道）③**数值格式不同**（B10 时间步进 RK4 积分超算子 vs 本题静态 Kraus 算子求和，离散参数是 Fock 截断维数而非步数）⇒ **非重复计数**（先例：B452 vs B33、B448/B449 同函数不同 X）。`coherent_loss|loss_fidelity` 在 lda/ 内仅命中 D-116 模块自身 ⇒ 闭式**非既有锚**。⚠️ **诚实边界**：α/η 为**设计预算值**、本锚**无实测锚**；结论只可用于预算与量级，不得作性能宣称。残差=截断误差。零商业依赖。",
+    },
+    "B454": {
+        "title": "TMSS on/off 预报条件态纯度（解析闭式 golden vs 截断 Fock 空间矩阵指数 + 投影 + 部分迹）",
+        "metric": "heralded_purity",
+        "oracle": "analytical(geometric-series closed-form) + truncated-Fock matrix-exponential/projector/partial-trace independent_cross_check",
+        "tol": 5e-3,
+        "default_params": {"lam": 0.8},
+        "golden_fn": golden_b454,
+        "candidate": "b454_heralded_purity_cand",
+        "candidate_desc": "截断 Fock 空间用矩阵指数建 TMSV（D-114 `tmss_numeric_state`）→ on/off 投影（先取模 2 对角再求和）→ 部分迹 → Tr(ρ²)；离散参数 = Fock 截断维数 N（默认 26）",
+        "note": "纯度 = (1−λ²)/(1+λ²)（λ=tanh r；λ→0 趋 1、λ→1 趋 0）。λ=0.8 ⇒ 0.2195121951。candidate=截断 Fock 空间矩阵指数 + 投影 + 部分迹（**构造型**，不用几何级数闭式）。实测 |Δ|=5.29e-10（tol=5e-3 的 9.46e6× 余量）；判据 D 实测比值 173.67/185.07/190.86（截断型，MONO），粗端 3.24e-03 < tol、默认档 5.29e-10 ≫ 1e-12。🔴 **同源体检（实 grep 全仓）**：`heralded|TMSS|squeez|压缩|twin_beam|孪生` 在 lda/ 内**仅命中 `lda_qeda/photon_sources.py` 自身**（D-114 模块）⇒ **零锚占用**，本族为新方程/新构型（连续变量压缩光源 + on/off 预报）。⚠️ **诚实边界**：λ 为**设计预算值**、本锚**无实测锚**；截断型收敛非幂律；结论只可用于预算与量级。残差=截断误差。零商业依赖。",
+    },
+    "B455": {
+        "title": "TMSS on/off 预报条件态 g²(0)（解析闭式 golden vs 截断 Fock 空间矩阵指数 + 投影 + 部分迹）",
+        "metric": "heralded_g2_0",
+        "oracle": "analytical(2λ² closed-form) + truncated-Fock matrix-exponential/projector/partial-trace independent_cross_check",
+        "tol": 1e-2,
+        "default_params": {"lam": 0.8},
+        "golden_fn": golden_b455,
+        "candidate": "b455_heralded_g2_cand",
+        "candidate_desc": "同 B454 路线的条件态 ⇒ g²(0) = ⟨n(n−1)⟩/⟨n⟩²（D-114 `heralded_g2_onoff` 闭式）；离散参数 = Fock 截断维数 N（默认 36）",
+        "note": "g²(0) = 2λ²（= 2·n̄/(1+n̄)，n̄=λ²/(1−λ²)；热光型条件态 ⇒ g²(0)=2 的上限随 λ→1 逼近）。λ=0.8 ⇒ 1.28。candidate=同 B454 的截断 Fock 空间路线（**与 B454 共享数值机制、被测标量不同** ⇒ 按本仓先例 B448/B449「同函数不同 X 各计一锚」计新锚，如实登记不掩盖）。实测 |Δ|=3.21e-06（tol=1e-2 的 3111× 余量）；判据 D 实测比值 10.34/11.25/11.84（截断型，MONO），粗端 4.42e-03 < tol、默认档 3.21e-06 ≫ 1e-12。⚠️ **诚实边界**：λ 为**设计预算值**、本锚**无实测锚**；截断型收敛非幂律；结论只可用于预算与量级。残差=截断误差。零商业依赖。",
     },
 }

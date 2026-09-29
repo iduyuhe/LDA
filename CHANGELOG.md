@@ -1,5 +1,71 @@
 # Changelog
 
+## v0.9.142（2026-09-29 · **量子征程「回填」：Batch B-30 三锚落地（B453/B454/B455）· 走完加锚四件套** · 账本 470→**473**（严格独立 449→452）· CI core 220 不变）
+
+### 一、候选接线（3 锚 · 全落严格独立）
+量子征程 D-113~D-127 此前**只产出平台能力**（账本零改动）。本轮首次把它**接进账本判决路径**，
+族 = **有限维 Fock 截断 × 解析闭式**（连续变量光量子器件：预报单光子源 + 损耗通道）。
+
+| 锚 | 被测标量 | golden（解析闭式 · 人类公共品） | candidate（方法学独立 · 离散参数） |
+|---|---|---|---|
+| **B453** | 相干态经损耗通道的输入-输出保真度 | `exp(−|α|²(1−√η)²)`（\|α⟩→\|√η α⟩ 态重叠模方） | 截断 Fock 空间归一 `\|α⟩⟨α\|`（D-114）→ D-116 振幅阻尼 **Kraus 算子求和** → `F=Tr(ρ_out ρ_in)`（N=22） |
+| **B454** | TMSS on/off 预报条件态**纯度** | `(1−λ²)/(1+λ²)`（λ=tanh r） | 截断 Fock 空间**矩阵指数**建 TMSV → on/off 投影 → 部分迹 → `Tr(ρ²)`（N=26） |
+| **B455** | 同条件态 **g²(0)** | `2λ²`（= 2·n̄/(1+n̄)） | 同 B454 路线的条件态 → `⟨n(n−1)⟩/⟨n⟩²`（N=36） |
+
+- 实测（默认档 / tol）：B453 `|Δ|=1.94e−09 / 1e−2`（余量 **5.17e6×**、`|golden|/tol=81.6`）；
+  B454 `|Δ|=5.29e−10 / 5e−3`（**9.46e6×**、43.9）；B455 `|Δ|=3.21e−06 / 1e−2`（**3111×**、128.0）。
+- **判据 D**（只扫 Fock 截断维数 N）：三者**逐档单调下降**，比值 B453 `60.40/186.54/436.78`、
+  B454 `173.67/185.07/190.86`、B455 `10.34/11.25/11.84` —— 截断型**非幂律**（比值随 N 单调增），
+  **如实登记，不假称 2^k**；粗端残差 ∈ (1e−13, tol)、默认档残差 ≫ 1e−12（避开 `run_d_criterion_smoke` ③ 红灯）。
+
+### 二、同源体检（实 grep 全仓 · 排除 .git/__pycache__/node_modules/lda_cuda_venv）
+- `heralded|TMSS|squeez|压缩|twin_beam|孪生` 在 `lda/` 内**仅命中 `lda_qeda/photon_sources.py` 自身**
+  （D-114 模块）⇒ **零锚占用**，B454/B455 族为新方程类/新构型。
+- `coherent_loss|loss_fidelity|相干态` 在 `lda/` 内仅命中 `lda_qeda/open_system.py`（D-116）与两处 smoke
+  ⇒ B453 闭式**非既有锚**。
+- **B453 vs B10（唯一需登记的近邻）**：B10 = 单量子比特门保真度（退相干极限），
+  golden `(3+2e^{−t/T2}+e^{−t/T1})/6`、candidate = Lindblad 4×4 超算子 **RK4 时间积分** → PTM。
+  **三方分歧**：①**被测标量不同**（平均门保真度含 T1/T2 双通道 vs 纯损耗单量 F）
+  ②**物理构型不同**（二能级 qubit + 4×4 PTM vs 连续变量相干态 + 截断 Fock 空间 + 振幅阻尼通道）
+  ③**数值格式不同**（时间步进 RK4 vs **静态 Kraus 算子求和**，离散参数是截断维数而非步数）
+  ⇒ **非重复计数**（先例：B452 vs B33 三处分歧；B448/B449 同函数不同 X）。共同上位结构如实登记不掩盖。
+
+### 三、坑（本批实测）
+1. **`coherent_dm` 的 `math.factorial(n)` 在 N ≥ 171 溢出** ⇒ 候选内加 `N ≤ 160` 硬护栏（血案预防 1）。
+2. **部分迹必须先取模 2 对角再求和**（D-115 血案）⇒ 本批**复用** `photon_sources.heralded_onoff`，不自写。
+3. **相干态截断密度矩阵必须归一**后再入通道，否则残差量级失真（血案预防 3）。
+4. **ADAPTER 批次核命名避让**：单锚 B30（色散读出 erfc 链）占用 `b30_` ⇒ 批次核用连字符
+   `_batch_b30_numeric` / `_get_batch_b30`（加前实 grep：全仓零命中）。
+
+### 四、独立验证
+`run_harness` ⇒ **独立候选 verified=452 · 降级 3 · 自证桩 18 · 判决回路 473/473 闭合**；
+三锚在报告内逐行 PASS（B453 0.816093/0.816093 |Δ|2e−09；B454 0.219512/0.219512 |Δ|1e−09；
+B455 1.28/1.28 |Δ|3.21e−06）。
+
+### 五、反向测试
+结构判据（⑧ 双向）覆盖：strict 锚 ⇒ `|cand−golden|` **非零**（B453 1.94e−09 / B454 5.29e−10 /
+B455 3.21e−06，均 ≠ 0 ⇒ 排除「静默回落 golden」）；`PERTURB_SPEC` **未新增条目**（参数扰动会同时
+改变 golden 与 candidate、残差不变 ⇒ 扰动对本族只改量值不改残差，故不加该项，**如实说明**而不是
+凑一条「看起来会红」的条目）。
+
+### 六、常驻护栏
+[`run_count_consistency_smoke`]（题库 470→473、B 题 447→450、最大号 B452→B455）·
+[`run_statistical_anchor_smoke`]（`range(400, 453)`→`range(400, 456)` + check 名）·
+[`run_three_class_consistency_smoke`]（README 三分类 ≡ harness）·
+[`run_p0_count_guard_sync_smoke`]（README / CONTRIBUTING / ledger smoke docstring 三处同源）·
+[`run_benchmark_falsifiability_smoke`]（`MIN_INDEPENDENT` 449→**452**）· [`run_self_certified_lock_smoke`]
+（上限 18 不变、无新自证桩）· `run_d_criterion_smoke` / `run_maturity_baseline_smoke` /
+`run_adapter_shard_layout_smoke` / `run_ci_coverage_gate_smoke` / `run_pyflakes_ratchet_smoke`。
+🔴 **加锚不新增 smoke** ⇒ `CORE_SMOKES` 持平（README / CONTRIBUTING 的 `CI core 220 条` 不变）。
+
+### 七、诚实边界
+- 三锚参数（α/η/λ）均为**设计预算值**，本批**无实测锚**；结论只可用于预算与量级，**不得作性能宣称**。
+- **截断型收敛非幂律**：比值随 N 单调增（超几何型）；`tol` 按「余量 ≥ 2 ∧ `|golden|/tol ≥ 13.5`
+  ∧ 粗端 < tol」逐锚标定，**不按标称阶设定**。
+- 结构上属「有限维 Fock 截断」数值机制，与既有 ODE-RK4 族（B446–B452）**数值格式不同**。
+- 零商业依赖（纯 numpy + 本项目 `lda_qeda` 纯净模块；无 torch/numba/meep/tidy3d）。
+
+---
 ## v0.9.141（2026-09-28 · **M4 几何回提覆盖率 → 14/14 类** · 口径更正 + 分类表机器化 · **不加锚** · 账本 470 不变 · CI core 209 不变）
 
 ### 背景

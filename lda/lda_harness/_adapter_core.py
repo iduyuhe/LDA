@@ -525,3 +525,24 @@ def _get_batch_b567():
         import _batch_b567_numeric as _m
     _BATCH_B567_MOD = _m
     return _m
+
+
+_BATCH_B30_MOD = None
+
+def _get_batch_b30():
+    """双路兜底导入 Batch B-30 数值核（量子征程回填 · 有限维 Fock 截断 × 解析闭式，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B30**（色散读出保真度 erfc 链）占用无连字符写法 `b30_`，
+    故批次核一律用连字符形式 `_batch_b30_numeric` / `_get_batch_b30`
+    （接手前已实 grep 核占名：`_BATCH_B30` / `_get_batch_b30` 全仓零命中，B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B30_MOD
+    if _BATCH_B30_MOD is not None:
+        return _BATCH_B30_MOD
+    try:
+        from lda_harness import _batch_b30_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b30_numeric as _m
+    _BATCH_B30_MOD = _m
+    return _m

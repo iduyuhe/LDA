@@ -252,7 +252,9 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 #   停在 396 时，448 道里任意 52 道退化为自证桩都不会红，与本护栏「背离自证桩」的立项意图相悖。
 # P6·T6.4（B-29）：一阶 RC 阶跃充电族 1 道严格独立锚（B452）落地 ⇒ 严格独立 448 → 449
 #   （降级 3、自证桩 18 不变）。棘轮地板同步单调上调：448 → 449。
-MIN_INDEPENDENT = 449
+# Batch B-30（量子征程回填）：有限维 Fock 截断族 3 道严格独立锚（B453/B454/B455）落地
+#   ⇒ 严格独立 449 → 452（降级 3、自证桩 18 不变）。棘轮地板同步上调：449 → 452。
+MIN_INDEPENDENT = 452
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

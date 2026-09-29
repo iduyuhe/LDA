@@ -205,6 +205,39 @@ def h_capability_demos(h, p, q, path):
     return (200, _app.capability_demos_status())
 
 
+def h_qchip_demo(h, p, q, path):
+    """GET /api/qchip_demo —— 光量子计算芯片案例卡（只读 · 免登录 · 微秒级）。
+
+    A 档接入（D-131）：把「量子征程（吃狗粮）」九步成果在 UI 中以**只读案例**
+    呈现（可编程 MZI 干涉仪网格 = LOQC 通用处理器）。
+
+    🔴 与站内重计算端点（cpo_array / design_* 等）**不同**：本端点**零重计算** ——
+    全部数字为闭式现算（深度 / 损耗 / 参数 / 维数），不跑 P&R、不 import 求解器
+    ⇒ **无 DoS 面**，故**不进 HEAVY_POST_PATHS、不要求登录**，与
+    `/api/verification_ledger`、`/api/benchmarks` 同属「公开只读验货」类
+    （维持「可被外部验货」战略可达性）。
+
+    🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`（**非** ACCEPT/PASS），
+    返回体自带 `honest_note` 说明「非流片后实测 / 设计预算口径」。
+
+    查询参数：`n`（目标模数，默认 216，范围 2..4096；非法值回落默认）。
+    异常不 500（返回 200 + error 字段，与 `h_design_catalog` 同风格）。
+    """
+    try:
+        n = int(q.get("n") or 216)
+    except (TypeError, ValueError):
+        n = 216
+    try:
+        from . import qchip_case as _qc
+    except ImportError:
+        from lda_webui import qchip_case as _qc
+    try:
+        return (200, _qc.case_card(n))
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/qchip_demo", "error": str(e)[:160],
+                      "case_id": _qc.CASE_ID, "verdict": "ERROR"})
+
+
 # --------------------------------------------------------------------------
 # /api/cpo_array 重计算端点并发护栏
 # 背景：app.py 用 ThreadingHTTPServer（每请求一线程）。该端点无鉴权且默认
@@ -1704,6 +1737,8 @@ GET_ROUTES = {
     "/api/admin/config": h_admin_config_get,
     "/api/scale_demo": h_scale_demo,
     "/api/capability_demos": h_capability_demos,
+    # A 档接入（D-131）：光量子计算芯片只读案例卡（零重计算 · 免登录）
+    "/api/qchip_demo": h_qchip_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,

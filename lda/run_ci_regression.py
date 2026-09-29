@@ -516,6 +516,14 @@ CORE_SMOKES: List[str] = [
     #     ⇒ **平台自己的 P&R 就是最优砖墙**（门禁 E1–E4）。
     #   突变探针 `scripts/d127_submanifold_probe.py` 反证其会响（12 条突变各必红）。CI core 219→220。
     "run_submanifold_smoke.py",          # D-127 可编程子流形 · 可及自由度 = 雅可比秩（32 判据）
+    # D-131 WebUI 光量子计算芯片案例卡（A 档接入）：把「量子征程」九步成果以**只读案例**
+    #   呈现（新增 GET /api/qchip_demo + 1 个面板）。门禁核心是**跨源一致性** ——
+    #   面板现算值逐项对回已提交的 report JSON（lda_q5 / lda_q5b）与平台常量
+    #   （lda_qeda.loss_budget per_mzi/per_step）与平台 rect_mesh 层数，防文案与工程漂移；
+    #   另加红线断言（verdict 恒 DESIGN_BUDGET 非 PASS/ACCEPT、LLM 不进判决、免登录不进
+    #   HEAVY_POST_PATHS、零重计算=不 import 求解器）。
+    #   突变探针 `scripts/d131_qchip_case_probe.py` 反证其会响（10 条突变各必红）。CI core 220→221。
+    "run_qchip_case_smoke.py",           # D-131 光量子芯片案例卡 · 跨源一致 + 红线（24 判据）
     "run_ir_solve_smoke.py",            # L0/L3 直接消费 IR 真值计算
     "run_wdm_coupler_smoke.py",         # ⚠️ 文件头旧注称其「重」→ 实测 0.30s，属过时排除
     "run_wdm_coupler_wl_smoke.py",

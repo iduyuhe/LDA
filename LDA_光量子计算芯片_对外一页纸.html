@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LDA 光量子计算芯片 · 一页纸</title>
+<style>
+@page{size:A4;margin:11mm}
+:root{--ink:#101828;--ink2:#475467;--ink3:#98a2b3;--line:#e4e7ec;--blue:#2563eb;--blue6:#eff6ff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f4f6f9;font-family:"Microsoft YaHei","PingFang SC",-apple-system,Arial,sans-serif;
+color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+.page{width:210mm;min-height:297mm;margin:14px auto;background:#fff;padding:11mm;
+box-shadow:0 2px 18px rgba(16,24,40,.10)}
+.hd{display:flex;justify-content:space-between;align-items:flex-start;
+border-bottom:2.5px solid var(--blue);padding-bottom:9px}
+.brand{font-size:15px;font-weight:700;color:var(--blue);letter-spacing:.02em}
+.brand small{display:block;font-weight:400;font-size:11px;color:var(--ink3);letter-spacing:0;margin-top:2px}
+.meta{font-size:11px;color:var(--ink3);text-align:right;line-height:1.7}
+h1{font-size:23px;font-weight:700;line-height:1.28;margin:13px 0 0;letter-spacing:-.01em}
+.oneline{font-size:13.5px;color:var(--ink2);margin-top:7px}
+.oneline b{color:var(--ink)}
+.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:13px}
+.n{border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:6px;padding:9px 10px}
+.n .v{font-size:21px;font-weight:700;color:var(--blue);letter-spacing:-.02em;line-height:1.15}
+.n .t{font-size:11px;color:var(--ink2);margin-top:3px}
+.n .d{font-size:10px;color:var(--ink3);margin-top:1px}
+h2{font-size:12.5px;font-weight:700;color:var(--ink);margin:14px 0 6px;
+padding-left:8px;border-left:3px solid var(--blue)}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+td,th{padding:5.5px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:var(--blue6);color:#1e3a8a;font-weight:700;font-size:10.5px;letter-spacing:.04em}
+td.k{font-weight:700;white-space:nowrap;width:26%}
+.mono{font-family:Consolas,monospace;font-size:11px}
+.hl{color:var(--blue);font-weight:700}
+.miles{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.mile{font-size:10.5px;border:1px solid var(--line);border-radius:5px;padding:4px 8px;color:var(--ink2)}
+.mile b{color:var(--blue)}
+.find{font-size:11.5px;color:var(--ink2);margin:5px 0 0;padding-left:11px;border-left:2px solid var(--blue6)}
+.find b{color:var(--ink)}
+.two{display:grid;grid-template-columns:1.06fr 1fr;gap:12px}
+.note{margin-top:13px;background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:9px 11px}
+.note .nt{font-size:11px;font-weight:700;color:#92400e;margin-bottom:3px}
+.note p{font-size:10.5px;color:#78350f;line-height:1.62}
+.ft{margin-top:12px;border-top:1px solid var(--line);padding-top:9px;
+font-size:10.5px;color:var(--ink3);line-height:1.75}
+.ft b{color:var(--ink2)}
+@media print{body{background:#fff}.page{margin:0;box-shadow:none;width:auto;min-height:0;padding:0}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hd">
+    <div class="brand">LDA 光量子计算芯片
+      <small>LOQC 通用处理器 · 可编程 MZI 干涉网格 · 用 LDA 亲手设计</small></div>
+    <div class="meta">开源 Agent 原生光子 / 量子芯片设计软件（MIT）<br>
+      一页纸 · 2026-09 · 数字可回溯至仓库机器可读报告</div>
+  </div>
+
+  <h1>216 个光学模式、23,220 个干涉仪单元，把「任意 216×216 酉变换」编译成片上真实光路
+    —— 深度恰好打到理论紧下界，全链路 DRC / LVS 签核通过</h1>
+  <p class="oneline">通用光量子计算机的核心是一张<b>可编程干涉仪网格</b>：用分束器与相移器在光路上实现任意矩阵运算。
+    LDA 在平台内把这条链路完整走通：酉分解 → 物理版图 → <b>真实 GDSII</b> → DRC/LVS 双签核 →
+    量子态层 → 真实源与探测器 → 定标 → 量子基准 → 规模与损耗审计。换一组相位即换一个酉，<b>硬件不动</b>。</p>
+
+  <div class="nums">
+    <div class="n"><div class="v">216</div><div class="t">光学深度 = 紧下界</div><div class="d">每层真匹配 · 紧界可达</div></div>
+    <div class="n"><div class="v">23,220</div><div class="t">MZI 干涉仪单元</div><div class="d">= N(N−1)/2 · 定理下限</div></div>
+    <div class="n"><div class="v">−213</div><div class="t">较三角 Reck 省层数</div><div class="d">429 → 216（约 −50%）</div></div>
+    <div class="n"><div class="v">1.000000</div><div class="t">酉重构保真度</div><div class="d">DFT + Haar · 机器精度</div></div>
+  </div>
+
+  <h2>规格与量化成绩单（旗舰配置 · 对标同规模国际主流）</h2>
+  <table>
+    <tr><th>指标</th><th>数值</th><th>说明</th></tr>
+    <tr><td class="k">规模 / 元件数</td><td class="mono">216 模 / 23,220 片 MZI</td><td>Clements 必要性定理：元件数不可再省</td></tr>
+    <tr><td class="k">光学深度</td><td class="mono"><span class="hl">216</span> = 相邻耦合紧下界</td><td>换拓扑即减半：三角 Reck 429 层 → 216 层</td></tr>
+    <tr><td class="k">每模插损</td><td class="mono"><span class="hl">518.4</span> dB</td><td>较三角静态 1029.6 dB <b>省 511.2 dB</b>（元件数不变）</td></tr>
+    <tr><td class="k">签核</td><td class="mono">DRC PASS · LVS ACCEPT</td><td>量子 DRC 9 规则 0 违规；LVS 保真度 0.999788 ≥ 0.999</td></tr>
+    <tr><td class="k">真实产出</td><td class="mono">GDSII（最大 64 模 / 650 KB）</td><td>酉层版图-原理图一致性签核 · 波导交叉 0</td></tr>
+  </table>
+
+  <h2>九步征程（全程在 LDA 内闭环）</h2>
+  <div class="miles">
+    <span class="mile"><b>M1</b> 四模全链路签核</span>
+    <span class="mile"><b>M2</b> 参数化 N×N 生成器</span>
+    <span class="mile"><b>M3</b> 量子态层</span>
+    <span class="mile"><b>M3b</b> 真实源 / 探测器</span>
+    <span class="mile"><b>M3c</b> 全链路量子签核</span>
+    <span class="mile"><b>M4</b> 规模对标 216 模</span>
+    <span class="mile"><b>M4b</b> 时间复用与深度界</span>
+    <span class="mile" style="border-color:#2563eb"><b>M5</b> 矩形网格坐实紧界可达</span>
+    <span class="mile"><b>M5b</b> 真实损耗预算</span>
+  </div>
+
+  <div class="two">
+    <div>
+      <h2>四条硬结论</h2>
+      <p class="find"><b>① 紧界可达</b>：通用 N 模酉的相邻耦合紧下界 = N，矩形 Clements 网格深度<b>恰 = N</b>，且元件数不增。</p>
+      <p class="find"><b>② 参数计数会骗人</b>：「可及参数 ≈ ⌊N/2⌋·D」只是上界；实测可达维数显示全最大匹配序列<b>恒为 2N</b>（与深度无关），最优浅电路是<b>交替砖墙</b>。</p>
+      <p class="find"><b>③ 通用与省损不可兼得</b>：损耗墙本质是深度墙，深度下界 Ω(N)；时间复用省元件但更费损，只有放弃通用性的浅电路才越墙。</p>
+      <p class="find"><b>④ 约定须精确到块级恒等式</b>：相位臂不一致的「看似只差一个标量」，嵌入 N×N 后变成<b>逐模相位注入</b>，连全局相位都不是。</p>
+    </div>
+    <div>
+      <h2>可信度来自哪里</h2>
+      <p class="find"><b>判决不靠模型</b>：是否通过由<b>死标量比对</b>（闭式物理律 vs 数值）给出，<b>LLM 不进判决路径</b>。</p>
+      <p class="find"><b>外部真值分层</b>：闭式科学原理与 A 级实测事实可作基准，<b>仿真/计算值永不作基准</b>；对标只比规模架构，不比数值。</p>
+      <p class="find"><b>机器可判护栏</b>：每个能力配<b>常驻门禁 + 突变探针</b>（探针证明断言真会变红）；本芯片案例的 UI 面板亦有 24 判据把数字对回报告与平台常量，<b>文案漂移即红</b>。</p>
+      <p class="find"><b>可复现</b>：纯 numpy，零量子 SDK，零 GPU，<code class="mono">python examples/lda_qchip_m5.py</code> 秒级复跑。</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <div class="nt">诚实边界（与本页同步，不可省略）</div>
+    <p>① 本成果是<b>设计 + 数值正确性证明</b>（数学 + 构造性数值 + 版图签核流程），<b>非流片后实测</b>；
+      ② 损耗 / 效率均为<b>设计预算口径</b>（per_mzi 2.4 dB / per_step 2.6 dB），<b>非实测 PDK</b>；
+      ③ 与 Borealis 只比<b>规模 / 架构 / 参数计数</b>，<b>不比数值</b>（CV GBS vs DV 被动 LOQC，物理模型不同）；
+      ④ 「综合对标分」是平台自定义量，<b>非国际公认指标</b>；
+      ⑤ 最优性证据限于 N ≤ 8 / D ≤ 6 搜索空间（N=4 穷举），<b>不宣称全局最优证明</b>；
+      ⑥ 每模口径<b>不含波导交叉损耗</b>，属<b>下界</b>。</p>
+  </div>
+
+  <div class="ft">
+    <b>LDA</b> · 开源 Agent 原生光子 / 量子芯片设计软件（MIT）· 用 LDA 亲手设计（量子征程「吃狗粮」）<br>
+    本页数字取自仓库内机器可读报告（<code>examples/lda_q5_report.json</code> / <code>lda_q5b_report.json</code> 等）与平台模块闭式，可在 UI 面板「★ 光量子计算芯片案例」现场复算。<br>
+    <b>杜玉河</b> · 工业5点0产业生态联盟 · 上海杜特企业管理咨询有限公司 · 13311602075 · 微信 gongyhlw
+  </div>
+
+</div>
+</body>
+</html>

@@ -57,6 +57,60 @@ statistical_anchor · d_criterion · maturity_baseline · falsifiability · pyfl
 
 两锚参数 μ 均为**设计预算值**、**无实测锚**（B-30 同）；截断型收敛**非幂律**；结论只可用于预算与量级，
 不得作性能宣称。残差 = 截断误差（含重归一偏差）。零商业依赖（纯 numpy + 本项目 `lda_qeda` 纯净模块）。
+### v0.9.143 追加（2026-09-29 · **WebUI 光量子计算芯片案例卡（A 档接入）** · 不加锚 · 账本 475 不变 · CI core 220 → 221）
+
+**背景（实测）**：量子征程（吃狗粮）D-113→D-129 的产出物一直留在 `examples/` 与 `lda/lda_qeda/`，
+**从未接入 WebUI** —— `lda/lda_webui/` 内 `LOQC|玻色采样|Clements|矩形网格|光量子` **0 命中**；
+UI 的 `data-stack="quantum"` 面板（11 个）+ 能力目录 2 条「量子」（CAP-MULTIQUBIT / CAP-QEDA）
+**全部是超导 transmon / 微波 QEDA**，与本芯片的**光量子 LOQC** 是两条路线。本次执行 **A 档接入**。
+
+#### 一、新增端点（只读 · 免登录 · 零重计算）
+
+- **`GET /api/qchip_demo`**（查询参数 `n`，默认 216，范围 2..4096）：返回光量子芯片案例卡。
+- 数据源新模块 `lda/lda_webui/qchip_case.py`（**D-131**）：**模块顶层只 import `math` / `os`**，
+  全部数字**闭式现算**（深度 / 损耗 / 参数 / 维数）——`case_card()` 实测 **0.4 ms**、JSON **7.2 KB**。
+  ⇒ **不跑 P&R、不 import 求解器** ⇒ **无 DoS 面**，故**不进 `HEAVY_POST_PATHS`、不要求登录**
+  （与 `/api/verification_ledger`、`/api/benchmarks` 同属「公开只读验货」类，维持可被外部验货的可达性）。
+- 产出物清单只 `stat` **元信息**（文件名 + 字节数）；`examples/` 不存在时**优雅降级**
+  （生产部署只装 `lda/` 也不报错）。
+
+#### 二、新增面板（1 个 · 自动进抽屉目录）
+
+`static/index.html` 新增 **`★ 光量子计算芯片案例（LOQC 通用处理器 · 可编程 MZI 干涉网格）`**
+（面板总数 63 → **64**）：`data-stage="accept" data-stack="both" data-roles="engineer,expert"`。
+按钮 id = **`runQChip`**（前缀 `run` ⇒ 被 `collect()` 自动收入抽屉「能力目录」，并可通过搜索框
+按「量子」「芯片」命中）。渲染 7 段：旗舰规格 / 深度扫频 / 每模损耗账 / 九步征程 / 四条硬结论 /
+G_Q1–G_Q9 能力反哺（8/9 闭合）/ 产出物。
+
+#### 三、门禁与探针（核心 = **跨源一致性**）
+
+- `lda/run_qchip_case_smoke.py` **24 判据**（A 自检与闭式 4 · B **跨源一致性** 5 · C 路由与面板接线 5 ·
+  D 诚实边界与红线 5 · E 护栏 2 · F 免登录/零重计算 3）。**B 节是本门禁的核心价值**：面板现算值逐项对回
+  已提交的 `examples/lda_q5_report.json`（深度 216 / 紧界 216 / 省 213 / 可达 True）、
+  `examples/lda_q5b_report.json`（三角 1029.6 / 矩形 518.4 / 列口径 516.0 / 时间复用两口径）、
+  平台 `lda_qeda.loss_budget`（per_mzi 2.4 / per_step 2.6）、平台 `lda_qeda.rect_mesh`（层数 = N）
+  ⇒ **文案与工程漂移即红**。
+- `scripts/d131_qchip_case_probe.py` **10 突变各必红 + 基线/还原复绿**：深度谎报 N−1 / η 闭式篡改 /
+  输出维数谎报 / `verdict` 冒充 PASS / 诚实边界删条 / G_Q9 谎报闭合 / 跨源漂移（矩形 dB +1）/
+  路由未注册 / 面板删「设计预算口径」/ 端点误入登录闸门。
+- 既有 `run_webui_api_smoke` 自动覆盖新路由并**实跑**：`GET /api/qchip_demo` ⇒ **200 JSON**
+  （实跑 PASS 98 → **99** · FAIL=0）。门禁耗时 **0.33 s** ⇒ 无需登记 TIMEOUTS。
+
+#### 四、诚实边界（面板与返回体同步携带）
+
+`verdict` 恒为 **`DESIGN_BUDGET`**（**非** PASS/ACCEPT —— **不伪装实测签核**）；`honest_note` 六条：
+① 非流片后实测 ② 设计预算口径非实测 PDK ③ 与 Borealis 只比规模不比数值 ④ 综合对标分非国际公认指标
+⑤ 最优性证据限 N ≤ 8 & D ≤ 6 ⑥ 每模口径不含波导交叉损耗属**下界**。
+缺口表如实：9 项中 **8 项闭合**、**G_Q9 明标未闭合**（不粉饰）。
+
+#### 五、红线
+
+纯标准库 + 平台闭式；**LLM 不进判决路径**（`verdict` 为死字符串、diff 为死标量）；**零量子 SDK**。
+CI core **220 → 221**；**账本 475 不变**（本批为 UI 接入，未走加锚四件套）。
+
+---
+
+
 
 ## v0.9.142（2026-09-29 · **量子征程「回填」：Batch B-30 三锚落地（B453/B454/B455）· 走完加锚四件套** · 账本 470→**473**（严格独立 449→452）· CI core 220 不变）
 

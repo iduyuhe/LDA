@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LDA 光量子计算芯片 · 路演页</title>
+<style>
+:root{--bg:#0a1120;--panel:#111c2e;--line:#1f2f47;--ink:#e8eef7;--ink2:#9fb3cc;--ink3:#6d8199;
+--blue:#2563eb;--blue2:#60a5fa;--teal:#14b8a6;--amber:#f59e0b;--green:#22c55e;--red:#ef4444}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);
+font-family:"Microsoft YaHei","PingFang SC",-apple-system,"Segoe UI",Arial,sans-serif;
+-webkit-font-smoothing:antialiased;line-height:1.6}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+.sec{padding:56px 0;border-bottom:1px solid var(--line)}
+.sec:last-child{border-bottom:none}
+.kicker{font-size:13px;letter-spacing:.16em;color:var(--blue2);font-weight:600;margin-bottom:14px}
+h1{font-size:44px;line-height:1.22;font-weight:700;letter-spacing:-.01em}
+h2{font-size:27px;font-weight:700;margin-bottom:8px;letter-spacing:-.005em}
+h3{font-size:17px;font-weight:700;margin-bottom:8px}
+.sub{font-size:17px;color:var(--ink2);margin-top:16px;max-width:860px}
+.lead{font-size:19px;color:var(--ink);margin-top:20px;max-width:900px}
+.hero{padding:76px 0 56px;border-bottom:1px solid var(--line);
+background:radial-gradient(1100px 420px at 16% -8%,rgba(37,99,235,.20),transparent 62%)}
+.tag{display:inline-block;font-size:12px;color:var(--blue2);border:1px solid #24406b;
+background:rgba(37,99,235,.10);border-radius:999px;padding:5px 13px;margin:0 8px 8px 0}
+.grid{display:grid;gap:16px;margin-top:26px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:1fr 1fr}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.big{font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.big.b{color:var(--blue2)}.big.t{color:#5eead4}.big.a{color:#fbbf24}.big.g{color:#4ade80}
+.cap{font-size:13px;color:var(--ink2);margin-top:7px}
+.cap2{font-size:12px;color:var(--ink3);margin-top:4px}
+table{width:100%;border-collapse:collapse;margin-top:20px;font-size:14.5px}
+th{text-align:left;color:var(--ink2);font-weight:600;font-size:12.5px;letter-spacing:.06em;
+padding:10px 12px;border-bottom:1px solid #26374f}
+td{padding:10px 12px;border-bottom:1px solid #1a2739;vertical-align:top}
+tr:last-child td{border-bottom:none}
+td.k{font-weight:700;white-space:nowrap}
+.hl{color:var(--blue2);font-weight:700}
+.mono{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:13px}
+.flow{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px;align-items:center}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:9px;
+padding:9px 13px;font-size:13px}
+.step b{color:var(--blue2);margin-right:6px}
+.arw{color:var(--ink3);font-size:13px}
+.mile{display:grid;grid-template-columns:70px 1fr;gap:14px;padding:13px 0;
+border-bottom:1px solid #1a2739}
+.mile:last-child{border-bottom:none}
+.mile .id{font-weight:700;color:var(--blue2);font-size:14px}
+.mile .ttl{font-weight:700;font-size:15px}
+.mile .res{color:var(--ink2);font-size:13.5px;margin-top:3px}
+.finding{border-left:3px solid var(--blue);padding:2px 0 2px 16px;margin:18px 0}
+.finding .ft{font-weight:700;color:var(--blue2);font-size:15px}
+.finding .fx{color:var(--ink2);font-size:14px;margin-top:4px}
+.note{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.28);
+border-radius:12px;padding:18px 20px;margin-top:24px}
+.note h3{color:#fbbf24;font-size:15px}
+.note p,.note li{font-size:13.5px;color:#e2c79a}
+.note ol{margin:8px 0 0 20px}
+.foot{padding:34px 0 46px;color:var(--ink3);font-size:13px;line-height:1.9}
+.foot b{color:var(--ink2)}
+code{background:rgba(96,165,250,.10);color:var(--blue2);border-radius:4px;padding:1px 5px;
+font-family:Consolas,monospace;font-size:13px}
+.bar{height:8px;border-radius:4px;background:#1b2b42;margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px}
+@media(max-width:900px){.g4,.g3,.g2{grid-template-columns:1fr 1fr}h1{font-size:31px}h2{font-size:22px}}
+@media(max-width:620px){.g4,.g3,.g2{grid-template-columns:1fr}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <div class="kicker">LDA · 开源 Agent 原生光子 / 量子芯片设计软件</div>
+  <h1>LDA 光量子计算芯片<br>可编程 MZI 干涉网格 · 通用线性光量子处理器</h1>
+  <p class="sub">用 LDA 亲手设计的一颗量子计算芯片：<b>216 个光学模式 · 23,220 个干涉仪单元</b>，
+  把「任意 216×216 酉变换」编译成片上真实光路，<b>光学深度恰好打到理论紧下界</b>，
+  全链路 DRC / LVS 签核通过。</p>
+  <div style="margin-top:26px">
+    <span class="tag">LOQC 通用处理器</span>
+    <span class="tag">真实 GDSII 版图</span>
+    <span class="tag">DRC PASS · LVS ACCEPT</span>
+    <span class="tag">保真度 1.000000000000</span>
+    <span class="tag">纯 numpy · 零量子 SDK</span>
+    <span class="tag">LLM 不进判决路径</span>
+  </div>
+</div></header>
+
+<section class="sec"><div class="wrap">
+  <div class="kicker">一组数字</div>
+  <h2>旗舰配置（对标 Xanadu Borealis 同规模）</h2>
+  <div class="grid g4">
+    <div class="card"><div class="big b">216</div><div class="cap">光学深度 = 紧下界</div>
+      <div class="cap2">每层真匹配 · 紧界可达</div></div>
+    <div class="card"><div class="big t">23,220</div><div class="cap">MZI 干涉仪单元</div>
+      <div class="cap2">= N(N−1)/2 · 定理下限</div></div>
+    <div class="card"><div class="big a">−213</div><div class="cap">较三角 Reck 省层数</div>
+      <div class="cap2">429 → 216（约 −50%）</div></div>
+    <div class="card"><div class="big g">1.000000</div><div class="cap">酉重构保真度</div>
+      <div class="cap2">DFT + Haar 随机酉 · 机器精度</div></div>
+  </div>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="kicker">它是什么</div>
+  <h2>可编程干涉仪网格 = 量子处理器</h2>
+  <p class="lead">线性光学中，N 个模式的任意酉变换 U 由无源分束器 + 相移器实现；
+  而任意 N×N 酉都可分解为 O(N²) 个 2×2 酉（<b>Clements 必要性定理</b>：恰好 N(N−1)/2 片 2 模门）。
+  把这个分解铺成网格版图，就是一颗「按需编程」的量子处理器——<b>换一组相位就换一个酉，硬件不动</b>。</p>
+
+  <svg viewBox="0 0 1080 250" width="100%" style="margin-top:26px" role="img"
+       aria-label="可编程 MZI 干涉仪网格示意">
+    <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6"
+      markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#4d7fb5" stroke-width="1.5"
+      stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+    <line x1="120" y1="70" x2="980" y2="70" stroke="#33517a" stroke-width="1.2"/>
+    <line x1="120" y1="110" x2="980" y2="110" stroke="#33517a" stroke-width="1.2"/>
+    <line x1="120" y1="150" x2="980" y2="150" stroke="#33517a" stroke-width="1.2"/>
+    <line x1="120" y1="190" x2="980" y2="190" stroke="#33517a" stroke-width="1.2"/>
+    <text x="104" y="70" fill="#8fa8c4" font-size="13" text-anchor="end" dominant-baseline="central">模 0</text>
+    <text x="104" y="110" fill="#8fa8c4" font-size="13" text-anchor="end" dominant-baseline="central">模 1</text>
+    <text x="104" y="150" fill="#8fa8c4" font-size="13" text-anchor="end" dominant-baseline="central">模 2</text>
+    <text x="104" y="190" fill="#8fa8c4" font-size="13" text-anchor="end" dominant-baseline="central">模 3</text>
+    <rect x="262" y="52" width="86" height="76" rx="8" fill="#123966" stroke="#60a5fa" stroke-width="1"/>
+    <rect x="262" y="132" width="86" height="76" rx="8" fill="#123966" stroke="#60a5fa" stroke-width="1"/>
+    <rect x="366" y="92" width="86" height="76" rx="8" fill="#0d4f47" stroke="#5eead4" stroke-width="1"/>
+    <rect x="470" y="52" width="86" height="76" rx="8" fill="#123966" stroke="#60a5fa" stroke-width="1"/>
+    <rect x="470" y="132" width="86" height="76" rx="8" fill="#123966" stroke="#60a5fa" stroke-width="1"/>
+    <rect x="574" y="92" width="86" height="76" rx="8" fill="#0d4f47" stroke="#5eead4" stroke-width="1"/>
+    <rect x="678" y="52" width="86" height="76" rx="8" fill="#123966" stroke="#60a5fa" stroke-width="1"/>
+    <rect x="678" y="132" width="86" height="76" rx="8" fill="#123966" stroke="#60a5fa" stroke-width="1"/>
+    <rect x="782" y="92" width="86" height="76" rx="8" fill="#0d4f47" stroke="#5eead4" stroke-width="1"/>
+    <text x="305" y="238" fill="#8fa8c4" font-size="13" text-anchor="middle">层 1</text>
+    <text x="409" y="238" fill="#8fa8c4" font-size="13" text-anchor="middle">层 2</text>
+    <text x="513" y="238" fill="#8fa8c4" font-size="13" text-anchor="middle">层 3</text>
+    <text x="617" y="238" fill="#8fa8c4" font-size="13" text-anchor="middle">层 4</text>
+    <text x="721" y="238" fill="#8fa8c4" font-size="13" text-anchor="middle">层 5</text>
+    <text x="825" y="238" fill="#8fa8c4" font-size="13" text-anchor="middle">层 6</text>
+  </svg>
+  <p class="cap2">每片 MZI（方框）= 一个分束器 θ + 一个相移器 φ（2 个可编程参数）；
+  同层配对互不共享波导 ⇒ 同层可同步；层间交替错位 ⇒ <b>每层都是真匹配</b>。</p>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="kicker">九步征程 · 全程在 LDA 内闭环</div>
+  <h2>从酉分解到真实版图签核</h2>
+  <div class="flow">
+    <span class="step"><b>M1</b>四模全链路签核</span><span class="arw">→</span>
+    <span class="step"><b>M2</b>N×N 生成器（至 64 模）</span><span class="arw">→</span>
+    <span class="step"><b>M3</b>量子态层</span><span class="arw">→</span>
+    <span class="step"><b>M3b</b>真实源 / 探测器</span><span class="arw">→</span>
+    <span class="step"><b>M3c</b>全链路量子签核</span><span class="arw">→</span>
+    <span class="step"><b>M4</b>规模对标 216 模</span><span class="arw">→</span>
+    <span class="step"><b>M4b</b>时间复用与深度界</span><span class="arw">→</span>
+    <span class="step" style="border-color:#2563eb"><b>M5</b>矩形网格坐实紧界可达</span><span class="arw">→</span>
+    <span class="step"><b>M5b</b>真实损耗预算</span>
+  </div>
+  <div class="grid g2" style="margin-top:24px">
+    <div class="card">
+      <h3>端到端闭环（真实产出）</h3>
+      <p class="cap">酉分解 → 物理前端（耦合模 / VπL）→ 参数化 P&amp;R → <b>真实 GDSII</b>（最大 64 模 / 650 KB）
+      → DRC PASS → LVS ACCEPT → 量子态层 → 真实源与探测器 → 标定闭环 → 量子基准 → 规模与损耗审计。</p>
+    </div>
+    <div class="card">
+      <h3>它同时是一次平台体检</h3>
+      <p class="cap">首轮跑通就暴露出平台<b>没有任何真量子能力</b>：9 项缺口（G_Q1–G_Q9）被逐条登记、逐项闭合
+      （真量子态层 / 源与探测器 / 定标闭环 / 可扩 P&amp;R / 量子 DRC·LVS / 量子基准…）。
+      这才是「吃狗粮」的意义——<b>用一颗芯片，逼平台长出一整个量子能力栈</b>。</p>
+      <div class="bar"><i style="width:89%;background:linear-gradient(90deg,#2563eb,#22c55e)"></i></div>
+      <p class="cap2">能力缺口闭合进度 <b>8 / 9</b>（余 G_Q9 已用布局守卫处置，如实标注未闭合）</p>
+    </div>
+  </div>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="kicker">核心突破</div>
+  <h2>四条硬结论</h2>
+  <div class="finding"><div class="ft">① 紧界可达</div>
+    <div class="fx">通用 N 模酉的相邻耦合紧下界 = N。矩形 Clements 网格的深度<b>恰好 = N</b>（每层真匹配），
+    且元件数不增（仍 N(N−1)/2）。对照平台三角 Reck 最优 2N−3 —— <b>换拓扑即深度减半</b>。</div></div>
+  <div class="finding"><div class="ft">② 参数计数会骗人</div>
+    <div class="fx">「可及参数 ≈ ⌊N/2⌋·D」只是上界。实测可达子流形维数后发现：全最大匹配序列门数线性增长，
+    而可达维数<b>恒为 2N</b>（乘积块对角，与深度无关）；最优浅电路是<b>交替砖墙</b>；
+    参数计数下界 N−1 <b>不可达</b>。</div></div>
+  <div class="finding"><div class="ft">③ 「通用」与「省损」不可兼得</div>
+    <div class="fx">损耗墙的本质是<b>深度墙</b>，深度下界 Ω(N) 由参数计数钉死。时间复用把元件数从 O(N²) 降到 O(1)，
+    但每模损耗反而更贵；只有<b>放弃通用性的浅电路</b>才越墙（而那已非通用）。
+    这给出了 Borealis 216 模「浅电路 + 放弃通用性」的机器可判依据。</div></div>
+  <div class="finding"><div class="ft">④ 约定必须精确到块级恒等式</div>
+    <div class="fx">平台单元与主权分解的相位臂相反：裸替换在 2×2 层面<b>只差一个标量</b>（看似无害），
+    但嵌入 N×N 后该标量只落在本门的 2 个模上 ⇒ 注入<b>逐模相位</b>且与邻门<b>不对易</b>
+    ⇒ 整网格 ≠ U（<b>连全局相位都不是</b>），相位不变口径保真度仅 0.0054。</div></div>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="kicker">量化成绩单</div>
+  <h2>可回溯至机器可读报告</h2>
+  <table>
+    <tr><th style="width:34%">指标</th><th style="width:30%">数值</th><th>说明</th></tr>
+    <tr><td class="k">旗舰规模</td><td class="mono">216 模 / 23,220 MZI</td><td>与 Borealis 同规模</td></tr>
+    <tr><td class="k">光学深度</td><td class="mono"><span class="hl">216</span> = 紧下界</td><td>省 213 层 vs 三角 Reck（429）</td></tr>
+    <tr><td class="k">每模插损</td><td class="mono"><span class="hl">518.4</span> dB</td><td>省 511.2 dB vs 三角静态（1029.6）</td></tr>
+    <tr><td class="k">酉重构保真度</td><td class="mono"><span class="hl">1.000000000000</span></td><td>N = 4…128，DFT + Haar</td></tr>
+    <tr><td class="k">量子 DRC</td><td class="mono">ACCEPT（9 规则 · 0 违规）</td><td>量子设计规则检查</td></tr>
+    <tr><td class="k">量子 LVS</td><td class="mono">ACCEPT（fid 0.999788 ≥ 0.999）</td><td>酉层版图-原理图一致性</td></tr>
+    <tr><td class="k">真实 GDS</td><td class="mono">最大 64 模 / 650,126 B</td><td>GDSII 版图导出</td></tr>
+    <tr><td class="k">波导交叉</td><td class="mono">0</td><td>三角网格全规模 0 交叉</td></tr>
+    <tr><td class="k">输出空间</td><td class="mono">log₂ dim ≈ 318 bit</td><td>玻色采样输出态空间量级</td></tr>
+  </table>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="kicker">工程纪律</div>
+  <h2>为什么这些数字可信</h2>
+  <div class="grid g3">
+    <div class="card"><h3>判决不靠模型</h3><p class="cap">是否通过由<b>死标量比对</b>（闭式物理律 vs 数值）
+      给出，<b>LLM 不进判决路径</b>；判定位是 int / bool / 死字符串。</p></div>
+    <div class="card"><h3>外部真值分层</h3><p class="cap">闭式科学原理与 A 级实测事实可作外部基准；
+      <b>仿真/计算值永不作基准</b>；与 Borealis 只比规模与架构，<b>不比数值</b>。</p></div>
+    <div class="card"><h3>机器可判的护栏</h3><p class="cap">每个能力配<b>常驻门禁 + 突变探针</b>
+      （探针证明断言真的会变红）；本芯片案例的 UI 面板亦有 <b>24 判据</b>把数字对回报告与平台常量，
+      <b>文案漂移即红</b>。</p></div>
+  </div>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="note">
+    <h3>诚实边界（随本页同步）</h3>
+    <ol>
+      <li>本成果是<b>设计 + 数值正确性证明</b>（数学 + 构造性数值 + 版图签核流程），<b>非流片后实测</b>。</li>
+      <li>损耗 / 效率均为<b>设计预算口径</b>（per_mzi 2.4 dB、per_step 2.6 dB），<b>非实测 PDK</b>。</li>
+      <li>与 Borealis 只比<b>规模 / 架构 / 参数计数</b>，<b>不比数值</b>（CV Gaussian Boson Sampling
+        vs DV 被动 LOQC，物理模型不同）。</li>
+      <li>「综合对标分」是平台自定义量，<b>非国际公认指标</b>，仅作内部趋势追踪。</li>
+      <li>最优性证据限于 N ≤ 8 / D ≤ 6 搜索空间（N=4 穷举）⇒ <b>不宣称全局最优证明</b>。</li>
+      <li>每模口径<b>不含波导交叉损耗</b>，属<b>下界</b>。</li>
+    </ol>
+  </div>
+</div></section>
+
+<footer class="foot"><div class="wrap">
+  <b>LDA</b> · 开源 Agent 原生光子 / 量子芯片设计软件（MIT）<br>
+  用 LDA 亲手设计——量子征程「吃狗粮」· 产出真实 GDSII + 全链路签核<br>
+  <b>杜玉河</b> / 工业5点0产业生态联盟 · 上海杜特企业管理咨询有限公司<br>
+  本页所有数字均取自仓库内机器可读报告（<code>examples/lda_q5_report.json</code> 等）与平台模块闭式，
+  可用 <code>python examples/lda_qchip_m5.py</code> 复现。
+</div></footer>
+
+</body>
+</html>

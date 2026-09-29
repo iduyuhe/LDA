@@ -1,0 +1,209 @@
+{
+  "chip_family": "LDA-Q3b · 光子硬件物理链路（源→mesh→损耗→探测）· M3 物理深度第二/三步",
+  "platform_capability": "lda_qeda/photon_sources.py(D-114) + detectors.py(D-115) + open_system.py(D-116)",
+  "methodology": "闭式物理律作 golden（HBT g²/二项分布/相干态保真/纠缠保真度）；各物理两条以上结构不同算法交叉验证；LLM 不进判决路径",
+  "source": {
+    "model": "SPDC 双模压缩真空 |TMSV⟩=√(1−λ²)Σλⁿ|n,n⟩（λ=tanh r）",
+    "anchors": "PNR 预告纯度=1（纯 |1⟩）；on/off 预告纯度=(1−λ²)/(1+λ²)；g²(0)=2λ²",
+    "scan": [
+      {
+        "lambda": 0.05,
+        "nbar_per_mode": 0.002506,
+        "purity_pnr_herald": 1.0,
+        "purity_onoff_herald": 0.995012,
+        "g2_onoff_herald": 0.005
+      },
+      {
+        "lambda": 0.1,
+        "nbar_per_mode": 0.010101,
+        "purity_pnr_herald": 1.0,
+        "purity_onoff_herald": 0.980198,
+        "g2_onoff_herald": 0.02
+      },
+      {
+        "lambda": 0.15,
+        "nbar_per_mode": 0.023018,
+        "purity_pnr_herald": 1.0,
+        "purity_onoff_herald": 0.95599,
+        "g2_onoff_herald": 0.045
+      },
+      {
+        "lambda": 0.2,
+        "nbar_per_mode": 0.041667,
+        "purity_pnr_herald": 1.0,
+        "purity_onoff_herald": 0.923077,
+        "g2_onoff_herald": 0.08
+      },
+      {
+        "lambda": 0.3,
+        "nbar_per_mode": 0.098901,
+        "purity_pnr_herald": 1.0,
+        "purity_onoff_herald": 0.834862,
+        "g2_onoff_herald": 0.18
+      },
+      {
+        "lambda": 0.4,
+        "nbar_per_mode": 0.190476,
+        "purity_pnr_herald": 1.0,
+        "purity_onoff_herald": 0.724138,
+        "g2_onoff_herald": 0.32
+      }
+    ],
+    "chosen_lambda": 0.2,
+    "honest_note": "理想 SPDC（无相位噪声/模式失配/传播损耗）；真实源纯度更低。"
+  },
+  "onchip_hom": {
+    "eta_chip": 0.9,
+    "eta_det": 0.9,
+    "eta_eff": 0.81,
+    "cross_method_max_diff": 5.551115123125783e-17,
+    "theta_scan": [
+      {
+        "theta_deg": 45.0,
+        "p_coin_full_open_system": 0.0,
+        "p_coin_effective_eff": 0.0,
+        "p_coin_ideal_no_loss": 0.0
+      },
+      {
+        "theta_deg": 22.5,
+        "p_coin_full_open_system": 0.3280499999999999,
+        "p_coin_effective_eff": 0.32804999999999995,
+        "p_coin_ideal_no_loss": 0.4999999999999999
+      },
+      {
+        "theta_deg": 54.0,
+        "p_coin_full_open_system": 0.0626519749952985,
+        "p_coin_effective_eff": 0.06265197499529851,
+        "p_coin_ideal_no_loss": 0.0954915028125263
+      },
+      {
+        "theta_deg": 18.0,
+        "p_coin_full_open_system": 0.4294230250047015,
+        "p_coin_effective_eff": 0.4294230250047015,
+        "p_coin_ideal_no_loss": 0.6545084971874736
+      }
+    ],
+    "hom_visibility_5050": 1.0,
+    "p_coin_distinguishable_5050": 0.3280500000000002,
+    "p_coin_indistinguishable_5050": 0.0,
+    "scaling": "符合率 ∝ η_eff² = 0.656100（单路 ∝ η_eff）",
+    "honest_note": "理想不可区分 + 理想模式匹配；实测可见度受模式失配/多光子/抖动限制。"
+  },
+  "mesh_loss": {
+    "N": 4,
+    "cutoff_d": 3,
+    "mesh": "DFT（M2 可编程 mesh 生成器）",
+    "input": "|1,1,0,0⟩（SPDC 预告的双单光子）",
+    "eta_per_mode": 0.85,
+    "fock_space_dim": 81,
+    "state_fidelity_vs_ideal": 0.7224999999999999,
+    "state_fidelity_closed_form_etaN": 0.7224999999999999,
+    "p_still_2photon_sector": 0.7224999999999999,
+    "top_ideal_outputs": [
+      [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        0.125
+      ],
+      [
+        [
+          0,
+          0,
+          1,
+          1
+        ],
+        0.125
+      ],
+      [
+        [
+          0,
+          0,
+          2,
+          0
+        ],
+        0.125
+      ],
+      [
+        [
+          0,
+          1,
+          1,
+          0
+        ],
+        0.125
+      ],
+      [
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        0.125
+      ]
+    ],
+    "top_lossy_outputs": [
+      [
+        [
+          0,
+          0,
+          1,
+          1
+        ],
+        0.090313
+      ],
+      [
+        [
+          0,
+          1,
+          1,
+          0
+        ],
+        0.090313
+      ],
+      [
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        0.090313
+      ],
+      [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        0.090312
+      ],
+      [
+        [
+          0,
+          0,
+          2,
+          0
+        ],
+        0.090312
+      ]
+    ],
+    "honest_note": "逐模独立损耗模型（无模间串扰/无相位噪声）。"
+  },
+  "link_budget": {
+    "chain": "SPDC(on/off 预告) → 片上 mesh → 逐模损耗 → SNSPD on/off",
+    "eta_chip": 0.9,
+    "eta_det": 0.9,
+    "eta_eff": 0.81,
+    "source_g2_at_lambda": 0.08,
+    "coincidence_rate_scaling": 0.6561,
+    "verdict": "理想链路下 HOM 可见度 V=1（η 无关）；符合计数率 ∝ η_eff²；真实源的多光子污染（g²(0)=2λ²>0）是可见度损失主因之一",
+    "honest_note": "链路预算为设计口径（源理想/无模式失配），非实测锚。"
+  },
+  "verdict": "PASS"
+}

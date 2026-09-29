@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 500" width="680" height="500">
+<rect width="680" height="500" fill="#ffffff"/>
+<text x="40" y="34" font-family="Arial" font-size="19" font-weight="bold" fill="#0f172a">LDA-Q3c · 全链路量子签核（源→网格→损耗→探测→标定→DRC/LVS→基准）</text>
+<text x="40" y="54" font-family="Arial" font-size="11" fill="#64748b">4 模可编程 MZI 干涉仪 · 纯 numpy + 平台模块 · 零量子 SDK · LLM 不进判决路径</text>
+<line x1="40" y1="66" x2="640" y2="66" stroke="#e2e8f0"/>
+<text x="40" y="92" font-family="Arial" font-size="13" font-weight="bold" fill="#0f172a">链路指标（归一化）</text>
+<text x="40" y="104" font-family="Arial" font-size="11" fill="#334155">源纯度 1−g²(0)</text><rect x="40" y="108" width="420" height="18" fill="#e2e8f0" rx="3"/><rect x="40" y="108" width="386.4" height="18" fill="#2563eb" rx="3"/><text x="468" y="123" font-family="Arial" font-size="11" fill="#0f172a">0.920</text>
+<text x="40" y="138" font-family="Arial" font-size="11" fill="#334155">网格酉保真度</text><rect x="40" y="142" width="420" height="18" fill="#e2e8f0" rx="3"/><rect x="40" y="142" width="420.0" height="18" fill="#2563eb" rx="3"/><text x="468" y="157" font-family="Arial" font-size="11" fill="#0f172a">1.0000</text>
+<text x="40" y="172" font-family="Arial" font-size="11" fill="#334155">链路效率 η_eff</text><rect x="40" y="176" width="420" height="18" fill="#e2e8f0" rx="3"/><rect x="40" y="176" width="321.3" height="18" fill="#2563eb" rx="3"/><text x="468" y="191" font-family="Arial" font-size="11" fill="#0f172a">0.765</text>
+<text x="40" y="206" font-family="Arial" font-size="11" fill="#334155">标定精度 1−σ</text><rect x="40" y="210" width="420" height="18" fill="#e2e8f0" rx="3"/><rect x="40" y="210" width="416.8" height="18" fill="#2563eb" rx="3"/><text x="468" y="225" font-family="Arial" font-size="11" fill="#0f172a">7.52e-04 rad</text>
+<text x="40" y="240" font-family="Arial" font-size="11" fill="#334155">LVS 酉保真度</text><rect x="40" y="244" width="420" height="18" fill="#e2e8f0" rx="3"/><rect x="40" y="244" width="419.9" height="18" fill="#2563eb" rx="3"/><text x="468" y="259" font-family="Arial" font-size="11" fill="#0f172a">0.99979</text>
+<line x1="40" y1="296" x2="640" y2="296" stroke="#e2e8f0"/>
+<text x="40" y="312" font-family="Arial" font-size="13" font-weight="bold" fill="#0f172a">量子 DRC 九规则（ACCEPT）</text>
+<rect x="40" y="320" width="188" height="24" fill="#f1f5f9" rx="3"/><text x="46" y="336" font-family="Arial" font-size="10" fill="#334155">QDR-PHASE-DOMAIN</text><text x="190" y="336" font-family="Arial" font-size="10" font-weight="bold" fill="#16a34a">PASS</text>
+<rect x="240" y="320" width="188" height="24" fill="#f1f5f9" rx="3"/><text x="246" y="336" font-family="Arial" font-size="10" fill="#334155">QDR-COUPLING-RANGE</text><text x="390" y="336" font-family="Arial" font-size="10" font-weight="bold" fill="#16a34a">PASS</text>
+<rect x="440" y="320" width="188" height="24" fill="#f1f5f9" rx="3"/><text x="446" y="336" font-family="Arial" font-size="10" fill="#334155">QDR-PHASE-RESOLUTION</text><text x="590" y="336" font-family="Arial" font-size="10" font-weight="bold" fill="#16a34a">PASS</text>
+<rect x="40" y="354" width="188" height="24" fill="#f1f5f9" rx="3"/><text x="46" y="370" font-family="Arial" font-size="10" fill="#334155">QDR-CROSSING-BUDGET</text><text x="190" y="370" font-family="Arial" font-size="10" font-weight="bold" fill="#16a34a">PASS</text>
+<rect x="240" y="354" width="188" height="24" fill="#f1f5f9" rx="3"/><text x="246" y="370" font-family="Arial" font-size="10" fill="#334155">QDR-LOSS-BUDGET</text><text x="390" y="370" font-family="Arial" font-size="10" font-weight="bold" fill="#16a34a">PASS</text>
+<rect x="440" y="354" width="188" height="24" fill="#f1f5f9" rx="3"/><text x="446" y="370" font-family="Arial" font-size="10" fill="#334155">QDR-SOURCE-PURITY</text><text x="590" y="370" font-family="Arial" font-size="10" font-weight="bold" fill="#16a34a">PASS</text>
+<rect x="40" y="388" width="188" height="24" fill="#f1f5f9" rx="3"/><text x="46" y="404" font-family="Arial" font-size="10" fill="#334155">QDR-INDISTINGUISHABILITY</text><text x="190" y="404" font-family="Arial" font-size="10" font-weight="bold" fill="#16a34a">PASS</text>
+<rect x="240" y="388" width="188" height="24" fill="#f1f5f9" rx="3"/><text x="246" y="404" font-family="Arial" font-size="10" fill="#334155">QDR-DETECTOR-EFFICIENCY</text><text x="390" y="404" font-family="Arial" font-size="10" font-weight="bold" fill="#16a34a">PASS</text>
+<rect x="440" y="388" width="188" height="24" fill="#f1f5f9" rx="3"/><text x="446" y="404" font-family="Arial" font-size="10" fill="#334155">QDR-CALIB-RESIDUAL</text><text x="590" y="404" font-family="Arial" font-size="10" font-weight="bold" fill="#16a34a">PASS</text>
+<line x1="40" y1="436" x2="640" y2="436" stroke="#e2e8f0"/>
+<text x="40" y="466" font-family="Arial" font-size="15" font-weight="bold" fill="#16a34a">全链路判决：PASS</text>
+<text x="250" y="466" font-family="Arial" font-size="12" fill="#334155">LVS ACCEPT · 综合对标分 3.11</text>
+<text x="40" y="486" font-family="Arial" font-size="10" fill="#94a3b8">综合对标分为平台自定义量（非国际公认指标）；损耗/效率为设计预算口径，非实测 PDK。</text>
+</svg>

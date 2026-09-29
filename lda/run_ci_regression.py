@@ -406,6 +406,29 @@ CORE_SMOKES: List[str] = [
     "run_qeda_depth_smoke.py",          # QEDA 纵深三件套（含负例）
     "run_qubit_resonator_smoke.py",     # qubit-resonator 求解器（含色散区失效负例）
     "run_mixed_system_smoke.py",        # 光-量混合巨型系统（2 正例 + 3 负例）
+    # 🔴 M3 量子芯片征程（吃狗粮 · 2026-09-29）· 量子光子硬件层门禁：
+    #   D-113 `loqc_states`（量子态层：Fock/HOM/符合计数/玻色采样永久式）+
+    #   D-114 `photon_sources`（单光子源：HBT g²(0)/TMSS 预告纯度闭式）+ 
+    #   D-115 `detectors`（SNSPD：on-off POVM/PNR 二项/死时间/效率≡损耗桥）+
+    #   D-116 `open_system`（多模 Lindblad：Kraus/ODE/张量收缩三法互证）。
+    #   纯 numpy · C 级自主 · 零量子 SDK（红线判据内判）；实测 0.10s / 2.20s，
+    #   远低于默认预算 ⇒ 无需 `_BUILTIN_TIMEOUT_OVERRIDE`，不动预算基线。
+    #   突变探针 `scripts/d113_loqc_probe.py` / `scripts/d114_d116_probe.py` 反证其会响。
+    #   账本 470 不变（量子芯片为平台能力演示，未走加锚四件套）。CI core 209→211。
+    #   D-117 `calibration`（L3 标定闭环 G_Q5：三点相移/探测器反馈闭环/CRB）+
+    #   D-118 `quantum_drc_lvs`（量子 DRC 九规则 G_Q7 + 酉层版图-原理图 LVS 签核）+
+    #   D-119 `quantum_benchmark`（玻色采样/HOM/过程保真度/综合对标分 G_Q8）。
+    #   突变探针 `scripts/d117_d119_probe.py` 反证其会响。CI core 211→212。
+    "run_loqc_states_smoke.py",         # D-113 量子态层（14 判据）
+    "run_photon_hardware_smoke.py",     # D-114/115/116 光子硬件层（26 判据）
+    "run_quantum_calib_bench_smoke.py", # D-117/118/119 标定/签核/基准（26 判据）
+    # 🔴 M4 规模对标（吃狗粮 · 2026-09-29）· D-120 `scale_bench`：
+    #   闭式规模律（n_mzi=N(N−1)/2 · 深度 N−1 · 单路径插损 (N−1)·per_mzi ·
+    #   输出空间 C(N+k−1,k)）+ N=216 实测剖析 + 标定「尺度盲」律
+    #   1−F≈(σ/2)√((N−1)/N) + 损耗墙/复杂度墙/架构权衡 + Borealis 216 模对标。
+    #   纯 numpy · C 级自主 · 零量子 SDK；实测 N=216 建 mesh 仅 ~0.11s ⇒ 无需预算覆盖。
+    #   突变探针 `scripts/d120_scale_probe.py` 反证其会响。CI core 212→213。
+    "run_quantum_scale_bench_smoke.py", # D-120 规模对标（27 判据）
     "run_ir_solve_smoke.py",            # L0/L3 直接消费 IR 真值计算
     "run_wdm_coupler_smoke.py",         # ⚠️ 文件头旧注称其「重」→ 实测 0.30s，属过时排除
     "run_wdm_coupler_wl_smoke.py",

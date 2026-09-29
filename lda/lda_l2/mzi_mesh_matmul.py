@@ -36,6 +36,8 @@ __all__ = [
     "voltage_from_phase",
     "reck_decompose",
     "assemble_mesh",
+    "reck_triangular_mesh",
+    "assemble_triangular_mesh",
     "mesh_cascade_loss_db",
     "unitary_fidelity",
     "apply_mesh",
@@ -184,6 +186,66 @@ def assemble_mesh(ops, D, N: int) -> np.ndarray:
         Gd = mzi_unit_cell(theta, phi).conj().T
         _apply_block_left(U, i, j, Gd)
     return U
+
+
+# ---------------------------------------------------------------------------
+# 物理可布线三角 mesh 分解（相邻模耦合 · 主权版图可直接实现）
+# ---------------------------------------------------------------------------
+def reck_triangular_mesh(U: np.ndarray):
+    """物理三角 mesh 分解：每片 MZI 只耦合**相邻模** (p, p+1)，适配主权版图 P&R。
+
+    `reck_decompose` 产生的 op 作用在 (col, row) 两行，row 可达 N-1（非相邻模直接
+    耦合），在版图层导致波导交叉爆炸（M1/M2 实测）。本函数改每片只耦合相邻模
+    (p, p+1)，让主权 P&R 能画出**标准三角 Reck mesh**（每列自底向上清相邻对）。
+
+    约定（与 reck_decompose 对齐零结构保持，已数值验证 fid=1.0）：
+      - 列序左→右：for c in range(N-1)；
+      - 列内自底向上相邻对：for p in range(N-2, c-1, -1)，块作用两行 (p, p+1)；
+      - 作用时 (p, p+1) 中 p 为较低模（math 第一列），p+1 为较高模（math 第二列）；
+      - 对角相位层 D 单位模（|D_kk|=1）。
+
+    返回 (ops, D)：ops 为 (c, p, theta, phi)，c=列(阶段)/p=较低模索引；
+    mesh 传递矩阵 = assemble_triangular_mesh(ops, D, N) ≡ U（机器精度）。
+    """
+    U = np.array(U, dtype=complex, copy=True)
+    N = U.shape[0]
+    if U.shape[1] != N:
+        raise ValueError("U 必须为方阵")
+    err = float(np.max(np.abs(U @ U.conj().T - np.eye(N))))
+    if err > 1e-6:
+        raise ValueError(f"输入非酉矩阵（‖UU†−I‖={err:.2e}），三角分解要求酉输入")
+    ops = []
+    for c in range(N - 1):                       # 列序：左→右（零结构保持关键）
+        for p in range(N - 2, c - 1, -1):        # 列内：自底向上相邻对 (p, p+1)
+            a = U[p, c]          # 较低模（pivot，math 第一列）
+            b = U[p + 1, c]      # 较高模（待清，math 第二列）
+            if abs(a) < 1e-15 and abs(b) < 1e-15:
+                continue
+            theta = 2.0 * math.atan2(abs(b), abs(a))
+            phi = math.atan2(a.imag, a.real) - math.atan2(b.imag, b.real) + math.pi
+            G = mzi_unit_cell(theta, phi)
+            ra, rb = U[p].copy(), U[p + 1].copy()
+            U[p] = G[0, 0] * ra + G[0, 1] * rb
+            U[p + 1] = G[1, 0] * ra + G[1, 1] * rb
+            ops.append((c, p, theta, phi))
+    D = np.diag(np.diag(U)).astype(complex)
+    return ops, D
+
+
+def assemble_triangular_mesh(ops, D, N: int) -> np.ndarray:
+    """物理三角 mesh 反向装配：从对角相位层 D 起步，按 ops 逆序左乘各 G_m†（块 (p,p+1)）。
+
+    光逆序穿过 MZI（每片=G_m†）+ 输入对角 D ⇒ 传递矩阵 ≡ 目标酉（机器精度）。
+    三角 mesh 无模态重排（输出模序与输入一致），无需 permutation 网络。
+    """
+    T = np.array(D, dtype=complex, copy=True)
+    for (c, p, theta, phi) in reversed(ops):
+        Gd = mzi_unit_cell(theta, phi).conj().T
+        ra, rb = T[p].copy(), T[p + 1].copy()
+        T[p] = Gd[0, 0] * ra + Gd[0, 1] * rb
+        T[p + 1] = Gd[1, 0] * ra + Gd[1, 1] * rb
+    return T
+
 
 
 # ---------------------------------------------------------------------------

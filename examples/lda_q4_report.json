@@ -1,0 +1,473 @@
+{
+  "chip_family": "LDA-Q4 · 规模对标（N=100+/Borealis 216 模）· 规模律 + 瓶颈诊断",
+  "platform_capability": "lda_qeda/scale_bench.py(D-120) 复用 D-117/118/119 + lda_l2 mesh",
+  "n_sweep": [
+    4,
+    8,
+    16,
+    32,
+    64,
+    100,
+    128,
+    216
+  ],
+  "profiles": [
+    {
+      "n_modes": 4,
+      "n_mzi_measured": 6,
+      "laws_match": true,
+      "fidelity": 0.9999999999999999,
+      "unitary_ok": true,
+      "gen_s": 0.00022170000011101365,
+      "asm_s": 6.500000017695129e-05,
+      "laws": {
+        "n_modes": 4,
+        "n_mzi": 6,
+        "n_stages": 3,
+        "mzi_per_path": 3,
+        "loss_total_db": 14.400000000000002,
+        "loss_per_path_db": 7.200000000000001,
+        "calib_phases": 10,
+        "n_crossings": 0,
+        "per_mzi_loss_db": 2.4000000000000004
+      },
+      "per_path_eta": 0.19054607179632468
+    },
+    {
+      "n_modes": 8,
+      "n_mzi_measured": 28,
+      "laws_match": true,
+      "fidelity": 0.9999999999999998,
+      "unitary_ok": true,
+      "gen_s": 0.00014879999798722565,
+      "asm_s": 0.0001137000072048977,
+      "laws": {
+        "n_modes": 8,
+        "n_mzi": 28,
+        "n_stages": 7,
+        "mzi_per_path": 7,
+        "loss_total_db": 67.20000000000002,
+        "loss_per_path_db": 16.800000000000004,
+        "calib_phases": 36,
+        "n_crossings": 0,
+        "per_mzi_loss_db": 2.4000000000000004
+      },
+      "per_path_eta": 0.020892961308540375
+    },
+    {
+      "n_modes": 16,
+      "n_mzi_measured": 120,
+      "laws_match": true,
+      "fidelity": 0.9999999999999997,
+      "unitary_ok": true,
+      "gen_s": 0.0005132999940542504,
+      "asm_s": 0.0004766000056406483,
+      "laws": {
+        "n_modes": 16,
+        "n_mzi": 120,
+        "n_stages": 15,
+        "mzi_per_path": 15,
+        "loss_total_db": 288.00000000000006,
+        "loss_per_path_db": 36.00000000000001,
+        "calib_phases": 136,
+        "n_crossings": 0,
+        "per_mzi_loss_db": 2.4000000000000004
+      },
+      "per_path_eta": 0.0002511886431509577
+    },
+    {
+      "n_modes": 32,
+      "n_mzi_measured": 496,
+      "laws_match": true,
+      "fidelity": 0.9999999999999997,
+      "unitary_ok": true,
+      "gen_s": 0.002112500005750917,
+      "asm_s": 0.001976600004127249,
+      "laws": {
+        "n_modes": 32,
+        "n_mzi": 496,
+        "n_stages": 31,
+        "mzi_per_path": 31,
+        "loss_total_db": 1190.4,
+        "loss_per_path_db": 74.4,
+        "calib_phases": 528,
+        "n_crossings": 0,
+        "per_mzi_loss_db": 2.4000000000000004
+      },
+      "per_path_eta": 3.63078054770101e-08
+    },
+    {
+      "n_modes": 64,
+      "n_mzi_measured": 2016,
+      "laws_match": true,
+      "fidelity": 0.9999999999999994,
+      "unitary_ok": true,
+      "gen_s": 0.009218799998052418,
+      "asm_s": 0.008270300008007325,
+      "laws": {
+        "n_modes": 64,
+        "n_mzi": 2016,
+        "n_stages": 63,
+        "mzi_per_path": 63,
+        "loss_total_db": 4838.400000000001,
+        "loss_per_path_db": 151.20000000000002,
+        "calib_phases": 2080,
+        "n_crossings": 0,
+        "per_mzi_loss_db": 2.4000000000000004
+      },
+      "per_path_eta": 7.585775750291821e-16
+    },
+    {
+      "n_modes": 100,
+      "n_mzi_measured": 4950,
+      "laws_match": true,
+      "fidelity": 0.9999999999999991,
+      "unitary_ok": true,
+      "gen_s": 0.022010600005160086,
+      "asm_s": 0.020599199997377582,
+      "laws": {
+        "n_modes": 100,
+        "n_mzi": 4950,
+        "n_stages": 99,
+        "mzi_per_path": 99,
+        "loss_total_db": 11880.000000000002,
+        "loss_per_path_db": 237.60000000000002,
+        "calib_phases": 5050,
+        "n_crossings": 0,
+        "per_mzi_loss_db": 2.4000000000000004
+      },
+      "per_path_eta": 1.737800828749369e-24
+    },
+    {
+      "n_modes": 128,
+      "n_mzi_measured": 8128,
+      "laws_match": true,
+      "fidelity": 0.9999999999999992,
+      "unitary_ok": true,
+      "gen_s": 0.03599239999311976,
+      "asm_s": 0.03369750001002103,
+      "laws": {
+        "n_modes": 128,
+        "n_mzi": 8128,
+        "n_stages": 127,
+        "mzi_per_path": 127,
+        "loss_total_db": 19507.200000000004,
+        "loss_per_path_db": 304.80000000000007,
+        "calib_phases": 8256,
+        "n_crossings": 0,
+        "per_mzi_loss_db": 2.4000000000000004
+      },
+      "per_path_eta": 3.3113112148258537e-31
+    },
+    {
+      "n_modes": 216,
+      "n_mzi_measured": 23220,
+      "laws_match": true,
+      "fidelity": 0.9999999999999986,
+      "unitary_ok": true,
+      "gen_s": 0.10777910001343116,
+      "asm_s": 0.10232139998697676,
+      "laws": {
+        "n_modes": 216,
+        "n_mzi": 23220,
+        "n_stages": 215,
+        "mzi_per_path": 215,
+        "loss_total_db": 55728.00000000001,
+        "loss_per_path_db": 516.0000000000001,
+        "calib_phases": 23436,
+        "n_crossings": 0,
+        "per_mzi_loss_db": 2.4000000000000004
+      },
+      "per_path_eta": 2.511886431509531e-52
+    }
+  ],
+  "calibration_scale_blind": {
+    "sigma": 0.01,
+    "measured": {
+      "4": 0.9964554623993991,
+      "16": 0.9954263467100162,
+      "32": 0.995304194384681
+    },
+    "closed_form": {
+      "4": 0.9956698729810778,
+      "16": 0.9951587708172407,
+      "32": 0.9950787450787426
+    },
+    "n_mzi": {
+      "4": 6,
+      "16": 120,
+      "32": 496
+    },
+    "spread_4_vs_32": 0.0011512680147180987
+  },
+  "signoff_at_scale": {
+    "N4": {
+      "verdict": "ACCEPT",
+      "violations": []
+    },
+    "N216": {
+      "verdict": "REJECT",
+      "violations": [
+        "QDR-COUPLING-RANGE",
+        "QDR-LOSS-BUDGET"
+      ]
+    },
+    "N216_split_out_of_range": 1077,
+    "N216_total_mzi": 23220
+  },
+  "benchmark_output_space": {
+    "output_dim_small": {
+      "4": 35,
+      "16": 3876,
+      "64": 766480
+    },
+    "output_dim_borealis": 318.12921150179113,
+    "n_photons_ref": 125,
+    "note": "N=216 平均 125 光子 ⇒ 输出空间 2^318 量级，永久式 #P-hard ⇒ 无法枚举/校验全分布。"
+  },
+  "lvs_assembly_cost": {
+    "n_modes": 216,
+    "n_mzi": 23220,
+    "platform_ops_complexity": "O(N^3)",
+    "independent_ops_complexity": "O(N^5)",
+    "platform_flops_order": 10077696.0,
+    "independent_flops_order": 468008202240.0,
+    "independent_over_platform": 46440.0,
+    "independent_scalable": false
+  },
+  "architecture_tradeoff": {
+    "n_modes": 216,
+    "static": {
+      "kind": "static_passive_mesh",
+      "n_modes": 216,
+      "n_components": 23220,
+      "loss_per_path_db": 516.0000000000001,
+      "per_path_eta": 2.511886431509531e-52,
+      "components_order": "O(N^2)",
+      "loss_order": "O(N)"
+    },
+    "time_multiplexed": {
+      "kind": "time_multiplexed_loops",
+      "n_modes_requested": 216,
+      "lattice_a": 6,
+      "n_loops": 3,
+      "n_modes_realized": 216,
+      "n_components": 3,
+      "loss_per_mode_db": 9.0,
+      "per_path_eta": 0.12589254117941673,
+      "components_order": "O(log_a N)",
+      "loss_order": "O(log_a N)",
+      "per_loop_loss_db": 3.0,
+      "honest_note": "环损耗为**设计预算**（非 Borealis 实测），仅作架构量级对照。"
+    },
+    "components_ratio_static_over_tmux": 7740.0,
+    "loss_saving_db_tmux": 507.0000000000001,
+    "verdict": "静态网格元件数 O(N²) 且单路径损耗 O(N) dB ⇒ 规模上不可行；时间复用元件 O(log N) 且损耗 O(log N) dB ⇒ 模数可指数扩张。"
+  },
+  "borealis_benchmark": {
+    "n_modes": 216,
+    "borealis_ref": {
+      "name": "Xanadu Borealis",
+      "source": "Madsen et al., Nature 606, 75-81 (2022)",
+      "doi": "10.1038/s41586-022-04725-x",
+      "public_url": "https://www.nature.com/articles/s41586-022-04725-x",
+      "task": "Gaussian boson sampling (GBS) - Hafnian sampling",
+      "squeezed_modes": 216,
+      "architecture": "time-multiplexed, 3 loop-based interferometers (tau, 6tau, 36tau), 3D connectivity, lattice a=6 => M=a^3=216 squeezed pulses",
+      "max_detected_photons": 219,
+      "mean_photon_number": 125,
+      "detector": "photon-number-resolving (superconducting transition-edge sensors, TES)",
+      "detector_efficiency": 0.95,
+      "clock_mhz": 6.0,
+      "programmable_parameters": 1200,
+      "sample_time_us": 36.0,
+      "classical_time_years": 9000.0,
+      "a_level_note": "公开文献 A 级可溯源事实；本平台只引用其架构/规模，不复算其数值。"
+    },
+    "lda_static_mesh": {
+      "kind": "static_passive_mesh",
+      "n_modes": 216,
+      "n_components": 23220,
+      "loss_per_path_db": 516.0000000000001,
+      "per_path_eta": 2.511886431509531e-52,
+      "components_order": "O(N^2)",
+      "loss_order": "O(N)"
+    },
+    "lda_time_multiplexed_model": {
+      "kind": "time_multiplexed_loops",
+      "n_modes_requested": 216,
+      "lattice_a": 6,
+      "n_loops": 3,
+      "n_modes_realized": 216,
+      "n_components": 3,
+      "loss_per_mode_db": 9.0,
+      "per_path_eta": 0.12589254117941673,
+      "components_order": "O(log_a N)",
+      "loss_order": "O(log_a N)",
+      "per_loop_loss_db": 3.0,
+      "honest_note": "环损耗为**设计预算**（非 Borealis 实测），仅作架构量级对照。"
+    },
+    "comparison": [
+      {
+        "axis": "模式数",
+        "borealis": 216,
+        "lda": 216,
+        "match": true
+      },
+      {
+        "axis": "物理形态",
+        "borealis": "连续变量 GBS（压缩态 + Hafnian）",
+        "lda": "离散变量被动 LOQC（Fock + 永久式）",
+        "match": false
+      },
+      {
+        "axis": "架构",
+        "borealis": "时间复用 3 环（a=6 ⇒ a³=216）",
+        "lda": "静态空间网格（元件 23220）",
+        "match": false
+      },
+      {
+        "axis": "元件数",
+        "borealis": "1 环量级",
+        "lda": 23220,
+        "match": false
+      },
+      {
+        "axis": "单路径损耗",
+        "borealis": "≈3 环量级（几十 dB 内）",
+        "lda": "516 dB",
+        "match": false
+      },
+      {
+        "axis": "探测",
+        "borealis": "PNR/TES, η=0.95",
+        "lda": "SNSPD on/off + PNR 模型（D-115）",
+        "match": false
+      }
+    ],
+    "mode_count_matches": true,
+    "same_modality": false,
+    "honest_boundary": "模数对标成立（216=216），但**物理形态不同**（CV GBS vs DV 被动 LOQC），**不比对具体数值**；且本平台未与 Borealis 实测数据做 A 级比对（属外部依赖）。M4 的结论是**架构-规模律层面**的：静态被动网格在损耗上不可能扩展到 N≫20，Borealis 用时间复用把元件数从 O(N²) 降到 O(log N) —— 这是规模上行的正解。"
+  },
+  "bottleneck_report": {
+    "sigma_cal": 0.01,
+    "eta_useful": 0.01,
+    "rows": [
+      {
+        "n_modes": 4,
+        "n_mzi": 6,
+        "loss_per_path_db": 7.2,
+        "per_path_eta": 0.19054607179632468,
+        "loss_ok": true,
+        "fidelity_at_sigma": 0.9956698729810778,
+        "fidelity_ok": false,
+        "calib_phases": 10,
+        "calib_sigma_star_rad": 0.018257418583505537,
+        "out_dim_Nk125": 341376
+      },
+      {
+        "n_modes": 8,
+        "n_mzi": 28,
+        "loss_per_path_db": 16.8,
+        "per_path_eta": 0.020892961308540375,
+        "loss_ok": true,
+        "fidelity_at_sigma": 0.9953229282665326,
+        "fidelity_ok": false,
+        "calib_phases": 36,
+        "calib_sigma_star_rad": 0.008451542547285166,
+        "out_dim_Nk125": 117850651776
+      },
+      {
+        "n_modes": 16,
+        "n_mzi": 120,
+        "loss_per_path_db": 36.0,
+        "per_path_eta": 0.0002511886431509577,
+        "loss_ok": false,
+        "fidelity_at_sigma": 0.9951587708172407,
+        "fidelity_ok": false,
+        "calib_phases": 136,
+        "calib_sigma_star_rad": 0.004082482904638631,
+        "out_dim_Nk125": 54680757182029915776
+      },
+      {
+        "n_modes": 32,
+        "n_mzi": 496,
+        "loss_per_path_db": 74.4,
+        "per_path_eta": 3.63078054770101e-08,
+        "loss_ok": false,
+        "fidelity_at_sigma": 0.9950787450787426,
+        "fidelity_ok": false,
+        "calib_phases": 528,
+        "calib_sigma_star_rad": 0.002008048322256247,
+        "out_dim_Nk125": 482597166588521931980005859542656
+      },
+      {
+        "n_modes": 64,
+        "n_mzi": 2016,
+        "loss_per_path_db": 151.2,
+        "per_path_eta": 7.585775750291821e-16,
+        "loss_ok": false,
+        "fidelity_at_sigma": 0.9950392162917538,
+        "fidelity_ok": false,
+        "calib_phases": 2080,
+        "calib_sigma_star_rad": 0.0009960238411119947,
+        "out_dim_Nk125": 722206923704206668850106730773121635029183189562496
+      },
+      {
+        "n_modes": 100,
+        "n_mzi": 4950,
+        "loss_per_path_db": 237.6,
+        "per_path_eta": 1.737800828749369e-24,
+        "loss_ok": false,
+        "fidelity_at_sigma": 0.9950250628144669,
+        "fidelity_ok": false,
+        "calib_phases": 5050,
+        "calib_sigma_star_rad": 0.0006356417261637283,
+        "out_dim_Nk125": 318557738174498267327921793184122388544134118610543331097444605056
+      },
+      {
+        "n_modes": 128,
+        "n_mzi": 8128,
+        "loss_per_path_db": 304.8,
+        "per_path_eta": 3.3113112148258537e-31,
+        "loss_ok": false,
+        "fidelity_at_sigma": 0.9950195695467159,
+        "fidelity_ok": false,
+        "calib_phases": 8256,
+        "calib_sigma_star_rad": 0.0004960473688328407,
+        "out_dim_Nk125": 360524411007474230104283738338382403028265265168780180043047605040851578752
+      },
+      {
+        "n_modes": 216,
+        "n_mzi": 23220,
+        "loss_per_path_db": 516.0,
+        "per_path_eta": 2.511886431509531e-52,
+        "loss_ok": false,
+        "fidelity_at_sigma": 0.9950115875010922,
+        "fidelity_ok": false,
+        "calib_phases": 23436,
+        "calib_sigma_star_rad": 0.0002934836354418746,
+        "out_dim_Nk125": 584030003741853114382047959624281365842619441241534039756426817102010056613158154484687597715712
+      }
+    ],
+    "first_wall_closed": "loss",
+    "first_loss_fail_n": 16,
+    "first_fidelity_fail_n": 4,
+    "fidelity_verdict_n_invariant": true,
+    "loss_wall_n_at_useful": 10,
+    "calib_tolerance_tightening": 0.01607476073901374,
+    "headline": "规模上行的**第一面墙是损耗**（指数），而酉保真度的**判决不随 N 移动**（尺度盲）——这正是必须为规模另立判据的原因。"
+  },
+  "headline_findings": [
+    "网格 P&R 生成器**本身**极其好地规模化：N=216 仅 0.11 s，酉保真度=机器精度。",
+    "★ 酉保真度是**尺度盲**指标：N 从 4 到 216，F 几乎不变（1−F≈(σ/2)√((N−1)/N)）⇒ 拿它做规模验收判据会漏掉全部真墙。",
+    "★ 规模上行的**第一面墙是损耗**：单路径插损=(N−1)·2.4 dB ⇒ N=216 达 516 dB，η≈2.5e−52。",
+    "签核墙：D-118 在 N=4 判 ACCEPT，在 N=216 因损耗预算（且部分 MZI 分束比越域）必判 REJECT。",
+    "基准墙：玻色采样输出空间 C(216+124,125) 达 2^318，永久式 #P-hard ⇒ 规模上不可枚举。",
+    "复杂度墙：LVS 方法学独立装配路径 O(N⁵)，平台路径 O(N³)，N=216 慢约 4.6e4×。",
+    "★ 架构结论：静态被动网格元件 O(N²)/损耗 O(N) dB 规模上不可行；Borealis 用时间复用（a=6, L=3 ⇒ 216 模，仅 3 环）把两者降到 O(log N)。"
+  ],
+  "scale_verdict": "M4 诊断 PASS：平台把从 N=4 到 N=216 的规模律与各面墙的位置**全部正确预测**。结论不是「我们的芯片达到 Borealis 水平」，而是「我们的平台能预测什么架构能扩展」：静态被动网格在损耗上不可能扩到 N≫20，正确路线是时间复用（真模数爆炸、元件数 O(log N)）。",
+  "honest_boundary": "① 与 Borealis 只比**规模/架构**，不比数值（CV GBS vs DV 被动 LOQC 物理形态不同）；② Borealis 数据为外部 A 级事实（Nature 606, 75-81 (2022)），仅引用不复算；③ 损耗/效率为设计预算口径，非实测 PDK（D5 外部依赖）；④ 平台未与任何真机的实测规模数据做 A 级比对（属外部依赖）。",
+  "verdict": "PASS"
+}

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="300" viewBox="0 0 680 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="16" y="26" font-family="Segoe UI,Arial" font-size="15" font-weight="600" fill="#1e293b">LDA-Q3 · 量子态层：片上 HOM 干涉 + 量子输出分布</text>
+<rect x="40" y="50" width="250" height="200" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="40" y="44" font-family="Segoe UI,Arial" font-size="12" fill="#475569">A · HOM 符合概率 P(θ)（蓝=数值，橙虚线=cos²2θ 闭式）</text>
+<polyline points="40.0,-150.0 44.2,-148.9 48.3,-145.6 52.5,-140.2 56.7,-132.7 60.8,-123.2 65.0,-111.8 69.2,-98.6 73.3,-83.8 77.5,-67.6 81.7,-50.0 85.8,-31.3 90.0,-11.8 94.2,8.4 98.3,29.1 102.5,50.0 106.7,70.9 110.8,91.6 115.0,111.8 119.2,131.3 123.3,150.0 127.5,167.6 131.7,183.8 135.8,198.6 140.0,211.8 144.2,223.2 148.3,232.7 152.5,240.2 156.7,245.6 160.8,248.9 165.0,250.0 169.2,248.9 173.3,245.6 177.5,240.2 181.7,232.7 185.8,223.2 190.0,211.8 194.2,198.6 198.3,183.8 202.5,167.6 206.7,150.0 210.8,131.3 215.0,111.8 219.2,91.6 223.3,70.9 227.5,50.0 231.7,29.1 235.8,8.4 240.0,-11.8 244.2,-31.3 248.3,-50.0 252.5,-67.6 256.7,-83.8 260.8,-98.6 265.0,-111.8 269.2,-123.2 273.3,-132.7 277.5,-140.2 281.7,-145.6 285.8,-148.9 290.0,-150.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<polyline points="40.0,-150.0 44.2,-148.9 48.3,-145.6 52.5,-140.2 56.7,-132.7 60.8,-123.2 65.0,-111.8 69.2,-98.6 73.3,-83.8 77.5,-67.6 81.7,-50.0 85.8,-31.3 90.0,-11.8 94.2,8.4 98.3,29.1 102.5,50.0 106.7,70.9 110.8,91.6 115.0,111.8 119.2,131.3 123.3,150.0 127.5,167.6 131.7,183.8 135.8,198.6 140.0,211.8 144.2,223.2 148.3,232.7 152.5,240.2 156.7,245.6 160.8,248.9 165.0,250.0 169.2,248.9 173.3,245.6 177.5,240.2 181.7,232.7 185.8,223.2 190.0,211.8 194.2,198.6 198.3,183.8 202.5,167.6 206.7,150.0 210.8,131.3 215.0,111.8 219.2,91.6 223.3,70.9 227.5,50.0 231.7,29.1 235.8,8.4 240.0,-11.8 244.2,-31.3 248.3,-50.0 252.5,-67.6 256.7,-83.8 260.8,-98.6 265.0,-111.8 269.2,-123.2 273.3,-132.7 277.5,-140.2 281.7,-145.6 285.8,-148.9 290.0,-150.0" fill="none" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="5 3"/>
+<line x1="165.0" y1="50" x2="165.0" y2="250" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3"/>
+<circle cx="165.0" cy="250" r="3.2" fill="#dc2626"/>
+<text x="169.0" y="244" font-family="Segoe UI,Arial" font-size="10" fill="#dc2626">50:50 → P=0</text>
+<text x="40" y="266" font-family="Segoe UI,Arial" font-size="10" fill="#64748b">θ=0</text>
+<text x="260" y="266" font-family="Segoe UI,Arial" font-size="10" fill="#64748b">θ=π/2</text>
+<rect x="360" y="50" width="290" height="200" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="360" y="44" font-family="Segoe UI,Arial" font-size="12" fill="#475569">B · |1,1,0,0⟩ 穿 4 模 DFT mesh 的输出分布（蓝=量子，灰=经典）</text>
+<rect x="371.0" y="74.0" width="12.6" height="154.0" fill="#cbd5e1"/>
+<rect x="385.0" y="74.0" width="12.6" height="154.0" fill="#2563eb"/>
+<text x="383.5" y="242" font-family="Segoe UI,Arial" font-size="8.5" fill="#475569" text-anchor="middle">1001</text>
+<rect x="401.0" y="151.0" width="12.6" height="77.0" fill="#cbd5e1"/>
+<rect x="415.0" y="74.0" width="12.6" height="154.0" fill="#2563eb"/>
+<text x="413.5" y="242" font-family="Segoe UI,Arial" font-size="8.5" fill="#475569" text-anchor="middle">0002</text>
+<rect x="431.0" y="74.0" width="12.6" height="154.0" fill="#cbd5e1"/>
+<rect x="445.0" y="74.0" width="12.6" height="154.0" fill="#2563eb"/>
+<text x="443.5" y="242" font-family="Segoe UI,Arial" font-size="8.5" fill="#475569" text-anchor="middle">0011</text>
+<rect x="461.0" y="151.0" width="12.6" height="77.0" fill="#cbd5e1"/>
+<rect x="475.0" y="74.0" width="12.6" height="154.0" fill="#2563eb"/>
+<text x="473.5" y="242" font-family="Segoe UI,Arial" font-size="8.5" fill="#475569" text-anchor="middle">0020</text>
+<rect x="491.0" y="74.0" width="12.6" height="154.0" fill="#cbd5e1"/>
+<rect x="505.0" y="74.0" width="12.6" height="154.0" fill="#2563eb"/>
+<text x="503.5" y="242" font-family="Segoe UI,Arial" font-size="8.5" fill="#475569" text-anchor="middle">0110</text>
+<rect x="521.0" y="74.0" width="12.6" height="154.0" fill="#cbd5e1"/>
+<rect x="535.0" y="74.0" width="12.6" height="154.0" fill="#2563eb"/>
+<text x="533.5" y="242" font-family="Segoe UI,Arial" font-size="8.5" fill="#475569" text-anchor="middle">1100</text>
+<rect x="551.0" y="151.0" width="12.6" height="77.0" fill="#cbd5e1"/>
+<rect x="565.0" y="74.0" width="12.6" height="154.0" fill="#2563eb"/>
+<text x="563.5" y="242" font-family="Segoe UI,Arial" font-size="8.5" fill="#475569" text-anchor="middle">0200</text>
+<rect x="581.0" y="151.0" width="12.6" height="77.0" fill="#cbd5e1"/>
+<rect x="595.0" y="74.0" width="12.6" height="154.0" fill="#2563eb"/>
+<text x="593.5" y="242" font-family="Segoe UI,Arial" font-size="8.5" fill="#475569" text-anchor="middle">2000</text>
+<rect x="611.0" y="74.0" width="12.6" height="154.0" fill="#cbd5e1"/>
+<rect x="625.0" y="228.0" width="12.6" height="0.0" fill="#2563eb"/>
+<text x="623.5" y="242" font-family="Segoe UI,Arial" font-size="8.5" fill="#475569" text-anchor="middle">1010</text>
+</svg>

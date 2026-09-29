@@ -1,0 +1,253 @@
+{
+  "chip_family": "LDA-Q3 · 量子态层（LOQC 通用处理器量子仿真）· M3 物理深度第一步",
+  "platform_capability": "lda_qeda/loqc_states.py（D-113）：Fock 态 + 线性光学 + 符合计数 + HOM（闭合 G_Q2/G_Q4）",
+  "methodology": "永久式（组合计数）× 产生算符多项式展开（符号）双算法交叉验证；闭式物理律 HOM=cos²2θ 作 golden；LLM 不进判决路径",
+  "hom_5050": {
+    "coincidence": 0.0,
+    "closed_form": 3.749399456654644e-33,
+    "distinguishable": 0.5000000000000002,
+    "visibility": 1.0
+  },
+  "hom_dip_vs_closed_form_max_dev": 4.440892098500626e-16,
+  "runs": [
+    {
+      "N": 4,
+      "n_photons": 2,
+      "n_mzi": 6,
+      "mesh_fidelity": 1.0,
+      "n_output_configs": 10,
+      "sum_probability": 1.0,
+      "dual_method_max_dev": 2.7755575615628914e-17,
+      "quantum_vs_classical_TV": 0.25,
+      "top_outcomes": [
+        [
+          [
+            1,
+            0,
+            0,
+            1
+          ],
+          0.125
+        ],
+        [
+          [
+            0,
+            0,
+            0,
+            2
+          ],
+          0.125
+        ],
+        [
+          [
+            0,
+            0,
+            1,
+            1
+          ],
+          0.125
+        ],
+        [
+          [
+            0,
+            0,
+            2,
+            0
+          ],
+          0.125
+        ],
+        [
+          [
+            0,
+            1,
+            1,
+            0
+          ],
+          0.125
+        ],
+        [
+          [
+            1,
+            1,
+            0,
+            0
+          ],
+          0.125
+        ]
+      ]
+    },
+    {
+      "N": 6,
+      "n_photons": 3,
+      "n_mzi": 15,
+      "mesh_fidelity": 1.0,
+      "n_output_configs": 56,
+      "sum_probability": 1.0,
+      "dual_method_max_dev": 2.0816681711721685e-17,
+      "quantum_vs_classical_TV": 0.444444,
+      "top_outcomes": [
+        [
+          [
+            1,
+            0,
+            1,
+            0,
+            1,
+            0
+          ],
+          0.041667
+        ],
+        [
+          [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1
+          ],
+          0.041667
+        ],
+        [
+          [
+            0,
+            0,
+            0,
+            2,
+            1,
+            0
+          ],
+          0.037037
+        ],
+        [
+          [
+            0,
+            0,
+            0,
+            1,
+            2,
+            0
+          ],
+          0.037037
+        ],
+        [
+          [
+            0,
+            1,
+            2,
+            0,
+            0,
+            0
+          ],
+          0.037037
+        ],
+        [
+          [
+            2,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          0.037037
+        ]
+      ]
+    },
+    {
+      "N": 8,
+      "n_photons": 4,
+      "n_mzi": 28,
+      "mesh_fidelity": 1.0,
+      "n_output_configs": 330,
+      "sum_probability": 1.0,
+      "dual_method_max_dev": 1.3877787807814457e-17,
+      "quantum_vs_classical_TV": 0.416398,
+      "top_outcomes": [
+        [
+          [
+            0,
+            0,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0
+          ],
+          0.011384
+        ],
+        [
+          [
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            0,
+            0
+          ],
+          0.011384
+        ],
+        [
+          [
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          0.011384
+        ],
+        [
+          [
+            0,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          0.011384
+        ],
+        [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            0
+          ],
+          0.011384
+        ],
+        [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2
+          ],
+          0.011384
+        ]
+      ]
+    }
+  ],
+  "quantum_classical_TV_4mode": 0.25,
+  "chip_hom_coincidence_2mode_mesh": 0.0,
+  "chip_hom_coincidence_path_entangle": 0.0,
+  "svg_path": "D:\\agent_LDA\\examples\\lda_q3_quantum.svg",
+  "honest_note": "M3 把芯片从经典光学层提升到量子态层：输入 Fock 态、输出量子干涉分布（真量子）。仍为理想酉（无损耗/相位噪声/探测器暗计数）；单光子源/SNSPD 探测物理（G_Q1）、开放系统完全过程层（G_Q3）、量子 DRC/LVS（G_Q7）、量子基准（G_Q8）属后续增量。HOM/玻色采样为闭式物理律锚（非拟合、非仿真值）。"
+}

@@ -1,0 +1,65 @@
+{
+  "chip": "LDA-Q3c",
+  "identity": "4 模可编程 MZI 干涉仪（LOQC 通用处理器）· 全链路量子签核",
+  "platform_capability": "D-114 源 + lda_l2 网格 + D-116 损耗 + D-115 探测 + D-117 标定 + D-118 DRC/LVS + D-119 基准",
+  "sources": {
+    "lambda": 0.2,
+    "g2_onoff": 0.08000000000000002,
+    "hom_visibility": 0.94,
+    "wcs_multiphoton_ref": 0.00120910427425025
+  },
+  "mesh": {
+    "N": 4,
+    "n_mzi": 6,
+    "unitary_fidelity_ideal": 0.9999999999999999,
+    "cascade_loss_db": 14.400000000000002
+  },
+  "link": {
+    "eta_chip": 0.85,
+    "eta_det": 0.9,
+    "eta_eff": 0.765,
+    "link_loss_db": 1.1633856484638239
+  },
+  "detection": {
+    "detector_click_prob_1photon": 0.9,
+    "link_residual_vacuum_1photon": 0.14999999999999997,
+    "bridge": "探测器效率 ≡ 损耗透射率（D-115 效率≡损耗桥）"
+  },
+  "calibration": {
+    "n_photons": 2000000.0,
+    "closed_loop_residual_max_rad": 4.440892098500626e-16,
+    "shot_noise_limit_rad": 0.0007522412565814335,
+    "fidelity_penalty": 2.769429926496869e-07
+  },
+  "quantum_drc": {
+    "verdict": "ACCEPT",
+    "violations": [],
+    "n_rules": 9
+  },
+  "quantum_lvs": {
+    "verdict": "ACCEPT",
+    "fidelity": 0.9997875631411539,
+    "fro_err": 0.0012017243477124892,
+    "fid_threshold": 0.999,
+    "imperfections": {
+      "phase_bits": 12,
+      "calib_sigma": 0.0007522412565814335,
+      "theta_sigma": 0.0
+    }
+  },
+  "benchmark": {
+    "boson_sampling_norm": 1.0,
+    "boson_sampling_entropy_bits": 3.0,
+    "hom_visibility_ideal": 1.0,
+    "entanglement_fidelity": 0.7901501988135613,
+    "process_fidelity_product": 0.7899823417873088,
+    "composite_score": {
+      "log2_hilbert_dim": 4.0,
+      "combined_fidelity": 0.7781546561440229,
+      "score": 3.1126186245760916,
+      "label": "platform-defined composite (NOT a recognized international metric)"
+    }
+  },
+  "verdict": "PASS",
+  "honest_note": "损耗/效率为设计预算口径（非实测 PDK，属 D5 外部依赖）；标定读数为合成数值；综合对标分为平台自定义量（非国际公认指标），仅作内部趋势追踪；全链路无量子 SDK，纯 numpy + 平台模块。"
+}

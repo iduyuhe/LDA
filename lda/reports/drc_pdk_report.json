@@ -9,19 +9,25 @@
       "min_width_um": 0.4,
       "min_space_um": 0.2,
       "min_bend_R_um": 5.0,
-      "max_split_angle_deg": 30.0
+      "max_split_angle_deg": 30.0,
+      "max_il_per_mode_db": 15.0,
+      "max_il_total_db": 25.0
     },
     "CUMEC(演示近似)::SOI 180nm": {
       "min_width_um": 0.35,
       "min_space_um": 0.2,
       "min_bend_R_um": 4.0,
-      "max_split_angle_deg": 30.0
+      "max_split_angle_deg": 30.0,
+      "max_il_per_mode_db": 15.0,
+      "max_il_total_db": 25.0
     },
     "SITRI(演示近似)::SOI 180nm": {
       "min_width_um": 0.45,
       "min_space_um": 0.25,
       "min_bend_R_um": 6.0,
-      "max_split_angle_deg": 30.0
+      "max_split_angle_deg": 30.0,
+      "max_il_per_mode_db": 15.0,
+      "max_il_total_db": 25.0
     }
   }
 }

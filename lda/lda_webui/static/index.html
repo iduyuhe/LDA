@@ -1323,6 +1323,16 @@ body{padding-top:56px}
       <label>目标模数 N
         <input id="qchipN" type="number" value="216" min="2" max="4096" step="1">
       </label>
+      <label>拓扑
+        <select id="qchipTopo">
+          <option value="rect">矩形 Clements（深度 N · 紧界可达）</option>
+          <option value="reck">三角 Reck（深度 2N−3）</option>
+          <option value="temporal">时间复用（1 片 MZI · 每步损耗）</option>
+        </select>
+      </label>
+      <label>单 MZI 插损 dB
+        <input id="qchipPerMzi" type="number" value="2.4" min="0.01" max="20" step="0.1">
+      </label>
       <button class="btn" id="runQChip">运行光量子芯片案例</button>
     </div>
     <div id="qchipSummary" class="summary"></div>
@@ -4313,7 +4323,10 @@ async function runQChip(){
     var n=parseInt((($('qchipN')&&$('qchipN').value)||'216'),10);
     if(!isFinite(n)||n<2) n=216;
     if(n>4096) n=4096;
-    const d=await apiGet('/api/qchip_demo?n='+n);
+    var tp=(($('qchipTopo')&&$('qchipTopo').value)||'rect');
+    var pm=parseFloat((($('qchipPerMzi')&&$('qchipPerMzi').value)||'2.4'));
+    if(!isFinite(pm)||pm<=0) pm=2.4;
+    const d=await apiGet('/api/qchip_demo?n='+n+'&topology='+encodeURIComponent(tp)+'&per_mzi='+pm);
     renderQChip(d);
   }catch(e){ $('qchipSummary').textContent='错误：'+(e&&e.message?e.message:e); }
   finally{ btn.disabled=false; }
@@ -4332,24 +4345,38 @@ function _qcTbl(head, rows){
 }
 function renderQChip(d){
   if(!d||d.error){ $('qchipSummary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
-  const s=d.spec, L=d.loss_account, A=d.artifacts;
+  const s=d.spec, L=d.loss_account, A=d.artifacts, R=d.requested, DB=d.depth_bounds;
   $('qchipSummary').innerHTML='<b>'+d.case_id+'</b> · 判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）';
   var h='';
-  h+='<h3 style="margin:14px 0 4px">① 旗舰规格（N='+s.n_modes+'）</h3>';
+  h+='<h3 style="margin:14px 0 4px">① 当前选择</h3>';
+  h+='<p style="margin:4px 0">模数 <b>N='+R.n_modes+'</b> · 拓扑 <b>'+d.selected_topology.label+'</b>'
+    +' · 单 MZI 插损 <b>'+R.per_mzi_db+' dB</b> · 时间复用每步 <b>'+R.per_step_db+' dB</b>'
+    +' · 每模光学深度 <b>'+d.selected_topology.per_mode_depth+'</b>（紧界 '+DB.tight_adjacency_bound
+    +'，达紧界='+(d.selected_topology.tight_bound_reached?'是':'否')+'）</p>';
+  h+='<h3 style="margin:14px 0 4px">② 旗舰规格（N='+s.n_modes+'）</h3>';
   h+=_qcTbl(['指标','数值','说明'],[
     ['MZI 元件数', s.n_mzi+' = N(N−1)/2', 'Clements 必要性定理（不可再省）'],
-    ['网格拓扑', s.topology, '每层真匹配，同层可同步'],
-    ['光学深度', '<b>'+s.depth+'</b>', '= 相邻耦合紧下界 '+s.depth_tight_bound+'（紧界可达='+s.tight_bound_reachable+'）'],
-    ['较三角 Reck', '省 '+s.depth_vs_reck_saving+' 层', '2N−3 → N'],
-    ['每模插损', s.per_mode_loss_db+' dB', '设计预算口径（per_mzi 2.4 dB）'],
+    ['选定拓扑', s.topology, '每层真匹配，同层可同步'],
+    ['光学深度', '<b>'+s.depth+'</b>', '紧界 '+s.depth_tight_bound+'（达紧界='+s.tight_bound_reachable+'）'],
+    ['较三角 Reck', '省 '+s.depth_vs_reck_saving+' 层', '2N−3 → N（对矩形/时间复用）'],
+    ['每模插损', s.per_mode_loss_db.toFixed(1)+' dB', '设计预算口径（单 MZI '+R.per_mzi_db+' dB）'],
+    ['每模透射率 η', s.per_mode_eta.toExponential(3), '10^(−dB/10)'],
+    ['物理元件数', s.n_physical_units, '时间复用 = 1 片（买元件数，不买深度）'],
     ['酉重构保真度', s.recon_fidelity.toFixed(12), 'DFT + Haar 随机酉（机器精度）'],
     ['输出空间', 'log₂ dim ≈ '+s.hilbert_log2_dim+' bit', '玻色采样输出态空间量级']
   ]);
-  h+='<h3 style="margin:14px 0 4px">② 深度扫频（换拓扑即减半，元件数不变）</h3>';
+  h+='<h3 style="margin:14px 0 4px">③ 三拓扑对照（同一 N · 换拓扑即减半）</h3>';
+  h+=_qcTbl(['拓扑','每模深度','每单位插损 dB','每模插损 dB','物理元件数','达紧界','备注'],
+    d.topology_report.map(function(r){
+      var nm=(r.id===R.topology)?'<b>'+r.label+'</b>':r.label;
+      return [nm, r.per_mode_depth, r.per_unit_loss_db, '<b>'+r.per_mode_loss_db.toFixed(1)+'</b>',
+              r.n_physical_units, r.tight_bound_reached?'是':'否', r.note];
+    }));
+  h+='<h3 style="margin:14px 0 4px">④ 深度扫频（元件数不变，深度线性）</h3>';
   h+=_qcTbl(['N','三角 Reck 2N−3','矩形 N','省层','三角静态 dB','矩形静态 dB'],
     d.depth_scan.map(function(r){ return [r.n_modes, r.depth_triangular_reck, r.depth_rectangular_clements,
       r.depth_saving_vs_reck, r.triangular_static_db.toFixed(1), r.rectangular_static_db.toFixed(1)]; }));
-  h+='<h3 style="margin:14px 0 4px">③ 每模损耗账（N='+L.n_modes+' · 口径分离）</h3>';
+  h+='<h3 style="margin:14px 0 4px">⑤ 每模损耗账（N='+L.n_modes+' · 口径分离）</h3>';
   h+=_qcTbl(['架构 / 口径','每模插损 dB','备注'],[
     ['三角静态（每模深度 2N−3）', L.triangular_static_db.toFixed(1), '邻耦合，0 交叉'],
     ['<b>矩形静态（每模深度 N）</b>', '<b>'+L.rectangular_static_db.toFixed(1)+'</b>', 'M5 收益，η='+L.rect_eta.toExponential(3)],
@@ -4357,15 +4384,27 @@ function renderQChip(d){
     ['时间复用（Reck 调度）', L.temporal_reck_schedule_db.toFixed(1), ''],
     ['列口径参考（旧口径，低估）', L.column_basis_db.toFixed(1), '低估每模真账 '+L.column_basis_underestimates_by_db.toFixed(1)+' dB']
   ]);
-  h+='<h3 style="margin:14px 0 4px">④ 九步征程</h3>';
+  h+='<h3 style="margin:14px 0 4px">⑥ 深度三口径界（下界 ≠ 可达）</h3>';
+  h+=_qcTbl(['口径','数值','性质'],[
+    ['参数计数下界', DB.parameter_count_lower_bound, '非紧（偶 N 唯一最大匹配 ⇒ 不可达）'],
+    ['相邻耦合紧界', DB.tight_adjacency_bound, '= N（矩形网格可达）'],
+    ['平台三角 Reck 最优', DB.reck_mesh_optimum, '2N−3（该 op 集最优）']
+  ]);
+  h+='<p style="margin:4px 0;font-size:12px;opacity:.85">'+DB.note+'</p>';
+  h+='<h3 style="margin:14px 0 4px">⑦ 浅电路前沿（时间复用：越墙但非通用）</h3>';
+  h+=_qcTbl(['深度 D','可及参数','占通用比例','每模插损 dB','每模 η','通用'],
+    d.shallow_frontier.map(function(r){ return [r.depth, r.reachable_params,
+      (r.param_fraction_of_unitary*100).toFixed(2)+'%', r.per_mode_loss_db.toFixed(1),
+      r.per_mode_eta.toExponential(2), r.universal?'是':'否']; }));
+  h+='<h3 style="margin:14px 0 4px">⑧ 九步征程</h3>';
   h+=_qcTbl(['','代号','里程碑','结果'],
     d.milestones.map(function(m){ return [m.id, m.code, m.title, m.result]; }));
-  h+='<h3 style="margin:14px 0 4px">⑤ 四条硬结论</h3>';
+  h+='<h3 style="margin:14px 0 4px">⑨ 四条硬结论</h3>';
   d.findings.forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.tag+'</b> —— '+f.text+'</p>'; });
-  h+='<h3 style="margin:14px 0 4px">⑥ 吃狗粮反向长出的平台能力（G_Q1–G_Q9 · 已闭合 '+d.gaps_closed+'/'+d.gaps_total+'）</h3>';
+  h+='<h3 style="margin:14px 0 4px">⑩ 吃狗粮反向长出的平台能力（G_Q1–G_Q9 · 已闭合 '+d.gaps_closed+'/'+d.gaps_total+'）</h3>';
   h+=_qcTbl(['缺口','内容','闭合','由'],
     d.gaps.map(function(g){ return [g.id, g.what, g.closed?'是':'否', g.by]; }));
-  h+='<h3 style="margin:14px 0 4px">⑦ 产出物</h3>';
+  h+='<h3 style="margin:14px 0 4px">⑪ 产出物</h3>';
   if(A.available){
     h+='<p style="margin:4px 0">'+A.count+' 件（只读元信息）· '+A.note+'</p>';
     h+='<p style="margin:4px 0;font-size:12px;opacity:.8">'
@@ -4377,6 +4416,7 @@ function renderQChip(d){
   $('qchipBody').innerHTML=h;
   $('qchipConclusion').innerHTML='<strong>结论：</strong>矩形 Clements 网格把通用 N 模酉的深度打到<b>紧下界 N</b>'
     +'（每层真匹配、装配保真度机器精度），且元件数不增；换拓扑即把每模插损减半。'
+    +'时间复用把元件数降到 1 片，但每模损耗反而更高 ⇒ <b>「通用」与「省损」不可兼得</b>。'
     +'<br/><strong>诚实边界：</strong>'+d.honest_note;
   return false;
 }

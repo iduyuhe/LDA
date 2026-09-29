@@ -57,8 +57,9 @@ def main():
 
     # ═══════════════ A 模块自检与闭式 ═══════════════
     ok_a = QC.run_selfchecks(verbose=False)
-    check("A1 模块自检 14/14 PASS", ok_a,
-          "旗舰闭式/紧界可达/三口径偏序/损耗账/口径分离/时间复用/地板/η/维数/护栏/组装/不伪装/无LLM/零重依赖")
+    check("A1 模块自检 17/17 PASS", ok_a,
+          "旗舰闭式/紧界可达/三口径偏序/损耗账/口径分离/时间复用/地板/η/维数/护栏/组装/"
+          "不伪装/无LLM/零重依赖/三拓扑/浅前沿/B档护栏")
 
     d216 = QC.mesh_depth_closed_form(216)
     check("A2 N=216 闭式：23220 片 · Reck 429 · 矩形 216 · 省 213",
@@ -80,6 +81,35 @@ def main():
           "N=216 ⇒ %d ≤ %d ≤ %d" % (d216["parameter_count_bound"],
                                      d216["tight_adjacency_bound"],
                                      d216["depth_triangular_reck"]))
+
+    # ── B 档（D-132）：拓扑对照 + 浅电路前沿 + 参数化 ──
+    tops = QC.topology_report(216)
+    tmap = {r["id"]: r for r in tops}
+    check("A5 B档 三拓扑对照：rect 216 / reck 429 / temporal 1 片物理 MZI",
+          len(tops) == 3
+          and tmap["rect"]["per_mode_depth"] == 216
+          and tmap["reck"]["per_mode_depth"] == 429
+          and tmap["temporal"]["n_physical_units"] == 1
+          and tmap["rect"]["tight_bound_reached"] is True
+          and tmap["reck"]["tight_bound_reached"] is False,
+          "rect=%s reck=%s tmx=%s" % (tmap["rect"]["per_mode_depth"],
+                                      tmap["reck"]["per_mode_depth"],
+                                      tmap["temporal"]["per_mode_depth"]))
+
+    fr = {r["depth"]: r for r in QC.shallow_frontier(216)}
+    check("A6 B档 浅电路前沿：D=32 非通用（3456 < 23220）· D=N 通用",
+          fr[32]["reachable_params"] == 3456 and fr[32]["universal"] is False
+          and fr[216]["universal"] is True,
+          "D=32 ⇒ %d 参数 / %.2f%%" % (fr[32]["reachable_params"],
+                                       fr[32]["param_fraction_of_unitary"] * 100))
+
+    c_reck = QC.case_card(64, topology="reck", per_mzi_db=1.0)
+    check("A7 B档 参数化生效：topology=reck ⇒ 深度 125 · per_mzi=1.0 ⇒ 损耗 125 dB",
+          c_reck["selected_topology"]["per_mode_depth"] == 125
+          and abs(c_reck["selected_topology"]["per_mode_loss_db"] - 125.0) < 1e-9
+          and abs(c_reck["requested"]["per_mzi_db"] - 1.0) < 1e-12,
+          "N=64 reck ⇒ 深度 %s / 损耗 %s" % (c_reck["selected_topology"]["per_mode_depth"],
+                                             c_reck["selected_topology"]["per_mode_loss_db"]))
 
     # ═══════════════ B 跨源一致性（防文案漂移）═══════════════
     q5 = _load_json("examples/lda_q5_report.json")
@@ -170,6 +200,12 @@ def main():
     check("C5 按钮 id 前缀 run ⇒ 自动进入抽屉「能力目录」（collect() 机制）",
           'id="runQChip"' in idx)
 
+    check("C6 B档 前端参数控件齐：N / 拓扑下拉 / 单 MZI 插损 + 请求带三参数",
+          all(('id="%s"' % k) in idx for k in ("qchipN", "qchipTopo", "qchipPerMzi"))
+          and "&topology='+encodeURIComponent(tp)+'&per_mzi='+pm" in idx
+          and 'id="qchipTopo"' in idx and 'value="reck"' in idx,
+          "控件 %s" % [k for k in ("qchipN", "qchipTopo", "qchipPerMzi") if ('id="%s"' % k) in idx])
+
     # ═══════════════ D 诚实边界与红线 ═══════════════
     card = QC.case_card(216, repo_root="__nonexistent__")
     check("D1 🔴 不伪装实测：verdict = DESIGN_BUDGET（非 PASS/ACCEPT）",
@@ -208,6 +244,18 @@ def main():
     check("E2 参数化：N=64 现算与其自身一致（深度 64 · 元件 2016）",
           card_n["spec"]["n_modes"] == 64 and card_n["spec"]["n_mzi"] == 2016
           and card_n["spec"]["depth"] == 64)
+
+    guard_b = [False, False]
+    try:
+        QC.case_card(216, topology="bogus")
+    except ValueError:
+        guard_b[0] = True
+    try:
+        QC.case_card(216, per_mzi_db=0.0)
+    except ValueError:
+        guard_b[1] = True
+    check("E3 B档护栏：非法 topology / 非法 per_mzi 抛 ValueError（不静默出数）",
+          all(guard_b), str(guard_b))
 
     # ═══════════════ F 免登录 / 零重计算 ═══════════════
     heavy = rt.split("HEAVY_POST_PATHS = {")[1].split("}")[0]

@@ -13,6 +13,9 @@
   M8  路由未注册（删 GET_ROUTES 行）⇒ C1/F2 应红
   M9  面板删「设计预算口径」    ⇒ D3 应红
   M10 端点误入登录闸门          ⇒ F1 应红
+  M11 B档 拓扑对照谎报（reck=N）⇒ A1(⑮)/A5 应红
+  M12 B档 浅前沿谎报（D=32 通用）⇒ A1(⑯)/A6 应红
+  M13 B档 前端删拓扑控件        ⇒ C6 应红
 
 运行：python scripts/d131_qchip_case_probe.py
 """
@@ -38,6 +41,8 @@ _ORIG = {
     "mesh_depth_closed_form": QC.mesh_depth_closed_form,
     "loss_account_closed_form": QC.loss_account_closed_form,
     "hilbert_log2_dim": QC.hilbert_log2_dim,
+    "topology_report": QC.topology_report,
+    "shallow_frontier": QC.shallow_frontier,
     "case_card": QC.case_card,
     "GAPS": QC.GAPS,
     "QCHIP_HONEST_NOTE": QC.QCHIP_HONEST_NOTE,
@@ -126,8 +131,8 @@ def main():
     _restore()
 
     # ---- M4 verdict 冒充 PASS ----
-    def _m4(n_modes=216, repo_root=None):
-        c = dict(_ORIG["case_card"](n_modes, repo_root=repo_root))
+    def _m4(*a, **k):
+        c = dict(_ORIG["case_card"](*a, **k))
         c["verdict"] = "PASS"
         return c
     QC.case_card = _m4
@@ -165,6 +170,38 @@ def main():
     with _TextMut(_RT, [("HEAVY_POST_PATHS = {\n", 'HEAVY_POST_PATHS = {\n    "/api/qchip_demo",\n')]):
         rows.append(("M10 端点误入登录闸门", *run_smoke()))
 
+    # ---- M11 B档：拓扑对照谎报（reck 深度冒充 N）----
+    def _m11(n_modes, per_mzi_db=2.4, per_step_db=2.6):
+        rows_ = []
+        for r in _ORIG["topology_report"](n_modes, per_mzi_db=per_mzi_db,
+                                          per_step_db=per_step_db):
+            r = dict(r)
+            if r["id"] == "reck":
+                r["per_mode_depth"] = int(n_modes)
+                r["tight_bound_reached"] = True
+            rows_.append(r)
+        return rows_
+    QC.topology_report = _m11
+    rows.append(("M11 B档 拓扑对照谎报（reck=N）", *run_smoke()))
+    _restore()
+
+    # ---- M12 B档：浅电路前沿谎报（D=32 冒充通用）----
+    def _m12(n_modes, per_step_db=2.6):
+        out_ = []
+        for r in _ORIG["shallow_frontier"](n_modes, per_step_db=per_step_db):
+            r = dict(r)
+            if r["depth"] == 32:
+                r["universal"] = True
+            out_.append(r)
+        return out_
+    QC.shallow_frontier = _m12
+    rows.append(("M12 B档 浅电路前沿谎报（D=32 通用）", *run_smoke()))
+    _restore()
+
+    # ---- M13 B档：前端删拓扑控件 ----
+    with _TextMut(_IDX, [('id="qchipTopo"', 'id="qchipTopoX"')]):
+        rows.append(("M13 B档 前端删拓扑控件", *run_smoke()))
+
     # ---- 还原后复绿 ----
     _restore()
     rows.append(("还原后（须复绿）", *run_smoke()))
@@ -189,7 +226,7 @@ def main():
 
     print("=" * 78)
     ok = not bad
-    print("探针结论：%s" % ("ALL OK（10 突变各必红 + 基线/还原复绿）" if ok
+    print("探针结论：%s" % ("ALL OK（13 突变各必红 + 基线/还原复绿）" if ok
                           else "存在问题 -> %s" % bad))
     return 0 if ok else 1
 

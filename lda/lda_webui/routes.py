@@ -220,19 +220,37 @@ def h_qchip_demo(h, p, q, path):
     🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`（**非** ACCEPT/PASS），
     返回体自带 `honest_note` 说明「非流片后实测 / 设计预算口径」。
 
-    查询参数：`n`（目标模数，默认 216，范围 2..4096；非法值回落默认）。
+    查询参数（B 档 D-132 扩充）：
+      `n`       目标模数，默认 216，范围 2..4096（非法值回落默认）
+      `topology` 拓扑：`rect`（矩形 Clements · 默认）/ `reck`（三角）/ `temporal`（时间复用）
+      `per_mzi`  单个 MZI 插损覆盖（dB，> 0；缺省取平台设计预算常量）
+      `per_step` 时间复用每步插损覆盖（dB，> 0；缺省取平台常量）
     异常不 500（返回 200 + error 字段，与 `h_design_catalog` 同风格）。
     """
     try:
         n = int(q.get("n") or 216)
     except (TypeError, ValueError):
         n = 216
+    topo = q.get("topology") or "rect"
+
+    def _opt_f(key):
+        v = q.get(key)
+        if v in (None, ""):
+            return None
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            return None
+        return f if f > 0.0 else None
+
     try:
         from . import qchip_case as _qc
     except ImportError:
         from lda_webui import qchip_case as _qc
     try:
-        return (200, _qc.case_card(n))
+        return (200, _qc.case_card(n, topology=topo,
+                                   per_mzi_db=_opt_f("per_mzi"),
+                                   per_step_db=_opt_f("per_step")))
     except Exception as e:  # noqa: BLE001
         return (200, {"endpoint": "/api/qchip_demo", "error": str(e)[:160],
                       "case_id": _qc.CASE_ID, "verdict": "ERROR"})

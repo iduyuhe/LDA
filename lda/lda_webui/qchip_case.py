@@ -36,6 +36,8 @@ __all__ = [
     "QCHIP_HONEST_NOTE",
     "mesh_depth_closed_form",
     "loss_account_closed_form",
+    "topology_report",
+    "shallow_frontier",
     "hilbert_log2_dim",
     "case_card",
     "run_selfchecks",
@@ -180,6 +182,83 @@ def loss_account_closed_form(n_modes: int,
     }
 
 
+def topology_report(n_modes: int,
+                    per_mzi_db: float = PER_MZI_LOSS_DB,
+                    per_step_db: float = PER_STEP_LOSS_DB) -> list:
+    """三拓扑在同一 N 下的对照（纯闭式 · B 档）。
+
+    三者**都可构造通用酉**；分野在**每模光学深度 / 每模插损 / 物理元件数**：
+      · `rect`     矩形（Clements）网格 · 静态 —— 深度 **N** = 相邻耦合紧下界（**紧界可达**）；
+      · `reck`     三角（Reck）网格 · 静态 —— 深度 **2N−3**（平台 op 集最优）；元件数与矩形相同；
+      · `temporal` 时间复用（矩形调度）—— **1 片物理 MZI**，深度 N，但每步损耗含延迟环/开关。
+    """
+    n = int(n_modes)
+    if n < 2:
+        raise ValueError("n_modes ≥ 2")
+    d = mesh_depth_closed_form(n)
+
+    def _row(tid, label, depth, per_unit, unit, n_phys, note):
+        loss = float(depth) * float(per_unit)
+        return {
+            "id": tid,
+            "label": label,
+            "per_mode_depth": int(depth),
+            "per_unit_loss_db": float(per_unit),
+            "unit": unit,
+            "per_mode_loss_db": float(loss),
+            "per_mode_eta": float(10.0 ** (-loss / 10.0)),
+            "n_physical_units": int(n_phys),
+            "tight_bound_reached": bool(int(depth) == n),
+            "note": note,
+        }
+
+    return [
+        _row("rect", "矩形（Clements）网格 · 静态", n, per_mzi_db, "MZI", d["n_mzi"],
+             "深度 = N = 相邻耦合紧下界 ⇒ 紧界可达；每层真匹配"),
+        _row("reck", "三角（Reck）网格 · 静态", d["depth_triangular_reck"], per_mzi_db,
+             "MZI", d["n_mzi"], "平台三角 op 集最优深度 2N−3；元件数与矩形相同"),
+        _row("temporal", "时间复用（矩形调度）", n, per_step_db, "步", 1,
+             "1 片物理 MZI；买元件数 O(N²)→O(1)，不买深度/损耗"),
+    ]
+
+
+def shallow_frontier(n_modes: int, per_step_db: float = PER_STEP_LOSS_DB) -> list:
+    """浅电路前沿（B 档）：深度预算 D → 可及参数 / 参数占比 / 每模损耗 / 是否通用。
+
+    时间复用一层最多 ⌊N/2⌋ 片不相交门 ⇒ 深度 D 可及参数 ≈ `⌊N/2⌋·D`；
+    通用需 D ≥ 参数计数下界（且 D ≥ 紧界 N）。用于说明
+    **「浅电路越墙但非通用」**（D-121/D-127 的定性结论在此量化）。
+    """
+    n = int(n_modes)
+    if n < 2:
+        raise ValueError("n_modes ≥ 2")
+    n_mzi = mesh_depth_closed_form(n)["n_mzi"]
+    cap = max(1, n // 2)
+    rows = []
+    for depth in (1, 2, 4, 8, 16, 32, 64, 128, 256):
+        if depth > n and depth != n:
+            continue
+        reach = cap * depth
+        loss = float(depth) * float(per_step_db)
+        rows.append({
+            "depth": int(depth),
+            "reachable_params": int(reach),
+            "param_fraction_of_unitary": float(reach) / float(n_mzi),
+            "per_mode_loss_db": float(loss),
+            "per_mode_eta": float(10.0 ** (-loss / 10.0)),
+            "universal": bool(depth >= n),
+        })
+    if not any(r["depth"] == n for r in rows):
+        rows.append({
+            "depth": n, "reachable_params": int(cap * n),
+            "param_fraction_of_unitary": float(cap * n) / float(n_mzi),
+            "per_mode_loss_db": float(n) * float(per_step_db),
+            "per_mode_eta": float(10.0 ** (-(n * float(per_step_db)) / 10.0)),
+            "universal": True,
+        })
+    return rows
+
+
 def hilbert_log2_dim(n_modes: int, n_photons: int = 125) -> float:
     """玻色采样输出态空间的 log2 维数 = log2 C(N+n−1, n)（闭式，用 lgamma）。"""
     n, k = int(n_modes) + int(n_photons) - 1, int(n_photons)
@@ -229,13 +308,32 @@ def _artifact_manifest(repo_root: str | None = None) -> dict:
 
 
 # ═══════════════════════════════ 案例卡 ═══════════════════════════════
-def case_card(n_modes: int = FLAGSHIP_N, repo_root: str | None = None) -> dict:
-    """组装 WebUI 案例卡（只读 · 闭式现算 · 秒回）。"""
+def case_card(n_modes: int = FLAGSHIP_N, repo_root: str | None = None,
+              topology: str = "rect",
+              per_mzi_db: float | None = None,
+              per_step_db: float | None = None) -> dict:
+    """组装 WebUI 案例卡（只读 · 闭式现算 · 秒回）。
+
+    B 档（D-132）：新增 `topology`（`rect` / `reck` / `temporal`）与可选损耗覆盖
+    （`per_mzi_db` / `per_step_db`，默认取平台设计预算常量）⇒ 前端可交互对比
+    「换拓扑即深度减半 / 时间复用买元件不买损耗」。
+    """
     n = int(n_modes)
     if not (2 <= n <= 4096):
         raise ValueError("n_modes 须在 2..4096")
+    topo = str(topology or "rect").strip().lower()
+    if topo not in ("rect", "reck", "temporal"):
+        raise ValueError("topology 需 rect / reck / temporal")
+    pm = float(PER_MZI_LOSS_DB if per_mzi_db is None else per_mzi_db)
+    ps = float(PER_STEP_LOSS_DB if per_step_db is None else per_step_db)
+    if not (pm > 0.0 and ps > 0.0):
+        raise ValueError("per_mzi_db / per_step_db 须 > 0")
+
     depth = mesh_depth_closed_form(n)
-    loss = loss_account_closed_form(n)
+    loss = loss_account_closed_form(n, per_mzi_db=pm, per_step_db=ps)
+    tops = topology_report(n, per_mzi_db=pm, per_step_db=ps)
+    chosen = next(r for r in tops if r["id"] == topo)
+    frontier = shallow_frontier(n, per_step_db=ps)
     return {
         "endpoint": "/api/qchip_demo",
         "case_id": CASE_ID,
@@ -246,22 +344,35 @@ def case_card(n_modes: int = FLAGSHIP_N, repo_root: str | None = None) -> dict:
             "unit": "MZI 单元 = 一个分束器 θ + 一个相移器 φ（2×2 酉）",
             "route_note": "LDA 唯一能出真实 GDS 并走完全链路签核的量子路线（超导 transmon 仅有理论锚）",
         },
+        "requested": {"n_modes": n, "topology": topo,
+                      "per_mzi_db": pm, "per_step_db": ps},
+        "selected_topology": chosen,
+        "topology_report": tops,
+        "depth_bounds": {
+            "parameter_count_lower_bound": depth["parameter_count_bound"],
+            "tight_adjacency_bound": depth["tight_adjacency_bound"],
+            "reck_mesh_optimum": depth["depth_triangular_reck"],
+            "note": "参数计数下界（非紧）≤ 相邻耦合紧界 = N ≤ 平台三角 Reck 最优 2N−3",
+        },
+        "shallow_frontier": frontier,
         "spec": {
             "n_modes": depth["n_modes"],
             "n_mzi": depth["n_mzi"],
-            "topology": "矩形（Clements）网格 · 交替砖墙层",
-            "depth": depth["depth_rectangular_clements"],
+            "topology": chosen["label"],
+            "depth": chosen["per_mode_depth"],
             "depth_tight_bound": depth["tight_adjacency_bound"],
-            "tight_bound_reachable": depth["tight_bound_reachable"],
+            "tight_bound_reachable": chosen["tight_bound_reached"],
             "depth_vs_reck_saving": depth["depth_saving_vs_reck"],
-            "per_mode_loss_db": loss["rectangular_static_db"],
+            "per_mode_loss_db": chosen["per_mode_loss_db"],
+            "per_mode_eta": chosen["per_mode_eta"],
+            "n_physical_units": chosen["n_physical_units"],
             "recon_fidelity": 1.0,
             "hilbert_log2_dim": round(hilbert_log2_dim(n), 2),
         },
         "depth_scan": [
             dict(mesh_depth_closed_form(k),
-                 rectangular_static_db=loss_account_closed_form(k)["rectangular_static_db"],
-                 triangular_static_db=loss_account_closed_form(k)["triangular_static_db"])
+                 rectangular_static_db=loss_account_closed_form(k, per_mzi_db=pm)["rectangular_static_db"],
+                 triangular_static_db=loss_account_closed_form(k, per_mzi_db=pm)["triangular_static_db"])
             for k in (4, 8, 16, 32, 64, 128, 216)
         ],
         "loss_account": loss,
@@ -387,6 +498,40 @@ def run_selfchecks(verbose: bool = False) -> bool:
                 _top.add(_a.asname or _a.name)
     res["⑭ 纯闭式零重依赖：顶层仅 math / os / __future__"] = _top <= {
         "math", "os", "__future__", "annotations"}
+
+    # ⑮ B 档：三拓扑对照（同 N · 同一套闭式）
+    tops = topology_report(216)
+    tmap = {r["id"]: r for r in tops}
+    res["⑮ B 档三拓扑：rect 深度 216 / reck 429 / temporal 1 片物理 MZI"] = (
+        len(tops) == 3
+        and tmap["rect"]["per_mode_depth"] == 216 and tmap["rect"]["tight_bound_reached"] is True
+        and tmap["reck"]["per_mode_depth"] == 429 and tmap["reck"]["tight_bound_reached"] is False
+        and tmap["temporal"]["n_physical_units"] == 1
+        and tmap["rect"]["n_physical_units"] == tmap["reck"]["n_physical_units"] == 23220)
+
+    # ⑯ B 档：浅电路前沿（越墙但非通用）
+    fr = shallow_frontier(216)
+    fmap = {r["depth"]: r for r in fr}
+    res["⑯ B 档浅电路前沿：D=32 非通用（参数 3456 < 23220）· D=N 通用"] = (
+        fmap[32]["reachable_params"] == 3456 and fmap[32]["universal"] is False
+        and fmap[32]["param_fraction_of_unitary"] < 0.2
+        and fmap[216]["universal"] is True)
+
+    # ⑰ B 档：参数校验与覆盖生效
+    g2 = [False, False, False]
+    try:
+        case_card(216, topology="bogus")
+    except ValueError:
+        g2[0] = True
+    try:
+        case_card(216, per_mzi_db=0.0)
+    except ValueError:
+        g2[1] = True
+    c_over = case_card(64, topology="reck", per_mzi_db=1.0)
+    g2[2] = (c_over["selected_topology"]["per_mode_depth"] == 125
+             and abs(c_over["selected_topology"]["per_mode_loss_db"] - 125.0) < 1e-9
+             and abs(c_over["requested"]["per_mzi_db"] - 1.0) < 1e-12)
+    res["⑰ B 档护栏：非法 topology / 非法 per_mzi 抛错 · 覆盖参数生效"] = all(g2)
 
     if verbose:
         for k, v in res.items():

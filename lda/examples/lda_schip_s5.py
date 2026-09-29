@@ -1,15 +1,18 @@
 """超导征程 S5 全闭环**批量** demo（P0: D-137 路由 + D-142 频率 + D-143 规模；
-P1: D-138 heavy-hex + D-139 可调耦合器 + D-140 读出 mux + D-141 控制多线 + D-144 阵列损耗 · 吃狗粮）。
+P1: D-138 heavy-hex + D-139 可调耦合器 + D-140 读出 mux + D-141 控制多线 + D-144 阵列损耗；
+第三波完善: D-145 统一拓扑 DRC/LVS 框架 · 吃狗粮）。
 
 批量签核两类配置族：
   • **grid 族**（LDA 原生方阵）：每档跑 路由 DRC/LVS（G1）+ 频率规划（G6）+ 读出 mux 规划/DRC/LVS（G4）
     + 控制多线 DRC/LVS/串扰（G5）+ 阵列损耗（G8）；产出 .gds/.svg。
   • **heavy-hex 族**（对标 IBM）：每档跑 拓扑度统计 + DRC/LVS + 逐边物理（G2）；产出 .gds/.svg。
   • **单元**：可调耦合器（G3）DRC/LVS/物理；产出 .gds/.svg。
+  • **统一拓扑框架族**（D-145）：方阵实例走与 heavy-hex **同一份** DRC/LVS/物理引擎（度上限
+    自声明 4 vs 3）；产出 .gds/.svg。
 
 汇总 lda_schip_s5.report.json。闭环判定 = 该档全部子签核 ACCEPT。
 默认档位：grid="2x2,7x8,13x13" · hex="3x3,4x5"；可用环境变量覆盖：
-  S5_TIERS="2x2,7x8,13x13,21x21" S5_HEX_TIERS="3x3,5x6" python lda_schip_s5.py
+  S5_TIERS="2x2,7x8,13x13,21x21" S5_HEX_TIERS="3x3,5x6" S5_TFG_TIERS="3x3,7x8" python lda_schip_s5.py
 """
 from __future__ import annotations
 
@@ -27,6 +30,7 @@ from lda_qeda import sc_freq_alloc as FA                              # noqa: E4
 from lda_qeda import sc_readout_mux as MX                             # noqa: E402
 from lda_qeda import sc_control as CT                                 # noqa: E402
 from lda_qeda import sc_topology as TP                                # noqa: E402
+from lda_qeda import sc_topology_core as TC                           # noqa: E402
 from lda_qeda import sc_coupler as SC                                 # noqa: E402
 
 
@@ -121,6 +125,31 @@ def _hex_one(rows: int, cols: int) -> dict:
     }
 
 
+def _topocore_one(rows: int, cols: int) -> dict:
+    """统一拓扑框架（D-145）方阵实例：grid_topology → topology_cell → 统一 DRC/LVS/物理。"""
+    tag = f"tfg{rows}x{cols}"
+    topo = TC.grid_topology(rows, cols)
+    cell = TC.topology_cell(topo)
+    gds_path = os.path.join(_HERE, f"lda_schip_s5_{tag}.gds")
+    svg_path = os.path.join(_HERE, f"lda_schip_s5_{tag}.svg")
+    gds_bytes = TC.topology_gds(topo, {}, gds_path)
+    _write(svg_path, TC.topology_svg_preview(topo, {}, width=680), gds_path, gds_bytes)
+    deg = TC.topology_degree_stats(topo)
+    drc = TC.run_topology_drc(cell, topo)
+    lvs = TC.topology_lvs(cell, topo)
+    ph = TC.topology_physics(topo)
+    closed = all(x["verdict"] == "ACCEPT" for x in (drc, lvs, ph))
+    return {"family": "topology-core", "tier": tag, "rows": rows, "cols": cols,
+            "n_qubits": topo["n_qubits"], "n_couplings": topo["n_couplings"],
+            "max_degree": deg["max_degree"],
+            "max_degree_limit": topo["max_degree_limit"],
+            "n_elements": len(cell), "gds_bytes": len(gds_bytes),
+            "drc": {"verdict": drc["verdict"], "n_rules": drc["n_rules"]},
+            "lvs": {"verdict": lvs["verdict"], "n_issues": len(lvs["issues"])},
+            "physics": {"verdict": ph["verdict"], "max_J_rel_err": ph["max_J_rel_err"]},
+            "closed_loop": closed}
+
+
 def _tunable_one() -> dict:
     tc = SC.tunable_coupler_cell({})
     gds_path = os.path.join(_HERE, "lda_schip_s5_tunable.gds")
@@ -144,7 +173,7 @@ def main() -> int:
     grid_tiers = _parse_tiers(os.environ.get("S5_TIERS", "2x2,7x8,13x13"))
     hex_tiers = _parse_tiers(os.environ.get("S5_HEX_TIERS", "3x3,4x5"))
     print("═" * 82)
-    print("超导征程 S5 全闭环批量 demo（P0 D-137/142/143 + P1 D-138/139/140/141/144）")
+    print("超导征程 S5 全闭环批量 demo（P0 D-137/142/143 + P1 D-138/139/140/141/144 + D-145 统一拓扑框架）")
     print("═" * 82)
 
     results = []
@@ -185,15 +214,28 @@ def main() -> int:
               f"PHYS={res['physics']['verdict']} · 元素={res['n_elements']} · "
               f"{time.time() - t0:.2f}s · {'✅' if res['closed_loop'] else '❌'}")
 
+    print("── 统一拓扑框架（D-145 · 方阵实例，与 heavy-hex 共用引擎）──")
+    for (r, c) in _parse_tiers(os.environ.get("S5_TFG_TIERS", "3x3,7x8")):
+        t0 = time.time()
+        res = _topocore_one(r, c)
+        all_closed = all_closed and res["closed_loop"]
+        results.append(res)
+        print(f"  {res['tier']:>7} (N={res['n_qubits']:>4}) · 耦合={res['n_couplings']} · "
+              f"maxDeg={res['max_degree']}/{res['max_degree_limit']} · "
+              f"DRC={res['drc']['verdict']} LVS={res['lvs']['verdict']} "
+              f"PHYS={res['physics']['verdict']} · 元素={res['n_elements']} · "
+              f"{time.time() - t0:.2f}s · {'✅' if res['closed_loop'] else '❌'}")
+
     report = {
-        "module": "S5 全闭环批量签核（P0 D-137/142/143 + P1 D-138/139/140/141/144）",
+        "module": "S5 全闭环批量签核（P0 D-137/142/143 + P1 D-138/139/140/141/144 + D-145 统一拓扑框架）",
         "configs": results,
         "all_closed_loop": all_closed,
         "red_line": {"routing": SR.RED_LINE_DISCLOSURE,
                      "freq_alloc": FA.RED_LINE_DISCLOSURE,
                      "mux": MX.RED_LINE_DISCLOSURE,
                      "control": CT.RED_LINE_DISCLOSURE,
-                     "topology": TP.RED_LINE_DISCLOSURE},
+                     "topology": TP.RED_LINE_DISCLOSURE,
+                     "topology_core": TC.RED_LINE_DISCLOSURE},
     }
     rep_path = os.path.join(_HERE, "lda_schip_s5.report.json")
     with open(rep_path, "w", encoding="utf-8") as f:

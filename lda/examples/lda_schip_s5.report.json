@@ -1,5 +1,5 @@
 {
-  "module": "S5 全闭环批量签核（P0 D-137/142/143 + P1 D-138/139/140/141/144）",
+  "module": "S5 全闭环批量签核（P0 D-137/142/143 + P1 D-138/139/140/141/144 + D-145 统一拓扑框架）",
   "configs": [
     {
       "family": "unit",
@@ -169,7 +169,7 @@
       "max_degree": 3,
       "no_four_neighbor": true,
       "n_elements": 241,
-      "gds_bytes": 13786,
+      "gds_bytes": 13780,
       "drc": {
         "verdict": "ACCEPT",
         "n_rules": 6
@@ -196,7 +196,57 @@
       "max_degree": 3,
       "no_four_neighbor": true,
       "n_elements": 561,
-      "gds_bytes": 31978,
+      "gds_bytes": 31972,
+      "drc": {
+        "verdict": "ACCEPT",
+        "n_rules": 6
+      },
+      "lvs": {
+        "verdict": "ACCEPT",
+        "n_issues": 0
+      },
+      "physics": {
+        "verdict": "ACCEPT",
+        "max_J_rel_err": 0.043137524792150786
+      },
+      "closed_loop": true
+    },
+    {
+      "family": "topology-core",
+      "tier": "tfg3x3",
+      "rows": 3,
+      "cols": 3,
+      "n_qubits": 9,
+      "n_couplings": 12,
+      "max_degree": 4,
+      "max_degree_limit": 4,
+      "n_elements": 61,
+      "gds_bytes": 3574,
+      "drc": {
+        "verdict": "ACCEPT",
+        "n_rules": 6
+      },
+      "lvs": {
+        "verdict": "ACCEPT",
+        "n_issues": 0
+      },
+      "physics": {
+        "verdict": "ACCEPT",
+        "max_J_rel_err": 0.043137524792150786
+      },
+      "closed_loop": true
+    },
+    {
+      "family": "topology-core",
+      "tier": "tfg7x8",
+      "rows": 7,
+      "cols": 8,
+      "n_qubits": 56,
+      "n_couplings": 97,
+      "max_degree": 4,
+      "max_degree_limit": 4,
+      "n_elements": 381,
+      "gds_bytes": 21986,
       "drc": {
         "verdict": "ACCEPT",
         "n_rules": 6
@@ -249,12 +299,21 @@
       "red_line": "纯几何（标准库 + 平台 numpy 物理锚）、零量子 SDK、LLM 不进判决路径、控制线为片上 stub（键合/穿片互连片外未建模）"
     },
     "topology": {
-      "role": "D-138 = 超导征程 S5 P1：heavy-hex 拓扑生成器（对标 IBM）+ P&R + DRC/LVS 签核，把平台拓扑从 LDA 原生方阵扩到 IBM 全系 heavy-hex",
+      "role": "D-138 = 超导征程 S5 P1：heavy-hex 拓扑生成器（对标 IBM）+ P&R + DRC/LVS 签核（**D-145 起与方阵共用 sc_topology_core 统一框架**）",
       "layers": "SC_FILM=10 / SC_JJ=11 / SC_GROUND=12（gds_export 定义，非 Foundry PDK）",
       "limits": "min_node_spacing / coupler_width 为**设计规则 · 可覆盖 · 非实测 golden**（Foundry PDK 属 D5 外部依赖）",
-      "lvs": "复用 S2 多网连通 LVS（对**实际 produced 几何**做 bbox 网表提取）+ 节点/边计数一致",
-      "physics": "逐边 J 用 coupler_solver 严格对角化↔解析闭式双验证 + cross_resonance 有效模型落 ORACLE 窗（与 S2/S3 同口径）",
-      "topology": "heavy-hex = 蜂窝顶点（度 3）+ 边中点（度 2）；最大度 3，无 4 邻居",
+      "lvs": "复用 S2 多网连通 LVS（对**实际 produced 几何**做 bbox 网表提取）+ 耦合计数与拓扑一致",
+      "physics": "逐耦合 J 用 coupler_solver 严格对角化↔解析闭式双验证 + cross_resonance 有效模型落 ORACLE 窗（与 S2/S3 同口径）",
+      "topology": "heavy-hex = 蜂窝顶点（度 3）+ 边中点（度 2）；最大度 3，无 4 邻居；与方阵共用 `SCD-TOPO-*` 规则与同一份 DRC/LVS 引擎",
+      "red_line": "纯几何（标准库 + 平台 numpy 物理锚）、零量子 SDK、LLM 不进判决路径、耦合器为中心连线矩形（单元级示意）"
+    },
+    "topology_core": {
+      "role": "D-145 = 超导征程 S5 第三波（完善）：统一拓扑 DRC/LVS 框架 —— 方阵（S3/D-135）与 heavy-hex（S5 P1/D-138）走同一份拓扑抽象 + 同一份 DRC/LVS/物理引擎",
+      "layers": "SC_FILM=10 / SC_JJ=11 / SC_GROUND=12（gds_export 定义，非 Foundry PDK）",
+      "limits": "min_node_spacing / coupler_width 为**设计规则 · 可覆盖 · 非实测 golden**（Foundry PDK 属 D5 外部依赖）",
+      "lvs": "复用 S2 多网连通 LVS（对**实际 produced 几何**做 bbox 网表提取）+ 耦合计数与拓扑一致",
+      "physics": "逐耦合 J 用 coupler_solver 严格对角化↔解析闭式双验证 + cross_resonance 有效模型落 ORACLE 窗（与 S2/S3 同口径）",
+      "topology": "拓扑抽象 = 节点位置/类型 + 耦合对 + 邻接 + **自声明最大度上限**；grid maxDeg=4 · heavy-hex maxDeg=3；引擎按声明判，不写死",
       "red_line": "纯几何（标准库 + 平台 numpy 物理锚）、零量子 SDK、LLM 不进判决路径、耦合器为中心连线矩形（单元级示意）"
     }
   }

@@ -20,11 +20,15 @@
   · M8  MX.mux_plan 恒合规            ⇒ I3（音密）/I4（保护带）应红
   · M9  MX.mux_lvs 恒 ACCEPT          ⇒ I5（同馈线重音）/I1 应红
   · M10 CT.control_lvs 恒 ACCEPT      ⇒ J4（缺 Z 线）/J1 应红
-  · M11 TP.heavy_hex_degree_stats 恒 ≤3 ⇒ L4（4 邻居漏判）应红
+  · M11 TP.heavy_hex_graph 退化（丢边中点）⇒ L1/L2/L3/L6（拓扑形状）应红
   · M12 S4.array_loss_budget 恒 ACCEPT ⇒ K2（封装模落带）/K3（T1 不足）应红
   · M13 SC.run_tunable_drc 恒 ACCEPT   ⇒ H3（少一结）/H4（flux 贴环）应红
   · M14 SC.squid_ej 恒常量             ⇒ H6（SQUID 闭式）应红
   · M15 TP.run_heavyhex_drc 恒 ACCEPT  ⇒ L4/L5 应红
+  ── S5 第三波 · 完善（D-145 统一拓扑框架）─────────────────────
+  · M16 TC.topology_degree_stats 恒合规 ⇒ P8（度上限声明式判据漏判）应红
+  · M17 TC.run_topology_drc 恒 ACCEPT   ⇒ P5/P6/P8/P9 应红
+  · M18 TC.grid_topology 少边（丢纵向）  ⇒ P4/P11（方阵与 S3 口径一致）应红
 """
 from __future__ import annotations
 
@@ -45,6 +49,7 @@ MX = SM.MX
 CT = SM.CT
 TP = SM.TP
 S4 = SM.S4
+TC = SM.TC
 
 
 def run_smoke() -> int:
@@ -162,14 +167,20 @@ def _make_mutations():
         CT.control_lvs = bad
 
     def m11():
-        o = orig["tp_deg"]
+        o = orig["tp_graph"]
 
-        def bad(g):
-            r = o(g)
-            r["max_degree"] = 3
-            r["no_four_neighbor"] = True
-            return r
-        TP.heavy_hex_degree_stats = bad
+        def bad(rows=3, cols=3, unit_um=TP.DEFAULT_HEX_UNIT_UM):
+            g = o(rows, cols, unit_um)
+            # 丢掉边中点 qubit ⇒ 退化为纯蜂窝骨架（不再是 heavy-hex）
+            pos = {n: xy for n, xy in g["positions"].items() if g["kind"][n] == "vertex"}
+            pairs = [(a, b) for (a, b) in g["couplers"] if a in pos and b in pos]
+            return TC._finalize("heavy-hex-degraded", pos,
+                                {n: "vertex" for n in pos}, pairs,
+                                g["max_degree_limit"],
+                                {"rows": rows, "cols": cols,
+                                 "unit_um": unit_um, "n_vertices": len(pos),
+                                 "n_edge_qubits": 0, "edges": [], "n_edges": 0})
+        TP.heavy_hex_graph = bad
 
     def m12():
         o = orig["s4_alb"]
@@ -206,6 +217,45 @@ def _make_mutations():
             return r
         TP.run_heavyhex_drc = bad
 
+    orig.update({
+        "tp_graph": TP.heavy_hex_graph,
+        "tc_deg": TC.topology_degree_stats, "tc_drc": TC.run_topology_drc,
+        "tc_grid": TC.grid_topology,
+    })
+
+    def m16():
+        o = orig["tc_deg"]
+
+        def bad(topo):
+            r = o(topo)
+            r["max_degree"] = topo["max_degree_limit"]
+            r["within_limit"] = True
+            return r
+        TC.topology_degree_stats = bad
+
+    def m17():
+        o = orig["tc_drc"]
+
+        def bad(els, topo, limits=None):
+            r = o(els, topo, limits)
+            r["verdict"] = "ACCEPT"
+            r["violations"] = []
+            return r
+        TC.run_topology_drc = bad
+
+    def m18():
+        o = orig["tc_grid"]
+
+        def bad(rows=3, cols=3, pitch_x=22.0, pitch_y=14.0):
+            r = o(rows, cols, pitch_x, pitch_y)
+            cols_i = int(cols)
+            pairs = [(i, j) for (i, j) in r["couplers"]
+                     if j - i == 1 and (i % cols_i) != (cols_i - 1)]
+            return TC._finalize("grid", r["positions"], r["kind"], pairs,
+                                r["max_degree_limit"],
+                                {"rows": rows, "cols": cols})
+        TC.grid_topology = bad
+
     def restore():
         SR.run_routing_drc = orig["drc"]
         SR.routed_array_lvs = orig["lvs"]
@@ -218,25 +268,31 @@ def _make_mutations():
         MX.mux_lvs = orig["mx_lvs"]
         CT.control_lvs = orig["ct_lvs"]
         TP.heavy_hex_degree_stats = orig["tp_deg"]
+        TP.heavy_hex_graph = orig["tp_graph"]
         S4.array_loss_budget = orig["s4_alb"]
         SC.run_tunable_drc = orig["sc_drc"]
         SC.squid_ej = orig["sc_ej"]
         TP.run_heavyhex_drc = orig["tp_drc"]
+        TC.topology_degree_stats = orig["tc_deg"]
+        TC.run_topology_drc = orig["tc_drc"]
+        TC.grid_topology = orig["tc_grid"]
 
     muts = [("M1-路由DRC恒ACCEPT", m1), ("M2-路由LVS恒ACCEPT", m2),
             ("M3-路由容量错值", m3), ("M4-路由披露缺键", m4),
             ("M5-路由GDS空", m5), ("M6-频率校验恒ok", m6),
             ("M7-频率规划恒REJECT", m7),
             ("M8-读出mux音规划恒合规", m8), ("M9-读出mux LVS恒ACCEPT", m9),
-            ("M10-控制多线LVS恒ACCEPT", m10), ("M11-heavyhex度恒≤3", m11),
+            ("M10-控制多线LVS恒ACCEPT", m10), ("M11-heavyhex拓扑退化(丢边中点)", m11),
             ("M12-阵列损耗恒ACCEPT", m12), ("M13-可调耦合器DRC恒ACCEPT", m13),
-            ("M14-SQUID闭式失效", m14), ("M15-heavyhex DRC恒ACCEPT", m15)]
+            ("M14-SQUID闭式失效", m14), ("M15-heavyhex DRC恒ACCEPT", m15),
+            ("M16-拓扑度统计恒合规", m16), ("M17-统一拓扑DRC恒ACCEPT", m17),
+            ("M18-方阵拓扑少边", m18)]
     return muts, restore
 
 
 def main() -> int:
     print("=" * 78)
-    print("D-137..D-144 S5 门禁 突变探针（15 突变各必红 · 还原复绿）")
+    print("D-137..D-145 S5 门禁 突变探针（18 突变各必红 · 还原复绿）")
     print("=" * 78)
 
     rc0 = run_smoke()
@@ -260,7 +316,7 @@ def main() -> int:
     print(f"[还原] smoke 返回 {rc2} · {'复绿' if restored_green else '未复绿'}")
     ok = base_green and all_red and restored_green
     print()
-    print(f"突变探针结论：基线绿={base_green} · 15 突变各红={all_red} · 还原绿={restored_green}"
+    print(f"突变探针结论：基线绿={base_green} · 18 突变各红={all_red} · 还原绿={restored_green}"
           f" => {'PASS' if ok else 'FAIL'}")
     return 0 if ok else 1
 

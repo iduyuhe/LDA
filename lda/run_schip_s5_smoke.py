@@ -1,4 +1,4 @@
-"""超导征程 S5 规模压力 + P1 架构门禁 smoke（D-137/138/139/140/141/142/143/144 · 吃狗粮）。
+"""超导征程 S5 规模压力 + P1 架构 + D-145 统一拓扑框架门禁 smoke（D-137..D-145 · 吃狗粮）。
 
 ═══ 为什么要有这个 smoke ═══
 S5 把平台从「能排带 stub 的阵列」（S4·D-136·9 qubit）推进到「能把 N 个 qubit 的读出/控制
@@ -23,6 +23,9 @@ S5 把平台从「能排带 stub 的阵列」（S4·D-136·9 qubit）推进到�
   M  P1 诚实标注 + 红线（披露键 · 零量子 SDK · 判决死标量）
   N  P1 模块 GDS round-trip（G2/G3/G4/G5）
   O  P1 规模压力（N=53/127/433：mux/control/阵列损耗全 ACCEPT；1024 阵列损耗）
+  ── S5 第三波 · 完善（D-145 统一拓扑 DRC/LVS 框架）──
+  P  **方阵与 heavy-hex 共用**同一份拓扑抽象 + DRC/LVS/物理引擎（度上限由拓扑自声明
+     4 vs 3 · 规则名统一 `SCD-TOPO-*` · 方阵实例与 S3 口径一致）
 
 运行：python run_schip_s5_smoke.py（cwd=lda/）
 出口：全 PASS 退 0；任一 FAIL 退 1。LLM 不进判决路径。
@@ -44,6 +47,7 @@ from lda_qeda import sc_coupler as SC                                # noqa: E40
 from lda_qeda import sc_readout_mux as MX                            # noqa: E402
 from lda_qeda import sc_control as CT                                # noqa: E402
 from lda_qeda import sc_topology as TP                               # noqa: E402
+from lda_qeda import sc_topology_core as TC                          # noqa: E402
 from lda_qeda import sc_readout as S4                                # noqa: E402
 from lda_harness.smoke_kit import make_check                         # noqa: E402
 
@@ -62,7 +66,7 @@ def _expected_edges(rows: int, cols: int) -> int:
 
 def main() -> int:
     print("=" * 78)
-    print("超导征程 S5 规模压力 + P1 架构门禁 smoke（D-137..D-144）")
+    print("超导征程 S5 规模压力 + P1 架构 + D-145 统一拓扑框架门禁 smoke（D-137..D-145）")
     print("=" * 78)
 
     # ════════════════ A 节：模块自检 ════════════════
@@ -373,14 +377,14 @@ def main() -> int:
     bad_g = TP.heavy_hex_graph(3, 3)
     bad_g["adjacency"][0] = [1, 2, 3, 4]
     vb = TP.run_heavyhex_drc(hc33, bad_g)
-    check("L4 出现 4 邻居 ⇒ DRC REJECT（SCD-HEAVYHEX-DEGREE）",
+    check("L4 出现 4 邻居 ⇒ DRC REJECT（SCD-TOPO-MAX-DEGREE，4>3）",
           vb["verdict"] == "REJECT"
-          and any(v["rule"] == "SCD-HEAVYHEX-DEGREE" for v in vb["violations"]), None)
+          and any(v["rule"] == "SCD-TOPO-MAX-DEGREE" for v in vb["violations"]), None)
     dense_hh = TP.run_heavyhex_drc(
         TP.heavy_hex_cell({"rows": 3, "cols": 3, "hex_unit": 16.0}), g33)
-    check("L5 节点太挤(unit 16) ⇒ DRC REJECT（SCD-HEAVYHEX-SPACING）",
+    check("L5 节点太挤(unit 16) ⇒ DRC REJECT（SCD-TOPO-NODE-SPACING）",
           dense_hh["verdict"] == "REJECT"
-          and any(v["rule"] == "SCD-HEAVYHEX-SPACING" for v in dense_hh["violations"]), None)
+          and any(v["rule"] == "SCD-TOPO-NODE-SPACING" for v in dense_hh["violations"]), None)
     g45 = TP.heavy_hex_graph(4, 5)
     hc45 = TP.heavy_hex_cell({"rows": 4, "cols": 5})
     check("L6 4×5 heavy-hex（40 顶点 + 51 边 qubit = 91 qubit）DRC+LVS 双 ACCEPT",
@@ -471,8 +475,80 @@ def main() -> int:
           and al1024["n_qubits"] == 1024,
           f"N={al1024['n_qubits']} min_t1={al1024['min_t1_total_us']:.1f}µs")
 
+    # ════════════════ P 节：统一拓扑 DRC/LVS 框架（D-145 · 方阵 + heavy-hex 共用）════════════════
+    print("── P 统一拓扑框架（D-145 · 方阵 + heavy-hex 共用 DRC/LVS）──")
+    try:
+        ok_core = TC.run_selfchecks(verbose=False)
+    except Exception as e:                                           # noqa: BLE001
+        ok_core = False
+        print(f"  topology_core 自检异常：{type(e).__name__}: {e}")
+    check("P1 topology_core（D-145 统一框架）自检全 PASS", ok_core, "期望 13 项全 PASS")
+
+    tg33 = TC.grid_topology(3, 3)
+    dg33 = TC.topology_degree_stats(tg33)
+    check("P2 方阵实例 3×3：9 节点 · 12 耦合 · maxDeg=4 · 度上限声明 4",
+          tg33["n_qubits"] == 9 and tg33["n_couplings"] == 12
+          and dg33["max_degree"] == 4 and tg33["max_degree_limit"] == 4
+          and dg33["within_limit"],
+          f"N={tg33['n_qubits']} E={tg33['n_couplings']} maxDeg={dg33['max_degree']}")
+    check("P3 heavy-hex 实例 3×3：39 qubit · 42 耦合 · maxDeg=3 · 度上限声明 3",
+          g33["n_qubits"] == 39 and g33["n_couplings"] == 42
+          and deg33["max_degree"] == 3 and g33["max_degree_limit"] == 3,
+          f"maxDeg={deg33['max_degree']}")
+    # 方阵实例与 S3 口径一致（耦合数 = rows(cols−1)+cols(rows−1)）
+    grid_ok = all(
+        TC.grid_topology(r, c)["n_qubits"] == r * c
+        and TC.grid_topology(r, c)["n_couplings"] == r * (c - 1) + c * (r - 1)
+        for (r, c) in ((2, 2), (3, 3), (7, 8)))
+    check("P4 方阵实例与 S3 口径一致（2×2/3×3/7×8 耦合数闭式）", grid_ok, None)
+    # 统一引擎对两种拓扑
+    cg33 = TC.topology_cell(tg33)
+    check("P5 **统一 DRC/LVS/物理** 对方阵 ACCEPT（与 heavy-hex 同一份代码）",
+          TC.run_topology_drc(cg33, tg33)["verdict"] == "ACCEPT"
+          and TC.topology_lvs(cg33, tg33)["verdict"] == "ACCEPT"
+          and TC.topology_physics(tg33)["verdict"] == "ACCEPT", None)
+    check("P6 **统一 DRC/LVS/物理** 对 heavy-hex ACCEPT（同一份代码）",
+          TC.run_topology_drc(hc33, g33)["verdict"] == "ACCEPT"
+          and TC.topology_lvs(hc33, g33)["verdict"] == "ACCEPT"
+          and TC.topology_physics(g33)["verdict"] == "ACCEPT", None)
+    check("P7 规则名统一：SCD-TOPO-NODE-SPACING / SCD-TOPO-MAX-DEGREE 在册（S1 四则 + TOPO 两则 = 6）",
+          len(TC.TOPOLOGY_DRC_RULES) == 6
+          and "SCD-TOPO-NODE-SPACING" in TC.TOPOLOGY_DRC_RULES
+          and "SCD-TOPO-MAX-DEGREE" in TC.TOPOLOGY_DRC_RULES
+          and not any("HEAVYHEX" in r for r in TC.TOPOLOGY_DRC_RULES),
+          f"规则={list(TC.TOPOLOGY_DRC_RULES)}")
+    # 度上限按拓扑声明：方阵 5>4 / hex 4>3
+    bad_g2 = TC.grid_topology(3, 3)
+    bad_g2["adjacency"][0] = [1, 2, 3, 4, 5]
+    vg = TC.run_topology_drc(cg33, bad_g2)
+    check("P8 度超上限 ⇒ DRC REJECT（方阵 5>4 · 声明式上限）",
+          vg["verdict"] == "REJECT"
+          and any(v["rule"] == "SCD-TOPO-MAX-DEGREE" for v in vg["violations"]), None)
+    dense_g = TC.grid_topology(3, 3, pitch_x=12.0, pitch_y=8.0)
+    vdg = TC.run_topology_drc(TC.topology_cell(dense_g), dense_g)
+    check("P9 方阵节点太挤 ⇒ DRC REJECT（SCD-TOPO-NODE-SPACING）",
+          vdg["verdict"] == "REJECT"
+          and any(v["rule"] == "SCD-TOPO-NODE-SPACING" for v in vdg["violations"]), None)
+    # 统一 GDS round-trip（方阵）
+    dg_gds = TC.topology_gds(tg33, {}, os.path.join(_HERE, "_sc_s5_grid_tmp.gds"))
+    pg = SR.G.parse_gds(dg_gds)
+    glayers = set()
+    for st in pg.get("structures", {}).values():
+        glayers |= set(st.get("layers", []))
+    check("P10 统一框架 GDS 真出（方阵）且含 SC 层 10/11/12",
+          bool(dg_gds) and {10, 11, 12}.issubset(glayers),
+          f"layers={sorted(glayers)} · bytes={len(dg_gds)}")
+    # 方阵规模（7×8）统一 DRC/LVS
+    t78 = TC.grid_topology(7, 8)
+    c78 = TC.topology_cell(t78)
+    check("P11 方阵规模 7×8 统一 DRC+LVS 双 ACCEPT（56 qubit · 97 耦合）",
+          t78["n_qubits"] == 56 and t78["n_couplings"] == 97
+          and TC.run_topology_drc(c78, t78)["verdict"] == "ACCEPT"
+          and TC.topology_lvs(c78, t78)["verdict"] == "ACCEPT",
+          f"N={t78['n_qubits']} E={t78['n_couplings']}")
+
     print()
-    print(f"超导征程 S5 规模压力 + P1 架构门禁 smoke（D-137..D-144）：{PASS}/{PASS + FAIL} PASS")
+    print(f"超导征程 S5 门禁 smoke（D-137..D-145）：{PASS}/{PASS + FAIL} PASS")
     return 0 if FAIL == 0 else 1
 
 

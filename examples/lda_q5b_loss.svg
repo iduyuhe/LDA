@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 620" width="680" height="620">
+<rect width="680" height="620" fill="#ffffff"/>
+<text x="34" y="30" font-family="Arial" font-size="18" font-weight="bold" fill="#0f172a">LDA-Q5b · 真实损耗预算（M5 延伸 · D-123）</text>
+<text x="34" y="48" font-family="Arial" font-size="10.5" fill="#64748b">每模深度 = N 的 dB 账 · 三角 2N−3 / 矩形 N · 口径分离 · 时间复用通用 vs 浅电路 · 纯 numpy · 闭式/构造实测作 golden</text>
+<line x1="34" y1="58" x2="646" y2="58" stroke="#e2e8f0"/>
+<text x="34" y="92" font-family="Arial" font-size="12" font-weight="bold" fill="#0f172a">① 每模光学深度（构造实测）</text>
+<line x1="34" y1="282" x2="324" y2="282" stroke="#cbd5e1"/>
+<line x1="34" y1="108" x2="34" y2="282" stroke="#cbd5e1"/>
+<circle cx="56.2" cy="278.8" r="2.6" fill="#dc2626"/>
+<circle cx="56.2" cy="279.5" r="2.6" fill="#2563eb"/>
+<circle cx="56.2" cy="280.1" r="2.6" fill="#94a3b8"/>
+<circle cx="64.4" cy="273.8" r="2.6" fill="#dc2626"/>
+<circle cx="64.4" cy="276.9" r="2.6" fill="#2563eb"/>
+<circle cx="64.4" cy="277.6" r="2.6" fill="#94a3b8"/>
+<circle cx="80.8" cy="263.7" r="2.6" fill="#dc2626"/>
+<circle cx="80.8" cy="271.9" r="2.6" fill="#2563eb"/>
+<circle cx="80.8" cy="272.5" r="2.6" fill="#94a3b8"/>
+<circle cx="113.5" cy="243.4" r="2.6" fill="#dc2626"/>
+<circle cx="113.5" cy="261.8" r="2.6" fill="#2563eb"/>
+<circle cx="113.5" cy="262.4" r="2.6" fill="#94a3b8"/>
+<circle cx="179.0" cy="202.9" r="2.6" fill="#dc2626"/>
+<circle cx="179.0" cy="241.5" r="2.6" fill="#2563eb"/>
+<circle cx="179.0" cy="242.2" r="2.6" fill="#94a3b8"/>
+<circle cx="310.0" cy="122.0" r="2.6" fill="#dc2626"/>
+<circle cx="310.0" cy="201.1" r="2.6" fill="#2563eb"/>
+<circle cx="310.0" cy="201.7" r="2.6" fill="#94a3b8"/>
+<text x="48" y="116.0" font-family="Arial" font-size="8.5" fill="#dc2626">2N−3 = 253</text>
+<text x="48" y="214.1" font-family="Arial" font-size="8.5" fill="#2563eb">N = 128</text>
+<text x="34" y="295" font-family="Arial" font-size="8.5" fill="#64748b">N=4…128（实跑构造数门）· 列口径 N−1 ≠ 三角每模 2N−3</text>
+<text x="356" y="92" font-family="Arial" font-size="12" font-weight="bold" fill="#0f172a">② N=216 每模损耗 dB 账</text>
+<text x="356" y="121" font-family="Arial" font-size="8.5" fill="#334155">列口径(N−1)</text>
+<rect x="434" y="112" width="89.7" height="10" fill="#94a3b8" rx="1.5"/>
+<text x="527.7" y="121" font-family="Arial" font-size="8.5" fill="#334155">516</text>
+<text x="356" y="137" font-family="Arial" font-size="8.5" fill="#334155">三角静态</text>
+<rect x="434" y="128" width="179.1" height="10" fill="#dc2626" rx="1.5"/>
+<text x="617.1" y="137" font-family="Arial" font-size="8.5" fill="#334155">1030</text>
+<text x="356" y="153" font-family="Arial" font-size="8.5" fill="#334155">矩形(M5)</text>
+<rect x="434" y="144" width="90.2" height="10" fill="#2563eb" rx="1.5"/>
+<text x="528.2" y="153" font-family="Arial" font-size="8.5" fill="#334155">518</text>
+<text x="356" y="169" font-family="Arial" font-size="8.5" fill="#334155">复用矩形调度</text>
+<rect x="434" y="160" width="97.7" height="10" fill="#7c3aed" rx="1.5"/>
+<text x="535.7" y="169" font-family="Arial" font-size="8.5" fill="#334155">562</text>
+<text x="356" y="185" font-family="Arial" font-size="8.5" fill="#334155">复用Reck调度</text>
+<rect x="434" y="176" width="194.0" height="10" fill="#a16207" rx="1.5"/>
+<text x="632.0" y="185" font-family="Arial" font-size="8.5" fill="#334155">1115</text>
+<text x="356" y="202" font-family="Arial" font-size="8.5" fill="#16a34a">矩形省三角 511 dB · 复用贵矩形 43 dB（= N·延迟）</text>
+<line x1="34" y1="300" x2="646" y2="300" stroke="#e2e8f0"/>
+<text x="34" y="316" font-family="Arial" font-size="12" font-weight="bold" fill="#0f172a">③ 时间复用：深度 ↔ 损耗 ↔ 通用性</text>
+<line x1="34" y1="466" x2="324" y2="466" stroke="#cbd5e1"/>
+<line x1="34" y1="332" x2="34" y2="466" stroke="#cbd5e1"/>
+<circle cx="47.2" cy="465.4" r="2.6" fill="#16a34a"/>
+<circle cx="48.5" cy="464.9" r="2.6" fill="#16a34a"/>
+<circle cx="50.9" cy="463.8" r="2.6" fill="#16a34a"/>
+<circle cx="55.9" cy="461.6" r="2.6" fill="#16a34a"/>
+<circle cx="65.7" cy="457.1" r="2.6" fill="#16a34a"/>
+<circle cx="85.4" cy="448.2" r="2.6" fill="#16a34a"/>
+<circle cx="124.8" cy="430.4" r="2.6" fill="#16a34a"/>
+<circle cx="203.6" cy="394.9" r="2.6" fill="#16a34a"/>
+<circle cx="310.8" cy="346.6" r="2.6" fill="#16a34a"/>
+<circle cx="312.0" cy="346.0" r="2.6" fill="#dc2626"/>
+<text x="50" y="442.2" font-family="Arial" font-size="8.5" fill="#16a34a">D=32 ⇒ 83.2 dB（浅电路，非通用）</text>
+<text x="34" y="479" font-family="Arial" font-size="8.5" fill="#64748b">红=通用(D≥N) · 绿=非通用(D&lt;N) · 损耗 = 深度 × 2.6 dB</text>
+<text x="356" y="316" font-family="Arial" font-size="12" font-weight="bold" fill="#0f172a">④ 判决与诚实边界</text>
+<text x="356" y="334" font-family="Arial" font-size="8.5" fill="#475569">通用性每模损耗下界 = 518 dB（矩形静态）</text>
+<text x="356" y="347" font-family="Arial" font-size="8.5" fill="#475569">等损耗下时间复用浅电路参数 = 21492 = 93% 矩形通用 ⇒ 仍非通用</text>
+<text x="356" y="360" font-family="Arial" font-size="8.5" fill="#475569">交叉敏感性：抹平矩形优势需 ≈10224 交叉/模</text>
+<text x="356" y="373" font-family="Arial" font-size="8.5" fill="#475569">矩形 N=216 每模透射率 η = 1.45e-52</text>
+<text x="356" y="386" font-family="Arial" font-size="8.5" fill="#475569">不含交叉损耗（三角 M2 实测 0 交叉；矩形交叉数属 P1-B）</text>
+<text x="356" y="399" font-family="Arial" font-size="8.5" fill="#475569">损耗为设计预算口径（非实测 PDK · 属 D5）</text>
+<line x1="34" y1="482" x2="646" y2="482" stroke="#e2e8f0"/>
+<text x="34" y="502" font-family="Arial" font-size="9.5" fill="#475569">血案（口径）：D-120 列口径 (N−1)·per = 516.0 dB；平台邻耦合三角网格每模深度实测 = 2N−3 ⇒ 真账 1029.6 dB（低估 513.6 dB）</text>
+<text x="34" y="518" font-family="Arial" font-size="9.5" fill="#475569">M5 收益兑现：矩形每模深度 = N ⇒ 1030 → 518 dB（省 511 dB），元件数不变（N(N−1)/2）</text>
+<text x="34" y="534" font-family="Arial" font-size="9.5" fill="#475569">时间复用：通用（矩形调度）562 dB 优于三角静态、贵于矩形静态 43 dB（= N·延迟）⇒ 通用于省损不可兼得</text>
+<text x="34" y="556" font-family="Arial" font-size="8.8" fill="#94a3b8">诚实边界：损耗为设计预算口径（非实测 PDK · 属 D5）；不含波导交叉损耗（三角网格 M2 实测 0 交叉；矩形交叉数属 P1-B）</text>
+<text x="34" y="570" font-family="Arial" font-size="8.8" fill="#94a3b8">「每模深度」由构造实测（跑分解数门数）给出并附闭式核对；常数复用 D-120(2.4)/D-121(0.2,2.6)/D-122(矩形层)，不另建</text>
+<text x="34" y="596" font-family="Arial" font-size="11" font-weight="bold" fill="#16a34a">M5 延伸判决：PASS（矩形每模省 511 dB · 通用下界 518 dB · 浅电路 D=32 越墙但非通用）</text>
+</svg>

@@ -1,0 +1,249 @@
+{
+  "verdict": "PASS",
+  "n_target": 216,
+  "per_mzi_loss_db": 2.4000000000000004,
+  "per_step_loss_db": 2.6000000000000005,
+  "delay_loss_db": 0.2,
+  "depth_sweep": [
+    {
+      "n_modes": 4,
+      "tri_max": 5,
+      "tri_columns": 3,
+      "tri_min": 1,
+      "rect_max": 4,
+      "rect_min": 2,
+      "abstract_max": 3,
+      "n_mzi": 6,
+      "closed_form_ok": true
+    },
+    {
+      "n_modes": 8,
+      "tri_max": 13,
+      "tri_columns": 7,
+      "tri_min": 1,
+      "rect_max": 8,
+      "rect_min": 4,
+      "abstract_max": 7,
+      "n_mzi": 28,
+      "closed_form_ok": true
+    },
+    {
+      "n_modes": 16,
+      "tri_max": 29,
+      "tri_columns": 15,
+      "tri_min": 1,
+      "rect_max": 16,
+      "rect_min": 8,
+      "abstract_max": 15,
+      "n_mzi": 120,
+      "closed_form_ok": true
+    },
+    {
+      "n_modes": 32,
+      "tri_max": 61,
+      "tri_columns": 31,
+      "tri_min": 1,
+      "rect_max": 32,
+      "rect_min": 16,
+      "abstract_max": 31,
+      "n_mzi": 496,
+      "closed_form_ok": true
+    },
+    {
+      "n_modes": 64,
+      "tri_max": 125,
+      "tri_columns": 63,
+      "tri_min": 1,
+      "rect_max": 64,
+      "rect_min": 32,
+      "abstract_max": 63,
+      "n_mzi": 2016,
+      "closed_form_ok": true
+    },
+    {
+      "n_modes": 128,
+      "tri_max": 253,
+      "tri_columns": 127,
+      "tri_min": 1,
+      "rect_max": 128,
+      "rect_min": 64,
+      "abstract_max": 127,
+      "n_mzi": 8128,
+      "closed_form_ok": true
+    }
+  ],
+  "loss_account": {
+    "n_modes": 216,
+    "per_mzi_loss_db": 2.4000000000000004,
+    "per_step_loss_db": 2.6000000000000005,
+    "rows": [
+      {
+        "impl": "静态矩形 Clements（M5）",
+        "physical_mzi": 23220,
+        "depth": 216,
+        "loss_per_mode_db": 518.4000000000001,
+        "universal": true,
+        "basis": "per_mode"
+      },
+      {
+        "impl": "静态三角 Reck（邻耦合·0 交叉）",
+        "physical_mzi": 23220,
+        "depth": 429,
+        "loss_per_mode_db": 1029.6000000000001,
+        "universal": true,
+        "basis": "per_mode"
+      },
+      {
+        "impl": "时间复用（矩形调度 N）",
+        "physical_mzi": 1,
+        "depth": 216,
+        "loss_per_mode_db": 561.6000000000001,
+        "universal": true,
+        "basis": "per_mode"
+      },
+      {
+        "impl": "时间复用（Reck 调度 2N−3）",
+        "physical_mzi": 1,
+        "depth": 429,
+        "loss_per_mode_db": 1115.4000000000003,
+        "universal": true,
+        "basis": "per_mode"
+      },
+      {
+        "impl": "静态（D-120 列口径 N−1）",
+        "physical_mzi": 23220,
+        "depth": 215,
+        "loss_per_mode_db": 516.0000000000001,
+        "universal": true,
+        "basis": "column_stages"
+      }
+    ],
+    "rect_vs_tri_saving_db": -511.20000000000005,
+    "rect_vs_temporal_saving_db": -43.200000000000045
+  },
+  "loss_account_N216": {
+    "column_basis_db": 516.0000000000001,
+    "triangular_static_db": 1029.6000000000001,
+    "rectangular_static_db": 518.4000000000001,
+    "temporal_rect_schedule_db": 561.6000000000001,
+    "temporal_reck_schedule_db": 1115.4000000000003,
+    "m5_saving_vs_triangular_db": 511.20000000000005,
+    "temporal_penalty_vs_rect_db": 43.200000000000045,
+    "rect_eta": 1.4454397707458925e-52
+  },
+  "temporal_sweep": [
+    {
+      "depth": 1,
+      "loss_db": 2.6000000000000005,
+      "params": 108,
+      "universal": false
+    },
+    {
+      "depth": 2,
+      "loss_db": 5.200000000000001,
+      "params": 216,
+      "universal": false
+    },
+    {
+      "depth": 4,
+      "loss_db": 10.400000000000002,
+      "params": 432,
+      "universal": false
+    },
+    {
+      "depth": 8,
+      "loss_db": 20.800000000000004,
+      "params": 864,
+      "universal": false
+    },
+    {
+      "depth": 16,
+      "loss_db": 41.60000000000001,
+      "params": 1728,
+      "universal": false
+    },
+    {
+      "depth": 32,
+      "loss_db": 83.20000000000002,
+      "params": 3456,
+      "universal": false
+    },
+    {
+      "depth": 64,
+      "loss_db": 166.40000000000003,
+      "params": 6912,
+      "universal": false
+    },
+    {
+      "depth": 128,
+      "loss_db": 332.80000000000007,
+      "params": 13824,
+      "universal": false
+    },
+    {
+      "depth": 215,
+      "loss_db": 559.0000000000001,
+      "params": 23220,
+      "universal": false
+    },
+    {
+      "depth": 216,
+      "loss_db": 561.6000000000001,
+      "params": 23328,
+      "universal": true
+    }
+  ],
+  "universality_floor": {
+    "n_modes": 216,
+    "candidates_db": {
+      "rect_static": 518.4000000000001,
+      "triangular_static": 1029.6000000000001,
+      "temporal_rect_schedule": 561.6000000000001,
+      "temporal_reck_schedule": 1115.4000000000003
+    },
+    "floor_db": 518.4000000000001,
+    "floor_kind": "rect_static",
+    "floor_eta": 1.4454397707458925e-52
+  },
+  "crossing_breakeven": {
+    "n_modes": 216,
+    "crossing_loss_db": 0.05,
+    "rect_saving_vs_tri_db": 511.2000000000001,
+    "breakeven_crossings_per_mode": 10224.000000000002,
+    "note": "矩形要抹平其优势需 ≈此数目的交叉/模；远超任何平面版图量级 ⇒ 交叉缺口不改变结论（三角网格 M2 实测 0 交叉）。"
+  },
+  "equal_loss_frontier": {
+    "n_modes": 216,
+    "loss_budget_db": 518.4000000000001,
+    "temporal_depth_at_equal_loss": 199,
+    "temporal_reachable_params": 21492,
+    "rect_static_params": 23220,
+    "param_fraction_vs_rect": 0.9255813953488372,
+    "temporal_universal_at_equal_loss": false,
+    "note": "同损耗下时间复用浅电路仍**不通用**（参数 < N(N−1)/2）——维度计数判死。"
+  },
+  "verdict_report": {
+    "n_modes": 216,
+    "rect_static_loss_db": 518.4000000000001,
+    "triangular_static_loss_db": 1029.6000000000001,
+    "column_basis_loss_db": 516.0000000000001,
+    "temporal_rect_schedule_loss_db": 561.6000000000001,
+    "m5_saving_vs_triangular_db": 511.20000000000005,
+    "temporal_penalty_vs_rect_static_db": 43.200000000000045,
+    "temporal_beats_triangular_static": true,
+    "temporal_still_worse_than_rect_static": true,
+    "universality_floor_db": 518.4000000000001,
+    "universality_floor_kind": "rect_static",
+    "shallow_D32_loss_db": 83.20000000000002,
+    "shallow_D32_universal": false,
+    "breakeven_crossings_per_mode": 10224.000000000002,
+    "headline": "把 M5 的**每模深度 N** 接进真实 dB 账：三角静态最坏模 (2N−3)·per = 1030 dB → 矩形 216·per = 518 dB（**省 511 dB**）。通用时间复用（矩形调度）562 dB：**优于三角静态**（继承矩形化收益），仍**贵于矩形静态** 43 dB（= N·延迟）⇒ D-121「通用与省损不可兼得」在**可达基线 N**（而非不可达的 N−1）上依然成立。只有**浅电路**越墙（D=32 ⇒ 83 dB）但参数 3456 ≪ 23220 ⇒ 非通用。"
+  },
+  "headline_findings": [
+    "口径分离：D-120 列口径 (N−1)·per = 516.0 dB 低估邻耦合三角网格真账 1029.6 dB（每模深度 2N−3 ≠ 列数 N−1）",
+    "M5 收益兑现：矩形每模深度 = N ⇒ 1029.6 → 518.4 dB（省 511.2 dB），元件数不变（同为 N(N−1)/2）",
+    "时间复用通用（矩形调度）561.6 dB：优于三角静态、贵于矩形静态 43.2 dB（= N·延迟）⇒ 通用于省损不可兼得（可达基线 N）",
+    "浅电路 D=32 ⇒ 83.2 dB （越墙）但参数 3456 ≪ 23220 ⇒ 非通用（维度计数判死）",
+    "交叉敏感性：抹平矩形优势需 ≈10224 交叉/模 ⇒ 缺口不改结论"
+  ]
+}

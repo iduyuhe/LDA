@@ -22,12 +22,12 @@
 | 项 | 值 |
 |---|---|
 
-| 端点总数 | 138（精确 121 + 前缀/后缀 17） |
-| 方法分布 | GET 43 · PATCH 1 · POST 94 |
-| 有描述 | 138（**100.0%**） |
+| 端点总数 | 139（精确 122 + 前缀/后缀 17） |
+| 方法分布 | GET 44 · PATCH 1 · POST 94 |
+| 有描述 | 139（**100.0%**） |
 | 需登录（重计算闸门） | 60 |
 
-## GET（43）
+## GET（44）
 
 | 路径 | 用途 | 参数 | 鉴权 |
 |---|---|---|---|
@@ -60,6 +60,7 @@
 | `/api/health` | P2.1 产品级健康检查（供 Docker/K8s liveness & readiness 探针）。 返回服务存活 + 版本 + 部署形态 + 内核落地概览。 db 字段在 P2.2（多用户数据层）落地后改为真实连通性；当前尚未配置 DB， 诚实标注 "not_configured"，不谎报健康。 | — | public |
 | `/api/pdks` | 返回（惰性构建并缓存）默认 Registry 实例。 | — | public |
 | `/api/public/stats` | 公开自证看板（无需鉴权）。仅暴露可信度信号：锚/引擎/货架/CI 项， 绝不返回任何用户、订单、GMV 等敏感数据。 | — | public |
+| `/api/qchip_demo` | GET /api/qchip_demo —— 光量子计算芯片案例卡（只读 · 免登录 · 微秒级）。 A 档接入（D-131）：把「量子征程（吃狗粮）」九步成果在 UI 中以**只读案例** 呈现（可编程 MZI 干涉仪网格 = LOQC 通用处理器）。 🔴 与站内重计算端点（cpo_array / design_* 等）**不同**：本端点**零重计算** —— 全部数字为闭式现算（深度 / 损耗 / 参数 / 维数），不跑 P&R、不 import 求解器 ⇒ **无 DoS 面**，故**不进 HEAVY_POST_PATHS、不要求登录**，与 `/api/verification_ledger`、`/api/benchmarks` 同属「公开只读验货」类 （维持「可被外部验货」战略可达性）。 🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`（**非** ACCEPT/PASS）， 返回体自带 `honest_note` 说明「非流片后实测 / 设计预算口径」。 查询参数（B 档 D-132 扩充）： `n`       目标模数，默认 216，范围 2..4096（非法值回落默认） `topology` 拓扑：`rect`（矩形 Clements · 默认）/ `reck`（三角）/ `temporal`（时间复用） `per_mzi`  单个 MZI 插损覆盖（dB，> 0；缺省取平台设计预算常量） `per_step` 时间复用每步插损覆盖（dB，> 0；缺省取平台常量） 异常不 500（返回 200 + error 字段，与 `h_design_catalog` 同风格）。 | — | public |
 | `/api/scale_demo` | A3 · 规模能力现场演示（1k/4k/32k 全链耗时，总 ~1.1s）。 | `verdict` | public |
 | `/api/shelf` | A2 · 创新超市货架元数据（快，零计算）。含按当前身份计算的实付价。 | — | public |
 | `/api/shelf/**`（前缀匹配） | GET /api/shelf/<id>/opinions 与 /api/shelf/<id>/(package\|download)。 | — | public |

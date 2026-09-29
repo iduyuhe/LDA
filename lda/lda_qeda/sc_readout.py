@@ -613,33 +613,40 @@ def crosstalk_budget(params: Optional[Dict] = None) -> Dict:
     import statistics as _st
     j_nn_rep = float(_st.median(j_nn.values())) if j_nn else 0.012
 
-    # 全 pair ζ_zz
+    # 全 pair ζ_zz（规模优化：f01/位置/边集**预计算**，逐对只做算术 —— 行为等价）
+    f01_mhz = [CS.koch_f01(ej, ec) * 1000.0 for ej in ej_list]
+    xs = [pos[i][0] for i in range(N)]
+    ys = [pos[i][1] for i in range(N)]
+    es = set(tuple(sorted(e)) for e in edges)
+    jnn_get = j_nn.get
     zz_matrix: List[Dict] = []
     stray_zz: List[float] = []
     nn_zz: List[float] = []
-    edge_set = set(edges)
+    pitch3 = pitch ** 3.0
     for i in range(N):
+        xi = xs[i]
+        yi = ys[i]
+        fi_mhz = f01_mhz[i]
         for j in range(i + 1, N):
-            (xi, yi) = pos[i]
-            (xj, yj) = pos[j]
-            d = math.hypot(xi - xj, yi - yj)
-            if (i, j) in edge_set or (j, i) in edge_set:
-                J = j_nn.get((i, j)) or j_nn.get((j, i)) or j_nn_rep
+            dx = xi - xs[j]
+            dy = yi - ys[j]
+            d = math.sqrt(dx * dx + dy * dy)
+            nearest = (i, j) in es
+            if nearest:
+                J = jnn_get((i, j), j_nn_rep)
             else:
-                J = j_nn_rep * (pitch / d) ** 3.0     # 背景耦合 1/d³ 标度
-            fi = CS.koch_f01(ej_list[i], ec)
-            fj = CS.koch_f01(ej_list[j], ec)
-            delta_mhz = (fj - fi) * 1000.0
+                J = j_nn_rep * pitch3 / (d ** 3.0)     # 背景耦合 1/d³ 标度
+            delta_mhz = f01_mhz[j] - fi_mhz
             J_mhz = J * 1000.0                        # J 转 MHz（与 α/Δ 同口径）
             denom = alpha_mhz * alpha_mhz - delta_mhz * delta_mhz
             if abs(denom) < 1e-12:
                 zeta = 0.0
             else:
-                zeta = 2.0 * J_mhz * J_mhz * alpha_mhz / denom    # MHz（ζ_zz=2J²α/(Δ(Δ+α))）
+                zeta = 2.0 * J_mhz * J_mhz * alpha_mhz / denom    # MHz（ζ_zz=2J²α/(α²−Δ²)）
             zz_matrix.append({"pair": [i, j], "d_um": float(d), "J_ghz": J,
                               "delta_mhz": float(delta_mhz), "zz_mhz": float(zeta),
-                              "nearest": (i, j) in edge_set or (j, i) in edge_set})
-            if (i, j) in edge_set or (j, i) in edge_set:
+                              "nearest": nearest})
+            if nearest:
                 nn_zz.append(abs(zeta))
             else:
                 stray_zz.append(abs(zeta))

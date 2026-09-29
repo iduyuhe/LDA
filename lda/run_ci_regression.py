@@ -62,6 +62,7 @@ CORE_SMOKES: List[str] = [
     "run_schip_s2_smoke.py",       # 超导征程 S2：耦合 transmon 对 DRC/LVS + 物理签核（D-134）
     "run_schip_s3_smoke.py",       # 超导征程 S3：N 比特阵列 P&R + 规模 DRC/LVS + 逐边物理（D-135）
     "run_schip_s4_smoke.py",       # 超导征程 S4：读出/控制线路 + 串扰/损耗预算（D-136）
+    "run_schip_s5_smoke.py",       # 超导征程 S5：大 N 路由 + 频率避撞 + 规模压力（D-137/142/143）
     "run_large_scale_smoke.py",
     # 工业化验证（D-76：FAIL 检出机制 + 性能基准——坏 smoke 残留根治的守卫）
     "run_ci_industrial_smoke.py",

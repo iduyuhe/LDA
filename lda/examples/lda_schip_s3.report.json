@@ -1,0 +1,48 @@
+{
+  "module": "D-135 · 超导 N 比特阵列 P&R + 规模 DRC/LVS + 逐边物理（S3）",
+  "topology": {
+    "rows": 2,
+    "cols": 2,
+    "n_qubits": 4,
+    "n_edges_expected": 4
+  },
+  "geometry": {
+    "n_elements": 28
+  },
+  "drc": {
+    "verdict": "ACCEPT",
+    "n_rules": 5,
+    "violations": []
+  },
+  "lvs": {
+    "verdict": "ACCEPT",
+    "netlist": {
+      "qubit_nets": 4,
+      "coupler": 4,
+      "ground_nets": 1,
+      "edges_bridged": 4,
+      "graph_connected": true
+    },
+    "issues": []
+  },
+  "physics": {
+    "verdict": "ACCEPT",
+    "n_qubits": 4,
+    "n_edges": 4,
+    "min_relJ": 0.04297876780558805,
+    "max_relJ": 0.043725233393529954,
+    "min_abs_g_CR_mhz": 0.16866868528772017,
+    "max_abs_g_CR_mhz": 0.38845728628886145,
+    "all_j_double_validated": true,
+    "all_cr_ok": true
+  },
+  "closed_loop": true,
+  "red_line": {
+    "role": "D-135 = 超导 N 比特阵列 P&R（网格排布 + 最近邻耦合路由）+ 超导专用 DRC/LVS 规模 + 逐边物理签核（S3）：把平台「能设计超导芯片」从耦合对推进到阵列",
+    "layers": "SC_FILM=10 / SC_JJ=11 / SC_GROUND=12（gds_export 定义，非 Foundry PDK）",
+    "limits": "min_width/min_jj/min_ground_gap 为**设计规则 · 可覆盖 · 非实测 golden**（Foundry PDK 层规/金属栈属 D5 外部依赖，平台不沾）",
+    "lvs": "几何 LVS 对**实际 produced 几何**做 bbox 重叠网表提取（不重放意图）；每个耦合器须桥接恰好 2 个 qubit 分量，耦合图须连通且边数==拓扑预期",
+    "physics": "逐边 J 用 coupler_solver 严格对角化↔解析闭式双验证（确定性锚）；g_CR/ZZ 用 cross_resonance 有效模型（SW 主导阶），落 ORACLE 验收窗",
+    "red_line": "纯几何（标准库，零 numpy 也够）、零量子 SDK、LLM 不进判决路径、耦合 Cc 为设计参数（不反推 GDS 几何）"
+  }
+}

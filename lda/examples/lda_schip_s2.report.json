@@ -1,0 +1,76 @@
+{
+  "module": "D-134 · 超导耦合 transmon 对",
+  "step": "S2",
+  "params": {
+    "E_J1": 18.0,
+    "E_C1": 0.25,
+    "E_J2": 19.3,
+    "E_C2": 0.25,
+    "Cc": 0.007,
+    "C1": 1.0,
+    "C2": 1.0
+  },
+  "physics": {
+    "verdict": "ACCEPT",
+    "f01_A_ghz": 5.75,
+    "f01_B_ghz": 5.962889826803627,
+    "alpha_B_ghz": -0.25,
+    "detune_ghz": 0.212889826803627,
+    "J_num_ghz": 0.010223745344897249,
+    "J_analytic_ghz": 0.010684654911016857,
+    "J_rel_err": 0.043137524788117484,
+    "J_double_validated": true,
+    "g_CR_mhz": 2.590802657356006,
+    "abs_g_CR_mhz": 2.590802657356006,
+    "t_CR_us": 1.2125943458757624,
+    "sigma_zz_mhz": 0.20637983296310344,
+    "cr_valid_regime": true,
+    "cr_in_real_band": true,
+    "cr_within_T2": true,
+    "cr_ok": true,
+    "cr_formula": "g_CR = 2·J²·Δ / (α² − Δ²)   [MHz, Schrieffer-Wolff 主导阶]",
+    "acceptance": {
+      "J_double_validated": true,
+      "g_CR_in_real_band": true,
+      "t_CR_within_T2": true,
+      "valid_regime": true
+    },
+    "note": "J 用 coupler_solver 严格对角化↔解析闭式双验证（确定性物理定律锚，容差 5%）；g_CR/ZZ 用 cross_resonance 有效模型（Schrieffer-Wolff 主导阶），落 ORACLE 验收窗 |g_CR|∈[0.02,10]MHz、t_CR≤T2、|Δ|<|α|。耦合 Cc 为设计参数，不反推 GDS 几何。LLM 不进判决路径。"
+  },
+  "layout": {
+    "n_elements": 15,
+    "gds_bytes": 942,
+    "drc": {
+      "verdict": "ACCEPT",
+      "violations": [],
+      "n_rules": 4,
+      "limits": {
+        "min_width_um": 0.2,
+        "min_jj_um": 0.15,
+        "min_ground_gap_um": 0.5
+      },
+      "checked": 15
+    },
+    "lvs": {
+      "verdict": "ACCEPT",
+      "issues": [],
+      "netlist": {
+        "qubit": 8,
+        "coupler": 1,
+        "jj": 2,
+        "ground": 4,
+        "components": 1
+      },
+      "n_checks": 6
+    }
+  },
+  "closed_loop": true,
+  "red_line": {
+    "role": "D-134 = 超导耦合 transmon 对（控制+目标+可调电容耦合器）版图 + 几何 DRC/LVS + 物理签核（S2）：把平台「能设计超导芯片」从单比特推进到多比特",
+    "layers": "SC_FILM=10 / SC_JJ=11 / SC_GROUND=12（gds_export 定义，非 Foundry PDK）",
+    "limits": "min_width/min_jj/min_ground_gap 为**设计规则 · 可覆盖 · 非实测 golden**（Foundry PDK 层规/金属栈属 D5 外部依赖，平台不沾）",
+    "lvs": "几何 LVS 对**实际 produced 几何**做 bbox 重叠网表提取（不重放意图）；耦合器须桥接两 qubit 分量，否则两 qubit 分列判 REJECT",
+    "physics": "J 用 coupler_solver 严格对角化↔解析闭式双验证（确定性锚）；g_CR/ZZ 用 cross_resonance 有效模型（SW 主导阶），落 ORACLE 验收窗",
+    "red_line": "纯几何（标准库，零 numpy 也够）、零量子 SDK、LLM 不进判决路径、耦合 Cc 为设计参数（不反推 GDS 几何）"
+  }
+}

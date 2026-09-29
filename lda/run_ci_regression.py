@@ -59,6 +59,7 @@ CORE_SMOKES: List[str] = [
     # Track D / 标准层（D-73~D-76）
     "run_tunable_wdm_smoke.py",     "run_qeda_topology_smoke.py",
     "run_schip_s1_smoke.py",       # 超导征程 S1：单 transmon 单元 DRC/LVS 签核（D-133）
+    "run_schip_s2_smoke.py",       # 超导征程 S2：耦合 transmon 对 DRC/LVS + 物理签核（D-134）
     "run_large_scale_smoke.py",
     # 工业化验证（D-76：FAIL 检出机制 + 性能基准——坏 smoke 残留根治的守卫）
     "run_ci_industrial_smoke.py",

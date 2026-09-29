@@ -546,3 +546,23 @@ def _get_batch_b30():
         import _batch_b30_numeric as _m
     _BATCH_B30_MOD = _m
     return _m
+_BATCH_B31_MOD = None
+
+def _get_batch_b31():
+    """双路兜底导入 Batch B-31 数值核（量子征程再评估 · WCS/Poisson 有限维 Fock 截断 × 解析闭式，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B31**（Soref-Bennett 载流子色散相移）占用无连字符写法 `b31_`
+    （`b31_soref_bennett_anchor.py` / `b31_drude_phase_shift`），故批次核一律用连字符形式
+    `_batch_b31_numeric` / `_get_batch_b31`（接手前已实 grep 核占名：`_BATCH_B31` /
+    `_get_batch_b31` 全仓零命中，B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B31_MOD
+    if _BATCH_B31_MOD is not None:
+        return _BATCH_B31_MOD
+    try:
+        from lda_harness import _batch_b31_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b31_numeric as _m
+    _BATCH_B31_MOD = _m
+    return _m

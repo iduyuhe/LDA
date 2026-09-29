@@ -10,7 +10,7 @@ from __future__ import annotations
 from ._adapter_core import (
     _get_batch_b, _get_batch_b2, _get_batch_b28, _get_batch_b29, _get_batch_b3, _get_batch_b4,
     _get_batch_b5, _get_batch_b6, _get_batch_b7, _get_batch_b8, _register_candidate,
-    _get_batch_b30,
+    _get_batch_b30, _get_batch_b31,
 )
 
 from typing import (
@@ -1025,3 +1025,19 @@ def _b455_heralded_g2_cand(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b30()
     return float(m.cand_b455(float(p["lam"])))
+@_register_candidate(
+    "b456_wcs_single_photon_cand",
+    "WCS 单光子概率·有限 Fock 空间：截断 Fock 空间建归一 WCS 布居 P(n)=e^{−μ}μⁿ/n!（D-114 `wcs_probs`）→ 读 ρ₁₁ ↔ 解析闭式 μe^{−μ}，方法学独立（离散参数=Fock 截断维数 N=10）")
+def _b456_wcs_single_photon_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b31()
+    return float(m.cand_b456(float(p["mu"])))
+
+
+@_register_candidate(
+    "b457_wcs_multiphoton_cand",
+    "WCS 多光子污染·有限 Fock 空间：同 B456 的归一截断密态 → Tr(ρ·Π_{≥2}) = Σ_{n≥2}ρ_nn ↔ 解析闭式 1−e^{−μ}(1+μ)，方法学独立（离散参数=Fock 截断维数 N=10）")
+def _b457_wcs_multiphoton_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b31()
+    return float(m.cand_b457(float(p["mu"])))

@@ -216,6 +216,9 @@ from ._batch_b29_numeric import (  # Batch B-29 双方法独立锚数值核（P6
 from ._batch_b30_numeric import (  # Batch B-30 双方法独立锚数值核（量子征程回填 · 有限维 Fock 截断 × 解析闭式：预报单光子源纯度/g²(0) + 损耗通道保真度）
     golden_b453, golden_b454, golden_b455,
 )
+from ._batch_b31_numeric import (  # Batch B-31 双方法独立锚数值核（量子征程再评估 · WCS/Poisson 有限维 Fock 截断 × 解析闭式：单光子概率 + 多光子污染）
+    golden_b456, golden_b457,
+)
 
 from .oracle_pyepr import resolve_pyepr_transmon
 
@@ -979,6 +982,8 @@ _GOLDEN_DISPATCH = {
     "B452": golden_b452,
     # ---- Batch B-30（量子征程回填 · 有限维 Fock 截断 × 解析闭式）----
     "B453": golden_b453, "B454": golden_b454, "B455": golden_b455,
+    # ---- Batch B-31（量子征程再评估 · WCS/Poisson 有限维 Fock 截断 × 解析闭式）----
+    "B456": golden_b456, "B457": golden_b457,
 
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
@@ -1064,6 +1069,7 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B446", "B447", "B448", "B449", "B450", "B451",  # Batch B-28（v0.9.110 · 腿① 续加锚 · 不完全 Beta / 积分正余弦函数：精确特殊函数 golden × 复合 Simpson·RK4 候选）
                  "B452",  # Batch B-29（P6 · T6.4 · U11 · 一阶 RC 阶跃充电：解析闭式 golden × 四阶 RK4 积分定义 ODE 候选）
                  "B453", "B454", "B455",  # Batch B-30（量子征程回填 · 有限维 Fock 截断 × 解析闭式：连续变量光量子器件 —— 预报单光子源纯度/g²(0) + 损耗通道保真度）
+                 "B456", "B457",  # Batch B-31（量子征程再评估 · WCS/Poisson 有限维 Fock 截断 × 解析闭式：WCS 单光子概率 + 多光子污染）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

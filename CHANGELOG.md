@@ -1,5 +1,63 @@
 # Changelog
 
+## v0.9.143（2026-09-29 · **量子征程「再评估」：Batch B-31 两锚落地（B456/B457 · WCS/Poisson 有限维 Fock 截断）· 走完加锚四件套** · 账本 473→**475**（严格独立 452→454）· CI core 220 不变）
+
+### 一、候选接线（2 道，均落 strict · 零自证桩新增）
+
+| 锚 | 被测标量 | golden（教科书闭式） | candidate（方法学独立·离散参数 = Fock 截断维数 N） |
+|---|---|---|---|
+| **B456** | WCS 单光子概率（有限 Fock 空间） | `μe^{−μ}`（μ=1 取极大 1/e） | 截断 Fock 空间建归一 WCS 布居 `P(n)=e^{−μ}μⁿ/n!`（D-114 `wcs_probs`）→ 读 ρ₁₁（N=10） |
+| **B457** | WCS 多光子污染 P(≥2) | `1 − e^{−μ}(1+μ)` | 同 B456 的归一截断密态 → `Tr(ρ·Π_{≥2})` = Σ_{n≥2}ρ_nn（N=10） |
+
+参数 μ=1.0 ⇒ B456 golden 0.3678794412 / B457 golden 0.2642411177。
+实测残差：B456 `|Δ|=3.696e−09 / 1e−2`（**2.71e6×** 余量）；B457 `|Δ|=7.393e−09 / 1e−2`（**1.35e6×**）。
+判据 D 实测比值 B456/B457 均 `44.12/73.98/111.99`（截断型**超几何**收敛，比值随 N 单调增 ⇒ **非幂律**，如实登记不假称 2^k），MONO。
+
+### 二、同源体检（实 grep 全仓，排除 .git/__pycache__/node_modules/lda_cuda_venv/reports/dist 噪声）
+
+`wcs|弱相干|weak.?coherent` / `单光子概率|single.?photon.?prob` / `多光子|multiphoton|multi.?photon` /
+`poisson|泊松`（统计义，排除静电 Poisson 方程）在 `BENCHMARK_DEFS` 的 title/metric/oracle/note/candidate_desc
+内 **全为 0 命中** ⇒ WCS/Poisson 统计族**零锚占用**。
+**B456/B457 vs B453**（唯一近邻，同属「有限维 Fock 截断」）**三方分歧**：①被测标量（态间保真度 vs 光子数概率）
+②物理构型（有振幅阻尼通道 η<1 vs **无通道**，纯截断+重归一）③数值格式（Kraus 算子求和 vs 直接读归一布居对角元 /
+POVM 迹）⇒ **非重复计数**（先例 B452 vs B33、B448/B449 同函数不同 X）。**B456 vs B457** 按 B448/B449 先例
+（同机制不同被测标量）各计一锚。共同上位结构「有限维 Fock 截断」如实登记不掩盖（B-30 已声明的族属性）。
+
+### 三、坑
+
+- `math.factorial(n)` 在 n ≥ 171 溢出 ⇒ 布居向量改**迭代递推** `t_n = t_{n−1}·μ/n`，并 `raise ValueError` 拦 N > 160。
+- 截断密态**必须归一**后再读观测量（未归一 ⇒ 量级失真）；归一化正是本族残差的物理来源（有限 Fock 空间必需）。
+- 🔴 **BENCHMARK_ORDER 是硬编码显式表**（非由 DEFS 派生）⇒ 加锚须**同时**改 `benchmarks.py` 的 `BENCHMARK_ORDER`，
+  否则 `len(ORDER)=473 ≠ len(DEFS)=475`（本轮实测踩到，已修）。
+- 🔴 **不得新建 `_adapter_p7.py`**：`run_adapter_shard_layout_smoke` L9 要求磁盘 `_adapter_p*.py` 数 == 装配契约片数（6）
+  ⇒ 候选一律**附加**到既有分片（本批附 `_adapter_p4.py`，同 B-30）。
+- 批次核命名避让：单锚 **B31**（Soref-Bennett）占 `b31_` ⇒ 批次核用连字符 `_batch_b31_numeric` / `_get_batch_b31`。
+
+### 四、独立验证
+
+`run_harness` ⇒ **独立候选 verified=454 · 降级 3 · 自证桩 18 · 判决回路 475/475 闭合**；
+B456/B457 在报告内逐行 PASS（0.367879/0.367879 |Δ|4e−09；0.264241/0.264241 |Δ|8e−09）。
+最小验证集：count_consistency · three_class · p0_count_guard · self_certified_lock · webui_ledger ·
+statistical_anchor · d_criterion · maturity_baseline · falsifiability · pyflakes_ratchet · adapter_shard_layout · ci_coverage_gate。
+
+### 五、反向测试
+
+`run_benchmark_falsifiability_smoke` 结构判据（⑧ 双向）覆盖：strict 锚 ⇒ `|cand−golden|` **非零**
+（B456 3.70e−09 / B457 7.39e−09，均 ≠ 0 ⇒ 排除「静默回落 golden」）；`PERTURB_SPEC` **未新增条目**
+（参数扰动会同时改 golden 与 candidate ⇒ 只会得到「不会红」的假条目；本族反证由 ⑧ 双向结构判据承担）。
+
+### 六、常驻护栏
+
+加锚**不新增 smoke** ⇒ `CORE_SMOKES` 条数**持平（220）**。陈述七处同步（README 题数/三分类/顶块 · CONTRIBUTING ·
+`run_webui_verification_ledger_smoke` docstring · `run_count_consistency_smoke`（题数/B 计数/max-B）·
+`run_statistical_anchor_smoke`（docstring/range/check 名）· `run_benchmark_falsifiability_smoke`（`MIN_INDEPENDENT`
+452→**454**））。
+
+### 七、诚实边界
+
+两锚参数 μ 均为**设计预算值**、**无实测锚**（B-30 同）；截断型收敛**非幂律**；结论只可用于预算与量级，
+不得作性能宣称。残差 = 截断误差（含重归一偏差）。零商业依赖（纯 numpy + 本项目 `lda_qeda` 纯净模块）。
+
 ## v0.9.142（2026-09-29 · **量子征程「回填」：Batch B-30 三锚落地（B453/B454/B455）· 走完加锚四件套** · 账本 470→**473**（严格独立 449→452）· CI core 220 不变）
 
 ### 一、候选接线（3 锚 · 全落严格独立）

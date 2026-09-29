@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """BENCHMARK_DEFS 数据分片 5/5（F-08 巨石治理 · v0.9.117）。
 
-覆盖 key：B359 … B455（共 97 条，按原 `benchmarks.py` 文件顺序**连续**切分）。
+覆盖 key：B359 … B457（共 99 条，按原 `benchmarks.py` 文件顺序**连续**切分）。
 
 本文件由机械拆分生成：条目正文**逐字节**取自原 BENCHMARK_DEFS 字面量，不重排、
 不重格式化。合并顺序由 `benchmark_defs/__init__.py` 保证与原文逐项一致；判据：
@@ -43,6 +43,9 @@ from .._batch_b29_numeric import (
 )
 from .._batch_b30_numeric import (  # Batch B-30 量子征程回填（有限维 Fock 截断 × 解析闭式）
     golden_b453, golden_b454, golden_b455,
+)
+from .._batch_b31_numeric import (  # Batch B-31 量子征程再评估（WCS/Poisson 有限维 Fock 截断 × 解析闭式）
+    golden_b456, golden_b457,
 )
 DEFS = {
     "B359": {
@@ -1198,5 +1201,27 @@ DEFS = {
         "candidate": "b455_heralded_g2_cand",
         "candidate_desc": "同 B454 路线的条件态 ⇒ g²(0) = ⟨n(n−1)⟩/⟨n⟩²（D-114 `heralded_g2_onoff` 闭式）；离散参数 = Fock 截断维数 N（默认 36）",
         "note": "g²(0) = 2λ²（= 2·n̄/(1+n̄)，n̄=λ²/(1−λ²)；热光型条件态 ⇒ g²(0)=2 的上限随 λ→1 逼近）。λ=0.8 ⇒ 1.28。candidate=同 B454 的截断 Fock 空间路线（**与 B454 共享数值机制、被测标量不同** ⇒ 按本仓先例 B448/B449「同函数不同 X 各计一锚」计新锚，如实登记不掩盖）。实测 |Δ|=3.21e-06（tol=1e-2 的 3111× 余量）；判据 D 实测比值 10.34/11.25/11.84（截断型，MONO），粗端 4.42e-03 < tol、默认档 3.21e-06 ≫ 1e-12。⚠️ **诚实边界**：λ 为**设计预算值**、本锚**无实测锚**；截断型收敛非幂律；结论只可用于预算与量级。残差=截断误差。零商业依赖。",
+    },
+    "B456": {
+        "title": "WCS（弱相干态）单光子概率·有限 Fock 空间（解析闭式 golden vs 截断 Fock 空间归一密态 ρ₁₁）",
+        "metric": "wcs_single_photon_prob_trunc",
+        "oracle": "analytical(mu*exp(-mu) closed-form) + truncated-Fock normalized-density-matrix independent_cross_check",
+        "tol": 1e-2,
+        "default_params": {"mu": 1.0},
+        "golden_fn": golden_b456,
+        "candidate": "b456_wcs_single_photon_cand",
+        "candidate_desc": "截断 Fock 空间建 WCS 布居 P(n)=e^{−μ}μⁿ/n!（D-114 `wcs_probs`）→ **归一** → 读 ρ₁₁；离散参数 = Fock 截断维数 N（默认 10）",
+        "note": "P(1) = μ·e^{−μ}（WCS 光子数泊松统计，教科书闭式/人类公共品；μ=1 取极大 1/e）。μ=1.0 ⇒ 0.3678794412。candidate=截断 Fock 空间 + **归一** 密态（**静态布居代数，无时间步进、无通道**）。实测 |Δ|=3.696e-09（tol=1e-2 的 2.71e6× 余量）；判据 D 实测比值 44.12/73.98/111.99（截断型超几何收敛，**非幂律** —— 比值随 N 单调增，如实登记不假称 2^k），MONO，粗端 1.35e-03 < tol、默认档 3.70e-09 ≫ 1e-12。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`wcs|弱相干|single.?photon.?prob` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ WCS 族零锚占用。与 **B453**（相干态经损耗通道保真度）同属「有限维 Fock 截断」，但**三方分歧** —— ①**被测标量不同**（B453 态间保真度 vs 本题光子数概率 P(1)）②**物理构型不同**（B453 有振幅阻尼通道 η<1 vs 本题**无通道**，纯截断+重归一）③**数值格式不同**（B453 Kraus 算子求和 vs 本题直接读归一布居对角元）⇒ **非重复计数**（先例：B452 vs B33、B448/B449 同函数不同 X）。⚠️ **诚实边界**：μ 为**设计预算值**、本锚**无实测锚**；截断型收敛非幂律；结论只可用于预算与量级，不得作性能宣称。残差=截断误差。零商业依赖。",
+    },
+    "B457": {
+        "title": "WCS（弱相干态）多光子污染 P(≥2)·有限 Fock 空间（解析闭式 golden vs 截断 Fock 空间归一密态 Π_{≥2} 迹）",
+        "metric": "wcs_multiphoton_prob_trunc",
+        "oracle": "analytical(1-exp(-mu)*(1+mu) closed-form) + truncated-Fock normalized-density-matrix independent_cross_check",
+        "tol": 1e-2,
+        "default_params": {"mu": 1.0},
+        "golden_fn": golden_b457,
+        "candidate": "b457_wcs_multiphoton_cand",
+        "candidate_desc": "同 B456 的归一截断密态 → Tr(ρ·Π_{≥2}) = Σ_{n≥2}ρ_nn（D-114 `wcs_multiphoton_prob` 闭式对照）；离散参数 = Fock 截断维数 N（默认 10）",
+        "note": "P(≥2) = 1 − e^{−μ}(1+μ)（WCS 多光子污染 = 单光子源关键限值，教科书闭式/人类公共品）。μ=1.0 ⇒ 0.2642411177。candidate=同 B456 路线的归一截断密态上取 POVM Π_{≥2} 迹（**与 B456 共享数值机制、被测标量不同** ⇒ 按本仓先例 B448/B449「同函数不同 X 各计一锚」计新锚，如实登记不掩盖）。实测 |Δ|=7.393e-09（tol=1e-2 的 1.35e6× 余量）；判据 D 实测比值 44.12/73.98/111.99（截断型，MONO），粗端 2.70e-03 < tol、默认档 7.39e-09 ≫ 1e-12。🔴 **同源体检**：`多光子|multiphoton` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ 零占用；与 B453 的三方分歧同 B456（标量/构型/格式均不同）。⚠️ **诚实边界**：μ 为**设计预算值**、本锚**无实测锚**；截断型收敛非幂律；结论只可用于预算与量级。残差=截断误差。零商业依赖。",
     },
 }

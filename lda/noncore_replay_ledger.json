@@ -1,0 +1,251 @@
+{
+  "schema": "lda.noncore_replay_ledger/1",
+  "threads": 10,
+  "rounds": 2,
+  "updated": "2026-09-29",
+  "commit": "c7db7a4f5bdb5a0b4e9b184ce703fdb8f263994e",
+  "dep_dirs": [
+    "lda_solver",
+    "lda_l2",
+    "lda_harness",
+    "lda_qeda"
+  ],
+  "all_green": true,
+  "note": "非 core 豁免项的复测台账（受跟踪）。由 scripts/noncore_replay.py 写入；run_noncore_reason_smoke.py 的 ⑪~⑱ 判据读之。last_green 只在复测为绿时前移 ⇒ 红了就保留旧值，时效自然变红。",
+  "rows": {
+    "run_wdm_splitter_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 163.34,
+      "elapsed_max_s": 163.86,
+      "samples_s": [
+        163.86,
+        162.82
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_design_package_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 120.41,
+      "elapsed_max_s": 129.25,
+      "samples_s": [
+        129.25,
+        111.56
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_sparams_loop_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 70.66,
+      "elapsed_max_s": 70.85,
+      "samples_s": [
+        70.85,
+        70.48
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_hybrid_multi_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 69.84,
+      "elapsed_max_s": 70.03,
+      "samples_s": [
+        69.64,
+        70.03
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_design_outcome_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 61.64,
+      "elapsed_max_s": 61.88,
+      "samples_s": [
+        61.88,
+        61.4
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_sparams_3d_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 59.25,
+      "elapsed_max_s": 59.35,
+      "samples_s": [
+        59.16,
+        59.35
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_adjoint_loop_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 55.77,
+      "elapsed_max_s": 56.28,
+      "samples_s": [
+        56.28,
+        55.26
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_coupler_design_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 53.02,
+      "elapsed_max_s": 56.19,
+      "samples_s": [
+        56.19,
+        49.84
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_adjoint_design_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 40.25,
+      "elapsed_max_s": 40.5,
+      "samples_s": [
+        40.5,
+        40.01
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_shape_design_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 31.52,
+      "elapsed_max_s": 31.63,
+      "samples_s": [
+        31.42,
+        31.63
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_spectral_design_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 26.94,
+      "elapsed_max_s": 27.19,
+      "samples_s": [
+        26.68,
+        27.19
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_adjoint3d_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 22.61,
+      "elapsed_max_s": 26.23,
+      "samples_s": [
+        26.23,
+        18.98
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_sparams_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 25.27,
+      "elapsed_max_s": 26.11,
+      "samples_s": [
+        24.43,
+        26.11
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_ir_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 23.2,
+      "elapsed_max_s": 25.56,
+      "samples_s": [
+        25.56,
+        20.85
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_inverse_design_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 19.65,
+      "elapsed_max_s": 19.68,
+      "samples_s": [
+        19.62,
+        19.68
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_hybrid_design_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 17.13,
+      "elapsed_max_s": 17.14,
+      "samples_s": [
+        17.13,
+        17.14
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_port_acceptance_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 10.41,
+      "elapsed_max_s": 10.47,
+      "samples_s": [
+        10.35,
+        10.47
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    },
+    "run_phc_anchor_smoke.py": {
+      "status": "PASS",
+      "last_attempt": "2026-09-29",
+      "last_attempt_status": "PASS",
+      "elapsed_s": 8.45,
+      "elapsed_max_s": 8.48,
+      "samples_s": [
+        8.41,
+        8.48
+      ],
+      "threads": 10,
+      "last_green": "2026-09-29"
+    }
+  }
+}

@@ -1255,28 +1255,37 @@ CORE_SMOKES: List[str] = [
 # rc 全 0；复测脚本 probe_noncore*.py，结果在 .cache/noncore_measured.json 与当日日志）。
 # 🔴 复测发现两条旧理由失真已修正：sparams_3d 旧称「>60s 超时」实为 47.2s 完成；
 #    sparams_loop 旧称「>60s 超时」实为 64.3s 完成（numba 运行时确被依赖链间接载入）。
+#
+# 🔴🔴 v0.9.144（D-147）：上段那次 N-2 复测之后，**18 项有 23 天没被任何自动化执行过**
+# —— 「进了豁免表」被默认当成「没事了」，正是 v0.9.41 血案的弱化版（豁免表 ≠ 执行）。
+# 现补**受跟踪复测台账** `lda/noncore_replay_ledger.json`（由 `scripts/noncore_replay.py`
+# 写入；`last_green` 只在复测为绿时前移 ⇒ 红了就停旧日期，时效判据自然变红），
+# 并由 `run_noncore_reason_smoke.py` 的 ⑪~⑱ 判据守护（覆盖 / 形状 / 时限 90 天 /
+# 与理由数字一致 ±20% / 默认 300s 预算余量 ≥1.5× + 四道反向）。
+# 🔴 维护动作：跑 `python scripts/noncore_replay.py`（串行 + 项间冷却，防 Kernel-Power 41
+#    掉电）复测并刷新台账；只读体检 `python scripts/noncore_replay.py --check`（秒级）。
 NON_CORE_SMOKES: Dict[str, str] = {
     # ---- 重仿真（实测 ≥25s，远超 CI 快速集预算）----
     "run_design_outcome_smoke.py": "重仿真：设计闭环全链路，实测 58.2s",
     "run_adjoint_loop_smoke.py": "重仿真：伴随优化迭代循环，实测 55.1s",
-    "run_coupler_design_smoke.py": "重仿真：耦合器参数扫描反解，实测 60.3s",
+    "run_coupler_design_smoke.py": "重仿真：耦合器参数扫描反解，实测 53.0s",
     "run_adjoint_design_smoke.py": "重仿真：伴随法设计，实测 40.0s",
     "run_shape_design_smoke.py": "重仿真：形状优化迭代，实测 31.6s",
     "run_spectral_design_smoke.py": "重仿真：谱响应设计扫描，实测 26.8s",
-    "run_adjoint3d_smoke.py": "3D 伴随仿真（重），实测 19.1s",
+    "run_adjoint3d_smoke.py": "3D 伴随仿真（重），实测 22.6s",
     "run_sparams_smoke.py": "FDTD 分束仿真（重），实测 25.1s",
     # ---- 中量（5~25s，超出 core 快速预算但非极限）----
     "run_ir_smoke.py": "IR 全量求解回归，实测 21.3s",
     "run_inverse_design_smoke.py": "逆向设计迭代，实测 19.4s",
     "run_hybrid_design_smoke.py": "混合参数化设计扫描，实测 17.2s",
     "run_port_acceptance_smoke.py": "端口验收 3D 判据，实测 10.4s",
-    "run_phc_anchor_smoke.py": "光子晶体本征解（ARPACK 迭代），实测 6.8s",
+    "run_phc_anchor_smoke.py": "光子晶体本征解（ARPACK 迭代），实测 8.4s",
     # ---- 超长（复测均能跑完、非卡死；numba 由依赖链运行时间接载入，仓库无显式 import）----
-    "run_sparams_3d_smoke.py": "3D 端口 S 参数仿真（重），实测 47.2s 完成（N-2 复测修正旧注误记的截断描述）",
+    "run_sparams_3d_smoke.py": "3D 端口 S 参数仿真（重），实测 59.2s 完成（N-2 复测修正旧注误记的截断描述）",
     "run_sparams_loop_smoke.py": "3D 闭环 + numba JIT（依赖链间接载入，首次编译慢），实测 64.3s 完成（N-2 复测修正旧注误记的截断描述）",
     # ---- 极重设计闭环（判明为「慢」而非「缺陷」后才准豁免；理由须含真实耗时，不得写「超时」了事）----
-    "run_wdm_splitter_smoke.py": "重设计闭环：WDM×分束树联合，实测 142.2s 完成（非卡死）",
-    "run_design_package_smoke.py": "重设计闭环：4 类设计包 schema 全链路，实测 108.7s 完成（非卡死）",
+    "run_wdm_splitter_smoke.py": "重设计闭环：WDM×分束树联合，实测 163.3s 完成（非卡死）",
+    "run_design_package_smoke.py": "重设计闭环：4 类设计包 schema 全链路，实测 120.4s 完成（非卡死）",
     "run_hybrid_multi_smoke.py": "重设计闭环：多波长加权联合，实测 69.7s 完成（非卡死）",
 }
 
@@ -1309,6 +1318,28 @@ def _discover_all() -> List[str]:
 # 🔴 失败状态全集：任何新增状态（如 CRASH）**必须**登记于此，否则
 # `n_fail` 统计不到 ⇒ 红灯变绿 ⇒ 静默假绿。这是「宁红不假绿」的记账底线。
 _FAIL_STATUSES = ("FAIL", "ERROR", "TIMEOUT", "CRASH")
+
+# 🔴 v0.9.144（D-147）：非 core 项的 per-item 超时预算（与 `_BUILTIN_TIMEOUT_OVERRIDE` 分开）。
+#
+# 为什么单立一张表，而不是塞进 `_BUILTIN_TIMEOUT_OVERRIDE`：
+#   `scripts/ci_core_batched._write_baseline` **只为 `_BUILTIN_TIMEOUT_OVERRIDE` 的成员建行**
+#   ⇒ 塞进去会把「**基线行数 == CI core 数**」的 1:1 语义解耦（B5/B6 强制 1:1 ⇒ 还得同步
+#   刷成 244 行），只为给 `--tag all` 修两条预算 —— 不划算。故单立此表：
+#   解析链 `overrides.get(s, _BUILTIN.get(s, NON_CORE.get(s, timeout)))` 对 **core 项零影响**
+#   （CORE 与 NON_CORE 两表互斥，且 core 项在上一级即命中）。
+#
+# 准入：**非 core 项在全局兜底 `--timeout 300s` 下余量 < 3×** 者必须在此配足。
+#   实测（2026-09-29 D-147 复测 · 2 轮 @10T · 台账 `lda/noncore_replay_ledger.json`）：
+#     · run_wdm_splitter_smoke   实测上界 163.86s ⇒ 300/163.86 = **1.83×**（< 2× 硬闸！）
+#     · run_design_package_smoke 实测上界 129.25s ⇒ 300/129.25 = **2.32×**（< 3× 目标）
+#   其余 16 项 ≥ 4.23×（最紧 run_sparams_loop 70.85s）⇒ 走全局 300s 即可，不登记。
+#   档位沿用仓库既有先例（900/600/450 档）：600 = 163.86×3.66，450 = 129.25×3.48。
+# 判据：`run_noncore_reason_smoke` ⑰（逐项 生效预算/实测上界 ≥ 3×）+ ⑱ 反向。
+NON_CORE_DEFAULT_BUDGET_S = 300.0        # = run_ci_regression() 的默认 timeout（全局兜底）
+NON_CORE_TIMEOUT_OVERRIDE: Dict[str, float] = {
+    "run_wdm_splitter_smoke.py": 600.0,
+    "run_design_package_smoke.py": 450.0,
+}
 
 # 内置 per-script 超时覆盖（秒）：实测耗时 + 安全边际，防慢机器上偶发 TIMEOUT
 # 被误判为 FAIL（TIMEOUT 与真 FAIL 必须区分开）。调用方可通过 timeout_override 再覆盖。
@@ -2088,7 +2119,8 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
     for s in scripts:
         # run_ci_industrial_smoke 内部含子回归+greens 基准（~300-315s 浮动），
         # 内置放宽至 600s 根治偶发 TIMEOUT；其余 smoke 用全局 timeout。
-        to = overrides.get(s, _BUILTIN_TIMEOUT_OVERRIDE.get(s, timeout))
+        to = overrides.get(s, _BUILTIN_TIMEOUT_OVERRIDE.get(
+            s, NON_CORE_TIMEOUT_OVERRIDE.get(s, timeout)))
         r = _run_one(python, s, to)
         results.append(r)
         print(f"  [{r['status']:<6}] {r['script']}  ({r['elapsed_s']}s)")

@@ -149,6 +149,11 @@ def mesh_scaling_laws(n_modes: int) -> dict:
     n = int(n_modes)
     n_mzi = n * (n - 1) // 2
     n_stages = n - 1
+    # 🔴 两种口径（D-125 起一体登记，供消费方自己选，绝不混用）：
+    #   · 列/阶段口径 n_stages = mzi_per_path = N−1  —— 抽象 Reck（reck_decompose，需交叉）；
+    #     平台**邻耦合三角网格**（0 交叉）的**每模光学深度**其实是 2N−3（同列相邻对共享模 = 链）。
+    #   · 每模口径 mzi_per_mode = 2N−3 —— 光子**实际穿越**的分束器数（物理口径·链路预算该用它）。
+    mzi_per_mode = 2 * n - 3
     return {
         "n_modes": n,
         "n_mzi": int(n_mzi),
@@ -159,6 +164,13 @@ def mesh_scaling_laws(n_modes: int) -> dict:
         "calib_phases": int(n_mzi + n),
         "n_crossings": 0,
         "per_mzi_loss_db": float(PER_MZI_LOSS_DB),
+        # ── 每模口径（D-125 · 物理正确）──
+        "mzi_per_mode": int(mzi_per_mode),
+        "loss_per_mode_db": float(mzi_per_mode * PER_MZI_LOSS_DB),
+        "loss_basis_note": (
+            "loss_per_path_db = **列/阶段口径**（N−1 · 抽象 Reck / 需交叉）；"
+            "loss_per_mode_db = **每模口径**（2N−3 · 平台邻耦合三角网格光子实际穿越深度）；"
+            "loss_total_db = **总级联口径**（全网格门合计）。三者不可互换。"),
     }
 
 
@@ -299,14 +311,25 @@ def lvs_assembly_cost(n_modes: int) -> dict:
 # 5) 架构权衡：静态网格 vs 时间复用（对标 Borealis 的架构要害）
 # ---------------------------------------------------------------------------
 def static_mesh_architecture(n_modes: int) -> dict:
-    """静态被动 MZI 网格架构：元件 O(N²)、单路径插损 O(N) dB、η 指数衰减。"""
+    """静态被动 MZI 网格架构：元件 O(N²)、单路径插损 O(N) dB、η 指数衰减。
+
+    🔴 同时给出**两种口径**（D-125）：
+      · `loss_per_path_db`（**列口径** N−1 · 抽象 Reck / 需交叉）—— 原字段，保留兼容；
+      · `loss_per_mode_db`（**每模口径** 2N−3 · 平台邻耦合三角网格实际穿越深度）——
+        链路预算应取这一个。
+    """
     laws = mesh_scaling_laws(n_modes)
     return {
         "kind": "static_passive_mesh",
         "n_modes": int(n_modes),
         "n_components": laws["n_mzi"],
         "loss_per_path_db": laws["loss_per_path_db"],
+        "loss_per_mode_db": laws["loss_per_mode_db"],
+        "mzi_per_path": laws["mzi_per_path"],
+        "mzi_per_mode": laws["mzi_per_mode"],
+        "loss_basis_note": laws["loss_basis_note"],
         "per_path_eta": per_path_transmissivity(n_modes),
+        "per_mode_eta": float(10.0 ** (-laws["loss_per_mode_db"] / 10.0)),
         "components_order": "O(N^2)",
         "loss_order": "O(N)",
     }
@@ -347,17 +370,23 @@ def time_multiplexed_architecture(n_modes: int, *, lattice_a: int = BOREALIS_LAT
 
 
 def architecture_tradeoff(n_modes: int) -> dict:
-    """两种架构在给定 N 上的定量对照（本模块的架构性结论）。"""
+    """两种架构在给定 N 上的定量对照（本模块的架构性结论）。
+
+    省损按**两种口径各算一遍**（D-125）：`loss_saving_db_tmux`（列口径 · 原字段保留）
+    与 `loss_saving_db_tmux_per_mode`（**每模口径** · 物理正确）。
+    """
     st = static_mesh_architecture(n_modes)
     tm = time_multiplexed_architecture(n_modes)
     comp_ratio = (st["n_components"] / tm["n_components"]) if tm["n_components"] else float("inf")
     loss_ratio = (st["loss_per_path_db"] - tm["loss_per_mode_db"])
+    loss_ratio_pm = (st["loss_per_mode_db"] - tm["loss_per_mode_db"])
     return {
         "n_modes": int(n_modes),
         "static": st,
         "time_multiplexed": tm,
         "components_ratio_static_over_tmux": float(comp_ratio),
         "loss_saving_db_tmux": float(loss_ratio),
+        "loss_saving_db_tmux_per_mode": float(loss_ratio_pm),
         "verdict": ("静态网格元件数 O(N²) 且单路径损耗 O(N) dB ⇒ 规模上不可行；"
                     "时间复用元件 O(log N) 且损耗 O(log N) dB ⇒ 模数可指数扩张。"),
     }
@@ -424,8 +453,11 @@ def scale_bottleneck_report(n_list=(4, 8, 16, 32, 64, 100, 128, 216), *,
             "n_modes": int(N),
             "n_mzi": laws["n_mzi"],
             "loss_per_path_db": round(laws["loss_per_path_db"], 3),
+            "loss_per_mode_db": round(laws["loss_per_mode_db"], 3),   # 每模口径（D-125）
             "per_path_eta": per_path_transmissivity(N),
+            "per_mode_eta": float(10.0 ** (-laws["loss_per_mode_db"] / 10.0)),
             "loss_ok": bool(per_path_transmissivity(N) >= eta_useful),
+            "loss_mode_ok": bool(10.0 ** (-laws["loss_per_mode_db"] / 10.0) >= eta_useful),
             "fidelity_at_sigma": calibration_fidelity_law(sigma_cal, N),
             "fidelity_ok": bool(calibration_fidelity_law(sigma_cal, N) >= 0.999),
             "calib_phases": laws["calib_phases"],
@@ -437,6 +469,11 @@ def scale_bottleneck_report(n_list=(4, 8, 16, 32, 64, 100, 128, 216), *,
         if not r["loss_ok"]:
             first_loss = r["n_modes"]
             break
+    first_loss_pm = None
+    for r in rows:
+        if not r["loss_mode_ok"]:
+            first_loss_pm = r["n_modes"]
+            break
     first_fid = None
     for r in rows:
         if not r["fidelity_ok"]:
@@ -444,12 +481,21 @@ def scale_bottleneck_report(n_list=(4, 8, 16, 32, 64, 100, 128, 216), *,
             break
     # 尺度盲的机器判据：保真度**判决**在全部 N 上取值相同（不随 N 移动）
     fid_verdicts = {bool(r["fidelity_ok"]) for r in rows}
+    # 每模口径的损耗墙（D-125 · 整数逐步扫描，禁闭式浮点反解）
+    lim_db = -10.0 * math.log10(eta_useful)
+    wall_pm = 0
+    for n in range(2, 100001):
+        if (2 * n - 3) * PER_MZI_LOSS_DB > lim_db:
+            wall_pm = n
+            break
     return {
         "sigma_cal": float(sigma_cal),
         "eta_useful": float(eta_useful),
         "rows": rows,
         "first_wall_closed": "loss" if first_loss is not None else "none",
         "first_loss_fail_n": first_loss,
+        "first_loss_fail_n_per_mode": first_loss_pm,
+        "loss_mode_wall_n": int(wall_pm) if wall_pm else 0,
         "first_fidelity_fail_n": first_fid,
         "fidelity_verdict_n_invariant": bool(len(fid_verdicts) == 1),
         "loss_wall_n_at_useful": loss_wall_n(eta_useful),
@@ -458,7 +504,9 @@ def scale_bottleneck_report(n_list=(4, 8, 16, 32, 64, 100, 128, 216), *,
             / math.sqrt(0.002 / max(1, mesh_scaling_laws(min(n_list))["n_mzi"]))),
         "headline": (
             "规模上行的**第一面墙是损耗**（指数），而酉保真度的**判决不随 N 移动**"
-            "（尺度盲）——这正是必须为规模另立判据的原因。"),
+            "（尺度盲）——这正是必须为规模另立判据的原因。"
+            f"（损耗按**每模口径** 2N−3 判 ⇒ 关门点 N*={wall_pm}，"
+            f"早于列口径 N*={loss_wall_n(eta_useful)}。）"),
     }
 
 
@@ -562,9 +610,26 @@ def run_selfchecks(verbose: bool = False) -> bool:
             pass
     res["⑫ 护栏：非法 N/per_mzi/η 阈值/lattice_a 抛 ValueError"] = guard
 
+    # ⑬ ★每模口径（D-125）★ 闭式 2N−3 ≡ 平台原语构造实测（邻耦合三角网格数门）
+    ok13 = True
+    detail13 = []
+    for n_ in (4, 8, 16, 64):
+        laws_ = mesh_scaling_laws(n_)
+        ops_, _D_ = MMM.reck_triangular_mesh(MMM.dft_matrix(n_))
+        constr = MMM.mesh_per_mode_optical_depth(ops_)
+        detail13.append(f"N={n_}:{laws_['mzi_per_mode']}={constr}")
+        if not (laws_["mzi_per_mode"] == 2 * n_ - 3 == constr
+                and abs(laws_["loss_per_mode_db"]
+                        - constr * laws_["per_mzi_loss_db"]) < 1e-9
+                and laws_["loss_per_mode_db"] > laws_["loss_per_path_db"]):
+            ok13 = False
+    res["⑬ ★每模口径★ mzi_per_mode=2N−3 ≡ 平台原语 mesh_per_mode_optical_depth（构造实测）"
+        " 且 loss_per_mode_db > loss_per_path_db"] = ok13
+
     if verbose:
         for k, v in res.items():
             print(f"[{'PASS' if v else 'FAIL'}] {k}")
+        print("⑬ 明细：" + " · ".join(detail13))
     return bool(all(res.values()))
 
 
@@ -572,6 +637,11 @@ RED_LINE_DISCLOSURE = {
     "role": "D-120 = 规模对标（M4）：N=100+/Borealis 216 模的规模律 + 瓶颈诊断。",
     "golden": "只用闭式：N(N−1)/2 · N−1 · 10^(−dB/10) · C(N+k−1,k) · "
               "1−F≈(σ/2)√((N−1)/N)（一阶微扰，实测验证）。**不**用仿真/自研计算值当 golden。",
+    "loss_basis": "🔴 三种损耗口径**一体登记**（D-125）：`loss_per_mode_db`（**每模口径** "
+                  "2N−3 · 平台邻耦合三角网格光子实际穿越深度 = 物理口径，链路预算用这个）、"
+                  "`loss_per_path_db`（**列/阶段口径** N−1 · 抽象 Reck / 需交叉 · 原字段保留）、"
+                  "`loss_total_db`（**总级联口径** · 全网格门合计）。三者**不可互换**；"
+                  "D-121 的静态基线用列口径（对抽象 Reck 网格自洽），本模块并报每模口径。",
     "external_a_level": "BOREALIS_REF 取自 Nature 606, 75-81 (2022)（doi:10.1038/s41586-022-04725-x）"
                         "——A 级可溯源事实，仅引用其架构/规模，**不复算**其数值。",
     "sovereignty": "C 级自主（纯 numpy + 平台 lda_l2/lda_qeda），零量子 SDK；LLM 不进判决路径。",

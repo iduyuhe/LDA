@@ -477,6 +477,17 @@ CORE_SMOKES: List[str] = [
     #   规则名 / QDR_RULES / n_rules 全不变（仍 `QDR-LOSS-BUDGET` · 9 条）⇒ 既有调用零破坏。
     #   突变探针 `scripts/d124_drc_loss_probe.py` 反证其会响（9 条突变各必红）。CI core 216→217。
     "run_drc_loss_per_mode_smoke.py",   # D-124 DRC 损耗每模口径 · QDR-LOSS-BUDGET 两口径（25 判据）
+    # D-125 平台级损耗口径：每模口径推到 lda_l2 + scale_bench 口径订正。
+    #   ★平台单一真源★ `mzi_mesh_matmul.mesh_per_mode_optical_depth`（三角 2N−3 / 矩形 N /
+    #     抽象 N−1）—— 量子 DRC(D-124) / 规模律(D-120) / 本门禁**四处同值**（防口径漂移）。
+    #   ★经典 DRC 损耗通道★ `drc.drc_check_mesh_loss` 判双口径（每模 15 dB + 总级联 25 dB，
+    #     与量子 DRC `QDR-LOSS-BUDGET` 同限值、同迁移：N=5 每模 16.8>15 拒 / 总 24≤25 过）。
+    #   ★lvs_geom 回提损耗★ `recovered_passive_loss`：回提几何 → 传播 + 环形弯曲（**下界**；
+    #     登记的长度参数必须真可回提，由门禁机器复核）。
+    #   ★scale_bench 口径订正★ `mesh_scaling_laws` 增 mzi_per_mode=2N−3 / loss_per_mode_db
+    #     （N=216：每模 1029.6 vs 列 516.0）；旧键语义**不变**（兼容）⇒ 既有门禁零破坏。
+    #   突变探针 `scripts/d125_platform_loss_probe.py` 反证其会响（10 条突变各必红）。CI core 217→218。
+    "run_platform_loss_basis_smoke.py",  # D-125 平台级损耗口径 · 三口径一体登记（28 判据）
     "run_ir_solve_smoke.py",            # L0/L3 直接消费 IR 真值计算
     "run_wdm_coupler_smoke.py",         # ⚠️ 文件头旧注称其「重」→ 实测 0.30s，属过时排除
     "run_wdm_coupler_wl_smoke.py",

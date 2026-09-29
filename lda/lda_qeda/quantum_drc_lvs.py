@@ -123,36 +123,19 @@ def quantize_phase(phi: float, bits: int) -> float:
 
 
 def per_mode_optical_depth(ops, n_modes: int | None = None) -> int:
-    """★ 每模光学深度：**由提交的 ops 直接数出**（mesh-agnostic · D-124）。
+    """★ 每模光学深度（**委托平台单一真源** · D-125）。
 
-        depth = max over 模 of (触及该模的门的片数)
-
-    每片门耦合**一个相邻对** (p, p+1) ⇒ 两端模各 +1。故：
+    实现在 `lda_l2.mzi_mesh_matmul.mesh_per_mode_optical_depth` —— 平台层一份，
+    量子 DRC / 经典 DRC（`lda_l2.drc`）/ 规模对标（`scale_bench`）共用，防口径漂移。
+    语义（见该函数文档）：
       · 三角邻耦合网格（`reck_triangular_mesh`）⇒ **2N−3**（同列相邻对共享模 = 链）；
-      · 矩形 Clements 分层展平 ⇒ **N**。
+      · 矩形 Clements 分层展平 ⇒ **N**；
+      · 抽象 Reck（`reck_decompose`，需交叉）⇒ **N−1**。
     ops 元素接受 4 元组 `(c, p, θ, φ)`（三角）或 3 元组 `(j, θ, φ)`（矩形展平）。
 
-    🔴 与「门的总片数」**不是一回事**：本函数是**单模最长路径**（三角 = 2N−3），
-    而门总片数是 `N(N−1)/2`（N=8：13 vs 28）⇒ 用 `len(ops)` 冒充每模深度会把
-    三角网格的深度**高估**约 (N−1)/2 倍（这正是 D-124 要分开的两个口径）。
+    🔴 与「门的总片数」`N(N−1)/2` **不是一回事**（N=8：13 vs 28）。
     """
-    if not ops:
-        raise ValueError("ops 非空")
-    cnt: dict = {}
-    for op in ops:
-        if len(op) >= 4:
-            p = int(op[1])
-        elif len(op) == 3:
-            p = int(op[0])
-        else:
-            raise ValueError(f"op 需 3/4 元组，得到 {len(op)} 元")
-        if p < 0:
-            raise ValueError(f"模索引越界：p={p}")
-        cnt[p] = cnt.get(p, 0) + 1
-        cnt[p + 1] = cnt.get(p + 1, 0) + 1
-    if n_modes is not None and max(cnt) + 1 > int(n_modes):
-        raise ValueError(f"ops 触到模 {max(cnt)} ≥ N={n_modes}")
-    return int(max(cnt.values()))
+    return int(MMM.mesh_per_mode_optical_depth(ops, n_modes=n_modes))
 
 
 # ---------------------------------------------------------------------------

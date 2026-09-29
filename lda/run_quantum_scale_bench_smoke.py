@@ -67,8 +67,8 @@ def main() -> int:
     except Exception as e:                                # noqa: BLE001
         ok_a = False
         print(f"  规模模块自检异常：{type(e).__name__}: {e}")
-    check("A1 规模模块自检 12/12 PASS", ok_a,
-          "规模律/216实测/尺度盲/标定律/损耗墙/复杂度/输出墙/架构/对标/瓶颈/护栏")
+    check("A1 规模模块自检 13/13 PASS", ok_a,
+          "规模律/216实测/尺度盲/标定律/损耗墙/复杂度/输出墙/架构/对标/瓶颈/护栏/★每模口径(D-125)")
 
     bad = [n for n in (2, 3, 4, 8, 16, 32, 64, 100, 128, 216)
            if SBM.mesh_scaling_laws(n)["n_mzi"] != n * (n - 1) // 2]

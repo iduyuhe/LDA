@@ -922,3 +922,119 @@ def extract_layout_params(link, placement, wg_width: float = 0.5,
             "诚实边界：本模块验证「版图几何与 IR 声明是否一致」，"
             "**不验证几何约定是否符合 foundry 事实**（后者需真 PDK deck）。"),
     }
+
+
+# ---------------------------------------------------------------------------
+# 损耗通道（几何回提 → 被动损耗 · D-125）
+# ---------------------------------------------------------------------------
+#: 各类器件「可作为传播长度」的**回提参数**（必须是 `PARAM_MEASURERS` 里真有的量，
+#: 由 `run_platform_loss_basis_smoke` 机器复核 —— 不靠注释自说自话）。
+#: 🔴 只登记**波导传播型**长度：耦合区/光栅/探测器的损耗机制不是传播 ⇒ 不入表。
+PROP_LENGTH_PARAM: Dict[str, str] = {
+    "Waveguide": "length",
+    "DirectionalCoupler": "Lc",
+    "MZI": "Lu",
+    "PhaseShifter": "L",
+    "MziModulator": "arm_L",
+    "Splitter": "length",
+    "BraggMirror": "taper_len",
+}
+#: 环形类：损耗由**弯曲**主导 ⇒ 用周长 2πR × 单位弯曲损耗，而不是传播常数。
+CURVED_R_CLASSES: Tuple[str, ...] = ("RingResonator", "RingAddDrop")
+
+RECOVERED_LOSS_DISCLOSURE: Dict[str, str] = {
+    "scope": (
+        "只算**传播项**（回提长度 × α_prop）与**环形弯曲项**（2πR × 单位弯曲损耗）；"
+        "**不含**耦合区过量损耗 / 光栅耦合 / 探测器 / 模场失配 / 偏振 / 温度漂移 "
+        "⇒ 结果是**下界**，不是链路预算。"
+    ),
+    "from_recovered_geometry": (
+        "长度与 R 取 `measure_device_params` 从**版图几何回提**的值（非 IR 声明值）"
+        "⇒ 版图与声明不一致时，本读数也随之改变（回提链路的下游消费者）。"
+    ),
+    "parameterized_not_measured": (
+        "α_prop 与弯曲损耗系数均为**设计预算常数**（与 `loss_aware_compile."
+        "ALPHA_PROP_DEFAULT` / `WAVEGUIDE_LOSS_DB_PER_CM` 同源），**非实测 PDK**。"
+    ),
+}
+
+
+def recovered_passive_loss(link, placement, *, geom_of=None, wg_width: float = 0.5,
+                           alpha_prop_db_cm: Optional[float] = None
+                           ) -> Dict[str, Any]:
+    """★ 几何回提 → **被动损耗读数**（D-125）：把版图几何接到损耗通道上。
+
+    参数与 `extract_layout_params` **同源同约定**（`link/placement/wg_width/geom_of`），
+    故回提链路的上游不变：对 `link.ir.components` 逐个 `geom_of` 生成几何 →
+    `measure_device_params` **回提**长度 / R → 计算设计预算被动损耗：
+      · 传播型（`PROP_LENGTH_PARAM` 登记的类）：`L_um/1e4 × α_prop(dB/cm)`；
+      · 环形（`CURVED_R_CLASSES`）：`2πR × bending_loss_db_per_cm(R)`。
+    返回 per-device 明细 + 合计（dB） + 未覆盖类清单 + 披露。
+
+    🔴 只含**传播 + 环形弯曲** ⇒ 合计是**下界**；不含耦合/光栅/探测器/失配（见披露）。
+    """
+    if geom_of is None:
+        from lda_l2.chip_layout_export import device_geom_of as geom_of  # noqa
+    from lda_agent.ring_adddrop import bending_loss_db_per_cm  # 单位弯曲损耗（平台同源）
+    if alpha_prop_db_cm is None:
+        from lda_l2.loss_aware_compile import ALPHA_PROP_DEFAULT
+        alpha_prop_db_cm = float(ALPHA_PROP_DEFAULT)
+    if alpha_prop_db_cm < 0.0:
+        raise ValueError("alpha_prop_db_cm ≥ 0")
+
+    devices: Dict[str, Dict[str, Any]] = {}
+    total = 0.0
+    uncovered: Dict[str, int] = {}
+    for c in link.ir.components:
+        kind = c.kind
+        try:
+            geoms = geom_of(c, placement, wg_width)
+        except Exception:                                  # noqa: BLE001
+            geoms = None
+        if not geoms:
+            uncovered[kind] = uncovered.get(kind, 0) + 1
+            devices[c.id] = {"kind": kind, "loss_db": None,
+                             "note": "几何不可生成或为空"}
+            continue
+        rec = measure_device_params(kind, geoms)
+        loss_db = None
+        detail = ""
+        if kind in PROP_LENGTH_PARAM:
+            pname = PROP_LENGTH_PARAM[kind]
+            L = rec.get(pname)
+            if L is not None:
+                loss_db = float(L) / 1e4 * float(alpha_prop_db_cm)
+                detail = f"传播 {float(L):.3f} µm × {float(alpha_prop_db_cm):g} dB/cm"
+        elif kind in CURVED_R_CLASSES:
+            R = rec.get("R")
+            if R is not None:
+                loss_db = (2.0 * math.pi * float(R) / 1e4
+                           * float(bending_loss_db_per_cm(float(R))))
+                detail = f"环形周长 2πR（R={float(R):.3f} µm）× 弯曲损耗"
+        if loss_db is None:
+            uncovered[kind] = uncovered.get(kind, 0) + 1
+            devices[c.id] = {"kind": kind, "loss_db": None,
+                             "note": "该类的损耗机制不在本通道（见披露）"}
+            continue
+        total += loss_db
+        devices[c.id] = {"kind": kind, "loss_db": float(loss_db), "note": detail}
+
+    n_all = len(list(link.ir.components))
+    n_cov = sum(1 for d in devices.values() if d["loss_db"] is not None)
+    return {
+        "n_devices": n_all,
+        "n_covered": int(n_cov),
+        "total_loss_db": float(total),
+        "total_loss_eta": float(10.0 ** (-float(total) / 10.0)),
+        "alpha_prop_db_cm": float(alpha_prop_db_cm),
+        "devices": devices,
+        "uncovered_by_kind": uncovered,
+        "covers": "propagation+ring_bending",
+        "is_lower_bound": True,
+        "disclosure": RECOVERED_LOSS_DISCLOSURE,
+        "honest_note": (
+            f"回提几何 → 被动损耗**下界**：{n_cov}/{n_all} 器件有读数，"
+            f"合计 {total:.3f} dB；未覆盖类 {uncovered or '{}'}"
+            "（耦合/光栅/探测器不建模）。长度与 R 均取**回提值**（非声明值）"
+            "⇒ 版图漂移会传导到本读数。"),
+    }

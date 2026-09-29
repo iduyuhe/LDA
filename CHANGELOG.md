@@ -42,7 +42,7 @@
   ② 「几何约定是否符合 foundry 事实」仍需**真 PDK deck（D5，外部）**；③ 33 个非几何参数仍不可回提，其中 2 项
   「几何敏感但非尺寸量」是**如实登记的残余**，不是通过。
 
-### v0.9.141 追加（2026-09-29 · **量子征程（吃狗粮）· D-121 时间复用 + D-122 矩形网格 + D-123 真实损耗预算 + D-124 DRC 每模口径** · 不加锚 · 账本 470 不变 · CI core 214 → 217）
+### v0.9.141 追加（2026-09-29 · **量子征程（吃狗粮）· D-121 时间复用 + D-122 矩形网格 + D-123 真实损耗预算 + D-124 DRC 每模口径 + D-125 平台级损耗口径** · 不加锚 · 账本 470 不变 · CI core 214 → 218）
 
 > 定位：`lda qchip` 路线 = **集成光量子芯片（LOQC 通用处理器 = 可编程 MZI 干涉仪）**。本轮两件都是
 > **平台能力演示**（**不走加锚四件套** ⇒ 账本 470 不变），但都按「构造 fid=1.0 + 突变探针反证 + 常驻门禁」纪律交付。
@@ -147,6 +147,42 @@
   方向可控、非硬编码（门禁 C2/C3 钉死）。
 - **红线**：纯 numpy + 平台模块，**零量子 SDK**；**LLM 不进判决路径**（rule/detail 二元组 ·
   全是限值比对）。
+
+#### D-125 · 把「每模口径」推到平台层 + 订正 `scale_bench` 静态口径
+
+> D-123/D-124 让每模口径在量子栈里落地；本轮把它**推到平台层**（`lda_l2`），
+> 并订正 `scale_bench` 长期以来把 `(N−1)·per_mzi` 当作「单路径插损」的口径问题。
+> 交付：`lda_l2/mzi_mesh_matmul.py`（平台原语）· `lda_l2/drc.py`（经典 DRC 损耗通道）·
+> `lda_l2/lvs_geom.py`（几何回提 → 被动损耗）· `lda_qeda/scale_bench.py`（三口径一体登记）·
+> 门禁 `lda/run_platform_loss_basis_smoke.py` **28 判据** · 探针 `scripts/d125_platform_loss_probe.py` **10/10 会响**。
+
+- **★ 平台单一真源 ★**：`mzi_mesh_matmul.mesh_per_mode_optical_depth(ops)`（每模深度 = max over 模
+  of 触及该模的门片数；三角 **2N−3** / 矩形 Clements **N** / 抽象 Reck **N−1**）+
+  `mesh_loss_basis(ops)`（**三口径一体登记**：`per_mode_db` / `total_db` / `per_mzi_db` +
+  交叉只进总口径）。`mesh_cascade_loss_db` 的 docstring 明确标注为**总级联口径**
+  （全网格门合计 —— **不是**任一光子实际经历的损耗）。
+  ⇒ 量子 DRC（D-124）/ 规模律（D-120）/ 门禁 **四处同值**（N=8：每模 13 ≠ 门总片数 28）。
+- **★ 经典 DRC 的损耗通道 ★**：`drc.drc_check_mesh_loss(ops, n_crossings)` 判**双口径**
+  （每模 `max_il_per_mode_db=15` + 总级联 `max_il_total_db=25`，与量子 DRC 的
+  `QDR-LOSS-BUDGET` **同限值、同迁移**：N=5 每模 16.8 > 15 **拒绝** / 总 24 ≤ 25 通过；
+  N=4 双口径皆通过）。器件级 `drc_check_device` 路径**不受影响**（新增函数，不碰既有路径）。
+- **★ lvs_geom 的损耗通道 ★**：`recovered_passive_loss(link, placement)` —— 用与
+  `extract_layout_params` **同源同约定**的回提链路（`geom_of` → `measure_device_params`），
+  从**回提的**长度 / R 算设计预算被动损耗（传播项 `L/1e4 × α_prop` + 环形弯曲项 `2πR × 单位弯曲损耗`）。
+  🔴 只含传播+环形弯曲 ⇒ **下界**（不含耦合/光栅/探测器/失配）；`PROP_LENGTH_PARAM` 登记的长度
+  参数**必须真可回提**（门禁 C1 机器复核，防漂移）；读数由**回提几何驱动**（12→24 µm 传播项翻倍）。
+- **★ scale_bench 口径订正 ★**：`mesh_scaling_laws` **新增** `mzi_per_mode = 2N−3` /
+  `loss_per_mode_db`（N=216：**1029.6 dB**）与 `loss_basis_note`（三口径标注）；
+  `static_mesh_architecture` / `architecture_tradeoff` / `scale_bottleneck_report` **并报**每模口径
+  （每模损耗墙 **N\*=6** 早于列口径 **N\*=10**）。🔴 **旧键语义不变**
+  （`n_stages` / `mzi_per_path` = N−1 · `loss_per_path_db` = (N−1)·per）—— 订正是**新增并标注**，
+  不是改写 ⇒ **既有门禁零破坏**（12 道相关门禁全部复跑通过）。每模口径与列口径差
+  **(N−2)·per = 513.6 dB**（N=216）。
+- **诚实边界**：全部为**设计预算口径**（`per_mzi` 2.4 · `α_prop` 2.0 与 `loss_aware_compile` /
+  `mzi_mesh_matmul` 同源），**非实测 PDK**（属 D5）；每模口径**不含交叉损耗**（交叉数需 P&R 几何，
+  属 P1-B）；`recovered_passive_loss` 是**下界**。
+- **红线**：纯 numpy + 标准库 + 平台模块，**零量子 SDK**；**LLM 不进判决路径**（口径值全为
+  float/int、判决为 bool，死标量）。
 
 ---
 

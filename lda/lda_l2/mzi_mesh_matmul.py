@@ -39,6 +39,8 @@ __all__ = [
     "reck_triangular_mesh",
     "assemble_triangular_mesh",
     "mesh_cascade_loss_db",
+    "mesh_per_mode_optical_depth",
+    "mesh_loss_basis",
     "unitary_fidelity",
     "apply_mesh",
     "dft_matrix",
@@ -261,10 +263,89 @@ def mesh_cascade_loss_db(n_mzi: int, n_crossings: int = 0,
 
     每个 MZI 单元：2 个定向耦合器 + 2 段相移器 + 波导段；
     外加网格拓扑所需波导交叉。全部为 Layer-1 被动前端物理损耗。
+
+    🔴 **口径 = 总级联口径（全网格门合计）** —— 它把**每一片**门都算进来，
+    因此**不是**任何一个光子实际经历的损耗（光子只穿过路径上的那几片）。
+    光子实际经历的损耗请用 `mesh_per_mode_loss_db` / `mesh_loss_basis`（每模口径 · D-125）。
+    两者不可互换：三角网格 N=8 时总片数损失 28×2.4 = 67.2 dB，而每模最坏路径 13×2.4 = 31.2 dB。
     """
     per_mzi = 2.0 * dc_excess_db + 2.0 * ps_loss_db + wg_loss_per_cm * wg_len_per_mzi_cm
     total = n_mzi * per_mzi + n_crossings * cross_loss_db
     return float(total)
+
+
+# ---------------------------------------------------------------------------
+# 每模口径（D-125）：光子**实际穿越**的损耗 —— 平台级单一真源
+# ---------------------------------------------------------------------------
+def mesh_per_mode_optical_depth(ops, n_modes: int | None = None) -> int:
+    """★ 每模光学深度：**由提交的 ops 直接数出**（平台级单一真源 · D-125）。
+
+        depth = max over 模 of (触及该模的门片数)
+
+    每片门耦合**一个相邻对** (p, p+1) ⇒ 两端模各 +1。故：
+      · 三角邻耦合网格（`reck_triangular_mesh`）⇒ **2N−3**（同列相邻对共享模 = 链）；
+      · 矩形 Clements 分层展平 ⇒ **N**；
+      · 抽象 Reck（`reck_decompose`，需交叉）⇒ **N−1**。
+    ops 元素接受 4 元组 `(c, p, θ, φ)`（三角）或 3 元组 `(j, θ, φ)`（矩形展平）。
+
+    🔴 **与「门的总片数」不是一回事**：总片数是 `N(N−1)/2`（N=8：13 vs 28）——
+    用 `len(ops)` 冒充每模深度会把三角网格的深度**高估**约 (N−1)/2 倍。
+    """
+    if not ops:
+        raise ValueError("ops 非空")
+    cnt: dict = {}
+    for op in ops:
+        if len(op) >= 4:
+            p = int(op[1])
+        elif len(op) == 3:
+            p = int(op[0])
+        else:
+            raise ValueError(f"op 需 3/4 元组，得到 {len(op)} 元")
+        if p < 0:
+            raise ValueError(f"模索引越界：p={p}")
+        cnt[p] = cnt.get(p, 0) + 1
+        cnt[p + 1] = cnt.get(p + 1, 0) + 1
+    if n_modes is not None and max(cnt) + 1 > int(n_modes):
+        raise ValueError(f"ops 触到模 {max(cnt)} ≥ N={n_modes}")
+    return int(max(cnt.values()))
+
+
+def mesh_loss_basis(ops, n_crossings: int = 0,
+                    dc_excess_db: float = DC_EXCESS_LOSS_DB,
+                    ps_loss_db: float = PHASE_SHIFTER_LOSS_DB,
+                    wg_loss_per_cm: float = WAVEGUIDE_LOSS_DB_PER_CM,
+                    wg_len_per_mzi_cm: float = WAVEGUIDE_LEN_PER_MZI_CM,
+                    cross_loss_db: float = CROSSING_LOSS_DB) -> dict:
+    """★ **两个损耗口径一体登记**（D-125）—— 一次调用看清"谁的损耗"。
+
+      · `per_mode_db`  —— **每模口径**：光子实际穿越的分束器数 × 单件损耗
+                          （= 最坏模的插入损耗；**这才是链路预算该用的量**）
+      · `total_db`     —— **总级联口径**：全网格门合计 + 交叉（=`mesh_cascade_loss_db`）
+      · `per_mzi_db`   —— 单件常数（= 2·DC + 2·PS + 波导段）
+      · `crossing_loss_db` —— 交叉损耗**只进总口径**；每模口径**不含**交叉
+                              （矩形/三角的交叉数需 P&R 几何确定，属 P1-B）
+
+    诚实边界：均为**设计预算口径**（非实测 PDK）；`ops` 必须是**同一个网格**的 op 列表。
+    """
+    n_mzi = len(ops)
+    per_mzi = 2.0 * dc_excess_db + 2.0 * ps_loss_db + wg_loss_per_cm * wg_len_per_mzi_cm
+    depth = mesh_per_mode_optical_depth(ops)
+    return {
+        "n_mzi": int(n_mzi),
+        "per_mode_optical_depth": int(depth),
+        "per_mzi_loss_db": float(per_mzi),
+        "per_mode_db": float(depth * per_mzi),
+        "total_db": float(mesh_cascade_loss_db(n_mzi, n_crossings=n_crossings,
+                                               dc_excess_db=dc_excess_db,
+                                               ps_loss_db=ps_loss_db,
+                                               wg_loss_per_cm=wg_loss_per_cm,
+                                               wg_len_per_mzi_cm=wg_len_per_mzi_cm,
+                                               cross_loss_db=cross_loss_db)),
+        "crossing_loss_db": float(int(n_crossings) * cross_loss_db),
+        "crossing_loss_included_in_per_mode": False,
+        "basis_note": "per_mode_db = 最坏模实际穿越深度 × per_mzi（物理口径）；"
+                      "total_db = 全网格门合计 + 交叉（结构性口径）—— 两者不可互换。",
+    }
 
 
 # ---------------------------------------------------------------------------

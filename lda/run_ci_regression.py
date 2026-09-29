@@ -439,6 +439,20 @@ CORE_SMOKES: List[str] = [
     #   纯 numpy · C 级自主 · 零量子 SDK；建表与重建均亚秒级 ⇒ 无需预算覆盖。
     #   突变探针 `scripts/d121_temporal_probe.py` 反证其会响。CI core 213→214。
     "run_temporal_mesh_smoke.py",       # D-121 时间复用可编程酉（24 判据）
+    # 🔴 M5（量子征程 · 2026-09-29）· D-122 `rect_mesh`：**坐实「紧界 N 可达」** ——
+    #   回答 D-121 留下的唯一悬问（参数界 N−1 已证不可达，那**紧界 N** 可达吗？）：
+    #   ①★约定桥★ `_ref_T(θ,φ) ≡ mzi_unit_cell(2θ,0)·diag(e^{iφ},1)`（无标量）
+    #     `≡ e^{iφ}·mzi_unit_cell(2θ,−φ)`（含标量）——两式**块级精确**。
+    #     陷阱：裸 `mzi_unit_cell(2θ,−φ)` 在 2×2 只差标量（看似可忽略），但**嵌入 N×N 后**
+    #     该标量只落在本门 2 模 ⇒ 每门注入逐模相位（与邻门不对易）⇒ 网格 ≠ U
+    #     （**连全局相位都不是**）：相位不变 fid≈0.005、项目口径≈0.66。
+    #   ②★紧界可达★ 换**矩形（Clements）网格**，层数 = 光学深度 = 紧界 **N**（每层真匹配）
+    #     ⇒ 紧界 N **可达**（N≥3）；三角 Reck 最优 2N−3 并非最优（N=216：429→216，省 213）。
+    #   ③元件数不变：矩形仍用 N(N−1)/2 片门 ⇒ 收益纯在深度；深度仍 Ω(N)
+    #     ⇒ D-121「通用与省损不可兼得」**不变**。
+    #   复用主权 `lda_layout.mesh_pnr`（fid=1.0 至 N=512），不重造分解；纯 numpy · C 级自主。
+    #   突变探针 `scripts/d122_rect_probe.py` 反证其会响（9 条突变各必红）。CI core 214→215。
+    "run_rect_mesh_smoke.py",           # D-122 矩形 Clements 网格 · 紧界 N 可达（26 判据）
     "run_ir_solve_smoke.py",            # L0/L3 直接消费 IR 真值计算
     "run_wdm_coupler_smoke.py",         # ⚠️ 文件头旧注称其「重」→ 实测 0.30s，属过时排除
     "run_wdm_coupler_wl_smoke.py",

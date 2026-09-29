@@ -1,0 +1,187 @@
+{
+  "chip_family": "LDA-Q5 · 矩形 Clements 网格（M5）",
+  "platform_capability": "lda_qeda/rect_mesh.py(D-122) 复用 lda_layout.mesh_pnr 主权矩形分解 + lda_l2.mzi_mesh_matmul.mzi_unit_cell 平台物理原语",
+  "n_sweep": [
+    4,
+    8,
+    16,
+    32,
+    64,
+    128
+  ],
+  "n_target": 216,
+  "convention_bridge": {
+    "identity": "_ref_T(theta,phi) = mzi_unit_cell(2*theta, 0) @ diag(exp(1j*phi), 1)",
+    "max_abs_diff": 0.0,
+    "exact": true,
+    "note": "相位臂相反（输入/上臂 vs 输出/下臂）⇒ 非 2θ 缩放；须拆独立对角相位层。"
+  },
+  "convention_bridge_error_case": {
+    "block_diff_bare_vs_ref": 0.3875963576648986,
+    "block_diff_scaled_exact": 1.1514170158385799e-16,
+    "row_action_max_abs_diff": 0.6475083477596899,
+    "wrong_bridge_fidelity_N8": 0.6581801786311874,
+    "phase_invariant_fidelity_N8": 0.00542769582233434
+  },
+  "fidelity_sweep": [
+    {
+      "n_modes": 4,
+      "fidelity_dft": 0.9999999999999999,
+      "fidelity_random": 0.9999999999999999
+    },
+    {
+      "n_modes": 8,
+      "fidelity_dft": 0.9999999999999998,
+      "fidelity_random": 0.9999999999999999
+    },
+    {
+      "n_modes": 16,
+      "fidelity_dft": 0.9999999999999997,
+      "fidelity_random": 0.9999999999999999
+    },
+    {
+      "n_modes": 32,
+      "fidelity_dft": 0.9999999999999997,
+      "fidelity_random": 0.9999999999999999
+    },
+    {
+      "n_modes": 64,
+      "fidelity_dft": 0.9999999999999994,
+      "fidelity_random": 0.9999999999999999
+    },
+    {
+      "n_modes": 128,
+      "fidelity_dft": 0.9999999999999992,
+      "fidelity_random": 0.9999999999999999
+    }
+  ],
+  "worst_fidelity": 0.9999999999999992,
+  "depth_sweep": [
+    {
+      "n_modes": 4,
+      "n_mzi": 6,
+      "rect_depth": 4,
+      "optical_depth": 4,
+      "per_layer_max": 2,
+      "layers_are_matchings": true,
+      "reck_optimum": 5,
+      "depth_reduction_vs_reck": 1,
+      "parameter_count_bound": 3,
+      "tight_adjacency_bound": 4,
+      "depth_equals_tight_bound": true,
+      "fidelity": 0.9999999999999999
+    },
+    {
+      "n_modes": 8,
+      "n_mzi": 28,
+      "rect_depth": 8,
+      "optical_depth": 8,
+      "per_layer_max": 4,
+      "layers_are_matchings": true,
+      "reck_optimum": 13,
+      "depth_reduction_vs_reck": 5,
+      "parameter_count_bound": 7,
+      "tight_adjacency_bound": 8,
+      "depth_equals_tight_bound": true,
+      "fidelity": 0.9999999999999998
+    },
+    {
+      "n_modes": 16,
+      "n_mzi": 120,
+      "rect_depth": 16,
+      "optical_depth": 16,
+      "per_layer_max": 8,
+      "layers_are_matchings": true,
+      "reck_optimum": 29,
+      "depth_reduction_vs_reck": 13,
+      "parameter_count_bound": 15,
+      "tight_adjacency_bound": 16,
+      "depth_equals_tight_bound": true,
+      "fidelity": 0.9999999999999997
+    },
+    {
+      "n_modes": 32,
+      "n_mzi": 496,
+      "rect_depth": 32,
+      "optical_depth": 32,
+      "per_layer_max": 16,
+      "layers_are_matchings": true,
+      "reck_optimum": 61,
+      "depth_reduction_vs_reck": 29,
+      "parameter_count_bound": 31,
+      "tight_adjacency_bound": 32,
+      "depth_equals_tight_bound": true,
+      "fidelity": 0.9999999999999997
+    },
+    {
+      "n_modes": 64,
+      "n_mzi": 2016,
+      "rect_depth": 64,
+      "optical_depth": 64,
+      "per_layer_max": 32,
+      "layers_are_matchings": true,
+      "reck_optimum": 125,
+      "depth_reduction_vs_reck": 61,
+      "parameter_count_bound": 63,
+      "tight_adjacency_bound": 64,
+      "depth_equals_tight_bound": true,
+      "fidelity": 0.9999999999999994
+    },
+    {
+      "n_modes": 128,
+      "n_mzi": 8128,
+      "rect_depth": 128,
+      "optical_depth": 128,
+      "per_layer_max": 64,
+      "layers_are_matchings": true,
+      "reck_optimum": 253,
+      "depth_reduction_vs_reck": 125,
+      "parameter_count_bound": 127,
+      "tight_adjacency_bound": 128,
+      "depth_equals_tight_bound": true,
+      "fidelity": 0.9999999999999992
+    }
+  ],
+  "n_target_report": {
+    "n_modes": 216,
+    "n_mzi": 23220,
+    "parameter_count_bound": 215,
+    "tight_adjacency_bound": 216,
+    "rectangular_mesh_depth": 216,
+    "reck_mesh_optimum": 429,
+    "tight_bound_reachable": true,
+    "depth_reduction_vs_reck": 213,
+    "verdict": "矩形（Clements）网格深度 = 216 = 紧下界 216 ⇒ **紧界可达**（每层真匹配 · 重建 fid=1.0）；三角 Reck 最优 = 429（2N−3）⇒ 矩形化省 213 层。（D-121 的「N−1 不可达」仍成立 —— 那是**参数界**非紧；真紧界是 N，可达。）"
+  },
+  "three_way_agreement": [
+    {
+      "n_modes": 4,
+      "mine": 0.9999999999999999,
+      "decomp": 0.9999999999999999,
+      "mesh": 0.9999999999999999
+    },
+    {
+      "n_modes": 8,
+      "mine": 0.9999999999999999,
+      "decomp": 0.9999999999999999,
+      "mesh": 0.9999999999999999
+    },
+    {
+      "n_modes": 16,
+      "mine": 0.9999999999999999,
+      "decomp": 0.9999999999999999,
+      "mesh": 0.9999999999999999
+    }
+  ],
+  "headline_findings": [
+    "① ★约定桥★ 两条**块级精确**恒等式（均 max|Δ|≈0）：`_ref_T(θ,φ) = mzi_unit_cell(2θ,0)·diag(e^{iφ},1)`（无标量，D-122 采用） = `e^{iφ}·mzi_unit_cell(2θ,−φ)`（含标量）。相位落于**输入臂/较低模 j**（主权）vs **输出臂/较高模 j+1**（平台）—— 非 2θ 缩放（实测 max|Δ|=0.0e+00）。",
+    "① 血案（比「块对不上」更精微）：裸 `mzi_unit_cell(2θ,−φ)` 在 2×2 只差标量 e^{−iφ}（e^iφ·裸 − _ref_T 的 max|Δ|=1.2e-16，精确）；但**嵌入 N×N 后**该标量只落在本门 2 模（裸门 vs _ref_T 块 max|Δ|=0.388）⇒ 每门注入**逐模相位**（与邻门不对易）⇒ 网格 ≠ U（**连全局相位都不是**）：相位不变 fid=0.0054（≪1 即反证）、项目 Frobenius 口径 0.6582 ⇒ 必须拆出独立对角相位层。",
+    "★ 结论 1（紧界可达）：矩形网格层数 = 列数 = 光学深度 = **N**（N≥3 每层真匹配）⇒ 与 D-121 相邻耦合紧下界 N 相等 ⇒ **紧界可达**。对照三角 Reck 最优 2N−3，矩形化把深度**减半**（N=216：429 → **216**，省 **213** 层）。",
+    "★ 结论 2（构造正确）：用平台物理原语装配，DFT 与 Haar 随机酉重建保真度均 = **1.0**（最差 fid=1.000000000000，N=4…128），且与主权 `mesh_rect_decomp_fidelity`/`mesh_rect_fidelity` **三方一致**。",
+    "★ 结论 3（元件数不变）：矩形网格仍用 **N(N−1)/2** 片 MZI（Clements 必要性定理）⇒ 收益纯在**深度**；深度仍 Ω(N) ⇒ D-121「通用与省损不可兼得」**不变**。",
+    "★ 结论 4（D-121 悬问闭环）：D-121「参数界 N−1 不可达」与 D-122「紧界 N 可达」**不矛盾** —— 前者是**参数计数下界（非紧）**，后者是**相邻耦合紧下界（真·可达）**。"
+  ],
+  "scale_verdict": "M5 结论：三角 Reck 的 2N−3 并非深度最优 —— 换**矩形（Clements）网格**即可把通用 N 模酉的深度打到**紧界 N**（每层真匹配、构造 fid=1.0），且不增加元件数。但深度仍 Ω(N)：矩形化把「损耗墙 = 深度墙」下界从 2N−3 降到 N，**不改变**「通用与省损不可兼得」这一结构性结论。",
+  "honest_boundary": "① 本演示是**网格拓扑 + 酉重构**的正确性证明（数学 + 构造性数值），**非真机实测**；② 未含波导损耗 / 非理想耦合 / 串扰 / 热串扰（属 P1-B 工艺级）；③ 「深度」= 网格**列数**（同列配对互不共享波导 ⇒ 同列可共享抽头 ⇒ 层数即物理深度）；④ 分解**非本模块自研**：复用 `lda_layout.mesh_pnr.clements_rect_decompose`（主权验证 fid=1.0 至 N=512）；本模块新增 = 约定桥 + 深度可达性判定；⑤ 与 Clements 原始文献同结论（矩形 N、三角 2N−3），但不引其数值作 golden ——判据全部为闭式恒等式 + 构造性实测。",
+  "verdict": "PASS"
+}

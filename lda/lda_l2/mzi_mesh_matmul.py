@@ -291,6 +291,14 @@ def mesh_per_mode_optical_depth(ops, n_modes: int | None = None) -> int:
     🔴 **与「门的总片数」不是一回事**：总片数是 `N(N−1)/2`（N=8：13 vs 28）——
     用 `len(ops)` 冒充每模深度会把三角网格的深度**高估**约 (N−1)/2 倍。
     """
+    return int(max(_per_mode_depth_counts(ops, n_modes).values()))
+
+
+def _per_mode_depth_counts(ops, n_modes: int | None = None) -> dict:
+    """逐模深度计数（私有共享实现 ⇒ `mesh_per_mode_optical_depth` 与其 stats 版**同一真源**）。
+
+    返回 `{模索引: 触及该模的门片数}`（每个被 `(p, p+1)` 门触及的模必在键里，值 ≥ 1）。
+    """
     if not ops:
         raise ValueError("ops 非空")
     cnt: dict = {}
@@ -307,7 +315,37 @@ def mesh_per_mode_optical_depth(ops, n_modes: int | None = None) -> int:
         cnt[p + 1] = cnt.get(p + 1, 0) + 1
     if n_modes is not None and max(cnt) + 1 > int(n_modes):
         raise ValueError(f"ops 触到模 {max(cnt)} ≥ N={n_modes}")
-    return int(max(cnt.values()))
+    return cnt
+
+
+def mesh_per_mode_optical_depth_stats(ops, n_modes: int | None = None) -> dict:
+    """★ 每模光学深度的**分布**（min/mean/max + 逐模表）—— 每模口径登记所需（D-126）。
+
+    与 `mesh_per_mode_optical_depth` **同一计数真源**（`_per_mode_depth_counts`）：
+    `depth_max ≡ mesh_per_mode_optical_depth(ops)`。用于把「每模**最坏**损耗」补上
+    「每模**最好/均值**」对照（D-126 `il_basis` 的 mesh 通道）。
+
+    已知形状（构造实测）：三角邻耦合 `max=2N−3`、`min=1`；矩形 Clements `max=N`、`min=⌊N/2⌋`。
+    **本函数不自称闭式**：min/mean/max 一律由 ops 数出（闭式仅供门禁交叉核对）。
+    """
+    cnt = _per_mode_depth_counts(ops, n_modes)
+    if n_modes is not None:
+        n = int(n_modes)
+        if len(cnt) < n:
+            raise ValueError(
+                f"ops 仅触及 {len(cnt)} 个模 < N={n} ⇒ 非完备网格，无法给出每模分布")
+    vals = list(cnt.values())
+    mx_i = max(cnt, key=lambda k: cnt[k])
+    return {
+        "n_modes": len(cnt),
+        "depth_min": int(min(vals)),
+        "depth_mean": float(sum(vals)) / float(len(vals)),
+        "depth_max": int(max(vals)),
+        "argmax_mode": int(mx_i),
+        "depths": {int(k): int(v) for k, v in sorted(cnt.items())},
+        "basis_note": "每模深度分布：由 ops 直接数出（同一真源 _per_mode_depth_counts）；"
+                      "depth_max ≡ mesh_per_mode_optical_depth。",
+    }
 
 
 def mesh_loss_basis(ops, n_crossings: int = 0,

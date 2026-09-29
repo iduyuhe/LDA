@@ -152,6 +152,18 @@ def optical_metrics(N: int, K: int, arch: str = ARCH_SHARED,
     geom = rail_geometry(br)
     deg_max = int(geom["deg_max"])
     il = float(il_db(deg_max, float(geom["L_bus_um"]), alpha_prop, alpha_tap, rail_pitch, gap))
+    # 🆕 D-126：本通道的损耗轴**本来就是每模最坏**（`deg_max`）—— 现登记到平台规范词汇
+    #   （min/mean/max + basis 标签），并补上最好/均值的对照读数。
+    #   ⇒ 与 `loss_aware_compile`（同端口模型）词汇统一；旧键 `il_worst_db` 一字未改。
+    from lda_l2 import il_basis as _ILB
+    ils = [float(il_db(d, float(geom["L_bus_um"]), alpha_prop, alpha_tap, rail_pitch, gap))
+           for d in geom["deg"]]
+    il_basis = _ILB.il_basis_from_values(
+        ils, channel="pareto", n_modes=len(ils),
+        per_element_db=float(alpha_prop * max(rail_pitch - gap, 0.0) / 1e4 + alpha_tap),
+        per_element_kind="per_tap_db",
+        basis_note="光域 Pareto 损耗轴 = 网格内**每模最坏**路径 IL（deg_max）；"
+                   "il_worst_db ≡ il_basis_per_mode.il_max_db（同 `loss_aware_compile` 端口模型）。")
     # U1（v0.9.122）的面积结论是**纯算术**：共享 ⇒ fp_shared = fp_single；朴素 K 套 ⇒ fp_naive = K·fp_single
     #   （`wdm_shared_mesh_pnr.build_wdm_shared_mesh_pnr` 内部即 `fp_naive_lower = K*fp_single`）
     # ⇒ 此处直接算，并由 `u1_area_crosscheck()` 用 U1 真函数在 K=4 上交叉核验（不重复调用热路径）。
@@ -170,6 +182,8 @@ def optical_metrics(N: int, K: int, arch: str = ARCH_SHARED,
         "plane_area_mm2": plane_area / 1e6,
         "area_ratio_vs_naive": (shared_area / naive_area) if naive_area > 0 else None,
         "il_worst_db": il,
+        "il_basis": "per_mode",
+        "il_basis_per_mode": il_basis,
         "deg_max": deg_max,
         "L_bus_um": float(geom["L_bus_um"]),
         "n_cols": int(br["n_cols"]),
@@ -285,6 +299,11 @@ def optical_pareto_table(Ns: Sequence[int] = DEFAULT_NS,
         "archs": list(archs),
         "n_rows": len(rows),
         "disclosure_keys": sorted(OPTICAL_PARETO_DISCLOSURE.keys()),
+        # 🆕 D-126：损耗轴口径登记（每模最坏）—— 与 `lda_l2.il_basis` 规范词汇统一
+        "il_basis": "per_mode",
+        "il_basis_note": ("损耗轴 = 网格内**每模最坏**路径 IL（`deg_max`）；每行另带 "
+                          "`il_basis_per_mode`（min/mean/max + spread，见 `lda_l2.il_basis`）。"
+                          "旧键 `il_worst_db` 语义不变，≡ `il_basis_per_mode.il_max_db`。"),
     }
     rep.update(dominance_report(rows))
     assert_no_energy_metrics(rep)

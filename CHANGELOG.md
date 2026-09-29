@@ -42,7 +42,7 @@
   ② 「几何约定是否符合 foundry 事实」仍需**真 PDK deck（D5，外部）**；③ 33 个非几何参数仍不可回提，其中 2 项
   「几何敏感但非尺寸量」是**如实登记的残余**，不是通过。
 
-### v0.9.141 追加（2026-09-29 · **量子征程（吃狗粮）· D-121 时间复用 + D-122 矩形网格 + D-123 真实损耗预算 + D-124 DRC 每模口径 + D-125 平台级损耗口径** · 不加锚 · 账本 470 不变 · CI core 214 → 218）
+### v0.9.141 追加（2026-09-29 · **量子征程（吃狗粮）· D-121 时间复用 + D-122 矩形网格 + D-123 真实损耗预算 + D-124 DRC 每模口径 + D-125 平台级损耗口径 + D-126 每模口径推物理/版图层** · 不加锚 · 账本 470 不变 · CI core 214 → 219）
 
 > 定位：`lda qchip` 路线 = **集成光量子芯片（LOQC 通用处理器 = 可编程 MZI 干涉仪）**。本轮两件都是
 > **平台能力演示**（**不走加锚四件套** ⇒ 账本 470 不变），但都按「构造 fid=1.0 + 突变探针反证 + 常驻门禁」纪律交付。
@@ -183,6 +183,64 @@
   属 P1-B）；`recovered_passive_loss` 是**下界**。
 - **红线**：纯 numpy + 标准库 + 平台模块，**零量子 SDK**；**LLM 不进判决路径**（口径值全为
   float/int、判决为 bool，死标量）。
+
+#### D-126 · 把「每模口径」推到**物理/版图层**（三条损耗通道统一词汇）
+
+> D-123 分离了「列口径」与「每模口径」，D-124 把它接进签核，D-125 把它下沉为平台单一真源。
+> 但**物理/版图层**的三条损耗通道仍各说各话 —— 本轮把它们统一到**同一规范词汇**。
+
+**① 新增「每模口径」统一登记**：`lda_l2/il_basis.py`
+- 规范词汇：`PER_MODE_REQUIRED_KEYS`（7 键：`basis`/`channel`/`n_modes`/`il_min_db`/`il_mean_db`/
+  `il_max_db`/`il_spread_db`）+ basis 四标签（`per_mode` / `column_mean` / `total_cascade` / `per_element`）；
+- 两个构造器 `il_basis_from_values`（由逐模值列表）/ `il_basis_from_stats`（由 min/mean/max），
+  均强制**序校验 `min ≤ mean ≤ max`**（报错序当场 raise）；
+- 护栏 `assert_basis_consistency` / `assert_manifest_consistent`（键齐 + 序正确 + basis 标签 + spread 自洽）；
+- 跨通道汇总 `il_basis_manifest(N)` —— 汇聚 **mesh / grid2d_bus / tiling / pareto** 四通道。
+- 🔴 **本模块不做物理计算**：物理量的唯一实现仍在各通道内（`mzi_mesh_matmul` / `loss_aware_compile` /
+  `mesh_tiling` / `optical_pareto`），本模块只**登记 + 校验**（D-125 纪律「一个物理量一份实现」）。
+
+**② 三条通道对齐（全部「新增 + 标注」，旧键一字未改）**
+- `loss_aware_compile.il_per_port_direct_bus`：增 `il_basis_per_mode` + `IL_min_db`/`IL_max_db`
+  —— 此前只报 `IL_mean_db` + `IL_var_ports_db`（**最坏模藏在方差里**）；
+- `mesh_tiling`：`tile_geometry` 增 deg 分布（**grid2d 实测** `deg_min = N/2`、`deg_max = N`、
+  `⟨deg⟩ = N−1`、`Σdeg = N(N−1)`）、`d1_bus_budget` 增 `il_basis_per_mode`/`IL_min_db`/`IL_max_db`、
+  `p3_tiling_ceiling` 增**每模式天花板**（`IL_total_per_mode_db` / `ceiling_per_mode_eq_N` /
+  `ceiling_per_mode_rx_N`，per-tile 用 `deg_max`）；
+- `optical_pareto.optical_metrics`：损耗轴（`deg_max`，**已是每模最坏**）登记 `il_basis_per_mode` +
+  `il_basis` 标签；`optical_pareto_table` 带 `il_basis`/`il_basis_note`；
+- `mzi_mesh_matmul`：新增 `mesh_per_mode_optical_depth_stats`（min/mean/max + 逐模表），与
+  `mesh_per_mode_optical_depth` 共用**同一计数真源** `_per_mode_depth_counts`。
+
+**③ 三条可机器判定的结论**
+1. **每模最坏 ≈ 均值 2 倍**：grid2d 的 `deg_max = N` vs `⟨deg⟩ = N−1`、`deg_min = N/2`
+   ⇒ 用均值（列口径）估天花板**系统性低估最坏模**。实测每模天花板**更严**：
+   `N_tile=4` 的 eq 天花板 **512 → 256**（rx 均 256）。
+2. **🔴 1.3 的轨切换余量不能替代每模最坏**：`IL_full = α_prop·L + 1.3·⟨deg⟩·α_tap` 在
+   `N_tile=4` 时（3.9 < 4）**仍低于** `IL_max = α_prop·L + deg_max·α_tap` ⇒ 该余量是**均值上的**余量。
+   闭式翻转点：`(N−1)·1.3 < N ⟺ N ≤ 4`。门禁 C5 钉死。
+3. **★跨模块口径对账★**：总线每抽头 − 瓦片每抽头 ≡ `α_prop·(rail_pitch−gap)/1e4`（= 每抽头**波导绕行项**）
+   ⇒ 两个模块的模型差是**可解释的常数**，不是漂移。门禁 C4 钉死。
+
+**④ 零破坏证据（12 道相关门禁全部复跑通过）**
+- `run_loss_aware_compile_smoke` 67/67 · `run_mesh_tiling_smoke` 34/34 ·
+  `run_optical_pareto_smoke` 35/35 · `run_eic_behavioral_smoke` 44/44；
+- 另含 drc×4 / lvs×3 / lvs_geom / scale_bench / temporal / calib_bench（D-123/D-124 门禁）；
+- 三个**文件级**突变探针 `t63_probe`（mesh_tiling）/ `t64_probe` / `p6_probe`（optical_pareto）仍全 PASS
+  ⇒ 锚点未被我方增量编辑破坏。
+
+**⑤ 交付物**
+- 模块：`lda/lda_l2/il_basis.py`（D-126，自检 **13/13**）；
+- 门禁：`lda/run_il_basis_platform_smoke.py`（**32 判据 · A–G 七节**）；
+- 探针：`scripts/d126_il_basis_probe.py`（**12 条突变各必红 + 还原复绿**，
+  全部 `exit=1` 具名 `[FAIL]`，**无崩溃** —— 所有生产调用走 `_safe()` 自判红）；
+- CI core **218 → 219**。
+
+- **诚实边界**：三条通道的损耗均为**设计预算口径**（`α_prop` 2.0 / `α_tap` 0.05 / `per_mzi` 2.4 同源），
+  **非实测 PDK**（属 D5）；四通道是**不同布局模型**（mesh 邻耦合三角 / grid2d 总线 / 瓦片 / Pareto，
+  `L_bus` 定义与几何不同）⇒ 只断言**词汇与序一致**，**不断言数值相等**（可溯源见门禁 F4）；
+  每模口径**不含**波导交叉 / demux/mux / 光纤耦合 / 调制器与探测器（**下界**）。
+- **红线**：纯 numpy（`il_basis` 本身**零 numpy**，纯 stdlib）+ 平台模块，**零量子 SDK**；
+  **LLM 不进判决路径**（口径值全为 float/int、判决为 bool，死标量）。
 
 ---
 

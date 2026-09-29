@@ -488,6 +488,20 @@ CORE_SMOKES: List[str] = [
     #     （N=216：每模 1029.6 vs 列 516.0）；旧键语义**不变**（兼容）⇒ 既有门禁零破坏。
     #   突变探针 `scripts/d125_platform_loss_probe.py` 反证其会响（10 条突变各必红）。CI core 217→218。
     "run_platform_loss_basis_smoke.py",  # D-125 平台级损耗口径 · 三口径一体登记（28 判据）
+    # D-126 把「每模口径」继续推到**物理/版图层**：三条损耗通道统一到同一规范词汇。
+    #   ★统一登记★ `lda_l2.il_basis`（规范键 7 + basis 四标签 + 序护栏 + 跨通道 manifest）——
+    #     本模块**不做物理计算**（物理量唯一实现仍在各通道内，D-125 纪律）。
+    #   · `loss_aware_compile.il_per_port_direct_bus` 增 `il_basis_per_mode`（此前只报 mean+var
+    #     ⇒ 最坏模藏在方差里）；
+    #   · `mesh_tiling` 增 deg 分布（grid2d 实测 deg_min=N/2、deg_max=N、⟨deg⟩=N−1）
+    #     与每模式天花板（`IL_total_per_mode_db` / `ceiling_per_mode_*`，用 deg_max ⇒ **更严**）；
+    #   · `optical_pareto.optical_metrics` 损耗轴（deg_max，已是每模最坏）登记 `il_basis_per_mode`。
+    #   旧键**一字未改**（兼容）⇒ 12 道相关门禁（drc×4 / lvs×3 / lvs_geom / scale_bench /
+    #     temporal / calib_bench / D-123 / D-124）零破坏；两条跨模块对账：
+    #     ① 总线每抽头 − 瓦片每抽头 ≡ α_prop·(rail_pitch−gap)/1e4（绕行项）；
+    #     ② N_tile=4 时 `IL_full`（含 1.3 余量）**仍低于**每模最坏 `IL_max` ⇒ 1.3 是均值上的余量。
+    #   突变探针 `scripts/d126_il_basis_probe.py` 反证其会响（12 条突变各必红）。CI core 218→219。
+    "run_il_basis_platform_smoke.py",    # D-126 每模口径平台统一登记 · 三通道对齐（32 判据）
     "run_ir_solve_smoke.py",            # L0/L3 直接消费 IR 真值计算
     "run_wdm_coupler_smoke.py",         # ⚠️ 文件头旧注称其「重」→ 实测 0.30s，属过时排除
     "run_wdm_coupler_wl_smoke.py",

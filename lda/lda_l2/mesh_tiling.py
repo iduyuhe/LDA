@@ -124,6 +124,14 @@ def tile_geometry(N_tile: int, layout_mode: str = LAYOUT_MODE_DEFAULT,
                          layout_mode=layout_mode, ps_arm_um=ps_arm_um,
                          vpi_l_v_mm=vpi_l_v_mm)
     prc = parasitic_rc.estimate_parasitics(parse_gds_polygons(rep["gds_bytes"])["structures"])
+    # 🆕 D-126：逐 rail 抽头数（deg）的分布 —— 「每模口径」所需。
+    #   此前本模块只假设 ⟨deg⟩ = N−1（列/均值口径）⇒ 用 it 估天花板会**低估最坏模**。
+    #   grid2d 实测：deg_min = N/2、deg_max = N、⟨deg⟩ = N−1（Σdeg = N(N−1)）。
+    deg = [0] * int(N_tile)
+    for (j, _t, _p, _c) in rep["ops"]:
+        j = int(j)
+        deg[j] += 1
+        deg[j + 1] += 1
     return {
         "N_tile": int(N_tile),
         "layout_mode": layout_mode,
@@ -132,6 +140,10 @@ def tile_geometry(N_tile: int, layout_mode: str = LAYOUT_MODE_DEFAULT,
         "footprint_um2": float(rep["footprint_um2"]),
         "n_cols": int(rep["n_cols"]),
         "n_mzi": int(rep["n_mzi"]),
+        "deg_min": int(min(deg)),
+        "deg_max": int(max(deg)),
+        "deg_span": int(max(deg) - min(deg)),
+        "deg_mean": float(sum(deg)) / float(N_tile),
         "C_total_ff": float(prc["totals"]["C_total_ff"]),
         "R_series_ohm": float(prc["totals"]["R_series_ohm"]),
         "n_elements": int(prc["totals"]["n_elements"]),
@@ -184,6 +196,24 @@ def d1_bus_budget(N_tile: int, scenario: str = "B",
     il_mean = a_prop * L_cm + avg_deg * a_tap
     il_full = a_prop * L_cm + (avg_deg * rail_switch_margin) * a_tap
     il_short = a_prop * col_cm + 1.0 * a_tap
+    # 🆕 D-126：把「每模口径」登记进来 —— 此前本通道只有 mean（列/均值口径）。
+    #   每模最坏 ⟺ deg_max（光子走挂门最多的那条 rail）；最好 ⟺ deg_min。
+    #   🔴 本模型（`a_prop·L_cm + deg·a_tap`）**不含**每抽头波导绕行项
+    #   ⇒ 与 `loss_aware_compile` 的总线端口模型相差 `deg·α_prop·(rail_pitch−gap)/1e4`
+    #   （两个模块各自的模型选择，均已在各自披露中声明）。
+    from lda_l2 import il_basis as _ILB
+    geo_deg_min = int(geo.get("deg_min", 0))
+    geo_deg_max = int(geo.get("deg_max", 0))
+    if geo_deg_min < 1 or geo_deg_max < geo_deg_min:
+        raise MeshTilingError("tile_geometry 未给出合法 deg_min/deg_max（%r/%r）"
+                              % (geo_deg_min, geo_deg_max))
+    il_min = a_prop * L_cm + geo_deg_min * a_tap
+    il_max = a_prop * L_cm + geo_deg_max * a_tap
+    basis = _ILB.il_basis_from_stats(
+        il_min, il_mean, il_max, channel="tiling", n_modes=N,
+        per_element_db=a_tap, per_element_kind="per_tap_db",
+        basis_note="瓦片总线 IL：IL_k = α_prop·L_bus/1e4 + deg[k]·α_tap（本通道模型，**不含**每抽头波导绕行）；"
+                   "每模最坏 = deg_max（grid2d = N）、最好 = deg_min（= N/2）、均值 = ⟨deg⟩ = N−1。")
     return {
         "N_tile": N, "scenario": scenario, "a_prop_db_cm": a_prop, "a_tap_db": a_tap,
         "layout_mode": geo["layout_mode"],
@@ -193,9 +223,12 @@ def d1_bus_budget(N_tile: int, scenario: str = "B",
         "avg_deg": avg_deg,
         "rail_switch_margin": float(rail_switch_margin),
         "IL_mean_db": float(il_mean),
+        "IL_min_db": float(il_min),
+        "IL_max_db": float(il_max),
         "IL_full_db": float(il_full),
         "IL_short_db": float(il_short),
         "IL_var_db": float(il_full - il_short),
+        "il_basis_per_mode": basis,
         "geometry": geo,
     }
 
@@ -253,8 +286,12 @@ def p3_tiling_ceiling(N_tile: int, scenario: str = "B",
     il_bus_tile = d1["IL_mean_db"]                             # 每瓦片内部（mean 口径）
     il_link = a_prop * (geo["L_bus_um"] / 1e4)                 # 每边界互连（该档 x 跨度）
     il_par_tile = c_sub_loss_db_per_ff * geo["C_total_ff"]      # 每瓦片寄生代理
+    # 🆕 D-126：每模最坏口径的 per-tile 总线 IL（= 挂门最多的 rail）。
+    #   本通道原用 `IL_mean_db`（列/均值口径）估天花板 ⇒ **低估最坏模**。
+    il_bus_worst = float(d1["IL_max_db"])
     rows = []
     last_eq = last_rx = 0
+    last_eq_pm = last_rx_pm = 0
     for T in t_table:
         if T < 1:
             raise MeshTilingError("t_table 元素须 >=1，收到 %r" % (T,))
@@ -263,24 +300,42 @@ def p3_tiling_ceiling(N_tile: int, scenario: str = "B",
         il_lnk = il_link * (T - 1)
         il_par = il_par_tile * T
         il_tot = il_bus + il_lnk + il_par
+        # 每模最坏口径（同一 T 结构，只把 per-tile bus 换成最坏模读数）
+        il_bus_pm = il_bus_worst * T
+        il_tot_pm = il_bus_pm + il_lnk + il_par
         fe = bool(il_tot <= eq_range_db)
         fr = bool(il_tot <= rx_margin_db)
+        fe_pm = bool(il_tot_pm <= eq_range_db)
+        fr_pm = bool(il_tot_pm <= rx_margin_db)
         rows.append({"T": int(T), "N": N, "IL_bus_db": float(il_bus),
                      "IL_link_db": float(il_lnk), "IL_par_db": float(il_par),
-                     "IL_total_db": float(il_tot), "feas_eq": fe, "feas_rx": fr})
+                     "IL_total_db": float(il_tot), "feas_eq": fe, "feas_rx": fr,
+                     "IL_bus_per_mode_db": float(il_bus_pm),
+                     "IL_total_per_mode_db": float(il_tot_pm),
+                     "feas_per_mode_eq": fe_pm, "feas_per_mode_rx": fr_pm})
         if fe:
             last_eq = N
         if fr:
             last_rx = N
+        if fe_pm:
+            last_eq_pm = N
+        if fr_pm:
+            last_rx_pm = N
     return {
         "N_tile": int(N_tile), "scenario": scenario, "layout_mode": geo["layout_mode"],
         "IL_bus_per_tile_db": float(il_bus_tile),
+        "IL_bus_worst_per_tile_db": il_bus_worst,
         "IL_link_per_boundary_db": float(il_link),
         "IL_par_per_tile_db": float(il_par_tile),
         "eq_range_db": float(eq_range_db), "rx_margin_db": float(rx_margin_db),
         "rows": rows,
         "ceiling_eq_N": int(last_eq),
         "ceiling_rx_N": int(last_rx),
+        "ceiling_per_mode_eq_N": int(last_eq_pm),
+        "ceiling_per_mode_rx_N": int(last_rx_pm),
+        "basis_note": "`IL_total_db`/`ceiling_*` = **列/均值口径**（per-tile 用 ⟨deg⟩=N−1）；"
+                      "`IL_total_per_mode_db`/`ceiling_per_mode_*` = **每模最坏口径**"
+                      "（per-tile 用 deg_max）⇒ 后者**更严**（天花板 ≤ 前者）。两者不可互换。",
         "a_prop_db_cm": a_prop, "a_tap_db": d1["a_tap_db"],
         "L_bus_um": float(geo["L_bus_um"]),
         "C_total_ff": float(geo["C_total_ff"]),

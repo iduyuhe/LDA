@@ -351,8 +351,20 @@ def il_per_port_direct_bus(build_result: Dict[str, Any],
         raise LossAwareCompileError(
             "逐端口 IL 方差(%.12g) != 闭式 (deg_span*dIL_per_tap=%.12g) ⇒ 模型不自洽"
             % (var, var_closed))
+    # 🆕 D-126：本通道**本来就是每端口（= 每模）口径**，但此前只报 mean + var
+    #   ⇒ 最坏模藏在方差里。现登记到平台规范词汇（min/mean/max/spread），
+    #     并显式给出「最坏模」读数（= 链路预算该用的量）。旧键一字未改。
+    from lda_l2 import il_basis as _ILB
+    il_min, il_max = min(ils), max(ils)
+    basis = _ILB.il_basis_from_values(
+        ils, channel="grid2d_bus", n_modes=len(ils),
+        per_element_db=dil, per_element_kind="per_tap_db",
+        basis_note="grid2d 直总线逐端口 IL（每端口 = 每模）：IL_k = α_prop·(L_bus + deg[k]·(rp−gap))/1e4 "
+                   "+ deg[k]·α_tap；最坏模 = deg_max（= N），最好模 = deg_min（= N/2）。")
     return {
         "IL_mean_db": sum(ils) / len(ils),
+        "IL_min_db": il_min,
+        "IL_max_db": il_max,
         "IL_var_ports_db": var,
         "IL_var_ports_closed_form_db": var_closed,
         "dIL_per_tap_db": dil,
@@ -366,6 +378,7 @@ def il_per_port_direct_bus(build_result: Dict[str, Any],
         "alpha_prop_db_cm": alpha_prop,
         "alpha_tap_db": alpha_tap,
         "per_port": per_port,
+        "il_basis_per_mode": basis,
     }
 
 

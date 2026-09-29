@@ -1,0 +1,59 @@
+{
+  "module": "D-136 · 超导征程 S4 读出/控制线路 + 串扰/损耗预算",
+  "topology": {
+    "rows": 3,
+    "cols": 3,
+    "n_qubits": 9,
+    "n_edges_expected": 12
+  },
+  "geometry": {
+    "n_elements": 82,
+    "nets": {
+      "qubit_nets": 9,
+      "feedline_segments": 3,
+      "readout": 9,
+      "control": 9,
+      "coupler": 12,
+      "ground_nets": 1,
+      "edges_bridged": 12
+    }
+  },
+  "drc": {
+    "verdict": "ACCEPT",
+    "n_rules": 10,
+    "violations": []
+  },
+  "lvs": {
+    "verdict": "ACCEPT",
+    "netlist": {
+      "qubit_nets": 9,
+      "feedline_segments": 3,
+      "readout": 9,
+      "control": 9,
+      "coupler": 12,
+      "ground_nets": 1,
+      "edges_bridged": 12
+    },
+    "issues": []
+  },
+  "physics": {
+    "verdict": "ACCEPT",
+    "n_qubits": 9,
+    "n_pairs": 36,
+    "max_stray_zz_mhz": 0.8760479783851564,
+    "zz_stray_limit_mhz": 1.0,
+    "max_control_xtalk": 1.5178285714285712e-05,
+    "control_xtalk_limit": 0.05,
+    "min_t1_total_us": 46.13029972620309,
+    "t1_target_us": 20.0
+  },
+  "closed_loop": true,
+  "red_line": {
+    "role": "D-136 = 超导征程 S4：在 S3 阵列上补读出/控制线路 + 串扰预算 + 损耗预算，把平台从「能排阵列」推进到「带互连与系统级预算」",
+    "layers": "SC_FILM=10 / SC_JJ=11 / SC_GROUND=12（gds_export 定义，非 Foundry PDK）；读出/馈线/控制均布在 FILM 层，以 net 区分（与 S2/S3 同口径）",
+    "limits": "min_width/min_jj/min_ground_gap/readout/control 限值为**设计规则 · 可覆盖 · 非实测 golden**（Foundry PDK 属 D5 外部依赖，平台不沾）",
+    "lvs": "几何 LVS 对**实际 produced 几何**做 bbox 重叠/邻近网表提取（不重放意图）；读出桥接 1 qubit_id + 邻近 1 行馈线；控制桥接恰好 1 qubit_id",
+    "physics": "串扰：全 pair 二阶微扰 ZZ 率 ζ_zz=2J²α/(Δ(Δ+α))（Blais 2004 色散，golden）；非最近邻 J_bg 用几何 1/d³ 标度估（设计估计）。损耗：Barends 参与比 1/T1=Σtanδ_i·p_i + Purcell γ_P=κg²/Δ²（复用 D-88 闭式）。f_r/κ/g/tanδ/p_i 为设计参数（非 golden），公式为确定性物理定律",
+    "red_line": "纯几何（标准库 + 平台 numpy 物理锚）、零量子 SDK、LLM 不进判决路径、读出/控制为几何 stub（键合焊盘片外未建模）"
+  }
+}

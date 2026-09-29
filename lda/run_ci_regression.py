@@ -502,6 +502,20 @@ CORE_SMOKES: List[str] = [
     #     ② N_tile=4 时 `IL_full`（含 1.3 余量）**仍低于**每模最坏 `IL_max` ⇒ 1.3 是均值上的余量。
     #   突变探针 `scripts/d126_il_basis_probe.py` 反证其会响（12 条突变各必红）。CI core 218→219。
     "run_il_basis_platform_smoke.py",    # D-126 每模口径平台统一登记 · 三通道对齐（32 判据）
+    # D-127 「非通用但浅」的可编程子流形设计：把 D-121 的「可编程性前沿 = 参数计数 ⌊N/2⌋·D」
+    #   升级为**机器实测的可及自由度 = 可达子流形维数**（雅可比秩，中心差分 + SVD）。
+    #   · 上界 `dim ≤ min(2g + N, N²)`（平台静态网格口径：每门 2 参数 + 末端相移屏 N）；
+    #   · 🔴 **参数计数会骗人**：全最大匹配（O-only）门数线性增而 dim **恒为 2N**
+    #     （块对角 ⇒ 可达集 = (U(2))^{N/2}）= D-121 §2b 阻塞的**定量版**；
+    #   · ★**最优浅电路 = 交替砖墙**（O,E,O,E…）★：dim 逐点达到上界；
+    #     N=4 全匹配序列穷举（无更优）+ N≤8 beam search + O-heavy 对照 + 随机基线 四重反证；
+    #   · ★**通用前沿 D\* = N**★（dim = N²）—— 与 **D-122 矩形网格深度 N**、
+    #     **D-121 相邻耦合紧界 N** 三方一致；`D = N−1` 时 dim < N² ⇒ 坐实参数界 N−1 不可达；
+    #   · ★跨模块★ `rect_mesh.rectangular_mesh_layers`（平台主权 Clements 分解）的层数 ≡ N、
+    #     逐层均为匹配、层尺寸序 ≡ 砖墙 `[N/2, N/2−1, …]`，且其匹配图案喂入实测秩 ⇒ dim = N²
+    #     ⇒ **平台自己的 P&R 就是最优砖墙**（门禁 E1–E4）。
+    #   突变探针 `scripts/d127_submanifold_probe.py` 反证其会响（12 条突变各必红）。CI core 219→220。
+    "run_submanifold_smoke.py",          # D-127 可编程子流形 · 可及自由度 = 雅可比秩（32 判据）
     "run_ir_solve_smoke.py",            # L0/L3 直接消费 IR 真值计算
     "run_wdm_coupler_smoke.py",         # ⚠️ 文件头旧注称其「重」→ 实测 0.30s，属过时排除
     "run_wdm_coupler_wl_smoke.py",

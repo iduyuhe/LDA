@@ -416,7 +416,8 @@ CORE_SMOKES: List[str] = [
     #   突变探针 `scripts/d113_loqc_probe.py` / `scripts/d114_d116_probe.py` 反证其会响。
     #   账本 470 不变（量子芯片为平台能力演示，未走加锚四件套）。CI core 209→211。
     #   D-117 `calibration`（L3 标定闭环 G_Q5：三点相移/探测器反馈闭环/CRB）+
-    #   D-118 `quantum_drc_lvs`（量子 DRC 九规则 G_Q7 + 酉层版图-原理图 LVS 签核）+
+    #   D-118 `quantum_drc_lvs`（量子 DRC 九规则 G_Q7 + 酉层版图-原理图 LVS 签核；
+    #   ⑤损耗预算 D-124 起判**两口径**：总级联 + 每模）+
     #   D-119 `quantum_benchmark`（玻色采样/HOM/过程保真度/综合对标分 G_Q8）。
     #   突变探针 `scripts/d117_d119_probe.py` 反证其会响。CI core 211→212。
     "run_loqc_states_smoke.py",         # D-113 量子态层（14 判据）
@@ -465,6 +466,17 @@ CORE_SMOKES: List[str] = [
     #   复用 D-120(per_mzi=2.4)/D-121(0.2,2.6)/D-122(矩形层)，不另建常数；纯 numpy · C 级自主。
     #   突变探针 `scripts/d123_loss_probe.py` 反证其会响（10 条突变各必红）。CI core 215→216。
     "run_loss_budget_smoke.py",         # D-123 真实损耗预算 · 每模深度接进 dB 账（27 判据）
+    # D-124 把「每模口径」接进 D-118 签核的 QDR-LOSS-BUDGET（重判更严）。
+    #   ★两口径★ 规则 ⑤ 现判**总级联口径**（n_mzi·per_mzi (+交叉)，限 max_loss_db=25）与
+    #     **每模口径**（光子实际穿越深度 × per_mzi，限 max_loss_per_mode_db=15）——
+    #     每模深度**由提交的 ops 直接数出**（mesh-agnostic：三角 2N−3 / 矩形 N），
+    #     与「门总片数 N(N−1)/2」是两个口径（N=8：13 vs 28）。
+    #   ★重判更严★ N=5（三角）在总口径下合法（24 dB ≤ 25）但每模口径拒绝（7×2.4=16.8 > 15）
+    #     ⇒ 同一设计由「通过」翻为「拒绝」；N=4 两口径皆合法（14.4/12）⇒ 既有参考设计不误伤。
+    #   ★矩形收益★ 同预算 15 dB：矩形可签 N≤6 · 三角仅 N≤4（呼应 M5/D-123）。
+    #   规则名 / QDR_RULES / n_rules 全不变（仍 `QDR-LOSS-BUDGET` · 9 条）⇒ 既有调用零破坏。
+    #   突变探针 `scripts/d124_drc_loss_probe.py` 反证其会响（9 条突变各必红）。CI core 216→217。
+    "run_drc_loss_per_mode_smoke.py",   # D-124 DRC 损耗每模口径 · QDR-LOSS-BUDGET 两口径（25 判据）
     "run_ir_solve_smoke.py",            # L0/L3 直接消费 IR 真值计算
     "run_wdm_coupler_smoke.py",         # ⚠️ 文件头旧注称其「重」→ 实测 0.30s，属过时排除
     "run_wdm_coupler_wl_smoke.py",

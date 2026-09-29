@@ -126,7 +126,8 @@ def main() -> int:
     except Exception as e:                                # noqa: BLE001
         ok_b = False
         print(f"  DRC/LVS 自检异常：{type(e).__name__}: {e}")
-    check("B1 DRC/LVS 模块自检 9/9 PASS", ok_b, "双路装配/零扰动/量化/噪声/DRC 九规则/阈值/反自证桩/护栏")
+    check("B1 DRC/LVS 模块自检 11/11 PASS", ok_b,
+          "双路装配/零扰动/量化/噪声/DRC 九规则/阈值/反自证桩/护栏/★重判更严(D-124)/限值可覆盖")
 
     N4 = 4
     Ut = MMM.dft_matrix(N4)

@@ -23,6 +23,16 @@
    器件的「量子参数」（g²、HOM 可见度、η、标定残差）由 D-114/115/117 提供，
    本模块只做**限值比对**（接口解耦）。
 
+   🔴 **⑤ 损耗预算内含「两个口径」**（D-124 升级 · 承接 D-123 的口径分离）：
+     · **总级联口径**（原口径）：`n_mzi · per_mzi (+ 交叉)` —— 全网格所有门的合计插损，
+       限值 `max_loss_db`。
+     · **每模口径**（**新增 · 物理正确**）：光子**实际穿越**的分束器数 × `per_mzi`，
+       限值 `max_loss_per_mode_db`（设计规则 · 可覆盖）。每模深度**由提交的 ops 直接数出**
+       （mesh-agnostic：三角邻耦合 = **2N−3**、矩形 Clements = **N**），故对提交的网格
+       零假设、无需另传 mesh 标记。
+     两个口径**各带独立限值**，任一超限即 violation（detail 标注口径）。默认限值下
+     每模口径**严格于**总级联口径（N=5：总 24 dB 通过 / 每模 7×2.4=16.8 dB 拒绝）。
+
 ② **量子 LVS 的两侧**：
    · **原理图侧** U_target —— 目标酉矩阵（设计意图，由 Reck 分解输入）。
    · **版图侧** U_actual —— 由网格 op 参数（θ, φ）经**非理想效应**重建：
@@ -56,12 +66,14 @@ from collections import OrderedDict
 import numpy as np
 
 from lda_l2 import mzi_mesh_matmul as MMM
+from lda_qeda.loss_budget import PER_MZI_LOSS_DB as _PER_MZI_LOSS_DB   # D-123 单一真源
 
 __all__ = [
     "DEFAULT_DRC_LIMITS",
     "QDR_RULES",
     "phase_resolution_rad",
     "quantize_phase",
+    "per_mode_optical_depth",
     "run_quantum_drc",
     "reconstruct_actual_unitary",
     "quantum_lvs_signoff",
@@ -77,7 +89,10 @@ DEFAULT_DRC_LIMITS = {
     "coupling_split_max": 0.98,          # 上限
     "phase_resolution_rad": 2.0 * math.pi / (2 ** 12),   # 12-bit 相移器量化步长
     "max_crossings": 40,                 # 网格波导交叉数上限
-    "max_loss_db": 25.0,                 # 级联插损预算上限（dB）
+    "max_loss_db": 25.0,                 # **总级联口径**插损预算上限（dB · 全网格门合计）
+    "max_loss_per_mode_db": 15.0,        # **每模口径**插损预算上限（dB · η ≈ 3.2%）
+                                         # 设计规则 · 可覆盖；默认**严于**总级联口径
+                                         # （总口径允许 N≤5，每模口径只到 N≤4）
     "max_source_g2": 0.10,               # 单光子源 g²(0) 上限（纯度）
     "min_hom_visibility": 0.90,          # HOM 可见度下限（不可区分性）
     "min_detector_eta": 0.70,            # SNSPD 效率下限
@@ -107,6 +122,39 @@ def quantize_phase(phi: float, bits: int) -> float:
     return round(phi / dphi) * dphi
 
 
+def per_mode_optical_depth(ops, n_modes: int | None = None) -> int:
+    """★ 每模光学深度：**由提交的 ops 直接数出**（mesh-agnostic · D-124）。
+
+        depth = max over 模 of (触及该模的门的片数)
+
+    每片门耦合**一个相邻对** (p, p+1) ⇒ 两端模各 +1。故：
+      · 三角邻耦合网格（`reck_triangular_mesh`）⇒ **2N−3**（同列相邻对共享模 = 链）；
+      · 矩形 Clements 分层展平 ⇒ **N**。
+    ops 元素接受 4 元组 `(c, p, θ, φ)`（三角）或 3 元组 `(j, θ, φ)`（矩形展平）。
+
+    🔴 与「门的总片数」**不是一回事**：本函数是**单模最长路径**（三角 = 2N−3），
+    而门总片数是 `N(N−1)/2`（N=8：13 vs 28）⇒ 用 `len(ops)` 冒充每模深度会把
+    三角网格的深度**高估**约 (N−1)/2 倍（这正是 D-124 要分开的两个口径）。
+    """
+    if not ops:
+        raise ValueError("ops 非空")
+    cnt: dict = {}
+    for op in ops:
+        if len(op) >= 4:
+            p = int(op[1])
+        elif len(op) == 3:
+            p = int(op[0])
+        else:
+            raise ValueError(f"op 需 3/4 元组，得到 {len(op)} 元")
+        if p < 0:
+            raise ValueError(f"模索引越界：p={p}")
+        cnt[p] = cnt.get(p, 0) + 1
+        cnt[p + 1] = cnt.get(p + 1, 0) + 1
+    if n_modes is not None and max(cnt) + 1 > int(n_modes):
+        raise ValueError(f"ops 触到模 {max(cnt)} ≥ N={n_modes}")
+    return int(max(cnt.values()))
+
+
 # ---------------------------------------------------------------------------
 # 2) 量子 DRC
 # ---------------------------------------------------------------------------
@@ -114,7 +162,8 @@ def run_quantum_drc(design: dict, limits: dict | None = None) -> dict:
     """量子设计规则检查：逐条比对，返回 violations 与 ACCEPT/REJECT 判决。
 
     design 字段（缺省视为「未提供 ⇒ 该规则跳过」）：
-      ops                 : 网格 op 列表 [(c, p, theta, phi), …]
+      ops                 : 网格 op 列表 —— 4 元组 (c, p, θ, φ)（三角）或 3 元组 (j, θ, φ)
+                            （矩形展平）；每片耦合同一个相邻对 (p, p+1)
       N                   : 模数
       n_crossings         : 网格波导交叉数
       source_g2           : 单光子源 g²(0)（D-114）
@@ -122,6 +171,10 @@ def run_quantum_drc(design: dict, limits: dict | None = None) -> dict:
       detector_eta        : SNSPD 探测效率（D-115）
       calib_residual_rad  : L3 标定残差（D-117 闭环输出）
       phase_bits          : 数字相移器比特数
+
+    🔴 规则 ⑤ `QDR-LOSS-BUDGET` **判两个口径**（D-124）：总级联口径（`max_loss_db`）与
+    每模口径（`max_loss_per_mode_db`）**各带独立限值**，任一超限即 violation
+    （detail 显式标注口径）。每模深度由 ops 直接数出 ⇒ 对提交的网格零假设。
 
     返回 {"verdict": "ACCEPT"/"REJECT", "violations": [...], "n_rules": k}。
     判决：任一 violation ⇒ REJECT。全死标量，LLM 不进判决路径。
@@ -170,13 +223,21 @@ def run_quantum_drc(design: dict, limits: dict | None = None) -> dict:
             viol.append({"rule": "QDR-CROSSING-BUDGET",
                          "detail": f"n_crossings={design['n_crossings']} > {lim['max_crossings']}"})
 
-    # ⑤ 级联插损预算
+    # ⑤ 插损预算（**两口径**：总级联 + 每模 · D-124）
     if ops is not None and design.get("n_crossings") is not None:
         checked += 1
-        loss = MMM.mesh_cascade_loss_db(len(ops), n_crossings=int(design["n_crossings"]))
-        if loss > lim["max_loss_db"]:
+        # ⑤a 总级联口径（原口径）：全网格门合计（+ 交叉）
+        total = MMM.mesh_cascade_loss_db(len(ops), n_crossings=int(design["n_crossings"]))
+        if total > lim["max_loss_db"]:
             viol.append({"rule": "QDR-LOSS-BUDGET",
-                         "detail": f"级联插损 {loss:.3f} dB > {lim['max_loss_db']} dB"})
+                         "detail": f"总级联口径 {total:.3f} dB > {lim['max_loss_db']} dB"})
+        # ⑤b 每模口径（**新增 · 物理正确**）：光子实际穿越深度 × per_mzi
+        depth = per_mode_optical_depth(ops)
+        per_mode = depth * float(_PER_MZI_LOSS_DB)
+        if per_mode > lim["max_loss_per_mode_db"]:
+            viol.append({"rule": "QDR-LOSS-BUDGET",
+                         "detail": f"每模口径 {per_mode:.3f} dB（光学深度 {depth}）"
+                                   f" > {lim['max_loss_per_mode_db']} dB"})
 
     # ⑥ 单光子源纯度 g²(0)
     if design.get("source_g2") is not None:
@@ -383,6 +444,31 @@ def run_selfchecks(verbose: bool = False) -> bool:
             pass
     res["⑨ 护栏：bits<1 / σ<0 抛 ValueError"] = guard
 
+    # ⑩ ★重判更严（D-124）★ 损耗预算两口径的判定迁移：
+    #    N=5 在**总级联口径**合法（10 门 ×2.4 = 24 dB ≤ 25）但**每模口径**
+    #    （深度 7 ×2.4 = 16.8 dB > 15）拒绝；N=4 两口径皆合法（14.4/12）。
+    N5 = 5
+    ops5, _D5 = MMM.reck_triangular_mesh(MMM.dft_matrix(N5))
+    d5 = run_quantum_drc({"ops": ops5, "N": N5, "n_crossings": 0})
+    d4 = run_quantum_drc({"ops": ops, "N": N, "n_crossings": 0})
+    det5 = [v["detail"] for v in d5["violations"] if v["rule"] == "QDR-LOSS-BUDGET"]
+    ok10 = (d5["verdict"] == "REJECT" and len(det5) == 1 and "每模口径" in det5[0]
+            and per_mode_optical_depth(ops5) == 2 * N5 - 3 == 7
+            and MMM.mesh_cascade_loss_db(len(ops5), n_crossings=0) <= 25.0
+            and d4["verdict"] == "ACCEPT" and per_mode_optical_depth(ops) == 2 * N - 3 == 5)
+    res[f"⑩ ★重判更严★ N=5 总口径 24 dB≤25 通过 · 每模口径 {7*2.4:.1f} dB>15 拒绝"
+        f"（N=4 两口径皆通过）"] = ok10
+
+    # ⑪ 每模限值是**设计规则**（可覆盖 · 非实测 golden）：收紧到 10 dB ⇒ N=4 也拒绝；
+    #    放宽到 20 dB ⇒ N=4 通过。两口径各自独立生效（detail 标口径）。
+    dt = run_quantum_drc({"ops": ops, "N": N, "n_crossings": 0},
+                         {"max_loss_per_mode_db": 10.0})
+    dl_ = run_quantum_drc({"ops": ops, "N": N, "n_crossings": 0},
+                          {"max_loss_per_mode_db": 20.0})
+    res["⑪ 每模限值为设计规则（可覆盖）：收紧 10 dB ⇒ N=4 拒绝 · 放宽 20 dB ⇒ 通过"] = (
+        dt["verdict"] == "REJECT" and any("每模口径" in v["detail"] for v in dt["violations"])
+        and dl_["verdict"] == "ACCEPT")
+
     if verbose:
         for k, v in res.items():
             print(f"[{'PASS' if v else 'FAIL'}] {k}")
@@ -393,6 +479,11 @@ RED_LINE_DISCLOSURE = {
     "role": "D-118 = 量子器件 DRC/LVS（G_Q7）：量子设计规则 + 酉层版图-原理图签核。",
     "drc": "9 条量子规则（相位域/分束比域/量化分辨率/交叉预算/损耗预算/源纯度/"
            "不可区分性/探测效率/标定残差），全死标量限值比对。",
+    "loss_basis": "🔴 ⑤损耗预算判**两个口径**（D-124）：总级联口径 `n_mzi·per_mzi (+交叉)`"
+                  "（限 `max_loss_db`）与**每模口径**（光子实际穿越深度 × per_mzi，"
+                  "限 `max_loss_per_mode_db`）。每模深度**由提交的 ops 直接数出**"
+                  "（mesh-agnostic：三角 2N−3 / 矩形 Clements N），与「门总片数」区分。"
+                  "默认每模限值**严于**总级联口径（N=5 由通过翻为拒绝）。",
     "lvs": "版图侧 U_actual（量化+标定残差+耦合器误差）vs 原理图侧 U_target，"
            "按酉保真度判 ACCEPT/REJECT。",
     "independence": "版图侧装配用嵌入矩阵乘法，平台用行组合——两路数值独立互验。",

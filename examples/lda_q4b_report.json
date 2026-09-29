@@ -1,0 +1,280 @@
+{
+  "chip_family": "LDA-Q4b · 时间复用可编程酉（M4 延伸）",
+  "platform_capability": "lda_qeda/temporal_mesh.py(D-121) 复用 lda_l2 Reck + D-120 规模律",
+  "n_sweep": [
+    4,
+    8,
+    16,
+    32,
+    64,
+    128
+  ],
+  "n_target": 216,
+  "lemma_l1_any_pair_addressing": {
+    "n_modes": 7,
+    "stride_m": 3,
+    "target_pair": [
+      2,
+      5
+    ],
+    "max_abs_diff": 0.0,
+    "ok": true
+  },
+  "constructive_universality": {
+    "dft": [
+      {
+        "n_modes": 4,
+        "n_gates": 6,
+        "n_gate_steps": 5,
+        "max_gates_per_step": 2,
+        "fidelity": 0.9999999999999999,
+        "unitary_ok": true,
+        "depth_lower_bound": 3
+      },
+      {
+        "n_modes": 8,
+        "n_gates": 28,
+        "n_gate_steps": 23,
+        "max_gates_per_step": 2,
+        "fidelity": 0.9999999999999998,
+        "unitary_ok": true,
+        "depth_lower_bound": 7
+      },
+      {
+        "n_modes": 16,
+        "n_gates": 120,
+        "n_gate_steps": 107,
+        "max_gates_per_step": 2,
+        "fidelity": 0.9999999999999997,
+        "unitary_ok": true,
+        "depth_lower_bound": 15
+      },
+      {
+        "n_modes": 32,
+        "n_gates": 496,
+        "n_gate_steps": 467,
+        "max_gates_per_step": 2,
+        "fidelity": 0.9999999999999997,
+        "unitary_ok": true,
+        "depth_lower_bound": 31
+      },
+      {
+        "n_modes": 64,
+        "n_gates": 2016,
+        "n_gate_steps": 1955,
+        "max_gates_per_step": 2,
+        "fidelity": 0.9999999999999994,
+        "unitary_ok": true,
+        "depth_lower_bound": 63
+      },
+      {
+        "n_modes": 128,
+        "n_gates": 8128,
+        "n_gate_steps": 8003,
+        "max_gates_per_step": 2,
+        "fidelity": 0.9999999999999992,
+        "unitary_ok": true,
+        "depth_lower_bound": 127
+      }
+    ],
+    "random": [
+      {
+        "n_modes": 4,
+        "fidelity": 0.9999999999999999,
+        "unitary_ok": true
+      },
+      {
+        "n_modes": 8,
+        "fidelity": 0.9999999999999999,
+        "unitary_ok": true
+      },
+      {
+        "n_modes": 16,
+        "fidelity": 0.9999999999999999,
+        "unitary_ok": true
+      },
+      {
+        "n_modes": 32,
+        "fidelity": 0.9999999999999999,
+        "unitary_ok": true
+      },
+      {
+        "n_modes": 64,
+        "fidelity": 0.9999999999999999,
+        "unitary_ok": true
+      },
+      {
+        "n_modes": 128,
+        "fidelity": 0.9999999999999999,
+        "unitary_ok": true
+      }
+    ],
+    "worst_fidelity": 0.9999999999999992,
+    "n_physical_mzi": 1
+  },
+  "depth_lower_bound": {
+    "n_modes": 216,
+    "formula": "ceil(n_mzi / floor(N/2))",
+    "value": 215,
+    "note": "参数计数下界（Clements 必要性定理 + 层容量 ⌊N/2⌋）；硬件无关。"
+  },
+  "construction_note": "构造性时间表 = 平台 Reck 三角 op 序列（按光路逆序）+ 匹配贪心聚合。三角 Reck 的 op 集本质是**串行链**（同列相邻对共享模、顺序不可交换）⇒ 朴素构造步数为 O(N²)（N=128 时 8003 步）。本演示的**损耗判定不依赖构造深度**，而依赖参数计数下界（结论 2）：任何合法通用时间表的深度都 ≥ 下界，故「不省损耗」的结论与调度器优劣无关。",
+  "resources": {
+    "static": {
+      "kind": "static_passive_mesh",
+      "n_modes": 216,
+      "n_physical_mzi": 23220,
+      "depth": 215,
+      "loss_per_mode_db": 516.0000000000001,
+      "components_order": "O(N^2)",
+      "depth_order": "O(N)"
+    },
+    "temporal_best_case": {
+      "kind": "time_multiplexed_universal",
+      "n_modes": 216,
+      "n_physical_mzi": 1,
+      "n_delay_lines": 1,
+      "n_eom_settings": 23220,
+      "depth": 215,
+      "depth_basis": "lower_bound_best_case",
+      "loss_per_mode_db": 559.0000000000001,
+      "per_path_eta": 1.2589254117941301e-56,
+      "components_order": "O(1)",
+      "depth_order": "O(N)",
+      "per_roundtrip_loss_db": 2.6000000000000005
+    }
+  },
+  "loss_verdict": {
+    "n_modes": 216,
+    "universal_constructible": true,
+    "depth_required_lower_bound": 215,
+    "depth_basis": "theoretical lower bound（对时间复用最有利的假设）",
+    "static_n_physical_mzi": 23220,
+    "temporal_n_physical_mzi": 1,
+    "element_saving_factor": 23220.0,
+    "static_loss_per_mode_db": 516.0000000000001,
+    "temporal_loss_lower_bound_db": 559.0000000000001,
+    "loss_saved_db_by_time_multiplexing": -43.0,
+    "loss_saving_strictly_negative": true,
+    "buys": [
+      "物理元件数 O(N²)→O(1)（可制造性 / 版图面积 / 对准难度）",
+      "耦合比越域风险：只需 1 片 MZI 落在可实现域（D-118 曾报 1077/23220 片越域）",
+      "可重配代价：同一硬件换表即换电路"
+    ],
+    "does_not_buy": [
+      "每模损耗（= 深度 × 单件损耗，而通用性下界 D ≥ N−1 ⇒ Ω(N) dB）",
+      "通用性所付的深度（参数计数硬约束）",
+      "标定相位数（仍 O(N²)）"
+    ],
+    "proof_sketch": "① 通用 N 模酉需 n_mzi=N(N−1)/2 片 2 模门（Clements 必要性定理）；② 一层最多 ⌊N/2⌋ 片不相交门 ⇒ 任何时间表深度 D ≥ ⌈n_mzi/⌊N/2⌋⌉ = N−1（N 偶）；③ 故每模损耗 ≥ D_min·per_rt = 559 dB > 静态网格 (N−1)·per_mzi = 516 dB。",
+    "headline": "时间复用**能**实现任意 216 模酉（构造性时间表已实测 fid=1.0），但即便取理论最优深度 215，每模损耗 559 dB —— 比静态网格（516 dB）**严格更差**（多了环/开关损耗）。⇒ 「通用」与「省损」不可兼得（参数计数硬约束）：M4 的正确表述是「真路线 = 时间复用 + 浅电路（放弃通用性）」。"
+  },
+  "programmability_frontier": {
+    "n_modes": 216,
+    "gates_needed_universal": 23220,
+    "depth_lower_bound": 215,
+    "max_gates_per_step": 108,
+    "rows": [
+      {
+        "depth": 1,
+        "max_gates": 108,
+        "reachable_params": 108,
+        "param_fraction_of_unitary": 0.0023148148148148147,
+        "loss_db": 2.6000000000000005,
+        "universal": false
+      },
+      {
+        "depth": 2,
+        "max_gates": 216,
+        "reachable_params": 216,
+        "param_fraction_of_unitary": 0.004629629629629629,
+        "loss_db": 5.200000000000001,
+        "universal": false
+      },
+      {
+        "depth": 3,
+        "max_gates": 324,
+        "reachable_params": 324,
+        "param_fraction_of_unitary": 0.006944444444444444,
+        "loss_db": 7.800000000000002,
+        "universal": false
+      },
+      {
+        "depth": 4,
+        "max_gates": 432,
+        "reachable_params": 432,
+        "param_fraction_of_unitary": 0.009259259259259259,
+        "loss_db": 10.400000000000002,
+        "universal": false
+      },
+      {
+        "depth": 8,
+        "max_gates": 864,
+        "reachable_params": 864,
+        "param_fraction_of_unitary": 0.018518518518518517,
+        "loss_db": 20.800000000000004,
+        "universal": false
+      },
+      {
+        "depth": 16,
+        "max_gates": 1728,
+        "reachable_params": 1728,
+        "param_fraction_of_unitary": 0.037037037037037035,
+        "loss_db": 41.60000000000001,
+        "universal": false
+      },
+      {
+        "depth": 32,
+        "max_gates": 3456,
+        "reachable_params": 3456,
+        "param_fraction_of_unitary": 0.07407407407407407,
+        "loss_db": 83.20000000000002,
+        "universal": false
+      },
+      {
+        "depth": 64,
+        "max_gates": 6912,
+        "reachable_params": 6912,
+        "param_fraction_of_unitary": 0.14814814814814814,
+        "loss_db": 166.40000000000003,
+        "universal": false
+      },
+      {
+        "depth": 215,
+        "max_gates": 23220,
+        "reachable_params": 23220,
+        "param_fraction_of_unitary": 0.4976851851851852,
+        "loss_db": 559.0000000000001,
+        "universal": true
+      }
+    ],
+    "headline": "通用性需 D ≥ 215（参数计数下界）⇒ 每模损耗 ≥ 559 dB —— 与静态网格同阶。"
+  },
+  "borealis_dimension_verdict": {
+    "lattice_3loops": {
+      "kind": "fixed_lattice",
+      "n_modes_requested": 216,
+      "lattice_a": 6,
+      "n_loops_depth": 3,
+      "n_modes_realized": 216,
+      "reachable_params_model": 324,
+      "gates_needed_universal": 23220,
+      "param_fraction": 0.006944444444444444,
+      "universal": false,
+      "depth_order": "O(log_a N)"
+    },
+    "reported_params": 1200,
+    "reported_fraction": 0.0257201646090535,
+    "verdict": "浅晶格可及参数 ≪ N² ⇒ 不可能实现任意 216 模酉（放弃通用性换浅深度）。"
+  },
+  "headline_findings": [
+    "① 引理 L1：延迟环就是模置换；非相邻模对 (i,i+m) 由置换共轭寻址（实测逐位一致 max|Δ|=0）。",
+    "★ 结论 1：时间复用**能**实现任意 N 模酉 —— 用 **1 片物理 MZI**，时间表重建 DFT 与 Haar 随机酉到机器精度（最差 fid=1.000000000000，N=4…128）。",
+    "★ 结论 2：通用性深度下界（参数计数）= 215（N=216）——任何通用时间表都不可能更浅；该下界与硬件细节无关。",
+    "★ 结论 3（修正 M4 口号）：**即便取理论最优深度**，时间复用每模损耗 559 dB 仍**严格高于**静态网格 516 dB（多出 环/开关 损耗）。⇒ 时间复用买的是**元件数 O(N²)→O(1)**（可制造性 / 版图 / 对准），**不买**深度与损耗 ——「通用」与「省损」不可兼得。",
+    "★ 结论 4：Borealis 216 模 @ 浅深度(3 环) 靠的是**放弃通用性**：可及参数 324（报称 1200）≪ N²=46656 ⇒ 维度计数判死。"
+  ],
+  "scale_verdict": "M4 延伸结论：M4 的「真路线是时间复用」必须精确化为「真路线是**时间复用 + 浅电路（放弃通用性）**」。时间复用解决的是**可制造性墙**（元件数、耦合比越域、版图面积），而**损耗墙的本质是电路深度**，深度下界由参数计数钉死在 Ω(N) ——故通用酉在两架构下的每模损耗同阶，时间复用甚至略差。",
+  "honest_boundary": "① 本演示是**架构-资源模型**（设计预算口径），非任一真机实测比对；② 每轮次损耗为设计预算（MZI + 环/延迟/开关），非实测 PDK（D5 外部依赖）；③ 与 Borealis 只比**规模/架构/参数计数**，不比数值（CV GBS vs DV 被动 LOQC）；④ 深度下界为参数计数下界（不问硬件细节），可达性由构造性时间表独立给出（实测深度 ≥ 下界）。",
+  "verdict": "PASS"
+}

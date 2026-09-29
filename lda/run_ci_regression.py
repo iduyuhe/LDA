@@ -429,6 +429,16 @@ CORE_SMOKES: List[str] = [
     #   纯 numpy · C 级自主 · 零量子 SDK；实测 N=216 建 mesh 仅 ~0.11s ⇒ 无需预算覆盖。
     #   突变探针 `scripts/d120_scale_probe.py` 反证其会响。CI core 212→213。
     "run_quantum_scale_bench_smoke.py", # D-120 规模对标（27 判据）
+    # 🔴 M4 延伸（量子征程 · 2026-09-29）· D-121 `temporal_mesh`：
+    #   把 M4 的口号「真路线是时间复用」做成**可构造 + 可判死**的结论 ——
+    #   ①构造性通用性：**1 片物理 MZI** 的时间表重建任意 N 模酉到机器精度（N=4…128）；
+    #   ②通用性深度下界（参数计数）⌈N(N−1)/2 / ⌊N/2⌋⌉（N 偶⇒N−1、N 奇⇒N，216⇒215）；
+    #   ③★修正 M4 口号★：即便取该最优深度，时间复用每模损耗仍**严格高于**静态网格
+    #     ⇒ 时间复用买的是**元件数 O(N²)→O(1)**，**不买**深度/损耗；
+    #   ④Borealis 浅晶格（3 环）可及参数 ≪ N² ⇒ 维度计数判非通用（放弃通用性换浅深度）。
+    #   纯 numpy · C 级自主 · 零量子 SDK；建表与重建均亚秒级 ⇒ 无需预算覆盖。
+    #   突变探针 `scripts/d121_temporal_probe.py` 反证其会响。CI core 213→214。
+    "run_temporal_mesh_smoke.py",       # D-121 时间复用可编程酉（24 判据）
     "run_ir_solve_smoke.py",            # L0/L3 直接消费 IR 真值计算
     "run_wdm_coupler_smoke.py",         # ⚠️ 文件头旧注称其「重」→ 实测 0.30s，属过时排除
     "run_wdm_coupler_wl_smoke.py",

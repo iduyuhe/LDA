@@ -26,6 +26,12 @@ LIB_LAYER_SI = 1               # 顶层硅（芯层）
 LIB_LAYER_CLAD = 2             # 包层/BOX
 LIB_LAYER_METAL = 3            # 金属层
 LIB_LAYER_LABEL = 4
+# ── 超导层（D-133 · 超导 transmon 征程 S1）──
+LIB_LAYER_SC_FILM = 10       # 超导薄膜（Al/Nb 量子比特导体岛 + CPW 馈线）
+LIB_LAYER_SC_JJ = 11         # 约瑟夫森结（桥接两岛屿，定义非线性）
+LIB_LAYER_SC_GROUND = 12     # 地平面（共面波导接地板）
+LIB_LAYER_SC_AIRBRIDGE = 13  # 空气桥 / 跨线（S3+ 立体布线）
+LIB_LAYER_SC_PAD = 14        # 焊盘（RF/磁通偏置接入）
 
 
 # ---------------------------------------------------------------------------
@@ -278,6 +284,49 @@ def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
     # MziModulator / Photodetector —— 此前这 6 类器件**无任何版图几何**
     # （`device_geom_of` 直接 raise）⇒ 芯片级导出对含它们的链路直接崩，
     # 且版图↔原理图尺寸一致性（G4）对这 6 类**结构性无法回提**。
+    elif kind == "Transmon":
+        # D-133：超导固定频率 transmon 单元（Xmon 风格双岛屿 + 约瑟夫森结 +
+        # CPW 馈线 + 地平面框）。每个 desc 带 `net` 语义标签（qubit/jj/ground），
+        # 供 lda_qeda.sc_layout.sc_lvs_signoff 做几何网表提取（不重放设计意图）。
+        pad_w = float(params.get("pad_w", 3.0))
+        pad_h = float(params.get("pad_h", 2.0))
+        gap_x = float(params.get("gap_x", 0.2))      # 两岛屿间 JJ 间隙
+        jj_len = float(params.get("jj_len", 0.4))
+        jj_h = float(params.get("jj_h", 0.3))
+        cpw_w = float(params.get("cpw_w", 0.5))
+        arm_len = float(params.get("arm_len", 6.0))
+        ground_gap = float(params.get("ground_gap", 1.0))
+        chip_half = float(params.get("chip_half", 15.0))
+        # 两岛屿（qubit 导体）
+        descs.append({"kind": "boundary", "layer": LIB_LAYER_SC_FILM, "net": "qubit",
+                      "rings_um": [[(-pad_w, -pad_h), (-gap_x / 2.0, -pad_h),
+                                    (-gap_x / 2.0, pad_h), (-pad_w, pad_h)]]})
+        descs.append({"kind": "boundary", "layer": LIB_LAYER_SC_FILM, "net": "qubit",
+                      "rings_um": [[(gap_x / 2.0, -pad_h), (pad_w, -pad_h),
+                                    (pad_w, pad_h), (gap_x / 2.0, pad_h)]]})
+        # 约瑟夫森结（桥接两岛屿）
+        descs.append({"kind": "boundary", "layer": LIB_LAYER_SC_JJ, "net": "jj",
+                      "rings_um": [[(-jj_len / 2.0, -jj_h / 2.0), (jj_len / 2.0, -jj_h / 2.0),
+                                    (jj_len / 2.0, jj_h / 2.0), (-jj_len / 2.0, jj_h / 2.0)]]})
+        # CPW 馈线（readout/coupling 臂，左）+ 磁通线（右）
+        descs.append({"kind": "path", "layer": LIB_LAYER_SC_FILM, "net": "qubit",
+                      "width_um": cpw_w,
+                      "points_um": [(-pad_w, 0.0), (-pad_w - arm_len, 0.0)]})
+        descs.append({"kind": "path", "layer": LIB_LAYER_SC_FILM, "net": "qubit",
+                      "width_um": cpw_w,
+                      "points_um": [(pad_w, 0.0), (pad_w + arm_len, 0.0)]})
+        # 地平面框（4 矩形，留 ground_gap；几何上不与 qubit 导体重叠）
+        gi = pad_w + arm_len + ground_gap
+        gj = pad_h + ground_gap
+        co = chip_half
+        descs.append({"kind": "boundary", "layer": LIB_LAYER_SC_GROUND, "net": "ground",
+                      "rings_um": [[(-co, gj), (co, gj), (co, co), (-co, co)]]})
+        descs.append({"kind": "boundary", "layer": LIB_LAYER_SC_GROUND, "net": "ground",
+                      "rings_um": [[(-co, -gj), (co, -gj), (co, -co), (-co, -co)]]})
+        descs.append({"kind": "boundary", "layer": LIB_LAYER_SC_GROUND, "net": "ground",
+                      "rings_um": [[(-co, -gj), (-gi, -gj), (-gi, gj), (-co, gj)]]})
+        descs.append({"kind": "boundary", "layer": LIB_LAYER_SC_GROUND, "net": "ground",
+                      "rings_um": [[(gi, -gj), (co, -gj), (co, gj), (gi, gj)]]})
     elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler",
                   "BraggMirror", "Splitter", "MMIC", "MZI",
                   "PhaseShifter", "MziModulator", "Photodetector"):

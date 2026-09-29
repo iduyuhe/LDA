@@ -1,0 +1,60 @@
+{
+  "chip": "LDA-S1 单 transmon 量子比特",
+  "role": "D-133 = 超导 transmon 单元版图 + 几何 DRC/LVS 签核（S1）：补齐平台「能设计超导芯片」的版图/签收闭环（光子侧已由 D-113..D-132 证）",
+  "physics": {
+    "E_J_ghz": 11.3,
+    "E_C_ghz": 0.3,
+    "f01_diag_ghz": 4.88711,
+    "f01_koch_ghz": 4.90769,
+    "alpha_ghz": -0.35593,
+    "rel_err": 0.004193,
+    "tol_rel": 0.03,
+    "passed": true,
+    "verdict": "物理双验证 PASS（严格 f01=4.8871 ↔ Koch 4.9077 rel=0.42%≤3%）"
+  },
+  "ir_anchor": {
+    "bid": "B9",
+    "kind": "transmon-f01"
+  },
+  "layout": {
+    "gds": "lda_schip_s1.gds",
+    "svg": "lda_schip_s1.svg",
+    "n_elements": 9,
+    "params": {
+      "pad_w": 3.0,
+      "pad_h": 2.0,
+      "gap_x": 0.2,
+      "jj_len": 0.4,
+      "jj_h": 0.3,
+      "cpw_w": 0.5,
+      "arm_len": 6.0,
+      "ground_gap": 1.0,
+      "chip_half": 15.0
+    }
+  },
+  "signoff": {
+    "drc": {
+      "verdict": "ACCEPT",
+      "n_rules": 4,
+      "violations": []
+    },
+    "lvs": {
+      "verdict": "ACCEPT",
+      "netlist": {
+        "qubit": 4,
+        "jj": 1,
+        "ground": 4,
+        "qubit_components": 1
+      },
+      "issues": []
+    }
+  },
+  "overall": true,
+  "disclosure": {
+    "role": "D-133 = 超导 transmon 单元版图 + 几何 DRC/LVS 签核（S1）：补齐平台「能设计超导芯片」的版图/签收闭环（光子侧已由 D-113..D-132 证）",
+    "layers": "SC_FILM=10 / SC_JJ=11 / SC_GROUND=12（gds_export 定义，非 Foundry PDK）",
+    "limits": "min_width/min_jj/min_ground_gap 为**设计规则 · 可覆盖 · 非实测 golden**（Foundry PDK 层规/金属栈属 D5 外部依赖，平台不沾）",
+    "lvs": "几何 LVS 对**实际 produced 几何**做 bbox 重叠网表提取（不重放意图）",
+    "red_line": "纯几何（标准库，零 numpy 即可）、LLM 不进判决路径、零量子 SDK"
+  }
+}

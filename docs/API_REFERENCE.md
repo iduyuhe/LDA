@@ -22,12 +22,12 @@
 | 项 | 值 |
 |---|---|
 
-| 端点总数 | 140（精确 123 + 前缀/后缀 17） |
-| 方法分布 | GET 45 · PATCH 1 · POST 94 |
-| 有描述 | 140（**100.0%**） |
+| 端点总数 | 141（精确 124 + 前缀/后缀 17） |
+| 方法分布 | GET 46 · PATCH 1 · POST 94 |
+| 有描述 | 141（**100.0%**） |
 | 需登录（重计算闸门） | 60 |
 
-## GET（45）
+## GET（46）
 
 | 路径 | 用途 | 参数 | 鉴权 |
 |---|---|---|---|
@@ -58,6 +58,7 @@
 | `/api/empirical` | D-62 实证大数据锚快照：语料库统计 + 逐条溯源 + 对抗题库 + harness 实证锚题（E1-E3）golden 来源 + 语料评审流状态。 | `anchor`, `empirical_id`, `tol` | public |
 | `/api/gc_benchmarks` | A1 · GC 整芯片对照（golden_product_benchmarks：5 GP + 20 GC）。 run=False 返回元数据（快，零计算）；run=True 现场真跑 25/25（~2.5s， 用户显式点击才触发）。数据源 = lda_l2.golden_product_benchmarks 已验证库，不在此重写任何验证逻辑（LLM 不进判决路径）。 | — | public |
 | `/api/health` | P2.1 产品级健康检查（供 Docker/K8s liveness & readiness 探针）。 返回服务存活 + 版本 + 部署形态 + 内核落地概览。 db 字段在 P2.2（多用户数据层）落地后改为真实连通性；当前尚未配置 DB， 诚实标注 "not_configured"，不谎报健康。 | — | public |
+| `/api/pchip_demo` | GET /api/pchip_demo —— 硅光张量核（光计算芯片）案例卡（只读 · 免登录 · 微秒级）。 M5 收尾（2026-09-30）：把光计算征程「吃狗粮」LDA-P（M1→M5）成果在 UI 中 以**只读案例**呈现（MZI mesh 干涉架构：SVD 双网格 + 对角衰减 + 光电协同 + tiling）。 🔴 与 `/api/qchip_demo`（光量子 LOQC 案例卡 · D-131）、`/api/schip_demo` （超导 transmon 案例卡 · D-148）**并列**：三条物理路线在 LDA 均已吃狗粮。 🔴 **零重计算**：不跑仿真、不 import 求解器 —— 数字来自 ① 静态里程碑/结论 （可回溯到 M1–M5 门禁）② 纯闭式现算（MZI 计数）③ 对产出物只 `stat` 的元信息 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**（与 `/api/qchip_demo`、 `/api/schip_demo`、`/api/verification_ledger` 同属「公开只读验货」类）。 🔴 **不伪装实测 / 不报 fabricated 能效**：`verdict` 恒为 `DESIGN_SIGNOFF` （**非** ACCEPT/PASS），返回体自带 `honest_note`（非流片实测 / 设计容量 / 不报任何 fabricated 能效数字）。 异常不 500（返回 200 + error 字段，与 `h_schip_demo` 同风格）。 | — | public |
 | `/api/pdks` | 返回（惰性构建并缓存）默认 Registry 实例。 | — | public |
 | `/api/public/stats` | 公开自证看板（无需鉴权）。仅暴露可信度信号：锚/引擎/货架/CI 项， 绝不返回任何用户、订单、GMV 等敏感数据。 | — | public |
 | `/api/qchip_demo` | GET /api/qchip_demo —— 光量子计算芯片案例卡（只读 · 免登录 · 微秒级）。 A 档接入（D-131）：把「量子征程（吃狗粮）」九步成果在 UI 中以**只读案例** 呈现（可编程 MZI 干涉仪网格 = LOQC 通用处理器）。 🔴 与站内重计算端点（cpo_array / design_* 等）**不同**：本端点**零重计算** —— 全部数字为闭式现算（深度 / 损耗 / 参数 / 维数），不跑 P&R、不 import 求解器 ⇒ **无 DoS 面**，故**不进 HEAVY_POST_PATHS、不要求登录**，与 `/api/verification_ledger`、`/api/benchmarks` 同属「公开只读验货」类 （维持「可被外部验货」战略可达性）。 🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`（**非** ACCEPT/PASS）， 返回体自带 `honest_note` 说明「非流片后实测 / 设计预算口径」。 查询参数（B 档 D-132 扩充）： `n`       目标模数，默认 216，范围 2..4096（非法值回落默认） `topology` 拓扑：`rect`（矩形 Clements · 默认）/ `reck`（三角）/ `temporal`（时间复用） `per_mzi`  单个 MZI 插损覆盖（dB，> 0；缺省取平台设计预算常量） `per_step` 时间复用每步插损覆盖（dB，> 0；缺省取平台常量） 异常不 500（返回 200 + error 字段，与 `h_design_catalog` 同风格）。 | — | public |

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LDA · 光子计算芯片 M3</title>
+<style>
+ body{font-family:-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;
+   margin:0;background:#f8fafc;color:#0f172a;line-height:1.6}
+ .wrap{max-width:940px;margin:0 auto;padding:32px 20px}
+ h1{font-size:24px;margin:0 0 4px}
+ .sub{color:#64748b;font-size:14px;margin-bottom:20px}
+ .card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin:14px 0}
+ .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+ .m{background:#eff6ff;border-radius:8px;padding:10px;text-align:center}
+ .m .v{font-size:20px;font-weight:700;color:#2563eb}
+ .m .l{font-size:11px;color:#475569}
+ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+ th,td{border:1px solid #e2e8f0;padding:6px 8px;text-align:center}
+ th{background:#f1f5f9}
+ .dis{background:#f1f5f9;border-left:4px solid #2563eb;border-radius:6px;padding:12px 16px;font-size:13px}
+ .dis ul{margin:6px 0 0;padding-left:18px}
+ .tag{display:inline-block;padding:2px 10px;border-radius:999px;font-size:13px;font-weight:700}
+ .ok{background:#dcfce7;color:#166534} .warn{background:#fef9c3;color:#854d0e}
+ h2{font-size:16px;margin:0 0 8px}
+ .foot{color:#94a3b8;font-size:12px;margin-top:18px}
+</style></head>
+<body><div class="wrap">
+<h1>LDA · 光子计算芯片 M3</h1>
+<div class="sub">光计算征程 · 光电协同仿真：DAC→驱动→相移器→光网格→PD→TIA 闭环 + 基于读回的闭环标定 · C 级自主（纯 numpy）</div>
+
+<div class="card">
+ <div class="metrics">
+  <div class="m"><div class="v">100%</div><div class="l">EO 全精度分类精度</div></div>
+  <div class="m"><div class="v">67%</div><div class="l">2-bit 量化精度</div></div>
+  <div class="m"><div class="v">83.3%</div><div class="l">Vπ+5% 未标定</div></div>
+  <div class="m"><div class="v">100%</div><div class="l">闭环标定回收</div></div>
+ </div>
+ <p style="margin-top:10px"><span class="tag ok">✅ 接受闸通过</span>
+  &nbsp;光电协同闭环成立：16-bit DAC 全精度光学实现与 numpy 同构参考逐位一致（分类 100%）；
+  Vπ+5% 失配致精度跌至 83.3%，经 DAC 下发 + TIA 读回闭环标定回收至 100%。</p>
+</div>
+
+<div class="card">
+ <h2>① DAC→驱动→相移器 量化扫描（电子域有限比特分辨率）</h2>
+ <table><thead><tr><th>DAC 位深 n_bits</th><th>平均相位误差（2π 环差, rad）</th></tr></thead><tbody><tr><td>2</td><td>0.490195</td></tr><tr><td>4</td><td>0.107146</td></tr><tr><td>8</td><td>0.006257</td></tr><tr><td>12</td><td>0.001114</td></tr></tbody></table>
+ <p style="font-size:12px;color:#64748b">平均相位误差随 DAC 位深单调下降（2-bit 0.49 rad → 12-bit 0.0011 rad）。
+ 这是真实芯片电子驱动逃不掉的有限精度代价，已纳入光电协同链路。</p>
+</div>
+
+<div class="card">
+ <h2>② 闭环标定（控制环）：DAC 下发码 + TIA 强度读回反估真实 Vπ</h2>
+ <table><thead><tr><th>标定位深</th><th>真实 Vπ (V)</th><th>反估 Vπ (V)</th><th>相对残差</th></tr></thead><tbody><tr><td>4-bit</td><td>7.8750</td><td>7.4975</td><td>4.794%</td></tr><tr><td>8-bit</td><td>7.8750</td><td>7.8489</td><td>0.331%</td></tr></tbody></table>
+ <p style="font-size:12px;color:#64748b">真实 Vπ 偏离标称 +5%（7.875V）。扫描 DAC 码经驱动→相移器→参考 MZI 强度
+ null，反估真实 Vπ：8-bit 残差 0.331%，4-bit 残差 4.79%（位深↑残差↓）。
+ 这是平台既往没有的「基于读回的控制环」能力。</p>
+</div>
+
+<div class="card">
+ <h2>③ EO 端到端精度锚（光核 + 电子接口 · 光学 MVM→PD+TIA→激活 vs numpy 参考）</h2>
+ <table><thead><tr><th>场景</th><th>分类精度</th><th>权重相对误差</th><th>U 网格保真(均)</th><th>V† 网格保真(均)</th></tr></thead><tbody><tr><td>EO 全精度（16-bit DAC, Vπ 匹配）</td><td>100.0%</td><td>0.001474</td><td>0.999647</td><td>0.999567</td></tr><tr><td>EO 2-bit 量化</td><td>66.7%</td><td>1.059</td><td>0.688378</td><td>0.900331</td></tr><tr><td>EO Vπ+5% 未标定</td><td>83.3%</td><td>0.209</td><td>0.948830</td><td>0.938685</td></tr><tr><td>EO Vπ+5% 闭环标定回收</td><td>100.0%</td><td>0.001721</td><td>0.999586</td><td>0.999495</td></tr></tbody></table>
+ <p style="font-size:12px;color:#64748b">全精度（16-bit，无 Vπ 失配）光学实现与参考逐位一致（分类 100%）；
+ 2-bit 量化 / Vπ+5% 未标定均致精度退化；闭环标定把 Vπ 误差场景精度回收至 100%、权重误差 0.209→0.0017。
+ 全精度残余 0.15% 由驱动 RC 在 8τ 仍差 0.03% 未达稳态所致（真实物理效应，非量化），光-only 的 M2 因无电子前端才到 1e-15。</p>
+</div>
+
+<div class="card">
+ <h2>④ TIA 带宽读回（单极点行为级）</h2>
+ <table><thead><tr><th>读回频率</th><th>跨阻增益 |Z| (Ω)</th><th>相对 DC 增益</th></tr></thead><tbody><tr><td>DC (f=0)</td><td>2000.0</td><td>1.000</td></tr><tr><td>f_3dB</td><td>1414.2</td><td>0.707</td></tr><tr><td>10·f_3dB</td><td>281.4</td><td>0.141</td></tr></tbody></table>
+ <p style="font-size:12px;color:#64748b">DC 读回增益 = R_f（2000Ω）；f=f_3dB 处增益滚降至 R_f/√2（0.707）；
+ 10·f_3dB 高频读回增益仅 0.141 × DC —— 高速读回需受带宽约束。</p>
+</div>
+
+<div class="card">
+ <h2>EO 行为级预算（驱动 / TIA / DAC · 零能效数字）</h2>
+ <table><thead><tr><th>EO 行为级预算</th><th>值</th></tr></thead><tbody><tr><td>驱动一阶时间常数 τ</td><td>20.0 ps</td></tr><tr><td>驱动上升时延（10%→90%）</td><td>46.05 ps</td></tr><tr><td>TIA −3dB 带宽</td><td>3.979 GHz</td></tr><tr><td>DAC 相位分辨率</td><td>0.09817 rad/步</td></tr><tr><td>器件 Vπ（co-sim 口径）</td><td>7.50 V</td></tr></tbody></table>
+ <p style="font-size:12px;color:#64748b">复用 eic_behavioral 一阶 RC 驱动 + 单极点 TIA；只给电压/相位/时延/带宽/量化步进，
+ 不输出 pJ/bit、驱动功耗、TOPS/W（零能效守卫单一真值来源）。</p>
+</div>
+
+<div class="card">
+ <h2>诚实边界披露（防纸糊楼 / 不虚报）</h2>
+ <div class="dis"><ul><li><b>capability_added</b>：本模块把 LDA 从『给相位即可算』补到『给 DAC 码 + TIA 读回即可算』——电子↔光子协同闭环（DAC→驱动→相移器→光网格→PD→TIA）+ 基于读回的闭环标定。</li><li><b>sovereignty</b>：C 级自主（纯 numpy），不借 Meep/Tidy3D（A 级禁）；LLM 不进判决路径。</li><li><b>eic_reuse</b>：电子域复用 `lda_l2.eic_behavioral`（per-MZI 一阶 RC 驱动 + 单极点 TIA 行为级），不重复造轮子；其零能效守卫（assert_no_energy_metrics）单一真值来源被本模块复用。</li><li><b>t1_candidate</b>：电子域只到**行为级（T1 候选，非 ORACLE）**：复用 EIC 一阶 RC + 单极点 TIA，不碰晶体管级（DAC/ADC/SerDes/DSP 在红线外）；不宣称已物理校准（U10 纪律）。</li><li><b>zero_energy</b>：🔴 零能效数字：不输出 pJ/bit、驱动功耗、TOPS/W；只给电压/相位/时延/带宽/量化误差/标定残差。</li><li><b>detection</b>：探测为强度探测（PD 物理本征 |E|²），与 M2 detection='intensity' 同构；片上非线性光学元件（可饱和吸收/相变材料阈值）物理属 B 类外部，非本模块 golden。</li><li><b>vpi_units_warning</b>：🔴 跨模块口径不一致（吃狗粮发现）：光侧 mzi_mesh_matmul.VPI_L_V_CM=25.0（V·cm）与 EIC 侧 eic_behavioral.VPI_L_V_MM_DEFAULT=7.5（V·mm）口径不同；本模块 co-sim 用单一 vpi_v=7.5V 贯穿，待回查两处 DEFAULT 是否统一。</li><li><b>honest_boundary</b>：本模块演示『光计算芯片可由 DAC 下发 + TIA 读回协同实现，且基于读回的闭环标定可回收 Vπ 误差』；不声称已实现相干光学计算机、电子 co-sim 实测或已物理校准（须 foundry 工艺角/实测锚）。</li><li><b>non_oracle_scope</b>：本模块电子域（EIC 行为级一阶 RC 驱动 + 单极点 TIA）与光计算核（M1/M2 网格 + 量化/激活）均属 C 级自主纯 numpy 实现，非外部 ORACLE；B 类外部接口（foundry PDK、TCAD 工艺角、SerDes/DSP 固件、相位调制器器件模型）非本模块范围，须外部真实锚（T2 真值）。</li><li><b>verification_basis</b>：验证基础：EO 端到端以 numpy 强度探测同构参考（eo_golden_classify）作 golden 标签；闭环标定以参考 MZI 强度 null 反估 Vπ 属**设计层自检**，非工艺实测；全部数值机器可判、可复现（固定 seed=20260930）。</li></ul></div>
+</div>
+
+<div class="foot">LDA 开源 Agent 原生光子/量子芯片设计软件 · 光计算征程 M3 ·
+本页为确定性生成（无 wall-clock），浮点 9 位有效数字。</div>
+</div></body></html>

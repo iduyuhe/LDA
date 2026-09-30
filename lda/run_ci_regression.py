@@ -1260,6 +1260,35 @@ CORE_SMOKES: List[str] = [
     # 实测耗时 ~0.6s（只读文件 + 无重依赖）⇒ 不进 `_BUILTIN_TIMEOUT_OVERRIDE`。
     # 🔴 D-146（2026-09-29 盲区清偿）：本条**已按默认预算语义登记 300s**（仅可见化 · 不手调）；上文「不入覆盖表 / 走全局默认兜底」为历史口径。
     "run_dmm_scorecard_smoke.py",
+    # 🔴 光计算征程 M2（v0.9.145 征程线 · 2026-09-30）：把平台从「能算」推向「算得准」——
+    #   相位量化（相移器有限比特分辨率模型）/ 相位标定闭环（Vπ·L + π/2 探针反估回收 Vπ 增益误差）/
+    #   非线性激活（检测后电子/光电域 relu/sigmoid/tanh）/ 端到端计算精度锚（两层网络光学 MVM→探测
+    #   →激活 vs numpy 参考，全精度逐位一致、量化/标定误差致退化、标定闭环回收）。纯 numpy 亚秒级、
+    #   零 A 级/Meep/Tidy3D、LLM 不进判决路径。每条判据带反向可证伪。CI core 232→233。
+    "run_photonic_compute_m2_smoke.py",
+    # 🔴 光计算征程 M3（v0.9.145 征程线 · 2026-09-30）：把平台从「算得准」推向「能设计完整光计算芯片
+    #   （光核 + 电子接口）」—— 复用既有 eic_behavioral（per-MZI 一阶 RC 驱动 + 单极点 TIA 行为级）与光计算核，
+    #   接成**光电协同闭环**：① DAC→驱动→相移器→光网格→PD→TIA 全程 co-sim（带 DAC 量化 / Vπ 失配损伤）；
+    #   ② 基于 DAC 下发 + TIA 读回的**闭环标定（控制环）**反估真实 Vπ 并回收精度。纯 numpy 亚秒级、零 A 级/Meep/
+    #   Tidy3D、T1 行为级（非 ORACLE）、零能效数字。每条判据带反向可证伪。CI core 233→234。
+    "run_photonic_compute_m3_smoke.py",
+    # 🔴 光计算征程 M4（v0.9.145 征程线 · 2026-09-30）：把平台从「能设计小芯片」推向「能设计达到
+    #   国际规模的张量核」—— 规模可扩展性压力测试 + 阵列化 tiling 架构分析。补平台既往缺的「规模盲
+    #   保真度（网格酉保真度 1−F≈(σ/2)√((N−1)/N)，随 N 次线性不塌缩）」+ tiling（局部标定环降噪收益
+    #   + 块间交叉开关路由损耗代价）验证；复用 M3 EO 链路跑到 N=256 证明全光电流水线随规模仍准。C 级自主、
+    #   零能效数字、每条判据带反向可证伪（规模盲判定可反向证伪）。CI core 234→235。
+    "run_photonic_compute_m4_smoke.py",
+    # 🔴 光计算征程 M5（v0.9.145 征程线 · 2026-09-30）：把平台能力**对标到国际公开基准**——
+    #   用 A 级公开来源（Nature/Science/AIP/MIT News/厂商）登记的产业界光计算 landmark，对照 LDA 已验证的
+    #   设计&验证能力，给出**诚实的达国际水平口径**。核心纪律：LDA 是设计&验证工具链（非流片芯片），
+    #   **不报任何 fabricated TOPS/W**，按「架构族（MZI mesh，与 MIT 学术 lineage 同族）+ 设计质量方法论
+    #   （scale-blind 保真 / 闭环标定 / tiling 增益）」比较。复用 M4 scale-blind、零能效数字、每条判据
+    #   带反向可证伪（注入 fabricated 能效/尺度盲塌缩必红）。CI core 235→236。
+    "run_photonic_compute_m5_smoke.py",
+    # 🔴 光计算案例卡 WebUI 门禁（M5 收尾 · 2026-09-30）：守 /api/pchip_demo 只读案例卡的诚实边界
+    #   （verdict 恒 DESIGN_SIGNOFF / 不报 fabricated 能效 / 规模按设计容量解读），含突变探针（破坏诚实
+    #   边界必红）。与 qchip_case 体例对齐（光计算案例卡独立 smoke）。CI core 236→237。
+    "run_pchip_case_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。

@@ -1365,6 +1365,30 @@ body{padding-top:56px}
     <div class="conclusion" id="schipConclusion"></div>
   </div>
 
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-pchip">
+    <h2>★ 硅光张量核 / 光神经网络案例（MZI mesh 干涉架构）</h2>
+    <div class="hint">
+      用 LDA <b>亲手设计</b>的一颗<b>硅光张量核 / 光神经网络芯片</b>：MZI mesh 干涉架构——
+      SVD 双网格 + 对角衰减实现任意矩阵乘法，配 DAC 下发 + TIA 读回的<b>光电协同闭环标定</b>，
+      规模经 <b>tiling 阵列化</b>扩展到 256×256（32640 MZI，网格保真 0.9932），并可延展到
+      文献最大类 800×800。<br/>
+      <b>五段征程</b>（全程在 LDA 内闭环 · 门禁共 <b>161 判据</b>）：M1 非酉 SVD 光计算路径 →
+      M2 激活/量化/标定 + 精度锚 → M3 光电协同仿真（光核 + 电子接口）→
+      M4 规模盲 + tiling 压力测试 → <b>M5 达国际水平（对标 Lightmatter / MIT / 清华 A 级 golden）</b>。<br/>
+      <b>核心结果</b>：网格酉保真度 N=256 ⇒ <b>0.9932</b>（规模盲，随 N 不塌缩）；tiling 局部标定增益 <b>2.8×</b>；
+      EO Vπ+5% 未标定 <b>83.3%</b> → 闭环标定 <b>100%</b>。<br/>
+      🔴 本面板为<b>只读案例</b>（零重计算、免登录、不跑仿真、零外部光学 SDK）；
+      全部为<b>设计&验证能力证明</b>，<b>非流片后实测</b>；规模数字是<b>设计容量</b>，非已制备器件数；
+      <b>不报任何 fabricated 能效数字</b>。判决位由死标量给出，LLM 不进判决路径。
+    </div>
+    <div class="row">
+      <button class="btn" id="runPChip">运行光计算芯片案例</button>
+    </div>
+    <div id="pchipSummary" class="summary"></div>
+    <div id="pchipBody"></div>
+    <div class="conclusion" id="pchipConclusion"></div>
+  </div>
+
   <div class="footer" data-page-node-id="n4rEeCHGtMlHrVaGZxjXUN">
     本界面所有数据均为<strong data-page-node-id="swf6kw75EiLlFDeLcjsQXv">实时真跑</strong> LDA 内核产出，非演示稿。<br data-page-node-id="lDMKpIy4YCjFkzGCzg3IPK"/>
     后端零依赖（Python 标准库 http.server），复用已落地的验证裁判 / L1 KernelGateway / agent 设计闭环。<br data-page-node-id="NkqVPBGLvjnjvojcUO4fcZ"/>
@@ -4538,6 +4562,91 @@ function renderSChip(d){
   return false;
 }
 if($('runSChip')) $('runSChip').onclick = runSChip;
+
+/* ═══════════ 硅光张量核（光计算）案例（M5 · /api/pchip_demo）═══════════ */
+async function runPChip(){
+  const btn=$('runPChip'); if(!btn) return;
+  btn.disabled=true;
+  $('pchipSummary').innerHTML='<span class="spin"></span> 正在装配光计算芯片案例…';
+  try{
+    const d=await apiGet('/api/pchip_demo');
+    renderPChip(d);
+  }catch(e){ $('pchipSummary').textContent='错误：'+(e&&e.message?e.message:e); }
+  finally{ btn.disabled=false; }
+}
+function renderPChip(d){
+  if(!d||d.error){ $('pchipSummary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
+  const sp=d.span||{}, fl=d.flagship||{}, EO=d.eo_chain||{}, ID=d.identity||{};
+  $('pchipSummary').innerHTML='<b>'+d.case_id+'</b> · 判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）'
+    +' · 征程 <b>'+(sp.milestones||'?')+'</b> 段 · 门禁 <b>'+(sp.gate_checks||'?')+'</b> 判据';
+  var h='';
+  h+='<div class="note">物理：'+ID.physics+' · 器件：'+ID.device+'</div>';
+  h+='<div class="note">非线性：'+(ID.nonlinearity||'?')+' · 零外部光学 SDK：<b>'+(ID.zero_optical_sdk?'是':'否')+'</b></div>';
+
+  h+='<div class="summary" style="margin-top:12px">五段征程</div>';
+  h+=_qcTbl(['段','编号','内容','门禁','关键结果'],
+    (d.milestones||[]).map(function(m){ return [m.id, m.code, m.title, String(m.gate), m.result]; }));
+
+  h+='<div class="summary" style="margin-top:12px">旗舰规模（N='+fl.n_max_verified+' 已验证）</div>';
+  h+=_qcTbl(['指标','数值','口径'],
+    [['MZI 元件数', String(fl.n_mzi)+' = N(N−1)/2', '三角 Reck 分解'],
+     ['网格酉保真度 N=64', String(fl.fid_u_64), '规模盲（次线性）'],
+     ['网格酉保真度 N=128', String(fl.fid_u_128), '规模盲'],
+     ['网格酉保真度 N=256', String(fl.fid_u_256), 'bigN 实测'],
+     ['scale-blind ratio 相对标准差', (fl.scale_blind_ratio_rel_std*100).toFixed(2)+'%', '随 N 不塌缩'],
+     ['tiling 局部标定增益', fl.tiling_gain+'×', '局部标定再降'],
+     ['设计容量延展', fl.n_extend+'×'+fl.n_extend+'（'+fl.mzi_extend+' MZI）', fl.extend_note]]);
+
+  h+='<div class="summary" style="margin-top:12px">光电协同仿真（EO 链路 · 行为级）</div>';
+  h+=_qcTbl(['场景','精度','权重相对误差'],
+    [['EO 全精度（16-bit）', (EO.eo_full_acc*100).toFixed(1)+'%', EO.eo_full_werr],
+     ['EO 2-bit 量化', (EO.eo_2bit_acc*100).toFixed(1)+'%', EO.eo_2bit_werr],
+     ['Vπ+5% 未标定', (EO.eo_vpi_mismatch_acc*100).toFixed(1)+'%', EO.eo_vpi_mismatch_werr],
+     ['Vπ+5% 闭环标定', (EO.eo_vpi_cal_acc*100).toFixed(1)+'%', EO.eo_vpi_cal_werr],
+     ['TIA z0 / z@f3dB', EO.tia_z0_ohm+' / '+EO.tia_z_f3db_ohm+' Ω', '单极点'],
+     ['8-bit 标定残差', (EO.cal_8bit_residual*100).toFixed(3)+'%', 'DAC+TIA 读回反估 Vπ']]);
+
+  const st=d.scale_tiers||{};
+  h+='<div class="summary" style="margin-top:12px">规模档（MZI = N(N−1)/2）</div>';
+  h+=_qcTbl(['档','N','MZI','备注'],
+    (st.grid||[]).map(function(t){ return [t.tier, String(t.n), String(t.mzi), t.note||'']; })
+    .concat((st.extend||[]).map(function(t){ return [t.tier, String(t.n), String(t.mzi), t.note||'']; })));
+
+  h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
+  (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });
+  h+='</div>';
+
+  const pos=d.positioning||{};
+  h+='<div class="summary" style="margin-top:12px">先进性定位（架构族对齐）</div>';
+  h+='<div class="note">'+pos.disclaimer+'</div>';
+  h+=_qcTbl(['维度','产业界','本案例'],
+    (pos.what_is_different||[]).map(function(x){ return [x.axis, x.industry, x.lda]; }));
+  h+='<div class="summary" style="margin-top:10px">公开基准（A 级 golden）</div>';
+  h+=_qcTbl(['主体','进展'],
+    (d.public_landmarks||[]).map(function(x){ return [x.who, x.item]; }));
+
+  h+='<div class="summary" style="margin-top:12px">未闭合项（逐条登记）</div>';
+  h+=_qcTbl(['#','项目','说明'],
+    (d.gaps||[]).map(function(g){ return [g.id, g.title, g.detail]; }));
+
+  const A=d.artifacts||{};
+  h+='<div class="summary" style="margin-top:12px">产出物（pc_*.html 报告）</div>';
+  if(A.available){
+    h+='<p style="margin:4px 0">目录 <b>'+A.root_hint+'/</b> · 共 <b>'+A.count+'</b> 个文件</p>';
+    h+=_qcTbl(['文件','字节'],
+      (A.items||[]).map(function(it){ return [it.name, String(it.bytes)]; }));
+  } else {
+    h+='<p style="margin:4px 0">本部署内不含产出物目录（'+A.root_hint+'）——'+A.note+'</p>';
+  }
+
+  $('pchipBody').innerHTML=h;
+  $('pchipConclusion').innerHTML='<strong>结论：</strong>光计算 MZI mesh 路线在 LDA 内已从「只能算酉」推进到'
+    +'<b>「能设计完整光计算芯片（光核 + 电子接口）并验证保真闭环」</b>：规模盲保真（N=256 仍 0.9932）、'
+    +'闭环 Vπ 标定（83.3%→100%）、tiling 局部标定增益 2.8×。'
+    +'<br/><strong>诚实边界：</strong>'+d.honest_note;
+  return false;
+}
+if($('runPChip')) $('runPChip').onclick = runPChip;
 </script>
 <script src="/nav.js"></script>
 <script src="/cs_widget.js"></script>

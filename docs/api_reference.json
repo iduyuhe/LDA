@@ -1,9 +1,9 @@
 {
   "counts": {
-    "described": 140,
+    "described": 141,
     "needs_login": 60,
-    "precise": 123,
-    "total": 140,
+    "precise": 124,
+    "total": 141,
     "undescribed": 0,
     "wildcard": 17
   },
@@ -388,6 +388,20 @@
       "params": [],
       "path": "/api/health",
       "source": "app_docstring",
+      "wildcard": false
+    },
+    {
+      "app_function": null,
+      "auth": "public",
+      "binary": false,
+      "description": "GET /api/pchip_demo —— 硅光张量核（光计算芯片）案例卡（只读 · 免登录 · 微秒级）。 M5 收尾（2026-09-30）：把光计算征程「吃狗粮」LDA-P（M1→M5）成果在 UI 中 以**只读案例**呈现（MZI mesh 干涉架构：SVD 双网格 + 对角衰减 + 光电协同 + tiling）。 🔴 与 `/api/qchip_demo`（光量子 LOQC 案例卡 · D-131）、`/api/schip_demo` （超导 transmon 案例卡 · D-148）**并列**：三条物理路线在 LDA 均已吃狗粮。 🔴 **零重计算**：不跑仿真、不 import 求解器 —— 数字来自 ① 静态里程碑/结论 （可回溯到 M1–M5 门禁）② 纯闭式现算（MZI 计数）③ 对产出物只 `stat` 的元信息 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**（与 `/api/qchip_demo`、 `/api/schip_demo`、`/api/verification_ledger` 同属「公开只读验货」类）。 🔴 **不伪装实测 / 不报 fabricated 能效**：`verdict` 恒为 `DESIGN_SIGNOFF` （**非** ACCEPT/PASS），返回体自带 `honest_note`（非流片实测 / 设计容量 / 不报任何 fabricated 能效数字）。 异常不 500（返回 200 + error 字段，与 `h_schip_demo` 同风格）。",
+      "handler": "h_pchip_demo",
+      "heavy": false,
+      "method": "GET",
+      "note": "",
+      "params": [],
+      "path": "/api/pchip_demo",
+      "source": "handler_docstring",
       "wildcard": false
     },
     {

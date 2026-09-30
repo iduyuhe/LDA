@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LDA · 光子计算芯片 M2</title>
+<style>
+ body{font-family:-apple-system,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;
+   margin:0;background:#f8fafc;color:#0f172a;line-height:1.6}
+ .wrap{max-width:920px;margin:0 auto;padding:32px 20px}
+ h1{font-size:24px;margin:0 0 4px}
+ .sub{color:#64748b;font-size:14px;margin-bottom:20px}
+ .card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin:14px 0}
+ .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+ .m{background:#eff6ff;border-radius:8px;padding:10px;text-align:center}
+ .m .v{font-size:20px;font-weight:700;color:#2563eb}
+ .m .l{font-size:11px;color:#475569}
+ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+ th,td{border:1px solid #e2e8f0;padding:6px 8px;text-align:center}
+ th{background:#f1f5f9}
+ .dis{background:#f1f5f9;border-left:4px solid #2563eb;border-radius:6px;padding:12px 16px;font-size:13px}
+ .dis ul{margin:6px 0 0;padding-left:18px}
+ .tag{display:inline-block;padding:2px 10px;border-radius:999px;font-size:13px;font-weight:700}
+ .ok{background:#dcfce7;color:#166534} .warn{background:#fef9c3;color:#854d0e}
+ h2{font-size:16px;margin:0 0 8px}
+ .foot{color:#94a3b8;font-size:12px;margin-top:18px}
+</style></head>
+<body><div class="wrap">
+<h1>LDA · 光子计算芯片 M2</h1>
+<div class="sub">光计算征程 · 性能爬坡：相位量化 + 标定闭环 + 非线性激活 + 端到端精度锚 · C 级自主（纯 numpy）</div>
+
+<div class="card">
+ <div class="metrics">
+  <div class="m"><div class="v">100%</div><div class="l">全精度分类精度</div></div>
+  <div class="m"><div class="v">0.999733</div><div class="l">12-bit 网格保真</div></div>
+  <div class="m"><div class="v">1.000000</div><div class="l">标定回收保真</div></div>
+  <div class="m"><div class="v">100%</div><div class="l">Vπ+5% 标定后精度</div></div>
+ </div>
+ <p style="margin-top:10px"><span class="tag ok">✅ 接受闸通过</span>
+  &nbsp;全精度光学实现与 numpy 参考管线逐位一致（分类 100% · MAC 误差≈0）。</p>
+</div>
+
+<div class="card">
+ <h2>① 相位量化扫描（相移器有限比特分辨率模型）</h2>
+ <table><thead><tr><th>相位比特数 n_bits</th><th>网格传递矩阵保真度</th></tr></thead><tbody><tr><td>1</td><td>0.660869011</td></tr><tr><td>2</td><td>0.611632135</td></tr><tr><td>4</td><td>0.961064273</td></tr><tr><td>8</td><td>0.995303772</td></tr><tr><td>12</td><td>0.999733063</td></tr></tbody></table>
+ <p style="font-size:12px;color:#64748b">比特数越少，网格传递矩阵保真度越低（2-bit 即出现可测退化），
+ 高位宽快速逼近机器精度。这是真实芯片躲不掉的有限精度代价。</p>
+</div>
+
+<div class="card">
+ <h2>② 相位标定闭环（Vπ·L 物理定律 · π/2 探针反估 Vπ）</h2>
+ <table><thead><tr><th>场景</th><th>Vπ 增益误差 δ</th><th>网格保真度</th></tr></thead><tbody><tr><td>未标定</td><td>5.0%</td><td>0.857846639</td></tr><tr><td>标定闭环（π/2 探针反估 Vπ）</td><td>5.0%</td><td>1.000000000</td></tr></tbody></table>
+ <p style="font-size:12px;color:#64748b">真实器件 Vπ 偏离标称 +5% 时，未标定网格保真度跌到
+ 0.8578；经 π/2 探针反估真实 Vπ 并补偿指令电压后，保真度完全回收至
+ 1.000000000（模型自洽）。</p>
+</div>
+
+<div class="card">
+ <h2>③ 非线性激活（检测后电子/光电域 · 平台 M2 新增能力）</h2>
+ <table><thead><tr><th>z（探测后实值）</th><th>ReLU</th><th>Sigmoid(β=1)</th><th>Tanh(β=1)</th></tr></thead><tbody><tr><td>-2.00</td><td>0.0000</td><td>0.1192</td><td>-0.9640</td></tr><tr><td>-0.50</td><td>0.0000</td><td>0.3775</td><td>-0.4621</td></tr><tr><td>0.00</td><td>0.0000</td><td>0.5000</td><td>0.0000</td></tr><tr><td>0.50</td><td>0.5000</td><td>0.6225</td><td>0.4621</td></tr><tr><td>2.00</td><td>2.0000</td><td>0.8808</td><td>0.9640</td></tr></tbody></table>
+ <p style="font-size:12px;color:#64748b">relu/sigmoid/tanh 在光探测后信号上实现。片上非线性光学元件
+ （可饱和吸收 / 相变材料阈值）物理属 B 类外部，非本模块 golden——不声称已建光学非线性求解器。</p>
+</div>
+
+<div class="card">
+ <h2>④ 端到端计算精度锚（两层网络 · 光学 MVM→探测→激活 vs numpy 参考）</h2>
+ <table><thead><tr><th>场景</th><th>分类精度</th><th>最大 MAC 误差</th><th>U 网格保真(均)</th><th>V† 网格保真(均)</th></tr></thead><tbody><tr><td>全精度（无量化/无标定误差）</td><td>100.0%</td><td>1.998e-15</td><td>1.000000</td><td>1.000000</td></tr><tr><td>2-bit 量化</td><td>50.0%</td><td>3.389</td><td>0.688248</td><td>0.900362</td></tr><tr><td>Vπ+5% 未标定</td><td>83.3%</td><td>1.479</td><td>0.898394</td><td>0.873253</td></tr><tr><td>Vπ+5% 标定闭环</td><td>100.0%</td><td>1.78e-15</td><td>1.000000</td><td>1.000000</td></tr></tbody></table>
+ <p style="font-size:12px;color:#64748b">全精度光学实现与 numpy 参考管线逐位一致（分类 100% · MAC 误差≈0）；
+ 2-bit 量化 / Vπ+5% 未标定均致精度退化；标定闭环把 Vπ 误差场景精度回收至 100%。</p>
+</div>
+
+<div class="card">
+ <h2>诚实边界披露（防纸糊楼 / 不虚报）</h2>
+ <div class="dis"><ul><li><b>honest_boundary</b>：本模块演示『任意权重矩阵可由 SVD → 双 MZI 网格 + 对角衰减』实现，理想模型下复现 numpy 数值；不声称已实现相干光学计算机或电子 co-sim。</li><li><b>m2_quantization</b>：相位量化是相移器有限比特分辨率的物理模型（φ 量化到 2^n 电平）；网格传递矩阵保真度随比特数上升，2bit 即出现可测退化。</li><li><b>m2_calibration</b>：相位标定闭环基于 Vπ·L 物理定律（Soref-Bennett）：标称指令电压 → 真实器件相位；用 π/2 探针反估真实 Vπ 补偿。模型自洽下可完全回收因 Vπ 增益误差造成的退化。</li><li><b>m2_activation</b>：非线性激活在检测后（电子/光电域）实现（relu/sigmoid/tanh）。片上非线性光学元件（可饱和吸收 / 相变材料阈值）物理属 B 类外部，非本模块 golden——不声称已建光学非线性求解器。</li><li><b>m2_accuracy_anchor</b>：端到端精度锚：两层网络『光学 MVM→探测→激活』与 numpy 同构参考管线比对，报告 MAC 误差与分类精度；full 精度须逐位一致（分类 100%），量化/标定误差致精度退化、标定闭环回收。所有参考为闭式 / numpy 自洽，非自证桩。</li><li><b>m2_honest_boundary</b>：量化 / 标定为**模型级**能力，非实测 PDK。真实器件的热串扰、Vπ 漂移、探针噪声、片上非线性元件物理属 B 类外部（measurement / foundry T2 消费，非本模块求解）。</li></ul></div>
+</div>
+
+<div class="foot">LDA 开源 Agent 原生光子/量子芯片设计软件 · 光计算征程 M2 ·
+本页为确定性生成（无 wall-clock），浮点 9 位有效数字。</div>
+</div></body></html>

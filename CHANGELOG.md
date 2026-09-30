@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.9.145（2026-09-30 · **超导量子计算芯片征程 S1–S5 全闭环 + 工程债清偿（D-146/D-147）+ 案例化与对外包装（D-148）** · 账本 **476 不变**（严格独立 455 / 降级 3 / 自证桩 18）· 独立率 95.59% 持平 · CI core **221 → 226 → 227（P1.1）→ 228（死断言）→ 229（GPU wheel）→ 230（P2.2 误差列）→ 232（P2.4 真机 ORACLE 接入框架）**）
+## v0.9.145（2026-09-30 · **超导量子计算芯片征程 S1–S5 全闭环 + 工程债清偿（D-146/D-147）+ 案例化与对外包装（D-148）· 光子计算芯片征程 M1–M5 全闭环 + WebUI 只读案例卡** · 账本 **476 不变**（严格独立 455 / 降级 3 / 自证桩 18）· 独立率 95.59% 持平 · CI core **221 → 226 → 227（P1.1）→ 228（死断言）→ 229（GPU wheel）→ 230（P2.2 误差列）→ 232（P2.4 真机 ORACLE 接入框架）→ 237（光子计算征程 M1–M5 门禁 + 案例卡门禁）**）
 
 > **P1.1（2026-09-30 · 战略/功能/代码三审计后第一轮实施 · SO1 标准首项）**：把 L1 agent 协议层（lda/lda_l1/protocol.py 的 KernelGateway + AgentRequest/AgentResponse + tool_schemas 原语集；lda/lda_l1/mcp_server.py 的零依赖 JSON-RPC 2.0 传输绑定）冻结为开放标准 **LDA-STD-002 v0.1**（docs/l1_protocol_spec.md + docs/l1_protocol_schema.json，对标 L0 LDA-STD-001 v0.3）；新增零漂移门禁 `lda/run_l1_spec_smoke.py`（8 判据：契约-代码逐字段比对 + 未知 action / 非法 candidate 两道反向反例 + 正向防假绿），入 CI core（CORE_SMOKES + 超时表 120s）。CI core **226 → 227**。A1 发函由用户方人类合作伙伴推进（已建周提醒自动化）；L1 协议冻结为社区共建起点。
 
@@ -151,6 +151,28 @@ G5 **控制多线**（XY/Z/coupler-flux 三线分离 + 逐线 fringe 串扰）·
 （新增 `run_schip_s1..s5_smoke` 五个征程门禁，其余轮次均复用既有成员）。
 
 ---
+
+### 二、光子计算芯片征程 M1–M5（LDA-P · 吃狗粮）
+
+用 LDA 亲手设计一颗 **硅光张量核 / 光神经网络芯片**（MZI mesh 干涉架构）：从「能算」（M1 非酉 SVD）
+→「算得准」（M2 激活/量化/标定）→「能设计完整芯片：光核 + 电子接口」（M3 光电协同仿真）
+→「规模达国际水平」（M4 规模盲 + tiling）→「对标国际公开基准」（M5）——并对标 Lightmatter / MIT / 清华等 A 级 landmark。
+与 `/api/qchip_demo`（光量子 LOQC）/ `/api/schip_demo`（超导 transmon）**并列**：三条物理路线均有「吃狗粮」征程。
+
+| 段 | 编号 | 内容 | 门禁 | 关键结果 |
+|---|---|---|---|---|
+| **M1** | D-129…D-131 | 非酉 SVD 光计算路径 · 全闭环 | 28 | SVD(W=U·Σ·V†)→双 MZI 网格+对角衰减 · Reck 三角分解 · 相移闭环标定 · 小矩阵端到端精度 100% |
+| **M2** | D-132 | 激活 + 量化/标定 + 精度锚 | 31 | relu/sigmoid/tanh 激活 · 相位量化 · Vπ·L 律标定环 · 端到端精度锚 100% |
+| **M3** | D-133 | 光电协同仿真（光核 + 电子接口） | 31 | DAC→驱动(RK4)→相移器(Vπ)→光网格→PD→TIA 全链路 co-sim · Vπ+5% 失配精度 83.3%→标定 100% |
+| **M4** | D-134 | 规模扩张 / tiling 压力测试 | 38 | scale-blind 保真（1−F≈常数，ratio rel_std 7.66%）· tiling 局部标定增益 2.8× · N=256 网格保真 0.9932 |
+| **M5** | D-135 | 达国际水平（对标公开基准） | 33 | 8 条 A 级 golden landmark（Lightmatter/MIT/清华/AIP/Ayar）· 架构族对齐（MIT MZI lineage 同族）· 诚实口径（不报 fabricated 能效） |
+
+**M1–M5 合计 5 段征程 · 161 判据全绿 + 突变探针各必响**；入 CI core 门禁 `run_photonic_compute_m2_smoke` / `m3_smoke` / `m4_smoke` / `m5_smoke`（M1 以 demo 脚本 `run_photonic_compute_m1` 验收，不单列门禁）。
+**WebUI 只读案例卡（本版本收尾 · 照 qchip/schip 体例）**：新增 `GET /api/pchip_demo`（零重计算 ⇒ 免登录 · 不进 `HEAVY_POST_PATHS` · `verdict` 恒 `DESIGN_SIGNOFF`）+ `index.html` 卡片「★ 硅光张量核 / 光神经网络」（验证实力区 · 与超导/光量子案例卡**并列**）；门禁 `run_pchip_case_smoke` **18 判据**全绿（含突变探针：剥离诚实边界→判红、清空 landmark→判红）。CI core **232 → 237**。
+
+**关键平台能力增量**：① 非酉光计算路径（SVD 双网格 + 对角衰减，复矩阵/任意实矩阵均可片上实现）② 光电协同仿真框架（EIC 行为级一阶 RC 驱动 + 单极点 TIA 与光核闭环，**第一次能设计「光核 + 电子接口」完整芯片**）③ 闭环标定（DAC 下发 + TIA 读回反估真 Vπ 并补偿，Vπ+5% 失配 83.3%→100%）④ 规模可扩展（scale-blind 保真跨 N=8→256 ratio rel_std 仅 7.66%；tiling 增益 2.8×；N=256 网格保真 0.9932）⑤ 对标纪律（A 级公开来源登记 landmark 表 + 架构族对齐口径）。
+
+**诚实边界（G-A…G-G 逐条登记）**：① 非流片 / 非实测芯片（无 foundry 回片、无光学标定实测、无 TOPS/W 实测）② 不报任何 fabricated 能效数字（公开基准 TOPS/W 是「已交付芯片」实测/厂商标称；LDA 不产出 pj/MAC、TOPS/W）③ 对标按架构族 + 设计质量方法论，不按 die 级 benchmark 同台比较 ④ 规模=设计容量（256 是「可设计且可验证保真度」的矩阵规模，非已制备器件；延展 800×800 靠 scale-blind 性质、理想 fab 假设）⑤ EO 链路行为级（T1 候选，非 ORACLE；不碰晶体管级 DAC/ADC/SerDes/DSP）⑥ 零能效数字纪律（复用 `assert_no_energy_metrics`）⑦ Vπ 跨模块口径未统一（光侧 25 V·cm vs EIC 侧 7.5 V·mm，差 ~3.3×，已在 co-sim 层用单一 vpi_v 贯穿规避；根因统一留作独立 sprint 任务 #7）。
 
 ## v0.9.144（2026-09-29 · **Batch B-32 加锚 1 锚 B458（几何栅格化收敛 · 平台首个几何类锚）· 走完加锚四件套** · 账本 475→**476**（严格独立 454→455）· CI core 221 不变）
 

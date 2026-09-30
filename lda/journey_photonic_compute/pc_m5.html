@@ -1,0 +1,170 @@
+<!DOCTYPE html><html lang='zh-CN'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>LDA 光计算芯片 · 设计与成果介绍</title><style>
+:root{
+  --bg:#0b1020; --panel:#121a2e; --panel2:#0f1729; --line:#22314f;
+  --ink:#e8eefb; --mut:#9aa8c0; --acc:#4f8cff; --acc2:#7aa2ff;
+  --ok:#34d399; --warn:#fbbf24; --red:#f87171;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;}
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px 96px}
+header.hero{padding:64px 0 32px;border-bottom:1px solid var(--line);
+  background:radial-gradient(1200px 400px at 12% -10%,rgba(79,140,255,.18),transparent 60%)}
+.kicker{color:var(--acc2);letter-spacing:.18em;font-size:13px;font-weight:700}
+h1{font-size:40px;line-height:1.25;margin:12px 0 8px;letter-spacing:-.01em}
+h1 small{display:block;font-size:17px;font-weight:500;color:var(--mut);margin-top:10px}
+.badge{display:inline-block;padding:5px 12px;border:1px solid var(--warn);color:var(--warn);
+  border-radius:999px;font-size:12.5px;font-weight:700;margin-right:8px}
+.badge.ok{border-color:var(--ok);color:var(--ok)}
+.badge.acc{border-color:var(--acc);color:var(--acc2)}
+h2{font-size:24px;margin:56px 0 6px;padding-top:22px;border-top:1px solid var(--line)}
+h2 .no{color:var(--acc);font-weight:800;margin-right:10px}
+h3{font-size:18px;margin:30px 0 8px;color:#cfdcf5}
+p{margin:12px 0}
+.lead{font-size:19px;color:#d8e3f7}
+.mut{color:var(--mut)}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin:20px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.card .k{color:var(--mut);font-size:13px;letter-spacing:.04em}
+.card .v{font-size:30px;font-weight:800;color:#fff;line-height:1.2;margin-top:6px}
+.card .v span{font-size:15px;font-weight:600;color:var(--acc2);margin-left:4px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);color:#cfdcf5;
+  background:var(--panel2);font-weight:700;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid rgba(34,49,79,.75);vertical-align:top}
+tr:hover td{background:rgba(79,140,255,.05)}
+code{background:#0d1526;border:1px solid var(--line);border-radius:6px;padding:2px 7px;
+  font-family:ui-monospace,Consolas,"Cascadia Mono",monospace;font-size:13.5px;color:#bcd0f2}
+.callout{border-radius:12px;padding:16px 20px;margin:18px 0;border:1px solid}
+.callout.warn{border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.08)}
+.callout.ok{border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.07)}
+.callout.acc{border-color:rgba(79,140,255,.45);background:rgba(79,140,255,.08)}
+.callout b{color:#fff}
+.foot{margin-top:64px;padding-top:22px;border-top:1px solid var(--line);color:var(--mut);font-size:13.5px}
+a{color:var(--acc2)}
+</style></head><body><div class='wrap'>
+<header class="hero">
+  <div class="kicker">LDA · 开源 Agent-native EDA（MIT）· 光计算芯片征程</div>
+  <h1>硅光张量核 / 光神经网络 LDA-P
+    <small>MZI mesh 干涉架构 · 从「能算」到「算得准、规模达国际水平」· 设计&验证闭环</small>
+  </h1>
+  <div style="margin-top:18px">
+    <span class="badge ok">N=256 网格保真 0.9932</span>
+    <span class="badge ok">scale-blind 真身</span>
+    <span class="badge acc">闭环 Vπ 标定</span>
+    <span class="badge">零外部光学 SDK</span>
+    <span class="badge">判决路径无 LLM</span>
+    <span class="badge">设计&验证 · 非流片实测</span>
+  </div>
+  <p class="lead" style="margin-top:22px">
+    <b>用 LDA 从零设计一颗硅光张量核 / 光神经网络芯片：非酉 SVD 分解 → 激活量化标定 →
+    光电协同仿真 → 规模扩张 tiling，走完设计&验证闭环，并对标国际公开基准（Lightmatter / MIT / 清华）。</b>
+  </p>
+  <p class="mut">这不是一次器件仿真，而是一次「平台能不能真的设计一颗光计算芯片并验证其正确性」的体检——吃自己的狗粮。</p>
+</header>
+
+<div class="grid">
+  <div class="card"><div class="k">最大已验证矩阵</div><div class="v">256<span>×256</span></div>
+    <div class="mut" style="font-size:13px">32640 MZI（Reck 三角分解）</div></div>
+  <div class="card"><div class="k">N=256 网格酉保真度</div><div class="v">0.9932</div>
+    <div class="mut" style="font-size:13px">规模盲：1−F 随 N 不塌缩</div></div>
+  <div class="card"><div class="k">scale-blind 判定</div><div class="v">True</div>
+    <div class="mut" style="font-size:13px">ratio 相对标准差 3.01%</div></div>
+  <div class="card"><div class="k">tiling 保真增益</div><div class="v">2.8<span>×</span></div>
+    <div class="mut" style="font-size:13px">局部标定相对 monolithic</div></div>
+  <div class="card"><div class="k">EO 全精度精度</div><div class="v">100%</div>
+    <div class="mut" style="font-size:13px">Vπ+5% 未标定 83.3% → 标定 100%</div></div>
+  <div class="card"><div class="k">设计容量延展</div><div class="v">800<span>×800</span></div>
+    <div class="mut" style="font-size:13px">文献 MZI-mesh 最大类（理想 fab）</div></div>
+</div>
+
+<h2><span class='no'>01</span>这颗芯片是什么</h2>
+<table>
+<tr><th>维度</th><th>内容</th></tr>
+<tr><td><b>物理载体</b></td><td>硅光子计算（MZI mesh 干涉 · 相干光学线性代数）</td></tr>
+<tr><td><b>计算原语</b></td><td>任意酉矩阵（Reck 三角分解）+ 对角衰减 ⇒ 任意实矩阵；复矩阵走 SVD 双网格</td></tr>
+<tr><td><b>电子接口</b></td><td>DAC 下发相移 → 一阶 RC 驱动 → 相移器（Vπ） → 光网格 → 光电探测 → 单极点 TIA 读回</td></tr>
+<tr><td><b>闭环标定</b></td><td>基于 DAC 下发 + TIA 强度读回<b>反估真实 Vπ</b> 并补偿指令，回收 Vπ 失配精度</td></tr>
+<tr><td><b>非线性</b></td><td>relu / sigmoid / tanh 激活（计算后电子侧实现）</td></tr>
+<tr><td><b>规模架构</b></td><td>tiling 阵列化：N×N 切 k×k 个 T×T 子块，每块独立标定环 + 块间交叉开关</td></tr>
+<tr><td><b>外部依赖</b></td><td><b>零外部光学 SDK</b>（不依赖 Meep / Tidy3D / Lumerical）；物理内核平台自研</td></tr>
+</table>
+
+<h2><span class='no'>02</span>四段征程（M1 → M4）</h2>
+<table>
+<tr><th>段</th><th>标题</th><th>关键结果</th></tr>
+<tr><td><b>M1</b></td><td>非酉 SVD 光计算路径</td><td>SVD(W=U·Σ·V†) → 双 MZI 网格 + 对角衰减；Reck 三角分解；相移闭环标定</td></tr>
+<tr><td><b>M2</b></td><td>激活 + 量化 / 标定 + 精度锚</td><td>relu/sigmoid/tanh；相位量化；Vπ·L 律标定环；端到端精度锚 100%</td></tr>
+<tr><td><b>M3</b></td><td>光电协同仿真（光核 + 电子接口）</td><td>DAC→驱动→相移器→光网格→PD→TIA 全链路 co-sim；闭环 Vπ 标定回收精度</td></tr>
+<tr><td><b>M4</b></td><td>规模扩张 / tiling 压力测试</td><td>规模盲保真（1−F≈常数，随 N 不塌缩）；tiling 局部标定增益 2.8×；N=256 网格保真 0.9932</td></tr>
+</table>
+
+<h2><span class='no'>03</span>关键技术结果（可复核）</h2>
+<h3>3.1 光电协同仿真（M3）</h3>
+<table>
+<tr><th>场景</th><th>精度</th><th>权重相对误差</th></tr>
+<tr><td>EO 全精度（16-bit）</td><td>100%</td><td>0.0015</td></tr>
+<tr><td>2-bit 量化</td><td>66.7%</td><td>1.059</td></tr>
+<tr><td>Vπ+5% 未标定</td><td>83.3%</td><td>0.209</td></tr>
+<tr><td><b>Vπ+5% 标定为</b></td><td><b>100%</b></td><td><b>0.0017</b></td></tr>
+</table>
+<p class="mut">DAC 2/4/8/12-bit 相位误差 0.49 / 0.107 / 0.0063 / 0.0011 rad；8-bit 标定残差 0.331%；
+TIA z0=2000Ω、z@f3dB=1414Ω、高频滚降 0.141。</p>
+<h3>3.2 规模盲 + tiling（M4）</h3>
+<table>
+<tr><th>指标</th><th>值</th></tr>
+<tr><td>规模盲判定</td><td>True（(1−F)/√((N−1)/N) 相对标准差 7.66%）</td></tr>
+<tr><td>tiling 收益</td><td>mono 1−F=0.0247 → tiled 0.0088（局部标定再降 2.8×）</td></tr>
+<tr><td>路由损耗</td><td>k=1→0 / k=8→33.6 dB / k=32→595.2 dB（单调）</td></tr>
+<tr><td>大 N 网格保真度</td><td>N=64 / 128 / 256 ⇒ 0.9967 / 0.9952 / 0.9932</td></tr>
+</table>
+<div class='callout acc'><b>判决全部为死标量比对，LLM 不进判决路径</b>；物理定律（酉幺正性、Vπ·L 律）作<b>红线锚</b>。</div>
+<h2><span class='no'>04</span>对标国际公开基准（A 级 golden）</h2><div class='callout warn'>⚠️ 下表为 2024–2026 公开报道的「已交付/已流片光子芯片」数字，仅作背景坐标；本案例为<b>设计&验证层能力证明</b>，两者不同台比较。</div><table><tr><th>主体 / 年份</th><th>架构</th><th>关键指标</th><th>来源</th></tr><tr><td><b>Lightmatter</b><br><span class='mut'>2025</span></td><td>光广播 + 电子加权累加（4×128×128 PTC，349 mm²/核）</td><td>262 TOPS/W（光子核）</td><td class='mut' style='font-size:12px'>https://whychips.com/optical-computing-for-ai-inference-2026-energy-benchmarks ; https://www.clppublishing.net/articles/OJ20108ea49ccd5e7e</td></tr><tr><td><b>Lightmatter</b><br><span class='mut'>2025</span></td><td>硅光组合优化加速器（PACE）</td><td>4.21 TOPS/W（不含激光）</td><td class='mut' style='font-size:12px'>https://www.clppublishing.net/articles/OJ20108ea49ccd5e7e</td></tr><tr><td><b>MIT（Shen, Harris, Soljačić, Englund 等）</b><br><span class='mut'>2017</span></td><td>MZI mesh（可编程纳米光子处理器）</td><td>「原则上零能耗、几乎瞬时」；元音识别 77%（传统 90%）</td><td class='mut' style='font-size:12px'>https://news.mit.edu/2017/new-system-allows-optical-deep-learning-0612</td></tr><tr><td><b>MIT（Englund lab）</b><br><span class='mut'>2024</span></td><td>MZI mesh（全集成）</td><td>训练 96% / 推理 92% · <0.5 ns</td><td class='mut' style='font-size:12px'>https://whychips.com/optical-computing-for-ai-inference-2026-energy-benchmarks</td></tr><tr><td><b>MIT（Englund, Hamerly 等）</b><br><span class='mut'>2026</span></td><td>空-谱-时超复用衍射光束路由（单发 matrix-matrix）</td><td>20 aJ/MAC · 2 Gsa/s</td><td class='mut' style='font-size:12px'>https://www.rle.mit.edu/?p=12123/</td></tr><tr><td><b>清华大学（Taichi / 太极）</b><br><span class='mut'>2024</span></td><td>WDM + chiplet 分布式广度架构</td><td>160 TOPS/W</td><td class='mut' style='font-size:12px'>https://whychips.com/optical-computing-for-ai-inference-2026-energy-benchmarks</td></tr><tr><td><b>AIP Applied Physics Letters（综述对比表）</b><br><span class='mut'>2024</span></td><td></td><td>MZI-mesh 可达 ≤800×800、≤9 TOPS/W、≤10 TOPS/mm²；MRR weight bank ≤100×100、≤15 TOPS/W；Lightmatter 128×128 0.81 TOPS/W、0.047 TOPS/mm²（光广播+电子加权口径）；NVIDIA B200 9 TOPS/W、5.5 TOPS/mm²；IBM Hermes 256×256 9.76 TOPS/W</td><td class='mut' style='font-size:12px'>https://pubs.aip.org/aip/aml/article/4/2/026114/3394765/A-case-study-on-the-performance-metrics-of</td></tr><tr><td><b>Ayar Labs</b><br><span class='mut'>2024</span></td><td>光互连 I/O（**非计算核**）</td><td>Ayar 做**光互连层（非计算核）**（带宽/延迟），与 LDA 的**计算核**不同层；用户问及时须明标二者不在同层比较</td><td class='mut' style='font-size:12px'>https://lightmatter.co（产业版图背景）</td></tr></table>
+<h2><span class='no'>05</span>架构族对齐（诚实比较的核心）</h2>
+<ul>
+<li><b>LDA 的 MZI mesh 与 MIT 学术 lineage（Shen/Harris 2017 → 2025 Nature 128×128 PTC）同族</b>；
+Lightmatter 商用 Envise 采用「光广播 + 电子加权」口径（AIP AML 表记 0.81 TOPS/W），与纯 MZI mesh 实现为不同子架构。</li>
+<li><b>文献 MZI-mesh 最大类 ≤800×800</b>（AIP AML 2024）。LDA 已验证 N=256（32640 MZI）网格保真 0.9932，设计容量可借 scale-blind 性质延展到 800×800 类（理想 fab 假设）。</li>
+<li><b>该 lineage 的公开瓶颈</b>正是「MZI mesh 受限于制备误差（fabrication imperfections）」（AIP AML 2024 原文）。
+LDA 的 <b>scale-blind 保真 + 闭环 Vπ 标定 + tiling 局部标定</b> 正是对这一瓶颈的工程解。</li>
+</ul>
+
+<h2><span class='no'>06</span>先进性定位（诚实版）</h2>
+<div class='callout warn'>⚠️ 本案例是<b>设计工具链的能力证明</b>，不是「又造了一颗更快的光子芯片」。把 256 / 800 读成「已制备光子芯片」即为失真。</div>
+<h3>本案例的差异点（不做数值同台比较）</h3>
+<table>
+<tr><th>维度</th><th>产业界</th><th>本案例</th></tr>
+<tr><td><b>交付物</b></td><td>已流片 / 已交付光子芯片 + 实测 TOPS/W</td><td><b>设计&验证工具链</b>：MZI mesh 张量核的可设计 + 可验证保真闭环</td></tr>
+<tr><td><b>工具链</b></td><td>各自闭源 CAD/PDK + 控制 ASIC</td><td><b>开源（MIT）· Agent-native</b> · 物理内核自研 · 零外部光学 SDK</td></tr>
+<tr><td><b>判决路径</b></td><td>实验标定 + 数值仿真混合</td><td><b>LLM 不进判决路径</b>；死标量比对；红线为物理定律</td></tr>
+<tr><td><b>能效数字</b></td><td>实测 / 标称 TOPS/W（制造+系统级）</td><td><b>不报任何 fabricated 能效数字</b></td></tr>
+<tr><td><b>对标维度</b></td><td>die 级 benchmark</td><td><b>架构族 + 设计质量方法论</b></td></tr>
+</table>
+
+<h2><span class='no'>07</span>诚实边界（逐条）</h2>
+<div class='callout warn'><ol>
+<li><b>非流片 / 非实测芯片</b>：全部为设计期验证；无 foundry 回片、无光学校准实测、无 TOPS/W 实测。</li>
+<li><b>不宣称任何 fabricated 能效数字</b>：公开基准的 TOPS/W 是「已交付芯片」的实测/厂商标称；LDA 不报任何 pj/MAC、TOPS/W。</li>
+<li><b>比较按架构族 + 设计质量方法论</b>：不按 die 级 benchmark 数字同台比；LDA 的 MZI mesh 与 MIT 学术 lineage 同族。</li>
+<li><b>规模 = 设计容量</b>：256 是「可设计且可验证保真度」的矩阵规模，非已制备器件；延展到 800×800 类靠 scale-blind 性质（理想 fab 假设）。</li>
+<li><b>EO 链路为行为级（T1 候选，非 ORACLE）</b>：驱动/TIA 用一阶 RC + 单极点模型，不碰晶体管级 DAC/ADC/SerDes/DSP。</li>
+<li><b>零能效数字纪律</b>：复用 assert_no_energy_metrics；模块不输出能效指标。</li>
+<li><b>Vπ 跨模块口径未统一</b>：光侧 25 V·cm vs EIC 侧 7.5 V·mm（差 ~3.3×），已在 co-sim 层用单一 vpi_v=7.5V 贯穿规避；根因统一留作独立 sprint（任务 #7）。</li>
+</ol></div>
+
+<h2><span class='no'>08</span>平台能力增量（吃狗粮的意义）</h2>
+<ol>
+<li><b>非酉光计算路径</b>：SVD 双网格 + 对角衰减，突破「只能算酉矩阵」的限制。</li>
+<li><b>光电协同仿真框架</b>：把既有 EIC 行为级模型与光计算核接成闭环，平台第一次能设计「光核 + 电子接口」的完整芯片。</li>
+<li><b>闭环标定（控制环）</b>：用 DAC 下发 + TIA 读回反估真实 Vπ，平台第一次有「读回→补偿」的校准能力。</li>
+<li><b>规模可扩展性验证</b>：scale-blind 保真度证明大 N 不塌缩；tiling 架构给出局部标定增益与路由损耗代价模型。</li>
+<li><b>对标纪律</b>：用 A 级公开来源登记产业界 landmark，平台第一次把「达国际水平」落到可复核的对标表。</li>
+</ol>
+
+<div class="foot">
+  <p><b>LDA</b>（开源 Agent-native EDA · MIT）· 光计算芯片 LDA-P · 版本 0.9.145 · 2026-09-30</p>
+  <p>平台账本：CI core 236 条回归成员 · 验证锚 <b>476</b>（严格独立 455 / 降级 3 / 自证桩 18）· 独立率 95.59%</p>
+  <p>本征程门禁：<code>run_photonic_compute_m1..m5_smoke.py</code> · M5 单文件 33 判据全绿</p>
+  <p class="mut">本页为《LDA_光计算芯片设计与成果总结_2026-09-30.md》的派生包装；数字以事实源 + photonic_compute_benchmarks.py 为准。</p>
+</div>
+</div></body></html>

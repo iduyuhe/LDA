@@ -286,6 +286,37 @@ def h_schip_demo(h, p, q, path):
                       "case_id": _sc.CASE_ID, "verdict": "ERROR"})
 
 
+def h_pchip_demo(h, p, q, path):
+    """GET /api/pchip_demo —— 硅光张量核（光计算芯片）案例卡（只读 · 免登录 · 微秒级）。
+
+    M5 收尾（2026-09-30）：把光计算征程「吃狗粮」LDA-P（M1→M5）成果在 UI 中
+    以**只读案例**呈现（MZI mesh 干涉架构：SVD 双网格 + 对角衰减 + 光电协同 + tiling）。
+
+    🔴 与 `/api/qchip_demo`（光量子 LOQC 案例卡 · D-131）、`/api/schip_demo`
+    （超导 transmon 案例卡 · D-148）**并列**：三条物理路线在 LDA 均已吃狗粮。
+
+    🔴 **零重计算**：不跑仿真、不 import 求解器 —— 数字来自 ① 静态里程碑/结论
+    （可回溯到 M1–M5 门禁）② 纯闭式现算（MZI 计数）③ 对产出物只 `stat` 的元信息
+    ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**（与 `/api/qchip_demo`、
+    `/api/schip_demo`、`/api/verification_ledger` 同属「公开只读验货」类）。
+
+    🔴 **不伪装实测 / 不报 fabricated 能效**：`verdict` 恒为 `DESIGN_SIGNOFF`
+    （**非** ACCEPT/PASS），返回体自带 `honest_note`（非流片实测 / 设计容量 /
+    不报任何 fabricated 能效数字）。
+
+    异常不 500（返回 200 + error 字段，与 `h_schip_demo` 同风格）。
+    """
+    try:
+        from . import pchip_case as _pc
+    except ImportError:
+        from lda_webui import pchip_case as _pc
+    try:
+        return (200, _pc.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/pchip_demo", "error": str(e)[:160],
+                      "case_id": _pc.CASE_ID, "verdict": "ERROR"})
+
+
 # --------------------------------------------------------------------------
 # /api/cpo_array 重计算端点并发护栏
 # 背景：app.py 用 ThreadingHTTPServer（每请求一线程）。该端点无鉴权且默认
@@ -1788,6 +1819,8 @@ GET_ROUTES = {
     # A 档接入（D-131）：光量子计算芯片只读案例卡（零重计算 · 免登录）
     "/api/qchip_demo": h_qchip_demo,
     "/api/schip_demo": h_schip_demo,
+    # A 档接入（M5 收尾）：硅光张量核（光计算芯片）只读案例卡（零重计算 · 免登录）
+    "/api/pchip_demo": h_pchip_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,

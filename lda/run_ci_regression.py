@@ -1323,6 +1323,14 @@ CORE_SMOKES: List[str] = [
     # landmark 仅背景坐标），跨源一致性（模块↔API 参考↔routes），含突变探针（破坏诚实边界/清空 landmark
     # 必红）。与 qchip/schip/pchip 案例卡体例对齐。CI core 242→243。
     "run_ecore_case_smoke.py",
+    # 🔴 电子计算征程 E6（2026-09-30 · 新征程第二段「逼近国际水平」· 主攻方向=版图与签核链）：
+    # 让电子征程**第一次能出真 GDS**——电子版图层栈（DIFF/POLY/CONT/M1/VIA1/M2 + 层语义谓词
+    # 「同层 signal 相交判短 / 异层介质隔离」+ 设计规则）+ 1T 交叉阵列版图 P&R（节距闭式 +
+    # AREF 层次化）+ 几何 DRC（线宽/间距/接触孔包围/面积）+ 段感知 LVS（连通分量/短路/悬空桥/
+    # 晶体管数/W-L **几何回提**）+ 真 GDSII 出口。吃狗粮闭环：版图回提 W/L → E1 MOSFET 模型
+    # 偏置电流（版图↔电路同口径）。含 4 道突变探针（抬限值/篡足迹闭式/篡 W-L 回提/退回旧 bbox
+    # 必红）+ 还原完整性。CI core 243→244。
+    "run_ecore_e6_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2129,6 +2137,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_capability_guard_smoke.py": 300.0,
     # E 征程收官 · 电子计算芯片案例卡 WebUI 门禁（D-155）· 实测上界 0.1s（单测）
     "run_ecore_case_smoke.py": 300.0,
+    # E6 电子计算征程版图与几何签核门禁（D-156）· 实测上界 0.36s（3 轮 max · @本机）
+    "run_ecore_e6_smoke.py": 300.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

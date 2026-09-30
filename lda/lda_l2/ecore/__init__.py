@@ -52,6 +52,28 @@ from .mosfet import (
     mosfet_self_check,
     vdsat,
 )
+from .elayers import (
+    DEFAULT_CMOS_STACK,
+    ELEC_DESIGN_RULES,
+    ELEC_DISCLOSURE,
+    ELayer,
+    ELayerStack,
+    get_estack,
+)
+from .layout import (
+    EDRC_RULES,
+    LAYOUT_DISCLOSURE,
+    array_footprint,
+    crossbar_array,
+    crosspoint_cell,
+    elvs_signoff,
+    expected_netlist,
+    extract_wl,
+    gds_roundtrip_check,
+    layout_svg,
+    run_edrc,
+    to_gds,
+)
 
 __all__ = [
     "Circuit",
@@ -88,6 +110,24 @@ __all__ = [
     "ECORE_CAPABILITY_DISCLOSURE",
     "manifest_check",
     "ecore_module_names",
+    "ELayer",
+    "ELayerStack",
+    "DEFAULT_CMOS_STACK",
+    "get_estack",
+    "ELEC_DESIGN_RULES",
+    "ELEC_DISCLOSURE",
+    "EDRC_RULES",
+    "LAYOUT_DISCLOSURE",
+    "crosspoint_cell",
+    "crossbar_array",
+    "array_footprint",
+    "expected_netlist",
+    "extract_wl",
+    "run_edrc",
+    "elvs_signoff",
+    "to_gds",
+    "gds_roundtrip_check",
+    "layout_svg",
 ]
 
 # 征程入口披露（对外引用须携此诚实边界）
@@ -98,6 +138,7 @@ ECORE_DISCLOSURE: dict = {
     "e3_scope": "E3 数据通路：数字→DAC→交叉阵列→ADC→数字 的模拟计算引擎；多层级联(MLP+ReLU)+分块(tiling)；带符号权重用参考列法映射；端到端 vs 全精度数字 golden 正确性判据。",
     "e4_scope": "E4 规模对标（诚实边界）：N×N 数据通路规模扫描(至 256×256=65536 突触) + 公开模拟加速器 landmark 诚实对标；不报 TOPS/TOPS/W；相对误差有界/绝对误差 ∝N。",
     "e5_scope": "E5 平台能力硬化：ecore 能力清单（ECORE_CAPABILITY_MANIFEST·单一真源）+ 常驻守护门禁（清单↔模块/符号双向完备 + 披露一致 + 诚实边界）。",
+    "e6_scope": "E6 版图与几何签核：电子版图层栈（DIFF/POLY/CONT/M1/VIA1/M2 + 层语义谓词 + 设计规则）+ 1T 交叉阵列版图 P&R（节距闭式 + AREF 层次化）+ 几何 DRC（线宽/间距/包围/面积）+ 段感知 LVS（连通分量/短路/悬空桥/W-L 几何回提）+ 真 GDSII 出口。",
     "redline": "电域→仅电路级（T1）：不碰 Foundry TCAD / 工艺角 / 流片（属 T2 真值，永久锁）。",
     "sovereignty": "C 级自主（纯 numpy），不借 HSPICE/Spectre 等商业 SPICE 引擎；LLM 不进判决路径。",
     "honest_boundary": "电路级设计验证引擎，非签核级 SPICE（无温度/噪声/稀疏矩阵/收敛增强）；"

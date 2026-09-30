@@ -32,6 +32,14 @@ LIB_LAYER_SC_JJ = 11         # 约瑟夫森结（桥接两岛屿，定义非线�
 LIB_LAYER_SC_GROUND = 12     # 地平面（共面波导接地板）
 LIB_LAYER_SC_AIRBRIDGE = 13  # 空气桥 / 跨线（S3+ 立体布线）
 LIB_LAYER_SC_PAD = 14        # 焊盘（RF/磁通偏置接入）
+# ── 电子层（D-156 · 电子计算征程 E6 · 模拟计算核版图）──
+LIB_LAYER_E_DIFF = 20        # 有源区（源/漏/沟道）
+LIB_LAYER_E_POLY = 21        # 多晶硅栅
+LIB_LAYER_E_CONT = 22        # 接触孔
+LIB_LAYER_E_M1 = 23          # 金属 1（行线 / 权重线）
+LIB_LAYER_E_VIA1 = 24        # 通孔 1
+LIB_LAYER_E_M2 = 25          # 金属 2（列线）
+LIB_LAYER_E_PAD = 26         # 焊盘 / 钝化开口
 
 
 # ---------------------------------------------------------------------------

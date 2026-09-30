@@ -72,6 +72,22 @@ ECORE_CAPABILITY_MANIFEST = [
                     "NON_CLAIMED", "SCALE_BENCH_DISCLOSURE"],
         "introduced_by": "D-153 (E4)", "guard": "run_ecore_e4_smoke.py",
     },
+    {
+        "capability": "电子版图层栈（DIFF/POLY/CONT/M1/VIA1/M2）+ 层语义谓词 + 设计规则",
+        "module": "lda_l2.ecore.elayers",
+        "symbols": ["ELayer", "ELayerStack", "DEFAULT_CMOS_STACK", "get_estack",
+                    "ELEC_DESIGN_RULES", "ELEC_DISCLOSURE", "run_selfcheck"],
+        "introduced_by": "D-156 (E6)", "guard": "run_ecore_e6_smoke.py",
+    },
+    {
+        "capability": "电子版图与几何签核（1T 交叉阵列 P&R + 几何 DRC + 段感知 LVS + AREF 层次化 GDS）",
+        "module": "lda_l2.ecore.layout",
+        "symbols": ["crosspoint_cell", "crossbar_array", "array_footprint",
+                    "expected_netlist", "extract_wl", "run_edrc", "elvs_signoff",
+                    "to_gds", "gds_roundtrip_check", "layout_svg",
+                    "EDRC_RULES", "LAYOUT_DISCLOSURE", "run_selfchecks"],
+        "introduced_by": "D-156 (E6)", "guard": "run_ecore_e6_smoke.py",
+    },
 ]
 
 
@@ -113,8 +129,8 @@ def manifest_check() -> dict:
 
 
 ECORE_CAPABILITY_DISCLOSURE = {
-    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）",
-    "e5_scope": "把 E1~E4 逼出的平台能力固化为机器可读清单（单向真源）+ 常驻门禁（正向完备 + 反向完备 + 披露一致 + 诚实边界）",
+    "route": "电子计算征程 E5/E6 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）",
+    "e5_scope": "把 E1~E6 逼出的平台能力固化为机器可读清单（单向真源）+ 常驻门禁（正向完备 + 反向完备 + 披露一致 + 诚实边界）",
     "hardening_semantics": "能力面必须被门禁守着：任一模模块/符号缺失、隐身模块出现、或注入 fabricated 指标 ⇒ 门禁必红",
-    "redline": "T1 电路级（不碰 Foundry TCAD/流片）；C 级自主（纯 numpy）；LLM 不进判决路径",
+    "redline": "T1 电路级（不碰 Foundry TCAD/流片）；C 级自主（纯 numpy/标准库）；LLM 不进判决路径",
 }

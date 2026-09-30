@@ -87,6 +87,24 @@ from .parasitic import (
     wire_capacitance,
     wire_resistance,
 )
+from .mismatch import (
+    MISMATCH_DISCLOSURE,
+    MISMATCH_PROCESS,
+    calibration_report,
+    flicker_input_noise_psd,
+    flicker_output_noise_psd,
+    input_referred_noise_psd,
+    mc_output_error,
+    mobility_ratio,
+    mvm_output,
+    nominal_conductances,
+    pelgrom_sigma_beta_rel,
+    pelgrom_sigma_vth_mv,
+    sample_mismatch,
+    sigma_vs_n,
+    thermal_noise_psd,
+    vth_at,
+)
 
 __all__ = [
     "Circuit",
@@ -152,6 +170,22 @@ __all__ = [
     "sneak_report",
     "wire_capacitance",
     "wire_resistance",
+    "MISMATCH_PROCESS",
+    "MISMATCH_DISCLOSURE",
+    "pelgrom_sigma_vth_mv",
+    "pelgrom_sigma_beta_rel",
+    "vth_at",
+    "mobility_ratio",
+    "thermal_noise_psd",
+    "flicker_input_noise_psd",
+    "flicker_output_noise_psd",
+    "input_referred_noise_psd",
+    "nominal_conductances",
+    "sample_mismatch",
+    "mvm_output",
+    "mc_output_error",
+    "sigma_vs_n",
+    "calibration_report",
 ]
 
 # 征程入口披露（对外引用须携此诚实边界）
@@ -164,6 +198,7 @@ ECORE_DISCLOSURE: dict = {
     "e5_scope": "E5 平台能力硬化：ecore 能力清单（ECORE_CAPABILITY_MANIFEST·单一真源）+ 常驻守护门禁（清单↔模块/符号双向完备 + 披露一致 + 诚实边界）。",
     "e6_scope": "E6 版图与几何签核：电子版图层栈（DIFF/POLY/CONT/M1/VIA1/M2 + 层语义谓词 + 设计规则）+ 1T 交叉阵列版图 P&R（节距闭式 + AREF 层次化）+ 几何 DRC（线宽/间距/包围/面积）+ 段感知 LVS（连通分量/短路/悬空桥/W-L 几何回提）+ 真 GDSII 出口。",
     "e7_scope": "E7 寄生提取与后仿：从 E6 版图按教科书闭式提导线 RC（R=ρL/(Wt)·C=ε₀ε_r·W/d）+ 阵列 R 梯网络（行/列分段电阻 + 交叉点电导）注入 MNA 后仿，量化 IR drop（随规模超线性增）与 sneak path（half-select 浮空方案旁路电流）+ Elmore 互连延迟；golden = 解析 I_j=Σg_ij·V_i（R=0 精确复现）。",
+    "e8_scope": "E8 非理想/失配/噪声：Pelgrom 器件失配（σ_ΔVth=A_VT/√(W·L)、σ_Δβ/β）+ 温度一阶模型（Vth 线性漂移 · 迁移率 (T/T0)^m · 片内列热梯度）+ 噪声（热 4kTγg_m · 闪烁 K_f/(C_ox·W·L·f)）+ 失配 Monte Carlo 输出误差分布（自证 σ_rel ∝ 1/√N）+ 校准层级 L0 原始 / L1 列增益 / L2 逐单元。",
     "redline": "电域→仅电路级（T1）：不碰 Foundry TCAD / 工艺角 / 流片（属 T2 真值，永久锁）。",
     "sovereignty": "C 级自主（纯 numpy），不借 HSPICE/Spectre 等商业 SPICE 引擎；LLM 不进判决路径。",
     "honest_boundary": "电路级设计验证引擎，非签核级 SPICE（无温度/噪声/稀疏矩阵/收敛增强）；"

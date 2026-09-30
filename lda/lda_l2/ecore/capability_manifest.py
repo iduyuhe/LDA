@@ -98,6 +98,19 @@ ECORE_CAPABILITY_MANIFEST = [
                     "PARASITIC_DISCLOSURE", "run_selfchecks"],
         "introduced_by": "D-157 (E7)", "guard": "run_ecore_e7_smoke.py",
     },
+    {
+        "capability": "非理想/失配/噪声通道（Pelgrom 失配 + 温度 + 热/闪烁噪声 + 失配 Monte Carlo + 校准层级 L0/L1/L2）",
+        "module": "lda_l2.ecore.mismatch",
+        "symbols": ["pelgrom_sigma_vth_mv", "pelgrom_sigma_beta_rel", "vth_at",
+                    "mobility_ratio", "conductance_at_temperature",
+                    "thermal_noise_psd", "flicker_input_noise_psd",
+                    "flicker_output_noise_psd", "input_referred_noise_psd",
+                    "nominal_conductances", "sample_mismatch",
+                    "mismatched_conductances", "mvm_output", "mc_output_error",
+                    "sigma_vs_n", "calibration_report", "MISMATCH_PROCESS",
+                    "MISMATCH_DISCLOSURE", "run_selfchecks"],
+        "introduced_by": "D-158 (E8)", "guard": "run_ecore_e8_smoke.py",
+    },
 ]
 
 

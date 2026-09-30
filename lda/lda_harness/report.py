@@ -163,10 +163,19 @@ def format_markdown(results, meta=None):
             gv = "—"
             cv = "—"
         else:
-            # 归一后再格式化：否则浮点末位抖动会泄漏进 markdown（护栏 ⑥ 抓到过）。
+            # 值列：round_float 防浮点末位抖动泄漏（护栏 ⑥ 抓到过）。
             _g = deterministic.round_float(r.golden)
             _c = deterministic.round_float(r.candidate)
-            err = f"{abs(_c - _g):.4g}"
+            # 🔴 P2.2 修复：误差必须用**原始** golden/candidate 计算，不得先
+            #    round_float 再相减——否则 9 位有效数字会把 B446-B452 等亚 1e-8
+            #    的真实吻合偏差抹成 0，把「高精度吻合」误显示为「完全相等」，
+            #    损害报告可信度。
+            #    兜底：<1e-12 的绝对误差按数值抖动吸收（守护栏 ⑥，与
+            #    run_harness.py / falsifiability 判据的 1e-12 阈值一致），不泄漏
+            #    1e-15 末位抖动进误差列。
+            err_raw = abs(float(r.candidate) - float(r.golden))
+            err_norm = 0.0 if err_raw < 1e-12 else deterministic.round_float(err_raw)
+            err = f"{err_norm:.5g}" if err_norm else "0"
             gv = f"{_g:.6g}"
             cv = f"{_c:.6g}"
         verdict = "✅ PASS" if r.passed else "❌ FAIL"

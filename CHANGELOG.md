@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.9.145（2026-09-30 · **超导量子计算芯片征程 S1–S5 全闭环 + 工程债清偿（D-146/D-147）+ 案例化与对外包装（D-148）** · 账本 **476 不变**（严格独立 455 / 降级 3 / 自证桩 18）· 独立率 95.59% 持平 · CI core **221 → 226 → 227（P1.1）→ 228（死断言）→ 229（GPU wheel）**）
+## v0.9.145（2026-09-30 · **超导量子计算芯片征程 S1–S5 全闭环 + 工程债清偿（D-146/D-147）+ 案例化与对外包装（D-148）** · 账本 **476 不变**（严格独立 455 / 降级 3 / 自证桩 18）· 独立率 95.59% 持平 · CI core **221 → 226 → 227（P1.1）→ 228（死断言）→ 229（GPU wheel）→ 230（P2.2 误差列）**）
 
 > **P1.1（2026-09-30 · 战略/功能/代码三审计后第一轮实施 · SO1 标准首项）**：把 L1 agent 协议层（lda/lda_l1/protocol.py 的 KernelGateway + AgentRequest/AgentResponse + tool_schemas 原语集；lda/lda_l1/mcp_server.py 的零依赖 JSON-RPC 2.0 传输绑定）冻结为开放标准 **LDA-STD-002 v0.1**（docs/l1_protocol_spec.md + docs/l1_protocol_schema.json，对标 L0 LDA-STD-001 v0.3）；新增零漂移门禁 `lda/run_l1_spec_smoke.py`（8 判据：契约-代码逐字段比对 + 未知 action / 非法 candidate 两道反向反例 + 正向防假绿），入 CI core（CORE_SMOKES + 超时表 120s）。CI core **226 → 227**。A1 发函由用户方人类合作伙伴推进（已建周提醒自动化）；L1 协议冻结为社区共建起点。
 
@@ -12,6 +12,9 @@
 > ② **pyflakes 静净 6 → 0**：`lda/run_pyflakes_ratchet_smoke.py` 棘轮基线收至 F841=0（前序轮次已完成）。
 > ③ **死断言常驻扫描门禁（CI core 227 → 228）**：新增 `lda/run_dead_assert_guard_smoke.py` —— 对 `scripts/*_probe.py` 共 33 个突变探针做纯静态（AST + 文本子串）活性扫描，凡探针声明的「突变锚点串」已不在活代码中（重构后 patch 入口失效 ⇒ 仍绿死断言，血案 D-145）、或目标源文件被删，当场判红，强制把探针重定向到更根本入口；不改源码、不起子进程、秒级。
 > ④ **GPU/CUDA 隔离 venv 预置可用性自检（CI core 228 → 229）**：新增 `lda/run_cuda_venv_selfcheck_smoke.py`（软/Advisory 护栏）—— 登记「torch>=2.0 且 CUDA build」预期；隔离 venv `lda_cuda_venv/`（已在 .gitignore 排除，不污染用户/仓库环境）若缺席则 SKIP（CI 沙箱因审计 R7 缺口无法下载 CUDA wheel，属合法缺席，不阻断任何门禁），若已预置则实跑校验 torch 可 import + 为 CUDA build + 版本达标，损坏即 FAIL（抓出「预置了却坏掉」）。配套可复现 recipe `setup_cuda_venv.py`（一键创建 + 安装 cu128 wheel + 校验；安装被阻断时明确报错退出，绝不假装成功）。本机预置实测：torch 2.11.0+cu128（CUDA 12.8，`torch.cuda.is_available=True`）。
+
+> **P2.2（2026-09-30 · 技术验证轨 P2 启动 · 收口/文档化首项）**：修复验证报告误差列展示 bug（B446-B452 等独立候选与黄金「高精度吻合」亚 1e-8 偏差被旧实现先 `round_float(9位)` 再相减抹成 0，误显示「完全相等」）。`lda/lda_harness/report.py` 的 `format_markdown` 误差列改为**从原始 golden/candidate 计算**，并保留 `<1e-12` 按数值抖动吸收（守护栏 ⑥，与 `run_harness.py`/`falsifiability` 的 1e-12 阈值一致，不泄漏 1e-15 末位）。配套反向测试 `lda/run_report_error_display_smoke.py`（4 判据：1e-8 偏差误差必须非 0、自证桩恒 0、jitter 必被吸收、真变更必变），入 CI core（CORE_SMOKES + 超时表）。CI core **229 → 230**。账本零变化、零锚改动、独立率 95.59% 持平。
+> 诚实边界：完整 `format_markdown` 链路需 numpy+scipy（CI 环境具备），本机沙箱缺 scipy 故用真实 `deterministic.round_float` 做等价逻辑验证；受修复影响的 `reports/*/verification_report.md` 误差列将在下次 CI harness 跑时自然刷新（确定性函数，非手改）。
 
 > ⚠️ **本段为补记归档**：D-133…D-148 共 11 轮工程（`78162cd`…`7c6c2e8`）此前**未写 CHANGELOG 段**
 > （沿用「不 bump 版本即不落段」的旧惯例，导致 CHANGELOG 最新条目长期停在 v0.9.144 的 B-32）。

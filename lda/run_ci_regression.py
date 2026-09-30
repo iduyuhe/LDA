@@ -118,6 +118,12 @@ CORE_SMOKES: List[str] = [
     #   缺席⇒SKIP（CI 沙箱 R7 缺口合法缺席，不阻断门禁），venv 存在但损坏⇒FAIL（抓出
     #   "预置了却坏掉"）。绝不 import/安装 torch，不污染环境。CI core 228→229。
     "run_cuda_venv_selfcheck_smoke.py",
+    # 🔴 v0.9.145（P2.2）：误差列展示 bug 反向测试——B446-B452 等独立候选与黄金
+    #   亚 1e-8 真实吻合偏差，旧实现先 round_float(9位)再相减抹成 0，误显示「完全相等」。
+    #   修复后误差从原始 golden/candidate 计算、<1e-12 按抖动吸收（守 ⑥）；本 smoke
+    #   反向可证伪（1e-8 偏差误差必须非 0、jitter 必被吸收、自证桩恒 0、真变更必变）。
+    #   CI core 229→230。
+    "run_report_error_display_smoke.py",
     # 基准对照验证闭环报告（v0.8.11c：15 引擎解析锚 rel + 实证语料覆盖矩阵 + ORACLE 状态）
     "run_benchmark_crosscheck_report.py",
     # 芯片级版图导出增强（v0.8.11d：IO 光栅接入 + 版图统计 + 芯片级 DRC 正负例）

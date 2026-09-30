@@ -9,7 +9,7 @@ E5（吃狗粮收尾：把 E1~E4 逼出的平台能力**钉成常驻门禁**，�
   ① 正向完备：清单每条 ⇒ 模块可导入 + 关键符号齐备；
   ② 反向完备：`lda_l2/ecore/` 下每个模块 ⇒ 必须在清单中登记（防隐身模块进盲区）；
   ③ 清单每条 guard smoke 文件真实存在（能力有门禁守着）；
-  ④ `ECORE_DISCLOSURE` 含 e1~e10 全部 scope（披露一致）；
+  ④ `ECORE_DISCLOSURE` 含 e1~e11 全部 scope（披露一致）；
   ⑤ 诚实边界：能力面不含 TOPS/TOPS-W 等 fabricated 指标。
 
 🔴 突变探针（防常数假绿 / 防死断言）：
@@ -60,7 +60,7 @@ def chk_guards_exist():
 
 
 def chk_disclosure_scopes():
-    need = [f"e{i}_scope" for i in range(1, 11)]
+    need = [f"e{i}_scope" for i in range(1, 12)]
     missing = [k for k in need if k not in ECORE_DISCLOSURE]
     return (len(missing) == 0), f"missing_scopes={missing}"
 
@@ -126,7 +126,7 @@ def main():
     ok, det = chk_guards_exist()
     check("③ 清单每条 guard smoke 文件真实存在", ok, det)
     ok, det = chk_disclosure_scopes()
-    check("④ ECORE_DISCLOSURE 含 e1~e10 全部 scope", ok, det)
+    check("④ ECORE_DISCLOSURE 含 e1~e11 全部 scope", ok, det)
     ok, det = chk_honest_boundary()
     check("⑤ 诚实边界: 能力面无 TOPS/TOPS-W 指标", ok, det)
 

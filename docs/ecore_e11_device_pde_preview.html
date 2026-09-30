@@ -1,0 +1,95 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<title>LDA 电子计算征程 E11-c · 器件级内核桥（MOSCAP PDE ⟷ 教科书闭式）</title>
+<style>
+body{background:#0b1220;color:#e6edf7;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;margin:0;padding:28px}
+h1{font-size:20px;font-weight:600;margin:0 0 4px}
+h2{font-size:15px;font-weight:600;margin:26px 0 10px;color:#9fb3d1}
+.sub{color:#8296b3;font-size:13px;margin-bottom:18px}
+.cards{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
+.card{background:#141d2f;border:1px solid #24314a;border-radius:10px;padding:12px 16px;min-width:158px}
+.card .k{font-size:12px;color:#8296b3}.card .v{font-size:20px;font-weight:600;color:#7fd1ff;margin-top:2px}
+.card .v.warn{color:#fbbf24}.card .v.ok{color:#4ade80}
+table{border-collapse:collapse;font-size:13px;margin-top:8px;width:100%}
+td,th{border:1px solid #24314a;padding:6px 12px;text-align:left}
+th{background:#1b2740;color:#9fb3d1;font-weight:600}
+.panel{background:#141d2f;border:1px solid #24314a;border-radius:10px;padding:14px;margin-top:10px}
+.note{color:#8296b3;font-size:12.5px;margin-top:14px;line-height:1.75}
+code{background:#1b2740;padding:1px 5px;border-radius:4px;color:#a5d8ff}
+.split{display:flex;gap:20px;flex-wrap:wrap}
+.split>div{flex:1;min-width:330px}
+</style></head><body>
+<h1>LDA · 电子计算征程 E11-c · 器件级内核桥</h1>
+<div class="sub">MOSCAP 1D 自洽泊松（<code>lda_solver/mos_1d.py</code>）⟷ 教科书闭式（Sze 完整 Q_s 式 / 耗尽近似 V_th 式）
+· 桥接层 <code>lda_l2/ecore/device_pde.py</code> · D-163</div>
+
+<div class="cards">
+  <div class="card"><div class="k">V_th（教科书闭式）</div><div class="v">0.4260 V</div></div>
+  <div class="card"><div class="k">V_th（PDE 候选）</div><div class="v">0.426036 V</div></div>
+  <div class="card"><div class="k">V_th 相对差</div><div class="v ok">1.59e-04 %</div></div>
+  <div class="card"><div class="k">Q_s 跨点最差</div><div class="v ok">0.01077 %</div></div>
+  <div class="card"><div class="k">工作区上限</div><div class="v">ψ_s ≤ 2.5φ_F</div></div>
+  <div class="card"><div class="k">G-3 µ 偏差</div><div class="v warn">3.58 ×</div></div>
+</div>
+
+<div class="split">
+<div class="panel">
+<h2 style="margin-top:0">① V_th：教科书闭式 ⟷ PDE 数值解</h2>
+<table><tr><th>项</th><th>值</th></tr>
+<tr><td>golden（Sze 耗尽近似）</td><td>0.4260 V</td></tr>
+<tr><td>candidate（MOSCAP PDE）</td><td>0.426036 V</td></tr>
+<tr><td>绝对差</td><td>6.782e-07 V</td></tr>
+<tr><td>相对差</td><td><b>1.592e-04 %</b></td></tr>
+<tr><td>网格点 / 收敛</td><td>2335 · True</td></tr>
+<tr><td>candidate is_oracle</td><td>False（红线：T1 永不作真值）</td></tr>
+</table>
+<div class="note">判据方向 = <b>PDE 收敛到闭式</b>；绝不反向用 PDE 当真值标定闭式。</div>
+</div>
+
+<div class="panel">
+<h2 style="margin-top:0">② 氧化物厚度扫描（V_th 一致性）</h2>
+<table><tr><th>t_ox (nm)</th><th>闭式 (V)</th><th>PDE (V)</th><th>相对差</th></tr>
+<tr><td>2</td><td>0.3297</td><td>0.3297</td><td>0.000103%</td></tr><tr><td>4</td><td>0.4260</td><td>0.4260</td><td>0.000159%</td></tr><tr><td>8</td><td>0.6187</td><td>0.6187</td><td>0.000219%</td></tr>
+</table>
+<div class="note">薄氧 ⇒ C_ox ↑ ⇒ 体电荷分压 ↓ ⇒ V_th ↓（物理趋势由门禁判据 ⑤ 守着）。</div>
+</div>
+</div>
+
+<h2>③ Q_s 跨点交叉验证（0.5 → 2.5 φ_F）</h2>
+<div class="panel">
+<table><tr><th>ψ_s / φ_F</th><th>闭式 Q_s (C/m²)</th><th>PDE Q_s (C/m²)</th><th>相对差</th><th></th></tr>
+<tr><td>0.50</td><td>-7.78336e-04</td><td>-7.78337e-04</td><td>0.00014%</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#22d3ee;width:2.0px;vertical-align:middle"></span></td></tr><tr><td>1.00</td><td>-1.13902e-03</td><td>-1.13903e-03</td><td>0.00008%</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#22d3ee;width:2.0px;vertical-align:middle"></span></td></tr><tr><td>1.50</td><td>-1.41032e-03</td><td>-1.41032e-03</td><td>0.00005%</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#22d3ee;width:2.0px;vertical-align:middle"></span></td></tr><tr><td>2.00</td><td>-1.66325e-03</td><td>-1.66325e-03</td><td>0.00035%</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#22d3ee;width:4.9px;vertical-align:middle"></span></td></tr><tr><td>2.25</td><td>-2.80217e-03</td><td>-2.80247e-03</td><td>0.01077%</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#22d3ee;width:150.7px;vertical-align:middle"></span></td></tr><tr><td>2.50</td><td>-1.65755e-02</td><td>-1.65748e-02</td><td>0.00415%</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#22d3ee;width:58.1px;vertical-align:middle"></span></td></tr>
+</table>
+<div class="note">🔴 跨点是<b>必需的</b>：在 ψ_s = 2φ_F 处完整式与耗尽式<b>数学恒等</b>，单点比对不构成独立验证。</div>
+</div>
+
+<h2>④ 工作区测绘（超出即降级 · 诚实边界）</h2>
+<div class="panel">
+<table><tr><th>ψ_s / φ_F</th><th>相对差</th><th>界面电子浓度 (m⁻³)</th><th></th></tr>
+<tr><td>0.50</td><td>0.000137%</td><td>3.162e+12</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#4ade80;width:2.0px;vertical-align:middle"></span></td></tr><tr><td>1.00</td><td>0.000075%</td><td>1.000e+16</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#4ade80;width:2.0px;vertical-align:middle"></span></td></tr><tr><td>1.50</td><td>0.000055%</td><td>3.162e+19</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#4ade80;width:2.0px;vertical-align:middle"></span></td></tr><tr><td>2.00</td><td>0.000352%</td><td>1.000e+23</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#4ade80;width:2.0px;vertical-align:middle"></span></td></tr><tr><td>2.25</td><td>0.010767%</td><td>5.623e+24</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#4ade80;width:2.0px;vertical-align:middle"></span></td></tr><tr><td>2.50</td><td>0.004147%</td><td>3.162e+26</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#4ade80;width:2.0px;vertical-align:middle"></span></td></tr><tr><td>2.75</td><td>6.339701%</td><td>1.778e+28</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#f472b6;width:253.6px;vertical-align:middle"></span></td></tr><tr><td>3.00</td><td>48.805319%</td><td>1.000e+30</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#f472b6;width:280.0px;vertical-align:middle"></span></td></tr>
+</table>
+<div class="note">ψ_s ≥ 2.75φ_F 时反型层厚度（~0.03 nm）薄于界面网格 ⇒ 系统性低估。<b>已登记为门禁判据 ⑦ 的诚实窗口</b>，
+非隐藏误差。</div>
+</div>
+
+<h2>⑤ G-3 参数自洽性（显式暴露 · 不强行统一）</h2>
+<div class="panel">
+<table><tr><th>项</th><th>值</th><th>来源</th></tr>
+<tr><td>k_p = µ·C_ox</td><td>120.0 µA/V²</td><td><code>ecore/mosfet.py</code>（占位）</td></tr>
+<tr><td>C_ox</td><td>8.60 fF/µm²（= 8.6000e-03 F/m²）</td><td><code>ecore/mismatch.py</code>（占位）</td></tr>
+<tr><td>反推 µ</td><td><b>140 cm²/V·s</b></td><td>k_p / C_ox</td></tr>
+<tr><td>体硅典型 µn（tox≈4 nm）</td><td>500 cm²/V·s</td><td>公开典型量级</td></tr>
+<tr><td>比值 / 自洽</td><td><b>3.58 ×</b> · consistent = False</td><td>本报告</td></tr>
+</table>
+<div class="note">🔴 <b>只报告、不改值</b>：统一数值会改动 E1–E10 全部已上线数字（账本 / 案例卡 188 判据 / DOCX / PPTX）。</div>
+</div>
+
+<div class="note">
+<b>保护性约束</b>：物理 V_th 只作<b>并行第二器件模型 + 可核参数建议</b>，<b>绝不替换</b> <code>NmosParams.vth0</code>
+（23 处构造 / 30 处引用）—— 门禁判据 ⑧ 逐位守住默认值。<br>
+<b>诚实边界</b>：1D MOS 电容无源/漏、无沟道长度 ⇒ <b>天然不含短沟道效应</b>（roll-off / DIBL 均不出现）；
+平台无 2D MOS 能力。N_A / t_ox / V_FB 为公开典型量级占位（非 PDK）。LDA 是设计 &amp; 验证工具链，
+<b>不是流片芯片</b> ⇒ 不报 TOPS/TOPS-W/fJ-op。<br>
+<b>红线口径</b>：平台红线 = <b>分层口径</b>（器件级 T1 数值内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；
+ecore 其余模块<b>主动限定在电路级</b>（设计取舍）；本模块是该取舍的<b>受控例外</b>。
+</div>
+</body></html>

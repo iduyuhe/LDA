@@ -1359,6 +1359,10 @@ CORE_SMOKES: List[str] = [
     # （器件级 T1 已解锁 / T2 永久锁）；ecore 曾把「本包主动限定在电路级」误述为「红线只允许到电路级」
     # ⇒ 全仓订正 + 本门禁机器化（A 零残留 · B 披露必含分层 · C 活文档同步 · D 4 道突变探针）。CI core 247→248。
     "run_ecore_redline_scope_smoke.py",
+    # E11-c 电子计算征程器件级内核桥门禁（D-163）：MOSCAP 1D 自洽泊松（lda_solver/mos_1d）
+    # ⟷ 教科书闭式交叉验证（V_th 与 Q_s 跨点 · 量纲桥 · 参数自洽性显式报告）；19 判据 + 5 突变探针
+    # （含「候选标 ORACLE 必 raise」与「NmosParams 默认值被改必红」）。CI core 248→249。
+    "run_ecore_e11_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2175,6 +2179,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e9_smoke.py": 300.0,
     # E11-a 电子计算征程红线口径防漂移门禁（D-161）· 实测上界 0.26s（3 轮 max · @本机）
     "run_ecore_redline_scope_smoke.py": 300.0,
+    # E11-c 电子计算征程器件级内核桥门禁（D-163）· 实测上界 2.96s（3 轮 max · @本机）
+    "run_ecore_e11_smoke.py": 300.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

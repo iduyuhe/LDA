@@ -123,6 +123,18 @@ ECORE_CAPABILITY_MANIFEST = [
                     "NON_CLAIMED", "SCALE_DISCLOSURE", "run_selfchecks"],
         "introduced_by": "D-159 (E9)", "guard": "run_ecore_e9_smoke.py",
     },
+    {
+        "capability": "器件级内核桥（MOSCAP 1D 自洽泊松 ⟷ 教科书闭式交叉验证：V_th 与 Q_s 跨点一致 + 量纲桥 + 参数自洽性显式报告）",
+        "module": "lda_l2.ecore.device_pde",
+        "symbols": ["UM_TO_M", "NM_TO_M", "CM3_TO_M3", "F_PER_UM2_TO_F_PER_M2",
+                    "um_to_m", "m_to_um", "nm_to_m", "m_to_nm", "cm3_to_m3",
+                    "m3_to_cm3", "cox_f_per_um2_to_f_per_m2",
+                    "physics_vth_closed", "physics_qs_closed", "physics_vth_pde",
+                    "moscap_qs_pde", "cross_check_vth", "cross_check_qs",
+                    "pde_vs_closed_sweep", "parameter_consistency_report",
+                    "device_pde_self_check", "DEVICE_PDE_DISCLOSURE"],
+        "introduced_by": "D-163 (E11-c)", "guard": "run_ecore_e11_smoke.py",
+    },
 ]
 
 
@@ -164,7 +176,7 @@ def manifest_check() -> dict:
 
 
 ECORE_CAPABILITY_DISCLOSURE = {
-    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10",
+    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11",
     "e5_scope": "把 E1~E9 逼出的平台能力固化为机器可读清单（单向真源）+ 常驻门禁（正向完备 + 反向完备 + 披露一致 + 诚实边界）",
     "hardening_semantics": "能力面必须被门禁守着：任一模模块/符号缺失、隐身模块出现、或注入 fabricated 指标 ⇒ 门禁必红",
     "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"

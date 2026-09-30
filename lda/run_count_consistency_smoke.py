@@ -37,6 +37,19 @@ if _LDA not in sys.path:
 
 _ROOT = os.path.dirname(_LDA)  # D:/agent_LDA
 README_PATH = os.path.join(_ROOT, "README.md")
+CONTRIB_PATH = os.path.join(_ROOT, "CONTRIBUTING.md")
+
+
+def _prose_ci_core(text: str):
+    """从散文里抽取「CI core N 条」的数字（**纯函数，供正向 + 反向共用**）。
+
+    🔴 2026-09-30（v0.9.145）实测发现：`CONTRIBUTING.md` 顶部账本块长期写
+    「CI core **221** 条」而代码实际 **226**（D-133…D-148 新增 5 个征程门禁未同步），
+    且**当时无任何判据覆盖**（`run_p0_count_guard_sync_smoke` 只守三分类 455/3/18）
+    ⇒ 静默失真。本函数 + 下面的用例把该口径钉住。
+    """
+    m = re.search(r"CI core\s*\*{0,2}(\d+)\s*条", text or "")
+    return int(m.group(1)) if m else None
 
 
 def _top_version_block(readme: str) -> str:
@@ -233,6 +246,34 @@ class CountConsistencySmoke(unittest.TestCase):
         self.assertTrue(self.pyproject_version, "无法读取 pyproject version")
         self.assertIn(f"v{self.pyproject_version}", self.readme_top,
                       f"README 顶行版本须 = pyproject {self.pyproject_version}")
+
+    # ---- 7. 对外账本块的 CI core 数（v0.9.145 补：此前**无判据覆盖**）----
+    def test_contributing_ci_core_matches_core_smokes(self):
+        """`CONTRIBUTING.md` 顶部账本块的「CI core N 条」须 == `len(CORE_SMOKES)`。
+
+        为什么单列：CI 成员增删是常规操作，而该处是**对外账本**（新人按它判断门禁规模）；
+        README 侧早有 `test_ci_core_count_matches_readme_top` 守着，**CONTRIBUTING 侧一直裸奔**
+        ⇒ v0.9.145 实测抓到它滞后 5 个（221 vs 226）。
+        """
+        from run_ci_regression import CORE_SMOKES
+        self.assertTrue(os.path.exists(CONTRIB_PATH), "CONTRIBUTING.md 应存在")
+        with open(CONTRIB_PATH, encoding="utf-8") as f:
+            txt = f.read()
+        got = _prose_ci_core(txt)
+        self.assertIsNotNone(got, "CONTRIBUTING 顶部账本块应写明「CI core N 条」")
+        want = len(CORE_SMOKES)
+        self.assertEqual(
+            got, want,
+            f"CONTRIBUTING 写 CI core {got} 条，代码实际 {want} 条"
+            f" —— 增删 CI 成员后须同步「三同步」清单：README 顶行 / `## 当前账本` 段 /"
+            f" CONTRIBUTING 顶部账本块 / pyproject / CHANGELOG")
+        # 反向：把计数改错 1 ⇒ 抽取器必须给出不符值（证明判据会响，非恒真）
+        bad = txt.replace(f"CI core {got} 条", f"CI core {got + 1} 条", 1)
+        self.assertNotEqual(_prose_ci_core(bad), want,
+                            "反向用例：篡改计数后应判出不符（否则本判据恒真）")
+        # 反向：缺写 ⇒ 抽取器返回 None（缺失也必须能被发现）
+        self.assertIsNone(_prose_ci_core("本文件不含该口径"),
+                          "反向用例：缺失「CI core N 条」时应返回 None")
 
 
 if __name__ == "__main__":

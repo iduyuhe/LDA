@@ -54,6 +54,12 @@ G5 **控制多线**（XY/Z/coupler-flux 三线分离 + 逐线 fringe 串扰）·
   **不塞进覆盖表**以保住「基线行数 == CI core 数」的 1:1 语义）。顺带回填 6 条失真理由（偏差 ≥10%）。
 - **顺带热修**：`run_p2_usability_smoke` **真红**（CI core 成员）—— D-131 的 `GET /api/qchip_demo` 落地后
   未重跑 `scripts/gen_api_reference.py` ⇒ API 参考漂移（端点 138→139 后 38/38）。
+- **顺带补判据（堵住本段发现的第二个洞）**：`run_count_consistency_smoke` 新增
+  **`test_contributing_ci_core_matches_core_smokes`** —— `CONTRIBUTING.md` 顶部账本块的
+  「CI core N 条」须 == `len(CORE_SMOKES)`；含**两道反向**（把计数改错 1 ⇒ 必判出不符 / 缺失该口径 ⇒
+  抽取器返回 `None`）。用例 **12 → 13**（正反向均已实测：改 `226`→`999` ⇒ FAIL，还原 ⇒ 13/13 OK）。
+  ⇒ 此前 README 侧早有 `test_ci_core_count_matches_readme_top` 守着，**CONTRIBUTING 侧一直裸奔**，
+  正是它滞后 5 个（221 vs 226）而无人发现的原因。
 
 ### 三、案例化与对外包装（D-148）
 

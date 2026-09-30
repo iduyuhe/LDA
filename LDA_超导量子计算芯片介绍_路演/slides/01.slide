@@ -19,7 +19,7 @@
     <Text style={{ fontSize: 21, color: '#99BDED', lineHeight: 1.5 }}>这不是一次器件仿真，而是一次「平台能不能真的画出一颗芯片」的体检——用 LDA 亲手设计，吃自己的狗粮。</Text>
     <Box style={{ height: 1, background: '#44546A' }} />
     <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Text style={{ fontSize: 17, color: '#808080' }}>LDA 工程团队 · 2026-09-30 · 平台版本 0.9.144</Text>
+      <Text style={{ fontSize: 17, color: '#808080' }}>LDA 工程团队 · 2026-09-30 · 平台版本 0.9.145</Text>
       <Text style={{ fontSize: 17, color: '#808080' }}>口径：设计期签核 · 非流片后实测</Text>
     </Box>
   </Box>

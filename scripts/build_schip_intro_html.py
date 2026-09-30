@@ -8,8 +8,19 @@ from __future__ import annotations
 
 import io
 import os
+import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # 仓库根（本脚本在 scripts/ 下）
+
+
+def _platform_version() -> str:
+    """平台版本**从 pyproject.toml 读取**（单一真源 ⇒ 版本 bump 后本页不再漂移）。"""
+    try:
+        txt = io.open(os.path.join(ROOT, "pyproject.toml"), encoding="utf-8").read()
+        m = re.search(r'^version\s*=\s*"([^"]+)"', txt, re.M)
+        return m.group(1) if m else "?"
+    except OSError:
+        return "?"
 EX = ("examples", "lda/examples")
 
 
@@ -380,9 +391,9 @@ S5_TIERS="2x2,7x8,13x13,21x21" S5_HEX_TIERS="3x3,4x5" python examples/lda_schip_
 python -c "from lda_webui import schip_case as S; print(S.run_selfchecks(verbose=True))"</code></pre>
 """
 
-FOOT = """
+FOOT = f"""
 <div class="foot">
-  <p><b>LDA</b>（开源 Agent-native EDA · MIT）· 超导量子计算芯片 LDA-S · 版本 0.9.144 · 2026-09-30</p>
+  <p><b>LDA</b>（开源 Agent-native EDA · MIT）· 超导量子计算芯片 LDA-S · 版本 {_platform_version()} · 2026-09-30</p>
   <p>平台账本：CI core 226 条回归成员 · 验证锚 <b>476</b>（严格独立 455 / 降级 3 / 自证桩 18）· 独立率 95.59%</p>
   <p>本征程门禁：<code>run_schip_s1..s5_smoke.py</code> 共 <b>200</b> 判据 · 突变探针 <code>scripts/d_sc_s5_probe.py</code> 18 组</p>
   <p class="mut">本页为《LDA_超导量子计算芯片设计与成果总结_2026-09-30.md》的派生包装；数字以事实源为准。</p>

@@ -18,6 +18,15 @@ pyflakes 告警 F401×244 / F841×71 / F541×25 / F811×4（共 344 条）。v0.
   ④ pyflakes 缺失 ⇒ FAIL（与 scipy/jsonschema 同范式：核心门禁依赖缺失=红，**不**静默跳过）
   ⑤ 🔴 反向测试（两条）：把基线调低 1 / 合成超限计数 ⇒ 违规检测器**必报**
      （铁律：没被验证过的护栏不算护栏——证明棘轮真会响，非假绿）
+  ⑥ 🔴 **文件面自洽**（2026-09-30 · D-149 新增）：`git ls-files -i -c --exclude-standard` == ∅
+     —— 即**不存在「受跟踪 ∩ 被 ignore」的文件**。`.gitignore` **不能取消已跟踪文件的跟踪**，
+     故该集非空 ⇒ 「ignore 只是标签、文件仍在库里」。血案：`de4d8e1` 误把
+     `LDA_光量子计算芯片_路演页/.slidep/commands.jsonl`（slidep 会话状态）提交入库，紧随的
+     `69f6f1f` 只补了 ignore 模式 ⇒ 该中间产物在库里**多留了一天**，直到 `git rm --cached` 才移出。
+     与 ① 共用同一 git 口径（`cwd=_ROOT`）：① 定义**扫什么**（受跟踪 ∪ 未跟踪非 ignore 的 .py），
+     ⑥ 保证该定义**不自相矛盾**（受跟踪的文件若同时被 ignore，① 的「∪」两侧会命中同一文件）。
+     范围覆盖**全部文件类型**（不限于 .py）。
+  ⑦ 反向测试（两条，扩自 ⑤）：合成「有冲突」输入 ⇒ 检测器必报；空输入 ⇒ 判空（防恒真/恒红）
 
 为何 F401 基线不是 0
 -------------------
@@ -138,8 +147,17 @@ def _ratchet_violations(counts, baseline):
     return out
 
 
+def _tracked_ignored(lines):
+    """纯函数：`git ls-files -i -c --exclude-standard` 输出 → 「受跟踪 ∩ 被 ignore」文件名列表。
+
+    **应为空集**（`.gitignore` 不能取消已跟踪文件的跟踪）。正向（⑥）与反向（⑦⑧）**共用本函数**
+    ⇒ 反向是真的在驱动同一条判据，而不是另写一套玩具逻辑。
+    """
+    return sorted(x.strip() for x in lines if x.strip())
+
+
 def main() -> int:
-    print("== 静态卫生棘轮（pyflakes · 只降不升）==")
+    print("== 静态卫生棘轮（pyflakes 只降不升 + 文件面自洽）==")
     files = _tracked_py()
     try:
         msgs = _scan(files)
@@ -193,6 +211,28 @@ def main() -> int:
     synth = {"F401": _RATCHET["F401"] + 5}
     rc |= not check("⑤ 反向 B：合成超限计数 ⇒ 必报",
                     len(_ratchet_violations(synth, _RATCHET)) > 0)
+    # ---- 🔴 ⑥ 文件面自洽（D-149 · 2026-09-30）：受跟踪 ∩ 被 ignore == ∅ ----
+    # `.gitignore` 不能取消已跟踪文件的跟踪 ⇒ 该集非空 = 「ignore 只是标签、文件仍在库里」。
+    # 与 ① 同一 git 口径：① 定义「扫什么」，⑥ 保证该定义不自相矛盾。
+    GIT_LS_IGNORED = ["git", "ls-files", "-i", "-c", "--exclude-standard"]
+    try:
+        ti = subprocess.run(GIT_LS_IGNORED, cwd=_ROOT, capture_output=True, text=True)
+        ti_rc, ti_out = ti.returncode, ti.stdout
+    except OSError as exc:            # git 缺失 ⇒ 干净报红（不裸退、不静默跳过）
+        print("  （git 不可用：%s）" % exc)
+        ti_rc, ti_out = -1, ""
+    conflict = _tracked_ignored(ti_out.splitlines()) if ti_rc == 0 else []
+    rc |= not check("⑥ 受跟踪 ∩ 被 ignore == ∅（防『ignore 只是标签、文件仍在库里』）",
+                    ti_rc == 0 and not conflict,
+                    "git rc=%d · 冲突 %d 项：%s" % (ti_rc, len(conflict), conflict[:5]))
+
+    # 🔴 反向测试 C/D：合成输入驱动同一条判据（证它会响 · 也证它不恒红）
+    rc |= not check("⑦ 反向 C：合成冲突输入 ⇒ 检测器必报（非假绿）",
+                    len(_tracked_ignored(["a.py", "", "  ", "b/.slidep/c.jsonl"])) == 2,
+                    "检测器未响应")
+    rc |= not check("⑧ 反向 D：空输入 ⇒ 判空（防恒真/恒红）",
+                    _tracked_ignored([]) == [])
+
 
     n_pass = sum(1 for c in _CHECKS if c["ok"])
     print("-" * 74)

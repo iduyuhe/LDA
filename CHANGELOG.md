@@ -76,6 +76,17 @@ G5 **控制多线**（XY/Z/coupler-flux 三线分离 + 逐线 fringe 串扰）·
   抽取器返回 `None`）。用例 **12 → 13**（正反向均已实测：改 `226`→`999` ⇒ FAIL，还原 ⇒ 13/13 OK）。
   ⇒ 此前 README 侧早有 `test_ci_core_count_matches_readme_top` 守着，**CONTRIBUTING 侧一直裸奔**，
   正是它滞后 5 个（221 vs 226）而无人发现的原因。
+- **顺带补判据（堵住本段发现的第三个洞 · 2026-09-30）**：`run_pyflakes_ratchet_smoke` 新增 **⑥⑦⑧**
+  —— ⑥ 断言 `git ls-files -i -c --exclude-standard` == ∅，即**不存在「受跟踪 ∩ 被 ignore」的文件**：
+  `.gitignore` **不能取消已跟踪文件的跟踪**，该集非空 ⇒ 「ignore 只是标签、文件仍在库里」。本段补记时
+  捞出的 `de4d8e1` / `69f6f1f` 那一对（`.slidep/commands.jsonl` 误入库、gitignore 只补了一半）正是此类。
+  ⑦⑧ 是两道反向（合成冲突输入 ⇒ 必报 / 空输入 ⇒ 判空），与 ⑥ **共用同一纯函数** `_tracked_ignored` 驱动。
+  判据 **5 → 8**。⑥ 与 ① 是同一 git 口径的两面：① 定义「扫什么」（受跟踪 ∪ 未跟踪非 ignore 的 .py），
+  ⑥ 保证该定义**不自相矛盾**（受跟踪文件若同时被 ignore，① 的「∪」两侧会命中同一文件）。
+  **真文件级反向证明**：临时 `git add -f` 该件 ⇒ ⑥ 精确报出文件名且 `rc=1`（7 PASS / 1 FAIL）；
+  `git rm --cached` 还原 ⇒ **8/8 绿**，索引终态与突变前逐项一致（冲突 0 · 跟踪 0 · 本地文件未丢）。
+  ⇒ 至此 `lda-untracked-surface-triage` 技能里那条「安全网」（原本**只写在文档里、没人跑**）变成**常驻门禁**，
+  且**不新增 CI 成员**（并入既有 core 成员内部，**CI core 仍 226**）。
 
 ### 三、案例化与对外包装（D-148）
 

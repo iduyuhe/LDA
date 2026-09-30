@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.9.145（2026-09-30 · **超导量子计算芯片征程 S1–S5 全闭环 + 工程债清偿（D-146/D-147）+ 案例化与对外包装（D-148）** · 账本 **476 不变**（严格独立 455 / 降级 3 / 自证桩 18）· 独立率 95.59% 持平 · CI core **221 → 226 → 227（P1.1）→ 228（死断言）→ 229（GPU wheel）→ 230（P2.2 误差列）**）
+## v0.9.145（2026-09-30 · **超导量子计算芯片征程 S1–S5 全闭环 + 工程债清偿（D-146/D-147）+ 案例化与对外包装（D-148）** · 账本 **476 不变**（严格独立 455 / 降级 3 / 自证桩 18）· 独立率 95.59% 持平 · CI core **221 → 226 → 227（P1.1）→ 228（死断言）→ 229（GPU wheel）→ 230（P2.2 误差列）→ 232（P2.4 真机 ORACLE 接入框架）**）
 
 > **P1.1（2026-09-30 · 战略/功能/代码三审计后第一轮实施 · SO1 标准首项）**：把 L1 agent 协议层（lda/lda_l1/protocol.py 的 KernelGateway + AgentRequest/AgentResponse + tool_schemas 原语集；lda/lda_l1/mcp_server.py 的零依赖 JSON-RPC 2.0 传输绑定）冻结为开放标准 **LDA-STD-002 v0.1**（docs/l1_protocol_spec.md + docs/l1_protocol_schema.json，对标 L0 LDA-STD-001 v0.3）；新增零漂移门禁 `lda/run_l1_spec_smoke.py`（8 判据：契约-代码逐字段比对 + 未知 action / 非法 candidate 两道反向反例 + 正向防假绿），入 CI core（CORE_SMOKES + 超时表 120s）。CI core **226 → 227**。A1 发函由用户方人类合作伙伴推进（已建周提醒自动化）；L1 协议冻结为社区共建起点。
 
@@ -15,6 +15,13 @@
 
 > **P2.2（2026-09-30 · 技术验证轨 P2 启动 · 收口/文档化首项）**：修复验证报告误差列展示 bug（B446-B452 等独立候选与黄金「高精度吻合」亚 1e-8 偏差被旧实现先 `round_float(9位)` 再相减抹成 0，误显示「完全相等」）。`lda/lda_harness/report.py` 的 `format_markdown` 误差列改为**从原始 golden/candidate 计算**，并保留 `<1e-12` 按数值抖动吸收（守护栏 ⑥，与 `run_harness.py`/`falsifiability` 的 1e-12 阈值一致，不泄漏 1e-15 末位）。配套反向测试 `lda/run_report_error_display_smoke.py`（4 判据：1e-8 偏差误差必须非 0、自证桩恒 0、jitter 必被吸收、真变更必变），入 CI core（CORE_SMOKES + 超时表）。CI core **229 → 230**。账本零变化、零锚改动、独立率 95.59% 持平。
 > 诚实边界：完整 `format_markdown` 链路需 numpy+scipy（CI 环境具备），本机沙箱缺 scipy 故用真实 `deterministic.round_float` 做等价逻辑验证；受修复影响的 `reports/*/verification_report.md` 误差列将在下次 CI harness 跑时自然刷新（确定性函数，非手改）。
+
+> **P2.4（2026-09-30 · 技术验证轨 P2 · SO3 外部对标接口铺路）**：把「真机 ORACLE 接入框架预留清单」（docs/LDA_真机ORACLE接入框架预留清单_2026-09-11.md，T2 永久锁死档）从「只预留契约与守卫」推进到**可选层接口骨架 + ≥1 个接入示例**，内核零依赖不被污染。具体 ——
+> ① **契约扩展（`lda/lda_harness/real_machine_oracle.py`）**：`RealMachineMeasurement` 新增两布尔字段 `method_independent` / `no_fitting_back`（人类责任方填，AI 不代填），新增守卫 `guard_method_independence`（实测 kind 注册进 golden 前强制：方法学须独立于 LDA 自研求解器测得 + 严禁拟合回算）；`MeasurementQuantity` 扩实证量成员（有效折射率/FSR/品质因子/耦合效率/响应度/插损 等，覆盖 M6 实证锚可标测量）；`CalibrationWindow`（人类签字 + source_ref，AI 不代签）沿用。
+> ② **接入示例桥接层（`lda/real_machine_oracle_example.py`，放 `lda/` 根避免 import 边界误伤）**：直接复用 `EmpiricalAnchor.resolve(require_traceable=True)`（A 级才出值）+ `classify_citation`（tier 判定），把 M6 实证语料（73→122 扩容后）流式接入为 `RealMachineMeasurement(kind=LITERATURE_MEASURED, method_independent=True, no_fitting_back=True)`；含 `reject_fitting_back_demo`（no_fitting_back=False 必拒）。**全程零真实 foundry/流片真值**，仅用 M6 公开 A 级语料，符合 T2 锁死档现状。
+> ③ **两道新 CI core 门禁**：`run_real_machine_oracle_example_smoke.py`（4 判据：A 级语料正向接入成功 / no_fitting_back=False 必拒 / method_independent=False 必拒 / B 级不可溯源语料必拒，不污染全局单例）+ `run_real_machine_oracle_import_boundary_smoke.py`（纯 AST 静态：A 内核 10 模块不得 import 可选层 / B 可选层 `real_machine_oracle.py` 仅依赖 `lda_pdk` + 标准库，单向依赖，秒级）。均入 CORE_SMOKES + 超时表（300s）。**CI core 230 → 232**。
+> ④ **承接 P1.3 实证语料并机器化方法学独立性**：把 P2.4 验收的「数据源/方法学独立性/不拟合回算/CalibrationWindow」四要素全部钉成 CI 会拦的机器纪律，为后续 SO3 外部对标（实测 ORACLE 真值单向、COMMERCIAL_SOLVER_FIELD/SELF_KERNEL_SOLVED 禁作 golden、EAR 744.23 扫描、死标量判决）铺好接口骨架。
+> 账本 **476 不变**、**零锚改动**、独立率 95.59% 持平；新增 5 个文件（2 改 3 新）pyflakes 全 clean。诚实边界：示例值取自 M6 公开文献/数据库实测（非 LDA 自研求解器回算），属于 golden 级外部对标真值的「接入演练」；真实 foundry/tapeout 真值仍按 T2 锁死档**不写入**，待人类合作伙伴携标定来源 + 签字 `CalibrationWindow` 接入。
 
 > ⚠️ **本段为补记归档**：D-133…D-148 共 11 轮工程（`78162cd`…`7c6c2e8`）此前**未写 CHANGELOG 段**
 > （沿用「不 bump 版本即不落段」的旧惯例，导致 CHANGELOG 最新条目长期停在 v0.9.144 的 B-32）。

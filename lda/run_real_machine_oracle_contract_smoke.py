@@ -19,6 +19,9 @@
  12. ② 正向（**合法必过**）：已签字窗口下**窗内** ⇒ 注册成功且值可回读
  13. ② 诚实默认：honest_tier 空串（未声称标定）⇒ 放行
  14. ② 现状：SIGNED_CALIBRATION_WINDOWS 为空 · SECONDARY_GOLDEN_ALLOWED is False
+ ── 2026-09-30 P2.4：方法学独立性 / 不拟合回算 双声明门 ──
+ 15. 反向 A：no_fitting_back=False（声明「拟合回算得到」）⇒ 必 raise
+ 16. 反向 B：method_independent=False（声明「非方法学独立」）⇒ 必 raise
 
 注：② 的注入测试一律用**新 registry 实例**，不污染全局单例（保 is_empty 现状）。
 """
@@ -193,6 +196,7 @@ def main() -> int:
                 RealMachineMeasurement(
                     anchor, MeasurementQuantity.IV_CURVE, value=25.0, unit="mA",
                     provenance_ref="p9",
+                    method_independent=True, no_fitting_back=True,
                     honest_tier=f"{CALIBRATED_TIER_PREFIX}[window={anchor}]"),
                 RealMachineProvenance(ref="p9", foundry="X"),
             )
@@ -242,11 +246,38 @@ def main() -> int:
     try:
         RealMachineOracleRegistry().register(
             RealMachineMeasurement("B-10", MeasurementQuantity.IV_CURVE,
-                                   value=1e-6, unit="A", provenance_ref="p10"),
+                                   value=1e-6, unit="A", provenance_ref="p10",
+                                   method_independent=True, no_fitting_back=True),
             RealMachineProvenance(ref="p10", foundry="X"),
         )
     except OracleGuardError as e:
         fails.append(f"② 诚实默认失败：未声称标定却被拦 - {e}")
+
+    # ------------------------------------------------------------------
+    # 🔴 P2.4（2026-09-30）：方法学独立性 / 不拟合回算 双声明门
+    # ------------------------------------------------------------------
+    # 15. 反向 A：no_fitting_back=False（声明「拟合回算得到」）必 raise
+    _expect_raise(
+        fails, "P2.4 失效：no_fitting_back=False 竟被注册为 golden",
+        lambda: RealMachineOracleRegistry().register(
+            RealMachineMeasurement(
+                "B-11", MeasurementQuantity.IV_CURVE, value=1e-3, unit="A",
+                provenance_ref="p11", method_independent=True,
+                no_fitting_back=False),
+            RealMachineProvenance(ref="p11", foundry="X"),
+        ),
+    )
+    # 16. 反向 B：method_independent=False（声明「非方法学独立」）必 raise
+    _expect_raise(
+        fails, "P2.4 失效：method_independent=False 竟被注册为 golden",
+        lambda: RealMachineOracleRegistry().register(
+            RealMachineMeasurement(
+                "B-12", MeasurementQuantity.IV_CURVE, value=1e-3, unit="A",
+                provenance_ref="p12", method_independent=False,
+                no_fitting_back=True),
+            RealMachineProvenance(ref="p12", foundry="X"),
+        ),
+    )
 
     # 14. 现状：窗口表空 · 二级 golden 禁用
     if SIGNED_CALIBRATION_WINDOWS:

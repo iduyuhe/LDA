@@ -14,6 +14,15 @@
       * 目的：现实机会到来时系统已齐备，不拖现实操作。
 
 对应文档：docs/LDA_真机ORACLE接入框架预留清单_2026-09-11.md
+
+> 🔴 **P2.4 扩展（2026-09-30 · 技术验证轨收口）**：把「**方法学独立性 / 不拟合回算**」
+> 从散文纪律下沉为机器守卫 `guard_method_independence`（实测 kind 注册 golden 前
+> 必须显式声明 `method_independent` + `no_fitting_back`，二者皆人类责任方填写、AI
+> 不得代填）。并新增 `MeasurementQuantity` 实证量成员（覆盖 M6 实证锚的可标测量）+
+> 接入示例模块 `real_machine_oracle_example.py`（承接 P1.3 M6 语料 73→122，演示
+> `literature_measured` 语料经 `EmpiricalAnchor.resolve` → `RealMachineMeasurement`
+> → `register` 的活流转）+ 两道 CI core 门禁（示例流转 + **import 边界**：内核零依赖、
+> 可选层仅依赖 `lda_pdk`）。全部零真实数据、不污染内核、不增账本锚。
 """
 from __future__ import annotations
 
@@ -39,6 +48,14 @@ class MeasurementQuantity(str, Enum):
     # 以下为 T2 锁死档占位（增益类维持禁区，仅声明接口不激活）
     L_I_CURVE = "l_i_curve"                    # 激光 L-I（T2 锁死）
     GAIN = "gain"                              # 增益介质（T2 锁死）
+    # ── 2026-09-30 P2.4：补实证语料可标测量（承接 M6 实证锚，覆盖实测量）──
+    EFFECTIVE_INDEX = "effective_index"        # 群/模有效折射率 n_g / n_eff
+    FSR = "fsr"                                # 自由光谱范围 (nm)
+    QUALITY_FACTOR = "quality_factor"          # 品质因数 Q（本征/负载）
+    COUPLING_EFFICIENCY = "coupling_efficiency"  # 耦合效率
+    RESPONSIVITY = "responsivity"              # 探测器响应度 (A/W)
+    INSERTION_LOSS = "insertion_loss"          # 插入/过量损耗 (dB)
+    OTHER = "other"                            # 其它实测量（兜底）
 
 
 class OracleKind(str, Enum):
@@ -100,6 +117,14 @@ class RealMachineMeasurement:
     #     f"{CALIBRATED_TIER_PREFIX}[window={anchor_id}]"
     # 且该锚点必须存在**已签字**的 SIGNED_CALIBRATION_WINDOWS 且值落在窗内。
     # 空串 = 未标定（诚实默认，锁死档现状）。
+    # ── 2026-09-30 P2.4：方法学独立性 / 不拟合回算 双声明（人类责任方填写）──
+    method_independent: bool = False
+    # 方法学独立性声明：进 golden 的实测须由**方法学独立于 LDA 自研求解器**
+    #   的来源测得（独立仪器 / 第三方公开实测），不得由 LDA 内核反推。
+    #   🔴 人类责任方显式声明（AI 不得代填为 True）；登记 True 即承担该事实责任。
+    no_fitting_back: bool = False
+    # 不拟合回算声明（红线）：本条值**不得**由「把 LDA 内核输出回拟合到某目标」
+    #   得到——否则退化为自证，可证伪性被稀释。🔴 人类责任方显式声明（AI 不得代填）。
 
 
 # --------------------------------------------------------------------------
@@ -216,6 +241,34 @@ def guard_golden_eligibility(kind: OracleKind, role: str = "golden") -> bool:
     return True
 
 
+def guard_method_independence(meas: "RealMachineMeasurement") -> None:
+    """🔴 「方法学独立性 + 不拟合回算」双声明门（P2.4 · 2026-09-30 机器化）。
+
+    仅对**可作 golden** 的实测 kind（`GOLDEN_ELIGIBLE_KINDS`）生效：
+      - `method_independent` 必为 True：来源方法学独立于 LDA 自研求解器
+        （独立仪器 / 第三方公开实测），不得由内核反推。
+      - `no_fitting_back` 必为 True：该值**非**由「LDA 内核输出回拟合到目标」
+        得到——否则退化为自证，可证伪性被稀释。
+
+    二者皆为人类责任方显式声明（类比 `CalibrationWindow.signer`），AI 不得代填。
+    仿真 / 计算值（`GOLDEN_INELIGIBLE_KINDS`）在 `guard_golden_eligibility` 已拦截，
+    不达此处。空表现状（锁死档）不受影响：本函数只对「实测 kind 且试图注册」生效，
+    全局注册表为空时不触发。
+    """
+    if meas.kind not in GOLDEN_ELIGIBLE_KINDS:
+        return
+    if not meas.method_independent:
+        raise OracleGuardError(
+            "方法学独立性违反：%s 为实测 kind（可作 golden），但 method_independent=False "
+            "—— 进 golden 的实测须由方法学独立于 LDA 自研求解器的来源测得"
+            "（独立仪器 / 第三方公开实测），不得由内核反推。" % meas.anchor_id)
+    if not meas.no_fitting_back:
+        raise OracleGuardError(
+            "不拟合回算违反：%s 的 no_fitting_back=False —— 该值不得由"
+            "「LDA 内核输出回拟合到目标」得到（否则退化为自证，稀释可证伪性）。"
+            % meas.anchor_id)
+
+
 # --------------------------------------------------------------------------
 # C4 · 标定方向契约 + G1 ORACLE 守卫：真机 ORACLE 注册表
 # --------------------------------------------------------------------------
@@ -255,6 +308,8 @@ class RealMachineOracleRegistry:
         self._assert_not_t1b_output(meas.anchor_id)
         # ①（2026-09-23 裁定）：非实测事实（商业求解器 / 自研内核解）禁作 golden
         guard_golden_eligibility(meas.kind, role="真机 ORACLE golden")
+        # 🔴 P2.4（2026-09-30）：实测 kind 还须声明「方法学独立 + 不拟合回算」
+        guard_method_independence(meas)
         # ②（2026-09-23 裁定）：声称已外部标定 ⇒ 必须落在**已签字**窗口内
         self._assert_within_signed_window(meas)
         self._oracles[meas.anchor_id] = meas

@@ -851,6 +851,18 @@ CORE_SMOKES: List[str] = [
     #   14 组判据 = 7 条反例 + 2 条「合法必过」；纯 import 级，实测 <0.5s，
     #   按准入准则无权豁免。CI core 185->186。
     "run_real_machine_oracle_contract_smoke.py",
+    # 🔴 v0.9.145 P2.4（真机 ORACLE 接入示例流转 · 承接 P1.3 M6 实证语料 73→122）：
+    #   real_machine_oracle_example.py 演示 literature_measured 语料经
+    #   EmpiricalAnchor.resolve → RealMachineMeasurement → register 的活流转；
+    #   本 smoke 固化「正向 A 级接入 + 不拟合回算 / 非方法学独立 / 不可溯源
+    #   三道反向全拒」。纯 import 级 + 实证语料只读，实测 <1s，无权豁免。
+    #   CI core 230->231。
+    "run_real_machine_oracle_example_smoke.py",
+    # 🔴 v0.9.145 P2.4（import 边界门禁）：AST 扫描内核模块不得反向 import
+    #   real_machine_oracle（含桥接示例层），且可选层仅依赖 lda_pdk + 标准库
+    #   （单向依赖）。把「内核零依赖不被污染」从约定下沉为机器守卫。纯 AST
+    #   静态、秒级。CI core 231->232。
+    "run_real_machine_oracle_import_boundary_smoke.py",
     # 🔴 v0.9.122（U1 · WDM **共享网格** P&R —— 内部总结 §4.2 第一梯队首项 / §4.4 执行序第 1 项）：
     #   v1（v0.9.120）把 K 波长实现为 **K 套独立网格垂直堆叠** ⇒ 面积 ∝ K。
     #   U1 改为 **K 波长共享同一套物理网格**（同一组 MZI / 同一位相配置），
@@ -1989,6 +2001,10 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_il_basis_platform_smoke.py": 300.0,
     # 实测上界 0.83s（3 轮 max · @10T）
     "run_real_machine_oracle_contract_smoke.py": 300.0,
+    # 实测上界 <1s（3 轮 max · @10T）
+    "run_real_machine_oracle_example_smoke.py": 300.0,
+    # 实测上界 <1s（3 轮 max · @10T）
+    "run_real_machine_oracle_import_boundary_smoke.py": 300.0,
     # 实测上界 0.80s（3 轮 max · @10T）
     "run_adversarial_scoring_smoke.py": 300.0,
     # 实测上界 0.68s（3 轮 max · @10T）

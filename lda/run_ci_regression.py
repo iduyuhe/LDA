@@ -1363,6 +1363,10 @@ CORE_SMOKES: List[str] = [
     # ⟷ 教科书闭式交叉验证（V_th 与 Q_s 跨点 · 量纲桥 · 参数自洽性显式报告）；19 判据 + 5 突变探针
     # （含「候选标 ORACLE 必 raise」与「NmosParams 默认值被改必红」）。CI core 248→249。
     "run_ecore_e11_smoke.py",
+    # E11-d 电子计算征程器件级模型失效边界门禁（D-164）：数值窗口实测复现 + 物理窗口（文献）分离
+    # + 缺口量化 + 网格依赖性；19 判据 + 6 突变探针（含「文献项被标 LDA 自算必红」诚实护栏）。
+    # CI core 249→250。
+    "run_ecore_e11d_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2181,6 +2185,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_redline_scope_smoke.py": 300.0,
     # E11-c 电子计算征程器件级内核桥门禁（D-163）· 实测上界 2.96s（3 轮 max · @本机）
     "run_ecore_e11_smoke.py": 300.0,
+    # E11-d 电子计算征程器件级失效边界门禁（D-164）· 实测上界 5.08s（3 轮 max · @本机）
+    "run_ecore_e11d_smoke.py": 300.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

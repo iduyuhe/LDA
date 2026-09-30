@@ -135,6 +135,18 @@ ECORE_CAPABILITY_MANIFEST = [
                     "device_pde_self_check", "DEVICE_PDE_DISCLOSURE"],
         "introduced_by": "D-163 (E11-c)", "guard": "run_ecore_e11_smoke.py",
     },
+    {
+        "capability": "器件级模型失效边界（数值窗口实测复现 + 物理模型边界文献登记 + 缺口量化 · 两类边界严格分离）",
+        "module": "lda_l2.ecore.device_limits",
+        "symbols": ["N_CRIT_NUMERICAL", "N_CRIT_DEGENERATE", "WINDOW_HALF_WIDTH_PHI_F",
+                    "numerical_window_phi_f", "degeneracy_phi_f",
+                    "window_ratio_physical_over_numerical", "LITERATURE_LIMITS",
+                    "LITERATURE_PARAMS", "yau_rolloff_dvth", "dibl_characteristic_length",
+                    "dibl_dvth", "velocity_saturation_field", "mobility_degradation_factor",
+                    "literature_gap_report", "capability_boundary_map",
+                    "DEVICE_LIMITS_DISCLOSURE", "run_selfchecks"],
+        "introduced_by": "D-164 (E11-d)", "guard": "run_ecore_e11d_smoke.py",
+    },
 ]
 
 

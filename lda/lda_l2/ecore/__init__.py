@@ -149,6 +149,28 @@ from .device_pde import (
     physics_vth_pde,
     um_to_m,
 )
+from .device_limits import (
+    DEVICE_LIMITS_DISCLOSURE,
+    LITERATURE_LIMITS,
+    LITERATURE_PARAMS,
+    N_CRIT_DEGENERATE,
+    N_CRIT_NUMERICAL,
+    WINDOW_HALF_WIDTH_PHI_F,
+    WINDOW_REFERENCE_DX_IF_NM,
+    capability_boundary_map,
+    degeneracy_phi_f,
+    dibl_characteristic_length,
+    dibl_dvth,
+    literature_gap_report,
+    measure_window_edge,
+    mobility_degradation_factor,
+    numerical_window_grid_dependence,
+    numerical_window_phi_f,
+    run_selfchecks as device_limits_self_check,
+    velocity_saturation_field,
+    window_ratio_physical_over_numerical,
+    yau_rolloff_dvth,
+)
 
 __all__ = [
     "Circuit",
@@ -271,6 +293,27 @@ __all__ = [
     "DEVICE_PDE_NA_CM3",
     "DEVICE_PDE_T_OX_NM",
     "DEVICE_PDE_VFB_V",
+    # E11-d 器件级模型失效边界（数值窗口实测 + 物理窗口文献登记 + 缺口量化）
+    "N_CRIT_NUMERICAL",
+    "N_CRIT_DEGENERATE",
+    "WINDOW_HALF_WIDTH_PHI_F",
+    "WINDOW_REFERENCE_DX_IF_NM",
+    "numerical_window_phi_f",
+    "degeneracy_phi_f",
+    "window_ratio_physical_over_numerical",
+    "measure_window_edge",
+    "numerical_window_grid_dependence",
+    "LITERATURE_LIMITS",
+    "LITERATURE_PARAMS",
+    "yau_rolloff_dvth",
+    "dibl_characteristic_length",
+    "dibl_dvth",
+    "velocity_saturation_field",
+    "mobility_degradation_factor",
+    "literature_gap_report",
+    "capability_boundary_map",
+    "DEVICE_LIMITS_DISCLOSURE",
+    "device_limits_self_check",
 ]
 
 # 征程入口披露（对外引用须携此诚实边界）
@@ -286,7 +329,7 @@ ECORE_DISCLOSURE: dict = {
     "e8_scope": "E8 非理想/失配/噪声：Pelgrom 器件失配（σ_ΔVth=A_VT/√(W·L)、σ_Δβ/β）+ 温度一阶模型（Vth 线性漂移 · 迁移率 (T/T0)^m · 片内列热梯度）+ 噪声（热 4kTγg_m · 闪烁 K_f/(C_ox·W·L·f)）+ 失配 Monte Carlo 输出误差分布（自证 σ_rel ∝ 1/√N）+ 校准层级 L0 原始 / L1 列增益 / L2 逐单元。",
     "e9_scope": "E9 规模压力与诚实对标：E6 物化版图与 E7 稠密 MNA 都只到 N≈32 ⇒ 换 O(N) 算法（cell+AREF 层次化出图 + 一维三对角 IR-drop 求解）推到千级阵列；三重规模律（IR drop 超线性 · 面积 ∝N² · 失配 σ ∝1/√N · Elmore ∝N²）+ 按误差预算反解可及规模上界 + 同族维度诚实对标（landmark 照录·不报 TOPS）。",
     "e10_scope": "E10 收官（平台硬化 + 案例卡升级 + 对外物料 + 生产部署）：把 E1–E9 全链固化为**对外只读案例卡**（`/api/ecore_demo` · 九段里程碑 + 四块新能力面 facts + 9 条诚实边界）+ 守护 scope 扩到本段 + 对外物料与生产上线；本段**不新增求解器能力**，属集成/对外/验收段（新增判据由 run_ecore_case_smoke 承载）。",
-    "e11_scope": "E11 器件级内核接线：**E11-a** 口径同步（把「本包的设计取舍」与「平台红线」两件事分离，统一订正为**分层口径** + 防漂移门禁）；**E11-b** 接缝勘查（查明 ecore 与器件级内核零复用的根因 = 两侧非同一器件：`drift_diffusion_1d/2d` 是两端 p-n 结，本包要的是三端 MOSFET）；**E11-c 器件级内核桥** = 平台新增 MOS 结构 1D 自洽泊松内核（`lda_solver/mos_1d.py` · MOSCAP）+ 本包 `device_pde.py`：量纲桥（SI ⟷ µm 制）+ 教科书闭式（Sze 完整 Q_s 式 / 耗尽近似 V_th 式）⟷ PDE 数值解交叉验证（V_th 与 Q_s 跨点一致 ≤0.02% · 工作区 ψ_s ≤ 2.5φ_F）+ 参数自洽性显式报告（G-3）。🔴 golden = 教科书闭式，PDE 只是 candidate（`is_oracle=False`）；**不替换**任何电路级默认参数（`NmosParams` 逐位不变）。",
+    "e11_scope": "E11 器件级内核接线：**E11-a** 口径同步（把「本包的设计取舍」与「平台红线」两件事分离，统一订正为**分层口径** + 防漂移门禁）；**E11-b** 接缝勘查（查明 ecore 与器件级内核零复用的根因 = 两侧非同一器件：`drift_diffusion_1d/2d` 是两端 p-n 结，本包要的是三端 MOSFET）；**E11-c 器件级内核桥** = 平台新增 MOS 结构 1D 自洽泊松内核（`lda_solver/mos_1d.py` · MOSCAP）+ 本包 `device_pde.py`：量纲桥（SI ⟷ µm 制）+ 教科书闭式（Sze 完整 Q_s 式 / 耗尽近似 V_th 式）⟷ PDE 数值解交叉验证（V_th 与 Q_s 跨点一致 ≤0.02% · 工作区 ψ_s ≤ 2.5φ_F）+ 参数自洽性显式报告（G-3）。🔴 golden = 教科书闭式，PDE 只是 candidate（`is_oracle=False`）；**不替换**任何电路级默认参数（`NmosParams` 逐位不变）。**E11-d 失效边界测绘** = `device_limits.py`：**两类边界严格分离** —— A **数值窗口**（LDA 实测：ψ_s ∈ φ_F·[1±1.54]，**随网格变化**：0.05→0.02 nm 时窗口变宽）/ B **物理窗口**（文献判据：玻尔兹曼简并 + 1D 无源漏，**与网格无关**）⇒ **物理模型先失效、数值后崩**（半宽比 0.835）；另含文献经验式**缺口量化**（L=65 nm 时短沟道 roll-off 占 V_th **37.9%**）· 每项标 `computed_by_lda=False`。",
     "redline": "红线 = **分层口径**（2026-09-11 §八§九 · 2026-09-23 逐步解锁）：平台**器件级 T1 内核已解锁**"
                "（`lda_solver/drift_diffusion_1d/2d`）；**T2 工艺真值 / 工艺角 / 流片永久锁**。"
                "**本包主动限定在电路级**——这是设计取舍，不是红线要求。",

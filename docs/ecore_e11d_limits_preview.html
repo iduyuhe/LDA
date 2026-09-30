@@ -1,0 +1,105 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<title>LDA 电子计算征程 E11-d · 器件级模型失效边界</title>
+<style>
+body{background:#0b1220;color:#e6edf7;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;margin:0;padding:28px}
+h1{font-size:20px;font-weight:600;margin:0 0 4px}
+h2{font-size:15px;font-weight:600;margin:26px 0 10px;color:#9fb3d1}
+.sub{color:#8296b3;font-size:13px;margin-bottom:18px}
+.cards{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
+.card{background:#141d2f;border:1px solid #24314a;border-radius:10px;padding:12px 16px;min-width:170px}
+.card .k{font-size:12px;color:#8296b3}.card .v{font-size:20px;font-weight:600;color:#7fd1ff;margin-top:2px}
+.card .v.ok{color:#4ade80}.card .v.warn{color:#fbbf24}
+table{border-collapse:collapse;font-size:13px;margin-top:8px;width:100%}
+td,th{border:1px solid #24314a;padding:6px 12px;text-align:left}
+th{background:#1b2740;color:#9fb3d1;font-weight:600}
+.panel{background:#141d2f;border:1px solid #24314a;border-radius:10px;padding:14px;margin-top:10px}
+.note{color:#8296b3;font-size:12.5px;margin-top:14px;line-height:1.75}
+code{background:#1b2740;padding:1px 5px;border-radius:4px;color:#a5d8ff}
+.split{display:flex;gap:20px;flex-wrap:wrap}
+.split>div{flex:1;min-width:330px}
+.tag{background:#3b2a12;color:#fbbf24;border-radius:4px;padding:1px 6px;font-size:11.5px;margin-left:6px}
+ul{margin:6px 0 0 0;padding-left:20px;line-height:1.9;font-size:13px}
+.ax{background:#1b2740;height:26px;border-radius:6px;position:relative;margin:22px 0 8px}
+.ax .zone{position:absolute;height:100%;background:#0e3a2a;border:1px solid #22c55e;border-radius:6px}
+.ax .num{position:absolute;height:100%;background:#0c2a44;border:1px dashed #38bdf8;border-radius:6px}
+.ax span{position:absolute;top:-20px;font-size:11.5px;color:#9fb3d1}
+</style></head><body>
+<h1>LDA · 电子计算征程 E11-d · 器件级模型失效边界</h1>
+<div class="sub">两类边界严格分离：<b>A 数值窗口</b>（LDA 实测 · 随网格变化）与小 <b>B 物理窗口</b>（文献判据 · 与网格无关）· D-164 · <code>ecore/device_limits.py</code></div>
+
+<div class="cards">
+  <div class="card"><div class="k">数值窗口（0.02 nm）</div><div class="v">[-0.54, 2.54] φ_F</div></div>
+  <div class="card"><div class="k">物理窗口（简并判据）</div><div class="v warn">[-0.29, 2.29] φ_F</div></div>
+  <div class="card"><div class="k">物理/数值 半宽比</div><div class="v warn">0.835</div></div>
+  <div class="card"><div class="k">瓶颈判定</div><div class="v warn">物理模型</div></div>
+  <div class="card"><div class="k">L=65 nm roll-off</div><div class="v">37.9% of V_th</div></div>
+  <div class="card"><div class="k">能力清单</div><div class="v ok">13 条</div></div>
+</div>
+
+<div class="panel">
+<h2 style="margin-top:0">① 两类窗口（ψ_s 轴 · 以 φ_F 归一）</h2>
+<div class="ax">
+  <div class="num" style="left:0%;width:100%"></div>
+  <div class="zone" style="left:21%;width:16%"></div>
+  <span style="left:0">0</span>
+  <span style="left:38%">1 φ_F</span>
+  <span style="left:75%">2 φ_F</span>
+  <span style="left:96%">2.5</span>
+</div>
+<div class="note">
+  <b>虚线蓝框</b> = 数值窗口 [-0.54, 2.54] φ_F（PDE 与闭式一致到 1e-3，**由网格分辨率决定**，网格越细越宽）<br>
+  <b>实线绿框</b> = 物理窗口 [-0.29, 2.29] φ_F（玻尔兹曼适用上限 ~1e25 m⁻³，**与网格无关**）<br>
+  ⇒ 绿框 ⊂ 蓝框 ⇒ <b>物理模型先失效、数值后崩</b>：细化网格推不动真正的边界。
+</div>
+</div>
+
+<div class="split">
+<div class="panel">
+<h2 style="margin-top:0">② 数值窗口的网格依赖性（实测）</h2>
+<table><tr><th>dx_if (nm)</th><th>lo (φ_F)</th><th>hi (φ_F)</th><th>宽 (φ_F)</th></tr>
+<tr><td>0.05</td><td>-0.40</td><td>2.40</td><td>2.800</td></tr><tr><td>0.02</td><td>-0.45</td><td>2.45</td><td>2.900</td></tr>
+</table>
+<div class="note">网格越细 ⇒ 窗口越宽 ⇒ 数值窗口是「网格相关」的（可被数值手段改善）。</div>
+</div>
+
+<div class="panel">
+<h2 style="margin-top:0">③ 其他参量敏感性（实测）</h2>
+<table><tr><th>参量</th><th>扫描范围</th><th>窗口（以 φ_F 归一）</th></tr>
+<tr><td>N_A</td><td>1e16 → 1e18 cm⁻³</td><td>≈ [−0.54, 2.54] <b>基本不变</b></td></tr>
+<tr><td>T</td><td>250 → 400 K</td><td>≈ [−0.52, 2.55] <b>基本不变</b></td></tr>
+<tr><td>dx_if</td><td>0.05 → 0.02 nm</td><td>[−0.40, 2.40] → [−0.50, 2.50] <b>变宽</b></td></tr>
+</table>
+<div class="note">窗口对掺杂与温度稳健、对网格敏感 ⇒ 它是<b>数值</b>边界而非物理边界。</div>
+</div>
+</div>
+
+<h2>④ 缺口量化（文献经验式 · 每项 <code>computed_by_lda=False</code>）</h2>
+<div class="panel">
+<table><tr><th>L (nm)</th><th>roll-off ΔV_th (V)</th><th>占 V_th</th><th></th><th>DIBL ΔV_th (V)</th><th>占 V_th</th></tr>
+<tr><td>65</td><td>-0.1613</td><td>37.9%</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#f472b6;width:227.2px;vertical-align:middle"></span></td><td>-0.0130</td><td>3.1%</td></tr><tr><td>130</td><td>-0.0807</td><td>18.9%</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#f472b6;width:113.6px;vertical-align:middle"></span></td><td>-0.0004</td><td>0.1%</td></tr><tr><td>250</td><td>-0.0419</td><td>9.8%</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#f472b6;width:59.1px;vertical-align:middle"></span></td><td>-0.0000</td><td>0.0%</td></tr><tr><td>500</td><td>-0.0210</td><td>4.9%</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#f472b6;width:29.5px;vertical-align:middle"></span></td><td>-0.0000</td><td>0.0%</td></tr><tr><td>1000</td><td>-0.0105</td><td>2.5%</td><td><span style="display:inline-block;height:11px;border-radius:3px;background:#f472b6;width:14.8px;vertical-align:middle"></span></td><td>-0.0000</td><td>0.0%</td></tr>
+</table>
+<div class="note">长沟道 V_th = <b>0.4260 V</b>（教科书闭式）· DIBL 特征长度 ℓ = <b>19.0 nm</b> ·
+速度饱和 E_c = <b>80.4 kV/cm</b> · 迁移率退化 µ_eff/µ_0 = <b>0.870</b>（@V_ov=0.5 V）。<br>
+🔴 这些是<b>文献模型给出的缺口</b>，<b>不是 LDA 的计算结果</b> —— 本平台无 2D MOS 能力。</div>
+</div>
+
+<div class="split">
+<div class="panel">
+<h2 style="margin-top:0">⑤ LDA 能算什么</h2>
+<ul><li>1D MOS 电容自洽泊松（ψ(x)/Q_s/V_g/V_th）· 前提：ψ_s 在数值窗口内</li><li>教科书闭式 ⟷ PDE 交叉验证（V_th · Q_s 跨点）</li><li>长沟道平方律三区特性 / 小信号 gm·gds（`ecore/mosfet.py`）</li><li>体效应（V_th 随衬底偏置的经典 √ 式，长沟道）</li></ul>
+</div>
+<div class="panel">
+<h2 style="margin-top:0">⑥ LDA 算不了什么（诚实登记）</h2>
+<ul><li>短沟道 V_th roll-off <span class='tag'>需 2D MOS 求解器（本平台无）</span></li><li>DIBL <span class='tag'>需 2D 横向势垒调制</span></li><li>速度饱和 / 高场输运 <span class='tag'>需 v–E 关系 + 高场求解</span></li><li>迁移率退化 <span class='tag'>需 垂直场相关 µ_eff（经验 θ 标定）</span></li><li>工艺角 / PDK 标定 / 良率 <span class='tag'>需 foundry 数据（**T2 永久锁**）</span></li></ul>
+</div>
+</div>
+
+<div class="note">
+<b>门禁</b>：<code>run_ecore_e11d_smoke.py</code> 19 判据 + 6 突变探针 —— 含三条诚实护栏：
+文献项被标 LDA 自算必红 · Yau 符号翻转必红 · 注入「LDA 已算短沟道」必红。<br>
+<b>诚实边界</b>：x_j / v_sat / θ / µ_0 为公开典型量级占位（非标定）；文献式只给缺口量级，
+不构成工艺标定。平台<b>无 2D MOS 能力</b>。LDA 是设计 &amp; 验证工具链，<b>不是流片芯片</b> ⇒ 不报 TOPS/TOPS-W/fJ-op。<br>
+<b>红线口径</b>：平台红线 = <b>分层口径</b>（器件级 T1 已解锁 · T2 工艺真值/工艺角/流片永久锁）；
+ecore 其余模块<b>主动限定在电路级</b>；本模块为边界说明，不新增能力。
+</div>
+</body></html>

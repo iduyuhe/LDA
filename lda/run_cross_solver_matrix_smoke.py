@@ -181,6 +181,119 @@ def _p_apd_gain(param):
             float(multiplication_exact(V, n_x=int(param))))
 
 
+def _p_vec_mode(param):
+    """条形波导（SiN 低对比度）基模 n_eff：全矢量 staggered 求解 vs 半矢量 collocated 求解（同几何）。
+
+    ref=全矢量细网格(0.005)准真值；cand=半矢量扫 h_grid。两求解器方法学独立
+    （staggered vs collocated 不同离散 + 半矢量约束 E_y≡0 不同变分），非换后端。
+    """
+    from lda_solver.full_vector_mode_solver import neff_strip as fv_neff
+    from lda_solver.semivec_mode_solver import neff_strip as sv_neff
+    w, h, wl = 1.2, 0.30, 1.55
+    n_core, n_clad = 1.9963, 1.444
+    ref = float(fv_neff(w, h, wl, n_core, n_clad, h_grid=0.005))
+    cand = float(sv_neff(w_um=w, h_um=h, wl_um=wl, n_core=n_core, n_clad=n_clad,
+                        h_grid=float(param)))
+    return ref, cand
+
+
+def _p_pn_e(param):
+    """p-n 结峰值电场 E_max（kV/cm）：Sze 突变结耗尽近似闭式 vs 1D 自洽泊松-玻尔兹曼数值核。
+
+    ref=Sze 闭式（解析耗尽近似）；cand=自研 T1 电学内核（数值，n_grid 加密收敛）。
+    方法学独立（解析近似 vs 全场数值，少数载流子指数衰减非严格 0）；扫 n_grid
+    残差严格单调降 ⇒ 有判据 D。
+    """
+    from lda_solver.drift_diffusion_1d import solve_pn_junction_1d, sze_pn_junction_closed_form
+    ref = float(sze_pn_junction_closed_form()["E_max"])
+    cand = float(solve_pn_junction_1d(n_grid=int(param))["E_max"])
+    return ref, cand
+
+
+def _p_dc_3db(param):
+    """定向耦合器 3dB 耦合长度 L_3dB（µm）：CMT 闭式 λ/(4|Δn|) vs 数值传播+FFT 拍频谱峰。
+
+    ref=闭式反解（知 sin² 解析形直接解）；cand=dc_3dB_fft 数值传播序列谱分析
+    （只看周期性，不知解析形）。方法独立；扫 dz 残差严格单调降 ⇒ 有判据 D。
+    """
+    from lda_solver.dc_cmt_solver import dc_3dB_fft
+    n_e, n_o, wl = 2.45, 2.40, 1.55
+    ref = wl / (4.0 * abs(n_e - n_o))
+    cand = float(dc_3dB_fft(n_e, n_o, wl, dz=float(param)))
+    return ref, cand
+
+
+def _p_tmm_film(param):
+    """单层介质膜透射率 T：TMM 解析传输矩阵 vs 1D FDTD 全波（fdtd1d 的 ORACLE 对拍）。
+
+    ref=TMM 解析解（物理定律锚）；cand=fdtd1d（dl_factor=cpw 加密收敛）。方法独立
+    （解析传输矩阵 vs 时域全波）；扫 dl_factor 残差严格单调降 ⇒ 有判据 D。
+    """
+    from lda_solver.tmm import solve_spectrum as tmm_spec
+    from lda_solver.fdtd1d import solve_spectrum as fdtd_spec
+    spec = {"layers": [(float("inf"), 1.0), (0.5, 3.4), (float("inf"), 1.0)],
+            "wavelengths_um": [1.55]}
+    ref = float(tmm_spec(spec)["transmission"][0])
+    cand = float(fdtd_spec(spec, dl_factor=float(param))["transmission"][0])
+    return ref, cand
+
+
+def _p_mie_ray(param):
+    """Mie 散射效率 Q_scat：完整无穷级数 vs Rayleigh 小粒子闭式（前导偶极项）。
+
+    ref=Rayleigh 闭式（x→0 极限）；cand=完整 Mie 级数（mie_q_scat）。尺寸参数 x 减小
+    ⇒ 级数收敛到 Rayleigh 极限，残差严格单调降 ⇒ 有判据 D（类比 M1 渐近 vs 严格，
+    此处 cand 真正趋于 ref，而非停在近似地板）。
+    """
+    from lda_solver.mie_solver import mie_q_scat, rayleigh_q_scat
+    m = 1.5
+    x = float(param)
+    return float(rayleigh_q_scat(m, x)), float(mie_q_scat(m, x))
+
+
+def _p_fresnel(param):
+    """单界面（空气|n）透射率 T：Fresnel 闭式 vs 1D FDTD 全波。
+
+    ref=Fresnel 解析 4·n0·nL/(n0+nL)²；cand=fdtd1d。方法独立；扫 dl_factor
+    残差严格单调降 ⇒ 有判据 D。
+    """
+    from lda_solver.tmm import solve_spectrum as tmm_spec
+    from lda_solver.fdtd1d import solve_spectrum as fdtd_spec
+    n0, nL = 1.0, 3.48
+    ref = 4.0 * n0 * nL / (n0 + nL) ** 2
+    spec = {"layers": [(float("inf"), n0), (float("inf"), nL)], "wavelengths_um": [1.55]}
+    cand = float(fdtd_spec(spec, dl_factor=float(param))["transmission"][0])
+    return ref, cand
+
+
+def _p_tmm_2layer(param):
+    """双层非对称膜（空气|n1|n2 衬底）透射率 T：TMM 解析 vs 1D FDTD 全波。
+
+    方法独立（解析传输矩阵 vs 时域全波）；扫 dl_factor 残差严格单调降 ⇒ 有判据 D。
+    """
+    from lda_solver.tmm import solve_spectrum as tmm_spec
+    from lda_solver.fdtd1d import solve_spectrum as fdtd_spec
+    spec = {"layers": [(float("inf"), 1.0), (0.4, 2.0), (float("inf"), 3.4)],
+            "wavelengths_um": [1.55]}
+    ref = float(tmm_spec(spec)["transmission"][0])
+    cand = float(fdtd_spec(spec, dl_factor=float(param))["transmission"][0])
+    return ref, cand
+
+
+def _p_tmm_3layer(param):
+    """三层非对称膜（空气|n1|n2|n3 衬底）透射率 T：TMM 解析 vs 1D FDTD 全波。
+
+    方法独立（解析传输矩阵 vs 时域全波）；扫 dl_factor 残差严格单调降 ⇒ 有判据 D。
+    """
+    from lda_solver.tmm import solve_spectrum as tmm_spec
+    from lda_solver.fdtd1d import solve_spectrum as fdtd_spec
+    spec = {"layers": [(float("inf"), 1.0), (0.3, 1.5), (0.3, 2.5), (float("inf"), 3.4)],
+            "wavelengths_um": [1.55]}
+    ref = float(tmm_spec(spec)["transmission"][0])
+    cand = float(fdtd_spec(spec, dl_factor=float(param))["transmission"][0])
+    return ref, cand
+
+
 # ---------------------------------------------------------------------------
 # 矩阵：每格 = 器件 × 物理量 × 求解器A ↔ 求解器B
 #   kind="convergent"     ⇒ 有判据 D（扫参数残差严格单调降）
@@ -302,6 +415,81 @@ CELLS = [
         "note": ("🔴 固定偏压 V=0.7·V_br 扫描 nx：残差恒 0.938（93.8%）。局部模型无死区"
                  "效应 ⇒ M(V) 陡度低于 Miller（n_eff≈0.7–0.9 vs 文献 1.5–4），如实登记不冒充"),
     },
+    {
+        "id": "X10-VEC-MODE", "device": "条形波导（SiN 低对比度）", "metric": "基模 n_eff",
+        "solver_a": "全矢量 staggered 本征模求解器（Fallahkhair 2008，H 场交错网格，代数消 Hz）",
+        "solver_b": "半矢量 collocated 本征模求解器（约束 E_y≡0，变分偏高）",
+        "independence": "矢量全解 vs 半矢量近似：不同离散（staggered vs collocated）+ 不同约束变分，非换后端（通则 B 不触发）",
+        "kind": "convergent", "param": "h_grid(µm)", "values": (0.04, 0.02, 0.01),
+        "tol_rel": 5e-3, "probe": _p_vec_mode,
+        "note": ("ref=全矢量细网格(0.005)准真值；cand=半矢量扫 h_grid。低对比度下半矢量误差"
+                 "≲1e-3（约束固有），离散误差随 h 减小而降 ⇒ 期望收敛；细端 rel 不归零"
+                 "（停在约束误差）⇒ tol_rel=5e-3 容纳。实测扫描定 kind。"),
+    },
+    # ── 本轮加厚（2026-09-30 · P1.2 · M3 13→20 格）──
+    {
+        "id": "X11-PN-DD", "device": "p-n 结（突变结）", "metric": "峰值电场 E_max (kV/cm)",
+        "solver_a": "Sze 突变结耗尽近似闭式（解析）",
+        "solver_b": "1D 自洽泊松-玻尔兹曼数值核（T1 电学内核）",
+        "independence": "解析耗尽近似 vs 全场数值（少数载流子指数衰减非严格 0）",
+        "kind": "convergent", "param": "n_grid(泊松网格点)", "values": (200, 400, 800, 1600),
+        "tol_rel": 1e-1, "probe": _p_pn_e,
+        "note": "B 档 T1 内核候选；n_grid 加密 E_max 单调收敛到 Sze 闭式（6.96e-2→3.37e-2）",
+    },
+    {
+        "id": "X12-DC-3DB", "device": "定向耦合器", "metric": "3dB 耦合长度 L_3dB (µm)",
+        "solver_a": "CMT 闭式 λ/(4|Δn|)（解析反解）",
+        "solver_b": "数值传播序列 + FFT 拍频谱峰（dc_3dB_fft）",
+        "independence": "闭式反解（知 sin² 形）vs 谱分析（只看周期性，不知解析形）",
+        "kind": "convergent", "param": "dz(传播步长 µm)", "values": (0.05, 0.02, 0.01),
+        "tol_rel": 1e-3, "probe": _p_dc_3db,
+        "note": "B14 独立候选；dz 扫描残差严格单调降（1.01e-4→2.02e-5）",
+    },
+    {
+        "id": "X13-TMM-FDTD", "device": "单层介质膜", "metric": "透射率 T",
+        "solver_a": "TMM 传输矩阵解析解（物理定律锚）",
+        "solver_b": "1D FDTD 全波（fdtd1d）",
+        "independence": "解析传输矩阵 vs 时域全波（不同数值路径）",
+        "kind": "convergent", "param": "dl_factor(每波长网格数)", "values": (30, 60, 120),
+        "tol_rel": 5e-2, "probe": _p_tmm_film,
+        "note": "fdtd1d 的 ORACLE 对拍；dl_factor 加密 T 单调收敛（2.08e-1→1.41e-2）",
+    },
+    {
+        "id": "X14-MIE-RAY", "device": "介质球散射（Mie）", "metric": "散射效率 Q_scat",
+        "solver_a": "Rayleigh 小粒子闭式（x→0 偶极极限）",
+        "solver_b": "完整 Mie 无穷级数（mie_q_scat）",
+        "independence": "小粒子前导闭式 vs 全多极级数（不同收敛极限）",
+        "kind": "convergent", "param": "x(尺寸参数)", "values": (1.5, 1.0, 0.6, 0.3),
+        "tol_rel": 1e-2, "probe": _p_mie_ray,
+        "note": "x 减小 ⇒ 级数收敛到 Rayleigh 极限，残差严格单调降（3.55e-1→5.47e-3）",
+    },
+    {
+        "id": "X15-FRESNEL", "device": "单界面（空气|n）", "metric": "透射率 T",
+        "solver_a": "Fresnel 闭式 4·n0·nL/(n0+nL)²",
+        "solver_b": "1D FDTD 全波（fdtd1d）",
+        "independence": "解析 Fresnel vs 时域全波",
+        "kind": "convergent", "param": "dl_factor(每波长网格数)", "values": (30, 60, 120),
+        "tol_rel": 2e-2, "probe": _p_fresnel,
+        "note": "单界面 Fresnel 对拍；dl_factor 加密 T 单调收敛（9.77e-2→5.90e-3）",
+    },
+    {
+        "id": "X16-TMM-2LAYER", "device": "双层非对称膜", "metric": "透射率 T",
+        "solver_a": "TMM 传输矩阵解析解",
+        "solver_b": "1D FDTD 全波（fdtd1d）",
+        "independence": "解析传输矩阵 vs 时域全波",
+        "kind": "convergent", "param": "dl_factor(每波长网格数)", "values": (30, 60, 120),
+        "tol_rel": 2e-2, "probe": _p_tmm_2layer,
+        "note": "双层膜对拍；dl_factor 加密 T 单调收敛（8.50e-2→5.43e-3）",
+    },
+    {
+        "id": "X17-TMM-3LAYER", "device": "三层非对称膜", "metric": "透射率 T",
+        "solver_a": "TMM 传输矩阵解析解",
+        "solver_b": "1D FDTD 全波（fdtd1d）",
+        "independence": "解析传输矩阵 vs 时域全波",
+        "kind": "convergent", "param": "dl_factor(每波长网格数)", "values": (30, 60, 120),
+        "tol_rel": 5e-2, "probe": _p_tmm_3layer,
+        "note": "三层膜对拍；dl_factor 加密 T 单调收敛（8.89e-2→2.56e-2）",
+    },
 ]
 
 
@@ -329,6 +517,16 @@ CELL_DOMAIN = {
     "X8-THERMAL-PI": "photonic",
     "X9-PD-RESP": "photonic",
     "M3-APD-GAIN": "quantum",
+    "X10-VEC-MODE": "photonic",
+    # 本轮加厚（2026-09-30 · P1.2 · M3 13→20 格）
+    "X12-DC-3DB": "photonic",
+    "X13-TMM-FDTD": "photonic",
+    "X14-MIE-RAY": "photonic",
+    "X15-FRESNEL": "photonic",
+    "X16-TMM-2LAYER": "photonic",
+    "X17-TMM-3LAYER": "photonic",
+    # p-n 结电气核（突变结耗尽近似 ↔ 自洽泊松数值）
+    "X11-PN-DD": "quantum",
 }
 
 

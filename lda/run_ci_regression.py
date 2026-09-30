@@ -43,6 +43,7 @@ CORE_SMOKES: List[str] = [
     "run_quickverify_smoke.py",
     "run_mcp_smoke.py",                      # L1 协议层（MCP 工具路径，D-104 入 core）
     "run_l1_agent_smoke.py",                 # L1 协议层全链路（KernelGateway + L0 IR + candidate，D-105 入 core）
+    "run_l1_spec_smoke.py",                  # P1.1 L1 协议层开放标准零漂移（代码-契约逐字段一致，2026-09-30 入 core）
     "run_agent_loop_smoke.py",               # agent 自迭代设计闭环（DesignAgent「AI for AI」最小实证，D-106 入 core）
     # IR / 谱形 / 环形（纯 numpy）
     "run_ir_d05_smoke.py", "run_ir_ring_smoke.py", "run_ir_spec_smoke.py",
@@ -1710,6 +1711,7 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_kernel_seal_smoke.py": 300.0,
     # T7-B4 新增：183-run 实测 6.3s · 3.05× 取整 · 不低于默认 300s
     "run_l1_agent_smoke.py": 300.0,
+    "run_l1_spec_smoke.py": 120.0,
     # T7-B4 新增：183-run 实测 0.3s · 3.05× 取整 · 不低于默认 300s
     "run_large_scale_smoke.py": 300.0,
     # T7-B4 新增：183-run 实测 18.7s · 3.05× 取整 · 不低于默认 300s

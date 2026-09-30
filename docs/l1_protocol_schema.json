@@ -1,0 +1,179 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lda.weomnitech.com.cn/std/LDA-STD-002/l1_protocol_schema.json",
+  "title": "LDA L1 Agent Protocol",
+  "description": "LDA L1（agent 协议层）开放标准机器可读契约（LDA-STD-002 v0.1）。本文件是规范文档 docs/l1_protocol_spec.md 的零漂移伴随物：协议层代码（lda/lda_l1/protocol.py 的 KernelGateway + AgentRequest/AgentResponse + tool_schemas；lda/lda_l1/mcp_server.py 的零依赖 JSON-RPC 2.0 绑定）必须与本契约逐字段一致。run_l1_spec_smoke.py 负责机器守护该一致性。",
+  "type": "object",
+  "spec_version": "0.1",
+  "protocol_version": "2024-11-05",
+  "server_version": "0.1.0",
+
+  "contract": {
+    "envelope": {
+      "AgentRequest": {
+        "fields": ["request_id", "action", "payload", "meta"],
+        "required": ["action", "payload"],
+        "field_types": {
+          "request_id": "string",
+          "action": "string (enum@actions)",
+          "payload": "object",
+          "meta": "object"
+        },
+        "note": "request_id 缺省由 KernelGateway 生成（req-<hex12>）；transport 层（MCP）的 JSON-RPC id 与 request_id 解耦，不强制相等。"
+      },
+      "AgentResponse": {
+        "fields": ["request_id", "status", "result", "artifacts", "error"],
+        "required": ["request_id", "status"],
+        "status_enum": ["ok", "fail", "error", "partial"],
+        "status_semantics": {
+          "ok": "全 PASS（verify 类：passed==total；链路/布局/导出类：流程成功）",
+          "fail": "流程成功但判决有 FAIL（verify 类：passed<total，死标量比对结果，非异常）",
+          "partial": "仅 export_chip_gds 使用：存在 blocked_nets（部分结构未布线）但流程成功",
+          "error": "异常（链路未跑完），error 字段含 str(e)"
+        },
+        "field_types": {
+          "request_id": "string",
+          "status": "string (enum)",
+          "result": "object",
+          "artifacts": "object",
+          "error": "string|null"
+        }
+      },
+      "Candidate": {
+        "type_enum": ["reference", "perturbed", "l3_ai"],
+        "type_semantics": {
+          "reference": "确定性参考实现（黄金对照，预期全 PASS）",
+          "perturbed": "施加 rel_err 相对扰动，预期被死标量抓 FAIL（falsifiability 反例）",
+          "l3_ai": "L3 AI 求解候选生成器，判决=死标量比对，预期被法官抓 FAIL（排雷①：LLM 不进判决路径）"
+        },
+        "fields": {
+          "type": "string (enum, required)",
+          "rel_err": "number（仅 perturbed 语义使用）"
+        }
+      }
+    },
+    "actions": [
+      {
+        "name": "verify_design",
+        "aliases": ["run_candidate"],
+        "description": "驱动 L0 IR → L3 candidate → harness 确定性验证；返回 summary/details/artifacts。",
+        "payload_required": ["candidate"],
+        "payload_optional": ["l0_ir", "benchmarks"],
+        "payload_enum": {"candidate.type": ["reference", "perturbed", "l3_ai"]},
+        "tool_exposed": true
+      },
+      {
+        "name": "list_benchmarks",
+        "aliases": [],
+        "description": "列出全部标准题（B-*/E-*/S-*）定义（metric/oracle/tol）。",
+        "payload_required": [],
+        "payload_optional": [],
+        "payload_enum": {},
+        "tool_exposed": true
+      },
+      {
+        "name": "link_simulate",
+        "aliases": [],
+        "description": "链路级联仿真：spec → LinkModel → lda_chain.simulate，返回各端口传递谱与缺模型清单。",
+        "payload_required": ["spec"],
+        "payload_optional": ["wavelengths_um", "net_loss_db"],
+        "payload_enum": {},
+        "tool_exposed": true
+      },
+      {
+        "name": "route",
+        "aliases": [],
+        "description": "单 net 自动布线（C 级自写）：src/dst/obstacles → 曼哈顿+圆角走线，返回点数/弯曲/损耗/避障。",
+        "payload_required": ["src", "dst"],
+        "payload_optional": ["obstacles", "wg_width", "bend_radius", "corner", "straight_loss_db_cm"],
+        "payload_enum": {},
+        "tool_exposed": true
+      },
+      {
+        "name": "place",
+        "aliases": [],
+        "description": "器件放置：spec → LinkModel → place_row，返回各实例坐标。",
+        "payload_required": ["spec"],
+        "payload_optional": ["pitch_x"],
+        "payload_enum": {},
+        "tool_exposed": true
+      },
+      {
+        "name": "export_chip_gds",
+        "aliases": [],
+        "description": "整芯片 GDS 导出：spec → 放置+自动布线+真 GDSII（round-trip 可解析），返回结构/布线/损耗/blocked。",
+        "payload_required": ["spec"],
+        "payload_optional": ["wg_width", "bend_radius", "corner", "pitch_x", "straight_loss_db_cm"],
+        "payload_enum": {},
+        "tool_exposed": true
+      }
+    ],
+    "transport_bindings": [
+      {
+        "name": "mcp-stdio-jsonrpc2",
+        "protocol": "JSON-RPC 2.0 over stdio",
+        "protocol_version": "2024-11-05",
+        "server_name": "lda-kernel",
+        "server_version": "0.1.0",
+        "discovery": "tools/list → 返回 tool_schemas() 的 MCP 格式（inputSchema 大写 S）",
+        "invoke": "tools/call → method=lda.<action>，params=payload，result.content[0].text=AgentResponse.to_json()",
+        "deps": "零依赖（不装 mcp/fastmcp 包，手写最小 JSON-RPC 2.0）",
+        "implemented_by": "lda/lda_l1/mcp_server.py::LdaMcpServer"
+      },
+      {
+        "name": "in-process-library",
+        "protocol": "同进程直接调用 KernelGateway.handle(AgentRequest)",
+        "deps": "仅 lda 内核依赖",
+        "implemented_by": "lda/lda_l1/protocol.py::KernelGateway（所有传输绑定的唯一真源）"
+      }
+    ],
+    "invariants": [
+      "LLM 不进判决路径：verify 类判决=死标量比对（candidate vs 物理定律锚 golden），l3_ai 仅为候选生成器。",
+      "确定性：同请求 → 同结果；无随机、无状态、无交互、不弹 GUI。",
+      "可验证：harness 黄金参考来自非 AI 的物理定律锚（analytical/EIM/Airy/Rayleigh 等）。",
+      "所有验证结果默认落盘 reports_l1/verification_report.{md,json}（artifacts 字段回指路径）。",
+      "tool_schemas() 暴露的工具集 ⊆ 本契约 actions（tool_exposed=true 者）；新增 action 须同步更新本契约与文档，否则 run_l1_spec_smoke 红。"
+    ]
+  },
+
+  "definitions": {
+    "AgentRequest": {
+      "type": "object",
+      "properties": {
+        "request_id": {"type": "string"},
+        "action": {"type": "string", "enum": ["verify_design", "run_candidate", "list_benchmarks", "link_simulate", "route", "place", "export_chip_gds"]},
+        "payload": {"type": "object"},
+        "meta": {"type": "object"}
+      },
+      "required": ["action", "payload"],
+      "additionalProperties": true
+    },
+    "AgentResponse": {
+      "type": "object",
+      "properties": {
+        "request_id": {"type": "string"},
+        "status": {"type": "string", "enum": ["ok", "fail", "error", "partial"]},
+        "result": {"type": "object"},
+        "artifacts": {"type": "object"},
+        "error": {"type": ["string", "null"]}
+      },
+      "required": ["request_id", "status"],
+      "additionalProperties": true
+    },
+    "Candidate": {
+      "type": "object",
+      "properties": {
+        "type": {"type": "string", "enum": ["reference", "perturbed", "l3_ai"]},
+        "rel_err": {"type": "number"}
+      },
+      "required": ["type"],
+      "additionalProperties": true
+    }
+  },
+
+  "json_schema": {
+    "AgentRequest": {"$ref": "#/definitions/AgentRequest"},
+    "AgentResponse": {"$ref": "#/definitions/AgentResponse"},
+    "Candidate": {"$ref": "#/definitions/Candidate"}
+  }
+}

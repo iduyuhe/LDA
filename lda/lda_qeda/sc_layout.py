@@ -5,6 +5,11 @@
 已证的光子 GDS 闭环在**超导**侧的对应物。光子闭环走通了；超导先前只有理论锚/
 仿真、无版图/DRC/LVS，本模块补齐版图原语 + 几何签核，让平台「先能设计出来」。
 
+🔴 **订正（2026-09-30）**：「超导无版图/DRC/LVS」为**本模块建成前**的历史状态；
+超导征程 LDA-S1…S5（D-133…D-145）现已走完真 GDS + DRC/LVS + 频率避撞 +
+串扰/损耗预算全闭环（最大 1024 qubit / 32×32 / 10244 元件；heavy-hex 91 qubit）。
+对照见 `LDA_超导量子计算芯片设计与成果总结_2026-09-30.md`。
+
 能力（单一真源复用 gds_export.geometry_desc 的 Transmon kind）：
   - transmon_cell(params)        → geometry_desc 列表（带 net 语义标签）
   - transmon_gds(params, path)   → 真出 GDSII（零依赖自写编码器）

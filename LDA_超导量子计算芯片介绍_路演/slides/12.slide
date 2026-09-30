@@ -1,0 +1,63 @@
+<Slide style={{ width: 1280, height: 720, padding: '44px 56px 20px 56px', background: '#FFFFFF', fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif', flexDirection: 'column' }}>
+  <Box style={{ height: 58, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <Text style={{ fontSize: 33, fontWeight: 'bold', color: '#061F32', lineHeight: 1.15 }}>案例卡已接线，三条路径都能在 30 秒内自己验一遍</Text>
+    <Text style={{ fontSize: 15, color: '#808080', paddingTop: 10 }}>第 3 章 · 路径</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#061F32', marginTop: 8 }} />
+
+  <Box style={{ height: 537, marginTop: 12, flexDirection: 'row', gap: 26 }}>
+    <Box style={{ flex: 2, flexDirection: 'column', gap: 14 }}>
+      <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#061F32' }}>三条获取路径（任选一条即可独立验证）</Text>
+
+      <Box style={{ height: 132, background: '#061F32', padding: '16px 18px', flexDirection: 'column', gap: 6 }}>
+        <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#08A6F6' }}>路径 A · UI 案例卡（零门槛）</Text>
+        <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+          <Text style={{ fontSize: 16, color: '#E7E6E6' }}>lda.weomnitech.com.cn</Text>
+          <Text style={{ fontSize: 16, color: '#808080' }}>›</Text>
+          <Text style={{ fontSize: 16, color: '#E7E6E6' }}>免登录</Text>
+          <Text style={{ fontSize: 16, color: '#808080' }}>›</Text>
+          <Text style={{ fontSize: 16, color: '#E7E6E6' }}>验证实力</Text>
+          <Text style={{ fontSize: 16, color: '#808080' }}>›</Text>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' }}>★ 超导量子计算芯片案例</Text>
+          <Text style={{ fontSize: 16, color: '#808080' }}>›</Text>
+          <Text style={{ fontSize: 16, color: '#08A6F6' }}>运行超导芯片案例</Text>
+        </Box>
+        <Text style={{ fontSize: 15, color: '#99BDED', lineHeight: 1.45 }}>卡片呈现：五段征程 · 旗舰规模 · 双验证表 · 规模档 · 关键结论 · 先进性 · 诚实限制 · 未闭合项 · 产出物</Text>
+      </Box>
+
+      <Box style={{ height: 140, background: '#F5F5F5', padding: '16px 18px', flexDirection: 'column', gap: 6 }}>
+        <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#001965' }}>路径 B · 只读端点（可直接集成）</Text>
+        <Text style={{ fontSize: 17, color: '#061F32', marginTop: 4 }}>GET /api/schip_demo</Text>
+        <Text style={{ fontSize: 15, color: '#44546A', lineHeight: 1.45 }}>公开只读 · 免登录 · 零重计算（不跑 P&amp;R、不 import 求解器）· 微秒级响应；返回体自带 verdict 与 honest_note。</Text>
+      </Box>
+
+      <Box style={{ height: 140, background: '#F5F5F5', padding: '16px 18px', flexDirection: 'column', gap: 6 }}>
+        <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#001965' }}>路径 C · 源码复现（最硬）</Text>
+        <Text style={{ fontSize: 16, color: '#061F32', marginTop: 4, lineHeight: 1.45 }}>python run_schip_s5_smoke.py（96 判据） · python examples/lda_schip_s5.py（一键出 GDS/SVG/report）</Text>
+        <Text style={{ fontSize: 15, color: '#44546A', lineHeight: 1.45 }}>开源仓库可克隆；同一份代码在两台机器上给出逐位一致的结果。</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ flex: 1, flexDirection: 'column', gap: 12, paddingTop: 34 }}>
+      <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#061F32' }}>够不够格当案例：五条判据</Text>
+      <Box style={{ width: 44, height: 3, background: '#08A6F6' }} />
+      <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.5 }}>① 有独立可访问入口</Text>
+      <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.5 }}>② 有真产出物（29 件 .gds / .svg / report）</Text>
+      <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.5 }}>③ 有机器可判门禁（200 判据 + 18 组探针）</Text>
+      <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.5 }}>④ 有一键复现脚本</Text>
+      <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.5 }}>⑤ 有逐条写明的诚实边界</Text>
+      <Box style={{ background: '#E7E6E6', borderLeft: '4px solid #061F32', padding: '12px 14px', marginTop: 6 }}>
+        <Text style={{ fontSize: 16, color: '#061F32', lineHeight: 1.5 }}>五条齐备，才算「案例」，而不是「演示」。</Text>
+      </Box>
+      <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.5, marginTop: 4 }}>与光量子案例卡（/api/qchip_demo）并列呈现——同一条链路，两种物理。</Text>
+    </Box>
+  </Box>
+
+  <Box style={{ height: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <Box style={{ flexDirection: 'column' }}>
+      <Text style={{ fontSize: 14, color: '#808080' }}>Source：lda_webui/schip_case.py（案例卡数据源 · 12 项自检）· routes.py h_schip_demo · docs/API_REFERENCE.md（端点 140）</Text>
+      <Text style={{ fontSize: 14, color: '#808080' }}>Footnote：端点为零重计算只读，不进登录闸门；返回体明标 DESIGN_SIGNOFF（设计期签核）。</Text>
+    </Box>
+    <Text style={{ fontSize: 14, color: '#808080' }}>12 / 13</Text>
+  </Box>
+</Slide>

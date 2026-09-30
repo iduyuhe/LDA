@@ -1,0 +1,78 @@
+<Slide style={{ width: 1280, height: 720, padding: '44px 56px 20px 56px', background: '#FFFFFF', fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif', flexDirection: 'column' }}>
+  <Box style={{ height: 58, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <Text style={{ fontSize: 33, fontWeight: 'bold', color: '#061F32', lineHeight: 1.15 }}>五段征程把「能设计」推进到「能签核」，判据从 21 条长到 200 条</Text>
+    <Text style={{ fontSize: 15, color: '#808080', paddingTop: 10 }}>第 1 章 · 征程</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#061F32', marginTop: 8 }} />
+
+  <Box style={{ height: 537, marginTop: 12, flexDirection: 'column', gap: 18 }}>
+    <Box style={{ height: 400, flexDirection: 'row', alignItems: 'stretch' }}>
+      <Box style={{ flex: 1, background: '#F5F5F5', borderTop: '3px solid #061F32', padding: '20px 16px', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Box style={{ flexDirection: 'column', gap: 6 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#08A6F6' }}>S1 · D-133</Text>
+          <Text style={{ fontSize: 23, fontWeight: 'bold', color: '#061F32', lineHeight: 1.25 }}>单 transmon<br />单元</Text>
+        </Box>
+        <Text style={{ fontSize: 46, fontWeight: 'bold', color: '#061F32', lineHeight: 1 }}>21<span style={{ fontSize: 17, color: '#808080' }}> 判据</span></Text>
+        <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.5 }}>真 GDS（596 B）· DRC 4 规则 · LVS 5 判据</Text>
+      </Box>
+      <Box style={{ width: 18, justifyContent: 'center', alignItems: 'center' }}>
+        <svg width={16} height={16} viewBox='0 0 16 16'><path d='M2 8h10M8 3l5 5-5 5' fill='none' stroke='#808080' strokeWidth='2' /></svg>
+      </Box>
+      <Box style={{ flex: 1, background: '#F5F5F5', borderTop: '3px solid #061F32', padding: '20px 16px', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Box style={{ flexDirection: 'column', gap: 6 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#08A6F6' }}>S2 · D-134</Text>
+          <Text style={{ fontSize: 23, fontWeight: 'bold', color: '#061F32', lineHeight: 1.25 }}>耦合 transmon<br />对</Text>
+        </Box>
+        <Text style={{ fontSize: 46, fontWeight: 'bold', color: '#061F32', lineHeight: 1 }}>24<span style={{ fontSize: 17, color: '#808080' }}> 判据</span></Text>
+        <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.5 }}>J 双验证 rel ≤5% · g_CR 2.59 MHz</Text>
+      </Box>
+      <Box style={{ width: 18, justifyContent: 'center', alignItems: 'center' }}>
+        <svg width={16} height={16} viewBox='0 0 16 16'><path d='M2 8h10M8 3l5 5-5 5' fill='none' stroke='#808080' strokeWidth='2' /></svg>
+      </Box>
+      <Box style={{ flex: 1, background: '#F5F5F5', borderTop: '3px solid #061F32', padding: '20px 16px', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Box style={{ flexDirection: 'column', gap: 6 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#08A6F6' }}>S3 · D-135</Text>
+          <Text style={{ fontSize: 23, fontWeight: 'bold', color: '#061F32', lineHeight: 1.25 }}>N 比特阵列<br />P&amp;R</Text>
+        </Box>
+        <Text style={{ fontSize: 46, fontWeight: 'bold', color: '#061F32', lineHeight: 1 }}>28<span style={{ fontSize: 17, color: '#808080' }}> 判据</span></Text>
+        <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.5 }}>逐边 J 双验证 max 4.37% · 3×3 = 12 耦合</Text>
+      </Box>
+      <Box style={{ width: 18, justifyContent: 'center', alignItems: 'center' }}>
+        <svg width={16} height={16} viewBox='0 0 16 16'><path d='M2 8h10M8 3l5 5-5 5' fill='none' stroke='#808080' strokeWidth='2' /></svg>
+      </Box>
+      <Box style={{ flex: 1, background: '#F5F5F5', borderTop: '3px solid #061F32', padding: '20px 16px', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Box style={{ flexDirection: 'column', gap: 6 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#08A6F6' }}>S4 · D-136</Text>
+          <Text style={{ fontSize: 23, fontWeight: 'bold', color: '#061F32', lineHeight: 1.25 }}>读出控制<br />+ 预算</Text>
+        </Box>
+        <Text style={{ fontSize: 46, fontWeight: 'bold', color: '#061F32', lineHeight: 1 }}>31<span style={{ fontSize: 17, color: '#808080' }}> 判据</span></Text>
+        <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.5 }}>DRC 10 规则 · LVS 9 判据 · 杂散 ZZ ≤1.0 MHz</Text>
+      </Box>
+      <Box style={{ width: 18, justifyContent: 'center', alignItems: 'center' }}>
+        <svg width={16} height={16} viewBox='0 0 16 16'><path d='M2 8h10M8 3l5 5-5 5' fill='none' stroke='#808080' strokeWidth='2' /></svg>
+      </Box>
+      <Box style={{ flex: 1, background: '#061F32', borderTop: '3px solid #08A6F6', padding: '20px 16px', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Box style={{ flexDirection: 'column', gap: 6 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#08A6F6' }}>S5 · D-137…D-145</Text>
+          <Text style={{ fontSize: 23, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1.25 }}>规模压力<br />+ 架构要素</Text>
+        </Box>
+        <Text style={{ fontSize: 46, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1 }}>96<span style={{ fontSize: 17, color: '#99BDED' }}> 判据</span></Text>
+        <Text style={{ fontSize: 16, color: '#E7E6E6', lineHeight: 1.5 }}>规模 53→1024 · heavy-hex 91 qubit · 统一拓扑框架</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', background: '#E7E6E6', borderLeft: '4px solid #061F32', padding: '14px 20px' }}>
+      <Text style={{ fontSize: 20, color: '#061F32', lineHeight: 1.5 }}>
+        判断：判据增长不是堆数量，而是<span style={{ fontWeight: 'bold' }}>每一段都新增了一类真实约束</span>——几何与物理（S1–S3）、读出与损耗（S4）、规模与拓扑（S5）。判据长不出来的能力，等于没有。
+      </Text>
+    </Box>
+  </Box>
+
+  <Box style={{ height: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <Box style={{ flexDirection: 'column' }}>
+      <Text style={{ fontSize: 14, color: '#808080' }}>Source：run_schip_s1_smoke.py … run_schip_s5_smoke.py（21/24/28/31/96）· 突变探针 scripts/d_sc_s5_probe.py 18 组</Text>
+      <Text style={{ fontSize: 14, color: '#808080' }}>Footnote：全部判据为机器可判的死标量比对，LLM 不进判决路径。</Text>
+    </Box>
+    <Text style={{ fontSize: 14, color: '#808080' }}>05 / 13</Text>
+  </Box>
+</Slide>

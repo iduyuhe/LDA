@@ -1,0 +1,38 @@
+<Slide style={{ width: 1280, height: 720, padding: '44px 56px 20px 56px', background: '#FFFFFF', fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif', flexDirection: 'column' }}>
+  <Box style={{ height: 58, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#061F32', lineHeight: 1.15 }}>目录</Text>
+    <Text style={{ fontSize: 15, color: '#808080', paddingTop: 10 }}>CONTENTS · 全篇回答一个问题：同一条设计链路，换一种物理，是否还站得住</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#061F32', marginTop: 8 }} />
+
+  <Box style={{ height: 537, marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 40 }}>
+    <Box style={{ flex: 1, flexDirection: 'column', gap: 18, paddingTop: 6 }}>
+      <Text style={{ fontSize: 96, fontWeight: 'bold', color: '#E7E6E6', lineHeight: 1 }}>01</Text>
+      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#061F32' }}>这颗芯片是什么</Text>
+      <Box style={{ width: 56, height: 4, background: '#08A6F6' }} />
+      <Text style={{ fontSize: 19, color: '#44546A', lineHeight: 1.55 }}>规格与构成：transmon 比特、可调耦合器、读出腔、三线控制、两种拓扑；八项硬指标同时成立，才叫「能画出一颗芯片」。</Text>
+    </Box>
+
+    <Box style={{ width: 1, height: 260, background: '#E7E6E6' }} />
+
+    <Box style={{ flex: 1, flexDirection: 'column', gap: 18, paddingTop: 6 }}>
+      <Text style={{ fontSize: 96, fontWeight: 'bold', color: '#E7E6E6', lineHeight: 1 }}>02</Text>
+      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#061F32' }}>技术结果与先进性</Text>
+      <Box style={{ width: 56, height: 4, background: '#08A6F6' }} />
+      <Text style={{ fontSize: 19, color: '#44546A', lineHeight: 1.55 }}>物理内核两条独立路径互验（0.42% / 4.60%）；六道签核工序各有拒绝条件；与产业界不同台比比特数，比可验证的设计链路。</Text>
+    </Box>
+
+    <Box style={{ width: 1, height: 260, background: '#E7E6E6' }} />
+
+    <Box style={{ flex: 1, flexDirection: 'column', gap: 18, paddingTop: 6 }}>
+      <Text style={{ fontSize: 96, fontWeight: 'bold', color: '#E7E6E6', lineHeight: 1 }}>03</Text>
+      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#061F32' }}>案例化与合作路径</Text>
+      <Box style={{ width: 56, height: 4, background: '#08A6F6' }} />
+      <Text style={{ fontSize: 19, color: '#44546A', lineHeight: 1.55 }}>版图可下载可复核；案例卡已接线，三条路径都能在 30 秒内自己验一遍；六条边界写清楚，合作才谈得实。</Text>
+    </Box>
+  </Box>
+
+  <Box style={{ height: 40, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'flex-end' }}>
+    <Text style={{ fontSize: 15, color: '#808080' }}>02 / 13</Text>
+  </Box>
+</Slide>

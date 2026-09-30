@@ -1,0 +1,9 @@
+<Slide style={{ width: 1280, height: 720, padding: '82px 96px', background: '#062032', fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif', flexDirection: 'row', alignItems: 'center', gap: 60 }}>
+  <Text style={{ fontSize: 264, fontWeight: 'bold', color: 'rgba(255,255,255,0.10)', lineHeight: 0.9 }}>02</Text>
+  <Box style={{ flexDirection: 'column', gap: 18 }}>
+    <Text style={{ fontSize: 46, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1.2 }}>技术结果与先进性</Text>
+    <Text style={{ fontSize: 21, color: '#99BDED', letterSpacing: 3 }}>EVIDENCE &amp; POSITIONING</Text>
+    <Box style={{ width: 96, height: 3, background: '#44546A', marginTop: 8 }} />
+    <Text style={{ fontSize: 19, color: '#99BDED', lineHeight: 1.6 }}>结果必须能复核，定位必须不同台比。</Text>
+  </Box>
+</Slide>

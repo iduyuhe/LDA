@@ -256,6 +256,36 @@ def h_qchip_demo(h, p, q, path):
                       "case_id": _qc.CASE_ID, "verdict": "ERROR"})
 
 
+def h_schip_demo(h, p, q, path):
+    """GET /api/schip_demo —— 超导 transmon 量子芯片案例卡（只读 · 免登录 · 微秒级）。
+
+    A 档接入（D-148）：把超导征程「吃狗粮」LDA-S1…S5（D-133…D-145）成果在 UI 中
+    以**只读案例**呈现（transmon 比特 + 可调耦合器 + 读出/控制 + 阵列布线与签核）。
+
+    🔴 与 `/api/qchip_demo`（光量子 LOQC 案例卡 · D-131）**并列**：量子两条路线在
+    LDA 均已走完真 GDS 闭环。
+
+    🔴 **零重计算**：不跑 P&R、不 import 求解器、不解析 GDS —— 数字来自
+    ① 静态里程碑/结论 ② 闭式几何 ③ 对 `examples/` 产出物只 `stat` 的元信息
+    ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**（与 `/api/qchip_demo`、
+    `/api/verification_ledger` 同属「公开只读验货」类）。
+
+    🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_SIGNOFF`（**非** ACCEPT/PASS），
+    返回体自带 `honest_note`（非流片实测 / 非 foundry PDK / 规模=版图容量）。
+
+    异常不 500（返回 200 + error 字段，与 `h_qchip_demo` 同风格）。
+    """
+    try:
+        from . import schip_case as _sc
+    except ImportError:
+        from lda_webui import schip_case as _sc
+    try:
+        return (200, _sc.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/schip_demo", "error": str(e)[:160],
+                      "case_id": _sc.CASE_ID, "verdict": "ERROR"})
+
+
 # --------------------------------------------------------------------------
 # /api/cpo_array 重计算端点并发护栏
 # 背景：app.py 用 ThreadingHTTPServer（每请求一线程）。该端点无鉴权且默认
@@ -1757,6 +1787,7 @@ GET_ROUTES = {
     "/api/capability_demos": h_capability_demos,
     # A 档接入（D-131）：光量子计算芯片只读案例卡（零重计算 · 免登录）
     "/api/qchip_demo": h_qchip_demo,
+    "/api/schip_demo": h_schip_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,

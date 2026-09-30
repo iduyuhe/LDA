@@ -1,0 +1,88 @@
+<Slide style={{ width: 1280, height: 720, padding: '44px 56px 20px 56px', background: '#FFFFFF', fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif', flexDirection: 'column' }}>
+  <Box style={{ height: 58, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <Text style={{ fontSize: 33, fontWeight: 'bold', color: '#061F32', lineHeight: 1.15 }}>全链路签核由六道工序串成，每道都有机器可判的拒绝条件</Text>
+    <Text style={{ fontSize: 15, color: '#808080', paddingTop: 10 }}>第 2 章 · 工序</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#061F32', marginTop: 8 }} />
+
+  <Box style={{ height: 537, marginTop: 12, flexDirection: 'row', gap: 26 }}>
+    <Box style={{ flex: 2, flexDirection: 'column', gap: 12 }}>
+      <Box style={{ height: 232, flexDirection: 'row', alignItems: 'stretch' }}>
+        <Box style={{ flex: 1, background: '#061F32', padding: '16px 14px', flexDirection: 'column', gap: 8 }}>
+          <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#08A6F6' }}>工序 1</Text>
+          <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' }}>P&amp;R 布局</Text>
+          <Text style={{ fontSize: 15, color: '#E7E6E6', lineHeight: 1.45 }}>比特单元摆放 + 网格/重六边形拓扑生成 + 规模自洽 pitch</Text>
+          <Text style={{ fontSize: 14, color: '#99BDED', lineHeight: 1.4 }}>REJECT：节点间距 / 最大度超限</Text>
+        </Box>
+        <Box style={{ width: 20, justifyContent: 'center', alignItems: 'center' }}>
+          <svg width={16} height={16} viewBox='0 0 16 16'><path d='M2 8h10M8 3l5 5-5 5' fill='none' stroke='#808080' strokeWidth='2' /></svg>
+        </Box>
+        <Box style={{ flex: 1, background: '#F5F5F5', padding: '16px 14px', flexDirection: 'column', gap: 8 }}>
+          <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#001965' }}>工序 2</Text>
+          <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#061F32' }}>布线路由</Text>
+          <Text style={{ fontSize: 15, color: '#44546A', lineHeight: 1.45 }}>梳状 Manhattan 单层路由 + 行馈线 + 焊盘列 + 沟道地</Text>
+          <Text style={{ fontSize: 14, color: '#001965', lineHeight: 1.4 }}>REJECT：线间距 / 焊盘间距 / 沟道间隙 / 焊盘宽度</Text>
+        </Box>
+        <Box style={{ width: 20, justifyContent: 'center', alignItems: 'center' }}>
+          <svg width={16} height={16} viewBox='0 0 16 16'><path d='M2 8h10M8 3l5 5-5 5' fill='none' stroke='#808080' strokeWidth='2' /></svg>
+        </Box>
+        <Box style={{ flex: 1, background: '#F5F5F5', padding: '16px 14px', flexDirection: 'column', gap: 8 }}>
+          <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#001965' }}>工序 3</Text>
+          <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#061F32' }}>几何 DRC / LVS</Text>
+          <Text style={{ fontSize: 15, color: '#44546A', lineHeight: 1.45 }}>线宽/间隙/JJ 尺寸/短接 + 多网连通性（段感知，不误判拐角）</Text>
+          <Text style={{ fontSize: 14, color: '#001965', lineHeight: 1.4 }}>REJECT：14 条 DRC 规则 / 11 条 LVS 判据</Text>
+        </Box>
+      </Box>
+
+      <Box style={{ height: 18, flexDirection: 'row', alignItems: 'center', paddingLeft: 8 }}>
+        <svg width={18} height={18} viewBox='0 0 18 18'><path d='M9 2v11M4 9l5 5 5-5' fill='none' stroke='#808080' strokeWidth='2' /></svg>
+        <Text style={{ fontSize: 15, color: '#808080', marginLeft: 8 }}>版图合法后进入物理域</Text>
+      </Box>
+
+      <Box style={{ height: 232, flexDirection: 'row', alignItems: 'stretch' }}>
+        <Box style={{ flex: 1, background: '#F5F5F5', padding: '16px 14px', flexDirection: 'column', gap: 8 }}>
+          <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#001965' }}>工序 4</Text>
+          <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#061F32' }}>频率避撞</Text>
+          <Text style={{ fontSize: 15, color: '#44546A', lineHeight: 1.45 }}>逐比特频率分配 + 显式规避 ZZ 极点（|‖Δ‖−|α|| 下限）</Text>
+          <Text style={{ fontSize: 14, color: '#001965', lineHeight: 1.4 }}>REJECT：近邻/相邻失谐 / 共振极点</Text>
+        </Box>
+        <Box style={{ width: 20, justifyContent: 'center', alignItems: 'center' }}>
+          <svg width={16} height={16} viewBox='0 0 16 16'><path d='M2 8h10M8 3l5 5-5 5' fill='none' stroke='#808080' strokeWidth='2' /></svg>
+        </Box>
+        <Box style={{ flex: 1, background: '#F5F5F5', padding: '16px 14px', flexDirection: 'column', gap: 8 }}>
+          <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#001965' }}>工序 5</Text>
+          <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#061F32' }}>串扰 / 损耗预算</Text>
+          <Text style={{ fontSize: 15, color: '#44546A', lineHeight: 1.45 }}>全 pair 杂散 ZZ + 参与比 + Purcell + 封装腔模规避</Text>
+          <Text style={{ fontSize: 14, color: '#001965', lineHeight: 1.4 }}>REJECT：杂散超上限 / T1 低于目标</Text>
+        </Box>
+        <Box style={{ width: 20, justifyContent: 'center', alignItems: 'center' }}>
+          <svg width={16} height={16} viewBox='0 0 16 16'><path d='M2 8h10M8 3l5 5-5 5' fill='none' stroke='#808080' strokeWidth='2' /></svg>
+        </Box>
+        <Box style={{ flex: 1, background: '#061F32', padding: '16px 14px', flexDirection: 'column', gap: 8 }}>
+          <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#08A6F6' }}>工序 6</Text>
+          <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' }}>GDS 导出</Text>
+          <Text style={{ fontSize: 15, color: '#E7E6E6', lineHeight: 1.45 }}>平台自写 GDSII 编码器直出（层 10 / 11 / 12），零外部依赖</Text>
+          <Text style={{ fontSize: 14, color: '#99BDED', lineHeight: 1.4 }}>产出：8 组配置 × .gds / .svg / report</Text>
+        </Box>
+      </Box>
+    </Box>
+
+    <Box style={{ flex: 1, flexDirection: 'column', gap: 14, paddingTop: 34 }}>
+      <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#061F32' }}>为什么这条链值得看</Text>
+      <Box style={{ width: 44, height: 3, background: '#08A6F6' }} />
+      <Text style={{ fontSize: 17, color: '#44546A', lineHeight: 1.55 }}>很多设计流程只在最后做一次整体检查，中间环节靠人工经验。这里每一道工序都有<span style={{ fontWeight: 'bold', color: '#061F32' }}>自己的拒绝条件</span>，问题在产生的那一步就被拦下。</Text>
+      <Text style={{ fontSize: 17, color: '#44546A', lineHeight: 1.55 }}>工序 1–3 是几何域，工序 4–5 是物理域，工序 6 是交付域。<span style={{ fontWeight: 'bold', color: '#061F32' }}>跨域串联</span>，是「能设计」和「能交付」的分界。</Text>
+      <Box style={{ background: '#E7E6E6', borderLeft: '4px solid #061F32', padding: '12px 16px' }}>
+        <Text style={{ fontSize: 16, color: '#061F32', lineHeight: 1.5 }}>六道工序全部通过，才允许出 GDS。</Text>
+      </Box>
+    </Box>
+  </Box>
+
+  <Box style={{ height: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <Box style={{ flexDirection: 'column' }}>
+      <Text style={{ fontSize: 14, color: '#808080' }}>Source：sc_routing / sc_array / sc_topology_core / sc_freq_alloc / sc_readout（DRC 14 规则 · LVS 11 判据）</Text>
+      <Text style={{ fontSize: 14, color: '#808080' }}>Footnote：DRC 限值为平台自建设计规则，未对接任何 foundry PDK deck。</Text>
+    </Box>
+    <Text style={{ fontSize: 14, color: '#808080' }}>07 / 13</Text>
+  </Box>
+</Slide>

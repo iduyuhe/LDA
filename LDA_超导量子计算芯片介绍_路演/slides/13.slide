@@ -1,0 +1,35 @@
+<Slide style={{ width: 1280, height: 720, padding: '72px 72px 56px 72px', background: '#061F32', fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif', flexDirection: 'column', justifyContent: 'space-between' }}>
+  <Box style={{ flexDirection: 'column', gap: 16 }}>
+    <Text style={{ fontSize: 17, color: '#99BDED', letterSpacing: 2, fontWeight: 'bold' }}>边界与合作</Text>
+    <Text style={{ fontSize: 52, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1.2 }}>边界写清楚，合作才能谈得实</Text>
+    <Box style={{ width: 120, height: 4, background: '#08A6F6' }} />
+  </Box>
+
+  <Box style={{ flexDirection: 'row', gap: 40 }}>
+    <Box style={{ flex: 1, flexDirection: 'column', gap: 10 }}>
+      <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#FFFFFF' }}>六条边界（逐条写明，不含糊）</Text>
+      <Text style={{ fontSize: 16, color: '#E7E6E6', lineHeight: 1.5 }}>① 非流片后实测：无低温实测 T1/T2、无实测保真度、无回片</Text>
+      <Text style={{ fontSize: 16, color: '#E7E6E6', lineHeight: 1.5 }}>② 非 foundry PDK：DRC 为自建设计规则，未对接工艺厂 deck</Text>
+      <Text style={{ fontSize: 16, color: '#E7E6E6', lineHeight: 1.5 }}>③ 规模 = 版图容量，不等于已制备器件数</Text>
+      <Text style={{ fontSize: 16, color: '#E7E6E6', lineHeight: 1.5 }}>④ 不含纠错码层：无 surface code / qLDPC 逻辑比特验证</Text>
+      <Text style={{ fontSize: 16, color: '#E7E6E6', lineHeight: 1.5 }}>⑤ 不含线路级能力：无脉冲标定、无噪声仿真、无门保真实测</Text>
+      <Text style={{ fontSize: 16, color: '#E7E6E6', lineHeight: 1.5 }}>⑥ 封装 / 低温布线未落地：只做到腔模规避与参与比预算</Text>
+    </Box>
+
+    <Box style={{ width: 1, background: '#44546A' }} />
+
+    <Box style={{ flex: 1, flexDirection: 'column', gap: 14, justifyContent: 'center' }}>
+      <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1.4 }}>在明确边界内，这是一条可复现、可审计的设计链路。</Text>
+      <Text style={{ fontSize: 17, color: '#99BDED', lineHeight: 1.6 }}>我们欢迎三类合作：<br />技术评审（一起看代码与判据）<br />工艺对接（把设计规则换成真实 PDK）<br />生态共建（开源仓库 · MIT）</Text>
+      <Text style={{ fontSize: 16, color: '#E7E6E6', lineHeight: 1.6 }}>下一步：先看 <span style={{ fontWeight: 'bold', color: '#FFFFFF' }}>/api/schip_demo</span>，再决定要不要一起把某个环节做实。</Text>
+    </Box>
+  </Box>
+
+  <Box style={{ flexDirection: 'column', gap: 12 }}>
+    <Box style={{ height: 1, background: '#44546A' }} />
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Text style={{ fontSize: 16, color: '#808080' }}>LDA · 开源 Agent-native EDA（MIT）· 超导量子计算芯片 LDA-S · 2026-09-30</Text>
+      <Text style={{ fontSize: 16, color: '#808080' }}>13 / 13</Text>
+    </Box>
+  </Box>
+</Slide>

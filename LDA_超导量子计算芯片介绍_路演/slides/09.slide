@@ -1,0 +1,64 @@
+<Slide style={{ width: 1280, height: 720, padding: '44px 56px 20px 56px', background: '#FFFFFF', fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif', flexDirection: 'column' }}>
+  <Box style={{ height: 58, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <Text style={{ fontSize: 33, fontWeight: 'bold', color: '#061F32', lineHeight: 1.15 }}>我们不与产业界比比特数，比的是「可验证的设计链路」</Text>
+    <Text style={{ fontSize: 15, color: '#808080', paddingTop: 10 }}>第 2 章 · 定位</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#061F32', marginTop: 8 }} />
+
+  <Box style={{ height: 537, marginTop: 12, flexDirection: 'column', gap: 16 }}>
+    <Box style={{ height: 92, flexDirection: 'row', alignItems: 'center', background: '#F5F5F5', padding: '12px 18px', gap: 24 }}>
+      <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#061F32', width: 132, lineHeight: 1.4 }}>公开坐标<br />（已交付芯片）</Text>
+      <Text style={{ fontSize: 17, color: '#44546A', lineHeight: 1.5, flex: 1 }}>
+        IBM Heron 156 qubit · Condor 1,121（缩放里程碑）· Nighthawk 120 qubit 方格 4-度；Google Willow 105 qubit · 2024 首次 below-threshold 纠错；中国祖冲之 3.2 107 qubit；Fujitsu+RIKEN 256 qubit；Rigetti/IQM 84–150 qubit。<br />
+        <span style={{ color: '#808080' }}>以上为 2026 年公开报道数字，仅作背景坐标。</span>
+      </Text>
+    </Box>
+
+    <Box style={{ flexDirection: 'column', height: 312 }}>
+      <Box style={{ height: 42, flexDirection: 'row', alignItems: 'center', background: '#061F32' }}>
+        <Text style={{ width: 150, fontSize: 16, fontWeight: 'bold', color: '#FFFFFF', paddingLeft: 12 }}>维度</Text>
+        <Text style={{ flex: 1, fontSize: 16, fontWeight: 'bold', color: '#99BDED' }}>产业界</Text>
+        <Text style={{ flex: 1, fontSize: 16, fontWeight: 'bold', color: '#08A6F6' }}>本案例（LDA-S）</Text>
+      </Box>
+      <Box style={{ height: 54, flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #E7E6E6' }}>
+        <Text style={{ width: 150, fontSize: 17, fontWeight: 'bold', color: '#061F32', paddingLeft: 12 }}>交付物</Text>
+        <Text style={{ flex: 1, fontSize: 16, color: '#44546A' }}>已制备芯片 + 云访问</Text>
+        <Text style={{ flex: 1, fontSize: 16, color: '#061F32' }}>真 GDSII + DRC/LVS + 预算，可复现、可审计</Text>
+      </Box>
+      <Box style={{ height: 54, flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #E7E6E6' }}>
+        <Text style={{ width: 150, fontSize: 17, fontWeight: 'bold', color: '#061F32', paddingLeft: 12 }}>工具链</Text>
+        <Text style={{ flex: 1, fontSize: 16, color: '#44546A' }}>各自闭源 CAD/PDK + Qiskit 等 SDK</Text>
+        <Text style={{ flex: 1, fontSize: 16, color: '#061F32' }}>开源（MIT）· Agent-native · 零量子 SDK</Text>
+      </Box>
+      <Box style={{ height: 54, flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #E7E6E6' }}>
+        <Text style={{ width: 150, fontSize: 17, fontWeight: 'bold', color: '#061F32', paddingLeft: 12 }}>判决路径</Text>
+        <Text style={{ flex: 1, fontSize: 16, color: '#44546A' }}>实验标定 + 数值仿真混合</Text>
+        <Text style={{ flex: 1, fontSize: 16, color: '#061F32' }}>死标量比对 · LLM 不进判决路径</Text>
+      </Box>
+      <Box style={{ height: 54, flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #E7E6E6' }}>
+        <Text style={{ width: 150, fontSize: 17, fontWeight: 'bold', color: '#061F32', paddingLeft: 12 }}>拓扑</Text>
+        <Text style={{ flex: 1, fontSize: 16, color: '#44546A' }}>heavy-hex（Heron）→ Nighthawk 改方格 4-度</Text>
+        <Text style={{ flex: 1, fontSize: 16, color: '#061F32' }}>方阵与 heavy-hex 共用一份 DRC/LVS 引擎</Text>
+      </Box>
+      <Box style={{ height: 54, flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #E7E6E6' }}>
+        <Text style={{ width: 150, fontSize: 17, fontWeight: 'bold', color: '#061F32', paddingLeft: 12 }}>规模口径</Text>
+        <Text style={{ flex: 1, fontSize: 16, color: '#44546A' }}>已交付比特数 156 / 105 / 107</Text>
+        <Text style={{ flex: 1, fontSize: 16, color: '#061F32' }}>版图容量 1024（可排布且可签核）</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', background: '#E7E6E6', borderLeft: '4px solid #061F32', padding: '12px 20px' }}>
+      <Text style={{ fontSize: 19, color: '#061F32', lineHeight: 1.5 }}>
+        判断：两边口径不同，<span style={{ fontWeight: 'bold' }}>不能直接比数字</span>。把 1024 读成「已制备 1024 比特芯片」即为失真——我们交付的是设计能力，不是成品器件。
+      </Text>
+    </Box>
+  </Box>
+
+  <Box style={{ height: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <Box style={{ flexDirection: 'column' }}>
+      <Text style={{ fontSize: 14, color: '#808080' }}>Source：产业界数字为 2026 年公开报道（IBM / Google / 中国 / Fujitsu+RIKEN / Rigetti / IQM）；本案例数字来自平台门禁</Text>
+      <Text style={{ fontSize: 14, color: '#808080' }}>Footnote：本案例为设计期签核，未流片；不宣称门保真度或相干时间优于任何厂商。</Text>
+    </Box>
+    <Text style={{ fontSize: 14, color: '#808080' }}>09 / 13</Text>
+  </Box>
+</Slide>

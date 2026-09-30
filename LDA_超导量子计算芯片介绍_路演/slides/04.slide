@@ -1,0 +1,93 @@
+<Slide style={{ width: 1280, height: 720, padding: '44px 56px 20px 56px', background: '#FFFFFF', fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif', flexDirection: 'column' }}>
+  <Box style={{ height: 58, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#061F32', lineHeight: 1.15 }}>八项硬指标同时成立，才叫「能画出一颗芯片」</Text>
+    <Text style={{ fontSize: 15, color: '#808080', paddingTop: 10 }}>第 1 章 · 规格</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#061F32', marginTop: 8 }} />
+
+  <Box style={{ height: 537, marginTop: 12, flexDirection: 'column', gap: 18 }}>
+    <Box style={{ height: 196, flexDirection: 'row', gap: 20 }}>
+      <Box style={{ flex: 1, background: '#061F32', borderRadius: 4, padding: 18, flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 17, color: '#99BDED' }}>旗舰规模 · 版图容量</Text>
+        <Box style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+          <Text style={{ fontSize: 64, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1 }}>1024</Text>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#08A6F6', paddingBottom: 8 }}>qubit</Text>
+        </Box>
+        <Text style={{ fontSize: 16, color: '#E7E6E6', lineHeight: 1.45 }}>32×32 · 10244 版图元素 · 1056 条控制信号线</Text>
+      </Box>
+      <Box style={{ flex: 1, background: '#F5F5F5', borderRadius: 4, padding: 18, flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 17, color: '#44546A' }}>五段征程 · 门禁判据</Text>
+        <Box style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+          <Text style={{ fontSize: 64, fontWeight: 'bold', color: '#061F32', lineHeight: 1 }}>200</Text>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#001965', paddingBottom: 8 }}>条</Text>
+        </Box>
+        <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.45 }}>S1 21 → S2 24 → S3 28 → S4 31 → S5 96</Text>
+      </Box>
+      <Box style={{ flex: 1, background: '#F5F5F5', borderRadius: 4, padding: 18, flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 17, color: '#44546A' }}>f01 双验证一致性</Text>
+        <Box style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+          <Text style={{ fontSize: 64, fontWeight: 'bold', color: '#061F32', lineHeight: 1 }}>0.42</Text>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#001965', paddingBottom: 8 }}>%</Text>
+        </Box>
+        <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.45 }}>严格对角化 ↔ Koch 闭式（两条独立路径）</Text>
+      </Box>
+      <Box style={{ flex: 1, background: '#F5F5F5', borderRadius: 4, padding: 18, flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 17, color: '#44546A' }}>可调耦合器可关比</Text>
+        <Box style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+          <Text style={{ fontSize: 64, fontWeight: 'bold', color: '#061F32', lineHeight: 1 }}>54.3</Text>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#001965', paddingBottom: 8 }}>×</Text>
+        </Box>
+        <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.45 }}>J_on 0.400 / J_off 0.0074 MHz · SQUID 闭式</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ height: 196, flexDirection: 'row', gap: 20 }}>
+      <Box style={{ flex: 1, background: '#F5F5F5', borderRadius: 4, padding: 18, flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 17, color: '#44546A' }}>最坏杂散 ZZ（N=1024）</Text>
+        <Box style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+          <Text style={{ fontSize: 64, fontWeight: 'bold', color: '#061F32', lineHeight: 1 }}>0.39</Text>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#001965', paddingBottom: 8 }}>MHz</Text>
+        </Box>
+        <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.45 }}>上限 1.0 MHz · 频率规划仅用 0.17 s</Text>
+      </Box>
+      <Box style={{ flex: 1, background: '#F5F5F5', borderRadius: 4, padding: 18, flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 17, color: '#44546A' }}>最小 T1（N≤1024）</Text>
+        <Box style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+          <Text style={{ fontSize: 64, fontWeight: 'bold', color: '#061F32', lineHeight: 1 }}>41.2</Text>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#001965', paddingBottom: 8 }}>µs</Text>
+        </Box>
+        <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.45 }}>目标 20 µs · 阵列良率 100%（含封装项）</Text>
+      </Box>
+      <Box style={{ flex: 1, background: '#F5F5F5', borderRadius: 4, padding: 18, flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 17, color: '#44546A' }}>heavy-hex 最大度</Text>
+        <Box style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+          <Text style={{ fontSize: 64, fontWeight: 'bold', color: '#061F32', lineHeight: 1 }}>3</Text>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#001965', paddingBottom: 8 }}>度</Text>
+        </Box>
+        <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.45 }}>91 qubit · 无 4 邻居（IBM 定义式 · 对标）</Text>
+      </Box>
+      <Box style={{ flex: 1, background: '#F5F5F5', borderRadius: 4, padding: 18, flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 17, color: '#44546A' }}>真产出物（可下载）</Text>
+        <Box style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+          <Text style={{ fontSize: 64, fontWeight: 'bold', color: '#061F32', lineHeight: 1 }}>29</Text>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#001965', paddingBottom: 8 }}>件</Text>
+        </Box>
+        <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.45 }}>8 组配置的 .gds / .svg / report.json</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', background: '#E7E6E6', borderLeft: '4px solid #061F32', padding: '14px 20px' }}>
+      <Text style={{ fontSize: 20, color: '#061F32', lineHeight: 1.5 }}>
+        判断：这八项不是并列的荣誉，而是<span style={{ fontWeight: 'bold' }}>同一条链路的八个断面</span>——任意一项缺失，都说明「设计」没有走到「可交付」。
+      </Text>
+    </Box>
+  </Box>
+
+  <Box style={{ height: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <Box style={{ flexDirection: 'column' }}>
+      <Text style={{ fontSize: 14, color: '#808080' }}>Source：LDA 超导征程门禁 run_schip_s1..s5_smoke.py（200 判据）· 批量签核 examples/lda_schip_s5.py</Text>
+      <Text style={{ fontSize: 14, color: '#808080' }}>Footnote：规模为版图容量（可排布且可签核的比特数），非已制备器件数；全部为设计期签核。</Text>
+    </Box>
+    <Text style={{ fontSize: 14, color: '#808080' }}>04 / 13</Text>
+  </Box>
+</Slide>

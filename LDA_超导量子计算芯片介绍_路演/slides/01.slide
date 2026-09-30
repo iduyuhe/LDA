@@ -1,0 +1,26 @@
+<Slide style={{ width: 1280, height: 720, padding: '72px 72px 56px 72px', background: '#061F32', fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif', flexDirection: 'column', justifyContent: 'space-between' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+    <svg width={30} height={30} viewBox='0 0 28 28'>
+      <rect x='0' y='0' width='12' height='12' fill='#08A6F6' />
+      <rect x='16' y='0' width='12' height='12' fill='#99BDED' />
+      <rect x='0' y='16' width='12' height='12' fill='#99BDED' />
+      <rect x='16' y='16' width='12' height='12' fill='#08A6F6' />
+    </svg>
+    <Text style={{ fontSize: 18, color: '#99BDED', letterSpacing: 2, fontWeight: 'bold' }}>LDA · 开源 Agent-native EDA（MIT）· 量子芯片征程</Text>
+  </Box>
+
+  <Box style={{ flexDirection: 'column', gap: 24 }}>
+    <Text style={{ fontSize: 78, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1.12 }}>超导量子计算芯片<br />LDA-S</Text>
+    <Box style={{ width: 132, height: 5, background: '#08A6F6' }} />
+    <Text style={{ fontSize: 26, color: '#E7E6E6', lineHeight: 1.5 }}>transmon 微波 QEDA · 从单比特单元到 1024 比特阵列版图（32×32）<br />P&amp;R 与全链路签核闭环 · 平台自写 GDSII 编码器直出</Text>
+  </Box>
+
+  <Box style={{ flexDirection: 'column', gap: 14 }}>
+    <Text style={{ fontSize: 21, color: '#99BDED', lineHeight: 1.5 }}>这不是一次器件仿真，而是一次「平台能不能真的画出一颗芯片」的体检——用 LDA 亲手设计，吃自己的狗粮。</Text>
+    <Box style={{ height: 1, background: '#44546A' }} />
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Text style={{ fontSize: 17, color: '#808080' }}>LDA 工程团队 · 2026-09-30 · 平台版本 0.9.144</Text>
+      <Text style={{ fontSize: 17, color: '#808080' }}>口径：设计期签核 · 非流片后实测</Text>
+    </Box>
+  </Box>
+</Slide>

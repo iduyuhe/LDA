@@ -1,0 +1,61 @@
+<Slide style={{ width: 1280, height: 720, padding: '44px 56px 20px 56px', background: '#FFFFFF', fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif', flexDirection: 'column' }}>
+  <Box style={{ height: 58, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <Text style={{ fontSize: 33, fontWeight: 'bold', color: '#061F32', lineHeight: 1.15 }}>物理内核用两条独立路径互验，一致性落在 0.42% 与 4.60%</Text>
+    <Text style={{ fontSize: 15, color: '#808080', paddingTop: 10 }}>第 2 章 · 结果</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#061F32', marginTop: 8 }} />
+
+  <Box style={{ height: 537, marginTop: 12, flexDirection: 'row', gap: 28 }}>
+    <Box style={{ flex: 2, flexDirection: 'column' }}>
+      <Box style={{ height: 44, flexDirection: 'row', alignItems: 'center', background: '#061F32' }}>
+        <Text style={{ width: 168, fontSize: 16, fontWeight: 'bold', color: '#FFFFFF', paddingLeft: 12 }}>物理量</Text>
+        <Text style={{ width: 232, fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' }}>路径 A（闭式 / 解析）</Text>
+        <Text style={{ width: 216, fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' }}>路径 B（数值 / 严格对角化）</Text>
+        <Text style={{ flex: 1, fontSize: 16, fontWeight: 'bold', color: '#08A6F6' }}>一致性</Text>
+      </Box>
+      <Box style={{ height: 76, flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #E7E6E6' }}>
+        <Text style={{ width: 168, fontSize: 18, fontWeight: 'bold', color: '#061F32', paddingLeft: 12 }}>f01 比特频率</Text>
+        <Text style={{ width: 232, fontSize: 16, color: '#44546A', lineHeight: 1.4 }}>Koch 闭式<br />√(8E_J E_C) − E_C</Text>
+        <Text style={{ width: 216, fontSize: 16, color: '#44546A', lineHeight: 1.4 }}>coupler_solver<br />严格对角化</Text>
+        <Text style={{ flex: 1, fontSize: 24, fontWeight: 'bold', color: '#061F32' }}>0.42%</Text>
+      </Box>
+      <Box style={{ height: 76, flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #E7E6E6' }}>
+        <Text style={{ width: 168, fontSize: 18, fontWeight: 'bold', color: '#061F32', paddingLeft: 12 }}>耦合强度 J</Text>
+        <Text style={{ width: 232, fontSize: 16, color: '#44546A', lineHeight: 1.4 }}>解析闭式 J_c<br />（电容网络）</Text>
+        <Text style={{ width: 216, fontSize: 16, color: '#44546A', lineHeight: 1.4 }}>严格对角化<br />（441 维本征）</Text>
+        <Text style={{ flex: 1, fontSize: 24, fontWeight: 'bold', color: '#061F32' }}>≤ 5%</Text>
+      </Box>
+      <Box style={{ height: 76, flexDirection: 'row', alignItems: 'center', borderBottom: '1px solid #E7E6E6' }}>
+        <Text style={{ width: 168, fontSize: 18, fontWeight: 'bold', color: '#061F32', paddingLeft: 12 }}>可调耦合器 E_J(Φ)</Text>
+        <Text style={{ width: 232, fontSize: 16, color: '#44546A', lineHeight: 1.4 }}>SQUID 精确闭式<br />（含结不对称）</Text>
+        <Text style={{ width: 216, fontSize: 16, color: '#44546A', lineHeight: 1.4 }}>数值提取<br />（近共振有效区）</Text>
+        <Text style={{ flex: 1, fontSize: 24, fontWeight: 'bold', color: '#061F32' }}>4.60%</Text>
+      </Box>
+
+      <Box style={{ height: 132, marginTop: 20, background: '#F5F5F5', borderLeft: '4px solid #08A6F6', padding: '16px 20px', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
+        <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#061F32' }}>判决纪律：死标量比对，LLM 不进判决路径</Text>
+        <Text style={{ fontSize: 16, color: '#44546A', lineHeight: 1.5 }}>判决位由数值比较给出；物理定律（能量守恒、幺正性、λ/4 关系）作红线锚；AI 只负责构造与检查，不负责裁定对错。</Text>
+      </Box>
+
+      <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+        <Text style={{ fontSize: 16, color: '#808080', lineHeight: 1.5 }}>关键量：J_on 0.400 MHz / J_off 0.0074 MHz（可关比 54.3×）· g_CR 2.59 MHz · t_CR 1.21 µs · σ_zz 0.21 MHz</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ flex: 1, flexDirection: 'column', gap: 14, paddingTop: 6 }}>
+      <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#061F32' }}>为什么必须双路径</Text>
+      <Box style={{ width: 44, height: 3, background: '#08A6F6' }} />
+      <Text style={{ fontSize: 17, color: '#44546A', lineHeight: 1.55 }}>单一来源的数值无法自证：公式写错、符号错、单位错，都会得到「看起来很合理」的答案。</Text>
+      <Text style={{ fontSize: 17, color: '#44546A', lineHeight: 1.55 }}>两条<span style={{ fontWeight: 'bold', color: '#061F32' }}>方法学独立</span>的路径互验到 0.42% 与 4.60%，才说明实现是对的，而不是"看起来像对的"。</Text>
+      <Text style={{ fontSize: 17, color: '#44546A', lineHeight: 1.55 }}>这三条一致性不是抽查，是<span style={{ fontWeight: 'bold', color: '#061F32' }}>常驻门禁</span>——每次回归都会重跑。</Text>
+    </Box>
+  </Box>
+
+  <Box style={{ height: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <Box style={{ flexDirection: 'column' }}>
+      <Text style={{ fontSize: 14, color: '#808080' }}>Source：run_schip_s1/s2_smoke.py（f01 与 J 双验证）· sc_coupler.tunable_coupler_physics（SQUID 闭式 ↔ 数值）</Text>
+      <Text style={{ fontSize: 14, color: '#808080' }}>Footnote：容差口径 f01 5% / J 5% / SQUID 5%；一致性为实测相对偏差。</Text>
+    </Box>
+    <Text style={{ fontSize: 14, color: '#808080' }}>08 / 13</Text>
+  </Box>
+</Slide>

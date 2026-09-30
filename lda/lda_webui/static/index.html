@@ -1340,6 +1340,31 @@ body{padding-top:56px}
     <div class="conclusion" id="qchipConclusion"></div>
   </div>
 
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-schip">
+    <h2>★ 超导量子计算芯片案例（transmon · 微波 QEDA）</h2>
+    <div class="hint">
+      用 LDA <b>亲手设计</b>的一颗<b>超导 transmon 量子计算芯片</b>：比特 + 可调耦合器 +
+      读出谐振腔/馈线 + XY/Z/flux 控制线 + 阵列布线沟道——从单比特单元到
+      <b>1024 比特阵列版图</b>（32×32，10244 元件），走完
+      <b>P&amp;R → 布线路由 → 几何 DRC/LVS → 频率避撞 → 串扰/损耗预算</b>全链路签核，并出<b>真 GDSII</b>。<br/>
+      <b>五段征程</b>（全程在 LDA 内闭环 · 门禁共 <b>200 判据</b>）：S1 单 transmon 全闭环 →
+      S2 耦合对 → S3 N 比特阵列 P&amp;R → S4 读出/控制 + 串扰/损耗预算 →
+      <b>S5 规模压力 + 真实架构要素 + 统一拓扑框架</b>。<br/>
+      <b>核心结果</b>：f01 严格对角化 ↔ Koch 闭式 <b>rel 0.42%</b>；可调耦合器可关比 <b>54.3</b>；
+      全 pair 杂散 ZZ ≤ <b>1.0 MHz</b>；N=4…1024 损耗预算全部达标（最小 T1 <b>41.2 µs</b>，目标 20 µs）；
+      <b>重六边形（heavy-hex，最大度 3，对标 IBM）与方阵共用同一份 DRC/LVS 引擎</b>。<br/>
+      🔴 本面板为<b>只读案例</b>（零重计算、免登录、不跑 P&amp;R、不依赖任何量子 SDK）；
+      全部为<b>设计期签核</b>，<b>非流片后实测</b>；规模数字是<b>版图容量</b>，非已制备器件数。
+      判决位由死标量给出，LLM 不进判决路径。
+    </div>
+    <div class="row">
+      <button class="btn" id="runSChip">运行超导芯片案例</button>
+    </div>
+    <div id="schipSummary" class="summary"></div>
+    <div id="schipBody"></div>
+    <div class="conclusion" id="schipConclusion"></div>
+  </div>
+
   <div class="footer" data-page-node-id="n4rEeCHGtMlHrVaGZxjXUN">
     本界面所有数据均为<strong data-page-node-id="swf6kw75EiLlFDeLcjsQXv">实时真跑</strong> LDA 内核产出，非演示稿。<br data-page-node-id="lDMKpIy4YCjFkzGCzg3IPK"/>
     后端零依赖（Python 标准库 http.server），复用已落地的验证裁判 / L1 KernelGateway / agent 设计闭环。<br data-page-node-id="NkqVPBGLvjnjvojcUO4fcZ"/>
@@ -4421,6 +4446,98 @@ function renderQChip(d){
   return false;
 }
 if($('runQChip')) $('runQChip').onclick = runQChip;
+
+/* ═══════════ 超导量子计算芯片案例（D-148 · /api/schip_demo）═══════════ */
+async function runSChip(){
+  const btn=$('runSChip'); if(!btn) return;
+  btn.disabled=true;
+  $('schipSummary').innerHTML='<span class="spin"></span> 正在装配超导芯片案例…';
+  try{
+    const d=await apiGet('/api/schip_demo');
+    renderSChip(d);
+  }catch(e){ $('schipSummary').textContent='错误：'+(e&&e.message?e.message:e); }
+  finally{ btn.disabled=false; }
+}
+function renderSChip(d){
+  if(!d||d.error){ $('schipSummary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
+  const sp=d.span||{}, fl=d.flagship||{}, ph=d.physics||{}, ID=d.identity||{};
+  $('schipSummary').innerHTML='<b>'+d.case_id+'</b> · 判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）'
+    +' · 征程 <b>'+(sp.milestones||'?')+'</b> 段 · 门禁 <b>'+(sp.gate_checks||'?')+'</b> 判据';
+  var h='';
+  h+='<div class="note">物理：'+ID.physics+' · 器件：'+ID.device+'</div>';
+  h+='<div class="note">版图层：FILM '+(ID.gds_layers?ID.gds_layers.FILM:'?')
+    +' / JJ '+(ID.gds_layers?ID.gds_layers.JJ:'?')
+    +' / GROUND '+(ID.gds_layers?ID.gds_layers.GROUND:'?')
+    +' · 零量子 SDK：<b>'+(ID.zero_quantum_sdk?'是':'否')+'</b></div>';
+
+  h+='<div class="summary" style="margin-top:12px">五段征程（每段 = 模块 + 门禁 + 突变探针 + 真 GDS）</div>';
+  h+=_qcTbl(['段','编号','内容','门禁','关键结果'],
+    (d.milestones||[]).map(function(m){ return [m.id, m.code, m.title, String(m.gate), m.result]; }));
+
+  h+='<div class="summary" style="margin-top:12px">旗舰规模（方阵 · '+fl.rows+'×'+fl.cols+'）</div>';
+  h+=_qcTbl(['指标','数值','口径'],
+    [['比特数', String(fl.n_qubits), '版图容量'],
+     ['最近邻耦合', String(fl.n_couplings), '4 邻居'],
+     ['版图元素', String(fl.n_elements), '真 GDSII 层 10/11/12'],
+     ['控制信号线', String(fl.n_signals), '布线沟道'],
+     ['行 pitch 自洽', fl.pitch_y_eff_um+' µm', '随 N 自动重算'],
+     ['静态杂散 ZZ', fl.max_stray_zz_mhz+' MHz ≤ '+fl.zz_limit_mhz+' MHz', '全 pair'],
+     ['最小 T1', fl.t1_us_min+' µs ≥ '+fl.t1_target_us+' µs', '内部 + Purcell'],
+     ['频率规划耗时', fl.freq_plan_seconds+' s', '向量化闭式']]);
+
+  h+='<div class="summary" style="margin-top:12px">关键物理（闭式 ↔ 严格对角化双验证）</div>';
+  h+=_qcTbl(['量','数值','验证'],
+    [['f01（GHz）', String(ph.f01_ghz), '对角化 ↔ Koch rel '+(ph.f01_rel_err_vs_koch!=null?(ph.f01_rel_err_vs_koch*100).toFixed(2)+'%':'?')],
+     ['非谐性 α（GHz）', String(ph.anharmonicity_ghz), 'Koch 闭式'],
+     ['可调耦合器 J_on / J_off（MHz）', ph.coupler_J_on_mhz+' / '+ph.coupler_J_off_mhz, 'rel '+(ph.coupler_J_rel_err!=null?(ph.coupler_J_rel_err*100).toFixed(1)+'%':'?')],
+     ['可关比', String(ph.coupler_off_ratio), '下限 10'],
+     ['g_CR（MHz） / t_CR（µs）', ph.g_CR_mhz+' / '+ph.t_CR_us, 'Schrieffer-Wolff'],
+     ['σ_zz（MHz）', String(ph.sigma_zz_mhz), '有效 ZX/ZZ']]);
+
+  const st=d.scale_tiers||{};
+  h+='<div class="summary" style="margin-top:12px">规模档（来源：'+(st.source||'?')+'）</div>';
+  h+=_qcTbl(['族','档','比特/元素','备注'],
+    (st.grid||[]).map(function(t){ return ['方阵（度 4）', t.tier, t.qubits+' qubit / '+t.elements+' 元素', '路由 + 频率 + 损耗全 ACCEPT']; })
+    .concat((st.heavy_hex||[]).map(function(t){ return ['heavy-hex（度 3）', t.tier, t.qubits+' qubit / '+t.elements+' 元素', '顶点 '+(t.vertices||'?')+' + 边 '+(t.edge_qubits||'?')+' · 对标 IBM']; }))
+    .concat((st.pressure||[]).map(function(t){ return ['规模压力', t.rows+'×'+t.cols, t.n+' qubit', '路由 DRC+LVS + 频率规划']; })));
+
+  h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
+  (d.findings||[]).forEach(function(f){
+    h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>';
+  });
+  h+='</div>';
+
+  const pos=d.positioning||{};
+  h+='<div class="summary" style="margin-top:12px">先进性定位</div>';
+  h+='<div class="note">'+pos.disclaimer+'</div>';
+  h+=_qcTbl(['维度','产业界（公开报道）','本案例'],
+    (pos.what_is_different||[]).map(function(x){ return [x.axis, x.industry, x.lda]; }));
+  h+='<div class="summary" style="margin-top:10px">诚实限制</div><div>';
+  (pos.honest_limits||[]).forEach(function(t){ h+='<p style="margin:4px 0">• '+t+'</p>'; });
+  h+='</div>';
+
+  h+='<div class="summary" style="margin-top:12px">未闭合项（逐条登记）</div>';
+  h+=_qcTbl(['#','项目','说明'],
+    (d.gaps||[]).map(function(g){ return [g.id, g.title, g.detail]; }));
+
+  const A=d.artifacts||{};
+  h+='<div class="summary" style="margin-top:12px">产出物（真 GDS / SVG）</div>';
+  if(A.available){
+    h+='<p style="margin:4px 0">目录 <b>'+A.root_hint+'/</b> · 共 <b>'+A.count+'</b> 个文件：</p>';
+    h+=_qcTbl(['文件','字节'],
+      (A.items||[]).map(function(it){ return [it.name, String(it.bytes)]; }));
+  } else {
+    h+='<p style="margin:4px 0">本部署内不含产出物目录（'+A.root_hint+'）——'+A.note+'</p>';
+  }
+
+  $('schipBody').innerHTML=h;
+  $('schipConclusion').innerHTML='<strong>结论：</strong>超导 transmon 路线在 LDA 内已从「只能仿真」推进到'
+    +'<b>「能画版图并走完全链路签核」</b>：P&amp;R → 布线路由 → 几何 DRC/LVS → 频率避撞 → 串扰/损耗预算，'
+    +'规模压到 <b>1024 比特（32×32）</b>，且<b>重六边形与方阵共用同一份签核引擎</b>（度上限由拓扑自声明）。'
+    +'<br/><strong>诚实边界：</strong>'+d.honest_note;
+  return false;
+}
+if($('runSChip')) $('runSChip').onclick = runSChip;
 </script>
 <script src="/nav.js"></script>
 <script src="/cs_widget.js"></script>

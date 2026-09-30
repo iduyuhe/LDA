@@ -1389,6 +1389,32 @@ body{padding-top:56px}
     <div class="conclusion" id="pchipConclusion"></div>
   </div>
 
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-ecore">
+    <h2>★ 电子计算芯片案例（模拟计算核 / MVM 交叉阵列）</h2>
+    <div class="hint">
+      用 LDA <b>亲手设计</b>的一颗<b>电子计算芯片</b>（电子版的「光子 MZI 网格」）：模拟
+      <b>矩阵-向量乘（MVM）交叉阵列</b>——行电压 × 交叉点电导 → 列电流求和 → TIA 转电压，
+      对标模拟 AI 加速器（Mythic 类）同族架构。<br/>
+      <b>五段征程</b>（全程在 LDA 内闭环 · 门禁共 <b>28 判据</b> + 5 道常驻门禁）：E1 基座
+      （晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）→ E2 参数化 N×M
+      MVM 交叉阵列（ideal TIA / transistor 权重 + 晶体管级 OTA）→ E3 MVM 数据通路
+      （DAC→阵列→ADC、多层 MLP+ReLU、分块）→ E4 规模对标（至 256×256 = 65536 突触，诚实边界）
+      → <b>E5 平台能力硬化</b>（能力清单 + 双向完备守护门禁）。<br/>
+      <b>核心结果</b>：MNA 瞬态 vs 指数闭式误差 <b>&lt;2e-4</b>；理想 8×8 阵列 <b>&lt;2e-4</b>；
+      数据通路单层 8bit 误差 <b>0.012</b>、2 层 MLP <b>0.044</b>、分块=全阵（精确）；
+      规模律：相对误差有界、绝对误差 ∝ N。<br/>
+      🔴 本面板为<b>只读案例</b>（零重计算、免登录、不跑仿真、零外部 SPICE 引擎）；
+      全部为<b>设计期验证</b>，<b>非流片后实测</b>；晶体管参数为公开典型量级占位（非 PDK）；
+      <b>不报任何 TOPS / TOPS-W 能效或吞吐指标</b>。判决位由死标量给出，LLM 不进判决路径。
+    </div>
+    <div class="row">
+      <button class="btn" id="runECore">运行电子计算芯片案例</button>
+    </div>
+    <div id="ecoreSummary" class="summary"></div>
+    <div id="ecoreBody"></div>
+    <div class="conclusion" id="ecoreConclusion"></div>
+  </div>
+
   <div class="footer" data-page-node-id="n4rEeCHGtMlHrVaGZxjXUN">
     本界面所有数据均为<strong data-page-node-id="swf6kw75EiLlFDeLcjsQXv">实时真跑</strong> LDA 内核产出，非演示稿。<br data-page-node-id="lDMKpIy4YCjFkzGCzg3IPK"/>
     后端零依赖（Python 标准库 http.server），复用已落地的验证裁判 / L1 KernelGateway / agent 设计闭环。<br data-page-node-id="NkqVPBGLvjnjvojcUO4fcZ"/>
@@ -4647,6 +4673,100 @@ function renderPChip(d){
   return false;
 }
 if($('runPChip')) $('runPChip').onclick = runPChip;
+
+/* ═══════════ 电子计算芯片（模拟计算核 / MVM 交叉阵列）案例（E 征程收官 · /api/ecore_demo）═══════════ */
+async function runECore(){
+  const btn=$('runECore'); if(!btn) return;
+  btn.disabled=true;
+  $('ecoreSummary').innerHTML='<span class="spin"></span> 正在装配电子计算芯片案例…';
+  try{
+    const d=await apiGet('/api/ecore_demo');
+    renderECore(d);
+  }catch(e){ $('ecoreSummary').textContent='错误：'+(e&&e.message?e.message:e); }
+  finally{ btn.disabled=false; }
+}
+function renderECore(d){
+  if(!d||d.error){ $('ecoreSummary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
+  const sp=d.span||{}, fl=d.flagship||{}, ID=d.identity||{}, PH=d.physics||{}, MT=PH.metrics||{};
+  $('ecoreSummary').innerHTML='<b>'+d.case_id+'</b> · 判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）'
+    +' · 征程 <b>'+(sp.milestones||'?')+'</b> 段 · 门禁 <b>'+(sp.gate_checks||'?')+'</b> 判据';
+  var h='';
+  h+='<div class="note">物理：'+ID.physics+' · 器件：'+ID.device+'</div>';
+  h+='<div class="note">计算砖：'+ID.unit+'</div>';
+  h+='<div class="note">零外部 SPICE 引擎：<b>'+(ID.zero_spice_engine?'是':'否')+'</b> · 零量子 SDK：<b>'+(ID.zero_quantum_sdk?'是':'否')+'</b></div>';
+
+  h+='<div class="summary" style="margin-top:12px">五段征程</div>';
+  h+=_qcTbl(['段','编号','内容','门禁','关键结果'],
+    (d.milestones||[]).map(function(m){ return [m.id, m.code, m.title, String(m.gate), m.result]; }));
+
+  h+='<div class="summary" style="margin-top:12px">晶体管级模型（E1 基座 · 平台此前完全缺失）</div>';
+  const mos=PH.mosfet||{};
+  h+=_qcTbl(['参数','数值','口径'],
+    [['KP（跨导参数）', (mos.kp_a_per_v2*1e6).toFixed(0)+' µA/V²', '公开典型量级占位'],
+     ['Vth0（阈值）', mos.vth0_v+' V', '零偏'],
+     ['λ（沟道调制）', mos.lambda_per_v+' /V', ''],
+     ['W/L（宽长比）', String(mos.w_over_l), '占位'],
+     ['模型', mos.model||'', 'Level-1 平方律']]);
+
+  h+='<div class="summary" style="margin-top:12px">关键实测（门禁值 · vs 闭式物理律）</div>';
+  h+=_qcTbl(['指标','数值','口径'],
+    [['MNA 瞬态 vs 指数', '<'+MT.mna_rc_transient_err, 'RC 一阶'],
+     ['MNA 交流 vs 闭式', '<'+MT.mna_ac_err, '复导纳'],
+     ['理想阵列 8×8 误差', '<'+MT.xbar_ideal_8x8_err, 'VCVS TIA'],
+     ['transistor 4×4 误差', '<'+MT.xbar_transistor_4x4_err, 'NMOS 三极管权重'],
+     ['OTA 开环增益 @20k/30k', MT.ota_gain_20k+' / '+MT.ota_gain_30k, '∝ Rd'],
+     ['数据通路 单层 8bit', String(MT.datapath_single_8bit_err), 'vs 全精度 golden'],
+     ['数据通路 2 层 MLP 6bit', String(MT.datapath_mlp_2layer_6bit_err), 'ReLU'],
+     ['分块 tiling 误差', String(MT.datapath_tiling_err), '= 全阵（精确）']]);
+
+  h+='<div class="summary" style="margin-top:12px">旗舰容量（N='+fl.n_rows+'×'+fl.n_cols+'）</div>';
+  h+=_qcTbl(['指标','数值','口径'],
+    [['交叉点（突触）', String(fl.n_synapses)+' = N×M', '可建模并可验证容量'],
+     ['物理列（含参考列）', String(fl.n_phys_cols_incl_ref), '参考列承载带符号权重'],
+     ['每列扇入', String(fl.fan_in_per_col), '行 = 输入']]);
+
+  const st=d.scale_tiers||{};
+  h+='<div class="summary" style="margin-top:12px">规模档（E4 扫描 · 相对误差有界 / 绝对误差 ∝ N）</div>';
+  h+=_qcTbl(['N','突触','相对误差','绝对误差'],
+    (st.tiers||[]).map(function(t){ return ['N='+t.n, String(t.synapses), String(t.rel_err), String(t.abs_err)]; }));
+  h+='<div class="note">'+st.note+'</div>';
+
+  h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
+  (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });
+  h+='</div>';
+
+  const pos=d.positioning||{};
+  h+='<div class="summary" style="margin-top:12px">先进性定位（架构族对齐）</div>';
+  h+='<div class="note">'+pos.disclaimer+'</div>';
+  h+=_qcTbl(['维度','产业界/学术','本案例'],
+    (pos.what_is_different||[]).map(function(x){ return [x.axis, x.industry, x.lda]; }));
+  h+='<div class="summary" style="margin-top:10px">公开基准（A 级 · 仅背景坐标 · 不同台比较）</div>';
+  h+=_qcTbl(['主体','进展'],
+    (pos.public_landscape||[]).map(function(x){ return [x.who, x.item]; }));
+
+  h+='<div class="summary" style="margin-top:12px">未闭合项（逐条登记）</div>';
+  h+=_qcTbl(['#','项目','说明'],
+    (d.gaps||[]).map(function(g){ return [g.id, g.title, g.detail]; }));
+
+  const A=d.artifacts||{};
+  h+='<div class="summary" style="margin-top:12px">产出物（ecore 报告）</div>';
+  if(A.available){
+    h+='<p style="margin:4px 0">目录 <b>'+A.root_hint+'/</b> · 共 <b>'+A.count+'</b> 个文件</p>';
+    h+=_qcTbl(['文件','字节'],
+      (A.items||[]).map(function(it){ return [it.name, String(it.bytes)]; }));
+  } else {
+    h+='<p style="margin:4px 0">本部署内不含产出物目录（'+A.root_hint+'）——'+A.note+'</p>';
+  }
+
+  $('ecoreBody').innerHTML=h;
+  $('ecoreConclusion').innerHTML='<strong>结论：</strong>电子计算（模拟 MVM 交叉阵列）路线在 LDA 内已从'
+    +'<b>「平台无晶体管级模型 / 无电路仿真器」</b>推进到<b>「能设计完整模拟计算数据通路并端到端验证」</b>：'
+    +'晶体管级 MNA 仿真（瞬态 <2e-4）、参数化 N×M 阵列、DAC→阵列→ADC 数据通路（单层 8bit 误差 0.012）、'
+    +'规模扫描至 65536 突触（相对误差有界）。'
+    +'<br/><strong>诚实边界：</strong>'+d.honest_note;
+  return false;
+}
+if($('runECore')) $('runECore').onclick = runECore;
 </script>
 <script src="/nav.js"></script>
 <script src="/cs_widget.js"></script>

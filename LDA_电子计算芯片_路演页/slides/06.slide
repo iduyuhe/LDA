@@ -1,0 +1,27 @@
+<Slide style={{ width: 1280, height: 720, background: '#0A1120', padding: '64px 72px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'column', gap: 20, marginTop: 30 }}>
+        <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <Box style={{ width: 6, height: 32, background: '#2563EB', borderRadius: 3 }} />
+            <Text style={{ fontSize: 19, color: '#9FB3CC' }}>收尾 · 电子征程 E1–E5 全部闭环</Text>
+        </Box>
+        <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#E8EEF7', lineHeight: 1.2 }}>从「平台无晶体管级模型、无电路仿真器」<br/>到「能设计完整模拟计算数据通路并端到端验证」</Text>
+        <Box style={{ flexDirection: 'row', gap: 16, marginTop: 8 }}>
+            <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 24px', width: 340, gap: 6 }}>
+                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#2563EB' }}>四条路线已吃狗粮</Text>
+                <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.6 }}>光子计算 M1–M5 · 光量子 LOQC · 超导 transmon S1–S5 · 电子计算 E1–E5</Text>
+            </Box>
+            <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 24px', width: 340, gap: 6 }}>
+                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#2563EB' }}>能力已硬化</Text>
+                <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.6 }}>ecore 能力清单 + 双向完备守护门禁 ⇒ 能力面不再静默失守</Text>
+            </Box>
+            <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 24px', width: 340, gap: 6 }}>
+                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#2563EB' }}>诚实边界</Text>
+                <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.6 }}>设计期验证 · 非流片实测 · 不报 fabricated 能效 · landmark 仅背景坐标</Text>
+            </Box>
+        </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(159,179,204,0.25)', paddingTop: 16 }}>
+        <Text style={{ fontSize: 16, color: '#9FB3CC' }}>LDA · 开源 Agent-native 光 / 量 / 电子 EDA（MIT）· 电子计算征程 E1–E5（D-150…D-154）</Text>
+        <Text style={{ fontSize: 16, color: '#9FB3CC', fontFamily: 'Consolas' }}>06 / 06</Text>
+    </Box>
+</Slide>

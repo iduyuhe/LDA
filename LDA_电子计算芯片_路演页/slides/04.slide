@@ -1,0 +1,47 @@
+<Slide style={{ width: 1280, height: 720, background: '#0A1120', padding: '64px 72px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'column', gap: 12, marginBottom: 22 }}>
+        <Text style={{ fontSize: 16, color: '#2563EB', fontWeight: 'bold' }}>关键结果 · 规模律（诚实报告）</Text>
+        <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#E8EEF7' }}>相对误差有界、绝对误差 ∝ N</Text>
+        <Text style={{ fontSize: 18, color: '#9FB3CC' }}>MVM 输出幅度随 N 增长；固定位数 ADC 下绝对 LSB 随之增大 ⇒ 须按层输出定标（out_norm）。</Text>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 16, marginBottom: 18 }}>
+        <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 22px', width: 250, gap: 6 }}>
+            <Text style={{ fontSize: 15, color: '#9FB3CC' }}>单层 8bit 误差</Text>
+            <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>0.0122</Text>
+            <Text style={{ fontSize: 14, color: '#9FB3CC' }}>vs 全精度数字 golden</Text>
+        </Box>
+        <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 22px', width: 250, gap: 6 }}>
+            <Text style={{ fontSize: 15, color: '#9FB3CC' }}>2 层 MLP 6bit 误差</Text>
+            <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>0.044</Text>
+            <Text style={{ fontSize: 14, color: '#9FB3CC' }}>ReLU 层间累积</Text>
+        </Box>
+        <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 22px', width: 250, gap: 6 }}>
+            <Text style={{ fontSize: 15, color: '#9FB3CC' }}>分块 tiling 误差</Text>
+            <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>0.0</Text>
+            <Text style={{ fontSize: 14, color: '#9FB3CC' }}>= 全阵（精确 · 可组合）</Text>
+        </Box>
+        <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 22px', width: 250, gap: 6 }}>
+            <Text style={{ fontSize: 15, color: '#9FB3CC' }}>MNA 瞬态 vs 指数</Text>
+            <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>&lt;2e-4</Text>
+            <Text style={{ fontSize: 14, color: '#9FB3CC' }}>RC 一阶闭式</Text>
+        </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 16, marginBottom: 8 }}>
+        <Text style={{ fontSize: 15, color: '#9FB3CC', width: 130 }}>规模档（8bit）</Text>
+        <Text style={{ fontSize: 15, color: '#E8EEF7', width: 120 }}>N=32</Text>
+        <Text style={{ fontSize: 15, color: '#E8EEF7', width: 120 }}>N=64</Text>
+        <Text style={{ fontSize: 15, color: '#E8EEF7', width: 140 }}>N=128</Text>
+        <Text style={{ fontSize: 15, color: '#E8EEF7', width: 180 }}>N=256</Text>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 16 }}>
+        <Text style={{ fontSize: 15, color: '#9FB3CC', width: 130 }}>相对误差</Text>
+        <Text style={{ fontSize: 15, color: '#2563EB', fontFamily: 'Consolas', width: 120 }}>0.018</Text>
+        <Text style={{ fontSize: 15, color: '#2563EB', fontFamily: 'Consolas', width: 120 }}>0.027</Text>
+        <Text style={{ fontSize: 15, color: '#2563EB', fontFamily: 'Consolas', width: 140 }}>0.024</Text>
+        <Text style={{ fontSize: 15, color: '#2563EB', fontFamily: 'Consolas', width: 180 }}>0.030</Text>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(159,179,204,0.25)', paddingTop: 16, marginTop: 26 }}>
+        <Text style={{ fontSize: 16, color: '#9FB3CC' }}>LDA · 电子计算芯片（电子征程「吃狗粮」E1–E5）</Text>
+        <Text style={{ fontSize: 16, color: '#9FB3CC', fontFamily: 'Consolas' }}>04 / 06</Text>
+    </Box>
+</Slide>

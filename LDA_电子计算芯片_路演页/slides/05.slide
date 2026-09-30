@@ -1,0 +1,37 @@
+<Slide style={{ width: 1280, height: 720, background: '#0A1120', padding: '64px 72px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'column', gap: 12, marginBottom: 22 }}>
+        <Text style={{ fontSize: 16, color: '#2563EB', fontWeight: 'bold' }}>先进性定位 · 架构族对齐</Text>
+        <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#E8EEF7' }}>同族可比 · 不同层级 · 不做数值超越比较</Text>
+        <Text style={{ fontSize: 18, color: '#9FB3CC' }}>LDA 是设计 &amp; 验证工具链（非流片芯片）⇒ 不报任何 TOPS / TOPS-W / fJ/op。</Text>
+    </Box>
+    <Box style={{ flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+        <Box style={{ flexDirection: 'row', gap: 14, background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '12px 20px' }}>
+            <Text style={{ fontSize: 16, color: '#9FB3CC', width: 200 }}>架构族</Text>
+            <Text style={{ fontSize: 16, color: '#E8EEF7' }}>analog CIM MVM 交叉阵列</Text>
+            <Text style={{ fontSize: 16, color: '#2563EB', fontWeight: 'bold' }}>→ 本案例同族（电子版「光子 MZI 网格」）</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 14, background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '12px 20px' }}>
+            <Text style={{ fontSize: 16, color: '#9FB3CC', width: 200 }}>工具链来源</Text>
+            <Text style={{ fontSize: 16, color: '#E8EEF7' }}>闭源 CAD/PDK + 商业 SPICE</Text>
+            <Text style={{ fontSize: 16, color: '#2563EB', fontWeight: 'bold' }}>→ 开源 MIT · 零外部 SPICE 引擎（自研）</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 14, background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '12px 20px' }}>
+            <Text style={{ fontSize: 16, color: '#9FB3CC', width: 200 }}>判决路径</Text>
+            <Text style={{ fontSize: 16, color: '#E8EEF7' }}>实测 + 数值仿真混合</Text>
+            <Text style={{ fontSize: 16, color: '#2563EB', fontWeight: 'bold' }}>→ LLM 不进判决路径（死标量比对）</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 14, background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '12px 20px' }}>
+            <Text style={{ fontSize: 16, color: '#9FB3CC', width: 200 }}>能效口径</Text>
+            <Text style={{ fontSize: 16, color: '#E8EEF7' }}>有实测/宣称 TOPS 与 W</Text>
+            <Text style={{ fontSize: 16, color: '#2563EB', fontWeight: 'bold' }}>→ 不报能效/吞吐（口径不同，不可比数）</Text>
+        </Box>
+    </Box>
+    <Box style={{ background: 'rgba(37,99,235,0.10)', borderRadius: 10, padding: '14px 20px', flexDirection: 'column', gap: 6 }}>
+        <Text style={{ fontSize: 15, color: '#9FB3CC' }}>公开 landmark（A 级公开来源 · 照录 · 未验证 · 仅背景坐标 · 不同台比较）</Text>
+        <Text style={{ fontSize: 15, color: '#E8EEF7' }}>Mythic M1076 AMP：analog compute-in-memory MVM（flash array + on-die ADC）· up to 25 TOPS · typ. 3–4 W · 76 AMP tiles · 80M weights · INT4/INT8</Text>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(159,179,204,0.25)', paddingTop: 16, marginTop: 22 }}>
+        <Text style={{ fontSize: 16, color: '#9FB3CC' }}>LDA · 电子计算芯片（电子征程「吃狗粮」E1–E5）</Text>
+        <Text style={{ fontSize: 16, color: '#9FB3CC', fontFamily: 'Consolas' }}>05 / 06</Text>
+    </Box>
+</Slide>

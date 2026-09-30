@@ -1,0 +1,38 @@
+<Slide style={{ width: 1280, height: 720, background: '#0A1120', padding: '64px 72px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'column', gap: 12, marginBottom: 22 }}>
+        <Text style={{ fontSize: 16, color: '#2563EB', fontWeight: 'bold' }}>五段征程 · 全程在 LDA 内闭环</Text>
+        <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#E8EEF7' }}>E1 基座 → E2 阵列 → E3 数据通路 → E4 规模 → E5 硬化</Text>
+        <Text style={{ fontSize: 18, color: '#9FB3CC' }}>门禁合计 28 判据 + 5 道常驻门禁 · D-150…D-154。</Text>
+    </Box>
+    <Box style={{ flexDirection: 'column', gap: 10 }}>
+        <Box style={{ flexDirection: 'row', gap: 16, background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '14px 20px', alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas', width: 90 }}>E1</Text>
+            <Text style={{ fontSize: 18, color: '#E8EEF7', width: 360 }}>基座：晶体管模型 + MNA 仿真器 + 最小计算单元</Text>
+            <Text style={{ fontSize: 16, color: '#9FB3CC' }}>RC 瞬态 vs 指数 &lt;2e-4 · AC vs 闭式 &lt;1e-13</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 16, background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '14px 20px', alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas', width: 90 }}>E2</Text>
+            <Text style={{ fontSize: 18, color: '#E8EEF7', width: 360 }}>参数化 N×M 模拟 MVM 交叉阵列</Text>
+            <Text style={{ fontSize: 16, color: '#9FB3CC' }}>理想 8×8 &lt;2e-4 · transistor 4×4 &lt;2.4e-4 · OTA 增益 ∝ Rd</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 16, background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '14px 20px', alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas', width: 90 }}>E3</Text>
+            <Text style={{ fontSize: 18, color: '#E8EEF7', width: 360 }}>MVM 数据通路（DAC→阵列→ADC、多层、分块）</Text>
+            <Text style={{ fontSize: 16, color: '#9FB3CC' }}>单层 8bit 0.0122 · 2 层 MLP 0.044 · 分块=全阵</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 16, background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '14px 20px', alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas', width: 90 }}>E4</Text>
+            <Text style={{ fontSize: 18, color: '#E8EEF7', width: 360 }}>规模对标（至 256×256 = 65536 突触）</Text>
+            <Text style={{ fontSize: 16, color: '#9FB3CC' }}>相对误差有界 0.018→0.030 · 绝对误差 ∝N 0.08→0.54</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 16, background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '14px 20px', alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas', width: 90 }}>E5</Text>
+            <Text style={{ fontSize: 18, color: '#E8EEF7', width: 360 }}>平台能力硬化：能力清单 + 守护门禁</Text>
+            <Text style={{ fontSize: 16, color: '#9FB3CC' }}>清单 ↔ 模块/符号 双向完备 · 诚实边界机器化</Text>
+        </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(159,179,204,0.25)', paddingTop: 16, marginTop: 22 }}>
+        <Text style={{ fontSize: 16, color: '#9FB3CC' }}>LDA · 电子计算芯片（电子征程「吃狗粮」E1–E5）</Text>
+        <Text style={{ fontSize: 16, color: '#9FB3CC', fontFamily: 'Consolas' }}>03 / 06</Text>
+    </Box>
+</Slide>

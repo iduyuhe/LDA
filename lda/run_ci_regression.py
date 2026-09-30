@@ -1289,6 +1289,40 @@ CORE_SMOKES: List[str] = [
     #   （verdict 恒 DESIGN_SIGNOFF / 不报 fabricated 能效 / 规模按设计容量解读），含突变探针（破坏诚实
     #   边界必红）。与 qchip_case 体例对齐（光计算案例卡独立 smoke）。CI core 236→237。
     "run_pchip_case_smoke.py",
+    # 🔴 电子计算征程 E1（2026-09-30 · 新征程「再启新征程」）：用平台亲手设计电子计算芯片，
+    # 路线=模拟计算核(MVM 交叉阵列，电子版「光子 MZI 网格」)。E1 基座逼出平台两块短板——
+    # 此前**无晶体管级模型 / 无电路仿真器**（spice_netlist 只生成网表不仿真）。本门禁验 mosfet
+    # 长沟道平方律 + MNA 电路仿真器(DC/瞬态/AC) + 最小模拟计算单元(反相求和 MAC/NMOS 饱和偏置)，
+    # 含 3 道突变探针（破坏 golden/模型/stamp 必红）+ 还原完整性。CI core 237→238。
+    "run_ecore_e1_smoke.py",
+    # 🔴 电子计算征程 E2（2026-09-30 · 新征程）：把 E1 的「反相求和 MAC」扩成
+    # **参数化 N×M 模拟 MVM 交叉阵列**（电子版「光子 MZI 网格」）。两条验证路径：
+    # amp='ideal'（VCVS TIA，golden=-rf·W@x，规模可扩 8×8+）/ amp='transistor'（NMOS
+    # 三极管区作压控电阻，真正吃 E1 的 MOSFET 模型）；另含晶体管级 OTA 开环增益表征。
+    # 含 3 道突变探针（破坏 golden/模型/电阻 stamp 必红）+ 还原完整性。CI core 238→239。
+    "run_ecore_e2_smoke.py",
+    # 🔴 电子计算征程 E3（2026-09-30 · 新征程）：把 E2 的 MVM 阵列接成**完整矩阵运算数据通路**
+    # ——数字→DAC(量化)→交叉阵列(参考列法承载带符号权重)→ADC(量化)→数字；支持多层级联(MLP+ReLU)
+    # 与分块(tiling)。端到端正确性 vs 全精度数字 golden（量化界内、随位数单调下降）。含 3 道突变
+    # 探针（破坏 golden/量化器/交叉阵列 solve 必红）+ 还原完整性。CI core 239→240。
+    "run_ecore_e3_smoke.py",
+    # 🔴 电子计算征程 E4（2026-09-30 · 新征程）：把 E3 数据通路**推到大规模**（至 256×256=65536
+    # 突触）并与公开模拟加速器 landmark**诚实对标**。核心纪律：LDA 是设计&验证工具链（非流片芯片）
+    # ⇒ 不报 TOPS/TOPS-W；landmark 照录公开来源(A级·未验证)；只在同族维度对标。规模律：相对误差有界
+    # (≈1/2^bits)、绝对误差 ∝N。含 3 道突变探针（破坏 golden / 注入 fabricated 指标 / 破坏 landmark
+    # 登记 必红）+ 还原完整性。CI core 240→241。
+    "run_ecore_e4_smoke.py",
+    # 🔴 电子计算征程 E5（2026-09-30 · 新征程收官）：**平台能力硬化**——把 E1~E4 逼出的平台能力
+    # 固化为机器可读清单（`ECORE_CAPABILITY_MANIFEST`·单一真源）+ 常驻守护门禁。守的是"能力面整体"：
+    # ① 正向完备（清单每条⇒模块可导入+符号齐备）② **反向完备**（ecore 每模块⇒必须登记，防隐身模块）
+    # ③ guard 文件真实存在 ④ ECORE_DISCLOSURE 含 e1~e5 scope ⑤ 诚实边界（无 TOPS/TOPS-W）。
+    # 含 3 道突变探针（符号损坏/注入 fabricated 指标/移除模块登记 必红）+ 还原完整性。CI core 241→242。
+    "run_ecore_capability_guard_smoke.py",
+    # 🔴 电子计算芯片案例卡 WebUI 门禁（E 征程收官 · D-155）：守 /api/ecore_demo 只读案例卡的诚实边界
+    # （verdict 恒 DESIGN_VERIFIED / 不报 fabricated 能效 TOPS-TOPS-W / 规模按「可建模可验证容量」解读 /
+    # landmark 仅背景坐标），跨源一致性（模块↔API 参考↔routes），含突变探针（破坏诚实边界/清空 landmark
+    # 必红）。与 qchip/schip/pchip 案例卡体例对齐。CI core 242→243。
+    "run_ecore_case_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2076,6 +2110,37 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_loqc_states_smoke.py": 300.0,
     # 实测上界 0.31s（3 轮 max · @10T）
     "run_dmm_scorecard_smoke.py": 300.0,
+    # 🔴 B20 盲区清偿（E1 电子计算征程 + M2–M5 光计算 + 守卫 · 2026-09-30）：
+    #   上述 9 项加入 CORE_SMOKES 时未登记本表 ⇒ B20 盲区。现按「实际生效预算 300s」
+    #   登记（= 原生效值，不收紧不放宽 · 仅消除看不见）。实测上界均 <45s ⇒ 300s 余量 ≥7×。
+    #   实测上界 1.69s（单测 · @本机）
+    "run_cuda_venv_selfcheck_smoke.py": 300.0,
+    # 实测上界 0.15s（单测）
+    "run_dead_assert_guard_smoke.py": 300.0,
+    # E1 电子计算征程基座门禁（D-150）· 实测上界 0.25s（单测）
+    "run_ecore_e1_smoke.py": 300.0,
+    # E2 电子计算征程参数化 MVM 交叉阵列门禁（D-151）· 实测上界 0.25s（单测）
+    "run_ecore_e2_smoke.py": 300.0,
+    # E3 电子计算征程 MVM 数据通路门禁（D-152）· 实测上界 0.24s（单测）
+    "run_ecore_e3_smoke.py": 300.0,
+    # E4 电子计算征程规模对标门禁（D-153）· 实测上界 10.3s（单测）
+    "run_ecore_e4_smoke.py": 300.0,
+    # E5 电子计算征程平台能力硬化门禁（D-154）· 实测上界 0.22s（单测）
+    "run_ecore_capability_guard_smoke.py": 300.0,
+    # E 征程收官 · 电子计算芯片案例卡 WebUI 门禁（D-155）· 实测上界 0.1s（单测）
+    "run_ecore_case_smoke.py": 300.0,
+    # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
+    "run_pchip_case_smoke.py": 300.0,
+    # 光计算征程 M2 · 实测上界 0.25s（单测）
+    "run_photonic_compute_m2_smoke.py": 300.0,
+    # 光计算征程 M3 · 实测上界 0.40s（单测）
+    "run_photonic_compute_m3_smoke.py": 300.0,
+    # 光计算征程 M4 · 实测上界 20.59s（单测）
+    "run_photonic_compute_m4_smoke.py": 300.0,
+    # 光计算征程 M5 · 实测上界 42.03s（单测）
+    "run_photonic_compute_m5_smoke.py": 300.0,
+    # 错误显示守卫 · 实测上界 0.27s（单测）
+    "run_report_error_display_smoke.py": 300.0,
 }
 
 

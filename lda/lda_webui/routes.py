@@ -317,6 +317,37 @@ def h_pchip_demo(h, p, q, path):
                       "case_id": _pc.CASE_ID, "verdict": "ERROR"})
 
 
+def h_ecore_demo(h, p, q, path):
+    """GET /api/ecore_demo —— 电子计算芯片（模拟计算核 / MVM 交叉阵列）案例卡（只读 · 免登录 · 微秒级）。
+
+    电子计算征程「吃狗粮」E1…E5（D-150…D-154）成果在 UI 中以**只读案例**呈现
+    （晶体管级模型 + 电路仿真 + 参数化 MVM 阵列 + 数据通路 + 规模对标 + 能力硬化）。
+
+    🔴 与 `/api/qchip_demo`（光量子）、`/api/schip_demo`（超导）、`/api/pchip_demo`
+    （硅光张量核）**并列**：四条物理/器件路线在 LDA 均已吃狗粮。
+
+    🔴 **零重计算**：不跑电路仿真、不 import 求解器/numpy —— 数字来自
+    ① 静态里程碑/结论 ② 纯 math 闭式现算 ⇒ **无 DoS 面**，故**免登录、
+    不进 HEAVY_POST_PATHS**（与 `/api/pchip_demo`、`/api/verification_ledger` 同属
+    「公开只读验货」类）。
+
+    🔴 **不伪装实测 / 不报 fabricated 能效**：`verdict` 恒为 `DESIGN_VERIFIED`
+    （**非** ACCEPT/PASS），返回体自带 `honest_note`（非流片实测 / 非 PDK /
+    不报任何 TOPS/TOPS-W）。
+
+    异常不 500（返回 200 + error 字段，与 `h_pchip_demo` 同风格）。
+    """
+    try:
+        from . import ecore_case as _ec
+    except ImportError:
+        from lda_webui import ecore_case as _ec
+    try:
+        return (200, _ec.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/ecore_demo", "error": str(e)[:160],
+                      "case_id": _ec.CASE_ID, "verdict": "ERROR"})
+
+
 # --------------------------------------------------------------------------
 # /api/cpo_array 重计算端点并发护栏
 # 背景：app.py 用 ThreadingHTTPServer（每请求一线程）。该端点无鉴权且默认
@@ -1821,6 +1852,8 @@ GET_ROUTES = {
     "/api/schip_demo": h_schip_demo,
     # A 档接入（M5 收尾）：硅光张量核（光计算芯片）只读案例卡（零重计算 · 免登录）
     "/api/pchip_demo": h_pchip_demo,
+    # A 档接入（E 征程收官）：电子计算芯片（模拟计算核 / MVM 交叉阵列）只读案例卡（零重计算 · 免登录）
+    "/api/ecore_demo": h_ecore_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,

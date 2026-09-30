@@ -1,0 +1,33 @@
+<Slide style={{ width: 1280, height: 720, background: '#0A1120', padding: '64px 72px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'column', gap: 12, marginBottom: 26 }}>
+        <Text style={{ fontSize: 16, color: '#2563EB', fontWeight: 'bold' }}>吃狗粮 · 逼出并补齐平台四块真短板</Text>
+        <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#E8EEF7' }}>客户使用前，我们自己先使用并检验</Text>
+        <Text style={{ fontSize: 18, color: '#9FB3CC' }}>此前 LDA 电子域只到行为级——本征程新增 lda/lda_l2/ecore/ 包（7 模块）逐一补齐。</Text>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 16 }}>
+        <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '20px 20px', width: 262, gap: 8 }}>
+            <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>1</Text>
+            <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#E8EEF7' }}>无晶体管级模型</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.6 }}>新增长沟道平方律 NMOS（三区 + gm/gds 解析）。D-150</Text>
+        </Box>
+        <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '20px 20px', width: 262, gap: 8 }}>
+            <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>2</Text>
+            <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#E8EEF7' }}>无电路仿真器</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.6 }}>新增 MNA 求解器（DC 牛顿 / 瞬态后向欧拉 / AC 复数）。D-150</Text>
+        </Box>
+        <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '20px 20px', width: 262, gap: 8 }}>
+            <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>3</Text>
+            <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#E8EEF7' }}>无模拟计算原语</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.6 }}>新增参数化 N×M MVM 阵列 + 数据通路（DAC→阵列→ADC）。D-151/152</Text>
+        </Box>
+        <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '20px 20px', width: 262, gap: 8 }}>
+            <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>4</Text>
+            <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#E8EEF7' }}>无规模定标与诚实护栏</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.6 }}>新增层输出定标 + 诚实边界机器化护栏 + 能力清单。D-153/154</Text>
+        </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(159,179,204,0.25)', paddingTop: 16, marginTop: 26 }}>
+        <Text style={{ fontSize: 16, color: '#9FB3CC' }}>LDA · 电子计算芯片（电子征程「吃狗粮」E1–E5）</Text>
+        <Text style={{ fontSize: 16, color: '#9FB3CC', fontFamily: 'Consolas' }}>02 / 06</Text>
+    </Box>
+</Slide>

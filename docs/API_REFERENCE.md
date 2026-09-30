@@ -22,12 +22,12 @@
 | 项 | 值 |
 |---|---|
 
-| 端点总数 | 141（精确 124 + 前缀/后缀 17） |
-| 方法分布 | GET 46 · PATCH 1 · POST 94 |
-| 有描述 | 141（**100.0%**） |
+| 端点总数 | 142（精确 125 + 前缀/后缀 17） |
+| 方法分布 | GET 47 · PATCH 1 · POST 94 |
+| 有描述 | 142（**100.0%**） |
 | 需登录（重计算闸门） | 60 |
 
-## GET（46）
+## GET（47）
 
 | 路径 | 用途 | 参数 | 鉴权 |
 |---|---|---|---|
@@ -54,6 +54,7 @@
 | `/api/cpo_array` | GET /api/cpo_array —— CPO 共封装光引擎阵列死锚判决（外部可验货）。 默认 32 引擎 × 34 通道 × 8 波长 = 100,096 器件；?oe=&ch=&lane=&ch_per_row= 缩放（如 ?oe=40&ch=68 → 250,240 器件）。?gds=1 含 GDS 导出（默认跳过省时）。 返回死标量验收 JSON：器件数 / DRC / LVS / 断路反例 / 耗时 / accepted。 读-only、无鉴权——直接服务「可被外部验货的验证可信度」战略主线。 | — | public |
 | `/api/design_catalog` | GET /api/design_catalog —— 设计引擎与设计包目录（`engine_catalog` / `package_catalog`）。 导入失败时返回空目录 + `error` 字段（服务不 500）。 | — | public |
 | `/api/design_gds` | GET /api/design_gds —— 下载设计版图 .gds（T1.1 · **唯一二进制响应端点**）。 ⚠️ `run_webui_api_smoke` 的通用 GET 循环按「200 + JSON」断言，二进制响应会被 误判 ⇒ 该 smoke 已把本端点登记进 `BINARY_GET` 并配**专项断言**（状态码 / Content-Type / GDS 魔数 / 长度自洽 / Content-Disposition / sha256 与 POST 报告登记值一致）。未带 kind 时返回 **400 + JSON 用法**（不返回空文件）。 | — | public · **二进制** |
+| `/api/ecore_demo` | GET /api/ecore_demo —— 电子计算芯片（模拟计算核 / MVM 交叉阵列）案例卡（只读 · 免登录 · 微秒级）。 电子计算征程「吃狗粮」E1…E5（D-150…D-154）成果在 UI 中以**只读案例**呈现 （晶体管级模型 + 电路仿真 + 参数化 MVM 阵列 + 数据通路 + 规模对标 + 能力硬化）。 🔴 与 `/api/qchip_demo`（光量子）、`/api/schip_demo`（超导）、`/api/pchip_demo` （硅光张量核）**并列**：四条物理/器件路线在 LDA 均已吃狗粮。 🔴 **零重计算**：不跑电路仿真、不 import 求解器/numpy —— 数字来自 ① 静态里程碑/结论 ② 纯 math 闭式现算 ⇒ **无 DoS 面**，故**免登录、 不进 HEAVY_POST_PATHS**（与 `/api/pchip_demo`、`/api/verification_ledger` 同属 「公开只读验货」类）。 🔴 **不伪装实测 / 不报 fabricated 能效**：`verdict` 恒为 `DESIGN_VERIFIED` （**非** ACCEPT/PASS），返回体自带 `honest_note`（非流片实测 / 非 PDK / 不报任何 TOPS/TOPS-W）。 异常不 500（返回 200 + error 字段，与 `h_pchip_demo` 同风格）。 | — | public |
 | `/api/ecosystem` | D-93 生态快照。 v0.9.33：harness 部分（48 道锚全量实跑 ~15.3s）已加串行锁 + TTL 缓存； 锁被占用时按并发护栏纪律返回 429，而不是让请求排到 15s 后（无鉴权公开 GET 绝不允许单请求占满线程十秒级）。 | — | public |
 | `/api/empirical` | D-62 实证大数据锚快照：语料库统计 + 逐条溯源 + 对抗题库 + harness 实证锚题（E1-E3）golden 来源 + 语料评审流状态。 | `anchor`, `empirical_id`, `tol` | public |
 | `/api/gc_benchmarks` | A1 · GC 整芯片对照（golden_product_benchmarks：5 GP + 20 GC）。 run=False 返回元数据（快，零计算）；run=True 现场真跑 25/25（~2.5s， 用户显式点击才触发）。数据源 = lda_l2.golden_product_benchmarks 已验证库，不在此重写任何验证逻辑（LLM 不进判决路径）。 | — | public |

@@ -18,7 +18,8 @@
 🔴 规模律（实测发现，诚实报告）：**相对误差有界、绝对误差 ∝ N**——MVM 输出幅度随 N 增长，
 固定 ADC 位数下绝对 LSB 随之增大 ⇒ 须按层输出定标（E3 `out_norm`）；相对误差 ≈ 1/2^bits 有界。
 
-主权纪律（全平台同源）：C 级自主（纯 numpy）；LLM 不进判决路径；T1 电路级。
+主权纪律（全平台同源）：C 级自主（纯 numpy）；LLM 不进判决路径；
+**本包主动限定在电路级**（平台红线 = 分层口径：器件级 T1 内核已解锁 · T2 永久锁）。
 """
 from __future__ import annotations
 
@@ -140,5 +141,6 @@ SCALE_BENCH_DISCLOSURE = {
     "scale_law": "相对误差有界（≈1/2^bits，N 无关）；绝对误差 ∝ N（固定位数 ADC 固有律，须按层输出定标）",
     "honest_boundary": "LDA 是设计&验证工具链（非流片芯片）⇒ 不报 TOPS/TOPS/W/fJ/op；"
                        "landmark 照录公开来源(A级)、未验证、不用于计算 LDA 成就值；只在同族维度对标",
-    "redline": "T1 电路级（不碰 Foundry TCAD/流片）；C 级自主（纯 numpy）；LLM 不进判决路径",
+    "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"
+               "本包主动限定在电路级；C 级自主（纯 numpy）；LLM 不进判决路径",
 }

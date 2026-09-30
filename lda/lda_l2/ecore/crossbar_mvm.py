@@ -20,7 +20,8 @@ OTA**的开环增益（增益 ∝ Rd），证明平台能仿真真实放大器�
 MVM 摆幅内闭合 TIA 环路需多级缓冲设计，本征程验证路径以理想 TIA / 晶体管权重为准。
 
 主权纪律（全平台同源）：C 级自主（纯 numpy）；LLM 不进判决路径；golden 俱为闭式物理律；
-T1 电路级（不碰 Foundry TCAD/流片）。参数为公开典型量级占位，不宣称器件性能。
+**本包主动限定在电路级**（平台红线 = 分层口径：器件级 T1 内核已解锁 · T2 工艺真值/流片永久锁）。
+参数为公开典型量级占位，不宣称器件性能。
 """
 from __future__ import annotations
 
@@ -174,7 +175,8 @@ def ota_open_loop_gain(Iss: float = 0.5e-3, Rd: float = 20e3, Vdd: float = 10.0,
 CROSSBAR_DISCLOSURE = {
     "route": "电子计算征程 E2 · 参数化 MVM 交叉阵列生成器",
     "e2_scope": "N×M 模拟矩阵-向量乘；amp={'ideal'(VCVS TIA) | 'transistor'(NMOS三极管权重)}",
-    "redline": "T1 电路级（不碰 Foundry TCAD / 工艺角 / 流片）；C 级自主（纯 numpy）",
+    "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"
+               "本包主动限定在电路级；C 级自主（纯 numpy）",
     "sovereignty": "不借任何商业 SPICE 引擎；LLM 不进判决路径",
     "honest_boundary": "参数为公开典型量级占位（非 PDK 标定、无实测锚）；非签核级 SPICE；"
                        "transistor 路径列增益含电阻负载因子（golden 已计入）",

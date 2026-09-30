@@ -18,7 +18,8 @@ E2 造出了「N×M 模拟 MVM 交叉阵列」这一块砖；E3 把它接成**�
 另设一列纯 g_base 参考列；数据列减参考列即得干净的有符号 MVM：y_j = −(V_j − V_ref)/(Rf·s·vfs)。
 
 主权纪律（全平台同源）：C 级自主（纯 numpy）；LLM 不进判决路径；golden=全精度数字参考
-（非外部 ORACLE）；T1 电路级。参数为公开典型量级占位，不宣称器件性能。
+（非外部 ORACLE）；**本包主动限定在电路级**（平台红线 = 分层：器件级 T1 已解锁 · T2 永久锁）。
+参数为公开典型量级占位，不宣称器件性能。
 """
 from __future__ import annotations
 
@@ -215,7 +216,8 @@ MVM_DATAPATH_DISCLOSURE = {
     "e3_scope": "数字→DAC→交叉阵列(E2)→ADC→数字 的模拟计算引擎；多层级联(MLP+ReLU) + 分块(tiling)",
     "weight_mapping": "带符号权重经参考列法映射为正电导（g=g_base+s·W，减参考列）",
     "correctness_claim": "端到端输出 vs 全精度数字 golden（同权重/激活/定标）；误差 = 量化 + 交叉阵列精度，随位数下降",
-    "redline": "T1 电路级（不碰 Foundry TCAD/流片）；C 级自主（纯 numpy）；LLM 不进判决路径",
+    "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"
+               "本包主动限定在电路级；C 级自主（纯 numpy）；LLM 不进判决路径",
     "honest_boundary": "理想 TIA 路径（放大器无限增益理想化）；DAC/ADC 为均匀量化模型；"
                        "参数为公开典型量级占位（非 PDK、无实测锚）⇒ 不宣称实际芯片能效/精度",
 }

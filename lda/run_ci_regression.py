@@ -1355,6 +1355,10 @@ CORE_SMOKES: List[str] = [
     # 按误差预算反解**可及规模上界**（10%→N≤26 · 5%→N≤18 · 1%→N≤8）⇒ 被动单端行线驱动的 IR-drop 是硬天花板。
     # 同族维度诚实对标（landmark 照录·verified=False · 无 TOPS 自夸）+ 4 道突变探针 + 还原。CI core 246→247。
     "run_ecore_e9_smoke.py",
+    # E11-a 红线口径防漂移门禁（D-161）：平台红线已于 2026-09-11 §八§九 + 09-23 拍板为**分层口径**
+    # （器件级 T1 已解锁 / T2 永久锁）；ecore 曾把「本包主动限定在电路级」误述为「红线只允许到电路级」
+    # ⇒ 全仓订正 + 本门禁机器化（A 零残留 · B 披露必含分层 · C 活文档同步 · D 4 道突变探针）。CI core 247→248。
+    "run_ecore_redline_scope_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2169,6 +2173,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e8_smoke.py": 300.0,
     # E9 电子计算征程千级阵列规模压力与诚实对标门禁（D-159）· 实测上界 2.13s（3 轮 max · @本机）
     "run_ecore_e9_smoke.py": 300.0,
+    # E11-a 电子计算征程红线口径防漂移门禁（D-161）· 实测上界 0.26s（3 轮 max · @本机）
+    "run_ecore_redline_scope_smoke.py": 300.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

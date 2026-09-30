@@ -4780,6 +4780,36 @@ function renderECore(d){
     (SPP.ceiling||[]).map(function(c){ return [(100*c.budget_rel)+'%', 'N ≤ '+c.max_rows]; }));
   h+='<div class="note">'+(SPP.note||'')+'</div>';
 
+  var DPD=(d.device_pde||{}), DLM=(d.device_limits||{});
+  var PC=(DPD.param_consistency||{});
+  h+='<div class="summary" style="margin-top:12px">器件级内核桥（E11-c · MOSCAP 1D 自洽泊松 ⟷ 教科书闭式）</div>';
+  h+=_qcTbl(['项','数值','口径'],
+    [['V_th（教科书闭式 ⟷ PDE 候选）',
+      Number(DPD.vth_golden_v||0).toFixed(4)+' V ⟷ '+Number(DPD.vth_pde_v||0).toFixed(6)+' V',
+      '相对差 '+Number(DPD.vth_rel_err_pct||0).toExponential(1)+'%'],
+     ['Q_s 跨点最差', Number(DPD.qs_cross_point_worst_rel_pct||0).toFixed(4)+'%',
+      'ψ_s = '+(DPD.qs_cross_point_span_phi_f||[]).join(' → ')+' φ_F'],
+     ['t_ox 扫描 V_th（2/4/8 nm）',
+      (DPD.tox_sweep_vth_v||[]).map(function(v){return Number(v).toFixed(4)+' V';}).join(' / '),
+      '厚氧更难反型'],
+     ['量纲桥', DPD.dim_bridge||'', 'SI ⟷ µm 制 · 往返可逆'],
+     ['G-3 参数自洽性',
+      'µ(反推) '+Number(PC.mu_implied_cm2_vs||0).toFixed(0)+' vs 典型 '+Number(PC.mu_typical_cm2_vs||0)+' cm²/V·s',
+      '比值 '+Number(PC.ratio||0).toFixed(2)+'× · consistent='+String(PC.consistent)]]);
+  h+='<div class="note">'+String(DPD.no_replace||'')+'<br>'+String(PC.note||'')+'</div>';
+
+  h+='<div class="summary" style="margin-top:12px">失效边界（E11-d · 两类边界严格分离）</div>';
+  var GD=(DLM.grid_dependence_phi_f||{});
+  h+=_qcTbl(['边界','范围（以 φ_F 归一）','性质'],
+    [['A 数值窗口（LDA 实测）', '['+(DLM.numerical_window_phi_f||[]).join(', ')+'] φ_F',
+      '随网格变宽：'+String(GD['0.05nm']||'')+' → '+String(GD['0.02nm']||'')],
+     ['B 物理窗口（文献判据）', '['+(DLM.physical_window_phi_f||[]).join(', ')+'] φ_F',
+      '**与网格无关** ⇒ 真正的边界']]);
+  h+=_qcTbl(['沟道长度 L','短沟道 roll-off 占 V_th','DIBL 占 V_th'],
+    [['65 nm', (100*((DLM.gap_at_L65nm||{}).rolloff_frac_of_vth||0)).toFixed(1)+'%',
+      (100*((DLM.gap_at_L65nm||{}).dibl_frac_of_vth||0)).toFixed(1)+'%']]);
+  h+='<div class="note">'+String(DLM.bottleneck||'')+'<br>'+String(DLM.literature_only||'')+'</div>';
+
   h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
   (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });
   h+='</div>';
@@ -4815,7 +4845,10 @@ function renderECore(d){
     +'规模扫描至 65536 突触、<b>首次直出真 GDS</b>（1T 阵列 + 几何 DRC/LVS）、'
     +'<b>有阻互连后仿</b>（IR drop N=32 达 27%、sneak 7.26×）、'
     +'<b>失配 Monte Carlo + 分层校准</b>（L0 1.70% → L2 0.074%）、'
-    +'<b>千级阵列规模压力</b>（1024² 层次化 GDS 86.6 KB · 压缩比 3571×）。'
+    +'<b>千级阵列规模压力</b>（1024² 层次化 GDS 86.6 KB · 压缩比 3571×）、'
+    +'<b>器件级内核交叉验证</b>（新增 MOSCAP 1D 自洽泊松 ⟷ 教科书闭式：V_th 一致到 2e-4%、Q_s 跨点 ≤0.011%）、'
+    +'<b>失效边界测绘</b>（数值窗口 vs 物理窗口严格分离 ⇒ <b>物理模型先失效、数值后崩</b>，'
+    +'半宽比 0.835；文献缺口量化 L=65 nm roll-off 占 V_th 37.9%）。'
     +'<br/><strong>诚实边界：</strong>'+d.honest_note;
   return false;
 }

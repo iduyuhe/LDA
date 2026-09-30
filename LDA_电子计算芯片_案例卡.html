@@ -86,7 +86,7 @@
     </table>
   </div>
 
-  <h2>九段征程（E1–E9 门禁判据合计 188 · 含 31 条突变探针）</h2>
+  <h2>十段征程（E1–E11 门禁判据合计 235 · 含 46 条突变探针）</h2>
   <div class="card">
     <table>
       <thead><tr><th>段</th><th>编号</th><th>内容</th><th>关键结果（门禁实测）</th></tr></thead>
@@ -185,6 +185,46 @@
       三重规模律方向相反（IR drop ∝N² · 面积 ∝N² vs 失配 σ ∝1/√N）⇒ <b>规模由 IR drop 主导，千级被动不可达</b>。</p>
   </div>
 
+  <h2>E11-c · 器件级内核桥 —— MOSCAP 1D 自洽泊松 ⟷ 教科书闭式</h2>
+  <div class="card">
+    <p style="margin:0 0 10px;font-size:13.5px">此前 ecore 的器件模型只与<b>自身闭式</b>自洽（自证桩）。
+      E11-b 查明根因：<b>平台器件级内核是两端 p-n 结，本包要的是三端 MOSFET</b> ——
+      故不是「接线」问题，而是<b>缺器件内核</b>。E11-c 补上 MOSCAP 1D 自洽泊松，使本包首次拥有
+      「<b>教科书闭式 ⟷ 器件级 PDE</b>」这条独立交叉验证路径。</p>
+    <table>
+      <thead><tr><th>项</th><th>数值</th><th>口径</th></tr></thead>
+      <tbody>
+        <tr><td>V_th（教科书闭式 ⟷ PDE 候选）</td><td><b>0.4260 V ⟷ 0.426036 V</b></td><td>相对差 <b>2e-4%</b></td></tr>
+        <tr><td>Q_s 跨点最差（0.5→2.5 φ_F）</td><td><b>0.0108%</b></td><td>六点交叉验证</td></tr>
+        <tr><td>t_ox 扫描 2/4/8 nm 的 V_th</td><td>0.3297 / 0.4260 / 0.6187 V</td><td>厚氧更难反型</td></tr>
+        <tr><td>量纲桥</td><td>8.6 fF/µm² ≡ 8.6e-3 F/m²</td><td>与 4 nm SiO₂ 教科书值差 0.38%</td></tr>
+        <tr><td>G-3 参数自洽性</td><td>µ(反推) 140 vs 典型 500 cm²/V·s</td><td>比值 <b>3.58×</b> · 显式暴露不改值</td></tr>
+      </tbody>
+    </table>
+    <p style="margin:10px 0 0;font-size:13.5px">🔴 golden = 教科书闭式（<code>is_oracle=True</code>）；
+      PDE 只是 candidate（<code>is_oracle=False</code>）；判据方向 = PDE 收敛到闭式；
+      <b>不替换</b>任何电路级默认参数（<code>NmosParams</code> 逐位不变）。</p>
+  </div>
+
+  <h2>E11-d · 失效边界 —— 两类边界严格分离</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>边界</th><th>范围（以 φ_F 归一）</th><th>性质</th></tr></thead>
+      <tbody>
+        <tr><td>A 数值窗口（LDA 实测）</td><td>[−0.54, 2.54] φ_F</td><td>随网格变宽（0.05 → 0.02 nm）</td></tr>
+        <tr><td>B 物理窗口（文献判据）</td><td>[−0.29, 2.29] φ_F</td><td><b>与网格无关</b> ⇒ 真正的边界</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>沟道长度 L</th><th>短沟道 roll-off 占 V_th</th><th>DIBL 占 V_th</th></tr></thead>
+      <tbody><tr><td>65 nm</td><td><b>37.9%</b>（−0.161 V）</td><td>3.1%</td></tr></tbody>
+    </table>
+    <p style="margin:10px 0 0;font-size:13.5px">物理窗口半宽 / 数值窗口半宽 = <b>0.835 &lt; 1</b> ⇒
+      <b>物理模型先失效、数值后崩</b>：瓶颈是物理模型（1D 无源漏 + 玻尔兹曼），不是数值精度。<br/>
+      🔴 roll-off / DIBL / 速度饱和 / 迁移率退化均为<b>文献经验式缺口量化</b>
+      （<code>computed_by_lda=False</code>）—— <b>不是 LDA 的计算结果</b>（本平台无 2D MOS 能力）。</p>
+  </div>
+
   <h2>关键结论</h2>
   <div class="card">
     <ul>
@@ -232,15 +272,16 @@
       <b>G-F</b> 版图层/规则为公开近似（非 PDK）：几何判据为 <b>bbox 级</b>；沟道区被 POLY 断开为 DIFF_D/DIFF_S 属<b>教学级简化</b>。<br/>
       <b>G-G</b> 寄生提取为一阶几何闭式 · 后仿为 DC：无 3D 场解；<code>r_leak</code> 为<b>数值钉扎</b>（防浮空奇异），非物理漏电。<br/>
       <b>G-H</b> 失配/噪声/温度参数为公开量级 · 校准为理想化：L2 逐单元校准为理想化模型；噪声仅谱密度量级；假定独立同分布。<br/>
-      <b>G-I</b> 规模模型为 1D 行线（忽略列线电阻）：校核规模内与 2D 稠密 MNA 对拍一致；千级为<b>设计期版图与规模律</b>，非流片。
+      <b>G-I</b> 规模模型为 1D 行线（忽略列线电阻）：校核规模内与 2D 稠密 MNA 对拍一致；千级为<b>设计期版图与规模律</b>，非流片。<br/>
+      <b>G-J</b> 无 2D MOS 能力 ⇒ 短沟道效应不在模型内：E11-d 已用<b>文献经验式量化缺口</b>（L=65 nm 时 roll-off 占 V_th <b>37.9%</b>），但<b>这些不是 LDA 的计算结果</b>；补齐需 2D MOS 求解器，而工艺参数属 <b>T2 永久锁</b>。
     </div>
   </div>
 
   <div class="foot">
     声明：本案例是<b>设计期验证</b>，非流片后实测；<b>不报任何 fabricated 能效数字</b>；
     Mythic 等公开数字仅作<b>背景坐标</b>，不同台比较。<br/>
-    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E10（D-150…D-160）·
-    版图/寄生/失配/规模可视化产物见 <code>docs/ecore_e6..e9_*_preview.html</code>。
+    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E11（D-150…D-164）·
+    版图/寄生/失配/规模/器件内核/失效边界可视化产物见 <code>docs/ecore_e6..e11d_*_preview.html</code>。
   </div>
 
 </div>

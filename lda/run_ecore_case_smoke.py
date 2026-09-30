@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""电子计算芯片案例卡门禁（WebUI 只读端点 /api/ecore_demo · D-155 建卡 → **D-160 升级为 E1–E9 全链**）。
+"""电子计算芯片案例卡门禁（WebUI 只读端点 /api/ecore_demo · D-155 建卡 → D-160 升级 E1–E9 →
+**E11-e 升级为 E1–E11 全链**）。
 
 ═══ 判什么（分节）═══
-A 模块自检（ecore_case.run_selfchecks 20 项）· B 关键事实 name-first 断言（含 E6–E9 四块新能力面）·
-C 反向可证伪（5 条突变探针：破坏诚实边界 / 清空 landmark / verdict 冒充实测 / 规模上界非单调 /
-掏空版图能力面 ⇒ 均必红）· D 不进 HEAVY_POST_PATHS（公开只读 · 零重计算）·
+A 模块自检（ecore_case.run_selfchecks **23 项**）· B 关键事实 name-first 断言（含 E6–E9 四块能力面 +
+**E11-c/E11-d 两块能力面** + 🔴 **B16/B17 与底层模块交叉核对**）·
+C 反向可证伪（**8 条突变探针**：破坏诚实边界 / 清空 landmark / verdict 冒充实测 / 规模上界非单调 /
+掏空版图面 / **G-3 被改成自洽** / **缺口归零** / **注入「已支持 2D MOS」** ⇒ 均必红）·
+D 不进 HEAVY_POST_PATHS（公开只读 · 零重计算）·
 E API 参考已登记（gen_api_reference 已跑 · 血案 23）· K 自入 CI core（防静默漏接 · 血案 28）。
 
 🔴 本门禁的核心价值：守 WebUI 对外案例卡的**诚实边界**——verdict 恒 DESIGN_VERIFIED、
 不报 fabricated 能效（TOPS/TOPS-W）、规模按「可建模/可验证容量」解读、landmark 仅背景坐标；
-并守住**升级后的能力面不被静默缩水**（E6 版图 / E7 寄生 / E8 失配 / E9 规模四块 facts 必须都在）。
-任一被静默改坏 ⇒ C 组突变探针必红。
+守住**升级后的能力面不被静默缩水**（E6/E7/E8/E9/E11-c/E11-d 六块 facts 必须都在）；
+并守住 🔴 **「内部能力 ↔ 对外载体」真拉平**（B16/B17 拿卡里的数字与**底层模块实测**对拍，
+而不是卡自证自洽）。
 """
 from __future__ import annotations
 
@@ -45,19 +49,20 @@ def main() -> int:
 
     # ══════════════════════ A 模块自检 ══════════════════════
     ok_a = EC.run_selfchecks(verbose=False)
-    check("A1 模块自检 20/20 PASS（容量/量化界/版图闭式/压缩比/方块电阻/Pelgrom/1√N/"
-          "Elmore/组装/降级/诚实/定位/口径/零框架/护栏/里程碑/landmark/E6-E9 面/上界单调）", ok_a)
+    check("A1 模块自检 23/23 PASS（容量/量化界/版图闭式/压缩比/方块电阻/Pelgrom/1√N/"
+          "Elmore/组装/降级/诚实/定位/口径/零框架/护栏/里程碑/landmark/E6-E9 面/上界单调/"
+          "**E11-c 器件级内核面/E11-d 失效边界面/诚实不宣称**）", ok_a)
 
     # ══════════════════════ B 关键事实（name-first）══════════════════════
     card = EC.case_card(repo_root="__nonexistent_root__")
     check("B1 endpoint == /api/ecore_demo", card["endpoint"] == "/api/ecore_demo")
     check("B2 verdict == DESIGN_VERIFIED（非 ACCEPT/PASS）",
           card["verdict"] == "DESIGN_VERIFIED")
-    check("B3 九段征程（E1→E9）", len(card["milestones"]) == 9)
-    check("B4 关键结论 9 条", len(card["findings"]) == 9)
-    check("B5 诚实边界 9 条", card["gaps_total"] == 9)
-    check("B6 门禁判据合计 = 188（含 31 条突变探针）",
-          card["span"]["gate_checks"] == 188 and card["span"]["probe_checks"] == 31)
+    check("B3 十段征程（E1→E11）", len(card["milestones"]) == 10)
+    check("B4 关键结论 11 条", len(card["findings"]) == 11)
+    check("B5 诚实边界 10 条", card["gaps_total"] == 10)
+    check("B6 门禁判据合计 = 235（含 46 条突变探针）",
+          card["span"]["gate_checks"] == 235 and card["span"]["probe_checks"] == 46)
     check("B6b 判据合计 ≡ Σ 各段 gate（内部自洽）",
           sum(m["gate"] for m in card["milestones"]) == card["span"]["gate_checks"]
           and sum(m["seg_probes"] for m in card["milestones"]) == card["span"]["probe_checks"])
@@ -98,6 +103,33 @@ def main() -> int:
           and len(card["scale_pressure"]["tiers"]) == 4
           and any(c["budget_rel"] == 0.05 and c["max_rows"] == 18
                   for c in card["scale_pressure"]["ceiling"]))
+
+    # B16/B17 🔴 **与底层模块交叉核对**（真拉平 · 非自洽）：
+    # 卡里硬编码的数字必须 ≡ 模块实测值 —— 这是「内部能力 ↔ 对外载体」的机器化对齐，
+    # 而不是"卡自己和自己一致"。任何一侧漂移 ⇒ 必红。
+    from lda_l2.ecore import device_limits as DL   # noqa: E402
+    from lda_l2.ecore import device_pde as DP      # noqa: E402
+    cc = DP.cross_check_vth()
+    pts = DP.cross_check_qs()
+    check("B16 🔴 E11-c 面 **与模块交叉核对**：卡内数字 ≡ device_pde 实测"
+          "（V_th 闭式⟷PDE · Q_s 跨点最差）",
+          abs(card["device_pde"]["vth_golden_v"] - cc["V_th_golden"]) < 5e-4
+          and abs(card["device_pde"]["vth_rel_err_pct"] - cc["rel_err"] * 100) < 1e-3
+          and abs(card["device_pde"]["qs_cross_point_worst_rel_pct"]
+                  - max(p["rel_err"] for p in pts) * 100) < 1e-3,
+          "卡 %.4f%% vs 模块 %.4f%%" %
+          (card["device_pde"]["qs_cross_point_worst_rel_pct"],
+           max(p["rel_err"] for p in pts) * 100))
+    check("B17 🔴 E11-d 面 **与模块交叉核对**：卡内数字 ≡ device_limits 实测"
+          "（半宽比 · L=65nm 缺口）",
+          abs(card["device_limits"]["physical_over_numerical_halfwidth"]
+              - DL.window_ratio_physical_over_numerical()) < 1e-3
+          # 卡内为 3 位有效数字展示（0.379），模块精确值 0.37864 ⇒ 容差按展示精度取 2e-3
+          and abs(card["device_limits"]["gap_at_L65nm"]["rolloff_frac_of_vth"]
+                  - DL.literature_gap_report(0.065)["rolloff_frac_of_vth"]) < 2e-3,
+          "卡 %.3f vs 模块 %.5f" %
+          (card["device_limits"]["gap_at_L65nm"]["rolloff_frac_of_vth"],
+           DL.literature_gap_report(0.065)["rolloff_frac_of_vth"]))
 
     # ══════════════════════ C 反向可证伪（突变探针）═══════════════════════
     # C1 破坏 honest_note 关键字 ⇒ ⑥ 必红
@@ -148,6 +180,31 @@ def main() -> int:
     EC.LAYOUT_FACTS.clear()
     EC.LAYOUT_FACTS.update(saved_lay)
     check("C5 反向：掏空 E6 版图能力面（cell_elements=0）⇒ ⑲ 判定必红", ok_c5 is False)
+
+    # C6 E11-c 面被改坏（G-3 不自洽被改成「自洽」）⇒ ㉑ 判定必红
+    saved_pc = dict(EC.DEVICE_PDE_FACTS["param_consistency"])
+    EC.DEVICE_PDE_FACTS["param_consistency"] = dict(saved_pc, consistent=True)
+    ok_c6 = EC.run_selfchecks(verbose=False)
+    EC.DEVICE_PDE_FACTS["param_consistency"] = saved_pc
+    check("C6 反向：把 G-3 参数不自洽改成「自洽」⇒ ㉑ 判定必红"
+          "（诚实项不许被静默抹平）", ok_c6 is False)
+
+    # C7 E11-d 面被掏空（短沟道缺口归零）⇒ ㉒ 判定必红
+    saved_gap = dict(EC.DEVICE_LIMITS_FACTS["gap_at_L65nm"])
+    EC.DEVICE_LIMITS_FACTS["gap_at_L65nm"] = {"rolloff_frac_of_vth": 0.0,
+                                              "dibl_frac_of_vth": 0.0,
+                                              "rolloff_dvth_v": 0.0,
+                                              "vth_long_channel_v": 0.4260}
+    ok_c7 = EC.run_selfchecks(verbose=False)
+    EC.DEVICE_LIMITS_FACTS["gap_at_L65nm"] = saved_gap
+    check("C7 反向：把短沟道缺口归零 ⇒ ㉒ 判定必红（缺口不许被静默抹掉）", ok_c7 is False)
+
+    # C8 注入「已支持 2D MOS」口径 ⇒ ㉓ 诚实判据必红
+    saved_gaps = [dict(g) for g in EC.GAPS]
+    EC.GAPS[0]["detail"] = "本平台已支持 2D MOS 求解。"
+    ok_c8 = EC.run_selfchecks(verbose=False)
+    EC.GAPS[:] = saved_gaps
+    check("C8 反向：注入「已支持 2D MOS」口径 ⇒ ㉓ 诚实判据必红", ok_c8 is False)
 
     # ══════════════════════ D 免登录 / 零重计算 ═══════════════════════════
     rt = _read("lda/lda_webui/routes.py")

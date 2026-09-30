@@ -43,7 +43,7 @@ __all__ = [
 ]
 
 # ═══════════════════════════ 常量（与平台模块同源）═══════════════════════════
-CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E9 全链"
+CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E11 全链"
 
 #: 长沟道 NMOS 模型参数（E1 · D-150 · `lda_l2.ecore.mosfet.NmosParams` 默认值；公开典型量级占位）
 MOSFET_FACTS = {
@@ -176,6 +176,48 @@ SCALE_CEILING = [
 ]
 
 #: 公开 landmark（A级公开来源·照录·未验证·仅背景坐标；不作 LDA 成就值）
+#: E11-c 器件级内核桥（`ecore/device_pde.py` · 桥接平台器件级 T1 内核 `lda_solver/mos_1d.py`）
+#: 🔴 卡内硬编码（本模块**零 numpy/零重计算**）；与模块实测值的一致性由
+#:    `run_ecore_case_smoke.py` 的 B16/B17 **交叉核对**（真拉平，非自洽）。
+DEVICE_PDE_FACTS = {
+    "kernel": "MOSCAP（金属-氧化层-半导体）1D 自洽泊松 · `lda_solver/mos_1d.py`（E11-c 新增）",
+    "bridge": "`ecore/device_pde.py`（量纲桥 + golden/candidate 分离 + G-3 参数自洽性报告）",
+    "golden_a": "Sze 完整 Q_s 闭式（含反型层 + 玻尔兹曼尾）",
+    "golden_b": "教科书耗尽近似 V_th 式",
+    "vth_golden_v": 0.4260,
+    "vth_pde_v": 0.426036,
+    "vth_rel_err_pct": 1.6e-4,
+    "qs_cross_point_worst_rel_pct": 0.0108,
+    "qs_cross_point_span_phi_f": [0.5, 2.5],
+    "tox_sweep_nm": [2.0, 4.0, 8.0],
+    "tox_sweep_vth_v": [0.3297, 0.4260, 0.6187],
+    "dim_bridge": "8.6 fF/µm² ≡ 8.6e-3 F/m²（与 4 nm SiO₂ 教科书值差 0.38%）",
+    "param_consistency": {
+        "mu_implied_cm2_vs": 140.0, "mu_typical_cm2_vs": 500.0,
+        "ratio": 3.58, "consistent": False,
+        "note": "`kp` 与 `C_ox` 两处占位值反推的 µ 与体硅典型量级差 3.58× ⇒ **显式暴露、不强行统一**"
+                "（统一数值会改动 E1–E10 全部已上线数字）",
+    },
+    "no_replace": "🔴 物理 V_th 只作**并行第二器件模型 + 可核参数建议**；`NmosParams` 默认值逐位不变。",
+    "oracle_semantics": "golden = 教科书闭式（`is_oracle=True`）；candidate = PDE 数值解（`is_oracle=False`）"
+                        "；判据方向 = PDE 收敛到闭式。",
+}
+
+#: E11-d 失效边界（`ecore/device_limits.py` · 边界说明书，不新增能力）
+DEVICE_LIMITS_FACTS = {
+    "numerical_window_phi_f": [-0.54, 2.54],
+    "physical_window_phi_f": [-0.286, 2.286],
+    "physical_over_numerical_halfwidth": 0.835,
+    "bottleneck": "物理模型（1D 无源漏 + 玻尔兹曼）—— **物理先失效、数值后崩**；细化网格推不动真正的边界",
+    "grid_dependence_phi_f": {"0.05nm": [-0.40, 2.40], "0.02nm": [-0.50, 2.50],
+                              "note": "数值窗口**随网格变宽**；物理窗口**与网格无关**"},
+    "gap_at_L65nm": {"rolloff_frac_of_vth": 0.379, "dibl_frac_of_vth": 0.031,
+                     "rolloff_dvth_v": -0.161, "vth_long_channel_v": 0.4260},
+    "not_computed_by_lda": ["短沟道 V_th roll-off", "DIBL", "速度饱和", "迁移率退化"],
+    "literature_only": "🔴 上述四项均为**文献经验式缺口量化**（每项 `computed_by_lda=False`），"
+                       "**不是 LDA 的计算结果** —— 本平台**无 2D MOS 能力**。",
+}
+
 LANDMARKS_BRIEF = [
     {"who": "Mythic AI", "item": "M1076 AMP：analog compute-in-memory MVM 交叉阵列"
                                  "（flash array + on-die ADC）· up to 25 TOPS · typ. 3–4 W · "
@@ -247,6 +289,16 @@ MILESTONES = [
                "top 2049 条 / 压缩比 **3571×**）+ 一维三对角 IR-drop（**1D ≡ 2D 的 2D 稠密 MNA，"
                "相对差 ≤1.7e-13**）；**三重规模律**（IR drop ∝N² · 面积 ∝N² · 失配 ∝1/√N）；"
                "**可及规模上界**：10% 预算 → N≤26 · 5% → N≤18 · 2% → N≤11 · 1% → N≤8"},
+    {"id": "E11", "code": "D-161…D-164",
+     "title": "器件级内核接线（口径同步 · 接缝勘查 · MOSCAP 内核桥 · 失效边界）",
+     "gate": 47, "seg_probes": 15,
+     "result": "E11-a 口径同步（把「本包的设计取舍」与「平台红线」两件事分离 + 防漂移门禁）→ "
+               "E11-b 接缝勘查（查明与器件级内核零复用的根因 = **两侧非同一器件**："
+               "`drift_diffusion_1d/2d` 是**两端 p-n 结**，本包要的是**三端 MOSFET**）→ "
+               "E11-c **器件级内核桥**：新增 MOSCAP 1D 自洽泊松（`lda_solver/mos_1d.py`）"
+               "⟷ 教科书闭式交叉验证（**V_th 一致到 2e-4%** · Q_s 跨点 ≤0.011% · 量纲桥 · "
+               "G-3 参数自洽性显式报告）→ E11-d **失效边界**：数值窗口 vs 物理窗口严格分离 ⇒ "
+               "**物理先失效、数值后崩**（半宽比 0.835）· 文献缺口量化（L=65 nm roll-off 占 V_th **37.9%**）"},
 ]
 
 #: 门禁判据合计（= Σ MILESTONES.gate）与突变探针合计（= Σ seg_probes）
@@ -289,6 +341,18 @@ FINDINGS = [
     {"title": "诚实对标：不报 fabricated 能效",
      "detail": "LDA 是设计&验证工具链（非流片芯片）⇒ **不报任何 TOPS/TOPS-W**；公开 landmark "
                "照录来源、仅作背景坐标、不作 LDA 成就值；护栏机器化（注入造假指标必红）。"},
+    {"title": "器件级内核接线：ecore 首次被**器件级 PDE** 校验（E11-c）",
+     "detail": "此前 ecore 的器件模型只与**自身闭式**自洽（自证桩）。E11-b 查明根因——**平台器件级内核"
+               "是两端 p-n 结，本包要的是三端 MOSFET**，故不是「接线」问题而是**缺器件内核**。"
+               "E11-c 补上 MOSCAP 1D 自洽泊松，使本包首次拥有「**教科书闭式 ⟷ 器件级 PDE**」独立交叉"
+               "验证：V_th 一致到 **2e-4%**、Q_s 跨点 ≤**0.011%**。🔴 golden 仍是教科书闭式，"
+               "PDE 只是 candidate（`is_oracle=False`）。"},
+    {"title": "失效边界：**物理模型先失效、数值后崩**（E11-d）",
+     "detail": "把两类边界严格分开：**数值窗口**（LDA 实测，随网格变宽）与**物理窗口**（文献判据，"
+               "与网格无关）⇒ 半宽比 **0.835 < 1** ⇒ **瓶颈是物理模型（1D 无源漏 + 玻尔兹曼），"
+               "不是数值精度**。文献缺口量化：L=65 nm 时短沟道 roll-off 让 V_th 偏 **37.9%**、"
+               "DIBL 3.1%（L↑ 单调收敛）。⇒「达到国际水平」的真实瓶颈在 **T2（工艺/PDK/流片）**，"
+               "不在求解器精度——加求解器补不上这一格。"},
 ]
 
 # ═══════════════════════ 诚实边界（未闭合项 · 逐条登记）═══════════════════════
@@ -315,6 +379,11 @@ GAPS = [
     {"id": "G-I", "title": "规模模型为 1D 行线（忽略列线电阻）",
      "detail": "千级阵列的 IR-drop 用一维三对角线模型，**忽略列线电阻**（二阶项）；"
                "在校核规模内与 E7 的 2D 稠密 MNA 对拍一致；千级是**设计期版图与规模律**，非流片。"},
+    {"id": "G-J", "title": "无 2D MOS 能力 ⇒ 短沟道效应不在模型内（E11-d 测绘）",
+     "detail": "平台器件级内核为 **1D MOS 电容**（无源/漏、无沟道长度）⇒ **天然不含**短沟道 V_th "
+               "roll-off / DIBL / 速度饱和 / 迁移率退化。E11-d 已用**文献经验式量化缺口**"
+               "（L=65 nm 时 roll-off 占 V_th **37.9%**），但**这些不是 LDA 的计算结果**"
+               "（每项标 `computed_by_lda=False`）；补齐需 2D MOS 求解器，而工艺参数属 **T2 永久锁**。"},
 ]
 
 _ARTIFACT_DIRS = ("examples", "lda/examples")
@@ -474,7 +543,8 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "case_id": CASE_ID,
         "claim": "用 LDA 从零设计一颗电子计算芯片（模拟计算核 / MVM 交叉阵列）："
                  "晶体管级模型 + 电路仿真 + 参数化阵列 + 数据通路 + 规模对标 + 版图签核 + "
-                 "寄生后仿 + 失配/噪声 + 千级规模压力全链路验证",
+                 "寄生后仿 + 失配/噪声 + 千级规模压力 + **器件级 PDE 交叉验证 + 失效边界测绘**"
+                 "全链路验证",
         "verdict": "DESIGN_VERIFIED",
         "verdict_label": "设计期验证（非流片实测）",
         "identity": {
@@ -491,9 +561,9 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "milestones": len(MILESTONES),
             "gate_checks": GATE_CHECKS_TOTAL,
             "probe_checks": PROBE_CHECKS_TOTAL,
-            "modules": 12,               # ecore 包内模块数（含能力清单自身）
-            "capability_modules": 11,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
-            "entrypoints": 9,            # 九段常驻门禁（含能力守护）
+            "modules": 14,               # ecore 包内模块数（含能力清单自身）
+            "capability_modules": 13,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
+            "entrypoints": 12,           # 常驻门禁数（E1–E9 各自 + 能力守护 + 案例卡 + E11 三道）
             "modules_dir": "lda/lda_l2/ecore/",
         },
         "milestones": MILESTONES,
@@ -516,6 +586,8 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "layout": LAYOUT_FACTS,
         "parasitic": PARASITIC_FACTS,
         "mismatch": MISMATCH_FACTS,
+        "device_pde": DEVICE_PDE_FACTS,
+        "device_limits": DEVICE_LIMITS_FACTS,
         "scale_pressure": {
             "facts": SCALE_FACTS,
             "tiers": SCALE_PRESSURE_TIERS,
@@ -628,12 +700,12 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑨ Elmore 延迟闭式：τ(R=1, C=1) = 0.5 s",
         abs(elmore_tau_rc(1.0, 1.0) - 0.5) < 1e-15)
 
-    # ⑩ 案例卡组装：9 里程碑 / 9 结论 / 9 缺口 / 判据合计 188（含 31 探针）
+    # ⑩ 案例卡组装：10 里程碑 / 11 结论 / 10 缺口 / 判据合计 235（含 46 探针）
     card = case_card(repo_root="__nonexistent_root__")
-    chk("⑩ 案例卡组装：9 里程碑 / 9 结论 / 9 缺口 / 门禁判据合计 188（含 31 探针）",
-        len(card["milestones"]) == 9 and len(card["findings"]) == 9
-        and card["gaps_total"] == 9 and card["span"]["gate_checks"] == 188
-        and card["span"]["probe_checks"] == 31)
+    chk("⑩ 案例卡组装：10 里程碑 / 11 结论 / 10 缺口 / 门禁判据合计 235（含 46 探针）",
+        len(card["milestones"]) == 10 and len(card["findings"]) == 11
+        and card["gaps_total"] == 10 and card["span"]["gate_checks"] == 235
+        and card["span"]["probe_checks"] == 46)
 
     # ⑪ 产出物优雅降级（root 不存在 ⇒ available False，不抛错）
     chk("⑪ 产出物探测优雅降级（root 不存在 ⇒ available=False）",
@@ -684,8 +756,8 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑯ 护栏：非法 rows/cols · bits>60 · 零厚度 · n<1 均抛 ValueError", guard == 6)
 
     # ⑰ 每里程碑都有门禁数 + 结果文本（防空洞）
-    chk("⑰ 里程碑完整：9 段 · 每段含 gate 数 + 结果文本",
-        len(MILESTONES) == 9
+    chk("⑰ 里程碑完整：10 段 · 每段含 gate 数 + 结果文本",
+        len(MILESTONES) == 10
         and all(m.get("gate", 0) > 0 and m.get("result") and m.get("seg_probes", 0) > 0
                 for m in MILESTONES))
 
@@ -704,6 +776,30 @@ def run_selfchecks(verbose: bool = False) -> bool:
     ceil_ = [c["max_rows"] for c in SCALE_CEILING]
     chk("⑳ 可及规模上界单调：预算越紧 ⇒ 可及行数越小（26 > 18 > 11 > 8）",
         ceil_ == sorted(ceil_, reverse=True) and len(set(ceil_)) == len(ceil_))
+
+    # ㉑ E11-c 器件级内核面登记齐全（防「加了能力忘了卡」）
+    dp = card["device_pde"]
+    chk("㉑ E11-c 器件级内核面登记齐全（V_th 闭式⟷PDE · Q_s 跨点 · 量纲桥 · G-3 显式不自洽）",
+        abs(dp["vth_golden_v"] - 0.4260) < 5e-4
+        and dp["vth_rel_err_pct"] < 0.01
+        and abs(dp["qs_cross_point_worst_rel_pct"] - 0.0108) < 1e-3
+        and dp["param_consistency"]["consistent"] is False
+        and dp["no_replace"].startswith("🔴"))
+
+    # ㉒ E11-d 失效边界面登记齐全（两类边界分离 · 瓶颈判定 · 缺口量化 · 非 LDA 计算）
+    dl = card["device_limits"]
+    chk("㉒ E11-d 失效边界面登记齐全（数值/物理窗口 · 半宽比 · 缺口 · 文献项非 LDA 计算）",
+        dl["numerical_window_phi_f"] == [-0.54, 2.54]
+        and abs(dl["physical_over_numerical_halfwidth"] - 0.835) < 1e-3
+        and abs(dl["gap_at_L65nm"]["rolloff_frac_of_vth"] - 0.379) < 1e-3
+        and len(dl["not_computed_by_lda"]) == 4)
+
+    # ㉓ 🔴 诚实：卡内不得声称「已算出短沟道 / 已支持 2D MOS」
+    blob = (str(card["device_limits"]) + str(card["device_pde"])
+            + " ".join(g["detail"] for g in card["gaps"]))
+    chk("㉓ 🔴 诚实：卡内不得声称「已算出短沟道 / 已支持 2D MOS」",
+        ("LDA 已算" not in blob) and ("已支持 2D MOS" not in blob)
+        and any("无 2D MOS" in g["title"] for g in card["gaps"]))
 
     ok_all = all(res.values())
     if verbose:

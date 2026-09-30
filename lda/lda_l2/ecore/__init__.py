@@ -232,6 +232,7 @@ ECORE_DISCLOSURE: dict = {
     "e7_scope": "E7 寄生提取与后仿：从 E6 版图按教科书闭式提导线 RC（R=ρL/(Wt)·C=ε₀ε_r·W/d）+ 阵列 R 梯网络（行/列分段电阻 + 交叉点电导）注入 MNA 后仿，量化 IR drop（随规模超线性增）与 sneak path（half-select 浮空方案旁路电流）+ Elmore 互连延迟；golden = 解析 I_j=Σg_ij·V_i（R=0 精确复现）。",
     "e8_scope": "E8 非理想/失配/噪声：Pelgrom 器件失配（σ_ΔVth=A_VT/√(W·L)、σ_Δβ/β）+ 温度一阶模型（Vth 线性漂移 · 迁移率 (T/T0)^m · 片内列热梯度）+ 噪声（热 4kTγg_m · 闪烁 K_f/(C_ox·W·L·f)）+ 失配 Monte Carlo 输出误差分布（自证 σ_rel ∝ 1/√N）+ 校准层级 L0 原始 / L1 列增益 / L2 逐单元。",
     "e9_scope": "E9 规模压力与诚实对标：E6 物化版图与 E7 稠密 MNA 都只到 N≈32 ⇒ 换 O(N) 算法（cell+AREF 层次化出图 + 一维三对角 IR-drop 求解）推到千级阵列；三重规模律（IR drop 超线性 · 面积 ∝N² · 失配 σ ∝1/√N · Elmore ∝N²）+ 按误差预算反解可及规模上界 + 同族维度诚实对标（landmark 照录·不报 TOPS）。",
+    "e10_scope": "E10 收官（平台硬化 + 案例卡升级 + 对外物料 + 生产部署）：把 E1–E9 全链固化为**对外只读案例卡**（`/api/ecore_demo` · 九段里程碑 + 四块新能力面 facts + 9 条诚实边界）+ 守护 scope 扩到本段 + 对外物料与生产上线；本段**不新增求解器能力**，属集成/对外/验收段（新增判据由 run_ecore_case_smoke 承载）。",
     "redline": "电域→仅电路级（T1）：不碰 Foundry TCAD / 工艺角 / 流片（属 T2 真值，永久锁）。",
     "sovereignty": "C 级自主（纯 numpy），不借 HSPICE/Spectre 等商业 SPICE 引擎；LLM 不进判决路径。",
     "honest_boundary": "电路级设计验证引擎，非签核级 SPICE（无温度/噪声/稀疏矩阵/收敛增强）；"

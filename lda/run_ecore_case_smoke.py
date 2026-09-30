@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""电子计算芯片案例卡门禁（WebUI 只读端点 /api/ecore_demo · E 征程收官 · D-155）。
+"""电子计算芯片案例卡门禁（WebUI 只读端点 /api/ecore_demo · D-155 建卡 → **D-160 升级为 E1–E9 全链**）。
 
 ═══ 判什么（分节）═══
-A 模块自检（ecore_case.run_selfchecks 12 项）· B 关键事实 name-first 断言 ·
-C 反向可证伪（突变探针：破坏诚实边界 / 清空 landmark ⇒ 必红）·
-D 不进 HEAVY_POST_PATHS（公开只读 · 零重计算）· E API 参考已登记（gen_api_reference 已跑 · 血案 23）·
-K 自入 CI core（防静默漏接 · 血案 28）。
+A 模块自检（ecore_case.run_selfchecks 20 项）· B 关键事实 name-first 断言（含 E6–E9 四块新能力面）·
+C 反向可证伪（5 条突变探针：破坏诚实边界 / 清空 landmark / verdict 冒充实测 / 规模上界非单调 /
+掏空版图能力面 ⇒ 均必红）· D 不进 HEAVY_POST_PATHS（公开只读 · 零重计算）·
+E API 参考已登记（gen_api_reference 已跑 · 血案 23）· K 自入 CI core（防静默漏接 · 血案 28）。
 
 🔴 本门禁的核心价值：守 WebUI 对外案例卡的**诚实边界**——verdict 恒 DESIGN_VERIFIED、
-不报 fabricated 能效（TOPS/TOPS-W）、规模按「可建模/可验证容量」解读、landmark 仅背景坐标。
+不报 fabricated 能效（TOPS/TOPS-W）、规模按「可建模/可验证容量」解读、landmark 仅背景坐标；
+并守住**升级后的能力面不被静默缩水**（E6 版图 / E7 寄生 / E8 失配 / E9 规模四块 facts 必须都在）。
 任一被静默改坏 ⇒ C 组突变探针必红。
 """
 from __future__ import annotations
@@ -44,18 +45,22 @@ def main() -> int:
 
     # ══════════════════════ A 模块自检 ══════════════════════
     ok_a = EC.run_selfchecks(verbose=False)
-    check("A1 模块自检 12/12 PASS（容量闭式/量化界/组装/降级/诚实/定位/口径/"
-          "零框架/护栏/里程碑/landmark）", ok_a)
+    check("A1 模块自检 20/20 PASS（容量/量化界/版图闭式/压缩比/方块电阻/Pelgrom/1√N/"
+          "Elmore/组装/降级/诚实/定位/口径/零框架/护栏/里程碑/landmark/E6-E9 面/上界单调）", ok_a)
 
     # ══════════════════════ B 关键事实（name-first）══════════════════════
     card = EC.case_card(repo_root="__nonexistent_root__")
     check("B1 endpoint == /api/ecore_demo", card["endpoint"] == "/api/ecore_demo")
     check("B2 verdict == DESIGN_VERIFIED（非 ACCEPT/PASS）",
           card["verdict"] == "DESIGN_VERIFIED")
-    check("B3 五段征程（E1→E5）", len(card["milestones"]) == 5)
-    check("B4 关键结论 5 条", len(card["findings"]) == 5)
-    check("B5 诚实边界 5 条", card["gaps_total"] == 5)
-    check("B6 门禁判据合计 = 28", card["span"]["gate_checks"] == 28)
+    check("B3 九段征程（E1→E9）", len(card["milestones"]) == 9)
+    check("B4 关键结论 9 条", len(card["findings"]) == 9)
+    check("B5 诚实边界 9 条", card["gaps_total"] == 9)
+    check("B6 门禁判据合计 = 188（含 31 条突变探针）",
+          card["span"]["gate_checks"] == 188 and card["span"]["probe_checks"] == 31)
+    check("B6b 判据合计 ≡ Σ 各段 gate（内部自洽）",
+          sum(m["gate"] for m in card["milestones"]) == card["span"]["gate_checks"]
+          and sum(m["seg_probes"] for m in card["milestones"]) == card["span"]["probe_checks"])
     check("B7 旗舰容量 256×256 ⇒ 65536 突触 · 257 物理列",
           card["flagship"]["n_synapses"] == 65536
           and card["flagship"]["n_phys_cols_incl_ref"] == 257)
@@ -69,6 +74,30 @@ def main() -> int:
           and all(e.get("source") for e in EC.LANDMARKS_BRIEF))
     check("B11 定位声明含「不报任何 TOPS / TOPS-W」",
           "不报任何 TOPS / TOPS-W" in card["positioning"]["disclaimer"])
+
+    # B12–B15 E6–E9 四块新能力面（升级后必须出现在对外卡上）
+    check("B12 E6 版图签核：1T 单元 7 元素 · 4×4=120 元素 · GDS 936 B · W/L=1.20/0.30",
+          card["layout"]["cell_elements"] == 7
+          and card["layout"]["arr_4x4_elements"] == 120
+          and card["layout"]["gds_bytes_4x4"] == 936
+          and abs(card["layout"]["w_um"] - 1.20) < 1e-9
+          and abs(card["layout"]["l_um"] - 0.30) < 1e-9)
+    check("B13 E7 寄生后仿：R□=0.084 Ω/□ · IR drop N=4 0.42%→N=32 27.0% · sneak 1.29×→7.26×",
+          abs(card["parasitic"]["sheet_r_m1_ohm_sq"] - 0.084) < 1e-12
+          and card["parasitic"]["ir_drop_rel"][0][1] == 0.0042
+          and card["parasitic"]["ir_drop_rel"][-1][1] == 0.270
+          and card["parasitic"]["sneak_ratio"][-1][1] == 7.26)
+    check("B14 E8 失配/校准：σ_ΔVth=5.00 mV · MC σ_rel 0.654% · L0 1.696%→L1 0.212%→L2 0.0743%",
+          abs(card["mismatch"]["sigma_vth_mv"] - 5.00) < 1e-9
+          and abs(card["mismatch"]["mc_sigma_rel_8x8"] - 0.00654) < 1e-9
+          and card["mismatch"]["calibration"]["L0_rel"]
+          > card["mismatch"]["calibration"]["L1_rel"]
+          > card["mismatch"]["calibration"]["L2_rel"])
+    check("B15 E9 规模压力：压缩比 3571× · 三重规模律 · 上界 5% ⇒ N≤18",
+          card["scale_pressure"]["facts"]["compression_1024"] == 3571.0
+          and len(card["scale_pressure"]["tiers"]) == 4
+          and any(c["budget_rel"] == 0.05 and c["max_rows"] == 18
+                  for c in card["scale_pressure"]["ceiling"]))
 
     # ══════════════════════ C 反向可证伪（突变探针）═══════════════════════
     # C1 破坏 honest_note 关键字 ⇒ ⑥ 必红
@@ -101,6 +130,24 @@ def main() -> int:
     EC.case_card = saved_cc
     check("C3 反向：verdict 冒充 ACCEPT ⇒ 不伪装实测判据必红",
           fake["verdict"] != "DESIGN_VERIFIED")
+
+    # C4 E9 可及规模上界改成非单调（预算越紧反而行数越多）⇒ ⑳ 判定必红
+    saved_ceil = EC.SCALE_CEILING
+    EC.SCALE_CEILING = [{"budget_rel": 0.10, "max_rows": 8},
+                        {"budget_rel": 0.05, "max_rows": 18},
+                        {"budget_rel": 0.02, "max_rows": 11},
+                        {"budget_rel": 0.01, "max_rows": 26}]     # ← 非单调
+    ok_c4 = EC.run_selfchecks(verbose=False)
+    EC.SCALE_CEILING = saved_ceil
+    check("C4 反向：可及上界非单调 ⇒ ⑳ 判定必红（规模律不许被静默改坏）", ok_c4 is False)
+
+    # C5 E6–E9 能力面 facts 被掏空（GDS 字节归零）⇒ ⑲ 判定必红
+    saved_lay = dict(EC.LAYOUT_FACTS)
+    EC.LAYOUT_FACTS["cell_elements"] = 0
+    ok_c5 = EC.run_selfchecks(verbose=False)
+    EC.LAYOUT_FACTS.clear()
+    EC.LAYOUT_FACTS.update(saved_lay)
+    check("C5 反向：掏空 E6 版图能力面（cell_elements=0）⇒ ⑲ 判定必红", ok_c5 is False)
 
     # ══════════════════════ D 免登录 / 零重计算 ═══════════════════════════
     rt = _read("lda/lda_webui/routes.py")

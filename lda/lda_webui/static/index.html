@@ -4689,13 +4689,14 @@ function renderECore(d){
   if(!d||d.error){ $('ecoreSummary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
   const sp=d.span||{}, fl=d.flagship||{}, ID=d.identity||{}, PH=d.physics||{}, MT=PH.metrics||{};
   $('ecoreSummary').innerHTML='<b>'+d.case_id+'</b> · 判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）'
-    +' · 征程 <b>'+(sp.milestones||'?')+'</b> 段 · 门禁 <b>'+(sp.gate_checks||'?')+'</b> 判据';
+    +' · 征程 <b>'+(sp.milestones||'?')+'</b> 段 · 门禁 <b>'+(sp.gate_checks||'?')+'</b> 判据'
+    +'（含 <b>'+(sp.probe_checks||'?')+'</b> 条突变探针）· 模块 <b>'+(sp.modules||'?')+'</b>';
   var h='';
   h+='<div class="note">物理：'+ID.physics+' · 器件：'+ID.device+'</div>';
   h+='<div class="note">计算砖：'+ID.unit+'</div>';
-  h+='<div class="note">零外部 SPICE 引擎：<b>'+(ID.zero_spice_engine?'是':'否')+'</b> · 零量子 SDK：<b>'+(ID.zero_quantum_sdk?'是':'否')+'</b></div>';
+  h+='<div class="note">零外部 SPICE 引擎：<b>'+(ID.zero_spice_engine?'是':'否')+'</b> · 零量子 SDK：<b>'+(ID.zero_quantum_sdk?'是':'否')+'</b> · 零商业 EDA：<b>'+(ID.zero_commercial_eda?'是':'否')+'</b></div>';
 
-  h+='<div class="summary" style="margin-top:12px">五段征程</div>';
+  h+='<div class="summary" style="margin-top:12px">九段征程（E1–E9 · 全链）</div>';
   h+=_qcTbl(['段','编号','内容','门禁','关键结果'],
     (d.milestones||[]).map(function(m){ return [m.id, m.code, m.title, String(m.gate), m.result]; }));
 
@@ -4731,6 +4732,54 @@ function renderECore(d){
     (st.tiers||[]).map(function(t){ return ['N='+t.n, String(t.synapses), String(t.rel_err), String(t.abs_err)]; }));
   h+='<div class="note">'+st.note+'</div>';
 
+  const LY=d.layout||{}, PA=d.parasitic||{}, MM=d.mismatch||{}, SPP=d.scale_pressure||{}, SF=SPP.facts||{};
+
+  h+='<div class="summary" style="margin-top:12px">版图与几何签核（E6 · 电子芯片首次直出真 GDS）</div>';
+  h+=_qcTbl(['项','数值','口径'],
+    [['层栈', LY.layers||'', '公开工艺近似（非 PDK）'],
+     ['1T 单元元素', String(LY.cell_elements), 'DIFF_D/DIFF_S/POLY/CONT×2/M1/VIA1'],
+     ['4×4 阵列', String(LY.arr_4x4_elements)+' 元素', '足迹 '+(LY.arr_4x4_footprint_um||[]).join(' × ')+' µm²'],
+     ['4×4 GDS', (LY.gds_bytes_4x4||'?')+' B', '层次化 top '+(LY.gds_top_records_4x4||'?')+' 条（vs flat '+String(LY.arr_4x4_elements)+'）'],
+     ['8×8 阵列', String(LY.arr_8x8_elements)+' 元素', '几何 DRC / LVS 双 ACCEPT'],
+     ['几何回提 W/L', (LY.w_um||'?')+' / '+(LY.l_um||'?')+' µm', '逐单元一致 · 注入 E1 模型 Id ≡ Id'],
+     ['几何 DRC / LVS', String(LY.edrc_rules)+' 规则 / '+String(LY.elvs_checks)+' 判据', 'bbox 级几何近似']]);
+  h+='<div class="note">'+(LY.note||'')+'</div>';
+
+  h+='<div class="summary" style="margin-top:12px">寄生提取与后仿（E7 · 理想互连 → 有阻互连）</div>';
+  h+=_qcTbl(['项','数值','口径'],
+    [['M1 方块电阻 R□', (PA.sheet_r_m1_ohm_sq||'?')+' Ω/□', 'ρ_Cu / t_M1'],
+     ['行线每段电阻', (PA.r_row_seg_ohm||'?')+' Ω', '由 E6 版图节距/线宽提取'],
+     ['8×8 行线总阻', (PA.r_row_total_8x8_ohm||'?')+' Ω', 'Elmore τ_row = '+(PA.tau_row_s||'?')+' s'],
+     ['IR drop 相对误差', (PA.ir_drop_rel||[]).map(function(x){return 'N='+x[0]+' '+(100*x[1]).toFixed(2)+'%';}).join(' → '), '最坏列 · 超线性（∝N²）'],
+     ['sneak 比例', (PA.sneak_ratio||[]).map(function(x){return 'N='+x[0]+' '+x[1]+'×';}).join(' → '), 'half-select 浮空旁路 / 理想'],
+     ['R=0 ≡ 解析 golden', String(PA.r0_vs_golden_max_abs), '验证网络装配 + MNA 求解']]);
+  h+='<div class="note">'+(PA.formulae||'')+'<br/>'+(PA.note||'')+'</div>';
+
+  h+='<div class="summary" style="margin-top:12px">非理想 / 失配 / 噪声 + 校准层级（E8）</div>';
+  const CAL=MM.calibration||{};
+  h+=_qcTbl(['项','数值','口径'],
+    [['Pelgrom σ_ΔVth', (MM.sigma_vth_mv||'?')+' mV', 'A_VT/√(W·L) @ 1.20/0.30 µm'],
+     ['σ_Δβ/β', (MM.sigma_beta_rel_pct||'?')+' %', '同尺寸'],
+     ['Vth 漂移 25→85°C', (MM.vth_shift_25_85_mv||'?')+' mV', '温度一阶（mV/K）'],
+     ['迁移率比 µ(85)/µ(25)', String(MM.mobility_ratio_85_25), '(T/T0)^m'],
+     ['热噪声 i_n²', String(MM.thermal_noise_psd_a2_per_hz)+' A²/Hz', '4kTγg_m @ g_m = 1 mS'],
+     ['MC 输出 σ_rel（8×8）', (100*(MM.mc_sigma_rel_8x8||0)).toFixed(3)+'%', 'σ_rel·√N ≈ '+(MM.sqrt_n_invariant||'?')+' 恒定 ⇒ ∝1/√N'],
+     ['校准残差 L0→L1→L2', (100*(CAL.L0_rel||0)).toFixed(3)+'% → '+(100*(CAL.L1_rel||0)).toFixed(3)+'% → '+(100*(CAL.L2_rel||0)).toFixed(3)+'%', '列增益消系统项 · 逐单元压随机项']]);
+  h+='<div class="note">'+(MM.note||'')+'</div>';
+
+  h+='<div class="summary" style="margin-top:12px">千级阵列规模压力（E9 · O(N) 算法 + 三重规模律）</div>';
+  h+=_qcTbl(['项','数值','口径'],
+    [['1024×1024 层次化 GDS', ((SF.hier_gds_bytes_1024||0)/1000).toFixed(1)+' KB · top '+String(SF.hier_top_records_1024), '不物化 N²'],
+     ['层次化压缩比', String(SF.compression_1024)+'×', '∝N（非 ∝N²）'],
+     ['1D 三对角 ≡ 2D 稠密 MNA', SF.one_d_vs_two_d||'', '最坏列口径'],
+     ['算法', SF.algorithms||'', '版图 O(N) / 求解 O(N)']]);
+  h+=_qcTbl(['N','突触','IR drop 相对误差','面积 (mm²)','失配 σ_rel','Elmore τ (s)'],
+    (SPP.tiers||[]).map(function(t){ return ['N='+t.n, String(t.synapses), (100*t.ir_drop_rel).toFixed(2)+'%',
+      String(t.area_mm2), (100*t.sigma_rel).toFixed(4)+'%', String(t.tau_elmore_s)]; }));
+  h+=_qcTbl(['输出误差预算','可及最大行数（被动单端驱动）'],
+    (SPP.ceiling||[]).map(function(c){ return [(100*c.budget_rel)+'%', 'N ≤ '+c.max_rows]; }));
+  h+='<div class="note">'+(SPP.note||'')+'</div>';
+
   h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
   (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });
   h+='</div>';
@@ -4760,9 +4809,13 @@ function renderECore(d){
 
   $('ecoreBody').innerHTML=h;
   $('ecoreConclusion').innerHTML='<strong>结论：</strong>电子计算（模拟 MVM 交叉阵列）路线在 LDA 内已从'
-    +'<b>「平台无晶体管级模型 / 无电路仿真器」</b>推进到<b>「能设计完整模拟计算数据通路并端到端验证」</b>：'
+    +'<b>「平台无晶体管级模型 / 无电路仿真器 / 无版图链」</b>推进到'
+    +'<b>「能设计 → 签核 → 后仿 → 标定 → 规模压测的完整电子芯片设计链」</b>：'
     +'晶体管级 MNA 仿真（瞬态 <2e-4）、参数化 N×M 阵列、DAC→阵列→ADC 数据通路（单层 8bit 误差 0.012）、'
-    +'规模扫描至 65536 突触（相对误差有界）。'
+    +'规模扫描至 65536 突触、<b>首次直出真 GDS</b>（1T 阵列 + 几何 DRC/LVS）、'
+    +'<b>有阻互连后仿</b>（IR drop N=32 达 27%、sneak 7.26×）、'
+    +'<b>失配 Monte Carlo + 分层校准</b>（L0 1.70% → L2 0.074%）、'
+    +'<b>千级阵列规模压力</b>（1024² 层次化 GDS 86.6 KB · 压缩比 3571×）。'
     +'<br/><strong>诚实边界：</strong>'+d.honest_note;
   return false;
 }

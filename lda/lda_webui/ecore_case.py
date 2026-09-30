@@ -1,11 +1,17 @@
-"""电子计算芯片案例卡（WebUI 只读端点数据源）· D-155。
+"""电子计算芯片案例卡（WebUI 只读端点数据源）· D-155 建卡 → **D-160（E10 收官）升级为 E1–E9 全链**。
 
 ═══════════════════════════════════════════════════════════════════════════
 定位
 ═══════════════════════════════════════════════════════════════════════════
-电子计算征程「吃狗粮」E1…E5（D-150…D-154）的**只读案例**：用 LDA 亲手设计一颗
-**电子计算芯片**（模拟计算核 = 模拟 MVM 交叉阵列，电子版的「光子 MZI 网格」），
-走完 晶体管级模型 → 电路仿真 → 阵列 → 数据通路 → 规模对标 → 平台能力硬化 全链路。
+电子计算征程「吃狗粮」**E1…E9（D-150…D-159）** 的**只读案例**：用 LDA 亲手设计一颗
+**电子计算芯片**（模拟计算核 = 模拟 MVM 交叉阵列，电子版的「光子 MZI 网格」），走完全链路：
+
+    晶体管级模型 → 电路仿真 → 阵列 → 数据通路 → 规模对标 → 能力硬化        （E1–E5 · 电路级）
+    → 版图与几何签核（首次直出真 GDS）                                      （E6）
+    → 寄生提取与后仿（IR drop / sneak path）                                （E7）
+    → 非理想/失配/噪声 + 校准层级                                           （E8）
+    → 千级阵列规模压力 + 同族维度诚实对标                                   （E9）
+    → E10 平台硬化 + 案例卡升级 + 对外物料 + 生产部署                       （D-160）
 
 与 `/api/qchip_demo`（光量子 LOQC）、`/api/schip_demo`（超导 transmon）、
 `/api/pchip_demo`（硅光张量核）**并列**：四条物理/器件路线在 LDA 均已吃狗粮。
@@ -20,18 +26,24 @@
 """
 from __future__ import annotations
 
-import json
+import ast
+import math
 import os
 from typing import Any, Dict, List, Optional
 
 __all__ = [
     "CASE_ID", "ECORE_HONEST_NOTE", "MILESTONES", "FINDINGS", "GAPS",
-    "SCALE_TIERS", "MOSFET_FACTS", "KEY_METRICS", "LANDMARKS_BRIEF",
-    "crossbar_capacity", "quant_error_rel_bound", "case_card", "run_selfchecks",
+    "SCALE_TIERS", "SCALE_PRESSURE_TIERS", "SCALE_CEILING",
+    "MOSFET_FACTS", "KEY_METRICS", "LAYOUT_FACTS", "PARASITIC_FACTS",
+    "MISMATCH_FACTS", "SCALE_FACTS", "GATE_CHECKS_TOTAL", "PROBE_CHECKS_TOTAL",
+    "crossbar_capacity", "quant_error_rel_bound", "layout_elements_flat",
+    "layout_elements_hier", "hier_compression_ratio", "sheet_resistance_ohm_per_sq",
+    "wire_resistance_ohm", "pelgrom_sigma_vth_mv", "pelgrom_sigma_beta_pct",
+    "elmore_tau_rc", "sigma_rel_vs_n", "case_card", "run_selfchecks",
 ]
 
 # ═══════════════════════════ 常量（与平台模块同源）═══════════════════════════
-CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）"
+CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E9 全链"
 
 #: 长沟道 NMOS 模型参数（E1 · D-150 · `lda_l2.ecore.mosfet.NmosParams` 默认值；公开典型量级占位）
 MOSFET_FACTS = {
@@ -59,7 +71,109 @@ KEY_METRICS = {
     "scale_rel_err_32": 0.018, "scale_rel_err_256": 0.030,
     "scale_abs_err_32": 0.08, "scale_abs_err_256": 0.54,
     "max_synapses_tested": 65536,
+    # E6 · 版图与几何签核
+    "layout_gds_roundtrip_match": True,  # AREF 展开 ≡ flat（120 ≡ 120 · 464 ≡ 464）
+    "layout_wl_extract_um": (1.20, 0.30),
+    # E7 · 寄生后仿
+    "parasitic_ir_drop_rel_32": 0.270,   # N=32 最坏列相对误差
+    "parasitic_sneak_ratio_16": 7.26,    # N=16 half-select 旁路比
+    "parasitic_r0_vs_golden_max_abs": 1.08e-19,   # R=0 ⇒ 精确复现解析 golden
+    # E8 · 失配 / 噪声 / 校准
+    "mismatch_mc_sigma_rel_8x8": 0.00654,
+    "mismatch_sqrtN_invariant": 0.0186,  # σ_rel·√N 近恒定（1/√N 律）
+    "calib_L0_rel": 0.01696, "calib_L1_rel": 0.00212, "calib_L2_rel": 0.000743,
+    # E9 · 千级规模压力
+    "scale_hier_gds_bytes_1024": 86600,  # 1024×1024 层次化 GDS 字节
+    "scale_hier_top_records_1024": 2049,
+    "scale_compression_1024": 3571.0,    # 层次化压缩比（vs 物化）
 }
+
+#: E6 · 版图与几何签核（`lda_l2.ecore.elayers` + `layout`）
+LAYOUT_FACTS = {
+    "layers": "DIFF=20 / POLY=21 / CONT=22 / M1=23 / VIA1=24 / M2=25",
+    "cell_elements": 7,                  # DIFF_D + DIFF_S + POLY 栅 + CONT×2 + M1 焊垫 + VIA1
+    "arr_4x4_elements": 120, "arr_4x4_footprint_um": (8.40, 8.90),
+    "arr_8x8_elements": 464,
+    "gds_bytes_4x4": 936,
+    "gds_top_records_4x4": 9,            # 层次化（cell + AREF）vs flat 120
+    "w_um": 1.20, "l_um": 0.30,          # 几何回提（逐单元一致）
+    "edrc_rules": 4,                     # 线宽 / 间距 / 接触孔包围 / 最小面积
+    "elvs_checks": 7,                    # 连通分量 / 短路 / 悬空桥 / 端口实现 / 管数 / W·L / 零悬空
+    "note": "电子芯片**首次直出真 GDS**（平台自写 GDSII 编码器 · AREF 层次化）；"
+            "沟道区被 POLY 断开为 DIFF_D/DIFF_S 属**教学级简化**；几何判据为 **bbox 级**",
+}
+
+#: E7 · 寄生提取与后仿（`lda_l2.ecore.parasitic`）
+PARASITIC_FACTS = {
+    "sheet_r_m1_ohm_sq": 0.084,          # R□ = ρ_Cu / t_M1
+    "r_row_seg_ohm": 0.504,              # 每段行线电阻（按 E6 节距/线宽提）
+    "r_row_total_8x8_ohm": 3.53,
+    "tau_row_s": 3.1e-15,                # Elmore 行线延迟
+    "ir_drop_rel": [(4, 0.0042), (16, 0.0806), (32, 0.270)],   # 最坏列相对误差
+    "sneak_ratio": [(4, 1.29), (8, 3.27), (16, 7.26)],         # half-select 旁路/理想比
+    "r0_vs_golden_max_abs": 1.08e-19,    # R=0 网络 ≡ 解析 golden（验证网络装配 + 求解）
+    "formulae": "R = ρL/(W·t) ≡ R□·L/W · C = ε₀ε_r·W/d · τ_Elmore → R·C/2",
+    "note": "**IR drop 是模拟 MVM 第一号规模墙**（∝N² 量级）· **sneak 是拓扑效应**"
+            "（R=0 时仍存在，与 IR drop 解耦）；`r_leak` 为**数值钉扎**（防浮空奇异），"
+            "**非物理漏电**；提取为一阶几何闭式（无 3D 场解）· 后仿为 DC",
+}
+
+#: E8 · 非理想 / 失配 / 噪声 + 校准层级（`lda_l2.ecore.mismatch`）
+MISMATCH_FACTS = {
+    "process": {"a_vt_mv_um": 3.0, "a_beta_pct_um": 1.0, "vth_tc_mv_per_k": -1.0,
+                "mu_temp_exponent": -1.5, "t_ref_c": 25.0},
+    "sigma_vth_mv": 5.00,                # Pelgrom @ W/L = 1.20/0.30 µm
+    "sigma_beta_rel_pct": 1.67,
+    "vth_shift_25_85_mv": -60.0,         # 温度一阶
+    "mobility_ratio_85_25": 0.760,
+    "thermal_noise_psd_a2_per_hz": 1.098e-23,   # 4kTγg_m @ g_m = 1 mS
+    "mc_sigma_rel_8x8": 0.00654,
+    "sqrt_n_invariant": 0.0186,          # σ_rel·√N ≈ 恒定 ⇒ σ_rel ∝ 1/√N
+    "calibration": {"L0_rel": 0.01696, "L1_rel": 0.00212, "L2_rel": 0.000743,
+                    "L1": "列增益校准（消**系统项**：列热梯度/共模）",
+                    "L2": "逐单元校准（压**随机项** · 残差由测量噪声决定）"},
+    "note": "随机失配被 **1/√N 平均掉**（小阵列更脆弱）· **系统项不会被平均掉** ⇒ 必须列级校准；"
+            "只有逐单元校准才压随机项 ⇒ **校准精度决定模拟 CIM 的有效位数上限**",
+}
+
+#: E9 · 千级阵列规模压力 + 同族维度诚实对标（`lda_l2.ecore.array_scale`）
+SCALE_FACTS = {
+    "hier_gds_bytes_1024": 86600,        # 1024×1024：层次化出图（**不物化 N²**）
+    "hier_top_records_1024": 2049,
+    "compression_1024": 3571.0,
+    "structural_count_256": 459264,      # AREF 元数据结构性核算 ≡ flat 闭式
+    "algorithms": "版图：cell + AREF 层次化（O(N)）· 后仿：一维三对角 Thomas（O(N)）",
+    "one_d_vs_two_d": "1D 模型 ≡ E7 的 2D 稠密 MNA（最坏列口径 · 相对差 ≤1.7e-13）",
+    "note": "1D 行线模型**忽略列线电阻**（二阶项，已披露）；千级阵列是**设计期版图与规模律**，非流片",
+}
+
+#: 规模档（E4 实测 · 8bit · 数据通路）
+SCALE_TIERS = [
+    {"n": 32, "synapses": 1024, "rel_err": 0.018, "abs_err": 0.08},
+    {"n": 64, "synapses": 4096, "rel_err": 0.027, "abs_err": 0.15},
+    {"n": 128, "synapses": 16384, "rel_err": 0.024, "abs_err": 0.29},
+    {"n": 256, "synapses": 65536, "rel_err": 0.030, "abs_err": 0.54},
+]
+
+#: 规模压力档（E9 实测 · **三重规模律**）
+SCALE_PRESSURE_TIERS = [
+    {"n": 16, "synapses": 256, "ir_drop_rel": 0.0375, "area_mm2": 0.0014,
+     "sigma_rel": 0.004209, "tau_elmore_s": 1.34e-14},
+    {"n": 64, "synapses": 4096, "ir_drop_rel": 0.152, "area_mm2": 0.0236,
+     "sigma_rel": 0.001052, "tau_elmore_s": 2.15e-13},
+    {"n": 256, "synapses": 65536, "ir_drop_rel": 0.549, "area_mm2": 0.3772,
+     "sigma_rel": 0.000263, "tau_elmore_s": 3.44e-12},
+    {"n": 1024, "synapses": 1048576, "ir_drop_rel": 0.956, "area_mm2": 6.035,
+     "sigma_rel": 0.0000526, "tau_elmore_s": 5.50e-11},
+]
+
+#: 可及规模上界（按输出误差预算二分反解 · E9 实测）
+SCALE_CEILING = [
+    {"budget_rel": 0.10, "max_rows": 26},
+    {"budget_rel": 0.05, "max_rows": 18},
+    {"budget_rel": 0.02, "max_rows": 11},
+    {"budget_rel": 0.01, "max_rows": 8},
+]
 
 #: 公开 landmark（A级公开来源·照录·未验证·仅背景坐标；不作 LDA 成就值）
 LANDMARKS_BRIEF = [
@@ -70,54 +184,105 @@ LANDMARKS_BRIEF = [
 ]
 
 ECORE_HONEST_NOTE = (
-    "① 本案例是**设计期验证**（晶体管级模型 + 电路仿真 + 阵列 + 数据通路 + 规模扫描），"
-    "**非流片后实测**——无硅、无实测精度/良率/工艺、无 foundry 回片；"
+    "① 本案例是**设计期验证**（晶体管级模型 + 电路仿真 + 阵列 + 数据通路 + 版图签核 + 寄生后仿 + "
+    "失配/噪声 + 规模压力），**非流片后实测**——无硅、无实测精度/良率/工艺、无 foundry 回片；"
     "② 晶体管模型为**公开典型量级占位参数**（非 PDK 标定、无实测锚）⇒ 不宣称器件性能；"
+    "版图层号/设计规则亦为**公开工艺近似**（非 PDK）；"
     "③ 数据通路主路径用**理想 TIA（放大器无限增益理想化）**；transistor 路径的列增益含"
     "**电阻负载因子**（golden 已计入）——二者均为建模口径，非实测；"
     "④ **不报任何 TOPS / TOPS-W / fJ/op 等能效或吞吐指标**（LDA 是设计&验证工具链，"
     "非流片芯片）；Mythic 等公开 landmark 仅作背景坐标，**不同台比较**；"
     "⑤ 电路级验证引擎是**设计验证引擎**，非签核级 SPICE（无温度/噪声/稀疏矩阵/收敛增强）；"
+    "版图几何判据为 **bbox 级**、寄生提取为一阶几何闭式（无 3D 场解）、"
+    "规模模型为 **1D 行线**（忽略列线电阻这一二阶项）；"
     "⑥ **LLM 不进判决路径**：判决为死标量比对（闭式物理律 golden）；"
-    "全程零外部 SPICE 引擎——C 级自主（纯 numpy）。"
+    "全程零外部 SPICE 引擎——C 级自主（纯 numpy/标准库）。"
 )
 
-# ═══════════════════════ 五段征程（静态事实 · 可回溯门禁）═══════════════════
+# ═══════════════════════ 九段征程（静态事实 · 可回溯门禁）═══════════════════════
+# gate = 该段**常驻门禁实测判据数**（含突变探针）；seg_probes = 其中的反向突变探针数
 MILESTONES = [
     {"id": "E1", "code": "D-150", "title": "基座：晶体管模型 + 电路仿真器 + 最小计算单元",
-     "gate": 6,
+     "gate": 10, "seg_probes": 3,
      "result": "补齐平台两块短板（此前**无晶体管级模型 / 无电路仿真器**）：长沟道平方律 "
                "NMOS（三区 + gm/gds）+ MNA 仿真器（DC 牛顿/瞬态后向欧拉/AC 复数）+ 反相求和 MAC；"
                "RC 瞬态 vs 指数 <2e-4、AC vs 闭式 <1e-13"},
     {"id": "E2", "code": "D-151", "title": "参数化 N×M 模拟 MVM 交叉阵列",
-     "gate": 5,
+     "gate": 9, "seg_probes": 3,
      "result": "参数化阵列（ideal TIA / transistor 权重 双路径）+ 晶体管级 OTA 表征；"
                "理想 8×8 <2e-4、transistor 4×4 <2.4e-4、OTA 开环增益 ∝ Rd（20k→7.5 / 30k→10.4）"},
     {"id": "E3", "code": "D-152", "title": "MVM 数据通路（计算架构 + 端到端正确性）",
-     "gate": 6,
+     "gate": 10, "seg_probes": 3,
      "result": "数字→DAC→交叉阵列→ADC→数字；带符号权重参考列法 + 多层级联(MLP+ReLU) + 分块；"
                "单层 8bit 误差 0.012 · 2 层 MLP 0.044 · 分块=全阵（精确）"},
     {"id": "E4", "code": "D-153", "title": "规模对标（诚实边界）",
-     "gate": 6,
+     "gate": 10, "seg_probes": 3,
      "result": "规模扫描 32→256（65536 突触）+ 公开 landmark 诚实对标；规模律："
                "**相对误差有界（0.018→0.030）· 绝对误差 ∝ N（0.08→0.54）**；不报 fabricated 能效"},
     {"id": "E5", "code": "D-154", "title": "平台能力硬化（能力清单 + 守护门禁）",
-     "gate": 5,
+     "gate": 9, "seg_probes": 3,
      "result": "ECORE_CAPABILITY_MANIFEST（单一真源）+ 常驻守护门禁（清单↔模块/符号**双向完备** + "
                "披露一致 + 诚实边界）⇒ 能力面不再静默失守"},
+    {"id": "E6", "code": "D-156", "title": "版图与几何签核（电子芯片**首次直出真 GDS**）",
+     "gate": 36, "seg_probes": 4,
+     "result": "新增电子版图层栈（DIFF/POLY/CONT/M1/VIA1/M2 + 层语义谓词 + 设计规则）+ "
+               "1T 交叉阵列 P&R（节距闭式）+ 几何 DRC + 段感知 LVS（连通分量/短路/悬空桥/"
+               "**W·L 几何回提**）+ AREF 层次化 GDS；4×4 = 120 元素 / 8.40×8.90 µm² / GDS 936 B；"
+               "回提 W/L 注入 E1 模型 ⇒ Id(负载) ≡ Id(模型)"},
+    {"id": "E7", "code": "D-157", "title": "寄生提取与后仿（理想互连 → 有阻互连）",
+     "gate": 34, "seg_probes": 4,
+     "result": "导线 RC 教科书闭式（R=ρL/(Wt) ≡ R□·L/W · C=ε₀ε_r·W/d）由 E6 几何提每段 R/C + "
+               "Elmore 延迟；阵列 **R 梯网络**注入 MNA 后仿；**IR drop 相对误差 N=4 0.42% → "
+               "N=32 27.0%**（超线性）· **sneak 比例 N=4 1.29× → N=16 7.26×**；"
+               "R=0 网络 ≡ 解析 golden（max|Δ| = 1.08e-19）"},
+    {"id": "E8", "code": "D-158", "title": "非理想 / 失配 / 噪声 + 校准层级",
+     "gate": 36, "seg_probes": 4,
+     "result": "Pelgrom 失配（σ_ΔVth = A_VT/√(W·L)）+ 温度（Vth 线性 + 迁移率 (T/T0)^m）+ "
+               "热/闪烁噪声 + **失配 Monte Carlo** + **校准层级 L0/L1/L2**；"
+               "σ_ΔVth = 5.00 mV · MC 8×8 σ_rel = 0.654% · **σ_rel·√N ≈ 0.0186 恒定（1/√N 律）** · "
+               "校准 L0 1.696% → L1 0.212% → L2 0.0743%"},
+    {"id": "E9", "code": "D-159", "title": "千级阵列规模压力 + 同族维度诚实对标",
+     "gate": 34, "seg_probes": 4,
+     "result": "换 O(N) 算法把规模推到千级：层次化 AREF 版图（1024×1024 → GDS 86.6 KB / "
+               "top 2049 条 / 压缩比 **3571×**）+ 一维三对角 IR-drop（**1D ≡ 2D 的 2D 稠密 MNA，"
+               "相对差 ≤1.7e-13**）；**三重规模律**（IR drop ∝N² · 面积 ∝N² · 失配 ∝1/√N）；"
+               "**可及规模上界**：10% 预算 → N≤26 · 5% → N≤18 · 2% → N≤11 · 1% → N≤8"},
 ]
+
+#: 门禁判据合计（= Σ MILESTONES.gate）与突变探针合计（= Σ seg_probes）
+GATE_CHECKS_TOTAL = sum(m["gate"] for m in MILESTONES)
+PROBE_CHECKS_TOTAL = sum(m["seg_probes"] for m in MILESTONES)
 
 # ═══════════════════════ 关键结论（物理 + 方法学）═══════════════════════
 FINDINGS = [
-    {"title": "吃狗粮逼出并补齐平台四块真短板",
+    {"title": "吃狗粮逼出并补齐平台四块真短板（E1–E5）",
      "detail": "此前 LDA 电子域只到行为级——**无晶体管级模型 / 无电路仿真器 / 无模拟计算原语 / "
-               "无规模定标与诚实护栏**。本征程新增 `lda_l2/ecore/` 包（7 模块）逐一补齐。"},
+               "无规模定标与诚实护栏**。本征程新增 `lda_l2/ecore/` 包逐一补齐。"},
+    {"title": "补上最大平台缺口：电子芯片**首次直出真 GDS**（E6）",
+     "detail": "此前 ecore **一条版图链都没有**——严格讲「设计出了电路，但签不出芯片」。E6 补齐"
+               "电子版图层栈 + 1T 交叉阵列 P&R + 几何 DRC + 段感知 LVS + AREF 层次化，与光子/量子"
+               "征程收尾同构：**电路模型 → 可签核版图 → GDS**。"},
     {"title": "架构族同构：电子版「光子 MZI 网格」",
      "detail": "模拟 MVM 交叉阵列 = 行电压 × 交叉点电导 → 列电流求和 → TIA，正是电子域的"
                "矩阵-向量乘；与光子 MZI mesh、与商业模拟 AI 加速器（Mythic 类）**同族**。"},
     {"title": "方法学独立：闭式物理律 golden",
      "detail": "MOSFET 三区解析 ↔ 平方律闭式、RC 瞬态 ↔ 指数、AC ↔ 复导纳转移函数、"
-               "分压/求和 ↔ 闭式——判决全为**死标量比对**，LLM 不进判决路径，零外部 SPICE。"},
+               "导线 RC ↔ 方块电阻闭式、AREF 展开 ↔ flat、R=0 网络 ↔ 解析求和 —— "
+               "判决全为**死标量比对**，LLM 不进判决路径，零外部 SPICE。"},
+    {"title": "IR drop 是模拟 MVM 的**第一号规模墙**；sneak 是**拓扑效应**（E7）",
+     "detail": "N=32 时 IR drop 相对误差已达 **27%**，且按 **∝N²** 超线性增长 ⇒ 被动式单端驱动的"
+               "模拟交叉阵列**不能只靠加行/列数扩规模**（须分段/双侧驱动、加宽加厚金属、降单元电导、"
+               "分块 tiling）。sneak 在 R=0 时仍存在 ⇒ 属**拓扑效应**，与 IR drop 解耦，"
+               "需正规选通方案（1T「栅压即权重」在未选通浮空时无选择器隔离）。"},
+    {"title": "失配：随机项被 1/√N 平均掉，系统项不会 ⇒ 分层校准（E8）",
+     "detail": "σ_rel ∝ **1/√N**（小阵列更脆弱，但绝对值 ∝√N 上升，动态范围仍被失配底噪占据）；"
+               "**列系统项（热梯度/共模）不会被平均掉** ⇒ 必须**列级校准**（L1）；只有**逐单元"
+               "校准**（L2）才压随机项，而 L2 残差由**测量噪声**决定 ⇒ **校准精度决定模拟 CIM "
+               "的有效位数上限**。实测：L0 1.696% → L1 0.212% → L2 0.0743%。"},
+    {"title": "规模压力：千级阵列在被动驱动下**不可达**（E9）",
+     "detail": "换 O(N) 算法后可建模到 1024×1024（层次化 GDS 86.6 KB · 压缩比 3571×），"
+               "但三重规模律显示 IR drop **3.75% → 95.6%**（超线性）、失配 σ **0.4209% → 0.0526%**"
+               "（反降）——**两约束方向相反，规模由 IR drop 主导**：5% 输出误差预算只支持 **~18 行**。"},
     {"title": "规模律（诚实报告）：相对误差有界、绝对误差 ∝ N",
      "detail": "MVM 输出幅度随 N 增长；固定位数 ADC 下绝对 LSB 随之增大 ⇒ **须按层输出定标**"
                "（`out_norm`）；相对误差 ≈ 1/2^bits 与 N 无关。这是「规模墙」暴露的真实架构约束。"},
@@ -130,7 +295,7 @@ FINDINGS = [
 GAPS = [
     {"id": "G-A", "title": "无流片 / 无实测",
      "detail": "全部为设计期验证；无硅、无实测精度/良率、无 foundry 回片。"},
-    {"id": "G-B", "title": "无 foundry PDK",
+    {"id": "G-B", "title": "无 foundry PDK（器件）",
      "detail": "晶体管参数为公开典型量级占位（非 PDK 标定、无实测锚）。"},
     {"id": "G-C", "title": "理想 TIA 路径 / 非签核级 SPICE",
      "detail": "数据通路主路径用理想运放（无限增益）；电路引擎无温度/噪声/稀疏矩阵/收敛增强。"},
@@ -138,14 +303,18 @@ GAPS = [
      "detail": "不报任何 TOPS / TOPS-W / fJ/op（无流片、无硅实测）。"},
     {"id": "G-E", "title": "transistor 路径列增益含电阻负载因子",
      "detail": "晶体管权重路径的列增益随该列总电导变化（电阻负载固有特性，golden 已计入）。"},
-]
-
-# ═══════════════════════ 规模档案（来自 E4 实测）═══════════════════════
-SCALE_TIERS = [
-    {"n": 32, "synapses": 1024, "rel_err": 0.018, "abs_err": 0.08},
-    {"n": 64, "synapses": 4096, "rel_err": 0.027, "abs_err": 0.15},
-    {"n": 128, "synapses": 16384, "rel_err": 0.024, "abs_err": 0.29},
-    {"n": 256, "synapses": 65536, "rel_err": 0.030, "abs_err": 0.54},
+    {"id": "G-F", "title": "版图层 / 规则为公开近似（非 PDK）",
+     "detail": "层号与设计规则取公开工艺近似（可覆盖）；几何判据为 **bbox 级**；"
+               "沟道区被 POLY 断开为 DIFF_D/DIFF_S 属**教学级简化**。"},
+    {"id": "G-G", "title": "寄生提取为一阶几何闭式 · 后仿为 DC",
+     "detail": "无 3D 场解、无频变 R/L、无衬底耦合；sneak 分析中的 `r_leak` 为**数值钉扎**"
+               "（防浮空节点奇异），**非物理漏电**。"},
+    {"id": "G-H", "title": "失配/噪声/温度参数为公开量级 · 校准为理想化",
+     "detail": "A_VT / A_β / k_T / K_f 为公开典型量级；L2 逐单元校准为理想化模型；"
+               "噪声仅给谱密度量级；假定**独立同分布**（不建模空间相关）。"},
+    {"id": "G-I", "title": "规模模型为 1D 行线（忽略列线电阻）",
+     "detail": "千级阵列的 IR-drop 用一维三对角线模型，**忽略列线电阻**（二阶项）；"
+               "在校核规模内与 E7 的 2D 稠密 MNA 对拍一致；千级是**设计期版图与规模律**，非流片。"},
 ]
 
 _ARTIFACT_DIRS = ("examples", "lda/examples")
@@ -182,6 +351,75 @@ def quant_error_rel_bound(bits: int) -> float:
     if b > 60:
         raise ValueError("bits 过大（>60）无意义")
     return 1.0 / (2 ** b - 1)
+
+
+def layout_elements_flat(n: int, m: int) -> int:
+    """**物化**整阵列版图元素数（E6 `layout.crossbar_array` 的规模）= n·m·7 + n + m（纯计数）。
+
+    7 = 1T 单元元素数（DIFF_D/DIFF_S/POLY/CONT×2/M1 焊垫/VIA1）；+n 行线；+m 列线。
+    """
+    r, c = int(n), int(m)
+    if r < 1 or c < 1:
+        raise ValueError("n / m 须 ≥ 1")
+    return r * c * 7 + r + c
+
+
+def layout_elements_hier(n: int, m: int) -> int:
+    """**层次化** GDS 的元素记录数（E9 `array_scale`）= cell(7) + 1 条 AREF + n 行 + m 列 = **O(N)**。"""
+    r, c = int(n), int(m)
+    if r < 1 or c < 1:
+        raise ValueError("n / m 须 ≥ 1")
+    return 8 + r + c
+
+
+def hier_compression_ratio(n: int, m: int) -> float:
+    """层次化压缩比 = 物化 / 层次化（🔴 **∝N**，非 ∝N²：flat = 7N²+2N、hier = 8+N+M）。"""
+    return layout_elements_flat(n, m) / float(layout_elements_hier(n, m))
+
+
+def sheet_resistance_ohm_per_sq(rho_ohm_um: float, t_um: float) -> float:
+    """金属方块电阻 R□ = ρ / t（Ω/□）。"""
+    if float(t_um) <= 0:
+        raise ValueError("厚度须 > 0")
+    return float(rho_ohm_um) / float(t_um)
+
+
+def wire_resistance_ohm(rho_ohm_um: float, length_um: float, width_um: float,
+                        t_um: float) -> float:
+    """导线电阻 R = ρL/(W·t) ≡ R□·L/W（Ω）。"""
+    if float(width_um) <= 0 or float(t_um) <= 0:
+        raise ValueError("W / t 须 > 0")
+    return float(rho_ohm_um) * float(length_um) / (float(width_um) * float(t_um))
+
+
+def pelgrom_sigma_vth_mv(a_vt_mv_um: float, w_um: float, l_um: float) -> float:
+    """Pelgrom 阈值失配标准差 σ_ΔVth = A_VT / √(W·L)（mV，W·L 单位 µm²）。"""
+    wl = float(w_um) * float(l_um)
+    if wl <= 0:
+        raise ValueError("W·L 须 > 0")
+    return float(a_vt_mv_um) / math.sqrt(wl)
+
+
+def pelgrom_sigma_beta_pct(a_beta_pct_um: float, w_um: float, l_um: float) -> float:
+    """Pelgrom 电流因子失配 σ_Δβ/β = A_β / √(W·L)（%）。"""
+    wl = float(w_um) * float(l_um)
+    if wl <= 0:
+        raise ValueError("W·L 须 > 0")
+    return float(a_beta_pct_um) / math.sqrt(wl)
+
+
+def elmore_tau_rc(r_total_ohm: float, c_total_f: float) -> float:
+    """分布 RC 线的 Elmore 延迟极限 τ = R·C/2（s）。"""
+    if float(r_total_ohm) < 0 or float(c_total_f) < 0:
+        raise ValueError("R / C 须 ≥ 0")
+    return 0.5 * float(r_total_ohm) * float(c_total_f)
+
+
+def sigma_rel_vs_n(sigma_cell_rel: float, n: int) -> float:
+    """输出相对误差的 **1/√N 律**：σ_out = σ_cell / √N（独立同分布求和平均）。"""
+    if int(n) < 1:
+        raise ValueError("n 须 ≥ 1")
+    return float(sigma_cell_rel) / math.sqrt(int(n))
 
 
 # ═══════════════════════════════ 产出物探测（只读元信息）═══════════════════════
@@ -231,27 +469,31 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
     `verdict` 恒为 `DESIGN_VERIFIED` —— **明标「设计期验证」而非实测**。
     """
     flag = crossbar_capacity(256, 256)
-    gate_total = sum(m["gate"] for m in MILESTONES)
     return {
         "endpoint": "/api/ecore_demo",
         "case_id": CASE_ID,
         "claim": "用 LDA 从零设计一颗电子计算芯片（模拟计算核 / MVM 交叉阵列）："
-                 "晶体管级模型 + 电路仿真 + 参数化阵列 + 数据通路 + 规模扫描全链路验证",
+                 "晶体管级模型 + 电路仿真 + 参数化阵列 + 数据通路 + 规模对标 + 版图签核 + "
+                 "寄生后仿 + 失配/噪声 + 千级规模压力全链路验证",
         "verdict": "DESIGN_VERIFIED",
         "verdict_label": "设计期验证（非流片实测）",
         "identity": {
-            "physics": "模拟 compute-in-memory（MVM 交叉阵列）· 电子/CMOS 电路级",
+            "physics": "模拟 compute-in-memory（MVM 交叉阵列）· 电子/CMOS 电路级 + 版图级",
             "device": "NMOS 差分对 OTA / 交叉点电导 / TIA（大增益运放）",
             "unit": "模拟 MVM 砖 = 行电压 × 交叉点电导 → 列电流求和 → TIA 转电压",
             "route_note": "吃狗粮第四条路线（光子计算 / 光量子 LOQC / 超导 transmon 之后）；"
-                          "与光子 MZI mesh 同构（电子版）",
+                          "与光子 MZI mesh 同构（电子版）；**版本征程中唯一出真 GDS 的电子路线**",
             "zero_quantum_sdk": True,
             "zero_spice_engine": True,
+            "zero_commercial_eda": True,
         },
         "span": {
             "milestones": len(MILESTONES),
-            "gate_checks": gate_total,
-            "modules": 7,
+            "gate_checks": GATE_CHECKS_TOTAL,
+            "probe_checks": PROBE_CHECKS_TOTAL,
+            "modules": 12,               # ecore 包内模块数（含能力清单自身）
+            "capability_modules": 11,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
+            "entrypoints": 9,            # 九段常驻门禁（含能力守护）
             "modules_dir": "lda/lda_l2/ecore/",
         },
         "milestones": MILESTONES,
@@ -271,6 +513,16 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "note": "规模 = **可建模并可验证的交叉点容量**，非已流片器件数；"
                     "相对误差有界、绝对误差 ∝ N（固定位数 ADC 固有律）",
         },
+        "layout": LAYOUT_FACTS,
+        "parasitic": PARASITIC_FACTS,
+        "mismatch": MISMATCH_FACTS,
+        "scale_pressure": {
+            "facts": SCALE_FACTS,
+            "tiers": SCALE_PRESSURE_TIERS,
+            "ceiling": SCALE_CEILING,
+            "note": "**三重规模律**：IR drop ∝N²（超线性）· 面积 ∝N² · 失配 σ ∝1/√N（方向相反）；"
+                    "**规模上界由 IR drop 主导**：5% 输出误差预算 ⇒ 被动单端驱动 ~18 行",
+        },
         "physics": {
             "mosfet": MOSFET_FACTS,
             "metrics": KEY_METRICS,
@@ -284,7 +536,8 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "ui": {
             "found_in_ui": True,
             "entry": "验证实力（accept）→「电子计算芯片案例」卡",
-            "scope_note": "UI 电子/CMOS 面板覆盖**电路级仿真**；本卡覆盖**芯片级模拟计算架构与验证**。",
+            "scope_note": "UI 电子/CMOS 面板覆盖**电路级仿真**；本卡覆盖**芯片级模拟计算架构与验证**"
+                          "（含版图签核 / 寄生后仿 / 失配校准 / 规模压力）。",
         },
         "positioning": _positioning(),
         "honest_note": ECORE_HONEST_NOTE,
@@ -305,8 +558,8 @@ def _positioning() -> Dict[str, Any]:
             {"axis": "交付物", "industry": "流片硅产品 + 云访问（或有硅实测）",
              "lda": "**设计期验证**：可复现、可审计的工具链输出（无硅）"},
             {"axis": "工具链来源", "industry": "各自闭源 CAD/PDK + 商业 SPICE",
-             "lda": "**开源（MIT）· Agent-native · 零外部 SPICE 引擎**：晶体管模型 + MNA "
-                    "求解器自研（纯 numpy）"},
+             "lda": "**开源（MIT）· Agent-native · 零外部 SPICE/EDA 引擎**：晶体管模型 + MNA "
+                    "求解器 + 版图/GDS/DRC/LVS 全自研（纯 numpy/标准库）"},
             {"axis": "判决路径", "industry": "通常为实测 + 数值仿真混合",
              "lda": "**LLM 不进判决路径**：判决为死标量比对；红线为物理定律锚"},
             {"axis": "架构族", "industry": "analog CIM MVM 交叉阵列",
@@ -325,7 +578,6 @@ def _positioning() -> Dict[str, Any]:
 # ═══════════════════════════════ 自检 ═══════════════════════════════
 def run_selfchecks(verbose: bool = False) -> bool:
     """模块自检（门禁同源调用）。闭式断言 + 红线断言（不 import 求解器 / numpy）。"""
-    import ast
     res: Dict[str, bool] = {}
     msgs: List[str] = []
 
@@ -348,34 +600,63 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("③ 量化相对误差上界：8bit ⇒ 1/255 ≈ 0.00392",
         abs(quant_error_rel_bound(8) - 1.0 / 255.0) < 1e-15)
 
-    # ④ 案例卡组装：5 里程碑 · 5 结论 · 5 缺口 · 门禁判据合计 28
-    card = case_card(repo_root="__nonexistent_root__")
-    chk("④ 案例卡组装：5 里程碑 / 5 结论 / 5 缺口 / 门禁判据合计 28",
-        len(card["milestones"]) == 5 and len(card["findings"]) == 5
-        and card["gaps_total"] == 5 and card["span"]["gate_checks"] == 28)
+    # ④ 版图元素闭式（E6/E9）：4×4 ⇒ flat 120 · hier 16
+    chk("④ 版图元素闭式：flat(4,4)=120 · flat(8,8)=464 · hier(4,4)=16",
+        layout_elements_flat(4, 4) == 120 and layout_elements_flat(8, 8) == 464
+        and layout_elements_hier(4, 4) == 16)
 
-    # ⑤ 产出物优雅降级（root 不存在 ⇒ available False，不抛错）
-    chk("⑤ 产出物探测优雅降级（root 不存在 ⇒ available=False）",
+    # ⑤ 层次化压缩比 ∝ N（N ×4 ⇒ 比值 ≈ ×4，渐近）
+    r256, r1024 = hier_compression_ratio(256, 256), hier_compression_ratio(1024, 1024)
+    chk("⑤ 层次化压缩比 ∝ N：ratio(1024)/ratio(256) ∈ (4.0, 4.3)（非 ∝N²）",
+        4.0 < r1024 / r256 < 4.3)
+
+    # ⑥ 导线方块电阻闭式：R□(M1) = ρ/t = 0.0168/0.20 = 0.084 Ω/□
+    chk("⑥ 导线方块电阻闭式：R□(M1) = ρ_Cu/t_M1 = 0.084 Ω/□",
+        abs(sheet_resistance_ohm_per_sq(1.68e-2, 0.20) - 0.084) < 1e-12)
+
+    # ⑦ Pelgrom 失配闭式：σ_ΔVth(A_VT=3.0, W/L=1.20/0.30) = 5.00 mV
+    chk("⑦ Pelgrom 失配闭式：σ_ΔVth = A_VT/√(W·L) = 5.00 mV @ 1.20/0.30 µm",
+        abs(pelgrom_sigma_vth_mv(3.0, 1.20, 0.30) - 5.00) < 1e-9
+        and abs(pelgrom_sigma_beta_pct(1.0, 1.20, 0.30) - 1.0 / 0.6) < 1e-9)
+
+    # ⑧ 1/√N 律：σ_rel(4N) = σ_rel(N)/2
+    s1, s4 = sigma_rel_vs_n(0.01, 1), sigma_rel_vs_n(0.01, 4)
+    chk("⑧ 失配 1/√N 律：σ_rel(4) = σ_rel(1)/2（独立同分布求和平均）",
+        abs(s4 - s1 / 2.0) < 1e-15)
+
+    # ⑨ Elmore 闭式：τ = R·C/2
+    chk("⑨ Elmore 延迟闭式：τ(R=1, C=1) = 0.5 s",
+        abs(elmore_tau_rc(1.0, 1.0) - 0.5) < 1e-15)
+
+    # ⑩ 案例卡组装：9 里程碑 / 9 结论 / 9 缺口 / 判据合计 188（含 31 探针）
+    card = case_card(repo_root="__nonexistent_root__")
+    chk("⑩ 案例卡组装：9 里程碑 / 9 结论 / 9 缺口 / 门禁判据合计 188（含 31 探针）",
+        len(card["milestones"]) == 9 and len(card["findings"]) == 9
+        and card["gaps_total"] == 9 and card["span"]["gate_checks"] == 188
+        and card["span"]["probe_checks"] == 31)
+
+    # ⑪ 产出物优雅降级（root 不存在 ⇒ available False，不抛错）
+    chk("⑪ 产出物探测优雅降级（root 不存在 ⇒ available=False）",
         card["artifacts"]["available"] is False)
 
-    # ⑥ 🔴 不伪装实测：verdict 恒 DESIGN_VERIFIED，且诚实边界齐全
+    # ⑫ 🔴 不伪装实测：verdict 恒 DESIGN_VERIFIED，且诚实边界齐全
     note = card["honest_note"]
-    chk("⑥ 不伪装实测：verdict=DESIGN_VERIFIED · 诚实边界含「非流片后实测」/「非 PDK」/"
+    chk("⑫ 不伪装实测：verdict=DESIGN_VERIFIED · 诚实边界含「非流片后实测」/「非 PDK」/"
         "「不报任何 TOPS」",
         card["verdict"] == "DESIGN_VERIFIED"
         and "非流片后实测" in note and "非 PDK" in note and "不报任何 TOPS" in note)
 
-    # ⑦ 🔴 不报 fabricated 能效：定位声明 + 3 条诚实限制
+    # ⑬ 🔴 不报 fabricated 能效：定位声明 + 3 条诚实限制
     pos = card["positioning"]
-    chk("⑦ 先进性定位：含不同台比较声明 + 3 条诚实限制 + 「不报任何 TOPS/TOPS-W」",
+    chk("⑬ 先进性定位：含不同台比较声明 + 3 条诚实限制 + 「不报任何 TOPS/TOPS-W」",
         bool(pos["disclaimer"]) and len(pos["honest_limits"]) == 3
         and "不报任何 TOPS / TOPS-W" in pos["disclaimer"])
 
-    # ⑧ 🔴 规模口径明标「可建模/可验证容量」
-    chk("⑧ 规模口径明标「可建模并可验证的交叉点容量」",
+    # ⑭ 🔴 规模口径明标「可建模/可验证容量」
+    chk("⑭ 规模口径明标「可建模并可验证的交叉点容量」",
         "可建模并可验证的交叉点容量" in card["scale_tiers"]["note"])
 
-    # ⑨ 🔴 零外部框架：**ast 遍历真实 import**（不用源码字符串 in）⇒ 无 numpy/scipy/SPICE
+    # ⑮ 🔴 零外部框架：**ast 遍历真实 import**（不用源码字符串 in）⇒ 无 numpy/scipy/SPICE
     src = open(os.path.abspath(__file__), encoding="utf-8").read()
     mods: List[str] = []
     for node in ast.walk(ast.parse(src)):
@@ -386,26 +667,43 @@ def run_selfchecks(verbose: bool = False) -> bool:
                 mods.append(node.module.split(".")[0])
     banned = {"numpy", "scipy", "ahkab", "PySpice", "ngspice", "pyspice"}
     hit = sorted(set(mods) & banned)
-    chk("⑨ 零重计算/零外部框架：本模块不 import numpy/scipy/SPICE（ast 判定）", not hit)
+    chk("⑮ 零重计算/零外部框架：本模块不 import numpy/scipy/SPICE（ast 判定）", not hit)
 
-    # ⑩ 护栏：非法输入抛错（0 行列 / bits 过大）
+    # ⑯ 护栏：非法输入抛错（0 行列 / bits 过大 / 零厚度）
     guard = 0
     for bad in (lambda: crossbar_capacity(0, 4),
                 lambda: crossbar_capacity(4, 0),
-                lambda: quant_error_rel_bound(61)):
+                lambda: quant_error_rel_bound(61),
+                lambda: layout_elements_flat(0, 4),
+                lambda: sheet_resistance_ohm_per_sq(1.0, 0.0),
+                lambda: sigma_rel_vs_n(0.01, 0)):
         try:
             bad()
         except ValueError:
             guard += 1
-    chk("⑩ 护栏：非法 rows/cols · bits>60 均抛 ValueError", guard == 3)
+    chk("⑯ 护栏：非法 rows/cols · bits>60 · 零厚度 · n<1 均抛 ValueError", guard == 6)
 
-    # ⑪ 每里程碑都有门禁数与结果文本（防空洞）
-    chk("⑪ 里程碑完整：每段含 gate 数 + 结果文本",
-        all(m.get("gate", 0) > 0 and m.get("result") for m in MILESTONES))
+    # ⑰ 每里程碑都有门禁数 + 结果文本（防空洞）
+    chk("⑰ 里程碑完整：9 段 · 每段含 gate 数 + 结果文本",
+        len(MILESTONES) == 9
+        and all(m.get("gate", 0) > 0 and m.get("result") and m.get("seg_probes", 0) > 0
+                for m in MILESTONES))
 
-    # ⑫ landmark 登记含来源（A 级公开·未验证）
-    chk("⑫ landmark 登记含 source（Mythic · mythic.ai）",
+    # ⑱ landmark 登记含来源（A 级公开·未验证）
+    chk("⑱ landmark 登记含 source（Mythic · mythic.ai）",
         bool(LANDMARKS_BRIEF) and all(e.get("source") for e in LANDMARKS_BRIEF))
+
+    # ⑲ E6–E9 四块新能力面登记齐全（防「加了能力忘了卡」）
+    chk("⑲ E6–E9 四块能力面登记齐全（layout/parasitic/mismatch/scale_pressure）",
+        card["layout"].get("cell_elements") == 7
+        and abs(card["parasitic"]["sheet_r_m1_ohm_sq"] - 0.084) < 1e-12
+        and abs(card["mismatch"]["sigma_vth_mv"] - 5.00) < 1e-9
+        and card["scale_pressure"]["facts"].get("compression_1024") == 3571.0)
+
+    # ⑳ 可及规模上界单调（预算越紧 ⇒ N 越小）
+    ceil_ = [c["max_rows"] for c in SCALE_CEILING]
+    chk("⑳ 可及规模上界单调：预算越紧 ⇒ 可及行数越小（26 > 18 > 11 > 8）",
+        ceil_ == sorted(ceil_, reverse=True) and len(set(ceil_)) == len(ceil_))
 
     ok_all = all(res.values())
     if verbose:

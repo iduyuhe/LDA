@@ -1,5 +1,56 @@
 # Changelog
 
+## v0.9.150（2026-09-30 · **电子计算芯片征程（吃狗粮第三征程）E10 收官（D-160 · 平台硬化 + 案例卡升级为 E1–E9 全链 + 对外物料 + 生产部署）** · 账本 **476 不变**（严格独立 455 / 降级 3 / 自证桩 18）· 独立率 95.59% 持平 · CI core **247 不变**（本段不新增 smoke 文件；案例卡门禁判据 20 → **27**、突变探针 3 → **5**））
+
+### E10（D-160）· 收官：把 E1–E9 全链固化为**对外只读案例 + 可分发物料 + 生产上线**
+
+E1–E9 之后 ecore 已有 9 段能力，但**对外案例卡仍停在 E1–E5 的旧口径**（5 里程碑 / 28 判据 / 7 模块），
+四块新能力面（版图签核 / 寄生后仿 / 失配校准 / 规模压力）**完全没出现在任何对外载体上**。
+本段把「内部能力」与「对外口径」拉平，并完成上线。
+
+**① 案例卡升级为 E1–E9 全链**（`lda/lda_webui/ecore_case.py`）
+- `MILESTONES` 5 → **9 段**；`FINDINGS` 5 → **9 条**；`GAPS` 5 → **9 条**（新增 G-F 版图层/规则公开近似 ·
+  G-G 寄生一阶闭式+`r_leak` 数值钉扎 · G-H 失配参数公开量级+校准理想化 · G-I 1D 规模模型忽略列线电阻）。
+- 新增四块能力面 facts：`LAYOUT_FACTS`（E6）· `PARASITIC_FACTS`（E7）· `MISMATCH_FACTS`（E8）·
+  `SCALE_FACTS` + `SCALE_PRESSURE_TIERS` + `SCALE_CEILING`（E9）。
+- 新增 8 个**闭式**可反向测试函数（纯 math · 零 numpy）：`layout_elements_flat` / `layout_elements_hier` /
+  `hier_compression_ratio` / `sheet_resistance_ohm_per_sq` / `wire_resistance_ohm` /
+  `pelgrom_sigma_vth_mv` / `pelgrom_sigma_beta_pct` / `elmore_tau_rc` / `sigma_rel_vs_n`。
+- 模块自检 **12 → 20 项**（含 ⑲ E6–E9 四块面登记齐全 · ⑳ 可及规模上界单调）。
+- **口径修订（诚实记账）**：`span.gate_checks` 旧值 28 只计 E1–E5 且不含探针；本版改为
+  **该段常驻门禁实测判据数（含探针）** ⇒ E1–E9 合计 **188**（其中突变探针 **31**）。
+  E1–E5 的历史值 6/5/6/6/5 与实测 10/9/10/10/9 不符，一并订正；历史 CHANGELOG 段不追改。
+
+**② 案例卡门禁加厚**（`lda/run_ecore_case_smoke.py`：20 → **27 判据 + 5 突变探针**）
+- 新增 B6b 内部自洽（`Σ 各段 gate ≡ span.gate_checks`）· B12–B15 四块能力面 name-first 断言。
+- 新增突变探针 C4（可及上界改非单调 ⇒ ⑳ 必红）· C5（掏空 E6 版图面 ⇒ ⑲ 必红）。
+
+**③ WebUI 前端同步**（`lda/lda_webui/static/index.html`）
+- `renderECore` 摘要行加「突变探针数 / 模块数 / 零商业 EDA」；新增 4 个面板：
+  版图与几何签核 · 寄生提取与后仿 · 非理想/失配/噪声+校准层级 · 千级阵列规模压力（含三重规模律表 + 可及上界表）。
+- 结论文案从「电路级验证」升级为「**能设计 → 签核 → 后仿 → 标定 → 规模压测的完整电子芯片设计链**」。
+
+**④ 平台硬化**
+- `ECORE_DISCLOSURE` 新增 `e10_scope`；守护门禁 `run_ecore_capability_guard_smoke` 的 scope 判据
+  e1~e9 → **e1~e10**；`capability_manifest` 清单 11 条**不变**（E10 为集成/对外/验收段，不新增求解器能力）。
+
+**⑤ 对外物料（全部从同一事实源派生）**
+- `LDA_电子计算芯片_事实源.md` 全量重写（12 模块 / 九段 / 四块能力面 / 9 条诚实边界 / 规模压力表 / 可及上界表）。
+- `LDA_电子计算芯片_对外一页纸.md` 重写 → 经 `tencent-docs-routing` → `tencent-docx` 流水线
+  （design-token + doc-typeset + html-review **95 分通过** + html-to-docx）重建 **`LDA_电子计算芯片_对外一页纸.docx`**
+  （51.5 KB · 55 段 · **10 表格** · **17 个 XML part 全可解析** · 封面 + 目录 + 执行摘要 + 十节正文 + 附录）。
+- `LDA_电子计算芯片_案例卡.html` 重写（E1–E9 全链 · 含四块能力面小节）。
+- 版图/寄生/失配/规模四张可视化产物（`docs/ecore_e6..e9_*_preview.html`）与蓝图同步。
+
+**⑥ 生产部署**：双端（Gitee / GitHub）推送 + `remote_deploy.py` 部署，生产 `/api/ecore_demo` 实测 200。
+
+**红线与诚实边界**（全程）：C 级自主（纯 numpy/标准库 · 零商业 SPICE/EDA）· **LLM 不进判决路径** ·
+**电域→仅电路级 T1**（不碰 Foundry TCAD/流片）· 不报任何 TOPS/TOPS-W/fJ/op。
+
+**验证**：案例卡门禁 27/27 · E6 36/36 · E7 34/34 · E8 36/36 · E9 34/34 · 能力守护（含 e1~e10 scope）· 
+计数一致性 13/13 · pyflakes 棘轮 8/8 · 超时棘轮（覆盖 247 / 基线 247）· 覆盖率门禁（core=247）·
+`gen_api_reference` 142 端点（未改路由 ⇒ 无 diff）。**账本 476 不变、零锚改动。**
+
 ## v0.9.149（2026-09-30 · **电子计算芯片征程 E9 规模压力与诚实对标（D-159）** · 账本 **476 不变**（严格独立 455 / 降级 3 / 自证桩 18）· 独立率 95.59% 持平 · CI core **246 → 247**（`run_ecore_e9_smoke`））
 
 ### 一、E9（D-159 · 第二段第 4 段）· 从「能画 8×8」到「千级阵列的规模律与可及上界」

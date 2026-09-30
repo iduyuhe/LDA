@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LDA · 电子计算芯片案例卡（模拟计算核 / MVM 交叉阵列）</title>
+<title>LDA · 电子计算芯片案例卡（模拟计算核 / MVM 交叉阵列 · E1–E9 全链）</title>
 <style>
   :root{--ink:#0f172a;--sub:#475569;--line:#e2e8f0;--accent:#2563eb;--soft:#eff6ff;--bg:#f8fafc}
   *{box-sizing:border-box}
@@ -38,19 +38,19 @@
 <div class="wrap">
 
   <h1>LDA · 电子计算芯片案例卡</h1>
-  <div class="sub">模拟计算核 / MVM 交叉阵列（电子版「光子 MZI 网格」）· 吃狗粮第三征程 E1–E5（D-150…D-154）·
-    设计期验证 · <span class="tag">DESIGN_VERIFIED</span></div>
+  <div class="sub">模拟计算核 / MVM 交叉阵列（电子版「光子 MZI 网格」）· 吃狗粮第三征程 <b>E1–E9 全链 + E10 收官</b>
+    （D-150…D-160）· 设计期验证 · <span class="tag">DESIGN_VERIFIED</span></div>
 
   <div class="card">
     <div class="metrics">
-      <div class="m"><div class="v">5</div><div class="l">征程段（E1–E5）</div></div>
-      <div class="m"><div class="v">28</div><div class="l">门禁判据</div></div>
-      <div class="m"><div class="v">7</div><div class="l">ecore 模块</div></div>
+      <div class="m"><div class="v">9</div><div class="l">征程段（E1–E9）</div></div>
+      <div class="m"><div class="v">188</div><div class="l">门禁判据（含 31 探针）</div></div>
+      <div class="m"><div class="v">12</div><div class="l">ecore 模块</div></div>
       <div class="m"><div class="v">65536</div><div class="l">最大交叉点（突触）</div></div>
-      <div class="m"><div class="v">&lt;2e-4</div><div class="l">MNA 瞬态 vs 指数闭式</div></div>
-      <div class="m"><div class="v">0.0122</div><div class="l">数据通路 单层 8bit 误差</div></div>
-      <div class="m"><div class="v">0.044</div><div class="l">2 层 MLP 6bit 误差</div></div>
-      <div class="m"><div class="v">精确</div><div class="l">分块 tiling = 全阵</div></div>
+      <div class="m"><div class="v">936 B</div><div class="l">4×4 阵列真 GDS</div></div>
+      <div class="m"><div class="v">27.0%</div><div class="l">IR drop @ N=32</div></div>
+      <div class="m"><div class="v">0.654%</div><div class="l">失配 σ（8×8 MC）</div></div>
+      <div class="m"><div class="v">3571×</div><div class="l">层次化压缩比（1024²）</div></div>
     </div>
   </div>
 
@@ -62,113 +62,185 @@
     定位：<b>开源（MIT）· Agent-native 的设计 &amp; 验证工具链</b>，<b>不是流片芯片</b>。
   </div>
 
-  <h2>🔴 吃狗粮逼出并补齐的平台四块真短板</h2>
+  <h2>🔴 吃狗粮逼出并补齐的平台真短板</h2>
   <div class="card">
-    此前 LDA 电子域只到行为级——<b>无晶体管级模型 / 无电路仿真器 / 无模拟计算原语 / 无规模定标与诚实护栏</b>。
-    本征程新增 <code>lda/lda_l2/ecore/</code> 包（7 模块）逐一补齐。
+    此前 LDA 电子域只到行为级——<b>无晶体管级模型 / 无电路仿真器 / 无模拟计算原语 / 无规模定标与诚实护栏</b>；
+    进一步吃狗粮又逼出<b>无版图链 / 无寄生后仿 / 无失配噪声模型 / 无千级规模能力</b>。
+    本征程新增 <code>lda/lda_l2/ecore/</code> 包（<b>12 模块 · 11 条能力面入册</b>）逐一补齐。
     <table>
       <thead><tr><th>模块</th><th>能力</th><th>引入</th></tr></thead>
       <tbody>
-        <tr><td><code>mosfet.py</code></td><td>长沟道平方律 NMOS（截止/三极管/饱和三区 + gm/gds 解析）</td><td>D-150 (E1)</td></tr>
-        <tr><td><code>mna.py</code></td><td>MNA 电路仿真器（DC 牛顿 / 瞬态后向欧拉 / AC 复数）</td><td>D-150 (E1)</td></tr>
-        <tr><td><code>analog_mvm.py</code></td><td>最小模拟计算单元（反相求和 MAC + NMOS 饱和偏置）</td><td>D-150 (E1)</td></tr>
+        <tr><td><code>mosfet.py</code></td><td>长沟道平方律 NMOS（三区 + gm/gds 解析）</td><td>D-150 (E1)</td></tr>
+        <tr><td><code>mna.py</code></td><td>MNA 电路仿真器（DC 牛顿 / 瞬态后向欧拉 / AC 复数）+ 分支电流读数</td><td>D-150 (E1)</td></tr>
+        <tr><td><code>analog_mvm.py</code></td><td>最小模拟计算单元（反相求和 MAC）</td><td>D-150 (E1)</td></tr>
         <tr><td><code>crossbar_mvm.py</code></td><td>参数化 N×M 模拟 MVM 交叉阵列（ideal/transistor）+ 晶体管级 OTA</td><td>D-151 (E2)</td></tr>
         <tr><td><code>mvm_datapath.py</code></td><td>MVM 数据通路（DAC→阵列→ADC、多层 MLP+ReLU、分块、输出定标）</td><td>D-152 (E3)</td></tr>
         <tr><td><code>scale_bench.py</code></td><td>规模对标（诚实边界）+ 诚实护栏 + 公开 landmark 登记</td><td>D-153 (E4)</td></tr>
         <tr><td><code>capability_manifest.py</code></td><td>能力清单（单一真源）+ 双向完备检查</td><td>D-154 (E5)</td></tr>
+        <tr><td><code>elayers.py</code></td><td>电子版图层栈（DIFF/POLY/CONT/M1/VIA1/M2）+ 层语义谓词 + 设计规则</td><td>D-156 (E6)</td></tr>
+        <tr><td><code>layout.py</code></td><td>1T 交叉阵列 P&amp;R + 几何 DRC + 段感知 LVS + AREF 层次化 GDS + W/L 几何回提</td><td>D-156 (E6)</td></tr>
+        <tr><td><code>parasitic.py</code></td><td>导线 RC 闭式提取 + 阵列 R 梯网络 + IR drop / sneak path + Elmore 延迟</td><td>D-157 (E7)</td></tr>
+        <tr><td><code>mismatch.py</code></td><td>Pelgrom 失配 + 温度 + 热/闪烁噪声 + 失配 Monte Carlo + 校准层级 L0/L1/L2</td><td>D-158 (E8)</td></tr>
+        <tr><td><code>array_scale.py</code></td><td>千级阵列层次化版图 O(N) + 一维三对角 IR-drop O(N) + 三重规模律 + 可及上界</td><td>D-159 (E9)</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h2>五段征程（门禁合计 28 判据 + 5 道常驻门禁）</h2>
+  <h2>九段征程（E1–E9 门禁判据合计 188 · 含 31 条突变探针）</h2>
   <div class="card">
     <table>
-      <thead><tr><th>段</th><th>编号</th><th>内容</th><th>门禁</th><th>关键结果（实测）</th></tr></thead>
+      <thead><tr><th>段</th><th>编号</th><th>内容</th><th>关键结果（门禁实测）</th></tr></thead>
       <tbody>
-        <tr><td>E1</td><td>D-150</td><td>基座：晶体管模型 + MNA 仿真器 + 最小计算单元</td><td>6</td>
-            <td>RC 瞬态 vs 指数 &lt;2e-4 · AC vs 闭式 &lt;1e-13 · NMOS 饱和偏置 vs 闭式 + KCL</td></tr>
-        <tr><td>E2</td><td>D-151</td><td>参数化 N×M 模拟 MVM 交叉阵列</td><td>5</td>
+        <tr><td>E1</td><td>D-150</td><td>基座：晶体管模型 + MNA 仿真器 + 最小计算单元</td>
+            <td>RC 瞬态 vs 指数 &lt;2e-4 · AC vs 闭式 &lt;1e-13</td></tr>
+        <tr><td>E2</td><td>D-151</td><td>参数化 N×M 模拟 MVM 交叉阵列</td>
             <td>理想 8×8 &lt;2e-4 · transistor 4×4 &lt;2.4e-4 · OTA 增益 ∝ Rd（20k→7.5 / 30k→10.4）</td></tr>
-        <tr><td>E3</td><td>D-152</td><td>MVM 数据通路（计算架构 + 端到端正确性）</td><td>6</td>
-            <td>单层 8bit 0.0122 · 2 层 MLP 0.044 · 分块=全阵（精确）· 量化趋势单调降</td></tr>
-        <tr><td>E4</td><td>D-153</td><td>规模对标（诚实边界）</td><td>6</td>
-            <td>规模扫描 32→256（65536 突触）· 相对误差有界 0.018→0.030 · 绝对误差 ∝N 0.08→0.54</td></tr>
-        <tr><td>E5</td><td>D-154</td><td>平台能力硬化（能力清单 + 守护门禁）</td><td>5</td>
-            <td>清单↔模块/符号<b>双向完备</b> · 披露一致 · 诚实边界机器化</td></tr>
+        <tr><td>E3</td><td>D-152</td><td>MVM 数据通路（DAC→阵列→ADC）</td>
+            <td>单层 8bit 0.0122 · 2 层 MLP 0.044 · 分块 = 全阵（精确）</td></tr>
+        <tr><td>E4</td><td>D-153</td><td>规模对标（诚实边界）</td>
+            <td>扫描 32→256（65536 突触）· 相对误差有界（0.018→0.030）· 绝对误差 ∝N（0.08→0.54）</td></tr>
+        <tr><td>E5</td><td>D-154</td><td>平台能力硬化</td>
+            <td>能力清单 ↔ 模块/符号 <b>双向完备</b> · 披露一致 · 诚实边界机器化</td></tr>
+        <tr><td>E6</td><td>D-156</td><td><b>版图与几何签核（电子芯片首次直出真 GDS）</b></td>
+            <td>4×4 = 120 元素 / 8.40×8.90 µm² / GDS 936 B · 8×8 = 464 双 ACCEPT · AREF 展开 ≡ flat · 回提 W/L = 1.20/0.30 逐单元一致</td></tr>
+        <tr><td>E7</td><td>D-157</td><td><b>寄生提取与后仿（理想互连 → 有阻互连）</b></td>
+            <td>R□ = 0.084 Ω/□ · <b>IR drop N=4 0.42% → N=32 27.0%</b>（超线性）· <b>sneak 1.29× → 7.26×</b> · R=0 ≡ golden（max|Δ| = 1.08e-19）</td></tr>
+        <tr><td>E8</td><td>D-158</td><td><b>非理想 / 失配 / 噪声 + 校准层级</b></td>
+            <td>σ_ΔVth = 5.00 mV · MC 8×8 σ_rel = 0.654% · <b>σ_rel·√N ≈ 0.0186（1/√N 律）</b> · 校准 L0 1.696% → L1 0.212% → L2 0.0743%</td></tr>
+        <tr><td>E9</td><td>D-159</td><td><b>千级阵列规模压力 + 同族维度诚实对标</b></td>
+            <td>1024² 层次化 GDS 86.6 KB / top 2049 / <b>压缩比 3571×</b> · 1D ≡ 2D 稠密 MNA（≤1.7e-13）· <b>可及上界 5% 预算 ⇒ N≤18</b></td></tr>
       </tbody>
     </table>
+    <p style="margin:10px 0 0;font-size:13.5px"><b>E10（D-160）收官</b>：平台硬化（能力面守护 scope 扩至 e1~e10）+ 案例卡升级为 E1–E9 全链
+      （<b>27 判据 + 5 突变探针</b>）+ 对外物料 + 生产部署。</p>
   </div>
 
-  <h2>关键结论（物理 + 方法学）</h2>
-  <div class="card">
-    <h3>架构族同构</h3>
-    模拟 MVM 交叉阵列 = 电子域矩阵-向量乘；与光子 MZI mesh、商业模拟 AI 加速器（Mythic 类）<b>同族</b>。
-    <h3>方法学独立</h3>
-    MOSFET 三区解析 ↔ 平方律闭式、RC ↔ 指数、AC ↔ 复导纳——判决全为<b>死标量比对</b>，
-    <b>LLM 不进判决路径</b>，<b>零外部 SPICE 引擎</b>（C 级自主 · 纯 numpy）。
-    <h3>规模律（诚实报告）</h3>
-    MVM 输出幅度随 N 增长；固定位数 ADC 下<b>绝对误差 ∝ N</b> ⇒ 须按层输出定标（<code>out_norm</code>）；
-    <b>相对误差 ≈ 1/2<sup>bits</sup> 与 N 无关</b>。
-    <h3>带符号权重</h3>
-    交叉点电导须为正 ⇒ 用<b>参考列法</b>（<code>g_ij = g_base + s·W_ij</code>，数据列减参考列）。
-  </div>
-
-  <h2>规模档（E4 实测 · 8bit）</h2>
+  <h2>E6 · 版图与几何签核 —— 电子芯片首次直出真 GDS</h2>
   <div class="card">
     <table>
-      <thead><tr><th>N</th><th>突触</th><th>相对误差</th><th>绝对误差</th></tr></thead>
+      <thead><tr><th>项</th><th>数值</th><th>口径</th></tr></thead>
       <tbody>
-        <tr><td>32</td><td>1024</td><td>0.018</td><td>0.08</td></tr>
-        <tr><td>64</td><td>4096</td><td>0.027</td><td>0.15</td></tr>
-        <tr><td>128</td><td>16384</td><td>0.024</td><td>0.29</td></tr>
-        <tr><td>256</td><td>65536</td><td>0.030</td><td>0.54</td></tr>
+        <tr><td>层栈</td><td>DIFF=20 / POLY=21 / CONT=22 / M1=23 / VIA1=24 / M2=25</td><td>公开工艺近似（非 PDK）</td></tr>
+        <tr><td>1T 单元元素</td><td>7</td><td>DIFF_D/DIFF_S/POLY/CONT×2/M1 焊垫/VIA1</td></tr>
+        <tr><td>4×4 阵列</td><td>120 元素</td><td>足迹 8.40 × 8.90 µm²</td></tr>
+        <tr><td>4×4 GDS</td><td>936 B</td><td>层次化 top 9 条（vs flat 120）</td></tr>
+        <tr><td>8×8 阵列</td><td>464 元素</td><td>几何 DRC / LVS 双 ACCEPT</td></tr>
+        <tr><td>几何回提 W/L</td><td>1.20 / 0.30 µm</td><td>逐单元一致 · 注入 E1 模型 ⇒ Id(负载) ≡ Id(模型)</td></tr>
+        <tr><td>几何 DRC / LVS</td><td>4 规则 / 7 判据</td><td>bbox 级几何近似</td></tr>
       </tbody>
     </table>
-    <div style="color:var(--sub);font-size:12.5px;margin-top:8px">
-      规模 = <b>可建模并可验证的交叉点容量</b>，非已流片器件数；相对误差有界、绝对误差 ∝ N（固定位数 ADC 固有律）。
-    </div>
   </div>
 
-  <h2>先进性定位（架构族对齐 · 公开 landmark 仅背景坐标 · 不同台比较）</h2>
+  <h2>E7 · 寄生提取与后仿 —— 理想互连 → 有阻互连</h2>
   <div class="card">
     <table>
-      <thead><tr><th>维度</th><th>产业界/学术</th><th>本案例</th></tr></thead>
+      <thead><tr><th>项</th><th>数值</th><th>口径</th></tr></thead>
+      <tbody>
+        <tr><td>M1 方块电阻 R□</td><td>0.084 Ω/□</td><td>ρ_Cu / t_M1</td></tr>
+        <tr><td>行线每段 / 8×8 总阻</td><td>0.504 Ω / 3.53 Ω</td><td>由 E6 版图节距/线宽提取 · Elmore τ = 3.1 fs</td></tr>
+        <tr><td>IR drop 相对误差</td><td>N=4 0.42% → N=16 8.06% → N=32 <b>27.0%</b></td><td>最坏列 · 超线性（∝N²）</td></tr>
+        <tr><td>sneak 比例</td><td>N=4 1.29× → N=8 3.27× → N=16 <b>7.26×</b></td><td>half-select 浮空旁路 / 理想</td></tr>
+        <tr><td>R=0 ≡ 解析 golden</td><td>max|Δ| = 1.08e-19</td><td>验证网络装配 + MNA 求解</td></tr>
+      </tbody>
+    </table>
+    <p style="margin:10px 0 0;font-size:13.5px"><code>R = ρL/(W·t) ≡ R□·L/W</code> · <code>C = ε₀ε_r·W/d</code> · <code>τ_Elmore → R·C/2</code><br/>
+      <b>IR drop 是模拟 MVM 的第一号规模墙</b>（∝N²）；<b>sneak 是拓扑效应</b>（R=0 时仍存在，与 IR drop 解耦）。</p>
+  </div>
+
+  <h2>E8 · 非理想 / 失配 / 噪声 + 校准层级</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>项</th><th>数值</th><th>口径</th></tr></thead>
+      <tbody>
+        <tr><td>Pelgrom σ_ΔVth</td><td>5.00 mV</td><td>A_VT/√(W·L) @ 1.20/0.30 µm</td></tr>
+        <tr><td>σ_Δβ/β</td><td>1.67 %</td><td>同尺寸</td></tr>
+        <tr><td>Vth 漂移 25→85 °C</td><td>−60 mV</td><td>温度一阶（−1.0 mV/K）</td></tr>
+        <tr><td>迁移率比 µ(85)/µ(25)</td><td>0.760</td><td>(T/T0)<sup>−1.5</sup></td></tr>
+        <tr><td>热噪声 i_n²</td><td>1.098e-23 A²/Hz</td><td>4kTγg_m @ g_m = 1 mS</td></tr>
+        <tr><td>MC 输出 σ_rel（8×8）</td><td>0.654 %</td><td>σ_rel·√N ≈ 0.0186 恒定 ⇒ ∝1/√N</td></tr>
+        <tr><td>校准残差 L0→L1→L2</td><td>1.696% → 0.212% → <b>0.0743%</b></td><td>列增益消系统项 · 逐单元压随机项</td></tr>
+      </tbody>
+    </table>
+    <p style="margin:10px 0 0;font-size:13.5px">随机失配被 <b>1/√N 平均掉</b>（小阵列更脆弱）· <b>系统项不会被平均掉</b> ⇒ 必须列级校准；
+      只有逐单元校准才压随机项 ⇒ <b>校准精度决定模拟 CIM 的有效位数上限</b>。</p>
+  </div>
+
+  <h2>E9 · 千级阵列规模压力（O(N) 算法 + 三重规模律）</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>N</th><th>突触</th><th>IR drop 相对误差</th><th>面积 (mm²)</th><th>失配 σ_rel</th><th>Elmore τ (s)</th></tr></thead>
+      <tbody>
+        <tr><td>16</td><td>256</td><td>3.75%</td><td>0.0014</td><td>0.4209%</td><td>1.34e-14</td></tr>
+        <tr><td>64</td><td>4096</td><td>15.2%</td><td>0.0236</td><td>0.1052%</td><td>2.15e-13</td></tr>
+        <tr><td>256</td><td>65536</td><td>54.9%</td><td>0.3772</td><td>0.0263%</td><td>3.44e-12</td></tr>
+        <tr><td>1024</td><td>1048576</td><td><b>95.6%</b></td><td>6.035</td><td>0.00526%</td><td>5.50e-11</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>输出误差预算</th><th>10%</th><th>5%</th><th>2%</th><th>1%</th></tr></thead>
+      <tbody><tr><td>可及最大行数（被动单端驱动）</td><td>N≤26</td><td><b>N≤18</b></td><td>N≤11</td><td>N≤8</td></tr></tbody>
+    </table>
+    <p style="margin:10px 0 0;font-size:13.5px">1024×1024 层次化 GDS <b>86.6 KB</b> / top 2049 条 / 压缩比 <b>3571×</b>（不物化 N²）·
+      1D 三对角 ≡ E7 的 2D 稠密 MNA（≤1.7e-13）。<br/>
+      三重规模律方向相反（IR drop ∝N² · 面积 ∝N² vs 失配 σ ∝1/√N）⇒ <b>规模由 IR drop 主导，千级被动不可达</b>。</p>
+  </div>
+
+  <h2>关键结论</h2>
+  <div class="card">
+    <ul>
+      <li><b>补上最大平台缺口（E6）</b>：此前 ecore 一条版图链都没有——「设计出了电路，但签不出芯片」；
+        现打通 <b>电路模型 → 可签核版图 → GDS</b>（与光子/量子征程收尾同构）。</li>
+      <li><b>IR drop 是模拟 MVM 的第一号规模墙（E7）</b>：∝N² 超线性 ⇒ 被动单端驱动不能只靠加行列扩规模
+        （须分段/双侧驱动、加宽加厚金属、降单元电导、分块 tiling）。</li>
+      <li><b>sneak 是拓扑效应（E7）</b>：与 IR drop 解耦（R=0 时仍存在）⇒ 需正规选通方案。</li>
+      <li><b>失配的两半（E8）</b>：随机项按 1/√N 被平均掉、系统项不会 ⇒ 分层校准（L0/L1/L2）；
+        校准精度决定模拟 CIM 的有效位数上限。</li>
+      <li><b>规模由 IR drop 主导（E9）</b>：5% 输出误差预算只支持 ~18 行，千级阵列在被动驱动下不可达。</li>
+      <li><b>架构族同构</b>：模拟 MVM 交叉阵列 = 电子域矩阵-向量乘，与光子 MZI mesh、商业模拟 AI 加速器同族。</li>
+      <li><b>方法学独立</b>：判决全为死标量比对（闭式物理律 golden），LLM 不进判决路径，
+        <b>零外部 SPICE / 商业 EDA 引擎</b>（C 级自主 · 纯 numpy/标准库）。</li>
+      <li><b>带符号权重</b>：参考列法（<code>g_ij = g_base + s·W_ij</code>，数据列减参考列）。</li>
+    </ul>
+  </div>
+
+  <h2>先进性定位（架构族对齐 · 公开 landmark 仅背景坐标）</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>维度</th><th>产业界 / 学术</th><th>本案例</th></tr></thead>
       <tbody>
         <tr><td>交付物</td><td>流片硅产品 + 云访问</td><td>设计期验证（可复现、可审计的工具链输出）</td></tr>
-        <tr><td>工具链来源</td><td>闭源 CAD/PDK + 商业 SPICE</td><td>开源（MIT）· Agent-native · 零外部 SPICE 引擎（自研）</td></tr>
-        <tr><td>判决路径</td><td>实测 + 数值仿真混合</td><td>LLM 不进判决路径（死标量比对 · 物理定律锚）</td></tr>
+        <tr><td>工具链来源</td><td>闭源 CAD/PDK + 商业 SPICE</td><td>开源（MIT）· Agent-native · <b>零外部 SPICE/EDA 引擎</b>（自研）</td></tr>
+        <tr><td>判决路径</td><td>实测 + 数值仿真混合</td><td><b>LLM 不进判决路径</b>（死标量比对 · 物理定律锚）</td></tr>
         <tr><td>架构族</td><td>analog CIM MVM 交叉阵列</td><td><b>同族</b>：MVM 交叉阵列（电子版「光子 MZI 网格」）</td></tr>
         <tr><td>能效口径</td><td>有实测/宣称 TOPS 与 W</td><td><b>不报能效/吞吐</b>（无流片）——口径不同，不可比数</td></tr>
       </tbody>
     </table>
-    <h3>公开 landmark（A 级公开来源 · 照录 · 未验证 · 仅背景坐标）</h3>
-    <ul>
-      <li><b>Mythic M1076 AMP</b>（Mythic AI）：analog compute-in-memory MVM 交叉阵列（flash array + on-die ADC）·
-        up to 25 TOPS · typ. 3–4 W · 76 AMP tiles · up to 80M weights · INT4/INT8（厂商宣称）· 源 mythic.ai</li>
-      <li>学术界：RRAM/ReRAM MVM 交叉阵列加速器提案（ISAAC / PUMA 系列，架构族参照）</li>
-    </ul>
+    <p style="margin:10px 0 0;font-size:13px;color:#475569">
+      公开 landmark（A 级公开来源 · 照录 · 未验证 · 仅背景坐标 · 不作 LDA 成就值）：
+      <b>Mythic M1076 AMP</b>（analog CIM MVM · up to 25 TOPS · typ. 3–4 W · 76 tiles · 80M weights · INT4/INT8 ·
+      源 mythic.ai）；学术界 RRAM/ReRAM MVM 加速器提案（ISAAC / PUMA 系列，架构族参照）。</p>
   </div>
 
-  <h2>🔴 诚实边界（逐条登记 · 不得删改）</h2>
-  <div class="dis">
-    <b>G-A 无流片 / 无实测</b>：全部为设计期验证；无硅、无实测精度/良率、无 foundry 回片。<br/>
-    <b>G-B 无 foundry PDK</b>：晶体管参数为公开典型量级占位（非 PDK 标定、无实测锚）。<br/>
-    <b>G-C 理想 TIA 路径 / 非签核级 SPICE</b>：数据通路主路径用理想运放（无限增益）；电路引擎无温度/噪声/稀疏矩阵。<br/>
-    <b>G-D 无实测能效 / 吞吐</b>：<b>不报任何 TOPS / TOPS-W / fJ/op</b>（无流片、无硅实测）。<br/>
-    <b>G-E transistor 路径列增益含电阻负载因子</b>：电阻负载固有特性，golden 已计入。
-  </div>
-
-  <h2>在 LDA 内的位置</h2>
+  <h2>诚实边界（逐条登记 · 不得删改）</h2>
   <div class="card">
-    WebUI 只读案例卡：<code>GET /api/ecore_demo</code>（免登录 · 零重计算）。<br/>
-    与 <code>/api/qchip_demo</code>（光量子 LOQC）、<code>/api/schip_demo</code>（超导 transmon）、
-    <code>/api/pchip_demo</code>（硅光张量核）<b>并列</b>：四条物理/器件路线在 LDA 均已吃狗粮。
+    <div class="dis">
+      <b>G-A</b> 无流片 / 无实测：全部为设计期验证，无硅、无实测精度/良率、无 foundry 回片。<br/>
+      <b>G-B</b> 无 foundry PDK（器件）：晶体管参数为公开典型量级占位（非 PDK 标定、无实测锚）。<br/>
+      <b>G-C</b> 理想 TIA 路径 / 非签核级 SPICE：主路径用理想运放（无限增益）；引擎无温度/噪声/稀疏矩阵/收敛增强。<br/>
+      <b>G-D</b> 无实测能效 / 吞吐：<b>不报任何 TOPS / TOPS-W / fJ/op</b>。<br/>
+      <b>G-E</b> transistor 路径列增益含电阻负载因子（golden 已计入）。<br/>
+      <b>G-F</b> 版图层/规则为公开近似（非 PDK）：几何判据为 <b>bbox 级</b>；沟道区被 POLY 断开为 DIFF_D/DIFF_S 属<b>教学级简化</b>。<br/>
+      <b>G-G</b> 寄生提取为一阶几何闭式 · 后仿为 DC：无 3D 场解；<code>r_leak</code> 为<b>数值钉扎</b>（防浮空奇异），非物理漏电。<br/>
+      <b>G-H</b> 失配/噪声/温度参数为公开量级 · 校准为理想化：L2 逐单元校准为理想化模型；噪声仅谱密度量级；假定独立同分布。<br/>
+      <b>G-I</b> 规模模型为 1D 行线（忽略列线电阻）：校核规模内与 2D 稠密 MNA 对拍一致；千级为<b>设计期版图与规模律</b>，非流片。
+    </div>
   </div>
 
   <div class="foot">
-    <b>声明</b>：本案例是设计期验证，非流片后实测；不报任何 fabricated 能效数字；
-    Mythic 等公开数字仅作背景坐标，不同台比较。判决位由死标量给出，LLM 不进判决路径。<br/>
-    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E5（D-150…D-154）。
+    声明：本案例是<b>设计期验证</b>，非流片后实测；<b>不报任何 fabricated 能效数字</b>；
+    Mythic 等公开数字仅作<b>背景坐标</b>，不同台比较。<br/>
+    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E10（D-150…D-160）·
+    版图/寄生/失配/规模可视化产物见 <code>docs/ecore_e6..e9_*_preview.html</code>。
   </div>
 
 </div>

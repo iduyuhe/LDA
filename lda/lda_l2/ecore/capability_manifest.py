@@ -88,6 +88,16 @@ ECORE_CAPABILITY_MANIFEST = [
                     "EDRC_RULES", "LAYOUT_DISCLOSURE", "run_selfchecks"],
         "introduced_by": "D-156 (E6)", "guard": "run_ecore_e6_smoke.py",
     },
+    {
+        "capability": "寄生提取与后仿（导线 RC 闭式 + 阵列 R 梯网络 + IR drop / sneak path + Elmore 延迟）",
+        "module": "lda_l2.ecore.parasitic",
+        "symbols": ["sheet_resistance", "wire_resistance", "cap_per_length",
+                    "wire_capacitance", "elmore_delay", "array_parasitics",
+                    "ideal_column_currents", "build_network", "solve_network",
+                    "ir_drop_report", "sneak_report", "ELEC_PROCESS",
+                    "PARASITIC_DISCLOSURE", "run_selfchecks"],
+        "introduced_by": "D-157 (E7)", "guard": "run_ecore_e7_smoke.py",
+    },
 ]
 
 

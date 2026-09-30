@@ -74,6 +74,19 @@ from .layout import (
     run_edrc,
     to_gds,
 )
+from .parasitic import (
+    ELEC_PROCESS,
+    PARASITIC_DISCLOSURE,
+    array_parasitics,
+    build_network,
+    elmore_delay,
+    ideal_column_currents,
+    ir_drop_report,
+    solve_network,
+    sneak_report,
+    wire_capacitance,
+    wire_resistance,
+)
 
 __all__ = [
     "Circuit",
@@ -128,6 +141,17 @@ __all__ = [
     "to_gds",
     "gds_roundtrip_check",
     "layout_svg",
+    "ELEC_PROCESS",
+    "PARASITIC_DISCLOSURE",
+    "array_parasitics",
+    "build_network",
+    "elmore_delay",
+    "ideal_column_currents",
+    "ir_drop_report",
+    "solve_network",
+    "sneak_report",
+    "wire_capacitance",
+    "wire_resistance",
 ]
 
 # 征程入口披露（对外引用须携此诚实边界）
@@ -139,6 +163,7 @@ ECORE_DISCLOSURE: dict = {
     "e4_scope": "E4 规模对标（诚实边界）：N×N 数据通路规模扫描(至 256×256=65536 突触) + 公开模拟加速器 landmark 诚实对标；不报 TOPS/TOPS/W；相对误差有界/绝对误差 ∝N。",
     "e5_scope": "E5 平台能力硬化：ecore 能力清单（ECORE_CAPABILITY_MANIFEST·单一真源）+ 常驻守护门禁（清单↔模块/符号双向完备 + 披露一致 + 诚实边界）。",
     "e6_scope": "E6 版图与几何签核：电子版图层栈（DIFF/POLY/CONT/M1/VIA1/M2 + 层语义谓词 + 设计规则）+ 1T 交叉阵列版图 P&R（节距闭式 + AREF 层次化）+ 几何 DRC（线宽/间距/包围/面积）+ 段感知 LVS（连通分量/短路/悬空桥/W-L 几何回提）+ 真 GDSII 出口。",
+    "e7_scope": "E7 寄生提取与后仿：从 E6 版图按教科书闭式提导线 RC（R=ρL/(Wt)·C=ε₀ε_r·W/d）+ 阵列 R 梯网络（行/列分段电阻 + 交叉点电导）注入 MNA 后仿，量化 IR drop（随规模超线性增）与 sneak path（half-select 浮空方案旁路电流）+ Elmore 互连延迟；golden = 解析 I_j=Σg_ij·V_i（R=0 精确复现）。",
     "redline": "电域→仅电路级（T1）：不碰 Foundry TCAD / 工艺角 / 流片（属 T2 真值，永久锁）。",
     "sovereignty": "C 级自主（纯 numpy），不借 HSPICE/Spectre 等商业 SPICE 引擎；LLM 不进判决路径。",
     "honest_boundary": "电路级设计验证引擎，非签核级 SPICE（无温度/噪声/稀疏矩阵/收敛增强）；"

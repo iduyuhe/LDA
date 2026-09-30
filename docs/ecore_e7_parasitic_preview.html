@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>LDA 电子计算芯片 E7 寄生后仿</title><style>
+body{background:#0b1220;color:#e6edf7;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;margin:0;padding:28px}
+h1{font-size:20px;font-weight:600;margin:0 0 4px}h2{font-size:14px;font-weight:600;margin:0 0 8px;color:#9fb3d1}
+.sub{color:#8296b3;font-size:13px;margin-bottom:18px}.cards{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
+.card{background:#141d2f;border:1px solid #24314a;border-radius:10px;padding:12px 16px;min-width:150px}
+.card .k{font-size:12px;color:#8296b3}.card .v{font-size:19px;font-weight:600;color:#7fd1ff;margin-top:2px}
+.row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.panel{background:#141d2f;border:1px solid #24314a;border-radius:10px;padding:14px}
+table{border-collapse:collapse;font-size:13px;margin-top:8px}td,th{border:1px solid #24314a;padding:6px 12px;text-align:left}
+th{background:#1b2740;color:#9fb3d1;font-weight:600}.note{color:#8296b3;font-size:12.5px;margin-top:14px;line-height:1.7}
+</style></head><body>
+<h1>LDA · 电子计算芯片征程 E7 · 寄生提取与后仿</h1>
+<div class="sub">从 E6 版图按教科书闭式提 RC → 阵列 R 梯网络注入 MNA 后仿 → 量化 IR drop 与 sneak path · D-157</div>
+<div class="cards">
+<div class="card"><div class="k">M1 方块电阻 R□</div><div class="v">0.084 Ω/□</div></div>
+<div class="card"><div class="k">R_row_seg (8×8)</div><div class="v">0.504 Ω</div></div>
+<div class="card"><div class="k">R_row_total</div><div class="v">3.53 Ω</div></div>
+<div class="card"><div class="k">C_row_total</div><div class="v">1.55 fF</div></div>
+<div class="card"><div class="k">Elmore τ_row</div><div class="v">3.12 fs</div></div>
+<div class="card"><div class="k">IR drop @N=32</div><div class="v">27.0%</div></div>
+</div>
+<div class="row">
+<div class="panel"><h2>IR drop 相对误差 vs 阵列规模</h2><svg width="300" height="180" viewBox="0 0 300 180"><line x1="38" y1="146" x2="292" y2="146" stroke="#2b3b57"/><rect x="49.2" y="144.3" width="39.7" height="1.7" rx="3" fill="#38bdf8"/><text x="69.0" y="140.3" font-size="10" fill="#cfe3ff" text-anchor="middle">0.4%</text><text x="69.0" y="161.0" font-size="11" fill="#8296b3" text-anchor="middle">N=4</text><rect x="111.2" y="138.1" width="39.7" height="7.9" rx="3" fill="#38bdf8"/><text x="131.0" y="134.1" font-size="10" fill="#cfe3ff" text-anchor="middle">2.0%</text><text x="131.0" y="161.0" font-size="11" fill="#8296b3" text-anchor="middle">N=8</text><rect x="173.2" y="113.8" width="39.7" height="32.2" rx="3" fill="#38bdf8"/><text x="193.0" y="109.8" font-size="10" fill="#cfe3ff" text-anchor="middle">8.1%</text><text x="193.0" y="161.0" font-size="11" fill="#8296b3" text-anchor="middle">N=16</text><rect x="235.2" y="38.2" width="39.7" height="107.8" rx="3" fill="#38bdf8"/><text x="255.0" y="34.2" font-size="10" fill="#cfe3ff" text-anchor="middle">27.0%</text><text x="255.0" y="161.0" font-size="11" fill="#8296b3" text-anchor="middle">N=32</text></svg></div>
+<div class="panel"><h2>sneak 比例 vs 阵列规模</h2><svg width="300" height="180" viewBox="0 0 300 180"><line x1="38" y1="146" x2="292" y2="146" stroke="#2b3b57"/><rect x="49.2" y="136.9" width="39.7" height="9.1" rx="3" fill="#f472b6"/><text x="69.0" y="132.9" font-size="10" fill="#cfe3ff" text-anchor="middle">1.29×</text><text x="69.0" y="161.0" font-size="11" fill="#8296b3" text-anchor="middle">N=4</text><rect x="111.2" y="122.9" width="39.7" height="23.1" rx="3" fill="#f472b6"/><text x="131.0" y="118.9" font-size="10" fill="#cfe3ff" text-anchor="middle">3.27×</text><text x="131.0" y="161.0" font-size="11" fill="#8296b3" text-anchor="middle">N=8</text><rect x="173.2" y="94.7" width="39.7" height="51.3" rx="3" fill="#f472b6"/><text x="193.0" y="90.7" font-size="10" fill="#cfe3ff" text-anchor="middle">7.26×</text><text x="193.0" y="161.0" font-size="11" fill="#8296b3" text-anchor="middle">N=16</text><rect x="235.2" y="38.2" width="39.7" height="107.8" rx="3" fill="#f472b6"/><text x="255.0" y="34.2" font-size="10" fill="#cfe3ff" text-anchor="middle">15.25×</text><text x="255.0" y="161.0" font-size="11" fill="#8296b3" text-anchor="middle">N=32</text></svg></div>
+<div class="panel"><h2>行线抽头电压剖面（8×8 · 输入 0.1 V）</h2><svg width="300" height="180" viewBox="0 0 300 180"><line x1="46" y1="146" x2="292" y2="146" stroke="#2b3b57"/><polyline points="46.0,22.0 80.0,53.1 114.0,79.6 148.0,101.8 182.0,119.5 216.0,132.7 250.0,141.6 284.0,146.0" fill="none" stroke="#f59e0b" stroke-width="2"/><circle cx="46.0" cy="22.0" r="3" fill="#f59e0b"/><text x="46.0" y="14.0" font-size="10" fill="#ffd9a0" text-anchor="middle">0.10000</text><circle cx="80.0" cy="53.1" r="3" fill="#f59e0b"/><circle cx="114.0" cy="79.6" r="3" fill="#f59e0b"/><circle cx="148.0" cy="101.8" r="3" fill="#f59e0b"/><circle cx="182.0" cy="119.5" r="3" fill="#f59e0b"/><circle cx="216.0" cy="132.7" r="3" fill="#f59e0b"/><circle cx="250.0" cy="141.6" r="3" fill="#f59e0b"/><circle cx="284.0" cy="146.0" r="3" fill="#f59e0b"/><text x="284.0" y="138.0" font-size="10" fill="#ffd9a0" text-anchor="middle">0.09861</text><text x="40" y="26" font-size="10" fill="#8296b3" text-anchor="end">0.1000</text><text x="40" y="146" font-size="10" fill="#8296b3" text-anchor="end">0.0986</text><text x="46.0" y="161" font-size="11" fill="#8296b3" text-anchor="middle">tap 0</text><text x="284.0" y="161" font-size="11" fill="#8296b3" text-anchor="middle">tap 7</text></svg></div>
+</div>
+<h2 style="margin-top:24px">规模律（同 R_seg · 全阵列导通）</h2><table>
+<tr><th>N</th><th>IR drop 相对误差</th><th>sneak 比例</th></tr>
+<tr><td>4</td><td>0.42%</td><td>1.29×</td></tr>
+<tr><td>8</td><td>1.98%</td><td>3.27×</td></tr>
+<tr><td>16</td><td>8.06%</td><td>7.26×</td></tr>
+<tr><td>32</td><td>27.00%</td><td>15.25×</td></tr>
+</table>
+<div class="note">工艺参数（ρ_Cu / 金属厚度 / ILD ε_r）为<b>公开典型量级占位（非 Foundry PDK）</b>；提取为<b>一阶几何闭式</b>（R=ρL/(Wt) · C=ε₀ε_r·W/d，无 3D 场解）；后仿为 <b>DC</b>（电容仅进 Elmore 时间常数）；网络内 <b>r_leak 是数值钉扎</b>（防浮空奇异），非物理漏电声明。<br>LDA 是设计 &amp; 验证工具链，<b>不是流片芯片</b> ⇒ 不报 TOPS/TOPS-W/fJ-op；本引擎非签核级 SPICE。</div>
+</body></html>

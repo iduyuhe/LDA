@@ -7,7 +7,7 @@
   "target_x": 3.0,
   "ratchet_below_target": 0,
   "anchors_at_measurement": 476,
-  "core_smokes_at_measurement": 244,
+  "core_smokes_at_measurement": 245,
   "updated_at": "2026-09-30",
   "source_reports": [
     "_ci_core_179",
@@ -3985,6 +3985,19 @@
         0.33,
         0.36,
         0.36
+      ],
+      "n_rounds": 3,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ecore_e7_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.73,
+      "margin_x": 173.41,
+      "samples_s": [
+        1.73,
+        1.63,
+        1.63
       ],
       "n_rounds": 3,
       "censored_events": 0

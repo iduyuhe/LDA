@@ -205,6 +205,24 @@ class Circuit:
             _, _, nidx = self._setup()
         return {n: float(x[nidx[n]]) for n in nidx}
 
+    def branch_currents(self, x: np.ndarray) -> Dict[str, float]:
+        """分支电流（V / E 元素）：{tag: I}。
+
+        电流符号约定：**从元素 a 端流向 b 端为正**。电压源/VCVS 的电流是 MNA 的
+        增广未知量，`solve_dc` / `solve_transient` / `solve_ac` 后可直接读出。
+        典型用法（E7 后仿）：把某节点经 `vsource(node, 0, 0.0)` 接地作**0 V 电流表**
+        （理想 TIA 虚地），分支电流即流入该节点的电流。
+
+        🔴 须在 solve_* **之后**调用（分支索引在求解时写入）；无 tag 的元素以
+        `br{index}` 命名。
+        """
+        out: Dict[str, float] = {}
+        for e in self._elems:
+            if e["type"] in ("V", "E") and "_bix" in e:
+                key = e.get("tag") or f"br{e['_bix']}"
+                out[key] = float(x[e["_bix"]])
+        return out
+
     # ------------------------------------------------------------------
     # 瞬态（后向欧拉）
     # ------------------------------------------------------------------

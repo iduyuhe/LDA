@@ -63,8 +63,11 @@ WAVEGUIDE_LEN_PER_MZI_CM = 0.40   # 设计预算
 # 波导交叉单点损耗（dB）：浅刻蚀交叉 ~0.02–0.1 dB（E4/E7 语料为几何级，
 # 此处取保守设计预算，不作为精度判决）。
 CROSSING_LOSS_DB = 0.05           # 设计预算
-# 相移器半波电压-长度积 Vπ·L（V·cm）：热光硅相移器典型 10–50 V·cm。
-VPI_L_V_CM = 25.0                 # 设计预算（Soref-Bennett 线性电光/热光）
+# 相移器半波电压-长度积 Vπ·L：统一口径见 lda_l2.vpi_l（单一真值源，单位 V·mm）。
+# VPI_L_V_CM 为遗留 V·cm 兼容别名（= 250 V·mm ÷ 10 = 25.0 V·cm），真值来自 vpi_l。
+from lda_l2.vpi_l import VPI_L_REDLINE_VMM as _VPI_L_REDLINE_VMM
+VPI_L_VMM = _VPI_L_REDLINE_VMM            # 250.0 V·mm（统一单位真值 · red-line 上界）
+VPI_L_V_CM = _VPI_L_REDLINE_VMM / 10.0   # 25.0 V·cm 兼容别名（热光硅相移器设计预算）
 # 工作波长（µm）
 WL_UM = 1.55
 # 定向耦合器偶模/奇模折射率（用于 CMT 耦合长度锚定，SOI 220nm 量级）
@@ -105,14 +108,16 @@ def coupler_length_from_theta(theta: float, n_e: float = N_E_DC,
     return (theta / 2.0) / kappa
 
 
-def voltage_from_phase(phi: float, vpi_l_v_cm: float = VPI_L_V_CM,
+def voltage_from_phase(phi: float, vpi_l_v_mm: float = VPI_L_VMM,
                        wl: float = WL_UM) -> float:
-    """由相移 φ 反算相移器驱动电压（V），Vπ·L 物理定律。
+    """由相移 φ 反算相移器驱动电压（V），Vπ·L 物理定律（单位统一 V·mm）。
 
-    φ = π·V·L / (Vπ·L) ⇒ V = φ·(Vπ·L)/(π·L)。取 L=1cm 量级给出驱动电压量级。
+    φ = π·V·L / (Vπ·L) ⇒ V = φ·(Vπ·L_mm)/(π·L_mm)。
+    取 L_mm=10.0（= 1 cm 量级）给出驱动电压量级；默认 VPI_L_VMM=250 V·mm
+    ⇒ 1 cm 臂下 Vπ = 250/10 = 25 V，与原 25 V·cm 口径物理量一致。
     """
-    L_cm = 1.0  # 取单位臂长 1cm 给出驱动电压量级
-    return phi * vpi_l_v_cm / (math.pi * L_cm)
+    L_mm = 10.0  # 单位臂长 1 cm = 10 mm（给出驱动电压量级）
+    return phi * vpi_l_v_mm / (math.pi * L_mm)
 
 
 # ---------------------------------------------------------------------------

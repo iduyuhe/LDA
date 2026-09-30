@@ -108,6 +108,16 @@ CORE_SMOKES: List[str] = [
     #   f-string 须 3.12+）。静态扫描 lda/**/*.py 的 JoinedStr 跨行节点，断言声明不谎报。
     #   防「声明可装 3.11 实则 3.12 才跑得起来」的对外硬阻塞。实测 <2s。
     "run_requires_python_smoke.py",
+    # 🔴 v0.9.145（P1 死断言常驻扫描）：对 scripts/*_probe.py 做静态活性扫描——凡探针
+    #   声明的「突变锚点串」已不在活代码中（重构后 patch 入口失效 ⇒ 仍绿死断言，血案
+    #   D-145）、或目标源文件被删，当场判红，强制把探针重定向到更根本入口。纯 AST +
+    #   文本子串，不改源码、不起子进程，秒级。CI core 227→228。
+    "run_dead_assert_guard_smoke.py",
+    # 🔴 v0.9.145（P1 GPU wheel 预置）：对隔离 CUDA venv（lda_cuda_venv/，gitignore
+    #   排除）做**软/Advisory**可用性自检——登记「torch>=2.0 且 CUDA build」预期；venv
+    #   缺席⇒SKIP（CI 沙箱 R7 缺口合法缺席，不阻断门禁），venv 存在但损坏⇒FAIL（抓出
+    #   "预置了却坏掉"）。绝不 import/安装 torch，不污染环境。CI core 228→229。
+    "run_cuda_venv_selfcheck_smoke.py",
     # 基准对照验证闭环报告（v0.8.11c：15 引擎解析锚 rel + 实证语料覆盖矩阵 + ORACLE 状态）
     "run_benchmark_crosscheck_report.py",
     # 芯片级版图导出增强（v0.8.11d：IO 光栅接入 + 版图统计 + 芯片级 DRC 正负例）

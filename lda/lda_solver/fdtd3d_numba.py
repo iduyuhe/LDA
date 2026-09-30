@@ -63,8 +63,6 @@ def _fdtd3d_core(Ex, Ey, Ez, Hx, Hy, Hz,
                 # 前向差分（沿 j / k / i）
                 ez_fj = (Ez[i, (j + 1) % Ny, k] - Ez[i, j, k]) if pbc_y else (
                     Ez[i, j + 1, k] - Ez[i, j, k] if j + 1 < Ny else 0.0)
-                ez_fk = (Ez[i, j, (k + 1) % Nz] - Ez[i, j, k]) if pbc_z else (
-                    Ez[i, j, k + 1] - Ez[i, j, k] if k + 1 < Nz else 0.0)
                 ez_fi = Ez[i + 1, j, k] - Ez[i, j, k] if i + 1 < Nx else 0.0
                 ey_fk = (Ey[i, j, (k + 1) % Nz] - Ey[i, j, k]) if pbc_z else (
                     Ey[i, j, k + 1] - Ey[i, j, k] if k + 1 < Nz else 0.0)
@@ -93,8 +91,6 @@ def _fdtd3d_core(Ex, Ey, Ez, Hx, Hy, Hz,
                 # 后向差分（沿 j / k / i）—— 必须为 f[i] - f[i-1]，边界首格为 0
                 hz_bj = (Hz[i, j, k] - Hz[i, (j - 1) % Ny, k]) if pbc_y else (
                     Hz[i, j, k] - Hz[i, j - 1, k] if j - 1 >= 0 else 0.0)
-                hz_bk = (Hz[i, j, k] - Hz[i, j, (k - 1) % Nz]) if pbc_z else (
-                    Hz[i, j, k] - Hz[i, j, k - 1] if k - 1 >= 0 else 0.0)
                 hz_bi = Hz[i, j, k] - Hz[i - 1, j, k] if i - 1 >= 0 else 0.0
                 hy_bk = (Hy[i, j, k] - Hy[i, j, (k - 1) % Nz]) if pbc_z else (
                     Hy[i, j, k] - Hy[i, j, k - 1] if k - 1 >= 0 else 0.0)

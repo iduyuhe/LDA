@@ -1546,10 +1546,9 @@ class DeviceLibrary:
         B27 锚：t_CZ=π/(2|χ|)（GHz→ns）。数值：由 χ 反推 2|χ|·t_CZ=π
         精确性校验 + 对角化 χ 复核（双死标量，LLM 不进判决路径）。
         """
-        from lda_harness.golden import b27_cz_gate_time, b26_dispersive_shift
+        from lda_harness.golden import b27_cz_gate_time
         from lda_solver.qeda_depth_solver import tls_spectrum_L, _chi_from_spectrum
         anchor_ns = b27_cz_gate_time(f_q_ghz, alpha_ghz, f_r_ghz, g_ghz)
-        chi_an = b26_dispersive_shift(f_q_ghz, alpha_ghz, f_r_ghz, g_ghz)
         physical_anchor = bool(10.0 < anchor_ns < 1e6)
         if mode == "contract":
             return {

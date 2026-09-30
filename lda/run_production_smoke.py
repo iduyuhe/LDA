@@ -110,7 +110,6 @@ def _qd67_reverse_test() -> bool:
         Qmu = Y0 + eta * mu
         Emu = (0.5 * Y0 + e1 * mu * math.exp(-mu) * Y1) / Qmu
         H1 = _qe.binary_entropy(e1)
-        Hmu = _qe.binary_entropy(Emu)
         skr_per_pulse = q * Qmu * (1.0 - H1)   # BAD：用 Q_μ 且丢惩罚项 → 应突破上界
         q1_upper = q * Q1
         if skr_per_pulse > q1_upper + 1e-15:

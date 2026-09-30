@@ -1,11 +1,17 @@
 # Changelog
 
-## v0.9.145（2026-09-30 · **超导量子计算芯片征程 S1–S5 全闭环 + 工程债清偿（D-146/D-147）+ 案例化与对外包装（D-148）** · 账本 **476 不变**（严格独立 455 / 降级 3 / 自证桩 18）· 独立率 95.59% 持平 · CI core **221 → 226 → 227（P1.1）**）
+## v0.9.145（2026-09-30 · **超导量子计算芯片征程 S1–S5 全闭环 + 工程债清偿（D-146/D-147）+ 案例化与对外包装（D-148）** · 账本 **476 不变**（严格独立 455 / 降级 3 / 自证桩 18）· 独立率 95.59% 持平 · CI core **221 → 226 → 227（P1.1）→ 228（死断言）→ 229（GPU wheel）**）
 
 > **P1.1（2026-09-30 · 战略/功能/代码三审计后第一轮实施 · SO1 标准首项）**：把 L1 agent 协议层（lda/lda_l1/protocol.py 的 KernelGateway + AgentRequest/AgentResponse + tool_schemas 原语集；lda/lda_l1/mcp_server.py 的零依赖 JSON-RPC 2.0 传输绑定）冻结为开放标准 **LDA-STD-002 v0.1**（docs/l1_protocol_spec.md + docs/l1_protocol_schema.json，对标 L0 LDA-STD-001 v0.3）；新增零漂移门禁 `lda/run_l1_spec_smoke.py`（8 判据：契约-代码逐字段比对 + 未知 action / 非法 candidate 两道反向反例 + 正向防假绿），入 CI core（CORE_SMOKES + 超时表 120s）。CI core **226 → 227**。A1 发函由用户方人类合作伙伴推进（已建周提醒自动化）；L1 协议冻结为社区共建起点。
 
 
 > **P1.2（2026-09-30 · 战略/功能/代码三审计后第一轮实施 · SO2 信任墙首项）**：把 M3 横向交叉验证网从 13 格加厚到 **20 格**（`lda/run_cross_solver_matrix_smoke.py`），SO2 信任墙物理可信度提升。新增 7 个**实测收敛**格（X11-X17）：p-n 结峰值电场 E_max（Sze 突变结闭式 ↔ 1D 自洽泊松数值核，rel 6.96e-2→3.37e-2 单调降）、定向耦合器 3dB 耦合长度 L_3dB（CMT 闭式 ↔ dc_3dB_fft 谱峰，1.01e-4→2.02e-5）、单层介质膜透射率 T（TMM ↔ 1D FDTD 全波，2.09e-1→1.41e-2）、Mie 散射效率 Q_scat（Rayleigh 小粒子闭式 ↔ 完整 Mie 无穷级数，3.55e-1→5.47e-3）、单界面 Fresnel 透射率（闭式 ↔ FDTD，9.77e-2→5.90e-3）、双层膜 T（TMM ↔ FDTD，8.50e-2→5.43e-3）、三层膜 T（TMM ↔ FDTD，8.89e-2→2.56e-2）；每格登记**方法学独立声明**（非换后端，通则 B 不触发）+ **判据 D**（扫精化参数残差严格单调降、粗端 >1e-13、细端 < tol_rel）。域标签表 `CELL_DOMAIN` 双向完备（光子 13 + 量子 7 = 20，判据 ⑦a 必过）。诚实剔除 4 个假繁荣候选并登记进 `EXCLUDED_CANDIDATES` 留痕：DET/DEP-MZM 含不可消除网格收敛项的假 model_limited（残差 spread 2e-5~4e-3，永远达不到 1e-6 稳定判据，永久不入矩阵）、DBR quarter-wave 堆栈反射率反发散（rel_err 随网格变粗更差 5.5e-3→1.44e-2）、WG-NEFF FDTD 取错模支（cand > n_core 物理区间）。突变探针造真实反例（sha256 复核）刻意不入 CI。CI core 计数**不变**（矩阵 smoke 已是 core 成员，扩格不增成员，仍 227）；账本零变化、零锚改动、独立率 95.59% 持平。
+
+> **P1 余下（2026-09-30 · P1 四项收官 · SO1/SO2 之外的工程加固）**：把 P1 余下四项全部落地，账本零变化、零锚改动、独立率 95.59% 持平 ——
+> ① **M6 实证语料扩容（73 → 122）**：`lda/lda_harness/seed_empirical.json` 经 12 轮 WebSearch 核实的真实 DOI/URL 实测值追加 49 条（Ge PD/APD 响应度、Si3N4 微环 Q/损耗、SOI 微环/微盘 Q、SOI 交叉/MM I 插损、光栅耦合器 IL、SOI MZM VπL、Si 热光系数、SOI 边耦合器、Si3N4 群折射率等），全部 A 级、带 `uncertainty_abs` + `geometry`；**不登记新 comparison**（避免 M6-7/8/9/10 回归），`distinct_locators` 57→85，10 门禁全 PASS、rel 中位数 18.05% 不变。
+> ② **pyflakes 静净 6 → 0**：`lda/run_pyflakes_ratchet_smoke.py` 棘轮基线收至 F841=0（前序轮次已完成）。
+> ③ **死断言常驻扫描门禁（CI core 227 → 228）**：新增 `lda/run_dead_assert_guard_smoke.py` —— 对 `scripts/*_probe.py` 共 33 个突变探针做纯静态（AST + 文本子串）活性扫描，凡探针声明的「突变锚点串」已不在活代码中（重构后 patch 入口失效 ⇒ 仍绿死断言，血案 D-145）、或目标源文件被删，当场判红，强制把探针重定向到更根本入口；不改源码、不起子进程、秒级。
+> ④ **GPU/CUDA 隔离 venv 预置可用性自检（CI core 228 → 229）**：新增 `lda/run_cuda_venv_selfcheck_smoke.py`（软/Advisory 护栏）—— 登记「torch>=2.0 且 CUDA build」预期；隔离 venv `lda_cuda_venv/`（已在 .gitignore 排除，不污染用户/仓库环境）若缺席则 SKIP（CI 沙箱因审计 R7 缺口无法下载 CUDA wheel，属合法缺席，不阻断任何门禁），若已预置则实跑校验 torch 可 import + 为 CUDA build + 版本达标，损坏即 FAIL（抓出「预置了却坏掉」）。配套可复现 recipe `setup_cuda_venv.py`（一键创建 + 安装 cu128 wheel + 校验；安装被阻断时明确报错退出，绝不假装成功）。本机预置实测：torch 2.11.0+cu128（CUDA 12.8，`torch.cuda.is_available=True`）。
 
 > ⚠️ **本段为补记归档**：D-133…D-148 共 11 轮工程（`78162cd`…`7c6c2e8`）此前**未写 CHANGELOG 段**
 > （沿用「不 bump 版本即不落段」的旧惯例，导致 CHANGELOG 最新条目长期停在 v0.9.144 的 B-32）。

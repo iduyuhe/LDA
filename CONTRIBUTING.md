@@ -2,7 +2,7 @@
 
 感谢关注 **LDA**——一个 Agent-native 的光子芯片（PDA）+ 量子芯片（QEDA）开源设计软件，核心是 **AI agent 递归自举主权求解器**，人类做架构与验证，AI 不进判决路径。
 
-当前版本：**v0.9.145** · 账本：**22 引擎（光子 15 + 量子 7）+ 11 包 = 33 类端到端 · 476 道锚（严格独立 455 / 降级 3 / 自证桩 18）· CI core 227 条**
+当前版本：**v0.9.145** · 账本：**22 引擎（光子 15 + 量子 7）+ 11 包 = 33 类端到端 · 476 道锚（严格独立 455 / 降级 3 / 自证桩 18）· CI core 229 条**
 · 实证大数据锚：**70 条 A 级语料（100% 可公开溯源）· 14 条实测对照（独立 10 + 跨器件 4）**。
 
 > ⚠️ 账本以 `README.md` 顶行权威账本为准。如与本页不一致，以 README 为准，并欢迎提 PR 修正本页。
@@ -29,13 +29,13 @@ LDA 有**两个并存的自测入口**，口径同源、互不替代：
 
 # ---- 入口①（主入口）：CI 回归 ----
 cd lda
-python run_ci_regression.py --tag core      # CI core 全量（227 条 smoke）
+python run_ci_regression.py --tag core      # CI core 全量（229 条 smoke）
 python run_parasitic_rc_smoke.py             # 几何寄生估算
 
 # ---- 入口②（次入口）：pytest ----
 cd ..                                        # 仓库根
 pytest                                       # 默认档：契约/单元用例，秒级
-pytest -m smoke                              # smoke 档：逐条转发 CI core 成员（分钟级，227 条）
+pytest -m smoke                              # smoke 档：逐条转发 CI core 成员（分钟级，229 条）
 ```
 
 > 🔴 **两个入口口径必须一致**：`tests/test_smoke_core.py` 的 smoke 用例**动态派生**自

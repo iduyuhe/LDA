@@ -1,0 +1,60 @@
+{
+  "schema": "lda-verification-report/1",
+  "meta": {
+    "L0_IR": "(内置默认)",
+    "candidate": "ReferenceCandidate",
+    "oracle": "确定性物理定律锚（analytical/EIM/Airy/Rayleigh）",
+    "via": "L1 KernelGateway",
+    "self_consistent": true
+  },
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "self_consistent": true,
+    "verified": 0,
+    "self_consistent_stub_count": 3,
+    "independent_candidate_count": 0,
+    "candidate_class_totals": null
+  },
+  "results": [
+    {
+      "id": "B1",
+      "metric": "Q_scat",
+      "oracle": "analytical(Rayleigh-limit)",
+      "source": "physical-law",
+      "golden": 0.00284131373,
+      "candidate": 0.00284131373,
+      "tol": 0.0002,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": null,
+      "candidate_class": null
+    },
+    {
+      "id": "B2",
+      "metric": "n_eff",
+      "oracle": "analytical(EIM)",
+      "source": "physical-law",
+      "golden": 2.65094743,
+      "candidate": 2.65094743,
+      "tol": 0.05,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": null,
+      "candidate_class": null
+    },
+    {
+      "id": "B4",
+      "metric": "FSR_nm",
+      "oracle": "analytical(ring)/sax",
+      "source": "physical-law",
+      "golden": 9.14760169,
+      "candidate": 9.14760169,
+      "tol": 0.3,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": null,
+      "candidate_class": null
+    }
+  ]
+}

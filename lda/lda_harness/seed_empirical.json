@@ -1857,6 +1857,1164 @@
         "soi",
         "2um"
       ]
+    },
+    {
+      "id": "E-GE-R-LI106",
+      "device": "Ge p-i-n waveguide PD, 0.8x10 um on SOI (Li 2010)",
+      "metric": "responsivity_A_per_W",
+      "measured_value": 1.06,
+      "uncertainty_abs": 0.05,
+      "fab_source": "CMOS-compatible Ge-on-SOI evanescent PD, 0.8 um x 10 um active",
+      "citation": "X. Li et al., High-speed Ge photodetector monolithically integrated with large cross-section SOI waveguide, AIP 2010: R_TE=1.06 A/W, R_TM=1.1 A/W @1550nm",
+      "source_url": "https://doi.org/10.1063/1.3279129",
+      "method": "Lensed-fiber coupling-loss calibrated photocurrent vs incident power",
+      "geometry": {
+        "w_core_um": 0.8,
+        "l_um": 10,
+        "wl_um": 1.55,
+        "n_ge": 4.0
+      },
+      "tags": [
+        "ge",
+        "pd",
+        "responsivity",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-GE-R-LI110",
+      "device": "Ge p-i-n waveguide PD, 0.8x10 um on SOI (Li 2010, TM)",
+      "metric": "responsivity_A_per_W",
+      "measured_value": 1.1,
+      "uncertainty_abs": 0.05,
+      "fab_source": "CMOS-compatible Ge-on-SOI evanescent PD",
+      "citation": "X. Li et al., High-speed Ge photodetector ... AIP 2010: R_TM=1.1 A/W @1550nm",
+      "source_url": "https://doi.org/10.1063/1.3279129",
+      "method": "Lensed-fiber coupling-loss calibrated photocurrent vs incident power",
+      "geometry": {
+        "w_core_um": 0.8,
+        "l_um": 10,
+        "wl_um": 1.55,
+        "n_ge": 4.0
+      },
+      "tags": [
+        "ge",
+        "pd",
+        "responsivity",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-GE-R-ZH114",
+      "device": "Metal-free Ge-on-Si PD, 1550nm (Zhang 2014)",
+      "metric": "responsivity_A_per_W",
+      "measured_value": 1.14,
+      "uncertainty_abs": 0.05,
+      "fab_source": "Ge-on-Si PD without doped Ge or Ge-metal contacts",
+      "citation": "Y. Zhang et al., A high-responsivity photodetector absent metal-germanium direct contact, Opt. Express 22, 11367 (2014): 1.14 A/W @ -4V",
+      "source_url": "https://opg.optica.org/oe/abstract.cfm?uri=oe-22-9-11367",
+      "method": "On-chip photocurrent vs coupled power, -4V reverse bias",
+      "geometry": {
+        "w_core_um": 1.0,
+        "l_um": 10,
+        "wl_um": 1.55,
+        "n_ge": 4.0
+      },
+      "tags": [
+        "ge",
+        "pd",
+        "responsivity",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-GE-R-ZH144",
+      "device": "Metal-free Ge-on-Si PD, 1550nm (Zhang 2014, -12V)",
+      "metric": "responsivity_A_per_W",
+      "measured_value": 1.44,
+      "uncertainty_abs": 0.05,
+      "fab_source": "Ge-on-Si PD without doped Ge or Ge-metal contacts",
+      "citation": "Y. Zhang et al., Opt. Express 22, 11367 (2014): 1.44 A/W @ -12V",
+      "source_url": "https://opg.optica.org/oe/abstract.cfm?uri=oe-22-9-11367",
+      "method": "On-chip photocurrent vs coupled power, -12V reverse bias",
+      "geometry": {
+        "w_core_um": 1.0,
+        "l_um": 10,
+        "wl_um": 1.55,
+        "n_ge": 4.0
+      },
+      "tags": [
+        "ge",
+        "pd",
+        "responsivity",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-GE-R-YIN089",
+      "device": "Intel Ge n-i-p waveguide PD, 7.4x50 um (Yin 2007)",
+      "metric": "responsivity_A_per_W",
+      "measured_value": 0.89,
+      "uncertainty_abs": 0.05,
+      "fab_source": "Evanescently coupled Ge PD on SOI rib, 1 um BOX, 1.5 um Si",
+      "citation": "T. Yin et al., 31GHz Ge n-i-p waveguide photodetectors on SOI, Opt. Express 15, 13965 (2007): 0.89 A/W @-2V",
+      "source_url": "https://opg.optica.org/oe/abstract.cfm?uri=OE-15-21-13965",
+      "method": "Waveguide-coupled responsivity extraction, -2V",
+      "geometry": {
+        "w_core_um": 7.4,
+        "l_um": 50,
+        "wl_um": 1.55,
+        "n_ge": 4.0
+      },
+      "tags": [
+        "ge",
+        "pd",
+        "responsivity",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-GE-R-YIN116",
+      "device": "Intel Ge n-i-p waveguide PD, 4.4x100 um (Yin 2007)",
+      "metric": "responsivity_A_per_W",
+      "measured_value": 1.16,
+      "uncertainty_abs": 0.05,
+      "fab_source": "Evanescently coupled Ge PD on SOI rib",
+      "citation": "T. Yin et al., Opt. Express 15, 13965 (2007): 1.16 A/W @-2V (longer detector)",
+      "source_url": "https://opg.optica.org/oe/abstract.cfm?uri=OE-15-21-13965",
+      "method": "Waveguide-coupled responsivity extraction, -2V",
+      "geometry": {
+        "w_core_um": 4.4,
+        "l_um": 100,
+        "wl_um": 1.55,
+        "n_ge": 4.0
+      },
+      "tags": [
+        "ge",
+        "pd",
+        "responsivity",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-GEAPD-R-UNIT",
+      "device": "Lateral SACM Ge-on-Si APD, 10x0.5 um @1310nm (Yi 2024)",
+      "metric": "responsivity_A_per_W",
+      "measured_value": 0.5,
+      "uncertainty_abs": 0.05,
+      "fab_source": "8-inch SiPh platform, lateral SACM Ge APD",
+      "citation": "L. Yi et al., Peak enhancement of frequency response of waveguide integrated Si-based Ge APD, J. Semicond. 45, 072401 (2024): unit-gain R=0.5 A/W @-10V",
+      "source_url": "https://doi.org/10.1088/1674-4926/24020006",
+      "method": "Responsivity at unit gain (-10V), 1310nm",
+      "geometry": {
+        "w_core_um": 0.5,
+        "l_um": 10,
+        "wl_um": 1.31,
+        "n_ge": 4.0
+      },
+      "tags": [
+        "ge",
+        "apd",
+        "responsivity",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-GEAPD-R-GAIN",
+      "device": "Lateral SACM Ge-on-Si APD, 10x0.5 um @1310nm (Yi 2024)",
+      "metric": "responsivity_A_per_W",
+      "measured_value": 2.98,
+      "uncertainty_abs": 0.1,
+      "fab_source": "8-inch SiPh platform, lateral SACM Ge APD",
+      "citation": "L. Yi et al., J. Semicond. 45, 072401 (2024): R=2.98 A/W @-15V (gain 11.68)",
+      "source_url": "https://doi.org/10.1088/1674-4926/24020006",
+      "method": "Responsivity under avalanche gain, -15V",
+      "geometry": {
+        "w_core_um": 0.5,
+        "l_um": 10,
+        "wl_um": 1.31,
+        "n_ge": 4.0
+      },
+      "tags": [
+        "ge",
+        "apd",
+        "responsivity",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-GEAPD-R-2",
+      "device": "Si-contacted waveguide Ge/Si APD, 300mm SOI (Kobbi 2026)",
+      "metric": "responsivity_A_per_W",
+      "measured_value": 2.0,
+      "uncertainty_abs": 0.1,
+      "fab_source": "300mm SOI, silicon-contacted waveguide Ge/Si APD",
+      "citation": "A. Shahin et al., Towards 100 GHz waveguide Ge/Si avalanche photodiodes, J. Lightwave Technol. 44, 6958 (2026): R=2 A/W @-7V (70 GHz BW)",
+      "source_url": "https://doi.org/10.1109/jlt.2026.3670103",
+      "method": "Waveguide-coupled responsivity at -7V, C-band",
+      "geometry": {
+        "w_core_um": 1.0,
+        "l_um": 20,
+        "wl_um": 1.55,
+        "n_ge": 4.0
+      },
+      "tags": [
+        "ge",
+        "apd",
+        "responsivity",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-Q-CUI",
+      "device": "Si3N4 multimode MRR, LIGENTEC AN800 (Cui 2024)",
+      "metric": "intrinsic_Q",
+      "measured_value": 6800000.0,
+      "uncertainty_abs": 400000.0,
+      "fab_source": "Standard LIGENTEC-AN800 MPW, 7-um wide multimode Si3N4",
+      "citation": "S. Cui et al., Integrated waveguide coupled ultralow-loss multimode waveguides based on Si3N4 resonators, Opt. Express 32, 2179 (2024): Qi=(6.8+-0.4)e6",
+      "source_url": "https://doi.org/10.1364/OE.507791",
+      "method": "Ring resonance linewidth fit (intrinsic Q)",
+      "geometry": {
+        "w_core_um": 7.0,
+        "h_core_um": 0.8,
+        "wl_um": 1.55,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "microresonator",
+        "Q",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-PL-CUI",
+      "device": "Si3N4 multimode waveguide, LIGENTEC AN800 (Cui 2024)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.051,
+      "uncertainty_abs": 0.003,
+      "fab_source": "Standard LIGENTEC-AN800 MPW",
+      "citation": "S. Cui et al., Opt. Express 32, 2179 (2024): loss 0.051+-0.003 dB/cm",
+      "source_url": "https://doi.org/10.1364/OE.507791",
+      "method": "Resonator load/intrinsic linewidth separation",
+      "geometry": {
+        "w_core_um": 7.0,
+        "h_core_um": 0.8,
+        "wl_um": 1.55,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "waveguide",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-Q-HKTE",
+      "device": "Si3N4 subtractive MRR, 61.5um R, TE1 (HKUST)",
+      "metric": "intrinsic_Q",
+      "measured_value": 2600000.0,
+      "uncertainty_abs": 100000.0,
+      "fab_source": "Wafer-scale subtractive Si3N4, 950nm film",
+      "citation": "Integrated Si3N4 microresonator-based quantum light sources, Opt. Express 29, 24750 (2021): Q0=2.6e6 TE1",
+      "source_url": "https://opg.optica.org/abstract.cfm?URI=oe-29-16-24750",
+      "method": "Resonance linewidth fit",
+      "geometry": {
+        "R_um": 61.5,
+        "h_core_um": 0.95,
+        "wl_um": 1.55,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "microresonator",
+        "Q",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-Q-HKTM",
+      "device": "Si3N4 subtractive MRR, 61.5um R, TM1 (HKUST)",
+      "metric": "intrinsic_Q",
+      "measured_value": 1600000.0,
+      "uncertainty_abs": 100000.0,
+      "fab_source": "Wafer-scale subtractive Si3N4, 950nm film",
+      "citation": "Integrated Si3N4 microresonator-based quantum light sources, Opt. Express 29, 24750 (2021): Q0=1.6e6 TM1",
+      "source_url": "https://opg.optica.org/abstract.cfm?URI=oe-29-16-24750",
+      "method": "Resonance linewidth fit",
+      "geometry": {
+        "R_um": 61.5,
+        "h_core_um": 0.95,
+        "wl_um": 1.55,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "microresonator",
+        "Q",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-PL-HKTE",
+      "device": "Si3N4 subtractive MRR, TE1 (HKUST)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.15,
+      "uncertainty_abs": 0.02,
+      "fab_source": "Wafer-scale subtractive Si3N4",
+      "citation": "Integrated Si3N4 microresonator-based quantum light sources, Opt. Express 29, 24750 (2021): atten ~0.15 dB/cm TE1",
+      "source_url": "https://opg.optica.org/abstract.cfm?URI=oe-29-16-24750",
+      "method": "Q-derived propagation loss",
+      "geometry": {
+        "R_um": 61.5,
+        "h_core_um": 0.95,
+        "wl_um": 1.55,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "waveguide",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-PL-HKTM",
+      "device": "Si3N4 subtractive MRR, TM1 (HKUST)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.26,
+      "uncertainty_abs": 0.02,
+      "fab_source": "Wafer-scale subtractive Si3N4",
+      "citation": "Integrated Si3N4 microresonator-based quantum light sources, Opt. Express 29, 24750 (2021): atten ~0.26 dB/cm TM1",
+      "source_url": "https://opg.optica.org/abstract.cfm?URI=oe-29-16-24750",
+      "method": "Q-derived propagation loss",
+      "geometry": {
+        "R_um": 61.5,
+        "h_core_um": 0.95,
+        "wl_um": 1.55,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "waveguide",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-Q-ELDIRANI",
+      "device": "High-confinement Si3N4 MRR 1.6x0.8 um (El Dirani 2019)",
+      "metric": "intrinsic_Q",
+      "measured_value": 10000000.0,
+      "uncertainty_abs": 1000000.0,
+      "fab_source": "Subtractive Si3N4, multistep anneal + encapsulation",
+      "citation": "H. El Dirani et al., Ultralow-loss tightly confining Si3N4 waveguides and high-Q microresonators, Opt. Express 27, 30726 (2019): Qi approaching 1e7",
+      "source_url": "https://doi.org/10.1364/OE.27.030726",
+      "method": "Resonance linewidth fit, C-band",
+      "geometry": {
+        "w_core_um": 1.6,
+        "h_core_um": 0.8,
+        "wl_um": 1.55,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "microresonator",
+        "Q",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-PL-ELDIRANI",
+      "device": "High-confinement Si3N4 waveguide 1.6x0.8 um (El Dirani 2019)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.3,
+      "uncertainty_abs": 0.05,
+      "fab_source": "Subtractive Si3N4, multistep anneal + encapsulation",
+      "citation": "H. El Dirani et al., Opt. Express 27, 30726 (2019): ~3 dB/m across S/C/L bands",
+      "source_url": "https://doi.org/10.1364/OE.27.030726",
+      "method": "Cutback / ring-derived loss",
+      "geometry": {
+        "w_core_um": 1.6,
+        "h_core_um": 0.8,
+        "wl_um": 1.55,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "waveguide",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-PL-STUTIUS",
+      "device": "LPCVD Si3N4 on SiO2 buffer, 3212 A (Stutius 1977)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.1,
+      "uncertainty_abs": 0.05,
+      "fab_source": "LPCVD Si3N4 3212 A on steam-oxide SiO2 buffer",
+      "citation": "W. Stutius, W. Streifer, Silicon nitride films on silicon for optical waveguides, Appl. Opt. 16, 3218 (1977): <0.1 dB/cm TE0 @632.8nm",
+      "source_url": "https://doi.org/10.1364/AO.16.003218",
+      "method": "Prism coupling loss measurement",
+      "geometry": {
+        "h_core_um": 0.3212,
+        "wl_um": 0.633,
+        "n_sin": 2.0,
+        "n_clad": 1.46
+      },
+      "tags": [
+        "sin",
+        "waveguide",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-PL-DALD",
+      "device": "LPCVD Si3N4 channel waveguide, CMOS pilot (Daldosso 2004)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.15,
+      "uncertainty_abs": 0.05,
+      "fab_source": "CMOS pilot-line LPCVD Si3N4 channel waveguide",
+      "citation": "N. Daldosso et al., Fabrication and optical characterization of thin 2D Si3N4 waveguides, Mat. Sci. Semicond. Process. 7, 453 (2004): 0.1-0.2 dB/cm @632.8nm",
+      "source_url": "https://doi.org/10.1016/j.mssp.2004.09.023",
+      "method": "Cut-back / scattered-light @632.8nm",
+      "geometry": {
+        "h_core_um": 0.3,
+        "wl_um": 0.633,
+        "n_sin": 2.0,
+        "n_clad": 1.46
+      },
+      "tags": [
+        "sin",
+        "waveguide",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-PL-JABER",
+      "device": "Low-confinement Si3N4 waveguide, ~0.8um wide (Jaber 2024)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.0175,
+      "uncertainty_abs": 0.002,
+      "fab_source": "Low-confinement Si3N4, double-stray-light method",
+      "citation": "A. Jaber et al., Low-loss integrated Si3N4 waveguide platform, Opt. Lett. 49, 3146 (2024): ~0.0175 dB/cm",
+      "source_url": "https://doi.org/10.1364/OL.519793",
+      "method": "Double stray-light collection",
+      "geometry": {
+        "w_core_um": 0.8,
+        "h_core_um": 0.4,
+        "wl_um": 1.55,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "waveguide",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-PL-APP1360",
+      "device": "LPCVD Si3N4 0.4x1 um, 8-inch (Liao 2023)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.06,
+      "uncertainty_abs": 0.01,
+      "fab_source": "8-inch LPCVD Si3N4, BOX trench fill + CMP",
+      "citation": "Z. Li et al., Process Development of Low-Loss LPCVD Si3N4 Waveguides on 8-Inch Wafer, Appl. Sci. 13, 3660 (2023): 0.06 dB/cm @1580nm",
+      "source_url": "https://doi.org/10.3390/app13063660",
+      "method": "Cutback, 1490-1580nm scan",
+      "geometry": {
+        "w_core_um": 1.0,
+        "h_core_um": 0.4,
+        "wl_um": 1.58,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "waveguide",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-PL-APP1550",
+      "device": "LPCVD Si3N4 0.4x1 um, 8-inch (Liao 2023, 1550nm)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.157,
+      "uncertainty_abs": 0.01,
+      "fab_source": "8-inch LPCVD Si3N4, BOX trench fill + CMP",
+      "citation": "Z. Li et al., Appl. Sci. 13, 3660 (2023): 0.157 dB/cm @1550nm",
+      "source_url": "https://doi.org/10.3390/app13063660",
+      "method": "Cutback, 1490-1580nm scan",
+      "geometry": {
+        "w_core_um": 1.0,
+        "h_core_um": 0.4,
+        "wl_um": 1.55,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "waveguide",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-PL-APP-BEND50",
+      "device": "LPCVD Si3N4 bend, R=50 um (Liao 2023)",
+      "metric": "bend_loss_per90_dB",
+      "measured_value": 0.013,
+      "uncertainty_abs": 0.003,
+      "fab_source": "8-inch LPCVD Si3N4",
+      "citation": "Z. Li et al., Appl. Sci. 13, 3660 (2023): bend loss 0.013 dB/90deg @R=50um",
+      "source_url": "https://doi.org/10.3390/app13063660",
+      "method": "Bend-count sweep fit",
+      "geometry": {
+        "w_core_um": 1.0,
+        "h_core_um": 0.4,
+        "R_um": 50,
+        "wl_um": 1.55,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "bend",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-PL-APP-BEND80",
+      "device": "LPCVD Si3N4 bend, R=80 um (Liao 2023)",
+      "metric": "bend_loss_per90_dB",
+      "measured_value": 0.0095,
+      "uncertainty_abs": 0.002,
+      "fab_source": "8-inch LPCVD Si3N4",
+      "citation": "Z. Li et al., Appl. Sci. 13, 3660 (2023): bend loss 0.0095 dB/90deg @R=80um",
+      "source_url": "https://doi.org/10.3390/app13063660",
+      "method": "Bend-count sweep fit",
+      "geometry": {
+        "w_core_um": 1.0,
+        "h_core_um": 0.4,
+        "R_um": 80,
+        "wl_um": 1.55,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "bend",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-RING-Q-NIJEM",
+      "device": "SOI adiabatic MRR, LOCOS (Nijem 2024)",
+      "metric": "intrinsic_Q",
+      "measured_value": 2000000.0,
+      "uncertainty_abs": 100000.0,
+      "fab_source": "SOI + LOCOS, single-mode adiabatic microring",
+      "citation": "J. Nijem et al., High-Q and high finesse silicon microring resonator, Opt. Express 32, 7896 (2024): Qi~2e6, FSR 2nm",
+      "source_url": "https://doi.org/10.1364/OE.514080",
+      "method": "Resonance linewidth fit",
+      "geometry": {
+        "R_um": null,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "microring",
+        "Q",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-RING-PL-ZENG",
+      "device": "SOI racetrack MRR, 445x250 nm (Zeng 2022)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.27,
+      "uncertainty_abs": 0.02,
+      "fab_source": "SOI 445x250 nm racetrack resonator",
+      "citation": "Y. Zeng et al., High-Q SOI micro-ring resonators, Micromachines 13, 1155 (2022): loss 0.27-0.28 dB/cm",
+      "source_url": "https://doi.org/10.3390/mi13071155",
+      "method": "Q-derived loss",
+      "geometry": {
+        "w_core_um": 0.445,
+        "h_core_um": 0.25,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "microring",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-RING-Q-ZENG",
+      "device": "SOI racetrack MRR, 445x250 nm (Zeng 2022)",
+      "metric": "intrinsic_Q",
+      "measured_value": 1170000.0,
+      "uncertainty_abs": 50000.0,
+      "fab_source": "SOI 445x250 nm racetrack resonator",
+      "citation": "Y. Zeng et al., Micromachines 13, 1155 (2022): Q 1.17-1.20e6",
+      "source_url": "https://doi.org/10.3390/mi13071155",
+      "method": "Resonance linewidth fit",
+      "geometry": {
+        "w_core_um": 0.445,
+        "h_core_um": 0.25,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "microring",
+        "Q",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-RING-PL-SOLTANI",
+      "device": "SOI microdisk on substrate (Soltani 2007)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.16,
+      "uncertainty_abs": 0.02,
+      "fab_source": "SOI microdisk, disk-on-substrate",
+      "citation": "M. Soltani et al., Ultra-high Q planar silicon microdisk resonators, Opt. Express 15, 4694 (2007): loss ~0.16 dB/cm",
+      "source_url": "https://doi.org/10.1364/oe.15.004694",
+      "method": "Q-derived loss",
+      "geometry": {
+        "R_um": null,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "microdisk",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-RING-Q-SOLTANI",
+      "device": "SOI microdisk on substrate (Soltani 2007)",
+      "metric": "intrinsic_Q",
+      "measured_value": 3000000.0,
+      "uncertainty_abs": 200000.0,
+      "fab_source": "SOI microdisk, disk-on-substrate",
+      "citation": "M. Soltani et al., Opt. Express 15, 4694 (2007): Q~3e6",
+      "source_url": "https://doi.org/10.1364/oe.15.004694",
+      "method": "Resonance linewidth fit",
+      "geometry": {
+        "R_um": null,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "microdisk",
+        "Q",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-RING-Q-BORSELLI",
+      "device": "SOI microdisk, resist-reflow mask (Borselli 2005)",
+      "metric": "intrinsic_Q",
+      "measured_value": 5000000.0,
+      "uncertainty_abs": 300000.0,
+      "fab_source": "SOI microdisk, low-damage plasma etch",
+      "citation": "M. Borselli et al., Beyond the Rayleigh scattering limit in high-Q silicon microdisks, Opt. Express 13, 1515 (2005): Q=5e6",
+      "source_url": "https://doi.org/10.1364/opex.13.001515",
+      "method": "Resonance linewidth fit",
+      "geometry": {
+        "R_um": null,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "microdisk",
+        "Q",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-RING-PL-BORSELLI",
+      "device": "SOI microdisk, resist-reflow mask (Borselli 2005)",
+      "metric": "propagation_loss_dBcm",
+      "measured_value": 0.1,
+      "uncertainty_abs": 0.02,
+      "fab_source": "SOI microdisk, low-damage plasma etch",
+      "citation": "M. Borselli et al., Opt. Express 13, 1515 (2005): alpha~0.1 dB/cm",
+      "source_url": "https://doi.org/10.1364/opex.13.001515",
+      "method": "Q-derived loss",
+      "geometry": {
+        "R_um": null,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "microdisk",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SOI-XING-GAO-TE",
+      "device": "SOI 220nm 2D-Gaussian crossing, MPW (Gao 2025)",
+      "metric": "insertion_loss_dB",
+      "measured_value": 0.05,
+      "uncertainty_abs": 0.02,
+      "fab_source": "220nm SOI MPW, 2D-Gaussian beam synthesis crossing",
+      "citation": "W. Gao et al., Low-loss polarization-insensitive silicon waveguide crossing, Chin. Opt. Lett. 23, 111304 (2025): 0.05 dB TE0",
+      "source_url": "https://doi.org/10.3788/COL202523.111304",
+      "method": "Through-port transmission, 1520-1580nm",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "crossing",
+        "IL",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SOI-XING-GAO-TM",
+      "device": "SOI 220nm 2D-Gaussian crossing, MPW (Gao 2025)",
+      "metric": "insertion_loss_dB",
+      "measured_value": 0.12,
+      "uncertainty_abs": 0.03,
+      "fab_source": "220nm SOI MPW",
+      "citation": "W. Gao et al., Chin. Opt. Lett. 23, 111304 (2025): 0.12 dB TM0",
+      "source_url": "https://doi.org/10.3788/COL202523.111304",
+      "method": "Through-port transmission, 1520-1580nm",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "crossing",
+        "IL",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SOI-XING-MA1550",
+      "device": "SOI MMI crossing, 248nm litho (Ma 2013)",
+      "metric": "insertion_loss_dB",
+      "measured_value": 0.028,
+      "uncertainty_abs": 0.009,
+      "fab_source": "CMOS-compatible 248nm litho, single etch",
+      "citation": "Y. Ma et al., Ultralow loss single layer submicron silicon waveguide crossing, Opt. Express 21, 29374 (2013): -0.028+-0.009 dB @1550nm",
+      "source_url": "https://doi.org/10.1364/OE.21.029374",
+      "method": "Cross-wafer 30-die transmission",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "crossing",
+        "IL",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SOI-XING-MA1310",
+      "device": "SOI MMI crossing, 248nm litho (Ma 2013, 1310nm)",
+      "metric": "insertion_loss_dB",
+      "measured_value": 0.017,
+      "uncertainty_abs": 0.005,
+      "fab_source": "CMOS-compatible 248nm litho, single etch",
+      "citation": "Y. Ma et al., Opt. Express 21, 29374 (2013): -0.017+-0.005 dB @1310nm",
+      "source_url": "https://doi.org/10.1364/OE.21.029374",
+      "method": "Cross-wafer 30-die transmission",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "wl_um": 1.31,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "crossing",
+        "IL",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-MMI-ROUIFED1550",
+      "device": "SOI 340nm MMI demux, 293x6 um2 (Rouifed 2017)",
+      "metric": "insertion_loss_dB",
+      "measured_value": 0.14,
+      "uncertainty_abs": 0.05,
+      "fab_source": "340nm SOI platform",
+      "citation": "M.-S. Rouifed et al., Ultra-compact MMI-based beam splitter demultiplexer, Opt. Express 25, 10893 (2017): IL 0.14 dB @1550nm",
+      "source_url": "https://doi.org/10.1364/OE.25.010893",
+      "method": "Through-port transmission",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.34,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "mmi",
+        "IL",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-MMI-ROUIFED2UM",
+      "device": "SOI 340nm MMI demux, 293x6 um2 (Rouifed 2017, 2um)",
+      "metric": "insertion_loss_dB",
+      "measured_value": 1.2,
+      "uncertainty_abs": 0.1,
+      "fab_source": "340nm SOI platform",
+      "citation": "M.-S. Rouifed et al., Opt. Express 25, 10893 (2017): IL 1.2 dB @2um",
+      "source_url": "https://doi.org/10.1364/OE.25.010893",
+      "method": "Through-port transmission",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.34,
+        "wl_um": 2.0,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "mmi",
+        "IL",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-MMI-SPIE2020",
+      "device": "SOI 1x2 MMI 2.8x27 um2 (SPIE 2020)",
+      "metric": "excess_loss_dB",
+      "measured_value": 0.05,
+      "uncertainty_abs": 0.02,
+      "fab_source": "SOI 220nm platform",
+      "citation": "SOI MMI 1x2 3dB splitter, Opt. Eng. 59, 105102 (2020): excess loss 0.05 dB TE @1550nm",
+      "source_url": "https://doi.org/10.1117/1.oe.59.10.105102",
+      "method": "EME + transmission, 1430-1675nm",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "mmi",
+        "excess_loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-GC-DING",
+      "device": "Fully-etched photonic-crystal GC, SOI 220nm (Ding 2013)",
+      "metric": "insertion_loss_dB",
+      "measured_value": -1.74,
+      "uncertainty_abs": 0.1,
+      "fab_source": "SOI 220nm, fully etched photonic crystal GC",
+      "citation": "Y. Ding et al., Fully etched grating coupler with 69% efficiency, Opt. Lett. 38, 2732 (2013): -1.74 dB (67% eff)",
+      "source_url": "https://doi.org/10.1364/OL.38.002732",
+      "method": "GC transmission vs fiber angle",
+      "geometry": {
+        "h_core_um": 0.22,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "grating",
+        "IL",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-GC-XU",
+      "device": "SOI GC, TE (Xu 2017)",
+      "metric": "insertion_loss_dB",
+      "measured_value": -7.6,
+      "uncertainty_abs": 0.3,
+      "fab_source": "SOI grating coupler, TE",
+      "citation": "X. Xu et al., Grating coupler -7.6 dB TE measured, Opt. Quantum Electron. 49, 158 (2017)",
+      "source_url": "https://doi.org/10.1007/s11082-017-0997-4",
+      "method": "GC transmission",
+      "geometry": {
+        "h_core_um": 0.22,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "grating",
+        "IL",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-GC-DEMIR",
+      "device": "SOI GC with bottom mirror (Demirtzioglou 2019)",
+      "metric": "insertion_loss_dB",
+      "measured_value": 3.1,
+      "uncertainty_abs": 0.2,
+      "fab_source": "SOI GC with gold bottom mirror, BCB bonding",
+      "citation": "E. Demirtzioglou et al., Grating coupler 3.1 dB, Photon. Res. 7, 1036 (2019)",
+      "source_url": "https://doi.org/10.1364/PRJ.7.001036",
+      "method": "GC transmission",
+      "geometry": {
+        "h_core_um": 0.22,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "grating",
+        "IL",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-MZM-DONG",
+      "device": "SOI carrier-depletion MZM, PN (Dong 2012)",
+      "metric": "VpiL_Vcm",
+      "measured_value": 1.28,
+      "uncertainty_abs": 0.05,
+      "fab_source": "SOI 220nm, lateral PN depletion",
+      "citation": "P. Dong et al., High-speed low-voltage single-drive push-pull MZM, Opt. Express 20, 7081 (2012): VpiL=1.28 V*cm",
+      "source_url": "https://doi.org/10.1364/OE.20.007081",
+      "method": "Phase shift vs bias, null tracking",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "L_um": 1000,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "mzm",
+        "VpiL",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-MZM-FENG",
+      "device": "SOI carrier-depletion MZM, offset PN (Feng 2010)",
+      "metric": "VpiL_Vcm",
+      "measured_value": 1.4,
+      "uncertainty_abs": 0.05,
+      "fab_source": "0.25um SOI, offset lateral PN",
+      "citation": "N.-N. Feng et al., High speed carrier-depletion modulators with 1.4 V-cm VpiL, Opt. Express 18, 7994 (2010)",
+      "source_url": "https://doi.org/10.1364/oe.18.007994",
+      "method": "Phase shift vs bias, 1mm phase shifter",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.25,
+        "L_um": 1000,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "mzm",
+        "VpiL",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-MZM-GOYKHMAN",
+      "device": "SOI interleaved MZM, 200nm junction (Goykhman 2013)",
+      "metric": "VpiL_Vcm",
+      "measured_value": 0.78,
+      "uncertainty_abs": 0.05,
+      "fab_source": "SOI, interleaved depletion MZM, 200nm junction",
+      "citation": "I. Goykhman et al., Optimization of efficiency-loss FOM in carrier-depletion Si MZM, Opt. Express 21, 19518 (2013): VpiL~0.78 Vcm @1V",
+      "source_url": "https://doi.org/10.1364/OE.21.019518",
+      "method": "Phase shift vs bias, 1V reverse",
+      "geometry": {
+        "w_core_um": 0.5,
+        "h_core_um": 0.22,
+        "L_um": 1000,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "mzm",
+        "VpiL",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SI-TOC",
+      "device": "Crystalline Si thermo-optic coefficient (Nat. Comm. 2018)",
+      "metric": "dn_dT_per_K",
+      "measured_value": 0.000186,
+      "uncertainty_abs": 2e-06,
+      "fab_source": "Crystalline silicon, near-telecom",
+      "citation": "Thermally induced optical bistability / Si TOC dn/dT=1.86e-4 K-1, Nat. Commun. 9, 5287 (2018)",
+      "source_url": "https://doi.org/10.1038/s41467-018-05287-1",
+      "method": "Thermo-optic resonance shift measurement",
+      "geometry": {
+        "wl_um": 1.55,
+        "n_si": 3.48
+      },
+      "tags": [
+        "si",
+        "thermal",
+        "toc",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SOI-EC-PU-TM",
+      "device": "SOI ridge inverse-taper EC, polymer clad (Pu 2010)",
+      "metric": "coupling_loss_dB",
+      "measured_value": 0.36,
+      "uncertainty_abs": 0.05,
+      "fab_source": "SOI ridge, thermal-oxide tip, polymer waveguide",
+      "citation": "M. Pu et al., Ultra-low-loss inverted taper coupler for SOI ridge waveguide, Opt. Commun. 283, 3678 (2010): 0.36 dB/coupler TM",
+      "source_url": "https://doi.org/10.1016/j.optcom.2010.05.034",
+      "method": "Two-coupler transmission, per coupler",
+      "geometry": {
+        "w_core_um": 0.45,
+        "h_core_um": 0.25,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.51
+      },
+      "tags": [
+        "soi",
+        "edge_coupler",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SOI-EC-PU-TE",
+      "device": "SOI ridge inverse-taper EC, polymer clad (Pu 2010)",
+      "metric": "coupling_loss_dB",
+      "measured_value": 0.66,
+      "uncertainty_abs": 0.05,
+      "fab_source": "SOI ridge, thermal-oxide tip, polymer waveguide",
+      "citation": "M. Pu et al., Opt. Commun. 283, 3678 (2010): 0.66 dB/coupler TE",
+      "source_url": "https://doi.org/10.1016/j.optcom.2010.05.034",
+      "method": "Two-coupler transmission, per coupler",
+      "geometry": {
+        "w_core_um": 0.45,
+        "h_core_um": 0.25,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.51
+      },
+      "tags": [
+        "soi",
+        "edge_coupler",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SOI-EC-DEWANJEE",
+      "device": "Two-level inverse-taper EC, SOI (Dewanjee 2014)",
+      "metric": "coupling_loss_dB",
+      "measured_value": 1.0,
+      "uncertainty_abs": 0.1,
+      "fab_source": "220nm SOI, two-level inverse taper",
+      "citation": "A. Dewanjee et al., Low-loss compact broadband polarization-insensitive edge coupler, IEEE Photon. Conf. (2014): <1 dB coupling loss",
+      "source_url": "https://doi.org/10.1109/IPCon.2014.6995499",
+      "method": "Edge coupling, both polarizations",
+      "geometry": {
+        "w_core_um": 0.45,
+        "h_core_um": 0.22,
+        "wl_um": 1.55,
+        "n_si": 3.48,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "soi",
+        "edge_coupler",
+        "loss",
+        "measured"
+      ]
+    },
+    {
+      "id": "E-SIN-NG-DTU",
+      "device": "Si3N4 strip 0.8um wide, TE @1550nm (DTU)",
+      "metric": "n_g",
+      "measured_value": 2.13,
+      "uncertainty_abs": 0.03,
+      "fab_source": "Si3N4 strip waveguide, 0.8um wide",
+      "citation": "DTU orbit.dk: Si3N4 group index n_g~2.13 (TE, 0.8um wide, 1550nm)",
+      "source_url": "https://orbit.dtu.dk/en/publications/groupindex-measurement-of-si3n4-waveguides",
+      "method": "Ring-resonator group-delay fit",
+      "geometry": {
+        "w_core_um": 0.8,
+        "h_core_um": 0.4,
+        "wl_um": 1.55,
+        "n_sin": 2.0,
+        "n_clad": 1.44
+      },
+      "tags": [
+        "sin",
+        "group_index",
+        "measured"
+      ]
     }
   ],
   "adversarial": [

@@ -511,7 +511,6 @@ def solve_pn_junction_2d_bias(V: float, N_A: float = N_A_DEFAULT, N_D: float = N
     n = n.flatten()
     p = np.linspace(p_left, p_right, nx)[:, None] * np.ones((1, ny))
     p = p.flatten()
-    L = _build_laplacian(nx, ny, dx, dy)
 
     converged = False
     for _ in range(max_outer):

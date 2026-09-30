@@ -1,47 +1,51 @@
-<Slide style={{ width: 1280, height: 720, background: '#0A1120', padding: '64px 72px', flexDirection: 'column' }}>
-    <Box style={{ flexDirection: 'column', gap: 12, marginBottom: 22 }}>
-        <Text style={{ fontSize: 16, color: '#2563EB', fontWeight: 'bold' }}>关键结果 · 规模律（诚实报告）</Text>
-        <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#E8EEF7' }}>相对误差有界、绝对误差 ∝ N</Text>
-        <Text style={{ fontSize: 18, color: '#9FB3CC' }}>MVM 输出幅度随 N 增长；固定位数 ADC 下绝对 LSB 随之增大 ⇒ 须按层输出定标（out_norm）。</Text>
+<Slide style={{ width: 1280, height: 720, background: '#0A1120', padding: '64px 72px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'column', gap: 10 }}>
+        <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#E8EEF7' }}>关键结果 · E6–E9 四块新能力面</Text>
+        <Text style={{ fontSize: 20, color: '#2563EB', fontWeight: 'bold' }}>从「设计出电路」到「能签核、能后仿、能标定、能压测」</Text>
+        <Text style={{ fontSize: 16, color: '#9FB3CC' }}>全部为设计期验证（非流片实测）· 判决为死标量比对（闭式物理律 golden）· 零外部 SPICE / 商业 EDA 引擎。</Text>
     </Box>
-    <Box style={{ flexDirection: 'row', gap: 16, marginBottom: 18 }}>
-        <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 22px', width: 250, gap: 6 }}>
-            <Text style={{ fontSize: 15, color: '#9FB3CC' }}>单层 8bit 误差</Text>
-            <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>0.0122</Text>
-            <Text style={{ fontSize: 14, color: '#9FB3CC' }}>vs 全精度数字 golden</Text>
+    <Box style={{ flexDirection: 'row', gap: 18, alignItems: 'stretch' }}>
+        <Box style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 22px', flexDirection: 'column', gap: 8, flex: 1 }}>
+            <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>E6</Text>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#E8EEF7' }}>版图与几何签核</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 1T 单元 7 元素（DIFF/POLY/CONT×2/M1/VIA1）</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 4×4 = 120 元素 / 8.40×8.90 µm²</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 真 GDS 936 B（AREF 层次化 top 9）</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 8×8 = 464 元素 · DRC/LVS 双 ACCEPT</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 几何回提 W/L = 1.20/0.30 µm 逐单元一致</Text>
         </Box>
-        <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 22px', width: 250, gap: 6 }}>
-            <Text style={{ fontSize: 15, color: '#9FB3CC' }}>2 层 MLP 6bit 误差</Text>
-            <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>0.044</Text>
-            <Text style={{ fontSize: 14, color: '#9FB3CC' }}>ReLU 层间累积</Text>
-        </Box>
-        <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 22px', width: 250, gap: 6 }}>
-            <Text style={{ fontSize: 15, color: '#9FB3CC' }}>分块 tiling 误差</Text>
-            <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>0.0</Text>
-            <Text style={{ fontSize: 14, color: '#9FB3CC' }}>= 全阵（精确 · 可组合）</Text>
-        </Box>
-        <Box style={{ flexDirection: 'column', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 22px', width: 250, gap: 6 }}>
-            <Text style={{ fontSize: 15, color: '#9FB3CC' }}>MNA 瞬态 vs 指数</Text>
-            <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>&lt;2e-4</Text>
-            <Text style={{ fontSize: 14, color: '#9FB3CC' }}>RC 一阶闭式</Text>
+        <Box style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 22px', flexDirection: 'column', gap: 8, flex: 1 }}>
+            <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>E7</Text>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#E8EEF7' }}>寄生提取与后仿</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 导线 RC 闭式 R = ρL/(W·t) ≡ R□·L/W</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· R□(M1) = 0.084 Ω/□ · τ_row = 3.1 fs</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· IR drop：N=4 0.42% → N=32 27.0%（∝N²）</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· sneak 比例：1.29× → 7.26×</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· R=0 ≡ 解析 golden（max|Δ| = 1.08e-19）</Text>
         </Box>
     </Box>
-    <Box style={{ flexDirection: 'row', gap: 16, marginBottom: 8 }}>
-        <Text style={{ fontSize: 15, color: '#9FB3CC', width: 130 }}>规模档（8bit）</Text>
-        <Text style={{ fontSize: 15, color: '#E8EEF7', width: 120 }}>N=32</Text>
-        <Text style={{ fontSize: 15, color: '#E8EEF7', width: 120 }}>N=64</Text>
-        <Text style={{ fontSize: 15, color: '#E8EEF7', width: 140 }}>N=128</Text>
-        <Text style={{ fontSize: 15, color: '#E8EEF7', width: 180 }}>N=256</Text>
+    <Box style={{ flexDirection: 'row', gap: 18, alignItems: 'stretch' }}>
+        <Box style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 22px', flexDirection: 'column', gap: 8, flex: 1 }}>
+            <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>E8</Text>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#E8EEF7' }}>失配 / 噪声 / 校准</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· Pelgrom σ_ΔVth = 5.00 mV @ 1.20/0.30 µm</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 温度：Vth 25→85°C −60 mV · µ 比 0.760</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 热噪声 4kTγg_m = 1.098e-23 A²/Hz</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· MC 8×8 σ_rel = 0.654% · σ_rel·√N ≈ 0.0186</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 校准 L0 1.696% → L1 0.212% → L2 0.0743%</Text>
+        </Box>
+        <Box style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '18px 22px', flexDirection: 'column', gap: 8, flex: 1 }}>
+            <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#2563EB', fontFamily: 'Consolas' }}>E9</Text>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#E8EEF7' }}>千级阵列规模压力</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 1024² 层次化 GDS 86.6 KB / top 2049 条</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 压缩比 3571×（不物化 N²）</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 1D 三对角 ≡ 2D 稠密 MNA（≤1.7e-13）</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 三重规模律：IR drop ∝N² · 面积 ∝N² · 失配 ∝1/√N</Text>
+            <Text style={{ fontSize: 15, color: '#9FB3CC', lineHeight: 1.5 }}>· 可及上界：5% 预算 ⇒ N≤18（被动单端驱动）</Text>
+        </Box>
     </Box>
-    <Box style={{ flexDirection: 'row', gap: 16 }}>
-        <Text style={{ fontSize: 15, color: '#9FB3CC', width: 130 }}>相对误差</Text>
-        <Text style={{ fontSize: 15, color: '#2563EB', fontFamily: 'Consolas', width: 120 }}>0.018</Text>
-        <Text style={{ fontSize: 15, color: '#2563EB', fontFamily: 'Consolas', width: 120 }}>0.027</Text>
-        <Text style={{ fontSize: 15, color: '#2563EB', fontFamily: 'Consolas', width: 140 }}>0.024</Text>
-        <Text style={{ fontSize: 15, color: '#2563EB', fontFamily: 'Consolas', width: 180 }}>0.030</Text>
-    </Box>
-    <Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(159,179,204,0.25)', paddingTop: 16, marginTop: 26 }}>
-        <Text style={{ fontSize: 16, color: '#9FB3CC' }}>LDA · 电子计算芯片（电子征程「吃狗粮」E1–E5）</Text>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(159,179,204,0.25)', paddingTop: 16 }}>
+        <Text style={{ fontSize: 16, color: '#9FB3CC' }}>LDA · 电子计算芯片（电子征程「吃狗粮」E1–E9 + E10 收官）</Text>
         <Text style={{ fontSize: 16, color: '#9FB3CC', fontFamily: 'Consolas' }}>04 / 06</Text>
     </Box>
 </Slide>

@@ -111,6 +111,17 @@ ECORE_CAPABILITY_MANIFEST = [
                     "MISMATCH_DISCLOSURE", "run_selfchecks"],
         "introduced_by": "D-158 (E8)", "guard": "run_ecore_e8_smoke.py",
     },
+    {
+        "capability": "千级阵列规模压力（层次化 AREF 版图 O(N) + 一维三对角 IR-drop 求解 O(N) + 三重规模律 + 可及规模上界 + 同族维度诚实对标）",
+        "module": "lda_l2.ecore.array_scale",
+        "symbols": ["elements_flat", "elements_hierarchical", "compression_ratio",
+                    "hierarchical_gds", "expanded_element_count", "row_line_profile",
+                    "ir_drop_scaling", "max_scale_for_budget", "sigma_cell_rel",
+                    "sigma_out_rel", "array_scale_sweep", "honest_comparison",
+                    "honest_boundary_ok", "LANDMARKS", "LDA_CAPABILITIES",
+                    "NON_CLAIMED", "SCALE_DISCLOSURE", "run_selfchecks"],
+        "introduced_by": "D-159 (E9)", "guard": "run_ecore_e9_smoke.py",
+    },
 ]
 
 

@@ -105,6 +105,23 @@ from .mismatch import (
     thermal_noise_psd,
     vth_at,
 )
+from .array_scale import (
+    LANDMARKS as SCALE_LANDMARKS,
+    LDA_CAPABILITIES as SCALE_LDA_CAPABILITIES,
+    NON_CLAIMED as SCALE_NON_CLAIMED,
+    SCALE_DISCLOSURE,
+    array_scale_sweep,
+    compression_ratio,
+    elements_flat,
+    elements_hierarchical,
+    expanded_element_count,
+    hierarchical_gds,
+    honest_boundary_ok as scale_honest_boundary_ok,
+    honest_comparison as scale_honest_comparison,
+    max_scale_for_budget,
+    row_line_profile,
+    sigma_out_rel,
+)
 
 __all__ = [
     "Circuit",
@@ -186,6 +203,21 @@ __all__ = [
     "mc_output_error",
     "sigma_vs_n",
     "calibration_report",
+    "SCALE_DISCLOSURE",
+    "SCALE_LANDMARKS",
+    "SCALE_LDA_CAPABILITIES",
+    "SCALE_NON_CLAIMED",
+    "elements_flat",
+    "elements_hierarchical",
+    "compression_ratio",
+    "hierarchical_gds",
+    "expanded_element_count",
+    "row_line_profile",
+    "max_scale_for_budget",
+    "sigma_out_rel",
+    "array_scale_sweep",
+    "scale_honest_comparison",
+    "scale_honest_boundary_ok",
 ]
 
 # 征程入口披露（对外引用须携此诚实边界）
@@ -199,6 +231,7 @@ ECORE_DISCLOSURE: dict = {
     "e6_scope": "E6 版图与几何签核：电子版图层栈（DIFF/POLY/CONT/M1/VIA1/M2 + 层语义谓词 + 设计规则）+ 1T 交叉阵列版图 P&R（节距闭式 + AREF 层次化）+ 几何 DRC（线宽/间距/包围/面积）+ 段感知 LVS（连通分量/短路/悬空桥/W-L 几何回提）+ 真 GDSII 出口。",
     "e7_scope": "E7 寄生提取与后仿：从 E6 版图按教科书闭式提导线 RC（R=ρL/(Wt)·C=ε₀ε_r·W/d）+ 阵列 R 梯网络（行/列分段电阻 + 交叉点电导）注入 MNA 后仿，量化 IR drop（随规模超线性增）与 sneak path（half-select 浮空方案旁路电流）+ Elmore 互连延迟；golden = 解析 I_j=Σg_ij·V_i（R=0 精确复现）。",
     "e8_scope": "E8 非理想/失配/噪声：Pelgrom 器件失配（σ_ΔVth=A_VT/√(W·L)、σ_Δβ/β）+ 温度一阶模型（Vth 线性漂移 · 迁移率 (T/T0)^m · 片内列热梯度）+ 噪声（热 4kTγg_m · 闪烁 K_f/(C_ox·W·L·f)）+ 失配 Monte Carlo 输出误差分布（自证 σ_rel ∝ 1/√N）+ 校准层级 L0 原始 / L1 列增益 / L2 逐单元。",
+    "e9_scope": "E9 规模压力与诚实对标：E6 物化版图与 E7 稠密 MNA 都只到 N≈32 ⇒ 换 O(N) 算法（cell+AREF 层次化出图 + 一维三对角 IR-drop 求解）推到千级阵列；三重规模律（IR drop 超线性 · 面积 ∝N² · 失配 σ ∝1/√N · Elmore ∝N²）+ 按误差预算反解可及规模上界 + 同族维度诚实对标（landmark 照录·不报 TOPS）。",
     "redline": "电域→仅电路级（T1）：不碰 Foundry TCAD / 工艺角 / 流片（属 T2 真值，永久锁）。",
     "sovereignty": "C 级自主（纯 numpy），不借 HSPICE/Spectre 等商业 SPICE 引擎；LLM 不进判决路径。",
     "honest_boundary": "电路级设计验证引擎，非签核级 SPICE（无温度/噪声/稀疏矩阵/收敛增强）；"

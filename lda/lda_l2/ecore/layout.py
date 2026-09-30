@@ -185,6 +185,36 @@ def crosspoint_cell(net_drain: str, net_source: str, net_gate: str,
 # ---------------------------------------------------------------------------
 # 阵列 P&R（节距闭式 + 行线/列线）
 # ---------------------------------------------------------------------------
+def array_lines(n: int, m: int,
+                params: Optional[Dict[str, float]] = None) -> List[Dict]:
+    """阵列布线（绝对坐标）：行线 M1 水平 + 列线 M2 竖直 —— **布线几何的唯一定义处**。
+
+    E6 `crossbar_array` 与 E9 `array_scale`（千级阵列，O(N) 不物化 N² 单元）**共用**本函数，
+    杜绝第二份副本（平台 P0-0/P0-1 血案的通则）。
+    """
+    p = dict(DEFAULT_CELL_PARAMS)
+    if params:
+        p.update(params)
+    px, py = p["pitch_x_um"], p["pitch_y_um"]
+    out: List[Dict] = []
+    # 行线（M1 水平）——经每行全部单元的漏极接触孔
+    x_lo = 0.0 - (p["l_um"] / 2.0 + p["sd_um"])
+    x_hi = (m - 1) * px + (p["l_um"] / 2.0 + p["sd_um"])
+    for i in range(n):
+        y = i * py + p["dy_um"]
+        out.append({"kind": "path", "layer": EL.L_M1, "net": f"row{i}",
+                    "width_um": p["row_w_um"], "points_um": [(x_lo, y), (x_hi, y)]})
+    # 列线（M2 竖直）——经每列全部单元的 VIA1
+    cx_s = -(p["l_um"] / 2.0 + p["sd_um"] / 2.0)
+    y_lo = 0.0 - (p["w_um"] / 2.0 + p["poly_oh_um"])
+    y_hi = (n - 1) * py + (p["w_um"] / 2.0 + p["poly_oh_um"])
+    for j in range(m):
+        x = j * px + cx_s
+        out.append({"kind": "path", "layer": EL.L_M2, "net": f"col{j}",
+                    "width_um": p["col_w_um"], "points_um": [(x, y_lo), (x, y_hi)]})
+    return out
+
+
 def array_footprint(n: int, m: int,
                     params: Optional[Dict[str, float]] = None
                     ) -> Tuple[float, float]:
@@ -228,24 +258,8 @@ def crossbar_array(n: int, m: int,
                                      for r in d["rings_um"]]
                 flat.append(e)
 
-    # 行线（M1 水平）——经每行全部单元的漏极接触孔
-    x_lo = 0.0 - (p["l_um"] / 2.0 + p["sd_um"])
-    x_hi = (m - 1) * px + (p["l_um"] / 2.0 + p["sd_um"])
-    for i in range(n):
-        y = i * py + p["dy_um"]
-        flat.append({"kind": "path", "layer": EL.L_M1, "net": f"row{i}",
-                     "width_um": p["row_w_um"],
-                     "points_um": [(x_lo, y), (x_hi, y)]})
-
-    # 列线（M2 竖直）——经每列全部单元的 VIA1
-    cx_s = -(p["l_um"] / 2.0 + p["sd_um"] / 2.0)
-    y_lo = 0.0 - (p["w_um"] / 2.0 + p["poly_oh_um"])
-    y_hi = (n - 1) * py + (p["w_um"] / 2.0 + p["poly_oh_um"])
-    for j in range(m):
-        x = j * px + cx_s
-        flat.append({"kind": "path", "layer": EL.L_M2, "net": f"col{j}",
-                     "width_um": p["col_w_um"],
-                     "points_um": [(x, y_lo), (x, y_hi)]})
+    # 行线 / 列线（唯一定义处 = array_lines，与 E9 千级阵列共用）
+    flat.extend(array_lines(n, m, p))
 
     nets = sorted({d["net"] for d in flat})
     return {

@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>LDA 电子计算芯片 E9 规模压力</title><style>
+body{background:#0b1220;color:#e6edf7;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;margin:0;padding:28px}
+h1{font-size:20px;font-weight:600;margin:0 0 4px}h2{font-size:14px;font-weight:600;margin:0 0 8px;color:#9fb3d1}
+.sub{color:#8296b3;font-size:13px;margin-bottom:18px}.cards{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
+.card{background:#141d2f;border:1px solid #24314a;border-radius:10px;padding:12px 16px;min-width:150px}
+.card .k{font-size:12px;color:#8296b3}.card .v{font-size:19px;font-weight:600;color:#7fd1ff;margin-top:2px}
+.row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.panel{background:#141d2f;border:1px solid #24314a;border-radius:10px;padding:14px}
+table{border-collapse:collapse;font-size:13px;margin-top:8px}td,th{border:1px solid #24314a;padding:6px 12px;text-align:left}
+th{background:#1b2740;color:#9fb3d1;font-weight:600}.note{color:#8296b3;font-size:12.5px;margin-top:14px;line-height:1.7}
+</style></head><body>
+<h1>LDA · 电子计算芯片征程 E9 · 千级阵列规模压力与诚实对标</h1>
+<div class="sub">换 O(N) 算法（层次化 AREF 出图 + 一维三对角 IR-drop）→ 推到千级阵列 · 三重规模律 · 可及规模上界 · 同族维度对标 · D-159</div>
+<div class="cards">
+<div class="card"><div class="k">1024² 层次化 GDS</div><div class="v">84.6 KB</div></div>
+<div class="card"><div class="k">压缩比（1024²）</div><div class="v">3571×</div></div>
+<div class="card"><div class="k">1D ≡ 2D 对拍</div><div class="v">≤1.7e-13</div></div>
+<div class="card"><div class="k">IR drop @1024²</div><div class="v">95.6%</div></div>
+<div class="card"><div class="k">面积 @1024²</div><div class="v">6.04 mm²</div></div>
+<div class="card"><div class="k">5% 预算上界</div><div class="v">N ≤ 18</div></div>
+</div>
+<div class="row">
+<div class="panel"><h2>元素数：flat（物化）vs hier（层次化）</h2><svg width="330" height="200" viewBox="0 0 330 200"><line x1="48" y1="166" x2="322" y2="166" stroke="#2b3b57"/><rect x="61.4" y="106.5" width="40.2" height="59.5" rx="3" fill="#f87171"/><text x="81.5" y="101.5" font-size="10" fill="#cfe3ff" text-anchor="middle">1824</text><text x="81.5" y="182" font-size="10" fill="#8296b3" text-anchor="middle">flat 16²</text><rect x="128.4" y="136.8" width="40.2" height="29.2" rx="3" fill="#38bdf8"/><text x="148.5" y="131.8" font-size="10" fill="#cfe3ff" text-anchor="middle">40</text><text x="148.5" y="182" font-size="10" fill="#8296b3" text-anchor="middle">hier 16²</text><rect x="195.4" y="40.8" width="40.2" height="125.2" rx="3" fill="#f87171"/><text x="215.5" y="35.8" font-size="10" fill="#cfe3ff" text-anchor="middle">7.3M</text><text x="215.5" y="182" font-size="10" fill="#8296b3" text-anchor="middle">flat 1024²</text><rect x="262.4" y="105.6" width="40.2" height="60.4" rx="3" fill="#38bdf8"/><text x="282.5" y="100.6" font-size="10" fill="#cfe3ff" text-anchor="middle">2056</text><text x="282.5" y="182" font-size="10" fill="#8296b3" text-anchor="middle">hier 1024²</text></svg></div>
+<div class="panel"><h2>IR drop 随规模（平均输出误差）</h2><svg width="330" height="200" viewBox="0 0 330 200"><line x1="46" y1="166" x2="322" y2="166" stroke="#2b3b57"/><line x1="46" y1="159.4" x2="322" y2="159.4" stroke="#4ade80" stroke-dasharray="5 3"/><text x="50" y="154.4" font-size="10" fill="#4ade80">5% 预算</text><polyline points="46.0,161.0 135.3,116.4 224.7,56.5 314.0,39.0" fill="none" stroke="#f59e0b" stroke-width="2"/><circle cx="46.0" cy="161.0" r="3.5" fill="#f59e0b"/><text x="46.0" y="153.0" font-size="10" fill="#ffd9a0" text-anchor="middle">3.8%</text><text x="46.0" y="181" font-size="10" fill="#8296b3" text-anchor="middle">16²</text><circle cx="135.3" cy="116.4" r="3.5" fill="#f59e0b"/><text x="135.3" y="108.4" font-size="10" fill="#ffd9a0" text-anchor="middle">37.4%</text><text x="135.3" y="181" font-size="10" fill="#8296b3" text-anchor="middle">64²</text><circle cx="224.7" cy="56.5" r="3.5" fill="#f59e0b"/><text x="224.7" y="48.5" font-size="10" fill="#ffd9a0" text-anchor="middle">82.5%</text><text x="224.7" y="181" font-size="10" fill="#8296b3" text-anchor="middle">256²</text><circle cx="314.0" cy="39.0" r="3.5" fill="#f59e0b"/><text x="314.0" y="31.0" font-size="10" fill="#ffd9a0" text-anchor="middle">95.6%</text><text x="314.0" y="181" font-size="10" fill="#8296b3" text-anchor="middle">1024²</text></svg></div>
+<div class="panel"><h2>可及规模上界（误差预算反解）</h2><svg width="330" height="200" viewBox="0 0 330 200"><line x1="48" y1="166" x2="322" y2="166" stroke="#2b3b57"/><rect x="61.4" y="40.8" width="40.2" height="125.2" rx="3" fill="#fbbf24"/><text x="81.5" y="35.8" font-size="10" fill="#cfe3ff" text-anchor="middle">26</text><text x="81.5" y="182" font-size="10" fill="#8296b3" text-anchor="middle">10% 预算</text><rect x="128.4" y="54.9" width="40.2" height="111.1" rx="3" fill="#fbbf24"/><text x="148.5" y="49.9" font-size="10" fill="#cfe3ff" text-anchor="middle">18</text><text x="148.5" y="182" font-size="10" fill="#8296b3" text-anchor="middle">5% 预算</text><rect x="195.4" y="73.8" width="40.2" height="92.2" rx="3" fill="#fbbf24"/><text x="215.5" y="68.8" font-size="10" fill="#cfe3ff" text-anchor="middle">11</text><text x="215.5" y="182" font-size="10" fill="#8296b3" text-anchor="middle">2% 预算</text><rect x="262.4" y="86.1" width="40.2" height="79.9" rx="3" fill="#fbbf24"/><text x="282.5" y="81.1" font-size="10" fill="#cfe3ff" text-anchor="middle">8</text><text x="282.5" y="182" font-size="10" fill="#8296b3" text-anchor="middle">1% 预算</text></svg></div>
+</div>
+<h2 style="margin-top:24px">三重规模律（逐规模）</h2><table>
+<tr><th>N</th><th>flat 元素</th><th>hier 元素</th><th>压缩比</th><th>面积 (mm²)</th><th>IR drop</th><th>失配 σ</th><th>Elmore τ</th></tr>
+<tr><td>16²</td><td>1824</td><td>40</td><td>46×</td><td>0.0014</td><td>3.75%</td><td>0.4209%</td><td>1.34e-14 s</td></tr>
+<tr><td>64²</td><td>28800</td><td>136</td><td>212×</td><td>0.0233</td><td>37.38%</td><td>0.2104%</td><td>2.25e-13 s</td></tr>
+<tr><td>256²</td><td>459264</td><td>520</td><td>883×</td><td>0.3763</td><td>82.47%</td><td>0.1052%</td><td>3.64e-12 s</td></tr>
+<tr><td>1024²</td><td>7342080</td><td>2056</td><td>3571×</td><td>6.0351</td><td>95.62%</td><td>0.0526%</td><td>5.83e-11 s</td></tr>
+</table>
+<div class="note">算法：版图 <b>cell + 1 条 AREF</b>（元素数 O(N)，不物化 N²）；后仿 <b>一维三对角 Thomas</b>（O(N)），与 E7 的 2D 稠密 MNA <b>对拍一致</b>（最坏列口径 rel ≤1.7e-13）。<br><b>1D 模型忽略列线电阻</b>（二阶项，已在披露中显式声明）；工艺参数为公开典型量级（非 PDK）。<br>landmark 为公开来源<b>照录·未验证</b>，仅作同族维度坐标；<b>不做数值超越比较</b>。千级阵列是<b>设计期版图与规模律</b>，非流片 ⇒ 不报 TOPS/TOPS-W/fJ-op。</div>
+</body></html>

@@ -237,6 +237,14 @@ from .col_share import (
     col_throughput_sps, k_star, fit_loglog_slope, scaling_law_report,
     architectures, recommend_architecture, replication_vs_sharing,
 )
+from .col_share_dynamic import (
+    COL_SHARE_DYN_PROCESS, COL_SHARE_DYN_DISCLOSURE,
+    charge_injection_pedestal_v, charge_injection_residual_sigma_v,
+    aperture_jitter_sigma_v, jitter_bandwidth_limits,
+    mux_settling_tau, mux_settling_erosion,
+    dynamic_budget_terms, dynamic_cost_report,
+    col_share_dynamic_self_check,
+)
 from .device_2d import (
     DEVICE_2D_DISCLOSURE,
     LG_NM_DEFAULT as DEVICE_2D_LG_NM,
@@ -465,6 +473,12 @@ __all__ = [
     "analytic_area_um2", "area_period_product_um2_s", "converter_period_s",
     "col_throughput_sps", "k_star", "fit_loglog_slope", "scaling_law_report",
     "architectures", "recommend_architecture", "replication_vs_sharing",
+    # —— E19（D-194）列侧共享的动态代价
+    "COL_SHARE_DYN_PROCESS", "COL_SHARE_DYN_DISCLOSURE",
+    "charge_injection_pedestal_v", "charge_injection_residual_sigma_v",
+    "aperture_jitter_sigma_v", "jitter_bandwidth_limits",
+    "mux_settling_tau", "mux_settling_erosion",
+    "dynamic_budget_terms", "dynamic_cost_report", "col_share_dynamic_self_check",
 ]
 
 # 征程入口披露（对外引用须携此诚实边界）
@@ -548,6 +562,26 @@ ECORE_DISCLOSURE: dict = {
                  "**不做功耗估算 ⇒ 不谈能效**；**绝不报 TOPS / TOPS-W / fJ/op**。"
                  "🔴 **保护性约束**：**只读消费** E14/E17，**不改**任何既有默认值；"
                  "`keep_throughput` **默认 False** ⇒ E15/E16/E17 已发布数字**逐位不变**。",
+    "e19_scope": "E19 列侧共享的动态代价（**闭合 E18 G-S 自点名缺口**，把「静态面积」口径闭合成「静态+动态」）："
+                 "E18 补上「面积」维度却自点名漏了「共享的动态代价」。本段新增 `col_share_dynamic.py`"
+                 "（ecore 第 23 个模块 · 纯标准库 · **只读消费 E14/E17/E18/E8/E15 · 不吃新物理**）："
+                 "① 🔴 **复用开关电荷注入 + 时钟馈通 = 确定性 pedestal**（~12% FS 量级）**可单点校准消除**"
+                 "⇒ 不进精度预算；其 **Pelgrom 随机残差 ~29 µV ≪ kT/C/LSB** ⇒ 不是墙；"
+                 "**真成本 = 校准负担（N 列需 N 次失调校准）**（与 E16 共模漂移同口径）。"
+                 "② 🔴 **采样孔径抖动** σ_v = π·f·V_ref·σ_t（满量程正弦最陡斜率最坏口径）；"
+                 "地板仍是 E18 的 kT/C：仅当 **f > ~20.5 MHz** 越过热噪地板、**f > ~1.24 GHz** 越 LSB"
+                 "（保吞吐共享抬高 kT/C 地板 ⇒ 更早触发）；**条件性，非墙**。"
+                 "③ 🔴 **多路开关建立时间对吞吐的侵蚀**（复用 E14 R_on·E17 建立律）：C_s 固定绝对开销 ⇒ "
+                 "plain 共享下侵蚀**恒定 ~0.04%**（可忽略）；**保吞吐共享下随 K 回升、K*≈160 处 ≈7% 每列周期**"
+                 "—— E18 静态模型此前未计的真实动态代价，且**反相关于 E18 面积收益**。"
+                 "🔴 **诚实结论**：三项动态代价在可达共享度内**都不是精度墙**；共享的真实新代价 = "
+                 "「保吞吐开关建立开销」+「高带宽孔径抖动」，二者皆反相关于 E18 静态收益，但**都不造新墙**（不硬造精度腿 / 不报 TOPS）。"
+                 "🔴 **诚实边界**：开关尺寸/重叠/抖动/信号频率均为**公开量级占位（非 PDK）**；"
+                 "电荷注入用 α=0.5 经典模型、时钟馈通用栅漏重叠 C_gd 一阶模型；"
+                 "**不做功耗估算 ⇒ 不谈能效**；**绝不报 TOPS / TOPS-W / fJ/op**。"
+                 "🔴 **保护性约束**：**只读消费** E14/E17/E18/E8/E15，**不改**任何既有默认值；"
+                 "`keep_throughput` **默认 False** ⇒ E15/E16/E17/E18 已发布数字**逐位不变**；"
+                 "**不覆盖** E18 `converter_period_s`/`col_throughput_sps`。",
     "redline": "红线 = **分层口径**（2026-09-11 §八§九 · 2026-09-23 逐步解锁）：平台**器件级 T1 内核已解锁**"
                "（`lda_solver/drift_diffusion_1d/2d`）；**T2 工艺真值 / 工艺角 / 流片永久锁**。"
                "**本包主动限定在电路级**——这是设计取舍，不是红线要求。",

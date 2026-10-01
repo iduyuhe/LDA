@@ -1,0 +1,67 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LDA · E19 列侧共享的动态代价</title><style>
+:root{--ink:#0f172a;--sub:#475569;--line:#e2e8f0;--acc:#2563eb;--bg:#f8fafc;--card:#fff;--warn:#b91c1c;--ok:#15803d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:36px 24px 80px}
+h1{font-size:26px;margin:0 0 6px;letter-spacing:-.4px}
+h2{font-size:19px;margin:38px 0 12px;padding-left:11px;border-left:4px solid var(--acc)}
+h3{font-size:15px;margin:20px 0 8px;color:var(--sub)}
+.lede{color:var(--sub);margin:0 0 22px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px;margin:16px 0}
+.kv div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.kv b{display:block;font-size:22px;color:var(--acc);letter-spacing:-.5px}
+.kv span{font-size:12.5px;color:var(--sub)}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:13.5px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}
+th{background:#eff6ff;color:#1e3a8a;font-weight:600}
+tr:last-child td{border-bottom:0}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:13px 16px;font-size:13.5px;color:#1e3a8a;margin:14px 0}
+.bad{background:#fef2f2;border-color:#fecaca;color:var(--warn)}
+.ok{color:var(--ok);font-weight:600}
+code{background:#f1f5f9;border-radius:4px;padding:1px 5px;font-size:12.5px}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--sub);font-size:12.5px}
+</style></head><body><div class="wrap"><h1>LDA 电子计算征程 · E19 列侧共享的动态代价</h1><p class="lede">D-194 · v0.9.169 · 闭合 E18（列侧共享与架构权衡）G-S 自点名缺口 —— 把「共享开关的动态代价到底是什么、会不会造新墙」这个 E18 自己承认没答的问题答掉。<br>🔴 开关尺寸 / 重叠 / 抖动 / 信号频率均为<b>公开量级占位（非 PDK）</b>；<b>不做功耗估算 ⇒ 不谈能效</b>；<b>绝不报 TOPS / TOPS-W / fJ/op</b>。</p>
+
+<h2>① 复用开关电荷注入 + 时钟馈通</h2>
+<p>开关关断瞬间沟道电荷注入采样电容，且时钟经栅漏重叠耦合。确定性 pedestal <code>pedestal = Q_inj/C_s + ΔV_ft</code>，可由每列/每开关单点失调校准消除（不进精度预算）；校准后幸存的 Pelgrom 随机残差 <code>σ_ped = α·(C_ox·W·L)/C_s·σ_ΔVth</code>。</p>
+<div class="kv">
+<div><b>119.04 mV</b><span>确定性 pedestal（11.90% FS）· 可校准剔除</span></div>
+<div><b>28.85 µV</b><span>Pelgrom 随机残差（0.0029% FS）</span></div>
+<div><b>≪ 64.4 µV</b><span>残差 ≪ kT/C（E18 地板）</span></div>
+<div><b>≪ 3.906 mV</b><span>残差 ≪ 1 LSB（8 bit）</span></div>
+</div>
+<div class="note">🔴 真成本不是精度、是<b>校准负担</b>（N 列需 N 次失调校准）；随机残差可忽略 ⇒ <b>不是精度墙</b>（与 E16「共模漂移可被单次全局校准消除」同口径）。</div>
+
+<h2>② 采样孔径抖动（最坏口径）</h2>
+<p><code>σ_v = π·f·V_ref·σ_t</code>（满量程正弦最陡斜率最坏口径），地板仍是 E18 的 <code>σ=√(kT/C_s)</code>。</p>
+<div class="kv">
+<div><b>314.16 µV</b><span>σ_v @ 100 MHz（0.031% FS）</span></div>
+<div><b>20.49 MHz</b><span>越过 kT/C 地板频率 f_ktc</span></div>
+<div><b>1243.4 MHz</b><span>越过 LSB 频率 f_lsb</span></div>
+<div><b>条件性</b><span>非精度限</span></div>
+</div>
+<div class="note">孔径抖动在低/中带宽被 kT/C 与 LSB 埋住；仅当输入带宽 &gt;~20 MHz 才越过热噪地板、&gt;~1.2 GHz 才越 LSB ⇒ <b>条件性，非墙</b>。且 σ_v 与 C 无关，保吞吐共享抬高了 kT/C 地板 ⇒ 抖动相对更显著（<b>反相关于 E18 静态收益</b>）。</div>
+
+<h2>③ 多路开关建立时间对吞吐的侵蚀</h2>
+<p><code>τ_mux = R_on·C_s</code>，<code>t_mux = settle_half_lsb(τ_mux, bits)</code>（复用 E14 同器件 <code>R_on=6.41 Ω</code> · E17 G-2 建立律）。C_s 是固定绝对采样电容（与共享无关），故 t_mux 不随 K 缩小。</p>
+<div class="kv">
+<div><b>6.41 Ω</b><span>复用 E14 同器件 R_on（W/L=500）</span></div>
+<div><b>39.99 ps</b><span>t_mux（τ=6.41 ps）</span></div>
+<div><b>0.0434%</b><span>plain 共享侵蚀（恒定 · 可忽略）</span></div>
+<div><b>6.944%</b><span>保吞吐共享侵蚀 @ K*=160（∝K）</span></div>
+</div>
+<div class="note">🔴 plain 共享：侵蚀恒定 0.0434%（可忽略）。🔴 保吞吐共享：每列周期 <code>T_conv(1)+K·t_mux</code> ⇒ 侵蚀 ∝ K，K*=160 处 ≈ <b>6.944%</b> —— 这是 E18 静态模型此前漏计的真实动态代价，<b>反相关于 E18 面积收益</b>。</div>
+
+<h2>④ 动态预算（接 E15 合成律 · RANDOM · 1σ）</h2>
+<table><thead><tr><th>项</th><th>内容</th><th>数值</th></tr></thead><tbody>
+<tr><td>进预算项数</td><td>电荷注入 Pelgrom 残差 + 孔径抖动（确定性 pedestal / 多路开关建立不入预算）</td><td class="num">2</td></tr>
+<tr><td>worst</td><td>合成后最坏相对误差</td><td class="num">0.0946%</td></tr>
+<tr><td>≈ 有效位</td><td><code>log2(1/worst_rel)</code> 口径</td><td class="num">10.045 位</td></tr>
+</tbody></table>
+
+<h2>E19 总诚实结论（闭合 G-S）</h2>
+<div class="note">在可达共享度内，三项动态代价<b>都不是精度墙</b>：① 电荷注入确定性 pedestal 虽大但<b>可校准</b>（真成本=校准负担）；② 孔径抖动<b>条件性</b>（高带宽才显著）；③ 多路开关建立在保吞吐共享下随 K 回升、K* 处 ≈7% —— E18 漏计的真实动态代价。<br><b>共享的真实新代价 = 保吞吐开关建立开销 + 高带宽孔径抖动；二者反相关于 E18 静态收益，但都不造新墙</b>（不硬造精度腿 / 不报 TOPS）。E18 主线收口成立。</div>
+
+<footer>LDA · agent-native 开源光+量子芯片设计软件 · 杜玉河 / 工业5点0产业生态联盟 · 本页为只读设计期验证摘要，非流片后实测。</footer>
+</div></body></html>

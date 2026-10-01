@@ -1392,6 +1392,11 @@ CORE_SMOKES: List[str] = [
     # 🔴 **诚实拒绝造腿**（kT/C 到位需 K≈1.05e5 ≫ 可达共享度 ⇒ 共享代价是吞吐不是精度）；
     # 🔴 保护性约束：`keep_throughput` **默认 False** ⇒ E15/E16/E17 已发布数字逐位不变。
     "run_ecore_e18_smoke.py",
+    # E19 电子计算征程 列侧共享的动态代价门禁（D-194）· 含 6 条突变探针 + 还原重跑；
+    # 三项动态代价（电荷注入 pedestal / 孔径抖动 / mux 建立侵蚀）+ 保护性约束（E18 逐位不变）；
+    # 🔴 用**肯定性禁止短语**守诚实边界（不用 `"TOPS" not in blob`，否则误伤「绝不报 TOPS」这句正确自我否定）；
+    # 🔴 突变探针须先证「真能变红」且 patch 到被消费的那份引用（血案 #3/#21）。
+    "run_ecore_e19_smoke.py",
     "run_webui_entry_smoke.py",
     # 🔴 v0.9.169（D-193）WebUI 案例卡前端**取值路径**门禁 —— 把血案 #32 机器化：
     #   E17-e 生产实测发现前端取 `synthesis_law.serial_ns` 而该值实际在 `.demo` 下 ⇒ **三格显示 0.0**，
@@ -2237,6 +2242,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e17_smoke.py": 300.0,
     # E18 电子计算征程 列侧共享与架构权衡门禁（D-191）· 实测上界见基线行（亚秒级）
     "run_ecore_e18_smoke.py": 300.0,
+    # E19 电子计算征程 列侧共享的动态代价门禁（D-194）· 实测上界 0.170s ⇒ 余量 1764×
+    "run_ecore_e19_smoke.py": 300.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     "run_webui_entry_smoke.py": 120.0,
     # WebUI 案例卡前端取值路径门禁（v0.9.169 · D-193）· 纯文本解析（不执行 JS），实测 ~0.19s

@@ -57,7 +57,7 @@ __all__ = [
 ]
 
 # ═══════════════════════════ 常量（与平台模块同源）═══════════════════════════
-CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E18 全链"
+CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E19 全链"
 
 #: 长沟道 NMOS 模型参数（E1 · D-150 · `lda_l2.ecore.mosfet.NmosParams` 默认值；公开典型量级占位）
 MOSFET_FACTS = {
@@ -761,6 +761,74 @@ COL_SHARE_FACTS = {
                   "**不做功耗估算 ⇒ 不谈能效**；**绝不报 TOPS / TOPS-W / fJ/op**。",
 }
 
+#: E19 · 列侧共享的动态代价（闭合 E18 G-S 自点名缺口 · 静态+动态）
+COL_SHARE_DYN_FACTS = {
+    "process": {
+        "mux_w_um": 50.0, "mux_l_um": 0.1, "mux_w_over_l": 500.0,
+        "charge_inj_alpha": 0.5, "clk_feedthrough_overlap_um": 0.05,
+        "clk_swing_v": 3.0, "sample_cap_f": 1.0e-12,
+        "clock_jitter_sigma_s": 1.0e-12, "signal_freq_hz": 100.0e6,
+        "temperature_k": 300.0, "ref_v": 1.0, "k_sigma": 3.0,
+        "non_pdk": True,
+    },
+    # ① 电荷注入 + 时钟馈通：确定性 pedestal（可校准）+ Pelgrom 随机残差
+    "charge_injection": {
+        "pedestal_v": 0.1190424376, "pedestal_rel_pct": 11.904244,
+        "is_deterministic": True, "is_calibratable": True,
+        "residual_sigma_v": 2.8845277e-05, "residual_rel_pct": 0.0028845,
+        "below_ktc": True, "below_lsb": True,
+        "note": "复用开关电荷注入 + 时钟馈通 = **确定性 pedestal ≈ 119.04 mV（11.90% FS）**，"
+                "由**每列/每开关单点失调校准消除**（与 E16 共模漂移同口径 ⇒ **不进精度预算**）。"
+                "校准后幸存的 **Pelgrom 随机残差 ≈ 28.85 µV ≪ kT/C（64.4 µV）/ LSB（3.906 mV）**"
+                "⇒ **不是精度墙**。**真成本 = 校准负担**（N 列需 N 次失调校准）。",
+    },
+    # ② 采样孔径抖动：σ_v = π·f·V_ref·σ_t（最坏口径）· 地板 = E18 kT/C
+    "aperture_jitter": {
+        "signal_freq_hz": 100.0e6, "clock_jitter_sigma_s": 1.0e-12, "ref_v": 1.0,
+        "sigma_v": 3.1415926536e-04, "sigma_rel_pct": 0.031416,
+        "f_cross_ktc_hz": 20485774.885, "f_cross_lsb_hz": 1243397992.9,
+        "below_lsb_at_ref": True,
+        "note": "孔径抖动电压误差 `σ_v = π·f·V_ref·σ_t`（满量程正弦最陡斜率最坏口径）；"
+                "地板仍是 E18 的 `σ = √(kT/C_s)`。**仅当信号带宽 > ~20.49 MHz 才越过热噪地板**"
+                "（仍非精度限）、**> ~1243.4 MHz 才越 LSB**（保吞吐共享抬高 kT/C 地板 ⇒ 更早触发）；"
+                "**条件性，非墙**。",
+    },
+    # ③ 多路开关建立时间对吞吐的侵蚀（复用 E14 R_on·E17 建立律）
+    "mux_settling": {
+        "r_on_ohm": 6.4102564103, "tau_s": 6.410256e-12, "t_settle_s": 3.998926e-11,
+        "plain_overhead_rel_pct": 0.043403, "keep_overhead_k160_rel_pct": 6.944444,
+        "keep_vs_plain_ratio": 160.0,
+        "note": "多路开关建立 `τ_mux = R_on·C_s`（C_s 固定绝对采样电容，与共享无关）；"
+                "**复用 E14 同器件 R_on = 6.41 Ω**（W/L=500）· `t_mux ≈ 39.99 ps`。"
+                "🔴 **plain 共享**：每列周期 `K·(T_conv(1)+t_mux)` vs 基线 `K·T_conv(1)`"
+                "⇒ 侵蚀**恒定 = t_mux/T_conv(1) ≈ 0.0434%**（可忽略）。"
+                "🔴 **保吞吐共享**：每列周期 `T_conv(1)+K·t_mux` vs 基线 `T_conv(1)`"
+                "⇒ 侵蚀 **∝ K**，**K*=160 处 ≈ 6.944%**（E18 静态模型此前漏计的真实动态代价，"
+                "且**反相关于 E18 面积收益**）。",
+    },
+    # ④ 动态预算项（接 E15 make_term · RANDOM · 1σ）
+    "budget": {
+        "n_terms": 2, "worst_pct": 0.094644, "worst_bits": 10.0452,
+        "terms": ["colshare_charge_injection_residual", "colshare_aperture_jitter"],
+        "note": "仅含**进预算**的两项 RANDOM（kσ）：电荷注入 Pelgrom 随机残差（确定性 pedestal 已校准剔除）"
+                "+ 孔径抖动（参考带宽 100 MHz）；确定性 pedestal / 多路开关建立（吞吐代价非 %FS 误差）"
+                "**不入预算**。worst ≈ 0.0946% ⇒ 约 **10.045 位**（接 E15 合成律）。",
+    },
+    "protection": {
+        "e18_numbers_unchanged": True, "keep_throughput_default_off": True,
+        "no_power_estimation": True,
+        "note": "**只读消费** E14/E17/E18/E8/E15 —— **不改**任何既有默认值；"
+                "`keep_throughput` **默认 False**（保守口径）⇒ **E15/E16/E17/E18 已发布数字逐位不变**"
+                "（模块门禁 B12 守着）；**不覆盖** E18 `converter_period_s` / `col_throughput_sps`。",
+    },
+    "disclosure": "🔴 开关尺寸/重叠/抖动/信号频率均为**公开量级占位（非 PDK）**；"
+                  "电荷注入用对称分配 α=0.5 经典模型；时钟馈通用栅漏重叠 C_gd 一阶模型；"
+                  "孔径抖动取满量程正弦最陡斜率最坏口径。**不做功耗估算 ⇒ 不谈能效**；"
+                  "**绝不报 TOPS / TOPS-W / fJ/op**；三项动态代价在可达共享度内**都不是精度墙**"
+                  "（共享的真实新代价 = 保吞吐开关建立开销 + 高带宽孔径抖动，二者反相关于 E18 静态收益，"
+                  "但都不造新墙）。",
+}
+
 LANDMARKS_BRIEF = [
     {"who": "Mythic AI", "item": "M1076 AMP：analog compute-in-memory MVM 交叉阵列"
                                  "（flash array + on-die ADC）· up to 25 TOPS · typ. 3–4 W · "
@@ -798,7 +866,8 @@ ECORE_HONEST_NOTE = (
     "开关 25 µm² 均为**公开量级占位 · 非 PDK · 无实测锚**）⇒ **结论随参数变**；"
     "真实芯片用分段 CDAC / 更小 `C_u` / 采样电容共享 ⇒ 面积远小于此；"
     "**只覆盖静态**（不含动态功耗 / 时钟树 / 供电网络 / 驱动器面积 / IO pad）；"
-    "共享的**动态代价（多路开关电荷注入 / 串扰 / 采样孔径抖动）未建模**；"
+    "共享的**动态代价已由 E19 建模**（电荷注入 / 孔径抖动 / 多路开关建立 —— 见 G-T），"
+    "但仍**不做功耗估算** ⇒ **绝不报 TOPS / TOPS-W / fJ/op**；"
     "🔴 **不做功耗估算 ⇒ 因此绝不报 TOPS / TOPS-W / fJ/op** —— 本段只报「面积（µm²/mm²）/ "
     "每列采样率（Sa/s）/ 相对倍数」；🔴 **kT/C 位数上限 16.34 位远高于 8 位** ⇒ "
     "本段**不宣称共享受精度限制**（真实代价是**吞吐**，**不硬造精度腿**）。"
@@ -993,6 +1062,25 @@ MILESTONES = [
                "`A×周期` **严格常数**（散布 0.0）⇒ **提吞吐（复制）与省面积（共享）是同一条双曲线两端**。"
                "🔴 **保护性约束**：**只读消费** E14/E17 · `keep_throughput` **默认 False** ⇒ "
                "**E15/E16/E17 已发布数字逐位不变**（模块门禁 B18/B19 守着）。"},
+    {"id": "E19", "code": "D-194",
+     "title": "列侧共享的动态代价（闭合 E18 自点名缺口 · 静态+动态）",
+     "gate": 23, "seg_probes": 6,
+     "result": "E18 补上「面积」维度却**自点名**漏了「共享的动态代价」。新增 `col_share_dynamic`"
+               "（第 23 模块 · 纯标准库 · **只读消费 E14/E17/E18/E8/E15 · 不吃新物理**）："
+               "① 🔴 **复用开关电荷注入 + 时钟馈通 = 确定性 pedestal**（≈ 119.04 mV / 11.90% FS）"
+               "**可单点失调校准消除** ⇒ **不进精度预算**；其 **Pelgrom 随机残差 ≈ 28.85 µV ≪ kT/C"
+               "（64.4 µV）/ LSB（3.906 mV）** ⇒ **不是墙**；**真成本 = 校准负担**"
+               "（N 列需 N 次失调校准，与 E16 共模漂移同口径）。"
+               "② 🔴 **采样孔径抖动** `σ_v = π·f·V_ref·σ_t`（满量程正弦最陡斜率最坏口径）；"
+               "地板仍是 E18 的 kT/C：仅当 **f > ~20.49 MHz** 越过热噪地板、**f > ~1243.4 MHz** 越 LSB"
+               "（保吞吐共享抬高 kT/C 地板 ⇒ 更早触发）⇒ **条件性，非墙**。"
+               "③ 🔴 **多路开关建立时间对吞吐的侵蚀**（复用 E14 R_on·E17 建立律）：C_s 固定绝对开销 ⇒ "
+               "**plain 共享下侵蚀恒定 ≈ 0.0434%**（可忽略）；**保吞吐共享下随 K 回升、K*≈160 处 ≈ 6.944%**"
+               "—— **E18 静态模型此前未计的真实动态代价**，且**反相关于 E18 面积收益**（与抖动同族）。"
+               "🔴 **诚实结论**：三项动态代价在可达共享度内**都不是精度墙**；共享的真实新代价 = "
+               "「保吞吐开关建立开销」+「高带宽孔径抖动」，二者皆反相关于 E18 静态收益，但**都不造新墙**"
+               "（不硬造精度腿 / 不报 TOPS）。🔴 **保护性约束**：**只读消费** E14/E17/E18/E8/E15，"
+               "`keep_throughput` **默认 False** ⇒ **E15/E16/E17/E18 已发布数字逐位不变**。"},
 ]
 
 #: 门禁判据合计（= Σ MILESTONES.gate）与突变探针合计（= Σ seg_probes）
@@ -1129,6 +1217,20 @@ FINDINGS = [
                "🔴 与 E17 的 **0.28889** 锚合起来看：**提吞吐（并行复制瓶颈级）与省面积（共享）"
                "是同一条 `A×周期 = 常数` 双曲线的两端** —— 两者不是两条独立的设计维度，"
                "而是**同一个守恒量的两个方向**。"},
+    {"title": "共享的动态代价闭合成「静态+动态」· 三项都不是精度墙（E19）",
+     "detail": "E18 补上「面积」维度却**自点名**漏了「共享的动态代价」—— 本段补上，把 E18 的"
+               "**静态面积/吞吐**口径闭合成**静态+动态**。三项："
+               "① 🔴 **复用开关电荷注入 + 时钟馈通 = 确定性 pedestal**（≈ 119 mV / 11.9% FS）"
+               "**可单点校准消除** ⇒ 不进精度预算；其 **Pelgrom 随机残差 ≈ 28.85 µV ≪ kT/C/LSB**"
+               "⇒ **不是墙**；**真成本 = 校准负担**（N 列需 N 次失调校准，与 E16 共模漂移同口径）。"
+               "② 🔴 **采样孔径抖动** `σ_v = π·f·V_ref·σ_t`（最坏口径）；地板仍是 E18 kT/C："
+               "仅当 **f > ~20.5 MHz** 越过热噪、**f > ~1243 MHz** 越 LSB（保吞吐共享抬高地板 ⇒ 更早）⇒ "
+               "**条件性，非墙**。③ 🔴 **多路开关建立对吞吐的侵蚀**（复用 E14 R_on·E17 建立律）："
+               "C_s 固定绝对开销 ⇒ plain 共享侵蚀**恒定 ≈ 0.0434%**（可忽略）；**保吞吐共享下随 K 回升、"
+               "K*≈160 处 ≈ 6.944% 每列周期** —— **E18 静态模型此前漏计的真实动态代价，反相关于 E18 面积收益**。"
+               "🔴 **诚实结论**：三项在可达共享度内**都不是精度墙**；共享的真实新代价 = "
+               "「保吞吐开关建立开销」+「高带宽孔径抖动」，二者皆反相关于 E18 静态收益，但**都不造新墙**"
+               "（不硬造精度腿 / 不报 TOPS）。"},
 ]
 
 # ═══════════════════════ 诚实边界（未闭合项 · 逐条登记）═══════════════════════
@@ -1235,13 +1337,12 @@ GAPS = [
                "⇒ **结论随参数变**，报告须携带参数。**保护性约束**：只读消费 E7/E14、"
                "**不给** `PERIPHERY_PROCESS` 加时间键（E17 的时间参数只进**自己的** `TIMING_PROCESS`）"
                "⇒ **E15/E16 已发布数字逐位不变**（门禁 B15/B16 守着）。"},
-    {"id": "G-S", "title": "面积为**宏模型占位** · 只覆盖静态 · 共享的动态代价未建模（E18 新增能力的内在边界）",
+    {"id": "G-S", "title": "面积为**宏模型占位** · E18 只覆盖静态 · 动态代价已由 E19 建模（E18 新增能力的内在边界）",
      "detail": "① 🔴 **面积为宏模型占位**：ρ=2 fF/µm²（MIM）· A_logic=800 µm² · A_tia=400 µm² · "
                "开关 25 µm² 均为**公开典型量级（非 PDK · 无实测锚）** ⇒ **结论随参数变**，"
                "报告须携带参数；真实芯片用**分段 CDAC / 更小 `C_u` / 采样电容共享** ⇒ 面积远小于此。"
-               "② **只覆盖静态**：不含动态功耗 / 时钟树与偏斜 / 供电网络（PDN）/ 驱动器面积 / IO pad；"
-               "**共享的动态代价（多路开关电荷注入 / 串扰 / 采样孔径抖动 / 复用开关的建立时间）未建模**"
-               "（本段只做**静态面积与周期**估算）。"
+               "② **E18 只覆盖静态**（面积与周期）；**共享的动态代价已由 E19 建模**（电荷注入 / 孔径抖动 / "
+               "多路开关建立 —— 见 **G-T**），不再属于「未建模」缺口。"
                "③ 🔴 **不做功耗估算 ⇒ 不谈能效**：**绝不报 TOPS / TOPS-W / fJ/op**；"
                "只报「面积（µm²/mm²）/ 每列采样率（Sa/s）/ 相对倍数」。"
                "④ 🔴 **不宣称共享受精度限制**：`σ = √(kT/C_tot)` 是物理律，但 8 bit / 1 pF / `k_σ=3` 时"
@@ -1250,6 +1351,23 @@ GAPS = [
                "硬造一个精度腿是错的。"
                "⑤ **保护性约束**：本段**只读消费** E14/E17，**不改**任何既有默认值；"
                "`keep_throughput` **默认 False** ⇒ **E15/E16/E17 已发布数字逐位不变**。"},
+    {"id": "G-T", "title": "🔴 动态代价为**经典/一阶模型** · 参数为公开量级占位 · 仍不报 TOPS（E19 新增能力的内在边界）",
+     "detail": "E19 把 E18 的**静态**口径闭合成**静态+动态**，三项动态代价："
+               "① **电荷注入用对称分配 α=0.5 经典模型**（不是 Spice 级电荷守恒瞬态）；"
+               "**时钟馈通用栅漏重叠 C_gd 一阶模型**；开关尺寸 L=0.1 µm / W=50 µm（W/L=500）"
+               "与 E18 CDAC 开关**同一器件**（R_on=6.41 Ω）⇒ 口径自洽，但**非 PDK**。"
+               "② **孔径抖动取满量程正弦最陡斜率最坏口径**（`σ_v = π·f·V_ref·σ_t`，f=100 MHz / σ_t=1 ps）；"
+               "实际取决于时钟源与时钟树，本段未建时钟树 / 不建模抖动谱。"
+               "③ **多路开关建立**用 E14 同器件 R_on·C_s 与 E17 建立律（`τ·(k+1)·ln2`）；"
+               "C_s=1 pF 为固定绝对采样电容（与共享度无关）⇒ 侵蚀只随 K 变。"
+               "④ 🔴 **不做功耗估算 ⇒ 仍不谈能效**：**绝不报 TOPS / TOPS-W / fJ/op**"
+               "（本段无功耗模型、无实测硅）；只报「相对 %FS / 越界频率 / 侵蚀 %」。"
+               "⑤ 🔴 **诚实拒绝造腿**：三项动态代价在可达共享度内**都不是精度墙**"
+               "（电荷注入确定性 pedestal 可校准、残差 ≪ kT/C/LSB；抖动仅高带宽越界；"
+               "mux 建立在 plain 共享下可忽略、保吞吐共享下虽达 ~7% 但仍是吞吐代价非精度限）；"
+               "共享的真实新代价 = 保吞吐开关建立开销 + 高带宽孔径抖动，二者**反相关于 E18 静态收益**"
+               "但不硬造精度腿。⑥ 🔴 **保护性约束**：本段**只读消费** E14/E17/E18/E8/E15，"
+               "`keep_throughput` **默认 False** ⇒ **E15/E16/E17/E18 已发布数字逐位不变**。"},
 ]
 
 _ARTIFACT_DIRS = ("examples", "lda/examples")
@@ -1428,7 +1546,9 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
                  "真 DAC / ADC / 行驱动外设（系统链） + 端到端误差预算链 + "
                  "权重编程通路（写-校验 / 噪声地板 / 接误差预算） + "
                  "时序 / 时钟预算链（五阶段节拍 / 时间按拓扑合成 / 时钟反解） + "
-                 "列侧共享与架构权衡（面积-时间乘积守恒 / 保吞吐 ∝1/K² / 架构族对照）**全链路验证",
+                 "列侧共享与架构权衡（面积-时间乘积守恒 / 保吞吐 ∝1/K² / 架构族对照） + "
+                 "列侧共享的动态代价（复用开关电荷注入 / 采样孔径抖动 / 多路开关建立时间 —— "
+                 "闭合 E18 自点名缺口）**全链路验证",
         "verdict": "DESIGN_VERIFIED",
         "verdict_label": "设计期验证（非流片实测）",
         "identity": {
@@ -1445,10 +1565,10 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "milestones": len(MILESTONES),
             "gate_checks": GATE_CHECKS_TOTAL,
             "probe_checks": PROBE_CHECKS_TOTAL,
-            "modules": 22,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
-            "capability_modules": 21,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
-            "entrypoints": 20,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
-                                         #   E11 两道 + E12…E18 七道）
+            "modules": 23,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
+            "capability_modules": 22,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
+            "entrypoints": 21,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
+                                         #   E11 两道 + E12…E19 八道）
             "modules_dir": "lda/lda_l2/ecore/",
         },
         "milestones": MILESTONES,
@@ -1480,6 +1600,7 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "device_weight_prog": WEIGHT_PROG_FACTS,
         "device_timing": TIMING_FACTS,
         "device_col_share": COL_SHARE_FACTS,
+        "device_col_share_dyn": COL_SHARE_DYN_FACTS,
         "scale_pressure": {
             "facts": SCALE_FACTS,
             "tiers": SCALE_PRESSURE_TIERS,
@@ -1593,12 +1714,12 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑨ Elmore 延迟闭式：τ(R=1, C=1) = 0.5 s",
         abs(elmore_tau_rc(1.0, 1.0) - 0.5) < 1e-15)
 
-    # ⑩ 案例卡组装：17 里程碑 / 18 结论 / 19 缺口 / 判据合计 407（含 88 探针）
+    # ⑩ 案例卡组装：18 里程碑 / 19 结论 / 20 缺口 / 判据合计 430（含 94 探针）
     card = case_card(repo_root="__nonexistent_root__")
-    chk("⑩ 案例卡组装：17 里程碑 / 18 结论 / **19 缺口** / 门禁判据合计 407（含 88 探针）",
-        len(card["milestones"]) == 17 and len(card["findings"]) == 18
-        and card["gaps_total"] == 19 and card["span"]["gate_checks"] == 407
-        and card["span"]["probe_checks"] == 88)
+    chk("⑩ 案例卡组装：18 里程碑 / 19 结论 / **20 缺口** / 门禁判据合计 430（含 94 探针）",
+        len(card["milestones"]) == 18 and len(card["findings"]) == 19
+        and card["gaps_total"] == 20 and card["span"]["gate_checks"] == 430
+        and card["span"]["probe_checks"] == 94)
 
     # ⑪ 产出物优雅降级（root 不存在 ⇒ available False，不抛错）
     chk("⑪ 产出物探测优雅降级（root 不存在 ⇒ available=False）",
@@ -1649,8 +1770,8 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑯ 护栏：非法 rows/cols · bits>60 · 零厚度 · n<1 均抛 ValueError", guard == 6)
 
     # ⑰ 每里程碑都有门禁数 + 结果文本（防空洞）
-    chk("⑰ 里程碑完整：17 段 · 每段含 gate 数 + 结果文本",
-        len(MILESTONES) == 17
+    chk("⑰ 里程碑完整：18 段 · 每段含 gate 数 + 结果文本",
+        len(MILESTONES) == 18
         and all(m.get("gate", 0) > 0 and m.get("result") and m.get("seg_probes", 0) > 0
                 for m in MILESTONES))
 
@@ -1910,6 +2031,41 @@ def run_selfchecks(verbose: bool = False) -> bool:
         and ("不宣称共享受精度限制" in _bgp4)
         and ("硬造一个精度腿是错的" in _bgp4)
         and all(k not in (_dcs + _bgp4) for k in _forbid_c))
+
+    # ㊳ E19 列侧共享动态代价面登记齐全（防「加了能力忘了卡」）
+    dc = card["device_col_share_dyn"]
+    chk("㊳ E19 列侧共享动态代价面登记齐全（电荷注入 pedestal/残差 · 孔径抖动越界频率 · "
+        "mux R_on 同器件 · plain/keep 侵蚀 · 预算项 · 保护性）",
+        abs(dc["charge_injection"]["pedestal_v"] - 0.1190424376) < 1e-6
+        and dc["charge_injection"]["is_calibratable"] is True
+        and dc["charge_injection"]["below_ktc"] is True
+        and dc["charge_injection"]["below_lsb"] is True
+        and abs(dc["aperture_jitter"]["sigma_v"] - 3.1415926536e-04) < 1e-9
+        and 1.0e7 < dc["aperture_jitter"]["f_cross_ktc_hz"] < 3.0e7
+        and 1.0e9 < dc["aperture_jitter"]["f_cross_lsb_hz"] < 2.0e9
+        and abs(dc["mux_settling"]["r_on_ohm"] - 6.4102564103) < 1e-9
+        and abs(dc["mux_settling"]["plain_overhead_rel_pct"] - 0.043403) < 1e-6
+        and abs(dc["mux_settling"]["keep_overhead_k160_rel_pct"] - 6.944444) < 1e-6
+        and abs(dc["mux_settling"]["keep_vs_plain_ratio"] - 160.0) < 1e-9
+        and dc["budget"]["n_terms"] == 2
+        and dc["protection"]["keep_throughput_default_off"] is True)
+
+    # ㊴ 🔴 诚实（E19 · 双向）：
+    #     **抬高方向** —— 动态代价能力到手后最易滑成「已报 TOPS / 已含功耗 / 动态已实测」；
+    #     **贬低方向** —— E19 前的「共享动态代价未建模」口径已显式改写为「已由 E19 建模」（G-S）；
+    #     🔴 且必须显式**拒绝硬造精度腿**（三项动态代价在可达共享度内都不是精度墙）。
+    #     🔴 判据纪律（E15 血案）：**按来源分别断言**。
+    _dcd = str(card["device_col_share_dyn"])
+    _bgp5 = " ".join(g["detail"] for g in card["gaps"])
+    _forbid_d = ("已报 TOPS", "已含功耗", "已完成功耗估算", "动态已实测",
+                 "已含真实版图寄生")
+    chk("㊴ 🔴 诚实（E19 · 双向）：动态代价面与缺口各自显式声明**不报 TOPS** + **非 PDK** + "
+        "**不做功耗估算** + **拒绝硬造精度腿**；不得自称已报 TOPS / 已含功耗 / 动态已实测",
+        ("不报 TOPS" in _dcd) and ("非 PDK" in _dcd) and ("不做功耗估算" in _dcd)
+        and ("都不是精度墙" in _dcd)
+        and ("不报 TOPS" in _bgp5) and ("不做功耗估算" in _bgp5)
+        and ("都不是精度墙" in _bgp5)
+        and all(k not in (_dcd + _bgp5) for k in _forbid_d))
 
     ok_all = all(res.values())
     if verbose:

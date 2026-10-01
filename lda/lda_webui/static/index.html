@@ -1424,8 +1424,8 @@ body{padding-top:56px}
       用 LDA <b>亲手设计</b>的一颗<b>电子计算芯片</b>（电子版的「光子 MZI 网格」）：模拟
       <b>矩阵-向量乘（MVM）交叉阵列</b>——行电压 × 交叉点电导 → 列电流求和 → TIA 转电压，
       对标模拟 AI 加速器（Mythic 类）同族架构。<br/>
-      <b>E1–E18 全链</b>（17 段里程碑 · 全程在 LDA 内闭环 · 门禁共 <b>407 判据</b> / <b>88 道突变探针</b> ·
-      <b>20 道常驻门禁</b>）：E1 基座（晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）
+      <b>E1–E19 全链</b>（18 段里程碑 · 全程在 LDA 内闭环 · 门禁共 <b>430 判据</b> / <b>94 道突变探针</b> ·
+      <b>21 道常驻门禁</b>）：E1 基座（晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）
       → E2 参数化 N×M MVM 交叉阵列（ideal TIA / transistor 权重 + 晶体管级 OTA）→ E3 MVM 数据通路
       （DAC→阵列→ADC、多层 MLP+ReLU、分块）→ E4 规模对标（至 256×256 = 65536 突触，诚实边界）
       → E5 平台能力硬化（能力清单 + 双向完备守护门禁）→ <b>E6 版图与几何签核（首次直出真 GDS）</b>
@@ -1444,7 +1444,10 @@ body{padding-top:56px}
       <b>128 000 µm²</b> 是整片 64×64 阵列本体（<b>23 302 µm²</b>）的 <b>354.92 倍</b>；🔴
       <b>面积-时间乘积守恒</b> + <b>保吞吐共享 ⇒ 面积 ∝1/K²</b>（拐点 <b>K*=160</b>）⇒
       全并行 <b>8.2704 mm²</b> → 推荐 <b>30 000 µm²（1/275.68）</b>；🔴 <b>诚实拒绝造腿</b>：
-      kT/C 跌到 8 位需共享度 K≈1.05×10⁵ ⇒ <b>代价是吞吐不是精度</b>）。<br/>
+      kT/C 跌到 8 位需共享度 K≈1.05×10⁵ ⇒ <b>代价是吞吐不是精度</b>）→ <b>E19 列侧共享的动态代价</b>
+      （闭合 E18 自点名缺口 · 静态+动态：电荷注入 pedestal 119.04 mV 可校准 · 孔径抖动地板仍 kT/C ·
+      多路开关建立复用 E14 R_on=6.41 Ω ⇒ plain 侵蚀 0.0434% / 保吞吐 K*=160 处 6.944%；
+      三项在可达共享度内<b>都不是精度墙</b>）。<br/>
       <b>核心结果</b>：MNA 瞬态 vs 指数闭式 <b>&lt;2e-4</b>；理想 8×8 阵列 <b>&lt;2e-4</b>；
       数据通路单层 8bit <b>0.012</b>；<b>首次直出真 GDS</b>（4×4 = 120 元素 / 936 B）；
       <b>IR drop N=32 达 27%</b>、sneak <b>7.26×</b>；<b>校准 L0 1.70% → L2 0.074%</b>；
@@ -1456,6 +1459,7 @@ body{padding-top:56px}
       <b>权重编程：8×8 有效精度 4.62 → 4.24 位（MLC 6 位）· 5% 预算可及规模 12 → 11 → 6 位「无解」</b>。<br/>
       <b>E15 全链误差预算：8×8 worst 4.0601% ⇒ 有效精度仅 4.622 位</b>；<b>主导项 N≤8 失配 / N≥16 IR drop</b>（交叉点）；<b>全链 5% 上界 N≤12</b> ⟷ 仅 IR drop 口径 N≤18。<br/>
       <b>E18 列侧共享</b>：<b>面积-时间乘积守恒</b>（与共享度 K 无关）· <b>保吞吐 ⇒ 面积 ∝1/K²</b>（电容项严格 −2）· 拐点 <b>K*=160</b> · 架构族面积比 <b>63.2×</b> · <b>读出 = 阵列的 354.92 倍</b> ⇒ <b>面积瓶颈不在阵列、在列侧读出</b>。<br/>
+      <b>E19 列侧共享动态代价</b>：电荷注入 pedestal <b>119.04 mV（11.90% FS）</b>可单点校准（不进预算）· Pelgrom 残差 <b>28.85 µV ≪ kT/C/LSB</b> ⇒ 非墙 · 孔径抖动 <b>σ_v=314.16 µV @100MHz</b>（地板 kT/C · 越界 20.49/1243.4 MHz）· 多路开关 R_on=6.41 Ω（E14 同器件）· plain 侵蚀 <b>0.0434%</b> / 保吞吐 K*=160 <b>6.944%</b> · 动态预算 worst <b>0.0946% ≈ 10.045 位</b>。<br/>
       🔴 本面板为<b>只读案例</b>（零重计算、免登录、不跑仿真、零外部 SPICE 引擎）；
       全部为<b>设计期验证</b>，<b>非流片后实测</b>；晶体管参数为公开典型量级占位（非 PDK）；
       <b>不报任何 TOPS / TOPS-W 能效或吞吐指标</b>。判决位由死标量给出，LLM 不进判决路径。
@@ -5159,6 +5163,40 @@ function renderECore(d){
   h+='<div class="note">🔴 <b>保护性约束</b>：'+String(DCSP.note||'')+'</div>';
   h+='<div class="note">'+String(DCS.disclosure||'')+'</div>';
 
+  var DCD=(d.device_col_share_dyn||{}), DCDCI=DCD.charge_injection||{}, DCDAJ=DCD.aperture_jitter||{},
+      DCDMS=DCD.mux_settling||{}, DCDB=DCD.budget||{}, DCDPRO=DCD.protection||{};
+  h+='<div class="summary" style="margin-top:12px">列侧共享的动态代价（E19 · 闭合 E18 G-S 自点名缺口 · 静态+动态）</div>';
+  h+='<div class="note">E18 把「面积」维度补上了，但**只覆盖静态**（disclosure 自点名：动态代价未建模）。'
+    +'E19 把三类动态代价显式建模：**① 电荷注入 + 时钟馈通（确定性 pedestal，可校准）** · '
+    +'**② 采样孔径抖动（地板 = E18 kT/C）** · **③ 多路开关建立时间对吞吐的侵蚀（复用 E14 R_on · E17 建立律）**。</div>';
+  h+=_qcTbl(['① 电荷注入 + 时钟馈通','值'],
+    [['确定性 pedestal','<b>'+Number(DCDCI.pedestal_v||0).toFixed(4)+' V</b>（'+Number(DCDCI.pedestal_rel_pct||0).toFixed(2)+'% FS）'],
+     ['是否确定性 / 可校准', (DCDCI.is_deterministic?'是':'否')+' / '+(DCDCI.is_calibratable?'可每列单点失调校准消除 ⇒ 不进精度预算':'否')],
+     ['Pelgrom 随机残差 σ','<b>'+Number(DCDCI.residual_sigma_v||0).toExponential(3)+' V</b>（'+Number(DCDCI.residual_rel_pct||0).toExponential(2)+'% FS）'],
+     ['vs kT/C（64.4 µV）/ LSB（3.906 mV）','<b>≪ 二者</b> ⇒ 不是精度墙']]);
+  h+='<div class="note">'+String(DCDCI.note||'')+'</div>';
+  h+=_qcTbl(['② 采样孔径抖动（最坏口径）','值'],
+    [['信号频率 / 时钟抖动 σ_t','<b>'+Number(DCDAJ.signal_freq_hz||0).toExponential(2)+' Hz</b> / '+Number(DCDAJ.clock_jitter_sigma_s||0).toExponential(2)+' s'],
+     ['σ_v = π·f·V_ref·σ_t','<b>'+Number(DCDAJ.sigma_v||0).toExponential(3)+' V</b>（'+Number(DCDAJ.sigma_rel_pct||0).toExponential(2)+'% FS）'],
+     ['越过热噪地板频率 f_ktc','<b>'+Number(DCDAJ.f_cross_ktc_hz||0).toExponential(3)+' Hz</b>'],
+     ['越 LSB 频率 f_lsb','<b>'+Number(DCDAJ.f_cross_lsb_hz||0).toExponential(3)+' Hz</b>'],
+     ['地板','E18 kT/C（σ=√(kT/C_s)）—— 条件性，非墙']]);
+  h+='<div class="note">'+String(DCDAJ.note||'')+'</div>';
+  h+=_qcTbl(['③ 多路开关建立对吞吐的侵蚀','值'],
+    [['复用 E14 同器件 R_on','<b>'+Number(DCDMS.r_on_ohm||0).toFixed(4)+' Ω</b>（W/L=500）'],
+     ['τ_mux = R_on·C_s','<b>'+Number(DCDMS.tau_s||0).toExponential(3)+' s</b>'],
+     ['t_mux = settle_half_lsb','<b>'+Number(DCDMS.t_settle_s||0).toExponential(3)+' s</b>（≈'+Number(DCDMS.t_settle_s||0).toFixed(2)+' ps）'],
+     ['plain 共享侵蚀（恒定）','<b>'+Number(DCDMS.plain_overhead_rel_pct||0).toFixed(4)+'%</b>（可忽略）'],
+     ['保吞吐共享侵蚀 @K*=160','<b>'+Number(DCDMS.keep_overhead_k160_rel_pct||0).toFixed(4)+'%</b>（∝K）']]);
+  h+='<div class="note">'+String(DCDMS.note||'')+'</div>';
+  h+=_qcTbl(['④ 动态预算（接 E15 合成律 · RANDOM · 1σ）','值'],
+    [['进预算项数','<b>'+Number(DCDB.n_terms||0).toFixed(0)+'</b>（电荷残差 + 孔径抖动）'],
+     ['worst','<b>'+Number(DCDB.worst_pct||0).toFixed(4)+'%</b>'],
+     ['≈ 有效位','<b>'+Number(DCDB.worst_bits||0).toFixed(3)+' 位</b>']]);
+  h+='<div class="note">'+String(DCDB.note||'')+'</div>';
+  h+='<div class="note">🔴 <b>保护性约束</b>：'+String(DCDPRO.note||'')+'</div>';
+  h+='<div class="note">'+String(DCD.disclosure||'')+'</div>';
+
   h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
   (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });
   h+='</div>';
@@ -5226,7 +5264,15 @@ function renderECore(d){
     +'（电容项严格 −2 · 双项混合 −1.952，拐点 <b>K*=160</b>）⇒ 全并行 <b>8.2704 mm²</b> → '
     +'推荐方案 <b>30 000 µm²（1/275.68）</b>。🔴 <b>诚实拒绝造腿</b>：kT/C 跌到 8 位需共享度 '
     +'<b>K≈1.05×10⁵</b> ⇒ <b>共享的代价是「吞吐」不是「精度」</b>；与 E17 的 0.289 锚合起来 —— '
-    +'<b>提吞吐（复制瓶颈级）与省面积（共享）是同一条双曲线的两端</b>。';
+    +'<b>提吞吐（复制瓶颈级）与省面积（共享）是同一条双曲线的两端</b>。'
+    +'<br/><b>列侧共享的动态代价（E19 · 闭合 E18 G-S 自点名缺口 · 静态+动态）</b>：补上 E18 静态口径漏计的'
+    +'三类动态代价 —— ① 电荷注入+时钟馈通=确定性 pedestal <b>119.04 mV（11.90% FS）</b>，'
+    +'<b>可每列单点校准消除</b>（不进精度预算）；幸存 Pelgrom 随机残差 <b>28.85 µV ≪ kT/C（64.4 µV）/ LSB（3.906 mV）</b>⇒ 不是精度墙；'
+    +'② 孔径抖动 <code>σ_v=π·f·V_ref·σ_t</code>，地板仍是 E18 kT/C，<b>仅 &gt;~20.49 MHz 越热噪</b>、&gt;<b>~1243.4 MHz 越 LSB</b>（保吞吐共享更早触发）⇒ 条件性；'
+    +'③ 多路开关建立 <code>τ_mux=R_on·C_s</code>（复用 E14 同器件 <b>R_on=6.41 Ω</b>）→ <b>t_mux≈39.99 ps</b>；'
+    +'🔴 <b>plain 共享侵蚀恒定 0.0434%</b>（可忽略）· 🔴 <b>保吞吐共享侵蚀 ∝K，K*=160 处 ≈6.944%</b>（反相关于 E18 面积收益）；'
+    +'动态预算仅含进预算两项 RANDOM（电荷残差+抖动）⇒ worst ≈ <b>0.0946% ≈ 10.045 位</b>；'
+    +'三项在可达共享度内<b>都不是精度墙</b>，共享新代价 = 保吞吐开关建立 + 高带宽抖动，二者反相关于 E18 静态收益但<b>不造新墙</b>。';
   return false;
 }
 if($('runECore')) $('runECore').onclick = runECore;

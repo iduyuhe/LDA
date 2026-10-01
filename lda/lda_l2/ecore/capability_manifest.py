@@ -254,6 +254,20 @@ ECORE_CAPABILITY_MANIFEST = [
                     "COL_SHARE_DISCLOSURE", "col_share_self_check"],
         "introduced_by": "D-189…D-191 (E18)", "guard": "run_ecore_e18_smoke.py",
     },
+    {
+        "capability": "列侧共享的动态代价（复用开关电荷注入 + 时钟馈通 · 采样孔径抖动 · 多路开关建立时间"
+                      "对吞吐的侵蚀）—— 闭合 E18 G-S 自点名缺口，把「静态面积」口径闭合成"
+                      "「静态 + 动态」：① 电荷注入确定性 pedestal（可单点校准消除）+ Pelgrom 随机残差"
+                      "② 孔径抖动 σ_v=π·f·V_ref·σ_t（地板=E18 kT/C）③ 保吞吐共享下 mux 建立侵蚀 ∝K",
+        "module": "lda_l2.ecore.col_share_dynamic",
+        "symbols": ["KB", "COL_SHARE_DYN_PROCESS", "COL_SHARE_DYN_DISCLOSURE",
+                    "charge_injection_pedestal_v", "charge_injection_residual_sigma_v",
+                    "aperture_jitter_sigma_v", "jitter_bandwidth_limits",
+                    "mux_settling_tau", "mux_settling_erosion",
+                    "dynamic_budget_terms", "dynamic_cost_report",
+                    "col_share_dynamic_self_check"],
+        "introduced_by": "D-194 (E19)", "guard": "run_ecore_e19_smoke.py",
+    },
 ]
 
 
@@ -295,7 +309,7 @@ def manifest_check() -> dict:
 
 
 ECORE_CAPABILITY_DISCLOSURE = {
-    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18",
+    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19",
     "e5_scope": "把 E1~E9 逼出的平台能力固化为机器可读清单（单向真源）+ 常驻门禁（正向完备 + 反向完备 + 披露一致 + 诚实边界）",
     "hardening_semantics": "能力面必须被门禁守着：任一模模块/符号缺失、隐身模块出现、或注入 fabricated 指标 ⇒ 门禁必红",
     "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"

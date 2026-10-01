@@ -98,14 +98,14 @@ def main() -> int:
     check("B1 endpoint == /api/ecore_demo", card["endpoint"] == "/api/ecore_demo")
     check("B2 verdict == DESIGN_VERIFIED（非 ACCEPT/PASS）",
           card["verdict"] == "DESIGN_VERIFIED")
-    check("B3 十七段征程（E1→E18）", len(card["milestones"]) == 17)
-    check("B4 关键结论 18 条", len(card["findings"]) == 18)
-    check("B5 诚实边界 19 条", card["gaps_total"] == 19)
-    check("B6 门禁判据合计 = 407（含 88 条突变探针）",
-          card["span"]["gate_checks"] == 407 and card["span"]["probe_checks"] == 88)
-    check("B6c 计数拉平：21 能力模块 / 22 模块 / 20 常驻门禁",
-          card["span"]["capability_modules"] == 21 and card["span"]["modules"] == 22
-          and card["span"]["entrypoints"] == 20)
+    check("B3 十八段征程（E1→E19）", len(card["milestones"]) == 18)
+    check("B4 关键结论 19 条", len(card["findings"]) == 19)
+    check("B5 诚实边界 20 条", card["gaps_total"] == 20)
+    check("B6 门禁判据合计 = 430（含 94 条突变探针）",
+          card["span"]["gate_checks"] == 430 and card["span"]["probe_checks"] == 94)
+    check("B6c 计数拉平：22 能力模块 / 23 模块 / 21 常驻门禁",
+          card["span"]["capability_modules"] == 22 and card["span"]["modules"] == 23
+          and card["span"]["entrypoints"] == 21)
     check("B6b 判据合计 ≡ Σ 各段 gate（内部自洽）",
           sum(m["gate"] for m in card["milestones"]) == card["span"]["gate_checks"]
           and sum(m["seg_probes"] for m in card["milestones"]) == card["span"]["probe_checks"])

@@ -310,8 +310,11 @@ def dynamic_budget_terms(n_cols: int = 8, m: int = 8, bits: int = 8,
     🔴 仅含**进预算**的两项 RANDOM（kσ）：① 电荷注入 Pelgrom 随机残差（确定性 pedestal 已校准剔除）
     ② 孔径抖动（在参考带宽 `signal_freq_hz` 下）。两者地板均为 E18 kT/C。
     确定性 pedestal（可校准）/ 多路开关建立（吞吐代价非 %FS 误差）**不入预算**。
+
+    🔴 `n_cols`/`m` 保留在签名里（与 E15 `make_term` 调用方口径一致、且 `dynamic_cost_report`
+    原样透传），但**本函数的预算项与阵列规模无关**（σ 均为单位 cell 级量），
+    故这里不得出现 `n = int(n_cols)` 之类的尺寸派生——那是死代码，pyflakes 棘轮会拦（F841）。
     """
-    n = int(n_cols)
     b = int(bits)
     res = charge_injection_residual_sigma_v(override)
     jit = aperture_jitter_sigma_v(None, override)

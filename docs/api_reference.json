@@ -1,9 +1,9 @@
 {
   "counts": {
-    "described": 144,
+    "described": 145,
     "needs_login": 60,
-    "precise": 127,
-    "total": 144,
+    "precise": 128,
+    "total": 145,
     "undescribed": 0,
     "wildcard": 17
   },
@@ -327,6 +327,20 @@
       "note": "",
       "params": [],
       "path": "/api/d4_demo",
+      "source": "handler_docstring",
+      "wildcard": false
+    },
+    {
+      "app_function": null,
+      "auth": "public",
+      "binary": true,
+      "description": "GET /api/d4_gds?domain=<ecore|quantum_sc> —— 新两域的 `.gds` 下载（G-D 缺口收口）。 与 `/api/design_gds`（光子侧，全站原「唯一二进制端点」）**同口径**： `application/octet-stream` + `Content-Disposition: attachment` + `X-LDA-GDS-Sha256` 响应头。sha256 由 `d4_domains.deliver_download` 随字节 一并给出 ⇒ 本层**不再重算一遍**（响应头与实体同源，杜绝「头≠体」）。 🔴 免登录 + 参数可控 ⇒ `d4_domains.DOMAIN_PARAM_LIMITS` 硬限幅（防 `?domain=ecore&n=100000` 单请求 OOM）；未知域 / 越界 / 非数值 ⇒ **400 + JSON**， **不返回空文件、不静默丢弃**。 ⚠️ 二进制响应会被 `run_webui_api_smoke` 的通用 GET 循环误判 ⇒ 已登记进 `BINARY_GET` 并配专项断言（状态码 / Content-Type / 魔数 / `X-LDA-GDS-Sha256` ≡ 实体 sha256 / 附件名 ≡ `gds_filename` / 与 `/api/d4_demo` 案例卡登记值 MATCH）。",
+      "handler": "h_d4_gds",
+      "heavy": false,
+      "method": "GET",
+      "note": "",
+      "params": [],
+      "path": "/api/d4_gds",
       "source": "handler_docstring",
       "wildcard": false
     },

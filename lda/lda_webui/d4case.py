@@ -56,6 +56,10 @@ MILESTONES = [
     {"id": "D5", "label": "布局：域完备反向判据 + 3 道探针",
      "detail": "注册域 ≡ 门禁显式表（新域必须进门禁）；探针：空 GDS / DRC 伪造 REJECT / "
                "塞入未接门禁的 ghost 域，三者皆必红"},
+    {"id": "D6", "label": "下载端点扩面（G-D 收口）",
+     "detail": "`/api/d4_gds?domain=<域>` 出 `.gds`：octet-stream + attachment 附件名 + "
+               "`X-LDA-GDS-Sha256` 响应头；**下载字节 sha256 与本卡登记的逐位 MATCH**——"
+               "「设计→签核→下载」在新两域同样闭合。免登录 ⇒ 参数面带硬限幅"},
 ]
 FINDINGS = [
     {"title": "两条新产线都能出真 GDS 且双闸 ACCEPT",
@@ -69,14 +73,23 @@ FINDINGS = [
     {"title": "对外只给标量",
      "detail": "deliver_report 不含 GDS 字节面（前端/案例卡只消费标量），字节面仅由"
                "签名端点交付"},
+    {"title": "交付闭环以 sha256 互证，而非口头承诺",
+     "detail": "案例卡报告 sha256 与 `/api/d4_gds` 实际字节 sha256 逐位 MATCH —— "
+               "两处由同一份字节面算出（响应头不重算、双闸咬合不拼两份），"
+               "改任一侧都会红"},
+    {"title": "免登录端点必须有参数硬限幅",
+     "detail": "下载端点无鉴权 ⇒ `?domain=ecore&n=100000` 一个请求就能 OOM；"
+               "DOMAIN_PARAM_LIMITS 逐键设上下限，越界/非数值/非登记键一律 400 + JSON，"
+               "不静默丢弃、不返回空文件"},
 ]
 GAPS = [
     {"id": "G-U", "label": "光量子（LOQC）侧尚未纳入统一编排",
      "closed": False,
      "note": "本卡只收编电子 + 超导超导两域；LOQC 可编程 MZI 网格的交付通路待接入"},
-    {"id": "G-D", "label": "下载端点尚未扩面到新两域",
-     "closed": False,
-     "note": "光子侧 /api/design_gds 按 kind 参数重建；新两域需同口径的确定性重建端点"},
+    {"id": "G-D", "label": "下载端点已扩面到新两域（本轮闭合）",
+     "closed": True,
+     "note": "`/api/d4_gds?domain=<域>` 与光子侧同口径出 .gds，下载 sha256 ≡ 本卡登记值；"
+             "余下：光子侧 kind 参数面仍各自一套（未走统一编排）"},
     {"id": "G-P", "label": "层规仍是公开工艺近似",
      "closed": False,
      "note": "Foundry PDK 层规属外部依赖（D5），平台不沾 ⇒ 签核结论不可当流片放行依据"},
@@ -99,6 +112,9 @@ def _domain_facts() -> Dict[str, Any]:
             "n_bytes": r.get("gds", {}).get("n_bytes"),
             "sha256": r.get("gds", {}).get("sha256"),
             "n_elements": r.get("n_elements"),
+            # 下载通路：与光子侧 `/api/design_tapeout` 报告的 gds.download_url 同口径，
+            # 逐域唯一。门禁断言「下载字节 sha256 ≡ 本值」⇒ 交付闭环可证。
+            "download_url": "/api/d4_gds?domain=%s" % d,
             "drc": r.get("drc"),
             "lvs": r.get("lvs"),
         }

@@ -1458,6 +1458,45 @@ def h_design_gds(h, p, q, path):
     return None
 
 
+def h_d4_gds(h, p, q, path):
+    """GET /api/d4_gds?domain=<ecore|quantum_sc> —— 新两域的 `.gds` 下载（G-D 缺口收口）。
+
+    与 `/api/design_gds`（光子侧，全站原「唯一二进制端点」）**同口径**：
+    `application/octet-stream` + `Content-Disposition: attachment` +
+    `X-LDA-GDS-Sha256` 响应头。sha256 由 `d4_domains.deliver_download` 随字节
+    一并给出 ⇒ 本层**不再重算一遍**（响应头与实体同源，杜绝「头≠体」）。
+
+    🔴 免登录 + 参数可控 ⇒ `d4_domains.DOMAIN_PARAM_LIMITS` 硬限幅（防
+    `?domain=ecore&n=100000` 单请求 OOM）；未知域 / 越界 / 非数值 ⇒ **400 + JSON**，
+    **不返回空文件、不静默丢弃**。
+
+    ⚠️ 二进制响应会被 `run_webui_api_smoke` 的通用 GET 循环误判 ⇒ 已登记进
+    `BINARY_GET` 并配专项断言（状态码 / Content-Type / 魔数 /
+    `X-LDA-GDS-Sha256` ≡ 实体 sha256 / 附件名 ≡ `gds_filename` /
+    与 `/api/d4_demo` 案例卡登记值 MATCH）。
+    """
+    from lda_l2 import d4_domains as _dm
+
+    # 🔴 分发层的 query 是 `{k: v[0] ...}`（**dict[str, str]**，不是 list），
+    #    按 list 形态写会 `q['domain'][0]` 把 "ecore" 截成 "e" ⇒ 永远未知域。
+    #    这里两种形状都兼容（内部直调常传 list）。
+    _raw = q.get("domain", "")
+    domain = str(_raw[0] if isinstance(_raw, (list, tuple)) else _raw or "")
+    params = {}
+    for k, v in q.items():
+        if k == "domain":
+            continue
+        params[k] = v[0] if isinstance(v, (list, tuple)) else v
+    body, meta = _dm.deliver_download(domain, params)
+    if body is None:
+        return (400, meta)
+    h._send(200, body=body, ctype="application/octet-stream", headers={
+        "Content-Disposition": 'attachment; filename="%s"' % meta["filename"],
+        "X-LDA-GDS-Sha256": meta["sha256"],
+    })
+    return None
+
+
 def h_geometry_drc(h, p, q, path):
     return (200, _app.run_geometry_drc(p))
 
@@ -1894,6 +1933,8 @@ GET_ROUTES = {
     "/api/design_catalog": h_design_catalog,
     # T1.1：设计版图 .gds 下载（**唯一二进制端点**，见 h_design_gds docstring）
     "/api/design_gds": h_design_gds,
+    # v0.9.173：D4 扩面两域的 .gds 下载（G-D 缺口收口，见 h_d4_gds docstring）
+    "/api/d4_gds": h_d4_gds,
     "/api/gc_benchmarks": h_gc_benchmarks,
     "/api/shelf": h_shelf,
     "/api/admin/opinions": h_admin_opinions,

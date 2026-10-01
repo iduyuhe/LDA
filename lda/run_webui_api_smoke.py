@@ -56,6 +56,13 @@ HEAVY_GET = {
 #    无 kind ⇒ 400 + JSON 用法）。豁免 + 专项断言合起来才算「覆盖」，不是「跳过」。
 BINARY_GET = {
     "design_gds": "/api/design_gds?kind=RingResonator&R=10.0&wg_width=0.5&wg=0.5",
+    # v0.9.173：D4 扩面两域的 .gds 下载（G-D 缺口收口）——同样豁免通用 GET 循环，
+    # 逐域专项断言见 `_check_d4_gds_get`：**必须与 `/api/d4_demo` 案例卡登记值
+    # 互证**（下载到的字节 sha256 ≡ 案例卡报告的 sha256 ⇒ 交付闭环真闭合）。
+    # 🔴 键 = **路由路径**（`r.replace("/api/","")` ⇒ "d4_gds"），值 = 实跑 URL。
+    #    键名必须与路径同名：否则通用 GET 循环豁免不掉 ⇒ 拿 400 当 FAIL。
+    "d4_gds": "/api/d4_gds?domain=ecore",
+    "d4_gds_quantum_sc": "/api/d4_gds?domain=quantum_sc",
 }
 
 # v0.9.33：冷启动耗时的重计算 GET——进入断言循环前必须先各打一次把 TTL 缓存
@@ -411,6 +418,73 @@ def _check_binary_get(base):
     return out
 
 
+def _check_d4_gds_get(base):
+    """v0.9.173：`/api/d4_gds` 两域下载专项断言（G-D 缺口收口）。
+
+    逐域判（死标量 / 字节事实）：Content-Type / GDSII 魔数 / 长度自洽 /
+    `X-LDA-GDS-Sha256` ≡ 实体 sha256 / 附件名 ≡ `gds_filename` /
+    **下载字节 sha256 ≡ `/api/d4_demo` 案例卡登记的 sha256**（交付闭环互证）；
+    反向：无 domain、未知 domain、越界参数（防免登录端点被单请求 OOM）⇒
+    一律 **400 + JSON**，且不返回空 200 文件。
+    """
+    out = []
+    with urllib.request.urlopen(f"{base}/api/d4_demo", timeout=30) as r:
+        card = json.load(r)
+    facts = card.get("domains") or {}
+    if not facts:
+        out.append(("FAIL", "GET /api/d4_demo", "案例卡未返回域事实 ⇒ 无法做闭环互证"))
+    for dom, want in ((k, v) for k, v in facts.items() if k != "photon"):
+        tag = f"GET /api/d4_gds?domain={dom}"
+        try:
+            with urllib.request.urlopen(f"{base}/api/d4_gds?domain={dom}",
+                                        timeout=30) as r:
+                body, ctype = r.read(), r.headers.get("Content-Type", "")
+                cdisp = r.headers.get("Content-Disposition", "")
+                clen = r.headers.get("Content-Length", "")
+                head = r.headers.get("X-LDA-GDS-Sha256", "")
+        except Exception as e:                                    # noqa: BLE001
+            out.append(("FAIL", tag, f"读取失败: {e}"))
+            continue
+        real = hashlib.sha256(body).hexdigest()
+        exp_sha = str((want or {}).get("sha256") or "")
+        exp_bytes = (want or {}).get("n_bytes")
+        out += [
+            ("PASS" if ctype.startswith("application/octet-stream") else "FAIL", tag,
+             f"Content-Type={ctype!r}（须 application/octet-stream）"),
+            ("PASS" if body[:4] == b"\x00\x06\x00\x02" else "FAIL", tag,
+             f"GDSII 魔数 {body[:4]!r}"),
+            ("PASS" if str(clen) == str(len(body)) else "FAIL", tag,
+             f"Content-Length {clen} == 实体 {len(body)}"),
+            ("PASS" if ("attachment" in cdisp and ".gds" in cdisp) else "FAIL", tag,
+             f"Content-Disposition={cdisp!r}"),
+            ("PASS" if head == real else "FAIL", tag,
+             f"X-LDA-GDS-Sha256 {head[:12]}… == 实体 sha256 {real[:12]}…"),
+            ("PASS" if bool(head) and head == exp_sha else "FAIL", tag,
+             f"下载 sha256 ≡ 案例卡登记值 {exp_sha[:12]}…（交付闭环互证）"),
+            ("PASS" if len(body) == exp_bytes else "FAIL", tag,
+             f"下载字节 {len(body)} == 案例卡 n_bytes {exp_bytes}"),
+        ]
+    for bad, why in (("/api/d4_gds", "无 domain"),
+                     ("/api/d4_gds?domain=ghost", "未知域"),
+                     ("/api/d4_gds?domain=ecore&n=999999", "越界参数"),
+                     ("/api/d4_gds?domain=ecore&junk=1", "非登记参数键")):
+        tag = f"GET {bad}"
+        try:
+            with urllib.request.urlopen(f"{base}{bad}", timeout=20) as r:
+                code, blob = r.status, (r.read(200) or b"")
+            out.append(("FAIL", tag, f"{why} 未拒绝（实得 {code}）"))
+        except urllib.error.HTTPError as e:
+            try:
+                blob = (e.read(200) or b"")
+            except Exception:                                      # noqa: BLE001
+                blob = b""
+            out.append(("PASS" if (e.code == 400 and blob.lstrip().startswith(b"{"))
+                        else "FAIL", tag, f"{why} ⇒ {e.code} + JSON 报错"))
+        except Exception as e:                                    # noqa: BLE001
+            out.append(("FAIL", tag, f"{why} 路径异常: {e}"))
+    return out
+
+
 def _check_ecosystem_fields(base):
     """生态字段存在性断言（D-103）：GET /api/ecosystem 真实响应中逐一解析
     前端面板 53-56 渲染硬依赖的关键字段路径，字段删除/改名即 FAIL。
@@ -596,6 +670,12 @@ def main():
         # 3d) T1.1 唯一二进制端点专项断言：通用 GET 循环对 /api/design_gds 豁免
         #     （它返回 octet-stream，不是 JSON）⇒ 豁免必须配专项覆盖，否则等于没测。
         for kind, r, d in _check_binary_get(base):
+            if kind == "PASS":
+                ok.append(("BINARY", r, d))
+            else:
+                fail.append(("BINARY", r, d))
+        # 3e) v0.9.173：D4 扩面两域下载专项断言（豁免配覆盖，逐域 + 反向拒错）
+        for kind, r, d in _check_d4_gds_get(base):
             if kind == "PASS":
                 ok.append(("BINARY", r, d))
             else:

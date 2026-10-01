@@ -18,6 +18,7 @@
 """
 from __future__ import annotations
 
+import os
 import re
 import sys
 import unittest.mock as mock
@@ -87,9 +88,14 @@ def main() -> int:
           and "非实测签核" in card["honest_note"]
           and "非流片结果" in card["honest_note"]
           and "不报 TOPS" in card["honest_note"])
-    check("②c gaps 计数自洽且全部未闭合（诚实边界逐条登记）",
+    gd = next((g for g in card["gaps"] if g["id"] == "G-D"), {})
+    check("②c gaps 计数自洽 + 逐条有说明（G-D 已闭合，其余仍是诚实边界）",
           card["gaps_total"] == len(card["gaps"]) == 4
-          and all(g["closed"] is False for g in card["gaps"]))
+          and gd.get("closed") is True
+          and all(g.get("note") for g in card["gaps"])
+          and sum(1 for g in card["gaps"] if g["closed"] is False) == 3,
+          "gaps=%d 未闭合=%d" % (card["gaps_total"],
+                                 sum(1 for g in card["gaps"] if g["closed"] is False)))
     check("②d honest_note 含公开工艺近似 + LLM 不进判决路径",
           "公开工艺近似" in card["honest_note"] and "LLM 不进判决路径" in card["honest_note"])
 
@@ -103,8 +109,8 @@ def main() -> int:
     check("③c 逐域 sha256 为 64 位十六进制（确定性交付物标识）",
           all(re.fullmatch(r"[0-9a-f]{64}", card["domains"][d]["sha256"])
               for d in card["domain_list"]))
-    check("③d 征程/结论/缺口三段在场（5 里程碑 · 4 结论 · 4 缺口）",
-          len(card["milestones"]) == 5 and len(card["findings"]) == 4
+    check("③d 征程/结论/缺口三段在场（6 里程碑 · 6 结论 · 4 缺口）",
+          len(card["milestones"]) == 6 and len(card["findings"]) == 6
           and len(card["gaps"]) == 4)
 
     # —— 前端三件 + 接线 ——
@@ -138,15 +144,38 @@ def main() -> int:
           and {"label", "verdict", "n_bytes", "sha256", "n_elements", "drc", "lvs"}
           <= facts_keys)
 
+    # —— ③k/③l 下载闭环（G-D 收口本体：卡里给的 URL 必须真能下到同一份字节）——
+    dl_bad = []
+    for d in card["domain_list"]:
+        f = card["domains"][d]
+        body, meta = dm.deliver_download(d)
+        if not (f.get("download_url") == "/api/d4_gds?domain=%s" % d
+                and body is not None
+                and meta.get("sha256") == f.get("sha256")
+                and meta.get("n_bytes") == f.get("n_bytes")
+                and meta.get("verdict") == f.get("verdict")):
+            dl_bad.append(d)
+    check("③k 逐域下载端点可真下载且 sha256 ≡ 卡内登记值（交付闭环互证）",
+          dl_bad == [], f"不同步: {dl_bad}")
+    # 🔴 锚 __file__ 同级（不是 _FRONTEND 往上两级——那会落到 lda_webui/ 下，
+    #   判据读了个不存在的文件 ⇒ `os.path.exists` 短路成空串 ⇒ 假绿而非真绿）
+    _api_smoke = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "run_webui_api_smoke.py")
+    _api_src = open(_api_smoke, encoding="utf-8").read() if os.path.exists(_api_smoke) else ""
+    check("③l 下载路由已登记 GET_ROUTES + 已在 run_webui_api_smoke.BINARY_GET 豁免"
+          "（二进制响应不被通用 GET 循环误判）",
+          "/api/d4_gds" in _routes.GET_ROUTES
+          and '"d4_gds_ecore"' in _api_src and '"/api/d4_gds?domain=ecore"' in _api_src)
+
     # —— 缓存纪律 ——
     check("③h 同配置缓存命中（同一对象 · 秒回）", dc.case_card() is dc.case_card())
 
     # —— 🔴 突变探针 ——
+    # 🔴 探针必须返回**域事实 dict**（不是整卡）：返回整卡会让 `case_card` 再套一层，
+    #   判据红起来是因为「域根本不存在」而非「sha256 造假」——理由不对的探针是假探针。
     def fabricated_facts(*a, **kw):
-        bad = dict(card)
-        bad["domains"] = {d: dict(v, verdict="ACCEPT", sha256="0" * 64)
-                          for d, v in card["domains"].items()}
-        return bad
+        return {d: dict(v, verdict="ACCEPT", sha256="0" * 64)
+                for d, v in card["domains"].items()}
 
     with mock.patch.object(dc, "_domain_facts", fabricated_facts):
         bad_card = dc.case_card(use_cache=False)
@@ -167,6 +196,19 @@ def main() -> int:
     tampered = src + '\n<button class="btn" id="runD4Broken">探针</button>\n'
     check("🔴 ⑥ 探针③: 注入无接线按钮 runD4Broken ⇒ 前端反向完备判据必红",
           unwired_static_buttons(tampered) == ["runD4Broken"])
+
+    # 探针④：卡里把下载 URL 指向未注册域 ⇒ ③k 闭环互证必红
+    def wrong_dl(*a, **kw):
+        return {d: dict(v, download_url="/api/d4_gds?domain=ghost")
+                for d, v in card["domains"].items()}
+
+    with mock.patch.object(dc, "_domain_facts", wrong_dl):
+        bad3 = dc.case_card(use_cache=False)
+    wrong_domains = [d for d in bad3["domain_list"]
+                     if bad3["domains"][d].get("download_url")
+                     != "/api/d4_gds?domain=%s" % d]
+    check("🔴 ⑦ 探针④: 域事实下载 URL 指向未注册域 ⇒ 下载闭环判据必红",
+          wrong_domains == list(bad3["domain_list"]), str(wrong_domains))
 
     print()
     if fails:

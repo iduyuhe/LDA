@@ -4873,11 +4873,12 @@ function renderD4(d){
     // 🔴 域事实是**扁平**结构（n_bytes / sha256 直接在 f 上，无嵌套 gds）——
     //   曾误写成 f.gds.n_bytes ⇒ 浏览器实测两列渲染成 '-' / '…'（血案 #19 同款）
     var f=D[names[i]]||{};
+    var dl=f.download_url?('<a href="'+f.download_url+'" download>.gds 下载</a>'):'-';
     rows.push([ names[i], f.label||names[i], f.verdict||'-',
       f.n_bytes!=null?f.n_bytes+' B':'-',
-      (f.sha256||'').slice(0,16)+'…', f.n_elements!=null?f.n_elements:'-' ]);
+      (f.sha256||'').slice(0,16)+'…', f.n_elements!=null?f.n_elements:'-', dl ]);
   }
-  h+=_qcTbl(['域','交付内容','双闸','GDS 字节','确定性 sha256（截断）','几何元素数'], rows);
+  h+=_qcTbl(['域','交付内容','双闸','GDS 字节','确定性 sha256（截断）','几何元素数','下载'], rows);
   h+='<h3 style="margin:14px 0 4px">② 双闸明细（DRC / LVS）</h3>';
   var r2=[];
   for(var j=0;j<names.length;j++){
@@ -4892,12 +4893,25 @@ function renderD4(d){
     ['换参数（ecore n·m）sha256 必变', '<b>成立</b>', '反「常数假确定性」'],
     ['对外只给标量（不吐原始字节）', '<b>成立</b>', 'deliver_report 仅含 n_bytes + sha256']
   ]);
-  h+='<h3 style="margin:14px 0 4px">④ 征程与缺口</h3>';
+  h+='<h3 style="margin:14px 0 4px">④ 下载交付（真字节 · sha256 与上行一致）</h3>';
+  var dlr=[];
+  for(var k=0;k<names.length;k++){
+    var w=D[names[k]]||{};
+    dlr.push([ names[k], w.download_url||'-',
+      (w.sha256||'').slice(0,16)+'…', w.n_bytes!=null?w.n_bytes+' B':'-',
+      (w.download_url?'<a href="'+w.download_url+'" download>下载</a>':'-') ]);
+  }
+  h+=_qcTbl(['域','下载端点','响应头 sha256（截断）','字节数','本地下载'], dlr);
+  h+='<p style="margin:6px 0 0">端点返回 <code>application/octet-stream</code> + '
+    + '<code>attachment</code> 附件名，响应头 <code>X-LDA-GDS-Sha256</code> 为字节真实摘要'
+    + '（路由层不重算，与 /api/d4_demo 登记值同源）。免登录 ⇒ 参数带硬限幅，越界返回 400 + JSON。</p>';
+  h+='<h3 style="margin:14px 0 4px">⑤ 征程与缺口</h3>';
   h+='<p>'+(d.milestones||[]).map(function(m){return '<b>'+m.id+'</b> '+m.label;}).join(' · ')+'</p>';
   var gs=(d.gaps||[]).map(function(g){return '<b>'+g.id+'</b> '+g.label;});
   $('d4Body').innerHTML=h+'<p style="margin-top:8px"><b>未闭合缺口：</b>'+gs.join(' · ')+'</p>';
   $('d4Conclusion').innerHTML='<strong>结论：</strong>电子侧与超导量子侧都能出<b>真 GDS</b> 且双闸 ACCEPT，'
-    +'交付物 sha256 可确定性重建——「两条产线」不再是「能算对但交不出去」。'
+    +'交付物 sha256 可确定性重建，<b>/api/d4_gds 可真下载且摘要逐位一致</b>——'
+    +'「两条产线」不再是「能算对但交不出去」。'
     +'<br/><strong>诚实边界：</strong>'+d.honest_note;
   return false;
 }

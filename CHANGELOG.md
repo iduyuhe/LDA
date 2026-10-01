@@ -1,5 +1,56 @@
 # Changelog
 
+## v0.9.173（2026-10-02 · **阶段 2 残留项收口 · D4 下载端点扩面（G-D 收口）**：电子 + 超导量子两域的 `.gds` 下载**同口径闭合**，下载字节 sha256 与案例卡登记值逐位 MATCH · 账本 **476 不变（零锚改动）** · 独立率 95.59% 持平 · CI core **264 不变** · 端点 **144 → 145**）
+
+> 上版把两条**既有真产线**收编进 D4 编排（能算出真 GDS），但「最后一厘米」仍断：
+> **没有下载通路 ⇒ 用户拿不走**。本版补 `/api/d4_gds`，与光子侧 `/api/design_gds` 完全同口径。
+
+### 新增
+- **`/api/d4_gds?domain=<ecore|quantum_sc>`**（二进制下载端点）：`application/octet-stream` +
+  `Content-Disposition: attachment` + `X-LDA-GDS-Sha256` 响应头。🔴 **响应头不重算 sha256**——
+  由 `d4_domains.deliver_download` 随字节一并给出（「头≠体」这类不一致会静默发生，故判据把它钉死）。
+- **`deliver_download` / `deliver_gds_bytes` / `gds_filename`**（`lda_l2/d4_domains.py`）：对外下载口径
+  的**单一真源**；报告组装抽成 `_report_of(raw, domain)` 唯一口（双闸咬合只此一处，
+  `build_domain` 与 `deliver_download` **几何不重跑、不拼第二份报告**）。
+- **`DOMAIN_PARAM_LIMITS` 硬限幅**：`ecore{n,m}∈[1,32]` / `quantum_sc{rows,cols}∈[1,8]`。
+  🔴 免登录端点 + 外部可控参数 = 单请求 OOM（`?domain=ecore&n=100000`）；越界 / 非数值 / 非登记键
+  ⇒ **400 + JSON**（不静默丢弃、不返回空文件）。门禁用反向完备扫限幅表（新域不进盲区）。
+- **`_check_d4_gds_get`（`run_webui_api_smoke`）**：逐域专项断言（Content-Type / GDSII 魔数 /
+  `X-LDA-GDS-Sha256` ≡ 实体 sha256 / 附件名 / **下载 sha256 ≡ `/api/d4_demo` 登记值** / 字节数），
+  + 4 条拒错反向（无 domain / 未知域 / 越界 / 非登记键）。PASS **108 → 122**、FAIL **0**。
+
+### 门禁加厚
+- `run_d4_domain_smoke`：**13 → 21 判据 + 3 → 6 探针**（⑧ 下载⇄标量互证 · ⑨ 元信息自洽 ·
+  ⑩ 限幅反向完备 + 4 组拒错 · ⑪ 未知域快失败；新探针：字节面换成另一份真字节 / 限幅表掉域 /
+  下载与报告取到不同 raw）。
+- `run_d4_case_smoke`：**19 → 22 判据 + 3 → 4 探针**（③k 下载闭环互证 · ③l GET_ROUTES +
+  `BINARY_GET` 豁免登记；新探针：下载 URL 指向未注册域）。
+
+### 对外载体
+- 案例卡 **6 里程碑（新增 D6 下载扩面）· 6 结论 · 4 缺口（G-D **已闭合**，余 G-U/G-P/G-B）**；
+  域事实新增 `download_url`（逐域唯一）。
+- 前端 `sec-d4`：逐域表增「下载」列 + 新增「④ 下载交付」表（`Content-Disposition` /
+  `X-LDA-GDS-Sha256` 口径说明）+ 结论段补「可真下载且摘要逐位一致」。
+- `docs/API_REFERENCE.md` + `api_reference.json` 由 `scripts/gen_api_reference.py` 重生成（端点 **145**）。
+
+### 修复
+- 🔴 `h_d4_gds` 误按 list 形态取 query：分发层 `query = {k: v[0] ...}` 实为 `dict[str, str]`，
+  按 list 写会把 `"ecore"` 截成 `"e"` ⇒ **永远未知域、永远 400**（通用 GET 循环实测抓出，非人工看出）。
+- 探针写法修正：① `d4_domains` 用**导入期固化字典**持函数引用会让 mock 打不进（上版已修，本轮复验）；
+  ② 探针必须制造**真实分歧**——打 `_report_of` 会让 `build_domain` 与 `deliver_download` 一起被带偏
+  ⇒ 判据恒绿（假探针），改为「同一 `fn` 第二次调用返回不同 raw」才真正咬住「是否同一条构建链」。
+
+### 纪律
+- 单一真源：下载字节、sha256、双闸 verdict 全部由 `deliver_download` 一处产出；
+  路由层只负责 `h._send` 挂头。
+- 版本三同步（`pyproject` / README 顶行 + `## 当前账本` / CONTRIBUTING）+ CHANGELOG 段。
+
+### 诚实边界
+- 层规为**公开工艺近似**（非 Foundry PDK 标定值）；DRC 为 **bbox 级几何近似**；
+- verdict 属**设计期签核**，**非实测签核 · 非流片结果**；
+- **不报 TOPS / TOPS-W / fJ/op**；LLM 不进判决路径；零商业 EDA 依赖。
+- 下载的是**设计版图字节**（可确定性重建），**不是流片数据、不是实测数据**。
+
 ## v0.9.172（2026-10-02 · **阶段 2 残留项收口 · D4 交付闭环扩面（W5-1 + W5-2）：电子 + 超导量子两域都能出真 GDS 并通过双闸签核** · 账本 **476 不变（零锚改动）** · 独立率 95.59% 持平 · CI core **262 → 264**（`run_d4_domain_smoke` + `run_d4_case_smoke`））
 
 > W2 已实测闭合光子侧「设计 → GDS → 签核 → 下载」。本版收口的是**另外两条既有真产线**：

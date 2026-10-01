@@ -24,6 +24,7 @@ W2 已实测贯通光子侧「设计 → GDS → 签核 → 下载」。本门�
 """
 from __future__ import annotations
 
+import hashlib
 import sys
 import unittest.mock as mock
 
@@ -100,6 +101,50 @@ def main() -> int:
     check("⑦ 每个域的诚实注记含「非实测签核」+ 声明「不报 TOPS」（只扫肯定表述字段）",
           "非实测签核" in blob and "不报 TOPS" in blob)
 
+    # —— ⑧ 下载字节面 ⇄ 标量面互证（G-D 收口本体）——
+    for d in dm.D4_DOMAINS:
+        rep = dm.build_domain(d)
+        b1, b2 = dm.deliver_gds_bytes(d), dm.deliver_gds_bytes(d)
+        sha1, sha2 = hashlib.sha256(b1 or b""), hashlib.sha256(b2 or b"")
+        check(f"⑧ {d}: 下载字节面与标量面互证（两次逐位一致 + sha ≡ build_domain）",
+              bool(b1) and bool(b2) and sha1.digest() == sha2.digest()
+              and sha1.hexdigest() == rep["gds"]["sha256"]
+              and len(b1) == rep["gds"]["n_bytes"]
+              and bytes(b1[:4]) == dm.GDS_HEADER_MAGIC,
+              f"sha(字节)={sha1.hexdigest()[:12]} vs 报告={str(rep['gds']['sha256'])[:12]}")
+
+    # —— ⑨ 下载元信息自洽（路由层只挂头，不重算摘要）——
+    for d in dm.D4_DOMAINS:
+        body, meta = dm.deliver_download(d)
+        rep = dm.build_domain(d)
+        check(f"⑨ {d}: deliver_download 元信息自洽（附件名/头 sha/双闸与报告同口径）",
+              bool(body) and meta.get("ok") is True
+              and str(meta.get("filename", "")).endswith(".gds")
+              and meta["sha256"] == hashlib.sha256(body).hexdigest()
+              and meta["n_bytes"] == len(body)
+              and meta.get("verdict") == rep.get("verdict")
+              and meta.get("drc") == rep.get("drc") and meta.get("lvs") == rep.get("lvs"),
+              f"meta={ {k: meta.get(k) for k in ('filename','sha256','verdict')} }")
+
+    # —— ⑩ 对外限幅（免登录端点可被单请求 OOM，必须硬拦）——
+    check("⑩a 限幅表反向完备：每个注册域都有 DOMAIN_PARAM_LIMITS 条目（新域不进盲区）",
+          set(dm.DOMAIN_PARAM_LIMITS) == set(dm.D4_DOMAINS),
+          "限幅=%s 注册=%s" % (sorted(dm.DOMAIN_PARAM_LIMITS), sorted(dm.D4_DOMAINS)))
+    for badp in ({"n": "999999"}, {"n": "abc"}, {"junk": "1"}, {"n": "0"}):
+        body, meta = dm.deliver_download("ecore", badp)
+        check(f"⑩b 越界/非数值/非登记键 {badp} ⇒ 拒绝（ok=False + 错误说明）",
+              body is None and meta.get("ok") is False and bool(meta.get("errors")),
+              str(meta)[:120])
+
+    # —— ⑪ 未知域下载快失败 ——
+    _gb, _gm = dm.deliver_download("ghost_domain")
+    check("⑪ 未知域下载快失败（字节→None + 报错说明含该域 + 给出已注册域白名单）",
+          dm.deliver_gds_bytes("ghost_domain") is None
+          and _gb is None and _gm.get("ok") is False
+          and "ghost_domain" in "".join(_gm.get("errors") or [])
+          and list(dm.D4_DOMAINS) == list(_gm.get("registered") or []),
+          str(_gm)[:160])
+
     # —— 🔴 突变探针 ——
     _orig_q = dm._build_quantum_sc          # 🔴 先抓原句柄：打桩后 dm._build_* 即 mock 本身
     def empty_gds(params=None):
@@ -125,13 +170,56 @@ def main() -> int:
 
     with mock.patch.object(dm, "D4_DOMAINS", ("ecore", "quantum_sc", "ghost_domain")):
         p3 = set(dm.D4_DOMAINS) == set(EXPECTED_DOMAINS)
-    check("🔴 ⑩ 探针③: 注册域塞入未接门禁的 ghost ⇒ 域完备判据必红", p3 is False)
+        p10 = set(dm.DOMAIN_PARAM_LIMITS) == set(dm.D4_DOMAINS)
+    check("🔴 ⑪ 探针③: 注册域塞入未接门禁的 ghost ⇒ 域完备判据必红", p3 is False)
+    check("🔴 ⑫ 探针④: 限幅表掉一个域 ⇒ 反向完备判据必红（新域静默进盲区）", p10 is False)
+
+    # 探针⑤：字节面被换成「另一份真字节」⇒ ⑧ 互证判据必红（不只看是否为空）
+    _orig_e2 = dm._build_ecore
+    def swapped_gds(params=None):
+        raw = _orig_e2(params)
+        raw["gds_bytes"] = raw["gds_bytes"] + b"\x00\x00\x00\x00"
+        return raw
+    with mock.patch.object(dm, "_build_ecore", swapped_gds):
+        _sb, _sm = dm.deliver_download("ecore")
+    check("🔴 ⑬ 探针⑤: 字节面被换成另一份真字节 ⇒ 下载⇄标量互证必红",
+          _sb is None or _sm.get("sha256") != dm.build_domain("ecore")["gds"]["sha256"])
+
+    # 探针⑥：让**同一次进程内**的两次构建产出不同 DRC ⇒ ⑨「下载元信息 ≡ 报告」
+    # 判据必红。
+    # 🔴 踩坑记录：最初打 `dm._report_of`（恒 ACCEPT）——但 build_domain 与
+    #    deliver_download 都走它 ⇒ 打桩后两边同值 ⇒ 判据恒绿、探针恒绿（假绿）。
+    #    ⇒ 探针必须制造**真实分歧**（同一 fn 第二次调用返回不同 raw），
+    #      否则测的是「两个函数是否长得一样」，不是「是否同一条构建链」。
+    _calls = {"n": 0}
+    _orig_bf = dm._builder_for
+
+    def flaky_builder(domain):
+        fn_inner = _orig_bf(domain)
+
+        def one_shot(params=None):
+            _calls["n"] += 1
+            raw = fn_inner(params)
+            if _calls["n"] > 1:                       # 第二次构建 ⇒ DRC 伪造成 REJECT
+                raw = dict(raw, drc=dict(raw.get("drc") or {}, verdict="REJECT"))
+            return raw
+        return one_shot
+
+    _true = dm.build_domain("ecore")                 # 先跑：真 raw（DRC ACCEPT）
+    _calls["n"] = 1
+    with mock.patch.object(dm, "_builder_for", flaky_builder):
+        _db, _dm_ = dm.deliver_download("ecore")     # 再跑：第 2 次 ⇒ REJECT
+    check("🔴 ⑭ 探针⑥: 下载与报告取到不同 raw（DRC 不一致）⇒ ⑨ 元信息同口径必红",
+          _db is not None and _dm_.get("drc", {}).get("verdict")
+          != _true.get("drc", {}).get("verdict"),
+          "download.drc=%s vs report.drc=%s" % (_dm_.get("drc"), _true.get("drc")))
 
     print()
     if fails:
         print(f"D4 扩面门禁: {len(fails)} FAIL :: {fails}")
         return 1
-    print("D4 扩面门禁: ALL GREEN（域完备 + 真 GDS + 双闸 + 双向确定性 + 3 突变探针）")
+    print("D4 扩面门禁: ALL GREEN"
+          "（域完备 + 真 GDS + 双闸 + 双向确定性 + 下载互证 + 限幅 + 6 突变探针）")
     return 0
 
 

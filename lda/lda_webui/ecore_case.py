@@ -1,10 +1,11 @@
 """电子计算芯片案例卡（WebUI 只读端点数据源）· D-155 建卡 → D-160（E10）升 E1–E9 →
-E11-e 升 E1–E11 → E12-e 升 E1–E12 → **D-173（E13-e）升 E1–E13 全链**。
+E11-e 升 E1–E11 → E12-e 升 E1–E12 → D-173（E13-e）升 E1–E13 → D-177（E14-e）升 E1–E14 →
+D-180（E15-e）升 E1–E15 → **D-184（E16-e）升 E1–E16 全链**。
 
 ═══════════════════════════════════════════════════════════════════════════
 定位
 ═══════════════════════════════════════════════════════════════════════════
-电子计算征程「吃狗粮」**E1…E13（D-150…D-172）** 的**只读案例**：用 LDA 亲手设计一颗
+电子计算征程「吃狗粮」**E1…E16（D-150…D-183）** 的**只读案例**：用 LDA 亲手设计一颗
 **电子计算芯片**（模拟计算核 = 模拟 MVM 交叉阵列，电子版的「光子 MZI 网格」），走完全链路：
 
     晶体管级模型 → 电路仿真 → 阵列 → 数据通路 → 规模对标 → 能力硬化        （E1–E5 · 电路级）
@@ -16,6 +17,9 @@ E11-e 升 E1–E11 → E12-e 升 E1–E12 → **D-173（E13-e）升 E1–E13 全
     → E11 器件级内核接线（口径同步 / 接缝勘查 / MOSCAP 内核桥 / 失效边界）  （D-161…D-164）
     → E12 2D MOS 求解器（短沟道效应：算不了 → 算得了）                      （D-166…D-168）
     → E13 2D MOS 漂移扩散输运（I–V / 亚阈值摆幅：G-K 的「不产 I-V」关掉）   （D-170…D-172）
+    → E14 真 DAC / ADC / 行驱动外设（把「设计链」补成「系统链」）            （D-174…D-176）
+    → E15 端到端误差预算链（把 E1–E14 串成一个答案：实际几个有效位）        （D-178…D-180）
+    → E16 权重编程通路（权重怎么写进阵列 / 写进去有多准 / 写错多少）        （D-181…D-183）
 
 与 `/api/qchip_demo`（光量子 LOQC）、`/api/schip_demo`（超导 transmon）、
 `/api/pchip_demo`（硅光张量核）**并列**：四条物理/器件路线在 LDA 均已吃狗粮。
@@ -42,6 +46,7 @@ __all__ = [
     "MISMATCH_FACTS", "SCALE_FACTS", "GATE_CHECKS_TOTAL", "PROBE_CHECKS_TOTAL",
     "DEVICE_PDE_FACTS", "DEVICE_LIMITS_FACTS", "DEVICE_2D_FACTS",
     "DEVICE_TRANSPORT_FACTS", "DEVICE_PERIPHERY_FACTS", "BUDGET_FACTS",
+    "WEIGHT_PROG_FACTS",
     "crossbar_capacity", "quant_error_rel_bound", "layout_elements_flat",
     "layout_elements_hier", "hier_compression_ratio", "sheet_resistance_ohm_per_sq",
     "wire_resistance_ohm", "pelgrom_sigma_vth_mv", "pelgrom_sigma_beta_pct",
@@ -51,7 +56,7 @@ __all__ = [
 ]
 
 # ═══════════════════════════ 常量（与平台模块同源）═══════════════════════════
-CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E15 全链"
+CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E16 全链"
 
 #: 长沟道 NMOS 模型参数（E1 · D-150 · `lda_l2.ecore.mosfet.NmosParams` 默认值；公开典型量级占位）
 MOSFET_FACTS = {
@@ -434,6 +439,106 @@ BUDGET_FACTS = {
     "protection": "🔴 **只读消费** E7/E8/E9/E14 接口，**不改**任何既有默认值（门禁 G8 逐位守住）",
 }
 
+WEIGHT_PROG_FACTS = {
+    # ① 写入噪声地板（G-4 闭式 ⟷ 独立 MC）
+    "noise_floor": {
+        "formula": "sigma_inf = sigma_p / sqrt(alpha*(2-alpha))",
+        "sigma_cell_pct": 0.70014,          # 闭式
+        "mc_pct": 0.69922,                  # 4000-trial MC（seed=0）
+        "mc_rel_pct": 0.13,
+        "alpha": 0.3, "sigma_pulse_pct": 0.5, "tol_pct": 1.0, "max_pulses": 64,
+        "iters_to_tol": 13,                 # ceil(ln(tol/e0)/ln(1-alpha))
+        "floor_range_pct": [0.5, 0.70014],  # [sigma_p, sigma_inf]
+        "escalation_x": 1.40028,            # 1/sqrt(alpha*(2-alpha))
+        "semantics": "🔴 **单脉冲噪声 sigma_p 是硬地板** —— 写-校验最多把地板抬升 "
+                     "1/sqrt(alpha*(2-alpha)) 倍；tol < sigma_inf 时**期望意义上不可达** "
+                     "⇒ 要提精度必须降 sigma_p（脉冲整形/电流限制），**不是加脉冲数**",
+    },
+    # ② 电平量化（G-1）
+    "level": {
+        "levels_6bit": 64, "lsb_rel_pct_6bit": 1.5873,
+        "formula": "lsb_rel = 1/(2^k - 1)（相对**电导窗口**）",
+        "bound_semantics": "🔴 电平在窗口内**等间距** ⇒ 每单元量化误差**绝对值同为半步长**（与 g 无关）"
+                           "⇒ 输出相对界 = half_step·Σ|x|/|Σ g_i x_i| = **half_step / 平均电导**；"
+                           "**低电导单元的「大相对误差」在求和里并不放大**",
+    },
+    # ③ 误差预算对比（8×8 · 接 E15）
+    "budget": {
+        "base":   {"worst_pct": 4.06012, "bits": 4.6223, "dominant": "device_mismatch", "dom_share_pct": 44.0},
+        "analog": {"worst_pct": 4.20838, "bits": 4.5706, "dominant": "device_mismatch", "dom_share_pct": 37.2},
+        "mlc6":   {"worst_pct": 5.27562, "bits": 4.2445, "dominant": "device_mismatch", "dom_share_pct": 30.4},
+        "mlc8":   {"worst_pct": 4.47205, "bits": 4.4829, "dominant": "device_mismatch", "dom_share_pct": 35.2},
+        "note": "🔴 口径：base = E15 四类误差（不含编程）· analog = 仅写入残差 · mlcN = 写入残差 + N 位电平量化",
+    },
+    # ④ 电平位数敏感性（≥8 位饱和）
+    "level_sensitivity": {
+        "4":  {"level_pct": 4.4824, "worst_pct": 8.69080, "bits": 3.5244},
+        "6":  {"level_pct": 1.0672, "worst_pct": 5.27562, "bits": 4.2445},
+        "8":  {"level_pct": 0.2637, "worst_pct": 4.47205, "bits": 4.4829},
+        "10": {"level_pct": 0.0657, "worst_pct": 4.27410, "bits": 4.5482},
+        "12": {"level_pct": 0.0164, "worst_pct": 4.22480, "bits": 4.5650},
+        "note": "🔴 **≥8 位后收益饱和**（4.4829 → 4.5650，渐近 4.5706 = 纯模拟写入）"
+                "—— 残余误差转由器件失配 + IR drop 决定 ⇒「多给几位电平」不是免费的午餐",
+    },
+    # ⑤ 5% 预算可及规模（收缩）
+    "scale_ceiling": {
+        "budget_pct": 5.0,
+        "default_n_max": 12, "analog_n_max": 11, "mlc6_n_max": 1, "mlc8_n_max": 10,
+        "note": "🔴 **电平项是 N 无关的常量**（有界项不被 1/sqrt(N) 平均）⇒ MLC 6 位下 5% 误差预算"
+                "**连 2x2 都不满足**（n_max=1 是「无 N>=2 可行」的哨兵值）—— 本段最强的架构结论",
+    },
+    # ⑥ 漂移（幂律 + 重校准间隔 + 共模/离散分离）
+    "drift": {
+        "curve": [
+            {"t_s": 1.0, "factor": 1.0, "common_mode_pct": 0.0, "spread_pct": 0.0},
+            {"t_s": 10.0, "factor": 0.8913, "common_mode_pct": 10.87, "spread_pct": 0.345},
+            {"t_s": 100.0, "factor": 0.7943, "common_mode_pct": 20.57, "spread_pct": 0.691},
+            {"t_s": 1000.0, "factor": 0.7079, "common_mode_pct": 29.21, "spread_pct": 1.036},
+            {"t_s": 10000.0, "factor": 0.631, "common_mode_pct": 36.9, "spread_pct": 1.382},
+        ],
+        "recalibration_s": {"beta_1pct": 1.2226, "beta_5pct": 2.7895, "beta_10pct": 8.2253},
+        "nu": 0.05, "sigma_nu": 0.0015, "t0_s": 1.0,
+        "semantics": "🔴 **共模漂移**（所有单元同向）**可被单次全局增益校准消除 ⇒ 不进预算**；"
+                     "进预算的只有 **nu 的单元间离散（校准不掉）** —— "
+                     "**一个能被单次校准消掉的项，不是精度上限**（与 E8 列系统项/L1 校准同型）",
+        "conditional": "🔴 漂移结论**条件于 nu**（nu=0.05 为公开典型量级占位 · 非 PDK）"
+                       "⇒ t_max 是**参数推论而非普适断言**；正确读法 =「RRAM 类模拟 CIM 必须频繁重刷」",
+    },
+    # ⑦ 良率 / 卡位
+    "yield": {
+        "formula": "Y = (1-p)^N",
+        "cells_64_p_1e-3": 0.937975, "cells_48_p_1e-3": 0.953111,
+        "stuck_tail": {"p": 1e-3, "mean_pct": 1.53, "max_pct": 22.83, "yield_48_pct": 95.31,
+                       "note": "🔴 **卡位是良率问题、不是均值精度问题** ⇒ 预算默认不含卡位"
+                               "（另设 include_stuck）"},
+    },
+    # ⑧ 端到端（接 E8 mvm_output）
+    "end_to_end": {
+        "trials": 600, "emp_sigma_pct": 0.2522, "strict_sigma_pct": 0.2514, "rel_pct": 0.31,
+        "max_pct": 1.0692, "bound_pct": 1.76025,
+        "semantics": "🔴 实测 sigma 必须与**矩阵感知严格式** sigma*sqrt(Sigma(gx)^2)/|Sigma gx| 对拍"
+                     "（单列 · **带符号**序列）—— 拿「逐列 max」（极值统计量）比 sigma 必然对不上；"
+                     "「1/sqrt(N)」是**理想化**（隐含各单元电导相同）",
+    },
+    # ⑨ 误差项分类（决定是否被 1/sqrt(N) 平均）
+    "categories": {"residual": "random", "level": "bounded",
+                   "note": "🔴 写入残差 = **RANDOM**（单元独立 ⇒ 被 1/sqrt(N) 平均）· "
+                           "电平量化 = **BOUNDED**（**N 无关**）—— 分类不是形式主义"},
+    "window": {"ratio": 4.9998, "worst_cell_level_pct": 2.401,
+               "note": "由 E3 口径 g_base = 1.5·max|W|·s 导出（**非**器件窗口）；"
+                       "最坏单元值仅作告警，**不进**预算"},
+    # ⑩ 保护性约束
+    "protection": "🔴 `budget.collect_terms` 新增的 `include_programming` **默认 False** ⇒ "
+                  "**E15 已发布数字逐位不变**（8x8 worst 4.06012% / bits 4.6223 / 5% 上界 N<=12）；"
+                  "门禁 B12 守住默认不变 + 探针 C5 专模拟「有人把默认改成 ON」⇒ 必红；"
+                  "**E15 自己的门禁自动成为 E16 的回归保护**",
+    "honest_boundary": "权重编程为**行为级**模型（比例修正 + 加性噪声）：参数（alpha / sigma_p / tol / nu / "
+                       "p_stuck）均为**公开典型量级占位 · 非 PDK · 无实测锚** ⇒ 结论随参数变；"
+                       "不含细丝动力学 / 脉冲宽度依赖 / 温度加速；无 endurance/retention 联合退化；"
+                       "**只覆盖静态**（不含编程时间与能耗）；🔴 **共模漂移可被单次全局增益校准消除 "
+                       "⇒ 不进预算**（进预算的只有 nu 的单元间离散）；**不报 TOPS / TOPS-W / fJ/op**",
+}
+
 LANDMARKS_BRIEF = [
     {"who": "Mythic AI", "item": "M1076 AMP：analog compute-in-memory MVM 交叉阵列"
                                  "（flash array + on-die ADC）· up to 25 TOPS · typ. 3–4 W · "
@@ -461,7 +566,12 @@ ECORE_HONEST_NOTE = (
     "`60·(1+Cd/Cox)` 才是**渐近平台**（把 60 当目标是错的）；"
     "🔴 但**仍是漂移扩散（DD）框架**：不含量子修正 / 速度饱和 / 隧穿 / 弹道输运，"
     "**迁移率为常数** ⇒ `I_on` 绝对值**不可当器件性能**（深亚阈值 SS 不受影响）；"
-    "结构为教科书突变结 + 2 nm 平滑，**无 LDD/halo/应力/栅重叠**。"
+    "结构为教科书突变结 + 2 nm 平滑，**无 LDD/halo/应力/栅重叠**；"
+    "⑧ E16 的**权重编程通路**是**行为级**模型（写-校验 = 比例修正 + 加性噪声）："
+    "参数（α / σ_p / tol / ν / p_stuck）均为**公开典型量级占位（非 PDK · 无实测锚）**"
+    "⇒ 结论**随参数变**，漂移结论**条件于 ν**；**不含**细丝动力学 / 脉冲宽度依赖 / 温度加速，"
+    "**无 endurance / retention 联合退化**；🔴 **共模漂移可被单次全局增益校准消除 ⇒ 不进预算**"
+    "（进预算的只有 ν 的单元间离散）—— **一个能被单次校准消掉的项，不是精度上限**。"
 )
 
 # ═══════════════════════ 九段征程（静态事实 · 可回溯门禁）═══════════════════════
@@ -574,6 +684,27 @@ MILESTONES = [
                "🔴 **全链 5% 可及上界 N≤12** ⟷ 仅 IR drop **N≤18** ⇒ **E9 原口径是乐观的**"
                "（严格 33%）。🔴 仅 IR drop 时**委托 E9** ⇒ **逐值相等**（泛化必须退化为特例）；"
                "全链用**扫描而非二分**（`worst(N)` 未必单调：IR drop 升 / 失配降）。"},
+    {"id": "E16", "code": "D-181…D-183",
+     "title": "权重编程通路（补上「权重怎么写进阵列」这一此前完全不存在的一环）",
+     "gate": 25, "seg_probes": 6,
+     "result": "E1–E15 全程把权重当**已知且精确**的输入（`crossbar_mvm` 直接吃电导/栅压 · "
+               "`mvm_datapath` 用 `G=g_base+s·W` **解析**算出 · `layout` 的权重栅只是**对外端口**）"
+               "⇒ 新增 `weight_prog`（第 20 模块 · 纯 numpy）：**写-校验**动力学 + **五个闭式 golden** —— "
+               "电平步长 `1/(2^k−1)` · 轨迹 `e0(1−α)^k` · 脉冲数 `ceil(ln(tol/e0)/ln(1−α))`=**13** · "
+               "🔴 **写入噪声地板 `σ_p/√(α(2−α))` = 0.7001%**（闭式 ⟷ 4000-trial MC 0.6992%，"
+               "**rel 0.13%**）⇒ **单脉冲噪声是硬地板，写-校验最多抬升 1/√(α(2−α)) 倍；"
+               "`tol < σ_∞` 时期望上不可达**（⇒ 要提精度须降 σ_p，**不是加脉冲数**）· "
+               "漂移 `(t/t0)^(−ν)` 与**重校准间隔闭式** `t0(1−β)^(−1/ν)`（β=5% ⇒ **2.79 s**）；"
+               "另有 **良率 `(1−p)^N`**（64 单元 1e-3 ⇒ **0.9380**）· **差分对** · "
+               "**矩阵感知端到端**（接 E8 `mvm_output`，σ ⟷ 严格式 **rel 0.31%**）· "
+               "**接 E15 误差预算链**（残差=**RANDOM** / 电平=**BOUNDED**）。"
+               "🔴 **实测**：8×8 有效精度 **4.6223 → 4.5706 位（模拟写入）→ 4.2445 位（MLC 6 位，"
+               "−0.378 位）**；电平敏感性 4/6/8/10/12 bit ⇒ 3.52/4.24/4.48/4.55/**4.57** 位"
+               "（**≥8 位后饱和**）；🔴 **5% 预算可及规模 12 → 11 → 6 位「无解」**"
+               "（电平项 **N 无关**、不被 1/√N 平均）；"
+               "🔴 **卡位只影响尾部**（p=1e-3 时 max 1.07%→**22.83%**、mean 0.47%→1.53%、"
+               "良率 **95.31%**）。🔴 **保护性约束**：`include_programming` **默认 False** ⇒ "
+               "**E15 已发布数字逐位不变**（门禁 B12 + 探针 C5 专守）。"},
 ]
 
 #: 门禁判据合计（= Σ MILESTONES.gate）与突变探针合计（= Σ seg_probes）
@@ -669,6 +800,16 @@ FINDINGS = [
                "🔴 顺带推翻了一个乐观结论：E9 的「5% 预算 ⇒ N≤18」**只算了 IR drop**；"
                "加入失配 + 行驱动 + 转换器后，同样 5% 只能到 **N≤12**（严格 33%）。"
                "**单看任何一段都得不出这个数** —— 这就是「串成一条链」的价值。"},
+    {"title": "权重编程通路：8×8 有效精度再降 0.378 位 · 5% 预算可及规模 12 → 11 → 「无解」",
+     "detail": "E16 补上「写入动作」这一此前完全不存在的一环后：**8×8 有效精度从 4.6223 位"
+               "（E15 四类误差）降到 4.2445 位（MLC 6 位，−0.378 位）**。"
+               "🔴 最有价值的两条：① **写入噪声有一个由「单脉冲噪声 σ_p」决定的硬地板** "
+               "`σ_∞ = σ_p/√(α(2−α))` —— 加脉冲数**买不到**精度，必须降 σ_p；"
+               "② **电平量化是 N 无关的常量**（有界项不被 1/√N 平均）⇒ 6 位 MLC 下 5% 误差预算的"
+               "可及规模从 **N≤12 塌到「无解」**（连 2×2 都不满足）。"
+               "🔴 还有一条反直觉的：**低电导单元的「大相对误差」在求和里并不放大** —— "
+               "电平等间距 ⇒ 量化误差**绝对值同为半步长** ⇒ 输出界 = `half_step / **平均电导**`"
+               "（初版误用最小电导 ⇒ 界放大 ~3×、结论整个带偏）。"},
 ]
 
 # ═══════════════════════ 诚实边界（未闭合项 · 逐条登记）═══════════════════════
@@ -744,6 +885,24 @@ GAPS = [
                "④ 误差项参数均为公开典型量级占位（**非 PDK**）；器件侧仍 **DD 框架 + 常数迁移率**。"
                "⑤ **保护性约束**：本段**只读消费** E7/E8/E9/E14 接口，**不改**任何既有默认值"
                "（门禁 G8 逐位守住）⇒ 卡内数字与既有段**不冲突**。"},
+    {"id": "G-P", "title": "权重编程是**行为级模型** · 参数为公开量级占位（E16 新增能力的内在边界）",
+     "detail": "写-校验建模为「**比例修正 + 加性噪声**」的**现象学模型**，**不含**：真实 RRAM 的"
+               "细丝动力学 / 非线性 / 脉冲宽度依赖 / 温度加速 / 器件级物理随机性谱；"
+               "**无 endurance / retention 联合退化**；**只覆盖静态**（不含编程时间与能耗）。"
+               "参数（α=0.30 / σ_p=0.5% / tol=1% / ν=0.05 / p=1e-3）均为**公开典型量级占位"
+               "（非 PDK · 无实测锚）** ⇒ **结论随参数变**，报告必须携带参数。"
+               "补真实器件行为需**器件级 RRAM/闪存物理模型**（属器件层，非本段范围）。"},
+    {"id": "G-Q", "title": "🔴 漂移结论**条件于 ν** · 共模漂移可校准 ⇒ 不进预算（E16 的诚实要点）",
+     "detail": "① 🔴 **可及规模与重校准间隔都是参数推出的**：ν=0.05 时 5% 漂移预算 ⇒ "
+               "`t_max ≈ 2.79 s` —— 这是**参数推论而非普适断言**，换 ν 换数；"
+               "正确读法是「**RRAM 类模拟 CIM 必须频繁重刷**」。"
+               "② 🔴 **共模漂移（所有单元同向）可被单次全局增益校准消除** ⇒ **不进误差预算**；"
+               "进预算的只有 **ν 的单元间离散**（校准不掉）。"
+               "⇒ **通则：一个能被单次校准消掉的项，不是精度上限**"
+               "（与 E8「列系统项可由 L1 校准、逐单元失配才需 L2」同型）。"
+               "③ **卡位（stuck）是良率问题、不是均值精度问题** ⇒ 预算默认不含卡位"
+               "（另设 `include_stuck`）—— 实测 p=1e-3 时 mean 仅 0.47%→1.53%，"
+               "但 max 1.07%→**22.83%**、良率降到 **95.31%**。"},
 ]
 
 _ARTIFACT_DIRS = ("examples", "lda/examples")
@@ -919,7 +1078,8 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
                  "晶体管级模型 + 电路仿真 + 参数化阵列 + 数据通路 + 规模对标 + 版图签核 + "
                  "寄生后仿 + 失配/噪声 + 千级规模压力 + **器件级 PDE 交叉验证 + 失效边界测绘 + "
                  "2D 短沟道效应（roll-off/DIBL） + 2D 漂移扩散输运（I–V / 亚阈值摆幅） + "
-                 "真 DAC / ADC / 行驱动外设（系统链）**全链路验证",
+                 "真 DAC / ADC / 行驱动外设（系统链） + 端到端误差预算链 + "
+                 "权重编程通路（写-校验 / 噪声地板 / 接误差预算）**全链路验证",
         "verdict": "DESIGN_VERIFIED",
         "verdict_label": "设计期验证（非流片实测）",
         "identity": {
@@ -936,9 +1096,9 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "milestones": len(MILESTONES),
             "gate_checks": GATE_CHECKS_TOTAL,
             "probe_checks": PROBE_CHECKS_TOTAL,
-            "modules": 19,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
-            "capability_modules": 18,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
-            "entrypoints": 17,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
+            "modules": 20,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
+            "capability_modules": 19,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
+            "entrypoints": 18,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
                                          #   E11 两道 + E12 + E13 + E14 + E15）
             "modules_dir": "lda/lda_l2/ecore/",
         },
@@ -968,6 +1128,7 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "device_transport": DEVICE_TRANSPORT_FACTS,
         "device_periphery": DEVICE_PERIPHERY_FACTS,
         "device_budget": BUDGET_FACTS,
+        "device_weight_prog": WEIGHT_PROG_FACTS,
         "scale_pressure": {
             "facts": SCALE_FACTS,
             "tiers": SCALE_PRESSURE_TIERS,
@@ -1083,10 +1244,10 @@ def run_selfchecks(verbose: bool = False) -> bool:
 
     # ⑩ 案例卡组装：13 里程碑 / 14 结论 / 14 缺口 / 判据合计 303（含 64 探针）
     card = case_card(repo_root="__nonexistent_root__")
-    chk("⑩ 案例卡组装：14 里程碑 / 15 结论 / 15 缺口 / 门禁判据合计 323（含 70 探针）",
-        len(card["milestones"]) == 14 and len(card["findings"]) == 15
-        and card["gaps_total"] == 15 and card["span"]["gate_checks"] == 323
-        and card["span"]["probe_checks"] == 70)
+    chk("⑩ 案例卡组装：15 里程碑 / 16 结论 / **17 缺口** / 门禁判据合计 348（含 76 探针）",
+        len(card["milestones"]) == 15 and len(card["findings"]) == 16
+        and card["gaps_total"] == 17 and card["span"]["gate_checks"] == 348
+        and card["span"]["probe_checks"] == 76)
 
     # ⑪ 产出物优雅降级（root 不存在 ⇒ available False，不抛错）
     chk("⑪ 产出物探测优雅降级（root 不存在 ⇒ available=False）",
@@ -1137,8 +1298,8 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑯ 护栏：非法 rows/cols · bits>60 · 零厚度 · n<1 均抛 ValueError", guard == 6)
 
     # ⑰ 每里程碑都有门禁数 + 结果文本（防空洞）
-    chk("⑰ 里程碑完整：14 段 · 每段含 gate 数 + 结果文本",
-        len(MILESTONES) == 14
+    chk("⑰ 里程碑完整：15 段 · 每段含 gate 数 + 结果文本",
+        len(MILESTONES) == 15
         and all(m.get("gate", 0) > 0 and m.get("result") and m.get("seg_probes", 0) > 0
                 for m in MILESTONES))
 
@@ -1285,6 +1446,41 @@ def run_selfchecks(verbose: bool = False) -> bool:
         and ("不是 IEEE ENOB" in _bgp)
         and all(k not in (_bdb + _bgp) for k in ("这就是 ENOB", "等于 ENOB",
                                                  "已含动态", "已含时序", "包含时序")))
+
+    # ㉜ E16 权重编程面登记齐全（防「加了能力忘了卡」）
+    dwp = card["device_weight_prog"]
+    chk("㉜ E16 权重编程面登记齐全（噪声地板闭式⟷MC · 预算四档 · 位数敏感性五点 · 上界收缩 · "
+        "漂移/重校准 · 良率/卡位 · 端到端 · 项分类）",
+        abs(dwp["noise_floor"]["sigma_cell_pct"] - 0.70014) < 0.001
+        and abs(dwp["noise_floor"]["mc_pct"] - 0.69922) < 0.005
+        and dwp["noise_floor"]["iters_to_tol"] == 13
+        and len(dwp["budget"]) >= 5
+        and abs(dwp["budget"]["mlc6"]["worst_pct"] - 5.27562) < 0.001
+        and abs(dwp["budget"]["mlc6"]["bits"] - 4.2445) < 0.01
+        and len(dwp["level_sensitivity"]) >= 5
+        and dwp["scale_ceiling"]["analog_n_max"] < dwp["scale_ceiling"]["default_n_max"]
+        and dwp["scale_ceiling"]["mlc6_n_max"] < dwp["scale_ceiling"]["analog_n_max"]
+        and len(dwp["drift"]["curve"]) == 5
+        and len(dwp["drift"]["recalibration_s"]) == 3
+        and dwp["categories"]["residual"] == "random"
+        and dwp["categories"]["level"] == "bounded")
+
+    # ㉝ 🔴 诚实（E16 · 双向）：
+    #     **抬高方向** —— 能力到手后最易滑成「参数已标定 PDK / 已报 TOPS /
+    #        把共模漂移当成精度上限」（共模可被单次增益校准消除 ⇒ 不该进预算）；
+    #     **贬低方向** —— E16 前的「权重直接灌入、无写入模型」口径必须显式标注已闭合（G-P/G-Q）。
+    #     🔴 判据纪律（E15 血案）：**按来源分别断言** —— 多来源拼接会稀释判据（探针会假绿）。
+    _dwp = str(card["device_weight_prog"])
+    _bgp2 = " ".join(g["detail"] for g in card["gaps"])
+    chk("㉝ 🔴 诚实（E16）：两个来源各自显式声明**非 PDK** + **不报 TOPS** + "
+        "**共模漂移可校准 ⇒ 不进预算**；且漂移结论**条件于 ν**；"
+        "不得自称已标定 PDK / 已含 TOPS / 把共模漂移当精度上限",
+        ("非 PDK" in _dwp) and ("TOPS" in _dwp)
+        and ("共模" in _dwp) and ("不进预算" in _dwp) and ("条件于" in _dwp)
+        and ("非 PDK" in _bgp2)
+        and (("不进预算" in _bgp2) or ("不进误差预算" in _bgp2))
+        and all(k not in (_dwp + _bgp2) for k in ("已标定 PDK", "已含 TOPS",
+                                                 "共模漂移是精度上限")))
 
     ok_all = all(res.values())
     if verbose:

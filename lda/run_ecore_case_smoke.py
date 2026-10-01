@@ -1,21 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """电子计算芯片案例卡门禁（WebUI 只读端点 /api/ecore_demo · D-155 建卡 → D-160 升级 E1–E9 →
-E11-e → E1–E11 · E12-e → E1–E12 · E13-e → E1–E13 · **E14-e 升级为 E1–E14 全链**）。
+E11-e → E1–E11 · E12-e → E1–E12 · E13-e → E1–E13 · E14-e → E1–E14 · E15-e → E1–E15 ·
+**D-184（E16-e）升级为 E1–E16 全链**）。
 
 ═══ 判什么（分节）═══
-A 模块自检（ecore_case.run_selfchecks **29 项**）· B 关键事实 name-first 断言（含 E6–E9 四块能力面 +
-E11-c/E11-d 两块 + E12 的 2D MOS 面 + E13 的 2D 输运面 + **E14 的真外围/系统链面** +
-🔴 **B16/B17/B18/B19/B20/B21 与底层模块交叉核对**）· C 反向可证伪（**12 条突变探针**：破坏诚实边界 /
-清空 landmark / verdict 冒充实测 / 规模上界非单调 / 掏空版图面 / G-3 被改成自洽 / 缺口归零 /
-**注入「已含量子修正/已算弹道」** / 掏空 E12 的 DIBL 指数律 / **抹掉 E12 面的「已由 E13 闭合」标注** /
-**抹掉「vcvs 极性缺陷登记」** / **把误差预算口径拔高成 ENOB** ⇒ 均必红）· D 不进 HEAVY_POST_PATHS（公开只读 · 零重计算）·
+A 模块自检（ecore_case.run_selfchecks **33 项**）· B 关键事实 name-first 断言（含 E6–E9 四块能力面 +
+E11-c/E11-d 两块 + E12 的 2D MOS 面 + E13 的 2D 输运面 + E14 的真外围/系统链面 + E15 误差预算面 +
+**E16 权重编程面** + 🔴 **B16/B17/B18/B19/B20/B21/B22 与底层模块交叉核对**）·
+C 反向可证伪（**13 条突变探针**：破坏诚实边界 / 清空 landmark / verdict 冒充实测 / 规模上界非单调 /
+掏空版图面 / G-3 被改成自洽 / 缺口归零 / **注入「已含量子修正/已算弹道」** / 掏空 E12 的 DIBL 指数律 /
+**抹掉 E12 面的「已由 E13 闭合」标注** / **抹掉「vcvs 极性缺陷登记」** / **把误差预算口径拔高成 ENOB** /
+**E16 双向（伪造已标定 PDK/TOPS + 把共模漂移当精度上限 + 抹掉「条件于 ν」）** ⇒ 均必红）·
+D 不进 HEAVY_POST_PATHS（公开只读 · 零重计算）·
 E API 参考已登记（gen_api_reference 已跑 · 血案 23）· K 自入 CI core（防静默漏接 · 血案 28）。
 
 🔴 本门禁的核心价值：守 WebUI 对外案例卡的**诚实边界**——verdict 恒 DESIGN_VERIFIED、
 不报 fabricated 能效（TOPS/TOPS-W）、规模按「可建模/可验证容量」解读、landmark 仅背景坐标；
-守住**升级后的能力面不被静默缩水**（E6/E7/E8/E9/E11-c/E11-d/E12/E13/E14/E15 十块 facts 必须都在）；
-并守住 🔴 **「内部能力 ↔ 对外载体」真拉平**（B16–B21 拿卡里的数字与**底层模块实测**对拍，
+守住**升级后的能力面不被静默缩水**（E6/E7/E8/E9/E11-c/E11-d/E12/E13/E14/E15/E16 **十一块** facts 必须都在）；
+并守住 🔴 **「内部能力 ↔ 对外载体」真拉平**（B16–B22 拿卡里的数字与**底层模块实测**对拍，
 而不是卡自证自洽）。
 
 🔴 收官的**护栏换代史**（能力升级必须回扫**两个方向**，每次各扫一遍）：
@@ -28,6 +31,16 @@ E API 参考已登记（gen_api_reference 已跑 · 血案 23）· K 自入 CI c
     🔴 本轮新立的判据纪律：**多来源拼接会稀释判据** —— ㉛ 初版把 `device_budget` 与 `gaps`
     拼成一个大 blob ⇒ 改坏 `device_budget` 后 blob 里仍有 G-O 的同名字符串 ⇒ 判据照样绿（假绿）。
     ⇒ **必须按来源分别断言**，探针才能打到「被单独检查的那份来源」。
+  · **E16-e**：抬高方向「**编程参数不许冒充已标定 PDK / 不许报 TOPS / 不许把「共模漂移」当精度上限**」
+    （共模可被单次增益校准消除 ⇒ 不该进预算）（**㉝** + **C13 ①**）；
+    贬低方向「**E16 前「权重直接灌入、无写入模型」的口径必须显式标注已闭合**（G-P/G-Q）+
+    漂移结论必须显式声明**条件于 ν**」（**㉝** + **C13 ②**）。
+    🔴 E16 本轮新立的两条口径纪律：
+      ① **绝对值序列估不出 σ** —— `std(|Z|) = σ·√(1−2/π) = 0.603σ` ⇒ 端到端 σ 对拍必须用**带符号**序列
+         （用绝对值序列会比真值低 40%）；
+      ② **电平界要用「平均电导」而非「最小电导」** —— 电平在窗口内**等间距** ⇒ 量化误差
+         **绝对值同为半步长**（与 g 无关）⇒ 输出界 = `half_step / 平均电导`；低电导单元的
+         「大相对误差」在求和里**并不放大**。
 """
 from __future__ import annotations
 
@@ -61,10 +74,11 @@ def main() -> int:
 
     # ══════════════════════ A 模块自检 ══════════════════════
     ok_a = EC.run_selfchecks(verbose=False)
-    check("A1 模块自检 31/31 PASS（容量/量化界/版图闭式/压缩比/方块电阻/Pelgrom/1√N/"
+    check("A1 模块自检 33/33 PASS（容量/量化界/版图闭式/压缩比/方块电阻/Pelgrom/1√N/"
           "Elmore/组装/降级/诚实/定位/口径/零框架/护栏/里程碑/landmark/E6-E9 面/上界单调/"
           "E11-c 器件级内核面/E11-d 失效边界面/贬低方向诚实/E12 2D MOS 面/2D 解非 ORACLE/"
-          "E13 输运面/抬高方向诚实/**E14 外围面/E14 双向诚实**）",
+          "E13 输运面/抬高方向诚实/E14 外围面/E14 双向诚实/E15 预算面/E15 诚实/"
+          "**E16 权重编程面/E16 双向诚实**）",
           ok_a)
 
     # ══════════════════════ B 关键事实（name-first）══════════════════════
@@ -72,11 +86,14 @@ def main() -> int:
     check("B1 endpoint == /api/ecore_demo", card["endpoint"] == "/api/ecore_demo")
     check("B2 verdict == DESIGN_VERIFIED（非 ACCEPT/PASS）",
           card["verdict"] == "DESIGN_VERIFIED")
-    check("B3 十四段征程（E1→E15）", len(card["milestones"]) == 14)
-    check("B4 关键结论 15 条", len(card["findings"]) == 15)
-    check("B5 诚实边界 15 条", card["gaps_total"] == 15)
-    check("B6 门禁判据合计 = 323（含 70 条突变探针）",
-          card["span"]["gate_checks"] == 323 and card["span"]["probe_checks"] == 70)
+    check("B3 十五段征程（E1→E16）", len(card["milestones"]) == 15)
+    check("B4 关键结论 16 条", len(card["findings"]) == 16)
+    check("B5 诚实边界 17 条", card["gaps_total"] == 17)
+    check("B6 门禁判据合计 = 348（含 76 条突变探针）",
+          card["span"]["gate_checks"] == 348 and card["span"]["probe_checks"] == 76)
+    check("B6c 计数拉平：19 能力模块 / 20 模块 / 18 常驻门禁",
+          card["span"]["capability_modules"] == 19 and card["span"]["modules"] == 20
+          and card["span"]["entrypoints"] == 18)
     check("B6b 判据合计 ≡ Σ 各段 gate（内部自洽）",
           sum(m["gate"] for m in card["milestones"]) == card["span"]["gate_checks"]
           and sum(m["seg_probes"] for m in card["milestones"]) == card["span"]["probe_checks"])
@@ -290,6 +307,48 @@ def main() -> int:
           and _bf["scale_ceiling"]["full_chain_n_max"] == _full["n_max"]
           and _bf["scale_ceiling"]["ir_drop_only_n_max"] == _only["n_max"])
 
+    # B22 🔴 **与 E16 的 weight_prog 模块交叉核对**（真拉平 · 非自洽）：
+    # 卡里硬编码的权重编程数字必须 ≡ `weight_prog` 模块**同参数**实测值。
+    # ⚠️ 参数成对锁死：`noise_floor_sigma(0.005, 0.30)` · `canonical_weights(8, 8)` ·
+    #    `programming_budget_terms(..., include_level=True, bits=6)` ·
+    #    `max_scale_full_chain(5.0, prog_terms_fn=…)` —— 参数漂了这条判据自己就成噪声源。
+    from lda_l2.ecore import weight_prog as WP      # noqa: E402
+    _wp = card["device_weight_prog"]
+    _PR = WP.WEIGHT_PROG_PROCESS
+    _W8 = WP.canonical_weights(8, 8)
+    _sig = WP.noise_floor_sigma(_PR["sigma_pulse_rel"], _PR["alpha_pulse"])
+    _mc = WP.write_verify_stochastic(sigma_pulse_rel=_PR["sigma_pulse_rel"],
+                                     alpha=_PR["alpha_pulse"], max_pulses=64,
+                                     seed=0, trials=4000)
+    _r6 = BD.error_budget_report(8, 8, include_programming=True,
+                                 prog_terms=WP.programming_budget_terms(
+                                     8, 8, w=_W8, include_level=True, bits=6))
+    _base = BD.error_budget_report(8, 8)
+    _lc = BD.max_scale_full_chain(5.0, prog_terms_fn=lambda kk: WP.programming_budget_terms(
+        kk, kk, include_level=False))["n_max"]
+    _mc6 = BD.max_scale_full_chain(5.0, prog_terms_fn=lambda kk: WP.programming_budget_terms(
+        kk, kk, include_level=True, bits=6))["n_max"]
+    _lev_c = [_wp["level_sensitivity"][k3]["level_pct"] for k3 in ("4", "6", "8", "10", "12")]
+    _lev_m = [next(x["rel_pct"] for x in WP.programming_budget_terms(
+        8, 8, w=_W8, include_level=True, bits=b3) if x["name"] == "weight_prog_level")
+        for b3 in (4, 6, 8, 10, 12)]
+    check("B22 🔴 E16 面 **与 weight_prog 模块交叉核对**：卡内数字 ≡ 模块实测"
+          "（噪声地板闭式⟷MC · 脉冲数 · base 不变 · MLC6 worst/bits · 位数敏感性五点 · "
+          "上界收缩 12→11→1）",
+          abs(_wp["noise_floor"]["sigma_cell_pct"] - _sig * 100.0) < 5e-4
+          and abs(_wp["noise_floor"]["mc_pct"] - _mc["sigma_residual"] * 100.0) < 5e-3
+          and _wp["noise_floor"]["iters_to_tol"] == WP.iter_to_tolerance(
+              1.0, _PR["tol_rel"], _PR["alpha_pulse"])
+          and abs(_wp["budget"]["base"]["worst_pct"] - _base["worst_pct"]) < 5e-3
+          and abs(_wp["budget"]["mlc6"]["worst_pct"] - _r6["worst_pct"]) < 5e-3
+          and abs(_wp["budget"]["mlc6"]["bits"] - _r6["worst_bits"]) < 5e-3
+          and all(abs(a3 - b3) < 5e-3 for a3, b3 in zip(_lev_c, _lev_m))
+          and all(_lev_c[i3] > _lev_c[i3 + 1] for i3 in range(4))
+          and _wp["scale_ceiling"]["default_n_max"] == 12
+          and _wp["scale_ceiling"]["analog_n_max"] == _lc
+          and _wp["scale_ceiling"]["mlc6_n_max"] == _mc6
+          and _wp["scale_ceiling"]["analog_n_max"] < _wp["scale_ceiling"]["default_n_max"])
+
     # ══════════════════════ C 反向可证伪（突变探针）═══════════════════════
     # C1 破坏 honest_note 关键字 ⇒ ⑥ 必红
     saved_note = EC.ECORE_HONEST_NOTE
@@ -409,6 +468,24 @@ def main() -> int:
     EC.BUDGET_FACTS["effective_bits_semantics"] = saved_sem
     check("C12 反向：把误差预算口径拔高成「这就是 ENOB / 已含动态」⇒ ㉛ 判定必红"
           "（**抬高方向：自定义量不许冒充标准量**）", ok_c12 is False)
+
+    # C13 🔴 **E16 双向**（E16-e 新立）：
+    #   ① 抬高方向 —— 把编程模型说成「已标定 PDK / 已含 TOPS」· 把「共模漂移」当成精度上限
+    #      （共模可被单次全局增益校准消除 ⇒ 不该进预算）⇒ ㉝ 必红；
+    #   ② 贬低方向 —— 抹掉/替换 `drift.conditional`（漂移结论**条件于 ν** 的前提声明）⇒ ㉝ 必红。
+    #   ⚠️ 能变红的前提是 ㉝ **按来源分别断言**（E15 血案：多来源拼接会稀释判据 ⇒ 探针假绿）。
+    _saved_hb = EC.WEIGHT_PROG_FACTS["honest_boundary"]
+    _saved_cond = EC.WEIGHT_PROG_FACTS["drift"]["conditional"]
+    EC.WEIGHT_PROG_FACTS["honest_boundary"] = "参数均已标定 PDK，已含 TOPS 与能效指标。"
+    ok_c13a = EC.run_selfchecks(verbose=False)
+    EC.WEIGHT_PROG_FACTS["honest_boundary"] = _saved_hb
+    EC.WEIGHT_PROG_FACTS["drift"]["conditional"] = "共模漂移是精度上限，已计入预算。"
+    ok_c13b = EC.run_selfchecks(verbose=False)
+    EC.WEIGHT_PROG_FACTS["drift"]["conditional"] = _saved_cond
+    check("C13 反向（**双向**）：① 编程参数冒充「已标定 PDK / 已含 TOPS」· "
+          "② 抹掉「条件于 ν」并把共模漂移当精度上限 ⇒ ㉝ 判定必红"
+          "（两个方向各扫一次 · **可被单次校准消掉的项不是精度上限**）",
+          ok_c13a is False and ok_c13b is False)
 
     # ══════════════════════ D 免登录 / 零重计算 ═══════════════════════════
     rt = _read("lda/lda_webui/routes.py")

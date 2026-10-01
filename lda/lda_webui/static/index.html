@@ -140,7 +140,7 @@ body{padding-top:56px}
     <a href="#sec-qchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光量子计算芯片</a>
     <a href="#sec-schip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">超导量子计算芯片</a>
     <a href="#sec-pchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光计算芯片</a>
-    <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E15）</a>
+    <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E16）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1424,8 +1424,8 @@ body{padding-top:56px}
       用 LDA <b>亲手设计</b>的一颗<b>电子计算芯片</b>（电子版的「光子 MZI 网格」）：模拟
       <b>矩阵-向量乘（MVM）交叉阵列</b>——行电压 × 交叉点电导 → 列电流求和 → TIA 转电压，
       对标模拟 AI 加速器（Mythic 类）同族架构。<br/>
-      <b>E1–E15 全链</b>（14 段里程碑 · 全程在 LDA 内闭环 · 门禁共 <b>323 判据</b> / <b>70 道突变探针</b> ·
-      <b>17 道常驻门禁</b>）：E1 基座（晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）
+      <b>E1–E16 全链</b>（15 段里程碑 · 全程在 LDA 内闭环 · 门禁共 <b>348 判据</b> / <b>76 道突变探针</b> ·
+      <b>18 道常驻门禁</b>）：E1 基座（晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）
       → E2 参数化 N×M MVM 交叉阵列（ideal TIA / transistor 权重 + 晶体管级 OTA）→ E3 MVM 数据通路
       （DAC→阵列→ADC、多层 MLP+ReLU、分块）→ E4 规模对标（至 256×256 = 65536 突触，诚实边界）
       → E5 平台能力硬化（能力清单 + 双向完备守护门禁）→ <b>E6 版图与几何签核（首次直出真 GDS）</b>
@@ -1434,7 +1434,9 @@ body{padding-top:56px}
       失效边界测绘）→ <b>E12 2D MOS 求解器</b>（短沟道 roll-off / DIBL）
       → <b>E13 2D 漂移扩散输运</b>（I–V / 亚阈值摆幅）
       → <b>E14 真 DAC / ADC / 行驱动外设</b>（把「设计链」补成「系统链」）
-      → <b>E15 端到端误差预算链</b>（把 E1–E14 串成一个答案：<b>8×8 实际只有 4.62 位</b>）。<br/>
+      → <b>E15 端到端误差预算链</b>（把 E1–E14 串成一个答案：<b>8×8 实际只有 4.62 位</b>）
+      → <b>E16 权重编程通路</b>（补上「<b>权重怎么写进阵列</b>」这一此前完全不存在的一环：
+      写-校验 + <b>写入噪声地板 σ_p/√(α(2−α))</b> ⇒ 加脉冲数买不到精度）。<br/>
       <b>核心结果</b>：MNA 瞬态 vs 指数闭式 <b>&lt;2e-4</b>；理想 8×8 阵列 <b>&lt;2e-4</b>；
       数据通路单层 8bit <b>0.012</b>；<b>首次直出真 GDS</b>（4×4 = 120 元素 / 936 B）；
       <b>IR drop N=32 达 27%</b>、sneak <b>7.26×</b>；<b>校准 L0 1.70% → L2 0.074%</b>；
@@ -1442,7 +1444,8 @@ body{padding-top:56px}
       <b>2D 短沟道 DIBL 153.6 mV/V（指数律 R² 0.9986）</b>；
       <b>亚阈值摆幅长沟道 68.08 ⟷ 闭式 66.41 mV/dec</b>（<b>SS ≥ 60 是硬下限，不是目标</b>）；
       <b>真 R-2R DAC 全码 max|Δ| 0.0265 LSB</b>（NMOS 开关 <code>R_on</code> 6.4 Ω）；
-      <b>行驱动 R_oc ⇒ 可及规模 N≤20→N≤10（5 Ω）</b>（器件参数反过来限制系统规模）。<br/>
+      <b>行驱动 R_oc ⇒ 可及规模 N≤20→N≤10（5 Ω）</b>（器件参数反过来限制系统规模）；
+      <b>权重编程：8×8 有效精度 4.62 → 4.24 位（MLC 6 位）· 5% 预算可及规模 12 → 11 → 6 位「无解」</b>。<br/>
       <b>E15 全链误差预算：8×8 worst 4.0601% ⇒ 有效精度仅 4.622 位</b>；<b>主导项 N≤8 失配 / N≥16 IR drop</b>（交叉点）；<b>全链 5% 上界 N≤12</b> ⟷ 仅 IR drop 口径 N≤18。<br/>
       🔴 本面板为<b>只读案例</b>（零重计算、免登录、不跑仿真、零外部 SPICE 引擎）；
       全部为<b>设计期验证</b>，<b>非流片后实测</b>；晶体管参数为公开典型量级占位（非 PDK）；
@@ -4737,7 +4740,7 @@ function renderECore(d){
   h+='<div class="note">计算砖：'+ID.unit+'</div>';
   h+='<div class="note">零外部 SPICE 引擎：<b>'+(ID.zero_spice_engine?'是':'否')+'</b> · 零量子 SDK：<b>'+(ID.zero_quantum_sdk?'是':'否')+'</b> · 零商业 EDA：<b>'+(ID.zero_commercial_eda?'是':'否')+'</b></div>';
 
-  h+='<div class="summary" style="margin-top:12px">E1–E15 全链 · 十四段征程</div>';
+  h+='<div class="summary" style="margin-top:12px">E1–E16 全链 · 十五段征程</div>';
   h+=_qcTbl(['段','编号','内容','门禁','关键结果'],
     (d.milestones||[]).map(function(m){ return [m.id, m.code, m.title, String(m.gate), m.result]; }));
 
@@ -4967,6 +4970,63 @@ function renderECore(d){
      ['与 E9 一致性', '仅 IR drop ⇒ <b>逐值相等</b>', '泛化必须退化为特例（门禁 G7 守着）']]);
   h+='<div class="note">'+String(DBSC.note||'')+'</div>';
   h+='<div class="note">'+String(DB.effective_bits_semantics||'')+'<br>'+String(DB.honest_boundary||'')+'</div>';
+
+  var DWP=(d.device_weight_prog||{}), DWNF=DWP.noise_floor||{}, DWLV=DWP.level||{},
+      DWBD=DWP.budget||{}, DWLS=DWP.level_sensitivity||{}, DWSC=DWP.scale_ceiling||{},
+      DWDR=DWP.drift||{}, DWREC=DWDR.recalibration_s||{}, DWY=DWP.yield||{},
+      DWE2E=DWP.end_to_end||{}, DWPM=DWP.protection||'';
+  h+='<div class="summary" style="margin-top:12px">权重编程通路（E16 · 补上「权重怎么写进阵列」）</div>';
+  h+='<div class="note">E1–E15 全程把权重当<b>已知且精确</b>的输入（<code>crossbar_mvm</code> 直接吃电导/栅压 · '
+    +'<code>mvm_datapath</code> 用 <code>G=g_base+s·W</code> 解析算出 · <code>layout</code> 的权重栅只是<b>对外端口</b>）'
+    +'⇒ 本段补上<b>写-校验</b>动力学 + 五个闭式 golden，并<b>接进误差预算链</b>。'
+    +'🔴 <b>与 E8 器件失配不是重复</b>：E8 是<b>流片后固定</b>的制造涨落；E16 是<b>写入动作本身</b>，每次编程都不同。</div>';
+  h+=_qcTbl(['闭式 golden','表达式','实测'],
+    [['🔴 写入噪声地板（G-4）','σ_p/√(α(2−α))',
+      '<b>'+Number(DWNF.sigma_cell_pct||0).toFixed(5)+'%</b> ⟷ MC '+Number(DWNF.mc_pct||0).toFixed(5)
+      +'%（rel '+Number(DWNF.mc_rel_pct||0).toFixed(2)+'%）'],
+     ['到容差脉冲数（G-3）','ceil(ln(tol/e0)/ln(1−α))',
+      '<b>'+String(DWNF.iters_to_tol||'')+'</b> 个脉冲（α='+Number(DWNF.alpha||0).toFixed(2)
+      +' · σ_p='+Number(DWNF.sigma_pulse_pct||0).toFixed(1)+'% · tol='+Number(DWNF.tol_pct||0).toFixed(1)+'%）'],
+     ['电平步长（G-1）','1/(2^k − 1)',
+      '6 位 ⇒ '+Number(DWLV.lsb_rel_pct_6bit||0).toFixed(4)+'%（相对窗口 · '+String(DWLV.levels_6bit||'')+' 电平）'],
+     ['漂移重校准间隔（G-5）','t0·(1−β)^(−1/ν)',
+      'β=1%/5%/10% ⇒ '+Number(DWREC.beta_1pct||0).toFixed(3)+' / <b>'+Number(DWREC.beta_5pct||0).toFixed(3)
+      +'</b> / '+Number(DWREC.beta_10pct||0).toFixed(3)+' s（ν='+Number(DWDR.nu||0).toFixed(2)+'）'],
+     ['良率','(1−p)^N',
+      '64 单元 @ p=1e-3 ⇒ <b>'+Number(DWY.cells_64_p_1e-3||0).toFixed(5)+'</b>']]);
+  h+='<div class="note">🔴 <b>单脉冲噪声 σ_p 是硬地板</b>：'+String(DWNF.semantics||'')+'</div>';
+  h+='<div class="note">🔴 <b>电平界要用「平均电导」</b>：'+String(DWLV.bound_semantics||'')+'</div>';
+  h+=_qcTbl(['8×8 口径','worst','有效精度','主导项'],
+    [['E15 现状（四类误差）', Number((DWBD.base||{}).worst_pct||0).toFixed(5)+'%',
+      '<b>'+Number((DWBD.base||{}).bits||0).toFixed(4)+' 位</b>', String((DWBD.base||{}).dominant||'')],
+     ['+ 模拟写入（仅写入残差）', Number((DWBD.analog||{}).worst_pct||0).toFixed(5)+'%',
+      '<b>'+Number((DWBD.analog||{}).bits||0).toFixed(4)+' 位</b>', String((DWBD.analog||{}).dominant||'')],
+     ['+ MLC 6 位（残差 + 电平）', '<b>'+Number((DWBD.mlc6||{}).worst_pct||0).toFixed(5)+'%</b>',
+      '<b>'+Number((DWBD.mlc6||{}).bits||0).toFixed(4)+' 位</b>（−0.378）', String((DWBD.mlc6||{}).dominant||'')],
+     ['+ MLC 8 位', Number((DWBD.mlc8||{}).worst_pct||0).toFixed(5)+'%',
+      '<b>'+Number((DWBD.mlc8||{}).bits||0).toFixed(4)+' 位</b>', String((DWBD.mlc8||{}).dominant||'')]]);
+  h+='<div class="note">'+String(DWBD.note||'')+'</div>';
+  h+=_qcTbl(['编程位数','电平项（输出口径）','8×8 worst','有效精度'],
+    ['4','6','8','10','12'].map(function(k){
+      var x=DWLS[k]||{};
+      return [k+' bit', Number(x.level_pct||0).toFixed(4)+'%', Number(x.worst_pct||0).toFixed(5)+'%',
+              '<b>'+Number(x.bits||0).toFixed(4)+'</b>']; }));
+  h+='<div class="note">'+String(DWLS.note||'')+'</div>';
+  h+=_qcTbl(['5% 预算 · 可及规模','n_max'],
+    [['E15 默认', '<b>'+String(DWSC.default_n_max||'')+'</b>'],
+     ['+ 模拟写入', '<b>'+String(DWSC.analog_n_max||'')+'</b>'],
+     ['+ MLC 6 位', '<b>'+String(DWSC.mlc6_n_max||'')+'</b>（=「无 N≥2 可行」的哨兵值）'],
+     ['+ MLC 8 位', '<b>'+String(DWSC.mlc8_n_max||'')+'</b>']]);
+  h+='<div class="note">'+String(DWSC.note||'')+'</div>';
+  h+=_qcTbl(['漂移直方图 t (s)','g/g0','共模掉电导（可校准 ⇒ 不进预算）','ν 离散（校准不掉）'],
+    (DWDR.curve||[]).map(function(x){
+      return [Number(x.t_s).toExponential(0), Number(x.factor).toFixed(4),
+              Number(x.common_mode_pct).toFixed(2)+'%', Number(x.spread_pct).toFixed(3)+'%']; }));
+  h+='<div class="note">'+String(DWDR.semantics||'')+'<br>'+String(DWDR.conditional||'')+'</div>';
+  h+='<div class="note">🔴 <b>卡位只影响尾部</b>：'+String(((DWY.stuck_tail||{}).note)||'')+'</div>';
+  h+='<div class="note">'+String(DWE2E.semantics||'')+'</div>';
+  h+='<div class="note">🔴 <b>保护性约束</b>：'+String(DWPM||'')+'</div>';
+  h+='<div class="note">'+String(DWP.honest_boundary||'')+'</div>';
 
   h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
   (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });

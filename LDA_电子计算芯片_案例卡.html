@@ -66,8 +66,8 @@
   <div class="card">
     此前 LDA 电子域只到行为级——<b>无晶体管级模型 / 无电路仿真器 / 无模拟计算原语 / 无规模定标与诚实护栏</b>；
     进一步吃狗粮又逼出<b>无版图链 / 无寄生后仿 / 无失配噪声模型 / 无千级规模能力</b>。
-    进一步吃狗粮又逼出<b>无器件级 PDE 内核 / 无 2D MOS（短沟道）能力</b>。
-    本征程新增 <code>lda/lda_l2/ecore/</code> 包（<b>15 模块 · 14 条能力面入册</b>）逐一补齐。
+    进一步吃狗粮又逼出<b>无器件级 PDE 内核 / 无 2D MOS（短沟道）能力 / 无 2D 输运（I–V）能力</b>。
+    本征程新增 <code>lda/lda_l2/ecore/</code> 包（<b>16 模块 · 15 条能力面入册</b>）逐一补齐。
     <table>
       <thead><tr><th>模块</th><th>能力</th><th>引入</th></tr></thead>
       <tbody>
@@ -86,11 +86,12 @@
         <tr><td><code>device_pde.py</code></td><td>器件级内核桥（量纲桥 + 教科书闭式 ⟷ MOSCAP PDE 交叉验证 + 参数自洽性报告）</td><td>D-163 (E11-c)</td></tr>
         <tr><td><code>device_limits.py</code></td><td>失效边界（数值窗口实测 + 物理窗口文献判据 · 两类边界严格分离）</td><td>D-164 (E11-d)</td></tr>
         <tr><td><code>device_2d.py</code></td><td>2D MOS 桥（长沟道 ⟷ 教科书闭式交叉验证 + roll-off/DIBL 报告 + 能力闭合表）</td><td>D-166…D-168 (E12)</td></tr>
+        <tr><td><code>device_transport.py</code></td><td>2D MOS 输运桥（G1–G6 判据 + SS 双锚 + V_th 双法交叉 + 能力闭合表）</td><td>D-170…D-172 (E13)</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h2>十一段征程（E1–E12 门禁判据合计 259 · 含 53 条突变探针）</h2>
+  <h2>十二段里程碑（E1–E13 门禁判据合计 277 · 含 58 条突变探针）</h2>
   <div class="card">
     <table>
       <thead><tr><th>段</th><th>编号</th><th>内容</th><th>关键结果（门禁实测）</th></tr></thead>
@@ -120,7 +121,9 @@
       <b>E11（D-161…D-164）</b>：红线口径同步 + 接缝勘查 + 器件级内核桥（MOSCAP 1D ⟷ 教科书闭式）+ 失效边界
       （<b>47 判据 / 15 突变探针</b>）⇒ 案例卡升级为 E1–E11（32 判据 + 8 探针）。<br/>
       <b>E12（D-166…D-168）</b>：<b>2D MOS 求解器</b>（<b>24 判据 / 7 突变探针</b>）⇒ 案例卡升级为
-      <b>E1–E12 全链（34 判据 + 9 探针）</b>。</p>
+      <b>E1–E12 全链（34 判据 + 9 探针）</b>。<br/>
+      <b>E13（D-170…D-172）</b>：<b>2D MOS 漂移扩散输运</b>（<b>18 判据 / 5 突变探针</b>）⇒ 案例卡升级为
+      <b>E1–E13 全链（38 判据 + 10 探针）</b>；能力面守护 scope 扩至 <b>e1~e13</b>。</p>
   </div>
 
   <h2>E6 · 版图与几何签核 —— 电子芯片首次直出真 GDS</h2>
@@ -259,15 +262,51 @@
         <tr><td>DIBL（L = 65 nm）</td><td><b>153.6 mV/V</b></td><td>2D 数值解给出（不再靠文献式代入）</td></tr>
         <tr><td>指数衰减律 fit</td><td>R² <b>0.99863</b> · ℓ_eff 68.9 nm</td><td>ln(DIBL)–L 线性 ⇒ 物理正确的决定性证据</td></tr>
         <tr><td>自然长度 λ</td><td>18.97 nm ⟷ 文献式 18.97 nm</td><td>同式（互为独立实现）</td></tr>
-        <tr><td>能力闭合</td><td>闭合 <b>3</b> 项 · 仍不可用 <b>3</b> 项</td><td>roll-off · DIBL · 自然长度校验</td></tr>
+        <tr><td>能力闭合</td><td>闭合 <b>3</b> 项 · 仍不可用 <b>3</b> 项</td><td>roll-off · DIBL · 自然长度校验<br/>（其中「I–V / 亚阈值摆幅」<b>已由 E13 闭合</b>）</td></tr>
       </tbody>
     </table>
-    <p style="margin:10px 0 0;font-size:13.5px">🔴 本段是<b>准平衡静电求解，不含漂移扩散输运 ⇒ 不产 I-V</b>
-      （V_th 用「界面最低表面势达 +φ_F」判据，非恒定电流法）⇒「算得了」仅限<b>静电量</b>。<br/>
+    <p style="margin:10px 0 0;font-size:13.5px">🔴 本段（E12）为<b>准平衡静电求解，不含漂移扩散输运 ⇒ 当时不产 I-V</b>
+      （V_th 用「界面最低表面势达 +φ_F」判据，非恒定电流法）⇒「算得了」当时仅限<b>静电量</b>。
+      <b>该缺口已由 E13 闭合</b>（见下节），本段保留作<b>可追溯</b>记录。<br/>
       🔴 <b>golden 仍是教科书 1D 闭式</b>，2D 解只是 candidate（<code>is_oracle=False</code>），
-      只允许「长沟道 2D → 1D」方向。<br/>
-      仍不可用：I–V / 亚阈值摆幅（需输运 ⇒ E13 候选）· 工艺角/PDK/硅验证（<b>T2 永久锁</b>）·
-      LDD/halo/应力/量子修正。</p>
+      只允许「长沟道 2D → 1D」方向。</p>
+  </div>
+
+  <h2>E13 · 2D MOS 漂移扩散输运 —— I–V / 亚阈值摆幅（把「不产 I-V」关掉）</h2>
+  <div class="card">
+    <p style="font-size:13.5px;margin:0 0 8px">把 E12 的 <b>G-K</b>「准平衡静电求解 ⇒ 不产 I-V」<b>真正关掉</b>：
+      新增 <b>Si-only 掩码稳态漂移扩散输运</b>（<code>lda_solver/mos_2d_transport.py</code>）——
+      Scharfetter–Gummel 离散 + <b>接触准费米势 BC</b> + Gummel 交替 + 终端电流；ecore 侧桥
+      <code>lda_l2/ecore/device_transport.py</code> ⇒ <b>I–V / 亚阈值摆幅可从数值解提取</b>。</p>
+    <table>
+      <thead><tr><th>项</th><th>数值</th><th>锚 / 口径</th></tr></thead>
+      <tbody>
+        <tr><td><b>SS 热极限</b></td><td><b>59.53 mV/dec</b></td><td><b>物理定律锚（不等式）</b> —— 数值解不得突破</td></tr>
+        <tr><td>SS 教科书闭式（含体效应）</td><td><b>66.41 mV/dec</b></td><td>Cd/Cox ≈ 0.1156 ⇒ <code>60·(1+Cd/Cox)</code> 平台</td></tr>
+        <tr><td>长沟道 SS（L = 1 µm）</td><td><b>68.08 mV/dec</b></td><td>⟷ 闭式 66.41（rel <b>2.52%</b>）</td></tr>
+        <tr><td>电流守恒（源 ≡ 漏）</td><td><b>5.4e-5</b></td><td>带<b>绝对下限</b>（相对判据在分母趋零时失效）</td></tr>
+        <tr><td>输出特性</td><td>1.0 V → <b>1605 A/m</b></td><td>低 V_d 线性 → 高 V_d 趋饱和</td></tr>
+        <tr><td><b>V_th 双法交叉</b></td><td>恒流法 0.2475 ⟷ 表面势法 0.3241 V</td><td>差 76.6 mV · <b>两法均 is_oracle=False</b>（互不充当 ORACLE）</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>栅长 L</th><th>2D 数值 SS（mV/dec）</th><th>口径</th></tr></thead>
+      <tbody>
+        <tr><td>65 nm</td><td><b>226.9</b></td><td>短沟道静电控制退化（与 E12 roll-off <b>同向</b>）</td></tr>
+        <tr><td>100 nm</td><td>88.0</td><td></td></tr>
+        <tr><td>250 nm</td><td>69.5</td><td></td></tr>
+        <tr><td>1000 nm</td><td>68.1</td><td>长沟道趋近闭式平台</td></tr>
+      </tbody>
+    </table>
+    <p style="margin:10px 0 0;font-size:13.5px">🔴 <b>本段最重要的物理澄清：「SS → 60 mV/dec」是错的目标</b> ——
+      <code>60</code> 只在 <code>Cd → 0</code>（FD-SOI / 双栅）时达到；<b>体硅器件因体效应收敛到
+      <code>60·(1+Cd/Cox)</code> 的平台</b>（本例 ≈ 66.4）⇒ 60 的正确角色是<b>物理定律硬下限（不等式）</b>，
+      <b>不是渐近目标</b>。<br/>
+      🔴 <b>仍为漂移扩散（DD）框架</b>：不含量子修正 / 速度饱和 / 带间与栅隧穿 / 弹道输运；
+      <b>迁移率为常数</b> ⇒ <code>I_on</code> 绝对值<b>不可当器件性能</b>（但<b>深亚阈值 SS 不受影响</b> ——
+      由玻尔兹曼尾决定，代价是 I_on 偏高、I_off 偏低）；无 LDD/halo/应变/栅重叠；参数为公开典型量级占位
+      （<b>非 PDK</b>）；2D 仿真 = <b>每单位宽度电流（A/m）</b>。<br/>
+      仍不可用：量子修正 / 弹道输运（需 NEGF）· 工艺角/PDK/硅验证（<b>T2 永久锁</b>）。</p>
   </div>
 
   <h2>关键结论</h2>
@@ -288,6 +327,12 @@
       <li><b>短沟道效应由 2D 解自然涌现（E12）</b>：E11-d 曾登记「平台算不了」；E12 补上四端 2D 自洽泊松后，
         roll-off / DIBL 不再靠文献式代入 —— <b>DIBL 153.6 mV/V 且满足 ln(DIBL)–L 指数衰减律（R² 0.9986）</b>，
         这是该能力「真做出来了」的决定性证据。</li>
+      <li><b>亚阈值摆幅：60 mV/dec 是硬下限，不是目标（E13）</b>：E12 的「不产 I-V」缺口由 E13 的稳态漂移
+        扩散输运关掉。🔴 <b>「SS → 60」是错的目标</b> —— 体硅器件因体效应收敛到 <code>60·(1+Cd/Cox)</code>
+        的平台（本例 ≈ <b>66.4</b>）⇒ 60 的角色是<b>物理定律硬下限（不等式）</b>，不是渐近目标。实测长沟道
+        2D <b>68.08</b> ⟷ 闭式 <b>66.41</b>（rel 2.52%）；短沟道退化 <b>65 nm → 226.9 mV/dec</b>
+        （与 E12 的 roll-off/DIBL <b>同向</b>，两条独立路径互证）。🔴 <b>仍是 DD 框架</b> ⇒
+        <code>I_on</code> 绝对值不可当器件性能。</li>
     </ul>
   </div>
 
@@ -322,15 +367,17 @@
       <b>G-H</b> 失配/噪声/温度参数为公开量级 · 校准为理想化：L2 逐单元校准为理想化模型；噪声仅谱密度量级；假定独立同分布。<br/>
       <b>G-I</b> 规模模型为 1D 行线（忽略列线电阻）：校核规模内与 2D 稠密 MNA 对拍一致；千级为<b>设计期版图与规模律</b>，非流片。<br/>
       <b>G-J</b> 短沟道效应原不在模型内（E11-d 测绘）→ <b>已由 E12 闭合（历史项 · 保留可追溯）</b>：E11-d 曾用<b>文献经验式</b>量化缺口（L=65 nm roll-off 占 V_th <b>37.9%</b>）；<b>E12 已补上该能力</b>。本项不代表当前能力状态。<br/>
-      <b>G-K</b> 2D MOS 为准平衡静电求解 ⇒ <b>不产 I-V</b>：<b>不含漂移扩散输运</b> ⇒ 无 I–V / 无亚阈值摆幅（从电流）；「算得了」仅限<b>静电量</b>（roll-off / DIBL / 自然长度）。结构无 LDD/halo/应力/量子修正；补 I–V 需 Gummel 2D 输运（<b>E13 候选</b>）；工艺角/PDK/硅验证属 <b>T2 永久锁</b>。
+      <b>G-K</b> 2D MOS 原不产 I-V（E12 测绘）→ <b>已由 E13 闭合（历史项 · 保留可追溯）</b>：E12 的 2D 求解器<b>不含漂移扩散输运</b> ⇒ 当时无 I–V / 无亚阈值摆幅（从电流）。<b>E13 已补上该能力</b>（稳态漂移扩散）⇒ 本项<b>不代表当前能力状态</b>。<br/>
+      <b>G-L</b> 漂移扩散（DD）框架的内在边界（E13 新增能力的内在边界）：<b>仍不含量子修正 / 速度饱和 / 带间与栅隧穿 / 弹道输运</b>；<b>迁移率为常数</b> ⇒ <code>I_on</code> 绝对值<b>不可当器件性能</b>（但<b>深亚阈值 SS 不受影响</b>，代价是 I_on 偏高、I_off 偏低）；无 LDD/halo/应变/栅重叠；固定 300 K、只做 DC；参数为公开典型量级占位（<b>非 PDK</b>）；2D 仿真 = <b>每单位宽度电流（A/m）</b>；<b>EAR 744.23</b>（成熟节点 / 非先进用途）；工艺角/PDK/硅验证属 <b>T2 永久锁</b>。
     </div>
   </div>
 
   <div class="foot">
     声明：本案例是<b>设计期验证</b>，非流片后实测；<b>不报任何 fabricated 能效数字</b>；
     Mythic 等公开数字仅作<b>背景坐标</b>，不同台比较。<br/>
-    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E12（D-150…D-168）·
-    版图/寄生/失配/规模/器件内核/失效边界可视化产物见 <code>docs/ecore_e6..e11d_*_preview.html</code>。
+    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E13（D-150…D-172）·
+    版图/寄生/失配/规模/器件内核/失效边界/2D MOS/2D 输运可视化产物见
+    <code>docs/ecore_e6..e13_*_preview.html</code>。
   </div>
 
 </div>

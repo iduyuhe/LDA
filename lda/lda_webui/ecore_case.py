@@ -1,9 +1,10 @@
-"""电子计算芯片案例卡（WebUI 只读端点数据源）· D-155 建卡 → **D-160（E10 收官）升级为 E1–E9 全链**。
+"""电子计算芯片案例卡（WebUI 只读端点数据源）· D-155 建卡 → D-160（E10）升 E1–E9 →
+E11-e 升 E1–E11 → E12-e 升 E1–E12 → **D-173（E13-e）升 E1–E13 全链**。
 
 ═══════════════════════════════════════════════════════════════════════════
 定位
 ═══════════════════════════════════════════════════════════════════════════
-电子计算征程「吃狗粮」**E1…E9（D-150…D-159）** 的**只读案例**：用 LDA 亲手设计一颗
+电子计算征程「吃狗粮」**E1…E13（D-150…D-172）** 的**只读案例**：用 LDA 亲手设计一颗
 **电子计算芯片**（模拟计算核 = 模拟 MVM 交叉阵列，电子版的「光子 MZI 网格」），走完全链路：
 
     晶体管级模型 → 电路仿真 → 阵列 → 数据通路 → 规模对标 → 能力硬化        （E1–E5 · 电路级）
@@ -12,6 +13,9 @@
     → 非理想/失配/噪声 + 校准层级                                           （E8）
     → 千级阵列规模压力 + 同族维度诚实对标                                   （E9）
     → E10 平台硬化 + 案例卡升级 + 对外物料 + 生产部署                       （D-160）
+    → E11 器件级内核接线（口径同步 / 接缝勘查 / MOSCAP 内核桥 / 失效边界）  （D-161…D-164）
+    → E12 2D MOS 求解器（短沟道效应：算不了 → 算得了）                      （D-166…D-168）
+    → E13 2D MOS 漂移扩散输运（I–V / 亚阈值摆幅：G-K 的「不产 I-V」关掉）   （D-170…D-172）
 
 与 `/api/qchip_demo`（光量子 LOQC）、`/api/schip_demo`（超导 transmon）、
 `/api/pchip_demo`（硅光张量核）**并列**：四条物理/器件路线在 LDA 均已吃狗粮。
@@ -36,6 +40,8 @@ __all__ = [
     "SCALE_TIERS", "SCALE_PRESSURE_TIERS", "SCALE_CEILING",
     "MOSFET_FACTS", "KEY_METRICS", "LAYOUT_FACTS", "PARASITIC_FACTS",
     "MISMATCH_FACTS", "SCALE_FACTS", "GATE_CHECKS_TOTAL", "PROBE_CHECKS_TOTAL",
+    "DEVICE_PDE_FACTS", "DEVICE_LIMITS_FACTS", "DEVICE_2D_FACTS",
+    "DEVICE_TRANSPORT_FACTS",
     "crossbar_capacity", "quant_error_rel_bound", "layout_elements_flat",
     "layout_elements_hier", "hier_compression_ratio", "sheet_resistance_ohm_per_sq",
     "wire_resistance_ohm", "pelgrom_sigma_vth_mv", "pelgrom_sigma_beta_pct",
@@ -43,7 +49,7 @@ __all__ = [
 ]
 
 # ═══════════════════════════ 常量（与平台模块同源）═══════════════════════════
-CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E12 全链"
+CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E13 全链"
 
 #: 长沟道 NMOS 模型参数（E1 · D-150 · `lda_l2.ecore.mosfet.NmosParams` 默认值；公开典型量级占位）
 MOSFET_FACTS = {
@@ -214,8 +220,12 @@ DEVICE_LIMITS_FACTS = {
     "gap_at_L65nm": {"rolloff_frac_of_vth": 0.379, "dibl_frac_of_vth": 0.031,
                      "rolloff_dvth_v": -0.161, "vth_long_channel_v": 0.4260},
     "not_computed_by_lda": ["短沟道 V_th roll-off", "DIBL", "速度饱和", "迁移率退化"],
-    "literature_only": "🔴 上述四项均为**文献经验式缺口量化**（每项 `computed_by_lda=False`），"
-                       "**不是 LDA 的计算结果** —— 本平台**无 2D MOS 能力**。",
+    "literature_only": "🔴 上述四项在 **E11-d 当时**均为**文献经验式缺口量化**（每项 `computed_by_lda=False`），"
+                       "**不是 LDA 的计算结果**。🔴 **口径已换代（E13-e 订正）**：其中 **roll-off / DIBL "
+                       "已由 E12 的 2D MOS 求解器、I–V / 亚阈值摆幅已由 E13 的 2D 漂移扩散输运**补上"
+                       "（`computed_by_lda=True`）⇒ 本字段仅作**可追溯**记录，**不代表当前能力状态**；"
+                       "仍在文献侧的是**速度饱和 / 迁移率退化**（DD 框架之外，见 `device_transport` 的"
+                       "能力闭合表）。",
 }
 
 #: E12 2D MOS 求解器（`lda_solver/mos_2d.py` + `ecore/device_2d.py`）
@@ -245,14 +255,75 @@ DEVICE_2D_FACTS = {
     "natural_length_nm": {"lda_2d": 18.97, "literature": 18.97, "same_formula": True},
     "capability_closure": {"closed": 3, "still_unavailable": 3,
                            "closed_items": ["V_th roll-off", "DIBL", "自然长度校验"],
-                           "still_items": ["I–V / 亚阈值摆幅（需输运 ⇒ E13 候选）",
+                           "still_items": ["I–V / 亚阈值摆幅（**已由 E13 闭合** —— 见 `device_transport`）",
                                            "工艺角 / PDK / 硅验证（**T2 永久锁**）",
-                                           "LDD / halo / 应力 / 量子修正"]},
-    "no_iv": "🔴 本段为**准平衡静电求解、不含漂移扩散输运 ⇒ 不产 I-V**；「算得了」的范围"
-             "**仅限静电量**（roll-off / DIBL / 自然长度）",
+                                           "LDD / halo / 应力 / 量子修正"],
+                           "note": "🔴 本表为 **E12 当时的**能力闭合表（闭合 3 / 仍不可用 3）；"
+                                   "其中第一条「I–V / 亚阈值摆幅」**已由 E13 的 2D 漂移扩散输运闭合**"
+                                   "（E13 侧另有一张 4/4 的闭合表）⇒ 本表仅作**可追溯**记录。"},
+    "transport_closure": "🔴 **（E12 段原口径）** 本段为**准平衡静电求解、不含漂移扩散输运 ⇒ "
+                         "当时不产 I-V**；「算得了」当时仅限**静电量**（roll-off / DIBL / 自然长度）。"
+                         "🔴 **该缺口已由 E13 闭合**（`lda_solver/mos_2d_transport.py` + "
+                         "`ecore/device_transport.py`：稳态漂移扩散 + Gummel ⇒ I–V / 亚阈值摆幅**可从"
+                         "数值解提取**）⇒ 本字段仅作**可追溯**记录，**不代表当前能力状态**；"
+                         "E13 之后**新的**内在边界见 `device_transport`（漂移扩散框架的硬边界）。",
     "oracle_semantics": "golden = 教科书 1D 闭式（`is_oracle=True`）；candidate = 2D 数值解"
                         "（`is_oracle=False`）；**只允许「长沟道 2D → 1D」方向，绝不反向**"
                         "（用 2D 当标定真值会当场破红线）。",
+}
+
+#: E13 2D MOS 漂移扩散输运（`lda_solver/mos_2d_transport.py` + `ecore/device_transport.py`）
+#: 🔴 卡内硬编码（本模块**零 numpy/零重计算**）；与模块实测值的一致性由
+#:    `run_ecore_case_smoke.py` 的 B19 **交叉核对**（真拉平，非自洽）。
+#: ⚠️ SS 值随 **V_g 扫描点数**变化（拟合窗口）⇒ 卡内数字与 B19 核对参数**成对锁死**
+#:    （口径 = `default_vg_list(n=13)`）。
+DEVICE_TRANSPORT_FACTS = {
+    "kernel": "**2D MOS 稳态漂移扩散输运** · `lda_solver/mos_2d_transport.py`（E13 新增）",
+    "bridge": "`ecore/device_transport.py`（量纲桥复用 E11-c + G1–G6 判据 + 能力闭合表 · "
+              "**惰性导入** scipy 内核 ⇒ 无 scipy 环境仍可 import）",
+    "numerics": "**Si-only 掩码**稳态连续性（Scharfetter–Gummel 离散；氧化层节点逐出未知量集 ⇒ "
+                "Si↔SiO₂ 界面自然 Neumann）+ **接触准费米势 BC**（φ_n = φ_p = V_c ⇒ n·p = n_i²，"
+                "统一式自动给出 n⁺ 区 n=N_SD / p 区 p=N_A）+ Gummel 交替（非线性泊松 ⟷ 连续性）"
+                "+ 终端电流（SG 守恒截面）",
+    "golden_a": "**SS 热极限** `(kT/q)·ln10`—— **物理定律锚（不等式）**：扩散机制下 SS 不可能低于它",
+    "golden_b": "**教科书 SS 闭式** `(kT/q)ln10·(1+Cd/Cox)`（耗尽近似 · 含体效应）",
+    "candidate": "2D 漂移扩散数值解（`is_oracle=False`）",
+    "thermal_limit_mv_dec": 59.53,
+    "ss_closed_platform_mv_dec": 66.41,
+    "cd_over_cox": 0.1156,
+    "long_channel": {"Lg_nm": 1000.0, "ss_2d_mv_dec": 68.08, "ss_closed_mv_dec": 66.41,
+                     "rel_err_pct": 2.52},
+    "ss_vs_length": {"Ls_nm": [65.0, 100.0, 250.0, 1000.0],
+                     "ss_mv_dec": [226.9, 88.0, 69.5, 68.1],
+                     "note": "L↓ ⇒ SS↑（短沟道静电控制退化）· 与 E12 的 roll-off / DIBL **同向**"},
+    "ss_at_100nm_mv_dec": 88.0,
+    "conservation": {"worst_rel": 5.4e-5, "n_checked": 8, "n_total": 13,
+                     "i_floor_a_per_m": 1e-3,
+                     "note": "🔴 **相对判据必须带绝对下限**：深亚阈值电流可到 1e-10 A/m，"
+                             "此时相对差被数值噪声主导（rel 可达 >1，绝对差仅 ~1e-9 A/m）"},
+    "id_vd": {"V_d": [0.05, 0.2, 0.5, 1.0], "I_d_a_per_m": [265.7, 882.9, 1428.1, 1605.3],
+              "note": "输出特性：低 V_d 线性 → 高 V_d 趋饱和（定性物理）"},
+    "vth_two_methods": {"cc_v": 0.2475, "surface_potential_v": 0.3241, "abs_diff_mv": -76.6,
+                        "note": "🔴 两法**均 `is_oracle=False`** · **互不充当 ORACLE**；口径不同"
+                                "（恒流法在弱反型 I_ref；表面势法在 ψ_s=+φ_F）⇒ 系统性差异"},
+    "capability_closure": {"closed": 4, "still": 4,
+                           "closed_items": ["I–V 特性（I_d(V_g, V_d)）", "亚阈值摆幅 SS",
+                                            "恒定电流法 V_th", "I_on / I_off"],
+                           "still_items": ["量子修正 / 速度饱和 / 隧穿 / 弹道输运",
+                                           "真实迁移率（场依赖退化 / 表面散射）",
+                                           "工艺角 / PDK 标定 / 硅验证（**T2 永久锁**）",
+                                           "LDD / halo / 应变 / 栅重叠 / 温度扫描 / AC·瞬态"]},
+    "ss_target_note": "🔴 **「SS → 60 mV/dec」是错的目标**：`60` 只在 `Cd → 0`（FD-SOI / 双栅）时达到；"
+                      "**体硅器件因体效应收敛到 `60·(1+Cd/Cox)` 的平台**（本例 ≈ 66.4）"
+                      "⇒ 60 的角色是**硬下限（不等式 G1）**，**不是渐近目标**。",
+    "honest_boundary": "🔴 **仍是漂移扩散（DD）框架**：不含量子修正 / 速度饱和 / 带间与栅隧穿 / "
+                       "弹道输运；**迁移率为常数** ⇒ `I_on` 绝对值**不可当器件性能**"
+                       "（**深亚阈值 SS 不受影响** —— 这正是 G1/G2 仍严格成立的原因 —— "
+                       "但 I_on 偏高、I_off 偏低）；无 LDD/halo/应变/栅重叠；参数为公开典型量级占位"
+                       "（**非 PDK**）；2D 仿真 = **每单位宽度电流（A/m）**；不报 TOPS/TOPS-W/fJ/op。",
+    "oracle_semantics": "golden_A = **物理定律锚（不等式）** · golden_B = **教科书闭式**；"
+                        "candidate = 2D 数值解（`is_oracle=False`）；V_th 双法为**内部交叉**"
+                        "（两法均非 ORACLE）。",
 }
 
 LANDMARKS_BRIEF = [
@@ -276,10 +347,13 @@ ECORE_HONEST_NOTE = (
     "规模模型为 **1D 行线**（忽略列线电阻这一二阶项）；"
     "⑥ **LLM 不进判决路径**：判决为死标量比对（闭式物理律 golden）；"
     "全程零外部 SPICE 引擎——C 级自主（纯 numpy/标准库）；"
-    "⑦ E12 新增的 **2D MOS 求解器为准平衡静电求解**，**不含漂移扩散输运 ⇒ 不产 I-V**"
-    "（V_th 用「界面最低表面势达 +φ_F」判据，**非恒定电流法**）⇒ 短沟道能力仅限**静电量**"
-    "（roll-off / DIBL / 自然长度）；结构为教科书突变结 + 2 nm 平滑，"
-    "**无 LDD/halo/应力/量子修正**；2D 数值解只是 **candidate**，golden 仍是教科书 1D 闭式。"
+    "⑦ E12 的 **2D MOS 求解器（准平衡静电）**与 E13 的 **2D 漂移扩散输运**是**两段互补能力**："
+    "2D 数值解一律只是 **candidate**（golden 仍是教科书闭式 / 物理定律锚）；"
+    "E13 的 SS 判据用**双锚**——`60 mV/dec` 是**物理定律硬下限（不等式）**、"
+    "`60·(1+Cd/Cox)` 才是**渐近平台**（把 60 当目标是错的）；"
+    "🔴 但**仍是漂移扩散（DD）框架**：不含量子修正 / 速度饱和 / 隧穿 / 弹道输运，"
+    "**迁移率为常数** ⇒ `I_on` 绝对值**不可当器件性能**（深亚阈值 SS 不受影响）；"
+    "结构为教科书突变结 + 2 nm 平滑，**无 LDD/halo/应力/栅重叠**。"
 )
 
 # ═══════════════════════ 九段征程（静态事实 · 可回溯门禁）═══════════════════════
@@ -350,6 +424,18 @@ MILESTONES = [
                "**rel 0.496%** · roll-off L=65 nm **−176 mV**（Yau 文献式 −161 mV · **同量级对照**）· "
                "**DIBL 153.6 mV/V 且 ln(DIBL)–L 线性 R² 0.9986**（**指数衰减律** · ℓ_eff 68.9 nm）· "
                "网格收敛 <0.6 mV"},
+    {"id": "E13", "code": "D-170…D-172",
+     "title": "2D MOS 漂移扩散输运（I–V / 亚阈值摆幅：把 G-K 的「不产 I-V」关掉）",
+     "gate": 18, "seg_probes": 5,
+     "result": "把 E12 的诚实边界 **G-K**（「2D MOS 为准平衡静电求解 ⇒ 不产 I-V」，"
+               "`short_channel_capability_report` 的 `still_not_available` 首条）**真正关掉**："
+               "新增 **Si-only 掩码稳态漂移扩散输运**（Scharfetter–Gummel 离散 + **接触准费米势 BC** + "
+               "Gummel 交替 + 终端电流）⇒ **I–V / 亚阈值摆幅由数值解提取**。🔴 **SS 双锚**："
+               "**热极限 59.53 mV/dec 是硬下限（不等式）**、**教科书闭式 66.41 mV/dec 才是渐近平台** "
+               "⇒ 长沟道 2D **68.08 ⟷ 闭式 66.41（rel 2.52%）**；栅长趋势 L↓⇒SS↑ "
+               "（65 nm **226.9** → 100 nm 88.0 → 250 nm 69.5 → 1 µm 68.1，与 E12 roll-off **同向**）；"
+               "电流守恒 **5.4e-5**（带绝对下限）· 输出特性单调趋饱和（1.0 V 时 **1605 A/m**）· "
+               "**V_th 双法交叉**（恒流法 0.2475 ⟷ E12 表面势法 0.3241 V，差 76.6 mV；两法均非 ORACLE）"},
 ]
 
 #: 门禁判据合计（= Σ MILESTONES.gate）与突变探针合计（= Σ seg_probes）
@@ -412,6 +498,15 @@ FINDINGS = [
                "（R² 0.9986 · ℓ_eff 68.9 nm）**——数值假象不会给出干净的指数律，"
                "**这是该能力「真做出来了」的决定性证据**。🔴 但本段为**准平衡静电求解、"
                "不含输运 ⇒ 不产 I-V**；golden 仍是教科书 1D 闭式，2D 解只是 candidate。"},
+    {"title": "亚阈值摆幅：**60 mV/dec 是硬下限，不是目标**（E13）",
+     "detail": "E12 登记的「不产 I-V」缺口由 E13 的**稳态漂移扩散输运**（SG 离散 + 接触准费米势 BC + "
+               "Gummel）关掉 ⇒ I–V / SS 可从数值解提取。🔴 本段最重要的物理澄清："
+               "**「SS → 60」是错的目标** —— `60 mV/dec` 只在 `Cd → 0`（FD-SOI / 双栅）时达到，"
+               "**体硅器件因体效应收敛到 `60·(1+Cd/Cox)` 的平台**（本例 ≈ **66.4**）⇒ 60 的正确角色是"
+               "**物理定律硬下限（不等式 G1）**，**不是渐近目标**。实测长沟道 2D **68.08** ⟷ 闭式 "
+               "**66.41**（rel 2.52%）；短沟道退化 **65 nm → 226.9 mV/dec**（与 E12 的 roll-off/DIBL "
+               "**同向**，两条独立路径互证）。🔴 **仍是 DD 框架**：不含量子修正 / 速度饱和 / 隧穿 / "
+               "弹道；**迁移率为常数** ⇒ `I_on` 绝对值**不可当器件性能**。"},
 ]
 
 # ═══════════════════════ 诚实边界（未闭合项 · 逐条登记）═══════════════════════
@@ -443,14 +538,21 @@ GAPS = [
                "占 V_th **37.9%**，每项 `computed_by_lda=False`）。**E12 已补上该能力**："
                "roll-off / DIBL 现由 **2D 数值泊松解**给出。本项保留作**可追溯**记录，"
                "**不代表当前能力状态**；闭合之后**新的**内在边界见 **G-K**。"},
-    {"id": "G-K", "title": "2D MOS 为准平衡静电求解 ⇒ **不产 I-V**（E12 新增能力的内在边界）",
-     "detail": "E12 的 2D 求解器**不含漂移扩散输运** ⇒ **无 I–V、无亚阈值摆幅（从电流）**；"
-               "V_th 用「界面最低表面势达 +φ_F」判据（**非恒定电流法**——那需要 I-V）。"
-               "⇒「算得了」的范围**仅限静电量**（roll-off / DIBL / 自然长度）。"
-               "结构为教科书突变结 + 2 nm 平滑，**无 LDD / halo / 应力 / 量子修正 / 栅重叠**；"
-               "参数（N_A / N_SD / t_ox / x_j / V_FB）为公开典型量级占位（**非 PDK**、无实测锚）。"
-               "补 I–V 需 **Gummel 2D 输运 + 准费米势分裂 ⇒ E13 候选**；"
-               "工艺角 / PDK / 硅验证 ⇒ **T2 永久锁**（商业路径，非求解器精度问题）。"},
+    {"id": "G-K", "title": "2D MOS 原不产 I-V（E12 测绘）→ **已由 E13 闭合**（历史项 · 保留可追溯）",
+     "detail": "E12 的 2D 求解器**不含漂移扩散输运** ⇒ 当时**无 I–V、无亚阈值摆幅（从电流）**"
+               "（V_th 用「界面最低表面势达 +φ_F」判据，**非恒定电流法**）。**E13 已补上该能力**："
+               "稳态漂移扩散（SG 离散 + 接触准费米势 BC + Gummel）⇒ I–V / SS **可从数值解提取**。"
+               "本项保留作**可追溯**记录，**不代表当前能力状态**；闭合之后**新的**内在边界见 **G-L**。"},
+    {"id": "G-L", "title": "漂移扩散（DD）框架的内在边界（E13 新增能力的内在边界）",
+     "detail": "E13 的输运内核**仍是漂移扩散框架** ⇒ 不含量子修正 / 速度饱和 / 带间与栅隧穿 / "
+               "弹道输运；**迁移率为常数**（无场依赖退化 / 无表面散射）⇒ `I_on` 绝对值**不可当器件性能**"
+               "（但**深亚阈值 SS 不受影响** —— 由玻尔兹曼尾决定，这正是 SS 热极限与教科书闭式两条判据"
+               "仍严格成立的原因；代价是 **I_on 偏高、I_off 偏低**）。结构为教科书突变结 + 2 nm 平滑，"
+               "**无 LDD / halo / 应变 / 栅重叠**；固定 300 K、只做 DC（无温度扫描 / 无 AC·瞬态）。"
+               "参数（N_A / N_SD / t_ox / x_j / V_FB）为公开典型量级占位（**非 PDK**、无实测锚）；"
+               "2D 仿真 = **每单位宽度电流（A/m）**；**EAR 744.23**（成熟节点 / 非先进用途）。"
+               "补量子修正 / 弹道需 NEGF 或量子修正 DD；工艺角 / PDK / 硅验证 ⇒ **T2 永久锁**"
+               "（商业路径，非求解器精度问题）。"},
 ]
 
 _ARTIFACT_DIRS = ("examples", "lda/examples")
@@ -611,7 +713,7 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "claim": "用 LDA 从零设计一颗电子计算芯片（模拟计算核 / MVM 交叉阵列）："
                  "晶体管级模型 + 电路仿真 + 参数化阵列 + 数据通路 + 规模对标 + 版图签核 + "
                  "寄生后仿 + 失配/噪声 + 千级规模压力 + **器件级 PDE 交叉验证 + 失效边界测绘 + "
-                 "2D 短沟道效应（roll-off/DIBL）**全链路验证",
+                 "2D 短沟道效应（roll-off/DIBL） + 2D 漂移扩散输运（I–V / 亚阈值摆幅）**全链路验证",
         "verdict": "DESIGN_VERIFIED",
         "verdict_label": "设计期验证（非流片实测）",
         "identity": {
@@ -628,9 +730,10 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "milestones": len(MILESTONES),
             "gate_checks": GATE_CHECKS_TOTAL,
             "probe_checks": PROBE_CHECKS_TOTAL,
-            "modules": 15,               # ecore 包内模块数（含能力清单自身）
-            "capability_modules": 14,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
-            "entrypoints": 13,           # 常驻门禁数（E1–E9 + 能力守护 + 案例卡 + 红线 + E11 两道 + E12）
+            "modules": 16,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
+            "capability_modules": 15,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
+            "entrypoints": 15,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
+                                         #   E11 两道 + E12 + E13）
             "modules_dir": "lda/lda_l2/ecore/",
         },
         "milestones": MILESTONES,
@@ -656,6 +759,7 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "device_pde": DEVICE_PDE_FACTS,
         "device_limits": DEVICE_LIMITS_FACTS,
         "device_2d": DEVICE_2D_FACTS,
+        "device_transport": DEVICE_TRANSPORT_FACTS,
         "scale_pressure": {
             "facts": SCALE_FACTS,
             "tiers": SCALE_PRESSURE_TIERS,
@@ -678,7 +782,7 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "entry": "验证实力（accept）→「电子计算芯片案例」卡",
             "scope_note": "UI 电子/CMOS 面板覆盖**电路级仿真**；本卡覆盖**芯片级模拟计算架构与验证**"
                           "（含版图签核 / 寄生后仿 / 失配校准 / 规模压力 / 器件级 PDE 交叉验证 / "
-                          "2D 短沟道效应）。",
+                          "2D 短沟道效应 / 2D 漂移扩散输运 I–V 与亚阈值摆幅）。",
         },
         "positioning": _positioning(),
         "honest_note": ECORE_HONEST_NOTE,
@@ -769,12 +873,12 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑨ Elmore 延迟闭式：τ(R=1, C=1) = 0.5 s",
         abs(elmore_tau_rc(1.0, 1.0) - 0.5) < 1e-15)
 
-    # ⑩ 案例卡组装：11 里程碑 / 12 结论 / 11 缺口 / 判据合计 259（含 53 探针）
+    # ⑩ 案例卡组装：12 里程碑 / 13 结论 / 12 缺口 / 判据合计 277（含 58 探针）
     card = case_card(repo_root="__nonexistent_root__")
-    chk("⑩ 案例卡组装：11 里程碑 / 12 结论 / 11 缺口 / 门禁判据合计 259（含 53 探针）",
-        len(card["milestones"]) == 11 and len(card["findings"]) == 12
-        and card["gaps_total"] == 11 and card["span"]["gate_checks"] == 259
-        and card["span"]["probe_checks"] == 53)
+    chk("⑩ 案例卡组装：12 里程碑 / 13 结论 / 12 缺口 / 门禁判据合计 277（含 58 探针）",
+        len(card["milestones"]) == 12 and len(card["findings"]) == 13
+        and card["gaps_total"] == 12 and card["span"]["gate_checks"] == 277
+        and card["span"]["probe_checks"] == 58)
 
     # ⑪ 产出物优雅降级（root 不存在 ⇒ available False，不抛错）
     chk("⑪ 产出物探测优雅降级（root 不存在 ⇒ available=False）",
@@ -825,8 +929,8 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑯ 护栏：非法 rows/cols · bits>60 · 零厚度 · n<1 均抛 ValueError", guard == 6)
 
     # ⑰ 每里程碑都有门禁数 + 结果文本（防空洞）
-    chk("⑰ 里程碑完整：11 段 · 每段含 gate 数 + 结果文本",
-        len(MILESTONES) == 11
+    chk("⑰ 里程碑完整：12 段 · 每段含 gate 数 + 结果文本",
+        len(MILESTONES) == 12
         and all(m.get("gate", 0) > 0 and m.get("result") and m.get("seg_probes", 0) > 0
                 for m in MILESTONES))
 
@@ -863,19 +967,18 @@ def run_selfchecks(verbose: bool = False) -> bool:
         and abs(dl["gap_at_L65nm"]["rolloff_frac_of_vth"] - 0.379) < 1e-3
         and len(dl["not_computed_by_lda"]) == 4)
 
-    # ㉓ 🔴 诚实（E12-e 改写）：2D 面必须**显式声明「不含输运 ⇒ 不产 I-V」**，
-    #     且卡内**不得声称**已产 I-V / 已算亚阈值摆幅 / 已把 2D 解当真值。
-    #     口径背景：E12 前这条守的是「不许假称有 2D MOS」；**E12 后该能力已真实存在**，
-    #     故护栏对象换成**能力升级后新增的内在边界** —— 这正是「能力升级后必须回扫
-    #     对外口径」的镜像（既有贬低口径 G-J，又有抬高口径「已产 I-V」）。
-    blob = (str(card["device_limits"]) + str(card["device_pde"]) + str(card["device_2d"])
-            + " ".join(g["detail"] for g in card["gaps"]) + card["honest_note"])
-    forbidden_claims = ("已产 I-V", "已算出 I-V", "已支持 I-V", "已算亚阈值摆幅",
-                        "已支持亚阈值", "2D 解作真值", "2D 为 ORACLE")
-    chk("㉓ 🔴 诚实：2D 面显式声明「不含输运 ⇒ 不产 I-V」，且不得声称已产 I-V / 亚阈值摆幅 / "
-        "把 2D 解当 ORACLE",
-        ("不含漂移扩散输运" in blob) and ("不产 I-V" in blob)
-        and all(k not in blob for k in forbidden_claims))
+    # ㉓ 🔴 诚实（**E13-e 换代** · 能力升级必须**前后各扫一次方向**）：
+    #     · 方向一（**贬低自身**）：E12 面的「不产 I-V」**已由 E13 闭合** ⇒ 卡内必须**显式标注**
+    #       「已由 E13 闭合 / 不代表当前能力状态」，**不得**把它当**当前**能力状态复述
+    #       （否则就是 E12-e 前的假贬低，会在对外演示时自相矛盾）。
+    #     · 方向二（**抬高自身**）见 ㉗。
+    #     口径演进：E12-e 前守「不许假称有 2D MOS」→ E12-e 改守「不许假称已产 I-V」
+    #     → **E13-e 再换代**（该能力已真实存在）。
+    blob12 = str(card["device_2d"]) + str(card["device_limits"])
+    chk("㉓ 🔴 诚实（**贬低方向**）：E12 面的「不产 I-V」必须显式标注「已由 E13 闭合 / "
+        "不代表当前能力状态」，且不得仍写成「E13 候选」",
+        ("已由 E13 闭合" in blob12) and ("不代表当前能力状态" in blob12)
+        and ("E13 候选" not in blob12))
 
     # ㉔ E12 2D MOS 面登记齐全（防「加了能力忘了卡」）
     d2 = card["device_2d"]
@@ -893,6 +996,35 @@ def run_selfchecks(verbose: bool = False) -> bool:
         d2["golden"].startswith("教科书 1D")
         and "is_oracle=False" in d2["candidate"]
         and "只允许" in d2["oracle_semantics"])
+
+    # ㉖ E13 输运面登记齐全（防「加了能力忘了卡」）
+    dtf = card["device_transport"]
+    chk("㉖ E13 输运面登记齐全（SS 双锚 · 长沟道 ⟷ 闭式 · 栅长趋势 · 守恒 · 输出特性 · "
+        "V_th 双法 · 闭合表 4/4）",
+        abs(dtf["thermal_limit_mv_dec"] - 59.53) < 0.01
+        and dtf["long_channel"]["rel_err_pct"] < 10.0
+        and dtf["ss_vs_length"]["ss_mv_dec"][0] > dtf["ss_vs_length"]["ss_mv_dec"][-1]
+        and dtf["conservation"]["worst_rel"] < 1e-3
+        and len(dtf["id_vd"]["I_d_a_per_m"]) == 4
+        and dtf["capability_closure"]["closed"] == 4
+        and dtf["capability_closure"]["still"] == 4)
+
+    # ㉗ 🔴 诚实（**抬高方向** · E13-e 立）：能力到手后最容易滑成「已含量子修正 / 已算弹道 /
+    #     已通过 PDK 标定 / 报了 TOPS」⇒ 必须**显式声明 DD 框架边界**，且说明
+    #     **SS 热极限是硬下限而非渐近目标**、**迁移率常数 ⇒ I_on 不可当器件性能**。
+    blob_all = (str(card["device_transport"]) + str(card["device_2d"]) + str(card["device_limits"])
+                + str(card["device_pde"]) + " ".join(g["detail"] for g in card["gaps"])
+                + card["honest_note"])
+    forbidden_claims_hi = ("已含量子修正", "已支持量子修正", "已算弹道", "已支持弹道",
+                           "已含速度饱和", "已算速度饱和", "已通过 PDK 标定", "已报 TOPS",
+                           "已突破热极限", "2D 解作真值", "2D 为 ORACLE")
+    chk("㉗ 🔴 诚实（**抬高方向**）：DD 框架边界显式（不含量子修正/隧穿/弹道 + 迁移率常数 ⇒ "
+        "I_on 不可当器件性能）+ SS 热极限是**硬下限非渐近目标**，且不得声称已含量子修正/弹道/"
+        "PDK/TOPS",
+        ("漂移扩散" in blob_all) and ("迁移率" in blob_all)
+        and ("不可当器件性能" in blob_all) and ("硬下限" in blob_all)
+        and ("不是渐近目标" in blob_all)
+        and all(k not in blob_all for k in forbidden_claims_hi))
 
     ok_all = all(res.values())
     if verbose:

@@ -1395,14 +1395,21 @@ body{padding-top:56px}
       用 LDA <b>亲手设计</b>的一颗<b>电子计算芯片</b>（电子版的「光子 MZI 网格」）：模拟
       <b>矩阵-向量乘（MVM）交叉阵列</b>——行电压 × 交叉点电导 → 列电流求和 → TIA 转电压，
       对标模拟 AI 加速器（Mythic 类）同族架构。<br/>
-      <b>五段征程</b>（全程在 LDA 内闭环 · 门禁共 <b>28 判据</b> + 5 道常驻门禁）：E1 基座
-      （晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）→ E2 参数化 N×M
-      MVM 交叉阵列（ideal TIA / transistor 权重 + 晶体管级 OTA）→ E3 MVM 数据通路
+      <b>E1–E13 全链</b>（12 段里程碑 · 全程在 LDA 内闭环 · 门禁共 <b>277 判据</b> / <b>58 道突变探针</b> ·
+      <b>15 道常驻门禁</b>）：E1 基座（晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）
+      → E2 参数化 N×M MVM 交叉阵列（ideal TIA / transistor 权重 + 晶体管级 OTA）→ E3 MVM 数据通路
       （DAC→阵列→ADC、多层 MLP+ReLU、分块）→ E4 规模对标（至 256×256 = 65536 突触，诚实边界）
-      → <b>E5 平台能力硬化</b>（能力清单 + 双向完备守护门禁）。<br/>
-      <b>核心结果</b>：MNA 瞬态 vs 指数闭式误差 <b>&lt;2e-4</b>；理想 8×8 阵列 <b>&lt;2e-4</b>；
-      数据通路单层 8bit 误差 <b>0.012</b>、2 层 MLP <b>0.044</b>、分块=全阵（精确）；
-      规模律：相对误差有界、绝对误差 ∝ N。<br/>
+      → E5 平台能力硬化（能力清单 + 双向完备守护门禁）→ <b>E6 版图与几何签核（首次直出真 GDS）</b>
+      → <b>E7 寄生提取与后仿</b>（IR drop / sneak path）→ <b>E8 失配 / 噪声 + 校准层级</b>
+      → <b>E9 千级阵列规模压力</b> → <b>E11 器件级内核接线</b>（MOSCAP 1D 自洽泊松 ⟷ 教科书闭式 ·
+      失效边界测绘）→ <b>E12 2D MOS 求解器</b>（短沟道 roll-off / DIBL）
+      → <b>E13 2D 漂移扩散输运</b>（I–V / 亚阈值摆幅）。<br/>
+      <b>核心结果</b>：MNA 瞬态 vs 指数闭式 <b>&lt;2e-4</b>；理想 8×8 阵列 <b>&lt;2e-4</b>；
+      数据通路单层 8bit <b>0.012</b>；<b>首次直出真 GDS</b>（4×4 = 120 元素 / 936 B）；
+      <b>IR drop N=32 达 27%</b>、sneak <b>7.26×</b>；<b>校准 L0 1.70% → L2 0.074%</b>；
+      <b>器件级 V_th 教科书闭式 ⟷ PDE 一致到 2e-4%</b>；
+      <b>2D 短沟道 DIBL 153.6 mV/V（指数律 R² 0.9986）</b>；
+      <b>亚阈值摆幅长沟道 68.08 ⟷ 闭式 66.41 mV/dec</b>（<b>SS ≥ 60 是硬下限，不是目标</b>）。<br/>
       🔴 本面板为<b>只读案例</b>（零重计算、免登录、不跑仿真、零外部 SPICE 引擎）；
       全部为<b>设计期验证</b>，<b>非流片后实测</b>；晶体管参数为公开典型量级占位（非 PDK）；
       <b>不报任何 TOPS / TOPS-W 能效或吞吐指标</b>。判决位由死标量给出，LLM 不进判决路径。
@@ -4696,7 +4703,7 @@ function renderECore(d){
   h+='<div class="note">计算砖：'+ID.unit+'</div>';
   h+='<div class="note">零外部 SPICE 引擎：<b>'+(ID.zero_spice_engine?'是':'否')+'</b> · 零量子 SDK：<b>'+(ID.zero_quantum_sdk?'是':'否')+'</b> · 零商业 EDA：<b>'+(ID.zero_commercial_eda?'是':'否')+'</b></div>';
 
-  h+='<div class="summary" style="margin-top:12px">九段征程（E1–E9 · 全链）</div>';
+  h+='<div class="summary" style="margin-top:12px">E1–E13 全链 · 十二段征程</div>';
   h+=_qcTbl(['段','编号','内容','门禁','关键结果'],
     (d.milestones||[]).map(function(m){ return [m.id, m.code, m.title, String(m.gate), m.result]; }));
 
@@ -4834,9 +4841,41 @@ function renderECore(d){
       '同式（互为独立实现）'],
      ['能力闭合', '闭合 '+Number(CP.closed||0)+' 项 · 仍不可用 '+Number(CP.still_unavailable||0)+' 项',
       (CP.closed_items||[]).join(' · ')]]);
-  h+='<div class="note">'+String(D2.no_iv||'')+'<br>'+String(DB.literature_note||'')+'<br>'
+  h+='<div class="note">'+String(D2.transport_closure||'')+'<br>'+String(DB.literature_note||'')+'<br>'
     +String(D2.oracle_semantics||'')+'</div>';
   h+='<div class="note">仍不可用：'+(CP.still_items||[]).join(' · ')+'</div>';
+
+  var DT=(d.device_transport||{}), TL=DT.long_channel||{}, SVS=DT.ss_vs_length||{},
+      CS=DT.conservation||{}, IDV=DT.id_vd||{}, VT2=DT.vth_two_methods||{}, CC2=DT.capability_closure||{};
+  h+='<div class="summary" style="margin-top:12px">2D MOS 漂移扩散输运（E13 · I–V / 亚阈值摆幅：把「不产 I-V」关掉）</div>';
+  h+='<div class="note">'+String(DT.kernel||'')+'<br>'+String(DT.numerics||'')+'</div>';
+  h+=_qcTbl(['项','数值','锚 / 口径'],
+    [['SS 热极限（**物理定律锚 · 不等式**）', Number(DT.thermal_limit_mv_dec||0).toFixed(2)+' mV/dec',
+      '扩散机制**硬下限** ⇒ 数值解不得突破'],
+     ['SS 教科书闭式（含体效应）', Number(DT.ss_closed_platform_mv_dec||0).toFixed(2)+' mV/dec',
+      'Cd/Cox = '+Number(DT.cd_over_cox||0).toFixed(4)+' ⇒ 60·(1+Cd/Cox) 平台'],
+     ['长沟道 SS（L = 1 µm）', Number(TL.ss_2d_mv_dec||0).toFixed(2)+' mV/dec',
+      '⟷ 闭式 '+Number(TL.ss_closed_mv_dec||0).toFixed(2)+'（rel '+Number(TL.rel_err_pct||0).toFixed(2)+'%）']]);
+  h+=_qcTbl(['栅长 L','2D 数值 SS（mV/dec）','口径'],
+    (SVS.Ls_nm||[]).map(function(L,i){ return [
+      Number(L).toFixed(0)+' nm', Number((SVS.ss_mv_dec||[])[i]||0).toFixed(1),
+      i===0 ? '短沟道静电控制退化（与 E12 roll-off **同向**）'
+            : (i===((SVS.Ls_nm||[]).length-1) ? '长沟道趋近闭式平台' : '')]; }));
+  h+=_qcTbl(['项','数值','口径'],
+    [['电流守恒（源 ≡ 漏）',
+      Number(CS.worst_rel||0).toExponential(1)+'（检查 '+CS.n_checked+'/'+CS.n_total+' 点）',
+      '**带绝对下限**（相对判据在分母趋零时失效）'],
+     ['输出特性 I_d(V_d)',
+      (IDV.I_d_a_per_m||[]).map(function(v){return Number(v).toFixed(0);}).join(' → ')+' A/m',
+      'V_d = '+(IDV.V_d||[]).join(' / ')+' V · 单调趋饱和'],
+     ['V_th 双法（恒流法 ⟷ 表面势法）',
+      Number(VT2.cc_v||0).toFixed(4)+' ⟷ '+Number(VT2.surface_potential_v||0).toFixed(4)+' V',
+      '差 '+Number(VT2.abs_diff_mv||0).toFixed(1)+' mV · **两法均 is_oracle=False**（互不充当 ORACLE）'],
+     ['能力闭合（E12 的 G-K 缺口）',
+      '闭合 '+Number(CC2.closed||0)+' 项 · 仍不可用 '+Number(CC2.still||0)+' 项',
+      (CC2.closed_items||[]).join(' · ')]]);
+  h+='<div class="note">'+String(DT.ss_target_note||'')+'<br>'+String(DT.honest_boundary||'')+'</div>';
+  h+='<div class="note">仍不可用：'+(CC2.still_items||[]).join(' · ')+'</div>';
 
   h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
   (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });
@@ -4880,7 +4919,13 @@ function renderECore(d){
     +'<b>2D MOS 求解器</b>（把 E11-d 登记为「算不了」的短沟道效应<b>补上</b>：四端 2D 自洽泊松 ⇒ '
     +'roll-off L=65 nm <b>'+Number((RO.dvth_vs_golden_mv||[])[0]||0).toFixed(1)+' mV</b>、'
     +'<b>DIBL '+Number(DB.dibl_mv_per_v||0).toFixed(1)+' mV/V 且满足 ln(DIBL)–L 指数衰减律'
-    +'（R² '+Number(DB.r2_exp_law||0).toFixed(4)+'）</b>）。'
+    +'（R² '+Number(DB.r2_exp_law||0).toFixed(4)+'）</b>）、'
+    +'<b>2D 漂移扩散输运</b>（把 E12 的 G-K「不产 I-V」<b>关掉</b>：Si-only 掩码 SG 离散 + '
+    +'接触准费米势 BC + Gummel ⇒ <b>I–V / 亚阈值摆幅可从数值解提取</b>；长沟道 SS '
+    +'<b>'+Number(TL.ss_2d_mv_dec||0).toFixed(2)+' ⟷ 闭式 '+Number(TL.ss_closed_mv_dec||0).toFixed(2)
+    +' mV/dec</b>（rel '+Number(TL.rel_err_pct||0).toFixed(2)+'%）；'
+    +'短沟道退化 <b>65 nm → '+Number((SVS.ss_mv_dec||[])[0]||0).toFixed(0)+' mV/dec</b>，'
+    +'与 E12 的 roll-off/DIBL <b>同向</b>；<b>SS ≥ 60 mV/dec 是物理定律硬下限，不是渐近目标</b>）。'
     +'<br/><strong>诚实边界：</strong>'+d.honest_note;
   return false;
 }

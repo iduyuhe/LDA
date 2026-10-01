@@ -147,6 +147,20 @@ ECORE_CAPABILITY_MANIFEST = [
                     "DEVICE_LIMITS_DISCLOSURE", "run_selfchecks"],
         "introduced_by": "D-164 (E11-d)", "guard": "run_ecore_e11d_smoke.py",
     },
+    {
+        "capability": "2D MOS 求解器（四端栅/源/漏/衬底 · 变系数 FV 泊松 · 电子准费米势分裂 · "
+                      "roll-off / DIBL 由 2D 数值解自然涌现 ⟷ 教科书 1D 闭式交叉验证）",
+        "module": "lda_l2.ecore.device_2d",
+        "symbols": ["LG_NM_DEFAULT", "XJ_NM_DEFAULT", "T_OX_NM_DEFAULT", "NA_CM3_DEFAULT",
+                    "N_SD_CM3_DEFAULT", "T_SI_NM_DEFAULT", "L_SIDE_NM_DEFAULT",
+                    "ROLLOFF_LS_NM", "LONG_CHANNEL_NM",
+                    "dimension_roundtrip_report", "cross_check_vth_2d_longchannel",
+                    "rolloff_2d_report", "dibl_2d_report", "natural_length_2d",
+                    "short_channel_capability_report",
+                    "device_2d_compute_rolloff_dibl_for_case",
+                    "DEVICE_2D_DISCLOSURE", "device_2d_self_check"],
+        "introduced_by": "D-166…D-168 (E12)", "guard": "run_ecore_e12_smoke.py",
+    },
 ]
 
 
@@ -188,7 +202,7 @@ def manifest_check() -> dict:
 
 
 ECORE_CAPABILITY_DISCLOSURE = {
-    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11",
+    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12",
     "e5_scope": "把 E1~E9 逼出的平台能力固化为机器可读清单（单向真源）+ 常驻门禁（正向完备 + 反向完备 + 披露一致 + 诚实边界）",
     "hardening_semantics": "能力面必须被门禁守着：任一模模块/符号缺失、隐身模块出现、或注入 fabricated 指标 ⇒ 门禁必红",
     "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"

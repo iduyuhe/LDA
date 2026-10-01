@@ -1367,6 +1367,9 @@ CORE_SMOKES: List[str] = [
     # + 缺口量化 + 网格依赖性；19 判据 + 6 突变探针（含「文献项被标 LDA 自算必红」诚实护栏）。
     # CI core 249→250。
     "run_ecore_e11d_smoke.py",
+    # E12（D-166…D-168）· 2D MOS 求解器（短沟道效应：roll-off / DIBL 由 2D 数值解涌现
+    # —— 把 E11-d 登记为「算不了」的那一格补上）+ 6 条突变探针 + 能力闭合表。
+    "run_ecore_e12_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2187,6 +2190,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e11_smoke.py": 300.0,
     # E11-d 电子计算征程器件级失效边界门禁（D-164）· 实测上界 5.08s（3 轮 max · @本机）
     "run_ecore_e11d_smoke.py": 300.0,
+    # E12 电子计算征程 2D MOS 求解器门禁（D-166…D-168）· 实测上界见基线行（约 2 分钟级）
+    "run_ecore_e12_smoke.py": 300.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

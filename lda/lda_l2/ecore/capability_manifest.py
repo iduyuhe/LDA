@@ -225,6 +225,19 @@ ECORE_CAPABILITY_MANIFEST = [
                     "WEIGHT_PROG_DISCLOSURE", "weight_prog_self_check"],
         "introduced_by": "D-181…D-183 (E16)", "guard": "run_ecore_e16_smoke.py",
     },
+    {
+        "capability": "时序 / 时钟预算链（时间按拓扑合成 · 五阶段节拍 · 时钟反解 · "
+                      "规模×时间 · 阵列 RC 交叉点）",
+        "module": "lda_l2.ecore.timing",
+        "symbols": ["normalize_stages", "serial_sum", "pipelined_period", "combine_time",
+                    "rc_settle_time", "settle_half_lsb", "sar_period",
+                    "row_stage_time", "col_stage_time", "sample_hold_stage_time",
+                    "cdac_total_cap", "cdac_settle_tau", "cdac_clock_from_settle",
+                    "sar_stage_time", "dac_stage_time", "stage_times",
+                    "per_sample_report", "clock_budget", "time_vs_n", "crossover_n_ps",
+                    "TIMING_PROCESS", "TIMING_DISCLOSURE", "timing_self_check"],
+        "introduced_by": "D-185…D-187 (E17)", "guard": "run_ecore_e17_smoke.py",
+    },
 ]
 
 

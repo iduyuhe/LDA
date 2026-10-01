@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDA 验收操作卡 · D4 设计→GDS→签核→下载（2026-10-02 实测版）</title>
+<style>
+  body{font-family:"Microsoft YaHei",sans-serif;max-width:900px;margin:0 auto;padding:24px;line-height:1.75;color:#1f2937;background:#f8fafc}
+  h1{font-size:22px;color:#1f3864;border-bottom:3px solid #2563eb;padding-bottom:8px}
+  h2{font-size:17px;color:#1f3864;margin-top:28px}
+  .meta{background:#eff6ff;border-radius:8px;padding:10px 14px;font-size:13px}
+  .step{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;margin:12px 0}
+  .warn{background:#fef3c7;border-left:4px solid #f59e0b;border-radius:6px;padding:8px 12px;font-size:13px}
+  table{border-collapse:collapse;width:100%;font-size:13px;margin:8px 0}
+  th{background:#2563eb;color:#fff;padding:6px 10px;text-align:left}
+  td{border:1px solid #e2e8f0;padding:6px 10px}
+  tr:nth-child(even) td{background:#f1f5f9}
+  code{background:#eef2ff;border-radius:4px;padding:1px 6px;font-size:12px}
+  img{max-width:100%;border:1px solid #cbd5e1;border-radius:8px;margin:8px 0}
+  .ok{color:#15803d;font-weight:bold}
+</style>
+</head>
+<body>
+<h1>LDA 验收操作卡 · D4 交付闭环（设计 → GDS → 签核 → 下载）</h1>
+<div class="meta">
+  <b>实测信息</b>：2026-10-02 由 AI 在生产站点真实浏览器（Chromium）逐步实测通过 · 账号 duyuhe@shdute.cn（管理员）·
+  站点版本 <code>v0.9.169</code> · 每步截图与本卡同目录（d4_shot1–4.png）。<br>
+  <b>验收判据</b>：设计包验收 PASS → 芯片级签核 ACCEPT（DRC/LVS/G4 全过）→ 下载 .gds 字节数与 sha256 与页面登记一致。
+</div>
+
+<h2>Step 0 · 打开站点并登录</h2>
+<div class="step">
+  1. 浏览器打开 <code>https://lda.weomnitech.com.cn/store.html</code>，顶部导航点「<b>🛒 创新超市</b>」区域中的 <b>注册 / 登录</b>，在弹窗选<b>登录</b>模式，输入账号（管理员账号，向杜先生索取）后点「<b>确定</b>」。<br>
+  2. 登录成功的标志：页面右上/订单区出现你的账户身份（实测显示「duyuhe · 标准个人 · 退出」，见截图①右上）。<br>
+  3. 打开 <code>https://lda.weomnitech.com.cn/index.html</code>。
+</div>
+
+<h2>Step 1 · 先关掉挡路弹窗</h2>
+<div class="step">
+  页面右下角会有「<b>欢迎使用 LDA · 3 分钟上手</b>」引导浮窗（第 1/7 步）——点右上角 <b>×</b> 或「<b>跳过</b>」关掉，否则会遮挡下方按钮。<span class="warn">截图①右下可见该浮窗。</span>
+</div>
+
+<h2>Step 2 · 定位旗舰面板</h2>
+<div class="step">
+  在首页找到标题「<b>★ 旗舰流程 · 设计闭环端到端：给目标 → 出统一设计包</b>」的卡片（蓝色边框，位于页面前部 ~2 屏内）。<br>
+  器件类型下拉选「<b>● 环形谐振器 · 目标 FSR（解析锚）（nm）</b>」——选中后<b>目标值自动填 9</b>（单位 nm），验证候选数 top_k 保持 3。
+</div>
+
+<h2>Step 3 · 运行设计闭环</h2>
+<div class="step">
+  点按钮「<b>运行设计闭环 → 出设计包</b>」，等待约 10–30 秒。<br>
+  <b>预期看到（截图②）</b>：目标 9nm · 搜索 <b>35</b> 点 → 验证 <b>3</b> 候选 → 通过 <b>3</b> · 设计包验收 <span class="ok">PASS</span>；<br>
+  「✅ 最优已验证设计：<b>R_um=12</b> → FSR (解析, nm)=<b>9.16</b>（目标误差 0.1600）」+ 候选参数表（R_um=12/13/14，FSR 9.16/8.79/8.45）。
+</div>
+
+<h2>Step 4 · 一键生成 GDS 并签核</h2>
+<div class="step">
+  点按钮「<b>→ 生成 GDS 并签核（流片文件）</b>」，等待约 8–40 秒（冷启动较慢）。<br>
+  <b>预期看到（截图③，逐项核对）</b>：
+  <table>
+    <tr><th>位置</th><th>应显示</th><th>不许出现</th></tr>
+    <tr><td>芯片级签核</td><td><span class="ok">ACCEPT</span> · DRC <b>1/1</b> · LVS <b>ACCEPT</b> · 几何回提(G4) 核对 1 项 / 违规 <b>0</b> · 器件 1 · GDS <b>684 B</b></td><td>FAIL / 0.0 / NaN / undefined</td></tr>
+    <tr><td>流片管道报告</td><td><span class="ok">ACCEPT</span> · 工艺角 ✅ · 几何 DRC ✅（标注「与 /api/tapeout 同一函数」）</td><td>—</td></tr>
+    <tr><td>下载行</td><td>⬇ <code>design_engine_ringresonator.gds</code> · 684 B · sha256 <code>14c253e7bf21347d…</code></td><td>空链接 / 链接不可见</td></tr>
+  </table>
+  同时出现蓝色按钮「<b>⬇ 下载 .gds（芯片级）</b>」——点击即下载真实 GDSII 文件（684 字节，文件头 <code>00 06 00 02</code> 为合法 GDSII HEADER 记录）。
+</div>
+
+<h2>Step 5 · 下载字节核验（可选，一条命令）</h2>
+<div class="step">
+  Windows 终端执行：<br>
+  <code>curl -s -o ring.gds "https://lda.weomnitech.com.cn/api/design_gds?kind=RingResonator&amp;wg=0.5&amp;name=design_engine_ringresonator&amp;R=12.0"</code><br>
+  <code>certutil -hashfile ring.gds SHA256</code><br>
+  预期：<b>684 字节</b>，sha256 前缀 <code>619256ad…</code>（该 URL 固定参数口径；页面上由设计闭环产出的口径为 14c253e7…——两种口径均与各自响应登记值同源一致，已实测 MATCH）。
+</div>
+
+<h2>实测截图</h2>
+<div class="step">
+  <p><b>截图①</b> 登录态 + 旗舰面板初始（R_um 目录已加载，注意右下角引导浮窗要先关）</p>
+  <img src="d4_shot1_flagship_panel.png" alt="旗舰面板">
+  <p><b>截图②</b> 设计闭环结果（目标 9nm · 35 点 · 3 候选全过 · 设计包 PASS · 最优 R_um=12→FSR 9.16）</p>
+  <img src="d4_shot2_design_outcome.png" alt="设计闭环结果">
+  <p><b>截图③</b> 芯片级签核 ACCEPT + 下载链接（DRC 1/1 · LVS ACCEPT · G4 0 违规 · 684B · sha256 14c253e7…）</p>
+  <img src="d4_shot3_signoff_download.png" alt="签核与下载">
+  <p><b>截图④</b> 点击「⬇ 下载 .gds」后的页面状态（下载已触发）</p>
+  <img src="d4_shot4_after_download_click.png" alt="下载点击后">
+</div>
+
+<h2>对不上时发我什么</h2>
+<div class="step">
+  把以下四样发回来即可定位：① 浏览器与缩放比例；② 页面右上角版本号（应 <code>v0.9.169</code>）；③ 卡在哪一步的截图；④ 若签核失败，同时截图 <code>doTapeoutOut</code> 区域的完整「诚实边界」文字。
+</div>
+
+<div class="meta" style="margin-top:20px">
+  <b>实测留痕</b>：进程内 E2E <code>scripts/verify_design_d4_e2e.py</code> 12/12 PASS；门禁 <code>run_design_tapeout_smoke</code> 46/0 ·
+  <code>run_design_outcome_smoke</code> 10/0 · <code>run_webui_entry_smoke</code> 18/0；生产下载字节与本地确定性重建 sha256 逐位一致。
+  <br><span style="color:#64748b">版权：上海杜特企业管理咨询有限公司 · LDA 工程 · 2026-10-02</span>
+</div>
+</body>
+</html>

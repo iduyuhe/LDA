@@ -236,7 +236,23 @@ ECORE_CAPABILITY_MANIFEST = [
                     "sar_stage_time", "dac_stage_time", "stage_times",
                     "per_sample_report", "clock_budget", "time_vs_n", "crossover_n_ps",
                     "TIMING_PROCESS", "TIMING_DISCLOSURE", "timing_self_check"],
-        "introduced_by": "D-185…D-187 (E17)", "guard": "run_ecore_e17_smoke.py",
+                    "introduced_by": "D-185…D-187 (E17)", "guard": "run_ecore_e17_smoke.py",
+    },
+    {
+        "capability": "列侧共享与架构权衡（面积-时间乘积守恒 · 保吞吐 ⇒ 面积 ∝1/K² 的"
+                      "双项闭式 N·C_tot/(ρK²)+N·A_logic/K · 拐点 K* · kT/C 位数地板 · "
+                      "架构族对照 · 列侧读出面积 vs 阵列本体 · 复制 vs 共享同一双曲线）",
+        "module": "lda_l2.ecore.col_share",
+        "symbols": ["thermal_noise_rms_v", "thermal_noise_bits_ceiling",
+                    "bits_ceiling_of_share", "ktc_crossing_share",
+                    "cap_area_um2", "converter_area_um2", "readout_area_um2",
+                    "analytic_area_um2", "area_period_product_um2_s",
+                    "converter_period_s", "col_throughput_sps",
+                    "k_star", "fit_loglog_slope", "scaling_law_report",
+                    "architectures", "recommend_architecture",
+                    "replication_vs_sharing", "COL_SHARE_PROCESS",
+                    "COL_SHARE_DISCLOSURE", "col_share_self_check"],
+        "introduced_by": "D-189…D-191 (E18)", "guard": "run_ecore_e18_smoke.py",
     },
 ]
 
@@ -279,7 +295,7 @@ def manifest_check() -> dict:
 
 
 ECORE_CAPABILITY_DISCLOSURE = {
-    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12",
+    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18",
     "e5_scope": "把 E1~E9 逼出的平台能力固化为机器可读清单（单向真源）+ 常驻门禁（正向完备 + 反向完备 + 披露一致 + 诚实边界）",
     "hardening_semantics": "能力面必须被门禁守着：任一模模块/符号缺失、隐身模块出现、或注入 fabricated 指标 ⇒ 门禁必红",
     "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"

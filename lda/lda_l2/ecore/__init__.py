@@ -229,6 +229,14 @@ from .timing import (
     sar_stage_time, dac_stage_time, stage_times,
     per_sample_report, clock_budget, time_vs_n, crossover_n_ps,
 )
+from .col_share import (
+    COL_SHARE_PROCESS, COL_SHARE_DISCLOSURE, col_share_self_check,
+    thermal_noise_rms_v, thermal_noise_bits_ceiling, bits_ceiling_of_share,
+    ktc_crossing_share, cap_area_um2, converter_area_um2, readout_area_um2,
+    analytic_area_um2, area_period_product_um2_s, converter_period_s,
+    col_throughput_sps, k_star, fit_loglog_slope, scaling_law_report,
+    architectures, recommend_architecture, replication_vs_sharing,
+)
 from .device_2d import (
     DEVICE_2D_DISCLOSURE,
     LG_NM_DEFAULT as DEVICE_2D_LG_NM,
@@ -450,6 +458,13 @@ __all__ = [
     "cdac_total_cap", "cdac_settle_tau", "cdac_clock_from_settle",
     "sar_stage_time", "dac_stage_time", "stage_times",
     "per_sample_report", "clock_budget", "time_vs_n", "crossover_n_ps",
+    # —— E18（D-189…D-191）列侧共享与架构权衡
+    "COL_SHARE_PROCESS", "COL_SHARE_DISCLOSURE", "col_share_self_check",
+    "thermal_noise_rms_v", "thermal_noise_bits_ceiling", "bits_ceiling_of_share",
+    "ktc_crossing_share", "cap_area_um2", "converter_area_um2", "readout_area_um2",
+    "analytic_area_um2", "area_period_product_um2_s", "converter_period_s",
+    "col_throughput_sps", "k_star", "fit_loglog_slope", "scaling_law_report",
+    "architectures", "recommend_architecture", "replication_vs_sharing",
 ]
 
 # 征程入口披露（对外引用须携此诚实边界）
@@ -505,6 +520,34 @@ ECORE_DISCLOSURE: dict = {
              "🔴 **保护性约束**：**只读消费** E7/E14，**不改**任何既有默认值；**不给** `PERIPHERY_PROCESS` 加时间键"
              "（E14 行驱动保持原样，E17 的时间参数只进自己的 `TIMING_PROCESS`）⇒ E15/E16 已发布数字**逐位不变**"
              "（门禁 B15/B16 守着）。",
+    "e18_scope": "E18 列侧共享与架构权衡（补上全仓此前**完全没有建模**的「面积」维度）："
+                 "E1–E17 的列侧读出（TIA + ADC）**始终是「每列一份」**（`crossbar_mvm` 每列一个理想运放 · "
+                 "`mvm_datapath` 每列一个 ADC · `converter.sar_convert` 是单通道），"
+                 "全仓 `share`/`mux`/`multiplex`/`复用器`/`时分` 在 `lda_l2/ecore/` **零命中** ⇒ "
+                 "「列侧电路能不能共享、共享的代价是什么」此前无人能答。本段新增 `col_share.py`"
+                 "（ecore 第 22 个模块 · 纯标准库 · **只读消费 E14/E17 · 不吃新物理**）："
+                 "① 🔴 **第一原理「面积-时间乘积守恒」** —— 全并行 `N·A_u`/`T_conv` 与 K 列共享 "
+                 "`(N/K)·A_u`/`K·T_conv` 给出 **`A_total × 每列周期 = N·A_u·T_conv`（与 K 无关）**；"
+                 "② 🔴 **第二原理「保吞吐共享 ⇒ 面积 ∝1/K²」** —— 缩 `T_conv` 的唯一物理路径是降 `C_tot`"
+                 "（`T_conv ∝ C_tot·(bits+1)²` · E17 G-5）⇒ **双项闭式** "
+                 "`A(K) = N·C_tot(1)/(ρK²) + N·A_logic/K`（电容项 ∝1/K² · 逻辑项 ∝1/K），"
+                 "拐点 `K* = C_tot(1)/(ρ·A_logic) = 160`；"
+                 "③ **第三腿（诚实结论）** —— `σ = √(kT/C_tot)` 是物理律，但 kT/C 跌到 8 位需共享度 "
+                 "**K ≈ 1.05×10⁵**（≫ 任何合理共享度）⇒ **共享的真实代价是「吞吐」不是「精度」**"
+                 "（**不硬造精度腿**）；"
+                 "④ **量级事实** —— 8 bit CDAC 单列电容面积 **128 000 µm²**，而 64×64 阵列本体足迹仅 "
+                 "**23 302 µm²** ⇒ **读出 = 阵列的 355 倍**（全并行 N=64 = **8.27 mm²**）；"
+                 "⑤ **架构族对照 / 推荐 / 复制-共享** —— 五条路线（全并行 / TIA 共享 / ADC 共享不保吞吐 / "
+                 "ADC 共享保吞吐 / 全串行，面积比 **63.2×**）；**推荐**（N=64 / 8 bit / 10 MSa/s）"
+                 "共享度饱和到列数 ⇒ 面积由 8.27 mm² 降到 **30 000 µm²（1/276）**；"
+                 "🔴 **接 E17 的 0.289 锚** —— **提吞吐（并行复制瓶颈级）与省面积（共享）是同一条 "
+                 "`A×周期 = 常数` 双曲线的两端**。"
+                 "🔴 **诚实边界**：面积为**宏模型占位**（ρ=2 fF/µm² · A_logic=800 µm² · A_tia=400 µm² · "
+                 "非 PDK）；**只覆盖静态**（不含动态功耗 / 时钟树 / 供电网络 / 驱动器面积）；"
+                 "共享的**动态代价（多路开关电荷注入 / 串扰 / 采样孔径抖动）未建模**；"
+                 "**不做功耗估算 ⇒ 不谈能效**；**绝不报 TOPS / TOPS-W / fJ/op**。"
+                 "🔴 **保护性约束**：**只读消费** E14/E17，**不改**任何既有默认值；"
+                 "`keep_throughput` **默认 False** ⇒ E15/E16/E17 已发布数字**逐位不变**。",
     "redline": "红线 = **分层口径**（2026-09-11 §八§九 · 2026-09-23 逐步解锁）：平台**器件级 T1 内核已解锁**"
                "（`lda_solver/drift_diffusion_1d/2d`）；**T2 工艺真值 / 工艺角 / 流片永久锁**。"
                "**本包主动限定在电路级**——这是设计取舍，不是红线要求。",

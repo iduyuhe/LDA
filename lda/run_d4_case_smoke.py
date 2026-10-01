@@ -25,7 +25,9 @@ import unittest.mock as mock
 from lda_webui import d4case as dc
 from lda_webui import routes as _routes
 
-FRONTEND = "lda_webui/static/index.html"
+# 🔴 锚到 __file__ 而非 cwd 相对串：门禁不得依赖调用目录（CI 是 cwd=lda/ 跑的，
+#   但本地/其他入口从仓库根跑会 FileNotFoundError —— 判据没跑起来 ≠ 判据通过）。
+_FRONTEND = __file__.replace("\\", "/").rsplit("/", 1)[0] + "/lda_webui/static/index.html"
 
 _RE_BTN_ID = re.compile(r'<button[^>]*?\sid="([A-Za-z0-9_]+)"')
 _RE_WIRED = re.compile(r"\$\('([A-Za-z0-9_]+)'\)\.onclick")
@@ -106,7 +108,7 @@ def main() -> int:
           and len(card["gaps"]) == 4)
 
     # —— 前端三件 + 接线 ——
-    src = open(FRONTEND, encoding="utf-8").read()
+    src = open(_FRONTEND, encoding="utf-8").read()
     check("③e 前端 sec-d4 段 + runD4 按钮 + 本端点引用齐",
           'id="sec-d4"' in src and "runD4" in src and "/api/d4_demo" in src)
     check("③f 前端 hash 自动运行映射含 #sec-d4",

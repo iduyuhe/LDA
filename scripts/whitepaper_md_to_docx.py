@@ -127,9 +127,9 @@ def render(doc, blocks):
 
 def main():
     src = sys.argv[1] if len(sys.argv) > 1 else \
-        "D:/agent_LDA/docs/lda_technical_whitepaper_2026-09-05.md"
+        "D:/agent_LDA/docs/lda_technical_whitepaper_v0.9.169.md"
     out = sys.argv[2] if len(sys.argv) > 2 else \
-        "D:/agent_LDA/lda/lda_webui/static/lda_whitepaper_v0.9.40.docx"
+        "D:/agent_LDA/lda/lda_webui/static/lda_whitepaper_v0.9.169.docx"
     lines = open(src, encoding="utf-8").read().split("\n")
     doc = render(Document(), split_blocks(lines))
     doc.save(out)

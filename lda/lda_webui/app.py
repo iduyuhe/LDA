@@ -2823,8 +2823,8 @@ def about_info():
     return {
         "version": LDA_VERSION,
         "product": PRODUCT_INFO,
-        "whitepaper_url": "/lda_whitepaper_v0.9.40.docx",
-        "whitepaper_pdf_url": "/lda_whitepaper_v0.9.40.pdf",
+        "whitepaper_url": "/lda_whitepaper_v0.9.169.docx",
+        "whitepaper_pdf_url": "/lda_whitepaper_v0.9.169.pdf",
         "organization": {
             "copyright": "上海杜特企业管理咨询有限公司",
             "contact": "杜玉河（上海杜特企业管理咨询有限公司）",

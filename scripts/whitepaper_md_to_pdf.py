@@ -4,7 +4,7 @@
 
 依赖：reportlab + Windows 中文字体（msyh / msyhbd / simhei）。
 用法：python scripts/whitepaper_md_to_pdf.py
-输出：lda/lda_webui/static/lda_whitepaper_v0.9.40.pdf
+输出：lda/lda_webui/static/lda_whitepaper_v0.9.169.pdf
 
 解析支持：标题(#~######)、引用(>)、无序/有序列表、表格(|..|)、分隔线(---)、
 内联加粗(**x**)。中文字体 Microsoft YaHei 作正文/加粗，SimHei 作标题，自动分页。
@@ -27,8 +27,8 @@ from reportlab.pdfbase.pdfmetrics import registerFontFamily
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "docs", "lda_technical_whitepaper_2026-09-05.md")
-OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, "lda", "lda_webui", "static", "lda_whitepaper_v0.9.40.pdf")
+SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "docs", "lda_technical_whitepaper_v0.9.169.md")
+OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, "lda", "lda_webui", "static", "lda_whitepaper_v0.9.169.pdf")
 
 FONT_DIR = "C:/Windows/Fonts"
 pdfmetrics.registerFont(TTFont("MSYH", os.path.join(FONT_DIR, "msyh.ttc"), subfontIndex=0))
@@ -171,9 +171,12 @@ def build():
         flow.append(Paragraph(esc(line), bs))
         i += 1
 
+    m_ver = re.search(r"v(\d+\.\d+\.\d+)", OUT)
+    doc_title = ("LDA 商业计划书" if "business_plan" in OUT else "LDA 技术白皮书") + \
+        (" v" + m_ver.group(1) if m_ver else "")
     doc = SimpleDocTemplate(OUT, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm,
                             topMargin=16 * mm, bottomMargin=16 * mm,
-                            title=("LDA 商业计划书 v0.9.40" if "business_plan" in OUT else "LDA 技术白皮书 v0.9.40"),
+                            title=doc_title,
                             author="上海杜特企业管理咨询有限公司")
     doc.build(flow)
     print("WROTE", OUT, os.path.getsize(OUT), "bytes")

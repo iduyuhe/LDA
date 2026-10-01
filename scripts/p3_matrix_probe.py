@@ -4,7 +4,7 @@
 它靠「改工作区文件 → 跑门禁 → 按原字节还原」取证，若中途异常退出可能留下被改坏的
 门禁源码。CI 里跑这种自改脚本风险不对等（门禁本身每次都跑，探针只需在改门禁时人工跑）。
 
-用法（仓库根）：python scripts/p3_matrix_probe.py   → 10/10 全响则 rc=0
+用法（仓库根）：python scripts/p3_matrix_probe.py   → 12/12 全响则 rc=0
 
 铁律：「没被验证过的护栏不算护栏」。本脚本对每条高价值判据各造一个**真实反例**
 （改的是**门禁自己的源码**），跑门禁断言「恰好该判据变红」，然后**按原字节还原**并用
@@ -40,15 +40,18 @@ def run_smoke(name):
 
 # --------------------------- 反例构造（矩阵门禁） ---------------------------
 def _drop_three_cells(b):
-    """删掉 3 个格 ⇒ 格数 9→6 边界，再删一个 ⋯ 直接删到 5 个。"""
-    for cid in (b'"id": "X6-MZM-VPI"', b'"id": "X5-LINDBLAD"',
-                b'"id": "X4-RESONATOR"', b'"id": "X7-MMI-EXCESS"'):
-        i = b.find(cid)
+    """把注册格删到 <6 ⇒ ①「矩阵格数 ≥6」必红。
+
+    🔴 v0.9.170 重标定：旧构造只删 4 个固定 id（X6/X5/X4/X7），矩阵 9 格时代
+    删完剩 5 格会红；矩阵扩到 22 格后删 4 剩 18 ⇒ **探针恒真**（探针反例必须
+    随矩阵规模重标定）。改为**删除全部 X*/M* 注册格**（逐 id 扫描，规模自适应）。
+    """
+    import re as _re
+    for cid in set(_re.findall(rb'"id": "(X[0-9A-Z-]+|M[0-9A-Z-]+)"', b)):
+        i = b.find(b'"id": "%s"' % cid)
         if i < 0:
             continue
-        # 往前找到该 dict 的起始 "    {\n"
         j = b.rfind(b"    {", 0, i)
-        # 往后找到配对的 "    },\n"（本文件的格都是这个缩进结尾）
         k = b.find(b"\n    },\n", i)
         if j >= 0 and k > 0:
             b = b[:j] + b[k + len(b"\n    },\n"):]
@@ -101,6 +104,23 @@ def _drop_domain_row(b):
     return b.replace(b'    "X6-MZM-VPI": "photonic",\n', b"", 1)
 
 
+def _shuffle_rc_values(b):
+    """把 X18 的 n_steps 序列改成乱序 ⇒ 残差不再严格单调降 ⇒ 判据 D 必红。
+
+    实测残差：n=10→1.068e-2 / n=40→2.270e-3 / n=160→5.396e-4（严格降）。
+    重排 (40, 10, 160) ⇒ 2.270e-3 → 1.068e-2 → 5.396e-4（第二点上升）⇒ 红。
+    """
+    return b.replace('"param": "n_steps(MNA 瞬态步数)", "values": (10, 40, 160),'.encode("utf-8"),
+                     '"param": "n_steps(MNA 瞬态步数)", "values": (40, 10, 160),'.encode("utf-8"), 1)
+
+
+def _break_vth_flatness(b):
+    """把 M4 的 dx 扫描末档换成 0.125nm ⇒ 残差出现数值地板跳变（8.81e-6 ≠ 1.98e-6）
+    ⇒ 「残差不变」判据必红（同时细端 rel 8.81e-6 > tol 3e-6 也红）。
+    """
+    return b.replace(b'"values": (2.0, 1.0, 0.5),', b'"values": (2.0, 1.0, 0.125),', 1)
+
+
 # --------------------------- 反例构造（判分门禁） ---------------------------
 def _unregister_unscorable(b):
     """把 A-BEND-R2 的理由键名改掉 ⇒ 该题落进 UNHANDLED ⇒ disposition 判据红。"""
@@ -135,6 +155,10 @@ PROBES = [
      "⑩ E1-SLAB-TE 否决理由可复现", MATRIX),
     ("域标签表删掉 X6 一行 ⇒ 格漏标域", MATRIX, _drop_domain_row,
      "⑦a 域标签表", MATRIX),
+    ("X18 的 n_steps 序列乱序 ⇒ 判据 D 不再单调", MATRIX, _shuffle_rc_values,
+     "⑵ X18-RC-SETTLE 有判据 D", MATRIX),
+    ("M4 的 dx 扫描末档换 0.125nm ⇒ 残差跳变", MATRIX, _break_vth_flatness,
+     "⑵ M4-VTH-PDE 如实登记为 model_limited", MATRIX),
     ("不可判分题未登记 disposition", SCORING, _unregister_unscorable,
      "② 每题 disposition 都已判定", SCORING),
     ("把陷阱答案换成正确答案", SCORING, _trap_becomes_correct,

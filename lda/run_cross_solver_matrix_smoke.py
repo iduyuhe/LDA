@@ -257,7 +257,6 @@ def _p_fresnel(param):
     ref=Fresnel 解析 4·n0·nL/(n0+nL)²；cand=fdtd1d。方法独立；扫 dl_factor
     残差严格单调降 ⇒ 有判据 D。
     """
-    from lda_solver.tmm import solve_spectrum as tmm_spec
     from lda_solver.fdtd1d import solve_spectrum as fdtd_spec
     n0, nL = 1.0, 3.48
     ref = 4.0 * n0 * nL / (n0 + nL) ** 2
@@ -292,6 +291,40 @@ def _p_tmm_3layer(param):
     ref = float(tmm_spec(spec)["transmission"][0])
     cand = float(fdtd_spec(spec, dl_factor=float(param))["transmission"][0])
     return ref, cand
+
+
+def _p_rc_settle(param):
+    """一阶 RC 建立电路（CDAC 单元 · 电子域 ecore）末端电压 V_out(T)（V）。
+
+    ref=一阶 RC 闭式指数 V_f−(V_f−V_0)e^{−t/τ}；cand=MNA 后向欧拉瞬态
+    （伴随模型 g_eq=C/dt + 历史电流源，逐步牛顿）。方法学独立：连续闭式解 vs
+    MNA 稀疏装配 + 时间离散（后向欧拉截断误差 O(dt)）；扫 n_steps 残差严格
+    单调降 ⇒ 有判据 D。R=10kΩ, C=1pF ⇒ τ=10ns；T=5τ 阶跃 0→3.3V。
+    """
+    from lda_l2.ecore.mna import Circuit
+    R, C, VDD, T = 10e3, 1e-12, 3.3, 50e-9
+    tau = R * C
+    v_exact = VDD * (1.0 - math.exp(-T / tau))
+    c = Circuit()
+    c.vsource(1, 0, VDD, tag="vs")
+    c.resistor(1, 2, R)
+    c.capacitor(2, 0, C)
+    _times, out = c.solve_transient(T, int(param))
+    v_num = c.node_voltages(out[-1])[2]
+    return float(v_exact), float(v_num)
+
+
+def _p_vth_pde(param):
+    """MOSCAP 阈值电压 V_th（V）：教科书闭式（golden）vs 1D 自洽泊松 PDE（candidate）。
+
+    ref=device_pde.physics_vth_closed（Sze 完整闭式，golden-A）；
+    cand=cross_check_vth 的 PDE 数值解（T1 内核，只作候选）。扫界面网格 dx_if_nm
+    实测残差**不变**（model_limited：残差由 Vth 提取判据/闭式常数的网格无关源主导，
+    非离散误差）⇒ 无判据 D，如实登记。
+    """
+    from lda_l2.ecore.device_pde import cross_check_vth
+    r = cross_check_vth(dx_if_nm=float(param))
+    return float(r["V_th_golden"]), float(r["V_th_cand"])
 
 
 # ---------------------------------------------------------------------------
@@ -490,6 +523,28 @@ CELLS = [
         "tol_rel": 5e-2, "probe": _p_tmm_3layer,
         "note": "三层膜对拍；dl_factor 加密 T 单调收敛（8.89e-2→2.56e-2）",
     },
+    {
+        "id": "X18-RC-SETTLE", "device": "一阶 RC 建立电路（CDAC 单元）",
+        "metric": "末端电压 V_out(5τ) (V)",
+        "solver_a": "一阶 RC 闭式指数 V_f−(V_f−V_0)e^{−t/τ}",
+        "solver_b": "MNA 后向欧拉瞬态（伴随模型 + 牛顿，ecore mna）",
+        "independence": "连续闭式解 vs MNA 装配 + 时间离散（后向欧拉截断 O(dt)，两条独立路径）",
+        "kind": "convergent", "param": "n_steps(MNA 瞬态步数)", "values": (10, 40, 160),
+        "tol_rel": 1e-3, "probe": _p_rc_settle,
+        "note": ("电子域首格（ecore E1 mna ↔ 闭式）；残差 1.068e-2→2.270e-3→5.396e-4 "
+                 "严格单调降（后向欧拉一阶收敛）"),
+    },
+    {
+        "id": "M4-VTH-PDE", "device": "MOSCAP 阈值电压（电子域）", "metric": "V_th (V)",
+        "solver_a": "教科书闭式（Sze 完整，golden-A）",
+        "solver_b": "1D 自洽泊松 PDE 数值解（T1 内核，只作候选）",
+        "independence": "解析闭式 vs 逐点自洽数值（redline guard_t1_not_oracle 接线）",
+        "kind": "model_limited", "param": "dx_if_nm(界面网格)", "values": (2.0, 1.0, 0.5),
+        "tol_rel": 3e-6, "probe": _p_vth_pde,
+        "note": ("🔴 实测扫 dx 残差**不变**（1.978584e-6 逐位恒值，Δrel=0）⇒ 误差由网格"
+                 "无关源（Vth 提取判据/闭式常数）主导，非离散误差 ⇒ 无判据 D；0.125nm 处"
+                 "残差反升至 8.81e-6（自洽迭代数值地板），取值段只取平稳段并如实登记"),
+    },
 ]
 
 
@@ -527,6 +582,9 @@ CELL_DOMAIN = {
     "X17-TMM-3LAYER": "photonic",
     # p-n 结电气核（突变结耗尽近似 ↔ 自洽泊松数值）
     "X11-PN-DD": "quantum",
+    # 电子域（ecore · 2026-10-02 阶段3 W3-1 · 矩阵跨三栈）
+    "X18-RC-SETTLE": "electronic",
+    "M4-VTH-PDE": "electronic",
 }
 
 
@@ -685,21 +743,27 @@ def main() -> int:
                 viol.append(c["id"])
     check("⑥ 矩阵内无「同算法换后端」格（防虚假繁荣）", not viol, "违规 %s" % viol)
 
-    # ⑦ 覆盖面：域标签**双向完备** + 划分互斥 + 光子/量子各 ≥2 格
+    # ⑦ 覆盖面：域标签**双向完备** + 划分互斥 + 光子/量子/电子各 ≥2 格
     ids = [c["id"] for c in registry]
     missing = [i for i in ids if i not in CELL_DOMAIN]
     orphan = [k for k in CELL_DOMAIN if k not in ids]
     check("⑦a 域标签表**双向完备**（无漏标格 / 无孤儿行）",
           not missing and not orphan,
           "漏标 %s / 孤儿 %s" % (missing, orphan))
-    photonic = [i for i in ids if CELL_DOMAIN.get(i) == "photonic"]
-    quantum = [i for i in ids if CELL_DOMAIN.get(i) == "quantum"]
-    check("⑦b 域划分**互斥且并集 == 全部注册格**",
-          (not missing) and len(photonic) + len(quantum) == len(ids),
-          "光子 %d + 量子 %d vs 总 %d" % (len(photonic), len(quantum), len(ids)))
-    check("⑦c 覆盖面：光子域 ≥2 格 且 量子域 ≥2 格",
-          len(photonic) >= 2 and len(quantum) >= 2,
-          "光子 %d / 量子 %d" % (len(photonic), len(quantum)))
+    domain_counts = {}
+    for i in ids:
+        domain_counts[CELL_DOMAIN.get(i)] = domain_counts.get(CELL_DOMAIN.get(i), 0) + 1
+    check("⑦b 域划分**互斥且并集 == 全部注册格**（无未知域值）",
+          (not missing) and None not in domain_counts
+          and sum(domain_counts.values()) == len(ids),
+          "域计数 %s vs 总 %d" % (dict(domain_counts), len(ids)))
+    check("⑦c 覆盖面：光子域 ≥2 格 且 量子域 ≥2 格 且 电子域 ≥2 格",
+          domain_counts.get("photonic", 0) >= 2
+          and domain_counts.get("quantum", 0) >= 2
+          and domain_counts.get("electronic", 0) >= 2,
+          "光子 %d / 量子 %d / 电子 %d"
+          % (domain_counts.get("photonic", 0), domain_counts.get("quantum", 0),
+             domain_counts.get("electronic", 0)))
 
     # ⑨ 实测否决项登记完备（无解也留痕：id / 候选 / 理由 / 复现 / 日期）
     bad_ex = []

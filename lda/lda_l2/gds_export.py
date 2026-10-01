@@ -68,7 +68,38 @@ def _int4(v: int) -> bytes:
 
 
 def _real8(v: float) -> bytes:
-    return struct.pack(">d", float(v))
+    """GDSII REAL8 编码（v0.9.170 修复 · W3-2 互操作实测抓出的真 bug）。
+
+    GDSII 规范的实数**不是** IEEE-754：1 bit 符号 + 7 bit 指数（excess-64，
+    基 16）+ 56 bit 尾数（十六进制小数 0.f）。旧实现 ``struct.pack(">d")``
+    写出的是 IEEE-754 双精度字节序 ⇒ LDA 自家解析器不读 UNITS 记录所以从未
+    暴露，但任何生态工具（gdstk / gdsfactory / KLayout）读到的物理尺度全错
+    （实测 40µm 波导被读成 785 单位）。
+
+    UNITS 记录两个实数都要走本编码器：db_in_user=0.001（1 DBU=1nm，用户单位
+    µm）· db_in_meters=1e-9。
+    """
+    if v == 0.0:
+        return b"\x00" * 8
+    sign = 0x80 if v < 0 else 0x00
+    x = abs(v)
+    e = 0
+    while x >= 1.0:            # 归一化到 1/16 ≤ x < 1（x = 0.f × 16^e）
+        x /= 16.0
+        e += 1
+    while x < 0.0625:
+        x *= 16.0
+        e -= 1
+    expo = e + 64
+    if expo < 0 or expo > 127:
+        raise OverflowError("GDSII REAL8 指数溢出: %r" % (v,))
+    mant = int(round(x * (1 << 56)))
+    if mant >= (1 << 56):      # 尾数进位（x 恰在 16^k 边界）
+        mant >>= 4
+        expo += 1
+        if expo > 127:
+            raise OverflowError("GDSII REAL8 指数溢出: %r" % (v,))
+    return bytes([sign | expo]) + mant.to_bytes(7, "big")
 
 
 def _ascii(s: str) -> bytes:
@@ -165,7 +196,10 @@ def gds_library(name: str, structures: Dict[str, List[bytes]]) -> bytes:
     chunks.append(_rec(0x00, 2, _int2(600)))       # HEADER（版本 600）
     chunks.append(_rec(0x01, 0, b""))              # BGNLIB
     chunks.append(_rec(0x02, 6, _ascii(name)))     # LIBNAME
-    chunks.append(_rec(0x03, 5, _real8(DBU) + _real8(1.0 / DBU)))  # UNITS
+    # UNITS：(DBU 于用户单位, DBU 于米) = (0.001, 1e-9)。🔴 旧版第二值写
+    # 1/DBU=1000（语义错位：把「每用户单位 DBU 数」倒过来当米数）⇒ 生态工具
+    # 读出的物理尺度全错（gdstk 实测 40µm 读成 785）。v0.9.170 修复。
+    chunks.append(_rec(0x03, 5, _real8(DBU) + _real8(1e-9)))  # UNITS
     for sname, elements in structures.items():
         chunks.append(_rec(0x05, 0, b""))          # BGNSTR
         chunks.append(_rec(0x06, 6, _ascii(sname)))  # STRNAME

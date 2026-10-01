@@ -25,7 +25,7 @@
 | `lda/lda_webui/` | 零依赖后端 + 静态控制台 | 健全（app.py / routes.py / static/index.html） |
 | 根 `lda/` | benchmarks.py / golden.py / verification_adapters.py + **272 个 run_*_smoke.py 平铺** | 平铺问题见 C3 |
 
-规模：`lda/` 下 **686** 个 .py 模块；CI core 259 条（run_ci_regression.py CORE_SMOKES 编排）。
+规模：`lda/` 下 **686** 个 .py 模块；CI core 260 条（run_ci_regression.py CORE_SMOKES 编排）。
 
 ---
 

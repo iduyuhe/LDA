@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.9.170（2026-10-02 · **阶段 3 · 主权变硬证据（W3-1 交叉矩阵扩格入电子域 + W3-2 生态互操作抓出真 bug）** · 账本 **476 不变** · 独立率 95.59% 持平 · CI core **259 → 260（补登记）**）
+
+### 触发：把「主权」从声明变成行业工具能验证的硬证据
+
+- **W3-1 · 交叉验证矩阵 20 → 22 格 · 首次跨入电子域（ecore）**（`run_cross_solver_matrix_smoke.py` 实测 ALL GREEN · 判据 D 17 格）：
+  - 新增 `X18-RC-SETTLE`（一阶 RC 建立电路 · CDAC 单元）：ref=闭式指数 `V_f−(V_f−V_0)e^{−t/τ}`，cand=ecore `mna.Circuit.solve_transient`（后向欧拉伴随模型 + 牛顿）。扫 n_steps 残差 **1.068e-2 → 2.270e-3 → 5.396e-4 严格单调降**（O(dt) 一阶收敛）⇒ `convergent` 有判据 D。
+  - 新增 `M4-VTH-PDE`（MOSCAP 阈值电压）：ref=`device_pde.physics_vth_closed`（Sze 完整闭式 · golden-A），cand=`cross_check_vth` 的 1D 自洽泊松 PDE 数值解（T1 内核 · `guard_t1_not_oracle` 接线）。扫 dx_if_nm 残差 **1.978584e-6 逐位恒值**（Δrel=0）⇒ `model_limited` **无判据 D 如实登记**；0.125nm 处残差反升至 8.81e-6（自洽迭代数值地板）已如实记入 note，取值段只取平稳段。
+  - `CELL_DOMAIN` 升**三域显式表**（photonic / quantum / **electronic**）；判据 ⑦b 扩为「互斥且并集 == 全部注册格（无未知域值）」、⑦c 扩为**三域各 ≥2 格**（防「标签≠行为」回归的显式表 + 双向完备口径同步覆盖第三域）。
+  - 突变探针 `scripts/p3_matrix_probe.py` 10 → **12 例**（新增 X18 n_steps 乱序反例 ⇒ 判据 D 必红；M4 dx 末档换 0.125nm ⇒ 残差平坦性必红）。
+- **W3-2 · 生态互操作（gdstk = gdsfactory 的 GDS I/O 后端）双向 ALL PASS**（`scripts/verify_gds_interop_gdstk.py` 入仓 · 可选依赖缺失时优雅跳过）：
+  - 🔴 **实测抓出并修复真产品 bug**（`lda_l2/gds_export.py`）：① `_real8` 误用 IEEE-754 `struct.pack(">d")` 写 GDSII 实数——规范要求 **excess-64 基-16** 1+7+56 格式；② UNITS 记录第二值语义错位：`1/DBU=1000` ⇒ 应为 **DBU 米数 1e-9**（DBU=1nm）。🔴 根因即「门禁只管它看得见的集合」：LDA 自家 `parse_gds_polygons` 不读 UNITS 记录（坐标 ×1e-3 硬编码）⇒ 从未暴露，而**任何生态工具读出的物理尺度全错**（gdstk 实测 40µm 波导读成 785 单位）。
+  - 修复后双向验证：**方向 A**（LDA 导出 → gdstk 读回）单元名/元素数/层号/PATH 线宽/BOUNDARY 包围盒 dev=0µm 全对拍一致；**方向 B**（gdstk 写 gdsfactory 风格 GDS → LDA）`parse_gds_polygons` 解析 + 主权几何 DRC：合法版图全绿、线宽 0.05µm<0.12µm 违规必判 FAIL。
+  - 受 GDS 字节变化影响的门禁全量回归绿：`run_gds_smoke`（D-14）· `run_gdsfactory_bridge_smoke`（3/0）· `run_hier_gds_smoke`（17/17）· `run_bragg_gds_smoke`（15/0）· `run_design_tapeout_smoke`（46/0，sha256 双端同算无硬编码）。
+- 🔴 **CI core 259 → 260（补登记，存量漂移收口）**：`run_ecore_e19_smoke` 于 v0.9.169 当日接线入 `CORE_SMOKES` 时漏走三同步；`run_count_consistency_smoke` 实测 **2 FAIL**（README「259」≠260 · CONTRIBUTING「259」≠260）抓到后随本版一并修正，同步 CONTRIBUTING `--tag core` 注释 253 → 260。⇒ 账本纪律：加 CI 成员必须走「README 顶行 / 当前账本段 / CONTRIBUTING / pyproject / CHANGELOG」五处。
+- 顺带：`_p_fresnel` 既有未用导入（pyflakes F401）清除；矩阵门禁新报告 `lda/reports/cross_solver_matrix_report.json`（22 格）。
+
 ## v0.9.169（2026-10-01 · **E18-e 收官补 · 前端取值路径门禁（血案 #32 机器化）** · 账本 **476 不变** · 独立率 95.59% 持平 · CI core **258 → 259**）
 
 ### 触发：把「靠人肉在生产页上翻」的那一层交给机器

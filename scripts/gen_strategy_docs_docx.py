@@ -45,7 +45,7 @@ DOCS_SPEC = [
             "Gitee gitee.com/i4hub/LDA · GitHub github.com/iduyuhe/LDA",
             "上海杜特企业管理咨询有限公司",
         ],
-        "keys": ["476", "95.59%", "259", "B458", "E1", "13311602075",
+        "keys": ["476", "95.59%", "260", "B458", "E1", "13311602075",
                  "MESH8", "TOPS", "gdsfactory", "上海杜特企业管理咨询有限公司"],
     },
     {
@@ -59,7 +59,7 @@ DOCS_SPEC = [
             "联系人 杜玉河 · 13311602075 · gongyhlw · duyuhe@shdute.cn",
             "Gitee gitee.com/i4hub/LDA · GitHub github.com/iduyuhe/LDA",
         ],
-        "keys": ["476", "95.59%", "259", "1000 万", "599", "1999", "4999",
+        "keys": ["476", "95.59%", "260", "1000 万", "599", "1999", "4999",
                  "13311602075", "TOPS", "尚无任何真实付费客户", "上海杜特企业管理咨询有限公司"],
     },
 ]

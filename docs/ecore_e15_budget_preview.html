@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LDA 电子计算征程 E15 · 端到端误差预算链</title>
+<style>
+ body{margin:0;background:#f6f8fb;color:#1f2937;font:14.5px/1.7 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+ .wrap{max-width:960px;margin:0 auto;padding:32px 20px 64px}
+ h1{font-size:23px;margin:0 0 6px}
+ .sub{color:#6b7280;font-size:13px;margin-bottom:22px}
+ h2{font-size:17px;margin:30px 0 10px;padding-left:10px;border-left:4px solid #185FA5}
+ .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+ .k{background:#fff;border:1px solid #e3e8ef;border-radius:10px;padding:12px 14px}
+ .k .n{font-size:22px;font-weight:700;color:#185FA5}
+ .k .l{font-size:12px;color:#6b7280;margin-top:2px}
+ table{width:100%;border-collapse:collapse;background:#fff;font-size:13.5px;border:1px solid #e3e8ef;border-radius:10px;overflow:hidden}
+ th,td{padding:8px 10px;border-bottom:1px solid #eef2f7;text-align:left}
+ th{background:#eef4fb;font-weight:600}
+ td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+ td.src{color:#6b7280;font-size:12px}
+ code{background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:12.5px}
+ .bar{display:inline-block;height:10px;border-radius:5px;min-width:2px;vertical-align:middle}
+ .note{background:#fffbeb;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:10px;padding:12px 16px;margin:14px 0;font-size:13.5px}
+ .ok{background:#f0fdf7;border:1px solid #a7e8cf;border-left:4px solid #0f6e56;border-radius:10px;padding:12px 16px;margin:14px 0;font-size:13.5px}
+ .foot{color:#6b7280;font-size:12px;text-align:center;margin-top:36px;line-height:1.8}
+</style></head><body><div class="wrap">
+
+<h1>电子计算征程 E15 · 端到端误差预算链</h1>
+<div class="sub">把 E1–E14 走过路的四类误差合成一条链 —— 回答「这颗阵列实际几个有效位」与「给定精度能做多大」。
+数据实时取自 <code>lda_l2/ecore/budget.py</code>（只读消费 E7/E8/E9/E14 接口，不改任何既有默认值）。</div>
+
+<div class="kpi">
+  <div class="k"><div class="n">4.622</div><div class="l">8×8 输出有效精度（最坏口径）</div></div>
+  <div class="k"><div class="n">4.0601%</div><div class="l">8×8 全链最坏相对误差</div></div>
+  <div class="k"><div class="n">N≤12</div><div class="l">全链 5% 预算可及上界</div></div>
+  <div class="k"><div class="n">N≤18</div><div class="l">仅 IR drop 口径（E9 原值）</div></div>
+</div>
+
+<h2>一、8×8 误差预算分解（六项 · 统一到「相对满量程 %」）</h2>
+<table>
+<thead><tr><th>误差项</th><th>类别与合成方式</th><th style="text-align:right">相对 %FS</th><th>量级</th><th>来源</th></tr></thead>
+<tbody><tr><td><code>ir_drop</code></td><td style="color:#185FA5">系统性（代数 Σ）</td><td class="num">0.87897%</td><td><span class="bar" style="width:100.0%;background:#185FA5"></span></td><td class="src">E7/E9</td></tr><tr><td><code>device_mismatch</code></td><td style="color:#993C1D">随机（RSS → kσ）</td><td class="num">0.59524%</td><td><span class="bar" style="width:67.7%;background:#993C1D"></span></td><td class="src">E8/E9</td></tr><tr><td><code>adc_quantization</code></td><td style="color:#0F6E56">有界（Σ → √3）</td><td class="num">0.19531%</td><td><span class="bar" style="width:22.2%;background:#0F6E56"></span></td><td class="src">E3</td></tr><tr><td><code>row_driver_load</code></td><td style="color:#185FA5">系统性（代数 Σ）</td><td class="num">0.79916%</td><td><span class="bar" style="width:90.9%;background:#185FA5"></span></td><td class="src">E14</td></tr><tr><td><code>dac_inl</code></td><td style="color:#0F6E56">有界（Σ → √3）</td><td class="num">0.01035%</td><td><span class="bar" style="width:1.2%;background:#0F6E56"></span></td><td class="src">E14</td></tr><tr><td><code>adc_sar</code></td><td style="color:#0F6E56">有界（Σ → √3）</td><td class="num">0.39062%</td><td><span class="bar" style="width:44.4%;background:#0F6E56"></span></td><td class="src">E14</td></tr></tbody></table>
+<div class="note">
+口径桥：<code>1 LSB @ k bit = 100/2^k %FS</code>（8 bit ⇒ 0.390625%）。三类**不可直接相加** ——
+系统性项代数相加、随机项 RSS 后取 kσ、有界项代数相加（典型值再除以 √3）。
+合成律：<code>worst = Σsys + 3σ_tot + Σbnd</code>、<code>typical = Σsys + σ_tot + Σbnd/√3</code>。
+</div>
+
+<h2>二、精度 vs 规模（5% 预算）</h2>
+<table>
+<thead><tr><th style="text-align:right">N</th><th style="text-align:right">全链 worst</th><th>量级</th>
+<th style="text-align:right">有效位数(worst)</th><th style="text-align:right">有效位数(typ)</th><th>主导项</th></tr></thead>
+<tbody><tr><td class="num"><b>8</b></td><td class="num">4.0601%</td><td><span class="bar" style="width:4.8%;background:#185FA5"></span></td><td class="num"><b>4.622</b></td><td class="num">5.256</td><td>device_mismatch</td></tr><tr><td class="num"><b>16</b></td><td class="num">6.4120%</td><td><span class="bar" style="width:7.6%;background:#185FA5"></span></td><td class="num"><b>3.963</b></td><td class="num">4.233</td><td>ir_drop <b style="color:#993C1D">← 交叉点</b></td></tr><tr><td class="num"><b>32</b></td><td class="num">16.0547%</td><td><span class="bar" style="width:19.1%;background:#185FA5"></span></td><td class="num"><b>2.639</b></td><td class="num">2.717</td><td>ir_drop</td></tr><tr><td class="num"><b>64</b></td><td class="num">39.4115%</td><td><span class="bar" style="width:46.8%;background:#185FA5"></span></td><td class="num"><b>1.343</b></td><td class="num">1.368</td><td>ir_drop</td></tr><tr><td class="num"><b>128</b></td><td class="num">67.0083%</td><td><span class="bar" style="width:79.6%;background:#185FA5"></span></td><td class="num"><b>0.578</b></td><td class="num">0.589</td><td>ir_drop</td></tr><tr><td class="num"><b>256</b></td><td class="num">84.1844%</td><td><span class="bar" style="width:100.0%;background:#185FA5"></span></td><td class="num"><b>0.248</b></td><td class="num">0.256</td><td>ir_drop</td></tr></tbody></table>
+<div class="ok">
+🔴 <b>本段最有价值的结论 —— 主导项交叉点</b>：<b>N≤8 由「器件失配」主导</b>
+（失配 σ ∝ 1/√N ⇒ 小 N 更差）；<b>N≥16 由「IR drop」主导</b>（∝ N² 爆炸）。
+⇒ 设计指令：<b>小阵列先治失配（器件面积 / 校准），大阵列先治 IR drop（驱动架构 / 金属）</b>。
+</div>
+
+<h2>三、可及规模上界：全链口径 vs 仅 IR drop 口径</h2>
+<table>
+<thead><tr><th>口径</th><th>方法</th><th style="text-align:right">5% 预算 N_max</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td><b>全链（本段）</b></td><td><code>scan</code></td><td class="num"><b>12</b></td>
+<td>六项误差全部计入；用<b>扫描</b>而非二分（<code>worst(N)</code> 未必单调）</td></tr>
+<tr><td>仅 IR drop（E9）</td><td><code>delegated_to_E9</code></td><td class="num">18</td>
+<td>本段<b>直接委托</b> E9 ⇒ 逐值相等（门禁 G7 守着）</td></tr>
+</tbody></table>
+<div class="note">
+🔴 <b>E9 的「5% ⇒ N≤18」是乐观的</b>：它只算了 IR drop。加入失配 + 行驱动 + 转换器后，
+同样 5% 预算只能到 <b>N≤12</b>（严格 33%）。<br/>
+这正是「把 14 段串成一个答案」的价值 —— <b>单看任何一段都得不出这个数</b>。
+</div>
+
+<h2>四、诚实边界</h2>
+<div class="note">
+① 🔴 <code>output_effective_bits</code> = <code>log2(100/最坏相对误差[%])</code>，是<b>本项目自定义量，
+不是 IEEE ENOB</b>（ENOB 含噪声 + 谐波 + 直流非线性、由 FFT 谱定义）。<br/>
+② <b>只覆盖静态</b>：给定权重与输入的静态精度 —— 不含时序 / 动态 / 建立时间 / 采样率 /
+时钟抖动 / 热梯度空间分布 / 老化漂移 / 电源噪声。<br/>
+③ 合成律是<b>保守工程口径</b>，<b>不是严格概率保证</b>（严格需分布假设与卷积）；
+<code>typical</code> 的 <code>Σb/√3</code> 假设均匀分布。<br/>
+④ 参数为公开典型量级占位（<b>非 PDK</b>）；器件侧仍 <b>DD 框架 + 常数迁移率</b>；
+<b>不报 TOPS / TOPS-W / fJ/op</b>。<br/>
+⑤ 🔴 <b>保护性约束</b>：本模块<b>只读消费</b> E7/E8/E9/E14 接口，<b>不改</b>任何既有默认值。
+</div>
+
+<div class="foot">
+LDA · 开源 Agent-native 光 / 量 / 电子 EDA（MIT）· 电子计算征程 E15（D-178…D-180）<br/>
+数据源：<code>lda/lda_l2/ecore/budget.py</code> · 门禁：<code>lda/run_ecore_e15_smoke.py</code>（20 判据 + 6 突变探针）
+</div>
+</div></body></html>

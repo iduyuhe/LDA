@@ -200,6 +200,15 @@ from .periphery import (
     max_scale_with_driver, driver_scale_table, row_load_conductance,
     system_chain, row_system_error,
 )
+from .budget import (
+    SYSTEMATIC, RANDOM, BOUNDED, CATEGORIES,
+    DEFAULT_K_SIGMA, DEFAULT_ADC_BITS, DEFAULT_DAC_BITS, DEFAULT_SCAN_HI,
+    lsb_to_rel_pct, rel_pct_to_lsb, output_effective_bits,
+    make_term, combine, dominant_term,
+    cell_conductance, row_segment_resistance, collect_terms,
+    error_budget_report, budget_vs_n, max_scale_full_chain,
+    BUDGET_DISCLOSURE, budget_self_check,
+)
 from .device_2d import (
     DEVICE_2D_DISCLOSURE,
     LG_NM_DEFAULT as DEVICE_2D_LG_NM,
@@ -397,6 +406,14 @@ __all__ = [
     "max_scale_with_driver", "driver_scale_table", "row_load_conductance",
     "system_chain", "row_system_error",
     "DEVICE_TRANSPORT_DISCLOSURE",
+    # —— E15（D-178…D-180）端到端误差预算链
+    "SYSTEMATIC", "RANDOM", "BOUNDED", "CATEGORIES",
+    "DEFAULT_K_SIGMA", "DEFAULT_ADC_BITS", "DEFAULT_DAC_BITS", "DEFAULT_SCAN_HI",
+    "lsb_to_rel_pct", "rel_pct_to_lsb", "output_effective_bits",
+    "make_term", "combine", "dominant_term",
+    "cell_conductance", "row_segment_resistance", "collect_terms",
+    "error_budget_report", "budget_vs_n", "max_scale_full_chain",
+    "BUDGET_DISCLOSURE", "budget_self_check",
 ]
 
 # 征程入口披露（对外引用须携此诚实边界）
@@ -417,6 +434,7 @@ ECORE_DISCLOSURE: dict = {
 
     "e13_scope": "E13 2D MOS 漂移扩散输运（I–V / 亚阈值摆幅 —— 把 E12 的 G-K「不含输运 ⇒ 不产 I-V」关掉）：平台新增 `lda_solver/mos_2d_transport.py`（**Si-only 掩码**稳态连续性（Scharfetter–Gummel 离散；氧化层节点逐出未知量集 ⇒ Si↔SiO₂ 界面自然 Neumann；y 网格非均匀 ⇒ 逐边取间距）+ **接触准费米势 BC**（φ_n = φ_p = V_c ⇒ n·p = n_i²，统一式自动给出 n⁺ 区 n=N_SD / p 区 p=N_A）+ Gummel 交替（非线性泊松 ⟷ 连续性）+ 终端电流（SG 守恒截面 · 源≡漏））+ 本包 `device_transport.py`（量纲桥复用 E11-c + G1–G6 判据 + 能力闭合表）。🔴 **golden 双锚**：**SS 热极限 `(kT/q)·ln10 = 59.53 mV/dec`（物理定律锚 · 不等式，数值解不得突破）** 与 **教科书闭式 `(kT/q)ln10·(1+Cd/Cox)`（含体效应）** ⇒ 长沟道（1 µm）数值 SS **68.08 ⟷ 闭式 66.41 mV/dec（rel 2.5%）**；栅长趋势 L↓ ⇒ SS↑（65 nm **232** → 100 nm 88.0 → 250 nm 69.5 → 1 µm 68.1）与 E12 的 roll-off/DIBL **同向**；电流守恒（大电流点 rel 5.4e-5）；输出特性单调且趋饱和；**V_th 双法交叉**（恒流法 0.2475 ⟷ E12 表面势法 0.3241 V，差 76.6 mV；**两法均 `is_oracle=False`**，互不充当 ORACLE）。🔴 **仍为漂移扩散（DD）框架**：不含量子修正 / 速度饱和 / 带间与栅隧穿 / 弹道输运；**迁移率为常数**（无场依赖退化 / 无表面散射）⇒ `I_on` 绝对值**不可当器件性能**（深亚阈值 SS 不受影响，但 I_on 偏高、I_off 偏低）；无 LDD/halo/应变/栅重叠；参数为公开典型量级占位（非 PDK）；2D 仿真 = **每单位宽度电流（A/m）**；不报 TOPS/TOPS-W/fJ/op。",
     "e14_scope": "E14 真 DAC / ADC / 行驱动外设（把「设计链」补成「系统链」）：E1–E13 的数据通路里 DAC/ADC 一直只是**行为级均匀量化模型**（`mvm_datapath.quantize_uniform`）、行线由**理想电压源**钉住（`crossbar_mvm.py`）—— 本段补上两端转换器与行驱动的**真电路**。① `converter.py`：**R-2R 梯形 DAC**（无源电阻网络 + **NMOS 模拟开关** ⇒ 暴露导通电阻 `R_on` 对精度的限制：8 bit 全码扫描 max|Δ| **0.0265 LSB** · `R_on`=6.4 Ω）与 **SAR + CDAC 电荷重分配 ADC**（真电容阵列 + 真瞬态 + 逐次逼近逻辑；🔴 **电容 DC 开路 ⇒ 必须走瞬态**：后向欧拉伴随模型给出 `Σ C(V_top−V_bk) = const` 即**电荷严格守恒**，一步瞬态 = 精确电荷守恒解）+ **采样保持 RC**（瞬态 ⟷ 后向欧拉离散闭式 rel **5.6e-16**，与连续闭式偏差 **O(dt)** 且随步长加密单调降）。② `periphery.py`：**行驱动闭式** `v_load = v_in·A/(1+A+R_ol/R_L)`（含增益误差与**闭环输出电阻** `R_oc=R_ol/(1+A)`；与 **MNA 真实电路**（VCVS 闭环 + R_ol + R_L）对拍 rel 1.4e-16）+ 🔴 **把 `R_oc` 串进 E9 的三对角 IR-drop 模型** ⇒ **可及规模上界重算**（5% 预算：理想源 N≤**20** → `R_oc`=1 Ω N≤17 → 5 Ω N≤**10** → 20 Ω N≤**3**）—— **器件级参数第一次反馈到规模律**；`R_oc = 0` 时与 E9 `array_scale.row_line_profile` **逐位一致**（max|Δ| = 0，极限交叉核对）。③ **端到端系统链**（DAC→行驱动→阵列→TIA→ADC）与 **行系统项**：驱动负载调整引入**按行增益误差**（行负载随行权重和变化 ⇒ 行增益**离散** 8.889e-4；理想驱动下离散 = 0）—— 与 E8 的**列系统项**同型，**不会被 MC 平均掉**。🔴 **诚实体积**：**比较器是「有限增益 + 失调 + 噪声」判决器抽象、非晶体管级**（MNA 无非线性饱和器件，E2 已证朴素差分对无法闭合高增益环路）；**CDAC 底板开关用理想电压源抽象**（DAC 侧用真 NMOS 开关以暴露 R_on）；行驱动器为 **VCVS + 开环输出电阻的宏模型**；电阻/电容为理想值（不建匹配网络）；参数为公开典型量级占位（非 PDK）；不做流片；不报 TOPS/TOPS-W/fJ/op。🔴🔴 **平台缺陷登记（本段发现 · 不修 mna）**：`mna.Circuit.vcvs` 的 **docstring 声明** `V_out = gain·(V_cp−V_cn)`，但 `_stamp_dc` 实际给出 **`gain·(V_cn−V_cp)`（极性相反）** —— 按保护性约束（E1–E13 全部已上线数字建立其上，含 E2 ideal-TIA 的虚地电路）**不改 mna**，改为**适配 + 显式登记 + 判据锁死**；E2/E3 结论仍成立（TIA 虚地是 `|A|→∞` 极限，符号只改变放大器输出定向、不改变虚地机制）。",
+    "e15_scope": "E15 端到端误差预算链（**把已走过的四类误差合成一条链**）：E1–E14 每段都给了**单点误差**，但**从未合成过**，且口径互不相同（相对 % / σ / LSB）、性质未分类（系统性 / 随机 / 有界）。本段新增 `budget.py`（ecore 第 19 个模块 · **不吃新物理**，只读消费既有接口）：① **口径桥** —— 统一锚点 `1 LSB @ k bit = 100/2^k %FS`（自洽判据 `bits_eff(lsb_to_rel_pct(k)) == k`，纯代数、无需任何模块）；② **三分类合成律** —— 系统性 **Σ**（代数）/ 随机 **RSS(→kσ)** / 有界 **Σ(→√3 折减)**，`worst = Σsys + kσ_tot + Σbnd`、`typical = Σsys + σ_tot + Σbnd/√3`（🔴 简单相加是错的，全用 RSS 也是错的）；③ **输出有效精度位数**（🔴 自定义量，**不是 IEEE ENOB**）· **误差主导项分析**（给设计者的行动指令）· **全链预算下的可及规模上界**（泛化 E9：仅 IR drop 时**委托** E9 ⇒ 逐值相等；全链时用**扫描而非二分**，因 `worst(N)` 未必单调）。🔴 **关键实测**：**8×8 ⇒ worst 4.0601% ⇒ 有效精度仅 4.622 位**（不是 8 位）；**精度 vs N**：N=8 **4.622** → 16 3.963 → 32 2.639 → 64 1.343 → 128 0.578 → 256 **0.248**；🔴 **主导项交叉点** —— N≤8 由**器件失配**主导（44.0%）、N≥16 由 **IR drop** 主导；🔴 **全链上界（5% 预算）N≤12**，而仅 IR drop 口径为 **N≤18** ⇒ **E9 原来的「5% ⇒ N≤18」是乐观的**（漏计失配 / 行驱动 / 转换器后只能到 12）。🔴 **诚实边界**：`output_effective_bits` **非 IEEE ENOB**（口径 = `log2(100/最坏相对误差[%])`）；**只覆盖静态**（不含时序 / 动态 / 采样率 / 时钟抖动 / 热梯度空间分布 / 老化 / 电源噪声）；合成律是**保守工程口径**（`worst = Σsys + kσ + Σbnd`），**不是严格概率保证**；`typical` 的 `Σb/√3` 假设均匀分布；参数为公开典型量级占位（**非 PDK**）；器件侧仍 **DD 框架 + 常数迁移率**；**不报 TOPS/TOPS-W/fJ/op**。🔴 **保护性约束**：本段**只读消费** E7/E8/E9/E14 接口，**不改**任何既有默认值（门禁 G8 逐位守住）。",
     "redline": "红线 = **分层口径**（2026-09-11 §八§九 · 2026-09-23 逐步解锁）：平台**器件级 T1 内核已解锁**"
                "（`lda_solver/drift_diffusion_1d/2d`）；**T2 工艺真值 / 工艺角 / 流片永久锁**。"
                "**本包主动限定在电路级**——这是设计取舍，不是红线要求。",

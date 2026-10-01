@@ -196,6 +196,19 @@ ECORE_CAPABILITY_MANIFEST = [
                     "PERIPHERY_DISCLOSURE", "periphery_self_check"],
         "introduced_by": "D-174…D-176 (E14)", "guard": "run_ecore_e14_smoke.py",
     },
+    {
+        "capability": "端到端误差预算链（口径桥 LSB ⟷ 相对 % + 三分类合成律（系统 Σ / 随机 RSS+kσ / "
+                      "有界 Σ 与 √3）+ 输出有效精度位数 + 误差主导项分析 + 全链预算可及规模上界）",
+        "module": "lda_l2.ecore.budget",
+        "symbols": ["SYSTEMATIC", "RANDOM", "BOUNDED", "CATEGORIES",
+                    "DEFAULT_K_SIGMA", "DEFAULT_ADC_BITS", "DEFAULT_DAC_BITS",
+                    "DEFAULT_SCAN_HI", "lsb_to_rel_pct", "rel_pct_to_lsb",
+                    "output_effective_bits", "make_term", "combine", "dominant_term",
+                    "cell_conductance", "row_segment_resistance", "collect_terms",
+                    "error_budget_report", "budget_vs_n", "max_scale_full_chain",
+                    "BUDGET_DISCLOSURE", "budget_self_check"],
+        "introduced_by": "D-178…D-180 (E15)", "guard": "run_ecore_e15_smoke.py",
+    },
 ]
 
 

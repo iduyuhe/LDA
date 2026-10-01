@@ -1377,6 +1377,7 @@ CORE_SMOKES: List[str] = [
     # 电荷重分配 / 行驱动 R_oc 耦合规模律 / 端到端系统链）—— 把「设计链」补成「系统链」+
     # 6 条突变探针；并**登记** `mna.vcvs` 极性与 docstring 相反的平台缺陷。
     "run_ecore_e14_smoke.py",
+    "run_ecore_e15_smoke.py",
     "run_webui_entry_smoke.py",
 ]
 
@@ -2204,6 +2205,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e13_smoke.py": 300.0,
     # E14 电子计算征程 真转换器/行驱动门禁（D-174…D-176）· 实测上界见基线行（秒级）
     "run_ecore_e14_smoke.py": 300.0,
+    # E15 电子计算征程 端到端误差预算链门禁（D-180）· 实测 ~0.9s ⇒ 余量 333×
+    "run_ecore_e15_smoke.py": 300.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     "run_webui_entry_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）

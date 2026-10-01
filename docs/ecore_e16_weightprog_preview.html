@@ -1,0 +1,132 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<title>LDA · E16 权重编程通路（预览）</title><style>
+body{margin:0;padding:28px 32px;background:#f6f7f9;color:#1f2430;
+ font:14px/1.65 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:26px 0 10px;
+ padding-left:9px;border-left:4px solid #185FA5}
+.sub{color:#5b6472;font-size:12.5px;margin-bottom:18px}
+.card{background:#fff;border:1px solid #e3e6ea;border-radius:10px;padding:16px 18px;margin:12px 0}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:13px;margin:6px 0 2px}
+th,td{border:1px solid #e3e6ea;padding:6px 9px;text-align:left}
+th{background:#eef2f7;font-weight:600}
+td.v{font-variant-numeric:tabular-nums}
+.note{color:#5b6472;font-size:12.5px;margin-top:8px}
+.warn{background:#fff8ed;border-left:4px solid #d97706;padding:10px 12px;margin:10px 0;font-size:13px}
+.ok{background:#f0fdf4;border-left:4px solid #16a34a;padding:10px 12px;margin:10px 0;font-size:13px}
+.bad{background:#fef2f2;border-left:4px solid #dc2626;padding:10px 12px;margin:10px 0;font-size:13px}
+.bar{background:#eef2f7;border-radius:4px;height:9px;overflow:hidden;margin-top:3px}
+.bar span{display:block;height:100%;border-radius:4px}
+.kpi{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0}
+.kpi div{flex:1 1 150px;background:#fff;border:1px solid #e3e6ea;border-radius:9px;
+ padding:11px 13px;text-align:center}
+.kpi b{display:block;font-size:20px;color:#185FA5;font-variant-numeric:tabular-nums}
+.kpi small{color:#5b6472;font-size:11.5px}
+svg{background:#fff;border:1px solid #e3e6ea;border-radius:9px}
+code{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:12.5px}
+.foot{color:#7a8290;font-size:12px;margin-top:24px;border-top:1px solid #e3e6ea;padding-top:12px}
+</style></head><body>
+<h1>E16 · 权重编程通路</h1>
+<div class="sub">LDA 电子计算征程 D-181…D-183 · <code>ecore/weight_prog.py</code>（第 20 模块）·
+门禁 25 判据 + 6 突变探针 ⇒ CI core 255 → 256 · 账本 476 不变</div>
+
+<div class="warn"><b>补的是什么缺口：</b>E1–E15 全程把权重当<b>已知且精确</b>的输入
+（<code>crossbar_mvm</code> 直接吃电导/栅压 · <code>mvm_datapath</code> 用 <code>G=g_base+s·W</code>
+解析算出 · <code>layout</code> 的权重栅只是<b>对外端口</b>）——<b>「写入动作」从未被建模</b>。
+本段补上它：<b>写-校验</b>动力学 + 五个闭式 golden + 接 E15 误差预算链。</div>
+
+<div class="kpi">
+  <div><b>0.7001%</b><small>写入噪声地板 σ_cell（闭式）</small></div>
+  <div><b>0.6992%</b><small>同上 MC 实测（rel 0.13%）</small></div>
+  <div><b>13</b><small>到 1% 容差所需脉冲数</small></div>
+  <div><b>93.80%</b><small>良率 (1−p)^64 @ p=1e-3</small></div>
+</div>
+
+<h2>① 核心结论：写入噪声有一个由「单脉冲噪声」决定的硬地板</h2>
+<div class="card">
+<p><code>g ← g + α(g*−g) + η</code>，η ~ N(0, σ_p²) ⇒
+ <code>Var(e_∞) = σ_p²·Σ_{j≥0}(1−α)^{2j} = σ_p²/(α(2−α))</code> ⇒
+ <b>σ_∞ = σ_p/√(α(2−α))</b>（无穷级数<b>精确解</b>）。</p>
+<p>闭式 <b>0.700140%</b> ⟷ 4000-trial MC <b>0.699222%</b>（rel 0.13%，方法学独立）。
+⇒ <code>tol_rel &lt; σ_∞</code> 时<b>期望意义上不可达</b> —— <b>越校验越白校验</b>。</p>
+<div class="ok"><b>设计指令：</b>要把编程精度做上去，必须<b>降单脉冲噪声 σ_p</b>（脉冲整形 / 电流限制），
+<b>不是加脉冲数</b>。写-校验最多把地板抬升 <code>1/√(α(2−α))</code> = <b>1.400 倍</b>
+（σ_∞ ∈ [σ_p, σ_p/√(α(2−α))] = [0.5000%, 0.7001%]）。</div>
+<svg width="100%" height="180" viewBox="0 0 640 180">
+ <polyline fill="none" stroke="#185FA5" stroke-width="2" points="0,100.0 1,70.0 2,49.0 3,34.3 4,24.0 5,16.8 6,11.8 7,8.2 8,5.8 9,4.0 10,2.8 11,2.0 12,1.4 13,1.0 14,0.7 15,0.5 16,0.3 17,0.2 18,0.2 19,0.1 20,0.1"/>
+ <line x1="0" y1="99.3" x2="640" y2="99.3" stroke="#dc2626" stroke-dasharray="5 4" stroke-width="1.4"/>
+ <text x="6" y="87.3" font-size="11" fill="#dc2626">噪声地板 σ_∞=0.700%（不可逾越）</text>
+ <text x="6" y="172" font-size="11" fill="#5b6472">确定性轨迹 e_k = e0·(1−α)^k（k=0…20 · 纵轴 %）</text>
+</svg>
+</div>
+
+<h2>② 电平量化：误差是「绝对量」，界要用<b>平均电导</b>而不是最小电导</h2>
+<div class="card">
+<p>电平在窗口内<b>等间距</b> ⇒ 每个单元的量化误差<b>绝对值同为半步长</b>（与 g 无关）⇒
+ 输出相对误差界 = <code>half_step·Σ|x| / |Σ g_i x_i|</code> = <code>half_step / g_mean</code>。
+ <b>低电导单元的「大相对误差」在求和里并不放大。</b></p>
+<div class="bad"><b>本段血案：</b>初版取 <code>max_i(half_step/g_i)</code> ⇒ 界被放大 ~3×
+（1.0672% → 3.1744%），把预算结论整个带偏。探针 <b>C6</b> 专守此线。</div>
+<table><thead><tr><th>编程位数</th><th>电平项（输出口径）</th><th>8×8 合成 worst</th><th>有效精度</th></tr></thead>
+<tbody><tr><td>4 bit</td><td class="v">4.4824%</td><td class="v">8.69079%</td><td class="v"><b>3.5244 位</b></td></tr><tr><td>6 bit</td><td class="v">1.0672%</td><td class="v">5.27562%</td><td class="v"><b>4.2445 位</b></td></tr><tr><td>8 bit</td><td class="v">0.2637%</td><td class="v">4.47205%</td><td class="v"><b>4.4829 位</b></td></tr><tr><td>10 bit</td><td class="v">0.0657%</td><td class="v">4.27410%</td><td class="v"><b>4.5482 位</b></td></tr><tr><td>12 bit</td><td class="v">0.0164%</td><td class="v">4.22480%</td><td class="v"><b>4.5650 位</b></td></tr></tbody></table>
+<p class="note">8×8 实测电导窗口比 = <b>4.9998:1</b>（由 E3 口径 <code>g_base=1.5·max|W|·s</code> 导出，<b>非</b>器件窗口）；
+最低电导单元的<b>相对</b>电平误差 = <b>2.40%</b>（仅作告警，不进预算）。
+⇒ <b>≥8 位后收益饱和</b>（渐近 4.5706 位 = 纯模拟写入）——「多给几位电平」不是免费的午餐。</p>
+</div>
+
+<h2>③ 接 E15 误差预算链：8×8 有效精度 4.6223 → 4.2445 位</h2>
+<div class="card">
+<table><thead><tr><th>口径</th><th>worst</th><th>有效精度</th><th>主导项</th><th>新增项类别</th></tr></thead>
+<tbody><tr><td>E15 现状（四类误差）</td><td class="v">4.06012%</td><td class="v"><b>4.6223 位</b></td><td>device_mismatch</td><td>—</td></tr><tr><td>+ 模拟写入（仅写入残差）</td><td class="v">4.20838%</td><td class="v"><b>4.5706 位</b></td><td>device_mismatch</td><td>RANDOM σ/√N</td></tr><tr><td>+ MLC 6 位</td><td class="v">5.27562%</td><td class="v"><b>4.2445 位</b></td><td>device_mismatch</td><td>BOUNDED + RANDOM</td></tr><tr><td>+ MLC 8 位</td><td class="v">4.47205%</td><td class="v"><b>4.4829 位</b></td><td>device_mismatch</td><td>BOUNDED + RANDOM</td></tr></tbody></table>
+<p class="note">写入残差 = <b>RANDOM</b>（单元独立 ⇒ 被 1/√N 平均）·
+ 电平量化 = <b>BOUNDED</b>（<b>N 无关</b>）—— <b>分类决定它会不会被平均掉</b>，不是形式主义。</p>
+</div>
+
+<h2>④ 5% 预算的可及规模：12 → 11 → <b>无解</b></h2>
+<div class="card">
+<table><thead><tr><th>口径</th><th>n_max（5% 预算）</th></tr></thead><tbody>
+<tr><td>E15 默认</td><td class="v"><b>12</b></td></tr>
+<tr><td>+ 模拟写入</td><td class="v"><b>11</b></td></tr>
+<tr><td>+ MLC 6 位</td><td class="v" style="color:#dc2626"><b>1</b>（n_max=1 是「无 N≥2 可行」的哨兵值）</td></tr>
+</tbody></table>
+<div class="bad"><b>电平项是 N 无关的常量</b>（有界项不被 1/√N 平均）⇒
+ 6 位 MLC 下 5% 误差预算<b>连 2×2 阵列都不满足</b>。这是本段最强的架构结论。</div>
+</div>
+
+<h2>⑤ 漂移：共模可校准（不进预算），只有 ν 的离散才是精度上限</h2>
+<div class="card">
+<p>幂律 <code>g(t)/g0 = (t/t0)^(−ν)</code> · 重校准间隔闭式 <code>t_max = t0·(1−β)^(−1/ν)</code>。</p>
+<table><thead><tr><th>直方图 t (s)</th><th>g/g0</th><th>共模掉电导（<b>可被单次全局增益校准消除</b>）</th><th>ν 离散（<b>校准不掉</b>）</th></tr></thead>
+<tbody><tr><td>1</td><td class="v">1.0000</td><td class="v">0.00%</td><td class="v" style="color:#b45309">0.000%</td></tr><tr><td>10</td><td class="v">0.8913</td><td class="v">10.87%</td><td class="v" style="color:#b45309">0.345%</td></tr><tr><td>100</td><td class="v">0.7943</td><td class="v">20.57%</td><td class="v" style="color:#b45309">0.691%</td></tr><tr><td>1000</td><td class="v">0.7079</td><td class="v">29.21%</td><td class="v" style="color:#b45309">1.036%</td></tr><tr><td>10000</td><td class="v">0.6310</td><td class="v">36.90%</td><td class="v" style="color:#b45309">1.382%</td></tr><tr><td>100000</td><td class="v">0.5623</td><td class="v">43.77%</td><td class="v" style="color:#b45309">1.727%</td></tr></tbody></table>
+<table style="width:52%"><thead><tr><th>漂移预算 β</th><th>重校准间隔 t_max</th></tr></thead><tbody><tr><td>1%</td><td class="v">1.2226 s</td></tr><tr><td>5%</td><td class="v">2.7895 s</td></tr><tr><td>10%</td><td class="v">8.2253 s</td></tr></tbody></table>
+<div class="warn"><b>诚实边界：</b>ν = 0.05 为<b>公开典型量级占位（非 PDK）</b> ⇒
+ 上面的 t_max（β=5% ⇒ <b>2.7895 s</b>）是<b>参数推出的</b>，<b>不是普适断言</b>；换 ν 换数。
+ 结论的正确读法：<b>RRAM 类模拟 CIM 必须频繁重刷</b>。</div>
+</div>
+
+<h2>⑥ 良率与卡位：只影响尾部，不影响均值</h2>
+<div class="card">
+<p>良率 <code>(1−p)^N</code>：N=64 单元 · p=1e-3 ⇒ <b>0.9380</b>。
+ 端到端实测（600 trials，`stuck_p=0` 隔离两机制）：σ 实测 ⟷ 矩阵感知严格式 <b>rel 0.31%</b>。</p>
+<div class="bad">卡位（p=1e-3）只影响<b>尾部</b>：max 1.07% → <b>22.83%</b>、mean 0.47% → 1.53%、良率 <b>95.31%</b>
+ ⇒ <b>卡位是良率问题，不是均值精度问题</b> ⇒ 预算默认不含卡位（另设 <code>include_stuck</code>）。</div>
+</div>
+
+<h2>⑦ 保护性约束与诚实边界</h2>
+<div class="card">
+<div class="ok"><b>🔴 保护性约束：</b><code>budget.collect_terms</code> 新增的 <code>include_programming</code>
+ <b>默认 False</b> ⇒ <b>E15 已发布数字逐位不变</b>（8×8 worst <b>4.06012%</b> / bits <b>4.6223</b> / 5% 上界 N≤12）。
+ 门禁 <b>B12</b> 守住默认不变；探针 <b>C5</b> 专模拟「有人把默认改成 ON」⇒ 必红。
+ 同族纪律见 <code>NmosParams</code> / <code>mna.vcvs</code>。</div>
+<ul style="margin:8px 0 0 18px;padding:0">
+ <li>参数（α / σ_p / tol / ν / p_stuck）为<b>公开典型量级占位 · 非 PDK · 无实测锚</b> ⇒ 结论随参数变。</li>
+ <li>器件模型为<b>行为级</b>（比例修正 + 加性噪声），<b>不含</b>细丝动力学 / 脉冲宽度依赖 / 温度加速。</li>
+ <li>无 endurance / retention 联合退化；<b>只覆盖静态</b>（不含编程时间与能耗）。</li>
+ <li>共模漂移可被单次校准消除 ⇒ <b>不进预算</b>（一个能被单次校准消掉的项不是精度上限）。</li>
+ <li><b>不报 TOPS / TOPS-W / fJ/op</b>。</li>
+</ul>
+</div>
+
+<div class="foot">E16 门禁 25 判据 + 6 突变探针（全部实测能变红）· 模块自检 14/14 ·
+E15 门禁 20/20（自动成为本段的回归保护）· 能力清单 18→19 · 守护 scope e1~e16。<br/>
+LDA · 开源 Agent-native 光 / 量 / 电子 EDA（MIT）· 电子计算征程 E1–E16（D-150…D-183）。</div>
+</body></html>

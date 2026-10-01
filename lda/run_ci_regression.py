@@ -1378,6 +1378,12 @@ CORE_SMOKES: List[str] = [
     # 6 条突变探针；并**登记** `mna.vcvs` 极性与 docstring 相反的平台缺陷。
     "run_ecore_e14_smoke.py",
     "run_ecore_e15_smoke.py",
+    # E16（D-181…D-183）· **权重编程通路**（写-校验 · G-4 写入噪声地板 σ_p/√(α(2−α)) ·
+    # G-5 漂移与重校准间隔 · 良率 (1−p)^N · 差分对 · 接 E15 误差预算链）——
+    # 补上「权重怎么写进去」这一此前完全不存在的一环 + 6 条突变探针；
+    # 🔴 保护性约束：`budget.collect_terms(include_programming=…)` **默认 False**
+    #    ⇒ E15 已发布数字逐位不变（探针 C5 专守此线）。
+    "run_ecore_e16_smoke.py",
     "run_webui_entry_smoke.py",
 ]
 
@@ -2207,6 +2213,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e14_smoke.py": 300.0,
     # E15 电子计算征程 端到端误差预算链门禁（D-180）· 实测 ~0.9s ⇒ 余量 333×
     "run_ecore_e15_smoke.py": 300.0,
+    # E16 电子计算征程 权重编程通路门禁（D-181…D-183）· 实测 ~3.11s（600-trial 端到端 MC）
+    "run_ecore_e16_smoke.py": 300.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     "run_webui_entry_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）

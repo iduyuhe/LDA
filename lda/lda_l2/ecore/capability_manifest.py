@@ -209,6 +209,22 @@ ECORE_CAPABILITY_MANIFEST = [
                     "BUDGET_DISCLOSURE", "budget_self_check"],
         "introduced_by": "D-178…D-180 (E15)", "guard": "run_ecore_e15_smoke.py",
     },
+    {
+        "capability": "权重编程通路（写-校验动力学 · 电平量化 · 写入噪声地板 · 漂移与重校准 · "
+                      "良率 · 差分对 · 接 E15 误差预算链）",
+        "module": "lda_l2.ecore.weight_prog",
+        "symbols": ["program_levels", "level_lsb_rel", "level_error_bound_rel",
+                    "level_bound_in_output", "quantize_to_levels",
+                    "write_verify_closed", "iter_to_tolerance", "noise_floor_sigma",
+                    "write_verify_stochastic", "residual_sigma_out",
+                    "output_sigma_matrix_aware",
+                    "drift_factor", "drift_rel_pct", "recal_interval", "drift_curve",
+                    "yield_fraction", "stuck_error_bound_rel", "differential_pair",
+                    "canonical_weights", "program_array", "programming_error_matrix",
+                    "programming_budget_terms", "programming_report",
+                    "WEIGHT_PROG_DISCLOSURE", "weight_prog_self_check"],
+        "introduced_by": "D-181…D-183 (E16)", "guard": "run_ecore_e16_smoke.py",
+    },
 ]
 
 

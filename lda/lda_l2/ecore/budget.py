@@ -215,6 +215,8 @@ def collect_terms(n: int, m: Optional[int] = None, *,
                   row_load_rel: Optional[float] = None,
                   include_row_driver: bool = True,
                   include_converters: bool = True,
+                  include_programming: bool = False,
+                  prog_terms: Optional[Sequence[Dict]] = None,
                   dac_step: int = 1, sar_samples: int = 16) -> List[Dict]:
     """把四类误差源汇集成**统一口径（相对 %）**的误差项列表。
 
@@ -225,6 +227,8 @@ def collect_terms(n: int, m: Optional[int] = None, *,
       · `adc_quantization` —— 0.5 LSB（有界半宽）
       · `dac_inl`          —— E14 `dac_static_report().inl_lsb_max` × LSB%
       · `adc_sar`          —— E14 `sar_error_report().max_err_lsb` × LSB%
+      · `weight_prog_*`    —— **E16**（`include_programming=True` 时才出现；默认 **False** ⇒
+        已发布数字逐位不变。`prog_terms` 可注入以避免重复求解 / 解耦依赖）
 
     🔴 **`dac_step` 必须为 1（全码扫描）**：E14 `dac_static_report` 的 **DNL 只在相邻码上有定义**
     （内部 `if c1 - c0 != 1: continue`）⇒ `step > 1` 时 `dnl` 列表为空 ⇒ **`min()` on empty ⇒ ValueError**。
@@ -290,6 +294,16 @@ def collect_terms(n: int, m: Optional[int] = None, *,
         terms.append(make_term(
             "adc_sar", BOUNDED, float(adc_err_lsb) * lsb_to_rel_pct(adc_bits), "E14",
             note="SAR + CDAC 实测码误差（%d bits）" % int(adc_bits)))
+
+    # ⑦ 权重编程通路（E16）—— 可选注入
+    # 🔴 **默认 False**（保护性约束）：E15 的 8×8（4.06012% / 4.622 位）与 5% 上界（N≤12）
+    #    已发布并被门禁硬编码、被案例卡/物料/DOCX 引用 ⇒ **改默认 = 静默改掉已发布数字**。
+    #    本模块**不 import `weight_prog`**（由调用方构造 terms）⇒ 无环依赖。
+    if include_programming:
+        if prog_terms is None:
+            from . import weight_prog as WP          # 惰性导入（只在显式开启时才需要）
+            prog_terms = WP.programming_budget_terms(n, m)
+        terms.extend(list(prog_terms))
 
     return terms
 
@@ -364,6 +378,7 @@ def max_scale_full_chain(budget_pct: float, *, r_seg: Optional[float] = None,
                          scan_hi: int = DEFAULT_SCAN_HI,
                          k_sigma: float = DEFAULT_K_SIGMA,
                          ir_drop_only: bool = False,
+                         prog_terms_fn=None,
                          **kw) -> Dict:
     """**全链预算下的可及规模上界**（泛化 E9 `max_scale_for_budget`）。
 
@@ -373,10 +388,18 @@ def max_scale_full_chain(budget_pct: float, *, r_seg: Optional[float] = None,
     🔴 全链情形**用扫描而非二分**：因为 `worst(N)` 未必单调 ——
     IR drop ∝ N² **升**、失配 σ ∝ 1/√N **降**，合成曲线可能先降后升
     ⇒ **二分隐含的单调假设不成立，用二分会给错数**。扫描上界 `scan_hi` 显式披露。
+
+    🔴 **E16 权重编程（可选）**：`prog_terms_fn(n) -> List[Dict]` 给出**每个 N 专属**的
+    编程误差项（电平项依赖该 N 的权重分布 ⇒ **不能用固定 terms**）。
+    默认 `None` ⇒ 行为与 E15 完全一致（**逐位不变**）。
     """
     bp = float(budget_pct)
     if bp <= 0:
         raise ValueError("budget_pct 必须 > 0")
+    prog_on = bool(kw.pop("include_programming", False))
+    prog_fn = prog_terms_fn if prog_terms_fn is not None else kw.pop("prog_terms_fn", None)
+    if prog_fn is not None:
+        prog_on = True
     if r_seg is None:
         r_seg = row_segment_resistance(8, 8)
     if g is None:
@@ -407,8 +430,13 @@ def max_scale_full_chain(budget_pct: float, *, r_seg: Optional[float] = None,
     #    ⇒ 二分隐含的单调假设不成立。必须扫完才知道"最大的可行 N"。
     best, curve = 1, []
     for n in range(2, int(scan_hi) + 1):
+        kw_scan = dict(inject)
+        if prog_on:
+            # 🔴 每个 N 专属的编程项（电平项依赖该 N 的权重分布）
+            kw_scan["include_programming"] = True
+            kw_scan["prog_terms"] = list(prog_fn(n)) if prog_fn is not None else None
         agg = combine(collect_terms(n, n, r_seg=float(r_seg), g=float(g), vg=vg,
-                                    w_um=w_um, l_um=l_um, **inject),
+                                    w_um=w_um, l_um=l_um, **kw_scan),
                       k_sigma=k_sigma)
         curve.append((int(n), float(agg["worst_pct"])))
         if agg["worst_pct"] <= bp:

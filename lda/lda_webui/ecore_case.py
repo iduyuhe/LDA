@@ -47,7 +47,7 @@ __all__ = [
     "MISMATCH_FACTS", "SCALE_FACTS", "GATE_CHECKS_TOTAL", "PROBE_CHECKS_TOTAL",
     "DEVICE_PDE_FACTS", "DEVICE_LIMITS_FACTS", "DEVICE_2D_FACTS", "TIMING_FACTS",
     "DEVICE_TRANSPORT_FACTS", "DEVICE_PERIPHERY_FACTS", "BUDGET_FACTS",
-    "WEIGHT_PROG_FACTS",
+    "WEIGHT_PROG_FACTS", "COL_SHARE_FACTS",
     "crossbar_capacity", "quant_error_rel_bound", "layout_elements_flat",
     "layout_elements_hier", "hier_compression_ratio", "sheet_resistance_ohm_per_sq",
     "wire_resistance_ohm", "pelgrom_sigma_vth_mv", "pelgrom_sigma_beta_pct",
@@ -57,7 +57,7 @@ __all__ = [
 ]
 
 # ═══════════════════════════ 常量（与平台模块同源）═══════════════════════════
-CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E17 全链"
+CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E18 全链"
 
 #: 长沟道 NMOS 模型参数（E1 · D-150 · `lda_l2.ecore.mosfet.NmosParams` 默认值；公开典型量级占位）
 MOSFET_FACTS = {
@@ -635,6 +635,132 @@ TIMING_FACTS = {
 }
 
 
+#: E18 · 列侧共享与架构权衡（面积维度 · 全仓此前空白）
+COL_SHARE_FACTS = {
+    "process": {
+        "bits": 8, "c_unit_f": 1.0e-12, "cap_density_ff_per_um2": 2.0,
+        "adc_logic_area_um2": 800.0, "tia_area_um2": 400.0,
+        "mux_switch_area_um2": 25.0, "temperature_k": 300.0, "k_sigma": 3.0,
+        "non_pdk": True,
+    },
+    # ① 量级事实：为什么列侧**必须**共享
+    "magnitude": {
+        "unit_cap_area_um2": 128000.0, "unit_cap_area_mm2": 0.128,
+        "converter_area_um2": 128800.0,
+        "converter_cap_over_logic": 160.0,
+        "array_footprint_um": [152.4, 152.9], "array_footprint_um2": 23301.96,
+        "readout_over_array_ratio": 354.923,
+        "full_parallel_mm2": 8.2704, "fully_serial_mm2": 0.1308,
+        "arch_ratio": 63.229,
+        "note": "E1–E17 的列侧读出（TIA + ADC）**始终是「每列一份」**（`crossbar_mvm` 每列一个理想运放 · "
+                "`mvm_datapath` 每列一个 ADC · `converter.sar_convert` 是单通道）⇒ 列侧读出**完全不进面积**。"
+                "在二进制 CDAC 口径下（`C_tot = C_u·2^bits` · MIM 密度 2 fF/µm²）**单列电容面积 "
+                "128 000 µm²**，而 64×64 阵列本体足迹仅 **23 301.96 µm²** ⇒ "
+                "**读出 = 阵列的 354.92 倍**（全并行 N=64 列侧 **8.2704 mm²**）—— "
+                "**列侧读出压倒性支配芯片面积**，这就是「为什么必须共享」。",
+    },
+    # ② 第一原理：面积-时间乘积守恒
+    "first_principle": {
+        "law": "A_total × 每列周期 = N·A_u·T_conv = **常数（与 K 无关）**",
+        "pairing": "全并行 (K=1)：面积 N·A_u / 每列周期 T_conv；K 列共享：(N/K)·A_u / K·T_conv",
+        "product_um2_s": 0.7594893422640095, "k_points": [1, 2, 4, 8, 16, 32],
+        "spread": 0.0,
+        "escape": "要突破这条双曲线只有两条路：**① 缩短 `T_conv` 本身**（→ 第二原理）；"
+                  "**② 复制瓶颈级**（反向沿曲线走 → 接 E17 的 0.289 锚）",
+        "note": "门禁 **B5** 断言跨 6 个 K 的乘积相对散布 **0.00e+00** ⇒ "
+                "**共享只沿「等面积-时间双曲线」移动，不改变乘积**。",
+    },
+    # ③ 第二原理：保吞吐共享 ⇒ 面积 ∝1/K²
+    "second_principle": {
+        "law": "A(K) = (N/K)·( C_tot(1)/(ρ·K) + A_logic ) = "
+               "N·C_tot(1)/(ρ·K²) + N·A_logic/K",
+        "chain": "共享 K 倍同时保吞吐 ⇒ `T_conv` 须缩短 K 倍；由 E17 G-5 "
+                 "`T_conv ∝ C_tot·(bits+1)²` ⇒ **缩 `T_conv` 的唯一物理路径是降 `C_tot`**"
+                 "（`C_tot(K) = C_tot(1)/K`）",
+        "slope_plain": -1.0, "slope_keep_cap": -2.0, "slope_keep_total": -1.952465,
+        "k_points": [1, 2, 4, 8, 16, 32],
+        "note": "门禁 **B6 三条分开判**：不保吞吐**严格 ∝1/K**（−1.000000）· 保吞吐"
+                "**仅电容项严格 ∝1/K²**（−2.000000）· **双项混合 −1.952465 ∈ (−2,−1)**"
+                "（`K*` 之后退化为 ∝1/K）—— 双项闭式的标度律**不能拿整体拟合断言单一指数**。",
+    },
+    "k_star": {
+        "k_star": 160.0, "logic_area_um2": 800.0, "cap_over_logic_at_k1": 160.0,
+        "law": "K* = C_tot(1)/(ρ·A_logic)",
+        "note": "**拐点**：该点电容项 == 逻辑项（800 µm²）。`K<K*` 电容支配（**1/K² 收益显著**）；"
+                "`K>K*` 逻辑面积支配（**退化为 ∝1/K**）",
+    },
+    # ④ 第三腿：诚实拒绝造腿
+    "ktc": {
+        "sigma_law": "σ = √(kT/C_tot)", "bits_law": "log2(V_ref/(k_σ·σ))",
+        "bits_ceiling_at_256pF": 16.338559,
+        "k_share_crit_8bit": 104788.4, "sigma_at_crit_v": 0.0013020833,
+        "c_tot_at_crit_f": 2.4430197473280004e-15,
+        "conclusion": "🔴 **诚实拒绝造腿**：kT/C 是物理律，但 8 bit / 1 pF / 300 K / k_σ=3 时位数上限 "
+                      "**16.34 位**，跌到 8 位需共享度 **K ≈ 1.0479×10⁵** ⇒ **远超任何合理共享度**。"
+                      "⇒ **共享的真实代价是「吞吐」不是「精度」** —— 把公式与交叉点如实给出，"
+                      "**不硬造精度腿**。",
+    },
+    "architectures": {
+        "n_cols": 64, "bits": 8,
+        "rows": [
+            {"name": "fully_parallel", "k_adc": 1, "area_um2": 8270400.0,
+             "area_mm2": 8.2704, "per_col_sps": 10853608.53, "bits_ceiling": 16.338559},
+            {"name": "tia_shared_k4", "k_adc": 1, "area_um2": 8251200.0,
+             "area_mm2": 8.2512, "per_col_sps": 10853608.53, "bits_ceiling": 16.338559},
+            {"name": "adc_shared_k4_plain", "k_adc": 4, "area_um2": 2088000.0,
+             "area_mm2": 2.088, "per_col_sps": 2713402.13, "bits_ceiling": 15.338559},
+            {"name": "adc_shared_k4_keep", "k_adc": 4, "area_um2": 552000.0,
+             "area_mm2": 0.552, "per_col_sps": 10853608.53, "bits_ceiling": 15.338559},
+            {"name": "fully_serial", "k_adc": 64, "area_um2": 130800.0,
+             "area_mm2": 0.1308, "per_col_sps": 169587.63, "bits_ceiling": 13.338559},
+        ],
+        "plain_over_keep_k4": 3.782609,
+        "note": "五条路线（N=64 / 8 bit）：**全并行 8.2704 mm² → 全串行 0.1308 mm²（63.229×）**，"
+                "面积沿共享度**单调降**。🔴 **保吞吐 k4**（552 000 µm²）比**不保吞吐 k4**"
+                "（2 088 000 µm²）**再省 3.782609×**（≈K 倍），且**每列速率 == 全并行**"
+                "（10.8536 MSa/s）⇒ **吞吐真的被保住了**（这正是第二原理的兑现）。",
+    },
+    "recommend": {
+        "n_cols": 64, "bits": 8, "target_sps": 10.0e6,
+        "k_best": 64, "n_adc_units": 1, "c_tot_unit_f": 4.0e-12,
+        "area_um2": 30000.0, "bits_ceiling": 13.338559,
+        "area_ratio_vs_parallel": 275.68,
+        "note": "共享度**饱和到列数**（k=64 ⇒ 只需 **1 个 ADC** · `C_tot` 降到 **4 pF**）⇒ "
+                "面积 **30 000 µm²**（全并行 8 270 400 µm² 的 **1/275.68**）。"
+                "🔴 上界 = **列数 N**（共享度 > N 无意义）与 **kT/C 位数上限**（本口径下远未触及）。",
+    },
+    "replication_vs_sharing": {
+        "shared_k4_um2": 2088000.0, "shared_k4_sps": 2713402.13,
+        "replicated_r4_um2": 33081600.0, "replicated_r4_sps": 43414434.10,
+        "shared_spread": 0.047013, "replicated_spread": 0.0,
+        "note": "🔴 接 E17 的 **0.289** 锚（流水线几无收益 ⇒ 提吞吐只能**并行复制瓶颈级**）："
+                "**复制**方向 `A × 每列周期` **严格常数**（散布 0.0）⇒ "
+                "**提吞吐（复制）与省面积（共享）是同一条 `A×周期 = 常数` 双曲线的两端**。",
+    },
+    "closed_form": {
+        "thermal_noise": "σ = √(k_B·T/C)",
+        "bits_ceiling": "log2(V_ref/(k_σ·σ))",
+        "cap_area": "A = C/ρ",
+        "area_time_product": "A_total × 每列周期 = N·A_u·T_conv（与 K 无关）",
+        "keep_throughput_area": "A(K) = N·C_tot(1)/(ρK²) + N·A_logic/K",
+        "k_star": "K* = C_tot(1)/(ρ·A_logic)",
+        "ktc_crossing": "K_crit = C_tot(1)·V_ref²/(k_σ²·kT·4^bits)",
+    },
+    "protection": {
+        "e15_worst_pct": 4.06012, "e15_bits": 4.6223, "e15_n_max": 12,
+        "conv_process_keys_unchanged": True, "timing_process_keys_unchanged": True,
+        "keep_throughput_default_off": True,
+        "note": "**只读消费** E14/E17 —— **不改** `CONV_PROCESS` / `TIMING_PROCESS` / 任何既有默认值；"
+                "`keep_throughput` **默认 False**（保守口径）⇒ **E15/E16/E17 已发布数字逐位不变**"
+                "（模块门禁 B18/B19 守着）。",
+    },
+    "disclosure": "🔴 面积为**宏模型占位**（ρ=2 fF/µm² · A_logic=800 µm² · A_tia=400 µm² —— "
+                  "**公开量级 · 非 PDK · 无实测锚**）⇒ 结论随参数变；真实芯片用分段 CDAC / 更小 `C_u` / "
+                  "采样电容共享 ⇒ 面积远小于此；**只覆盖静态**（不含动态功耗 / 时钟树 / 供电网络 / "
+                  "驱动器面积 / IO pad）；共享的**动态代价（多路开关电荷注入 / 串扰 / 采样孔径抖动）未建模**；"
+                  "**不做功耗估算 ⇒ 不谈能效**；**绝不报 TOPS / TOPS-W / fJ/op**。",
+}
+
 LANDMARKS_BRIEF = [
     {"who": "Mythic AI", "item": "M1076 AMP：analog compute-in-memory MVM 交叉阵列"
                                  "（flash array + on-die ADC）· up to 25 TOPS · typ. 3–4 W · "
@@ -667,7 +793,15 @@ ECORE_HONEST_NOTE = (
     "参数（α / σ_p / tol / ν / p_stuck）均为**公开典型量级占位（非 PDK · 无实测锚）**"
     "⇒ 结论**随参数变**，漂移结论**条件于 ν**；**不含**细丝动力学 / 脉冲宽度依赖 / 温度加速，"
     "**无 endurance / retention 联合退化**；🔴 **共模漂移可被单次全局增益校准消除 ⇒ 不进预算**"
-    "（进预算的只有 ν 的单元间离散）—— **一个能被单次校准消掉的项，不是精度上限**。"
+    "（进预算的只有 ν 的单元间离散）—— **一个能被单次校准消掉的项，不是精度上限**；"
+    "⑨ E18 的**列侧共享 / 面积**是**宏模型级估算**（ρ=2 fF/µm² · 逻辑面积 800 µm² · TIA 400 µm² · "
+    "开关 25 µm² 均为**公开量级占位 · 非 PDK · 无实测锚**）⇒ **结论随参数变**；"
+    "真实芯片用分段 CDAC / 更小 `C_u` / 采样电容共享 ⇒ 面积远小于此；"
+    "**只覆盖静态**（不含动态功耗 / 时钟树 / 供电网络 / 驱动器面积 / IO pad）；"
+    "共享的**动态代价（多路开关电荷注入 / 串扰 / 采样孔径抖动）未建模**；"
+    "🔴 **不做功耗估算 ⇒ 因此绝不报 TOPS / TOPS-W / fJ/op** —— 本段只报「面积（µm²/mm²）/ "
+    "每列采样率（Sa/s）/ 相对倍数」；🔴 **kT/C 位数上限 16.34 位远高于 8 位** ⇒ "
+    "本段**不宣称共享受精度限制**（真实代价是**吞吐**，**不硬造精度腿**）。"
 )
 
 # ═══════════════════════ 九段征程（静态事实 · 可回溯门禁）═══════════════════════
@@ -832,6 +966,33 @@ MILESTONES = [
                "而每样本耗时只涨 **7.7e-6 %** ⇒ **R_oc 伤精度、不伤速度**。"
                "🔴 **保护性约束**：**只读消费** E7/E14 · **不给** `PERIPHERY_PROCESS` 加时间键 ⇒ "
                "**E15/E16 已发布数字逐位不变**（门禁 B15/B16 守着；探针 C6 守「注入已报 TOPS 必红」）。"},
+    {"id": "E18", "code": "D-189…D-191",
+     "title": "列侧共享与架构权衡（补上全仓此前完全空白的「面积」维度）",
+     "gate": 31, "seg_probes": 6,
+     "result": "E1–E17 的列侧读出（TIA + ADC）**始终是「每列一份」**（`crossbar_mvm` 每列一个理想运放 · "
+               "`mvm_datapath` 每列一个 ADC · `converter.sar_convert` 是单通道），"
+               "**全仓 `share`/`mux`/`multiplex`/`复用器`/`时分` 在 `lda_l2/ecore/` 零命中**，"
+               "面积维度只有 `array_footprint`（阵列本体）⇒ 列侧读出**完全不进面积**。"
+               "新增 `col_share`（第 22 模块 · 纯标准库 · **只读消费 E14/E17 · 不吃新物理**）："
+               "🔴🔴 **第一原理「面积-时间乘积守恒」** —— `A_total × 每列周期 = N·A_u·T_conv`"
+               "（**与 K 无关**）⇒ 共享只沿「等面积-时间双曲线」移动，不改乘积"
+               "（跨 6 个 K 的散布 **0.00e+00**）。"
+               "🔴🔴 **第二原理「保吞吐共享 ⇒ 面积 ∝1/K²」** —— 缩 `T_conv` 的唯一物理路径是降 `C_tot`"
+               "（`T_conv ∝ C_tot·(bits+1)²` · E17 G-5）⇒ **双项闭式** "
+               "`A(K) = N·C_tot(1)/(ρK²) + N·A_logic/K`（电容项 ∝1/K² · 逻辑项 ∝1/K）；"
+               "**拐点 K\\* = C_tot(1)/(ρ·A_logic) = 160** ⇒ 三条斜率分开判：不保吞吐 **−1.000000** · "
+               "保吞吐仅电容项 **−2.000000** · 双项混合 **−1.952465 ∈ (−2,−1)**。"
+               "🔴 **第三腿（诚实拒绝造腿）**：`σ = √(kT/C_tot)` 是物理律，但 8 bit / 1 pF / `k_σ=3` ⇒ "
+               "位数上限 **16.338559**，跌到 8 位需共享度 **K ≈ 1.0479×10⁵** ≫ 可达 ⇒ "
+               "**共享的真实代价是「吞吐」不是「精度」**（不硬造精度腿）。"
+               "🔴 **量级事实**：单列 CDAC 电容面积 **128 000 µm²** vs 64×64 阵列本体 "
+               "**23 301.96 µm²** ⇒ **读出 = 阵列的 354.92 倍**；全并行 N=64 = **8.2704 mm²** → "
+               "全串行 **0.1308 mm²**（**63.229×**）；**保吞吐 k4 再省 3.782609×**（且速率 == 全并行）；"
+               "**推荐**（N=64 / 8 bit / 10 MSa/s）共享度**饱和到列数**（1 个 ADC · `C_tot` 4 pF）⇒ "
+               "**30 000 µm² = 1/275.68**。🔴 **接 E17 的 0.289 锚** —— **复制**方向 "
+               "`A×周期` **严格常数**（散布 0.0）⇒ **提吞吐（复制）与省面积（共享）是同一条双曲线两端**。"
+               "🔴 **保护性约束**：**只读消费** E14/E17 · `keep_throughput` **默认 False** ⇒ "
+               "**E15/E16/E17 已发布数字逐位不变**（模块门禁 B18/B19 守着）。"},
 ]
 
 #: 门禁判据合计（= Σ MILESTONES.gate）与突变探针合计（= Σ seg_probes）
@@ -951,6 +1112,23 @@ FINDINGS = [
                "⇒ **低位数该优化 DAC，高位数只能优化 SAR**。"
                "🔴 第三条：**流水线收益仅 0.28889**（最慢级独占预算）⇒ "
                "**提吞吐必须并行复制瓶颈级，而不是加深流水线**（面积代价 ⇒ 接 E18 架构权衡）。"},
+    {"title": "面积瓶颈不在阵列、在**列侧读出** · 共享有两条闭式律（E18）",
+     "detail": "E1–E17 的列侧读出（TIA + ADC）**始终是「每列一份」**，且**面积维度从未建模**。"
+               "补上后得到一条反直觉的量级事实：在二进制 CDAC 口径下，**单列读出（128 000 µm²）"
+               "是整片 64×64 阵列本体（23 301.96 µm²）的 354.92 倍**，全并行 N=64 的列侧读出高达 "
+               "**8.2704 mm²** ⇒ **模拟 CIM 的面积瓶颈不在阵列，而在列侧读出** —— 这才是"
+               "「共享」成为必答题的原因。两条闭式律："
+               "① 🔴🔴 **面积-时间乘积守恒** —— `A_total × 每列周期 = N·A_u·T_conv`（**与 K 无关**）"
+               "⇒ 共享只沿「等面积-时间双曲线」移动，**不改变乘积**；"
+               "② 🔴🔴 **保吞吐共享 ⇒ 面积 ∝1/K²** —— 要同时保住吞吐就必须缩短 `T_conv`，"
+               "而缩 `T_conv` 的唯一物理路径是降 `C_tot`（`T_conv ∝ C_tot·(bits+1)²`）⇒ 面积是"
+               "**双项**的：`N·C_tot(1)/(ρK²) + N·A_logic/K`（电容项 ∝1/K²、逻辑项 ∝1/K），"
+               "**拐点 `K* = 160`**。实测：全并行 **8.2704 mm² → 全串行 0.1308 mm²（63.229×）**；"
+               "**保吞吐 k4 比不保吞吐 k4 再省 3.782609×**（且每列速率 == 全并行）；"
+               "推荐方案（N=64 / 8 bit / 10 MSa/s）**30 000 µm² = 1/275.68**。"
+               "🔴 与 E17 的 **0.28889** 锚合起来看：**提吞吐（并行复制瓶颈级）与省面积（共享）"
+               "是同一条 `A×周期 = 常数` 双曲线的两端** —— 两者不是两条独立的设计维度，"
+               "而是**同一个守恒量的两个方向**。"},
 ]
 
 # ═══════════════════════ 诚实边界（未闭合项 · 逐条登记）═══════════════════════
@@ -1057,6 +1235,21 @@ GAPS = [
                "⇒ **结论随参数变**，报告须携带参数。**保护性约束**：只读消费 E7/E14、"
                "**不给** `PERIPHERY_PROCESS` 加时间键（E17 的时间参数只进**自己的** `TIMING_PROCESS`）"
                "⇒ **E15/E16 已发布数字逐位不变**（门禁 B15/B16 守着）。"},
+    {"id": "G-S", "title": "面积为**宏模型占位** · 只覆盖静态 · 共享的动态代价未建模（E18 新增能力的内在边界）",
+     "detail": "① 🔴 **面积为宏模型占位**：ρ=2 fF/µm²（MIM）· A_logic=800 µm² · A_tia=400 µm² · "
+               "开关 25 µm² 均为**公开典型量级（非 PDK · 无实测锚）** ⇒ **结论随参数变**，"
+               "报告须携带参数；真实芯片用**分段 CDAC / 更小 `C_u` / 采样电容共享** ⇒ 面积远小于此。"
+               "② **只覆盖静态**：不含动态功耗 / 时钟树与偏斜 / 供电网络（PDN）/ 驱动器面积 / IO pad；"
+               "**共享的动态代价（多路开关电荷注入 / 串扰 / 采样孔径抖动 / 复用开关的建立时间）未建模**"
+               "（本段只做**静态面积与周期**估算）。"
+               "③ 🔴 **不做功耗估算 ⇒ 不谈能效**：**绝不报 TOPS / TOPS-W / fJ/op**；"
+               "只报「面积（µm²/mm²）/ 每列采样率（Sa/s）/ 相对倍数」。"
+               "④ 🔴 **不宣称共享受精度限制**：`σ = √(kT/C_tot)` 是物理律，但 8 bit / 1 pF / `k_σ=3` 时"
+               "位数上限 **16.338559**，跌到 8 位需共享度 **K ≈ 1.0479×10⁵**"
+               "（远超可达共享度，其上界为列数 N）⇒ **共享的真实代价是「吞吐」不是「精度」**；"
+               "硬造一个精度腿是错的。"
+               "⑤ **保护性约束**：本段**只读消费** E14/E17，**不改**任何既有默认值；"
+               "`keep_throughput` **默认 False** ⇒ **E15/E16/E17 已发布数字逐位不变**。"},
 ]
 
 _ARTIFACT_DIRS = ("examples", "lda/examples")
@@ -1234,7 +1427,8 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
                  "2D 短沟道效应（roll-off/DIBL） + 2D 漂移扩散输运（I–V / 亚阈值摆幅） + "
                  "真 DAC / ADC / 行驱动外设（系统链） + 端到端误差预算链 + "
                  "权重编程通路（写-校验 / 噪声地板 / 接误差预算） + "
-                 "时序 / 时钟预算链（五阶段节拍 / 时间按拓扑合成 / 时钟反解）**全链路验证",
+                 "时序 / 时钟预算链（五阶段节拍 / 时间按拓扑合成 / 时钟反解） + "
+                 "列侧共享与架构权衡（面积-时间乘积守恒 / 保吞吐 ∝1/K² / 架构族对照）**全链路验证",
         "verdict": "DESIGN_VERIFIED",
         "verdict_label": "设计期验证（非流片实测）",
         "identity": {
@@ -1251,10 +1445,10 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "milestones": len(MILESTONES),
             "gate_checks": GATE_CHECKS_TOTAL,
             "probe_checks": PROBE_CHECKS_TOTAL,
-            "modules": 21,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
-            "capability_modules": 20,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
-            "entrypoints": 19,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
-                                         #   E11 两道 + E12…E17 六道）
+            "modules": 22,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
+            "capability_modules": 21,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
+            "entrypoints": 20,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
+                                         #   E11 两道 + E12…E18 七道）
             "modules_dir": "lda/lda_l2/ecore/",
         },
         "milestones": MILESTONES,
@@ -1285,6 +1479,7 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "device_budget": BUDGET_FACTS,
         "device_weight_prog": WEIGHT_PROG_FACTS,
         "device_timing": TIMING_FACTS,
+        "device_col_share": COL_SHARE_FACTS,
         "scale_pressure": {
             "facts": SCALE_FACTS,
             "tiers": SCALE_PRESSURE_TIERS,
@@ -1398,12 +1593,12 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑨ Elmore 延迟闭式：τ(R=1, C=1) = 0.5 s",
         abs(elmore_tau_rc(1.0, 1.0) - 0.5) < 1e-15)
 
-    # ⑩ 案例卡组装：16 里程碑 / 17 结论 / 18 缺口 / 判据合计 376（含 82 探针）
+    # ⑩ 案例卡组装：17 里程碑 / 18 结论 / 19 缺口 / 判据合计 407（含 88 探针）
     card = case_card(repo_root="__nonexistent_root__")
-    chk("⑩ 案例卡组装：16 里程碑 / 17 结论 / **18 缺口** / 门禁判据合计 376（含 82 探针）",
-        len(card["milestones"]) == 16 and len(card["findings"]) == 17
-        and card["gaps_total"] == 18 and card["span"]["gate_checks"] == 376
-        and card["span"]["probe_checks"] == 82)
+    chk("⑩ 案例卡组装：17 里程碑 / 18 结论 / **19 缺口** / 门禁判据合计 407（含 88 探针）",
+        len(card["milestones"]) == 17 and len(card["findings"]) == 18
+        and card["gaps_total"] == 19 and card["span"]["gate_checks"] == 407
+        and card["span"]["probe_checks"] == 88)
 
     # ⑪ 产出物优雅降级（root 不存在 ⇒ available False，不抛错）
     chk("⑪ 产出物探测优雅降级（root 不存在 ⇒ available=False）",
@@ -1454,8 +1649,8 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑯ 护栏：非法 rows/cols · bits>60 · 零厚度 · n<1 均抛 ValueError", guard == 6)
 
     # ⑰ 每里程碑都有门禁数 + 结果文本（防空洞）
-    chk("⑰ 里程碑完整：16 段 · 每段含 gate 数 + 结果文本",
-        len(MILESTONES) == 16
+    chk("⑰ 里程碑完整：17 段 · 每段含 gate 数 + 结果文本",
+        len(MILESTONES) == 17
         and all(m.get("gate", 0) > 0 and m.get("result") and m.get("seg_probes", 0) > 0
                 for m in MILESTONES))
 
@@ -1674,6 +1869,47 @@ def run_selfchecks(verbose: bool = False) -> bool:
         and ("不报 TOPS" in _bgp3) and ("不做能量与功耗估算" in _bgp3)
         and ("宏模型" in _bgp3) and ("只覆盖静态" in _bgp3)
         and all(k not in (_dtm + _bgp3) for k in _forbid_t))
+
+    # ㊱ E18 列侧共享面登记齐全（防「加了能力忘了卡」）
+    dcs = card["device_col_share"]
+    chk("㊱ E18 列侧共享面登记齐全（量级事实 · 第一原理守恒 · 第二原理三斜率 + K* · kT/C 地板 · "
+        "架构族五条 · 推荐 · 复制-共享 · 闭式七项 · 保护性）",
+        abs(dcs["magnitude"]["unit_cap_area_um2"] - 128000.0) < 1e-6
+        and abs(dcs["magnitude"]["readout_over_array_ratio"] - 354.923) < 1e-3
+        and abs(dcs["magnitude"]["full_parallel_mm2"] - 8.2704) < 1e-9
+        and abs(dcs["magnitude"]["arch_ratio"] - 63.229) < 1e-3
+        and abs(dcs["first_principle"]["spread"]) < 1e-12
+        and abs(dcs["second_principle"]["slope_plain"] + 1.0) < 1e-9
+        and abs(dcs["second_principle"]["slope_keep_cap"] + 2.0) < 1e-9
+        and -2.0 < dcs["second_principle"]["slope_keep_total"] < -1.0
+        and abs(dcs["k_star"]["k_star"] - 160.0) < 1e-9
+        and abs(dcs["ktc"]["bits_ceiling_at_256pF"] - 16.338559) < 1e-6
+        and dcs["ktc"]["k_share_crit_8bit"] > 1.0e4
+        and len(dcs["architectures"]["rows"]) == 5
+        and dcs["recommend"]["k_best"] == 64 and dcs["recommend"]["n_adc_units"] == 1
+        and abs(dcs["replication_vs_sharing"]["replicated_spread"]) < 1e-12
+        and len(dcs["closed_form"]) == 7
+        and dcs["protection"]["keep_throughput_default_off"] is True)
+
+    # ㊲ 🔴 诚实（E18 · 双向）：
+    #     **抬高方向** —— 列侧共享能力到手后最易滑成「面积已实测 / 已报 TOPS / 已含功耗 /
+    #       已含复用开关建模（其实未建模）」；
+    #     **贬低方向** —— E18 前的「列侧每列一份 / 面积维度零覆盖」口径必须显式标注为已补上；
+    #     🔴 且必须显式**拒绝硬造精度腿**（kT/C 在可达共享度内不是约束 ⇒ 不得把共享说成精度瓶颈）。
+    #     🔴 判据纪律（E15 血案）：**按来源分别断言** —— 多来源拼接会稀释判据（探针会假绿）。
+    _dcs = str(card["device_col_share"])
+    _bgp4 = " ".join(g["detail"] for g in card["gaps"])
+    _forbid_c = ("已报 TOPS", "已含功耗", "已完成功耗估算", "面积已实测",
+                 "已含动态功耗", "已含复用开关建模")
+    chk("㊲ 🔴 诚实（E18 · 双向）：两个来源各自显式声明**不报 TOPS** + **非 PDK** + "
+        "**不做功耗估算** + **宏模型占位**；🔴 且必须显式写明**拒绝硬造精度腿**；"
+        "不得自称已报 TOPS / 已含功耗 / 面积已实测 / 已含复用开关建模",
+        ("不报 TOPS" in _dcs) and ("非 PDK" in _dcs) and ("不做功耗估算" in _dcs)
+        and ("宏模型占位" in _dcs) and ("不硬造精度腿" in _dcs)
+        and ("不报 TOPS" in _bgp4) and ("不做功耗估算" in _bgp4)
+        and ("不宣称共享受精度限制" in _bgp4)
+        and ("硬造一个精度腿是错的" in _bgp4)
+        and all(k not in (_dcs + _bgp4) for k in _forbid_c))
 
     ok_all = all(res.values())
     if verbose:

@@ -85,11 +85,12 @@ def main() -> int:
 
     # ══════════════════════ A 模块自检 ══════════════════════
     ok_a = EC.run_selfchecks(verbose=False)
-    check("A1 模块自检 35/35 PASS（容量/量化界/版图闭式/压缩比/方块电阻/Pelgrom/1√N/"
+    check("A1 模块自检 37/37 PASS（容量/量化界/版图闭式/压缩比/方块电阻/Pelgrom/1√N/"
           "Elmore/组装/降级/诚实/定位/口径/零框架/护栏/里程碑/landmark/E6-E9 面/上界单调/"
           "E11-c 器件级内核面/E11-d 失效边界面/贬低方向诚实/E12 2D MOS 面/2D 解非 ORACLE/"
           "E13 输运面/抬高方向诚实/E14 外围面/E14 双向诚实/E15 预算面/E15 诚实/"
-          "**E16 权重编程面/E16 双向诚实**）",
+          "E16 权重编程面/E16 双向诚实/E17 时序面/E17 双向诚实/"
+          "**E18 列侧共享面/E18 双向诚实**）",
           ok_a)
 
     # ══════════════════════ B 关键事实（name-first）══════════════════════
@@ -97,14 +98,14 @@ def main() -> int:
     check("B1 endpoint == /api/ecore_demo", card["endpoint"] == "/api/ecore_demo")
     check("B2 verdict == DESIGN_VERIFIED（非 ACCEPT/PASS）",
           card["verdict"] == "DESIGN_VERIFIED")
-    check("B3 十六段征程（E1→E17）", len(card["milestones"]) == 16)
-    check("B4 关键结论 17 条", len(card["findings"]) == 17)
-    check("B5 诚实边界 18 条", card["gaps_total"] == 18)
-    check("B6 门禁判据合计 = 376（含 82 条突变探针）",
-          card["span"]["gate_checks"] == 376 and card["span"]["probe_checks"] == 82)
-    check("B6c 计数拉平：20 能力模块 / 21 模块 / 19 常驻门禁",
-          card["span"]["capability_modules"] == 20 and card["span"]["modules"] == 21
-          and card["span"]["entrypoints"] == 19)
+    check("B3 十七段征程（E1→E18）", len(card["milestones"]) == 17)
+    check("B4 关键结论 18 条", len(card["findings"]) == 18)
+    check("B5 诚实边界 19 条", card["gaps_total"] == 19)
+    check("B6 门禁判据合计 = 407（含 88 条突变探针）",
+          card["span"]["gate_checks"] == 407 and card["span"]["probe_checks"] == 88)
+    check("B6c 计数拉平：21 能力模块 / 22 模块 / 20 常驻门禁",
+          card["span"]["capability_modules"] == 21 and card["span"]["modules"] == 22
+          and card["span"]["entrypoints"] == 20)
     check("B6b 判据合计 ≡ Σ 各段 gate（内部自洽）",
           sum(m["gate"] for m in card["milestones"]) == card["span"]["gate_checks"]
           and sum(m["seg_probes"] for m in card["milestones"]) == card["span"]["probe_checks"])
@@ -396,6 +397,52 @@ def main() -> int:
           and abs(_tm["protection"]["e15_bits"]
                   - BD.error_budget_report(8, 8)["worst_bits"]) < 1e-4)
 
+    # B24 🔴 E18 面 与 col_share 模块交叉核对（面积维度 · 全仓此前空白）
+    from lda_l2.ecore import col_share as CS      # noqa: E402
+    _dcs = card["device_col_share"]
+    _cv8 = CS.converter_area_um2(8)
+    _arch_c = CS.architectures(64, 8)
+    _sl_c = CS.scaling_law_report(4096, 8, ks=(1, 2, 4, 8, 16, 32))
+    _ks_c = CS.k_star(8)
+    _kt_c = CS.ktc_crossing_share(8)
+    _rc_c = CS.recommend_architecture(64, 8, 10.0e6)
+    _rv_c = CS.replication_vs_sharing(64, 8)
+    check("B24 🔴 E18 面 **与 col_share 模块交叉核对**：卡内数字 ≡ 模块实测"
+          "（面积双项闭式 · 量级比 · 第一原理散布 · 第二原理三斜率 · K* · kT/C 地板 · "
+          "架构族五条逐条 · 推荐 · 复制-共享 · 保护性锚）",
+          abs(_dcs["magnitude"]["unit_cap_area_um2"] - _cv8["cap_area_um2"]) < 1e-6
+          and abs(_dcs["magnitude"]["converter_area_um2"] - _cv8["area_um2"]) < 1e-6
+          and abs(_dcs["magnitude"]["converter_cap_over_logic"]
+                  - _cv8["cap_area_um2"] / _cv8["logic_area_um2"]) < 1e-9
+          and abs(_dcs["magnitude"]["array_footprint_um2"]
+                  - _arch_c["array_footprint_um2"]) < 1e-6
+          and abs(_dcs["magnitude"]["readout_over_array_ratio"]
+                  - _arch_c["readout_over_array_ratio_parallel"]) < 1e-3
+          and abs(_dcs["magnitude"]["full_parallel_mm2"] - _arch_c["area_max_mm2"]) < 1e-9
+          and abs(_dcs["magnitude"]["arch_ratio"]
+                  - _arch_c["area_ratio_max_over_min"]) < 1e-3
+          and abs(_dcs["first_principle"]["spread"]) < 1e-12
+          and abs(_dcs["second_principle"]["slope_plain"] - _sl_c["slope_plain"]) < 1e-9
+          and abs(_dcs["second_principle"]["slope_keep_cap"] - _sl_c["slope_keep_cap"]) < 1e-9
+          and abs(_dcs["second_principle"]["slope_keep_total"]
+                  - _sl_c["slope_keep_total"]) < 1e-6
+          and abs(_dcs["k_star"]["k_star"] - _ks_c["k_star"]) < 1e-9
+          and abs(_dcs["ktc"]["bits_ceiling_at_256pF"]
+                  - CS.thermal_noise_bits_ceiling(TM.cdac_total_cap(8))) < 1e-4
+          and abs(_dcs["ktc"]["k_share_crit_8bit"] - _kt_c["k_share_crit"]) < 1.0
+          and len(_dcs["architectures"]["rows"]) == 5
+          and all(abs(_dcs["architectures"]["rows"][i5]["area_um2"]
+                      - _arch_c["rows"][i5]["area_um2"]) < 1e-6 for i5 in range(5))
+          and all(_dcs["architectures"]["rows"][i5]["name"]
+                  == _arch_c["rows"][i5]["architecture"] for i5 in range(5))
+          and abs(_dcs["recommend"]["area_um2"] - _rc_c["best"]["area_um2"]) < 1e-6
+          and abs(_dcs["recommend"]["c_tot_unit_f"] - _rc_c["c_tot_unit_f"]) < 1e-21
+          and abs(_dcs["replication_vs_sharing"]["replicated_spread"]
+                  - _rv_c["product_replicated_spread"]) < 1e-12
+          and len(_dcs["closed_form"]) == 7
+          and abs(_dcs["protection"]["e15_worst_pct"]
+                  - BD.error_budget_report(8, 8)["worst_pct"]) < 1e-4)
+
     # ══════════════════════ C 反向可证伪（突变探针）═══════════════════════
     # C1 破坏 honest_note 关键字 ⇒ ⑥ 必红
     saved_note = EC.ECORE_HONEST_NOTE
@@ -561,6 +608,32 @@ def main() -> int:
           "② 抹掉「宏模型级」与「只覆盖静态」两条内在边界 ⇒ ㉟ 判定必红"
           "（两个方向各扫一次 · **无功耗模型 ⇒ 绝不报 TOPS**）",
           ok_c14a is False and ok_c14b is False)
+
+    # C15 反向（**双向**）：E18 面 —— ① 抬高方向（面积已实测 / 已报 TOPS）
+    #   ② 贬低方向（抹掉 G-S 的三条内在边界：宏模型占位 / 不做功耗估算 / 拒绝硬造精度腿）
+    _saved_dcs = dict(EC.COL_SHARE_FACTS)
+    _saved_gaps4 = [dict(g) for g in EC.GAPS]
+    try:
+        _bad_dcs = dict(EC.COL_SHARE_FACTS)
+        _bad_dcs["disclosure"] = _bad_dcs["disclosure"] + " 面积已实测；已报 TOPS：8.3 TOPS。"
+        EC.COL_SHARE_FACTS.clear()
+        EC.COL_SHARE_FACTS.update(_bad_dcs)
+        ok_c15a = EC.run_selfchecks(verbose=False)
+    finally:
+        EC.COL_SHARE_FACTS.clear()
+        EC.COL_SHARE_FACTS.update(_saved_dcs)
+    try:
+        for _g4 in EC.GAPS:
+            if _g4["id"] == "G-S":
+                _g4["detail"] = "面积已实测，已含动态功耗与复用开关建模。"
+        ok_c15b = EC.run_selfchecks(verbose=False)
+    finally:
+        EC.GAPS[:] = _saved_gaps4
+    check("C15 反向（**双向**）：① E18 面冒充「面积已实测 / 已报 TOPS」· "
+          "② 抹掉 G-S 的「宏模型占位 / 不做功耗估算 / 拒绝硬造精度腿」三条内在边界 ⇒ ㊲ 判定必红"
+          "（两个方向各扫一次 · **无功耗模型 ⇒ 绝不报 TOPS** · "
+          "**kT/C 在可达共享度内不是约束 ⇒ 不许把共享说成精度瓶颈**）",
+          ok_c15a is False and ok_c15b is False)
 
     # ══════════════════════ D 免登录 / 零重计算 ═══════════════════════════
     rt = _read("lda/lda_webui/routes.py")

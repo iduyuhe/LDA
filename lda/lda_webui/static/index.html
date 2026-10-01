@@ -140,7 +140,7 @@ body{padding-top:56px}
     <a href="#sec-qchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光量子计算芯片</a>
     <a href="#sec-schip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">超导量子计算芯片</a>
     <a href="#sec-pchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光计算芯片</a>
-    <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E17）</a>
+    <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E18）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1424,8 +1424,8 @@ body{padding-top:56px}
       用 LDA <b>亲手设计</b>的一颗<b>电子计算芯片</b>（电子版的「光子 MZI 网格」）：模拟
       <b>矩阵-向量乘（MVM）交叉阵列</b>——行电压 × 交叉点电导 → 列电流求和 → TIA 转电压，
       对标模拟 AI 加速器（Mythic 类）同族架构。<br/>
-      <b>E1–E17 全链</b>（16 段里程碑 · 全程在 LDA 内闭环 · 门禁共 <b>376 判据</b> / <b>82 道突变探针</b> ·
-      <b>19 道常驻门禁</b>）：E1 基座（晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）
+      <b>E1–E18 全链</b>（17 段里程碑 · 全程在 LDA 内闭环 · 门禁共 <b>407 判据</b> / <b>88 道突变探针</b> ·
+      <b>20 道常驻门禁</b>）：E1 基座（晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）
       → E2 参数化 N×M MVM 交叉阵列（ideal TIA / transistor 权重 + 晶体管级 OTA）→ E3 MVM 数据通路
       （DAC→阵列→ADC、多层 MLP+ReLU、分块）→ E4 规模对标（至 256×256 = 65536 突触，诚实边界）
       → E5 平台能力硬化（能力清单 + 双向完备守护门禁）→ <b>E6 版图与几何签核（首次直出真 GDS）</b>
@@ -1439,7 +1439,12 @@ body{padding-top:56px}
       写-校验 + <b>写入噪声地板 σ_p/√(α(2−α))</b> ⇒ 加脉冲数买不到精度）
       → <b>E17 时序 / 时钟预算链</b>（<b>时间维度上的 E15</b>：五阶段节拍 + 时间按<b>拓扑</b>合成 ⇒
       <b>8×8 每样本 129.565 ns = 7.7181 MSa/s</b>；🔴 <b>N 8→1024 阵列 τ 跨 12556× 而每样本只跨 1.005×</b>
-      ⇒ <b>规模墙是精度墙、不是速度墙</b>）。<br/>
+      ⇒ <b>规模墙是精度墙、不是速度墙</b>）
+      → <b>E18 列侧共享与架构权衡</b>（补上全仓此前<b>空白的「面积」维度</b>：单列 CDAC 电容面积
+      <b>128 000 µm²</b> 是整片 64×64 阵列本体（<b>23 302 µm²</b>）的 <b>354.92 倍</b>；🔴
+      <b>面积-时间乘积守恒</b> + <b>保吞吐共享 ⇒ 面积 ∝1/K²</b>（拐点 <b>K*=160</b>）⇒
+      全并行 <b>8.2704 mm²</b> → 推荐 <b>30 000 µm²（1/275.68）</b>；🔴 <b>诚实拒绝造腿</b>：
+      kT/C 跌到 8 位需共享度 K≈1.05×10⁵ ⇒ <b>代价是吞吐不是精度</b>）。<br/>
       <b>核心结果</b>：MNA 瞬态 vs 指数闭式 <b>&lt;2e-4</b>；理想 8×8 阵列 <b>&lt;2e-4</b>；
       数据通路单层 8bit <b>0.012</b>；<b>首次直出真 GDS</b>（4×4 = 120 元素 / 936 B）；
       <b>IR drop N=32 达 27%</b>、sneak <b>7.26×</b>；<b>校准 L0 1.70% → L2 0.074%</b>；
@@ -1450,6 +1455,7 @@ body{padding-top:56px}
       <b>行驱动 R_oc ⇒ 可及规模 N≤20→N≤10（5 Ω）</b>（器件参数反过来限制系统规模）；
       <b>权重编程：8×8 有效精度 4.62 → 4.24 位（MLC 6 位）· 5% 预算可及规模 12 → 11 → 6 位「无解」</b>。<br/>
       <b>E15 全链误差预算：8×8 worst 4.0601% ⇒ 有效精度仅 4.622 位</b>；<b>主导项 N≤8 失配 / N≥16 IR drop</b>（交叉点）；<b>全链 5% 上界 N≤12</b> ⟷ 仅 IR drop 口径 N≤18。<br/>
+      <b>E18 列侧共享</b>：<b>面积-时间乘积守恒</b>（与共享度 K 无关）· <b>保吞吐 ⇒ 面积 ∝1/K²</b>（电容项严格 −2）· 拐点 <b>K*=160</b> · 架构族面积比 <b>63.2×</b> · <b>读出 = 阵列的 354.92 倍</b> ⇒ <b>面积瓶颈不在阵列、在列侧读出</b>。<br/>
       🔴 本面板为<b>只读案例</b>（零重计算、免登录、不跑仿真、零外部 SPICE 引擎）；
       全部为<b>设计期验证</b>，<b>非流片后实测</b>；晶体管参数为公开典型量级占位（非 PDK）；
       <b>不报任何 TOPS / TOPS-W 能效或吞吐指标</b>。判决位由死标量给出，LLM 不进判决路径。
@@ -4743,7 +4749,7 @@ function renderECore(d){
   h+='<div class="note">计算砖：'+ID.unit+'</div>';
   h+='<div class="note">零外部 SPICE 引擎：<b>'+(ID.zero_spice_engine?'是':'否')+'</b> · 零量子 SDK：<b>'+(ID.zero_quantum_sdk?'是':'否')+'</b> · 零商业 EDA：<b>'+(ID.zero_commercial_eda?'是':'否')+'</b></div>';
 
-  h+='<div class="summary" style="margin-top:12px">E1–E17 全链 · 十七段征程</div>';
+  h+='<div class="summary" style="margin-top:12px">E1–E18 全链 · 十八段征程</div>';
   h+=_qcTbl(['段','编号','内容','门禁','关键结果'],
     (d.milestones||[]).map(function(m){ return [m.id, m.code, m.title, String(m.gate), m.result]; }));
 
@@ -5099,6 +5105,60 @@ function renderECore(d){
   h+='<div class="note">🔴 <b>保护性约束</b>：'+String(DTROT.note||'')+'</div>';
   h+='<div class="note">'+String(DTM.disclosure||'')+'</div>';
 
+  var DCS=(d.device_col_share||{}), DCSM=DCS.magnitude||{}, DCSF=DCS.first_principle||{},
+      DCSS=DCS.second_principle||{}, DCSK=DCS.k_star||{}, DCST=DCS.ktc||{},
+      DCSA=DCS.architectures||{}, DCSR=DCSA.rows||[],
+      DCSRC=DCS.recommend||{}, DCSRV=DCS.replication_vs_sharing||{},
+      DCSP=DCS.protection||{};
+  h+='<div class="summary" style="margin-top:12px">列侧共享与架构权衡（E18 · 补上全仓此前空白的「面积」维度）</div>';
+  h+='<div class="note">E1–E17 的<b>列侧读出</b>（TIA + ADC）<b>始终是「每列一份」</b>，且<b>面积维度从未建模</b>；'
+    +'全仓 <code>share</code> / <code>mux</code> / <code>multiplex</code> / <code>复用器</code> / '
+    +'<code>时分</code> 在 <code>lda_l2/ecore/</code> <b>零命中</b> ⇒ '
+    +'「列侧电路能不能共享、代价是什么」此前无人能答。</div>';
+  h+=_qcTbl(['量级事实','数值'],
+    [['单列 CDAC 电容面积','<b>'+Number(DCSM.unit_cap_area_um2||0).toFixed(0)+' µm²</b>（'
+      +Number(DCSM.unit_cap_area_mm2||0).toFixed(3)+' mm²）'],
+     ['64×64 阵列本体足迹', Number(DCSM.array_footprint_um2||0).toFixed(2)+' µm²'],
+     ['🔴 读出 / 阵列 面积比','<b>'+Number(DCSM.readout_over_array_ratio||0).toFixed(2)+'×</b>'],
+     ['全并行列侧读出（N=64）','<b>'+Number(DCSM.full_parallel_mm2||0).toFixed(4)+' mm²</b>'],
+     ['全串行（一套）', Number(DCSM.fully_serial_mm2||0).toFixed(4)+' mm²'],
+     ['架构族面积比','<b>'+Number(DCSM.arch_ratio||0).toFixed(2)+'×</b>']]);
+  h+='<div class="note">'+String(DCSM.note||'')+'</div>';
+  h+='<div class="note">🔴🔴 <b>第一原理「面积-时间乘积守恒」</b> —— <code>'+String(DCSF.law||'')
+    +'</code>（跨 6 个 K 的散布 <b>'+Number(DCSF.spread||0).toExponential(2)+'</b>）。<br/>'
+    +String(DCSF.note||'')+'<br/>'+String(DCSF.escape||'')+'</div>';
+  h+='<div class="note">🔴🔴 <b>第二原理「保吞吐共享 ⇒ 面积 ∝1/K²」</b>：'+String(DCSS.chain||'')+'</div>';
+  h+=_qcTbl(['标度（log-log 拟合）','指数','含义'],
+    [['不保吞吐（双曲线守恒）','<b>'+Number(DCSS.slope_plain||0).toFixed(6)+'</b>','面积 ∝ 1/K'],
+     ['保吞吐 · 仅电容项','<b>'+Number(DCSS.slope_keep_cap||0).toFixed(6)+'</b>','面积 ∝ 1/K²（第二原理）'],
+     ['保吞吐 · 双项混合', Number(DCSS.slope_keep_total||0).toFixed(6),'∈ (−2,−1)：K* 后退化为 ∝1/K']]);
+  h+='<div class="note">🔴 <b>拐点 K*</b> = <code>'+String(DCSK.law||'')+'</code> = <b>'
+    +Number(DCSK.k_star||0).toFixed(0)+'</b>（该点电容项 == 逻辑项 '
+    +Number(DCSK.logic_area_um2||0).toFixed(0)+' µm²）。'+String(DCSK.note||'')+'</div>';
+  h+='<div class="note">🔴 <b>第三腿（诚实拒绝造腿）</b>：'+String(DCST.conclusion||'')+'</div>';
+  h+=_qcTbl(['架构族（N=64 · 8 bit）','K','面积 (µm²)','每列 MSa/s','kT/C 位数上限'],
+    DCSR.map(function(x){ return [x.name, String(x.k_adc), Number(x.area_um2||0).toFixed(0),
+      Number(x.per_col_sps||0).toFixed(0), Number(x.bits_ceiling||0).toFixed(3)]; }));
+  h+='<div class="note">'+String(DCSA.note||'')+'</div>';
+  h+=_qcTbl(['推荐（N=64 · 目标 10 MSa/s）','值'],
+    [['共享度 K','<b>'+String(DCSRC.k_best||'')+'</b>（饱和到列数）'],
+     ['所需 ADC 份数','<b>'+String(DCSRC.n_adc_units||'')+'</b>'],
+     ['单份 C_tot','<b>'+Number(DCSRC.c_tot_unit_f||0).toExponential(1)+' F</b>'],
+     ['面积','<b>'+Number(DCSRC.area_um2||0).toFixed(0)+' µm²</b>（1/'
+      +Number(DCSRC.area_ratio_vs_parallel||0).toFixed(2)+'）']]);
+  h+='<div class="note">'+String(DCSRC.note||'')+'</div>';
+  h+='<div class="note">🔴 <b>复制 vs 共享</b>（接 E17 的 0.289 锚）：'+String(DCSRV.note||'')+'</div>';
+  h+=_qcTbl(['闭式','表达式'],
+    [['采样热噪声','<code>σ = √(k_B·T/C)</code>'],
+     ['位数上限','<code>log2(V_ref/(k_σ·σ))</code>'],
+     ['电容面积','<code>A = C/ρ</code>'],
+     ['面积-时间积','<code>A×每列周期 = N·A_u·T_conv</code>（与 K 无关）'],
+     ['保吞吐面积','<code>A(K) = N·C_tot(1)/(ρK²) + N·A_logic/K</code>'],
+     ['拐点','<code>K* = C_tot(1)/(ρ·A_logic)</code>'],
+     ['kT/C 交叉','<code>K_crit = C_tot(1)·V_ref²/(k_σ²·kT·4^bits)</code>']]);
+  h+='<div class="note">🔴 <b>保护性约束</b>：'+String(DCSP.note||'')+'</div>';
+  h+='<div class="note">'+String(DCS.disclosure||'')+'</div>';
+
   h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
   (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });
   h+='</div>';
@@ -5158,7 +5218,15 @@ function renderECore(d){
     +'</b> → 20 Ω N≤'+Number((DPSC.n_max||[])[3]||0)+'；<code>R_oc=0</code> 与 E9 <b>逐位一致</b>）'
     +'—— <b>器件级参数第一次反馈到规模律</b>，并暴露<b>行系统项</b>（行增益离散 '
     +Number(DPRS.spread_with_driver||0).toExponential(3)+'，MC 平均不掉））。'
-    +'<br/><strong>诚实边界：</strong>'+d.honest_note+'<br/><b>时序 / 时钟预算链</b>（把零散时间量串成<b>节拍链</b>：五阶段 + 时间按<b>拓扑</b>合成 —— 与 E15 按<b>类型</b>合成误差相对照 ⇒ <b>8×8 每样本 129.565 ns ⇒ 7.7181 MSa/s</b>，<b>SAR 独占 71.11%</b>；🔴 <b>N 8→1024 阵列 τ 跨 12556× 而每样本只跨 1.005×</b> ⇒ <b>规模墙是精度墙、不是速度墙</b>；<b>主导项随位数交叉</b>（≤6 bit ⇒ DAC 建立 / ≥8 bit ⇒ SAR））。';
+    +'<br/><strong>诚实边界：</strong>'+d.honest_note+'<br/><b>时序 / 时钟预算链</b>（把零散时间量串成<b>节拍链</b>：五阶段 + 时间按<b>拓扑</b>合成 —— 与 E15 按<b>类型</b>合成误差相对照 ⇒ <b>8×8 每样本 129.565 ns ⇒ 7.7181 MSa/s</b>，<b>SAR 独占 71.11%</b>；🔴 <b>N 8→1024 阵列 τ 跨 12556× 而每样本只跨 1.005×</b> ⇒ <b>规模墙是精度墙、不是速度墙</b>；<b>主导项随位数交叉</b>（≤6 bit ⇒ DAC 建立 / ≥8 bit ⇒ SAR））'
+    +'<br/><b>列侧共享与架构权衡（E18）</b>：补上全仓此前<b>空白的「面积」维度</b> —— 单列 CDAC 电容面积 '
+    +'<b>128 000 µm²</b> 是 64×64 阵列本体（<b>23 302 µm²</b>）的 <b>354.92 倍</b> ⇒ '
+    +'<b>面积瓶颈不在阵列、在列侧读出</b>。🔴 <b>面积-时间乘积守恒</b>（<code>A×每列周期 = 常数</code>，'
+    +'与共享度 K 无关）⇒ 共享只沿「等面积-时间双曲线」移动；🔴 <b>保吞吐共享 ⇒ 面积 ∝1/K²</b>'
+    +'（电容项严格 −2 · 双项混合 −1.952，拐点 <b>K*=160</b>）⇒ 全并行 <b>8.2704 mm²</b> → '
+    +'推荐方案 <b>30 000 µm²（1/275.68）</b>。🔴 <b>诚实拒绝造腿</b>：kT/C 跌到 8 位需共享度 '
+    +'<b>K≈1.05×10⁵</b> ⇒ <b>共享的代价是「吞吐」不是「精度」</b>；与 E17 的 0.289 锚合起来 —— '
+    +'<b>提吞吐（复制瓶颈级）与省面积（共享）是同一条双曲线的两端</b>。';
   return false;
 }
 if($('runECore')) $('runECore').onclick = runECore;

@@ -68,7 +68,7 @@
     进一步吃狗粮又逼出<b>无版图链 / 无寄生后仿 / 无失配噪声模型 / 无千级规模能力</b>。
     进一步吃狗粮又逼出<b>无器件级 PDE 内核 / 无 2D MOS（短沟道）能力 / 无 2D 输运（I–V）能力 / 无真 DAC·ADC·行驱动外设</b>；
     最后又逼出<b>无误差预算（四类误差从未合成）/ 无权重编程通路（「写入动作」从未被建模） / 无时序预算（时间从未被建模）</b>。
-    本征程新增 <code>lda/lda_l2/ecore/</code> 包（<b>21 模块 · 20 条能力面入册</b>）逐一补齐。
+    本征程新增 <code>lda/lda_l2/ecore/</code> 包（<b>22 模块 · 21 条能力面入册</b>）逐一补齐。
     <table>
       <thead><tr><th>模块</th><th>能力</th><th>引入</th></tr></thead>
       <tbody>
@@ -93,11 +93,13 @@
         <tr><td><code>budget.py</code></td><td><b>端到端误差预算链</b>（口径桥 LSB ⟷ 相对 % · 三分类合成律 · 主导项分析 · 全链可及规模上界）</td><td>D-178…D-180 (E15)</td></tr>
         <tr><td><code>weight_prog.py</code></td><td><b>权重编程通路</b>（写-校验动力学 + 五个闭式 golden（含<b>写入噪声地板 σ_p/√(α(2−α))</b>）+ 良率 + 差分对 + 接 E15 误差预算链）</td><td>D-181…D-183 (E16)</td></tr>
         <tr><td><code>timing.py</code></td><td><b>时序 / 时钟预算链</b>（五阶段节拍 + 时间按<b>拓扑</b>合成（serial=Σ / pipelined=max）+ 五个闭式 golden + 时钟反解 + 规模×时间 + 阵列 RC 交叉点）</td><td>D-185…D-187 (E17)</td></tr>
+        <tr><td><code>col_share.py</code></td><td><b>列侧共享与架构权衡</b>（面积维度：面积-时间乘积守恒 + 保吞吐 ⇒ 面积 ∝1/K² 双项闭式 + 收益拐点 K* + kT/C 位数地板 + 架构族对照 / 推荐 / 复制-共享）</td><td>D-189…D-191 (E18)</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h2>十六段里程碑（E1–E17 门禁判据合计 376 · 含 82 条突变探针）</h2>
+  <p style="margin:10px 0 6px"><b>E18（D-189…D-191）</b>：<b>列侧共享与架构权衡</b>（<b>31 判据 / 6 突变探针</b>）⇒ 案例卡升级为 <b>E1–E18 全链（49 判据 + 15 探针）</b>；守护 scope 扩至 <b>e1~e18</b>；能力清单 <b>21</b> 条 · 常驻门禁 <b>20</b> 道。</p>
+  <h2>十七段里程碑（E1–E18 门禁判据合计 407 · 含 88 条突变探针）</h2>
   <div class="card">
     <table>
       <thead><tr><th>段</th><th>编号</th><th>内容</th><th>关键结果（门禁实测）</th></tr></thead>
@@ -564,12 +566,58 @@
     </div>
   </div>
 
+  <h2>E18 · 列侧共享与架构权衡 —— 补上全仓此前空白的「面积」维度</h2>
+  <div class="card">
+    <p>E1–E17 的<b>列侧读出</b>（TIA + ADC）<b>始终是「每列一份」</b>（<code>crossbar_mvm</code> 每列一个理想运放 ·
+      <code>mvm_datapath</code> 每列一个 ADC · <code>converter.sar_convert</code> 是单通道）；全仓
+      <code>share</code> / <code>mux</code> / <code>multiplex</code> / <code>复用器</code> / <code>时分</code>
+      在 <code>lda_l2/ecore/</code> <b>零命中</b>；面积维度只有 <code>layout.array_footprint</code>（<b>阵列本体</b>）
+      ⇒ 列侧读出<b>完全不进面积</b>。E18 补上（ecore 第 <b>22</b> 模块 <code>col_share.py</code> · 纯标准库 ·
+      <b>只读消费 E14/E17 · 不吃新物理</b>）。</p>
+    <p>🔴 <b>量级事实</b>：单列 CDAC 电容面积 <b>128 000 µm²</b>（256 pF ÷ 2 fF/µm²），而 64×64 阵列本体仅
+      <b>23 301.96 µm²</b> ⇒ <b>读出 = 阵列的 354.92 倍</b>（全并行 N=64 = <b>8.2704 mm²</b>）⇒
+      <b>面积瓶颈不在阵列、在列侧读出</b>。</p>
+    <p>🔴🔴 <b>第一原理：面积-时间乘积守恒</b> —— <code>A_total × 每列周期 = N·A_u·T_conv</code>
+      （<b>与共享度 K 无关</b> ⇒ 跨 6 个 K 的散布 <b>0.00e+00</b>）⇒ 共享只沿「等面积-时间双曲线」移动，
+      <b>不改变乘积</b>。要突破只有两条路：<b>缩 <code>T_conv</code></b> 或 <b>复制瓶颈级</b>（反向沿曲线走）。</p>
+    <p>🔴🔴 <b>第二原理：保吞吐共享 ⇒ 面积 ∝ 1/K²</b> —— 缩 <code>T_conv</code> 的唯一物理路径是降
+      <code>C_tot</code>（<code>T_conv ∝ C_tot·(bits+1)²</code>）⇒ <b>双项闭式</b>
+      <code>A(K) = N·C_tot(1)/(ρK²) + N·A_logic/K</code>（电容项 ∝1/K² · 逻辑项 ∝1/K）；
+      拐点 <b>K* = C_tot(1)/(ρ·A_logic) = 160</b>。三条斜率分开判：不保吞吐 <b>−1.000000</b> ·
+      保吞吐仅电容项 <b>−2.000000</b> · 双项混合 <b>−1.952465 ∈ (−2,−1)</b>。</p>
+    <table>
+      <thead><tr><th>架构族（N=64 · 8 bit）</th><th>共享度 K</th><th>面积 (µm²)</th><th>每列 MSa/s</th><th>kT/C 位数上限</th></tr></thead>
+      <tbody>
+        <tr><td>全并行</td><td class="num">1</td><td class="num"><b>8 270 400</b></td><td class="num"><b>10.8536</b></td><td class="num">16.338559</td></tr>
+        <tr><td>TIA 共享 k4</td><td class="num">1（TIA 四路）</td><td class="num">8 251 200</td><td class="num">10.8536</td><td class="num">16.338559</td></tr>
+        <tr><td>ADC 共享 k4（<b>不保吞吐</b>）</td><td class="num">4</td><td class="num">2 088 000</td><td class="num">2.7134</td><td class="num">15.338559</td></tr>
+        <tr><td>ADC 共享 k4（<b>保吞吐</b>）</td><td class="num">4</td><td class="num"><b>552 000</b></td><td class="num"><b>10.8536</b></td><td class="num">15.338559</td></tr>
+        <tr><td>全串行</td><td class="num">64</td><td class="num">130 800</td><td class="num">0.1696</td><td class="num">13.338559</td></tr>
+      </tbody>
+    </table>
+    <p>面积比（全并行 / 全串行）= <b>63.229×</b>；<b>保吞吐 k4 比不保吞吐 k4 再省 3.782609×，且每列速率 == 全并行</b>；
+      推荐方案（N=64 / 8 bit / 10 MSa/s，共享度<b>饱和到列数</b> ⇒ 1 个 ADC · <code>C_tot</code> 4 pF）
+      <b>30 000 µm² = 全并行的 1/275.68</b>。</p>
+    <p>🔴 <b>第三腿：诚实拒绝造腿</b> —— <code>σ = √(kT/C_tot)</code> 是物理律，但 8 bit / 1 pF /
+      <code>k_σ=3</code> ⇒ 位数上限 <b>16.338559 位</b>，跌到 8 位需共享度 <b>K ≈ 1.0479×10⁵</b>
+      （远超可达共享度）⇒ <b>共享的真实代价是「吞吐」不是「精度」</b>（<b>不硬造精度腿</b>）。</p>
+    <p>🔴 <b>与 E17 的锚合起来看</b>：<b>提吞吐（并行复制瓶颈级）与省面积（共享）是同一条
+      <code>A×周期 = 常数</code> 双曲线的两端</b> —— 两者不是两条独立的设计维度，而是
+      <b>同一个守恒量的两个方向</b>。</p>
+    <p>🔴 <b>诚实边界</b>：面积为<b>宏模型占位</b>（ρ=2 fF/µm² · A_logic=800 µm² · A_tia=400 µm² ·
+      开关 25 µm² · <b>非 PDK · 无实测锚</b>）；<b>只覆盖静态</b>（不含动态功耗 / 时钟树 / 供电网络 /
+      驱动器面积 / IO pad）；共享的<b>动态代价（多路开关电荷注入 / 串扰 / 采样孔径抖动）未建模</b>；
+      <b>不做功耗估算 ⇒ 不谈能效</b>；<b>绝不报 TOPS / TOPS-W / fJ/op</b>。
+      🔴 <b>保护性约束</b>：只读消费 E14/E17 · <code>keep_throughput</code> <b>默认 False</b> ⇒
+      <b>E15/E16/E17 已发布数字逐位不变</b>。</p>
+  </div>
+
   <div class="foot">
     声明：本案例是<b>设计期验证</b>，非流片后实测；<b>不报任何 fabricated 能效数字</b>；
     Mythic 等公开数字仅作<b>背景坐标</b>，不同台比较。<br/>
-    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E17（D-150…D-187）·
+    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E18（D-150…D-191）·
     版图/寄生/失配/规模/器件内核/失效边界/2D MOS/2D 输运可视化产物见
-    <code>docs/ecore_e6..e14_*_preview.html</code>。
+    <code>docs/ecore_e6..e18_*_preview.html</code>。
   </div>
 
 </div>

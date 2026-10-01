@@ -28,7 +28,10 @@
   .card .l{color:var(--mut);font-size:12px;margin-top:4px}
   .card.g .n{color:var(--green)} .card.a .n{color:var(--accent)}
   .sec{background:var(--panel);border:1px solid var(--line);border-radius:14px;
-    padding:18px 20px;margin-bottom:22px}
+    padding:18px 20px;margin-bottom:22px;
+    /* v0.9.160：锚点跳转（#sec-ecore 等）时给 sticky 顶部导航留出 70px 余量，
+       否则标题会被 56px 高的 #lda-nav 压住，用户以为"跳过去是空的"。 */
+    scroll-margin-top:70px}
   .sec h2{margin:0 0 4px;font-size:16px}
   .sec .hint{color:var(--mut);font-size:12px;margin-bottom:14px}
   .subhead{font-size:13px;font-weight:600;color:var(--accent);margin:16px 0 8px;
@@ -74,15 +77,23 @@
 <style id="wb-nav-css">
 .wb-btn{border:1px solid rgba(0,0,0,.2);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px}
 .wb-btn:hover{background:#f0f4ff}
+/* 🔴 v0.9.160 入口高亮：能力目录 / 芯片案例直达 必须能从一排白底细边框按钮里跳出来。
+   受门禁 run_webui_entry_smoke.py 判据 D 守护。 */
+.wb-btn-primary{background:#185FA5;color:#fff;border-color:#185FA5;font-weight:700}
+.wb-btn-primary:hover{background:#1f74c4;color:#fff}
 .wb-search{flex:1;max-width:340px;padding:7px 10px;border:1px solid rgba(0,0,0,.2);border-radius:8px;font-size:13px}
 .wb-roles{display:flex;gap:4px}
 .wb-role{border:1px solid rgba(0,0,0,.2);background:#fff;border-radius:14px;padding:5px 12px;cursor:pointer;font-size:12px}
 .wb-role.wb-active{background:#185FA5;color:#fff;border-color:#185FA5}
 .wb-role-hidden{display:none !important}
 .wb-cta{margin-left:auto;background:#185FA5;color:#fff;border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;text-decoration:none;white-space:nowrap}
-.wb-drawer{position:fixed;top:56px;left:0;bottom:0;width:320px;background:#fff;border-right:1px solid rgba(0,0,0,.12);z-index:999;transform:translateX(-100%);transition:transform .2s ease;overflow-y:auto;padding:12px}
+/* 🔴 v0.9.160 层级修复（根因之二）：抽屉原为 z-index:999，而本页自注入的 3 个浮层
+   （cs_widget 客服气泡 / guide_widget 引导 / onboard_widget 上手）用的是 z-index ≈ 21.47 亿
+   （最高 2147483003）⇒ 点开抽屉后左侧被「入门进度」「🎯 3分钟引导」压住，用户以为"打不开/没有"。
+   现把抽屉抬到所有浮层之上（2147483100 > 2147483003），受门禁 run_webui_entry_smoke.py 判据 B 守护。 */
+.wb-drawer{position:fixed;top:56px;left:0;bottom:0;width:320px;background:#fff;border-right:1px solid rgba(0,0,0,.12);box-shadow:2px 0 16px rgba(0,0,0,.18);z-index:2147483100;transform:translateX(-100%);transition:transform .2s ease;overflow-y:auto;padding:12px}
 .wb-drawer.open{transform:none}
-.wb-scrim{position:fixed;inset:56px 0 0 0;background:rgba(0,0,0,.25);z-index:998;display:none}
+.wb-scrim{position:fixed;inset:56px 0 0 0;background:rgba(0,0,0,.25);z-index:2147483090;display:none}
 .wb-scrim.open{display:block}
 .wb-stage{font-weight:600;font-size:13px;margin:14px 0 6px;color:#185FA5;cursor:pointer;display:flex;justify-content:space-between;user-select:none}
 .wb-stage:first-child{margin-top:4px}
@@ -92,6 +103,8 @@
 .wb-demo .wb-tag{font-size:11px;color:#0F6E56;margin-left:6px}
 .wb-collapsed{display:none}
 .wb-flash{outline:3px solid #185FA5;outline-offset:4px;border-radius:8px}
+/* v0.9.160：锚点直达（#sec-ecore 等）落地即高亮，给用户「到了」的即时反馈 */
+.sec:target{outline:3px solid #fbbf24;outline-offset:4px;border-radius:14px}
 .wb-hero{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 14px}
 .wb-hcard{position:relative;border:1px solid #3f5e93;border-radius:12px;padding:14px 16px;background:#16243f;box-shadow:0 8px 24px rgba(2,6,20,.35);overflow:hidden}
 .wb-hcard.feat{background:#1b3a6b;border-color:#3b82f6}
@@ -152,6 +165,19 @@ body{padding-top:56px}
     <span style="background:#fbbf24;color:#1a1205;font-weight:700;padding:3px 10px;border-radius:999px">系统级 → 护城河</span>
     <a href="/insights.html" style="color:#eaf2ff;border:1px solid #3f5e93;border-radius:8px;padding:4px 10px;text-decoration:none">🏛 展厅</a>
     <a href="/store.html" style="color:#eaf2ff;border:1px solid #3f5e93;border-radius:8px;padding:4px 10px;text-decoration:none">🛒 创新超市</a>
+  </div>
+
+  <!-- 🔴 v0.9.160 芯片案例首屏直达（根因之三）：
+       4 张案例卡此前位于页面 ~48 屏处（#sec-ecore 实测 at 26872px / 整页 27423px），
+       且全页没有任何指向它们的首屏锚点导航 ⇒ 用户「反复查也找不到」。
+       受门禁 run_webui_entry_smoke.py 判据 E 守护（4 张案例卡必须各有首屏直达入口）。 -->
+  <div id="wbCaseBar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 14px;color:#9fb0d4;font-size:12px">
+    <span style="font-weight:700;color:#eaf2ff">★ 芯片案例直达：</span>
+    <a href="#sec-qchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光量子计算芯片</a>
+    <a href="#sec-schip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">超导量子计算芯片</a>
+    <a href="#sec-pchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光计算芯片</a>
+    <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E14）</a>
+    <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
 <div class="wrap" data-page-node-id="ZSb14R166GTEpeT15LSGPz">
@@ -5061,6 +5087,33 @@ if($('runECore')) $('runECore').onclick = runECore;
   });
   render();
   applyRoleToPage();
+})();
+</script>
+
+<script id="wb-casejump-js">
+/* 🔴 v0.9.160 芯片案例「直达即运行」（根因之三的体验闭环）：
+   4 张案例卡实测位于页面 ~48 屏处（#sec-ecore at 26872px / 整页 27423px）。
+   此前用户即便靠浏览器 hash 滚过去，还得自己再找一次「运行」按钮。
+   这里让 hash 命中案例锚点时自动点一次对应「运行」按钮——4 个案例端点均为
+   公开只读 / 零重计算 / 免登录（不进 HEAVY_POST_PATHS），秒出结果，自动运行安全。
+   受门禁 run_webui_entry_smoke.py 判据 E 守护。 */
+(function () {
+  "use strict";
+  var CASE_MAP = {"#sec-qchip": "runQChip", "#sec-schip": "runSChip",
+                  "#sec-pchip": "runPChip", "#sec-ecore": "runECore"};
+  var fired = {};
+  function maybeRun() {
+    var btnId = CASE_MAP[location.hash];
+    if (!btnId || fired[btnId]) return;
+    fired[btnId] = true;
+    var btn = document.getElementById(btnId);
+    if (btn) { try { btn.click(); } catch (e) {} }
+  }
+  window.addEventListener("hashchange", function () { setTimeout(maybeRun, 120); });
+  function boot() { setTimeout(maybeRun, 350); }
+  if (document.readyState === "complete" || document.readyState === "interactive") boot();
+  else document.addEventListener("DOMContentLoaded", boot);
+  boot();  // 覆盖「DOMContentLoaded 已过但 readyState 未刷新」的竞态
 })();
 </script>
 

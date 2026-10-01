@@ -48,11 +48,22 @@
         "padding:10px 18px;min-height:56px;box-sizing:border-box;flex-wrap:wrap;" +
         "background:var(--panel);border-bottom:1px solid var(--line)"
     );
-    // 首页专用控件（仅 index.html 存在 #wbDrawer 时注入）：目录/搜索/角色/进入工作台
+    // 首页专用控件（仅 index.html 存在 #wbDrawer 时注入）：能力目录/案例直达/搜索/角色/进入工作台
     // —— 与 wb-nav-js 按 id/class 接线（事件监听在 index.html 挂载），合并原 wb-topbar，消除双导航。
+    //
+    // 🔴 v0.9.160 入口可发现性修复（根因之一）：
+    //    此前该按钮文本是「目录」——**零信息量**，用户无法联想到「能力清单 / 芯片案例」，
+    //    而它又是「电子计算芯片案例」等深层卡片的**唯一导航入口**（卡片位于页面 ~48 屏处）。
+    //    ⇒ 现改为「☰ 能力目录」+ 强调色高亮 + 明确 title；并新增「★ 芯片案例」首屏直达。
+    //    ⚠️ 此命名受门禁 run_webui_entry_smoke.py 判据 D 守护（含糊命名会变红）。
     var isHome = !!document.getElementById("wbDrawer");
     var homeControls = isHome ? (
-      '<button id="wbMenuBtn" class="wb-btn" style="margin-right:4px">目录</button>' +
+      '<button id="wbMenuBtn" class="wb-btn wb-btn-primary" ' +
+        'title="按 7 个阶段浏览全部能力与芯片案例（含电子计算芯片案例）">' +
+        '☰ 能力目录</button>' +
+      '<a id="wbCaseJump" class="wb-btn wb-btn-primary" href="#sec-ecore" ' +
+        'title="直达首屏下方的芯片案例（光量子 / 超导 / 光计算 / 电子计算）" ' +
+        'style="margin-right:8px;text-decoration:none">★ 芯片案例</a>' +
       '<input id="wbSearch" class="wb-search" placeholder="搜索能力（如 环形 / 逆设计 / DRC）">' +
       '<div class="wb-roles" style="margin:0 4px">' +
         '<button data-role="customer" class="wb-role">客户</button>' +

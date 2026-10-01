@@ -4870,9 +4870,12 @@ function renderD4(d){
   h+='<h3 style="margin:14px 0 4px">① 逐域交付物（真 GDS + 双闸签核）</h3>';
   var names=Object.keys(D), rows=[];
   for(var i=0;i<names.length;i++){
-    var f=D[names[i]]||{}, gds=f.gds||{};
-    rows.push([ names[i], f.label||names[i], f.verdict||'-', gds.n_bytes!=null?gds.n_bytes+' B':'-',
-      (gds.sha256||'').slice(0,16)+'…', f.n_elements!=null?f.n_elements:'-' ]);
+    // 🔴 域事实是**扁平**结构（n_bytes / sha256 直接在 f 上，无嵌套 gds）——
+    //   曾误写成 f.gds.n_bytes ⇒ 浏览器实测两列渲染成 '-' / '…'（血案 #19 同款）
+    var f=D[names[i]]||{};
+    rows.push([ names[i], f.label||names[i], f.verdict||'-',
+      f.n_bytes!=null?f.n_bytes+' B':'-',
+      (f.sha256||'').slice(0,16)+'…', f.n_elements!=null?f.n_elements:'-' ]);
   }
   h+=_qcTbl(['域','交付内容','双闸','GDS 字节','确定性 sha256（截断）','几何元素数'], rows);
   h+='<h3 style="margin:14px 0 4px">② 双闸明细（DRC / LVS）</h3>';

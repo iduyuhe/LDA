@@ -113,6 +113,28 @@ def main() -> int:
           '"#sec-d4": "runD4"' in src)
     check("③g 全站反向完备：每个静态按钮 id 都有 $()*.onclick 接线",
           unwired_static_buttons(src) == [], f"无接线: {unwired_static_buttons(src)}")
+    # 🔴 前端取值路径门禁（血案 #19）：renderD4 访问的**属性名**必须在卡 JSON 里真存在。
+    #   本次就是靠浏览器实测抓出「前端读 f.gds.n_bytes，而域事实是扁平结构 ⇒ 渲染成 -」。
+    #   🔴 判据咬语义不咬字面：JS 里变量可改名（f./s.），只抽「访问了哪些属性名」。
+    js = src[src.find("function renderD4(d)"): src.find("if($('runD4'))")]
+    # 🔴 先剥注释：注释里的示例串（如「曾误写成 f.gds.n_bytes」）会被属性扫描当真，
+    #   造成自己写的判据被自己绊倒（该死的咬文嚼字，但必须机器化）
+    js_code = "\n".join(ln.split("//")[0] for ln in js.splitlines())
+    props = set(re.findall(r"\b(?:f|s)\.([A-Za-z_][A-Za-z0-9_]*)", js_code))
+    facts_keys = set()
+    for d in card["domain_list"]:
+        v = card["domains"][d]
+        facts_keys |= set(v)
+        for nest in ("drc", "lvs"):
+            if isinstance(v.get(nest), dict):
+                facts_keys |= {nest + "." + k for k in v[nest]}
+    missing_js = sorted(p for p in props if p not in facts_keys and p not in ("length",))
+    check("③i renderD4 访问的属性名逐键存在于卡 JSON（防 f.gds.* 式幽灵路径）",
+          not missing_js, f"前端读但卡里无: {missing_js}")
+    check("③j 域事实为扁平结构（无嵌套 gds 键，前端按 f.* 取值）",
+          ".gds." not in js_code
+          and {"label", "verdict", "n_bytes", "sha256", "n_elements", "drc", "lvs"}
+          <= facts_keys)
 
     # —— 缓存纪律 ——
     check("③h 同配置缓存命中（同一对象 · 秒回）", dc.case_card() is dc.case_card())

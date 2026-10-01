@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LDA 上机验收操作卡 · 电子计算芯片案例（v0.9.166 · E1–E17）</title>
+<title>LDA 上机验收操作卡 · 电子计算芯片案例（v0.9.168 · E1–E18）</title>
 <style>
   :root{--bg:#f7f9fc;--card:#fff;--line:#e3e8ef;--txt:#1f2937;--mut:#6b7280;--acc:#185FA5;--warn:#b45309;--ok:#0f6e56}
   *{box-sizing:border-box}
@@ -36,7 +36,7 @@
 
   <h1>LDA 上机验收操作卡 · 电子计算芯片案例</h1>
   <div class="sub">
-    版本 <b>v0.9.166</b> · 征程 <b>E1–E17（16 段）</b> · 生产 <code>https://lda.weomnitech.com.cn</code> · 本卡所有路径与截图
+    版本 <b>v0.9.168</b> · 征程 <b>E1–E18（17 段）</b> · 生产 <code>https://lda.weomnitech.com.cn</code> · 本卡所有路径与截图
     <b>均为实测</b>（agent-browser 真实打开生产站点逐步骤跑通后截取）
   </div>
 
@@ -93,13 +93,13 @@
       <span class="badge" style="background:#0f6e56;color:#eafff7;border-color:#0f6e56">光量子计算芯片</span>
       <span class="badge" style="background:#0f6e56;color:#eafff7;border-color:#0f6e56">超导量子计算芯片</span>
       <span class="badge" style="background:#0f6e56;color:#eafff7;border-color:#0f6e56">光计算芯片</span>
-      <span class="badge" style="background:#fbbf24;color:#1a1205;border-color:#fbbf24;font-weight:700">★ 电子计算芯片（E1–E17）</span>
+      <span class="badge" style="background:#fbbf24;color:#1a1205;border-color:#fbbf24;font-weight:700">★ 电子计算芯片（E1–E18）</span>
     </div>
   </div>
   <div class="step">
     <div class="num">3</div>
     <div class="body">
-      点最右边那个<b>黄色的「★ 电子计算芯片（E1–E17）」</b> —— 页面会<b>自动跳到卡片、黄色描边高亮、并自动跑出结果</b>。
+      点最右边那个<b>黄色的「★ 电子计算芯片（E1–E18）」</b> —— 页面会<b>自动跳到卡片、黄色描边高亮、并自动跑出结果</b>。
     </div>
   </div>
   <img src="shotA_home_direct.png" alt="首屏：顶部高亮入口 + 第一行芯片案例直达条">
@@ -142,17 +142,19 @@
   <table>
     <tr><th style="width:46px">#</th><th style="width:250px">看哪里</th><th>应该看到</th></tr>
     <tr><td>1</td><td>页面顶部最右</td><td>版本号 <b>v0.9.166</b></td></tr>
-    <tr><td>2</td><td>首屏第一行</td><td>「★ 芯片案例直达：…」四个彩色按钮，含黄色的<b>「★ 电子计算芯片（E1–E17）」</b></td></tr>
+    <tr><td>2</td><td>首屏第一行</td><td>「★ 芯片案例直达：…」四个彩色按钮，含黄色的<b>「★ 电子计算芯片（E1–E18）」</b></td></tr>
     <tr><td>3</td><td>点完之后卡片顶部</td><td>标题「<b>★ 电子计算芯片案例（模拟计算核 / MVM 交叉阵列）</b>」完整可见（不被顶部导航压住）</td></tr>
     <tr><td>4</td><td>卡片边框</td><td>一圈<b>黄色描边</b>（表示你就是从入口跳过来的）</td></tr>
-    <tr><td>5</td><td>蓝色摘要行</td><td>判决 <b>DESIGN_VERIFIED</b>（设计期验证）· 征程 <b>16 段</b> · 门禁 <b>376 判据</b>（含 82 探针）· 模块 <b>21</b></td></tr>
-    <tr><td>6</td><td>卡片正文（hint）</td><td><b>E1–E17 全链</b> → 最后一项是 <b>E17 时序 / 时钟预算链</b>（8×8 每样本 129.565 ns ⇒ 7.7181 MSa/s）</td></tr>
-    <tr><td>7</td><td>页面下半（继续滚）</td><td>能展开看到 E1–E17 的分段结果表、诚实边界表（共 <b>18</b> 条，末条 <b>G-R</b>）</td></tr>
+    <tr><td>5</td><td>蓝色摘要行</td><td>判决 <b>DESIGN_VERIFIED</b>（设计期验证）· 征程 <b>17 段</b> · 门禁 <b>407 判据</b>（含 88 探针）· 模块 <b>22</b></td></tr>
+    <tr><td>6</td><td>卡片正文（hint）</td><td><b>E1–E18 全链</b> → 最后一项是 <b>E18 列侧共享与架构权衡</b>（单列读出 128 000 µm² = 阵列的 354.92 倍；面积-时间乘积守恒 + 保吞吐 ∝1/K²）</td></tr>
+    <tr><td>7</td><td>页面下半（继续滚）</td><td>能展开看到 E1–E18 的分段结果表、诚实边界表（共 <b>19</b> 条，末条 <b>G-S</b>）</td></tr>
     <tr><td>8</td><td><b>实测参考</b>（见下方截图）</td><td>「<b>时序 / 时钟预算链（E17 · 时间维度上的 E15）</b>」面板：合成律对照（<b>21.0 / 11.0 / 21.0 ns</b> · RSS 13.38 ← 错法）+ 五阶段（SAR <b>71.11%</b>）+ <b>N 8→1024 阵列 τ 跨 12556× 而每样本只跨 1.00469×</b> + 交叉点 N≈4238 + 位数交叉</td></tr>
   </table>
 
   <p style="font-size:13.5px;color:#6b7280;margin:14px 0 4px">以下为「第 8 项」的实测截图（生产 <code>v0.9.166</code> · <code>agent-browser</code> 真实抓取）：</p>
+    <tr><td>9</td><td><b>实测参考</b>（见下方截图）</td><td>「<b>列侧共享与架构权衡（E18 · 补上全仓此前空白的「面积」维度）</b>」面板：量级事实（单列 CDAC 电容 <b>128 000 µm²</b> vs 64×64 阵列本体 <b>23 301.96 µm²</b> ⇒ 读出 = 阵列的 <b>354.92 倍</b>）+ <b>第一原理「面积-时间乘积守恒」</b>（散布 <b>0.00e+00</b>）+ <b>第二原理「保吞吐 ⇒ 面积 ∝1/K²」</b>（−1.000000 / −2.000000 / −1.952465）+ 拐点 <b>K*=160</b> + <b>kT/C 位数地板 16.34 位</b>（跌到 8 位需 K≈1.05×10⁵ ⇒ 代价是吞吐不是精度）+ 架构族 <b>5 条</b> + 推荐（<b>30 000 µm² = 1/275.68</b>）</td></tr>
   <img src="shotD_e17_panel.png" alt="E17 时序 / 时钟预算面板（生产实测）">
+  <img src="shotE_e18_panel.png" alt="E18 列侧共享与架构权衡面板（生产实测）">
 
   <h3>可选：不想点页面，用一条命令核对</h3>
   <p style="font-size:14px">把下面整段粘进 Windows 终端（PowerShell），会打印案例卡的关键字段：</p>
@@ -161,8 +163,8 @@
 "span    : 段=$($r.span.gate_checks) 判据 探针=$($r.span.probe_checks) 模块=$($r.span.modules)"
 "verdict : " + $r.verdict
 "gaps    : " + $r.gaps_total + " 条（末条 = " + $r.gaps[-1].id + "）"</pre>
-  <p style="font-size:14px">预期输出要点：<code>case_id</code> 含 <b>E1–E17 全链</b>；<code>verdict</code> = <b>DESIGN_VERIFIED</b>；
-  <code>span</code> 里 <b>gate_checks=376</b>、<b>probe_checks=82</b>、<b>modules=21</b>、<b>entrypoints=19</b>；<code>gaps</code> = <b>18</b> 条（末条 <b>G-R</b>）；<code>device_timing.totals.serial_ns</code> = <b>129.565246</b>。</p>
+  <p style="font-size:14px">预期输出要点：<code>case_id</code> 含 <b>E1–E18 全链</b>；<code>verdict</code> = <b>DESIGN_VERIFIED</b>；
+  <code>span</code> 里 <b>gate_checks=407</b>、<b>probe_checks=88</b>、<b>modules=22</b>、<b>capability_modules=21</b>、<b>entrypoints=20</b>；<code>gaps</code> = <b>19</b> 条（末条 <b>G-S</b>）；<code>device_timing.totals.serial_ns</code> = <b>129.565246</b>；<code>device_col_share.magnitude.readout_over_array_ratio</code> = <b>354.923</b>；<code>device_col_share.first_principle.spread</code> = <b>0.0</b>。</p>
 
   <h2>四、对不上时，请发我这三样</h2>
   <table>
@@ -196,7 +198,7 @@
 
   <div class="foot">
     LDA · 开源 Agent-native 光 / 量 / 电子 EDA（MIT）<br>
-    上机验收操作卡 · 入口可达性修复（v0.9.160）→ 口径升 E1–E17（v0.9.166）· 本卡路径与截图均为生产实测
+    上机验收操作卡 · 入口可达性修复（v0.9.160）→ 口径升 E1–E18（v0.9.168）· 本卡路径与截图均为生产实测
   </div>
 
 </div>

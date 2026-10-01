@@ -5002,7 +5002,7 @@ function renderECore(d){
       'β=1%/5%/10% ⇒ '+Number(DWREC.beta_1pct||0).toFixed(3)+' / <b>'+Number(DWREC.beta_5pct||0).toFixed(3)
       +'</b> / '+Number(DWREC.beta_10pct||0).toFixed(3)+' s（ν='+Number(DWDR.nu||0).toFixed(2)+'）'],
      ['良率','(1−p)^N',
-      '64 单元 @ p=1e-3 ⇒ <b>'+Number(DWY.cells_64_p_1e-3||0).toFixed(5)+'</b>']]);
+      '64 单元 @ p=1e-3 ⇒ <b>'+Number(DWY['cells_64_p_1e-3']||0).toFixed(5)+'</b>']]);
   h+='<div class="note">🔴 <b>单脉冲噪声 σ_p 是硬地板</b>：'+String(DWNF.semantics||'')+'</div>';
   h+='<div class="note">🔴 <b>电平界要用「平均电导」</b>：'+String(DWLV.bound_semantics||'')+'</div>';
   h+=_qcTbl(['8×8 口径','worst','有效精度','主导项'],
@@ -5200,8 +5200,8 @@ function renderECore(d){
     +'半宽比 0.835；文献缺口量化 L=65 nm roll-off 占 V_th 37.9%）、'
     +'<b>2D MOS 求解器</b>（把 E11-d 登记为「算不了」的短沟道效应<b>补上</b>：四端 2D 自洽泊松 ⇒ '
     +'roll-off L=65 nm <b>'+Number((RO.dvth_vs_golden_mv||[])[0]||0).toFixed(1)+' mV</b>、'
-    +'<b>DIBL '+Number(DB.dibl_mv_per_v||0).toFixed(1)+' mV/V 且满足 ln(DIBL)–L 指数衰减律'
-    +'（R² '+Number(DB.r2_exp_law||0).toFixed(4)+'）</b>）、'
+    +'<b>DIBL '+Number(D2.dibl.dibl_mv_per_v||0).toFixed(1)+' mV/V 且满足 ln(DIBL)–L 指数衰减律'
+    +'（R² '+Number(D2.dibl.r2_exp_law||0).toFixed(4)+'）</b>）、'
     +'<b>2D 漂移扩散输运</b>（把 E12 的 G-K「不产 I-V」<b>关掉</b>：Si-only 掩码 SG 离散 + '
     +'接触准费米势 BC + Gummel ⇒ <b>I–V / 亚阈值摆幅可从数值解提取</b>；长沟道 SS '
     +'<b>'+Number(TL.ss_2d_mv_dec||0).toFixed(2)+' ⟷ 闭式 '+Number(TL.ss_closed_mv_dec||0).toFixed(2)

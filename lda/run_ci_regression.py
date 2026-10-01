@@ -1393,6 +1393,16 @@ CORE_SMOKES: List[str] = [
     # 🔴 保护性约束：`keep_throughput` **默认 False** ⇒ E15/E16/E17 已发布数字逐位不变。
     "run_ecore_e18_smoke.py",
     "run_webui_entry_smoke.py",
+    # 🔴 v0.9.169（D-193）WebUI 案例卡前端**取值路径**门禁 —— 把血案 #32 机器化：
+    #   E17-e 生产实测发现前端取 `synthesis_law.serial_ns` 而该值实际在 `.demo` 下 ⇒ **三格显示 0.0**，
+    #   靠人肉翻生产页才发现。后端侧一切门禁（案例卡 B1–B24 / API 验收）**看不到这一层** ——
+    #   它们只保证 JSON 里有值，**不保证前端问对了地方**。
+    #   本门禁：① 别名**时间线**（`DB` 被声明两次 ⇒ 必须按位置取最近绑定；朴素全局映射造 63 条假阳性）；
+    #   ② 每条引用路径在真实 `case_card()` JSON 上逐段解析（排除 JS 内建成员 `.map`/`.length` 等）；
+    #   ③ 反向完备（每个 `device_*` facts 块都必须被引用）；④ 3 条突变探针 + 还原重跑。
+    #   🔴 首次运行即抓到 **2 处真实渲染 bug**：`DB.dibl_mv_per_v`/`DB.r2_exp_law`（该处 `DB` 已重绑为
+    #   `device_budget` ⇒ 渲染 0.0）与 `DWY.cells_64_p_1e-3`（JS 减法 ⇒ NaN）—— 均已修。
+    "run_webui_ecore_render_path_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2229,6 +2239,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e18_smoke.py": 300.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     "run_webui_entry_smoke.py": 120.0,
+    # WebUI 案例卡前端取值路径门禁（v0.9.169 · D-193）· 纯文本解析（不执行 JS），实测 ~0.19s
+    "run_webui_ecore_render_path_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

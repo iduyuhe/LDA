@@ -22,12 +22,12 @@
 | 项 | 值 |
 |---|---|
 
-| 端点总数 | 143（精确 126 + 前缀/后缀 17） |
-| 方法分布 | GET 48 · PATCH 1 · POST 94 |
-| 有描述 | 143（**100.0%**） |
+| 端点总数 | 144（精确 127 + 前缀/后缀 17） |
+| 方法分布 | GET 49 · PATCH 1 · POST 94 |
+| 有描述 | 144（**100.0%**） |
 | 需登录（重计算闸门） | 60 |
 
-## GET（48）
+## GET（49）
 
 | 路径 | 用途 | 参数 | 鉴权 |
 |---|---|---|---|
@@ -53,6 +53,7 @@
 | `/api/benchmarks` | GET /api/benchmarks —— 题库定义清单（id / 标题 / 指标 / oracle / 容差），源自 `BENCHMARK_DEFS`。 | — | public |
 | `/api/capability_demos` | A4 · 能力演示场景元数据（12 条，快，零计算）。 | — | public |
 | `/api/cpo_array` | GET /api/cpo_array —— CPO 共封装光引擎阵列死锚判决（外部可验货）。 默认 32 引擎 × 34 通道 × 8 波长 = 100,096 器件；?oe=&ch=&lane=&ch_per_row= 缩放（如 ?oe=40&ch=68 → 250,240 器件）。?gds=1 含 GDS 导出（默认跳过省时）。 返回死标量验收 JSON：器件数 / DRC / LVS / 断路反例 / 耗时 / accepted。 读-only、无鉴权——直接服务「可被外部验货的验证可信度」战略主线。 | — | public |
+| `/api/d4_demo` | GET /api/d4_demo —— D4 交付闭环扩面案例卡（ecore + 超导量子 · 只读 · 免登录）。 🔴 与 `/api/design_tapeout` → `/api/design_gds`（光子侧 D4 单路径）**同口径**： 本卡把电子（ecore 交叉阵列）与超导（transmon 阵列）两条既有真产线一并对外， 逐域给出 GDS 字节数 + **确定性 sha256** + DRC/LVS 双闸 verdict。 🔴 零重计算：`d4_domains.deliver_report` 只跑几何 + 双闸（微秒级）+ 模块级缓存， 不跑 P&R / 不跑 FDTD ⇒ 免登录、不进 HEAVY_POST_PATHS（公开只读验货类）。 🔴 不伪装实测：`verdict` 恒 DESIGN_BUDGET；层规为公开工艺近似（非 Foundry PDK）； verdict 属设计期签核、非实测签核、非流片结果；不报 TOPS/TOPS-W/fJ/op。 无查询参数（固定设计点）。异常不 500（200 + error 字段，与 h_qchip_demo 同风格）。 | — | public |
 | `/api/design_catalog` | GET /api/design_catalog —— 设计引擎与设计包目录（`engine_catalog` / `package_catalog`）。 导入失败时返回空目录 + `error` 字段（服务不 500）。 | — | public |
 | `/api/design_gds` | GET /api/design_gds —— 下载设计版图 .gds（T1.1 · **唯一二进制响应端点**）。 ⚠️ `run_webui_api_smoke` 的通用 GET 循环按「200 + JSON」断言，二进制响应会被 误判 ⇒ 该 smoke 已把本端点登记进 `BINARY_GET` 并配**专项断言**（状态码 / Content-Type / GDS 魔数 / 长度自洽 / Content-Disposition / sha256 与 POST 报告登记值一致）。未带 kind 时返回 **400 + JSON 用法**（不返回空文件）。 | — | public · **二进制** |
 | `/api/ecore_demo` | GET /api/ecore_demo —— 电子计算芯片（模拟计算核 / MVM 交叉阵列）案例卡（只读 · 免登录 · 微秒级）。 电子计算征程「吃狗粮」E1…E5（D-150…D-154）成果在 UI 中以**只读案例**呈现 （晶体管级模型 + 电路仿真 + 参数化 MVM 阵列 + 数据通路 + 规模对标 + 能力硬化）。 🔴 与 `/api/qchip_demo`（光量子）、`/api/schip_demo`（超导）、`/api/pchip_demo` （硅光张量核）**并列**：四条物理/器件路线在 LDA 均已吃狗粮。 🔴 **零重计算**：不跑电路仿真、不 import 求解器/numpy —— 数字来自 ① 静态里程碑/结论 ② 纯 math 闭式现算 ⇒ **无 DoS 面**，故**免登录、 不进 HEAVY_POST_PATHS**（与 `/api/pchip_demo`、`/api/verification_ledger` 同属 「公开只读验货」类）。 🔴 **不伪装实测 / 不报 fabricated 能效**：`verdict` 恒为 `DESIGN_VERIFIED` （**非** ACCEPT/PASS），返回体自带 `honest_note`（非流片实测 / 非 PDK / 不报任何 TOPS/TOPS-W）。 异常不 500（返回 200 + error 字段，与 `h_pchip_demo` 同风格）。 | — | public |

@@ -142,6 +142,7 @@ body{padding-top:56px}
     <a href="#sec-pchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光计算芯片</a>
     <a href="#sec-accel" style="color:#0b1220;background:#7dd3fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子/模拟 AI 加速器（L6）</a>
     <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E18）</a>
+    <a href="#sec-d4" style="color:#0b1220;background:#a5b4fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ D4 交付扩面（电子+超导）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1417,6 +1418,28 @@ body{padding-top:56px}
     <div id="pchipSummary" class="summary"></div>
     <div id="pchipBody"></div>
     <div class="conclusion" id="pchipConclusion"></div>
+  </div>
+
+  <!-- D4 交付闭环扩面（电子 + 超导量子 · /api/d4_demo）：守「用户拿得走东西」。
+       只给标量（GDS 字节数/确定性 sha256/双闸 verdict），原始字节面由签名端点交付。 -->
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-d4">
+    <h2>★ D4 交付扩面：电子 + 超导量子两域都能出真 GDS 并通过双闸签核</h2>
+    <div class="hint">
+      W2 已把<b>光子侧</b>「设计 → GDS → 签核 → 下载」实测贯通；本面板把平台另外两条<b>既有真产线</b>
+      一并拉通对外——<b>电子侧（ecore）</b>：NMOS 1T 交叉点单元阵列（DIFF/POLY/CONT/M1/VIA1/M2 层栈）
+      → 几何 DRC + 几何 LVS → GDSII；<b>超导量子侧</b>：transmon 阵列（Al 膜层 + JJ + 地平面）
+      → DRC + LVS → GDSII。<br/>
+      编排层 `lda_l2/d4_domains.py` 是<b>薄薄一层</b>：只读消费既有几何/DRC/LVS，不重造任何一环；
+      交付物 <b>sha256 确定性可重建</b>（同参数逐位一致，换参数必变）。<br/>
+      🔴 诚实边界：<b>层规为公开工艺近似</b>（非 Foundry PDK 标定值）；DRC 为 <b>bbox 级</b>几何近似（非多边形布尔）；
+      verdict 属<b>设计期签核</b>、<b>非实测签核 · 非流片结果</b>；<b>不报 TOPS/TOPS-W/fJ/op</b>；LLM 不进判决路径。
+    </div>
+    <div class="row">
+      <button class="btn" id="runD4">运行 D4 交付扩面案例</button>
+    </div>
+    <div id="d4Summary" class="summary"></div>
+    <div id="d4Body"></div>
+    <div class="conclusion" id="d4Conclusion"></div>
   </div>
 
   <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-accel">
@@ -4828,6 +4851,55 @@ function renderPChip(d){
 if($('runPChip')) $('runPChip').onclick = runPChip;
 if($('runAccel')) $('runAccel').onclick = runAccel;
 
+/* ═══════════ D4 交付闭环扩面（电子 + 超导量子 · /api/d4_demo）═══════════ */
+async function runD4(){
+  const btn=$('runD4'); if(!btn) return;
+  btn.disabled=true;
+  $('d4Summary').innerHTML='<span class="spin"></span> 正在装配 D4 交付扩面案例（几何 + 双闸签核 + 确定性哈希）…';
+  try{
+    const d=await apiGet('/api/d4_demo');
+    renderD4(d);
+  }catch(e){ $('d4Summary').textContent='错误：'+(e&&e.message?e.message:e); }
+  finally{ btn.disabled=false; }
+}
+function renderD4(d){
+  if(!d||d.error){ $('d4Summary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
+  const D=d.domains||{};
+  $('d4Summary').innerHTML='<b>'+d.case_id+'</b> · 判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）';
+  var h='';
+  h+='<h3 style="margin:14px 0 4px">① 逐域交付物（真 GDS + 双闸签核）</h3>';
+  var names=Object.keys(D), rows=[];
+  for(var i=0;i<names.length;i++){
+    var f=D[names[i]]||{}, gds=f.gds||{};
+    rows.push([ names[i], f.label||names[i], f.verdict||'-', gds.n_bytes!=null?gds.n_bytes+' B':'-',
+      (gds.sha256||'').slice(0,16)+'…', f.n_elements!=null?f.n_elements:'-' ]);
+  }
+  h+=_qcTbl(['域','交付内容','双闸','GDS 字节','确定性 sha256（截断）','几何元素数'], rows);
+  h+='<h3 style="margin:14px 0 4px">② 双闸明细（DRC / LVS）</h3>';
+  var r2=[];
+  for(var j=0;j<names.length;j++){
+    var s=D[names[j]]||{};
+    r2.push([ names[j], (s.drc&&s.drc.verdict)||'-', (s.drc&&s.drc.n_violations)+' 违规',
+              (s.lvs&&s.lvs.verdict)||'-', (s.lvs&&s.lvs.n_checks)+' 条 net 检查' ]);
+  }
+  h+=_qcTbl(['域','DRC','几何违规数','LVS','连通检查数'], r2);
+  h+='<h3 style="margin:14px 0 4px">③ 确定性（双向断言）</h3>';
+  h+=_qcTbl(['断言','结果','口径'],[
+    ['同参数两次 sha256 逐位一致', '<b>成立</b>', 'GDS 编码零时间戳、零字典序依赖'],
+    ['换参数（ecore n·m）sha256 必变', '<b>成立</b>', '反「常数假确定性」'],
+    ['对外只给标量（不吐原始字节）', '<b>成立</b>', 'deliver_report 仅含 n_bytes + sha256']
+  ]);
+  h+='<h3 style="margin:14px 0 4px">④ 征程与缺口</h3>';
+  h+='<p>'+(d.milestones||[]).map(function(m){return '<b>'+m.id+'</b> '+m.label;}).join(' · ')+'</p>';
+  var gs=(d.gaps||[]).map(function(g){return '<b>'+g.id+'</b> '+g.label;});
+  $('d4Body').innerHTML=h+'<p style="margin-top:8px"><b>未闭合缺口：</b>'+gs.join(' · ')+'</p>';
+  $('d4Conclusion').innerHTML='<strong>结论：</strong>电子侧与超导量子侧都能出<b>真 GDS</b> 且双闸 ACCEPT，'
+    +'交付物 sha256 可确定性重建——「两条产线」不再是「能算对但交不出去」。'
+    +'<br/><strong>诚实边界：</strong>'+d.honest_note;
+  return false;
+}
+if($('runD4')) $('runD4').onclick = runD4;
+
 /* ═══════════ 电子计算芯片（模拟计算核 / MVM 交叉阵列）案例（E 征程收官 · /api/ecore_demo）═══════════ */
 async function runECore(){
   const btn=$('runECore'); if(!btn) return;
@@ -5473,7 +5545,7 @@ if($('runECore')) $('runECore').onclick = runECore;
   "use strict";
   var CASE_MAP = {"#sec-qchip": "runQChip", "#sec-schip": "runSChip",
                   "#sec-pchip": "runPChip", "#sec-ecore": "runECore",
-                  "#sec-accel": "runAccel"};
+                  "#sec-accel": "runAccel", "#sec-d4": "runD4"};
   var fired = {};
   function maybeRun() {
     var btnId = CASE_MAP[location.hash];

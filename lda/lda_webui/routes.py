@@ -386,6 +386,32 @@ def h_ecore_demo(h, p, q, path):
                       "case_id": _ec.CASE_ID, "verdict": "ERROR"})
 
 
+def h_d4_demo(h, p, q, path):
+    """GET /api/d4_demo —— D4 交付闭环扩面案例卡（ecore + 超导量子 · 只读 · 免登录）。
+
+    🔴 与 `/api/design_tapeout` → `/api/design_gds`（光子侧 D4 单路径）**同口径**：
+    本卡把电子（ecore 交叉阵列）与超导（transmon 阵列）两条既有真产线一并对外，
+    逐域给出 GDS 字节数 + **确定性 sha256** + DRC/LVS 双闸 verdict。
+
+    🔴 零重计算：`d4_domains.deliver_report` 只跑几何 + 双闸（微秒级）+ 模块级缓存，
+    不跑 P&R / 不跑 FDTD ⇒ 免登录、不进 HEAVY_POST_PATHS（公开只读验货类）。
+
+    🔴 不伪装实测：`verdict` 恒 DESIGN_BUDGET；层规为公开工艺近似（非 Foundry PDK）；
+    verdict 属设计期签核、非实测签核、非流片结果；不报 TOPS/TOPS-W/fJ/op。
+
+    无查询参数（固定设计点）。异常不 500（200 + error 字段，与 h_qchip_demo 同风格）。
+    """
+    try:
+        from . import d4case as _d4
+    except ImportError:
+        from lda_webui import d4case as _d4
+    try:
+        return (200, _d4.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/d4_demo", "error": str(e)[:160],
+                      "case_id": _d4.CASE_ID, "verdict": "ERROR"})
+
+
 # --------------------------------------------------------------------------
 # /api/cpo_array 重计算端点并发护栏
 # 背景：app.py 用 ThreadingHTTPServer（每请求一线程）。该端点无鉴权且默认
@@ -1893,6 +1919,8 @@ GET_ROUTES = {
     "/api/accel_demo": h_accel_demo,
     # A 档接入（E 征程收官）：电子计算芯片（模拟计算核 / MVM 交叉阵列）只读案例卡（零重计算 · 免登录）
     "/api/ecore_demo": h_ecore_demo,
+    # D4 交付闭环扩面：电子 + 超导量子两域的「真 GDS + 双闸签核 + 确定性 sha256」案例卡
+    "/api/d4_demo": h_d4_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,

@@ -1420,6 +1420,15 @@ CORE_SMOKES: List[str] = [
     #   诚实边界（verdict 恒 DESIGN_BUDGET · 主张面无 TOPS/实测宣称 · gaps 自洽）·
     #   跨源一致（卡内数字与模块现算逐位同源 · 前端三件 · hash 映射）。2 突变探针。CI core 261→262。
     "run_accel_case_smoke.py",
+    # v0.9.172 · D4 交付闭环扩面（ecore + 超导量子）：统一编排 build_domain 一次跑完
+    # 「几何 → 真 GDS → DRC/LVS 双闸 → 确定性 sha256」，只读消费 ecore/layout 与
+    # lda_qeda/sc_array（不重造几何/DRC/LVS）。13 判据 + 3 突变探针（空 GDS / DRC 伪造
+    # REJECT / ghost 未接门禁域）。CI core 262→263。
+    "run_d4_domain_smoke.py",
+    # v0.9.172 · D4 扩面案例卡门禁（/api/d4_demo）：只读可达 + 诚实边界（verdict 恒
+    # DESIGN_BUDGET · 逐域 sha256 与模块现算逐位同源）+ 前端 sec-d4/runD4/CASE_MAP +
+    # onclick 接线反向完备 + 3 突变探针。CI core 263→264。
+    "run_d4_case_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2264,6 +2273,10 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ai_accel_ref_smoke.py": 300.0,
     # 阶段 4 案例卡门禁（W4-2 accel_demo）· 实测上界 <1s（缓存现算 + 前端源码扫描）
     "run_accel_case_smoke.py": 300.0,
+    # v0.9.172 D4 交付扩面门禁：纯标准库几何 + DRC/LVS，实测上界 <1s
+    "run_d4_domain_smoke.py": 300.0,
+    # v0.9.172 D4 扩面案例卡门禁：缓存现算 + 前端源码扫描，实测上界 <1s
+    "run_d4_case_smoke.py": 300.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

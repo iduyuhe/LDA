@@ -1,9 +1,9 @@
 {
   "counts": {
-    "described": 143,
+    "described": 144,
     "needs_login": 60,
-    "precise": 126,
-    "total": 143,
+    "precise": 127,
+    "total": 144,
     "undescribed": 0,
     "wildcard": 17
   },
@@ -313,6 +313,20 @@
       "note": "",
       "params": [],
       "path": "/api/cpo_array",
+      "source": "handler_docstring",
+      "wildcard": false
+    },
+    {
+      "app_function": null,
+      "auth": "public",
+      "binary": false,
+      "description": "GET /api/d4_demo —— D4 交付闭环扩面案例卡（ecore + 超导量子 · 只读 · 免登录）。 🔴 与 `/api/design_tapeout` → `/api/design_gds`（光子侧 D4 单路径）**同口径**： 本卡把电子（ecore 交叉阵列）与超导（transmon 阵列）两条既有真产线一并对外， 逐域给出 GDS 字节数 + **确定性 sha256** + DRC/LVS 双闸 verdict。 🔴 零重计算：`d4_domains.deliver_report` 只跑几何 + 双闸（微秒级）+ 模块级缓存， 不跑 P&R / 不跑 FDTD ⇒ 免登录、不进 HEAVY_POST_PATHS（公开只读验货类）。 🔴 不伪装实测：`verdict` 恒 DESIGN_BUDGET；层规为公开工艺近似（非 Foundry PDK）； verdict 属设计期签核、非实测签核、非流片结果；不报 TOPS/TOPS-W/fJ/op。 无查询参数（固定设计点）。异常不 500（200 + error 字段，与 h_qchip_demo 同风格）。",
+      "handler": "h_d4_demo",
+      "heavy": false,
+      "method": "GET",
+      "note": "",
+      "params": [],
+      "path": "/api/d4_demo",
       "source": "handler_docstring",
       "wildcard": false
     },

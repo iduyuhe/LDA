@@ -1,0 +1,152 @@
+# -*- coding: utf-8 -*-
+"""LDA · D4 交付扩面案例卡（W5-1 · ecore / 量子侧 · 只读案例卡）。
+
+============================================================================
+案例卡体例（与 qchip/schip/pchip/ecore/accel 同族）：
+  `*_case.py` 事实源 → 只读 GET 路由（不进 HEAVY_POST_PATHS）→ 前端 sec-* 面板
+  → API 参考（gen_api_reference 单一真源）→ 案例卡门禁（run_*_case_smoke.py）。
+
+本卡守的是「**用户拿得走东西**」：W2 已把光子侧「设计→GDS→签核→下载」实测贯通，
+本卡把电子（ecore 交叉阵列）与超导量子（transmon 阵列）两条**既有真产线**一并
+对外开放——它们此前各有 GDS/DRC/LVS，但**没有对外交付通路**。
+
+🔴 诚实边界（逐条登记，不粉饰）：
+  - 层规为**公开工艺近似**设计规则（非 Foundry PDK 标定值）；
+  - DRC 为 bbox 级几何近似（非多边形布尔运算）；
+  - verdict 属**设计期签核**，**非实测签核 · 非流片结果**；
+  - 不报 TOPS / TOPS-W / fJ/op（红线）· LLM 不进判决路径。
+"""
+from __future__ import annotations
+
+from typing import Any, Dict
+
+CASE_ID = "D4-DOMAIN-EXPANSION-v1"
+
+_CARD_CACHE: Dict[tuple, Dict[str, Any]] = {}
+
+CLAIM = ("电子侧与超导量子侧都能出**真 GDS** 并通过 DRC/LVS 双闸签核——"
+         "且同一份交付物的 sha256 可确定性重建（设计→签核→下载 全链一致）")
+IDENTITY = {
+    "ecore": "电子计算核：NMOS 1T 交叉点单元阵列（DIFF/POLY/CONT/M1/VIA1/M2 层栈）"
+             "→ 几何 DRC（bbox 级）+ 几何 LVS（并查集连通分量）→ GDSII",
+    "quantum_sc": "超导 transmon 量子阵列（S3）：Al 膜层 + JJ + 地平面 + 读出/控制几何"
+                  "→ DRC + LVS 签核 → GDSII",
+    "photon": "光子侧（W2 已闭合，本卡仅作对照基线）：单器件设计包 → 芯片级 GDS + 双闸 → 下载",
+    "route_note": "本卡只读消费 `lda_l2/d4_domains.py`（编排）+ `ecore/layout` + `lda_qeda/sc_array`"
+                  "（几何/DRC/LVS 真实现），**不重造任何一环**",
+}
+HONEST_NOTE = (
+    "诚实边界：层规为公开工艺近似设计规则（非 Foundry PDK 标定值）；DRC 为 bbox 级几何近似；"
+    "verdict 属设计期签核、非实测签核、非流片结果；不报 TOPS / TOPS-W / fJ/op；"
+    "LLM 不进判决路径；零商业 EDA 依赖。"
+)
+MILESTONES = [
+    {"id": "D1", "label": "光子侧 D4 先闭合（W2）",
+     "detail": "/api/design_tapeout → /api/design_gds：芯片级 GDS + 双闸 ACCEPT + "
+               "下载 sha256 与本地确定性重建逐位 MATCH（12/12 进程内 E2E）"},
+    {"id": "D2", "label": "发现两条产线仍是断的",
+     "detail": "ecore（E6）与超导量子（S3）早就有真 GDS + DRC/LVS，但**无对外交付通路**——"
+               "用户拿不走 ⇒ 能力停在 D3"},
+    {"id": "D3", "label": "统一编排收编既有链路",
+     "detail": "`lda_l2/d4_domains.py`：build_domain(domain) 一次跑完「几何 → GDS → 双闸签核 → "
+               "确定性 sha256」，只读消费既有模块，不重造几何/DRC/LVS"},
+    {"id": "D4", "label": "双向确定性判据",
+     "detail": "同参数两次 sha256 逐位一致；换参数（ecore n·m）sha256 必须不同——"
+               "防「常数假确定性」"},
+    {"id": "D5", "label": "布局：域完备反向判据 + 3 道探针",
+     "detail": "注册域 ≡ 门禁显式表（新域必须进门禁）；探针：空 GDS / DRC 伪造 REJECT / "
+               "塞入未接门禁的 ghost 域，三者皆必红"},
+]
+FINDINGS = [
+    {"title": "两条新产线都能出真 GDS 且双闸 ACCEPT",
+     "detail": "ecore 交叉阵列与超导 transmon 阵列各产出字节级 GDS（HEADER 记录 "
+               "`00 06 00 02`），DRC 零违规 + LVS ACCEPT"},
+    {"title": "确定性不是口号，是双向断言",
+     "detail": "只测「同参数同 sha」会被恒定 sha 骗过；本卡同时断言「换参数必变」"},
+    {"title": "编排层必须是薄薄的一层",
+     "detail": "编排只做去重/归一/确定性哈希，几何与签核仍各自真实现——"
+               "否则编排一改，两条产线的物理结论跟着漂移"},
+    {"title": "对外只给标量",
+     "detail": "deliver_report 不含 GDS 字节面（前端/案例卡只消费标量），字节面仅由"
+               "签名端点交付"},
+]
+GAPS = [
+    {"id": "G-U", "label": "光量子（LOQC）侧尚未纳入统一编排",
+     "closed": False,
+     "note": "本卡只收编电子 + 超导超导两域；LOQC 可编程 MZI 网格的交付通路待接入"},
+    {"id": "G-D", "label": "下载端点尚未扩面到新两域",
+     "closed": False,
+     "note": "光子侧 /api/design_gds 按 kind 参数重建；新两域需同口径的确定性重建端点"},
+    {"id": "G-P", "label": "层规仍是公开工艺近似",
+     "closed": False,
+     "note": "Foundry PDK 层规属外部依赖（D5），平台不沾 ⇒ 签核结论不可当流片放行依据"},
+    {"id": "G-B", "label": "DRC 为 bbox 级近似",
+     "closed": False,
+     "note": "bbox 相交偏保守（宁可多报）——真实多边形布尔运算不在本层"},
+]
+
+
+def _domain_facts() -> Dict[str, Any]:
+    """逐域取交付报告（只读标量面）。"""
+    from lda_l2 import d4_domains as dm
+
+    facts = {}
+    for d in dm.D4_DOMAINS:
+        r = dm.deliver_report(d)
+        facts[d] = {
+            "label": r.get("label"),
+            "verdict": r.get("verdict"),
+            "n_bytes": r.get("gds", {}).get("n_bytes"),
+            "sha256": r.get("gds", {}).get("sha256"),
+            "n_elements": r.get("n_elements"),
+            "drc": r.get("drc"),
+            "lvs": r.get("lvs"),
+        }
+    return facts
+
+
+def case_card(use_cache: bool = True) -> Dict[str, Any]:
+    """组装 D4 扩面案例卡（确定性现算 + 模块级缓存）。"""
+    if use_cache and CASE_ID in _CARD_CACHE:
+        return _CARD_CACHE[CASE_ID]
+
+    facts = _domain_facts()
+    card = {
+        "endpoint": "/api/d4_demo",
+        "case_id": CASE_ID,
+        "claim": CLAIM,
+        "identity": IDENTITY,
+        "verdict": "DESIGN_BUDGET",
+        "verdict_label": "设计期签核口径（几何 + DRC/LVS 双闸 · 确定性哈希 · 非流片实测）",
+        "honest_note": HONEST_NOTE,
+        "domains": facts,
+        "domain_list": list(facts),
+        "disclosure": {
+            "layer_rules": "公开工艺近似（非 Foundry PDK）",
+            "drc_precision": "bbox 级几何近似",
+            "signoff_class": "设计期签核 · 非实测签核 · 非流片",
+            "redline": "不报 TOPS / TOPS-W / fJ/op",
+        },
+        "milestones": MILESTONES,
+        "findings": FINDINGS,
+        "gaps": GAPS,
+        "gaps_total": len(GAPS),
+    }
+    if use_cache:
+        _CARD_CACHE[CASE_ID] = card
+    return card
+
+
+def run_selfchecks(verbose: bool = False) -> bool:
+    card = case_card()
+    facts_ok = bool(card["domains"]) and all(
+        v["verdict"] == "ACCEPT" and v["n_bytes"] > 0 for v in card["domains"].values())
+    if verbose:
+        print("[%s] 案例卡 %s · 域=%s · 全 ACCEPT=%s"
+              % ("PASS" if facts_ok else "FAIL", CASE_ID,
+                 ",".join(card["domain_list"]), facts_ok))
+    return bool(facts_ok)
+
+
+if __name__ == "__main__":
+    print("D4 case self-check:", "PASS" if run_selfchecks(verbose=True) else "FAIL")

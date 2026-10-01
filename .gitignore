@@ -196,6 +196,8 @@ _push*.py
 _verify*.py
 _accept*.py
 _deploy.log
+# 构建产物：超导/光量子 GDS 导出默认落盘会写进工作目录（lda/ 为常见 cwd）——窄口径忽略
+/lda/*.gds
 _msg*.txt
 _cmsg*.txt
 _*.log

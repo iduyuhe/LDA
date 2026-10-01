@@ -30,13 +30,11 @@ E1–E13 里，交叉阵列的行线一直是**理想电压源**直接钉住（`
 """
 from __future__ import annotations
 
-import math
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
 from .mna import Circuit
-from .mosfet import NmosParams
 
 try:                                        # 与 E7 寄生同源（取 r_seg / g 的默认口径）
     from . import parasitic as PA

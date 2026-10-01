@@ -66,8 +66,8 @@
   <div class="card">
     此前 LDA 电子域只到行为级——<b>无晶体管级模型 / 无电路仿真器 / 无模拟计算原语 / 无规模定标与诚实护栏</b>；
     进一步吃狗粮又逼出<b>无版图链 / 无寄生后仿 / 无失配噪声模型 / 无千级规模能力</b>。
-    进一步吃狗粮又逼出<b>无器件级 PDE 内核 / 无 2D MOS（短沟道）能力 / 无 2D 输运（I–V）能力</b>。
-    本征程新增 <code>lda/lda_l2/ecore/</code> 包（<b>16 模块 · 15 条能力面入册</b>）逐一补齐。
+    进一步吃狗粮又逼出<b>无器件级 PDE 内核 / 无 2D MOS（短沟道）能力 / 无 2D 输运（I–V）能力 / 无真 DAC·ADC·行驱动外设</b>。
+    本征程新增 <code>lda/lda_l2/ecore/</code> 包（<b>18 模块 · 17 条能力面入册</b>）逐一补齐。
     <table>
       <thead><tr><th>模块</th><th>能力</th><th>引入</th></tr></thead>
       <tbody>
@@ -87,11 +87,13 @@
         <tr><td><code>device_limits.py</code></td><td>失效边界（数值窗口实测 + 物理窗口文献判据 · 两类边界严格分离）</td><td>D-164 (E11-d)</td></tr>
         <tr><td><code>device_2d.py</code></td><td>2D MOS 桥（长沟道 ⟷ 教科书闭式交叉验证 + roll-off/DIBL 报告 + 能力闭合表）</td><td>D-166…D-168 (E12)</td></tr>
         <tr><td><code>device_transport.py</code></td><td>2D MOS 输运桥（G1–G6 判据 + SS 双锚 + V_th 双法交叉 + 能力闭合表）</td><td>D-170…D-172 (E13)</td></tr>
+        <tr><td><code>converter.py</code></td><td><b>真转换器电路</b>（R-2R 梯形 DAC + NMOS 模拟开关 · SAR/CDAC 电荷重分配 ADC · 采样保持 RC）</td><td>D-174…D-176 (E14)</td></tr>
+        <tr><td><code>periphery.py</code></td><td><b>行驱动 + 系统链</b>（缓冲闭式 + R_oc 耦合三对角 IR-drop + 可及规模上界重算 + 端到端系统链 + 行系统项）</td><td>D-174…D-176 (E14)</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h2>十二段里程碑（E1–E13 门禁判据合计 277 · 含 58 条突变探针）</h2>
+  <h2>十三段里程碑（E1–E14 门禁判据合计 303 · 含 64 条突变探针）</h2>
   <div class="card">
     <table>
       <thead><tr><th>段</th><th>编号</th><th>内容</th><th>关键结果（门禁实测）</th></tr></thead>
@@ -123,7 +125,9 @@
       <b>E12（D-166…D-168）</b>：<b>2D MOS 求解器</b>（<b>24 判据 / 7 突变探针</b>）⇒ 案例卡升级为
       <b>E1–E12 全链（34 判据 + 9 探针）</b>。<br/>
       <b>E13（D-170…D-172）</b>：<b>2D MOS 漂移扩散输运</b>（<b>18 判据 / 5 突变探针</b>）⇒ 案例卡升级为
-      <b>E1–E13 全链（38 判据 + 10 探针）</b>；能力面守护 scope 扩至 <b>e1~e13</b>。</p>
+      <b>E1–E13 全链（38 判据 + 10 探针）</b>；能力面守护 scope 扩至 <b>e1~e13</b>。<br/>
+      <b>E14（D-174…D-176）</b>：<b>真 DAC / ADC / 行驱动外设</b>（<b>26 判据 / 6 突变探针</b>）⇒ 案例卡升级为
+      <b>E1–E14 全链（40 判据 + 11 探针）</b>；守护 scope 扩至 <b>e1~e14</b>；能力清单 <b>17</b> 条。</p>
   </div>
 
   <h2>E6 · 版图与几何签核 —— 电子芯片首次直出真 GDS</h2>
@@ -309,6 +313,46 @@
       仍不可用：量子修正 / 弹道输运（需 NEGF）· 工艺角/PDK/硅验证（<b>T2 永久锁</b>）。</p>
   </div>
 
+  <h2>E14 · 真 DAC / ADC / 行驱动外设 —— 把「设计链」补成「系统链」</h2>
+  <div class="card">
+    <p style="font-size:13.5px;margin:0 0 8px">E1–E13 的 <b>DAC/ADC 一直是行为级量化模型</b>、
+      <b>行线由理想电压源钉住</b> ⇒ 外围电路的精度 / 负载代价从未进入任何结论。E14 换成<b>真电路</b>：
+      <b>R-2R 梯形 DAC</b>（无源电阻网络 + <b>NMOS 模拟开关</b>）· <b>SAR + CDAC 电荷重分配 ADC</b>
+      （真电容阵列 + 真瞬态）· <b>采样保持</b>（<code>converter.py</code>）；
+      行驱动与端到端系统链（<code>periphery.py</code>）。</p>
+    <table>
+      <thead><tr><th>环节</th><th>实测</th><th>锚 / 口径</th></tr></thead>
+      <tbody>
+        <tr><td><b>R-2R DAC</b>（真 NMOS 开关）</td><td>8 bit 全码 256 点 max|Δ| <b>0.0265 LSB</b></td><td><code>R_on</code> <b>6.4 Ω</b> · 网络装配自证 1.1e-16</td></tr>
+        <tr><td>开关影响</td><td>W/L ↑ ⇒ 误差 ↓（<b>0.0017 ⟷ 0.0660 LSB</b>）</td><td><b>R_on 是 DAC 精度上限的一个来源</b></td></tr>
+        <tr><td><b>SAR + CDAC</b></td><td>电荷守恒 rel <b>3.9e-12</b> · 16 点 max ≤ <b>1 LSB</b></td><td>🔴 <b>电容 DC 开路 ⇒ 必须走瞬态</b></td></tr>
+        <tr><td><b>采样保持</b></td><td>瞬态 ⟷ 离散闭式 rel <b>5.6e-16</b></td><td>与连续闭式偏差 <b>O(dt)</b>：2.27e-3 → 1.10e-3 → 5.40e-4</td></tr>
+        <tr><td><b>行驱动</b></td><td>闭式 ⟷ <b>MNA 真电路</b> rel <b>1.4e-16</b></td><td><code>v_in·A/(1+A+R_ol/R_L)</code> · <code>R_oc = R_ol/(1+A)</code></td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>🔴 可及规模上界（5% 输出误差预算）</th><th>R_oc = 0 / 1 / 5 / 20 Ω</th></tr></thead>
+      <tbody>
+        <tr><td>可及最大行数 N_max</td><td><b>20 → 17 → 10 → 3</b></td></tr>
+        <tr><td>与 E9 极限一致性</td><td>R_oc = 0 时与 E9 <code>row_line_profile</code> <b>逐位一致</b>（max|Δ| = 0）</td></tr>
+      </tbody>
+    </table>
+    <p style="margin:10px 0 0;font-size:13.5px">🔴 <b>器件级参数第一次反馈到规模律</b>：
+      <b>行驱动输出阻抗必须远小于行线总电阻</b>；并暴露 <b>行系统项</b>（行增益离散 <b>8.889e-4</b>，
+      理想驱动 = 0）—— 与 E8 的<b>列系统项</b>同型、<b>不会被执行 Monte Carlo 平均掉</b> ⇒
+      要么 R_oc 足够低，要么<b>行级校准</b>。<br/>
+      🔴 <b>平台缺陷登记</b>：<code>mna.Circuit.vcvs</code> 的<b>实际极性与 docstring 相反</b>
+      （声明 <code>V_out = gain·(V_cp−V_cn)</code>，实际 <code>gain·(V_cn−V_cp)</code>）—— 按保护性约束
+      <b>不改 mna</b>（E1–E13 已上线数字建立其上），改为<b>适配 + 显式登记 + 判据锁死</b>；
+      E2/E3 结论仍成立（TIA 虚地是 |A|→∞ 的极限）。<br/>
+      🔴 <b>诚实边界</b>：比较器是<b>判决器抽象</b>（非晶体管级）· CDAC 底板开关用<b>理想电压源抽象</b>
+      （DAC 侧用真 NMOS 开关以暴露 R_on）· 行驱动器是 <b>VCVS + 开环输出电阻宏模型</b> ·
+      电阻/电容为理想值（不建匹配网络）· 不做流片 · 不报 TOPS/TOPS-W/fJ/op。<br/>
+      仍不可用：晶体管级比较器 / 运放 · 匹配网络 · 电荷注入完整模型 · 建立时间/摆率 ·
+      工艺角/PDK/硅验证（<b>T2 永久锁</b>）。</p>
+  </div>
+
+
   <h2>关键结论</h2>
   <div class="card">
     <ul>
@@ -333,6 +377,10 @@
         2D <b>68.08</b> ⟷ 闭式 <b>66.41</b>（rel 2.52%）；短沟道退化 <b>65 nm → 226.9 mV/dec</b>
         （与 E12 的 roll-off/DIBL <b>同向</b>，两条独立路径互证）。🔴 <b>仍是 DD 框架</b> ⇒
         <code>I_on</code> 绝对值不可当器件性能。</li>
+      <li><b>驱动阻抗反向决定规模上界（E14）</b>：把行驱动的<b>闭环输出电阻 R_oc</b> 串进 E9 的三对角
+        IR-drop 后，5% 误差预算下的可及行数从 <b>N≤20（理想源）掉到 N≤17（1 Ω）/ N≤10（5 Ω）/ N≤3（20 Ω）</b>
+        ⇒ <b>行驱动输出阻抗必须远小于行线总电阻</b>；并暴露 <b>行系统项</b>（行负载随行变化 ⇒ 按行增益误差
+        8.889e-4，与 E8 的<b>列系统项</b>同型、<b>MC 平均不掉</b>）。</li>
     </ul>
   </div>
 
@@ -368,16 +416,18 @@
       <b>G-I</b> 规模模型为 1D 行线（忽略列线电阻）：校核规模内与 2D 稠密 MNA 对拍一致；千级为<b>设计期版图与规模律</b>，非流片。<br/>
       <b>G-J</b> 短沟道效应原不在模型内（E11-d 测绘）→ <b>已由 E12 闭合（历史项 · 保留可追溯）</b>：E11-d 曾用<b>文献经验式</b>量化缺口（L=65 nm roll-off 占 V_th <b>37.9%</b>）；<b>E12 已补上该能力</b>。本项不代表当前能力状态。<br/>
       <b>G-K</b> 2D MOS 原不产 I-V（E12 测绘）→ <b>已由 E13 闭合（历史项 · 保留可追溯）</b>：E12 的 2D 求解器<b>不含漂移扩散输运</b> ⇒ 当时无 I–V / 无亚阈值摆幅（从电流）。<b>E13 已补上该能力</b>（稳态漂移扩散）⇒ 本项<b>不代表当前能力状态</b>。<br/>
-      <b>G-L</b> 漂移扩散（DD）框架的内在边界（E13 新增能力的内在边界）：<b>仍不含量子修正 / 速度饱和 / 带间与栅隧穿 / 弹道输运</b>；<b>迁移率为常数</b> ⇒ <code>I_on</code> 绝对值<b>不可当器件性能</b>（但<b>深亚阈值 SS 不受影响</b>，代价是 I_on 偏高、I_off 偏低）；无 LDD/halo/应变/栅重叠；固定 300 K、只做 DC；参数为公开典型量级占位（<b>非 PDK</b>）；2D 仿真 = <b>每单位宽度电流（A/m）</b>；<b>EAR 744.23</b>（成熟节点 / 非先进用途）；工艺角/PDK/硅验证属 <b>T2 永久锁</b>。
+      <b>G-L</b> 漂移扩散（DD）框架的内在边界（E13 新增能力的内在边界）：<b>仍不含量子修正 / 速度饱和 / 带间与栅隧穿 / 弹道输运</b>；<b>迁移率为常数</b> ⇒ <code>I_on</code> 绝对值<b>不可当器件性能</b>（但<b>深亚阈值 SS 不受影响</b>，代价是 I_on 偏高、I_off 偏低）；无 LDD/halo/应变/栅重叠；固定 300 K、只做 DC；参数为公开典型量级占位（<b>非 PDK</b>）；2D 仿真 = <b>每单位宽度电流（A/m）</b>；<b>EAR 744.23</b>（成熟节点 / 非先进用途）；工艺角/PDK/硅验证属 <b>T2 永久锁</b>。<br/>
+      <b>G-M</b> 外围电路为宏模型 / 抽象（E14）：<b>比较器是判决器抽象</b>（非晶体管级）· <b>CDAC 底板开关用理想电压源抽象</b>（DAC 侧用真 NMOS 开关以暴露 R_on）· <b>行驱动器是 VCVS + 开环输出电阻宏模型</b> · 电阻/电容为理想值（<b>不建匹配网络</b>）· 电荷注入/时钟馈通只给量级 · 位数 ≤ 8 bit · 参数公开量级（非 PDK）。<br/>
+      <b>G-N</b> 🔴 <b>平台缺陷登记：<code>mna.vcvs</code> 实际极性与 docstring 相反（E14 发现 · 未修）</b>：docstring 声明 <code>V_out = gain·(V_cp−V_cn)</code>，<code>_stamp_dc</code> 实际给出 <b><code>gain·(V_cn−V_cp)</code></b>（实测 ctl_p=+1 V ⇒ V_out=−1000 V）。<b>E1–E13 全程带着它上线</b>；按保护性约束<b>不改 mna</b>，改为<b>适配 + 显式登记 + 判据锁死</b>（门禁 B14）。既有结论不失效：TIA 虚地是 |A|→∞ 的<b>极限</b>，符号只改变放大器输出<b>定向</b>。
     </div>
   </div>
 
   <div class="foot">
     声明：本案例是<b>设计期验证</b>，非流片后实测；<b>不报任何 fabricated 能效数字</b>；
     Mythic 等公开数字仅作<b>背景坐标</b>，不同台比较。<br/>
-    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E13（D-150…D-172）·
+    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E14（D-150…D-176）·
     版图/寄生/失配/规模/器件内核/失效边界/2D MOS/2D 输运可视化产物见
-    <code>docs/ecore_e6..e13_*_preview.html</code>。
+    <code>docs/ecore_e6..e14_*_preview.html</code>。
   </div>
 
 </div>

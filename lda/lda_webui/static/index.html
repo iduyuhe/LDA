@@ -1395,21 +1395,24 @@ body{padding-top:56px}
       用 LDA <b>亲手设计</b>的一颗<b>电子计算芯片</b>（电子版的「光子 MZI 网格」）：模拟
       <b>矩阵-向量乘（MVM）交叉阵列</b>——行电压 × 交叉点电导 → 列电流求和 → TIA 转电压，
       对标模拟 AI 加速器（Mythic 类）同族架构。<br/>
-      <b>E1–E13 全链</b>（12 段里程碑 · 全程在 LDA 内闭环 · 门禁共 <b>277 判据</b> / <b>58 道突变探针</b> ·
-      <b>15 道常驻门禁</b>）：E1 基座（晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）
+      <b>E1–E14 全链</b>（13 段里程碑 · 全程在 LDA 内闭环 · 门禁共 <b>303 判据</b> / <b>64 道突变探针</b> ·
+      <b>16 道常驻门禁</b>）：E1 基座（晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）
       → E2 参数化 N×M MVM 交叉阵列（ideal TIA / transistor 权重 + 晶体管级 OTA）→ E3 MVM 数据通路
       （DAC→阵列→ADC、多层 MLP+ReLU、分块）→ E4 规模对标（至 256×256 = 65536 突触，诚实边界）
       → E5 平台能力硬化（能力清单 + 双向完备守护门禁）→ <b>E6 版图与几何签核（首次直出真 GDS）</b>
       → <b>E7 寄生提取与后仿</b>（IR drop / sneak path）→ <b>E8 失配 / 噪声 + 校准层级</b>
       → <b>E9 千级阵列规模压力</b> → <b>E11 器件级内核接线</b>（MOSCAP 1D 自洽泊松 ⟷ 教科书闭式 ·
       失效边界测绘）→ <b>E12 2D MOS 求解器</b>（短沟道 roll-off / DIBL）
-      → <b>E13 2D 漂移扩散输运</b>（I–V / 亚阈值摆幅）。<br/>
+      → <b>E13 2D 漂移扩散输运</b>（I–V / 亚阈值摆幅）
+      → <b>E14 真 DAC / ADC / 行驱动外设</b>（把「设计链」补成「系统链」）。<br/>
       <b>核心结果</b>：MNA 瞬态 vs 指数闭式 <b>&lt;2e-4</b>；理想 8×8 阵列 <b>&lt;2e-4</b>；
       数据通路单层 8bit <b>0.012</b>；<b>首次直出真 GDS</b>（4×4 = 120 元素 / 936 B）；
       <b>IR drop N=32 达 27%</b>、sneak <b>7.26×</b>；<b>校准 L0 1.70% → L2 0.074%</b>；
       <b>器件级 V_th 教科书闭式 ⟷ PDE 一致到 2e-4%</b>；
       <b>2D 短沟道 DIBL 153.6 mV/V（指数律 R² 0.9986）</b>；
-      <b>亚阈值摆幅长沟道 68.08 ⟷ 闭式 66.41 mV/dec</b>（<b>SS ≥ 60 是硬下限，不是目标</b>）。<br/>
+      <b>亚阈值摆幅长沟道 68.08 ⟷ 闭式 66.41 mV/dec</b>（<b>SS ≥ 60 是硬下限，不是目标</b>）；
+      <b>真 R-2R DAC 全码 max|Δ| 0.0265 LSB</b>（NMOS 开关 <code>R_on</code> 6.4 Ω）；
+      <b>行驱动 R_oc ⇒ 可及规模 N≤20→N≤10（5 Ω）</b>（器件参数反过来限制系统规模）。<br/>
       🔴 本面板为<b>只读案例</b>（零重计算、免登录、不跑仿真、零外部 SPICE 引擎）；
       全部为<b>设计期验证</b>，<b>非流片后实测</b>；晶体管参数为公开典型量级占位（非 PDK）；
       <b>不报任何 TOPS / TOPS-W 能效或吞吐指标</b>。判决位由死标量给出，LLM 不进判决路径。
@@ -4703,7 +4706,7 @@ function renderECore(d){
   h+='<div class="note">计算砖：'+ID.unit+'</div>';
   h+='<div class="note">零外部 SPICE 引擎：<b>'+(ID.zero_spice_engine?'是':'否')+'</b> · 零量子 SDK：<b>'+(ID.zero_quantum_sdk?'是':'否')+'</b> · 零商业 EDA：<b>'+(ID.zero_commercial_eda?'是':'否')+'</b></div>';
 
-  h+='<div class="summary" style="margin-top:12px">E1–E13 全链 · 十二段征程</div>';
+  h+='<div class="summary" style="margin-top:12px">E1–E14 全链 · 十三段征程</div>';
   h+=_qcTbl(['段','编号','内容','门禁','关键结果'],
     (d.milestones||[]).map(function(m){ return [m.id, m.code, m.title, String(m.gate), m.result]; }));
 
@@ -4877,6 +4880,38 @@ function renderECore(d){
   h+='<div class="note">'+String(DT.ss_target_note||'')+'<br>'+String(DT.honest_boundary||'')+'</div>';
   h+='<div class="note">仍不可用：'+(CC2.still_items||[]).join(' · ')+'</div>';
 
+  var DP=(d.device_periphery||{}), DPD=DP.dac||{}, DPA=DP.adc||{}, DPS=DP.sample_hold||{},
+      DPR=DP.row_driver||{}, DPSC=DP.scale_ceiling||{}, DPRS=DP.row_system_term||{},
+      DPX=DP.system_chain||{}, DPPD=DP.platform_defect||{};
+  h+='<div class="summary" style="margin-top:12px">真 DAC / ADC / 行驱动外设（E14 · 把「设计链」补成「系统链」）</div>';
+  h+='<div class="note">'+String(DP.kernel||'')+'<br>'+String(DP.why||'')+'</div>';
+  h+=_qcTbl(['项','数值','口径'],
+    [['R-2R DAC（真 NMOS 开关）',
+      '8 bit 全码 '+String(DPD.codes_scanned||'')+' 点 · max|Δ| <b>'+Number(DPD.max_abs_err_lsb||0).toFixed(4)+' LSB</b>',
+      '<code>R_on</code> = '+Number(DPD.ron_ohm||0).toFixed(1)+' Ω · 网络装配自证 max|Δ| = '+
+      Number(DPD.sub_golden_max_abs_v||0).toExponential(1)],
+     ['SAR + CDAC（电荷重分配）', '16 取样点 max ≤ <b>'+String(DPA.sar_max_err_lsb||'')+' LSB</b>',
+      '电荷守恒 rel = '+Number(DPA.charge_conservation_rel||0).toExponential(1)],
+     ['采样保持（瞬态 ⟷ 离散闭式）', 'rel = '+Number(DPS.rel_err_vs_discrete||0).toExponential(1),
+      '与连续闭式偏差 O(dt)：'+(DPS.discretization_rel||[]).map(function(v){return Number(v).toExponential(2);}).join(' → ')],
+     ['行驱动（闭式 ⟷ MNA 真电路）', 'rel = '+Number(DPR.mna_rel_err||0).toExponential(1),
+      '<code>R_oc = R_ol/(1+A)</code>（反馈降输出阻抗）']]);
+  h+=_qcTbl(['🔴 可及规模上界（5% 输出误差预算）','R_oc = 0 / 1 / 5 / 20 Ω'],
+    [['可及最大行数 N_max', (DPSC.n_max||[]).map(function(n){ return '<b>'+n+'</b>'; }).join(' → ')],
+     ['与 E9 极限一致性', 'R_oc = 0 时与 E9 <code>row_line_profile</code> <b>逐位一致</b>（max|Δ| = '+
+      Number(DPSC.e9_limit_match_max_abs||0).toExponential(1)+'）']]);
+  h+='<div class="note">'+String(DPSC.note||'')+'</div>';
+  h+=_qcTbl(['项','数值','口径'],
+    [['行系统项（行增益离散度）',
+      '<b>'+Number(DPRS.spread_with_driver||0).toExponential(3)+'</b>（理想驱动 = 0）',
+      String(DPRS.note||'')],
+     ['端到端系统链 max_rel_err',
+      Number(DPX.max_rel_err_real||0).toExponential(3)+'（理想 A→∞：'+Number(DPX.max_rel_err_ideal||0).toExponential(1)+'）',
+      String(DPX.note||'')]]);
+  h+='<div class="note">'+String(DP.honest_boundary||'')+'</div>';
+  h+='<div class="note">🔴 <b>平台缺陷登记</b>：'+String(DPPD.what||'')+'<br>'+String(DPPD.why_not_fixed||'')+'<br>'+
+    String(DPPD.still_valid||'')+'</div>';
+
   h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
   (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });
   h+='</div>';
@@ -4925,7 +4960,17 @@ function renderECore(d){
     +'<b>'+Number(TL.ss_2d_mv_dec||0).toFixed(2)+' ⟷ 闭式 '+Number(TL.ss_closed_mv_dec||0).toFixed(2)
     +' mV/dec</b>（rel '+Number(TL.rel_err_pct||0).toFixed(2)+'%）；'
     +'短沟道退化 <b>65 nm → '+Number((SVS.ss_mv_dec||[])[0]||0).toFixed(0)+' mV/dec</b>，'
-    +'与 E12 的 roll-off/DIBL <b>同向</b>；<b>SS ≥ 60 mV/dec 是物理定律硬下限，不是渐近目标</b>）。'
+    +'与 E12 的 roll-off/DIBL <b>同向</b>；<b>SS ≥ 60 mV/dec 是物理定律硬下限，不是渐近目标</b>）、'
+    +'<b>真 DAC / ADC / 行驱动外设</b>（把「设计链」补成「系统链」：<b>R-2R 梯形 DAC</b>（真 NMOS 开关）'
+    +'8 bit 全码 <b>'+Number(DPD.codes_scanned||0)+' 点</b> max|Δ| <b>'+Number(DPD.max_abs_err_lsb||0).toFixed(4)
+    +' LSB</b>（<code>R_on</code> '+Number(DPD.ron_ohm||0).toFixed(1)+' Ω）· <b>SAR + CDAC 电荷重分配 ADC</b>'
+    +'（🔴 <b>电容 DC 开路 ⇒ 必须走瞬态</b>：后向欧拉给出<b>电荷严格守恒</b> rel '+Number(DPA.charge_conservation_rel||0).toExponential(1)
+    +'）· <b>采样保持</b>（⟷ 离散闭式 rel '+Number(DPS.rel_err_vs_discrete||0).toExponential(1)+'）· '
+    +'🔴 <b>行驱动 R_oc 串进 E9 三对角 ⇒ 可及规模上界重算</b>（5% 预算：理想源 <b>N≤'+Number((DPSC.n_max||[])[0]||0)
+    +'</b> → 1 Ω N≤'+Number((DPSC.n_max||[])[1]||0)+' → 5 Ω <b>N≤'+Number((DPSC.n_max||[])[2]||0)
+    +'</b> → 20 Ω N≤'+Number((DPSC.n_max||[])[3]||0)+'；<code>R_oc=0</code> 与 E9 <b>逐位一致</b>）'
+    +'—— <b>器件级参数第一次反馈到规模律</b>，并暴露<b>行系统项</b>（行增益离散 '
+    +Number(DPRS.spread_with_driver||0).toExponential(3)+'，MC 平均不掉））。'
     +'<br/><strong>诚实边界：</strong>'+d.honest_note;
   return false;
 }

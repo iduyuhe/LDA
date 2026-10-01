@@ -41,7 +41,7 @@ __all__ = [
     "MOSFET_FACTS", "KEY_METRICS", "LAYOUT_FACTS", "PARASITIC_FACTS",
     "MISMATCH_FACTS", "SCALE_FACTS", "GATE_CHECKS_TOTAL", "PROBE_CHECKS_TOTAL",
     "DEVICE_PDE_FACTS", "DEVICE_LIMITS_FACTS", "DEVICE_2D_FACTS",
-    "DEVICE_TRANSPORT_FACTS",
+    "DEVICE_TRANSPORT_FACTS", "DEVICE_PERIPHERY_FACTS",
     "crossbar_capacity", "quant_error_rel_bound", "layout_elements_flat",
     "layout_elements_hier", "hier_compression_ratio", "sheet_resistance_ohm_per_sq",
     "wire_resistance_ohm", "pelgrom_sigma_vth_mv", "pelgrom_sigma_beta_pct",
@@ -49,7 +49,7 @@ __all__ = [
 ]
 
 # ═══════════════════════════ 常量（与平台模块同源）═══════════════════════════
-CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E13 全链"
+CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E14 全链"
 
 #: 长沟道 NMOS 模型参数（E1 · D-150 · `lda_l2.ecore.mosfet.NmosParams` 默认值；公开典型量级占位）
 MOSFET_FACTS = {
@@ -326,6 +326,65 @@ DEVICE_TRANSPORT_FACTS = {
                         "（两法均非 ORACLE）。",
 }
 
+#: E14 真 DAC / ADC / 行驱动外设（`ecore/converter.py` + `ecore/periphery.py`）
+#: 🔴 卡内硬编码（本模块**零 numpy/零重计算**）；与模块实测值的一致性由
+#:    `run_ecore_case_smoke.py` 的 B20 **交叉核对**（真拉平，非自洽）。
+DEVICE_PERIPHERY_FACTS = {
+    "kernel": "**真转换器电路 + 行驱动**：`ecore/converter.py`（R-2R 梯形 DAC + NMOS 模拟开关 · "
+              "SAR/CDAC 电荷重分配 ADC · 采样保持）· `ecore/periphery.py`（行驱动 + 端到端系统链）",
+    "why": "E1–E13 的 DAC/ADC 只是**行为级均匀量化模型**、行线由**理想电压源**钉住 ⇒ "
+           "外围电路的精度 / 速度 / 负载代价从未计入。本段补上**真电路**，把「设计链」补成「系统链」。",
+    "dac": {"topology": "R-2R 梯形：v[k]--R--v[k+1] · v[k]--2R--s[k]（开关接 V_ref / GND）· "
+                        "v[N-1]--2R--GND（终端）",
+            "n_bits": 8, "codes_scanned": 256,
+            "max_abs_err_lsb": 0.0265, "inl_lsb_max": 0.0265, "monotone": True,
+            "ron_ohm": 6.4, "ron_over_r": 0.00064,
+            "sub_golden_max_abs_v": 1.1e-16,
+            "switch_effect": "W/L ↑ ⇒ R_on ↓ ⇒ 误差 ↓（W/L=2000 → 0.0017 LSB；50 → 0.0660 LSB）",
+            "note": "**开关导通电阻是 DAC 精度上限的一个来源**（行为级量化模型看不见）"},
+    "adc": {"topology": "SAR + CDAC 电荷重分配（C_k = 2^k·C_u + 哑元 ⇒ C_total = 2^N·C_u）",
+            "why_transient": "🔴 **电容在 DC 下开路** ⇒ DC 解里顶板电位与电荷分配**无关**"
+                             "（拓扑退化）；后向欧拉伴随模型 ⇒ `Σ C_k(V_top−V_bk) = const`"
+                             "（**电荷严格守恒**）⇒ 一步瞬态 = **精确**电荷守恒解",
+            "charge_conservation_rel": 3.9e-12,
+            "sar_max_err_lsb": 1, "sar_samples": 16,
+            "comparator": "🔴 **判决器抽象**（有限增益 + 失调 + 噪声）—— **非晶体管级比较器**"},
+    "sample_hold": {"tau_s": 1.0e-9,
+                    "rel_err_vs_discrete": 5.6e-16,
+                    "discretization_rel": [2.27e-3, 1.10e-3, 5.40e-4],
+                    "discretization_steps": [40, 80, 160],
+                    "note": "瞬态 ⟷ **后向欧拉离散闭式**（同口径 · 机器精度）；与**连续**闭式的偏差是"
+                            "**离散化误差**，随步长加密单调降（**O(dt) 一阶**）—— 两个口径必须分清"},
+    "row_driver": {"formula": "v_load = v_in·A/(1 + A + R_ol/R_L)",
+                   "closed_loop_rout": "R_oc = R_ol/(1+A)（反馈降输出阻抗 1+A 倍）",
+                   "mna_rel_err": 1.4e-16},
+    "scale_ceiling": {"budget_rel": 0.05, "r_out_cl_ohm": [0.0, 1.0, 5.0, 20.0],
+                      "n_max": [20, 17, 10, 3],
+                      "e9_limit_match_max_abs": 0.0,
+                      "note": "🔴 **器件级参数第一次反馈到规模律**：`R_oc` ↑ ⇒ 可及行数 ↓；"
+                              "`R_oc = 0` 时与 E9 `row_line_profile` **逐位一致**（max|Δ| = 0）"},
+    "row_system_term": {"spread_with_driver": 8.889e-4, "spread_ideal_driver": 0.0,
+                        "note": "驱动负载调整引入**按行增益误差**（行负载 Σ_j g_ij 随行变）——"
+                                "与 E8 的**列系统项**同型，**不会被 Monte Carlo 平均掉**"},
+    "system_chain": {"max_rel_err_real": 3.019e-3, "max_rel_err_ideal": 1.0e-9,
+                     "note": "DAC→行驱动→阵列→TIA→ADC vs E3 数字全精度通路"},
+    "platform_defect": {
+        "what": "`mna.Circuit.vcvs` 的 **实际极性与 docstring 相反**"
+                "（声明 `V_out = gain·(V_cp−V_cn)`，实际 `gain·(V_cn−V_cp)`）",
+        "probe_v": -1000.0,
+        "why_not_fixed": "E1–E13 全部已上线数字（含 E2 ideal-TIA 虚地电路）建立其上 ⇒ "
+                         "按保护性约束**不改 mna**，改为**适配 + 显式登记 + 判据锁死**",
+        "still_valid": "E2/E3 结论仍成立：TIA 虚地是 `|A|→∞` 的**极限**，符号只改变放大器输出"
+                       "**定向**、不改变虚地机制",
+    },
+    "honest_boundary": "🔴 **比较器是判决器抽象**（非晶体管级）· **CDAC 底板开关用理想电压源抽象**"
+                       "（DAC 侧用真 NMOS 开关以暴露 R_on）· **行驱动器是 VCVS + 开环输出电阻宏模型**"
+                       "（非晶体管级运放）· 电阻 / 电容为理想值（**不建匹配网络**）· R_on 取三极管区闭式 · "
+                       "电荷注入 / 时钟馈通只给量级 · 阵列用 E2 已验证的解析列电流模型 · "
+                       "参数为公开典型量级占位（**非 PDK**）· 不做流片 · **不报 TOPS/TOPS-W/fJ/op**。",
+    "is_oracle": False,
+}
+
 LANDMARKS_BRIEF = [
     {"who": "Mythic AI", "item": "M1076 AMP：analog compute-in-memory MVM 交叉阵列"
                                  "（flash array + on-die ADC）· up to 25 TOPS · typ. 3–4 W · "
@@ -436,6 +495,21 @@ MILESTONES = [
                "（65 nm **226.9** → 100 nm 88.0 → 250 nm 69.5 → 1 µm 68.1，与 E12 roll-off **同向**）；"
                "电流守恒 **5.4e-5**（带绝对下限）· 输出特性单调趋饱和（1.0 V 时 **1605 A/m**）· "
                "**V_th 双法交叉**（恒流法 0.2475 ⟷ E12 表面势法 0.3241 V，差 76.6 mV；两法均非 ORACLE）"},
+    {"id": "E14", "code": "D-174…D-176",
+     "title": "真 DAC / ADC / 行驱动外设（把「设计链」补成「系统链」）",
+     "gate": 26, "seg_probes": 6,
+     "result": "把数据通路**两端的转换器**与**行驱动**从行为级换成**真电路**："
+               "**R-2R 梯形 DAC**（无源网络 + **NMOS 模拟开关** ⇒ 8 bit **全码 256 点** max|Δ| "
+               "**0.0265 LSB** · `R_on` **6.4 Ω** · **W/L ↑ ⇒ 误差 ↓**：0.0017 ⟷ 0.0660 LSB）+ "
+               "**SAR + CDAC 电荷重分配 ADC**（🔴 **电容 DC 开路 ⇒ 必须走瞬态**：后向欧拉伴随模型给出 "
+               "`Σ C_k(V_top−V_bk) = const` 即**电荷严格守恒**（rel 3.9e-12）；16 取样点 max ≤ **1 LSB**）+ "
+               "**采样保持**（瞬态 ⟷ **后向欧拉离散闭式** rel **5.6e-16**；与**连续**闭式偏差 **O(dt) 一阶**）+ "
+               "🔴 **行驱动 `R_oc` 串进 E9 三对角 IR-drop** ⇒ **可及规模上界重算**（5% 预算：理想源 "
+               "**N≤20** → 1 Ω **N≤17** → 5 Ω **N≤10** → 20 Ω **N≤3**，`R_oc=0` 时与 E9 **逐位一致** "
+               "max|Δ| = 0）—— **器件级参数第一次反馈到规模律** + **行系统项**（驱动负载调整 ⇒ "
+               "行增益离散 **8.889e-4**，与 E8 列系统项同型、MC 平均不掉）。"
+               "🔴 并**登记一个平台缺陷**：`mna.Circuit.vcvs` 实际极性与 docstring 相反"
+               "（适配 + 判据锁死，**不改 mna** ⇒ 保护 E1–E13 已上线数字）"},
 ]
 
 #: 门禁判据合计（= Σ MILESTONES.gate）与突变探针合计（= Σ seg_probes）
@@ -507,6 +581,19 @@ FINDINGS = [
                "**66.41**（rel 2.52%）；短沟道退化 **65 nm → 226.9 mV/dec**（与 E12 的 roll-off/DIBL "
                "**同向**，两条独立路径互证）。🔴 **仍是 DD 框架**：不含量子修正 / 速度饱和 / 隧穿 / "
                "弹道；**迁移率为常数** ⇒ `I_on` 绝对值**不可当器件性能**。"},
+    {"title": "外围电路：从「行为级量化」到「真电路」——**驱动阻抗反向决定规模上界**（E14）",
+     "detail": "E1–E13 的 DAC/ADC 一直只是 `quantize_uniform`（行为级）**、行线由理想电压源钉住** ⇒ "
+               "**外围电路的代价从未进入任何规模结论**。E14 补上真电路后发现两件事："
+               "① **真器件参数会反过来限制系统规模** —— 把行驱动的**闭环输出电阻 `R_oc`** 串进 E9 的三对角 "
+               "IR-drop 模型后，5% 误差预算下的可及行数从 **N≤20（理想源）掉到 N≤17（1 Ω）/ N≤10（5 Ω）/ "
+               "N≤3（20 Ω）** ⇒ **行驱动输出阻抗必须远小于行线总电阻**；而一个再普通不过的缓冲"
+               "（开环输出 1 kΩ · A=1e3）就已经是 1 Ω 量级。"
+               "② **行系统项** —— 行负载 `Σ_j g_ij` 随行变化 ⇒ 驱动负载调整引入**按行增益误差**"
+               "（实测行增益离散 **8.889e-4**，理想驱动下为 0）—— 与 E8 的**列系统项**同型，"
+               "**不会被 Monte Carlo 平均掉** ⇒ 要么 `R_oc` 足够低，要么**行级校准**。"
+               "🔴 转换器侧的两个数值纪律同样重要：**电容在 DC 下开路** ⇒ CDAC 必须走瞬态"
+               "（后向欧拉的电荷守恒是**精确**的，不是近似）；**离散闭式 ≠ 连续闭式** ⇒ 对拍要先问"
+               "「求解器实际在解哪个方程」。"},
 ]
 
 # ═══════════════════════ 诚实边界（未闭合项 · 逐条登记）═══════════════════════
@@ -553,6 +640,25 @@ GAPS = [
                "2D 仿真 = **每单位宽度电流（A/m）**；**EAR 744.23**（成熟节点 / 非先进用途）。"
                "补量子修正 / 弹道需 NEGF 或量子修正 DD；工艺角 / PDK / 硅验证 ⇒ **T2 永久锁**"
                "（商业路径，非求解器精度问题）。"},
+    {"id": "G-M", "title": "外围电路为宏模型 / 抽象（E14 新增能力的内在边界）",
+     "detail": "**比较器是「有限增益 + 输入失调 + 噪声」的判决器抽象，非晶体管级比较器**"
+               "（MNA 无非线性饱和器件，且 E2 已证朴素 NMOS 差分对无法闭合高增益环路）；"
+               "**CDAC 的底板开关用理想电压源抽象**（DAC 侧则用真 NMOS 开关以暴露 `R_on` —— 这是"
+               "**有意的工程取舍**）；**行驱动器是 VCVS + 开环输出电阻的宏模型，非晶体管级运放**；"
+               "电阻 / 电容为**理想值**（**不建匹配网络**，失配沿用 E8 的 Pelgrom/MC 口径）；"
+               "`R_on` 取平方律**三极管区闭式**；**电荷注入 / 时钟馈通只给量级估算**；"
+               "阵列用 E2 已验证的解析列电流模型；**无建立时间 / 摆率 / 输出级非线性建模**；"
+               "位数 ≤ 8 bit（更高位带来规模与收敛成本）。参数为公开典型量级占位（**非 PDK**）。"},
+    {"id": "G-N", "title": "🔴 平台缺陷登记：`mna.vcvs` 实际极性与 docstring 相反（E14 发现 · 未修）",
+     "detail": "`mna.Circuit.vcvs` 的 **docstring 声明** `V(out_p)−V(out_n) = gain·(V(ctl_p)−V(ctl_n))`，"
+               "但 `_stamp_dc` 的 E 分支实际给出 **`gain·(V(ctl_n) − V(ctl_p))`（极性相反）**"
+               "（实测 `ctl_p = +1 V` ⇒ `V_out = −1000 V`）。**E1–E13 全程带着它上线**。"
+               "**为什么不就地修**：E1–E13 全部已上线数字（含 E2 的 ideal-TIA 虚地电路）建立其上 ⇒ "
+               "按保护性约束（同 `NmosParams` 默认值）**不改 mna**，改为**适配 + 显式登记 + 判据锁死**"
+               "（本包 `periphery.row_driver_mna_check` 把 `ctl_p`/`ctl_n` 对调；门禁 B14 用 "
+               "`vcvs_polarity_fact()` 把事实锁死 ⇒ 若未来有人「顺手改正」 mna.py，B14 会红并提示适配过期）。"
+               "**既有结论是否失效**：不失效 —— TIA 虚地是 `|A|→∞` 的**极限**，符号只改变放大器输出的"
+               "**定向**，不改变虚地机制 ⇒ **E2/E3 结论仍成立**。"},
 ]
 
 _ARTIFACT_DIRS = ("examples", "lda/examples")
@@ -713,7 +819,8 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "claim": "用 LDA 从零设计一颗电子计算芯片（模拟计算核 / MVM 交叉阵列）："
                  "晶体管级模型 + 电路仿真 + 参数化阵列 + 数据通路 + 规模对标 + 版图签核 + "
                  "寄生后仿 + 失配/噪声 + 千级规模压力 + **器件级 PDE 交叉验证 + 失效边界测绘 + "
-                 "2D 短沟道效应（roll-off/DIBL） + 2D 漂移扩散输运（I–V / 亚阈值摆幅）**全链路验证",
+                 "2D 短沟道效应（roll-off/DIBL） + 2D 漂移扩散输运（I–V / 亚阈值摆幅） + "
+                 "真 DAC / ADC / 行驱动外设（系统链）**全链路验证",
         "verdict": "DESIGN_VERIFIED",
         "verdict_label": "设计期验证（非流片实测）",
         "identity": {
@@ -730,10 +837,10 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "milestones": len(MILESTONES),
             "gate_checks": GATE_CHECKS_TOTAL,
             "probe_checks": PROBE_CHECKS_TOTAL,
-            "modules": 16,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
-            "capability_modules": 15,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
-            "entrypoints": 15,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
-                                         #   E11 两道 + E12 + E13）
+            "modules": 18,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
+            "capability_modules": 17,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
+            "entrypoints": 16,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
+                                         #   E11 两道 + E12 + E13 + E14）
             "modules_dir": "lda/lda_l2/ecore/",
         },
         "milestones": MILESTONES,
@@ -760,6 +867,7 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "device_limits": DEVICE_LIMITS_FACTS,
         "device_2d": DEVICE_2D_FACTS,
         "device_transport": DEVICE_TRANSPORT_FACTS,
+        "device_periphery": DEVICE_PERIPHERY_FACTS,
         "scale_pressure": {
             "facts": SCALE_FACTS,
             "tiers": SCALE_PRESSURE_TIERS,
@@ -873,12 +981,12 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑨ Elmore 延迟闭式：τ(R=1, C=1) = 0.5 s",
         abs(elmore_tau_rc(1.0, 1.0) - 0.5) < 1e-15)
 
-    # ⑩ 案例卡组装：12 里程碑 / 13 结论 / 12 缺口 / 判据合计 277（含 58 探针）
+    # ⑩ 案例卡组装：13 里程碑 / 14 结论 / 14 缺口 / 判据合计 303（含 64 探针）
     card = case_card(repo_root="__nonexistent_root__")
-    chk("⑩ 案例卡组装：12 里程碑 / 13 结论 / 12 缺口 / 门禁判据合计 277（含 58 探针）",
-        len(card["milestones"]) == 12 and len(card["findings"]) == 13
-        and card["gaps_total"] == 12 and card["span"]["gate_checks"] == 277
-        and card["span"]["probe_checks"] == 58)
+    chk("⑩ 案例卡组装：13 里程碑 / 14 结论 / 14 缺口 / 门禁判据合计 303（含 64 探针）",
+        len(card["milestones"]) == 13 and len(card["findings"]) == 14
+        and card["gaps_total"] == 14 and card["span"]["gate_checks"] == 303
+        and card["span"]["probe_checks"] == 64)
 
     # ⑪ 产出物优雅降级（root 不存在 ⇒ available False，不抛错）
     chk("⑪ 产出物探测优雅降级（root 不存在 ⇒ available=False）",
@@ -929,8 +1037,8 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑯ 护栏：非法 rows/cols · bits>60 · 零厚度 · n<1 均抛 ValueError", guard == 6)
 
     # ⑰ 每里程碑都有门禁数 + 结果文本（防空洞）
-    chk("⑰ 里程碑完整：12 段 · 每段含 gate 数 + 结果文本",
-        len(MILESTONES) == 12
+    chk("⑰ 里程碑完整：13 段 · 每段含 gate 数 + 结果文本",
+        len(MILESTONES) == 13
         and all(m.get("gate", 0) > 0 and m.get("result") and m.get("seg_probes", 0) > 0
                 for m in MILESTONES))
 
@@ -1025,6 +1133,28 @@ def run_selfchecks(verbose: bool = False) -> bool:
         and ("不可当器件性能" in blob_all) and ("硬下限" in blob_all)
         and ("不是渐近目标" in blob_all)
         and all(k not in blob_all for k in forbidden_claims_hi))
+
+    # ㉘ E14 外围面登记齐全（防「加了能力忘了卡」）
+    dpf = card["device_periphery"]
+    chk("㉘ E14 外围面登记齐全（DAC 全码扫描 · ADC 电荷守恒 · 采样保持离散闭式 · "
+        "R_oc ⇒ 规模上界 · 行系统项 · 平台缺陷登记）",
+        dpf["dac"]["codes_scanned"] == 256 and dpf["dac"]["max_abs_err_lsb"] < 1.0
+        and dpf["adc"]["charge_conservation_rel"] < 1e-6
+        and dpf["sample_hold"]["rel_err_vs_discrete"] < 1e-9
+        and dpf["scale_ceiling"]["n_max"][0] > dpf["scale_ceiling"]["n_max"][-1]
+        and dpf["row_system_term"]["spread_with_driver"] > 1e-4
+        and dpf["platform_defect"]["probe_v"] < 0.0)
+
+    # ㉙ 🔴 诚实（E14 · 两个方向）：① 外围建模取舍必须**显式**（比较器判决器抽象 / 行驱动宏模型 /
+    #     不报 TOPS）——**抬高方向**（把宏模型说成真晶体管电路）；② 平台缺陷（vcvs 极性）
+    #     必须**已登记且未被抹掉** —— **贬低方向**（假装平台无缺陷）。
+    blob_e14 = str(card["device_periphery"]) + " ".join(g["detail"] for g in card["gaps"])
+    chk("㉙ 🔴 诚实（E14 · 双向）：外围建模取舍显式（判决器抽象 / 宏模型 / 不报 TOPS）+ "
+        "平台缺陷（vcvs 极性相反）**已登记**且不得被抹掉",
+        ("判决器抽象" in blob_e14) and ("宏模型" in blob_e14) and ("TOPS" in blob_e14)
+        and ("vcvs" in blob_e14) and ("极性相反" in blob_e14)
+        and all(k not in blob_e14 for k in ("已修 mna", "已修复 vcvs", "无建模取舍",
+                                            "无平台缺陷")))
 
     ok_all = all(res.values())
     if verbose:

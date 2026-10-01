@@ -1,29 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """电子计算芯片案例卡门禁（WebUI 只读端点 /api/ecore_demo · D-155 建卡 → D-160 升级 E1–E9 →
-E11-e 升级为 E1–E11 全链 → E12-e 升级为 E1–E12 全链 → **E13-e 升级为 E1–E13 全链**）。
+E11-e → E1–E11 · E12-e → E1–E12 · E13-e → E1–E13 · **E14-e 升级为 E1–E14 全链**）。
 
 ═══ 判什么（分节）═══
-A 模块自检（ecore_case.run_selfchecks **27 项**）· B 关键事实 name-first 断言（含 E6–E9 四块能力面 +
-E11-c/E11-d 两块 + E12 的 2D MOS 面 + **E13 的 2D 漂移扩散输运面** + 🔴 **B16/B17/B18/B19 与底层模块
-交叉核对**）· C 反向可证伪（**10 条突变探针**：破坏诚实边界 / 清空 landmark / verdict 冒充实测 /
-规模上界非单调 / 掏空版图面 / G-3 被改成自洽 / 缺口归零 / **注入「已含量子修正/已算弹道」** /
-掏空 E12 的 DIBL 指数律 / **抹掉 E12 面的「已由 E13 闭合」标注（假贬低回归）** ⇒ 均必红）·
-D 不进 HEAVY_POST_PATHS（公开只读 · 零重计算）·
+A 模块自检（ecore_case.run_selfchecks **29 项**）· B 关键事实 name-first 断言（含 E6–E9 四块能力面 +
+E11-c/E11-d 两块 + E12 的 2D MOS 面 + E13 的 2D 输运面 + **E14 的真外围/系统链面** +
+🔴 **B16/B17/B18/B19/B20 与底层模块交叉核对**）· C 反向可证伪（**11 条突变探针**：破坏诚实边界 /
+清空 landmark / verdict 冒充实测 / 规模上界非单调 / 掏空版图面 / G-3 被改成自洽 / 缺口归零 /
+**注入「已含量子修正/已算弹道」** / 掏空 E12 的 DIBL 指数律 / **抹掉 E12 面的「已由 E13 闭合」标注** /
+**抹掉「vcvs 极性缺陷登记」** ⇒ 均必红）· D 不进 HEAVY_POST_PATHS（公开只读 · 零重计算）·
 E API 参考已登记（gen_api_reference 已跑 · 血案 23）· K 自入 CI core（防静默漏接 · 血案 28）。
 
 🔴 本门禁的核心价值：守 WebUI 对外案例卡的**诚实边界**——verdict 恒 DESIGN_VERIFIED、
 不报 fabricated 能效（TOPS/TOPS-W）、规模按「可建模/可验证容量」解读、landmark 仅背景坐标；
-守住**升级后的能力面不被静默缩水**（E6/E7/E8/E9/E11-c/E11-d/E12/E13 八块 facts 必须都在）；
-并守住 🔴 **「内部能力 ↔ 对外载体」真拉平**（B16–B19 拿卡里的数字与**底层模块实测**对拍，
+守住**升级后的能力面不被静默缩水**（E6/E7/E8/E9/E11-c/E11-d/E12/E13/E14 九块 facts 必须都在）；
+并守住 🔴 **「内部能力 ↔ 对外载体」真拉平**（B16–B20 拿卡里的数字与**底层模块实测**对拍，
 而不是卡自证自洽）。
 
-🔴 E13-e 的**护栏对象双换代**（能力升级必须回扫**两个方向**，各扫一次）：
-  · 方向一（**贬低自身**）：E12 面的「不产 I-V」——E13 已补上该能力 ⇒ 必须显式标注
-    「已由 E13 闭合 / 不代表当前能力状态」⇒ **㉓** 守此线，**C10** 探针（抹掉标注 ⇒ 必红）。
-  · 方向二（**抬高自身**）：输运能力到手后最容易滑成「已含量子修正 / 已算弹道 / 已报 TOPS」
-    ⇒ **㉗** 守此线（必须显式声明 **DD 框架边界**、**SS 热极限是硬下限而非渐近目标**、
-    **迁移率常数 ⇒ I_on 不可当器件性能**），**C8** 探针（注入「已含量子修正」⇒ 必红）。
+🔴 收官的**护栏换代史**（能力升级必须回扫**两个方向**，每次各扫一遍）：
+  · E12-e：贬低方向 G-J「无 2D MOS」→ 历史项；抬高方向「不许假称已产 I-V」（C8）。
+  · E13-e：贬低方向 E12 面「不产 I-V」→ 标「已由 E13 闭合」（C10）；抬高方向「不许假称已含量子修正」（C8 换代）。
+  · **E14-e**：贬低方向「**平台缺陷（vcvs 极性）必须已登记且不得被抹掉**」（**C11**）；
+    抬高方向「外围宏模型必须显式声明（判决器抽象 / 宏模型 / 不报 TOPS）」（**㉙** + **C8 仍守**）。
 """
 from __future__ import annotations
 
@@ -57,10 +56,10 @@ def main() -> int:
 
     # ══════════════════════ A 模块自检 ══════════════════════
     ok_a = EC.run_selfchecks(verbose=False)
-    check("A1 模块自检 27/27 PASS（容量/量化界/版图闭式/压缩比/方块电阻/Pelgrom/1√N/"
+    check("A1 模块自检 29/29 PASS（容量/量化界/版图闭式/压缩比/方块电阻/Pelgrom/1√N/"
           "Elmore/组装/降级/诚实/定位/口径/零框架/护栏/里程碑/landmark/E6-E9 面/上界单调/"
-          "E11-c 器件级内核面/E11-d 失效边界面/**贬低方向诚实**/E12 2D MOS 面/2D 解非 ORACLE/"
-          "**E13 输运面/抬高方向诚实**）",
+          "E11-c 器件级内核面/E11-d 失效边界面/贬低方向诚实/E12 2D MOS 面/2D 解非 ORACLE/"
+          "E13 输运面/抬高方向诚实/**E14 外围面/E14 双向诚实**）",
           ok_a)
 
     # ══════════════════════ B 关键事实（name-first）══════════════════════
@@ -68,11 +67,11 @@ def main() -> int:
     check("B1 endpoint == /api/ecore_demo", card["endpoint"] == "/api/ecore_demo")
     check("B2 verdict == DESIGN_VERIFIED（非 ACCEPT/PASS）",
           card["verdict"] == "DESIGN_VERIFIED")
-    check("B3 十二段征程（E1→E13）", len(card["milestones"]) == 12)
-    check("B4 关键结论 13 条", len(card["findings"]) == 13)
-    check("B5 诚实边界 12 条", card["gaps_total"] == 12)
-    check("B6 门禁判据合计 = 277（含 58 条突变探针）",
-          card["span"]["gate_checks"] == 277 and card["span"]["probe_checks"] == 58)
+    check("B3 十三段征程（E1→E14）", len(card["milestones"]) == 13)
+    check("B4 关键结论 14 条", len(card["findings"]) == 14)
+    check("B5 诚实边界 14 条", card["gaps_total"] == 14)
+    check("B6 门禁判据合计 = 303（含 64 条突变探针）",
+          card["span"]["gate_checks"] == 303 and card["span"]["probe_checks"] == 64)
     check("B6b 判据合计 ≡ Σ 各段 gate（内部自洽）",
           sum(m["gate"] for m in card["milestones"]) == card["span"]["gate_checks"]
           and sum(m["seg_probes"] for m in card["milestones"]) == card["span"]["probe_checks"])
@@ -218,6 +217,46 @@ def main() -> int:
           and dtf["capability_closure"]["still"] == len(_cap["still_not_available"]) == 4
           and any("T2" in c["why"] for c in _cap["still_not_available"]))
 
+    # B20 🔴 **与 E14 的 converter / periphery 模块交叉核对**（真拉平 · 非自洽）：
+    # 卡里硬编码的 E14 数字必须 ≡ 模块**同参数**实测值。
+    # ⚠️ `dac_static_report` 参数（vref/R/WL/vgate）与 `driver_scale_table` 的
+    #    （budget/r_out 列表）与卡内数字**成对锁死**（换参数数字会变）。
+    from lda_l2.ecore import converter as CV        # noqa: E402
+    from lda_l2.ecore import periphery as PY_       # noqa: E402
+    from lda_l2.ecore.mosfet import NmosParams as _NP   # noqa: E402
+    from lda_l2.ecore import parasitic as PA_       # noqa: E402
+    _r_seg2 = PA_.array_parasitics(8, 8)["r_row_seg_ohm"]
+    _nn2 = _NP(w_over_l=1.2 / 0.3)
+    _g2 = _nn2.kp * _nn2.w_over_l * (2.1 - _nn2.vth0)
+    _dac = CV.dac_static_report(8, step=1)
+    _sar8 = CV.sar_convert(0.4187, 8, 1.0)
+    _sarrep = CV.sar_error_report(8, samples=16)
+    _sh = CV.sample_hold_transient()
+    _drv = PY_.row_driver_mna_check(0.8, 1.0e3, 1.0e3, 1.0e3)
+    _scl = PY_.driver_scale_table(_r_seg2, _g2, 0.05, (0.0, 1.0, 5.0, 20.0))
+    _pol = PY_.vcvs_polarity_fact()
+    _rel_chg = (abs(_sar8["v_top_hold_v"] - _sar8["top_closed_form_hold_v"])
+                / abs(_sar8["top_closed_form_hold_v"]))
+    dpf = card["device_periphery"]
+    check("B20 🔴 E14 面 **与 converter / periphery 模块交叉核对**：卡内数字 ≡ 模块实测"
+          "（DAC 全码误差 + R_on · CDAC 电荷守恒 · SAR ≤1LSB · 采样保持离散闭式 · "
+          "行驱动 MNA rel · R_oc ⇒ N_max · vcvs 极性）",
+          abs(dpf["dac"]["max_abs_err_lsb"] - _dac["max_abs_err_lsb"]) < 5e-3
+          and abs(dpf["dac"]["ron_ohm"] - _dac["ron_ohm"]) < 0.05
+          and dpf["dac"]["codes_scanned"] == _dac["codes_scanned"]
+          and dpf["adc"]["charge_conservation_rel"] < 1e-11 and _rel_chg < 1e-11
+          and dpf["adc"]["sar_max_err_lsb"] == _sarrep["max_err_lsb"]
+          and abs(dpf["sample_hold"]["rel_err_vs_discrete"] - _sh["rel_err_discrete"]) < 1e-12
+          and abs(dpf["row_driver"]["mna_rel_err"] - _drv["rel_err"]) < 1e-9
+          and [r["n_max"] for r in _scl["rows"]] == dpf["scale_ceiling"]["n_max"]
+          and bool(_pol["polarity_inverted"]) == (dpf["platform_defect"]["probe_v"] < 0.0),
+          "DAC err %.4f ⟷ %.4f | R_on %.1f | 电荷 %.1e ⟷ %.1e | SAR %d | 采样 %.1e ⟷ %.1e | "
+          "N_max %s | vcvs=%s"
+          % (dpf["dac"]["max_abs_err_lsb"], _dac["max_abs_err_lsb"], _dac["ron_ohm"],
+             dpf["adc"]["charge_conservation_rel"], _rel_chg, _sarrep["max_err_lsb"],
+             dpf["sample_hold"]["rel_err_vs_discrete"], _sh["rel_err_discrete"],
+             [r["n_max"] for r in _scl["rows"]], _pol["polarity_inverted"]))
+
     # ══════════════════════ C 反向可证伪（突变探针）═══════════════════════
     # C1 破坏 honest_note 关键字 ⇒ ⑥ 必红
     saved_note = EC.ECORE_HONEST_NOTE
@@ -316,6 +355,17 @@ def main() -> int:
     EC.DEVICE_2D_FACTS["transport_closure"] = saved_tc
     check("C10 反向：抹掉 E12 面的「已由 E13 闭合」标注（**假贬低回归**）⇒ ㉓ 判定必红"
           "（贬低方向的回扫 · 与 C8 成对）", ok_c10 is False)
+
+    # C11 🔴 **平台缺陷不许被静默抹掉**（E14-e 新立 · 与 C8/C10 同族）：
+    #     把 `platform_defect` 换成「无平台缺陷」⇒ ㉙ 必红。
+    #     —— **贬低方向的第三种形态**：不是"把能做的说成不能做"，而是"把已知缺陷说成不存在"。
+    saved_pd = dict(EC.DEVICE_PERIPHERY_FACTS["platform_defect"])
+    EC.DEVICE_PERIPHERY_FACTS["platform_defect"] = {
+        "what": "无平台缺陷", "probe_v": 0.0, "why_not_fixed": "-", "still_valid": "-"}
+    ok_c11 = EC.run_selfchecks(verbose=False)
+    EC.DEVICE_PERIPHERY_FACTS["platform_defect"] = saved_pd
+    check("C11 反向：抹掉「vcvs 极性缺陷登记」（假装平台无缺陷）⇒ ㉙ 判定必红"
+          "（**平台缺陷不许被静默抹掉**）", ok_c11 is False)
 
     # ══════════════════════ D 免登录 / 零重计算 ═══════════════════════════
     rt = _read("lda/lda_webui/routes.py")

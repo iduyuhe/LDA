@@ -11,12 +11,15 @@
   ③ 跨源一致：卡内精度/网格数字与 `ai_accelerator_ref` 现算同源 · 前端
      （sec-accel / runAccel / CASE_MAP）三件齐 · API 参考文档含本端点。
 
-🔴 突变探针（进程内 patch.object，防死断言）：
+🔴 突变探针（进程内 patch.object / 纯函数反例，防死断言）：
   ① verdict 伪造成 DESIGN_VERIFIED ⇒ 诚实判决判据必红；
-  ② 主张面注入「实测/流片验证」字样 ⇒ 诚实边界扫描必红。
+  ② 主张面注入「实测/流片验证」字样 ⇒ 诚实边界扫描必红；
+  ③ 注入无接线按钮 id ⇒ onclick 反向完备判据必红（血案 #18：accel 按钮
+     曾「函数已定义+按钮在页面」但漏接 onclick，agent-browser 实测才抓出）。
 """
 from __future__ import annotations
 
+import re
 import sys
 import unittest.mock as mock
 
@@ -24,6 +27,17 @@ from lda_webui import accel_case as ac
 from lda_webui import routes as _routes
 
 FRONTEND = "lda_webui/static/index.html"
+
+# 静态按钮 id（\sid= 排除 data-page-node-id 的 -id= 尾巴）与 JS 接线。
+_RE_BTN_ID = re.compile(r'<button[^>]*?\sid="([A-Za-z0-9_]+)"')
+_RE_WIRED = re.compile(r"\$\('([A-Za-z0-9_]+)'\)\.onclick")
+
+
+def unwired_static_buttons(src: str) -> list[str]:
+    """返回「页面有静态按钮但 JS 从未 $(id).onclick 接线」的 id 列表（反向完备）。"""
+    btn_ids = set(_RE_BTN_ID.findall(src))
+    wired = set(_RE_WIRED.findall(src))
+    return sorted(btn_ids - wired)
 
 
 def main() -> int:
@@ -86,6 +100,9 @@ def main() -> int:
           and "/api/accel_demo" in src)
     check("③f 前端 hash 自动运行映射含 #sec-accel（entry smoke 判据 E 同款）",
           '"#sec-accel": "runAccel"' in src)
+    check("③h 全站反向完备：每个静态按钮 id 都有 $()*.onclick 接线（血案 #18 防再犯）",
+          unwired_static_buttons(src) == [],
+          f"无接线按钮: {unwired_static_buttons(src)}")
 
     # —— 缓存纪律 ——
     c1 = ac.case_card()
@@ -114,11 +131,19 @@ def main() -> int:
     check("🔴 ⑤ 突变探针②: 主张面注入「实测」宣称 ⇒ 诚实边界扫描必红",
           "实测" in repr(bad2["claim"]))
 
+    # 突变探针③（纯函数反例 · 血案 #18）：注入无接线按钮，反向完备判据必须能红。
+    tampered = src + '\n<button class="btn" id="runBrokenProbe">探针按钮</button>\n'
+    probe_missing = unwired_static_buttons(tampered)
+    check("🔴 ⑥ 突变探针③: 注入无接线按钮 runBrokenProbe ⇒ 反向完备判据必红",
+          probe_missing == ["runBrokenProbe"]
+          and len(unwired_static_buttons(src)) == 0,
+          f"探针检出={probe_missing}")
+
     print()
     if fails:
         print(f"W4-2 案例卡门禁: {len(fails)} FAIL :: {fails}")
         return 1
-    print("W4-2 案例卡门禁: ALL GREEN（只读可达 + 诚实边界 + 跨源一致 + 2 突变探针）")
+    print("W4-2 案例卡门禁: ALL GREEN（只读可达 + 诚实边界 + 跨源一致 + onclick 反向完备 + 3 突变探针）")
     return 0
 
 

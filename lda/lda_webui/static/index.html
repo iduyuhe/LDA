@@ -29,9 +29,11 @@
   .card.g .n{color:var(--green)} .card.a .n{color:var(--accent)}
   .sec{background:var(--panel);border:1px solid var(--line);border-radius:14px;
     padding:18px 20px;margin-bottom:22px;
-    /* v0.9.160：锚点跳转（#sec-ecore 等）时给 sticky 顶部导航留出 70px 余量，
-       否则标题会被 56px 高的 #lda-nav 压住，用户以为"跳过去是空的"。 */
-    scroll-margin-top:70px}
+    /* v0.9.160：锚点跳转（#sec-ecore 等）时给 sticky 顶部导航留出余量，
+       否则标题会被 #lda-nav 压住，用户以为"跳过去是空的"。
+       ⚠️ 实测窄视口下 #lda-nav 因 flex-wrap 换行，实际高度可达 **103px**（非 56px），
+       故取 120px（> navTop56+wrap）而非 70px —— 受门禁 E4 守护。 */
+    scroll-margin-top:120px}
   .sec h2{margin:0 0 4px;font-size:16px}
   .sec .hint{color:var(--mut);font-size:12px;margin-bottom:14px}
   .subhead{font-size:13px;font-weight:600;color:var(--accent);margin:16px 0 8px;

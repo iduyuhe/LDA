@@ -9,10 +9,16 @@ import os
 import sys
 import ctypes
 import subprocess
+import tempfile
 from ctypes import wintypes
 
 REPO = sys.argv[1] if len(sys.argv) > 1 else "D:/agent_LDA"
-STORE = sys.argv[2] if len(sys.argv) > 2 else "/tmp/lda_cred_store_push"
+# 🔴 v0.9.169 修复：store 路径必须是**本机真实存在的绝对路径**。
+# 旧默认 `/tmp/lda_cred_store_push` 在 Windows 上不是合法路径 ⇒ credential-store
+# 写入/读取不一致（写 rc=0，但 push 时读不到 ⇒ `could not read Username`）⇒ 假绿。
+# 改用 `tempfile.gettempdir()`（Windows 上 = C:\Users\...\AppData\Local\Temp）·
+# 再统一归一化为正斜杠（下方 STORE.replace 已做）。
+STORE = sys.argv[2] if len(sys.argv) > 2 else os.path.join(tempfile.gettempdir(), "lda_cred_store_push")
 
 # 🔴 v0.9.118 实测订正：store 路径必须【正斜杠】。
 # STORE 被嵌进 `-c credential.helper=store --file={STORE}` ⇒ git 把该 helper 交给

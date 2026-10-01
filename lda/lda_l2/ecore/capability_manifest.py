@@ -161,6 +161,17 @@ ECORE_CAPABILITY_MANIFEST = [
                     "DEVICE_2D_DISCLOSURE", "device_2d_self_check"],
         "introduced_by": "D-166…D-168 (E12)", "guard": "run_ecore_e12_smoke.py",
     },
+    {
+        "capability": "2D MOS 漂移扩散输运（I–V / 亚阈值摆幅 / 恒定电流法 V_th）",
+        "module": "lda_l2.ecore.device_transport",
+        "symbols": ["transfer_curve", "ss_thermal_limit_report",
+                    "cross_check_ss_closed_form", "ss_vs_length_report",
+                    "current_conservation_report", "id_vd_report",
+                    "vth_cc_vs_surface_potential", "transport_capability_closure",
+                    "default_vg_list", "DEVICE_TRANSPORT_DISCLOSURE",
+                    "device_transport_self_check"],
+        "introduced_by": "D-170…D-172 (E13)", "guard": "run_ecore_e13_smoke.py",
+    },
 ]
 
 

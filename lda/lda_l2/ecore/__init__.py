@@ -173,6 +173,19 @@ from .device_limits import (
 )
 
 # E12 · 2D MOS 桥（本模块**函数内惰性导入** lda_solver.mos_2d ⇒ 无 scipy 环境仍可导入）
+from .device_transport import (
+    DEVICE_TRANSPORT_DISCLOSURE,
+    cross_check_ss_closed_form,
+    current_conservation_report,
+    default_vg_list,
+    device_transport_self_check,
+    id_vd_report,
+    ss_thermal_limit_report,
+    ss_vs_length_report,
+    transfer_curve,
+    transport_capability_closure,
+    vth_cc_vs_surface_potential,
+)
 from .device_2d import (
     DEVICE_2D_DISCLOSURE,
     LG_NM_DEFAULT as DEVICE_2D_LG_NM,
@@ -348,6 +361,17 @@ __all__ = [
     "short_channel_capability_report",
     "device_2d_compute_rolloff_dibl_for_case",
     "device_2d_self_check",
+    "transfer_curve",
+    "ss_thermal_limit_report",
+    "cross_check_ss_closed_form",
+    "ss_vs_length_report",
+    "current_conservation_report",
+    "id_vd_report",
+    "vth_cc_vs_surface_potential",
+    "transport_capability_closure",
+    "default_vg_list",
+    "device_transport_self_check",
+    "DEVICE_TRANSPORT_DISCLOSURE",
 ]
 
 # 征程入口披露（对外引用须携此诚实边界）
@@ -364,7 +388,9 @@ ECORE_DISCLOSURE: dict = {
     "e9_scope": "E9 规模压力与诚实对标：E6 物化版图与 E7 稠密 MNA 都只到 N≈32 ⇒ 换 O(N) 算法（cell+AREF 层次化出图 + 一维三对角 IR-drop 求解）推到千级阵列；三重规模律（IR drop 超线性 · 面积 ∝N² · 失配 σ ∝1/√N · Elmore ∝N²）+ 按误差预算反解可及规模上界 + 同族维度诚实对标（landmark 照录·不报 TOPS）。",
     "e10_scope": "E10 收官（平台硬化 + 案例卡升级 + 对外物料 + 生产部署）：把 E1–E9 全链固化为**对外只读案例卡**（`/api/ecore_demo` · 九段里程碑 + 四块新能力面 facts + 9 条诚实边界）+ 守护 scope 扩到本段 + 对外物料与生产上线；本段**不新增求解器能力**，属集成/对外/验收段（新增判据由 run_ecore_case_smoke 承载）。",
     "e11_scope": "E11 器件级内核接线：**E11-a** 口径同步（把「本包的设计取舍」与「平台红线」两件事分离，统一订正为**分层口径** + 防漂移门禁）；**E11-b** 接缝勘查（查明 ecore 与器件级内核零复用的根因 = 两侧非同一器件：`drift_diffusion_1d/2d` 是两端 p-n 结，本包要的是三端 MOSFET）；**E11-c 器件级内核桥** = 平台新增 MOS 结构 1D 自洽泊松内核（`lda_solver/mos_1d.py` · MOSCAP）+ 本包 `device_pde.py`：量纲桥（SI ⟷ µm 制）+ 教科书闭式（Sze 完整 Q_s 式 / 耗尽近似 V_th 式）⟷ PDE 数值解交叉验证（V_th 与 Q_s 跨点一致 ≤0.02% · 工作区 ψ_s ≤ 2.5φ_F）+ 参数自洽性显式报告（G-3）。🔴 golden = 教科书闭式，PDE 只是 candidate（`is_oracle=False`）；**不替换**任何电路级默认参数（`NmosParams` 逐位不变）。**E11-d 失效边界测绘** = `device_limits.py`：**两类边界严格分离** —— A **数值窗口**（LDA 实测：ψ_s ∈ φ_F·[1±1.54]，**随网格变化**：0.05→0.02 nm 时窗口变宽）/ B **物理窗口**（文献判据：玻尔兹曼简并 + 1D 无源漏，**与网格无关**）⇒ **物理模型先失效、数值后崩**（半宽比 0.835）；另含文献经验式**缺口量化**（L=65 nm 时短沟道 roll-off 占 V_th **37.9%**）· 每项标 `computed_by_lda=False`。",
-    "e12_scope": "E12 2D MOS 求解器（短沟道效应：**算不了 → 算得了**）：E11-d 曾把 V_th roll-off / DIBL 登记为平台算不了（只引文献经验式），本段补上能力本身 —— 平台新增 `lda_solver/mos_2d.py`（**四端**栅/源/漏/衬底 2D 自洽泊松：变系数有限体积离散（**按面中点判介质** ⇒ Si/SiO₂ 界面离散精确，氧化层电容恰为 ε_ox/t_ox）+ **分段边界条件** + **电子准费米势分裂**（源侧 0 / 漏侧 V_d ⇒ n⁺ 区自然中性、偏压真正进得去）+ 阻尼牛顿 / continuation）+ 本包 `device_2d.py`（量纲桥 + 长沟道极限 ⟷ 教科书 1D 闭式交叉验证 + roll-off / DIBL 报告 + 与 E11-d 文献式**对照** + 能力闭合表）。🔴 golden = 教科书 1D 长沟道耗尽式（`device_pde.physics_vth_closed` 单一定义），2D 数值解只是 candidate（`is_oracle=False`）；**只允许「长沟道极限 2D → 1D」方向，绝不反向**。核心判据：长沟道收敛（rel 0.50%）· roll-off 单调且 L=65nm 下降 **−176 mV**（文献式对照 −161 mV）· DIBL **153 mV/V** 且满足 **ln(DIBL)–L 线性（R² 0.9986，指数衰减律）** · 两变体互验（majority ⟷ boltzmann 差 11 mV = 反型层电荷贡献）。🔴 **本段为准平衡静电求解，不含漂移扩散输运 ⇒ 不产 I-V**；结构为教科书突变结 + 2 nm 平滑（无 LDD/halo/应力/量子修正）；参数为公开典型量级占位（非 PDK）；不报 TOPS/TOPS-W/fJ/op。",
+    "e12_scope": "E12 2D MOS 求解器（短沟道效应：**算不了 → 算得了**）：E11-d 曾把 V_th roll-off / DIBL 登记为平台算不了（只引文献经验式），本段补上能力本身 —— 平台新增 `lda_solver/mos_2d.py`（**四端**栅/源/漏/衬底 2D 自洽泊松：变系数有限体积离散（**按面中点判介质** ⇒ Si/SiO₂ 界面离散精确，氧化层电容恰为 ε_ox/t_ox）+ **分段边界条件** + **电子准费米势分裂**（源侧 0 / 漏侧 V_d ⇒ n⁺ 区自然中性、偏压真正进得去）+ 阻尼牛顿 / continuation）+ 本包 `device_2d.py`（量纲桥 + 长沟道极限 ⟷ 教科书 1D 闭式交叉验证 + roll-off / DIBL 报告 + 与 E11-d 文献式**对照** + 能力闭合表）。🔴 golden = 教科书 1D 长沟道耗尽式（`device_pde.physics_vth_closed` 单一定义），2D 数值解只是 candidate（`is_oracle=False`）；**只允许「长沟道极限 2D → 1D」方向，绝不反向**。核心判据：长沟道收敛（rel 0.50%）· roll-off 单调且 L=65nm 下降 **−176 mV**（文献式对照 −161 mV）· DIBL **153 mV/V** 且满足 **ln(DIBL)–L 线性（R² 0.9986，指数衰减律）** · 两变体互验（majority ⟷ boltzmann 差 11 mV = 反型层电荷贡献）。🔴 **本段（E12）为准平衡静电求解，不含漂移扩散输运 ⇒ 不产 I-V —— 该缺口已由 E13 闭合**（`lda_solver/mos_2d_transport.py` + 本包 `device_transport.py`；详见 `e13_scope`）；结构为教科书突变结 + 2 nm 平滑（无 LDD/halo/应力/量子修正）；参数为公开典型量级占位（非 PDK）；不报 TOPS/TOPS-W/fJ/op。",
+
+    "e13_scope": "E13 2D MOS 漂移扩散输运（I–V / 亚阈值摆幅 —— 把 E12 的 G-K「不含输运 ⇒ 不产 I-V」关掉）：平台新增 `lda_solver/mos_2d_transport.py`（**Si-only 掩码**稳态连续性（Scharfetter–Gummel 离散；氧化层节点逐出未知量集 ⇒ Si↔SiO₂ 界面自然 Neumann；y 网格非均匀 ⇒ 逐边取间距）+ **接触准费米势 BC**（φ_n = φ_p = V_c ⇒ n·p = n_i²，统一式自动给出 n⁺ 区 n=N_SD / p 区 p=N_A）+ Gummel 交替（非线性泊松 ⟷ 连续性）+ 终端电流（SG 守恒截面 · 源≡漏））+ 本包 `device_transport.py`（量纲桥复用 E11-c + G1–G6 判据 + 能力闭合表）。🔴 **golden 双锚**：**SS 热极限 `(kT/q)·ln10 = 59.53 mV/dec`（物理定律锚 · 不等式，数值解不得突破）** 与 **教科书闭式 `(kT/q)ln10·(1+Cd/Cox)`（含体效应）** ⇒ 长沟道（1 µm）数值 SS **68.08 ⟷ 闭式 66.41 mV/dec（rel 2.5%）**；栅长趋势 L↓ ⇒ SS↑（65 nm **232** → 100 nm 88.0 → 250 nm 69.5 → 1 µm 68.1）与 E12 的 roll-off/DIBL **同向**；电流守恒（大电流点 rel 5.4e-5）；输出特性单调且趋饱和；**V_th 双法交叉**（恒流法 0.2475 ⟷ E12 表面势法 0.3241 V，差 76.6 mV；**两法均 `is_oracle=False`**，互不充当 ORACLE）。🔴 **仍为漂移扩散（DD）框架**：不含量子修正 / 速度饱和 / 带间与栅隧穿 / 弹道输运；**迁移率为常数**（无场依赖退化 / 无表面散射）⇒ `I_on` 绝对值**不可当器件性能**（深亚阈值 SS 不受影响，但 I_on 偏高、I_off 偏低）；无 LDD/halo/应变/栅重叠；参数为公开典型量级占位（非 PDK）；2D 仿真 = **每单位宽度电流（A/m）**；不报 TOPS/TOPS-W/fJ/op。",
     "redline": "红线 = **分层口径**（2026-09-11 §八§九 · 2026-09-23 逐步解锁）：平台**器件级 T1 内核已解锁**"
                "（`lda_solver/drift_diffusion_1d/2d`）；**T2 工艺真值 / 工艺角 / 流片永久锁**。"
                "**本包主动限定在电路级**——这是设计取舍，不是红线要求。",

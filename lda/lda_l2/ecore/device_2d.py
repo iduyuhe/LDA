@@ -232,9 +232,11 @@ def short_channel_capability_report() -> Dict:
              "e12_status": "2D 求解器与文献式**同式**（独立实现）· 且指数律拟合的 ℓ_eff 可比"},
         ],
         "still_not_available": [
-            {"item": "I–V 特性 / 亚阈值摆幅（从电流）",
-             "why": "本段为**准平衡静电求解**，不含漂移扩散输运 ⇒ 无 I-V",
-             "candidate": "E13（Gummel 2D 输运 + 准费米势分裂）"},
+            {"item": "I–V 特性 / 亚阈值摆幅（从电流）—— **已由 E13 闭合**（保留作可追溯记录）",
+             "why": "E12 为准平衡静电求解、不含输运 ⇒ 当时无 I-V；**E13 已补上**"
+                    "（`lda_solver/mos_2d_transport.py` + `ecore/device_transport.py`）"
+                    "⇒ 本条**不代表当前能力状态**",
+             "candidate": "已完成（E13 · D-170…D-172）"},
             {"item": "工艺角 / PDK 标定 / 硅验证",
              "why": "**T2 永久锁**（需 NDA + 流片）——属商业路径，非求解器精度问题",
              "candidate": "不在平台红线内"},
@@ -266,7 +268,8 @@ DEVICE_2D_DISCLOSURE: dict = {
     "golden": "教科书 1D 长沟道耗尽式（`device_pde.physics_vth_closed` · E11-c 单一定义）",
     "candidate": "2D 数值泊松解（`lda_solver/mos_2d.py`）· is_oracle=False",
     "two_variants": "mode='majority'（耗尽近似，任意 V_d）/ mode='boltzmann'（含反型层，仅 V_d=0）",
-    "honest_boundary": "准平衡静电求解，**不含输运 ⇒ 无 I-V**；V_th = 界面最低表面势达 +φ_F；"
+    "honest_boundary": "本段（E12）准平衡静电求解，**不含输运 ⇒ 无 I-V**"
+                       "（**该缺口已由 E13 闭合**：`mos_2d_transport` + `device_transport`）；V_th = 界面最低表面势达 +φ_F；"
                        "结构为教科书突变结 + 2 nm 平滑，无 LDD/halo/应力/量子修正；"
                        "参数为公开典型量级占位（非 PDK）；不报 TOPS/TOPS-W/fJ/op",
     "redline": "红线 = 分层口径（器件级 T1 已解锁 · T2 工艺真值/工艺角/流片永久锁）；"

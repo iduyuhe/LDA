@@ -1,0 +1,76 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<title>LDA 电子计算征程 E13 · 2D MOS 漂移扩散输运（I–V / 亚阈值摆幅）</title>
+<style>
+body{background:#0b1220;color:#e6edf7;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;margin:0;padding:28px}
+h1{font-size:20px;font-weight:600;margin:0 0 4px}
+h2{font-size:15px;font-weight:600;margin:26px 0 10px;color:#9fb3d1}
+.sub{color:#8296b3;font-size:13px;margin-bottom:18px}
+.cards{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
+.card{background:#141d2f;border:1px solid #24314a;border-radius:10px;padding:12px 16px;min-width:150px}
+.card .k{font-size:12px;color:#8296b3}.card .v{font-size:20px;font-weight:600;color:#7fd1ff;margin-top:2px}
+.panel{background:#141d2f;border:1px solid #24314a;border-radius:10px;padding:14px;margin:12px 0}
+table{border-collapse:collapse;font-size:13px;margin-top:8px;width:100%}
+td,th{border:1px solid #24314a;padding:5px 10px;text-align:left;vertical-align:top}
+th{background:#1b2740;color:#9fb3d1;font-weight:600}
+.ok{color:#4ade80;font-weight:600}.warn{color:#fbbf24}
+.note{color:#8296b3;font-size:12.5px;margin-top:12px;line-height:1.7}
+code{color:#7fd1ff}
+</style></head><body>
+<h1>LDA · 电子计算征程 E13 · 2D MOS 漂移扩散输运</h1>
+<div class="sub">把 E12 的 G-K「不含输运 ⇒ 不产 I-V」关掉 · Si-only SG 连续性 + 接触准费米势 BC + Gummel · D-170…D-172</div>
+
+<div class="cards">
+  <div class="card"><div class="k">SS @100 nm</div><div class="v">87.98</div></div>
+  <div class="card"><div class="k">SS 长沟道 1 µm</div><div class="v">68.08</div></div>
+  <div class="card"><div class="k">教科书闭式</div><div class="v">66.41</div></div>
+  <div class="card"><div class="k">G2 rel 误差</div><div class="v">2.52%</div></div>
+  <div class="card"><div class="k">热极限下限</div><div class="v">59.53</div></div>
+  <div class="card"><div class="k">I 跨度</div><div class="v">6.7e+10</div></div>
+</div>
+
+<h2>转移特性 I_d(V_g)（Lg = 100 nm · V_d = 0.05 V · 13 点）</h2>
+<div class="panel"><svg viewBox="0 0 560 300" width="100%" style="background:#0f172a;border-radius:8px"><line x1="42" y1="260.8" x2="542" y2="260.8" stroke="#24314a" stroke-width="1"/><text x="6" y="263.8" fill="#8296b3" font-size="10">1e-8</text><line x1="42" y1="238.8" x2="542" y2="238.8" stroke="#24314a" stroke-width="1"/><text x="6" y="241.8" fill="#8296b3" font-size="10">1e-7</text><line x1="42" y1="216.8" x2="542" y2="216.8" stroke="#24314a" stroke-width="1"/><text x="6" y="219.8" fill="#8296b3" font-size="10">1e-6</text><line x1="42" y1="194.8" x2="542" y2="194.8" stroke="#24314a" stroke-width="1"/><text x="6" y="197.8" fill="#8296b3" font-size="10">1e-5</text><line x1="42" y1="172.8" x2="542" y2="172.8" stroke="#24314a" stroke-width="1"/><text x="6" y="175.8" fill="#8296b3" font-size="10">1e-4</text><line x1="42" y1="150.9" x2="542" y2="150.9" stroke="#24314a" stroke-width="1"/><text x="6" y="153.9" fill="#8296b3" font-size="10">1e-3</text><line x1="42" y1="128.9" x2="542" y2="128.9" stroke="#24314a" stroke-width="1"/><text x="6" y="131.9" fill="#8296b3" font-size="10">1e-2</text><line x1="42" y1="106.9" x2="542" y2="106.9" stroke="#24314a" stroke-width="1"/><text x="6" y="109.9" fill="#8296b3" font-size="10">1e-1</text><line x1="42" y1="84.9" x2="542" y2="84.9" stroke="#24314a" stroke-width="1"/><text x="6" y="87.9" fill="#8296b3" font-size="10">1e0</text><line x1="42" y1="62.9" x2="542" y2="62.9" stroke="#24314a" stroke-width="1"/><text x="6" y="65.9" fill="#8296b3" font-size="10">1e1</text><line x1="42" y1="40.9" x2="542" y2="40.9" stroke="#24314a" stroke-width="1"/><text x="6" y="43.9" fill="#8296b3" font-size="10">1e2</text><line x1="42" y1="19.0" x2="542" y2="19.0" stroke="#24314a" stroke-width="1"/><text x="6" y="22.0" fill="#8296b3" font-size="10">1e3</text><path d="M42.0,258.0 L83.7,238.9 L125.3,217.9 L167.0,192.7 L208.7,163.1 L250.3,130.5 L292.0,96.5 L333.7,64.0 L375.3,42.0 L417.0,31.8 L458.7,26.3 L500.3,22.7 L542.0,20.0" fill="none" stroke="#7fd1ff" stroke-width="2.2"/><text x="42.0" y="278" fill="#8296b3" font-size="10" text-anchor="middle">-0.60</text><text x="292.0" y="278" fill="#8296b3" font-size="10" text-anchor="middle">0.20</text><text x="542.0" y="278" fill="#8296b3" font-size="10" text-anchor="middle">1.00</text><text x="42" y="14" fill="#9fb3d1" font-size="11">log10 |I_d| (A/m) vs V_g (V)</text></svg></div>
+
+<h2>SS 栅长趋势 ⟷ 教科书闭式平台</h2>
+<div class="panel"><svg viewBox="0 0 560 250" width="100%" style="background:#0f172a;border-radius:8px"><text x="46" y="16" fill="#9fb3d1" font-size="11">SS (mV/dec) vs 栅长 L</text><rect x="76.6" y="156.3" width="61.2" height="47.7" fill="#2563eb" rx="3"/><text x="107.2" y="151.3" fill="#c7d5ea" font-size="10" text-anchor="middle">68.1</text><text x="107.2" y="218" fill="#8296b3" font-size="10" text-anchor="middle">1000 nm</text><rect x="199.1" y="155.3" width="61.2" height="48.7" fill="#2563eb" rx="3"/><text x="229.8" y="150.3" fill="#c7d5ea" font-size="10" text-anchor="middle">69.5</text><text x="229.8" y="218" fill="#8296b3" font-size="10" text-anchor="middle">250 nm</text><rect x="321.6" y="142.4" width="61.2" height="61.6" fill="#2563eb" rx="3"/><text x="352.2" y="137.4" fill="#c7d5ea" font-size="10" text-anchor="middle">88.0</text><text x="352.2" y="218" fill="#8296b3" font-size="10" text-anchor="middle">100 nm</text><rect x="444.1" y="45.1" width="61.2" height="158.9" fill="#2563eb" rx="3"/><text x="474.8" y="40.1" fill="#c7d5ea" font-size="10" text-anchor="middle">226.9</text><text x="474.8" y="218" fill="#8296b3" font-size="10" text-anchor="middle">65 nm</text><line x1="46" y1="157.5" x2="540" y2="157.5" stroke="#4ade80" stroke-width="1.6" stroke-dasharray="6,4"/><text x="46" y="153.5" fill="#4ade80" font-size="10">闭式平台 66.4</text></svg>
+<div class="note">L↓ ⇒ SS↑（短沟道静电控制退化，与 E12 的 roll-off / DIBL <b>同向</b>）；
+长沟道收敛到<b>闭式平台 66.41</b>（= (kT/q)ln10·(1+Cd/Cox)，含体效应），
+<b>不是 60</b> —— 60 是<b>硬下限</b>（判据 G1），只在 Cd→0 时达到。</div></div>
+
+<h2>V_th 双法交叉（两法均 is_oracle=False，互不充当 ORACLE）</h2>
+<div class="panel"><table>
+<tr><th>方法</th><th>V_th</th><th>口径</th></tr>
+<tr><td>E13 恒定电流法</td><td><b>0.2475 V</b></td><td>|I_d| = 100 nA × (1 m / Lg)（公开惯例）</td></tr>
+<tr><td>E12 表面势法</td><td><b>0.3241 V</b></td><td>界面最低表面势达 +φ_F</td></tr>
+<tr><td>差</td><td class="warn">-76.6 mV（23.6%）</td><td>口径不同 ⇒ 系统性差异，判据只要求同量级</td></tr>
+</table>
+<div class="note">G4 电流守恒（源≡漏）：检查 8/13 点 · worst rel = <b>5.40e-05</b>（|I_d| ≥ 1e-3 A/m 的点）</div></div>
+
+<h2>能力闭合表（E12「算不了」→ E13「算得了」）</h2>
+<div class="panel"><table>
+<tr><th>项</th><th>E12 状态</th><th>E13 状态</th></tr>
+<tr><td><b>I–V 特性（I_d(V_g, V_d)）</b></td><td style="color:#fbbf24">不含输运 ⇒ 不产 I-V（G-K 登记为 still_not_available）</td><td style="color:#4ade80">稳态漂移扩散（SG 离散 + Gummel）⇒ 转移/输出特性**可从数值解提取**</td></tr><tr><td><b>亚阈值摆幅 SS</b></td><td style="color:#fbbf24">无（需从电流提取）</td><td style="color:#4ade80">从 I–V 提取 · 满足 **SS ≥ 60 mV/dec 热极限**，长沟道收敛到**教科书闭式** `(kT/q)ln10·(1+Cd/Cox)`</td></tr><tr><td><b>恒定电流法 V_th</b></td><td style="color:#fbbf24">只有表面势法（ψ_s = φ_F）</td><td style="color:#4ade80">恒流法可用 ⇒ 与表面势法**交叉验证**（两法互不充当 ORACLE）</td></tr><tr><td><b>I_on / I_off</b></td><td style="color:#fbbf24">无</td><td style="color:#4ade80">可提取（**口径为每单位宽度电流**，非器件性能）</td></tr><tr><td>量子修正（反型层电荷重心 / 体量子化）· 速度饱和 · 带间/栅隧穿 · 弹道输运</td><td colspan="2" style="color:#8296b3">本内核仍是**漂移扩散（DD）框架** ⇒ 不含上述机制；深亚阈值 SS 不受影响，但 **I_on 偏高、I_off 偏低**</td></tr><tr><td>真实迁移率（场依赖退化 / 表面散射 / 库仑散射）</td><td colspan="2" style="color:#8296b3">本内核迁移率为**常数**（文献典型值）⇒ `I_on` 绝对值不可当器件性能</td></tr><tr><td>工艺角 / PDK 标定 / 硅验证</td><td colspan="2" style="color:#8296b3">**T2 永久锁**（需 NDA + 流片）——属商业路径，非求解器精度问题</td></tr><tr><td>LDD / halo / 应变 / 栅重叠 / 温度扫描 / AC·瞬态</td><td colspan="2" style="color:#8296b3">结构为教科书突变结 + 2 nm 平滑；本段固定 300 K、只做 DC</td></tr>
+</table></div>
+
+<div class="panel"><h2 style="margin-top:0">🔴 诚实边界（本段最重要）</h2>
+<div class="note">
+<b>仍是漂移扩散（DD）框架</b> ⇒ 不含量子修正 / 速度饱和 / 带间与栅隧穿 / 弹道输运。
+⇒ <b>深亚阈值 SS 不受影响</b>（那里由玻尔兹曼尾决定 —— 这正是 G1/G2 判据仍严格成立的原因），
+但 <b>I_on 偏高、I_off 偏低</b>。<br>
+<b>迁移率为常数</b>（无场依赖退化 / 无表面散射）⇒ <b>I_on 绝对值不可当器件性能</b>，只作相对趋势与 SS 判据。<br>
+无 LDD / halo / 应变 / 栅重叠；结构为教科书突变结 + 2 nm 平滑；本段固定 300 K、只做 DC。<br>
+参数为公开典型量级占位（<b>非 PDK</b>，无实测锚）；<b>2D 仿真 = 每单位宽度电流（A/m）</b>，不是绝对安培。<br>
+补齐后仍不可用：量子修正 / NEGF（超 T1 范围）· 真实迁移率标定 · 工艺角/PDK/硅验证（<b>T2 永久锁</b>）。<br>
+LDA 是设计 &amp; 验证工具链，<b>不是流片芯片</b> ⇒ 不报 TOPS / TOPS-W / fJ/op。EAR 744.23（成熟节点用途）。
+</div></div>
+
+<div class="panel"><h2 style="margin-top:0">判据 G1–G6 摘要</h2><table>
+<tr><th>判据</th><th>结果</th><th>性质</th></tr>
+<tr><td>G1 SS ≥ 热极限</td><td><b>87.98 ≥ 59.53</b> mV/dec</td><td>物理定律锚（不等式）</td></tr>
+<tr><td>G2 长沟道 ⟷ 教科书闭式</td><td><b>68.08 ⟷ 66.41</b>（rel 2.52%）</td><td>闭式 golden（含体效应）</td></tr>
+<tr><td>G3 栅长趋势</td><td>65→227 · 100→88.0 · 250→69.5 · 1000→68.1</td><td>与 E12 roll-off 同向</td></tr>
+<tr><td>G4 电流守恒</td><td>worst rel <b>5.40e-05</b></td><td>∇·J=0 自洽</td></tr>
+<tr><td>G5 输出特性单调</td><td>单调 ✓</td><td>定性物理</td></tr>
+<tr><td>G6 V_th 双法</td><td>0.2475 ⟷ 0.3241 V</td><td>内部交叉（互不充当 ORACLE）</td></tr>
+</table></div>
+</body></html>

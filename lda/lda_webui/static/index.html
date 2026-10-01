@@ -5050,12 +5050,12 @@ function renderECore(d){
     +'<b>对时间取 RSS 是错的</b>（串行阶段的时间必然叠加，不满足「独立随机量」前提）'
     +'⇒ <b>E15 的合成律不可平移到 E17</b>。</div>';
   h+=_qcTbl(['口径（3/7/11 ns 三阶段）','公式','值（ns）'],
-    [['串行 <code>serial</code>','<b>Σ t_i</b>','<b>'+Number(DTSL.serial_ns||0).toFixed(1)+'</b>'],
-     ['流水线稳态','<b>max t_i</b>',Number(DTSL.pipelined_ns||0).toFixed(1)],
-     ['流水线首样本延迟','Σ t_i',Number(DTSL.serial_ns||0).toFixed(1)],
-     ['（错法）RSS','√Σt²','<b>'+Number(DTSL.rss_ns||0).toFixed(2)+' ← 错</b>']]);
+    [['串行 <code>serial</code>','<b>Σ t_i</b>','<b>'+Number(DTSD.serial_ns||0).toFixed(1)+'</b>'],
+     ['流水线稳态','<b>max t_i</b>',Number(DTSD.pipelined_ns||0).toFixed(1)],
+     ['流水线首样本延迟','Σ t_i',Number(DTSD.serial_ns||0).toFixed(1)],
+     ['（错法）RSS','√Σt²','<b>'+Number(DTSD.rss_ns||0).toFixed(2)+' ← 错</b>']]);
   h+='<div class="note">🔴 门禁 <b>B5</b> 特意断言「<b>对时间取 RSS 会给出不同值</b>」（'
-    +Number(DTSL.rss_ns||0).toFixed(2)+' ⟷ '+Number(DTSL.serial_ns||0).toFixed(1)+' ns）'
+    +Number(DTSD.rss_ns||0).toFixed(2)+' ⟷ '+Number(DTSD.serial_ns||0).toFixed(1)+' ns）'
     +'—— 否则「两套合成律」只是口号。<br/>'+String(DTSL.contrast||'')+'</div>';
   h+=_qcTbl(['阶段','时间 (ns)','占比','说明'],
     DTS.map(function(x){ return [x.name, Number(x.t_ns||0).toFixed(6),

@@ -187,3 +187,15 @@ scripts/t2_closing_acceptance_rehearsal.py
 # ---- 文档/演示生成链的中间产物（2026-09-29 新增）----
 .slidep/
 output/
+
+# ---- 本地诊断 / 推送 scratch（2026-10-01 新增 · E16-e 血案：tmp_facts.py 曾被 git add -A 误提交）----
+# 推送脚本一律放仓库外（~/.workbuddy/lda_scratch/），不要落在仓库里。
+tmp_*
+tmp*.log
+_push*.py
+_verify*.py
+_accept*.py
+_deploy.log
+_msg*.txt
+_*.log
+[qrst][0-9].log

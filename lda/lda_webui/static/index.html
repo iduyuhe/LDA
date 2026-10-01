@@ -140,7 +140,7 @@ body{padding-top:56px}
     <a href="#sec-qchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光量子计算芯片</a>
     <a href="#sec-schip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">超导量子计算芯片</a>
     <a href="#sec-pchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光计算芯片</a>
-    <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E16）</a>
+    <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E17）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1424,8 +1424,8 @@ body{padding-top:56px}
       用 LDA <b>亲手设计</b>的一颗<b>电子计算芯片</b>（电子版的「光子 MZI 网格」）：模拟
       <b>矩阵-向量乘（MVM）交叉阵列</b>——行电压 × 交叉点电导 → 列电流求和 → TIA 转电压，
       对标模拟 AI 加速器（Mythic 类）同族架构。<br/>
-      <b>E1–E16 全链</b>（15 段里程碑 · 全程在 LDA 内闭环 · 门禁共 <b>348 判据</b> / <b>76 道突变探针</b> ·
-      <b>18 道常驻门禁</b>）：E1 基座（晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）
+      <b>E1–E17 全链</b>（16 段里程碑 · 全程在 LDA 内闭环 · 门禁共 <b>376 判据</b> / <b>82 道突变探针</b> ·
+      <b>19 道常驻门禁</b>）：E1 基座（晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）
       → E2 参数化 N×M MVM 交叉阵列（ideal TIA / transistor 权重 + 晶体管级 OTA）→ E3 MVM 数据通路
       （DAC→阵列→ADC、多层 MLP+ReLU、分块）→ E4 规模对标（至 256×256 = 65536 突触，诚实边界）
       → E5 平台能力硬化（能力清单 + 双向完备守护门禁）→ <b>E6 版图与几何签核（首次直出真 GDS）</b>
@@ -1436,7 +1436,10 @@ body{padding-top:56px}
       → <b>E14 真 DAC / ADC / 行驱动外设</b>（把「设计链」补成「系统链」）
       → <b>E15 端到端误差预算链</b>（把 E1–E14 串成一个答案：<b>8×8 实际只有 4.62 位</b>）
       → <b>E16 权重编程通路</b>（补上「<b>权重怎么写进阵列</b>」这一此前完全不存在的一环：
-      写-校验 + <b>写入噪声地板 σ_p/√(α(2−α))</b> ⇒ 加脉冲数买不到精度）。<br/>
+      写-校验 + <b>写入噪声地板 σ_p/√(α(2−α))</b> ⇒ 加脉冲数买不到精度）
+      → <b>E17 时序 / 时钟预算链</b>（<b>时间维度上的 E15</b>：五阶段节拍 + 时间按<b>拓扑</b>合成 ⇒
+      <b>8×8 每样本 129.565 ns = 7.7181 MSa/s</b>；🔴 <b>N 8→1024 阵列 τ 跨 12556× 而每样本只跨 1.005×</b>
+      ⇒ <b>规模墙是精度墙、不是速度墙</b>）。<br/>
       <b>核心结果</b>：MNA 瞬态 vs 指数闭式 <b>&lt;2e-4</b>；理想 8×8 阵列 <b>&lt;2e-4</b>；
       数据通路单层 8bit <b>0.012</b>；<b>首次直出真 GDS</b>（4×4 = 120 元素 / 936 B）；
       <b>IR drop N=32 达 27%</b>、sneak <b>7.26×</b>；<b>校准 L0 1.70% → L2 0.074%</b>；
@@ -4740,7 +4743,7 @@ function renderECore(d){
   h+='<div class="note">计算砖：'+ID.unit+'</div>';
   h+='<div class="note">零外部 SPICE 引擎：<b>'+(ID.zero_spice_engine?'是':'否')+'</b> · 零量子 SDK：<b>'+(ID.zero_quantum_sdk?'是':'否')+'</b> · 零商业 EDA：<b>'+(ID.zero_commercial_eda?'是':'否')+'</b></div>';
 
-  h+='<div class="summary" style="margin-top:12px">E1–E16 全链 · 十五段征程</div>';
+  h+='<div class="summary" style="margin-top:12px">E1–E17 全链 · 十七段征程</div>';
   h+=_qcTbl(['段','编号','内容','门禁','关键结果'],
     (d.milestones||[]).map(function(m){ return [m.id, m.code, m.title, String(m.gate), m.result]; }));
 
@@ -5028,6 +5031,74 @@ function renderECore(d){
   h+='<div class="note">🔴 <b>保护性约束</b>：'+String(DWPM||'')+'</div>';
   h+='<div class="note">'+String(DWP.honest_boundary||'')+'</div>';
 
+  var DTM=(d.device_timing||{}), DTS=DTM.stages||[], DTT=DTM.totals||{},
+      DTSL=DTM.synthesis_law||{}, DTSD=(DTM.synthesis_law||{}).demo||{},
+      DTSV=DTM.scale_vs_time||{}, DTX=DTM.crossover||{},
+      DTBC=DTM.bits_cross||{}, DTBX=DTBC.points||[],
+      DTCB=DTM.clock_budget||{}, DTRO=DTM.roc_sensitivity||{},
+      DTROT=DTM.protection||'';
+  h+='<div class="summary" style="margin-top:12px">时序 / 时钟预算链（E17 · 时间维度上的 E15）</div>';
+  h+='<div class="note">E1–E16 把<b>精度</b>（E15 误差预算）与<b>写入</b>（E16 编程通路）都建起来了，'
+    +'但<b>时间</b>从未被建模 —— 全仓 <code>sample_rate</code> / <code>clock</code> / <code>latency</code> / '
+    +'<code>timing_budget</code> / <code>throughput</code> <b>零命中</b>，且 '
+    +'<code>PERIPHERY_PROCESS</code> 的键全为直流量（<b>一个时间参数都没有</b>）'
+    +'⇒ E14 行驱动是<b>无限带宽宏模型</b>、<b>采样率算不出来</b>。'
+    +'本段把零散时间量串成一条<b>节拍链</b>。</div>';
+  h+='<div class="note">🔴 <b>第一原理：误差要分类合成，时间要分拓扑相加</b> —— '
+    +'E15 <code>budget.combine</code> 按<b>类型</b>（系统 Σ / 随机 RSS→kσ / 有界 Σ→√3）；'
+    +'E17 <code>timing.combine_time</code> 按<b>拓扑</b>（串行 <b>Σ t_i</b> / 流水线稳态 <b>max t_i</b>）。'
+    +'<b>对时间取 RSS 是错的</b>（串行阶段的时间必然叠加，不满足「独立随机量」前提）'
+    +'⇒ <b>E15 的合成律不可平移到 E17</b>。</div>';
+  h+=_qcTbl(['口径（3/7/11 ns 三阶段）','公式','值（ns）'],
+    [['串行 <code>serial</code>','<b>Σ t_i</b>','<b>'+Number(DTSL.serial_ns||0).toFixed(1)+'</b>'],
+     ['流水线稳态','<b>max t_i</b>',Number(DTSL.pipelined_ns||0).toFixed(1)],
+     ['流水线首样本延迟','Σ t_i',Number(DTSL.serial_ns||0).toFixed(1)],
+     ['（错法）RSS','√Σt²','<b>'+Number(DTSL.rss_ns||0).toFixed(2)+' ← 错</b>']]);
+  h+='<div class="note">🔴 门禁 <b>B5</b> 特意断言「<b>对时间取 RSS 会给出不同值</b>」（'
+    +Number(DTSL.rss_ns||0).toFixed(2)+' ⟷ '+Number(DTSL.serial_ns||0).toFixed(1)+' ns）'
+    +'—— 否则「两套合成律」只是口号。<br/>'+String(DTSL.contrast||'')+'</div>';
+  h+=_qcTbl(['阶段','时间 (ns)','占比','说明'],
+    DTS.map(function(x){ return [x.name, Number(x.t_ns||0).toFixed(6),
+      Number(x.share_pct||0).toFixed(2)+'%', String(x.note||'')]; }));
+  h+=_qcTbl(['口径','值'],
+    [['<b>每样本耗时（串行）</b>','<b>'+Number(DTT.serial_ns||0).toFixed(6)+' ns</b>'],
+     ['流水线稳态周期', Number(DTT.pipelined_period_ns||0).toFixed(6)+' ns'],
+     ['<b>最大采样率</b>','<b>'+Number(DTT.max_sample_rate_msa||0).toFixed(4)+' MSa/s</b>'],
+     ['主导项','<b>'+String(DTT.dominant||'')+'</b>（'+Number(DTT.dominant_share_pct||0).toFixed(2)+'%）'],
+     ['流水线收益 (Σ−max)/Σ', Number(DTT.pipeline_gain_frac||0).toFixed(5)+' ⇒ <b>最慢级独占</b>'],
+     ['🔴 报告口径','<b>只报「每样本耗时」与相对量 · 绝不报 TOPS</b>']]);
+  h+='<div class="note">🔴🔴 <b>规模 × 时间趋势相反</b>：N '+String((DTSV.n_pair||[])[0]||'')
+    +' → '+String((DTSV.n_pair||[])[1]||'')+' 时阵列 <code>τ_row</code> 跨 <b>'
+    +Number(DTSV.tau_row_span_x||0).toFixed(1)+'×</b>（∝N²）而<b>每样本耗时只跨 '
+    +Number(DTSV.serial_span_x||0).toFixed(5)+'×</b>（'+Number(DTSV.serial_n8_ns||0).toFixed(4)
+    +' → '+Number(DTSV.serial_n1024_ns||0).toFixed(4)+' ns）。<br/>'+String(DTSV.conclusion||'')+'</div>';
+  h+=_qcTbl(['阵列 τ 达','N（二分）','N（解析外推）','相对差'],
+    [['1 ps','<b>'+String(DTX.ps||'')+'</b>','',''],
+     ['100 ps','<b>'+String(DTX.p_100ps||'')+'</b>','',''],
+     ['1 ns','<b>'+String(DTX.ns||'')+'</b>', Number(DTX.analytic_ns||0).toFixed(1),
+      Number(DTX.rel_pct||0).toFixed(3)+'%']]);
+  h+='<div class="note">'+String(DTX.conclusion||'')+'</div>';
+  h+='<div class="note">🔴 <b>主导项随位数交叉</b>（第二个「交叉点」）：'+String(DTBC.why||'')+'</div>';
+  h+=_qcTbl(['bits','每样本 (ns)','主导阶段','主导占比'],
+    DTBX.map(function(x){ return [String(x.bits)+' bit', Number(x.serial_ns||0).toFixed(4),
+      '<b>'+String(x.dominant||'')+'</b>', Number(x.share_pct||0).toFixed(1)+'%']; }));
+  h+='<div class="note"><b>设计指令</b>：'+String(DTBC.design||'')+'</div>';
+  h+=_qcTbl(['时钟预算（目标 '+Number(DTCB.target_ns||0).toFixed(0)+' ns）','值'],
+    [['除 SAR 外的固定开销', Number(DTCB.fixed_ns||0).toFixed(3)+' ns'],
+     ['<b>允许的 t_clk 上限</b>','<b>'+Number(DTCB.t_clk_max_ns||0).toFixed(4)+' ns</b>'],
+     ['代回残差','<b>'+String(DTCB.back_calc_residual_s||'')+'</b>（<b>代回验证</b>）'],
+     ['CDAC 物理推导 t_clk', Number(DTCB.cdac_t_clk_ns||0).toFixed(4)+' ns']]);
+  h+='<div class="note">'+String(DTCB.note||'')+'</div>';
+  h+='<div class="note">🔴 <b>R_oc 敏感性</b>：'+String(DTRO.note||'')+'</div>';
+  h+=_qcTbl(['闭式 golden','表达式'],
+    [['一阶 RC 建立','<code>t = τ·ln(1/ε)</code>'],
+     ['建立到 k-bit ½LSB','<code>t = τ·(k+1)·ln2</code>（⟷ <b>E14 实测</b>逐位一致）'],
+     ['Elmore（R 梯）','<code>τ = r·c·n(n+1)/2</code>（复用 E7）'],
+     ['SAR 拍数','<code>t = (n_bits+1)·t_clk</code>'],
+     ['CDAC 建立 ⇒ 时钟','<code>t_clk = settle_half_lsb(R_on·C_u·2^n, k)</code>（复用 E14）']]);
+  h+='<div class="note">🔴 <b>保护性约束</b>：'+String(DTROT.note||'')+'</div>';
+  h+='<div class="note">'+String(DTM.disclosure||'')+'</div>';
+
   h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
   (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });
   h+='</div>';
@@ -5087,7 +5158,7 @@ function renderECore(d){
     +'</b> → 20 Ω N≤'+Number((DPSC.n_max||[])[3]||0)+'；<code>R_oc=0</code> 与 E9 <b>逐位一致</b>）'
     +'—— <b>器件级参数第一次反馈到规模律</b>，并暴露<b>行系统项</b>（行增益离散 '
     +Number(DPRS.spread_with_driver||0).toExponential(3)+'，MC 平均不掉））。'
-    +'<br/><strong>诚实边界：</strong>'+d.honest_note;
+    +'<br/><strong>诚实边界：</strong>'+d.honest_note+'<br/><b>时序 / 时钟预算链</b>（把零散时间量串成<b>节拍链</b>：五阶段 + 时间按<b>拓扑</b>合成 —— 与 E15 按<b>类型</b>合成误差相对照 ⇒ <b>8×8 每样本 129.565 ns ⇒ 7.7181 MSa/s</b>，<b>SAR 独占 71.11%</b>；🔴 <b>N 8→1024 阵列 τ 跨 12556× 而每样本只跨 1.005×</b> ⇒ <b>规模墙是精度墙、不是速度墙</b>；<b>主导项随位数交叉</b>（≤6 bit ⇒ DAC 建立 / ≥8 bit ⇒ SAR））。';
   return false;
 }
 if($('runECore')) $('runECore').onclick = runECore;

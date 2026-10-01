@@ -7,18 +7,20 @@ E11-e → E1–E11 · E12-e → E1–E12 · E13-e → E1–E13 · E14-e → E1�
 ═══ 判什么（分节）═══
 A 模块自检（ecore_case.run_selfchecks **33 项**）· B 关键事实 name-first 断言（含 E6–E9 四块能力面 +
 E11-c/E11-d 两块 + E12 的 2D MOS 面 + E13 的 2D 输运面 + E14 的真外围/系统链面 + E15 误差预算面 +
-**E16 权重编程面** + 🔴 **B16/B17/B18/B19/B20/B21/B22 与底层模块交叉核对**）·
-C 反向可证伪（**13 条突变探针**：破坏诚实边界 / 清空 landmark / verdict 冒充实测 / 规模上界非单调 /
+**E16 权重编程面** + **E17 时序/时钟预算面** +
+🔴 **B16/B17/B18/B19/B20/B21/B22/B23 与底层模块交叉核对**）·
+C 反向可证伪（**14 条突变探针**：破坏诚实边界 / 清空 landmark / verdict 冒充实测 / 规模上界非单调 /
 掏空版图面 / G-3 被改成自洽 / 缺口归零 / **注入「已含量子修正/已算弹道」** / 掏空 E12 的 DIBL 指数律 /
 **抹掉 E12 面的「已由 E13 闭合」标注** / **抹掉「vcvs 极性缺陷登记」** / **把误差预算口径拔高成 ENOB** /
-**E16 双向（伪造已标定 PDK/TOPS + 把共模漂移当精度上限 + 抹掉「条件于 ν」）** ⇒ 均必红）·
+**E16 双向（伪造已标定 PDK/TOPS + 把共模漂移当精度上限 + 抹掉「条件于 ν」）** /
+**E17 双向（时序面冒充已报 TOPS/已完成功耗估算 + 抹掉「宏模型级」「只覆盖静态」）** ⇒ 均必红）·
 D 不进 HEAVY_POST_PATHS（公开只读 · 零重计算）·
 E API 参考已登记（gen_api_reference 已跑 · 血案 23）· K 自入 CI core（防静默漏接 · 血案 28）。
 
 🔴 本门禁的核心价值：守 WebUI 对外案例卡的**诚实边界**——verdict 恒 DESIGN_VERIFIED、
 不报 fabricated 能效（TOPS/TOPS-W）、规模按「可建模/可验证容量」解读、landmark 仅背景坐标；
-守住**升级后的能力面不被静默缩水**（E6/E7/E8/E9/E11-c/E11-d/E12/E13/E14/E15/E16 **十一块** facts 必须都在）；
-并守住 🔴 **「内部能力 ↔ 对外载体」真拉平**（B16–B22 拿卡里的数字与**底层模块实测**对拍，
+守住**升级后的能力面不被静默缩水**（E6/E7/E8/E9/E11-c/E11-d/E12/E13/E14/E15/E16/E17 **十二块** facts 必须都在）；
+并守住 🔴 **「内部能力 ↔ 对外载体」真拉平**（B16–B23 拿卡里的数字与**底层模块实测**对拍，
 而不是卡自证自洽）。
 
 🔴 收官的**护栏换代史**（能力升级必须回扫**两个方向**，每次各扫一遍）：
@@ -35,6 +37,15 @@ E API 参考已登记（gen_api_reference 已跑 · 血案 23）· K 自入 CI c
     （共模可被单次增益校准消除 ⇒ 不该进预算）（**㉝** + **C13 ①**）；
     贬低方向「**E16 前「权重直接灌入、无写入模型」的口径必须显式标注已闭合**（G-P/G-Q）+
     漂移结论必须显式声明**条件于 ν**」（**㉝** + **C13 ②**）。
+  · **E17-e**：抬高方向「**时序面不许冒充已报 TOPS / 已完成功耗估算**」
+    （本段**无功耗模型、无实测硅** ⇒ `P = C·V²·f` 之类不在本段）（**㉟** + **C14 ①**）；
+    贬低方向「**E17 前「全仓时间零覆盖 / 行驱动无限带宽宏模型」的口径必须显式标注已闭合**，
+    且**新**的内在边界（**宏模型级** + **只覆盖静态** + 参数**非 PDK**）不得被抹掉」
+    （**㉟** + **C14 ②**）。
+    🔴 E17 本轮新立的判据纪律：**「B18 式否定词窗口」的第二种误伤** —— 披露里写的是
+    「**不报** TOPS/TOPS-W/fJ/op」（正确的自我否定），若用 `"TOPS" not in blob` 会把它**误判成违规**；
+    ⇒ **必须用「肯定性禁止短语」**（`已报 TOPS` / `已含功耗` / `已含时钟树抖动` …）
+    （与 E12/E13 的否定词窗口血案同族）。
     🔴 E16 本轮新立的两条口径纪律：
       ① **绝对值序列估不出 σ** —— `std(|Z|) = σ·√(1−2/π) = 0.603σ` ⇒ 端到端 σ 对拍必须用**带符号**序列
          （用绝对值序列会比真值低 40%）；
@@ -74,7 +85,7 @@ def main() -> int:
 
     # ══════════════════════ A 模块自检 ══════════════════════
     ok_a = EC.run_selfchecks(verbose=False)
-    check("A1 模块自检 33/33 PASS（容量/量化界/版图闭式/压缩比/方块电阻/Pelgrom/1√N/"
+    check("A1 模块自检 35/35 PASS（容量/量化界/版图闭式/压缩比/方块电阻/Pelgrom/1√N/"
           "Elmore/组装/降级/诚实/定位/口径/零框架/护栏/里程碑/landmark/E6-E9 面/上界单调/"
           "E11-c 器件级内核面/E11-d 失效边界面/贬低方向诚实/E12 2D MOS 面/2D 解非 ORACLE/"
           "E13 输运面/抬高方向诚实/E14 外围面/E14 双向诚实/E15 预算面/E15 诚实/"
@@ -86,14 +97,14 @@ def main() -> int:
     check("B1 endpoint == /api/ecore_demo", card["endpoint"] == "/api/ecore_demo")
     check("B2 verdict == DESIGN_VERIFIED（非 ACCEPT/PASS）",
           card["verdict"] == "DESIGN_VERIFIED")
-    check("B3 十五段征程（E1→E16）", len(card["milestones"]) == 15)
-    check("B4 关键结论 16 条", len(card["findings"]) == 16)
-    check("B5 诚实边界 17 条", card["gaps_total"] == 17)
-    check("B6 门禁判据合计 = 348（含 76 条突变探针）",
-          card["span"]["gate_checks"] == 348 and card["span"]["probe_checks"] == 76)
-    check("B6c 计数拉平：19 能力模块 / 20 模块 / 18 常驻门禁",
-          card["span"]["capability_modules"] == 19 and card["span"]["modules"] == 20
-          and card["span"]["entrypoints"] == 18)
+    check("B3 十六段征程（E1→E17）", len(card["milestones"]) == 16)
+    check("B4 关键结论 17 条", len(card["findings"]) == 17)
+    check("B5 诚实边界 18 条", card["gaps_total"] == 18)
+    check("B6 门禁判据合计 = 376（含 82 条突变探针）",
+          card["span"]["gate_checks"] == 376 and card["span"]["probe_checks"] == 82)
+    check("B6c 计数拉平：20 能力模块 / 21 模块 / 19 常驻门禁",
+          card["span"]["capability_modules"] == 20 and card["span"]["modules"] == 21
+          and card["span"]["entrypoints"] == 19)
     check("B6b 判据合计 ≡ Σ 各段 gate（内部自洽）",
           sum(m["gate"] for m in card["milestones"]) == card["span"]["gate_checks"]
           and sum(m["seg_probes"] for m in card["milestones"]) == card["span"]["probe_checks"])
@@ -349,6 +360,42 @@ def main() -> int:
           and _wp["scale_ceiling"]["mlc6_n_max"] == _mc6
           and _wp["scale_ceiling"]["analog_n_max"] < _wp["scale_ceiling"]["default_n_max"])
 
+    # B23 🔴 **与 E17 的 timing 模块交叉核对**（真拉平 · 非自洽）：
+    # 卡里硬编码的时序数字必须 ≡ `timing` 模块**同参数**实测值。
+    # ⚠️ 参数成对锁死：`per_sample_report(8, 8, 8)` · `time_vs_n([8, 1024], 8)` ·
+    #    `crossover_n_ps(1.0e-9)` · `clock_budget(160.0e-9, 8, 8)` ·
+    #    `E15 error_budget_report(8, 8)`（保护性约束锚）—— 参数漂了这条判据自己就成噪声源。
+    from lda_l2.ecore import timing as TM      # noqa: E402
+    _tm = card["device_timing"]
+    _rep_t = TM.per_sample_report(8, 8, 8)
+    _stg = {st["name"]: st["t_s"] * 1e9 for st in _rep_t["stages"]}
+    _tv_t = TM.time_vs_n([8, 1024], 8)
+    _cx_t = TM.crossover_n_ps(1.0e-9)
+    _cb_t = TM.clock_budget(160.0e-9, 8, 8)
+    check("B23 🔴 E17 面 **与 timing 模块交叉核对**：卡内数字 ≡ 模块实测"
+          "（五阶段逐项 · serial/pipelined/收益/速率 · 主导项 · 规模×时间跨度 · 交叉点 · 时钟反解残差 · "
+          "E15 保护性锚）",
+          len(_tm["stages"]) == 5
+          and all(abs(_tm["stages"][i4]["t_ns"] - _stg[_tm["stages"][i4]["name"]]) < 1e-5
+                  for i4 in range(5))
+          and abs(_tm["totals"]["serial_ns"] - _rep_t["serial_ns"]) < 1e-4
+          and abs(_tm["totals"]["pipelined_period_ns"] - _rep_t["pipelined_period_ns"]) < 1e-4
+          and abs(_tm["totals"]["pipeline_gain_frac"] - _rep_t["pipeline_gain_frac"]) < 1e-5
+          and abs(_tm["totals"]["max_sample_rate_msa"]
+                  - _rep_t["max_sample_rate_hz"] / 1e6) < 1e-3
+          and _tm["totals"]["dominant"] == _rep_t["dominant_name"]
+          and abs(_tm["scale_vs_time"]["tau_row_span_x"] - _tv_t["tau_row_span_x"]) < 1.0
+          and abs(_tm["scale_vs_time"]["serial_span_x"] - _tv_t["serial_span_x"]) < 1e-4
+          and _tm["crossover"]["ns"] == _cx_t["n_bisect"]
+          and abs(_tm["crossover"]["analytic_ns"] - _cx_t["n_analytic"]) < 0.05
+          and abs(_tm["clock_budget"]["fixed_ns"] - _cb_t["fixed_s"] * 1e9) < 1e-3
+          and abs(_tm["clock_budget"]["t_clk_max_ns"] - _cb_t["t_clk_max_s"] * 1e9) < 1e-4
+          and _tm["clock_budget"]["back_calc_residual_s"] == _cb_t["residual_s"]
+          and abs(_tm["protection"]["e15_worst_pct"]
+                  - BD.error_budget_report(8, 8)["worst_pct"]) < 1e-4
+          and abs(_tm["protection"]["e15_bits"]
+                  - BD.error_budget_report(8, 8)["worst_bits"]) < 1e-4)
+
     # ══════════════════════ C 反向可证伪（突变探针）═══════════════════════
     # C1 破坏 honest_note 关键字 ⇒ ⑥ 必红
     saved_note = EC.ECORE_HONEST_NOTE
@@ -486,6 +533,34 @@ def main() -> int:
           "② 抹掉「条件于 ν」并把共模漂移当精度上限 ⇒ ㉝ 判定必红"
           "（两个方向各扫一次 · **可被单次校准消掉的项不是精度上限**）",
           ok_c13a is False and ok_c13b is False)
+
+    # C14 反向（**双向**）：
+    #   ① **抬高方向** —— 时序能力到手后最易滑成「已报 TOPS / 已完成功耗估算」；
+    #   ② **贬低方向** —— E17 前的「全仓时间零覆盖 / 行驱动无限带宽」已闭合，
+    #      但**新**的内在边界（宏模型级 + 只覆盖静态）不得被抹掉。
+    _saved_tm = dict(EC.TIMING_FACTS)
+    try:
+        _bad_tm = dict(EC.TIMING_FACTS)
+        _bad_tm["disclosure"] = (_bad_tm["disclosure"]
+                                 + " 已报 TOPS：7.7 TOPS · 已完成功耗估算。")
+        EC.TIMING_FACTS.clear()
+        EC.TIMING_FACTS.update(_bad_tm)
+        ok_c14a = EC.run_selfchecks(verbose=False)
+    finally:
+        EC.TIMING_FACTS.clear()
+        EC.TIMING_FACTS.update(_saved_tm)
+    _saved_gaps3 = [dict(g) for g in EC.GAPS]
+    try:
+        for _g3 in EC.GAPS:
+            if _g3["id"] == "G-R":
+                _g3["detail"] = "时序已完全建模，含比较器延时 / 时钟树 / 抖动，并已完成功耗估算。"
+        ok_c14b = EC.run_selfchecks(verbose=False)
+    finally:
+        EC.GAPS[:] = _saved_gaps3
+    check("C14 反向（**双向**）：① 时序面冒充「已报 TOPS / 已完成功耗估算」· "
+          "② 抹掉「宏模型级」与「只覆盖静态」两条内在边界 ⇒ ㉟ 判定必红"
+          "（两个方向各扫一次 · **无功耗模型 ⇒ 绝不报 TOPS**）",
+          ok_c14a is False and ok_c14b is False)
 
     # ══════════════════════ D 免登录 / 零重计算 ═══════════════════════════
     rt = _read("lda/lda_webui/routes.py")

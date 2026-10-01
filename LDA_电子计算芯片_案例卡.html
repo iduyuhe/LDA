@@ -67,8 +67,8 @@
     此前 LDA 电子域只到行为级——<b>无晶体管级模型 / 无电路仿真器 / 无模拟计算原语 / 无规模定标与诚实护栏</b>；
     进一步吃狗粮又逼出<b>无版图链 / 无寄生后仿 / 无失配噪声模型 / 无千级规模能力</b>。
     进一步吃狗粮又逼出<b>无器件级 PDE 内核 / 无 2D MOS（短沟道）能力 / 无 2D 输运（I–V）能力 / 无真 DAC·ADC·行驱动外设</b>；
-    最后又逼出<b>无误差预算（四类误差从未合成）/ 无权重编程通路（「写入动作」从未被建模）</b>。
-    本征程新增 <code>lda/lda_l2/ecore/</code> 包（<b>20 模块 · 19 条能力面入册</b>）逐一补齐。
+    最后又逼出<b>无误差预算（四类误差从未合成）/ 无权重编程通路（「写入动作」从未被建模） / 无时序预算（时间从未被建模）</b>。
+    本征程新增 <code>lda/lda_l2/ecore/</code> 包（<b>21 模块 · 20 条能力面入册</b>）逐一补齐。
     <table>
       <thead><tr><th>模块</th><th>能力</th><th>引入</th></tr></thead>
       <tbody>
@@ -92,11 +92,12 @@
         <tr><td><code>periphery.py</code></td><td><b>行驱动 + 系统链</b>（缓冲闭式 + R_oc 耦合三对角 IR-drop + 可及规模上界重算 + 端到端系统链 + 行系统项）</td><td>D-174…D-176 (E14)</td></tr>
         <tr><td><code>budget.py</code></td><td><b>端到端误差预算链</b>（口径桥 LSB ⟷ 相对 % · 三分类合成律 · 主导项分析 · 全链可及规模上界）</td><td>D-178…D-180 (E15)</td></tr>
         <tr><td><code>weight_prog.py</code></td><td><b>权重编程通路</b>（写-校验动力学 + 五个闭式 golden（含<b>写入噪声地板 σ_p/√(α(2−α))</b>）+ 良率 + 差分对 + 接 E15 误差预算链）</td><td>D-181…D-183 (E16)</td></tr>
+        <tr><td><code>timing.py</code></td><td><b>时序 / 时钟预算链</b>（五阶段节拍 + 时间按<b>拓扑</b>合成（serial=Σ / pipelined=max）+ 五个闭式 golden + 时钟反解 + 规模×时间 + 阵列 RC 交叉点）</td><td>D-185…D-187 (E17)</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h2>十五段里程碑（E1–E16 门禁判据合计 348 · 含 76 条突变探针）</h2>
+  <h2>十六段里程碑（E1–E17 门禁判据合计 376 · 含 82 条突变探针）</h2>
   <div class="card">
     <table>
       <thead><tr><th>段</th><th>编号</th><th>内容</th><th>关键结果（门禁实测）</th></tr></thead>
@@ -136,6 +137,9 @@
     <p><b>E16（D-181…D-183）</b>：<b>权重编程通路</b>（<b>25 判据 / 6 突变探针</b>）⇒ 案例卡升级为
       <b>E1–E16 全链（45 判据 + 13 探针）</b>；守护 scope 扩至 <b>e1~e16</b>；能力清单 <b>19</b> 条 ·
       常驻门禁 <b>18</b> 道。</p>
+    <p><b>E17（D-185…D-187）</b>：<b>时序 / 时钟预算链</b>（<b>28 判据 / 6 突变探针</b>）⇒ 案例卡升级为
+      <b>E1–E17 全链（47 判据 + 14 探针）</b>；守护 scope 扩至 <b>e1~e17</b>；能力清单 <b>20</b> 条 ·
+      常驻门禁 <b>19</b> 道。</p>
   </div>
 
   <h2>E15 · 端到端误差预算链 —— 把 14 段串成一个答案</h2>
@@ -448,6 +452,49 @@
       <b>不报 TOPS / TOPS-W / fJ/op</b>。</p>
   </div>
 
+  <h2>E17 · 时序 / 时钟预算链 —— 时间维度上的 E15</h2>
+  <div class="card">
+    <p>E1–E16 把<b>精度</b>（E15 误差预算）与<b>写入</b>（E16 编程通路）都建起来了，但<b>时间从未被建模</b>：
+      全仓 <code>sample_rate</code> / <code>clock</code> / <code>latency</code> / <code>timing_budget</code> /
+      <code>throughput</code> <b>零命中</b>，且 <code>PERIPHERY_PROCESS</code> 的键全为直流量
+      （<b>一个时间参数都没有</b>）⇒ E14 行驱动是<b>无限带宽宏模型</b>、<b>采样率算不出来</b>。
+      E17 把零散时间量串成一条<b>节拍链</b>（ecore 第 <b>21</b> 模块 <code>timing.py</code> · 纯标准库 ·
+      <b>只读消费 E7/E14 · 不吃新物理</b>）。</p>
+    <p>🔴🔴 <b>第一原理：误差要分类合成，时间要分拓扑相加</b> —— E15 <code>budget.combine</code> 按<b>类型</b>
+      （系统性 Σ / 随机 RSS→kσ / 有界 Σ→√3）；E17 <code>timing.combine_time</code> 按<b>拓扑</b>
+      （串行 <b>Σ t_i</b> / 流水线稳态 <b>max t_i</b>）。<b>对时间用 RSS 是错的</b>
+      （串行阶段的时间必然叠加）⇒ <b>E15 的合成律不可平移到 E17</b>。</p>
+    <table>
+      <thead><tr><th>阶段（8×8 / 8 bit）</th><th>时间 (ns)</th><th>占比</th><th>τ</th></tr></thead>
+      <tbody>
+        <tr><td>行线（Elmore <b>+</b> 驱动源阻抗）</td><td class="num"><b>0.000029</b></td><td class="num">~0%</td><td>4.664 fs</td></tr>
+        <tr><td>列线</td><td class="num"><b>0.000013</b></td><td class="num">~0%</td><td>2.079 fs</td></tr>
+        <tr><td>采样保持</td><td class="num"><b>6.238325</b></td><td class="num">4.81%</td><td>1 ns</td></tr>
+        <tr><td><b>SAR</b>（<code>t_clk</code> 10.2373 ns × 9 拍）</td><td class="num"><b>92.135256</b></td><td class="num"><b>71.11%</b></td><td>—</td></tr>
+        <tr><td>DAC（节点电容为<b>显式占位</b>）</td><td class="num"><b>31.191620</b></td><td class="num">24.07%</td><td>5 ns</td></tr>
+        <tr><td><b>合计（串行）</b></td><td class="num"><b>129.565246</b></td><td class="num">100%</td><td>⇒ <b>7.7181 MSa/s</b></td></tr>
+        <tr><td>流水线稳态</td><td class="num">92.135256</td><td class="num">—</td><td>收益 <b>0.28889</b></td></tr>
+      </tbody>
+    </table>
+    <p>🔴🔴 <b>规模 × 时间趋势相反</b>：N 8→1024 时阵列 <code>τ_row</code> 跨 <b>12556.5×</b>（∝N²）
+      而<b>每样本耗时只跨 1.00469×</b>（129.5652 → 130.1732 ns）—— <b>规模墙是「精度墙」
+      （E15：IR drop ∝N²、5% 预算只到 N≤12）不是「速度墙」</b>：加行列<b>不拖慢采样率</b>，
+      但<b>会毁掉有效位数</b>。阵列 τ 达 1 ps 需 N≈135 · 100 ps ≈ 1341 · <b>1 ns ≈ 4238</b>
+      （解析 4245.8 ⟷ 二分 4238）⇒ <b>在可达规模内阵列 RC 永不是时间瓶颈</b>。</p>
+    <p>🔴 <b>主导项随位数交叉</b>（第二个「交叉点」）：4/6 bit ⇒ <b>DAC 建立</b>（76.8% / 56.4%）；
+      8/10/12 bit ⇒ <b>SAR</b>（71.1% / 92.3% / 98.3%）—— 因 <b>SAR ∝ (bits+1)²</b>（拍数 × 每拍建立）
+      而 <b>DAC ∝ (bits+1)</b> ⇒ <b>必然交叉</b>。⇒ 低位数优化 DAC 建立；高位数<b>只能优化 SAR</b>
+      （降 <code>C_u</code> / 更高 W/L 开关 / 分段 CDAC）。</p>
+    <p><b>时钟预算</b>：除 SAR 外的固定开销 <b>37.43 ns</b>；目标 160 ns ⇒ <code>t_clk_max</code>
+      <b>13.6189 ns</b>（<b>代回残差 0.00e+00</b>）；CDAC 物理推导 <code>t_clk</code> = <b>10.2373 ns</b>。</p>
+    <p>🔴 <b>保护性约束</b>：只读消费 E7/E14 · <b>不给</b> <code>PERIPHERY_PROCESS</code> 加时间键
+      （E14 行驱动保持原样）⇒ <b>E15/E16 已发布数字逐位不变</b>。</p>
+    <p>🔴 <b>诚实边界</b>：<b>只报「每样本耗时（ns）」与相对量 · 绝不报 TOPS / TOPS-W / fJ/op</b>
+      （既无功耗模型、也无实测硅）；五阶段为<b>宏模型级</b>估算（行驱动仍 VCVS + 开环输出电阻宏模型 ·
+      无真实 GBW / 摆率 · 比较器延时 / 时钟树 / 抖动<b>未建模</b> · R-2R 节点电容为<b>显式占位</b>）；
+      <b>只覆盖静态 + 一阶 RC 建立</b>；<b>不做能量与功耗估算</b>；参数<b>非 PDK</b>。</p>
+  </div>
+
   <h2>关键结论</h2>
   <div class="card">
     <ul>
@@ -520,7 +567,7 @@
   <div class="foot">
     声明：本案例是<b>设计期验证</b>，非流片后实测；<b>不报任何 fabricated 能效数字</b>；
     Mythic 等公开数字仅作<b>背景坐标</b>，不同台比较。<br/>
-    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E16（D-150…D-183）·
+    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E17（D-150…D-187）·
     版图/寄生/失配/规模/器件内核/失效边界/2D MOS/2D 输运可视化产物见
     <code>docs/ecore_e6..e14_*_preview.html</code>。
   </div>

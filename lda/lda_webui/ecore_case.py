@@ -1,11 +1,11 @@
 """电子计算芯片案例卡（WebUI 只读端点数据源）· D-155 建卡 → D-160（E10）升 E1–E9 →
 E11-e 升 E1–E11 → E12-e 升 E1–E12 → D-173（E13-e）升 E1–E13 → D-177（E14-e）升 E1–E14 →
-D-180（E15-e）升 E1–E15 → **D-184（E16-e）升 E1–E16 全链**。
+D-180（E15-e）升 E1–E15 → **D-184（E16-e）升 E1–E16** → **D-188（E17-e）升 E1–E17 全链**。
 
 ═══════════════════════════════════════════════════════════════════════════
 定位
 ═══════════════════════════════════════════════════════════════════════════
-电子计算征程「吃狗粮」**E1…E16（D-150…D-183）** 的**只读案例**：用 LDA 亲手设计一颗
+电子计算征程「吃狗粮」**E1…E17（D-150…D-187）** 的**只读案例**：用 LDA 亲手设计一颗
 **电子计算芯片**（模拟计算核 = 模拟 MVM 交叉阵列，电子版的「光子 MZI 网格」），走完全链路：
 
     晶体管级模型 → 电路仿真 → 阵列 → 数据通路 → 规模对标 → 能力硬化        （E1–E5 · 电路级）
@@ -20,6 +20,7 @@ D-180（E15-e）升 E1–E15 → **D-184（E16-e）升 E1–E16 全链**。
     → E14 真 DAC / ADC / 行驱动外设（把「设计链」补成「系统链」）            （D-174…D-176）
     → E15 端到端误差预算链（把 E1–E14 串成一个答案：实际几个有效位）        （D-178…D-180）
     → E16 权重编程通路（权重怎么写进阵列 / 写进去有多准 / 写错多少）        （D-181…D-183）
+    → E17 时序 / 时钟预算链（时间维度上的 E15：五阶段节拍 / 时间按拓扑合成）  （D-185…D-187）
 
 与 `/api/qchip_demo`（光量子 LOQC）、`/api/schip_demo`（超导 transmon）、
 `/api/pchip_demo`（硅光张量核）**并列**：四条物理/器件路线在 LDA 均已吃狗粮。
@@ -44,7 +45,7 @@ __all__ = [
     "SCALE_TIERS", "SCALE_PRESSURE_TIERS", "SCALE_CEILING",
     "MOSFET_FACTS", "KEY_METRICS", "LAYOUT_FACTS", "PARASITIC_FACTS",
     "MISMATCH_FACTS", "SCALE_FACTS", "GATE_CHECKS_TOTAL", "PROBE_CHECKS_TOTAL",
-    "DEVICE_PDE_FACTS", "DEVICE_LIMITS_FACTS", "DEVICE_2D_FACTS",
+    "DEVICE_PDE_FACTS", "DEVICE_LIMITS_FACTS", "DEVICE_2D_FACTS", "TIMING_FACTS",
     "DEVICE_TRANSPORT_FACTS", "DEVICE_PERIPHERY_FACTS", "BUDGET_FACTS",
     "WEIGHT_PROG_FACTS",
     "crossbar_capacity", "quant_error_rel_bound", "layout_elements_flat",
@@ -56,7 +57,7 @@ __all__ = [
 ]
 
 # ═══════════════════════════ 常量（与平台模块同源）═══════════════════════════
-CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E16 全链"
+CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E17 全链"
 
 #: 长沟道 NMOS 模型参数（E1 · D-150 · `lda_l2.ecore.mosfet.NmosParams` 默认值；公开典型量级占位）
 MOSFET_FACTS = {
@@ -539,6 +540,101 @@ WEIGHT_PROG_FACTS = {
                        "⇒ 不进预算**（进预算的只有 nu 的单元间离散）；**不报 TOPS / TOPS-W / fJ/op**",
 }
 
+TIMING_FACTS = {
+    "process": {
+        "bits": 8, "r_oc_ohm": 0.999, "r2r_node_cap_f_placeholder": 0.5e-12,
+        "t_clk_from_cdac_ns": 10.2373, "non_pdk": True,
+    },
+    "stages": [
+        {"name": "row_line", "t_ns": 0.000029, "share_pct": 0.0,
+         "note": "Elmore 3.119 fs **+** 驱动源阻抗 1.545 fs（**串联**）· R_oc=0 ⇒ 退化为纯 Elmore"},
+        {"name": "col_line", "t_ns": 0.000013, "share_pct": 0.0,
+         "note": "TIA 虚地 ⇒ 无 Rf·C 项"},
+        {"name": "sample_hold", "t_ns": 6.238325, "share_pct": 4.81,
+         "note": "τ = rs·cs = 1 ns（**复用 E14 `CONV_PROCESS`**）"},
+        {"name": "sar_convert", "t_ns": 92.135256, "share_pct": 71.11,
+         "note": "`(bits+1)·t_clk` = 9 × 10.2373 ns · t_clk 由 **CDAC 建立推导**（G-5）"},
+        {"name": "dac_settle", "t_ns": 31.191620, "share_pct": 24.07,
+         "note": "τ = r_unit·c_node · 🔴 `c_node` 为**显式占位** ⇒ `param_sensitive=True`"},
+    ],
+    "totals": {
+        "serial_ns": 129.565246, "pipelined_period_ns": 92.135256,
+        "pipelined_latency_ns": 129.565246, "pipeline_gain_frac": 0.28889,
+        "max_sample_rate_msa": 7.7181,
+        "dominant": "sar_convert", "dominant_share_pct": 71.11,
+    },
+    "synthesis_law": {
+        "serial": "Σ t_i", "pipelined_steady": "max t_i", "pipelined_latency": "Σ t_i",
+        "wrong": "√Σt²（RSS）—— **对时间用 RSS 是错的**（串行阶段的时间必然叠加，"
+                 "不满足「独立随机量」前提）",
+        "contrast": "E15 `budget.combine` 按**类型**（系统 Σ / 随机 RSS→kσ / 有界 Σ→√3）；"
+                    "E17 `timing.combine_time` 按**拓扑**（串行 Σ / 流水线 max）"
+                    "⇒ 🔴 **E15 的合成律不可平移到 E17**",
+        "demo": {"stages_ns": [3, 7, 11], "serial_ns": 21.0, "pipelined_ns": 11.0,
+                 "rss_ns": 13.38, "gain": 0.4762},
+        "note": "门禁 **B5** 特意断言「**对时间取 RSS 会给出不同值**」"
+                "（13.38 ⟷ 21.0 ns）—— 否则「两套合成律」只是口号",
+    },
+    "scale_vs_time": {
+        "n_pair": [8, 1024], "tau_row_span_x": 12556.5, "serial_span_x": 1.00469,
+        "serial_n8_ns": 129.5652, "serial_n1024_ns": 130.1732,
+        "conclusion": "阵列 τ_row 随 N 跨 **12556.5×**（∝N²）而**每样本耗时只跨 1.00469×** "
+                      "⇒ 🔴 **规模墙是「精度墙」（E15：IR drop ∝N²、5% 预算只到 N≤12）"
+                      "不是「速度墙」** —— 加行列**不拖慢采样率**，但**会毁掉有效位数**",
+    },
+    "crossover": {
+        "ps": 135, "p_100ps": 1341, "ns": 4238,
+        "analytic_ns": 4245.8, "rel_pct": 0.184,
+        "conclusion": "阵列 τ 达 1 ns 需 **N≈4238**（解析 4245.8 ⟷ 二分 4238）"
+                      "⇒ **远超 E15 的可及规模（N≤12）** ⇒ 在可达规模内阵列 RC **永不是时间瓶颈**",
+    },
+    "bits_cross": {
+        "points": [
+            {"bits": 4, "serial_ns": 22.5717, "dominant": "dac_settle", "share_pct": 76.8},
+            {"bits": 6, "serial_ns": 43.0462, "dominant": "dac_settle", "share_pct": 56.4},
+            {"bits": 8, "serial_ns": 129.5652, "dominant": "sar_convert", "share_pct": 71.1},
+            {"bits": 10, "serial_ns": 596.2844, "dominant": "sar_convert", "share_pct": 92.3},
+            {"bits": 12, "serial_ns": 3129.7906, "dominant": "sar_convert", "share_pct": 98.3},
+        ],
+        "why": "**SAR ∝ (bits+1)²**（拍数 × 每拍建立时间，而 `t_clk` 本身也 ∝ (bits+1)）"
+               "而 **DAC ∝ (bits+1)** ⇒ **必然交叉**（本例交叉点在 6–8 bit 之间）",
+        "design": "低位数优化 **DAC 建立**（降 `r_unit` 或节点电容）；高位数**只能优化 SAR**"
+                  "（降 `C_u` / 更高 W/L 开关 / 分段 CDAC）",
+    },
+    "clock_budget": {
+        "target_ns": 160.0, "fixed_ns": 37.43, "t_clk_max_ns": 13.6189,
+        "back_calc_residual_s": 0.0, "cdac_t_clk_ns": 10.2373,
+        "note": "反解 + **代回验证**（`fixed + (bits+1)·t_clk_max == target`）· "
+                "目标小于固定开销时显式 `feasible=False`",
+    },
+    "roc_sensitivity": {
+        "r_oc_ohm": 100.0, "row_stage_ns": 0.000984506, "serial_ns": 129.566201,
+        "rel_increase_pct": 0.0000077,
+        "note": "R_oc 从 0 → 100 Ω，行线阶段涨 50×（1.9e-5 → 9.85e-4 ns），"
+                "而**每样本耗时相对增幅仅 7.7e-6 %** ⇒ 🔴 **R_oc 伤精度（E14 上界收缩），不伤速度**",
+    },
+    "closed_form": {
+        "rc_settle": "t = τ·ln(1/ε)",
+        "half_lsb": "t = τ·(k+1)·ln2",
+        "elmore": "τ = r·c·n(n+1)/2（**复用 E7**）",
+        "sar": "t = (n_bits+1)·t_clk",
+        "cdac_tclk": "t_clk = settle_half_lsb(R_on·C_u·2^n, k)（**复用 E14**）",
+    },
+    "protection": {
+        "e15_worst_pct": 4.06012, "e15_bits": 4.6223, "e15_n_max": 12,
+        "periphery_keys": ["a_gain", "r_out_open_ohm", "vfs_v", "vdd_v"],
+        "note": "**只读消费** E7/E14 · **不给** `PERIPHERY_PROCESS` 加时间键（E14 行驱动保持原样）"
+                "⇒ **E15/E16 已发布数字逐位不变**（门禁 B15/B16 守着）",
+    },
+    "disclosure": "🔴 **只报「每样本耗时（ns）」与相对量 · 绝不报 TOPS / TOPS-W / fJ/op**"
+                  "（既无功耗模型、也无实测硅）；五阶段为**宏模型级**估算"
+                  "（行驱动仍 **VCVS + 开环输出电阻宏模型** · 无真实 GBW/摆率 · "
+                  "**比较器延时 / 时钟树 / 抖动未建模** · R-2R 节点电容为**显式占位**）；"
+                  "**只覆盖静态 + 一阶 RC 建立**（不含摆率 / 时钟偏斜与抖动 / 供电噪声 / "
+                  "温度梯度 / 老化 / 工艺角）；**不做能量与功耗估算**；参数**非 PDK** ⇒ 结论随参数变。",
+}
+
+
 LANDMARKS_BRIEF = [
     {"who": "Mythic AI", "item": "M1076 AMP：analog compute-in-memory MVM 交叉阵列"
                                  "（flash array + on-die ADC）· up to 25 TOPS · typ. 3–4 W · "
@@ -705,6 +801,37 @@ MILESTONES = [
                "🔴 **卡位只影响尾部**（p=1e-3 时 max 1.07%→**22.83%**、mean 0.47%→1.53%、"
                "良率 **95.31%**）。🔴 **保护性约束**：`include_programming` **默认 False** ⇒ "
                "**E15 已发布数字逐位不变**（门禁 B12 + 探针 C5 专守）。"},
+    {"id": "E17", "code": "D-185…D-187",
+     "title": "时序 / 时钟预算链（时间维度上的 E15：E15 合成「误差」，E17 合成「时间」）",
+     "gate": 28, "seg_probes": 6,
+     "result": "E1–E16 把精度（E15）与写入（E16）都建起来了，但**时间**从未被建模 —— 全仓 "
+               "`sample_rate` / `clock` / `latency` / `timing_budget` / `throughput` / "
+               "`per_sample` / `settling_time` **零命中**，且 `PERIPHERY_PROCESS` 的键全为 "
+               "`['a_gain','r_out_open_ohm','vdd_v','vfs_v']`（**一个时间参数都没有**）"
+               "⇒ E14 行驱动是**无限带宽宏模型**、**采样率算不出来**。新增 `timing`（第 21 模块 · "
+               "纯标准库 · **只读消费 E7/E14 · 不吃新物理**）："
+               "🔴🔴 **第一原理「误差要分类合成，时间要分拓扑相加」** —— E15 按**类型**做 RSS，"
+               "而时间阶段**物理串行** ⇒ `serial = Σ t_i` / 流水线稳态 `= max t_i`；"
+               "**对时间取 RSS 是错的** ⇒ **E15 的合成律不可平移到 E17**。"
+               "五个**闭式 golden**：`t = τ·ln(1/ε)` · `t = τ·(k+1)·ln2`（½LSB@k，"
+               "⟷ **E14 实测** `t_to_half_lsb_8bit_s` 逐位一致）· Elmore `r·c·n(n+1)/2`（复用 E7）· "
+               "`(n_bits+1)` 拍（⟷ E14 `len(sar_convert.trace)`）· "
+               "`t_clk = settle_half_lsb(R_on·C_u·2^n, k)`（CDAC 建立 ⇒ 时钟，复用 E14）。"
+               "**五阶段**：行线（Elmore **+** `R_oc·C_row_tot`）· 列线 · 采样保持 · SAR · DAC。"
+               "🔴 **关键实测（8×8 / 8 bit）**：每样本 **129.565246 ns ⇒ 7.7181 MSa/s** —— "
+               "**SAR 92.135256 ns 占 71.11%** · DAC 31.191620 ns 占 24.07% · 采样保持 6.238325 ns 占 4.81% · "
+               "行线 **0.000029 ns** · 列线 0.000013 ns；流水线稳态 92.135256 ns（收益 **0.28889**）。"
+               "🔴🔴 **规模 × 时间趋势相反**：N 8→1024 时阵列 `τ_row` 跨 **12556.5×**（∝N²）"
+               "而**每样本耗时只跨 1.00469×** ⇒ **规模墙是「精度墙」（E15：IR drop ∝N²、"
+               "5% 预算只到 N≤12）不是「速度墙」**；阵列 τ 达 1 ns 需 **N≈4238**"
+               "（解析 4245.8 ⟷ 二分 4238）⇒ **在可达规模内阵列 RC 永不是时间瓶颈**。"
+               "🔴 **主导项随位数交叉**：4/6 bit ⇒ **DAC 建立**（76.8% / 56.4%），"
+               "8/10/12 bit ⇒ **SAR**（71.1% / 92.3% / 98.3%）—— 因 **SAR ∝ (bits+1)²** 而 "
+               "**DAC ∝ (bits+1)** ⇒ **必然交叉**。**时钟预算**：固定开销 37.43 ns；目标 160 ns ⇒ "
+               "`t_clk_max` 13.6189 ns（**代回残差 0.00e+00**）。**R_oc 敏感性**：0→100 Ω 时行线阶段涨 50×，"
+               "而每样本耗时只涨 **7.7e-6 %** ⇒ **R_oc 伤精度、不伤速度**。"
+               "🔴 **保护性约束**：**只读消费** E7/E14 · **不给** `PERIPHERY_PROCESS` 加时间键 ⇒ "
+               "**E15/E16 已发布数字逐位不变**（门禁 B15/B16 守着；探针 C6 守「注入已报 TOPS 必红」）。"},
 ]
 
 #: 门禁判据合计（= Σ MILESTONES.gate）与突变探针合计（= Σ seg_probes）
@@ -810,6 +937,20 @@ FINDINGS = [
                "🔴 还有一条反直觉的：**低电导单元的「大相对误差」在求和里并不放大** —— "
                "电平等间距 ⇒ 量化误差**绝对值同为半步长** ⇒ 输出界 = `half_step / **平均电导**`"
                "（初版误用最小电导 ⇒ 界放大 ~3×、结论整个带偏）。"},
+    {"title": "时序：这套架构是「精度墙」不是「速度墙」 · 8×8 每样本 129.565 ns ⇒ 7.7181 MSa/s",
+     "detail": "把 E1–E16 里**零散的时间量**（E7 的 Elmore τ · E14 的采样保持 τ / SAR 逐位试判）"
+               "串成一条**节拍链**后得到：**8×8 / 8 bit 每样本 129.565246 ns ⇒ 7.7181 MSa/s**，"
+               "其中 **SAR 独占 71.11%**（92.135 ns，`t_clk` 10.237 ns × 9 拍）、DAC 建立 24.07%、"
+               "采样保持 4.81%，而**行线 + 列线合计不足 0.001%（fs 量级）**。"
+               "🔴 **本段最可讲的结论**：**N 从 8 涨到 1024，阵列 `τ_row` 跨 12556.5×（∝N²），"
+               "而每样本耗时只跨 1.00469×** ⇒ **时间几乎完全不随规模恶化** —— "
+               "**规模墙是「精度墙」（E15：IR drop ∝N²、5% 预算只到 N≤12）不是「速度墙」**。"
+               "阵列 τ 要到 **N≈4238** 才与 1 ns 可比，**远超可达规模** ⇒ 阵列 RC 永不是时间瓶颈。"
+               "🔴 第二条：**主导项随位数交叉**（≤6 bit ⇒ DAC 建立主导；≥8 bit ⇒ SAR 主导）—— "
+               "因为 **SAR ∝ (bits+1)²**（拍数 × 每拍建立）而 **DAC ∝ (bits+1)** ⇒ 必然交叉；"
+               "⇒ **低位数该优化 DAC，高位数只能优化 SAR**。"
+               "🔴 第三条：**流水线收益仅 0.28889**（最慢级独占预算）⇒ "
+               "**提吞吐必须并行复制瓶颈级，而不是加深流水线**（面积代价 ⇒ 接 E18 架构权衡）。"},
 ]
 
 # ═══════════════════════ 诚实边界（未闭合项 · 逐条登记）═══════════════════════
@@ -903,6 +1044,19 @@ GAPS = [
                "③ **卡位（stuck）是良率问题、不是均值精度问题** ⇒ 预算默认不含卡位"
                "（另设 `include_stuck`）—— 实测 p=1e-3 时 mean 仅 0.47%→1.53%，"
                "但 max 1.07%→**22.83%**、良率降到 **95.31%**。"},
+    {"id": "G-R", "title": "时序为**宏模型级**估算 · 只覆盖静态 · **不做功耗**（E17 新增能力的内在边界）",
+     "detail": "五阶段时间中：行驱动仍是 **VCVS + 开环输出电阻宏模型**（**无真实 GBW / 摆率**）；"
+               "**比较器延时 / 时钟树 / 时钟抖动未建模**；R-2R 输出节点电容 `r2r_node_cap_f` 是**显式占位**"
+               "（E14 未建 R-2R 动态）⇒ **DAC 阶段尤其参数敏感**（报告里标 `param_sensitive=True`）。"
+               "**只覆盖静态 + 一阶 RC 建立**：不含摆率限制 / 时钟偏斜与抖动 / 供电噪声 / 温度梯度 / "
+               "老化（接 E16 漂移）/ 工艺角；阵列 RC 沿用 E7/E9 一阶口径（**忽略列线电阻对行线的耦合**）。"
+               "🔴 **不做能量与功耗估算** ⇒ 因而 **绝不报 TOPS / TOPS-W / fJ/op**"
+               "（那是「吞吐 × 能效」的联合指标，本段既无功耗模型、也无实测硅）；"
+               "**只报「每样本耗时（ns）」与相对量**。参数（`c_unit_f` / `r_unit_ohm` / "
+               "`r2r_node_cap_f` / `rs` / `cs`）为**公开典型量级占位（非 PDK · 无实测锚）** "
+               "⇒ **结论随参数变**，报告须携带参数。**保护性约束**：只读消费 E7/E14、"
+               "**不给** `PERIPHERY_PROCESS` 加时间键（E17 的时间参数只进**自己的** `TIMING_PROCESS`）"
+               "⇒ **E15/E16 已发布数字逐位不变**（门禁 B15/B16 守着）。"},
 ]
 
 _ARTIFACT_DIRS = ("examples", "lda/examples")
@@ -1079,7 +1233,8 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
                  "寄生后仿 + 失配/噪声 + 千级规模压力 + **器件级 PDE 交叉验证 + 失效边界测绘 + "
                  "2D 短沟道效应（roll-off/DIBL） + 2D 漂移扩散输运（I–V / 亚阈值摆幅） + "
                  "真 DAC / ADC / 行驱动外设（系统链） + 端到端误差预算链 + "
-                 "权重编程通路（写-校验 / 噪声地板 / 接误差预算）**全链路验证",
+                 "权重编程通路（写-校验 / 噪声地板 / 接误差预算） + "
+                 "时序 / 时钟预算链（五阶段节拍 / 时间按拓扑合成 / 时钟反解）**全链路验证",
         "verdict": "DESIGN_VERIFIED",
         "verdict_label": "设计期验证（非流片实测）",
         "identity": {
@@ -1096,10 +1251,10 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "milestones": len(MILESTONES),
             "gate_checks": GATE_CHECKS_TOTAL,
             "probe_checks": PROBE_CHECKS_TOTAL,
-            "modules": 20,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
-            "capability_modules": 19,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
-            "entrypoints": 18,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
-                                         #   E11 两道 + E12 + E13 + E14 + E15）
+            "modules": 21,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
+            "capability_modules": 20,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
+            "entrypoints": 19,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
+                                         #   E11 两道 + E12…E17 六道）
             "modules_dir": "lda/lda_l2/ecore/",
         },
         "milestones": MILESTONES,
@@ -1129,6 +1284,7 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "device_periphery": DEVICE_PERIPHERY_FACTS,
         "device_budget": BUDGET_FACTS,
         "device_weight_prog": WEIGHT_PROG_FACTS,
+        "device_timing": TIMING_FACTS,
         "scale_pressure": {
             "facts": SCALE_FACTS,
             "tiers": SCALE_PRESSURE_TIERS,
@@ -1242,12 +1398,12 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑨ Elmore 延迟闭式：τ(R=1, C=1) = 0.5 s",
         abs(elmore_tau_rc(1.0, 1.0) - 0.5) < 1e-15)
 
-    # ⑩ 案例卡组装：13 里程碑 / 14 结论 / 14 缺口 / 判据合计 303（含 64 探针）
+    # ⑩ 案例卡组装：16 里程碑 / 17 结论 / 18 缺口 / 判据合计 376（含 82 探针）
     card = case_card(repo_root="__nonexistent_root__")
-    chk("⑩ 案例卡组装：15 里程碑 / 16 结论 / **17 缺口** / 门禁判据合计 348（含 76 探针）",
-        len(card["milestones"]) == 15 and len(card["findings"]) == 16
-        and card["gaps_total"] == 17 and card["span"]["gate_checks"] == 348
-        and card["span"]["probe_checks"] == 76)
+    chk("⑩ 案例卡组装：16 里程碑 / 17 结论 / **18 缺口** / 门禁判据合计 376（含 82 探针）",
+        len(card["milestones"]) == 16 and len(card["findings"]) == 17
+        and card["gaps_total"] == 18 and card["span"]["gate_checks"] == 376
+        and card["span"]["probe_checks"] == 82)
 
     # ⑪ 产出物优雅降级（root 不存在 ⇒ available False，不抛错）
     chk("⑪ 产出物探测优雅降级（root 不存在 ⇒ available=False）",
@@ -1298,8 +1454,8 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑯ 护栏：非法 rows/cols · bits>60 · 零厚度 · n<1 均抛 ValueError", guard == 6)
 
     # ⑰ 每里程碑都有门禁数 + 结果文本（防空洞）
-    chk("⑰ 里程碑完整：15 段 · 每段含 gate 数 + 结果文本",
-        len(MILESTONES) == 15
+    chk("⑰ 里程碑完整：16 段 · 每段含 gate 数 + 结果文本",
+        len(MILESTONES) == 16
         and all(m.get("gate", 0) > 0 and m.get("result") and m.get("seg_probes", 0) > 0
                 for m in MILESTONES))
 
@@ -1481,6 +1637,43 @@ def run_selfchecks(verbose: bool = False) -> bool:
         and (("不进预算" in _bgp2) or ("不进误差预算" in _bgp2))
         and all(k not in (_dwp + _bgp2) for k in ("已标定 PDK", "已含 TOPS",
                                                  "共模漂移是精度上限")))
+
+    # ㉞ E17 时序面登记齐全（防「加了能力忘了卡」）
+    dtm = card["device_timing"]
+    chk("㉞ E17 时序面登记齐全（五阶段 · 总量/主导项/速率 · 时间合成律双口径 + RSS 反例 · "
+        "规模×时间 · 交叉点 · 位数交叉 · 时钟反解 · R_oc 敏感性 · 保护性 · 闭式五项）",
+        len(dtm["stages"]) == 5
+        and abs(dtm["totals"]["serial_ns"] - 129.565246) < 1e-4
+        and abs(dtm["totals"]["pipelined_period_ns"] - 92.135256) < 1e-4
+        and abs(dtm["totals"]["pipeline_gain_frac"] - 0.28889) < 1e-4
+        and abs(dtm["totals"]["max_sample_rate_msa"] - 7.7181) < 1e-3
+        and dtm["totals"]["dominant"] == "sar_convert"
+        and abs(dtm["synthesis_law"]["demo"]["serial_ns"] - 21.0) < 1e-9
+        and abs(dtm["synthesis_law"]["demo"]["rss_ns"] - 13.38) < 0.01
+        and dtm["scale_vs_time"]["tau_row_span_x"] > 10000
+        and dtm["scale_vs_time"]["serial_span_x"] < 1.01
+        and abs(dtm["crossover"]["ns"] - 4238) < 2
+        and len(dtm["bits_cross"]["points"]) == 5
+        and dtm["clock_budget"]["back_calc_residual_s"] == 0.0
+        and len(dtm["closed_form"]) == 5
+        and dtm["protection"]["e15_worst_pct"] == 4.06012)
+
+    # ㉟ 🔴 诚实（E17 · 双向）：
+    #     **抬高方向** —— 时间能力到手后最易滑成「已报 TOPS / 已含功耗 / 已含时钟树抖动」；
+    #     **贬低方向** —— E17 前的「全仓时间零覆盖 / 行驱动无限带宽宏模型」口径必须显式标注已闭合。
+    #     🔴 判据纪律（E15 血案）：**按来源分别断言** —— 多来源拼接会稀释判据（探针会假绿）。
+    _dtm = str(card["device_timing"])
+    _bgp3 = " ".join(g["detail"] for g in card["gaps"])
+    _forbid_t = ("已报 TOPS", "已含功耗", "已含时钟树抖动", "已含摆率模型", "已完成功耗估算")
+    chk("㉟ 🔴 诚实（E17）：两个来源各自显式声明**只报每样本耗时** + **不报 TOPS** + **非 PDK** + "
+        "**不做功耗估算**；且必须给出「宏模型级」与「只覆盖静态」两条内在边界；"
+        "不得自称已报 TOPS / 已含功耗 / 已含时钟树抖动",
+        ("只报「每样本耗时（ns）」" in _dtm) and ("不报 TOPS" in _dtm)
+        and ("非 PDK" in _dtm) and ("不做能量与功耗估算" in _dtm)
+        and ("宏模型" in _dtm) and ("只覆盖静态" in _dtm)
+        and ("不报 TOPS" in _bgp3) and ("不做能量与功耗估算" in _bgp3)
+        and ("宏模型" in _bgp3) and ("只覆盖静态" in _bgp3)
+        and all(k not in (_dtm + _bgp3) for k in _forbid_t))
 
     ok_all = all(res.values())
     if verbose:

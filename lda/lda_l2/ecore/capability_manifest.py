@@ -172,6 +172,30 @@ ECORE_CAPABILITY_MANIFEST = [
                     "device_transport_self_check"],
         "introduced_by": "D-170…D-172 (E13)", "guard": "run_ecore_e13_smoke.py",
     },
+    {
+        "capability": "真转换器电路：R-2R 梯形 DAC（NMOS 模拟开关 · R_on 精度上限）+ "
+                      "SAR/CDAC 电荷重分配 ADC（真瞬态）+ 采样保持 RC",
+        "module": "lda_l2.ecore.converter",
+        "symbols": ["ideal_dac_voltage", "code_to_bits", "bits_to_code",
+                    "r2r_rational_voltage", "nmos_switch_ron_ohm",
+                    "r2r_ideal_network_dc", "r2r_nmos_dac_dc", "dac_static_report",
+                    "cdac_top_closed_form", "sar_convert", "sar_error_report",
+                    "sample_hold_transient", "CONV_PROCESS",
+                    "CONVERTER_DISCLOSURE", "converter_self_check"],
+        "introduced_by": "D-174…D-176 (E14)", "guard": "run_ecore_e14_smoke.py",
+    },
+    {
+        "capability": "行驱动外设 + 系统链：单位增益缓冲闭式（增益误差 + 闭环输出电阻）· "
+                      "R_oc 耦合三对角 IR-drop · 可及规模上界重算 · 端到端系统链（含行系统项）",
+        "module": "lda_l2.ecore.periphery",
+        "symbols": ["buffer_closed_loop_gain", "buffer_closed_loop_rout",
+                    "buffered_row_voltage", "row_driver_mna_check", "vcvs_polarity_fact",
+                    "row_line_profile_with_driver", "max_scale_with_driver",
+                    "driver_scale_table", "row_load_conductance", "system_chain",
+                    "row_system_error", "PERIPHERY_PROCESS",
+                    "PERIPHERY_DISCLOSURE", "periphery_self_check"],
+        "introduced_by": "D-174…D-176 (E14)", "guard": "run_ecore_e14_smoke.py",
+    },
 ]
 
 

@@ -1373,6 +1373,10 @@ CORE_SMOKES: List[str] = [
     # E13（D-170…D-172）· 2D MOS 漂移扩散输运（Si-only SG 连续性 + Gummel ⇒ I–V /
     # 亚阈值摆幅）—— 把 E12 的 G-K「不含输运 ⇒ 不产 I-V」关掉 + 5 条突变探针。
     "run_ecore_e13_smoke.py",
+    # E14（D-174…D-176）· **真 DAC / ADC / 行驱动外设**（R-2R + NMOS 开关 / SAR + CDAC
+    # 电荷重分配 / 行驱动 R_oc 耦合规模律 / 端到端系统链）—— 把「设计链」补成「系统链」+
+    # 6 条突变探针；并**登记** `mna.vcvs` 极性与 docstring 相反的平台缺陷。
+    "run_ecore_e14_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2197,6 +2201,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e12_smoke.py": 300.0,
     # E13 电子计算征程 2D MOS 输运门禁（D-170…D-172）· 实测上界见基线行
     "run_ecore_e13_smoke.py": 300.0,
+    # E14 电子计算征程 真转换器/行驱动门禁（D-174…D-176）· 实测上界见基线行（秒级）
+    "run_ecore_e14_smoke.py": 300.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

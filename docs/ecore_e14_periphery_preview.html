@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<title>LDA 电子计算征程 E14 · 真 DAC / ADC / 行驱动外设（预览）</title>
+<style>
+ body{font:14px/1.65 "Microsoft YaHei",Arial;background:#f7f9fc;color:#1f2937;margin:0;padding:28px}
+ .wrap{max-width:1060px;margin:0 auto}
+ h1{font-size:22px;border-left:5px solid #2563eb;padding-left:12px;margin:0 0 6px}
+ .sub{color:#64748b;font-size:13px;margin-bottom:22px}
+ h2{font-size:17px;margin:26px 0 10px;color:#0f172a;border-bottom:1px solid #e2e8f0;padding-bottom:6px}
+ table{border-collapse:collapse;width:100%;background:#fff;font-size:13.5px;margin:8px 0 14px}
+ th,td{border:1px solid #e2e8f0;padding:7px 10px;text-align:left}
+ th{background:#eff6ff;font-weight:600;color:#1e40af}
+ .k{color:#2563eb;font-weight:700}
+ .card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;margin:10px 0}
+ .warn{background:#fef2f2;border-left:4px solid #dc2626;padding:10px 14px;border-radius:4px;font-size:13.5px}
+ .ok{background:#f0fdf4;border-left:4px solid #16a34a;padding:10px 14px;border-radius:4px;font-size:13.5px}
+</style></head><body><div class="wrap">
+<h1>LDA 电子计算征程 E14 · 真 DAC / ADC / 行驱动外设</h1>
+<div class="sub">把「设计链」补成「系统链」· D-174…D-176 · 2026-10-01 · 纯 numpy/标准库，零商业 SPICE</div>
+
+<h2>① R-2R 梯形 DAC（无源网络 + NMOS 模拟开关）</h2>
+<div class="card">拓扑：<code>v[k] --R-- v[k+1]</code>（k=0..N−2）· <code>v[k] --2R-- s[k]</code>（开关接 V<sub>ref</sub> 或 GND）·
+<code>v[N-1] --2R-- GND</code>（终端）。戴维南递推 ⇒ 每级向右看等效 R ⇒ 逐级二分 ⇒
+<span class="k">v[0] = V<sub>ref</sub>·code/2<sup>N</sup></span>。</div>
+<table><thead><tr><th>量</th><th>数值</th><th>口径</th></tr></thead><tbody><tr><td>DAC 位数 / 扫描码数</td><td>8 bit / 256</td><td>全码扫描</td></tr><tr><td>max|Δ|（vs 闭式）</td><td><span class='k'>0.0265 LSB</span></td><td>真 NMOS 开关</td></tr><tr><td>INL / DNL</td><td>0.0265 / -0.0345 LSB</td><td>单调：是</td></tr><tr><td>开关 R_on</td><td>6.4 Ω（R_on/R = 0.00064）</td><td>三极管区闭式</td></tr></tbody></table>
+<table><thead><tr><th>长沟道极限</th><th>电压</th><th>口径</th></tr></thead><tbody><tr><td>code=0（零码）</td><td>0.000000 V</td><td>真电路 MNA 直流解</td></tr><tr><td>code=255（满码）</td><td>0.996088 V</td><td>理想 0.996094 V</td></tr></tbody></table>
+<div class="ok">网络装配自证：MNA 解「理想开关」网络 ⟷ 二进制除权闭式 —— 两个独立来源，max|Δ| = 1.1e-16。</div>
+<div class="warn">🔴 <b>真 NMOS 开关暴露 R_on</b>：8 bit 全码 max|Δ| = 0.0265 LSB（R_on = 6.4 Ω）⇒
+<b>开关导通电阻是 DAC 精度上限的一个来源</b>（行为级量化模型看不见）。W/L ↑ ⇒ R_on ↓ ⇒ 误差 ↓：
+W/L=2000 → 0.0017 LSB；W/L=50 → 0.0660 LSB。</div>
+
+<h2>② SAR + CDAC 电荷重分配 ADC（真电容阵列 + 真瞬态）</h2>
+<div class="card">🔴 <b>电容在 DC 下开路</b> ⇒ DC 解里顶板电位与电荷分配无关；后向欧拉伴随模型
+<code>i = C/dt·(v−v_prev)</code> 代入顶板 KCL ⇒ <b>Σ C<sub>k</sub>(V_top−V<sub>bk</sub>) = const</b>
+（<b>电荷严格守恒</b>）⇒ <b>一步瞬态 = 精确电荷守恒解</b>。</div>
+<table><thead><tr><th>项</th><th>数值</th><th>口径</th></tr></thead><tbody><tr><td>逐次逼近轨迹（8 bit）</td><td>8 步</td><td>MSB→LSB</td></tr><tr><td>V_top 保持态</td><td>-0.418700000 V</td><td>闭式 -0.418700000 V</td></tr><tr><td>输出码（V_in=0.4187）</td><td>code = 107</td><td>8 bit</td></tr></tbody></table>
+<table><thead><tr><th>第 k 步（电容）</th><th>V_top (V)</th><th>判决</th></tr></thead><tbody><tr><td>C7（MSB）</td><td>0.081300</td><td>回切</td></tr><tr><td>C6（）</td><td>-0.168700</td><td>保留</td></tr><tr><td>C5（）</td><td>-0.043700</td><td>保留</td></tr><tr><td>C4（）</td><td>0.018800</td><td>回切</td></tr><tr><td>C3（）</td><td>-0.012450</td><td>保留</td></tr><tr><td>C2（）</td><td>0.003175</td><td>回切</td></tr><tr><td>C1（）</td><td>-0.004637</td><td>保留</td></tr><tr><td>C0（LSB）</td><td>-0.000731</td><td>保留</td></tr></tbody></table>
+<div class="ok">SAR 转换：16 个均匀取样点 max 误差 = 1 LSB · 末步残差 = -7.312e-04 V（≤ 1 LSB = 3.906e-03 V）·
+保持态 V_top = -0.418700000 ⟷ 闭式 −V_in = -0.418700000（rel = 3.9e-12）。</div>
+
+<h2>③ 采样保持（真瞬态 · 两个口径必须分清）</h2>
+<table><thead><tr><th>口径</th><th>τ (s)</th><th>v_end (V)</th><th>对账</th></tr></thead><tbody><tr><td>瞬态（40 步）</td><td>1.0e-09</td><td>0.792805691</td><td>⟷ 离散闭式 rel 5.60e-16</td></tr><tr><td>连续闭式</td><td>-</td><td>0.794609642</td><td>物理（连续时间）</td></tr><tr><td>离散闭式</td><td>-</td><td>0.792805691</td><td>求解器实际在解的方程</td></tr></tbody></table>
+<div class="warn">🔴 连续闭式 <code>V_in(1−e^{−t/τ})</code> 与 <b>后向欧拉离散闭式</b>
+<code>V_in(1−(1+dt/τ)<sup>−n</sup>)</code> 不是一回事：瞬态 ⟷ <b>离散闭式</b> rel = 5.60e-16（同口径、机器精度）；
+与<b>连续</b>闭式的偏差是<b>离散化误差</b>，随步长加密单调降（2.27e-03 → 1.10e-03 → 5.40e-04，比值 2.07 ⇒ <b>O(dt) 一阶</b>）。</div>
+
+<h2>④ 行驱动（闭式 ⟷ MNA 真实电路）</h2>
+<div class="card"><span class="k">v_load = v_in·A/(1 + A + R_ol/R_L)</span> —— 含<b>增益误差</b>
+<code>A/(1+A)</code> 与<b>闭环输出电阻</b> <code>R_oc = R_ol/(1+A)</code>（反馈把输出阻抗降 (1+A) 倍）。</div>
+<table><thead><tr><th>量</th><th>MNA 真电路</th><th>闭式</th><th>相对误差</th></tr></thead><tbody><tr><td>v_load（v_in=0.8 · A=1e3 · R_ol=R_L=1 kΩ）</td><td>0.798403194 V</td><td>0.798403194 V</td><td>1.39e-16</td></tr></tbody></table>
+
+<h2>⑤ 🔴 R_oc ⇒ 可及规模上界（本段核心系统结论）</h2>
+<div class="card">把 <code>R_oc</code> 串进 E9 的三对角 IR-drop 模型，首端边界从 <code>V_0 = v_in</code>
+改为 <code>−(1+(1+gr)/ρ)·V_0 + (1/ρ)·V_1 = −v_in</code>（ρ = r_seg/R_oc）。
+⇒ <b>器件级参数第一次反馈到规模律</b>。5% 输出误差预算下：</div>
+<table><thead><tr><th>R_oc (Ω)</th><th>可及最大行数 N_max</th><th>N=18 探测点 avg_rel_err</th><th>首端电压 (V)</th></tr></thead><tbody><tr><td>0.0</td><td>20</td><td>3.8827%</td><td>1.000</td></tr><tr><td>0.5</td><td>18</td><td>4.5564%</td><td>0.993</td></tr><tr><td>1.0</td><td>17</td><td>5.2208%</td><td>0.986</td></tr><tr><td>2.0</td><td>15</td><td>6.5221%</td><td>0.973</td></tr><tr><td>5.0</td><td>10</td><td>10.2201%</td><td>0.934</td></tr><tr><td>10.0</td><td>5</td><td>15.7736%</td><td>0.876</td></tr><tr><td>20.0</td><td>3</td><td>25.0462%</td><td>0.780</td></tr></tbody></table>
+<div class="warn">🔴 一个典型缓冲（开环输出 1 kΩ · A=1e3 ⇒ R_oc≈1 Ω）就把可及规模从 N≤20 压到 N≤17；
+R_oc = 20 Ω 时只剩 N≤3。⇒ <b>行驱动输出阻抗必须远小于行线总电阻</b>，否则 IR drop 提前恶化。</div>
+<div class="ok">极限交叉核对：<b>R_oc = 0 时与 E9 <code>array_scale.row_line_profile</code> 逐位一致</b>（max|Δ| = 0）
+⇒ 本模型不是另起一套。</div>
+
+<h2>⑥ 端到端系统链与「行系统项」</h2>
+<div class="card">DAC → 行驱动 → 阵列 → TIA → ADC。行负载 <code>Σ_j g_ij</code> 随行<b>变化</b>
+⇒ 驱动负载调整引入<b>按行增益误差</b>（实测行增益<b>离散度 8.889e-4</b>；理想驱动下 = 0）
+—— 与 E8 的<b>列系统项</b>同型，<b>不会被 Monte Carlo 平均掉</b> ⇒ 要么 R_oc 足够低，要么<b>行级校准</b>。</div>
+<table><thead><tr><th>链路段</th><th>数值</th><th>口径</th></tr></thead><tbody><tr><td>行增益离散度（真驱动）</td><td>8.889e-4</td><td>R_ol = 1 kΩ</td></tr><tr><td>行增益离散度（理想驱动）</td><td>0（机器零）</td><td>R_ol = 0</td></tr><tr><td>系统链 max_rel_err（真）</td><td>3.019e-3</td><td>vs 数字全精度 golden</td></tr><tr><td>系统链 max_rel_err（理想 A→∞）</td><td>1.000e-9</td><td>含缓冲固有增益误差</td></tr></tbody></table>
+
+<h2>⑦ 🔴 平台缺陷登记（本段发现 · 适配 + 锁死 · 不改 mna）</h2>
+<div class="warn"><code>mna.Circuit.vcvs</code> 的 <b>docstring 声明</b>
+<code>V(out_p)−V(out_n) = gain·(V(ctl_p)−V(ctl_n))</code>，但 <code>_stamp_dc</code> 实际给出
+<b><code>V_out = gain·(V(ctl_n) − V(ctl_p))</code>（极性相反）</b>。<br>
+实测：ctl_p = +1 V ⇒ V_out = -1000.0 V（docstring 期望 +1000 V）。<br>
+<b>为什么不修</b>：E1–E13 全部已上线数字建立其上（含 E2 ideal-TIA 虚地电路）⇒ 按保护性约束<b>不改</b>，
+改为<b>适配 + 显式登记 + 判据锁死</b>。E2/E3 结论仍成立（TIA 虚地是 |A|→∞ 的极限，符号只改变输出定向）。<br>
+<b>护栏</b>：门禁 B14 把这个事实锁死 ⇒ 若未来有人「顺手改正」 mna.py，B14 会红并提示适配过期。</div>
+
+<h2>⑧ 诚实边界</h2>
+<div class="card">比较器是<b>判决器抽象</b>（非晶体管级）· CDAC 底板开关用<b>理想电压源抽象</b>
+（DAC 侧用真 NMOS 开关以暴露 R_on）· 行驱动器是 <b>VCVS + 开环输出电阻宏模型</b>（非晶体管级运放）·
+电阻/电容为理想值（<b>不建匹配网络</b>）· R_on 取三极管区闭式 · 电荷注入/时钟馈通只给量级 ·
+参数为公开典型量级占位（<b>非 PDK</b>）· 不做流片 · <b>不报 TOPS/TOPS-W/fJ/op</b>。</div>
+
+<div class="sub" style="margin-top:26px">LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E14（D-150…D-176）</div>
+</div></body></html>

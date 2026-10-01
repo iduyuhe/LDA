@@ -60,7 +60,7 @@ def chk_guards_exist():
 
 
 def chk_disclosure_scopes():
-    need = [f"e{i}_scope" for i in range(1, 14)]
+    need = [f"e{i}_scope" for i in range(1, 15)]
     missing = [k for k in need if k not in ECORE_DISCLOSURE]
     return (len(missing) == 0), f"missing_scopes={missing}"
 

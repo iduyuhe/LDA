@@ -1,7 +1,0 @@
-chore(gitignore): 补本地诊断 / 推送 scratch 规则（E16-e 血案：tmp_facts.py 曾被 git add -A 误提交）
-
-新增：tmp_* / tmp*.log / _push*.py / _verify*.py / _accept*.py / _deploy.log / _msg*.txt /
-_*.log / [qrst][0-9].log —— 实测 `git check-ignore` 逐条命中（8/8）。
-🔴 血案 #31 纪律：.gitignore 不能取消已入库文件的跟踪 ⇒ 本次同时 `git rm --cached tmp_facts.py`
-并 amend 掉误提交（该提交尚未推送）。
-🔴 通则（同 E16 教训）：推送脚本一律放仓库外（~/.workbuddy/lda_scratch/），不落仓库。

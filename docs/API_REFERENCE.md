@@ -22,12 +22,12 @@
 | 项 | 值 |
 |---|---|
 
-| 端点总数 | 142（精确 125 + 前缀/后缀 17） |
-| 方法分布 | GET 47 · PATCH 1 · POST 94 |
-| 有描述 | 142（**100.0%**） |
+| 端点总数 | 143（精确 126 + 前缀/后缀 17） |
+| 方法分布 | GET 48 · PATCH 1 · POST 94 |
+| 有描述 | 143（**100.0%**） |
 | 需登录（重计算闸门） | 60 |
 
-## GET（47）
+## GET（48）
 
 | 路径 | 用途 | 参数 | 鉴权 |
 |---|---|---|---|
@@ -42,6 +42,7 @@
 | `*.png`（后缀匹配） | GET /<name>.jpg\|jpeg\|png\|gif —— 静态图片（公开缓存 1 天；basename 防目录穿越）。 | — | public · **二进制** |
 | `/` | GET / 与 /index.html —— 主控制台单页（static/index.html，nocache）。 | — | public · **二进制** |
 | `/api/about` | GET /api/about —— 公开产品说明（版本号 + 基本说明 + 边界），供前端与白皮书取用。 | — | public |
+| `/api/accel_demo` | GET /api/accel_demo —— 光子/模拟混合 AI 推理加速器案例卡（阶段 4 · L6 参考设计 · 只读）。 🔴 与 `/api/qchip_demo`（光量子）、`/api/schip_demo`（超导）、`/api/pchip_demo` （硅光张量核）、`/api/ecore_demo`（电子 ecore）**并列**：本卡是**跨域拼接** （光子网格第 1 层 + ecore E3 交叉阵列第 2 层 = 端到端 MLP 推理加速器）。 🔴 确定性现算 + 模块级缓存：固定种子纯 numpy（~0.2s 首算，同配置秒回）， 不跑 P&R / 不跑 FDTD ⇒ 免登录、不进 HEAVY_POST_PATHS（公开只读验货类）。 🔴 不伪装实测：`verdict` 恒 DESIGN_BUDGET；精度为合成任务链路行为验证， 不报 TOPS/TOPS-W/fJ/op。 查询参数（可选设计点）：`phase`（移相器位数 2..12，默认 6）、 `dac` / `adc`（DAC/ADC 位数 2..16，默认 8）。非法值回落默认。 异常不 500（200 + error 字段，与 `h_qchip_demo` 同风格）。 | — | public |
 | `/api/admin/config` | GET /api/admin/config —— 读站点配置（管理员令牌，否则 401）。 | — | public |
 | `/api/admin/me` | GET /api/admin/me —— 管理员态轻量探活（v0.9.47 接线 stats.html 数据看板）。 P2-5：凭 HttpOnly Cookie（lda_admin_token）判断，零计算、零数据泄露。 用途：导航条凭真值决定是否显示「数据看板」链接，取代可被 XSS 伪造的 localStorage 影子标志（旧 nav.js 依赖 lda_admin_logged_in 的同类改造留半截）。 未登录 / 非管理员 → 401（与 /api/admin/* 一致的鉴权有效行为）； 已登录管理员 → 200 {"ok":true,"admin":true}。 | — | public |
 | `/api/admin/opinions` | 管理员聚合视图：全部意见（含联系方式），按货架分组。 | — | public |

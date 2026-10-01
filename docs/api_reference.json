@@ -1,9 +1,9 @@
 {
   "counts": {
-    "described": 142,
+    "described": 143,
     "needs_login": 60,
-    "precise": 125,
-    "total": 142,
+    "precise": 126,
+    "total": 143,
     "undescribed": 0,
     "wildcard": 17
   },
@@ -159,6 +159,20 @@
       "note": "",
       "params": [],
       "path": "/api/about",
+      "source": "handler_docstring",
+      "wildcard": false
+    },
+    {
+      "app_function": null,
+      "auth": "public",
+      "binary": false,
+      "description": "GET /api/accel_demo —— 光子/模拟混合 AI 推理加速器案例卡（阶段 4 · L6 参考设计 · 只读）。 🔴 与 `/api/qchip_demo`（光量子）、`/api/schip_demo`（超导）、`/api/pchip_demo` （硅光张量核）、`/api/ecore_demo`（电子 ecore）**并列**：本卡是**跨域拼接** （光子网格第 1 层 + ecore E3 交叉阵列第 2 层 = 端到端 MLP 推理加速器）。 🔴 确定性现算 + 模块级缓存：固定种子纯 numpy（~0.2s 首算，同配置秒回）， 不跑 P&R / 不跑 FDTD ⇒ 免登录、不进 HEAVY_POST_PATHS（公开只读验货类）。 🔴 不伪装实测：`verdict` 恒 DESIGN_BUDGET；精度为合成任务链路行为验证， 不报 TOPS/TOPS-W/fJ/op。 查询参数（可选设计点）：`phase`（移相器位数 2..12，默认 6）、 `dac` / `adc`（DAC/ADC 位数 2..16，默认 8）。非法值回落默认。 异常不 500（200 + error 字段，与 `h_qchip_demo` 同风格）。",
+      "handler": "h_accel_demo",
+      "heavy": false,
+      "method": "GET",
+      "note": "",
+      "params": [],
+      "path": "/api/accel_demo",
       "source": "handler_docstring",
       "wildcard": false
     },

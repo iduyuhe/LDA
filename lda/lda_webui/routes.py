@@ -317,6 +317,44 @@ def h_pchip_demo(h, p, q, path):
                       "case_id": _pc.CASE_ID, "verdict": "ERROR"})
 
 
+def h_accel_demo(h, p, q, path):
+    """GET /api/accel_demo —— 光子/模拟混合 AI 推理加速器案例卡（阶段 4 · L6 参考设计 · 只读）。
+
+    🔴 与 `/api/qchip_demo`（光量子）、`/api/schip_demo`（超导）、`/api/pchip_demo`
+    （硅光张量核）、`/api/ecore_demo`（电子 ecore）**并列**：本卡是**跨域拼接**
+    （光子网格第 1 层 + ecore E3 交叉阵列第 2 层 = 端到端 MLP 推理加速器）。
+
+    🔴 确定性现算 + 模块级缓存：固定种子纯 numpy（~0.2s 首算，同配置秒回），
+    不跑 P&R / 不跑 FDTD ⇒ 免登录、不进 HEAVY_POST_PATHS（公开只读验货类）。
+
+    🔴 不伪装实测：`verdict` 恒 DESIGN_BUDGET；精度为合成任务链路行为验证，
+    不报 TOPS/TOPS-W/fJ/op。
+
+    查询参数（可选设计点）：`phase`（移相器位数 2..12，默认 6）、
+    `dac` / `adc`（DAC/ADC 位数 2..16，默认 8）。非法值回落默认。
+    异常不 500（200 + error 字段，与 `h_qchip_demo` 同风格）。
+    """
+    def _opt_i(key, default, lo, hi):
+        try:
+            v = int(q.get(key) or default)
+        except (TypeError, ValueError):
+            return default
+        return v if lo <= v <= hi else default
+
+    pb = _opt_i("phase", 6, 2, 12)
+    db = _opt_i("dac", 8, 2, 16)
+    ab = _opt_i("adc", 8, 2, 16)
+    try:
+        from . import accel_case as _ac
+    except ImportError:
+        from lda_webui import accel_case as _ac
+    try:
+        return (200, _ac.case_card(phase_bits=pb, dac_bits=db, adc_bits=ab))
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/accel_demo", "error": str(e)[:160],
+                      "case_id": _ac.CASE_ID, "verdict": "ERROR"})
+
+
 def h_ecore_demo(h, p, q, path):
     """GET /api/ecore_demo —— 电子计算芯片（模拟计算核 / MVM 交叉阵列）案例卡（只读 · 免登录 · 微秒级）。
 
@@ -1852,6 +1890,7 @@ GET_ROUTES = {
     "/api/schip_demo": h_schip_demo,
     # A 档接入（M5 收尾）：硅光张量核（光计算芯片）只读案例卡（零重计算 · 免登录）
     "/api/pchip_demo": h_pchip_demo,
+    "/api/accel_demo": h_accel_demo,
     # A 档接入（E 征程收官）：电子计算芯片（模拟计算核 / MVM 交叉阵列）只读案例卡（零重计算 · 免登录）
     "/api/ecore_demo": h_ecore_demo,
     "/api/cpo_array": h_cpo_array,

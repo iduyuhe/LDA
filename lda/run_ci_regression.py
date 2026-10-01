@@ -1408,6 +1408,18 @@ CORE_SMOKES: List[str] = [
     #   🔴 首次运行即抓到 **2 处真实渲染 bug**：`DB.dibl_mv_per_v`/`DB.r2_exp_law`（该处 `DB` 已重绑为
     #   `device_budget` ⇒ 渲染 0.0）与 `DWY.cells_64_p_1e-3`（JS 减法 ⇒ NaN）—— 均已修。
     "run_webui_ecore_render_path_smoke.py",
+    # 🔴 v0.9.171（2026-10-02）阶段 4 · L6 参考设计门禁（W4-1）：光子/模拟混合 AI 推理加速器。
+    #   把光子 MZI 网格（第 1 层 · 正交约束 + 移相器相位量化）与 E3 模拟交叉阵列
+    #   （第 2 层 · DAC/ADC 量化）拼成端到端 2 层 MLP 分类器，vs 全精度数字 golden
+    #   逐项误差归因（相位量化 ↔ DAC/ADC）且随位数下降。14 项自检 + 跨源核对 +
+    #   3 道突变探针（量化旁路/标签破坏/网格错配，进程内 patch.object —— 沙箱禁 spawn）。
+    #   诚实边界：合成数据集只证链路行为 · 不报 TOPS（电路级模型无 PDK）。CI core 260→261。
+    "run_ai_accel_ref_smoke.py",
+    # 🔴 v0.9.171（2026-10-02）阶段 4 案例卡门禁（W4-2）：/api/accel_demo（光子/模拟混合
+    #   加速器 · 跨域拼接）。守三纪律：只读可达（GET_ROUTES · 不进 HEAVY_POST_PATHS）·
+    #   诚实边界（verdict 恒 DESIGN_BUDGET · 主张面无 TOPS/实测宣称 · gaps 自洽）·
+    #   跨源一致（卡内数字与模块现算逐位同源 · 前端三件 · hash 映射）。2 突变探针。CI core 261→262。
+    "run_accel_case_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2248,6 +2260,10 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_webui_entry_smoke.py": 120.0,
     # WebUI 案例卡前端取值路径门禁（v0.9.169 · D-193）· 纯文本解析（不执行 JS），实测 ~0.19s
     "run_webui_ecore_render_path_smoke.py": 120.0,
+    # 阶段 4 · L6 参考设计门禁（W4-1 混合加速器）· 实测上界 <2s（14 自检含 3 次全量 run_reference + 3 探针）
+    "run_ai_accel_ref_smoke.py": 300.0,
+    # 阶段 4 案例卡门禁（W4-2 accel_demo）· 实测上界 <1s（缓存现算 + 前端源码扫描）
+    "run_accel_case_smoke.py": 300.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LDA 上机验收操作卡 · 电子计算芯片案例（v0.9.160）</title>
+<style>
+  :root{--bg:#f7f9fc;--card:#fff;--line:#e3e8ef;--txt:#1f2937;--mut:#6b7280;--acc:#185FA5;--warn:#b45309;--ok:#0f6e56}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+  .wrap{max-width:980px;margin:0 auto;padding:34px 22px 70px}
+  h1{font-size:25px;margin:0 0 6px}
+  .sub{color:var(--mut);font-size:13px;margin-bottom:26px}
+  h2{font-size:18px;margin:34px 0 12px;padding-left:10px;border-left:4px solid var(--acc)}
+  h3{font-size:15px;margin:20px 0 8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:12px 0}
+  .badge{display:inline-block;font-size:12px;padding:2px 9px;border-radius:999px;background:#eef4fb;color:var(--acc);border:1px solid #cfe0f2;margin-right:6px}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;background:var(--card)}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#eef4fb;font-weight:600}
+  code{background:#f1f5f9;padding:1px 6px;border-radius:5px;font-size:13px}
+  pre{background:#0e1525;color:#dbe6f5;padding:14px 16px;border-radius:10px;overflow:auto;font-size:13px;line-height:1.6}
+  .step{display:flex;gap:14px;align-items:flex-start;margin:16px 0}
+  .num{flex:0 0 30px;height:30px;border-radius:50%;background:var(--acc);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .step .body{flex:1}
+  img{max-width:100%;border:1px solid var(--line);border-radius:10px;margin:8px 0}
+  .warn{background:#fffbeb;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:10px;padding:12px 16px;margin:14px 0;font-size:14px}
+  .ok{background:#f0fdf7;border:1px solid #a7e8cf;border-left:4px solid var(--ok);border-radius:10px;padding:12px 16px;margin:14px 0;font-size:14px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.two{grid-template-columns:1fr}}
+  .foot{color:var(--mut);font-size:12.5px;text-align:center;margin-top:40px;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>LDA 上机验收操作卡 · 电子计算芯片案例</h1>
+  <div class="sub">
+    版本 <b>v0.9.160</b> · 生产 <code>https://lda.weomnitech.com.cn</code> · 本卡所有路径与截图
+    <b>均为实测</b>（agent-browser 真实打开生产站点逐步骤跑通后截取）
+  </div>
+
+  <div class="ok">
+    <b>一句话结论：</b>「找不到」不是你的问题，也不是缓存 —— 是页面上<strong>三个真实缺陷</strong>叠加所致。
+    本版已全部修复，现在有 <b>3 条路</b>都能一两秒内到达，最快的是首屏第一行那个黄色按钮。
+  </div>
+
+  <h2>一、为什么之前「反复查也找不到」（根因说明）</h2>
+
+  <p>先说<strong>不是什么</strong>：</p>
+  <table>
+    <tr><th style="width:150px">怀疑对象</th><th>实测结论</th></tr>
+    <tr><td>缓存</td><td>不是。生产返回的 HTML 与本地源码 <b>419,869 字节逐字节相同</b>，关键词计数完全一致。</td></tr>
+    <tr><td>部署</td><td>不是。部署校验 <code>HEAD_MATCH=True</code>，案例数据端点 <code>/api/ecore_demo</code> 正常。</td></tr>
+    <tr><td>权限</td><td>不是。案例卡本来就免登录（不在需登录的重计算面板之列）。</td></tr>
+    <tr><td>功能坏了</td><td>不是。案例卡自身门禁 40 项判据全绿，数据正常。</td></tr>
+  </table>
+
+  <p>真正的原因（三个叠加的页面缺陷）：</p>
+  <table>
+    <tr><th style="width:90px">#</th><th>缺陷</th><th>实测证据</th></tr>
+    <tr>
+      <td>①</td>
+      <td><b>入口叫「目录」</b><br>唯一的能力清单入口，按钮上只有「目录」两个字，看不出里面有「芯片案例」</td>
+      <td>该按钮由页面脚本注入，原文是 <code>&lt;button id="wbMenuBtn"&gt;目录&lt;/button&gt;</code></td>
+    </tr>
+    <tr>
+      <td>②</td>
+      <td><b>点开了也被自家浮层压住</b><br>抽屉层级只有 999，而页面自己注入的「💬 客服 / ✅ 入门进度 / 🎯 3分钟引导 / 3分钟上手」浮层层级高达 <b>21.47 亿</b></td>
+      <td>在抽屉区域内取「最上层元素」，命中的是<strong>浮层而不是抽屉</strong> ⇒ 看起来像「打不开 / 没反应」</td>
+    </tr>
+    <tr>
+      <td>③</td>
+      <td><b>卡片埋在 48 屏处且没有入口</b><br>4 张芯片案例卡在页面很靠下的位置</td>
+      <td><code>#sec-ecore</code> 实测在 <b>26,872 px</b>，整页 <b>27,423 px</b>；全页 <b>0 个</b>指向这些卡片的首屏入口</td>
+    </tr>
+  </table>
+
+  <h2>二、现在怎么找（三条路，任选一条）</h2>
+
+  <h3>路径 A · 首屏直达（最快，推荐）</h3>
+  <div class="step">
+    <div class="num">1</div>
+    <div class="body">
+      浏览器打开 <code>https://lda.weomnitech.com.cn</code>
+      <br>（<b>不需要登录</b>；案例卡是公开只读的）
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">2</div>
+    <div class="body">
+      <b>看页面第一行</b>，有一排彩色按钮：<br>
+      <span class="badge" style="background:#0f6e56;color:#eafff7;border-color:#0f6e56">光量子计算芯片</span>
+      <span class="badge" style="background:#0f6e56;color:#eafff7;border-color:#0f6e56">超导量子计算芯片</span>
+      <span class="badge" style="background:#0f6e56;color:#eafff7;border-color:#0f6e56">光计算芯片</span>
+      <span class="badge" style="background:#fbbf24;color:#1a1205;border-color:#fbbf24;font-weight:700">★ 电子计算芯片（E1–E14）</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">3</div>
+    <div class="body">
+      点最右边那个<b>黄色的「★ 电子计算芯片（E1–E14）」</b> —— 页面会<b>自动跳到卡片、黄色描边高亮、并自动跑出结果</b>。
+    </div>
+  </div>
+  <img src="shotA_home_direct.png" alt="首屏：顶部高亮入口 + 第一行芯片案例直达条">
+  <div class="sub" style="margin-top:-4px">↑ 首屏实拍：顶部导航的蓝色「☰ 能力目录」「★ 芯片案例」，与页面第一行的「★ 芯片案例直达」条</div>
+
+  <div class="warn">
+    <b>两个可能挡住你的小东西（都不是 bug，点掉即可）：</b><br>
+    ① 右下角会弹「欢迎使用 LDA · 3 分钟上手」引导卡片 —— 点它的 <b>「跳过」</b>；<br>
+    ② 左下角有「✅ 入门进度 0/4」「🎯 3分钟引导」两个小浮标 —— 不碍事，可以不管。
+  </div>
+
+  <h3>路径 B · 能力目录抽屉（想浏览/搜索所有能力时用）</h3>
+  <div class="step">
+    <div class="num">1</div>
+    <div class="body">点顶部导航栏最左边那个<b>蓝色的「☰ 能力目录」</b>按钮（就在 LDA 标志右边）。</div>
+  </div>
+  <div class="step">
+    <div class="num">2</div>
+    <div class="body">
+      左侧滑出抽屉，按 <b>7 个阶段</b>分组列出全部 <b>64 个能力</b>。把抽屉<b>滚到最底部</b>，看
+      <b>「⑦ 验货」</b>这一组 —— 里面有：运行光量子芯片案例 / 运行超导芯片案例 / 运行光计算芯片案例 /
+      <b>运行电子计算芯片案例</b>。
+    </div>
+  </div>
+  <img src="shotC_drawer.png" alt="能力目录抽屉：⑦ 验货 组里的「运行电子计算芯片案例」">
+  <div class="sub" style="margin-top:-4px">↑ 抽屉实拍：⑥ 流片交付 → ⑦ 验货（8 项），最后一项即「运行电子计算芯片案例」</div>
+  <p style="font-size:14px">
+    抽屉顶部还有<b>搜索框</b>（可搜「电子 / 环形 / 逆设计 / DRC」）和<b>角色切换</b>（客户 / 工程师 / 专家）。
+  </p>
+
+  <h3>路径 C · 直接粘网址（最省事）</h3>
+  <pre>https://lda.weomnitech.com.cn/#sec-ecore</pre>
+  <p style="font-size:14px">
+    粘进地址栏回车即可。锚点落地后会<b>黄色描边高亮</b>，并<b>自动运行一次案例</b>。
+    （其余三张卡同理：<code>#sec-qchip</code> 光量子 · <code>#sec-schip</code> 超导 · <code>#sec-pchip</code> 光计算）
+  </p>
+
+  <h2>三、验收清单（点完之后逐项核对）</h2>
+  <img src="shotB_landed.png" alt="落地后的电子计算芯片案例卡片与摘要">
+  <table>
+    <tr><th style="width:46px">#</th><th style="width:250px">看哪里</th><th>应该看到</th></tr>
+    <tr><td>1</td><td>页面顶部最右</td><td>版本号 <b>v0.9.160</b></td></tr>
+    <tr><td>2</td><td>首屏第一行</td><td>「★ 芯片案例直达：…」四个彩色按钮，含黄色的<b>「★ 电子计算芯片（E1–E14）」</b></td></tr>
+    <tr><td>3</td><td>点完之后卡片顶部</td><td>标题「<b>★ 电子计算芯片案例（模拟计算核 / MVM 交叉阵列）</b>」完整可见（不被顶部导航压住）</td></tr>
+    <tr><td>4</td><td>卡片边框</td><td>一圈<b>黄色描边</b>（表示你就是从入口跳过来的）</td></tr>
+    <tr><td>5</td><td>蓝色摘要行</td><td>判决 <b>DESIGN_VERIFIED</b>（设计期验证）· 征程 <b>13 段</b> · 门禁 <b>303 判据</b>（含 64 探针）· 模块 <b>18</b></td></tr>
+    <tr><td>6</td><td>卡片正文（hint）</td><td><b>E1–E14 全链</b> → 最后一项是 <b>E14 真 DAC / ADC / 行驱动外设</b></td></tr>
+    <tr><td>7</td><td>页面下半（继续滚）</td><td>能展开看到 E1–E14 的分段结果表、诚实边界表</td></tr>
+  </table>
+
+  <h3>可选：不想点页面，用一条命令核对</h3>
+  <p style="font-size:14px">把下面整段粘进 Windows 终端（PowerShell），会打印案例卡的关键字段：</p>
+  <pre>$r = Invoke-RestMethod https://lda.weomnitech.com.cn/api/ecore_demo
+"case_id : " + $r.case_id
+"span    : 段=$($r.span.gate_checks) 判据 探针=$($r.span.probe_checks) 模块=$($r.span.modules)"
+"verdict : " + $r.verdict
+"gaps    : " + $r.gaps_total + " 条（末条 = " + $r.gaps[-1].id + "）"</pre>
+  <p style="font-size:14px">预期输出要点：<code>case_id</code> 含 <b>E1–E14 全链</b>；<code>verdict</code> = <b>DESIGN_VERIFIED</b>；
+  <code>span</code> 里 <b>gate_checks=303</b>、<b>probe_checks=64</b>、<b>modules=18</b>；<code>gaps</code> = <b>14</b> 条。</p>
+
+  <h2>四、对不上时，请发我这三样</h2>
+  <table>
+    <tr><th style="width:120px">要什么</th><th>怎么拿</th></tr>
+    <tr><td>① 页面地址</td><td>直接从浏览器地址栏整条复制（含 <code>#...</code> 部分）</td></tr>
+    <tr><td>② 版本号</td><td>页面右上角那串 <code>v0.9.xxx</code>（一句话截图即可）</td></tr>
+    <tr><td>③ 截图</td><td>你看到的那一屏——尤其「第一行为空 / 按钮颜色不对 / 点了没反应」这三种情况</td></tr>
+  </table>
+  <p style="font-size:14px">
+    如果三样都符合预期却仍然找不到，请告诉我<b>浏览器与缩放比例</b>（例如「豆包浏览器 125% 缩放」）——
+    本卡已按窄视口（窗口较小时顶部导航会换行）实测过，但不同缩放可能还有边界情况，
+    我会按你给的信息补测并加固。
+  </p>
+
+  <h2>五、诚实边界</h2>
+  <div class="card" style="font-size:14px">
+    <p style="margin:0 0 8px">
+      ① 本卡是<b>设计期验证</b>的操作验收，<b>不是流片后实测</b>；
+      ② 案例卡为<b>公开只读 · 零重计算 · 免登录</b>（它不进重计算面板的登录闸门）；
+      ③ 本次修复的是<b>页面入口可达性</b>，<b>未改动任何求解器能力、未动锚账本</b>
+      （锚仍 476 道、CI core 由 253 增至 254 是因为新增了这道入口门禁）；
+      ④ 新增常驻门禁 <code>run_webui_entry_smoke.py</code>（18 判据 + 5 突变探针）——
+      以后若有人把入口改名回「目录」、把抽屉层级降回去、或删掉首屏直达，门禁会当场变红。
+    </p>
+    <p style="margin:0">
+      ⑤ 底部版权条仍显示「技术白皮书 v0.9.40」—— 这是<b>白皮书文件自己的版本</b>
+      （<code>static/</code> 内实际文件即 <code>lda_whitepaper_v0.9.40.docx/pdf</code>），
+      与平台版本号 <code>v0.9.160</code> 是两回事，非笔误；若需统一口径请告知。
+    </p>
+  </div>
+
+  <div class="foot">
+    LDA · 开源 Agent-native 光 / 量 / 电子 EDA（MIT）<br>
+    上机验收操作卡 · 入口可达性修复（v0.9.160）· 本卡路径与截图均为生产实测
+  </div>
+
+</div>
+</body>
+</html>

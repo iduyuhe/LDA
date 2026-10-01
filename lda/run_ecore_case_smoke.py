@@ -6,16 +6,16 @@ E11-e → E1–E11 · E12-e → E1–E12 · E13-e → E1–E13 · **E14-e 升级
 ═══ 判什么（分节）═══
 A 模块自检（ecore_case.run_selfchecks **29 项**）· B 关键事实 name-first 断言（含 E6–E9 四块能力面 +
 E11-c/E11-d 两块 + E12 的 2D MOS 面 + E13 的 2D 输运面 + **E14 的真外围/系统链面** +
-🔴 **B16/B17/B18/B19/B20 与底层模块交叉核对**）· C 反向可证伪（**11 条突变探针**：破坏诚实边界 /
+🔴 **B16/B17/B18/B19/B20/B21 与底层模块交叉核对**）· C 反向可证伪（**12 条突变探针**：破坏诚实边界 /
 清空 landmark / verdict 冒充实测 / 规模上界非单调 / 掏空版图面 / G-3 被改成自洽 / 缺口归零 /
 **注入「已含量子修正/已算弹道」** / 掏空 E12 的 DIBL 指数律 / **抹掉 E12 面的「已由 E13 闭合」标注** /
-**抹掉「vcvs 极性缺陷登记」** ⇒ 均必红）· D 不进 HEAVY_POST_PATHS（公开只读 · 零重计算）·
+**抹掉「vcvs 极性缺陷登记」** / **把误差预算口径拔高成 ENOB** ⇒ 均必红）· D 不进 HEAVY_POST_PATHS（公开只读 · 零重计算）·
 E API 参考已登记（gen_api_reference 已跑 · 血案 23）· K 自入 CI core（防静默漏接 · 血案 28）。
 
 🔴 本门禁的核心价值：守 WebUI 对外案例卡的**诚实边界**——verdict 恒 DESIGN_VERIFIED、
 不报 fabricated 能效（TOPS/TOPS-W）、规模按「可建模/可验证容量」解读、landmark 仅背景坐标；
-守住**升级后的能力面不被静默缩水**（E6/E7/E8/E9/E11-c/E11-d/E12/E13/E14 九块 facts 必须都在）；
-并守住 🔴 **「内部能力 ↔ 对外载体」真拉平**（B16–B20 拿卡里的数字与**底层模块实测**对拍，
+守住**升级后的能力面不被静默缩水**（E6/E7/E8/E9/E11-c/E11-d/E12/E13/E14/E15 十块 facts 必须都在）；
+并守住 🔴 **「内部能力 ↔ 对外载体」真拉平**（B16–B21 拿卡里的数字与**底层模块实测**对拍，
 而不是卡自证自洽）。
 
 🔴 收官的**护栏换代史**（能力升级必须回扫**两个方向**，每次各扫一遍）：
@@ -23,6 +23,11 @@ E API 参考已登记（gen_api_reference 已跑 · 血案 23）· K 自入 CI c
   · E13-e：贬低方向 E12 面「不产 I-V」→ 标「已由 E13 闭合」（C10）；抬高方向「不许假称已含量子修正」（C8 换代）。
   · **E14-e**：贬低方向「**平台缺陷（vcvs 极性）必须已登记且不得被抹掉**」（**C11**）；
     抬高方向「外围宏模型必须显式声明（判决器抽象 / 宏模型 / 不报 TOPS）」（**㉙** + **C8 仍守**）。
+  · **E15-e**：抬高方向「**误差预算口径不许冒充 IEEE ENOB / 不许说成含动态**」（**㉛** + **C12**）；
+    贬低方向由 **㉚**（E15 面登记齐全 · 防静默缩水）守住。
+    🔴 本轮新立的判据纪律：**多来源拼接会稀释判据** —— ㉛ 初版把 `device_budget` 与 `gaps`
+    拼成一个大 blob ⇒ 改坏 `device_budget` 后 blob 里仍有 G-O 的同名字符串 ⇒ 判据照样绿（假绿）。
+    ⇒ **必须按来源分别断言**，探针才能打到「被单独检查的那份来源」。
 """
 from __future__ import annotations
 
@@ -56,7 +61,7 @@ def main() -> int:
 
     # ══════════════════════ A 模块自检 ══════════════════════
     ok_a = EC.run_selfchecks(verbose=False)
-    check("A1 模块自检 29/29 PASS（容量/量化界/版图闭式/压缩比/方块电阻/Pelgrom/1√N/"
+    check("A1 模块自检 31/31 PASS（容量/量化界/版图闭式/压缩比/方块电阻/Pelgrom/1√N/"
           "Elmore/组装/降级/诚实/定位/口径/零框架/护栏/里程碑/landmark/E6-E9 面/上界单调/"
           "E11-c 器件级内核面/E11-d 失效边界面/贬低方向诚实/E12 2D MOS 面/2D 解非 ORACLE/"
           "E13 输运面/抬高方向诚实/**E14 外围面/E14 双向诚实**）",
@@ -67,11 +72,11 @@ def main() -> int:
     check("B1 endpoint == /api/ecore_demo", card["endpoint"] == "/api/ecore_demo")
     check("B2 verdict == DESIGN_VERIFIED（非 ACCEPT/PASS）",
           card["verdict"] == "DESIGN_VERIFIED")
-    check("B3 十三段征程（E1→E14）", len(card["milestones"]) == 13)
-    check("B4 关键结论 14 条", len(card["findings"]) == 14)
-    check("B5 诚实边界 14 条", card["gaps_total"] == 14)
-    check("B6 门禁判据合计 = 303（含 64 条突变探针）",
-          card["span"]["gate_checks"] == 303 and card["span"]["probe_checks"] == 64)
+    check("B3 十四段征程（E1→E15）", len(card["milestones"]) == 14)
+    check("B4 关键结论 15 条", len(card["findings"]) == 15)
+    check("B5 诚实边界 15 条", card["gaps_total"] == 15)
+    check("B6 门禁判据合计 = 323（含 70 条突变探针）",
+          card["span"]["gate_checks"] == 323 and card["span"]["probe_checks"] == 70)
     check("B6b 判据合计 ≡ Σ 各段 gate（内部自洽）",
           sum(m["gate"] for m in card["milestones"]) == card["span"]["gate_checks"]
           and sum(m["seg_probes"] for m in card["milestones"]) == card["span"]["probe_checks"])
@@ -257,6 +262,34 @@ def main() -> int:
              dpf["sample_hold"]["rel_err_vs_discrete"], _sh["rel_err_discrete"],
              [r["n_max"] for r in _scl["rows"]], _pol["polarity_inverted"]))
 
+    # B21 🔴 **与 E15 的 budget 模块交叉核对**（真拉平 · 非自洽）：
+    # 卡里硬编码的误差预算数字必须 ≡ `budget` 模块**同参数**实测值。
+    # ⚠️ 参数成对锁死：`error_budget_report(8, 8)` 与
+    #    `budget_vs_n([8,16,32,64,128,256], budget_pct=5.0)` —— 参数漂了这条判据自己就成噪声源。
+    from lda_l2.ecore import budget as BD          # noqa: E402
+    _bf = card["device_budget"]
+    _rep = BD.error_budget_report(8, 8)
+    _bcv = BD.budget_vs_n([8, 16, 32, 64, 128, 256], budget_pct=5.0)
+    _full = BD.max_scale_full_chain(5.0)
+    _only = BD.max_scale_full_chain(5.0, ir_drop_only=True)
+    _bd_t = {t["name"]: t["rel_pct"] for t in _rep["terms"]}
+    _cd_t = {t["name"]: t["rel_pct"] for t in _bf["budget_8x8"]["terms"]}
+    check("B21 🔴 E15 面 **与 budget 模块交叉核对**：卡内数字 ≡ 模块实测"
+          "（六项误差逐项 · worst/bits · 主导项 · 精度vsN 六点 · 全链上界 vs 仅IR）",
+          set(_bd_t) == set(_cd_t) == {"ir_drop", "device_mismatch", "row_driver_load",
+                                       "adc_quantization", "dac_inl", "adc_sar"}
+          and all(abs(_bd_t[k] - _cd_t[k]) < 5e-4 for k in _bd_t)
+          and abs(_bf["budget_8x8"]["worst_pct"] - _rep["worst_pct"]) < 5e-3
+          and abs(_bf["budget_8x8"]["worst_bits"] - _rep["worst_bits"]) < 5e-3
+          and _bf["budget_8x8"]["dominant"] == _rep["dominant"]["name"]
+          and len(_bf["scale_curve"]) == len(_bcv["points"])
+          and all(abs(a_["worst_pct"] - b_["worst_pct"]) < 5e-3
+                  for a_, b_ in zip(_bf["scale_curve"], _bcv["points"]))
+          and all(a_["dominant"] == b_["dominant"]
+                  for a_, b_ in zip(_bf["scale_curve"], _bcv["points"]))
+          and _bf["scale_ceiling"]["full_chain_n_max"] == _full["n_max"]
+          and _bf["scale_ceiling"]["ir_drop_only_n_max"] == _only["n_max"])
+
     # ══════════════════════ C 反向可证伪（突变探针）═══════════════════════
     # C1 破坏 honest_note 关键字 ⇒ ⑥ 必红
     saved_note = EC.ECORE_HONEST_NOTE
@@ -366,6 +399,16 @@ def main() -> int:
     EC.DEVICE_PERIPHERY_FACTS["platform_defect"] = saved_pd
     check("C11 反向：抹掉「vcvs 极性缺陷登记」（假装平台无缺陷）⇒ ㉙ 判定必红"
           "（**平台缺陷不许被静默抹掉**）", ok_c11 is False)
+
+    # C12 🔴 **误差预算口径不许被拔高成 ENOB / 动态口径**（E15-e 新立 · 抬高方向）：
+    #     把 `effective_bits_semantics` 换成「这就是 ENOB，已含动态」⇒ ㉛ 必红。
+    #     ⚠️ 本探针能变红的前提是 ㉛ **按来源分别断言** —— 否则 G-O 里的同名字符串会把它掩盖 ⇒ 假绿。
+    saved_sem = EC.BUDGET_FACTS["effective_bits_semantics"]
+    EC.BUDGET_FACTS["effective_bits_semantics"] = "这就是 ENOB，已含动态与时序口径。"
+    ok_c12 = EC.run_selfchecks(verbose=False)
+    EC.BUDGET_FACTS["effective_bits_semantics"] = saved_sem
+    check("C12 反向：把误差预算口径拔高成「这就是 ENOB / 已含动态」⇒ ㉛ 判定必红"
+          "（**抬高方向：自定义量不许冒充标准量**）", ok_c12 is False)
 
     # ══════════════════════ D 免登录 / 零重计算 ═══════════════════════════
     rt = _read("lda/lda_webui/routes.py")

@@ -140,7 +140,7 @@ body{padding-top:56px}
     <a href="#sec-qchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光量子计算芯片</a>
     <a href="#sec-schip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">超导量子计算芯片</a>
     <a href="#sec-pchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光计算芯片</a>
-    <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E14）</a>
+    <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E15）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1424,8 +1424,8 @@ body{padding-top:56px}
       用 LDA <b>亲手设计</b>的一颗<b>电子计算芯片</b>（电子版的「光子 MZI 网格」）：模拟
       <b>矩阵-向量乘（MVM）交叉阵列</b>——行电压 × 交叉点电导 → 列电流求和 → TIA 转电压，
       对标模拟 AI 加速器（Mythic 类）同族架构。<br/>
-      <b>E1–E14 全链</b>（13 段里程碑 · 全程在 LDA 内闭环 · 门禁共 <b>303 判据</b> / <b>64 道突变探针</b> ·
-      <b>16 道常驻门禁</b>）：E1 基座（晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）
+      <b>E1–E15 全链</b>（14 段里程碑 · 全程在 LDA 内闭环 · 门禁共 <b>323 判据</b> / <b>70 道突变探针</b> ·
+      <b>17 道常驻门禁</b>）：E1 基座（晶体管级 MOSFET 模型 + MNA 电路仿真器 DC/瞬态/AC + 最小计算单元）
       → E2 参数化 N×M MVM 交叉阵列（ideal TIA / transistor 权重 + 晶体管级 OTA）→ E3 MVM 数据通路
       （DAC→阵列→ADC、多层 MLP+ReLU、分块）→ E4 规模对标（至 256×256 = 65536 突触，诚实边界）
       → E5 平台能力硬化（能力清单 + 双向完备守护门禁）→ <b>E6 版图与几何签核（首次直出真 GDS）</b>
@@ -1433,7 +1433,8 @@ body{padding-top:56px}
       → <b>E9 千级阵列规模压力</b> → <b>E11 器件级内核接线</b>（MOSCAP 1D 自洽泊松 ⟷ 教科书闭式 ·
       失效边界测绘）→ <b>E12 2D MOS 求解器</b>（短沟道 roll-off / DIBL）
       → <b>E13 2D 漂移扩散输运</b>（I–V / 亚阈值摆幅）
-      → <b>E14 真 DAC / ADC / 行驱动外设</b>（把「设计链」补成「系统链」）。<br/>
+      → <b>E14 真 DAC / ADC / 行驱动外设</b>（把「设计链」补成「系统链」）
+      → <b>E15 端到端误差预算链</b>（把 E1–E14 串成一个答案：<b>8×8 实际只有 4.62 位</b>）。<br/>
       <b>核心结果</b>：MNA 瞬态 vs 指数闭式 <b>&lt;2e-4</b>；理想 8×8 阵列 <b>&lt;2e-4</b>；
       数据通路单层 8bit <b>0.012</b>；<b>首次直出真 GDS</b>（4×4 = 120 元素 / 936 B）；
       <b>IR drop N=32 达 27%</b>、sneak <b>7.26×</b>；<b>校准 L0 1.70% → L2 0.074%</b>；
@@ -1442,6 +1443,7 @@ body{padding-top:56px}
       <b>亚阈值摆幅长沟道 68.08 ⟷ 闭式 66.41 mV/dec</b>（<b>SS ≥ 60 是硬下限，不是目标</b>）；
       <b>真 R-2R DAC 全码 max|Δ| 0.0265 LSB</b>（NMOS 开关 <code>R_on</code> 6.4 Ω）；
       <b>行驱动 R_oc ⇒ 可及规模 N≤20→N≤10（5 Ω）</b>（器件参数反过来限制系统规模）。<br/>
+      <b>E15 全链误差预算：8×8 worst 4.0601% ⇒ 有效精度仅 4.622 位</b>；<b>主导项 N≤8 失配 / N≥16 IR drop</b>（交叉点）；<b>全链 5% 上界 N≤12</b> ⟷ 仅 IR drop 口径 N≤18。<br/>
       🔴 本面板为<b>只读案例</b>（零重计算、免登录、不跑仿真、零外部 SPICE 引擎）；
       全部为<b>设计期验证</b>，<b>非流片后实测</b>；晶体管参数为公开典型量级占位（非 PDK）；
       <b>不报任何 TOPS / TOPS-W 能效或吞吐指标</b>。判决位由死标量给出，LLM 不进判决路径。
@@ -4735,7 +4737,7 @@ function renderECore(d){
   h+='<div class="note">计算砖：'+ID.unit+'</div>';
   h+='<div class="note">零外部 SPICE 引擎：<b>'+(ID.zero_spice_engine?'是':'否')+'</b> · 零量子 SDK：<b>'+(ID.zero_quantum_sdk?'是':'否')+'</b> · 零商业 EDA：<b>'+(ID.zero_commercial_eda?'是':'否')+'</b></div>';
 
-  h+='<div class="summary" style="margin-top:12px">E1–E14 全链 · 十三段征程</div>';
+  h+='<div class="summary" style="margin-top:12px">E1–E15 全链 · 十四段征程</div>';
   h+=_qcTbl(['段','编号','内容','门禁','关键结果'],
     (d.milestones||[]).map(function(m){ return [m.id, m.code, m.title, String(m.gate), m.result]; }));
 
@@ -4940,6 +4942,31 @@ function renderECore(d){
   h+='<div class="note">'+String(DP.honest_boundary||'')+'</div>';
   h+='<div class="note">🔴 <b>平台缺陷登记</b>：'+String(DPPD.what||'')+'<br>'+String(DPPD.why_not_fixed||'')+'<br>'+
     String(DPPD.still_valid||'')+'</div>';
+
+  var DB=(d.device_budget||{}), DB8=DB.budget_8x8||{}, DBC=DB.scale_curve||[],
+      DBX=DB.crossover||{}, DBSC=DB.scale_ceiling||{};
+  h+='<div class="summary" style="margin-top:12px">端到端误差预算链（E15 · 把 E1–E14 串成一个答案）</div>';
+  h+='<div class="note">把前 14 段各自的<b>单点误差</b>合成<b>一条链</b>：口径桥（1 LSB @ k bit = 100/2^k %FS）'
+    +'+ 三分类合成律（系统性 Σ / 随机 RSS→3σ / 有界 Σ→√3）。'
+    +'🔴 <b>简单相加是错的、全用 RSS 也是错的</b>。</div>';
+  h+=_qcTbl(['误差源','类别与合成','相对 %FS','来源'],
+    (DB8.terms||[]).map(function(t){
+      var cat=({systematic:'系统性（代数 Σ）',random:'随机（RSS → kσ）',bounded:'有界（Σ → √3）'})[t.category]||t.category;
+      return [t.name, cat, Number(t.rel_pct).toFixed(5)+'%', t.source]; }));
+  h+=_qcTbl(['合成结果','worst（报告口径）','typical（参考）'],
+    [['相对满量程误差', '<b>'+Number(DB8.worst_pct||0).toFixed(4)+'%</b>', Number(DB8.typical_pct||0).toFixed(4)+'%'],
+     ['🔴 输出有效精度位数', '<b>'+Number(DB8.worst_bits||0).toFixed(3)+' 位</b>', Number(DB8.typical_bits||0).toFixed(3)+' 位'],
+     ['主导项', '<b>'+String(DB8.dominant||'')+'</b>（'+Number(DB8.dominant_share_pct||0).toFixed(1)+'%）', '—']]);
+  h+=_qcTbl(['精度 vs 规模（5% 预算）','全链 worst','有效位数','主导项'],
+    DBC.map(function(p){ return ['N = '+p.n, Number(p.worst_pct).toFixed(4)+'%',
+      '<b>'+Number(p.worst_bits).toFixed(3)+'</b>', p.dominant]; }));
+  h+='<div class="note">🔴 <b>主导项交叉点</b>：'+String(DBX.note||'')+'</div>';
+  h+=_qcTbl(['项','数值','口径'],
+    [['🔴 全链可及上界（5% 预算）', '<b>N ≤ '+String(DBSC.full_chain_n_max||'')+'</b>',
+      '仅 IR drop 口径为 N ≤ '+String(DBSC.ir_drop_only_n_max||'')+'（E9 原值）'],
+     ['与 E9 一致性', '仅 IR drop ⇒ <b>逐值相等</b>', '泛化必须退化为特例（门禁 G7 守着）']]);
+  h+='<div class="note">'+String(DBSC.note||'')+'</div>';
+  h+='<div class="note">'+String(DB.effective_bits_semantics||'')+'<br>'+String(DB.honest_boundary||'')+'</div>';
 
   h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
   (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });

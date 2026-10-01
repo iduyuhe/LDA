@@ -41,15 +41,17 @@ __all__ = [
     "MOSFET_FACTS", "KEY_METRICS", "LAYOUT_FACTS", "PARASITIC_FACTS",
     "MISMATCH_FACTS", "SCALE_FACTS", "GATE_CHECKS_TOTAL", "PROBE_CHECKS_TOTAL",
     "DEVICE_PDE_FACTS", "DEVICE_LIMITS_FACTS", "DEVICE_2D_FACTS",
-    "DEVICE_TRANSPORT_FACTS", "DEVICE_PERIPHERY_FACTS",
+    "DEVICE_TRANSPORT_FACTS", "DEVICE_PERIPHERY_FACTS", "BUDGET_FACTS",
     "crossbar_capacity", "quant_error_rel_bound", "layout_elements_flat",
     "layout_elements_hier", "hier_compression_ratio", "sheet_resistance_ohm_per_sq",
     "wire_resistance_ohm", "pelgrom_sigma_vth_mv", "pelgrom_sigma_beta_pct",
-    "elmore_tau_rc", "sigma_rel_vs_n", "case_card", "run_selfchecks",
+    "elmore_tau_rc", "sigma_rel_vs_n",
+    "lsb_to_rel_pct", "output_effective_bits",
+    "case_card", "run_selfchecks",
 ]
 
 # ═══════════════════════════ 常量（与平台模块同源）═══════════════════════════
-CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E14 全链"
+CASE_ID = "LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E15 全链"
 
 #: 长沟道 NMOS 模型参数（E1 · D-150 · `lda_l2.ecore.mosfet.NmosParams` 默认值；公开典型量级占位）
 MOSFET_FACTS = {
@@ -385,6 +387,53 @@ DEVICE_PERIPHERY_FACTS = {
     "is_oracle": False,
 }
 
+
+# ═══════════════════════ E15（D-178…D-180）端到端误差预算链 ═══════════════════════
+#   ⚠️ 卡内数字必须与 ecore/budget.py **实测同口径**（案例卡门禁 B21 守着对拍）。
+BUDGET_FACTS = {
+    "budget_8x8": {
+        "terms": [
+            {"name": "ir_drop", "category": "systematic", "rel_pct": 0.87897, "source": "E7/E9"},
+            {"name": "device_mismatch", "category": "random", "rel_pct": 0.59524, "source": "E8/E9"},
+            {"name": "row_driver_load", "category": "systematic", "rel_pct": 0.79916, "source": "E14"},
+            {"name": "adc_quantization", "category": "bounded", "rel_pct": 0.19531, "source": "E3"},
+            {"name": "dac_inl", "category": "bounded", "rel_pct": 0.01035, "source": "E14"},
+            {"name": "adc_sar", "category": "bounded", "rel_pct": 0.39062, "source": "E14"},
+        ],
+        "worst_pct": 4.06012, "typical_pct": 2.61762,
+        "worst_bits": 4.622, "typical_bits": 5.256,
+        "dominant": "device_mismatch", "dominant_share_pct": 44.0,
+    },
+    "scale_curve": [
+        {"n": 8, "worst_pct": 4.0601, "worst_bits": 4.622, "dominant": "device_mismatch"},
+        {"n": 16, "worst_pct": 6.4120, "worst_bits": 3.963, "dominant": "ir_drop"},
+        {"n": 32, "worst_pct": 16.0547, "worst_bits": 2.639, "dominant": "ir_drop"},
+        {"n": 64, "worst_pct": 39.4115, "worst_bits": 1.343, "dominant": "ir_drop"},
+        {"n": 128, "worst_pct": 67.0083, "worst_bits": 0.578, "dominant": "ir_drop"},
+        {"n": 256, "worst_pct": 84.1844, "worst_bits": 0.248, "dominant": "ir_drop"},
+    ],
+    "crossover": {"n_lo": 8, "dom_lo": "device_mismatch", "n_hi": 32, "dom_hi": "ir_drop",
+                  "note": "小 N 由器件失配主导（σ∝1/√N ⇒ 小 N 更差）· 大 N 由 IR drop 主导（∝N²）"
+                          "⇒ 小阵列先治失配（器件面积/校准）、大阵列先治 IR drop（驱动架构/金属）"},
+    "scale_ceiling": {"budget_pct": 5.0, "full_chain_n_max": 12, "ir_drop_only_n_max": 18,
+                      "note": "🔴 全链口径严格于仅 IR drop（E9 原口径乐观 33%）："
+                              "只算 IR drop 得 N≤18，加入失配+行驱动+转换器后只能到 N≤12"},
+    "bridge": {"lsb8_pct": 0.390625,
+               "self_consistency": "bits_eff(lsb_to_rel_pct(k)) == k（纯代数自洽锚）"},
+    "composition": {"systematic": "代数 Σ", "random": "RSS → 3σ", "bounded": "代数 Σ → √3（typical）",
+                    "worst_pct": "Σsys + 3σ_tot + Σbnd",
+                    "typical_pct": "Σsys + σ_tot + Σbnd/√3",
+                    "note": "🔴 简单相加是错的、全用 RSS 也是错的"},
+    "effective_bits_semantics": "🔴 `output_effective_bits` = log2(100/最坏相对误差[%])，"
+                                "**本项目自定义量，不是 IEEE ENOB**；只覆盖静态（不含动态 / 时序）",
+    "honest_boundary": "只覆盖静态（给定权重与输入的静态精度）—— 不含时序 / 动态 / 建立时间 / "
+                       "采样率 / 时钟抖动 / 热梯度空间分布 / 老化漂移 / 电源噪声；"
+                       "合成律是**保守工程口径**、**不是严格概率保证**（typical 的 Σb/√3 假设均匀分布）；"
+                       "参数为公开典型量级占位（**非 PDK**）；器件侧仍 **DD 框架 + 常数迁移率**；"
+                       "**不报 TOPS / TOPS-W / fJ/op**",
+    "protection": "🔴 **只读消费** E7/E8/E9/E14 接口，**不改**任何既有默认值（门禁 G8 逐位守住）",
+}
+
 LANDMARKS_BRIEF = [
     {"who": "Mythic AI", "item": "M1076 AMP：analog compute-in-memory MVM 交叉阵列"
                                  "（flash array + on-die ADC）· up to 25 TOPS · typ. 3–4 W · "
@@ -510,6 +559,21 @@ MILESTONES = [
                "行增益离散 **8.889e-4**，与 E8 列系统项同型、MC 平均不掉）。"
                "🔴 并**登记一个平台缺陷**：`mna.Circuit.vcvs` 实际极性与 docstring 相反"
                "（适配 + 判据锁死，**不改 mna** ⇒ 保护 E1–E13 已上线数字）"},
+    {"id": "E15", "code": "D-178…D-180",
+     "title": "端到端误差预算链（把 E1–E14 串成一个答案）",
+     "gate": 20, "seg_probes": 6,
+     "result": "把前 14 段各自给出的**单点误差**合成**一条链**，回答「这颗阵列实际几个有效位」："
+               "① **口径桥** —— 统一锚点 `1 LSB @ k bit = 100/2^k %FS`（自洽锚 "
+               "`bits_eff(lsb_to_rel_pct(k)) == k`，纯代数）；"
+               "② **三分类合成律**（系统 **Σ** / 随机 **RSS→3σ** / 有界 **Σ→√3**；"
+               "🔴 **简单相加是错的、全用 RSS 也是错的**）⇒ **8×8 worst 4.0601% ⇒ 有效精度仅 "
+               "4.622 位**（不是 8 位；typical 2.618% ⇒ 5.256 位）；"
+               "③ **精度 vs N**：8→**4.622** · 16→3.963 · 32→2.639 · 64→1.343 · 128→0.578 · "
+               "256→**0.248** 位；🔴 **主导项交叉点**：N≤8 由**器件失配**主导（44.0%）· "
+               "N≥16 由 **IR drop** 主导 ⇒ **小阵列先治失配、大阵列先治 IR drop**；"
+               "🔴 **全链 5% 可及上界 N≤12** ⟷ 仅 IR drop **N≤18** ⇒ **E9 原口径是乐观的**"
+               "（严格 33%）。🔴 仅 IR drop 时**委托 E9** ⇒ **逐值相等**（泛化必须退化为特例）；"
+               "全链用**扫描而非二分**（`worst(N)` 未必单调：IR drop 升 / 失配降）。"},
 ]
 
 #: 门禁判据合计（= Σ MILESTONES.gate）与突变探针合计（= Σ seg_probes）
@@ -594,6 +658,17 @@ FINDINGS = [
                "🔴 转换器侧的两个数值纪律同样重要：**电容在 DC 下开路** ⇒ CDAC 必须走瞬态"
                "（后向欧拉的电荷守恒是**精确**的，不是近似）；**离散闭式 ≠ 连续闭式** ⇒ 对拍要先问"
                "「求解器实际在解哪个方程」。"},
+    {"title": "把 14 段串成一个答案：8×8 只有 4.62 位 · 主导项在 N≈16 换手（E15）",
+     "detail": "E1–E14 每段都给**单点误差**却**从未合成过**，且口径互不相同（相对 % / σ / LSB）、"
+               "性质未分类（系统性 / 随机 / 有界）—— 所以「这颗阵列几个有效位」**此前无人能答**。"
+               "E15 把四类误差接成一条链后：**8×8 全链最坏 4.0601% ⇒ 有效精度只有 4.622 位**"
+               "（典型口径 5.256 位）；规模上去后 **N=256 只剩 0.248 位**。"
+               "🔴 最有价值的是**主导项交叉点**：N≤8 由**器件失配**主导（σ∝1/√N ⇒ 小 N 更差），"
+               "N≥16 由 **IR drop** 主导（∝N² 爆炸）⇒ 设计指令变得明确：**小阵列先治失配"
+               "（器件面积 / 校准）、大阵列先治 IR drop（驱动架构 / 金属）**。"
+               "🔴 顺带推翻了一个乐观结论：E9 的「5% 预算 ⇒ N≤18」**只算了 IR drop**；"
+               "加入失配 + 行驱动 + 转换器后，同样 5% 只能到 **N≤12**（严格 33%）。"
+               "**单看任何一段都得不出这个数** —— 这就是「串成一条链」的价值。"},
 ]
 
 # ═══════════════════════ 诚实边界（未闭合项 · 逐条登记）═══════════════════════
@@ -659,6 +734,16 @@ GAPS = [
                "`vcvs_polarity_fact()` 把事实锁死 ⇒ 若未来有人「顺手改正」 mna.py，B14 会红并提示适配过期）。"
                "**既有结论是否失效**：不失效 —— TIA 虚地是 `|A|→∞` 的**极限**，符号只改变放大器输出的"
                "**定向**，不改变虚地机制 ⇒ **E2/E3 结论仍成立**。"},
+    {"id": "G-O", "title": "误差预算为**静态口径** · 合成律是**保守工程近似**（E15 新增能力的内在边界）",
+     "detail": "① 🔴 `output_effective_bits` = `log2(100/最坏相对误差[%])` 是**本项目自定义量**，"
+               "**不是 IEEE ENOB**（ENOB 含噪声 + 谐波 + 直流非线性、由 FFT 谱定义）—— 不得张冠李戴。"
+               "② 只覆盖静态：给定权重与输入的静态精度，不含时序 / 动态 / 建立时间 / 采样率 / "
+               "时钟抖动 / 热梯度空间分布 / 老化漂移 / 电源噪声。"
+               "③ 合成律 `worst = Σsys + kσ + Σbnd` 是**保守工程口径**，**不是严格概率保证**"
+               "（严格需分布假设与卷积）；`typical` 的 `Σb/√3` 假设误差均匀分布。"
+               "④ 误差项参数均为公开典型量级占位（**非 PDK**）；器件侧仍 **DD 框架 + 常数迁移率**。"
+               "⑤ **保护性约束**：本段**只读消费** E7/E8/E9/E14 接口，**不改**任何既有默认值"
+               "（门禁 G8 逐位守住）⇒ 卡内数字与既有段**不冲突**。"},
 ]
 
 _ARTIFACT_DIRS = ("examples", "lda/examples")
@@ -766,6 +851,20 @@ def sigma_rel_vs_n(sigma_cell_rel: float, n: int) -> float:
     return float(sigma_cell_rel) / math.sqrt(int(n))
 
 
+def lsb_to_rel_pct(bits: int) -> float:
+    """**口径桥闭式**：1 LSB 相对满量程的百分比 = `100 / 2**bits`（8 bit ⇒ 0.390625%）。"""
+    return 100.0 / float(1 << int(bits))
+
+
+def output_effective_bits(rel_pct: float) -> float:
+    """**输出有效精度位数** = `log2(100 / rel_pct)`。
+
+    🔴 **本项目自定义量，不是 IEEE ENOB**（ENOB 含噪声 + 谐波 + 直流非线性、由 FFT 谱定义）。
+    自洽锚：`output_effective_bits(lsb_to_rel_pct(k)) == k`。
+    """
+    return math.log2(100.0 / float(rel_pct))
+
+
 # ═══════════════════════════════ 产出物探测（只读元信息）═══════════════════════
 def _artifact_manifest(repo_root: Optional[str] = None) -> Dict[str, Any]:
     """探测 `examples/` 下 E 征程产出物**元信息**（文件名 + 字节数 · 只 stat）。
@@ -837,10 +936,10 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "milestones": len(MILESTONES),
             "gate_checks": GATE_CHECKS_TOTAL,
             "probe_checks": PROBE_CHECKS_TOTAL,
-            "modules": 18,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
-            "capability_modules": 17,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
-            "entrypoints": 16,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
-                                         #   E11 两道 + E12 + E13 + E14）
+            "modules": 19,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
+            "capability_modules": 18,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
+            "entrypoints": 17,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
+                                         #   E11 两道 + E12 + E13 + E14 + E15）
             "modules_dir": "lda/lda_l2/ecore/",
         },
         "milestones": MILESTONES,
@@ -868,6 +967,7 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "device_2d": DEVICE_2D_FACTS,
         "device_transport": DEVICE_TRANSPORT_FACTS,
         "device_periphery": DEVICE_PERIPHERY_FACTS,
+        "device_budget": BUDGET_FACTS,
         "scale_pressure": {
             "facts": SCALE_FACTS,
             "tiers": SCALE_PRESSURE_TIERS,
@@ -983,10 +1083,10 @@ def run_selfchecks(verbose: bool = False) -> bool:
 
     # ⑩ 案例卡组装：13 里程碑 / 14 结论 / 14 缺口 / 判据合计 303（含 64 探针）
     card = case_card(repo_root="__nonexistent_root__")
-    chk("⑩ 案例卡组装：13 里程碑 / 14 结论 / 14 缺口 / 门禁判据合计 303（含 64 探针）",
-        len(card["milestones"]) == 13 and len(card["findings"]) == 14
-        and card["gaps_total"] == 14 and card["span"]["gate_checks"] == 303
-        and card["span"]["probe_checks"] == 64)
+    chk("⑩ 案例卡组装：14 里程碑 / 15 结论 / 15 缺口 / 门禁判据合计 323（含 70 探针）",
+        len(card["milestones"]) == 14 and len(card["findings"]) == 15
+        and card["gaps_total"] == 15 and card["span"]["gate_checks"] == 323
+        and card["span"]["probe_checks"] == 70)
 
     # ⑪ 产出物优雅降级（root 不存在 ⇒ available False，不抛错）
     chk("⑪ 产出物探测优雅降级（root 不存在 ⇒ available=False）",
@@ -1037,8 +1137,8 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑯ 护栏：非法 rows/cols · bits>60 · 零厚度 · n<1 均抛 ValueError", guard == 6)
 
     # ⑰ 每里程碑都有门禁数 + 结果文本（防空洞）
-    chk("⑰ 里程碑完整：13 段 · 每段含 gate 数 + 结果文本",
-        len(MILESTONES) == 13
+    chk("⑰ 里程碑完整：14 段 · 每段含 gate 数 + 结果文本",
+        len(MILESTONES) == 14
         and all(m.get("gate", 0) > 0 and m.get("result") and m.get("seg_probes", 0) > 0
                 for m in MILESTONES))
 
@@ -1155,6 +1255,36 @@ def run_selfchecks(verbose: bool = False) -> bool:
         and ("vcvs" in blob_e14) and ("极性相反" in blob_e14)
         and all(k not in blob_e14 for k in ("已修 mna", "已修复 vcvs", "无建模取舍",
                                             "无平台缺陷")))
+
+    # ㉚ E15 误差预算面登记齐全（防「加了能力忘了卡」）
+    dbf = card["device_budget"]
+    chk("㉚ E15 误差预算面登记齐全（六项误差 · worst/bits · 精度vsN 六点 · 交叉点 · 全链上界）",
+        len(dbf["budget_8x8"]["terms"]) == 6
+        and abs(dbf["budget_8x8"]["worst_pct"] - 4.06012) < 0.001
+        and abs(dbf["budget_8x8"]["worst_bits"] - 4.622) < 0.01
+        and len(dbf["scale_curve"]) == 6
+        and dbf["crossover"]["dom_lo"] == "device_mismatch"
+        and dbf["crossover"]["dom_hi"] == "ir_drop"
+        and dbf["scale_ceiling"]["full_chain_n_max"] < dbf["scale_ceiling"]["ir_drop_only_n_max"])
+
+    # ㉛ 🔴 诚实（E15 · 抬高方向）：能力到手后最易滑成「这就是 ENOB / 已含动态」
+    #     🔴 两条判据设计纪律（本轮实测踩到）：
+    #       ① **不能要求跨 Markdown 加粗的连续子串** —— 文本里的 `只覆盖**静态**` 会被 `**` 打断，
+    #          使 `"只覆盖静态" in blob` 恒假（假红）；
+    #       ② **禁词必须精确** —— `"含时序"` 会**误伤** `"不含时序"`（否定词窗口问题，E12 血案同族）
+    #          ⇒ 禁词只取肯定的表述（`已含时序` / `包含时序`），并在文本侧去掉跨词加粗。
+    #       ③ 🔴 **多来源拼接会稀释判据**：若把 `device_budget` 与 `gaps` 拼成一个大 blob 再断言，
+    #          任一来源被破坏都可能被另一来源掩盖（实测：改坏 `device_budget` 后，blob 里仍留有
+    #          G-O 的「不是 IEEE ENOB」⇒ 判据**照样绿** ⇒ 探针假绿）。
+    #          ⇒ **必须按来源分别断言**（下面两个来源各查一次）。
+    _bdb = str(card["device_budget"])
+    _bgp = " ".join(g["detail"] for g in card["gaps"])
+    chk("㉛ 🔴 诚实（E15）：**两个来源各自**显式声明非 IEEE ENOB + 只覆盖静态；"
+        "不得自称 ENOB / 已含动态 / 已含时序",
+        ("不是 IEEE ENOB" in _bdb) and ("只覆盖静态" in _bdb)
+        and ("不是 IEEE ENOB" in _bgp)
+        and all(k not in (_bdb + _bgp) for k in ("这就是 ENOB", "等于 ENOB",
+                                                 "已含动态", "已含时序", "包含时序")))
 
     ok_all = all(res.values())
     if verbose:

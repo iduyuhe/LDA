@@ -197,7 +197,6 @@ _verify*.py
 _accept*.py
 _deploy.log
 _msg*.txt
-_*.txt
 _cmsg*.txt
 _*.log
 [qrst][0-9].log

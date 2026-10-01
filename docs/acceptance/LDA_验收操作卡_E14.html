@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<title>LDA 电子计算芯片案例 · 上机验收操作卡（E1–E14）</title>
+<style>
+ body{font:14px/1.7 "Microsoft YaHei",Arial;background:#f4f7fb;color:#1f2937;margin:0;padding:26px}
+ .wrap{max-width:1080px;margin:0 auto}
+ h1{font-size:22px;border-left:5px solid #2563eb;padding-left:12px;margin:0 0 4px}
+ .meta{color:#64748b;font-size:13px;margin-bottom:20px}
+ h2{font-size:17px;margin:26px 0 10px;color:#0f172a;border-bottom:1px solid #e2e8f0;padding-bottom:6px}
+ .card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;margin:10px 0}
+ .step{background:#fff;border-left:4px solid #2563eb;border-radius:6px;padding:12px 18px;margin:10px 0;
+       box-shadow:0 1px 3px rgba(15,23,42,.06)}
+ .step b.n{color:#2563eb;font-size:15px}
+ code{background:#f1f5f9;padding:1px 6px;border-radius:4px;font-size:13px;color:#0f172a}
+ .url{background:#eff6ff;border:1px dashed #93c5fd;padding:8px 12px;border-radius:6px;
+      font-family:Consolas,monospace;font-size:14px;color:#1e40af;word-break:break-all}
+ table{border-collapse:collapse;width:100%;background:#fff;font-size:13.5px;margin:8px 0 14px}
+ th,td{border:1px solid #e2e8f0;padding:7px 10px;text-align:left;vertical-align:top}
+ th{background:#eff6ff;font-weight:600;color:#1e40af}
+ .ok{color:#16a34a;font-weight:700}
+ .key{color:#2563eb;font-weight:700}
+ .warn{background:#fef2f2;border-left:4px solid #dc2626;padding:10px 14px;border-radius:4px;margin:10px 0}
+ .tip{background:#f0fdf4;border-left:4px solid #16a34a;padding:10px 14px;border-radius:4px;margin:10px 0}
+ img{max-width:100%;border:1px solid #cbd5e1;border-radius:6px;margin:8px 0;display:block}
+ .cap{font-size:12.5px;color:#64748b;margin:2px 0 16px}
+</style></head><body><div class="wrap">
+
+<h1>LDA 电子计算芯片案例 · 上机验收操作卡</h1>
+<div class="meta">版本 <b>v0.9.159</b> · 2026-10-01 · 对外口径 = <b>E1–E14 全链</b> ·
+本页每一步都是我<b>在真实浏览器里跑过一遍</b>之后写的，不是推测。</div>
+
+<div class="tip"><b>先说结论：这个案例卡是「免登录只读」的</b> —— 不需要注册、不需要密码、点了就跑，
+大约 1 秒出结果（服务端零重计算，数字都是预置的诚实值）。所以你随时可以自己打开核对。
+其余「真跑内核」的面板（版图 / FDTD / 验收等）才需要登录。</div>
+
+<h2>Step 0 · 打开页面</h2>
+<div class="step">
+<span class="n">0.</span> 浏览器（你常用的豆包浏览器即可）打开：
+<div class="url">https://lda.weomnitech.com.cn</div>
+</div>
+
+<h2>Step 1 · 先关掉新手引导（关键，否则它挡着页面）</h2>
+<div class="step">
+<span class="n">1.</span> 右下角会弹出一个白框「<b>欢迎使用 LDA · 3 分钟上手</b>」——
+点它底部的 <b>「跳过」</b>。不关掉的话，它会一直遮住右侧约 1/3 的页面。
+</div>
+
+<h2>Step 2 · 找到这张卡（两种走法，任选）</h2>
+<div class="step">
+<span class="n">2a.</span> 顶部导航栏点 <b>「验证实力」</b>（在「能力展示」右边）；<br>
+<span class="n">2b.</span> 或者直接往下滚，认准这个标题：<br>
+<div style="margin:8px 0 0;font-size:15px"><b>★ 电子计算芯片案例（模拟计算核 / MVM 交叉阵列）</b></div>
+</div>
+
+<h2>Step 3 · 点按钮</h2>
+<div class="step">
+<span class="n">3.</span> 卡片里那个蓝色按钮：<b>「运行电子计算芯片案例」</b>
+（页面左下角另有一个同名的浮动按钮，等价）。<br>
+大约 1 秒后，卡片下方会展开一整套结果面板。
+</div>
+
+<h2>Step 4 · 核对这 7 个点（这是"验收"的实质）</h2>
+<table>
+<thead><tr><th>#</th><th>看哪里</th><th>应该看到</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>卡头摘要行（点按钮后第一行）</td>
+    <td><span class="key">判决 DESIGN_VERIFIED（设计期验证（非流片实测））</span> ·
+        <span class="key">征程 13 段</span> · 门禁 <span class="key">303 判据</span>（含 64 条突变探针）· 模块 <b>18</b></td></tr>
+<tr><td>2</td><td>卡内 hint 第 2 行</td>
+    <td><b>E1–E14 全链（13 段里程碑 · 门禁共 303 判据 / 64 道突变探针 · 16 道常驻门禁）</b>，
+        末尾有 <b>→ E14 真 DAC / ADC / 行驱动外设（把「设计链」补成「系统链」）</b></td></tr>
+<tr><td>3</td><td>「E1–E14 全链 · 十三段征程」表</td>
+    <td>最后一行是 <b>E14</b>，编号 D-174…D-176，门禁列 <b>26</b></td></tr>
+<tr><td>4</td><td>「真 DAC / ADC / 行驱动外设（E14）」面板</td>
+    <td><b>R-2R DAC</b> 8 bit 全码 <b>256 点</b> max|Δ| <span class="key">0.0265 LSB</span>（R_on 6.4 Ω）·
+        SAR+CDAC 电荷守恒 rel <b>3.9e-12</b> · 采样保持 ⟷ 离散闭式 <b>5.6e-16</b> · 行驱动 ⟷ MNA <b>1.4e-16</b></td></tr>
+<tr><td>5</td><td>同面板的「🔴 可及规模上界」小表</td>
+    <td><b>N_max = 20 → 17 → 10 → 3</b>（对应 R_oc = 0 / 1 / 5 / 20 Ω）——
+        这是本段最有价值的结论：<b>行驱动输出阻抗会反过来压小可及规模</b></td></tr>
+<tr><td>6</td><td>「未闭合项（逐条登记）」表</td>
+    <td>共 <b>14</b> 条，最后两条是 <b>G-M</b>（外围电路为宏模型/抽象）与
+        <b>G-N</b>（<span class="key">平台缺陷登记：mna.vcvs 极性与 docstring 相反</span>）</td></tr>
+<tr><td>7</td><td>页面顶部右侧版本号</td>
+    <td><b>v0.9.159</b></td></tr>
+</tbody>
+</table>
+
+<div class="warn"><b>特别说明第 6 条（G-N）</b>：这是我在 E14 里<b>主动查出并公开登记</b>的一个平台缺陷
+（<code>mna.Circuit.vcvs</code> 的实际电压极性与它自己文档写的不一致，E1–E13 一直带着它上线）。
+我们<b>没有偷偷改掉</b>（改了会让前面 13 段已上线的数字全部失效），而是：<b>下游适配 + 显式登记 +
+加一条门禁把它锁死</b>。如果你在别的项目里看到"平台缺陷"被静默抹平，那是另一种做法 —— 我们选择公开。</div>
+
+<h2>Step 5 · 截图证据（我在真实浏览器里的实拍）</h2>
+<img src="shot1_card_top.png" alt="案例卡顶部">
+<div class="cap">截图 1 · 案例卡的位置与按钮：标题「★ 电子计算芯片案例」+ hint 里明写
+<b>E1–E14 全链 / 303 判据 / 64 道突变探针</b> + 蓝色按钮「运行电子计算芯片案例」。
+（右下角那个白框就是新手引导，点「跳过」即可。）</div>
+
+<img src="shot2_result.png" alt="运行后的面板">
+<div class="cap">截图 2 · 点击运行后展开的结果面板（此处是 E13 的面板与 E14 面板标题）。</div>
+
+<img src="shot3_e14.png" alt="里程碑表">
+<div class="cap">截图 3 · 「十三段征程」里程碑表（每一段都带门禁判据数与关键结果）。</div>
+
+<h2>可选 · 不想点页面？一条命令直接看数据</h2>
+<div class="card">
+把下面整段粘到 PowerShell 里回车（Windows 自带 PowerShell 即可，无需装任何东西）：<br>
+<pre style="background:#0f172a;color:#e2e8f0;padding:12px;border-radius:6px;overflow-x:auto;font-size:12.5px">$r = Invoke-RestMethod https://lda.weomnitech.com.cn/api/ecore_demo
+$r.case_id
+$r.span
+$r.device_periphery.scale_ceiling.n_max
+$r.gaps | Select-Object -Last 2 | ForEach-Object { $_.id + "  " + $_.title }</pre>
+你会看到 <code>LDA-E · 电子计算芯片（模拟计算核 / MVM 交叉阵列）· E1–E14 全链</code>、
+<code>milestones=13 / gate_checks=303 / probe_checks=64 / modules=18</code>、
+<code>20 17 10 3</code>，以及 <code>G-M</code>、<code>G-N</code> 两条诚实边界。
+</div>
+
+<h2>如果哪里对不上，请把这三样发我</h2>
+<div class="card">
+① 浏览器地址栏的完整 URL；② 页面顶部版本号；③ 出问题那块区域的截图。
+有这三样我就能直接定位（是缓存旧版、还是真的口径没同步）。
+</div>
+
+<div class="meta" style="margin-top:24px">
+LDA · 开源 Agent-native 光 / 量 / 电子 EDA（MIT）· 电子计算征程 E1–E14（D-150…D-176）· 杜玉河 / 工业5点0产业生态联盟
+</div>
+</div></body></html>

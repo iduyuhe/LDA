@@ -4810,6 +4810,34 @@ function renderECore(d){
       (100*((DLM.gap_at_L65nm||{}).dibl_frac_of_vth||0)).toFixed(1)+'%']]);
   h+='<div class="note">'+String(DLM.bottleneck||'')+'<br>'+String(DLM.literature_only||'')+'</div>';
 
+  var D2=(d.device_2d||{}), LC=(D2.long_channel||{}), RO=(D2.rolloff||{}),
+      DB=(D2.dibl||{}), NL=(D2.natural_length_nm||{}), CP=(D2.capability_closure||{});
+  h+='<div class="summary" style="margin-top:12px">2D MOS 求解器（E12 · 短沟道效应：从「算不了」到「算得了」）</div>';
+  h+='<div class="note">'+String(D2.kernel||'')+'<br>'+String(D2.numerics||'')+'</div>';
+  h+=_qcTbl(['项','2D 数值解（candidate）','教科书 1D 闭式（golden）'],
+    [['长沟道极限 V_th（L = '+Number(LC.Lg_nm||0).toFixed(0)+' nm）',
+      Number(LC.vth_2d_v||0).toFixed(4)+' V',
+      Number(LC.vth_golden_v||0).toFixed(4)+' V（rel '+Number(LC.rel_err_pct||0).toFixed(3)+'%）']]);
+  h+=_qcTbl(['栅长 L','2D 数值 ΔV_th（vs 长沟道闭式）','Yau 文献式（对照 · 非 golden）'],
+    [['65 nm', Number((RO.dvth_vs_golden_mv||[])[0]||0).toFixed(1)+' mV',
+      Number((RO.yau_literature_mv||[])[0]||0).toFixed(1)+' mV'],
+     ['100 nm', Number((RO.dvth_vs_golden_mv||[])[1]||0).toFixed(1)+' mV',
+      Number((RO.yau_literature_mv||[])[1]||0).toFixed(1)+' mV'],
+     ['250 nm', Number((RO.dvth_vs_golden_mv||[])[2]||0).toFixed(1)+' mV',
+      Number((RO.yau_literature_mv||[])[2]||0).toFixed(1)+' mV']]);
+  h+=_qcTbl(['量','数值','判据/口径'],
+    [['DIBL（L = '+Number(DB.Lg_nm||0).toFixed(0)+' nm）', Number(DB.dibl_mv_per_v||0).toFixed(1)+' mV/V',
+      '2D 数值解给出（不再靠文献式代入）'],
+     ['指数衰减律 fit', 'R² = '+Number(DB.r2_exp_law||0).toFixed(5)+' · ℓ_eff = '+Number(DB.decay_length_nm||0).toFixed(1)+' nm',
+      'ln(DIBL)–L 线性 ⇒ 物理正确的决定性证据'],
+     ['自然长度 λ', Number(NL.lda_2d||0).toFixed(2)+' nm ⟷ 文献式 '+Number(NL.literature||0).toFixed(2)+' nm',
+      '同式（互为独立实现）'],
+     ['能力闭合', '闭合 '+Number(CP.closed||0)+' 项 · 仍不可用 '+Number(CP.still_unavailable||0)+' 项',
+      (CP.closed_items||[]).join(' · ')]]);
+  h+='<div class="note">'+String(D2.no_iv||'')+'<br>'+String(DB.literature_note||'')+'<br>'
+    +String(D2.oracle_semantics||'')+'</div>';
+  h+='<div class="note">仍不可用：'+(CP.still_items||[]).join(' · ')+'</div>';
+
   h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
   (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });
   h+='</div>';
@@ -4848,7 +4876,11 @@ function renderECore(d){
     +'<b>千级阵列规模压力</b>（1024² 层次化 GDS 86.6 KB · 压缩比 3571×）、'
     +'<b>器件级内核交叉验证</b>（新增 MOSCAP 1D 自洽泊松 ⟷ 教科书闭式：V_th 一致到 2e-4%、Q_s 跨点 ≤0.011%）、'
     +'<b>失效边界测绘</b>（数值窗口 vs 物理窗口严格分离 ⇒ <b>物理模型先失效、数值后崩</b>，'
-    +'半宽比 0.835；文献缺口量化 L=65 nm roll-off 占 V_th 37.9%）。'
+    +'半宽比 0.835；文献缺口量化 L=65 nm roll-off 占 V_th 37.9%）、'
+    +'<b>2D MOS 求解器</b>（把 E11-d 登记为「算不了」的短沟道效应<b>补上</b>：四端 2D 自洽泊松 ⇒ '
+    +'roll-off L=65 nm <b>'+Number((RO.dvth_vs_golden_mv||[])[0]||0).toFixed(1)+' mV</b>、'
+    +'<b>DIBL '+Number(DB.dibl_mv_per_v||0).toFixed(1)+' mV/V 且满足 ln(DIBL)–L 指数衰减律'
+    +'（R² '+Number(DB.r2_exp_law||0).toFixed(4)+'）</b>）。'
     +'<br/><strong>诚实边界：</strong>'+d.honest_note;
   return false;
 }

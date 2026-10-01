@@ -15,11 +15,12 @@
 - 与光子计算（`/api/pchip_demo`）、光量子 LOQC（`/api/qchip_demo`）、超导 transmon
   （`/api/schip_demo`）**并列**：四条物理/器件路线在 LDA 均已吃狗粮。
 
-## 2. 🔴 吃狗粮逼出并补齐的平台真短板（14 模块）
+## 2. 🔴 吃狗粮逼出并补齐的平台真短板（15 模块）
 
 此前 LDA 电子域只到行为级——**无晶体管级模型 / 无电路仿真器 / 无模拟计算原语 /
-无规模定标与诚实护栏 / 无版图链 / 无寄生后仿 / 无失配噪声模型 / 无千级规模能力**。
-本征程新增 `lda/lda_l2/ecore/` 包（14 模块 · 13 条能力面入册）逐一补齐：
+无规模定标与诚实护栏 / 无版图链 / 无寄生后仿 / 无失配噪声模型 / 无千级规模能力 /
+无器件级 PDE 内核 / **无 2D MOS（短沟道）能力****。
+本征程新增 `lda/lda_l2/ecore/` 包（15 模块 · 14 条能力面入册）逐一补齐：
 
 | 模块 | 能力 | 引入 |
 |---|---|---|
@@ -37,8 +38,9 @@
 | `array_scale.py` | 千级阵列层次化版图 O(N) + 一维三对角 IR-drop O(N) + 三重规模律 + 可及上界 | D-159 (E9) |
 | `device_pde.py` | 器件级内核桥（量纲桥 + 教科书闭式 ⟷ MOSCAP PDE 交叉验证 + 参数自洽性报告） | D-163 (E11-c) |
 | `device_limits.py` | 失效边界（数值窗口实测 + 物理窗口文献判据 + 文献缺口量化 · 两类边界严格分离） | D-164 (E11-d) |
+| `device_2d.py` | 2D MOS 桥（量纲桥 + 长沟道 ⟷ 教科书闭式交叉验证 + roll-off/DIBL 报告 + 能力闭合表） | D-166…D-168 (E12) |
 
-## 3. 十段征程（E1–E11 门禁判据合计 **235**（含 46 条突变探针）· 另有案例卡门禁 32 判据 + 8 突变探针）
+## 3. 十一段征程（E1–E12 门禁判据合计 **259**（含 53 条突变探针）· 另有案例卡门禁 34 判据 + 9 突变探针）
 
 | 段 | 编号 | 内容 | 关键结果（门禁实测） |
 |---|---|---|---|
@@ -62,9 +64,19 @@
 | E11-c | D-163 | **MOSCAP 1D 自洽泊松 ⟷ 教科书闭式**交叉验证 | **V_th 一致到 2e-4%**（0.4260 V）· Q_s 跨点 ≤0.011% · 量纲桥（0.38%）· G-3 µ 偏差 3.58× |
 | E11-d | D-164 | 失效边界测绘（两类边界**严格分离**） | 数值窗口 vs 物理窗口 · 半宽比 **0.835** ⇒ **物理先失效、数值后崩** · L=65 nm roll-off 占 V_th **37.9%** |
 
-> 🔴 E11 段只把「**LDA 算得出的边界**」算作能力；短沟道 roll-off / DIBL / 速度饱和 / 迁移率退化
-> 均为**文献经验式缺口量化**（每项 `computed_by_lda=False`），**不是 LDA 的计算结果**
-> —— 本平台**无 2D MOS 能力**。
+> 🔴 E11 段只把「**LDA 算得出的边界**」算作能力；短沟道 roll-off / DIBL 当时为**文献经验式缺口量化**
+> （`computed_by_lda=False`）—— **该缺口已由 E12 闭合**（见下），E11 段保留作**可追溯**记录。
+
+### E12 段（D-166…D-168 · 合计 **24** 判据 / 7 突变探针）：2D MOS 求解器（短沟道效应：算不了 → 算得了）
+
+| 段 | 编号 | 内容 | 关键结果（门禁实测） |
+|---|---|---|---|
+| E12 | D-166…D-168 | **四端 2D MOSFET 自洽泊松**（变系数有限体积**按面中点判介质** + 分段四端 BC + **电子准费米势分裂** + 阻尼牛顿/continuation） | 长沟道 2D **0.4239 V** ⟷ 教科书 1D 闭式 **0.4260 V（rel 0.496%）** · roll-off L=65 nm **−176.3 mV**（Yau 文献式 −161.3 · 对照）· **DIBL 153.6 mV/V** · ln(DIBL)–L **R² 0.99863**（ℓ_eff 68.9 nm）· 网格收敛 <0.6 mV · 两变体差 +11.3 mV |
+
+> 🔴 E12 **闭合了** E11-d 登记的「平台无 2D MOS 能力」：roll-off / DIBL 现由 **2D 数值解自然涌现**，
+> 不再靠文献式代入。但本段是**准平衡静电求解、不含漂移扩散输运 ⇒ 不产 I-V**
+> （「算得了」仅限**静电量**）；**golden 仍是教科书 1D 闭式**，2D 解只是 candidate（`is_oracle=False`），
+> 只允许「长沟道 2D → 1D」方向。
 
 ## 4. 🔴 关键技术结论（物理 + 方法学）
 
@@ -128,7 +140,8 @@
   L2 逐单元校准为理想化模型；噪声仅给谱密度量级；假定**独立同分布**（不建模空间相关）。
 - **G-I 规模模型为 1D 行线（忽略列线电阻）**：在校核规模内与 E7 的 2D 稠密 MNA 对拍一致；
   千级是**设计期版图与规模律**，非流片。
-- **G-J 无 2D MOS 能力 ⇒ 短沟道效应不在模型内**：E11-d 已用**文献经验式量化缺口**（L=65 nm 时 roll-off 占 V_th **37.9%**），但**这些不是 LDA 的计算结果**（每项 `computed_by_lda=False`）；补齐需 2D MOS 求解器，而工艺参数属 **T2 永久锁**。
+- **G-J 短沟道效应原不在模型内（E11-d 测绘）→ 已由 E12 闭合（历史项 · 保留可追溯）**：E11-d 曾用**文献经验式**量化缺口（L=65 nm roll-off 占 V_th **37.9%**，`computed_by_lda=False`）；**E12 已补上该能力**（roll-off/DIBL 现由 2D 数值解给出）。本项**不代表当前能力状态**，闭合后的**新**内在边界见 G-K。
+- **G-K 2D MOS 为准平衡静电求解 ⇒ 不产 I-V**：E12 的 2D 求解器**不含漂移扩散输运** ⇒ **无 I–V、无亚阈值摆幅（从电流）**；V_th 用「界面最低表面势达 +φ_F」判据（**非恒定电流法**）⇒「算得了」的范围**仅限静电量**（roll-off / DIBL / 自然长度）。结构为教科书突变结 + 2 nm 平滑，**无 LDD/halo/应力/量子修正**；参数为公开典型量级占位（非 PDK）。补 I–V 需 Gummel 2D 输运 ⇒ **E13 候选**；工艺角/PDK/硅验证 ⇒ **T2 永久锁**。
 
 ## 8. 先进性定位（架构族对齐 · 公开 landmark 仅背景坐标 · 不同台比较）
 
@@ -147,15 +160,20 @@
 
 ## 9. 在 LDA 内的位置
 
-- WebUI 只读案例卡：`GET /api/ecore_demo`（免登录 · 零重计算 · 九段里程碑 + 四块能力面 facts + 9 条诚实边界）。
+- WebUI 只读案例卡：`GET /api/ecore_demo`（免登录 · 零重计算 · **十一段里程碑 + 七块能力面 facts + 11 条诚实边界** · 259 判据 / 53 突变探针）。
 - 与 `/api/qchip_demo`（光量子 LOQC）、`/api/schip_demo`（超导 transmon）、`/api/pchip_demo`（硅光张量核）**并列**。
-- 常驻门禁（9 段 + 案例卡）：`run_ecore_e1_smoke`（D-150）· `run_ecore_e2_smoke`（D-151）·
+- 常驻门禁（13 道）：`run_ecore_e1_smoke`（D-150）· `run_ecore_e2_smoke`（D-151）·
   `run_ecore_e3_smoke`（D-152）· `run_ecore_e4_smoke`（D-153）· `run_ecore_capability_guard_smoke`（D-154）·
   `run_ecore_e6_smoke`（D-156）· `run_ecore_e7_smoke`（D-157）· `run_ecore_e8_smoke`（D-158）·
-  `run_ecore_e9_smoke`（D-159）· `run_ecore_case_smoke`（D-155/D-160 案例卡）。
+  `run_ecore_e9_smoke`（D-159）· `run_ecore_case_smoke`（案例卡）· `run_ecore_redline_scope_smoke`（D-161）·
+  `run_ecore_e11_smoke`（D-163）· `run_ecore_e11d_smoke`（D-164）· `run_ecore_e12_smoke`（D-168）。
 - 版图可视化产物：`docs/ecore_e6_layout_preview.html` · 寄生：`docs/ecore_e7_parasitic_preview.html` ·
   失配：`docs/ecore_e8_mismatch_preview.html` · 规模：`docs/ecore_e9_scale_preview.html`。
-- 蓝图：`docs/LDA_电子计算征程_E6-E10_蓝图_2026-09-30.md`。
+- 2D MOS 可视化：`docs/ecore_e12_2dmos_preview.html`；器件级内核：`docs/ecore_e11_device_pde_preview.html`；
+  失效边界：`docs/ecore_e11d_limits_preview.html`。
+- 蓝图 / 定稿 / 勘查：`docs/LDA_电子计算征程_E6-E10_蓝图_2026-09-30.md` ·
+  `docs/LDA_电子计算征程_E12_2DMOS定稿_2026-10-01.md` · `docs/LDA_电子计算征程_E11b_接缝勘查_2026-10-01.md` ·
+  `docs/LDA_电子计算征程_E11d_失效边界_2026-10-01.md`。
 
 ---
 

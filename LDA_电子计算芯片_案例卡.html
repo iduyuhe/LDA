@@ -66,7 +66,8 @@
   <div class="card">
     此前 LDA 电子域只到行为级——<b>无晶体管级模型 / 无电路仿真器 / 无模拟计算原语 / 无规模定标与诚实护栏</b>；
     进一步吃狗粮又逼出<b>无版图链 / 无寄生后仿 / 无失配噪声模型 / 无千级规模能力</b>。
-    本征程新增 <code>lda/lda_l2/ecore/</code> 包（<b>12 模块 · 11 条能力面入册</b>）逐一补齐。
+    进一步吃狗粮又逼出<b>无器件级 PDE 内核 / 无 2D MOS（短沟道）能力</b>。
+    本征程新增 <code>lda/lda_l2/ecore/</code> 包（<b>15 模块 · 14 条能力面入册</b>）逐一补齐。
     <table>
       <thead><tr><th>模块</th><th>能力</th><th>引入</th></tr></thead>
       <tbody>
@@ -82,11 +83,14 @@
         <tr><td><code>parasitic.py</code></td><td>导线 RC 闭式提取 + 阵列 R 梯网络 + IR drop / sneak path + Elmore 延迟</td><td>D-157 (E7)</td></tr>
         <tr><td><code>mismatch.py</code></td><td>Pelgrom 失配 + 温度 + 热/闪烁噪声 + 失配 Monte Carlo + 校准层级 L0/L1/L2</td><td>D-158 (E8)</td></tr>
         <tr><td><code>array_scale.py</code></td><td>千级阵列层次化版图 O(N) + 一维三对角 IR-drop O(N) + 三重规模律 + 可及上界</td><td>D-159 (E9)</td></tr>
+        <tr><td><code>device_pde.py</code></td><td>器件级内核桥（量纲桥 + 教科书闭式 ⟷ MOSCAP PDE 交叉验证 + 参数自洽性报告）</td><td>D-163 (E11-c)</td></tr>
+        <tr><td><code>device_limits.py</code></td><td>失效边界（数值窗口实测 + 物理窗口文献判据 · 两类边界严格分离）</td><td>D-164 (E11-d)</td></tr>
+        <tr><td><code>device_2d.py</code></td><td>2D MOS 桥（长沟道 ⟷ 教科书闭式交叉验证 + roll-off/DIBL 报告 + 能力闭合表）</td><td>D-166…D-168 (E12)</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h2>十段征程（E1–E11 门禁判据合计 235 · 含 46 条突变探针）</h2>
+  <h2>十一段征程（E1–E12 门禁判据合计 259 · 含 53 条突变探针）</h2>
   <div class="card">
     <table>
       <thead><tr><th>段</th><th>编号</th><th>内容</th><th>关键结果（门禁实测）</th></tr></thead>
@@ -112,7 +116,11 @@
       </tbody>
     </table>
     <p style="margin:10px 0 0;font-size:13.5px"><b>E10（D-160）收官</b>：平台硬化（能力面守护 scope 扩至 e1~e10）+ 案例卡升级为 E1–E9 全链
-      （<b>27 判据 + 5 突变探针</b>）+ 对外物料 + 生产部署。</p>
+      （<b>27 判据 + 5 突变探针</b>）+ 对外物料 + 生产部署。<br/>
+      <b>E11（D-161…D-164）</b>：红线口径同步 + 接缝勘查 + 器件级内核桥（MOSCAP 1D ⟷ 教科书闭式）+ 失效边界
+      （<b>47 判据 / 15 突变探针</b>）⇒ 案例卡升级为 E1–E11（32 判据 + 8 探针）。<br/>
+      <b>E12（D-166…D-168）</b>：<b>2D MOS 求解器</b>（<b>24 判据 / 7 突变探针</b>）⇒ 案例卡升级为
+      <b>E1–E12 全链（34 判据 + 9 探针）</b>。</p>
   </div>
 
   <h2>E6 · 版图与几何签核 —— 电子芯片首次直出真 GDS</h2>
@@ -221,8 +229,45 @@
     </table>
     <p style="margin:10px 0 0;font-size:13.5px">物理窗口半宽 / 数值窗口半宽 = <b>0.835 &lt; 1</b> ⇒
       <b>物理模型先失效、数值后崩</b>：瓶颈是物理模型（1D 无源漏 + 玻尔兹曼），不是数值精度。<br/>
-      🔴 roll-off / DIBL / 速度饱和 / 迁移率退化均为<b>文献经验式缺口量化</b>
-      （<code>computed_by_lda=False</code>）—— <b>不是 LDA 的计算结果</b>（本平台无 2D MOS 能力）。</p>
+      🔴 roll-off / DIBL 当时为<b>文献经验式缺口量化</b>（<code>computed_by_lda=False</code>）——
+      <b>该缺口已由 E12 闭合</b>（见下节），E11 段保留作<b>可追溯</b>记录。</p>
+  </div>
+
+  <h2>E12 · 2D MOS 求解器 —— 短沟道效应：从「算不了」到「算得了」</h2>
+  <div class="card">
+    <p style="font-size:13.5px;margin:0 0 8px">把 E11-d 登记为「<b>平台算不了</b>」的那一格<b>补上</b>：新增
+      <b>四端（栅/源/漏/衬底）2D MOSFET 自洽泊松</b>求解器（<code>lda_solver/mos_2d.py</code>）——
+      变系数有限体积（<b>按面中点判介质</b> ⇒ 界面离散精确、C_ox 恰为 ε_ox/t_ox）+ <b>分段四端边界条件</b> +
+      <b>电子准费米势分裂</b> + 阻尼牛顿 / continuation；ecore 侧桥 <code>lda_l2/ecore/device_2d.py</code>。</p>
+    <table>
+      <thead><tr><th>项</th><th>2D 数值解（candidate）</th><th>教科书 1D 闭式（golden）</th></tr></thead>
+      <tbody>
+        <tr><td>长沟道极限 V_th（L = 1000 nm）</td><td><b>0.4239 V</b></td><td>0.4260 V（rel <b>0.496%</b>）</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>栅长 L</th><th>2D 数值 ΔV_th（vs 长沟道闭式）</th><th>Yau 文献式（对照 · 非 golden）</th></tr></thead>
+      <tbody>
+        <tr><td>65 nm</td><td><b>−176.3 mV</b></td><td>−161.3 mV</td></tr>
+        <tr><td>100 nm</td><td>−101.3 mV</td><td>−104.9 mV</td></tr>
+        <tr><td>250 nm</td><td>−14.0 mV</td><td>−41.9 mV</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>量</th><th>数值</th><th>判据 / 口径</th></tr></thead>
+      <tbody>
+        <tr><td>DIBL（L = 65 nm）</td><td><b>153.6 mV/V</b></td><td>2D 数值解给出（不再靠文献式代入）</td></tr>
+        <tr><td>指数衰减律 fit</td><td>R² <b>0.99863</b> · ℓ_eff 68.9 nm</td><td>ln(DIBL)–L 线性 ⇒ 物理正确的决定性证据</td></tr>
+        <tr><td>自然长度 λ</td><td>18.97 nm ⟷ 文献式 18.97 nm</td><td>同式（互为独立实现）</td></tr>
+        <tr><td>能力闭合</td><td>闭合 <b>3</b> 项 · 仍不可用 <b>3</b> 项</td><td>roll-off · DIBL · 自然长度校验</td></tr>
+      </tbody>
+    </table>
+    <p style="margin:10px 0 0;font-size:13.5px">🔴 本段是<b>准平衡静电求解，不含漂移扩散输运 ⇒ 不产 I-V</b>
+      （V_th 用「界面最低表面势达 +φ_F」判据，非恒定电流法）⇒「算得了」仅限<b>静电量</b>。<br/>
+      🔴 <b>golden 仍是教科书 1D 闭式</b>，2D 解只是 candidate（<code>is_oracle=False</code>），
+      只允许「长沟道 2D → 1D」方向。<br/>
+      仍不可用：I–V / 亚阈值摆幅（需输运 ⇒ E13 候选）· 工艺角/PDK/硅验证（<b>T2 永久锁</b>）·
+      LDD/halo/应力/量子修正。</p>
   </div>
 
   <h2>关键结论</h2>
@@ -240,6 +285,9 @@
       <li><b>方法学独立</b>：判决全为死标量比对（闭式物理律 golden），LLM 不进判决路径，
         <b>零外部 SPICE / 商业 EDA 引擎</b>（C 级自主 · 纯 numpy/标准库）。</li>
       <li><b>带符号权重</b>：参考列法（<code>g_ij = g_base + s·W_ij</code>，数据列减参考列）。</li>
+      <li><b>短沟道效应由 2D 解自然涌现（E12）</b>：E11-d 曾登记「平台算不了」；E12 补上四端 2D 自洽泊松后，
+        roll-off / DIBL 不再靠文献式代入 —— <b>DIBL 153.6 mV/V 且满足 ln(DIBL)–L 指数衰减律（R² 0.9986）</b>，
+        这是该能力「真做出来了」的决定性证据。</li>
     </ul>
   </div>
 
@@ -273,14 +321,15 @@
       <b>G-G</b> 寄生提取为一阶几何闭式 · 后仿为 DC：无 3D 场解；<code>r_leak</code> 为<b>数值钉扎</b>（防浮空奇异），非物理漏电。<br/>
       <b>G-H</b> 失配/噪声/温度参数为公开量级 · 校准为理想化：L2 逐单元校准为理想化模型；噪声仅谱密度量级；假定独立同分布。<br/>
       <b>G-I</b> 规模模型为 1D 行线（忽略列线电阻）：校核规模内与 2D 稠密 MNA 对拍一致；千级为<b>设计期版图与规模律</b>，非流片。<br/>
-      <b>G-J</b> 无 2D MOS 能力 ⇒ 短沟道效应不在模型内：E11-d 已用<b>文献经验式量化缺口</b>（L=65 nm 时 roll-off 占 V_th <b>37.9%</b>），但<b>这些不是 LDA 的计算结果</b>；补齐需 2D MOS 求解器，而工艺参数属 <b>T2 永久锁</b>。
+      <b>G-J</b> 短沟道效应原不在模型内（E11-d 测绘）→ <b>已由 E12 闭合（历史项 · 保留可追溯）</b>：E11-d 曾用<b>文献经验式</b>量化缺口（L=65 nm roll-off 占 V_th <b>37.9%</b>）；<b>E12 已补上该能力</b>。本项不代表当前能力状态。<br/>
+      <b>G-K</b> 2D MOS 为准平衡静电求解 ⇒ <b>不产 I-V</b>：<b>不含漂移扩散输运</b> ⇒ 无 I–V / 无亚阈值摆幅（从电流）；「算得了」仅限<b>静电量</b>（roll-off / DIBL / 自然长度）。结构无 LDD/halo/应力/量子修正；补 I–V 需 Gummel 2D 输运（<b>E13 候选</b>）；工艺角/PDK/硅验证属 <b>T2 永久锁</b>。
     </div>
   </div>
 
   <div class="foot">
     声明：本案例是<b>设计期验证</b>，非流片后实测；<b>不报任何 fabricated 能效数字</b>；
     Mythic 等公开数字仅作<b>背景坐标</b>，不同台比较。<br/>
-    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E11（D-150…D-164）·
+    LDA · 开源 Agent-native 光/量/电子 EDA（MIT）· 电子计算征程 E1–E12（D-150…D-168）·
     版图/寄生/失配/规模/器件内核/失效边界可视化产物见 <code>docs/ecore_e6..e11d_*_preview.html</code>。
   </div>
 

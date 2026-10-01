@@ -3968,12 +3968,14 @@
     {
       "script": "run_ecore_case_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 0.12,
-      "margin_x": 2500.0,
+      "elapsed_max_s": 4.4,
+      "margin_x": 68.182,
       "samples_s": [
-        0.12
+        4.37,
+        4.39,
+        4.4
       ],
-      "n_rounds": 1,
+      "n_rounds": 3,
       "censored_events": 0
     },
     {

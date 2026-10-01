@@ -128,6 +128,20 @@ body{padding-top:56px}
 <div class="wb-drawer" id="wbDrawer"></div>
 <div class="wb-scrim" id="wbScrim"></div>
 
+  <!-- 🔴 v0.9.160 芯片案例首屏直达（根因之三）：
+       4 张案例卡此前位于页面 ~48 屏处（#sec-ecore 实测 at 26872px / 整页 27423px），
+       且全页没有任何指向它们的首屏锚点导航 ⇒ 用户「反复查也找不到」。
+       ⚠️ 位置在 **hero 之前**（而非之后）—— 实测放在 hero 之后会被首屏截断，用户仍需滚动。
+       受门禁 run_webui_entry_smoke.py 判据 E1 守护（4 张案例卡必须各有首屏直达入口）。 -->
+  <div id="wbCaseBar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 18px 2px;color:#9fb0d4;font-size:12px">
+    <span style="font-weight:700;color:#eaf2ff">★ 芯片案例直达：</span>
+    <a href="#sec-qchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光量子计算芯片</a>
+    <a href="#sec-schip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">超导量子计算芯片</a>
+    <a href="#sec-pchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光计算芯片</a>
+    <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E14）</a>
+    <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
+  </div>
+
   <!-- LDA 英雄区：2×2 四卡（内循环项目交付 + 外循环生态闭环），不照搬诚实边界，文案做角色翻译 -->
   <div class="wb-hero" data-page-node-id="wbHero">
     <!-- 卡1 ★ 旗舰流程（器件级 · 内循环 · 项目交付） -->
@@ -165,19 +179,6 @@ body{padding-top:56px}
     <span style="background:#fbbf24;color:#1a1205;font-weight:700;padding:3px 10px;border-radius:999px">系统级 → 护城河</span>
     <a href="/insights.html" style="color:#eaf2ff;border:1px solid #3f5e93;border-radius:8px;padding:4px 10px;text-decoration:none">🏛 展厅</a>
     <a href="/store.html" style="color:#eaf2ff;border:1px solid #3f5e93;border-radius:8px;padding:4px 10px;text-decoration:none">🛒 创新超市</a>
-  </div>
-
-  <!-- 🔴 v0.9.160 芯片案例首屏直达（根因之三）：
-       4 张案例卡此前位于页面 ~48 屏处（#sec-ecore 实测 at 26872px / 整页 27423px），
-       且全页没有任何指向它们的首屏锚点导航 ⇒ 用户「反复查也找不到」。
-       受门禁 run_webui_entry_smoke.py 判据 E 守护（4 张案例卡必须各有首屏直达入口）。 -->
-  <div id="wbCaseBar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 14px;color:#9fb0d4;font-size:12px">
-    <span style="font-weight:700;color:#eaf2ff">★ 芯片案例直达：</span>
-    <a href="#sec-qchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光量子计算芯片</a>
-    <a href="#sec-schip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">超导量子计算芯片</a>
-    <a href="#sec-pchip" style="color:#eafff7;background:#0f6e56;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:600">光计算芯片</a>
-    <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E14）</a>
-    <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
 <div class="wrap" data-page-node-id="ZSb14R166GTEpeT15LSGPz">

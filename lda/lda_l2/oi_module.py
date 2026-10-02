@@ -84,9 +84,12 @@ def build_transceiver_m0(n_lanes: int = 2,
         link.add_device(rid, "RingResonator",
                         params={"R": float(Rs[i]), "n_g": n_g, "gap": gap})
         # 设计意图：每环 FSR 目标（与 P1 build_wdm_link 同构，过 IR.validate）
+        # 🔴 单位修正（M1 吃狗粮发现）：`fsr_nm` 口径为「λ 用 **nm**、R 用 µm」
+        #    （见 `lda_agent.wdm_system.fsr_nm` 与 `lda_chain.photon_link` 的规范调用）。
+        #    M0 初版误传 `channels_nm[i]*1e-3`（把 1550 nm 传成 1.55）⇒ 目标恒为 0.0 nm。
         link.ir.objectives.append(
             ObjectiveSpec(bid="B4",
-                          target=round(fsr_nm(channels_nm[i] * 1e-3, Rs[i], n_g), 3),
+                          target=round(fsr_nm(channels_nm[i], Rs[i], n_g), 3),
                           tol=1e-3, role="objective"))
         # 仅首环由 GC 捕获端口喂入；后续环输入由 rx_thru_{i-1} 提供，
         # 不再重复连 rx_in_i（否则与上一环 thru 链形成重复网 → 级联重复计数）
@@ -145,12 +148,16 @@ def transceiver_m0_budget(link: Any, channels_nm: List[float],
                           gc_coupling: float = 0.5,
                           fiber_span_db: float = 1.0,
                           n_g: float = 4.2, gap: float = 0.3,
-                          n_pts: int = 201) -> Dict[str, Any]:
+                          m: int = 170, n_pts: int = 201) -> Dict[str, Any]:
     """两种独立方法分解每信道链路预算 + 信道隔离 + 无源锚(B19)。
 
     光纤 span 损耗默认取自 link.link_params["fiber_span_db"]（build 时写入，
     与级联引擎同源）；仅当显式传入 fiber_span_db 时覆盖。这保证闭式(A)与级联(B)
     始终计入同一光纤损耗 → 两法一致（防 P2 类探针把"闭式漏计光纤"误判为分歧）。
+
+    🔴 `m` 修正（M1 吃狗粮发现）：M0 初版在此**硬编码 170**，与
+    `build_transceiver_m0(m=...)` 脱钩 —— 一旦按别的 m 装配，方法 A 用错的 R，
+    闭式与级联会静默分歧（假红）。现改为显式入参（默认 170，向后兼容）。
     """
     from lda_agent.ring_adddrop import (adddrop_spectrum,
                                         bending_loss_db_per_cm, gap_to_kappa)
@@ -161,7 +168,7 @@ def transceiver_m0_budget(link: Any, channels_nm: List[float],
     Rs = [None] * n
     for i, c in enumerate(channels_nm):
         from lda_agent.wdm_system import inverse_ring_for_channel
-        Rs[i] = inverse_ring_for_channel(c * 1e-3, n_g, 170)
+        Rs[i] = inverse_ring_for_channel(c * 1e-3, n_g, m)
     kappa = gap_to_kappa(gap)
     fiber_g = 10.0 ** (-fiber_span_db / 10.0)
 

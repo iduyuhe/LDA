@@ -1,4 +1,27 @@
 # Changelog
+## v0.9.177（2026-10-02 · **新征程 M1：光联接模块 800G（8×100G PAM4）频域/时域预算 + 吃狗粮补齐「梳齿规避信道规划」能力**：新增 `oi_m1.py` + 门禁 56 判据 + 6 探针 · 清偿 4 处平台缺陷 + 2 项历史欠账 · 账本 **476 不变（零锚改动）** · CI core **265 → 267** · 端点 **146 不变**）
+
+### 收什么
+在 M0 的 2 通道功率预算之上补两维。**频域**：调制器（RC 闭式 + 渡越）× 探测器（τ=RC）× TIA（单极点）级联成**级联 EO S21**，‑3dB 带宽用**几何二分**求解并**回代 |H|=1/√2** 校验（另判单极点退化 ≡ fᵢ）。**时域**：PAM4 符号间隔冲激响应抽头 → 三眼 / Q / **链路预算级 BER**（golden = **闭式 Q 函数** `0.375·erfc(Q/√2)`，并与 4000-trial MC 对拍）；光纤色散走 σ₁²=σ₀²+(β₂L)²/(4σ₀²) **高斯展宽闭式** ⟷ **IFFT 时域仿真**方法学独立对拍；驱动阶跃 **RK4 ⟷ 闭式**上升时间对照 + TIA 带宽余量。另给**免 SNR 假设**的「达 KP4 门限所需 SNR」（仿真二分 ⟷ 闭式解析，Δ=0.086dB）。设计点 4 成员（C_2km 主 / C_10km 限 / O_2km·O_10km 对照，C-band 主 + O-band 对照）：`f_3dB(EO)=32.94GHz` · `worstQ=3.76` · `worstBER=5.64e-05` · 聚合 **800Gb/s**。
+
+### 吃狗粮：抓出并修复 4 处平台缺陷（这是本轮最大产出）
+1. 🔴 **平台旧判据「FSR > 信道跨度」充分非必要 ⇒ 容量被严重低估**：8 通道在 M0 默认环参数（m=170 / gap=0.30）下隔离崩溃到 **−0.85dB**——根因是 FSR≈9.12nm < 跨度 31.5nm ⇒ 第 i±2 环的梳齿落在 λᵢ 偏 **0.118nm** 处（M0 只测 2 通道时完全未暴露）。而真正必要条件是「任一环梳齿不得落在其它信道线宽内」。按旧判据在 LDA DRC（`min_bend_R_um=5.0`）下FSR 上限 ≈18nm，8×4.5nm **必被判死**；改用**梳齿规避**仍可把偏移做到 1.24nm ≫ 线宽。新增平台能力 `oi_m1.plan_lwdm_channels`（m 搜索 + `wdm_system.system_metrics` 实证，22 个可行解）⇒ 最佳 m=129 / gap=0.55µm：**最坏隔离 39.5dB**（级联引擎口径）/ 43.09dB（规划解 L0 口径），drop IL 7.18–7.55dB（更均匀）。
+2. 🔴 **外部规格常量口径差 100×**：`TARGET_BER_KP4` 原写 **2.4e-2**，正确为 **2.4e-4**（KP4 = RS(544,514)，IEEE 802.3bs/df Clause 91 pre-FEC 门限；Keysight 802.3 应用笔记 / Vitex 800G 验收指南 / Heather IEEE 802.3 FEC 对照表三源独立一致）。该错把「所需 SNR」低估约 5dB（20.92 → **26.56dB**），设计裕量由虚高 ~7dB 回到真实 **1.44dB**——即设计点其实**贴近门限**。已修，并加 **C13 公开规格锚**（KP4∈[2.0e-4,2.8e-4] + 所需 SNR ∈ 工业共识窗口）+ **探针 P6**（改回错值 ⇒ 必红）+ 纳入还原判据。
+3. `transceiver_m0_budget` **硬编码环区数 m=170**（与 `build_transceiver_m0(m=…)` 脱钩）⇒ 换 m 装配时闭式(A)与级联(B)静默分歧；已改为显式入参（`m: int = 170`）。
+4. **B4（FSR）目标单位错**：`fsr_nm` 口径为 λ 用 nm / R 用 µm，原把 λ 以 `1.55` 当 nm 传 ⇒ 目标恒 0.0nm；修为 `fsr_nm(channels_nm[i], Rs[i], n_g)`（目标 9.118nm）。
+另清偿 2 项历史欠账：`run_oi_m0_smoke.py` 补登记进 CORE_SMOKES（v0.9.176 漏走三同步）；超时预算基线补 5 行（v0.9.169–176 各里程碑漏刷新：`run_ai_accel_ref_smoke` / `run_accel_case_smoke` / `run_d4_domain_smoke` / `run_d4_case_smoke` / `run_webui_oi_render_path_smoke`）。
+
+### 门禁加厚（本版纪律）
+- 新增 `lda/run_oi_m1_smoke.py`（**56 判据 + 6 突变探针 + 还原重跑**）：C1 一阶低通 |H(f₃)|=1/√2（3 个 f₃）· C2 级联 EO S21 解回代 + 单极点退化 · C3 RC 带宽 ≡ 1/(2πRC) · C4 色散（D=0 ⇒ σ₁≡σ₀ 精确 + σ₁ 随 L 严格单调）· C5 逐设计点按 `expect` 声明断言（全覆盖 SPEC_POINTS）· C6 PAM4 平坦 golden（闭式 ⟷ MC）· C7 所需 SNR 仿真 ⟷ 闭式（Δ<0.3dB）· C8 驱动-TIA（t90 闭式 ⟷ RK4 rel<1e-3 · 上升 <0.5UI · TIA > Nyquist）· C9 梳齿规避规划（搜索解 ⟷ 设计常量 · minXT≥15dB · 旧规则会拒 · 存在可行解）· C10 集成（800G 聚合 / B19 无源无增益 / 闭式≡级联 ≤0.05dB / 8 通道隔离 ≥15dB / 无缺失模型 / IR.validate==[]）· C11 O 波段退化（代价≡0，同类成员 ≥2）· C12 诚实护栏 · **C13 公开规格锚（KP4 门限 + 所需 SNR 合理性窗口）**；探针 P1 抹平 EO S21 / P2 patch 被消费的 `d_ps_nm_km=0` / P3 patch `snr_db=10` / P4 打乱 `_PAM4_LEVELS` / P5 撤 CORE 登记 / **P6 把 KP4 改回错值**，各**先证能变红**；R 还原重跑（含 R-探针反向验证还原判据本身会红）。
+- `run_webui_oi_render_path_smoke` 39 → **99 判据 + 6 突变探针**：为 M1 块加五组反向完备（④e-1 顶层 / ④e-2 `ring_plan` / ④e-3 `driver` / ④e-4 `spec_points[]` / ④e-5 `m0_fixes[]`）+ 探针③（抹 `m1.ring_plan.m`）④（`ring_plan` 多字段）⑤（顶层多字段）⑥。🔴 **探针⑥当场抓出门禁自身的真 bug**：`_js_ref_ok` 在未命中时误 `return hits`（应为 `return False`）⇒ 短路径 `rp.m` 会被 `rp.min_fsr_nm` 前缀**假绿**；修后把纯子串判定升级为「非标识符字符收尾」边界判定（`d.verdict` 与 `d.verdict_label` 也不再互相假绿）。
+- `run_oi_m0_smoke.py` / `run_oi_m1_smoke.py` 登记进 CORE_SMOKES + `_BUILTIN_TIMEOUT_OVERRIDE`（各 120s）；超时预算基线重测并入（`run_webui_oi_render_path_smoke` 0.30 → **4.11s** = 29.20×，`run_oi_m1_smoke` 4.03s = 29.78×）⇒ 棘轮 **21/21 ALL PASS** · 覆盖门禁 **8/8 ALL PASS**。
+
+### 对外载体
+案例卡 `/api/oi_demo` 升 **M0/M1**（新增 `m1` 块：阶段/聚合/带宽/最坏 Q·BER/IL 区间/隔离 39.5dB/驱动-TIA/`ring_plan`（含 `fsr_rule_rejects_span` 与 M0 默认对照）/4 设计点/4 处 `m0_fixes`/**设计裕量 `snr_margin_db`=1.44dB**）；`run_selfchecks` 扩到 11 项（新增裕量卡内自洽 + 物理不等式「最坏所需 SNR ≥ 平坦 golden」）。前端 `sec-oi` 新增⑥M1 信道规划 ⑦M1 设计点 ⑧M1 驱动-TIA ⑨吃狗粮修复清单，标题/导航/按钮升 M0/M1。复用 `/api/oi_demo`（不新增端点）⇒ `gen_api_reference` 无需重跑。
+
+### 诚实边界
+M0/M1 均属**设计预算层**（L0 解析器件模型 + A 档闭式/行为级）；M1 的 BER 是**光通道预算级**闭式估计，**不含** SerDes/DSP/FEC/均衡/CDR（与 `eic_behavioral` 的 EIC 电路级排除**显式分层**），接受 SNR 为**设计输入假设**（另给免假设的「达 KP4 门限所需 SNR」）；环模型为 L0 add-drop 解析谱（无 FDTD 标定）；真实版图 GDS 由 D4 域 `photonic_interconnect` 承载；verdict 恒 `DESIGN_BUDGET`（设计期签核、非实测签核、非流片结果）；**不报 TOPS/TOPS-W/fJ/op**；LLM 不进判决路径。
+
 
 ## v0.9.176（2026-10-02 · **新征程 M0 光联接模块基线 + D4 光子互联真 GDS 域 + 门禁加厚**：吃狗粮抓出并修复星型网级联重复计数平台 bug · D4 扩到四条产线 · 前端取值路径门禁抓到 1 处真实渲染 bug · 账本 **476 不变（零锚改动）** · CI core **264 → 265** · 端点 **145 → 146**）
 

@@ -143,7 +143,7 @@ body{padding-top:56px}
     <a href="#sec-accel" style="color:#0b1220;background:#7dd3fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子/模拟 AI 加速器（L6）</a>
     <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E18）</a>
     <a href="#sec-d4" style="color:#0b1220;background:#a5b4fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ D4 交付扩面（电子+超导）</a>
-    <a href="#sec-oi" style="color:#04201b;background:#5eead4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光联接模块 M0（新征程）</a>
+    <a href="#sec-oi" style="color:#04201b;background:#5eead4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光联接模块 M0/M1（新征程）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1444,22 +1444,30 @@ body{padding-top:56px}
   </div>
 
   <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-oi">
-    <h2>★ 光联接模块 M0 基线：2 通道 WDM 收发器（链路预算 · 吃狗粮检阅平台）</h2>
+    <h2>★ 光联接模块 M0+ M1：2 通道基线 → 800G（8×100G PAM4）频域/时域预算（吃狗粮检阅平台）</h2>
     <div class="hint">
-      用 LDA 自家<b>光链路设计验证链（lda_chain）</b>把一款 2 通道 WDM 收发器从装配跑通到链路预算：
+      <b>M0</b>：用 LDA 自家<b>光链路设计验证链（lda_chain）</b>把一款 2 通道 WDM 收发器从装配跑通到链路预算——
       <b>Tx</b> = MZI 调制器（cos² 传递）× N 通道；<b>Rx</b> = 微环 add-drop 滤波器级联下路
-      + 双 GratingCoupler 耦合 + 光纤 span。<br/>
-      两种方法<b>独立交叉验证</b>：① 闭式链路预算（含前置环 thru 总线链）② lda_chain 级联引擎
-      （信号流图精确信道波长评估）——两者逐位一致（差 &lt;0.05dB），证明装配接线正确。<br/>
-      🔴 <b>吃狗粮抓出真平台 bug</b>：级联引擎对 ≥3 端口星型网用 all-pairs 全连边 ⇒ 同一信号
-      多路径重复求和（GC 耦合被翻倍 2×~4×）——双通道 Rx 星形合波首跑即暴露，已 root-cause
-      并改用 hub 模型修复，2 端口网语义不变、4 道 P1 link 引擎门禁零回归。<br/>
-      🔴 诚实边界：M0 属<b>链路预算层</b>（L0 解析器件模型：微环 add-drop 解析谱 / GC 固定耦合 /
-      MZI cos² 传递）；真实版图 GDS 由 <b>D4 域 photonic_interconnect</b>（复用 wdm_mesh_pnr 的
-      K×N WDM 网格 P&R）承载；本卡只报预算；<b>不报 TOPS/TOPS-W/fJ/op</b>；LLM 不进判决路径。
+      + 双 GratingCoupler 耦合 + 光纤 span。两种方法<b>独立交叉验证</b>：① 闭式链路预算
+      （含前置环 thru 总线链）② lda_chain 级联引擎（信号流图精确信道波长评估）——两者逐位一致
+      （差 &lt;0.05dB），证明装配接线正确。<br/>
+      <b>M1（800G）</b>：在功率预算之上补两维——<b>频域</b>（调制器 RC+渡越 × 探测器 τ=RC × TIA
+      单极点的<b>级联 EO S21</b>，f<sub>-3dB</sub> 用几何二分严格求解并回代 |H|=1/√2 校验）；
+      <b>时域</b>（PAM4 符号间隔抽头 → 三眼 / Q / <b>链路预算级 BER</b>；高色散用高斯展宽闭式
+      ⟷ IFFT 时域仿真<b>方法学独立对拍</b>；驱动阶跃 RK4 ⟷ 闭式上升时间对照）。<br/>
+      🔴 <b>吃狗粮抓出的真平台短板（已补齐）</b>：8 通道在 M0 默认环参数下隔离崩溃到
+      <b>−0.85dB</b> ⇒ 定位出平台旧判据「FSR &gt; 信道跨度」<b>充分非必要</b>（LDA DRC 的 R≥5µm
+      下 8×4.5nm 会被直接判死），新增平台能力<b>梳齿规避信道规划</b>（m 搜索 + 级联引擎实证）
+      ⇒ m=129 / gap=0.55µm 最坏隔离 <b>39.5dB</b>、drop IL 7.18–7.55dB（更均匀）。<br/>
+      🔴 诚实边界：M0/M1 均属<b>设计预算层</b>（L0 解析器件模型 + A 档闭式/行为级）；
+      M1 的 BER 是<b>光通道预算级</b>闭式估计（golden = 闭式 Q 函数），<b>不含</b>
+      SerDes/DSP/FEC/均衡/CDR（与 <code>eic_behavioral</code> 的 EIC 电路级排除<b>显式分层</b>）；
+      接受 SNR 为<b>设计输入假设</b>，另给免假设的「达 KP4 门限所需 SNR」；真实版图 GDS 由
+      <b>D4 域 photonic_interconnect</b>（复用 wdm_mesh_pnr 的 K×N WDM 网格 P&R）承载；
+      本卡只报预算；<b>不报 TOPS/TOPS-W/fJ/op</b>；LLM 不进判决路径。
     </div>
     <div class="row">
-      <button class="btn" id="runOi">运行 光联接模块 M0 基线案例</button>
+      <button class="btn" id="runOi">运行 光联接模块 M0 + M1 案例</button>
     </div>
     <div id="oiSummary" class="summary"></div>
     <div id="oiBody"></div>
@@ -4951,7 +4959,7 @@ if($('runD4')) $('runD4').onclick = runD4;
 async function runOi(){
   const btn=$('runOi'); if(!btn) return;
   btn.disabled=true;
-  $('oiSummary').innerHTML='<span class="spin"></span> 正在装配 光联接模块 M0 基线案例（闭式 + 级联引擎确定性现算）…';
+  $('oiSummary').innerHTML='<span class="spin"></span> 正在装配 光联接模块 M0 + M1 案例（闭式 + 级联引擎 + IFFT 时域 + 几何搜索，确定性现算）…';
   try{
     const d=await apiGet('/api/oi_demo');
     renderOi(d);
@@ -5001,13 +5009,83 @@ function renderOi(d){
   var gs=(d.gaps||[]).filter(function(g){return !g.closed;})
                   .map(function(g){return '<b>'+g.id+'</b> '+g.title;});
   h+='<p style="margin-top:8px"><b>未闭合缺口：</b>'
-    +(gs.length?gs.join(' · '):'（本卡无未闭合缺口')+'</p>';
+    +(gs.length?gs.join(' · '):'（本卡无未闭合缺口）')+'</p>';
+
+  /* ── M1（800G）块：频域/时域预算 + 梳齿规避规划（/api/oi_demo 的 d.m1）── */
+  var m1=d.m1||{}, rp=m1.ring_plan||{}, dv=m1.driver||{};
+  // ⑥ M1 信道规划（梳齿规避 · G-OI1 闭合）
+  h+='<h3 style="margin:14px 0 4px">⑥ M1 信道规划（梳齿规避 → 隔离 39.5dB · G-OI1 闭合）</h3>';
+  h+=_qcTbl(['规划量','值'],[
+    ['环区数 m', rp.m],
+    ['环半径 R (µm)', rp.R_um!=null?rp.R_um:'-'],
+    ['耦合间隙 gap (µm)', rp.gap_um!=null?rp.gap_um:'-'],
+    ['最小 FSR (nm)', rp.min_fsr_nm!=null?rp.min_fsr_nm:'-'],
+    ['最小梳齿偏移 (nm)', rp.min_comb_detune_nm!=null?rp.min_comb_detune_nm:'-'],
+    ['规划解 最坏邻道隔离 XT (dB)（L0 解析模型）', rp.min_xt_db!=null?rp.min_xt_db:'-'],
+    ['最大 drop IL (dB)', rp.max_il_drop_db!=null?rp.max_il_drop_db:'-'],
+    ['R_min 处 FSR 上限 (nm)', rp.max_fsr_at_rmin_nm!=null?rp.max_fsr_at_rmin_nm:'-'],
+    ['旧判据「FSR&gt;信道跨度」会判死?',
+     rp.fsr_rule_rejects_span?'<b>是</b>（充分非必要 ⇒ 容量被低估）':'否'],
+    ['M0 默认参数下 8 通道最坏隔离 (dB)',
+     rp.m0_default_min_xt_db!=null?rp.m0_default_min_xt_db:'-'],
+    ['可行解数', rp.n_solutions]
+  ]);
+  // ⑦ M1 频域 / 时域设计点
+  h+='<h3 style="margin:14px 0 4px">⑦ M1 800G 设计点（C 波段主 + O 波段对照 · 两法对拍）</h3>';
+  h+='<p>阶段：<b>'+m1.stage_label+'</b> · '+m1.n_lanes+' × '+m1.baud_gbd+' GBd · 聚合 <b>'
+    +m1.aggregate_gbps+' Gb/s</b> · 目标 BER (KP4) '
+    +(m1.target_ber_kp4!=null?m1.target_ber_kp4.toExponential(1):'-')
+    +' · 假设 SNR '+m1.snr_db+' dB</p>';
+  h+=_qcTbl(['设计点','波段','波长 (nm)','距离 (km)','预期','Q','BER (闭式)',
+             '色散代价 (dB)','仿真代价 (dB)','所需 SNR (dB)','可达'],
+    (m1.spec_points||[]).map(function(sp){
+      return [ sp.key, sp.band, sp.wl_nm, sp.reach_km,
+        (sp.expect==='pass'?'<b>达标</b>':'<b>色散受限</b>'),
+        sp.q, (sp.ber!=null?sp.ber.toExponential(2):'-'),
+        sp.disp_penalty_db,
+        (sp.sim_penalty_db!=null?sp.sim_penalty_db:'-'),
+        (sp.required_snr_db!=null?sp.required_snr_db:'<b>不可达</b>'),
+        sp.required_snr_reachable?'<b>是</b>':'<b>否</b>' ];
+    }));
+  h+=_qcTbl(['链路量','值'],[
+    ['级联 EO −3dB 带宽 (GHz)', m1.f_3db_eo_ghz],
+    ['最坏 Q', m1.worst_q],
+    ['最坏 BER (闭式)', m1.worst_ber!=null?m1.worst_ber.toExponential(2):'-'],
+    ['drop IL 区间 (dB)', m1.il_min_db+' – '+m1.il_max_db],
+    ['级联引擎实测口径 最坏信道隔离 (dB)', m1.worst_isolation_db],
+    ['最坏可达所需 SNR (dB)（KP4 门限）',
+     m1.worst_required_snr_db!=null?m1.worst_required_snr_db:'-'],
+    ['设计裕量 = 假设 SNR − 最坏所需 SNR (dB)',
+     m1.snr_margin_db!=null?m1.snr_margin_db:'-']
+  ]);
+  // ⑧ M1 驱动-TIA 协同
+  h+='<h3 style="margin:14px 0 4px">⑧ M1 驱动-TIA 协同（闭式 ⟷ RK4 两法对照）</h3>';
+  h+=_qcTbl(['协同量','值'],[
+    ['驱动 10–90% 上升 (UI)', dv.rise_ui],
+    ['t90 闭式 (ps)', dv.t90_closed_ps],
+    ['t90 RK4 (ps)', dv.t90_rk4_ps],
+    ['TIA 带宽 (GHz)', dv.tia_ghz],
+    ['TIA 带宽 / Nyquist', dv.tia_over_nyquist]
+  ]);
+  // ⑨ M1 吃狗粮修复清单
+  h+='<h3 style="margin:14px 0 4px">⑨ 吃狗粮修复：平台缺陷清偿（本卡登记）</h3>';
+  h+='<p>'+(m1.m0_fixes||[]).map(function(fx){
+        return '· <b>'+fx.title+'</b> —— '+fx.detail;
+      }).join('<br/>')+'</p>';
+
   $('oiBody').innerHTML=h;
-  $('oiConclusion').innerHTML='<strong>结论：</strong>用 LDA 自家光链路设计验证链可把一款 2 通道 '
-    +'WDM 收发器从装配跑通到链路预算，且<b>闭式与级联两种方法逐位一致</b>——'
-    +'更重要的是，吃狗粮过程<b>抓出并修复了平台级 bug</b>（星型网级联重复计数），'
+  $('oiConclusion').innerHTML='<strong>结论：</strong>用 LDA 自家光链路设计验证链可把一款 WDM 收发器'
+    +'从 2 通道 M0 基线一路推进到 <b>M1 800G（8×100G PAM4）频域/时域预算</b>：'
+    +'闭式与级联两种方法逐位一致（差 &lt;0.05dB），EO 级联 f<sub>-3dB</sub> 由几何二分严格解出，'
+    +'PAM4 三眼 BER 以闭式 Q 函数为 golden、并与 IFFT 时域仿真对拍，色散展宽闭式与仿真同向。'
+    +'<br/>更重要的是，吃狗粮过程<b>抓出并补齐了平台级短板</b>：8 通道暴露「环梳齿混叠」使隔离崩溃'
+    +'（M0 默认参数下仅 '+rp.m0_default_min_xt_db+'dB）⇒ 据此新增<b>梳齿规避信道规划</b>能力'
+    +'（m='+rp.m+' / gap='+rp.gap_um+'µm ⇒ 规划解邻道隔离 '+rp.min_xt_db+'dB，级联引擎实测最坏 '
+    +m1.worst_isolation_db+'dB），'
+    +'并顺带修复 4 处平台缺陷（星型网级联重复计数 · 环区数硬编码 · FSR 目标单位错 · KP4 门限口径差 100×）。'
     +'这正是「客户用前自己先用并检验、补齐短板」的落地。'
-    +'<br/><strong>诚实边界：</strong>'+d.honest_note;
+    +'<br/><strong>诚实边界：</strong>'+d.honest_note
+    +'<br/>'+m1.honest_note_m1;
   return false;
 }
 if($('runOi')) $('runOi').onclick = runOi;

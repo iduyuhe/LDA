@@ -1429,13 +1429,29 @@ CORE_SMOKES: List[str] = [
     # DESIGN_BUDGET · 逐域 sha256 与模块现算逐位同源）+ 前端 sec-d4/runD4/CASE_MAP +
     # onclick 接线反向完备 + 3 突变探针。CI core 263→264。
     "run_d4_case_smoke.py",
-    # 🔴 新征程（2026-10-02）光联接模块 M0 案例卡 前端取值路径 + onclick 门禁：
+    # 🔴 新征程（2026-10-02）光联接模块 M0+M1 案例卡 前端取值路径 + onclick 门禁：
     #   把血案 #18/#19「JSON 里有值 ≠ 前端问对了地方」机器化到 sec-oi 面板：
-    #   renderOi 每条取值路径（d./rq./c./m./g.）拿到真实 oi_case.case_card() JSON
-    #   上逐段解析 + 反向完备（每个展示字段都必须被引用）+ onclick 接线反向完备 +
-    #   2 突变探针（抹字段/删接线，先证能变红）。首次运行即抓到 1 处真实渲染 bug
-    #   （renderOi 取 g.label 而 JSON gaps 实为 g.title ⇒ 缺口标签渲染 undefined），已修。
+    #   renderOi 每条取值路径（d./m1./rp./dv./sp./fx./rq./c./m./g.）拿到真实
+    #   oi_case.case_card() JSON 上逐段解析 + 反向完备（每个展示字段都必须被引用，
+    #   含 M1 块顶层 + ring_plan/driver/spec_points[]/m0_fixes[] 五组）+ onclick
+    #   接线反向完备 + 6 突变探针（抹字段/删接线/M1 抹路径/M1 多字段×2/边界假绿，
+    #   先证能变红）。首次运行即抓到 1 处真实渲染 bug（取 g.label 而 JSON gaps 实为
+    #   g.title ⇒ 缺口标签 undefined）；M1 加厚时探针⑥又抓到**门禁自身**的真 bug
+    #   （`_js_ref_ok` 未命中误返回 True ⇒ 短路径被前缀假绿），已修为「非标识符收尾」。
     "run_webui_oi_render_path_smoke.py",
+    # 🔴 v0.9.177 · 光联接模块征程 M1（吃狗粮）· **清偿 M0 遗留的 CI 覆盖欠账**：
+    #   M0 收官时建了 `run_oi_m0_smoke.py` 却漏登记任何回归集 —— `run_ci_coverage_gate_smoke`
+    #   的 ①/⑥ 判据因此长期为红（孤儿 smoke，坏了不响）。随 M1 一并接线。
+    #   M0 = 链路功率预算（闭式≡级联 · B19 无源无增益 · 隔离/IL · 星型网重复计数引擎回归）
+    #   + 3 突变探针（窄间隔/超大光纤损耗/缺模型，先证能变红）。
+    "run_oi_m0_smoke.py",
+    # 🔴 v0.9.177 · 光联接模块 M1（800G · 8×100G PAM4）门禁：闭式 golden（一阶低通 / 级联
+    #   EO S21 解回代 / RC 带宽 / 色散展宽 / PAM4 平坦 Q / 所需 SNR 仿真⟷闭式 / 驱动-TIA
+    #   t90 闭式⟷RK4）+ 梳齿规避信道规划（搜索解⟷常量 · 规划 minXT≥15dB · M0 默认必红 ·
+    #   旧「FSR>跨度」规则会拒）+ 集成（800G 聚合 / B19 / 闭式≡级联 / 8 通道隔离 / 无缺失
+    #   模型）+ 逐设计点按声明 expect 断言 + 诚实披露键 + 5 突变探针 + 还原重跑。
+    #   实测 ~4s ⇒ 入 `_BUILTIN_TIMEOUT_OVERRIDE`(120s) 留足余量。
+    "run_oi_m1_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2284,8 +2300,12 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_d4_domain_smoke.py": 300.0,
     # v0.9.172 D4 扩面案例卡门禁：缓存现算 + 前端源码扫描，实测上界 <1s
     "run_d4_case_smoke.py": 300.0,
-    # 新征程 光联接模块 M0 案例卡前端取值路径 + onclick 门禁：纯文本解析（不执行 JS），实测 ~0.12s
+    # 新征程 光联接模块 M0+M1 案例卡前端取值路径 + onclick 门禁：纯文本解析（不执行 JS），实测 ~4.1s
     "run_webui_oi_render_path_smoke.py": 120.0,
+    # 光联接模块 M0 基线门禁：2 通道链路预算 + 4 探针，实测 ~0.3s
+    "run_oi_m0_smoke.py": 120.0,
+    # 光联接模块 M1 门禁：闭式 golden + 梳齿规避规划（m 扫描）+ 4 设计点 + C13 规格锚 + 6 探针，实测 ~4.0s
+    "run_oi_m1_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

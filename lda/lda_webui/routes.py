@@ -413,15 +413,21 @@ def h_d4_demo(h, p, q, path):
 
 
 def h_oi_demo(h, p, q, path):
-    """GET /api/oi_demo —— 光联接模块 M0 基线案例卡（新征程 · 只读 · 免登录）。
+    """GET /api/oi_demo —— 光联接模块 M0 + M1 案例卡（新征程 · 只读 · 免登录）。
 
     🔴 与 `/api/qchip_demo` / `/api/pchip_demo` / `/api/ecore_demo` / `/api/d4_demo`
-    同属「公开只读验货」类：本卡把 M0 基线（2 通道 WDM 收发器）的链路预算
-    以确定性现算呈现（闭式 + lda_chain 级联引擎，零重计算、不跑 P&R/FDTD），
-    免登录、不进 HEAVY_POST_PATHS。
+    同属「公开只读验货」类：本卡把 **M0**（2 通道 WDM 收发器）的链路预算与
+    **M1**（800G · 8×100G PAM4）的**频域/时域预算**以确定性现算呈现（闭式 +
+    lda_chain 级联引擎 + `lda_l2.oi_m1` 的 IFFT 时域与几何搜索，零重计算、
+    不跑 P&R/FDTD），免登录、不进 HEAVY_POST_PATHS。返回体的 `m1` 块含：
+    级联 EO S21 带宽 / PAM4 眼·Q·**链路预算级 BER** / 色散代价 / 驱动-TIA /
+    **梳齿规避信道规划**（`ring_plan`）/ 4 处吃狗粮修复清单 / **设计裕量**。
 
-    🔴 不伪装实测：`verdict` 恒 DESIGN_BUDGET；M0 属链路预算层（L0 解析器件模型），
-    真实版图 GDS 由 D4 域 photonic_interconnect 承载；不报 TOPS/TOPS-W/fJ/op。
+    🔴 不伪装实测：`verdict` 恒 DESIGN_BUDGET；M0/M1 均属**设计预算层**
+    （L0 解析器件模型 + A 档闭式/行为级），M1 的 BER 为**光通道预算级**闭式
+    估计（不含 SerDes/DSP/FEC/均衡/CDR，与 `eic_behavioral` 的 EIC 电路级
+    排除**显式分层**）、接受 SNR 为**设计输入假设**；真实版图 GDS 由 D4 域
+    photonic_interconnect 承载；不报 TOPS/TOPS-W/fJ/op。
 
     无查询参数（固定设计点）。异常不 500（200 + error 字段，与 h_qchip_demo 同风格）。
     """

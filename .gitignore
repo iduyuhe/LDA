@@ -201,6 +201,8 @@ _deploy.log
 # 浏览器上机验收留证截图（整页 PNG 数 MB，勿进提交；真相在 eval 文本里）
 # 窄口径：只忽略验收截图目录，不动其他 png
 _verify*.png
+# 同上：D4 面板整页验收截图（数 MB，勿进提交；真相在 eval/innerText 实测里）
+_d4_*_prod_*.png
 _msg*.txt
 _cmsg*.txt
 _*.log

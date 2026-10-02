@@ -1,4 +1,39 @@
 # Changelog
+## v0.9.179（2026-10-02 · **M2 收官回扫修复：环区数常量漂移（版图 ⟷ 预算不同参）+ 跨模块互锁判据**：M2 门禁 **69 → 75 判据**（+C13c/C15c 互锁 + P8/P9 探针）· 账本 **476 不变（零锚改动）** · CI core **269 不变** · 端点 **146 不变**）
+
+### 收什么
+收官回扫（沿用 M0/M1 血案纪律「对外常量 / 派生量逐条核对」）抓出**同族第三例**静默口径错 ——
+`oi_m2.OI_M2_PROCESS["ring_m"]` 与 `oi_layout.oi_transceiver_pnr.RX_RING_M` **均写作 129**
+（那是 **M1 在 C-band 栅上的规划解**），注释还声称「M1/M2 梳齿规避规划给出的 m」；
+而 M2 的 **O-band 栅**（1311 nm 起 / 4.5 nm ≈ 800 GHz）搜索解实为 **268**
+（`R = m·λ/(2π·n_g)` ⇒ **13.31 µm** vs 129 的 6.41 µm）
+⇒ **版图签核的环 ≠ 链路预算的环** —— 而 M2 全部 69 判据**仍全绿**（该错不在任何判据视野内）。
+
+**根因**：M1 有「搜索解 ⟷ 设计常量」互锁判据（`oi_m1_self_check` #9），**M2 漏配**。
+
+### 改什么
+1. **两处常量对齐为 268**：`oi_m2.OI_M2_PROCESS["ring_m"]` + `oi_transceiver_pnr.RX_RING_M`（注释同步改准）。
+2. **补互锁判据**：`C13c`（**搜索解 ⟷ 设计常量**，照 M1 #9 体例）与**新增跨模块判据 `C15c`**
+   （**版图 builder 的环解 ⟷ 链路预算的规划解**，防「签核的环 ≠ 预算的环」静默脱钩）。
+   同步进 `oi_m2_self_check` #14b（模块自检也被案例卡消费）。
+3. **探针 P8/P9 先证能变红**：把 `ring_m` / `RX_RING_M` 退回血案原值 129 ⇒ `C13c` / `C15c` 必红。
+4. **案例卡** `platform_fixes_m2` **3 → 4** 条（吃狗粮证据链补全，前端 ⑯ 自动展示）。
+
+### 实测
+- `run_oi_m2_smoke` **69 → 75 PASS / 0 FAIL**（+C13c · +C15c · +P8 · +P9 · +还原重跑 2 项）。
+- `run_oi_transceiver_pnr_smoke` **40 PASS / 0 FAIL**（环 R 6.4140 → **13.3140 µm** · m=268 · FSR 4.892 nm；
+  GDS bbox 822×596 → **832×589 µm** · 元素 158 / 字节 17434 不变）。
+- 相邻门禁全绿：`run_d4_domain_smoke` ALL GREEN（11 探针）· `run_webui_oi_render_path_smoke` **191 PASS** ·
+  `run_lvs_geom_smoke` 31 PASS · `run_oi_m1_smoke` 56 PASS · `run_oi_m0_smoke` rc=0 ·
+  `run_webui_entry_smoke` 18 PASS · `run_pyflakes_ratchet_smoke` 8 PASS · 案例卡（oi_case/d4case）自检 ALL PASS。
+- 三同步 v0.9.179 ⇒ `run_count_consistency_smoke` 13/13。
+
+### 诚实边界（不变）
+仍属**设计预算层 + 设计期签核**；GDS 为几何近似（层规 = 公开工艺近似，非 Foundry PDK）；非流片、非实测；
+**不报 TOPS/TOPS-W/fJ/op/pJ/bit**；LLM 不进判决路径。
+
+---
+
 ## v0.9.178（2026-10-02 · **新征程 M2：光联接模块 1.6T（8×200G PAM4）+ LPO「模块内无 DSP」形态 + G-OI2 收发器专用真 GDS**：新增 `oi_m2.py`（69 判据 + 7 探针）+ `oi_transceiver_pnr.py`（40 判据 + 8 探针）· 吃狗粮抓出「布局纪律三条隐含前提」· 账本 **476 不变（零锚改动）** · CI core **267 → 269** · 端点 **146 不变**）
 
 ### 收什么

@@ -15,8 +15,10 @@
   C11 接收噪声上界 > 设计假设（⇒ 噪声非瓶颈）· 且 ⟷ 独立手算闭式一致
   C12 驱动–TIA（200G 档）：t90 闭式 ⟷ RK4（rel<1e-3）· 上升 <0.5UI · TIA > Nyquist
   C13 波长栅 O-band + 环规划（梳齿规避）有解且 best 隔离 ≥ 15 dB
+      + **C13c 搜索解 ⟷ 设计常量互锁**（防常量漂移；血案：`ring_m` 曾抄成 M1 的 C-band 解 129）
   C14 诚实护栏：能力宣称面无 TOPS/能效字样 · 披露键齐备
   C15 集成：G-OI2 builder 与 D4 交付域 `oi_transceiver` 接线在位（真 GDS 可出）
+      + **C15c 跨模块互锁**：**版图 builder 的环解 ⟷ 链路预算的规划解**（防版图/预算静默脱钩）
   P1  抹掉 LPO 收紧（`mode_for_form_factor` 对 lpo 也返回级联）⇒ C6/C8 必红
   P2  把 M2 的调制器带宽换成 M1（100G）档常量 ⇒ C7「200G 够用」必红
   P3  把 M1 档常量的带宽抬高到 200G 档 ⇒ C7「带宽墙存在」必红
@@ -24,6 +26,8 @@
   P5  把级联 FEC 门限改回 2.4e-4（抹掉级联优势）⇒ A3 规格锚必红
   P6  把 200G/lane 符号率改成 53.125（当成 100G/lane 用）⇒ A1 规格锚必红
   P7  TIA 反馈电阻改成 1 Ω（噪声爆炸）⇒ C11「噪声非瓶颈」必红
+  P8  `ring_m` 抄成 M1 的 C-band 解 129（**血案原值**）⇒ C13c 互锁必红
+  P9  版图 builder `RX_RING_M` 退回 129 ⇒ C15c 跨模块互锁必红
   R   探针还原后基线门禁**必须重新全绿**（探针不得污染真判据）
 
 运行：python run_oi_m2_smoke.py（cwd=lda/）
@@ -212,6 +216,20 @@ def _baseline_checks(pts=None, pts_tag: str = "", light: bool = False):
         out.append((f"{tag}C13b 环规划（梳齿规避）{plan['n_solutions']} 解 · best m="
                     f"{bp.get('m')} minXT={bp.get('min_xt_db')}dB ≥ 15",
                     plan["n_solutions"] > 0 and float(bp.get("min_xt_db", 0.0)) >= 15.0))
+        # C13c 🔴 同源互锁：搜索解 ⟷ 设计常量（M1 有同款判据 #9，M2 原缺 ⇒ v0.9.179 补）
+        #  血案：`OI_M2_PROCESS["ring_m"]` 曾抄成 M1 的 C-band 解 129（注释却称「M2 波段搜索给出」），
+        #  而 M2 O-band 搜索给 268 ⇒ 版图与预算不同参而**一切判据全绿**抓不到。
+        out.append((f"{tag}C13c 搜索解 ⟷ 设计常量互锁（best m={bp.get('m')}/gap={bp.get('gap_um')} ⟷ "
+                    f"常量 m={M.OI_M2_PROCESS['ring_m']}/gap={M.OI_M2_PROCESS['ring_gap_um']}）",
+                    bool(bp) and int(bp.get("m")) == int(M.OI_M2_PROCESS["ring_m"])
+                    and abs(float(bp.get("gap_um", -1.0))
+                            - float(M.OI_M2_PROCESS["ring_gap_um"])) < 1e-9))
+        # C15c 🔴 跨模块互锁：**版图 builder 的环解** ⟷ 链路预算的规划解
+        #  （否则「签核的环」≠「预算的环」—— 版图与预算静默脱钩）
+        from lda_layout import oi_transceiver_pnr as _TXm
+        out.append((f"{tag}C15c 版图环解 ⟷ 预算规划解互锁（builder RX_RING_M={_TXm.RX_RING_M} "
+                    f"≡ best m={bp.get('m')}）",
+                    bool(bp) and int(_TXm.RX_RING_M) == int(bp.get("m"))))
 
     # ── C14：诚实护栏 ───────────────────────────────────────────────────
     need_keys = {"level", "not_redline", "form_lpo", "ber_layer", "snr_is_input",
@@ -327,6 +345,21 @@ def main() -> int:
     p7 = _baseline_checks(light=True)
     check("🔴 P7 探针: TIA R_f=1Ω ⇒ C11a「噪声非瓶颈」必红", _red(p7, "C11a"))
     _restore()
+
+    # P8：环区数常量漂移（抄成 M1 的 C-band 解）⇒ C13c「搜索解 ⟷ 常量」互锁必红
+    #     （这是 v0.9.179 修复的那条血案原值，探针即复现血案现场）
+    M.OI_M2_PROCESS["ring_m"] = 129
+    p8 = _baseline_checks()
+    check("🔴 P8 探针: ring_m 抄成 M1 的 129 ⇒ C13c 互锁必红", _red(p8, "C13c"))
+    _restore()
+
+    # P9：版图 builder 环解漂移 ⇒ C15c「版图环解 ⟷ 预算规划解」跨模块互锁必红
+    from lda_layout import oi_transceiver_pnr as _TX
+    _rxm_save = _TX.RX_RING_M
+    _TX.RX_RING_M = 129
+    p9 = _baseline_checks()
+    check("🔴 P9 探针: builder RX_RING_M 退回 129 ⇒ C15c 跨模块互锁必红", _red(p9, "C15c"))
+    _TX.RX_RING_M = _rxm_save
 
     # ── R：还原后基线必须重新全绿 ───────────────────────────────────────
     print("-" * 74)

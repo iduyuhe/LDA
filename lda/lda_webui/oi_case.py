@@ -268,6 +268,13 @@ def _m2_block() -> dict:
              "detail": "级联 FEC 的内码在模块 DSP 内 ⇒ LPO（无 DSP）只能 RS-only ⇒ pre-FEC 门限"
                        "由 4.8e-3 收紧回 2.4e-4 ⇒ 所需 SNR 上升 2.744 dB（内码增益），"
                        "实测 LPO 代价 3.169 dB（= 内码增益 + ISI 口径差 0.425）"},
+            {"title": "🔴 环区数常量漂移：`ring_m` 抄成 M1 的 C-band 解（版图 ⟷ 预算不同参）",
+             "detail": "`oi_m2.OI_M2_PROCESS['ring_m']` 与 `oi_transceiver_pnr.RX_RING_M` 均曾写成 "
+                       "**129**（M1 在 C-band 栅上的解；注释却称「M1/M2 规划给出」）。M2 的 "
+                       "O-band 栅（1311 nm 起 / 4.5 nm）搜索解实为 **268**（R 13.31 µm vs 6.41 µm）"
+                       "⇒ 版图签核的环 ≠ 链路预算的环，而**原有全部判据仍全绿**。已对齐为 268，"
+                       "并补 M1 同款互锁判据 C13c（搜索解 ⟷ 常量）+ 新增跨模块 C15c"
+                       "（builder ⟷ 规划解）+ 探针 P8/P9 锁死"},
         ],
         "honest_note_m2": (
             "🔴 M2 仍属**设计预算层**：FEC 门限口径四源独立一致（802.3dj 级联 4.8e-3 / RS-only "

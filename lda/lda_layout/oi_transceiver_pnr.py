@@ -103,7 +103,10 @@ _MMIC_Y_MARGIN_UM = 40.0       # MMIC 原点到「最上调制器输出」的最
 
 # Rx 侧
 RX_RING_Y_UM = -260.0
-RX_RING_M = 129                # 环区数（M1/M2 梳齿规避规划给出的 m）
+RX_RING_M = 268                # 环区数 m = `lda_l2.oi_m2.plan_m2_rings()` 的搜索解（M2 O-band 栅）
+# 🔴 原为 129（**M1 的 C-band 解**，误标为「M1/M2 规划给出的 m」）⇒ 版图环与 M2 链路预算
+#    **不同参**（R 6.41 vs 13.31 µm）。v0.9.179 对齐为 M2 规划解 268，并由
+#    `run_oi_m2_smoke` C15c 跨模块互锁（builder 的 m ⟷ 规划器 best m）。
 RX_N_G = 4.2                   # 群折射率（M1 信道规划同源口径）
 RX_RING_GAP_UM = 0.55
 RX_RING_DX_UM = 30.0

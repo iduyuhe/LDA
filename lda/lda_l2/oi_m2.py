@@ -89,7 +89,11 @@ OI_M2_PROCESS: Dict[str, Any] = {
     "snr_db": 28.0,              # 🔴 **设计输入假设**（满幅信噪比）；非实测噪声预算
     "tx_sigma_frac": 0.25,       # 源脉冲 RMS σ₀ = frac × T_sym
     "tau_driver_ps": 1.6,        # 🔴 驱动一阶时间常数设计目标（200G 档；非实测）
-    "ring_m": 129,               # 环区数 m（由 `plan_lwdm_channels` 在 M2 波段搜索给出）
+    "ring_m": 268,               # 环区数 m = `plan_m2_rings()` 的搜索解（M2 O-band 栅）
+    # 🔴 **不是** 129：129 是 M1 在 C-band 栅上的解（`OI_M1_PROCESS["ring_m"]`）。
+    #    同一规划器切到 M2 的 O-band 栅（1311 nm 起 / 4.5 nm ≈ 800 GHz）后最优 m 变为 268
+    #    （R = m·λ/(2π·n_g) = 13.31 µm；129 ⇒ 6.41 µm）。两者不可互抄 —— M1 有此互锁判据
+    #    （`oi_m1_self_check` #9），M2 原缺 ⇒ v0.9.179 补 #14b 同款判据 + 探针 P10。
     "ring_gap_um": 0.55,
 }
 
@@ -503,6 +507,13 @@ def oi_m2_self_check(verbose: bool = True) -> Dict[str, Any]:
     bp = plan["best"] or {}
     checks.append((f"M2 O-band 环规划: {plan['n_solutions']} 解, best m={bp.get('m')} "
                    f"minXT={bp.get('min_xt_db')}dB", plan["n_solutions"] > 0))
+    # 14b) 🔴 搜索解 ⟷ 设计常量互锁（照 M1 `oi_m1_self_check` #9 体例；M2 原缺此判据
+    #      ⇒ `ring_m` 曾静默抄成 M1 的 C-band 解 129 而门禁全绿）
+    checks.append((f"环常量互锁: 搜索解 m={bp.get('m')} ⟷ 常量 m={OI_M2_PROCESS['ring_m']}"
+                   f"（gap {bp.get('gap_um')} ⟷ {OI_M2_PROCESS['ring_gap_um']}）",
+                   bool(bp) and int(bp.get("m")) == int(OI_M2_PROCESS["ring_m"])
+                   and abs(float(bp.get("gap_um", -1.0))
+                           - float(OI_M2_PROCESS["ring_gap_um"])) < 1e-9))
     checks.append(("M2 波长栅 O-band 起 1311 nm · 8 通道",
                    abs(m2_channels()[0] - 1311.0) < 1e-9 and len(m2_channels()) == 8))
     # 15) 诚实护栏

@@ -7,8 +7,9 @@
   → API 参考（gen_api_reference 单一真源）→ 案例卡门禁（run_*_case_smoke.py）。
 
 本卡守的是「**用户拿得走东西**」：W2 已把光子侧「设计→GDS→签核→下载」实测贯通，
-本卡把电子（ecore 交叉阵列）与超导量子（transmon 阵列）两条**既有真产线**一并
-对外开放——它们此前各有 GDS/DRC/LVS，但**没有对外交付通路**。
+本卡把电子（ecore 交叉阵列）、超导量子（transmon 阵列）与光量子 LOQC（可编程 MZI
+网格）三条**既有真产线**一并对外开放——它们此前各有 GDS/DRC/LVS，但**没有对外
+交付通路**（残缺口 G-U 已随本轮收口）。
 
 🔴 诚实边界（逐条登记，不粉饰）：
   - 层规为**公开工艺近似**设计规则（非 Foundry PDK 标定值）；
@@ -24,16 +25,20 @@ CASE_ID = "D4-DOMAIN-EXPANSION-v1"
 
 _CARD_CACHE: Dict[tuple, Dict[str, Any]] = {}
 
-CLAIM = ("电子侧与超导量子侧都能出**真 GDS** 并通过 DRC/LVS 双闸签核——"
+CLAIM = ("电子侧、超导量子侧与光量子 LOQC 侧都能出**真 GDS** 并通过 DRC/LVS 双闸签核——"
          "且同一份交付物的 sha256 可确定性重建（设计→签核→下载 全链一致）")
 IDENTITY = {
     "ecore": "电子计算核：NMOS 1T 交叉点单元阵列（DIFF/POLY/CONT/M1/VIA1/M2 层栈）"
              "→ 几何 DRC（bbox 级）+ 几何 LVS（并查集连通分量）→ GDSII",
     "quantum_sc": "超导 transmon 量子阵列（S3）：Al 膜层 + JJ + 地平面 + 读出/控制几何"
                   "→ DRC + LVS 签核 → GDSII",
+    "loqc": "光量子 LOQC 可编程 MZI 网格（`lda_layout/mesh_pnr`）：Clements 矩形分解 → "
+            "摆位 → 布线 → 输出相移 → 物理级联网表真算该酉 → GDS → 主权 DRC/LVS"
+            "（n=2..16 实测双闸全 ACCEPT）",
     "photon": "光子侧（W2 已闭合，本卡仅作对照基线）：单器件设计包 → 芯片级 GDS + 双闸 → 下载",
-    "route_note": "本卡只读消费 `lda_l2/d4_domains.py`（编排）+ `ecore/layout` + `lda_qeda/sc_array`"
-                  "（几何/DRC/LVS 真实现），**不重造任何一环**",
+    "route_note": "本卡只读消费 `lda_l2/d4_domains.py`（编排）+ `ecore/layout` + "
+                  "`lda_qeda/sc_array` + `lda_layout/mesh_pnr`（几何/DRC/LVS 真实现），"
+                  "**不重造任何一环**",
 }
 HONEST_NOTE = (
     "诚实边界：层规为公开工艺近似设计规则（非 Foundry PDK 标定值）；DRC 为 bbox 级几何近似；"
@@ -53,13 +58,22 @@ MILESTONES = [
     {"id": "D4", "label": "双向确定性判据",
      "detail": "同参数两次 sha256 逐位一致；换参数（ecore n·m）sha256 必须不同——"
                "防「常数假确定性」"},
-    {"id": "D5", "label": "布局：域完备反向判据 + 3 道探针",
-     "detail": "注册域 ≡ 门禁显式表（新域必须进门禁）；探针：空 GDS / DRC 伪造 REJECT / "
-               "塞入未接门禁的 ghost 域，三者皆必红"},
+    {"id": "D5", "label": "布局：域完备反向判据 + 探针（逐域递增）",
+     "detail": "注册域 ≡ 门禁显式表（新域必须进门禁）；探针覆盖：空 GDS / DRC 伪造 REJECT / "
+               "塞入未接门禁的 ghost 域 / 字节面被换成另一份真字节 / 下载与报告取到不同 raw，"
+               "逐域递增至 8 道，皆必红"},
     {"id": "D6", "label": "下载端点扩面（G-D 收口）",
      "detail": "`/api/d4_gds?domain=<域>` 出 `.gds`：octet-stream + attachment 附件名 + "
                "`X-LDA-GDS-Sha256` 响应头；**下载字节 sha256 与本卡登记的逐位 MATCH**——"
                "「设计→签核→下载」在新两域同样闭合。免登录 ⇒ 参数面带硬限幅"},
+    {"id": "D7", "label": "光量子 LOQC 入编排（G-U 收口）",
+     "detail": "第三域 `loqc`：Clements 矩形分解可编程 MZI 网格（n=2..16 实测全 ACCEPT）。"
+               "编排层把 `mesh_pnr` 的扁报告（drc_pass 布尔 / lvs_full 嵌套）**归一化**成与"
+               "另两域同形 ⇒ `_report_of`（双闸咬合唯一口）只认一种形状，不新增分支"},
+    {"id": "D8", "label": "枚举型参数白名单（新类型限幅）",
+     "detail": "`loqc.layout_mode ∈ {serpentine, grid2d}` 是**枚举**不是数值：白名单外/非字符串"
+               "一律 400 + JSON，且报文点名『不在白名单』而非『不是数』——判据 ④c 咬住"
+               "「枚举被静默丢弃」（吞了参数仍交 ACCEPT 真 GDS，属最难看的一类假绿）"},
 ]
 FINDINGS = [
     {"title": "两条新产线都能出真 GDS 且双闸 ACCEPT",
@@ -81,11 +95,17 @@ FINDINGS = [
      "detail": "下载端点无鉴权 ⇒ `?domain=ecore&n=100000` 一个请求就能 OOM；"
                "DOMAIN_PARAM_LIMITS 逐键设上下限，越界/非数值/非登记键一律 400 + JSON，"
                "不静默丢弃、不返回空文件"},
+    {"title": "第三条产线（光量子 LOQC）同口径收编，编排未长胖",
+     "detail": "`mesh_pnr` 的回报形状与另两域不同（布尔 `drc_pass` / 嵌套 `lvs_full`）⇒ "
+               "在**构建器里**做归一化，不在 `_report_of` 里开分支——"
+               "双闸咬合仍只有一处实现，改逻辑不会漏改第二处"},
 ]
 GAPS = [
-    {"id": "G-U", "label": "光量子（LOQC）侧尚未纳入统一编排",
-     "closed": False,
-     "note": "本卡只收编电子 + 超导超导两域；LOQC 可编程 MZI 网格的交付通路待接入"},
+    {"id": "G-U", "label": "光量子（LOQC）侧已纳入统一编排（本轮闭合）",
+     "closed": True,
+     "note": "`loqc` 域（Clements 可编程 MZI 网格）与另两域同口径：真 GDS + 双闸 ACCEPT + "
+             "下载 sha256 互证；余下：LOQC 仅覆盖 Clements 网格，时间复用/2D 压实以外的"
+             "LOQC 拓扑未纳入"},
     {"id": "G-D", "label": "下载端点已扩面到新两域（本轮闭合）",
      "closed": True,
      "note": "`/api/d4_gds?domain=<域>` 与光子侧同口径出 .gds，下载 sha256 ≡ 本卡登记值；"

@@ -11,11 +11,15 @@ W2 已把光子侧「设计 → GDS → 签核 → 下载」实测贯通（`/api
   - **电子侧（ecore）**：E6 早就能出真 GDS（`ecore/layout.to_gds` +
     `run_edrc` + `elvs_signoff`），却**没有一条对外交付通路**——用户拿不走；
   - **量子侧（超导 transmon）**：`lda_qeda/sc_array.array_gds` +
-    `run_sc_array_drc` + `sc_array_lvs_signoff` 同样齐全，同样无通路。
+    `run_sc_array_drc` + `sc_array_lvs_signoff` 同样齐全，同样无通路；
+  - **光量子侧（LOQC 可编程 MZI 网格，残缺口 G-U）**：`lda_layout/mesh_pnr`
+    早就能出 Clements 网格真 GDS + 主权 DRC/LVS（n=2..20 实测全 ACCEPT），
+    同样没有对外交付通路。
 
-⇒ 本模块把这两条**既有真链路**收编进同一条 D4 编排：
+⇒ 本模块把这三条**既有真链路**收编进同一条 D4 编排：
     `build_domain(domain)` → GDS 字节 + sha256 + 双闸签核 + 交付报告。
-**不重造几何、不重造 DRC/LVS**：只读消费 `ecore/layout` 与 `lda_qeda/sc_array`。
+**不重造几何、不重造 DRC/LVS**：只读消费 `ecore/layout`、`lda_qeda/sc_array`
+与 `lda_layout/mesh_pnr`。
 
 ============================================================================
 纪律（与光子侧 D4 同一口径）
@@ -53,11 +57,12 @@ __all__ = [
 ]
 
 # 交付域 → 支持参数键（门禁用反向完备判据扫这份表，防「新域静默进盲区」）
-D4_DOMAINS = ("ecore", "quantum_sc")
+D4_DOMAINS = ("ecore", "quantum_sc", "loqc")
 
 DOMAIN_LABELS = {
     "ecore": "电子计算核（模拟 MVM 交叉阵列 · NMOS 1T 交叉点单元）",
     "quantum_sc": "超导 transmon 量子阵列（S3 · 单元 + 读出/控制几何）",
+    "loqc": "光量子 LOQC 可编程 MZI 网格（Clements 矩形分解 · 光计算核）",
 }
 
 HONEST_NOTES = (
@@ -69,13 +74,23 @@ HONEST_NOTES = (
 # GDS HEADER 记录魔数（len=6 · HEADER · INTEGER_2），与光子侧 D4 同口径
 GDS_HEADER_MAGIC = b"\x00\x06\x00\x02"
 
-# 交付域 → 可对外接收的版图参数键与硬上限 [(min, max)]
+# 交付域 → 可对外接收的版图参数键与硬上限 [(min, max)]；若两端都是字符串，
+# 则该键是**枚举型白名单**（不走数值范围校验，见 `_check_domain_params`）。
 # 🔴 下载端点 `/api/d4_gds` 是**免登录**端点 ⇒ 参数面必须有硬上限，否则
 # `?domain=ecore&n=100000` 一个请求就能把机器打成 OOM。门禁用反向完备判据
 # 扫这张表（每个注册域都必须有条目 ⇒ 新域不会静默进盲区）。
 DOMAIN_PARAM_LIMITS = {
     "ecore": {"n": (1, 32), "m": (1, 32)},
     "quantum_sc": {"rows": (1, 8), "cols": (1, 8)},
+    "loqc": {"n": (2, 16), "layout_mode": ("serpentine", "grid2d")},
+}
+
+# 逐域追加的诚实注记（与全局 HONEST_NOTES 拼接，逐域口径不同 ⇒ 不能只挂全局一份）
+DOMAIN_EXTRA_HONEST = {
+    "loqc": "光量子侧为 Clements 矩形分解可编程 MZI 网格（酉分解→摆位→布线→输出相移"
+            "→物理级联网表真算该酉→GDS→DRC/LVS）；layout_mode='serpentine' 是 1D 蛇形"
+            "**展开**布局（长条非 2D 压实芯片），压实布局见 layout_mode='grid2d'；"
+            "LOQC 为**设计期版图**，未流片、未实测。",
 }
 
 
@@ -133,6 +148,40 @@ def _build_quantum_sc(params: Optional[Dict[str, Any]] = None) -> Dict:
     }
 
 
+def _build_loqc(params: Optional[Dict[str, Any]] = None) -> Dict:
+    """光量子 LOQC 域：Clements 网格 P&R → 真 GDS → DRC → LVS 签核（只读消费 P&R）。
+
+    🔴 形状适配：`mesh_pnr` 的回报是**扁报告**（`drc_pass` 布尔 / `lvs_full` 嵌套 dict /
+    `lvs_verdict` 字符串），与另两域的 `{drc: {verdict, violations}, lvs: {verdict, issues}}`
+    不同 ⇒ 在此做归一化，让 `_report_of`（双闸咬合唯一口）只认一种形状。
+    """
+    from lda_layout.mesh_pnr import build_mesh_pnr, dft_matrix
+
+    p = dict(params or {})
+    n = int(p.get("n", 4))
+    mode = str(p.get("layout_mode", "serpentine"))
+    rep = build_mesh_pnr(dft_matrix(n), layout_mode=mode)
+
+    src_drc = rep.get("drc_results") or {}
+    drc = {
+        "verdict": "ACCEPT" if rep.get("drc_pass") else "REJECT",
+        "violations": [k for k, v in src_drc.items() if (v or {}).get("passed") is False],
+    }
+    src_lvs = rep.get("lvs_full") or {}
+    lvs = {
+        "verdict": str(rep.get("lvs_verdict") or src_lvs.get("verdict") or "REJECT"),
+        "violations": list(src_lvs.get("violations") or []),
+    }
+    return {
+        "gds_bytes": rep.get("gds_bytes") or b"",
+        "n_elements": rep.get("gds_elements", 0),
+        "params": {"domain": "loqc", "n": n, "layout_mode": mode},
+        "drc": drc,
+        "lvs": lvs,
+        "extra_honest": DOMAIN_EXTRA_HONEST.get("loqc", ""),
+    }
+
+
 def _builder_for(domain: str):
     """交付域 → 构建函数。
 
@@ -144,6 +193,8 @@ def _builder_for(domain: str):
         return _build_ecore
     if domain == "quantum_sc":
         return _build_quantum_sc
+    if domain == "loqc":
+        return _build_loqc
     return None
 
 
@@ -170,7 +221,7 @@ def _report_of(raw: Dict, domain: str) -> Dict:
         "lvs": {"verdict": lvs.get("verdict"),
                 "n_checks": len(lvs.get("issues") or [])},
         "n_elements": raw["n_elements"],
-        "honest_notes": HONEST_NOTES,
+        "honest_notes": HONEST_NOTES + str(raw.get("extra_honest") or ""),
         "errors": [],
     }
 
@@ -224,12 +275,20 @@ def _check_domain_params(domain: str, params: Optional[Dict[str, Any]]):
         if k not in lim:
             errors.append("参数 %s 不属于交付域 %s（允许=%s）" % (k, domain, sorted(lim)))
             continue
+        lo, hi = lim[k]
+        # 🔴 枚举判定必须在浮点尝试**之前**：否则 `layout_mode=bogus` 会先报
+        # 「不是数」，把「白名单外」这个真因盖掉（报文误导调用方排障）。
+        if isinstance(lo, str):
+            if not isinstance(v, str) or v not in (lo, hi):
+                errors.append("参数 %s=%r 不在白名单（允许=%s）" % (k, v, [lo, hi]))
+            else:
+                clean[k] = v
+            continue
         try:
             fv = float(v)
         except (TypeError, ValueError):
             errors.append("参数 %s=%r 不是数" % (k, v))
             continue
-        lo, hi = lim[k]
         if not (lo <= fv <= hi):
             errors.append("参数 %s=%s 越界（须 ∈ [%s, %s]）" % (k, v, lo, hi))
             continue
@@ -256,6 +315,9 @@ def gds_filename(domain: str, params: Optional[Dict[str, Any]] = None) -> str:
         return "ecore_%sx%s.gds" % (int(p.get("n", 4)), int(p.get("m", 4)))
     if domain == "quantum_sc":
         return "sc_array_%sx%s.gds" % (int(p.get("rows", 2)), int(p.get("cols", 2)))
+    if domain == "loqc":
+        return "loqc_mzi_%s_%s.gds" % (int(p.get("n", 4)),
+                                       str(p.get("layout_mode", "serpentine")))
     return "%s.gds" % domain
 
 

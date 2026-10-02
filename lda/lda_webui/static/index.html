@@ -4891,6 +4891,8 @@ function renderD4(d){
   h+=_qcTbl(['断言','结果','口径'],[
     ['同参数两次 sha256 逐位一致', '<b>成立</b>', 'GDS 编码零时间戳、零字典序依赖'],
     ['换参数（ecore n·m）sha256 必变', '<b>成立</b>', '反「常数假确定性」'],
+    ['换枚举参数（loqc layout_mode）sha256 必变', '<b>成立</b>',
+     '反「枚举被静默丢弃」——吞了参数仍交 ACCEPT 真 GDS，属最难看的一类假绿'],
     ['对外只给标量（不吐原始字节）', '<b>成立</b>', 'deliver_report 仅含 n_bytes + sha256']
   ]);
   h+='<h3 style="margin:14px 0 4px">④ 下载交付（真字节 · sha256 与上行一致）</h3>';
@@ -4907,11 +4909,16 @@ function renderD4(d){
     + '（路由层不重算，与 /api/d4_demo 登记值同源）。免登录 ⇒ 参数带硬限幅，越界返回 400 + JSON。</p>';
   h+='<h3 style="margin:14px 0 4px">⑤ 征程与缺口</h3>';
   h+='<p>'+(d.milestones||[]).map(function(m){return '<b>'+m.id+'</b> '+m.label;}).join(' · ')+'</p>';
-  var gs=(d.gaps||[]).map(function(g){return '<b>'+g.id+'</b> '+g.label;});
-  $('d4Body').innerHTML=h+'<p style="margin-top:8px"><b>未闭合缺口：</b>'+gs.join(' · ')+'</p>';
-  $('d4Conclusion').innerHTML='<strong>结论：</strong>电子侧与超导量子侧都能出<b>真 GDS</b> 且双闸 ACCEPT，'
-    +'交付物 sha256 可确定性重建，<b>/api/d4_gds 可真下载且摘要逐位一致</b>——'
-    +'「两条产线」不再是「能算对但交不出去」。'
+  // 🔴 只列**未闭合**缺口：已闭合的（G-D 下载扩面 / G-U LOQC 入编排）不该再挂着
+  //   「未闭合」误导读者（曾全量罗列 ⇒ 面板自相矛盾）
+  var gs=(d.gaps||[]).filter(function(g){return !g.closed;})
+                    .map(function(g){return '<b>'+g.id+'</b> '+g.label;});
+  $('d4Body').innerHTML=h+'<p style="margin-top:8px"><b>未闭合缺口：</b>'
+    +(gs.length?gs.join(' · '):'（本卡无未闭合缺口）')+'</p>';
+  $('d4Conclusion').innerHTML='<strong>结论：</strong>电子侧、超导量子侧与光量子 LOQC 侧都能出'
+    +'<b>真 GDS</b> 且双闸 ACCEPT，交付物 sha256 可确定性重建，'
+    +'<b>/api/d4_gds 可真下载且摘要逐位一致</b>——'
+    +'「三条产线」不再是「能算对但交不出去」。'
     +'<br/><strong>诚实边界：</strong>'+d.honest_note;
   return false;
 }

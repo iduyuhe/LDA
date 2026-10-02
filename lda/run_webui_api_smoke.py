@@ -61,8 +61,10 @@ BINARY_GET = {
     # 互证**（下载到的字节 sha256 ≡ 案例卡报告的 sha256 ⇒ 交付闭环真闭合）。
     # 🔴 键 = **路由路径**（`r.replace("/api/","")` ⇒ "d4_gds"），值 = 实跑 URL。
     #    键名必须与路径同名：否则通用 GET 循环豁免不掉 ⇒ 拿 400 当 FAIL。
+    #    故这里**只需一条**（键 "d4_gds"）——逐域（ecore / quantum_sc / loqc）的实跑
+    #    断言由 `_check_d4_gds_get` 按案例卡域事实逐域覆盖，不必逐域加键
+    #    （加 "d4_gds_quantum_sc" 这类带后缀的键 ⇒ 豁免不掉，是无效登记）。
     "d4_gds": "/api/d4_gds?domain=ecore",
-    "d4_gds_quantum_sc": "/api/d4_gds?domain=quantum_sc",
 }
 
 # v0.9.33：冷启动耗时的重计算 GET——进入断言循环前必须先各打一次把 TTL 缓存
@@ -419,13 +421,15 @@ def _check_binary_get(base):
 
 
 def _check_d4_gds_get(base):
-    """v0.9.173：`/api/d4_gds` 两域下载专项断言（G-D 缺口收口）。
+    """v0.9.173：`/api/d4_gds` 逐域下载专项断言（G-D / G-U 两缺口收口）。
 
     逐域判（死标量 / 字节事实）：Content-Type / GDSII 魔数 / 长度自洽 /
     `X-LDA-GDS-Sha256` ≡ 实体 sha256 / 附件名 ≡ `gds_filename` /
     **下载字节 sha256 ≡ `/api/d4_demo` 案例卡登记的 sha256**（交付闭环互证）；
-    反向：无 domain、未知 domain、越界参数（防免登录端点被单请求 OOM）⇒
-    一律 **400 + JSON**，且不返回空 200 文件。
+    🔴 逐域清单**由案例卡域事实驱动**（不写死列表）⇒ 新域接入编排即自动进本断言，
+    不会「注册了但门禁看不见」。
+    反向：无 domain、未知 domain、越界数值参数、越界枚举参数
+    （防免登录端点被单请求 OOM）⇒ 一律 **400 + JSON**，且不返回空 200 文件。
     """
     out = []
     with urllib.request.urlopen(f"{base}/api/d4_demo", timeout=30) as r:
@@ -464,10 +468,20 @@ def _check_d4_gds_get(base):
             ("PASS" if len(body) == exp_bytes else "FAIL", tag,
              f"下载字节 {len(body)} == 案例卡 n_bytes {exp_bytes}"),
         ]
+    # 正向：合法最小规模（loqc n=2）必须放行出真字节。🔴 只测「该拦的拦住」不测
+    #   「该放的放行」⇒ 限幅一旦写得过严（把整条端点锁死）判据仍会全绿。
+    _ok_tag = "GET /api/d4_gds?domain=loqc&n=2"
+    try:
+        with urllib.request.urlopen(f"{base}/api/d4_gds?domain=loqc&n=2", timeout=30) as _r:
+            _b, _st = _r.read(), _r.status
+        out.append(("PASS" if (_st == 200 and _b[:4] == b"\x00\x06\x00\x02") else "FAIL",
+                    _ok_tag, f"状态 {_st} · 字节 {len(_b)} · 魔数 {_b[:4].hex()}"))
+    except Exception as e:                                        # noqa: BLE001
+        out.append(("FAIL", _ok_tag, f"合法请求被拒: {e}"))
     for bad, why in (("/api/d4_gds", "无 domain"),
                      ("/api/d4_gds?domain=ghost", "未知域"),
-                     ("/api/d4_gds?domain=ecore&n=999999", "越界参数"),
-                     ("/api/d4_gds?domain=ecore&junk=1", "非登记参数键")):
+                     ("/api/d4_gds?domain=ecore&n=999999", "越界数值参数"),
+                     ("/api/d4_gds?domain=loqc&layout_mode=bogus", "越界枚举参数")):
         tag = f"GET {bad}"
         try:
             with urllib.request.urlopen(f"{base}{bad}", timeout=20) as r:

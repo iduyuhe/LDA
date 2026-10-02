@@ -27,7 +27,8 @@ W2 已实测贯通光子侧「设计 → GDS → 签核 → 下载」。本门�
   ④ 字节面被换成「另一份真字节」⇒ 下载⇄标量互证必红；
   ⑤ 下载取到与报告不同的 raw（DRC 不一致）⇒ 元信息同口径必红；
   ⑥ LOQC 域 GDS 伪造为空字节 ⇒ 真-GDS 判据必红；
-  ⑦ LOQC 的枚举参数被静默忽略 ⇒ 「换参数 sha 必变」判据必红。
+  ⑦ LOQC 的枚举参数被静默忽略 ⇒ 「换参数 sha 必变」判据必红；
+  ⑧ 光子互联域 GDS 伪造为空字节 ⇒ 真-GDS 判据必红。
 """
 from __future__ import annotations
 
@@ -41,7 +42,7 @@ from lda_l2.ecore import layout as EL_LAYOUT
 from lda_webui import d4case as d4c
 
 # 🔴 门禁显式表（反向完备的锚：D4_DOMAINS 必须与本表逐位相等）
-EXPECTED_DOMAINS = ("ecore", "quantum_sc", "loqc")
+EXPECTED_DOMAINS = ("ecore", "quantum_sc", "loqc", "photonic_interconnect")
 
 
 def main() -> int:
@@ -124,6 +125,10 @@ def main() -> int:
     _loqc_h = dm.deliver_report("loqc").get("honest_notes", "")
     check("⑦b loqc 专属诚实注记在场（展开布局非压实芯片 + 未流片未实测）",
           "展开" in _loqc_h and "未流片" in _loqc_h, _loqc_h[-80:])
+    # ⑦c：photonic_interconnect 专属诚实注记必须带上（K×N WDM 网格 + 未流片未实测）
+    _oi_h = dm.deliver_report("photonic_interconnect").get("honest_notes", "")
+    check("⑦c photonic_interconnect 专属诚实注记在场（WDM 网格 + 未流片未实测）",
+          "WDM" in _oi_h and "未流片" in _oi_h and "未实测" in _oi_h, _oi_h[-120:])
 
     # —— ⑧ 下载字节面 ⇄ 标量面互证（G-D 收口本体）——
     for d in dm.D4_DOMAINS:
@@ -325,6 +330,20 @@ def main() -> int:
     check("🔴 ⑮ 探针⑦: LOQC 域 GDS 伪造为空字节 ⇒ ② 真-GDS 判据必红",
           p7["gds"]["n_bytes"] == 0 and p7["gds"]["header_ok"] is False)
 
+    # 探针⑧：光子互联域 GDS 伪造为空字节 ⇒ ② 真-GDS 判据必红（与 LOQC 同源逻辑，
+    # 但独立验证新域「空字节会被抓住」，而非靠 LOQC 探针顺带覆盖）。
+    _orig_w = dm._build_photonic_interconnect
+
+    def empty_wdm(params=None):
+        raw = _orig_w(params)
+        raw["gds_bytes"] = b""
+        return raw
+
+    with mock.patch.object(dm, "_build_photonic_interconnect", empty_wdm):
+        p8w = dm.build_domain("photonic_interconnect")
+    check("🔴 ⑯ 探针⑧: 光子互联域 GDS 伪造为空字节 ⇒ ② 真-GDS 判据必红",
+          p8w["gds"]["n_bytes"] == 0 and p8w["gds"]["header_ok"] is False)
+
     # 探针⑧：枚举参数被静默丢弃（构建时不管 layout_mode）⇒ ④c 必红
     # 🔴 这类「参数吞掉不报错」的假绿最难看：交付的仍是 ACCEPT 真 GDS，只是
     # 永远默认布局——④c 是唯一能咬住它的判据，故探针必须造出「同参数不同请求」
@@ -335,7 +354,7 @@ def main() -> int:
 
     with mock.patch.object(dm, "_build_loqc", drop_enum):
         p8 = dm.build_domain("loqc", {"layout_mode": "grid2d"})
-    check("🔴 ⑯ 探针⑧: LOQC 枚举参数被静默丢弃 ⇒ ④c『换枚举 sha 必变』必红",
+    check("🔴 ⑰ 探针⑨: LOQC 枚举参数被静默丢弃 ⇒ ④c『换枚举 sha 必变』必红",
           p8["gds"]["n_bytes"] > 0 and p8["verdict"] == "ACCEPT"
           and p8["gds"]["sha256"] == dm.build_domain("loqc")["gds"]["sha256"],
           "grid2d 却与默认 serpentine 同 sha ⇒ 枚举被吞")

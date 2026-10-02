@@ -112,10 +112,16 @@ def _waveguide_response(component, wls: List[float], link_params, kappa_fn):
 
 
 def _grating_response(component, wls: List[float], link_params, kappa_fn):
-    """光栅耦合器：固定耦合效率（缺省 -3dB；可由 params.coupling 覆盖）。"""
+    """光栅耦合器：固定耦合效率（缺省 -3dB；可由 params.coupling 覆盖）。
+
+    M0 光联接模块征程补强（2026-10-02）：**双向**（chip↔fiber 对称 η）。
+    原版仅 ("wg","fib") 单向（fib→wg，入芯片捕获），导致收发器 Tx 端
+    wg→fib 离芯片发射无法建模（吃狗粮暴露的缺口）。现补 ("fib","wg")
+    方向，使同一 GC 既能量纤→芯片也能芯片→光纤，对称 η。
+    """
     eff = float(component.params.get("coupling", 0.5))
     c = [eff] * len(wls)
-    return {("wg", "fib"): c}  # 仅正向 fib→wg（同 v0.8.11 单向传播语义）
+    return {("wg", "fib"): c, ("fib", "wg"): c}  # 双向（入/出芯片，对称 η）
 
 
 def _mzi_response(component, wls: List[float], link_params, kappa_fn):

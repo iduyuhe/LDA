@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.9.176（2026-10-02 · **新征程 M0 光联接模块基线 + D4 光子互联真 GDS 域 + 门禁加厚**：吃狗粮抓出并修复星型网级联重复计数平台 bug · D4 扩到四条产线 · 前端取值路径门禁抓到 1 处真实渲染 bug · 账本 **476 不变（零锚改动）** · CI core **264 → 265** · 端点 **145 → 146**）
+
+### 收什么
+启动「客户用前自己先用并检验、补齐短板」新征程，用 LDA 自家光链路设计验证链（lda_chain）把一款 2 通道 WDM 收发器从装配跑通到链路预算，闭式(A)与级联引擎(B)两种方法逐位一致（差 <0.05dB）；吃狗粮过程**抓出并修复平台级 bug**（≥3 端口星型网级联 all-pairs 全连边 ⇒ 同一信号多路径重复求和、GC 耦合被翻倍 2×~4×），双通道 Rx 星形合波首跑即暴露（ch1 级联 IL=0.07dB vs 闭式 7.02dB），改 hub 模型修复、2 端口网语义不变、4 道 P1 link 引擎门禁零回归。D4 交付闭环从三条产线扩到四条——新增 `photonic_interconnect` 域（光子互联 WDM 网格，复用 `lda_layout/wdm_mesh_pnr`，真 GDS + DRC/LVS 双闸 ACCEPT + 下载字节 sha256 互证）。案例卡 `/api/oi_demo`（只读 · 免登录 · verdict 恒 DESIGN_BUDGET · 不报 TOPS）+ 前端 `sec-oi` 面板接入。
+
+### 门禁加厚（本版纪律）
+- `run_d4_domain_smoke` 41 → **42 判据 + 9 探针**：EXPECTED_DOMAINS 反向完备同步扩到四域；新增 ⑦c 逐域专属诚实注记（photonic_interconnect）+ 探针⑧（光子互联空 GDS 必红）。
+- **新增 `run_webui_oi_render_path_smoke.py`（39 判据 + 2 突变探针）**：把血案 #18/#19「JSON 里有值 ≠ 前端问对了地方」机器化到 `sec-oi` 面板；**首次运行即抓到 1 处真实渲染 bug**（`renderOi` 取 `g.label` 而 JSON gaps 实为 `g.title` ⇒ 缺口标签渲染 undefined），已修。
+- `run_webui_entry_smoke` / `run_webui_api_smoke` 经动态迭代自动覆盖 `sec-oi` 与 `photonic_interconnect` 域（无需写死列表）。
+
+### 诚实边界
+M0 属链路预算层（L0 解析器件模型），真实版图 GDS 由 D4 域 photonic_interconnect 承载；层规为公开工艺近似 · DRC 为 bbox 级几何近似 · verdict 属设计期签核、非实测签核、非流片结果 · 不报 TOPS/TOPS-W/fJ/op · LLM 不进判决路径。
+
 ## v0.9.175（2026-10-02 · **阶段 2 残留项收口 · G-P / G-B 收口**：层规口径单一真源 + bbox 保守性实证 + 防假宣传门禁 · 账本 **476 不变（零锚改动）** · CI core **264 不变** · 端点 **145 不变**）
 
 ### 收什么
@@ -20,9 +33,9 @@
 - 探针 ⑱：抽掉否定式豁免 ⇒ ③o 必红（防「禁词表写了但撤掉豁免仍零命中」的死判据）。
 
 **顺手修掉的真实擦边表述**（4 处，`foundry-ready` 属外力抬高的假宣传）：
-- `index.html` 标题 + JS 注释「㉛ D-71 真实版图基元库（**foundry-ready 几何**）」×2；
-- `index.html` 「**可流片级**版图基元」；
-- `README.md`「㉛ 真实版图基元库（**foundry-ready**）」×2；
+- `index.html` 标题 + JS 注释「㉛ D-71 真实版图基元库（**foundry-ready 几何**）」×2（**假宣传，已修掉**）；
+- `index.html` 「**可流片级**版图基元」（**假宣传，已修掉**）；
+- `README.md`「㉛ 真实版图基元库（**foundry-ready**）」×2（**假宣传，已修掉**）；
   ⇒ 统一改为「设计期几何 · 非 Foundry 标定 / 非流片级 · 未流片实测」。
 
 **设计纪律**：判据 ⑬ 不只比「同源相等」（同源必然相等 ⇒ 探针恒绿，血案「A≡B 打双方共用函数 = 一起打偏」）；必须咬住**自然文本侧**（honest_note / GAPS note）与短口径同锚，探针 ⑰ 打短口径一侧即制造真实分歧。

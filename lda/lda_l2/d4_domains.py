@@ -57,12 +57,13 @@ __all__ = [
 ]
 
 # 交付域 → 支持参数键（门禁用反向完备判据扫这份表，防「新域静默进盲区」）
-D4_DOMAINS = ("ecore", "quantum_sc", "loqc")
+D4_DOMAINS = ("ecore", "quantum_sc", "loqc", "photonic_interconnect")
 
 DOMAIN_LABELS = {
     "ecore": "电子计算核（模拟 MVM 交叉阵列 · NMOS 1T 交叉点单元）",
     "quantum_sc": "超导 transmon 量子阵列（S3 · 单元 + 读出/控制几何）",
     "loqc": "光量子 LOQC 可编程 MZI 网格（Clements 矩形分解 · 光计算核）",
+    "photonic_interconnect": "光子互联 WDM 网格（K 波长 × N×N Clements 网格 · 微环 add-drop 解/复用 · 真 GDS+DRC+LVS）",
 }
 
 HONEST_NOTES = (
@@ -83,6 +84,7 @@ DOMAIN_PARAM_LIMITS = {
     "ecore": {"n": (1, 32), "m": (1, 32)},
     "quantum_sc": {"rows": (1, 8), "cols": (1, 8)},
     "loqc": {"n": (2, 16), "layout_mode": ("serpentine", "grid2d")},
+    "photonic_interconnect": {"K": (2, 8), "N": (2, 8)},
 }
 
 # 逐域追加的诚实注记（与全局 HONEST_NOTES 拼接，逐域口径不同 ⇒ 不能只挂全局一份）
@@ -91,6 +93,18 @@ DOMAIN_EXTRA_HONEST = {
             "→物理级联网表真算该酉→GDS→DRC/LVS）；layout_mode='serpentine' 是 1D 蛇形"
             "**展开**布局（长条非 2D 压实芯片），压实布局见 layout_mode='grid2d'；"
             "LOQC 为**设计期版图**，未流片、未实测。",
+    "photonic_interconnect": "光子互联侧为 K 波长 × N×N Clements 网格 P&R（复用 lda_layout."
+                             "wdm_mesh_pnr）：每波长面 = 独立酉网格（主权 MZI 摆位 + 物理级"
+                             "联网表真算该酉）；输入/输出侧各 K 个微环 add-drop 解/复用（环半径"
+                             "R=m·λ/(2π·n_g)，与 D-42/D-57 同源物理锚）；GratingCoupler + MMI 1×N/"
+                             "N×1 扇入扇出。单一 LinkModel + 单次主权 DRC/LVS。布局纪律：解/复用"
+                             "路由落 y<0 走廊、波长面全在 y≥0 ⇒ 无 cross_short。诚实边界：① 环耦合"
+                             "k_ring 默认解析 κ_c 上界，精确值由 wdm_coupler 的 FDTD κ_c(gap,λ) 标定"
+                             "回填；② 单波长带宽密度为占位乘子（=1），真值须 foundry PDK 圆片表征；"
+                             "③ PDK 为演示近似 SOI；④ 串扰/FSR 预算的 n_g/损耗/FWHM 为设计预算常数"
+                             "非实测；⑤ 为**设计期版图**，未流片、未实测。WDM 网格是「光子互联」类"
+                             "芯片（波分复用光 fabric），非计算核——其保真度继承 mesh_pnr 已证结论"
+                             "（机器精度）。",
 }
 
 
@@ -182,6 +196,44 @@ def _build_loqc(params: Optional[Dict[str, Any]] = None) -> Dict:
     }
 
 
+def _build_photonic_interconnect(params: Optional[Dict[str, Any]] = None) -> Dict:
+    """光子互联域：K 波长 × N×N WDM 网格 P&R → 真 GDS → DRC → LVS 签核
+    （只读消费 `lda_layout.wdm_mesh_pnr`）。
+
+    🔴 形状适配：`wdm_mesh_pnr` 的回报是**扁报告**（`drc_pass` 布尔 /
+    `lvs_verdict` 字符串 / `lvs_full` 嵌套 dict），与另三域的
+    `{drc: {verdict, violations}, lvs: {verdict, issues}}` 不同 ⇒ 在此做归一化，
+    让 `_report_of`（双闸咬合唯一口）只认一种形状（与 `_build_loqc` 同纪律）。
+    """
+    from lda_layout.wdm_mesh_pnr import build_wdm_mesh_pnr
+
+    p = dict(params or {})
+    K = int(p.get("K", 4))
+    N = int(p.get("N", 4))
+    wls = [1550.0 + 2.5 * i for i in range(K)]   # LAN-WDM 2.5nm 间隔
+    rep = build_wdm_mesh_pnr(wls, N=N)
+
+    src_drc = rep.get("drc_results") or {}
+    drc = {
+        "verdict": "ACCEPT" if rep.get("drc_pass") else "REJECT",
+        "violations": [k for k, v in src_drc.items() if (v or {}).get("passed") is False],
+    }
+    src_lvs = rep.get("lvs_full") or {}
+    lvs = {
+        "verdict": str(rep.get("lvs_verdict") or src_lvs.get("verdict") or "REJECT"),
+        "violations": list(src_lvs.get("violations") or []),
+        "issues": list(src_lvs.get("violations") or []),
+    }
+    return {
+        "gds_bytes": rep.get("gds_bytes") or b"",
+        "n_elements": rep.get("gds_elements", 0),
+        "params": {"domain": "photonic_interconnect", "K": K, "N": N},
+        "drc": drc,
+        "lvs": lvs,
+        "extra_honest": DOMAIN_EXTRA_HONEST.get("photonic_interconnect", ""),
+    }
+
+
 def _builder_for(domain: str):
     """交付域 → 构建函数。
 
@@ -195,6 +247,8 @@ def _builder_for(domain: str):
         return _build_quantum_sc
     if domain == "loqc":
         return _build_loqc
+    if domain == "photonic_interconnect":
+        return _build_photonic_interconnect
     return None
 
 
@@ -318,6 +372,8 @@ def gds_filename(domain: str, params: Optional[Dict[str, Any]] = None) -> str:
     if domain == "loqc":
         return "loqc_mzi_%s_%s.gds" % (int(p.get("n", 4)),
                                        str(p.get("layout_mode", "serpentine")))
+    if domain == "photonic_interconnect":
+        return "wdm_mesh_%sx%s.gds" % (int(p.get("K", 4)), int(p.get("N", 4)))
     return "%s.gds" % domain
 
 

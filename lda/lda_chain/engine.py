@@ -108,18 +108,25 @@ def simulate(link: LinkModel, wavelengths_um: List[float],
     lp = link_params if link_params is not None else link.link_params
     topo = link.topology()
 
-    # 内部连接映射：node -> [(互连节点, 增益)]；增益来自 net 损耗（默认透射 1）
+    # 内部连接映射（信号流图）：每个 net 收敛为一个「星型中心节点」(hub)——
+    # 端口 → hub（进入网时施加 net 损耗 g），hub → 各端口（无损耗扇出）。
+    #
+    # 为什么用 hub 而非旧版「全连接对」（光联接 M0 吃狗粮暴露的平台 bug）：
+    # 旧版对 ≥3 端口网生成所有端口两两互联边，使同一对端口之间存在多条路径
+    # （如 mod0.out→gc_tx.wg 既可由直连边、也可经 mod0.out→mod1.out→gc_tx.wg
+    #   到达）；_propagate 对多条路径**求和** → 星型拓扑的端到端传递被重复计数
+    #   （2 端口网不受影响）。hub 模型保证信号穿过一个网只计数一次。
+    # 2 端口网语义保持不变：a→hub(g)→b(1) = g（与旧版 a→b(g) 等价）。
     net_loss = net_loss_db or {}
     internal_map: Dict[Tuple[str, str], list] = {}
     for net in link.ir.nets:
         ports = [tuple(c.split(".", 1)) for c in net.connects if "." in c]
         if len(ports) >= 2:
             g = 10.0 ** (-net_loss.get(net.id, 0.0) / 10.0)
+            hub = ("__net__", net.id)
             for a in ports:
-                internal_map.setdefault(a, [])
-                for b in ports:
-                    if b != a:
-                        internal_map[a].append((b, g))
+                internal_map.setdefault(a, []).append((hub, g))    # 端口入网：施加 net 损耗
+                internal_map.setdefault(hub, []).append((a, 1.0))  # 网出端口：无损耗扇出
 
     ext_nodes = [(i, p) for (i, p, _) in topo["external"]]
     ext_set = set(ext_nodes)

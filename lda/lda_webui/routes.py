@@ -412,6 +412,30 @@ def h_d4_demo(h, p, q, path):
                       "case_id": _d4.CASE_ID, "verdict": "ERROR"})
 
 
+def h_oi_demo(h, p, q, path):
+    """GET /api/oi_demo —— 光联接模块 M0 基线案例卡（新征程 · 只读 · 免登录）。
+
+    🔴 与 `/api/qchip_demo` / `/api/pchip_demo` / `/api/ecore_demo` / `/api/d4_demo`
+    同属「公开只读验货」类：本卡把 M0 基线（2 通道 WDM 收发器）的链路预算
+    以确定性现算呈现（闭式 + lda_chain 级联引擎，零重计算、不跑 P&R/FDTD），
+    免登录、不进 HEAVY_POST_PATHS。
+
+    🔴 不伪装实测：`verdict` 恒 DESIGN_BUDGET；M0 属链路预算层（L0 解析器件模型），
+    真实版图 GDS 由 D4 域 photonic_interconnect 承载；不报 TOPS/TOPS-W/fJ/op。
+
+    无查询参数（固定设计点）。异常不 500（200 + error 字段，与 h_qchip_demo 同风格）。
+    """
+    try:
+        from . import oi_case as _oi
+    except ImportError:
+        from lda_webui import oi_case as _oi
+    try:
+        return (200, _oi.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/oi_demo", "error": str(e)[:160],
+                      "case_id": _oi.CASE_ID, "verdict": "ERROR"})
+
+
 # --------------------------------------------------------------------------
 # /api/cpo_array 重计算端点并发护栏
 # 背景：app.py 用 ThreadingHTTPServer（每请求一线程）。该端点无鉴权且默认
@@ -1962,6 +1986,8 @@ GET_ROUTES = {
     "/api/ecore_demo": h_ecore_demo,
     # D4 交付闭环扩面：电子 + 超导量子两域的「真 GDS + 双闸签核 + 确定性 sha256」案例卡
     "/api/d4_demo": h_d4_demo,
+    # 光联接模块新征程 M0 基线：2 通道 WDM 收发器链路预算（只读 · 免登录）
+    "/api/oi_demo": h_oi_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,

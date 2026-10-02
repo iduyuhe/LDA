@@ -1429,6 +1429,13 @@ CORE_SMOKES: List[str] = [
     # DESIGN_BUDGET · 逐域 sha256 与模块现算逐位同源）+ 前端 sec-d4/runD4/CASE_MAP +
     # onclick 接线反向完备 + 3 突变探针。CI core 263→264。
     "run_d4_case_smoke.py",
+    # 🔴 新征程（2026-10-02）光联接模块 M0 案例卡 前端取值路径 + onclick 门禁：
+    #   把血案 #18/#19「JSON 里有值 ≠ 前端问对了地方」机器化到 sec-oi 面板：
+    #   renderOi 每条取值路径（d./rq./c./m./g.）拿到真实 oi_case.case_card() JSON
+    #   上逐段解析 + 反向完备（每个展示字段都必须被引用）+ onclick 接线反向完备 +
+    #   2 突变探针（抹字段/删接线，先证能变红）。首次运行即抓到 1 处真实渲染 bug
+    #   （renderOi 取 g.label 而 JSON gaps 实为 g.title ⇒ 缺口标签渲染 undefined），已修。
+    "run_webui_oi_render_path_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2277,6 +2284,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_d4_domain_smoke.py": 300.0,
     # v0.9.172 D4 扩面案例卡门禁：缓存现算 + 前端源码扫描，实测上界 <1s
     "run_d4_case_smoke.py": 300.0,
+    # 新征程 光联接模块 M0 案例卡前端取值路径 + onclick 门禁：纯文本解析（不执行 JS），实测 ~0.12s
+    "run_webui_oi_render_path_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

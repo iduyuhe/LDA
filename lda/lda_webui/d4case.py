@@ -37,6 +37,10 @@ IDENTITY = {
     "loqc": "光量子 LOQC 可编程 MZI 网格（`lda_layout/mesh_pnr`）：Clements 矩形分解 → "
             "摆位 → 布线 → 输出相移 → 物理级联网表真算该酉 → GDS → 主权 DRC/LVS"
             "（n=2..16 实测双闸全 ACCEPT）",
+    "photonic_interconnect": "光子互联 WDM 网格（`lda_layout/wdm_mesh_pnr`）：K 波长 × N×N "
+            "Clements 网格（每 λ 算各自酉） + 输入/输出侧各 K 个微环 add-drop 解/复用 + "
+            "GratingCoupler + MMI 1×N/N×1 扇入扇出 → 单一 LinkModel + 单次主权 DRC/LVS"
+            "（K=4×N=4 实测 7482B·双闸 ACCEPT）；属「光子互联」类芯片（波分复用光 fabric）",
     "photon": "光子侧（W2 已闭合，本卡仅作对照基线）：单器件设计包 → 芯片级 GDS + 双闸 → 下载",
     "route_note": "本卡只读消费 `lda_l2/d4_domains.py`（编排）+ `ecore/layout` + "
                   "`lda_qeda/sc_array` + `lda_layout/mesh_pnr`（几何/DRC/LVS 真实现），"

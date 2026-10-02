@@ -143,6 +143,7 @@ body{padding-top:56px}
     <a href="#sec-accel" style="color:#0b1220;background:#7dd3fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子/模拟 AI 加速器（L6）</a>
     <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E18）</a>
     <a href="#sec-d4" style="color:#0b1220;background:#a5b4fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ D4 交付扩面（电子+超导）</a>
+    <a href="#sec-oi" style="color:#04201b;background:#5eead4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光联接模块 M0（新征程）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1440,6 +1441,29 @@ body{padding-top:56px}
     <div id="d4Summary" class="summary"></div>
     <div id="d4Body"></div>
     <div class="conclusion" id="d4Conclusion"></div>
+  </div>
+
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-oi">
+    <h2>★ 光联接模块 M0 基线：2 通道 WDM 收发器（链路预算 · 吃狗粮检阅平台）</h2>
+    <div class="hint">
+      用 LDA 自家<b>光链路设计验证链（lda_chain）</b>把一款 2 通道 WDM 收发器从装配跑通到链路预算：
+      <b>Tx</b> = MZI 调制器（cos² 传递）× N 通道；<b>Rx</b> = 微环 add-drop 滤波器级联下路
+      + 双 GratingCoupler 耦合 + 光纤 span。<br/>
+      两种方法<b>独立交叉验证</b>：① 闭式链路预算（含前置环 thru 总线链）② lda_chain 级联引擎
+      （信号流图精确信道波长评估）——两者逐位一致（差 &lt;0.05dB），证明装配接线正确。<br/>
+      🔴 <b>吃狗粮抓出真平台 bug</b>：级联引擎对 ≥3 端口星型网用 all-pairs 全连边 ⇒ 同一信号
+      多路径重复求和（GC 耦合被翻倍 2×~4×）——双通道 Rx 星形合波首跑即暴露，已 root-cause
+      并改用 hub 模型修复，2 端口网语义不变、4 道 P1 link 引擎门禁零回归。<br/>
+      🔴 诚实边界：M0 属<b>链路预算层</b>（L0 解析器件模型：微环 add-drop 解析谱 / GC 固定耦合 /
+      MZI cos² 传递）；真实版图 GDS 由 <b>D4 域 photonic_interconnect</b>（复用 wdm_mesh_pnr 的
+      K×N WDM 网格 P&R）承载；本卡只报预算；<b>不报 TOPS/TOPS-W/fJ/op</b>；LLM 不进判决路径。
+    </div>
+    <div class="row">
+      <button class="btn" id="runOi">运行 光联接模块 M0 基线案例</button>
+    </div>
+    <div id="oiSummary" class="summary"></div>
+    <div id="oiBody"></div>
+    <div class="conclusion" id="oiConclusion"></div>
   </div>
 
   <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-accel">
@@ -4924,6 +4948,70 @@ function renderD4(d){
 }
 if($('runD4')) $('runD4').onclick = runD4;
 
+async function runOi(){
+  const btn=$('runOi'); if(!btn) return;
+  btn.disabled=true;
+  $('oiSummary').innerHTML='<span class="spin"></span> 正在装配 光联接模块 M0 基线案例（闭式 + 级联引擎确定性现算）…';
+  try{
+    const d=await apiGet('/api/oi_demo');
+    renderOi(d);
+  }catch(e){ $('oiSummary').textContent='错误：'+(e&&e.message?e.message:e); }
+  finally{ btn.disabled=false; }
+}
+function renderOi(d){
+  if(!d||d.error){ $('oiSummary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
+  $('oiSummary').innerHTML='<b>'+d.case_id+'</b> · 判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）';
+  var h='';
+  // ① 设计点
+  var rq=d.requested||{};
+  h+='<h3 style="margin:14px 0 4px">① 设计点（M0 基线）</h3>';
+  h+=_qcTbl(['参数','值'],[
+    ['通道数 N', rq.n_lanes!=null?rq.n_lanes:'-'],
+    ['信道波长 (nm)', (rq.channels_nm||[]).join(' / ')],
+    ['调制器 Vπ (V)', rq.v_pi_v!=null?rq.v_pi_v:'-'],
+    ['GC 耦合 (-)', rq.gc_coupling!=null?rq.gc_coupling:'-'],
+    ['光纤 span (dB)', rq.fiber_span_db!=null?rq.fiber_span_db:'-'],
+    ['B19 无源无增益 |T|≤1', d.b19_passivity?'<b>通过</b>':'<b>未通过</b>']
+  ]);
+  // ② 逐通道链路预算（两法交叉验证）
+  var ch=d.channels||[];
+  var rows=ch.map(function(c){
+    return [ c.lane, c.channel_nm+' nm', c.R_um!=null?c.R_um+' µm':'-',
+      c.il_closedform_db!=null?c.il_closedform_db.toFixed(2)+' dB':'-',
+      c.il_cascade_db!=null?c.il_cascade_db.toFixed(2)+' dB':'-',
+      c.il_ab_diff_db!=null?c.il_ab_diff_db.toFixed(4)+' dB':'-',
+      c.isolation_db!=null?c.isolation_db.toFixed(1)+' dB':'∞' ];
+  });
+  h+='<h3 style="margin:14px 0 4px">② 逐通道链路预算（闭式 ≡ 级联，两法交叉验证）</h3>';
+  h+=_qcTbl(['通道','波长','环半径 R','IL 闭式','IL 级联','闭式-级联差','信道隔离'], rows);
+  h+=_qcTbl(['断言','结果'],[
+    ['闭式 ≡ 级联（差 ≤0.05dB）',
+     ch.length&&ch.every(function(c){return c.il_ab_diff_db<=0.05;})?'<b>成立</b>':'<b>不成立</b>'],
+    ['B19 无源无增益 |T|≤1', d.b19_passivity?'<b>成立</b>':'<b>不成立</b>']
+  ]);
+  // ③ 设计洞察（诚实边界）
+  h+='<h3 style="margin:14px 0 4px">③ 设计洞察（诚实边界 · L0 基线特征）</h3>';
+  h+='<p>'+(d.design_notes&&d.design_notes.length
+        ? d.design_notes.map(function(n){return '· '+n;}).join('<br/>')
+        : '（无）')+'</p>';
+  // ④ 征程里程碑
+  h+='<h3 style="margin:14px 0 4px">④ 新征程里程碑</h3>';
+  h+='<p>'+(d.milestones||[]).map(function(m){return '<b>'+m.id+'</b> '+m.label;}).join(' · ')+'</p>';
+  // ⑤ 缺口（只列未闭合）
+  var gs=(d.gaps||[]).filter(function(g){return !g.closed;})
+                  .map(function(g){return '<b>'+g.id+'</b> '+g.title;});
+  h+='<p style="margin-top:8px"><b>未闭合缺口：</b>'
+    +(gs.length?gs.join(' · '):'（本卡无未闭合缺口')+'</p>';
+  $('oiBody').innerHTML=h;
+  $('oiConclusion').innerHTML='<strong>结论：</strong>用 LDA 自家光链路设计验证链可把一款 2 通道 '
+    +'WDM 收发器从装配跑通到链路预算，且<b>闭式与级联两种方法逐位一致</b>——'
+    +'更重要的是，吃狗粮过程<b>抓出并修复了平台级 bug</b>（星型网级联重复计数），'
+    +'这正是「客户用前自己先用并检验、补齐短板」的落地。'
+    +'<br/><strong>诚实边界：</strong>'+d.honest_note;
+  return false;
+}
+if($('runOi')) $('runOi').onclick = runOi;
+
 /* ═══════════ 电子计算芯片（模拟计算核 / MVM 交叉阵列）案例（E 征程收官 · /api/ecore_demo）═══════════ */
 async function runECore(){
   const btn=$('runECore'); if(!btn) return;
@@ -5569,7 +5657,7 @@ if($('runECore')) $('runECore').onclick = runECore;
   "use strict";
   var CASE_MAP = {"#sec-qchip": "runQChip", "#sec-schip": "runSChip",
                   "#sec-pchip": "runPChip", "#sec-ecore": "runECore",
-                  "#sec-accel": "runAccel", "#sec-d4": "runD4"};
+                  "#sec-accel": "runAccel", "#sec-d4": "runD4", "#sec-oi": "runOi"};
   var fired = {};
   function maybeRun() {
     var btnId = CASE_MAP[location.hash];

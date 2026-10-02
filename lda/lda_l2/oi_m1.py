@@ -198,7 +198,8 @@ def _gray2(i: int) -> int:
 def _channel_taps(f_mod_hz: float, f_pd_hz: float, f_tia_hz: float,
                   beta2_s2_m: float, L_m: float, baud_hz: float,
                   sigma_tx_s: float = 0.0,
-                  n_taps: int = 32, os: int = 64) -> np.ndarray:
+                  n_taps: int = 32, os: int = 64,
+                  h_extra: Optional["object"] = None) -> np.ndarray:
     """信道**符号间隔冲激响应抽头**（因果 · cursor 归一化为 1）。
 
     由 `H(f) = H_tx(f) × EO S21(f) × 色散(f)` 经 IFFT 得 `h(t)`，再在符号间隔取抽头
@@ -219,6 +220,23 @@ def _channel_taps(f_mod_hz: float, f_pd_hz: float, f_tia_hz: float,
         h = h * np.exp(-0.5 * (w * sigma_tx_s) ** 2)
     if beta2_s2_m != 0.0 and L_m != 0.0:
         h = h * np.exp(1j * (beta2_s2_m * L_m / 2.0) * w ** 2)
+    if h_extra is not None:
+        # M2b 接线点：把**额外级联频响**（如模拟 CTLE）乘进来，抽头/眼/BER 全部随之更新。
+        # 默认 None ⇒ 本函数行为与历史逐位一致（M1 门禁不受影响）。
+        #
+        # 🔴 契约（外部频栅 ≠ 本函数频栅，绝不用插值糊过去）：
+        #    `h_extra` 必须是 **callable(freqs) → 复数频响**，在本函数**自己的频栅**
+        #    `freqs`（长 `freqs.size`）上求值后逐点乘入。形状不符直接报错失败，
+        #    避免「静默广播/静默插值」把 CTLE 形态画错 —— 抽头/BER 全跟着错，
+        #    而**源头判据仍然全绿**（本项目反复踩的坑：假绿）。
+        if not callable(h_extra):
+            raise TypeError("h_extra 必须是 callable(freqs)->complex（不得直接传数组，"
+                            "外部频栅与本函数频栅不同步）")
+        h_extra_h = np.asarray(h_extra(freqs), dtype=complex)
+        if h_extra_h.shape != h.shape:
+            raise ValueError("h_extra 求值结果与信道频栅形状不符：%s vs %s"
+                             % (h_extra_h.shape, h.shape))
+        h = h * h_extra_h
     ht = np.fft.irfft(h, n=n_pts)
     # 🔴 级联多极点冲激响应在 t=0 为 0（峰在其后）⇒ 必须按**峰值**对齐取抽头
     pk = int(np.argmax(np.abs(ht)))

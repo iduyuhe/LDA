@@ -260,11 +260,114 @@ M2_FIX_PATHS = [  # `fx` 为 m2.platform_fixes_m2 元素（与 M1 同名局部�
     ("fx.detail", "m2.platform_fixes_m2[].detail"),
 ]
 
+# ── M2b（G-OI5 · 多通道均衡/热调/热串扰Γ/良率MC/封装容差）块 ──
+#    前端局部别名：m2b=d.m2b||{} · m2beq=equalizer · m2bct=ctle · m2ble=lane_equalizer
+#    m2bth=thermal_tune · m2bg=crosstalk_gamma · m2by=yield · m2bp=packaging
+#    m2beL=equalizer.lpo · m2beR=equalizer.retimed
+M2B_TOP_PATHS = [
+    ("m2b.stage_label", "m2b.stage_label"),
+    ("m2b.equalizer", "m2b.equalizer"),
+    ("m2b.ctle", "m2b.ctle"),
+    ("m2b.lane_equalizer", "m2b.lane_equalizer"),
+    ("m2b.thermal_tune", "m2b.thermal_tune"),
+    ("m2b.crosstalk_gamma", "m2b.crosstalk_gamma"),
+    ("m2b.yield", "m2b.yield"),
+    ("m2b.packaging", "m2b.packaging"),
+    ("m2b.honest_note_m2b", "m2b.honest_note_m2b"),
+]
+M2B_EQMODE_PATHS = [  # m2beL = m2b.equalizer.lpo · m2beR = m2b.equalizer.retimed
+    ("m2beL.ctle", "m2b.equalizer.lpo.ctle"),
+    ("m2beL.ffe", "m2b.equalizer.lpo.ffe"),
+    ("m2beL.needs_dsp", "m2b.equalizer.lpo.needs_dsp"),
+    ("m2beL.label", "m2b.equalizer.lpo.label"),
+    ("m2beL.note", "m2b.equalizer.lpo.note"),
+    ("m2beR.ctle", "m2b.equalizer.retimed.ctle"),
+    ("m2beR.ffe", "m2b.equalizer.retimed.ffe"),
+    ("m2beR.needs_dsp", "m2b.equalizer.retimed.needs_dsp"),
+    ("m2beR.label", "m2b.equalizer.retimed.label"),
+    ("m2beR.note", "m2b.equalizer.retimed.note"),
+]
+M2B_EQ_PATHS = [
+    ("m2beq.why", "m2b.equalizer.why"),
+]
+M2B_CTLE_PATHS = [
+    ("m2bct.f_z_hz", "m2b.ctle.f_z_hz"),
+    ("m2bct.f_p_hz", "m2b.ctle.f_p_hz"),
+    ("m2bct.boost_nom_db", "m2b.ctle.boost_nom_db"),
+    ("m2bct.noise_penalty_db", "m2b.ctle.noise_penalty_db"),
+    ("m2bct.noise_penalty_flat_db", "m2b.ctle.noise_penalty_flat_db"),
+    ("m2bct.note", "m2b.ctle.note"),
+]
+M2B_LANE_PATHS = [
+    ("m2ble.n_lanes", "m2b.lane_equalizer.n_lanes"),
+    ("m2ble.boost_distinct", "m2b.lane_equalizer.boost_distinct"),
+    ("m2ble.flat_after_equalization_db", "m2b.lane_equalizer.flat_after_equalization_db"),
+    ("m2ble.flat_ok", "m2b.lane_equalizer.flat_ok"),
+    ("m2ble.noise_penalty_min_db", "m2b.lane_equalizer.noise_penalty_min_db"),
+    ("m2ble.noise_penalty_max_db", "m2b.lane_equalizer.noise_penalty_max_db"),
+    ("m2ble.lanes", "m2b.lane_equalizer.lanes"),
+]
+M2B_LANE_ELEM_PATHS = [  # m2ble.lanes[] 元素
+    ("l.lane", "m2b.lane_equalizer.lanes[].lane"),
+    ("l.f_mod_ghz", "m2b.lane_equalizer.lanes[].f_mod_ghz"),
+    ("l.boost_db", "m2b.lane_equalizer.lanes[].boost_db"),
+    ("l.f_z_ghz", "m2b.lane_equalizer.lanes[].f_z_ghz"),
+    ("l.pen_db", "m2b.lane_equalizer.lanes[].pen_db"),
+]
+M2B_THERMAL_PATHS = [
+    ("m2bth.unit_note", "m2b.thermal_tune.unit_note"),
+    ("m2bth.S_nm_per_mW", "m2b.thermal_tune.S_nm_per_mW"),
+    ("m2bth.Ppi_mW", "m2b.thermal_tune.Ppi_mW"),
+    ("m2bth.heater_length_um", "m2b.thermal_tune.heater_length_um"),
+    ("m2bth.ring_R_um", "m2b.thermal_tune.ring_R_um"),
+    ("m2bth.FSR_nm", "m2b.thermal_tune.FSR_nm"),
+    ("m2bth.residual_detune_nm", "m2b.thermal_tune.residual_detune_nm"),
+    ("m2bth.p_per_lane_mW", "m2b.thermal_tune.p_per_lane_mW"),
+    ("m2bth.p_total_mW", "m2b.thermal_tune.p_total_mW"),
+    ("m2bth.honest_note_m2b_thermal", "m2b.thermal_tune.honest_note_m2b_thermal"),
+]
+M2B_GAMMA_PATHS = [
+    ("m2bg.n", "m2b.crosstalk_gamma.n"),
+    ("m2bg.S_nm_per_mW", "m2b.crosstalk_gamma.S_nm_per_mW"),
+    ("m2bg.diag_max_nm_per_mW", "m2b.crosstalk_gamma.diag_max_nm_per_mW"),
+    ("m2bg.max_offdiag_nm_per_mW", "m2b.crosstalk_gamma.max_offdiag_nm_per_mW"),
+    ("m2bg.symmetric_ok", "m2b.crosstalk_gamma.symmetric_ok"),
+    ("m2bg.diagonal_max_ok", "m2b.crosstalk_gamma.diagonal_max_ok"),
+    ("m2bg.monotonic_ok", "m2b.crosstalk_gamma.monotonic_ok"),
+    ("m2bg.note", "m2b.crosstalk_gamma.note"),
+]
+M2B_YIELD_PATHS = [
+    ("m2by.sigma_dn_eff", "m2b.yield.sigma_dn_eff"),
+    ("m2by.tol_nm", "m2b.yield.tol_nm"),
+    ("m2by.sigma_resonance_nm", "m2b.yield.sigma_resonance_nm"),
+    ("m2by.yield_closed_form", "m2b.yield.yield_closed_form"),
+    ("m2by.yield_mc", "m2b.yield.yield_mc"),
+    ("m2by.mc_n_samples", "m2b.yield.mc_n_samples"),
+    ("m2by.mc_seed", "m2b.yield.mc_seed"),
+    ("m2by.note", "m2b.yield.note"),
+]
+M2B_PKG_PATHS = [
+    ("m2bp.il_budget_db", "m2b.packaging.il_budget_db"),
+    ("m2bp.il_mode_mismatch_db", "m2b.packaging.il_mode_mismatch_db"),
+    ("m2bp.eta_mode", "m2b.packaging.eta_mode"),
+    ("m2bp.dx_max_um", "m2b.packaging.dx_max_um"),
+    ("m2bp.dx_max_numeric_um", "m2b.packaging.dx_max_numeric_um"),
+    ("m2bp.temp_window_c", "m2b.packaging.temp_window_c"),
+    ("m2bp.wl_drift_nm", "m2b.packaging.wl_drift_nm"),
+    ("m2bp.dx_drift_um", "m2b.packaging.dx_drift_um"),
+    ("m2bp.dx_tolerance_um", "m2b.packaging.dx_tolerance_um"),
+    ("m2bp.temp_in_tolerance", "m2b.packaging.temp_in_tolerance"),
+    ("m2bp.note", "m2b.packaging.note"),
+]
+
 ALL_PATHS = (ROOT_PATHS + REQUESTED_PATHS + CHANNEL_PATHS + MILESTONE_PATHS
              + GAP_PATHS + M1_TOP_PATHS + M1_DRIVER_PATHS + M1_RING_PATHS
              + M1_SPEC_PATHS + M1_FIX_PATHS
              + M2_TOP_PATHS + M2_FEC_PATHS + M2_FEC_MODE_PATHS + M2_DRIVER_PATHS
-             + M2_RING_PATHS + M2_SPEC_PATHS + M2_GDS_PATHS + M2_FIX_PATHS)
+             + M2_RING_PATHS + M2_SPEC_PATHS + M2_GDS_PATHS + M2_FIX_PATHS
+             + M2B_TOP_PATHS + M2B_EQ_PATHS + M2B_EQMODE_PATHS + M2B_CTLE_PATHS
+             + M2B_LANE_PATHS + M2B_LANE_ELEM_PATHS + M2B_THERMAL_PATHS
+             + M2B_GAMMA_PATHS + M2B_YIELD_PATHS + M2B_PKG_PATHS)
 
 # 🔴 防假绿：纯子串匹配下 `rp.m` 会被 `rp.min_fsr_nm` / `rp.max_il_drop_db` 前缀命中
 # ⇒ 「把 `rp.m` 从渲染里删掉」时 ③ 仍绿（门禁看不见的盲区）。对**是其它字面量前缀**
@@ -380,9 +483,48 @@ def _m2_reverse_flags(card: dict) -> dict:
     }
 
 
+def _m2b_reverse_flags(card: dict) -> dict:
+    """M2b（G-OI5）反向完备十一格：顶层 / equalizer / equalizer.lpo / equalizer.retimed /
+    ctle / lane_equalizer / lane_equalizer.lanes[] / thermal_tune / crosstalk_gamma /
+    yield / packaging。
+
+    返回 {格名: bool}；True = 「后端每个展示字段都被前端引用」。
+    🔴 `honest_note_m2b` 与 `thermal_tune.honest_note_m2b_thermal` 也在路径表内
+    （前端结论段与热调段分别渲染）⇒ 参与反向完备。
+    """
+    m2b = card.get("m2b") or {}
+    eq = m2b.get("equalizer") or {}
+    le = m2b.get("lane_equalizer") or {}
+    return {
+        "top": set(m2b.keys()) <= _tops_of(M2B_TOP_PATHS, "m2b"),
+        # `lpo` / `retimed` 两个形态的**叶子**由 M2B_EQMODE_PATHS 覆盖，
+        # 这里只需证明「顶层每个键都被 ③ 的路径表登记」（lpo / retimed / why）。
+        "equalizer": set(eq.keys()) <= _tops_of(M2B_EQ_PATHS + M2B_EQMODE_PATHS,
+                                               "m2b.equalizer"),
+        "eq_lpo": set((eq.get("lpo") or {}).keys())
+                  <= _leaf_keys(M2B_EQMODE_PATHS, "m2b.equalizer.lpo."),
+        "eq_retimed": set((eq.get("retimed") or {}).keys())
+                      <= _leaf_keys(M2B_EQMODE_PATHS, "m2b.equalizer.retimed."),
+        "ctle": set((m2b.get("ctle") or {}).keys())
+                <= _leaf_keys(M2B_CTLE_PATHS, "m2b.ctle."),
+        "lane_eq": set(le.keys()) <= _leaf_keys(M2B_LANE_PATHS, "m2b.lane_equalizer."),
+        "lane_elem": set(((le.get("lanes") or [{}])[0]).keys())
+                     <= _leaf_keys(M2B_LANE_ELEM_PATHS, "m2b.lane_equalizer.lanes[]."),
+        "thermal": set((m2b.get("thermal_tune") or {}).keys())
+                   <= _leaf_keys(M2B_THERMAL_PATHS, "m2b.thermal_tune."),
+        "gamma": set((m2b.get("crosstalk_gamma") or {}).keys())
+                 <= _leaf_keys(M2B_GAMMA_PATHS, "m2b.crosstalk_gamma."),
+        "yield": set((m2b.get("yield") or {}).keys())
+                 <= _leaf_keys(M2B_YIELD_PATHS, "m2b.yield."),
+        "pkg": set((m2b.get("packaging") or {}).keys())
+               <= _leaf_keys(M2B_PKG_PATHS, "m2b.packaging."),
+    }
+
+
 def main() -> int:
     print("=" * 74)
-    print("WebUI 光联接模块 M0+M1+M2 案例卡 前端取值路径 + onclick 门禁（血案 #18/#19 机器化）")
+    print("WebUI 光联接模块 M0+M1+M2+M2b 案例卡 前端取值路径 + onclick 门禁"
+          "（血案 #18/#19 机器化）")
     print("=" * 74)
 
     html = open(INDEX, encoding="utf-8").read()
@@ -505,6 +647,53 @@ def main() -> int:
           % (sorted(((_m2.get("platform_fixes_m2") or [{}])[0]).keys()),
              sorted(_leaf_keys(M2_FIX_PATHS, "m2.platform_fixes_m2[]."))))
 
+    # ── 4c. M2b（G-OI5）反向完备十一格 ────────────────────────────────
+    _m2b = card.get("m2b") or {}
+    _eq = _m2b.get("equalizer") or {}
+    _le = _m2b.get("lane_equalizer") or {}
+    rf3 = _m2b_reverse_flags(card)
+    check("④e-16 反向完备：m2b 顶层每个展示字段都被前端引用",
+          rf3["top"], "后端=%s 前端引用=%s"
+          % (sorted(_m2b.keys()), sorted(_tops_of(M2B_TOP_PATHS, "m2b"))))
+    check("④e-17 反向完备：m2b.equalizer 每个字段都被前端引用",
+          rf3["equalizer"], "后端=%s 前端引用=%s"
+          % (sorted(_eq.keys()), sorted(_tops_of(M2B_EQ_PATHS, "m2b.equalizer"))))
+    check("④e-18 反向完备：m2b.equalizer.lpo 每个字段都被前端引用",
+          rf3["eq_lpo"], "后端=%s 前端引用=%s"
+          % (sorted((_eq.get("lpo") or {}).keys()),
+             sorted(_leaf_keys(M2B_EQMODE_PATHS, "m2b.equalizer.lpo."))))
+    check("④e-19 反向完备：m2b.equalizer.retimed 每个字段都被前端引用",
+          rf3["eq_retimed"], "后端=%s 前端引用=%s"
+          % (sorted((_eq.get("retimed") or {}).keys()),
+             sorted(_leaf_keys(M2B_EQMODE_PATHS, "m2b.equalizer.retimed."))))
+    check("④e-20 反向完备：m2b.ctle 每个字段都被前端引用",
+          rf3["ctle"], "后端=%s 前端引用=%s"
+          % (sorted((_m2b.get("ctle") or {}).keys()),
+             sorted(_leaf_keys(M2B_CTLE_PATHS, "m2b.ctle."))))
+    check("④e-21 反向完备：m2b.lane_equalizer 每个字段都被前端引用",
+          rf3["lane_eq"], "后端=%s 前端引用=%s"
+          % (sorted(_le.keys()), sorted(_leaf_keys(M2B_LANE_PATHS, "m2b.lane_equalizer."))))
+    check("④e-22 反向完备：m2b.lane_equalizer.lanes[] 每个字段都被前端引用",
+          rf3["lane_elem"], "后端=%s 前端引用=%s"
+          % (sorted(((_le.get("lanes") or [{}])[0]).keys()),
+             sorted(_leaf_keys(M2B_LANE_ELEM_PATHS, "m2b.lane_equalizer.lanes[]."))))
+    check("④e-23 反向完备：m2b.thermal_tune 每个字段都被前端引用",
+          rf3["thermal"], "后端=%s 前端引用=%s"
+          % (sorted((_m2b.get("thermal_tune") or {}).keys()),
+             sorted(_leaf_keys(M2B_THERMAL_PATHS, "m2b.thermal_tune."))))
+    check("④e-24 反向完备：m2b.crosstalk_gamma 每个字段都被前端引用",
+          rf3["gamma"], "后端=%s 前端引用=%s"
+          % (sorted((_m2b.get("crosstalk_gamma") or {}).keys()),
+             sorted(_leaf_keys(M2B_GAMMA_PATHS, "m2b.crosstalk_gamma."))))
+    check("④e-25 反向完备：m2b.yield 每个字段都被前端引用",
+          rf3["yield"], "后端=%s 前端引用=%s"
+          % (sorted((_m2b.get("yield") or {}).keys()),
+             sorted(_leaf_keys(M2B_YIELD_PATHS, "m2b.yield."))))
+    check("④e-26 反向完备：m2b.packaging 每个字段都被前端引用",
+          rf3["pkg"], "后端=%s 前端引用=%s"
+          % (sorted((_m2b.get("packaging") or {}).keys()),
+             sorted(_leaf_keys(M2B_PKG_PATHS, "m2b.packaging."))))
+
     # ── 5. 突变探针（先证能变红）───────────────────────────────────────
     import copy
     # 探针①：抹掉 case_card 的某 channel 字段 ⇒ ③ 的路径判据必红
@@ -569,6 +758,47 @@ def main() -> int:
     _strict = _js_ref_ok(_fake, "rp.m", _all_lits)
     check("🔴 探针⑥: 只剩 rp.min_/rp.max_ 的源码 ⇒ 纯子串假绿=%s 而边界判据必红=%s"
           % (_plain, not _strict), _plain is True and _strict is False)
+
+    # ── 5b. M2b（G-OI5）突变探针（先证能变红，再信 ③/④e-16…④e-26）────
+    card_m10 = copy.deepcopy(card)
+    card_m10["m2b"]["brand_new_probe_top3"] = 1
+    probe10 = _m2b_reverse_flags(card_m10)["top"]
+    check("🔴 探针⑩: m2b 顶层多一个新字段 ⇒ ④e-16 反向完备必红", probe10 is False)
+
+    card_m11 = copy.deepcopy(card)
+    del card_m11["m2b"]["thermal_tune"]["p_per_lane_mW"]
+    probe11 = json_path_exists(card_m11, "m2b.thermal_tune.p_per_lane_mW")
+    check("🔴 探针⑪: 抹掉 m2b.thermal_tune.p_per_lane_mW ⇒ ③ 路径判据必红",
+          probe11 is False)
+
+    card_m12 = copy.deepcopy(card)
+    del card_m12["m2b"]["lane_equalizer"]["lanes"][0]["pen_db"]
+    probe12 = json_path_exists(card_m12, "m2b.lane_equalizer.lanes[].pen_db")
+    check("🔴 探针⑫: 抹掉 m2b.lane_equalizer.lanes[].pen_db ⇒ ③ 路径判据必红",
+          probe12 is False)
+
+    card_m13 = copy.deepcopy(card)
+    card_m13["m2b"]["packaging"]["brand_new_probe_pkg"] = 1
+    probe13 = _m2b_reverse_flags(card_m13)["pkg"]
+    check("🔴 探针⑬: m2b.packaging 多一个新字段 ⇒ ④e-26 反向完备必红", probe13 is False)
+
+    card_m14 = copy.deepcopy(card)
+    del card_m14["m2b"]["thermal_tune"]["honest_note_m2b_thermal"]
+    probe14 = json_path_exists(card_m14, "m2b.thermal_tune.honest_note_m2b_thermal")
+    check("🔴 探针⑭: 抹掉 m2b.thermal_tune.honest_note_m2b_thermal ⇒ ③ 路径判据必红",
+          probe14 is False)
+
+    # 探针⑮：证明 ③ 真的盯「前端字面量」本身——把 ④e-20 依赖的 `m2bct.noise_penalty_flat_db`
+    # 从 renderOi 源码里抹掉 ⇒ 该路径的 js_ref 必红（只有后端 JSON 有值而不盯前端 = 假绿）。
+    rsrc_m15 = rsrc.replace("m2bct.noise_penalty_flat_db", "")
+    probe15 = _js_ref_ok(rsrc_m15, "m2bct.noise_penalty_flat_db", _all_lits)
+    check("🔴 探针⑮: 前端抹掉 m2bct.noise_penalty_flat_db 字面量 ⇒ ③ 的 js_ref 必红",
+          probe15 is False)
+
+    check("🔴 探针R: 未被污染的 case_card 在 M1+M2+M2b 反向完备上仍全绿（探针无副作用）",
+          all(_m1_reverse_flags(card).values())
+          and all(_m2_reverse_flags(card).values())
+          and all(_m2b_reverse_flags(card).values()))
 
     # ── 6. 自入 CI core ────────────────────────────────────────────────
     ci = os.path.join(_ROOT, "lda", "run_ci_regression.py")

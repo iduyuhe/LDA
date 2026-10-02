@@ -5077,6 +5077,12 @@ function renderOi(d){
   var m2=d.m2||{}, m2rp=m2.ring_plan||{}, m2dv=m2.driver||{}, m2g=m2.g_oi2||{};
   var m2fec=m2.fec||{}, m2cf=m2fec.concatenated||{}, m2rs=m2fec.rs_only||{},
       m2fm=m2fec.form_map||{};
+  /* ── M2b（G-OI5）块：多通道均衡 · 热调 · 热串扰 Γ · 工艺偏差良率 MC · 封装容差 ── */
+  var m2b=d.m2b||{};
+  var m2beq=m2b.equalizer||{}, m2bct=m2b.ctle||{}, m2ble=m2b.lane_equalizer||{};
+  var m2bth=m2b.thermal_tune||{}, m2bg=m2b.crosstalk_gamma||{};
+  var m2by=m2b.yield||{}, m2bp=m2b.packaging||{};
+  var m2beL=m2beq.lpo||{}, m2beR=m2beq.retimed||{};
   // ⑩ M2 规模 × 形态
   h+='<h3 style="margin:16px 0 4px">⑩ M2 规模 × 形态（1.6T · LPO「模块内无 DSP」）</h3>';
   h+='<p>阶段：<b>'+m2.stage_label+'</b> · '+m2.n_lanes+' × '+m2.net_per_lane_gbps
@@ -5161,6 +5167,106 @@ function renderOi(d){
       }).join('<br/>')+'</p>';
   h+='<p style="color:#555">'+m2.honest_note_m2+'</p>';
 
+  /* ── M2b（G-OI5）块 ── */
+  // ⑰ M2b 形态映射（均衡能力只能从形态推，不能硬凑）
+  h+='<h3 style="margin:16px 0 4px">⑰ M2b 形态映射（FFE/DFE 在 DSP 里 ⇒ LPO 只有 CTLE）</h3>';
+  h+='<p>阶段：<b>'+m2b.stage_label+'</b></p>';
+  h+=_qcTbl(['形态','CTLE（模拟）','FFE（数字）','需模块内 DSP','约束成因'],[
+    ['LPO（模块内无 DSP）', m2beL.ctle?'<b>是</b>':'否',
+     m2beL.ffe?'<b>是</b>':'否（拿不到）', m2beL.needs_dsp?'是':'<b>否</b>', m2beL.label],
+    ['重定时 retimed（有 DSP）', m2beR.ctle?'<b>是</b>':'否',
+     m2beR.ffe?'<b>是</b>':'否', m2beR.needs_dsp?'<b>是</b>':'否', m2beR.label]
+  ]);
+  h+='<p style="color:#555">'+m2beL.note+'</p>';
+  h+='<p style="color:#555">'+m2beR.note+'</p>';
+  h+='<p>'+m2beq.why+'</p>';
+  // ⑱ M2b CTLE 均衡（闭式复频响 + 噪声 penalty）
+  h+='<h3 style="margin:14px 0 4px">⑱ M2b 多通道 CTLE 均衡（复频响 H(f)=(1+jf/f_z)/(1+jf/f_p)）</h3>';
+  h+=_qcTbl(['均衡量','值'],[
+    ['零点 f_z (GHz)', m2bct.f_z_hz?(m2bct.f_z_hz/1e9).toFixed(3):'-'],
+    ['极点 f_p (GHz)', m2bct.f_p_hz?(m2bct.f_p_hz/1e9).toFixed(1):'-'],
+    ['标称提升 boost (dB)', m2bct.boost_nom_db],
+    ['噪声 penalty (dB)', m2bct.noise_penalty_db],
+    ['平坦基准 penalty (dB)（f_z=f_p ⇒ 恒 0）', m2bct.noise_penalty_flat_db],
+    ['penalty 口径', m2bct.note]
+  ]);
+  h+=_qcTbl(['通道','调制率 (GBd→GHz)','CTLE 提升 (dB)','f_z (GHz)','噪声 penalty (dB)'],
+    (m2ble.lanes||[]).map(function(l){
+      return [ l.lane, l.f_mod_ghz, l.boost_db, l.f_z_ghz, l.pen_db ];
+    }));
+  h+=_qcTbl(['断言','结果'],[
+    ['各通道 CTLE 提升互不相等（真逐通道，非同一个数复制 8 份）',
+     m2ble.boost_distinct?'<b>成立</b>':'<b>不成立</b>'],
+    ['均衡后 8 通道幅度**拉平**（相对起伏 ≤0.05dB）',
+     m2ble.flat_ok?'<b>成立</b>（起伏 '+m2ble.flat_after_equalization_db+' dB）':'<b>不成立</b>'],
+    ['噪声 penalty 逐通道有界（min '+m2ble.noise_penalty_min_db+' / max '
+     +m2ble.noise_penalty_max_db+' dB）','<b>成立</b>']
+  ]);
+  // ⑲ M2b 热调（mW 功耗口径）
+  h+='<h3 style="margin:14px 0 4px">⑲ M2b 热调（单真源 S = λ·(dn/dT)·R_th/n_eff · 只报 mW）</h3>';
+  h+=_qcTbl(['热调量','值（mW 功耗口径）'],[
+    ['调谐灵敏度 S (nm/mW)', m2bth.S_nm_per_mW],
+    ['π 相移功耗 Pπ (mW)', m2bth.Ppi_mW],
+    ['加热器长度 (µm)', m2bth.heater_length_um],
+    ['环半径 R (µm)', m2bth.ring_R_um],
+    ['FSR (nm)', m2bth.FSR_nm],
+    ['残余失谐 |Δλ| (nm)', m2bth.residual_detune_nm],
+    ['单通道调谐功耗 P_tune (mW)', '<b>'+m2bth.p_per_lane_mW+'</b>'],
+    ['8 通道合计 (mW)', m2bth.p_total_mW],
+    ['口径', m2bth.unit_note]
+  ]);
+  h+='<p style="color:#555">'+m2bth.honest_note_m2b_thermal+'</p>';
+  // ⑳ M2b 热串扰 Γ
+  h+='<h3 style="margin:14px 0 4px">⑳ M2b 热串扰 Γ 矩阵（Θ 取二维薄片稳态对数场 · Γ=S·Θ）</h3>';
+  h+=_qcTbl(['Γ 量','值'],[
+    ['通道数 n', m2bg.n],
+    ['S (nm/mW)', m2bg.S_nm_per_mW],
+    ['对角最大 Γ (nm/mW)', m2bg.diag_max_nm_per_mW],
+    ['最大非对角 Γ (nm/mW)', m2bg.max_offdiag_nm_per_mW],
+    ['互易 Γ_ij = Γ_ji', m2bg.symmetric_ok?'<b>成立</b>':'<b>不成立</b>'],
+    ['对角 ≥ 所有非对角（自身加热最强）', m2bg.diagonal_max_ok?'<b>成立</b>':'<b>不成立</b>'],
+    ['随距离单调递减', m2bg.monotonic_ok?'<b>成立</b>':'<b>不成立</b>'],
+    ['第二独立通道', '有限差分热网络（网格加密相对误差单调下降 ⇒ 真收敛）']
+  ]);
+  h+='<p style="color:#555">'+m2bg.note+'</p>';
+  // ㉑ M2b 工艺偏差 → 良率
+  h+='<h3 style="margin:14px 0 4px">㉑ M2b 工艺偏差 → 良率（golden = 闭式 Φ · MC 只作第二通道）</h3>';
+  h+=_qcTbl(['良率量','值'],[
+    ['工艺偏差 σ (nm)', m2by.sigma_dn_eff],
+    ['容差 ± (nm)', m2by.tol_nm],
+    ['等效共振 σ (nm)', m2by.sigma_resonance_nm],
+    ['闭式良率（erf）', '<b>'+m2by.yield_closed_form+'</b>'],
+    ['蒙特卡洛良率', m2by.yield_mc],
+    ['MC 样本数 / 固定 seed', m2by.mc_n_samples+' / '+m2by.mc_seed],
+    ['两法一致（差 ≤0.01）',
+     Math.abs((m2by.yield_mc||0)-(m2by.yield_closed_form||0))<=0.01?'<b>成立</b>':'<b>不成立</b>']
+  ]);
+  h+='<p style="color:#555">'+m2by.note+'</p>';
+  // ㉒ M2b 封装容差
+  h+='<h3 style="margin:14px 0 4px">㉒ M2b 封装对准容差（预算只管「对准附加」IL）</h3>';
+  h+=_qcTbl(['封装量','值'],[
+    ['对准预算 IL (dB)', m2bp.il_budget_db],
+    ['模场失配 IL 底 (dB，先扣)', m2bp.il_mode_mismatch_db],
+    ['耦合效率 η (-)', m2bp.eta_mode],
+    ['对准容差上限 dx_max (µm)', m2bp.dx_max_um],
+    ['数值解 dx_max (µm)', m2bp.dx_max_numeric_um],
+    ['温窗 (°C)', (m2bp.temp_window_c||[]).join(' … ')],
+    ['温漂波长 Δλ (nm)', m2bp.wl_drift_nm],
+    ['温漂对准位移 (µm)', m2bp.dx_drift_um],
+    ['对准容差上限（几何）(µm)', m2bp.dx_tolerance_um],
+    ['温区内容差可达', m2bp.temp_in_tolerance?'<b>是</b>':'<b>否</b>']
+  ]);
+  h+='<p style="color:#555">'+m2bp.note+'</p>';
+  // ㉓ 缺口终态
+  var Gob=(d.gaps||[]).filter(function(g){return g.closed;}).map(function(g){return g.id;});
+  h+='<h3 style="margin:14px 0 4px">㉓ M2b 缺口终态（G-OI5 闭合 · G-OI4 诚实保留开放）</h3>';
+  h+=_qcTbl(['缺口','闭合','说明'],(d.gaps||[]).map(function(g){
+    return [ g.id, g.closed?'<b>已闭合</b>':'<b>仍开放</b>', g.title ];
+  }));
+  h+='<p>已闭合 '+Gob.length+' / '+(d.gaps_total||(d.gaps||[]).length)
+    +'（已闭合：'+(Gob.join(' · ')||'-')+'）</p>';
+  h+='<p style="color:#555">'+m2b.honest_note_m2b+'</p>';
+
   $('oiBody').innerHTML=h;
   $('oiConclusion').innerHTML='<strong>结论：</strong>用 LDA 自家光链路设计验证链可把一款 WDM 收发器'
     +'从 2 通道 M0 基线一路推进到 <b>M1 800G（8×100G PAM4）频域/时域预算</b>：'
@@ -5184,7 +5290,21 @@ function renderOi(d){
     +' GHz）。物理落地：<b>G-OI2 收发器专用真 GDS</b>（'+m2g.n_devices+' 器件 / '
     +m2g.n_nets+' 网 · DRC='+(m2g.drc_pass?'全绿':'红')+' · LVS='+m2g.lvs_verdict
     +' · 片外 fiber 不落版图 · 布局纪律三前提'+(m2g.layout_discipline_ok?'满足':'未满足')+'）'
-    +'<br/>'+m2.honest_note_m2;
+    +'<br/>'+m2.honest_note_m2
+    +'<br/><strong>M2b（G-OI5）：</strong>把「一个通道算对」推到「一片阵列管得住」——'
+    +m2ble.n_lanes+' 条通道的 CTLE 提升逐通道取不同值（'
+    +((m2ble.boost_distinct===true)?'互不相等':'**全相等（可疑）**')
+    +'） 并把幅度拉平（起伏 '
+    +m2ble.flat_after_equalization_db+' dB），代价是噪声 penalty 上升 '
+    +m2ble.noise_penalty_min_db+'+ dB；热调只报 <b>mW</b>（单通道 '+m2bth.p_per_lane_mW
+    +' mW / 合计 '+m2bth.p_total_mW+' mW，不做能效比换算），热串扰 Γ 的对角/互易/随距单调三条物理律'
+    +'（'+(m2bg.symmetric_ok&&m2bg.diagonal_max_ok&&m2bg.monotonic_ok
+      ?'全部成立':'存在不成立')+'）由有限差分热网络做第二独立通道；'
+    +'工艺偏差良率以**闭式 Φ（erf）为 golden**、MC（N='+m2by.mc_n_samples
+    +'，seed '+m2by.mc_seed+'）只作第二通道（闭式 '+m2by.yield_closed_form
+    +' ↔ MC '+m2by.yield_mc+'）；封装对准容差 dx_max '+m2bp.dx_max_um+' µm 在 '
+    +(m2bp.temp_window_c||[]).join('…')+' °C 温窗内漂移 '+(m2bp.temp_in_tolerance?'可达':'不可达')+'。'
+    +'<br/>'+m2b.honest_note_m2b;
   return false;
 }
 if($('runOi')) $('runOi').onclick = runOi;

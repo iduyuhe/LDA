@@ -31,10 +31,18 @@ D4 域 `photonic_interconnect` 与 `oi_transceiver`（M2 · G-OI2）单独承载
 """
 from __future__ import annotations
 
-CASE_ID = ("OI-M0/M1/M2 · 光联接模块（M0 双通道基线 + M1 800G 频域/时域 + "
-           "M2 1.6T·LPO·G-OI2 真 GDS）")
+CASE_ID = ("OI-M0/M1/M2/M2b · 光联接模块（M0 双通道基线 + M1 800G 频域/时域 + "
+           "M2 1.6T·LPO·G-OI2 真 GDS + M2b 均衡/热调/热串扰/良率/封装 G-OI5）")
 
 _CACHE: dict = {}
+_DEBUG_SELFCHECK: bool = False      # 排障用开关（默认关，避免门禁输出噪声）
+
+# 🔴 禁词扫描的「否定豁免」标记：命中后**截断到该标记处**，只扫其前的**肯定式宣称面**。
+#    （E12/E13/E17 血案同族：正确自我否定「本项目不报 TOPS/…」若整串豁免会漏掉
+#     「本模块提供 TOPS 级算力」这类真违规；整串跳过同理过宽。）截断式最严且最准：
+#    否定标记之前的肯定文字**照扫**，只把否定及其后文剔掉。
+_NEG_MARKERS = ("不报", "不做", "不得", "不宣", "未报")
+
 
 CHANNELS_NM = [1550.0, 1551.6]
 N_LANES = 2
@@ -288,6 +296,132 @@ def _m2_block() -> dict:
     }
 
 
+def _m2b_block() -> dict:
+    """M2b（G-OI5）现算块：多通道 CTLE 均衡 · 热调 · 热串扰 Γ · 工艺偏差良率 MC · 封装容差。
+
+    🔴 数字**全部现算**（不写死）：与 `lda/run_oi_m2b_smoke.py` 的 85 判据同源同一份
+    `lda_l2.oi_m2b`，卡内只是**呈现层**，`run_selfchecks` 再回读比对防静默失真。
+
+    诚实边界（与卡内 `honest_note_m2b` 一致）：
+      · 良率/容差 = **设计者显式声明的统计窗口**（σ_dn_eff、对准 IL 预算、温窗 −5…70 ℃），
+        **不是 Foundry 工艺真值**（T2 锁死）⇒ 不得宣称「实测工艺能力 / 流片良率」；
+      · 热调只登记 **mW**（功耗口径），**不做**能效比换算（🔴 不报 TOPS/TOPS-W/fJ-op/pJ-bit）；
+      · CTLE/Γ 为 **A 档闭式 + 行为级**（golden = 闭式物理律 + 第二独立通道对拍）。
+    """
+    from lda_l2 import oi_m2b as MB
+
+    p = MB.OI_M2B_PROCESS
+    F = MB.NYQUIST_200G_GHZ * 1e9
+    a = float(p["f_tia_ghz"]) * 1e9
+    z = MB.f_z_for_boost(F, a, float(p["ctle_boost_db"]))
+
+    des = MB.lane_ctle_design()
+    tb = MB.thermal_tune_budget()
+    g = MB.crosstalk_gamma()
+    yc = MB.yield_closed_form()
+    ym = MB.yield_monte_carlo()
+    ab = MB.alignment_tolerance_budget()
+    tdb = MB.temp_drift_budget()
+
+    return {
+        "stage_label": ("M2b · G-OI5：多通道 CTLE 均衡 · 热调 · 热串扰 Γ · "
+                        "工艺偏差良率 MC · 封装容差"),
+        # ① 形态↔均衡映射（本轮题眼：LPO 无 DSP ⇒ 只能模拟 CTLE，不能 FFE）
+        "equalizer": {
+            "lpo": MB.equalizer_for_form("lpo"),
+            "retimed": MB.equalizer_for_form("retimed"),
+            "why": ("FFE/DFE 是**数字**均衡（在模块 DSP 里跑）⇒ LPO（模块内无 DSP）只能有"
+                    "模拟 CTLE（TIA 前的连续时间线性均衡）；retimed 才有 DSP ⇒ CTLE+FFE。"
+                    "这条约束由门禁探针 P3 守护（让 lpo 拿到 ffe 必红）。"),
+        },
+        # ② CTLE 闭式（单零点/单极点）
+        "ctle": {
+            "f_z_hz": z, "f_p_hz": a,
+            "boost_nom_db": float(p["ctle_boost_db"]),
+            "noise_penalty_db": round(MB.ctle_noise_penalty_db(z, a, F), 4),
+            "noise_penalty_flat_db": round(MB.ctle_noise_penalty_db(a, a, F), 9),
+            "note": ("penalty = 10·log10(∫₀^F G²df / F)，基准是**平坦响应**（≡0 dB）；"
+                     "首版错把基准取成 G(F)² ⇒ 得到 −2.86 dB 的**负惩罚**（门禁 T8 抓出）。"),
+        },
+        # ③ 多通道均衡：逐 lane 抽头（工艺离散 f_mod ±3% ⇒ 均衡后总增益拉平）
+        "lane_equalizer": {
+            "n_lanes": int(des["n_lanes"]),
+            "boost_distinct": bool(des["boost_distinct"]),
+            "flat_after_equalization_db": round(float(des["total_gain_spread_db"]), 12),
+            "flat_ok": bool(des["flat_after_equalization"]),
+            "noise_penalty_min_db": round(float(des["noise_penalty_min_db"]), 4),
+            "noise_penalty_max_db": round(float(des["noise_penalty_max_db"]), 4),
+            "lanes": [{"lane": x["lane"], "f_mod_ghz": round(float(x["f_mod_ghz"]), 3),
+                       "boost_db": round(float(x["boost_db"]), 4),
+                       "f_z_ghz": round(float(x["f_z_hz"]) / 1e9, 4),
+                       "pen_db": round(float(x["noise_penalty_db"]), 4)}
+                      for x in des["lanes"]],
+        },
+        # ④ 热调（mW 口径，非能效）
+        "thermal_tune": {
+            "unit_note": str(tb["unit_note"]),
+            "S_nm_per_mW": float(tb["S_nm_per_mW"]),
+            "Ppi_mW": round(float(tb["p_pi_mw"]), 3),
+            "heater_length_um": round(float(tb["heater_length_um"]), 3),
+            "ring_R_um": round(float(tb["ring_R_um"]), 4),
+            "FSR_nm": round(float(tb["FSR_nm"]), 4),
+            "residual_detune_nm": float(tb["residual_detune_nm"]),
+            "p_per_lane_mW": round(float(tb["p_tune_mw_per_lane"]), 3),
+            "p_total_mW": round(float(tb["p_tune_total_mw"]), 3),
+            "honest_note_m2b_thermal": ("调谐功耗为 **mW 功耗口径**（P_tune = Pπ·|Δλ|/FSR）；"
+                                        "本项目**不报** TOPS / TOPS-W / fJ-op / pJ-bit 能效比。"),
+        },
+        # ⑤ 热串扰 Γ（版图绑定，坐标来自 G-OI2 builder placement）
+        "crosstalk_gamma": {
+            "n": int(g["n"]), "S_nm_per_mW": float(g["S_nm_per_mW"]),
+            "diag_max_nm_per_mW": round(max(g["gamma_nm_per_mw"][i][i]
+                                             for i in range(int(g["n"]))), 5),
+            "max_offdiag_nm_per_mW": round(float(g["max_offdiag_nm_per_mW"]), 5),
+            "symmetric_ok": bool(g["symmetric_ok"]),
+            "diagonal_max_ok": bool(g["diagonal_max_ok"]),
+            "monotonic_ok": bool(g["monotonic_ok"]),
+            "note": ("Γ_ij = S_i·Θ_ij，Θ 取二维薄片稳态**对数场**闭式；三条物理律判据"
+                     "（互易/随距离单调递减/对角最大）由门禁守护，第二独立通道为"
+                     "**有限差分热网络**（网格加密相对误差单调下降）。"),
+        },
+        # ⑥ 工艺偏差 → 良率（MC 是采样近似，不是 golden）
+        "yield": {
+            "sigma_dn_eff": float(p["sigma_dn_eff"]),
+            "tol_nm": float(yc["tol_nm"]),
+            "sigma_resonance_nm": float(yc["sigma_resonance_nm"]),
+            "yield_closed_form": round(float(yc["yield"]), 8),
+            "yield_mc": round(float(ym["yield"]), 8),
+            "mc_n_samples": int(ym["n_samples"]),
+            "mc_seed": int(ym.get("seed", 0)),
+            "note": ("golden = **闭式** Φ（erf）；MC（N=20000，固定 seed 20261002）只是"
+                     "**第二通道 / 采样近似**，不是 golden。σ 是**设计者声明窗口**，"
+                     "非 Foundry 真值（T2 锁死）⇒ 不得当实测工艺能力宣称。"),
+        },
+        # ⑦ 封装容差（对准 + 温度）
+        "packaging": {
+            "il_budget_db": float(ab["il_budget_db"]),
+            "il_mode_mismatch_db": round(float(ab["il_mode_mismatch_db"]), 4),
+            "eta_mode": round(float(ab["eta_mode"]), 5),
+            "dx_max_um": round(float(ab["dx_max_um"]), 4),
+            "dx_max_numeric_um": round(float(ab["dx_max_numeric_um"]), 4),
+            "temp_window_c": [float(tdb["t_lo_c"]), float(tdb["t_hi_c"])],
+            "wl_drift_nm": round(float(tdb["dlam_nm"]), 4),
+            "dx_drift_um": round(float(tdb["dx_drift_um"]), 5),
+            "dx_tolerance_um": round(float(tdb["dx_tolerance_um"]), 4),
+            "temp_in_tolerance": bool(tdb["in_tolerance"]),
+            "note": ("对准预算**只管「对准附加」IL**（模场失配底 0.66 dB 另披露，先扣掉），"
+                     "否则 1 dB 预算在 dx=0 就被吃光 ⇒ 容差不可达（首版缺陷，门禁 T25 守）。"
+                     "温漂走 GC 出射角真物理 Δθ=Δλ/(Λcosθ)。"),
+        },
+        "honest_note_m2b": (
+            "🔴 M2b 仍属**设计预算层**（A 档闭式 + 行为级，golden = 闭式物理律 + 第二独立通道"
+            "对拍）：σ/容差/温窗均为**设计者显式声明的统计窗口**，**不是** Foundry 工艺真值"
+            "（T2 锁死区）⇒ **不得**宣称「实测工艺能力」或「流片良率」；热调只报 **mW** 功耗，"
+            "**不报** TOPS / TOPS-W / fJ-op / pJ-bit 能效比；Γ/CTLE 为 L0 级解析模型，"
+            "非 PDK、非电路级（G-OI4 仍开放）；verdict 恒 `DESIGN_BUDGET`。"),
+    }
+
+
 def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
     """组装 M0 案例卡（确定性现算 + 模块级缓存）。
 
@@ -344,11 +478,18 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
             "method_m1": "M1 在功率预算之上补**频域**（级联 EO S21：调制器 RC+渡越 × 探测器"
                          "τ=RC × TIA 单极点）与**时域**（PAM4 符号间隔抽头 → 三眼 / Q / BER；"
                          "高斯色散展宽闭式 ⟷ 时域仿真对拍）两维",
-            "method_m2": "M2 再补**规模 × 形态 × 物理落地**三维：(规模) 8×200G PAM4 = 1.6T、"
-                         "奈奎斯特 26.56→53.13GHz；(形态) LPO 无模块 DSP ⇒ 形态↔FEC 映射"
-                         "（retimed→级联 / lpo→RS-only）+ 逐形态裕量与 LPO 代价；(物理落地) "
-                         "收发器专用真 GDS + DRC/LVS 双闸 + 「源 x 次序 ⟂ 目标 y 次序（反序）」"
-                         "L 型走线的**结构性零 cross_short**（三条前提机器化）",
+        "method_m2": "M2 再补**规模 × 形态 × 物理落地**三维：(规模) 8×200G PAM4 = 1.6T、"
+                     "奈奎斯特 26.56→53.13GHz；(形态) LPO 无模块 DSP ⇒ 形态↔FEC 映射"
+                     "（retimed→级联 / lpo→RS-only）+ 逐形态裕量与 LPO 代价；(物理落地) "
+                     "收发器专用真 GDS + DRC/LVS 双闸 + 「源 x 次序 ⟂ 目标 y 次序（反序）」"
+                     "L 型走线的**结构性零 cross_short**（三条前提机器化）",
+        "method_m2b": "M2b 把**设计 ⟷ 版图 ⟷ 工艺 ⟷ 封装**四层咬成闭环：(均衡) 逐 lane CTLE "
+                      "抽头（各 lane 工艺离散 ⇒ 目标 boost 不同 ⇒ 均衡后总增益拉平）+ "
+                      "形态↔均衡映射（LPO 无 DSP ⇒ 只有模拟 CTLE，不能 FFE）；(热) 热调 "
+                      "Pπ 进链路（只报 mW）+ 热串扰 Γ 矩阵（**坐标取自真版图 placement**，"
+                      "互易/单调/对角最大三条物理律 + 有限差分热网络第二通道）；"
+                      "(工艺/封装) 工艺偏差→良率（golden 闭式 Φ ⟷ MC 第二通道）、"
+                      "封装容差（对准 IL 预算先扣模场失配底 + GC 出射角温漂真物理）",
             "anchor_B19": "无源无增益不等式 |T|≤1（所有 transfer 幅值 ≤1），M0/M1/M2 全部满足",
             "honest_layer": "M0/M1/M2 均属设计预算层（L0 解析器件模型 + A 档闭式/行为级）；"
                             "真实版图 GDS 由 D4 域 photonic_interconnect 与 M2 新增的 "
@@ -362,8 +503,9 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
             "fiber_span_db": rep.get("fiber_span_db"),
         },
         "channels": channels,
-        "m1": _m1_block(),
-        "m2": _m2_block(),
+            "m1": _m1_block(),
+            "m2": _m2_block(),
+            "m2b": _m2b_block(),
         "b19_passivity": rep["b19_passivity"],
         "min_isolation_db": min_iso,
         "max_il_db": max_il,
@@ -484,14 +626,19 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
             {"id": "G-OI4", "closed": False,
              "title": "电路级模型 · 无 PDK · 不报 TOPS",
              "detail": "继承主权红线：无 foundry 数据 ⇒ 无能效宣称资格；规模与能效外推属 T2 锁死区"},
-            {"id": "G-OI5", "closed": False,
-             "title": "M2b 预留：多通道均衡 · 热调/串扰 · 良率 · 封装容差",
-             "detail": "多通道均衡（IL/倾斜/眼高平坦化）· 热调（Pπ 预算进链路）· 热串扰 Γ 矩阵"
-                       "（版图绑定）· 光子工艺偏差 → 良率 MC · 封装容差（对准 + 温度）。"
-                       "本轮按用户裁定的「核心四件」范围**后置为 M2b**，不在 M2 判据内（诚实登记，"
-                       "不冒充已完成）"},
+            {"id": "G-OI5", "closed": True,
+             "title": "M2b 已闭合：多通道均衡 · 热调 · 热串扰 Γ · 良率 MC · 封装容差",
+             "detail": "五项全部落地（`lda_l2/oi_m2b.py` + 门禁 `run_oi_m2b_smoke.py` 85 判据 / "
+                       "8 探针 + 模块自检 29 项）：① 多通道 CTLE（逐 lane 抽头，工艺离散 ±3% ⇒ "
+                       "目标 boost 各异 ⇒ 均衡后总增益拉平，spread<1e-15 dB）+ **形态↔均衡映射**"
+                       "（LPO 无 DSP ⇒ 只有模拟 CTLE、不能 FFE，探针 P3 守）；② 热调 Pπ 进链路"
+                       "（只报 mW，不做能效比）；③ Γ 矩阵**版图绑定**（坐标取真版图 placement，"
+                       "互易/单调/对角最大 + 有限差分热网络第二通道）；④ 工艺偏差→良率"
+                       "（golden 闭式 Φ ⟷ MC N=20000 固定 seed 第二通道）；⑤ 封装容差"
+                       "（对准 IL 预算先扣模场失配底 + GC 出射角温漂真物理）。"
+                       "与 G-OI4 合并考虑后，G-OI4「电路级模型 · 无 PDK · 不报 TOPS」**仍开放**"},
         ],
-        "gaps_closed": 3,
+        "gaps_closed": 4,
         "gaps_total": 5,
         "verdict": "DESIGN_BUDGET",
         "verdict_label": "链路预算设计行为验证口径（确定性现算 · 非流片实测 · 非实测签核）",
@@ -510,25 +657,118 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
     return card
 
 
+def _positive_surface(obj: object) -> str:
+    """递归取「肯定式宣称面」字符串（禁词扫描只扫这一面）。
+
+    规则：逐值递归 dict/list/tuple/set；对字符串，若含任一否定标记则**截断到该标记处**
+    （标记及其后文剔除），否则整串保留。
+    🔴 为什么是「截断」而不是「整串跳过」：整串跳过会把「本模块提供 TOPS 级算力，
+    但不报 TOPS-W」整句免责 ⇒ 真违规漏网（假绿）。截断式把否定前的肯定面照扫，
+    既豁免了正确自我否定，又不给「肯定式违规」开后门。
+    """
+    parts: list[str] = []
+    stack = [obj]
+    while stack:
+        _cur = stack.pop()
+        if isinstance(_cur, dict):
+            stack.extend(_cur.values())
+        elif isinstance(_cur, (list, tuple, set, frozenset)):
+            stack.extend(_cur)
+        elif isinstance(_cur, str):
+            _cut = None
+            for _m in _NEG_MARKERS:
+                _i = _cur.find(_m)
+                if _i >= 0 and (_cut is None or _i < _cut):
+                    _cut = _i
+            parts.append(_cur if _cut is None else _cur[:_cut])
+    return "\n".join(parts)
+
+
+def _m2b_pkg_consistent(m2b: dict) -> bool:
+    """M2b 封装块「卡内数字 ≡ 模块现算」同源回读（温漂链必须一起对拍）。
+
+    容差取「对外四舍五入的半个步长」（wl 4 位 ⇒ 5e-5，dx 5 位 ⇒ 5e-6）：
+    比显示精度粗 ⇒ 换一位小数不红；比一个步长细 ⇒ 数字真变必红。
+    🔴 单独抽成函数是为了能被探针直接喂**被篡改的块**（否则判据恒绿、无从证伪）。
+    """
+    from lda_l2 import oi_m2b as M2B
+
+    _ab = M2B.alignment_tolerance_budget()
+    _tdb = M2B.temp_drift_budget()
+    return (abs(float(m2b["packaging"]["dx_max_um"]) - float(_ab["dx_max_um"])) < 1e-3
+            and abs(float(m2b["packaging"]["il_mode_mismatch_db"])
+                    - float(_ab["il_mode_mismatch_db"])) < 1e-3
+            and abs(float(m2b["packaging"]["wl_drift_nm"]) - float(_tdb["dlam_nm"])) < 5e-5
+            and abs(float(m2b["packaging"]["dx_drift_um"]) - float(_tdb["dx_drift_um"])) < 5e-6)
+
+
+def probe_banned_token_scan() -> bool:
+    """🔴 探针：证明「禁词只扫肯定式宣称面」这套口径**真能变红**，否则它是假判据。
+
+    双向断言（缺一即假绿）：
+      · 正例（必须被抓到）：否定标记**之前**出现 `TOPS` ⇒ `_positive_surface` 仍含 `TOPS`
+        ⇒ 禁词扫描会红。（防「整串跳过」式豁免把真违规整句免责的 E12/E13/E17 同族血案）
+      · 负例（必须被豁免）：纯否定式自我声明「本项目不报 TOPS / TOPS-W / fJ-op / pJ-bit」
+        ⇒ 截断后不含任何禁用 token ⇒ 不误杀正确诚实声明（本卡 `honest_note*` 全靠这条存活）。
+      · 嵌套例：`honest_note_m2b_thermal` 这类**嵌套**在 m2b 子 dict 里的否定声明
+        ⇒ 递归能取到并豁免（顶层 `honest_note*` 键豁免会漏掉嵌套层）。
+    """
+    pos = "本模块提供 TOPS 级算力与 TOPS-W 能效比，且不报 pJ/bit"
+    if "TOPS" not in _positive_surface(pos):
+        return False                       # 肯定式被豁免 ⇒ 扫描形同虚设（假绿）
+    neg = "本项目**不报** TOPS / TOPS-W / fJ-op / pJ-bit 能效比。"
+    for _t in ("TOPS", "TOPS-W", "TOPS/W", "fJ/op", "pJ/bit", "W/op"):
+        if _t in _positive_surface(neg):
+            return False                   # 正确否定被误杀 ⇒ 口径过宽
+    nested = {"honest_note_m2b_thermal": neg, "p_per_lane_mW": 51.672}
+    if any(_t in _positive_surface(nested) for _t in
+           ("TOPS", "TOPS-W", "TOPS/W", "fJ/op", "pJ/bit", "W/op")):
+        return False                       # 嵌套否定声明未被递归豁免
+    return True
+
+
+def probe_m2b_pkg_same_source() -> bool:
+    """🔴 探针：证明 `_m2b_pkg_consistent` 不是恒绿判据（先证能变红，再信它）。
+
+    双向断言：
+      · 正例：真块 ⇒ True（否则自检自毁）；
+      · 反例：把块的温漂数字改成错值（+5 nm / +0.5 µm，远超半步长）
+        ⇒ 必须 False。防「温漂从未与模块对拍、判据只看显然字段」的静默盲区。
+    """
+    import copy as _copy
+    _blk = _m2b_block()
+    if not _m2b_pkg_consistent(_blk):
+        return False                                   # 真块都不绿 ⇒ 判据写错
+    _bad = _copy.deepcopy(_blk)
+    _bad["packaging"]["wl_drift_nm"] = float(_bad["packaging"]["wl_drift_nm"]) + 5.0
+    if _m2b_pkg_consistent(_bad):
+        return False                                   # 数字真变了还绿 ⇒ 假绿
+    _bad2 = _copy.deepcopy(_blk)
+    _bad2["packaging"]["dx_drift_um"] = float(_bad2["packaging"]["dx_drift_um"]) + 0.5
+    if _m2b_pkg_consistent(_bad2):
+        return False
+    return True
+
+
 def run_selfchecks(verbose: bool = False) -> bool:
-    """模块自检：卡结构完备 + 判决诚实 + 关键数字与模块自检同源（M0 + M1）。
+    """模块自检：卡结构完备 + 判决诚实 + 关键数字与模块自检同源（M0 + M1 + M2 + M2b）。
 
     🔴 「卡内数字 ≡ 模块现算」逐位同源：M1 块的关键标量回读 `lda_l2.oi_m1` 现算比对，
     防「案例卡写死一份、模块改了卡不动」的静默失真（血案同族）。
     """
     c = case_card(use_cache=False)
-    need = ["case_id", "claim", "identity", "requested", "channels", "m1", "m2",
+    need = ["case_id", "claim", "identity", "requested", "channels", "m1", "m2", "m2b",
             "b19_passivity", "milestones", "findings", "gaps", "verdict", "honest_note"]
     if any(k not in c for k in need):
         return False
     if c["verdict"] != "DESIGN_BUDGET":
         return False
-    # 🔴 只守「能力宣称面」：`honest_note` / `honest_note_m1` / `honest_note_m2` 是否定语境的
-    #    **正确自我否定**（「不报 TOPS/…」）⇒ 不参与判据（否则正确否定被误判违规 —— E12/E13/E17 血案同族）。
-    _surf = {k: v for k, v in c["m1"].items() if k != "honest_note_m1"}
-    _surf2 = {k: v for k, v in c["m2"].items() if k != "honest_note_m2"}
-    blob = (repr(c["claim"]) + repr(c["identity"]) + repr(c["requested"]) + repr(_surf)
-            + repr(_surf2))
+    # 🔴 只守「能力宣称面」：是否定语境的**正确自我否定**（「不报 TOPS/…」）⇒ 不参与判据
+    #    （否则正确否定被误判违规 —— E12/E13/E17 血案同族）。
+    #    修法：递归取「肯定式表面」= 逐值递归，凡含否定标记的字符串**截断到标记处**
+    #    （否定标记之前的肯定文字照扫，防「本模块提供 TOPS 级算力…不报 TOPS-W」漏网），
+    #    标记及其后文剔除 ⇒ 分别只留否定式诚实声明。顶层 `honest_note*` 键亦无需再列举豁免。
+    blob = _positive_surface(c)
     for _tok in ("TOPS", "TOPS-W", "TOPS/W", "fJ/op", "pJ/bit", "W/op"):
         if _tok in blob:
             return False
@@ -614,7 +854,58 @@ def run_selfchecks(verbose: bool = False) -> bool:
                  and _g["gds_bytes"] > 0)
     good2 = (ok_m2_agg and ok_m2_fec and ok_m2_bw and ok_m2_pts and ok_m2_lpo
              and ok_m2_noise and ok_m2_gds)
-    good = good and good2
+
+    # ── M2b 自洽 + 与模块现算逐位同源（G-OI5 五项）──
+    from lda_l2 import oi_m2b as M2B
+    m2b = c["m2b"]
+    _F = M2B.NYQUIST_200G_GHZ * 1e9
+    _a = float(M2B.OI_M2B_PROCESS["f_tia_ghz"]) * 1e9
+    _z = M2B.f_z_for_boost(_F, _a, float(M2B.OI_M2B_PROCESS["ctle_boost_db"]))
+    ok_m2b_form = (bool(m2b["equalizer"]["lpo"]["ctle"])
+                   and not bool(m2b["equalizer"]["lpo"]["ffe"])
+                   and bool(m2b["equalizer"]["retimed"]["ffe"]))
+    ok_m2b_ctle = (abs(m2b["ctle"]["f_z_hz"] - _z) < 1.0
+                   and abs(m2b["ctle"]["noise_penalty_db"]
+                           - M2B.ctle_noise_penalty_db(_z, _a, _F)) < 1e-3)
+    ok_m2b_eq = (bool(m2b["lane_equalizer"]["boost_distinct"])
+                 and bool(m2b["lane_equalizer"]["flat_ok"])
+                 and len(m2b["lane_equalizer"]["lanes"]) == 8)
+    _tb = M2B.thermal_tune_budget()
+    ok_m2b_th = (abs(m2b["thermal_tune"]["p_per_lane_mW"] - _tb["p_tune_mw_per_lane"]) < 1e-3
+                 and abs(m2b["thermal_tune"]["S_nm_per_mW"] - _tb["S_nm_per_mW"]) < 1e-9
+                 and "mW" in m2b["thermal_tune"]["unit_note"])
+    _g = M2B.crosstalk_gamma()
+    ok_m2b_g = (bool(m2b["crosstalk_gamma"]["symmetric_ok"])
+                and bool(m2b["crosstalk_gamma"]["diagonal_max_ok"])
+                and bool(m2b["crosstalk_gamma"]["monotonic_ok"])
+                and abs(m2b["crosstalk_gamma"]["S_nm_per_mW"] - _g["S_nm_per_mW"]) < 1e-9
+                and m2b["crosstalk_gamma"]["n"] == int(_g["n"]))
+    _yc = M2B.yield_closed_form()
+    _ym = M2B.yield_monte_carlo()
+    ok_m2b_y = (abs(m2b["yield"]["yield_closed_form"] - _yc["yield"]) < 1e-7
+                and m2b["yield"]["mc_n_samples"] == int(_ym["n_samples"])
+                and bool(m2b["yield"]["mc_seed"]))
+    # 温漂两项（`wl_drift_nm` / `dx_drift_um`）同源回读：此前只比 dx_max / IL 底，
+    # 温漂链（`Δθ = Δλ/(Λ·cosθ)` ⇒ 波长漂 ⇒ 横向走偏）从未与模块对拍 ⇒ 静默盲区（F841 棘轮抓出）。
+    ok_m2b_pkg = (_m2b_pkg_consistent(m2b) and
+                  bool(m2b["packaging"]["temp_in_tolerance"]))
+    ok_m2b_gap = ([g["id"] for g in c["gaps"]] == ["G-OI1", "G-OI2", "G-OI3",
+                                                   "G-OI4", "G-OI5"]
+                  and bool([g for g in c["gaps"] if g["id"] == "G-OI5"
+                            and g["closed"]])
+                  and bool([g for g in c["gaps"] if g["id"] == "G-OI4"
+                            and not g["closed"]]))
+    good3 = (ok_m2b_form and ok_m2b_ctle and ok_m2b_eq and ok_m2b_th
+             and ok_m2b_g and ok_m2b_y and ok_m2b_pkg and ok_m2b_gap)
+    # 🔴 探针进判决（此前 `probe_banned_token_scan` 写好却没接进 good ⇒ 装饰性判据，
+    #    「写得绿」不等于「拦得住」；禁词口径与温漂同源回读两条都必须是真拦）。
+    _PROBE_OK = probe_banned_token_scan() and probe_m2b_pkg_same_source()
+    good = good and good2 and good3 and _PROBE_OK
+    if _DEBUG_SELFCHECK:                                     # noqa: F821
+        print("DBG good=%s good2=%s | m2b: form=%s ctle=%s eq=%s th=%s g=%s y=%s "
+              "pkg=%s gap=%s | m0/m1: ab=%s b19=%s ch=%s" %
+              (good, good2, ok_m2b_form, ok_m2b_ctle, ok_m2b_eq, ok_m2b_th,
+               ok_m2b_g, ok_m2b_y, ok_m2b_pkg, ok_m2b_gap, ok_ab, ok_b19, ok_ch))
     if verbose:
         print("[%s] OI-M0/M1/M2 case_card · 通道=%d · 闭式≡级联=%s · B19=%s"
               % ("PASS" if good else "FAIL", len(c["channels"]), ok_ab, ok_b19))
@@ -632,11 +923,20 @@ def run_selfchecks(verbose: bool = False) -> bool:
                  m2["fec"]["lpo_inner_code_gain_db"], ok_m2_bw,
                  m2["bandwidth_headroom_fast_ghz"], m2["bandwidth_headroom_legacy_ghz"],
                  ok_m2_pts, ok_m2_noise, m2["tia_noise_snr_db"], m2["snr_assumed_db"],
-                 ok_m2_gds, _g.get("n_devices"), _g.get("n_nets"),
-                 _g.get("lvs_verdict"), _g.get("layout_discipline_ok")))
+                 ok_m2_gds, m2["g_oi2"].get("n_devices"), m2["g_oi2"].get("n_nets"),
+                 m2["g_oi2"].get("lvs_verdict"),
+                 m2["g_oi2"].get("layout_discipline_ok")))
+        print("      M2b: 形态映射=%s · CTLE=%s(boost%.1fdB penalty%.3fdB) · 多通道=%s"
+              "(8 lane boost各异 + 平坦化) · 热调=%s(%.1f mW/lane) · Γ=%s · 良率=%s"
+              "(%.6f 闭式/%.6f MC) · 封装=%s(dx_max %.2f µm) · 缺口=%s"
+              % (ok_m2b_form, ok_m2b_ctle, m2b["ctle"]["boost_nom_db"],
+                 m2b["ctle"]["noise_penalty_db"], ok_m2b_eq, ok_m2b_th,
+                 m2b["thermal_tune"]["p_per_lane_mW"], ok_m2b_g, ok_m2b_y,
+                 m2b["yield"]["yield_closed_form"], m2b["yield"]["yield_mc"],
+                 ok_m2b_pkg, m2b["packaging"]["dx_max_um"], ok_m2b_gap))
     return good
 
 
 if __name__ == "__main__":
-    print("OI-M0/M1/M2 case self-check:",
+    print("OI-M0/M1/M2b case self-check:",
           "PASS" if run_selfchecks(verbose=True) else "FAIL")

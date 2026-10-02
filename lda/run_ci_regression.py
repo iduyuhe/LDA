@@ -1467,6 +1467,13 @@ CORE_SMOKES: List[str] = [
     #   + 反例 V1/V2（同序 ⇒ 36/28 处交叉，证明「反序」是必要条件）+ 6 突变探针 + 还原。
     #   实测 0.63s（冷启 ~10s）⇒ 入 `_BUILTIN_TIMEOUT_OVERRIDE`(120s)。
     "run_oi_transceiver_pnr_smoke.py",
+    # 🔴 v0.9.180 · 光联接模块征程 **M2b（G-OI5 · 多通道均衡/热调/热串扰Γ/良率MC/封装
+    #   容差）** 门禁：CTLE 复频响 + penalty 新口径（10log10(∫G²df/F)，基准=平坦）+ 8 通道
+    #   均衡拉平 + 热调单真源 S（只报 mW）+ 热串扰 Γ（Θ 二维薄片对数解 ⟷ 有限差分热网络
+    #   第二独立通道，误差随网格单调降）+ 良率（闭式 erf ⟷ MC N=20000 固定 seed）+ 封装
+    #   对准容差（先扣模场失配底）+ C1–C13 规格锚 + 探针 P1–P8 + 还原重跑。
+    #   实测 ~20s（MC 样本主导）⇒ 入 `_BUILTIN_TIMEOUT_OVERRIDE`(120s) 留足余量。
+    "run_oi_m2b_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2325,6 +2332,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_oi_m2_smoke.py": 120.0,
     # G-OI2 收发器真 GDS 门禁：逐规模 5 档双闸 + 布局纪律三前提两条通道 + 6 探针，实测 0.63s（冷启 ~10s）
     "run_oi_transceiver_pnr_smoke.py": 120.0,
+    # 光联接模块 M2b 门禁（G-OI5 五项）：CTLE/热调/Γ 双通道/良率 erf⟷MC/封装容差 + 8 探针，实测 20.3s
+    "run_oi_m2b_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

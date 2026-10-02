@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""WebUI 光联接模块 M0 + M1 + M2 + M2b + M3 案例卡前端**取值路径 + onclick**门禁（新征程 · 2026-10-02）。
+"""WebUI 光联接模块 M0 + M1 + M2 + M2b + M3 + M4 案例卡前端**取值路径 + onclick**门禁（新征程 · 2026-10-02）。
 
 ═══════════════════════════════════════════════════════════════════════════
 为什么存在（血案 #18 / #19 机器化）
@@ -9,7 +9,7 @@ E17-e 生产实测：`renderECore` 取 `synthesis_law.serial_ns`，而该值实�
 （案例卡 B1–B24 / API 验收）**都看不到这一层**：它们只保证 JSON 里有值，
 **不保证前端问对了地方**。
 
-本门禁把 `renderOi`（`sec-oi` 面板）的每条取值路径（M0 根块 + M1 / M2 / M2b / M3 子块），
+本门禁把 `renderOi`（`sec-oi` 面板）的每条取值路径（M0 根块 + M1 / M2 / M2b / M3 / M4 子块），
 逐条拿到真实 `oi_case.case_card()` JSON 上解析，并验证 `onclick` 接线反向
 完备——把「JSON 里有值 ≠ 前端问对了地方」这层钉死。
 
@@ -17,11 +17,12 @@ E17-e 生产实测：`renderECore` 取 `synthesis_law.serial_ns`，而该值实�
 判什么
 ───────────────────────────────────────────────────────────────────────────
 1. **onclick 接线**：$('runOi').onclick = runOi 在场（防「能力上线却点不动」）。
-2. **函数定义**：runOi / renderOi 在 index.html 内定义（且真的含 M1/M2/M3 块引用
-   + ㉔–㉘ 五个表头，防「后端加了 M3、前端还是 M0/M1/M2 壳」）。
+2. **函数定义**：runOi / renderOi 在 index.html 内定义（且真的含 M1/M2/M3/M4 块引用
+   + ㉔–㉘ 五个表头 + ㉙–㉞ 六个表头，防「后端加了 M4、前端还是 M0–M3 壳」）。
 3. **路径存在性**：renderOi 引用的每条 d./m1./rp./dv./sp./fx./rq./c./m./g./
    m2./m2rp./m2dv./m2g./m2fec./m2cf./m2rs./m2fm./m2b*/./m3./m3t./m3e./m3f./
-   m3n./m3p./m3th./m3cl./m3pw./m3ly./m3os./m3ru./m3r2./m3r4. 取值路径，在真实 JSON
+   m3n./m3p./m3th./m3cl./m3pw./m3ly./m3os./m3ru./m3r2./m3r4./
+   m4./m4c./m4p./m4r./m4fm./m4fx./m4x./m4q./pt./m4vl./m4w./m4b./m4s. 取值路径，在真实 JSON
    上逐段解析；**任一段不存在 ⇒ 红**（血案 #18/#19 要抓的）。
 4. **反向完备**：case_card() 下每个展示字段——channels 元素、requested 子字段、
    milestones/gaps 元素字段，**以及 M1 块顶层 + `ring_plan` / `driver` /
@@ -30,8 +31,11 @@ E17-e 生产实测：`renderECore` 取 `synthesis_law.serial_ns`，而该值实�
    `spec_points[]` / `g_oi2` / `platform_fixes_m2[]` 九组嵌套字段 + M2b 十一格
    + **M3 十六格**（顶层 / twmzm / echannel / fdtd_telegraph / next / pdn /
    thermal / closed_loop_thermal / power / power.cpo / power.pluggable /
-   layout_2p5d / layout_2p5d.oe_stats / reuse / reuse.at_200g / reuse.at_400g）**
-   ——都必须被前端引用（防「后端加了、前端不显示」的静默盲区）。🔴 M2 / M2b / M3
+   layout_2p5d / layout_2p5d.oe_stats / reuse / reuse.at_200g / reuse.at_400g）
+   + **M4 十三格**（顶层 / chain / prebias / replan / forms /
+   forms.forms[CPO|OBO|pluggable] / cte / pareto / pareto.points[] / pareto.vpi_l /
+   feasibility_wall / band_lock / slope_lock）**
+   ——都必须被前端引用（防「后端加了、前端不显示」的静默盲区）。🔴 M2 / M2b / M3 / M4
    块都是**后加的新成员**：若本门禁不扩，各块会静默落进盲区（正是本条纪律要防的）。
 5. **突变探针**（先证能变红）：
    ① 抹掉 case_card 某 channel 字段 ⇒ ③ 路径判据必红；
@@ -47,6 +51,11 @@ E17-e 生产实测：`renderECore` 取 `synthesis_law.serial_ns`，而该值实�
    ⑲ 抹掉**前端字面量** `m3cl.residual_nm` ⇒ ③ 的 js_ref 必红（证明两端都盯）；
    ⑳ 边界正则：`m3ly.gds_sha256` 被 `…_short` 前缀包含 ⇒ 纯子串假绿 / 边界必红；
    ㉑ 往 `oe_stats` 塞新成员 ⇒ ④e-42 必红。还原后复绿（R/R2）。
+   ㉕ 往 `m4` 顶层塞新字段 ⇒ ④e-43 必红；㉖ 抹掉 `m4.pareto.points[].vpi_v` ⇒ ③ 必红；
+   ㉗ 往 `m4.pareto.vpi_l` 塞新字段 ⇒ ④e-52 必红；
+   ㉘ 抹掉**前端字面量** `m4vl.vpi_l_gap_ratio` ⇒ ③ 的 js_ref 必红；
+   ㉙ 往 `m4.pareto` 塞**豁免外**新字段 ⇒ ④e-50 仍必红（证明豁免集不是万能挡箭牌）。
+   还原后复绿（R/R2/R3）。
 6. 自入 CI core（防静默漏接 · 血案 #28 同族）。
 
 🔴 M3 段的特别纪律（两处**自造假绿**已被本门禁当场抓住）：
@@ -57,11 +66,13 @@ E17-e 生产实测：`renderECore` 取 `synthesis_law.serial_ns`，而该值实�
     豁免集只剩 `geometry` / `lvs_report`（全量嵌套报告，前端只展示摘要，
     由 ④e-38 白名单 + `run_oi_m3_smoke` C 组签核判据守）。
     🔴 一般纪律：**豁免是最后手段，且必须显式登记 + 配探针证明不是死条款。**
+  · M4 同族：`m4.pareto` 的 `front` / `feasible` / `m3_design_point` 是**重复副本**
+    （与 `points` 同构）⇒ 显式白名单豁免；探针㉙ 专证「豁免集不能吞掉豁免外的成员」。
 
 🔴 诚实边界：本门禁是**静态路径检查**，不执行 JS、不看渲染是否「好看」；
 值存在但**语义不对**（口径漂移）仍由 oi_case.run_selfchecks + run_oi_m0_smoke /
-run_oi_m1_smoke / run_oi_m2_smoke / run_oi_m2b_smoke / run_oi_m3_smoke 那类
-「卡内数字 ≡ 模块现算」判据守。二者互补：
+run_oi_m1_smoke / run_oi_m2_smoke / run_oi_m2b_smoke / run_oi_m3_smoke /
+run_oi_m4_smoke 那类「卡内数字 ≡ 模块现算」判据守。二者互补：
 **那些守「值对不对」，本门禁守「问对没」**。
 """
 from __future__ import annotations
@@ -549,6 +560,76 @@ M3_REUSE_200_PATHS = [("m3r2." + k, "m3.reuse.at_200g." + k)
 M3_REUSE_400_PATHS = [("m3r4." + k, "m3.reuse.at_400g." + k)
                       for k in sorted(_REUSE_OPTIONAL)]
 
+# ── M4（CPO 形态深化 · 热-光-电协同设计空间）块：`var m4=d.m4||{}, m4c=m4.chain||{}, ...` ──
+M4_TOP_PATHS = [
+    ("m4.stage_label", "m4.stage_label"),
+    ("m4.chain", "m4.chain"),
+    ("m4.prebias", "m4.prebias"),
+    ("m4.replan", "m4.replan"),
+    ("m4.forms", "m4.forms"),
+    ("m4.cte", "m4.cte"),
+    ("m4.pareto", "m4.pareto"),
+    ("m4.feasibility_wall", "m4.feasibility_wall"),
+    ("m4.band_lock", "m4.band_lock"),
+    ("m4.slope_lock", "m4.slope_lock"),
+    ("m4.honest_note_m4", "m4.honest_note_m4"),
+]
+M4_CHAIN_PATHS = [("m4c." + k, "m4.chain." + k) for k in (
+    "p_asic_w", "d_t_photon_k", "slope_nm_per_k", "d_lambda_self_nm",
+    "d_lambda_frac_fsr", "fsr_nm", "channels_shifted", "r_h_k_per_mw",
+    "p_heat_required_mw_per_lane", "p_heat_supplyable_mw_per_lane",
+    "actuator_direction", "unidirectional_heater_feasible",
+    "chain_consistent_with_m3_residual", "note")]
+M4_PREBIAS_PATHS = [("m4p." + k, "m4.prebias." + k) for k in (
+    "p_asic_w", "t_amb_c", "d_t_photon_k", "t_eq_c", "setpoint_shift_nm",
+    "d_lambda_self_nm", "residual_nm_without_prebias", "residual_nm_after_prebias",
+    "p_heat_without_prebias_mw_per_lane", "p_heat_after_prebias_mw_per_lane",
+    "tec_required", "solution", "bi_directional_margin_needed", "note")]
+M4_REPLAN_PATHS = [("m4r." + k, "m4.replan." + k) for k in (
+    "wl0_cold_nm", "wl0_hot_nm", "d_lambda_nm", "fsr_nm_cold", "fsr_nm_hot",
+    "fsr_rel_change", "m_baseline", "m_at_t_eq", "m_changed",
+    "min_xt_db_at_t_eq", "max_il_drop_db_at_t_eq", "n_solutions_at_t_eq",
+    "plan_still_valid", "note")]
+M4_FORMS_TOP_PATHS = [("m4fm." + k, "m4.forms." + k) for k in (
+    "forms", "order", "thermal_coupling_rank", "elec_il_rank", "fiber_il_rank",
+    "theta_monotonic_with_distance", "elec_il_monotonic_with_bus", "note")]
+M4_FORMS_ELEM_KEYS = ("die_dist_um", "theta_k_per_w", "bus_len_mm",
+                      "il_elec_db", "il_fiber_db", "il_total_db")
+M4_FORMS_ELEM_PATHS = [("m4fx.%s.%s" % (fk, k), "m4.forms.forms.%s.%s" % (fk, k))
+                       for fk in ("CPO", "OBO", "pluggable") for k in M4_FORMS_ELEM_KEYS]
+M4_CTE_PATHS = [("m4x." + k, "m4.cte." + k) for k in (
+    "p_asic_w", "d_t_k", "cte_si_per_k", "cte_glass_fau_per_k", "cte_mismatch_per_k",
+    "arm_len_mm", "mfd_w_um", "dx_um", "dx_nm", "ratio_dx_over_w", "il_cte_db",
+    "assembly_tol_um", "il_assembly_db", "cte_is_dominant", "note")]
+M4_PARETO_TOP_PATHS = [("m4q." + k, "m4.pareto." + k) for k in (
+    "points", "n_points", "n_front", "n_dominated", "all_points_non_dominated",
+    "n_infeasible_bw", "n_infeasible_vpp", "n_feasible", "feasible_collapsed",
+    "feasible_l_mm", "bw_death_line_ghz", "vpp_cmos_limit_v", "m3_design_l_mm",
+    "m3_design_on_front", "m3_design_feasible", "vpi_l", "note")]
+M4_PARETO_PT_PATHS = [("pt.%s" % k, "m4.pareto.points[].%s" % k) for k in (
+    "l_mm", "bw_ghz", "il_db", "p_drv_mw", "vpi_v", "vpp_v",
+    "feasible_bw", "feasible_vpp", "feasible")]   # 前端 `m4q.points[].map(function(pt){...})`
+# 🔴 `pareto` 里三项**故意不渲染**（与 ④c 的 `detail` / M3 的 `geometry` 同族豁免）：
+#   · `front` / `feasible` = Pareto 前沿与可行子集的**全量嵌套点数组**（与 `points` 同构的
+#     重复副本），前端已用 `points` 逐点表 + 计数（n_front/n_feasible）表达 ⇒ 渲染全量纯冗余；
+#   · `m3_design_point` = M3 设计点那一行 `points` 元素（同样已在逐点表中）⇒ 重复副本。
+# 豁免是**显式白名单**：新成员落进这三项之外 ⇒ ④e-M4 立刻变红（与 oe_stats 血案同族纪律）。
+M4_PARETO_OPT = {"front", "feasible", "m3_design_point"}
+M4_VPIL_PATHS = [("m4vl." + k, "m4.pareto.vpi_l." + k) for k in (
+    "vpi_l_implied_by_m3_v_cm", "vpi_l_public_typical_v_cm", "vpi_l_public_band_v_cm",
+    "vpi_l_gap_ratio", "vpp_required_at_public_vpi_l_v", "l_needed_for_m3_vpp_mm",
+    "public_vpi_l_in_band", "consistent_with_public_process", "note")]
+M4_WALL_PATHS = [("m4w." + k, "m4.feasibility_wall." + k) for k in (
+    "public_feasible_l_mm", "m3_implied_feasible_l_mm", "public_vpi_l_feasible_points",
+    "m3_implied_vpi_l_feasible_points", "public_feasible_collapsed",
+    "public_narrower_than_m3", "note")]
+M4_BAND_PATHS = [("m4b." + k, "m4.band_lock." + k) for k in (
+    "m4_wl0_nm", "m2_wl0_nm", "m1_default_wl0_nm", "same_as_m2",
+    "differs_from_m1_default", "channels_match_m2", "gap_nm", "note")]
+M4_SLOPE_PATHS = [("m4s." + k, "m4.slope_lock." + k) for k in (
+    "slope_m3_calibrated_nm_per_k", "slope_material_closed_nm_per_k",
+    "rel_diff", "agree_within_25pct", "note")]
+
 ALL_PATHS = (ROOT_PATHS + REQUESTED_PATHS + CHANNEL_PATHS + MILESTONE_PATHS
              + GAP_PATHS + M1_TOP_PATHS + M1_DRIVER_PATHS + M1_RING_PATHS
              + M1_SPEC_PATHS + M1_FIX_PATHS
@@ -561,7 +642,11 @@ ALL_PATHS = (ROOT_PATHS + REQUESTED_PATHS + CHANNEL_PATHS + MILESTONE_PATHS
              + M3_NEXT_PATHS + M3_PDN_PATHS + M3_TH_PATHS + M3_CL_PATHS
              + M3_PW_TOP_PATHS + M3_PW_CPO_PATHS + M3_PW_PLUG_PATHS
              + M3_LAY_PATHS + M3_LAY_STAT_PATHS + M3_REUSE_TOP_PATHS
-             + M3_REUSE_200_PATHS + M3_REUSE_400_PATHS)
+             + M3_REUSE_200_PATHS + M3_REUSE_400_PATHS
+             + M4_TOP_PATHS + M4_CHAIN_PATHS + M4_PREBIAS_PATHS + M4_REPLAN_PATHS
+             + M4_FORMS_TOP_PATHS + M4_FORMS_ELEM_PATHS + M4_CTE_PATHS
+             + M4_PARETO_TOP_PATHS + M4_PARETO_PT_PATHS + M4_VPIL_PATHS
+             + M4_WALL_PATHS + M4_BAND_PATHS + M4_SLOPE_PATHS)
 
 # 🔴 防假绿：纯子串匹配下 `rp.m` 会被 `rp.min_fsr_nm` / `rp.max_il_drop_db` 前缀命中
 # ⇒ 「把 `rp.m` 从渲染里删掉」时 ③ 仍绿（门禁看不见的盲区）。对**是其它字面量前缀**
@@ -769,9 +854,53 @@ def _m3_reverse_flags(card: dict) -> dict:
     }
 
 
+def _m4_reverse_flags(card: dict) -> dict:
+    """M4（CPO 形态深化 · 热-光-电协同）反向完备十一格：顶层 / chain / prebias / replan /
+    forms / forms.forms[CPO|OBO|pluggable] / cte / pareto / pareto.vpi_l /
+    feasibility_wall / band_lock / slope_lock。
+
+    返回 {格名: bool}；True = 「后端每个展示字段都被前端引用」。
+    🔴 `m4.honest_note_m4` 与各子块 `note` 也在路径表内（前端分段/结论渲染）⇒ 参与反向完备。
+    🔴 `pareto` 的 `front` / `feasible` / `m3_design_point` 为**显式白名单豁免**（重复副本）。
+    """
+    m4 = card.get("m4") or {}
+    pa = m4.get("pareto") or {}
+    fo = m4.get("forms") or {}
+    elem_ok = all(
+        set((fo.get("forms") or {}).get(fk, {}).keys()) <= set(M4_FORMS_ELEM_KEYS)
+        for fk in ("CPO", "OBO", "pluggable"))
+    return {
+        "top": set(m4.keys()) <= _tops_of(M4_TOP_PATHS + M4_CHAIN_PATHS + M4_PREBIAS_PATHS
+                                          + M4_REPLAN_PATHS + M4_FORMS_TOP_PATHS + M4_CTE_PATHS
+                                          + M4_PARETO_TOP_PATHS + M4_WALL_PATHS + M4_BAND_PATHS
+                                          + M4_SLOPE_PATHS, "m4"),
+        "chain": set((m4.get("chain") or {}).keys())
+                 <= _leaf_keys(M4_CHAIN_PATHS, "m4.chain."),
+        "prebias": set((m4.get("prebias") or {}).keys())
+                   <= _leaf_keys(M4_PREBIAS_PATHS, "m4.prebias."),
+        "replan": set((m4.get("replan") or {}).keys())
+                  <= _leaf_keys(M4_REPLAN_PATHS, "m4.replan."),
+        "forms": set(fo.keys()) <= _tops_of(M4_FORMS_TOP_PATHS, "m4.forms"),
+        "forms_elem": elem_ok,
+        "cte": set((m4.get("cte") or {}).keys()) <= _leaf_keys(M4_CTE_PATHS, "m4.cte."),
+        "pareto": (set(pa.keys()) - M4_PARETO_OPT)
+                  <= _tops_of(M4_PARETO_TOP_PATHS, "m4.pareto"),
+        "pareto_pt": set(((pa.get("points") or [{}])[0]).keys())
+                     <= _leaf_keys(M4_PARETO_PT_PATHS, "m4.pareto.points[]."),
+        "vpi_l": set((pa.get("vpi_l") or {}).keys())
+                 <= _leaf_keys(M4_VPIL_PATHS, "m4.pareto.vpi_l."),
+        "wall": set((m4.get("feasibility_wall") or {}).keys())
+                <= _leaf_keys(M4_WALL_PATHS, "m4.feasibility_wall."),
+        "band": set((m4.get("band_lock") or {}).keys())
+                <= _leaf_keys(M4_BAND_PATHS, "m4.band_lock."),
+        "slope": set((m4.get("slope_lock") or {}).keys())
+                 <= _leaf_keys(M4_SLOPE_PATHS, "m4.slope_lock."),
+    }
+
+
 def main() -> int:
     print("=" * 74)
-    print("WebUI 光联接模块 M0+M1+M2+M2b+M3 案例卡 前端取值路径 + onclick 门禁"
+    print("WebUI 光联接模块 M0+M1+M2+M2b+M3+M4 案例卡 前端取值路径 + onclick 门禁"
           "（血案 #18/#19 机器化）")
     print("=" * 74)
 
@@ -803,6 +932,12 @@ def main() -> int:
           "d.m3" in rsrc and "㉔ M3 400G/lane 带宽墙" in rsrc
           and "㉕ CPO 电通道" in rsrc and "㉖ die↔die 热 + 闭环热调" in rsrc
           and "㉗ M3 功耗账" in rsrc and "㉘ M3 2.5D 版图签核" in rsrc)
+    # M4 段必须真的写进了 renderOi（防「后端加了 M4、前端还是 M0–M3 壳」）
+    check("② renderOi 内出现 M4 块引用（d.m4 + ㉙–㉞ 六个表头）",
+          "d.m4" in rsrc and "㉙ M4 热-光-电耦合链" in rsrc
+          and "㉚ M4 固化点预偏移" in rsrc and "㉛ M4 热致偏移" in rsrc
+          and "㉜ M4 三形态三域矩阵" in rsrc and "㉝ M4 FAU CTE" in rsrc
+          and "㉞ M4 三域 Pareto 前沿" in rsrc)
 
     # ── 3. 路径存在性（前端引用 ∧ 后端 JSON 真有值）─────────────────────
     _all_lits = [p[0] for p in ALL_PATHS]
@@ -1024,6 +1159,68 @@ def main() -> int:
           % (sorted(((_m3.get("layout_2p5d") or {}).get("oe_stats") or {}).keys()),
              sorted(_leaf_keys(M3_LAY_STAT_PATHS, "m3.layout_2p5d.oe_stats."))))
 
+    # ── 4e. M4（CPO 形态深化 · 热-光-电协同）反向完备十三格 ──────────────
+    _m4 = card.get("m4") or {}
+    _pa4 = _m4.get("pareto") or {}
+    _fo4 = _m4.get("forms") or {}
+    rf5 = _m4_reverse_flags(card)
+    check("④e-43 反向完备：m4 顶层每个展示字段都被前端引用",
+          rf5["top"], "后端=%s 前端引用=%s"
+          % (sorted(_m4.keys()),
+             sorted(_tops_of(M4_TOP_PATHS + M4_CHAIN_PATHS + M4_PREBIAS_PATHS
+                             + M4_REPLAN_PATHS + M4_FORMS_TOP_PATHS + M4_CTE_PATHS
+                             + M4_PARETO_TOP_PATHS + M4_WALL_PATHS + M4_BAND_PATHS
+                             + M4_SLOPE_PATHS, "m4"))))
+    check("④e-44 反向完备：m4.chain 每个字段都被前端引用",
+          rf5["chain"], "后端=%s 前端引用=%s"
+          % (sorted((_m4.get("chain") or {}).keys()),
+             sorted(_leaf_keys(M4_CHAIN_PATHS, "m4.chain."))))
+    check("④e-45 反向完备：m4.prebias 每个字段都被前端引用",
+          rf5["prebias"], "后端=%s 前端引用=%s"
+          % (sorted((_m4.get("prebias") or {}).keys()),
+             sorted(_leaf_keys(M4_PREBIAS_PATHS, "m4.prebias."))))
+    check("④e-46 反向完备：m4.replan 每个字段都被前端引用",
+          rf5["replan"], "后端=%s 前端引用=%s"
+          % (sorted((_m4.get("replan") or {}).keys()),
+             sorted(_leaf_keys(M4_REPLAN_PATHS, "m4.replan."))))
+    check("④e-47 反向完备：m4.forms 每个字段都被前端引用",
+          rf5["forms"], "后端=%s 前端引用=%s"
+          % (sorted(_fo4.keys()), sorted(_tops_of(M4_FORMS_TOP_PATHS, "m4.forms"))))
+    check("④e-48 反向完备：m4.forms.forms[CPO|OBO|pluggable] 每个字段都被前端引用",
+          rf5["forms_elem"], "后端=%s 前端引用=%s"
+          % (sorted(set().union(*[set(((_fo4.get("forms") or {}).get(fk) or {}).keys())
+                                  for fk in ("CPO", "OBO", "pluggable")])),
+             sorted(M4_FORMS_ELEM_KEYS)))
+    check("④e-49 反向完备：m4.cte 每个字段都被前端引用",
+          rf5["cte"], "后端=%s 前端引用=%s"
+          % (sorted((_m4.get("cte") or {}).keys()),
+             sorted(_leaf_keys(M4_CTE_PATHS, "m4.cte."))))
+    check("④e-50 反向完备：m4.pareto 每个展示字段都被前端引用"
+          "（front/feasible/m3_design_point 为显式白名单豁免）",
+          rf5["pareto"], "后端=%s 前端引用=%s"
+          % (sorted(set(_pa4.keys()) - M4_PARETO_OPT),
+             sorted(_tops_of(M4_PARETO_TOP_PATHS, "m4.pareto"))))
+    check("④e-51 反向完备：m4.pareto.points[] 每个字段都被前端引用",
+          rf5["pareto_pt"], "后端=%s 前端引用=%s"
+          % (sorted(((_pa4.get("points") or [{}])[0]).keys()),
+             sorted(_leaf_keys(M4_PARETO_PT_PATHS, "m4.pareto.points[]."))))
+    check("④e-52 反向完备：m4.pareto.vpi_l 每个字段都被前端引用",
+          rf5["vpi_l"], "后端=%s 前端引用=%s"
+          % (sorted((_pa4.get("vpi_l") or {}).keys()),
+             sorted(_leaf_keys(M4_VPIL_PATHS, "m4.pareto.vpi_l."))))
+    check("④e-53 反向完备：m4.feasibility_wall 每个字段都被前端引用",
+          rf5["wall"], "后端=%s 前端引用=%s"
+          % (sorted((_m4.get("feasibility_wall") or {}).keys()),
+             sorted(_leaf_keys(M4_WALL_PATHS, "m4.feasibility_wall."))))
+    check("④e-54 反向完备：m4.band_lock 每个字段都被前端引用",
+          rf5["band"], "后端=%s 前端引用=%s"
+          % (sorted((_m4.get("band_lock") or {}).keys()),
+             sorted(_leaf_keys(M4_BAND_PATHS, "m4.band_lock."))))
+    check("④e-55 反向完备：m4.slope_lock 每个字段都被前端引用",
+          rf5["slope"], "后端=%s 前端引用=%s"
+          % (sorted((_m4.get("slope_lock") or {}).keys()),
+             sorted(_leaf_keys(M4_SLOPE_PATHS, "m4.slope_lock."))))
+
     # ── 5. 突变探针（先证能变红）───────────────────────────────────────
     import copy
     # 探针①：抹掉 case_card 的某 channel 字段 ⇒ ③ 的路径判据必红
@@ -1198,6 +1395,43 @@ def main() -> int:
     check("🔴 探针㉔: 前端只渲染 ladder_err_largest、漏掉 ladder_err_smallest ⇒ 必红",
           _js_ref_ok(_fake5, "m3t.ladder_err_smallest", _all_lits) is False
           and _plain4 == "h+=m3t.ladder_err;")
+
+    # ── M4 探针（先证能变红）──────────────────────────────────────────
+    # 探针㉕：往 m4 顶层塞一个新字段 ⇒ ④e-43 反向完备必红
+    card_m25 = copy.deepcopy(card)
+    card_m25["m4"]["brand_new_probe_top4"] = 1
+    probe25 = _m4_reverse_flags(card_m25)["top"]
+    check("🔴 探针㉕: m4 顶层多一个新字段 ⇒ ④e-43 反向完备必红", probe25 is False)
+
+    # 探针㉖：抹掉 m4.pareto.points[].vpi_v ⇒ ③ 的路径判据必红（前端逐点表引用了它）
+    card_m26 = copy.deepcopy(card)
+    del card_m26["m4"]["pareto"]["points"][0]["vpi_v"]
+    probe26 = json_path_exists(card_m26, "m4.pareto.points[].vpi_v")
+    check("🔴 探针㉖: 抹掉 m4.pareto.points[].vpi_v ⇒ ③ 路径判据必红", probe26 is False)
+
+    # 探针㉗：往 m4.pareto.vpi_l 塞一个新字段 ⇒ ④e-52 必红（VπL 断口不能静默加字段）
+    card_m27 = copy.deepcopy(card)
+    card_m27["m4"]["pareto"]["vpi_l"]["brand_new_vpil_field"] = 1
+    probe27 = _m4_reverse_flags(card_m27)["vpi_l"]
+    check("🔴 探针㉗: m4.pareto.vpi_l 多一个新字段 ⇒ ④e-52 反向完备必红", probe27 is False)
+
+    # 探针㉘：抹掉 `m4vl.vpi_l_gap_ratio` 的**前端字面量** ⇒ ③ 的 js_ref 必红
+    #   （只有后端 JSON 有值而不盯前端 = 假绿；证明 ③ 在 M4 上也真的两端都盯）
+    rsrc_m28 = rsrc.replace("m4vl.vpi_l_gap_ratio", "")
+    probe28 = _js_ref_ok(rsrc_m28, "m4vl.vpi_l_gap_ratio", _all_lits)
+    check("🔴 探针㉘: 前端抹掉 m4vl.vpi_l_gap_ratio 字面量 ⇒ ③ 的 js_ref 必红",
+          probe28 is False)
+
+    # 探针㉙：把 `m4.pareto` 的**豁免集**当挡箭牌 —— 往豁免外的字段塞成员仍必须红
+    #   （防「豁免集一扩，新成员又静默进盲区」；与 oe_stats 血案同族）
+    card_m29 = copy.deepcopy(card)
+    card_m29["m4"]["pareto"]["brand_new_pareto_field"] = 1
+    probe29 = _m4_reverse_flags(card_m29)["pareto"]
+    check("🔴 探针㉙: m4.pareto 塞豁免外新字段 ⇒ ④e-50 仍必红（豁免集不是万能挡箭牌）",
+          probe29 is False)
+
+    check("🔴 探针R3: 未被污染的 case_card 在 M4 反向完备十三格上仍全绿（探针无副作用）",
+          all(_m4_reverse_flags(card).values()))
 
     # ── 6. 自入 CI core ────────────────────────────────────────────────
     ci = os.path.join(_ROOT, "lda", "run_ci_regression.py")

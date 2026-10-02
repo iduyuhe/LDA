@@ -31,9 +31,10 @@ D4 域 `photonic_interconnect` 与 `oi_transceiver`（M2 · G-OI2）单独承载
 """
 from __future__ import annotations
 
-CASE_ID = ("OI-M0/M1/M2/M2b/M3 · 光联接模块（M0 双通道基线 + M1 800G 频域/时域 + "
+CASE_ID = ("OI-M0/M1/M2/M2b/M3/M4 · 光联接模块（M0 双通道基线 + M1 800G 频域/时域 + "
            "M2 1.6T·LPO·G-OI2 真 GDS + M2b 均衡/热调/热串扰/良率/封装 G-OI5 + "
-           "M3 3.2T·CPO·400G/lane 带宽墙·die↔die 热·2.5D 签核 G-OI6）")
+           "M3 3.2T·CPO·400G/lane 带宽墙·die↔die 热·2.5D 签核 G-OI6 + "
+           "M4 CPO 形态深化·热-光-电协同设计空间·VπL 断口 G-OI7）")
 
 _CACHE: dict = {}
 _DEBUG_SELFCHECK: bool = False      # 排障用开关（默认关，避免门禁输出噪声）
@@ -637,6 +638,61 @@ def _m3_block() -> dict:
     }
 
 
+def _m4_block() -> dict:
+    """M4（CPO 形态深化 · 热-光-电协同设计空间）现算块。
+
+    🔴 数字**全部现算**（不写死）：与 `lda/run_oi_m4_smoke.py`（46 判据 + 11 探针）同源同一份
+    `lda_l2.oi_m4`，卡内只做**呈现层**，`run_selfchecks` 再回读比对防静默失真。
+
+    诚实边界（与卡内 `honest_note_m4` 一致）：
+      · 材料 CTE / VπL / 模场半径 / 三形态总线长 / 光纤耦合损耗均为**规格锚**（公开近似，非 foundry 真值）；
+      · 三形态 θ 差异用**几何标度**（1/d 远场），非实测封装数据；
+      · `P_drv ∝ 1/L` 是 `VπL` 恒定假设下的 A 档闭式；
+      · 🔴 不报 TOPS / TOPS-W / fJ-op / pJ-bit（三域代价只出 mW / W / K / nm / dB / GHz）。
+    """
+    from lda_l2 import oi_m4 as M4
+
+    chain = M4.co_design_chain()
+    prebias = M4.setpoint_prebias_design()
+    replan = M4.thermal_channel_replan()
+    forms = M4.package_form_factor_compare()
+    cte = M4.fau_cte_misalignment()
+    pareto = M4.pareto_front_l_electrode()
+    wall = M4.feasibility_wall()
+    bl = M4.band_lock()
+    slope = M4.thermal_optical_slope_lock()
+    return {
+        "stage_label": ("M4 · CPO 形态深化：热-光-电协同设计空间 —— "
+                        "耦合链 · 固化点预偏移（代数解）· 热态信道重规划 · 三形态矩阵 · "
+                        "FAU CTE 失准 · 三域 Pareto + VπL 断口"),
+        # ① 热-光-电耦合链
+        "chain": chain,
+        # ② 固化点预偏移（CPO 真实工程解 · 代数解）
+        "prebias": prebias,
+        # ③ 热致偏移 ⟷ WDM 信道规划（首次联立）
+        "replan": replan,
+        # ④ 封装形态族三域矩阵
+        "forms": forms,
+        # ⑤ FAU CTE 热-机械失准
+        "cte": cte,
+        # ⑥ 三域 Pareto 前沿 + VπL 断口
+        "pareto": pareto,
+        "feasibility_wall": wall,
+        # 互锁与波段
+        "band_lock": bl,
+        "slope_lock": slope,
+        "honest_note_m4": (
+            "🔴 M4 仍属**设计预算层**：材料 CTE（Si 2.6e-6 / 玻璃 FAU 3.2e-6 /K，**公开手册值**）· "
+            "`VπL` 规格锚（公开 SiP 典型 1.0–2.5 V·cm）· 模场半径 · 三形态总线长 · "
+            "光纤耦合损耗均为**规格锚**（公开工艺近似，**不是** foundry 真值，属 T2 锁死区）；"
+            "三形态热耦合 θ 差异用**几何标度**（1/d 远场近似），非实测封装数据；"
+            "`P_drv ∝ 1/L` 是 `VπL` 恒定假设下的 A 档闭式；"
+            "FAU 对准公差**无分布数据**、封装应力/翘曲**无实测** ⇒ **G-OI7 诚实保留**；"
+            "🔴 三域代价**只出 mW / W / K / nm / dB / GHz**，"
+            "**不报** TOPS / TOPS-W / fJ-op / pJ-bit 能效比；verdict 恒 `DESIGN_BUDGET`。"),
+    }
+
+
 def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
     """组装 M0 案例卡（确定性现算 + 模块级缓存）。
 
@@ -689,7 +745,15 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                   "① 400G/lane 带宽墙（TWMZM 双通道：闭式行波电极频响 ⟷ ABCD 阶梯链收敛）；"
                   "② CPO 电通道（电报闭式 ⟷ 1D FDTD 对拍 + NEXT + PDN 地弹）；"
                   "③ die↔die 热与闭环热调（抓出「环路增益 ≫1 致发散」根因）；"
-                  "④ 逐项 mW/W 同口径功耗账（CPO vs 可插拔）；⑤ 2.5D 版图签核 G-OI6 **"),
+                  "④ 逐项 mW/W 同口径功耗账（CPO vs 可插拔）；⑤ 2.5D 版图签核 G-OI6）；"
+                  "**M4 再把 CPO 形态深化为「热-光-电协同设计空间」**（此前三域从未联立）："
+                  "① 热-光-电耦合链（ASIC 热 → Δλ_self 1.676 nm → 信道失谐/热调功耗）；"
+                  "② **固化点预偏移**（CPO 真实工程解 · 代数解：25.0→41.5 ℃，残余与补偿功耗归零）；"
+                  "③ 热致偏移 ⟷ WDM 信道重规划（首次联立，FSR ∝ λ²）；"
+                  "④ 三形态三域矩阵（CPO / OBO / 可插拔：热 Θ 100× 差 · 电 IL 总线 ∝ 长 · 光纤耦合）；"
+                  "⑤ FAU CTE 热-机械失准（实测 118.8 nm ⇒ 0.0068 dB ≪ 装配公差 ⇒ **非主因**）；"
+                  "⑥ 三域 Pareto 前沿（**10/10 全非支配**）+ **VπL 诚实断口**（M3 隐含 0.24 V·cm "
+                  "比公开 SiP 激进 6.25× ⇒ 可行域收缩到 L=6 mm ≠ M3 的 2 mm）"),
         "identity": {
             "topology": "Tx：MZI 调制器（cos² 传递）× N 通道；Rx：微环 add-drop 滤波器"
                         "级联下路 + 双 GratingCoupler 耦合 + 光纤 span",
@@ -721,10 +785,21 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                          "(功耗) 逐项 mW 逐口径对拍（CPO vs 可插拔，只 mW/W）；"
                          "(版图) 2.5D：ASIC die + 中介层 + 光引擎 die + FAU 接触点，"
                          "电层 DRC + 电网络拓扑 LVS",
+            "method_m4": "M4 把**热 ↔ 光 ↔ 电**三域**首次联立**成一条耦合链（此前热调只在光子 die "
+                         "内闭环、电通道只管自己的 S 参数、热致波长偏移从未喂回信道规划）："
+                         "(耦合链) P_asic → ΔT_phot(=M3 同源 16.500 K) → Δλ_self(1.676 nm) → "
+                         "{信道失谐 0.373 间距, 热调功耗}；(预偏移) CPO 真实工程解＝把环**固化点**"
+                         "预偏移到热平衡温度（代数解，25.0→41.5 ℃）；(热×规划) 热态波长喂回"
+                         "`plan_lwdm_channels` 重规划（FSR ∝ λ²）；(形态族) CPO/OBO/可插拔三域矩阵"
+                         "（热 1/d 远场标度 · 电 √f 律 + 总线长 · 光纤耦合）；(CTE) FAU↔Si CTE "
+                         "失配 → 高斯模场闭式；(前沿) 共享变量 L 上三域 Pareto + **VπL 规格锚**。"
+                         "🔴 只出 K/nm/dB/mW/GHz，不折算能效比",
             "anchor_B19": "无源无增益不等式 |T|≤1（所有 transfer 幅值 ≤1），M0/M1/M2 全部满足",
-            "honest_layer": "M0/M1/M2/M3 均属设计预算层（L0 解析器件模型 + A 档闭式/行为级）；"
+            "honest_layer": "M0/M1/M2/M3/M4 均属设计预算层（L0 解析器件模型 + A 档闭式/行为级）；"
                             "真实版图 GDS 由 D4 域 photonic_interconnect 与 M2 新增的 "
-                            "oi_transceiver（G-OI2 收发器拓扑）承载；M3 的 2.5D 版图复用它",
+                            "oi_transceiver（G-OI2 收发器拓扑）承载；M3 的 2.5D 版图复用它；"
+                            "M4 的材料 CTE / VπL / 模场半径 / 三形态总线长均为**规格锚**"
+                            "（公开工艺近似，非 foundry 真值 ⇒ G-OI7 诚实保留）",
         },
         "requested": {
             "n_lanes": n_lanes,
@@ -738,6 +813,7 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
             "m2": _m2_block(),
             "m2b": _m2b_block(),
             "m3": _m3_block(),
+            "m4": _m4_block(),
         "b19_passivity": rep["b19_passivity"],
         "min_isolation_db": min_iso,
         "max_il_db": max_il,
@@ -819,6 +895,37 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                        "与板上终端。2.5D 版图：ASIC die 1800 µm + 中介层 3080 µm + 光引擎 die"
                        "（**复用 G-OI2 builder 元素**）+ FAU 接触点（片外 fiber 不落版图），"
                        "电层 DRC + 电网络拓扑 LVS 双闸 ⇒ 6 结构 / 247 元素 / 22 KB GDS."},
+            {"id": "M4-1", "label": "热-光-电耦合链：三域首次联立（ASIC 热 → 波长 → 信道/功耗）",
+             "detail": "此前热调只在光子 die 内闭环、电通道只管自己的 S 参数、热致波长偏移从未喂回"
+                       "信道规划 ⇒ M4 把三者接成**一条链**：P_asic 3 W × (R_a+R_i) 5.5 K/W = "
+                       "**ΔT_photon 16.500 K**（与 M3 闭环热调残余**同源一致**）⇒ Δλ_self = "
+                       "**1.676 nm**（0.343 FSR / 0.373 个信道间距）；单向加热器**不可行**"
+                       "（可供电 0.000 mW ⇒ 方向 `cool(TEC)`）—— 链上最关键的一环由 `chain_"
+                       "consistent_with_m3_residual` 判据锁死，跨模块同源不得各算各的"},
+            {"id": "M4-2", "label": "固化点预偏移（CPO 真实工程解 · 代数解）",
+             "detail": "CPO 里 ASIC 热把光子 die 抬到 41.5 ℃ > 环**固化点** 25 ℃ ⇒ 单向加热器补不回来"
+                       "（M3 已判死）。M4 给出**真正的工程解**：把环固化点**预偏移**到热平衡温度"
+                       "（25.0 → **41.5 ℃**）⇒ 热态残余由 **1.676 nm 归零到 0.000 nm**，补偿功耗"
+                       "同时由 16.500 → **0.000 mW/lane**（**代数解**，非不动点迭代）；"
+                       "🔴 残余/功耗**由公式算出**（不是写死的 0）⇒ 口径不一致时可被探针 P2 打红"},
+            {"id": "M4-3", "label": "热致偏移 ⟷ WDM 信道重规划（首次联立）",
+             "detail": "把热态波长**喂回**信道规划器：热致偏移后 wl0 1311.000 → 1312.676 nm；"
+                       "FSR ∝ λ² ⇒ 4.8918 → 4.9043 nm（**+0.256%**，非零，说明联立真起作用而非摆设）；"
+                       "在**热平衡波长**下重规划 m 由 268 不变（`m_changed=False`）· 热态最坏隔离 "
+                       "**41.52 dB** · `plan_still_valid=True` ⇒ 结论：本设计点下热致失谐**不推翻**"
+                       "现有的梳齿规避解（但这是**算出来的**，不是假设的）"},
+            {"id": "M4-4", "label": "三形态三域矩阵 + FAU CTE + 三域 Pareto + VπL 断口（G-OI7）",
+             "detail": "① 三形态（CPO / OBO / 可插拔）同口径三域代价：热耦合 Θ **0.2877 ≫ 0.0288 ≫ "
+                       "0.00288 K/W**（几何 1/d 远场标度，CPO 是 OBO 的 10×、可插拔的 100×）；"
+                       "电层 IL（M3 电通道 √f 模型 · 总线 5/50/100 mm 线性外推）25.95 → 259.5 → "
+                       "519.1 dB；光纤耦合 1.5/1.2/0.8 dB ⇒ **三域互相冲突，无单一赢家**。"
+                       "② FAU CTE 热-机械失准：Δx =(α_FAU−α_Si)·L_arm·ΔT ⇒ 实测 **118.8 nm** ⇒ "
+                       "高斯模场闭式 IL 仅 **0.0068 dB** ≪ 装配公差 **0.1206 dB** ⇒ **CTE 非耦合损耗"
+                       "主因**（反直觉诚实结论）。③ 三域 Pareto（共享变量 L）：**10/10 全非支配**"
+                       "（BW∝1/L² · IL∝L · P∝1/L 两两权衡）；**VπL 断口**：M3 设计点隐含 "
+                       "VπL=**0.24 V·cm**，比公开 SiP 典型 1.0–2.5 激进 **6.25×** ⇒ 用公开 VπL + "
+                       "CMOS 摆幅 3.3 V，可行域**收缩到 1 点（L=6 mm）**且 **≠ M3 的 2 mm** ⇒ "
+                       "**带宽墙部分是「调制效率墙」**。新增缺口 **G-OI7**（封装级热-机械-光真值缺失）"},
         ],
         "findings": [
             {"title": "闭式与级联两种方法预算逐位一致",
@@ -874,6 +981,32 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
              "detail": "LPO 相对重定时的裕量缩水 = 理想内码增益 **+ ISI 口径差**（0.425dB，因 RS-only "
                        "门限更紧 ⇒ 可达 SNR 工作点不同）。恒等式 `pen ≡ gain + (ISI_LPO − ISI_retimed)` "
                        "已由门禁 C10d 逐位锁死（Δ<1e-9）"},
+            {"title": "🔴 M4 最有价值发现：VπL 口径缺口（定稿阶段就抓出）",
+             "detail": "`OI_M3_PROCESS` **没有 VπL** ⇒ M3 的 `driver_dynamic_mw` 走的是**封装线电容**"
+                       "（与电极长度 L 无关）⇒ 三目标退化、**Pareto 根本不成立**。修正为「显式电极"
+                       "电容 C′·L + VπL 规格锚」后，用 f_RC = 4 Ω × 400 fF = 1.6 ps ⇒ 99.472 GHz "
+                       "**逐位反验**正确。由此长出真断口：M3 设计点（v_pp 3.0 V × L 2 mm）**隐含** "
+                       "VπL = **0.24 V·cm**，比公开 SiP 典型 **1.0–2.5 V·cm** **激进 4.2–10.4×**；"
+                       "叠加 CMOS 摆幅 3.3 V ⇒ 公开 VπL 下可行域从 10 点**收缩到 1 点（L=6 mm）**，"
+                       "且 **≠ M3 的 2 mm** ⇒ 所谓「带宽墙」**部分是「调制效率墙」**。"
+                       "🔴 这是**定稿阶段**（不是跑挂之后）就靠机器假设核查抓出的缺口"},
+            {"title": "🔴 CTE 失配不是耦合损耗主因（反直觉 · 有判据守）",
+             "detail": "FAU 与 Si 光子 die 的 CTE 失配（3.2e-6 vs 2.6e-6 /K）在 ΔT=16.5 K、12 mm "
+                       "臂长下只产生 **118.8 nm** 横向漂移 ⇒ 高斯模场闭式 IL **0.0068 dB**，"
+                       "比**装配对准公差**（0.5 µm ⇒ 0.1206 dB）小一个量级 ⇒ `cte_is_dominant=False`。"
+                       "结论：封装 IL 预算的主要矛盾在**装配公差**，不在 CTE 漂移（但 CTE 仍是"
+                       "长期可靠性/温循关注点，属 G-OI7 诚实保留）"},
+            {"title": "🔴 M4 自查抓出我自己写的假判据（同源相等）",
+             "detail": "门禁 P5 首跑**红不了** ⇒ 顺线查出 oi_case 里一条判据写成 "
+                       "`wl0_cold == OI_M4_PROCESS['wl0_nm']` —— 两边同源、**恒真**，任何探针都"
+                       "改不红。修法：改咬语义的 **O-band 归属判定**（1260–1360 nm 且与 M2 一致 + "
+                       "与 M1 的 C-band 默认不同）；另两条同源相等的「残余/补偿功耗」也改为"
+                       "**由公式算**并断言 `after < without`。识别法：**问「把上游常量改掉，这条会红吗？」**"},
+            {"title": "三域两两权衡 ⇒ 无单一最优 L（Pareto 10/10 全非支配）",
+             "detail": "共享自由变量 L 上：带宽 BW∝1/L²（越大越好）· 电极线损 IL∝L（越小越好）· "
+                       "驱动功耗 P∝1/L（越小越好）⇒ **两两反向**，10 个设计点**全部非支配**、"
+                       "被支配点 0 个。这不是「模型没收敛」，而是「三域本来就没有单一最优」——"
+                       "设计点必须由**系统级约束**（带宽线 + CMOS 摆幅）钉住，不能靠单域调优"},
         ],
         "gaps": [
             {"id": "G-OI1", "closed": True,
@@ -917,9 +1050,18 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                        "光引擎复用这条狗粮路径**根本没通**；改走 `chip_layout_export."
                        "device_elements`（与 `export_chip_gds` 同源）后 6 结构/247 元素/22 KB "
                        "GDS 出图。G-OI4「电路级模型 · 无 PDK · 不报 TOPS」**仍开放**"},
+            {"id": "G-OI7", "closed": False,
+             "title": "封装级热-机械-光真值缺失（M4 新增）",
+             "detail": "M4（CPO 形态深化）暴露：材料 CTE 用**公开手册值**（Si 2.6e-6 / 玻璃 FAU "
+                       "3.2e-6 /K，**不是本封装实测**）· FAU 对准公差**无分布数据** · "
+                       "封装应力/翘曲**无实测** · CTE 失配→耦合损耗用**高斯模场闭式**"
+                       "（未含实测模场交叠/端面反射/横向偏移之外的失配机制）；"
+                       "三形态热耦合 θ 差异用几何标度（1/d 远场近似）。"
+                       "🔴 属 **T2 锁死区**，是**诚实保留**项。"
+                       "与 G-OI4 **域不同、不重复记账**（G-OI4 = 电路级无 PDK；G-OI7 = 封装级无实测）"},
         ],
-        "gaps_closed": 5,      # G-OI1 / G-OI2 / G-OI3 / G-OI5 / G-OI6（G-OI4 仍开放）
-        "gaps_total": 6,
+        "gaps_closed": 5,      # G-OI1 / G-OI2 / G-OI3 / G-OI5 / G-OI6（G-OI4 与 G-OI7 开放）
+        "gaps_total": 7,
         "verdict": "DESIGN_BUDGET",
         "verdict_label": "链路预算设计行为验证口径（确定性现算 · 非流片实测 · 非实测签核）",
         "honest_note": ("🔴 本卡为只读案例：数字由确定性现算（闭式 + lda_chain 级联引擎 + "
@@ -930,6 +1072,11 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                         "接受 SNR 为**设计输入假设**（M2 另给免假设的 TIA 噪声闭式**上界**做交叉核对，"
                         "不含 RIN/反射/串扰/老化 ⇒ 不得当灵敏度规格）；M2 的 G-OI2 版图为"
                         "**设计期签核**（非流片、非实测；非 Foundry PDK）；"
+                        "M4 仍属**设计预算层**：材料 CTE / VπL / 模场半径 / 三形态总线长均为"
+                        "**规格锚**（公开工艺近似，非 foundry 真值 ⇒ G-OI7 诚实保留），"
+                        "三形态热耦合 θ 用几何标度（1/d 远场）非实测封装数据，"
+                        "FAU 对准公差无分布数据、封装应力/翘曲无实测；"
+                        "🔴 M4 三域代价**只出 mW / W / K / nm / dB / GHz**；"
                         "不报 TOPS/TOPS-W/fJ/op/pJ/bit；判决由死标量给出，LLM 不进判决路径。"),
     }
     if use_cache:
@@ -1104,6 +1251,117 @@ def probe_m3_loop_is_algebraic() -> bool:
     return True
 
 
+def _m4_pkg_consistent(m4: dict) -> bool:
+    """M4 块「卡内数字 ≡ 模块现算」同源回读（耦合链 / 预偏移 / 重规划 / 三形态 / CTE /
+    Pareto / 可行性墙 / 波段 / 斜率九链一起对拍）。
+
+    🔴 单独抽成函数是为了能被探针直接喂**被篡改的块**（否则判据恒绿、无从证伪）。
+    """
+    from lda_l2 import oi_m4 as M4
+
+    ch = M4.co_design_chain()
+    pb = M4.setpoint_prebias_design()
+    rp = M4.thermal_channel_replan()
+    fm = M4.package_form_factor_compare()
+    ct = M4.fau_cte_misalignment()
+    pa = M4.pareto_front_l_electrode()
+    wl = M4.feasibility_wall()
+    bl = M4.band_lock()
+    sl = M4.thermal_optical_slope_lock()
+
+    c, p, r = m4["chain"], m4["prebias"], m4["replan"]
+    f, x, q = m4["forms"], m4["cte"], m4["pareto"]
+    w, b, s = m4["feasibility_wall"], m4["band_lock"], m4["slope_lock"]
+
+    return (
+        abs(c["d_t_photon_k"] - ch["d_t_photon_k"]) < 1e-6
+        and abs(c["d_lambda_self_nm"] - ch["d_lambda_self_nm"]) < 1e-6
+        and abs(c["d_lambda_frac_fsr"] - ch["d_lambda_frac_fsr"]) < 1e-6
+        and bool(c["unidirectional_heater_feasible"]) == bool(ch["unidirectional_heater_feasible"])
+        and abs(p["setpoint_shift_nm"] - pb["setpoint_shift_nm"]) < 1e-6
+        and abs(p["residual_nm_after_prebias"] - pb["residual_nm_after_prebias"]) < 1e-8
+        and abs(p["t_eq_c"] - pb["t_eq_c"]) < 1e-6
+        and abs(r["wl0_hot_nm"] - rp["wl0_hot_nm"]) < 1e-6
+        and abs(r["fsr_rel_change"] - rp["fsr_rel_change"]) < 1e-8
+        and len(f["forms"]) == len(fm["forms"])
+        and all(abs(f["forms"][k]["theta_k_per_w"] - fm["forms"][k]["theta_k_per_w"]) < 1e-6
+                for k in fm["forms"])
+        and abs(x["dx_nm"] - ct["dx_nm"]) < 1e-6
+        and abs(x["il_cte_db"] - ct["il_cte_db"]) < 1e-6
+        and bool(x["cte_is_dominant"]) == bool(ct["cte_is_dominant"])
+        and q["n_points"] == pa["n_points"] and q["n_front"] == pa["n_front"]
+        and bool(q["all_points_non_dominated"]) == bool(pa["all_points_non_dominated"])
+        and [round(v, 9) for v in q["feasible_l_mm"]] == [round(v, 9) for v in pa["feasible_l_mm"]]
+        and bool(q["m3_design_on_front"]) == bool(pa["m3_design_on_front"])
+        and abs(q["vpi_l"]["vpi_l_implied_by_m3_v_cm"]
+                - pa["vpi_l"]["vpi_l_implied_by_m3_v_cm"]) < 1e-9
+        and w["public_vpi_l_feasible_points"] == wl["public_vpi_l_feasible_points"]
+        and bool(w["public_feasible_collapsed"]) == bool(wl["public_feasible_collapsed"])
+        and abs(b["m4_wl0_nm"] - bl["m4_wl0_nm"]) < 1e-9
+        and bool(b["same_as_m2"]) == bool(bl["same_as_m2"])
+        and bool(b["differs_from_m1_default"]) == bool(bl["differs_from_m1_default"])
+        and abs(s["rel_diff"] - sl["rel_diff"]) < 1e-9
+    )
+
+
+def _m4_vpi_l_honest(m4: dict) -> bool:
+    """M4 VπL 断口**诚实性**（不是同源相等）：必须如实承认 M3 隐含 VπL 与公开工艺不符。
+
+    守的血案：「外部常量/规格取值错一处 ⇒ 整条链路余量判断反向」（M1 的 KP4 门限同族）。
+    若被抹平（说成落在公开区间内）⇒ 判 False。
+    """
+    _v = m4["pareto"]["vpi_l"]
+    return (
+        bool(_v["consistent_with_public_process"]) is False
+        and float(_v["vpi_l_gap_ratio"]) > 1.0
+        and float(_v["vpi_l_implied_by_m3_v_cm"]) < float(_v["vpi_l_public_band_v_cm"][0])
+    )
+
+
+def probe_m4_same_source() -> bool:
+    """🔴 探针：证 `_m4_pkg_consistent` 不是恒绿（先证能变红，再信它）。
+
+    反例覆盖**六条链**任改其一必红（只改一条不足以证明「全链对拍」）：
+      · 耦合链（d_lambda_self）· 预偏移（残余）· 重规划（fsr 相对变化）·
+        三形态 CTE（dx_nm）· Pareto（前沿点数）· 波段互锁（m4_wl0）
+    """
+    import copy as _copy
+    _blk = _m4_block()
+    if not _m4_pkg_consistent(_blk):
+        return False                                   # 真块都不绿 ⇒ 判据写错
+    for _path, _delta in ((("chain", "d_lambda_self_nm"), 0.05),
+                          (("prebias", "residual_nm_after_prebias"), 1e-3),
+                          (("replan", "fsr_rel_change"), 1e-4),
+                          (("cte", "dx_nm"), 5.0),
+                          (("pareto", "n_front"), -1),
+                          (("band_lock", "m4_wl0_nm"), 3.0)):
+        _bad = _copy.deepcopy(_blk)
+        _cur = _bad
+        for _k in _path[:-1]:
+            _cur = _cur[_k]
+        _cur[_path[-1]] = _cur[_path[-1]] + _delta
+        if _m4_pkg_consistent(_bad):
+            return False                               # 数字真变了还绿 ⇒ 假绿
+    return True
+
+
+def probe_m4_vpi_l_disclosed() -> bool:
+    """🔴 探针：VπL 断口必须**被披露且可判死**（守「规格取值错一处 ⇒ 余量判断反向」血案）。
+
+    双向：
+      · 正例：真块如实 `consistent_with_public_process is False` + `gap_ratio > 1`；
+      · 反例：把断口**抹平**成「一致」⇒ `_m4_vpi_l_honest` 必须判 False。
+    """
+    import copy as _copy
+    _blk = _m4_block()
+    if not _m4_vpi_l_honest(_blk):
+        return False                                   # 真块都没披露 ⇒ 判据写错
+    _bad = _copy.deepcopy(_blk)
+    _bad["pareto"]["vpi_l"]["consistent_with_public_process"] = True   # 抹平断口
+    _bad["pareto"]["vpi_l"]["vpi_l_gap_ratio"] = 1.0
+    return not _m4_vpi_l_honest(_bad)
+
+
 def run_selfchecks(verbose: bool = False) -> bool:
     """模块自检：卡结构完备 + 判决诚实 + 关键数字与模块自检同源（M0 + M1 + M2 + M2b）。
 
@@ -1111,7 +1369,7 @@ def run_selfchecks(verbose: bool = False) -> bool:
     防「案例卡写死一份、模块改了卡不动」的静默失真（血案同族）。
     """
     c = case_card(use_cache=False)
-    need = ["case_id", "claim", "identity", "requested", "channels", "m1", "m2", "m2b", "m3",
+    need = ["case_id", "claim", "identity", "requested", "channels", "m1", "m2", "m2b", "m3", "m4",
             "b19_passivity", "milestones", "findings", "gaps", "verdict", "honest_note"]
     if any(k not in c for k in need):
         return False
@@ -1244,9 +1502,10 @@ def run_selfchecks(verbose: bool = False) -> bool:
     ok_m2b_pkg = (_m2b_pkg_consistent(m2b) and
                   bool(m2b["packaging"]["temp_in_tolerance"]))
     # 🔴 缺口清单变了必须同步：M3 新增 G-OI6 ⇒ 5→6 项（首版漏改 ⇒ 旧断言仍要 5 项 ⇒ 自毁）
+    # 🔴 缺口清单变了必须同步：M4 新增 G-OI7 ⇒ 6→7 项（首版漏改 ⇒ 旧断言仍要 6 项 ⇒ 自毁）
     ok_m2b_gap = ([g["id"] for g in c["gaps"]] == ["G-OI1", "G-OI2", "G-OI3",
-                                                   "G-OI4", "G-OI5", "G-OI6"]
-                  and c["gaps_total"] == 6
+                                                   "G-OI4", "G-OI5", "G-OI6", "G-OI7"]
+                  and c["gaps_total"] == 7
                   and bool([g for g in c["gaps"] if g["id"] == "G-OI5"
                             and g["closed"]])
                   and bool([g for g in c["gaps"] if g["id"] == "G-OI6"
@@ -1297,31 +1556,68 @@ def run_selfchecks(verbose: bool = False) -> bool:
                     and lay["oe_elements_reused"] > 0
                     and lay["gds_structures"].count("OE_DIE") == 1)
     ok_m3_pkg = _m3_pkg_consistent(m3)
-    # 缺口终态：G-OI6 已闭合 ⇒ 5/6（G-OI4 仍开放）
+    # 缺口终态：G-OI7 新增开放 ⇒ 5/7（G-OI4 与 G-OI7 仍开放）
     ok_m3_gap = ([g["id"] for g in c["gaps"]] == ["G-OI1", "G-OI2", "G-OI3", "G-OI4",
-                                                  "G-OI5", "G-OI6"]
-                 and c["gaps_total"] == 6
+                                                  "G-OI5", "G-OI6", "G-OI7"]
+                 and c["gaps_total"] == 7
                  and bool([g for g in c["gaps"] if g["id"] == "G-OI6" and g["closed"]])
-                 and bool([g for g in c["gaps"] if g["id"] == "G-OI4" and not g["closed"]]))
+                 and bool([g for g in c["gaps"] if g["id"] == "G-OI4" and not g["closed"]])
+                 and bool([g for g in c["gaps"] if g["id"] == "G-OI7" and not g["closed"]]))
     # 🔴 `ok_m3_gap` 必须**进判决**（此前只出现在 debug print 里 ⇒ 装饰性判据：
     #    缺口清单被改坏时 `good` 仍绿 —— 正是「写得绿 ≠ 拦得住」的血案）。
     good4 = (ok_m3_scale and ok_m3_bw and ok_m3_chan and ok_m3_th
              and ok_m3_loop and ok_m3_pw and ok_m3_layout and ok_m3_pkg
              and ok_m3_gap)
 
+    # ── M4 自洽 + 与模块现算逐位同源（热-光-电耦合链 / 预偏移 / 重规划 / 三形态 / CTE /
+    #    Pareto / 可行性墙 / 波段 / 斜率）—— 同源回读经由 `_m4_pkg_consistent` 内部取模块现算 ──
+    m4 = c["m4"]
+    ok_m4_pkg = _m4_pkg_consistent(m4)
+    # 语义（不靠同源相等）：三域真冲突 + 预偏移归零 + 热态红移 + 反直觉结论 + 互锁
+    ok_m4_sem = (m4["chain"]["d_t_photon_k"] > 0.0
+                 and m4["chain"]["unidirectional_heater_feasible"] is False
+                 and bool(m4["chain"]["chain_consistent_with_m3_residual"])
+                 and m4["prebias"]["solution"] == "algebraic"
+                 and m4["prebias"]["residual_nm_after_prebias"]
+                 < m4["prebias"]["residual_nm_without_prebias"]
+                 and m4["prebias"]["p_heat_after_prebias_mw_per_lane"]
+                 < m4["prebias"]["p_heat_without_prebias_mw_per_lane"]
+                 and 1260.0 <= m4["replan"]["wl0_cold_nm"] <= 1360.0     # O-band 归属（咬语义）
+                 and m4["replan"]["wl0_hot_nm"] > m4["replan"]["wl0_cold_nm"]
+                 and m4["replan"]["fsr_nm_hot"] > m4["replan"]["fsr_nm_cold"]   # FSR ∝ λ²
+                 and bool(m4["forms"]["theta_monotonic_with_distance"])
+                 and bool(m4["forms"]["elec_il_monotonic_with_bus"])
+                 and bool(m4["cte"]["cte_is_dominant"]) is False          # CTE 非主因
+                 and bool(m4["pareto"]["all_points_non_dominated"])
+                 and bool(m4["feasibility_wall"]["public_feasible_collapsed"])
+                 and bool(m4["feasibility_wall"]["public_narrower_than_m3"])
+                 and bool(m4["band_lock"]["same_as_m2"])
+                 and bool(m4["band_lock"]["differs_from_m1_default"])
+                 and bool(m4["slope_lock"]["agree_within_25pct"]))
+    ok_m4_vpi = _m4_vpi_l_honest(m4)
+    # 缺口终态：M4 新增 G-OI7 开放 ⇒ 5/7
+    ok_m4_gap = ([g["id"] for g in c["gaps"]] == ["G-OI1", "G-OI2", "G-OI3", "G-OI4",
+                                                  "G-OI5", "G-OI6", "G-OI7"]
+                 and c["gaps_total"] == 7
+                 and bool([g for g in c["gaps"] if g["id"] == "G-OI7" and not g["closed"]]
+                          ))
+    good5 = (ok_m4_pkg and ok_m4_sem and ok_m4_vpi and ok_m4_gap)
+
     # 🔴 探针进判决（此前 `probe_banned_token_scan` 写好却没接进 good ⇒ 装饰性判据，
     #    「写得绿」不等于「拦得住」；禁词口径与温漂同源回读两条都必须是真拦）。
     _PROBE_OK = (probe_banned_token_scan() and probe_m2b_pkg_same_source()
-                 and probe_m3_pkg_same_source() and probe_m3_loop_is_algebraic())
-    good = good and good2 and good3 and good4 and _PROBE_OK
+                 and probe_m3_pkg_same_source() and probe_m3_loop_is_algebraic()
+                 and probe_m4_same_source() and probe_m4_vpi_l_disclosed())
+    good = good and good2 and good3 and good4 and good5 and _PROBE_OK
     if _DEBUG_SELFCHECK:                                     # noqa: F821
         print("DBG good=%s good2=%s | m2b: form=%s ctle=%s eq=%s th=%s g=%s y=%s "
               "pkg=%s gap=%s | m3: scale=%s bw=%s chan=%s th=%s loop=%s pw=%s "
-              "layout=%s pkg=%s gap=%s | m0/m1: ab=%s b19=%s ch=%s" %
+              "layout=%s pkg=%s gap=%s | m4: pkg=%s sem=%s vpi=%s gap=%s | m0/m1: ab=%s b19=%s ch=%s" %
               (good, good2, ok_m2b_form, ok_m2b_ctle, ok_m2b_eq, ok_m2b_th,
                ok_m2b_g, ok_m2b_y, ok_m2b_pkg, ok_m2b_gap,
                ok_m3_scale, ok_m3_bw, ok_m3_chan, ok_m3_th, ok_m3_loop, ok_m3_pw,
-               ok_m3_layout, ok_m3_pkg, ok_m3_gap, ok_ab, ok_b19, ok_ch))
+               ok_m3_layout, ok_m3_pkg, ok_m3_gap,
+               ok_m4_pkg, ok_m4_sem, ok_m4_vpi, ok_m4_gap, ok_ab, ok_b19, ok_ch))
     if verbose:
         print("[%s] OI-M0/M1/M2 case_card · 通道=%d · 闭式≡级联=%s · B19=%s"
               % ("PASS" if good else "FAIL", len(c["channels"]), ok_ab, ok_b19))
@@ -1350,6 +1646,23 @@ def run_selfchecks(verbose: bool = False) -> bool:
                  m2b["thermal_tune"]["p_per_lane_mW"], ok_m2b_g, ok_m2b_y,
                  m2b["yield"]["yield_closed_form"], m2b["yield"]["yield_mc"],
                  ok_m2b_pkg, m2b["packaging"]["dx_max_um"], ok_m2b_gap))
+        print("      M4: 同源=%s · 语义=%s · VπL断口=%s · 缺口=%s | 耦合链 ΔT=%.3fK→Δλ=%.3f nm · "
+              "预偏移 %.1f→%.1f℃(残余 %.3e nm) · 重规划 FSR %+.3f%% · 三形态 θ[%s] · "
+              "CTE %.1f nm(%.4f dB, 主因=%s) · Pareto %d/%d 非支配 · 可行域 %s mm · "
+              "VπL 隐含 %.3f(公开 %.1f–%.1f, ×%.2f)"
+              % (ok_m4_pkg, ok_m4_sem, ok_m4_vpi, ok_m4_gap,
+                 m4["chain"]["d_t_photon_k"], m4["chain"]["d_lambda_self_nm"],
+                 m4["prebias"]["t_amb_c"], m4["prebias"]["t_eq_c"],
+                 m4["prebias"]["residual_nm_after_prebias"],
+                 m4["replan"]["fsr_rel_change"] * 100.0,
+                 ",".join(m4["forms"]["thermal_coupling_rank"]),
+                 m4["cte"]["dx_nm"], m4["cte"]["il_cte_db"], m4["cte"]["cte_is_dominant"],
+                 m4["pareto"]["n_front"], m4["pareto"]["n_points"],
+                 m4["pareto"]["feasible_l_mm"],
+                 m4["pareto"]["vpi_l"]["vpi_l_implied_by_m3_v_cm"],
+                 m4["pareto"]["vpi_l"]["vpi_l_public_band_v_cm"][0],
+                 m4["pareto"]["vpi_l"]["vpi_l_public_band_v_cm"][1],
+                 m4["pareto"]["vpi_l"]["vpi_l_gap_ratio"]))
     return good
 
 

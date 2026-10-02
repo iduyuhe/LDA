@@ -143,7 +143,7 @@ body{padding-top:56px}
     <a href="#sec-accel" style="color:#0b1220;background:#7dd3fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子/模拟 AI 加速器（L6）</a>
     <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E18）</a>
     <a href="#sec-d4" style="color:#0b1220;background:#a5b4fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ D4 交付扩面（电子+超导）</a>
-    <a href="#sec-oi" style="color:#04201b;background:#5eead4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光联接模块 M0–M3（3.2T/CPO 新征程）</a>
+    <a href="#sec-oi" style="color:#04201b;background:#5eead4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光联接模块 M0–M4（3.2T/CPO · 热-光-电协同新征程）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1444,7 +1444,7 @@ body{padding-top:56px}
   </div>
 
   <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-oi">
-    <h2>★ 光联接模块 M0–M3：2 通道基线 → 800G → 1.6T → 3.2T / CPO（吃狗粮检阅平台）</h2>
+    <h2>★ 光联接模块 M0–M4：2 通道基线 → 800G → 1.6T → 3.2T/CPO → CPO 形态深化（吃狗粮检阅平台）</h2>
     <div class="hint">
       <b>M0</b>：用 LDA 自家<b>光链路设计验证链（lda_chain）</b>把一款 2 通道 WDM 收发器从装配跑通到链路预算——
       <b>Tx</b> = MZI 调制器（cos² 传递）× N 通道；<b>Rx</b> = 微环 add-drop 滤波器级联下路
@@ -1479,10 +1479,25 @@ body{padding-top:56px}
       🔴 <b>诚实边界</b>：M0–M3 均属<b>设计预算层</b>（M3 的 2.5D 版图复用它）；电极/总线/热阻/
       版图尺寸为<b>规格锚</b>（公开工艺近似，<b>非</b> Foundry PDK 真值，T2 锁死）；LVS 是
       <b>几何-拓扑一致性核对</b>，非 foundry 电 PDK；FDTD 跑<b>无损</b>电报方程；
-      功耗账<b>只 mW/W</b>，<b>不报</b> TOPS / TOPS-W / fJ-op / pJ-bit。
+      功耗账<b>只 mW/W</b>，<b>不报</b> TOPS / TOPS-W / fJ-op / pJ-bit。<br/>
+      <b>M4（CPO 形态深化 · 热-光-电协同设计空间）</b>：此前热调只在光子 die 内闭环、电通道只管
+      自己的 S 参数、热致波长偏移<b>从未喂回信道规划</b> ⇒ M4 把三域<b>接成一条耦合链</b>：
+      <b>热-光-电耦合链</b>（P_asic → ΔT_photon 16.5 K → Δλ_self 1.676 nm → {信道失谐, 热调功耗}）·
+      <b>固化点预偏移</b>（CPO 真实工程解 = 把环设定点挪到热平衡温度 25.0→41.5 ℃，残余与补偿功耗同时归零，
+      <b>代数解</b>）· <b>热致偏移 ⟷ WDM 信道重规划</b>（首次联立，FSR ∝ λ²）·
+      <b>封装形态族三域矩阵</b>（CPO / OBO / 可插拔：热 Θ 100× 差 · 电 IL ∝ 总线长 · 光纤耦合，三域<b>互相冲突</b>）·
+      <b>FAU CTE 热-机械失准</b>（实测 118.8 nm ⇒ 0.0068 dB ≪ 装配公差 ⇒ 🔴 <b>CTE 非耦合损耗主因</b>，反直觉）·
+      <b>三域 Pareto 前沿</b>（共享变量 L，10/10 全非支配 ⇒ 无单一最优）+ <b>🔴 VπL 诚实断口</b>
+      （M3 设计点<b>隐含</b> VπL 0.24 V·cm，比公开 SiP 典型 1.0–2.5 激进 6.25× ⇒ 用公开 VπL + CMOS 摆幅
+      可行域收缩到 L=6 mm 且 ≠ M3 的 2 mm ⇒ 所谓「带宽墙」<b>部分是「调制效率墙」</b>）。
+      新增缺口 <b>G-OI7</b>（封装级热-机械-光真值缺失，T2 锁死诚实保留，与 G-OI4 域不同不重复记账）。<br/>
+      🔴 <b>M4 诚实边界</b>：材料 CTE / VπL / 模场半径 / 三形态总线长均为<b>规格锚</b>（公开近似，<b>非</b> foundry
+      真值）；三形态热耦合 θ 用<b>几何标度</b>（1/d 远场）非实测封装数据；FAU 对准公差<b>无分布数据</b>、
+      封装应力/翘曲<b>无实测</b>；三域代价<b>只出 mW / W / K / nm / dB / GHz</b>，<b>不报</b>
+      TOPS / TOPS-W / fJ-op / pJ-bit。
     </div>
     <div class="row">
-      <button class="btn" id="runOi">运行 光联接模块 M0 – M3 案例</button>
+      <button class="btn" id="runOi">运行 光联接模块 M0 – M4 案例</button>
     </div>
     <div id="oiSummary" class="summary"></div>
     <div id="oiBody"></div>
@@ -4974,7 +4989,7 @@ if($('runD4')) $('runD4').onclick = runD4;
 async function runOi(){
   const btn=$('runOi'); if(!btn) return;
   btn.disabled=true;
-  $('oiSummary').innerHTML='<span class="spin"></span> 正在装配 光联接模块 M0 – M3 案例（闭式 + 级联引擎 + IFFT 时域 + 几何搜索 + 1D FDTD 电通道 + 2.5D 版图，确定性现算）…';
+  $('oiSummary').innerHTML='<span class="spin"></span> 正在装配 光联接模块 M0 – M4 案例（闭式 + 级联引擎 + IFFT 时域 + 几何搜索 + 1D FDTD 电通道 + 2.5D 版图 + 热-光-电协同设计空间，确定性现算）…';
   try{
     const d=await apiGet('/api/oi_demo');
     renderOi(d);
@@ -5471,6 +5486,167 @@ function renderOi(d){
     +'</b>（'+(Gob.join(' · ')||'-')+'）· 🔴 <b>G-OI4 仍诚实保留开放</b>。</p>';
   h+='<p style="color:#555">'+m3.honest_note_m3+'</p>';
 
+  /* ── M4（CPO 形态深化）块：热-光-电协同设计空间（耦合链 · 预偏移 · 重规划 · 三形态 · CTE · Pareto/VπL）── */
+  var m4=d.m4||{}, m4c=m4.chain||{}, m4p=m4.prebias||{}, m4r=m4.replan||{},
+      m4fm=m4.forms||{}, m4fx=m4fm.forms||{}, m4x=m4.cte||{}, m4q=m4.pareto||{},
+      m4vl=m4q.vpi_l||{}, m4w=m4.feasibility_wall||{}, m4b=m4.band_lock||{}, m4s=m4.slope_lock||{};
+  h+='<h3 style="margin:16px 0 4px">㉙ M4 热-光-电耦合链（🔴 三域首次联立 · 此前各算各的）</h3>';
+  h+='<p>阶段：<b>'+m4.stage_label+'</b></p>';
+  h+=_qcTbl(['耦合链量','值','口径'],[
+    ['ASIC 功耗 P_asic (W)', m4c.p_asic_w, '设计输入'],
+    ['光子 die 温升 ΔT (K)', m4c.d_t_photon_k, '两串热阻（与 M3 同源）'],
+    ['dλ/dT (nm/K)', m4c.slope_nm_per_k, 'M3 标定链 S/R_h'],
+    ['自热波长漂移 Δλ_self (nm)', m4c.d_lambda_self_nm, '= dλ/dT · ΔT'],
+    ['FSR (nm)', m4c.fsr_nm, '冷态'],
+    ['折算 FSR 占比 (个)', m4c.d_lambda_frac_fsr, '红移了多少个 FSR'],
+    ['折算信道间距 (个)', m4c.channels_shifted, '失谐多少个信道'],
+    ['R_h (K/mW)', m4c.r_h_k_per_mw, '单一真源'],
+    ['单向加热器 所需 (mW/lane)', m4c.p_heat_required_mw_per_lane, '环红移 ⇒ 需降温'],
+    ['单向加热器 可供电 (mW/lane)', m4c.p_heat_supplyable_mw_per_lane, '🔴 只能加热不能制冷'],
+    ['执行方向', m4c.actuator_direction, '单向加热器不可行 ⇒ 需 TEC'],
+    ['单向加热器可行', m4c.unidirectional_heater_feasible?'<b>是</b>':'<b>否（🔴 CPO 真实代价）</b>',''],
+    ['与 M3 闭环残余同源一致', m4c.chain_consistent_with_m3_residual?'<b>成立</b>':'<b>不成立</b>',
+     '跨模块同源不得各算各的']
+  ]);
+  h+='<p style="color:#555">'+(m4c.note||'')+'</p>';
+
+  h+='<h3 style="margin:14px 0 4px">㉚ M4 固化点预偏移（CPO 真实工程解 · 🔴 代数解，非不动点迭代）</h3>';
+  h+=_qcTbl(['预偏移量','值','说明'],[
+    ['ASIC 功耗 P_asic (W)', m4p.p_asic_w, '设计输入'],
+    ['环境温度 T_amb (°C)', m4p.t_amb_c, '默认'],
+    ['光子 die 温升 ΔT (K)', m4p.d_t_photon_k, '与耦合链同源'],
+    ['光子 die 热平衡温度 T_eq (°C)', m4p.t_eq_c, '= T_amb + ΔT'],
+    ['环固化点 预偏移 (nm)', m4p.setpoint_shift_nm, '把设定点挪到热平衡处'],
+    ['自热漂移 Δλ_self (nm)', m4p.d_lambda_self_nm, ''],
+    ['残余失谐 无预偏移 (nm)', m4p.residual_nm_without_prebias, '🔴 单向加热器补不回来'],
+    ['残余失谐 有预偏移 (nm)', m4p.residual_nm_after_prebias, '✅ 由公式算出（非写死 0）'],
+    ['补偿功耗 无预偏移 (mW/lane)', m4p.p_heat_without_prebias_mw_per_lane, ''],
+    ['补偿功耗 有预偏移 (mW/lane)', m4p.p_heat_after_prebias_mw_per_lane, '✅ 同时归零'],
+    ['求解方式', m4p.solution, '代数解（历史血案：不动点迭代发散 1e88 K）'],
+    ['需要 TEC', m4p.tec_required?'是':'否', '预偏移后可省双向 TEC'],
+    ['仍需双向裕量', m4p.bi_directional_margin_needed?'是':'否', '保留双向 TEC 余量']
+  ]);
+  h+='<p style="color:#555">'+(m4p.note||'')+'</p>';
+
+  h+='<h3 style="margin:14px 0 4px">㉛ M4 热致偏移 ⟷ WDM 信道重规划（🔴 首次联立 · FSR ∝ λ²）</h3>';
+  h+=_qcTbl(['重规划量','值','说明'],[
+    ['冷态中心波长 (nm)', m4r.wl0_cold_nm, 'O-band（继承 M2）'],
+    ['热态中心波长 (nm)', m4r.wl0_hot_nm, '热致红移后'],
+    ['热致漂移 (nm)', m4r.d_lambda_nm, ''],
+    ['FSR 冷态 / 热态 (nm)', m4r.fsr_nm_cold+' / '+m4r.fsr_nm_hot, 'FSR ∝ λ²'],
+    ['FSR 相对变化 (%)', (m4r.fsr_rel_change*100).toFixed(4)+' %', '🔴 非零 ⇒ 联立真起作用'],
+    ['环区数 m 冷态 / 热态', m4r.m_baseline+' / '+m4r.m_at_t_eq, m4r.m_changed?'<b>解被推翻</b>':'解不变'],
+    ['热态最坏邻道隔离 (dB)', m4r.min_xt_db_at_t_eq, '热平衡波长下重算'],
+    ['热态最大 drop IL 劣化 (dB)', m4r.max_il_drop_db_at_t_eq, ''],
+    ['热态候选解数', m4r.n_solutions_at_t_eq, ''],
+    ['规划解仍有效', m4r.plan_still_valid?'<b>是</b>':'<b>否</b>', '算出来的，不是假设的']
+  ]);
+  h+='<p style="color:#555">'+(m4r.note||'')+'</p>';
+
+  h+='<h3 style="margin:14px 0 4px">㉜ M4 三形态三域矩阵（CPO / OBO / 可插拔 · 🔴 三域互相冲突，无单一赢家）</h3>';
+  h+=_qcTbl(['量','CPO','OBO','可插拔'],[
+    ['die 间距离 (µm)', m4fx.CPO?m4fx.CPO.die_dist_um:'-', m4fx.OBO?m4fx.OBO.die_dist_um:'-', m4fx.pluggable?m4fx.pluggable.die_dist_um:'-'],
+    ['热耦合 Θ (K/W)（1/d 远场）', m4fx.CPO?m4fx.CPO.theta_k_per_w:'-', m4fx.OBO?m4fx.OBO.theta_k_per_w:'-', m4fx.pluggable?m4fx.pluggable.theta_k_per_w:'-'],
+    ['电总线长 (mm)', m4fx.CPO?m4fx.CPO.bus_len_mm:'-', m4fx.OBO?m4fx.OBO.bus_len_mm:'-', m4fx.pluggable?m4fx.pluggable.bus_len_mm:'-'],
+    ['电层 IL (dB)（√f 律 + 总线长）', m4fx.CPO?m4fx.CPO.il_elec_db:'-', m4fx.OBO?m4fx.OBO.il_elec_db:'-', m4fx.pluggable?m4fx.pluggable.il_elec_db:'-'],
+    ['光纤耦合 IL (dB)', m4fx.CPO?m4fx.CPO.il_fiber_db:'-', m4fx.OBO?m4fx.OBO.il_fiber_db:'-', m4fx.pluggable?m4fx.pluggable.il_fiber_db:'-'],
+    ['合计 IL (dB)', m4fx.CPO?m4fx.CPO.il_total_db:'-', m4fx.OBO?m4fx.OBO.il_total_db:'-', m4fx.pluggable?m4fx.pluggable.il_total_db:'-']
+  ]);
+  h+=_qcTbl(['排序 / 判据','结果','口径'],[
+    ['形态顺序', (m4fm.order||[]).join(' → '), '本模块定义序'],
+    ['热耦合排序（强→弱）', (m4fm.thermal_coupling_rank||[]).join(' → '), 'CPO 最强'],
+    ['电层 IL 排序（优→劣）', (m4fm.elec_il_rank||[]).join(' → '), 'CPO 最优'],
+    ['光纤耦合排序（优→劣）', (m4fm.fiber_il_rank||[]).join(' → '), '可插拔最优'],
+    ['θ 随距离单调下降', m4fm.theta_monotonic_with_distance?'<b>成立</b>':'<b>不成立</b>',
+     '🔴 首版误用 M2b 近场局部解 ⇒ 全 0，已改 3D 远场 1/d'],
+    ['电 IL 随总线长单调上升', m4fm.elec_il_monotonic_with_bus?'<b>成立</b>':'<b>不成立</b>','']
+  ]);
+  h+='<p style="color:#555">'+(m4fm.note||'')+'</p>';
+
+  h+='<h3 style="margin:14px 0 4px">㉝ M4 FAU CTE 热-机械失准 → 光纤耦合损耗（🔴 反直觉：CTE 非主因）</h3>';
+  h+=_qcTbl(['CTE 失准量','值','口径'],[
+    ['ASIC 功耗 P_asic (W)', m4x.p_asic_w, '设计输入'],
+    ['Si CTE (/K)', m4x.cte_si_per_k, '公开手册值（非本封装实测）'],
+    ['玻璃 FAU CTE (/K)', m4x.cte_glass_fau_per_k, '公开手册值'],
+    ['CTE 失配 Δα (/K)', m4x.cte_mismatch_per_k, ''],
+    ['臂长 L_arm (mm)', m4x.arm_len_mm, '规格锚'],
+    ['模场半径 w (µm)', m4x.mfd_w_um, '规格锚'],
+    ['温升 ΔT (K)', m4x.d_t_k, '与耦合链同源'],
+    ['横向漂移 Δx (µm)', m4x.dx_um, '= Δα · L · ΔT'],
+    ['横向漂移 Δx (nm)', m4x.dx_nm, '= Δα · L · ΔT'],
+    ['Δx / w (-)', m4x.ratio_dx_over_w, ''],
+    ['CTE 附加耦合 IL (dB)', m4x.il_cte_db, '高斯模场闭式'],
+    ['装配对准公差 (µm)', m4x.assembly_tol_um, '规格锚'],
+    ['装配公差 IL (dB)', m4x.il_assembly_db, ''],
+    ['🔴 CTE 是主因', m4x.cte_is_dominant?'是':'<b>否（装配公差才是主要矛盾）</b>',
+     '小一个量级']
+  ]);
+  h+='<p style="color:#555">'+(m4x.note||'')+'</p>';
+
+  h+='<h3 style="margin:14px 0 4px">㉞ M4 三域 Pareto 前沿 + VπL 断口（G-OI7 · 🔴 共享变量 L）</h3>';
+  h+=_qcTbl(['L (mm)','带宽 BW (GHz)','电极 IL (dB)','驱动功耗 P (mW)','V_π (V)','V_pp (V)','带宽可行','摆幅可行','综合可行'],
+    (m4q.points||[]).map(function(pt){
+      return [pt.l_mm, pt.bw_ghz, pt.il_db, pt.p_drv_mw, pt.vpi_v, pt.vpp_v,
+        pt.feasible_bw?'是':'<b>否</b>', pt.feasible_vpp?'是':'<b>否</b>',
+        pt.feasible?'<b>可行</b>':'否'];
+    }));
+  h+=_qcTbl(['Pareto / 可行性','值','说明'],[
+    ['设计点 / 非支配点', m4q.n_front+' / '+m4q.n_points, '🔴 三域两两权衡 ⇒ 全非支配'],
+    ['被支配点', m4q.n_dominated, '= 0（无单一最优）'],
+    ['全点非支配', m4q.all_points_non_dominated?'<b>成立</b>':'不成立',''],
+    ['带宽不足点 / 摆幅超限点', m4q.n_infeasible_bw+' / '+m4q.n_infeasible_vpp, ''],
+    ['带宽判死线 (GHz)', m4q.bw_death_line_ghz, '与 M3 同口径'],
+    ['CMOS 摆幅上限 (V)', m4q.vpp_cmos_limit_v, '规格锚'],
+    ['M3 设计点 L (mm)', m4q.m3_design_l_mm, ''],
+    ['M3 设计点在 Pareto 前沿上', m4q.m3_design_on_front?'<b>是</b>':'否',''],
+    ['M3 设计点在可行域内', m4q.m3_design_feasible?'是':'<b>否（🔴 隐含 VπL 过于激进）</b>',''],
+    ['可行点 / 可行 L (mm)', m4q.n_feasible+' / '+(m4q.feasible_l_mm||[]).join(', '), '🔴 收缩到 1 点'],
+    ['可行域已收缩', m4q.feasible_collapsed?'<b>是（≤1 点）</b>':'否', '两条约束联合作用']
+  ]);
+  h+='<p style="color:#555">'+(m4q.note||'')+'</p>';
+  h+='<h4 style="margin:10px 0 3px">🔴 VπL 诚实断口（外部规格取值缺口）</h4>';
+  h+=_qcTbl(['VπL 断口量','值','说明'],[
+    ['M3 设计点隐含 VπL (V·cm)', m4vl.vpi_l_implied_by_m3_v_cm, '= v_pp · L'],
+    ['公开 SiP 典型 VπL (V·cm)', m4vl.vpi_l_public_typical_v_cm, '规格锚'],
+    ['公开区间 (V·cm)', '<b>'+(m4vl.vpi_l_public_band_v_cm||[]).join(' – ')+'</b>',
+     '公开工艺近似'],
+    ['隐含 / 公开激进倍数', '×'+m4vl.vpi_l_gap_ratio, '🔴 4.2–10.4×'],
+    ['公开 VπL 下所需 V_pp (V)', m4vl.vpp_required_at_public_vpi_l_v, '超 CMOS 摆幅'],
+    ['公开 VπL 下所需 L (mm)', m4vl.l_needed_for_m3_vpp_mm, '为达到 M3 的 V_pp'],
+    ['公开 VπL 落在公开区间', m4vl.public_vpi_l_in_band?'是':'否',''],
+    ['M3 隐含 VπL 与公开工艺一致', m4vl.consistent_with_public_process?'是':'<b>否（断口所在）</b>','']
+  ]);
+  h+='<p style="color:#555">'+(m4vl.note||'')+'</p>';
+  h+='<h4 style="margin:10px 0 3px">可行性墙（两种 VπL 口径对照 · 双向证明）</h4>';
+  h+=_qcTbl(['口径','可行 L (mm)','可行点数','是否收缩'],[
+    ['公开 SiP VπL（1.5 V·cm）', (m4w.public_feasible_l_mm||[]).join(', '),
+     m4w.public_vpi_l_feasible_points, m4w.public_feasible_collapsed?'<b>收缩到 ≤1 点</b>':'未收缩'],
+    ['M3 隐含 VπL（0.24 V·cm）', (m4w.m3_implied_feasible_l_mm||[]).join(', '),
+     m4w.m3_implied_vpi_l_feasible_points, ''],
+    ['公开口径 比 M3 口径更窄', m4w.public_narrower_than_m3?'<b>成立</b>':'不成立','','']
+  ]);
+  h+='<p style="color:#555">'+(m4w.note||'')+'</p>';
+  h+='<h4 style="margin:10px 0 3px">波段互锁（D4）与斜率双通路互锁</h4>';
+  h+=_qcTbl(['互锁量','值','说明'],[
+    ['M4 中心波长 (nm)', m4b.m4_wl0_nm, '继承 M2'],
+    ['M2 中心波长 (nm)', m4b.m2_wl0_nm, ''],
+    ['M1 规划器默认 (nm)', m4b.m1_default_wl0_nm, 'C-band LWDM'],
+    ['M4 ≡ M2 波段', m4b.same_as_m2?'<b>成立</b>':'<b>不成立</b>',''],
+    ['M4 ≠ M1 默认（跨模块口径分歧）', m4b.differs_from_m1_default?'<b>成立</b>':'不成立',''],
+    ['信道栅与 M2 一致', m4b.channels_match_m2?'<b>成立</b>':'不成立',''],
+    ['与 M1 默认波长间隔 (nm)', m4b.gap_nm, ''],
+    ['斜率 通路A（M3 标定 S/R_h）', m4s.slope_m3_calibrated_nm_per_k, 'nm/K'],
+    ['斜率 通路B（材料闭式含热膨胀）', m4s.slope_material_closed_nm_per_k, 'nm/K'],
+    ['两通路相对差 / 25% 内一致', (m4s.rel_diff*100).toFixed(2)+' % / '+(m4s.agree_within_25pct?'<b>一致</b>':'不一致'), '']
+  ]);
+  h+='<p style="color:#555">'+(m4b.note||'')+'</p>';
+  h+='<p style="color:#555">'+(m4s.note||'')+'</p>';
+  var Gma=d.gaps||[];
+  h+='<p><b>M4 缺口终态：</b>已闭合 <b>'+Gob.length+' / '+(d.gaps_total||Gma.length)
+    +'</b>（'+(Gob.join(' · ')||'-')+'）· 🔴 <b>G-OI4 与 G-OI7 诚实保留开放</b>'
+    +'（G-OI4 = 电路级无 PDK；G-OI7 = 封装级热-机械-光无实测，M4 新增，域不同不重复记账）。</p>';
+  h+='<p style="color:#555">'+m4.honest_note_m4+'</p>';
+
   $('oiBody').innerHTML=h;
   $('oiConclusion').innerHTML='<strong>结论：</strong>用 LDA 自家光链路设计验证链可把一款 WDM 收发器'
     +'从 2 通道 M0 基线一路推进到 <b>M1 800G（8×100G PAM4）频域/时域预算</b>：'
@@ -5531,7 +5707,27 @@ function renderOi(d){
     +' B），光引擎 <b>真复用 M2 的 G-OI2 builder</b>（'+m3ly.oe_elements_reused+' 元素）而非换皮，'
     +'电层 DRC '+(m3ly.electrical_drc_pass?'全绿':'红')+'；🔴 通用导出路径对 ring 回提 LVS 给 '
     +m3ly.oe_lvs_verdict+'（'+m3ly.oe_lvs_n_violations+' 违规）——如实报出，不抹平也不改叫 ACCEPT。'
-    +'<br/>'+m3.honest_note_m3;
+    +'<br/>'+m3.honest_note_m3
+    +'<br/><strong>M4（CPO 形态深化 · 热-光-电协同设计空间）：</strong>把此前「各算各的」三域接成'
+    +'<b>一条耦合链</b>——ASIC 热（ΔT '+m4c.d_t_photon_k+' K）→ 波长自热漂移（'+m4c.d_lambda_self_nm
+    +' nm = '+m4c.channels_shifted+' 个信道间距）→ 信道失谐与热调功耗，且与 M3 闭环残余'
+    +'<b>同源一致</b>（跨模块不各算各的）。CPO 真实工程解<b>不是</b>硬扛热，而是把环<b>固化点预偏移</b>到'
+    +'热平衡温度（'+m4p.t_amb_c+'→'+m4p.t_eq_c+' ℃）⇒ 残余失谐与补偿功耗<b>同时归零</b>（'+m4p.solution
+    +'，历史血案：不动点迭代发散 1e88 K）。热致偏移<b>喂回</b>信道规划：热态波长 '
+    +m4r.wl0_cold_nm+'→'+m4r.wl0_hot_nm+' nm、FSR ∝ λ² 变化 '+((m4r.fsr_rel_change*100).toFixed(3))
+    +'% ⇒ 结论由<b>算出来的</b>给出（本设计点解不变，热态隔离 '+m4r.min_xt_db_at_t_eq+' dB）。'
+    +'封装形态族（CPO/OBO/可插拔）三域<b>互相冲突</b>：热耦合 Θ '+m4fx.CPO.theta_k_per_w+' ≫ '
+    +m4fx.OBO.theta_k_per_w+' ≫ '+m4fx.pluggable.theta_k_per_w+' K/W，但电层 IL 反之（'
+    +m4fx.CPO.il_elec_db+' → '+m4fx.pluggable.il_elec_db+' dB）。FAU CTE 失配只产生 '
+    +m4x.dx_nm+' nm 漂移 ⇒ '+m4x.il_cte_db+' dB，**小于**装配公差 '+m4x.il_assembly_db
+    +' dB ⇒ <b>CTE 非耦合损耗主因</b>（反直觉诚实结论）。共享变量 L 上三域 Pareto '
+    +m4q.n_front+'/'+m4q.n_points+' <b>全非支配</b>（无单一最优）；🔴 最重的发现是 <b>VπL 断口</b>：'
+    +'M3 设计点隐含 VπL '+m4vl.vpi_l_implied_by_m3_v_cm+' V·cm，比公开 SiP 典型 '
+    +m4vl.vpi_l_public_typical_v_cm+'（区间 '+(m4vl.vpi_l_public_band_v_cm||[]).join('–')+'）激进 <b>×'
+    +m4vl.vpi_l_gap_ratio+'</b> ⇒ 用公开 VπL + CMOS 摆幅，可行域<b>收缩到</b> '+(m4w.public_feasible_l_mm||[]).join(',')
+    +' mm（≠ M3 的 '+m4q.m3_design_l_mm+' mm）⇒ 所谓「带宽墙」<b>部分是「调制效率墙」</b>。'
+    +'🔴 新增缺口 <b>G-OI7</b>（封装级热-机械-光真值缺失，T2 锁死诚实保留）。'
+    +'<br/>'+m4.honest_note_m4;
   return false;
 }
 if($('runOi')) $('runOi').onclick = runOi;

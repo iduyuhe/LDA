@@ -54,7 +54,7 @@ DMM 是 **VMM（`docs/verification_maturity_model.md`）的姊妹模型**：VMM 
 | C21 | 时域色散 / 各向异性 / 非线性（G13） | **D3** | `lda/lda_solver/dispersive.py` | `run_dispersive_smoke.py` | probe/independence_guard | `scripts/p4_g13_probe.py`（10/10 会响） | — |
 | C22 | 全矢量模式求解（G12-H/A/B） | **D3** | `lda/lda_solver/full_vector_mode_solver.py` | `run_full_vector_mode_smoke.py` | probe/own_smoke/independence_guard | `scripts/g12b_probe.py`（6/6 会响（G12-A 另有 g12a_probe 6/6）） | — |
 | C23 | SPICE 网表导出 | **D3** | `lda/lda_l2/spice_netlist.py` | `run_spice_netlist_smoke.py` | own_smoke/independence_guard | — | — |
-| C24 | gdsfactory 单向桥（gf → LDA） | **D3** | `lda/lda_l1/gdsfactory_bridge.py` | `run_gdsfactory_bridge_smoke.py` | independence_guard | — | — |
+| C24 | gdsfactory 单向桥（gf → LDA） | **D3** | `lda/lda_l1/gdsfactory_bridge.py` | `run_gdsfactory_bridge_smoke.py` | own_smoke/independence_guard | — | — |
 | C25 | 实证锚库与 M6 口径（T5.3） | **D3** | `lda/lda_harness/empirical_m6.py` | `run_empirical_anchor_smoke.py` | probe/own_smoke/independence_guard | `scripts/p5_probe.py`（10/10 会响） | — |
 
 ## 🔴 诚实边界（必须与分数同读）

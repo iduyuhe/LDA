@@ -41,10 +41,11 @@
   J7 🔴 T1 红线语义：`T1_OUTPUT_IS_ORACLE is False`；6 个数值内核的
      `guard_t1_not_oracle` **绑定到同一个函数对象**（`partial.func is` 判据）⇒
      任何一处退回本地复制即红
-  J8 🔴 反向测试（四条，证明判据真会变红，非假绿）：
+  J8 🔴 反向测试（七条，证明判据真会变红，非假绿）：
      ① 基线调低 1 ⇒ J3 必报  ② 合成 2 处守卫定义 ⇒ J1 必报
      ③ 合成超限 check_defs ⇒ J3 必报  ④ 合成接线不足 ⇒ J5 必报
-     ⑤ `force_oracle=True` 必 raise  ⑥ `is_oracle=True` 必 raise
+     ⑤ 合成超限重复组 ⇒ J4 必报（v0.9.183 补：J4 此前无探针）
+     ⑥ `force_oracle=True` 必 raise  ⑦ `is_oracle=True` 必 raise
 
 基线来源：v0.9.113 波次 2 **归一后实测值**（见 `LDA_fix_workplan_2026-09-19.md`）。
 运行：python run_helper_dup_ratchet_smoke.py
@@ -77,9 +78,15 @@ _KIT_REL = "lda/lda_harness/smoke_kit.py"
 # 并在本合同步留注（防静默放宽）。
 _BASELINE = {
     "max_check_defs": 53,        # HEAD 97 处 − 本轮抽走 44 处 = 53（`smoke_kit` 自身不计 · 实测）
-    "max_dup_files": 30,         # 仍处于「逐字重复组」的文件数（10 组）
-    "min_kit_importers": 70,     # 50(波次2 Stage A) + 18(F-18 报告契约) + 1(本棘轮自身)
-                                 #   + 1(v0.9.114：`run_bounty_ledger_smoke` 删死码时归一到 make_check)
+    "max_dup_files": 28,         # 🔴 v0.9.183 收紧 30 → 28：归一 20 个 smoke 后实测 9 组 / 28 文件
+                                 #   （原 10 组 / 30 文件）。「下限类必随成果收紧」⇒ 把改善锁死，
+                                 #   否则旧基线会留出「再加 2 个重复文件仍绿」的回归窗口。
+    "min_kit_importers": 159,    # 🔴 v0.9.183 收紧 70 → 159：归一 20 个 smoke 后实测接线 159。
+                                 #   历史：原 70 = 50(波次2 Stage A) + 18(F-18 报告契约) + 1(本棘轮自身)
+                                 #   + 1(v0.9.114 `run_bounty_ledger_smoke` 归一到 make_check)，此后**从未随成果上调**
+                                 #   ⇒ 曾留出「悄悄拆掉 89 处接线仍绿」的巨大回归窗口，正是 J5「防抽了没人用」要防的事。
+                                 # 严格口径：与 `max_check_defs` 一样取**实测值**（零松量）——
+                                 #   合法删除 smoke 时 J5 会红，须按本合同步「付理由」调整。
 }
 
 # 6 个 T1 数值内核（守卫文案各不同，但实现必须同一份）
@@ -286,6 +293,17 @@ def main() -> int:
     syn3 = dict(sc, kit_importers=sc["kit_importers"][:5])
     rc |= not check("J8e 反向：接线不足 ⇒ J5 必报",
                     any(j.startswith("J5 ") and not ok for j, ok, _ in judge(syn3, _BASELINE)),
+                    "判据未响应")
+
+    # 🔴 v0.9.183 补：J4 此前**无反向探针**（J8c/d/e 只覆盖 J3/J1/J5）。本轮把
+    # `max_dup_files` 由 30 收紧到 28 ⇒ 按「纯全绿须配突变探针」纪律补此条，
+    # 证明「逐字重复组超限」真能让 J4 变红（否则收紧后的 J4 仍是未验证断言）。
+    syn4 = dict(sc, dup_groups={"<synth-seg>": ["a.py", "b.py", "c.py"]})
+    lower4 = dict(_BASELINE)
+    lower4["max_dup_files"] = 2                     # 合成 3 文件 > 2 ⇒ 必报
+    rc |= not check("J8f 反向：合成超限重复组 ⇒ J4 必报",
+                    any(j.startswith("J4 ") and not ok
+                        for j, ok, _ in judge(syn4, lower4)),
                     "判据未响应")
 
     print("-" * 74)

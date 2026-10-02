@@ -1474,6 +1474,19 @@ CORE_SMOKES: List[str] = [
     #   对准容差（先扣模场失配底）+ C1–C13 规格锚 + 探针 P1–P8 + 还原重跑。
     #   实测 ~20s（MC 样本主导）⇒ 入 `_BUILTIN_TIMEOUT_OVERRIDE`(120s) 留足余量。
     "run_oi_m2b_smoke.py",
+    # 🔴 v0.9.181 · 光联接模块征程 **M3（3.2T / CPO）** 门禁：400G/lane 带宽墙
+    #   （行波电极 TWMZM 闭式 |H|=(1/L)∫₀^L e^{−qx}dx，🔴 虚部须减光相位基准
+    #   ω·n_g,opt/c；第二通道 ABCD 梯形链收敛 + 末端 Z0=√(z/y) 匹配 + RC ∝1/L²）
+    #   + CPO 电通道（电报闭式 e^{−γL} ⟷ 1D FDTD Yee 对拍渡越时间；🔴 √f 律**只在
+    #   R 主导子带**成立、RL 主导区漂移如实披露；NEXT 功率比 K²(F/f₀)⁴/3，k=0 ⇒ 真 −inf；
+    #   PDN 地弹 V=L_pdn·di/dt 量级披露）+ die↔die 热（两串热阻 ⟷ M2b 热网络第二通道）
+    #   + 闭环热调（🔴 首版发散 1e88 K 的根因：S=dλ/dP 已含自热却再抄一份小 125× 的
+    #   r_th 且热通路算两遍 ⇒ 改**代数解** T_ring=max(T_free,T_set) + 单通路一致性判据）
+    #   + 逐项 mW/W 功耗账（🔴 只 mW/W，不报 fJ/bit、pJ-op、TOPS、TOPS-W）
+    #   + G-OI6 2.5D 版图签核（真 GDS + 光引擎**真复用** M2 builder + 电层 DRC +
+    #   几何-拓扑 LVS，🔴 通用导出对 ring REJECT 如实报出不改叫 ACCEPT）
+    #   + C1–C14 规格锚 + 探针 P1–P10 + 还原重跑。实测 ~3s ⇒ timeout 120s 留足余量。
+    "run_oi_m3_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2334,6 +2347,9 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_oi_transceiver_pnr_smoke.py": 120.0,
     # 光联接模块 M2b 门禁（G-OI5 五项）：CTLE/热调/Γ 双通道/良率 erf⟷MC/封装容差 + 8 探针，实测 20.3s
     "run_oi_m2b_smoke.py": 120.0,
+    # 光联接模块 M3 门禁（G-OI6 五项）：400G/lane TWMZM 带宽墙 + CPO 电通道闭式⟷FDTD
+    # + die↔die 热/闭环热调 + mW 功耗账 + 2.5D 版图签核 + 10 探针，实测 3s
+    "run_oi_m3_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""WebUI 光联接模块 M0 + M1 + M2 案例卡前端**取值路径 + onclick**门禁（新征程 · 2026-10-02）。
+"""WebUI 光联接模块 M0 + M1 + M2 + M2b + M3 案例卡前端**取值路径 + onclick**门禁（新征程 · 2026-10-02）。
 
 ═══════════════════════════════════════════════════════════════════════════
 为什么存在（血案 #18 / #19 机器化）
@@ -9,7 +9,7 @@ E17-e 生产实测：`renderECore` 取 `synthesis_law.serial_ns`，而该值实�
 （案例卡 B1–B24 / API 验收）**都看不到这一层**：它们只保证 JSON 里有值，
 **不保证前端问对了地方**。
 
-本门禁把 `renderOi`（`sec-oi` 面板）的每条取值路径（M0 根块 + M1 子块 + M2 子块），
+本门禁把 `renderOi`（`sec-oi` 面板）的每条取值路径（M0 根块 + M1 / M2 / M2b / M3 子块），
 逐条拿到真实 `oi_case.case_card()` JSON 上解析，并验证 `onclick` 接线反向
 完备——把「JSON 里有值 ≠ 前端问对了地方」这层钉死。
 
@@ -17,17 +17,22 @@ E17-e 生产实测：`renderECore` 取 `synthesis_law.serial_ns`，而该值实�
 判什么
 ───────────────────────────────────────────────────────────────────────────
 1. **onclick 接线**：$('runOi').onclick = runOi 在场（防「能力上线却点不动」）。
-2. **函数定义**：runOi / renderOi 在 index.html 内定义（且真的含 M1/M2 块引用）。
+2. **函数定义**：runOi / renderOi 在 index.html 内定义（且真的含 M1/M2/M3 块引用
+   + ㉔–㉘ 五个表头，防「后端加了 M3、前端还是 M0/M1/M2 壳」）。
 3. **路径存在性**：renderOi 引用的每条 d./m1./rp./dv./sp./fx./rq./c./m./g./
-   m2./m2rp./m2dv./m2g./m2fec./m2cf./m2rs./m2fm. 取值路径，在真实 JSON 上逐段
-   解析；**任一段不存在 ⇒ 红**（血案 #18/#19 要抓的）。
+   m2./m2rp./m2dv./m2g./m2fec./m2cf./m2rs./m2fm./m2b*/./m3./m3t./m3e./m3f./
+   m3n./m3p./m3th./m3cl./m3pw./m3ly./m3os./m3ru./m3r2./m3r4. 取值路径，在真实 JSON
+   上逐段解析；**任一段不存在 ⇒ 红**（血案 #18/#19 要抓的）。
 4. **反向完备**：case_card() 下每个展示字段——channels 元素、requested 子字段、
    milestones/gaps 元素字段，**以及 M1 块顶层 + `ring_plan` / `driver` /
    `spec_points[]` / `m0_fixes[]` 四组嵌套字段 + M2 块顶层 + `fec` /
    `fec.concatenated` / `fec.rs_only` / `fec.form_map` / `ring_plan` / `driver` /
-   `spec_points[]` / `g_oi2` / `platform_fixes_m2[]` 九组嵌套字段**——都必须被前端
-   引用（防「后端加了、前端不显示」的静默盲区）。🔴 M2 块是**新成员**：若本门禁
-   不扩，M2 全块会静默落进盲区（正是本条纪律要防的）。
+   `spec_points[]` / `g_oi2` / `platform_fixes_m2[]` 九组嵌套字段 + M2b 十一格
+   + **M3 十六格**（顶层 / twmzm / echannel / fdtd_telegraph / next / pdn /
+   thermal / closed_loop_thermal / power / power.cpo / power.pluggable /
+   layout_2p5d / layout_2p5d.oe_stats / reuse / reuse.at_200g / reuse.at_400g）**
+   ——都必须被前端引用（防「后端加了、前端不显示」的静默盲区）。🔴 M2 / M2b / M3
+   块都是**后加的新成员**：若本门禁不扩，各块会静默落进盲区（正是本条纪律要防的）。
 5. **突变探针**（先证能变红）：
    ① 抹掉 case_card 某 channel 字段 ⇒ ③ 路径判据必红；
    ② 删掉 onclick 接线行 ⇒ ① 接线判据必红；
@@ -36,12 +41,27 @@ E17-e 生产实测：`renderECore` 取 `synthesis_law.serial_ns`，而该值实�
    ⑤ 往 `m1` 顶层塞一个新字段 ⇒ ④ 的 m1 顶层反向完备必红；
    ⑦ 往 `m2` 顶层塞一个新字段 ⇒ ④e-6 m2 顶层反向完备必红；
    ⑧ 抹掉 `m2.spec_points[].verdict_point` ⇒ ③ 的 M2 路径判据必红；
-   ⑨ 往 `m2.fec` 塞一个新字段 ⇒ ④e-7 fec 反向完备必红。还原后复绿。
+   ⑨ 往 `m2.fec` 塞一个新字段 ⇒ ④e-7 fec 反向完备必红。
+   ⑯ 往 `m3` 顶层塞新字段 ⇒ ④e-27 必红；⑰ 抹掉 `m3.twmzm.margin_db` ⇒ ③ 必红；
+   ⑱ 往 `m3.power.cpo` 塞新分项 ⇒ ④e-36 必红；
+   ⑲ 抹掉**前端字面量** `m3cl.residual_nm` ⇒ ③ 的 js_ref 必红（证明两端都盯）；
+   ⑳ 边界正则：`m3ly.gds_sha256` 被 `…_short` 前缀包含 ⇒ 纯子串假绿 / 边界必红；
+   ㉑ 往 `oe_stats` 塞新成员 ⇒ ④e-42 必红。还原后复绿（R/R2）。
 6. 自入 CI core（防静默漏接 · 血案 #28 同族）。
+
+🔴 M3 段的特别纪律（两处**自造假绿**已被本门禁当场抓住）：
+  · `m3.echannel.note` / `m3.power.unit_note` 曾在后端有值而前端**不引用** ⇒ ③ 直接红
+    ⇒ 判据抓的正是「后端加了、前端不渲染」这类静默盲区，不是走过场。
+  · `layout_2p5d.oe_stats` 首版被我塞进 `M3_LAYOPT` 豁免集（理由：字段多、只渲染紧凑行）
+    ⇒ 它就**完全没有反向完备守护**了（后端往里加字段没人拦）⇒ 已改为**全字段渲染**，
+    豁免集只剩 `geometry` / `lvs_report`（全量嵌套报告，前端只展示摘要，
+    由 ④e-38 白名单 + `run_oi_m3_smoke` C 组签核判据守）。
+    🔴 一般纪律：**豁免是最后手段，且必须显式登记 + 配探针证明不是死条款。**
 
 🔴 诚实边界：本门禁是**静态路径检查**，不执行 JS、不看渲染是否「好看」；
 值存在但**语义不对**（口径漂移）仍由 oi_case.run_selfchecks + run_oi_m0_smoke /
-run_oi_m1_smoke / run_oi_m2_smoke 那类「卡内数字 ≡ 模块现算」判据守。二者互补：
+run_oi_m1_smoke / run_oi_m2_smoke / run_oi_m2b_smoke / run_oi_m3_smoke 那类
+「卡内数字 ≡ 模块现算」判据守。二者互补：
 **那些守「值对不对」，本门禁守「问对没」**。
 """
 from __future__ import annotations
@@ -360,6 +380,175 @@ M2B_PKG_PATHS = [
     ("m2bp.note", "m2b.packaging.note"),
 ]
 
+M3_TOP_PATHS = [
+    ("d.m3", "m3"),
+    ("m3.stage_label", "m3.stage_label"),
+    ("m3.honest_note_m3", "m3.honest_note_m3"),
+]
+M3_TWMZM_PATHS = [
+    ("m3t.family", "m3.twmzm.family"),
+    ("m3t.f3db_ghz", "m3.twmzm.f3db_ghz"),
+    ("m3t.nyquist_ghz", "m3.twmzm.nyquist_ghz"),
+    ("m3t.margin_db", "m3.twmzm.margin_db"),
+    ("m3t.ratio_to_nyquist", "m3.twmzm.ratio_to_nyquist"),
+    ("m3t.in_window", "m3.twmzm.in_window"),
+    ("m3t.bandwidth_ok", "m3.twmzm.bandwidth_ok"),
+    ("m3t.f_rc_ghz", "m3.twmzm.f_rc_ghz"),
+    ("m3t.l_electrode_mm", "m3.twmzm.l_electrode_mm"),
+    ("m3t.dn_g_resid", "m3.twmzm.dn_g_resid"),
+    ("m3t.f_pd_ghz", "m3.twmzm.f_pd_ghz"),
+    ("m3t.f_tia_ghz", "m3.twmzm.f_tia_ghz"),
+    ("m3t.ladder_n_grid", "m3.twmzm.ladder_n_grid"),
+    ("m3t.ladder_rel_err", "m3.twmzm.ladder_rel_err"),
+    ("m3t.ladder_monotonic", "m3.twmzm.ladder_monotonic"),
+    ("m3t.ladder_f_eval_ghz", "m3.twmzm.ladder_f_eval_ghz"),
+    ("m3t.ladder_err_largest", "m3.twmzm.ladder_err_largest"),
+    ("m3t.ladder_err_smallest", "m3.twmzm.ladder_err_smallest"),
+    ("m3t.note", "m3.twmzm.note"),
+]
+M3_ECH_PATHS = [
+    ("m3e.bus_len_mm", "m3.echannel.bus_len_mm"),
+    ("m3e.f_rl_ghz", "m3.echannel.f_rl_ghz"),
+    ("m3e.window_ghz", "m3.echannel.window_ghz"),
+    ("m3e.h_in_window", "m3.echannel.h_in_window"),
+    ("m3e.drift_in_window", "m3.echannel.drift_in_window"),
+    ("m3e.sqrtf_ok", "m3.echannel.sqrtf_ok"),
+    ("m3e.h_outside", "m3.echannel.h_outside"),
+    ("m3e.drift_outside", "m3.echannel.drift_outside"),
+    ("m3e.disclosed_outside", "m3.echannel.disclosed_outside"),
+    ("m3e.note", "m3.echannel.note"),
+]
+M3_FDTD_PATHS = [
+    ("m3f.n_cells", "m3.fdtd_telegraph.n_cells"),
+    ("m3f.n_step", "m3.fdtd_telegraph.n_step"),
+    ("m3f.dt_ps", "m3.fdtd_telegraph.dt_ps"),
+    ("m3f.tau_closed_ps", "m3.fdtd_telegraph.tau_closed_ps"),
+    ("m3f.tau_fdtd_ps", "m3.fdtd_telegraph.tau_fdtd_ps"),
+    ("m3f.rel_err", "m3.fdtd_telegraph.rel_err"),
+    ("m3f.peak_out_v", "m3.fdtd_telegraph.peak_out_v"),
+    ("m3f.v_fdtd_m_per_s", "m3.fdtd_telegraph.v_fdtd_m_per_s"),
+    ("m3f.phase_ok", "m3.fdtd_telegraph.phase_ok"),
+    ("m3f.lossy_term_included", "m3.fdtd_telegraph.lossy_term_included"),
+    ("m3f.note", "m3.fdtd_telegraph.note"),
+]
+M3_NEXT_PATHS = [
+    ("m3n.k", "m3.next.k"),
+    ("m3n.f_ghz", "m3.next.f_ghz"),
+    ("m3n.f0_ghz", "m3.next.f0_ghz"),
+    ("m3n.ratio_linear", "m3.next.ratio_linear"),
+    ("m3n.xtalk_db", "m3.next.xtalk_db"),
+    ("m3n.xtalk_at_zero_coupling_db", "m3.next.xtalk_at_zero_coupling_db"),
+    ("m3n.note", "m3.next.note"),
+]
+M3_PDN_PATHS = [
+    ("m3p.l_pdn_nh", "m3.pdn.l_pdn_nh"),
+    ("m3p.di_dt_a_per_s", "m3.pdn.di_dt_a_per_s"),
+    ("m3p.v_bounce_v", "m3.pdn.v_bounce_v"),
+    ("m3p.note", "m3.pdn.note"),
+]
+M3_TH_PATHS = [
+    ("m3th.p_asic_w", "m3.thermal.p_asic_w"),
+    ("m3th.t_amb_c", "m3.thermal.t_amb_c"),
+    ("m3th.d_t_interposer_c", "m3.thermal.d_t_interposer_c"),
+    ("m3th.t_interposer_c", "m3.thermal.t_interposer_c"),
+    ("m3th.d_t_photon_c", "m3.thermal.d_t_photon_c"),
+    ("m3th.t_photon_c", "m3.thermal.t_photon_c"),
+    ("m3th.die_to_die_theta_k", "m3.thermal.die_to_die_theta_k"),
+    ("m3th.theta_from_m2b_network", "m3.thermal.theta_from_m2b_network"),
+    ("m3th.theta_channels_agree", "m3.thermal.theta_channels_agree"),
+    ("m3th.note", "m3.thermal.note"),
+]
+M3_CL_PATHS = [
+    ("m3cl.solution", "m3.closed_loop_thermal.solution"),
+    ("m3cl.r_h_k_per_mw", "m3.closed_loop_thermal.r_h_k_per_mw"),
+    ("m3cl.S_nm_per_mW", "m3.closed_loop_thermal.S_nm_per_mW"),
+    ("m3cl.d_lambda_dT_nm_per_k", "m3.closed_loop_thermal.d_lambda_dT_nm_per_k"),
+    ("m3cl.single_path_consistency", "m3.closed_loop_thermal.single_path_consistency"),
+    ("m3cl.t_free_c", "m3.closed_loop_thermal.t_free_c"),
+    ("m3cl.t_setpoint_c", "m3.closed_loop_thermal.t_setpoint_c"),
+    ("m3cl.t_ring_c", "m3.closed_loop_thermal.t_ring_c"),
+    ("m3cl.residual_nm", "m3.closed_loop_thermal.residual_nm"),
+    ("m3cl.residual_frac_fsr", "m3.closed_loop_thermal.residual_frac_fsr"),
+    ("m3cl.residual_lt_fsr", "m3.closed_loop_thermal.residual_lt_fsr"),
+    ("m3cl.FSR_nm", "m3.closed_loop_thermal.FSR_nm"),
+    ("m3cl.p_actuator_mw_per_lane", "m3.closed_loop_thermal.p_actuator_mw_per_lane"),
+    ("m3cl.actuator_direction", "m3.closed_loop_thermal.actuator_direction"),
+    ("m3cl.unidirectional_heater_feasible",
+     "m3.closed_loop_thermal.unidirectional_heater_feasible"),
+    ("m3cl.note", "m3.closed_loop_thermal.note"),
+]
+M3_PW_TOP_PATHS = [
+    ("m3pw.unit_note", "m3.power.unit_note"),
+    ("m3pw.energy_per_bit_banned", "m3.power.energy_per_bit_banned"),
+    ("m3pw.cpo_per_lane_mw", "m3.power.cpo_per_lane_mw"),
+    ("m3pw.pluggable_per_lane_mw", "m3.power.pluggable_per_lane_mw"),
+    ("m3pw.cpo_total_w", "m3.power.cpo_total_w"),
+    ("m3pw.pluggable_total_w", "m3.power.pluggable_total_w"),
+    ("m3pw.cpo_advantage_thermal_mw", "m3.power.cpo_advantage_thermal_mw"),
+    ("m3pw.cpo_penalty_interposer_mw", "m3.power.cpo_penalty_interposer_mw"),
+    ("m3pw.reconciled", "m3.power.reconciled"),
+    ("m3pw.note", "m3.power.note"),
+]
+_PW_ITEMS = ("driver_dynamic_mw", "driver_termination_mw", "tia_static_mw",
+             "ctle_analog_mw", "thermal_steady_mw", "source_pump_mw",
+             "interposer_pdn_mw")
+M3_PW_CPO_PATHS = [("m3pw.cpo." + k, "m3.power.cpo." + k) for k in _PW_ITEMS]
+M3_PW_PLUG_PATHS = [("m3pw.pluggable." + k, "m3.power.pluggable." + k) for k in _PW_ITEMS]
+M3_LAY_PATHS = [
+    ("m3ly.gds_structures", "m3.layout_2p5d.gds_structures"),
+    ("m3ly.gds_elements", "m3.layout_2p5d.gds_elements"),
+    ("m3ly.gds_bytes_len", "m3.layout_2p5d.gds_bytes_len"),
+    ("m3ly.gds_sha256", "m3.layout_2p5d.gds_sha256"),
+    ("m3ly.gds_sha256_short", "m3.layout_2p5d.gds_sha256_short"),
+    ("m3ly.oe_elements_reused", "m3.layout_2p5d.oe_elements_reused"),
+    ("m3ly.oe_drc_pass", "m3.layout_2p5d.oe_drc_pass"),
+    ("m3ly.electrical_drc_pass", "m3.layout_2p5d.electrical_drc_pass"),
+    ("m3ly.fiber_in_layout", "m3.layout_2p5d.fiber_in_layout"),
+    ("m3ly.oe_lvs_verdict", "m3.layout_2p5d.oe_lvs_verdict"),
+    ("m3ly.oe_lvs_n_violations", "m3.layout_2p5d.oe_lvs_n_violations"),
+    ("m3ly.oe_lvs_pass", "m3.layout_2p5d.oe_lvs_pass"),
+    ("m3ly.oe_lvs_honest_note", "m3.layout_2p5d.oe_lvs_honest_note"),
+    ("m3ly.oe_stats", "m3.layout_2p5d.oe_stats"),   # 别名赋值行 `m3os=m3ly.oe_stats||{}`
+]
+M3_LAY_STAT_PATHS = [   # `oe_stats` 全字段渲染；`m3os = m3ly.oe_stats||{}` 别名
+    ("m3os.n_devices", "m3.layout_2p5d.oe_stats.n_devices"),
+    ("m3os.n_nets", "m3.layout_2p5d.oe_stats.n_nets"),
+    ("m3os.area_um2", "m3.layout_2p5d.oe_stats.area_um2"),
+    ("m3os.width_um", "m3.layout_2p5d.oe_stats.width_um"),
+    ("m3os.height_um", "m3.layout_2p5d.oe_stats.height_um"),
+    ("m3os.bbox_um", "m3.layout_2p5d.oe_stats.bbox_um"),
+    ("m3os.n_io", "m3.layout_2p5d.oe_stats.n_io"),
+    ("m3os.n_elements", "m3.layout_2p5d.oe_stats.n_elements"),
+    ("m3os.n_structures", "m3.layout_2p5d.oe_stats.n_structures"),
+    ("m3os.gds_bytes", "m3.layout_2p5d.oe_stats.gds_bytes"),
+    ("m3os.multilayer", "m3.layout_2p5d.oe_stats.multilayer"),
+]
+# 🔴 `layout_2p5d` 里有两项**故意不渲染**（与 ④c 的 `detail` 同族豁免，理由不同）：
+#   · `geometry` / `lvs_report` = 版图几何与 LVS 报告的**全量嵌套**（几十个子字段），
+#     前端只展示其**摘要**（gds_elements / oe_lvs_verdict / oe_lvs_n_violations /
+#     oe_lvs_honest_note）⇒ 渲染全量会把面板撑爆、且与「紧凑行」体例冲突。
+# 豁免是**显式白名单**：新成员落进这两项 ⇒ 豁免集合不含它 ⇒ ④e-38 立刻变红。
+# 🔴 `oe_stats` 首版曾被我塞进这个豁免集 ⇒ 它就**没有任何反向完备守护**了
+#（真盲区：后端往里加字段前端不显示，无人拦）。现已改为**全字段渲染**，
+# 豁免集里不再有它 ⇒ ④e-38 直接管住它。
+M3_LAYOPT = {"geometry", "lvs_report"}
+M3_REUSE_TOP_PATHS = [
+    ("m3ru.lane_halved", "m3.reuse.lane_halved"),
+    ("m3ru.density_still_below_ceiling", "m3.reuse.density_still_below_ceiling"),
+    ("m3ru.pitch_still_above_floor", "m3.reuse.pitch_still_above_floor"),
+    ("m3ru.energy_floor_still_positive", "m3.reuse.energy_floor_still_positive"),
+    ("m3ru.reused_not_rebuilt", "m3.reuse.reused_not_rebuilt"),
+]
+_REUSE_OPTIONAL = {"model", "couple_mode", "bandwidth_density_gbps_mm",
+                   "density_ceiling_gbps_mm", "energy_floor_dB",
+                   "shoreline_width_mm", "pitch_um", "pitch_floor_um",
+                   "lane_rate_gbps", "n_channels", "total_bandwidth_tbps",
+                   "per_channel_il_dB", "link_margin_db"}
+M3_REUSE_200_PATHS = [("m3r2." + k, "m3.reuse.at_200g." + k)
+                      for k in sorted(_REUSE_OPTIONAL)]
+M3_REUSE_400_PATHS = [("m3r4." + k, "m3.reuse.at_400g." + k)
+                      for k in sorted(_REUSE_OPTIONAL)]
+
 ALL_PATHS = (ROOT_PATHS + REQUESTED_PATHS + CHANNEL_PATHS + MILESTONE_PATHS
              + GAP_PATHS + M1_TOP_PATHS + M1_DRIVER_PATHS + M1_RING_PATHS
              + M1_SPEC_PATHS + M1_FIX_PATHS
@@ -367,7 +556,12 @@ ALL_PATHS = (ROOT_PATHS + REQUESTED_PATHS + CHANNEL_PATHS + MILESTONE_PATHS
              + M2_RING_PATHS + M2_SPEC_PATHS + M2_GDS_PATHS + M2_FIX_PATHS
              + M2B_TOP_PATHS + M2B_EQ_PATHS + M2B_EQMODE_PATHS + M2B_CTLE_PATHS
              + M2B_LANE_PATHS + M2B_LANE_ELEM_PATHS + M2B_THERMAL_PATHS
-             + M2B_GAMMA_PATHS + M2B_YIELD_PATHS + M2B_PKG_PATHS)
+             + M2B_GAMMA_PATHS + M2B_YIELD_PATHS + M2B_PKG_PATHS
+             + M3_TOP_PATHS + M3_TWMZM_PATHS + M3_ECH_PATHS + M3_FDTD_PATHS
+             + M3_NEXT_PATHS + M3_PDN_PATHS + M3_TH_PATHS + M3_CL_PATHS
+             + M3_PW_TOP_PATHS + M3_PW_CPO_PATHS + M3_PW_PLUG_PATHS
+             + M3_LAY_PATHS + M3_LAY_STAT_PATHS + M3_REUSE_TOP_PATHS
+             + M3_REUSE_200_PATHS + M3_REUSE_400_PATHS)
 
 # 🔴 防假绿：纯子串匹配下 `rp.m` 会被 `rp.min_fsr_nm` / `rp.max_il_drop_db` 前缀命中
 # ⇒ 「把 `rp.m` 从渲染里删掉」时 ③ 仍绿（门禁看不见的盲区）。对**是其它字面量前缀**
@@ -521,9 +715,63 @@ def _m2b_reverse_flags(card: dict) -> dict:
     }
 
 
+def _m3_reverse_flags(card: dict) -> dict:
+    """M3（3.2T / CPO）反向完备十四格：顶层 / twmzm / echannel / fdtd_telegraph /
+    next / pdn / thermal / closed_loop_thermal / power / power.cpo / power.pluggable /
+    layout_2p5d / reuse / reuse.at_200g+at_400g。
+
+    返回 {格名: bool}；True = 「后端每个展示字段都被前端引用」。
+    🔴 `m3.honest_note_m3` 与各子块 `note` 也在路径表内（前端分段/结论渲染）
+    ⇒ 参与反向完备。
+    """
+    m3 = card.get("m3") or {}
+    pw = m3.get("power") or {}
+    ru = m3.get("reuse") or {}
+    return {
+        "top": set(m3.keys()) <= _tops_of(M3_TOP_PATHS + M3_TWMZM_PATHS
+                                         + M3_ECH_PATHS + M3_FDTD_PATHS
+                                         + M3_NEXT_PATHS + M3_PDN_PATHS
+                                         + M3_TH_PATHS + M3_CL_PATHS
+                                         + M3_PW_TOP_PATHS + M3_LAY_PATHS
+                                         + M3_REUSE_TOP_PATHS, "m3"),
+        "twmzm": set((m3.get("twmzm") or {}).keys())
+                  <= _leaf_keys(M3_TWMZM_PATHS, "m3.twmzm."),
+        "echannel": set((m3.get("echannel") or {}).keys())
+                    <= _leaf_keys(M3_ECH_PATHS, "m3.echannel."),
+        "fdtd": set((m3.get("fdtd_telegraph") or {}).keys())
+                 <= _leaf_keys(M3_FDTD_PATHS, "m3.fdtd_telegraph."),
+        "next": set((m3.get("next") or {}).keys())
+                 <= _leaf_keys(M3_NEXT_PATHS, "m3.next."),
+        "pdn": set((m3.get("pdn") or {}).keys())
+               <= _leaf_keys(M3_PDN_PATHS, "m3.pdn."),
+        "thermal": set((m3.get("thermal") or {}).keys())
+                   <= _leaf_keys(M3_TH_PATHS, "m3.thermal."),
+        "closed_loop": set((m3.get("closed_loop_thermal") or {}).keys())
+                       <= _leaf_keys(M3_CL_PATHS, "m3.closed_loop_thermal."),
+        "power": set(pw.keys()) <= _tops_of(M3_PW_TOP_PATHS
+                                            + M3_PW_CPO_PATHS + M3_PW_PLUG_PATHS,
+                                            "m3.power"),
+        "power_cpo": set((pw.get("cpo") or {}).keys())
+                    <= _leaf_keys(M3_PW_CPO_PATHS, "m3.power.cpo."),
+        "power_plug": set((pw.get("pluggable") or {}).keys())
+                     <= _leaf_keys(M3_PW_PLUG_PATHS, "m3.power.pluggable."),
+        "layout": (set((m3.get("layout_2p5d") or {}).keys()) - M3_LAYOPT)
+                  <= _leaf_keys(M3_LAY_PATHS, "m3.layout_2p5d."),
+        "layout_stats": set(((m3.get("layout_2p5d") or {}).get("oe_stats") or {}).keys())
+                        <= _leaf_keys(M3_LAY_STAT_PATHS, "m3.layout_2p5d.oe_stats."),
+        "reuse": set(ru.keys()) <= _tops_of(M3_REUSE_TOP_PATHS
+                                           + M3_REUSE_200_PATHS + M3_REUSE_400_PATHS,
+                                           "m3.reuse"),
+        "reuse_200": set((ru.get("at_200g") or {}).keys())
+                     <= _leaf_keys(M3_REUSE_200_PATHS, "m3.reuse.at_200g."),
+        "reuse_400": set((ru.get("at_400g") or {}).keys())
+                     <= _leaf_keys(M3_REUSE_400_PATHS, "m3.reuse.at_400g."),
+    }
+
+
 def main() -> int:
     print("=" * 74)
-    print("WebUI 光联接模块 M0+M1+M2+M2b 案例卡 前端取值路径 + onclick 门禁"
+    print("WebUI 光联接模块 M0+M1+M2+M2b+M3 案例卡 前端取值路径 + onclick 门禁"
           "（血案 #18/#19 机器化）")
     print("=" * 74)
 
@@ -550,6 +798,11 @@ def main() -> int:
     check("② renderOi 内出现 M2 块引用（d.m2 + ⑩⑪⑮ 表头）",
           "d.m2" in rsrc and "⑩ M2 规模 × 形态" in rsrc
           and "⑪ M2 带宽墙" in rsrc and "⑮ G-OI2 收发器真 GDS" in rsrc)
+    # M3 段必须真的写进了 renderOi（防「后端加了 M3、前端还是 M0/M1/M2 壳」）
+    check("② renderOi 内出现 M3 块引用（d.m3 + ㉔–㉘ 五个表头）",
+          "d.m3" in rsrc and "㉔ M3 400G/lane 带宽墙" in rsrc
+          and "㉕ CPO 电通道" in rsrc and "㉖ die↔die 热 + 闭环热调" in rsrc
+          and "㉗ M3 功耗账" in rsrc and "㉘ M3 2.5D 版图签核" in rsrc)
 
     # ── 3. 路径存在性（前端引用 ∧ 后端 JSON 真有值）─────────────────────
     _all_lits = [p[0] for p in ALL_PATHS]
@@ -694,6 +947,83 @@ def main() -> int:
           % (sorted((_m2b.get("packaging") or {}).keys()),
              sorted(_leaf_keys(M2B_PKG_PATHS, "m2b.packaging."))))
 
+    # ── 4d. M3（3.2T / CPO）反向完备十五格 ────────────────────────────
+    _m3 = card.get("m3") or {}
+    _pw3 = _m3.get("power") or {}
+    _ru3 = _m3.get("reuse") or {}
+    rf4 = _m3_reverse_flags(card)
+    check("④e-27 反向完备：m3 顶层每个展示字段都被前端引用",
+          rf4["top"], "后端=%s 前端引用=%s"
+          % (sorted(_m3.keys()),
+             sorted(_tops_of(M3_TOP_PATHS + M3_TWMZM_PATHS + M3_ECH_PATHS
+                             + M3_FDTD_PATHS + M3_NEXT_PATHS + M3_PDN_PATHS
+                             + M3_TH_PATHS + M3_CL_PATHS + M3_PW_TOP_PATHS
+                             + M3_LAY_PATHS + M3_REUSE_TOP_PATHS, "m3"))))
+    check("④e-28 反向完备：m3.twmzm 每个字段都被前端引用",
+          rf4["twmzm"], "后端=%s 前端引用=%s"
+          % (sorted((_m3.get("twmzm") or {}).keys()),
+             sorted(_leaf_keys(M3_TWMZM_PATHS, "m3.twmzm."))))
+    check("④e-29 反向完备：m3.echannel 每个字段都被前端引用",
+          rf4["echannel"], "后端=%s 前端引用=%s"
+          % (sorted((_m3.get("echannel") or {}).keys()),
+             sorted(_leaf_keys(M3_ECH_PATHS, "m3.echannel."))))
+    check("④e-30 反向完备：m3.fdtd_telegraph 每个字段都被前端引用",
+          rf4["fdtd"], "后端=%s 前端引用=%s"
+          % (sorted((_m3.get("fdtd_telegraph") or {}).keys()),
+             sorted(_leaf_keys(M3_FDTD_PATHS, "m3.fdtd_telegraph."))))
+    check("④e-31 反向完备：m3.next 每个字段都被前端引用",
+          rf4["next"], "后端=%s 前端引用=%s"
+          % (sorted((_m3.get("next") or {}).keys()),
+             sorted(_leaf_keys(M3_NEXT_PATHS, "m3.next."))))
+    check("④e-32 反向完备：m3.pdn 每个字段都被前端引用",
+          rf4["pdn"], "后端=%s 前端引用=%s"
+          % (sorted((_m3.get("pdn") or {}).keys()),
+             sorted(_leaf_keys(M3_PDN_PATHS, "m3.pdn."))))
+    check("④e-33 反向完备：m3.thermal 每个字段都被前端引用",
+          rf4["thermal"], "后端=%s 前端引用=%s"
+          % (sorted((_m3.get("thermal") or {}).keys()),
+             sorted(_leaf_keys(M3_TH_PATHS, "m3.thermal."))))
+    check("④e-34 反向完备：m3.closed_loop_thermal 每个字段都被前端引用",
+          rf4["closed_loop"], "后端=%s 前端引用=%s"
+          % (sorted((_m3.get("closed_loop_thermal") or {}).keys()),
+             sorted(_leaf_keys(M3_CL_PATHS, "m3.closed_loop_thermal."))))
+    check("④e-35 反向完备：m3.power 每个字段都被前端引用",
+          rf4["power"], "后端=%s 前端引用=%s"
+          % (sorted(_pw3.keys()),
+             sorted(_tops_of(M3_PW_TOP_PATHS + M3_PW_CPO_PATHS + M3_PW_PLUG_PATHS,
+                             "m3.power"))))
+    check("④e-36 反向完备：m3.power.cpo 每个分项都被前端引用",
+          rf4["power_cpo"], "后端=%s 前端引用=%s"
+          % (sorted((_pw3.get("cpo") or {}).keys()),
+             sorted(_leaf_keys(M3_PW_CPO_PATHS, "m3.power.cpo."))))
+    check("④e-37 反向完备：m3.power.pluggable 每个分项都被前端引用",
+          rf4["power_plug"], "后端=%s 前端引用=%s"
+          % (sorted((_pw3.get("pluggable") or {}).keys()),
+             sorted(_leaf_keys(M3_PW_PLUG_PATHS, "m3.power.pluggable."))))
+    check("④e-38 反向完备：m3.layout_2p5d 每个展示字段都被前端引用"
+          "（geometry/lvs_report 为显式白名单豁免）",
+          rf4["layout"], "后端=%s 前端引用=%s"
+          % (sorted(set((_m3.get("layout_2p5d") or {}).keys()) - M3_LAYOPT),
+             sorted(_leaf_keys(M3_LAY_PATHS, "m3.layout_2p5d."))))
+    check("④e-39 反向完备：m3.reuse 每个字段都被前端引用",
+          rf4["reuse"], "后端=%s 前端引用=%s"
+          % (sorted(_ru3.keys()),
+             sorted(_tops_of(M3_REUSE_TOP_PATHS + M3_REUSE_200_PATHS
+                             + M3_REUSE_400_PATHS, "m3.reuse"))))
+    check("④e-40 反向完备：m3.reuse.at_200g 每个字段都被前端引用",
+          rf4["reuse_200"], "后端=%s 前端引用=%s"
+          % (sorted((_ru3.get("at_200g") or {}).keys()),
+             sorted(_leaf_keys(M3_REUSE_200_PATHS, "m3.reuse.at_200g."))))
+    check("④e-41 反向完备：m3.reuse.at_400g 每个字段都被前端引用",
+          rf4["reuse_400"], "后端=%s 前端引用=%s"
+          % (sorted((_ru3.get("at_400g") or {}).keys()),
+             sorted(_leaf_keys(M3_REUSE_400_PATHS, "m3.reuse.at_400g."))))
+    # 🔴 oe_stats 已改为**全字段渲染**（首版把它塞进豁免集 ⇒ 无人守护的真盲区）。
+    check("④e-42 反向完备：m3.layout_2p5d.oe_stats 每个字段都被前端引用（零豁免）",
+          rf4["layout_stats"], "后端=%s 前端引用=%s"
+          % (sorted(((_m3.get("layout_2p5d") or {}).get("oe_stats") or {}).keys()),
+             sorted(_leaf_keys(M3_LAY_STAT_PATHS, "m3.layout_2p5d.oe_stats."))))
+
     # ── 5. 突变探针（先证能变红）───────────────────────────────────────
     import copy
     # 探针①：抹掉 case_card 的某 channel 字段 ⇒ ③ 的路径判据必红
@@ -799,6 +1129,75 @@ def main() -> int:
           all(_m1_reverse_flags(card).values())
           and all(_m2_reverse_flags(card).values())
           and all(_m2b_reverse_flags(card).values()))
+
+    # ── 5c. M3（3.2T / CPO）突变探针（先证能变红，再信 ③/④e-27…④e-41）──
+    card_m16 = copy.deepcopy(card)
+    card_m16["m3"]["brand_new_probe_top4"] = 1
+    probe16 = _m3_reverse_flags(card_m16)["top"]
+    check("🔴 探针⑯: m3 顶层多一个新字段 ⇒ ④e-27 反向完备必红", probe16 is False)
+
+    card_m17 = copy.deepcopy(card)
+    del card_m17["m3"]["twmzm"]["margin_db"]
+    probe17 = json_path_exists(card_m17, "m3.twmzm.margin_db")
+    check("🔴 探针⑰: 抹掉 m3.twmzm.margin_db ⇒ ③ 路径判据必红", probe17 is False)
+
+    card_m18 = copy.deepcopy(card)
+    card_m18["m3"]["power"]["cpo"]["brand_new_probe_pw"] = 1
+    probe18 = _m3_reverse_flags(card_m18)["power_cpo"]
+    check("🔴 探针⑱: m3.power.cpo 多一个新分项 ⇒ ④e-36 反向完备必红",
+          probe18 is False)
+
+    # 探针⑲：抹掉 `m3cl.residual_nm` 的**前端字面量** ⇒ ③ 的 js_ref 必红
+    #（只有后端 JSON 有值而不盯前端 = 假绿；这条证明 ③ 真的两端都盯）。
+    rsrc_m19 = rsrc.replace("m3cl.residual_nm", "")
+    probe19 = _js_ref_ok(rsrc_m19, "m3cl.residual_nm", _all_lits)
+    check("🔴 探针⑲: 前端抹掉 m3cl.residual_nm 字面量 ⇒ ③ 的 js_ref 必红",
+          probe19 is False)
+
+    # 探针⑳：M3 路径表里 `m3ly.gds_sha256` 被 `m3ly.gds_sha256_short` **前缀包含**
+    # ⇒ 纯子串口径下「只留 short」会让短路径假绿；边界正则必须为 False。
+    _fake3 = "h+=m3ly.gds_sha256_short;"
+    _plain3 = "m3ly.gds_sha256" in _fake3
+    _strict3 = _js_ref_ok(_fake3, "m3ly.gds_sha256", _all_lits)
+    check("🔴 探针⑳: 只留 m3ly.gds_sha256_short 的源码 ⇒ 纯子串假绿=%s 而边界判据必红=%s"
+          % (_plain3, not _strict3), _plain3 is True and _strict3 is False)
+
+    check("🔴 探针R2: 未被污染的 case_card 在 M3 反向完备十五格上仍全绿（探针无副作用）",
+          all(_m3_reverse_flags(card).values()))
+
+    # 探针㉑：往 oe_stats 里塞一个新成员 ⇒ ④e-42 必红（证明「零豁免」不是死条款）
+    card_m21 = copy.deepcopy(card)
+    card_m21["m3"]["layout_2p5d"]["oe_stats"]["brand_new_stat"] = 1
+    probe21 = _m3_reverse_flags(card_m21)["layout_stats"]
+    check("🔴 探针㉑: m3.layout_2p5d.oe_stats 多一个新成员 ⇒ ④e-42 必红",
+          probe21 is False)
+
+    # 探针㉒：ladder 收敛五字段是**新加**的 ⇒ 必须证明「后端塞进 ladder_* 新字段会被反向完备抓住」。
+    #   （旧口径下 M3 是 462 判据，加字段后若 ④e 不覆盖，就会静默进盲区）
+    card_m22 = copy.deepcopy(card)
+    card_m22["m3"]["twmzm"]["ladder_err_convergence_rate"] = 0.5
+    probe22 = _m3_reverse_flags(card_m22)["twmzm"]
+    check("🔴 探针㉒: m3.twmzm 多一个 ladder_err_convergence_rate ⇒ ④e twmzm 必红",
+          probe22 is False)
+
+    # 探针㉓：前缀包含对 —— `m3t.ladder_err_largest` 与 `m3t.ladder_err_smallest` 互不为前缀，
+    #   但 `m3t.ladder_err` 是**两者共同前缀**且在路径表里不存在 ⇒ 纯子串口径会把它误判为已引用。
+    #   证明边界判定把 `m3t.ladder_err`（未在路径表）判为「不引用任何一条真实路径」。
+    _plain4 = "h+=m3t.ladder_err;"
+    _strict4 = _js_ref_ok(_fake3, "m3t.ladder_err_largest", _all_lits)
+    check("🔴 探针㉓: 只留 m3t.ladder_err（共同前缀）的源码 ⇒ 不得满足 ladder_err_largest 的引用判定",
+          _strict4 is False)
+    check("🔴 探针㉓b: 真实源码确实同时引用了 ladder_err_largest 与 ladder_err_smallest（防路径表写成死条款）",
+          _js_ref_ok(rsrc_m19, "m3t.ladder_err_largest", _all_lits) is True
+          and _js_ref_ok(rsrc_m19, "m3t.ladder_err_smallest", _all_lits) is True)
+
+    # 探针㉔：把 ladder 收敛判据**改成恒真的假值**（monotonic=False）⇒ ④e 只管「引用」不管「取值」，
+    #   所以这条探针锁定的是另一件事：门禁必须确认前端**不是**只渲染 largest 而漏 smallest。
+    #   做法：抹掉 smallest 的字面量 ⇒ 必红。
+    _fake5 = "h+='最大 '+(m3t.ladder_err_largest*100).toFixed(4);"
+    check("🔴 探针㉔: 前端只渲染 ladder_err_largest、漏掉 ladder_err_smallest ⇒ 必红",
+          _js_ref_ok(_fake5, "m3t.ladder_err_smallest", _all_lits) is False
+          and _plain4 == "h+=m3t.ladder_err;")
 
     # ── 6. 自入 CI core ────────────────────────────────────────────────
     ci = os.path.join(_ROOT, "lda", "run_ci_regression.py")

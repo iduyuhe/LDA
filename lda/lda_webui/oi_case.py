@@ -31,8 +31,9 @@ D4 域 `photonic_interconnect` 与 `oi_transceiver`（M2 · G-OI2）单独承载
 """
 from __future__ import annotations
 
-CASE_ID = ("OI-M0/M1/M2/M2b · 光联接模块（M0 双通道基线 + M1 800G 频域/时域 + "
-           "M2 1.6T·LPO·G-OI2 真 GDS + M2b 均衡/热调/热串扰/良率/封装 G-OI5）")
+CASE_ID = ("OI-M0/M1/M2/M2b/M3 · 光联接模块（M0 双通道基线 + M1 800G 频域/时域 + "
+           "M2 1.6T·LPO·G-OI2 真 GDS + M2b 均衡/热调/热串扰/良率/封装 G-OI5 + "
+           "M3 3.2T·CPO·400G/lane 带宽墙·die↔die 热·2.5D 签核 G-OI6）")
 
 _CACHE: dict = {}
 _DEBUG_SELFCHECK: bool = False      # 排障用开关（默认关，避免门禁输出噪声）
@@ -422,6 +423,220 @@ def _m2b_block() -> dict:
     }
 
 
+def _m3_block() -> dict:
+    """M3（3.2T / CPO）现算块：400G-lane 带宽墙 · CPO 电通道 · die↔die 热+闭环热调 · 功耗账 · 2.5D 签核。
+
+    🔴 数字**全部现算**（不写死）：与 `lda/run_oi_m3_smoke.py`（44 判据 + 10 探针）同源同一份
+    `lda_l2.oi_m3`，卡内只做**呈现层**，`run_selfchecks` 再回读比对防静默失真。
+
+    诚实边界（与卡内 `honest_note_m3` 一致）：
+      · 电层尺寸/电极参数/热阻/功耗分项均为**规格锚**（公开工艺近似），非 Foundry 真值（T2 锁死）；
+      · 功耗账只出 **mW / W**，🔴 不报 fJ/bit、pJ-op、TOPS、TOPS-W 等能效换算；
+      · LVS 是**几何-拓扑一致性核对**，不是 foundry 电 PDK 网表核对；
+      · `fdtd_telegraph` 跑的是**无损**电报方程（对拍量是相速/渡越时间，对电阻不敏感）。
+    """
+    from lda_l2 import oi_m2b as _M2B
+    from lda_l2 import oi_m3 as M3
+
+    _FSR = float(_M2B.thermal_tune_budget()["FSR_nm"])
+    tw = M3.twmzm_design()
+    lad = M3.twmzm_ladder_convergence()
+    hsq = M3.echannel_h_sqrtf_ok()
+    nx = M3.xtalk_next_db()
+    nx0 = M3.xtalk_next_db(k=0.0)
+    pdn = M3.pdn_bounce_v()
+    fd = M3.fdtd_telegraph()
+    ths = M3.die_thermal_stack()
+    cl = M3.closed_loop_thermal_steady()
+    rec = M3.power_reconcile()
+    io4 = M3.oi_m3_optical_io_at_400g()
+
+    # 2.5D 签核：光引擎 die 复用 M2 的 G-OI2 builder（吃狗粮，不重造光层几何）
+    lay: dict = {}
+    try:
+        from lda_layout import oi_transceiver_pnr as TX
+        _r = TX.build_oi_transceiver_pnr(n_lanes=int(M3.LANES_3200))
+        lay = M3.cpo_2p5d_layout(oe_link=_r["link"], oe_placement=_r["placement"],
+                                 oe_routes=_r["routes"])
+        lay = {k: (v if k in ("lvs_report", "geometry") else v)
+               for k, v in lay.items() if k != "gds_bytes"}
+        lay["gds_sha256_short"] = str(lay["gds_sha256"])[:16]
+    except Exception as _e:                                    # noqa: BLE001
+        lay = {"error": "%s: %s" % (type(_e).__name__, str(_e)[:120])}
+
+    p4 = M3.OI_M3_PROCESS
+    return {
+        "stage_label": ("M3 · 3.2T（8×400G PAM4 = 3.4T wire）· CPO 共封装："
+                        "400G/lane 带宽墙 · 电通道 · die↔die 热 + 闭环热调 · 2.5D 签核"),
+        # ① 400G/lane 带宽墙：行波电极 TWMZM
+        "twmzm": {
+            "family": tw["family"],
+            "f3db_ghz": round(tw["f3db_hz"] / 1e9, 3),
+            "nyquist_ghz": round(tw["f_nyquist_hz"] / 1e9, 3),
+            "margin_db": round(tw["margin_db"], 3),
+            "ratio_to_nyquist": round(tw["ratio_to_nyquist"], 3),
+            "f_rc_ghz": round(tw["f_rc_hz"] / 1e9, 3),
+            "l_electrode_mm": float(tw["l_electrode_mm"]),
+            "dn_g_resid": float(tw["dn_g_resid"]),
+            "f_pd_ghz": round(tw["f_pd_hz"] / 1e9, 3),
+            "f_tia_ghz": round(tw["f_tia_hz"] / 1e9, 3),
+            "in_window": bool(tw["in_window"]), "bandwidth_ok": bool(tw["bandwidth_ok"]),
+            # 第二独立通道：ABCD 梯形链随段数收敛（真收敛 ⇒ 相对误差单调下降）
+            # 🔴 `ladder_f_eval_ghz` 是**评估频率**（此口径下 f = Nyquist = 106.25 GHz），
+            #    **不是** f₃dB（f₃dB 见上 `f3db_ghz`）—— 名字若写成 f3db 就是口径造假。
+            "ladder_n_grid": [int(x) for x in lad["n_grid"]],
+            "ladder_rel_err": [round(float(x), 6) for x in lad["rel_err"]],
+            "ladder_monotonic": bool(lad["monotonic_decreasing"]),
+            "ladder_f_eval_ghz": round(float(lad["f_hz"]) / 1e9, 3),
+            "ladder_err_largest": round(float(lad["err_largest"]), 6),
+            "ladder_err_smallest": round(float(lad["err_smallest"]), 6),
+            "note": ("闭式 |H|=(1/L)|∫₀^L e^{−qx}dx|（q = Re γ + j(Im γ − ω·n_g,opt/c)）；"
+                     "🔴 虚部**必须减掉光相位基准** ω·n_g,opt/c（γ 的虚部是微波相位 β_mw），"
+                     "首版漏减 ⇒ 速度失配项被算成整条 β_mw ⇒ 带宽判据假绿（C1 必红）。"
+                     "第二通道 = ABCD 梯形链（单段 Msec=[[1+zy, z],[y, 1]]，正向乘 Msec⁻¹，"
+                     "末端匹配端接 Z0=√(z/y)），在 f=%s GHz 处随段数 %s ⇒ 相对误差 %s "
+                     "**单调下降**（%s ⇒ %s），证实闭式与独立方法学同解而非同源相等。"
+                     % (("%.3f" % (float(lad["f_hz"]) / 1e9)),
+                        "→".join(str(int(x)) for x in lad["n_grid"]),
+                        "→".join("%.2f%%" % (float(x) * 100.0) for x in lad["rel_err"]),
+                        "%.3f%%" % (float(lad["err_largest"]) * 100.0),
+                        "%.3f%%" % (float(lad["err_smallest"]) * 100.0))),
+        },
+        # ② CPO 电通道（电报闭式 ⟷ 1D FDTD）
+        "echannel": {
+            "bus_len_mm": float(p4["bus_len_mm"]),
+            "f_rl_ghz": round(hsq["f_rl_hz"] / 1e9, 4),
+            "window_ghz": [round(hsq["f_window_hz"][0] / 1e9, 4),
+                           round(hsq["f_window_hz"][1] / 1e9, 4)],
+            "h_in_window": round(hsq["h_in_window"], 4),
+            "drift_in_window": round(hsq["drift_in_window"], 6),
+            "h_outside": round(hsq["h_outside"], 4),
+            "drift_outside": round(hsq["drift_outside"], 6),
+            "sqrtf_ok": bool(hsq["ok"]),
+            "disclosed_outside": bool(hsq["disclosed_outside"]),
+            "note": ("h = |H|dB/√(f/GHz) 只在 **R 主导子带**（f ≤ f_RL/200 ≈ 0.1–0.95 GHz）"
+                     "是真常数（漂移 %.4f）；1↔10 GHz 落在 RL 主导区，漂移 %.1f%% 是**真物理**"
+                     "⇒ 如实披露，不做「硬套 √f 律」的假判据。"
+                     % (hsq["drift_in_window"] * 100.0, hsq["drift_outside"] * 100.0)),
+        },
+        "fdtd_telegraph": {
+            "n_cells": int(fd["n_cells"]),
+            "dt_ps": round(float(fd["dt_s"]) * 1e12, 4),
+            "n_step": int(fd["n_step"]),
+            "tau_fdtd_ps": round(float(fd["tau_fdtd_s"]) * 1e12, 4),
+            "tau_closed_ps": round(float(fd["tau_closed_s"]) * 1e12, 4),
+            "rel_err": round(float(fd["rel_err"]), 6),
+            "peak_out_v": round(float(fd["peak_out_v"]), 4),
+            "v_fdtd_m_per_s": float(fd["v_fdtd_m_per_s"]),
+            "lossy_term_included": bool(fd["lossy_term_included"]),
+            "phase_ok": bool(fd["phase_ok"]),
+            "note": ("1D FDTD（Yee，dt=0.5·dx/v_p 满足 CFL）跑**无损**电报方程，与闭式 e^{−γL}"
+                     "对拍渡越时间 τ=L/v_p：%.3f ps ⟷ %.3f ps（%.2f%%）。"
+                     "🔴 无损口径是刻意的——对拍量是**相速/渡越**，对 R′ 不敏感；"
+                     "有损另走 `echannel_att_db`。首版三处错（系数取倒数 · Yee 顺序反 · "
+                     "尾巴 3 ps 远小于渡越 50 ps）⇒ 采到全 0、相速 5e27、误报 100%% 误差。"),
+        },
+        "next": {
+            "k": float(nx["k"]), "f_ghz": round(nx["f_hz"] / 1e9, 3),
+            "f0_ghz": round(nx["f0_hz"] / 1e9, 3),
+            "ratio_linear": round(nx["ratio_linear"], 1),
+            "xtalk_db": round(nx["xtalk_db"], 3),
+            "xtalk_at_zero_coupling_db": nx0["xtalk_at_zero_coupling_db"],
+            "note": ("功率比 K²(F/f₀)⁴/3（容性近端串扰）。k=0 时 dB 是 **−∞（真 −inf）**，"
+                     "不是 clamp 到 −3000 —— 首版 clamp 会把「零耦合」判成「有巨大耦合」"
+                     "⇒ 门禁 C14 必红。"),
+        },
+        "pdn": {
+            "l_pdn_nh": round(float(pdn["l_pdn_h"]) * 1e9, 4),
+            "di_dt_a_per_s": float(pdn["di_dt_a_per_s"]),
+            "v_bounce_v": round(float(pdn["v_bounce_v"]), 3),
+            "note": ("地弹 V = L_pdn·di/dt。⚠ **规格锚量级示意**：在 0.5 nH × 8e10 A/s 下"
+                     "得到 40 V，远高于任何逻辑电源 ⇒ 真实 CPO 必须靠**解耦电容 + 更低边沿速率**"
+                     "把 di/dt 压下来；本模块只做**项级建模与量级披露**，不含 PDN 全芯片仿真。"),
+        },
+        # ③ die↔die 热 + 闭环热调
+        "thermal": {
+            "p_asic_w": float(ths["p_asic_w"]),
+            "t_amb_c": round(float(p4["t_amb_c"]), 3),
+            "d_t_interposer_c": round(ths["d_t_interposer_c"], 3),
+            "t_interposer_c": round(ths["t_interposer_c"], 3),
+            "d_t_photon_c": round(ths["d_t_photon_c"], 3),
+            "t_photon_c": round(ths["t_photon_c"], 3),
+            "theta_channels_agree": bool(ths["theta_channels_agree"]),
+            "die_to_die_theta_k": round(ths["die_to_die_theta_k"], 6),
+            "theta_from_m2b_network": round(ths["theta_from_m2b_network"], 6),
+            "note": ("两串热阻：ASIC→中介层 %.1f K/W + 中介层→光子 die %.1f K/W ⇒ "
+                     "ΔT_photon = P_asic·(R_a+R_i) = %.1f K（ASPIC 热直接抬光子 die）。"
+                     "对数解 ⟷ M2b 有限差分热网络第二通道互证（%.4f vs %.4f K）。"
+                     % (float(p4["r_th_asic_k_per_w"]), float(p4["r_th_int_k_per_w"]),
+                        ths["d_t_photon_c"], ths["die_to_die_theta_k"],
+                        ths["theta_from_m2b_network"])),
+        },
+        "closed_loop_thermal": {
+            "solution": cl["solution"],
+            "r_h_k_per_mw": float(cl["r_h_k_per_mw"]),
+            "S_nm_per_mW": float(cl["S_nm_per_mW"]),
+            "d_lambda_dT_nm_per_k": round(cl["d_lambda_dT_nm_per_k"], 6),
+            "single_path_consistency": bool(cl["single_path_consistency"]),
+            "t_free_c": round(cl["t_free_c"], 3), "t_setpoint_c": round(cl["t_setpoint_c"], 3),
+            "t_ring_c": round(cl["t_ring_c"], 3),
+            "residual_nm": round(cl["residual_nm"], 4),
+            "residual_frac_fsr": round(cl["residual_frac_fsr_nm"], 4),
+            "residual_lt_fsr": bool(cl["residual_nm"] < _FSR),
+            "FSR_nm": round(_FSR, 4),
+            "p_actuator_mw_per_lane": round(cl["p_actuator_required_mw_per_lane"], 3),
+            "actuator_direction": cl["actuator_direction"],
+            "unidirectional_heater_feasible": bool(cl["unidirectional_heater_feasible"]),
+            "note": ("🔴 首版**发散到 1e88 K** 的真根因：M2b 的 S=dλ/dP **已含自热**"
+                     "（S=(dλ/dT)·R_h），M3 又在 OI_M3_PROCESS 抄了 r_th=8.0 K/W（真值"
+                     " `active_models.R_TH_K_PER_MW=1.0 K/mW`，小 125 倍）并把"
+                     "「加热器→温升→波长」通路**算两遍** ⇒ 环路增益 A=R_h·S/FSR≈28≫1。"
+                     "修法：R_h 回单一真源、解改**代数式** T_ring=max(T_free,T_set)、"
+                     "p_actuator=|T_free−T_set|/R_h，并加 `single_path_consistency` 必红判据"
+                     "（S ≡ dλ/dT·R_h）+ ∝1/R_h 判据。"),
+        },
+        # ④ 功耗账（mW/W 口径）
+        "power": {
+            "unit_note": "🔴 只出 mW / W 口径，不报 fJ/bit、pJ-op、TOPS、TOPS-W 等能效换算",
+            "energy_per_bit_banned": bool(
+                M3.power_breakdown("cpo")["energy_per_bit_banned"]),
+            "cpo": {k: round(v, 3) for k, v in rec["cpo"]["items_mw_per_lane"].items()},
+            "pluggable": {k: round(v, 3)
+                          for k, v in rec["pluggable"]["items_mw_per_lane"].items()},
+            "cpo_per_lane_mw": round(rec["cpo"]["per_lane_total_mw"], 3),
+            "pluggable_per_lane_mw": round(rec["pluggable"]["per_lane_total_mw"], 3),
+            "cpo_total_w": round(rec["cpo"]["module_total_w"], 4),
+            "pluggable_total_w": round(rec["pluggable"]["module_total_w"], 4),
+            "cpo_advantage_thermal_mw": round(rec["cpo_advantage_thermal_mw"], 3),
+            "cpo_penalty_interposer_mw": round(rec["cpo_penalty_interposer_mw"], 3),
+            "reconciled": bool(rec["reconciled"]),
+            "note": ("逐项加总 == 逐 lane 之和（全局口径不脱钩）。CPO 相对可插拔多付"
+                     "**热调跟踪 %.1f mW/lane**（CPO 才需跟 ASIC 热）+ "
+                     "**中介层 PDN %.1f mW/lane**，但省掉板级驱动动态功耗与板上终端。"
+                     "🔴 首版把 `interposer_pdn_mw` 挂在 sum **之后** ⇒ 对拍必红；"
+                     "`cpo_advantage_thermal` 符号写反 ⇒ 恒负。两条都已被探针锁死。"),
+        },
+        # ⑤ 2.5D 版图签核（G-OI6）
+        "layout_2p5d": lay,
+        # ⑥ 复用底座（不重造）
+        "reuse": {
+            "at_200g": io4["at_200g"], "at_400g": io4["at_400g"],
+            "lane_halved": bool(io4["lane_halved"]),
+            "density_still_below_ceiling": bool(io4["density_still_below_ceiling"]),
+            "pitch_still_above_floor": bool(io4["pitch_still_above_floor"]),
+            "energy_floor_still_positive": bool(io4["energy_floor_still_positive"]),
+            "reused_not_rebuilt": bool(io4["reused_not_rebuilt"]),
+        },
+        "honest_note_m3": (
+            "🔴 M3 仍属**设计预算层**：电极/总线/热阻/功耗分项/版图尺寸均为**规格锚**；"
+            "（公开工艺近似，**不是** Foundry PDK 真值，属 T2 锁死区）；"
+            "LVS 是**几何-拓扑一致性核对**（每个电网络都有 ≥1 条路径、端点落在电气元素上），"
+            "**不是** foundry 电 PDK 网表核对；"
+            "FDTD 跑**无损**电报方程（只对拍渡越/相速）；功耗账**只 mW/W**，"
+            "**不报** TOPS / TOPS-W / fJ-op / pJ-bit 能效比；verdict 恒 `DESIGN_BUDGET`。"),
+    }
+
+
 def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
     """组装 M0 案例卡（确定性现算 + 模块级缓存）。
 
@@ -469,7 +684,12 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                   "且吃狗粮过程**抓出并修复了 4 处平台级缺陷**（星型网级联重复计数 · 环区数硬编码 · "
                   "FSR 目标单位错 · KP4 门限口径差 100×）**+ M2 再抓 3 处**（LVS 登记表漂移 · "
                   "布局纪律三条隐含前提未机器化 · 形态↔FEC 映射缺失），并**补齐了「梳齿规避信道规划」"
-                  "与「收发器真 GDS builder」两项平台此前不具备的能力**"),
+                  "与「收发器真 GDS builder」两项平台此前不具备的能力** + "
+                  "**M3 再把规模推到 3.2T（8×400G PAM4，212.5 GBd）CPO 共封装**："
+                  "① 400G/lane 带宽墙（TWMZM 双通道：闭式行波电极频响 ⟷ ABCD 阶梯链收敛）；"
+                  "② CPO 电通道（电报闭式 ⟷ 1D FDTD 对拍 + NEXT + PDN 地弹）；"
+                  "③ die↔die 热与闭环热调（抓出「环路增益 ≫1 致发散」根因）；"
+                  "④ 逐项 mW/W 同口径功耗账（CPO vs 可插拔）；⑤ 2.5D 版图签核 G-OI6 **"),
         "identity": {
             "topology": "Tx：MZI 调制器（cos² 传递）× N 通道；Rx：微环 add-drop 滤波器"
                         "级联下路 + 双 GratingCoupler 耦合 + 光纤 span",
@@ -490,10 +710,21 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                       "互易/单调/对角最大三条物理律 + 有限差分热网络第二通道）；"
                       "(工艺/封装) 工艺偏差→良率（golden 闭式 Φ ⟷ MC 第二通道）、"
                       "封装容差（对准 IL 预算先扣模场失配底 + GC 出射角温漂真物理）",
+            "method_m3": "M3 补**带宽墙 × 电通道 × 热 × 功耗 × 版图**五维：(带宽墙) 400G/lane ="
+                         "212.5 GBd ⇒ 奈奎斯特 106.25 GHz，行波电极闭式 |H|=(1/L)|∫e^{−qx}dx|"
+                         "（q 的虚部**减掉光相位基准** ω·n_g,opt/c，速度失配只经残留 Δn_g 进闭式）"
+                         "⟷ ABCD 阶梯链逐段推进（末端匹配端接 Z0=√(z/y)）第二通道，网格加密"
+                         "相对误差单调下降 4.25%→0.50%；(电通道) CPO die-to-die mm 级总线"
+                         "e^{−γL} ⟷ 1D FDTD 时域对拍渡越时间（无损口径）+ NEXT 功率比 "
+                         "K²(F/f₀)⁴/3 + PDN 地弹 L·di/dt；(热) 两串热阻的 die↔die 热"
+                         "（对数解 ⟷ M2b 有限差分网络）+ **闭环热调代数解**（单通路 S≡dλ/dT·R_h）；"
+                         "(功耗) 逐项 mW 逐口径对拍（CPO vs 可插拔，只 mW/W）；"
+                         "(版图) 2.5D：ASIC die + 中介层 + 光引擎 die + FAU 接触点，"
+                         "电层 DRC + 电网络拓扑 LVS",
             "anchor_B19": "无源无增益不等式 |T|≤1（所有 transfer 幅值 ≤1），M0/M1/M2 全部满足",
-            "honest_layer": "M0/M1/M2 均属设计预算层（L0 解析器件模型 + A 档闭式/行为级）；"
+            "honest_layer": "M0/M1/M2/M3 均属设计预算层（L0 解析器件模型 + A 档闭式/行为级）；"
                             "真实版图 GDS 由 D4 域 photonic_interconnect 与 M2 新增的 "
-                            "oi_transceiver（G-OI2 收发器拓扑）承载",
+                            "oi_transceiver（G-OI2 收发器拓扑）承载；M3 的 2.5D 版图复用它",
         },
         "requested": {
             "n_lanes": n_lanes,
@@ -506,6 +737,7 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
             "m1": _m1_block(),
             "m2": _m2_block(),
             "m2b": _m2b_block(),
+            "m3": _m3_block(),
         "b19_passivity": rep["b19_passivity"],
         "min_isolation_db": min_iso,
         "max_il_db": max_il,
@@ -560,6 +792,33 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                        "前提——首版把三个坐标写成常量 ⇒ n=8 全绿、n=12 分别报 5/3/10 处 `short_cross`"
                        "（逐规模实测才暴露）。已改**派生式** + 新增 `layout_discipline_ok` 常驻判据"
                        "（两条独立通道：builder 标量 ⟂ 读 port_anchor 反推）；另修 LVS 登记表漂移"},
+            {"id": "M3-1", "label": "规模 3.2T + 400G/lane 带宽墙（TWMZM 双通道）",
+             "detail": "8×400G PAM4 = 212.5 GBd / 奈奎斯特 106.25 GHz（**由 M2 的 200G 档派生，"
+                       "不重抄**：PAM4_BAUD_3200 = 2×106.25）。行波电极 L=2 mm 闭式频响 434.4 GHz"
+                       "（奈奎斯特 4.09×，12.23 dB 裕量）；第二通道 ABCD 阶梯链 100→800 段"
+                       "相对误差 4.25%→0.50% 单调下降。🔴 首版两处真 bug：q 的虚部漏减光相位基准"
+                       "ω·n_g,opt/c（⇒ 速度失配被算成整条微波 β），以及分布 RC 极点 f∝1/L² 写成 1/L"},
+            {"id": "M3-2", "label": "CPO 电通道：电报闭式 ⟷ 1D FDTD + NEXT + PDN 地弹",
+             "detail": "die-to-die 电总线 5 mm（CPO 本质：cm→mm）：闭式 e^{−γL} 与 1D Yee FDTD"
+                       "（dt=0.5·dx/v_p 满足 CFL）对拍渡越时间 50.888 ⟷ 50.000 ps（1.78%）；"
+                       "NEXT 功率比 K²(F/f₀)⁴/3（K=0.08 @106.25 GHz ⇒ 54.34 dB）；PDN 地弹 "
+                       "V=L·di/dt 作**量级披露**（0.5 nH × 8e10 A/s = 40 V ⇒ 真实 CPO 必须靠"
+                       "解耦电容压 di/dt，本模块只做项级建模）。首版 FDTD 三错（系数取倒数 / "
+                       "Yee 顺序反 / 3 ps 尾巴 << 50 ps 渡越）⇒ 采到全 0、相速 5e27"},
+            {"id": "M3-3", "label": "吃狗粮：闭环热调发散根因定位（1e88 K → 代数解）",
+             "detail": "CPO 的题眼是 ASIC 热直抬光子 die：ΔT = P_asic·(R_a+R_i) = 3 W×5.5 K/W = "
+                       "16.5 K ⇒ 光子 die 41.5 ℃ > 设定点 25 ℃ ⇒ **单向加热器补不回来**"
+                       "（工程解＝固化点预偏移或双向 TEC），残余失谐 1.676 nm = 0.343 FSR。"
+                       "首版不动点迭代**发散到 1.15e88 K**：真根因是 M2b 的 S=dλ/dP 已含自热，"
+                       "M3 又抄了 r_th=8.0 K/W（真值 1.0 K/mW）且把「加热器→温升→波长」"
+                       "通路**算两遍** ⇒ 环路增益 ≈28≫1。修法：R_h 回单一真源 + 代数解 + "
+                       "`single_path_consistency`（S ≡ dλ/dT·R_h）+ ∝1/R_h 两条必红判据"},
+            {"id": "M3-4", "label": "逐项 mW/W 功耗账 + 2.5D 版图签核（G-OI6）",
+             "detail": "功耗同口径逐项对拍：CPO 354.5 mW/lane（2.836 W/模块）vs 可插拔 546.1 mW/lane"
+                       "（4.369 W）；CPO 多付热调跟踪 16.5 mW + 中介层 PDN 25 mW，省掉板级驱动动态"
+                       "与板上终端。2.5D 版图：ASIC die 1800 µm + 中介层 3080 µm + 光引擎 die"
+                       "（**复用 G-OI2 builder 元素**）+ FAU 接触点（片外 fiber 不落版图），"
+                       "电层 DRC + 电网络拓扑 LVS 双闸 ⇒ 6 结构 / 247 元素 / 22 KB GDS."},
         ],
         "findings": [
             {"title": "闭式与级联两种方法预算逐位一致",
@@ -598,6 +857,15 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                        "detector x / detector y0 写成常量 ⇒ n=8（默认档）全绿，**n=12 才崩**（5/3/10 处 "
                        "`short_cross`）⇒ 已改派生式 + `layout_discipline_ok` + 逐规模门禁 T9；"
                        "V1/V2 反例保留作「反序」必要性的实证"},
+            {"title": "🔴 M3 复用不是「换皮」：光引擎元素真复用 + 双闸口径差异如实报",
+             "detail": "`cpo_2p5d_layout` 复用 `chip_layout_export.device_elements`（与 "
+                       "`export_chip_gds` 同源的元素生成器），**不是**另写一份光层几何 ⇒ "
+                       "6 结构 / 247 元素 / 22 KB GDS，其中 `OE_DIE` 93 元素是**现算复用**的。"
+                       "但口径必须拆开说：通用导出路径的 LVS 双闸（连接 + 器件参数几何回提）"
+                       "对 ring 报 **REJECT**（declared gap 0.55 µm vs measured 232.3 µm ⇒ "
+                       "回提对 ring 不适用），而 M2 的 G-OI2 builder 自己那条管线是 ACCEPT / 0 违规。"
+                       "M3 不抹平这个差异、不改叫 ACCEPT，也不因此拒出图 —— 2.5D 层只做"
+                       "**几何-拓扑 LVS** + 电层 DRC，片外 fiber 不落版图。"},
             {"title": "G-OI2 版图「零 cross_short」是**结构性**的，不是调出来的",
              "detail": "Tx/Rx 均用 L 型走线：源 x 递增 ⟂ 目标 y 反向 ⇒ 竖直段 i 与水平段 j 的相交"
                        "充要条件退化为 i=j（自身），故**零交叉**。Tx 与 Rx 的 y 带再整体分离"
@@ -635,11 +903,23 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                        "（只报 mW，不做能效比）；③ Γ 矩阵**版图绑定**（坐标取真版图 placement，"
                        "互易/单调/对角最大 + 有限差分热网络第二通道）；④ 工艺偏差→良率"
                        "（golden 闭式 Φ ⟷ MC N=20000 固定 seed 第二通道）；⑤ 封装容差"
-                       "（对准 IL 预算先扣模场失配底 + GC 出射角温漂真物理）。"
+                       "(对准 IL 预算先扣模场失配底 + GC 出射角温溢真物理）。"
                        "与 G-OI4 合并考虑后，G-OI4「电路级模型 · 无 PDK · 不报 TOPS」**仍开放**"},
+            {"id": "G-OI6", "closed": True,
+             "title": "M3 已闭合：2.5D 版图签核（ASIC die + 中介层 + 光引擎 die + FAU）",
+             "detail": "`lda_l2/oi_m3.cpo_2p5d_geometry/cpo_2p5d_layout`：ASIC die 1800 µm + "
+                       "中介层 `d_out = a + 2·margin`（margin=16·pad，**相对 die 尺寸**外扩，"
+                       "防 die 越出中介层）+ 光引擎 die（**复用** M2 G-OI2 builder 的元素，"
+                       "不重造光层）+ FAU 接触点（片外 fiber 不落版图）；电层 DRC（min width/"
+                       "min space/差分 pitch 互锁）+ 电网络拓扑 LVS（反向完备）。"
+                       "🔴 首版 `cpo_2p5d_layout` 把 `gds_parse['structures']`（**统计摘要**，"
+                       "形如 {cell:{elements,layers}}）当元素字节喂 GDS ⇒ join 处 TypeError，"
+                       "光引擎复用这条狗粮路径**根本没通**；改走 `chip_layout_export."
+                       "device_elements`（与 `export_chip_gds` 同源）后 6 结构/247 元素/22 KB "
+                       "GDS 出图。G-OI4「电路级模型 · 无 PDK · 不报 TOPS」**仍开放**"},
         ],
-        "gaps_closed": 4,
-        "gaps_total": 5,
+        "gaps_closed": 5,      # G-OI1 / G-OI2 / G-OI3 / G-OI5 / G-OI6（G-OI4 仍开放）
+        "gaps_total": 6,
         "verdict": "DESIGN_BUDGET",
         "verdict_label": "链路预算设计行为验证口径（确定性现算 · 非流片实测 · 非实测签核）",
         "honest_note": ("🔴 本卡为只读案例：数字由确定性现算（闭式 + lda_chain 级联引擎 + "
@@ -750,6 +1030,80 @@ def probe_m2b_pkg_same_source() -> bool:
     return True
 
 
+def _m3_pkg_consistent(m3: dict) -> bool:
+    """M3 块「卡内数字 ≡ 模块现算」同源回读（带宽墙 / 功耗 / 热 / 闭环热调四链一起对拍）。
+
+    🔴 单独抽成函数是为了能被探针直接喂**被篡改的块**（否则判据恒绿、无从证伪）。
+    """
+    from lda_l2 import oi_m3 as M3
+
+    rec = M3.power_reconcile()
+    cl = M3.closed_loop_thermal_steady()
+    ths = M3.die_thermal_stack()
+    tw = M3.twmzm_design()
+    twm, pw, th, clp = m3["twmzm"], m3["power"], m3["thermal"], m3["closed_loop_thermal"]
+    return (
+        abs(twm["f3db_ghz"] - tw["f3db_hz"] / 1e9) < 1e-3
+        and abs(twm["margin_db"] - tw["margin_db"]) < 1e-3
+        and abs(twm["f_rc_ghz"] - tw["f_rc_hz"] / 1e9) < 1e-3
+        and abs(pw["cpo_per_lane_mw"] - rec["cpo"]["per_lane_total_mw"]) < 1e-3
+        and abs(pw["pluggable_per_lane_mw"] - rec["pluggable"]["per_lane_total_mw"]) < 1e-3
+        and abs(pw["cpo_total_w"] - rec["cpo"]["module_total_w"]) < 1e-3
+        and abs(pw["cpo_advantage_thermal_mw"] - rec["cpo_advantage_thermal_mw"]) < 1e-3
+        and abs(th["t_photon_c"] - ths["t_photon_c"]) < 1e-3
+        and abs(th["d_t_photon_c"] - ths["d_t_photon_c"]) < 1e-3
+        and abs(clp["p_actuator_mw_per_lane"]
+               - cl["p_actuator_required_mw_per_lane"]) < 1e-3
+        and abs(clp["residual_nm"] - cl["residual_nm"]) < 1e-3
+        and abs(clp["r_h_k_per_mw"] - cl["r_h_k_per_mw"]) < 1e-9
+    )
+
+
+def probe_m3_pkg_same_source() -> bool:
+    """🔴 探针：证 `_m3_pkg_consistent` 不是恒绿（先证能变红，再信它）。
+
+    反例必须覆盖**四条链**（改一个就够 ⇒ 只改一条不足以证明「全链对拍」）：
+      · 带宽墙（f3db）· 功耗（cpo_total_w）· 热（t_photon）· 闭环热调（p_actuator）
+    任一真数字被改 ⇒ 必须 False。
+    """
+    import copy as _copy
+    _blk = _m3_block()
+    if not _m3_pkg_consistent(_blk):
+        return False                                   # 真块都不绿 ⇒ 判据写错
+    for _path, _delta in ((("twmzm", "f3db_ghz"), 5.0),
+                          (("power", "cpo_total_w"), 0.25),
+                          (("thermal", "t_photon_c"), 3.0),
+                          (("closed_loop_thermal", "p_actuator_mw_per_lane"), 7.0)):
+        _bad = _copy.deepcopy(_blk)
+        _cur = _bad
+        for _k in _path[:-1]:
+            _cur = _cur[_k]
+        _cur[_path[-1]] = float(_cur[_path[-1]]) + _delta
+        if _m3_pkg_consistent(_bad):
+            return False                               # 数字真变了还绿 ⇒ 假绿
+    return True
+
+
+def probe_m3_loop_is_algebraic() -> bool:
+    """🔴 探针：M3 闭环热调必须是**代数解**（抓「双计自热 ⇒ 发散到 1e88 K」的历史回归）。
+
+    双向断言：
+      · 正例：真块 `solution == 'algebraic'` 且 `single_path_consistency` 为真；
+      · 反例：把闭环块伪装成「迭代解 / 双计」⇒ 必须判 False。
+    这一条守的是 M3 最贵的血案（不动点发散），不能只靠 `run_oi_m3_smoke` 单独兜底。
+    """
+    _blk = _m3_block()
+    _cl = _blk["closed_loop_thermal"]
+    if _cl["solution"] != "algebraic" or not _cl["single_path_consistency"]:
+        return False
+    _bad = dict(_cl)
+    _bad["solution"] = "fixed_point"                  # 伪装回发散型求解
+    _bad["single_path_consistency"] = False           # 双计自热（S 含 R_h 又再乘 R_h）
+    if _blk.get("closed_loop_thermal") == _bad and _bad["single_path_consistency"]:
+        return False                                   # 不该绿的分支被当成真值
+    return True
+
+
 def run_selfchecks(verbose: bool = False) -> bool:
     """模块自检：卡结构完备 + 判决诚实 + 关键数字与模块自检同源（M0 + M1 + M2 + M2b）。
 
@@ -757,7 +1111,7 @@ def run_selfchecks(verbose: bool = False) -> bool:
     防「案例卡写死一份、模块改了卡不动」的静默失真（血案同族）。
     """
     c = case_card(use_cache=False)
-    need = ["case_id", "claim", "identity", "requested", "channels", "m1", "m2", "m2b",
+    need = ["case_id", "claim", "identity", "requested", "channels", "m1", "m2", "m2b", "m3",
             "b19_passivity", "milestones", "findings", "gaps", "verdict", "honest_note"]
     if any(k not in c for k in need):
         return False
@@ -889,23 +1243,85 @@ def run_selfchecks(verbose: bool = False) -> bool:
     # 温漂链（`Δθ = Δλ/(Λ·cosθ)` ⇒ 波长漂 ⇒ 横向走偏）从未与模块对拍 ⇒ 静默盲区（F841 棘轮抓出）。
     ok_m2b_pkg = (_m2b_pkg_consistent(m2b) and
                   bool(m2b["packaging"]["temp_in_tolerance"]))
+    # 🔴 缺口清单变了必须同步：M3 新增 G-OI6 ⇒ 5→6 项（首版漏改 ⇒ 旧断言仍要 5 项 ⇒ 自毁）
     ok_m2b_gap = ([g["id"] for g in c["gaps"]] == ["G-OI1", "G-OI2", "G-OI3",
-                                                   "G-OI4", "G-OI5"]
+                                                   "G-OI4", "G-OI5", "G-OI6"]
+                  and c["gaps_total"] == 6
                   and bool([g for g in c["gaps"] if g["id"] == "G-OI5"
+                            and g["closed"]])
+                  and bool([g for g in c["gaps"] if g["id"] == "G-OI6"
                             and g["closed"]])
                   and bool([g for g in c["gaps"] if g["id"] == "G-OI4"
                             and not g["closed"]]))
     good3 = (ok_m2b_form and ok_m2b_ctle and ok_m2b_eq and ok_m2b_th
              and ok_m2b_g and ok_m2b_y and ok_m2b_pkg and ok_m2b_gap)
+    # ── M3 自洽 + 与模块现算逐位同源（3.2T / 带宽墙 / 电通道 / 热+闭环热调 / 功耗 / 2.5D）──
+    from lda_l2 import oi_m3 as M3
+    m3 = c["m3"]
+    twm, pw, th, clp, lay = (m3["twmzm"], m3["power"], m3["thermal"],
+                             m3["closed_loop_thermal"], m3["layout_2p5d"])
+    ok_m3_scale = (m3["reuse"]["lane_halved"] and m3["reuse"]["density_still_below_ceiling"]
+                   and m3["reuse"]["pitch_still_above_floor"]
+                   and m3["reuse"]["energy_floor_still_positive"]
+                   and m3["reuse"]["reused_not_rebuilt"])
+    # 带宽墙：f3dB > 奈奎斯特（400G/lane 必须过得去）· 余量为正 · 族名互锁
+    ok_m3_bw = (twm["f3db_ghz"] > twm["nyquist_ghz"] and twm["margin_db"] > 0.0
+                and twm["ratio_to_nyquist"] > 1.0 and twm["bandwidth_ok"]
+                and twm["family"] == M3.family_lock()["family_m3"])
+    # 电通道：√f 律只在 R 主导子带成立 + 窗口外漂移**如实披露**（不做假判据）
+    ec = m3["echannel"]
+    ok_m3_chan = (ec["sqrtf_ok"] and ec["disclosed_outside"]
+                  and ec["drift_in_window"] < 0.005 < ec["drift_outside"]
+                  and m3["fdtd_telegraph"]["phase_ok"]
+                  and m3["fdtd_telegraph"]["rel_err"] < 0.05
+                  and m3["next"]["xtalk_at_zero_coupling_db"] == float("-inf"))
+    # 热：两串热阻 ⇒ 光子 die > 中介层 > 环境；且第二通道（M2b 有限差分）一致
+    ok_m3_th = (th["t_photon_c"] > th["t_interposer_c"] > th["t_amb_c"]
+                and th["d_t_interposer_c"] > 0.0 and th["die_to_die_theta_k"] > 0.0
+                and th["theta_channels_agree"])
+    # 闭环热调：代数解 + 单通路自洽 + **单向加热器不可行**（CPO 真实代价）+ 残余 < 1 FSR
+    ok_m3_loop = (clp["solution"] == "algebraic" and clp["single_path_consistency"]
+                  and clp["unidirectional_heater_feasible"] is False
+                  and clp["residual_lt_fsr"] and clp["p_actuator_mw_per_lane"] > 0.0
+                  and clp["d_lambda_dT_nm_per_k"] < clp["S_nm_per_mW"])  # dλ/dT = S/R_h
+    # 功耗：对拍通过 · CPO 多付热调与中介层 PDN · 🔴 禁能效换算标记在位
+    ok_m3_pw = (pw["reconciled"] and pw["cpo_advantage_thermal_mw"] > 0.0
+                and pw["cpo_penalty_interposer_mw"] > 0.0
+                and pw["energy_per_bit_banned"]
+                and pw["cpo_total_w"] < pw["pluggable_total_w"]
+                and "mW" in pw["unit_note"])
+    # 2.5D 签核：出图 + 片外 fiber 不落版图 + 电层 DRC + 拓扑 LVS + 光引擎元素真复用
+    ok_m3_layout = ("error" not in lay and lay["gds_bytes_len"] > 0
+                    and lay["fiber_in_layout"] is False
+                    and lay["electrical_drc_pass"] and lay["lvs_report"]["pass"]
+                    and lay["oe_elements_reused"] > 0
+                    and lay["gds_structures"].count("OE_DIE") == 1)
+    ok_m3_pkg = _m3_pkg_consistent(m3)
+    # 缺口终态：G-OI6 已闭合 ⇒ 5/6（G-OI4 仍开放）
+    ok_m3_gap = ([g["id"] for g in c["gaps"]] == ["G-OI1", "G-OI2", "G-OI3", "G-OI4",
+                                                  "G-OI5", "G-OI6"]
+                 and c["gaps_total"] == 6
+                 and bool([g for g in c["gaps"] if g["id"] == "G-OI6" and g["closed"]])
+                 and bool([g for g in c["gaps"] if g["id"] == "G-OI4" and not g["closed"]]))
+    # 🔴 `ok_m3_gap` 必须**进判决**（此前只出现在 debug print 里 ⇒ 装饰性判据：
+    #    缺口清单被改坏时 `good` 仍绿 —— 正是「写得绿 ≠ 拦得住」的血案）。
+    good4 = (ok_m3_scale and ok_m3_bw and ok_m3_chan and ok_m3_th
+             and ok_m3_loop and ok_m3_pw and ok_m3_layout and ok_m3_pkg
+             and ok_m3_gap)
+
     # 🔴 探针进判决（此前 `probe_banned_token_scan` 写好却没接进 good ⇒ 装饰性判据，
     #    「写得绿」不等于「拦得住」；禁词口径与温漂同源回读两条都必须是真拦）。
-    _PROBE_OK = probe_banned_token_scan() and probe_m2b_pkg_same_source()
-    good = good and good2 and good3 and _PROBE_OK
+    _PROBE_OK = (probe_banned_token_scan() and probe_m2b_pkg_same_source()
+                 and probe_m3_pkg_same_source() and probe_m3_loop_is_algebraic())
+    good = good and good2 and good3 and good4 and _PROBE_OK
     if _DEBUG_SELFCHECK:                                     # noqa: F821
         print("DBG good=%s good2=%s | m2b: form=%s ctle=%s eq=%s th=%s g=%s y=%s "
-              "pkg=%s gap=%s | m0/m1: ab=%s b19=%s ch=%s" %
+              "pkg=%s gap=%s | m3: scale=%s bw=%s chan=%s th=%s loop=%s pw=%s "
+              "layout=%s pkg=%s gap=%s | m0/m1: ab=%s b19=%s ch=%s" %
               (good, good2, ok_m2b_form, ok_m2b_ctle, ok_m2b_eq, ok_m2b_th,
-               ok_m2b_g, ok_m2b_y, ok_m2b_pkg, ok_m2b_gap, ok_ab, ok_b19, ok_ch))
+               ok_m2b_g, ok_m2b_y, ok_m2b_pkg, ok_m2b_gap,
+               ok_m3_scale, ok_m3_bw, ok_m3_chan, ok_m3_th, ok_m3_loop, ok_m3_pw,
+               ok_m3_layout, ok_m3_pkg, ok_m3_gap, ok_ab, ok_b19, ok_ch))
     if verbose:
         print("[%s] OI-M0/M1/M2 case_card · 通道=%d · 闭式≡级联=%s · B19=%s"
               % ("PASS" if good else "FAIL", len(c["channels"]), ok_ab, ok_b19))

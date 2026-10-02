@@ -1,4 +1,77 @@
 # Changelog
+## v0.9.181（2026-10-02 · **新征程 M3：光联接模块 3.2T / CPO（8×400G PAM4 = 3.4T wire）—— 400G/lane 带宽墙 · CPO 电通道 · die↔die 热 + 闭环热调 · 逐项 mW 功耗账 · G-OI6 2.5D 版图签核**）
+
+### 改了什么
+
+M3 把速率从 M2 的 1.6T 再翻一倍到 **3.2T**（8 通道 × 400G PAM4 = 212.5 GBd/通道 · 线速率 3400 Gb/s · 奈奎斯特 **106.250 GHz**），撞上真正的墙（400G/lane），并首次引入 **CPO（共封装光学）** 形态。全部落在 `lda_l2/oi_m3.py`（模块自检 **44 项**）+ 门禁 `run_oi_m3_smoke.py`（**57 判据 + 10 探针 P1–P10 + R 还原重跑**）。
+
+五项能力：
+
+| 项 | 内容 | 关键实测 |
+|---|---|---|
+| ① 400G/lane 带宽墙 | 行波电极 TWMZM 闭式 \|H\|=(1/L)∣∫₀^L e^{−qx}dx∣，q = Re γ + j(Im γ − ω·n_g,opt/c)；第二通道 ABCD 梯形链（Msec=[[1+zy, z],[y, 1]]，正向乘 Msec⁻¹，末端 Z0=√(z/y)） | f₋₃dB **434.408 GHz** vs 奈奎斯特 106.250（裕量 **+12.231 dB**）· RC 极点 99.472 GHz（∝1/L²）· L=2.0 mm |
+| ② CPO 电通道 | 电报闭式 e^{−γL} ⟷ 1D FDTD（Yee · dt=0.5·dx/v_p 满足 CFL）两法对拍；容性 NEXT 功率比 K²(F/f₀)⁴/3；PDN 地弹 V=L_pdn·di/dt | τ **50.000 ⟷ 50.888 ps**（误差 0.017760）· NEXT 54.344 dB（k=0.08）· k=0 ⇒ **真 −inf** · 地弹 40.00 V（⚠ 量级示意） |
+| ③ die↔die 热 + 闭环热调 | 两串热阻（ASIC→中介层 1.5 + 中介层→光子 die 4.0 K/W）；闭环热调改**代数解** + 单通路一致性 | ΔT_photon **16.500 K**（0.287682 ⟷ 0.312959 K/W 双通道）· 残余 1.6764 nm · 加热器 16.500 mW/lane |
+| ④ 逐项 mW/W 功耗账 | CPO vs 可插拔七分项同口径对拍 | CPO **354.500 mW/lane（2.8360 W）** vs 可插拔 **546.100 mW/lane（4.3688 W）** |
+| ⑤ G-OI6 2.5D 版图签核 | ASIC die + 中介层 + 光引擎 die（**真复用 M2 builder**）+ FAU 接触点；真 GDS + 电层 DRC + 几何-拓扑 LVS | GDS **22006 B / 247 元素 / 6 结构** · 光引擎复用 **93 元素** · 电层 DRC 全绿 |
+
+### 🔴 本轮抓出并修的真 bug（全部由门禁暴露，非自查发现）
+
+1. **闭环热调发散到 1e88 K（最严重）** —— 根因是**同一条热通路算两遍 + 抄错热阻**：M2b 的 S=dλ/dP **已含自热**（S=(dλ/dT)·R_h），M3 首版又抄 `r_th=8.0 K/W`（真值 `active_models.R_TH_K_PER_MW=1.0 K/mW`，小 125 倍）⇒ 环路增益 A=R_h·S/FSR≈**28 ≫ 1**。修：R_h 回单一真源 + 解法改**代数式** `T_ring=max(T_free,T_set)`、`p_actuator=|T_free−T_set|/R_h` + 新增 `single_path_consistency`（S ≡ dλ/dT·R_h）与 ∝1/R_h 判据 + 探针 `probe_m3_loop_is_algebraic`（伪装 fixed_point 必 False）。
+2. **TWMZM 相位基准漏减** —— γ 的虚部是微波相位 β_mw，必须**减掉光相位基准** ω·n_g,opt/c；首版漏减 ⇒ 速度失配项被算成整条 β_mw ⇒ 带宽判据**假绿**（C1 必红探针锁死）。
+3. **光引擎 GDS 复用路径根本没通** —— 首版把 `gds_parse["structures"]`（**统计摘要** `{cell:{elements,layers}}`）当元素字节喂 `gds_library` ⇒ join 处 `TypeError: expected a bytes-like object, str found`（此前一直静默失败）。改走 `chip_layout_export.device_elements`。
+4. **P8 探针假绿** —— 首版 `_bad_pw` 把 `interposer_pdn_mw` 置 0 后重算 sum ⇒ items 与 per_lane 仍一致 ⇒ 逐项加总对拍**不红**。改为**items 保留非零 + per_lane_total 漏掉它**（354.5 vs 329.5 真分歧）。
+5. **`interposer_pdn_mw` 挂在 sum 之后** ⇒ 对拍必红；**`cpo_advantage_thermal` 符号写反** ⇒ 恒负。两条已被探针锁死。
+6. **NEXT k=0 时 dB 被 clamp 到 −3000** ⇒ 把「零耦合」判成「有巨大耦合」；改真 **−inf**（C14 必红）。
+7. **FDTD 首版三处错**（系数取倒数 · Yee 顺序反 · 尾巴 3 ps 远小于渡越 50 ps）⇒ 采到全 0、相速 5e27、误报 100% 误差。
+8. **`run_oi_m3_smoke.py` SyntaxError** —— `check("…（不是"全变绿/全变红"的假还原）")` 外层双引号串内嵌未转义 `"` 提前闭合；改外层单引号 + 内层换「」。
+9. **案例卡 `findings` 字典键重复（pyflakes 棘轮抓出）** —— M3-1..M3-4 milestones 被误插进 `findings` 列表，导致第二个 `"findings": [` 成为**重复键**（后写覆盖前写 ⇒ 前一整段 findings 静默丢失）。修：M3-1..M3-4 挪回 `milestones` 末，两段 findings 合并为一段。
+10. **`ok_m3_gap` 是装饰性判据** —— 算了却**只出现在 debug print 里**、未进 `good4` ⇒ 缺口清单被改坏时 `good` 仍绿。修：接进 `good4` + 补 debug print。**教训：判据不进口 = 不存在。**
+11. **`ladder_*` 字段名是我凭印象编的、与真函数不符** —— 为清 F841 给 `twmzm` 块加收敛字段时写成 `n_segments` / `f3db_hz` / `vs_closed_rel_err`，而 `twmzm_ladder_convergence()` 真实返回 `n_grid` / `f_hz` / `err_largest` / `err_smallest` ⇒ 立刻 `KeyError: 'n_segments'`。修：按真返回键改名，并把语义**正名**（`f_hz` 是**评估频率**= Nyquist，**不是** f₃dB ⇒ 字段名改 `ladder_f_eval_ghz`，否则就是口径造假）。
+
+### 🔴 前端取值路径门禁当场抓到的 3 处盲区（本轮 D-214）
+
+`run_webui_oi_render_path_smoke` **284 → 472 判据**（+M3 十六格反向完备 ④e-27…④e-42 + 探针⑯–㉔），**首次运行即红 3 条**：
+
+- `m3.echannel.note` / `m3.power.unit_note` —— 后端有值而前端**根本没渲染**（③ 路径判据直接红）⇒ 已补渲染。
+- `layout_2p5d.oe_stats` —— 我一度把它塞进 `M3_LAYOPT` **豁免集**（理由：字段多、只渲染紧凑行）⇒ 它就**完全没有反向完备守护**了（后端往里加字段无人拦）⇒ 已改为**全字段渲染**（11 项全展示），豁免集只剩 `geometry` / `lvs_report` 两个全量嵌套报告。
+- 探针⑳ 复用「非标识符收尾」边界正则抓前缀假绿（`m3ly.gds_sha256` 被 `m3ly.gds_sha256_short` 前缀包含）。
+
+🔴 一般纪律：**豁免是最后手段**，且必须显式登记 + 配探针证明不是死条款。
+
+### 🔴 收官段：pyflakes 棘轮归零 + ladder 收敛字段接线（F841 5 → 0）
+
+收官回扫跑 `run_pyflakes_ratchet_smoke` 得 **F841 5 > 0 棘轮红**，逐条清干净：
+
+| 处 | 症状 | 修法 |
+|---|---|---|
+| `oi_m3.py:38` | `typing.Sequence` 导入未用 | 删 |
+| `run_oi_m3_smoke.py:108/112` | P1 探针里 `o`（原函数句柄）/ `w`（2πf）赋值未用 | 删（探针只改**相位基准**一处，其余与生产实现逐行同构，注释写明） |
+| `run_oi_m3_smoke.py:182` | P5 探针里 `r`（总线 R′）赋值未用 | 删 + 注释说明本探针**刻意走无损**电报方程（只破 CFL、不引入 R 项） |
+| `oi_case.py:443` | `lad` 收敛结果赋值未用 | **不删**，改为真接线：把梯形链收敛搬进 `m3.twmzm` 呈现层（见下） |
+
+**唯一「有价值」的 F841 是 `lad`** —— 它不是废变量，而是暴露「ABCD 第二独立通道**在案例卡/前端根本没露出**」（后端算了、门禁也查了，只有 smoke 看得到）。修法是**接线而非删除**：新增 6 字段 `ladder_n_grid` / `ladder_rel_err` / `ladder_monotonic` / `ladder_f_eval_ghz` / `ladder_err_largest` / `ladder_err_smallest`，前端 ㉔ 段加「第二独立方法学：ABCD 梯形链 ⟷ 闭式（段数收敛）」两表（逐 N 误差行 + 收敛判据行），路径表 `M3_TWMZM_PATHS` 同步 +6 条 ⇒ **462 → 468 判据**。
+
+再补 3 条探针把新字段**证明是活的**：**⑫**（编号㉒）后端往 `m3.twmzm` 塞 `ladder_err_convergence_rate` ⇒ ④e twmzm 必红（防「新字段进盲区」）；**㉓** 共同前缀 `m3t.ladder_err` 不得满足 `ladder_err_largest` 的引用判定（防前缀假绿）+ **㉓b** 反向：真实源码**确实**同时引用 largest 与 smallest（防路径表写成死条款）；**㉔** 前端只渲染 largest 漏掉 smallest ⇒ 必红。⇒ **468 → 472 判据全绿**。
+
+实测阶梯：`run_pyflakes_ratchet_smoke` **8 PASS / 0 FAIL**（F841≤0）· `run_oi_m3_smoke` **57 PASS**（3.0s）· `run_webui_oi_render_path_smoke` **472 PASS / 0 FAIL** · `run_count_consistency_smoke` **13 用例 0 FAIL** · 案例卡 self-check ALL PASS · 前端 7 个 script block 全部 `new Function` 语法通过。
+
+### 接线（案例卡 / 前端 / CI）
+
+- 案例卡 `/api/oi_demo` 升 **M0/M1/M2/M2b/M3**（新增 `m3` 块，数字**全现算非写死**）；新增 `_m3_pkg_consistent` 同源回读判据 + `probe_m3_pkg_same_source`（四链篡改 f3db/cpo_total/t_photon/p_actuator 全须翻 False）+ `probe_m3_loop_is_algebraic`。
+- 缺口增 **G-OI6** ⇒ `gaps_total` **5 → 6**、`gaps_closed` **4 → 5**（G-OI1/2/3/5/6 闭合，🔴 **G-OI4 仍诚实保留开放**）。
+- 前端 `sec-oi` 新增 **㉔ 400G/lane 带宽墙 · ㉕ CPO 电通道（闭式⟷FDTD + NEXT + PDN）· ㉖ die↔die 热 + 闭环热调 · ㉗ 功耗账 · ㉘ G-OI6 2.5D 版图签核**，结论段同步 M3 叙述，面板 h2/按钮/导航改为「M0–M3」。
+- CI core 登记 `run_oi_m3_smoke.py`（timeout 120s，实测 3s）⇒ **CI core 270 → 271**。
+- 三同步 v0.9.181（pyproject / README 顶行 + `## 当前账本` / CONTRIBUTING / CHANGELOG）。
+
+### 诚实边界
+
+M3 仍属**设计预算层**（L0/A 档闭式 + 行为级 + 几何-拓扑 LVS，M2b 的 2.5D 版图复用它）；电极/总线/热阻/功耗分项/版图尺寸均为**规格锚**（公开工艺近似，**不是** Foundry PDK 真值，属 T2 锁死区）；LVS **不是** foundry 电 PDK 网表核对；FDTD 跑**无损**电报方程（只对拍渡越/相速，对 R′ 不敏感）；PDN 地弹为量级示意非全芯片仿真；🔴 **不报 TOPS / TOPS-W / fJ-op / pJ-bit**（`energy_per_bit_banned=True` 由门禁守）；LLM 不进判决路径。
+
+🔴 **双闸口径差异如实报出**：通用导出路径 LVS 对 ring 回提 **REJECT / 8 违规**（declared gap 0.55 vs measured 232.3），而 M2 的专用 builder 给 ACCEPT —— 本卡**只做几何-拓扑 LVS + 电层 DRC**，不抹平、不改叫 ACCEPT、也不因此拒出图。
+
+账本 **476 不变（零锚改动）** · 端点 **146 不变**
+
 ## v0.9.180（2026-10-02 · **新征程 M2b：光联接模块 G-OI5 —— 多通道均衡 · 热调 · 热串扰 Γ 矩阵 · 工艺偏差良率 MC · 封装容差（五合一闭合）**：门禁 **85 判据 + 8 探针 + 还原重跑** · 缺口 G-OI5 闭合 ⇒ **gaps_closed 3/5 → 4/5** · 账本 **476 不变（零锚改动）** · CI core **269 → 270** · 端点 **146 不变**）
 
 ### 收什么

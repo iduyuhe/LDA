@@ -143,7 +143,7 @@ body{padding-top:56px}
     <a href="#sec-accel" style="color:#0b1220;background:#7dd3fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子/模拟 AI 加速器（L6）</a>
     <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E18）</a>
     <a href="#sec-d4" style="color:#0b1220;background:#a5b4fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ D4 交付扩面（电子+超导）</a>
-    <a href="#sec-oi" style="color:#04201b;background:#5eead4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光联接模块 M0/M1（新征程）</a>
+    <a href="#sec-oi" style="color:#04201b;background:#5eead4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光联接模块 M0–M3（3.2T/CPO 新征程）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1444,7 +1444,7 @@ body{padding-top:56px}
   </div>
 
   <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-oi">
-    <h2>★ 光联接模块 M0+ M1：2 通道基线 → 800G（8×100G PAM4）频域/时域预算（吃狗粮检阅平台）</h2>
+    <h2>★ 光联接模块 M0–M3：2 通道基线 → 800G → 1.6T → 3.2T / CPO（吃狗粮检阅平台）</h2>
     <div class="hint">
       <b>M0</b>：用 LDA 自家<b>光链路设计验证链（lda_chain）</b>把一款 2 通道 WDM 收发器从装配跑通到链路预算——
       <b>Tx</b> = MZI 调制器（cos² 传递）× N 通道；<b>Rx</b> = 微环 add-drop 滤波器级联下路
@@ -1464,10 +1464,25 @@ body{padding-top:56px}
       SerDes/DSP/FEC/均衡/CDR（与 <code>eic_behavioral</code> 的 EIC 电路级排除<b>显式分层</b>）；
       接受 SNR 为<b>设计输入假设</b>，另给免假设的「达 KP4 门限所需 SNR」；真实版图 GDS 由
       <b>D4 域 photonic_interconnect</b>（复用 wdm_mesh_pnr 的 K×N WDM 网格 P&R）承载；
-      本卡只报预算；<b>不报 TOPS/TOPS-W/fJ/op</b>；LLM 不进判决路径。
+      本卡只报预算；<b>不报 TOPS/TOPS-W/fJ/op</b>；LLM 不进判决路径。<br/>
+      <b>M2（1.6T）</b>：LPO「模块内无 DSP」从免责声明变成设计约束（拿不到级联内码 ⇒
+      pre-FEC 门限收紧 ⇒ 所需 SNR 上升）；同链路换回 M1 的 100G 档器件即被带宽墙判死；
+      <b>G-OI2 收发器专用真 GDS</b>直出。<br/>
+      <b>M2b（G-OI5）</b>：多通道 CTLE 均衡逐通道取不同值（拉平 + 噪声 penalty）·
+      热调 mW 口径 · 热串扰 Γ 矩阵 · 工艺偏差良率（闭式 Φ 为 golden）· 封装对准容差。<br/>
+      <b>M3（3.2T / CPO）</b>：<b>400G/lane 带宽墙</b> ⇒ 行波电极 TWMZM 闭式双极点（虚部须减光相位基准）；
+      <b>CPO 电通道电报闭式 ⟷ 1D FDTD 对拍</b>（√f 律只在 R 主导子带成立，窗外漂移如实披露）
+      + NEXT + PDN 地弹；<b>die↔die 热</b>（两串热阻，与 M2b 热网络互证）+ <b>闭环热调改代数解</b>
+      （首版因「热通路算两遍 + 抄错 r_th」发散到 1e88 K）；<b>逐项 mW/W 功耗账</b>
+      （CPO vs 可插拔同口径）；<b>G-OI6 2.5D 版图签核</b>（光引擎真复用 M2 builder + 电层 DRC +
+      几何-拓扑 LVS）。<br/>
+      🔴 <b>诚实边界</b>：M0–M3 均属<b>设计预算层</b>（M3 的 2.5D 版图复用它）；电极/总线/热阻/
+      版图尺寸为<b>规格锚</b>（公开工艺近似，<b>非</b> Foundry PDK 真值，T2 锁死）；LVS 是
+      <b>几何-拓扑一致性核对</b>，非 foundry 电 PDK；FDTD 跑<b>无损</b>电报方程；
+      功耗账<b>只 mW/W</b>，<b>不报</b> TOPS / TOPS-W / fJ-op / pJ-bit。
     </div>
     <div class="row">
-      <button class="btn" id="runOi">运行 光联接模块 M0 + M1 案例</button>
+      <button class="btn" id="runOi">运行 光联接模块 M0 – M3 案例</button>
     </div>
     <div id="oiSummary" class="summary"></div>
     <div id="oiBody"></div>
@@ -4959,7 +4974,7 @@ if($('runD4')) $('runD4').onclick = runD4;
 async function runOi(){
   const btn=$('runOi'); if(!btn) return;
   btn.disabled=true;
-  $('oiSummary').innerHTML='<span class="spin"></span> 正在装配 光联接模块 M0 + M1 案例（闭式 + 级联引擎 + IFFT 时域 + 几何搜索，确定性现算）…';
+  $('oiSummary').innerHTML='<span class="spin"></span> 正在装配 光联接模块 M0 – M3 案例（闭式 + 级联引擎 + IFFT 时域 + 几何搜索 + 1D FDTD 电通道 + 2.5D 版图，确定性现算）…';
   try{
     const d=await apiGet('/api/oi_demo');
     renderOi(d);
@@ -5267,6 +5282,195 @@ function renderOi(d){
     +'（已闭合：'+(Gob.join(' · ')||'-')+'）</p>';
   h+='<p style="color:#555">'+m2b.honest_note_m2b+'</p>';
 
+  /* ── M3（3.2T / CPO）块：400G-lane 带宽墙 · 电通道 · die↔die 热 + 闭环热调 · 功耗账 · 2.5D 签核 ── */
+  var m3=d.m3||{}, m3t=m3.twmzm||{}, m3e=m3.echannel||{}, m3f=m3.fdtd_telegraph||{},
+      m3n=m3.next||{}, m3p=m3.pdn||{}, m3th=m3.thermal||{}, m3cl=m3.closed_loop_thermal||{},
+      m3pw=m3.power||{}, m3ly=m3.layout_2p5d||{}, m3ru=m3.reuse||{};
+  var m3r2=m3ru.at_200g||{}, m3r4=m3ru.at_400g||{}, m3os=m3ly.oe_stats||{};
+  // ㉔ M3 400G/lane 带宽墙（行波电极 TWMZM）
+  h+='<h3 style="margin:16px 0 4px">㉔ M3 400G/lane 带宽墙（行波电极 TWMZM · 分布 RC + 速度失配）</h3>';
+  h+='<p>阶段：<b>'+m3.stage_label+'</b></p>';
+  h+=_qcTbl(['带宽墙量','值'],[
+    ['工艺档', m3t.family],
+    ['TWMZM 级联 EO −3dB (GHz)', m3t.f3db_ghz],
+    ['奈奎斯特 (GHz)', m3t.nyquist_ghz],
+    ['带宽余量 (GHz)', (m3t.f3db_ghz-m3t.nyquist_ghz)],
+    ['相对奈奎斯特裕量 (dB)', m3t.margin_db],
+    ['f<sub>−3dB</sub> / 奈奎斯特 (-)', m3t.ratio_to_nyquist],
+    ['落在 400G/lane 设计窗内',
+     m3t.in_window?'<b>是</b>':'<b>否</b>'],
+    ['带宽判据通过', m3t.bandwidth_ok?'<b>是</b>':'<b>否</b>'],
+    ['分布 RC 极点 (GHz)（∝1/L²）', m3t.f_rc_ghz],
+    ['行波电极长度 (mm)', m3t.l_electrode_mm],
+    ['有效群速度失配残差 Δn<sub>g</sub>', m3t.dn_g_resid],
+    ['探测器 −3dB (GHz)', m3t.f_pd_ghz],
+    ['TIA −3dB (GHz)', m3t.f_tia_ghz]
+  ]);
+  h+='<p style="color:#555">'+m3t.note+'</p>';
+  h+='<h4 style="margin:10px 0 3px">第二独立方法学：ABCD 梯形链 ⟷ 闭式（段数收敛）</h4>';
+  h+=_qcTbl(['梯形段数 N','闭式相对误差','备注'],
+    (m3t.ladder_n_grid||[]).map(function(n,i){
+      var e=(m3t.ladder_rel_err||[])[i];
+      return [n, (e===undefined||e===null)?'—':(e*100).toFixed(3)+' %',
+        i===0?'最粗网格':'较前一级下降'];
+    })
+  );
+  h+=_qcTbl(['梯形收敛判据','值','说明'],[
+    ['评估频率 (GHz)', m3t.ladder_f_eval_ghz],
+    ['相对误差 单调下降', m3t.ladder_monotonic],
+    ['最大相对误差（N 最小）', (m3t.ladder_err_largest*100).toFixed(4)+' %'],
+    ['最小相对误差（N 最大）', (m3t.ladder_err_smallest*100).toFixed(4)+' %']
+  ]);
+  // ㉕ CPO 电通道（闭式 ⟷ 1D FDTD 两法）+ NEXT + PDN 地弹
+  h+='<h3 style="margin:14px 0 4px">㉕ CPO 电通道（电报闭式 e^{−γL} ⟷ 1D FDTD 对拍 · NEXT · PDN）</h3>';
+  h+=_qcTbl(['电通道量','值'],[
+    ['总线长度 (mm)', m3e.bus_len_mm],
+    ['R–L 转折频率 f_RL (GHz)', m3e.f_rl_ghz],
+    ['√f 律成立窗口 (GHz)', (m3e.window_ghz||[]).join(' – ')],
+    ['窗内 h = |H|<sub>dB</sub>/√(f/GHz)', m3e.h_in_window],
+    ['窗内相对漂移', m3e.drift_in_window],
+    ['√f 律判据（限 R 主导子带）', m3e.sqrtf_ok?'<b>成立</b>':'<b>不成立</b>'],
+    ['窗外 h（RL 主导）', m3e.h_outside],
+    ['窗外相对漂移', m3e.drift_outside],
+    ['窗外漂移已如实披露', m3e.disclosed_outside?'<b>是</b>':'<b>否</b>']
+  ]);
+  h+='<p style="color:#555">'+m3e.note+'</p>';
+  h+=_qcTbl(['FDTD 对拍量','值'],[
+    ['FDTD 单元数 / 步数', m3f.n_cells+' / '+m3f.n_step],
+    ['步长 dt (ps)（CFL：0.5·dx/v_p）', m3f.dt_ps],
+    ['渡越时间 τ 闭式 (ps)', m3f.tau_closed_ps],
+    ['渡越时间 τ FDTD (ps)', m3f.tau_fdtd_ps],
+    ['相对误差', m3f.rel_err],
+    ['末端峰值 (V)', m3f.peak_out_v],
+    ['相速 (m/s)', m3f.v_fdtd_m_per_s],
+    ['相速度一致', m3f.phase_ok?'<b>成立</b>':'<b>不成立</b>'],
+    ['含损耗项', m3f.lossy_term_included?'<b>是</b>':'否（刻意取<b>无损</b>口径）']
+  ]);
+  h+='<p style="color:#555">'+m3f.note+'</p>';
+  h+=_qcTbl(['串扰 / 供电噪声','值'],[
+    ['容性 NEXT 耦合系数 k', m3n.k],
+    [' aggressor / 受害频率 (GHz)', m3n.f_ghz+' / '+m3n.f0_ghz],
+    ['F/f₀', m3n.ratio_linear],
+    ['NEXT 串扰 (dB)', m3n.xtalk_db],
+    ['k=0 时串扰 (dB)', m3n.xtalk_at_zero_coupling_db]
+  ]);
+  h+='<p style="color:#555">'+m3n.note+'</p>';
+  h+=_qcTbl(['PDN 量','值'],[
+    ['PDN 电感 L (nH)', m3p.l_pdn_nh],
+    ['边沿电流斜率 di/dt (A/s)', m3p.di_dt_a_per_s],
+    ['地弹 V = L·di/dt (V)', m3p.v_bounce_v]
+  ]);
+  h+='<p style="color:#555">'+m3p.note+'</p>';
+  // ㉖ die↔die 热 + 闭环热调
+  h+='<h3 style="margin:14px 0 4px">㉖ die↔die 热 + 闭环热调（🔴 首版发散 1e88 K 的根因修复）</h3>';
+  h+=_qcTbl(['热堆叠量','值'],[
+    ['ASIC 功耗 (W)', m3th.p_asic_w],
+    ['环境温度 (°C)', m3th.t_amb_c],
+    ['中介层温升 (K)', m3th.d_t_interposer_c],
+    ['中介层温度 (°C)', m3th.t_interposer_c],
+    ['🔴 光子 die 温升 (K)', '<b>'+m3th.d_t_photon_c+'</b>'],
+    ['光子 die 温度 (°C)', m3th.t_photon_c],
+    ['die↔die 合成热阻 (K/W)', m3th.die_to_die_theta_k],
+    ['M2b 有限差分热网络回算 (K/W)', m3th.theta_from_m2b_network],
+    ['两通道一致', m3th.theta_channels_agree?'<b>成立</b>':'<b>不成立</b>']
+  ]);
+  h+='<p style="color:#555">'+m3th.note+'</p>';
+  h+=_qcTbl(['闭环热调量','值'],[
+    ['解法', (m3cl.solution==='algebraic'?'<b>代数解</b>（max(T_free, T_set)）':m3cl.solution)],
+    ['单一真源 R_h (K/mW)', m3cl.r_h_k_per_mw],
+    ['S = dλ/dP (nm/mW)', m3cl.S_nm_per_mW],
+    ['dλ/dT (nm/K)', m3cl.d_lambda_dT_nm_per_k],
+    ['单通路一致 S ≡ dλ/dT·R_h',
+     m3cl.single_path_consistency?'<b>成立</b>（热通路只走一条）':'<b>不成立</b>'],
+    ['自由温度 (°C)', m3cl.t_free_c],
+    ['设定点 (°C)', m3cl.t_setpoint_c],
+    ['环最终温度 (°C)', m3cl.t_ring_c],
+    ['残余失谐 (nm)', m3cl.residual_nm],
+    ['残余占 FSR 比（FSR = '+m3cl.FSR_nm+' nm）', m3cl.residual_frac_fsr],
+    ['残余 &lt; FSR', m3cl.residual_lt_fsr?'<b>成立</b>':'<b>不成立</b>'],
+    ['加热器功耗 (mW/lane)', '<b>'+m3cl.p_actuator_mw_per_lane+'</b>'],
+    ['驱动方向', m3cl.actuator_direction],
+    ['单向加热器可行', m3cl.unidirectional_heater_feasible?'<b>是</b>':'<b>否</b>']
+  ]);
+  h+='<p style="color:#555">'+m3cl.note+'</p>';
+  // ㉗ 功耗账（逐项 mW/W 同口径）
+  h+='<h3 style="margin:14px 0 4px">㉗ M3 功耗账（逐项 mW/W 同口径 · 🔴 不做能效换算）</h3>';
+  h+='<p style="color:#555">'+m3pw.unit_note+'</p>';
+  h+=_qcTbl(['分项 (mW/lane)','CPO（共封装）','可插拔（Pluggable）'],[
+    ['驱动动态', m3pw.cpo.driver_dynamic_mw, m3pw.pluggable.driver_dynamic_mw],
+    ['驱动终端', m3pw.cpo.driver_termination_mw, m3pw.pluggable.driver_termination_mw],
+    ['TIA 静态', m3pw.cpo.tia_static_mw, m3pw.pluggable.tia_static_mw],
+    ['CTLE 模拟', m3pw.cpo.ctle_analog_mw, m3pw.pluggable.ctle_analog_mw],
+    ['热调跟踪', m3pw.cpo.thermal_steady_mw, m3pw.pluggable.thermal_steady_mw],
+    ['光源泵浦', m3pw.cpo.source_pump_mw, m3pw.pluggable.source_pump_mw],
+    ['中介层 PDN', m3pw.cpo.interposer_pdn_mw, m3pw.pluggable.interposer_pdn_mw],
+    ['<b>逐 lane 合计</b>', '<b>'+m3pw.cpo_per_lane_mw+'</b>',
+     '<b>'+m3pw.pluggable_per_lane_mw+'</b>'],
+    ['<b>整模块合计 (W)</b>', '<b>'+m3pw.cpo_total_w+'</b>',
+     '<b>'+m3pw.pluggable_total_w+'</b>']
+  ]);
+  h+=_qcTbl(['功耗账对拍','值'],[
+    ['CPO 热优势 (mW/lane，CPO − 可插拔)', m3pw.cpo_advantage_thermal_mw],
+    ['CPO 中介层 PDN 代价 (mW/lane)', m3pw.cpo_penalty_interposer_mw],
+    ['逐项加总 == 逐 lane 之和（全局口径不脱钩）',
+     m3pw.reconciled?'<b>成立</b>':'<b>不成立</b>'],
+    ['🔴 能效比换算位已封禁', m3pw.energy_per_bit_banned?'<b>是</b>':'<b>否</b>']
+  ]);
+  h+='<p style="color:#555">'+m3pw.note+'</p>';
+  // ㉘ 2.5D 版图签核（G-OI6）+ 复用底座
+  h+='<h3 style="margin:14px 0 4px">㉘ M3 2.5D 版图签核 G-OI6（真 GDS · 电层 DRC + 几何-拓扑 LVS）</h3>';
+  h+=_qcTbl(['2.5D 版图量','值'],[
+    ['GDS 结构', (m3ly.gds_structures||[]).join(' / ')],
+    ['GDS 元素 / 字节', m3ly.gds_elements+' / '+m3ly.gds_bytes_len],
+    ['GDS sha256（前 16）', m3ly.gds_sha256_short],
+    ['光引擎 die 器件 / 网 / 面积 (µm²)',
+     m3os.n_devices+' / '+m3os.n_nets+' / '+m3os.area_um2],
+    ['光引擎 die 宽 × 高 (µm)', m3os.width_um+' × '+m3os.height_um],
+    ['光引擎 die bbox (µm)', (m3os.bbox_um||[]).join(', ')],
+    ['光引擎 die I/O 口 / 元素 / 结构 / GDS 字节',
+     m3os.n_io+' / '+m3os.n_elements+' / '+m3os.n_structures+' / '+m3os.gds_bytes],
+    ['光引擎 GDS 多层', m3os.multilayer?'<b>是</b>':'否'],
+    ['光引擎元素<b>真复用</b> M2 builder（个）', m3ly.oe_elements_reused],
+    ['光引擎 DRC', m3ly.oe_drc_pass?'<b>全绿</b>':'<b>红</b>'],
+    ['电层 DRC（宽度/间距/节距）', m3ly.electrical_drc_pass?'<b>全绿</b>':'<b>红</b>'],
+    ['片外 fiber 不落版图', m3ly.fiber_in_layout?'<b>否</b>':'<b>是</b>'],
+    ['🔴 通用导出路径 LVS 判决 / 违规', m3ly.oe_lvs_verdict+' / '+m3ly.oe_lvs_n_violations],
+    ['通用导出路径 LVS pass 标志', m3ly.oe_lvs_pass?'<b>是</b>':'<b>否</b>'],
+    ['本卡 LVS 口径', '几何-拓扑一致性核对（非 foundry 电 PDK 网表）'],
+    ['GDS sha256（全 64 位）', '<code style="font-size:10px">'+m3ly.gds_sha256+'</code>']
+  ]);
+  h+='<p style="color:#555">'+(m3ly.oe_lvs_honest_note||'')+'</p>';
+  h+=_qcTbl(['复用底座（不重造）','200G 档（M2）','400G 档（M3）'],[
+    ['lane 速率 (G)', m3r2.lane_rate_gbps, m3r4.lane_rate_gbps],
+    ['通道数', m3r2.n_channels, m3r4.n_channels],
+    ['聚合带宽 (Tb/s)', m3r2.total_bandwidth_tbps, m3r4.total_bandwidth_tbps],
+    ['带宽密度 (Gb/s/mm)', m3r2.bandwidth_density_gbps_mm, m3r4.bandwidth_density_gbps_mm],
+    ['密度天花板 (Gb/s/mm)', m3r2.density_ceiling_gbps_mm, m3r4.density_ceiling_gbps_mm],
+    ['单通道 IL (dB)', m3r2.per_channel_il_dB, m3r4.per_channel_il_dB],
+    ['链路余量 (dB)', m3r2.link_margin_db, m3r4.link_margin_db],
+    ['能量地板 (dB)', m3r2.energy_floor_dB, m3r4.energy_floor_dB],
+    ['pitch (µm) / 地板', m3r2.pitch_um+' / '+m3r2.pitch_floor_um,
+     m3r4.pitch_um+' / '+m3r4.pitch_floor_um],
+    ['岸线宽度 (mm)', m3r2.shoreline_width_mm, m3r4.shoreline_width_mm],
+    ['耦合方式', m3r2.couple_mode, m3r4.couple_mode],
+    ['模型', m3r2.model, m3r4.model]
+  ]);
+  h+=_qcTbl(['复用断言','结果'],[
+    ['400G = 200G 档的 lane 参数减半后派生（<b>不跨档抄常量</b>）',
+     m3ru.lane_halved?'<b>成立</b>':'<b>不成立</b>'],
+    ['带宽密度仍低于天花板',
+     m3ru.density_still_below_ceiling?'<b>成立</b>':'<b>不成立</b>'],
+    ['pitch 仍高于地板',
+     m3ru.pitch_still_above_floor?'<b>成立</b>':'<b>不成立</b>'],
+    ['能量地板仍为正',
+     m3ru.energy_floor_still_positive?'<b>成立</b>':'<b>不成立</b>'],
+    ['真复用同一底座而非重造',
+     m3ru.reused_not_rebuilt?'<b>成立</b>':'<b>不成立</b>']
+  ]);
+  h+='<p><b>M3 缺口终态：</b>已闭合 <b>'+Gob.length+' / '+(d.gaps_total||(d.gaps||[]).length)
+    +'</b>（'+(Gob.join(' · ')||'-')+'）· 🔴 <b>G-OI4 仍诚实保留开放</b>。</p>';
+  h+='<p style="color:#555">'+m3.honest_note_m3+'</p>';
+
   $('oiBody').innerHTML=h;
   $('oiConclusion').innerHTML='<strong>结论：</strong>用 LDA 自家光链路设计验证链可把一款 WDM 收发器'
     +'从 2 通道 M0 基线一路推进到 <b>M1 800G（8×100G PAM4）频域/时域预算</b>：'
@@ -5304,7 +5508,30 @@ function renderOi(d){
     +'，seed '+m2by.mc_seed+'）只作第二通道（闭式 '+m2by.yield_closed_form
     +' ↔ MC '+m2by.yield_mc+'）；封装对准容差 dx_max '+m2bp.dx_max_um+' µm 在 '
     +(m2bp.temp_window_c||[]).join('…')+' °C 温窗内漂移 '+(m2bp.temp_in_tolerance?'可达':'不可达')+'。'
-    +'<br/>'+m2b.honest_note_m2b;
+    +'<br/>'+m2b.honest_note_m2b
+    +'<br/><strong>M3（3.2T / CPO）：</strong>把速率再翻一倍到 <b>'+m3r4.total_bandwidth_tbps
+    +' Tb/s（'+m3r4.n_channels+'×'+m3r4.lane_rate_gbps+'G PAM4）</b>，撞上 <b>400G/lane 带宽墙</b>'
+    +'⇒ 换行波电极 TWMZM：闭式级联 f<sub>−3dB</sub> '+m3t.f3db_ghz+' GHz vs 奈奎斯特 '
+    +m3t.nyquist_ghz+' GHz（裕量 '+m3t.margin_db+' dB，分布 RC 极点 '+m3t.f_rc_ghz
+    +' GHz ∝1/L²；🔴 虚部必须<b>减掉光相位基准</b> ω·n<sub>g,opt</sub>/c，否则速度失配被算成整条微波相位）。'
+    +'CPO 电通道用 <b>1D FDTD（电报方程）⟷ 闭式 e^{−γL} 两法对拍</b>渡越时间（'
+    +m3f.tau_closed_ps+' ps ⟷ '+m3f.tau_fdtd_ps+' ps），并如实披露 <b>√f 律只在 R 主导子带成立</b>（窗外漂移 '
+    +m3e.drift_outside+' 是真物理，不做硬套）。die↔die 热把 ASPIC 的热直接抬到光子 die（ΔT '
+    +m3th.d_t_photon_c+' K，与 M2b 热网络回算 '+m3th.theta_from_m2b_network+' K 互证）；'
+    +'闭环热调更抓出一个<b>真根因 bug</b>：M2b 的 S=dλ/dP <b>已含自热</b>，M3 首版又抄了一份小 125 倍的 r_th '
+    +'并把「加热器→温升→波长」<b>算两遍</b> ⇒ 环路增益 ≈28 发散到 <b>1e88 K</b>；修法是单一真源 R_h + '
+    +'<b>代数解</b> T_ring=max(T_free,T_set) + 单通路一致性判据（S ≡ dλ/dT·R_h）。'
+    +'功耗账<b>逐项 mW 同口径</b>：CPO '+m3pw.cpo_per_lane_mw+' mW/lane（'+m3pw.cpo_total_w+' W）'
+    +' vs 可插拔 '+m3pw.pluggable_per_lane_mw+' mW/lane（'+m3pw.pluggable_total_w+' W）——'
+    +'CPO 多付热调跟踪 '+m3pw.cpo_advantage_thermal_mw+' mW/lane 与中介层 PDN '
+    +m3pw.cpo_penalty_interposer_mw+' mW/lane，但省掉板级驱动动态功耗；'
+    +'🔴 <b>只 mW/W，不做 fJ/bit、pJ-op、TOPS、TOPS-W 能效换算</b>。'
+    +'物理落地 <b>G-OI6 2.5D 版图签核</b>：直出真 GDS（'
+    +(m3ly.gds_structures||[]).join('/')+'，'+m3ly.gds_elements+' 元素 / '+m3ly.gds_bytes_len
+    +' B），光引擎 <b>真复用 M2 的 G-OI2 builder</b>（'+m3ly.oe_elements_reused+' 元素）而非换皮，'
+    +'电层 DRC '+(m3ly.electrical_drc_pass?'全绿':'红')+'；🔴 通用导出路径对 ring 回提 LVS 给 '
+    +m3ly.oe_lvs_verdict+'（'+m3ly.oe_lvs_n_violations+' 违规）——如实报出，不抹平也不改叫 ACCEPT。'
+    +'<br/>'+m3.honest_note_m3;
   return false;
 }
 if($('runOi')) $('runOi').onclick = runOi;

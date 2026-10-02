@@ -34,6 +34,42 @@ _RE_BTN_ID = re.compile(r'<button[^>]*?\sid="([A-Za-z0-9_]+)"')
 _RE_WIRED = re.compile(r"\$\('([A-Za-z0-9_]+)'\)\.onclick")
 
 
+# 缺口 G-P 防假宣传：肯定式禁词 / 否定式豁免上下文（模块级 ⇒ 探针可打，见探针⑥）
+# 🔴 禁词一律取**肯定式、且限定 Foundry/流片语境**：早期版本写了「通过 DRC」，
+#   结果把 d4case/README 里「通过 DRC/LVS **双闸**签核」（= LDA 自研双闸）判成假宣传
+#   —— 假红。收紧后才只咬「foundry-ready / 可流片级 / 已符合层规」这类真擦边表述。
+_BANNED = ("符合 Foundry 层规", "符合 foundry 层规", "通过 Foundry", "Foundry 标定值",
+           "PDK 标定值", "foundry-ready", "Foundry-ready", "foundry ready",
+           "流片放行", "可流片", "已流片")
+_NEG_CTX = ("非", "不", "未", "属外部", "不可当", "平台不沾", "假宣传", "禁词", "豁免", "不得")
+
+_SCANNED_REL = ("lda/lda_webui/d4case.py", "lda/lda_webui/static/index.html",
+                "README.md", "CHANGELOG.md")
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def banned_hits(banned=None, neg=None):
+    """扫对外物料，返回**未落在否定上下文**里的肯定式禁词命中（空表 = 无假宣传）。
+
+    🔴 判据与突变探针共用这一条逻辑（探针才有真实分歧可造，而不是测「两个函数长得一样」）。
+    """
+    # 🔴 用 `is not None`：探针要传空元组 `()`（= 抽掉豁免）⇒ 空元组是 falsy，
+    #   写成 `neg or _NEG_CTX` 会把探针的意图直接吃掉，探针恒绿（假探针）。
+    banned = _BANNED if banned is None else banned
+    neg = _NEG_CTX if neg is None else neg
+    hits = []
+    for rel in _SCANNED_REL:
+        p = os.path.join(_ROOT, rel.replace("/", os.sep))
+        if not os.path.exists(p):
+            continue
+        txt = open(p, encoding="utf-8").read()
+        for m in re.finditer("|".join(re.escape(w) for w in banned), txt):
+            ctx = txt[max(0, m.start() - 40): m.end() + 40].replace("\n", " ")
+            if not any(n in ctx for n in neg):
+                hits.append("%s :: …%s…" % (rel, ctx[:70]))
+    return hits
+
+
 def unwired_static_buttons(src: str) -> list:
     """页面有静态按钮但 JS 从未 $(id).onclick 接线（反向完备判据）。"""
     return sorted(set(_RE_BTN_ID.findall(src)) - set(_RE_WIRED.findall(src)))
@@ -117,6 +153,20 @@ def main() -> int:
           all(d in card["identity"] and card["identity"][d] for d in card["domain_list"])
           and "mesh_pnr" in card["identity"]["loqc"],
           str([d for d in card["domain_list"] if d not in card["identity"]]))
+
+    # —— ③o G-P 防假宣传：对外物料禁止「已符合层规 / 可流片」类肯定式断言 ——
+    # 🔴 缺口 G-P 的物理边界是「Foundry PDK 属 D5 外部依赖、平台不沾」。只写在 note 里
+    #   等于没写：日后谁把 README 改成「已符合 foundry 层规」，不会有任何东西拦。
+    #   故以**肯定式禁词**扫对外物料；否定式（「非 Foundry PDK」「不可当流片放行」）
+    #   是诚实口径本身 ⇒ 上下文含否定标记即豁免（血案 #17：禁词取肯定表述，否则误伤）。
+    _hits = banned_hits()
+    check("③o G-P 防假宣传：对外物料无『已符合 Foundry 层规 / 可流片』类肯定式断言",
+          not _hits, " | ".join(_hits[:2]))
+    check("③o2 禁词门禁反向完备（扫文件清单 ≡ 4 ⇒ 判据真跑起来了，不是空转）",
+          len(_SCANNED_REL) == 4 and all(
+              os.path.exists(os.path.join(_ROOT, r.replace("/", os.sep)))
+              for r in _SCANNED_REL),
+          "扫=%s" % list(_SCANNED_REL))
 
     # —— 前端三件 + 接线 ——
     src = open(_FRONTEND, encoding="utf-8").read()
@@ -235,11 +285,18 @@ def main() -> int:
     check("🔴 ⑧ 探针⑤: 域身份表掉一个域（删 loqc 描述）⇒ ③n 必红",
           missing_id == ["loqc"], str(missing_id))
 
+    # 探针⑥：抽掉否定式豁免上下文 ⇒ ③o 必红。
+    #   🔴 这类「禁词表写了但豁免一撤就零命中」的死判据，比没有判据更危险——
+    #   它给人「已经有人在守」的错觉。共用 banned_hits 保证测的是同一条逻辑。
+    _ph = banned_hits(neg=())
+    check("🔴 ⑱ 探针⑥: 抽掉否定式豁免 ⇒ ③o 禁词门禁必红（防死判据）",
+          bool(_ph), "抽掉豁免后仍零命中 ⇒ ③o 是死判据（扫了个寂寞）")
+
     print()
     if fails:
         print(f"D4 案例卡门禁: {len(fails)} FAIL :: {fails}")
         return 1
-    print("D4 案例卡门禁: ALL GREEN（只读可达 + 诚实边界 + 跨源一致 + 接线反向完备 + 域身份逐域登记 + 5 突变探针）")
+    print("D4 案例卡门禁: ALL GREEN（只读可达 + 诚实边界 + 跨源一致 + 接线反向完备 + 域身份逐域登记 + G-P 防假宣传禁词 + 6 突变探针）")
     return 0
 
 

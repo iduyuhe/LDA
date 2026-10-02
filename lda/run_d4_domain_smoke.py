@@ -36,6 +36,9 @@ import sys
 import unittest.mock as mock
 
 from lda_l2 import d4_domains as dm
+from lda_l2.ecore import elayers as EL                 # 层号单一真源（L_DIFF 等）
+from lda_l2.ecore import layout as EL_LAYOUT
+from lda_webui import d4case as d4c
 
 # 🔴 门禁显式表（反向完备的锚：D4_DOMAINS 必须与本表逐位相等）
 EXPECTED_DOMAINS = ("ecore", "quantum_sc", "loqc")
@@ -191,6 +194,55 @@ def main() -> int:
           and list(dm.D4_DOMAINS) == list(_gm.get("registered") or []),
           str(_gm)[:160])
 
+    # —— ⑬ 层规/几何口径单一真源（G-P / G-B 机器化的第一半）——
+    # 🔴 血案 #10 的极端形态：案例卡 disclosure 三字段此前是**第二份手写副本**，且
+    #   全仓无任何消费 ⇒ 改成「已通过 Foundry 层规」也全绿。现改为派生
+    #   LAYOUT_DISCLOSURE 的短口径键，结构上不可能漂移；跨源再由 honest_note / GAPS note
+    #   咬住（只比同源不算守：同源必然相等 ⇒ 探针恒绿）。
+    _ld = EL_LAYOUT.LAYOUT_DISCLOSURE
+    _card = d4c.case_card()
+    _dis = _card["disclosure"]
+    _gp = next(g for g in _card["gaps"] if g["id"] == "G-P")["note"]
+    _gb = next(g for g in _card["gaps"] if g["id"] == "G-B")["note"]
+    check("⑬ 层规/几何口径单一真源（LAYOUT_DISCLOSURE ⇄ 案例卡 disclosure ⇄ honest_note ⇄ GAPS）",
+          _dis["layer_rules"] == _ld["layer_rules_short"]
+          and _dis["drc_precision"] == _ld["geom_short"]
+          and _dis["signoff_class"] == _ld["signoff_short"]
+          and "公开工艺近似" in _ld["layer_rules_short"]
+          and "非 Foundry PDK" in _ld["layer_rules_short"]
+          and "bbox" in _ld["geom_short"]
+          and "公开工艺近似" in _card["honest_note"]
+          and "bbox" in _card["honest_note"]
+          and "公开工艺近似" in _gp and "bbox" in _gb,
+          "disclosure=%s short=%s" % (_dis.get("layer_rules"), _ld["layer_rules_short"]))
+
+    # —— ⑭ bbox 保守性实证（G-B 的第二半：从「一句免责」升级为「有机器守着的事实」）——
+    # 两条算例都走**真实** run_edrc（不 mock 几何）：
+    #   A 真重叠矩形（不同 net）⇒ 必报                ⇒ 零漏报（安全侧：真冲突必被抓）
+    #   B 两个 L 形：外接 bbox 重叠、本体不相交
+    #     ⇒ bbox 报「间距 0.000」而精确多边形最小间距 0.5 µm > 阈值 0.4 µm（精确判定
+    #       应 ACCEPT）⇒ 证明 bbox 宁可多报（保守）而非漏报。
+    _lim = {"diff_min_width_um": 0.1, "diff_min_space_um": 0.4, "diff_min_area_um2": 0.1}
+    _A = EL_LAYOUT.run_edrc([
+        {"kind": "boundary", "layer": EL.L_DIFF, "net": "N1",
+         "rings_um": [[(0.0, 0.0), (2.0, 0.0), (2.0, 2.0), (0.0, 2.0)]]},
+        {"kind": "boundary", "layer": EL.L_DIFF, "net": "N2",
+         "rings_um": [[(1.0, 1.0), (3.0, 1.0), (3.0, 3.0), (1.0, 3.0)]]},
+    ], _lim)
+    _B = EL_LAYOUT.run_edrc([
+        {"kind": "boundary", "layer": EL.L_DIFF, "net": "M1",
+         "rings_um": [[(0, 0), (4, 0), (4, 2), (2, 2), (2, 4), (0, 4)]]},                 # Γ 形：底横条 + 左竖条
+        {"kind": "boundary", "layer": EL.L_DIFF, "net": "M2",
+         "rings_um": [[(3.5, 2.5), (7.5, 2.5), (7.5, 6.5), (5.5, 6.5),
+                       (5.5, 4.5), (3.5, 4.5)]]},                                          # ⌐ 形：底横条 + 右竖条
+    ], _lim)
+    _bd = " ".join(v.get("detail", "") for v in _B["violations"])
+    check("⑭ bbox 保守性实证（真重叠必报 + bbox 多报不会漏报）",
+          _A["verdict"] == "REJECT" and _B["verdict"] == "REJECT"
+          and "间距 0.000" in _bd
+          and 0.5 > _lim["diff_min_space_um"] > 0.0,
+          "A=%s B=%s detail=%s" % (_A["verdict"], _B["verdict"], _bd[:90]))
+
     # —— 🔴 突变探针 ——
     _orig_q = dm._build_quantum_sc          # 🔴 先抓原句柄：打桩后 dm._build_* 即 mock 本身
     def empty_gds(params=None):
@@ -288,12 +340,28 @@ def main() -> int:
           and p8["gds"]["sha256"] == dm.build_domain("loqc")["gds"]["sha256"],
           "grid2d 却与默认 serpentine 同 sha ⇒ 枚举被吞")
 
+    # 探针⑨：层规短口径被改成「已通过 Foundry 标定」⇒ ⑬ 必红（防免责措辞被悄悄改没）
+    _orig_ld = dict(EL_LAYOUT.LAYOUT_DISCLOSURE)
+    try:
+        EL_LAYOUT.LAYOUT_DISCLOSURE["layer_rules_short"] = "Foundry PDK 层规（真实标定）"
+        _p_card = d4c.case_card()
+        _p_short = EL_LAYOUT.LAYOUT_DISCLOSURE["layer_rules_short"]
+        # 🔴 只打短口径一侧：长版 rules / honest_note / GAPS note 都不跟着变 ⇒
+        #    若判据 ⑬ 真的咬住「自然文本侧」而非「同源相等」，此处必红（真实分歧）。
+        _p_ok = (_p_card["disclosure"]["layer_rules"] == _p_short
+                 and "公开工艺近似" in _p_short)
+    finally:
+        EL_LAYOUT.LAYOUT_DISCLOSURE.clear()
+        EL_LAYOUT.LAYOUT_DISCLOSURE.update(_orig_ld)
+    check("🔴 ⑰ 探针⑨: 层规短口径被改成『Foundry 真实标定』 ⇒ ⑬『自然文本侧』必红",
+          _p_ok is False, "短口径已变但判据却绿 ⇒ ⑬ 咬的是同源相等，是假判据")
+
     print()
     if fails:
         print(f"D4 扩面门禁: {len(fails)} FAIL :: {fails}")
         return 1
     print("D4 扩面门禁: ALL GREEN"
-          "（域完备 + 真 GDS + 双闸 + 双向确定性 + 下载互证 + 限幅 + 8 突变探针）")
+          "（域完备 + 真 GDS + 双闸 + 双向确定性 + 下载互证 + 限幅 + 9 突变探针）")
     return 0
 
 

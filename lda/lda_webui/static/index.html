@@ -767,8 +767,8 @@ body{padding-top:56px}
   </div>
 
   <div class="sec" data-stage="layout" data-stack="both" data-roles="engineer" data-page-node-id="4COuBrGJMFp75TZTLE5BUW">
-    <h2 data-page-node-id="11boNzx9iONrTYnBN1fpD7">㉛ 真实版图基元库（D-71 · foundry-ready 几何）</h2>
-    <div class="hint" data-page-node-id="nwkzLjmXThr1BMre5O7RCu">替代玩具几何（直线/圆环）的<b data-page-node-id="FcsXkAecS6zU3C0R5ia9Oo">可流片级版图基元</b>：① <b data-page-node-id="2DxPkheoBbKdsBld9JVKou">Taper</b> 线性/绝热（余弦）轮廓（两端斜率 0 减模式失配）② <b data-page-node-id="PqD4vk29x0LCKAG3jPeyWH">Euler 弯</b>（clothoid：曲率 0→1/R→0 连续，无折角尖点，90° 弯终点角误差 &lt;0.01°）③ <b data-page-node-id="UWj6wj81kNHC1zagHGRFNe">MMI</b> 1×2 对称分束（输入 taper + 多模干涉区 + 双输出 taper）④ <b data-page-node-id="oBdMDpIhPdGeUsTlTzcSyt">光栅耦合器</b>（周期部分刻蚀齿，齿宽=Λ·duty）。每个基元 → <b data-page-node-id="9K5U6mjUiFZPSUC92RdPse">GDSII 编码（round-trip 回读一致）+ DRC 可制造性自查</b>（min_width / min_space / min_bend_R，典型 SOI 180nm 规则）+ SVG 预览。诚实边界：只交付几何，分束比/透射谱等电特性归 D-72 2D FDTD 端口 S 参数验收。LLM 不进判决路径。</div>
+    <h2 data-page-node-id="11boNzx9iONrTYnBN1fpD7">㉛ 真实版图基元库（D-71 · 设计期几何 · 非 Foundry 标定）</h2>
+    <div class="hint" data-page-node-id="nwkzLjmXThr1BMre5O7RCu">替代玩具几何（直线/圆环）的<b data-page-node-id="FcsXkAecS6zU3C0R5ia9Oo">设计期版图基元（非流片级 · 未流片实测）</b>：① <b data-page-node-id="2DxPkheoBbKdsBld9JVKou">Taper</b> 线性/绝热（余弦）轮廓（两端斜率 0 减模式失配）② <b data-page-node-id="PqD4vk29x0LCKAG3jPeyWH">Euler 弯</b>（clothoid：曲率 0→1/R→0 连续，无折角尖点，90° 弯终点角误差 &lt;0.01°）③ <b data-page-node-id="UWj6wj81kNHC1zagHGRFNe">MMI</b> 1×2 对称分束（输入 taper + 多模干涉区 + 双输出 taper）④ <b data-page-node-id="oBdMDpIhPdGeUsTlTzcSyt">光栅耦合器</b>（周期部分刻蚀齿，齿宽=Λ·duty）。每个基元 → <b data-page-node-id="9K5U6mjUiFZPSUC92RdPse">GDSII 编码（round-trip 回读一致）+ DRC 可制造性自查</b>（min_width / min_space / min_bend_R，典型 SOI 180nm 规则）+ SVG 预览。诚实边界：只交付几何，分束比/透射谱等电特性归 D-72 2D FDTD 端口 S 参数验收。LLM 不进判决路径。</div>
     <div class="row" data-page-node-id="9DYy2lBkoEhLj7NXABaLLf">
       <button class="btn" id="runPrim" data-page-node-id="st6RH0UIgpApVXzqQJvr6H">生成基元库（GDS+DRC+SVG）</button>
     </div>
@@ -2775,7 +2775,7 @@ function renderAl(d){
 }
 $('runAl').onclick = runAl;
 
-// ---- ㉛ D-71 真实版图基元库（foundry-ready 几何）----
+// ---- ㉛ D-71 真实版图基元库（设计期几何 · 非 Foundry 标定）----
 async function runPrim(){
   const btn = $('runPrim'); btn.disabled = true;
   $('primSummary').innerHTML = '<span class="spin"></span> 生成 4 基元 GDS + DRC + SVG…';

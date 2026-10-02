@@ -82,6 +82,13 @@ LAYOUT_DISCLOSURE = {
              "（Foundry PDK 属 D5 外部依赖）",
     "geom": "全部判据为 **bbox 级**几何近似（非多边形布尔），bbox 相交偏保守",
     "red_line": "纯标准库（零 numpy 也可）· LLM 不进判决路径 · 零商业 EDA 依赖",
+    # 🔴 短口径键（G-P / G-B 的单一真源）：对外载体（案例卡 disclosure / honest_note /
+    #   GAPS note / 前端面板）一律**派生自这三键**，不许另写一份自然语言。
+    #   血案 #10：同一事实 N 处常只 1~2 处有护栏 ⇒ 手写两份必然漂移。
+    #   纯新增（无 Markdown、零破坏），比上面的长句更适合直接进 JSON 字段。
+    "layer_rules_short": "公开工艺近似（非 Foundry PDK）",
+    "geom_short": "bbox 级几何近似（非多边形布尔）",
+    "signoff_short": "设计期签核 · 非实测签核 · 非流片",
 }
 
 # ---------------------------------------------------------------------------

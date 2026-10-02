@@ -21,6 +21,8 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+from lda_l2.ecore.layout import LAYOUT_DISCLOSURE
+
 CASE_ID = "D4-DOMAIN-EXPANSION-v1"
 
 _CARD_CACHE: Dict[tuple, Dict[str, Any]] = {}
@@ -110,12 +112,18 @@ GAPS = [
      "closed": True,
      "note": "`/api/d4_gds?domain=<域>` 与光子侧同口径出 .gds，下载 sha256 ≡ 本卡登记值；"
              "余下：光子侧 kind 参数面仍各自一套（未走统一编排）"},
-    {"id": "G-P", "label": "层规仍是公开工艺近似",
+    {"id": "G-P", "label": "层规仍是公开工艺近似（不可闭合 · 已机器化锁死）",
      "closed": False,
-     "note": "Foundry PDK 层规属外部依赖（D5），平台不沾 ⇒ 签核结论不可当流片放行依据"},
-    {"id": "G-B", "label": "DRC 为 bbox 级近似",
+     "note": "层规为**公开工艺近似**设计规则（非 Foundry PDK 标定值）：Foundry PDK 层规"
+             "属外部依赖（D5），平台不沾 ⇒ 签核结论不可当流片放行依据。"
+             "此条**物理不可闭合**：任何「已符合 Foundry 层规 / 已 PDK 标定 / 可流片放行」"
+             "的表述都属假宣传 ⇒ 判据 ⑬ 锁死层规短口径单一真源，案例卡门禁 ③o 以肯定式"
+             "禁词拦住对外物料（否定式『非 Foundry PDK』豁免）"},
+    {"id": "G-B", "label": "DRC 为 bbox 级近似（保守方向 · 已实证锁死）",
      "closed": False,
-     "note": "bbox 相交偏保守（宁可多报）——真实多边形布尔运算不在本层"},
+     "note": "bbox 相交偏保守（宁可多报、零漏报）——真实多边形布尔运算不在本层。"
+             "判据 ⑭ 以真实 `run_edrc` 算例实证两条性质：①真重叠必报（零漏报）"
+             "②外接 bbox 重叠而本体不相交的 L 形布局仍报（多报 ⇒ 安全侧）"},
 ]
 
 
@@ -157,10 +165,13 @@ def case_card(use_cache: bool = True) -> Dict[str, Any]:
         "honest_note": HONEST_NOTE,
         "domains": facts,
         "domain_list": list(facts),
+        # 🔴 派生自单一真源：LAYOUT_DISCLOSURE 的机器可读短口径键。
+        #   此前三字段是**第二份手写副本**，且全仓无人消费 ⇒ 改坏也全绿（血案 #10 极端形态）。
+        #   现结构上不可能与层规声明漂移；跨源一致由编排门禁判据 ⑬ 咬住。
         "disclosure": {
-            "layer_rules": "公开工艺近似（非 Foundry PDK）",
-            "drc_precision": "bbox 级几何近似",
-            "signoff_class": "设计期签核 · 非实测签核 · 非流片",
+            "layer_rules": LAYOUT_DISCLOSURE["layer_rules_short"],
+            "drc_precision": LAYOUT_DISCLOSURE["geom_short"],
+            "signoff_class": LAYOUT_DISCLOSURE["signoff_short"],
             "redline": "不报 TOPS / TOPS-W / fJ/op",
         },
         "milestones": MILESTONES,

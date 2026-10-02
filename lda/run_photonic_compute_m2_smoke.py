@@ -35,13 +35,16 @@ def check(name: str, ok: bool, detail: str = "") -> None:
 
 
 def main() -> int:
+    import inspect
+
     import numpy as np
     from lda_l2.photonic_compute import (
         verify_photonic_compute_m2,
         photonic_activation,
         mesh_transfer_with_model,
-        VPI_L_V_CM,
+        VPI_L_VMM,
     )
+    from lda_l2.mzi_mesh_matmul import voltage_from_phase, VPI_UNIT_ARM_MM
 
     r = verify_photonic_compute_m2()
 
@@ -111,6 +114,39 @@ def main() -> int:
     check("M2d 端到端：Vπ+5% 标定后精度 > 未标定精度",
           cal_e["accuracy"] > no_cal["accuracy"],
           f"{cal_e['accuracy']*100:.1f}% > {no_cal['accuracy']*100:.1f}%")
+
+    # ---- ⑤ Vπ·L 单位口径守护（v0.9.183 补：清死 import 时改「接线」而非删除）----
+    # 🔴 血案（c4965be）：Vπ·L 单位统一提交只改了 `mzi_mesh_matmul.voltage_from_phase`
+    # 的形参名（vpi_l_v_cm → vpi_l_v_mm）与默认值（V·cm → V·mm），**漏改调用方**
+    # `photonic_compute.py` ⇒ 该模块自 c4965be 起 `TypeError` 全程不可运行，而本 smoke
+    # 当时只 `import VPI_L_V_CM` **从未使用**（死 import）⇒ 口径裂开无任何判据看守。
+    # 故此处把死 import 变成真判据：单位口径 + 关键字契约（后者是该类断裂的通用防线）。
+    _sig = inspect.signature(voltage_from_phase)
+    check("M2e Vπ·L 关键字契约：voltage_from_phase 只收 vpi_l_v_mm（V·mm 单一真值口径）",
+          "vpi_l_v_mm" in _sig.parameters and "vpi_l_v_cm" not in _sig.parameters,
+          f"参数={list(_sig.parameters)}")
+    check("M2e Vπ·L 真值源：VPI_L_VMM == 250.0（V·mm，≡ 25 V·cm 同一物理量）",
+          abs(VPI_L_VMM - 250.0) < 1e-12, f"VPI_L_VMM={VPI_L_VMM}")
+    # 物理量不变锚：φ=π 时驱动电压 = π·250/(π·10) = 25 V（L_mm=10 ⇒ 1 cm 臂）
+    _v_pi = voltage_from_phase(math.pi, vpi_l_v_mm=VPI_L_VMM)
+    check("M2e Vπ·L 物理量锚：φ=π @ 250 V·mm ⇒ 25.0 V（单位切换不改物理量）",
+          abs(_v_pi - 25.0) < 1e-12, f"V(π)={_v_pi:.12g} V")
+    # 反向：把 V·cm 口径的数值（25.0）当 V·mm 传 ⇒ 得 2.5 V（10× 静默错单位）。
+    # 若有人把口径退回 V·cm 而不改单位，本判据在此处即红。
+    _v_cm_misuse = voltage_from_phase(math.pi, vpi_l_v_mm=25.0)
+    check("M2e Vπ·L 反向：V·cm 数值当 V·mm 传 ⇒ 10× 偏差（错单位必被本判据抓）",
+          abs(_v_cm_misuse - 2.5) < 1e-12 and abs(_v_cm_misuse - _v_pi) > 1.0,
+          f"V(π,V·cm误用)={_v_cm_misuse:.6g} V vs 正确 {_v_pi:.6g} V")
+    # 🔴 回译恒等式（本判据直接看守「归一闪射」）：设备回译 φ=π·V/Vπ 中 Vπ = Vπ·L/L_arm。
+    # 若消费方忘了除以臂长（c4965be 血案），该式会给出 φ/10 ⇒ 标定闭环失效 ⇒ 此判据红。
+    _rt_bad = []
+    for _phi in (0.3, 1.0, math.pi / 2.0, math.pi):
+        _V = voltage_from_phase(_phi, vpi_l_v_mm=VPI_L_VMM)
+        _phi_back = math.pi * _V / (VPI_L_VMM / VPI_UNIT_ARM_MM)
+        if abs(_phi_back - _phi) > 1e-12:
+            _rt_bad.append((_phi, _phi_back))
+    check("M2e 回译恒等式：π·V(φ)/(Vπ·L/L_arm) == φ（臂长归一两侧同步，防 10× 闪射）",
+          not _rt_bad, f"bad={_rt_bad[:2]} · L_arm={VPI_UNIT_ARM_MM}")
 
     # ---- 自食其规则：本 smoke 须 ∈ CORE_SMOKES（覆盖网关守护）----
     try:

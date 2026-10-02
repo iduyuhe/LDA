@@ -68,6 +68,11 @@ CROSSING_LOSS_DB = 0.05           # 设计预算
 from lda_l2.vpi_l import VPI_L_REDLINE_VMM as _VPI_L_REDLINE_VMM
 VPI_L_VMM = _VPI_L_REDLINE_VMM            # 250.0 V·mm（统一单位真值 · red-line 上界）
 VPI_L_V_CM = _VPI_L_REDLINE_VMM / 10.0   # 25.0 V·cm 兼容别名（热光硅相移器设计预算）
+# 🔴 单位臂长（mm）：`voltage_from_phase` 用 φ = π·V·L/(Vπ·L) 反算驱动电压时取的 L。
+#   导出为模块常量（v0.9.183）——此前是函数内硬编码 `L_mm = 10.0`，导致任何
+#   「Vπ（伏特）⟷ Vπ·L（V·mm）」的消费方只能猜这个 10× 归一闪射（c4965be 后
+#   photonic_compute 标定闭环即因此静默偏 10× ⇒ 闭环失效）。消费方一律 import 本常量。
+VPI_UNIT_ARM_MM = 10.0                    # = 1 cm 单位臂长（Vπ = Vπ·L/10）
 # 工作波长（µm）
 WL_UM = 1.55
 # 定向耦合器偶模/奇模折射率（用于 CMT 耦合长度锚定，SOI 220nm 量级）
@@ -113,10 +118,10 @@ def voltage_from_phase(phi: float, vpi_l_v_mm: float = VPI_L_VMM,
     """由相移 φ 反算相移器驱动电压（V），Vπ·L 物理定律（单位统一 V·mm）。
 
     φ = π·V·L / (Vπ·L) ⇒ V = φ·(Vπ·L_mm)/(π·L_mm)。
-    取 L_mm=10.0（= 1 cm 量级）给出驱动电压量级；默认 VPI_L_VMM=250 V·mm
-    ⇒ 1 cm 臂下 Vπ = 250/10 = 25 V，与原 25 V·cm 口径物理量一致。
+    取 L_mm=VPI_UNIT_ARM_MM(=10.0，= 1 cm 量级) 给出驱动电压量级；默认
+    VPI_L_VMM=250 V·mm ⇒ 1 cm 臂下 Vπ = 250/10 = 25 V，与遗留 25 V·cm 口径物理量一致。
     """
-    L_mm = 10.0  # 单位臂长 1 cm = 10 mm（给出驱动电压量级）
+    L_mm = VPI_UNIT_ARM_MM  # 单位臂长 1 cm = 10 mm（给出驱动电压量级）
     return phi * vpi_l_v_mm / (math.pi * L_mm)
 
 

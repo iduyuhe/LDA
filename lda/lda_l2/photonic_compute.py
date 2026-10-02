@@ -36,7 +36,8 @@ from lda_l2.mzi_mesh_matmul import (
     unitary_fidelity,
     mesh_loss_basis,
     voltage_from_phase,
-    VPI_L_V_CM,
+    VPI_L_VMM,
+    VPI_UNIT_ARM_MM,
 )
 from lda_layout.mesh_pnr import build_mesh_pnr, write_mesh_gds
 
@@ -194,7 +195,17 @@ def quantize_phase(phi: float, n_bits: int):
     return float(idx * step)
 
 
-def apply_phase_model(ops, D, N, n_bits=None, vpi_cmd=VPI_L_V_CM,
+def _vpi_v(vpi_l_v_mm: float) -> float:
+    """Vπ·L（V·mm）→ Vπ（伏特）：Vπ = (Vπ·L) / L_arm，L_arm = VPI_UNIT_ARM_MM。
+
+    🔴 与 `mzi_mesh_matmul.voltage_from_phase` 的单位臂长**同源**（import 同一常量，不另写
+    字面量 10.0）—— 这是「电压（V）⟷ Vπ（V）」换算的唯一入口。c4965be 血案：
+    L_cm=1.0→L_mm=10.0 的归一闪射未同步到消费方 ⇒ 标定闭环静默偏 10× 且无判据看守。
+    """
+    return vpi_l_v_mm / VPI_UNIT_ARM_MM
+
+
+def apply_phase_model(ops, D, N, n_bits=None, vpi_cmd=VPI_L_VMM,
                      vpi_real=None, calibrate=True):
     """对 MZI 网格施加有限精度（量化）+ 相位标定模型，返回 (ops_eff, D_eff)。
 
@@ -202,22 +213,32 @@ def apply_phase_model(ops, D, N, n_bits=None, vpi_cmd=VPI_L_V_CM,
     - 标定：标称 Vπ 指令相位→电压，真实器件 Vπ_real 把电压回译为相位；
       若 calibrate=True，先用标准探针（π/2 命令）反估 vpi_real，回令时补偿；
     - 仅影响相位（θ 由耦合器几何决定，属 B 类外部，本模块不扰动）。
+
+    🔴 单位口径（v0.9.183 修）：`vpi_cmd` / `vpi_real` 单位 **V·mm**
+    （与单一真值源 `lda_l2.vpi_l` / `mzi_mesh_matmul.VPI_L_VMM` 同口径；
+    250 V·mm ≡ 25 V·cm，同一物理量）。本模块历史遗留的 `VPI_L_V_CM`
+    （V·cm）已于 c4965be 统一为 V·mm，此处跟随 —— 再混用会在
+    `voltage_from_phase` 处按 10× 静默错单位。
     """
     vpi_use = vpi_cmd
     if vpi_real is not None and calibrate:
-        # 探针：命令 π/2 → 测得真实相位 = π/2 · vpi_cmd/vpi_real → 反估 vpi_real。
+        # 探针：命令 π/2 → 实测真实相位 = (π/2)·Vπ_cmd/Vπ_real → 反估 Vπ_real。
+        # 🔴 口径（v0.9.183）：`vpi_cmd` / `vpi_real` 均为 **Vπ·L（V·mm）**；而「设备
+        # 回译」式 φ=π·V/Vπ 里的 Vπ 是**伏特**，须由 Vπ·L ÷ 单位臂长得到（`_vpi_v`）。
+        # 少了这一除 ⇒ 电压（已含 /L_arm 归一）与被除的 Vπ 口径不一致 ⇒ 标定闭环静默偏 10×。
         probe_phi_cmd = math.pi / 2.0
-        v_probe = voltage_from_phase(probe_phi_cmd, vpi_l_v_cm=vpi_cmd)
-        phi_probe_real = math.pi * v_probe / vpi_real
-        vpi_use = math.pi * v_probe / phi_probe_real  # 模型自洽 ⇒ = vpi_real
+        v_probe = voltage_from_phase(probe_phi_cmd, vpi_l_v_mm=vpi_cmd)
+        phi_probe_real = math.pi * v_probe / _vpi_v(vpi_real)
+        # 反估到的 Vπ（伏特）再换回 Vπ·L 口径供 _map 使用（模型自洽 ⇒ = vpi_real）
+        vpi_use = math.pi * v_probe / phi_probe_real * VPI_UNIT_ARM_MM
 
     def _map(phi):
         if vpi_real is not None:
             # 指令电压用「标定后」的 vpi_use：标定时 vpi_use=vpi_real（探针反估），
-            # 设备回译 φ_real=π·V/vpi_real 即还原目标相位；未标定时 vpi_use=vpi_cmd(标称)
+            # 设备回译 φ_real=π·V/Vπ_real 即还原目标相位；未标定时 vpi_use=vpi_cmd(标称)
             # ⇒ φ_real 被 vpi_nominal/vpi_real 缩放 ⇒ 退化。
-            v = voltage_from_phase(phi, vpi_l_v_cm=vpi_use)
-            phi = math.pi * v / vpi_real
+            v = voltage_from_phase(phi, vpi_l_v_mm=vpi_use)
+            phi = math.pi * v / _vpi_v(vpi_real)
         if n_bits and n_bits > 0:
             phi = quantize_phase(phi, n_bits)
         return float(phi)
@@ -230,7 +251,7 @@ def apply_phase_model(ops, D, N, n_bits=None, vpi_cmd=VPI_L_V_CM,
 
 
 def mesh_transfer_with_model(U, n_bits=None, vpi_real=None, calibrate=True,
-                             vpi_cmd=VPI_L_V_CM):
+                             vpi_cmd=VPI_L_VMM):
     """对酉 U 做三角 mesh 分解，施加相位模型后返回 (U_eff, ops_eff, D_eff, fid)。
 
     fid = unitary_fidelity(U_eff, U)：有限精度 / 标定误差下网格传递矩阵的退化度量。
@@ -299,7 +320,7 @@ def _square_embed(W):
 def photonic_layer_forward(W, x, activation="relu", beta=1.0,
                            detection="real", n_bits=None,
                            vpi_real=None, calibrate=True,
-                           vpi_cmd=VPI_L_V_CM):
+                           vpi_cmd=VPI_L_VMM):
     """光子计算层：W·x 经 SVD→双网格(+相位模型)→探测→激活，返回 (y, W_eff, meta)。
 
     - 任意维度 W 经 _square_embed 方阵嵌入（U_full·Σ_full·V_full），两片酉网格均施加相位模型；
@@ -357,7 +378,7 @@ def golden_classify(net, activation="relu", beta=1.0, detection="real"):
 
 def end_to_end_inference(net, labels, activation="relu", beta=1.0,
                         detection="real", n_bits=None, vpi_real=None,
-                        calibrate=True, vpi_cmd=VPI_L_V_CM):
+                        calibrate=True, vpi_cmd=VPI_L_VMM):
     """端到端推理：两层网络对 net['X'] 分类，返回精度/误差与逐层保真。
 
     - full 精度（n_bits=None, vpi_real=None）下，光学实现须与 numpy 参考管线逐位一致
@@ -412,7 +433,7 @@ def verify_photonic_compute_m2(seed=20260930):
 
     # M2b 标定闭环
     delta = 0.05
-    vpi_real = VPI_L_V_CM * (1.0 + delta)
+    vpi_real = VPI_L_VMM * (1.0 + delta)
     _, _, _, fid_no = mesh_transfer_with_model(U, vpi_real=vpi_real, calibrate=False)
     _, _, _, fid_cal = mesh_transfer_with_model(U, vpi_real=vpi_real, calibrate=True)
 

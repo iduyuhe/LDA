@@ -45,6 +45,7 @@ from lda_l2.ecore import col_share_dynamic as D    # noqa: E402
 from lda_l2.ecore import converter as CV          # noqa: E402
 from lda_l2.ecore import mismatch as MM           # noqa: E402
 from lda_l2.ecore import timing as T              # noqa: E402
+from lda_harness.smoke_kit import make_result_collector
 
 _results: list = []
 
@@ -53,9 +54,7 @@ AN_T_CONV_8 = 9.213525600058347e-08      # 一次 SAR 转换周期（= E17 sar_s
 AN_R_ON = 6.410256410256410             # 多路开关 R_on（= E18 CDAC 开关 W/L=500）
 
 
-def check(name: str, cond: bool, detail: str = "") -> bool:
-    _results.append((name, bool(cond), detail))
-    return bool(cond)
+check = make_result_collector(_results)
 
 
 # ── 复用的绿色判据（突变探针也调同一份 —— 保证「打的判据」就是「守的判据」）──

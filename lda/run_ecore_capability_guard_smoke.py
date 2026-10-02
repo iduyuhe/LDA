@@ -31,6 +31,7 @@ from lda_l2.ecore.capability_manifest import (
     manifest_check,
 )
 from lda_l2.ecore.scale_bench import honest_boundary_ok
+from lda_harness.smoke_kit import make_fail_collector
 
 _LDA_ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -106,12 +107,7 @@ def probe_module_undeclared():
 def main():
     fails = []
 
-    def check(name, cond, detail=""):
-        if cond:
-            print(f"[PASS] {name}")
-        else:
-            print(f"[FAIL] {name} :: {detail}")
-            fails.append(name)
+    check = make_fail_collector(fails)
 
     print("=== LDA 电子计算征程 E5 · 平台能力硬化门禁（D-154）===")
     print("ECORE_CAPABILITY_DISCLOSURE:", capability_manifest.ECORE_CAPABILITY_DISCLOSURE["route"])

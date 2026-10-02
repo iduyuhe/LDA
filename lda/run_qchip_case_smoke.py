@@ -195,8 +195,24 @@ def main():
           and all(('id="qchip%s"' % k) in idx for k in ("Summary", "Body", "Conclusion")))
 
     secs = re.findall(r'<div class="sec"[^>]*>', idx)
-    check("C4 面板总数 = 64（新增 1 个，未破坏既有 63）", len(secs) == 64,
-          "got %d" % len(secs))
+    sec_ids = set(re.findall(r'<div class="sec"[^>]*id="([^"]+)"', idx))
+    # 🔴 v0.9.183 改判据语义（原 `len(secs) == 64` 是**写死当时计数**：63 既有 + qchip
+    #   新增 1）。此后 schip / pchip / d4 / oi / accel / ecore 六块面板**合法新增**
+    #   ⇒ 精确相等把「增长」误判为「破坏」（面板总数实测 70）。正确不变量：
+    #   ① 数量不低于冻结地板 64（既有未被删）；② 冻结的 7 个命名面板 id ⊆ 现有 id
+    #   （新增允许、删除必红）。
+    _REQUIRED_SECS = frozenset({"sec-qchip", "sec-schip", "sec-pchip", "sec-d4",
+                                "sec-oi", "sec-accel", "sec-ecore"})
+    _missing = _REQUIRED_SECS - sec_ids
+    check("C4 既有面板未被破坏（count ≥ 64 且 7 个命名面板 id 全在）",
+          len(secs) >= 64 and not _missing,
+          "count=%d missing=%s" % (len(secs), sorted(_missing)))
+    # 反向（判据有判别力，非恒真）：抹掉 sec-qchip ⇒ 上述谓词必 False
+    _neg = idx.replace('id="sec-qchip"', 'id="sec-qchip__gone"')
+    _neg_ids = set(re.findall(r'<div class="sec"[^>]*id="([^"]+)"', _neg))
+    check("C4b 反向：抹掉 sec-qchip 后 C4 谓词必 False（非恒真）",
+          not (len(re.findall(r'<div class="sec"[^>]*>', _neg)) >= 64
+               and not (_REQUIRED_SECS - _neg_ids)))
     check("C5 按钮 id 前缀 run ⇒ 自动进入抽屉「能力目录」（collect() 机制）",
           'id="runQChip"' in idx)
 

@@ -40,6 +40,7 @@ from lda_l2 import d4_domains as dm
 from lda_l2.ecore import elayers as EL                 # 层号单一真源（L_DIFF 等）
 from lda_l2.ecore import layout as EL_LAYOUT
 from lda_webui import d4case as d4c
+from lda_harness.smoke_kit import make_fail_collector
 
 # 🔴 门禁显式表（反向完备的锚：D4_DOMAINS 必须与本表逐位相等）
 EXPECTED_DOMAINS = ("ecore", "quantum_sc", "loqc", "photonic_interconnect",
@@ -49,12 +50,7 @@ EXPECTED_DOMAINS = ("ecore", "quantum_sc", "loqc", "photonic_interconnect",
 def main() -> int:
     fails = []
 
-    def check(name, cond, detail=""):
-        if cond:
-            print(f"[PASS] {name}")
-        else:
-            print(f"[FAIL] {name} :: {detail}")
-            fails.append(name)
+    check = make_fail_collector(fails)
 
     print("=== LDA · D4 交付闭环扩面门禁（ecore / 量子侧）===")
 

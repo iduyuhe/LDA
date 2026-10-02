@@ -24,15 +24,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from lda_l1.protocol import AgentRequest, KernelGateway
 from lda_harness.benchmarks import BENCHMARK_ORDER
+from lda_harness.smoke_kit import make_reporting_collector
 
 PASS = "PASS"
 FAIL = "FAIL"
 checks: list = []
 
 
-def check(name: str, ok: bool, detail: str = ""):
-    checks.append((name, ok, detail))
-    print(f"  [{PASS if ok else FAIL}] {name}" + (f"  ·  {detail}" if detail else ""))
+check = make_reporting_collector(checks)
 
 
 def main() -> int:

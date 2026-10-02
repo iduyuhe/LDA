@@ -28,17 +28,13 @@ import unittest.mock as mock
 import numpy as np
 
 from lda_l2 import ai_accelerator_ref as ar
+from lda_harness.smoke_kit import make_fail_collector
 
 
 def main() -> int:
     fails = []
 
-    def check(name, cond, detail=""):
-        if cond:
-            print(f"[PASS] {name}")
-        else:
-            print(f"[FAIL] {name} :: {detail}")
-            fails.append(name)
+    check = make_fail_collector(fails)
 
     print("=== LDA 阶段 4 · L6 参考设计门禁（W4-1 · 光子/模拟混合 AI 推理加速器）===")
     print("route:", ar.ACCELERATOR_REF_DISCLOSURE["route"])

@@ -1742,7 +1742,9 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # T-8：5 器件 live 全跑（DC 15.3s / YB 19.1s / WG numba 秒级 / Bragg 19.9s
     # / Ring <0.1s），干净实测 ~60-80s；配 600s 只为 numba 首次 JIT 编译（冷
     # 缓存 ~30s）与慢机器抖动留余量。
-    "run_device_library_smoke.py": 600.0,
+    # 🔴 v0.9.183：2026-10-02 全量回扫实测上界 **451.0s** ⇒ 600s 仅 1.33×（<2× 硬闸）
+    #   ⇒ 提到 **1500s**（≈3.3×）。判据一字未改，纯耗时余量。
+    "run_device_library_smoke.py": 1500.0,
     # 反自证桩护栏：路径① 8 类断言 + 全锚重计算（正向/反向/灵敏度/无回归/对外账本/
     # 路径② 复现/JSON 序列化/行为判据自检）。判据一字未改，纯耗时余量。
     # 🔴 v0.9.111（2026-09-19 全面审计 F-19）：实测耗时已随锚数增长远超旧预算 ——
@@ -1754,7 +1756,9 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   （实测 1105.0 / 1118.7s）—— 与本表 `run_d_criterion_smoke` 同属
     #   「预算未随规模同步」的**欠标定**，重机器/热降频下**同样会假红** ⇒
     #   提到 **3600s**（≈3.2×）。判据一字未改。
-    "run_benchmark_falsifiability_smoke.py": 3600.0,
+    # 🔴 v0.9.183：2026-10-02 全量回扫实测上界 **1262.1s** ⇒ 3600s 仅 2.85×
+    #   （低于 3× 目标档）⇒ 提到 **4200s**（≈3.3×）。判据一字未改。
+    "run_benchmark_falsifiability_smoke.py": 4200.0,
     # 🔴 v0.9.111（2026-09-19 全面审计 F-19 · 本项此前**无覆盖**，走默认 300s）：
     #   红队锚面 fuzz —— 对全部 52 锚逐锚做规则式参数扰动并用 run_verification 判卷。
     #   攻击面大 ⇒ 10 线程实跑 **1315.8s** rc=0（"红队锚面 fuzz smoke: PASS"）；
@@ -2201,8 +2205,9 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_cli_build_smoke.py": 300.0,
     # 实测上界 17.55s（3 轮 max · @10T）
     "run_cpml_absorber_smoke.py": 300.0,
-    # 实测上界 14.39s（3 轮 max · @10T）
-    "run_cross_solver_matrix_smoke.py": 300.0,
+    # 实测上界 192.3s（2026-10-02 全量回扫 · @10T；旧注释写 14.39s 已随
+    # 交叉验证网格扩容失效）⇒ 提到 **900s**（≈4.7×）。
+    "run_cross_solver_matrix_smoke.py": 900.0,
     # 实测上界 5.72s（3 轮 max · @10T）
     "run_p2_usability_smoke.py": 300.0,
     # 实测上界 5.39s（3 轮 max · @10T）

@@ -31,7 +31,9 @@ import socket
 import sys
 import unittest
 
-__all__ = ["free_port", "check_raise", "make_check", "Counter", "run_unittest_suite"]
+__all__ = ["free_port", "check_raise", "make_check", "make_fail_collector",
+           "make_result_collector", "make_reporting_collector",
+           "make_fail_tag_collector", "Counter", "run_unittest_suite"]
 
 
 class Counter:
@@ -103,6 +105,94 @@ def check_raise(cond, msg):
     ok = bool(cond)
     print(("OK  " if ok else "FAIL ") + msg)
     return ok
+
+
+def make_fail_collector(failed):
+    """生成 ``check(name, cond, detail="")``：PASS/FAIL 打印 + 失败名收集进 ``failed``。
+
+    对应结构类「**嵌套** ``def check`` + ``fails.append(name)``」——v0.9.183 实测
+    在 E 系列（ecore E1–E4）/ accel / d4 案例门禁里 **9 个文件逐字相同**。原形::
+
+        def check(name, cond, detail=""):
+            if cond:
+                print(f"[PASS] {name}")
+            else:
+                print(f"[FAIL] {name} :: {detail}")
+                fails.append(name)
+
+    🔴 内层函数名刻意**不叫** ``check``：``run_helper_dup_ratchet_smoke`` 按
+    ``FunctionDef.name == "check"`` 计**定义**（不计「绑定」）⇒ 只有内层改名，
+    归一后该文件的计数才会真正下降，而不是把定义搬个家。
+    """
+    def _gate(name, cond, detail=""):
+        if cond:
+            print("[PASS] %s" % name)
+        else:
+            print("[FAIL] %s :: %s" % (name, detail))
+            failed.append(name)
+
+    return _gate
+
+
+def make_result_collector(results):
+    """生成 ``check(name, cond, detail="") -> bool``：(name, ok, detail) 收集进
+    ``results`` 并返回 ``bool(cond)``；**不打印**（汇总由调用方统一输出）。
+
+    对应结构类「模块级 ``_results.append((name, bool(cond), detail))`` + 返回 bool」
+    ——v0.9.183 实测 **6 个文件逐字相同**（ecore E15–E19 + webui_entry）。原形::
+
+        def check(name: str, cond: bool, detail: str = "") -> bool:
+            _results.append((name, bool(cond), detail))
+            return bool(cond)
+    """
+    def _gate(name, cond, detail=""):
+        results.append((name, bool(cond), detail))
+        return bool(cond)
+
+    return _gate
+
+
+def make_reporting_collector(results):
+    """生成 ``check(name, ok, detail="")``：(name, ok, detail) 收集进 ``results`` 并
+    打印 ``  [PASS|FAIL] name  ·  detail``（仅当 ``detail`` 非空时追加 ``  ·  detail``）。
+
+    对应结构类「模块级 ``checks: list = []`` + ``append`` + 带缩进打印」——v0.9.183
+    实测 **3 个文件逐字相同**（agent_loop / l1_agent / l1_spec）。原形::
+
+        def check(name: str, ok: bool, detail: str = ""):
+            checks.append((name, ok, detail))
+            print(f"  [{PASS if ok else FAIL}] {name}" + (f"  ·  {detail}" if detail else ""))
+
+    🔴 内层函数名刻意**不叫** ``check``（同 ``make_fail_collector`` 说明）。
+    """
+    def _gate(name, ok, detail=""):
+        results.append((name, ok, detail))
+        print("  [%s] %s%s" % ("PASS" if ok else "FAIL", name,
+                               ("  ·  " + detail) if detail else ""))
+
+    return _gate
+
+
+def make_fail_tag_collector(failed):
+    """生成 ``check(name, cond, detail="")``：打印 ``  [PASS|FAIL] name  (detail)``，
+    并把**失败**名收集进 ``failed``。
+
+    对应结构类「模块级 ``_FAILS = []`` + 打印 + 仅失败时 ``append``」——v0.9.183
+    实测 **2 个文件逐字相同**（report_determinism / report_error_display）。原形::
+
+        def check(name, cond, detail=""):
+            tag = "PASS" if cond else "FAIL"
+            print(f"  [{tag}] {name}" + (f"  ({detail})" if detail else ""))
+            if not cond:
+                _FAILS.append(name)
+    """
+    def _gate(name, cond, detail=""):
+        tag = "PASS" if cond else "FAIL"
+        print("  [%s] %s%s" % (tag, name, ("  (" + detail + ")") if detail else ""))
+        if not cond:
+            failed.append(name)
+
+    return _gate
 
 
 def free_port():

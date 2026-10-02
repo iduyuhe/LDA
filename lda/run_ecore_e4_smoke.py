@@ -35,6 +35,7 @@ from lda_l2.ecore.scale_bench import (
     scale_bench_self_check,
     scale_sweep,
 )
+from lda_harness.smoke_kit import make_fail_collector
 
 _SIZES = (32, 64, 128, 256)
 
@@ -113,12 +114,7 @@ def probe_landmark_registry_corrupt():
 def main():
     fails = []
 
-    def check(name, cond, detail=""):
-        if cond:
-            print(f"[PASS] {name}")
-        else:
-            print(f"[FAIL] {name} :: {detail}")
-            fails.append(name)
+    check = make_fail_collector(fails)
 
     print("=== LDA 电子计算征程 E4 · 规模对标（诚实边界）门禁（D-153）===")
     print("SCALE_BENCH_DISCLOSURE:", scale_bench.SCALE_BENCH_DISCLOSURE["route"])

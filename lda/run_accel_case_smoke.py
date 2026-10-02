@@ -25,6 +25,7 @@ import unittest.mock as mock
 
 from lda_webui import accel_case as ac
 from lda_webui import routes as _routes
+from lda_harness.smoke_kit import make_fail_collector
 
 FRONTEND = "lda_webui/static/index.html"
 
@@ -43,12 +44,7 @@ def unwired_static_buttons(src: str) -> list[str]:
 def main() -> int:
     fails = []
 
-    def check(name, cond, detail=""):
-        if cond:
-            print(f"[PASS] {name}")
-        else:
-            print(f"[FAIL] {name} :: {detail}")
-            fails.append(name)
+    check = make_fail_collector(fails)
 
     print("=== LDA 阶段 4 · 案例卡门禁（W4-2 · /api/accel_demo）===")
     card = ac.case_card(use_cache=False)

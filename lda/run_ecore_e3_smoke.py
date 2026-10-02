@@ -31,6 +31,7 @@ from unittest.mock import patch
 from lda_l2.ecore import crossbar_mvm, mvm_datapath
 from lda_l2.ecore.mvm_datapath import MvmDatapath, mvm_datapath_self_check, tiled_mvm
 from lda_l2.ecore.crossbar_mvm import CrossbarMVM
+from lda_harness.smoke_kit import make_fail_collector
 
 
 # ---------------------------------------------------------------------------
@@ -114,12 +115,7 @@ def probe_crossbar_corrupt():
 def main():
     fails = []
 
-    def check(name, cond, detail=""):
-        if cond:
-            print(f"[PASS] {name}")
-        else:
-            print(f"[FAIL] {name} :: {detail}")
-            fails.append(name)
+    check = make_fail_collector(fails)
 
     print("=== LDA 电子计算征程 E3 · MVM 数据通路门禁（D-152）===")
     print("MVM_DATAPATH_DISCLOSURE:", mvm_datapath.MVM_DATAPATH_DISCLOSURE["route"])

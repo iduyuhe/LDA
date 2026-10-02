@@ -28,6 +28,7 @@ from unittest.mock import patch
 from lda_l2.ecore import crossbar_mvm, mna, mosfet
 from lda_l2.ecore.crossbar_mvm import CrossbarMVM, ota_open_loop_gain
 from lda_l2.ecore.mosfet import NmosParams
+from lda_harness.smoke_kit import make_fail_collector
 
 
 # ---------------------------------------------------------------------------
@@ -116,12 +117,7 @@ def probe_resistor_stamp_corrupt():
 def main():
     fails = []
 
-    def check(name, cond, detail=""):
-        if cond:
-            print(f"[PASS] {name}")
-        else:
-            print(f"[FAIL] {name} :: {detail}")
-            fails.append(name)
+    check = make_fail_collector(fails)
 
     print("=== LDA 电子计算征程 E2 · 参数化 MVM 交叉阵列门禁（D-151）===")
     print("CROSSBAR_DISCLOSURE:", crossbar_mvm.CROSSBAR_DISCLOSURE["route"])

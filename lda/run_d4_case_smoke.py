@@ -25,6 +25,7 @@ import unittest.mock as mock
 
 from lda_webui import d4case as dc
 from lda_webui import routes as _routes
+from lda_harness.smoke_kit import make_fail_collector
 
 # 🔴 锚到 __file__ 而非 cwd 相对串：门禁不得依赖调用目录（CI 是 cwd=lda/ 跑的，
 #   但本地/其他入口从仓库根跑会 FileNotFoundError —— 判据没跑起来 ≠ 判据通过）。
@@ -98,12 +99,7 @@ def _unsynced(card: dict) -> list:
 def main() -> int:
     fails = []
 
-    def check(name, cond, detail=""):
-        if cond:
-            print(f"[PASS] {name}")
-        else:
-            print(f"[FAIL] {name} :: {detail}")
-            fails.append(name)
+    check = make_fail_collector(fails)
 
     print("=== LDA · D4 扩面案例卡门禁（/api/d4_demo）===")
     card = dc.case_card(use_cache=False)

@@ -117,7 +117,14 @@ BE_DUAL8_1E3 = 0.0017017106483002142
 DUAL_CROSSOVER = {4: False, 5: False, 6: True, 8: True}
 
 TOL_EXACT = 1e-12      # 解析量
-TOL_OPT = 1e-9         # 优化器输出（**已收敛**的，跨 BLAS 稳健）
+TOL_OPT = 1e-6         # 优化器输出（**已收敛**的）。
+                       # 🔴 v0.9.183 订正：原 1e-9 的注释「跨 BLAS 稳健」**是假的** ——
+                       # `stuck_bar["fid_best_repair"]` 在 numpy 2.5.1 / scipy 1.18.0 上
+                       # 实测偏差 **8.234e-09**（> 1e-9）⇒ 该判据**换 BLAS/LAPACK 必红**。
+                       # 优化器**终值**本就不逐位可复现（终止判据 + 线搜索路径受浮点实现影响），
+                       # 冻结到 1e-9 属**过精**。1e-6 = 实测偏差的 **121× 余量**，
+                       # 仍远小于本判据的判别尺度（`fid_best - fid_naive` 判别差 ~0.34）⇒
+                       # 容差有判别力（见反向 F3b）。
 TOL_OPT_NOCONV = 1e-5  # 优化器输出（**触预算未收敛**的 ⇒ 只判线程带；实测跨度
                        # 1.4948e-6 ⇒ 余量 6.7×。见 `G8_BAR_REP_THREAD_BAND` 注释）
 
@@ -377,7 +384,13 @@ def main():  # noqa: C901
     check("F3 N=4 重编译常量锁（naive / best 三模式）",
           all(_close(rep4[m]["fid_naive"], G4_REP[m][0], TOL_OPT)
               and _close(rep4[m]["fid_best_repair"], G4_REP[m][1], TOL_OPT)
-              for m in FATAL_MODES))
+              for m in FATAL_MODES),
+          "实测 %s" % {m: (round(rep4[m]["fid_naive"], 12),
+                           round(rep4[m]["fid_best_repair"], 12)) for m in FATAL_MODES})
+    # 🔴 F3b 反向：证明 `_close` 在 TOL_OPT 下**不是恒真**（容差有判别力）
+    _f3_ref = G4_REP["stuck_bar"][1]
+    check("F3b 反向：冻结值自身必闭合 ∧ 偏 1e-4 必不闭合 ⇒ 容差有判别力（非恒真）",
+          _close(_f3_ref, _f3_ref, TOL_OPT) and not _close(_f3_ref + 1e-4, _f3_ref, TOL_OPT))
     check("F4 重编译收益有限（fid_best - fid_naive < 0.24，且 >= 0）",
           all(0.0 <= rep4[m]["repair_gain"] < 0.24 for m in FATAL_MODES),
           "gains=%s" % {m: round(rep4[m]["repair_gain"], 6) for m in FATAL_MODES})

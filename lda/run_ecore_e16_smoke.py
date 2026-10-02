@@ -50,14 +50,13 @@ import numpy as np                                # noqa: E402
 from lda_l2.ecore import array_scale as AS        # noqa: E402
 from lda_l2.ecore import budget as B              # noqa: E402
 from lda_l2.ecore import weight_prog as WP        # noqa: E402
+from lda_harness.smoke_kit import make_result_collector
 
 _results: list = []
 PR = WP.WEIGHT_PROG_PROCESS
 
 
-def check(name: str, cond: bool, detail: str = "") -> bool:
-    _results.append((name, bool(cond), detail))
-    return bool(cond)
+check = make_result_collector(_results)
 
 
 # ── 复用的绿色判据（突变探针也调同一份 —— 保证「打的判据」就是「守的判据」）──

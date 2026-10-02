@@ -37,6 +37,7 @@ from lda_l2.ecore.analog_mvm import (
 )
 from lda_l2.ecore.mosfet import NmosParams, mosfet_self_check
 from lda_l2.ecore import ECORE_DISCLOSURE
+from lda_harness.smoke_kit import make_fail_collector
 
 
 # ---------------------------------------------------------------------------
@@ -153,12 +154,7 @@ def probe_divider_stamp_corrupt():
 def main():
     fails = []
 
-    def check(name, cond, detail=""):
-        if cond:
-            print(f"[PASS] {name}")
-        else:
-            print(f"[FAIL] {name} :: {detail}")
-            fails.append(name)
+    check = make_fail_collector(fails)
 
     print("=== LDA 电子计算征程 E1 · 基座门禁（D-150）===")
     print("ECORE_DISCLOSURE:", ECORE_DISCLOSURE["route"])

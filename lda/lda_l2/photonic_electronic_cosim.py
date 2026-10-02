@@ -27,10 +27,11 @@ DAC 编码 → 驱动（一阶 RC）→ 相移器（Vπ·L）→ 光网格计算
   驱动功耗、TOPS/W。本模块只给电压 / 相位 / 时延 / 带宽 / 量化误差 / 标定残差。
 - 探测为**强度探测**（PD 物理本征 |E|²），与 M2 `detection='intensity'` 同构；
   片上非线性光学元件（可饱和吸收 / 相变材料阈值）物理属 B 类外部，非本模块 golden。
-- 🔴 跨模块口径：光侧 `mzi_mesh_matmul.VPI_L_V_CM=25.0`（V·cm）与 EIC 侧
-  `eic_behavioral.VPI_L_V_MM_DEFAULT=7.5`（V·mm）口径不一致（见 EO 披露块）；
-  本模块在 co-sim 层用**单一 `vpi_v`（伏特）**贯穿，默认 7.5 V（= 1mm 臂、7.5 V·mm），
-  避免静默不一致。
+- 🔴 跨模块 Vπ 口径（v0.9.183 订正）：光侧自 c4965be 起以 `mzi_mesh_matmul.VPI_L_VMM
+  = 250.0 V·mm` 为单一真值源（`VPI_L_V_CM=25.0` 仅 V·cm 兼容别名，同一物理量）
+  ⇒ 与 EIC 侧 `VPI_L_V_MM_DEFAULT=7.5 V·mm` 之差属**设计点差异**（Vπ=25 V vs 7.5 V），
+  **不是**单位口径分裂。本模块 co-sim 层仍用**单一 `vpi_v`（伏特）**贯穿，默认 7.5 V。
+  （历史「跨模块口径不一致」警告与订正见 EO 披露块 `vpi_units_warning`。）
 ============================================================================
 """
 
@@ -407,9 +408,12 @@ EO_COSIM_DISCLOSURE = {
     "zero_energy": "🔴 零能效数字：不输出 pJ/bit、驱动功耗、TOPS/W；只给电压/相位/时延/带宽/量化误差/标定残差。",
     "detection": "探测为强度探测（PD 物理本征 |E|²），与 M2 detection='intensity' 同构；"
                  "片上非线性光学元件（可饱和吸收/相变材料阈值）物理属 B 类外部，非本模块 golden。",
-    "vpi_units_warning": "🔴 跨模块口径不一致（吃狗粮发现）：光侧 mzi_mesh_matmul.VPI_L_V_CM=25.0（V·cm）"
-                         "与 EIC 侧 eic_behavioral.VPI_L_V_MM_DEFAULT=7.5（V·mm）口径不同；"
-                         "本模块 co-sim 用单一 vpi_v=7.5V 贯穿，待回查两处 DEFAULT 是否统一。",
+    "vpi_units_warning": "🔴 跨模块口径不一致（历史警告 · v0.9.183 订正）：原述「光侧 "
+                         "mzi_mesh_matmul.VPI_L_V_CM=25.0（V·cm）与 EIC 侧 "
+                         "eic_behavioral.VPI_L_V_MM_DEFAULT=7.5（V·mm）口径不同」—— 该**单位**"
+                         "口径分裂已由 c4965be 消除（光侧单一真值源 VPI_L_VMM=250.0 V·mm，"
+                         "VPI_L_V_CM 仅 V·cm 兼容别名）。现存 250 与 7.5 V·mm 之差属**设计点差异**"
+                         "（Vπ=25 V vs 7.5 V），非口径分裂；本模块 co-sim 用单一 vpi_v=7.5V 贯穿。",
     "honest_boundary": "本模块演示『光计算芯片可由 DAC 下发 + TIA 读回协同实现，且基于读回的闭环标定可回收 Vπ 误差』；"
                        "不声称已实现相干光学计算机、电子 co-sim 实测或已物理校准（须 foundry 工艺角/实测锚）。",
     "non_oracle_scope": "本模块电子域（EIC 行为级一阶 RC 驱动 + 单极点 TIA）与光计算核（M1/M2 网格 + 量化/激活）"

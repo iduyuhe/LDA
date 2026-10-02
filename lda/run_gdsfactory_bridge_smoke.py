@@ -49,13 +49,49 @@ class GdsfactoryBridgeSmoke(unittest.TestCase):
         self.assertTrue(any("线宽" in v for v in rep["violations"]))
 
     def test_gf_bridge_graceful(self):
+        import importlib.util
+        import sys
+        import types
+
         from lda_l1.gdsfactory_bridge import (
             gdsfactory_available, gf_component_to_spec,
         )
-        # 无论 gdsfactory 是否安装，桥模块都能 import 且不崩
-        avail = gdsfactory_available()
-        # 未装时优雅返回 False；装了则 True（CI 本机通常未装，属 B 级可选）
-        self.assertIsInstance(avail, bool)
+        # 🔴 语义判据（v0.9.183 强化）：`gdsfactory_available()` 必须与**独立的可用性
+        #    探测**（importlib.util.find_spec）一致 —— 不得恒真/恒假。
+        #    旧判据只 `assertIsInstance(avail, bool)` ⇒ **恒真**，因此 1529c9f 把
+        #    `import gdsfactory  # noqa: F401` 当 F401 删掉（函数退化为 `return True`）
+        #    后本门禁仍全绿（血案：删 import ⇒ 改语义，只断言类型抓不到）。
+        real = importlib.util.find_spec("gdsfactory") is not None
+        self.assertEqual(gdsfactory_available(), real,
+                         "gdsfactory_available() 必须等于真实可导入性（非恒真/恒假）")
+
+        # 反向探针（双向，证明函数真的在探测）：
+        #   ① 注入假 gdsfactory 模块 ⇒ 必须 True；② 拦截 import ⇒ 必须 False。
+        saved = sys.modules.get("gdsfactory")
+        try:
+            sys.modules["gdsfactory"] = types.ModuleType("gdsfactory")
+            self.assertTrue(gdsfactory_available(),
+                            "注入可导入的 gdsfactory 后必须返回 True（防恒假）")
+        finally:
+            if saved is None:
+                sys.modules.pop("gdsfactory", None)
+            else:
+                sys.modules["gdsfactory"] = saved
+
+        class _Blocker:
+            def find_spec(self, name, path=None, target=None):
+                if name == "gdsfactory":
+                    raise ImportError("blocked by smoke probe")
+                return None
+
+        blocker = _Blocker()
+        sys.meta_path.insert(0, blocker)
+        try:
+            self.assertFalse(gdsfactory_available(),
+                             "拦截 gdsfactory 导入后必须返回 False（防恒真）")
+        finally:
+            sys.meta_path.remove(blocker)
+        self.assertEqual(gdsfactory_available(), real, "探针须无副作用（恢复原值）")
         # 桥函数本身可调用（缺组件时返回合法 spec 结构）
         fake = type("C", (), {"name": "demo", "references": [], "ports": {}})()
         spec = gf_component_to_spec(fake, name="demo")

@@ -510,9 +510,24 @@ def main():  # noqa: C901
           all(identifiability_report(N, "power")["sigma_gap"] > 1e9 for N in (4, 6, 8)),
           str({N: "%.2e" % identifiability_report(N, "power")["sigma_gap"]
                for N in (4, 6, 8)}))
-    check("D12b 冻结 σ 间隙与实测一致（相对差 < 1e-9，N=4/6/8）",
-          all(abs(identifiability_report(N, "power")["sigma_gap"]
-                  / MEASURED_SIGMA_GAP[N][2] - 1.0) < 1e-9 for N in (4, 6, 8)))
+    # 🔴 v0.9.183 订正：`sigma_gap = σmin / σ_{r+1}`，而 σ_{r+1} 是**机器零**（~1e-16）
+    # ⇒ 该比值**由 ULP 决定**，是**噪声主导量**，冻结到 1e-9 **不可复现**
+    # （numpy 2.5.1 / scipy 1.18.0 上实测相对差 **9.79e-2 / 6.30e-1 / 2.62e-1**）。
+    # 改判**数量级一致 + N 递减序**（二者跨 BLAS 稳健，且仍有判别力：三档相差 1~3 个数量级）。
+    _d12b_gaps = {N: identifiability_report(N, "power")["sigma_gap"] for N in (4, 6, 8)}
+    _d12b_frozen = {N: MEASURED_SIGMA_GAP[N][2] for N in (4, 6, 8)}
+    _d12b_now = all(math.floor(math.log10(_d12b_gaps[N]))
+                    == math.floor(math.log10(_d12b_frozen[N])) for N in (4, 6, 8))
+    _d12b_shift = all(math.floor(math.log10(_d12b_gaps[N]))
+                      == math.floor(math.log10(_d12b_frozen[N])) + 1 for N in (4, 6, 8))
+    check("D12b 🔴 σ 间隙**数量级 + N 递减序**与冻结一致"
+          "（精确值不可复现：σ_{r+1} 在机器精度 ⇒ 比值是噪声产物，实测相对差达 1e-1）",
+          _d12b_now and _d12b_gaps[4] > _d12b_gaps[6] > _d12b_gaps[8],
+          "实测 %s · 冻结 %s" % ({N: "%.2e" % _d12b_gaps[N] for N in (4, 6, 8)},
+                                {N: "%.2e" % _d12b_frozen[N] for N in (4, 6, 8)}))
+    # D12c 反向：现口径必 True ∧ 冻结数量级挪 1 档必 False ⇒ 谓词有判别力（非恒真）
+    check("D12c 反向：现口径 True ∧ 冻结挪 1 档 False ⇒ D12b 谓词有判别力（非恒真）",
+          bool(_d12b_now) and not bool(_d12b_shift))
     check("D13 真零 σ_{r+1}/σmax ≤ 1e-15（N=4/6/8）",
           all(identifiability_report(N, "power")["sigma_next_ratio"] <= 1e-15
               for N in (4, 6, 8)))

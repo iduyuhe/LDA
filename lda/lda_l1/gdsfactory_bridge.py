@@ -39,8 +39,16 @@ GF_TO_LDA_KIND = {
 
 
 def gdsfactory_available() -> bool:
+    """gdsfactory 是否可导入（B 级可选依赖探测）。
+
+    🔴 血案（v0.9.183 修）：`import gdsfactory  # noqa: F401` 曾在 commit 1529c9f
+    「清 F401 到棘轮地板」时被**当作未用 import 删除**，只剩 `return True` ⇒ 函数
+    恒真 ⇒ `lda gf` 的「未装优雅降级」路径彻底死掉（`cmd_gf` 永远走 .py 分支），
+    而当时门禁只断言 `isinstance(avail, bool)`（恒真）故全绿无感。**删 F401 前必须
+    先判「废变量 vs 盲区」** —— 这里的 import 是函数体的**唯一副作用**，删掉即改语义。
+    """
     try:
-  # noqa: F401
+        import gdsfactory  # noqa: F401  （import 即探测：成功即可用）
         return True
     except Exception:
         return False

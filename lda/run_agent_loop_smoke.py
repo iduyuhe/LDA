@@ -19,15 +19,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lda_harness import deterministic as _det  # noqa: E402 (v0.9.75 确定性报告口径)
 
 from lda_agent.design_loop import  main as design_main
+from lda_harness.smoke_kit import make_reporting_collector
 
 PASS = "PASS"
 FAIL = "FAIL"
 checks: list = []
 
 
-def check(name: str, ok: bool, detail: str = ""):
-    checks.append((name, ok, detail))
-    print(f"  [{PASS if ok else FAIL}] {name}" + (f"  ·  {detail}" if detail else ""))
+check = make_reporting_collector(checks)
 
 
 def main() -> int:

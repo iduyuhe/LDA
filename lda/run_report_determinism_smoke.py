@@ -61,15 +61,12 @@ for _p in (HERE, os.path.join(HERE, "lda_harness")):
 
 from lda_harness import deterministic as det      # noqa: E402
 from lda_harness import report as rep             # noqa: E402
+from lda_harness.smoke_kit import make_fail_tag_collector
 
 _FAILS = []
 
 
-def check(name, cond, detail=""):
-    tag = "PASS" if cond else "FAIL"
-    print(f"  [{tag}] {name}" + (f"  ({detail})" if detail else ""))
-    if not cond:
-        _FAILS.append(name)
+check = make_fail_tag_collector(_FAILS)
 
 
 class _R:

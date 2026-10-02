@@ -444,7 +444,7 @@ def main() -> int:
           not rev_bad, f"异常={rev_bad}")
 
     # ⑲ 具名构造路径扫描：`lda/**` 内**零具名 add_device 调用**的器件类，
-    #    必须**恰好**等于 `NO_NAMED_ADD_DEVICE`（双向）—— 把「这 6 类的回提
+    #    必须**恰好**等于 `NO_NAMED_ADD_DEVICE`（双向）—— 把「这些类的回提
     #    能力目前由本门禁演示、尚无流水线使用」变成机器事实；一旦有人接线，
     #    本判据转红，逼着更新登记表（防"过时说明长期误导"）。
     import re as _re

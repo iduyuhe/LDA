@@ -140,7 +140,11 @@ def drc_check_device(kind: str, params: Dict[str, float],
     elif kind == "BraggMirror":
         # 一维层堆叠：宽度规则由衬底工艺决定（无 2D 版图几何），跳过
         pass
-    elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler"):
+    elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler",
+                  # v0.9.178（M2 · G-OI2）：收发器器件类接入参数级 DRC。
+                  # 此前这 4 类无分支 ⇒ raise ValueError ⇒ 收发器真 GDS 里
+                  # MziModulator / Photodetector / MMIC / Splitter **进不了 DRC**。
+                  "MziModulator", "Photodetector", "MMIC", "Splitter"):
         # D-71 真实版图基元：可制造性几何量来自 primitives.primitive_geometry
         from lda_l2.primitives import primitive_geometry
         g = primitive_geometry(kind, params)

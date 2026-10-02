@@ -613,4 +613,32 @@ def primitive_geometry(kind: str, params: Dict[str, float]) -> Dict[str, float]:
         # 特征，交给几何 DRC（gds_drc 对真实多边形做最小平行带宽度检查）。
         rep = bragg_grating_report(params)
         return {"min_width": min(rep["w_hi"], rep["w_lo"])}
+    # ── v0.9.178（M2 · G-OI2）：收发器器件类补可制造性几何量 ────────────────
+    # 🔴 此前这 6 类**无 DRC 入口**（`primitive_geometry` 与 `drc_check_device`
+    #    双双 `raise ValueError`）⇒ 收发器真 GDS 里这些器件**只能进 GDS、进不了
+    #    DRC**（与 wdm_mesh_pnr 只守 MZI 死标量同族）。几何量取自各 `*_descs` 的
+    #    实际多边形（单一真源：派生自 descs 用的同名参数）。
+    if kind in ("modulator", "mzimodulator", "mzi_modulator"):
+        w = float(params.get("width", 0.5))
+        ag = float(params.get("arm_gap", 4.0))
+        eg = float(params.get("elec_gap", 1.0))
+        # 两臂**内缘**间距 = arm_gap − w；电极与臂外缘间距 = elec_gap。
+        return {"min_width": w, "min_space": min(ag - w, eg)}
+    if kind in ("photodetector", "photo_detector"):
+        w = float(params.get("width", params.get("wg", 0.5)))
+        Wd = float(params.get("det_w", params.get("W", 5.0)))
+        # 吸收区（宽）+ 输入波导（窄）⇒ 最小横向特征取二者较小。
+        return {"min_width": min(w, Wd)}
+    if kind == "mmic":
+        return {"min_width": float(params.get("width", 0.5)),
+                "min_space": float(params.get("out_gap", 0.5))}
+    if kind == "splitter":
+        # IR 词汇：`width`(=W_mmi) / `length`(=L_mmi)；最小横向特征在**波导宽**。
+        return {"min_width": float(params.get("wg", 0.5)),
+                "min_space": float(params.get("out_gap", 1.0))}
+    if kind in ("phaseshifter", "phase_shifter"):
+        return {"min_width": float(params.get("width", params.get("wg", 0.5))),
+                "min_space": float(params.get("gap_heat", 1.0))}
+    if kind == "mzi":
+        return {"min_width": float(params.get("wg", params.get("width", 0.5)))}
     raise ValueError(f"真实版图基元暂不支持 kind={kind}")

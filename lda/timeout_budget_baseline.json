@@ -7,7 +7,7 @@
   "target_x": 3.0,
   "ratchet_below_target": 0,
   "anchors_at_measurement": 476,
-  "core_smokes_at_measurement": 267,
+  "core_smokes_at_measurement": 269,
   "updated_at": "2026-10-02",
   "source_reports": [
     "_ci_core_179",
@@ -43,7 +43,8 @@
     "_ci_core_v09139.json",
     "_blind_measure.json",
     "_oi_m1_baseline_report.json",
-    "_oi_rebase_report.json"
+    "_oi_rebase_report.json",
+    "_oi_ci_two_report.json"
   ],
   "rules": "预算 ≥ 2 × 跨轮实测上界（硬闸）；目标 3×（棘轮：低于 3× 的项数只降不升）；锚数或 CI core 成员数变化 ⇒ 基线过期，须重跑全量并 --write-baseline 刷新",
   "rows": [
@@ -1059,6 +1060,17 @@
       "margin_x": 20.848,
       "samples_s": [
         14.39
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
+      "script": "run_oi_m2_smoke.py",
+      "budget_s": 120.0,
+      "elapsed_max_s": 5.26,
+      "margin_x": 22.814,
+      "samples_s": [
+        5.26
       ],
       "n_rounds": 1,
       "censored_events": 0
@@ -2097,6 +2109,17 @@
         0.9
       ],
       "n_rounds": 2,
+      "censored_events": 0
+    },
+    {
+      "script": "run_oi_transceiver_pnr_smoke.py",
+      "budget_s": 120.0,
+      "elapsed_max_s": 0.36,
+      "margin_x": 333.333,
+      "samples_s": [
+        0.36
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {

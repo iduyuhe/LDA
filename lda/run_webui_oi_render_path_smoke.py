@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""WebUI 光联接模块 M0 + M1 案例卡前端**取值路径 + onclick**门禁（新征程 · 2026-10-02）。
+"""WebUI 光联接模块 M0 + M1 + M2 案例卡前端**取值路径 + onclick**门禁（新征程 · 2026-10-02）。
 
 ═══════════════════════════════════════════════════════════════════════════
 为什么存在（血案 #18 / #19 机器化）
@@ -9,7 +9,7 @@ E17-e 生产实测：`renderECore` 取 `synthesis_law.serial_ns`，而该值实�
 （案例卡 B1–B24 / API 验收）**都看不到这一层**：它们只保证 JSON 里有值，
 **不保证前端问对了地方**。
 
-本门禁把 `renderOi`（`sec-oi` 面板）的每条取值路径（M0 根块 + M1 子块），
+本门禁把 `renderOi`（`sec-oi` 面板）的每条取值路径（M0 根块 + M1 子块 + M2 子块），
 逐条拿到真实 `oi_case.case_card()` JSON 上解析，并验证 `onclick` 接线反向
 完备——把「JSON 里有值 ≠ 前端问对了地方」这层钉死。
 
@@ -17,24 +17,31 @@ E17-e 生产实测：`renderECore` 取 `synthesis_law.serial_ns`，而该值实�
 判什么
 ───────────────────────────────────────────────────────────────────────────
 1. **onclick 接线**：$('runOi').onclick = runOi 在场（防「能力上线却点不动」）。
-2. **函数定义**：runOi / renderOi 在 index.html 内定义。
-3. **路径存在性**：renderOi 引用的每条 d./m1./rp./dv./sp./fx./rq./c./m./g. 取值
-   路径，在真实 JSON 上逐段解析；**任一段不存在 ⇒ 红**（血案 #18/#19 要抓的）。
+2. **函数定义**：runOi / renderOi 在 index.html 内定义（且真的含 M1/M2 块引用）。
+3. **路径存在性**：renderOi 引用的每条 d./m1./rp./dv./sp./fx./rq./c./m./g./
+   m2./m2rp./m2dv./m2g./m2fec./m2cf./m2rs./m2fm. 取值路径，在真实 JSON 上逐段
+   解析；**任一段不存在 ⇒ 红**（血案 #18/#19 要抓的）。
 4. **反向完备**：case_card() 下每个展示字段——channels 元素、requested 子字段、
    milestones/gaps 元素字段，**以及 M1 块顶层 + `ring_plan` / `driver` /
-   `spec_points[]` / `m0_fixes[]` 四组嵌套字段**——都必须被前端引用
-   （防「后端加了、前端不显示」的静默盲区）。
+   `spec_points[]` / `m0_fixes[]` 四组嵌套字段 + M2 块顶层 + `fec` /
+   `fec.concatenated` / `fec.rs_only` / `fec.form_map` / `ring_plan` / `driver` /
+   `spec_points[]` / `g_oi2` / `platform_fixes_m2[]` 九组嵌套字段**——都必须被前端
+   引用（防「后端加了、前端不显示」的静默盲区）。🔴 M2 块是**新成员**：若本门禁
+   不扩，M2 全块会静默落进盲区（正是本条纪律要防的）。
 5. **突变探针**（先证能变红）：
    ① 抹掉 case_card 某 channel 字段 ⇒ ③ 路径判据必红；
    ② 删掉 onclick 接线行 ⇒ ① 接线判据必红；
    ③ 抹掉 `m1.ring_plan.m` ⇒ ③ 的 M1 路径判据必红；
    ④ 往 `m1.ring_plan` 塞一个新字段 ⇒ ④ 的 ring 反向完备必红；
-   ⑤ 往 `m1` 顶层塞一个新字段 ⇒ ④ 的 m1 顶层反向完备必红。还原后复绿。
+   ⑤ 往 `m1` 顶层塞一个新字段 ⇒ ④ 的 m1 顶层反向完备必红；
+   ⑦ 往 `m2` 顶层塞一个新字段 ⇒ ④e-6 m2 顶层反向完备必红；
+   ⑧ 抹掉 `m2.spec_points[].verdict_point` ⇒ ③ 的 M2 路径判据必红；
+   ⑨ 往 `m2.fec` 塞一个新字段 ⇒ ④e-7 fec 反向完备必红。还原后复绿。
 6. 自入 CI core（防静默漏接 · 血案 #28 同族）。
 
 🔴 诚实边界：本门禁是**静态路径检查**，不执行 JS、不看渲染是否「好看」；
 值存在但**语义不对**（口径漂移）仍由 oi_case.run_selfchecks + run_oi_m0_smoke /
-run_oi_m1_smoke 那类「卡内数字 ≡ 模块现算」判据守。二者互补：
+run_oi_m1_smoke / run_oi_m2_smoke 那类「卡内数字 ≡ 模块现算」判据守。二者互补：
 **那些守「值对不对」，本门禁守「问对没」**。
 """
 from __future__ import annotations
@@ -157,9 +164,107 @@ M1_FIX_PATHS = [  # `fx` 为 m1.m0_fixes 元素
     ("fx.detail", "m1.m0_fixes[].detail"),
 ]
 
+# ── M2（1.6T · LPO · G-OI2 真 GDS）块：`var m2=d.m2||{}, m2rp=m2.ring_plan||{}, ...` ──
+M2_TOP_PATHS = [
+    ("m2.stage_label", "m2.stage_label"),
+    ("m2.n_lanes", "m2.n_lanes"),
+    ("m2.net_per_lane_gbps", "m2.net_per_lane_gbps"),
+    ("m2.baud_gbd", "m2.baud_gbd"),
+    ("m2.nyquist_ghz", "m2.nyquist_ghz"),
+    ("m2.aggregate_gbps", "m2.aggregate_gbps"),
+    ("m2.channels_nm", "m2.channels_nm"),
+    ("m2.eo_f3db_fast_ghz", "m2.eo_f3db_fast_ghz"),
+    ("m2.eo_f3db_legacy_ghz", "m2.eo_f3db_legacy_ghz"),
+    ("m2.bandwidth_headroom_fast_ghz", "m2.bandwidth_headroom_fast_ghz"),
+    ("m2.bandwidth_headroom_legacy_ghz", "m2.bandwidth_headroom_legacy_ghz"),
+    ("m2.snr_assumed_db", "m2.snr_assumed_db"),
+    ("m2.tia_noise_snr_db", "m2.tia_noise_snr_db"),
+    ("m2.fec", "m2.fec"),
+    ("m2.driver", "m2.driver"),
+    ("m2.ring_plan", "m2.ring_plan"),
+    ("m2.spec_points", "m2.spec_points"),
+    ("m2.g_oi2", "m2.g_oi2"),
+    ("m2.platform_fixes_m2", "m2.platform_fixes_m2"),
+    ("m2.honest_note_m2", "m2.honest_note_m2"),
+]
+M2_FEC_PATHS = [  # `m2fec` 为 m2.fec
+    ("m2fec.concatenated", "m2.fec.concatenated"),
+    ("m2fec.rs_only", "m2.fec.rs_only"),
+    ("m2fec.ber_ratio", "m2.fec.ber_ratio"),
+    ("m2fec.lpo_inner_code_gain_db", "m2.fec.lpo_inner_code_gain_db"),
+    ("m2fec.form_map", "m2.fec.form_map"),
+]
+M2_FEC_MODE_PATHS = [  # `m2cf`/`m2rs` 为 m2.fec.concatenated / rs_only · `m2fm` 为 form_map
+    ("m2cf.pre_fec_ber", "m2.fec.concatenated.pre_fec_ber"),
+    ("m2cf.needs_module_dsp", "m2.fec.concatenated.needs_module_dsp"),
+    ("m2cf.required_snr_ideal_db", "m2.fec.concatenated.required_snr_ideal_db"),
+    ("m2cf.label", "m2.fec.concatenated.label"),
+    ("m2rs.pre_fec_ber", "m2.fec.rs_only.pre_fec_ber"),
+    ("m2rs.needs_module_dsp", "m2.fec.rs_only.needs_module_dsp"),
+    ("m2rs.required_snr_ideal_db", "m2.fec.rs_only.required_snr_ideal_db"),
+    ("m2rs.label", "m2.fec.rs_only.label"),
+    ("m2fm.retimed", "m2.fec.form_map.retimed"),
+    ("m2fm.lpo", "m2.fec.form_map.lpo"),
+]
+M2_DRIVER_PATHS = [  # `m2dv` 为 m2.driver
+    ("m2dv.rise_ui", "m2.driver.rise_ui"),
+    ("m2dv.tia_ghz", "m2.driver.tia_ghz"),
+    ("m2dv.tia_over_nyquist", "m2.driver.tia_over_nyquist"),
+    ("m2dv.t90_closed_ps", "m2.driver.t90_closed_ps"),
+    ("m2dv.t90_rk4_ps", "m2.driver.t90_rk4_ps"),
+]
+M2_RING_PATHS = [  # `m2rp` 为 m2.ring_plan
+    ("m2rp.m", "m2.ring_plan.m"),
+    ("m2rp.R_um", "m2.ring_plan.R_um"),
+    ("m2rp.gap_um", "m2.ring_plan.gap_um"),
+    ("m2rp.min_xt_db", "m2.ring_plan.min_xt_db"),
+    ("m2rp.max_il_drop_db", "m2.ring_plan.max_il_drop_db"),
+    ("m2rp.max_fsr_at_rmin_nm", "m2.ring_plan.max_fsr_at_rmin_nm"),
+    ("m2rp.fsr_rule_rejects_span", "m2.ring_plan.fsr_rule_rejects_span"),
+    ("m2rp.n_solutions", "m2.ring_plan.n_solutions"),
+]
+M2_SPEC_PATHS = [  # `sp` 为 m2.spec_points 元素（与 M1 同名局部变量）
+    ("sp.key", "m2.spec_points[].key"),
+    ("sp.band", "m2.spec_points[].band"),
+    ("sp.wl_nm", "m2.spec_points[].wl_nm"),
+    ("sp.reach_km", "m2.spec_points[].reach_km"),
+    ("sp.process", "m2.spec_points[].process"),
+    ("sp.role", "m2.spec_points[].role"),
+    ("sp.expect", "m2.spec_points[].expect"),
+    ("sp.verdict_point", "m2.spec_points[].verdict_point"),
+    ("sp.limiting_cause", "m2.spec_points[].limiting_cause"),
+    ("sp.eo_f3db_ghz", "m2.spec_points[].eo_f3db_ghz"),
+    ("sp.nyquist_ghz", "m2.spec_points[].nyquist_ghz"),
+    ("sp.bandwidth_headroom_ghz", "m2.spec_points[].bandwidth_headroom_ghz"),
+    ("sp.retimed_margin_db", "m2.spec_points[].retimed_margin_db"),
+    ("sp.lpo_margin_db", "m2.spec_points[].lpo_margin_db"),
+    ("sp.lpo_penalty_db", "m2.spec_points[].lpo_penalty_db"),
+    ("sp.required_snr_retimed_db", "m2.spec_points[].required_snr_retimed_db"),
+    ("sp.required_snr_lpo_db", "m2.spec_points[].required_snr_lpo_db"),
+]
+M2_GDS_PATHS = [  # `m2g` 为 m2.g_oi2
+    ("m2g.n_devices", "m2.g_oi2.n_devices"),
+    ("m2g.n_nets", "m2.g_oi2.n_nets"),
+    ("m2g.gds_bytes", "m2.g_oi2.gds_bytes"),
+    ("m2g.gds_elements", "m2.g_oi2.gds_elements"),
+    ("m2g.drc_pass", "m2.g_oi2.drc_pass"),
+    ("m2g.lvs_verdict", "m2.g_oi2.lvs_verdict"),
+    ("m2g.lvs_n_violations", "m2.g_oi2.lvs_n_violations"),
+    ("m2g.footprint_um2", "m2.g_oi2.footprint_um2"),
+    ("m2g.ring_R_um", "m2.g_oi2.ring_R_um"),
+    ("m2g.fiber_off_chip", "m2.g_oi2.fiber_off_chip"),
+    ("m2g.layout_discipline_ok", "m2.g_oi2.layout_discipline_ok"),
+]
+M2_FIX_PATHS = [  # `fx` 为 m2.platform_fixes_m2 元素（与 M1 同名局部变量）
+    ("fx.title", "m2.platform_fixes_m2[].title"),
+    ("fx.detail", "m2.platform_fixes_m2[].detail"),
+]
+
 ALL_PATHS = (ROOT_PATHS + REQUESTED_PATHS + CHANNEL_PATHS + MILESTONE_PATHS
              + GAP_PATHS + M1_TOP_PATHS + M1_DRIVER_PATHS + M1_RING_PATHS
-             + M1_SPEC_PATHS + M1_FIX_PATHS)
+             + M1_SPEC_PATHS + M1_FIX_PATHS
+             + M2_TOP_PATHS + M2_FEC_PATHS + M2_FEC_MODE_PATHS + M2_DRIVER_PATHS
+             + M2_RING_PATHS + M2_SPEC_PATHS + M2_GDS_PATHS + M2_FIX_PATHS)
 
 # 🔴 防假绿：纯子串匹配下 `rp.m` 会被 `rp.min_fsr_nm` / `rp.max_il_drop_db` 前缀命中
 # ⇒ 「把 `rp.m` 从渲染里删掉」时 ③ 仍绿（门禁看不见的盲区）。对**是其它字面量前缀**
@@ -220,6 +325,12 @@ def _leaf_keys(paths, prefix: str) -> set:
     return {p[1].rsplit(".", 1)[1] for p in paths if p[1].startswith(prefix)}
 
 
+def _tops_of(paths, root: str) -> set:
+    """由 `root.a.b` 路径族派生 root 顶层的被引用键名（`_top_keys` 的通用版）。"""
+    return {p[1][len(root) + 1:].split(".", 1)[0] for p in paths
+            if p[1].startswith(root + ".")}
+
+
 def _m1_reverse_flags(card: dict) -> dict:
     """M1 反向完备五格：顶层 / ring_plan / driver / spec_points[] / m0_fixes[]。
 
@@ -238,9 +349,40 @@ def _m1_reverse_flags(card: dict) -> dict:
             "spec_points": ok_sp, "m0_fixes": ok_fx}
 
 
+def _m2_reverse_flags(card: dict) -> dict:
+    """M2 反向完备十格：顶层 / fec / fec.concatenated / fec.rs_only / fec.form_map /
+    ring_plan / driver / spec_points[] / g_oi2 / platform_fixes_m2[]。
+
+    返回 {格名: bool}；True = 「后端每个展示字段都被前端引用」。
+    🔴 `m2.honest_note_m2` 也在 M2_TOP_PATHS 内（结论段引用它），故参与顶层判据。
+    """
+    m2 = card.get("m2") or {}
+    fec = m2.get("fec") or {}
+    return {
+        "top": set(m2.keys()) <= _tops_of(M2_TOP_PATHS, "m2"),
+        "fec": set(fec.keys()) <= _tops_of(M2_FEC_PATHS, "m2.fec"),
+        "fec_concat": set((fec.get("concatenated") or {}).keys())
+                      <= _leaf_keys(M2_FEC_MODE_PATHS, "m2.fec.concatenated."),
+        "fec_rs": set((fec.get("rs_only") or {}).keys())
+                  <= _leaf_keys(M2_FEC_MODE_PATHS, "m2.fec.rs_only."),
+        "form_map": set((fec.get("form_map") or {}).keys())
+                    <= _leaf_keys(M2_FEC_MODE_PATHS, "m2.fec.form_map."),
+        "ring_plan": set((m2.get("ring_plan") or {}).keys())
+                     <= _leaf_keys(M2_RING_PATHS, "m2.ring_plan."),
+        "driver": set((m2.get("driver") or {}).keys())
+                  <= _leaf_keys(M2_DRIVER_PATHS, "m2.driver."),
+        "spec_points": set(((m2.get("spec_points") or [{}])[0]).keys())
+                       <= _leaf_keys(M2_SPEC_PATHS, "m2.spec_points[]."),
+        "g_oi2": set((m2.get("g_oi2") or {}).keys())
+                 <= _leaf_keys(M2_GDS_PATHS, "m2.g_oi2."),
+        "platform_fixes": set(((m2.get("platform_fixes_m2") or [{}])[0]).keys())
+                          <= _leaf_keys(M2_FIX_PATHS, "m2.platform_fixes_m2[]."),
+    }
+
+
 def main() -> int:
     print("=" * 74)
-    print("WebUI 光联接模块 M0+M1 案例卡 前端取值路径 + onclick 门禁（血案 #18/#19 机器化）")
+    print("WebUI 光联接模块 M0+M1+M2 案例卡 前端取值路径 + onclick 门禁（血案 #18/#19 机器化）")
     print("=" * 74)
 
     html = open(INDEX, encoding="utf-8").read()
@@ -262,6 +404,10 @@ def main() -> int:
     # M1 段必须真的写进了 renderOi（防「后端加了 M1、前端还是 M0 壳」）
     check("② renderOi 内出现 M1 块引用（d.m1 + §⑥⑦⑧⑨ 表头）",
           "d.m1" in rsrc and "⑥ M1 信道规划" in rsrc and "⑦ M1 800G 设计点" in rsrc)
+    # M2 段必须真的写进了 renderOi（防「后端加了 M2、前端还是 M0/M1 壳」）
+    check("② renderOi 内出现 M2 块引用（d.m2 + ⑩⑪⑮ 表头）",
+          "d.m2" in rsrc and "⑩ M2 规模 × 形态" in rsrc
+          and "⑪ M2 带宽墙" in rsrc and "⑮ G-OI2 收发器真 GDS" in rsrc)
 
     # ── 3. 路径存在性（前端引用 ∧ 后端 JSON 真有值）─────────────────────
     _all_lits = [p[0] for p in ALL_PATHS]
@@ -316,6 +462,49 @@ def main() -> int:
           % (sorted((card["m1"]["m0_fixes"][0]).keys()),
              sorted(_leaf_keys(M1_FIX_PATHS, "m1.m0_fixes[]."))))
 
+    # ── 4b. M2（1.6T）反向完备十格 ─────────────────────────────────────
+    _m2 = card.get("m2") or {}
+    _fec = _m2.get("fec") or {}
+    rf2 = _m2_reverse_flags(card)
+    check("④e-6 反向完备：m2 顶层每个展示字段都被前端引用",
+          rf2["top"], "后端=%s 前端引用=%s"
+          % (sorted(_m2.keys()), sorted(_tops_of(M2_TOP_PATHS, "m2"))))
+    check("④e-7 反向完备：m2.fec 每个字段都被前端引用",
+          rf2["fec"], "后端=%s 前端引用=%s"
+          % (sorted(_fec.keys()), sorted(_tops_of(M2_FEC_PATHS, "m2.fec"))))
+    check("④e-8 反向完备：m2.fec.concatenated 每个字段都被前端引用",
+          rf2["fec_concat"], "后端=%s 前端引用=%s"
+          % (sorted((_fec.get("concatenated") or {}).keys()),
+             sorted(_leaf_keys(M2_FEC_MODE_PATHS, "m2.fec.concatenated."))))
+    check("④e-9 反向完备：m2.fec.rs_only 每个字段都被前端引用",
+          rf2["fec_rs"], "后端=%s 前端引用=%s"
+          % (sorted((_fec.get("rs_only") or {}).keys()),
+             sorted(_leaf_keys(M2_FEC_MODE_PATHS, "m2.fec.rs_only."))))
+    check("④e-10 反向完备：m2.fec.form_map 每个字段都被前端引用",
+          rf2["form_map"], "后端=%s 前端引用=%s"
+          % (sorted((_fec.get("form_map") or {}).keys()),
+             sorted(_leaf_keys(M2_FEC_MODE_PATHS, "m2.fec.form_map."))))
+    check("④e-11 反向完备：m2.ring_plan 每个字段都被前端引用",
+          rf2["ring_plan"], "后端=%s 前端引用=%s"
+          % (sorted((_m2.get("ring_plan") or {}).keys()),
+             sorted(_leaf_keys(M2_RING_PATHS, "m2.ring_plan."))))
+    check("④e-12 反向完备：m2.driver 每个字段都被前端引用",
+          rf2["driver"], "后端=%s 前端引用=%s"
+          % (sorted((_m2.get("driver") or {}).keys()),
+             sorted(_leaf_keys(M2_DRIVER_PATHS, "m2.driver."))))
+    check("④e-13 反向完备：m2.spec_points[] 每个字段都被前端引用",
+          rf2["spec_points"], "后端=%s 前端引用=%s"
+          % (sorted(((_m2.get("spec_points") or [{}])[0]).keys()),
+             sorted(_leaf_keys(M2_SPEC_PATHS, "m2.spec_points[]."))))
+    check("④e-14 反向完备：m2.g_oi2 每个字段都被前端引用",
+          rf2["g_oi2"], "后端=%s 前端引用=%s"
+          % (sorted((_m2.get("g_oi2") or {}).keys()),
+             sorted(_leaf_keys(M2_GDS_PATHS, "m2.g_oi2."))))
+    check("④e-15 反向完备：m2.platform_fixes_m2[] 每个字段都被前端引用",
+          rf2["platform_fixes"], "后端=%s 前端引用=%s"
+          % (sorted(((_m2.get("platform_fixes_m2") or [{}])[0]).keys()),
+             sorted(_leaf_keys(M2_FIX_PATHS, "m2.platform_fixes_m2[]."))))
+
     # ── 5. 突变探针（先证能变红）───────────────────────────────────────
     import copy
     # 探针①：抹掉 case_card 的某 channel 字段 ⇒ ③ 的路径判据必红
@@ -350,8 +539,28 @@ def main() -> int:
     check("🔴 探针⑤: m1 顶层多一个新字段 ⇒ ④e-1 反向完备必红", probe5 is False)
 
     # 探针 R：还原探针（未被污染的原卡必须全绿）——防「探针把卡改脏后判据仍绿」假象
-    check("🔴 探针R: 未被污染的 case_card 在 M1 反向完备上仍全绿（探针无副作用）",
-          all(_m1_reverse_flags(card).values()))
+    check("🔴 探针R: 未被污染的 case_card 在 M1+M2 反向完备上仍全绿（探针无副作用）",
+          all(_m1_reverse_flags(card).values())
+          and all(_m2_reverse_flags(card).values()))
+
+    # 探针⑦：往 m2 顶层塞一个新字段 ⇒ ④e-6 顶层反向完备必红
+    card_mut7 = copy.deepcopy(card)
+    card_mut7["m2"]["brand_new_probe_top2"] = 1
+    probe7 = _m2_reverse_flags(card_mut7)["top"]
+    check("🔴 探针⑦: m2 顶层多一个新字段 ⇒ ④e-6 反向完备必红", probe7 is False)
+
+    # 探针⑧：抹掉 m2.spec_points[0] 的 verdict_point ⇒ ③ 的 M2 路径判据必红
+    card_mut8 = copy.deepcopy(card)
+    del card_mut8["m2"]["spec_points"][0]["verdict_point"]
+    probe8 = json_path_exists(card_mut8, "m2.spec_points[].verdict_point")
+    check("🔴 探针⑧: 抹掉 m2.spec_points[].verdict_point ⇒ ③ 路径判据必红",
+          probe8 is False)
+
+    # 探针⑨：往 m2.fec 塞一个新字段 ⇒ ④e-7 fec 反向完备必红
+    card_mut9 = copy.deepcopy(card)
+    card_mut9["m2"]["fec"]["brand_new_probe_fec"] = 1
+    probe9 = _m2_reverse_flags(card_mut9)["fec"]
+    check("🔴 探针⑨: m2.fec 多一个新字段 ⇒ ④e-7 反向完备必红", probe9 is False)
 
     # 探针⑥：证明「边界正则」不是摆设——一段**只**提到 rp.min_/rp.max_ 的源码
     #        在纯子串口径下会假绿，在边界口径下必须为 False（先证能变红）。

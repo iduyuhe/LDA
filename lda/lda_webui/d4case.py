@@ -41,6 +41,13 @@ IDENTITY = {
             "Clements 网格（每 λ 算各自酉） + 输入/输出侧各 K 个微环 add-drop 解/复用 + "
             "GratingCoupler + MMI 1×N/N×1 扇入扇出 → 单一 LinkModel + 单次主权 DRC/LVS"
             "（K=4×N=4 实测 7482B·双闸 ACCEPT）；属「光子互联」类芯片（波分复用光 fabric）",
+    "oi_transceiver": "光联接收发器 PIC（`lda_layout/oi_transceiver_pnr` · M2 征程 G-OI2）："
+            "Tx = N 个 MziModulator 阶梯阵列 + MMIC N×1 合波 + GratingCoupler 出片；"
+            "Rx = GratingCoupler 入片 + N 个 RingAddDrop 级联 add-drop 总线 + N 个 "
+            "Photodetector → 单一 LinkModel + 单次主权 DRC/LVS（N=8 实测 3N+3 器件 / "
+            "3N+1 网 · 双闸 ACCEPT）；布局用「源 x ⟂ 目标 y 反序」L 型走线 ⇒ 结构性零 "
+            "cross_short。**fiber span 为片外互连、不落芯片版图**；属「光联接」类芯片，"
+            "非计算核（不报能效）",
     "photon": "光子侧（W2 已闭合，本卡仅作对照基线）：单器件设计包 → 芯片级 GDS + 双闸 → 下载",
     "route_note": "本卡只读消费 `lda_l2/d4_domains.py`（编排）+ `ecore/layout` + "
                   "`lda_qeda/sc_array` + `lda_layout/mesh_pnr`（几何/DRC/LVS 真实现），"

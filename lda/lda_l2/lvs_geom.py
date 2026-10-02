@@ -659,12 +659,14 @@ PARAM_TAXONOMY: Dict[str, Dict[str, Tuple[str, str]]] = {
 #: `"modulator"/"photodetector"` 属**电域 SPICE 器件**，不是光子器件类）。
 #: ⚠️ 这是「**具名构造路径为零**」的机器事实，**不等于**「永不被实例化」
 #: （kind 为变量、经 `lda_ir.photon` 工厂 + `ir.add` 的路径不在静态扫描范围）。
-#: 意义：对这 6 类，「几何回提覆盖率」在现有流水线里**没有分母** ⇒ 其
+#: 意义：对表中各类，「几何回提覆盖率」在现有流水线里**没有分母** ⇒ 其
 #: 几何/测量器能力由 `run_lvs_geom_smoke` 的规范声明用例演示，而不是被实战使用。
 #: 由 `run_lvs_geom_smoke` ⑲ 用源码扫描**双向**复核（一旦接线即红 ⇒ 逼更新本表）。
+#: v0.9.178：`MziModulator`/`Photodetector` 已被光联接模块征程 **M0**
+#: （`lda_l2/oi_module.py`）以字面量 kind 具名构造 ⇒ 「有分母」⇒ 移出本表
+#: （判据 ⑲ 双向扫描当场抓到，符合「接线即红」的设计意图）。
 NO_NAMED_ADD_DEVICE: Tuple[str, ...] = (
-    "BraggMirror", "DirectionalCoupler", "MziModulator", "Photodetector",
-    "Splitter", "SymmetricYBranch",
+    "BraggMirror", "DirectionalCoupler", "Splitter", "SymmetricYBranch",
 )
 
 #: 几何**不可生成**的 kind —— v0.9.141 起为空元组（14 类全部有版图几何）。

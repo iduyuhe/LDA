@@ -1,4 +1,46 @@
 # Changelog
+## v0.9.178（2026-10-02 · **新征程 M2：光联接模块 1.6T（8×200G PAM4）+ LPO「模块内无 DSP」形态 + G-OI2 收发器专用真 GDS**：新增 `oi_m2.py`（69 判据 + 7 探针）+ `oi_transceiver_pnr.py`（40 判据 + 8 探针）· 吃狗粮抓出「布局纪律三条隐含前提」· 账本 **476 不变（零锚改动）** · CI core **267 → 269** · 端点 **146 不变**）
+
+### 收什么
+把光联接模块从 M1 的 800G 推到 **1.6T = 8×200G PAM4**（每通道 **106.25 GBd** PAM4 · 线速率 212.5 Gb/s · 奈奎斯特 26.56 → **53.125 GHz**），并补上此前完全空白的两个维度：**形态维**（LPO）与**物理落地维**（G-OI2 真 GDS）。
+
+**① 规模 + 形态（LPO = 设计约束，不是免责声明）** — 新增 `lda_l2/oi_m2.py`
+- 200G/lane 的 FEC **不是** 100G/lane 的 FEC：802.3dj 用**级联**（外 KP4 `RS(544,514)` ⊗ 内 `Hamming/BCH(128,120)` + 卷积交织）⇒ pre-FEC 门限 **4.8e-3**；RS-only 模式仍 **2.4e-4**（门限比 **20×**）。
+- 级联内码在**模块 DSP** 内实现 ⇒ **LPO（模块内无 DSP）拿不到** ⇒ 只能走 RS-only ⇒ 所需 SNR 上升 **2.744 dB**（= 内码增益）。实测 LPO 裕量缩水 **3.169 dB** = 内码增益 **+ ISI 口径差 0.425 dB**（恒等式由 C10d 逐位锁死，Δ<1e-9）。
+- **规格锚 A1–A5**（外部对标四层之 ④「标准 = 限值」逐条核对）：A1 符号率 **106.25 GBd** ∈[106.0,106.5] · A2 RS-only **2.4e-4** ∈[2.0e-4,2.8e-4] · A3 级联 **4.8e-3** ∈[4.5e-3,5.2e-3] · A4 内码增益 **2.744 dB** ∈[2.4,3.1] · A5 聚合 8×200G == 1.6 Tb/s。四源独立一致（Signal Integrity Journal DesignCon 2024 / Netnod / Vitex / Ethernet Alliance）。
+- **带宽墙反例（吃狗粮证据）**：EO f₋₃dB 200G 档 **56.44 GHz**（余量 **+3.31**）vs M1 的 100G 档 **32.93 GHz**（缺 **−20.19**）⇒ 旧调制器/TIA 参数在 200G/lane 下**不再够用**，如实判 `bw_limited`。
+- **接收噪声闭式上界**（与 M1 的「SNR 假设」**方法学独立**交叉核对）：`i_n² = 4kT/R_f + 2q·I_avg` ⇒ SNR 上界 **39.13 dB** > 设计假设 28 dB ⇒ **噪声不是瓶颈**（带宽/ISI 才是）。🔴 明写为上界（不含 RIN/反射/串扰/老化 ⇒ 不得当灵敏度规格）。
+- 设计点 3 成员 + 声明式 `expect`：`O_2km` pass（retimed **+4.13 dB** / LPO **+0.96 dB**）· `C_2km` **disp_limited**（同点 M1 曾是 pass ⇒ 量化「速率翻倍 ⇒ 色散代价 ~4×」）· `O_2km_legacy` **bw_limited**。分因由「**关掉色散重算**」独立判定（防把色散受限误归因成带宽受限）。
+
+**② 物理落地（G-OI2 闭合）** — 新增 `lda_layout/oi_transceiver_pnr.py`
+- 拓扑：Tx = N 个 `MziModulator` 阶梯阵列 → `MMIC` N×1 合波 → `GratingCoupler` 出片；Rx = `GratingCoupler` 入片 → N 个 `RingAddDrop` 级联 → N 个 `Photodetector`。**fiber span 为片外互连、不落版图**（端口不属任何内部 net，由 T7 断言）。
+- 8×200G：**27 器件 / 25 网 / 158 GDS 元素 / 17434 B** · bbox 822×596 µm · 环 R **6.4086 µm**（m=129 · n_g=4.2 · λ=1311 nm · FSR 10.163 nm，与 D-42/D-57 同源物理锚）。**DRC 全绿 + LVS ACCEPT（0 违规）**。
+- 接入 D4 新域 `oi_transceiver`（**5 域**）：`DOMAIN_PARAM_LIMITS["n_lanes"]=(1,16)` 硬限幅、`_build_oi_transceiver` 形状归一化、专属诚实注记、`gds_filename` 可辨。
+
+### 🔴 吃狗粮最大收获：布局纪律的**三条隐含前提**（逐规模实测才暴露）
+「源 x 次序 ⟂ 目标 y 次序（**反序**）+ 目标 x 全同」的 L 型走线无交叉证明，成立需三条**此前无人写下的**前提：
+1. 目标 x **全同**且 **> 源 x 上界**（否则水平段反向，相交条件不再互否）；
+2. 目标 y 次序与源 x 次序**相反**（Tx 必须 `in{n−i}`；Rx det y 必须递增）；
+3. 目标 y 与源 y 线**同侧**（否则竖直段 y 区间跨越源线 ⇒ 必与邻段相交）。
+
+首版把 **MMIC x（640）/ detector x（270）/ detector y0（−330）** 三个坐标写成常量 ⇒ **n=8（默认档）全绿，n=12 才崩**（三条前提分别被破坏，LVS 报 **5 / 3 / 10** 处 `short_cross`）。修法=全部改**派生式**（`_mmic_x_um` / `_rx_det_x_um` / `_rx_det_y0_um`，随 n 与端口跨度自适应）+ 新增常驻判据 **`layout_discipline_ok`**（从 `link`/`placement` 读 `port_anchor` 真实锚点**反推**三条前提，**不写常量 True**），并保留 **V1/V2 反例**（Tx 同序 ⇒ **36** 处交叉 · Rx det y 递减 ⇒ **28** 处交叉）作「反序」**必要性**实证。门禁 **T9 逐规模 n∈{1,2,4,8,12} 双闸**正是这条护栏的守门人。
+
+### 平台修复（本版 3 处）
+1. **`NO_NAMED_ADD_DEVICE` 登记表漂移**：M0 的 `oi_module.py` 已具名构造 `MziModulator` / `Photodetector` ⇒ 登记表里的「6 类」实际只剩 4 类，`run_lvs_geom_smoke` 判据 ⑲ 亮红；已同步（回归 31 PASS / 0 FAIL）。
+2. **布局纪律三条隐含前提**（同上，M2 主动补齐）。
+3. **形态↔FEC 映射缺单一真源**：新增 `mode_for_form_factor`（retimed→级联 / lpo→RS-only），由门禁 C6 锁死；C8 的 expect 对照也因此**不能**单独当探针靶（LPO 收紧被全抹平后「lpo == retimed」恰好满足 expect ⇒ 假绿），P1 探针改打 **C6 + C10b**。
+
+### 门禁
+- **新增 `run_oi_m2_smoke.py`**：A1–A5 规格锚（含**窗口判据** + 同源自洽 + **20× 门限比反向判据**）+ C6/C7a/C7b/C8/C9a-c/C10a-d/C11a-b/C12a-b/C13a-b/C14a-b/C15a-b 共 **69 判据** + **7 突变探针** + 还原重跑。
+- **新增 `run_oi_transceiver_pnr_smoke.py`**：真 GDS + 平台解析器读回 + 双闸 + 拓扑自洽（3N+3 / 3N+1）+ **端口同源（无序最近匹配，非 sorted-zip）** + **布局三前提两条独立通道**（T5b/T5c 读 builder 标量 ⟂ T5d 读 `port_anchor` 反推）+ 片外 fiber 不落版图 + 环半径闭式同源 + **逐规模双闸** + 反例 V1–V6 + 探针 P1–P8（含 **§6·P8 拓扑退化双反例**：去掉探测器阵列 ⇒ 网表一致性必红；拿酉网格「计算核」顶替 ⇒ **名字空间不相容**立即异常 + 拓扑计数 14/18 ≠ 27/25）共 **40 判据**。
+- `run_d4_domain_smoke`（D4 扩面）**11 突变探针** ALL GREEN；`run_webui_oi_render_path_smoke` **99 → 191 判据**（新增 **M2 十格反向完备** ④e-6…④e-15 + 探针⑦⑧⑨ —— 防「后端加了 M2、前端不渲染」的静默盲区）。
+- **CI core 267 → 269**（两门禁入 `CORE_SMOKES` + `_BUILTIN_TIMEOUT_OVERRIDE`(120s) + 超时基线并入刷新 269 行；`run_timeout_budget_ratchet_smoke` 21 PASS 最低 **3.015×** · `run_ci_coverage_gate_smoke` 8 PASS）。
+- 案例卡 `lda_webui/oi_case.py` 升 **M0/M1/M2**（`CASE_ID` + `m2` 块 + 自检 M2 段 §7 项 + **G-OI2 缺口闭合** ⇒ gaps 3/5 + 新增 G-OI5「M2b 多通道均衡/热调/串扰/良率/封装容差」诚实登记）+ 前端 `sec-oi` 新增 ⑩–⑯ 六段 + 结论段 M2 段。
+
+### 同步
+- 三同步：`pyproject.toml` / `README.md` 顶行与 `## 当前账本` / `CONTRIBUTING.md` 顶块 ⇒ **v0.9.178** · CI core **269**。
+- 账本 **476 不变（零锚改动）** · 独立率 **95.59%** 持平 · 端点 **146 不变**（M2 未新增 API 路由，D4 域走既有 `/api/d4_demo`）。
+
 ## v0.9.177（2026-10-02 · **新征程 M1：光联接模块 800G（8×100G PAM4）频域/时域预算 + 吃狗粮补齐「梳齿规避信道规划」能力**：新增 `oi_m1.py` + 门禁 56 判据 + 6 探针 · 清偿 4 处平台缺陷 + 2 项历史欠账 · 账本 **476 不变（零锚改动）** · CI core **265 → 267** · 端点 **146 不变**）
 
 ### 收什么

@@ -57,13 +57,15 @@ __all__ = [
 ]
 
 # 交付域 → 支持参数键（门禁用反向完备判据扫这份表，防「新域静默进盲区」）
-D4_DOMAINS = ("ecore", "quantum_sc", "loqc", "photonic_interconnect")
+D4_DOMAINS = ("ecore", "quantum_sc", "loqc", "photonic_interconnect",
+              "oi_transceiver")
 
 DOMAIN_LABELS = {
     "ecore": "电子计算核（模拟 MVM 交叉阵列 · NMOS 1T 交叉点单元）",
     "quantum_sc": "超导 transmon 量子阵列（S3 · 单元 + 读出/控制几何）",
     "loqc": "光量子 LOQC 可编程 MZI 网格（Clements 矩形分解 · 光计算核）",
     "photonic_interconnect": "光子互联 WDM 网格（K 波长 × N×N Clements 网格 · 微环 add-drop 解/复用 · 真 GDS+DRC+LVS）",
+    "oi_transceiver": "光联接收发器 PIC（N×200G PAM4 · Tx 调制器阵列+MMIC 合波+GC / Rx GC+环解波+探测器阵列 · 真 GDS+DRC+LVS）",
 }
 
 HONEST_NOTES = (
@@ -85,6 +87,8 @@ DOMAIN_PARAM_LIMITS = {
     "quantum_sc": {"rows": (1, 8), "cols": (1, 8)},
     "loqc": {"n": (2, 16), "layout_mode": ("serpentine", "grid2d")},
     "photonic_interconnect": {"K": (2, 8), "N": (2, 8)},
+    # 收发器：通道数是唯一对外旋钮（版图规模线性增长 ⇒ 硬上限 16 封顶 OOM 面）
+    "oi_transceiver": {"n_lanes": (1, 16)},
 }
 
 # 逐域追加的诚实注记（与全局 HONEST_NOTES 拼接，逐域口径不同 ⇒ 不能只挂全局一份）
@@ -105,6 +109,20 @@ DOMAIN_EXTRA_HONEST = {
                              "非实测；⑤ 为**设计期版图**，未流片、未实测。WDM 网格是「光子互联」类"
                              "芯片（波分复用光 fabric），非计算核——其保真度继承 mesh_pnr 已证结论"
                              "（机器精度）。",
+    "oi_transceiver": "光联接收发器侧为 N×200G PAM4 收发器 PIC 真版图（复用 lda_layout."
+                      "oi_transceiver_pnr）：Tx = N 个 MziModulator 阶梯阵列 + MMIC N×1 合波 + "
+                      "GratingCoupler 出片；Rx = GratingCoupler 入片 + N 个 RingAddDrop 级联 "
+                      "add-drop 总线 + N 个 Photodetector。单一 LinkModel + 单次主权 DRC/LVS。"
+                      "布局纪律：Tx（y≥0）与 Rx（y<0）**y 区间不相交**；Tx/Rx 均用「源 x 次序 ⟂ "
+                      "目标 y 次序（反序）+ 目标 x 全同」L 型走线 ⇒ 交叉充要条件互为否定 ⇒ 结构性"
+                      "零 cross_short。诚实边界：① **fiber span 为片外互连、不落芯片版图**"
+                      "（Tx/Rx 由片外光纤连接，芯片只保证各自 GC 的耦合面）；② MMIC 多模区宽度由"
+                      "**端口跨度**派生，**未建模自成像长度 L_π∝W²/λ** ⇒ 宽多模区在真实 SOI 的"
+                      "可行性未验（M2 吃狗粮暴露的器件几何参数化短板）；③ 层规为公开工艺近似、"
+                      "DRC 为参数级近似；④ 器件为 L0/L1 解析/行为模型，参数为公开文献典型量级"
+                      "占位（**非 PDK**）；⑤ 为**设计期版图**，未流片、未实测；⑥ 不含电接口/"
+                      "驱动/TIA/热调/串扰/良率几何。收发器是「光联接」类芯片，**非计算核**——"
+                      "不报能效。",
 }
 
 
@@ -234,6 +252,42 @@ def _build_photonic_interconnect(params: Optional[Dict[str, Any]] = None) -> Dic
     }
 
 
+def _build_oi_transceiver(params: Optional[Dict[str, Any]] = None) -> Dict:
+    """光联接收发器域：N×200G PAM4 收发器 PIC 真版图 → GDS → DRC → LVS 签核
+    （只读消费 `lda_layout.oi_transceiver_pnr`）。
+
+    🔴 形状适配：`oi_transceiver_pnr` 与 `wdm_mesh_pnr` 同为**扁报告**
+    （`drc_pass` 布尔 / `lvs_verdict` 字符串 / `lvs_full` 嵌套 dict），与另三域的
+    `{drc: {verdict, violations}, lvs: {verdict, issues}}` 不同 ⇒ 在此归一化，
+    让 `_report_of`（双闸咬合唯一口）只认一种形状（与 `_build_loqc` 同纪律）。
+    """
+    from lda_layout.oi_transceiver_pnr import build_oi_transceiver_pnr
+
+    p = dict(params or {})
+    n_lanes = int(p.get("n_lanes", 8))
+    rep = build_oi_transceiver_pnr(n_lanes=n_lanes)
+
+    src_drc = rep.get("drc_results") or {}
+    drc = {
+        "verdict": "ACCEPT" if rep.get("drc_pass") else "REJECT",
+        "violations": [k for k, v in src_drc.items() if (v or {}).get("passed") is False],
+    }
+    src_lvs = rep.get("lvs_full") or {}
+    lvs = {
+        "verdict": str(rep.get("lvs_verdict") or src_lvs.get("verdict") or "REJECT"),
+        "violations": list(src_lvs.get("violations") or []),
+        "issues": list(src_lvs.get("violations") or []),
+    }
+    return {
+        "gds_bytes": rep.get("gds_bytes") or b"",
+        "n_elements": rep.get("gds_elements", 0),
+        "params": {"domain": "oi_transceiver", "n_lanes": n_lanes},
+        "drc": drc,
+        "lvs": lvs,
+        "extra_honest": DOMAIN_EXTRA_HONEST.get("oi_transceiver", ""),
+    }
+
+
 def _builder_for(domain: str):
     """交付域 → 构建函数。
 
@@ -249,6 +303,8 @@ def _builder_for(domain: str):
         return _build_loqc
     if domain == "photonic_interconnect":
         return _build_photonic_interconnect
+    if domain == "oi_transceiver":
+        return _build_oi_transceiver
     return None
 
 
@@ -374,6 +430,8 @@ def gds_filename(domain: str, params: Optional[Dict[str, Any]] = None) -> str:
                                        str(p.get("layout_mode", "serpentine")))
     if domain == "photonic_interconnect":
         return "wdm_mesh_%sx%s.gds" % (int(p.get("K", 4)), int(p.get("N", 4)))
+    if domain == "oi_transceiver":
+        return "oi_transceiver_%sx200G.gds" % int(p.get("n_lanes", 8))
     return "%s.gds" % domain
 
 

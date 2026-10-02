@@ -42,7 +42,8 @@ from lda_l2.ecore import layout as EL_LAYOUT
 from lda_webui import d4case as d4c
 
 # 🔴 门禁显式表（反向完备的锚：D4_DOMAINS 必须与本表逐位相等）
-EXPECTED_DOMAINS = ("ecore", "quantum_sc", "loqc", "photonic_interconnect")
+EXPECTED_DOMAINS = ("ecore", "quantum_sc", "loqc", "photonic_interconnect",
+                    "oi_transceiver")
 
 
 def main() -> int:
@@ -105,6 +106,17 @@ def main() -> int:
           and _l1["gds"]["sha256"] != _l3["gds"]["sha256"]
           and _l2["gds"]["sha256"] != _l3["gds"]["sha256"],
           "恒等 sha ⇒ 枚举参数被丢弃")
+    # ④d：oi_transceiver 的**通道数**必须真进构建链（同 ④c 的反向完备思路）——
+    # 若 `_build_oi_transceiver` 把 n_lanes 静默丢掉（恒建 8 通道），两个规模的
+    # 请求会产出同一份字节 ⇒ 交付「假货」还好看（最难看的假绿形态）。
+    _t1 = dm.build_domain("oi_transceiver")
+    _t2 = dm.build_domain("oi_transceiver", {"n_lanes": 4})
+    _t3 = dm.build_domain("oi_transceiver", {"n_lanes": 12})
+    check("④d oi_transceiver 换通道数 sha256 必须变化（反「n_lanes 被静默忽略」）",
+          _t1["gds"]["sha256"] != _t2["gds"]["sha256"]
+          and _t1["gds"]["sha256"] != _t3["gds"]["sha256"]
+          and _t2["gds"]["sha256"] != _t3["gds"]["sha256"],
+          "恒等 sha ⇒ 通道数被丢弃")
 
     # —— ⑤ 对外只给标量 ——
     rep = dm.deliver_report("quantum_sc")
@@ -129,6 +141,11 @@ def main() -> int:
     _oi_h = dm.deliver_report("photonic_interconnect").get("honest_notes", "")
     check("⑦c photonic_interconnect 专属诚实注记在场（WDM 网格 + 未流片未实测）",
           "WDM" in _oi_h and "未流片" in _oi_h and "未实测" in _oi_h, _oi_h[-120:])
+    # ⑦d：oi_transceiver 专属诚实注记必须带上（片外 fiber + MMIC 自成像未建模 +
+    #     「非计算核不报能效」——这三条是该域**独有**的口径，不能只靠全局一份兜底）
+    _tr_h = dm.deliver_report("oi_transceiver").get("honest_notes", "")
+    check("⑦d oi_transceiver 专属诚实注记在场（片外 fiber 不落版图 + MMIC 自成像未建模 + 非计算核）",
+          "片外" in _tr_h and "自成像" in _tr_h and "非计算核" in _tr_h, _tr_h[-140:])
 
     # —— ⑧ 下载字节面 ⇄ 标量面互证（G-D 收口本体）——
     for d in dm.D4_DOMAINS:
@@ -189,6 +206,18 @@ def main() -> int:
           and "grid2d" in str(_meta_ok.get("filename", ""))
           and _meta_ok.get("verdict") == "ACCEPT",
           str(_meta_ok)[:120])
+    # ⑩f：oi_transceiver 限幅（免登录端点 ⇒ 通道数必须封顶；合法值放行 + 附件名可辨）
+    _tb, _tm = dm.deliver_download("oi_transceiver", {"n_lanes": 99})
+    _ob, _om = dm.deliver_download("oi_transceiver", {"n_lanes": 4})
+    _xb, _xm = dm.deliver_download("oi_transceiver", {"lanes": 4})
+    check("⑩f oi_transceiver 限幅：越界/非登记键拒绝，合法值放行且附件名可辨",
+          _tb is None and _tm.get("ok") is False and bool(_tm.get("errors"))
+          and _xb is None and _xm.get("ok") is False
+          and bool(_ob) and _om.get("verdict") == "ACCEPT"
+          and _om.get("filename") == "oi_transceiver_4x200G.gds",
+          "越界=%s 非登记=%s 合法名=%s" % (str(_tm.get("errors"))[:60],
+                                          str(_xm.get("errors"))[:60],
+                                          _om.get("filename")))
 
     # —— ⑪ 未知域下载快失败 ——
     _gb, _gm = dm.deliver_download("ghost_domain")
@@ -375,12 +404,39 @@ def main() -> int:
     check("🔴 ⑰ 探针⑨: 层规短口径被改成『Foundry 真实标定』 ⇒ ⑬『自然文本侧』必红",
           _p_ok is False, "短口径已变但判据却绿 ⇒ ⑬ 咬的是同源相等，是假判据")
 
+    # 探针⑩：oi_transceiver 域 GDS 伪造为空字节 ⇒ ② 真-GDS 判据必红
+    # （与探针⑦/⑧ 同族，但**独立**验证新域「空字节会被抓住」，而非靠光子互联域顺带覆盖）
+    _orig_t = dm._build_oi_transceiver
+
+    def empty_trx(params=None):
+        raw = _orig_t(params)
+        raw["gds_bytes"] = b""
+        return raw
+
+    with mock.patch.object(dm, "_build_oi_transceiver", empty_trx):
+        p10t = dm.build_domain("oi_transceiver")
+    check("🔴 ⑱ 探针⑩: 收发器域 GDS 伪造为空字节 ⇒ ② 真-GDS 判据必红",
+          p10t["gds"]["n_bytes"] == 0 and p10t["gds"]["header_ok"] is False)
+
+    # 探针⑪：收发器的**通道数被静默丢弃**（恒建 8 通道）⇒ ④d 必红
+    # 与探针⑨（枚举被吞）同族但独立：证明 ④d 真能咬住「交付的仍是 ACCEPT 真 GDS、
+    # 只是永远默认规模」这类最难看假绿。
+    def drop_lanes(params=None):
+        return _orig_t({})                          # 🔴 故意丢掉 n_lanes
+
+    with mock.patch.object(dm, "_build_oi_transceiver", drop_lanes):
+        p11t = dm.build_domain("oi_transceiver", {"n_lanes": 4})
+    check("🔴 ⑲ 探针⑪: 收发器通道数被静默丢弃 ⇒ ④d『换规模 sha 必变』必红",
+          p11t["gds"]["n_bytes"] > 0 and p11t["verdict"] == "ACCEPT"
+          and p11t["gds"]["sha256"] == dm.build_domain("oi_transceiver")["gds"]["sha256"],
+          "n_lanes=4 却与默认同 sha ⇒ 通道数被吞")
+
     print()
     if fails:
         print(f"D4 扩面门禁: {len(fails)} FAIL :: {fails}")
         return 1
     print("D4 扩面门禁: ALL GREEN"
-          "（域完备 + 真 GDS + 双闸 + 双向确定性 + 下载互证 + 限幅 + 9 突变探针）")
+          "（域完备 + 真 GDS + 双闸 + 双向确定性 + 下载互证 + 限幅 + 11 突变探针）")
     return 0
 
 

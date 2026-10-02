@@ -1452,6 +1452,21 @@ CORE_SMOKES: List[str] = [
     #   模型）+ 逐设计点按声明 expect 断言 + 诚实披露键 + 5 突变探针 + 还原重跑。
     #   实测 ~4s ⇒ 入 `_BUILTIN_TIMEOUT_OVERRIDE`(120s) 留足余量。
     "run_oi_m1_smoke.py",
+    # 🔴 v0.9.178 · 光联接模块征程 **M2（1.6T = 8×200G PAM4）** 门禁：级联 FEC 与
+    #   RS-only 两套 pre-FEC 门限口径（802.3dj：4.8e-3 vs 2.4e-4）+ LPO「模块内无 DSP」
+    #   ⇒ 只能走 RS-only 的内码增益口径（2.744dB，实测 LPO 代价 3.169dB=增益+ISI 差）+
+    #   规格锚 A1–A5（含窗口判据 + 同源自洽 + 20× 门限比反向判据）+ 逐设计点按 expect
+    #   断言 + 分因（disp_limited/bw_limited 不同源）+ 手算复现接收噪声上界 39.13dB +
+    #   7 突变探针 + 还原重跑。实测 5.77s ⇒ 入 `_BUILTIN_TIMEOUT_OVERRIDE`(120s)。
+    "run_oi_m2_smoke.py",
+    # 🔴 v0.9.178 · **G-OI2 收发器真 GDS 门禁**（M2 新征程吃狗粮核心交付）：真 GDS +
+    #   平台解析器读回 + 双闸（DRC 逐器件 + LVS 零违规）+ 拓扑自洽（3N+3/3N+1）+
+    #   端口同源（无序最近匹配）+ **布局纪律三前提两条独立通道**（T5b/T5c 读 builder
+    #   标量 ⟂ T5d 走 `layout_discipline_ok` 读 port_anchor 反推）+ 片外 fiber 不落版图 +
+    #   环半径闭式同源 + **逐规模 n∈{1,2,4,8,12} 双闸**（首版三个硬编码坐标只在 n=12 崩）
+    #   + 反例 V1/V2（同序 ⇒ 36/28 处交叉，证明「反序」是必要条件）+ 6 突变探针 + 还原。
+    #   实测 0.63s（冷启 ~10s）⇒ 入 `_BUILTIN_TIMEOUT_OVERRIDE`(120s)。
+    "run_oi_transceiver_pnr_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2306,6 +2321,10 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_oi_m0_smoke.py": 120.0,
     # 光联接模块 M1 门禁：闭式 golden + 梳齿规避规划（m 扫描）+ 4 设计点 + C13 规格锚 + 6 探针，实测 ~4.0s
     "run_oi_m1_smoke.py": 120.0,
+    # 光联接模块 M2 门禁：级联/RS-only 门限口径 + 规格锚 A1–A5 + 5 设计点 + 7 探针 + 真版图接线，实测 5.77s
+    "run_oi_m2_smoke.py": 120.0,
+    # G-OI2 收发器真 GDS 门禁：逐规模 5 档双闸 + 布局纪律三前提两条通道 + 6 探针，实测 0.63s（冷启 ~10s）
+    "run_oi_transceiver_pnr_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

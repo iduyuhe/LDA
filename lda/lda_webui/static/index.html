@@ -5073,6 +5073,94 @@ function renderOi(d){
         return '· <b>'+fx.title+'</b> —— '+fx.detail;
       }).join('<br/>')+'</p>';
 
+  /* ── M2（1.6T）块：规模 × 形态（LPO 无 DSP）× 物理落地（G-OI2 真 GDS）（d.m2）── */
+  var m2=d.m2||{}, m2rp=m2.ring_plan||{}, m2dv=m2.driver||{}, m2g=m2.g_oi2||{};
+  var m2fec=m2.fec||{}, m2cf=m2fec.concatenated||{}, m2rs=m2fec.rs_only||{},
+      m2fm=m2fec.form_map||{};
+  // ⑩ M2 规模 × 形态
+  h+='<h3 style="margin:16px 0 4px">⑩ M2 规模 × 形态（1.6T · LPO「模块内无 DSP」）</h3>';
+  h+='<p>阶段：<b>'+m2.stage_label+'</b> · '+m2.n_lanes+' × '+m2.net_per_lane_gbps
+    +'G（'+m2.baud_gbd+' GBd PAM4 · 奈奎斯特 '+m2.nyquist_ghz+' GHz）· 聚合 <b>'
+    +m2.aggregate_gbps+' Gb/s</b> · 波长栅 '+(m2.channels_nm||[]).join('/')+' nm</p>';
+  h+=_qcTbl(['FEC 模式','pre-FEC 门限','需模块内 DSP','理想所需 SNR (dB)'],[
+    ['级联（外 KP4 ⊗ 内 BCH(128,120)）', m2cf.pre_fec_ber.toExponential(1),
+     m2cf.needs_module_dsp?'<b>是</b>':'否', m2cf.required_snr_ideal_db],
+    ['RS-only（KP4 单级 · LPO 唯一可用）', m2rs.pre_fec_ber.toExponential(1),
+     m2rs.needs_module_dsp?'是':'<b>否</b>', m2rs.required_snr_ideal_db]
+  ]);
+  h+='<p>门限比 <b>'+m2fec.ber_ratio+'×</b> · LPO 丢失的内码增益（= 所需 SNR 上升）<b>'
+    +m2fec.lpo_inner_code_gain_db+' dB</b> · 形态映射：retimed→'+m2fm.retimed
+    +' / lpo→'+m2fm.lpo+'（无 DSP ⇒ 只能 RS-only）</p>';
+  h+='<p style="color:#555">'+m2cf.label+'<br/>'+m2rs.label+'</p>';
+  // ⑪ M2 带宽墙（吃狗粮反例）
+  h+='<h3 style="margin:14px 0 4px">⑪ M2 带宽墙（200G 档够用 vs M1 100G 档不够）</h3>';
+  h+=_qcTbl(['工艺档','级联 EO −3dB (GHz)','奈奎斯特 (GHz)','带宽余量 (GHz)'],[
+    ['M2 200G 档', m2.eo_f3db_fast_ghz, m2.nyquist_ghz, m2.bandwidth_headroom_fast_ghz],
+    ['M1 100G 档（🔴 吃狗粮反例）', m2.eo_f3db_legacy_ghz, m2.nyquist_ghz,
+     '<b>'+m2.bandwidth_headroom_legacy_ghz+'</b>']
+  ]);
+  // ⑫ M2 设计点（逐形态裕量 + 分因）
+  h+='<h3 style="margin:14px 0 4px">⑫ M2 设计点（逐形态裕量 · 分因判定）</h3>';
+  h+=_qcTbl(['设计点','波段','波长 (nm)','距离 (km)','档','角色','预期','判定',
+             '判定成因','EO −3dB (GHz)','奈奎斯特 (GHz)','带宽余量 (GHz)',
+             '重定时裕量 (dB)','LPO 裕量 (dB)','LPO 代价 (dB)',
+             '所需 SNR 重定时/LPO (dB)'],
+    (m2.spec_points||[]).map(function(sp){
+      return [ sp.key, sp.band, sp.wl_nm, sp.reach_km, sp.process, sp.role,
+        sp.expect, sp.verdict_point, sp.limiting_cause, sp.eo_f3db_ghz,
+        sp.nyquist_ghz, sp.bandwidth_headroom_ghz,
+        (sp.retimed_margin_db!=null?sp.retimed_margin_db:'-'),
+        (sp.lpo_margin_db!=null?sp.lpo_margin_db:'<b>不可达</b>'),
+        (sp.lpo_penalty_db!=null?sp.lpo_penalty_db:'-'),
+        (sp.required_snr_retimed_db!=null?sp.required_snr_retimed_db:'-')+' / '
+        +(sp.required_snr_lpo_db!=null?sp.required_snr_lpo_db:'-') ];
+    }));
+  h+=_qcTbl(['链路量（免假设交叉核对）','值'],[
+    ['假设 SNR (dB)', m2.snr_assumed_db],
+    ['接收噪声闭式<b>上界</b> SNR (dB)（只含热+散粒+TIA 输入参考）', m2.tia_noise_snr_db]
+  ]);
+  // ⑬ M2 驱动-TIA（200G 档）
+  h+='<h3 style="margin:14px 0 4px">⑬ M2 驱动-TIA 协同（200G 档 · 闭式 ⟷ RK4）</h3>';
+  h+=_qcTbl(['协同量','值'],[
+    ['驱动 10–90% 上升 (UI)', m2dv.rise_ui],
+    ['t90 闭式 (ps)', m2dv.t90_closed_ps],
+    ['t90 RK4 (ps)', m2dv.t90_rk4_ps],
+    ['TIA 带宽 (GHz)', m2dv.tia_ghz],
+    ['TIA 带宽 / Nyquist', m2dv.tia_over_nyquist]
+  ]);
+  // ⑭ M2 环规划（O-band 栅）
+  h+='<h3 style="margin:14px 0 4px">⑭ M2 环规划（O-band 栅 · 梳齿规避）</h3>';
+  h+=_qcTbl(['规划量','值'],[
+    ['环区数 m', m2rp.m],
+    ['环半径 R (µm)', m2rp.R_um!=null?m2rp.R_um:'-'],
+    ['耦合间隙 gap (µm)', m2rp.gap_um!=null?m2rp.gap_um:'-'],
+    ['规划解 最坏邻道隔离 (dB)', m2rp.min_xt_db!=null?m2rp.min_xt_db:'-'],
+    ['最大 drop IL (dB)', m2rp.max_il_drop_db!=null?m2rp.max_il_drop_db:'-'],
+    ['R_min 处 FSR 上限 (nm)', m2rp.max_fsr_at_rmin_nm!=null?m2rp.max_fsr_at_rmin_nm:'-'],
+    ['旧判据「FSR&gt;信道跨度」会判死?',
+     m2rp.fsr_rule_rejects_span?'<b>是</b>（充分非必要）':'否'],
+    ['可行解数', m2rp.n_solutions]
+  ]);
+  // ⑮ M2 · G-OI2 收发器真 GDS（DRC/LVS 双闸）
+  h+='<h3 style="margin:14px 0 4px">⑮ G-OI2 收发器真 GDS（DRC/LVS 双闸签核 · 设计期）</h3>';
+  h+=_qcTbl(['版图量','值'],[
+    ['器件 / 网', m2g.n_devices+' / '+m2g.n_nets],
+    ['GDS 元素 / 字节', m2g.gds_elements+' / '+m2g.gds_bytes],
+    ['DRC 全绿', m2g.drc_pass?'<b>是</b>':'否'],
+    ['LVS 判决 / 违规数', m2g.lvs_verdict+' / '+m2g.lvs_n_violations],
+    ['版图面积 (µm²)', m2g.footprint_um2],
+    ['环半径 R (µm)', m2g.ring_R_um],
+    ['片外 fiber 不落版图', m2g.fiber_off_chip?'<b>是</b>':'否'],
+    ['布局纪律三前提（反序 ⇒ 结构性零交叉）',
+     m2g.layout_discipline_ok?'<b>满足</b>':'否']
+  ]);
+  // ⑯ M2 吃狗粮修复清单
+  h+='<h3 style="margin:14px 0 4px">⑯ M2 吃狗粮修复：平台短板清偿</h3>';
+  h+='<p>'+(m2.platform_fixes_m2||[]).map(function(fx){
+        return '· <b>'+fx.title+'</b> —— '+fx.detail;
+      }).join('<br/>')+'</p>';
+  h+='<p style="color:#555">'+m2.honest_note_m2+'</p>';
+
   $('oiBody').innerHTML=h;
   $('oiConclusion').innerHTML='<strong>结论：</strong>用 LDA 自家光链路设计验证链可把一款 WDM 收发器'
     +'从 2 通道 M0 基线一路推进到 <b>M1 800G（8×100G PAM4）频域/时域预算</b>：'
@@ -5085,7 +5173,18 @@ function renderOi(d){
     +'并顺带修复 4 处平台缺陷（星型网级联重复计数 · 环区数硬编码 · FSR 目标单位错 · KP4 门限口径差 100×）。'
     +'这正是「客户用前自己先用并检验、补齐短板」的落地。'
     +'<br/><strong>诚实边界：</strong>'+d.honest_note
-    +'<br/>'+m1.honest_note_m1;
+    +'<br/>'+m1.honest_note_m1
+    +'<br/><strong>M2（1.6T）：</strong>规模翻到 <b>'+m2.aggregate_gbps+' Gb/s</b>（'
+    +m2.n_lanes+' × '+m2.net_per_lane_gbps+'G PAM4），并把 <b>LPO「模块内无 DSP」</b>'
+    +'从免责声明变成设计约束：拿不到级联内码 ⇒ pre-FEC 门限由 '
+    +m2cf.pre_fec_ber.toExponential(1)+' 收紧回 '+m2rs.pre_fec_ber.toExponential(1)
+    +' ⇒ 所需 SNR 上升 <b>'+m2fec.lpo_inner_code_gain_db+' dB</b>；'
+    +'同链路换回 M1 的 100G 档器件（EO '+m2.eo_f3db_legacy_ghz+' GHz &lt; 奈奎斯特 '
+    +m2.nyquist_ghz+' GHz）即被带宽墙判死（余量 '+m2.bandwidth_headroom_legacy_ghz
+    +' GHz）。物理落地：<b>G-OI2 收发器专用真 GDS</b>（'+m2g.n_devices+' 器件 / '
+    +m2g.n_nets+' 网 · DRC='+(m2g.drc_pass?'全绿':'红')+' · LVS='+m2g.lvs_verdict
+    +' · 片外 fiber 不落版图 · 布局纪律三前提'+(m2g.layout_discipline_ok?'满足':'未满足')+'）'
+    +'<br/>'+m2.honest_note_m2;
   return false;
 }
 if($('runOi')) $('runOi').onclick = runOi;

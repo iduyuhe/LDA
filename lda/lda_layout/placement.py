@@ -140,6 +140,21 @@ def port_anchor(kind: str, port: str, params: dict) -> Tuple[float, float]:
         except Exception:
             out_x = 6.0
         return {"in": (-Li, 0.0), "out": (out_x, 0.0)}.get(port, (0.0, 0.0))
+    # ── v0.9.178（M2 · G-OI2）：收发器器件端口锚（此前 fallback=(0,0) ────────
+    #    ⇒ 收发器 P&R 的 in/out **双双落在器件原点** ⇒ 布线零长、LVS 静默错。
+    #    锚点与 `primitives.modulator_descs` / `photodetector_descs` **逐点一致**
+    #    （由判据 ⑳「端口锚必须落在版图 bbox 内」守护）。
+    if kind == "MziModulator":
+        # modulator_descs：双臂矩形 x∈[−arm_L/2, +arm_L/2]，上/下臂中心线 y=±arm_gap/2。
+        # 光通路取**上臂**（信号臂）中心线 ⇒ in/out 正落在臂矩形中心。
+        La = float(params.get("arm_L", 200.0))
+        ag = float(params.get("arm_gap", 4.0))
+        y_arm = ag / 2.0
+        return {"in": (-La / 2.0, y_arm), "out": (La / 2.0, y_arm)}.get(port, (0.0, 0.0))
+    if kind == "Photodetector":
+        # photodetector_descs：输入波导 x∈[−8,0]（y=0）→ Ge 吸收区 x∈[0,det_L]。
+        Ld = float(params.get("det_L", params.get("L", 20.0)))
+        return {"in": (-8.0, 0.0), "out": (Ld, 0.0)}.get(port, (0.0, 0.0))
     return (0.0, 0.0)
 
 
@@ -166,6 +181,19 @@ def device_bbox(kind: str, params: dict) -> Tuple[float, float]:
     if kind == "GratingCoupler":
         L = float(params.get("L", 10.0))
         return (max(L / 2.0, 5.0), 5.0)
+    # ── v0.9.178（M2 · G-OI2）：收发器器件 bbox（此前 fallback=(5,5)，远小于
+    #    调制器 arm_L 的 x 跨度 ⇒ 自动摆放会重叠）。几何量取自同名 descs。
+    if kind == "MziModulator":
+        La = float(params.get("arm_L", 200.0))
+        ag = float(params.get("arm_gap", 4.0))
+        w = float(params.get("width", 0.5))
+        eg = float(params.get("elec_gap", 1.0))
+        ew = float(params.get("elec_w", 3.0))
+        return (La / 2.0, ag / 2.0 + w / 2.0 + eg + ew)
+    if kind == "Photodetector":
+        Ld = float(params.get("det_L", params.get("L", 20.0)))
+        Wd = float(params.get("det_w", params.get("W", 5.0)))
+        return (max(8.0, Ld) / 2.0 + 4.0, max(wg_w, Wd) / 2.0)
     return (5.0, 5.0)
 
 

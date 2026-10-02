@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""LDA WebUI · 光联接模块案例卡（M0 双通道基线 + M1 800G 预算 · 只读案例）。
+"""LDA WebUI · 光联接模块案例卡（M0 双通道基线 + M1 800G + M2 1.6T/LPO/真 GDS · 只读案例）。
 
 ============================================================================
 A 档接入（对齐 qchip/schip/pchip/ecore/accel/d4 案例卡体例）
@@ -10,24 +10,29 @@ A 档接入（对齐 qchip/schip/pchip/ecore/accel/d4 案例卡体例）
   · **M1**：在其上补 **频域（级联 EO S21 / −3dB 带宽）** 与 **时域（PAM4 三眼 / Q /
     链路预算级 BER / 光纤色散 / 驱动-TIA 协同）**，并给出**梳齿规避信道规划**
     （8 通道隔离 −0.85dB → 39.5dB 的根因与解）。
+  · **M2**：规模翻到 **1.6T（8×200G PAM4）** + **LPO「模块内无 DSP」形态**（设计约束，
+    非免责声明：FEC 口径由级联 4.8e-3 收紧回 RS-only 2.4e-4 ⇒ 所需 SNR 上升 2.744dB）
+    + **G-OI2 收发器专用真 GDS 版图**（Tx 调制器阵列 + MMIC 合波 + GC / GC + 环解波 +
+    探测器阵列，单次主权 DRC/LVS 双闸）。
 
-🔴 只读与缓存纪律：结果为**确定性现算**（纯闭式 + 级联引擎 + IFFT 时域 + 几何搜索，
-零重计算 / 不跑 P&R / 不跑 FDTD），首次调用后按配置键**模块级缓存**（同配置秒回）。
+🔴 只读与缓存纪律：结果为**确定性现算**（纯闭式 + 级联引擎 + IFFT 时域 + 几何搜索 +
+收发器真 GDS，零重计算 / 不跑 P&R / 不跑 FDTD），首次调用后按配置键**模块级缓存**（同配置秒回）。
 不进 HEAVY_POST_PATHS、不要求登录（与 qchip/schip/pchip/ecore/accel/d4 同属
 「公开只读验货」类）。
 
 🔴 不伪装实测：`verdict` 恒为 `DESIGN_BUDGET`（非 ACCEPT/PASS）——链路/带宽预算是
-设计期行为验证，非流片后实测；**不报 TOPS/TOPS-W/fJ/op**。
+设计期行为验证，非流片后实测；**不报 TOPS/TOPS-W/fJ/op/pJ/bit**。
 
-🔴 诚实边界：M0/M1 均为**设计预算层**（器件用 L0 级解析模型 + A 档闭式/行为级）；
-M1 的 BER 是**光通道预算级**闭式估计（不含 SerDes/DSP/FEC/均衡/CDR，与
+🔴 诚实边界：M0/M1/M2 均为**设计预算层**（器件用 L0 级解析模型 + A 档闭式/行为级）；
+M1/M2 的 BER 是**光通道预算级**闭式估计（不含 SerDes/DSP/FEC/均衡/CDR，与
 `eic_behavioral.EIC_DISCLOSURE` 的 EIC 电路级排除**显式分层**），接受 SNR 为
-**设计输入假设**；真实版图 GDS 由 D4 域 `photonic_interconnect`（复用
-`wdm_mesh_pnr`）单独承载 —— 本卡只报预算。
+**设计输入假设**（M2 另给 TIA 噪声闭式**上界**做方法学独立交叉核对）；真实版图 GDS 由
+D4 域 `photonic_interconnect` 与 `oi_transceiver`（M2 · G-OI2）单独承载 —— 本卡只报预算 + 版图签核。
 """
 from __future__ import annotations
 
-CASE_ID = "OI-M0/M1 · 光联接模块（M0 双通道基线 + M1 800G 频域/时域预算）"
+CASE_ID = ("OI-M0/M1/M2 · 光联接模块（M0 双通道基线 + M1 800G 频域/时域 + "
+           "M2 1.6T·LPO·G-OI2 真 GDS）")
 
 _CACHE: dict = {}
 
@@ -139,6 +144,143 @@ def _m1_block() -> dict:
     }
 
 
+def _m2_block() -> dict:
+    """M2（1.6T）现算块：FEC 双口径 / LPO 代价 / 带宽墙 / 3 设计点 / 接收噪声 / G-OI2 真 GDS。
+
+    🔴 全部由 `lda_l2.oi_m2` + `lda_layout.oi_transceiver_pnr` **确定性现算**；关键标量与
+    `run_oi_m2_smoke.py` / `run_oi_transceiver_pnr_smoke.py` 两道门禁的断言同源。
+    """
+    from lda_l2 import oi_m2 as M2
+
+    pts = M2.m2_budget_all_points()
+    plan = M2.plan_m2_rings()
+    bp = plan["best"] or {}
+    prof = M2.FEC_MODE_PROFILES
+    noise = M2.tia_noise_snr_db()
+    dt = M2.driver_tia_200g()
+
+    def _z(v):
+        return (round(v, 3) if v is not None else None)
+
+    spec = []
+    for sp in M2.SPEC_POINTS_M2:
+        pb = pts[sp["key"]]
+        spec.append({
+            "key": sp["key"], "band": sp["band"], "wl_nm": sp["wl_nm"],
+            "reach_km": sp["reach_km"], "process": pb["process"],
+            "role": sp["role"], "expect": sp["expect"],
+            "verdict_point": pb["verdict_point"],
+            "limiting_cause": pb["limiting_cause"],
+            "eo_f3db_ghz": round(pb["eo_f3db_ghz"], 3),
+            "nyquist_ghz": round(pb["nyquist_ghz"], 3),
+            "bandwidth_headroom_ghz": round(pb["bandwidth_headroom_ghz"], 3),
+            "retimed_margin_db": _z(pb["retimed"]["margin_db"]),
+            "lpo_margin_db": _z(pb["lpo"]["margin_db"]),
+            "lpo_penalty_db": _z(pb["lpo_penalty_db"]),
+            "required_snr_retimed_db": _z(pb["retimed"]["required_snr_db"]),
+            "required_snr_lpo_db": _z(pb["lpo"]["required_snr_db"]),
+        })
+
+    # G-OI2 真 GDS 现算（0.3–0.5s；版图确定性 ⇒ 与门禁 sha 同源）
+    try:
+        from lda_layout import oi_transceiver_pnr as TX
+        r = TX.build_oi_transceiver_pnr(n_lanes=int(M2.OI_M2_PROCESS["n_lanes"]))
+        g_oi2 = {
+            "n_devices": int(r["n_devices"]), "n_nets": int(r["n_nets"]),
+            "gds_bytes": len(r["gds_bytes"]), "gds_elements": int(r["gds_elements"]),
+            "drc_pass": bool(r["drc_pass"]),
+            "lvs_verdict": r["lvs_verdict"],
+            "lvs_n_violations": int(r["lvs_n_violations"]),
+            "footprint_um2": round(r["footprint_um2"]),
+            "ring_R_um": r["ring_anchor"]["R_um"],
+            "fiber_off_chip": bool(r["fiber_off_chip"]),
+            "layout_discipline_ok": bool(
+                TX.layout_discipline_ok(r["link"], r["placement"],
+                                        int(r["n_lanes"]))["ok"]),
+        }
+    except Exception as _e:                                    # noqa: BLE001
+        g_oi2 = {"error": type(_e).__name__}
+
+    return {
+        "stage_label": ("M2 · 1.6T（8×200G PAM4）· LPO「模块内无 DSP」形态 + "
+                        "G-OI2 收发器真 GDS"),
+        "n_lanes": int(M2.OI_M2_PROCESS["n_lanes"]),
+        "aggregate_gbps": M2.aggregate_gbps(),
+        "net_per_lane_gbps": M2.NET_PER_LANE_GBPS,
+        "baud_gbd": M2.PAM4_BAUD_200G_GBD,
+        "nyquist_ghz": M2.NYQUIST_200G_GHZ,
+        "channels_nm": M2.m2_channels(),
+        "fec": {
+            "concatenated": {
+                "pre_fec_ber": prof["concatenated"]["pre_fec_ber"],
+                "needs_module_dsp": bool(prof["concatenated"]["needs_module_dsp"]),
+                "required_snr_ideal_db": round(
+                    M2.required_snr_ideal_db("concatenated"), 3),
+                "label": prof["concatenated"]["label"],
+            },
+            "rs_only": {
+                "pre_fec_ber": prof["rs_only"]["pre_fec_ber"],
+                "needs_module_dsp": bool(prof["rs_only"]["needs_module_dsp"]),
+                "required_snr_ideal_db": round(M2.required_snr_ideal_db("rs_only"), 3),
+                "label": prof["rs_only"]["label"],
+            },
+            "ber_ratio": round(prof["concatenated"]["pre_fec_ber"]
+                               / prof["rs_only"]["pre_fec_ber"], 3),
+            "lpo_inner_code_gain_db": round(M2.lpo_inner_code_gain_db(), 3),
+            "form_map": {"retimed": M2.mode_for_form_factor("retimed"),
+                         "lpo": M2.mode_for_form_factor("lpo")},
+        },
+        "eo_f3db_fast_ghz": round(M2.eo_f3db_ghz("fast"), 3),
+        "eo_f3db_legacy_ghz": round(M2.eo_f3db_ghz("legacy"), 3),
+        "bandwidth_headroom_fast_ghz": round(M2.bandwidth_headroom_ghz("fast"), 3),
+        "bandwidth_headroom_legacy_ghz": round(M2.bandwidth_headroom_ghz("legacy"), 3),
+        "snr_assumed_db": M2.OI_M2_PROCESS["snr_db"],
+        "tia_noise_snr_db": round(noise["snr_db"], 3),
+        "driver": {
+            "rise_ui": round(dt["rise_10_90_ui"], 3),
+            "tia_ghz": round(dt["f_tia_ghz"], 3),
+            "tia_over_nyquist": round(dt["tia_over_nyquist"], 3),
+            "t90_closed_ps": round(dt["t90_closed_form_s"] * 1e12, 3),
+            "t90_rk4_ps": round(float(dt["t90_rk4_s"]) * 1e12, 3),
+        },
+        "ring_plan": {
+            "m": int(bp.get("m", 0)),
+            "R_um": bp.get("R_um"),
+            "gap_um": bp.get("gap_um"),
+            "min_xt_db": bp.get("min_xt_db"),
+            "max_il_drop_db": bp.get("max_il_drop_db"),
+            "n_solutions": int(plan["n_solutions"]),
+            "max_fsr_at_rmin_nm": plan.get("max_fsr_at_rmin_nm"),
+            "fsr_rule_rejects_span": bool(plan["fsr_rule_rejects_span"]),
+        },
+        "spec_points": spec,
+        "g_oi2": g_oi2,
+        "platform_fixes_m2": [
+            {"title": "`NO_NAMED_ADD_DEVICE` 登记表漂移（LVS 几何门禁 ⑲ 红）",
+             "detail": "M0 的 `oi_module.py` 已具名构造 `MziModulator`/`Photodetector` ⇒ "
+                       "登记表里的 6 类实际只剩 4 类；扫描 vs 登记失配 ⇒ 已同步（门禁回归 0 FAIL）"},
+            {"title": "布局纪律三条**隐含前提**此前无人机器化（吃狗粮最大收获）",
+             "detail": "「源 x 次序 ⟂ 目标 y 次序（反序）+ 目标 x 全同」的无交叉证明需三条前提"
+                       "（目标 x 全同且 > 源 x 上界 · 目标 y 次序与源次序相反 · 目标 y 与源 y 同侧）。"
+                       "首版把 MMIC x / detector x / detector y0 写成常量 ⇒ n=8 全绿、n=12 分别报 "
+                       "5/3/10 处 `short_cross`。已改为**派生式**并加 `layout_discipline_ok` 常驻判据"},
+            {"title": "诚实口径升级：LPO 不是免责声明而是**设计约束**",
+             "detail": "级联 FEC 的内码在模块 DSP 内 ⇒ LPO（无 DSP）只能 RS-only ⇒ pre-FEC 门限"
+                       "由 4.8e-3 收紧回 2.4e-4 ⇒ 所需 SNR 上升 2.744 dB（内码增益），"
+                       "实测 LPO 代价 3.169 dB（= 内码增益 + ISI 口径差 0.425）"},
+        ],
+        "honest_note_m2": (
+            "🔴 M2 仍属**设计预算层**：FEC 门限口径四源独立一致（802.3dj 级联 4.8e-3 / RS-only "
+            "2.4e-4）但**非**本平台实测；LPO 代价为**闭式 Q 函数**推算（golden = 闭式），"
+            "BER 为**光通道预算级**（与 `eic_behavioral` 的 EIC 电路级**显式分层**）；"
+            "接收噪声 SNR 为**乐观上界**（只含热+散粒+TIA 输入参考，不含 RIN/反射/串扰/老化）"
+            "⇒ **不得**当灵敏度规格宣称，其价值在「噪声是否瓶颈」的判定；"
+            "G-OI2 版图为**设计期签核**（非流片、非实测；层规为公开工艺近似，非 Foundry PDK）；"
+            "MMIC 宽多模区**未建模自成像长度** L_π∝W²/λ；**不报 TOPS / TOPS-W / fJ/op / pJ/bit**；"
+            "verdict 恒 `DESIGN_BUDGET`。"),
+    }
+
+
 def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
     """组装 M0 案例卡（确定性现算 + 模块级缓存）。
 
@@ -177,11 +319,16 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
     card = {
         "endpoint": "/api/oi_demo",
         "case_id": CASE_ID,
-        "claim": ("用 LDA 自家光链路设计验证链（lda_chain + lda_l2.oi_m1）可把一款 WDM 收发器"
-                  "从装配一路推进到**800G（8×100G PAM4）频域/时域预算**：闭式预算与级联引擎"
-                  "两种方法逐位一致（差 <0.05dB），且吃狗粮过程**抓出并修复了 4 处平台级缺陷**"
-                  "（星型网级联重复计数 · 环区数硬编码 · FSR 目标单位错 · KP4 门限口径差 100×），并**补齐了"
-                  "「梳齿规避信道规划」这一平台此前不具备的能力**"),
+        "claim": ("用 LDA 自家光链路设计验证链（lda_chain + lda_l2.oi_m1 + lda_l2.oi_m2 + "
+                  "lda_layout.oi_transceiver_pnr）可把一款 WDM 收发器从装配一路推进到"
+                  "**1.6T（8×200G PAM4）**：规模翻倍、补上 **LPO「模块内无 DSP」形态**"
+                  "（把免责声明变成设计约束：丢掉级联内码 ⇒ 所需 SNR 上升 2.744dB）与"
+                  "**G-OI2 收发器专用真 GDS 版图**（Tx 调制器阵列 + MMIC 合波 + GC 出片 / "
+                  "GC 入片 + 环解波 + 探测器阵列，单次主权 DRC/LVS 双闸签核）；"
+                  "且吃狗粮过程**抓出并修复了 4 处平台级缺陷**（星型网级联重复计数 · 环区数硬编码 · "
+                  "FSR 目标单位错 · KP4 门限口径差 100×）**+ M2 再抓 3 处**（LVS 登记表漂移 · "
+                  "布局纪律三条隐含前提未机器化 · 形态↔FEC 映射缺失），并**补齐了「梳齿规避信道规划」"
+                  "与「收发器真 GDS builder」两项平台此前不具备的能力**"),
         "identity": {
             "topology": "Tx：MZI 调制器（cos² 传递）× N 通道；Rx：微环 add-drop 滤波器"
                         "级联下路 + 双 GratingCoupler 耦合 + 光纤 span",
@@ -190,9 +337,15 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
             "method_m1": "M1 在功率预算之上补**频域**（级联 EO S21：调制器 RC+渡越 × 探测器"
                          "τ=RC × TIA 单极点）与**时域**（PAM4 符号间隔抽头 → 三眼 / Q / BER；"
                          "高斯色散展宽闭式 ⟷ 时域仿真对拍）两维",
-            "anchor_B19": "无源无增益不等式 |T|≤1（所有 transfer 幅值 ≤1），M0/M1 全部满足",
-            "honest_layer": "M0/M1 均属设计预算层（L0 解析器件模型 + A 档闭式/行为级）；真实版图"
-                            " GDS 由 D4 域 photonic_interconnect（复用 wdm_mesh_pnr）承载",
+            "method_m2": "M2 再补**规模 × 形态 × 物理落地**三维：(规模) 8×200G PAM4 = 1.6T、"
+                         "奈奎斯特 26.56→53.13GHz；(形态) LPO 无模块 DSP ⇒ 形态↔FEC 映射"
+                         "（retimed→级联 / lpo→RS-only）+ 逐形态裕量与 LPO 代价；(物理落地) "
+                         "收发器专用真 GDS + DRC/LVS 双闸 + 「源 x 次序 ⟂ 目标 y 次序（反序）」"
+                         "L 型走线的**结构性零 cross_short**（三条前提机器化）",
+            "anchor_B19": "无源无增益不等式 |T|≤1（所有 transfer 幅值 ≤1），M0/M1/M2 全部满足",
+            "honest_layer": "M0/M1/M2 均属设计预算层（L0 解析器件模型 + A 档闭式/行为级）；"
+                            "真实版图 GDS 由 D4 域 photonic_interconnect 与 M2 新增的 "
+                            "oi_transceiver（G-OI2 收发器拓扑）承载",
         },
         "requested": {
             "n_lanes": n_lanes,
@@ -203,6 +356,7 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
         },
         "channels": channels,
         "m1": _m1_block(),
+        "m2": _m2_block(),
         "b19_passivity": rep["b19_passivity"],
         "min_isolation_db": min_iso,
         "max_il_db": max_il,
@@ -238,6 +392,25 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                        "⇒ m=129/gap=0.55 隔离 39.5dB；顺带修 4 处平台缺陷（星型网级联重复计数 · "
                        "环区数硬编码 · FSR 目标单位错 · KP4 门限口径差 100×）+ 2 项历史欠账"
                        "（CI 覆盖登记 · 超时预算基线 5 行）"},
+            {"id": "M2-1", "label": "规模：8×200G PAM4 = 1.6T（奈奎斯特 53.125GHz）",
+             "detail": "每通道 200G = 106.25 GBd PAM4（线速率 212.5 Gb/s）；8 通道聚合净 1.6 Tb/s。"
+                       "🔴 FEC 口径**必须换**：200G/lane 用 802.3dj **级联 FEC**（外 KP4 ⊗ 内 "
+                       "Hamming/BCH(128,120) + 卷积交织）⇒ pre-FEC 门限 4.8e-3（非 100G/lane 的 2.4e-4）"},
+            {"id": "M2-2", "label": "形态：LPO「模块内无 DSP」是为**设计约束**",
+             "detail": "级联内码在模块 DSP 内实现 ⇒ LPO 拿不到 ⇒ 只能 RS-only ⇒ 门限由 4.8e-3 收紧回 "
+                       "2.4e-4 ⇒ 所需 SNR 上升 **2.744 dB**（内码增益）；实测 LPO 裕量缩水 "
+                       "**3.169 dB**（= 内码增益 + ISI 口径差 0.425）。形态↔FEC 映射由 "
+                       "`mode_for_form_factor` 单一真源 + 门禁 C6 锁死"},
+            {"id": "M2-3", "label": "物理落地：G-OI2 收发器专用真 GDS builder",
+             "detail": "新建 `lda_layout/oi_transceiver_pnr.py`：Tx N 个 MZI 调制器阶梯阵列 → MMIC "
+                       "N×1 合波 → GC 出片；Rx GC 入片 → N 个环 add-drop 级联 → N 个探测器阵列；"
+                       "fiber span **片外不落版图**；单 LinkModel + 单次主权 DRC/LVS ⇒ 8×200G 为 "
+                       "27 器件 / 25 网 / 158 GDS 元素 / 17434 B，DRC 全绿 + LVS ACCEPT(0 违规)"},
+            {"id": "M2-4", "label": "吃狗粮：布局纪律三条隐含前提机器化 + 3 处平台修复",
+             "detail": "「源 x 次序 ⟂ 目标 y 次序（**反序**）+ 目标 x 全同」的无交叉证明需三条**隐含**"
+                       "前提——首版把三个坐标写成常量 ⇒ n=8 全绿、n=12 分别报 5/3/10 处 `short_cross`"
+                       "（逐规模实测才暴露）。已改**派生式** + 新增 `layout_discipline_ok` 常驻判据"
+                       "（两条独立通道：builder 标量 ⟂ 读 port_anchor 反推）；另修 LVS 登记表漂移"},
         ],
         "findings": [
             {"title": "闭式与级联两种方法预算逐位一致",
@@ -265,17 +438,37 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
             {"title": "基线 IL≈7dB 是结构预算，可压缩",
              "detail": "GC -3dB×2 + 光纤 span + 环总线 thru 累积；M1 通过梳齿规避（更均匀 7.2–7.6dB）"
                        "改善，进一步压缩须低损耗 GC / 短总线"},
+            {"title": "🔴 M2 口径陷阱：200G/lane 的 FEC **不是** 100G/lane 的 FEC",
+             "detail": "802.3dj 在 200G/lane 用**级联** FEC ⇒ pre-FEC 门限 4.8e-3，比 RS-only 的 "
+                       "2.4e-4 宽 **20×**。若沿用 M1 门限 ⇒ 所需 SNR 被虚高一档；若把级联门限误用于 "
+                       "LPO（无 DSP 拿不到内码）⇒ 裕量被虚高 2.744dB。已由**规格锚 A1–A5** "
+                       "（窗口判据 + 同源自洽 + 20× 门限比反向判据）机器锁死"},
+            {"title": "🔴 M2 吃狗粮最大收获：布局纪律的三条前提是**隐含的**",
+             "detail": "「反序 ⇒ 无交叉」只在三条前提同时成立时才是可证充分条件（目标 x 全同且 > 源 x "
+                       "上界 · 目标 y 次序与源 y 次序相反 · 目标 y 与源 y 线同侧）。首版把 MMIC x / "
+                       "detector x / detector y0 写成常量 ⇒ n=8（默认档）全绿，**n=12 才崩**（5/3/10 处 "
+                       "`short_cross`）⇒ 已改派生式 + `layout_discipline_ok` + 逐规模门禁 T9；"
+                       "V1/V2 反例保留作「反序」必要性的实证"},
+            {"title": "G-OI2 版图「零 cross_short」是**结构性**的，不是调出来的",
+             "detail": "Tx/Rx 均用 L 型走线：源 x 递增 ⟂ 目标 y 反向 ⇒ 竖直段 i 与水平段 j 的相交"
+                       "充要条件退化为 i=j（自身），故**零交叉**。Tx 与 Rx 的 y 带再整体分离"
+                       "（Tx y∈[−3.8,178.2] / Rx y∈[−379.3,−250.9]）⇒ 跨域也不交叉"},
+            {"title": "LPO 代价实测 ≥ 内码增益（3.169 vs 2.744 dB）",
+             "detail": "LPO 相对重定时的裕量缩水 = 理想内码增益 **+ ISI 口径差**（0.425dB，因 RS-only "
+                       "门限更紧 ⇒ 可达 SNR 工作点不同）。恒等式 `pen ≡ gain + (ISI_LPO − ISI_retimed)` "
+                       "已由门禁 C10d 逐位锁死（Δ<1e-9）"},
         ],
         "gaps": [
             {"id": "G-OI1", "closed": True,
              "title": "相邻信道隔离（M1 已闭合：−0.85dB → 39.5dB）",
              "detail": "靠**梳齿规避信道规划**（m=129 / gap=0.55µm，最小梳齿偏移 1.24nm）闭合；"
                        "新增平台能力 `oi_m1.plan_lwdm_channels`（搜索解与设计常量由门禁互锁）"},
-            {"id": "G-OI2", "closed": False,
-             "title": "M0/M1 收发器拓扑尚无专用真 GDS 版图 builder",
-             "detail": "本卡是链路预算层；平台已有 D4 域 photonic_interconnect（复用 wdm_mesh_pnr"
-                       "的 K×N WDM 网格 P&R，真 GDS+DRC+LVS），但「N 调制器+N 环+2GC+光纤」"
-                       "这一具体拓扑的专用 layout builder 仍是缺口，须后续补（不重造既有单元）"},
+            {"id": "G-OI2", "closed": True,
+             "title": "M2 已闭合：收发器拓扑专用真 GDS builder",
+             "detail": "新增 `lda_layout/oi_transceiver_pnr.py`（Tx 调制器阵列 + MMIC 合波 + GC 出片 / "
+                       "GC 入片 + 环解波 + 探测器阵列，片外 fiber 不落版图）⇒ 单 LinkModel + 单次"
+                       "主权 DRC/LVS 双闸 + D4 新域 `oi_transceiver`（下载端点 + 限幅 + 诚实注记）；"
+                       "门禁 `run_oi_transceiver_pnr_smoke.py` 40 项（含逐规模 n∈{1,2,4,8,12} 双闸）"},
             {"id": "G-OI3", "closed": True,
              "title": "级电光行为模型（M1 已闭合四项）",
              "detail": "EO S21 带宽（G-OI3-a）· 眼图/BER（G-OI3-b，光链路预算级 + 与 EIC 电路级"
@@ -284,17 +477,26 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
             {"id": "G-OI4", "closed": False,
              "title": "电路级模型 · 无 PDK · 不报 TOPS",
              "detail": "继承主权红线：无 foundry 数据 ⇒ 无能效宣称资格；规模与能效外推属 T2 锁死区"},
+            {"id": "G-OI5", "closed": False,
+             "title": "M2b 预留：多通道均衡 · 热调/串扰 · 良率 · 封装容差",
+             "detail": "多通道均衡（IL/倾斜/眼高平坦化）· 热调（Pπ 预算进链路）· 热串扰 Γ 矩阵"
+                       "（版图绑定）· 光子工艺偏差 → 良率 MC · 封装容差（对准 + 温度）。"
+                       "本轮按用户裁定的「核心四件」范围**后置为 M2b**，不在 M2 判据内（诚实登记，"
+                       "不冒充已完成）"},
         ],
-        "gaps_closed": 2,
-        "gaps_total": 4,
+        "gaps_closed": 3,
+        "gaps_total": 5,
         "verdict": "DESIGN_BUDGET",
         "verdict_label": "链路预算设计行为验证口径（确定性现算 · 非流片实测 · 非实测签核）",
         "honest_note": ("🔴 本卡为只读案例：数字由确定性现算（闭式 + lda_chain 级联引擎 + "
-                        "oi_m1 IFFT 时域 + 几何搜索，零重计算 · 免登录 · 不跑 P&R/FDTD）；"
-                        "M0/M1 均属**设计预算层**（L0 解析器件模型 / A 档闭式行为级），真实版图 GDS "
-                        "由 D4 域 photonic_interconnect 承载；M1 的 BER 是**光通道预算级**闭式估计"
-                        "（不含 SerDes/DSP/FEC/均衡/CDR），接受 SNR 为**设计输入假设**；"
-                        "不报 TOPS/TOPS-W/fJ/op；判决由死标量给出，LLM 不进判决路径。"),
+                        "oi_m1/oi_m2 时域与预算 + 几何搜索 + 收发器真 GDS，零重计算 · 免登录 · "
+                        "不跑 P&R/FDTD）；M0/M1/M2 均属**设计预算层**（L0 解析器件模型 / A 档闭式"
+                        "行为级），真实版图 GDS 由 D4 域 photonic_interconnect 与 oi_transceiver 承载；"
+                        "M1/M2 的 BER 是**光通道预算级**闭式估计（不含 SerDes/DSP/FEC/均衡/CDR），"
+                        "接受 SNR 为**设计输入假设**（M2 另给免假设的 TIA 噪声闭式**上界**做交叉核对，"
+                        "不含 RIN/反射/串扰/老化 ⇒ 不得当灵敏度规格）；M2 的 G-OI2 版图为"
+                        "**设计期签核**（非流片、非实测；非 Foundry PDK）；"
+                        "不报 TOPS/TOPS-W/fJ/op/pJ/bit；判决由死标量给出，LLM 不进判决路径。"),
     }
     if use_cache:
         _CACHE[key] = card
@@ -308,16 +510,18 @@ def run_selfchecks(verbose: bool = False) -> bool:
     防「案例卡写死一份、模块改了卡不动」的静默失真（血案同族）。
     """
     c = case_card(use_cache=False)
-    need = ["case_id", "claim", "identity", "requested", "channels", "m1", "b19_passivity",
-            "milestones", "findings", "gaps", "verdict", "honest_note"]
+    need = ["case_id", "claim", "identity", "requested", "channels", "m1", "m2",
+            "b19_passivity", "milestones", "findings", "gaps", "verdict", "honest_note"]
     if any(k not in c for k in need):
         return False
     if c["verdict"] != "DESIGN_BUDGET":
         return False
-    # 🔴 只守「能力宣称面」：`honest_note` / `honest_note_m1` 是否定语境的**正确自我否定**
-    #    （「不报 TOPS/…」）⇒ 不参与判据（否则正确否定被误判违规 —— E12/E13/E17 血案同族）。
+    # 🔴 只守「能力宣称面」：`honest_note` / `honest_note_m1` / `honest_note_m2` 是否定语境的
+    #    **正确自我否定**（「不报 TOPS/…」）⇒ 不参与判据（否则正确否定被误判违规 —— E12/E13/E17 血案同族）。
     _surf = {k: v for k, v in c["m1"].items() if k != "honest_note_m1"}
-    blob = repr(c["claim"]) + repr(c["identity"]) + repr(c["requested"]) + repr(_surf)
+    _surf2 = {k: v for k, v in c["m2"].items() if k != "honest_note_m2"}
+    blob = (repr(c["claim"]) + repr(c["identity"]) + repr(c["requested"]) + repr(_surf)
+            + repr(_surf2))
     for _tok in ("TOPS", "TOPS-W", "TOPS/W", "fJ/op", "pJ/bit", "W/op"):
         if _tok in blob:
             return False
@@ -358,16 +562,74 @@ def run_selfchecks(verbose: bool = False) -> bool:
                  and 0.0 < m1["snr_margin_db"] < 6.0)
     good = (ok_ab and ok_b19 and ok_ch and ok_plan and ok_agg and ok_iso
             and ok_pts and ok_exp and ok_ber and ok_fix and ok_margin)
+
+    # ── M2 自洽 + 与模块现算逐位同源（1.6T / FEC 双口径 / LPO / 带宽墙 / G-OI2）──
+    from lda_l2 import oi_m2 as M2
+    m2 = c["m2"]
+    ok_m2_agg = (m2["aggregate_gbps"] == 1600.0 and m2["n_lanes"] == 8
+                 and abs(m2["baud_gbd"] - M2.PAM4_BAUD_200G_GBD) < 1e-9
+                 and abs(m2["nyquist_ghz"] - M2.NYQUIST_200G_GHZ) < 1e-9)
+    # FEC 双口径：级联门限宽 20×；形态映射 lpo→rs_only / retimed→concatenated
+    ok_m2_fec = (m2["fec"]["concatenated"]["pre_fec_ber"]
+                 == M2.FEC_MODE_PROFILES["concatenated"]["pre_fec_ber"]
+                 and m2["fec"]["rs_only"]["pre_fec_ber"]
+                 == M2.FEC_MODE_PROFILES["rs_only"]["pre_fec_ber"]
+                 and abs(m2["fec"]["ber_ratio"] - 20.0) < 1e-6
+                 and m2["fec"]["form_map"]["lpo"] == "rs_only"
+                 and m2["fec"]["form_map"]["retimed"] == "concatenated"
+                 and m2["fec"]["rs_only"]["needs_module_dsp"] is False
+                 and m2["fec"]["concatenated"]["needs_module_dsp"] is True
+                 and abs(m2["fec"]["lpo_inner_code_gain_db"]
+                         - M2.lpo_inner_code_gain_db()) < 1e-3)   # 卡内展示 round 到 3 位
+    # 带宽墙反例：fast 有余量 ∧ legacy 不足（吃狗粮证据）
+    ok_m2_bw = (m2["bandwidth_headroom_fast_ghz"] > 0
+                and m2["bandwidth_headroom_legacy_ghz"] < 0
+                and abs(m2["eo_f3db_fast_ghz"] - M2.eo_f3db_ghz("fast")) < 1e-3
+                and abs(m2["eo_f3db_legacy_ghz"] - M2.eo_f3db_ghz("legacy")) < 1e-3)
+    # 逐设计点：verdict ≡ 声明 expect（pass / disp_limited / bw_limited）
+    ok_m2_pts = ([s["key"] for s in m2["spec_points"]]
+                 == [s["key"] for s in M2.SPEC_POINTS_M2]
+                 and all(s["verdict_point"] == s["expect"] for s in m2["spec_points"]))
+    # LPO 代价 ≥ 理想内码增益（物理不等式；恒等式本身由门禁 C10d 逐位锁死）
+    _lpo = [s for s in m2["spec_points"] if s["lpo_penalty_db"] is not None]
+    ok_m2_lpo = bool(_lpo) and all(
+        s["lpo_penalty_db"] >= m2["fec"]["lpo_inner_code_gain_db"] - 1e-9 for s in _lpo)
+    # 接收噪声**上界** > 设计假设（⇒ 噪声非瓶颈）· 与模块现算逐位同源
+    ok_m2_noise = (m2["tia_noise_snr_db"] > m2["snr_assumed_db"]
+                   and abs(m2["tia_noise_snr_db"]
+                           - M2.tia_noise_snr_db()["snr_db"]) < 1e-3)  # 展示 round 到 3 位
+    # G-OI2 真 GDS：双闸 ACCEPT + 拓扑计数 + 片外 fiber + 布局纪律三前提
+    _g = m2["g_oi2"]
+    ok_m2_gds = ("error" not in _g and _g["drc_pass"]
+                 and _g["lvs_verdict"] == "ACCEPT" and _g["lvs_n_violations"] == 0
+                 and _g["n_devices"] == 3 * 8 + 3 and _g["n_nets"] == 3 * 8 + 1
+                 and _g["fiber_off_chip"] and _g["layout_discipline_ok"]
+                 and _g["gds_bytes"] > 0)
+    good2 = (ok_m2_agg and ok_m2_fec and ok_m2_bw and ok_m2_pts and ok_m2_lpo
+             and ok_m2_noise and ok_m2_gds)
+    good = good and good2
     if verbose:
-        print("[%s] OI-M0/M1 case_card · 通道=%d · 闭式≡级联=%s · B19=%s"
+        print("[%s] OI-M0/M1/M2 case_card · 通道=%d · 闭式≡级联=%s · B19=%s"
               % ("PASS" if good else "FAIL", len(c["channels"]), ok_ab, ok_b19))
         print("      M1: 800G=%s · 隔离=%s(%.1fdB vs M0默认 %.2fdB) · 规划=%s · 设计点=%s · "
               "修复=%s · 裕量=%s(%.2fdB)"
               % (ok_agg, ok_iso, m1["worst_isolation_db"],
                  m1["ring_plan"]["m0_default_min_xt_db"], ok_plan, ok_exp, ok_fix,
                  ok_margin, m1["snr_margin_db"]))
+        print("      M2: 1.6T=%s · FEC双口径=%s(级联%.1e/RS-only%.1e · 比%.0f×) · LPO代价=%s "
+              "(%.3fdB ≥ 内码增益 %.3fdB) · 带宽墙=%s(fast %+.2f / legacy %+.2f GHz) · "
+              "设计点=%s · 噪声上界=%s(%.2fdB > 假设 %.0fdB) · G-OI2=%s(%s件/%s网 · %s · 纪律%s)"
+              % (ok_m2_agg, ok_m2_fec, m2["fec"]["concatenated"]["pre_fec_ber"],
+                 m2["fec"]["rs_only"]["pre_fec_ber"], m2["fec"]["ber_ratio"],
+                 ok_m2_lpo, min(s["lpo_penalty_db"] for s in _lpo) if _lpo else float("nan"),
+                 m2["fec"]["lpo_inner_code_gain_db"], ok_m2_bw,
+                 m2["bandwidth_headroom_fast_ghz"], m2["bandwidth_headroom_legacy_ghz"],
+                 ok_m2_pts, ok_m2_noise, m2["tia_noise_snr_db"], m2["snr_assumed_db"],
+                 ok_m2_gds, _g.get("n_devices"), _g.get("n_nets"),
+                 _g.get("lvs_verdict"), _g.get("layout_discipline_ok")))
     return good
 
 
 if __name__ == "__main__":
-    print("OI-M0 case self-check:", "PASS" if run_selfchecks(verbose=True) else "FAIL")
+    print("OI-M0/M1/M2 case self-check:",
+          "PASS" if run_selfchecks(verbose=True) else "FAIL")

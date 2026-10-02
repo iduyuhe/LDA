@@ -196,6 +196,17 @@ def main():
         lr = subprocess.run([*base, "ls-remote", remote, "refs/heads/main"],
                             cwd=REPO, env=env2, capture_output=True, text=True)
         sha = lr.stdout.split()[0] if lr.stdout.strip() else ""
+        # 🔴 直连 ls-remote 失败（env2 已清代理 ⇒ github 直连不通）⇒ 用代理重试再判。
+        #   实测踩到：github 直推 exit=128、走代理 exit=0（推成功了），但本段直连
+        #   ls-remote 仍是空 sha ⇒ [VERIFY] 误报 MISMATCH（「推成功却说没推上」，
+        #   会让人白重推一轮）。sha 为空只说明「查不到」，不等于「远端不是这个 sha」。
+        if not sha and lr.returncode != 0:
+            lr2 = subprocess.run([*base, "-c", "http.proxy=socks5h://127.0.0.1:7890",
+                                  "ls-remote", remote, "refs/heads/main"],
+                                 cwd=REPO, env=env2, capture_output=True, text=True)
+            if lr2.stdout.strip():
+                print(f"  [{remote}] 直连 ls-remote 失败 ⇒ 代理重试取到 sha（非 MISMATCH）")
+                sha = lr2.stdout.split()[0]
         ok = (sha == local)
         all_match = all_match and ok
         print(f"[VERIFY] {remote} main = {sha} -> {'MATCH' if ok else 'MISMATCH'}")

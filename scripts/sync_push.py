@@ -80,7 +80,11 @@ def credread(adv, target):
 
 
 def _probe(host, user, tok, remote):
-    """用该凭据真实做一次 ls-remote，判断能否认证（避免拿到过期/无效 token 仍误报成功）。"""
+    """用该凭据真实做一次 ls-remote，判断能否认证（避免拿到过期/无效 token 仍误报成功）。
+
+    返回 `'direct'` / `'proxy'` / `None` —— 除「能不能用」外，还告诉调用方**这条凭据
+    走哪条通路才通**（供 push/verify 段排序，避免每轮白等一次 21 s 直连超时）。
+    """
     env0 = {**os.environ, "GIT_CONFIG_GLOBAL": "/dev/null",
             "GIT_CONFIG_SYSTEM": "/dev/null"}
     try:
@@ -95,12 +99,25 @@ def _probe(host, user, tok, remote):
     for k in ("http_proxy", "https_proxy", "all_proxy", "no_proxy",
               "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY"):
         env_p.pop(k, None)
-    r = subprocess.run(
-        ["git", "-c", f"credential.helper=store --file={STORE}",
-         "-c", "http.sslBackend=openssl", "-c", "http.version=HTTP/1.1",
-         "ls-remote", remote, "refs/heads/main"],
-        cwd=REPO, env=env_p, capture_output=True, text=True)
-    return r.returncode == 0 and bool(r.stdout.strip())
+    common = ["git", "-c", f"credential.helper=store --file={STORE}",
+              "-c", "http.sslBackend=openssl", "-c", "http.version=HTTP/1.1"]
+    r = subprocess.run([*common, "ls-remote", remote, "refs/heads/main"],
+                       cwd=REPO, env=env_p, capture_output=True, text=True)
+    if r.returncode == 0 and r.stdout.strip():
+        return "direct"
+    # 🔴 v0.9.180 实测订正：**探活也必须留代理兜底**（与下方 push 段同口径）。
+    #   旧版探活只做直连 ⇒ 本机直连 github 不通时（`Recv failure: Connection was reset`
+    #   或 `Failed to connect to github.com:443 after 21080 ms`），一条**有效凭据**被判
+    #   「不可用」⇒ github 被静默踢出 creds ⇒ 推送段与 VERIFY 段**一起跳过** ⇒ 只推了
+    #   gitee 却仍报 `ALL-MATCH`（假绿）。push 段早有直连⟶代理兜底，探活段漏了同款。
+    if host == "github.com":
+        r2 = subprocess.run(
+            [*common, "-c", "http.proxy=socks5h://127.0.0.1:7890",
+             "ls-remote", remote, "refs/heads/main"],
+            cwd=REPO, env=env_p, capture_output=True, text=True)
+        if r2.returncode == 0 and r2.stdout.strip():
+            return "proxy"
+    return None
 
 
 def main():
@@ -123,13 +140,14 @@ def main():
             user, tok = credread(adv, target)
             if not tok:
                 continue
-            if _probe(host, user, tok, remote):
-                print(f"[OK] {host} 凭据生效: target={target} user={user}")
-                creds[host] = (user, tok)
+            mode = _probe(host, user, tok, remote)
+            if mode:
+                print(f"[OK] {host} 凭据生效: target={target} user={user} via={mode}")
+                creds[host] = (user, tok, mode)
                 got = True
                 break
             else:
-                print(f"[PROBE-FAIL] {host} target={target} 认证失败(过期/无效)，试下一个")
+                print(f"[PROBE-FAIL] {host} target={target} 认证失败(过期/无效/直连不通)，试下一个")
         if not got:
             print(f"[WARN] {host} 所有候选凭据均不可用，跳过")
     if not creds:
@@ -138,7 +156,7 @@ def main():
 
     env = {**os.environ, "GIT_CONFIG_GLOBAL": "/dev/null",
            "GIT_CONFIG_SYSTEM": "/dev/null"}
-    for host, (user, tok) in creds.items():
+    for host, (user, tok, _mode) in creds.items():
         inp = f"protocol=https\nhost={host}\nusername={user}\npassword={tok}\n"
         r = subprocess.run(
             ["git", "credential-store", f"--file={STORE}", "store"],
@@ -160,30 +178,32 @@ def main():
                        "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY")
     env_noproxy = {k: v for k, v in env2.items() if k not in _PROXY_ENV_KEYS}
 
+    push_rc = {}
     if "gitee.com" in creds:
         print("[PUSH] gitee main ...")
         r = subprocess.run([*base, "push", "gitee", "main"], cwd=REPO, env=env2)
         print(f"  gitee exit={r.returncode}")
+        push_rc["gitee"] = r.returncode
     if "github.com" in creds:
-        # 🔴 v0.9.24 实测订正：github **直连常常就是通的**。
-        # 旧版无条件加 `-c http.proxy=socks5h://127.0.0.1:7890`，一旦本地代理没开
-        # 就必然 `Failed to connect to github.com:443 over proxy`（exit=128），
-        # 而同一次直连 `curl --noproxy '*' https://github.com` 返回 **200**。
-        # ⇒ **先直连（环境变量层清空代理），失败再退回 SOCKS5 代理**，两条路都留着。
-        # 直连也走不通时（DNS 污染 / SNI 过滤）的兜底仍是：paramiko 借生产服务器
-        # 115.191.20.92 起 SOCKS5 中继（见项目记忆「代理没开时的备用通路」）。
-        print("[PUSH] github main (direct, proxy cleared) ...")
-        r = subprocess.run([*base, "push", "github", "main"],
-                           cwd=REPO, env=env_noproxy)
-        print(f"  github direct exit={r.returncode}")
-        if r.returncode != 0:
-            print("[PUSH] github main (fallback: socks5h://127.0.0.1:7890) ...")
-            # 同样要在环境变量层排除，否则注入的 5xxxx 端口会盖掉 socks5h 配置
-            r = subprocess.run([*base,
-                                "-c", "http.proxy=socks5h://127.0.0.1:7890",
-                                "push", "github", "main"],
+        # 🔴 v0.9.24 实测订正：github **直连常常就是通的**（故仍保留直连优先，省一次代理往返）。
+        # 🔴 v0.9.180 补：**按探活结论排序** —— 探活已实测本机直连不通 / 仅代理通时
+        #   （`via=proxy`），就先走代理，避免每轮白等一次 21 s 直连超时；反之直连优先。
+        #   两条路都留着（直连可能随时恢复）。直连也走不通时（DNS 污染 / SNI 过滤）的
+        #   兜底仍是：paramiko 借生产服务器 115.191.20.92 起 SOCKS5 中继。
+        _first = "proxy" if creds["github.com"][2] == "proxy" else "direct"
+        _rc = 1
+        for _m in (_first, "proxy" if _first == "direct" else "direct"):
+            _extra = (["-c", "http.proxy=socks5h://127.0.0.1:7890"]
+                      if _m == "proxy" else [])
+            print(f"[PUSH] github main ({_m}) ...")
+            # 直连/代理两路都必须在**环境变量层**排除注入代理，否则 5xxxx 端口会盖掉配置
+            r = subprocess.run([*base, *_extra, "push", "github", "main"],
                                cwd=REPO, env=env_noproxy)
-            print(f"  github proxy exit={r.returncode}")
+            print(f"  github {_m} exit={r.returncode}")
+            _rc = r.returncode
+            if _rc == 0:
+                break
+        push_rc["github"] = _rc
 
     # 🔴 推送判据（铁律）：ls-remote sha == 本地 HEAD（勿信 rc=0）
     local = subprocess.run(["git", "-C", REPO, "rev-parse", "HEAD"],
@@ -192,6 +212,12 @@ def main():
     all_match = True
     for remote in ("gitee", "github"):
         if remote + ".com" not in creds:
+            # 🔴 v0.9.180 补（反向完备判据）：凭据不可用的远端**必须显式判 FAIL**，
+            #   不许 `continue` 静默跳过 —— 旧版只核 gitee 就报 `ALL-MATCH`（假绿），
+            #   正是「白名单式门禁缺反向完备判据」的同族（见项目纪律）。
+            all_match = False
+            print(f"[VERIFY] {remote} main = <NO-CREDENTIAL> -> FAIL"
+                  f"（凭据不可用 ⇒ 既未推送也未验证，不算同步成功）")
             continue
         lr = subprocess.run([*base, "ls-remote", remote, "refs/heads/main"],
                             cwd=REPO, env=env2, capture_output=True, text=True)
@@ -207,7 +233,17 @@ def main():
             if lr2.stdout.strip():
                 print(f"  [{remote}] 直连 ls-remote 失败 ⇒ 代理重试取到 sha（非 MISMATCH）")
                 sha = lr2.stdout.split()[0]
-        ok = (sha == local)
+        # 🔴 v0.9.180 补（第二处假绿）：**本次 push 是否成功**必须单独作判据。
+        #   只因「远端 sha 恰等于本地 HEAD」而报 MATCH 是假绿 —— 上一轮推成功后，
+        #   本轮 push 全失败（凭据失效 / 无权 403 / 网络不通）时远端 sha 仍等于本地
+        #   HEAD ⇒ 会让人以为「同步正常」，直到下次提交才暴露。且 `_probe` 用
+        #   `ls-remote` 只证**读**权限（public 仓库匿名也可读）⇒ 读通 ≠ 写通，
+        #   写权限唯一的真判据就是 push 的 rc。
+        prc = push_rc.get(remote, None)
+        if prc != 0:
+            print(f"  [{remote}] push rc={prc} ≠ 0 ⇒ 本次推送未成功"
+                  f"（远端 sha 相等不构成同步成功；读通≠写通）")
+        ok = (sha == local) and (prc == 0)
         all_match = all_match and ok
         print(f"[VERIFY] {remote} main = {sha} -> {'MATCH' if ok else 'MISMATCH'}")
     print(f"[VERIFY] RESULT {'ALL-MATCH' if all_match else 'HAS-MISMATCH'}")

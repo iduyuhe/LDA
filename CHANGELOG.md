@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.9.184（2026-10-03 · **新征程 M5：光联接模块 —— VπL 断口结算**（可行域闭式充要 + 电极/封装线双口径对拍 + 口径翻转披露） · 账本 **476 不变（零锚改动）** · CI core **272 → 273** · 端点 **146 不变**）
+## v0.9.184（2026-10-03 · **新征程 M5：光联接模块 —— VπL 断口结算**（可行域闭式充要 + 电极/封装线双口径对拍 + 口径翻转披露） · **并清偿两处既有欠账**（受跟踪报告落后账本 6 项 · **30/47 受跟踪 GDS 的 UNITS 为坏编码** ⇒ 原位修复 + 常驻门禁） · 账本 **476 不变（零锚改动）** · CI core **272 → 273** · 端点 **146 不变**）
 
 ### 触发
 
@@ -50,6 +50,23 @@ M4（v0.9.182）已把三域耦合成链，也**登记**了 VπL 断口，但**�
 - `run_webui_oi_render_path_smoke` **641 → 718 判据**：新增 M5 五格反向完备 **④e-56…④e-60** + 探针 **㉚**（m5 顶层塞新字段必红）、
   **㉛**（把「空集档」伪装成有解 ⇒ 本门禁**仍绿** ⇒ 如实披露「静态结构检查拦不住口径撒谎」，语义由 `oi_case` 探针判死）。
 - CI core 登记 `run_oi_m5_smoke.py`（超时预算 120s，实测 ~2s）。
+- **CI core 全量 273 条实跑：273 PASS / 0 SKIP / 0 FAIL**（16 批 · 1h48m · 预算最低余量 3.067×）。
+
+### ③ 全量 CI 顺带清偿的两处既有欠账（**均非 M5 引入**）
+
+跑 CI core 全量（273 条）后，工作区出现 **19 项受跟踪生成物被重写**。逐项定性后 **零判定翻转**，全部是「入库快照落后于写入器 / 生成器」的欠账：
+
+**（a）受跟踪报告长期落后账本（6 个文件）**：`reports_mcp/verification_report.{json,md}`（`total 470 → 476`、`passed 467 → 473`、新增 B453/B454/B455）、`redteam_adjudication_report.{json,md}`（`total 203 → 204`、`in_domain_suspect 86 → 87`）、`redteam_anchor_fuzz_report.json`（`strict_total 449 → 455`、`attacks 4509 → 4539`）、`lda_harness/reports/empirical_anchor_report.md`（语料 `70 → 122`）。
+根因：前几批加锚只改了账本代码，**没重跑报告生成器**（`run_harness.py` / 红队 / MCP 报告），入库快照停留在旧账本（470/449 时期）。差异**零判定翻转**（B2 误差仅显示精度 `0.6247 → 0.62467`，两版均 FAIL；汇总行 476/476 · 455 已验证不变）。
+
+**（b）🔴 受跟踪 GDS 的 UNITS 是坏编码 —— 30 / 47 个（v0.9.170 前的 bug 从未回填）**
+v0.9.170 修好了 `gds_export._real8`（IEEE-754 → excess-64 基-16）与 UNITS 第二值（`1/DBU=1000` → `1e-9`），并入了仓验证脚本 `scripts/verify_gds_interop_gdstk.py` —— 但**该脚本从不被 CI 调用**（gdstk 缺失即 SKIP），且**已入库的 GDS 全部没重新生成**。
+实测：47 个受跟踪 GDS 里 **30 个** UNITS = `(0.019625, 0.55957)`（坏），含**量子征程 Q1/Q2 芯片、mesh 示例集、schip 系列、光子计算核 `compute_core_U_4x4.gds`、主权证据 `lda_2x2_ring.gds`** ⇒ 任何 gdstk / KLayout / gdsfactory 读到的**物理尺度全错**。
+修复手法（**方法学独立**）：本次 CI 已用修好的编码器重生成 12 个文件，与旧版**文件长度完全相同、仅 16 字节不同** ⇒ 证明「整数几何逐字节不变、只有 UNITS 元数据错」。故对全部 30 个做**原位 UNITS 替换**，并**先用那 12 个文件交叉验证**：`patch(HEAD 版) == 生成器版` **12/12 逐字节相等** ⇒ 原位修复被官方生成器背书。修后受跟踪 GDS **47/47 正确**。
+
+**常驻门禁（补上「修了没锁死」的缺口）**：`run_gds_smoke.py` 新增 **GDSII UNITS 互操作门禁** —— ① 独立实现 REAL8 解码（**刻意不复用 `gds_export` 编码器**，防同源自证）；② 按记录流精确走到 UNITS 记录（**不按字节串搜索**，防坐标数据里的假匹配）；③ **全仓 glob `*.gds` 扫描**（不做目录白名单，防新落点静默进盲区）+ 下限断言 ≥40；④ **反向探针**（把 UNITS 篡改为旧坏编码 ⇒ 判据必红）。实测 **58 个 GDS 全绿 · 坏 0/58 · 探针会响**。
+
+**受影响门禁复跑 13/13 全绿**：`run_gds_smoke` / `run_hier_gds_smoke` / `run_bragg_gds_smoke` / `run_gds_drc_semantics_smoke` / `run_gdsfactory_bridge_smoke` / `run_cli_smoke` / `run_pipeline_smoke` / `run_sovereign_evidence_smoke` / `run_d4_domain_smoke` / `run_d4_case_smoke` / `run_oi_m3_smoke`（57/0）/ `run_oi_m4_smoke`（61/0）/ `run_oi_m5_smoke`（53/0）。
 
 ### 诚实边界
 

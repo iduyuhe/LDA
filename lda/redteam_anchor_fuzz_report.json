@@ -1,12 +1,12 @@
 {
-  "strict_total": 449,
-  "strict_attacked": 449,
+  "strict_total": 455,
+  "strict_attacked": 455,
   "strict_coverage": 1.0,
-  "attacks_total": 4509,
-  "genuine_div": 265,
+  "attacks_total": 4539,
+  "genuine_div": 266,
   "cand_limitation": 70,
-  "golden_unstable": 86,
-  "divergence_rate": 0.0778443114,
+  "golden_unstable": 88,
+  "divergence_rate": 0.0779907469,
   "findings": [
     {
       "bid": "B1",
@@ -3098,6 +3098,35 @@
           "cand": 0.158212292,
           "err": 0.0706316605,
           "tol": 1e-06
+        }
+      ]
+    },
+    {
+      "bid": "B455",
+      "as_strict": true,
+      "n_attacks": 5,
+      "genuine_div": 1,
+      "cand_limitation": 0,
+      "golden_unstable": 1,
+      "samples": [
+        {
+          "params": {
+            "lam": 0.92
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.6928,
+          "cand": 1.66133845,
+          "err": 0.0314615524,
+          "tol": 0.01
+        },
+        {
+          "params": {
+            "lam": 1.04
+          },
+          "issue": "golden_unstable",
+          "oracle": null,
+          "cand": null,
+          "err": Infinity
         }
       ]
     },

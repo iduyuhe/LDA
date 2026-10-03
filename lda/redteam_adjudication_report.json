@@ -1,7 +1,7 @@
 {
-  "total": 203,
+  "total": 204,
   "expected_extreme": 117,
-  "in_domain_suspect": 86,
+  "in_domain_suspect": 87,
   "suspects": [
     {
       "bid": "B165",
@@ -1217,6 +1217,20 @@
       "cand": 0.158212292,
       "err": 0.0706316605,
       "tol": 1e-06,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B455",
+      "as_strict": true,
+      "params": {
+        "lam": 0.92
+      },
+      "oracle": 1.6928,
+      "cand": 1.66133845,
+      "err": 0.0314615524,
+      "tol": 0.01,
       "passed": false,
       "max_perturbation": 0.15,
       "classification": "in_domain_divergence"
@@ -4291,6 +4305,20 @@
       "cand": 0.158212292,
       "err": 0.0706316605,
       "tol": 1e-06,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B455",
+      "as_strict": true,
+      "params": {
+        "lam": 0.92
+      },
+      "oracle": 1.6928,
+      "cand": 1.66133845,
+      "err": 0.0314615524,
+      "tol": 0.01,
       "passed": false,
       "max_perturbation": 0.15,
       "classification": "in_domain_divergence"

@@ -1,5 +1,46 @@
 # Changelog
 
+## v0.9.186（2026-10-03 · **WebUI 标准 JSON 出口修复 —— 浏览器 `JSON.parse` 崩事故收口** · 账本 **476 不变（零锚改动）** · CI core **273 → 274** · 端点 **146 不变**）
+### 触发
+
+用户点 WebUI「运行 光联接模块 M0–M4 案例」按钮后整张案例卡只回一行错误：
+浏览器抛 `Unexpected token o in JSON at position 16230`（截图实证）。
+
+### 根因（V8 复现，position 与截图一字不差）
+
+链路：`lda_l2/oi_m3.xtalk_next_db(k=0)` ⇒ `float("-inf")` → `json.dumps` 序列化成
+**`-Infinity`**（**标准 JSON 无此字面**）→ 浏览器 `JSON.parse` 见到 `-` 后不是数字 ⇒ 抛错。
+
+> 🔴 **更贵的教训**：v0.9.185 发布前用 **Python `json.load`** 验收生产 `/api/oi_demo`，
+> 而 **Python 的 json 默认接受 `-Infinity`**，V8 一律崩 ⇒ **那个「绿」是假的**。
+> 通法：凡验收对外字节流，先问「谁在消费它」；验收用
+> `dumps(allow_nan=False)` 或 **node 的 `JSON.parse`（V8 = 浏览器同引擎）**。
+
+### 修法（四层，缺一都会复发）
+
+| 层 | 动作 |
+|---|---|
+| ① 源头 | `oi_m3.NEG_INF_DB = "−∞"` **字符串 tag**；「真 −∞」判别力不变（仍 ≠ clamp −3000，那条判据本就是抓 clamp 假绿而生的） |
+| ② 卡层 | 卡内判据读的就是**出口那一份 card**（判据-出口同源）+ 出口 `_json_safe` 递归兜底 + `json_hard_ok` / `json_hard_bad` 自报状态 |
+| ③ HTTP 出口 | `app.py._send` 统一 `allow_nan=False`，失败再 `_json_safe` 兜底 ⇒ **任何新端点漏网先服务端红**，不坑前端 |
+| ④ 门禁 | 新建 `run_webui_json_hard_smoke.py`（**13 PASS / 0 FAIL**）：7 张公开 demo 卡标准 JSON 出口 + 非有限递归扫描 + oi 真 −∞ tag（≡ −3000 双向）+ 4 道突变探针 + 自入 CORE_SMOKES |
+
+### 全量结论与门禁
+
+- 全量 CI core **274 条**：**273 PASS / 0 SKIP / 1 FAIL —— 唯一 FAIL 是
+  `run_timeout_budget_ratchet_smoke` 自己**（新门禁进 CORE_SMOKES 却漏登
+  `_BUILTIN_TIMEOUT_OVERRIDE` ⇒ B20 反向完备报「盲区 1 项」）。**这是护栏本职抓到的真红，
+  不是假红**；按门禁处方清偿：登记 120.0s（实测 5.87s ≈ 20.4×，与同族秒级 webui 门同档）
+  + `--from-report` 刷基线（**不手改任何数字**）⇒ 该门禁复跑 **21 PASS / 0 FAIL**。
+- 本次清偿只动「覆盖表 + 基线」两张表；经 grep 实证，读这两张表的 core 成员仅
+  `run_timeout_budget_ratchet_smoke` / `run_ecore_e12_smoke` / `run_noncore_reason_smoke`
+  ⇒ 其余 271 条**不受影响**（且新门禁本身在本次全量中已 PASS）。
+- 复绿：`run_timeout_budget_ratchet 21/21` · `run_ecore_e12 rc=0` ·
+  `run_noncore_reason 18/18` · `run_webui_json_hard 13/13` · `oi_m3 69/69` ·
+  `oi_m2b 89/89` · `oi_render_path 728/728` · `count_consistency 13/13` · pyflakes 零告警。
+- 账本 **476 不变（零锚改动）** · 端点 **146 不变** · CI core **273 → 274**（新增 `run_webui_json_hard_smoke`）。
+
+
 ## v0.9.185（2026-10-03 · **光联接模块 M2b/M3 复核缺陷修复（P0→P1→P2）—— 假判据清零 · 缺口闭合证据链 · 真护栏** · 账本 **476 不变（零锚改动）** · CI core **273 不变** · 端点 **146 不变**）
 
 ### 触发

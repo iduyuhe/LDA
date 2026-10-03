@@ -31,6 +31,12 @@ D4 域 `photonic_interconnect` 与 `oi_transceiver`（M2 · G-OI2）单独承载
 """
 from __future__ import annotations
 
+import math
+
+# 🔴 非有限 dB 值的 JSON 安全字符串 tag —— 唯一真源是 `lda_l2.oi_m3.NEG_INF_DB`，
+#    卡内判据 / 出口兜底 / 前端显示三处同源，避免「两处字面量」假判据。
+from lda_l2.oi_m3 import NEG_INF_DB as NEG_INF_DB        # noqa: E402
+
 CASE_ID = ("OI-M0/M1/M2/M2b/M3/M4 · 光联接模块（M0 双通道基线 + M1 800G 频域/时域 + "
            "M2 1.6T·LPO·G-OI2 真 GDS + M2b 均衡/热调/热串扰/良率/封装 G-OI5 + "
            "M3 3.2T·CPO·400G/lane 带宽墙·die↔die 热·2.5D 签核 G-OI6 + "
@@ -556,7 +562,7 @@ def _m3_block() -> dict:
             "k": float(nx["k"]), "f_ghz": round(nx["f_hz"] / 1e9, 3),
             "f0_ghz": round(nx["f0_hz"] / 1e9, 3),
             "ratio_linear": round(nx["ratio_linear"], 1),
-            "xtalk_db": round(nx["xtalk_db"], 3),
+            "xtalk_db": _r3(nx["xtalk_db"]),
             "xtalk_at_zero_coupling_db": nx0["xtalk_at_zero_coupling_db"],
             "note": ("功率比 K²(F/f₀)⁴/3（容性近端串扰）。k=0 时 dB 是 **−∞（真 −inf）**，"
                      "不是 clamp 到 −3000 —— 首版 clamp 会把「零耦合」判成「有巨大耦合」"
@@ -982,6 +988,80 @@ def _gap_evidence_gate(card: dict) -> bool:
     return True
 
 
+# --------------------------------------------------------------------------
+# 🔴 标准 JSON 出口（v0.9.185 事故修）
+#    `json.dumps` 默认把非有限 float 序列化成 `-Infinity` / `Infinity` / `NaN` ——
+#    这**不是标准 JSON**，浏览器 `JSON.parse` 必抛 "No number after minus sign in
+#    JSON" ⇒ 整张案例卡渲染失败（用户点「运行 光联接模块 M0–M4 案例」只看到一行
+#    解析错误）。🔴 Python 侧 `json.load` **接受**这些字面 ⇒ 用 `json.load` 验收
+#    公开端点 = **假绿**（本次就栽在这：生产核验全绿而前端一点击就崩）。
+#    修法：源头（`lda_l2.oi_m3.NEG_INF_DB`）+ 出口兜底 `_json_safe` 双层，
+#    判据 `json_hard_ok` 读的就是**出口那一一份 card**（判据-出口同源，非假判据）。
+# --------------------------------------------------------------------------
+def _nonfinite_scan(obj, path="", bad=None):
+    """递归收集卡内所有**非有限 float**（NaN / ±inf）的 JSON 路径。"""
+    if bad is None:
+        bad = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            _nonfinite_scan(v, path + "." + str(k), bad)
+    elif isinstance(obj, (list, tuple)):
+        for i, v in enumerate(obj):
+            _nonfinite_scan(v, "%s[%d]" % (path, i), bad)
+    elif isinstance(obj, float) and not math.isfinite(obj):
+        bad.append((path, repr(obj)))
+    return bad
+
+
+def json_hard_ok(card) -> bool:
+    """🔴 判据：卡内**不得**出现非有限 float（`NaN` / `±inf`）⇒ 必须标准 JSON 可解析。
+
+    存在性判据 ⇒ 必须配反向探针自证能变红（`probe_json_hard_ok`）。
+    """
+    return not _nonfinite_scan(card)
+
+
+def _json_safe(obj):
+    """出口兜底：任何漏网的非有限 float 换成标准 JSON 可表达的字符串 tag。"""
+    if isinstance(obj, float):
+        if math.isnan(obj):
+            return "NaN"
+        if math.isinf(obj):
+            return NEG_INF_DB if obj < 0 else "\u221e"
+        return obj
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    return obj
+
+
+def _r3(v):
+    """round 到 3 位；已是 tag（str）则原样返回（对字符串 round 会崩）。"""
+    return v if isinstance(v, str) else round(float(v), 3)
+
+
+def probe_json_hard_ok() -> bool:
+    """🔴 反向探针：把非有限 float 灌进**真卡块**（deepcopy ⇒ 走真现算路径）⇒ 必红。
+
+    两条靶子：① 已修好的 M3 NEXT（k=0 的 −∞ 位）② M4 耦合链标量（一般数值位）。
+    """
+    import copy as _copy
+    try:
+        _card = case_card(use_cache=True)
+        for _p in (("m3", "next", "xtalk_db"), ("m4", "chain", "d_t_photon_k")):
+            _bad = _copy.deepcopy(_card)
+            _cur = _bad
+            for _k in _p[:-1]:
+                _cur = _cur[_k]
+            _cur[_p[-1]] = float("-inf")
+            if json_hard_ok(_bad):
+                return False
+    except Exception:                                        # noqa: BLE001
+        return False
+    return True
+
+
 def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
     """组装 M0 案例卡（确定性现算 + 模块级缓存）。
 
@@ -1377,6 +1457,11 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
         _g["evidence"] = _GAP_EVIDENCE_SPEC.get(_g["id"], "")
         _g["evidence_ok"] = bool(_e["ok"])
         _g["evidence_detail"] = str(_e["detail"])
+    # 🔴 标准 JSON 出口：非有限 float → tag 字符串（判据 `json_hard_ok` 读的就是这份 card）
+    card = _json_safe(card)
+    _nf = _nonfinite_scan(card)
+    card["json_hard_ok"] = (not _nf)
+    card["json_hard_bad"] = _nf[:8]
     if use_cache:
         _CACHE[key] = card
     return card
@@ -1952,7 +2037,7 @@ def run_selfchecks(verbose: bool = False) -> bool:
                   and ec["drift_in_window"] < 0.005 < ec["drift_outside"]
                   and m3["fdtd_telegraph"]["phase_ok"]
                   and m3["fdtd_telegraph"]["rel_err"] < 0.05
-                  and m3["next"]["xtalk_at_zero_coupling_db"] == float("-inf"))
+                  and m3["next"]["xtalk_at_zero_coupling_db"] == NEG_INF_DB)
     # 热：两串热阻 ⇒ 光子 die > 中介层 > 环境；且第二通道（M2b 有限差分）一致
     ok_m3_th = (th["t_photon_c"] > th["t_interposer_c"] > th["t_amb_c"]
                 and th["d_t_interposer_c"] > 0.0 and th["die_to_die_theta_k"] > 0.0
@@ -2062,11 +2147,13 @@ def run_selfchecks(verbose: bool = False) -> bool:
     _PROBE_OK = (probe_banned_token_scan() and probe_m2b_pkg_same_source()
                  and probe_m3_pkg_same_source() and probe_m3_loop_is_algebraic()
                  and probe_m4_same_source() and probe_m4_vpi_l_disclosed()
-                 and probe_m5_settlement_disclosed() and probe_gap_evidence_binding())
+                 and probe_m5_settlement_disclosed() and probe_gap_evidence_binding()
+                 and probe_json_hard_ok())
     # 🔴 F5：缺口终态**证据链**门禁（`closed ⇔ evidence_ok` 逐项一致 + 闭口必须挂非空证据键）
     ok_gap_evidence = _gap_evidence_gate(c)
+    ok_json_hard = json_hard_ok(c)
     good = (good and good2 and good3 and good4 and good5 and good6 and _PROBE_OK
-            and ok_gap_evidence)
+            and ok_gap_evidence and (ok_json_hard is True))
     if _DEBUG_SELFCHECK:                                     # noqa: F821
         print("DBG good=%s good2=%s | m2b: form=%s ctle=%s eq=%s th=%s g=%s y=%s "
               "pkg=%s gap=%s | m3: scale=%s bw=%s chan=%s th=%s loop=%s pw=%s "

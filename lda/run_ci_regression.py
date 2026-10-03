@@ -73,6 +73,11 @@ CORE_SMOKES: List[str] = [
     "run_ecosystem_publish_smoke.py",# 评审→落地→发布 全链（含补丁生成）
     # 实证大数据锚（D-62：harness E1-E3 实证锚题 + 语料评审流，纯 numpy 快速）
     "run_empirical_anchor_smoke.py",
+    # 🔴 v0.9.186（WebUI 标准 JSON 出口事故修）：非有限 float（±inf / NaN）一旦以
+    #    Python float 跨 HTTP 边界 ⇒ `json.dumps` 产出 `-Infinity`（非标准 JSON）⇒
+    #    浏览器 `JSON.parse` 抛 "No number after minus sign" ⇒ 整卡崩；而 Python
+    #    `json.load` **接受**该字面 ⇒ 旧验收是**假绿**。本门禁守「前端能不能打开」。
+    "run_webui_json_hard_smoke.py",         # 7 张公开 demo 卡标准 JSON 出口 + oi 真 −∞ tag
     # 实证语料库入口（D-66 入 core）：ci.yml 自 v0.9.8 起一直跑它，但**本地 core 未收录**
     # → D-63 引入的相对导入 bug 让 GitHub 主干红了多个版本而本地全绿（典型「宣称全绿、
     # 主干红」）。入 core 后该类缺口由本地门禁兜底。以子路径调用（cwd=lda/）。
@@ -2339,6 +2344,13 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # E19 电子计算征程 列侧共享的动态代价门禁（D-194）· 实测上界 0.170s ⇒ 余量 1764×
     "run_ecore_e19_smoke.py": 300.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
+    # 🔴 v0.9.186：新增「标准 JSON 出口」门禁（`run_webui_json_hard_smoke.py`,
+    #   13 判据 + 4 道突变探针；因浏览器 JSON.parse 崩于 `-Infinity` 而立）。
+    #   2026-10-03 入 CORE_SMOKES 时**漏登本表** ⇒ B20 反向完备当场报「盲区 1 项」。
+    #   这是护栏本职抓到的真红（新 smoke 不登预算 ⇒ 走默认 300s、B5~B10 看不见它），
+    #   **不是**假红。实测 5.87s ⇒ 120.0s ≈ 20.4× 余量，与同族秒级 webui 门（120.0）
+    #   同档。判据一字未改，仅按「≥3 × 跨轮实测上界」单调放宽耗时上限。
+    "run_webui_json_hard_smoke.py": 120.0,
     "run_webui_entry_smoke.py": 120.0,
     # WebUI 案例卡前端取值路径门禁（v0.9.169 · D-193）· 纯文本解析（不执行 JS），实测 ~0.19s
     "run_webui_ecore_render_path_smoke.py": 120.0,

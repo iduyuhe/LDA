@@ -54,6 +54,14 @@ PAM4_BAUD_200G_GBD = _M2.PAM4_BAUD_200G_GBD     # 106.25 GBd（200G/lane，同�
 PAM4_BAUD_3200_GBD = 2.0 * PAM4_BAUD_200G_GBD   # 212.5 GBd（IEEE 802.3dj 400G/lane）
 NYQUIST_3200_GHZ = PAM4_BAUD_3200_GBD / 2.0     # 106.25 GHz
 
+# 🔴 JSON 出口纪律（v0.9.185 事故）：非有限值（±inf / NaN）**不得**以 Python float
+#    形式跨越 HTTP 边界 —— `json.dumps` 会产出 `-Infinity` / `NaN` 这类**非标准
+#    JSON** 字面，浏览器 `JSON.parse` 必抛 "No number after minus sign in JSON"
+#    ⇒ 整张案例卡渲染失败（用户点「运行 光联接模块 M0–M4 案例」只有一行解析错误）。
+#    Python 侧 `json.load` **接受**这类字面 ⇒ 用 `json.load` 验收公开端点 = 假绿。
+#    一律改用**字符串 tag** 表达；「真 −∞」的判别力不变（≠ clamp 到 −3000）。
+NEG_INF_DB = "-∞"
+
 LANES_3200 = 8                                  # 3.2T = 8 × 400G
 LANE_BITS_3200 = 400.0                          # 每通道 400 Gb/s（编码后）
 ENCODE_OVERHEAD = 1.0625                        # 64b/66b + RS(544,514) 开销（规格锚）
@@ -424,6 +432,9 @@ def xtalk_next_db(f_hz: Optional[float] = None, k: Optional[float] = None) -> Di
         NEXT_ratio = K²·(F/f₀)⁴/3   （∫₀^F K²(f/f₀)⁴df ÷ ∫₀^F df）
 
     `k` 可显式给（探针 P4 靶子：把它清零 ⇒ 必为 −∞ dB）。
+
+    🔴 返回值一律 **JSON-safe**：k=0 时两个 dB 字段是字符串 tag `"−∞"` 而不是
+    `float("-inf")`（后者 `json.dumps` 产出非标准 JSON `-Infinity` ⇒ 前端崩）。
     """
     p = OI_M3_PROCESS
     f = NYQUIST_3200_GHZ * 1e9 if f_hz is None else float(f_hz)
@@ -432,9 +443,9 @@ def xtalk_next_db(f_hz: Optional[float] = None, k: Optional[float] = None) -> Di
     if k == 0.0:
         # 🔴 耦合比清零 ⇒ 物理上串扰功率比为 0 ⇒ dB 为 **−∞**（不是被 clamp 的 −3000）。
         #   clamp 会让「探针把 c_m 清零」这条判据看起来"绿了但没真判"（首版就栽在这）。
-        return {"ratio_linear": 0.0, "xtalk_db": float("-inf"),
+        return {"ratio_linear": 0.0, "xtalk_db": NEG_INF_DB,
                 "k": k, "f_hz": f, "f0_hz": f0,
-                "xtalk_at_zero_coupling_db": float("-inf")}
+                "xtalk_at_zero_coupling_db": NEG_INF_DB}
     ratio = k * k * (f / f0) ** 4 / 3.0
     return {"ratio_linear": ratio, "xtalk_db": 10.0 * math.log10(max(ratio, 1e-300)),
             "k": k, "f_hz": f, "f0_hz": f0,
@@ -1220,7 +1231,7 @@ def oi_m3_self_check(verbose: bool = True) -> Dict[str, Any]:
               echannel_att_db(NYQUIST_3200_GHZ * 1e9, 5.0)
               > echannel_att_db(NYQUIST_3200_GHZ * 1e9, 1.0)))
     c.append(("M3 ② NEXT：耦合比清零 ⇒ 串扰 −∞ dB（P4 靶子可判）",
-              xtalk_next_db(k=0.0)["xtalk_at_zero_coupling_db"] == float("-inf")))
+              xtalk_next_db(k=0.0)["xtalk_at_zero_coupling_db"] == NEG_INF_DB))
     c.append(("M3 ② NEXT：K·(F/f₀)² 功率比随 F 单调增",
               xtalk_next_db(NYQUIST_3200_GHZ * 1e9)["ratio_linear"]
               > xtalk_next_db(1e9)["ratio_linear"]))

@@ -3602,7 +3602,18 @@ class Handler(BaseHTTPRequestHandler):
 
     def _send(self, code, obj=None, body=None, ctype="application/json", headers=None, nocache=False, set_cookies=None):
         if body is None:
-            body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
+            # 🔴 标准 JSON 出口（v0.9.185 事故）：非有限 float 会被 `json.dumps`
+            #    序列化成 `-Infinity` / `NaN`（**非标准 JSON**）⇒ 浏览器
+            #    `JSON.parse` 抛 "No number after minus sign in JSON" ⇒ 前端整卡崩
+            #    （用户点「运行 光联接模块 M0–M4 案例」实测截图）。
+            #    `allow_nan=False` ⇒ 先在**服务端**红（诚实可见），
+            #    漏网的非有限值再交给 `oi_case._json_safe` 兜底 tag 化。
+            try:
+                body = json.dumps(obj, ensure_ascii=False,
+                                  allow_nan=False).encode("utf-8")
+            except ValueError:
+                from lda_webui.oi_case import _json_safe
+                body = json.dumps(_json_safe(obj), ensure_ascii=False).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", ctype + "; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))

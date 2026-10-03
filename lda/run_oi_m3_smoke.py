@@ -11,14 +11,15 @@
     （模块级函数 → patch `lda_l2.oi_m3` 的属性，不能只改调用方）。
   · 还原后基线门禁**必须重新全绿**（探针不得污染真判据）。
 
-判据（共 44 项，来自 `oi_m3.oi_m3_self_check`）：
+判据（共 51 项，来自 `oi_m3.oi_m3_self_check`）：
   C01–C04  规格锚 / 3.2T 常量互锁（**由 200G 档派生**，不重抄）
   C05–C15  ① TWMZM 带宽墙（闭式解析 + ABCD 链第二通道 + 速度失配 + f_RC ∝ 1/L²）
   C16–C24  ② CPO 电通道（√f 窗口 / 长度衰减 / NEXT / PDN 地弹 / FDTD ⟷ 闭式）
-  C25–C28  ③ 跨 die 热 + **闭环热调**（单通路自洽 / ∝1/R_h / 单向执行器 / 残余失谐）
-  C29–C33  ④ 功耗同口径账（对拍 / CPO 热代价 / 独有项 / 红线 / 同参）
-  C34–C37  ⑤ 2.5D 版图（电层 DRC / fiber 不落版图 / LVS / 光引擎复用）
-  C38–C41  复用底座在 400G 速率级仍成立 + 诚实边界
+  C25–C34  ③ 跨 die 热 + **闭环热调**（收敛路径返回 / 代数⟷不动点 / **双计必发散** /
+           ∝1/R_h（求解器输出）/ 单向执行器 / 残余失谐）+ **单一真源可达 / 无旁路热阻键**（F6/F7）
+  C35–C39  ④ 功耗同口径账（对拍 / CPO 热代价 / 独有项 / 红线 / 同参）
+  C40–C46  ⑤ 2.5D 版图（电层 DRC / fiber 不落版图 / LVS **独立解码 4 条** / 光引擎复用）
+  C47–C51  复用底座在 400G 速率级仍成立 + 诚实边界
 
 探针（**先证能变红**）：
   P1  TWMZM 把光相位基准从 γ 里**减掉**（相位算重 ⇒ q 相位变 2β_mw−β_opt）
@@ -28,11 +29,17 @@
   P4  NEXT 耦合比清零时**钳位成 −3000 dB**（不是 −∞）⇒ C19 必红
   P5  FDTD 步长**越 CFL**（Δt = 1.5·Δx/v_p）⇒ C22/C23 必红
   P6  闭环热调**退回「一次性」**（稳态功率与残余失谐恒 0）⇒ C26/C27 必红
-  P7  🔴 热调**双计**（把「加热器→温升→波长」通路算两遍 ⇒ 环路增益 ≈28 ≫ 1）
-      ⇒ C26 必红（这是首版真踩过的坑：发散到 1e88 K）
+  P7  🔴 热调**双计**（把「加热器→温升→波长」通路算两遍 ⇒ 环路增益 A≈28 ≫ 1）
+      ⇒ 走**真实现** fixed_point ⇒ 「稳态解收敛」判据必红（首版真踩过的坑：1e88 K）
   P8  功耗账**漏掉 CPO 独有项** interposer_pdn ⇒ C29 对拍必红
   P9  **片外 fiber 落进版图** ⇒ C35 必红
   P10 衰减把 √f 律写成 f 律 ⇒ C16 必红
+  P11 焊盘⟷走线**错位**（走线起点移出焊盘 1 µm）⇒「无悬空」判据必红
+  P12 **删一条走线**（末焊盘悬空）⇒「无悬空」判据必红
+  P13 **对照组**：同一坏几何喂「旧式计数 LVS」仍**假绿** ⇒ 证明新判据有判别力
+  P14 🔴 复活死配置 `OI_M3_PROCESS["r_th_thermal_k_per_w"] = 8.0`（旁路热阻键）⇒「无旁路热阻键」必红
+  P15 🔴 令单一真源 `lda_design.active_models` **不可达**（sys.modules 置 None）⇒「单一真源可达」必红
+      （首版回退 `return 1.0` 恰等真值 ⇒ 静默降级看不见；回退已删 · F7）
   R   探针还原后基线门禁**必须重新全绿**（探针不污染真判据）
 """
 from __future__ import annotations
@@ -94,7 +101,7 @@ def run_probes() -> dict:
         "twmzm_response_closed", "rc_pole_hz", "twmzm_response_ladder",
         "xtalk_next_db", "fdtd_telegraph", "closed_loop_thermal_steady",
         "tuning_slope_nm_per_k", "power_breakdown", "cpo_2p5d_geometry",
-        "echannel_att_db")}
+        "echannel_att_db", "_pdn_lvs")}
     res: dict = {}
 
     def restore() -> None:
@@ -213,27 +220,30 @@ def run_probes() -> dict:
     restore()
 
     # ── P6/P7：闭环热调退回「一次性」 / 🔴 双计 ────────────────────────────────
-    def _one_shot(n_lanes=None, setpoint_over_ambient_c=None, r_h_override_k_per_mw=None):
+    def _one_shot(n_lanes=None, setpoint_over_ambient_c=None,
+                  r_h_override_k_per_mw=None, **kw):
         # 🔴 退回「一次性」：稳态执行器功率与残余失谐**恒 0**（闭环形同虚设）
-        return dict(orig["closed_loop_thermal_steady"](n_lanes),
-                    p_actuator_required_mw_per_lane=0.0, residual_nm=0.0,
-                    closed_loop=False, solution="one_shot")
+        r = dict(orig["closed_loop_thermal_steady"](
+            n_lanes, setpoint_over_ambient_c, r_h_override_k_per_mw, **kw))
+        r.update(p_actuator_required_mw_per_lane=0.0, residual_nm=0.0,
+                 closed_loop=False, solution="one_shot", converged=True)
+        return r
 
     M.closed_loop_thermal_steady = _one_shot
     res["P6"] = _red(base_checks(), "稳态执行器功率 ∝ 1/R_h") \
         or _red(base_checks(), "残余失谐落在")
     restore()
 
-    def _double_count(n_lanes=None, setpoint_over_ambient_c=None,
-                      r_h_override_k_per_mw=None):
-        r = dict(orig["closed_loop_thermal_steady"](
-            n_lanes, setpoint_over_ambient_c, r_h_override_k_per_mw))
-        # 🔴 把「加热器→温升→波长」通路算两遍 ⇒ 反馈增益 A = R_h·S/FSR ≫ 1（发散）
-        r["single_path_consistency"] = False
-        return r
+    def _double_count(*a, **kw):
+        #   🔴 复刻首版真 bug 形态：把「加热器→温升→波长」通路**算两遍**
+        #      （灵敏度算错 ⇒ 环路增益 A≈28 ≫ 1）⇒ 走**真实现**的 fixed_point 路径
+        #      ⇒ 迭代必发散（**不是**直接改输出字段 —— 那只是自证探针）。
+        kw2 = {k: v for k, v in kw.items() if k not in ("solve_mode", "loop_gain")}
+        return orig["closed_loop_thermal_steady"](
+            *a, solve_mode="fixed_point", loop_gain=28.0, **kw2)
 
     M.closed_loop_thermal_steady = _double_count
-    res["P7"] = _red(base_checks(), "单通路自洽")
+    res["P7"] = _red(base_checks(), "稳态解**收敛**")
     restore()
 
     # ── P8：功耗账漏掉 CPO 独有项 interposer_pdn ──────────────────────────────
@@ -280,16 +290,89 @@ def run_probes() -> dict:
     res["P10"] = _red(base_checks(), "R 主导子带")
     restore()
 
+    # ── P11：焊盘 ⟷ 走线**错位**（把一条走线起点移出焊盘右边界 1 µm）────────────
+    #     🔴 真灌 bug：改**生成端几何**（重编码 M1 PATH），经**独立解码器** → 真 LVS
+    #     ⇒「无悬空」判据必红。**不是**直接改输出字段（那只是自证探针）。
+    from lda_l2 import gds_export as _gx11
+    o11 = orig["cpo_2p5d_geometry"]
+
+    def _bad_geo_mismatch(oe_structures=None):
+        r = dict(o11(oe_structures))
+        st = dict(r["structures"])
+        p = M.OI_M3_PROCESS
+        w = float(p["m1_width_um"])
+        pad = float(p["interposer_pad_um"])
+        ax = float(p["asic_die_x_um"])
+        n_pitch = max(1, int(ax // (2.0 * float(p["diff_pitch_um"]))))
+        x = -ax / 2 + 0.5 * (ax / n_pitch) + pad / 2 + 1.0      # 🔴 移出焊盘右边界 1 µm
+        m1s = list(st["M1_ROUTING"])
+        m1s[0] = _gx11.path(M._LAYER_M1, w, [(x, 0.0), (x, ax * 0.5 + pad)])
+        st["M1_ROUTING"] = m1s
+        r["structures"] = st
+        return r
+
+    M.cpo_2p5d_geometry = _bad_geo_mismatch
+    base_bad = base_checks()
+    res["P11"] = _red(base_bad, "无悬空")
+
+    # ── P13：**对照组** —— 同一坏几何喂「旧式计数 LVS」必须仍**假绿**
+    #     证明新判据确实有判别力（而不是「怎么改都红」的粗糙判据）。
+    def _count_only_lvs(structs):
+        #    🔴 复刻首版真 bug 形态：只统计元素计数，端点是否落在焊盘上**根本不检查**
+        n = sum(len(v) for v in structs.values() if isinstance(v, (list, tuple)))
+        return {"n_nets": n, "nets": [{"net": "BUS_LANE_1", "endpoints_on_pads": True}],
+                "n_pads": n, "n_paths": n, "n_dangling_paths": 0, "n_uncovered_pads": 0,
+                "n_offdie_touch_points": 0, "pass": bool(n > 0),
+                "decoder": "old_count_only（首版形态）", "kind": "geometry_topology_lvs"}
+
+    M._pdn_lvs = _count_only_lvs
+    legacy = [v for k, v in base_checks().items() if "无悬空" in k]
+    res["P13"] = bool(legacy) and all(legacy)      # 旧式对同一坏几何**仍绿** ⇒ 对照组成立
+    restore()
+
+    # ── P12：删一条走线 ⇒ **悬空焊盘**（反向完备必红）──────────────────────────
+    def _bad_geo_drop(oe_structures=None):
+        r = dict(o11(oe_structures))
+        st = dict(r["structures"])
+        st["M1_ROUTING"] = list(st["M1_ROUTING"])[:-1]          # 🔴 删末条 ⇒ 末焊盘悬空
+        r["structures"] = st
+        return r
+
+    M.cpo_2p5d_geometry = _bad_geo_drop
+    res["P12"] = _red(base_checks(), "无悬空")
+    restore()
+
+    # ── P14：🔴 复活死配置「旁路热阻键」（8.0 K/W）⇒ F6 守卫必红 ──────────────────
+    M.OI_M3_PROCESS["r_th_thermal_k_per_w"] = 8.0
+    res["P14"] = _red(base_checks(), "无旁路热阻键")
+    M.OI_M3_PROCESS.pop("r_th_thermal_k_per_w", None)
+    restore()
+
+    # ── P15：🔴 单一真源不可达 ⇒ F7 可达性判据必红（回退已删，不能再静默降级）────────
+    #     🔴 真灌故障：把 `lda_design` 从 `sys.modules` 里置 None ⇒ `from lda_design import
+    #     active_models` 真抛 ImportError（不是直接改判据返回值 = 自证探针）。
+    import sys as _sys
+    _keep = _sys.modules.get("lda_design", "__MISSING__")
+    _sys.modules["lda_design"] = None
+    try:
+        res["P15"] = (M.single_source_reachable_m3() is False)
+    finally:
+        if _keep == "__MISSING__":
+            _sys.modules.pop("lda_design", None)
+        else:
+            _sys.modules["lda_design"] = _keep
+    restore()
+
     return res
 
 
 def main() -> int:
     base = base_checks()
-    section("M3（G-OI6）门禁 · 基线判据（44 项）")
+    section("M3（G-OI6）门禁 · 基线判据（51 项）")
     for k in sorted(base):
         check("  %s" % k, base[k])
     # 判据数自行锁住：门禁只管看得见的集合 ⇒ 新判据静默进盲区
-    check("R0 判据集合规模 == 44（新增判据必须同步本门禁与定稿索引）", len(base) == 44)
+    check("R0 判据集合规模 == 51（新增判据必须同步本门禁与定稿索引）", len(base) == 51)
     section("M3 突变探针（先证能变红）")
     probes = run_probes()
     for k in sorted(probes):

@@ -234,7 +234,12 @@ def lane_ctle_design(n_lanes: Optional[int] = None, boost_db: Optional[float] = 
 
         boost_i = boost_nom + (loss_ref − loss_i)      （loss 用 `oi_m1.eo_s21_complex` 实算）
 
-    ⇒ f_z_i 逐 lane 真不同，且「各 lane 均衡后总增益相等」成为**可判的互锁**（不是断言）。
+    ⇒ f_z_i 逐 lane 真不同。
+
+    🔴 **v0.9.185 修 F3**：首版把「各 lane 均衡后总增益相等」当成**成效判据**，但它恰是
+    `f_z_for_boost` 反解的**往返恒等式**（改物理常量不红 ⇒ 假判据）。现在如实分成两层：
+      · `design_roundtrip_flat` —— **设计方程自洽**（往返恒等式，弱）；
+      · `lane_equalization_flatness()` —— **信道成效**（独立重算：逐 lane 真信道的 ISI）。
     """
     p = OI_M2B_PROCESS
     F = (NYQUIST_200G_GHZ if f_nyq_ghz is None else float(f_nyq_ghz)) * 1e9
@@ -266,39 +271,92 @@ def lane_ctle_design(n_lanes: Optional[int] = None, boost_db: Optional[float] = 
             "noise_penalty_min_db": min(np_), "noise_penalty_max_db": max(np_),
             "total_gain_min_db": min(tot), "total_gain_max_db": max(tot),
             "total_gain_spread_db": max(tot) - min(tot),
-            "flat_after_equalization": bool(max(tot) - min(tot) < 1e-6),
+            # 🔴 **v0.9.185 修 F3（如实标注）**：`total_gain_i ≡ loss_i + boost_achieved_i
+            #    ≡ b_nom + loss_ref`，而 `boost_achieved_i` 恰是 `f_z_for_boost` 反解的**逆**
+            #    ⇒ 逐 lane 相等是**往返恒等式**（改任何物理常量都不红）。它证明的是
+            #    「**设计方程自洽**」，**不是**「信道被真正拉平」。
+            #    ⇒ 信道成效改由 `lane_equalization_flatness()`（**独立重算**：逐 lane
+            #    真信道的时域抽头 ISI）判定，门禁 T10 / 探针 P11 守护。
+            "design_roundtrip_flat": bool(max(tot) - min(tot) < 1e-6),
+            "design_roundtrip_note": (
+                "total_gain 逐 lane 相等 = f_z_for_boost 反解的往返恒等式（非信道成效）"),
             "boost_distinct": len({round(x["boost_db"], 9) for x in lanes}) == len(lanes),
             "spread_pct": float(p["lane_spread_pct"]),
             "f_nyquist_ghz": NYQUIST_200G_GHZ}
 
 
 def lane_isi_residual(lanes: Sequence[Dict[str, Dict[str, Any]]],
-                      f_mod_hz: float, f_pd_hz: float, f_tia_hz: float,
-                      beta2_s2_m: float, L_m: float, baud_hz: float,
-                      sigma_tx_s: float = 0.0) -> Dict[str, Any]:
+                      f_mod_hz: Optional[float] = None,
+                      f_pd_hz: Optional[float] = None,
+                      f_tia_hz: Optional[float] = None,
+                      beta2_s2_m: float = 0.0, L_m: float = 0.0,
+                      baud_hz: Optional[float] = None,
+                      sigma_tx_s: float = 0.0,
+                      f_z_perturb_rel: float = 0.0,
+                      flat_tol: float = 1e-3) -> Dict[str, Any]:
     """逐 lane 均衡后 **ISI residual**（抽头能量和 = 归一化干扰上界，闭式口径）。
 
     🔴 复用 `oi_m1._channel_taps` 单一实现，CTLE 经 `h_extra` 接入（上游 M1 已开该接线点）。
+
+    🔴 **v0.9.185 修 F4（多通道退化）**：首版签名 `f_mod_hz: float` 用**单一标称信道**
+    跑**全部 lane**，与 `lane["f_mod_ghz"]`（逐 lane 工艺离散 101.85…108.15 GHz）
+    **自相矛盾** ⇒ 门禁测的是「8×同一信道 + 8 个不同 CTLE」，**没有**检验「逐 lane
+    信道被各自均衡」。现在 `f_mod_hz=None`（默认）⇒ **逐 lane 用自身 `f_mod_ghz`**；
+    传标量则退化到旧口径（显式保留以便对照），`channel_source` **如实回报**来源。
+
+    `f_z_perturb_rel` 供门禁探针制造「某 lane 的 CTLE 零点被设计错」的真 bug。
     """
+    per_lane_ch = f_mod_hz is None
     out: List[Dict[str, Any]] = []
     for lane in lanes:
-        z = float(lane["f_z_hz"])
+        z = float(lane["f_z_hz"]) * (1.0 + float(f_z_perturb_rel))
         p_ = float(lane["f_p_hz"])
+        fm = float(lane["f_mod_ghz"]) * 1e9 if per_lane_ch else float(f_mod_hz)
         # 🔴 CTLE 在 `oi_m1._channel_taps` **自己的频栅**上求值（callable 契约），
         #    频栅分辨率 df = baud/(n_taps+8)：取 n_taps=512 ⇒ df≈0.2 GHz（奈奎斯特处
         #    约 260 点），足以解析 f_z/f_p 形态；窗口 = 520 符号 ≈ 4.9 ns。
-        taps = _M1._channel_taps(f_mod_hz=f_mod_hz, f_pd_hz=f_pd_hz, f_tia_hz=f_tia_hz,
+        taps = _M1._channel_taps(f_mod_hz=fm, f_pd_hz=f_pd_hz, f_tia_hz=f_tia_hz,
                                  beta2_s2_m=beta2_s2_m, L_m=L_m, baud_hz=baud_hz,
                                  sigma_tx_s=sigma_tx_s, n_taps=512, os=64,
                                  h_extra=lambda fq: ctle_h(fq, z, p_))
         res = float(np.sum(np.abs(taps[1:]) ** 2))
         out.append({"lane": lane["lane"], "taps": taps.tolist(),
+                    "f_mod_ghz_used": (float(lane["f_mod_ghz"]) if per_lane_ch
+                                       else float(f_mod_hz) / 1e9),
                     "isi_residual": res, "cursor": float(taps[0])})
     residuals = [x["isi_residual"] for x in out]
+    spread = max(residuals) - min(residuals)
     return {"per_lane": out, "n_lanes": len(out),
+            "channel_source": ("per_lane(f_mod_ghz)" if per_lane_ch
+                               else "scalar(f_mod_hz)"),
             "isi_min": min(residuals), "isi_max": max(residuals),
-            "isi_spread": max(residuals) - min(residuals),
-            "isi_flat_ok": bool(max(residuals) - min(residuals) <= 1e-3)}
+            "isi_spread": spread,
+            "isi_flat_ok": bool(spread <= flat_tol)}
+
+
+def lane_equalization_flatness(n_lanes: Optional[int] = None,
+                               boost_db: Optional[float] = None,
+                               f_nyq_ghz: Optional[float] = None,
+                               f_z_perturb_rel: float = 0.0) -> Dict[str, Any]:
+    """多通道均衡**成效**（🔴 **独立重算**，v0.9.185 修 F3）。
+
+    🔴 **为何需要它**：`lane_ctle_design` 的 `total_gain_*` 是 `f_z_for_boost` 反解的
+    **往返恒等式**（改物理常量不红）⇒ 它只证明「设计方程自洽」，**不证明**「信道被真正
+    拉平」。本函数走 `lane_isi_residual`（**时域抽头**，逐 lane **真信道**）⇒ 若某 lane
+    的 f_z 被设计错，其 residual 会真变 ⇒ **能变红**（门禁 P11 靶子）。
+
+    `f_z_perturb_rel` 供探针制造「某 lane CTLE 零点打偏」的真 bug（透传给逐 lane 循环）。
+    """
+    des = lane_ctle_design(n_lanes, boost_db, f_nyq_ghz)
+    f_pd = float(_M2.OI_M2_PROCESS["f_pd_ghz"]) * 1e9
+    f_tia = float(OI_M2B_PROCESS["f_tia_ghz"]) * 1e9
+    baud = PAM4_BAUD_200G_GBD * 1e9
+    iso = lane_isi_residual(des["lanes"], None, f_pd, f_tia, 0.0, 0.0, baud,
+                            f_z_perturb_rel=f_z_perturb_rel)
+    return {"design": des, "flatness": iso,
+            "equalization_flat_ok": bool(iso["isi_flat_ok"]),
+            "isi_spread": float(iso["isi_spread"]),
+            "channel_source": iso["channel_source"]}
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -359,12 +417,23 @@ def thermal_tune_budget(n_lanes: Optional[int] = None,
 
 
 def _ring_fsr_nm() -> float:
-    try:
-        from lda_agent.wdm_system import fsr_nm  # noqa: E402
-        return float(fsr_nm(float(OI_M2B_PROCESS["wl0_nm"]), ring_radius_um(),
-                            OI_M2B_PROCESS["ring_n_g"]))
-    except Exception:
-        return float(OI_M2B_PROCESS["spacing_nm"])
+    """环 FSR（nm）—— **单一真源** = `lda_agent.wdm_system.fsr_nm`。
+
+    🔴 F7（v0.9.185）：首版 import 失败时 `return OI_M2B_PROCESS["spacing_nm"]`（= **4.5 nm**），
+    而真值 **4.891789 nm** ⇒ 静默偏 8.0%，`P_tune` 与「∝Δλ」判据**照绿**。**回退已删**
+    （失败即 raise），并加 `no_fsr_fallback_ok()` 把「用的不是回退常量」变成机器可查。
+    """
+    from lda_agent.wdm_system import fsr_nm          # noqa: E402（单一真源 · 回退已删）
+    return float(fsr_nm(float(OI_M2B_PROCESS["wl0_nm"]), ring_radius_um(),
+                        OI_M2B_PROCESS["ring_n_g"]))
+
+
+def no_fsr_fallback_ok() -> bool:
+    """🔴 F7（v0.9.185）：`_ring_fsr_nm()` 必须**不等于** `spacing_nm` 回退常量。
+
+    真值 4.891789 ≠ 回退 4.5 ⇒ 若回退分支复活（被静默触发），本判据必红（探针 P12 靶子）。
+    """
+    return abs(_ring_fsr_nm() - float(OI_M2B_PROCESS["spacing_nm"])) > 0.1
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -687,6 +756,11 @@ OI_M2B_DISCLOSURE: Dict[str, str] = {
     "no_t2": "工艺偏差 σ / 温窗为设计者声明窗口，非 foundry 真值（T2 锁死）",
     "no_energy": "🔴 不报 TOPS / TOPS-W / fJ/op / pJ/bit；热调只登记 mW 功耗",
     "no_dsp_lpo": "LPO 形态无 FFE/DFE（模块内无 DSP）—— 形态映射约束，可判红",
+    "gamma_scale": ("🔴 Γ 矩阵为**归一化对数场口径**（`_R_TH0_K_PER_MW` / `_D_REF_UM` 均无实测锚）"
+                    "⇒ **绝对量级未标定**；三条物理律（互易/单调递减/对角最大）只是**结构性质**，"
+                    "不得当热串扰定量结论对外宣称。**对角 Γ_ii 是 d→0 的钳位伪值**"
+                    "（真自热 ≈ S·1mW = 0.1016 nm/mW，伪值 2.0124 nm/mW，偏大 ~20×）"
+                    "——自热请用调谐斜率 S，**勿用 Γ_ii**。"),
 }
 
 _EFFECT_BANNED = ("fJ/", "pJ/bit", "TOPS-W", "能效比", "J/op")
@@ -696,7 +770,8 @@ def honest_boundary_ok() -> bool:
     """🔴 禁词只扫**肯定式宣称面**（本项目纪律：否定式声明是豁免，否则自己扫自己必红）。
 
     本模块的免责条款正是 `no_energy`（原文含 `fJ/op` / `pJ/bit` / `TOPS-W`）⇒ 该键**排除**，
-    其余披露面（verdict/scope/golden/...")
+    其余披露面（verdict/scope/golden/not_golden/no_pdk/no_t2/no_dsp_lpo/gamma_scale）
+    逐条按**肯定式宣称面**扫，任一含能效词即红。
     """
     txt = " ".join(v for k, v in OI_M2B_DISCLOSURE.items() if k != "no_energy")
     return not any(b in txt for b in _EFFECT_BANNED)
@@ -743,8 +818,12 @@ def oi_m2b_self_check(verbose: bool = True) -> Dict[str, Any]:
     checks.append(("M2b 多通道：逐 lane f_z 真不同（工艺离散 ⇒ 多通道均衡非摆设）",
                    len({round(x["f_z_hz"], 6) for x in des["lanes"]})
                    == int(OI_M2B_PROCESS["n_lanes"])))
-    checks.append(("M2b 多通道：均衡后各 lane 总增益拉平（平坦化互锁，非断言）",
-                   bool(des["flat_after_equalization"])))
+    checks.append(("M2b 多通道：设计方程往返自洽（total_gain ≡ b_nom+loss_ref；弱判据，如实标注）",
+                   bool(des["design_roundtrip_flat"])))
+    _flat = lane_equalization_flatness()
+    checks.append(("M2b 多通道：**均衡成效**（独立重算 · 逐 lane 真信道 ISI 拉平）",
+                   bool(_flat["equalization_flat_ok"])
+                   and _flat["channel_source"] == "per_lane(f_mod_ghz)"))
     # 6) 热调（功耗口径）
     tb = thermal_tune_budget()
     _d0 = tb["residual_detune_nm"]
@@ -752,6 +831,8 @@ def oi_m2b_self_check(verbose: bool = True) -> Dict[str, Any]:
     checks.append(("M2b 热调：P_tune ∝ 剩余失谐（P = Pπ·Δλ/FSR，闭式线性）",
                    abs(_p2 - 2.0 * tb["p_tune_mw_per_lane"]) < 1e-12))
     checks.append(("M2b 热调：只出 mW 不出能效（honest_boundary）", honest_boundary_ok()))
+    checks.append(("M2b 热调：FSR 走单一真源 `fsr_nm`（回退常量 4.5 nm 分支已删 · 修 F7）",
+                   no_fsr_fallback_ok()))
     # 7) Γ 三条物理律
     g = crosstalk_gamma()
     checks.append(("M2b Γ：对称（热传导互易）", g["symmetric_ok"]))

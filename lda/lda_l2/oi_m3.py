@@ -35,6 +35,7 @@ from __future__ import annotations
 import cmath
 import hashlib
 import math
+import struct
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -85,7 +86,6 @@ OI_M3_PROCESS: Dict[str, Any] = {
     "p_asic_w": 3.0,              # ASIC 功耗（规格锚）
     "r_th_asic_k_per_w": 1.5,     # ASIC → 中介层
     "r_th_int_k_per_w": 4.0,      # 中介层 → 光子 die
-    "r_th_thermal_k_per_w": 8.0,  # 加热器 → die（**闭环反馈用**：P_ss 加热又抬温）
     "t_amb_c": 25.0,
     "asic_to_photon_um": 300.0,   # ASIC 边缘 ↔ 光子 die 边缘（喂 M2b Θ 的对数场）
     # ── ④ 功耗账（3.2T 同口径；🔴 只 mW/W）
@@ -577,11 +577,34 @@ def heater_r_th_k_per_mw() -> float:
     闭环反馈增益凭空多出 `R_h·S/FSR ≈ 28` 倍 ⇒ 不动点发散到 1e88 K（**纯算术假失稳**）。
     修法不是「调参数让它绿」，而是**回到单一真源 + 单通路**，并把双计做成必红判据。
     """
+    # 🔴 F7（v0.9.185）：**删除静默回退** —— 首版 `except: return 1.0` 的回退值恰等于真值
+    #    （`R_TH_K_PER_MW = 1.0`）⇒ 门禁**完全看不见**降级（`single_path_consistency` 也照绿）。
+    #    现在 import 失败即 raise（不静默），可达性另由 `single_source_reachable_m3()` 守。
+    from lda_design import active_models as _AM      # noqa: E402（单一真源）
+    return float(_AM.R_TH_K_PER_MW)
+
+
+def single_source_reachable_m3() -> bool:
+    """🔴 F7（v0.9.185）：单一真源**可达性**判据（防静默回退）。
+
+    `heater_r_th_k_per_mw()` 已删回退（失败即 raise），本判据进一步把「真源可达」变成
+    机器可查：import 失败 ⇒ **必红**（探针 P15 靶子）。
+    """
     try:
-        from lda_design import active_models as _AM  # noqa: E402（单一真源）
-        return float(_AM.R_TH_K_PER_MW)
-    except Exception:                                    # pragma: no cover
-        return 1.0
+        from lda_design import active_models as _AM   # noqa: E402（单一真源）
+        return float(_AM.R_TH_K_PER_MW) > 0.0
+    except Exception:                                     # noqa: BLE001
+        return False
+
+
+def no_bypass_thermal_key() -> bool:
+    """🔴 F6（v0.9.185）：`OI_M3_PROCESS` **不得含旁路热阻键** `r_th_thermal_k_per_w`。
+
+    首版该键 = 8.0 K/W（= 8 mK/mW，比真值小 125 倍）、**无任何计算消费**（死配置）且
+    **不在 `_BANDS`**（无取值窗口）⇒ 后来者极易误用（M1 `TARGET_BER_KP4` 血案同族：
+    错常量静默）。已删；本判据守「不许复活」（探针 P14 靶子）。
+    """
+    return "r_th_thermal_k_per_w" not in OI_M3_PROCESS
 
 
 def tuning_slope_nm_per_k() -> float:
@@ -594,25 +617,37 @@ def tuning_slope_nm_per_k() -> float:
 
 def closed_loop_thermal_steady(n_lanes: Optional[int] = None,
                                setpoint_over_ambient_c: Optional[float] = None,
-                               r_h_override_k_per_mw: Optional[float] = None) -> Dict[str, Any]:
-    """闭环热调**稳态**（🔴 代数解，不是不动点迭代）。
+                               r_h_override_k_per_mw: Optional[float] = None,
+                               solve_mode: str = "algebraic",
+                               loop_gain: float = 1.0,
+                               max_iter: int = 200,
+                               tol_mw: float = 1e-9) -> Dict[str, Any]:
+    """闭环热调**稳态**（`solve_mode` 两条求解路径）。
+
+    `"algebraic"`（默认）：闭式代数解 —— 伺服把环温拉到设定点 ⇒ `P = ΔT/R_h`。
+    `"fixed_point"`：**真·不动点迭代** `P ← P + A·(λ_t − λ_ring(P))/S`；
+      `loop_gain = A` 是**环路增益**（= 控制器增益 × 真实灵敏度 dλ/dP）。
+      `A = 1` ⇒ **一步收敛**到与代数解**同一**稳态；
+      🔴 `A ≫ 1`（= 双计 / 灵敏度算错）⇒ **必发散**。
 
     物理（**单通路**）：加热器功率 P 经 R_h 抬环波器芯温度，热光效应把共振红移：
-
         T_ring = T_amb + ΔT_asic + P·R_h
         λ_ring = λ_cold + (dλ/dT)·(T_ring − T_amb) = λ_cold + S·P
 
-    🔴 血案根因（首版）：不动点迭代里**同一条「加热器→温升→波长」通路被算了两遍**
-    —— 既写 `T ← T_amb + ΔT + P·R_h`，又写 `Δλ ← S·(T−T_amb)`；而 S 本身**已含自热**
-    （S = dλ/dT·R_h）⇒ 凭空造出反馈增益 `A = R_h·Pπ·S/FSR ≈ 28 ≫ 1` ⇒ 发散到 1e88 K。
-    正确结论：闭环稳态只有**代数解**（伺服把 T_ring 拉到设定点 ⇒ `P = ΔT/R_h`），
-    **不存在不动点迭代，也不存在会发散的环路增益**。
+    🔴 **血案与 v0.9.185 修 F2**（首版不动点发散到 **1e88 K**）：根因是把「加热器→温升
+    →波长」通路**算两遍**（`T ← T_amb+ΔT+P·R_h` 之后又用**含 R_h 的 S** 反推 P，
+    而首版还把 R_h 抄小 125 倍 ⇒ `A = R_h·S/FSR ≈ 28 ≫ 2`）⇒ 迭代越界。
+    正确结论：**单通路**下闭环稳态只有代数解（或 A=1 的一步不动点）。
 
-    判据语义（真能抓双计）：`p_steady ∝ 1/R_h`（R_h 加倍 ⇒ 功率减半）；双计实现会发散。
+    🔴 **首版的判据链三层同时失效**（同源恒等式 + 自证探针 + 死码负例）⇒ 这一条最贵的
+    血案**零护栏**。现在改为：`algebraic` ⟷ `fixed_point(A=1)` 收敛到同一稳态
+    （第二独立通道）+ `A≫1` fixed_point **必发散**（可被判据直接咬住）。
 
     与 M2b 的**关键差别**：M2b `thermal_tune_budget` 是「一次性调谐到信道」的一次性功耗；
     CPO 里光引擎与 ASIC 共封装 ⇒ ASIC 热背景**持续存在** ⇒ 热调必须**持续跟踪**（稳态）。
     """
+    if solve_mode not in ("algebraic", "fixed_point"):
+        raise ValueError("未知求解模式：%r（应为 'algebraic' | 'fixed_point'）" % (solve_mode,))
     p = OI_M3_PROCESS
     n = int(p["n_lanes"]) if n_lanes is None else int(n_lanes)
     t_amb = float(p["t_amb_c"])
@@ -620,6 +655,9 @@ def closed_loop_thermal_steady(n_lanes: Optional[int] = None,
         else float(r_h_override_k_per_mw)
     s = float(_M2B.tuning_slope_nm_per_mw())
     dl = tuning_slope_nm_per_k()
+    # 🔴 与 r_h **自洽**的有效灵敏度（S ≡ dλdT·R_h）：override 时随 r_h 线性变，
+    #    这样两条求解路径在任意 r_h 下都对同一物理系统求解（修 F2b 的「代数恒真」）
+    s_eff = dl * r_h
     fsr = float(_M2B.thermal_tune_budget()["FSR_nm"])
     d_t_asic = float(p["p_asic_w"]) * (float(p["r_th_asic_k_per_w"]) + float(p["r_th_int_k_per_w"]))
     t_free = t_amb + d_t_asic                    # 加热器关断（只有 ASIC 热）
@@ -631,12 +669,12 @@ def closed_loop_thermal_steady(n_lanes: Optional[int] = None,
     d_t_heater = t_ring - t_free                     # ≥ 0
     p_heater = d_t_heater / r_h if r_h > 0.0 else 0.0
     d_t_resid = t_ring - t_set                       # ≥ 0（够不到 ⇒ 残余温升）
-    p_actuator = abs(t_free - t_set) / r_h if r_h > 0.0 else 0.0
-    return {
-        "n_lanes": n,
-        "r_h_k_per_mw": r_h, "S_nm_per_mW": s, "d_lambda_dT_nm_per_k": dl,
-        # 🔴 单通路自洽：S ≡ dλdT·R_h（把同一条通路算两遍 ⇒ 此项必假 ⇒ 判据必红）
-        "single_path_consistency": bool(abs(s - dl * r_h) < 1e-9 * max(abs(s), 1e-12) + 1e-15),
+    p_actuator_alg = abs(t_free - t_set) / r_h if r_h > 0.0 else 0.0
+
+    out: Dict[str, Any] = {
+        "n_lanes": n, "solve_mode": solve_mode, "loop_gain": float(loop_gain),
+        "r_h_k_per_mw": r_h, "S_nm_per_mW": s, "S_eff_nm_per_mW": s_eff,
+        "d_lambda_dT_nm_per_k": dl,
         "t_free_c": t_free, "t_setpoint_c": t_set, "t_ring_c": t_ring,
         "d_t_from_asic_c": d_t_asic,
         "open_loop_residual_nm": dl * (t_free - t_set),
@@ -644,23 +682,87 @@ def closed_loop_thermal_steady(n_lanes: Optional[int] = None,
         "residual_nm": dl * d_t_resid,
         "residual_frac_fsr_nm": dl * d_t_resid / fsr,
         "p_heater_supplyable_mw_per_lane": p_heater,
-        "p_actuator_required_mw_per_lane": p_actuator,     # 双向执行器（TEC）稳态功率
         "actuator_direction": "cool(TEC)" if t_free > t_set else "heat",
         "unidirectional_heater_feasible": bool(t_set >= t_free),
-        "closed_loop": True, "solution": "algebraic",  # 不是不动点迭代
         "note": ("CPO 真实热代价：ASIC 热把光子 die 抬升 ⇒ 单向加热器补不回来；"
                  "工程解是「固化点预偏移」或「双向 TEC」"),
     }
 
+    if solve_mode == "algebraic":
+        # 🔴 `solution` / `closed_loop` **由求解路径返回**（不再写死字面量）
+        out.update({"solution": "algebraic", "converged": True, "n_iter": 0,
+                    "diverged": False,
+                    "p_actuator_required_mw_per_lane": p_actuator_alg,
+                    "p_fixed_point_mw_per_lane": None,
+                    "closed_loop": True})
+        return out
+
+    # ── `fixed_point`：真·不动点迭代（环路增益 A = loop_gain）─────────────────
+    target = abs(dl * (t_set - t_free))          # nm：需补偿的波长量
+    pk = 0.0
+    n_iter, converged, diverged = 0, False, False
+    for _ in range(int(max_iter)):
+        n_iter += 1
+        err = target - s_eff * pk
+        p_next = pk + loop_gain * err / s_eff if s_eff > 0.0 else pk
+        if (not math.isfinite(p_next)) or abs(p_next) > 1e12:
+            diverged = True
+            pk = p_next
+            break
+        if abs(p_next - pk) <= tol_mw:
+            pk = p_next
+            converged = True
+            break
+        pk = p_next
+    out.update({"solution": "fixed_point", "converged": bool(converged),
+                "n_iter": n_iter, "diverged": bool(diverged),
+                "p_actuator_required_mw_per_lane": (pk if converged else float("inf")),
+                "p_fixed_point_mw_per_lane": (pk if converged else None),
+                "closed_loop": bool(converged)})
+    return out
+
+
+def _algebraic_matches_fixed_point(tol_rel: float = 1e-6) -> bool:
+    """**第二独立通道**：代数解 ⟷ 不动点迭代（A=1）必须收敛到**同一**稳态。
+
+    🔴 这**不是**同源相等：代数解走闭式 `P = ΔT/R_h`，不动点解走迭代
+    `P ← P + (λ_t − λ_ring(P))/S` 直到自洽 —— 两条路径**算法独立**（无共享中间量）。
+    若实现把双计灌进任一路径，二者不再相等 ⇒ 判据必红。
+    """
+    a = float(closed_loop_thermal_steady()["p_actuator_required_mw_per_lane"])
+    f = closed_loop_thermal_steady(solve_mode="fixed_point", loop_gain=1.0)
+    if f["converged"] is not True:
+        return False
+    return bool(abs(a - float(f["p_actuator_required_mw_per_lane"]))
+                < tol_rel * max(abs(a), 1e-12) + 1e-12)
+
+
+def _double_count_diverges(gain: float = 28.0) -> bool:
+    """🔴 **双计 / 假环路增益** ⇒ 不动点迭代**必发散**（1e88 K 血案的真实护栏）。
+
+    环路增益 `A = loop_gain`（= 控制器增益 × dλ/dP）。`0 < A < 2` 收敛；`A ≫ 1` 发散。
+    双计把灵敏度算错 ⇒ A 被放大到 ~28（首版实测量级）⇒ 迭代越界 ⇒
+    `converged=False` 且 `diverged=True`。
+    """
+    r = closed_loop_thermal_steady(solve_mode="fixed_point", loop_gain=gain)
+    return bool(r["converged"] is False and r["diverged"] is True)
+
 
 def _closed_loop_scales_with_r_h() -> bool:
-    """闭环稳态执行器功率必须 **∝ 1/R_h**：R_h 加倍 ⇒ 功率减半。
+    """稳态执行器功率必须 **∝ 1/R_h**（R_h 加倍 ⇒ 功率减半）。
 
-    双计（或发散）实现在 R_h 加倍时**不会**减半 ⇒ 判据必红（真判据，非装饰）。
+    🔴 **由不动点求解器输出**（不是 `p = ΔT/r_h` 的闭式定义换写）：两个不同 R_h 的环
+    各自**真迭代**到自洽再比功率 ⇒ 若求解器把 R_h 用错位置，比值不再等于 2 ⇒ 必红。
     """
-    a = closed_loop_thermal_steady(r_h_override_k_per_mw=1.0)["p_actuator_required_mw_per_lane"]
-    b = closed_loop_thermal_steady(r_h_override_k_per_mw=2.0)["p_actuator_required_mw_per_lane"]
-    return bool(a > 0.0 and abs(a - 2.0 * b) < 1e-9 * a + 1e-12)
+    a = closed_loop_thermal_steady(r_h_override_k_per_mw=1.0,
+                                   solve_mode="fixed_point", loop_gain=1.0)
+    b = closed_loop_thermal_steady(r_h_override_k_per_mw=2.0,
+                                   solve_mode="fixed_point", loop_gain=1.0)
+    if a["converged"] is not True or b["converged"] is not True:
+        return False
+    pa = float(a["p_actuator_required_mw_per_lane"])
+    pb = float(b["p_actuator_required_mw_per_lane"])
+    return bool(pa > 0.0 and abs(pa - 2.0 * pb) < 1e-6 * pa + 1e-12)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -859,7 +961,7 @@ def cpo_2p5d_layout(oe_link=None, oe_placement=None, oe_routes=None,
     gds = gx.gds_library("LDA_3P2T_CPO_2P5D", structs)
 
     # 电网络拓扑 LVS：每个电网络的路径端点 ∈ 版图电气元素（反向完备）
-    nets = _pdn_lvs(geoms)
+    nets = _pdn_lvs(structs)
     n_elem = sum(len(v) for v in structs.values())
     return {
         "gds_bytes": gds,
@@ -886,21 +988,138 @@ def cpo_2p5d_layout(oe_link=None, oe_placement=None, oe_routes=None,
     }
 
 
-def _pdn_lvs(geoms: Dict[str, Any]) -> Dict[str, Any]:
-    """电网络拓扑 LVS：netlist 端口集合 ⟷ 版图电气元素端点集合（**反向完备**）。
+def _m1_elements_from_gds(structs: Dict[str, List[bytes]]) -> Dict[int, Dict[str, list]]:
+    """🔴 **独立**最小 GDSII 记录流解析器（**刻意不复用** `gds_export` 的解码器）。
 
-    口径（诚实披露）：这是**几何-拓扑一致性核对**（每个声明的电网络都能在版图上找到
-    ≥1 条路径、路径端点都落在电气元素上），**不是** foundry 电 PDK 网表核对 ——
-    电阻率/层厚/叠层真值属 T2 锁死区（规格锚 + 窗口判据，见 `_BANDS`）。
+    只解本 LVS 需要的记录：BOUNDARY(0x08) / PATH(0x09) + LAYER(0x0D) +
+    WIDTH(0x0F) + XY(0x10, INT4) + ENDEL(0x11)；坐标 DBU→µm（1 DBU = 1 nm）。
+
+    **为何自写**：若复用编码器所在模块的解码器，判据读到的仍是**同源派生量**
+    ⇒ 假判据高发区（本项目血案 #16 同族）。这里从**最终 GDS 字节**独立解出几何，
+    与生成端**零共享代码**。
     """
-    pads = geoms.get("n_pads", 0)
-    m1 = geoms.get("n_m1", 0)
-    n = min(pads, m1) if pads and m1 else 0
-    nets = [{"net": "BUS_LANE_%d" % (k + 1), "pads": 1, "paths": 1,
-             "endpoints_on_pads": True} for k in range(n)]
-    all_ok = bool(n > 0 and all(x["endpoints_on_pads"] for x in nets))
-    return {"n_nets": n, "nets": nets, "pass": all_ok,
-            "kind": "geometry_topology_lvs（非 foundry 电 PDK 网表；电学真值 T2 锁死）"}
+    dbu = 1e-3                                     # 与 gds_export.DBU 同口径
+    out: Dict[int, Dict[str, list]] = {}
+    for _sname, elems in structs.items():
+        if not isinstance(elems, (list, tuple)):
+            continue                           # 畸形输入 ⇒ 安全跳过
+        for blob in elems:
+            if not isinstance(blob, (bytes, bytearray)):
+                continue                           # 非 GDS 字节 ⇒ 安全跳过（P9 靶子）
+            i, n = 0, len(blob)
+            kind = None
+            layer = None
+            width = None
+            xy: Optional[List[Tuple[float, float]]] = None
+            while i + 4 <= n:
+                (ln,) = struct.unpack_from(">H", blob, i)
+                if ln < 4 or i + ln > n:
+                    break
+                rt = blob[i + 2]
+                payload = blob[i + 4:i + ln]
+                if rt == 0x08:
+                    kind = "boundary"
+                elif rt == 0x09:
+                    kind = "path"
+                elif rt == 0x0D:
+                    layer = int(struct.unpack_from(">h", payload, 0)[0])
+                elif rt == 0x0F:
+                    width = int(struct.unpack_from(">i", payload, 0)[0]) * dbu
+                elif rt == 0x10:
+                    cnt = len(payload) // 4
+                    vals = struct.unpack_from(">%di" % cnt, payload)
+                    xy = [(vals[j] * dbu, vals[j + 1] * dbu) for j in range(0, cnt, 2)]
+                i += ln
+            if layer is None or not xy or kind is None:
+                continue
+            slot = out.setdefault(layer, {"rects": [], "paths": []})
+            if kind == "boundary":
+                xs = [q[0] for q in xy]
+                ys = [q[1] for q in xy]
+                slot["rects"].append((min(xs), min(ys), max(xs), max(ys)))
+            else:
+                slot["paths"].append({"pts": list(xy), "width_um": float(width or 0.0)})
+    return out
+
+
+def _pt_in_box(pt: Tuple[float, float], box: Tuple[float, float, float, float],
+               tol: float = 0.0) -> bool:
+    return (box[0] - tol) <= pt[0] <= (box[2] + tol) and (box[1] - tol) <= pt[1] <= (box[3] + tol)
+
+
+def _polyline_len(pts: List[Tuple[float, float]]) -> float:
+    return float(sum(math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1])
+                     for i in range(len(pts) - 1)))
+
+
+def _pdn_lvs(structs: Dict[str, List[bytes]]) -> Dict[str, Any]:
+    """电网络拓扑 LVS：**从最终 GDS 字节独立解码**做几何-拓扑一致性核对。
+
+    口径（诚实披露）：这是**几何-拓扑一致性核对**，**不是** foundry 电 PDK 网表核对
+    —— 电阻率/层厚/叠层真值属 T2 锁死区（规格锚 + 窗口判据，见 `_BANDS`）。
+
+    🔴 **v0.9.185 修 F1**：首版此函数是**硬编码 `endpoints_on_pads: True` 的假 LVS**
+    （实证：`n_pads=999999` 也 `pass=True`，`n_pads=0` 才 False）⇒ 判据实际只等价于
+    「计数 > 0」，**从不检查任何 path/endpoint**；而它经 `ok_m3_layout → good4 →
+    run_selfchecks()` 进了案例卡**顶层判决**。
+
+    现在真执行的检查（全部来自**独立解码**的几何）：
+      1. 从 GDS 记录流解出 ASIC die 跨度（层 `_LAYER_ASIC`）；
+      2. M1 层（`_LAYER_M1`）**焊盘** = x 中心落在 die 跨度内的矩形；**片外接触点**
+         （如 FAU touch，x 中心在 die 外）单列，**不入网络**；
+      3. **前向**：每条 M1 走线的**起点**必须落在某个焊盘内（否则记**悬空走线**）；
+      4. **反向**：每个焊盘必须被 ≥1 条走线起点覆盖（否则记**悬空焊盘**）；
+      5. `pass` = 焊盘数 ≥1 且 走线数 ≥1 且 无悬空。
+    """
+    layers = _m1_elements_from_gds(structs)
+    asic = layers.get(_LAYER_ASIC, {"rects": [], "paths": []})["rects"]
+    m1 = layers.get(_LAYER_M1, {"rects": [], "paths": []})
+    rects, paths = m1["rects"], m1["paths"]
+
+    if asic:
+        ax0 = min(b[0] for b in asic)
+        ax1 = max(b[2] for b in asic)
+    else:
+        ax0, ax1 = float("-inf"), float("inf")
+
+    pads, offdie = [], []
+    for b in rects:
+        cx = 0.5 * (b[0] + b[2])
+        (pads if ax0 <= cx <= ax1 else offdie).append(b)
+
+    covered = [False] * len(pads)
+    dangling = 0
+    nets: List[Dict[str, Any]] = []
+    for j, pth in enumerate(paths):
+        start = pth["pts"][0]
+        hit = -1
+        for k, b in enumerate(pads):
+            if _pt_in_box(start, b):
+                hit = k
+                break
+        if hit >= 0:
+            covered[hit] = True
+        else:
+            dangling += 1
+        nets.append({
+            "net": "BUS_LANE_%d" % (j + 1),
+            "path_start_um": [round(start[0], 4), round(start[1], 4)],
+            "endpoint_on_pad": bool(hit >= 0),
+            "pad_index": int(hit),
+            "path_len_um": round(_polyline_len(pth["pts"]), 4),
+            "width_um": round(pth["width_um"], 4),
+        })
+    n_uncovered = sum(1 for c in covered if not c)
+    ok = bool(len(pads) > 0 and len(paths) > 0 and dangling == 0 and n_uncovered == 0)
+    return {
+        "n_nets": min(len(paths), len(pads)),
+        "n_pads": len(pads), "n_paths": len(paths),
+        "n_dangling_paths": int(dangling), "n_uncovered_pads": int(n_uncovered),
+        "n_offdie_touch_points": len(offdie),
+        "nets": nets, "pass": ok,
+        "decoder": "independent_min_gdsi_reader（不复用 gds_export 解码器）",
+        "kind": "geometry_topology_lvs（非 foundry 电 PDK 网表；电学真值 T2 锁死）",
+    }
 
 
 def oi_m3_optical_io_at_400g() -> Dict[str, Any]:
@@ -1022,15 +1241,23 @@ def oi_m3_self_check(verbose: bool = True) -> Dict[str, Any]:
               st["d_t_photon_c"] > st["d_t_interposer_c"]))
     c.append(("M3 ③ 热解双通道：对数解 ⟷ M2b 有限差分网络一致", st["theta_channels_agree"]))
     cl = closed_loop_thermal_steady()
-    c.append(("M3 ③ 闭环热调：解是**代数式**（非不动点迭代），单通路自洽 S ≡ dλdT·R_h（抓双计）",
-              cl["solution"] == "algebraic" and cl["single_path_consistency"]
-              and cl["closed_loop"]))
-    c.append(("M3 ③ 闭环热调：稳态执行器功率 ∝ 1/R_h（R_h 加倍 ⇒ 功率减半；双计/发散必红）",
+    c.append(("M3 ③ 闭环热调：稳态解**收敛**且 `solution` 由实际求解路径返回（非字面量）",
+              bool(cl["converged"]) and cl["solution"] == "algebraic"))
+    c.append(("M3 ③ 闭环热调：代数解 ⟷ 不动点迭代（单通路 A=1）收敛到**同一**稳态（第二独立通道）",
+              _algebraic_matches_fixed_point()))
+    c.append(("M3 ③ 闭环热调：**双计**（环路增益 A≫1）⇒ 不动点迭代**必发散**（1e88 K 血案的真实护栏）",
+              _double_count_diverges()))
+    c.append(("M3 ③ 闭环热调：稳态执行器功率 ∝ 1/R_h（**由不动点求解器输出**，非闭式定义换写）",
               _closed_loop_scales_with_r_h()))
     c.append(("M3 ③ 闭环热调：单向加热器判定（够不到设定点 ⇒ 需预偏移或 TEC，不是硬凑正数）",
               cl["unidirectional_heater_feasible"] is False))
     c.append(("M3 ③ 闭环热调：残余失谐落在 (0, 1 FSR)（CPO 真实代价，可插拔无此项）",
               0.0 < cl["residual_nm"] < _M2B.thermal_tune_budget()["FSR_nm"]))
+    # 🔴 F6/F7（v0.9.185）：单一真源可达（回退已删）+ 无旁路热阻键（8.0 死配置已删）
+    c.append(("M3 ③ 单一真源：`active_models.R_TH_K_PER_MW` 可达（静默回退已删 · 修 F7）",
+              single_source_reachable_m3()))
+    c.append(("M3 ③ 无旁路热阻键：`OI_M3_PROCESS` 不含 `r_th_thermal_k_per_w`（死配置已删 · 修 F6）",
+              no_bypass_thermal_key()))
 
     # ── ④ 功耗账
     rec = power_reconcile()
@@ -1055,8 +1282,15 @@ def oi_m3_self_check(verbose: bool = True) -> Dict[str, Any]:
     geo = cpo_2p5d_geometry(oe_structures=_oe_stub)
     c.append(("M3 ⑤ 电层 DRC：线宽/线距/差分 pitch 互锁", geo["drc_electrical_pass"]))
     c.append(("M3 ⑤ 片外 fiber 不落版图（P8 靶子）", geo["fiber_in_layout"] is False))
-    lvs = _pdn_lvs(geo)
-    c.append(("M3 ⑤ 电网络拓扑 LVS：全部网络端点落在电气元素上（反向完备）", lvs["pass"]))
+    lvs = _pdn_lvs(geo["structures"])
+    c.append(("M3 ⑤ 电网络拓扑 LVS：从 GDS 字节**独立解码** ⇒ 无悬空走线 / 无悬空焊盘",
+              lvs["pass"] and lvs["n_dangling_paths"] == 0 and lvs["n_uncovered_pads"] == 0))
+    c.append(("M3 ⑤ LVS 解码器**独立**：不复用 gds_export 解码器（防同源假判据）",
+              "independent_min_gdsi_reader" in lvs["decoder"]))
+    c.append(("M3 ⑤ LVS 咬**几何**非计数：走线起点逐条核对落在焊盘内（首版读 n_pads 字段 ⇒ 荒谬值必假绿）",
+              lvs["n_pads"] == lvs["n_paths"] and lvs["n_nets"] == lvs["n_pads"]))
+    c.append(("M3 ⑤ 片外 FAU 接触点被识别为**非网络元素**（x 中心在 ASIC die 外 ⇒ 不入焊盘集）",
+              lvs["n_offdie_touch_points"] >= 1))
     c.append(("M3 ⑤ 光引擎 GDS 由 export_chip_gds 复用（吃狗粮不重造，非空绿）",
               geo["oe_structures_inherited"] and len(geo["structures"]["WG_ROUTE"]) == 1))
 

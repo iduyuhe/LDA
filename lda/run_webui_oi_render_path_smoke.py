@@ -132,6 +132,10 @@ GAP_PATHS = [  # `g` 为 gaps 元素
     ("g.closed", "gaps[].closed"),
     ("g.id", "gaps[].id"),
     ("g.title", "gaps[].title"),
+    # 🔴 F5（v0.9.185）：缺口**闭合证据链**（`closed ⇔ evidence_ok`，由 oi_case 门禁守）
+    ("g.evidence", "gaps[].evidence"),
+    ("g.evidence_ok", "gaps[].evidence_ok"),
+    ("g.evidence_detail", "gaps[].evidence_detail"),
 ]
 
 # ── M1（800G）块：`var m1=d.m1||{}, rp=m1.ring_plan||{}, dv=m1.driver||{}` ──
@@ -332,7 +336,9 @@ M2B_CTLE_PATHS = [
 M2B_LANE_PATHS = [
     ("m2ble.n_lanes", "m2b.lane_equalizer.n_lanes"),
     ("m2ble.boost_distinct", "m2b.lane_equalizer.boost_distinct"),
-    ("m2ble.flat_after_equalization_db", "m2b.lane_equalizer.flat_after_equalization_db"),
+    ("m2ble.equalization_isi_spread", "m2b.lane_equalizer.equalization_isi_spread"),
+    ("m2ble.design_roundtrip_spread_db", "m2b.lane_equalizer.design_roundtrip_spread_db"),
+    ("m2ble.channel_source", "m2b.lane_equalizer.channel_source"),
     ("m2ble.flat_ok", "m2b.lane_equalizer.flat_ok"),
     ("m2ble.noise_penalty_min_db", "m2b.lane_equalizer.noise_penalty_min_db"),
     ("m2ble.noise_penalty_max_db", "m2b.lane_equalizer.noise_penalty_max_db"),
@@ -474,7 +480,12 @@ M3_CL_PATHS = [
     ("m3cl.r_h_k_per_mw", "m3.closed_loop_thermal.r_h_k_per_mw"),
     ("m3cl.S_nm_per_mW", "m3.closed_loop_thermal.S_nm_per_mW"),
     ("m3cl.d_lambda_dT_nm_per_k", "m3.closed_loop_thermal.d_lambda_dT_nm_per_k"),
-    ("m3cl.single_path_consistency", "m3.closed_loop_thermal.single_path_consistency"),
+    ("m3cl.solve_mode", "m3.closed_loop_thermal.solve_mode"),
+    ("m3cl.converged", "m3.closed_loop_thermal.converged"),
+    ("m3cl.S_eff_nm_per_mW", "m3.closed_loop_thermal.S_eff_nm_per_mW"),
+    ("m3cl.algebraic_matches_fixed_point",
+     "m3.closed_loop_thermal.algebraic_matches_fixed_point"),
+    ("m3cl.double_count_diverges", "m3.closed_loop_thermal.double_count_diverges"),
     ("m3cl.t_free_c", "m3.closed_loop_thermal.t_free_c"),
     ("m3cl.t_setpoint_c", "m3.closed_loop_thermal.t_setpoint_c"),
     ("m3cl.t_ring_c", "m3.closed_loop_thermal.t_ring_c"),
@@ -1337,6 +1348,16 @@ def main() -> int:
     probe1 = json_path_exists(card_mut, "channels[].il_cascade_db")
     check("🔴 探针①: 抹掉 channels[].il_cascade_db ⇒ ③ 路径判据必红",
           probe1 is False)
+
+    # 探针①b：往 gaps[0] 塞一个新字段 ⇒ ④d 反向完备必红
+    #          （F5：缺口**闭合证据链**字段必须一一被前端引用，不许静默增字段）
+    card_mut1b = copy.deepcopy(card)
+    card_mut1b["gaps"][0]["brand_new_probe_gap_field"] = 1
+    _gpk = ((set(card_mut1b["gaps"][0].keys()) if card_mut1b.get("gaps") else set())
+            - OPTIONAL_UNREF)
+    _rgp = {p[1].split("[].", 1)[1] for p in GAP_PATHS if p[1].startswith("gaps[].")}
+    check("🔴 探针①b: gaps[] 多一个新字段 ⇒ ④d 反向完备必红（缺口证据字段无静默盲区）",
+          (_gpk <= _rgp) is False)
 
     # 探针②：删掉 onclick 接线行 ⇒ ① 接线判据必红
     html_mut = html.replace("$('runOi').onclick = runOi", "$('runOi').onclick = null")

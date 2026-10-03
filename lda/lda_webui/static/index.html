@@ -5227,8 +5227,12 @@ function renderOi(d){
   h+=_qcTbl(['断言','结果'],[
     ['各通道 CTLE 提升互不相等（真逐通道，非同一个数复制 8 份）',
      m2ble.boost_distinct?'<b>成立</b>':'<b>不成立</b>'],
-    ['均衡后 8 通道幅度**拉平**（相对起伏 ≤0.05dB）',
-     m2ble.flat_ok?'<b>成立</b>（起伏 '+m2ble.flat_after_equalization_db+' dB）':'<b>不成立</b>'],
+    ['均衡成效：逐 lane <b>真信道</b>下 ISI 抽头能量拉平（独立重算 ≤1e-3）',
+     m2ble.flat_ok?'<b>成立</b>（逐 lane 真信道 ISI spread '+m2ble.equalization_isi_spread+'）':'<b>不成立</b>'],
+    ['设计方程往返自洽（total_gain ≡ b_nom+loss_ref · <b>弱判据</b>）· 信道口径 '
+     +m2ble.channel_source,
+     (m2ble.design_roundtrip_spread_db<1e-6?'<b>成立</b>':'<b>不成立</b>')
+     +'（起伏 '+m2ble.design_roundtrip_spread_db+' dB）'],
     ['噪声 penalty 逐通道有界（min '+m2ble.noise_penalty_min_db+' / max '
      +m2ble.noise_penalty_max_db+' dB）','<b>成立</b>']
   ]);
@@ -5290,8 +5294,11 @@ function renderOi(d){
   // ㉓ 缺口终态
   var Gob=(d.gaps||[]).filter(function(g){return g.closed;}).map(function(g){return g.id;});
   h+='<h3 style="margin:14px 0 4px">㉓ M2b 缺口终态（G-OI5 闭合 · G-OI4 诚实保留开放）</h3>';
-  h+=_qcTbl(['缺口','闭合','说明'],(d.gaps||[]).map(function(g){
-    return [ g.id, g.closed?'<b>已闭合</b>':'<b>仍开放</b>', g.title ];
+  h+=_qcTbl(['缺口','闭合','闭合证据（机器可查 · 重算）','说明'],(d.gaps||[]).map(function(g){
+    return [ g.id, g.closed?'<b>已闭合</b>':'<b>仍开放</b>',
+      (g.closed?(g.evidence_ok?'✅ ':'🔴 '):'—')+escapeHtml(g.evidence||'')
+        +'<br/><span style="color:#666">'+escapeHtml(g.evidence_detail||'')+'</span>',
+      g.title ];
   }));
   h+='<p>已闭合 '+Gob.length+' / '+(d.gaps_total||(d.gaps||[]).length)
     +'（已闭合：'+(Gob.join(' · ')||'-')+'）</p>';
@@ -5396,8 +5403,12 @@ function renderOi(d){
     ['单一真源 R_h (K/mW)', m3cl.r_h_k_per_mw],
     ['S = dλ/dP (nm/mW)', m3cl.S_nm_per_mW],
     ['dλ/dT (nm/K)', m3cl.d_lambda_dT_nm_per_k],
-    ['单通路一致 S ≡ dλ/dT·R_h',
-     m3cl.single_path_consistency?'<b>成立</b>（热通路只走一条）':'<b>不成立</b>'],
+    ['求解模式 / 收敛', m3cl.solve_mode+' · '+(m3cl.converged?'<b>收敛</b>':'<b>未收敛</b>')],
+    ['S_eff = dλ/dT · R_h (nm/mW)', m3cl.S_eff_nm_per_mW],
+    ['代数解 ⟷ 不动点(A=1) 收敛到同一稳态',
+     m3cl.algebraic_matches_fixed_point?'<b>成立</b>':'<b>不成立</b>'],
+    ['🔴 双计(A≫1) ⇒ 不动点必发散（1e88 K 血案护栏）',
+     m3cl.double_count_diverges?'<b>成立</b>':'<b>不成立</b>'],
     ['自由温度 (°C)', m3cl.t_free_c],
     ['设定点 (°C)', m3cl.t_setpoint_c],
     ['环最终温度 (°C)', m3cl.t_ring_c],
@@ -5463,6 +5474,9 @@ function renderOi(d){
     ['片外 fiber 不落版图', m3ly.fiber_in_layout?'<b>否</b>':'<b>是</b>'],
     ['🔴 通用导出路径 LVS 判决 / 违规', m3ly.oe_lvs_verdict+' / '+m3ly.oe_lvs_n_violations],
     ['通用导出路径 LVS pass 标志', m3ly.oe_lvs_pass?'<b>是</b>':'<b>否</b>'],
+    ['🔴 签核判决口径（F11）：OE 层 LVS 进不进判决',
+     m3ly.oe_lvs_pass?'<b>真 pass</b>'
+       :'<b>显式豁免</b>（verdict=REJECT ∧ honest_note 非空 ∧ 违规≥1）—— <b>不静默不提</b>'],
     ['本卡 LVS 口径', '几何-拓扑一致性核对（非 foundry 电 PDK 网表）'],
     ['GDS sha256（全 64 位）', '<code style="font-size:10px">'+m3ly.gds_sha256+'</code>']
   ]);
@@ -5740,7 +5754,7 @@ function renderOi(d){
     +m2ble.n_lanes+' 条通道的 CTLE 提升逐通道取不同值（'
     +((m2ble.boost_distinct===true)?'互不相等':'**全相等（可疑）**')
     +'） 并把幅度拉平（起伏 '
-    +m2ble.flat_after_equalization_db+' dB），代价是噪声 penalty 上升 '
+    +m2ble.equalization_isi_spread+'（逐 lane 真信道 ISI spread·独立重算），代价是噪声 penalty 上升 '
     +m2ble.noise_penalty_min_db+'+ dB；热调只报 <b>mW</b>（单通道 '+m2bth.p_per_lane_mW
     +' mW / 合计 '+m2bth.p_total_mW+' mW，不做能效比换算），热串扰 Γ 的对角/互易/随距单调三条物理律'
     +'（'+(m2bg.symmetric_ok&&m2bg.diagonal_max_ok&&m2bg.monotonic_ok
@@ -5771,7 +5785,9 @@ function renderOi(d){
     +(m3ly.gds_structures||[]).join('/')+'，'+m3ly.gds_elements+' 元素 / '+m3ly.gds_bytes_len
     +' B），光引擎 <b>真复用 M2 的 G-OI2 builder</b>（'+m3ly.oe_elements_reused+' 元素）而非换皮，'
     +'电层 DRC '+(m3ly.electrical_drc_pass?'全绿':'红')+'；🔴 通用导出路径对 ring 回提 LVS 给 '
-    +m3ly.oe_lvs_verdict+'（'+m3ly.oe_lvs_n_violations+' 违规）——如实报出，不抹平也不改叫 ACCEPT。'
+    +m3ly.oe_lvs_verdict+'（'+m3ly.oe_lvs_n_violations+' 违规）——如实报出，不抹平也不改叫 ACCEPT；'
+    +'🔴 且该判决**已进 2.5D 签核判据**：要么真 pass，要么**显式豁免**（verdict ∈ 白名单 ∧ '
+    +'honest_note 非空 ∧ 违规≥1），**不允许静默不提**（F11）。'
     +'<br/>'+m3.honest_note_m3
     +'<br/><strong>M4（CPO 形态深化 · 热-光-电协同设计空间）：</strong>把此前「各算各的」三域接成'
     +'<b>一条耦合链</b>——ASIC 热（ΔT '+m4c.d_t_photon_k+' K）→ 波长自热漂移（'+m4c.d_lambda_self_nm

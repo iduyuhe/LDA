@@ -20,8 +20,9 @@
   T7  CTLE 退化：f_z = f_p（flat）⇒ penalty ≡ 0（判据能落到 0，不是恒绿）
   T8  CTLE 非平凡：penalty ∈ (0, 上限) —— **防「积分上限被改成 0 ⇒ 恒绿」陷阱**
   T9  多通道：各 lane 目标 boost 真不同（不是「单通道均衡 ×N」摆设）
-  T10 多通道：均衡后各 lane 总增益拉平（平坦化互锁，非断言）
-  T11 多通道：逐 lane ISI residual 有界且 spread 小
+  T10 多通道：**均衡成效**（🔴 独立重算：逐 lane **真信道** ISI 抽头能量拉平；
+      首版用 `total_gain ≡ b_nom+loss_ref` 的**往返恒等式** ⇒ 假判据，v0.9.185 修 F3）
+  T11 多通道：逐 lane ISI residual 有界 · **per-lane 真信道 ≠ 标量口径**（F4 回归锁）
   T12 热调：P_tune ∝ 剩余失谐（闭式线性）
   T13 热调：只出 mW 功耗，输出面无能效词（honest_boundary）
   T14 Γ 对称（热传导互易 · 非对称布局下仍须成立）
@@ -38,6 +39,8 @@
   T25 封装：模场失配底 < 对准预算（预算先扣固有底，容差才可达）
   T26 封装温漂：Δx = gap·Δλ/(Λcosθ) 落在对准容差内
   T27 诚实边界：披露面 / 输出面无禁出词（TOPS-W / fJ / pJ-bit / 能效比）
+  T28 热调：FSR 走单一真源 `fsr_nm`（🔴 F7：`spacing_nm` 回退常量 4.5 nm 分支已删，
+      真值 4.891789 ⇒ 判据证明「用的不是回退常量」）
 
 探针（**先证能变红**）：
   P1  CTLE 退化：f_z=f_p（关掉频率提升）⇒ T8「非平凡」必红
@@ -49,6 +52,10 @@
   P6  MC 换成随机 seed（不可复现）⇒ T22 必红
   P7  GC：把 `gc_coupling_efficiency` 的 dx 指数 2→1（物理解错）⇒ T24 回代必红
   P8  热调：输出面塞入 `fJ/bit`（触碰红线）⇒ T13 必红
+  P11 🔴 把第 0 lane 的 CTLE 零点打偏 1.5× ⇒ T10（**独立重算**的均衡成效）必红
+      （证明 T10 不再是对 `f_z_for_boost` 反解自动成立的恒等式）
+  P12 🔴 让 `lda_agent.wdm_system.fsr_nm` 恒返回回退常量 `spacing_nm` ⇒ T28 必红
+      （真灌故障：patch 真被调用的上游函数，不是直接改判据返回值）
   R  探针还原后基线门禁**必须重新全绿**（探针不污染真判据）
 """
 from __future__ import annotations
@@ -136,13 +143,20 @@ def baseline_checks(light: bool = False) -> dict:
     # ── T9–T11 多通道均衡 ────────────────────────────────────────────────────
     des = M.lane_ctle_design()
     out["T9"] = bool(des["boost_distinct"])
-    out["T10"] = bool(des["flat_after_equalization"])
     _fm = float(p["f_mod_nom_ghz"]) * 1e9
     _pd = float(O2.OI_M2_PROCESS["f_pd_ghz"]) * 1e9
-    iso = M.lane_isi_residual(des["lanes"], _fm, _pd, a, 0.0, 0.0,
-                              M.PAM4_BAUD_200G_GBD * 1e9)
+    _bd = M.PAM4_BAUD_200G_GBD * 1e9
+    # 🔴 F4：逐 lane **真信道**（f_mod_hz=None ⇒ 取 lane["f_mod_ghz"]）
+    iso = M.lane_isi_residual(des["lanes"], None, _pd, a, 0.0, 0.0, _bd)
+    # 🔴 F3：均衡**成效** = **独立重算**（逐 lane 真信道的 ISI 抽头能量 spread），
+    #    不再用 `total_gain ≡ b_nom+loss_ref` 的往返恒等式（首版 T10 是假判据）
+    out["T10"] = bool(M.lane_equalization_flatness()["equalization_flat_ok"])
     out["T11a"] = all(0.0 <= x["isi_residual"] <= 2.0 for x in iso["per_lane"])
-    out["T11b"] = bool(iso["isi_flat_ok"])
+    # 🔴 T11b：口径证据 —— 标量口径（8 lane 共用标称信道）与逐 lane 真信道的 spread
+    #    **必须不同**（否则「逐 lane」是摆设）；这是 F4 的回归锁
+    iso_sc = M.lane_isi_residual(des["lanes"], _fm, _pd, a, 0.0, 0.0, _bd)
+    out["T11b"] = bool(abs(iso["isi_spread"] - iso_sc["isi_spread"]) > 1e-6
+                       and iso_sc["channel_source"] == "scalar(f_mod_hz)")
 
     # ── T12–T13 热调（只登记功耗，不动能效）───────────────────────────────────
     tb = M.thermal_tune_budget()
@@ -211,6 +225,9 @@ def baseline_checks(light: bool = False) -> dict:
     txt = " ".join(v for k, v in M.OI_M2B_DISCLOSURE.items() if k != "no_energy")
     out["T27"] = not any(b in txt for b in ("fJ/", "pJ/bit", "TOPS-W", "能效比"))
 
+    # ── T28 FSR 单一真源（🔴 F7：回退常量 4.5 nm 分支已删）────────────────────
+    out["T28"] = bool(M.no_fsr_fallback_ok())
+
     return out
 
 
@@ -257,7 +274,7 @@ def run_probes() -> dict:
     orig = {k: getattr(M, k) for k in
             ("f_z_for_boost", "equalizer_for_form", "yield_closed_form",
              "yield_monte_carlo", "thermal_tune_budget", "ctle_noise_penalty_db",
-             "_nbw_numeric", "thermal_coupling_log")}
+             "_nbw_numeric", "thermal_coupling_log", "lane_ctle_design")}
 
     # P1：关掉 CTLE 频率提升（f_z = f_p）
     M.f_z_for_boost = lambda F, a, b: float(a)
@@ -319,6 +336,30 @@ def run_probes() -> dict:
     M.thermal_tune_budget = lambda *a, **k: dict(
         orig["thermal_tune_budget"](*a, **k), note="fJ/bit 能效 3.2")
     res["P8"] = _red(baseline_checks(), "T13")
+    _restore(M, orig)
+
+    # P11：🔴 把第 0 lane 的 CTLE 零点打偏 1.5× ⇒ **均衡成效**（T10，**独立重算**）必红
+    #      （证明 T10 不再是对 `f_z_for_boost` 反解自动成立的往返恒等式）
+    def _detuned(n_lanes=None, boost_db=None, f_nyq_ghz=None):
+        d = dict(orig["lane_ctle_design"](n_lanes, boost_db, f_nyq_ghz))
+        ln = [dict(x) for x in d["lanes"]]
+        ln[0]["f_z_hz"] = float(ln[0]["f_z_hz"]) * 1.5
+        d["lanes"] = ln
+        return d
+
+    M.lane_ctle_design = _detuned
+    res["P11"] = _red(baseline_checks(), "T10")
+    _restore(M, orig)
+
+    # P12：🔴 让上游 `fsr_nm` 恒返回回退常量（模拟回退分支复活）⇒ T28 必红
+    #      （真灌故障：patch **被真调用**的 `lda_agent.wdm_system.fsr_nm`）
+    import lda_agent.wdm_system as _ws
+    _bak_fsr = _ws.fsr_nm
+    _ws.fsr_nm = lambda *a, **k: float(M.OI_M2B_PROCESS["spacing_nm"])
+    try:
+        res["P12"] = _red(baseline_checks(), "T28")
+    finally:
+        _ws.fsr_nm = _bak_fsr
     _restore(M, orig)
 
     return res

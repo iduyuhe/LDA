@@ -2360,10 +2360,10 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_oi_m2_smoke.py": 120.0,
     # G-OI2 收发器真 GDS 门禁：逐规模 5 档双闸 + 布局纪律三前提两条通道 + 6 探针，实测 0.63s（冷启 ~10s）
     "run_oi_transceiver_pnr_smoke.py": 120.0,
-    # 光联接模块 M2b 门禁（G-OI5 五项）：CTLE/热调/Γ 双通道/良率 erf⟷MC/封装容差 + 8 探针，实测 20.3s
+    # 光联接模块 M2b 门禁（G-OI5 五项）：CTLE/热调/Γ 双通道/良率 erf⟷MC/封装容差 + 10 突变探针，实测 ~21s
     "run_oi_m2b_smoke.py": 120.0,
     # 光联接模块 M3 门禁（G-OI6 五项）：400G/lane TWMZM 带宽墙 + CPO 电通道闭式⟷FDTD
-    # + die↔die 热/闭环热调 + mW 功耗账 + 2.5D 版图签核 + 10 探针，实测 3s
+    # + die↔die 热/闭环热调 + mW 功耗账 + 2.5D 版图签核 + 15 突变探针，实测 ~3s
     "run_oi_m3_smoke.py": 120.0,
     "run_oi_m4_smoke.py": 120.0,
     # 光联接模块 M5 门禁（VπL 断口结算）：可行域闭式充要 + 电极/封装线双口径对拍

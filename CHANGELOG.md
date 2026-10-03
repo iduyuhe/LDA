@@ -1,5 +1,85 @@
 # Changelog
 
+## v0.9.185（%s · **光联接模块 M2b/M3 复核缺陷修复（P0→P1→P2）—— 假判据清零 · 缺口闭合证据链 · 真护栏** · 账本 **476 不变（零锚改动）** · CI core **273 不变** · 端点 **146 不变**）
+
+### 触发
+
+对 **M2b（G-OI5） / M3（G-OI6） / 缺口终态** 做一轮**独立复核**（`audit_2026-10-03_oi_m2b_m3.md`）：
+先跑全部 8 个 OI 门禁取基线（**全绿**），再逐条追问项目自己的四问
+（①改上游物理常量会红吗 ②探针走真路径还是改输出字段 ③判据读的值是算出来的还是写死的
+④输入改荒谬值还绿吗）⇒ **「全绿」只是起点**，查出 11 项缺陷：
+
+| 级别 | 项 | 性质 |
+|---|---|---|
+| P0 | F1 `oi_m3._pdn_lvs` 硬编码 True | 假 LVS（`n_pads=999999` 也 pass） |
+| P0 | F2 M3 闭环热调「抓双计」判据链 | **三层同时失效**（模块判据恒等式 / 门禁探针改字段 / 卡内负例死码） |
+| P1 | F3 M2b「均衡后拉平」 | `f_z_for_boost` 反解的**往返恒等式** |
+| P1 | F4 M2b 多通道 ISI | 8 lane 共用**单一标称信道**（API 与数据自相矛盾） |
+| P1 | F5 缺口终态 | 手写字面量，与能力实现**无机器耦合** |
+| P1 | F11 OE 层复用 LVS = REJECT(8) | **未进判决**（静默不提） |
+| P2 | F6/F7/F8/F9/F10 | 死配置 · 两处静默回退 · 文档串截断 · 计数表述 · Γ 披露不足 |
+
+### 修复（每项：真判据能变红 → 还原后基线复绿 → 同步门禁规模与卡内自检）
+
+**F1（假 LVS → 真几何-拓扑核对）**：新增 `oi_m3._m1_elements_from_gds` —— **独立**最小
+GDSII 记录流解析器（BOUNDARY/PATH + LAYER + WIDTH + XY + ENDEL），**刻意不复用**
+`gds_export` 的解码器（血案 #16「同源派生量」同族）。`_pdn_lvs` 重写为：由 ASIC die 跨度
+区分**焊盘**与**片外 FAU 接触点**（后者不入网络），**前向**每条 M1 走线起点必须落在某个
+焊盘内（否则记悬空走线），**反向**每个焊盘必须被 ≥1 条走线起点覆盖（否则记悬空焊盘）。
+实测 **75 焊盘 / 75 走线 / 0 悬空 / 0 未覆盖 / 1 片外接触点**。门禁配套：**P11**（走线起点移出
+焊盘 1 µm ⇒ 必红）· **P12**（删一条走线 ⇒ 末焊盘悬空必红）· **P13 对照组**（同一坏几何喂
+首版「旧式计数 LVS」**仍假绿** ⇒ 证明新判据有判别力，非「怎么改都红」的粗判据）
+
+**F2（判据链三层失效 → 收敛性护栏）**：`closed_loop_thermal_steady` 增加**真实现**的
+`solve_mode="fixed_point"` 不动点迭代（含发散侦测与 1e12 越界保护）；判据删除恒等式
+`single_path_consistency`，改为 `_algebraic_matches_fixed_point()`（代数解 ⟷ A=1 不动点
+**收敛到同一稳态**，实测 16.5 mW 逐位相同，n_iter=2）与 `_double_count_diverges()`（双计
+A=28 ⇒ `diverged=True`、p→inf）；`_closed_loop_scales_with_r_h()` 改由**求解器输出**比较
+（非闭式定义换写）；`solution` 由实际求解路径返回。门禁 **P7 由「改输出字段」改为「灌真
+实现」**；卡内 `probe_m3_loop_is_algebraic` 的**死码负例**改为**真实现双向断言**
+
+**F3/F4（往返恒等式 / 多通道退化 → 独立重算 + per-lane）**：新增
+`lane_equalization_flatness()` —— **独立重算**逐 lane **真信道**时域抽头 ISI（实测
+spread **3.6472e-04**）；`lane_ctle_design` 如实分离「设计方程往返自洽（弱 · 恒等式）」与
+「信道成效（强 · 独立重算）」；`lane_isi_residual` 支持 per-lane（`f_mod_hz=None` ⇒ 取
+`lane["f_mod_ghz"]`）并回报 `channel_source`；门禁新增 **P11**（第 0 lane 零点打偏 1.5× ⇒
+均衡成效必红）与 **T11b**（per-lane spread ≠ 标量口径 spread，回归锁）
+
+**F5（缺口闭合 ⇔ 证据机器可查）**：`oi_case` 新增 `_gap_evidence_ok()`（对每个缺口**重算**
+证据：G-OI1 ← m1 梳齿规划 · G-OI2 ← 收发器真 GDS 自检 · G-OI3 ← M1 四项 · G-OI5 ← m2b 五项 ·
+G-OI6 ← m3 2.5D 版图）+ `_GAP_EVIDENCE_SPEC` + 门禁 `_gap_evidence_gate`（**逐项不变式
+`closed ⇔ evidence_ok`**，闭口必须挂非空证据键）+ 探针 `probe_gap_evidence_binding`（逐项
+污染卡块 ⇒ 证据必红；并把「清单说闭合、证据不绿」判红）。前端 `㉓` 表新增「闭合证据」列，
+`GAP_PATHS` 补三格（gaps 反向完备 + 探针①b）
+
+**F11（OE 层 LVS 进判决）**：`_oe_lvs_judgement()` = 「要么真 `pass`，要么**显式豁免**：
+`verdict ∈ {REJECT}` ∧ `honest_note` 非空 ∧ 违规 ≥1」；`ok_m3_layout` 纳入该判据；
+前端 ㉘ 增「签核判决口径」行，明确**不静默不提**
+
+**P2 卫生**：删 `OI_M3_PROCESS["r_th_thermal_k_per_w"]=8.0`（无消费 · 与单一真源差 8×）+
+`no_bypass_thermal_key()` 守复活（P14）；删 `oi_m2b._ring_fsr_nm` 与
+`oi_m3.heater_r_th_k_per_mw` 两处静默回退（后者回退值恰等真值 ⇒ **降级不可见**）+ 
+`no_fsr_fallback_ok()`（P12）与 `single_source_reachable_m3()`（P15）；修 `honest_boundary_ok`
+文档串截断；`OI_M2B_DISCLOSURE` 增 `gamma_scale`（Γ **绝对量级未标定** · 三条律只是**结构
+性质** · **对角 Γ_ii 为 d→0 钳位伪值**，真自热 ≈ S·1mW = 0.1016 vs 伪值 2.0124 nm/mW，
+偏大 ~20×）并与卡内 `crosstalk_gamma.note` 一致；订正门禁规模/模块自检计数表述
+
+### 门禁与回归
+
+| 门禁 | 前 | 后 |
+|---|---|---|
+| `run_oi_m3_smoke` | 65 PASS | **69 PASS / 0 FAIL**（自检 49 → **51 项**；探针 13 → **15**） |
+| `run_oi_m2b_smoke` | 86 PASS | **89 PASS / 0 FAIL**（自检 30 → **31 项**；探针 9 → **10**） |
+| `run_webui_oi_render_path_smoke` | 724 PASS | **728 PASS / 0 FAIL**（gaps 三格 + 探针①b） |
+| 其余 7 个 OI 门禁 | — | 不变（m0 · m1 56 · m2 75 · m4 61 · m5 53 · pnr 40，rc=0） |
+
+🔴 **如实披露**：本轮为**定向门禁**回扫；**全量 CI core 回扫见文末「验证」段**（不跑全量
+不得声称全量绿）。
+
+**账本 476 不变（零锚改动）· CI core 273 不变（未新增 smoke 文件）· 端点 146 不变。**
+
+---
+
 ## v0.9.184（2026-10-03 · **新征程 M5：光联接模块 —— VπL 断口结算**（可行域闭式充要 + 电极/封装线双口径对拍 + 口径翻转披露） · **并清偿两处既有欠账**（受跟踪报告落后账本 6 项 · **30/47 受跟踪 GDS 的 UNITS 为坏编码** ⇒ 原位修复 + 常驻门禁） · 账本 **476 不变（零锚改动）** · CI core **272 → 273** · 端点 **146 不变**）
 
 ### 触发

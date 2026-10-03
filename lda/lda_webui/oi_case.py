@@ -301,8 +301,10 @@ def _m2_block() -> dict:
 def _m2b_block() -> dict:
     """M2b（G-OI5）现算块：多通道 CTLE 均衡 · 热调 · 热串扰 Γ · 工艺偏差良率 MC · 封装容差。
 
-    🔴 数字**全部现算**（不写死）：与 `lda/run_oi_m2b_smoke.py` 的 85 判据同源同一份
+    🔴 数字**全部现算**（不写死）：与 `lda/run_oi_m2b_smoke.py` 同源同一份
     `lda_l2.oi_m2b`，卡内只是**呈现层**，`run_selfchecks` 再回读比对防静默失真。
+    门禁规模：**89 行 = 39 基线判据 × 2（基线 + 还原复检）+ 10 突变探针 + 1 还原一致**；
+    模块自检 **31 项**。
 
     诚实边界（与卡内 `honest_note_m2b` 一致）：
       · 良率/容差 = **设计者显式声明的统计窗口**（σ_dn_eff、对准 IL 预算、温窗 −5…70 ℃），
@@ -318,6 +320,7 @@ def _m2b_block() -> dict:
     z = MB.f_z_for_boost(F, a, float(p["ctle_boost_db"]))
 
     des = MB.lane_ctle_design()
+    _eqflat = MB.lane_equalization_flatness()      # 🔴 F3：均衡成效（独立重算）
     tb = MB.thermal_tune_budget()
     g = MB.crosstalk_gamma()
     yc = MB.yield_closed_form()
@@ -349,8 +352,12 @@ def _m2b_block() -> dict:
         "lane_equalizer": {
             "n_lanes": int(des["n_lanes"]),
             "boost_distinct": bool(des["boost_distinct"]),
-            "flat_after_equalization_db": round(float(des["total_gain_spread_db"]), 12),
-            "flat_ok": bool(des["flat_after_equalization"]),
+            # 🔴 F3：**设计方程往返自洽**（弱，`f_z_for_boost` 反解的逆 ⇒ 恒等式）
+            #    与**信道成效**（强，独立重算：逐 lane 真信道 ISI）分开报，不混淆
+            "design_roundtrip_spread_db": round(float(des["total_gain_spread_db"]), 12),
+            "equalization_isi_spread": round(float(_eqflat["isi_spread"]), 9),
+            "channel_source": _eqflat["channel_source"],
+            "flat_ok": bool(_eqflat["equalization_flat_ok"]),
             "noise_penalty_min_db": round(float(des["noise_penalty_min_db"]), 4),
             "noise_penalty_max_db": round(float(des["noise_penalty_max_db"]), 4),
             "lanes": [{"lane": x["lane"], "f_mod_ghz": round(float(x["f_mod_ghz"]), 3),
@@ -384,7 +391,13 @@ def _m2b_block() -> dict:
             "monotonic_ok": bool(g["monotonic_ok"]),
             "note": ("Γ_ij = S_i·Θ_ij，Θ 取二维薄片稳态**对数场**闭式；三条物理律判据"
                      "（互易/随距离单调递减/对角最大）由门禁守护，第二独立通道为"
-                     "**有限差分热网络**（网格加密相对误差单调下降）。"),
+                     "**有限差分热网络**（网格加密相对误差单调下降）。"
+                     "🔴 **绝对量级未标定**（`_R_TH0_K_PER_MW` / `_D_REF_UM` 为归一化常数，"
+                     "无实测锚）⇒ 三条律只是**结构性质**，**不得**当热串扰定量结论对外宣称；"
+                     "**对角 Γ_ii 为 d→0 钳位伪值**（真自热 ≈ S·1mW = %.4f nm/mW，"
+                     "伪值 %.4f nm/mW，偏大 ~20×）——自热请用 `S_nm_per_mW`，**勿用 Γ_ii**。"
+                     % (float(g["S_nm_per_mW"]), round(max(g["gamma_nm_per_mw"][i][i]
+                                                            for i in range(int(g["n"]))), 4))),
         },
         # ⑥ 工艺偏差 → 良率（MC 是采样近似，不是 golden）
         "yield": {
@@ -427,7 +440,8 @@ def _m2b_block() -> dict:
 def _m3_block() -> dict:
     """M3（3.2T / CPO）现算块：400G-lane 带宽墙 · CPO 电通道 · die↔die 热+闭环热调 · 功耗账 · 2.5D 签核。
 
-    🔴 数字**全部现算**（不写死）：与 `lda/run_oi_m3_smoke.py`（44 判据 + 10 探针）同源同一份
+    🔴 数字**全部现算**（不写死）：与 `lda/run_oi_m3_smoke.py`（51 基线判据 + 15 突变探针
+    + 还原复检）同源同一份
     `lda_l2.oi_m3`，卡内只做**呈现层**，`run_selfchecks` 再回读比对防静默失真。
 
     诚实边界（与卡内 `honest_note_m3` 一致）：
@@ -579,7 +593,12 @@ def _m3_block() -> dict:
             "r_h_k_per_mw": float(cl["r_h_k_per_mw"]),
             "S_nm_per_mW": float(cl["S_nm_per_mW"]),
             "d_lambda_dT_nm_per_k": round(cl["d_lambda_dT_nm_per_k"], 6),
-            "single_path_consistency": bool(cl["single_path_consistency"]),
+            "converged": bool(cl["converged"]),
+            "solve_mode": cl["solution"],
+            "S_eff_nm_per_mW": round(float(cl["S_eff_nm_per_mW"]), 6),
+            # 🔴 F2（v0.9.185）：两条真判据（首版 `single_path_consistency` 是同源恒等式）
+            "algebraic_matches_fixed_point": bool(M3._algebraic_matches_fixed_point()),
+            "double_count_diverges": bool(M3._double_count_diverges()),
             "t_free_c": round(cl["t_free_c"], 3), "t_setpoint_c": round(cl["t_setpoint_c"], 3),
             "t_ring_c": round(cl["t_ring_c"], 3),
             "residual_nm": round(cl["residual_nm"], 4),
@@ -590,12 +609,14 @@ def _m3_block() -> dict:
             "actuator_direction": cl["actuator_direction"],
             "unidirectional_heater_feasible": bool(cl["unidirectional_heater_feasible"]),
             "note": ("🔴 首版**发散到 1e88 K** 的真根因：M2b 的 S=dλ/dP **已含自热**"
-                     "（S=(dλ/dT)·R_h），M3 又在 OI_M3_PROCESS 抄了 r_th=8.0 K/W（真值"
-                     " `active_models.R_TH_K_PER_MW=1.0 K/mW`，小 125 倍）并把"
-                     "「加热器→温升→波长」通路**算两遍** ⇒ 环路增益 A=R_h·S/FSR≈28≫1。"
-                     "修法：R_h 回单一真源、解改**代数式** T_ring=max(T_free,T_set)、"
-                     "p_actuator=|T_free−T_set|/R_h，并加 `single_path_consistency` 必红判据"
-                     "（S ≡ dλ/dT·R_h）+ ∝1/R_h 判据。"),
+                     "（S=(dλ/dT)·R_h），M3 又把「加热器→温升→波长」通路**算两遍** ⇒ 环路增益"
+                     " A≈28≫1 ⇒ 不动点迭代越界。"
+                     "修法（v0.9.185 修 F2）：R_h 回单一真源 + 解走**代数式**"
+                     " T_ring=max(T_free,T_set)（或 A=1 的一步不动点）。"
+                     "🔴 **首版的判据链三层同时失效**（`single_path_consistency` 因 "
+                     "dl=S/R_h 是**代数恒等式**、门禁 P7 只改输出字段、卡内负例是**死码**）"
+                     "⇒ 这条最贵的血案曾**零护栏**。现在护栏是**收敛性**："
+                     "`algebraic ⟷ fixed_point(A=1)` 收敛到同一稳态；**双计 A≫1 必发散**。"),
         },
         # ④ 功耗账（mW/W 口径）
         "power": {
@@ -788,6 +809,177 @@ def _m5_block() -> dict:
                abs(fl["package_line_cap"]["delta_cpo_minus_pluggable_mw"]),
                fl["electrode_cap"]["delta_cpo_minus_pluggable_mw"])),
     }
+
+
+# 🔴 F11（v0.9.185）：OE 层复用 LVS 的**判决级**白名单。
+#    实测 `export_chip_gds` 对 ring 参数几何回提**不适用** ⇒ `OE_LVS = REJECT / 8 违规`
+#    （已知且已在 `oi_m3.cpo_2p5d_layout` docstring 披露的口径差：declared gap 0.55 µm vs
+#    measured 232.3 µm）。此前 `ok_m3_layout` **不含** `oe_lvs_pass` ⇒ OE 层 REJECT 时
+#    「2.5D 签核」判据**仍绿**（静默不提）。修法：判决显式要求「要么 pass，要么**显式豁免**
+#    （verdict ∈ 白名单 ∧ honest_note 非空 ∧ 违规数 ≥1）」⇒ 把已知 REJECT 变成
+#    **显式豁免 + 理由**，而非静默不提。**反向完备**：任何其它 verdict 且非 pass ⇒ 红
+#    （白名单不许静默吞新判决）。
+_OE_LVS_EXEMPT_VERDICTS = ("REJECT",)
+
+
+def _oe_lvs_judgement(lay: dict) -> bool:
+    """OE 层复用 LVS 的**判决级**判定（F11）——要么真 pass，要么**显式豁免带理由**。"""
+    if bool(lay.get("oe_lvs_pass")):
+        return True
+    v = lay.get("oe_lvs_verdict")
+    note = lay.get("oe_lvs_honest_note")
+    n = int(lay.get("oe_lvs_n_violations") or 0)
+    return bool(v in _OE_LVS_EXEMPT_VERDICTS
+                and isinstance(note, str) and len(note.strip()) > 0 and n > 0)
+
+
+# 🔴 F5（v0.9.185）：缺口终态的**机器可查证据链**。
+#    缺口清单此前是手写字面量（`"closed": True`），与能力实现之间**无机器耦合** ⇒
+#    把 M2b/M3 的实现打坏而清单不改，`ok_m2b_gap` / `ok_m3_gap` **仍绿** ——
+#    「G-OI5/G-OI6 已闭合」这句声明**没有任何机器证据绑定**。
+#    ⇒ 每个闭口必须绑定**重算出来的**判据（读卡内**现算块**，不读 `gaps` 字面量），
+#    门禁不变式：`g["closed"] ⇔ g["evidence_ok"]`（逐项一致）。
+_GAP_EVIDENCE_SPEC: dict = {
+    "G-OI1": "m1.ring_plan：搜索解存在 ∧ minXT≥15dB ∧ M0 默认(0.30/170)对照 <15dB",
+    "G-OI2": "m2.g_oi2：真 GDS 元素>0 ∧ DRC 全绿 ∧ LVS ACCEPT/0 ∧ 布局纪律三前提",
+    "G-OI3": "m1：EO f₃dB>0 ∧ worst BER < KP4 门限 ∧ 驱动 t90<0.5UI ∧ TIA>1×Nyq ∧ 色散 penalty 可达",
+    "G-OI5": "m2b 五项：形态↔均衡 ∧ per-lane 均衡成效 ∧ 热调>0 ∧ Γ 三律 ∧ 良率闭式⟷MC ∧ 封装温窗",
+    "G-OI6": "m3.layout_2p5d：拓扑 LVS ∧ 电层 DRC ∧ OE 元素真复用 ∧ OE-LVS 显式豁免(verdict=REJECT+note)",
+}
+
+
+def _gap_evidence_ok(card: dict) -> dict:
+    """🔴 F5：对每个缺口**重算**证据（读的是**算出来的值**，不是 `gaps` 里的字面量）。
+
+    ⇒ 「打坏实现而清单不改」时本函数必红（`probe_gap_evidence_binding` 自证）。
+    开放缺口（G-OI4 电路级无 PDK / G-OI7 封装级无实测）**无证据** ⇒ `ok=False`。
+    """
+    m1 = card.get("m1", {}) or {}
+    m2 = card.get("m2", {}) or {}
+    m2b = card.get("m2b", {}) or {}
+    m3 = card.get("m3", {}) or {}
+    out: dict = {}
+
+    # ── G-OI1：M1 梳齿规避信道规划（真平台能力）
+    try:
+        rp = m1.get("ring_plan", {}) or {}
+        o1 = (int(rp.get("n_solutions", 0)) > 0
+              and float(rp.get("min_xt_db", 0.0)) >= 15.0
+              and float(rp.get("m0_default_min_xt_db", 99.0)) < 15.0)
+        d1 = ("n_sol=%s · best(m=%s,gap=%s) minXT=%s dB · M0 默认对照=%s dB"
+              % (rp.get("n_solutions"), rp.get("m"), rp.get("gap_um"),
+                 rp.get("min_xt_db"), rp.get("m0_default_min_xt_db")))
+    except Exception as e:                                    # noqa: BLE001
+        o1, d1 = False, "EXC %s" % type(e).__name__
+    out["G-OI1"] = {"ok": o1, "detail": d1}
+
+    # ── G-OI2：收发器专用真 GDS builder（ACCEPT/0 + DRC + 布局纪律）
+    try:
+        g2 = m2.get("g_oi2", {}) or {}
+        o2 = (g2.get("lvs_verdict") == "ACCEPT"
+              and int(g2.get("lvs_n_violations", -1)) == 0
+              and bool(g2.get("drc_pass"))
+              and int(g2.get("gds_elements", 0)) > 0
+              and bool(g2.get("layout_discipline_ok")))
+        d2 = ("LVS=%s/%s · DRC=%s · 元素=%s · 布局纪律=%s"
+              % (g2.get("lvs_verdict"), g2.get("lvs_n_violations"),
+                 g2.get("drc_pass"), g2.get("gds_elements"),
+                 g2.get("layout_discipline_ok")))
+    except Exception as e:                                    # noqa: BLE001
+        o2, d2 = False, "EXC %s" % type(e).__name__
+    out["G-OI2"] = {"ok": o2, "detail": d2}
+
+    # ── G-OI3：M1 四项级电光行为模型（EO S21 / 眼图·BER / 驱动-TIA / 色散）
+    try:
+        drv = m1.get("driver", {}) or {}
+        spec1 = m1.get("spec_points", []) or []
+        disp = [s.get("disp_penalty_db") for s in spec1
+                if s.get("disp_penalty_db") is not None]
+        o3 = (float(m1.get("f_3db_eo_ghz", 0.0)) > 0.0
+              and float(m1.get("worst_ber", 1.0)) < 3.8e-3          # 802.3dj KP4 门限
+              and bool(drv) and float(drv.get("rise_ui", 1.0)) < 0.5
+              and float(drv.get("tia_over_nyquist", 0.0)) > 1.0
+              and len(disp) > 0 and max(disp) > 0.0)
+        d3 = ("EO f3dB=%s GHz · worstBER=%s · t90=%s UI · TIA=%s×Nyq · 色散点=%d(max %s dB)"
+              % (m1.get("f_3db_eo_ghz"), m1.get("worst_ber"), drv.get("rise_ui"),
+                 drv.get("tia_over_nyquist"), len(disp),
+                 (round(max(disp), 3) if disp else None)))
+    except Exception as e:                                    # noqa: BLE001
+        o3, d3 = False, "EXC %s" % type(e).__name__
+    out["G-OI3"] = {"ok": o3, "detail": d3}
+
+    # ── G-OI5：m2b 五项（形态↔均衡 / 均衡成效 / 热调 / Γ / 良率 / 封装）
+    try:
+        eq = m2b.get("lane_equalizer", {}) or {}
+        tune = m2b.get("thermal_tune", {}) or {}
+        gam = m2b.get("crosstalk_gamma", {}) or {}
+        yl = m2b.get("yield", {}) or {}
+        pk = m2b.get("packaging", {}) or {}
+        forme = m2b.get("equalizer", {}) or {}
+        lpo, rt = forme.get("lpo", {}) or {}, forme.get("retimed", {}) or {}
+        _yd = abs(float(yl.get("yield_closed_form", 0.0))
+                  - float(yl.get("yield_mc", 1.0)))
+        o5 = (lpo.get("ffe") is False and lpo.get("ctle") is True        # 形态↔均衡映射
+              and rt.get("ffe") is True and rt.get("needs_dsp") is True
+              and bool(eq.get("boost_distinct")) and bool(eq.get("flat_ok"))
+              and eq.get("channel_source") == "per_lane(f_mod_ghz)"
+              and float(tune.get("p_per_lane_mW", 0.0)) > 0.0
+              and bool(gam.get("symmetric_ok")) and bool(gam.get("diagonal_max_ok"))
+              and bool(gam.get("monotonic_ok"))
+              and _yd < 0.02
+              and bool(pk.get("temp_in_tolerance")))
+        d5 = ("形态(ffe lpo=%s/retimed=%s) · boost_distinct=%s flat=%s(%s) · "
+              "P_tune=%s mW · Γ三律=%s/%s/%s · 良率 Δ=%.6f · 温窗=%s"
+              % (lpo.get("ffe"), rt.get("ffe"), eq.get("boost_distinct"),
+                 eq.get("flat_ok"), eq.get("channel_source"),
+                 tune.get("p_per_lane_mW"), gam.get("symmetric_ok"),
+                 gam.get("diagonal_max_ok"), gam.get("monotonic_ok"), _yd,
+                 pk.get("temp_in_tolerance")))
+    except Exception as e:                                    # noqa: BLE001
+        o5, d5 = False, "EXC %s" % type(e).__name__
+    out["G-OI5"] = {"ok": o5, "detail": d5}
+
+    # ── G-OI6：M3 2.5D 版图签核（含 F11 的 OE-LVS 显式豁免）
+    try:
+        lay = m3.get("layout_2p5d", {}) or {}
+        lvs = lay.get("lvs_report") or {}
+        oe_ok = _oe_lvs_judgement(lay)
+        o6 = ("error" not in lay and int(lay.get("gds_bytes_len", 0)) > 0
+              and lay.get("fiber_in_layout") is False
+              and bool(lay.get("electrical_drc_pass"))
+              and bool(lvs.get("pass"))
+              and int(lvs.get("n_dangling_paths", 1)) == 0
+              and int(lvs.get("n_uncovered_pads", 1)) == 0
+              and int(lay.get("oe_elements_reused", 0)) > 0
+              and list(lay.get("gds_structures") or []).count("OE_DIE") == 1
+              and oe_ok)
+        d6 = ("拓扑LVS=%s(悬%s/未覆%s) · 电层DRC=%s · OE复用=%s · OE-LVS=%s(违规%s,豁免=%s)"
+              % (lvs.get("pass"), lvs.get("n_dangling_paths"),
+                 lvs.get("n_uncovered_pads"), lay.get("electrical_drc_pass"),
+                 lay.get("oe_elements_reused"), lay.get("oe_lvs_verdict"),
+                 lay.get("oe_lvs_n_violations"), oe_ok))
+    except Exception as e:                                    # noqa: BLE001
+        o6, d6 = False, "EXC %s" % type(e).__name__
+    out["G-OI6"] = {"ok": o6, "detail": d6}
+
+    # ── 开放缺口：**无证据**（闭合必须由证据支撑，不许清单自说自话）
+    for gid in ("G-OI4", "G-OI7"):
+        out[gid] = {"ok": False, "detail": "开放（T2 锁死区·诚实保留）—— 无证据"}
+    return out
+
+
+def _gap_evidence_gate(card: dict) -> bool:
+    """🔴 F5 门禁：每个缺口的 `closed` 必须与其 `evidence_ok` **逐项一致**，
+    且闭口必须有非空证据键 ⇒ 「闭合 ⇔ 证据机器可查」。"""
+    gaps = card.get("gaps", []) or []
+    if not gaps:
+        return False
+    for g in gaps:
+        if bool(g.get("closed")) != bool(g.get("evidence_ok")):
+            return False
+        if g.get("closed") and not str(g.get("evidence") or "").strip():
+            return False
+    return True
 
 
 def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
@@ -986,7 +1178,7 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                        "首版不动点迭代**发散到 1.15e88 K**：真根因是 M2b 的 S=dλ/dP 已含自热，"
                        "M3 又抄了 r_th=8.0 K/W（真值 1.0 K/mW）且把「加热器→温升→波长」"
                        "通路**算两遍** ⇒ 环路增益 ≈28≫1。修法：R_h 回单一真源 + 代数解 + "
-                       "`single_path_consistency`（S ≡ dλ/dT·R_h）+ ∝1/R_h 两条必红判据"},
+                       "`algebraic ⟷ fixed_point(A=1)` 收敛一致 + **双计 A≫1 必发散** 两条真判据"},
             {"id": "M3-4", "label": "逐项 mW/W 功耗账 + 2.5D 版图签核（G-OI6）",
              "detail": "功耗同口径逐项对拍：CPO 354.5 mW/lane（2.836 W/模块）vs 可插拔 546.1 mW/lane"
                        "（4.369 W）；CPO 多付热调跟踪 16.5 mW + 中介层 PDN 25 mW，省掉板级驱动动态"
@@ -1127,8 +1319,9 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
              "detail": "继承主权红线：无 foundry 数据 ⇒ 无能效宣称资格；规模与能效外推属 T2 锁死区"},
             {"id": "G-OI5", "closed": True,
              "title": "M2b 已闭合：多通道均衡 · 热调 · 热串扰 Γ · 良率 MC · 封装容差",
-             "detail": "五项全部落地（`lda_l2/oi_m2b.py` + 门禁 `run_oi_m2b_smoke.py` 85 判据 / "
-                       "8 探针 + 模块自检 29 项）：① 多通道 CTLE（逐 lane 抽头，工艺离散 ±3% ⇒ "
+             "detail": "五项全部落地（`lda_l2/oi_m2b.py` + 门禁 `run_oi_m2b_smoke.py` "
+                       "**89 行 = 39 基线判据 ×2 + 10 突变探针 + 1 还原一致** + 模块自检 31 项）："
+                       "① 多通道 CTLE（逐 lane 抽头，工艺离散 ±3% ⇒ "
                        "目标 boost 各异 ⇒ 均衡后总增益拉平，spread<1e-15 dB）+ **形态↔均衡映射**"
                        "（LPO 无 DSP ⇒ 只有模拟 CTLE、不能 FFE，探针 P3 守）；② 热调 Pπ 进链路"
                        "（只报 mW，不做能效比）；③ Γ 矩阵**版图绑定**（坐标取真版图 placement，"
@@ -1177,6 +1370,13 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                         "🔴 M4 三域代价**只出 mW / W / K / nm / dB / GHz**；"
                         "不报 TOPS/TOPS-W/fJ/op/pJ/bit；判决由死标量给出，LLM 不进判决路径。"),
     }
+    # 🔴 F5：把**重算出来的**证据挂到每个缺口上（`closed ⇔ evidence_ok` 由 run_selfchecks 门禁守住）
+    _ev = _gap_evidence_ok(card)
+    for _g in card["gaps"]:
+        _e = _ev.get(_g["id"], {"ok": False, "detail": "无证据登记"})
+        _g["evidence"] = _GAP_EVIDENCE_SPEC.get(_g["id"], "")
+        _g["evidence_ok"] = bool(_e["ok"])
+        _g["evidence_detail"] = str(_e["detail"])
     if use_cache:
         _CACHE[key] = card
     return card
@@ -1330,22 +1530,26 @@ def probe_m3_pkg_same_source() -> bool:
 
 
 def probe_m3_loop_is_algebraic() -> bool:
-    """🔴 探针：M3 闭环热调必须是**代数解**（抓「双计自热 ⇒ 发散到 1e88 K」的历史回归）。
+    """🔴 探针：M3 闭环热调必须**收敛**（抓「双计 ⇒ 不动点发散到 1e88 K」血案回归）。
 
-    双向断言：
-      · 正例：真块 `solution == 'algebraic'` 且 `single_path_consistency` 为真；
-      · 反例：把闭环块伪装成「迭代解 / 双计」⇒ 必须判 False。
-    这一条守的是 M3 最贵的血案（不动点发散），不能只靠 `run_oi_m3_smoke` 单独兜底。
+    🔴 v0.9.185 修 F2：首版此探针是**死码负例** ——
+    `if _blk.get("closed_loop_thermal") == _bad and _bad["single_path_consistency"]:`
+    两个合取项按构造**恒 False**（真块 ≠ 篡改副本；且副本该字段本就是 False）⇒ 分支
+    永不触发，函数只剩正例回读 ⇒ **恒 True**。现在**调用真实现**做双向断言：
+      · 正例：默认解 `converged` 且 `solution` 由求解路径返回；A=1 fixed_point 收敛到同值；
+      · 反例：**双计**（`loop_gain=28`）走真实现 ⇒ **必发散**（`converged=False`）。
     """
-    _blk = _m3_block()
-    _cl = _blk["closed_loop_thermal"]
-    if _cl["solution"] != "algebraic" or not _cl["single_path_consistency"]:
+    from lda_l2 import oi_m3 as M3
+
+    _cl = M3.closed_loop_thermal_steady()
+    if not (_cl["converged"] is True and _cl["solution"] == "algebraic"):
         return False
-    _bad = dict(_cl)
-    _bad["solution"] = "fixed_point"                  # 伪装回发散型求解
-    _bad["single_path_consistency"] = False           # 双计自热（S 含 R_h 又再乘 R_h）
-    if _blk.get("closed_loop_thermal") == _bad and _bad["single_path_consistency"]:
-        return False                                   # 不该绿的分支被当成真值
+    if not M3._algebraic_matches_fixed_point():       # 第二独立通道：代数 ⟷ 不动点
+        return False
+    # 🔴 反例走**真实现**：双计（A≈28）灌进 fixed_point ⇒ 必须发散
+    _bad = M3.closed_loop_thermal_steady(solve_mode="fixed_point", loop_gain=28.0)
+    if not (_bad["converged"] is False and _bad["diverged"] is True):
+        return False
     return True
 
 
@@ -1530,6 +1734,51 @@ def probe_m5_settlement_disclosed() -> bool:
     return True
 
 
+def probe_gap_evidence_binding() -> bool:
+    """🔴 F5 探针：证明「缺口闭合 ⇔ 证据机器可查」不是装饰。
+
+    在**真函数** `_gap_evidence_ok` 上跑**被污染的卡块**（模拟「实现被改坏」⇒ 卡内现算块
+    随之变化，而 `gaps` 字面量不动）⇒ 对应缺口的 `evidence_ok` 必须变红。同时验证
+    `_gap_evidence_gate` 会把「清单说闭合、证据不绿」判红（`closed ⇔ evidence_ok`）。
+    """
+    import copy as _copy
+    try:
+        c0 = case_card()
+        ev0 = _gap_evidence_ok(c0)
+        if not all(ev0[g]["ok"] for g in ("G-OI1", "G-OI2", "G-OI3", "G-OI5", "G-OI6")):
+            return False
+        if any(ev0[g]["ok"] for g in ("G-OI4", "G-OI7")):
+            return False
+        # 逐项：把**卡内现算块**打坏（= 实现坏掉后的样子），证据必须变红
+        mutations = [
+            (("m1", "ring_plan", "min_xt_db"), 5.0, "G-OI1"),
+            (("m2", "g_oi2", "lvs_verdict"), "REJECT", "G-OI2"),
+            (("m3", "layout_2p5d", "lvs_report", "pass"), False, "G-OI6"),
+            (("m3", "layout_2p5d", "oe_lvs_verdict"), "UNKNOWN_NEW", "G-OI6"),
+            (("m2b", "lane_equalizer", "flat_ok"), False, "G-OI5"),
+            (("m2b", "yield", "yield_mc"), 0.0, "G-OI5"),
+        ]
+        for path, bad, gid in mutations:
+            cc = _copy.deepcopy(c0)
+            node = cc
+            for k in path[:-1]:
+                node = node[k]
+            node[path[-1]] = bad
+            if _gap_evidence_ok(cc)[gid]["ok"]:
+                return False
+        # 门禁：清单说闭合、证据不绿 ⇒ 必红（此例把 G-OI5 的证据块打坏但清单不动）
+        cc = _copy.deepcopy(c0)
+        cc["m2b"]["lane_equalizer"]["flat_ok"] = False
+        ev_bad = _gap_evidence_ok(cc)
+        for g in cc["gaps"]:
+            g["evidence_ok"] = bool(ev_bad[g["id"]]["ok"])
+        if _gap_evidence_gate(cc):
+            return False
+        return True
+    except Exception:                                         # noqa: BLE001
+        return False
+
+
 def run_selfchecks(verbose: bool = False) -> bool:
     """模块自检：卡结构完备 + 判决诚实 + 关键数字与模块自检同源（M0 + M1 + M2 + M2b）。
 
@@ -1648,7 +1897,9 @@ def run_selfchecks(verbose: bool = False) -> bool:
                    and abs(m2b["ctle"]["noise_penalty_db"]
                            - M2B.ctle_noise_penalty_db(_z, _a, _F)) < 1e-3)
     ok_m2b_eq = (bool(m2b["lane_equalizer"]["boost_distinct"])
+                 # 🔴 F3：`flat_ok` 现在是**独立重算**的信道成效（非往返恒等式）
                  and bool(m2b["lane_equalizer"]["flat_ok"])
+                 and m2b["lane_equalizer"]["channel_source"] == "per_lane(f_mod_ghz)"
                  and len(m2b["lane_equalizer"]["lanes"]) == 8)
     _tb = M2B.thermal_tune_budget()
     ok_m2b_th = (abs(m2b["thermal_tune"]["p_per_lane_mW"] - _tb["p_tune_mw_per_lane"]) < 1e-3
@@ -1707,7 +1958,10 @@ def run_selfchecks(verbose: bool = False) -> bool:
                 and th["d_t_interposer_c"] > 0.0 and th["die_to_die_theta_k"] > 0.0
                 and th["theta_channels_agree"])
     # 闭环热调：代数解 + 单通路自洽 + **单向加热器不可行**（CPO 真实代价）+ 残余 < 1 FSR
-    ok_m3_loop = (clp["solution"] == "algebraic" and clp["single_path_consistency"]
+    # 🔴 F2（v0.9.185）：判据换成**收敛性**（首版 `solution=="algebraic" and
+    #    single_path_consistency` 中后者是恒等式 ⇒ 无判别力）。
+    ok_m3_loop = (clp["solution"] == "algebraic" and clp["converged"] is True
+                  and clp["algebraic_matches_fixed_point"] and clp["double_count_diverges"]
                   and clp["unidirectional_heater_feasible"] is False
                   and clp["residual_lt_fsr"] and clp["p_actuator_mw_per_lane"] > 0.0
                   and clp["d_lambda_dT_nm_per_k"] < clp["S_nm_per_mW"])  # dλ/dT = S/R_h
@@ -1726,9 +1980,13 @@ def run_selfchecks(verbose: bool = False) -> bool:
                 and pw["flip"]["package_line_cap"]["delta_cpo_minus_pluggable_mw"] < 0.0
                 and "mW" in pw["unit_note"])
     # 2.5D 签核：出图 + 片外 fiber 不落版图 + 电层 DRC + 拓扑 LVS + 光引擎元素真复用
+    # 🔴 F11（v0.9.185）：OE 层复用 LVS 实为 REJECT(8 违规)（已知口径差）⇒ 判决**不允许静默不提**：
+    #    要么 pass，要么**显式豁免**（verdict ∈ 白名单 ∧ honest_note 非空 ∧ 违规数 ≥1）。
+    oe_lvs_ok = _oe_lvs_judgement(lay)
     ok_m3_layout = ("error" not in lay and lay["gds_bytes_len"] > 0
                     and lay["fiber_in_layout"] is False
                     and lay["electrical_drc_pass"] and lay["lvs_report"]["pass"]
+                    and oe_lvs_ok
                     and lay["oe_elements_reused"] > 0
                     and lay["gds_structures"].count("OE_DIE") == 1)
     ok_m3_pkg = _m3_pkg_consistent(m3)
@@ -1804,16 +2062,19 @@ def run_selfchecks(verbose: bool = False) -> bool:
     _PROBE_OK = (probe_banned_token_scan() and probe_m2b_pkg_same_source()
                  and probe_m3_pkg_same_source() and probe_m3_loop_is_algebraic()
                  and probe_m4_same_source() and probe_m4_vpi_l_disclosed()
-                 and probe_m5_settlement_disclosed())
-    good = good and good2 and good3 and good4 and good5 and good6 and _PROBE_OK
+                 and probe_m5_settlement_disclosed() and probe_gap_evidence_binding())
+    # 🔴 F5：缺口终态**证据链**门禁（`closed ⇔ evidence_ok` 逐项一致 + 闭口必须挂非空证据键）
+    ok_gap_evidence = _gap_evidence_gate(c)
+    good = (good and good2 and good3 and good4 and good5 and good6 and _PROBE_OK
+            and ok_gap_evidence)
     if _DEBUG_SELFCHECK:                                     # noqa: F821
         print("DBG good=%s good2=%s | m2b: form=%s ctle=%s eq=%s th=%s g=%s y=%s "
               "pkg=%s gap=%s | m3: scale=%s bw=%s chan=%s th=%s loop=%s pw=%s "
-              "layout=%s pkg=%s gap=%s | m4: pkg=%s sem=%s vpi=%s gap=%s | m0/m1: ab=%s b19=%s ch=%s" %
+              "layout=%s pkg=%s gap=%s gapEv=%s | m4: pkg=%s sem=%s vpi=%s gap=%s | m0/m1: ab=%s b19=%s ch=%s" %
               (good, good2, ok_m2b_form, ok_m2b_ctle, ok_m2b_eq, ok_m2b_th,
                ok_m2b_g, ok_m2b_y, ok_m2b_pkg, ok_m2b_gap,
                ok_m3_scale, ok_m3_bw, ok_m3_chan, ok_m3_th, ok_m3_loop, ok_m3_pw,
-               ok_m3_layout, ok_m3_pkg, ok_m3_gap,
+               ok_m3_layout, ok_m3_pkg, ok_m3_gap, ok_gap_evidence,
                ok_m4_pkg, ok_m4_sem, ok_m4_vpi, ok_m4_gap, ok_ab, ok_b19, ok_ch))
     if verbose:
         print("[%s] OI-M0/M1/M2 case_card · 通道=%d · 闭式≡级联=%s · B19=%s"

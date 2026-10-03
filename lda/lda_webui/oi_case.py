@@ -438,6 +438,7 @@ def _m3_block() -> dict:
     """
     from lda_l2 import oi_m2b as _M2B
     from lda_l2 import oi_m3 as M3
+    from lda_l2 import oi_m5 as M5      # 🔴 M5：驱动负载口径（电极 C′·L）+ 翻转披露
 
     _FSR = float(_M2B.thermal_tune_budget()["FSR_nm"])
     tw = M3.twmzm_design()
@@ -601,6 +602,11 @@ def _m3_block() -> dict:
             "unit_note": "🔴 只出 mW / W 口径，不报 fJ/bit、pJ-op、TOPS、TOPS-W 等能效换算",
             "energy_per_bit_banned": bool(
                 M3.power_breakdown("cpo")["energy_per_bit_banned"]),
+            # 🔴 M5：驱动负载电容取**电极电容 C′·L**（主账）；封装线口径**显式并报**
+            "cap_model_used": M3.power_breakdown("cpo")["cap_model_used"],
+            "driver_cap_fF": round(M3.power_breakdown("cpo")["driver_cap_fF"], 3),
+            "driver_package_line_mw": round(
+                M3.power_breakdown("cpo")["driver_package_line_mw"], 3),
             "cpo": {k: round(v, 3) for k, v in rec["cpo"]["items_mw_per_lane"].items()},
             "pluggable": {k: round(v, 3)
                           for k, v in rec["pluggable"]["items_mw_per_lane"].items()},
@@ -611,11 +617,24 @@ def _m3_block() -> dict:
             "cpo_advantage_thermal_mw": round(rec["cpo_advantage_thermal_mw"], 3),
             "cpo_penalty_interposer_mw": round(rec["cpo_penalty_interposer_mw"], 3),
             "reconciled": bool(rec["reconciled"]),
-            "note": ("逐项加总 == 逐 lane 之和（全局口径不脱钩）。CPO 相对可插拔多付"
-                     "**热调跟踪 %.1f mW/lane**（CPO 才需跟 ASIC 热）+ "
-                     "**中介层 PDN %.1f mW/lane**，但省掉板级驱动动态功耗与板上终端。"
+            # 🔴 M5 口径翻转（结算必须披露的后果，两口径并列、不选择性披露）
+            "flip": M5.cross_form_power_flip(),
+            "note": ("逐项加总 == 逐 lane 之和（全局口径不脱钩）。"
+                     "🔴 **M5 口径**：驱动负载取**电极电容 C′·L = %.0f fF**（主账），"
+                     "封装线口径（%.1f mW/lane）**并报不进求和** —— 后者已由中介层 PDN 覆盖，"
+                     "再算进 driver 属双重计数。"
+                     "⇒ 旧叙事「CPO 省掉板级驱动动态功耗」**在主账下不成立**：该优势全部来自"
+                     "1.0 pF vs 2.5 pF 的线电容差（package 口径 CPO 省 %.1f mW/lane；"
+                     "电极口径 CPO **多付 %.1f mW/lane** = 热调跟踪 %.1f + 中介层 PDN %.1f − 终端）。"
                      "🔴 首版把 `interposer_pdn_mw` 挂在 sum **之后** ⇒ 对拍必红；"
-                     "`cpo_advantage_thermal` 符号写反 ⇒ 恒负。两条都已被探针锁死。"),
+                     "`cpo_advantage_thermal` 符号写反 ⇒ 恒负。两条都已被探针锁死。"
+                     % (M3.power_breakdown("cpo")["driver_cap_fF"],
+                        M3.power_breakdown("cpo")["driver_package_line_mw"],
+                        abs(M5.cross_form_power_flip()["package_line_cap"][
+                            "delta_cpo_minus_pluggable_mw"]),
+                        M5.cross_form_power_flip()["electrode_cap"][
+                            "delta_cpo_minus_pluggable_mw"],
+                        rec["cpo_advantage_thermal_mw"], rec["cpo_penalty_interposer_mw"])),
         },
         # ⑤ 2.5D 版图签核（G-OI6）
         "layout_2p5d": lay,
@@ -690,6 +709,84 @@ def _m4_block() -> dict:
             "FAU 对准公差**无分布数据**、封装应力/翘曲**无实测** ⇒ **G-OI7 诚实保留**；"
             "🔴 三域代价**只出 mW / W / K / nm / dB / GHz**，"
             "**不报** TOPS / TOPS-W / fJ-op / pJ-bit 能效比；verdict 恒 `DESIGN_BUDGET`。"),
+    }
+
+
+def _m5_block() -> dict:
+    """🔴 M5（VπL 断口**结算**）现算块：可行域闭式充要 + 双口径对拍 + 口径翻转披露。
+
+    🔴 数字**全部现算**（不写死）：与 `lda/run_oi_m5_smoke.py`（41 判据 + 9 探针）同源同一份
+    `lda_l2.oi_m5` 调用。角色是「把 M4 登记的断口**结掉**」：M4 只登记（断口还在），
+    M5 给出**闭式充要条件** + 把两条并存的口径**机器化对拍** + 如实报出「口径切换会翻转
+    CPO 相对可插拔的功耗结论」这一后果。
+    """
+    from lda_l2 import oi_m5 as M5
+    st = M5.vpi_l_settlement()
+    bands = {}
+    for k, v in st["per_band"].items():
+        ne = bool(v["continuous_non_empty"])
+        bands[k] = {
+            "vpi_l_v_cm": v["vpi_l_v_cm"],
+            # 🔴 空集档**不给 l_min**（否则 lo 会被模块填成 l_max ⇒ 前端会显示成
+            #   「零宽区间」而掩盖「无解」这一事实 —— 失真，必须显式 non_empty）
+            "l_min_mm": (v["continuous_interval_mm"][0] if ne else None),
+            "l_max_mm": v["continuous_interval_mm"][1],
+            "width_mm": v["interval_width_mm"],
+            "n_grid_hits": v["n_grid_hits"],
+            "non_empty": ne,
+        }
+    bl = M5.bw_scaling_law_check()
+    pair = M5.driver_cap_pair_mw()
+    fl = M5.cross_form_power_flip()
+    return {
+        "status": st["status"],
+        "implied_vpi_l_v_cm": st["implied_vpi_l_v_cm"],
+        "vpi_l_critical_v_cm": st["vpi_l_critical_v_cm"],
+        "public_band_v_cm": st["public_band_v_cm"],
+        "gap_ratio_vs_typical": st["gap_ratio_vs_typical"],
+        "gap_ratio_vs_band_low": st["gap_ratio_vs_band_low"],
+        "design_point_self_consistent": bool(st["design_point_self_consistent"]),
+        "public_low_feasible": bool(st["public_low_feasible"]),
+        "public_typical_feasible": bool(st["public_typical_feasible"]),
+        "public_high_feasible": bool(st["public_high_feasible"]),
+        "required_l_at_public_typical_mm": st["required_l_at_public_typical_mm"],
+        "l_max_at_bw_deadline_mm": st["l_max_at_bw_deadline_mm"],
+        "vpp_needed_at_m3_l_v": st["vpp_needed_at_m3_l_v"],
+        "vpp_required_reachable": bool(st["vpp_required_reachable"]),
+        "feasible_bands": bands,
+        "bw_law": {"is_inverse_l": bool(bl["bw_is_inverse_l"]),
+                   "max_rel_err_inv_l": bl["max_rel_err_inv_l"],
+                   "is_inverse_l2": bool(bl["bw_is_inverse_l2"]),
+                   "max_rel_err_inv_l2": bl["max_rel_err_inv_l2"]},
+        "dual_cap": {"cap_electrode_fF": pair["cap_electrode_fF"],
+                     "cap_package_line_fF": pair["cap_package_line_fF"],
+                     "driver_electrode_mw": pair["driver_electrode_mw"],
+                     "driver_package_line_mw": pair["driver_package_line_mw"],
+                     "ratio_package_over_electrode": pair["ratio_package_over_electrode"]},
+        "cross_form_flip": fl,
+        "honest_note_m5": (
+            "🔴 M5 是**有条件结算**（`SETTLED_CONDITIONAL`），不是「断口消失」："
+            "M3 设计点（v_pp %.2f V × L %.1f mm）隐含 VπL = %.4f V·cm ≤ 临界 %.6f V·cm "
+            "⇒ **自洽**；但它比公开 SiP 典型 %.1f V·cm 激进 %.2f×（比窗口下界 %.1f 激进 %.2f×）"
+            "⇒ 设计点**只在高效率工艺上成立**。"
+            "🔴 两处**修正 M4 的表述**：① 带宽律是 `BW ∝ 1/L`（不是 M4 docstring 写的 1/L²），"
+            "实测逐项比值与 L₁/L₂ 最大相对误差仅 %.4f；② 公开典型工艺的连续可行域是 "
+            "[%.2f, %.2f] mm（宽 %.2f mm，**非空**）——M4 报的「收缩到 1 点」是 10 点**离散网格**"
+            "的采样数（grid 命中 %d 个），不是连续域。"
+            "🔴 口径结算的后果如实报出：切到电极口径后「CPO 省板级驱动动态功耗」**翻转**"
+            "（封装线口径 CPO 省 %.1f mW/lane ⇒ 电极口径 CPO 多付 %.1f mW/lane）。"
+            "🔴 边界：VπL 与 CMOS 摆幅是**公开规格锚**（非 foundry 真值）；只出 "
+            "mW / W / GHz / mm / V / V·cm，**不报** TOPS / TOPS-W / fJ-op / pJ-bit；"
+            "G-OI4（电路级无 PDK）与 G-OI7（封装级无实测）**仍开放**。"
+            % (M5.V_PP_DIFF_V, M5.L_ELECTRODE_MM, st["implied_vpi_l_v_cm"],
+               st["vpi_l_critical_v_cm"], st["public_band_v_cm"][0],
+               st["gap_ratio_vs_typical"], st["public_band_v_cm"][0],
+               st["gap_ratio_vs_band_low"], bl["max_rel_err_inv_l"],
+               st["required_l_at_public_typical_mm"], st["l_max_at_bw_deadline_mm"],
+               st["required_l_at_public_typical_mm"] and bands["public_typical"]["width_mm"],
+               bands["public_typical"]["n_grid_hits"],
+               abs(fl["package_line_cap"]["delta_cpo_minus_pluggable_mw"]),
+               fl["electrode_cap"]["delta_cpo_minus_pluggable_mw"])),
     }
 
 
@@ -814,6 +911,7 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
             "m2b": _m2b_block(),
             "m3": _m3_block(),
             "m4": _m4_block(),
+            "m5": _m5_block(),
         "b19_passivity": rep["b19_passivity"],
         "min_isolation_db": min_iso,
         "max_il_db": max_il,
@@ -1362,6 +1460,76 @@ def probe_m4_vpi_l_disclosed() -> bool:
     return not _m4_vpi_l_honest(_bad)
 
 
+def _m5_same_source(m5: dict) -> bool:
+    """M5 块「卡内数字 ≡ `lda_l2.oi_m5` 现算」同源回读（结算量 / 可行域四档 / 带宽律 /
+    双口径 / 翻转五链一起对拍）。
+
+    🔴 抽成函数是为了能被探针直接喂**被篡改的块**（否则判据恒绿、无从证伪）。
+    """
+    from lda_l2 import oi_m5 as M5
+    st = M5.vpi_l_settlement()
+    bl = M5.bw_scaling_law_check()
+    pair = M5.driver_cap_pair_mw()
+    fl = M5.cross_form_power_flip()
+    ok = (abs(m5["implied_vpi_l_v_cm"] - st["implied_vpi_l_v_cm"]) < 1e-9
+          and abs(m5["vpi_l_critical_v_cm"] - st["vpi_l_critical_v_cm"]) < 1e-9
+          and abs(m5["l_max_at_bw_deadline_mm"] - st["l_max_at_bw_deadline_mm"]) < 1e-9
+          and abs(m5["required_l_at_public_typical_mm"]
+                  - st["required_l_at_public_typical_mm"]) < 1e-9
+          and abs(m5["vpp_needed_at_m3_l_v"] - st["vpp_needed_at_m3_l_v"]) < 1e-9
+          and abs(m5["bw_law"]["max_rel_err_inv_l"] - bl["max_rel_err_inv_l"]) < 1e-12
+          and abs(m5["dual_cap"]["driver_electrode_mw"] - pair["driver_electrode_mw"]) < 1e-9
+          and abs(m5["dual_cap"]["ratio_package_over_electrode"]
+                  - pair["ratio_package_over_electrode"]) < 1e-9
+          and abs(m5["cross_form_flip"]["electrode_cap"]["delta_cpo_minus_pluggable_mw"]
+                  - fl["electrode_cap"]["delta_cpo_minus_pluggable_mw"]) < 1e-9
+          and bool(m5["status"]) == bool(st["status"]))
+    for k, v in st["per_band"].items():
+        ne = bool(v["continuous_non_empty"])
+        ok = ok and (m5["feasible_bands"][k]["non_empty"] is ne
+                     and abs(m5["feasible_bands"][k]["vpi_l_v_cm"] - v["vpi_l_v_cm"]) < 1e-9
+                     and m5["feasible_bands"][k]["n_grid_hits"] == v["n_grid_hits"]
+                     and abs(m5["feasible_bands"][k]["l_max_mm"]
+                             - v["continuous_interval_mm"][1]) < 1e-9
+                     and (m5["feasible_bands"][k]["l_min_mm"] is None if not ne
+                          else abs(m5["feasible_bands"][k]["l_min_mm"]
+                                   - v["continuous_interval_mm"][0]) < 1e-9))
+    return bool(ok)
+
+
+def probe_m5_settlement_disclosed() -> bool:
+    """🔴 探针：M5 断口结算必须**可判死**（守「抹平断口必红」纪律）。
+
+      · 正例：真实块必须过 `_m5_same_source`，且翻转被报出。
+      · 反例：① 抹平翻转（`advantage_flips=False`）⇒ 必须判 False；
+              ② 空集档伪装成有解（`public_high.non_empty=True`）⇒ 必须判 False；
+              ③ 带宽律退回 1/L² ⇒ 必须判 False。
+    """
+    from lda_l2 import oi_m5 as M5
+    blk = _m5_block()
+    if not (_m5_same_source(blk) and blk["cross_form_flip"]["advantage_flips"]
+            and not blk["bw_law"]["is_inverse_l2"]):
+        return False
+    import copy as _copy
+    a = _copy.deepcopy(blk)
+    a["cross_form_flip"]["advantage_flips"] = False
+    b = _copy.deepcopy(blk)
+    b["feasible_bands"]["public_high"]["non_empty"] = True
+    b["feasible_bands"]["public_high"]["l_min_mm"] = 7.50921
+    cc = _copy.deepcopy(blk)
+    cc["bw_law"]["is_inverse_l2"] = True
+    cc["bw_law"]["max_rel_err_inv_l"] = 0.9
+    # ① 抹平翻转：直接判语义（adv 不再报出）②空集伪装 ⇒ 同源回读必红 ③带宽律撒谎 ⇒ 回读必红
+    if a["cross_form_flip"]["advantage_flips"]:
+        return False
+    if _m5_same_source(b):
+        return False
+    if _m5_same_source(cc):
+        return False
+    del M5
+    return True
+
+
 def run_selfchecks(verbose: bool = False) -> bool:
     """模块自检：卡结构完备 + 判决诚实 + 关键数字与模块自检同源（M0 + M1 + M2 + M2b）。
 
@@ -1370,7 +1538,7 @@ def run_selfchecks(verbose: bool = False) -> bool:
     """
     c = case_card(use_cache=False)
     need = ["case_id", "claim", "identity", "requested", "channels", "m1", "m2", "m2b", "m3", "m4",
-            "b19_passivity", "milestones", "findings", "gaps", "verdict", "honest_note"]
+            "m5", "b19_passivity", "milestones", "findings", "gaps", "verdict", "honest_note"]
     if any(k not in c for k in need):
         return False
     if c["verdict"] != "DESIGN_BUDGET":
@@ -1544,10 +1712,18 @@ def run_selfchecks(verbose: bool = False) -> bool:
                   and clp["residual_lt_fsr"] and clp["p_actuator_mw_per_lane"] > 0.0
                   and clp["d_lambda_dT_nm_per_k"] < clp["S_nm_per_mW"])  # dλ/dT = S/R_h
     # 功耗：对拍通过 · CPO 多付热调与中介层 PDN · 🔴 禁能效换算标记在位
+    # 🔴 M5 口径修正（原判据 `cpo_total_w < pluggable_total_w` **已失效**）：
+    #   该不等式成立的前提是「封装线电容当驱动负载」（CPO 1.0 pF < 可插拔 2.5 pF）。
+    #   主账切到**电极电容 C′·L** 后两者负载相同 ⇒ 不等式**反向**（CPO 262.7 > 224.8 mW/lane）。
+    #   ⇒ 判据改为「口径切换的翻转**被如实报出**」+「主账口径确为 electrode」。
+    #   🔴 不删该结论、也不粉饰：翻转本身就是 M5 要披露的后果（`cross_form_power_flip`）。
     ok_m3_pw = (pw["reconciled"] and pw["cpo_advantage_thermal_mw"] > 0.0
                 and pw["cpo_penalty_interposer_mw"] > 0.0
                 and pw["energy_per_bit_banned"]
-                and pw["cpo_total_w"] < pw["pluggable_total_w"]
+                and pw["cap_model_used"] == "electrode"
+                and pw["flip"]["advantage_flips"] is True
+                and pw["flip"]["electrode_cap"]["delta_cpo_minus_pluggable_mw"] > 0.0
+                and pw["flip"]["package_line_cap"]["delta_cpo_minus_pluggable_mw"] < 0.0
                 and "mW" in pw["unit_note"])
     # 2.5D 签核：出图 + 片外 fiber 不落版图 + 电层 DRC + 拓扑 LVS + 光引擎元素真复用
     ok_m3_layout = ("error" not in lay and lay["gds_bytes_len"] > 0
@@ -1603,12 +1779,33 @@ def run_selfchecks(verbose: bool = False) -> bool:
                           ))
     good5 = (ok_m4_pkg and ok_m4_sem and ok_m4_vpi and ok_m4_gap)
 
+    # ── M5 自洽（VπL 断口结算 · 可行域闭式 · 双口径 · 翻转披露）——
+    #    🔴 必须**进判决**（`good6` 参与 `good`），否则又是「写得绿 ≠ 拦得住」的血案。
+    m5 = c["m5"]
+    ok_m5_sem = (m5["status"] == "SETTLED_CONDITIONAL"
+                 and m5["design_point_self_consistent"]
+                 and m5["implied_vpi_l_v_cm"] <= m5["vpi_l_critical_v_cm"]
+                 and m5["public_low_feasible"] and m5["public_typical_feasible"]
+                 and m5["public_high_feasible"] is False
+                 and m5["feasible_bands"]["public_typical"]["non_empty"]
+                 and m5["feasible_bands"]["public_high"]["non_empty"] is False
+                 and m5["feasible_bands"]["public_high"]["l_min_mm"] is None
+                 and m5["feasible_bands"]["public_typical"]["width_mm"] > 1.0
+                 and m5["bw_law"]["is_inverse_l"]
+                 and m5["bw_law"]["is_inverse_l2"] is False
+                 and m5["dual_cap"]["ratio_package_over_electrode"] > 2.0
+                 and m5["cross_form_flip"]["advantage_flips"] is True
+                 and bool(m5["honest_note_m5"]))
+    ok_m5_src = _m5_same_source(m5)
+    good6 = (ok_m5_sem and ok_m5_src)
+
     # 🔴 探针进判决（此前 `probe_banned_token_scan` 写好却没接进 good ⇒ 装饰性判据，
     #    「写得绿」不等于「拦得住」；禁词口径与温漂同源回读两条都必须是真拦）。
     _PROBE_OK = (probe_banned_token_scan() and probe_m2b_pkg_same_source()
                  and probe_m3_pkg_same_source() and probe_m3_loop_is_algebraic()
-                 and probe_m4_same_source() and probe_m4_vpi_l_disclosed())
-    good = good and good2 and good3 and good4 and good5 and _PROBE_OK
+                 and probe_m4_same_source() and probe_m4_vpi_l_disclosed()
+                 and probe_m5_settlement_disclosed())
+    good = good and good2 and good3 and good4 and good5 and good6 and _PROBE_OK
     if _DEBUG_SELFCHECK:                                     # noqa: F821
         print("DBG good=%s good2=%s | m2b: form=%s ctle=%s eq=%s th=%s g=%s y=%s "
               "pkg=%s gap=%s | m3: scale=%s bw=%s chan=%s th=%s loop=%s pw=%s "

@@ -499,6 +499,20 @@ M3_PW_TOP_PATHS = [
     ("m3pw.cpo_penalty_interposer_mw", "m3.power.cpo_penalty_interposer_mw"),
     ("m3pw.reconciled", "m3.power.reconciled"),
     ("m3pw.note", "m3.power.note"),
+    # 🔴 M5 口径接线：主账电容口径 + 旧口径并报 + 放大口径；`flip` 是**嵌套**子块
+    #   （其内部叶子由 M5_FLIP_PATHS 覆盖，此处只登记顶层键 + 前端引用）。
+    ("m3pw.cap_model_used", "m3.power.cap_model_used"),
+    ("m3pw.driver_cap_fF", "m3.power.driver_cap_fF"),
+    ("m3pw.driver_package_line_mw", "m3.power.driver_package_line_mw"),
+    ("m3pw.flip", "m3.power.flip"),
+    ("m3pwfl.advantage_flips", "m3.power.flip.advantage_flips"),
+    ("m3pwfl.note", "m3.power.flip.note"),
+    ("m3pwfp.cpo_per_lane_mw", "m3.power.flip.package_line_cap.cpo_per_lane_mw"),
+    ("m3pwfp.delta_cpo_minus_pluggable_mw",
+     "m3.power.flip.package_line_cap.delta_cpo_minus_pluggable_mw"),
+    ("m3pwfe.cpo_per_lane_mw", "m3.power.flip.electrode_cap.cpo_per_lane_mw"),
+    ("m3pwfe.delta_cpo_minus_pluggable_mw",
+     "m3.power.flip.electrode_cap.delta_cpo_minus_pluggable_mw"),
 ]
 _PW_ITEMS = ("driver_dynamic_mw", "driver_termination_mw", "tia_static_mw",
              "ctle_analog_mw", "thermal_steady_mw", "source_pump_mw",
@@ -630,6 +644,45 @@ M4_SLOPE_PATHS = [("m4s." + k, "m4.slope_lock." + k) for k in (
     "slope_m3_calibrated_nm_per_k", "slope_material_closed_nm_per_k",
     "rel_diff", "agree_within_25pct", "note")]
 
+# ── M5（VπL 断口结算 · 可行域闭式 + 双口径对拍 + 口径翻转）路径表 ──────────
+M5_TOP_PATHS = [
+    ("m5.status", "m5.status"),
+    ("m5.implied_vpi_l_v_cm", "m5.implied_vpi_l_v_cm"),
+    ("m5.vpi_l_critical_v_cm", "m5.vpi_l_critical_v_cm"),
+    ("m5.public_band_v_cm", "m5.public_band_v_cm"),
+    ("m5.gap_ratio_vs_typical", "m5.gap_ratio_vs_typical"),
+    ("m5.gap_ratio_vs_band_low", "m5.gap_ratio_vs_band_low"),
+    ("m5.design_point_self_consistent", "m5.design_point_self_consistent"),
+    ("m5.public_low_feasible", "m5.public_low_feasible"),
+    ("m5.public_typical_feasible", "m5.public_typical_feasible"),
+    ("m5.public_high_feasible", "m5.public_high_feasible"),
+    ("m5.required_l_at_public_typical_mm", "m5.required_l_at_public_typical_mm"),
+    ("m5.l_max_at_bw_deadline_mm", "m5.l_max_at_bw_deadline_mm"),
+    ("m5.vpp_needed_at_m3_l_v", "m5.vpp_needed_at_m3_l_v"),
+    ("m5.vpp_required_reachable", "m5.vpp_required_reachable"),
+    ("m5.feasible_bands", "m5.feasible_bands"),
+    ("m5.bw_law", "m5.bw_law"),
+    ("m5.dual_cap", "m5.dual_cap"),
+    ("m5.cross_form_flip", "m5.cross_form_flip"),
+    ("m5.honest_note_m5", "m5.honest_note_m5"),
+]
+M5_BANDS = ("public_low", "public_typical", "public_high", "m3_implied")
+M5_BAND_KEYS = ("vpi_l_v_cm", "l_min_mm", "l_max_mm", "width_mm", "n_grid_hits", "non_empty")
+M5_BAND_PATHS = [("m5fn." + b + "." + k, "m5.feasible_bands." + b + "." + k)
+                 for b in M5_BANDS for k in M5_BAND_KEYS]
+M5_LAW_PATHS = [("m5bw." + k, "m5.bw_law." + k) for k in (
+    "is_inverse_l", "max_rel_err_inv_l", "is_inverse_l2", "max_rel_err_inv_l2")]
+M5_DUAL_PATHS = [("m5dc." + k, "m5.dual_cap." + k) for k in (
+    "cap_electrode_fF", "cap_package_line_fF", "driver_electrode_mw",
+    "driver_package_line_mw", "ratio_package_over_electrode")]
+_M5_FLIP_LEAVES = ("cpo_per_lane_mw", "pluggable_per_lane_mw",
+                   "delta_cpo_minus_pluggable_mw")
+M5_FLIP_PATHS = (
+    [("m5fp." + k, "m5.cross_form_flip.package_line_cap." + k) for k in _M5_FLIP_LEAVES]
+    + [("m5fe." + k, "m5.cross_form_flip.electrode_cap." + k) for k in _M5_FLIP_LEAVES]
+    + [("m5fl.advantage_flips", "m5.cross_form_flip.advantage_flips"),
+       ("m5fl.note", "m5.cross_form_flip.note")])
+
 ALL_PATHS = (ROOT_PATHS + REQUESTED_PATHS + CHANNEL_PATHS + MILESTONE_PATHS
              + GAP_PATHS + M1_TOP_PATHS + M1_DRIVER_PATHS + M1_RING_PATHS
              + M1_SPEC_PATHS + M1_FIX_PATHS
@@ -646,7 +699,9 @@ ALL_PATHS = (ROOT_PATHS + REQUESTED_PATHS + CHANNEL_PATHS + MILESTONE_PATHS
              + M4_TOP_PATHS + M4_CHAIN_PATHS + M4_PREBIAS_PATHS + M4_REPLAN_PATHS
              + M4_FORMS_TOP_PATHS + M4_FORMS_ELEM_PATHS + M4_CTE_PATHS
              + M4_PARETO_TOP_PATHS + M4_PARETO_PT_PATHS + M4_VPIL_PATHS
-             + M4_WALL_PATHS + M4_BAND_PATHS + M4_SLOPE_PATHS)
+             + M4_WALL_PATHS + M4_BAND_PATHS + M4_SLOPE_PATHS
+             + M5_TOP_PATHS + M5_BAND_PATHS + M5_LAW_PATHS + M5_DUAL_PATHS
+             + M5_FLIP_PATHS)
 
 # 🔴 防假绿：纯子串匹配下 `rp.m` 会被 `rp.min_fsr_nm` / `rp.max_il_drop_db` 前缀命中
 # ⇒ 「把 `rp.m` 从渲染里删掉」时 ③ 仍绿（门禁看不见的盲区）。对**是其它字面量前缀**
@@ -851,6 +906,32 @@ def _m3_reverse_flags(card: dict) -> dict:
                      <= _leaf_keys(M3_REUSE_200_PATHS, "m3.reuse.at_200g."),
         "reuse_400": set((ru.get("at_400g") or {}).keys())
                      <= _leaf_keys(M3_REUSE_400_PATHS, "m3.reuse.at_400g."),
+    }
+
+
+def _m5_reverse_flags(card: dict) -> dict:
+    """M5（VπL 断口结算）反向完备五格：顶层 / feasible_bands / bw_law / dual_cap /
+    cross_form_flip（含两个口径子块）。
+
+    返回 {格名: bool}；True = 「后端每个展示字段都被前端引用」。
+    🔴 M5 的 `honest_note_m5` 也在 `M5_TOP_PATHS` 内（前端末段渲染）⇒ 参与顶层反向完备；
+       `feasible_bands` 的 `non_empty` **必须**参与（否则「空集档」可被静默渲染成有解
+       —— 与 M4 `oe_stats` 血案同族）。
+    """
+    m5 = card.get("m5") or {}
+    fb = m5.get("feasible_bands") or {}
+    fl = m5.get("cross_form_flip") or {}
+    return {
+        "top": set(m5.keys()) <= _tops_of(M5_TOP_PATHS + M5_BAND_PATHS + M5_LAW_PATHS
+                                          + M5_DUAL_PATHS + M5_FLIP_PATHS, "m5"),
+        "bands": all(set((fb.get(b) or {}).keys()) <= set(M5_BAND_KEYS) for b in M5_BANDS),
+        "law": set((m5.get("bw_law") or {}).keys()) <= _leaf_keys(M5_LAW_PATHS, "m5.bw_law."),
+        "dual": set((m5.get("dual_cap") or {}).keys())
+                <= _leaf_keys(M5_DUAL_PATHS, "m5.dual_cap."),
+        "flip": (set(fl.keys()) <= {"package_line_cap", "electrode_cap",
+                                    "advantage_flips", "note"}
+                 and all(set((fl.get(s) or {}).keys()) <= set(_M5_FLIP_LEAVES)
+                         for s in ("package_line_cap", "electrode_cap"))),
     }
 
 
@@ -1221,6 +1302,33 @@ def main() -> int:
           % (sorted((_m4.get("slope_lock") or {}).keys()),
              sorted(_leaf_keys(M4_SLOPE_PATHS, "m4.slope_lock."))))
 
+    # ── 4f. M5（VπL 断口结算）反向完备五格 ────────────────────────────
+    _m5 = card.get("m5") or {}
+    _fb5 = _m5.get("feasible_bands") or {}
+    rf6 = _m5_reverse_flags(card)
+    check("④e-56 反向完备：m5 顶层每个展示字段都被前端引用",
+          rf6["top"], "后端=%s 前端引用=%s"
+          % (sorted(_m5.keys()),
+             sorted(_tops_of(M5_TOP_PATHS + M5_BAND_PATHS + M5_LAW_PATHS
+                             + M5_DUAL_PATHS + M5_FLIP_PATHS, "m5"))))
+    check("④e-57 反向完备：m5.feasible_bands[四档] 每个字段都被前端引用"
+          "（含 non_empty，防空集档被渲染成有解）",
+          rf6["bands"], "后端=%s 前端引用=%s"
+          % (sorted(set().union(*[set((_fb5.get(b) or {}).keys()) for b in M5_BANDS])),
+             sorted(M5_BAND_KEYS)))
+    check("④e-58 反向完备：m5.bw_law 每个字段都被前端引用",
+          rf6["law"], "后端=%s 前端引用=%s"
+          % (sorted((_m5.get("bw_law") or {}).keys()),
+             sorted(_leaf_keys(M5_LAW_PATHS, "m5.bw_law."))))
+    check("④e-59 反向完备：m5.dual_cap 每个字段都被前端引用",
+          rf6["dual"], "后端=%s 前端引用=%s"
+          % (sorted((_m5.get("dual_cap") or {}).keys()),
+             sorted(_leaf_keys(M5_DUAL_PATHS, "m5.dual_cap."))))
+    check("④e-60 反向完备：m5.cross_form_flip 每个字段都被前端引用（两口径并列）",
+          rf6["flip"], "后端=%s 前端引用=%s"
+          % (sorted((_m5.get("cross_form_flip") or {}).keys()),
+             sorted({"package_line_cap", "electrode_cap", "advantage_flips", "note"})))
+
     # ── 5. 突变探针（先证能变红）───────────────────────────────────────
     import copy
     # 探针①：抹掉 case_card 的某 channel 字段 ⇒ ③ 的路径判据必红
@@ -1429,6 +1537,21 @@ def main() -> int:
     probe29 = _m4_reverse_flags(card_m29)["pareto"]
     check("🔴 探针㉙: m4.pareto 塞豁免外新字段 ⇒ ④e-50 仍必红（豁免集不是万能挡箭牌）",
           probe29 is False)
+
+    # 探针㉚：往 `m5` 顶层塞新字段 ⇒ ④e-56 必红（M5 无豁免集 ⇒ 零盲区）
+    card_m30 = copy.deepcopy(card)
+    card_m30["m5"]["brand_new_probe_top5"] = 1
+    probe30 = _m5_reverse_flags(card_m30)["top"]
+    check("🔴 探针㉚: m5 顶层多一个新字段 ⇒ ④e-56 反向完备必红", probe30 is False)
+
+    # 探针㉛：把「空集档」伪装成有解（public_high.non_empty ← True）⇒ ④e-57 结构上仍绿，
+    #   但**语义**由 oi_case 探针 `probe_m5_settlement_disclosed` 判死 ⇒ 本门禁必须承认
+    #   自己**看不到**语义（如实披露边界，不假装拦得住）。
+    card_m31 = copy.deepcopy(card)
+    card_m31["m5"]["feasible_bands"]["public_high"]["non_empty"] = True
+    probe31 = _m5_reverse_flags(card_m31)["bands"]
+    check("🔴 探针㉛: 空集档伪装成有解 ⇒ 本门禁（静态结构）**仍绿** ⇒ 语义由 oi_case "
+          "探针判死（如实披露：结构检查拦不住口径撒谎）", probe31 is True)
 
     check("🔴 探针R3: 未被污染的 case_card 在 M4 反向完备十三格上仍全绿（探针无副作用）",
           all(_m4_reverse_flags(card).values()))

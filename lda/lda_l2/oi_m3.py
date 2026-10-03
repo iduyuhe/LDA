@@ -666,17 +666,21 @@ def _closed_loop_scales_with_r_h() -> bool:
 # ═════════════════════════════════════════════════════════════════════════════
 # 5) ④ 功耗同口径账（3.2T：CPO ⟷ 可插拔，逐项对照；🔴 只 mW/W，不做 fJ/bit）
 # ═════════════════════════════════════════════════════════════════════════════
-def power_breakdown(form: str = "cpo", n_lanes: Optional[int] = None) -> Dict[str, Any]:
+def power_breakdown(form: str = "cpo", n_lanes: Optional[int] = None,
+                    cap_model: str = "electrode") -> Dict[str, Any]:
     """单 lane 逐项功耗（mW）+ 模块聚合（W）。**两家逐项同参**，只改电路径口径。
 
-    mW/lane 逐项：driver_dynamic（½C_line·V_pp²·f_sym）· driver_termination·
+    mW/lane 逐项：driver_dynamic（½C·V_pp²·f_sym）· driver_termination·
                   tia_static · ctle_analog · thermal_steady · source_pump
+    # 🔴 M5 口径（cap_model）：驱动器负载电容取**电极电容 C′·L**（光引擎内、与 L 线性）——这才是驱动器真正开关的负载；`c_line_*_pF` 是 die-to-die 互连等效（与 L 无关），其损耗已由 `interposer_pdn_mw` 覆盖，再算进 driver 属双重计数⇒ 旧口径以 `driver_package_line_mw` **显式并报**（口径变更可溯源），不进 `items` 求和。
     W/模块：上面逐 lane 求和 + CPO **独有**项 interposer_pdn（可插拔没有）。
 
     🔴 红线：不报「每比特焦耳 / TOPS 能效」，所有量是**功耗**（mW/W）。
     """
     if form not in ("cpo", "pluggable"):
         raise ValueError("未知形态：%r（应为 'cpo' | 'pluggable'）" % (form,))
+    if cap_model not in ("electrode", "package"):
+        raise ValueError("未知电容口径：%r（应为 'electrode' | 'package'）" % (cap_model,))
     p = OI_M3_PROCESS
     n = int(p["n_lanes"]) if n_lanes is None else int(n_lanes)
     f_sym = PAM4_BAUD_3200_GBD * 1e9            # 212.5 GBd（PAM4 符号率）
@@ -684,7 +688,11 @@ def power_breakdown(form: str = "cpo", n_lanes: Optional[int] = None) -> Dict[st
     c_line = float(p["c_line_cpo_pF"] if form == "cpo" else p["c_line_pluggable_pF"]) * 1e-12
     r_term = float(p["r_term_diff_ohm"])
 
-    p_drv = 0.5 * c_line * vpp ** 2 * f_sym * 1e3          # mW/lane
+    # 🔴 双口径：电极电容 C′·L（主账）vs 封装线电容（并报，不进求和）
+    c_elec_f = float(p["c_elect_fF_per_mm"]) * 1e-15 * float(p["l_electrode_mm"])
+    c_load_f = c_elec_f if cap_model == "electrode" else c_line
+    p_drv_pkg = 0.5 * c_line * vpp ** 2 * f_sym * 1e3       # mW/lane（旧口径·并报）
+    p_drv = 0.5 * c_load_f * vpp ** 2 * f_sym * 1e3         # mW/lane（主账）
     p_term = (vpp ** 2) / (4.0 * r_term) * 1e3 if form == "pluggable" else 0.0
     p_tia = float(p["p_tia_mw_per_lane"])
     p_ctle = float(p["p_ctle_mw_per_lane"])
@@ -711,6 +719,10 @@ def power_breakdown(form: str = "cpo", n_lanes: Optional[int] = None) -> Dict[st
     return {
         "form": form, "n_lanes": n,
         "f_sym_hz": f_sym, "v_pp_v": vpp, "c_line_pF": c_line * 1e12,
+        "cap_model_used": cap_model,
+        "driver_cap_fF": c_load_f * 1e15,
+        "driver_package_line_mw": p_drv_pkg,
+        "driver_package_line_note": ("旧口径并报：die-to-die 互连等效，与 L 无关；其损耗已由 interposer_pdn_mw 覆盖，故不进 items 求和。" if cap_model == "electrode" else "与 cap_model 相同，无对照"),
         "items_mw_per_lane": items,
         "per_lane_total_mw": per_lane,
         "module_total_w": module_w,

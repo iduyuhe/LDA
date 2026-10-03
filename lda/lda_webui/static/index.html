@@ -143,7 +143,7 @@ body{padding-top:56px}
     <a href="#sec-accel" style="color:#0b1220;background:#7dd3fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子/模拟 AI 加速器（L6）</a>
     <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E18）</a>
     <a href="#sec-d4" style="color:#0b1220;background:#a5b4fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ D4 交付扩面（电子+超导）</a>
-    <a href="#sec-oi" style="color:#04201b;background:#5eead4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光联接模块 M0–M4（3.2T/CPO · 热-光-电协同新征程）</a>
+    <a href="#sec-oi" style="color:#04201b;background:#5eead4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光联接模块 M0–M5（3.2T/CPO · 热-光-电协同 + VπL 断口结算）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -5300,7 +5300,8 @@ function renderOi(d){
   /* ── M3（3.2T / CPO）块：400G-lane 带宽墙 · 电通道 · die↔die 热 + 闭环热调 · 功耗账 · 2.5D 签核 ── */
   var m3=d.m3||{}, m3t=m3.twmzm||{}, m3e=m3.echannel||{}, m3f=m3.fdtd_telegraph||{},
       m3n=m3.next||{}, m3p=m3.pdn||{}, m3th=m3.thermal||{}, m3cl=m3.closed_loop_thermal||{},
-      m3pw=m3.power||{}, m3ly=m3.layout_2p5d||{}, m3ru=m3.reuse||{};
+      m3pw=m3.power||{}, m3ly=m3.layout_2p5d||{}, m3ru=m3.reuse||{},
+      m3pwfl=m3pw.flip||{}, m3pwfp=m3pwfl.package_line_cap||{}, m3pwfe=m3pwfl.electrode_cap||{};
   var m3r2=m3ru.at_200g||{}, m3r4=m3ru.at_400g||{}, m3os=m3ly.oe_stats||{};
   // ㉔ M3 400G/lane 带宽墙（行波电极 TWMZM）
   h+='<h3 style="margin:16px 0 4px">㉔ M3 400G/lane 带宽墙（行波电极 TWMZM · 分布 RC + 速度失配）</h3>';
@@ -5431,6 +5432,17 @@ function renderOi(d){
      m3pw.reconciled?'<b>成立</b>':'<b>不成立</b>'],
     ['🔴 能效比换算位已封禁', m3pw.energy_per_bit_banned?'<b>是</b>':'<b>否</b>']
   ]);
+  h+=_qcTbl(['🔴 M5 驱动负载口径','值'],[
+    ['主账电容口径（cap_model_used）', '<b>'+m3pw.cap_model_used+'</b>'],
+    ['主账负载电容 C′·L (fF)', m3pw.driver_cap_fF],
+    ['旧口径（封装线）并报 driver (mW/lane)', m3pw.driver_package_line_mw],
+    ['口径翻转已检出（advantage_flips）', m3pwfl.advantage_flips?'<b>是</b>':'<b>否</b>'],
+    ['封装线口径：CPO (mW/lane)', m3pwfp.cpo_per_lane_mw],
+    ['封装线口径：CPO − 可插拔 (mW/lane)', m3pwfp.delta_cpo_minus_pluggable_mw+'（CPO 省）'],
+    ['电极口径：CPO (mW/lane)', m3pwfe.cpo_per_lane_mw],
+    ['电极口径：CPO − 可插拔 (mW/lane)', '+'+m3pwfe.delta_cpo_minus_pluggable_mw+'（CPO 多付）']
+  ]);
+  h+='<p style="color:#555">'+(m3pwfl.note||'')+'</p>';
   h+='<p style="color:#555">'+m3pw.note+'</p>';
   // ㉘ 2.5D 版图签核（G-OI6）+ 复用底座
   h+='<h3 style="margin:14px 0 4px">㉘ M3 2.5D 版图签核 G-OI6（真 GDS · 电层 DRC + 几何-拓扑 LVS）</h3>';
@@ -5646,6 +5658,59 @@ function renderOi(d){
     +'</b>（'+(Gob.join(' · ')||'-')+'）· 🔴 <b>G-OI4 与 G-OI7 诚实保留开放</b>'
     +'（G-OI4 = 电路级无 PDK；G-OI7 = 封装级热-机械-光无实测，M4 新增，域不同不重复记账）。</p>';
   h+='<p style="color:#555">'+m4.honest_note_m4+'</p>';
+
+  var m5=d.m5||{}, m5fn=m5.feasible_bands||{}, m5bw=m5.bw_law||{}, m5dc=m5.dual_cap||{},
+      m5fl=m5.cross_form_flip||{}, m5fp=m5fl.package_line_cap||{}, m5fe=m5fl.electrode_cap||{};
+  h+='<h3 style="margin:16px 0 4px">㉟ M5 VπL 断口**结算**（可行域闭式充要 · 🔴 只给结算结论、不动设计点）</h3>';
+  h+=_qcTbl(['结算量','值','说明'],[
+    ['状态', '<b>'+m5.status+'</b>', '有条件结算（≠ 断口消失）'],
+    ['M3 设计点隐含 VπL (V·cm)', m5.implied_vpi_l_v_cm, '= v_pp · L / 10'],
+    ['🔴 临界 VπL (V·cm)', '<b>'+m5.vpi_l_critical_v_cm+'</b>', '= Vpp_limit·L_max/(10·overdrive)'],
+    ['公开区间 (V·cm)', (m5.public_band_v_cm||[]).join(' – '), '规格锚（非 foundry 真值）'],
+    ['激进倍数（比典型 / 比下界）', '×'+m5.gap_ratio_vs_typical+' / ×'+m5.gap_ratio_vs_band_low, ''],
+    ['设计点自洽（隐含 ≤ 临界）', m5.design_point_self_consistent?'<b>是</b>':'否','🔴 依赖高效率工艺'],
+    ['公开下界 / 典型工艺有解', (m5.public_low_feasible&&m5.public_typical_feasible)?'<b>是</b>':'否',''],
+    ['公开上界工艺有解', m5.public_high_feasible?'是':'<b>否（该档无解）</b>','反向'],
+    ['公开典型所需 L (mm)', m5.required_l_at_public_typical_mm, '= overdrive·VπL·10/Vpp_limit'],
+    ['带宽给出的 L 上界 (mm)', m5.l_max_at_bw_deadline_mm, '= bw(L)=deadline 的解'],
+    ['公开典型所需 V_pp (V)', m5.vpp_needed_at_m3_l_v, m5.vpp_required_reachable?'可达':'<b>超 CMOS 3.3 V ⇒ 不可达</b>']
+  ]);
+  h+='<h4 style="margin:10px 0 3px">四档工艺可行域（🔴 连续域 vs 网格采样，必须并列读）</h4>';
+  h+=_qcTbl(['工艺档','VπL (V·cm)','L 下界 (mm)','L 上界 (mm)','宽度 (mm)','网格命中','连续域非空'],[
+    ['公开下界', m5fn.public_low.vpi_l_v_cm, m5fn.public_low.l_min_mm, m5fn.public_low.l_max_mm,
+     m5fn.public_low.width_mm, m5fn.public_low.n_grid_hits, m5fn.public_low.non_empty?'是':'<b>否</b>'],
+    ['公开典型', m5fn.public_typical.vpi_l_v_cm, m5fn.public_typical.l_min_mm, m5fn.public_typical.l_max_mm,
+     m5fn.public_typical.width_mm, m5fn.public_typical.n_grid_hits, m5fn.public_typical.non_empty?'是':'<b>否</b>'],
+    ['公开上界', m5fn.public_high.vpi_l_v_cm, (m5fn.public_high.l_min_mm===null?'—':m5fn.public_high.l_min_mm),
+     m5fn.public_high.l_max_mm, m5fn.public_high.width_mm, m5fn.public_high.n_grid_hits,
+     m5fn.public_high.non_empty?'是':'<b>否（无解）</b>'],
+    ['M3 隐含', m5fn.m3_implied.vpi_l_v_cm, m5fn.m3_implied.l_min_mm, m5fn.m3_implied.l_max_mm,
+     m5fn.m3_implied.width_mm, m5fn.m3_implied.n_grid_hits, m5fn.m3_implied.non_empty?'是':'<b>否</b>']
+  ]);
+  h+='<h4 style="margin:10px 0 3px">带宽律（🔴 实测证伪 M4 docstring 写的 1/L²）</h4>';
+  h+=_qcTbl(['项','值','说明'],[
+    ['BW ∝ 1/L 成立', m5bw.is_inverse_l?'<b>是</b>':'否', '逐项比值 vs L₁/L₂'],
+    ['1/L 律最大相对误差', (m5bw.max_rel_err_inv_l*100).toFixed(2)+' %',''],
+    ['BW ∝ 1/L² 成立', m5bw.is_inverse_l2?'是':'<b>否（已证伪）</b>',''],
+    ['1/L² 律最大相对误差', (m5bw.max_rel_err_inv_l2*100).toFixed(2)+' %','']
+  ]);
+  h+='<h4 style="margin:10px 0 3px">驱动负载双口径对拍（主账 = 电极电容 C′·L）</h4>';
+  h+=_qcTbl(['项','值','说明'],[
+    ['电极电容 C′·L (fF)', m5dc.cap_electrode_fF, '主账（与 L 线性）'],
+    ['封装线电容 (fF)', m5dc.cap_package_line_fF, '旧口径（与 L 无关）'],
+    ['电极口径 driver 功耗 (mW/lane)', m5dc.driver_electrode_mw, '= ½CV²f'],
+    ['封装线口径 driver 功耗 (mW/lane)', m5dc.driver_package_line_mw, '并报，不进 items 求和'],
+    ['两口径比值', '×'+m5dc.ratio_package_over_electrode, '']
+  ]);
+  h+='<h4 style="margin:10px 0 3px">🔴 口径切换的后果：CPO−可插拔差<b>符号翻转</b></h4>';
+  h+=_qcTbl(['口径','CPO (mW/lane)','可插拔 (mW/lane)','差（CPO − 可插拔）'],[
+    ['封装线（旧）', m5fp.cpo_per_lane_mw, m5fp.pluggable_per_lane_mw,
+     m5fp.delta_cpo_minus_pluggable_mw+'（CPO 省）'],
+    ['电极（M5 主账）', m5fe.cpo_per_lane_mw, m5fe.pluggable_per_lane_mw,
+     '+'+m5fe.delta_cpo_minus_pluggable_mw+'（CPO 多付）']
+  ]);
+  h+='<p style="color:#555">翻转已检出：<b>'+m5fl.advantage_flips+'</b> · '+(m5fl.note||'')+'</p>';
+  h+='<p style="color:#555">'+m5.honest_note_m5+'</p>';
 
   $('oiBody').innerHTML=h;
   $('oiConclusion').innerHTML='<strong>结论：</strong>用 LDA 自家光链路设计验证链可把一款 WDM 收发器'

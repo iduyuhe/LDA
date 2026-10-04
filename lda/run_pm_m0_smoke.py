@@ -129,10 +129,12 @@ def main() -> int:
     gaps = {g["id"]: g for g in rep["gaps"]}
     check("C7a 台账不变式 closed ⇔ evidence_ok", M.gap_ledger_consistent() is True)
     check("C7b PM-G1（材料常数库）已闭合", gaps["PM-G1"]["closed"] is True)
-    check("C7c PM-G4 已闭合（JMAK 锚 ≥2 源 ∧ 律自检 · v0.9.188 证据升级）",
-          gaps["PM-G4"]["closed"] is True)
-    check("C7c2 PM-G2/G3/G5 如实开放（不粉饰）",
-          all(gaps[g]["closed"] is False for g in ("PM-G2", "PM-G3", "PM-G5")))
+    check("C7c PM-G3/G4/G5 已闭合（锚 + 律自检 · v0.9.189 证据升级）",
+          all(gaps[g]["closed"] is True for g in ("PM-G3", "PM-G4", "PM-G5")))
+    check("C7c2 PM-G2/G6/G7 如实开放（不粉饰）",
+          all(gaps[g]["closed"] is False for g in ("PM-G2", "PM-G6", "PM-G7")))
+    check("C7c3 台账人机两源一致性（declared ⇔ evidence · 非同义反复）",
+          all(g["declared_closed"] == g["evidence_ok"] for g in rep["gaps"]))
     check("C7d 每条缺口都挂证据明细（非空）",
           all(len(g["evidence_detail"]) > 0 for g in rep["gaps"]))
 
@@ -185,13 +187,14 @@ def main() -> int:
         ML.OPTICAL_ANCHORS = orig_opt
     check("P3 探针须造分歧（假实测声明 ⇒ C1 必红）", raised)
 
-    # P4 台账造假 ⇒ C7 必红
+    # P4 台账造假（人工声明与机器验算打架）⇒ C7 不变式必红
     fake = [dict(g) for g in rep["gaps"]]
     for g in fake:
         if g["id"] == "PM-G2":
+            g["declared_closed"] = True          # 声明闭合，但 evidence_ok=False
             g["closed"] = True
-    check("P4 探针须造分歧（G2 假闭合 ⇒ C7 不变式必红）",
-          not all(g["closed"] == g["evidence_ok"] for g in fake))
+    check("P4 探针须造分歧（G2 声明闭合而证据不成立 ⇒ 台账不变式必红）",
+          not all(g["declared_closed"] == g["evidence_ok"] for g in fake))
 
     # P5 长度压到 0.01µm ⇒ 读出能量下限爆炸
     ro_small = M.readout_margin("GST", l_um=0.01)

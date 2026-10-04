@@ -152,12 +152,13 @@ def main() -> int:
     hits = [w for w in _BANNED_POSITIVE if w in blob]
     check("C10b 真实输出肯定式面禁词零命中", not hits)
 
-    # ---------------- C11 缺口接线（PM-G4 闭合） ----------------
+    # ---------------- C11 缺口接线（v0.9.189：G3/G5 已闭合） ----------------
     gaps = {g["id"]: g for g in M0.gap_ledger()}
-    check("C11a PM-G4 已闭合（JMAK 锚 + 律自检）", gaps["PM-G4"]["closed"] is True)
-    check("C11b PM-G2/G3/G5 如实开放",
-          all(gaps[g]["closed"] is False for g in ("PM-G2", "PM-G3", "PM-G5")))
-    check("C11c 台账不变式 closed ⇔ evidence_ok", M0.gap_ledger_consistent() is True)
+    check("C11a PM-G1/G3/G4/G5 已闭合（锚 + 律自检）",
+          all(gaps[g]["closed"] is True for g in ("PM-G1", "PM-G3", "PM-G4", "PM-G5")))
+    check("C11b PM-G2/G6/G7 如实开放",
+          all(gaps[g]["closed"] is False for g in ("PM-G2", "PM-G6", "PM-G7")))
+    check("C11c 台账人机两源不变式（declared ⇔ evidence）", M0.gap_ledger_consistent() is True)
 
     # ---------------- 探针（每条先证能变红） ----------------
     # P1 Ea +1 eV ⇒ 温度标度比必显著变

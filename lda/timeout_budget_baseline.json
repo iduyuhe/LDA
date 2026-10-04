@@ -7,10 +7,9 @@
   "target_x": 3.0,
   "ratchet_below_target": 0,
   "anchors_at_measurement": 476,
-  "core_smokes_at_measurement": 276,
+  "core_smokes_at_measurement": 277,
   "updated_at": "2026-10-04",
   "source_reports": [
-    "_ci_core_179",
     "_ci_core_179_b",
     "_ci_core_179_c",
     "_ci_core_180_a",
@@ -49,7 +48,8 @@
     "_ci_core_v09184.json",
     "_ci_186.json",
     "lda_pmm0_ci_20261004.json",
-    "lda_pmm1_ci_20261004.json"
+    "lda_pmm1_ci_20261004.json",
+    "lda_pmm2_ci_20261004.json"
   ],
   "rules": "预算 ≥ 2 × 跨轮实测上界（硬闸）；目标 3×（棘轮：低于 3× 的项数只降不升）；锚数或 CI core 成员数变化 ⇒ 基线过期，须重跑全量并 --write-baseline 刷新",
   "rows": [
@@ -69,6 +69,7 @@
         119.72,
         119.82,
         121.62,
+        122.01,
         123.19,
         124.32,
         127.92,
@@ -85,7 +86,7 @@
         291.68,
         293.42
       ],
-      "n_rounds": 25,
+      "n_rounds": 26,
       "censored_events": 2
     },
     {
@@ -116,12 +117,13 @@
         173.61,
         173.9,
         177.39,
+        177.86,
         177.92,
         184.35,
         191.18,
         193.33
       ],
-      "n_rounds": 26,
+      "n_rounds": 27,
       "censored_events": 0
     },
     {
@@ -150,13 +152,14 @@
         181.64,
         182.54,
         182.86,
+        183.06,
         183.36,
         183.53,
         202.79,
         204.41,
         208.16
       ],
-      "n_rounds": 25,
+      "n_rounds": 26,
       "censored_events": 2
     },
     {
@@ -168,13 +171,14 @@
         74.66,
         74.91,
         74.96,
+        75.65,
         75.69,
         78.14,
         78.85,
         79.52,
         90.97
       ],
-      "n_rounds": 8,
+      "n_rounds": 9,
       "censored_events": 0
     },
     {
@@ -191,6 +195,7 @@
         68.74,
         68.79,
         69.05,
+        69.11,
         69.15,
         69.3,
         69.83,
@@ -207,7 +212,7 @@
         78.29,
         451.02
       ],
-      "n_rounds": 23,
+      "n_rounds": 24,
       "censored_events": 0
     },
     {
@@ -235,6 +240,7 @@
         1135.3,
         1135.66,
         1150.8,
+        1151.35,
         1151.47,
         1162.4,
         1164.33,
@@ -242,7 +248,7 @@
         1194.19,
         1262.06
       ],
-      "n_rounds": 25,
+      "n_rounds": 26,
       "censored_events": 2
     },
     {
@@ -273,11 +279,12 @@
         1393.84,
         1394.26,
         1394.56,
+        1395.05,
         1402.14,
         1573.83,
         1608.71
       ],
-      "n_rounds": 25,
+      "n_rounds": 26,
       "censored_events": 2
     },
     {
@@ -287,6 +294,7 @@
       "margin_x": 3.433,
       "samples_s": [
         80.77,
+        112.39,
         112.92,
         121.6,
         123.1,
@@ -313,7 +321,7 @@
         165.44,
         174.77
       ],
-      "n_rounds": 26,
+      "n_rounds": 27,
       "censored_events": 0
     },
     {
@@ -325,6 +333,7 @@
         78.07,
         79.44,
         79.83,
+        80.45,
         80.92,
         81.57,
         81.76,
@@ -337,7 +346,7 @@
         84.44,
         84.79
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -354,6 +363,7 @@
         72.0,
         72.07,
         72.98,
+        73.32,
         73.64,
         73.73,
         73.78,
@@ -361,7 +371,30 @@
         82.56,
         84.65
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
+      "censored_events": 0
+    },
+    {
+      "script": "run_full_vector_mode_smoke.py",
+      "budget_s": 600.0,
+      "elapsed_max_s": 167.19,
+      "margin_x": 3.589,
+      "samples_s": [
+        102.67,
+        105.96,
+        108.4,
+        144.85,
+        145.4,
+        145.5,
+        147.03,
+        147.13,
+        147.65,
+        150.14,
+        150.67,
+        151.46,
+        167.19
+      ],
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -380,12 +413,13 @@
         56.18,
         56.73,
         56.89,
+        57.18,
         57.44,
         57.54,
         58.01,
         82.73
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -397,6 +431,7 @@
         69.63,
         71.11,
         71.17,
+        71.29,
         71.33,
         71.74,
         71.77,
@@ -409,7 +444,7 @@
         74.38,
         81.55
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -429,6 +464,7 @@
         241.8,
         241.9,
         242.48,
+        243.35,
         243.54,
         243.74,
         244.34,
@@ -445,7 +481,7 @@
         304.88,
         322.04
       ],
-      "n_rounds": 26,
+      "n_rounds": 27,
       "censored_events": 0
     },
     {
@@ -474,6 +510,7 @@
         214.96,
         216.76,
         216.91,
+        216.96,
         218.19,
         218.7,
         220.54,
@@ -481,7 +518,7 @@
         222.17,
         232.49
       ],
-      "n_rounds": 26,
+      "n_rounds": 27,
       "censored_events": 0
     },
     {
@@ -491,6 +528,7 @@
       "margin_x": 3.884,
       "samples_s": [
         178.57,
+        178.69,
         179.29,
         179.35,
         181.14,
@@ -517,7 +555,7 @@
         206.69,
         231.7
       ],
-      "n_rounds": 26,
+      "n_rounds": 27,
       "censored_events": 0
     },
     {
@@ -541,6 +579,7 @@
         76.04,
         76.07,
         76.12,
+        76.27,
         76.34,
         76.55,
         77.04,
@@ -553,7 +592,7 @@
         113.8,
         115.56
       ],
-      "n_rounds": 26,
+      "n_rounds": 27,
       "censored_events": 0
     },
     {
@@ -585,33 +624,12 @@
         206.02,
         206.1,
         206.2,
+        206.7,
         206.97,
         217.61,
         228.74
       ],
-      "n_rounds": 26,
-      "censored_events": 0
-    },
-    {
-      "script": "run_full_vector_mode_smoke.py",
-      "budget_s": 600.0,
-      "elapsed_max_s": 151.46,
-      "margin_x": 3.961,
-      "samples_s": [
-        102.67,
-        105.96,
-        108.4,
-        144.85,
-        145.4,
-        145.5,
-        147.03,
-        147.13,
-        147.65,
-        150.14,
-        150.67,
-        151.46
-      ],
-      "n_rounds": 12,
+      "n_rounds": 27,
       "censored_events": 0
     },
     {
@@ -622,6 +640,7 @@
       "samples_s": [
         86.3,
         86.4,
+        86.91,
         87.23,
         87.49,
         87.51,
@@ -647,7 +666,7 @@
         95.74,
         100.22
       ],
-      "n_rounds": 26,
+      "n_rounds": 27,
       "censored_events": 0
     },
     {
@@ -663,6 +682,7 @@
         46.95,
         46.99,
         47.03,
+        47.05,
         47.19,
         47.52,
         47.87,
@@ -671,7 +691,7 @@
         71.67,
         72.23
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -698,6 +718,7 @@
         242.71,
         242.73,
         242.93,
+        242.97,
         243.08,
         243.68,
         244.03,
@@ -707,7 +728,7 @@
         264.13,
         268.86
       ],
-      "n_rounds": 26,
+      "n_rounds": 27,
       "censored_events": 0
     },
     {
@@ -720,10 +741,11 @@
         188.32,
         191.42,
         192.34,
+        195.3,
         195.44,
         195.67
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -732,6 +754,7 @@
       "elapsed_max_s": 64.01,
       "margin_x": 4.687,
       "samples_s": [
+        48.21,
         48.38,
         48.63,
         48.84,
@@ -747,7 +770,7 @@
         61.79,
         64.01
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -756,6 +779,7 @@
       "elapsed_max_s": 57.85,
       "margin_x": 5.186,
       "samples_s": [
+        44.09,
         47.4,
         51.07,
         52.83,
@@ -763,7 +787,7 @@
         57.6,
         57.85
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -776,6 +800,7 @@
         45.5,
         45.83,
         45.99,
+        46.03,
         46.05,
         46.29,
         46.58,
@@ -788,7 +813,7 @@
         49.55,
         55.28
       ],
-      "n_rounds": 15,
+      "n_rounds": 16,
       "censored_events": 0
     },
     {
@@ -799,6 +824,7 @@
       "samples_s": [
         38.76,
         38.94,
+        39.09,
         39.15,
         39.23,
         39.24,
@@ -812,7 +838,7 @@
         49.26,
         52.98
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -825,10 +851,11 @@
         38.52,
         38.63,
         38.64,
+        38.65,
         42.03,
         50.66
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -839,6 +866,7 @@
       "samples_s": [
         34.67,
         34.73,
+        34.77,
         34.89,
         34.9,
         40.26,
@@ -852,7 +880,7 @@
         46.83,
         49.78
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -870,13 +898,14 @@
         33.24,
         33.37,
         33.6,
+        33.65,
         33.68,
         34.26,
         34.28,
         47.7,
         49.27
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -926,6 +955,7 @@
       "samples_s": [
         35.55,
         35.65,
+        35.78,
         35.91,
         35.96,
         36.19,
@@ -939,7 +969,7 @@
         40.22,
         41.85
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -948,6 +978,7 @@
       "elapsed_max_s": 37.78,
       "margin_x": 7.941,
       "samples_s": [
+        20.18,
         20.86,
         22.92,
         25.53,
@@ -963,7 +994,7 @@
         33.31,
         37.78
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -973,6 +1004,7 @@
       "margin_x": 8.34,
       "samples_s": [
         33.75,
+        33.83,
         33.85,
         33.88,
         33.89,
@@ -986,7 +1018,7 @@
         35.14,
         35.97
       ],
-      "n_rounds": 13,
+      "n_rounds": 14,
       "censored_events": 0
     },
     {
@@ -997,6 +1029,7 @@
       "samples_s": [
         29.32,
         29.38,
+        29.4,
         29.64,
         30.14,
         31.36,
@@ -1009,7 +1042,7 @@
         33.71,
         35.96
       ],
-      "n_rounds": 13,
+      "n_rounds": 14,
       "censored_events": 0
     },
     {
@@ -1022,12 +1055,13 @@
         29.54,
         29.57,
         29.6,
+        29.75,
         30.67,
         30.77,
         30.78,
         35.13
       ],
-      "n_rounds": 8,
+      "n_rounds": 9,
       "censored_events": 0
     },
     {
@@ -1040,6 +1074,7 @@
         23.8,
         23.81,
         23.83,
+        24.21,
         24.84,
         25.2,
         25.48,
@@ -1049,7 +1084,7 @@
         27.22,
         29.32
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -1059,13 +1094,14 @@
       "margin_x": 10.86,
       "samples_s": [
         9.85,
+        9.89,
         9.9,
         9.94,
         10.01,
         10.06,
         11.05
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -1084,12 +1120,13 @@
         24.51,
         24.55,
         24.61,
+        24.68,
         24.79,
         24.91,
         25.75,
         26.98
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -1108,12 +1145,13 @@
         23.04,
         23.12,
         23.26,
+        23.47,
         23.54,
         23.9,
         25.47,
         25.94
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -1130,6 +1168,7 @@
         19.55,
         19.77,
         19.83,
+        19.88,
         20.77,
         21.85,
         21.9,
@@ -1137,7 +1176,7 @@
         22.76,
         25.41
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -1154,6 +1193,7 @@
         29.28,
         29.29,
         29.31,
+        29.33,
         29.34,
         29.36,
         29.37,
@@ -1171,7 +1211,7 @@
         32.27,
         32.36
       ],
-      "n_rounds": 24,
+      "n_rounds": 25,
       "censored_events": 0
     },
     {
@@ -1183,11 +1223,12 @@
         18.55,
         18.95,
         19.02,
+        19.19,
         19.25,
         20.59,
         24.24
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -1198,11 +1239,12 @@
       "samples_s": [
         23.52,
         23.69,
+        23.91,
         24.13,
         24.17,
         24.19
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1239,10 +1281,11 @@
         18.66,
         18.73,
         18.87,
+        19.35,
         19.67,
         20.6
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -1256,6 +1299,7 @@
         15.98,
         16.0,
         16.06,
+        16.08,
         16.2,
         16.29,
         16.41,
@@ -1266,7 +1310,7 @@
         19.47,
         20.11
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -1275,6 +1319,7 @@
       "elapsed_max_s": 20.09,
       "margin_x": 14.933,
       "samples_s": [
+        17.2,
         17.21,
         17.24,
         17.26,
@@ -1282,7 +1327,7 @@
         17.55,
         20.09
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -1293,6 +1338,7 @@
       "samples_s": [
         8.42,
         9.64,
+        10.22,
         10.96,
         11.21,
         12.64,
@@ -1306,7 +1352,7 @@
         17.64,
         18.63
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -1337,6 +1383,7 @@
         12.01,
         12.12,
         12.25,
+        12.27,
         12.73,
         13.19,
         13.28,
@@ -1346,7 +1393,7 @@
         14.45,
         15.41
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -1356,10 +1403,11 @@
       "margin_x": 20.305,
       "samples_s": [
         5.86,
+        5.88,
         5.9,
         5.91
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -1376,25 +1424,27 @@
         5.06,
         5.64,
         5.67,
+        5.69,
         5.73,
         5.77
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
       "script": "run_oi_m3_smoke.py",
       "budget_s": 120.0,
-      "elapsed_max_s": 5.11,
-      "margin_x": 23.483,
+      "elapsed_max_s": 5.13,
+      "margin_x": 23.392,
       "samples_s": [
         3.1,
         3.11,
         5.09,
         5.1,
-        5.11
+        5.11,
+        5.13
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1414,10 +1464,11 @@
         12.04,
         12.18,
         12.23,
+        12.26,
         12.38,
         12.44
       ],
-      "n_rounds": 13,
+      "n_rounds": 14,
       "censored_events": 2
     },
     {
@@ -1429,17 +1480,18 @@
         4.5,
         4.51,
         4.52,
+        4.54,
         4.55,
         4.57
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
       "script": "run_report_determinism_smoke.py",
       "budget_s": 120.0,
-      "elapsed_max_s": 4.24,
-      "margin_x": 28.302,
+      "elapsed_max_s": 4.28,
+      "margin_x": 28.037,
       "samples_s": [
         0.42,
         0.58,
@@ -1459,9 +1511,29 @@
         4.16,
         4.2,
         4.23,
-        4.24
+        4.24,
+        4.28
       ],
-      "n_rounds": 19,
+      "n_rounds": 20,
+      "censored_events": 0
+    },
+    {
+      "script": "run_oi_m1_smoke.py",
+      "budget_s": 120.0,
+      "elapsed_max_s": 4.17,
+      "margin_x": 28.777,
+      "samples_s": [
+        3.99,
+        4.0,
+        4.01,
+        4.02,
+        4.03,
+        4.05,
+        4.06,
+        4.07,
+        4.17
+      ],
+      "n_rounds": 9,
       "censored_events": 0
     },
     {
@@ -1471,31 +1543,14 @@
       "margin_x": 29.126,
       "samples_s": [
         4.24,
+        4.52,
         4.58,
         4.59,
         4.63,
         5.46,
         10.3
       ],
-      "n_rounds": 6,
-      "censored_events": 0
-    },
-    {
-      "script": "run_oi_m1_smoke.py",
-      "budget_s": 120.0,
-      "elapsed_max_s": 4.07,
-      "margin_x": 29.484,
-      "samples_s": [
-        3.99,
-        4.0,
-        4.01,
-        4.02,
-        4.03,
-        4.05,
-        4.06,
-        4.07
-      ],
-      "n_rounds": 8,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -1505,6 +1560,7 @@
       "margin_x": 30.612,
       "samples_s": [
         5.65,
+        5.69,
         6.59,
         7.23,
         7.98,
@@ -1519,7 +1575,7 @@
         9.61,
         9.8
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -1539,11 +1595,12 @@
         6.88,
         6.96,
         6.97,
+        6.99,
         7.68,
         8.26,
         9.74
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -1576,6 +1633,7 @@
       "samples_s": [
         5.41,
         5.42,
+        5.43,
         5.48,
         5.53,
         6.29,
@@ -1586,23 +1644,24 @@
         6.48,
         6.5
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
       "script": "run_p2_usability_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 6.18,
-      "margin_x": 48.544,
+      "elapsed_max_s": 6.24,
+      "margin_x": 48.077,
       "samples_s": [
         5.72,
         6.13,
         6.14,
         6.16,
         6.17,
-        6.18
+        6.18,
+        6.24
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -1615,9 +1674,10 @@
         5.27,
         5.3,
         5.32,
+        5.34,
         5.39
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1644,6 +1704,7 @@
       "samples_s": [
         1.13,
         3.01,
+        3.04,
         3.05,
         3.16,
         4.3,
@@ -1654,7 +1715,7 @@
         5.0,
         5.08
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -1679,6 +1740,7 @@
       "elapsed_max_s": 4.19,
       "margin_x": 71.599,
       "samples_s": [
+        3.62,
         3.65,
         3.67,
         3.68,
@@ -1691,7 +1753,7 @@
         4.17,
         4.19
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -1718,25 +1780,10 @@
       "censored_events": 0
     },
     {
-      "script": "run_l1_spec_smoke.py",
-      "budget_s": 120.0,
-      "elapsed_max_s": 1.56,
-      "margin_x": 76.923,
-      "samples_s": [
-        0.26,
-        1.52,
-        1.53,
-        1.54,
-        1.56
-      ],
-      "n_rounds": 5,
-      "censored_events": 0
-    },
-    {
       "script": "run_pyflakes_ratchet_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 3.89,
-      "margin_x": 77.121,
+      "elapsed_max_s": 3.95,
+      "margin_x": 75.949,
       "samples_s": [
         0.26,
         1.9,
@@ -1749,9 +1796,25 @@
         2.61,
         3.81,
         3.87,
-        3.89
+        3.89,
+        3.95
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
+      "censored_events": 0
+    },
+    {
+      "script": "run_l1_spec_smoke.py",
+      "budget_s": 120.0,
+      "elapsed_max_s": 1.56,
+      "margin_x": 76.923,
+      "samples_s": [
+        0.26,
+        1.52,
+        1.53,
+        1.54,
+        1.56
+      ],
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1792,6 +1855,23 @@
       "censored_events": 0
     },
     {
+      "script": "run_ecore_e11_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 3.13,
+      "margin_x": 95.847,
+      "samples_s": [
+        2.81,
+        2.85,
+        2.96,
+        3.06,
+        3.1,
+        3.11,
+        3.13
+      ],
+      "n_rounds": 7,
+      "censored_events": 0
+    },
+    {
       "script": "run_ecore_e16_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 3.12,
@@ -1800,24 +1880,9 @@
         3.02,
         3.03,
         3.05,
+        3.07,
         3.11,
         3.12
-      ],
-      "n_rounds": 5,
-      "censored_events": 0
-    },
-    {
-      "script": "run_ecore_e11_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 3.11,
-      "margin_x": 96.463,
-      "samples_s": [
-        2.81,
-        2.85,
-        2.96,
-        3.06,
-        3.1,
-        3.11
       ],
       "n_rounds": 6,
       "censored_events": 0
@@ -1901,6 +1966,30 @@
       "censored_events": 0
     },
     {
+      "script": "run_torch_numba_optional_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 2.54,
+      "margin_x": 118.11,
+      "samples_s": [
+        1.7,
+        2.11,
+        2.13,
+        2.14,
+        2.2,
+        2.21,
+        2.22,
+        2.24,
+        2.3,
+        2.48,
+        2.49,
+        2.51,
+        2.52,
+        2.54
+      ],
+      "n_rounds": 14,
+      "censored_events": 0
+    },
+    {
       "script": "run_fluxonium_anchor_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 2.53,
@@ -1919,29 +2008,6 @@
         2.53
       ],
       "n_rounds": 11,
-      "censored_events": 0
-    },
-    {
-      "script": "run_torch_numba_optional_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 2.52,
-      "margin_x": 119.048,
-      "samples_s": [
-        1.7,
-        2.11,
-        2.13,
-        2.14,
-        2.2,
-        2.21,
-        2.22,
-        2.24,
-        2.3,
-        2.48,
-        2.49,
-        2.51,
-        2.52
-      ],
-      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -1973,6 +2039,7 @@
         2.16,
         2.24,
         2.34,
+        2.36,
         2.38,
         2.4,
         2.41,
@@ -1981,7 +2048,7 @@
         2.46,
         2.47
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -1992,6 +2059,7 @@
       "samples_s": [
         2.23,
         2.27,
+        2.28,
         2.31,
         2.32,
         2.34,
@@ -2002,7 +2070,7 @@
         2.44,
         2.46
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -2015,6 +2083,7 @@
         2.11,
         2.13,
         2.15,
+        2.16,
         2.17,
         2.21,
         2.24,
@@ -2024,7 +2093,7 @@
         2.3,
         2.31
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -2069,9 +2138,10 @@
         0.73,
         0.87,
         0.88,
+        0.89,
         0.92
       ],
-      "n_rounds": 15,
+      "n_rounds": 16,
       "censored_events": 0
     },
     {
@@ -2081,12 +2151,13 @@
       "margin_x": 134.529,
       "samples_s": [
         2.13,
+        2.17,
         2.19,
         2.2,
         2.21,
         2.23
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -2095,13 +2166,14 @@
       "elapsed_max_s": 2.16,
       "margin_x": 138.889,
       "samples_s": [
+        2.06,
         2.07,
         2.08,
         2.09,
         2.1,
         2.16
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -2110,6 +2182,7 @@
       "elapsed_max_s": 2.13,
       "margin_x": 140.845,
       "samples_s": [
+        1.07,
         1.1,
         1.12,
         1.13,
@@ -2118,7 +2191,28 @@
         2.08,
         2.13
       ],
-      "n_rounds": 7,
+      "n_rounds": 8,
+      "censored_events": 0
+    },
+    {
+      "script": "run_helper_dup_ratchet_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 2.07,
+      "margin_x": 144.928,
+      "samples_s": [
+        0.97,
+        1.27,
+        1.28,
+        1.3,
+        1.31,
+        1.32,
+        1.35,
+        1.99,
+        2.0,
+        2.03,
+        2.07
+      ],
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -2137,30 +2231,10 @@
       "censored_events": 0
     },
     {
-      "script": "run_helper_dup_ratchet_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 2.03,
-      "margin_x": 147.783,
-      "samples_s": [
-        0.97,
-        1.27,
-        1.28,
-        1.3,
-        1.31,
-        1.32,
-        1.35,
-        1.99,
-        2.0,
-        2.03
-      ],
-      "n_rounds": 10,
-      "censored_events": 0
-    },
-    {
       "script": "run_store_flow_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 1.93,
-      "margin_x": 155.44,
+      "elapsed_max_s": 1.94,
+      "margin_x": 154.639,
       "samples_s": [
         1.26,
         1.42,
@@ -2172,9 +2246,10 @@
         1.88,
         1.89,
         1.9,
-        1.93
+        1.93,
+        1.94
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -2195,10 +2270,11 @@
         1.72,
         1.8,
         1.83,
+        1.84,
         1.85,
         1.88
       ],
-      "n_rounds": 14,
+      "n_rounds": 15,
       "censored_events": 0
     },
     {
@@ -2215,22 +2291,24 @@
         1.8,
         1.83,
         1.84,
+        1.85,
         1.86
       ],
-      "n_rounds": 9,
+      "n_rounds": 10,
       "censored_events": 0
     },
     {
       "script": "run_photon_hardware_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 1.83,
-      "margin_x": 163.934,
+      "elapsed_max_s": 1.84,
+      "margin_x": 163.043,
       "samples_s": [
         1.81,
         1.82,
-        1.83
+        1.83,
+        1.84
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -2242,9 +2320,10 @@
         1.72,
         1.73,
         1.74,
+        1.75,
         1.77
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -2253,6 +2332,7 @@
       "elapsed_max_s": 1.73,
       "margin_x": 173.41,
       "samples_s": [
+        0.88,
         0.9,
         0.91,
         0.92,
@@ -2261,7 +2341,7 @@
         1.63,
         1.73
       ],
-      "n_rounds": 7,
+      "n_rounds": 8,
       "censored_events": 0
     },
     {
@@ -2351,6 +2431,7 @@
       "samples_s": [
         0.69,
         1.34,
+        1.35,
         1.36,
         1.37,
         1.38,
@@ -2359,7 +2440,7 @@
         1.42,
         1.45
       ],
-      "n_rounds": 9,
+      "n_rounds": 10,
       "censored_events": 0
     },
     {
@@ -2396,10 +2477,11 @@
         1.26,
         1.27,
         1.34,
+        1.35,
         1.36,
         1.4
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -2416,11 +2498,12 @@
         1.25,
         1.33,
         1.34,
+        1.35,
         1.36,
         1.38,
         1.39
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -2431,9 +2514,10 @@
       "samples_s": [
         1.23,
         1.24,
+        1.25,
         1.38
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -2447,9 +2531,10 @@
         1.31,
         1.32,
         1.33,
+        1.34,
         1.35
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -2460,10 +2545,11 @@
       "samples_s": [
         1.22,
         1.24,
+        1.25,
         1.26,
         1.27
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -2496,6 +2582,7 @@
       "samples_s": [
         0.72,
         0.9,
+        0.91,
         0.92,
         0.94,
         1.2,
@@ -2504,7 +2591,7 @@
         1.24,
         1.25
       ],
-      "n_rounds": 9,
+      "n_rounds": 10,
       "censored_events": 0
     },
     {
@@ -2518,6 +2605,26 @@
         1.21
       ],
       "n_rounds": 3,
+      "censored_events": 0
+    },
+    {
+      "script": "run_tapeout_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 1.19,
+      "margin_x": 252.101,
+      "samples_s": [
+        0.46,
+        0.63,
+        0.65,
+        0.67,
+        0.68,
+        0.69,
+        1.14,
+        1.15,
+        1.17,
+        1.19
+      ],
+      "n_rounds": 10,
       "censored_events": 0
     },
     {
@@ -2536,28 +2643,10 @@
         0.98,
         1.14,
         1.15,
+        1.16,
         1.17
       ],
-      "n_rounds": 11,
-      "censored_events": 0
-    },
-    {
-      "script": "run_tapeout_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 1.17,
-      "margin_x": 256.41,
-      "samples_s": [
-        0.46,
-        0.63,
-        0.65,
-        0.67,
-        0.68,
-        0.69,
-        1.14,
-        1.15,
-        1.17
-      ],
-      "n_rounds": 9,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -2692,6 +2781,27 @@
       "censored_events": 0
     },
     {
+      "script": "run_webui_verification_ledger_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.99,
+      "margin_x": 303.03,
+      "samples_s": [
+        0.54,
+        0.71,
+        0.73,
+        0.74,
+        0.75,
+        0.76,
+        0.79,
+        0.8,
+        0.94,
+        0.96,
+        0.99
+      ],
+      "n_rounds": 11,
+      "censored_events": 0
+    },
+    {
       "script": "run_ecore_e14_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.98,
@@ -2731,6 +2841,7 @@
       "elapsed_max_s": 0.97,
       "margin_x": 309.278,
       "samples_s": [
+        0.9,
         0.91,
         0.92,
         0.93,
@@ -2738,7 +2849,7 @@
         0.95,
         0.97
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -2800,26 +2911,6 @@
         0.96
       ],
       "n_rounds": 11,
-      "censored_events": 0
-    },
-    {
-      "script": "run_webui_verification_ledger_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 0.96,
-      "margin_x": 312.5,
-      "samples_s": [
-        0.54,
-        0.71,
-        0.73,
-        0.74,
-        0.75,
-        0.76,
-        0.79,
-        0.8,
-        0.94,
-        0.96
-      ],
-      "n_rounds": 10,
       "censored_events": 0
     },
     {
@@ -2897,9 +2988,10 @@
         0.76,
         0.9,
         0.91,
+        0.92,
         0.93
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -2922,6 +3014,19 @@
         0.92
       ],
       "n_rounds": 12,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ecore_e17_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.92,
+      "margin_x": 326.087,
+      "samples_s": [
+        0.89,
+        0.9,
+        0.92
+      ],
+      "n_rounds": 3,
       "censored_events": 0
     },
     {
@@ -2982,18 +3087,6 @@
       "censored_events": 0
     },
     {
-      "script": "run_ecore_e17_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 0.9,
-      "margin_x": 333.333,
-      "samples_s": [
-        0.89,
-        0.9
-      ],
-      "n_rounds": 2,
-      "censored_events": 0
-    },
-    {
       "script": "run_b29_thermal_phase_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.89,
@@ -3033,6 +3126,28 @@
       "censored_events": 0
     },
     {
+      "script": "run_gds_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.89,
+      "margin_x": 337.079,
+      "samples_s": [
+        0.43,
+        0.63,
+        0.67,
+        0.68,
+        0.7,
+        0.73,
+        0.74,
+        0.8,
+        0.84,
+        0.85,
+        0.86,
+        0.89
+      ],
+      "n_rounds": 12,
+      "censored_events": 0
+    },
+    {
       "script": "run_maturity_baseline_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.89,
@@ -3049,6 +3164,27 @@
         0.89
       ],
       "n_rounds": 9,
+      "censored_events": 0
+    },
+    {
+      "script": "run_system_budget_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.89,
+      "margin_x": 337.079,
+      "samples_s": [
+        0.48,
+        0.63,
+        0.66,
+        0.67,
+        0.68,
+        0.7,
+        0.72,
+        0.85,
+        0.86,
+        0.87,
+        0.89
+      ],
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -3073,6 +3209,27 @@
       "censored_events": 0
     },
     {
+      "script": "run_tapeout_fullchain_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.88,
+      "margin_x": 340.909,
+      "samples_s": [
+        0.46,
+        0.62,
+        0.65,
+        0.66,
+        0.67,
+        0.68,
+        0.69,
+        0.8,
+        0.81,
+        0.84,
+        0.88
+      ],
+      "n_rounds": 11,
+      "censored_events": 0
+    },
+    {
       "script": "run_coverage_deadzone_closure_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.87,
@@ -3085,11 +3242,12 @@
         0.69,
         0.71,
         0.72,
+        0.84,
         0.85,
         0.86,
         0.87
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -3106,11 +3264,12 @@
         0.7,
         0.72,
         0.83,
+        0.84,
         0.85,
         0.86,
         0.87
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -3129,29 +3288,10 @@
         0.83,
         0.84,
         0.85,
-        0.87
-      ],
-      "n_rounds": 11,
-      "censored_events": 0
-    },
-    {
-      "script": "run_system_budget_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 0.87,
-      "margin_x": 344.828,
-      "samples_s": [
-        0.48,
-        0.63,
-        0.66,
-        0.67,
-        0.68,
-        0.7,
-        0.72,
-        0.85,
         0.86,
         0.87
       ],
-      "n_rounds": 10,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -3161,10 +3301,26 @@
       "margin_x": 344.828,
       "samples_s": [
         0.83,
+        0.84,
         0.86,
         0.87
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
+      "censored_events": 0
+    },
+    {
+      "script": "run_real_machine_oracle_example_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.87,
+      "margin_x": 344.828,
+      "samples_s": [
+        0.26,
+        0.82,
+        0.83,
+        0.84,
+        0.87
+      ],
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -3221,30 +3377,10 @@
         0.7,
         0.82,
         0.83,
-        0.86
-      ],
-      "n_rounds": 11,
-      "censored_events": 0
-    },
-    {
-      "script": "run_gds_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 0.86,
-      "margin_x": 348.837,
-      "samples_s": [
-        0.43,
-        0.63,
-        0.67,
-        0.68,
-        0.7,
-        0.73,
-        0.74,
-        0.8,
         0.84,
-        0.85,
         0.86
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -3394,37 +3530,24 @@
       "censored_events": 0
     },
     {
-      "script": "run_tapeout_fullchain_smoke.py",
+      "script": "run_ir_solve_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.84,
       "margin_x": 357.143,
       "samples_s": [
         0.46,
-        0.62,
+        0.61,
+        0.63,
+        0.64,
         0.65,
-        0.66,
         0.67,
         0.68,
-        0.69,
-        0.8,
         0.81,
-        0.84
-      ],
-      "n_rounds": 10,
-      "censored_events": 0
-    },
-    {
-      "script": "run_real_machine_oracle_example_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 0.84,
-      "margin_x": 357.143,
-      "samples_s": [
-        0.26,
         0.82,
         0.83,
         0.84
       ],
-      "n_rounds": 4,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -3446,26 +3569,6 @@
         0.83
       ],
       "n_rounds": 11,
-      "censored_events": 0
-    },
-    {
-      "script": "run_ir_solve_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 0.83,
-      "margin_x": 361.446,
-      "samples_s": [
-        0.46,
-        0.61,
-        0.63,
-        0.64,
-        0.65,
-        0.67,
-        0.68,
-        0.81,
-        0.82,
-        0.83
-      ],
-      "n_rounds": 10,
       "censored_events": 0
     },
     {
@@ -3546,6 +3649,28 @@
       "censored_events": 0
     },
     {
+      "script": "run_drc_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.79,
+      "margin_x": 379.747,
+      "samples_s": [
+        0.39,
+        0.56,
+        0.57,
+        0.58,
+        0.59,
+        0.61,
+        0.62,
+        0.63,
+        0.64,
+        0.75,
+        0.76,
+        0.79
+      ],
+      "n_rounds": 12,
+      "censored_events": 0
+    },
+    {
       "script": "run_drc_pdk_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.78,
@@ -3581,27 +3706,6 @@
         0.77
       ],
       "n_rounds": 8,
-      "censored_events": 0
-    },
-    {
-      "script": "run_drc_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 0.76,
-      "margin_x": 394.737,
-      "samples_s": [
-        0.39,
-        0.56,
-        0.57,
-        0.58,
-        0.59,
-        0.61,
-        0.62,
-        0.63,
-        0.64,
-        0.75,
-        0.76
-      ],
-      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -3642,8 +3746,8 @@
     {
       "script": "run_smoke_isolation_ratchet_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 0.71,
-      "margin_x": 422.535,
+      "elapsed_max_s": 0.72,
+      "margin_x": 416.667,
       "samples_s": [
         0.21,
         0.41,
@@ -3654,9 +3758,10 @@
         0.47,
         0.68,
         0.7,
-        0.71
+        0.71,
+        0.72
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -3685,6 +3790,18 @@
         0.68
       ],
       "n_rounds": 4,
+      "censored_events": 0
+    },
+    {
+      "script": "run_pm_m0_smoke.py",
+      "budget_s": 120.0,
+      "elapsed_max_s": 0.25,
+      "margin_x": 480.0,
+      "samples_s": [
+        0.23,
+        0.25
+      ],
+      "n_rounds": 2,
       "censored_events": 0
     },
     {
@@ -3729,6 +3846,17 @@
       "censored_events": 0
     },
     {
+      "script": "run_pm_m2_smoke.py",
+      "budget_s": 120.0,
+      "elapsed_max_s": 0.24,
+      "margin_x": 500.0,
+      "samples_s": [
+        0.24
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
+    {
       "script": "run_quantum_design_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.58,
@@ -3755,20 +3883,10 @@
         0.52,
         0.53,
         0.54,
+        0.55,
         0.58
       ],
-      "n_rounds": 4,
-      "censored_events": 0
-    },
-    {
-      "script": "run_pm_m0_smoke.py",
-      "budget_s": 120.0,
-      "elapsed_max_s": 0.23,
-      "margin_x": 521.739,
-      "samples_s": [
-        0.23
-      ],
-      "n_rounds": 1,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -4067,15 +4185,32 @@
       "censored_events": 0
     },
     {
+      "script": "run_ecore_redline_scope_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.4,
+      "margin_x": 750.0,
+      "samples_s": [
+        0.23,
+        0.25,
+        0.26,
+        0.38,
+        0.39,
+        0.4
+      ],
+      "n_rounds": 6,
+      "censored_events": 0
+    },
+    {
       "script": "run_schip_s1_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.39,
       "margin_x": 769.231,
       "samples_s": [
         0.3,
+        0.31,
         0.39
       ],
-      "n_rounds": 2,
+      "n_rounds": 3,
       "censored_events": 0
     },
     {
@@ -4117,18 +4252,19 @@
       "censored_events": 0
     },
     {
-      "script": "run_ecore_redline_scope_smoke.py",
+      "script": "run_ecore_e19_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.39,
       "margin_x": 769.231,
       "samples_s": [
-        0.23,
-        0.25,
         0.26,
+        0.28,
+        0.3,
+        0.37,
         0.38,
         0.39
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -4149,18 +4285,16 @@
       "censored_events": 0
     },
     {
-      "script": "run_ecore_e19_smoke.py",
+      "script": "run_ecore_capability_guard_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.38,
       "margin_x": 789.474,
       "samples_s": [
-        0.26,
-        0.28,
-        0.3,
+        0.22,
         0.37,
         0.38
       ],
-      "n_rounds": 5,
+      "n_rounds": 3,
       "censored_events": 0
     },
     {
@@ -4202,18 +4336,6 @@
         0.37
       ],
       "n_rounds": 3,
-      "censored_events": 0
-    },
-    {
-      "script": "run_ecore_capability_guard_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 0.37,
-      "margin_x": 810.811,
-      "samples_s": [
-        0.22,
-        0.37
-      ],
-      "n_rounds": 2,
       "censored_events": 0
     },
     {
@@ -4268,9 +4390,10 @@
       "samples_s": [
         0.32,
         0.33,
+        0.34,
         0.36
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -4316,9 +4439,10 @@
         0.31,
         0.32,
         0.33,
+        0.34,
         0.35
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -4480,9 +4604,10 @@
         0.29,
         0.3,
         0.31,
+        0.32,
         0.33
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -4718,12 +4843,13 @@
       "samples_s": [
         0.07,
         0.22,
+        0.23,
         0.25,
         0.26,
         0.27,
         0.29
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -4974,6 +5100,23 @@
       "censored_events": 0
     },
     {
+      "script": "run_drc_fix_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.26,
+      "margin_x": 1153.846,
+      "samples_s": [
+        0.08,
+        0.2,
+        0.21,
+        0.22,
+        0.24,
+        0.25,
+        0.26
+      ],
+      "n_rounds": 7,
+      "censored_events": 0
+    },
+    {
       "script": "run_gds_drc_semantics_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.26,
@@ -5050,22 +5193,6 @@
       "censored_events": 0
     },
     {
-      "script": "run_drc_fix_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 0.25,
-      "margin_x": 1200.0,
-      "samples_s": [
-        0.08,
-        0.2,
-        0.21,
-        0.22,
-        0.24,
-        0.25
-      ],
-      "n_rounds": 6,
-      "censored_events": 0
-    },
-    {
       "script": "run_noncore_reason_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.25,
@@ -5102,12 +5229,13 @@
       "margin_x": 1250.0,
       "samples_s": [
         0.06,
+        0.2,
         0.21,
         0.22,
         0.23,
         0.24
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {

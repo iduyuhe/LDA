@@ -49,12 +49,23 @@ READ_ENERGY_FJ_ASSUMED: float = 9.0  # 文献记录值作对照；shot-noise 简
 BER_TARGET: float = 1.0e-12
 
 #: 缺口语义（机器可查）：每项挂**重算证据**函数名，不读字面量。
-GAP_SPECS: Tuple[Dict[str, str], ...] = (
-    {"id": "PM-G1", "title": "相变材料光学常数锚库（n,k @λ,相态）", "evidence": "_ev_g1"},
-    {"id": "PM-G2", "title": "模场重叠因子 Γ 的 FDTD 标定", "evidence": "_ev_g2"},
-    {"id": "PM-G3", "title": "瞬态热模型（冷却时间 = set/reset 周期下限）", "evidence": "_ev_g3"},
-    {"id": "PM-G4", "title": "晶化动力学（JMAK/Avrami）", "evidence": "_ev_g4"},
-    {"id": "PM-G5", "title": "非晶态光学 drift（retention 物理来源）", "evidence": "_ev_g5"},
+GAP_SPECS: Tuple[Dict[str, Any], ...] = (
+    # `declared_closed` = **人工声明**（对证据链的判定）；`evidence` 指向的函数 = **机器验算**。
+    # 🔴 不变式 = `declared_closed == evidence_ok`（两**不同来源** ⇒ 非同义反复，有判别力）。
+    {"id": "PM-G1", "title": "相变材料光学常数锚库（n,k @λ,相态）",
+     "evidence": "_ev_g1", "declared_closed": True},
+    {"id": "PM-G2", "title": "模场重叠因子 Γ 的 FDTD 标定",
+     "evidence": "_ev_g2", "declared_closed": False},
+    {"id": "PM-G3", "title": "瞬态热模型（冷却时间 = set/reset 周期下限）",
+     "evidence": "_ev_g3", "declared_closed": True},
+    {"id": "PM-G4", "title": "晶化动力学（JMAK/Avrami）",
+     "evidence": "_ev_g4", "declared_closed": True},
+    {"id": "PM-G5", "title": "非晶 drift（物理来源 + 电学域锚 + 光学域适用性判定）",
+     "evidence": "_ev_g5", "declared_closed": True},
+    {"id": "PM-G6", "title": "相位域（谐振/干涉）多电平读出与漂移口径",
+     "evidence": "_ev_g6", "declared_closed": False},
+    {"id": "PM-G7", "title": "光学域 drift 定量锚（@1550 nm 的 n/k 随时间）",
+     "evidence": "_ev_g7", "declared_closed": False},
 )
 
 
@@ -223,8 +234,17 @@ def _ev_g2() -> Tuple[bool, str]:
 
 
 def _ev_g3() -> Tuple[bool, str]:
-    ok = hasattr(ML, "THERMAL_TRANSIENT_ANCHOR")
-    return bool(ok), f"瞬态热锚存在={bool(ok)}"
+    """PM-G3：热扩散率 ≥2 源（含字段级排除）∧ 临界冷却律双口径同数量级（**算出来的**）。"""
+    if not (hasattr(ML, "TRANSIENT_THERMAL_ANCHORS") and hasattr(ML, "TBR_ANCHORS")):
+        return False, "瞬态热锚不存在"
+    from lda_l2 import pm_m2 as M2  # 局部导入避免加载序耦合
+    d = M2.diffusivity_table("GST")
+    q = M2.max_quench_thickness("GST")
+    ok = (len(d["per_source"]) >= 2 and len(d["excluded_sources"]) >= 1
+          and q["diff_same_order_of_magnitude"] and q["rc_same_order_of_magnitude"])
+    return bool(ok), ("热扩散率来源=%d（字段级排除 %d）· L_max 双口径同数量级=%s/%s"
+                      % (len(d["per_source"]), len(d["excluded_sources"]),
+                         q["diff_same_order_of_magnitude"], q["rc_same_order_of_magnitude"]))
 
 
 def _ev_g4() -> Tuple[bool, str]:
@@ -239,8 +259,32 @@ def _ev_g4() -> Tuple[bool, str]:
 
 
 def _ev_g5() -> Tuple[bool, str]:
-    ok = hasattr(ML, "DRIFT_ANCHOR")
-    return bool(ok), f"drift 锚存在={bool(ok)}"
+    """PM-G5：电学域 ν 锚 ≥3 源 ∧ 两路互证通过 ∧ **光学域适用性已机器判定**（算出来的）。
+
+    闭合口径 = 「drift 物理来源登机 + 电学域锚 ≥3 源 + 律自检 + 光学域**无直接锚的判定本身**
+    作为结论公开」；判定结论（无锚）⇒ **派生缺口 PM-G7**，不粉饰。
+    """
+    if not hasattr(ML, "DRIFT_ANCHORS"):
+        return False, "drift 锚不存在"
+    from lda_l2 import pm_m2 as M2
+    n = len(ML.DRIFT_ANCHORS.get("GST", []))
+    chk = M2.power_law_check("GST")
+    st = M2.optical_drift_status("GST")
+    ok = (n >= 3 and chk["ok"] and st["has_direct_optical_anchor"] is False)
+    return bool(ok), ("电学域 ν 锚=%d 源 · 两路互证 dev=%.2e · 光学域直接锚=%s（判定为缺 ⇒ 缺口 PM-G7）"
+                      % (n, chk["max_rel_dev"], st["has_direct_optical_anchor"]))
+
+
+def _ev_g6() -> Tuple[bool, str]:
+    """PM-G6：相位域多电平口径 —— M1 判振幅域对 Sb₂Se₃ 不可行 ⇒ 相位域须独立口径（当前无）。"""
+    has = hasattr(ML, "PHASE_DOMAIN_ANCHOR") and bool(getattr(ML, "PHASE_DOMAIN_ANCHOR", None))
+    return bool(has), f"相位域多电平锚存在={bool(has)}"
+
+
+def _ev_g7() -> Tuple[bool, str]:
+    """PM-G7：光学域 drift 定量锚 —— 读 `OPTICAL_DRIFT_ANCHORS`（空 ⇒ 未闭合）。"""
+    n = len(getattr(ML, "OPTICAL_DRIFT_ANCHORS", {}).get("GST", []))
+    return bool(n > 0), f"光学域 drift 锚源={n}（0 ⇒ 未闭合）"
 
 
 def gap_ledger() -> List[Dict[str, Any]]:
@@ -248,8 +292,12 @@ def gap_ledger() -> List[Dict[str, Any]]:
     for spec in GAP_SPECS:
         ev = globals()[spec["evidence"]]()
         ok = bool(ev[0])
-        out.append({"id": spec["id"], "title": spec["title"], "closed": ok,
-                    "evidence_ok": ok, "evidence_detail": ev[1]})
+        decl = bool(spec["declared_closed"])
+        out.append({"id": spec["id"], "title": spec["title"],
+                    "declared_closed": decl,      # 人工声明
+                    "evidence_ok": ok,            # 机器验算
+                    "closed": decl and ok,        # 两者**同时**成立才闭合
+                    "evidence_detail": ev[1]})
     return out
 
 
@@ -265,8 +313,11 @@ def contrast_vs_length(mat: str, lengths_um: Tuple[float, ...] = (10.0, 50.0, 20
 
 
 def gap_ledger_consistent() -> bool:
-    """不变式：`closed ⇔ evidence_ok`（打坏实现而清单不改 ⇒ 必红）。"""
-    return all(g["closed"] == g["evidence_ok"] for g in gap_ledger())
+    """不变式：**人工声明 == 机器验算**（两**不同来源** ⇒ 非同义反复，有判别力）。
+
+    打坏实现（如弱化某 `_ev_*`）而声明不改 ⇒ `evidence_ok` 掉 ⇒ 必红。
+    """
+    return all(g["declared_closed"] == g["evidence_ok"] for g in gap_ledger())
 
 
 # ---------------------------------------------------------------------------

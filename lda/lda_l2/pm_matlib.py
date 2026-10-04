@@ -329,6 +329,105 @@ JMAK_PARAMS: Dict[str, List[Dict[str, Any]]] = {
 
 
 # ---------------------------------------------------------------------------
+# 8b. 瞬态热锚（热扩散率 + 界面热阻 + 临界冷却 · PM-G3）—— 逐条带来源
+# ---------------------------------------------------------------------------
+#: 热扩散率所需字段 = {ρ, cp, k_amorphous}（**非晶相淬火口径**：reset 把熔体淬到非晶，冷却主要经非晶相）。
+#: 🔴 与 `THERMAL_ANCHORS` **同源复用 ρ/cp**（一致性由 `thermal_table_consistency()` 机器守卫——
+#: 同来源在两表出现时 ρ/cp 必须逐位相等，防漂移）；k 按**相态**细分登记。
+TRANSIENT_THERMAL_ANCHORS: Dict[str, List[Dict[str, Any]]] = {
+    "GST": [
+        {"source": "Opt. Express 23(23):29353 (2015) Tab.1（光学/热参数表）",
+         "rho_kg_m3": 6200.0, "cp_j_per_kg_k": 202.0, "k_amorphous": 0.17, "k_cryst": 0.5},
+        {"source": "Front. Mater. 8:798398 (2021), DOI:10.3389/fmats.2021.798398（Comsol 热模型参数表）",
+         "rho_kg_m3": 6200.0, "cp_j_per_kg_k": 202.0, "k_amorphous": 0.2, "k_cryst": 0.58},
+        {"source": "arXiv:1809.08907（等离激元超表面热模型 Tab.M1）",
+         "rho_kg_m3": 6150.0, "cp_j_per_kg_k": 220.0, "k_amorphous": None, "k_cryst": None,
+         "t_melt_k": 873.0,
+         "note": "原文自述 k「temperature dependent / phase dependent」**未给数值** ⇒ 热扩散率消费时字段级排除；"
+                 "该源仅贡献熔点锚。"},
+    ],
+}
+
+#: 晶化/玻璃转变温度锚（非晶保持的临界温度 ⇒ 淬火窗口 ΔT 的下端，逐来源区间）。
+T_CRYST_ANCHORS: Dict[str, List[Dict[str, Any]]] = {
+    "GST": [
+        {"t_cryst_k": 403.0, "source": "J. Phys. Conf. Ser. 214:012102 (2010)（fcc 相变 ~130 °C）"},
+        {"t_cryst_k": 423.0, "source": "Optica Adv. Opt. Photon. 18(2):285（结晶温度 ~150 °C）"},
+        {"t_cryst_k": 433.0, "source": "arXiv:1809.08907（T_c = 160 °C）"},
+    ],
+}
+
+#: 界面热阻 TBR [m²·K/W]（= 文献 cm²·K/W × 1e-4）。单位换算在登记层完成，消费层只读 SI。
+TBR_ANCHORS: Dict[str, List[Dict[str, Any]]] = {
+    "GST": [
+        {"iface": "GST/SiO2", "tbr_m2k_per_w": 7.5e-8,
+         "source": "J. Semicond. Technol. Sci.（相变突触器件 TCAD · 引 ref.18/19 汇总）"},
+        {"iface": "GST/SiO2", "tbr_m2k_per_w": 5.0e-8,
+         "source": "Front. Mater. 8:798398 (2021), DOI:10.3389/fmats.2021.798398（GST–SiO2）"},
+        {"iface": "GST/SiO2", "tbr_m2k_per_w": 5.8e-8,
+         "source": "arXiv:1809.08907（等离激元超表面热模型 · 58 m²K/GW）"},
+        {"iface": "GST/metal", "tbr_m2k_per_w": 2.0e-8,
+         "source": "J. Semicond. Technol. Sci.（GST/W · ref.18）"},
+        {"iface": "GST/metal", "tbr_m2k_per_w": 2.6e-8,
+         "source": "Front. Mater. 8:798398 (2021)（GST–TiN）"},
+    ],
+}
+
+#: 临界冷却速率锚（非晶化淬火必须超过的速率 ⇒ 可非晶化最大膜厚）。
+CRITICAL_COOLING_ANCHORS: Dict[str, Dict[str, Any]] = {
+    "GST": {"rate_k_per_s": 1.0e9, "is_order_of_magnitude": True,
+            "source": "Adv. Mater. (2024), DOI:10.1002/adma.202414031（综述：GST 临界冷却速率 ~10⁹ °C/s ⇒ 非晶膜最大厚度 ~150 nm）",
+            "note": "文献只给「order of 10⁹」⇒ 本库按 1e9 取用并**全程标注为数量级锚**（非精确值）。"},
+}
+
+# ---------------------------------------------------------------------------
+# 8c. 非晶 drift 锚（power law R = R₀·(t/t₀)^ν · PM-G5）—— 逐条带来源
+# ---------------------------------------------------------------------------
+#: 🔴 **全部为电学域（电阻）锚**。光学域（n/k 随时间的定量漂移 @1550 nm）**检索未获直接锚**
+#: ⇒ 由 `OPTICAL_DRIFT_ANCHORS` 显式登记为空（机器可判），并派生缺口 **PM-G7**。
+DRIFT_ANCHORS: Dict[str, List[Dict[str, Any]]] = {
+    "GST": [
+        {"nu": 0.11, "t_ambient_k": 300.0, "domain": "electrical",
+         "source": "arXiv:1912.04480《Resistance Drift in Ge2Sb2Te5》（线元胞 · 暗态 · 300 K）",
+         "note": "ν 随温度 0.07（125 K）→ 0.11（300 K）；同文档光照下 0.05 vs 暗态 0.09（150 K）。"},
+        {"nu": 0.07, "t_ambient_k": 125.0, "domain": "electrical",
+         "source": "arXiv:1912.04480（同一数据集低温端）"},
+        {"nu": 0.12, "nu_sigma": 0.029, "t_ambient_k": 300.0, "domain": "electrical",
+         "source": "arXiv:2002.12487（melt-quenched 线元胞 300 K · ν = 0.12 ± 0.029）",
+         "note": "**带统计离散**（σ_ν）⇒ 支撑多电平「分布展宽」判据（单元间 ν 分散是态重叠主因）。"},
+        {"nu": 0.18, "is_upper_bound": True, "domain": "electrical",
+         "source": "US Patent US7701749B2（引 Pirovano, IEEE TED 51(5):714-719 (2004)）：可接受 drift 参数 α<0.18",
+         "note": "上界口径；同专利另给优选 <0.058。"},
+    ],
+}
+
+#: 🔴 光学域 drift 锚：**显式登记为空**（本项目未检索到 @1550 nm 的定量 ν）⇒ 缺口 PM-G7。
+OPTICAL_DRIFT_ANCHORS: Dict[str, List[Dict[str, Any]]] = {
+    "GST": [],   # 空 ⇒ 机器可判「光学域无直接锚」
+}
+
+
+def thermal_table_consistency() -> Dict[str, Any]:
+    """🔴 **防漂移判据**：同来源在两热表（THERMAL / TRANSIENT）出现时 ρ/cp 必须逐位相等。
+
+    两表并存是**刻意的消费语义分离**（一个服务写能量预算、一个服务瞬态热）；
+    但同一来源的 ρ/cp 若被改成一个表动、另一个不动 ⇒ 静默不一致 ⇒ 本判据必红。
+    """
+    t_th = {a["source"]: a for m in THERMAL_ANCHORS for a in THERMAL_ANCHORS[m]}
+    t_tr = {a["source"]: a for m in TRANSIENT_THERMAL_ANCHORS for a in TRANSIENT_THERMAL_ANCHORS[m]}
+    checked, bad = [], []
+    for src in sorted(set(t_th) & set(t_tr)):
+        a, b = t_th[src], t_tr[src]
+        rho_ok = a.get("rho_kg_m3") == b.get("rho_kg_m3")
+        cp_ok = a.get("cp_j_per_kg_k") == b.get("cp_j_per_kg_k")
+        checked.append({"source": src, "rho_match": rho_ok, "cp_match": cp_ok})
+        if not (rho_ok and cp_ok):
+            bad.append(src)
+    return {"n_shared_sources": len(checked), "checked": checked,
+            "n_inconsistent": len(bad), "inconsistent_sources": bad, "ok": not bad}
+
+
+# ---------------------------------------------------------------------------
 # 9. 汇总
 # ---------------------------------------------------------------------------
 def matlib_report(wl_nm: float = 1550.0) -> Dict[str, Any]:
@@ -346,6 +445,12 @@ def matlib_report(wl_nm: float = 1550.0) -> Dict[str, Any]:
         "materials": mats,
         "device_anchors": DEVICE_ANCHORS,
         "jmak_anchors": JMAK_PARAMS,
+        "transient_thermal_anchors": TRANSIENT_THERMAL_ANCHORS,
+        "t_cryst_anchors": T_CRYST_ANCHORS,
+        "tbr_anchors": TBR_ANCHORS,
+        "critical_cooling_anchors": CRITICAL_COOLING_ANCHORS,
+        "drift_anchors": DRIFT_ANCHORS,
+        "optical_drift_anchors": OPTICAL_DRIFT_ANCHORS,
         "k0_registered": False,   # 🔴 K0 无文献锚 ⇒ 不登记（pm_m1 结论对 K0 不变）
         "headline": {
             "cross_source_spread": {

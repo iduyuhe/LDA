@@ -1513,6 +1513,18 @@ CORE_SMOKES: List[str] = [
     #   实测 ~0.3s ⇒ timeout 120s 留足余量。
     "run_pm_m1_smoke.py",
     "run_pm_m2_smoke.py",
+    # ── 光子存储征程 PM-M3（阵列版图 · 真 GDS + DRC/LVS + 独立解码复核）──────────
+    #   22 判据（层号跨源一致 / 端口契约三处同步 / 🔴 端口锚点非退化（防缓存 id 复用毒化）
+    #   / 容差纪律 / 规模档逐档 DRC PASS + LVS ACCEPT(0) + 独立复核 / 独立解码 == 生成端声明
+    #   / 预算恒等式 / pitch 上游同源 / 披露守卫 / 🔴 内置快照 schema == 仓库报告 JSON）
+    #   + 探针 P1–P5（binding 可翻转 / 截断必 raise / 单点改层号 / 期望错配 / 容差可证伪）。
+    #   实测 ~6s ⇒ timeout 300s 留足余量。
+    "run_pm_m3_smoke.py",
+    #   光子存储阵列案例卡前端门禁（取值路径 + 反向完备 + onclick）：
+    #   20 判据（196 条取值路径逐条解析 / 顶层 22 键 + 24 嵌套块 + 5 项目块反向完备
+    #   / 面板 DOM 契约 / 路由登记且不进 HEAVY_POST_PATHS）+ 探针 P1–P5。
+    #   实测 <1s ⇒ timeout 120s 留足余量。
+    "run_webui_pm_render_path_smoke.py",
     "run_ci_gate_contract_smoke.py",
 ]
 
@@ -2398,6 +2410,10 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 光子存储征程 PM-M1 门禁（JMAK + 多电平可行性律）：24 判据 + 5 探针 · 实测上界 0.3s（单测）
     "run_pm_m1_smoke.py": 120.0,
     "run_pm_m2_smoke.py": 120.0,
+    # 光子存储征程 PM-M3 门禁（阵列版图 · 真 GDS + DRC/LVS + 独立解码）：23 判据 + 5 探针 · 实测 ~6s
+    "run_pm_m3_smoke.py": 300.0,
+    # 光子存储阵列案例卡前端门禁（取值路径 + 反向完备 + onclick）：20 判据 + 5 探针 · 实测 <1s
+    "run_webui_pm_render_path_smoke.py": 120.0,
     # CI 门禁自身契约（棘轮时序 + 退出码契约）· 受控 fake 驱动，实测上界 <5s
     "run_ci_gate_contract_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）

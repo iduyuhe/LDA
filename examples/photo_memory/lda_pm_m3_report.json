@@ -1,0 +1,340 @@
+{
+ "array_4x8": {
+  "drc_all_pass": true,
+  "gds": {
+   "bytes": 24710,
+   "path": "lda_pm_m3_array_4x8.gds",
+   "sha256": "9c41cd037c95c6bdcf36df50ef7e734d6186269e1077988631717c92d87b859b"
+  },
+  "independent_scan": {
+   "by_kind": {
+    "aref": 0,
+    "boundary": 288,
+    "path": 148,
+    "sref": 0
+   },
+   "layers": {
+    "1": 212,
+    "5": 32,
+    "6": 192
+   },
+   "n_aref": 0,
+   "n_elements": 436,
+   "n_sref": 0,
+   "n_structures": 1,
+   "total_length_um": 1518.28
+  },
+  "kind": "4 buses × 8 cells",
+  "lvs_n_violations": 0,
+  "lvs_verdict": "ACCEPT",
+  "stats": {
+   "area_um2": 10695.27,
+   "bbox_um": [
+    -40.0,
+    -3.1,
+    157.33,
+    51.1
+   ],
+   "gds_bytes": 24710,
+   "height_um": 54.2,
+   "multilayer": false,
+   "n_devices": 40,
+   "n_elements": 436,
+   "n_io": 8,
+   "n_nets": 44,
+   "n_structures": 1,
+   "width_um": 197.33
+  }
+ },
+ "array_8x1": {
+  "drc": {
+   "all_pass": true,
+   "n_checked": 10,
+   "n_pass": 10
+  },
+  "expected": {
+   "HEATER": 48,
+   "PCM": 8,
+   "SI_devices": 10,
+   "SI_routes": 9,
+   "layers_expected": {
+    "5": 8,
+    "6": 48
+   },
+   "n_devices": 10,
+   "n_nets": 9
+  },
+  "gds": {
+   "bytes": 6224,
+   "path": "lda_pm_m3_array_8x1.gds",
+   "sha256": "a516fa6127d0b8179be30d058b0020f2072083bc53ca28bbc79ffb75edb34675"
+  },
+  "independent_scan": {
+   "by_kind": {
+    "aref": 0,
+    "boundary": 72,
+    "path": 37,
+    "sref": 0
+   },
+   "layers": {
+    "1": 53,
+    "5": 8,
+    "6": 48
+   },
+   "n_aref": 0,
+   "n_elements": 109,
+   "n_sref": 0,
+   "n_structures": 1,
+   "total_length_um": 379.5699999999997
+  },
+  "io_ports": [
+   "b0_gc_in.in",
+   "b0_gc_out.out"
+  ],
+  "kind": "1 bus × 8 cells",
+  "lvs": {
+   "n_violations": 0,
+   "verdict": "ACCEPT"
+  },
+  "stats": {
+   "area_um2": 1223.44,
+   "bbox_um": [
+    -40.0,
+    -3.1,
+    157.33,
+    3.1
+   ],
+   "gds_bytes": 6224,
+   "height_um": 6.2,
+   "multilayer": false,
+   "n_devices": 10,
+   "n_elements": 109,
+   "n_io": 2,
+   "n_nets": 11,
+   "n_structures": 1,
+   "width_um": 197.33
+  },
+  "svg": "lda_pm_m3_array_8x1.svg"
+ },
+ "budget": {
+  "array_bits": 32,
+  "array_il_db": {
+   "amorphous": [
+    3.1025680636908706,
+    24.820544509526965
+   ],
+   "crystalline": [
+    15.51284031845435,
+    240.4490249360424
+   ]
+  },
+  "array_states": 128,
+  "bits_per_cell": 4,
+  "contrast_reuse_note": "contrast 与 IL 来自同一 M0 双层调用（避免二次来源）",
+  "gamma_note": "单元 IL 含 Γ 假设（PM-G2 未闭合）⇒ 区间口径，非单值",
+  "il_model": "serial_sum(N × single_cell_il)；不含单元间连接波导传播损耗（无锚）",
+  "l_cell_um": 11.014603130717049,
+  "material": "GST",
+  "n_cells_total": 8,
+  "n_electrode_pads": 32,
+  "n_heater_lines": 16,
+  "n_levels": 16,
+  "single_cell_contrast_db": [
+   1.551284031845435,
+   26.953560053314433
+  ],
+  "single_cell_il_db": {
+   "amorphous": [
+    0.3878210079613588,
+    3.1025680636908706
+   ],
+   "crystalline": [
+    1.9391050398067937,
+    30.0561281170053
+   ]
+  }
+ },
+ "device": {
+  "drc_checks": [
+   "min_width",
+   "min_space",
+   "min_pad"
+  ],
+  "kind": "PCMCell",
+  "layers": {
+   "HEATER": 6,
+   "PCM": 5,
+   "SI": 1
+  },
+  "ports": [
+   "in",
+   "out",
+   "h1",
+   "h2",
+   "h3",
+   "h4"
+  ],
+  "structure": "Si 波导 + GST 相变段 + 双侧微加热器 + 4 电极 pad"
+ },
+ "disclosure": {
+  "drc_rules_are_design_rules": true,
+  "flat_export": "阵列以 flat 导出（不做层次化压缩）⇒ 独立解码器逐元素复核",
+  "k_iso_is_design_choice": true,
+  "layer": "设计期签核（版图 + DRC/LVS + 预算）",
+  "llm_not_in_decision_path": true,
+  "no_efficiency_metric_reported": true,
+  "no_foundry_truth": true,
+  "no_project_measurement": true
+ },
+ "generated_by": "examples/photo_memory/build_pm_m3.py",
+ "material": "GST",
+ "milestone": "PM-M3 · 阵列版图（真 GDS + DRC/LVS + 独立解码复核）",
+ "pitch": {
+  "binding": "thermal",
+  "gap_process_um": 6.0,
+  "gap_thermal_um": 7.030421575840286,
+  "gap_um": 7.030421575840286,
+  "l_cell_um": 11.014603130717049,
+  "pad_um": 4.0,
+  "pitch_um": 18.045024706557335,
+  "thermal": {
+   "basis": "k_iso × L_max（热扩散口径上界）· k_iso 为设计选择",
+   "k_iso": 8.0,
+   "l_max_diff_um": 0.8788026969800358,
+   "l_max_rc_um": 0.27233211120226525,
+   "literature_l_ref_um": 0.15,
+   "material": "GST",
+   "min_gap_um": 7.030421575840286,
+   "min_gap_um_rc_basis": 2.178656889618122
+  }
+ },
+ "scale_tiers": [
+  {
+   "area_um2": 775.93,
+   "bus_x_cells": "1x4",
+   "drc_pass": true,
+   "expected_pcm": 4,
+   "gds_bytes": 4272,
+   "got_pcm": 4,
+   "height_um": 6.2,
+   "independent_ok": true,
+   "lvs": "ACCEPT",
+   "lvs_violations": 0,
+   "n_buses": 1,
+   "n_cells_per_bus": 4,
+   "n_cells_total": 4,
+   "n_devices": 6,
+   "n_elements": 73,
+   "n_nets": 7,
+   "width_um": 125.15
+  },
+  {
+   "area_um2": 1223.44,
+   "bus_x_cells": "1x8",
+   "drc_pass": true,
+   "expected_pcm": 8,
+   "gds_bytes": 6224,
+   "got_pcm": 8,
+   "height_um": 6.2,
+   "independent_ok": true,
+   "lvs": "ACCEPT",
+   "lvs_violations": 0,
+   "n_buses": 1,
+   "n_cells_per_bus": 8,
+   "n_cells_total": 8,
+   "n_devices": 10,
+   "n_elements": 109,
+   "n_nets": 11,
+   "width_um": 197.33
+  },
+  {
+   "area_um2": 2118.48,
+   "bus_x_cells": "1x16",
+   "drc_pass": true,
+   "expected_pcm": 16,
+   "gds_bytes": 10128,
+   "got_pcm": 16,
+   "height_um": 6.2,
+   "independent_ok": true,
+   "lvs": "ACCEPT",
+   "lvs_violations": 0,
+   "n_buses": 1,
+   "n_cells_per_bus": 16,
+   "n_cells_total": 16,
+   "n_devices": 18,
+   "n_elements": 181,
+   "n_nets": 19,
+   "width_um": 341.69
+  },
+  {
+   "area_um2": 3908.54,
+   "bus_x_cells": "1x32",
+   "drc_pass": true,
+   "expected_pcm": 32,
+   "gds_bytes": 17936,
+   "got_pcm": 32,
+   "height_um": 6.2,
+   "independent_ok": true,
+   "lvs": "ACCEPT",
+   "lvs_violations": 0,
+   "n_buses": 1,
+   "n_cells_per_bus": 32,
+   "n_cells_total": 32,
+   "n_devices": 34,
+   "n_elements": 325,
+   "n_nets": 35,
+   "width_um": 630.41
+  },
+  {
+   "area_um2": 10695.27,
+   "bus_x_cells": "4x8",
+   "drc_pass": true,
+   "expected_pcm": 32,
+   "gds_bytes": 24710,
+   "got_pcm": 32,
+   "height_um": 54.2,
+   "independent_ok": true,
+   "lvs": "ACCEPT",
+   "lvs_violations": 0,
+   "n_buses": 4,
+   "n_cells_per_bus": 8,
+   "n_cells_total": 32,
+   "n_devices": 40,
+   "n_elements": 436,
+   "n_nets": 44,
+   "width_um": 197.33
+  }
+ ],
+ "signoff_checks": {
+  "drc_all_pass": true,
+  "heater_layer_exact": true,
+  "lvs_accept": true,
+  "no_hierarchy_refs": true,
+  "pcm_layer_exact": true,
+  "si_layer_at_least_devices": true,
+  "single_structure": true
+ },
+ "upstream": {
+  "cell_length": {
+   "l_um": 11.014603130717049,
+   "source": "ACS Photonics 2025 / arXiv 2512.23559（椭偏 · Cody-Lorentz 拟合 · 30nm 膜）",
+   "spacing_frac": 0.06570779838443097,
+   "spacing_ok": true,
+   "worst_ber": 4.783254105536974e-14
+  },
+  "levels": {
+   "bits_per_cell": 4,
+   "n_levels": 16
+  },
+  "thermal": {
+   "basis": "k_iso × L_max（热扩散口径上界）· k_iso 为设计选择",
+   "k_iso": 8.0,
+   "l_max_diff_um": 0.8788026969800358,
+   "l_max_rc_um": 0.27233211120226525,
+   "literature_l_ref_um": 0.15,
+   "material": "GST",
+   "min_gap_um": 7.030421575840286,
+   "min_gap_um_rc_basis": 2.178656889618122
+  }
+ }
+}

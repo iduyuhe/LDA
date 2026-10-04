@@ -173,6 +173,52 @@ def _path_geoms(geoms: Sequence[Geom]) -> List[Geom]:
     return [g for g in geoms if g and g[0] == "P"]
 
 
+# ── v0.9.191（PM 征程 M3）：光子存储单元（PCMCell）测量器 ────────────────
+#    单器件含三类几何：Si 波导（层 1，1 条 PATH）· GST 段（层 5，1 个矩形）·
+#    双侧加热线 + 4 pad（层 6，2 条 PATH + 4 个方形 BOUNDARY）。
+#    测量器**按层筛选**（不靠索引顺序），且「不一致即判不可测」（不取平均）。
+_PCM_LAYER_SI = 1
+_PCM_LAYER_PCM = 5
+_PCM_LAYER_HEATER = 6
+
+
+def _m_pcm_L(geoms: Sequence[Geom]) -> Optional[float]:
+    """Si 层（1）单 PATH 端点距离 ⇒ `length`（单元光程长）。"""
+    p = [g for g in _path_geoms(geoms) if int(g[1]) == _PCM_LAYER_SI]
+    if len(p) != 1 or len(p[0][3]) < 2:
+        return None
+    return _dist(p[0][3][0], p[0][3][-1])
+
+
+def _m_pcm_w(geoms: Sequence[Geom]) -> Optional[float]:
+    """Si 层 PATH 的宽度字段 ⇒ `width`（波导宽）。"""
+    p = [g for g in _path_geoms(geoms) if int(g[1]) == _PCM_LAYER_SI]
+    if len(p) != 1:
+        return None
+    return float(p[0][2])
+
+
+def _m_pcm_heat_w(geoms: Sequence[Geom]) -> Optional[float]:
+    """HEATER 层（6）两条加热线 PATH 的**共同**宽度 ⇒ `heat_w`。"""
+    p = [g for g in _path_geoms(geoms) if int(g[1]) == _PCM_LAYER_HEATER]
+    if len(p) != 2:
+        return None
+    ws = {round(float(g[2]), 9) for g in p}
+    return ws.pop() if len(ws) == 1 else None
+
+
+def _m_pcm_pad(geoms: Sequence[Geom]) -> Optional[float]:
+    """HEATER 层（6）4 个方形 BOUNDARY 的共同边长 ⇒ `pad`（不一致即不可测）。"""
+    r = [g for g in _rect_geoms(geoms) if int(g[1]) == _PCM_LAYER_HEATER]
+    if len(r) != 4:
+        return None
+    sides = set()
+    for g in r:
+        sides.add(round(_x_span(g[3]), 9))
+        sides.add(round(_y_span(g[3]), 9))
+    return sides.pop() if len(sides) == 1 else None
+
+
 def _rect_geoms(geoms: Sequence[Geom]) -> List[Geom]:
     """4 点 BOUNDARY（矩形/梯形族；taper 是 66 点，天然被排除）。"""
     return [g for g in geoms if g and g[0] == "B" and len(g[3]) == 4]
@@ -473,6 +519,10 @@ PARAM_MEASURERS: Dict[str, Dict[str, Any]] = {
                     "corrugation": _m_bragg_corrugation,
                     "width": _m_bragg_width,
                     "taper_len": _m_taper_len},
+    # v0.9.191（PM 征程 M3）：光子存储单元 —— 4 个几何量可回提
+    # （光程长 / 波导宽 / 加热线宽 / 电极 pad 边长）。
+    "PCMCell": {"length": _m_pcm_L, "width": _m_pcm_w,
+                "heat_w": _m_pcm_heat_w, "pad": _m_pcm_pad},
 }
 
 #: 全部测量器名（供 smoke / 审计遍历，避免调用方硬编码名单）。
@@ -509,6 +559,11 @@ MEASURER_NAMES: Tuple[str, ...] = (
     "_m_bragg_periods",
     "_m_bragg_corrugation",
     "_m_bragg_width",
+    # v0.9.191（PM 征程 M3）· PCMCell 四测量器
+    "_m_pcm_L",
+    "_m_pcm_w",
+    "_m_pcm_heat_w",
+    "_m_pcm_pad",
 )
 
 #: **链路器件类全表（13 → 14）** —— 真相源 = `link_model._DEFAULT_PORTS` 的 12 类
@@ -519,6 +574,8 @@ DEVICE_CLASSES: Tuple[str, ...] = (
     "Waveguide", "GratingCoupler", "DirectionalCoupler", "RingResonator",
     "RingAddDrop", "MMI", "MMIC", "Splitter", "MZI", "PhaseShifter",
     "MziModulator", "Photodetector", "SymmetricYBranch", "BraggMirror",
+    # v0.9.191（PM 征程 M3）：光子存储单元（本征程新增的第 15 类）
+    "PCMCell",
 )
 
 #: 每类器件的**规范声明**（最小可放置实例的参数）—— 供 `class_coverage()`
@@ -544,6 +601,9 @@ CANONICAL_PARAMS: Dict[str, Dict[str, float]] = {
                     "taper_len": 1.5,
                     "wl0_um": 1.55, "h_core_um": 0.22, "n_si": 3.48,
                     "n_sio": 1.44},
+    # v0.9.191（PM 征程 M3）· 光子存储单元（默认参数即 `primitives.PCM_CELL_DEFAULTS`）
+    "PCMCell": {"length": 11.0, "width": 0.5, "gst_overhang": 0.20,
+                "heat_gap": 0.35, "heat_w": 0.60, "pad": 4.0},
 }
 
 #: **参数分类表（机器可审）** —— kind → {参数名: (类别, 原因)}。
@@ -650,6 +710,18 @@ PARAM_TAXONOMY: Dict[str, Dict[str, Tuple[str, str]]] = {
                  "n_si/n_sio 只进器件库 TMM 模型"),
         "n_sio": ("not_encoded", "同上（不落在本版图几何上）"),
         "target_r_min": ("not_encoded", "反射率目标：不入版图"),
+    },
+    # v0.9.191（PM 征程 M3）· 光子存储单元
+    "PCMCell": {
+        "length": ("geometric", "Si 层（1）单 PATH 端点距离"),
+        "width": ("geometric", "Si 层 PATH 的 width 字段"),
+        "heat_w": ("geometric", "HEATER 层（6）两条加热线 PATH 的共同宽度"),
+        "pad": ("geometric", "HEATER 层（6）4 个方形 BOUNDARY 的共同边长"),
+        "gst_overhang": ("encoded_not_recovered",
+                         "GST 矩形半高 = width/2 + gst_overhang ⇒ 与 width 共同"
+                         "决定，单侧不可唯一反解（需先独立回提 width）"),
+        "heat_gap": ("encoded_not_recovered",
+                     "加热线中心线 y 由 GST 半高与 heat_w 共同派生 ⇒ 复合量"),
     },
 }
 

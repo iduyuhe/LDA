@@ -30,6 +30,11 @@ DEFAULT_RULES: Dict[str, float] = {
     "min_space_um": 0.20,
     "min_bend_R_um": 5.0,
     "max_split_angle_deg": 30.0,
+    # ── v0.9.191（PM 征程 M3）· 电极 pad 尺寸下限 ──────────────────────────
+    # 来源 = **设计规则**（探针台接触常识：探针尖端 µm 量级，pad 须远大于尖端
+    # 以避免接触损伤与对准容差不足），**非任何 foundry PDK deck**；与其他
+    # DEFAULT_RULES 键同属「可被 PDK 覆盖」的设计规则层。
+    "min_pad_um": 2.0,
     # ── 损耗通道（网格级 · D-125）· 设计规则 · 可覆盖 · 非实测 golden ──
     "max_il_per_mode_db": 15.0,     # **每模口径**上限（光子实际穿越 · η ≈ 3.2%）
     "max_il_total_db": 25.0,        # **总级联口径**上限（全网格门合计）
@@ -140,6 +145,17 @@ def drc_check_device(kind: str, params: Dict[str, float],
     elif kind == "BraggMirror":
         # 一维层堆叠：宽度规则由衬底工艺决定（无 2D 版图几何），跳过
         pass
+    elif kind == "PCMCell":
+        # v0.9.191（PM 征程 M3）：光子存储单元 —— GST 相变层 / Si 波导 / 加热线
+        # 三处最小横向特征 + 「GST ↔ 加热线 / GST ↔ 波导」层间间距 + 电极 pad 尺寸。
+        # 🔴 几何量由 `primitives.pcm_cell_geometry` **同源导出**（与版图几何
+        #    共用同一函数），绝不在此重算一遍 ⇒ 杜绝 DRC 与版图脱钩。
+        from lda_l2.primitives import pcm_cell_geometry
+        g = pcm_cell_geometry(params)
+        add("min_width", "min_width_um", g["min_width"], rules["min_width_um"])
+        add("min_space", "min_space_um", g["min_space"], rules["min_space_um"])
+        add("min_pad", "pad_um", g["min_pad"],
+            rules.get("min_pad_um", DEFAULT_RULES["min_pad_um"]))
     elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler",
                   # v0.9.178（M2 · G-OI2）：收发器器件类接入参数级 DRC。
                   # 此前这 4 类无分支 ⇒ raise ValueError ⇒ 收发器真 GDS 里

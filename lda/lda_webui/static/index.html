@@ -144,6 +144,7 @@ body{padding-top:56px}
     <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E18）</a>
     <a href="#sec-d4" style="color:#0b1220;background:#a5b4fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ D4 交付扩面（电子+超导）</a>
     <a href="#sec-oi" style="color:#04201b;background:#5eead4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光联接模块 M0–M5（3.2T/CPO · 热-光-电协同 + VπL 断口结算）</a>
+    <a href="#sec-pm" style="color:#1a1205;background:#fcd34d;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子存储阵列 M0–M3（GST 相变 · 真 GDS + DRC/LVS）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1502,6 +1503,44 @@ body{padding-top:56px}
     <div id="oiSummary" class="summary"></div>
     <div id="oiBody"></div>
     <div class="conclusion" id="oiConclusion"></div>
+  </div>
+
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-pm">
+    <h2>★ 光子存储阵列 M0–M3：单元闭式 → 多电平 → 热-可靠性 → 阵列版图（真 GDS + DRC/LVS · 吃狗粮检阅平台）</h2>
+    <div class="hint">
+      <b>用 LDA 从零设计一条<b>非易失光子存储</b>（Si 直波导 + <b>GST 相变段</b> + 双侧微加热线 + 4 电极 pad）</b>，
+      从单元物理一路做到<b>可排布的阵列版图 + 真 GDSII + 双闸签核</b>。<br/>
+      <b>M0（单元闭式）</b>：核心闭式律 <b>每 π 损耗 IL<sub>π</sub> ≡ (10/ln10)·2πk/Δn</b>
+      —— <b>Γ（模场重叠）与器件长度同时约掉</b>；双态对比度跨 <b>4 个独立来源</b>得 28–489 dB
+      （离散 15×）⇒ 一律<b>区间</b>口径。<br/>
+      <b>M1（多电平）</b>：几何无关可行性判据 <b>r = k<sub>a</sub>/(k<sub>c</sub>−k<sub>a</sub>) ≤ 0.198</b>
+      （同样 <b>Γ 与 L 同约掉</b>）⇒ 设计点 <b>L = 11.01 µm</b>、级间距 6.57%、<b>worst BER 4.78e−14</b>、
+      <b>4 bit/单元（16 电平）</b>。<br/>
+      <b>M2（热-可靠性）</b>：可非晶化最大膜厚 <b>L_max 双口径</b>（扩散 768–879 nm / 集总 RC 240–272 nm）；
+      冷却时间 τ<sub>cool</sub> ≈ 1.3 ns ≪ 脉冲 ⇒ <b>冷却不是瓶颈</b>；电学域保持窗口 34/199/1162 s；
+      🔴 光学域 drift <b>无直接锚</b> ⇒ 派生缺口 <b>PM-G7</b> 如实开放。<br/>
+      <b>M3（阵列版图 · 本档）</b>：新增器件原语 <b>PCMCell</b>（端口/锚点/包围盒/DRC/LVS 五处契约同源），
+      单元间距 = <b>max(k_iso × L_max, 工艺间隙)</b> ⇒ <b>热串扰间距成为 binding 约束</b>、pitch <b>18.05 µm</b>；
+      <b>1×N 串行总线</b>与 <b>R×C 多总线</b>两种阵列；<b>从最终 GDS 字节独立解码复核</b>
+      （自写最小 GDSII 记录流解析器，<b>刻意不复用</b>导出器解码路径：层 5 元素数 <b>恰等于</b>单元数、
+      层 6 <b>恰等于</b> 6×单元数、截断未见 ENDLIB 即拒）；规模档 <b>4/8/16/32 单元 + 4×8</b>
+      全部 <b>DRC PASS + LVS ACCEPT（0 违规）</b>。<br/>
+      🔴 <b>吃狗粮抓出的框架级真缺陷</b>：<code>placement.port_abs</code> 的组件索引缓存<b>仅以 id() 为键</b>，
+      同进程多次建阵列时旧对象 GC 后 <b>id 复用 ⇒ 命中陈旧索引 ⇒ 端口偏移静默退回原点 ⇒ 51 处 LVS 假红</b>。
+      已修：缓存<b>持有对象引用 + 身份校验 + 组件数版本</b>；并把「实例不在 link ⇒ 静默返回原点」改为
+      <b>raise</b>（拒绝静默回退）。<br/>
+      🔴 <b>诚实边界</b>：本卡是<b>设计期签核</b>（版图 + 几何 DRC + LVS + 设计预算），<b>非流片、非实测</b>；
+      DRC 限值是<b>自建设计规则</b>（公开工艺近似，<b>非</b> foundry PDK deck）；单元插损含 <b>Γ 假设</b>
+      （缺口 PM-G2）⇒ 一律区间；<b>无电学/热学联仿</b>（焦耳热/热-光动力学属器件级 T1 / 电路级 T2 锁死区）；
+      规模数字是<b>版图容量</b>（可排布且可签核的单元数），<b>非</b>已制备器件数；
+      <b>不报</b> pJ/bit · fJ/op · TOPS · TOPS-W；判决为死标量比对，<b>LLM 不进判决路径</b>。
+    </div>
+    <div class="row">
+      <button class="btn" id="runPm">运行 光子存储阵列 M0 – M3 案例</button>
+    </div>
+    <div id="pmSummary" class="summary"></div>
+    <div id="pmBody"></div>
+    <div class="conclusion" id="pmConclusion"></div>
   </div>
 
   <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-accel">
@@ -5813,6 +5852,216 @@ function renderOi(d){
 }
 if($('runOi')) $('runOi').onclick = runOi;
 
+/* ═══════════ 光子存储阵列（GST 相变 · 电辅助写）案例（PM 征程 M0–M3 · /api/pm_demo）═══════════ */
+async function runPm(){
+  const btn=$('runPm'); if(!btn) return;
+  btn.disabled=true;
+  $('pmSummary').innerHTML='<span class="spin"></span> 正在装配 光子存储阵列 M0 – M3 案例（单元闭式 + 多电平 + 热-可靠性 + 阵列版图/P&R/DRC/LVS/独立 GDS 解码，只读快照）…';
+  try{
+    const d=await apiGet('/api/pm_demo');
+    renderPm(d);
+  }catch(e){ $('pmSummary').textContent='错误：'+(e&&e.message?e.message:e); }
+  finally{ btn.disabled=false; }
+}
+function renderPm(d){
+  if(!d||d.error){ $('pmSummary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
+  /* 🔴 别名一律写「无括号」式（取值型别名右手边直接接 `||{}`，不加圆括号）——
+     门禁 run_webui_pm_render_path_smoke 的静态解析器只识别三种绑定式：
+     ① `var 别名=(根点键||…`（含同行多声明的 `, 别名=(根点键||…`）
+     ② `别名=(父.键||{}).子键||`
+     ③ `别名=父.键||`
+     带圆括号的「父.键」式（如 `别名=(父.键||{})`）会整条漏掉 ⇒ 该块落进
+     「反向完备」盲区（正是血案 #32 同族）。 */
+  var sp=d.span||{}, ID=d.identity||{}, AR=d.array||{}, MN=AR.main||{},
+      ST=MN.stats||{}, SI=AR.independent_scan||{}, EX=AR.expected_layers||{},
+      PI=d.pitch||{}, UP=d.upstream||{}, BU=d.budget||{}, SC=d.signoff_checks||{},
+      WD=AR.wide||{}, AF=d.artifacts||{}, DV=d.device||{}, UI=d.ui||{};
+  $('pmSummary').innerHTML='<b>'+d.case_id+'</b> · 判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）'
+    +' · 征程 <b>'+(sp.milestones||'?')+'</b> 段 / <b>'+(sp.modules||'?')+'</b> 模块'
+    +' · 门禁判据 <b>'+(sp.gate_checks||'?')+'</b>（含 <b>'+(sp.probe_mutations||'?')+'</b> 条突变探针）'
+    +' · 主阵列 <b>'+(ST.n_devices||'?')+'</b> 器件 / <b>'+(ST.n_nets||'?')+'</b> 网';
+
+  var h='';
+  h+='<div class="note">端点：'+d.endpoint+'</div>';
+  h+='<div class="note">主张：'+(d.claim||'-')+'</div>';
+  h+='<div class="note">物理：'+(ID.physics||'-')+'</div>';
+  h+='<div class="note">器件：'+(ID.device||'-')+'</div>';
+  h+='<div class="note">'+(ID.route_note||'-')+'</div>';
+  var ly=ID.layers||{};
+  h+='<div class="note">版图层：Si=<b>'+ly.SI+'</b> · PCM=<b>'+ly.PCM+'</b> · HEATER=<b>'+ly.HEATER
+    +'</b> · 端口 '+(ID.ports||[]).join('/')+' · 零外部 EDA：<b>'+(ID.zero_external_eda?'是':'否')+'</b></div>';
+  h+=_qcTbl(['实现器件 / DRC 规则'],[
+    ['器件 kind / 层', (DV.kind||'-')+' / '+JSON.stringify(DV.layers||{})],
+    ['端口', (DV.ports||[]).join('/')],
+    ['DRC 规则', (DV.drc_rules||[]).join(' · ')]
+  ]);
+
+  // ① M1 上游设计点（与 M3 同源）
+  var cl=UP.cell_length||{}, lv=UP.levels||{}, th=UP.thermal||{};
+  h+='<h3 style="margin:14px 0 4px">① 上游设计点（M1/M2 同源 · M3 直接读取，不各算各的）</h3>';
+  h+=_qcTbl(['量','值'],[
+    ['单元长度 L (µm)', cl.l_um],
+    ['级间距占比', cl.spacing_frac!=null?(cl.spacing_frac*100).toFixed(2)+' %':'-'],
+    ['级间距可行', cl.spacing_ok?'<b>是</b>':'<b>否</b>'],
+    ['最坏 BER', cl.worst_ber!=null?Number(cl.worst_ber).toExponential(2):'-'],
+    ['电平数 / bit 每单元', (lv.n_levels||'-')+' / '+(lv.bits_per_cell||'-')],
+    ['热隔离系数 k_iso（设计选择）', th.k_iso],
+    ['L_max 扩散口径 (µm)', th.l_max_diff_um],
+    ['L_max 集总 RC 口径 (µm)', th.l_max_rc_um],
+    ['热串扰最小间距 (µm)', th.min_gap_um],
+    ['热间距（集总 RC 口径）(µm)', th.min_gap_um_rc_basis],
+    ['材料', th.material],
+    ['口径依据', th.basis],
+    ['文献参考 L_ref (µm)', th.literature_l_ref_um],
+    ['设计点来源', cl.source]
+  ]);
+
+  // ② 单元间距（binding 约束由算出来的 max 给出）
+  h+='<h3 style="margin:14px 0 4px">② 单元间距：热串扰间距 vs 工艺间隙（binding = <b>'+PI.binding+'</b>）</h3>';
+  h+=_qcTbl(['量','值'],[
+    ['单元长度 l_cell (µm)', PI.l_cell_um],
+    ['热串扰间距 k_iso × L_max (µm)', PI.gap_thermal_um],
+    ['工艺间隙 (µm)', PI.gap_process_um],
+    ['实际取用间距 gap (µm) = max(上两者)', PI.gap_um],
+    ['binding 约束', '<b>'+PI.binding+'</b>'],
+    ['单元 pitch (µm)', PI.pitch_um],
+    ['电极 pad 边长 (µm)', PI.pad_um]
+  ]);
+  h+='<div class="note">🔴 热串扰间距 '+PI.gap_thermal_um+' µm <b>大于</b>工艺间隙 '+PI.gap_process_um
+    +' µm ⇒ <b>热学结论直接决定了版图密度</b>：若热学给不出更小的 L_max，阵列就排不密。</div>';
+
+  // ③ 主阵列版图统计 + 双闸签核
+  h+='<h3 style="margin:14px 0 4px">③ 主阵列（'+(MN.kind||'-')+'）版图统计与双闸签核</h3>';
+  var drc=MN.drc||{}, lvs=MN.lvs||{};
+  h+=_qcTbl(['版图量','值'],[
+    ['器件数', ST.n_devices],
+    ['网（net）数', ST.n_nets],
+    ['元素（BOUNDARY/PATH）数', ST.n_elements],
+    ['GDS 结构数', ST.n_structures],
+    ['多层标志', (ST.multilayer?'<b>是</b>':'否')],
+    ['光学 IO 数', ST.n_io],
+    ['面积 (µm²)', ST.area_um2],
+    ['宽 × 高 (µm)', ST.width_um+' × '+ST.height_um],
+    ['包围盒 [x0,y0,x1,y1] (µm)', (ST.bbox_um||[]).join(', ')],
+    ['GDS 字节（生成端）', ST.gds_bytes],
+    ['DRC 通过', drc.all_pass?'<b>PASS</b>（'+(drc.n_pass||'?')+'/'+(drc.n_checked||'?')+'）':'<b>FAIL</b>'],
+    ['LVS 判决', (lvs.verdict==='ACCEPT'?'<b>ACCEPT</b>':'<b>'+lvs.verdict+'</b>')
+      +'（违规 '+(lvs.n_violations!=null?lvs.n_violations:'?')+'）']
+  ]);
+
+  // ④ 独立解码复核（从最终字节解出的层分布，与期望比对）
+  h+='<h3 style="margin:14px 0 4px">④ 独立解码复核：从最终 GDS 字节解出的层分布（不复用导出器解码路径）</h3>';
+  var layers=SI.layers||{};
+  var layRows=Object.keys(layers).sort().map(function(k){ return ['层 '+k, layers[k]]; });
+  h+=_qcTbl(['层','元素数'], layRows);
+  h+=_qcTbl(['断言','值'],[
+    ['GDS 结构数 / 元素数', (SI.n_structures!=null?SI.n_structures:'-')+' / '+(SI.n_elements!=null?SI.n_elements:'-')],
+    ['按类型（boundary/path/sref/aref）', JSON.stringify(SI.by_kind||{})],
+    ['路径总长 (µm)', (SI.total_length_um!=null?SI.total_length_um.toFixed(2):'-')],
+    ['SREF / AREF（应为 0 · flat 导出）', (SI.n_sref!=null?SI.n_sref:'-')+' / '+(SI.n_aref!=null?SI.n_aref:'-')],
+    ['期望 层 5（PCM）= 单元数', EX.PCM+' （实际 '+layers['5']+'）'],
+    ['期望 层 6（HEATER）= 6× 单元数', EX.HEATER+' （实际 '+layers['6']+'）'],
+    ['期望层表（生成端声明）', JSON.stringify(EX.layers_expected||{})],
+    ['期望 Si 器件/路由数', (EX.SI_devices!=null?EX.SI_devices:'-')+' / '+(EX.SI_routes!=null?EX.SI_routes:'-')],
+    ['期望 器件/网 数', (EX.n_devices!=null?EX.n_devices:'-')+' / '+(EX.n_nets!=null?EX.n_nets:'-')],
+    ['PCM 层恰等', SC.pcm_layer_exact?'<b>成立</b>':'<b>不成立</b>'],
+    ['HEATER 层恰等', SC.heater_layer_exact?'<b>成立</b>':'<b>不成立</b>'],
+    ['Si 层 ≥ 器件数', SC.si_layer_at_least_devices?'<b>成立</b>':'<b>不成立</b>'],
+    ['DRC 全通过 / LVS ACCEPT', (SC.drc_all_pass?'<b>是</b>':'<b>否</b>')+' / '+(SC.lvs_accept?'<b>是</b>':'<b>否</b>')],
+    ['单结构 / 无层次引用', (SC.single_structure?'<b>是</b>':'<b>否</b>')+' / '+(SC.no_hierarchy_refs?'<b>是</b>':'<b>否</b>')]
+  ]);
+  h+='<div class="note">GDS 字节 <b>'+(AR.gds_bytes!=null?AR.gds_bytes:'-')+'</b> · sha256 <code>'
+    +(AR.gds_sha256||'-')+'</code></div>';
+
+  // ⑤ 规模档（全部 DRC PASS + LVS ACCEPT + 独立复核 OK）
+  h+='<h3 style="margin:14px 0 4px">⑤ 规模档（4/8/16/32 单元 + 4×8 多总线，全部双闸签核）</h3>';
+  h+=_qcTbl(['阵列','单元数','器件','网','元素','GDS (B)','面积 (µm²)','LVS'],
+    (d.scale_tiers||[]).map(function(t){
+      return [ t.bus_x_cells, t.n_cells_total, t.n_devices, t.n_nets, t.n_elements,
+        t.gds_bytes, t.area_um2,
+        (t.lvs==='ACCEPT'?'<b>ACCEPT</b>':'<b>'+t.lvs+'</b>')
+          +(t.lvs_violations?'（'+t.lvs_violations+'）':'（0）')
+          +(t.independent_ok?' · <b>独立✓</b>':'') ];
+    }));
+  h+='<div class="note">宽阵列（'+(WD.kind||'-')+'）：器件 '+(WD.stats?WD.stats.n_devices:'-')
+    +' · 网 '+(WD.stats?WD.stats.n_nets:'-')+' · 元素 '+(WD.stats?WD.stats.n_elements:'-')
+    +' · 结构 '+(WD.stats?WD.stats.n_structures:'-')
+    +' · 多层 '+(WD.stats?(WD.stats.multilayer?'是':'否'):'-')
+    +' · IO '+(WD.stats?WD.stats.n_io:'-')
+    +' · GDS '+(WD.stats?WD.stats.gds_bytes:'-')+' B'
+    +' · 面积 '+(WD.stats?WD.stats.area_um2:'-')+' µm² · 宽×高 '
+    +(WD.stats?(WD.stats.width_um+' × '+WD.stats.height_um):'-')+' µm'
+    +' · 包围盒 '+JSON.stringify(WD.stats?WD.stats.bbox_um:[])
+    +' · DRC '+(WD.drc_all_pass?'<b>PASS</b>':'<b>FAIL</b>')
+    +' · LVS <b>'+(WD.lvs_verdict||'-')+'</b>'
+    +'（违规 '+(WD.lvs_n_violations!=null?WD.lvs_n_violations:'?')+'）</div>';
+
+  // ⑥ 设计预算（区间口径 · 非单值伪精度）
+  var sc2=BU.single_cell_il_db||{}, ar2=BU.array_il_db||{};
+  h+='<h3 style="margin:14px 0 4px">⑥ 设计预算（区间口径 · 串行累加 · 不含连接波导损耗）</h3>';
+  h+=_qcTbl(['预算量','值'],[
+    ['材料 / 单元长 (µm)', (BU.material||'-')+' / '+(BU.l_cell_um!=null?BU.l_cell_um:'-')],
+    ['总单元数 / 电平数 / bit 每单元', BU.n_cells_total+' / '+BU.n_levels+' / '+BU.bits_per_cell],
+    ['阵列态数 / 总 bit', BU.array_states+' / '+BU.array_bits],
+    ['电极 pad 总数（阵列）', BU.n_electrode_pads],
+    ['加热线总数（阵列）', BU.n_heater_lines],
+    ['单元 IL 非晶 (dB)', (sc2.amorphous||[]).join(' – ')],
+    ['单元 IL 晶态 (dB)', (sc2.crystalline||[]).join(' – ')],
+    ['单元双态对比度 (dB)', (BU.single_cell_contrast_db||[]).join(' – ')],
+    ['阵列总损 非晶 (dB)', (ar2.amorphous||[]).join(' – ')],
+    ['阵列总损 晶态 (dB)', (ar2.crystalline||[]).join(' – ')]
+  ]);
+  h+='<div class="note">IL 模型：'+(BU.il_model||'-')+'</div>';
+  h+='<div class="note">Γ 说明：'+(BU.gamma_note||'-')+'</div>';
+  h+='<div class="note">对比度来源纪律：'+(BU.contrast_reuse_note||'-')+'</div>';
+
+  // ⑦ 里程碑
+  h+='<h3 style="margin:14px 0 4px">⑦ 征程里程碑（M0 → M3 · 门禁判据合计 '+(sp.gate_checks||'?')+'）</h3>';
+  h+='<p>'+(d.milestones||[]).map(function(m){
+        return '<b>'+m.id+'</b>（'+m.code+'）'+m.title+'〔'+m.gate+' 判据〕：'+m.result;
+      }).join('<br/>')+'</p>';
+
+  // ⑧ 设计洞察
+  h+='<h3 style="margin:14px 0 4px">⑧ 设计洞察（吃狗粮抓出的真结论）</h3>';
+  h+='<p>'+(d.findings||[]).map(function(f){
+        return '· <b>'+f.title+'</b> —— '+f.detail;
+      }).join('<br/>')+'</p>';
+
+  // ⑨ 缺口（只列未闭合）
+  h+='<h3 style="margin:14px 0 4px">⑨ 诚实缺口（<b>'+(d.gaps_total||0)+'</b> 条 · 全部开放登记）</h3>';
+  h+='<p>'+(d.gaps||[]).map(function(g){
+        return '<b>'+g.id+'</b> '+g.title+' —— '+g.detail;
+      }).join('<br/>')+'</p>';
+
+  // ⑩ 产出物元信息 + 数据来源 + 面板导航
+  h+='<h3 style="margin:14px 0 4px">⑩ 产出物与数据来源</h3>';
+  if(AF.available){
+    h+=_qcTbl(['产出物','字节'], (AF.items||[]).map(function(it){ return [it.name, it.bytes]; }));
+  }else{
+    h+='<div class="note">产出物目录不在本部署内（源码仓才含 examples/photo_memory/）。</div>';
+  }
+  h+='<div class="note">产出物数 <b>'+(AF.count!=null?AF.count:'-')+'</b>'
+    +' · 扫描目录 '+((AF.dirs_scanned||[]).join(', ')||'-')
+    +' · 期望目录 '+((AF.root_hint!=null)?AF.root_hint:'-')+'</div>';
+  h+='<div class="note">产出物说明：'+(AF.note||'-')+'</div>';
+  h+='<div class="note">数据来源：'+d.data_source+'</div>';
+  h+='<div class="note">UI 入口：'+(UI.entry||'-')+' · 面板在位：'
+    +((UI.found_in_ui)?'<b>是</b>':'<b>否</b>')
+    +' · 关联面板 '+JSON.stringify(UI.related_panels||[])+'</div>';
+  h+='<div class="note">面板范围：'+(UI.scope_note||'-')+'</div>';
+
+  $('pmBody').innerHTML=h;
+  $('pmConclusion').innerHTML='<b>结论：</b>用 LDA 从零走通了「非易失光子存储单元 → 阵列版图 → 真 GDSII → '
+    +'几何 DRC/LVS → 从最终字节独立解码复核」的完整签核链：主阵列 '+(ST.n_devices||'?')+' 器件 / '
+    +(ST.n_nets||'?')+' 网，DRC <b>'+(drc.all_pass?'PASS':'FAIL')+'</b>、LVS <b>'+(lvs.verdict||'-')
+    +'</b>（0 违规），规模档 4/8/16/32 单元 + 4×8 多总线全部签核通过。'
+    +'🔴 最重的工程结论是<b>热串扰间距（'+PI.gap_thermal_um+' µm）> 工艺间隙（'+PI.gap_process_um
+    +' µm）</b> ⇒ 版图密度被<b>热学</b>卡住（不是布线）；并抓出<b>框架级真缺陷</b>（端口锚点缓存被 id 复用毒化 ⇒ 51 处 LVS 假红），已修并以 raise 拒绝静默回退。'
+    +'<br/>'+d.honest_note;
+  return false;
+}
+if($('runPm')) $('runPm').onclick = runPm;
+
 /* ═══════════ 电子计算芯片（模拟计算核 / MVM 交叉阵列）案例（E 征程收官 · /api/ecore_demo）═══════════ */
 async function runECore(){
   const btn=$('runECore'); if(!btn) return;
@@ -6458,7 +6707,8 @@ if($('runECore')) $('runECore').onclick = runECore;
   "use strict";
   var CASE_MAP = {"#sec-qchip": "runQChip", "#sec-schip": "runSChip",
                   "#sec-pchip": "runPChip", "#sec-ecore": "runECore",
-                  "#sec-accel": "runAccel", "#sec-d4": "runD4", "#sec-oi": "runOi"};
+                  "#sec-accel": "runAccel", "#sec-d4": "runD4", "#sec-oi": "runOi",
+                  "#sec-pm": "runPm"};
   var fired = {};
   function maybeRun() {
     var btnId = CASE_MAP[location.hash];

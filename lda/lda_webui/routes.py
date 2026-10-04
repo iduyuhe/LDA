@@ -317,6 +317,39 @@ def h_pchip_demo(h, p, q, path):
                       "case_id": _pc.CASE_ID, "verdict": "ERROR"})
 
 
+def h_pm_demo(h, p, q, path):
+    """GET /api/pm_demo —— 非易失光子存储阵列（GST 相变 · 电辅助写）案例卡（只读 · 免登录 · 微秒级）。
+
+    光子存储（PCM）征程 M0→M3 收口：把「每 π 损耗闭式律（M0）→ 多电平（M1）→
+    热-可靠性（M2）→ 单元/多电平落到阵列版图 + 真 GDS + DRC/LVS（M3）」四层设计
+    在 UI 中呈现为**只读案例**（此前 PM 无 UI 入口）。
+
+    🔴 与 `/api/oi_demo`（光联接链路）**并列**：两者都是「链路/阵列级」只读案例卡，
+    但 PM 卡的路由层走到**真 GDS 字节 + 独立解码复核**（自写记录流解析器，刻意不复用
+    导出器解码路径）。
+
+    🔴 **零重计算**：不跑 P&R、不 import 求解器、不解析 GDS —— 数字来自
+    ① 静态里程碑/结论（可回溯到 M0–M3 门禁）② 纯闭式现算（几何/预算）③ 对 `examples/`
+    产出物只 `stat` 的元信息 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**
+    （与 `/api/qchip_demo`、`/api/schip_demo`、`/api/pchip_demo` 同属「公开只读验货」类）。
+
+    🔴 **不伪装实测 / 不报 fabricated 能效**：`verdict` 恒为 `DESIGN_SIGNOFF`
+    （**非** ACCEPT/PASS），返回体自带 `honest_note`（非流片实测 / 非 foundry PDK /
+    规模=版图容量 / GDS 为几何签核非工艺签核）。
+
+    异常不 500（返回 200 + error 字段，与 `h_schip_demo` 同风格）。
+    """
+    try:
+        from . import pm_case as _pm
+    except ImportError:
+        from lda_webui import pm_case as _pm
+    try:
+        return (200, _pm.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/pm_demo", "error": str(e)[:160],
+                      "case_id": _pm.CASE_ID, "verdict": "ERROR"})
+
+
 def h_accel_demo(h, p, q, path):
     """GET /api/accel_demo —— 光子/模拟混合 AI 推理加速器案例卡（阶段 4 · L6 参考设计 · 只读）。
 
@@ -1997,6 +2030,8 @@ GET_ROUTES = {
     "/api/d4_demo": h_d4_demo,
     # 光联接模块新征程 M0 基线：2 通道 WDM 收发器链路预算（只读 · 免登录）
     "/api/oi_demo": h_oi_demo,
+    # 光子存储（PCM）征程 M0→M3：非易失光子存储阵列版图 + 真 GDS + DRC/LVS（只读 · 免登录）
+    "/api/pm_demo": h_pm_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,

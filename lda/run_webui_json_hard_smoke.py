@@ -22,9 +22,9 @@ float 序列化成 **`-Infinity`** —— 这**不是标准 JSON**（ECMA-404 / 
 ───────────────────────────────────────────────────────────────────────────
 判什么
 ───────────────────────────────────────────────────────────────────────────
-1. **标准 JSON 出口**：7 张公开只读 demo 卡（`oi` / `qchip` / `schip` / `pchip` /
-   `accel` / `ecore` / `d4`）全部 `json.dumps(..., allow_nan=False)` 通过。
-2. **无非有限值**：7 张卡卡内不存在 `NaN` / `±inf`（逐值递归定位到 JSON 路径）。
+1. **标准 JSON 出口**：8 张公开只读 demo 卡（`oi` / `qchip` / `schip` / `pchip` /
+   `accel` / `ecore` / `d4` / `pm`）全部 `json.dumps(..., allow_nan=False)` 通过。
+2. **无非有限值**：8 张卡卡内不存在 `NaN` / `±inf`（逐值递归定位到 JSON 路径）。
 3. **oi 专项**：`m3.next.xtalk_at_zero_coupling_db` == `oi_m3.NEG_INF_DB`（真 −∞ 的
    **字符串 tag**），且 **≠ −3000**（防「假 clamp」复活 —— 首版 clamp 把零耦合判成
    巨大耦合，本判据就是为抓它而生的）。
@@ -64,9 +64,9 @@ CI = os.path.join(_HERE, "run_ci_regression.py")
 
 
 def _load_modules():
-    """载入 7 张公开只读 demo 卡的构建器（延迟 import，失败即红而非崩）。"""
+    """载入 8 张公开只读 demo 卡的构建器（延迟 import，失败即红而非崩）。"""
     from lda_webui import (accel_case, d4case, ecore_case, oi_case, pchip_case,
-                           qchip_case, schip_case)
+                           pm_case, qchip_case, schip_case)
     return {
         "oi":    lambda: oi_case.case_card(),
         "qchip": lambda: qchip_case.case_card(12, topology="rect"),
@@ -75,6 +75,7 @@ def _load_modules():
         "accel": lambda: accel_case.case_card(phase_bits=4, dac_bits=6, adc_bits=6),
         "ecore": lambda: ecore_case.case_card(),
         "d4":    lambda: d4case.case_card(),
+        "pm":    lambda: pm_case.case_card(),
     }, oi_case
 
 
@@ -100,7 +101,7 @@ def main() -> int:
             _std[name] = True
         except ValueError:
             _std[name] = False
-    check("J1-a 7 张公开只读 demo 卡的**标准 JSON 出口**（dumps allow_nan=False 全过）",
+    check("J1-a 8 张公开只读 demo 卡的**标准 JSON 出口**（dumps allow_nan=False 全过）",
           len(errs) == 0 and all(_std.values()))
     if errs:
         for e in errs:

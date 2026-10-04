@@ -43,7 +43,6 @@ E17-e 生产实测发现：前端面板取 `synthesis_law.serial_ns`，而该值
 from __future__ import annotations
 
 import os
-import re
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -59,27 +58,13 @@ check = make_check(globals(), ok_key="PASS", bad_key="FAIL", detail_fmt="  |  {d
 
 INDEX = os.path.join(_HERE, "lda_webui", "static", "index.html")
 
-_BIND_PATTERNS = (
-    # (kind, regex)  kind: root | one | two
-    # 🔴 root 必须同时吃 `var X=(d.k||…` 与**同行多声明** `, X=(d.k||…`
-    #    —— 本轮实测 `var DPD=(d.device_pde||{}), DLM=(d.device_limits||{});`
-    #    的第二个别名曾整条漏掉 ⇒ 造出「device_limits 未被引用」的假缺口。
-    ("root", r"(?:var\s+|,\s*)(\w+)\s*=\s*\(\s*d\.(\w+)\s*\|\|"),
-    ("two", r"(\w+)\s*=\s*\(\s*(\w+)\.(\w+)\s*\|\|\s*\{\}\s*\)\s*\.(\w+)\s*\|\|"),
-    ("one", r"(\w+)\s*=\s*(\w+)\.(\w+)\s*\|\|"),
+# 🔴 别名时间线 / 引用扫描 / 逐段解析三件套已抽到**公共模块**（v0.9.191）
+#    —— 与 PM 光子存储门禁（`run_pm_webui_smoke.py`）**共用同一份实现**，不再各存一份
+#    （防 `run_helper_dup_ratchet_smoke` J4「逐字完全相同重复组文件数」上升）。
+#    迁移是**行为等价**的：`webui_js_ref` 的绑定三式与本文件原实现逐字同式。
+from lda_harness.webui_js_ref import (          # noqa: E402
+    alias_timeline, scan_refs, render_body as _render_body, bad_refs,
 )
-
-# 🔴 JS 内建成员名（数组/字符串方法 + 通用属性）—— **不是 JSON 路径**。
-#    本轮实测：`DTS.map(function(x){…})` 被当成 `device_timing.stages.map` ⇒ 假阳性。
-_JS_MEMBERS = frozenset((
-    "map", "filter", "forEach", "length", "join", "slice", "splice", "concat",
-    "indexOf", "lastIndexOf", "includes", "toFixed", "toExponential", "toString",
-    "toUpperCase", "toLowerCase", "reduce", "sort", "some", "every", "find",
-    "findIndex", "push", "pop", "shift", "unshift", "reverse", "keys", "values",
-    "entries", "flat", "flatMap", "at", "charAt", "substring", "substr", "trim",
-    "split", "replace", "replaceAll", "match", "test", "exec", "repeat",
-    "padStart", "padEnd", "startsWith", "endsWith", "call", "apply", "bind",
-))
 
 
 def _read(p):
@@ -89,85 +74,7 @@ def _read(p):
 
 def render_body(src: str) -> str:
     """抽 `function renderECore(d){ ... }` 的函数体（花括号配对）。"""
-    i = src.index("function renderECore(d){")
-    j = src.index("{", i)
-    depth, k = 0, j
-    while k < len(src):
-        if src[k] == "{":
-            depth += 1
-        elif src[k] == "}":
-            depth -= 1
-            if depth == 0:
-                return src[j + 1:k]
-        k += 1
-    raise ValueError("renderECore 花括号不配对")
-
-
-def alias_timeline(body: str):
-    """按位置顺序建立别名绑定时间线 ⇒ [(pos, alias, base_tuple)]（JS 顺序执行语义）。"""
-    events = []
-    for kind, pat in _BIND_PATTERNS:
-        for m in re.finditer(pat, body):
-            events.append((m.start(), kind, m))
-    events.sort(key=lambda e: e[0])
-    table = {"d": ()}
-    line = []
-    for pos, kind, m in events:
-        alias = m.group(1)
-        if kind == "root":
-            base = (m.group(2),)
-        elif kind == "one":
-            p = table.get(m.group(2))
-            if p is None:
-                continue
-            base = p + (m.group(3),)
-        else:                                   # two
-            p = table.get(m.group(2))
-            if p is None:
-                continue
-            base = p + (m.group(3), m.group(4))
-        table[alias] = base
-        line.append((pos, alias, base))
-    return line, table
-
-
-def scan_refs(body: str, alias_names, timeline):
-    """收集所有 `X.a.b.c` 引用，并绑上「该位置生效的 base」；返回 [(alias, path, base, err)]。"""
-    out = []
-    for m in re.finditer(r"(?<![\w.$])([A-Za-z_]\w*)\.((?:\w+)(?:\.\w+)*)", body):
-        a, path = m.group(1), m.group(2)
-        if a not in alias_names:
-            continue
-        if any(seg in _JS_MEMBERS for seg in path.split(".")):
-            continue                            # 🔴 JS 内建成员访问，不是 JSON 路径
-        base = None
-        for pos, al, b in timeline:
-            if pos <= m.start() and al == a:
-                base = b
-            elif pos > m.start():
-                break
-        if base is None:
-            continue                            # 该位置尚无绑定（作用域外）⇒ 不判
-        out.append((a, path, base))
-    return out
-
-
-def resolve(obj, base, path):
-    cur, walked = obj, list(base)
-    for seg in base:
-        if isinstance(cur, dict) and seg in cur:
-            cur = cur[seg]
-        else:
-            return False, ".".join(walked)
-    for seg in path.split("."):
-        walked.append(seg)
-        if isinstance(cur, dict) and seg in cur:
-            cur = cur[seg]
-        elif isinstance(cur, list):
-            return False, ".".join(walked) + "（父为数组）"
-        else:
-            return False, ".".join(walked)
-    return True, cur
+    return _render_body(src, "renderECore")
 
 
 def main() -> int:
@@ -191,14 +98,10 @@ def main() -> int:
           "🔴 重绑定必须按位置处理 —— 朴素全局映射会造 63 条假阳性（本轮实测）")
 
     check("A2 别名解析完整：每条绑定的父别名都已被更早绑定解析（无悬空父）",
-          all(b for _, _, b in timeline) and len(set(names)) >= 10,
-          "根→子链全部可解析")
+          all(b or b == () for _, _, b in timeline) and len(set(names)) >= 10,
+          "根→子链全部可解析（含根绑定 `d` = ()）")
 
-    bad = []
-    for a, path, base in refs:
-        ok, where = resolve(card, base, path)
-        if not ok:
-            bad.append("%s.%s → %s.%s（卡内缺）" % (a, path, ".".join(base), path))
+    bad = bad_refs(card, refs)
     check("B1 🔴 **取值路径存在性**：%d 条引用路径（%d 个别名）逐条在真实 `case_card()` JSON 上"
           "解析 ⇒ 全部存在（**这正是 E17 血案那一层**）" % (len(refs), len(set(r[0] for r in refs))),
           not bad, "坏路径 %d 条：%s" % (len(bad), bad[:4]))
@@ -226,12 +129,7 @@ def main() -> int:
     def _scan(b):
         tl, _tb = alias_timeline(b)
         _nm = set(t[1] for t in tl) | {"d"}
-        out = []
-        for a, path, base in scan_refs(b, _nm, tl):
-            ok, _ = resolve(card, base, path)
-            if not ok:
-                out.append(a + "." + path)
-        return out
+        return [x.split(" → ")[0] for x in bad_refs(card, scan_refs(b, _nm, tl))]
 
     assert _scan(body) == [], "前置：原体应无坏路径（实得 %s）" % _scan(body)[:3]
     probe1 = body.replace("DCSM.unit_cap_area_um2", "DCSM.unit_cap_area_um2_typo", 1)

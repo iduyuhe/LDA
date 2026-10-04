@@ -329,9 +329,14 @@ def main() -> int:
     used = {fn.__name__ for fn in _meas_fns}
     listed = set(MEASURER_NAMES)
     n_pairs = sum(len(v) for v in PARAM_MEASURERS.values())
+    # 🔴 v0.9.191：原为**写死计数** `== 14 / == 44` ⇒ 器件类合法新增（PCMCell）
+    #    会把「增长」误判为「破坏」（同族于 v0.9.183 修过的 qchip C4）。改成
+    #    「与真源等长（PARAM_MEASURERS ↔ DEVICE_CLASSES）+ 棘轮地板 = 当前实测值」
+    #    —— 允许合法新增，但**删类/删参数**仍必红。
     check(f"⑬ PARAM_MEASURERS 测量器可调用（{len(PARAM_MEASURERS)} 类 / "
-          f"{n_pairs} 参数）",
-          ok_tbl and len(PARAM_MEASURERS) == 14 and n_pairs == 44,
+          f"{n_pairs} 参数 ≥ 15/48 · 类数与 DEVICE_CLASSES 等长）",
+          ok_tbl and len(PARAM_MEASURERS) == len(DEVICE_CLASSES)
+          and n_pairs >= 48,
           f"kinds={len(PARAM_MEASURERS)} params={n_pairs}")
     check("⑬ MEASURER_NAMES 与 PARAM_MEASURERS **双向**一致（无漏登记/孤儿）",
           used == listed, f"仅表={sorted(used - listed)} "
@@ -348,8 +353,11 @@ def main() -> int:
     # ⑮ 类覆盖（M4 口径）：14/14，且与 link_model 认识的器件类**对表**
     cc = class_coverage()
     expect_classes = set(_DEFAULT_PORTS) | {"RingAddDrop", "MMIC"}
-    check("⑮ 类覆盖（M4）：14 类器件全部「几何可生成 + 可回提 + 参数已分类」",
-          cc["n_ok"] == cc["n_classes"] == 14 and cc["class_coverage"] == 1.0
+    # 🔴 v0.9.191：同 ⑬ —— 写死 `== 14` 改为「与真源等长 + 棘轮地板 15」
+    #    （新增器件类合法；删类仍红）。
+    check("⑮ 类覆盖（M4）：全类器件「几何可生成 + 可回提 + 参数已分类」· ≥15 类",
+          cc["n_ok"] == cc["n_classes"] == len(DEVICE_CLASSES)
+          and cc["n_classes"] >= 15 and cc["class_coverage"] == 1.0
           and cc["missing"] == [],
           f"{cc['n_ok']}/{cc['n_classes']} missing={cc['missing']}")
     check("⑮ DEVICE_CLASSES == link_model._DEFAULT_PORTS ∪ {RingAddDrop, MMIC}",

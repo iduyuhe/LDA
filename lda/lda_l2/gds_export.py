@@ -41,6 +41,13 @@ LIB_LAYER_E_VIA1 = 24        # 通孔 1
 LIB_LAYER_E_M2 = 25          # 金属 2（列线）
 LIB_LAYER_E_PAD = 26         # 焊盘 / 钝化开口
 
+# ── 光子存储（PM 征程 · v0.9.191）层栈 ─────────────────────────────────────
+# 🔴 号段选择：避开光子 1–4、超导 10–14、电子 20–26 ⇒ 取 5/6（同域无冲突）。
+#    **单一真源在此**；`lda_l2.primitives._LAYER_PCM/_LAYER_HEATER` 是同号引用，
+#    由 `run_pm_m3_smoke` 的跨源判据断言相等（防静默失配）。
+LIB_LAYER_PCM = 5            # GST 相变层（非易失存储的相变材料段）
+LIB_LAYER_HEATER = 6         # 微加热器 + 电极 pad（设计规则层，非 foundry PDK 映射）
+
 
 # ---------------------------------------------------------------------------
 # GDSII 记录编码（标准公开格式）
@@ -371,7 +378,8 @@ def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
                       "rings_um": [[(gi, -gj), (co, -gj), (co, gj), (gi, gj)]]})
     elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler",
                   "BraggMirror", "Splitter", "MMIC", "MZI",
-                  "PhaseShifter", "MziModulator", "Photodetector"):
+                  "PhaseShifter", "MziModulator", "Photodetector",
+                  "PCMCell"):          # v0.9.191（PM 征程 M3）：光子存储单元
         from lda_l2.primitives import primitive_descs as _prim
         descs.extend(_prim(kind, params))
     else:

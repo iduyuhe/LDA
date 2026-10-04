@@ -459,6 +459,112 @@ def photodetector_descs(params: Dict[str, float]) -> List[Dict]:
     ]
 
 
+# ---------------------------------------------------------------------------
+# 光子存储单元（PM 征程 · PCMCell）· v0.9.191
+# ---------------------------------------------------------------------------
+# 🔴 层号**单一真源在 `gds_export`**：这里只做「同号引用」并由门禁
+#    `run_pm_m3_smoke` 的跨源判据断言 `_gds.LIB_LAYER_PCM == _LAYER_PCM`
+#    （防止「几何画在 5 层、DRC/解码找 6 层」这类静默失配）。
+_LAYER_SI = 1          # 与 gds_export.LIB_LAYER_SI 同号
+_LAYER_PCM = 5         # GST 相变层（本征程新增；避开已有 1/2/3/4 与 10–14/20–26）
+_LAYER_HEATER = 6      # 加热器/电极金属（设计规则层，非 foundry PDK 映射）
+
+#: PCM 单元默认参数（**单一真源**：descs / geometry / pads 三处同源引用）。
+#: 🔴 `heat_gap` 取 0.35 而非更紧的 0.2，是为让电极端口 y_h=1.10 µm **有意超过**
+#: LVS 端口归属容差（`run_lvs(tol=1.0)`）—— 保证「波导端点最近端口 = in/out」这一
+#: 归属在容差下无歧义（否则 p 端点距两个端口都在容差内，靠「更近」勉强取胜）。
+PCM_CELL_DEFAULTS: Dict[str, float] = {
+    "width": 0.5,          # 波导宽
+    "length": 11.0,        # 单元光程长（PM-M1 设计点量级）
+    "gst_overhang": 0.20,  # GST 横向超出波导单边
+    "heat_gap": 0.35,      # GST 边缘 → 加热线间隙
+    "heat_w": 0.60,        # 加热线宽
+    "pad": 4.0,            # 电极 pad 边长
+}
+
+
+def _pcm_p(params: Dict[str, float]) -> Dict[str, float]:
+    """PCM 单元参数解析（缺项回落到 `PCM_CELL_DEFAULTS`，单一真源）。"""
+    return {k: float(params.get(k, v)) for k, v in PCM_CELL_DEFAULTS.items()}
+
+
+def pcm_cell_geometry(params: Dict[str, float]) -> Dict[str, float]:
+    """PCM 存储单元的**可制造性几何量**（DRC 检查源 · 单一真源）。
+
+    单元结构（局部坐标 µm，器件原点 = 光输入端口 in）：
+
+        y = +y_h  ────── 加热线（上）
+        y = +y_gst ┌──── GST 相变段（覆盖波导）────┐
+        y = 0      ────── Si 波导（光通路）──────
+        y = -y_gst └──── GST 相变段 ────┘
+        y = -y_h  ────── 加热线（下）
+
+    派生关系（**不许手写重复值**，全部由主参数算出）：
+      y_gst = width/2 + gst_overhang           （GST 横向半高）
+      y_h   = y_gst + heat_gap + heat_w/2      （加热线中心线 y）
+    """
+    p = _pcm_p(params)
+    w, go, hg, hw, ps = (p["width"], p["gst_overhang"], p["heat_gap"],
+                         p["heat_w"], p["pad"])
+    y_gst = w / 2.0 + go
+    y_h = y_gst + hg + hw / 2.0
+    return {
+        "min_width": min(w, 2.0 * y_gst, hw),      # 三处最小横向特征
+        "min_space": min(hg, go),                  # GST↔加热线 / GST 相对波导
+        "min_pad": ps,
+        "y_gst_um": y_gst, "y_heater_um": y_h,
+        "gst_width_um": 2.0 * y_gst,
+    }
+
+
+def pcm_cell_descs(params: Dict[str, float]) -> List[Dict]:
+    """光子存储单元版图几何（PM 征程 · 光通路 + 相变段 + 双侧微加热器 + 电极 pad）。
+
+    params（µm）：
+      length        单元光程长（默认 11.0 = PM-M1 设计点量级）
+      width         波导宽（默认 0.5）
+      gst_overhang  GST 横向超出波导单边（默认 0.20）
+      heat_gap      GST 边缘 → 加热线间隙（默认 0.20）
+      heat_w        加热线宽（默认 0.60）
+      pad           电极 pad 边长（默认 4.0）
+
+    🔴 几何与端口锚（`lda_layout.placement.port_anchor`）**必须同源**：
+    in=(0,0) / out=(length,0) / h1..h4 = 四个 pad 中心。
+    """
+    p = _pcm_p(params)
+    w, L, hw, ps = p["width"], p["length"], p["heat_w"], p["pad"]
+    g = pcm_cell_geometry(params)
+    y_gst, y_h = g["y_gst_um"], g["y_heater_um"]
+
+    descs: List[Dict] = [
+        {"kind": "path", "layer": _LAYER_SI, "width_um": w,
+         "points_um": [(0.0, 0.0), (L, 0.0)]},                      # Si 波导
+        {"kind": "boundary", "layer": _LAYER_PCM,
+         "rings_um": [_poly_rect(0.0, -y_gst, L, y_gst)]},          # GST 段
+        {"kind": "path", "layer": _LAYER_HEATER, "width_um": hw,
+         "points_um": [(0.0, y_h), (L, y_h)]},                      # 加热线（上）
+        {"kind": "path", "layer": _LAYER_HEATER, "width_um": hw,
+         "points_um": [(0.0, -y_h), (L, -y_h)]},                    # 加热线（下）
+    ]
+    for cx, cy in pcm_cell_pads(params).values():
+        descs.append({"kind": "boundary", "layer": _LAYER_HEATER,
+                      "rings_um": [_poly_rect(cx - ps / 2.0, cy - ps / 2.0,
+                                              cx + ps / 2.0, cy + ps / 2.0)]})
+    return descs
+
+
+def pcm_cell_pads(params: Dict[str, float]) -> Dict[str, Tuple[float, float]]:
+    """四个电极 pad 中心坐标（局部 µm）——**端口锚点的唯一真源**。
+
+    上加热线两端 ⇒ h1（左）/ h2（右）；下加热线两端 ⇒ h3（左）/ h4（右）。
+    `placement.port_anchor` 与 `pcm_cell_descs` 都从这里取值 ⇒ 不可能漂移。
+    """
+    p = _pcm_p(params)
+    y_h = pcm_cell_geometry(params)["y_heater_um"]
+    return {"h1": (0.0, y_h), "h2": (p["length"], y_h),
+            "h3": (0.0, -y_h), "h4": (p["length"], -y_h)}
+
+
 def splitter_descs(params: Dict[str, float]) -> List[Dict]:
     """MMI 型 1×2 分束器几何（IR kind `Splitter` · v0.9.141 G4/M4）。
 
@@ -584,6 +690,9 @@ def primitive_descs(kind: str, params: Dict[str, float]) -> List[Dict]:
         return mmic_descs(params)
     if kind == "mzi":
         return mzi_descs(params)
+    # v0.9.191（PM 征程 M3）：光子存储单元（光通路 + GST 相变段 + 双侧微加热器）。
+    if kind in ("pcmcell", "pcm_cell", "pcm"):
+        return pcm_cell_descs(params)
     raise ValueError(f"真实版图基元暂不支持 kind={kind}")
 
 
@@ -641,4 +750,9 @@ def primitive_geometry(kind: str, params: Dict[str, float]) -> Dict[str, float]:
                 "min_space": float(params.get("gap_heat", 1.0))}
     if kind == "mzi":
         return {"min_width": float(params.get("wg", params.get("width", 0.5)))}
+    # v0.9.191（PM 征程 M3）：光子存储单元——GST 层宽度 / 加热线宽 / 层间间距三闸。
+    if kind in ("pcmcell", "pcm_cell", "pcm"):
+        g = pcm_cell_geometry(params)
+        return {"min_width": g["min_width"], "min_space": g["min_space"],
+                "min_pad": g["min_pad"]}
     raise ValueError(f"真实版图基元暂不支持 kind={kind}")

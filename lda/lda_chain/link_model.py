@@ -35,6 +35,11 @@ _DEFAULT_PORTS = {
     "PhaseShifter": ["in", "out"],
     "MziModulator": ["in", "out"],
     "Photodetector": ["in", "out"],
+    # v0.9.191（PM 征程 M3）：光子存储单元 —— 2 光端口（波导两端）
+    # + 4 电端口（双侧微加热器的四个电极 pad 中心，见 placement.port_anchor）。
+    # 🔴 三处必须同步（血案：MMI 漏登记 ⇒ 端口锚塌到原点 ⇒ LVS 假 open）：
+    #    此处 / `placement.port_anchor` / `placement.device_bbox`。
+    "PCMCell": ["in", "out", "h1", "h2", "h3", "h4"],
 }
 
 

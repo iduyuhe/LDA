@@ -1,5 +1,89 @@
 # Changelog
 
+## v0.9.191（2026-10-04 · **光子存储征程 PM-M3：阵列版图 —— 单元/多电平落到阵列 + 真 GDS + DRC/LVS + 独立解码复核 + WebUI 案例卡** · 账本 **476 不变（零锚改动）** · CI core **278 → 280** · 端点 **146 不变**）
+
+第五程第四档。M0/M1/M2 交付的是**标量设计**（一个单元能不能写、能装几个电平、热与保持窗口够不够），
+但「客户能用」缺的是最后一跳：**把单元排成阵列、出真 GDS、过 DRC/LVS 双闸、并且在 UI 里点得到**。
+本轮补上这一跳，同时接上此前 PM 完全缺失的 WebUI 入口。
+
+### ① 器件原语 `PCMCell` —— 五处契约单一真源
+新增 `PCMCell`（Si 条波导 + GST 相变段 + 微加热器 + 4 个电极 pad），并在**五处**同步登记，
+任一处漂移都会被跨源判据当场抓红：
+- `lda_l2/primitives.py`：`PCM_CELL_DEFAULTS`、`pcm_cell_geometry`、`pcm_cell_descs`、`pcm_cell_pads`；
+- `lda_l2/gds_export.py`：层栈 **PCM=5 / HEATER=6**（光子 1–4、超导 10–14、电子 20–26 之后新增）；
+- `lda_layout/placement.py`：`port_anchor` / `device_bbox` 的 PCMCell 分支；
+- `lda_chain/link_model.py`：`_DEFAULT_PORTS["PCMCell"] = ["in","out","h1".."h4"]`；
+- `lda_l2/drc.py`（新增 `min_pad_um=2.0` 与 PCMCell 分支）/ `lda_l2/lvs_geom.py`（4 个测量器 + 器件类登记）。
+
+几何约束一处关键：电极中心 y = **1.10 µm** > LVS 容差 `tol = 1.0 µm`（`heat_gap=0.35`），
+否则 route 端点会落在容差外 ⇒ 假 REJECT。
+
+### ② 阵列层 `pm_m3` —— 让热串扰成为 binding 约束
+`cell_pitch_um` 逐项取 `max(热串扰间隙, 工艺间隙)`，并返回 **`binding`** 显式标注**哪一侧在咬合**
+（不是「看起来像」，而是判据读出来的）。本档 `k_iso × L_max`（`K_ISOLATION_DEFAULT=8.0` 为**设计选择**，
+非物理常数）给出热串扰间隙 **7.0304 µm** > 工艺间隙 6.0 µm ⇒ **binding = thermal**，
+单元间距 **18.045 µm**（`l_cell 11.0146 + 7.0304`）。
+支持 **1×N** 与 **R×C** 两类拓扑；`build_array → export_array_gds → layout_signoff` 全链；
+`scale_table` 覆盖 4/8/16/32 + 4×8。
+
+### ③ 真 GDS + DRC/LVS 双闸签核
+- 8×1：**10 器件 / 11 网 / 109 GDS 元素 / 1223.44 µm² / GDS 6224 B / 层 {1:53, 5:8, 6:48}**；
+- 4×8：**40 器件 / 44 网 / 436 元素 / 24710 B**；
+- 规模档 **4/8/16/32 + 4×8 全部 DRC PASS + LVS ACCEPT(0 违规)**。
+
+### ④ 独立解码复核（刻意不复用自家解码器）
+自写最小 GDSII 记录流解析器，从**最终字节**独立解出层分布，判据：
+「层 5 元素数 == 单元数 ∧ 层 6 == 6× 单元数 ∧ 单结构 ∧ 无 SREF/AREF」。
+解析器带 **ENDLIB 完整性护栏** —— 截断 GDS（末 4 字节）必 `raise`，防「读到一半也算绿」。
+
+### ⑤ 🔴 吃狗粮抓出框架级真缺陷（并非本程新码）
+`lda_layout.placement._port_abs_comp_cache` **仅以 `id()` 为键**：同一进程多次 `build_array`
+时，旧对象被 GC 后新对象**复用同一 `id`** ⇒ 命中陈旧索引 ⇒ `port_abs` **静默退回器件原点**
+⇒ 4×8 阵列一次性报 **51 处 LVS 假红**（同一段代码在 8×1 单跑时全绿 ⇒ 只有「逐规模实测」才暴露）。
+修法：缓存值**持有对象引用** + `is` 身份校验 + **组件数版本校验** + 容量上限 64；
+并把 `port_abs` 实例缺失由**静默返回改 raise** —— 拒绝静默回退，丑失败优于假绿。
+
+### ⑥ WebUI 案例卡接入（A 档只读 · 免登录 · 零重计算）
+- 新增 `lda_webui/pm_case.py`（数据源：报告加载 + 内置快照回落 + 9 判据自检）；
+- 新增 `GET /api/pm_demo`（仿 `h_schip_demo`，`try/except → 200 + error`；
+  零重计算 ⇒ 免登录、**不进 `HEAVY_POST_PATHS`**）；
+- `static/index.html`：新增 `sec-pm` 面板（含 M0–M3 叙事 + 诚实边界）、`runPm`/`renderPm`（①–⑩ 十段）、
+  导航快捷链接、`CASE_MAP["#sec-pm"] = "runPm"`。
+
+### ⑦ 门禁（全部先证能变红）
+- `run_pm_m3_smoke`：**22 判据 + 5 突变探针**
+  （C8「内置快照 schema 逐块 == 仓库报告 JSON」· B2a 端口契约三处同步 · B3 多总线端口锚点非退化
+  · B4 电极中心 y > `tol` · P1 `k_iso=0.5 ⇒ binding 翻转 process` · P2 截断 GDS 必 raise
+  · P3 改 `gds_export.LIB_LAYER_PCM ⇒ pcm_layer_exact 必红` · P4 4 单元期望 ≠ 8 单元解码
+  · P5 `heat_gap=0.05 ⇒ y ≤ tol`）；
+- `run_webui_pm_render_path_smoke`：**20 判据 + 5 突变探针**
+  （W3 取值路径存在性 · W4a 顶层 22 键反向完备 · W4b 24 嵌套块 · W4c `[]` 项目块
+  · W5a/W5b 路由登记与免登录 · 探针 W6-P1..P5）。
+
+### ⑧ 抽公共模块 `lda_harness/webui_js_ref.py`
+把 ecore 门禁的「别名时间线 ⟷ 引用扫描 ⟷ 逐段解析」三件套抽为公共模块，供 ecore 与 PM
+两个门禁**共用一份**（兑现助手重复棘轮 J4「逐字重复组文件数只降不升」）；ecore 门禁
+**行为等价迁移**（迁移后 10 PASS / 0 FAIL），并新增 `REF_SENTINELS` 处理 `d.error`
+错误分支哨兵（否则正常返回体被误判为缺引用 ⇒ 假红）。
+
+### ⑨ 自曝并修正：案例卡 `gate` 口径漂移（本版发现，本版修）
+案例卡 `MILESTONES` 的 `gate` 曾把 M3 写成 **62**（把「后端判据 + 前端判据 + 案例卡自检 + 探针」
+混成一个数），而 M0/M1/M2 的 `gate` 精确等于各自 smoke 的实跑 `[PASS]` 数（**33 / 24 / 40**）
+⇒ **跨档口径不一致**。修正为 **22**（= `run_pm_m3_smoke` 实跑值），并把
+`span.probe_mutations` 从**写死常数 12** 改为由逐档探针表**派生**（6+5+7+5 = **23**）。
+
+🔴 **已知盲区（如实公开）**：`gate` 与 smoke 实跑值的一致性目前**无自动判据**
+（门禁在同一进程内无法再跑各档 smoke 取数 · 沙箱禁止 spawn 子进程）⇒ 以逐档明文注释 +
+人工复核命令（`grep -c '\[PASS\]'`）替代，盲区**登记在案、未粉饰**。
+
+### 诚实边界
+- 阵列版图属**设计期签核**（非流片、非实测）；层规为公开工艺近似、DRC 为 bbox 级（保守侧）；
+- `k_iso = 8` 是**设计选择**（非物理常数），热串扰间隙随它线性变化 —— `binding` 字段如实标注咬合侧；
+- 材料/热学常数沿用 `pm_matlib` 的**文献锚 + 区间口径**，本档不新增单点断言；
+- **不报 TOPS / TOPS-W / fJ·op⁻¹ / pJ·bit⁻¹**；LLM 不进判决路径。
+
+**账本 476 不变（零锚改动）· CI core 278 → 280 · 端点 146 不变。**
+
 ## v0.9.190（2026-10-04 · **CI 门禁自身契约修复 —— 根治棘轮时序假红 + 门禁退出码失效（假绿）** · 账本 **476 不变（零锚改动）** · CI core **277 → 278** · 端点 **146 不变**）
 
 ### ① 棘轮时序假红根治（M0/M1/M2 连续三轮印证）

@@ -21,16 +21,38 @@ if TYPE_CHECKING:  # 仅类型标注用，避免 lda_chain ↔ lda_layout 循环
 #   与 LVS 锚点表均循环调用）；缓存 {id(placement), id(link)} → {inst: comp}
 #   后查表 O(1)。缓存失效条件：新 placement/link 对象（构造器每次新建，
 #   规模案例/不同用例天然新对象；原地增删器件走 _port_abs_cache_clear）。
-_port_abs_comp_cache: Dict[Tuple[int, int], Dict[str, "object"]] = {}
+#
+# 🔴 v0.9.191 修（**框架级真 bug · 由 PM-M3 同进程多次 build 首次暴露**）：
+#   仅以 `id()` 为键，当上一个 placement/link 被 GC 后**新对象复用同一 id**
+#   ⇒ 命中**陈旧索引** ⇒ 查不到新器件 ⇒ `port_abs` 静默退回器件原点
+#   （实测：`port_abs("b1_c0","out")` 返回 (0,16) 而非 (11.01,16)，随后
+#   route 端点被 LVS 归属到错误端口 ⇒ 51 处 `short_port`/`misconnect` 假红）。
+#   修法：缓存值里**持有对象强引用**并做 `is` 身份校验（同对象才复用；持有引用
+#   亦使 id 不可能在缓存存活期被复用）；另加容量上限防无界增长。
+_port_abs_comp_cache: Dict[Tuple[int, int], Tuple["object", "object", int, Dict[str, "object"]]] = {}
+_PORT_ABS_CACHE_MAX = 64
 
 
 def _port_abs_comp_index(placement: dict, link) -> Dict[str, "object"]:
-    """按 (placement, link) 对象身份缓存 {inst: comp} 索引。"""
+    """按 (placement, link) **对象身份 + 组件数版本**缓存 {inst: comp} 索引。
+
+    命中条件（三者同时成立）：
+      ① 缓存对象 `is` 当前对象（防 `id()` 回收复用毒化）；
+      ② 缓存的组件数 == 当前组件数（防**同一对象增量 add_device 后索引陈旧**
+         —— 这正是 v0.9.191 暴露的第二类误用：P&R 里「边加器件边取端口」会拿到
+         缺后加器件的旧索引，`port_abs` 遂静默退回器件原点）。
+    ⚠️ 组件数相同但成员被替换的极端场景（一增一删）仍需调用方
+    `_port_abs_cache_clear()`。
+    """
     key = (id(placement), id(link))
-    idx = _port_abs_comp_cache.get(key)
-    if idx is None:
-        idx = {c.id: c for c in link.ir.components}
-        _port_abs_comp_cache[key] = idx
+    n_comp = len(link.ir.components)
+    hit = _port_abs_comp_cache.get(key)
+    if hit is not None and hit[0] is placement and hit[1] is link and hit[2] == n_comp:
+        return hit[3]
+    idx = {c.id: c for c in link.ir.components}
+    if len(_port_abs_comp_cache) >= _PORT_ABS_CACHE_MAX:
+        _port_abs_comp_cache.clear()
+    _port_abs_comp_cache[key] = (placement, link, n_comp, idx)
     return idx
 
 
@@ -155,6 +177,17 @@ def port_anchor(kind: str, port: str, params: dict) -> Tuple[float, float]:
         # photodetector_descs：输入波导 x∈[−8,0]（y=0）→ Ge 吸收区 x∈[0,det_L]。
         Ld = float(params.get("det_L", params.get("L", 20.0)))
         return {"in": (-8.0, 0.0), "out": (Ld, 0.0)}.get(port, (0.0, 0.0))
+    # ── v0.9.191（PM 征程 M3）：光子存储单元（PCMCell）端口锚 ────────────────
+    # 🔴 **同源**：四个电极 pad 中心由 `primitives.pcm_cell_pads` 给出（与版图
+    #    几何 `pcm_cell_descs` 用**同一个函数**），光端口 in/out = 波导两端。
+    #    若在此手写坐标，一旦器件几何调整（如 pad 尺寸变化）就会静默错位 ⇒
+    #    route 端点悬空 ⇒ LVS 假 open。惰性导入避免加载序耦合。
+    if kind == "PCMCell":
+        from lda_l2.primitives import pcm_cell_pads as _pads
+        L = float(params.get("length", 11.0))
+        tbl = {"in": (0.0, 0.0), "out": (L, 0.0)}
+        tbl.update({k: (float(v[0]), float(v[1])) for k, v in _pads(params).items()})
+        return tbl.get(port, (0.0, 0.0))
     return (0.0, 0.0)
 
 
@@ -194,6 +227,14 @@ def device_bbox(kind: str, params: dict) -> Tuple[float, float]:
         Ld = float(params.get("det_L", params.get("L", 20.0)))
         Wd = float(params.get("det_w", params.get("W", 5.0)))
         return (max(8.0, Ld) / 2.0 + 4.0, max(wg_w, Wd) / 2.0)
+    # ── v0.9.191（PM 征程 M3）：PCM 单元 footprint = 光程长 + 两侧 pad 外扩，
+    #    横向 = 加热线中心 + pad 半宽。几何量由 primitives 同源导出（不手写）。
+    if kind == "PCMCell":
+        from lda_l2.primitives import pcm_cell_geometry as _pg
+        L = float(params.get("length", 11.0))
+        ps = float(params.get("pad", 4.0))
+        g = _pg(params)
+        return ((L + ps) / 2.0, g["y_heater_um"] + ps / 2.0)
     return (5.0, 5.0)
 
 
@@ -246,10 +287,17 @@ def place_2d(link: LinkModel, cols: int = 3,
 
 def port_abs(inst: str, port: str, placement: dict,
              link: LinkModel) -> Tuple[float, float]:
-    """端口绝对坐标 (x,y)。v0.8.39：comp 查找走索引缓存（O(1) 查表）。"""
+    """端口绝对坐标 (x,y)。v0.8.39：comp 查找走索引缓存（O(1) 查表）。
+
+    🔴 v0.9.191：`inst` 不在 `link.ir.components` 时**必须 raise** —— 此前静默
+    返回 `(ox, oy)`（器件原点，即端口偏移量被丢弃）⇒ 布线端点边界错位、LVS 归属
+    到错误端口，而调用方与门禁都看不见（本项目「静默回退」血案同族）。
+    """
     ox, oy, _ = placement[inst]
     comp = _port_abs_comp_index(placement, link).get(inst)
     if comp is None:
-        return (ox, oy)
+        raise ValueError(
+            "port_abs: 实例 %r 不在 link 内（其端口偏移量无法确定）"
+            "—— 拒绝静默回退到器件原点" % (inst,))
     dx, dy = port_anchor(comp.kind, port, dict(comp.params))
     return (ox + dx, oy + dy)

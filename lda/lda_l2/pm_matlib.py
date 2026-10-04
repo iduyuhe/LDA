@@ -307,7 +307,29 @@ def write_energy_budget(mat: str = "GST", *, l_um: float, w_um: float,
 
 
 # ---------------------------------------------------------------------------
-# 8. 汇总
+# 8. 晶化动力学锚（JMAK/Avrami · PM-G4）—— 文献锚，逐条带 DOI
+# ---------------------------------------------------------------------------
+#: JMAK 等温式 f = 1 − exp(−k·t^n)；Arrhenius k(T) = K0·exp(−Ea/(kB·T))。
+#: 🔴 **K0（速率前因子）无文献统一值** ⇒ 本库**不登记 K0**；
+#: pm_m1 的全部设计结论（脉冲阶梯比、温度标度律）对 K0 **不变**（比值消去），
+#: K0 绝对量纲留给器件级标定（pm_m1 显式 ASSUMED 注记）。
+JMAK_PARAMS: Dict[str, List[Dict[str, Any]]] = {
+    "GST": [
+        {"source": "Hu et al., J. Appl. Phys. 102 (2007), DOI:10.1063/1.2818104（等温电阻法 · 体膜）",
+         "ea_ev": 2.11, "ea_ev_err": 0.18, "n_min": 2.0, "n_max": 4.0,
+         "film_context_nm": None,
+         "note": "Avrami n∈[2,4]；层逐层晶化（layer-by-layer）动力学。"},
+        {"source": "Wei et al., Jpn. J. Appl. Phys. 46:2211 (2007), DOI:10.1143/JJAP.46.2211（厚度依赖 · Kissinger+JMA）",
+         "ea_ev": 2.86, "ea_ev_thin_ev": 4.66, "n_max_thin": 1.0, "n_min": None,
+         "film_context_nm": (5.0, 30.0),
+         "note": ("Ea 随减厚 2.86→4.66 eV（界面能模型）；<10 nm 膜仅给出 n<1（二维成核生长），"
+                  "下界未给 ⇒ 扫描下界属设计假设。光子器件典型 5–20 nm 膜落在此厚度档。")},
+    ],
+}
+
+
+# ---------------------------------------------------------------------------
+# 9. 汇总
 # ---------------------------------------------------------------------------
 def matlib_report(wl_nm: float = 1550.0) -> Dict[str, Any]:
     _check_anchors()
@@ -323,6 +345,8 @@ def matlib_report(wl_nm: float = 1550.0) -> Dict[str, Any]:
         "wl_nm": float(wl_nm),
         "materials": mats,
         "device_anchors": DEVICE_ANCHORS,
+        "jmak_anchors": JMAK_PARAMS,
+        "k0_registered": False,   # 🔴 K0 无文献锚 ⇒ 不登记（pm_m1 结论对 K0 不变）
         "headline": {
             "cross_source_spread": {
                 m: {"k_spread_x": mats[m]["nk_crystalline"]["k_spread_x"],

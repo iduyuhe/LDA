@@ -1508,6 +1508,10 @@ CORE_SMOKES: List[str] = [
     #   `closed ⇔ evidence_ok` / 肯定式面禁词扫描）+ 探针 P1–P6（含「损耗∝Γ² 必破律」）。
     #   实测 ~0.2s ⇒ timeout 120s 留足余量。
     "run_pm_m0_smoke.py",
+    # 光子存储征程 PM-M1 门禁（JMAK 动力学 + 多电平可行性律）：24 判据 + 5 探针。
+    #   核心律 r=k_a/(k_c−k_a) ≤ r_max（Γ/L 无关）+ demo 点 16级@6%@BER1e-12 实证。
+    #   实测 ~0.3s ⇒ timeout 120s 留足余量。
+    "run_pm_m1_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2389,6 +2393,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_oi_m5_smoke.py": 120.0,
     # 光子存储征程 PM-M0 门禁（材料锚库 + 单元闭式律）：31 判据 + 6 探针，实测 ~0.2s
     "run_pm_m0_smoke.py": 120.0,
+    # 光子存储征程 PM-M1 门禁（JMAK + 多电平可行性律）：24 判据 + 5 探针 · 实测上界 0.3s（单测）
+    "run_pm_m1_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

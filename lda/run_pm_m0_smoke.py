@@ -129,8 +129,10 @@ def main() -> int:
     gaps = {g["id"]: g for g in rep["gaps"]}
     check("C7a 台账不变式 closed ⇔ evidence_ok", M.gap_ledger_consistent() is True)
     check("C7b PM-G1（材料常数库）已闭合", gaps["PM-G1"]["closed"] is True)
-    check("C7c PM-G2..G5 如实开放（不粉饰）",
-          all(gaps[g]["closed"] is False for g in ("PM-G2", "PM-G3", "PM-G4", "PM-G5")))
+    check("C7c PM-G4 已闭合（JMAK 锚 ≥2 源 ∧ 律自检 · v0.9.188 证据升级）",
+          gaps["PM-G4"]["closed"] is True)
+    check("C7c2 PM-G2/G3/G5 如实开放（不粉饰）",
+          all(gaps[g]["closed"] is False for g in ("PM-G2", "PM-G3", "PM-G5")))
     check("C7d 每条缺口都挂证据明细（非空）",
           all(len(g["evidence_detail"]) > 0 for g in rep["gaps"]))
 

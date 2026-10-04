@@ -228,8 +228,14 @@ def _ev_g3() -> Tuple[bool, str]:
 
 
 def _ev_g4() -> Tuple[bool, str]:
-    ok = hasattr(ML, "JMAK_PARAMS")
-    return bool(ok), f"JMAK 参数存在={bool(ok)}"
+    """PM-G4：JMAK 锚 ≥2 源 ∧ 动力学律自检通过（**算出来的**，非存在性字面量）。"""
+    if not hasattr(ML, "JMAK_PARAMS") or not ML.JMAK_PARAMS.get("GST"):
+        return False, "JMAK 参数不存在"
+    from lda_l2 import pm_m1 as M1  # 局部导入避免加载序耦合
+    chk = M1.jmak_law_check("GST")
+    n_src = len(ML.JMAK_PARAMS["GST"])
+    return bool(chk["ok"] and n_src >= 2), (
+        f"JMAK 锚源={n_src} · Arrhenius 双路径 dev={chk['max_rel_dev']:.2e}")
 
 
 def _ev_g5() -> Tuple[bool, str]:

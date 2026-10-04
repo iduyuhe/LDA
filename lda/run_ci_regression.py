@@ -1513,6 +1513,7 @@ CORE_SMOKES: List[str] = [
     #   实测 ~0.3s ⇒ timeout 120s 留足余量。
     "run_pm_m1_smoke.py",
     "run_pm_m2_smoke.py",
+    "run_ci_gate_contract_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2397,6 +2398,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 光子存储征程 PM-M1 门禁（JMAK + 多电平可行性律）：24 判据 + 5 探针 · 实测上界 0.3s（单测）
     "run_pm_m1_smoke.py": 120.0,
     "run_pm_m2_smoke.py": 120.0,
+    # CI 门禁自身契约（棘轮时序 + 退出码契约）· 受控 fake 驱动，实测上界 <5s
+    "run_ci_gate_contract_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
     "run_pchip_case_smoke.py": 300.0,
     # 光计算征程 M2 · 实测上界 0.25s（单测）

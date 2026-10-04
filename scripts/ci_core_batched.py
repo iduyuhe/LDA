@@ -99,6 +99,11 @@ def _budget_margin_audit(results):
 _BASELINE_PATH = os.path.join(_LDA, "timeout_budget_baseline.json")
 _BASELINE_SCHEMA = "lda.timeout_budget_baseline/1"
 
+# 🔴 v0.9.190：超时预算棘轮门禁的脚本名 —— 它是**唯一**「自己读基线、又要求基线最新」的门禁
+#   （B5 覆盖完备 / B8 硬闸 / B9 目标），因此它对「基线写回时机」敏感（见 `_rerun_ratchet`）。
+_RATCHET_SMOKE = "run_timeout_budget_ratchet_smoke.py"
+_FAILED_STATES = ("FAIL", "ERROR", "TIMEOUT", "CRASH")
+
 
 def _write_baseline(results, *, label, threads, dst=_BASELINE_PATH):
     """把本轮实测**并入**既有基线后写回（v0.9.118 · T6.1 的刷新闭环）。
@@ -214,6 +219,94 @@ def _write_baseline(results, *, label, threads, dst=_BASELINE_PATH):
     return out
 
 
+def _summarize(results, *, n, tag, batch, cooldown, threads, per_batch, total_s,
+               n_batches, extra=None):
+    """把 `results` 汇总成报告体（v0.9.190 抽出）。
+
+    抽出的动机：`--write-baseline` 模式下棘轮要在**基线写回后**复跑（见 `_rerun_ratchet`），
+    其结果必须**重算**汇总与判决 —— 否则报告 JSON、verdict、返回码三者会互相打架
+    （那正是本仓最忌的「同一事实两处口径」）。故汇总必须是**可重入函数**，而不是内联一段。
+    """
+    n_pass = sum(1 for r in results if r["status"] == "PASS")
+    n_skip = sum(1 for r in results if r["status"] == "SKIP")
+    failed = [r for r in results if r["status"] in _FAILED_STATES]
+    skipped = [r for r in results if r["status"] == "SKIP"]
+    tally = {"PASS": n_pass, "SKIP": n_skip}
+    for r in failed:
+        tally[r["status"]] = tally.get(r["status"], 0) + 1
+
+    out = {
+        "title": f"CI 分批回归（tag={tag}）",
+        "tag": tag, "n_scripts": n,
+        "batch_size": batch, "cooldown_s": cooldown,
+        "threads": threads or "project-default(10)",
+        "summary": {"pass": n_pass, "skip": n_skip, "fail": len(failed),
+                    "total_s": round(total_s, 1),
+                    "by_status": tally,
+                    "failed": [{k: r[k] for k in
+                                ("script", "status", "rc", "elapsed_s")}
+                               for r in failed],
+                    "skipped": [r["script"] for r in skipped]},
+        # 超时预算余量体检（v0.9.112）：<2× 即欠标定，须重新实测并上调（目标 ≥3×）。
+        "budget_audit": _budget_margin_audit(results),
+        "per_batch": per_batch,
+        "results": results,
+        "verdict": (f"CI 分批回归 {tag}：{n_pass} PASS / {n_skip} SKIP / "
+                    f"{len(failed)} FAIL（{n} 条 · {n_batches} 批）"
+                    + (" —— 全绿" if not failed else
+                       " —— 失败项：" + "; ".join(r["script"] for r in failed[:5]))),
+    }
+    if extra:
+        out.update(extra)
+    return out, failed
+
+
+def _write_report(path, out):
+    """写报告 JSON（写盘失败不得掩盖判决）。"""
+    try:
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(out, f, ensure_ascii=False, indent=2)
+        print(f"\n[written] {path}")
+    except OSError as e:
+        print(f"[warn] 报告写入失败（不影响判决）：{e}", file=sys.stderr)
+
+
+def _rerun_ratchet(a, all_scripts):
+    """**基线写回之后**再跑一次棘轮门禁，返回它的单条 result（失败则 None）。
+
+    为什么必须后置（v0.9.190 根治 · M0/M1/M2 连续三轮印证的时序假红）
+    ------------------------------------------------------------------
+    `--write-baseline` 的批次循环把棘轮**排在普通批次里**执行，而基线文件在**全部批次跑完
+    之后**才写回。于是棘轮读到的永远是**上一版基线** ⇒ 本轮刚登记进 CI core 的新成员在
+    旧基线里没有行 ⇒ **B5「覆盖完备」必红**。这条红**信息量为零**（与代码/预算无关），
+    却每加一个新成员就必然出现一次，且**稀释真红的信噪比**（本仓最忌的「假红制造机」家族）。
+
+    ⇒ 处置：批次里的那次结果**保留不动**（它仍然是「旧基线下的真实读数」），
+    但在基线写回之后**再跑一次**，并用这次结果**覆盖**同名条目（不论红绿 ——
+    **绝不掩盖真红**：基线已是最新还红 ⇒ 那是真问题，必须照红）。
+    """
+    try:
+        r = run_ci_regression(python=a.python, tag=a.tag, timeout=a.timeout,
+                              scripts=[_RATCHET_SMOKE])
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[warn] 棘轮后置复跑失败（不影响既有判决）：{e}", file=sys.stderr)
+        return None
+    rows = [x for x in (r.get("results") or []) if x.get("script") == _RATCHET_SMOKE]
+    if not rows:
+        print("[warn] 棘轮后置复跑未产出结果（不影响既有判决）", file=sys.stderr)
+        return None
+    return rows[0]
+
+
+def _overlay(results, one):
+    """用 `one`（同名）覆盖 `results` 里的条目；不存在则追加。返回新列表。"""
+    name = one.get("script")
+    out = [x for x in results if x.get("script") != name]
+    out.append(one)
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="CI 分批回归（防掉电）")
     ap.add_argument("--tag", choices=["core", "all"], default="core")
@@ -286,42 +379,11 @@ def main() -> int:
                   f" {dt:.0f}s；冷却 {a.cooldown}s -----", flush=True)
             time.sleep(a.cooldown)
 
-    n_pass = sum(1 for r in results if r["status"] == "PASS")
-    n_skip = sum(1 for r in results if r["status"] == "SKIP")
-    failed = [r for r in results if r["status"] in ("FAIL", "ERROR", "TIMEOUT", "CRASH")]
-    skipped = [r for r in results if r["status"] == "SKIP"]
-    tally = {"PASS": n_pass, "SKIP": n_skip}
-    for r in failed:
-        tally[r["status"]] = tally.get(r["status"], 0) + 1
-
-    out = {
-        "title": f"CI 分批回归（tag={a.tag}）",
-        "tag": a.tag, "n_scripts": n,
-        "batch_size": a.batch, "cooldown_s": a.cooldown,
-        "threads": a.threads or "project-default(10)",
-        "summary": {"pass": n_pass, "skip": n_skip, "fail": len(failed),
-                    "total_s": round(time.time() - t0, 1),
-                    "by_status": tally,
-                    "failed": [{k: r[k] for k in
-                                ("script", "status", "rc", "elapsed_s")}
-                               for r in failed],
-                    "skipped": [r["script"] for r in skipped]},
-        # 超时预算余量体检（v0.9.112）：<2× 即欠标定，须重新实测并上调（目标 ≥3×）。
-        "budget_audit": _budget_margin_audit(results),
-        "per_batch": per_batch,
-        "results": results,
-        "verdict": (f"CI 分批回归 {a.tag}：{n_pass} PASS / {n_skip} SKIP / "
-                    f"{len(failed)} FAIL（{n} 条 · {len(batches)} 批）"
-                    + (" —— 全绿" if not failed else
-                       " —— 失败项：" + "; ".join(r["script"] for r in failed[:5]))),
-    }
-    try:
-        os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
-        with open(a.out, "w", encoding="utf-8") as f:
-            json.dump(out, f, ensure_ascii=False, indent=2)
-        print(f"\n[written] {a.out}")
-    except OSError as e:                      # 写盘失败不得掩盖判决
-        print(f"[warn] 报告写入失败（不影响判决）：{e}", file=sys.stderr)
+    out, failed = _summarize(results, n=n, tag=a.tag, batch=a.batch,
+                             cooldown=a.cooldown, threads=a.threads,
+                             per_batch=per_batch, total_s=time.time() - t0,
+                             n_batches=len(batches))
+    _write_report(a.out, out)
 
     if a.write_baseline:
         if (a.threads or 0) not in (0, 10):
@@ -329,6 +391,30 @@ def main() -> int:
                   "（见 run_ci_regression 文件头的标定纪律）")
         else:
             _write_baseline(results, label=os.path.basename(a.out), threads=a.threads)
+            # 🔴 v0.9.190：基线已是最新 ⇒ 现在重跑棘轮才有意义（详见 _rerun_ratchet）。
+            pre_status = next((x["status"] for x in results
+                               if x["script"] == _RATCHET_SMOKE), None)
+            post = _rerun_ratchet(a, all_scripts)
+            if post is not None:
+                results = _overlay(results, post)
+                out, failed = _summarize(
+                    results, n=n, tag=a.tag, batch=a.batch, cooldown=a.cooldown,
+                    threads=a.threads, per_batch=per_batch,
+                    total_s=time.time() - t0, n_batches=len(batches),
+                    extra={"ratchet_post_baseline": {
+                        "reason": ("棘轮读基线 ⇒ 必须在 --write-baseline 写回【之后】复跑；"
+                                   "否则本轮新登记的 CI 成员在旧基线里无行 ⇒ B5 覆盖完备必红"),
+                        "pre_status": pre_status, "post_status": post["status"],
+                        "post_rc": post.get("rc"),
+                        "verdict": ("时序假红已消除" if pre_status == "FAIL"
+                                    and post["status"] == "PASS" else
+                                    "真红（基线已最新仍红 ⇒ 不得掩盖）"
+                                    if post["status"] != "PASS" else "无变化"),
+                    }})
+                _write_report(a.out, out)
+                print(f"[ratchet] 基线写回后复跑：{post['status']}"
+                      f"（rc={post.get('rc')} · {post.get('elapsed_s')}s）⇒ 已覆盖批次内那条"
+                      f"（批次内读数 {pre_status}）")
 
     audit = out["budget_audit"]
     if audit["n_items"]:

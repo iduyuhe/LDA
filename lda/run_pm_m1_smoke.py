@@ -190,7 +190,11 @@ def main() -> int:
     check("P5 n=0 ⇒ 必 raise（域守卫真在跑）", raise_ok)
 
     print()
-    return 0
+    # 🔴 v0.9.190 修：退出码必须反映判据结果 —— CI 的成败判定是 `PASS if rc == 0 else FAIL`
+    #   （见 run_ci_regression._run_one）。原先此处恒 `return 0` ⇒ 本门禁的 FAIL 行
+    #   只是打印、**永不被 CI 捕获** = 假绿（A 级缺陷，同族于「假绿制造机」血案）。
+    #   对齐 run_pm_m0_smoke / run_oi_m0_smoke 的既有正确范式。
+    return 0 if (globals().get("PASS", 0) and not globals().get("FAIL", 0)) else 1
 
 
 if __name__ == "__main__":

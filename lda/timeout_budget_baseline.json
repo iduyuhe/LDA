@@ -7,8 +7,8 @@
   "target_x": 3.0,
   "ratchet_below_target": 0,
   "anchors_at_measurement": 476,
-  "core_smokes_at_measurement": 274,
-  "updated_at": "2026-10-03",
+  "core_smokes_at_measurement": 275,
+  "updated_at": "2026-10-04",
   "source_reports": [
     "_ci_core_179",
     "_ci_core_179_b",
@@ -47,7 +47,8 @@
     "_oi_ci_two_report.json",
     "ci_core_v09182.json",
     "_ci_core_v09184.json",
-    "_ci_186.json"
+    "_ci_186.json",
+    "lda_pmm0_ci_20261004.json"
   ],
   "rules": "预算 ≥ 2 × 跨轮实测上界（硬闸）；目标 3×（棘轮：低于 3× 的项数只降不升）；锚数或 CI core 成员数变化 ⇒ 基线过期，须重跑全量并 --write-baseline 刷新",
   "rows": [
@@ -68,6 +69,7 @@
         121.62,
         123.19,
         124.32,
+        127.92,
         131.31,
         270.31,
         272.67,
@@ -81,7 +83,7 @@
         291.68,
         293.42
       ],
-      "n_rounds": 23,
+      "n_rounds": 24,
       "censored_events": 2
     },
     {
@@ -102,6 +104,7 @@
         168.57,
         168.95,
         170.12,
+        171.01,
         171.91,
         172.15,
         172.5,
@@ -115,7 +118,7 @@
         184.35,
         193.33
       ],
-      "n_rounds": 24,
+      "n_rounds": 25,
       "censored_events": 0
     },
     {
@@ -144,11 +147,12 @@
         181.64,
         182.54,
         182.86,
+        183.53,
         202.79,
         204.41,
         208.16
       ],
-      "n_rounds": 23,
+      "n_rounds": 24,
       "censored_events": 2
     },
     {
@@ -159,12 +163,13 @@
       "samples_s": [
         74.66,
         74.96,
+        75.69,
         78.14,
         78.85,
         79.52,
         90.97
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -180,6 +185,7 @@
         68.44,
         68.74,
         68.79,
+        69.05,
         69.15,
         69.3,
         69.83,
@@ -196,7 +202,7 @@
         78.29,
         451.02
       ],
-      "n_rounds": 22,
+      "n_rounds": 23,
       "censored_events": 0
     },
     {
@@ -223,13 +229,14 @@
         1130.11,
         1135.3,
         1135.66,
+        1150.8,
         1162.4,
         1164.33,
         1168.3,
         1194.19,
         1262.06
       ],
-      "n_rounds": 23,
+      "n_rounds": 24,
       "censored_events": 2
     },
     {
@@ -257,12 +264,13 @@
         1367.63,
         1380.08,
         1385.02,
+        1393.84,
         1394.26,
         1402.14,
         1573.83,
         1608.71
       ],
-      "n_rounds": 23,
+      "n_rounds": 24,
       "censored_events": 2
     },
     {
@@ -291,12 +299,13 @@
         146.53,
         147.86,
         149.42,
+        154.36,
         155.76,
         156.79,
         165.44,
         174.77
       ],
-      "n_rounds": 24,
+      "n_rounds": 25,
       "censored_events": 0
     },
     {
@@ -308,6 +317,7 @@
         78.07,
         79.44,
         80.92,
+        81.57,
         81.76,
         82.45,
         82.71,
@@ -318,7 +328,7 @@
         84.44,
         84.79
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -336,11 +346,12 @@
         72.07,
         72.98,
         73.64,
+        73.73,
         73.87,
         82.56,
         84.65
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -349,6 +360,7 @@
       "elapsed_max_s": 82.73,
       "margin_x": 3.626,
       "samples_s": [
+        49.71,
         49.85,
         52.14,
         52.44,
@@ -362,7 +374,7 @@
         58.01,
         82.73
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -374,6 +386,7 @@
         69.63,
         71.11,
         71.17,
+        71.33,
         71.74,
         73.16,
         73.2,
@@ -384,7 +397,7 @@
         74.38,
         81.55
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -403,6 +416,7 @@
         241.72,
         241.8,
         241.9,
+        242.48,
         243.54,
         243.74,
         244.34,
@@ -418,7 +432,7 @@
         304.88,
         322.04
       ],
-      "n_rounds": 24,
+      "n_rounds": 25,
       "censored_events": 0
     },
     {
@@ -445,6 +459,7 @@
         213.32,
         214.68,
         214.96,
+        216.76,
         216.91,
         218.7,
         220.54,
@@ -452,7 +467,7 @@
         222.17,
         232.49
       ],
-      "n_rounds": 24,
+      "n_rounds": 25,
       "censored_events": 0
     },
     {
@@ -466,6 +481,7 @@
         179.35,
         181.14,
         181.77,
+        182.74,
         183.64,
         185.28,
         188.78,
@@ -486,7 +502,7 @@
         206.69,
         231.7
       ],
-      "n_rounds": 24,
+      "n_rounds": 25,
       "censored_events": 0
     },
     {
@@ -502,6 +518,7 @@
         75.4,
         75.61,
         75.62,
+        75.72,
         75.73,
         75.89,
         76.0,
@@ -520,7 +537,7 @@
         113.8,
         115.56
       ],
-      "n_rounds": 24,
+      "n_rounds": 25,
       "censored_events": 0
     },
     {
@@ -551,10 +568,11 @@
         205.68,
         206.02,
         206.2,
+        206.97,
         217.61,
         228.74
       ],
-      "n_rounds": 24,
+      "n_rounds": 25,
       "censored_events": 0
     },
     {
@@ -569,12 +587,13 @@
         145.4,
         145.5,
         147.03,
+        147.13,
         147.65,
         150.14,
         150.67,
         151.46
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -584,6 +603,7 @@
       "margin_x": 3.991,
       "samples_s": [
         86.3,
+        86.4,
         87.23,
         87.51,
         87.88,
@@ -608,7 +628,7 @@
         95.74,
         100.22
       ],
-      "n_rounds": 24,
+      "n_rounds": 25,
       "censored_events": 0
     },
     {
@@ -619,6 +639,7 @@
       "samples_s": [
         46.56,
         46.86,
+        46.93,
         46.95,
         46.99,
         47.03,
@@ -630,7 +651,7 @@
         71.67,
         72.23
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -654,6 +675,7 @@
         240.06,
         242.4,
         242.64,
+        242.71,
         242.73,
         242.93,
         243.68,
@@ -664,7 +686,7 @@
         264.13,
         268.86
       ],
-      "n_rounds": 24,
+      "n_rounds": 25,
       "censored_events": 0
     },
     {
@@ -674,11 +696,12 @@
       "margin_x": 4.6,
       "samples_s": [
         14.39,
+        188.32,
         192.34,
         195.44,
         195.67
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -688,6 +711,7 @@
       "margin_x": 4.687,
       "samples_s": [
         48.38,
+        48.63,
         49.12,
         49.54,
         50.2,
@@ -700,7 +724,7 @@
         61.79,
         64.01
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -709,12 +733,13 @@
       "elapsed_max_s": 57.85,
       "margin_x": 5.186,
       "samples_s": [
+        47.4,
         51.07,
         53.03,
         57.6,
         57.85
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -724,6 +749,7 @@
       "margin_x": 5.427,
       "samples_s": [
         45.02,
+        45.5,
         45.83,
         45.99,
         46.29,
@@ -737,7 +763,7 @@
         49.55,
         55.28
       ],
-      "n_rounds": 13,
+      "n_rounds": 14,
       "censored_events": 0
     },
     {
@@ -747,6 +773,7 @@
       "margin_x": 5.663,
       "samples_s": [
         38.76,
+        39.15,
         39.23,
         39.24,
         44.38,
@@ -759,7 +786,7 @@
         49.26,
         52.98
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -770,10 +797,11 @@
       "samples_s": [
         37.62,
         38.52,
+        38.64,
         42.03,
         50.66
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -783,6 +811,7 @@
       "margin_x": 6.027,
       "samples_s": [
         34.67,
+        34.89,
         34.9,
         40.26,
         43.29,
@@ -795,7 +824,7 @@
         46.83,
         49.78
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -810,6 +839,7 @@
         33.04,
         33.14,
         33.24,
+        33.37,
         33.6,
         33.68,
         34.26,
@@ -817,7 +847,7 @@
         47.7,
         49.27
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -828,9 +858,10 @@
       "samples_s": [
         13.03,
         13.07,
+        16.88,
         16.92
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -840,6 +871,7 @@
       "margin_x": 7.119,
       "samples_s": [
         33.0,
+        33.08,
         33.23,
         34.85,
         34.97,
@@ -852,7 +884,7 @@
         41.87,
         42.14
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -861,6 +893,7 @@
       "elapsed_max_s": 41.85,
       "margin_x": 7.168,
       "samples_s": [
+        35.55,
         35.91,
         35.96,
         36.19,
@@ -874,7 +907,7 @@
         40.22,
         41.85
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -886,6 +919,7 @@
         20.86,
         22.92,
         25.53,
+        28.47,
         28.6,
         28.82,
         28.89,
@@ -896,7 +930,7 @@
         33.31,
         37.78
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -905,6 +939,7 @@
       "elapsed_max_s": 35.97,
       "margin_x": 8.34,
       "samples_s": [
+        33.75,
         33.85,
         33.88,
         33.9,
@@ -917,7 +952,7 @@
         35.14,
         35.97
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -927,6 +962,7 @@
       "margin_x": 8.343,
       "samples_s": [
         29.32,
+        29.38,
         29.64,
         30.14,
         31.36,
@@ -939,7 +975,7 @@
         33.71,
         35.96
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -950,12 +986,13 @@
       "samples_s": [
         29.51,
         29.54,
+        29.6,
         30.67,
         30.77,
         30.78,
         35.13
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -965,6 +1002,7 @@
       "margin_x": 10.232,
       "samples_s": [
         23.78,
+        23.8,
         23.81,
         23.83,
         24.84,
@@ -976,7 +1014,7 @@
         27.22,
         29.32
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -986,11 +1024,12 @@
       "margin_x": 10.86,
       "samples_s": [
         9.85,
+        9.9,
         9.94,
         10.06,
         11.05
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1002,6 +1041,7 @@
         24.16,
         24.28,
         24.34,
+        24.36,
         24.38,
         24.46,
         24.51,
@@ -1012,7 +1052,7 @@
         25.75,
         26.98
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -1021,6 +1061,7 @@
       "elapsed_max_s": 25.94,
       "margin_x": 11.565,
       "samples_s": [
+        13.65,
         18.63,
         19.08,
         20.5,
@@ -1034,7 +1075,7 @@
         25.47,
         25.94
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -1054,9 +1095,10 @@
         20.77,
         21.85,
         21.9,
+        22.43,
         25.41
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -1100,11 +1142,12 @@
       "margin_x": 12.376,
       "samples_s": [
         18.55,
+        19.02,
         19.25,
         20.59,
         24.24
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1113,11 +1156,12 @@
       "elapsed_max_s": 24.19,
       "margin_x": 12.402,
       "samples_s": [
+        23.52,
         24.13,
         24.17,
         24.19
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -1128,10 +1172,11 @@
       "samples_s": [
         20.2,
         20.36,
+        20.49,
         20.52,
         21.64
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1147,13 +1192,14 @@
         17.99,
         18.15,
         18.21,
+        18.61,
         18.66,
         18.73,
         18.87,
         19.67,
         20.6
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -1163,6 +1209,7 @@
       "margin_x": 14.918,
       "samples_s": [
         15.86,
+        15.98,
         16.0,
         16.06,
         16.2,
@@ -1175,7 +1222,7 @@
         19.47,
         20.11
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -1186,10 +1233,11 @@
       "samples_s": [
         17.24,
         17.26,
+        17.27,
         17.55,
         20.09
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1208,10 +1256,11 @@
         14.46,
         15.21,
         15.31,
+        16.3,
         17.64,
         18.63
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -1222,10 +1271,11 @@
       "samples_s": [
         5.26,
         6.35,
+        6.39,
         6.4,
         6.74
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1236,6 +1286,7 @@
       "samples_s": [
         10.19,
         11.09,
+        11.78,
         12.01,
         12.12,
         12.25,
@@ -1247,7 +1298,7 @@
         14.45,
         15.41
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -1256,9 +1307,10 @@
       "elapsed_max_s": 5.91,
       "margin_x": 20.305,
       "samples_s": [
+        5.9,
         5.91
       ],
-      "n_rounds": 1,
+      "n_rounds": 2,
       "censored_events": 0
     },
     {
@@ -1274,22 +1326,24 @@
         4.11,
         5.06,
         5.64,
+        5.73,
         5.77
       ],
-      "n_rounds": 8,
+      "n_rounds": 9,
       "censored_events": 0
     },
     {
       "script": "run_oi_m3_smoke.py",
       "budget_s": 120.0,
-      "elapsed_max_s": 5.09,
-      "margin_x": 23.576,
+      "elapsed_max_s": 5.11,
+      "margin_x": 23.483,
       "samples_s": [
         3.1,
         3.11,
-        5.09
+        5.09,
+        5.11
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -1305,12 +1359,13 @@
         11.72,
         11.77,
         11.88,
+        11.95,
         12.04,
         12.18,
         12.38,
         12.44
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 2
     },
     {
@@ -1320,10 +1375,11 @@
       "margin_x": 26.374,
       "samples_s": [
         4.5,
+        4.51,
         4.52,
         4.55
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -1362,10 +1418,11 @@
       "samples_s": [
         4.58,
         4.59,
+        4.63,
         5.46,
         10.3
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1395,6 +1452,7 @@
         5.65,
         6.59,
         7.98,
+        7.99,
         8.06,
         8.11,
         8.26,
@@ -1405,7 +1463,7 @@
         9.61,
         9.8
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -1418,6 +1476,7 @@
         6.39,
         6.5,
         6.68,
+        6.75,
         6.79,
         6.87,
         6.88,
@@ -1427,7 +1486,7 @@
         8.26,
         9.74
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -1444,11 +1503,12 @@
         8.43,
         8.72,
         8.78,
+        8.82,
         8.84,
         8.86,
         8.87
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -1474,15 +1534,16 @@
     {
       "script": "run_p2_usability_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 6.16,
-      "margin_x": 48.701,
+      "elapsed_max_s": 6.17,
+      "margin_x": 48.622,
       "samples_s": [
         5.72,
         6.13,
         6.14,
-        6.16
+        6.16,
+        6.17
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1493,10 +1554,11 @@
       "samples_s": [
         5.08,
         5.27,
+        5.3,
         5.32,
         5.39
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1543,9 +1605,10 @@
         4.0,
         4.09,
         4.11,
+        4.14,
         4.27
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1584,9 +1647,10 @@
         3.36,
         4.07,
         4.12,
+        4.14,
         4.18
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -1597,17 +1661,18 @@
       "samples_s": [
         0.26,
         1.52,
+        1.53,
         1.54,
         1.56
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
       "script": "run_pyflakes_ratchet_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 3.87,
-      "margin_x": 77.519,
+      "elapsed_max_s": 3.89,
+      "margin_x": 77.121,
       "samples_s": [
         0.26,
         1.9,
@@ -1619,9 +1684,10 @@
         2.56,
         2.61,
         3.81,
-        3.87
+        3.87,
+        3.89
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -1640,9 +1706,10 @@
         3.14,
         3.4,
         3.61,
+        3.62,
         3.66
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -1653,9 +1720,10 @@
       "samples_s": [
         2.96,
         3.05,
+        3.08,
         3.13
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -1665,10 +1733,11 @@
       "margin_x": 96.154,
       "samples_s": [
         3.03,
+        3.05,
         3.11,
         3.12
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -1694,11 +1763,12 @@
       "margin_x": 107.143,
       "samples_s": [
         1.69,
+        1.84,
         1.88,
         1.91,
         2.8
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1713,9 +1783,10 @@
         2.6,
         2.74,
         2.75,
+        2.76,
         2.77
       ],
-      "n_rounds": 7,
+      "n_rounds": 8,
       "censored_events": 0
     },
     {
@@ -1727,6 +1798,7 @@
         2.34,
         2.41,
         2.55,
+        2.57,
         2.59,
         2.6,
         2.61,
@@ -1734,7 +1806,7 @@
         2.63,
         2.65
       ],
-      "n_rounds": 9,
+      "n_rounds": 10,
       "censored_events": 0
     },
     {
@@ -1794,10 +1866,11 @@
         2.22,
         2.24,
         2.3,
+        2.49,
         2.51,
         2.52
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -1849,6 +1922,7 @@
         2.27,
         2.31,
         2.32,
+        2.34,
         2.35,
         2.39,
         2.41,
@@ -1856,7 +1930,7 @@
         2.44,
         2.46
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -1894,10 +1968,11 @@
         2.04,
         2.05,
         2.1,
+        2.27,
         2.28,
         2.31
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -1906,12 +1981,13 @@
       "elapsed_max_s": 2.23,
       "margin_x": 134.529,
       "samples_s": [
+        2.13,
         2.19,
         2.2,
         2.21,
         2.23
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -1932,9 +2008,10 @@
         0.71,
         0.72,
         0.73,
+        0.87,
         0.88
       ],
-      "n_rounds": 13,
+      "n_rounds": 14,
       "censored_events": 0
     },
     {
@@ -1945,9 +2022,10 @@
       "samples_s": [
         2.07,
         2.08,
+        2.09,
         2.16
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -1956,13 +2034,14 @@
       "elapsed_max_s": 2.13,
       "margin_x": 140.845,
       "samples_s": [
+        1.1,
         1.13,
         1.15,
         1.26,
         2.08,
         2.13
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -1974,16 +2053,17 @@
         1.99,
         2.0,
         2.01,
+        2.02,
         2.05
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
       "script": "run_helper_dup_ratchet_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 2.0,
-      "margin_x": 150.0,
+      "elapsed_max_s": 2.03,
+      "margin_x": 147.783,
       "samples_s": [
         0.97,
         1.27,
@@ -1993,16 +2073,17 @@
         1.32,
         1.35,
         1.99,
-        2.0
+        2.0,
+        2.03
       ],
-      "n_rounds": 9,
+      "n_rounds": 10,
       "censored_events": 0
     },
     {
       "script": "run_store_flow_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 1.9,
-      "margin_x": 157.895,
+      "elapsed_max_s": 1.93,
+      "margin_x": 155.44,
       "samples_s": [
         1.26,
         1.42,
@@ -2013,9 +2094,10 @@
         1.49,
         1.88,
         1.89,
-        1.9
+        1.9,
+        1.93
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -2035,9 +2117,10 @@
         1.71,
         1.72,
         1.8,
+        1.83,
         1.85
       ],
-      "n_rounds": 12,
+      "n_rounds": 13,
       "censored_events": 0
     },
     {
@@ -2052,9 +2135,10 @@
         1.77,
         1.79,
         1.8,
+        1.83,
         1.84
       ],
-      "n_rounds": 7,
+      "n_rounds": 8,
       "censored_events": 0
     },
     {
@@ -2092,11 +2176,12 @@
       "samples_s": [
         0.9,
         0.91,
+        0.92,
         1.06,
         1.63,
         1.73
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -2246,12 +2331,13 @@
         1.22,
         1.24,
         1.25,
+        1.33,
         1.34,
         1.36,
         1.38,
         1.39
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -2276,10 +2362,11 @@
         1.28,
         1.29,
         1.31,
+        1.32,
         1.33,
         1.35
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {
@@ -2310,11 +2397,12 @@
         1.03,
         1.04,
         1.05,
+        1.2,
         1.22,
         1.23,
         1.26
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -2363,10 +2451,11 @@
         0.95,
         0.96,
         0.98,
+        1.14,
         1.15,
         1.17
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -2480,9 +2569,10 @@
         0.94,
         0.95,
         0.96,
+        0.99,
         1.03
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -2514,6 +2604,20 @@
         1.0
       ],
       "n_rounds": 7,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ecore_e14_smoke.py",
+      "budget_s": 300.0,
+      "elapsed_max_s": 0.98,
+      "margin_x": 306.122,
+      "samples_s": [
+        0.94,
+        0.95,
+        0.97,
+        0.98
+      ],
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -2551,19 +2655,6 @@
       "censored_events": 0
     },
     {
-      "script": "run_ecore_e14_smoke.py",
-      "budget_s": 300.0,
-      "elapsed_max_s": 0.97,
-      "margin_x": 309.278,
-      "samples_s": [
-        0.94,
-        0.95,
-        0.97
-      ],
-      "n_rounds": 3,
-      "censored_events": 0
-    },
-    {
       "script": "run_b30_readout_smoke.py",
       "budget_s": 300.0,
       "elapsed_max_s": 0.96,
@@ -2576,9 +2667,10 @@
         0.79,
         0.8,
         0.94,
+        0.95,
         0.96
       ],
-      "n_rounds": 8,
+      "n_rounds": 9,
       "censored_events": 0
     },
     {
@@ -2634,10 +2726,11 @@
         0.77,
         0.78,
         0.89,
+        0.92,
         0.93,
         0.95
       ],
-      "n_rounds": 9,
+      "n_rounds": 10,
       "censored_events": 0
     },
     {
@@ -2674,9 +2767,10 @@
         0.77,
         0.78,
         0.93,
+        0.94,
         0.95
       ],
-      "n_rounds": 9,
+      "n_rounds": 10,
       "censored_events": 0
     },
     {
@@ -2712,10 +2806,11 @@
         0.74,
         0.75,
         0.76,
+        0.9,
         0.91,
         0.93
       ],
-      "n_rounds": 9,
+      "n_rounds": 10,
       "censored_events": 0
     },
     {
@@ -2732,10 +2827,11 @@
         0.69,
         0.7,
         0.85,
+        0.86,
         0.89,
         0.91
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -2750,10 +2846,11 @@
         0.7,
         0.71,
         0.72,
+        0.88,
         0.89,
         0.91
       ],
-      "n_rounds": 8,
+      "n_rounds": 9,
       "censored_events": 0
     },
     {
@@ -2785,11 +2882,12 @@
         0.7,
         0.71,
         0.75,
+        0.85,
         0.86,
         0.88,
         0.9
       ],
-      "n_rounds": 11,
+      "n_rounds": 12,
       "censored_events": 0
     },
     {
@@ -2836,9 +2934,10 @@
         0.73,
         0.75,
         0.78,
+        0.88,
         0.89
       ],
-      "n_rounds": 8,
+      "n_rounds": 9,
       "censored_events": 0
     },
     {
@@ -2875,9 +2974,10 @@
         0.69,
         0.71,
         0.83,
+        0.87,
         0.88
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -2894,9 +2994,10 @@
         0.71,
         0.72,
         0.85,
+        0.86,
         0.87
       ],
-      "n_rounds": 9,
+      "n_rounds": 10,
       "censored_events": 0
     },
     {
@@ -2912,10 +3013,11 @@
         0.69,
         0.7,
         0.72,
+        0.83,
         0.85,
         0.87
       ],
-      "n_rounds": 9,
+      "n_rounds": 10,
       "censored_events": 0
     },
     {
@@ -2965,9 +3067,10 @@
       "margin_x": 344.828,
       "samples_s": [
         0.83,
+        0.86,
         0.87
       ],
-      "n_rounds": 2,
+      "n_rounds": 3,
       "censored_events": 0
     },
     {
@@ -3020,10 +3123,11 @@
         0.67,
         0.69,
         0.7,
+        0.84,
         0.85,
         0.86
       ],
-      "n_rounds": 8,
+      "n_rounds": 9,
       "censored_events": 0
     },
     {
@@ -3110,9 +3214,10 @@
         0.73,
         0.74,
         0.8,
+        0.84,
         0.85
       ],
-      "n_rounds": 9,
+      "n_rounds": 10,
       "censored_events": 0
     },
     {
@@ -3128,9 +3233,10 @@
         0.68,
         0.81,
         0.82,
+        0.83,
         0.84
       ],
-      "n_rounds": 8,
+      "n_rounds": 9,
       "censored_events": 0
     },
     {
@@ -3146,9 +3252,10 @@
         0.68,
         0.69,
         0.82,
+        0.83,
         0.84
       ],
-      "n_rounds": 8,
+      "n_rounds": 9,
       "censored_events": 0
     },
     {
@@ -3289,10 +3396,11 @@
       "samples_s": [
         0.27,
         0.8,
+        0.81,
         0.82,
         0.83
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -3371,10 +3479,11 @@
         0.38,
         0.58,
         0.73,
+        0.74,
         0.76,
         0.77
       ],
-      "n_rounds": 7,
+      "n_rounds": 8,
       "censored_events": 0
     },
     {
@@ -3435,8 +3544,8 @@
     {
       "script": "run_smoke_isolation_ratchet_smoke.py",
       "budget_s": 300.0,
-      "elapsed_max_s": 0.7,
-      "margin_x": 428.571,
+      "elapsed_max_s": 0.71,
+      "margin_x": 422.535,
       "samples_s": [
         0.21,
         0.41,
@@ -3446,9 +3555,10 @@
         0.45,
         0.47,
         0.68,
-        0.7
+        0.7,
+        0.71
       ],
-      "n_rounds": 9,
+      "n_rounds": 10,
       "censored_events": 0
     },
     {
@@ -3459,9 +3569,10 @@
       "samples_s": [
         0.22,
         0.25,
+        0.27,
         0.28
       ],
-      "n_rounds": 3,
+      "n_rounds": 4,
       "censored_events": 0
     },
     {
@@ -3517,11 +3628,12 @@
         0.52,
         0.53,
         0.54,
+        0.55,
         0.56,
         0.57,
         0.58
       ],
-      "n_rounds": 7,
+      "n_rounds": 8,
       "censored_events": 0
     },
     {
@@ -3535,6 +3647,17 @@
         0.58
       ],
       "n_rounds": 3,
+      "censored_events": 0
+    },
+    {
+      "script": "run_pm_m0_smoke.py",
+      "budget_s": 120.0,
+      "elapsed_max_s": 0.23,
+      "margin_x": 521.739,
+      "samples_s": [
+        0.23
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {
@@ -3604,6 +3727,7 @@
         0.11,
         0.32,
         0.33,
+        0.35,
         0.36,
         0.38,
         0.4,
@@ -3612,7 +3736,7 @@
         0.44,
         0.49
       ],
-      "n_rounds": 10,
+      "n_rounds": 11,
       "censored_events": 0
     },
     {
@@ -3767,10 +3891,11 @@
         0.32,
         0.33,
         0.34,
+        0.37,
         0.38,
         0.4
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -3792,11 +3917,12 @@
       "margin_x": 750.0,
       "samples_s": [
         0.34,
+        0.35,
         0.38,
         0.39,
         0.4
       ],
-      "n_rounds": 4,
+      "n_rounds": 5,
       "censored_events": 0
     },
     {
@@ -3958,9 +4084,10 @@
       "margin_x": 810.811,
       "samples_s": [
         0.35,
+        0.36,
         0.37
       ],
-      "n_rounds": 2,
+      "n_rounds": 3,
       "censored_events": 0
     },
     {
@@ -4166,13 +4293,14 @@
       "margin_x": 882.353,
       "samples_s": [
         0.14,
+        0.27,
         0.28,
         0.3,
         0.31,
         0.32,
         0.34
       ],
-      "n_rounds": 6,
+      "n_rounds": 7,
       "censored_events": 0
     },
     {
@@ -4330,9 +4458,10 @@
         0.28,
         0.29,
         0.3,
+        0.31,
         0.32
       ],
-      "n_rounds": 5,
+      "n_rounds": 6,
       "censored_events": 0
     },
     {

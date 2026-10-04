@@ -57,16 +57,19 @@ PM_HONEST_NOTE = (
     "（非实测、非逐条 DOI），读出速率 / 输入光功率 / 驱动摆幅 / EIC 通道 pitch 为"
     "**设计假设** ⇒ 只报区间与恒等式，**不报器件级真值**；焦耳热分布 / 热-光耦合"
     "属 T1/T2 锁死区；"
-    "⑪ 系统误码预算的 drift 段是**跨域代理**（用 M2 的**电学域** ν 上界；光学域无锚"
-    "⇒ PM-G7）⇒ 「16 电平保持 ≈ 1.7 秒」是**若两域同阶**的系统级后果，"
-    "**不是**光学域寿命结论。"
+    "⑪ 系统误码预算的 drift 段（v0.9.193 起）主账算自**光学域实测上界锚**（Cheng 2019 "
+    "Sci. Adv. eaau5759：器件级 10⁴ s 无可测透射漂移 + 编程 SD 0.35% 检测下限 ⇒ "
+    "ν_T ≤ 3.80e-4，纯算术推导）；ν_T 是**上界**非点值 ⇒ 保持时间结论是**下界**语义；"
+    "漂移函数形式 ΔT/T ≈ ν·ln(t) 仍是模型假设（锚只钉住速率上界）。M4 原电学域跨域"
+    "代理口径（ν≈0.12）**并报可查**（`drift_proxy` 字段）：该口径下瓶颈=drift、"
+    "16 电平保持 ~1.7 秒 —— 两口径差 315.8×，判结论前必须先选对口径。"
 )
 
 # ═══════════════════════ 四段征程（静态事实 · 可回溯门禁）════════════════════
 # 🔴 口径（v0.9.191 修正）：`gate` = 该档**后端门禁判据数**，须与对应 smoke 实跑的
 #   `[PASS]` 计数逐档相等（可人工复核 `grep -c '\[PASS\]'`）：
 #   M0 `run_pm_m0_smoke`=33 · M1 `run_pm_m1_smoke`=24 · M2 `run_pm_m2_smoke`=40 ·
-#   M3 `run_pm_m3_smoke`=22 · M4 `run_pm_m4_smoke`=22。
+#   M3 `run_pm_m3_smoke`=22 · M4 `run_pm_m4_smoke`=25 · M4b `run_pm_g7_settlement_smoke`=17。
 #   🔴 前端渲染门禁 `run_webui_pm_render_path_smoke`(=20) 是**另一个门禁**，不并入本表
 #      —— 各档没有对应前端门禁，混口径会让跨档数字不可比。
 #   🔴 血案：M3 曾误登记 `gate=62`（把「后端判据 + 前端判据 + 案例卡自检 + 探针」混成
@@ -95,18 +98,27 @@ MILESTONES = [
                "**从最终 GDS 字节独立解码复核**（层 5 = 单元数、层 6 = 6×单元数）；"
                "规模档 4/8/16/32 单元 + 4×8 全部 **DRC PASS + LVS ACCEPT(0 违规)**"},
     {"id": "M4", "code": "v0.9.192", "title": "外设与系统（读出链 + 写驱动 + 系统预算 + 2.5D）",
-     "gate": 22,
+     "gate": 25,
      "result": "读出链 `T→I_pd→V_TIA→判决→BER`（行为级）：存储读出**低频高灵敏** ⇒ "
                "TIA 反馈电阻可取带宽上界 ⇒ 灵敏度 −39.8 dBm、余量 **9495×**"
                "（读出不是瓶颈）；写驱动行为级 `R_h` 183.6–917.9 Ω、与 M1 脉宽动态范围"
-               "对齐；🔴 **系统瓶颈 = 光学域 drift**（ε_drift 2.07 ≫ ε_write 0.029 ≫ "
-               "ε_read 3.1e-5）⇒ 若与电学域同阶，16 电平保持仅 **1.7 秒**"
+               "对齐；🔴 **系统瓶颈 = drift**（当时代理口径：ε_drift 2.07 ≫ ε_write "
+               "0.029 ≫ ε_read 3.1e-5）⇒ 若与电学域同阶，16 电平保持仅 **1.7 秒**"
                "（PM-G7 由「缺口」升级为「系统级阻塞项」）；2.5D 装配签核 ⇒ "
                "**EIC 通道 pitch(50 µm) > PIC 单元 pitch(18.05 µm) ⇒ 密度瓶颈在电域**"},
+    {"id": "M4b", "code": "v0.9.193", "title": "PM-G7 结算（光学域 drift 实测锚 → 主账口径翻转）",
+     "gate": 17,
+     "result": "三条 DOI 级**实测锚**落库（Cheng 2019 Sci. Adv. eaau5759 器件级 10⁴ s "
+               "无可测透射漂移 / Kalb 2003 JAP 4908 双分子弛豫 E_iso=1.76 eV / "
+               "Ríos 2015 Nat. Photon. 8 电平「数十年」声明）⇒ ν_T 上界 **3.80e-4**"
+               "（0.35% 检测下限 + 纯算术推导，锚内字段重算守卫）；M4 系统预算主账 "
+               "drift 段改算自光学域锚 ⇒ **口径翻转**：1 年保持瓶颈 drift→**write**、"
+               "系统 BER 0.4047→**3.98e-62**（all_ok 翻绿）、保持下界 ~10^74 s；"
+               "旧电学代理口径**并报可查**（两域差 **315.8×**）"},
 ]
 
 # 各档**后端**突变探针数（与各 smoke 输出的 `[PASS] P*` 计数一致；派生用，勿写死合计）
-MILESTONE_PROBES = {"M0": 6, "M1": 5, "M2": 7, "M3": 5, "M4": 5}
+MILESTONE_PROBES = {"M0": 6, "M1": 5, "M2": 7, "M3": 5, "M4": 5, "M4b": 3}
 
 FINDINGS = [
     {"title": "热串扰间距是版图的**物理约束**（不是随意留白）",
@@ -141,12 +153,20 @@ FINDINGS = [
                "`σ_th·|Z| ∝ √R_f` 使 `SNR ∝ √R_f`（热噪声主导）⇒ **在带宽可行域内"
                "取最大 R_f**。本档 R_f 设计点 20 kΩ（带宽上界 79.6 MΩ）⇒ 读出灵敏度 "
                "−39.8 dBm、对 1 mW 读光的余量 **9495×** ⇒ **读出电路不是系统瓶颈**。"},
-    {"title": "🔴 系统瓶颈是**光学域 drift** —— 把 PM-G7 从「缺口」升级为「阻塞项」",
+    {"title": "🔴 系统瓶颈是 drift（M4 主账 = **电学域跨域代理**口径）—— 把 PM-G7 升级为「阻塞项」",
      "detail": "三段等效电平误差：ε_write 0.029（驱动时序量化）· ε_read 3.1e-5（读出"
-               "电路）· **ε_drift 2.07**（保持 1 年）。前两者都远小于 1，唯独 drift 段"
-               "（**用 M2 的电学域 ν 上界做跨域代理**）远超间距 ⇒ 系统 BER 0.40。"
-               "逆解：**16 电平保持时间仅 1.7 秒**。⇒ 多电平光存储对 drift 极敏感"
-               "（电平间距 ∝ 1/(L−1)），**光学域 drift 锚（PM-G7）不闭合则寿命结论不可给**。"},
+               "电路）· **ε_drift 2.07**（保持 1 年 · 电学域 ν 上界代理）。前两者都远小于 1，"
+               "唯独 drift 段远超间距 ⇒ 系统 BER 0.40，逆解 16 电平保持仅 **1.7 秒**。"
+               "⇒ 光学域 drift 锚（PM-G7）不闭合则寿命结论不可给。（M4 结算前口径；"
+               "结算后的主账翻转见下条）"},
+    {"title": "🔴 PM-G7 结算 ⇒ **口径翻转**：主账瓶颈 drift → **write**（旧口径并报不删）",
+     "detail": "Cheng 2019（Sci. Adv. eaau5759）器件级实测「10⁴ s 无可测透射漂移」"
+               "（13 电平 · probe 0.1 mW）+ 编程 SD 0.35% 检测下限 ⇒ ν_T ≤ 3.80e-4"
+               "（上界 · 纯算术推导）。主账 drift 段 ε 从 2.072（电学代理）降到 0.00656 "
+               "⇒ 1 年保持系统 BER 从 0.4047（all_ok=false）翻到 **3.98e-62"
+               "（all_ok=true）**，瓶颈翻转为**写量化**（占 97.6%）；保持下界 ~10^74 s。"
+               "两域 ν 相差 **315.8×** —— 跨域代理会把光学域判决带偏 316 倍，"
+               "这正是缺口要逐条结算的原因。"},
     {"title": "2.5D 集成密度瓶颈在**电域**（EIC 通道 pitch > PIC 单元 pitch）",
      "detail": "PIC 单元 pitch 18.05 µm（M3 由热串扰咬合定出）；本档 2.5D 装配假设 EIC "
                "通道 pitch 50 µm ⇒ EIC die（400 µm 宽）比 PIC die（197 µm 宽）还宽 ⇒ "
@@ -160,10 +180,21 @@ GAPS = [
                "但每 π 损耗与 Γ 无关（闭式已证）。"},
     {"id": "PM-G6", "title": "相位域（谐振/干涉）多电平读出与漂移口径（开放）",
      "detail": "本卡只走振幅域（波导直通 + 相变吸收调制）；相位域口径未建。"},
-    {"id": "PM-G7", "title": "光学域 drift 定量锚（@1550 nm 的 n/k 随时间）（开放 · M4 升级为系统级阻塞项）",
-     "detail": "电学域有 4 条 ν 锚；光学域**无直接锚**（M2 判定）。M4 的系统误码预算证明："
-               "**该缺口是系统级瓶颈**（ε_drift 占 99.99%）⇒ 若光学域 drift 与电学域同阶，"
-               "16 电平保持仅 ~1.7 秒。**此锚不闭合 ⇒ 任何寿命结论都不可给**。"},
+    {"id": "PM-G7", "title": "光学域 drift 定量锚（透射电平漂移）—— **已结算（v0.9.193 · 证据链机器可查）**",
+     "detail": "结算前：光学域无直接锚，M4 升级为系统级阻塞项（若与电学域同阶，16 电平保持"
+               "仅 ~1.7 秒）。结算证据链（`pm_matlib.OPTICAL_DRIFT_ANCHORS` 非空 + "
+               "`pm_m2.optical_drift_status` 机器判定 + `nu_optical_bound` 重算守卫）："
+               "① Cheng et al., Sci. Adv. 5, eaau5759 (2019) doi:10.1126/sciadv.aau5759 —— "
+               "2 µm GST 波导存储胞 13 电平、probe 0.1 mW ON 下 10⁴ s **无可测透射漂移**"
+               "（实测事实）⇒ 取编程 SD 0.35% 作检测下限（显式假设）⇒ ν_T ≤ 3.80e-4（上界）；"
+               "② Kalb et al., J. Appl. Phys. 94, 4908 (2003) doi:10.1063/1.1610775 —— "
+               "a-GST 粘度随时间线性增长（双分子结构弛豫 · E_iso=1.76 eV，实测）；"
+               "③ Ríos et al., Nat. Photon. 9, 725 (2015) doi:10.1038/nphoton.2015.182 —— "
+               "集成 8 电平保持「数十年」声明（定性）。**口径翻转**：主账 drift 段改算自"
+               "光学域上界锚 ⇒ 1 年保持瓶颈翻转为 **write**、系统 BER 3.98e-62 全绿、"
+               "保持下界 ~10^74 s（旧电学代理口径**并报**：瓶颈=drift、BER 0.4047 —— "
+               "两口径差 315.8×）。**残余边界**：ν_T 是上界非点值（检测下限假设支配）；"
+               "漂移函数形式 ln(t) 仍是模型假设 ⇒ 长寿命结论是**下界**语义。"},
     {"id": "PM-G8", "title": "加热器电-热联仿与 T1 器件级真值（M4 部分结算：行为级已交付 · 器件级仍锁死）",
      "detail": "M4 交付**行为级**外设（`R_h = R_sheet·(L_h/w_h)`、`P = V²/R`、`E = P·t`）"
                "并与 M1 的脉冲阶梯动态范围对齐；但焦耳热分布、热-光耦合动力学、开关能耗"
@@ -275,88 +306,186 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
                        "si_layer_at_least_devices": True,
                        "no_hierarchy_refs": True, "single_structure": True},
     # ── M4 外设与系统（2026-10-04 实测 · 与 lda_pm_m4_report.json 逐块同构）────────
-    "m4": {
-        "upstream": {
-            "levels": {"l_um": 11.014603130717049, "n_levels": 16,
-                       "spacing_frac": 0.06570779838443097,
-                       "source": "ACS Photonics 2025 / arXiv 2512.23559"
-                                 "（椭偏 · Cody-Lorentz 拟合 · 30nm 膜）"},
-            "pic_pitch_um": 18.045024706557335,
-        },
-        "readout": {
-            "all_ok": True, "f_3db_hz": 397887357.7297383, "f_read_hz": 100000.0,
-            "n_levels": 16, "p_in_w": 0.001, "p_min_dbm": -39.77515569742968,
-            "p_min_w": 1.0531359308367793e-07, "r_f_max_ohm": 79577471.54594769,
-            "r_f_ohm": 20000.0, "resp_a_per_w": 0.8,
-            "sensitivity_margin_x": 9495.450404065508, "shot_dominant": True,
-            "source": "ACS Photonics 2025 / arXiv 2512.23559"
-                      "（椭偏 · Cody-Lorentz 拟合 · 30nm 膜）",
-            "worst_ber": 0.0, "worst_snr": 32382.63468487792,
-            "z_mag_ohm": 19999.999368345347,
-        },
-        "rf_tradeoff": {
-            "design_r_f_ohm": 20000.0, "n_points": 24,
-            "optimal_r_f_ohm": 79577471.54594769, "optimal_worst_ber": 0.0,
-            "optimal_worst_snr": 37021.25838766379, "r_f_max_ohm": 79577471.54594769,
-            "snr_monotone_nondecreasing": True,
-        },
-        "write_driver": {
-            "driver_bits": 8, "e_hi_j": 2.966062382119907e-09,
-            "e_lo_j": 5.932124764239814e-10, "eps_write": 0.029411764705882353,
-            "p_hi_w": 0.05932124764239814, "p_lo_w": 0.011864249528479628,
-            "pulse_dynamic_range_ok": True, "pulse_ladder_ratio": 4.6748631345508755,
-            "r_hi_ohm": 917.8835942264208, "r_lo_ohm": 183.57671884528415,
-            "t_pulse_s": 5e-08, "v_drv": 3.3,
-        },
-        "system_budget": {
-            "all_ok": False, "ber_target": 1e-12, "ber_total": 0.40466976317426545,
-            "bottleneck": "drift",
-            "drift_proxy": {
-                "is_cross_domain_proxy": True, "nu_max": 0.12, "nu_min": 0.07,
-                "nu_upper_bound": 0.18,
-                "per_proxy": [{"nu_proxy": 0.07, "t_erode_human": "2.4 秒",
-                               "t_erode_s": 2.35641844238366},
-                              {"nu_proxy": 0.12, "t_erode_human": "1.6 秒",
-                               "t_erode_s": 1.6487212707001282}],
-                "note": "🔴 光学域 drift 无直接锚（PM-G7）⇒ 本段为跨域代理（电学域 ν 上界），"
-                        "给出「若两域同阶」的系统级后果，非光学域寿命结论。",
-            },
-            "eps": {"drift": 2.0720881264730338,
-                    "read": 3.0880748578094574e-05,
-                    "write": 0.029411764705882353},
-            "eps_total": 2.0722968553581462, "max_t_hold_human": "1.7 秒",
-            "max_t_hold_s_for_target": 1.7146877590497775,
-            "share": {"drift": 0.9998992765517292,
-                      "read": 1.490170122019395e-05,
-                      "write": 0.01419283372931589},
-            "snr_total": 0.24127817339837015, "t_hold_s": 31560000.0,
-            "t_hold_table": [
-                {"ber": 4.106652565053581e-65, "bottleneck": "write",
-                 "eps_drift": 0.0, "eps_total": 0.029411780917428642, "t_hold_s": 1.0},
-                {"ber": 0.1548515127872787, "bottleneck": "drift",
-                 "eps_drift": 0.491321347466652, "eps_total": 0.4922008932673542,
-                 "t_hold_s": 60.0},
-                {"ber": 0.30551485011699697, "bottleneck": "drift",
-                 "eps_drift": 0.982642694933304, "eps_total": 0.9830827629261543,
-                 "t_hold_s": 3600.0},
-                {"ber": 0.35700299445152234, "bottleneck": "drift",
-                 "eps_drift": 1.3640091545750574, "eps_total": 1.3643262170834722,
-                 "t_hold_s": 86400.0},
-                {"ber": 0.40466976317426545, "bottleneck": "drift",
-                 "eps_drift": 2.0720881264730338, "eps_total": 2.0722968553581462,
-                 "t_hold_s": 31560000.0},
-            ],
-        },
+    "m4":     {
         "assembly_2p5d": {
-            "density_bottleneck": "eic", "drc_all_pass": True,
-            "eic_die_um": [400.0, 6.2], "eic_pitch_um": 50.0,
+            "density_bottleneck": "eic",
+            "drc_all_pass": True,
+            "eic_die_um": [
+                400.0,
+                6.2
+            ],
+            "eic_pitch_um": 50.0,
             "gds_bytes_len": 4852,
             "gds_sha256": "4191e8b8255e98078add7886c35b982e7b5bb8bc6c2880db618b84fa12955bdf",
-            "interposer_um": [408.0, 24.4],
-            "layers_decoded": {"1": 10, "5": 8, "6": 48, "64": 2, "65": 16, "66": 1},
-            "lvs_verdict": "ACCEPT", "n_channels": 8, "pic_die_um": [197.33, 6.2],
-            "pic_pitch_um": 18.045024706557335,
+            "interposer_um": [
+                408.0,
+                24.4
+            ],
+            "layers_decoded": {
+                "1": 10,
+                "5": 8,
+                "6": 48,
+                "64": 2,
+                "65": 16,
+                "66": 1
+            },
+            "lvs_verdict": "ACCEPT",
+            "n_channels": 8,
+            "pic_die_um": [
+                197.33,
+                6.2
+            ],
+            "pic_pitch_um": 18.045024706557335
         },
+        "readout": {
+            "all_ok": True,
+            "f_3db_hz": 397887357.7297383,
+            "f_read_hz": 100000.0,
+            "n_levels": 16,
+            "p_in_w": 0.001,
+            "p_min_dbm": -39.77515569742968,
+            "p_min_w": 1.0531359308367793e-07,
+            "r_f_max_ohm": 79577471.54594769,
+            "r_f_ohm": 20000.0,
+            "resp_a_per_w": 0.8,
+            "sensitivity_margin_x": 9495.450404065508,
+            "shot_dominant": True,
+            "source": "ACS Photonics 2025 / arXiv 2512.23559（椭偏 · Cody-Lorentz 拟合 · 30nm 膜）",
+            "worst_ber": 0.0,
+            "worst_snr": 32382.63468487792,
+            "z_mag_ohm": 19999.999368345347
+        },
+        "rf_tradeoff": {
+            "design_r_f_ohm": 20000.0,
+            "n_points": 24,
+            "optimal_r_f_ohm": 79577471.54594769,
+            "optimal_worst_ber": 0.0,
+            "optimal_worst_snr": 37021.25838766379,
+            "r_f_max_ohm": 79577471.54594769,
+            "snr_monotone_nondecreasing": True
+        },
+        "system_budget": {
+            "all_ok": True,
+            "ber_target": 1e-12,
+            "ber_total": 3.975659327580069e-62,
+            "bottleneck": "write",
+            "drift_anchor": {
+                "derivation": "ν_T ≤ 检测下限 / ln(t_meas/t₀)（纯算术，检测下限假设显式披露）",
+                "is_main_account": True,
+                "is_upper_bound_semantics": True,
+                "n_bound_anchors": 1,
+                "note": "主账 drift 段 = 器件级实测锚（Cheng 2019 · doi:10.1126/sciadv.aau5759）；漂移函数形式 ΔT/T ≈ ν_T·ln(t/t₀) 仍是模型假设（锚只钉住速率上界）。",
+                "nu_t_ub": 0.0003800076716653453,
+                "per_anchor": [
+                    {
+                        "detection_floor_rel": 0.0035,
+                        "nu_ub": 0.0003800076716653453,
+                        "source": "Cheng, Ríos, Wright, Bhaskaran, Pernice et al., 《In-memory computing on a photonic platform》, Sci. Adv. 5, eaau5759 (2019) · doi:10.1126/sciadv.aau5759",
+                        "t_meas_s": 10000.0
+                    }
+                ],
+                "retention_semantics": "ν_T 为**上界** ⇒ max_t_hold 是**下界**（真保持 ≥ 报告值）；报告值受检测下限假设（0.35% SD）支配"
+            },
+            "drift_proxy": {
+                "ber_total": 0.40466976317426545,
+                "bottleneck": "drift",
+                "eps_drift_at_t_hold": 2.0720881264730338,
+                "eps_total": 2.0722968553581462,
+                "is_cross_domain_proxy": True,
+                "is_main_account": False,
+                "note": "🔴 **旧 M4 主账口径并报**（电学域 ν 上界跨域代理，「若两域同阶」的后果）：该口径下瓶颈=drift、系统 BER ≈0.40、16 电平保持 ~1.7 s —— 即 PM-G7 结算前的结论，保留可查（口径翻转须并报，不选择性披露）。光学域实测上界比电学代理小 ~316×。",
+                "nu_max_electrical": 0.12,
+                "nu_min_electrical": 0.07,
+                "nu_upper_bound_electrical": 0.18,
+                "per_proxy": [
+                    {
+                        "nu_proxy": 0.07,
+                        "t_erode_human": "2.4 秒",
+                        "t_erode_s": 2.35641844238366
+                    },
+                    {
+                        "nu_proxy": 0.12,
+                        "t_erode_human": "1.6 秒",
+                        "t_erode_s": 1.6487212707001282
+                    }
+                ]
+            },
+            "eps": {
+                "drift": 0.00656174487022021,
+                "read": 3.0880748578094574e-05,
+                "write": 0.029411764705882353
+            },
+            "eps_total": 0.030134852786709958,
+            "max_t_hold_human": "2837091245631522701244189319585739242049827558573865514564172382208.00 年",
+            "max_t_hold_s_for_target": 8.94705095222357e+73,
+            "share": {
+                "drift": 0.217746040329557,
+                "read": 0.0010247519308179123,
+                "write": 0.9760049240676397
+            },
+            "snr_total": 16.592083709149875,
+            "t_hold_s": 31560000.0,
+            "t_hold_table": [
+                {
+                    "ber": 4.106652565053581e-65,
+                    "bottleneck": "write",
+                    "eps_drift": 0.0,
+                    "eps_total": 0.029411780917428642,
+                    "t_hold_s": 1.0
+                },
+                {
+                    "ber": 6.154828416330524e-65,
+                    "bottleneck": "write",
+                    "eps_drift": 0.001555882344085688,
+                    "eps_total": 0.02945290523197087,
+                    "t_hold_s": 60.0
+                },
+                {
+                    "ber": 2.0444384733039977e-64,
+                    "bottleneck": "write",
+                    "eps_drift": 0.003111764688171376,
+                    "eps_total": 0.029575935085967613,
+                    "t_hold_s": 3600.0
+                },
+                {
+                    "ber": 8.770748952642746e-64,
+                    "bottleneck": "write",
+                    "eps_drift": 0.004319449524669031,
+                    "eps_total": 0.029727268642291763,
+                    "t_hold_s": 86400.0
+                },
+                {
+                    "ber": 3.975659327580069e-62,
+                    "bottleneck": "write",
+                    "eps_drift": 0.00656174487022021,
+                    "eps_total": 0.030134852786709958,
+                    "t_hold_s": 31560000.0
+                }
+            ]
+        },
+        "upstream": {
+            "levels": {
+                "l_um": 11.014603130717049,
+                "n_levels": 16,
+                "source": "ACS Photonics 2025 / arXiv 2512.23559（椭偏 · Cody-Lorentz 拟合 · 30nm 膜）",
+                "spacing_frac": 0.06570779838443097
+            },
+            "pic_pitch_um": 18.045024706557335
+        },
+        "write_driver": {
+            "driver_bits": 8,
+            "e_hi_j": 2.966062382119907e-09,
+            "e_lo_j": 5.932124764239814e-10,
+            "eps_write": 0.029411764705882353,
+            "p_hi_w": 0.05932124764239814,
+            "p_lo_w": 0.011864249528479628,
+            "pulse_dynamic_range_ok": True,
+            "pulse_ladder_ratio": 4.6748631345508755,
+            "r_hi_ohm": 917.8835942264208,
+            "r_lo_ohm": 183.57671884528415,
+            "t_pulse_s": 5e-08,
+            "v_drv": 3.3
+        }
     },
 }
 
@@ -638,6 +767,16 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑪ M4 密度瓶颈判据自洽（EIC pitch ↕ PIC pitch ⇒ bottleneck 翻转）",
         _asm.get("density_bottleneck")
         == ("eic" if _asm.get("eic_pitch_um", 0.0) > _asm.get("pic_pitch_um", 0.0) else "pic"))
+
+    # ⑫ 🔴 PM-G7 结算口径翻转**快照内自洽**：主账瓶颈=write ∧ 旧口径瓶颈=drift ∧
+    #    ν_T 上界 < 电学代理/100（315.8×）
+    _sb = m4.get("system_budget") or {}
+    _da = _sb.get("drift_anchor") or {}
+    _dp = _sb.get("drift_proxy") or {}
+    chk("⑫ PM-G7 结算自洽：主账 bottleneck=write ∧ 旧口径=drift ∧ ν_T_ub ≪ 电学 ν（>100×）",
+        _sb.get("bottleneck") == "write" and _sb.get("all_ok") is True
+        and _dp.get("bottleneck") == "drift"
+        and _da.get("nu_t_ub", 1.0) * 100.0 < _dp.get("nu_max_electrical", 0.0))
 
     ok_all = all(res.values())
     if verbose:

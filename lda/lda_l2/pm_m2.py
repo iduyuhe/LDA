@@ -251,14 +251,57 @@ def log_domain_invariance(mat: str = "GST") -> Dict[str, Any]:
 
 
 def optical_drift_status(mat: str = "GST") -> Dict[str, Any]:
-    """**机器判定**：光学域是否有定量 drift 锚（读 `OPTICAL_DRIFT_ANCHORS`，非字面量）。"""
-    n = len(ML.OPTICAL_DRIFT_ANCHORS.get(mat, []))
-    return {"material": mat, "n_optical_anchors": n, "has_direct_optical_anchor": n > 0,
+    """**机器判定**：光学域是否有定量 drift 锚（读 `OPTICAL_DRIFT_ANCHORS`，非字面量）。
+
+    🔴 PM-G7 结算（v0.9.193）后的语义：锚表非空 ⇒ `has_direct_optical_anchor=True`；
+    但**主账锚是「上界」语义**（实测事实 + 检测下限假设），不是点值 ⇒ 判定仍须显式披露。
+    """
+    srcs = ML.OPTICAL_DRIFT_ANCHORS.get(mat, [])
+    n = len(srcs)
+    n_bound = sum(1 for s in srcs if s.get("kind") == "transmission_drift_upper_bound")
+    has = n > 0 and n_bound > 0
+    return {"material": mat, "n_optical_anchors": n, "n_bound_anchors": n_bound,
+            "has_direct_optical_anchor": has,
             "electrical_anchors": len(ML.DRIFT_ANCHORS.get(mat, [])),
             "verdict": ("光学域**无直接定量锚** ⇒ M1 的光学振幅域设计的保持性"
                         "**不可由现有文献证据判定** ⇒ 派生缺口 PM-G7（须实测或换机制）。"
-                        if n == 0 else "存在光学域锚"),
+                        if not has else
+                        "光学域有**实测锚**（Cheng 2019 器件级 10⁴ s 无可测透射漂移 + "
+                        "Kalb 2003 弛豫动力学 + Ríos 2015 保持声明）⇒ 主账用**上界**口径"
+                        "（ν_T ≤ 检测下限/ln(t_meas/t₀)），保持时间结论为**下界**语义。"),
+            "gap_pm_g7_open": not has,
             "disclosed": "判定读的是锚表长度（机器可查），不是声明的字面量。"}
+
+
+def nu_optical_bound(mat: str = "GST") -> Dict[str, Any]:
+    """光学域透射漂移指数**上界**（从锚内实测字段**重算**，不读 `nu_ub` 字面量）。
+
+    推导（纯算术）：Cheng 2019 实测「10⁴ s 无可测漂移」+ 编程电平 SD 0.35% 作检测下限
+    ⇒ 漂移模型 ΔT/T ≈ ν_T·ln(t/t₀) 下 `ν_T ≤ floor/ln(t_meas/t₀)`。
+    🔴 防漂移：若锚表里 `nu_ub` 与重算值不一致（有人改了 floor 却没改 nu_ub）⇒ raise。
+    """
+    srcs = ML.OPTICAL_DRIFT_ANCHORS.get(mat, [])
+    bounds = [s for s in srcs if s.get("kind") == "transmission_drift_upper_bound"]
+    _require(bounds, f"{mat}：光学域无透射漂移上界锚（kind=transmission_drift_upper_bound）")
+    per, nus = [], []
+    for b in bounds:
+        floor = float(b["detection_floor_rel"])
+        t_m = float(b["t_meas_s"])
+        t0 = float(b["t0_s"])
+        _require(t_m > t0 > 0.0 and floor > 0.0, "上界锚字段非法（须 t_meas>t₀>0 且 floor>0）")
+        re_derived = floor / math.log(t_m / t0)
+        stated = float(b["nu_ub"])
+        _require(abs(re_derived - stated) <= 1e-12 * re_derived,
+                 f"{mat}：上界锚 nu_ub={stated} 与重算 {re_derived} 不一致 ⇒ 锚表损坏")
+        per.append({"source": b["source"], "nu_ub": re_derived,
+                    "detection_floor_rel": floor, "t_meas_s": t_m})
+        nus.append(re_derived)
+    return {"material": mat, "nu_ub_max": max(nus), "n_bound_anchors": len(bounds),
+            "per_anchor": per,
+            "is_upper_bound_semantics": True,
+            "derivation": "ν_T ≤ 检测下限 / ln(t_meas/t₀)（纯算术，检测下限假设显式披露）",
+            "note": ("主账取**最大**上界（保守侧：ν_T 越小保持越长）；"
+                     "t_max 结论因此是**下界**语义（真保持 ≥ 报告值）。")}
 
 
 def retention_window_electrical(mat: str = "GST", *, n_levels: int = LEVELS_4BIT,

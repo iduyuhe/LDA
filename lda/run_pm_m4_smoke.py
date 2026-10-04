@@ -2,7 +2,7 @@
 """LDA 光子存储征程 · PM-M4 外设与系统层门禁（判据 + 突变探针）。
 
 判据（全部**重算**，不读字面量）：
-  A1 模块自检：`pm_m4.run_selfchecks()` 16/16（同源调用，非转录）
+  A1 模块自检：`pm_m4.run_selfchecks()` 18/18（同源调用，非转录）
   B1 读出链跨源一致：`|Z|` ≡ `eic_behavioral.tia_transimpedance_ohm` ∧ `f_3db` ≡
      `tia_bandwidth_hz` ∧ R_f 带宽上界 ≡ 二者反函数（三处同源，防静默失配）
   B2 PD 电流恒等式（重算）：`I_pd ≡ R_pd·p_in·T`
@@ -13,7 +13,7 @@
   C2 写驱动恒等式（重算）：`E ≡ P·t` ∧ `P ≡ V²/R`
   C3 脉宽动态范围 ≡ `pm_m1.pulse_ladder` 的 `t_ratio_to_first`（同源重算）
   C4 🔴 系统预算：`ε_tot² ≡ Σ ε_i²` ∧ 瓶颈 == `argmax(ε)`（算出来的）
-  C5 🔴 drift 段 ε ≡ `ν_max·ln(t/t₀)`（**算自 M2 的 ν 锚**）∧ 随保持时间单调升
+  C5 🔴 drift 段 ε ≡ `ν_T_ub·ln(t/t₀)`（**主账算自光学域上界锚**，PM-G7 结算）∧ 随保持时间单调升
   C6 🔴 最大保持时间逆解自洽：`t_max` 处 ≤ 目标 ∧ `2·t_max` 处 > 目标
   D1 2.5D 独立解码：层 65 == 2×通道数 ∧ 层 64/66 存在 ∧ DRC PASS ∧ LVS ACCEPT
   D2 PIC die bbox ≡ `pm_m3` 签核 bbox（同源）∧ 通道数 ≡ 器件数 − 2×总线
@@ -72,7 +72,7 @@ def main() -> int:
     print("=" * 74)
 
     # ── A1 模块自检（同源调用）────────────────────────────────────────────
-    check("A1 `pm_m4.run_selfchecks()` 16/16（同源调用，非转录）",
+    check("A1 `pm_m4.run_selfchecks()` 18/18（同源调用，非转录）",
           M4.run_selfchecks() is True)
 
     rep = M4.m4_report("GST")
@@ -151,14 +151,14 @@ def main() -> int:
           and sb["bottleneck"] == max(sb["eps"], key=lambda k: sb["eps"][k]),
           "ε_tot=%.6g bottleneck=%s" % (sb["eps_total"], sb["bottleneck"]))
 
-    # ── C5 drift 段算自 M2 ν 锚 + 保持时间单调 ──────────────────────────
-    nu = M2.nu_central("GST")
+    # ── C5 drift 段算自光学域上界锚（主账 · PM-G7 结算）+ 保持时间单调 ────
+    nuo = M2.nu_optical_bound("GST")
     _b1h = M4.system_link_budget("GST", t_hold_s=1.0)
     _b3600 = M4.system_link_budget("GST", t_hold_s=3600.0)
-    check("C5 drift 段 ε ≡ ν_max·ln(t/t₀)（**算自 M2 ν 锚**）∧ 随 t 单调升",
-          abs(_b3600["eps"]["drift"] - float(nu["nu_max"]) * __import__("math").log(3600.0)) < 1e-12
+    check("C5 drift 段 ε ≡ ν_T_ub·ln(t/t₀)（**主账算自光学域上界锚**）∧ 随 t 单调升",
+          abs(_b3600["eps"]["drift"] - float(nuo["nu_ub_max"]) * __import__("math").log(3600.0)) < 1e-12
           and _b3600["eps"]["drift"] > _b1h["eps"]["drift"],
-          "ν_max=%.4g ε_drift(1h)=%.6g" % (float(nu["nu_max"]), _b3600["eps"]["drift"]))
+          "ν_T_ub=%.4g ε_drift(1h)=%.6g" % (float(nuo["nu_ub_max"]), _b3600["eps"]["drift"]))
 
     # ── C6 最大保持时间逆解自洽 ─────────────────────────────────────────
     tm = sb["max_t_hold_s_for_target"]
@@ -203,11 +203,20 @@ def main() -> int:
           "2p5d=%d B vs pic=%d B" % (a["gds_bytes_len"], len(_so["gds_bytes"])))
 
     # ── E1 披露守卫 ─────────────────────────────────────────────────────
+    # 🔴 PM-G7 结算后 disclosure 含**故意的 False**（drift 段不再是跨域代理）⇒
+    #    「全真」改为「既定披露键全真 ∧ drift 三键口径正确」（False 也是有效披露态）。
     disc = rep["disclosure"]
     surf = _positive_surface(json.dumps(disc, ensure_ascii=False))
     hits = [t for t in _BANNED_POSITIVE if t in surf]
-    check("E1 披露守卫全真 ∧ 肯定式面禁词零命中（否定式免责句不参与）",
-          all(bool(v) for v in disc.values() if isinstance(v, bool)) and not hits,
+    _must_true = {k: v for k, v in disc.items() if k not in (
+        "drift_segment_is_cross_domain_proxy",)}
+    check("E1 披露守卫：既定披露键全真 ∧ drift 三键口径正确（False 也是有效披露态）"
+          "∧ 肯定式面禁词零命中",
+          all(bool(v) for v in _must_true.values() if isinstance(v, bool))
+          and disc["drift_segment_is_cross_domain_proxy"] is False
+          and disc["drift_segment_main_account_is_measured_optical_upper_bound"] is True
+          and disc["retention_claims_depend_on_detection_floor_assumption"] is True
+          and not hits,
           "禁词命中=%s" % hits)
 
     # ── F1 缺口台账如实开放 ─────────────────────────────────────────────

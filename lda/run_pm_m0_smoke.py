@@ -131,8 +131,9 @@ def main() -> int:
     check("C7b PM-G1（材料常数库）已闭合", gaps["PM-G1"]["closed"] is True)
     check("C7c PM-G3/G4/G5 已闭合（锚 + 律自检 · v0.9.189 证据升级）",
           all(gaps[g]["closed"] is True for g in ("PM-G3", "PM-G4", "PM-G5")))
-    check("C7c2 PM-G2/G6/G7 如实开放（不粉饰）",
-          all(gaps[g]["closed"] is False for g in ("PM-G2", "PM-G6", "PM-G7")))
+    check("C7c2 PM-G2/G6 如实开放 ∧ PM-G7 已结算（v0.9.193 · 不粉饰）",
+          all(gaps[g]["closed"] is False for g in ("PM-G2", "PM-G6"))
+          and gaps["PM-G7"]["closed"] is True)
     check("C7c3 台账人机两源一致性（declared ⇔ evidence · 非同义反复）",
           all(g["declared_closed"] == g["evidence_ok"] for g in rep["gaps"]))
     check("C7d 每条缺口都挂证据明细（非空）",

@@ -6089,36 +6089,53 @@ function renderPm(d){
     ['写量化等效电平误差 ε_write', WDRV.eps_write]
   ]);
 
-  // ⑩ M4 系统误码预算
-  h+='<h3 style="margin:14px 0 4px">⑩ M4 系统误码预算（写量化 ⊕ 介质 drift ⊕ 读出电路 ⇒ 系统 BER + 瓶颈识别）</h3>';
+  // ⑩ M4 系统误码预算（PM-G7 结算后主账 = 光学域实测上界锚；旧电学代理口径并报）
+  var DA=SB.drift_anchor||{};
+  h+='<h3 style="margin:14px 0 4px">⑩ M4 系统误码预算（写量化 ⊕ 介质 drift ⊕ 读出电路 ⇒ 系统 BER + 瓶颈识别 · <b>主账 = 光学域实测上界锚（PM-G7 结算）</b>）</h3>';
   h+=_qcTbl(['预算量','值'],[
     ['系统 BER 目标', SB.ber_target!=null?Number(SB.ber_target).toExponential(0):'-'],
     ['系统最坏 BER @ t_hold = '+(SB.t_hold_s!=null?Number(SB.t_hold_s).toExponential(2):'-')+' s',
       SB.ber_total!=null?Number(SB.ber_total).toExponential(3):'-'],
     ['系统 SNR_tot', SB.snr_total],
     ['等效电平误差合计 ε_tot = √Σε_i²', SB.eps_total],
-    ['🔴 系统瓶颈 = argmax ε_i', '<b>'+SB.bottleneck+'</b>'],
+    ['🔴 系统瓶颈 = argmax ε_i（主账）', '<b>'+SB.bottleneck+'</b>'],
     ['系统预算自检（BER ≤ 目标）', SB.all_ok?'<b>PASS</b>':'<b>不达标（如实登记 · 非粉饰）</b>'],
     ['保持时间 t_hold (s)', SB.t_hold_s],
-    ['达标最大保持时间 t_max (s)', SB.max_t_hold_s_for_target],
+    ['达标最大保持时间 t_max (s)（<b>下界</b>语义）', SB.max_t_hold_s_for_target],
     ['达标最大保持时间（人读）', SB.max_t_hold_human],
-    ['ε 写量化', EPS.write],
-    ['ε 光学域 drift（跨域代理）', EPS.drift],
+    ['ε 写量化（主账瓶颈）', EPS.write],
+    ['ε 光学域 drift（主账 · 算自实测上界锚）', EPS.drift],
     ['ε 读出电路', EPS.read],
     ['占比 写量化', SHR.write!=null?(SHR.write*100).toFixed(3)+' %':'-'],
     ['占比 光学域 drift', SHR.drift!=null?(SHR.drift*100).toFixed(3)+' %':'-'],
     ['占比 读出电路', SHR.read!=null?(SHR.read*100).toFixed(4)+' %':'-']
   ]);
-  h+='<div class="note">drift 跨域代理（🔴 非光学域寿命结论 · 缺口 PM-G7 未闭合）：是否跨域代理 = <b>'
-    +(DPV.is_cross_domain_proxy?'是':'否')+'</b> · ν_min = '+DPV.nu_min+' · ν_max = '+DPV.nu_max
-    +' · ν_upper_bound = '+DPV.nu_upper_bound+'<br/>'+(DPV.note||'-')+'</div>';
-  h+='<div class="note"><b>保持时间扫描</b>（t_hold ↑ ⇒ ε_drift ↑ ⇒ 系统 BER ↑，瓶颈随之切换）：</div>';
+  h+='<div class="note">🔴 <b>主账 drift 锚（PM-G7 结算 · 机器可查证据链）</b>：is_main_account = <b>'
+    +(DA.is_main_account?'是':'否')+'</b> · ν_T 上界 = <b>'+(DA.nu_t_ub!=null?Number(DA.nu_t_ub).toExponential(3):'-')
+    +'</b>（上界锚条数 '+(DA.n_bound_anchors||'-')+'）· 上界语义 = <b>'
+    +(DA.is_upper_bound_semantics?'是（⇒ t_max 是下界）':'否')+'</b><br/>'
+    +'推导（纯算术）：'+(DA.derivation||'-')+'<br/>'
+    +'<b>下界语义</b>：'+(DA.retention_semantics||'-')+'<br/>'+(DA.note||'-')+'</div>';
+  h+='<div class="note"><b>锚逐条（DOI 级实测事实）：</b></div>';
+  h+=_qcTbl(['来源','ν_T 上界','检测下限','测量时长 (s)'],
+    (DA.per_anchor||[]).map(function(pa){
+      return [ pa.source||'-', pa.nu_ub!=null?Number(pa.nu_ub).toExponential(3):'-',
+        pa.detection_floor_rel, pa.t_meas_s ];
+    }));
+  h+='<div class="note">🔴 <b>旧口径并报（M4 结算前主账 · 电学域跨域代理）</b>：is_main_account = <b>'
+    +(DPV.is_main_account?'是':'否')+'</b>（跨域代理 = <b>'+(DPV.is_cross_domain_proxy?'是':'否')+'</b>）'
+    +' · ε_drift@t_hold = '+(DPV.eps_drift_at_t_hold!=null?Number(DPV.eps_drift_at_t_hold).toExponential(3):'-')
+    +' · ε_tot = '+(DPV.eps_total!=null?Number(DPV.eps_total).toExponential(3):'-')
+    +' · 系统 BER = '+(DPV.ber_total!=null?Number(DPV.ber_total).toExponential(3):'-')
+    +' · 瓶颈 = <b>'+DPV.bottleneck+'</b> · ν（电学）min/max/ub = '+DPV.nu_min_electrical+' / '
+    +DPV.nu_max_electrical+' / '+DPV.nu_upper_bound_electrical+'<br/>'+(DPV.note||'-')+'</div>';
+  h+='<div class="note"><b>保持时间扫描</b>（主账口径 · t_hold ↑ ⇒ ε_drift ↑ ⇒ 系统 BER ↑）：</div>';
   h+=_qcTbl(['t_hold (s)','ε_drift','ε_tot','系统 BER','瓶颈'],
     (SB.t_hold_table||[]).map(function(tt){
       return [ tt.t_hold_s, tt.eps_drift, tt.eps_total,
         (tt.ber!=null?Number(tt.ber).toExponential(3):'-'), tt.bottleneck ];
     }));
-  h+='<div class="note"><b>drift 代理逐点侵蚀</b>（若光学域与电学域同阶 ⇒ 侵蚀到 1 个电平所需时间）：</div>';
+  h+='<div class="note"><b>旧口径 drift 代理逐点侵蚀</b>（若光学域与电学域同阶 ⇒ 侵蚀到 1 个电平所需时间）：</div>';
   h+=_qcTbl(['ν 代理','侵蚀到 1 个电平 (s)','（人读）'],
     (DPV.per_proxy||[]).map(function(pp){ return [ pp.nu_proxy, pp.t_erode_s, pp.t_erode_human ]; }));
 
@@ -6191,8 +6208,12 @@ function renderPm(d){
     +'<br/>M4 外设与系统：读出链<b>低频高灵敏</b>（P<sub>min</sub> = '+Number(RO.p_min_dbm).toFixed(2)
     +' dBm，余量 ≈ '+Number(RO.sensitivity_margin_x).toFixed(0)+'×）⇒ <b>读出不是瓶颈</b>；'
     +'2.5D 密度瓶颈在<b>电域</b>（'+ASM.density_bottleneck+'：EIC '+ASM.eic_pitch_um+' µm vs PIC '
-    +ASM.pic_pitch_um+' µm）；🔴 <b>系统 BER 瓶颈是光学域 drift</b>（跨域代理，PM-G7 未闭合）⇒ '
-    +'16 电平保持窗口仅 '+(SB.max_t_hold_human||'-')+'，该结论<b>如实登记为开放缺口，不作粉饰</b>。'
+    +ASM.pic_pitch_um+' µm）。'
+    +'<br/>🔴 <b>PM-G7 结算 ⇒ 口径翻转</b>：光学域实测上界锚（Cheng 2019 · ν_T ≤ '
+    +Number(SB.drift_anchor.nu_t_ub).toExponential(2)+'）替换电学域跨域代理（两域差 ≈315.8×）'
+    +'⇒ 主账 1 年保持系统 BER 从 0.4047（不达标）翻到 <b>'+Number(SB.ber_total).toExponential(2)
+    +'（达标）</b>，瓶颈翻转为<b>写量化</b>，保持下界 ~10^74 s（ν_T 是上界 ⇒ 结论是<b>下界</b>语义）；'
+    +'旧口径（瓶颈=drift、保持 1.7 秒）<b>并报可查不删除</b>。'
     +'<br/>'+d.honest_note;
   return false;
 }

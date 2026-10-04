@@ -405,12 +405,17 @@ def system_link_budget(mat: str = "GST", n_levels: Optional[int] = None, *,
 
         ε_read  = 1 / SNR_read          （读出电路噪声，M4 读出链，最坏相邻对 —— 算出来的）
         ε_write = q·(L−1)/2             （驱动时序量化；q = 1/(2^bits−1)，等分假设 —— 算出来的）
-        ε_drift = ν_max·ln(t_hold/t₀)   （🔴 跨域代理：光学域无锚 ⇒ **算自 M2 电学域 ν 上界**）
+        ε_drift = ν_T_ub·ln(t_hold/t₀)  （🔴 主账：算自**光学域实测上界锚**，Cheng 2019）
 
     独立误差 ⇒ `ε_tot = √Σ ε_i²`；`SNR_tot = 1/(2 ε_tot)`、`BER = 0.5·erfc(SNR_tot/√2)`。
-    **瓶颈 = argmax(ε_i)**（算出来的，不硬编码）；短时间瓶颈是写量化、长时间是 drift。
-    🔴 `ε_drift` 的 `ν` 取自 **M2 电学域锚**（光学域无锚 ⇒ PM-G7）⇒ 本段是**跨域代理**；
-       它给出「若两域同阶」的系统级后果，**不是**光学域寿命结论。
+    **瓶颈 = argmax(ε_i)**（算出来的，不硬编码）。
+    🔴 **主账口径（PM-G7 结算 · v0.9.193）**：drift 段 ν 取自 `M2.nu_optical_bound` ——
+       Cheng 2019（Sci. Adv. eaau5759）器件级实测「10⁴ s 无可测透射漂移」+ 编程 SD 0.35%
+       检测下限 ⇒ ν_T ≤ 0.0035/ln(10⁴) ≈ 3.80e-4（**上界**，纯算术推导）。
+       上界语义 ⇒ `max_t_hold_s_for_target` 是**下界**（真保持 ≥ 报告值）。
+    🔴 **旧口径并报**：M4 原主账（电学域 ν 上界跨域代理，ν_max≈0.12）保留在
+       `drift_proxy` 字段，同一次调用可查 —— 两口径差 ~316×，正是 PM-G7 结算前后的
+       **口径翻转**证据（旧口径下瓶颈=drift、系统 BER 0.40；新口径下瓶颈=write）。
     """
     ro = readout_chain(mat, n_levels, f_read_hz=f_read_hz)
     n_lev = ro["n_levels"]
@@ -419,16 +424,24 @@ def system_link_budget(mat: str = "GST", n_levels: Optional[int] = None, *,
     wd = write_driver(mat, driver_bits=driver_bits, n_levels=n_lev)
     eps_write = float(wd["eps_write"])
 
-    nu = M2.nu_central(mat)
-    nu_max = float(nu["nu_max"])
+    nu_opt = M2.nu_optical_bound(mat)               # 主账：光学域上界锚（重算自实测字段）
+    nu_t_ub = float(nu_opt["nu_ub_max"])
+    nu_el = M2.nu_central(mat)                      # 并报：电学域（旧主账口径）
+    nu_max_el = float(nu_el["nu_max"])
     proxy = M2.retention_window_optical_proxy(mat, margin_req=float(M1.MARGIN_REQ_DEFAULT))
 
-    def _eps_drift(t_s: float) -> float:
+    def _eps_drift(t_s: float, nu: float) -> float:
         _require(t_s >= T_HOLD_T0_S, "保持时间必须 ≥ t₀")
-        return nu_max * math.log(t_s / T_HOLD_T0_S)
+        return nu * math.log(t_s / T_HOLD_T0_S)
 
     def _tot(t_s: float) -> Dict[str, Any]:
-        parts = {"write": eps_write, "drift": _eps_drift(t_s), "read": eps_read}
+        parts = {"write": eps_write, "drift": _eps_drift(t_s, nu_t_ub), "read": eps_read}
+        et = math.sqrt(sum(v * v for v in parts.values()))
+        snr = (1.0 / (2.0 * et)) if et > 0.0 else math.inf
+        return {"eps": parts, "eps_total": et, "snr_total": snr, "ber": _erfc_ber(snr)}
+
+    def _tot_legacy(t_s: float) -> Dict[str, Any]:
+        parts = {"write": eps_write, "drift": _eps_drift(t_s, nu_max_el), "read": eps_read}
         et = math.sqrt(sum(v * v for v in parts.values()))
         snr = (1.0 / (2.0 * et)) if et > 0.0 else math.inf
         return {"eps": parts, "eps_total": et, "snr_total": snr, "ber": _erfc_ber(snr)}
@@ -442,11 +455,14 @@ def system_link_budget(mat: str = "GST", n_levels: Optional[int] = None, *,
                      "eps_total": r["eps_total"], "ber": r["ber"],
                      "bottleneck": max(r["eps"], key=lambda k: r["eps"][k])})
 
-    # 逆解：达到 BER 目标的最大保持时间（BER 随 t 单调升；几何二分，**无条件求**）
+    # 逆解：达到 BER 目标的最大保持时间（BER 随 t 单调升；几何二分，**无条件求**）。
+    # hi = exp(700)（ln 空间 ≈700 ⇒ float 上限内）：上界锚 ν_T≈3.8e-4 下真解 ~1e74 s，
+    # 旧 1e20 封顶会把「天文量级保持」截成假值。
     t_max = 0.0
+    _hi = math.exp(700.0)
     if _tot(T_HOLD_T0_S)["ber"] <= tgt:       # 连 t₀=1 s 都不达标 ⇒ 无解（t_max=0）
-        lo, hi = T_HOLD_T0_S, 1e20
-        for _ in range(100):
+        lo, hi = T_HOLD_T0_S, _hi
+        for _ in range(200):
             mid = math.sqrt(lo * hi)
             if _tot(mid)["ber"] <= tgt:
                 lo = mid
@@ -454,6 +470,7 @@ def system_link_budget(mat: str = "GST", n_levels: Optional[int] = None, *,
                 hi = mid
         t_max = lo
     bottleneck = max(cur["eps"], key=lambda k: cur["eps"][k])
+    leg = _tot_legacy(float(t_hold_s))
     return {
         "material": mat, "n_levels": n_lev,
         "eps": cur["eps"], "eps_total": cur["eps_total"],
@@ -465,15 +482,33 @@ def system_link_budget(mat: str = "GST", n_levels: Optional[int] = None, *,
         "max_t_hold_s_for_target": t_max,
         "max_t_hold_human": (_humanize_s(t_max) if t_max > 0 else None),
         "ber_target": tgt, "all_ok": bool(cur["ber"] <= tgt),
-        "drift_proxy": {"is_cross_domain_proxy": True, "nu_max": nu_max,
-                        "nu_min": float(nu["nu_min"]),
-                        "nu_upper_bound": nu.get("nu_upper_bound"),
+        "drift_anchor": {"is_main_account": True, "nu_t_ub": nu_t_ub,
+                         "n_bound_anchors": int(nu_opt["n_bound_anchors"]),
+                         "per_anchor": nu_opt["per_anchor"],
+                         "is_upper_bound_semantics": True,
+                         "retention_semantics": ("ν_T 为**上界** ⇒ max_t_hold 是**下界**"
+                                                 "（真保持 ≥ 报告值）；报告值受检测下限"
+                                                 "假设（0.35% SD）支配"),
+                         "derivation": nu_opt["derivation"],
+                         "note": ("主账 drift 段 = 器件级实测锚（Cheng 2019 · "
+                                  "doi:10.1126/sciadv.aau5759）；漂移函数形式 "
+                                  "ΔT/T ≈ ν_T·ln(t/t₀) 仍是模型假设（锚只钉住速率上界）。")},
+        "drift_proxy": {"is_cross_domain_proxy": True, "is_main_account": False,
+                        "nu_max_electrical": nu_max_el,
+                        "nu_min_electrical": float(nu_el["nu_min"]),
+                        "nu_upper_bound_electrical": nu_el.get("nu_upper_bound"),
+                        "eps_drift_at_t_hold": leg["eps"]["drift"],
+                        "eps_total": leg["eps_total"], "ber_total": leg["ber"],
+                        "bottleneck": max(leg["eps"], key=lambda k: leg["eps"][k]),
                         "per_proxy": proxy["per_proxy"],
-                        "note": ("🔴 光学域 drift 无直接锚（PM-G7）⇒ 本段为跨域代理"
-                                 "（电学域 ν 上界），给出「若两域同阶」的系统级后果，"
-                                 "非光学域寿命结论。")},
+                        "note": ("🔴 **旧 M4 主账口径并报**（电学域 ν 上界跨域代理，"
+                                 "「若两域同阶」的后果）：该口径下瓶颈=drift、系统 BER "
+                                 "≈0.40、16 电平保持 ~1.7 s —— 即 PM-G7 结算前的结论，"
+                                 "保留可查（口径翻转须并报，不选择性披露）。"
+                                 "光学域实测上界比电学代理小 ~316×。")},
         "model": "three_segment_equivalent_error",
-        "honest_note": ("三段均为等效电平误差占比口径；drift 段为跨域代理（电学域 ν 上界）；"
+        "honest_note": ("三段均为等效电平误差占比口径；drift 段主账 = 光学域实测上界锚"
+                        "（Cheng 2019 · 检测下限假设显式披露），旧电学代理口径并报可查；"
                         "合成按独立误差平方和（保守）。只作瓶颈识别，不作签核口径。"),
     }
 
@@ -666,6 +701,7 @@ def m4_report(mat: str = "GST") -> Dict[str, Any]:
             "t_hold_table": bud["t_hold_table"],
             "max_t_hold_s_for_target": bud["max_t_hold_s_for_target"],
             "max_t_hold_human": bud["max_t_hold_human"],
+            "drift_anchor": bud["drift_anchor"],
             "drift_proxy": bud["drift_proxy"],
         },
         "assembly_2p5d": {
@@ -687,7 +723,9 @@ def m4_report(mat: str = "GST") -> Dict[str, Any]:
             "readout_model_is_behavioral": True,
             "driver_energy_is_behavioral_not_device_truth": True,
             "joule_heat_is_t1_t2_locked": True,
-            "drift_segment_is_cross_domain_proxy": True,
+            "drift_segment_is_cross_domain_proxy": False,
+            "drift_segment_main_account_is_measured_optical_upper_bound": True,
+            "retention_claims_depend_on_detection_floor_assumption": True,
             "eic_pitch_is_design_assumption": True,
             "no_efficiency_metric_reported": True,
             "llm_not_in_decision_path": True,
@@ -795,13 +833,28 @@ def run_selfchecks(verbose: bool = False) -> bool:
             guard += 1
     chk("⑬ 越域护栏：f_read≤0 / bits<1 / n_cells<1 / R_sheet≤0 均 raise", guard == 4)
 
-    # ⑭ drift 段 ε **算自 M2 的 ν 锚**（非直接赋值）且随保持时间单调升
+    # ⑭ drift 段 ε（主账）**算自光学域上界锚**（非直接赋值）且随保持时间单调升
     b1 = system_link_budget("GST", t_hold_s=1.0)
     b2 = system_link_budget("GST", t_hold_s=3600.0)
-    nu = M2.nu_central("GST")
-    chk("⑭ drift 段 ε ≡ ν_max·ln(t/t₀)（算自 M2 ν 锚）且随 t 单调升",
-        abs(b2["eps"]["drift"] - float(nu["nu_max"]) * math.log(3600.0)) < 1e-12
+    nu_opt = M2.nu_optical_bound("GST")
+    chk("⑭ drift 段 ε ≡ ν_T_ub·ln(t/t₀)（算自光学域上界锚）且随 t 单调升",
+        abs(b2["eps"]["drift"] - float(nu_opt["nu_ub_max"]) * math.log(3600.0)) < 1e-12
         and b2["eps"]["drift"] > b1["eps"]["drift"])
+
+    # ⑰ PM-G7 结算三连：主账/旧口径确实翻转 + 旧口径逐位保留可查 + 锚远小于代理
+    leg_eps = b2["drift_proxy"]["eps_drift_at_t_hold"]
+    nu_el = M2.nu_central("GST")
+    chk("⑰ 口径翻转三连（主账算自光学锚 / 旧电学代理逐位并报 / 两者确实不同）",
+        b2["drift_anchor"]["is_main_account"]
+        and not b2["drift_proxy"]["is_main_account"]
+        and abs(leg_eps - float(nu_el["nu_max"]) * math.log(3600.0)) < 1e-12
+        and leg_eps > b2["eps"]["drift"] * 100.0)
+
+    # ⑱ 结算后的物理结论（算出来的事实陈述）：默认 1 年保持下主账瓶颈 == 写量化
+    bud1y = system_link_budget("GST", t_hold_s=T_HOLD_S_DEFAULT)
+    chk("⑱ 主账（光学域上界锚）1 年保持：瓶颈 == write ∧ all_ok ∧ 旧口径瓶颈 == drift",
+        bud1y["bottleneck"] == "write" and bud1y["all_ok"]
+        and bud1y["drift_proxy"]["bottleneck"] == "drift")
 
     # ⑮ 读出灵敏度逆解自洽：在 p_min 处 BER ≈ 目标（≤ 且贴合）
     sens = readout_sensitivity("GST")

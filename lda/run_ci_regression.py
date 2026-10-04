@@ -1527,6 +1527,15 @@ CORE_SMOKES: List[str] = [
     #   披露守卫 / 🔴 内置快照 schema == 仓库报告 JSON。
     #   实测 ~0.6s ⇒ timeout 120s 留足余量。
     "run_pm_m4_smoke.py",
+    #   光子存储征程 PM-G7 结算门禁（光学域 drift 实测锚 → 主账口径翻转）：
+    #   15 判据（**含** 3 条突变探针 P1–P3）——锚表结构（三种 kind + DOI 源 + 无本项目
+    #   实测自称）/ 机器判定翻转 / ν_T 上界纯算术重算 + 防漂移守卫 / 主账 ε_drift 恒等式 /
+    #   🔴 口径翻转（主账 vs 旧电学代理，比值 >100）/ 1 年保持 all_ok ∧ 瓶颈 write /
+    #   下界语义 / 并报完整性 / 缺口台账「已结算」/ 🔴 快照 schema == 仓库报告 JSON /
+    #   matlib 透传 / 披露守卫。探针：floor×100 ⇒ 预算跟着翻（真读锚）/ 清空锚表 ⇒
+    #   pre-fix 行为复现 / nu_ub 与 floor 不一致 ⇒ raise。
+    #   实测 <1s ⇒ timeout 120s 留足余量。
+    "run_pm_g7_settlement_smoke.py",
     #   光子存储阵列案例卡前端门禁（取值路径 + 反向完备 + onclick）：
     #   22 判据（**含** 7 条突变探针 P1–P6b）——306 条取值路径逐条解析 / 顶层 23 键 + 35 嵌套块
     #   + 7 项目块反向完备 / 面板 DOM 契约 / 路由登记且不进 HEAVY_POST_PATHS。
@@ -2422,6 +2431,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_pm_m3_smoke.py": 300.0,
     # 光子存储征程 PM-M4 门禁（外设与系统 · 读出/写驱动/系统预算/2.5D）：25 判据（含 5 探针）· 实测 ~0.6s
     "run_pm_m4_smoke.py": 120.0,
+    # 光子存储征程 PM-G7 结算门禁（光学域 drift 锚 → 主账口径翻转）：15 判据（含 3 探针）· 实测 <1s
+    "run_pm_g7_settlement_smoke.py": 120.0,
     # 光子存储阵列案例卡前端门禁（取值路径 + 反向完备 + onclick）：22 判据（含 7 探针）· 实测 <1s
     "run_webui_pm_render_path_smoke.py": 120.0,
     # CI 门禁自身契约（棘轮时序 + 退出码契约）· 受控 fake 驱动，实测上界 <5s

@@ -134,8 +134,9 @@ def main() -> int:
     check("C8d 保持窗口量级为分钟级（log_range=3 dec ⇒ 1e2–1e3 s）",
           60.0 < re_["per_log_range"][1]["t_hold_s"] < 3600.0)
     st = M2.optical_drift_status("GST")
-    check("C8e 光学域机器判定为「无直接锚」∧ 锚计数为 0",
-          st["has_direct_optical_anchor"] is False and st["n_optical_anchors"] == 0)
+    check("C8e 光学域机器判定为「有实测上界锚」（PM-G7 结算 · v0.9.193）∧ 上界锚 ≥1",
+          st["has_direct_optical_anchor"] is True and st["n_bound_anchors"] >= 1
+          and st["gap_pm_g7_open"] is False)
     pr = M2.retention_window_optical_proxy("GST")
     check("C8f 光学域代理标为跨域（不冒充结论）", pr["is_cross_domain_proxy"] is True)
 
@@ -145,8 +146,9 @@ def main() -> int:
           M0.gap_ledger_consistent() is True)
     check("C9b PM-G3/G5 已闭合（本轮 v0.9.189）",
           all(gaps[g]["closed"] is True for g in ("PM-G3", "PM-G5")))
-    check("C9c PM-G2/G6/G7 如实开放（不粉饰）",
-          all(gaps[g]["closed"] is False for g in ("PM-G2", "PM-G6", "PM-G7")))
+    check("C9c PM-G2/G6 如实开放 ∧ PM-G7 已结算（closed ⇔ 实测上界锚，不粉饰）",
+          all(gaps[g]["closed"] is False for g in ("PM-G2", "PM-G6"))
+          and gaps["PM-G7"]["closed"] is True)
     check("C9d 每条缺口挂非空证据明细",
           all(len(g["evidence_detail"]) > 0 for g in M0.gap_ledger()))
 

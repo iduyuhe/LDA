@@ -30,7 +30,8 @@
   "pic_pitch_um": 18.045024706557335
  },
  "disclosure": {
-  "drift_segment_is_cross_domain_proxy": true,
+  "drift_segment_is_cross_domain_proxy": false,
+  "drift_segment_main_account_is_measured_optical_upper_bound": true,
   "driver_energy_is_behavioral_not_device_truth": true,
   "eic_pitch_is_design_assumption": true,
   "heater_sheet_rho_is_typical_range": true,
@@ -41,7 +42,8 @@
   "no_foundry_truth": true,
   "no_project_measurement": true,
   "pd_responsivity_is_typical_range": true,
-  "readout_model_is_behavioral": true
+  "readout_model_is_behavioral": true,
+  "retention_claims_depend_on_detection_floor_assumption": true
  },
  "gds_artifact": {
   "bytes": 4852,
@@ -79,16 +81,38 @@
   "snr_monotone_nondecreasing": true
  },
  "system_budget": {
-  "all_ok": false,
+  "all_ok": true,
   "ber_target": 1e-12,
-  "ber_total": 0.40466976317426545,
-  "bottleneck": "drift",
+  "ber_total": 3.975659327580069e-62,
+  "bottleneck": "write",
+  "drift_anchor": {
+   "derivation": "ν_T ≤ 检测下限 / ln(t_meas/t₀)（纯算术，检测下限假设显式披露）",
+   "is_main_account": true,
+   "is_upper_bound_semantics": true,
+   "n_bound_anchors": 1,
+   "note": "主账 drift 段 = 器件级实测锚（Cheng 2019 · doi:10.1126/sciadv.aau5759）；漂移函数形式 ΔT/T ≈ ν_T·ln(t/t₀) 仍是模型假设（锚只钉住速率上界）。",
+   "nu_t_ub": 0.0003800076716653453,
+   "per_anchor": [
+    {
+     "detection_floor_rel": 0.0035,
+     "nu_ub": 0.0003800076716653453,
+     "source": "Cheng, Ríos, Wright, Bhaskaran, Pernice et al., 《In-memory computing on a photonic platform》, Sci. Adv. 5, eaau5759 (2019) · doi:10.1126/sciadv.aau5759",
+     "t_meas_s": 10000.0
+    }
+   ],
+   "retention_semantics": "ν_T 为**上界** ⇒ max_t_hold 是**下界**（真保持 ≥ 报告值）；报告值受检测下限假设（0.35% SD）支配"
+  },
   "drift_proxy": {
+   "ber_total": 0.40466976317426545,
+   "bottleneck": "drift",
+   "eps_drift_at_t_hold": 2.0720881264730338,
+   "eps_total": 2.0722968553581462,
    "is_cross_domain_proxy": true,
-   "note": "🔴 光学域 drift 无直接锚（PM-G7）⇒ 本段为跨域代理（电学域 ν 上界），给出「若两域同阶」的系统级后果，非光学域寿命结论。",
-   "nu_max": 0.12,
-   "nu_min": 0.07,
-   "nu_upper_bound": 0.18,
+   "is_main_account": false,
+   "note": "🔴 **旧 M4 主账口径并报**（电学域 ν 上界跨域代理，「若两域同阶」的后果）：该口径下瓶颈=drift、系统 BER ≈0.40、16 电平保持 ~1.7 s —— 即 PM-G7 结算前的结论，保留可查（口径翻转须并报，不选择性披露）。光学域实测上界比电学代理小 ~316×。",
+   "nu_max_electrical": 0.12,
+   "nu_min_electrical": 0.07,
+   "nu_upper_bound_electrical": 0.18,
    "per_proxy": [
     {
      "nu_proxy": 0.07,
@@ -103,19 +127,19 @@
    ]
   },
   "eps": {
-   "drift": 2.0720881264730338,
+   "drift": 0.00656174487022021,
    "read": 3.0880748578094574e-05,
    "write": 0.029411764705882353
   },
-  "eps_total": 2.0722968553581462,
-  "max_t_hold_human": "1.7 秒",
-  "max_t_hold_s_for_target": 1.7146877590497775,
+  "eps_total": 0.030134852786709958,
+  "max_t_hold_human": "2837091245631522701244189319585739242049827558573865514564172382208.00 年",
+  "max_t_hold_s_for_target": 8.94705095222357e+73,
   "share": {
-   "drift": 0.9998992765517292,
-   "read": 1.490170122019395e-05,
-   "write": 0.01419283372931589
+   "drift": 0.217746040329557,
+   "read": 0.0010247519308179123,
+   "write": 0.9760049240676397
   },
-  "snr_total": 0.24127817339837015,
+  "snr_total": 16.592083709149875,
   "t_hold_s": 31560000.0,
   "t_hold_table": [
    {
@@ -126,31 +150,31 @@
     "t_hold_s": 1.0
    },
    {
-    "ber": 0.1548515127872787,
-    "bottleneck": "drift",
-    "eps_drift": 0.491321347466652,
-    "eps_total": 0.4922008932673542,
+    "ber": 6.154828416330524e-65,
+    "bottleneck": "write",
+    "eps_drift": 0.001555882344085688,
+    "eps_total": 0.02945290523197087,
     "t_hold_s": 60.0
    },
    {
-    "ber": 0.30551485011699697,
-    "bottleneck": "drift",
-    "eps_drift": 0.982642694933304,
-    "eps_total": 0.9830827629261543,
+    "ber": 2.0444384733039977e-64,
+    "bottleneck": "write",
+    "eps_drift": 0.003111764688171376,
+    "eps_total": 0.029575935085967613,
     "t_hold_s": 3600.0
    },
    {
-    "ber": 0.35700299445152234,
-    "bottleneck": "drift",
-    "eps_drift": 1.3640091545750574,
-    "eps_total": 1.3643262170834722,
+    "ber": 8.770748952642746e-64,
+    "bottleneck": "write",
+    "eps_drift": 0.004319449524669031,
+    "eps_total": 0.029727268642291763,
     "t_hold_s": 86400.0
    },
    {
-    "ber": 0.40466976317426545,
-    "bottleneck": "drift",
-    "eps_drift": 2.0720881264730338,
-    "eps_total": 2.0722968553581462,
+    "ber": 3.975659327580069e-62,
+    "bottleneck": "write",
+    "eps_drift": 0.00656174487022021,
+    "eps_total": 0.030134852786709958,
     "t_hold_s": 31560000.0
    }
   ]

@@ -64,8 +64,8 @@ GAP_SPECS: Tuple[Dict[str, Any], ...] = (
      "evidence": "_ev_g5", "declared_closed": True},
     {"id": "PM-G6", "title": "相位域（谐振/干涉）多电平读出与漂移口径",
      "evidence": "_ev_g6", "declared_closed": False},
-    {"id": "PM-G7", "title": "光学域 drift 定量锚（@1550 nm 的 n/k 随时间）",
-     "evidence": "_ev_g7", "declared_closed": False},
+    {"id": "PM-G7", "title": "光学域 drift 定量锚（透射电平漂移 · v0.9.193 结算：实测上界锚 + 检测下限假设显式披露）",
+     "evidence": "_ev_g7", "declared_closed": True},
 )
 
 
@@ -261,8 +261,9 @@ def _ev_g4() -> Tuple[bool, str]:
 def _ev_g5() -> Tuple[bool, str]:
     """PM-G5：电学域 ν 锚 ≥3 源 ∧ 两路互证通过 ∧ **光学域适用性已机器判定**（算出来的）。
 
-    闭合口径 = 「drift 物理来源登机 + 电学域锚 ≥3 源 + 律自检 + 光学域**无直接锚的判定本身**
-    作为结论公开」；判定结论（无锚）⇒ **派生缺口 PM-G7**，不粉饰。
+    闭合口径 = 「drift 物理来源登机 + 电学域锚 ≥3 源 + 律自检 + 光学域适用性机器判定公开」。
+    v0.9.191（结算前）：判定为「光学域无锚」⇒ 派生缺口 PM-G7；v0.9.193（PM-G7 结算）后
+    判定为「有实测上界锚」⇒ 本证据只要求**判定本身已机器化**（两态都算公开），不再要求具体态。
     """
     if not hasattr(ML, "DRIFT_ANCHORS"):
         return False, "drift 锚不存在"
@@ -270,8 +271,9 @@ def _ev_g5() -> Tuple[bool, str]:
     n = len(ML.DRIFT_ANCHORS.get("GST", []))
     chk = M2.power_law_check("GST")
     st = M2.optical_drift_status("GST")
-    ok = (n >= 3 and chk["ok"] and st["has_direct_optical_anchor"] is False)
-    return bool(ok), ("电学域 ν 锚=%d 源 · 两路互证 dev=%.2e · 光学域直接锚=%s（判定为缺 ⇒ 缺口 PM-G7）"
+    judged = isinstance(st.get("has_direct_optical_anchor"), bool)
+    ok = (n >= 3 and chk["ok"] and judged)
+    return bool(ok), ("电学域 ν 锚=%d 源 · 两路互证 dev=%.2e · 光学域机器判定=%s"
                       % (n, chk["max_rel_dev"], st["has_direct_optical_anchor"]))
 
 
@@ -282,9 +284,24 @@ def _ev_g6() -> Tuple[bool, str]:
 
 
 def _ev_g7() -> Tuple[bool, str]:
-    """PM-G7：光学域 drift 定量锚 —— 读 `OPTICAL_DRIFT_ANCHORS`（空 ⇒ 未闭合）。"""
-    n = len(getattr(ML, "OPTICAL_DRIFT_ANCHORS", {}).get("GST", []))
-    return bool(n > 0), f"光学域 drift 锚源={n}（0 ⇒ 未闭合）"
+    """PM-G7（v0.9.193 结算）：光学域 drift 定量锚 —— 机器判定 `optical_drift_status`。
+
+    闭合口径 = 「锚表含 transmission_drift_upper_bound 实测上界锚 ∧ 机器判定翻转为
+    has_direct_optical_anchor=True」；锚内 `nu_ub` 须与检测下限重算一致（防漂移由
+    `pm_m2.nu_optical_bound` 守卫）。**证据是上界语义**（检测下限假设显式披露），
+    不是直接测得的 ν 点值 ⇒ 保持时间结论为下界。
+    """
+    from lda_l2 import pm_m2 as M2
+    st = M2.optical_drift_status("GST")
+    if not st["has_direct_optical_anchor"]:
+        return False, "光学域 drift 锚=%d（无上界锚 ⇒ 未闭合）" % st["n_optical_anchors"]
+    try:
+        nuo = M2.nu_optical_bound("GST")
+    except Exception as exc:  # 防漂移守卫红 ⇒ 锚表损坏
+        return False, "光学域锚存在但重算守卫红：%s" % exc
+    return bool(nuo["nu_ub_max"] > 0.0), (
+        "光学域实测锚=%d 条（上界锚=%d）· ν_T ≤ %.4g（0.35%% 检测下限假设 · 下界语义）"
+        % (st["n_optical_anchors"], st["n_bound_anchors"], nuo["nu_ub_max"]))
 
 
 def gap_ledger() -> List[Dict[str, Any]]:

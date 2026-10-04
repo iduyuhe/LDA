@@ -384,7 +384,8 @@ CRITICAL_COOLING_ANCHORS: Dict[str, Dict[str, Any]] = {
 # 8c. 非晶 drift 锚（power law R = R₀·(t/t₀)^ν · PM-G5）—— 逐条带来源
 # ---------------------------------------------------------------------------
 #: 🔴 **全部为电学域（电阻）锚**。光学域（n/k 随时间的定量漂移 @1550 nm）**检索未获直接锚**
-#: ⇒ 由 `OPTICAL_DRIFT_ANCHORS` 显式登记为空（机器可判），并派生缺口 **PM-G7**。
+#   PM-G7 结算（v0.9.193）前：由 `OPTICAL_DRIFT_ANCHORS` 显式登记为空（机器可判）派生缺口 PM-G7；
+#   结算后：填入逐条实测锚（Cheng 2019 上界 / Kalb 2003 动力学 / Ríos 2015 保持声明）。
 DRIFT_ANCHORS: Dict[str, List[Dict[str, Any]]] = {
     "GST": [
         {"nu": 0.11, "t_ambient_k": 300.0, "domain": "electrical",
@@ -401,9 +402,50 @@ DRIFT_ANCHORS: Dict[str, List[Dict[str, Any]]] = {
     ],
 }
 
-#: 🔴 光学域 drift 锚：**显式登记为空**（本项目未检索到 @1550 nm 的定量 ν）⇒ 缺口 PM-G7。
+#: ✅ 光学域 drift 锚（PM-G7 结算 · 2026-10-05）：逐条**实测事实**（DOI 级）+ 显式推导假设。
+#: 主账锚 = Cheng 2019 的「10⁴ s 无可测透射漂移」器件级实测事实 ⇒ 透射漂移指数**上界**
+#: ν_T ≤ 检测下限/ln(t_meas/t₀)（纯算术推导，检测下限假设显式披露，非仿真值）。
 OPTICAL_DRIFT_ANCHORS: Dict[str, List[Dict[str, Any]]] = {
-    "GST": [],   # 空 ⇒ 机器可判「光学域无直接锚」
+    "GST": [
+        {"kind": "transmission_drift_upper_bound", "domain": "optical",
+         "nu_ub": 0.0035 / math.log(1.0e4 / 1.0),    # = 3.7998e-4（推导可见，非手抄）
+         "t_meas_s": 1.0e4, "t0_s": 1.0, "detection_floor_rel": 0.0035,
+         "is_upper_bound": True,
+         "source": ("Cheng, Ríos, Wright, Bhaskaran, Pernice et al., "
+                    "《In-memory computing on a photonic platform》, "
+                    "Sci. Adv. 5, eaau5759 (2019) · doi:10.1126/sciadv.aau5759"),
+         "measured_fact": ("2 µm GST 波导存储胞 · 13 个透射电平 · 连续 10⁴ s（8.8 h）"
+                           "probe 0.1 mW ON 测量「未发现可测漂移」（原文 do not find "
+                           "measurable drift for up to 10⁴ s）· 电平编程 SD 0.35%。"),
+         "derivation": ("上界推导（**纯算术**，非仿真）：电平漂移模型 ΔT/T ≈ ν_T·ln(t/t₀)；"
+                        "取编程电平 SD 0.35% 作漂移检测下限（保守假设 · 显式披露），"
+                        "则 ν_T ≤ 0.0035 / ln(10⁴) ≈ 3.80e-4。"),
+         "excluded_mechanism": ("probe OFF→ON 后 ~9% 漂移归因**探针热-光弛豫**"
+                                "（thermo-optical，原文归因 probe 加热平衡被撤）；0.05 mW 下 "
+                                "ON/OFF 均可忽略 ⇒ 非结构老化 drift，不并入本锚。"),
+         "note": ("🔴 本锚 = 「实测事实 + 显式检测下限假设」的**上界**，非直接测得的 ν_T 点值；"
+                  "主账取它作**保守上界**（ν_T 越小保持越长 ⇒ 取上界是保守侧）。")},
+        {"kind": "relaxation_kinetics", "domain": "optical_material",
+         "viscosity_growth": "linear_in_time", "kinetics": "bimolecular",
+         "e_isoconfig_ev": 1.76, "e_isoconfig_sigma_ev": 0.05,
+         "source": ("Kalb, Spaepen, Leervad Pedersen & Wuttig, "
+                    "《Viscosity and elastic constants of thin films of amorphous Te alloys "
+                    "used for optical data storage》, J. Appl. Phys. 94, 4908 (2003) · "
+                    "doi:10.1063/1.1610775"),
+         "measured_fact": ("溅射 a-GST 薄膜（光学存储介质本身）室温应力弛豫：剪切粘度随时间"
+                           "**线性增长** = 双分子结构弛豫动力学；等构型激活能 1.76±0.05 eV。"),
+         "note": ("材料级**弛豫动力学**锚（机制层面：弛豫驱动力随时间衰减 ⇒ 漂移减速），"
+                  "非 n/k 时间序列；不做粘度→折射率的跨域数值换算（模型口径⛔不作 golden）。")},
+        {"kind": "device_retention_claim", "domain": "optical_device",
+         "levels": 8, "binary_contrast_pct": 21.0, "device_length_um": 5.0,
+         "retention_statement": "decades",
+         "source": ("Ríos, Stegmaier, Hosseini, Wright, Bhaskaran & Pernice, "
+                    "《Integrated all-photonic non-volatile multi-level memory》, "
+                    "Nat. Photon. 9, 725–732 (2015) · doi:10.1038/nphoton.2015.182"),
+         "measured_fact": ("集成氮化硅波导 + 5 µm GST：8 电平写入/读出、双态读出对比 21%；"
+                           "作者声明 GST 保持所置状态「数十年」（qualitative，无漂移指数）。"),
+         "note": "定性保持声明锚（方向性佐证）；不提供定量 ν。"},
+    ],
 }
 
 

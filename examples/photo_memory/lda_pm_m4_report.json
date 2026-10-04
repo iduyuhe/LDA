@@ -1,0 +1,181 @@
+{
+ "assembly_2p5d": {
+  "density_bottleneck": "eic",
+  "drc_all_pass": true,
+  "eic_die_um": [
+   400.0,
+   6.2
+  ],
+  "eic_pitch_um": 50.0,
+  "gds_bytes_len": 4852,
+  "gds_sha256": "4191e8b8255e98078add7886c35b982e7b5bb8bc6c2880db618b84fa12955bdf",
+  "interposer_um": [
+   408.0,
+   24.4
+  ],
+  "layers_decoded": {
+   "1": 10,
+   "5": 8,
+   "6": 48,
+   "64": 2,
+   "65": 16,
+   "66": 1
+  },
+  "lvs_verdict": "ACCEPT",
+  "n_channels": 8,
+  "pic_die_um": [
+   197.33,
+   6.2
+  ],
+  "pic_pitch_um": 18.045024706557335
+ },
+ "disclosure": {
+  "drift_segment_is_cross_domain_proxy": true,
+  "driver_energy_is_behavioral_not_device_truth": true,
+  "eic_pitch_is_design_assumption": true,
+  "heater_sheet_rho_is_typical_range": true,
+  "joule_heat_is_t1_t2_locked": true,
+  "layer": "设计期行为级签核（读出/写驱动/系统预算/2.5D 几何）",
+  "llm_not_in_decision_path": true,
+  "no_efficiency_metric_reported": true,
+  "no_foundry_truth": true,
+  "no_project_measurement": true,
+  "pd_responsivity_is_typical_range": true,
+  "readout_model_is_behavioral": true
+ },
+ "gds_artifact": {
+  "bytes": 4852,
+  "path": "lda_pm_m4_2p5d.gds",
+  "sha256": "4191e8b8255e98078add7886c35b982e7b5bb8bc6c2880db618b84fa12955bdf"
+ },
+ "generated_by": "examples/photo_memory/build_pm_m4.py",
+ "material": "GST",
+ "milestone": "PM-M4 · 外设与系统（读出链 + 写驱动 + 系统误码预算 + 2.5D 签核）",
+ "readout": {
+  "all_ok": true,
+  "f_3db_hz": 397887357.7297383,
+  "f_read_hz": 100000.0,
+  "n_levels": 16,
+  "p_in_w": 0.001,
+  "p_min_dbm": -39.77515569742968,
+  "p_min_w": 1.0531359308367793e-07,
+  "r_f_max_ohm": 79577471.54594769,
+  "r_f_ohm": 20000.0,
+  "resp_a_per_w": 0.8,
+  "sensitivity_margin_x": 9495.450404065508,
+  "shot_dominant": true,
+  "source": "ACS Photonics 2025 / arXiv 2512.23559（椭偏 · Cody-Lorentz 拟合 · 30nm 膜）",
+  "worst_ber": 0.0,
+  "worst_snr": 32382.63468487792,
+  "z_mag_ohm": 19999.999368345347
+ },
+ "rf_tradeoff": {
+  "design_r_f_ohm": 20000.0,
+  "n_points": 24,
+  "optimal_r_f_ohm": 79577471.54594769,
+  "optimal_worst_ber": 0.0,
+  "optimal_worst_snr": 37021.25838766379,
+  "r_f_max_ohm": 79577471.54594769,
+  "snr_monotone_nondecreasing": true
+ },
+ "system_budget": {
+  "all_ok": false,
+  "ber_target": 1e-12,
+  "ber_total": 0.40466976317426545,
+  "bottleneck": "drift",
+  "drift_proxy": {
+   "is_cross_domain_proxy": true,
+   "note": "🔴 光学域 drift 无直接锚（PM-G7）⇒ 本段为跨域代理（电学域 ν 上界），给出「若两域同阶」的系统级后果，非光学域寿命结论。",
+   "nu_max": 0.12,
+   "nu_min": 0.07,
+   "nu_upper_bound": 0.18,
+   "per_proxy": [
+    {
+     "nu_proxy": 0.07,
+     "t_erode_human": "2.4 秒",
+     "t_erode_s": 2.35641844238366
+    },
+    {
+     "nu_proxy": 0.12,
+     "t_erode_human": "1.6 秒",
+     "t_erode_s": 1.6487212707001282
+    }
+   ]
+  },
+  "eps": {
+   "drift": 2.0720881264730338,
+   "read": 3.0880748578094574e-05,
+   "write": 0.029411764705882353
+  },
+  "eps_total": 2.0722968553581462,
+  "max_t_hold_human": "1.7 秒",
+  "max_t_hold_s_for_target": 1.7146877590497775,
+  "share": {
+   "drift": 0.9998992765517292,
+   "read": 1.490170122019395e-05,
+   "write": 0.01419283372931589
+  },
+  "snr_total": 0.24127817339837015,
+  "t_hold_s": 31560000.0,
+  "t_hold_table": [
+   {
+    "ber": 4.106652565053581e-65,
+    "bottleneck": "write",
+    "eps_drift": 0.0,
+    "eps_total": 0.029411780917428642,
+    "t_hold_s": 1.0
+   },
+   {
+    "ber": 0.1548515127872787,
+    "bottleneck": "drift",
+    "eps_drift": 0.491321347466652,
+    "eps_total": 0.4922008932673542,
+    "t_hold_s": 60.0
+   },
+   {
+    "ber": 0.30551485011699697,
+    "bottleneck": "drift",
+    "eps_drift": 0.982642694933304,
+    "eps_total": 0.9830827629261543,
+    "t_hold_s": 3600.0
+   },
+   {
+    "ber": 0.35700299445152234,
+    "bottleneck": "drift",
+    "eps_drift": 1.3640091545750574,
+    "eps_total": 1.3643262170834722,
+    "t_hold_s": 86400.0
+   },
+   {
+    "ber": 0.40466976317426545,
+    "bottleneck": "drift",
+    "eps_drift": 2.0720881264730338,
+    "eps_total": 2.0722968553581462,
+    "t_hold_s": 31560000.0
+   }
+  ]
+ },
+ "upstream": {
+  "levels": {
+   "l_um": 11.014603130717049,
+   "n_levels": 16,
+   "source": "ACS Photonics 2025 / arXiv 2512.23559（椭偏 · Cody-Lorentz 拟合 · 30nm 膜）",
+   "spacing_frac": 0.06570779838443097
+  },
+  "pic_pitch_um": 18.045024706557335
+ },
+ "write_driver": {
+  "driver_bits": 8,
+  "e_hi_j": 2.966062382119907e-09,
+  "e_lo_j": 5.932124764239814e-10,
+  "eps_write": 0.029411764705882353,
+  "p_hi_w": 0.05932124764239814,
+  "p_lo_w": 0.011864249528479628,
+  "pulse_dynamic_range_ok": true,
+  "pulse_ladder_ratio": 4.6748631345508755,
+  "r_hi_ohm": 917.8835942264208,
+  "r_lo_ohm": 183.57671884528415,
+  "t_pulse_s": 5e-08,
+  "v_drv": 3.3
+ }
+}

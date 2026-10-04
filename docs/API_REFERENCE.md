@@ -22,12 +22,12 @@
 | 项 | 值 |
 |---|---|
 
-| 端点总数 | 146（精确 129 + 前缀/后缀 17） |
-| 方法分布 | GET 51 · PATCH 1 · POST 94 |
-| 有描述 | 146（**100.0%**） |
+| 端点总数 | 147（精确 130 + 前缀/后缀 17） |
+| 方法分布 | GET 52 · PATCH 1 · POST 94 |
+| 有描述 | 147（**100.0%**） |
 | 需登录（重计算闸门） | 60 |
 
-## GET（51）
+## GET（52）
 
 | 路径 | 用途 | 参数 | 鉴权 |
 |---|---|---|---|
@@ -65,6 +65,7 @@
 | `/api/oi_demo` | GET /api/oi_demo —— 光联接模块 M0–M4 案例卡（新征程 · 只读 · 免登录）。 🔴 与 `/api/qchip_demo` / `/api/pchip_demo` / `/api/ecore_demo` / `/api/d4_demo` 同属「公开只读验货」类：本卡把 **M0**（2 通道 WDM 收发器）的链路预算、 **M1**（800G · 8×100G PAM4）的**频域/时域预算**、**M2/M2b**（1.6T · LPO · G-OI2 真 GDS · 多通道均衡/热调/Γ/良率/封装）、**M3**（3.2T/CPO：带宽墙 · 电通道 · 热 · 功耗账 · G-OI6 2.5D 版图）与 **M4**（CPO 形态深化 · 热-光-电 协同设计空间）以确定性现算呈现（闭式 + lda_chain 级联引擎 + `lda_l2.oi_m1`… `oi_m4`，零重计算、不跑 P&R/FDTD），免登录、不进 HEAVY_POST_PATHS。 返回体的 `m4` 块含：热-光-电耦合链 / 固化点预偏移 / 热致偏移⟷WDM 重规划 / 三形态三域矩阵 / FAU CTE 失准 / 三域 Pareto + **VπL 断口**。 🔴 不伪装实测：`verdict` 恒 DESIGN_BUDGET；M0–M4 均属**设计预算层** （L0 解析器件模型 + A 档闭式/行为级），BER 为**光通道预算级**闭式 估计（不含 SerDes/DSP/FEC/均衡/CDR，与 `eic_behavioral` 的 EIC 电路级 排除**显式分层**）、接受 SNR 为**设计输入假设**；M4 的 CTE/VπL/模场半径/ 三形态总线长均为**规格锚**（公开近似，非 foundry 真值）；真实版图 GDS 由 D4 域 photonic_interconnect / oi_transceiver / 2.5D 承载；不报 TOPS/TOPS-W/fJ/op/fJ-op/pJ-bit。 无查询参数（固定设计点）。异常不 500（200 + error 字段，与 h_qchip_demo 同风格）。 | — | public |
 | `/api/pchip_demo` | GET /api/pchip_demo —— 硅光张量核（光计算芯片）案例卡（只读 · 免登录 · 微秒级）。 M5 收尾（2026-09-30）：把光计算征程「吃狗粮」LDA-P（M1→M5）成果在 UI 中 以**只读案例**呈现（MZI mesh 干涉架构：SVD 双网格 + 对角衰减 + 光电协同 + tiling）。 🔴 与 `/api/qchip_demo`（光量子 LOQC 案例卡 · D-131）、`/api/schip_demo` （超导 transmon 案例卡 · D-148）**并列**：三条物理路线在 LDA 均已吃狗粮。 🔴 **零重计算**：不跑仿真、不 import 求解器 —— 数字来自 ① 静态里程碑/结论 （可回溯到 M1–M5 门禁）② 纯闭式现算（MZI 计数）③ 对产出物只 `stat` 的元信息 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**（与 `/api/qchip_demo`、 `/api/schip_demo`、`/api/verification_ledger` 同属「公开只读验货」类）。 🔴 **不伪装实测 / 不报 fabricated 能效**：`verdict` 恒为 `DESIGN_SIGNOFF` （**非** ACCEPT/PASS），返回体自带 `honest_note`（非流片实测 / 设计容量 / 不报任何 fabricated 能效数字）。 异常不 500（返回 200 + error 字段，与 `h_schip_demo` 同风格）。 | — | public |
 | `/api/pdks` | 返回（惰性构建并缓存）默认 Registry 实例。 | — | public |
+| `/api/pm_demo` | GET /api/pm_demo —— 非易失光子存储阵列（GST 相变 · 电辅助写）案例卡（只读 · 免登录 · 微秒级）。 光子存储（PCM）征程 M0→M3 收口：把「每 π 损耗闭式律（M0）→ 多电平（M1）→ 热-可靠性（M2）→ 单元/多电平落到阵列版图 + 真 GDS + DRC/LVS（M3）」四层设计 在 UI 中呈现为**只读案例**（此前 PM 无 UI 入口）。 🔴 与 `/api/oi_demo`（光联接链路）**并列**：两者都是「链路/阵列级」只读案例卡， 但 PM 卡的路由层走到**真 GDS 字节 + 独立解码复核**（自写记录流解析器，刻意不复用 导出器解码路径）。 🔴 **零重计算**：不跑 P&R、不 import 求解器、不解析 GDS —— 数字来自 ① 静态里程碑/结论（可回溯到 M0–M3 门禁）② 纯闭式现算（几何/预算）③ 对 `examples/` 产出物只 `stat` 的元信息 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS** （与 `/api/qchip_demo`、`/api/schip_demo`、`/api/pchip_demo` 同属「公开只读验货」类）。 🔴 **不伪装实测 / 不报 fabricated 能效**：`verdict` 恒为 `DESIGN_SIGNOFF` （**非** ACCEPT/PASS），返回体自带 `honest_note`（非流片实测 / 非 foundry PDK / 规模=版图容量 / GDS 为几何签核非工艺签核）。 异常不 500（返回 200 + error 字段，与 `h_schip_demo` 同风格）。 | — | public |
 | `/api/public/stats` | 公开自证看板（无需鉴权）。仅暴露可信度信号：锚/引擎/货架/CI 项， 绝不返回任何用户、订单、GMV 等敏感数据。 | — | public |
 | `/api/qchip_demo` | GET /api/qchip_demo —— 光量子计算芯片案例卡（只读 · 免登录 · 微秒级）。 A 档接入（D-131）：把「量子征程（吃狗粮）」九步成果在 UI 中以**只读案例** 呈现（可编程 MZI 干涉仪网格 = LOQC 通用处理器）。 🔴 与站内重计算端点（cpo_array / design_* 等）**不同**：本端点**零重计算** —— 全部数字为闭式现算（深度 / 损耗 / 参数 / 维数），不跑 P&R、不 import 求解器 ⇒ **无 DoS 面**，故**不进 HEAVY_POST_PATHS、不要求登录**，与 `/api/verification_ledger`、`/api/benchmarks` 同属「公开只读验货」类 （维持「可被外部验货」战略可达性）。 🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`（**非** ACCEPT/PASS）， 返回体自带 `honest_note` 说明「非流片后实测 / 设计预算口径」。 查询参数（B 档 D-132 扩充）： `n`       目标模数，默认 216，范围 2..4096（非法值回落默认） `topology` 拓扑：`rect`（矩形 Clements · 默认）/ `reck`（三角）/ `temporal`（时间复用） `per_mzi`  单个 MZI 插损覆盖（dB，> 0；缺省取平台设计预算常量） `per_step` 时间复用每步插损覆盖（dB，> 0；缺省取平台常量） 异常不 500（返回 200 + error 字段，与 `h_design_catalog` 同风格）。 | — | public |
 | `/api/scale_demo` | A3 · 规模能力现场演示（1k/4k/32k 全链耗时，总 ~1.1s）。 | `verdict` | public |

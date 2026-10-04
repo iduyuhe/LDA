@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""WebUI 光子存储阵列（PM-M3）案例卡前端**取值路径 + 反向完备 + onclick** 门禁（2026-10-04）。
+"""WebUI 光子存储阵列（PM-M3 / PM-M4）案例卡前端**取值路径 + 反向完备 + onclick** 门禁（2026-10-04）。
 
 ═══════════════════════════════════════════════════════════════════════════
 为什么存在（血案 #32 同族 / 血案 #18·#19 机器化）
@@ -17,7 +17,8 @@
   W2 函数定义（runPm / renderPm 真在场，且 runPm 真调 apiGet('/api/pm_demo')）
   W3 🔴 **取值路径存在性**：renderPm 里每条 `X.a.b` 引用（别名**按位置**解出 base）
      在真实 JSON 上逐段解析 ⇒ 全部存在
-  W4 🔴 **反向完备**：顶层键 + 12 个嵌套块 + 5 个 `[]` 项目块，**每个字段都被前端引用**
+  W4 🔴 **反向完备**：顶层键 + **全部**嵌套块 + **全部** `[]` 项目块（数量由 `len()` 现算，不写死），
+     **每个字段都被前端引用**
   W5 路由接线（`/api/pm_demo` 登记 `GET_ROUTES` ∧ **不在** `HEAVY_POST_PATHS`）
   W6 🔴 突变探针（先证能变红）：改真实路径 / 抹掉别名绑定 / 往后端注入新字段 /
      改项目块字面量 ⇒ 对应判据必红；还原后复绿
@@ -75,9 +76,22 @@ _BLOCKS = (
     (("ui",), "面板导航"),
     (("signoff_checks",), "签核断言"),
     (("artifacts",), "产出物元信息"),
+    # ── M4 外设与系统（2026-10-04 新增 · 与 m4 报告块逐块同构）────────────────
+    (("m4",), "M4 外设与系统汇总"),
+    (("m4", "upstream"), "M4 上游汇总"),
+    (("m4", "upstream", "levels"), "M4 上游电平设计"),
+    (("m4", "readout"), "M4 读出链"),
+    (("m4", "rf_tradeoff"), "M4 R_f 权衡"),
+    (("m4", "write_driver"), "M4 写驱动"),
+    (("m4", "system_budget"), "M4 系统误码预算"),
+    (("m4", "system_budget", "drift_proxy"), "M4 drift 跨域代理"),
+    (("m4", "system_budget", "eps"), "M4 等效误差分量"),
+    (("m4", "system_budget", "share"), "M4 等效误差占比"),
+    (("m4", "assembly_2p5d"), "M4 2.5D 装配"),
 )
 
 #: `[]` 项目块：`(JSON 前缀带 [] 路径, {js字面量: 相对字段})`
+#: 🔴 前缀是**字符串**（点分 + 数组 `[]`）——由 `_block_keys` 归一后逐段解析。
 _ITEM_BLOCKS = (
     ("scale_tiers[]", "规模档", {
         "t.bus_x_cells": "bus_x_cells", "t.n_cells_total": "n_cells_total",
@@ -85,6 +99,9 @@ _ITEM_BLOCKS = (
         "t.n_elements": "n_elements", "t.gds_bytes": "gds_bytes",
         "t.area_um2": "area_um2", "t.lvs": "lvs",
         "t.lvs_violations": "lvs_violations", "t.independent_ok": "independent_ok",
+        "t.n_buses": "n_buses", "t.n_cells_per_bus": "n_cells_per_bus",
+        "t.drc_pass": "drc_pass", "t.expected_pcm": "expected_pcm",
+        "t.got_pcm": "got_pcm", "t.width_um": "width_um", "t.height_um": "height_um",
     }),
     ("milestones[]", "里程碑", {
         "m.id": "id", "m.code": "code", "m.title": "title",
@@ -93,6 +110,14 @@ _ITEM_BLOCKS = (
     ("findings[]", "设计洞察", {"f.title": "title", "f.detail": "detail"}),
     ("gaps[]", "缺口", {"g.id": "id", "g.title": "title", "g.detail": "detail"}),
     ("artifacts.items[]", "产出物清单", {"it.name": "name", "it.bytes": "bytes"}),
+    ("m4.system_budget.t_hold_table[]", "M4 保持时间扫描", {
+        "tt.t_hold_s": "t_hold_s", "tt.ber": "ber", "tt.eps_drift": "eps_drift",
+        "tt.eps_total": "eps_total", "tt.bottleneck": "bottleneck",
+    }),
+    ("m4.system_budget.drift_proxy.per_proxy[]", "M4 drift 代理逐点", {
+        "pp.nu_proxy": "nu_proxy", "pp.t_erode_s": "t_erode_s",
+        "pp.t_erode_human": "t_erode_human",
+    }),
 )
 
 
@@ -104,13 +129,29 @@ _DUP_SUBTREES = {
 
 
 def _block_keys(card, prefix):
-    """取 JSON 路径 `prefix` 处的键集（列表取首元素）。"""
+    """取 JSON 路径 `prefix` 处的键集（**列表取首元素**；支持 `a.b[]` 点分形式）。
+
+    🔴 2026-10-04 修（本轮自查抓出的**假绿**）：原实现对字符串前缀 `for seg in prefix`
+    会把 `"scale_tiers[]"` 当**字符序列**迭代 ⇒ 首字符 `'s'` 不在根字典里 ⇒ 立刻
+    `return set()` ⇒ `W4c` 的「`[]` 项目块字段全覆盖」半边**恒真**（后端给项目块加了字段，
+    前端从不渲染，门禁全绿）。修法 = 先把前缀归一成「段列表」（字符串按 `.` 切分），
+    再对每段处理可选 `[]` 后缀。配反向探针 `W6-P6` 证明修完**真能变红**。
+    """
+    parts = prefix.split(".") if isinstance(prefix, str) else list(prefix)
     cur = card
-    for seg in prefix:
-        if isinstance(cur, dict) and seg in cur:
-            cur = cur[seg]
+    for part in parts:
+        if part.endswith("[]"):
+            key = part[:-2]
+            if not isinstance(cur, dict) or key not in cur:
+                return set()
+            cur = cur[key]
+            if not isinstance(cur, list) or not cur:
+                return set()
+            cur = cur[0]
         else:
-            return set()
+            if not isinstance(cur, dict) or part not in cur:
+                return set()
+            cur = cur[part]
     if isinstance(cur, dict):
         return set(cur.keys())
     if isinstance(cur, list) and cur and isinstance(cur[0], dict):
@@ -134,7 +175,7 @@ def _fulls(refs):
 
 def main() -> int:
     print("=" * 74)
-    print("WebUI 光子存储阵列（PM-M3）案例卡 前端取值路径 + 反向完备 + onclick 门禁")
+    print("WebUI 光子存储阵列（PM-M3 / PM-M4）案例卡 前端取值路径 + 反向完备 + onclick 门禁")
     print("=" * 74)
 
     html = open(INDEX, encoding="utf-8").read()
@@ -158,9 +199,12 @@ def main() -> int:
     check("W2b runPm 调 apiGet('/api/pm_demo') 并转交 renderPm",
           "/api/pm_demo" in usrc and "renderPm(" in usrc)
     heads = ("① 上游设计点", "② 单元间距", "③ 主阵列", "④ 独立解码复核", "⑤ 规模档",
-             "⑥ 设计预算", "⑦ 征程里程碑", "⑧ 设计洞察", "⑨ 诚实缺口", "⑩ 产出物")
+             "⑥ 设计预算",
+             "⑦ M4 读出链", "⑧ M4 读出灵敏度", "⑨ M4 写驱动", "⑩ M4 系统误码预算",
+             "⑪ M4 2.5D 装配签核",
+             "⑫ 征程里程碑", "⑬ 设计洞察", "⑭ 诚实缺口", "⑮ 产出物")
     miss = [h for h in heads if h not in rsrc]
-    check("W2c renderPm 真渲染 ①–⑩ 十段（防「后端加了段、前端还是空壳」）", not miss,
+    check("W2c renderPm 真渲染 ①–⑮ 十五段（防「后端加了段、前端还是空壳」）", not miss,
           "缺段：%s" % miss)
     check("W2d 抽屉目录自动运行映射含 '#sec-pm': 'runPm'",
           '"#sec-pm": "runPm"' in html)
@@ -261,6 +305,32 @@ def main() -> int:
 
     check("W6-P5 还原完整性：探针退出后复跑仍无坏路径 ∧ UI 绑定仍在",
           _bad_paths(rsrc) == [] and "UI=d.ui||{}" in rsrc and '"#sec-pm": "runPm"' in html)
+
+    # 🔴 项目块「字段全覆盖」反向探针 —— 证明 `_block_keys` 的 `[]` 支持**真能变红**
+    def _buggy_block_keys(c, prefix):
+        """**修复前**实现的逐字复刻（`for seg in prefix` 逐字符）——仅用于证明假绿曾存在。"""
+        cur = c
+        for seg in prefix:
+            if isinstance(cur, dict) and seg in cur:
+                cur = cur[seg]
+            else:
+                return set()
+        return set(cur.keys()) if isinstance(cur, dict) else set()
+
+    card_i = _copy.deepcopy(card)
+    card_i["scale_tiers"][0]["brand_new_item_field"] = 1
+    card_i["m4"]["system_budget"]["t_hold_table"][0]["brand_new_item_field"] = 1
+    dm = sorted(_block_keys(card_i, "scale_tiers[]")
+                - set(_ITEM_BLOCKS[0][2].values()))
+    dm2 = sorted(_block_keys(card_i, "m4.system_budget.t_hold_table[]")
+                 - set(_ITEM_BLOCKS[5][2].values()))
+    check("W6-P6 项目块字段覆盖能变红：向 `scale_tiers[0]` / `t_hold_table[0]` 注入新字段 "
+          "⇒ W4c 必红（%s / %s）" % (dm, dm2),
+          dm == ["brand_new_item_field"] and dm2 == ["brand_new_item_field"])
+    check("W6-P6b 🔴 假绿复现：**修复前**实现 `_block_keys(card, \"scale_tiers[]\")` 恒为**空集**"
+          "（⇒ W4c 字段覆盖半边恒绿）——这就是本轮被修掉的那个假判据",
+          _buggy_block_keys(card_i, "scale_tiers[]") == set()
+          and len(_block_keys(card_i, "scale_tiers[]")) >= 2)
 
     # ── W7 自入 CI core ─────────────────────────────────────────────────
     ci = os.path.join(_HERE, "run_ci_regression.py")

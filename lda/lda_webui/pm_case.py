@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
-"""光子存储阵列案例卡（WebUI 只读端点数据源）· PM 征程 M3。
+"""光子存储阵列案例卡（WebUI 只读端点数据源）· PM 征程 M0–M4。
 
 定位
 ----
-光子存储征程 PM-M0…M3 的**只读案例**：用 LDA 亲手设计一条**非易失光子存储
-单元 → 阵列**（Si 波导 + GST 相变段 + 双侧微加热器 + 电极 pad），走完
-**P&R → 布线路由 → 几何 DRC/LVS → 独立 GDS 字节复核 → 设计预算**全链路签核，
-并出**真 GDSII**。
+光子存储征程 PM-M0…M4 的**只读案例**：用 LDA 亲手设计一条**非易失光子存储
+单元 → 阵列 → 外设与系统**（Si 波导 + GST 相变段 + 双侧微加热器 + 电极 pad），
+走完 **P&R → 布线路由 → 几何 DRC/LVS → 独立 GDS 字节复核 → 设计预算 →
+读出/写驱动行为级 → 系统误码预算 → 2.5D 装配签核** 全链路，并出**真 GDSII**。
 
 🔴 **零重计算**（与站内 cpo_array / design_* 等重算端点不同）：本模块**不跑
 P&R、不 import 求解器、不解析 GDS** —— 全部数字取自
 ① 静态里程碑/结论（人工登记，可回溯到门禁与 report）
-② **预生成报告 JSON**（`examples/photo_memory/lda_pm_m3_report.json`，由货架脚本
-   `examples/photo_memory/build_pm_m3.py` 产出；本模块只 `json.load` + `stat`）。
+② **预生成报告 JSON**（`examples/photo_memory/lda_pm_m3_report.json` 与
+   `lda_pm_m4_report.json`，由货架脚本 `build_pm_m3.py` / `build_pm_m4.py` 产出；
+   本模块只 `json.load` + `stat`）。
 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**。
 
 🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_SIGNOFF`（**非** ACCEPT/PASS），
@@ -51,16 +52,23 @@ PM_HONEST_NOTE = (
     "⑦ 规模数字是**版图容量**（可排布且可签核的单元数），**非**已制备器件数；"
     "⑧ **不报 pJ/bit、fJ/op、TOPS、TOPS-W 类能效指标**（红线）；"
     "⑨ 全程零外部 EDA/光学框架（C 级自主，numpy/标准库自研），"
-    "判决为死标量比对，**LLM 不进判决路径**。"
+    "判决为死标量比对，**LLM 不进判决路径**；"
+    "⑩ M4 外设为**行为级**：读出链的 PD 响应度 / 加热器方阻取**公开工程典型区间**"
+    "（非实测、非逐条 DOI），读出速率 / 输入光功率 / 驱动摆幅 / EIC 通道 pitch 为"
+    "**设计假设** ⇒ 只报区间与恒等式，**不报器件级真值**；焦耳热分布 / 热-光耦合"
+    "属 T1/T2 锁死区；"
+    "⑪ 系统误码预算的 drift 段是**跨域代理**（用 M2 的**电学域** ν 上界；光学域无锚"
+    "⇒ PM-G7）⇒ 「16 电平保持 ≈ 1.7 秒」是**若两域同阶**的系统级后果，"
+    "**不是**光学域寿命结论。"
 )
 
 # ═══════════════════════ 四段征程（静态事实 · 可回溯门禁）════════════════════
 # 🔴 口径（v0.9.191 修正）：`gate` = 该档**后端门禁判据数**，须与对应 smoke 实跑的
 #   `[PASS]` 计数逐档相等（可人工复核 `grep -c '\[PASS\]'`）：
 #   M0 `run_pm_m0_smoke`=33 · M1 `run_pm_m1_smoke`=24 · M2 `run_pm_m2_smoke`=40 ·
-#   M3 `run_pm_m3_smoke`=22。
+#   M3 `run_pm_m3_smoke`=22 · M4 `run_pm_m4_smoke`=22。
 #   🔴 前端渲染门禁 `run_webui_pm_render_path_smoke`(=20) 是**另一个门禁**，不并入本表
-#      —— 前三档没有对应前端门禁，混口径会让跨档数字不可比。
+#      —— 各档没有对应前端门禁，混口径会让跨档数字不可比。
 #   🔴 血案：M3 曾误登记 `gate=62`（把「后端判据 + 前端判据 + 案例卡自检 + 探针」混成
 #      一个数），与 M0/M1/M2 口径不一致 ⇒ 本版修正为 22（= smoke 实跑值）。
 MILESTONES = [
@@ -86,10 +94,19 @@ MILESTONES = [
                "工艺间隙) ⇒ pitch 18.05 µm；1×N 与 R×C 两种阵列；"
                "**从最终 GDS 字节独立解码复核**（层 5 = 单元数、层 6 = 6×单元数）；"
                "规模档 4/8/16/32 单元 + 4×8 全部 **DRC PASS + LVS ACCEPT(0 违规)**"},
+    {"id": "M4", "code": "v0.9.192", "title": "外设与系统（读出链 + 写驱动 + 系统预算 + 2.5D）",
+     "gate": 22,
+     "result": "读出链 `T→I_pd→V_TIA→判决→BER`（行为级）：存储读出**低频高灵敏** ⇒ "
+               "TIA 反馈电阻可取带宽上界 ⇒ 灵敏度 −39.8 dBm、余量 **9495×**"
+               "（读出不是瓶颈）；写驱动行为级 `R_h` 183.6–917.9 Ω、与 M1 脉宽动态范围"
+               "对齐；🔴 **系统瓶颈 = 光学域 drift**（ε_drift 2.07 ≫ ε_write 0.029 ≫ "
+               "ε_read 3.1e-5）⇒ 若与电学域同阶，16 电平保持仅 **1.7 秒**"
+               "（PM-G7 由「缺口」升级为「系统级阻塞项」）；2.5D 装配签核 ⇒ "
+               "**EIC 通道 pitch(50 µm) > PIC 单元 pitch(18.05 µm) ⇒ 密度瓶颈在电域**"},
 ]
 
 # 各档**后端**突变探针数（与各 smoke 输出的 `[PASS] P*` 计数一致；派生用，勿写死合计）
-MILESTONE_PROBES = {"M0": 6, "M1": 5, "M2": 7, "M3": 5}
+MILESTONE_PROBES = {"M0": 6, "M1": 5, "M2": 7, "M3": 5, "M4": 5}
 
 FINDINGS = [
     {"title": "热串扰间距是版图的**物理约束**（不是随意留白）",
@@ -118,6 +135,23 @@ FINDINGS = [
                "命中陈旧索引 ⇒ 端口偏移静默退回器件原点 ⇒ 51 处 LVS 假红。已修："
                "缓存值**持有对象引用 + 身份校验 + 组件数版本**；并把 `port_abs` 的"
                "「实例不在 link ⇒ 静默返回器件原点」改为 **raise**。"},
+    {"title": "存储读出与通信链路**口径本质不同**：低频 ⇒ 大转阻换灵敏度",
+     "detail": "光子存储是**存储读**（kHz~MHz），不是 GBd 通信链。TIA 带宽 "
+               "`f_3dB = 1/(2π R_f C_f)` ⇒ 读出速率越低，允许的 `R_f` 越大；而热噪声 "
+               "`σ_th·|Z| ∝ √R_f` 使 `SNR ∝ √R_f`（热噪声主导）⇒ **在带宽可行域内"
+               "取最大 R_f**。本档 R_f 设计点 20 kΩ（带宽上界 79.6 MΩ）⇒ 读出灵敏度 "
+               "−39.8 dBm、对 1 mW 读光的余量 **9495×** ⇒ **读出电路不是系统瓶颈**。"},
+    {"title": "🔴 系统瓶颈是**光学域 drift** —— 把 PM-G7 从「缺口」升级为「阻塞项」",
+     "detail": "三段等效电平误差：ε_write 0.029（驱动时序量化）· ε_read 3.1e-5（读出"
+               "电路）· **ε_drift 2.07**（保持 1 年）。前两者都远小于 1，唯独 drift 段"
+               "（**用 M2 的电学域 ν 上界做跨域代理**）远超间距 ⇒ 系统 BER 0.40。"
+               "逆解：**16 电平保持时间仅 1.7 秒**。⇒ 多电平光存储对 drift 极敏感"
+               "（电平间距 ∝ 1/(L−1)），**光学域 drift 锚（PM-G7）不闭合则寿命结论不可给**。"},
+    {"title": "2.5D 集成密度瓶颈在**电域**（EIC 通道 pitch > PIC 单元 pitch）",
+     "detail": "PIC 单元 pitch 18.05 µm（M3 由热串扰咬合定出）；本档 2.5D 装配假设 EIC "
+               "通道 pitch 50 µm ⇒ EIC die（400 µm 宽）比 PIC die（197 µm 宽）还宽 ⇒ "
+               "**系统密度受 EIC 约束**。临界值 = PIC pitch ⇒ **EIC 通道 pitch 须 ≤ "
+               "18.05 µm 才不成为瓶颈**（这是给电路设计方的硬指标）。"},
 ]
 
 GAPS = [
@@ -126,13 +160,18 @@ GAPS = [
                "但每 π 损耗与 Γ 无关（闭式已证）。"},
     {"id": "PM-G6", "title": "相位域（谐振/干涉）多电平读出与漂移口径（开放）",
      "detail": "本卡只走振幅域（波导直通 + 相变吸收调制）；相位域口径未建。"},
-    {"id": "PM-G7", "title": "光学域 drift 定量锚（@1550 nm 的 n/k 随时间）（开放）",
-     "detail": "电学域有 4 条 ν 锚；光学域**无直接锚**（M2 判定）⇒ 阵列长期保持"
-               "只能给电学域口径。"},
-    {"id": "PM-G8", "title": "加热器电-热联仿与 T1 器件级真值（本档新增登记）",
-     "detail": "版图只交付**几何**（加热线 + pad 的尺寸/间距）；焦耳热分布、"
-               "热-光耦合动力学、开关能耗真值属**器件级 T1 / 电路级 T2 锁死区**"
-               "（无 PDK ⇒ 不报）。"},
+    {"id": "PM-G7", "title": "光学域 drift 定量锚（@1550 nm 的 n/k 随时间）（开放 · M4 升级为系统级阻塞项）",
+     "detail": "电学域有 4 条 ν 锚；光学域**无直接锚**（M2 判定）。M4 的系统误码预算证明："
+               "**该缺口是系统级瓶颈**（ε_drift 占 99.99%）⇒ 若光学域 drift 与电学域同阶，"
+               "16 电平保持仅 ~1.7 秒。**此锚不闭合 ⇒ 任何寿命结论都不可给**。"},
+    {"id": "PM-G8", "title": "加热器电-热联仿与 T1 器件级真值（M4 部分结算：行为级已交付 · 器件级仍锁死）",
+     "detail": "M4 交付**行为级**外设（`R_h = R_sheet·(L_h/w_h)`、`P = V²/R`、`E = P·t`）"
+               "并与 M1 的脉冲阶梯动态范围对齐；但焦耳热分布、热-光耦合动力学、开关能耗"
+               "**真值**仍属**器件级 T1 / 电路级 T2 锁死区**（无 PDK ⇒ 不报）。"},
+    {"id": "PM-G9", "title": "外设参数缺本项目实测锚（M4 新增登记）",
+     "detail": "PD 响应度（A/W）/ 加热器薄膜方阻（Ω/sq）取**公开工程典型区间**（非实测、"
+               "非逐条 DOI 复核）；读出速率 / 输入光功率 / 驱动摆幅 / EIC 通道 pitch 为"
+               "**设计假设** ⇒ 外设结论只给**区间 + 恒等式 + 单调性**，无绝对真值。"},
 ]
 
 #: 报告 JSON 不在本部署时的**内置快照**（2026-10-04 实测 · 仅供降级展示）。
@@ -235,6 +274,90 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
                        "pcm_layer_exact": True, "heater_layer_exact": True,
                        "si_layer_at_least_devices": True,
                        "no_hierarchy_refs": True, "single_structure": True},
+    # ── M4 外设与系统（2026-10-04 实测 · 与 lda_pm_m4_report.json 逐块同构）────────
+    "m4": {
+        "upstream": {
+            "levels": {"l_um": 11.014603130717049, "n_levels": 16,
+                       "spacing_frac": 0.06570779838443097,
+                       "source": "ACS Photonics 2025 / arXiv 2512.23559"
+                                 "（椭偏 · Cody-Lorentz 拟合 · 30nm 膜）"},
+            "pic_pitch_um": 18.045024706557335,
+        },
+        "readout": {
+            "all_ok": True, "f_3db_hz": 397887357.7297383, "f_read_hz": 100000.0,
+            "n_levels": 16, "p_in_w": 0.001, "p_min_dbm": -39.77515569742968,
+            "p_min_w": 1.0531359308367793e-07, "r_f_max_ohm": 79577471.54594769,
+            "r_f_ohm": 20000.0, "resp_a_per_w": 0.8,
+            "sensitivity_margin_x": 9495.450404065508, "shot_dominant": True,
+            "source": "ACS Photonics 2025 / arXiv 2512.23559"
+                      "（椭偏 · Cody-Lorentz 拟合 · 30nm 膜）",
+            "worst_ber": 0.0, "worst_snr": 32382.63468487792,
+            "z_mag_ohm": 19999.999368345347,
+        },
+        "rf_tradeoff": {
+            "design_r_f_ohm": 20000.0, "n_points": 24,
+            "optimal_r_f_ohm": 79577471.54594769, "optimal_worst_ber": 0.0,
+            "optimal_worst_snr": 37021.25838766379, "r_f_max_ohm": 79577471.54594769,
+            "snr_monotone_nondecreasing": True,
+        },
+        "write_driver": {
+            "driver_bits": 8, "e_hi_j": 2.966062382119907e-09,
+            "e_lo_j": 5.932124764239814e-10, "eps_write": 0.029411764705882353,
+            "p_hi_w": 0.05932124764239814, "p_lo_w": 0.011864249528479628,
+            "pulse_dynamic_range_ok": True, "pulse_ladder_ratio": 4.6748631345508755,
+            "r_hi_ohm": 917.8835942264208, "r_lo_ohm": 183.57671884528415,
+            "t_pulse_s": 5e-08, "v_drv": 3.3,
+        },
+        "system_budget": {
+            "all_ok": False, "ber_target": 1e-12, "ber_total": 0.40466976317426545,
+            "bottleneck": "drift",
+            "drift_proxy": {
+                "is_cross_domain_proxy": True, "nu_max": 0.12, "nu_min": 0.07,
+                "nu_upper_bound": 0.18,
+                "per_proxy": [{"nu_proxy": 0.07, "t_erode_human": "2.4 秒",
+                               "t_erode_s": 2.35641844238366},
+                              {"nu_proxy": 0.12, "t_erode_human": "1.6 秒",
+                               "t_erode_s": 1.6487212707001282}],
+                "note": "🔴 光学域 drift 无直接锚（PM-G7）⇒ 本段为跨域代理（电学域 ν 上界），"
+                        "给出「若两域同阶」的系统级后果，非光学域寿命结论。",
+            },
+            "eps": {"drift": 2.0720881264730338,
+                    "read": 3.0880748578094574e-05,
+                    "write": 0.029411764705882353},
+            "eps_total": 2.0722968553581462, "max_t_hold_human": "1.7 秒",
+            "max_t_hold_s_for_target": 1.7146877590497775,
+            "share": {"drift": 0.9998992765517292,
+                      "read": 1.490170122019395e-05,
+                      "write": 0.01419283372931589},
+            "snr_total": 0.24127817339837015, "t_hold_s": 31560000.0,
+            "t_hold_table": [
+                {"ber": 4.106652565053581e-65, "bottleneck": "write",
+                 "eps_drift": 0.0, "eps_total": 0.029411780917428642, "t_hold_s": 1.0},
+                {"ber": 0.1548515127872787, "bottleneck": "drift",
+                 "eps_drift": 0.491321347466652, "eps_total": 0.4922008932673542,
+                 "t_hold_s": 60.0},
+                {"ber": 0.30551485011699697, "bottleneck": "drift",
+                 "eps_drift": 0.982642694933304, "eps_total": 0.9830827629261543,
+                 "t_hold_s": 3600.0},
+                {"ber": 0.35700299445152234, "bottleneck": "drift",
+                 "eps_drift": 1.3640091545750574, "eps_total": 1.3643262170834722,
+                 "t_hold_s": 86400.0},
+                {"ber": 0.40466976317426545, "bottleneck": "drift",
+                 "eps_drift": 2.0720881264730338, "eps_total": 2.0722968553581462,
+                 "t_hold_s": 31560000.0},
+            ],
+        },
+        "assembly_2p5d": {
+            "density_bottleneck": "eic", "drc_all_pass": True,
+            "eic_die_um": [400.0, 6.2], "eic_pitch_um": 50.0,
+            "gds_bytes_len": 4852,
+            "gds_sha256": "4191e8b8255e98078add7886c35b982e7b5bb8bc6c2880db618b84fa12955bdf",
+            "interposer_um": [408.0, 24.4],
+            "layers_decoded": {"1": 10, "5": 8, "6": 48, "64": 2, "65": 16, "66": 1},
+            "lvs_verdict": "ACCEPT", "n_channels": 8, "pic_die_um": [197.33, 6.2],
+            "pic_pitch_um": 18.045024706557335,
+        },
+    },
 }
 
 _ARTIFACT_DIRS = (
@@ -242,6 +365,8 @@ _ARTIFACT_DIRS = (
     os.path.join("lda", "examples", "photo_memory"),
 )
 _REPORT_NAME = "lda_pm_m3_report.json"
+_M4_REPORT_NAME = "lda_pm_m4_report.json"
+_ARTIFACT_PREFIXES = ("lda_pm_m3", "lda_pm_m4")
 
 
 # ═══════════════════════════ 产出物探测（只读）═══════════════════════════
@@ -251,8 +376,8 @@ def _repo_root(repo_root: Optional[str]) -> str:
     return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def _load_report(repo_root: Optional[str] = None) -> Dict[str, Any]:
-    """读预生成报告 JSON（**只 json.load + stat**，绝不重算）。
+def _load_named_report(name: str, repo_root: Optional[str] = None) -> Dict[str, Any]:
+    """读**指定文件名**的预生成报告 JSON（只 `json.load` + 目录扫描，绝不重算）。
 
     🔴 **聚合扫描**：源码仓产物在 `examples/photo_memory/`，部署形态可能在
     `lda/examples/photo_memory/` ⇒ 逐个候选目录扫描，取首个命中（同一份数据）。
@@ -260,17 +385,27 @@ def _load_report(repo_root: Optional[str] = None) -> Dict[str, Any]:
     """
     root = _repo_root(repo_root)
     for d in _ARTIFACT_DIRS:
-        fp = os.path.join(root, d, _REPORT_NAME)
+        fp = os.path.join(root, d, name)
         if os.path.isfile(fp):
             try:
                 with open(fp, encoding="utf-8") as fh:
                     data = json.load(fh)
                 if isinstance(data, dict):
-                    data["_source"] = d.replace(os.sep, "/") + "/" + _REPORT_NAME
+                    data["_source"] = d.replace(os.sep, "/") + "/" + name
                     return data
             except (OSError, ValueError):
                 return {}
     return {}
+
+
+def _load_report(repo_root: Optional[str] = None) -> Dict[str, Any]:
+    """读 M3 阵列报告 JSON（薄委托 `_load_named_report`）。"""
+    return _load_named_report(_REPORT_NAME, repo_root)
+
+
+def _load_m4_report(repo_root: Optional[str] = None) -> Dict[str, Any]:
+    """读 M4 外设与系统报告 JSON（薄委托 `_load_named_report`）。"""
+    return _load_named_report(_M4_REPORT_NAME, repo_root)
 
 
 def _manifest(repo_root: Optional[str] = None) -> Dict[str, Any]:
@@ -288,7 +423,7 @@ def _manifest(repo_root: Optional[str] = None) -> Dict[str, Any]:
         except OSError:
             continue
         for nm in names:
-            if not nm.startswith("lda_pm_m3") or nm.endswith(".py"):
+            if not nm.startswith(_ARTIFACT_PREFIXES) or nm.endswith(".py"):
                 continue
             fp = os.path.join(p, nm)
             try:
@@ -314,7 +449,10 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
     """组装光子存储阵列案例卡（只读 · 零重计算 · 免登录）。"""
     rep = _load_report(repo_root)
     src = rep.get("_source")
+    rep4 = _load_m4_report(repo_root)
+    src4 = rep4.get("_source")
     snap = STATIC_SNAPSHOT
+    snap4 = snap["m4"]
     a8 = rep.get("array_8x1") or snap["array_8x1"]
     a32 = rep.get("array_4x8") or snap["array_4x8"]
     pitch = rep.get("pitch") or snap["pitch"]
@@ -322,21 +460,29 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
     tiers = rep.get("scale_tiers") or snap["scale_tiers"]
     ups = rep.get("upstream") or snap["upstream"]
     checks = rep.get("signoff_checks") or snap["signoff_checks"]
+    m4_up = rep4.get("upstream") or snap4["upstream"]
+    m4_ro = rep4.get("readout") or snap4["readout"]
+    m4_rf = rep4.get("rf_tradeoff") or snap4["rf_tradeoff"]
+    m4_wd = rep4.get("write_driver") or snap4["write_driver"]
+    m4_sb = rep4.get("system_budget") or snap4["system_budget"]
+    m4_asm = rep4.get("assembly_2p5d") or snap4["assembly_2p5d"]
 
     gate_total = sum(m["gate"] for m in MILESTONES)
     return {
         "endpoint": "/api/pm_demo",
         "case_id": CASE_ID,
-        "claim": "用 LDA 从零设计一条非易失光子存储单元 → 阵列（Si 波导 + GST 相变段 "
-                 "+ 双侧微加热器 + 电极 pad）：P&R → 路由 → 几何 DRC/LVS → "
-                 "**从最终 GDS 字节独立解码复核** → 设计预算，出真 GDSII",
+        "claim": "用 LDA 从零设计一条非易失光子存储单元 → 阵列 → 外设与系统"
+                 "（Si 波导 + GST 相变段 + 双侧微加热器 + 电极 pad）：P&R → 路由 → "
+                 "几何 DRC/LVS → **从最终 GDS 字节独立解码复核** → 设计预算 → "
+                 "读出/写驱动行为级 → 系统误码预算 → 2.5D 装配签核，出真 GDSII",
         "verdict": "DESIGN_SIGNOFF",
         "verdict_label": "设计期签核（非流片实测）",
         "identity": {
             "physics": "Si 波导 + GST 相变材料（电辅助写）· 振幅域多电平存储",
             "device": "PCM 单元 = Si 直波导 + GST 覆盖段 + 双侧微加热线 + 4 电极 pad",
             "route_note": "光学 IO 经**引出波导**接光栅耦合器（避免光栅齿区与电极 pad 打架）；"
-                          "阵列 = 串行总线（1×N）或多总线（R×C）",
+                          "阵列 = 串行总线（1×N）或多总线（R×C）；外设 = 读出 TIA + "
+                          "写驱动（行为级）",
             "layers": PCM_LAYERS,
             "ports": PCM_PORTS,
             "zero_external_eda": True,
@@ -344,7 +490,7 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "span": {
             "milestones": len(MILESTONES),
             "gate_checks": gate_total,
-            "modules": 4,
+            "modules": len(MILESTONES),
             "probe_mutations": sum(MILESTONE_PROBES.values()),
         },
         "milestones": MILESTONES,
@@ -370,14 +516,23 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "signoff_checks": checks,
         "budget": bud,
         "scale_tiers": tiers,
+        "m4": {
+            "readout": m4_ro,
+            "rf_tradeoff": m4_rf,
+            "write_driver": m4_wd,
+            "system_budget": m4_sb,
+            "assembly_2p5d": m4_asm,
+            "upstream": m4_up,
+            "data_source": src4 or "内置快照（2026-10-04 实测；本部署内无 M4 报告 JSON）",
+        },
         "artifacts": _manifest(repo_root),
         "data_source": src or "内置快照（2026-10-04 实测；本部署内无报告 JSON）",
         "ui": {
             "found_in_ui": True,
-            "entry": "验证实力（accept）→「光子存储阵列（PM-M3）」卡",
+            "entry": "验证实力（accept）→「光子存储阵列（PM-M0–M4）」卡",
             "related_panels": [],
-            "scope_note": "本卡覆盖**单元/阵列版图与签核**；单元物理闭式见 "
-                          "`lda_l2/pm_m0…pm_m3`，非 UI 可点面板。",
+            "scope_note": "本卡覆盖**单元/阵列版图/外设系统与签核**；单元物理闭式见 "
+                          "`lda_l2/pm_m0…pm_m4`，非 UI 可点面板。",
         },
         "honest_note": PM_HONEST_NOTE,
     }
@@ -438,9 +593,9 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑤ 独立解码口径：层 5 == 单元数 且 层 6 == 6 × 单元数",
         l5 == 8 and l6 == 48)
 
-    # ⑥ 缺口如实开放（不粉饰）：4 条缺口 · 含光学域 drift 无锚
-    chk("⑥ 缺口逐条登记（4 条）· 含「光学域 drift 无锚」与「无 PDK」",
-        card["gaps_total"] == 4
+    # ⑥ 缺口如实开放（不粉饰）：5 条缺口 · 含光学域 drift 无锚
+    chk("⑥ 缺口逐条登记（5 条）· 含「光学域 drift 无锚」与「无 PDK」",
+        card["gaps_total"] == 5
         and any("光学域 drift" in g["title"] for g in card["gaps"])
         and any("T1" in g["detail"] for g in card["gaps"]))
 
@@ -468,6 +623,21 @@ def run_selfchecks(verbose: bool = False) -> bool:
     _scan(card)
     chk("⑨ 返回体无非有限 float（±inf/NaN 会让前端 JSON.parse 崩）",
         not bad_float)
+
+    # ⑩ M4 外设块齐备（六段 · 与 lda_pm_m4_report.json 同构的顶层键）
+    m4 = card.get("m4") or {}
+    _m4_keys = {"readout", "rf_tradeoff", "write_driver", "system_budget",
+                "assembly_2p5d", "upstream", "data_source"}
+    chk("⑩ M4 外设块齐备（读出/权衡/写驱动/系统预算/2.5D/上游 六段 + 数据源）",
+        _m4_keys <= set(m4.keys())
+        and m4.get("system_budget", {}).get("bottleneck") in ("write", "drift", "read")
+        and m4.get("assembly_2p5d", {}).get("lvs_verdict") in ("ACCEPT", "REJECT"))
+
+    # ⑪ M4 密度瓶颈判据**快照内自洽**（EIC pitch ↕ PIC pitch ⇒ bottleneck）
+    _asm = m4.get("assembly_2p5d") or {}
+    chk("⑪ M4 密度瓶颈判据自洽（EIC pitch ↕ PIC pitch ⇒ bottleneck 翻转）",
+        _asm.get("density_bottleneck")
+        == ("eic" if _asm.get("eic_pitch_um", 0.0) > _asm.get("pic_pitch_um", 0.0) else "pic"))
 
     ok_all = all(res.values())
     if verbose:

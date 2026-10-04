@@ -1,5 +1,160 @@
 # Changelog
 
+## v0.9.192（2026-10-04 · **光子存储征程 PM-M4：外设与系统 —— 读出链 + 写驱动 + 系统误码预算 + 2.5D 签核** · 账本 **476 不变（零锚改动）** · CI core **280 → 281** · 端点 **146 → 147**（新增 `GET /api/pm_demo` 登记））
+
+第五程第五档。M0–M3 交付的是**「单元 → 阵列」的光学侧**（一个单元能不能写、能装几个电平、
+热与保持窗口够不够、能不能排布并签核）。M4 交付**「阵列 → 系统」的电学侧**：
+把光**读出来**、把电平**写进去**、把三段误差**合成系统 BER**、并给出**可装配的 2.5D 立面 + 真 GDS**。
+此前 PM 征程的读出/写驱动**只存在于文字里**，本档把它落成**可算、可判、可点**的模块。
+
+### ① 读出链（行为级）`pm_m4.readout_chain`
+
+每级显式、全部由上游/常量算出，无字面量回填：
+`P_out = P_in·T_j → I_pd = R_pd·P_out → V = |Z(f_read)|·I_pd → σ_I = √(2qIB + 4k_BTB/R_f) → SNR = ΔV/(2σ_V) → BER = ½erfc(SNR/√2)`。
+`T_j` 读 `pm_m1.level_design`（同源）、`|Z|` 复用 `eic_behavioral` 单极点 TIA（同源）。
+本档（GST · 16 电平）实测：`f_read = 1.0e5 Hz`、`R_pd = 0.8 A/W`（规格锚**下界**）、
+`R_f = 2.0e4 Ω`、`|Z| = 19999.9994 Ω`、`f_3dB = 3.9789e8 Hz`、
+**最坏 SNR 32382.6 / 最坏 BER 下溢 0**、`shot_dominant = true`、自检 `all_ok = true`。
+
+### ② 🔴 存储读出与 oi 高速链的**本质不同**（本档头号设计结论）
+
+oi 链要 GHz 带宽 ⇒ `R_f ≤ 1/(2π·f·C_f)` 把 `R_f` 压得很小（**带宽是硬约束，灵敏度只能让步**）；
+存储读出 `f_read` 低 ⇒ 同一个带宽上界**大 3–4 个量级**，且热噪声项 `4k_BTB/R_f` 主导时
+**SNR ∝ √R_f** ⇒ **可以在上界内取大 R_f 换灵敏度**。
+
+- R_f 带宽上界 = `1/(2π·f_read·C_f)` = **7.9577e7 Ω**（**由反函数算出、非硬编码** · 探针 P1 守）。
+- 24 点扫描：**SNR 随 R_f 单调不减**；设计点 20 kΩ → 上界仅 **+14.3%**（32382.6 → 37021.3）。
+- 🔴 **折点被 24 点扫描显式暴露** —— 说明 20 kΩ 已越过热噪声主导区、R_f 收益进入**递减段**，
+  故工程上**不必**一路开到上界（设计点不是拍脑袋）。
+- **灵敏度逆解**（二分求使 `worst_ber ≤ 1e-12` 的最小 `P_in`）：**`P_min = 1.0531e-7 W = −39.775 dBm`**，
+  与设计 `P_in = 1 mW` 的**余量 9495.5×** ⇒ **读出电路不可能成为系统瓶颈**（§④ 独立确认）。
+
+### ③ 写驱动 `write_driver`
+
+加热线电阻**由 M3 几何 × 方阻锚算出**（不是查表填数）：
+`R_h = R_sheet·(L_h/w_h)`，`L_h` 读 `pm_m3.cell_length_um`、`w_h` 读 `primitives.PCM_CELL_DEFAULTS["heat_w"]`。
+实测：`R_lo/R_hi = 183.577 / 917.884 Ω`（方阻锚 10–50 Ω/sq）⇒ `P = V²/R` = **0.011864 / 0.059321 W**、
+`E = P·t`（`t_pulse = 5e-8 s`）= **5.932e-10 / 2.966e-9 J**；脉冲阶梯动态比 **4.6749** 与 M1 `pulse_ladder` 同源；
+`ε_write = 1/(2·16) = 0.0294118`（半 LSB 均匀量化）。
+🔴 诚实边界：`E` 为**行为级**，不含器件级焦耳热/热-光动力学（**T1 PDE / T2 电路级锁死区**）。
+
+### ④ 系统误码预算（瓶颈识别）`system_link_budget`
+
+三段**等效电平误差**合成（跨域量纲统一为「电平份额误差」）：
+
+| 分量 | 公式 | 值 | 占比 |
+|---|---|---|---|
+| 写量化 `ε_write` | `q·(L−1)/2` | 0.0294118 | 1.419 % |
+| 介质 drift `ε_drift` | `ν_max·ln(t_hold/t₀)` —— **算自 M2 的 ν 锚** | 2.07209 | **99.990 %** |
+| 读出电路 `ε_read` | `1/SNR_read` | 3.088e-5 | 1.49e-5 % |
+| 合计 | `ε_tot = √Σε_i²` | **2.07230** | — |
+| 系统 BER @ 1 年 | `½erfc(SNR_tot/√2)` | **0.40467** | — |
+| **瓶颈** | `argmax ε_i` | **`drift`** | — |
+
+- `all_ok = false` ⇒ **如实登记为不达标，不粉饰**（判据 E5 披露守卫 + 肯定式面禁词扫描守）。
+- **保持时间扫描**（1 s / 60 s / 3600 s / 86400 s / 1 年）：瓶颈由 **`write`（t=1 s）切换到 `drift`**，
+  系统 BER 由 4.107e-65 单调升到 0.40467。
+- **逆解**：使 `worst_ber ≤ 1e-12` 的最大保持时间 **`t_max = 1.7147 s`（约 1.7 秒）**
+  —— 判据⑯用「`t_max` 处 ≤ 目标 ∧ `2·t_max` 处 > 目标」**双边**守住（防单边恒真）。
+- 🔴🔴 **跨域代理的诚实标注**（`drift_proxy.is_cross_domain_proxy = true`）：`ν` 取自 **M2 电学域锚**
+  （`ν_min 0.07 / ν_max 0.12 / 上界 0.18`），而**光学域 drift 至今无直接定量锚**（PM-G7 未闭合）
+  ⇒ 本段只回答「**若两域同阶**，系统级后果是什么」，**不是**光学域寿命结论
+  （逐点侵蚀：`ν = 0.07 ⇒ 2.356 s`；`ν = 0.12 ⇒ 1.649 s`）。
+  ⇒ 🔴 **PM-G7 由「派生缺口」升级为系统级阻塞项**：即使读出余量 9495×、写驱动阶梯干净，
+  **系统仍被光学域 drift 按在「秒级保持」上** —— 储能不是问题，**保持**才是问题。
+
+### ⑤ 2.5D 装配签核 `system_2p5d`（真 GDS + 电层 DRC + 网络 LVS + 独立解码）
+
+PIC 阵列 die（**复用 M3 阵列元素，不重造几何**）+ EIC 通道 die + interposer + M1 引出线 ⇒ 真 GDS。
+
+| 量 | 值 | 来源 |
+|---|---|---|
+| 通道数 | **8** | `n_devices − 2·n_buses`（每总线 2 个光栅耦合器） |
+| PIC die | **197.33 × 6.2 µm** | M3 `layout_signoff().gds_stats.bbox_um`（**算出来的**） |
+| EIC die | **400.0 × 6.2 µm** | `n_channels × eic_pitch`（50 µm · **设计假设**） |
+| interposer | **408.0 × 24.4 µm** | 每边外扩 `2×min_pad`（**相对量**，非写死绝对尺寸） |
+| **密度瓶颈** | **`eic`** | `argmax(pitch)`：EIC 50.0 > PIC 18.0450 ⇒ **提密度先压电域** |
+| 电层 DRC | **PASS**（6 项） | 通道宽/间距/EIC-PIC 净空/interposer 覆盖 ×2/引出线宽 |
+| 网络 LVS | **ACCEPT**（0 违规） | `layer 65 ≡ 2 × n_ch` |
+| GDS | **4852 B** · sha256 `4191e8b8…` | ≠ PIC 阵列 6224 B ⇒ **真装配，非原样复用** |
+
+**独立解码复核**（复用 `pm_m3.independent_gds_scan` —— 自写最小 GDSII 记录流解析器，**刻意不复用**导出器解码路径）：
+`{1:10, 5:8, 6:48, 64:2, 65:16, 66:1}`（Si / PCM / HEATER / interposer / M1 通道+引出 / EIC die）。
+🔴 **LVS 的通道/走线计数从独立解码器读**（`scan["layers"][65] == 2·n_ch`），
+**不读生成端 `len(structs[...])`** —— 否则判据读到**同源派生量**即成假判据。
+
+### ⑥ WebUI 接入（A 档只读 · 沿用 M3 通道）
+
+- `pm_case.py`：新增 `m4` 块（`readout / rf_tradeoff / write_driver / system_budget / assembly_2p5d / upstream / data_source`，
+  与 `lda_pm_m4_report.json` **逐块同构**，由判据 G1 常驻守）；`MILESTONES` 加 M4（`gate: 22`）；
+  `FINDINGS` **+3**（低频高灵敏 / drift 是系统瓶颈 / 2.5D 密度瓶颈在电域）；
+  缺口改 **PM-G7**（升级为系统级阻塞项）+ **PM-G8**（M4 部分结算）+ 新增 **PM-G9**（封装级热-机械真值）。
+- `static/index.html`：`sec-pm` 面板标题/导航链接/按钮改 **M0–M4**；`renderPm` 新增 **⑦–⑪ 五段 M4**
+  （读出链 / R_f 权衡 / 写驱动 / 系统误码预算 / 2.5D 装配），原 ⑦–⑩ 顺延为 **⑫–⑮**。
+
+### ⑦ 🔴 本轮自查抓出并修掉**上轮门禁里的一条假绿**（方法论产出 · 比数字更值钱）
+
+`run_webui_pm_render_path_smoke`（PM-M3 建立）中的 `W4c 反向完备（`[]` 项目块）`：
+
+```python
+def _block_keys(card, prefix):        # 原实现
+    for seg in prefix:                # ← prefix 是字符串 "scale_tiers[]" ⇒ 逐**字符**迭代
+        ...                           #    首字符 's' 不在根字典 ⇒ 立刻 return set()
+```
+
+⇒ `_block_keys(card, "scale_tiers[]") ≡ set()` ⇒ 「字段全覆盖」半边**恒真**（空集 ⊆ 任何集合）。
+**实证**：`scale_tiers` 项目块有 **17** 个字段，前端只渲染 **10** 个 ——
+`n_buses / n_cells_per_bus / drc_pass / expected_pcm / got_pcm / width_um / height_um`
+**从来没有在 UI 上出现过**，门禁却一直全绿。
+
+**修法三层**：
+1. **修判据** —— `_block_keys` 归一化为「段列表 + 可选 `[]` 后缀」（字符串前缀按 `.` 切分）。
+2. **补反向探针** —— 新增 `W6-P6`（向 `scale_tiers[0]` / `t_hold_table[0]` 注入字段 ⇒ W4c 必红）
+   与 `W6-P6b`（**逐字复刻**修复前实现，断言其**恒返回空集** ⇒ 把这条假绿**当场复现并钉住**）。
+3. **补前端** —— 把这 7 个字段真正渲染出来（规模档表加「总线结构」「宽 × 高」「独立解码 期望/实测」「DRC」）。
+
+**端到端突变实证**（非单元级）：删掉 `t.n_buses` 映射 ⇒ `W4c FAIL（缺 n_buses, n_cells_per_bus）`；
+抹掉前端 `ASM.density_bottleneck` 引用 ⇒ `W3 FAIL（坏路径）+ W4b FAIL（2.5D 块缺 density_bottleneck）`；
+还原后 **22 PASS / 0 FAIL**。
+
+### ⑧ 门禁与接线
+
+- 新增 `lda/run_pm_m4_smoke.py`：**25 判据（含 5 条突变探针）** —— 上游同源 / 读出链 5 条恒等式 /
+  R_f 上界 = 带宽反函数 + SNR 非降 / 写驱动 `R ≡ R_sheet·L/w ∧ E ≡ P·t` /
+  `ε_tot ≡ √Σε_i² ∧ 瓶颈 = argmax` / **`ε_drift` 算自 M2 ν 锚（非字面量）** /
+  2.5D 独立解码 ≡ 2×通道数 ∧ 密度瓶颈可翻转 / 披露守卫 / **内置快照 schema 逐块 == 仓库报告 JSON**；
+  探针 P1–P5（带宽上界可缩 / `I_pd` 走公式 / `ε_write` 随位深 / 期望非恒真 / DRC 可证伪）。
+- `pm_m4.run_selfchecks`：**16 项**（含越域护栏 4 类非法入参 `raise`、灵敏度逆解自洽、最大保持时间双边逆解）。
+- `run_webui_pm_render_path_smoke`：**20 → 22 判据（含 7 条突变探针）** —— 反向完备扩到
+  **23 顶层键 + 35 嵌套块 + 7 项目块**；取值路径 **306 条 / 36 别名**逐条在真实 `card()` JSON 上解析通过。
+- `run_ci_regression.py`：`CORE_SMOKES` +1（**280 → 281**）+ 超时预算覆盖表登记 `run_pm_m4_smoke.py: 120.0`；
+  顺带订正两处**陈述已落后实况**的注释（pm_m3「23 判据」→ 22；PM 前端门禁「20 判据 / 196 路径 / 24 块 / 5 项目块」→ 实况）。
+- 货架产物：`examples/photo_memory/build_pm_m4.py`（落盘前断言报告 `gds_bytes_len` == 落盘字节数 ∧ 无未替换 `%s`）
+  ⇒ `lda_pm_m4_report.json`（4791 B）+ `lda_pm_m4_2p5d.gds`（4852 B）。
+- 设计定稿：`docs/LDA_光子存储征程_PM-M4_设计定稿_2026-10-04.md`。
+
+### ⑨ 诚实缺口（不粉饰）
+
+**PM-G2**（单元插损含 Γ 假设）· **PM-G6**（相位域多电平口径）·
+🔴 **PM-G7**（光学域 drift 无直接定量锚 · **本档升级为系统级阻塞项**）·
+**PM-G8**（T1 PDE / T2 电路级器件级真值锁死区）· **PM-G9**（封装级热-机械真值 —— 2.5D 只做几何+拓扑签核）。
+
+**披露守卫**（`disclosure` 机器可查）：`no_foundry_truth` · `no_project_measurement` ·
+`pd_responsivity_is_typical_range` · `heater_sheet_rho_is_typical_range` · `readout_model_is_behavioral` ·
+`driver_energy_is_behavioral_not_device_truth` · `joule_heat_is_t1_t2_locked` ·
+`drift_segment_is_cross_domain_proxy` · `eic_pitch_is_design_assumption` ·
+`no_efficiency_metric_reported`（**不报 pJ/bit · fJ/op · TOPS · TOPS-W**）· `llm_not_in_decision_path`。
+
+**下一档候选**：① 攻 **PM-G7**（光学域 drift 锚 —— 本档已把它抬为系统级阻塞项）；
+② **PM-G9**（封装级热-机械）；③ **PM-G6**（相位域多电平，绕开振幅域 drift 侵蚀）。
+
+**🔴 顺带修掉 v0.9.191 的一个潜伏欠账**：PM-M3 接入 `GET /api/pm_demo` 时**漏跑了
+`scripts/gen_api_reference.py`**（README/CHANGELOG 里「端点 146 不变」是**错的**，当时已是 147），
+该缺陷被本轮全量 CI 的 `run_p2_usability_smoke` ⑤（生成器零漂移）⑦（参考覆盖全部端点）
+当场抓出 ⇒ 本版重生成 `docs/API_REFERENCE.md` + `docs/api_reference.json`（端点 **147**），
+门禁 **36 PASS / 2 FAIL → 38 PASS / 0 FAIL**。教训：**「改 WebUI 路由后必跑 API 参考生成器」
+不能靠人记，须靠全量 CI 兜底 —— 本轮正是全量跑才暴露。**
+
 ## v0.9.191（2026-10-04 · **光子存储征程 PM-M3：阵列版图 —— 单元/多电平落到阵列 + 真 GDS + DRC/LVS + 独立解码复核 + WebUI 案例卡** · 账本 **476 不变（零锚改动）** · CI core **278 → 280** · 端点 **146 不变**）
 
 第五程第四档。M0/M1/M2 交付的是**标量设计**（一个单元能不能写、能装几个电平、热与保持窗口够不够），

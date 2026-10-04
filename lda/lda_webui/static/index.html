@@ -144,7 +144,7 @@ body{padding-top:56px}
     <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E18）</a>
     <a href="#sec-d4" style="color:#0b1220;background:#a5b4fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ D4 交付扩面（电子+超导）</a>
     <a href="#sec-oi" style="color:#04201b;background:#5eead4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光联接模块 M0–M5（3.2T/CPO · 热-光-电协同 + VπL 断口结算）</a>
-    <a href="#sec-pm" style="color:#1a1205;background:#fcd34d;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子存储阵列 M0–M3（GST 相变 · 真 GDS + DRC/LVS）</a>
+    <a href="#sec-pm" style="color:#1a1205;background:#fcd34d;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子存储阵列 M0–M4（GST 相变 · 真 GDS + DRC/LVS · 外设与系统）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1506,7 +1506,7 @@ body{padding-top:56px}
   </div>
 
   <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-pm">
-    <h2>★ 光子存储阵列 M0–M3：单元闭式 → 多电平 → 热-可靠性 → 阵列版图（真 GDS + DRC/LVS · 吃狗粮检阅平台）</h2>
+    <h2>★ 光子存储阵列 M0–M4：单元闭式 → 多电平 → 热-可靠性 → 阵列版图（真 GDS + DRC/LVS）→ 外设与系统（吃狗粮检阅平台）</h2>
     <div class="hint">
       <b>用 LDA 从零设计一条<b>非易失光子存储</b>（Si 直波导 + <b>GST 相变段</b> + 双侧微加热线 + 4 电极 pad）</b>，
       从单元物理一路做到<b>可排布的阵列版图 + 真 GDSII + 双闸签核</b>。<br/>
@@ -1529,6 +1529,12 @@ body{padding-top:56px}
       同进程多次建阵列时旧对象 GC 后 <b>id 复用 ⇒ 命中陈旧索引 ⇒ 端口偏移静默退回原点 ⇒ 51 处 LVS 假红</b>。
       已修：缓存<b>持有对象引用 + 身份校验 + 组件数版本</b>；并把「实例不在 link ⇒ 静默返回原点」改为
       <b>raise</b>（拒绝静默回退）。<br/>
+      <b>M4（外设与系统 · 本档）</b>：把阵列接上<b>读出链</b>（T → I<sub>pd</sub> → V<sub>TIA</sub> → 判决 → BER）、
+      <b>写驱动</b>（加热线电阻由 M3 几何 × 方阻锚算出）与<b>系统误码预算</b>，并做 <b>2.5D 装配签核</b>。
+      🔴 存储读出与 oi 高速链<b>本质不同</b>——<b>低频高灵敏</b>：热噪声主导时 <b>SNR ∝ √R<sub>f</sub></b> ⇒ 带宽上界内取最大 R<sub>f</sub>；
+      实测读出灵敏度 <b>P<sub>min</sub> = −39.78 dBm</b>（余量 ≈ <b>9495×</b>）⇒ <b>读出不是瓶颈</b>；
+      系统 BER 瓶颈是<b>光学域 drift</b>（跨域代理口径 · <b>PM-G7 未闭合</b>）⇒ 16 电平保持窗口仅 <b>1.7 秒</b>；
+      2.5D 密度瓶颈在<b>电域</b>（EIC pitch 50 µm &gt; PIC pitch 18.05 µm）。<br/>
       🔴 <b>诚实边界</b>：本卡是<b>设计期签核</b>（版图 + 几何 DRC + LVS + 设计预算），<b>非流片、非实测</b>；
       DRC 限值是<b>自建设计规则</b>（公开工艺近似，<b>非</b> foundry PDK deck）；单元插损含 <b>Γ 假设</b>
       （缺口 PM-G2）⇒ 一律区间；<b>无电学/热学联仿</b>（焦耳热/热-光动力学属器件级 T1 / 电路级 T2 锁死区）；
@@ -1536,7 +1542,7 @@ body{padding-top:56px}
       <b>不报</b> pJ/bit · fJ/op · TOPS · TOPS-W；判决为死标量比对，<b>LLM 不进判决路径</b>。
     </div>
     <div class="row">
-      <button class="btn" id="runPm">运行 光子存储阵列 M0 – M3 案例</button>
+      <button class="btn" id="runPm">运行 光子存储阵列 M0 – M4 案例</button>
     </div>
     <div id="pmSummary" class="summary"></div>
     <div id="pmBody"></div>
@@ -5856,7 +5862,7 @@ if($('runOi')) $('runOi').onclick = runOi;
 async function runPm(){
   const btn=$('runPm'); if(!btn) return;
   btn.disabled=true;
-  $('pmSummary').innerHTML='<span class="spin"></span> 正在装配 光子存储阵列 M0 – M3 案例（单元闭式 + 多电平 + 热-可靠性 + 阵列版图/P&R/DRC/LVS/独立 GDS 解码，只读快照）…';
+  $('pmSummary').innerHTML='<span class="spin"></span> 正在装配 光子存储阵列 M0 – M4 案例（单元闭式 + 多电平 + 热-可靠性 + 阵列版图/P&R/DRC/LVS/独立 GDS 解码 + 读出/写驱动/系统误码预算/2.5D 装配，只读快照）…';
   try{
     const d=await apiGet('/api/pm_demo');
     renderPm(d);
@@ -5876,6 +5882,10 @@ function renderPm(d){
       ST=MN.stats||{}, SI=AR.independent_scan||{}, EX=AR.expected_layers||{},
       PI=d.pitch||{}, UP=d.upstream||{}, BU=d.budget||{}, SC=d.signoff_checks||{},
       WD=AR.wide||{}, AF=d.artifacts||{}, DV=d.device||{}, UI=d.ui||{};
+  /* ── M4 外设与系统：读取**同一份** `case_card()` 的 `m4` 块（别名同样「无括号」式）── */
+  var M4=d.m4||{}, RO=M4.readout||{}, RF=M4.rf_tradeoff||{}, WDRV=M4.write_driver||{},
+      SB=M4.system_budget||{}, ASM=M4.assembly_2p5d||{}, M4UP=M4.upstream||{},
+      LU=M4UP.levels||{}, DPV=SB.drift_proxy||{}, EPS=SB.eps||{}, SHR=SB.share||{};
   $('pmSummary').innerHTML='<b>'+d.case_id+'</b> · 判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）'
     +' · 征程 <b>'+(sp.milestones||'?')+'</b> 段 / <b>'+(sp.modules||'?')+'</b> 模块'
     +' · 门禁判据 <b>'+(sp.gate_checks||'?')+'</b>（含 <b>'+(sp.probe_mutations||'?')+'</b> 条突变探针）'
@@ -5975,13 +5985,16 @@ function renderPm(d){
 
   // ⑤ 规模档（全部 DRC PASS + LVS ACCEPT + 独立复核 OK）
   h+='<h3 style="margin:14px 0 4px">⑤ 规模档（4/8/16/32 单元 + 4×8 多总线，全部双闸签核）</h3>';
-  h+=_qcTbl(['阵列','单元数','器件','网','元素','GDS (B)','面积 (µm²)','LVS'],
+  h+=_qcTbl(['阵列','单元数','器件','网','元素','GDS (B)','宽 × 高 (µm)','面积 (µm²)','独立解码 期望/实测','DRC','LVS'],
     (d.scale_tiers||[]).map(function(t){
-      return [ t.bus_x_cells, t.n_cells_total, t.n_devices, t.n_nets, t.n_elements,
-        t.gds_bytes, t.area_um2,
+      return [ t.bus_x_cells+'（'+t.n_buses+' 总线 × '+t.n_cells_per_bus+' 单元）',
+        t.n_cells_total, t.n_devices, t.n_nets, t.n_elements,
+        t.gds_bytes, t.width_um+' × '+t.height_um, t.area_um2,
+        (t.expected_pcm!=null?t.expected_pcm:'-')+' / '+(t.got_pcm!=null?t.got_pcm:'-')
+          +(t.independent_ok?' <b>✓</b>':' <b>✗</b>'),
+        (t.drc_pass?'<b>PASS</b>':'<b>FAIL</b>'),
         (t.lvs==='ACCEPT'?'<b>ACCEPT</b>':'<b>'+t.lvs+'</b>')
-          +(t.lvs_violations?'（'+t.lvs_violations+'）':'（0）')
-          +(t.independent_ok?' · <b>独立✓</b>':'') ];
+          +(t.lvs_violations?'（'+t.lvs_violations+'）':'（0）') ];
     }));
   h+='<div class="note">宽阵列（'+(WD.kind||'-')+'）：器件 '+(WD.stats?WD.stats.n_devices:'-')
     +' · 网 '+(WD.stats?WD.stats.n_nets:'-')+' · 元素 '+(WD.stats?WD.stats.n_elements:'-')
@@ -6015,26 +6028,143 @@ function renderPm(d){
   h+='<div class="note">Γ 说明：'+(BU.gamma_note||'-')+'</div>';
   h+='<div class="note">对比度来源纪律：'+(BU.contrast_reuse_note||'-')+'</div>';
 
-  // ⑦ 里程碑
-  h+='<h3 style="margin:14px 0 4px">⑦ 征程里程碑（M0 → M3 · 门禁判据合计 '+(sp.gate_checks||'?')+'）</h3>';
+  // ═══════════ M4 外设与系统（读出链 / R_f 权衡 / 写驱动 / 系统误码预算 / 2.5D 装配）═══════════
+  // ⑦ M4 读出链（行为级 · 复用 oi 电域 TIA 模型）
+  h+='<h3 style="margin:14px 0 4px">⑦ M4 读出链（T → I<sub>pd</sub> → V<sub>TIA</sub> → 判决 → BER · 行为级）</h3>';
+  h+=_qcTbl(['读出量','值'],[
+    ['读出频率 f_read (Hz)（行为级取其为噪声带宽 B）', RO.f_read_hz],
+    ['PD 响应度 R_pd (A/W)（规格锚下界）', RO.resp_a_per_w],
+    ['入射读光功率 P_in (W)', RO.p_in_w],
+    ['电平数 n_levels', RO.n_levels],
+    ['TIA 反馈电阻 R_f (Ω)', RO.r_f_ohm],
+    ['TIA 跨阻 |Z(f_read)| (Ω)', RO.z_mag_ohm],
+    ['TIA 3dB 带宽 f_3dB (Hz)', RO.f_3db_hz],
+    ['R_f 带宽上界 1/(2π·f_read·C_f) (Ω)', RO.r_f_max_ohm],
+    ['最坏 SNR（相邻电平对）', RO.worst_snr],
+    ['最坏 BER', RO.worst_ber!=null?Number(RO.worst_ber).toExponential(2):'-'],
+    ['噪声主导项', RO.shot_dominant?'<b>散粒噪声主导</b>（R_f 增益递减）':'<b>热噪声主导</b>（SNR ∝ √R_f）'],
+    ['读出链自检（worst BER ≤ 目标）', RO.all_ok?'<b>PASS</b>':'<b>FAIL</b>'],
+    ['口径来源（与 M1 同源）', RO.source],
+    ['上游单元长 L (µm) / 电平数', (LU.l_um!=null?LU.l_um:'-')+' / '+(LU.n_levels!=null?LU.n_levels:'-')],
+    ['上游级间距占比', LU.spacing_frac!=null?(LU.spacing_frac*100).toFixed(2)+' %':'-'],
+    ['上游来源（M1.level_design · 同源）', LU.source],
+    ['上游 PIC 单元 pitch (µm)', M4UP.pic_pitch_um]
+  ]);
+
+  // ⑧ M4 读出灵敏度与 R_f 权衡
+  h+='<h3 style="margin:14px 0 4px">⑧ M4 读出灵敏度与 R<sub>f</sub> 权衡（存储读出<b>低频高灵敏</b>：SNR 随 R<sub>f</sub> 单调不减）</h3>';
+  h+=_qcTbl(['权衡量','值'],[
+    ['设计点 R_f (Ω) = min(缺省 20 kΩ, 带宽上界)', RF.design_r_f_ohm],
+    ['扫描点数', RF.n_points],
+    ['最优（= 带宽上界）R_f (Ω)', RF.optimal_r_f_ohm],
+    ['R_f 上界 (Ω)', RF.r_f_max_ohm],
+    ['设计点 R_f (Ω)', RO.r_f_ohm],
+    ['最优 R_f 处最坏 SNR', RF.optimal_worst_snr],
+    ['设计点最坏 SNR', RO.worst_snr],
+    ['最优 R_f 处最坏 BER', RF.optimal_worst_ber!=null?Number(RF.optimal_worst_ber).toExponential(2):'-'],
+    ['SNR 随 R_f 单调不减（判据）', RF.snr_monotone_nondecreasing?'<b>成立</b>':'<b>不成立</b>'],
+    ['最小可探测光功率 P_min (W)', RO.p_min_w],
+    ['最小可探测光功率 P_min (dBm)', RO.p_min_dbm],
+    ['设计 P_in / P_min 余量 (×)', RO.sensitivity_margin_x]
+  ]);
+  h+='<div class="note">🔴 与 oi<b>高速</b>链本质不同：存储读出频率低 ⇒ 热噪声项 4k<sub>B</sub>TB/R<sub>f</sub> 主导时 '
+    +'<b>SNR ∝ √R<sub>f</sub></b> ⇒ 可在带宽上界内<b>取大 R<sub>f</sub> 换灵敏度</b>（不必像 oi 那样为带宽牺牲 R<sub>f</sub>）。'
+    +'实测 P<sub>min</sub> = '+Number(RO.p_min_dbm).toFixed(2)+' dBm、余量 ≈ '
+    +Number(RO.sensitivity_margin_x).toFixed(0)+'× ⇒ <b>读出电路不是系统瓶颈</b>。</div>';
+
+  // ⑨ M4 写驱动
+  h+='<h3 style="margin:14px 0 4px">⑨ M4 写驱动（加热线电阻由 M3 几何 × 方阻锚算出 → 驱动功率/能量 → 脉冲阶梯动态范围）</h3>';
+  h+=_qcTbl(['写驱动量','值'],[
+    ['驱动电压 V_drv (V)', WDRV.v_drv],
+    ['写 DAC 位数', WDRV.driver_bits],
+    ['脉冲宽度 t_pulse (s)', WDRV.t_pulse_s],
+    ['加热线电阻 R_lo (Ω)（方阻锚下界）', WDRV.r_lo_ohm],
+    ['加热线电阻 R_hi (Ω)（方阻锚上界）', WDRV.r_hi_ohm],
+    ['驱动功率 P_lo (W)', WDRV.p_lo_w],
+    ['驱动功率 P_hi (W)', WDRV.p_hi_w],
+    ['单脉冲能量 E_lo (J)', WDRV.e_lo_j],
+    ['单脉冲能量 E_hi (J)', WDRV.e_hi_j],
+    ['脉冲阶梯动态比 P_hi/P_lo（对齐 M1 电平阶梯）', WDRV.pulse_ladder_ratio],
+    ['阶梯动态范围自检', WDRV.pulse_dynamic_range_ok?'<b>PASS</b>':'<b>FAIL</b>'],
+    ['写量化等效电平误差 ε_write', WDRV.eps_write]
+  ]);
+
+  // ⑩ M4 系统误码预算
+  h+='<h3 style="margin:14px 0 4px">⑩ M4 系统误码预算（写量化 ⊕ 介质 drift ⊕ 读出电路 ⇒ 系统 BER + 瓶颈识别）</h3>';
+  h+=_qcTbl(['预算量','值'],[
+    ['系统 BER 目标', SB.ber_target!=null?Number(SB.ber_target).toExponential(0):'-'],
+    ['系统最坏 BER @ t_hold = '+(SB.t_hold_s!=null?Number(SB.t_hold_s).toExponential(2):'-')+' s',
+      SB.ber_total!=null?Number(SB.ber_total).toExponential(3):'-'],
+    ['系统 SNR_tot', SB.snr_total],
+    ['等效电平误差合计 ε_tot = √Σε_i²', SB.eps_total],
+    ['🔴 系统瓶颈 = argmax ε_i', '<b>'+SB.bottleneck+'</b>'],
+    ['系统预算自检（BER ≤ 目标）', SB.all_ok?'<b>PASS</b>':'<b>不达标（如实登记 · 非粉饰）</b>'],
+    ['保持时间 t_hold (s)', SB.t_hold_s],
+    ['达标最大保持时间 t_max (s)', SB.max_t_hold_s_for_target],
+    ['达标最大保持时间（人读）', SB.max_t_hold_human],
+    ['ε 写量化', EPS.write],
+    ['ε 光学域 drift（跨域代理）', EPS.drift],
+    ['ε 读出电路', EPS.read],
+    ['占比 写量化', SHR.write!=null?(SHR.write*100).toFixed(3)+' %':'-'],
+    ['占比 光学域 drift', SHR.drift!=null?(SHR.drift*100).toFixed(3)+' %':'-'],
+    ['占比 读出电路', SHR.read!=null?(SHR.read*100).toFixed(4)+' %':'-']
+  ]);
+  h+='<div class="note">drift 跨域代理（🔴 非光学域寿命结论 · 缺口 PM-G7 未闭合）：是否跨域代理 = <b>'
+    +(DPV.is_cross_domain_proxy?'是':'否')+'</b> · ν_min = '+DPV.nu_min+' · ν_max = '+DPV.nu_max
+    +' · ν_upper_bound = '+DPV.nu_upper_bound+'<br/>'+(DPV.note||'-')+'</div>';
+  h+='<div class="note"><b>保持时间扫描</b>（t_hold ↑ ⇒ ε_drift ↑ ⇒ 系统 BER ↑，瓶颈随之切换）：</div>';
+  h+=_qcTbl(['t_hold (s)','ε_drift','ε_tot','系统 BER','瓶颈'],
+    (SB.t_hold_table||[]).map(function(tt){
+      return [ tt.t_hold_s, tt.eps_drift, tt.eps_total,
+        (tt.ber!=null?Number(tt.ber).toExponential(3):'-'), tt.bottleneck ];
+    }));
+  h+='<div class="note"><b>drift 代理逐点侵蚀</b>（若光学域与电学域同阶 ⇒ 侵蚀到 1 个电平所需时间）：</div>';
+  h+=_qcTbl(['ν 代理','侵蚀到 1 个电平 (s)','（人读）'],
+    (DPV.per_proxy||[]).map(function(pp){ return [ pp.nu_proxy, pp.t_erode_s, pp.t_erode_human ]; }));
+
+  // ⑪ M4 2.5D 装配签核
+  h+='<h3 style="margin:14px 0 4px">⑪ M4 2.5D 装配签核（PIC 阵列 die + EIC 通道 die + interposer · 真 GDS + 电层 DRC + 网络 LVS + 独立解码）</h3>';
+  h+=_qcTbl(['装配量','值'],[
+    ['读出通道数', ASM.n_channels],
+    ['PIC 单元 pitch (µm)', ASM.pic_pitch_um],
+    ['EIC 通道 pitch (µm)', ASM.eic_pitch_um],
+    ['🔴 密度瓶颈 = argmax(pitch)', '<b>'+ASM.density_bottleneck+'</b>'],
+    ['PIC die 尺寸 (µm)', JSON.stringify(ASM.pic_die_um)],
+    ['EIC die 尺寸 (µm)', JSON.stringify(ASM.eic_die_um)],
+    ['interposer 尺寸 (µm)', JSON.stringify(ASM.interposer_um)],
+    ['电层 DRC', ASM.drc_all_pass?'<b>PASS</b>':'<b>FAIL</b>'],
+    ['LVS 判决', (ASM.lvs_verdict==='ACCEPT'?'<b>ACCEPT</b>':'<b>'+ASM.lvs_verdict+'</b>')],
+    ['GDS 字节（独立解码复核）', ASM.gds_bytes_len],
+    ['GDS sha256（独立解码复核）', ASM.gds_sha256!=null?'<code>'+ASM.gds_sha256+'</code>':'-']
+  ]);
+  var asmly=ASM.layers_decoded||{};
+  h+=_qcTbl(['层','元素数'], Object.keys(asmly).sort(function(a,b){return (+a)-(+b);})
+    .map(function(k){ return ['层 '+k, asmly[k]]; }));
+  h+='<div class="note">2.5D 层号（与 oi_m3 同号）：interposer <b>64</b> / M1 布线 <b>65</b> / ASIC <b>66</b>；'
+    +'版图由主权导出器产出，再由<b>独立解码器</b>从最终字节复核层分布。'
+    +'🔴 密度上限由<b>电域</b>（EIC 通道 pitch）而非光学域（PIC 单元 pitch）决定。</div>';
+  h+='<div class="note">M4 数据来源：'+M4.data_source+'</div>';
+
+  // ⑫ 里程碑
+  h+='<h3 style="margin:14px 0 4px">⑫ 征程里程碑（M0 → M4 · 门禁判据合计 '+(sp.gate_checks||'?')+'）</h3>';
   h+='<p>'+(d.milestones||[]).map(function(m){
         return '<b>'+m.id+'</b>（'+m.code+'）'+m.title+'〔'+m.gate+' 判据〕：'+m.result;
       }).join('<br/>')+'</p>';
 
-  // ⑧ 设计洞察
-  h+='<h3 style="margin:14px 0 4px">⑧ 设计洞察（吃狗粮抓出的真结论）</h3>';
+  // ⑬ 设计洞察
+  h+='<h3 style="margin:14px 0 4px">⑬ 设计洞察（吃狗粮抓出的真结论）</h3>';
   h+='<p>'+(d.findings||[]).map(function(f){
         return '· <b>'+f.title+'</b> —— '+f.detail;
       }).join('<br/>')+'</p>';
 
-  // ⑨ 缺口（只列未闭合）
-  h+='<h3 style="margin:14px 0 4px">⑨ 诚实缺口（<b>'+(d.gaps_total||0)+'</b> 条 · 全部开放登记）</h3>';
+  // ⑭ 缺口（只列未闭合）
+  h+='<h3 style="margin:14px 0 4px">⑭ 诚实缺口（<b>'+(d.gaps_total||0)+'</b> 条 · 全部开放登记）</h3>';
   h+='<p>'+(d.gaps||[]).map(function(g){
         return '<b>'+g.id+'</b> '+g.title+' —— '+g.detail;
       }).join('<br/>')+'</p>';
 
-  // ⑩ 产出物元信息 + 数据来源 + 面板导航
-  h+='<h3 style="margin:14px 0 4px">⑩ 产出物与数据来源</h3>';
+  // ⑮ 产出物元信息 + 数据来源 + 面板导航
+  h+='<h3 style="margin:14px 0 4px">⑮ 产出物与数据来源</h3>';
   if(AF.available){
     h+=_qcTbl(['产出物','字节'], (AF.items||[]).map(function(it){ return [it.name, it.bytes]; }));
   }else{
@@ -6052,11 +6182,17 @@ function renderPm(d){
 
   $('pmBody').innerHTML=h;
   $('pmConclusion').innerHTML='<b>结论：</b>用 LDA 从零走通了「非易失光子存储单元 → 阵列版图 → 真 GDSII → '
-    +'几何 DRC/LVS → 从最终字节独立解码复核」的完整签核链：主阵列 '+(ST.n_devices||'?')+' 器件 / '
+    +'几何 DRC/LVS → 从最终字节独立解码复核 → 读出/写驱动 → 系统误码预算 → 2.5D 装配」的完整签核链：主阵列 '
+    +(ST.n_devices||'?')+' 器件 / '
     +(ST.n_nets||'?')+' 网，DRC <b>'+(drc.all_pass?'PASS':'FAIL')+'</b>、LVS <b>'+(lvs.verdict||'-')
     +'</b>（0 违规），规模档 4/8/16/32 单元 + 4×8 多总线全部签核通过。'
     +'🔴 最重的工程结论是<b>热串扰间距（'+PI.gap_thermal_um+' µm）> 工艺间隙（'+PI.gap_process_um
     +' µm）</b> ⇒ 版图密度被<b>热学</b>卡住（不是布线）；并抓出<b>框架级真缺陷</b>（端口锚点缓存被 id 复用毒化 ⇒ 51 处 LVS 假红），已修并以 raise 拒绝静默回退。'
+    +'<br/>M4 外设与系统：读出链<b>低频高灵敏</b>（P<sub>min</sub> = '+Number(RO.p_min_dbm).toFixed(2)
+    +' dBm，余量 ≈ '+Number(RO.sensitivity_margin_x).toFixed(0)+'×）⇒ <b>读出不是瓶颈</b>；'
+    +'2.5D 密度瓶颈在<b>电域</b>（'+ASM.density_bottleneck+'：EIC '+ASM.eic_pitch_um+' µm vs PIC '
+    +ASM.pic_pitch_um+' µm）；🔴 <b>系统 BER 瓶颈是光学域 drift</b>（跨域代理，PM-G7 未闭合）⇒ '
+    +'16 电平保持窗口仅 '+(SB.max_t_hold_human||'-')+'，该结论<b>如实登记为开放缺口，不作粉饰</b>。'
     +'<br/>'+d.honest_note;
   return false;
 }

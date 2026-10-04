@@ -1520,9 +1520,17 @@ CORE_SMOKES: List[str] = [
     #   + 探针 P1–P5（binding 可翻转 / 截断必 raise / 单点改层号 / 期望错配 / 容差可证伪）。
     #   实测 ~6s ⇒ timeout 300s 留足余量。
     "run_pm_m3_smoke.py",
+    #   光子存储征程 PM-M4 门禁（外设与系统 · 读出链 + 写驱动 + 系统误码预算 + 2.5D 签核）：
+    #   25 判据（**含** 5 条突变探针 P1–P5）——上游同源 / 读出链 5 条恒等式 / R_f 上界=带宽反函数
+    #   + SNR 非降 / 写驱动 R≡R_sheet·L/w ∧ E≡P·t / ε_tot≡√Σε_i² ∧ 瓶颈=argmax /
+    #   🔴 ε_drift 算自 M2 ν 锚（非字面量）/ 2.5D 独立解码 ≡ 2×通道数 ∧ 密度瓶颈可翻转 /
+    #   披露守卫 / 🔴 内置快照 schema == 仓库报告 JSON。
+    #   实测 ~0.6s ⇒ timeout 120s 留足余量。
+    "run_pm_m4_smoke.py",
     #   光子存储阵列案例卡前端门禁（取值路径 + 反向完备 + onclick）：
-    #   20 判据（196 条取值路径逐条解析 / 顶层 22 键 + 24 嵌套块 + 5 项目块反向完备
-    #   / 面板 DOM 契约 / 路由登记且不进 HEAVY_POST_PATHS）+ 探针 P1–P5。
+    #   22 判据（**含** 7 条突变探针 P1–P6b）——306 条取值路径逐条解析 / 顶层 23 键 + 35 嵌套块
+    #   + 7 项目块反向完备 / 面板 DOM 契约 / 路由登记且不进 HEAVY_POST_PATHS。
+    #   P6b 为「修复前实现恒返回空集」的假绿复现 —— 本轮修掉 `_block_keys("a[]")` 恒绿缺陷。
     #   实测 <1s ⇒ timeout 120s 留足余量。
     "run_webui_pm_render_path_smoke.py",
     "run_ci_gate_contract_smoke.py",
@@ -2410,9 +2418,11 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 光子存储征程 PM-M1 门禁（JMAK + 多电平可行性律）：24 判据 + 5 探针 · 实测上界 0.3s（单测）
     "run_pm_m1_smoke.py": 120.0,
     "run_pm_m2_smoke.py": 120.0,
-    # 光子存储征程 PM-M3 门禁（阵列版图 · 真 GDS + DRC/LVS + 独立解码）：23 判据 + 5 探针 · 实测 ~6s
+    # 光子存储征程 PM-M3 门禁（阵列版图 · 真 GDS + DRC/LVS + 独立解码）：22 判据（含 5 探针）· 实测 ~0.5s
     "run_pm_m3_smoke.py": 300.0,
-    # 光子存储阵列案例卡前端门禁（取值路径 + 反向完备 + onclick）：20 判据 + 5 探针 · 实测 <1s
+    # 光子存储征程 PM-M4 门禁（外设与系统 · 读出/写驱动/系统预算/2.5D）：25 判据（含 5 探针）· 实测 ~0.6s
+    "run_pm_m4_smoke.py": 120.0,
+    # 光子存储阵列案例卡前端门禁（取值路径 + 反向完备 + onclick）：22 判据（含 7 探针）· 实测 <1s
     "run_webui_pm_render_path_smoke.py": 120.0,
     # CI 门禁自身契约（棘轮时序 + 退出码契约）· 受控 fake 驱动，实测上界 <5s
     "run_ci_gate_contract_smoke.py": 120.0,

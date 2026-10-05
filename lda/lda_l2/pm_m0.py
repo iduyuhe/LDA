@@ -62,8 +62,8 @@ GAP_SPECS: Tuple[Dict[str, Any], ...] = (
      "evidence": "_ev_g4", "declared_closed": True},
     {"id": "PM-G5", "title": "非晶 drift（物理来源 + 电学域锚 + 光学域适用性判定）",
      "evidence": "_ev_g5", "declared_closed": True},
-    {"id": "PM-G6", "title": "相位域（谐振/干涉）多电平读出与漂移口径",
-     "evidence": "_ev_g6", "declared_closed": False},
+    {"id": "PM-G6", "title": "相位域（谐振/干涉）多电平读出与漂移口径（v0.9.195 结算：口径 + DOI 锚；相位漂移定量仍开放）",
+     "evidence": "_ev_g6", "declared_closed": True},
     {"id": "PM-G7", "title": "光学域 drift 定量锚（透射电平漂移 · v0.9.193 结算：实测上界锚 + 检测下限假设显式披露）",
      "evidence": "_ev_g7", "declared_closed": True},
     {"id": "PM-G10", "title": "写读耐久（endurance）模型与锚 —— M5 对拍表判定「不可判」（开放）",
@@ -280,9 +280,25 @@ def _ev_g5() -> Tuple[bool, str]:
 
 
 def _ev_g6() -> Tuple[bool, str]:
-    """PM-G6：相位域多电平口径 —— M1 判振幅域对 Sb₂Se₃ 不可行 ⇒ 相位域须独立口径（当前无）。"""
-    has = hasattr(ML, "PHASE_DOMAIN_ANCHOR") and bool(getattr(ML, "PHASE_DOMAIN_ANCHOR", None))
-    return bool(has), f"相位域多电平锚存在={bool(has)}"
+    """PM-G6（v0.9.195 结算）：相位域（干涉/谐振）多电平口径 —— **机器判定 + 现算**。
+
+    闭合口径 = 「相位域锚表含 ≥1 **measured** 条 ∧ 材料 FOM 闭式可算 ∧ 器件 FOM 锚在位
+    ⇒ 口径**建立**」（`pm_m6.phase_domain_status` 现算，不读字面量）。
+    🔴 残余边界**如实披露**：**相位漂移无独立定量实测锚** ⇒ 定量保持性仍开放
+    （`M6_DISCLOSURE.phase_drift_has_no_independent_quantitative_anchor=True`，
+    漂移段 `is_quantitative_conclusion=False`）。这是与 PM-G7 的分野：G7 有实测上界锚可定量，
+    G6 的相位漂移只有**口径与机制**，没有数。
+    """
+    if not (hasattr(ML, "PHASE_DOMAIN_ANCHORS") and ML.PHASE_DOMAIN_ANCHORS.get("Sb2Se3")):
+        return False, "相位域锚不存在"
+    from lda_l2 import pm_m6 as M6  # 局部导入避免加载序耦合
+    st = M6.phase_domain_status("Sb2Se3")
+    ok = bool(st["phase_domain_established"] and not st["gap_pm_g6_open"])
+    return ok, ("相位域锚 %d 条（measured %d / simulation %d）· 材料 FOM ≥ %.3g rad/dB · "
+                "器件 FOM 锚在位=%s · 相位域可行源 %d/%d ⇒ 口径%s"
+                % (st["n_anchors"], st["n_measured"], st["n_simulation"],
+                   st["fom_material_min_rad_per_db"], st["has_device_fom_anchor"],
+                   st["n_feasible_sources"], st["n_sources"], "已建立" if ok else "未建立"))
 
 
 def _ev_g7() -> Tuple[bool, str]:

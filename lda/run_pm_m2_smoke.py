@@ -146,9 +146,9 @@ def main() -> int:
           M0.gap_ledger_consistent() is True)
     check("C9b PM-G3/G5 已闭合（本轮 v0.9.189）",
           all(gaps[g]["closed"] is True for g in ("PM-G3", "PM-G5")))
-    check("C9c PM-G2/G6 如实开放 ∧ PM-G7 已结算（closed ⇔ 实测上界锚，不粉饰）",
-          all(gaps[g]["closed"] is False for g in ("PM-G2", "PM-G6"))
-          and gaps["PM-G7"]["closed"] is True)
+    check("C9c PM-G2 如实开放 ∧ PM-G6/G7 已结算（closed ⇔ 证据链，不粉饰）",
+          all(gaps[g]["closed"] is True for g in ("PM-G6", "PM-G7"))
+          and gaps["PM-G2"]["closed"] is False)
     check("C9d 每条缺口挂非空证据明细",
           all(len(g["evidence_detail"]) > 0 for g in M0.gap_ledger()))
 

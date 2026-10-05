@@ -260,7 +260,7 @@ def amplitude_feasibility(mat: str, n_levels: int = LEVELS_4BIT, *,
         if dk <= 0.0 or st["k_c"] <= 0.0:
             per.append({"source": st["source"], "r": None, "feasible": False,
                         "reason": ("两态吸收比不构成振幅域对比（k_c≤k_a 或 k_c≈0）⇒ "
-                                   "该材料的多电平须走相位域/谐振结构（另立口径）"),
+                                   "该材料的多电平须走**相位域**（口径见 `pm_m6` · PM-G6 已结算）"),
                         "t_a_min": t_a_min})
             continue
         r = st["k_a"] / dk

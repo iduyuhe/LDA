@@ -1,5 +1,60 @@
 # Changelog
 
+## v0.9.195（2026-10-05 · **光子存储征程 PM-G6 结算：相位域（干涉/谐振）多电平口径 —— 与振幅域镜像的核心律** · 账本 **476 不变（零锚改动）** · CI core **283 → 284** · 端点 **147 不变**）
+
+- **缺口 PM-G6 结算**（`declared_closed=True`，与机器验算 `evidence_ok` 双源一致）：
+  M1 已判「Sb₂Se₃ 在**振幅域**不可行」（k_c ≈ k_a ⇒ 振幅动态范围仅 0.2 dB）⇒ 其多电平
+  必须走**相位域**。本版把那条口径建成 —— `pm_m0._ev_g6` 由 `hasattr` 存在性检查
+  改为消费 `pm_m6.phase_domain_status()` **现算**（锚计数 + FOM 闭式 + 器件锚在位）。
+- **`lda/lda_l2/pm_matlib.py` 新增相位域锚族**：
+  - `PHASE_DOMAIN_ANCHORS`（6 条 = 5 measured + 1 simulation · 逐条 DOI）：
+    ① Delaney et al., Adv. Funct. Mater. 30(36):2002447 (2020) · doi:10.1002/adfm.202002447
+    —— Sb₂Se₃ Δn=0.77 / k<1e-5 @C-band · **器件 FOM = 29 rad/dB** · 耐久>4000；
+    ② Fang et al., PhotoniX 3:18 (2022) · doi:10.1186/s43074-022-00070-4 —— Δn_eff≈0.071 ·
+    0.09 π/µm · L_π=11 µm · **每 π 损耗 0.2 dB（唯一拆分为 0.1 dB 散射 + 0.1 dB 材料）**；
+    ③ Adv. Opt. Mater. (2025) · doi:10.1002/adom.202503295 —— MZI 消光比 **28 dB** ·
+    Δφ=0.7π · V_πL=0.56 V·cm；④ Adv. Funct. Mater. (2023) · doi:10.1002/adfm.202304601
+    —— 2×2 MZI + Al₂O₃ 封装 Sb₂Se₃：**6-bit 多电平**开关态 · >10⁴ 周期；⑤ Blundell et al.
+    2025 —— 23 nm 膜 0.04 π/µm · **>10⁶ 周期**；⑥ Dwivedi et al., APL 13(4):041123 (2025)
+    的 HMI 14 dB 对比为**数值仿真** ⇒ 标 `claim_kind="simulation"` **⛔ 永不作 golden**。
+  - `phase_fom_material()` / `phase_domain_residue()` / `phase_domain_anchor_count()`：
+    **材料级 FOM = Δn/(8.6859·k) rad/dB**（与 `per_pi_loss_db` 互为倒数：`FOM = π/IL_π`）
+    ⟷ 器件级锚 29 rad/dB 的**残差并报**（两条锚族不可互换，同 `device_anchor_residue` 政策）。
+- **`lda/lda_l2/pm_m6.py`（新模块 · 相位域设计层）**：
+  - **🔴 核心律（与 M1 严格镜像）**：可行 ⇔ `IL_π ≤ IL_budget` ⇔ **`FOM ≥ π/IL_budget`**
+    —— **Γ 与 L 同时约掉**（材料定能力、几何只定窗口位置）；理想臂长恰为 L_π；
+    窗口 = [L_π, IL_budget/α_per_um]，端点自洽双检（含 k=0 零吸收特判，防 `0·∞=nan`）。
+  - **读出（干涉 = MZI / 谐振 = 微环）**：MZI `I(φ)=cos²(φ/2)` 用**等强度间距**精确反演
+    `φ_j = 2·arccos(√I_j)`（cos² 非线性 ⇒ 相邻**相位**间距不等，最小者落在正交点 ≈2/(N−1)）；
+    谐振给**增益-带宽积守恒** `K = F/π`（放大相位噪声受限分辨力、不改善 shot 受限项）；
+    读出与 M1 `level_readout_ber` **同源同免责**（shot 限）并**并报**相位噪声项（`limited_by` 逐对标注）。
+  - **🔴 两条不利但照报的结论**：① 材料 FOM **8.83e4 rad/dB** vs 器件锚 **29 rad/dB**
+    ⇒ 差 **3045×**（器件损耗几乎全部来自非材料项）；② 同源 **9 fJ** 读出预算下等间距位深上限
+    **4.31 bit**（`N_max = 1 + √N_ph/(2·SNR_req)`，与 M1 `seven_bit_readout_floor`
+    **同不等式的两侧**，门禁 C7 用取整边界互换做**交叉验证**）⟷ 器件实测 **6-bit**
+    （逆解需 **100.7 fJ ⇒ 11.2×**）⇒ 「位深 ⟷ 读出能量」trade-off 显式并报。
+  - **漂移口径（相位域独立于 G7 的透射口径）**：观测方程 `δφ = φ_total·ν_n·ln(t/t₀)`、
+    阈值 `Δφ_step/2`、**差分对共模抑制**机制 —— 🔴 **相位漂移无独立定量实测锚**
+    ⇒ `is_quantitative_conclusion=False`，只给口径与灵敏度，**不给定量保持时间**
+    （与 PM-G7 的分野：G7 有实测上界锚可定量，G6 没有）。`_json_safe()` 保证出口 JSON
+    安全（k=0 来源的 ∞ ⇒ 字符串 tag，防非标准 token）。
+  - `phase_benchmark_rows()` 相位域对拍表 **7 行**（三带规则；`regime_mismatch` 行如实标注
+    材料 FOM vs 器件 FOM 口径不同）；L_π 行同时算出**文献器件隐含模式重叠 Γ_implied**
+    = Δn_eff/Δn = 0.0922（与 LDA 假设 Γ=0.05 差 1.84× ⇒ 只作**交叉参照**，不构成 Γ 标定）。
+- **新增门禁 `lda/run_pm_m6_smoke.py`（31 判据 · 含 6 条突变探针）**：判据全部**重算**
+  （FOM 两条独立写法 / MZI 精确反演往返 <1e-15 / 可行性等价 / 窗口端点自洽 / **Γ 与 L
+  不变性 12 组扫描** / 位深与 M1 交叉验证 / 谐振增益-带宽积守恒 / 漂移方程自洽 ∧ 明标非定量
+  / 域守卫 raise / 对拍表结构 / 缺口台账 / 披露 + 肯定式面禁词 / **JSON 出口安全**）；
+  探针先证能变红（k×10 · Δn×2 · FOM 漏 2 因子 · Γ 乘回 FOM · 禁词放肯定式面 · L<L_π 必 raise）。
+- **🔴 同族断言全 grep 更正（「改同族断言先 grep 全族」再次生效）**：`run_pm_m0_smoke` C7c2 /
+  `run_pm_m2_smoke` C9c（原写「PM-G2/G6 如实开放」）/ `run_pm_m1_smoke` C11b /
+  `run_pm_g7_settlement_smoke` D1b 的**已登记例外集合** `{PM-G7,PM-G8,PM-G9}` → `+PM-G6`
+  （精确指纹：结算 ≠ 从台账消失）。
+- **联动同步**：`examples/photo_memory/lda_pm_m5_report.json` **重生成**（G6 closed +
+  `gaps_closed` 5→6）；`pm_case` 内嵌快照同步；`MILESTONES` 加 **M6**（`gate=31`，
+  由 `run_webui_pm_render_path_smoke` **W8** 实跑对照）；`_GATE_SMOKE` / 超时预算表 /
+  `run_ci_regression` 注释（W9）/ `## 当前账本`（W10）四处同步 —— 前端门禁 **28/0**。
+
 ## v0.9.194（2026-10-05 · **光子存储征程 PM-M5 国际对标收官：规格锚逐条对拍表 + 缺口台账终态** · **全量 CI 两处真红根因修复（判据口径：printf 模板吞诊断 / cwd 相对路径 / 字面量计数）** · **「同一数字手写四处」全线上锁（W9/W10）+ 度量工具自身口径修正** · 账本 **476 不变（零锚改动）** · CI core **282 → 283** · 端点 **147 不变**）
 
 - **🔴 对拍表纪律（本档主旨）**：`lda/lda_l2/pm_m5.py` 构建逐条对拍表（7 行）——

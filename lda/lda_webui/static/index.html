@@ -5886,7 +5886,8 @@ function renderPm(d){
   var M4=d.m4||{}, RO=M4.readout||{}, RF=M4.rf_tradeoff||{}, WDRV=M4.write_driver||{},
       SB=M4.system_budget||{}, ASM=M4.assembly_2p5d||{}, M4UP=M4.upstream||{},
       LU=M4UP.levels||{}, DPV=SB.drift_proxy||{}, EPS=SB.eps||{}, SHR=SB.share||{},
-      M5=d.m5||{}, M5ROWS=M5.rows||[], M5VC=M5.verdict_counts||{}, M5GF=M5.gaps_final||[];
+      M5=d.m5||{}, M5ROWS=M5.rows||[], M5VC=M5.verdict_counts||{}, M5GF=M5.gaps_final||[],
+      M6=d.m6||{}, M6ROWS=M6.benchmark_rows||[];
   $('pmSummary').innerHTML='<b>'+d.case_id+'</b> · 判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）'
     +' · 征程 <b>'+(sp.milestones||'?')+'</b> 段 / <b>'+(sp.modules||'?')+'</b> 模块'
     +' · 门禁判据 <b>'+(sp.gate_checks||'?')+'</b>（含 <b>'+(sp.probe_mutations||'?')+'</b> 条突变探针）'
@@ -6224,8 +6225,44 @@ function renderPm(d){
   h+='<div class="note">🔴 收官口径：'+(M5.summary_note||'-')+'</div>';
   h+='<div class="note">'+(M5.honest_note||'-')+'</div>';
 
-  // ⑯ 产出物元信息 + 数据来源 + 面板导航
-  h+='<h3 style="margin:14px 0 4px">⑯ 产出物与数据来源</h3>';
+  // ⑯ 相位域（干涉/谐振）多电平口径（PM-G6 结算 · 与 M1 振幅域镜像）
+  h+='<h3 style="margin:14px 0 4px">⑯ 相位域多电平口径（PM-G6 结算 · 干涉/谐振 · 与振幅域镜像）</h3>';
+  h+=_qcTbl(['量','值'],[
+    ['材料', M6.material],
+    ['材料 FOM (rad/dB) = Δn/(8.6859·k)', Number(M6.fom_material_min_rad_per_db)>=1e4
+        ?Number(M6.fom_material_min_rad_per_db).toExponential(2):Number(M6.fom_material_min_rad_per_db).toFixed(2)],
+    ['器件 FOM 锚 (rad/dB) · Delaney 2020', M6.fom_device_measured_rad_per_db],
+    ['材料/器件 比值', '≈ '+Math.round(M6.residue_ratio_material_over_device)+' ×（两条锚族并报 · 不可互换）'],
+    ['可行门槛 FOM ≥ (rad/dB)', Number(M6.fom_needed_rad_per_db).toFixed(3)],
+    ['相位臂损耗预算 (dB)', M6.il_budget_db],
+    ['可行来源数', M6.n_feasible_sources+' / '+M6.n_sources],
+    ['MZI 读出（shot+相位噪声）全对达标', M6.readout_all_ok?'<b>是</b>':'<b>否</b>'],
+    ['MZI 最坏 BER', Number(M6.readout_worst_ber).toExponential(2)],
+    ['谐振读出最坏 BER', Number(M6.resonant_worst_ber).toExponential(2)],
+    ['位深上限 (bit · 9 fJ · 等间距+shot 限)', Number(M6.levels_bits_max_shot_limited).toFixed(2)],
+    ['6-bit 所需读出能量 (fJ)', Number(M6.energy_for_6bit_fj).toFixed(1)],
+    ['口径已建立（机器判定）', M6.phase_domain_established?'<b>是</b>':'否']
+  ]);
+  h+='<div class="note">🔴 核心律（与 M1 镜像）：相位域多电平可行 ⇔ IL<sub>π</sub> ≤ 预算 ⇔ '
+    +'<b>FOM = Δn/(8.6859·k) ≥ π/IL_budget</b> —— <b>Γ 与 L 同时约掉</b>'
+    +'（材料定能力、几何只定窗口位置；理想臂长 = L<sub>π</sub>）。读出：MZI 等强度间距精确反演 '
+    +'φ<sub>j</sub>=2·arccos(√I<sub>j</sub>)，谐振增益-带宽积守恒 K=F/π。</div>';
+  h+='<div class="note">🔴 残余边界（如实开放）：'+(M6.residual_boundary||'-')+'</div>';
+  h+=_qcTbl(['对拍行','LDA','文献','比值','判定'], (M6ROWS||[]).map(function(r){
+    return [r.metric+' ('+(r.unit||'-')+')',
+            (r.lda_value==null?'—':JSON.stringify(r.lda_value)),
+            (r.lit_value==null?'—':JSON.stringify(r.lit_value)),
+            (r.ratio==null?'—':(Math.abs(r.ratio)>=1000?Number(r.ratio).toExponential(2):Number(r.ratio).toFixed(2))),
+            '<b>'+r.verdict+'</b>'+(r.regime_mismatch?' ⚠口径不同':'')];
+  }));
+  h+=_qcTbl(['行','LDA 现算出处','文献出处','备注'], (M6ROWS||[]).map(function(r){
+    return [r.metric, r.lda_source, r.lit_source, r.note];
+  }));
+  h+='<div class="note">相位域锚逐条 DOI 见源码 <code>pm_matlib.PHASE_DOMAIN_ANCHORS</code>'
+    +'（6 条 = 5 measured + 1 simulation）；LDA 值全模块现算（<code>pm_m6</code> · 纯解析 · 无快照）。</div>';
+
+  // ⑰ 产出物元信息 + 数据来源 + 面板导航
+  h+='<h3 style="margin:14px 0 4px">⑰ 产出物与数据来源</h3>';
   if(AF.available){
     h+=_qcTbl(['产出物','字节'], (AF.items||[]).map(function(it){ return [it.name, it.bytes]; }));
   }else{

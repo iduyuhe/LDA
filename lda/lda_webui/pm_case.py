@@ -3,7 +3,7 @@
 
 定位
 ----
-光子存储征程 PM-M0…M5 的**只读案例**：用 LDA 亲手设计一条**非易失光子存储
+光子存储征程 PM-M0…M6 的**只读案例**：用 LDA 亲手设计一条**非易失光子存储
 单元 → 阵列 → 外设与系统 → 国际对标收官**（Si 波导 + GST 相变段 + 双侧微加热器
 + 电极 pad），走完 **P&R → 布线路由 → 几何 DRC/LVS → 独立 GDS 字节复核 →
 设计预算 → 读出/写驱动行为级 → 系统误码预算 → 2.5D 装配签核 → 规格锚逐条
@@ -71,12 +71,12 @@ PM_HONEST_NOTE = (
 #   `[PASS]` 计数逐档相等（可人工复核 `grep -c '\[PASS\]'`）：
 #   M0 `run_pm_m0_smoke`=33 · M1 `run_pm_m1_smoke`=24 · M2 `run_pm_m2_smoke`=40 ·
 #   M3 `run_pm_m3_smoke`=22 · M4 `run_pm_m4_smoke`=25 · M4b `run_pm_g7_settlement_smoke`=20 ·
-#   M5 `run_pm_m5_smoke`=18。
+#   M5 `run_pm_m5_smoke`=18 · M6 `run_pm_m6_smoke`=31。
 #   🔴 v0.9.194 起**不再靠人工复核**：`run_webui_pm_render_path_smoke` 的 **W8** 会实跑
-#      上表 7 个门禁并数**行首** `[PASS]` 行，与卡内 `gate` 逐档对照（缺映射即红）；
+#      上表 8 个门禁并数**行首** `[PASS]` 行，与卡内 `gate` 逐档对照（缺映射即红）；
 #      **W9** 再把 `run_ci_regression.py` 注释里手写的「N 判据」也实跑对照
 #      —— 治「同一份数字手写三处、只锁住一处」的漂移。
-#   🔴 前端渲染门禁 `run_webui_pm_render_path_smoke`(=28) 是**另一个门禁**，不并入本表
+#   🔴 前端渲染门禁 `run_webui_pm_render_path_smoke`(=29) 是**另一个门禁**，不并入本表
 #      —— 各档没有对应前端门禁，混口径会让跨档数字不可比。
 #   🔴 血案：M3 曾误登记 `gate=62`（把「后端判据 + 前端判据 + 案例卡自检 + 探针」混成
 #      一个数），与 M0/M1/M2 口径不一致 ⇒ 本版修正为 22（= smoke 实跑值）。
@@ -130,10 +130,21 @@ MILESTONES = [
                "🔴 **endurance 行=不可判**（无模型 ∧ 无器件级循环数锚 ⇒ **PM-G10**）· "
                "密度行=无同口径文献锚（不比）。**收官口径：知道自己每项站在哪，"
                "不是「全面领先」**"},
+    {"id": "M6", "code": "v0.9.195", "title": "相位域（干涉/谐振）多电平口径（PM-G6 结算）",
+     "gate": 31,
+     "result": "🔴 与 M1 振幅域**镜像**的核心律：相位域多电平可行 ⇔ IL_π ≤ IL_budget "
+               "⇔ **FOM = Δn/(8.6859k) ≥ π/IL_budget**（Γ 与 L 同时约掉 ⇒ 材料定能力、"
+               "几何只定窗口位置）；MZI 读出用**等强度间距**精确反演 φ=2·arccos(√I)"
+               "（cos² 非线性 ⇒ 最小相位间距落在正交点）；材料 FOM 8.83e4 rad/dB vs "
+               "器件锚 Delaney 2020 **29 rad/dB** ⇒ 差 **3045×**（器件损耗几乎全来自"
+               "非材料项，两条锚族并报不可互换）；位深 **4.31 bit**（同源 9 fJ · "
+               "BER 1e-12）⟷ 器件实测 **6-bit**（逆解需 **100.7 fJ** ⇒ 11.2×，"
+               "能量-位深 trade-off 显式）；🔴 **残余边界**：相位漂移无独立定量锚 ⇒ "
+               "定量保持性仍开放（与 PM-G7 的分野）"},
 ]
 
 # 各档**后端**突变探针数（与各 smoke 输出的 `[PASS] P*` 计数一致；派生用，勿写死合计）
-MILESTONE_PROBES = {"M0": 6, "M1": 5, "M2": 7, "M3": 5, "M4": 5, "M4b": 3, "M5": 4}
+MILESTONE_PROBES = {"M0": 6, "M1": 5, "M2": 7, "M3": 5, "M4": 5, "M4b": 3, "M5": 4, "M6": 6}
 
 FINDINGS = [
     {"title": "热串扰间距是版图的**物理约束**（不是随意留白）",
@@ -199,8 +210,22 @@ GAPS = [
     {"id": "PM-G2", "title": "模场重叠因子 Γ 的 FDTD 标定（开放）",
      "detail": "Γ 仍为假设参数 ⇒ 单元绝对插损/长度结论对它的线性敏感被并报，"
                "但每 π 损耗与 Γ 无关（闭式已证）。"},
-    {"id": "PM-G6", "title": "相位域（谐振/干涉）多电平读出与漂移口径（开放）",
-     "detail": "本卡只走振幅域（波导直通 + 相变吸收调制）；相位域口径未建。"},
+    {"id": "PM-G6", "title": "相位域（谐振/干涉）多电平读出与漂移口径 —— **已结算（v0.9.195 · 证据链机器可查）**",
+     "detail": "结算前：本卡只走振幅域（波导直通 + 相变吸收调制），相位域口径未建。"
+               "结算证据链（`pm_matlib.PHASE_DOMAIN_ANCHORS` 6 条 = 5 measured + 1 simulation · "
+               "`pm_m6.phase_domain_status` 机器判定 + FOM 闭式现算）：① Delaney et al., "
+               "Adv. Funct. Mater. 30(36):2002447 (2020) doi:10.1002/adfm.202002447 —— Sb₂Se₃ "
+               "Δn=0.77、k<1e-5、**器件 FOM = 29 rad/dB**、耐久>4000；② PhotoniX 3:18 (2022) "
+               "doi:10.1186/s43074-022-00070-4 —— Δn_eff≈0.071、L_π=11 µm、"
+               "**每 π 损耗 0.2 dB（含 0.1 散射）的唯一拆分锚**；③ Adv. Opt. Mater. (2025) "
+               "doi:10.1002/adom.202503295 —— MZI 消光比 28 dB、V_πL=0.56 V·cm；"
+               "④ Adv. Funct. Mater. (2023) doi:10.1002/adfm.202304601 —— **6-bit 多电平"
+               "**开关态、>10⁴ 周期；⑤ Blundell et al. 2025 —— 23 nm 膜 >10⁶ 周期"
+               "（Dwivedi APL 2025 的 HMI 14 dB 为**仿真** ⇒ ⛔ 永不作 golden）。"
+               "**口径**：可行 ⇔ IL_π ≤ IL_budget ⇔ FOM ≥ π/IL_budget（**Γ、L 同约掉**）。"
+               "🔴 **残余边界（如实开放）**：相位**漂移**无独立定量实测锚（现有光学锚全是"
+               "**透射**漂移）⇒ 只给观测方程 + 差分共模抑制机制，**不给定量保持时间**"
+               "（与 PM-G7 的分野：G7 有实测上界锚可定量，G6 没有）。"},
     {"id": "PM-G7", "title": "光学域 drift 定量锚（透射电平漂移）—— **已结算（v0.9.193 · 证据链机器可查）**",
      "detail": "结算前：光学域无直接锚，M4 升级为系统级阻塞项（若与电学域同阶，16 电平保持"
                "仅 ~1.7 秒）。结算证据链（`pm_matlib.OPTICAL_DRIFT_ANCHORS` 非空 + "
@@ -518,7 +543,7 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
             "no_fabricated_efficiency_claims": True,
             "no_fabrication_of_measurability": True
         },
-        "gaps_closed": 5,
+        "gaps_closed": 6,
         "gaps_final": [
             {
                 "closed": True,
@@ -546,9 +571,9 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
                 "title": "非晶 drift（物理来源 + 电学域锚 + 光学域适用性判定）"
             },
             {
-                "closed": False,
+                "closed": True,
                 "id": "PM-G6",
-                "title": "相位域（谐振/干涉）多电平读出与漂移口径"
+                "title": "相位域（谐振/干涉）多电平读出与漂移口径（v0.9.195 结算：口径 + DOI 锚；相位漂移定量仍开放）"
             },
             {
                 "closed": True,
@@ -782,6 +807,17 @@ def _manifest(repo_root: Optional[str] = None) -> Dict[str, Any]:
 
 
 # ═══════════════════════════════ 案例卡 ═══════════════════════════════
+def _phase_domain_case() -> Dict[str, Any]:
+    """相位域（干涉/谐振）多电平口径摘要 —— **纯解析现算**（`pm_m6` · 无文件 IO / 无 FDTD）。
+
+    🔴 与 `m3`/`m4`/`m5` 的「报告 JSON 快照」不同：相位域口径全是解析闭式（<50 ms），
+    **无入库生成物** ⇒ 直接现算，从根上避免「快照与写入器漂移」那类风险
+    （同族铁律：入库生成物必须配「快照 == 仓库当前状态」判据 —— 这里没有生成物 ⇒ 不需要）。
+    """
+    from lda_l2 import pm_m6 as M6
+    return M6.phase_case_summary("Sb2Se3")
+
+
 def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
     """组装光子存储阵列案例卡（只读 · 零重计算 · 免登录）。"""
     rep = _load_report(repo_root)
@@ -876,11 +912,12 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "disclosure": rep5.get("disclosure") or snap5["disclosure"],
             "data_source": src5 or "内置快照（2026-10-05 实测；本部署内无 M5 报告 JSON）",
         },
+        "m6": _phase_domain_case(),
         "artifacts": _manifest(repo_root),
         "data_source": src or "内置快照（2026-10-04 实测；本部署内无报告 JSON）",
         "ui": {
             "found_in_ui": True,
-            "entry": "验证实力（accept）→「光子存储阵列（PM-M0–M5）」卡",
+            "entry": "验证实力（accept）→「光子存储阵列（PM-M0–M6）」卡",
             "related_panels": [],
             "scope_note": "本卡覆盖**单元/阵列版图/外设系统与签核/国际对标收官**；单元物理闭式见 "
                           "`lda_l2/pm_m0…pm_m5`，非 UI 可点面板。",

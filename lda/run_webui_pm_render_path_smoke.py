@@ -76,6 +76,7 @@ _GATE_SMOKE = {
     "M4": "run_pm_m4_smoke.py",
     "M4b": "run_pm_g7_settlement_smoke.py",
     "M5": "run_pm_m5_smoke.py",
+    "M6": "run_pm_m6_smoke.py",
 }
 
 
@@ -329,9 +330,9 @@ def main() -> int:
              "⑦ M4 读出链", "⑧ M4 读出灵敏度", "⑨ M4 写驱动", "⑩ M4 系统误码预算",
              "⑪ M4 2.5D 装配签核",
              "⑫ 征程里程碑", "⑬ 设计洞察", "⑭ 诚实缺口",
-             "⑮ M5 国际对标收官", "⑯ 产出物")
+             "⑮ M5 国际对标收官", "⑯ 相位域", "⑰ 产出物")
     miss = [h for h in heads if h not in rsrc]
-    check("W2c renderPm 真渲染 ①–⑯ 十六段（防「后端加了段、前端还是空壳」）", not miss,
+    check("W2c renderPm 真渲染 ①–⑰ 十七段（防「后端加了段、前端还是空壳」）", not miss,
           "缺段：%s" % miss)
     check("W2d 抽屉目录自动运行映射含 '#sec-pm': 'runPm'",
           '"#sec-pm": "runPm"' in html)
@@ -517,13 +518,25 @@ def main() -> int:
     check("W10 🔴 README「当前版本」行里的 `run_pm_*_smoke` 判据数 == 实跑数",
           bool(_cur) and not _rd_bad, "漂移=%s" % (_rd_bad or "无"))
 
+    # 🔴 W10b 反向完备：当前版本行**必须**至少含 1 条可对照条目 ——
+    #   否则 `_readme_decl_drift` 恒返空 ⇒ W10 退化为恒绿（守卫空转）。
+    _cur_names = re.findall(r"`(run_[A-Za-z0-9_]+)(?:\.py)?`\s*\*\*\d+\s*判据", _cur)
+    check("W10b 🔴 反向完备：当前版本行至少含 1 条 `run_*` 判据数条目（防 W10 恒绿空转）",
+          len(_cur_names) >= 1 and all(n + ".py" in _counts for n in _cur_names),
+          "条目=%s" % _cur_names)
+
+    # 🔴 W10-P1（v0.9.195 修）：原实现**硬编码** `run_pm_m5_smoke.py` —— 一旦当前版本行
+    #   不再提及 m5（如本版改提 m6），探针第二项**恒 False**（改一个当前行里不存在的脚本
+    #   当然不产生漂移）⇒ 探针自己失效。改为**动态取当前行第一个条目**做变异。
+    _t10 = (_cur_names[0] + ".py") if _cur_names else "run_pm_m5_smoke.py"
     _p10 = [_readme_decl_drift(_cur, _counts) == [],                    # 原样绿
-            _readme_decl_drift(_cur, dict(_counts, **{"run_pm_m5_smoke.py": 99}))
+            _readme_decl_drift(_cur, dict(_counts, **{_t10: _counts.get(_t10, 0) + 1}))
             != [],                                                      # 实跑数变必红
-            _readme_decl_drift("`run_pm_m5_smoke.py` **16 判据", _counts)
-            != []]                                                      # README 旧值必红
-    check("W10-P1 突变探针：原样绿 ∧ 实跑数变 / README 旧值 两改必红",
-          all(_p10), "p10=%s" % _p10)
+            _readme_decl_drift("`%s` **%d 判据" % (_t10.replace(".py", ""),
+                                                 _counts.get(_t10, 0) + 1),
+                               _counts) != []]                          # README 旧值必红
+    check("W10-P1 突变探针：原样绿 ∧ 实跑数变 / README 旧值 两改必红（动态取当前行条目）",
+          all(_p10), "p10=%s t=%s" % (_p10, _t10))
 
     # ── W7 自入 CI core ─────────────────────────────────────────────────
     ci = os.path.join(_HERE, "run_ci_regression.py")

@@ -18,8 +18,9 @@
   D1 缺口台账：机器账本仍有 PM-G7 且 closed ∧ 对外台账行含「已结算」+ Cheng 2019
      DOI ∧ **未闭合 spec 缺口全披露** —— 不用「条目数 == 常数」这类字面量判据
      （v0.9.194：写死 5 ⇒ M5 合法新增 PM-G10 后必红；「条目数不变」本身语义就错）
-  D1b 🔴 对外台账 id 集合 == 开放 spec 缺口 ∪ 已登记例外 `{PM-G7, PM-G8, PM-G9}`
+  D1b 🔴 对外台账 id 集合 == 开放 spec 缺口 ∪ 已登记例外 `{PM-G6, PM-G7, PM-G8, PM-G9}`
      （**精确指纹** · 防「新条目只进看得见的集合、无独立证据链」静默进盲区）
+     · v0.9.195：PM-G6 由「开放」转「已结算但仍对外披露」⇒ 移入例外集合（同 G7 处置）
   D2 🔴 快照 schema == 仓库报告 JSON（system_budget 含 drift_anchor，逐块同构）
   D3 matlib `material_table()` 透传光学域锚（消费语义不脱钩）
   E1 披露守卫：`drift_segment_is_cross_domain_proxy=False` ∧ 主账=实测上界锚 ∧
@@ -101,7 +102,7 @@ def _g7_ledger_ok(case_gaps, ledger, spec):
 #:   ② M4 登记、**暂无独立证据链**的外设/器件级条目（`GAP_SPECS` 无对应 `_ev_*`）
 #:      —— 用**精确指纹**把它显式登记下来，任何一侧悄悄增删都会当场变红
 #:      （否则新条目只进「看得见的集合」⇒ 静默进盲区，本仓已吃过这一课）。
-_LEDGER_EXTRA = {"PM-G7", "PM-G8", "PM-G9"}
+_LEDGER_EXTRA = {"PM-G6", "PM-G7", "PM-G8", "PM-G9"}
 
 
 def main() -> int:

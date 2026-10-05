@@ -30,7 +30,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 # ---------------------------------------------------------------------------
 # 0. 域常量与守卫
@@ -135,6 +135,11 @@ def _check_anchors() -> None:
                      f"{mat} 光学锚不得自称本项目实测")
             for ph in PHASES:
                 _require(ph in r and len(r[ph]) == 2, f"{mat}/{ph} 锚缺 (n,k)")
+    # 相位域锚（PM-G6）：来源性质必须显式 ∧ 仿真类不得冒充实测
+    for mat, rows in PHASE_DOMAIN_ANCHORS.items():
+        for r in rows:
+            _require("source" in r and r.get("claim_kind") in ("measured", "simulation", "statement"),
+                     f"{mat} 相位域锚缺 source/claim_kind 非法")
 
 
 # ---------------------------------------------------------------------------
@@ -260,6 +265,164 @@ def device_anchor_residue(mat: str = "Sb2Se3") -> Dict[str, Any]:
                         "⇒ 器件损耗几乎全部来自非材料吸收项（散射/模式失配/界面/弯曲）。"
                         "🔴 两条锚族**不可互相替代**，必须并报。"),
     }
+
+
+# ---------------------------------------------------------------------------
+# 6b. 🔴 相位域（干涉/谐振）锚与 FOM —— PM-G6 结算 · 2026-10-05
+# ---------------------------------------------------------------------------
+#: 相位域**器件级**锚（DOI 级）。与 `OPTICAL_ANCHORS`（材料 n/k）是**两条锚族**：
+#: 这里给「器件 FOM / 每 π 损耗及拆分 / 消光比 / 多电平数 / 耐久」，**不提供 n/k**。
+#: 🔴 `claim_kind` 逐条标注来源性质：`measured`（实测）· `simulation`（仿真 ⇒ ⛔ 永不作 golden）
+#: · `statement`（结构性陈述，仅作机制佐证）。
+PHASE_DOMAIN_ANCHORS: Dict[str, List[Dict[str, Any]]] = {
+    "Sb2Se3": [
+        {"kind": "device_fom", "claim_kind": "measured",
+         "fom_rad_per_db": 29.0, "dn_contrast": 0.77, "k_upper": 1.0e-5,
+         "endurance_cycles": 4000,
+         "source": ("Delaney, Zeimpekis, Lawson, Hewak & Muskens, 《A New Family of Ultralow "
+                    "Loss Reversible Phase-Change Materials for Photonic Integrated Circuits: "
+                    "Sb₂S₃ and Sb₂Se₃》, Adv. Funct. Mater. 30(36), 2002447 (2020) · "
+                    "doi:10.1002/adfm.202002447"),
+         "measured_fact": ("Sb₂Se₃ @C 波段：Δn = 0.77、k < 1e-5；**器件 FOM = 29 rad 相移/dB 损耗**"
+                           "（作者称比 GST 优两个数量级）；稳定切换耐久 > 4000 周期。"),
+         "note": ("器件级 FOM（含波导散射等**非材料**损耗）⇒ 与材料吸收路径 FOM **不可互换**"
+                  "（见 `phase_domain_residue()`）。")},
+        {"kind": "phase_loss_split", "claim_kind": "measured",
+         "il_db_per_pi_total": 0.2, "il_db_per_pi_scatter": 0.1,
+         "il_db_per_um_on_switch": 0.018,
+         "delta_n_eff": 0.071, "shift_pi_per_um": 0.09, "l_pi_um": 11.0, "wl_nm": 1565.0,
+         "source": ("Fang, Chen, Zhou et al., 《Ultra-compact nonvolatile phase shifter based on "
+                    "electrically reprogrammable transparent phase change materials》, "
+                    "PhotoniX 3, 18 (2022) · doi:10.1186/s43074-022-00070-4"),
+         "measured_fact": ("30 nm Sb₂Se₃ / 220 nm SOI(110 nm rib) 电编程移相器：Δn_eff ≈ 0.071、"
+                           "0.09 π/µm @1565 nm、L_π = 11 µm；晶化引起的损耗变化实测 "
+                           "**0.018 dB/µm ⇒ 0.2 dB/π**，其中 **0.1 dB/π 为散射**"
+                           "（作者称改进设计可规避）。"),
+         "note": ("🔴 唯一把「每 π 损耗」**拆成散射 vs 材料**的锚 ⇒ 器件锚 0.1–0.2 dB/π 里"
+                  "有一半归散射（非材料吸收）。")},
+        {"kind": "mzi_extinction", "claim_kind": "measured",
+         "extinction_ratio_db": 28.0, "phase_shift_pi": 0.7, "vpi_l_v_cm": 0.56,
+         "shift_pi_per_um": 0.014,
+         "source": ("Non-Volatile Silicon Mach-Zehnder Switches with 0.7π Phase Shift Based on "
+                    "Graphene Heaters and Sb₂Se₃ Phase Change Material, "
+                    "Adv. Opt. Mater. (2025) · doi:10.1002/adom.202503295"),
+         "measured_fact": ("石墨烯加热器 + Sb₂Se₃ 非易失 MZI 开关（晶圆级工艺）：Δφ = 0.7π、"
+                           "V_πL ≈ 0.56 V·cm、0.014 π/µm、**消光比 28 dB**。"),
+         "note": ("干涉读出的**消光比**实测锚（MZI 相位→强度转换能力的器件级证据）。")},
+        {"kind": "multilevel_switch", "claim_kind": "measured",
+         "levels_bits": 6.0, "extinction_ratio_db": 20.0, "endurance_cycles": 10000.0,
+         "source": ("Li, Wu, Li, Chen & Zhou, 《Non-Volatile Optical Switch Element Enabled by "
+                    "Low-Loss Phase Change Material》, Adv. Funct. Mater. (2023) · "
+                    "doi:10.1002/adfm.202304601"),
+         "measured_fact": ("2×2 MZI + Al₂O₃ 封装 Sb₂Se₃（p-i-n 电驱动）：消光比 > 20 dB；"
+                           "把 Sb₂Se₃ 分成小 sub-cell 限制材料回流 ⇒ **>10 000 可逆相变周期**、"
+                           "电脉冲编程得 **6-bit 多电平开关态**。"),
+         "note": ("🔴 **相位域多电平读出**的直接器件级实测锚（6-bit）。与振幅域 7-bit 器件锚"
+                  "（`SB2SE3_DEVICE_ANCHOR`）是不同读出机制的两次独立测量。")},
+        {"kind": "endurance_thickness", "claim_kind": "measured",
+         "cycles_lower_bound": 1.0e6, "shift_pi_per_um": 0.04, "l_pi_um": 25.0,
+         "thickness_nm": 23.0,
+         "source": ("Blundell et al., 《Ultracompact programmable silicon photonics using layers "
+                    "of low-loss phase-change material Sb₂Se₃》, Univ. Southampton ePrints 501269 "
+                    "(2025)"),
+         "measured_fact": ("非对称 MZI 中 23 nm Sb₂Se₃：相移 ~0.04 π/µm ⇒ L_π ≈ 25 µm；"
+                           "厚度 ≤ 200 nm 的连续 Sb₂Se₃ 膜可逆切换 **> 10⁶ 周期**。"),
+         "note": ("厚度-相移-耐久 trade-off 锚（薄 ⇒ 相移小但耐久高）。")},
+        {"kind": "multilevel_transmission", "claim_kind": "simulation",
+         "contrast_db": 14.0, "il_db_max": 0.46,
+         "source": ("Dwivedi, Pavanello & Orobtchouk, 《An ultra-low-loss compact phase-change "
+                    "material-based hybrid-mode interferometer for photonic memories》, "
+                    "Appl. Phys. Lett. 13(4), 041123 (2025) · arXiv:2410.19587"),
+         "measured_fact": ("GeSe 混合模式干涉仪（HMI）**数值仿真**：多电平透射对比度 ~14 dB"
+                           "（作者原话：要获得多电平透射，须集成到 MZI / 定向耦合器 / 环谐振器）。"),
+         "note": ("⛔ **仿真值永不作 golden**（对外对标第③层红线）；仅引其**结构性陈述**作机制佐证。")},
+    ],
+    "GST": [
+        {"kind": "phase_infeasible", "claim_kind": "measured",
+         "il_db_per_pi_min": 0.97, "il_db_per_pi_max": 14.8,
+         "source": ("由本库 `per_pi_loss_table('GST')` 逐来源闭式律现算（c-GST k 0.83–1.55、"
+                    "Δn 2.0–3.6 @1550 nm）；来源见 `OPTICAL_ANCHORS['GST']`"),
+         "measured_fact": ("c-GST 每 π 损耗 0.97–14.8 dB/π ⇒ 相位域不可行（相移未及 π 已耗光）。"
+                           "GST 的出路是**振幅域**（`pm_m1.amplitude_feasibility`）。"),
+         "note": "🔴 与 Sb₂Se₃ 的相位域结论**方向相反** ⇒ 两材料分走两个域，不可混用口径。"},
+    ],
+}
+
+#: 相位域口径与边界（机器可读）。
+PHASE_DOMAIN_DISCLOSURE: Dict[str, Any] = {
+    "material_selects_domain": True,
+    "gamma_and_length_cancel_in_fom": True,
+    "device_fom_not_interchangeable_with_material_fom": True,
+    "phase_drift_has_no_independent_quantitative_anchor": True,
+    "no_energy_efficiency_metrics": True,
+    "note": ("相位域口径 = 相移 φ=2πΓΔnL/λ 编码 + 干涉(MZI)/谐振(环)读出；"
+             "每 π 损耗 IL_π=(10/ln10)·2πk/Δn 与 FOM=Δn/(8.6859·k) 均与 Γ、L **无关** "
+             "⇒ **材料定能力、几何只定窗口**（与 M0/M1 同族）。"
+             "🔴 相位**漂移**无独立定量实测锚（现有光学锚全是**透射**漂移）⇒ 定量保持性如实开放。"),
+}
+
+#: dB 转换系数（损耗 α_dB = `PER_PI_LOSS_COEF`·(Γk/λ)·L；相移 φ = 2πΓΔnL/λ）
+PHASE_FOM_COEF: float = 10.0 / math.log(10.0) * 4.0 * math.pi          # = 54.5757...
+
+
+def phase_fom_material(mat: str, wl_nm: float = 1550.0,
+                       phase: str = "crystalline") -> Dict[str, Any]:
+    """材料级相位域 FOM = Δφ/α = **Δn/(8.6859·k)**（rad/dB）—— Γ 与 L 严格约掉。
+
+    推导（纯代数）：
+        Δφ = 2πΓΔnL/λ（rad）；α_dB = (10/ln10)·Γ·(4πk/λ)·L
+        ⇒ FOM = Δφ/α_dB = 2πΔn / ((10/ln10)·4πk) = Δn / (2·(10/ln10)·k) = Δn/(8.6859·k)。
+    与 `per_pi_loss_db()` 互为倒数（FOM = π/IL_π）⇒ 同一条闭式律的两种写法（此处不换写、
+    直接由 Δn 与 k 现算，供门禁对照 π/IL_π 用）。
+    """
+    d = delta_n(mat, wl_nm)
+    per = []
+    for p in d["per_source"]:
+        k_ph = p["k_c"] if phase == "crystalline" else p["k_a"]
+        dn = p["dn"]
+        fom = (dn / (2.0 * (10.0 / math.log(10.0)) * k_ph)) if k_ph > 0 else math.inf
+        per.append({"source": p["source"], "dn": dn, "k": k_ph, "fom_rad_per_db": fom,
+                    "il_db_per_pi": per_pi_loss_db(dn, k_ph)})
+    vals = [r["fom_rad_per_db"] for r in per if math.isfinite(r["fom_rad_per_db"])]
+    return {"material": mat, "wl_nm": float(wl_nm), "phase": phase, "per_source": per,
+            "fom_min_rad_per_db": min(vals) if vals else math.inf,
+            "fom_max_rad_per_db": max(vals) if vals else math.inf,
+            "has_finite_fom": bool(vals),
+            "law": "FOM_mat = Δn/(8.6859·k) rad/dB ⇒ 与 Γ、L 无关（材料比）",
+            "reciprocity_check": "FOM = π/IL_π（同一条闭式的两种写法）"}
+
+
+def phase_domain_residue(mat: str = "Sb2Se3", wl_nm: float = 1550.0) -> Dict[str, Any]:
+    """材料吸收路径 FOM vs 相位域**器件级** FOM 锚 ⇒ 残差 = 非材料损耗。
+
+    🔴 与 `device_anchor_residue()`（每 π 损耗口径）**同一物理结论的 FOM 口径**：
+    材料路径给的 FOM 比器件锚高数个量级 ⇒ 器件损耗几乎全来自非材料项。
+    """
+    rows = PHASE_DOMAIN_ANCHORS.get(mat, [])
+    dev = [r for r in rows if r["kind"] == "device_fom" and r.get("claim_kind") == "measured"]
+    _require(dev, f"{mat}：无相位域器件级 FOM 锚（kind=device_fom, claim_kind=measured）")
+    fom_dev = float(dev[0]["fom_rad_per_db"])
+    mat_fom = phase_fom_material(mat, wl_nm)
+    # 取**最小**材料 FOM（= 最大 k ⇒ 最保守）作对照侧
+    fom_mat = mat_fom["fom_min_rad_per_db"]
+    return {
+        "material": mat,
+        "fom_material_min_rad_per_db": fom_mat,
+        "fom_device_measured_rad_per_db": fom_dev,
+        "ratio_material_over_device": (fom_mat / fom_dev) if fom_dev > 0 else None,
+        "device_anchor_source": dev[0]["source"],
+        "honest_note": ("材料吸收路径 FOM ≫ 器件实测 FOM（差数个量级）⇒ 器件损耗几乎全来自"
+                        "非材料吸收项（散射/模式失配/界面）🔴 两条锚族不可互换，必须并报"
+                        "（与 `device_anchor_residue()` 同结论、不同口径）。"),
+    }
+
+
+def phase_domain_anchor_count(mat: str, claim_kind: Optional[str] = None) -> int:
+    """相位域锚计数（可选按 `claim_kind` 过滤）—— 供缺口证据链**重算**消费，不读字面量。"""
+    rows = PHASE_DOMAIN_ANCHORS.get(mat, [])
+    if claim_kind is None:
+        return len(rows)
+    return sum(1 for r in rows if r.get("claim_kind") == claim_kind)
 
 
 # ---------------------------------------------------------------------------
@@ -523,6 +686,8 @@ def matlib_report(wl_nm: float = 1550.0) -> Dict[str, Any]:
         "drift_anchors": DRIFT_ANCHORS,
         "optical_drift_anchors": OPTICAL_DRIFT_ANCHORS,
         "benchmark_anchors": BENCHMARK_ANCHORS,
+        "phase_domain_anchors": PHASE_DOMAIN_ANCHORS,
+        "phase_domain_disclosure": PHASE_DOMAIN_DISCLOSURE,
         "k0_registered": False,   # 🔴 K0 无文献锚 ⇒ 不登记（pm_m1 结论对 K0 不变）
         "headline": {
             "cross_source_spread": {

@@ -156,8 +156,8 @@ def main() -> int:
     gaps = {g["id"]: g for g in M0.gap_ledger()}
     check("C11a PM-G1/G3/G4/G5 已闭合（锚 + 律自检）",
           all(gaps[g]["closed"] is True for g in ("PM-G1", "PM-G3", "PM-G4", "PM-G5")))
-    check("C11b PM-G2/G6 如实开放（G7 已于 v0.9.193 结算）",
-          all(gaps[g]["closed"] is False for g in ("PM-G2", "PM-G6")))
+    check("C11b PM-G2 仍如实开放（G6 已于 v0.9.195 / G7 v0.9.193 结算）",
+          gaps["PM-G2"]["closed"] is False and gaps["PM-G6"]["closed"] is True)
     check("C11c 台账人机两源不变式（declared ⇔ evidence）", M0.gap_ledger_consistent() is True)
 
     # ---------------- 探针（每条先证能变红） ----------------

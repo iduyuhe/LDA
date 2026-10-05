@@ -4,7 +4,7 @@
     "no_fabricated_efficiency_claims": true,
     "no_fabrication_of_measurability": true
   },
-  "gaps_closed": 5,
+  "gaps_closed": 6,
   "gaps_final": [
     {
       "closed": true,
@@ -32,9 +32,9 @@
       "title": "非晶 drift（物理来源 + 电学域锚 + 光学域适用性判定）"
     },
     {
-      "closed": false,
+      "closed": true,
       "id": "PM-G6",
-      "title": "相位域（谐振/干涉）多电平读出与漂移口径"
+      "title": "相位域（谐振/干涉）多电平读出与漂移口径（v0.9.195 结算：口径 + DOI 锚；相位漂移定量仍开放）"
     },
     {
       "closed": true,

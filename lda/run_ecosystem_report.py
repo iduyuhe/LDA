@@ -3,11 +3,19 @@
 汇总：harness 题库 B1-B18 全量 PASS + 新题 B14-B18 物理值/tol +
 PDK 主权分级 A/B/C 落地 + Registry 接口自洽。输出 reports/ecosystem_d93.json。
 
-运行：python run_ecosystem_report.py（managed python，零外部依赖）
+运行：python run_ecosystem_report.py（managed python，零外部依赖 · **任意 cwd**）
+
+🔴 v0.9.194：原先 `sys.path.insert(0, ".")` 与 `out = "lda/reports/..."` 都依赖 cwd，
+且**两者的正确 cwd 互斥**（导入要 cwd=lda，产物位置要 cwd=仓库根）⇒ 按 docstring
+直接跑会写到 `lda/lda/reports/` 这种错误位置。现全部锚定脚本自身位置 / 仓库根。
 """
+import os
 import sys
 import json
-sys.path.insert(0, ".")
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.path.dirname(_HERE)
+sys.path.insert(0, _HERE)
 
 from lda_harness.golden import (b14_dc_coupling_length, b15_bragg_wavelength,
     b16_mmi_length, b17_jj_critical_current, b18_purcell_factor)
@@ -117,7 +125,7 @@ def main():
         "acceptance": acceptance,
     }
 
-    out = "lda/reports/ecosystem_d93.json"
+    out = os.path.join(_ROOT, "lda", "reports", "ecosystem_d93.json")
     with open(out, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
     print("PASS:", acceptance["passed"])

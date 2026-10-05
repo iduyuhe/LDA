@@ -15,7 +15,11 @@
      bottleneck==drift ∧ BER>0.4（两口径并存 ⇒ 并报不选择性披露）
   C4 下界语义：max_t_hold > 1e70 s（天文量级）∧ `retention_semantics` 显式声明下界
   C5 并报完整性：`drift_proxy.per_proxy` 非空 ∧ note 含「并报」∧ 含旧结论数字
-  D1 缺口台账：PM-G7 标题含「已结算」∧ detail 含 Cheng 2019 DOI ∧ gaps_total 不变
+  D1 缺口台账：机器账本仍有 PM-G7 且 closed ∧ 对外台账行含「已结算」+ Cheng 2019
+     DOI ∧ **未闭合 spec 缺口全披露** —— 不用「条目数 == 常数」这类字面量判据
+     （v0.9.194：写死 5 ⇒ M5 合法新增 PM-G10 后必红；「条目数不变」本身语义就错）
+  D1b 🔴 对外台账 id 集合 == 开放 spec 缺口 ∪ 已登记例外 `{PM-G7, PM-G8, PM-G9}`
+     （**精确指纹** · 防「新条目只进看得见的集合、无独立证据链」静默进盲区）
   D2 🔴 快照 schema == 仓库报告 JSON（system_budget 含 drift_anchor，逐块同构）
   D3 matlib `material_table()` 透传光学域锚（消费语义不脱钩）
   E1 披露守卫：`drift_segment_is_cross_domain_proxy=False` ∧ 主账=实测上界锚 ∧
@@ -28,6 +32,9 @@
   P2 清空锚表 ⇒ 机器判定翻回「无锚/缺口开放」∧ `nu_optical_bound` raise（复现
      pre-fix 行为 ⇒ 「锚空=PM-G7 开放」的判定仍有效）
   P3 只改 nu_ub 不改 floor ⇒ 防漂移守卫 raise（锚表损坏当场暴露）
+  P4 台账判据自身变异探针（先证能变红）：原样必绿；抹「已结算」/抹 DOI/删 G7 行/
+     藏 G10 行/机器账本删行/机器账本改判未闭合 六种改法**各自**必红
+  P5 D1b 指纹反向探针：原样绿 ∧ 偷加条目/偷删条目/换名 三改必红
 """
 from __future__ import annotations
 
@@ -45,6 +52,7 @@ from lda_harness.smoke_kit import make_check  # noqa: E402
 check = make_check(globals(), ok_key="PASS", bad_key="FAIL",
                    indent="", detail_fmt=" —— {d}")
 
+from lda_l2 import pm_m0 as M0          # noqa: E402
 from lda_l2 import pm_m2 as M2          # noqa: E402
 from lda_l2 import pm_m4 as M4          # noqa: E402
 from lda_l2 import pm_matlib as ML      # noqa: E402
@@ -63,6 +71,37 @@ def _positive_surface(text: str) -> str:
             continue
         parts.append(clause)
     return "。".join(parts)
+
+
+def _g7_ledger_ok(case_gaps, ledger, spec):
+    """PM-G7 台账判据（**参数化**：探针可喂变异体 ⇒ 先证能变红）。
+
+    四个合取项各有独立语义：
+      ① 机器账本 `gap_ledger()` 里仍有 PM-G7 且 `closed=True` —— 结算 ≠ 删行；
+      ② 对外台账里仍有 PM-G7 且标题含「已结算」—— 结算动作确实对外披露；
+      ③ 该行 detail 含 Cheng 2019 DOI —— 挂的是**实测锚**而非自述；
+      ④ 所有**未闭合**的 spec 缺口都在对外台账里 —— 开放缺口不许被藏。
+    🔴 v0.9.194 血案：原判据写死 `len(PC.GAPS) == 5`（字面量）⇒ M5 合法新增
+    PM-G10 后必红。**「条目数不变」本身就是错的语义**（缺口只该增、不该被静默
+    吞），正确的是「开放缺口必须披露 + 结算不删行」。字面量计数 = 假判据高发区。
+    """
+    lrow = next((r for r in ledger if r.get("id") == "PM-G7"), None)
+    crow = next((x for x in case_gaps if x.get("id") == "PM-G7"), None)
+    if lrow is None or crow is None or not lrow.get("closed"):
+        return False
+    open_ids = {s["id"] for s in spec if not s.get("declared_closed")}
+    case_ids = {x.get("id") for x in case_gaps}
+    return ("已结算" in crow.get("title", "")
+            and "doi:10.1126/sciadv.aau5759" in crow.get("detail", "")
+            and open_ids <= case_ids)
+
+
+#: 对外台账里**不属「开放 spec 缺口」**的两类合法行：
+#:   ① 已结算但仍对外披露（结算 ≠ 从台账消失）；
+#:   ② M4 登记、**暂无独立证据链**的外设/器件级条目（`GAP_SPECS` 无对应 `_ev_*`）
+#:      —— 用**精确指纹**把它显式登记下来，任何一侧悄悄增删都会当场变红
+#:      （否则新条目只进「看得见的集合」⇒ 静默进盲区，本仓已吃过这一课）。
+_LEDGER_EXTRA = {"PM-G7", "PM-G8", "PM-G9"}
 
 
 def main() -> int:
@@ -145,10 +184,23 @@ def main() -> int:
 
     # ── D1 缺口台账 ─────────────────────────────────────────────────────
     _g7 = next(g for g in PC.GAPS if g["id"] == "PM-G7")
-    check("D1 缺口台账：PM-G7 标题含「已结算」∧ detail 含 Cheng 2019 DOI ∧ gaps_total 不变",
-          "已结算" in _g7["title"] and "doi:10.1126/sciadv.aau5759" in _g7["detail"]
-          and PC.GAPS and len(PC.GAPS) == 5,
-          "title=%s" % _g7["title"][:40])
+    _ledger = M0.gap_ledger()
+    _spec = list(M0.GAP_SPECS)
+    _open_ids = {s["id"] for s in _spec if not s.get("declared_closed")}
+    check("D1 缺口台账：机器账本仍有 PM-G7 且 closed ∧ 对外行含「已结算」+ Cheng 2019 DOI "
+          "∧ 未闭合缺口（%d 条）全披露" % len(_open_ids),
+          _g7_ledger_ok(PC.GAPS, _ledger, _spec),
+          "title=%s · case=%d ledger=%d" % (_g7["title"][:34], len(PC.GAPS),
+                                            len(_ledger)))
+
+    # ── D1b 🔴 对外台账 == 开放 spec 缺口 ∪ 已登记例外（**精确指纹**）──────
+    # 反向完备：两侧任何一侧悄悄增删条目都必红 ⇒ 新缺口不会只活在某一份清单里。
+    _case_ids = {g["id"] for g in PC.GAPS}
+    _want = _open_ids | _LEDGER_EXTRA
+    check("D1b 🔴 对外台账 id 集合 == 开放 spec 缺口 ∪ 已登记例外"
+          "（精确指纹 · 防「新条目进了看得见的集合却无证据链」静默进盲区）",
+          _case_ids == _want,
+          "多=%s 缺=%s" % (sorted(_case_ids - _want), sorted(_want - _case_ids)))
 
     # ── D2 快照 schema == 仓库报告 JSON ─────────────────────────────────
     rep_fp = os.path.join(_ROOT, "examples", "photo_memory", "lda_pm_m4_report.json")
@@ -232,6 +284,47 @@ def main() -> int:
               _raised3)
     finally:
         ML.OPTICAL_DRIFT_ANCHORS["GST"][0] = _keep
+
+    # ── P4 台账判据的变异探针（各改法**各自**必红 + 原样必绿）──────────────
+    _m_title = [{**x} for x in PC.GAPS]
+    for _x in _m_title:
+        if _x["id"] == "PM-G7":
+            _x["title"] = _x["title"].replace("已结算", "（开放）")
+    _m_doi = [{**x} for x in PC.GAPS]
+    for _x in _m_doi:
+        if _x["id"] == "PM-G7":
+            _x["detail"] = _x["detail"].replace("doi:10.1126/sciadv.aau5759",
+                                                "（无 DOI）")
+    _m_del_g7 = [x for x in PC.GAPS if x["id"] != "PM-G7"]
+    _m_del_g10 = [x for x in PC.GAPS if x["id"] != "PM-G10"]
+    _m_led_del = [r for r in _ledger if r["id"] != "PM-G7"]
+    _m_led_open = [{**r, "closed": False} if r["id"] == "PM-G7" else r
+                   for r in _ledger]
+    _mut = [
+        _g7_ledger_ok(PC.GAPS, _ledger, _spec) is True,            # 原样必绿（非恒假）
+        _g7_ledger_ok(_m_title, _ledger, _spec) is False,          # 抹「已结算」必红
+        _g7_ledger_ok(_m_doi, _ledger, _spec) is False,            # 抹 DOI 必红
+        _g7_ledger_ok(_m_del_g7, _ledger, _spec) is False,         # 对外删 G7 行必红
+        _g7_ledger_ok(_m_del_g10, _ledger, _spec) is False,        # 藏开放缺口必红
+        _g7_ledger_ok(PC.GAPS, _m_led_del, _spec) is False,        # 机器账本删行必红
+        _g7_ledger_ok(PC.GAPS, _m_led_open, _spec) is False,       # 账本判「未闭合」必红
+        _g7_ledger_ok(PC.GAPS, _ledger,
+                      [_s for _s in _spec if _s["id"] != "PM-G10"]) is True,
+    ]
+    check("P4 台账判据变异探针：原样绿 ∧ 抹已结算/抹 DOI/删 G7/藏 G10/账本删行/"
+          "账本改判 六改必红",
+          all(_mut), "mut=%s" % _mut)
+
+    # ── P5 D1b 精确指纹的反向探针（增/删/换名 各自必红）──────────────────
+    _case_ids = {g["id"] for g in PC.GAPS}
+    _fp = [
+        _case_ids == (_open_ids | _LEDGER_EXTRA),                     # 原样绿
+        (_case_ids | {"PM-G11"}) == (_open_ids | _LEDGER_EXTRA),      # 偷加条目必红
+        (_case_ids - {"PM-G10"}) == (_open_ids | _LEDGER_EXTRA),      # 偷删条目必红
+        (_case_ids - {"PM-G9"} | {"PM-G99"}) == (_open_ids | _LEDGER_EXTRA),  # 换名必红
+    ]
+    check("P5 D1b 指纹反向探针：原样绿 ∧ 偷加/偷删/换名 三改必红",
+          _fp[0] and not any(_fp[1:]), "fp=%s" % _fp)
 
     # ── S1 自入 CI core ─────────────────────────────────────────────────
     cut = os.path.join(_HERE, "run_ci_regression.py")

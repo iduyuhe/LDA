@@ -1,5 +1,102 @@
 # Changelog
 
+## v0.9.194（2026-10-05 · **光子存储征程 PM-M5 国际对标收官：规格锚逐条对拍表 + 缺口台账终态** · **全量 CI 两处真红根因修复（判据口径：printf 模板吞诊断 / cwd 相对路径 / 字面量计数）** · **「同一数字手写四处」全线上锁（W9/W10）+ 度量工具自身口径修正** · 账本 **476 不变（零锚改动）** · CI core **282 → 283** · 端点 **147 不变**）
+
+- **🔴 对拍表纪律（本档主旨）**：`lda/lda_l2/pm_m5.py` 构建逐条对拍表（7 行）——
+  **LDA 值全部模块现算**（`pm_m1.level_design` / `pm_m4.write_driver` /
+  `pm_m3.cell_length_um` / `pm_m0.contrast_vs_length` / `pm_m2.nu_optical_bound`，
+  对拍模块**零硬编码设计数字**，改任一上游 ⇒ 行值跟着动）；**verdict 由三带规则
+  `_band(ratio)` 算出**（[0.5,2]=same_order / (2,5]=within_5x / 其余=outside_band），
+  不是手写字符串。
+- **文献锚 `BENCHMARK_ANCHORS` 落库**（`pm_matlib`，kind=measured_device · DOI 级）：
+  ① Ríos 2015 Nat. Photon. 9, 725（doi:10.1038/nphoton.2015.182）—— 8 电平 ·
+  单次切换最低 **13.4 pJ** · 多电平写脉冲 **465–585 pJ** · 二元对比 21% · 5 µm 胞 ·
+  ~1 GHz 声明；② Cheng 2019 Sci. Adv. 5, eaau5759 —— 13 电平 · 2 µm 胞
+  （与 `OPTICAL_DRIFT_ANCHORS` 共享同一实测事实，显式标注「非两次独立测量」）。
+  Ríos 原文**未报循环数** ⇒ 锚不含 endurance 字段（不造数）。
+- **对拍实测**：电平数 16 vs 13（比值 1.231 · same_order · **design_only ⚠ LDA 是
+  设计目标，无流片实测**）· 写脉冲能量 0.593–2.966 nJ vs 0.465–0.585 nJ（3.390 ·
+  within_5x · **cross_domain ⚠ 电辅助焦耳热 vs 光脉冲，只判量级**）· 胞长 11.01 µm
+  vs 5 µm（2.203 · within_5x）· 对比度 ≥0.704 dB vs 1.023 dB（0.688 · same_order ·
+  LDA 取 k 源展布**最小值**保守侧）。
+- **🔴 诚实边界显式行**：① drift 行 verdict=`derived_from_same_source`（LDA ν_T
+  上界**推导自** Cheng 2019 同一实测事实 ⇒ 对拍是**自洽性检查**，不是独立对标；
+  真正独立对标需第二来源）；② **endurance 行 verdict=`not_modeled`**（征程内无
+  模型 ∧ 文献无器件级循环数锚 ⇒ **不可判** ⇒ **新缺口 PM-G10**；不引用电学 PCM
+  10⁶–10⁹ 量级粉饰）；③ 密度行 verdict=`no_anchor`（文献均单胞演示无同口径阵列
+  密度；LDA 双口径并报：PIC 3.58e7 bits/mm² / 系统（EIC 瓶颈）1.29e7）。
+- **缺口台账终态**：`pm_m0.GAP_SPECS` 增 **PM-G10**（evidence=`_ev_g10` 真读对拍表
+  verdict，monkeypatch 可翻 ⇒ 证据链有判别力）；终态 **8 缺口 5 闭合**
+  （开放：G2 Γ 标定 / G6 相位域 / G8 器件级真值 / G9 外设实测锚 / G10 endurance）。
+- **门禁**：新增 `run_pm_m5_smoke` **18 判据（含 5 探针）**—— 对拍结构 / 本账值
+  同源 / 比值现算 / 三带边界 / 自洽行 / 不可判行 / 密度双口径 / 锚 DOI 完整性 /
+  缺口终态同源 / 聚合披露 / **C1a 报告路径锚定仓库根** / 快照一致性；探针 P1 写能量
+  锚 ×100 ⇒ 行比值 ÷100 且 verdict 翻红 · P2 电平数锚 13/8→4 ⇒ 16/4 ⇒ within_5x ·
+  P3 monkeypatch benchmark_rows ⇒ `_ev_g10` 翻转 · P4 禁词 · **P5 反 CWD 依赖
+  （换 cwd 到临时目录仍定位到同一报告；相对写法在同一目录必读不到 ⇒ 探针能变红）**。
+  `run_pm_m4_smoke` F1（缺口成员资格）回归不变（25/0 全绿）。
+- **🔴 全量 CI 判决 → 两处真红 → 三处根因（本档二次收口）**：283 条 **281 PASS / 2 FAIL**
+  （`run_pm_g7_settlement_smoke` · `run_pm_m5_smoke`）。两处**都不是物理判据错**，
+  而是「判据自身口径」缺陷 —— 逐条定性：
+  - **① `detail_fmt` 传了 printf 模板**（`" · %s"`，`pm_m5.py` + `run_pm_m5_smoke.py`
+    两处）：`make_check` 收的是 `str.format` 模板（`{d}`），`"%s".format(d=...)` **不报错**
+    ⇒ 详情**恒印字面量 `· %s`**，把「报告 JSON 与现算不一致」这句唯一诊断线索**静默吞掉**。
+    **根因修复**：`smoke_kit.make_check` 命中 printf 占位符即 `raise ValueError`
+    （把这族误用从静默失真变成当场报错）。
+  - **② 门禁用 cwd 相对路径读仓库产物**：`run_pm_m5_smoke` 写
+    `os.path.join("examples", ...)` ⇒ 相对 **cwd**；CI 以 `cwd=lda` 调起
+    （`run_ci_regression._run_one(..., cwd=_HERE)`），于是**人手在仓库根跑是绿的、
+    CI 里必红** ⇒ 「本地绿/CI 红」互斥，最易被误当 flaky。**通法：cwd 也是口径的一部分**。
+    同一次全仓 AST 扫描另揪出**两处同族**（都逃过了 CI，因为恰好只在一种 cwd 下成立）：
+    `run_accel_case_smoke.py` 的 `FRONTEND = "lda_webui/static/index.html"`（**反着来**：
+    只在 `cwd=lda` 下能解析，从仓库根跑必 FileNotFoundError）与
+    `run_ecosystem_report.py` 的 `sys.path.insert(0, ".")` + `out = "lda/reports/..."`
+    （**两处需求的正确 cwd 互斥** ⇒ 按 docstring 直接跑会把产物写到 `lda/lda/reports/`）。
+    三处全部改为锚定脚本自身位置 / 仓库根。
+  - **③ `run_pm_g7_settlement_smoke` D1 写死 `len(PC.GAPS) == 5`**（字面量计数）⇒ M5
+    合法新增 PM-G10 后必红；且「条目数不变」**语义本身就错**（缺口只该增、不该被静默吞）
+    ⇒ 重写为「机器账本仍有 PM-G7 且 closed（结算≠删行）+ 对外行含「已结算」+ Cheng 2019
+    DOI + **未闭合 spec 缺口全披露**」，并新增 **D1b 精确指纹**：对外台账 id 集合
+    == 开放 spec 缺口 ∪ 已登记例外 `{PM-G7（已结算仍披露）, PM-G8/PM-G9（M4 登记、
+    暂无独立证据链）}` ⇒ 两侧任何一侧悄悄增删条目都必红（把「对外台账里无证据链的
+    条目」从**隐性事实**变成**显式登记 + 机器守卫**，治「门禁只管看得见的集合」）。
+- **门禁侧固化（新增组 C：自测口径契约）**：`run_ci_gate_contract_smoke` **13 → 18 判据**
+  （组 C `C1` make_check 拒 printf 模板 ∧ `{d}` 真插值 · `C2` **全仓 891 个 `.py` AST 扫描**：
+  不许 cwd 相对路径访问仓库产物，**不做白名单**，并含「CI 执行的 `run_*.py` 321/321 全覆盖」
+  的地板；探针 `P6` 三向（printf raise / format 不 raise / 纯字面量不 raise）·
+  `P7` 五向（三种相对读法必命中 ∧ 锚定/助手转发不误报））·
+  `run_pm_g7_settlement_smoke` 17 → **20 判据**（新增 P4 台账判据变异探针六改必红 ·
+  P5 D1b 指纹偷加/偷删/换名必红）· `run_pm_m5_smoke` 16 → **18 判据**
+  （C1a 路径锚定仓库根 · P5 反 CWD 依赖）·
+  **`run_webui_pm_render_path_smoke` 22 → 28 判据**（新增 **W8 🔴 里程碑 `gate` 数 ==
+  对应后端门禁**实跑**行首 `[PASS]` 计数**逐档对照 + 缺映射即红，探针 W8-P1 三改必红；
+  **W9 🔴 `run_ci_regression.py` 注释里手写的「N 判据」== 门禁实跑数**，探针 W9-P1 五向；
+  **W10 🔴 README「当前版本」行里的判据数 == 实跑数**，探针 W10-P1 两向）
+  —— 治「同一份数字手写**四处**」（门禁 docstring / `pm_case.MILESTONES[].gate` /
+  CI 注释 / **README 顶行**）。血案有 M3 误登记 62；本轮又出现 **M4b 17→20 /
+  M5 16→18 两处同族漏改**，且 W9 上线即发现 **CI 注释面全线漂移**（M0 31→33 / G7 15→20 /
+  M5 16→18 / render_path 22→24，加规模数字 306→344 / 23→24 / 7→9），W10 又发现
+  **README 顶行**写 `run_pm_m5_smoke` **16 判据` / `前端门禁 22/0`（修后为 18 / 28）。
+  🔴 且 W10 **自身首跑即被抓出假绿**：正则强制 `.py` 而 README 里脚本名**不带 `.py`**
+  ⇒ 恒不匹配 ⇒ W10 恒绿（探针 W10-P1 当场变红暴露；正则改 `.py` 可选并归一化补全）。
+  🔴 另有 W9 首次运行抓出的**度量工具自身口径错**：`_pass_count` 原用
+  `stdout.count("[PASS]")`（数出现次数）⇒ 被 `run_ci_gate_contract_smoke` C1 detail
+  里的 `[PASS]` 字面污染 ⇒ gate_contract 偏报 19（实为 18）—— 改为**按行首锚定**
+  （口径 == 人工 `grep -c`）。**度量工具自身也要有守卫。**
+- **货架产物**：`examples/photo_memory/build_pm_m5.py` ⇒ `lda_pm_m5_report.json`
+  （7529 B，落盘前断言无未替换占位符）。
+
+- **前端**：`renderPm` 新增 **⑮ M5 国际对标收官**（对拍表 + 行级溯源表（LDA 值
+  来源 / DOI 文献来源 / 行注记）+ verdict 旗标（⚠设计目标/⚠口径差/⚠自洽/PM-G10）
+  + 缺口台账终态表）；原 ⑮ 产出物顺延 **⑯**；标题/导航/按钮 M0–M4 → **M0–M5**；
+  结论段补收官叙事。`pm_case` 快照 **m5 块由报告程序化重建** + M5 里程碑（gate=18）
+  + FINDINGS +1 + GAPS +PM-G10（⑥ 缺口数 5→6）+ 自检 +⑬ ⇒ **13/13**；
+  `run_webui_pm_render_path_smoke` **28/0**（**9 个 `[]` 项目块**反向完备 ·
+  344 取值路径 / 41 别名 · 新增 **W8/W9/W10** 见上）。
+- **下一程候选**（光子存储收官后）：量子 G_Q9 收口 / 电子征程深化 / 光联接 G-OI4
+  （电路级 PDK）/ 智衍平台专项。
+
+
 ## v0.9.193（2026-10-05 · **光子存储征程 PM-G7 结算：光学域 drift 实测锚 —— 主账口径翻转** · 账本 **476 不变（零锚改动）** · CI core **281 → 282** · 端点 **147 不变**）
 
 - **🔴 缺口结算（本档主旨）**：PM-G7「光学域 drift 定量锚」由 M4 升级的**系统级阻塞项**转为**已结算**——

@@ -27,6 +27,7 @@
 """
 from __future__ import annotations
 
+import re
 import socket
 import sys
 import unittest
@@ -65,6 +66,7 @@ def make_check(ns, ok_key="PASS", bad_key="FAIL", indent="  ",
     ok_key/bad_key: 通过 / 失败计数键名（如 ``"PASS"`` / ``"_FAIL"``）
     indent        : 行首缩进（原实现有 ``"  "`` 与 ``""`` 两种）
     detail_fmt    : 详情后缀模板（``str.format(d=detail)``），``None`` ⇒ 无详情后缀
+
     always_detail : True ⇒ 详情**无条件**打印（原实现有 ``f"  ({detail})"`` 不判空的一类）
     return_ok     : True ⇒ 返回 ``bool(cond)``（原实现有返回 None 与返回 cond 两类）
     detail_on     : ``"both"``（默认，详情非空即打）/ ``"fail"``（**仅失败**打详情）/
@@ -76,7 +78,19 @@ def make_check(ns, ok_key="PASS", bad_key="FAIL", indent="  ",
     输出（与迁移前逐字一致）::
 
         {indent}[PASS|FAIL] {name}{detail 后缀（若需要）}
+
+    🔴 ``detail_fmt`` 是 **``str.format`` 模板（``{d}``）**，不是 printf 模板。
+    传 ``" · %s"`` 会**恒印字面量 ``· %s``**（``"%s".format(d=...)`` 不报错、
+    只是什么都不替换）⇒ **失败时的诊断详情被静默吞掉**（v0.9.194 实证：
+    `run_pm_m5_smoke.py` C1 真红时只打出 `· %s`，把「报告 JSON 与现算不一致」
+    这句唯一线索埋了）。故此处**主动 raise**，把这族误用从静默失真变成当场报错。
     """
+    if detail_fmt is not None and re.search(r"%[-+0#]*\.?\d*[sdiouxXeEfFgGcr]", detail_fmt):
+        raise ValueError(
+            "make_check(detail_fmt=...) 收的是 str.format 模板（占位符写 {d}），"
+            "不是 printf 模板；收到 %r —— 它会恒印字面量、静默吞掉失败详情。"
+            % (detail_fmt,))
+
     def check(name, cond, detail=""):
         ok = bool(cond)
         k = ok_key if ok else bad_key

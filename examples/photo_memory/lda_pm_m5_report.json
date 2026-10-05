@@ -1,0 +1,177 @@
+{
+  "disclosure": {
+    "all_lda_values_computed": true,
+    "no_fabricated_efficiency_claims": true,
+    "no_fabrication_of_measurability": true
+  },
+  "gaps_closed": 5,
+  "gaps_final": [
+    {
+      "closed": true,
+      "id": "PM-G1",
+      "title": "相变材料光学常数锚库（n,k @λ,相态）"
+    },
+    {
+      "closed": false,
+      "id": "PM-G2",
+      "title": "模场重叠因子 Γ 的 FDTD 标定"
+    },
+    {
+      "closed": true,
+      "id": "PM-G3",
+      "title": "瞬态热模型（冷却时间 = set/reset 周期下限）"
+    },
+    {
+      "closed": true,
+      "id": "PM-G4",
+      "title": "晶化动力学（JMAK/Avrami）"
+    },
+    {
+      "closed": true,
+      "id": "PM-G5",
+      "title": "非晶 drift（物理来源 + 电学域锚 + 光学域适用性判定）"
+    },
+    {
+      "closed": false,
+      "id": "PM-G6",
+      "title": "相位域（谐振/干涉）多电平读出与漂移口径"
+    },
+    {
+      "closed": true,
+      "id": "PM-G7",
+      "title": "光学域 drift 定量锚（透射电平漂移 · v0.9.193 结算：实测上界锚 + 检测下限假设显式披露）"
+    },
+    {
+      "closed": false,
+      "id": "PM-G10",
+      "title": "写读耐久（endurance）模型与锚 —— M5 对拍表判定「不可判」（开放）"
+    }
+  ],
+  "gaps_total": 8,
+  "generated_by": "examples/photo_memory/build_pm_m5.py",
+  "honest_note": "本表不产生任何「实测」声明：LDA 全部数字为闭式/行为级设计值；文献值全部 DOI 级器件实测；比值仅判量级（三带规则）。",
+  "material": "GST",
+  "milestone": "PM-M5",
+  "rows": [
+    {
+      "design_only": true,
+      "lda_source": "pm_m1.level_design（M1 主账）",
+      "lda_value": 16,
+      "lit_sources": [
+        "Ríos, Stegmaier, Hosseini, Wright, Bhaskaran & Pernice, 《Integrated all-photonic non-volatile multi-level memory》, Nat. Photon. 9, 725–732 (2015) · doi:10.1038/nphoton.2015.182",
+        "Cheng, Ríos, Wright, Bhaskaran, Pernice et al., 《In-memory computing on a photonic platform》, Sci. Adv. 5, eaau5759 (2019) · doi:10.1126/sciadv.aau5759"
+      ],
+      "lit_value": 13,
+      "metric": "n_levels",
+      "metric_cn": "存储电平数",
+      "note": "🔴 LDA 是**设计目标**（无流片实测）；文献是器件级实测。「高于实测 23%」不构成实测声明。",
+      "ratio": 1.2307692307692308,
+      "verdict": "same_order"
+    },
+    {
+      "cross_domain": true,
+      "lda_source": "pm_m4.write_driver（M4 行为级 · 电辅助焦耳热）",
+      "lda_value": {
+        "e_hi_j": 2.966062382119907e-09,
+        "e_lo_j": 5.932124764239814e-10,
+        "mid_j": 1.7796374292719442e-09
+      },
+      "lit_sources": [
+        "Ríos, Stegmaier, Hosseini, Wright, Bhaskaran & Pernice, 《Integrated all-photonic non-volatile multi-level memory》, Nat. Photon. 9, 725–732 (2015) · doi:10.1038/nphoton.2015.182"
+      ],
+      "lit_value": {
+        "e_switch_min_j": 1.34e-11,
+        "multi_mid_j": 5.25e-10
+      },
+      "metric": "write_pulse_energy_j",
+      "metric_cn": "单次写脉冲能量",
+      "note": "🔴 口径差：LDA = **电辅助**焦耳热（3.3 V × 加热线，行为级）；文献 = **光脉冲**写入（波导近场）。能量不可直接比优劣，只判量级；文献另报最低切换 13.4 pJ（二元优化点，非多电平工作点），不并入比值。",
+      "ratio": 3.3897855795656078,
+      "verdict": "within_5x"
+    },
+    {
+      "lda_source": "pm_m3.cell_length_um（M1 设计 L）",
+      "lda_value": 11.014603130717049,
+      "lit_sources": [
+        "Ríos, Stegmaier, Hosseini, Wright, Bhaskaran & Pernice, 《Integrated all-photonic non-volatile multi-level memory》, Nat. Photon. 9, 725–732 (2015) · doi:10.1038/nphoton.2015.182"
+      ],
+      "lit_value": 5.0,
+      "metric": "cell_length_um",
+      "metric_cn": "GST 相变段长度",
+      "note": "胞长越长插入损耗越高（M0 闭式律 ∝L），但设计点由 M1 可行性判据定，非自由选择。",
+      "ratio": 2.2029206261434098,
+      "verdict": "within_5x"
+    },
+    {
+      "lda_source": "pm_m0.contrast_vs_length（M0 闭式律 · Γ 抵消）",
+      "lda_value": {
+        "at_l_um": 5.0,
+        "contrast_max_db": 12.235375044130057,
+        "contrast_min_db": 0.7041942471441752
+      },
+      "lit_note": "21% 透射变化 ⇒ 10·log10(1/0.79) = 1.024 dB（换算可见）",
+      "lit_sources": [
+        "Ríos, Stegmaier, Hosseini, Wright, Bhaskaran & Pernice, 《Integrated all-photonic non-volatile multi-level memory》, Nat. Photon. 9, 725–732 (2015) · doi:10.1038/nphoton.2015.182"
+      ],
+      "lit_value": 1.0237290870955853,
+      "metric": "readout_contrast_db",
+      "metric_cn": "二元读出对比度",
+      "note": "取 LDA **最小**对比度（k 源展布保守侧）与文献单值比。",
+      "ratio": 0.6878716801356498,
+      "verdict": "same_order"
+    },
+    {
+      "lda_source": "pm_m2.nu_optical_bound（G7 结算 · 上界推导）",
+      "lda_value": {
+        "nu_ub": 0.0003800076716653453,
+        "semantics": "upper_bound"
+      },
+      "lit_sources": [
+        "Cheng, Ríos, Wright, Bhaskaran, Pernice et al., 《In-memory computing on a photonic platform》, Sci. Adv. 5, eaau5759 (2019) · doi:10.1126/sciadv.aau5759"
+      ],
+      "lit_value": {
+        "kind": "no_detectable_drift_1e4_s"
+      },
+      "metric": "drift_index_nu",
+      "metric_cn": "透射漂移指数 ν_T",
+      "note": "🔴 LDA 上界ν_T ≤ 检测下限/ln(10⁴) **推导自** Cheng 2019 的同一实测事实⇒ 本行是**自洽性检查**（推导链可复核），不是独立对标；真正独立对标需第二来源的器件级 drift 实测（尚无）。",
+      "self_consistency_only": true,
+      "verdict": "derived_from_same_source"
+    },
+    {
+      "gap_id": "PM-G10",
+      "lda_source": null,
+      "lda_value": null,
+      "lit_sources": [],
+      "lit_value": null,
+      "metric": "endurance",
+      "metric_cn": "写读循环耐久",
+      "note": "🔴 征程内**无 endurance 模型**；文献检索未取得光子 GST 器件级循环数实测锚（Ríos 2015 原文未报循环数）⇒ **不可判**。不引用电学 PCM 的 10⁶–10⁹ 量级作粉饰（器件口径不同）。",
+      "verdict": "not_modeled"
+    },
+    {
+      "lda_source": "pm_m3.cell_pitch_um × die 高（M4 2.5D）· 算出来的",
+      "lda_value": {
+        "bits_per_cell": 4.0,
+        "die_h_um": 6.2,
+        "pic_side": 35752.86267622216,
+        "pitch_um": 18.045024706557335,
+        "system_side_eic_bottleneck": 12903.22580645161
+      },
+      "lit_sources": [],
+      "lit_value": null,
+      "metric": "areal_density",
+      "metric_cn": "集成密度（bits/mm²）",
+      "note": "文献均为**单胞演示**（Ríos 5 µm / Cheng 2 µm），无同口径阵列密度实测锚⇒ 不比。LDA 侧两口径并报：PIC 版图口径 vs 2.5D 系统口径（EIC 瓶颈）。",
+      "verdict": "no_anchor"
+    }
+  ],
+  "summary_note": "收官口径：对拍 7 行 —— same_order/within_5x 均为**量级**结论（LDA 无流片实测，全部 design_only）；drift 行是自洽检查非独立对标；endurance 与密度两行**不可判**（如实登记 PM-G10 / 无锚）。国际对标收官 = 「知道自己每一项站在哪」，不是「全面领先」。",
+  "verdict_counts": {
+    "derived_from_same_source": 1,
+    "no_anchor": 1,
+    "not_modeled": 1,
+    "same_order": 2,
+    "within_5x": 2
+  }
+}

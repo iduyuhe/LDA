@@ -144,7 +144,7 @@ body{padding-top:56px}
     <a href="#sec-ecore" style="color:#1a1205;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 电子计算芯片（E1–E18）</a>
     <a href="#sec-d4" style="color:#0b1220;background:#a5b4fc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ D4 交付扩面（电子+超导）</a>
     <a href="#sec-oi" style="color:#04201b;background:#5eead4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光联接模块 M0–M5（3.2T/CPO · 热-光-电协同 + VπL 断口结算）</a>
-    <a href="#sec-pm" style="color:#1a1205;background:#fcd34d;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子存储阵列 M0–M4（GST 相变 · 真 GDS + DRC/LVS · 外设与系统）</a>
+    <a href="#sec-pm" style="color:#1a1205;background:#fcd34d;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子存储阵列 M0–M5（GST 相变 · 真 GDS + DRC/LVS · 外设与系统 · 国际对标）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1506,7 +1506,7 @@ body{padding-top:56px}
   </div>
 
   <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-pm">
-    <h2>★ 光子存储阵列 M0–M4：单元闭式 → 多电平 → 热-可靠性 → 阵列版图（真 GDS + DRC/LVS）→ 外设与系统（吃狗粮检阅平台）</h2>
+    <h2>★ 光子存储阵列 M0–M5：单元闭式 → 多电平 → 热-可靠性 → 阵列版图（真 GDS + DRC/LVS）→ 外设与系统 → 国际对标收官（吃狗粮检阅平台）</h2>
     <div class="hint">
       <b>用 LDA 从零设计一条<b>非易失光子存储</b>（Si 直波导 + <b>GST 相变段</b> + 双侧微加热线 + 4 电极 pad）</b>，
       从单元物理一路做到<b>可排布的阵列版图 + 真 GDSII + 双闸签核</b>。<br/>
@@ -1542,7 +1542,7 @@ body{padding-top:56px}
       <b>不报</b> pJ/bit · fJ/op · TOPS · TOPS-W；判决为死标量比对，<b>LLM 不进判决路径</b>。
     </div>
     <div class="row">
-      <button class="btn" id="runPm">运行 光子存储阵列 M0 – M4 案例</button>
+      <button class="btn" id="runPm">运行 光子存储阵列 M0 – M5 案例</button>
     </div>
     <div id="pmSummary" class="summary"></div>
     <div id="pmBody"></div>
@@ -5858,11 +5858,11 @@ function renderOi(d){
 }
 if($('runOi')) $('runOi').onclick = runOi;
 
-/* ═══════════ 光子存储阵列（GST 相变 · 电辅助写）案例（PM 征程 M0–M4 · /api/pm_demo）═══════════ */
+/* ═══════════ 光子存储阵列（GST 相变 · 电辅助写）案例（PM 征程 M0–M5 · /api/pm_demo）═══════════ */
 async function runPm(){
   const btn=$('runPm'); if(!btn) return;
   btn.disabled=true;
-  $('pmSummary').innerHTML='<span class="spin"></span> 正在装配 光子存储阵列 M0 – M4 案例（单元闭式 + 多电平 + 热-可靠性 + 阵列版图/P&R/DRC/LVS/独立 GDS 解码 + 读出/写驱动/系统误码预算/2.5D 装配，只读快照）…';
+  $('pmSummary').innerHTML='<span class="spin"></span> 正在装配 光子存储阵列 M0 – M5 案例（单元闭式 + 多电平 + 热-可靠性 + 阵列版图/P&R/DRC/LVS/独立 GDS 解码 + 读出/写驱动/系统误码预算/2.5D 装配 + 国际对标对拍表，只读快照）…';
   try{
     const d=await apiGet('/api/pm_demo');
     renderPm(d);
@@ -5885,7 +5885,8 @@ function renderPm(d){
   /* ── M4 外设与系统：读取**同一份** `case_card()` 的 `m4` 块（别名同样「无括号」式）── */
   var M4=d.m4||{}, RO=M4.readout||{}, RF=M4.rf_tradeoff||{}, WDRV=M4.write_driver||{},
       SB=M4.system_budget||{}, ASM=M4.assembly_2p5d||{}, M4UP=M4.upstream||{},
-      LU=M4UP.levels||{}, DPV=SB.drift_proxy||{}, EPS=SB.eps||{}, SHR=SB.share||{};
+      LU=M4UP.levels||{}, DPV=SB.drift_proxy||{}, EPS=SB.eps||{}, SHR=SB.share||{},
+      M5=d.m5||{}, M5ROWS=M5.rows||[], M5VC=M5.verdict_counts||{}, M5GF=M5.gaps_final||[];
   $('pmSummary').innerHTML='<b>'+d.case_id+'</b> · 判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）'
     +' · 征程 <b>'+(sp.milestones||'?')+'</b> 段 / <b>'+(sp.modules||'?')+'</b> 模块'
     +' · 门禁判据 <b>'+(sp.gate_checks||'?')+'</b>（含 <b>'+(sp.probe_mutations||'?')+'</b> 条突变探针）'
@@ -6180,8 +6181,51 @@ function renderPm(d){
         return '<b>'+g.id+'</b> '+g.title+' —— '+g.detail;
       }).join('<br/>')+'</p>';
 
-  // ⑮ 产出物元信息 + 数据来源 + 面板导航
-  h+='<h3 style="margin:14px 0 4px">⑮ 产出物与数据来源</h3>';
+  // ⑮ M5 国际对标收官（逐条对拍表 + 缺口台账终态）
+  h+='<h3 style="margin:14px 0 4px">⑮ M5 国际对标收官（规格锚逐条对拍 · 7 行）</h3>';
+  var _vTag={same_order:'<b>同量级</b>',within_5x:'<b>5×以内</b>',outside_band:'<b>出带</b>',
+    derived_from_same_source:'<b>自洽检查</b>（非独立对标）',not_modeled:'<b>🔴 不可判</b>',
+    no_anchor:'<b>无同口径锚</b>'};
+  h+=_qcTbl(['指标','LDA（设计值）','文献（DOI 实测）','比值','verdict'],
+    M5ROWS.map(function(r){
+      var lda='-';
+      if(r.metric==='n_levels') lda=r.lda_value+'（设计目标 · 非流片实测）';
+      else if(r.metric==='write_pulse_energy_j'&&r.lda_value) lda=(r.lda_value.e_lo_j!=null?Number(r.lda_value.e_lo_j*1e9).toFixed(2):'-')+' – '+(r.lda_value.e_hi_j!=null?Number(r.lda_value.e_hi_j*1e9).toFixed(2):'-')+' nJ（电辅助）';
+      else if(r.metric==='cell_length_um') lda=Number(r.lda_value).toFixed(2)+' µm';
+      else if(r.metric==='readout_contrast_db'&&r.lda_value) lda='≥'+Number(r.lda_value.contrast_min_db).toFixed(3)+' dB（保守侧 · @'+Number(r.lda_value.at_l_um).toFixed(0)+' µm）';
+      else if(r.metric==='drift_index_nu'&&r.lda_value) lda='ν_T ≤ '+Number(r.lda_value.nu_ub).toExponential(2)+'（上界）';
+      else if(r.metric==='areal_density'&&r.lda_value) lda=Number(r.lda_value.pic_side).toExponential(2)+' / '+Number(r.lda_value.system_side_eic_bottleneck).toExponential(2)+' bits/mm²（PIC/系统）';
+      var lit='-';
+      if(r.metric==='n_levels') lit=r.lit_value+' 电平（实测器件最大）';
+      else if(r.metric==='write_pulse_energy_j'&&r.lit_value) lit=Number(r.lit_value.multi_mid_j*1e9).toFixed(2)+' nJ（多电平中值 · 光写入）';
+      else if(r.metric==='cell_length_um') lit=Number(r.lit_value).toFixed(0)+' µm';
+      else if(r.metric==='readout_contrast_db') lit=Number(r.lit_value).toFixed(3)+' dB（21% 换算）';
+      else if(r.metric==='drift_index_nu') lit='10⁴ s 无可测漂移（Cheng 2019）';
+      var tags=(r.design_only?' · ⚠设计目标':'')+(r.cross_domain?' · ⚠口径差':'')
+        +(r.self_consistency_only?' · ⚠自洽':'')+(r.gap_id?' · '+r.gap_id:'');
+      return [ r.metric_cn, lda, lit+(r.lit_note?('（'+r.lit_note+'）'):''),
+        (r.ratio!=null?Number(r.ratio).toFixed(3):'-'),
+        (_vTag[r.verdict]||r.verdict)+tags ];
+    }));
+  h+=_qcTbl(['指标','LDA 值来源','文献来源（DOI）','行注记（诚实标注）'],
+    M5ROWS.map(function(r){
+      return [ r.metric_cn, r.lda_source||'-',
+        (r.lit_sources&&r.lit_sources.length?r.lit_sources.join('；'):'-'),
+        r.note||'-' ];
+    }));
+  h+='<div class="note"><b>verdict 计数</b>：same_order ×'+(M5VC.same_order||0)
+    +' · within_5x ×'+(M5VC.within_5x||0)
+    +' · derived_from_same_source ×'+(M5VC.derived_from_same_source||0)
+    +' · not_modeled ×'+(M5VC.not_modeled||0)
+    +' · no_anchor ×'+(M5VC.no_anchor||0)+'</div>';
+  var _gapRow=function(g){ return [ g.id, g.closed?'<b>已闭合</b>':'<b>开放</b>', g.title ]; };
+  h+='<div class="note"><b>缺口台账终态</b>（'+(M5.gaps_closed!=null?M5.gaps_closed:'-')+'/' +(M5.gaps_total!=null?M5.gaps_total:'-')+' 闭合 · closed ⇔ evidence_ok 恒等保持）：</div>';
+  h+=_qcTbl(['缺口','状态','说明'], M5GF.map(_gapRow));
+  h+='<div class="note">🔴 收官口径：'+(M5.summary_note||'-')+'</div>';
+  h+='<div class="note">'+(M5.honest_note||'-')+'</div>';
+
+  // ⑯ 产出物元信息 + 数据来源 + 面板导航
+  h+='<h3 style="margin:14px 0 4px">⑯ 产出物与数据来源</h3>';
   if(AF.available){
     h+=_qcTbl(['产出物','字节'], (AF.items||[]).map(function(it){ return [it.name, it.bytes]; }));
   }else{
@@ -6214,6 +6258,12 @@ function renderPm(d){
     +'⇒ 主账 1 年保持系统 BER 从 0.4047（不达标）翻到 <b>'+Number(SB.ber_total).toExponential(2)
     +'（达标）</b>，瓶颈翻转为<b>写量化</b>，保持下界 ~10^74 s（ν_T 是上界 ⇒ 结论是<b>下界</b>语义）；'
     +'旧口径（瓶颈=drift、保持 1.7 秒）<b>并报可查不删除</b>。'
+    +'<br/>M5 国际对标收官：逐条对拍 <b>7 行</b>（LDA 值全部模块现算 · 文献值全部 '
+    +'DOI 级器件实测 · 三带规则判 verdict）—— <b>same_order ×'+((M5VC.same_order||0)
+    +(M5VC.within_5x||0))+'</b> 行量级内 · drift 行为<b>自洽检查</b>非独立对标 · '
+    +'🔴 endurance <b>不可判</b>（PM-G10）· 密度无同口径锚（不比）。'
+    +'缺口台账终态 <b>'+M5.gaps_closed+'/'+M5.gaps_total+'</b> 闭合 —— '
+    +'<b>收官口径：知道自己每一项站在哪，不是「全面领先」</b>。'
     +'<br/>'+d.honest_note;
   return false;
 }

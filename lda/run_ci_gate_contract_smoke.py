@@ -18,15 +18,25 @@
    —— 注入恒 FAIL 时 rc 仍为 0（**假绿实证**，见 P 组探针），修后 rc=1。
 
 判据（全部走**真代码路径 / 真源码**；不读字面量、不设手写豁免清单）
-  组 A 棘轮时序      A1~A5  +  P1~P3 探针
+  组 A 棘轮时序      A1~A6  +  P1~P3 探针
   组 B 退出码契约    B1~B3  +  P4~P5 探针
     B1 判据**无手写豁免清单**：`有判据（check/assert）却无失败通道` 才判红；
        本就无判据的文件（如 CLI 演示入口）自动不判红 —— 避免清单静默进盲区。
+  组 C 自测口径契约  C1~C2  +  P6~P7 探针（v0.9.194 新增）
+    C1 🔴 `make_check(detail_fmt=...)` 是 **str.format 模板**（`{d}`）。传 printf
+       模板（`" · %s"`）**不报错但恒印字面量** ⇒ 失败详情被静默吞掉（实证：
+       `run_pm_m5_smoke.py` C1 真红时只打出 `· %s`，唯一线索被埋）。命中即判红。
+    C2 🔴 门禁/脚本**不许用 cwd 相对路径**访问仓库产物（`"examples/..."` 直传
+       `open`，或先赋值再传）。CI 以 `cwd=lda` 调起门禁，而人手多在仓库根跑 ⇒
+       同一份代码两套结论（`run_pm_m5_smoke` 是「本地绿/CI 红」，
+       `run_accel_case_smoke` 反着来；`run_ecosystem_report.py` 两处需求互斥 ⇒
+       根本没有一个 cwd 能同时成立）。**cwd 也是口径的一部分。**
 """
 from __future__ import annotations
 
 import ast
 import contextlib
+import glob
 import importlib.util
 import io
 import json
@@ -128,6 +138,90 @@ def _n_assert(tree):
 
 _ASSERT_OK = ("有判据（check/assert）⇒ 必须有失败退出通道（rc≠0），"
               "否则门禁的 FAIL 永不被 CI 捕获 = 假绿")
+
+
+# ==================================================== 组 C：自测口径契约
+#: 仓库顶层目录名（出现这些字面开头 ⇒ 该路径是**仓库内**产物、不该相对 cwd）
+_REPO_DIR_HEADS = ("examples", "docs", "lda", "scripts", "reports", "assets",
+                   "webui", "lda_webui")
+#: 视作「文件访问」的调用名（open/存在性/读取）
+_FILE_APIS = ("open", "exists", "isfile", "islink", "load", "read_text",
+              "read_bytes")
+
+
+def _fn_name(n):
+    if isinstance(n, ast.Attribute):
+        return n.attr
+    if isinstance(n, ast.Name):
+        return n.id
+    return ""
+
+
+def _is_cwd_relative_repo(n):
+    """判断 AST 表达式是否是**相对 cwd** 的仓库路径。
+
+    `"examples/x.json"`（字面量）或 `os.path.join("examples", ...)`（首参字面量）
+    ⇒ True。`os.path.join(_ROOT, "examples", ...)` ⇒ False（已锚定）。
+    """
+    if isinstance(n, ast.Constant) and isinstance(n.value, str):
+        return n.value.replace("\\", "/").split("/")[0] in _REPO_DIR_HEADS
+    if isinstance(n, ast.Call) and _fn_name(n.func) == "join" and n.args:
+        return _is_cwd_relative_repo(n.args[0])
+    return False
+
+
+def _cwd_relative_reads(src):
+    """返回「用 cwd 相对路径访问仓库文件」的调用点（AST · 不读字面量清单）。
+
+    口径（两类，覆盖本仓全部实证形态）：
+      · 当场就是相对字面量：`open("examples/x.json")` / `join("examples", ...)`
+        直接作为文件 API 的第一实参；
+      · 同一函数内先赋值再使用：`p = join("examples", ...)` … `open(p)`。
+    **不算**违约：`open(os.path.join(_ROOT, ...))`，以及经助手函数转发
+    （`_read(join("lda", ...))` + `def _read(rel): open(join(_ROOT, rel))`）——
+    那类最终仍锚在仓库根；这两类正是本判据的假阳性来源，已由 P7 样例钉死。
+    """
+    tree = ast.parse(src)
+    hits = []
+
+    def _scan(stmts, names, scope):
+        """在给定语句集合里找「第一实参是 cwd 相对仓库路径」的文件 API 调用。"""
+        for st in stmts:
+            for n in ast.walk(st):
+                if not (isinstance(n, ast.Call) and n.args):
+                    continue
+                if _fn_name(n.func) not in _FILE_APIS:
+                    continue
+                a0 = n.args[0]
+                if _is_cwd_relative_repo(a0) or (isinstance(a0, ast.Name)
+                                                 and a0.id in names):
+                    hits.append("%s:%s(%s)" % (scope, _fn_name(n.func),
+                                               ast.unparse(a0)))
+
+    mod_rel = {t.id for n in tree.body if isinstance(n, ast.Assign)
+               and _is_cwd_relative_repo(n.value)
+               for t in n.targets if isinstance(t, ast.Name)}
+    _scan(tree.body, mod_rel, "module")           # 模块级（含 __main__ 块内语句）
+    for fn in ast.walk(tree):
+        if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        names = set(mod_rel)
+        for n in ast.walk(fn):
+            if isinstance(n, ast.Assign) and _is_cwd_relative_repo(n.value):
+                for t in n.targets:
+                    if isinstance(t, ast.Name):
+                        names.add(t.id)
+        _scan(fn.body, names, fn.name)
+    return sorted(set(hits))
+
+
+def _fmt_guard_raises(fmt):
+    """`make_check` 对 printf 模板是否 raise（还原 pre-fix 行为用）。"""
+    try:
+        make_check({}, detail_fmt=fmt)
+        return False
+    except ValueError:
+        return True
 
 
 # ============================================================ 组 A：棘轮时序
@@ -280,6 +374,72 @@ def main() -> int:
                             "if __name__ == '__main__':\n    sys.exit(main())\n")
     check("P5 探针须造分歧（样例『有 check + 条件返回』⇒ 判据**不**判红，非恒真）",
           bool(_gate_calls(good_sample)) and _exit_channel(good_sample))
+
+    # ---------------- 组 C：自测口径契约 ----------------
+    print("\n== 组 C：自测口径契约（format 模板 + 禁 cwd 相对路径）==")
+    # C1 `make_check(detail_fmt)` 是 str.format 模板，printf 模板必须当场 raise
+    _ns, _buf = {}, io.StringIO()
+    _ck = make_check(_ns, ok_key="P", bad_key="F", detail_fmt=" · {d}")
+    with contextlib.redirect_stdout(_buf):
+        _ck("样例判据", True, "详情X")
+    _line = _buf.getvalue().strip()
+    check("C1 🔴 make_check 拒 printf 模板（%s 型）∧ {d} 模板真插值"
+          "（否则失败详情恒印字面量、被静默吞掉）",
+          _fmt_guard_raises(" · %s") and not _fmt_guard_raises(" · {d}")
+          and "详情X" in _line and "%s" not in _line,
+          "raise(%s)=%s · 输出=%r" % (" · %s", _fmt_guard_raises(" · %s"), _line))
+
+    # C2 门禁/脚本不许用 cwd 相对路径访问仓库产物（**全仓 glob · 不做白名单**）
+    _cwd_files = []
+    for _pat in (os.path.join(_HERE, "**", "*.py"),          # lda/ 全包（含 run_*.py）
+                 os.path.join(_ROOT, "scripts", "*.py"),
+                 os.path.join(_ROOT, "examples", "**", "*.py"),
+                 os.path.join(_ROOT, "*.py")):                # 仓库根脚本
+        _cwd_files.extend(glob.glob(_pat, recursive=True))
+    _cwd_files = sorted(set(_cwd_files))
+    _cwd_hits = []
+    for _p in _cwd_files:
+        _h = _cwd_relative_reads(open(_p, encoding="utf-8").read())
+        if _h:
+            _cwd_hits.append("%s%s" % (os.path.relpath(_p, _ROOT), _h))
+    _run_names = {os.path.basename(p) for p in glob.glob(os.path.join(_HERE, "run_*.py"))}
+    _scanned = {os.path.basename(p) for p in _cwd_files}
+    check("C2 🔴 门禁/脚本不用 cwd 相对路径访问仓库产物"
+          "（全仓 %d 个 .py 全扫 · CI 的 cwd 与手跑不同 ⇒ 否则同码两结论）"
+          % len(_cwd_files),
+          not _cwd_hits and _run_names <= _scanned and len(_cwd_files) >= 800,
+          "违约=%s · 覆盖率=%d/%d" % (_cwd_hits if _cwd_hits else "无",
+                                      len(_run_names & _scanned), len(_run_names)))
+
+    # P6 make_check 守卫三向探针（printf 必 raise · format 不 raise · 纯字面量不 raise）
+    _p6 = [_fmt_guard_raises(" · %s"), _fmt_guard_raises(" · %d"),
+           not _fmt_guard_raises(" · {d}"), not _fmt_guard_raises(" (100%)"),
+           not _fmt_guard_raises(" (50% done)"), not _fmt_guard_raises(None)]
+    check("P6 探针须造分歧（printf 模板 raise ∧ format/纯字面量不 raise）",
+          all(_p6), "p6=%s" % _p6)
+
+    # P7 CWD 扫描器五向探针（真违约必命中 · 已锚定/经助手转发必不误报）
+    _bad1 = "import os\np = os.path.join('examples', 'x.json')\nopen(p)\n"
+    _bad2 = "open('docs/a.md')\n"
+    _bad3 = ("import os, json\n"
+             "def main():\n"
+             "    p = os.path.join('reports', 'r.json')\n"
+             "    return json.load(open(p))\n")
+    _good1 = ("import os\n_R = '/repo'\n"
+              "open(os.path.join(_R, 'examples', 'x.json'))\n")
+    _good2 = ("import os\n_R = '/repo'\n"
+              "def _read(rel):\n"
+              "    with open(os.path.join(_R, rel)) as fh:\n"
+              "        return fh.read()\n"
+              "def main():\n"
+              "    return _read(os.path.join('lda', 'x.py'))\n")
+    _p7 = [len(_cwd_relative_reads(_bad1)) == 1,
+           len(_cwd_relative_reads(_bad2)) == 1,
+           len(_cwd_relative_reads(_bad3)) == 1,
+           _cwd_relative_reads(_good1) == [],
+           _cwd_relative_reads(_good2) == []]
+    check("P7 探针须造分歧（三种相对读法必命中 ∧ 锚定/助手转发不误报）",
+          all(_p7), "p7=%s" % _p7)
 
     print()
     return 0 if (globals().get("PASS", 0) and not globals().get("FAIL", 0)) else 1

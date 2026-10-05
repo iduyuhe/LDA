@@ -66,6 +66,8 @@ GAP_SPECS: Tuple[Dict[str, Any], ...] = (
      "evidence": "_ev_g6", "declared_closed": False},
     {"id": "PM-G7", "title": "光学域 drift 定量锚（透射电平漂移 · v0.9.193 结算：实测上界锚 + 检测下限假设显式披露）",
      "evidence": "_ev_g7", "declared_closed": True},
+    {"id": "PM-G10", "title": "写读耐久（endurance）模型与锚 —— M5 对拍表判定「不可判」（开放）",
+     "evidence": "_ev_g10", "declared_closed": False},
 )
 
 
@@ -302,6 +304,23 @@ def _ev_g7() -> Tuple[bool, str]:
     return bool(nuo["nu_ub_max"] > 0.0), (
         "光学域实测锚=%d 条（上界锚=%d）· ν_T ≤ %.4g（0.35%% 检测下限假设 · 下界语义）"
         % (st["n_optical_anchors"], st["n_bound_anchors"], nuo["nu_ub_max"]))
+
+
+def _ev_g10() -> Tuple[bool, str]:
+    """PM-G10：写读耐久（endurance）模型与锚 —— 当前**未建模** ⇒ 开放（M5 判「不可判」）。
+
+    开放口径 = 「征程内无 endurance 模型、文献检索未取得器件级循环数实测锚
+    （Ríos 2015 原文未给循环数）⇒ 对拍表该行 verdict=not_modeled」。
+    🔴 宁可开放也不粉饰：不给任何循环数声明。
+    """
+    from lda_l2 import pm_m5 as M5
+    rows = M5.benchmark_rows("GST")
+    end_row = [r for r in rows if r["metric"] == "endurance"]
+    if len(end_row) != 1:
+        return False, "对拍表缺 endurance 行（结构损坏）"
+    return not end_row[0]["verdict"] == "not_modeled", (
+        "endurance 行 verdict=%s（not_modeled ⇒ 开放；出现其他值 ⇒ 须先落锚/模型）"
+        % end_row[0]["verdict"])
 
 
 def gap_ledger() -> List[Dict[str, Any]]:

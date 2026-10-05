@@ -22,6 +22,20 @@
   W5 路由接线（`/api/pm_demo` 登记 `GET_ROUTES` ∧ **不在** `HEAVY_POST_PATHS`）
   W6 🔴 突变探针（先证能变红）：改真实路径 / 抹掉别名绑定 / 往后端注入新字段 /
      改项目块字面量 ⇒ 对应判据必红；还原后复绿
+  W8 🔴 里程碑 `gate` 数 == 对应后端门禁**实跑**行首 `[PASS]` 计数（逐档 + 缺映射即红）
+     —— 治「卡内手写数字漂移」（血案：M3 gate 误登记 62；v0.9.194 M4b/M5 两处漏改）
+  W9 🔴 `run_ci_regression.py` 注释声明的「N 判据」== 门禁实跑数（缺声明/漂移即红）
+     —— 同一份判据数被手写在**三处**（门禁 docstring / `pm_case.gate` / CI 注释），
+        W8 只锁住中间一处 ⇒ 本轮注释里 M0 31→33 / G7 15→20 / M5 16→18 /
+        render_path 22→24 全部漂移（+ 规模数字 306→344 / 23→24 / 7→9）。
+        🔴 附赠：W9 首次运行即抓出 `_pass_count` 自身口径错（`.count("[PASS]")`
+        数出现次数 ⇒ 被 detail 文本里的 `[PASS]` 字面污染，偏 +1）——
+        **度量工具自身也要有守卫**。
+  W10 🔴 README「当前版本」行（**对外第一屏**）里的 `run_pm_*_smoke` 判据数 == 实跑数
+     —— 同一份数字至此已手写在**四处**（门禁 docstring / `pm_case.gate` / CI 注释 / README），
+        README 顶行写 `run_pm_m5_smoke` **16 判据` / `前端门禁 22/0` 全部落后（实为 18 / 26）。
+        ⚠ 只覆盖能在实跑集里查到数的条目；`前端门禁 N/0`（= 本门禁自身）**不纳入**
+        （避免自指），属**已知无机器守卫**的对外手写项。
   W7 自入 CI core
 
 🔴 **诚实边界**：本门禁是**静态**路径检查，不执行 JS、不看渲染好不好看；
@@ -31,6 +45,8 @@
 from __future__ import annotations
 
 import os
+import re
+import subprocess
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -49,6 +65,104 @@ from lda_harness.webui_js_ref import (  # noqa: E402
 
 INDEX = os.path.join(_HERE, "lda_webui", "static", "index.html")
 ROUTES = os.path.join(_HERE, "lda_webui", "routes.py")
+
+#: 里程碑 ⇒ 后端门禁脚本。🔴 **反向完备**：卡内每档都必须有映射，新增档漏登记即红
+#: （否则「卡内 gate 数」就成了一份没人对得上的手写数字）。
+_GATE_SMOKE = {
+    "M0": "run_pm_m0_smoke.py",
+    "M1": "run_pm_m1_smoke.py",
+    "M2": "run_pm_m2_smoke.py",
+    "M3": "run_pm_m3_smoke.py",
+    "M4": "run_pm_m4_smoke.py",
+    "M4b": "run_pm_g7_settlement_smoke.py",
+    "M5": "run_pm_m5_smoke.py",
+}
+
+
+def _pass_count(sname):
+    """实跑某后端门禁，数**行首** `[PASS]` 行 —— 即 pm_case 文档化的复核口径 `grep -c`。
+
+    🔴 为什么值得进常驻门禁（v0.9.194）：`pm_case.MILESTONES[].gate` 是**手写**数字，
+    曾因「M3 误登记 gate=62（混口径）」出过血案；本轮又出现 M4b 17→20 / M5 16→18
+    两处同族漏改（判据加了，卡内数字没跟着走）——**手写数字 + 无机器对照 = 必漂**。
+
+    🔴 v0.9.194 第二血案（W9 首次运行即抓到）：原实现用 `stdout.count("[PASS]")`
+    （数**出现次数**）⇒ 任何 detail 文本里出现 `[PASS]` 字面就多算一条
+    （`run_ci_gate_contract_smoke` 的 C1 detail 含 `输出='[PASS] 样例判据…'` ⇒ 偏 +1）。
+    **度量工具自身口径错 = 漂移检测器自己漂**，且与它自称的 `grep -c`（按行）不符。
+    改为按行首锚定 —— 口径 == 人工复核口径。
+    """
+    p = os.path.join(_HERE, sname)
+    r = subprocess.run([sys.executable, p], cwd=_HERE, capture_output=True,
+                       text=True, timeout=300)
+    return sum(1 for ln in (r.stdout or "").splitlines()
+               if ln.lstrip().startswith("[PASS"))
+
+
+def _gate_drift(milestones, counts, mapping):
+    """返回 `(缺映射的档, [(档, 卡内 gate, 实跑计数)])` —— 参数化以便探针喂变异体。"""
+    have = {m["id"]: m for m in milestones}
+    missing = sorted(set(have) - set(mapping))
+    drift = []
+    for mid, sname in sorted(mapping.items()):
+        if mid in have and counts.get(sname) != have[mid]["gate"]:
+            drift.append((mid, have[mid]["gate"], counts.get(sname)))
+    return missing, drift
+
+
+#: W9 目标：哪些门禁必须在 `run_ci_regression.py` 注释里**声明**判据数（↔ 反向完备）
+_GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {"run_ci_gate_contract_smoke.py"})
+
+
+def _declared_judge_counts(text):
+    """从 `run_ci_regression.py` 文本抽出脚本条目**上方注释块**声明的判据数。
+
+    覆盖两种条目写法：① `CORE_SMOKES` 列表项 `"run_x.py",`；② `_BUILTIN_TIMEOUT_OVERRIDE`
+    字典项 `"run_x.py": 120.0,`。取注释块里**最后**一个 `N 判据`。行尾带注释或格式不符
+    的条目 ⇒ 解析不到 ⇒ 计入「缺声明」（W9 判红），不给盲区。
+    """
+    out, buf = {}, []
+    for ln in text.splitlines():
+        s = ln.strip()
+        if s.startswith("#"):
+            buf.append(s)
+            continue
+        m = re.match(r'^"(run_[A-Za-z0-9_]+\.py)"\s*[,:]', s)
+        if m:
+            nums = re.findall(r"(\d+)\s*判据", "\n".join(buf))
+            if nums:
+                out[m.group(1)] = int(nums[-1])
+            buf = []
+            continue
+        buf = []
+    return out
+
+
+def _decl_drift(declared, counts, targets):
+    """返回 `[(脚本, 注释声明, 实跑计数)]`，只列**不一致**者 —— 参数化以便探针喂变异体。"""
+    return [(t, declared.get(t), counts.get(t)) for t in targets
+            if declared.get(t) != counts.get(t)]
+
+
+def _readme_decl_drift(text, counts):
+    """从 README「当前版本」行抽 ``\\`run_x_smoke\\` **N 判据``，与实跑数对照（第四处手写面）。
+
+    🔴 血案 v0.9.194：README 顶行（**对外第一屏**）写 ``run_pm_m5_smoke`` **16 判据`` /
+    ``前端门禁 22/0``，全部落后于实跑（18 / 26）。README 是散文式超长行，
+    **只覆盖能在 `counts` 里查到实跑数的条目**（避免自指）；查不到的条目返回空
+    ⇒ 不误判，但也**不构成对它的守卫**（诚实边界）。
+
+    🔴 坑中坑（W10-P1 当场抓出）：README 里脚本名**不带 `.py`**（`` `run_pm_m5_smoke` ``），
+    而首版正则强制 `\\.py` ⇒ **恒不匹配 ⇒ W10 恒绿**（又一个假判据，且首跑就红）。
+    正则改为 `.py` **可选**并归一化补全。
+    """
+    bad = []
+    for m in re.finditer(r"`(run_[A-Za-z0-9_]+)(?:\.py)?`\s*\*\*(\d+)\s*判据", text):
+        t, n = m.group(1) + ".py", int(m.group(2))
+        if t in counts and counts[t] != n:
+            bad.append((t, n, counts[t]))
+    return bad
+
 
 #: 顶层块反向完备：`(JSON 前缀元组, 说明)`
 _BLOCKS = (
@@ -117,6 +231,18 @@ _ITEM_BLOCKS = (
     ("m4.system_budget.drift_proxy.per_proxy[]", "M4 drift 代理逐点", {
         "pp.nu_proxy": "nu_proxy", "pp.t_erode_s": "t_erode_s",
         "pp.t_erode_human": "t_erode_human",
+    }),
+    ("m5.rows[]", "M5 对拍行", {
+        "r.metric": "metric", "r.metric_cn": "metric_cn",
+        "r.ratio": "ratio", "r.verdict": "verdict",
+        "r.lda_source": "lda_source", "r.lit_sources": "lit_sources",
+        "r.note": "note", "r.lit_note": "lit_note",
+        "r.design_only": "design_only", "r.cross_domain": "cross_domain",
+        "r.self_consistency_only": "self_consistency_only", "r.gap_id": "gap_id",
+        "r.lda_value": "lda_value", "r.lit_value": "lit_value",
+    }),
+    ("m5.gaps_final[]", "M5 缺口终态", {
+        "g.id": "id", "g.closed": "closed", "g.title": "title",
     }),
 )
 
@@ -202,9 +328,10 @@ def main() -> int:
              "⑥ 设计预算",
              "⑦ M4 读出链", "⑧ M4 读出灵敏度", "⑨ M4 写驱动", "⑩ M4 系统误码预算",
              "⑪ M4 2.5D 装配签核",
-             "⑫ 征程里程碑", "⑬ 设计洞察", "⑭ 诚实缺口", "⑮ 产出物")
+             "⑫ 征程里程碑", "⑬ 设计洞察", "⑭ 诚实缺口",
+             "⑮ M5 国际对标收官", "⑯ 产出物")
     miss = [h for h in heads if h not in rsrc]
-    check("W2c renderPm 真渲染 ①–⑮ 十五段（防「后端加了段、前端还是空壳」）", not miss,
+    check("W2c renderPm 真渲染 ①–⑯ 十六段（防「后端加了段、前端还是空壳」）", not miss,
           "缺段：%s" % miss)
     check("W2d 抽屉目录自动运行映射含 '#sec-pm': 'runPm'",
           '"#sec-pm": "runPm"' in html)
@@ -331,6 +458,72 @@ def main() -> int:
           "（⇒ W4c 字段覆盖半边恒绿）——这就是本轮被修掉的那个假判据",
           _buggy_block_keys(card_i, "scale_tiers[]") == set()
           and len(_block_keys(card_i, "scale_tiers[]")) >= 2)
+
+    # ── W8 🔴 里程碑 gate 数 == 后端门禁实跑计数（对「手写数字」上机器对照）──
+    _ci = os.path.join(_HERE, "run_ci_regression.py")
+    _ck = open(_ci, encoding="utf-8").read() if os.path.exists(_ci) else ""
+    _counts = {s: _pass_count(s) for s in _GATE_DECL_TARGETS}
+    _missing, _drift = _gate_drift(PC.MILESTONES, _counts, _GATE_SMOKE)
+    check("W8 🔴 里程碑 `gate` == 对应后端门禁实跑 `[PASS]` 计数（逐档 · 缺映射即红）",
+          not _missing and not _drift,
+          "缺映射=%s · 漂移=%s · 实跑=%s" % (_missing, _drift,
+                                            {k: v for k, v in _counts.items()}))
+
+    # W8-P1 变异探针：原样绿 ∧ 计数变 / 卡内 gate 变 / 缺映射 三改各自必红
+    _c_bad = dict(_counts)
+    _c_bad[sorted(_GATE_SMOKE.values())[-1]] += 1
+    _ms_bad = [dict(m) for m in PC.MILESTONES]
+    for _m in _ms_bad:
+        if _m["id"] == "M5":
+            _m["gate"] += 1
+    _map_del = {k: v for k, v in _GATE_SMOKE.items() if k != "M5"}
+    _p8 = [_gate_drift(PC.MILESTONES, _counts, _GATE_SMOKE) == ([], []),
+           _gate_drift(PC.MILESTONES, _c_bad, _GATE_SMOKE)[1] != [],
+           _gate_drift(_ms_bad, _counts, _GATE_SMOKE)[1] != [],
+           _gate_drift(PC.MILESTONES, _counts, _map_del)[0] == ["M5"]]
+    check("W8-P1 突变探针：原样绿 ∧ 实跑计数变 / 卡内 gate 变 / 缺映射 三改必红",
+          all(_p8), "p8=%s" % _p8)
+
+    # ── W9 🔴 `run_ci_regression.py` 注释里的「N 判据」== 门禁实跑数 ──────────
+    # 血案 v0.9.194：同一份「判据数」被手写在**三处**（门禁 docstring / `pm_case.gate` /
+    # `run_ci_regression` 注释），W8 只锁住了第二处 ⇒ 本轮全量 CI 后复核发现注释里
+    # M0 31（实际 33）/ G7 15（20）/ M5 16（18）/ render_path 22（24）+ 规模数字
+    # 306/23/7（实际 344/24/9）**全部漂移**。⇒ 第三处也必须上机器对照。
+    _decl = _declared_judge_counts(_ck)
+    _decl_bad = _decl_drift(_decl, _counts, _GATE_DECL_TARGETS)
+    check("W9 🔴 `run_ci_regression.py` 注释声明的判据数 == 门禁实跑数（缺声明/漂移即红）",
+          not _decl_bad, "漂移=%s" % _decl_bad)
+
+    _syn = '# x：7 判据\n"run_x_smoke.py",\n'
+    _p9 = [_decl_drift(_decl, _counts, _GATE_DECL_TARGETS) == [],                 # 原样绿
+           _decl_drift(_decl, dict(_counts, **{"run_pm_m2_smoke.py": 99}),
+                       _GATE_DECL_TARGETS) != [],                              # 实跑数变必红
+           _decl_drift({k: v for k, v in _decl.items() if k != "run_pm_m2_smoke.py"},
+                       _counts, _GATE_DECL_TARGETS) != [],                     # 缺声明必红
+           _declared_judge_counts(_syn) == {"run_x_smoke.py": 7},                # 解析器真读注释
+           _decl_drift(_declared_judge_counts(_ck.replace("40 判据", "99 判据")),
+                       _counts, _GATE_DECL_TARGETS) != []]                     # 注释数字改必红
+    check("W9-P1 突变探针：原样绿 ∧ 实跑数变 / 缺声明 / 注释数字改 三改必红 ∧ 解析器真读注释",
+          all(_p9), "p9=%s" % _p9)
+
+    # ── W10 🔴 README「当前版本」行里的手写判据数 == 实跑数（第四处手写面）─────
+    # 血案 v0.9.194：README 顶行（**对外第一屏**）写 ``run_pm_m5_smoke`` **16 判据`` /
+    # ``前端门禁 22/0`` 全部落后（实为 18 / 26）。同一份数字至此已手写在**四处**
+    # （门禁 docstring / pm_case.gate / CI 注释 / README）⇒ 每处都得机器对照。
+    _rd = os.path.join(_ROOT, "README.md")
+    _rtext = open(_rd, encoding="utf-8").read() if os.path.exists(_rd) else ""
+    _cur = next((ln for ln in _rtext.splitlines() if "✅ 当前版本" in ln), "")
+    _rd_bad = _readme_decl_drift(_cur, _counts)
+    check("W10 🔴 README「当前版本」行里的 `run_pm_*_smoke` 判据数 == 实跑数",
+          bool(_cur) and not _rd_bad, "漂移=%s" % (_rd_bad or "无"))
+
+    _p10 = [_readme_decl_drift(_cur, _counts) == [],                    # 原样绿
+            _readme_decl_drift(_cur, dict(_counts, **{"run_pm_m5_smoke.py": 99}))
+            != [],                                                      # 实跑数变必红
+            _readme_decl_drift("`run_pm_m5_smoke.py` **16 判据", _counts)
+            != []]                                                      # README 旧值必红
+    check("W10-P1 突变探针：原样绿 ∧ 实跑数变 / README 旧值 两改必红",
+          all(_p10), "p10=%s" % _p10)
 
     # ── W7 自入 CI core ─────────────────────────────────────────────────
     ci = os.path.join(_HERE, "run_ci_regression.py")

@@ -448,6 +448,35 @@ OPTICAL_DRIFT_ANCHORS: Dict[str, List[Dict[str, Any]]] = {
     ],
 }
 
+#: 国际对标锚（PM-M5 · 2026-10-05）：**器件级实测事实**（第②层 golden），供逐条对拍表消费。
+#: 每条 = `kind: "measured_device"` + DOI + 实测字段（电平数/写脉冲能量/胞长/二元对比度）。
+BENCHMARK_ANCHORS: Dict[str, List[Dict[str, Any]]] = {
+    "GST": [
+        {"kind": "measured_device", "platform": "SiN",
+         "n_levels": 8, "e_switch_min_j": 13.4e-12,
+         "e_multi_range_j": [465e-12, 585e-12],
+         "cell_length_um": 5.0, "binary_contrast_frac": 0.21,
+         "write_speed_claim_hz": 1.0e9,
+         "source": ("Ríos, Stegmaier, Hosseini, Wright, Bhaskaran & Pernice, "
+                    "《Integrated all-photonic non-volatile multi-level memory》, "
+                    "Nat. Photon. 9, 725–732 (2015) · doi:10.1038/nphoton.2015.182"),
+         "measured_fact": ("5 µm GST 胞（SiN 波导）：最高 **8 电平**写读、单次切换能量低至 "
+                           "**13.4 pJ**、多电平写脉冲 **465±13 / 524±14 / 585±14 pJ**、"
+                           "双态读出对比 **21%**、写速度声明 ~1 GHz。"),
+         "note": ("首个集成全光非易失多电平存储（器件级实测）。 endurance 原文未给循环数 ⇒ "
+                  "本锚不含 endurance 字段（不造数）。")},
+        {"kind": "measured_device", "platform": "Si",
+         "n_levels": 13, "cell_length_um": 2.0,
+         "source": ("Cheng, Ríos, Wright, Bhaskaran, Pernice et al., "
+                    "《In-memory computing on a photonic platform》, "
+                    "Sci. Adv. 5, eaau5759 (2019) · doi:10.1126/sciadv.aau5759"),
+         "measured_fact": ("2 µm GST 胞（Si 波导）：**13 个透射电平**、probe 0.1 mW ON 下 "
+                           "10⁴ s 无可测漂移（详见 OPTICAL_DRIFT_ANCHORS 主账锚）。"),
+         "note": ("与 OPTICAL_DRIFT_ANCHORS 共享同一来源（同一实测事实两处消费："
+                  "drift 上界推导 / 对拍电平数），非两次独立测量。")},
+    ],
+}
+
 
 def thermal_table_consistency() -> Dict[str, Any]:
     """🔴 **防漂移判据**：同来源在两热表（THERMAL / TRANSIENT）出现时 ρ/cp 必须逐位相等。
@@ -493,6 +522,7 @@ def matlib_report(wl_nm: float = 1550.0) -> Dict[str, Any]:
         "critical_cooling_anchors": CRITICAL_COOLING_ANCHORS,
         "drift_anchors": DRIFT_ANCHORS,
         "optical_drift_anchors": OPTICAL_DRIFT_ANCHORS,
+        "benchmark_anchors": BENCHMARK_ANCHORS,
         "k0_registered": False,   # 🔴 K0 无文献锚 ⇒ 不登记（pm_m1 结论对 K0 不变）
         "headline": {
             "cross_source_spread": {

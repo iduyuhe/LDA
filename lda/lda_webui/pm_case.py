@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-"""光子存储阵列案例卡（WebUI 只读端点数据源）· PM 征程 M0–M4。
+"""光子存储阵列案例卡（WebUI 只读端点数据源）· PM 征程 M0–M5。
 
 定位
 ----
-光子存储征程 PM-M0…M4 的**只读案例**：用 LDA 亲手设计一条**非易失光子存储
-单元 → 阵列 → 外设与系统**（Si 波导 + GST 相变段 + 双侧微加热器 + 电极 pad），
-走完 **P&R → 布线路由 → 几何 DRC/LVS → 独立 GDS 字节复核 → 设计预算 →
-读出/写驱动行为级 → 系统误码预算 → 2.5D 装配签核** 全链路，并出**真 GDSII**。
+光子存储征程 PM-M0…M5 的**只读案例**：用 LDA 亲手设计一条**非易失光子存储
+单元 → 阵列 → 外设与系统 → 国际对标收官**（Si 波导 + GST 相变段 + 双侧微加热器
++ 电极 pad），走完 **P&R → 布线路由 → 几何 DRC/LVS → 独立 GDS 字节复核 →
+设计预算 → 读出/写驱动行为级 → 系统误码预算 → 2.5D 装配签核 → 规格锚逐条
+对拍** 全链路，并出**真 GDSII**。
 
 🔴 **零重计算**（与站内 cpo_array / design_* 等重算端点不同）：本模块**不跑
 P&R、不 import 求解器、不解析 GDS** —— 全部数字取自
@@ -69,8 +70,13 @@ PM_HONEST_NOTE = (
 # 🔴 口径（v0.9.191 修正）：`gate` = 该档**后端门禁判据数**，须与对应 smoke 实跑的
 #   `[PASS]` 计数逐档相等（可人工复核 `grep -c '\[PASS\]'`）：
 #   M0 `run_pm_m0_smoke`=33 · M1 `run_pm_m1_smoke`=24 · M2 `run_pm_m2_smoke`=40 ·
-#   M3 `run_pm_m3_smoke`=22 · M4 `run_pm_m4_smoke`=25 · M4b `run_pm_g7_settlement_smoke`=17。
-#   🔴 前端渲染门禁 `run_webui_pm_render_path_smoke`(=20) 是**另一个门禁**，不并入本表
+#   M3 `run_pm_m3_smoke`=22 · M4 `run_pm_m4_smoke`=25 · M4b `run_pm_g7_settlement_smoke`=20 ·
+#   M5 `run_pm_m5_smoke`=18。
+#   🔴 v0.9.194 起**不再靠人工复核**：`run_webui_pm_render_path_smoke` 的 **W8** 会实跑
+#      上表 7 个门禁并数**行首** `[PASS]` 行，与卡内 `gate` 逐档对照（缺映射即红）；
+#      **W9** 再把 `run_ci_regression.py` 注释里手写的「N 判据」也实跑对照
+#      —— 治「同一份数字手写三处、只锁住一处」的漂移。
+#   🔴 前端渲染门禁 `run_webui_pm_render_path_smoke`(=28) 是**另一个门禁**，不并入本表
 #      —— 各档没有对应前端门禁，混口径会让跨档数字不可比。
 #   🔴 血案：M3 曾误登记 `gate=62`（把「后端判据 + 前端判据 + 案例卡自检 + 探针」混成
 #      一个数），与 M0/M1/M2 口径不一致 ⇒ 本版修正为 22（= smoke 实跑值）。
@@ -107,7 +113,7 @@ MILESTONES = [
                "（PM-G7 由「缺口」升级为「系统级阻塞项」）；2.5D 装配签核 ⇒ "
                "**EIC 通道 pitch(50 µm) > PIC 单元 pitch(18.05 µm) ⇒ 密度瓶颈在电域**"},
     {"id": "M4b", "code": "v0.9.193", "title": "PM-G7 结算（光学域 drift 实测锚 → 主账口径翻转）",
-     "gate": 17,
+     "gate": 20,
      "result": "三条 DOI 级**实测锚**落库（Cheng 2019 Sci. Adv. eaau5759 器件级 10⁴ s "
                "无可测透射漂移 / Kalb 2003 JAP 4908 双分子弛豫 E_iso=1.76 eV / "
                "Ríos 2015 Nat. Photon. 8 电平「数十年」声明）⇒ ν_T 上界 **3.80e-4**"
@@ -115,10 +121,19 @@ MILESTONES = [
                "drift 段改算自光学域锚 ⇒ **口径翻转**：1 年保持瓶颈 drift→**write**、"
                "系统 BER 0.4047→**3.98e-62**（all_ok 翻绿）、保持下界 ~10^74 s；"
                "旧电学代理口径**并报可查**（两域差 **315.8×**）"},
+    {"id": "M5", "code": "v0.9.194", "title": "国际对标收官（规格锚逐条对拍表 + 缺口台账终态）",
+     "gate": 18,
+     "result": "对拍表 **7 行**：电平数 16 vs 文献实测最大 13（比值 1.23 · **设计目标，"
+               "非流片实测**）· 写脉冲能量与光写入同量级（比值 3.39 · 🔴 电辅助 vs "
+               "光写入**口径差**显式）· 胞长 11.01 vs 2–5 µm · 二元对比度 0.70 vs "
+               "1.02 dB（保守侧）· drift 行=**自洽检查**非独立对标（上界推导自同一来源）· "
+               "🔴 **endurance 行=不可判**（无模型 ∧ 无器件级循环数锚 ⇒ **PM-G10**）· "
+               "密度行=无同口径文献锚（不比）。**收官口径：知道自己每项站在哪，"
+               "不是「全面领先」**"},
 ]
 
 # 各档**后端**突变探针数（与各 smoke 输出的 `[PASS] P*` 计数一致；派生用，勿写死合计）
-MILESTONE_PROBES = {"M0": 6, "M1": 5, "M2": 7, "M3": 5, "M4": 5, "M4b": 3}
+MILESTONE_PROBES = {"M0": 6, "M1": 5, "M2": 7, "M3": 5, "M4": 5, "M4b": 3, "M5": 4}
 
 FINDINGS = [
     {"title": "热串扰间距是版图的**物理约束**（不是随意留白）",
@@ -172,6 +187,12 @@ FINDINGS = [
                "通道 pitch 50 µm ⇒ EIC die（400 µm 宽）比 PIC die（197 µm 宽）还宽 ⇒ "
                "**系统密度受 EIC 约束**。临界值 = PIC pitch ⇒ **EIC 通道 pitch 须 ≤ "
                "18.05 µm 才不成为瓶颈**（这是给电路设计方的硬指标）。"},
+    {"title": "🔴 国际对标收官口径：**知道自己每一项站在哪**（M5 · 不是「全面领先」）",
+     "detail": "逐条对拍 7 行：LDA 全部数字是**闭式/行为级设计值**（无流片实测），"
+               "文献值全部 **DOI 级器件实测**；比值仅判量级（三带规则 0.5–2 / 2–5）。"
+               "两个「不可判」如实登记：endurance 无模型（**PM-G10**）、密度无同口径"
+               "文献锚（单胞演示无阵列）。drift 行是**自洽检查**（上界推导自同一来源），"
+               "不是独立对标——真正独立对标需第二来源实测。"},
 ]
 
 GAPS = [
@@ -203,6 +224,10 @@ GAPS = [
      "detail": "PD 响应度（A/W）/ 加热器薄膜方阻（Ω/sq）取**公开工程典型区间**（非实测、"
                "非逐条 DOI 复核）；读出速率 / 输入光功率 / 驱动摆幅 / EIC 通道 pitch 为"
                "**设计假设** ⇒ 外设结论只给**区间 + 恒等式 + 单调性**，无绝对真值。"},
+    {"id": "PM-G10", "title": "写读耐久（endurance）模型与锚（M5 对拍判定「不可判」）",
+     "detail": "征程内**无 endurance 模型**；文献检索未取得光子 GST 器件级循环数"
+               "实测锚（Ríos 2015 原文未报循环数）⇒ 对拍表该行 verdict=not_modeled。"
+               "🔴 不引用电学 PCM 的 10⁶–10⁹ 量级作粉饰（器件口径不同）。"},
 ]
 
 #: 报告 JSON 不在本部署时的**内置快照**（2026-10-04 实测 · 仅供降级展示）。
@@ -487,6 +512,183 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
             "v_drv": 3.3
         }
     },
+    "m5":     {
+        "disclosure": {
+            "all_lda_values_computed": True,
+            "no_fabricated_efficiency_claims": True,
+            "no_fabrication_of_measurability": True
+        },
+        "gaps_closed": 5,
+        "gaps_final": [
+            {
+                "closed": True,
+                "id": "PM-G1",
+                "title": "相变材料光学常数锚库（n,k @λ,相态）"
+            },
+            {
+                "closed": False,
+                "id": "PM-G2",
+                "title": "模场重叠因子 Γ 的 FDTD 标定"
+            },
+            {
+                "closed": True,
+                "id": "PM-G3",
+                "title": "瞬态热模型（冷却时间 = set/reset 周期下限）"
+            },
+            {
+                "closed": True,
+                "id": "PM-G4",
+                "title": "晶化动力学（JMAK/Avrami）"
+            },
+            {
+                "closed": True,
+                "id": "PM-G5",
+                "title": "非晶 drift（物理来源 + 电学域锚 + 光学域适用性判定）"
+            },
+            {
+                "closed": False,
+                "id": "PM-G6",
+                "title": "相位域（谐振/干涉）多电平读出与漂移口径"
+            },
+            {
+                "closed": True,
+                "id": "PM-G7",
+                "title": "光学域 drift 定量锚（透射电平漂移 · v0.9.193 结算：实测上界锚 + 检测下限假设显式披露）"
+            },
+            {
+                "closed": False,
+                "id": "PM-G10",
+                "title": "写读耐久（endurance）模型与锚 —— M5 对拍表判定「不可判」（开放）"
+            }
+        ],
+        "gaps_total": 8,
+        "generated_by": "examples/photo_memory/build_pm_m5.py",
+        "honest_note": "本表不产生任何「实测」声明：LDA 全部数字为闭式/行为级设计值；文献值全部 DOI 级器件实测；比值仅判量级（三带规则）。",
+        "material": "GST",
+        "milestone": "PM-M5",
+        "rows": [
+            {
+                "design_only": True,
+                "lda_source": "pm_m1.level_design（M1 主账）",
+                "lda_value": 16,
+                "lit_sources": [
+                    "Ríos, Stegmaier, Hosseini, Wright, Bhaskaran & Pernice, 《Integrated all-photonic non-volatile multi-level memory》, Nat. Photon. 9, 725–732 (2015) · doi:10.1038/nphoton.2015.182",
+                    "Cheng, Ríos, Wright, Bhaskaran, Pernice et al., 《In-memory computing on a photonic platform》, Sci. Adv. 5, eaau5759 (2019) · doi:10.1126/sciadv.aau5759"
+                ],
+                "lit_value": 13,
+                "metric": "n_levels",
+                "metric_cn": "存储电平数",
+                "note": "🔴 LDA 是**设计目标**（无流片实测）；文献是器件级实测。「高于实测 23%」不构成实测声明。",
+                "ratio": 1.2307692307692308,
+                "verdict": "same_order"
+            },
+            {
+                "cross_domain": True,
+                "lda_source": "pm_m4.write_driver（M4 行为级 · 电辅助焦耳热）",
+                "lda_value": {
+                    "e_hi_j": 2.966062382119907e-09,
+                    "e_lo_j": 5.932124764239814e-10,
+                    "mid_j": 1.7796374292719442e-09
+                },
+                "lit_sources": [
+                    "Ríos, Stegmaier, Hosseini, Wright, Bhaskaran & Pernice, 《Integrated all-photonic non-volatile multi-level memory》, Nat. Photon. 9, 725–732 (2015) · doi:10.1038/nphoton.2015.182"
+                ],
+                "lit_value": {
+                    "e_switch_min_j": 1.34e-11,
+                    "multi_mid_j": 5.25e-10
+                },
+                "metric": "write_pulse_energy_j",
+                "metric_cn": "单次写脉冲能量",
+                "note": "🔴 口径差：LDA = **电辅助**焦耳热（3.3 V × 加热线，行为级）；文献 = **光脉冲**写入（波导近场）。能量不可直接比优劣，只判量级；文献另报最低切换 13.4 pJ（二元优化点，非多电平工作点），不并入比值。",
+                "ratio": 3.3897855795656078,
+                "verdict": "within_5x"
+            },
+            {
+                "lda_source": "pm_m3.cell_length_um（M1 设计 L）",
+                "lda_value": 11.014603130717049,
+                "lit_sources": [
+                    "Ríos, Stegmaier, Hosseini, Wright, Bhaskaran & Pernice, 《Integrated all-photonic non-volatile multi-level memory》, Nat. Photon. 9, 725–732 (2015) · doi:10.1038/nphoton.2015.182"
+                ],
+                "lit_value": 5.0,
+                "metric": "cell_length_um",
+                "metric_cn": "GST 相变段长度",
+                "note": "胞长越长插入损耗越高（M0 闭式律 ∝L），但设计点由 M1 可行性判据定，非自由选择。",
+                "ratio": 2.2029206261434098,
+                "verdict": "within_5x"
+            },
+            {
+                "lda_source": "pm_m0.contrast_vs_length（M0 闭式律 · Γ 抵消）",
+                "lda_value": {
+                    "at_l_um": 5.0,
+                    "contrast_max_db": 12.235375044130057,
+                    "contrast_min_db": 0.7041942471441752
+                },
+                "lit_note": "21% 透射变化 ⇒ 10·log10(1/0.79) = 1.024 dB（换算可见）",
+                "lit_sources": [
+                    "Ríos, Stegmaier, Hosseini, Wright, Bhaskaran & Pernice, 《Integrated all-photonic non-volatile multi-level memory》, Nat. Photon. 9, 725–732 (2015) · doi:10.1038/nphoton.2015.182"
+                ],
+                "lit_value": 1.0237290870955853,
+                "metric": "readout_contrast_db",
+                "metric_cn": "二元读出对比度",
+                "note": "取 LDA **最小**对比度（k 源展布保守侧）与文献单值比。",
+                "ratio": 0.6878716801356498,
+                "verdict": "same_order"
+            },
+            {
+                "lda_source": "pm_m2.nu_optical_bound（G7 结算 · 上界推导）",
+                "lda_value": {
+                    "nu_ub": 0.0003800076716653453,
+                    "semantics": "upper_bound"
+                },
+                "lit_sources": [
+                    "Cheng, Ríos, Wright, Bhaskaran, Pernice et al., 《In-memory computing on a photonic platform》, Sci. Adv. 5, eaau5759 (2019) · doi:10.1126/sciadv.aau5759"
+                ],
+                "lit_value": {
+                    "kind": "no_detectable_drift_1e4_s"
+                },
+                "metric": "drift_index_nu",
+                "metric_cn": "透射漂移指数 ν_T",
+                "note": "🔴 LDA 上界ν_T ≤ 检测下限/ln(10⁴) **推导自** Cheng 2019 的同一实测事实⇒ 本行是**自洽性检查**（推导链可复核），不是独立对标；真正独立对标需第二来源的器件级 drift 实测（尚无）。",
+                "self_consistency_only": True,
+                "verdict": "derived_from_same_source"
+            },
+            {
+                "gap_id": "PM-G10",
+                "lda_source": None,
+                "lda_value": None,
+                "lit_sources": [],
+                "lit_value": None,
+                "metric": "endurance",
+                "metric_cn": "写读循环耐久",
+                "note": "🔴 征程内**无 endurance 模型**；文献检索未取得光子 GST 器件级循环数实测锚（Ríos 2015 原文未报循环数）⇒ **不可判**。不引用电学 PCM 的 10⁶–10⁹ 量级作粉饰（器件口径不同）。",
+                "verdict": "not_modeled"
+            },
+            {
+                "lda_source": "pm_m3.cell_pitch_um × die 高（M4 2.5D）· 算出来的",
+                "lda_value": {
+                    "bits_per_cell": 4.0,
+                    "die_h_um": 6.2,
+                    "pic_side": 35752.86267622216,
+                    "pitch_um": 18.045024706557335,
+                    "system_side_eic_bottleneck": 12903.22580645161
+                },
+                "lit_sources": [],
+                "lit_value": None,
+                "metric": "areal_density",
+                "metric_cn": "集成密度（bits/mm²）",
+                "note": "文献均为**单胞演示**（Ríos 5 µm / Cheng 2 µm），无同口径阵列密度实测锚⇒ 不比。LDA 侧两口径并报：PIC 版图口径 vs 2.5D 系统口径（EIC 瓶颈）。",
+                "verdict": "no_anchor"
+            }
+        ],
+        "summary_note": "收官口径：对拍 7 行 —— same_order/within_5x 均为**量级**结论（LDA 无流片实测，全部 design_only）；drift 行是自洽检查非独立对标；endurance 与密度两行**不可判**（如实登记 PM-G10 / 无锚）。国际对标收官 = 「知道自己每一项站在哪」，不是「全面领先」。",
+        "verdict_counts": {
+            "derived_from_same_source": 1,
+            "no_anchor": 1,
+            "not_modeled": 1,
+            "same_order": 2,
+            "within_5x": 2
+        }
+    },
 }
 
 _ARTIFACT_DIRS = (
@@ -495,7 +697,8 @@ _ARTIFACT_DIRS = (
 )
 _REPORT_NAME = "lda_pm_m3_report.json"
 _M4_REPORT_NAME = "lda_pm_m4_report.json"
-_ARTIFACT_PREFIXES = ("lda_pm_m3", "lda_pm_m4")
+_M5_REPORT_NAME = "lda_pm_m5_report.json"
+_ARTIFACT_PREFIXES = ("lda_pm_m3", "lda_pm_m4", "lda_pm_m5")
 
 
 # ═══════════════════════════ 产出物探测（只读）═══════════════════════════
@@ -535,6 +738,11 @@ def _load_report(repo_root: Optional[str] = None) -> Dict[str, Any]:
 def _load_m4_report(repo_root: Optional[str] = None) -> Dict[str, Any]:
     """读 M4 外设与系统报告 JSON（薄委托 `_load_named_report`）。"""
     return _load_named_report(_M4_REPORT_NAME, repo_root)
+
+
+def _load_m5_report(repo_root: Optional[str] = None) -> Dict[str, Any]:
+    """读 M5 国际对标收官报告 JSON（薄委托 `_load_named_report`）。"""
+    return _load_named_report(_M5_REPORT_NAME, repo_root)
 
 
 def _manifest(repo_root: Optional[str] = None) -> Dict[str, Any]:
@@ -580,8 +788,11 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
     src = rep.get("_source")
     rep4 = _load_m4_report(repo_root)
     src4 = rep4.get("_source")
+    rep5 = _load_m5_report(repo_root)
+    src5 = rep5.get("_source")
     snap = STATIC_SNAPSHOT
     snap4 = snap["m4"]
+    snap5 = snap["m5"]
     a8 = rep.get("array_8x1") or snap["array_8x1"]
     a32 = rep.get("array_4x8") or snap["array_4x8"]
     pitch = rep.get("pitch") or snap["pitch"]
@@ -654,14 +865,25 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "upstream": m4_up,
             "data_source": src4 or "内置快照（2026-10-04 实测；本部署内无 M4 报告 JSON）",
         },
+        "m5": {
+            "rows": rep5.get("rows") or snap5["rows"],
+            "verdict_counts": rep5.get("verdict_counts") or snap5["verdict_counts"],
+            "gaps_final": rep5.get("gaps_final") or snap5["gaps_final"],
+            "gaps_total": rep5.get("gaps_total", snap5["gaps_total"]),
+            "gaps_closed": rep5.get("gaps_closed", snap5["gaps_closed"]),
+            "summary_note": rep5.get("summary_note") or snap5["summary_note"],
+            "honest_note": rep5.get("honest_note") or snap5["honest_note"],
+            "disclosure": rep5.get("disclosure") or snap5["disclosure"],
+            "data_source": src5 or "内置快照（2026-10-05 实测；本部署内无 M5 报告 JSON）",
+        },
         "artifacts": _manifest(repo_root),
         "data_source": src or "内置快照（2026-10-04 实测；本部署内无报告 JSON）",
         "ui": {
             "found_in_ui": True,
-            "entry": "验证实力（accept）→「光子存储阵列（PM-M0–M4）」卡",
+            "entry": "验证实力（accept）→「光子存储阵列（PM-M0–M5）」卡",
             "related_panels": [],
-            "scope_note": "本卡覆盖**单元/阵列版图/外设系统与签核**；单元物理闭式见 "
-                          "`lda_l2/pm_m0…pm_m4`，非 UI 可点面板。",
+            "scope_note": "本卡覆盖**单元/阵列版图/外设系统与签核/国际对标收官**；单元物理闭式见 "
+                          "`lda_l2/pm_m0…pm_m5`，非 UI 可点面板。",
         },
         "honest_note": PM_HONEST_NOTE,
     }
@@ -722,10 +944,10 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑤ 独立解码口径：层 5 == 单元数 且 层 6 == 6 × 单元数",
         l5 == 8 and l6 == 48)
 
-    # ⑥ 缺口如实开放（不粉饰）：5 条缺口 · 含光学域 drift 无锚
-    chk("⑥ 缺口逐条登记（5 条）· 含「光学域 drift 无锚」与「无 PDK」",
-        card["gaps_total"] == 5
-        and any("光学域 drift" in g["title"] for g in card["gaps"])
+    # ⑥ 缺口如实开放（不粉饰）：6 条缺口 · 含 endurance 不可判与「无 PDK」
+    chk("⑥ 缺口逐条登记（6 条）· 含「endurance 不可判」与「无 PDK」",
+        card["gaps_total"] == 6
+        and any("endurance" in g["title"] for g in card["gaps"])
         and any("T1" in g["detail"] for g in card["gaps"]))
 
     # ⑦ 里程碑计数与 span 一致（算出来的）
@@ -777,6 +999,17 @@ def run_selfchecks(verbose: bool = False) -> bool:
         _sb.get("bottleneck") == "write" and _sb.get("all_ok") is True
         and _dp.get("bottleneck") == "drift"
         and _da.get("nu_t_ub", 1.0) * 100.0 < _dp.get("nu_max_electrical", 0.0))
+
+    # ⑬ M5 对拍块齐备：7 行 ∧ 不可判行如实 ∧ 缺口终态与台账同源
+    m5 = card.get("m5") or {}
+    _rows = {r.get("metric"): r for r in (m5.get("rows") or [])}
+    _gids = {g.get("id"): g.get("closed") for g in (m5.get("gaps_final") or [])}
+    chk("⑬ M5 对拍块齐备：7 行 ∧ endurance=not_modeled ∧ G7 闭合 ∧ G10 开放",
+        len(_rows) == 7
+        and _rows.get("endurance", {}).get("verdict") == "not_modeled"
+        and _rows.get("drift_index_nu", {}).get("verdict") == "derived_from_same_source"
+        and _gids.get("PM-G7") is True and _gids.get("PM-G10") is False
+        and m5.get("data_source"))
 
     ok_all = all(res.values())
     if verbose:

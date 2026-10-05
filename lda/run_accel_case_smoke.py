@@ -19,6 +19,7 @@
 """
 from __future__ import annotations
 
+import os
 import re
 import sys
 import unittest.mock as mock
@@ -27,7 +28,12 @@ from lda_webui import accel_case as ac
 from lda_webui import routes as _routes
 from lda_harness.smoke_kit import make_fail_collector
 
-FRONTEND = "lda_webui/static/index.html"
+# 🔴 前端产物路径**锚定本文件所在目录（= lda/）**，不许写字面相对路径：
+#    CI 以 `cwd=lda` 调起门禁，而人手多在仓库根跑 —— `"lda_webui/static/index.html"`
+#    在 cwd=lda 下恰好能解析、在仓库根下必 FileNotFoundError ⇒ **同一份代码两套结论**
+#    （v0.9.194 复盘：自测口径必须 == CI 调用口径，cwd 也是口径）。
+FRONTEND = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "lda_webui", "static", "index.html")
 
 # 静态按钮 id（\sid= 排除 data-page-node-id 的 -id= 尾巴）与 JS 接线。
 _RE_BTN_ID = re.compile(r'<button[^>]*?\sid="([A-Za-z0-9_]+)"')

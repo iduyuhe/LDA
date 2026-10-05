@@ -1552,16 +1552,17 @@ CORE_SMOKES: List[str] = [
     #   实测 <1s ⇒ timeout 120s 留足余量。
     "run_pm_m5_smoke.py",
     #   光子存储征程 PM-M6 门禁（相位域（干涉/谐振）多电平口径 · PM-G6 结算）：
-    #   31 判据（**含** 6 条突变探针 P1–P6）——相位域锚结构（≥5 measured ∧ 仿真不冒充实测）
+    #   33 判据（**含** 7 条突变探针 P1–P7）——相位域锚结构（≥5 measured ∧ 仿真不冒充实测）
     #   / 🔴 FOM 闭式自洽（FOM ≡ π/IL_π ⟷ Δn/(8.6859k)，两条独立写法）/ MZI 等强度间距
     #   **精确反演** φ=2arccos(√I) / 可行性核心律（可行 ⇔ FOM ≥ π/IL_budget ⟷ IL_π ≤ 预算）
     #   / 窗口端点自洽（含 k=0 零吸收特判，防 0·∞=nan）/ 🔴 **Γ 与 L 不变性**（12 组扫描）
     #   / 🔴 位深公式与 M1 `seven_bit_readout_floor` **交叉验证**（取整边界互换）/
     #   谐振增益-带宽积守恒 K=F/π / 漂移观测方程自洽 ∧ 明标非定量结论 /
     #   域守卫 L<L_π 必 raise / 对拍表结构 ∧ regime_mismatch / 缺口台账（G6 闭合 ∧
-    #   G2/G10 仍开放）/ 披露 + 肯定式面禁词 / 🔴 JSON 出口安全（dumps(allow_nan=False)）。
+    #   G2/G10 仍开放）/ 披露 + 肯定式面禁词 / 🔴 JSON 出口安全（dumps(allow_nan=False)）/
+    #   🔴 默认 l_um=None 各读出入口不崩 ∧ 报告 l_um == 解析 L_π（防「漏解析」回归 · v0.9.196）。
     #   探针：k×10 & Δn×2（判别力）/ FOM 漏 2 因子（对公式形式敏感）/ Γ 乘回 FOM（不变性
-    #   有判别力）/ 禁词放肯定式面 / L<L_π 必 raise。
+    #   有判别力）/ 禁词放肯定式面 / L<L_π 必 raise / 注入「漏解析 l_um」⇒ 默认路径必崩。
     #   实测 <1s ⇒ timeout 120s 留足余量。
     "run_pm_m6_smoke.py",
     #   光子存储阵列案例卡前端门禁（取值路径 + 反向完备 + onclick）：
@@ -2472,7 +2473,7 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_pm_g7_settlement_smoke.py": 120.0,
     # 光子存储征程 PM-M5 国际对标收官门禁（规格锚逐条对拍表）：18 判据（含 5 探针）· 实测 <1s
     "run_pm_m5_smoke.py": 120.0,
-    # 光子存储征程 PM-M6 门禁（相位域多电平口径 · PM-G6 结算）：31 判据（含 6 探针）· 实测 <1s
+    # 光子存储征程 PM-M6 门禁（相位域多电平口径 · PM-G6 结算）：33 判据（含 7 探针）· 实测 <1s
     "run_pm_m6_smoke.py": 120.0,
     # 光子存储阵列案例卡前端门禁（取值路径 + 反向完备 + onclick）：28 判据（含 10 探针）· 实测 ~7s
     "run_webui_pm_render_path_smoke.py": 120.0,

@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.9.196（2026-10-05 · **PM-M6 收口补丁：默认 `l_um=None` 读出路径崩溃修复 + 门禁补覆盖（C15/P7）** · 账本 **476 不变（零锚改动）** · CI core **284 不变** · 端点 **147 不变**）
+
+- **缺陷（吃狗粮对拍抓出 · v0.9.195 交付后）**：`pm_m6.interferometric_readout` 与
+  `pm_m6.phase_drift_budget` 的签名声明 `l_um: Optional[float] = None`，函数体内**只在
+  `phase_level_design(...)` 的内联调用里**调了 `resolve_l_um(...)`，却用**未解析的原始 `l_um`**
+  填返回字段 ⇒ 默认路径（`l_um=None`）`float(None)` **TypeError 崩**。
+  `resonant_readout` / `m6_report` 因**顶部已重解析**故不受影响；`/api/pm_demo` 走显式 `l_um`
+  ⇒ **线上未触发**（属库 API 默认路径缺陷 —— 由生产 vs 本地现算对拍暴露）。
+- **修复**：两处补顶部 `l_um = resolve_l_um(mat, l_um, gamma=gamma, wl_nm=wl_nm)` 重解析，
+  使设计调用与返回字段共用同一解析值（**显式 `l_um` 透传语义不变**：25.0→25.0 / 30.0→30.0）。
+- **门禁补覆盖**：`run_pm_m6_smoke` 新增 **C15**（默认 `l_um=None` 三入口不崩 ∧ 报告
+  `l_um` == `resolve_l_um(mat,None)`）+ **P7 反向探针**（注入「`resolve_l_um` 变恒等 = 漏解析」
+  ⇒ 默认路径必崩）。**已实测「先证能变红」**：修后 ALL OK；注入缺陷 ⇒ 两项均崩 `TypeError`
+  ⇒ C15 判红。⇒ `run_pm_m6_smoke` **31 → 33 判据（含 6 → 7 探针）**；同步
+  `pm_case.MILESTONES[M6].gate` 31→33 / `MILESTONE_PROBES[M6]` 6→7 / `run_ci_regression` 两处注释。
+- **回归**：发布前全量 CI core **284 单次干净全绿**；`count_consistency` 13/13 · `pyflakes` 棘轮 8/8。
+
 ## v0.9.195（2026-10-05 · **光子存储征程 PM-G6 结算：相位域（干涉/谐振）多电平口径 —— 与振幅域镜像的核心律** · 账本 **476 不变（零锚改动）** · CI core **283 → 284** · 端点 **147 不变**）
 
 - **缺口 PM-G6 结算**（`declared_closed=True`，与机器验算 `evidence_ok` 双源一致）：

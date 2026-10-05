@@ -333,8 +333,8 @@ def interferometric_readout(mat: str, n_levels: int, *, l_um: Optional[float] = 
     相位噪声项为相位域**特有**：σ_n = N_ph·|dI/dφ|·σ_φ，|dI/dφ| = sin(φ)/2。
     ⇒ worst = 两源中**较差**者（并报，不取优）。
     """
-    d = phase_level_design(mat, n_levels, l_um=resolve_l_um(mat, l_um, gamma=gamma, wl_nm=wl_nm),
-                           gamma=gamma, wl_nm=wl_nm)
+    l_um = resolve_l_um(mat, l_um, gamma=gamma, wl_nm=wl_nm)
+    d = phase_level_design(mat, n_levels, l_um=l_um, gamma=gamma, wl_nm=wl_nm)
     nph = n_photons(e_read_fj, wl_nm)
     pairs = []
     for r in d["per_source"]:
@@ -438,8 +438,8 @@ def phase_drift_budget(mat: str, n_levels: int, *, l_um: Optional[float] = None,
     _require(n_levels >= 2, "至少两级")
     _require(nu_n_ub > 0.0, "漂移指数上界必须为正")
     _require(0.0 <= cmrr_fraction <= 1.0, "共模残余比例必须 ∈ [0,1]")
-    dsg = phase_level_design(mat, n_levels, l_um=resolve_l_um(mat, l_um, gamma=gamma, wl_nm=wl_nm),
-                             gamma=gamma, wl_nm=wl_nm)
+    l_um = resolve_l_um(mat, l_um, gamma=gamma, wl_nm=wl_nm)
+    dsg = phase_level_design(mat, n_levels, l_um=l_um, gamma=gamma, wl_nm=wl_nm)
     rows = []
     for r in dsg["per_source"]:
         lv = r["levels"]

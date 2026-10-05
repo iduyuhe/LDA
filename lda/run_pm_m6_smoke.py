@@ -17,6 +17,9 @@
   C12 缺口接线：PM-G6 已闭合（declared ∧ evidence 双源一致），G2/G10 仍如实开放
   C13 披露完整 + 真实输出**肯定式面**禁词零命中
   C14 🔴 JSON 出口安全：`m6_report_json_safe` 经 `dumps(allow_nan=False)` 不抛（防非标准 token）
+  C15 🔴 默认路径（`l_um=None`）各读出入口**不崩** ∧ 报告 `l_um` == `resolve_l_um(mat,None)`
+      （防「漏解析 l_um」回归 —— v0.9.195 曾漏，`interferometric_readout` / `phase_drift_budget`
+       在默认 `l_um=None` 时对 `float(None)` 崩）
 
 突变探针（每条**先证能变红**；探针注入后一律 finally 还原模块级常量）：
   P1  k_c ×10 ⇒ C2/C4 判据必红（FOM 对 k 有判别力）
@@ -25,6 +28,7 @@
   P4  把 Γ 混进 FOM（抹平不变性）⇒ C6 必红
   P5  禁词 "TOPS" 放**肯定式**面 ⇒ C13 必命中
   P6  L < L_π 传入 ⇒ 必 raise（C10 的守卫真在跑）
+  P7  🔴 注入「`resolve_l_um` 变恒等（漏解析）」⇒ 默认路径必崩（C15 有判别力 · 复现 v0.9.195 缺陷）
 """
 from __future__ import annotations
 
@@ -207,6 +211,27 @@ def main() -> int:
         json_ok = False
     check("C14 m6_report_json_safe 经 dumps(allow_nan=False) 不抛（出口 JSON 安全）", json_ok)
 
+    # ---------------- C15 🔴 默认路径（l_um=None）不崩 ∧ 报告值 == 解析值 ----------------
+    # 防回归：v0.9.195 的 `interferometric_readout` / `phase_drift_budget` 在默认 l_um=None 时，
+    # 只在 `phase_level_design(...)` 的内联调用里解析、却用**未解析的原始 l_um** 填返回字段
+    # ⇒ `float(None)` TypeError。本判据对**全部读出入口**强制「不崩 ∧ 报告 l_um == resolve_l_um」。
+    lpi_expect = M6.resolve_l_um(MAT, None)
+    c15_bad = []
+    for _name, _call in (
+        ("interferometric_readout", lambda: M6.interferometric_readout(MAT, 32)),
+        ("resonant_readout", lambda: M6.resonant_readout(MAT, 32, finesse=100.0)),
+        ("phase_drift_budget", lambda: M6.phase_drift_budget(MAT, 32, nu_n_ub=1e-4)),
+    ):
+        try:
+            _r = _call()
+        except Exception as _e:                              # noqa: BLE001
+            c15_bad.append(f"{_name} 崩 {type(_e).__name__}")
+            continue
+        if abs(float(_r["l_um"]) - lpi_expect) > 1e-12 * lpi_expect:
+            c15_bad.append(f"{_name} l_um={_r['l_um']!r} != L_π={lpi_expect!r}")
+    check("C15 🔴 默认 l_um=None 各读出入口不崩 ∧ 报告 l_um == 解析 L_π（防「漏解析」回归）",
+          not c15_bad, detail="; ".join(c15_bad) if c15_bad else "3 入口全 ok")
+
     # ==================== 突变探针（先证能变红）====================
     # P1 k_c ×10 ⇒ FOM 必变（C2/C4 有判别力）
     k0 = st0["k_c"]
@@ -247,6 +272,19 @@ def main() -> int:
     except M6.PMM6Error:
         r6 = True
     check("P6 L=3µm ⇒ 必 raise（域守卫真在跑）", r6)
+
+    # P7 🔴 复现 v0.9.195 缺陷：把 resolve_l_um 打成恒等（= 漏解析）⇒ 默认路径必崩
+    _orig_resolve = M6.resolve_l_um
+    try:
+        M6.resolve_l_um = lambda mat, l_um, **kw: l_um       # 🔴 注入「漏解析」缺陷
+        try:
+            M6.interferometric_readout(MAT, 32)
+            p7 = False
+        except TypeError:
+            p7 = True
+    finally:
+        M6.resolve_l_um = _orig_resolve
+    check("P7 注入「漏解析 l_um」⇒ 默认路径必崩（C15 有判别力 · 复现 v0.9.195 缺陷）", p7)
 
     print()
     # 🔴 退出码契约：CI 判 smoke = rc==0 ? PASS : FAIL（见 run_ci_regression._run_one）

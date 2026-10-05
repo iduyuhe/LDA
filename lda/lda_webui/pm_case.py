@@ -71,7 +71,7 @@ PM_HONEST_NOTE = (
 #   `[PASS]` 计数逐档相等（可人工复核 `grep -c '\[PASS\]'`）：
 #   M0 `run_pm_m0_smoke`=33 · M1 `run_pm_m1_smoke`=24 · M2 `run_pm_m2_smoke`=40 ·
 #   M3 `run_pm_m3_smoke`=22 · M4 `run_pm_m4_smoke`=25 · M4b `run_pm_g7_settlement_smoke`=20 ·
-#   M5 `run_pm_m5_smoke`=18 · M6 `run_pm_m6_smoke`=31。
+#   M5 `run_pm_m5_smoke`=18 · M6 `run_pm_m6_smoke`=33。
 #   🔴 v0.9.194 起**不再靠人工复核**：`run_webui_pm_render_path_smoke` 的 **W8** 会实跑
 #      上表 8 个门禁并数**行首** `[PASS]` 行，与卡内 `gate` 逐档对照（缺映射即红）；
 #      **W9** 再把 `run_ci_regression.py` 注释里手写的「N 判据」也实跑对照
@@ -131,7 +131,7 @@ MILESTONES = [
                "密度行=无同口径文献锚（不比）。**收官口径：知道自己每项站在哪，"
                "不是「全面领先」**"},
     {"id": "M6", "code": "v0.9.195", "title": "相位域（干涉/谐振）多电平口径（PM-G6 结算）",
-     "gate": 31,
+     "gate": 33,
      "result": "🔴 与 M1 振幅域**镜像**的核心律：相位域多电平可行 ⇔ IL_π ≤ IL_budget "
                "⇔ **FOM = Δn/(8.6859k) ≥ π/IL_budget**（Γ 与 L 同时约掉 ⇒ 材料定能力、"
                "几何只定窗口位置）；MZI 读出用**等强度间距**精确反演 φ=2·arccos(√I)"
@@ -144,7 +144,7 @@ MILESTONES = [
 ]
 
 # 各档**后端**突变探针数（与各 smoke 输出的 `[PASS] P*` 计数一致；派生用，勿写死合计）
-MILESTONE_PROBES = {"M0": 6, "M1": 5, "M2": 7, "M3": 5, "M4": 5, "M4b": 3, "M5": 4, "M6": 6}
+MILESTONE_PROBES = {"M0": 6, "M1": 5, "M2": 7, "M3": 5, "M4": 5, "M4b": 3, "M5": 4, "M6": 7}
 
 FINDINGS = [
     {"title": "热串扰间距是版图的**物理约束**（不是随意留白）",

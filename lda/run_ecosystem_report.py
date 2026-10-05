@@ -1,6 +1,6 @@
 """D-93 生态共建框架 · 验收报告生成。
 
-汇总：harness 题库 B1-B18 全量 PASS + 新题 B14-B18 物理值/tol +
+汇总：harness 题库全量 PASS + 新题 B14-B18 物理值/tol +
 PDK 主权分级 A/B/C 落地 + Registry 接口自洽。输出 reports/ecosystem_d93.json。
 
 运行：python run_ecosystem_report.py（managed python，零外部依赖 · **任意 cwd**）
@@ -8,15 +8,25 @@ PDK 主权分级 A/B/C 落地 + Registry 接口自洽。输出 reports/ecosystem
 🔴 v0.9.194：原先 `sys.path.insert(0, ".")` 与 `out = "lda/reports/..."` 都依赖 cwd，
 且**两者的正确 cwd 互斥**（导入要 cwd=lda，产物位置要 cwd=仓库根）⇒ 按 docstring
 直接跑会写到 `lda/lda/reports/` 这种错误位置。现全部锚定脚本自身位置 / 仓库根。
+
+🔴 v0.9.197（D-93 报告漂移专项）：本报告此前用**裸 `json.dump`**（Windows 还写 CRLF）
+且**钉在 `run_report_determinism_smoke._KNOWN_UNREGISTERED` 基线**里（不受 ⑧b 覆盖），
+入库快照停在 2026-08-24（harness 18 题 / B14=15.5 / B16=18.58 / 主权 16），与当前
+仓库状态漂移。现：
+  ① 落盘改走**唯一确定性口径** `deterministic.write_json`（canon 剔 volatile + 浮点 9 位
+     有效数字 + LF）；② 登记进 `lint_spec`（从 `_KNOWN_UNREGISTERED` 移除）；
+  ③ `run_ecosystem_smoke` 新增「**报告快照 == 仓库现算**」常驻判据 ⇒ 再落后必红。
+字段 `date` 更名为 `d93_delivery_date`（语义 = D-93 交付日，不随重生成变化），
+并加 `snapshot_note` 显式说明数值为「最近一次生成时的当前状态」。
 """
 import os
 import sys
-import json
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(_HERE)
 sys.path.insert(0, _HERE)
 
+from lda_harness import deterministic as det
 from lda_harness.golden import (b14_dc_coupling_length, b15_bragg_wavelength,
     b16_mmi_length, b17_jj_critical_current, b18_purcell_factor)
 from lda_harness.verification_adapters import build_harness_specs
@@ -107,7 +117,13 @@ def main():
 
     report = {
         "d93": "生态共建框架（harness 题库扩充 B14-B18 + PDK Registry/L2 开放标准接口）",
-        "date": "2026-08-24",
+        "d93_delivery_date": "2026-08-24",
+        "snapshot_note": (
+            "本报告的数值与计数为「最近一次生成时」的仓库当前状态"
+            "（B14-B18 物理值 / 全量 harness 计数与全过标志 / 主权依赖分级），"
+            "由 `run_ecosystem_smoke` 的「报告快照 == 仓库现算」判据强制同步 —— "
+            "改 golden 或加锚后未重生成本报告 ⇒ CI 必红。"
+            "D-93 交付当日（2026-08-24）的历史口径见 CHANGELOG。"),
         "honest_boundary": (
             "harness 题库 B14-B18 为确定性物理定律锚（能力圈内，立即落地）；"
             "PDK Registry 为 L2 开放标准接口框架 + 主权依赖分级 A/B/C 代码化"
@@ -126,8 +142,7 @@ def main():
     }
 
     out = os.path.join(_ROOT, "lda", "reports", "ecosystem_d93.json")
-    with open(out, "w", encoding="utf-8") as f:
-        json.dump(report, f, indent=2, ensure_ascii=False)
+    det.write_json(out, report)
     print("PASS:", acceptance["passed"])
     print("harness: %d/%d | 新题: %s" % (n_pass, len(specs), list(new_values)))
     print("PDK A/B/C: %d/%d/%d (总 %d)" % (

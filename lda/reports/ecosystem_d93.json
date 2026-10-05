@@ -1,10 +1,11 @@
 {
   "d93": "生态共建框架（harness 题库扩充 B14-B18 + PDK Registry/L2 开放标准接口）",
-  "date": "2026-08-24",
+  "d93_delivery_date": "2026-08-24",
+  "snapshot_note": "本报告的数值与计数为「最近一次生成时」的仓库当前状态（B14-B18 物理值 / 全量 harness 计数与全过标志 / 主权依赖分级），由 `run_ecosystem_smoke` 的「报告快照 == 仓库现算」判据强制同步 —— 改 golden 或加锚后未重生成本报告 ⇒ CI 必红。D-93 交付当日（2026-08-24）的历史口径见 CHANGELOG。",
   "honest_boundary": "harness 题库 B14-B18 为确定性物理定律锚（能力圈内，立即落地）；PDK Registry 为 L2 开放标准接口框架 + 主权依赖分级 A/B/C 代码化（系统开发可做）；真实晶圆厂 PDK 对接/实测语料采集属发动期事项（D-62 联动），暂缓，不在此硬编码。",
   "harness": {
-    "total": 18,
-    "passed": 18,
+    "total": 476,
+    "passed": 476,
     "new_benchmarks": [
       "B14",
       "B15",
@@ -17,7 +18,7 @@
   "new_benchmark_values": {
     "B14": {
       "metric": "L_3dB_um",
-      "value": 15.499999999999918,
+      "value": 7.75,
       "tol": 0.5,
       "params": {
         "n_e": 2.45,
@@ -40,7 +41,7 @@
     },
     "B16": {
       "metric": "L_mmi_um",
-      "value": 18.58064516129032,
+      "value": 13.9354839,
       "tol": 3.0,
       "params": {
         "W_e": 2.0,
@@ -52,7 +53,7 @@
     },
     "B17": {
       "metric": "I_c_A",
-      "value": 4.026709074502098e-08,
+      "value": 4.02670907e-08,
       "tol": 1e-09,
       "params": {
         "E_J_ghz": 20.0
@@ -62,7 +63,7 @@
     },
     "B18": {
       "metric": "F_purcell",
-      "value": 8000.000000000001,
+      "value": 8000.0,
       "tol": 1.0,
       "params": {
         "g_ghz": 0.1,
@@ -74,10 +75,10 @@
     }
   },
   "pdk_sovereign": {
-    "sovereign_deps_total": 16,
+    "sovereign_deps_total": 17,
     "by_class": {
       "A": 5,
-      "B": 7,
+      "B": 8,
       "C": 4
     },
     "class_A_names": [
@@ -90,6 +91,7 @@
     "class_B_names": [
       "gdsfactory 内核",
       "Meep",
+      "DEVSIM (TCAD 内核)",
       "KLayout",
       "SAX",
       "MPB",

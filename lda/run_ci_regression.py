@@ -68,7 +68,7 @@ CORE_SMOKES: List[str] = [
     # 工业化验证（D-76：FAIL 检出机制 + 性能基准——坏 smoke 残留根治的守卫）
     "run_ci_industrial_smoke.py",
     # 生态共建链（D-93~D-98：harness 扩展 / 提交 / 评审→落地→发布，纯 numpy 快速）
-    "run_ecosystem_smoke.py",        # harness B1-B18 + 主权 A/B/C + Registry 自检
+    "run_ecosystem_smoke.py",        # harness B1-B18 + 主权 A/B/C + Registry 自检 + eco_d93 快照同步
     "run_ecosystem_submit_smoke.py", # 社区提交入口（器件 + 批量 + 提案）
     "run_ecosystem_publish_smoke.py",# 评审→落地→发布 全链（含补丁生成）
     # 实证大数据锚（D-62：harness E1-E3 实证锚题 + 语料评审流，纯 numpy 快速）

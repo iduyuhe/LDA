@@ -36,6 +36,11 @@
         README 顶行写 `run_pm_m5_smoke` **16 判据` / `前端门禁 22/0` 全部落后（实为 18 / 26）。
         ⚠ 只覆盖能在实跑集里查到数的条目；`前端门禁 N/0`（= 本门禁自身）**不纳入**
         （避免自指），属**已知无机器守卫**的对外手写项。
+        🔴 v0.9.197：对照面 = PM 门禁 ∪ **本版真改动的便宜门禁**（`_W10_EXTRA`）。
+        W10b 反向完备（≥1 条可对照条目）在 v0.9.197 首跑即把「D-93 专项顶行**未提任何
+        门禁**」判红（真问题，非空转）⇒ 本版改的是 `run_report_determinism_smoke`
+        （不在 PM 门禁族）⇒ 对照面须覆盖它。**贵门禁不入**（`run_ecosystem_smoke`
+        实测 ~207s，会拖垮本门禁预算）。
   W7 自入 CI core
 
 🔴 **诚实边界**：本门禁是**静态**路径检查，不执行 JS、不看渲染好不好看；
@@ -113,6 +118,13 @@ def _gate_drift(milestones, counts, mapping):
 
 #: W9 目标：哪些门禁必须在 `run_ci_regression.py` 注释里**声明**判据数（↔ 反向完备）
 _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {"run_ci_gate_contract_smoke.py"})
+
+#: W10 对照面**增量**：本版真改动、且**便宜可实跑**的门禁（**不扩** W8/W9 的目标范围）。
+#: 🔴 v0.9.197：W10b 抓出「当前版本行无可对照条目」为**真问题**（非守卫空转）——
+#: 本版改的是 `run_report_determinism_smoke`（不属 PM 门禁族）⇒ 对照面须覆盖它。
+#: 贵门禁（`run_ecosystem_smoke` 实测 ~207s）**不入**此表 ⇒ 免拖垮本门禁预算；
+#: 它自己的判据数由 `run_ecosystem_smoke` 内「报告快照 == 仓库现算」常驻判据守。
+_W10_EXTRA = ("run_report_determinism_smoke.py",)
 
 
 def _declared_judge_counts(text):
@@ -511,10 +523,14 @@ def main() -> int:
     # 血案 v0.9.194：README 顶行（**对外第一屏**）写 ``run_pm_m5_smoke`` **16 判据`` /
     # ``前端门禁 22/0`` 全部落后（实为 18 / 26）。同一份数字至此已手写在**四处**
     # （门禁 docstring / pm_case.gate / CI 注释 / README）⇒ 每处都得机器对照。
+    # 🔴 v0.9.197：对照面 `_counts10` = `_counts`（PM 门禁 + 契约门禁）**∪ 本版真改动的
+    #   便宜门禁**（`_W10_EXTRA`）。W10b 曾把「v0.9.197 顶行（D-93 专项）未提任何门禁」
+    #   判红 ⇒ 本版改的 `run_report_determinism_smoke` 不属 PM 门禁族，须补进对照面。
+    _counts10 = dict(_counts, **{s: _pass_count(s) for s in _W10_EXTRA})
     _rd = os.path.join(_ROOT, "README.md")
     _rtext = open(_rd, encoding="utf-8").read() if os.path.exists(_rd) else ""
     _cur = next((ln for ln in _rtext.splitlines() if "✅ 当前版本" in ln), "")
-    _rd_bad = _readme_decl_drift(_cur, _counts)
+    _rd_bad = _readme_decl_drift(_cur, _counts10)
     check("W10 🔴 README「当前版本」行里的 `run_pm_*_smoke` 判据数 == 实跑数",
           bool(_cur) and not _rd_bad, "漂移=%s" % (_rd_bad or "无"))
 
@@ -522,19 +538,20 @@ def main() -> int:
     #   否则 `_readme_decl_drift` 恒返空 ⇒ W10 退化为恒绿（守卫空转）。
     _cur_names = re.findall(r"`(run_[A-Za-z0-9_]+)(?:\.py)?`\s*\*\*\d+\s*判据", _cur)
     check("W10b 🔴 反向完备：当前版本行至少含 1 条 `run_*` 判据数条目（防 W10 恒绿空转）",
-          len(_cur_names) >= 1 and all(n + ".py" in _counts for n in _cur_names),
+          len(_cur_names) >= 1 and all(n + ".py" in _counts10 for n in _cur_names),
           "条目=%s" % _cur_names)
 
     # 🔴 W10-P1（v0.9.195 修）：原实现**硬编码** `run_pm_m5_smoke.py` —— 一旦当前版本行
     #   不再提及 m5（如本版改提 m6），探针第二项**恒 False**（改一个当前行里不存在的脚本
     #   当然不产生漂移）⇒ 探针自己失效。改为**动态取当前行第一个条目**做变异。
     _t10 = (_cur_names[0] + ".py") if _cur_names else "run_pm_m5_smoke.py"
-    _p10 = [_readme_decl_drift(_cur, _counts) == [],                    # 原样绿
-            _readme_decl_drift(_cur, dict(_counts, **{_t10: _counts.get(_t10, 0) + 1}))
+    _p10 = [_readme_decl_drift(_cur, _counts10) == [],                  # 原样绿
+            _readme_decl_drift(_cur, dict(_counts10,
+                                          **{_t10: _counts10.get(_t10, 0) + 1}))
             != [],                                                      # 实跑数变必红
             _readme_decl_drift("`%s` **%d 判据" % (_t10.replace(".py", ""),
-                                                 _counts.get(_t10, 0) + 1),
-                               _counts) != []]                          # README 旧值必红
+                                                 _counts10.get(_t10, 0) + 1),
+                               _counts10) != []]                        # README 旧值必红
     check("W10-P1 突变探针：原样绿 ∧ 实跑数变 / README 旧值 两改必红（动态取当前行条目）",
           all(_p10), "p10=%s t=%s" % (_p10, _t10))
 

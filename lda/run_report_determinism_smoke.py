@@ -260,13 +260,17 @@ _REPO = os.path.dirname(HERE)
 #    `ecosystem_d9*.json` / `perf_*.json`），登记即触发 ⑧b ⇒ 必须同时改写成
 #    `det.write_json` ⇒ 会重写这些**历史证据报告**的字节。收益低而 blast radius 大，
 #    故本轮只登记**CI core 内**的（会在 CI 里反复重写、有真风险），其余钉基线待专项。
+#    ✅ **2026-10-05（v0.9.197）D-93 专项已摘除 `run_ecosystem_report.py`**：
+#      它已改走 `det.write_json` + 登记 `lint_spec`，并由 `run_ecosystem_smoke` 的
+#      「报告快照 == 仓库现算」常驻判据强制同步（此前入库快照停在 2026-08-24：
+#      harness 18/18 而现算 476/476、B14 15.5→7.75、B16 18.58→13.94、主权 16→17）。
+#      其余 7 项仍钉基线（同族、同风险，待各自专项）。
 _KNOWN_UNREGISTERED = frozenset({
     "lda/run_ecosystem_d94_report.py",
     "lda/run_ecosystem_d95_report.py",
     "lda/run_ecosystem_d96_report.py",
     "lda/run_ecosystem_d97_report.py",
     "lda/run_ecosystem_d98_report.py",
-    "lda/run_ecosystem_report.py",          # 写 reports/ecosystem_d93.json
     "lda/run_perf_adjoint3d.py",
     "lda/run_perf_bench.py",                # 写 reports/perf_baseline.json
 })
@@ -390,6 +394,14 @@ def main() -> int:
         "run_design_package_smoke.py": _WALL,
         "run_inverse_design_smoke.py": _WALL,
         "lda_design/design_package.py": _WALL,
+        # ——— 2026-10-05（v0.9.197）D-93 报告漂移专项：从 `_KNOWN_UNREGISTERED` 摘除 ———
+        #   `run_ecosystem_report.py`（写 reports/ecosystem_d93.json）此前裸 `json.dump`
+        #   （Windows 还写 CRLF）+ 钉基线 ⇒ 入库快照停在 2026-08-24，与当前仓库漂移：
+        #   harness 18/18→476/476 · B14 15.499999999999918→7.75（v0.9.20 物理修正）·
+        #   B16 18.58064516129032→13.9354839（v0.9.62 物理修正）· 主权 16(A5/B7/C4)→17(A5/B8/C4)。
+        #   处置：改走 `det.write_json`（唯一确定性口径）+ 登记本表 + 由
+        #   `run_ecosystem_smoke`「报告快照 == 仓库现算」常驻判据强制同步。
+        "run_ecosystem_report.py": _WALL,
     }
     lint_bad = []
     no_det = []

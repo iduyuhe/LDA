@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.9.197（2026-10-05 · **D-93 报告漂移专项：受跟踪生成物 `reports/ecosystem_d93.json` 刷新 + 确定性口径 + 快照同步判据** · 账本 **476 不变（零锚改动）** · CI core **284 不变** · 端点 **147 不变**）
+
+- **遗留**：`lda/reports/ecosystem_d93.json`（D-93 交付报告 · 2026-08-24 · **受跟踪**）与当前仓库**漂移** 4 处：`harness 18/18 → 476/476` · `B14 15.499999999999918 → 7.75`（v0.9.20 物理修正）· `B16 18.58064516129032 → 13.9354839`（v0.9.62 物理修正）· 主权依赖 `16(A5/B7/C4) → 17(A5/B8/C4)`（新增 DEVSIM (TCAD 内核)）。
+- **根因（技能第四形态「受跟踪生成物落后写入器」）**：生成器 `run_ecosystem_report.py` **不在 CI**（一次性证据生成器）⇒ 无同步机制则必然落后；且 ① 落盘用**裸 `json.dump`**（Windows 下写 CRLF）② 钉在 `run_report_determinism_smoke._KNOWN_UNREGISTERED` 基线 ⇒ 不受 ⑧b（走 deterministic）覆盖。
+- **定性（先字节级 → 再语义级）**：diff 13 行、差异分散（非时间戳/元数据类）；语义级**零判定翻转**（`acceptance.passed` 恒 true、5 项 checks 恒 true），改动全为**真实前进** ⇒ 按通法「真实前进 ⇒ 提交，不还原」处置。
+- **改动**：
+  - 生成器改走**唯一确定性口径** `deterministic.write_json`（canon 剔 volatile + 浮点 9 位有效数字 + LF）⇒ 顺带消掉 `B17 4.026709074502098e-08 → 4.02670907e-08`、`B18 8000.000000000001 → 8000` 的浮点噪声尾并补齐末尾换行（实测 **CRLF 0 / LF 131**）。
+  - 字段语义化：`date → d93_delivery_date`（交付日不变，不随重生成变化）+ 新增 `snapshot_note`（显式声明数值为「最近一次生成时的当前状态」，历史口径见 CHANGELOG）。
+  - 登记 `lint_spec` + 从 `_KNOWN_UNREGISTERED` 摘除 ⇒ ⑪ 读数 **「发现 29 · 已登记 22 · 基线钉住 7」**（此前 21/8 ⇒ **棘轮收紧 1 项**）；⑧b 实测 `not-using-deterministic=[]`。其余 7 个同族生成器仍钉基线（同风险，待各自专项）。
+  - 🔴 **新增常驻判据**（`run_ecosystem_smoke` 第 3 组）：**报告快照 == 仓库现算** —— 逐字段比对 harness 计数/全过标志 · 主权总数与 A/B/C · B14-B18 物理值（**用报告内 `params` 现算** ⇒ golden 改而未重生成必红）；**复用** `_specs_and_pass` 模块级缓存 ⇒ specs 全量只算一次、**零额外成本**。`run_ecosystem_smoke` **4 → 5 判据全绿**（实测 3m48s · 预算 900s）。
+- **反向证明（先证能变红）**：HEAD 版报告 × 新判据 ⇒ `ok=False`，精确报 `harness.total 18≠476` / `harness.passed 18≠476` / `主权总数 16≠17`；新报告 ⇒ `ok=True`；缓存命中确认（specs 只算一次）。
+- **收尾**：EOL 归一（Edit 曾把 `run_ecosystem_report.py` / `run_ecosystem_smoke.py` 落成 CRLF ⇒ 按铁律归一回 LF，diff 仍为语义级 25/90 行）。门禁：`run_ecosystem_smoke 5/5` · `run_report_determinism_smoke`（⑧b/⑪/12 项全绿）· `count_consistency` · `p0_count_guard_sync` · `three_class_consistency` · `ci_coverage_gate` · `maturity_baseline` · `webui_verification_ledger` · `self_certified_lock` · `ci_gate_contract` · `pyflakes_ratchet` 全绿。
+
+- 🔴 **全量首跑抓出：W10b 反向完备判据红（真问题 · 非空转）**：v0.9.197 顶行（D-93 专项）**未提任何门禁** ⇒ `run_webui_pm_render_path_smoke` 的 **W10b**（要求「当前版本行 ≥1 条可对照条目」）判红，W10-P1 第二项亦因 `_t10` 落到硬编码 fallback `run_pm_m5_smoke.py` 而失效（改动一个当前行里不存在的脚本当然不产生漂移）。**修复**：① W10 对照面新增 `_W10_EXTRA` = **本版真改动且便宜**的门禁 `run_report_determinism_smoke`（实测 ~4.4s）；**贵门禁不入**（`run_ecosystem_smoke` 实测 ~207s ⇒ 会拖垮本门禁预算，其判据数由它自身「快照==现算」常驻判据守）；② README v0.9.197 顶行补「**门禁现状锚**：`run_report_determinism_smoke` **19 判据**（⑧b `not-using-deterministic=[]` ∧ ⑪ `已登记 22 · 基线钉住 7`）」。**先证能变红**（4 方向）：原样绿 `[]` · 顶行写错 18 ⇒ 红 · 实跑变 20 ⇒ 红 · 抹掉脚本名 ⇒ W10b 红。`run_webui_pm_render_path_smoke` **29 PASS / 0 FAIL**。
+
 ## v0.9.196（2026-10-05 · **PM-M6 收口补丁：默认 `l_um=None` 读出路径崩溃修复 + 门禁补覆盖（C15/P7）** · 账本 **476 不变（零锚改动）** · CI core **284 不变** · 端点 **147 不变**）
 
 - **缺陷（吃狗粮对拍抓出 · v0.9.195 交付后）**：`pm_m6.interferometric_readout` 与

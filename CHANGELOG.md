@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.9.200（2026-10-06 · **光子存储征程 PM-G11 重标定批次：按标定 Γ=0.084 重算现役几何 ⇒ 重出全部受跟踪 GDS + 快照 + 对拍表；机器可拦** · 账本 **476 不变（零锚改动）** · CI core **285 不变** · 端点 **147 不变**）
+
+- **三档 Γ 框架（根治「假设更小≠更保守」血案 · 来自 v0.9.198 结算登记）**：`g_legacy=0.05`（v0.9.198 历史固定假设，仅作并报披露，非现役几何）/ `g_cal=0.0840054905578339`（四路径互证标定值，标定窗 [0.07708,0.09269]）/ `g_active=M0.GAMMA_DEFAULT`（现役几何，重标定后==标定值）。`L∝1/Γ` 缩放律精确等式：`L_mid(Γ_cal)=L_mid(Γ_assumed)·Γ_assumed/Γ_cal`，law_rel_dev=1.3548e-16（机器现算，非转录）。
+- **重标定结果**：现役设计点 **L=6.5559µm** 落入标定窗 **[3.5588,9.5529]µm**，余量 **+31.4%** ⇒ **PM-G11 由「开放」转「已结算（仍对外披露）」** ⇒ 台账 **9 缺口 · 闭合 8（G1~G7 + G11）· 开放 1（G10 耐久 not_modeled）**。（G11 在 v0.9.198 登记为开放缺口，本批次结算后自动闭合；不选择性披露历史假设 0.05。）
+- **受跟踪产物重生成 + 确定性验证（双跑 sha256 IDENTICAL）**：m3 `lda_pm_m3_array_8x1.gds`/`4x8.gds`/`lda_pm_m3_report.json`；m4 `lda_pm_m4_2p5d.gds`（4852B · pic_pitch=13.5863µm · DRC=True LVS=ACCEPT）+ `lda_pm_m4_report.json`；m5 `lda_pm_m5_report.json`（gaps=8/9 · G11 closed=True）。双跑 sha256 逐字节 IDENTICAL（无墙钟/随机泄漏）。
+- **代码改动（门禁全绿 + 消除手写漂移）**：`lda_webui/pm_case.py` G11 闭合（`gamma_sensitivity` `design_point_inside_calibrated_window:True` + 三档Γ披露）+ `STATIC_SNAPSHOT['m5']` 模块级 `_load_named_report` 覆盖快照（根治 M5 手写漂移，同 m3/m4 口径）；`STATIC_SNAPSHOT['m5']` gaps_closed 7→8、gaps_final G11 closed；门禁 ⑬（G10 开放/G11 闭合）/⑭（design_point_inside_calibrated_window 须 True）随 G11 更新。`static/index.html` verdict 计数改**数据驱动**（消除对 `within_5x` 字面量依赖，重标定后 verdict 翻 `same_order` 不再静默破 W3）。`run_pm_g7_settlement_smoke.py` D1b/P5 精确指纹随 G11 闭合更新——PM-G11 加入 `_LEDGER_EXTRA` 例外集合（P5「偷加」样本已用未使用 `PM-G0`，登记 G11 不使探针失效）。
+- **机器可拦（判据是真算，非恒真文案）**：越窗判据 `design_point_inside_calibrated_window` 重标定后 = True（`pm_m5.py` / `run_pm_m5_smoke.py` 门禁强制 True）；**P8 反向探针常驻**——Γ 推小于标定值 ⇒ 窗放大 ⇒ 现役点越下界 ⇒ 判据翻红，证明响应真值而非硬编码。g7 结算 **20/20**（D1b 多=[] 缺=[] · P5 fp=[True,False,False,False] 原样绿+三改必红）；WebUI 渲染路径 **29/29**（W8/W9 转绿：实跑 g7=20 与 gate 声明一致，漂移=[]）；确定性 ⑬「快照==现算」**28 判据全绿**（含反向探针三向）。
+- **门禁**：`run_pm_g7_settlement_smoke` **20 PASS / 0 FAIL**；`run_webui_pm_render_path_smoke` **29 PASS / 0 FAIL**；全量 CI core **285 PASS / 0 FAIL / 0 SKIP**（16 批 · 总 6346.17s · 零回归）。
+
 ## v0.9.199（2026-10-06 · **D-94~D-98 同族专项：受跟踪生成物快照漂移全面收口（棘轮 7→2）+ `deterministic.scrub` 挥发性语义唯一口径 + 审计修 ⑬ 字节对拍 EOL 假红** · 账本 **476 不变（零锚改动）** · CI core **285 不变** · 端点 **147 不变**）
 
 - **遗留（v0.9.197 如实披露的同风险面）**：`run_report_determinism_smoke._KNOWN_UNREGISTERED` 钉基线的 **7 个同模式一次性证据生成器** —— `run_ecosystem_d94~d98_report.py`（写 `reports/ecosystem_d9{4..8}.json`）+ `run_perf_adjoint3d.py`（`perf_adjoint3d_d89.json`）+ `run_perf_bench.py`（`perf_baseline.json`）。与 d93 同根因：生成器不在 CI + 裸 `json.dump`（Windows 写 CRLF）+ 钉基线 ⇒ 入库快照必然落后。

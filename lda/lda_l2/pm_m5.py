@@ -130,11 +130,14 @@ def benchmark_rows(mat: str = "GST") -> List[Dict[str, Any]]:
         "ratio": r3, "verdict": _band(r3),
         "gamma_sensitivity": gs,
         "note": ("胞长越长插入损耗越高（M0 闭式律 ∝L），但设计点由 M1 可行性判据定，非自由选择。"
-                 "🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 开放 · 并报）**：L ∝ 1/Γ ⇒ 按标定 "
-                 "Γ=%.4f 重标定为 **%.3f µm**（本行现值 %.3f µm 按假设 Γ=%.3f 出图；1/Γ 律 "
-                 "rel=%.1e）。两口径并报，不选择性披露。"
-                 % (gs["gamma_calibrated"], gs["l_cell_rebaselined_um"], lda_cell,
-                    gs["gamma_assumed"], gs["law_rel_dev"])),
+                 "🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 v0.9.200 已闭合 · 并报）**：现役几何已重标定到"
+                 "标定 Γ=%.5f ⇒ **L=%.3f µm** 落入标定窗 [%.3f, %.3f]µm（余量 +%.1f%% ⇒ 读出不再饿死）；"
+                 "历史假设 Γ=%.3f 曾给 L=%.3f µm（越窗 +%.1f%%），两口径并报留存。"
+                 % (gs["gamma_active"], gs["l_cell_now_um"],
+                    gs["window_now_um"][0], gs["window_now_um"][1],
+                    100.0 * (gs["window_now_um"][1] - gs["l_cell_now_um"]) / gs["window_now_um"][1],
+                    gs["gamma_assumed"], gs["l_cell_legacy_assumed_um"],
+                    100.0 * (gs["l_cell_legacy_assumed_um"] - gs["window_now_um"][1]) / gs["window_now_um"][1])),
     })
 
     # ── 行 4：读出对比度（同口径取「文献胞长」下的 LDA 闭式值）──────────
@@ -189,26 +192,29 @@ def benchmark_rows(mat: str = "GST") -> List[Dict[str, Any]]:
     lda_dens_pic = bits_per_cell / ((pitch * 1e-3) * (die_h * 1e-3))   # bits/mm²
     eic_pitch = 50.0
     lda_dens_sys = bits_per_cell / ((eic_pitch * 1e-3) * (die_h * 1e-3))
-    # 🔴 Γ 口径并报：pitch = L + gap ⇒ 按标定 Γ 平移光程长段即得重标定 pitch（gap 不变）
-    pitch_cal = pitch - float(M3.cell_length_um()["l_um"]) + gs["l_cell_rebaselined_um"]
-    dens_cal = bits_per_cell / ((pitch_cal * 1e-3) * (die_h * 1e-3))
+    # 🔴 Γ 口径并报：pitch = L + gap ⇒ 历史假设 Γ=0.05 的 L 更长 ⇒ pitch 更大（gap 不变）
+    l_um_now = float(M3.cell_length_um()["l_um"])
+    l_legacy = gs["l_cell_legacy_assumed_um"]            # 历史假设 L（11.015µm）
+    pitch_legacy = pitch - l_um_now + l_legacy          # 历史假设下的重算 pitch
+    dens_legacy = bits_per_cell / ((pitch_legacy * 1e-3) * (die_h * 1e-3))
     rows.append({
         "metric": "areal_density", "metric_cn": "集成密度（bits/mm²）",
         "lda_value": {"pic_side": lda_dens_pic, "system_side_eic_bottleneck": lda_dens_sys,
                       "pitch_um": pitch, "die_h_um": die_h,
                       "bits_per_cell": bits_per_cell,
-                      "pitch_rebaselined_um": pitch_cal, "pic_side_rebaselined": dens_cal},
+                      "pitch_legacy_assumed_um": pitch_legacy,
+                      "pic_side_legacy_assumed": dens_legacy},
         "lda_source": "pm_m3.cell_pitch_um × die 高（M4 2.5D）· 算出来的",
         "lit_value": None, "lit_sources": [],
         "verdict": "no_anchor",
         "gamma_sensitivity": gs,
         "note": ("文献均为**单胞演示**（Ríos 5 µm / Cheng 2 µm），无同口径阵列密度实测锚"
                  "⇒ 不比。LDA 侧两口径并报：PIC 版图口径 vs 2.5D 系统口径（EIC 瓶颈）。"
-                 "🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 开放 · 并报）**：pitch = L + gap ⇒ 按标定 "
-                 "Γ=%.4f 重标定 pitch=%.3f µm、PIC 密度 %.4g bits/mm²（本行现值 pitch=%.3f µm / "
-                 "%.4g bits/mm² 按假设 Γ=%.3f 出图）。"
-                 % (gs["gamma_calibrated"], pitch_cal, dens_cal, pitch, lda_dens_pic,
-                    gs["gamma_assumed"])),
+                 "🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 v0.9.200 已闭合 · 并报）**："
+                 "pitch = L + gap ⇒ 现役几何已重标定到标定 Γ=%.5f ⇒ pitch=%.3f µm、PIC 密度 %.4g bits/mm²"
+                 "（落在标定窗内 ⇒ 读出不再饿死）；历史假设 Γ=%.3f 曾给 pitch=%.3f µm / %.4g bits/mm²。"
+                 % (gs["gamma_active"], pitch, lda_dens_pic,
+                    gs["gamma_assumed"], pitch_legacy, dens_legacy)),
     })
     return rows
 
@@ -219,18 +225,25 @@ def _gamma_sensitivity(mat: str = "GST", wl_nm: float = 1550.0) -> Dict[str, Any
     `pm_gamma.gamma_impact_on_design()` 给 1/Γ 缩放律与越窗判定；本函数再把它投影到
     **对拍表的量**上：胞长（∝1/Γ）与由它派生的 pitch / 面积（pitch = L + gap ⇒ 按同一 gap 平移）。
     🔴 单调性由 `pitch = L + gap` 代数恒等式给出，不做二次拟合。
+
+    🔴 v0.9.200 重标定批次后：现役几何口径 == 标定 Γ ⇒ `l_cell_now_um`（现役）与
+    `l_cell_rebaselined_um`（标定）**重合**（均为 ~6.556µm），`design_point_inside_calibrated_window`
+    翻绿 ⇒ **G11 闭合**；历史假设 Γ=0.05 的 11.015µm 以 `l_cell_legacy_assumed_um` 并报留存（不选择性抹除）。
     """
     from lda_l2 import pm_gamma as PG
     imp = PG.gamma_impact_on_design(wl_nm, mat)
-    l_now = imp["assumed"]["l_mid_um"]
-    l_new = imp["calibrated"]["l_mid_um"]
+    l_active = imp["design_point_um"]                     # 现役几何（标定 Γ ⇒ ~6.556µm）
+    l_legacy = imp["design_point_legacy_assumed_um"]      # 历史假设（0.05 ⇒ 11.015µm）
     return {
-        "gamma_assumed": imp["gamma_assumed"], "gamma_calibrated": imp["gamma_calibrated"],
+        "gamma_assumed": imp["gamma_assumed"], "gamma_active": imp["gamma_active"],
+        "gamma_calibrated": imp["gamma_calibrated"],
         "scale_ratio": imp["scale_ratio"], "law_rel_dev": imp["law_rel_dev"],
-        "l_cell_now_um": l_now, "l_cell_rebaselined_um": l_new,
-        "length_scale": (l_new / l_now) if l_now else None,
-        "window_now_um": imp["assumed"]["window_um"],
+        "l_cell_now_um": l_active, "l_cell_rebaselined_um": l_active,
+        "l_cell_legacy_assumed_um": l_legacy,
+        "length_scale": (l_active / l_legacy) if l_legacy else None,
+        "window_now_um": imp["calibrated"]["window_um"],
         "window_rebaselined_um": imp["calibrated"]["window_um"],
+        "window_legacy_assumed_um": imp["assumed"]["window_um"],
         "design_point_inside_calibrated_window": imp["design_point_inside_calibrated_window"],
         "gap": "PM-G11", "never_golden": True,
         "note": imp["disclosure"]["headline"],

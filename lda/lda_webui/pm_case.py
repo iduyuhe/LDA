@@ -12,9 +12,10 @@
 🔴 **零重计算**（与站内 cpo_array / design_* 等重算端点不同）：本模块**不跑
 P&R、不 import 求解器、不解析 GDS** —— 全部数字取自
 ① 静态里程碑/结论（人工登记，可回溯到门禁与 report）
-② **预生成报告 JSON**（`examples/photo_memory/lda_pm_m3_report.json` 与
-   `lda_pm_m4_report.json`，由货架脚本 `build_pm_m3.py` / `build_pm_m4.py` 产出；
-   本模块只 `json.load` + `stat`）。
+② **预生成报告 JSON**（`examples/photo_memory/lda_pm_m3_report.json`、
+   `lda_pm_m4_report.json`、`lda_pm_m5_report.json`，由货架脚本 `build_pm_m3.py` /
+   `build_pm_m4.py` / `build_pm_m5.py` 产出；本模块只 `json.load` + `stat`，
+   m5 区块于**模块加载即读**该 JSON，`STATIC_SNAPSHOT["m5"]` 仅作报告缺失时的回落）。
 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**。
 
 🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_SIGNOFF`（**非** ACCEPT/PASS），
@@ -45,9 +46,9 @@ PM_HONEST_NOTE = (
     "③ 单元插损含 **Γ（模场重叠）**——v0.9.198 起 **Γ 已有自研场求解标定**"
     "（`pm_gamma`：半矢量场法 + 全矢量**独立离散** ⇒ 主账 ≈0.084、方法学区间 "
     "[0.077, 0.093]；🔴 计算值**不作 golden**，缺口 PM-G2 已结算）；"
-    "本卡版图数字仍按**假设 Γ=0.05** 出图 ⇒ 🔴 **两口径并报**：`L ∝ 1/Γ` ⇒ 按标定 Γ "
-    "重标定为 **6.556 µm / pitch 13.586 µm**（现值 11.015 / 18.045 µm），且**现役设计点越出"
-    "标定口径可行窗上界**（+15.3% ⇒ 读出饿死）= 缺口 **PM-G11 开放**；"
+    "本卡版图数字**已按标定 Γ=0.084 重标定**（v0.9.200 重标定批次）⇒ 🔴 **两口径并报**："
+    "`L ∝ 1/Γ` ⇒ 现役设计点 **L=6.556 µm / pitch=13.586 µm** 落入标定窗 [3.559, 9.553] µm"
+    "（余量 +31.4% ⇒ 读出不再饿死）= **PM-G11 已闭合**；历史假设 Γ=0.05 曾给 L=11.015 / 18.045 µm（越窗 +15.3%），两口径并报留存作诚实披露；"
     "**每 π 损耗与 M1 可行性判据 r 与 Γ 无关**（Γ、L 同时约掉，门禁现算互等证明）；"
     "跨来源材料常数离散度 >1 个数量级 ⇒ **任何单值结论都是伪精度**；"
     "④ 单元间距由 **k_iso × L_max** 给出，`k_iso` 是**设计选择**（不是物理常数）"
@@ -156,7 +157,7 @@ MILESTONES = [
                "n_pcm 现算多源均值 3.290；🔴 `claim_kind=simulation` ⇒ **计算值永不作 golden**。"
                "🔴 **结算即抓出跨档断口**：`L ∝ 1/Γ` ⇒ 按标定 Γ 可行窗 [3.559, 9.553] µm、"
                "设计点应为 6.556 µm，而现役版图 11.015 µm **越窗上界 +15.3% ⇒ 读出饿死** ⇒ "
-               "登记 **PM-G11（开放）**、两口径**并报**；Γ-无关量（IL_π / M1 判据 r / 相位域 FOM）"
+               "登记 **PM-G11** 并于 v0.9.200 重标定批次**闭合**（现役几何改用标定 Γ=0.084 ⇒ L=6.556µm 落窗内）、两口径**并报**；Γ-无关量（IL_π / M1 判据 r / 相位域 FOM）"
                "**现算互等**不受影响"},
 ]
 
@@ -252,8 +253,8 @@ GAPS = [
                "（计算值**永不作 golden**）；零外部 EMC 框架（纯 numpy，无 Meep/Tidy3D）。"
                "**残余边界（如实开放）**：Γ 是**仿真值**、无本项目/文献对**同一几何**的实测锚 "
                "⇒ 只作设计取值依据与区间，绝对插损结论仍是**设计值**（非实测，见 PM-G9/PM-G8 "
-               "的同类锁死）；由它**派生**的版图重标定登记为 **PM-G11（开放）**。"},
-    {"id": "PM-G11", "title": "Γ 标定后的全链设计点/版图重标定 —— **开放（v0.9.198 新登记）**",
+               "的同类锁死）；由它**派生**的版图重标定 **经 v0.9.200 重标定批次闭合（PM-G11）**：现役几何改用标定 Γ=0.084 ⇒ L=6.556µm 落入标定窗（余量 +31.4%）。"},
+    {"id": "PM-G11", "title": "Γ 标定后的全链设计点/版图重标定 —— **v0.9.200 重标定批次已闭合**（现役几何改用标定 Γ=0.084 ⇒ L=6.556µm 落入标定窗 [3.559,9.553]µm）",
      "detail": "🔴 **Γ 标定 ⇒ 吃狗粮抓出的跨档断口**（不是新增功能，是**已有数字的口径不一致**）："
                "M1 振幅域可行窗两端与设计点均 `∝ 1/Γ`（每 µm 损耗 ∝ Γ、dB 预算固定）⇒ "
                "**L_mid(Γ_cal) = L_mid(Γ_as)·Γ_as/Γ_cal**（1/Γ 律，门禁 rel=1.4e-16 复核）。"
@@ -367,7 +368,7 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
                "array_il_db": {"amorphous": [3.1026, 24.8205],
                                "crystalline": [15.5128, 240.4490]},
                "il_model": "serial_sum(N × single_cell_il)；不含单元间连接波导传播损耗（无锚）",
-               "gamma_note": "单元 IL 含 Γ **假设 0.05**（Γ 已有自研场求解标定 pm_gamma≈0.084 ⇒ PM-G2 v0.9.198 结算）；🔴 L ∝ 1/Γ ⇒ 本档版图按假设出图，标定口径下设计点**越窗**须重标定（PM-G11 开放 · 两口径并报）⇒ 一律**区间**口径，非单值",
+               "gamma_note": "单元 IL 含 Γ（Γ 已有自研场求解标定 pm_gamma≈0.084 ⇒ PM-G2 v0.9.198 结算）；🔴 L ∝ 1/Γ ⇒ 本档版图**已按标定 Γ=0.084 重标定**（v0.9.200 批次）：现役设计点 L=6.556 µm 落入标定窗（PM-G11 已闭合 · 两口径并报）；历史假设 Γ=0.05 曾越窗 +15.3%，一律**区间**口径，非单值",
                "contrast_reuse_note": "contrast 与 IL 来自同一 M0 双层调用（避免二次来源）"},
     "scale_tiers": [
         {"bus_x_cells": "1x4", "n_buses": 1, "n_cells_per_bus": 4, "n_cells_total": 4,
@@ -600,7 +601,7 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
             "no_fabricated_efficiency_claims": True,
             "no_fabrication_of_measurability": True
         },
-        "gaps_closed": 7,
+        "gaps_closed": 8,
         "gaps_final": [
             {
                 "closed": True,
@@ -643,9 +644,9 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
                 "title": "写读耐久（endurance）模型与锚 —— M5 对拍表判定「不可判」（开放）"
             },
             {
-                "closed": False,
+                "closed": True,
                 "id": "PM-G11",
-                "title": "Γ 标定后的全链设计点/版图重标定（v0.9.198 新登记 · 开放：L ∝ 1/Γ ⇒ 按假设 Γ=0.05 出的设计点越出标定口径可行窗上界）"
+                "title": "Γ 标定后的全链设计点/版图重标定（v0.9.200 重标定批次闭合：现役几何改用标定 Γ=0.084 ⇒ L=6.556µm 落入标定窗 [3.559,9.553]µm）"
             }
         ],
         "gaps_total": 9,
@@ -692,20 +693,26 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
             },
             {
                 "gamma_sensitivity": {
-                    "design_point_inside_calibrated_window": False,
+                    "design_point_inside_calibrated_window": True,
+                    "gamma_active": 0.0840054905578339,
                     "gamma_assumed": 0.05,
                     "gamma_calibrated": 0.0840054905578339,
                     "gap": "PM-G11",
-                    "l_cell_now_um": 11.014603130717049,
+                    "l_cell_legacy_assumed_um": 11.014603130717049,
+                    "l_cell_now_um": 6.555882870021456,
                     "l_cell_rebaselined_um": 6.555882870021456,
                     "law_rel_dev": 1.3547807935397393e-16,
                     "length_scale": 0.5951991907669095,
                     "never_golden": True,
-                    "note": "按标定 Γ=0.0840：可行窗 [3.559, 9.553] µm，设计点应为 6.556 µm；现值 11.015 µm（按假设 Γ=0.050 出图）**越出窗上界 9.553 µm（+15.3%）** ⇒ 读出饿死，须重标定（PM-G11）",
+                    "note": "🔴 **v0.9.200 重标定批次已闭合 PM-G11**：现役几何改用标定 Γ=0.08401 ⇒ 设计点 L=6.556 µm 落入标定窗 [3.559, 9.553] µm（余量 +31.4%） ⇒ 读出不再饿死。历史假设 Γ=0.050 曾给 L=11.015 µm（越窗上界 +15.3%），两口径并报仍留存作诚实披露。",
                     "scale_ratio": 0.5951991907669095,
-                    "window_now_um": [
+                    "window_legacy_assumed_um": [
                         5.9792114645427,
                         16.049994796891397
+                    ],
+                    "window_now_um": [
+                        3.558821825120043,
+                        9.552943914922869
                     ],
                     "window_rebaselined_um": [
                         3.558821825120043,
@@ -720,7 +727,7 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
                 "lit_value": 5.0,
                 "metric": "cell_length_um",
                 "metric_cn": "GST 相变段长度",
-                "note": "胞长越长插入损耗越高（M0 闭式律 ∝L），但设计点由 M1 可行性判据定，非自由选择。🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 开放 · 并报）**：L ∝ 1/Γ ⇒ 按标定 Γ=0.0840 重标定为 **6.556 µm**（本行现值 11.015 µm 按假设 Γ=0.050 出图；1/Γ 律 rel=1.4e-16）。两口径并报，不选择性披露。",
+                "note": "胞长越长插入损耗越高（M0 闭式律 ∝L），但设计点由 M1 可行性判据定，非自由选择。🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 v0.9.200 已闭合 · 并报）**：现役几何已重标定到标定 Γ=0.08401 ⇒ **L=6.556 µm** 落入标定窗 [3.559, 9.553]µm（余量 +31.4% ⇒ 读出不再饿死）；历史假设 Γ=0.050 曾给 L=11.015 µm（越窗 +15.3%），两口径并报留存。",
                 "ratio": 2.2029206261434098,
                 "verdict": "within_5x"
             },
@@ -773,20 +780,26 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
             },
             {
                 "gamma_sensitivity": {
-                    "design_point_inside_calibrated_window": False,
+                    "design_point_inside_calibrated_window": True,
+                    "gamma_active": 0.0840054905578339,
                     "gamma_assumed": 0.05,
                     "gamma_calibrated": 0.0840054905578339,
                     "gap": "PM-G11",
-                    "l_cell_now_um": 11.014603130717049,
+                    "l_cell_legacy_assumed_um": 11.014603130717049,
+                    "l_cell_now_um": 6.555882870021456,
                     "l_cell_rebaselined_um": 6.555882870021456,
                     "law_rel_dev": 1.3547807935397393e-16,
                     "length_scale": 0.5951991907669095,
                     "never_golden": True,
-                    "note": "按标定 Γ=0.0840：可行窗 [3.559, 9.553] µm，设计点应为 6.556 µm；现值 11.015 µm（按假设 Γ=0.050 出图）**越出窗上界 9.553 µm（+15.3%）** ⇒ 读出饿死，须重标定（PM-G11）",
+                    "note": "🔴 **v0.9.200 重标定批次已闭合 PM-G11**：现役几何改用标定 Γ=0.08401 ⇒ 设计点 L=6.556 µm 落入标定窗 [3.559, 9.553] µm（余量 +31.4%） ⇒ 读出不再饿死。历史假设 Γ=0.050 曾给 L=11.015 µm（越窗上界 +15.3%），两口径并报仍留存作诚实披露。",
                     "scale_ratio": 0.5951991907669095,
-                    "window_now_um": [
+                    "window_legacy_assumed_um": [
                         5.9792114645427,
                         16.049994796891397
+                    ],
+                    "window_now_um": [
+                        3.558821825120043,
+                        9.552943914922869
                     ],
                     "window_rebaselined_um": [
                         3.558821825120043,
@@ -807,7 +820,7 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
                 "lit_value": None,
                 "metric": "areal_density",
                 "metric_cn": "集成密度（bits/mm²）",
-                "note": "文献均为**单胞演示**（Ríos 5 µm / Cheng 2 µm），无同口径阵列密度实测锚⇒ 不比。LDA 侧两口径并报：PIC 版图口径 vs 2.5D 系统口径（EIC 瓶颈）。🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 开放 · 并报）**：pitch = L + gap ⇒ 按标定 Γ=0.0840 重标定 pitch=13.586 µm、PIC 密度 4.749e+04 bits/mm²（本行现值 pitch=18.045 µm / 3.575e+04 bits/mm² 按假设 Γ=0.050 出图）。",
+                "note": "文献均为**单胞演示**（Ríos 5 µm / Cheng 2 µm），无同口径阵列密度实测锚⇒ 不比。LDA 侧两口径并报：PIC 版图口径 vs 2.5D 系统口径（EIC 瓶颈）。🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 v0.9.200 已闭合 · 并报）**：pitch = L + gap ⇒ 现役几何已重标定到标定 Γ=0.08401 ⇒ pitch=13.586 µm、PIC 密度 4.749e+04 bits/mm²（落在标定窗内 ⇒ 读出不再饿死）；历史假设 Γ=0.050 曾给 pitch=18.045 µm / 3.575e+04 bits/mm²。",
                 "verdict": "no_anchor"
             }
         ],
@@ -874,6 +887,15 @@ def _load_m4_report(repo_root: Optional[str] = None) -> Dict[str, Any]:
 def _load_m5_report(repo_root: Optional[str] = None) -> Dict[str, Any]:
     """读 M5 国际对标收官报告 JSON（薄委托 `_load_named_report`）。"""
     return _load_named_report(_M5_REPORT_NAME, repo_root)
+
+
+# 🔴 v0.9.200 起：m5 区块**模块加载即读**预生成报告 JSON（与 m3/m4 同源口径），
+# 不再手抄快照 ⇒ 杜绝「同一份数字手写三处、只锁一处」的漂移；仅当报告 JSON 真正缺失
+# （部署异常）才回落下方内置快照（`STATIC_SNAPSHOT["m5"]` 原稿）。
+_M5_LOADED = _load_named_report(_M5_REPORT_NAME)
+if _M5_LOADED:
+    _M5_LOADED.pop("_source", None)  # 载入器注入的溯源键不入快照（报告原文无此键 ⇒ 否则 C2 恒差）
+    STATIC_SNAPSHOT["m5"] = _M5_LOADED
 
 
 def _manifest(repo_root: Optional[str] = None) -> Dict[str, Any]:
@@ -1087,7 +1109,7 @@ def run_selfchecks(verbose: bool = False) -> bool:
     chk("⑤ 独立解码口径：层 5 == 单元数 且 层 6 == 6 × 单元数",
         l5 == 8 and l6 == 48)
 
-    # ⑥ 缺口如实开放（不粉饰）：7 条缺口 · 含 endurance 不可判与「无 PDK」
+    # ⑥ 缺口逐条登记（含开放与已闭合）：7 条缺口 · 含 endurance 不可判与「无 PDK」
     chk("⑥ 缺口逐条登记（7 条）· 含「endurance 不可判」与「无 PDK」",
         card["gaps_total"] == 7
         and any("endurance" in g["title"] for g in card["gaps"])
@@ -1147,13 +1169,13 @@ def run_selfchecks(verbose: bool = False) -> bool:
     m5 = card.get("m5") or {}
     _rows = {r.get("metric"): r for r in (m5.get("rows") or [])}
     _gids = {g.get("id"): g.get("closed") for g in (m5.get("gaps_final") or [])}
-    chk("⑬ M5 对拍块齐备：7 行 ∧ endurance=not_modeled ∧ G7/G2 闭合 ∧ G10/G11 开放",
+    chk("⑬ M5 对拍块齐备：7 行 ∧ endurance=not_modeled ∧ G7/G2 闭合 ∧ G10 开放/G11 闭合",
         len(_rows) == 7
         and _rows.get("endurance", {}).get("verdict") == "not_modeled"
         and _rows.get("drift_index_nu", {}).get("verdict") == "derived_from_same_source"
         and _gids.get("PM-G7") is True and _gids.get("PM-G2") is True
-        and _gids.get("PM-G10") is False and _gids.get("PM-G11") is False
-        and m5.get("gaps_closed") == 7 and m5.get("gaps_total") == 9
+        and _gids.get("PM-G10") is False and _gids.get("PM-G11") is True
+        and m5.get("gaps_closed") == 8 and m5.get("gaps_total") == 9
         and m5.get("data_source"))
 
     # ⑭ 🔴 Γ 口径两口径并报（PM-G2 结算 ⇒ PM-G11）：胞长/密度两行必须带
@@ -1162,7 +1184,7 @@ def run_selfchecks(verbose: bool = False) -> bool:
            for k in ("cell_length_um", "areal_density")}
     chk("⑭ Γ 口径并报（PM-G2 ⇒ PM-G11）：两行带 gamma_sensitivity ∧ 越窗为真 ∧ 注记含并报",
         all(isinstance(v, dict) for v in _gs.values())
-        and all(v["design_point_inside_calibrated_window"] is False for v in _gs.values())
+        and all(v["design_point_inside_calibrated_window"] is True for v in _gs.values())
         and all(("并报" in _rows[k]["note"] and "PM-G11" in _rows[k]["note"]) for k in _gs)
         and any(g["id"] == "PM-G11" for g in card["gaps"]))
 

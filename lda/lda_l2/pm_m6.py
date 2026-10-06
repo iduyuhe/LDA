@@ -50,7 +50,8 @@ from lda_l2 import pm_matlib as ML
 # ---------------------------------------------------------------------------
 # 0. 假设参数（🔴 全部标注 provenance）
 # ---------------------------------------------------------------------------
-GAMMA_DEFAULT: float = 0.05             # 沿用 M0/M1 保守假设（Γ 已有标定 pm_gamma≈0.084）——材料级判据里约掉
+GAMMA_DEFAULT: float = 0.0840054905578339  # 🔴 标定 Γ（v0.9.200 重标定批次）= `pm_gamma.gamma_main`；
+                                            #   相位域判据里 Γ 与 L 约掉 ⇒ 本值不影响 FOM/IL_π，仅统一现役口径。
 WL_NM_DEFAULT: float = 1550.0
 E_READ_FJ_ASSUMED: float = 9.0          # 与 M0/M1 同源（shot-noise 简化用）
 BER_TARGET: float = 1.0e-12

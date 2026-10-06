@@ -177,16 +177,16 @@ def main() -> int:
     from lda_l2 import pm_gamma as PG
     imp = PG.gamma_impact_on_design()
     gs_rows = {m: by[m].get("gamma_sensitivity") for m in ("cell_length_um", "areal_density")}
-    check("B11 🔴 Γ 口径敏感（PM-G2 标定 ⇒ PM-G11）：胞长/密度两行带 gamma_sensitivity ∧ "
-          "越窗判定 ∧ 两行 note 均含「并报」+ PM-G11",
+    check("B11 🔴 Γ 口径敏感（PM-G2 标定 ⇒ PM-G11 v0.9.200 已闭合）：胞长/密度两行带 gamma_sensitivity ∧ "
+          "落窗判定（G11 闭合）∧ 两行 note 均含「并报」+「PM-G11」+「闭合」",
           all(isinstance(v, dict) for v in gs_rows.values())
-          and all(v["design_point_inside_calibrated_window"] is False for v in gs_rows.values())
-          and all(("并报" in by[m]["note"] and "PM-G11" in by[m]["note"])
+          and all(v["design_point_inside_calibrated_window"] is True for v in gs_rows.values())
+          and all(("并报" in by[m]["note"] and "PM-G11" in by[m]["note"] and "闭合" in by[m]["note"])
                   for m in gs_rows)
           and abs(gs_rows["cell_length_um"]["law_rel_dev"] - imp["law_rel_dev"]) < 1e-15,
-          "L_cal=%.4f µm · 越窗 +%.1f%%"
-          % (gs_rows["cell_length_um"]["l_cell_rebaselined_um"],
-             100 * imp["design_point_outside_frac"]))
+          "L_now=%.4f µm · law_rel=%.1e"
+          % (gs_rows["cell_length_um"]["l_cell_now_um"],
+             gs_rows["cell_length_um"]["law_rel_dev"]))
 
     # ── C1 快照一致性（路径锚定仓库根 · 与 cwd 无关）────────────────────
     path = _report_path()

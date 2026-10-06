@@ -432,9 +432,10 @@ def gamma_impact_on_design(wl_nm: float = WL_NM_DEFAULT, mat: str = "GST",
     设计点 `L_mid = ½(L_swing + min(L_starve, 3·L_swing))` 亦 ∝ 1/Γ（离散公式只搬运，不改幂次）
     ⇒ **L_mid(Γ_cal) = L_mid(Γ_assumed) · Γ_assumed / Γ_cal**（精确等式，可核到机器精度）。
 
-    🔴 本函数把「Γ 标定」与「全链版图数字」之间的断口**算出来并披露**：按**标定** Γ，原设计点
-    （按假设 0.05 出图）会**越出可行窗上界**（读出会饿死）⇒ 现有 M0–M6 的**绝对**长度/版图数字
-    须重标定（登记为缺口 **PM-G11**，两口径**并报**，不选择性披露）。
+    🔴 本函数把「Γ 标定」与「全链版图数字」之间的断口**算出来并披露**：历史假设 Γ=0.05 出的设计点
+    （11.015µm）会**越出标定窗上界**（读出饿死）⇒ 登记为缺口 **PM-G11**。**v0.9.200 重标定批次已
+    把现役几何改用标定 Γ**（设计点 6.556µm 落入窗内 ⇒ **G11 闭合**）；本函数仍并报历史假设口径，
+    两口径**并报**，不选择性披露。
 
     ⚠️ 与「Γ-无关量」的分野：每 π 损耗 `IL_π`、M1 可行性判据 `r = k_a/(k_c−k_a)`、
     相位域 FOM `Δn/(8.6859k)` **不含 Γ**（Γ 与 L 同时约掉）⇒ 这些结论**不受本断口影响**
@@ -442,8 +443,13 @@ def gamma_impact_on_design(wl_nm: float = WL_NM_DEFAULT, mat: str = "GST",
     """
     from lda_l2 import pm_m0 as M0
     from lda_l2 import pm_m1 as M1
-    g_assumed = float(M0.GAMMA_DEFAULT)
+    # 🔴 三档 Γ 各自独立含义（避免「假设 == 现役」同义反复）：
+    #   g_legacy = 历史**假设**值（固定事实 0.05，仅披露用，不进判决）
+    #   g_cal    = 自研场求解标定值 `gamma_main`（主账）
+    #   g_active = **现役几何**口径（= M0.GAMMA_DEFAULT；v0.9.200 重标定后 == 标定值）
+    g_legacy = float(M0.GAMMA_ASSUMED_LEGACY)
     g_cal = float(gamma_calibration_status(wl_nm)["gamma_main"])
+    g_active = float(M0.GAMMA_DEFAULT)
 
     def _probe(g: float) -> Dict[str, Any]:
         rep = M1.m1_report(mat, n_levels, gamma=g, wl_nm=wl_nm)
@@ -457,20 +463,25 @@ def gamma_impact_on_design(wl_nm: float = WL_NM_DEFAULT, mat: str = "GST",
                 "l_swing_um": f["l_swing_um"], "l_starve_um": f["l_starve_um"],
                 "l_mid_um": dd.get("l_mid_um"), "feasible": bool(f["feasible"])}
 
-    a = _probe(g_assumed)
-    b = _probe(g_cal)
-    ratio = g_assumed / g_cal
+    a = _probe(g_legacy)        # 历史假设口径：设计点 11.015µm（越窗，历史缺口）
+    b = _probe(g_cal)           # 自研标定语义：设计点 6.556µm（窗内）
+    p = _probe(g_active)        # 现役几何口径：重标定后 == b
+    ratio = g_legacy / g_cal    # 1/Γ 缩放比（历史假设 vs 标定）
     l_pred = (a["l_mid_um"] * ratio) if a["l_mid_um"] else None
     law_rel = (abs(l_pred - b["l_mid_um"]) / b["l_mid_um"]) if (l_pred and b["l_mid_um"]) else None
     win = b["window_um"]
-    design_pt = a["l_mid_um"]                      # **现役**设计点（按假设 Γ 出图那一个）
+    # 🔴 **现役**设计点：重标定后落在窗内 ⇒ 缺口闭合（_ev_g11 据此翻绿）
+    design_pt = p["l_mid_um"]
     inside = bool(win and design_pt and win[0] <= design_pt <= win[1])
     outside_by = (design_pt - win[1]) if (win and design_pt and design_pt > win[1]) else 0.0
     return {
         "material": mat, "n_levels": int(n_levels), "wl_nm": float(wl_nm),
-        "gamma_assumed": g_assumed, "gamma_calibrated": g_cal, "scale_ratio": ratio,
-        "assumed": a, "calibrated": b,
+        "gamma_assumed": g_legacy, "gamma_active": g_active, "gamma_calibrated": g_cal,
+        "scale_ratio": ratio,
+        "assumed": a, "active": p, "calibrated": b,
         "l_mid_predicted_by_law_um": l_pred, "law_rel_dev": law_rel,
+        "design_point_um": design_pt,
+        "design_point_legacy_assumed_um": a["l_mid_um"],
         "design_point_inside_calibrated_window": inside,
         "design_point_outside_by_um": outside_by,
         "design_point_outside_frac": (outside_by / win[1]) if (win and win[1]) else None,
@@ -478,11 +489,14 @@ def gamma_impact_on_design(wl_nm: float = WL_NM_DEFAULT, mat: str = "GST",
         "gap": "PM-G11",
         "disclosure": {
             "rule": "L ∝ 1/Γ（可行窗两端同阶）⇒ 绝对长度结论随 Γ 反比缩放",
-            "headline": ("按标定 Γ=%.4f：可行窗 [%.3f, %.3f] µm，设计点应为 %.3f µm；"
-                         "现值 %.3f µm（按假设 Γ=%.3f 出图）**越出窗上界 %.3f µm（+%.1f%%）**"
-                         " ⇒ 读出饿死，须重标定（PM-G11）"
-                         % (g_cal, win[0], win[1], b["l_mid_um"], design_pt, g_assumed,
-                            win[1], 100.0 * (outside_by / win[1] if win and win[1] else 0.0))),
+            "headline": ("🔴 **v0.9.200 重标定批次已闭合 PM-G11**：现役几何改用标定 Γ=%.5f"
+                         " ⇒ 设计点 L=%.3f µm 落入标定窗 [%.3f, %.3f] µm（余量 +%.1f%%）"
+                         " ⇒ 读出不再饿死。历史假设 Γ=%.3f 曾给 L=%.3f µm（越窗上界 +%.1f%%），"
+                         "两口径并报仍留存作诚实披露。"
+                         % (g_active, design_pt, win[0], win[1],
+                            100.0 * (win[1] - design_pt) / win[1] if (win and win[1]) else 0.0,
+                            g_legacy, a["l_mid_um"],
+                            100.0 * (a["l_mid_um"] - win[1]) / win[1] if (a["l_mid_um"] and win and win[1]) else 0.0)),
             "gamma_invariant": ["IL_π（每 π 损耗）", "M1 可行性判据 r=k_a/(k_c−k_a)",
                                 "相位域 FOM=Δn/(8.6859k)"],
             "gamma_invariant_note": "Γ 与 L 同时约掉 ⇒ 上述结论**不受**本断口影响"

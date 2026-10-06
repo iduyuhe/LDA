@@ -4,7 +4,7 @@
     "no_fabricated_efficiency_claims": true,
     "no_fabrication_of_measurability": true
   },
-  "gaps_closed": 7,
+  "gaps_closed": 8,
   "gaps_final": [
     {
       "closed": true,
@@ -47,9 +47,9 @@
       "title": "写读耐久（endurance）模型与锚 —— M5 对拍表判定「不可判」（开放）"
     },
     {
-      "closed": false,
+      "closed": true,
       "id": "PM-G11",
-      "title": "Γ 标定后的全链设计点/版图重标定（v0.9.198 新登记 · 开放：L ∝ 1/Γ ⇒ 按假设 Γ=0.05 出的设计点越出标定口径可行窗上界）"
+      "title": "Γ 标定后的全链设计点/版图重标定（v0.9.200 重标定批次**闭合**：现役几何改用标定 Γ=0.084 ⇒ 设计点 L=6.556µm 落入标定窗 [3.559,9.553]µm）"
     }
   ],
   "gaps_total": 9,
@@ -77,9 +77,9 @@
       "cross_domain": true,
       "lda_source": "pm_m4.write_driver（M4 行为级 · 电辅助焦耳热）",
       "lda_value": {
-        "e_hi_j": 2.966062382119907e-09,
-        "e_lo_j": 5.932124764239814e-10,
-        "mid_j": 1.7796374292719442e-09
+        "e_hi_j": 4.983310508702403e-09,
+        "e_lo_j": 9.966621017404806e-10,
+        "mid_j": 2.9899863052214415e-09
       },
       "lit_sources": [
         "Ríos, Stegmaier, Hosseini, Wright, Bhaskaran & Pernice, 《Integrated all-photonic non-volatile multi-level memory》, Nat. Photon. 9, 725–732 (2015) · doi:10.1038/nphoton.2015.182"
@@ -91,25 +91,31 @@
       "metric": "write_pulse_energy_j",
       "metric_cn": "单次写脉冲能量",
       "note": "🔴 口径差：LDA = **电辅助**焦耳热（3.3 V × 加热线，行为级）；文献 = **光脉冲**写入（波导近场）。能量不可直接比优劣，只判量级；文献另报最低切换 13.4 pJ（二元优化点，非多电平工作点），不并入比值。",
-      "ratio": 3.3897855795656078,
-      "verdict": "within_5x"
+      "ratio": 5.695212009945602,
+      "verdict": "outside_band"
     },
     {
       "gamma_sensitivity": {
-        "design_point_inside_calibrated_window": false,
+        "design_point_inside_calibrated_window": true,
+        "gamma_active": 0.0840054905578339,
         "gamma_assumed": 0.05,
         "gamma_calibrated": 0.0840054905578339,
         "gap": "PM-G11",
-        "l_cell_now_um": 11.014603130717049,
+        "l_cell_legacy_assumed_um": 11.014603130717049,
+        "l_cell_now_um": 6.555882870021456,
         "l_cell_rebaselined_um": 6.555882870021456,
         "law_rel_dev": 1.3547807935397393e-16,
         "length_scale": 0.5951991907669095,
         "never_golden": true,
-        "note": "按标定 Γ=0.0840：可行窗 [3.559, 9.553] µm，设计点应为 6.556 µm；现值 11.015 µm（按假设 Γ=0.050 出图）**越出窗上界 9.553 µm（+15.3%）** ⇒ 读出饿死，须重标定（PM-G11）",
+        "note": "🔴 **v0.9.200 重标定批次已闭合 PM-G11**：现役几何改用标定 Γ=0.08401 ⇒ 设计点 L=6.556 µm 落入标定窗 [3.559, 9.553] µm（余量 +31.4%） ⇒ 读出不再饿死。历史假设 Γ=0.050 曾给 L=11.015 µm（越窗上界 +15.3%），两口径并报仍留存作诚实披露。",
         "scale_ratio": 0.5951991907669095,
-        "window_now_um": [
+        "window_legacy_assumed_um": [
           5.9792114645427,
           16.049994796891397
+        ],
+        "window_now_um": [
+          3.558821825120043,
+          9.552943914922869
         ],
         "window_rebaselined_um": [
           3.558821825120043,
@@ -117,23 +123,23 @@
         ]
       },
       "lda_source": "pm_m3.cell_length_um（M1 设计 L）",
-      "lda_value": 11.014603130717049,
+      "lda_value": 6.555882870021456,
       "lit_sources": [
         "Ríos, Stegmaier, Hosseini, Wright, Bhaskaran & Pernice, 《Integrated all-photonic non-volatile multi-level memory》, Nat. Photon. 9, 725–732 (2015) · doi:10.1038/nphoton.2015.182"
       ],
       "lit_value": 5.0,
       "metric": "cell_length_um",
       "metric_cn": "GST 相变段长度",
-      "note": "胞长越长插入损耗越高（M0 闭式律 ∝L），但设计点由 M1 可行性判据定，非自由选择。🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 开放 · 并报）**：L ∝ 1/Γ ⇒ 按标定 Γ=0.0840 重标定为 **6.556 µm**（本行现值 11.015 µm 按假设 Γ=0.050 出图；1/Γ 律 rel=1.4e-16）。两口径并报，不选择性披露。",
-      "ratio": 2.2029206261434098,
-      "verdict": "within_5x"
+      "note": "胞长越长插入损耗越高（M0 闭式律 ∝L），但设计点由 M1 可行性判据定，非自由选择。🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 v0.9.200 已闭合 · 并报）**：现役几何已重标定到标定 Γ=0.08401 ⇒ **L=6.556 µm** 落入标定窗 [3.559, 9.553]µm（余量 +31.4% ⇒ 读出不再饿死）；历史假设 Γ=0.050 曾给 L=11.015 µm（越窗 +15.3%），两口径并报留存。",
+      "ratio": 1.3111765740042913,
+      "verdict": "same_order"
     },
     {
       "lda_source": "pm_m0.contrast_vs_length（M0 闭式律 · Γ 抵消）",
       "lda_value": {
         "at_l_um": 5.0,
-        "contrast_max_db": 12.235375044130057,
-        "contrast_min_db": 0.7041942471441752
+        "contrast_max_db": 20.556773654824482,
+        "contrast_min_db": 1.183123663587021
       },
       "lit_note": "21% 透射变化 ⇒ 10·log10(1/0.79) = 1.024 dB（换算可见）",
       "lit_sources": [
@@ -143,7 +149,7 @@
       "metric": "readout_contrast_db",
       "metric_cn": "二元读出对比度",
       "note": "取 LDA **最小**对比度（k 源展布保守侧）与文献单值比。",
-      "ratio": 0.6878716801356498,
+      "ratio": 1.1556999586127352,
       "verdict": "same_order"
     },
     {
@@ -177,20 +183,26 @@
     },
     {
       "gamma_sensitivity": {
-        "design_point_inside_calibrated_window": false,
+        "design_point_inside_calibrated_window": true,
+        "gamma_active": 0.0840054905578339,
         "gamma_assumed": 0.05,
         "gamma_calibrated": 0.0840054905578339,
         "gap": "PM-G11",
-        "l_cell_now_um": 11.014603130717049,
+        "l_cell_legacy_assumed_um": 11.014603130717049,
+        "l_cell_now_um": 6.555882870021456,
         "l_cell_rebaselined_um": 6.555882870021456,
         "law_rel_dev": 1.3547807935397393e-16,
         "length_scale": 0.5951991907669095,
         "never_golden": true,
-        "note": "按标定 Γ=0.0840：可行窗 [3.559, 9.553] µm，设计点应为 6.556 µm；现值 11.015 µm（按假设 Γ=0.050 出图）**越出窗上界 9.553 µm（+15.3%）** ⇒ 读出饿死，须重标定（PM-G11）",
+        "note": "🔴 **v0.9.200 重标定批次已闭合 PM-G11**：现役几何改用标定 Γ=0.08401 ⇒ 设计点 L=6.556 µm 落入标定窗 [3.559, 9.553] µm（余量 +31.4%） ⇒ 读出不再饿死。历史假设 Γ=0.050 曾给 L=11.015 µm（越窗上界 +15.3%），两口径并报仍留存作诚实披露。",
         "scale_ratio": 0.5951991907669095,
-        "window_now_um": [
+        "window_legacy_assumed_um": [
           5.9792114645427,
           16.049994796891397
+        ],
+        "window_now_um": [
+          3.558821825120043,
+          9.552943914922869
         ],
         "window_rebaselined_um": [
           3.558821825120043,
@@ -201,17 +213,17 @@
       "lda_value": {
         "bits_per_cell": 4.0,
         "die_h_um": 6.2,
-        "pic_side": 35752.86267622216,
-        "pic_side_rebaselined": 47486.14996030731,
-        "pitch_rebaselined_um": 13.586304445861742,
-        "pitch_um": 18.045024706557335,
+        "pic_side": 47486.14996030731,
+        "pic_side_legacy_assumed": 35752.86267622216,
+        "pitch_legacy_assumed_um": 18.045024706557335,
+        "pitch_um": 13.586304445861742,
         "system_side_eic_bottleneck": 12903.22580645161
       },
       "lit_sources": [],
       "lit_value": null,
       "metric": "areal_density",
       "metric_cn": "集成密度（bits/mm²）",
-      "note": "文献均为**单胞演示**（Ríos 5 µm / Cheng 2 µm），无同口径阵列密度实测锚⇒ 不比。LDA 侧两口径并报：PIC 版图口径 vs 2.5D 系统口径（EIC 瓶颈）。🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 开放 · 并报）**：pitch = L + gap ⇒ 按标定 Γ=0.0840 重标定 pitch=13.586 µm、PIC 密度 4.749e+04 bits/mm²（本行现值 pitch=18.045 µm / 3.575e+04 bits/mm² 按假设 Γ=0.050 出图）。",
+      "note": "文献均为**单胞演示**（Ríos 5 µm / Cheng 2 µm），无同口径阵列密度实测锚⇒ 不比。LDA 侧两口径并报：PIC 版图口径 vs 2.5D 系统口径（EIC 瓶颈）。🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 v0.9.200 已闭合 · 并报）**：pitch = L + gap ⇒ 现役几何已重标定到标定 Γ=0.08401 ⇒ pitch=13.586 µm、PIC 密度 4.749e+04 bits/mm²（落在标定窗内 ⇒ 读出不再饿死）；历史假设 Γ=0.050 曾给 pitch=18.045 µm / 3.575e+04 bits/mm²。",
       "verdict": "no_anchor"
     }
   ],
@@ -220,7 +232,7 @@
     "derived_from_same_source": 1,
     "no_anchor": 1,
     "not_modeled": 1,
-    "same_order": 2,
-    "within_5x": 2
+    "outside_band": 1,
+    "same_order": 3
   }
 }

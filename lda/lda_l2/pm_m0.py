@@ -46,10 +46,15 @@ from lda_l2 import pm_matlib as ML
 # ---------------------------------------------------------------------------
 # 0. 假设参数（🔴 全部标注 provenance，绝不伪装成实测）
 # ---------------------------------------------------------------------------
-GAMMA_DEFAULT: float = 0.05          # 🔴 **假设**值（v0.9.198 起 Γ 已有自研标定 `pm_gamma` ≈ 0.084；
-                                     #    L ∝ 1/Γ ⇒ 本值偏小 ⇒ 报出的长度/面积**偏大**（对面积保守）；
-                                     #    🔴 但按本假设出的设计点会**越出标定口径的可行窗上界**
-                                     #    ⇒ 缺口 PM-G11（须重标定，两口径并报）。
+#: 🔴 标定 Γ（v0.9.200 起现役几何口径）：= `pm_gamma.gamma_calibration().gamma_main`
+#: （半矢量场法 · 全矢量独立离散互证 · v0.9.198 结算）= 0.0840054905578339。
+#: 前代 `0.05` 为**保守假设**（v0.9.198 前），L ∝ 1/Γ ⇒ 该假设偏小使设计点偏长且越出
+#: 标定窗上界（PM-G11 开放）；v0.9.200 重标定批次已把它退役、现役几何改用标定 Γ，
+#: 设计点 L_mid≈6.556µm 落入标定窗 [3.559,9.553]µm ⇒ **PM-G11 闭合**（两口径并报仍留存）。
+GAMMA_DEFAULT: float = 0.0840054905578339
+#: 历史假设值（**固定事实**，非计算判据）：v0.9.198 前 M0–M6 全部几何用此 Γ；
+#: 仅用于缺口披露「假设 vs 标定」双口径对照，不进任何判决路径。
+GAMMA_ASSUMED_LEGACY: float = 0.05
 GAMMA_SCAN: Tuple[float, ...] = (0.01, 0.02, 0.05, 0.1, 0.2)
 WL_NM_DEFAULT: float = 1550.0
 T0_K_DEFAULT: float = 300.0
@@ -76,9 +81,9 @@ GAP_SPECS: Tuple[Dict[str, Any], ...] = (
      "evidence": "_ev_g7", "declared_closed": True},
     {"id": "PM-G10", "title": "写读耐久（endurance）模型与锚 —— M5 对拍表判定「不可判」（开放）",
      "evidence": "_ev_g10", "declared_closed": False},
-    {"id": "PM-G11", "title": "Γ 标定后的全链设计点/版图重标定（v0.9.198 新登记 · 开放："
-                              "L ∝ 1/Γ ⇒ 按假设 Γ=0.05 出的设计点越出标定口径可行窗上界）",
-     "evidence": "_ev_g11", "declared_closed": False},
+    {"id": "PM-G11", "title": "Γ 标定后的全链设计点/版图重标定（v0.9.200 重标定批次**闭合**："
+                             "现役几何改用标定 Γ=0.084 ⇒ 设计点 L=6.556µm 落入标定窗 [3.559,9.553]µm）",
+     "evidence": "_ev_g11", "declared_closed": True},
 )
 
 
@@ -361,21 +366,24 @@ def _ev_g10() -> Tuple[bool, str]:
 
 
 def _ev_g11() -> Tuple[bool, str]:
-    """PM-G11（v0.9.198 新登记）：Γ 标定后的全链设计点/版图重标定 —— **开放**。
+    """PM-G11（v0.9.198 新登记，v0.9.200 重标定批次**闭合**）：Γ 标定后的全链设计点/版图重标定。
 
-    开放口径 = 「存在**现役**设计点落在标定 Γ 口径的可行窗**之外**」⇒ 必须先重标定才能闭：
+    闭合口径 = 「**现役几何设计点**落在标定 Γ 口径的可行窗**之内**」：
     证据读 `pm_gamma.gamma_impact_on_design()` **现算**（1/Γ 缩放律 + 越窗判定），
-    🔴 一旦有人把现役设计点改到标定窗内（或改回自洽口径），本证据自动翻绿 ⇒ 缺口闭合。
+    🔴 现役几何口径（g_active）== 标定值 ⇒ 设计点 L=6.556µm ∈ [3.559,9.553]µm ⇒ 自动翻绿 ⇒ 缺口闭合。
+    历史假设 Γ=0.05 仍并报作诚实披露（不选择性抹除）。
     """
     from lda_l2 import pm_gamma as PG
     d = PG.gamma_impact_on_design()
     ok = bool(d["design_point_inside_calibrated_window"])
-    return ok, ("现役设计点 L=%.4f µm（假设 Γ=%.4f）vs 标定 Γ=%.4f 的可行窗 [%.4f, %.4f] µm "
-                "⇒ %s；重标定值 L=%.4f µm（1/Γ 律 rel=%.1e）"
-                % (d["assumed"]["l_mid_um"], d["gamma_assumed"], d["gamma_calibrated"],
-                   d["calibrated"]["window_um"][0], d["calibrated"]["window_um"][1],
-                   ("窗内 ⇒ 闭合" if ok else "越窗上界 %.4f µm（+%.1f%%）⇒ 开放"
-                    % (d["design_point_outside_by_um"], 100.0 * d["design_point_outside_frac"])),
+    win = d["calibrated"]["window_um"]
+    return ok, ("v0.9.200 重标定批次：**现役几何设计点 L=%.4f µm（标定 Γ=%.5f）** vs 自研标定窗 "
+                "[%.4f, %.4f] µm ⇒ %s。历史假设 Γ=%.4f 曾给 L=%.4f µm（越窗上界 +%.1f%% ⇒ 读出饿死，"
+                "两口径并报留存）；1/Γ 律预测重标定 L=%.4f µm（rel=%.1e）"
+                % (d["design_point_um"], d["gamma_active"], win[0], win[1],
+                   ("窗内 ⇒ **PM-G11 闭合**" if ok else "越窗 ⇒ 开放"),
+                   d["gamma_assumed"], d["design_point_legacy_assumed_um"],
+                   100.0 * (d["design_point_legacy_assumed_um"] - win[1]) / win[1],
                    d["calibrated"]["l_mid_um"], d["law_rel_dev"]))
 
 
@@ -434,9 +442,9 @@ def cell_report(mat: str = "GST", *, l_um: float = 200.0, gamma: float = GAMMA_D
             "contrast_vs_length": contrast_vs_length(mat, gamma=gamma, wl_nm=wl_nm),
             "per_pi_law": inv,
             "gamma_sensitivity": sens,
-            "gamma_provenance": ("assumption（v0.9.198 起已有自研标定 pm_gamma≈0.084；"
-                                 "L ∝ 1/Γ ⇒ 本值偏小 ⇒ 长度/面积偏大（对面积保守），"
-                                 "但可行窗同步缩小 ⇒ 设计点越窗 = PM-G11 开放）"),
+        "gamma_provenance": ("calibrated（v0.9.200 重标定批次起现役几何口径 = pm_gamma.gamma_main≈0.084；"
+                             "前代假设 0.05 已退役：L ∝ 1/Γ ⇒ 假设偏小使长度/面积偏大（对面积保守），"
+                             "但可行窗同步缩小 ⇒ 按假设出的设计点越窗 = PM-G11；v0.9.200 已重标定 ⇒ 闭合）"),
         },
         "device_anchor_residue": ML.device_anchor_residue("Sb2Se3"),
         "gaps": gap_ledger(),

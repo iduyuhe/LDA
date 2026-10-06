@@ -6243,11 +6243,8 @@ function renderPm(d){
       +'而 <b>IL<sub>π</sub> / M1 可行性判据 r / 相位域 FOM 与 Γ 无关</b>（Γ、L 同时约掉）⇒ '
       +'材料定能力的主结论不受影响（门禁以两档 Γ 现算互等证明，rel ~2e−16）。</div>';
   }
-  h+='<div class="note"><b>verdict 计数</b>：same_order ×'+(M5VC.same_order||0)
-    +' · within_5x ×'+(M5VC.within_5x||0)
-    +' · derived_from_same_source ×'+(M5VC.derived_from_same_source||0)
-    +' · not_modeled ×'+(M5VC.not_modeled||0)
-    +' · no_anchor ×'+(M5VC.no_anchor||0)+'</div>';
+  var _vcParts=Object.keys(M5VC).map(function(_vcK){ return (_vTag[_vcK]||_vcK)+' ×'+M5VC[_vcK]; });
+  h+='<div class="note"><b>verdict 计数</b>：'+_vcParts.join(' · ')+'</div>';
   var _gapRow=function(g){ return [ g.id, g.closed?'<b>已闭合</b>':'<b>开放</b>', g.title ]; };
   h+='<div class="note"><b>缺口台账终态</b>（'+(M5.gaps_closed!=null?M5.gaps_closed:'-')+'/' +(M5.gaps_total!=null?M5.gaps_total:'-')+' 闭合 · closed ⇔ evidence_ok 恒等保持）：</div>';
   h+=_qcTbl(['缺口','状态','说明'], M5GF.map(_gapRow));
@@ -6326,7 +6323,7 @@ function renderPm(d){
     +'旧口径（瓶颈=drift、保持 1.7 秒）<b>并报可查不删除</b>。'
     +'<br/>M5 国际对标收官：逐条对拍 <b>7 行</b>（LDA 值全部模块现算 · 文献值全部 '
     +'DOI 级器件实测 · 三带规则判 verdict）—— <b>same_order ×'+((M5VC.same_order||0)
-    +(M5VC.within_5x||0))+'</b> 行量级内 · drift 行为<b>自洽检查</b>非独立对标 · '
+    +(M5VC['within_5x']||0))+'</b> 行量级内 · drift 行为<b>自洽检查</b>非独立对标 · '
     +'🔴 endurance <b>不可判</b>（PM-G10）· 密度无同口径锚（不比）。'
     +'缺口台账终态 <b>'+M5.gaps_closed+'/'+M5.gaps_total+'</b> 闭合 —— '
     +'<b>收官口径：知道自己每一项站在哪，不是「全面领先」</b>。'

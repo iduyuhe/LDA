@@ -8,7 +8,7 @@
   ],
   "eic_pitch_um": 50.0,
   "gds_bytes_len": 4852,
-  "gds_sha256": "4191e8b8255e98078add7886c35b982e7b5bb8bc6c2880db618b84fa12955bdf",
+  "gds_sha256": "ce5b0d58e70ec97a3d24842d8738e4399e06d2f1f5e6b631e3b1a059e3f09a1c",
   "interposer_um": [
    408.0,
    24.4
@@ -24,10 +24,10 @@
   "lvs_verdict": "ACCEPT",
   "n_channels": 8,
   "pic_die_um": [
-   197.33,
+   161.66,
    6.2
   ],
-  "pic_pitch_um": 18.045024706557335
+  "pic_pitch_um": 13.586304445861742
  },
  "disclosure": {
   "drift_segment_is_cross_domain_proxy": false,
@@ -48,7 +48,7 @@
  "gds_artifact": {
   "bytes": 4852,
   "path": "lda_pm_m4_2p5d.gds",
-  "sha256": "4191e8b8255e98078add7886c35b982e7b5bb8bc6c2880db618b84fa12955bdf"
+  "sha256": "ce5b0d58e70ec97a3d24842d8738e4399e06d2f1f5e6b631e3b1a059e3f09a1c"
  },
  "generated_by": "examples/photo_memory/build_pm_m4.py",
  "material": "GST",
@@ -68,7 +68,7 @@
   "shot_dominant": true,
   "source": "ACS Photonics 2025 / arXiv 2512.23559（椭偏 · Cody-Lorentz 拟合 · 30nm 膜）",
   "worst_ber": 0.0,
-  "worst_snr": 32382.63468487792,
+  "worst_snr": 32382.634684877936,
   "z_mag_ohm": 19999.999368345347
  },
  "rf_tradeoff": {
@@ -76,7 +76,7 @@
   "n_points": 24,
   "optimal_r_f_ohm": 79577471.54594769,
   "optimal_worst_ber": 0.0,
-  "optimal_worst_snr": 37021.25838766379,
+  "optimal_worst_snr": 37021.25838766381,
   "r_f_max_ohm": 79577471.54594769,
   "snr_monotone_nondecreasing": true
  },
@@ -128,7 +128,7 @@
   },
   "eps": {
    "drift": 0.00656174487022021,
-   "read": 3.0880748578094574e-05,
+   "read": 3.088074857809456e-05,
    "write": 0.029411764705882353
   },
   "eps_total": 0.030134852786709958,
@@ -136,7 +136,7 @@
   "max_t_hold_s_for_target": 8.94705095222357e+73,
   "share": {
    "drift": 0.217746040329557,
-   "read": 0.0010247519308179123,
+   "read": 0.0010247519308179119,
    "write": 0.9760049240676397
   },
   "snr_total": 16.592083709149875,
@@ -181,24 +181,24 @@
  },
  "upstream": {
   "levels": {
-   "l_um": 11.014603130717049,
+   "l_um": 6.555882870021456,
    "n_levels": 16,
    "source": "ACS Photonics 2025 / arXiv 2512.23559（椭偏 · Cody-Lorentz 拟合 · 30nm 膜）",
    "spacing_frac": 0.06570779838443097
   },
-  "pic_pitch_um": 18.045024706557335
+  "pic_pitch_um": 13.586304445861742
  },
  "write_driver": {
   "driver_bits": 8,
-  "e_hi_j": 2.966062382119907e-09,
-  "e_lo_j": 5.932124764239814e-10,
+  "e_hi_j": 4.983310508702403e-09,
+  "e_lo_j": 9.966621017404806e-10,
   "eps_write": 0.029411764705882353,
-  "p_hi_w": 0.05932124764239814,
-  "p_lo_w": 0.011864249528479628,
+  "p_hi_w": 0.09966621017404806,
+  "p_lo_w": 0.019933242034809614,
   "pulse_dynamic_range_ok": true,
   "pulse_ladder_ratio": 4.6748631345508755,
-  "r_hi_ohm": 917.8835942264208,
-  "r_lo_ohm": 183.57671884528415,
+  "r_hi_ohm": 546.323572501788,
+  "r_lo_ohm": 109.26471450035761,
   "t_pulse_s": 5e-08,
   "v_drv": 3.3
  }

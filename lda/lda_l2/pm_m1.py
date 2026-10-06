@@ -27,9 +27,8 @@ from typing import Any, Dict, List, Tuple
 from lda_l2 import pm_matlib as ML
 
 KB_EV: float = 8.617333262e-5          # 玻尔兹曼常数 eV/K（CODATA）
-GAMMA_DEFAULT: float = 0.05            # 沿用 M0 **假设**值（Γ 已有自研标定 pm_gamma≈0.084 · PM-G2 v0.9.198
-                                       #   结算）；🔴 L ∝ 1/Γ ⇒ 本值偏小 ⇒ 设计点偏长且**会越出**
-                                       #   标定口径可行窗（缺口 PM-G11 · 两口径并报）
+GAMMA_DEFAULT: float = 0.0840054905578339  # 🔴 标定 Γ（v0.9.200 重标定批次）= `pm_gamma.gamma_main`；
+                                            #   现役几何口径。前代 0.05 假设已退役（PM-G11 闭合）。
 WL_NM_DEFAULT: float = 1550.0
 READ_ENERGY_FJ_ASSUMED: float = 9.0    # 与 M0 同源（shot-noise 简化用）
 BER_TARGET: float = 1.0e-12

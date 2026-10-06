@@ -174,11 +174,12 @@ def main() -> int:
           " rel=%.1e < 1e-9" % (imp["law_rel_dev"] or -1.0), law_ok,
           "L_as=%.4f L_cal=%.4f" % (imp["assumed"]["l_mid_um"], imp["calibrated"]["l_mid_um"]))
     _disc = imp["disclosure"]
-    check("C15b 🔴 现役设计点**越出**标定口径可行窗 ∧ 披露非空且含「重标定/PM-G11」",
-          imp["design_point_inside_calibrated_window"] is False
-          and imp["reads_out"] is True
-          and imp["design_point_outside_frac"] > 0.0
-          and ("重标定" in _disc["headline"] and imp["gap"] == "PM-G11"),
+    check("C15b 🔴 现役设计点**落入**标定口径可行窗（PM-G11 v0.9.200 重标定闭合）∧ 披露含「重标定/闭合/PM-G11」",
+          imp["design_point_inside_calibrated_window"] is True
+          and imp["reads_out"] is False
+          and imp["design_point_outside_frac"] == 0.0
+          and ("重标定" in _disc["headline"] and "闭合" in _disc["headline"]
+               and imp["gap"] == "PM-G11"),
           _disc["headline"][:96])
 
     # ---------------- C16 🔴 Γ-无关量现算互等（不是引述）----------------
@@ -205,12 +206,12 @@ def main() -> int:
 
     # ---------------- C17 缺口台账（PM-G11 登记 ∧ 不变式保持）----------------
     led = {g["id"]: g for g in M0.gap_ledger()}
-    check("C17 台账：PM-G2 已闭合 ∧ PM-G11 已登记且开放 ∧ declared==evidence 不变式保持",
+    check("C17 台账：PM-G2 已闭合 ∧ PM-G11 已登记且**闭合**（v0.9.200 重标定）∧ declared==evidence 不变式保持",
           led["PM-G2"]["closed"] is True and "PM-G11" in led
-          and led["PM-G11"]["closed"] is False
+          and led["PM-G11"]["closed"] is True
           and led["PM-G11"]["declared_closed"] == led["PM-G11"]["evidence_ok"]
           and M0.gap_ledger_consistent() is True,
-          "G11 ev=%s" % led["PM-G11"]["evidence_ok"])
+          "G11 ev=%s decl=%s" % (led["PM-G11"]["evidence_ok"], led["PM-G11"]["declared_closed"]))
 
     # ================= 突变探针（每条先证能变红）=================
     # P1 PCM 厚度 ×2 ⇒ Γ 显著变（对几何敏感）
@@ -274,19 +275,21 @@ def main() -> int:
     check("P7 探针：窗口压到 L=0.6 ⇒ Γ 偏离 %.1f%%（C6 有判别力）"
           % (100 * abs(s_small - s3) / s3), p7, "Γ(L=0.6)=%.5f" % s_small)
 
-    # P8 🔴 抹平 Γ 断口（标定 Γ := 假设 Γ）⇒ C15b 越窗判据翻转 ⇒ 该判据必红
+    # P8 🔴 越窗判据是真算的（非恒真文案）：把标定 Γ 推小 ⇒ 标定窗整体放大（∝1/Γ）⇒
+    #     现役设计点（~6.556µm）落到窗下界之下 ⇒ 越窗判据翻红；基线（标定 Γ）下窗内置信
+    #     ⇒ 两向都有判别力，证明「越窗/落窗」是计算出来的（G11 闭合后本探针仍有效）。
     _gcs = G.gamma_calibration_status
     try:
         G.gamma_calibration_status = (
-            lambda wl=1550.0: {**_gcs(wl), "gamma_main": float(M0.GAMMA_DEFAULT)})
-        imp_flat = G.gamma_impact_on_design()
+            lambda wl=1550.0: {**_gcs(wl), "gamma_main": 0.02})
+        imp_small = G.gamma_impact_on_design()
     finally:
         G.gamma_calibration_status = _gcs
-    p8 = (imp_flat["design_point_inside_calibrated_window"] is True
-          and imp["design_point_inside_calibrated_window"] is False)
-    check("P8 探针：抹平 Γ 断口（标定 Γ := 假设 Γ）⇒ C15b 越窗判据翻转为「窗内」"
-          "（证明「越窗」是真算出来的，非恒真文案）", p8,
-          "flat_inside=%s real_inside=%s" % (imp_flat["design_point_inside_calibrated_window"],
+    p8 = (imp_small["design_point_inside_calibrated_window"] is False
+          and imp["design_point_inside_calibrated_window"] is True)
+    check("P8 探针：标定 Γ 推小 ⇒ 窗放大 ⇒ 现役点落入窗下界之外 ⇒ 越窗判据翻红（证明是真算的）",
+          p8,
+          "small_inside=%s base_inside=%s" % (imp_small["design_point_inside_calibrated_window"],
                                              imp["design_point_inside_calibrated_window"]))
 
     print()

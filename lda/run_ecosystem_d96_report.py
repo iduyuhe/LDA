@@ -2,8 +2,11 @@
 
 产出 lda/reports/ecosystem_d96.json：门槛验收（签名完备性 / 数值界限 /
 core 双评审 quorum / 提交期防重 / 被拒重提 / 评审统计）。
+
+v0.9.199（D-94~D-98 同族专项）：落盘改走确定性唯一口径
+`det.write_json(det.scrub(report))` —— 流程时刻归一为 `<ts>` ⇒ 字节确定，
+由 `run_report_determinism_smoke` ⑬ 快照==现算常驻判据强制同步。
 """
-import json
 import os
 import sys
 import tempfile
@@ -13,6 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
 from lda_pdk.submit import submit_benchmark_proposal
 from lda_pdk.review import (review_proposal, land_proposal, resubmit_proposal,
                             review_stats, get_audit, list_proposals)
+from lda_harness import deterministic as det
 
 TMP = tempfile.mkdtemp(prefix="lda_d96r_")
 CP = os.path.join(TMP, "contributions.json")
@@ -109,6 +113,9 @@ acceptance = [
 report = {
     "d": "D-96",
     "title": "生态共建进一步 · 评审流 UI 增强 + 评审门槛扩展",
+    "snapshot_note": ("受跟踪确定性生成物（det.write_json + scrub 唯一口径）："
+                      "流程时刻（wall-clock）归一为 <ts>；数值为最近一次生成时的当前状态，"
+                      "历史口径见 CHANGELOG。"),
     "thresholds": {
         "core_quorum": {"vote1": v1, "vote1_dup": v1b, "vote2": v2},
         "value_bounds": r_bound,
@@ -129,8 +136,7 @@ report = {
 }
 
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
-with open(OUT, "w", encoding="utf-8") as f:
-    json.dump(report, f, indent=2, ensure_ascii=False)
+det.write_json(OUT, det.scrub(report))
 
 print("=" * 58)
 print("D-96 评审门槛扩展 + 评审流 UI 支撑 报告")

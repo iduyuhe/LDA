@@ -1533,11 +1533,18 @@ body{padding-top:56px}
       <b>写驱动</b>（加热线电阻由 M3 几何 × 方阻锚算出）与<b>系统误码预算</b>，并做 <b>2.5D 装配签核</b>。
       🔴 存储读出与 oi 高速链<b>本质不同</b>——<b>低频高灵敏</b>：热噪声主导时 <b>SNR ∝ √R<sub>f</sub></b> ⇒ 带宽上界内取最大 R<sub>f</sub>；
       实测读出灵敏度 <b>P<sub>min</sub> = −39.78 dBm</b>（余量 ≈ <b>9495×</b>）⇒ <b>读出不是瓶颈</b>；
-      系统 BER 瓶颈是<b>光学域 drift</b>（跨域代理口径 · <b>PM-G7 未闭合</b>）⇒ 16 电平保持窗口仅 <b>1.7 秒</b>；
+      系统 BER 瓶颈<b>经 PM-G7 结算已翻转为写量化</b>（光学域实测上界锚 ν<sub>T</sub> ≤ 3.80e−4 替换电学域跨域代理，两域差 ≈316× ⇒ 主账 BER 3.98e−62 全绿、保持下界 ~10<sup>74</sup> s；旧口径「瓶颈=drift · 保持 1.7 秒」<b>并报可查不删</b>）；
       2.5D 密度瓶颈在<b>电域</b>（EIC pitch 50 µm &gt; PIC pitch 18.05 µm）。<br/>
+      <b>M6b（PM-G2 结算 · 本档）</b>：把 <b>Γ（模场-材料重叠因子）</b>从<b>假设值</b>升级为<b>自研场求解标定</b>——
+      四条<b>方法学独立</b>路径：半矢量 collocated 场法（主账 <b>0.08401</b>）/ 全矢量 staggered（<b>独立离散</b>）0.08240
+      （rel 1.9% ⇒ <b>换一套离散、值不变</b>）/ 微扰法 0.07708 / 1D 平板（独立维度）0.09269 ⇒ 区间 <b>[0.077, 0.093]</b>；
+      🔴 <b>计算值不作 golden</b>。结算即抓出<b>跨档断口</b>：<code>L ∝ 1/Γ</code> ⇒ 按标定 Γ 可行窗 <b>[3.559, 9.553] µm</b>、
+      设计点应为 <b>6.556 µm</b>，而现役版图 11.015 µm <b>越窗上界 +15.3% ⇒ 读出饿死</b> ⇒
+      登记 <b>PM-G11（开放）</b>并<b>两口径并报</b>；<b>Γ-无关量</b>（每 π 损耗 IL<sub>π</sub> / M1 可行性判据 r / 相位域 FOM）<b>现算互等</b>不受影响。<br/>
       🔴 <b>诚实边界</b>：本卡是<b>设计期签核</b>（版图 + 几何 DRC + LVS + 设计预算），<b>非流片、非实测</b>；
-      DRC 限值是<b>自建设计规则</b>（公开工艺近似，<b>非</b> foundry PDK deck）；单元插损含 <b>Γ 假设</b>
-      （缺口 PM-G2）⇒ 一律区间；<b>无电学/热学联仿</b>（焦耳热/热-光动力学属器件级 T1 / 电路级 T2 锁死区）；
+      DRC 限值是<b>自建设计规则</b>（公开工艺近似，<b>非</b> foundry PDK deck）；单元插损含 <b>Γ 假设 0.05</b>
+      （<b>PM-G2 已结算</b>：标定 ≈0.084、区间 [0.077, 0.093]；🔴 版图按假设出图 ⇒ <b>两口径并报</b>，
+      标定口径须重标定 = <b>PM-G11 开放</b>）⇒ 一律区间；<b>无电学/热学联仿</b>（焦耳热/热-光动力学属器件级 T1 / 电路级 T2 锁死区）；
       规模数字是<b>版图容量</b>（可排布且可签核的单元数），<b>非</b>已制备器件数；
       <b>不报</b> pJ/bit · fJ/op · TOPS · TOPS-W；判决为死标量比对，<b>LLM 不进判决路径</b>。
     </div>
@@ -6165,7 +6172,7 @@ function renderPm(d){
   h+='<div class="note">M4 数据来源：'+M4.data_source+'</div>';
 
   // ⑫ 里程碑
-  h+='<h3 style="margin:14px 0 4px">⑫ 征程里程碑（M0 → M4 · 门禁判据合计 '+(sp.gate_checks||'?')+'）</h3>';
+  h+='<h3 style="margin:14px 0 4px">⑫ 征程里程碑（M0 → M6b · 门禁判据合计 '+(sp.gate_checks||'?')+' · 含突变探针 '+(sp.probe_mutations||'?')+'）</h3>';
   h+='<p>'+(d.milestones||[]).map(function(m){
         return '<b>'+m.id+'</b>（'+m.code+'）'+m.title+'〔'+m.gate+' 判据〕：'+m.result;
       }).join('<br/>')+'</p>';
@@ -6176,8 +6183,8 @@ function renderPm(d){
         return '· <b>'+f.title+'</b> —— '+f.detail;
       }).join('<br/>')+'</p>';
 
-  // ⑭ 缺口（只列未闭合）
-  h+='<h3 style="margin:14px 0 4px">⑭ 诚实缺口（<b>'+(d.gaps_total||0)+'</b> 条 · 全部开放登记）</h3>';
+  // ⑭ 缺口（逐条登记 · 含已结算与开放）
+  h+='<h3 style="margin:14px 0 4px">⑭ 诚实缺口台账（<b>'+(d.gaps_total||0)+'</b> 条 · 逐条标状态 · 已结算 ≠ 从台账消失）</h3>';
   h+='<p>'+(d.gaps||[]).map(function(g){
         return '<b>'+g.id+'</b> '+g.title+' —— '+g.detail;
       }).join('<br/>')+'</p>';
@@ -6214,6 +6221,28 @@ function renderPm(d){
         (r.lit_sources&&r.lit_sources.length?r.lit_sources.join('；'):'-'),
         r.note||'-' ];
     }));
+  // 🔴 Γ 口径并报（PM-G2 标定 ⇒ PM-G11）：只列**带敏感性**的行，避免满屏噪声
+  var _gsRows=M5ROWS.filter(function(r){ return r.gamma_sensitivity; });
+  if(_gsRows.length){
+    h+='<h3 style="margin:14px 0 4px">⑮b 🔴 Γ 口径敏感并报（PM-G2 标定 ⇒ PM-G11 开放 · 不选择性披露）</h3>';
+    h+=_qcTbl(['指标','本行现值（假设 Γ=0.050）','标定 Γ 重标定值','1/Γ 律残差'],
+      _gsRows.map(function(r){
+        var gs=r.gamma_sensitivity||{};
+        var now=(r.metric==='cell_length_um')?Number(gs.l_cell_now_um).toFixed(3)+' µm'
+              :(Number(gs.l_cell_now_um).toFixed(3)+' µm（胞长）· pitch '+(r.lda_value&&r.lda_value.pitch_um!=null?Number(r.lda_value.pitch_um).toFixed(3):'-')+' µm');
+        var reb=(r.metric==='cell_length_um')?Number(gs.l_cell_rebaselined_um).toFixed(3)+' µm'
+              :(Number(gs.l_cell_rebaselined_um).toFixed(3)+' µm（胞长）· pitch '+(r.lda_value&&r.lda_value.pitch_rebaselined_um!=null?Number(r.lda_value.pitch_rebaselined_um).toFixed(3):'-')+' µm');
+        return [ r.metric_cn, now, '<b>'+reb+'</b>',
+          Number(gs.law_rel_dev).toExponential(1)+'（精确等式）' ];
+      }));
+    h+='<div class="note">🔴 <b>为什么必须并报</b>：M1 可行窗两端与设计点均 <code>L ∝ 1/Γ</code> ⇒ '
+      +'按标定 Γ 的窗 <b>['+Number(_gsRows[0].gamma_sensitivity.window_rebaselined_um[0]).toFixed(3)+', '
+      +Number(_gsRows[0].gamma_sensitivity.window_rebaselined_um[1]).toFixed(3)+'] µm</b>，'
+      +'而<b>现役设计点 '+Number(_gsRows[0].gamma_sensitivity.l_cell_now_um).toFixed(3)+' µm 越出窗上界</b>'
+      +'（⇒ 标定口径下读出饿死）⇒ 版图重标定登记为 <b>PM-G11（开放）</b>。'
+      +'而 <b>IL<sub>π</sub> / M1 可行性判据 r / 相位域 FOM 与 Γ 无关</b>（Γ、L 同时约掉）⇒ '
+      +'材料定能力的主结论不受影响（门禁以两档 Γ 现算互等证明，rel ~2e−16）。</div>';
+  }
   h+='<div class="note"><b>verdict 计数</b>：same_order ×'+(M5VC.same_order||0)
     +' · within_5x ×'+(M5VC.within_5x||0)
     +' · derived_from_same_source ×'+(M5VC.derived_from_same_source||0)
@@ -6301,6 +6330,12 @@ function renderPm(d){
     +'🔴 endurance <b>不可判</b>（PM-G10）· 密度无同口径锚（不比）。'
     +'缺口台账终态 <b>'+M5.gaps_closed+'/'+M5.gaps_total+'</b> 闭合 —— '
     +'<b>收官口径：知道自己每一项站在哪，不是「全面领先」</b>。'
+    +'<br/>🔴 <b>M6b（PM-G2 结算）</b>：<b>Γ</b> 由<b>假设 0.05</b> 升级为<b>自研场求解标定 0.084</b>'
+    +'（四条方法学独立路径 · 全矢量<b>独立离散</b>与主账一致 rel 1.9% · 区间 [0.077, 0.093]；'
+    +'🔴 计算值<b>不作 golden</b>）。结算即抓出<b>跨档断口</b>：<code>L ∝ 1/Γ</code> ⇒ '
+    +'按标定 Γ 设计点应为 <b>6.556 µm</b>，而现役版图 <b>11.015 µm 越出可行窗上界（+15.3% ⇒ 读出饿死）</b>'
+    +'⇒ 登记 <b>PM-G11（开放）</b>、<b>两口径并报</b>（不选择性披露）；'
+    +'而 <b>IL<sub>π</sub> / M1 判据 r / 相位域 FOM 与 Γ 无关</b>（现算互等）⇒ 材料定能力的主结论不受影响。'
     +'<br/>'+d.honest_note;
   return false;
 }

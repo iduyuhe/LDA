@@ -4,7 +4,7 @@
     "no_fabricated_efficiency_claims": true,
     "no_fabrication_of_measurability": true
   },
-  "gaps_closed": 6,
+  "gaps_closed": 7,
   "gaps_final": [
     {
       "closed": true,
@@ -12,9 +12,9 @@
       "title": "相变材料光学常数锚库（n,k @λ,相态）"
     },
     {
-      "closed": false,
+      "closed": true,
       "id": "PM-G2",
-      "title": "模场重叠因子 Γ 的 FDTD 标定"
+      "title": "模场重叠因子 Γ 的场求解标定（v0.9.198 结算：半矢量场法 + 全矢量**独立离散** + 微扰法 + 1D 平板；🔴 计算值不作 golden）"
     },
     {
       "closed": true,
@@ -45,9 +45,14 @@
       "closed": false,
       "id": "PM-G10",
       "title": "写读耐久（endurance）模型与锚 —— M5 对拍表判定「不可判」（开放）"
+    },
+    {
+      "closed": false,
+      "id": "PM-G11",
+      "title": "Γ 标定后的全链设计点/版图重标定（v0.9.198 新登记 · 开放：L ∝ 1/Γ ⇒ 按假设 Γ=0.05 出的设计点越出标定口径可行窗上界）"
     }
   ],
-  "gaps_total": 8,
+  "gaps_total": 9,
   "generated_by": "examples/photo_memory/build_pm_m5.py",
   "honest_note": "本表不产生任何「实测」声明：LDA 全部数字为闭式/行为级设计值；文献值全部 DOI 级器件实测；比值仅判量级（三带规则）。",
   "material": "GST",
@@ -90,6 +95,27 @@
       "verdict": "within_5x"
     },
     {
+      "gamma_sensitivity": {
+        "design_point_inside_calibrated_window": false,
+        "gamma_assumed": 0.05,
+        "gamma_calibrated": 0.0840054905578339,
+        "gap": "PM-G11",
+        "l_cell_now_um": 11.014603130717049,
+        "l_cell_rebaselined_um": 6.555882870021456,
+        "law_rel_dev": 1.3547807935397393e-16,
+        "length_scale": 0.5951991907669095,
+        "never_golden": true,
+        "note": "按标定 Γ=0.0840：可行窗 [3.559, 9.553] µm，设计点应为 6.556 µm；现值 11.015 µm（按假设 Γ=0.050 出图）**越出窗上界 9.553 µm（+15.3%）** ⇒ 读出饿死，须重标定（PM-G11）",
+        "scale_ratio": 0.5951991907669095,
+        "window_now_um": [
+          5.9792114645427,
+          16.049994796891397
+        ],
+        "window_rebaselined_um": [
+          3.558821825120043,
+          9.552943914922869
+        ]
+      },
       "lda_source": "pm_m3.cell_length_um（M1 设计 L）",
       "lda_value": 11.014603130717049,
       "lit_sources": [
@@ -98,7 +124,7 @@
       "lit_value": 5.0,
       "metric": "cell_length_um",
       "metric_cn": "GST 相变段长度",
-      "note": "胞长越长插入损耗越高（M0 闭式律 ∝L），但设计点由 M1 可行性判据定，非自由选择。",
+      "note": "胞长越长插入损耗越高（M0 闭式律 ∝L），但设计点由 M1 可行性判据定，非自由选择。🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 开放 · 并报）**：L ∝ 1/Γ ⇒ 按标定 Γ=0.0840 重标定为 **6.556 µm**（本行现值 11.015 µm 按假设 Γ=0.050 出图；1/Γ 律 rel=1.4e-16）。两口径并报，不选择性披露。",
       "ratio": 2.2029206261434098,
       "verdict": "within_5x"
     },
@@ -150,11 +176,34 @@
       "verdict": "not_modeled"
     },
     {
+      "gamma_sensitivity": {
+        "design_point_inside_calibrated_window": false,
+        "gamma_assumed": 0.05,
+        "gamma_calibrated": 0.0840054905578339,
+        "gap": "PM-G11",
+        "l_cell_now_um": 11.014603130717049,
+        "l_cell_rebaselined_um": 6.555882870021456,
+        "law_rel_dev": 1.3547807935397393e-16,
+        "length_scale": 0.5951991907669095,
+        "never_golden": true,
+        "note": "按标定 Γ=0.0840：可行窗 [3.559, 9.553] µm，设计点应为 6.556 µm；现值 11.015 µm（按假设 Γ=0.050 出图）**越出窗上界 9.553 µm（+15.3%）** ⇒ 读出饿死，须重标定（PM-G11）",
+        "scale_ratio": 0.5951991907669095,
+        "window_now_um": [
+          5.9792114645427,
+          16.049994796891397
+        ],
+        "window_rebaselined_um": [
+          3.558821825120043,
+          9.552943914922869
+        ]
+      },
       "lda_source": "pm_m3.cell_pitch_um × die 高（M4 2.5D）· 算出来的",
       "lda_value": {
         "bits_per_cell": 4.0,
         "die_h_um": 6.2,
         "pic_side": 35752.86267622216,
+        "pic_side_rebaselined": 47486.14996030731,
+        "pitch_rebaselined_um": 13.586304445861742,
         "pitch_um": 18.045024706557335,
         "system_side_eic_bottleneck": 12903.22580645161
       },
@@ -162,7 +211,7 @@
       "lit_value": null,
       "metric": "areal_density",
       "metric_cn": "集成密度（bits/mm²）",
-      "note": "文献均为**单胞演示**（Ríos 5 µm / Cheng 2 µm），无同口径阵列密度实测锚⇒ 不比。LDA 侧两口径并报：PIC 版图口径 vs 2.5D 系统口径（EIC 瓶颈）。",
+      "note": "文献均为**单胞演示**（Ríos 5 µm / Cheng 2 µm），无同口径阵列密度实测锚⇒ 不比。LDA 侧两口径并报：PIC 版图口径 vs 2.5D 系统口径（EIC 瓶颈）。🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 开放 · 并报）**：pitch = L + gap ⇒ 按标定 Γ=0.0840 重标定 pitch=13.586 µm、PIC 密度 4.749e+04 bits/mm²（本行现值 pitch=18.045 µm / 3.575e+04 bits/mm² 按假设 Γ=0.050 出图）。",
       "verdict": "no_anchor"
     }
   ],

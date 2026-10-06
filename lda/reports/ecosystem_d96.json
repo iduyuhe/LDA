@@ -1,6 +1,7 @@
 {
   "d": "D-96",
   "title": "生态共建进一步 · 评审流 UI 增强 + 评审门槛扩展",
+  "snapshot_note": "受跟踪确定性生成物（det.write_json + scrub 唯一口径）：流程时刻（wall-clock）归一为 <ts>；数值为最近一次生成时的当前状态，历史口径见 CHANGELOG。",
   "thresholds": {
     "core_quorum": {
       "vote1": {
@@ -24,7 +25,7 @@
         "id": "B19",
         "decision": "approve",
         "reviewer": "评审人乙",
-        "reviewed_at": "2026-08-24T14:28:03",
+        "reviewed_at": "<ts>",
         "reason": "评审已记录（审计轨迹已落盘）"
       }
     },
@@ -65,7 +66,8 @@
       "pending": 2,
       "approved": 0,
       "rejected": 0,
-      "landed": 1
+      "landed": 1,
+      "published": 0
     },
     "approvals": 1,
     "rejections": 1,
@@ -74,14 +76,14 @@
   },
   "audit_b20": [
     {
-      "ts": "2026-08-24T14:28:03",
+      "ts": "<ts>",
       "op": "review",
       "decision": "reject",
       "reviewer": "评审员丁",
       "rationale": "界限不符"
     },
     {
-      "ts": "2026-08-24T14:28:03",
+      "ts": "<ts>",
       "op": "resubmit",
       "by": "community",
       "reason": "被拒后重新提交，进入新一轮评审"
@@ -159,7 +161,7 @@
       {
         "name": "review_stats 自洽",
         "ok": true,
-        "detail": "{'total': 3, 'by_status': {'pending': 2, 'approved': 0, 'rejected': 0, 'landed': 1}, 'approvals': 1, 'rejections': 1, 'quorum_votes': 2, 'avg_review_seconds': 0.0}"
+        "detail": "{'total': 3, 'by_status': {'pending': 2, 'approved': 0, 'rejected': 0, 'landed': 1, 'published': 0}, 'approvals': 1, 'rejections': 1, 'quorum_votes': 2, 'avg_review_seconds': 0.0}"
       }
     ]
   }

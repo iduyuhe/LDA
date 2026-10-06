@@ -82,6 +82,7 @@ _GATE_SMOKE = {
     "M4b": "run_pm_g7_settlement_smoke.py",
     "M5": "run_pm_m5_smoke.py",
     "M6": "run_pm_m6_smoke.py",
+    "M6b": "run_pm_g2_smoke.py",
 }
 
 
@@ -117,6 +118,10 @@ def _gate_drift(milestones, counts, mapping):
 
 
 #: W9 目标：哪些门禁必须在 `run_ci_regression.py` 注释里**声明**判据数（↔ 反向完备）
+#: 🔴 v0.9.198 试过把 `run_webui_pm_render_path_smoke.py`（**本门禁自身**）纳入目标集，
+#:    结果 `_pass_count(自身)` ⇒ **子进程自递归** ⇒ 300s 超时（实测 rc=2）。⇒ 本门禁
+#:    的判据数**结构上不可能**由它自己守（自指），只能由 `run_ci_regression` 注释 +
+#:    CORE_SMOKES 注释两处人工对齐（本版把注释里长期漂移的 28 更正为实测 29）。
 _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {"run_ci_gate_contract_smoke.py"})
 
 #: W10 对照面**增量**：本版真改动、且**便宜可实跑**的门禁（**不扩** W8/W9 的目标范围）。
@@ -253,6 +258,7 @@ _ITEM_BLOCKS = (
         "r.design_only": "design_only", "r.cross_domain": "cross_domain",
         "r.self_consistency_only": "self_consistency_only", "r.gap_id": "gap_id",
         "r.lda_value": "lda_value", "r.lit_value": "lit_value",
+        "r.gamma_sensitivity": "gamma_sensitivity",
     }),
     ("m5.gaps_final[]", "M5 缺口终态", {
         "g.id": "id", "g.closed": "closed", "g.title": "title",

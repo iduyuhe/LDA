@@ -1,6 +1,7 @@
 {
   "d": "D-98",
   "title": "生态共建 · 评审流端到端 · 发布（Publish）",
+  "snapshot_note": "受跟踪确定性生成物（det.write_json + scrub 唯一口径）：流程时刻（wall-clock）归一为 <ts>、随机临时目录归一为 <tmpdir>；数值为最近一次生成时的当前状态，历史口径见 CHANGELOG。",
   "flow": {
     "submit": {
       "status": "accepted_pending",
@@ -14,7 +15,7 @@
       "id": "B19",
       "decision": "approve",
       "reviewer": "杜玉河",
-      "reviewed_at": "2026-08-24T20:50:58",
+      "reviewed_at": "<ts>",
       "reason": "评审已记录（审计轨迹已落盘）"
     },
     "land": {
@@ -22,7 +23,7 @@
       "id": "B19",
       "value": 749.481145,
       "reason": "已注册 golden._GOLDEN_DISPATCH + _PHYSICAL_LAW + benchmarks.BENCHMARK_DEFS，自动纳入统一回归；补丁已生成，待维护者 git 提交",
-      "patch": "# ===== 社区提案落地补丁（B19）=====\n# 请合并到 lda_harness/golden.py 与 lda_harness/benchmarks.py，\n# 经维护者评审后提交 git（PR 即开放评审流）。落库(live) ≠ 进版本控制。\n\n## 1) golden.py —— 新增 ORACLE 函数（建议置于 B18 之后）\ndef b19_micro_ring_fsr(L_um, n_g):\n    c_um_s = 2.99792458e14\n    return c_um_s / (n_g * L_um) / 1e9\n\n## 2) golden.py —— 注册（模块级 _GOLDEN_DISPATCH / _PHYSICAL_LAW）\n_GOLDEN_DISPATCH[\"B19\"] = b19_micro_ring_fsr\n_PHYSICAL_LAW.add(\"B19\")\n\n## 3) benchmarks.py —— BENCHMARK_DEFS 条目\n\"B19\": {\n    \"title\": \"微环 FSR\", \"metric\": \"FSR_GHz\",\n    \"oracle\": \"analytical(community)\",\n    \"tol\": 0.5,\n    \"default_params\": {'L_um': 100.0, 'n_g': 4.0},\n    \"golden_fn\": b19_micro_ring_fsr,\n    \"note\": \"社区提案 B19 经评审落地；评审人 杜玉河 于 2026-08-24T20:50:58。\",\n},\n"
+      "patch": "# ===== 社区提案落地补丁（B19）=====\n# 请合并到 lda_harness/golden.py 与 lda_harness/benchmarks.py，\n# 经维护者评审后提交 git（PR 即开放评审流）。落库(live) ≠ 进版本控制。\n\n## 1) golden.py —— 新增 ORACLE 函数（建议置于 B18 之后）\ndef b19_micro_ring_fsr(L_um, n_g):\n    c_um_s = 2.99792458e14\n    return c_um_s / (n_g * L_um) / 1e9\n\n## 2) golden.py —— 注册（模块级 _GOLDEN_DISPATCH / _PHYSICAL_LAW）\n_GOLDEN_DISPATCH[\"B19\"] = b19_micro_ring_fsr\n_PHYSICAL_LAW.add(\"B19\")\n\n## 3) benchmarks.py —— BENCHMARK_DEFS 条目\n\"B19\": {\n    \"title\": \"微环 FSR\", \"metric\": \"FSR_GHz\",\n    \"oracle\": \"analytical(community)\",\n    \"tol\": 0.5,\n    \"default_params\": {'L_um': 100.0, 'n_g': 4.0},\n    \"golden_fn\": b19_micro_ring_fsr,\n    \"note\": \"社区提案 B19 经评审落地；评审人 杜玉河 于 <ts>。\",\n},\n"
     },
     "publish_missing_author": {
       "status": "error",
@@ -37,15 +38,15 @@
       "id": "B19",
       "value": 749.481145,
       "author": "杜玉河",
-      "patch_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\lda_d98r_ndlu1trr\\patches\\B19.publish.patch",
-      "release_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\lda_d98r_ndlu1trr\\patches\\B19.RELEASE.md",
+      "patch_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\<tmpdir>\\patches\\B19.publish.patch",
+      "release_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\<tmpdir>\\patches\\B19.RELEASE.md",
       "diff_lines": 33,
       "reason": "已生成正式补丁 + Release Notes 草稿；git apply/合并与正式发布由维护者执行"
     }
   },
   "patch": {
     "lines": 33,
-    "head": "# LDA 社区基准发布补丁 · B19\n# 生成：2026-08-24T20:50:58 · 评审人 杜玉河\n# 用法：git apply B19.publish.patch（或按 diff 手工合并），经维护者评审后提交。\n# 诚实边界：本补丁由社区评审流产出，LLM 不进判决路径；git 提交前不产生持久权威 ORACLE。\n",
+    "head": "# LDA 社区基准发布补丁 · B19\n# 生成：<ts> · 评审人 杜玉河\n# 用法：git apply B19.publish.patch（或按 diff 手工合并），经维护者评审后提交。\n# 诚实边界：本补丁由社区评审流产出，LLM 不进判决路径；git 提交前不产生持久权威 ORACLE。\n",
     "has_golden_section": true,
     "has_benchmarks_section": true
   },
@@ -55,7 +56,7 @@
   },
   "audit": [
     {
-      "ts": "2026-08-24T20:50:58",
+      "ts": "<ts>",
       "op": "review",
       "decision": "approve",
       "reviewer": "杜玉河",
@@ -64,19 +65,19 @@
       "votes": "1/1"
     },
     {
-      "ts": "2026-08-24T20:50:58",
+      "ts": "<ts>",
       "op": "land",
       "value": 749.481145,
       "live_registered": true
     },
     {
-      "ts": "2026-08-24T20:50:58",
+      "ts": "<ts>",
       "op": "publish",
       "author": "杜玉河",
       "note": "社区贡献",
       "value": 749.481145,
-      "patch_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\lda_d98r_ndlu1trr\\patches\\B19.publish.patch",
-      "release_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\lda_d98r_ndlu1trr\\patches\\B19.RELEASE.md"
+      "patch_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\<tmpdir>\\patches\\B19.publish.patch",
+      "release_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\<tmpdir>\\patches\\B19.RELEASE.md"
     }
   ],
   "review_stats": {
@@ -100,12 +101,12 @@
       "metric": "FSR_GHz",
       "oracle_fn_name": "b19_micro_ring_fsr",
       "reviewed_by": "杜玉河",
-      "reviewed_at": "2026-08-24T20:50:58",
-      "landed_at": "2026-08-24T20:50:58",
-      "published_at": "2026-08-24T20:50:58",
+      "reviewed_at": "<ts>",
+      "landed_at": "<ts>",
+      "published_at": "<ts>",
       "published_by": "杜玉河",
-      "patch_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\lda_d98r_ndlu1trr\\patches\\B19.publish.patch",
-      "release_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\lda_d98r_ndlu1trr\\patches\\B19.RELEASE.md"
+      "patch_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\<tmpdir>\\patches\\B19.publish.patch",
+      "release_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\<tmpdir>\\patches\\B19.RELEASE.md"
     }
   ],
   "honest_boundary": "发布不改源文件、不做 git commit——产出正式补丁（可 git apply 的 unified diff）+ Release Notes 草稿于 reports/patches/，git 合并与正式发布由维护者执行；LLM 不进判决路径（评审=具名人工、发布自检=死标量门禁）；真实晶圆厂 NDA-PDK 仍属发动期 D-62 暂缓。",

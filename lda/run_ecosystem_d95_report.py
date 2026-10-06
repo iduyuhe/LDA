@@ -2,8 +2,12 @@
 
 产出 lda/reports/ecosystem_d95.json：提案生命周期（提交→评审→落地）、
 确定性自测门禁、live 回归接入、补丁生成、启动恢复、审计轨迹、验收结论。
+
+v0.9.199（D-94~D-98 同族专项）：落盘改走确定性唯一口径
+`det.write_json(det.scrub(report))` —— 流程时刻（reviewed_at/landed_at/ts 等
+wall-clock，含 detail 字符串内嵌的）归一为 `<ts>` ⇒ 字节确定，由
+`run_report_determinism_smoke` ⑬ 快照==现算常驻判据强制同步。
 """
-import json
 import os
 import sys
 import tempfile
@@ -15,6 +19,7 @@ from lda_pdk.review import (review_proposal, land_proposal, reload_landed,
                             get_audit, list_proposals)
 from lda_harness.benchmarks import BENCHMARK_DEFS
 from lda_harness.golden import _GOLDEN_DISPATCH, _PHYSICAL_LAW, golden_with_source
+from lda_harness import deterministic as det
 
 TMP = tempfile.mkdtemp(prefix="lda_d95r_")
 CP = os.path.join(TMP, "contributions.json")
@@ -103,6 +108,9 @@ acceptance = [
 report = {
     "d": "D-95",
     "title": "生态共建 · 社区评审流 + 提案→golden 落地",
+    "snapshot_note": ("受跟踪确定性生成物（det.write_json + scrub 唯一口径）："
+                      "流程时刻（wall-clock）归一为 <ts>；数值为最近一次生成时的当前状态，"
+                      "历史口径见 CHANGELOG。"),
     "flow": {
         "submit": s_submit,
         "review_without_reviewer": s_norev,
@@ -128,8 +136,7 @@ report = {
 }
 
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
-with open(OUT, "w", encoding="utf-8") as f:
-    json.dump(report, f, indent=2, ensure_ascii=False)
+det.write_json(OUT, det.scrub(report))
 
 print("=" * 58)
 print("D-95 生态共建 · 社区评审流 + 提案落地 报告")

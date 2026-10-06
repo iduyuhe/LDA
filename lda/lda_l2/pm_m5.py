@@ -122,12 +122,19 @@ def benchmark_rows(mat: str = "GST") -> List[Dict[str, Any]]:
     lda_cell = float(M3.cell_length_um()["l_um"])
     lit_cell = float(anch["cell_length_um"])
     r3 = lda_cell / lit_cell
+    gs = _gamma_sensitivity(mat, wl_nm=M0.WL_NM_DEFAULT)
     rows.append({
         "metric": "cell_length_um", "metric_cn": "GST 相变段长度",
         "lda_value": lda_cell, "lda_source": "pm_m3.cell_length_um（M1 设计 L）",
         "lit_value": lit_cell, "lit_sources": [anch["source"]],
         "ratio": r3, "verdict": _band(r3),
-        "note": "胞长越长插入损耗越高（M0 闭式律 ∝L），但设计点由 M1 可行性判据定，非自由选择。",
+        "gamma_sensitivity": gs,
+        "note": ("胞长越长插入损耗越高（M0 闭式律 ∝L），但设计点由 M1 可行性判据定，非自由选择。"
+                 "🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 开放 · 并报）**：L ∝ 1/Γ ⇒ 按标定 "
+                 "Γ=%.4f 重标定为 **%.3f µm**（本行现值 %.3f µm 按假设 Γ=%.3f 出图；1/Γ 律 "
+                 "rel=%.1e）。两口径并报，不选择性披露。"
+                 % (gs["gamma_calibrated"], gs["l_cell_rebaselined_um"], lda_cell,
+                    gs["gamma_assumed"], gs["law_rel_dev"])),
     })
 
     # ── 行 4：读出对比度（同口径取「文献胞长」下的 LDA 闭式值）──────────
@@ -182,18 +189,52 @@ def benchmark_rows(mat: str = "GST") -> List[Dict[str, Any]]:
     lda_dens_pic = bits_per_cell / ((pitch * 1e-3) * (die_h * 1e-3))   # bits/mm²
     eic_pitch = 50.0
     lda_dens_sys = bits_per_cell / ((eic_pitch * 1e-3) * (die_h * 1e-3))
+    # 🔴 Γ 口径并报：pitch = L + gap ⇒ 按标定 Γ 平移光程长段即得重标定 pitch（gap 不变）
+    pitch_cal = pitch - float(M3.cell_length_um()["l_um"]) + gs["l_cell_rebaselined_um"]
+    dens_cal = bits_per_cell / ((pitch_cal * 1e-3) * (die_h * 1e-3))
     rows.append({
         "metric": "areal_density", "metric_cn": "集成密度（bits/mm²）",
         "lda_value": {"pic_side": lda_dens_pic, "system_side_eic_bottleneck": lda_dens_sys,
                       "pitch_um": pitch, "die_h_um": die_h,
-                      "bits_per_cell": bits_per_cell},
+                      "bits_per_cell": bits_per_cell,
+                      "pitch_rebaselined_um": pitch_cal, "pic_side_rebaselined": dens_cal},
         "lda_source": "pm_m3.cell_pitch_um × die 高（M4 2.5D）· 算出来的",
         "lit_value": None, "lit_sources": [],
         "verdict": "no_anchor",
+        "gamma_sensitivity": gs,
         "note": ("文献均为**单胞演示**（Ríos 5 µm / Cheng 2 µm），无同口径阵列密度实测锚"
-                 "⇒ 不比。LDA 侧两口径并报：PIC 版图口径 vs 2.5D 系统口径（EIC 瓶颈）。"),
+                 "⇒ 不比。LDA 侧两口径并报：PIC 版图口径 vs 2.5D 系统口径（EIC 瓶颈）。"
+                 "🔴 **Γ 口径敏感（PM-G2 标定 · PM-G11 开放 · 并报）**：pitch = L + gap ⇒ 按标定 "
+                 "Γ=%.4f 重标定 pitch=%.3f µm、PIC 密度 %.4g bits/mm²（本行现值 pitch=%.3f µm / "
+                 "%.4g bits/mm² 按假设 Γ=%.3f 出图）。"
+                 % (gs["gamma_calibrated"], pitch_cal, dens_cal, pitch, lda_dens_pic,
+                    gs["gamma_assumed"])),
     })
     return rows
+
+
+def _gamma_sensitivity(mat: str = "GST", wl_nm: float = 1550.0) -> Dict[str, Any]:
+    """Γ 口径敏感性（**现算**，供对拍表两行并报 —— PM-G2 标定 ⇒ PM-G11）。
+
+    `pm_gamma.gamma_impact_on_design()` 给 1/Γ 缩放律与越窗判定；本函数再把它投影到
+    **对拍表的量**上：胞长（∝1/Γ）与由它派生的 pitch / 面积（pitch = L + gap ⇒ 按同一 gap 平移）。
+    🔴 单调性由 `pitch = L + gap` 代数恒等式给出，不做二次拟合。
+    """
+    from lda_l2 import pm_gamma as PG
+    imp = PG.gamma_impact_on_design(wl_nm, mat)
+    l_now = imp["assumed"]["l_mid_um"]
+    l_new = imp["calibrated"]["l_mid_um"]
+    return {
+        "gamma_assumed": imp["gamma_assumed"], "gamma_calibrated": imp["gamma_calibrated"],
+        "scale_ratio": imp["scale_ratio"], "law_rel_dev": imp["law_rel_dev"],
+        "l_cell_now_um": l_now, "l_cell_rebaselined_um": l_new,
+        "length_scale": (l_new / l_now) if l_now else None,
+        "window_now_um": imp["assumed"]["window_um"],
+        "window_rebaselined_um": imp["calibrated"]["window_um"],
+        "design_point_inside_calibrated_window": imp["design_point_inside_calibrated_window"],
+        "gap": "PM-G11", "never_golden": True,
+        "note": imp["disclosure"]["headline"],
+    }
 
 
 def m5_report(mat: str = "GST") -> Dict[str, Any]:

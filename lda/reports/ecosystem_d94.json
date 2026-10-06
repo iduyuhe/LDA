@@ -1,5 +1,6 @@
 {
   "d_task": "D-94 生态共建深化 · 社区提交入口",
+  "snapshot_note": "受跟踪确定性生成物（det.write_json + scrub 唯一口径）：流程时刻（wall-clock）归一为 <ts>、随机临时目录归一为 <tmpdir>；数值为最近一次生成时的当前状态，历史口径见 CHANGELOG。",
   "submit_chain": {
     "device_single": {
       "status": "accepted",
@@ -148,7 +149,18 @@
         },
         "proposed_by": "community",
         "status": "pending",
-        "note": ""
+        "note": "",
+        "oracle_fn_source": "",
+        "reviewed_by": "",
+        "reviewed_at": "",
+        "review_rationale": "",
+        "landed_at": "",
+        "audit": [],
+        "value_min": null,
+        "value_max": null,
+        "core": false,
+        "approvals": [],
+        "submitted_at": "<ts>"
       }
     ]
   },

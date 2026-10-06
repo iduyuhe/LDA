@@ -14,7 +14,7 @@
   C9  漂移口径：观测方程自洽（t_hold 反解回 δφ == Δφ_step/2）∧ 明标「非定量结论」
   C10 域守卫：L < L_π ⇒ `phase_level_design` 必 raise（拒绝静默截断）
   C11 对拍表结构：≥6 行 ∧ LDA 值可重算复现 ∧ 口径不同行显式标 `regime_mismatch`
-  C12 缺口接线：PM-G6 已闭合（declared ∧ evidence 双源一致），G2/G10 仍如实开放
+  C12 缺口接线：PM-G2/G6 已闭合（declared ∧ evidence 双源一致），G10 仍如实开放
   C13 披露完整 + 真实输出**肯定式面**禁词零命中
   C14 🔴 JSON 出口安全：`m6_report_json_safe` 经 `dumps(allow_nan=False)` 不抛（防非标准 token）
   C15 🔴 默认路径（`l_um=None`）各读出入口**不崩** ∧ 报告 `l_um` == `resolve_l_um(mat,None)`
@@ -191,8 +191,8 @@ def main() -> int:
     gaps = {g["id"]: g for g in M0.gap_ledger()}
     check("C12a PM-G6 已闭合（declared_closed ∧ evidence_ok）",
           gaps["PM-G6"]["closed"] is True)
-    check("C12b PM-G2 / PM-G10 仍如实开放",
-          gaps["PM-G2"]["closed"] is False and gaps["PM-G10"]["closed"] is False)
+    check("C12b PM-G2 已结算（v0.9.198）∧ PM-G10 仍如实开放",
+          gaps["PM-G2"]["closed"] is True and gaps["PM-G10"]["closed"] is False)
     check("C12c 台账人机两源不变式（declared ⇔ evidence）", M0.gap_ledger_consistent() is True)
 
     # ---------------- C13 披露 + 禁词 ----------------

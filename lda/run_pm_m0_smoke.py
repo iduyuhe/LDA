@@ -8,7 +8,7 @@
   C4 双方法互证：闭式 ⟷ 分片累乘（两种 n_seg 都一致到 1e-12）
   C5 对比度随长度单调增（每点重算，不用缩放假设）
   C6 写能量预算：量级正确 ∧ 与文献记录值同量级 ∧ 字段级消费审计真在跑（有来源被排除）
-  C7 缺口台账：`closed ⇔ evidence_ok` ∧ PM-G1 已闭合 ∧ PM-G2..G5 如实开放
+  C7 缺口台账：`closed ⇔ evidence_ok` ∧ PM-G2/G6/G7 已结算 ∧ PM-G10 如实开放
   C8 披露完整 + 真实输出肯定式禁词扫描零命中
   C9 报告自洽：headline 离散度与逐来源重算一致（防 headline 写死）
 
@@ -131,9 +131,9 @@ def main() -> int:
     check("C7b PM-G1（材料常数库）已闭合", gaps["PM-G1"]["closed"] is True)
     check("C7c PM-G3/G4/G5 已闭合（锚 + 律自检 · v0.9.189 证据升级）",
           all(gaps[g]["closed"] is True for g in ("PM-G3", "PM-G4", "PM-G5")))
-    check("C7c2 PM-G2 如实开放 ∧ PM-G6/G7 已结算（v0.9.195 / v0.9.193 · 不粉饰）",
-          all(gaps[g]["closed"] is True for g in ("PM-G6", "PM-G7"))
-          and gaps["PM-G2"]["closed"] is False)
+    check("C7c2 PM-G2/G6/G7 已结算（v0.9.198 / 0.9.195 / 0.9.193 · 不粉饰）",
+          all(gaps[g]["closed"] is True for g in ("PM-G2", "PM-G6", "PM-G7"))
+          and gaps["PM-G10"]["closed"] is False)
     check("C7c3 台账人机两源一致性（declared ⇔ evidence · 非同义反复）",
           all(g["declared_closed"] == g["evidence_ok"] for g in rep["gaps"]))
     check("C7d 每条缺口都挂证据明细（非空）",
@@ -189,12 +189,13 @@ def main() -> int:
     check("P3 探针须造分歧（假实测声明 ⇒ C1 必红）", raised)
 
     # P4 台账造假（人工声明与机器验算打架）⇒ C7 不变式必红
+    #    🔴 v0.9.198 起 PM-G2 已真闭合 ⇒ 造假样本改用**仍开放**的 PM-G10（否则探针恒绿）。
     fake = [dict(g) for g in rep["gaps"]]
     for g in fake:
-        if g["id"] == "PM-G2":
+        if g["id"] == "PM-G10":
             g["declared_closed"] = True          # 声明闭合，但 evidence_ok=False
             g["closed"] = True
-    check("P4 探针须造分歧（G2 声明闭合而证据不成立 ⇒ 台账不变式必红）",
+    check("P4 探针须造分歧（G10 声明闭合而证据不成立 ⇒ 台账不变式必红）",
           not all(g["declared_closed"] == g["evidence_ok"] for g in fake))
 
     # P5 长度压到 0.01µm ⇒ 读出能量下限爆炸

@@ -2,19 +2,24 @@
 
 输出 lda/reports/ecosystem_d94.json：提交链路验收 + 贡献库计数 + 提案计数 +
 诚实边界标注。贡献库写入临时文件，不污染仓库。
+
+v0.9.199（D-94~D-98 同族专项）：落盘改走确定性唯一口径
+`det.write_json(det.scrub(report))` —— 流程时刻（submitted_at 等 wall-clock，
+含 detail 字符串内嵌的）归一为 `<ts>`、随机 tmpdir 归一为 `<tmpdir>` ⇒
+「相同输入 ⇒ 字节一致」，由 `run_report_determinism_smoke` ⑬ 快照==现算常驻判据强制同步。
 """
 import os
-import json
 import tempfile
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(HERE))
+sys.path.insert(0, HERE)
 
 from lda_pdk.submit import (
     submit_device, submit_devices_batch, submit_benchmark_proposal,
     list_contributions, infer_sovereign_class,
 )
+from lda_harness import deterministic as det
 
 REPORT_DIR = os.path.join(HERE, "reports")
 REPORT_PATH = os.path.join(REPORT_DIR, "ecosystem_d94.json")
@@ -85,6 +90,9 @@ def main():
 
     report = {
         "d_task": "D-94 生态共建深化 · 社区提交入口",
+        "snapshot_note": ("受跟踪确定性生成物（det.write_json + scrub 唯一口径）："
+                          "流程时刻（wall-clock）归一为 <ts>、随机临时目录归一为 <tmpdir>；"
+                          "数值为最近一次生成时的当前状态，历史口径见 CHANGELOG。"),
         "submit_chain": {
             "device_single": s1, "device_dup": s2, "device_invalid": s3,
             "batch": batch, "proposal": p1,
@@ -101,8 +109,7 @@ def main():
         "acceptance": {"passed": all(c["ok"] for c in acceptance), "checks": acceptance},
     }
 
-    with open(REPORT_PATH, "w", encoding="utf-8") as f:
-        json.dump(report, f, indent=2, ensure_ascii=False)
+    det.write_json(REPORT_PATH, det.scrub(report))
 
     print(f"D-94 报告已生成：{REPORT_PATH}")
     print(f"acceptance.passed = {report['acceptance']['passed']}")

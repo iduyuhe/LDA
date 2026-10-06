@@ -1,6 +1,7 @@
 {
   "d": "D-97",
   "title": "生态共建进一步 · 评审门槛再扩展（ReviewPolicy）+ 多提案批量评审",
+  "snapshot_note": "受跟踪确定性生成物（det.write_json + scrub 唯一口径）：流程时刻（wall-clock）归一为 <ts>；数值为最近一次生成时的当前状态，历史口径见 CHANGELOG。",
   "policy": {
     "enforce_positive_tol": true,
     "enforce_nonempty_params": true,
@@ -40,7 +41,7 @@
       "id": "B94",
       "decision": "approve",
       "reviewer": "杜玉河",
-      "reviewed_at": "2026-08-24T14:37:50",
+      "reviewed_at": "<ts>",
       "reason": "评审已记录（审计轨迹已落盘）"
     },
     "source_short": {
@@ -53,7 +54,7 @@
       "id": "B95",
       "decision": "approve",
       "reviewer": "杜玉河",
-      "reviewed_at": "2026-08-24T14:37:50",
+      "reviewed_at": "<ts>",
       "reason": "评审已记录（审计轨迹已落盘）"
     },
     "strict_dedup": {
@@ -75,7 +76,7 @@
           "id": "B99",
           "decision": "reject",
           "reviewer": "杜玉河",
-          "reviewed_at": "2026-08-24T14:37:50",
+          "reviewed_at": "<ts>",
           "reason": "评审已记录（审计轨迹已落盘）"
         },
         {
@@ -83,7 +84,7 @@
           "id": "B100",
           "decision": "reject",
           "reviewer": "杜玉河",
-          "reviewed_at": "2026-08-24T14:37:50",
+          "reviewed_at": "<ts>",
           "reason": "评审已记录（审计轨迹已落盘）"
         }
       ]
@@ -100,7 +101,7 @@
           "id": "B101",
           "decision": "approve",
           "reviewer": "杜玉河",
-          "reviewed_at": "2026-08-24T14:37:50",
+          "reviewed_at": "<ts>",
           "reason": "评审已记录（审计轨迹已落盘）"
         },
         {
@@ -108,7 +109,7 @@
           "id": "B102",
           "decision": "approve",
           "reviewer": "杜玉河",
-          "reviewed_at": "2026-08-24T14:37:50",
+          "reviewed_at": "<ts>",
           "reason": "评审已记录（审计轨迹已落盘）"
         }
       ]
@@ -125,14 +126,14 @@
           "id": "B101",
           "value": 4.0,
           "reason": "已注册 golden._GOLDEN_DISPATCH + _PHYSICAL_LAW + benchmarks.BENCHMARK_DEFS，自动纳入统一回归；补丁已生成，待维护者 git 提交",
-          "patch": "# ===== 社区提案落地补丁（B101）=====\n# 请合并到 lda_harness/golden.py 与 lda_harness/benchmarks.py，\n# 经维护者评审后提交 git（PR 即开放评审流）。落库(live) ≠ 进版本控制。\n\n## 1) golden.py —— 新增 ORACLE 函数（建议置于 B18 之后）\ndef b101(L, n_g):\n    return n_g * L\n\n## 2) golden.py —— 注册（模块级 _GOLDEN_DISPATCH / _PHYSICAL_LAW）\n_GOLDEN_DISPATCH[\"B101\"] = b101\n_PHYSICAL_LAW.add(\"B101\")\n\n## 3) benchmarks.py —— BENCHMARK_DEFS 条目\n\"B101\": {\n    \"title\": \"c\", \"metric\": \"M\",\n    \"oracle\": \"analytical(community)\",\n    \"tol\": 0.5,\n    \"default_params\": {'L': 1.0, 'n_g': 4.0},\n    \"golden_fn\": b101,\n    \"note\": \"社区提案 B101 经评审落地；评审人 杜玉河 于 2026-08-24T14:37:50。\",\n},\n"
+          "patch": "# ===== 社区提案落地补丁（B101）=====\n# 请合并到 lda_harness/golden.py 与 lda_harness/benchmarks.py，\n# 经维护者评审后提交 git（PR 即开放评审流）。落库(live) ≠ 进版本控制。\n\n## 1) golden.py —— 新增 ORACLE 函数（建议置于 B18 之后）\ndef b101(L, n_g):\n    return n_g * L\n\n## 2) golden.py —— 注册（模块级 _GOLDEN_DISPATCH / _PHYSICAL_LAW）\n_GOLDEN_DISPATCH[\"B101\"] = b101\n_PHYSICAL_LAW.add(\"B101\")\n\n## 3) benchmarks.py —— BENCHMARK_DEFS 条目\n\"B101\": {\n    \"title\": \"c\", \"metric\": \"M\",\n    \"oracle\": \"analytical(community)\",\n    \"tol\": 0.5,\n    \"default_params\": {'L': 1.0, 'n_g': 4.0},\n    \"golden_fn\": b101,\n    \"note\": \"社区提案 B101 经评审落地；评审人 杜玉河 于 <ts>。\",\n},\n"
         },
         {
           "status": "landed",
           "id": "B102",
           "value": 4.0,
           "reason": "已注册 golden._GOLDEN_DISPATCH + _PHYSICAL_LAW + benchmarks.BENCHMARK_DEFS，自动纳入统一回归；补丁已生成，待维护者 git 提交",
-          "patch": "# ===== 社区提案落地补丁（B102）=====\n# 请合并到 lda_harness/golden.py 与 lda_harness/benchmarks.py，\n# 经维护者评审后提交 git（PR 即开放评审流）。落库(live) ≠ 进版本控制。\n\n## 1) golden.py —— 新增 ORACLE 函数（建议置于 B18 之后）\ndef b102(L, n_g):\n    return n_g * L\n\n## 2) golden.py —— 注册（模块级 _GOLDEN_DISPATCH / _PHYSICAL_LAW）\n_GOLDEN_DISPATCH[\"B102\"] = b102\n_PHYSICAL_LAW.add(\"B102\")\n\n## 3) benchmarks.py —— BENCHMARK_DEFS 条目\n\"B102\": {\n    \"title\": \"d\", \"metric\": \"M\",\n    \"oracle\": \"analytical(community)\",\n    \"tol\": 0.5,\n    \"default_params\": {'L': 1.0, 'n_g': 4.0},\n    \"golden_fn\": b102,\n    \"note\": \"社区提案 B102 经评审落地；评审人 杜玉河 于 2026-08-24T14:37:50。\",\n},\n"
+          "patch": "# ===== 社区提案落地补丁（B102）=====\n# 请合并到 lda_harness/golden.py 与 lda_harness/benchmarks.py，\n# 经维护者评审后提交 git（PR 即开放评审流）。落库(live) ≠ 进版本控制。\n\n## 1) golden.py —— 新增 ORACLE 函数（建议置于 B18 之后）\ndef b102(L, n_g):\n    return n_g * L\n\n## 2) golden.py —— 注册（模块级 _GOLDEN_DISPATCH / _PHYSICAL_LAW）\n_GOLDEN_DISPATCH[\"B102\"] = b102\n_PHYSICAL_LAW.add(\"B102\")\n\n## 3) benchmarks.py —— BENCHMARK_DEFS 条目\n\"B102\": {\n    \"title\": \"d\", \"metric\": \"M\",\n    \"oracle\": \"analytical(community)\",\n    \"tol\": 0.5,\n    \"default_params\": {'L': 1.0, 'n_g': 4.0},\n    \"golden_fn\": b102,\n    \"note\": \"社区提案 B102 经评审落地；评审人 杜玉河 于 <ts>。\",\n},\n"
         }
       ]
     }

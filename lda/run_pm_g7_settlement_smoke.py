@@ -102,7 +102,8 @@ def _g7_ledger_ok(case_gaps, ledger, spec):
 #:   ② M4 登记、**暂无独立证据链**的外设/器件级条目（`GAP_SPECS` 无对应 `_ev_*`）
 #:      —— 用**精确指纹**把它显式登记下来，任何一侧悄悄增删都会当场变红
 #:      （否则新条目只进「看得见的集合」⇒ 静默进盲区，本仓已吃过这一课）。
-_LEDGER_EXTRA = {"PM-G6", "PM-G7", "PM-G8", "PM-G9"}
+#:   · v0.9.198：PM-G2（Γ 场求解标定）由「开放」转「已结算但仍对外披露」⇒ 移入例外集合。
+_LEDGER_EXTRA = {"PM-G2", "PM-G6", "PM-G7", "PM-G8", "PM-G9"}
 
 
 def main() -> int:
@@ -317,14 +318,16 @@ def main() -> int:
           all(_mut), "mut=%s" % _mut)
 
     # ── P5 D1b 精确指纹的反向探针（增/删/换名 各自必红）──────────────────
+    # 🔴 v0.9.198：探针的「偷加」样本 id 必须是**未使用**的（原用 `PM-G11`，
+    #    加入 PM-G11 后它成了合法 id ⇒ 该样本恒等于原样 ⇒ 探针静默失效）。
     _case_ids = {g["id"] for g in PC.GAPS}
     _fp = [
         _case_ids == (_open_ids | _LEDGER_EXTRA),                     # 原样绿
-        (_case_ids | {"PM-G11"}) == (_open_ids | _LEDGER_EXTRA),      # 偷加条目必红
+        (_case_ids | {"PM-G0"}) == (_open_ids | _LEDGER_EXTRA),       # 偷加条目必红
         (_case_ids - {"PM-G10"}) == (_open_ids | _LEDGER_EXTRA),      # 偷删条目必红
         (_case_ids - {"PM-G9"} | {"PM-G99"}) == (_open_ids | _LEDGER_EXTRA),  # 换名必红
     ]
-    check("P5 D1b 指纹反向探针：原样绿 ∧ 偷加/偷删/换名 三改必红",
+    check("P5 D1b 指纹反向探针：原样绿 ∧ 偷加(PM-G0)/偷删/换名 三改必红",
           _fp[0] and not any(_fp[1:]), "fp=%s" % _fp)
 
     # ── S1 自入 CI core ─────────────────────────────────────────────────

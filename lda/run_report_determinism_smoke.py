@@ -42,12 +42,19 @@ v0.9.75 定为铁律：**受跟踪报告必须是输入的确定性函数** —�
    输出目录、或文件名由 f-string/循环变量拼成的写入者**不在发现范围**（如
    `run_harness.py`、`lda_l1/protocol.py` 经 `args.out`/`self.out_dir` 落盘）——
    它们靠既有登记 + ⑧b 兜底；此类漏网正是 `_KNOWN_UNREGISTERED` 存在的原因之一。
+12. **（v0.9.199 · D-94~D-98 同族专项）** ⑬ 受跟踪报告「快照 == 仓库现算」：
+    子进程重跑 D-94~D-98 五个生成器 → 与入库快照**逐字节对拍**（快照落后/
+    手改/生成器演进未重生成，任何一种都红）+ 反向探针（快照侧篡改 1 B 必红）
+    + perf 两份计时类钉基线的 schema 存活判据（如实钉住，不做字节对拍）
+    + `det.scrub` 单元判据（内嵌时间戳→`<ts>` / Temp 内 tmpdir→`<tmpdir>` /
+    幂等 / 普通词不误洗）。
 
 纯标准库、秒级、零外部依赖 ⇒ 必进 core。
 """
 from __future__ import annotations
 
 import ast
+import json
 import os
 import re
 import subprocess
@@ -264,15 +271,18 @@ _REPO = os.path.dirname(HERE)
 #      它已改走 `det.write_json` + 登记 `lint_spec`，并由 `run_ecosystem_smoke` 的
 #      「报告快照 == 仓库现算」常驻判据强制同步（此前入库快照停在 2026-08-24：
 #      harness 18/18 而现算 476/476、B14 15.5→7.75、B16 18.58→13.94、主权 16→17）。
-#      其余 7 项仍钉基线（同族、同风险，待各自专项）。
+#    ✅ **2026-10-06（v0.9.199）D-94~D-98 同族专项再摘除 5 项**（棘轮 7 → 2）：
+#      `run_ecosystem_d94~d98_report.py` 全部改走 `det.write_json(det.scrub(...))`
+#      （字符串内嵌 wall-clock → `<ts>`、随机 tmpdir → `<tmpdir>`）+ 登记 `lint_spec`
+#      + 由本 smoke ⑬「快照 == 现算」常驻判据强制同步。实测 5 份入库快照全部
+#      落后（CRLF + 2026-08-24 时间戳 + 真实前进字段），判定零翻转 ⇒ 提交前进。
+#    剩余 2 项（perf_baseline / perf_adjoint3d_d89）**如实钉住**：内容是**墙钟计时**
+#      （speedup / *_s 字段），本质随硬件与负载波动 —— 字节级确定性口径对它们
+#      不成立（强套 = 假绿）；其「防漂移」由 `run_perf_bench` 自身的基线对比
+#      ±30% 预警机制承担（⑬g 有 schema 存活性判据防快照烂掉）。
 _KNOWN_UNREGISTERED = frozenset({
-    "lda/run_ecosystem_d94_report.py",
-    "lda/run_ecosystem_d95_report.py",
-    "lda/run_ecosystem_d96_report.py",
-    "lda/run_ecosystem_d97_report.py",
-    "lda/run_ecosystem_d98_report.py",
     "lda/run_perf_adjoint3d.py",
-    "lda/run_perf_bench.py",                # 写 reports/perf_baseline.json
+    "lda/run_perf_bench.py",                # 写 reports/perf_baseline.json（计时类）
 })
 
 
@@ -402,6 +412,21 @@ def main() -> int:
         #   处置：改走 `det.write_json`（唯一确定性口径）+ 登记本表 + 由
         #   `run_ecosystem_smoke`「报告快照 == 仓库现算」常驻判据强制同步。
         "run_ecosystem_report.py": _WALL,
+        # ——— 2026-10-06（v0.9.199）D-94~D-98 同族专项：从 `_KNOWN_UNREGISTERED` 摘除 ———
+        #   5 个生态流一次性证据生成器，此前裸 `json.dump`（Windows 写 CRLF）+
+        #   报告内嵌 wall-clock（含 detail/patch 字符串内嵌 ⇒ canon 键剔除够不着）
+        #   ⇒ 入库快照全部停在 2026-08-24 且带随机 tmpdir 路径。处置三件套：
+        #   ① 生成器改走 `det.write_json(det.scrub(report))`（新增 scrub：ISO 时间戳
+        #     → `<ts>`、Temp 目录上下文里的 mkdtemp 名 → `<tmpdir>`，语义 =
+        #     「演示流程时刻」非交付事实，同 d93 的 d93_delivery_date 语义化）；
+        #   ② 登记本表（⑧b 覆盖）；③ 本 smoke ⑬「快照 == 现算」常驻判据强制同步。
+        #   定性：5 份 diff 全为时间戳/前进字段（d94 提交链路新字段、d95 votes、
+        #   d96 published 状态），判定零翻转 ⇒ 真实前进 ⇒ 提交，不还原。
+        "run_ecosystem_d94_report.py": _WALL,
+        "run_ecosystem_d95_report.py": _WALL,
+        "run_ecosystem_d96_report.py": _WALL,
+        "run_ecosystem_d97_report.py": _WALL,
+        "run_ecosystem_d98_report.py": _WALL,
     }
     lint_bad = []
     no_det = []
@@ -505,13 +530,105 @@ def main() -> int:
               _hit and not _neg_read and not _neg_tmp,
               f"正例报={_hit} 只读反例={bool(_neg_read)} tmp 反例={bool(_neg_tmp)}")
 
+    # 13) v0.9.199 D-94~D-98 同族专项：受跟踪报告「快照 == 仓库现算」+ perf 存活。
+    #     🔴 方法：先读入库快照字节 → 子进程重跑生成器 → 再读 → 逐字节对拍。
+    #        生成器已确定性（scrub 后双跑字节一致，实测）⇒ 快照落后/被手改/生成器
+    #        演进未重生成，任何一种都会红。子进程隔离（d95~d98 在模块顶层执行
+    #        流程并污染 harness 全局态，绝不能在进程内 import）。
+    #     🔴 对拍前 `det.eol_lf` 归一（v0.9.199 补）：本机 git `core.autocrlf=true`
+    #        签出为 CRLF（`git checkout-index` 实测 131 CRLF / 0 LF），而 write_json
+    #        写 LF ⇒ 裸比在新克隆/重签出后**假红**。行尾是传输属性非内容 ⇒ 归一后
+    #        比；内容真变更仍必红（反向探针 + CRLF 子探针双向锁住）。
+    _ECO_SYNC = (
+        ("run_ecosystem_d94_report.py", "ecosystem_d94.json"),
+        ("run_ecosystem_d95_report.py", "ecosystem_d95.json"),
+        ("run_ecosystem_d96_report.py", "ecosystem_d96.json"),
+        ("run_ecosystem_d97_report.py", "ecosystem_d97.json"),
+        ("run_ecosystem_d98_report.py", "ecosystem_d98.json"),
+    )
+    _sync_pre, _sync_post = {}, {}
+    for _gen, _rep in _ECO_SYNC:
+        _rp = os.path.join(HERE, "reports", _rep)
+        _pre = open(_rp, "rb").read() if os.path.exists(_rp) else None
+        _env = dict(os.environ, PYTHONPATH=HERE)
+        _pr = subprocess.run([sys.executable, os.path.join(HERE, _gen)],
+                             capture_output=True, env=_env, cwd=HERE,
+                             timeout=120)
+        _post = open(_rp, "rb").read() if os.path.exists(_rp) else b""
+        # EOL 归一后比（见上方说明）：签出侧 CRLF / 生成侧 LF 之差不是漂移。
+        _pre_n, _post_n = det.eol_lf(_pre), det.eol_lf(_post)
+        _sync_pre[_rep], _sync_post[_rep] = _pre_n, _post_n
+        _ok = (_pr.returncode == 0 and _pre is not None and _pre_n == _post_n)
+        check("⑬ 快照 == 现算：%s 子进程重跑 → 字节一致（EOL 归一 · rc=%s · "
+              "pre=%s · %d B）" % (_rep, _pr.returncode,
+                                   "有" if _pre is not None else "缺", len(_post_n)),
+              _ok,
+              "" if _ok else ("快照落后或非确定（重跑后 %d B ≠ 快照 %s B）"
+                              % (len(_post_n),
+                                 len(_pre_n) if _pre is not None else "无")))
+    # ⑬ perf 两份（计时类 · 钉基线）：不做字节对拍（本质非确定），只验
+    #    **schema 存活**（合法 JSON + 关键结构 + acceptance 通过标志没烂掉）。
+    _pb = os.path.join(HERE, "reports", "perf_baseline.json")
+    try:
+        _d = json.load(open(_pb, encoding="utf-8"))
+        _ok_pb = (isinstance(_d, dict) and "greens" in _d and "spectrum" in _d
+                  and isinstance(_d["greens"], dict)
+                  and "speedup" in _d["greens"])
+        check("⑬ perf_baseline.json schema 存活（计时类钉基线 · 防快照烂掉）",
+              _ok_pb, "keys=%s" % sorted(_d)[:8] if isinstance(_d, dict) else "非 dict")
+    except Exception as e:                                    # noqa: BLE001
+        check("⑬ perf_baseline.json schema 存活", False, "读取失败：%s" % e)
+    _pa = os.path.join(HERE, "reports", "perf_adjoint3d_d89.json")
+    try:
+        _d = json.load(open(_pa, encoding="utf-8"))
+        _ok_pa = (isinstance(_d, dict) and isinstance(_d.get("rows"), list)
+                  and len(_d["rows"]) >= 3
+                  and _d.get("acceptance", {}).get("passed") is True)
+        check("⑬ perf_adjoint3d_d89.json schema 存活（rows≥3 ∧ passed=True）",
+              _ok_pa, "passed=%s rows=%s" % (_d.get("acceptance", {}).get("passed")
+                                             if isinstance(_d, dict) else "?",
+                                             len(_d.get("rows", []))
+                                             if isinstance(_d, dict) else "?"))
+    except Exception as e:                                    # noqa: BLE001
+        check("⑬ perf_adjoint3d_d89.json schema 存活", False, "读取失败：%s" % e)
+    # ⑬ 反向（先证能变红 + 防假红）：对拍是字节级的（EOL 归一后）——
+    #    A) 把「快照侧」内容篡改 1 B（模拟快照落后/手改）⇒ 对拍必翻红；
+    #    B) 把快照整行尾 CRLF 化（模拟 autocrlf=true 签出）⇒ 归一后仍 == 现算
+    #       ⇒ **不假红**（证明第 ⑬ 组的 eol_lf 归一确实在起作用，否则新克隆必红）。
+    _rep0 = _ECO_SYNC[0][1]
+    _pre0, _post0 = _sync_pre[_rep0], _sync_post[_rep0]
+    _pre_tampered = _pre0[:-1] + bytes([_pre0[-1] ^ 0x01]) if _pre0 else None
+    _crlf0 = _pre0.replace(b"\n", b"\r\n") if _pre0 else None
+    _p13 = [bool(_pre0) and _pre0 == _post0,                       # A0 原样绿
+            _pre_tampered is not None and _pre_tampered != _post0,  # A1 内容变更必红
+            _crlf0 is not None and _crlf0 != _post0                # B0 CRLF 裸比必不同
+            and det.eol_lf(_crlf0) == _post0]                      # B1 归一后不假红
+    check("⑬ 反向探针：原样绿 ∧ 内容篡改 1 B 必红 ∧ CRLF 化快照裸比不同但"
+          "归一后不假红",
+          all(_p13), "p13=%s" % _p13)
+    # ⑬ scrub 单元：嵌套字符串内嵌时间戳 → <ts>；幂等；**不误洗普通词**。
+    _s_in = {"a": [{"detail": "ok at 2026-08-24T14:08:22 and later",
+                    "path": "C:\\u\\AppData\\Local\\Temp\\lda_d98r_ab12cd34\\p.patch",
+                    "code": "请合并到 lda_harness/golden.py 与 lda_harness/benchmarks.py"}]}
+    _s_out = det.scrub(_s_in)
+    _s_twice = det.scrub(_s_out)
+    check("⑬ scrub：内嵌 ISO 时间戳→<ts> ∧ Temp 内 tmpdir→<tmpdir> ∧ 幂等 ∧ "
+          "普通词（lda_harness/golden.py）不误洗",
+          _s_out["a"][0]["detail"] == "ok at <ts> and later"
+          and _s_out["a"][0]["path"] ==
+          "C:\\u\\AppData\\Local\\Temp\\<tmpdir>\\p.patch"
+          and _s_out["a"][0]["code"] ==
+          "请合并到 lda_harness/golden.py 与 lda_harness/benchmarks.py"
+          and _s_twice == _s_out,
+          "detail=%r path=%r" % (_s_out["a"][0]["detail"], _s_out["a"][0]["path"]))
+
     print(f"\n=== 结果：{'全部通过' if not _FAILS else 'FAIL %d 项' % len(_FAILS)} ===")
     if _FAILS:
         for f in _FAILS:
             print("  FAIL:", f)
         return 1
-    print("  ✅ 报告确定性 12 项判据全绿（相同输入 ⇒ 字节一致；真变更仍可证伪；"
-          "报告写入者无漏登记）")
+    print("  ✅ 报告确定性 13 组判据全绿（相同输入 ⇒ 字节一致；真变更仍可证伪；"
+          "报告写入者无漏登记；D-94~D-98 快照 == 现算）")
     return 0
 
 

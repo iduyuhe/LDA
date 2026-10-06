@@ -50,7 +50,7 @@ from lda_l2 import pm_matlib as ML
 # ---------------------------------------------------------------------------
 # 0. 假设参数（🔴 全部标注 provenance）
 # ---------------------------------------------------------------------------
-GAMMA_DEFAULT: float = 0.05             # 沿用 M0/M1 假设（PM-G2 未闭合）——材料级判据里约掉
+GAMMA_DEFAULT: float = 0.05             # 沿用 M0/M1 保守假设（Γ 已有标定 pm_gamma≈0.084）——材料级判据里约掉
 WL_NM_DEFAULT: float = 1550.0
 E_READ_FJ_ASSUMED: float = 9.0          # 与 M0/M1 同源（shot-noise 简化用）
 BER_TARGET: float = 1.0e-12
@@ -622,8 +622,8 @@ def phase_benchmark_rows(mat: str = "Sb2Se3", wl_nm: float = WL_NM_DEFAULT) -> L
                      "note": ("🔴 LDA 用 **Γ 假设** 折算 L_π；文献器件隐含模式重叠 "
                               "Γ_implied = Δn_eff/Δn = %.4f/%.4f = **%.4f**（LDA 假设 Γ=%.3f ⇒ 差 %.2f×）。"
                               "若取 Γ_implied，LDA L_π = %.2f µm ⇔ 文献 %.0f µm（吻合 %.1f%%）"
-                              "⇒ 与 LDA 假设 Γ 同量级（**不同几何/材料** ⇒ 只作交叉参照，"
-                              "不构成 Γ 标定，PM-G2 独立性不受影响）。"
+                              "⇒ 与 LDA 保守假设 Γ 同量级（**不同几何/材料** ⇒ 只作交叉参照）；"
+                              "LDA **自研 Γ 标定**见 `pm_gamma`（主账 0.084 · v0.9.198 PM-G2 已结算）。"
                               % (float(s["delta_n_eff"]), st0["dn"], g_implied, GAMMA_DEFAULT,
                                  g_implied / GAMMA_DEFAULT, l_pi_at_implied, dev_l_pi,
                                  100.0 * (1.0 - abs(l_pi_at_implied - dev_l_pi) / dev_l_pi)))})

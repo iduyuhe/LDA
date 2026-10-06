@@ -16,9 +16,12 @@
     B8 文献锚逐条 DOI ∧ 无「本项目实测」自称
     B9 m5_report 缺口终态 == pm_m0.gap_ledger（同源）∧ G10 开放 ∧ G7 闭合
     B10 verdict_counts 聚合一致 ∧ 披露块全真
+    B11 🔴 Γ 口径敏感并报（PM-G2 标定 ⇒ PM-G11）：胞长/密度两行带 `gamma_sensitivity`
+        ∧ 越窗判定为真 ∧ 两行 note 均含「并报」+ PM-G11（不选择性披露）
   C1 快照一致性：examples/photo_memory/lda_pm_m5_report.json == m5_report() 现算（逐块）
      C1a 🔴 报告路径锚定仓库根（绝对路径）：CI 以 cwd=lda 调起门禁，相对写法
          会让「人手绿 / CI 红」互斥（v0.9.194 实证）—— cwd 也是口径的一部分。
+  C2 🔴 内置快照 STATIC_SNAPSHOT['m5'] == 仓库报告 JSON（逐键 · 补 m5 长期盲区）
   探针：
     P1 改锚写能量 ×100 ⇒ 写能量行比值跟着跳 100× 且 verdict 翻红（真读锚）
     P2 改锚电平数 13→4/8→4 ⇒ 电平数行 verdict 翻转（真读锚）
@@ -26,6 +29,7 @@
     P4 肯定式面禁词（TOPS/fJ-op/pJ-bit 等）零命中
     P5 🔴 反 CWD 依赖：chdir 到临时目录后仍能定位到同一报告；**相对写法在同一
        临时目录里必读不到**（探针先证能变红），钉死「不许用相对路径读仓库产物」。
+    P6 🔴 C2 反向探针：篡改快照副本 ⇒ C2 必红（防该判据恒绿空转）
 """
 from __future__ import annotations
 
@@ -169,6 +173,21 @@ def main() -> int:
           rep["verdict_counts"] == vc
           and all(bool(v) for v in disc.values() if isinstance(v, bool)))
 
+    # ── B11 🔴 Γ 口径敏感性并报（PM-G2 标定 ⇒ PM-G11）────────────────────
+    from lda_l2 import pm_gamma as PG
+    imp = PG.gamma_impact_on_design()
+    gs_rows = {m: by[m].get("gamma_sensitivity") for m in ("cell_length_um", "areal_density")}
+    check("B11 🔴 Γ 口径敏感（PM-G2 标定 ⇒ PM-G11）：胞长/密度两行带 gamma_sensitivity ∧ "
+          "越窗判定 ∧ 两行 note 均含「并报」+ PM-G11",
+          all(isinstance(v, dict) for v in gs_rows.values())
+          and all(v["design_point_inside_calibrated_window"] is False for v in gs_rows.values())
+          and all(("并报" in by[m]["note"] and "PM-G11" in by[m]["note"])
+                  for m in gs_rows)
+          and abs(gs_rows["cell_length_um"]["law_rel_dev"] - imp["law_rel_dev"]) < 1e-15,
+          "L_cal=%.4f µm · 越窗 +%.1f%%"
+          % (gs_rows["cell_length_um"]["l_cell_rebaselined_um"],
+             100 * imp["design_point_outside_frac"]))
+
     # ── C1 快照一致性（路径锚定仓库根 · 与 cwd 无关）────────────────────
     path = _report_path()
     check("C1a 报告路径锚定仓库根（绝对 ∧ 落在仓库内 ⇒ 与 cwd 无关）",
@@ -185,6 +204,24 @@ def main() -> int:
     else:
         check("C1 仓库报告 JSON == m5_report() 现算（逐块同构）", False,
               "缺 %s（先跑 examples/photo_memory/build_pm_m5.py）" % path)
+
+    # ── C2 🔴 内置快照 == 仓库报告 JSON（补盲区 · v0.9.198）──────────────
+    # 铁律：受跟踪生成物必须配「入库快照 == 仓库当前状态」的常驻判据。
+    # m3/m4 早有此判据（`run_pm_m3_smoke` C8 / `run_pm_m4_smoke` G1），**m5 一直是盲区** ——
+    # 本版加 Γ 口径两行 note 时正是靠它防「只改报告忘了改快照」的静默失真。
+    from lda_webui import pm_case as _PC
+    _snap5 = _PC.STATIC_SNAPSHOT["m5"]
+    _bad5 = []
+    if not os.path.exists(path):
+        _bad5.append("(报告缺失)")
+    else:
+        with io.open(path, encoding="utf-8") as _fh:
+            _repj = json.load(_fh)
+        for _k in sorted(_snap5):
+            if _repj.get(_k) != _snap5.get(_k):
+                _bad5.append(_k)
+    check("C2 🔴 内置快照 STATIC_SNAPSHOT['m5'] == 仓库报告 JSON（逐键同构 · 补 m5 盲区）",
+          not _bad5, "不同键：%s" % _bad5)
 
     # ── P1 改锚写能量 ×100 ⇒ 写能量行跟着翻 ────────────────────────────
     saved = copy.deepcopy(ML.BENCHMARK_ANCHORS)
@@ -254,6 +291,13 @@ def main() -> int:
           "（相对写法必读不到 ⇒ 探针会红）",
           abs_hit and same and not rel_hit,
           "rel=%s abs=%s same=%s" % (rel_hit, abs_hit, same))
+
+    # ── P6 🔴 C2 反向探针（先证能变红）──────────────────────────────────
+    _snap_bad = dict(_snap5)
+    _snap_bad["gaps_closed"] = int(_snap5["gaps_closed"]) - 1
+    _fired = [k for k in sorted(_snap_bad) if _repj.get(k) != _snap_bad.get(k)]
+    check("P6 C2 反向探针：篡改快照副本（gaps_closed−1）⇒ 该判据必红（非恒绿）",
+          _fired == ["gaps_closed"], "fired=%s" % _fired)
 
     print("汇总：%d PASS / %d FAIL / 共 %d 项"
           % (g["PASS"], g["FAIL"], g["PASS"] + g["FAIL"]))

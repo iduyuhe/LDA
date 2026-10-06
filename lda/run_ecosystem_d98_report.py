@@ -2,8 +2,12 @@
 
 产出 lda/reports/ecosystem_d98.json：完整链验收 / 发布门槛 / 补丁与 Release Notes /
 状态 published / 审计 / list_published。
+
+v0.9.199（D-94~D-98 同族专项）：落盘改走确定性唯一口径
+`det.write_json(det.scrub(report))` —— 流程时刻归一为 `<ts>`、随机 tmpdir
+（patch_path/release_path 及 detail 内嵌路径）归一为 `<tmpdir>` ⇒ 字节确定，
+由 `run_report_determinism_smoke` ⑬ 快照==现算常驻判据强制同步。
 """
-import json
 import os
 import sys
 import tempfile
@@ -13,6 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
 from lda_pdk.submit import submit_benchmark_proposal
 from lda_pdk.review import review_proposal, land_proposal, get_audit, review_stats
 from lda_pdk.publish import publish_proposal, list_published
+from lda_harness import deterministic as det
 
 TMP = tempfile.mkdtemp(prefix="lda_d98r_")
 CP = os.path.join(TMP, "contributions.json")
@@ -92,6 +97,9 @@ acceptance = [
 report = {
     "d": "D-98",
     "title": "生态共建 · 评审流端到端 · 发布（Publish）",
+    "snapshot_note": ("受跟踪确定性生成物（det.write_json + scrub 唯一口径）："
+                      "流程时刻（wall-clock）归一为 <ts>、随机临时目录归一为 <tmpdir>；"
+                      "数值为最近一次生成时的当前状态，历史口径见 CHANGELOG。"),
     "flow": {"submit": s0, "review": s1, "land": s2,
              "publish_missing_author": s_norev,
              "publish_non_landed": s_noland,
@@ -111,8 +119,7 @@ report = {
 }
 
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
-with open(OUT, "w", encoding="utf-8") as f:
-    json.dump(report, f, indent=2, ensure_ascii=False)
+det.write_json(OUT, det.scrub(report))
 
 print("=" * 58)
 print("D-98 评审流端到端 · 发布 报告")

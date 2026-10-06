@@ -2,8 +2,11 @@
 
 产出 lda/reports/ecosystem_d97.json：策略预检 / 白名单 / 最短源码 / 严格防重 /
 批量评审 / 批量落地 / policy_info。
+
+v0.9.199（D-94~D-98 同族专项）：落盘改走确定性唯一口径
+`det.write_json(det.scrub(report))` —— 流程时刻归一为 `<ts>` ⇒ 字节确定，
+由 `run_report_determinism_smoke` ⑬ 快照==现算常驻判据强制同步。
 """
-import json
 import os
 import sys
 import tempfile
@@ -13,6 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
 from lda_pdk.submit import submit_benchmark_proposal, policy_info
 from lda_pdk.review import (review_proposal, review_proposals_batch,
                             land_proposals_batch)
+from lda_harness import deterministic as det
 
 TMP = tempfile.mkdtemp(prefix="lda_d97r_")
 CP = os.path.join(TMP, "contributions.json")
@@ -123,6 +127,9 @@ acceptance = [
 report = {
     "d": "D-97",
     "title": "生态共建进一步 · 评审门槛再扩展（ReviewPolicy）+ 多提案批量评审",
+    "snapshot_note": ("受跟踪确定性生成物（det.write_json + scrub 唯一口径）："
+                      "流程时刻（wall-clock）归一为 <ts>；数值为最近一次生成时的当前状态，"
+                      "历史口径见 CHANGELOG。"),
     "policy": pi,
     "policy_checks": {
         "tol_nonpositive": r_tol, "empty_params": r_params,
@@ -142,8 +149,7 @@ report = {
 }
 
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
-with open(OUT, "w", encoding="utf-8") as f:
-    json.dump(report, f, indent=2, ensure_ascii=False)
+det.write_json(OUT, det.scrub(report))
 
 print("=" * 58)
 print("D-97 评审门槛再扩展（ReviewPolicy）+ 批量评审 报告")

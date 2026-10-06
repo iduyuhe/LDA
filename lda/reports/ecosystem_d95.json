@@ -1,6 +1,7 @@
 {
   "d": "D-95",
   "title": "生态共建 · 社区评审流 + 提案→golden 落地",
+  "snapshot_note": "受跟踪确定性生成物（det.write_json + scrub 唯一口径）：流程时刻（wall-clock）归一为 <ts>；数值为最近一次生成时的当前状态，历史口径见 CHANGELOG。",
   "flow": {
     "submit": {
       "status": "accepted_pending",
@@ -23,7 +24,7 @@
       "id": "B19",
       "decision": "approve",
       "reviewer": "杜玉河",
-      "reviewed_at": "2026-08-24T14:08:22",
+      "reviewed_at": "<ts>",
       "reason": "评审已记录（审计轨迹已落盘）"
     },
     "land": {
@@ -55,15 +56,16 @@
   },
   "audit": [
     {
-      "ts": "2026-08-24T14:08:22",
+      "ts": "<ts>",
       "op": "review",
       "decision": "approve",
       "reviewer": "杜玉河",
       "rationale": "FSR=c/(n_g·L) 为确定性物理定律，公式与实现一致",
-      "self_test_value": 749.481145
+      "self_test_value": 749.481145,
+      "votes": "1/1"
     },
     {
-      "ts": "2026-08-24T14:08:22",
+      "ts": "<ts>",
       "op": "land",
       "value": 749.481145,
       "live_registered": true
@@ -84,25 +86,31 @@
     "status": "landed",
     "note": "",
     "reviewed_by": "杜玉河",
-    "reviewed_at": "2026-08-24T14:08:22",
+    "reviewed_at": "<ts>",
     "review_rationale": "FSR=c/(n_g·L) 为确定性物理定律，公式与实现一致",
-    "landed_at": "2026-08-24T14:08:22",
+    "landed_at": "<ts>",
     "audit": [
       {
-        "ts": "2026-08-24T14:08:22",
+        "ts": "<ts>",
         "op": "review",
         "decision": "approve",
         "reviewer": "杜玉河",
         "rationale": "FSR=c/(n_g·L) 为确定性物理定律，公式与实现一致",
-        "self_test_value": 749.481145
+        "self_test_value": 749.481145,
+        "votes": "1/1"
       },
       {
-        "ts": "2026-08-24T14:08:22",
+        "ts": "<ts>",
         "op": "land",
         "value": 749.481145,
         "live_registered": true
       }
-    ]
+    ],
+    "value_min": null,
+    "value_max": null,
+    "core": false,
+    "approvals": [],
+    "submitted_at": "<ts>"
   },
   "patch_generated": true,
   "patch_head": "# ===== 社区提案落地补丁（B19）=====\n# 请合并到 lda_harness/golden.py 与 lda_harness/benchmarks.py，\n# 经维护者评审后提交 git（PR 即开放评审流）。落库(live) ≠ 进版本控制。\n\n## 1) golden.py —— 新增 ORACLE 函数（建议置于 B18 之后）\ndef b19_micro_ring_fsr(L_um, n_g):",
@@ -128,7 +136,7 @@
       {
         "name": "有效 approve → approved",
         "ok": true,
-        "detail": "{'status': 'approved', 'id': 'B19', 'decision': 'approve', 'reviewer': '杜玉河', 'reviewed_at': '2026-08-24T14:08:22', 'reason': '评审已记录（审计轨迹已落盘）'}"
+        "detail": "{'status': 'approved', 'id': 'B19', 'decision': 'approve', 'reviewer': '杜玉河', 'reviewed_at': '<ts>', 'reason': '评审已记录（审计轨迹已落盘）'}"
       },
       {
         "name": "落地 → landed + 物理值正确",
@@ -158,7 +166,7 @@
       {
         "name": "审计轨迹（review[approve] → land）",
         "ok": true,
-        "detail": "[{'ts': '2026-08-24T14:08:22', 'op': 'review', 'decision': 'approve', 'reviewer': '杜玉河', 'rationale': 'FSR=c/(n_g·L) 为确定性物理定律，公式与实现一致', 'self_test_value': 749.481145}, {'ts': '2026-08-24T14:08:22', 'op': 'land', 'value': 749.481145, 'live_registered': True}]"
+        "detail": "[{'ts': '<ts>', 'op': 'review', 'decision': 'approve', 'reviewer': '杜玉河', 'rationale': 'FSR=c/(n_g·L) 为确定性物理定律，公式与实现一致', 'self_test_value': 749.481145, 'votes': '1/1'}, {'ts': '<ts>', 'op': 'land', 'value': 749.481145, 'live_registered': True}]"
       }
     ]
   }

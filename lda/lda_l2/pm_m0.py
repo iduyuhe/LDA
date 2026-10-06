@@ -25,8 +25,13 @@
 
 诚实边界
 --------
-- Γ（模场重叠）**无 FDTD 标定** ⇒ 是假设参数：绝对相移/长度结论对它线性敏感（并报敏感性）；
-  但**每 π 损耗与它无关**（闭式已证）。
+- Γ（模场重叠）**v0.9.198 起已有自研场求解标定**（`pm_gamma`：半矢量场法 + 全矢量**独立离散**
+  + 微扰法 + 1D 平板 ⇒ 主账 ≈0.084，方法学区间 [0.077, 0.093]；🔴 计算值不作 golden）。
+  本模块仍走**假设 0.05**（低于标定值）。🔴 **保守侧判定必须分清方向**：`L ∝ 1/Γ` ⇒ 假设 Γ 偏小
+  ⇒ 报出的**长度/面积偏大**（对版图面积是保守的）；但**可行窗两端亦 ∝1/Γ** ⇒ 按假设出的设计点
+  在标定口径下会**越出窗上界**（读出饿死）—— 这是**不保守**的一面，已登记为缺口 **PM-G11**
+  （两口径并报，见 `pm_gamma.gamma_impact_on_design`）。**每 π 损耗与 Γ 无关**（闭式已证，
+  门禁以两档 Γ 现算互等证明）。
 - 无 foundry 工艺真值、无本项目实测；材料常数全为**逐来源登记的文献值**，跨来源离散度**一个数量级以上**
   ⇒ 本模块一律报区间，不给单值结论。
 - 🔴 不报 pJ/bit、fJ/op、TOPS 类能效指标（红线）。
@@ -41,7 +46,10 @@ from lda_l2 import pm_matlib as ML
 # ---------------------------------------------------------------------------
 # 0. 假设参数（🔴 全部标注 provenance，绝不伪装成实测）
 # ---------------------------------------------------------------------------
-GAMMA_DEFAULT: float = 0.05          # 模场-材料重叠因子（**假设**，M0 无 FDTD 标定 ⇒ 缺口 PM-G2）
+GAMMA_DEFAULT: float = 0.05          # 🔴 **假设**值（v0.9.198 起 Γ 已有自研标定 `pm_gamma` ≈ 0.084；
+                                     #    L ∝ 1/Γ ⇒ 本值偏小 ⇒ 报出的长度/面积**偏大**（对面积保守）；
+                                     #    🔴 但按本假设出的设计点会**越出标定口径的可行窗上界**
+                                     #    ⇒ 缺口 PM-G11（须重标定，两口径并报）。
 GAMMA_SCAN: Tuple[float, ...] = (0.01, 0.02, 0.05, 0.1, 0.2)
 WL_NM_DEFAULT: float = 1550.0
 T0_K_DEFAULT: float = 300.0
@@ -54,8 +62,8 @@ GAP_SPECS: Tuple[Dict[str, Any], ...] = (
     # 🔴 不变式 = `declared_closed == evidence_ok`（两**不同来源** ⇒ 非同义反复，有判别力）。
     {"id": "PM-G1", "title": "相变材料光学常数锚库（n,k @λ,相态）",
      "evidence": "_ev_g1", "declared_closed": True},
-    {"id": "PM-G2", "title": "模场重叠因子 Γ 的 FDTD 标定",
-     "evidence": "_ev_g2", "declared_closed": False},
+    {"id": "PM-G2", "title": "模场重叠因子 Γ 的场求解标定（v0.9.198 结算：半矢量场法 + 全矢量**独立离散** + 微扰法 + 1D 平板；🔴 计算值不作 golden）",
+     "evidence": "_ev_g2", "declared_closed": True},
     {"id": "PM-G3", "title": "瞬态热模型（冷却时间 = set/reset 周期下限）",
      "evidence": "_ev_g3", "declared_closed": True},
     {"id": "PM-G4", "title": "晶化动力学（JMAK/Avrami）",
@@ -68,6 +76,9 @@ GAP_SPECS: Tuple[Dict[str, Any], ...] = (
      "evidence": "_ev_g7", "declared_closed": True},
     {"id": "PM-G10", "title": "写读耐久（endurance）模型与锚 —— M5 对拍表判定「不可判」（开放）",
      "evidence": "_ev_g10", "declared_closed": False},
+    {"id": "PM-G11", "title": "Γ 标定后的全链设计点/版图重标定（v0.9.198 新登记 · 开放："
+                              "L ∝ 1/Γ ⇒ 按假设 Γ=0.05 出的设计点越出标定口径可行窗上界）",
+     "evidence": "_ev_g11", "declared_closed": False},
 )
 
 
@@ -230,9 +241,19 @@ def _ev_g1() -> Tuple[bool, str]:
 
 
 def _ev_g2() -> Tuple[bool, str]:
-    """PM-G2：Γ 的 FDTD 标定 —— 需存在可为 Γ 背书的数据源（当前无）。"""
-    has_fdtd = hasattr(ML, "GAMMA_FDTD_TABLE") and bool(getattr(ML, "GAMMA_FDTD_TABLE", None))
-    return bool(has_fdtd), f"FDTD Γ 数据源存在={bool(has_fdtd)}"
+    """PM-G2：Γ 场求解标定（v0.9.198 结算）—— 读 `pm_gamma` **现算**判定（非字面量）。
+
+    闭合口径 = 「Γ 为有限非退化值 ∧ ①半矢量 vs ③全矢量（**独立离散**）一致 ∧
+    ④微扰法同量级 ⇒ 标定成立」。🔴 计算值**不作 golden**（`claim_kind=simulation`）。
+    """
+    from lda_l2 import pm_gamma as PG  # 局部导入避免加载序耦合
+    st = PG.gamma_calibration_status()
+    ok = bool(st["calibrated"] and st["never_golden"])
+    return ok, ("Γ 主账=%.5f（半矢量场法 · 独立离散 rel=%.1e）· 方法学区间 [%.5f, %.5f] · "
+                "vs 假设=%s · vs 文献=%s · 🔴 计算值不作 golden"
+                % (st["gamma_main"], st["two_method_rel_dev"],
+                   st["gamma_span"][0], st["gamma_span"][1],
+                   st["vs_assumption_band"], st["vs_literature_band"]))
 
 
 def _ev_g3() -> Tuple[bool, str]:
@@ -339,6 +360,25 @@ def _ev_g10() -> Tuple[bool, str]:
         % end_row[0]["verdict"])
 
 
+def _ev_g11() -> Tuple[bool, str]:
+    """PM-G11（v0.9.198 新登记）：Γ 标定后的全链设计点/版图重标定 —— **开放**。
+
+    开放口径 = 「存在**现役**设计点落在标定 Γ 口径的可行窗**之外**」⇒ 必须先重标定才能闭：
+    证据读 `pm_gamma.gamma_impact_on_design()` **现算**（1/Γ 缩放律 + 越窗判定），
+    🔴 一旦有人把现役设计点改到标定窗内（或改回自洽口径），本证据自动翻绿 ⇒ 缺口闭合。
+    """
+    from lda_l2 import pm_gamma as PG
+    d = PG.gamma_impact_on_design()
+    ok = bool(d["design_point_inside_calibrated_window"])
+    return ok, ("现役设计点 L=%.4f µm（假设 Γ=%.4f）vs 标定 Γ=%.4f 的可行窗 [%.4f, %.4f] µm "
+                "⇒ %s；重标定值 L=%.4f µm（1/Γ 律 rel=%.1e）"
+                % (d["assumed"]["l_mid_um"], d["gamma_assumed"], d["gamma_calibrated"],
+                   d["calibrated"]["window_um"][0], d["calibrated"]["window_um"][1],
+                   ("窗内 ⇒ 闭合" if ok else "越窗上界 %.4f µm（+%.1f%%）⇒ 开放"
+                    % (d["design_point_outside_by_um"], 100.0 * d["design_point_outside_frac"])),
+                   d["calibrated"]["l_mid_um"], d["law_rel_dev"]))
+
+
 def gap_ledger() -> List[Dict[str, Any]]:
     out = []
     for spec in GAP_SPECS:
@@ -394,7 +434,9 @@ def cell_report(mat: str = "GST", *, l_um: float = 200.0, gamma: float = GAMMA_D
             "contrast_vs_length": contrast_vs_length(mat, gamma=gamma, wl_nm=wl_nm),
             "per_pi_law": inv,
             "gamma_sensitivity": sens,
-            "gamma_provenance": "assumption（无 FDTD 标定 ⇒ 缺口 PM-G2）",
+            "gamma_provenance": ("assumption（v0.9.198 起已有自研标定 pm_gamma≈0.084；"
+                                 "L ∝ 1/Γ ⇒ 本值偏小 ⇒ 长度/面积偏大（对面积保守），"
+                                 "但可行窗同步缩小 ⇒ 设计点越窗 = PM-G11 开放）"),
         },
         "device_anchor_residue": ML.device_anchor_residue("Sb2Se3"),
         "gaps": gap_ledger(),

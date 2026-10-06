@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 # 有效数字位数（v0.9.75b：12 → 9）。
 #
@@ -135,3 +136,59 @@ def write_text(path: str, text: str) -> None:
 def write_json(path: str, obj, indent=2, default=None) -> None:
     """确定性 JSON 落盘（= write_text(path, dumps(obj))）。"""
     write_text(path, dumps(obj, indent, default))
+
+
+def eol_lf(data: bytes) -> bytes:
+    """把字节流行尾归一为 LF（`\\r\\n` → `\\n`）；仅用于**比对**，不用于写盘。
+
+    🔴 存在理由（v0.9.199）：本仓库签出侧 git `core.autocrlf=true`（实测
+    `git checkout-index` 产出 CRLF），而 `write_json` 写 LF ⇒ 直接拿「工作树
+    快照字节」与「现算字节」裸比会**假红**。行尾是传输属性、非报告内容，
+    因此「快照 == 现算」这类判据必须先 `eol_lf` 再比。
+    内容真变更（值/字段/判定）经归一后仍必不同 —— 检查强度不减。
+    """
+    if not data:
+        return data
+    return data.replace(b"\r\n", b"\n")
+
+
+# ============================================================
+# 「演示流程时刻」清洗（v0.9.199 · D-94~D-98 同族专项）
+# ============================================================
+# 生态流生成器（D-94~D-98）的报告内嵌两类**非证据**的易变语义：
+#   ① wall-clock ISO 时间戳（submitted_at / reviewed_at / landed_at /
+#      published_at / ts …），且大量嵌在**字符串内部**（detail 是 dict 的
+#      str() 串、patch 是含时间戳的 diff 文本）⇒ canon 的**键**剔除够不着；
+#   ② 随机 tmpdir 名（tempfile.mkdtemp(prefix="lda_*_")，patch_path 等）。
+# 这些时刻/目录名描述的是「演示流程何时在哪儿跑过一次」，不是交付事实 ——
+# 与 d93 的 `date → d93_delivery_date`（交付日固定）同理：**在写边界归一为
+# 哨兵**，保留 schema（字段还在、值为 <ts>），字节即确定。
+#
+# 🔴 红线不变：scrub 只在写边界调用（`det.write_json(p, det.scrub(r))`），
+#    返回新对象，不动调用方内存对象。
+# 🔴 不得误洗合法文本：`lda_harness/golden.py` 这类普通词不含「随机后缀 +
+#    Temp 目录上下文」，两个正则都够不着（run_report_determinism_smoke ⑬
+#    有常驻反例判据锁住这一点）。
+SCRUB_TS_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
+# tmpdir 名只允许出现在「Temp\<dir>\」路径上下文里（前后都有分隔符），
+# 防止误伤 `lda_harness` / `lda_webui` 等普通词。
+SCRUB_TMP_RE = re.compile(r"(?<=Temp\\)lda_[A-Za-z0-9_]+(?=\\)")
+SCRUB_TS_SENTINEL = "<ts>"
+SCRUB_TMP_SENTINEL = "<tmpdir>"
+
+
+def scrub(obj):
+    """递归清洗字符串内嵌 wall-clock / 随机 tmpdir（返回新对象）。
+
+    与 `canon` 分工：canon 管键剔除 + 浮点归一 + numpy 兜底（写边界已自动
+    应用）；scrub 只管**字符串内部**的易变语义。两者组合 = 完整确定性口径：
+    `det.write_json(path, det.scrub(report))`。
+    """
+    if isinstance(obj, dict):
+        return {k: scrub(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [scrub(v) for v in obj]
+    if isinstance(obj, str):
+        obj = SCRUB_TS_RE.sub(SCRUB_TS_SENTINEL, obj)
+        return SCRUB_TMP_RE.sub(SCRUB_TMP_SENTINEL, obj)
+    return obj

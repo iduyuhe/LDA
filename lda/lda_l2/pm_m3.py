@@ -395,7 +395,7 @@ def array_budget(arr: Dict[str, Any], mat: str = "GST") -> Dict[str, Any]:
         "n_electrode_pads": 4 * n_tot,
         "n_heater_lines": 2 * n_tot,
         "il_model": "serial_sum(N × single_cell_il)；不含单元间连接波导传播损耗（无锚）",
-        "gamma_note": "单元 IL 含 Γ 假设（PM-G2 未闭合）⇒ 区间口径，非单值",
+        "gamma_note": "单元 IL 含 Γ **假设 0.05**（Γ 已有自研场求解标定 pm_gamma≈0.084 ⇒ PM-G2 v0.9.198 结算）；🔴 L ∝ 1/Γ ⇒ 本档版图按假设出图，标定口径下设计点**越窗**须重标定（PM-G11 开放 · 两口径并报）⇒ 一律**区间**口径，非单值",
         "contrast_reuse_note": "contrast 与 IL 来自同一 M0 双层调用（避免二次来源）",
     }
 

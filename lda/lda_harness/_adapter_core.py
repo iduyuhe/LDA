@@ -548,6 +548,8 @@ def _get_batch_b30():
     return _m
 _BATCH_B32_MOD = None
 _BATCH_B31_MOD = None
+_BATCH_B33_MOD = None
+_BATCH_B34_MOD = None
 
 def _get_batch_b31():
     """双路兜底导入 Batch B-31 数值核（量子征程再评估 · WCS/Poisson 有限维 Fock 截断 × 解析闭式，缓存，项目铁律）。
@@ -584,4 +586,87 @@ def _get_batch_b32():
         _ensure_paths()
         import _batch_b32_numeric as _m
     _BATCH_B32_MOD = _m
+    return _m
+
+def _get_batch_b33():
+    """B-33 数值核（光子传感器新征程 PS-M2 衍生 · 洛伦兹谐振线型斜率极值：解析闭式 golden × 中心差分数值微分候选，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B33** 占用无连字符写法 `b33_`（`b33_detector_bandwidth_anchor.py` /
+    `b33_detector_bandwidth`），故批次核一律用连字符形式 `_batch_b33_numeric` / `_get_batch_b33`
+    （接手前已实 grep 核占名：`_BATCH_B33` / `_get_batch_b33` 全仓零命中，B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B33_MOD
+    if _BATCH_B33_MOD is not None:
+        return _BATCH_B33_MOD
+    try:
+        from lda_harness import _batch_b33_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b33_numeric as _m
+    _BATCH_B33_MOD = _m
+    return _m
+
+
+def _get_batch_b34():
+    """B-34 数值核（光子传感器新征程 PS-M3 衍生 · 波导灵敏度 HF 微扰闭式 golden × 有限差分候选，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B34** 沿用连字符写法 `_batch_b34_numeric` / `_get_batch_b34`
+    （与 B-33 同构；接手前已实 grep 核占名：`_BATCH_B34` / `_get_batch_b34` 全仓零命中，
+    B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B34_MOD
+    if _BATCH_B34_MOD is not None:
+        return _BATCH_B34_MOD
+    try:
+        from lda_harness import _batch_b34_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b34_numeric as _m
+    _BATCH_B34_MOD = _m
+    return _m
+
+
+# B-35 数值核缓存占位（与 B-31~B-34 同构，项目铁律）
+_BATCH_B35_MOD = None
+
+
+def _get_batch_b35():
+    """B-35 数值核（光子传感器新征程 PS-M4 衍生 · 表面灵敏度 HF 闭式 golden × 三层 TMM-FD 候选 / 朗缪尔闭式 golden × RK4 候选，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B35** 沿用连字符写法 `_batch_b35_numeric` / `_get_batch_b35`
+    （与 B-34 同构；接手前已实 grep 核占名：`_BATCH_B35` / `_get_batch_b35` 全仓零命中，
+    B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B35_MOD
+    if _BATCH_B35_MOD is not None:
+        return _BATCH_B35_MOD
+    try:
+        from lda_harness import _batch_b35_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b35_numeric as _m
+    _BATCH_B35_MOD = _m
+    return _m
+
+
+# B-36 数值核缓存占位（与 B-31~B-35 同构，项目铁律）
+_BATCH_B36_MOD = None
+
+
+def _get_batch_b36():
+    """B-36 数值核（光子传感器新征程 PS-M5 衍生 · 微流控/Lab-on-chip 多物理场：矩形 Hagen-Poiseuille 级数 golden × 2D FD Poisson 候选 / Lucas-Washburn 闭式 golden × 后向欧拉候选 / 圆柱径向热阻 Fourier 闭式 golden × 1D FD 径向 Laplace 候选，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B36** 沿用连字符写法 `_batch_b36_numeric` / `_get_batch_b36`
+        （与 B-35 同构；接手前已实 grep 核占名：`_BATCH_B36` / `_get_batch_b36` 全仓零命中，
+        B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B36_MOD
+    if _BATCH_B36_MOD is not None:
+        return _BATCH_B36_MOD
+    try:
+        from lda_harness import _batch_b36_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b36_numeric as _m
+    _BATCH_B36_MOD = _m
     return _m

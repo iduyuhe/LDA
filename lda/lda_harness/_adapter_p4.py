@@ -10,7 +10,8 @@ from __future__ import annotations
 from ._adapter_core import (
     _get_batch_b, _get_batch_b2, _get_batch_b28, _get_batch_b29, _get_batch_b3, _get_batch_b4,
     _get_batch_b5, _get_batch_b6, _get_batch_b7, _get_batch_b8, _register_candidate,
-    _get_batch_b30, _get_batch_b31, _get_batch_b32,
+    _get_batch_b30, _get_batch_b31, _get_batch_b32, _get_batch_b33, _get_batch_b34,
+    _get_batch_b35, _get_batch_b36,
 )
 
 from typing import (
@@ -1049,3 +1050,75 @@ def _b457_wcs_multiphoton_cand(spec: VerificationSpec, oracle_value: Any) -> flo
 def _b458_polygon_area_cand(spec: VerificationSpec, oracle_value: Any) -> float:
     m = _get_batch_b32()
     return float(m.cand_b458())
+
+
+@_register_candidate(
+    "b459_lorentzian_slope_cand",
+    "洛伦兹谐振线型斜率极值·数值微分：等距采样 T(λ)=T_bg−depth·Γ²/((λ−λ0)²+Γ²)（Γ=FWHM/2），中心差分 np.gradient 取 |dT/dλ| 最大值 ↔ 闭式 slope_closed=depth·(3√3/4)/FWHM，方法学独立（离散参数=采样点数 n，默认 4001）")
+def _b459_lorentzian_slope_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b33()
+    return float(m.cand_b459(float(p["depth"]), float(p["FWHM"])))
+
+
+@_register_candidate(
+    "b460_sensitivity_cand",
+    "波导灵敏度·有限差分：对称平板波导 TE0 解析特征方程 u=V·cos(u) 解 n_eff，perturb n_clad ±dp → 重解 n_eff → 中心差商 dneff/dn_clad ↔ HF 微扰闭式 golden=(n_clad/n_eff)·Γ_clad，方法学独立（离散参数=dp，默认 1e-6）")
+def _b460_sensitivity_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b34()
+    return float(m.sensitivity_fd(float(p["n_f"]), float(p["n_c"]), float(p["d_um"]), float(p["wl_um"])))
+
+
+@_register_candidate(
+    "b461_sensitivity_cand",
+    "表面/吸附层灵敏度·三层对称平板 TE0 传递矩阵（连续域匹配法，无空间网格）：解 n_eff(n_a) → 中心差商 dneff/dn_a ↔ HF 微扰闭式 golden=(n_a/n_eff)·Γ_adlayer（Γ_adlayer=Γ_clad·(1−e^(−2γ·ds))），方法学独立（离散参数=da，默认 1e-5）")
+def _b461_sensitivity_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b35()
+    return float(m.surface_sensitivity_fd(
+        float(p["n_f"]), float(p["n_c"]), float(p["n_a"]),
+        float(p["d_um"]), float(p["ds_um"]), float(p["wl_um"]), da=1e-5))
+
+
+@_register_candidate(
+    "b462_langmuir_cand",
+    "朗缪尔吸附覆盖度·四阶 RK4 积分：dθ/dt=k_on·C·(1−θ)−k_off·θ，θ(0)=0，积分到 ~20 时间常数 ≈ 平衡 ↔ 闭式 golden θ_eq=K_A·C/(1+K_A·C)（K_A=k_on/k_off），方法学独立（离散参数=n_steps，默认 2000）")
+def _b462_langmuir_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b35()
+    return float(m.langmuir_rk4(
+        float(p["k_on"]), float(p["k_off"]), float(p["C"]), n_steps=2000))
+
+
+@_register_candidate(
+    "b463_poiseuille_cand",
+    "矩形微通道 Hagen-Poiseuille 体积流量·2D 有限差分 Poisson（红黑棋盘 SOR 矢量解，纯 numpy 无空间双循环，Young 最优 ω*）：解 −∇²u=ΔP/(μL)，u|边=0，Q=∫∫u dA ↔ 矩形级数闭式 golden Q=(ΔP/μL)·(a·b³/12)·C_f(α)（α=小/大边长），方法学独立（离散参数=N_grid，默认 200）")
+def _b463_poiseuille_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b36()
+    return float(m.poiseuille_flow_rate_fd_nl_s(
+        float(p["dp_pa"]), float(p["mu_pas"]), float(p["L_m"]),
+        float(p["w_m"]), float(p["h_m"]), N_grid=200))
+
+
+@_register_candidate(
+    "b464_washburn_cand",
+    "Lucas-Washburn 毛细填充长度·后向欧拉（隐式·无条件稳定·L(0)=0 奇点不爆）：dL/dt=(D·γ·cosθ)/(8ηL) ⟺ 闭式 golden L=√[(D·γ·cosθ)/(4η)·t]，方法学独立（离散参数=n_steps，默认 2000）")
+def _b464_washburn_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b36()
+    return float(m.washburn_length_be_mm(
+        float(p["D_m"]), float(p["gamma_Nm"]), float(p["cos_theta"]),
+        float(p["eta_Pas"]), float(p["t_s"]), n_steps=2000))
+
+
+@_register_candidate(
+    "b465_thermal_cand",
+    "圆柱微通道壁面径向热阻·1D 有限差分径向 Laplace（守恒界面通量格式）：解 d/dr(r·dT/dr)=0，界面热流 Q=−2π·r_{1/2}·k·(T_1−T_0)/dr·L ⟺ Fourier 闭式 golden R_th=ln(r_o/r_i)/(2πkL)，方法学独立（离散参数=N，默认 600）")
+def _b465_thermal_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b36()
+    return float(m.thermal_resistance_fd_k_W(
+        float(p["r_i_m"]), float(p["r_o_m"]), float(p["k_WmK"]),
+        float(p["L_m"]), N=600))

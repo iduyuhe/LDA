@@ -1,7 +1,7 @@
 {
-  "total": 204,
-  "expected_extreme": 117,
-  "in_domain_suspect": 87,
+  "total": 209,
+  "expected_extreme": 119,
+  "in_domain_suspect": 90,
   "suspects": [
     {
       "bid": "B165",
@@ -1233,6 +1233,63 @@
       "tol": 0.01,
       "passed": false,
       "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B461",
+      "as_strict": true,
+      "params": {
+        "n_f": 3.999355,
+        "n_c": 1.33,
+        "n_a": 1.45,
+        "d_um": 0.22,
+        "ds_um": 0.05,
+        "wl_um": 1.55
+      },
+      "oracle": 0.0423025402,
+      "cand": 0.0,
+      "err": 0.0423025402,
+      "tol": 0.002,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B461",
+      "as_strict": true,
+      "params": {
+        "n_f": 3.4777,
+        "n_c": 1.33,
+        "n_a": 1.45,
+        "d_um": 0.253,
+        "ds_um": 0.05,
+        "wl_um": 1.55
+      },
+      "oracle": 0.0461374319,
+      "cand": 0.0,
+      "err": 0.0461374319,
+      "tol": 0.002,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B461",
+      "as_strict": true,
+      "params": {
+        "n_f": 3.4777,
+        "n_c": 1.33,
+        "n_a": 1.45,
+        "d_um": 0.286,
+        "ds_um": 0.05,
+        "wl_um": 1.55
+      },
+      "oracle": 0.0360971399,
+      "cand": 0.0,
+      "err": 0.0360971399,
+      "tol": 0.002,
+      "passed": false,
+      "max_perturbation": 0.3,
       "classification": "in_domain_divergence"
     },
     {
@@ -4321,6 +4378,101 @@
       "tol": 0.01,
       "passed": false,
       "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B461",
+      "as_strict": true,
+      "params": {
+        "n_f": 3.999355,
+        "n_c": 1.33,
+        "n_a": 1.45,
+        "d_um": 0.22,
+        "ds_um": 0.05,
+        "wl_um": 1.55
+      },
+      "oracle": 0.0423025402,
+      "cand": 0.0,
+      "err": 0.0423025402,
+      "tol": 0.002,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B461",
+      "as_strict": true,
+      "params": {
+        "n_f": 4.52101,
+        "n_c": 1.33,
+        "n_a": 1.45,
+        "d_um": 0.22,
+        "ds_um": 0.05,
+        "wl_um": 1.55
+      },
+      "oracle": 0.0302862444,
+      "cand": 0.0,
+      "err": 0.0302862444,
+      "tol": 0.002,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B461",
+      "as_strict": true,
+      "params": {
+        "n_f": 3.4777,
+        "n_c": 1.33,
+        "n_a": 1.885,
+        "d_um": 0.22,
+        "ds_um": 0.05,
+        "wl_um": 1.55
+      },
+      "oracle": 0.0781508253,
+      "cand": 0.0815499218,
+      "err": 0.00339909655,
+      "tol": 0.002,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B461",
+      "as_strict": true,
+      "params": {
+        "n_f": 3.4777,
+        "n_c": 1.33,
+        "n_a": 1.45,
+        "d_um": 0.253,
+        "ds_um": 0.05,
+        "wl_um": 1.55
+      },
+      "oracle": 0.0461374319,
+      "cand": 0.0,
+      "err": 0.0461374319,
+      "tol": 0.002,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B461",
+      "as_strict": true,
+      "params": {
+        "n_f": 3.4777,
+        "n_c": 1.33,
+        "n_a": 1.45,
+        "d_um": 0.286,
+        "ds_um": 0.05,
+        "wl_um": 1.55
+      },
+      "oracle": 0.0360971399,
+      "cand": 0.0,
+      "err": 0.0360971399,
+      "tol": 0.002,
+      "passed": false,
+      "max_perturbation": 0.3,
       "classification": "in_domain_divergence"
     },
     {

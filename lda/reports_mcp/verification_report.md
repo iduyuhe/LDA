@@ -5,9 +5,9 @@
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - via：L1 KernelGateway
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **471 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **478 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
 
-## 汇总：473/476 通过（独立候选 5 项中 **2 项通过=已验证** · 471 项自证闭环，**非验证结论**）
+## 汇总：480/483 通过（独立候选 5 项中 **2 项通过=已验证** · 478 项自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -407,7 +407,14 @@
 | B456 | wcs_single_photon_prob_trunc | physical-law | 0.367879 | 0.367879 | 0 | 0.01 | ✅ PASS |
 | B457 | wcs_multiphoton_prob_trunc | physical-law | 0.264241 | 0.264241 | 0 | 0.01 | ✅ PASS |
 | B458 | polygon_area_rasterized | physical-law | 4.025 | 4.025 | 0 | 0.05 | ✅ PASS |
+| B459 | lorentzian_slope_max | physical-law | 11.6913 | 11.6913 | 0 | 0.05 | ✅ PASS |
 | B46 | E1_eV | physical-law | 0.493391 | 0.493391 | 0 | 0.01 | ✅ PASS |
+| B460 | waveguide_sensitivity_dneff_dn_clad | physical-law | 0.0863955 | 0.0863955 | 0 | 0.001 | ✅ PASS |
+| B461 | surface_sensitivity_dneff_dn_adlayer | physical-law | 0.060116 | 0.060116 | 0 | 0.002 | ✅ PASS |
+| B462 | langmuir_coverage_theta_eq | physical-law | 0.5 | 0.5 | 0 | 0.001 | ✅ PASS |
+| B463 | poiseuille_flow_rate_nl_s | physical-law | 0.00114341 | 0.00114341 | 0 | 5e-05 | ✅ PASS |
+| B464 | washburn_length_mm | physical-law | 13.4164 | 13.4164 | 0 | 0.1 | ✅ PASS |
+| B465 | thermal_resistance_k_W | physical-law | 124.893 | 124.893 | 0 | 0.01 | ✅ PASS |
 | B47 | E2_eV | physical-law | 0.822319 | 0.822319 | 0 | 0.1 | ✅ PASS |
 | B48 | E0_eV | physical-law | -0.350171 | -0.350171 | 0 | 0.01 | ✅ PASS |
 | B49 | T | physical-law | 0.308027 | 0.308027 | 0 | 0.02 | ✅ PASS |

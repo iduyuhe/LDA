@@ -123,6 +123,24 @@ class _DefUse:
                        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
         self._mod_env = self._env_of(tree.body)
         self._fn_env = {id(f): self._env_of(f.body) for f in self._funcs}
+        # 🔴 形参默认值也入作用域：`def f(path=_BASELINE)` 后 `open(path, "w")` 的
+        #    `path` 必须回溯到模块级 `_BASELINE`（否则 def-use 在「写入抽到带参数
+        #    的 helper」时会失明 ⇒ 真写入者被漏报 = 门禁盲区。run_perf_bench.py 先例）。
+        self._fn_params = {id(f): self._param_env(f) for f in self._funcs}
+
+    @staticmethod
+    def _param_env(f):
+        """函数的形参默认值环境（`{形参名: [默认值表达式, ...]}`，与 `_env_of` 同构）。"""
+        env = {}
+        a = f.args
+        pos = list(getattr(a, "posonlyargs", [])) + list(a.args)
+        defs = list(a.defaults)
+        for arg, d in zip(pos[len(pos) - len(defs):], defs):
+            env.setdefault(arg.arg, []).append(d)
+        for arg, d in zip(a.kwonlyargs, a.kw_defaults):
+            if d is not None:
+                env.setdefault(arg.arg, []).append(d)
+        return env
 
     @staticmethod
     def _env_of(body):
@@ -151,6 +169,7 @@ class _DefUse:
         if best is None:
             return self._mod_env
         merged = dict(self._mod_env)
+        merged.update(self._fn_params[id(best)])
         merged.update(self._fn_env[id(best)])
         return merged
 
@@ -521,14 +540,34 @@ def main() -> int:
                       'def w():\n'
                       '    with open(OUT, "w", encoding="utf-8") as f:\n'
                       '        json.dump(1, f)\n')
+        # 🔴 形参默认值回溯专项（本次修 run_perf_bench.py 盲区所加）：写入抽到
+        #    `def w(path=OUT)` 后 `open(path,"w")`，`path` 必须回溯到模块级 `OUT`。
+        #    正例（默认值=reports 路径）必报；反例（默认值=tmpdir 路径）必不报。
+        #    撤掉 `_param_env` 合并 ⇒ 正例必失明 ⇒ 本判据必红（先证能变红）。
+        _probe_param = ('import json, os\n'
+                        'OUT = os.path.join(_HERE, "reports", "probe_synth.json")\n'
+                        'def w(path=OUT):\n'
+                        '    with open(path, "w", encoding="utf-8") as f:\n'
+                        '        json.dump(1, f)\n')
+        _probe_param_neg = ('import json, os, tempfile\n'
+                            'OUT = os.path.join(tempfile.gettempdir(), "probe_synth.json")\n'
+                            'def w(path=OUT):\n'
+                            '    with open(path, "w", encoding="utf-8") as f:\n'
+                            '        json.dump(1, f)\n')
         _grab = {os.path.basename("probe_synth.json")}
         _hit = bool(held_report_literals(_probe, _grab))
         _neg_read = held_report_literals(_probe_read, _grab)
         _neg_tmp = held_report_literals(_probe_tmp, _grab)
+        _hit_param = bool(held_report_literals(_probe_param, _grab))
+        _neg_param = held_report_literals(_probe_param_neg, _grab)
         check("⑫ 反向：合成「写受跟踪报告」模块 ⇒ 发现器必报；"
               "只读 / 临时目录撞名两反例必不报（证明非粗扫）",
               _hit and not _neg_read and not _neg_tmp,
               f"正例报={_hit} 只读反例={bool(_neg_read)} tmp 反例={bool(_neg_tmp)}")
+        check("⑫b 反向：写入经**形参默认值**（`def w(path=OUT)`）⇒ 必报；"
+              "默认值指向 tmpdir ⇒ 必不报（参数回溯非假绿）",
+              _hit_param and not _neg_param,
+              f"形参正例报={_hit_param} 形参反例={bool(_neg_param)}")
 
     # 13) v0.9.199 D-94~D-98 同族专项：受跟踪报告「快照 == 仓库现算」+ perf 存活。
     #     🔴 方法：先读入库快照字节 → 子进程重跑生成器 → 再读 → 逐字节对拍。

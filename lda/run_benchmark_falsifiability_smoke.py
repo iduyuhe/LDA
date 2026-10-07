@@ -106,6 +106,33 @@ PERTURB_SPEC = [
     # v0.9.21（P0 续）：B1 米氏散射（完整 Mie 级数 ↔ Rayleigh 一阶极限）。
     # 扰 m（信号 2.357e-3，11.9× 最强键）；x×1.1→1.246e-3（6.2×）。
     ("B1", "m", "mul"),
+    # v0.9.201（Batch B-33 · 光子传感器新征程 PS-M2 衍生）：B459 洛伦兹谐振线型斜率极值
+    #   （解析闭式 golden × 中心差分数值微分候选；扰 FWHM ⇒ 斜率极值 ∝ 1/FWHM 响应）。
+    ("B459", "FWHM", "mul"),
+    # v0.9.202（Batch B-34 · 光子传感器新征程 PS-M3 衍生）：B460 波导灵敏度 dneff/dn_clad
+    #   （Hellmann-Feynman 微扰闭式 golden × 有限差分 perturb n_clad ±δ 候选；
+    #   扰 n_clad ⇒ 灵敏度响应：实测 n_c×1.1 ⇒ |golden 偏差|=0.0113 ≫ tol 1e-3 ⇒ 守卫必 FAIL）。
+    ("B460", "n_c", "mul"),
+    # v0.9.203（Batch B-35 · 光子传感器新征程 PS-M4 衍生）：B461 表面灵敏度 dneff/dn_a
+    #   （HF 微扰闭式 golden=(n_a/n_eff)·Γ_adlayer × 三层 TMM-FD 候选；扰 n_a ⇒ 灵敏度响应：
+    #   实测 n_a×1.1 ⇒ |golden 偏差|≈8.7e-03 ≫ tol 2e-03 ⇒ 守卫必 FAIL）。
+    ("B461", "n_a", "mul"),
+    # v0.9.203（Batch B-35 · 光子传感器新征程 PS-M4 衍生）：B462 朗缪尔平衡覆盖度 θ_eq
+    #   （闭式 golden=K_A·C/(1+K_A·C) × RK4 积分候选；扰 k_on ⇒ θ_eq 响应：
+    #   实测 k_on×1.1 ⇒ |golden 偏差|≈2.38e-02 ≫ tol 1e-03 ⇒ 守卫必 FAIL）。
+    ("B462", "k_on", "mul"),
+    # v0.9.204（Batch B-36 · 光子传感器新征程 PS-M5 衍生）：B463 矩形微通道 Hagen-Poiseuille 体积流量
+    #   （级数闭式 golden × 2D FD Poisson 红黑 SOR 候选；扰 μ ⇒ 流量 Q∝1/μ 响应：
+    #   实测 μ×1.1 ⇒ |golden 偏差|≫tol 5e-5 ⇒ 守卫必 FAIL）。
+    ("B463", "mu_pas", "mul"),
+    # v0.9.204（Batch B-36 · 光子传感器新征程 PS-M5 衍生）：B464 Lucas-Washburn 毛细填充长度
+    #   （闭式 golden × 后向欧拉候选；扰 γ ⇒ 毛细驱动力响应：
+    #   实测 γ×1.1 ⇒ |golden 偏差|≫tol 1e-1 ⇒ 守卫必 FAIL）。
+    ("B464", "gamma_Nm", "mul"),
+    # v0.9.204（Batch B-36 · 光子传感器新征程 PS-M5 衍生）：B465 圆柱微通道径向热阻
+    #   （Fourier 闭式 golden × 1D FD 径向 Laplace 候选；扰 k ⇒ 热导响应：
+    #   实测 k×1.1 ⇒ |golden 偏差|≫tol 1e-2 ⇒ 守卫必 FAIL）。
+    ("B465", "k_WmK", "mul"),
     # v0.9.23（P0 续）：E2 由「降级量级参考」**升为严格独立候选**
     # （候选 fdfd_ng → semivec_ng，2D 半矢量本征模；FDFD 的 ±0.04~0.08 窗口
     #  散射缺陷被解决，半矢量散射 <1e-5）。
@@ -258,7 +285,18 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 #   ⇒ 严格独立 452 → 454（降级 3、自证桩 18 不变）。棘轮地板同步单调上调：452 → 454。
 # Batch B-32（几何栅格化收敛）：几何类首锚 B458 落地 ⇒ 严格独立 454 → 455。
 #   棘轮地板同步单调上调：454 → 455。
-MIN_INDEPENDENT = 455
+# Batch B-33（光子传感器新征程 PS-M2 衍生）：洛伦兹谐振线型斜率极值 B459 落地
+#   ⇒ 严格独立 455 → 456（降级 3、自证桩 18 不变）。棘轮地板同步单调上调：455 → 456。
+# Batch B-34（光子传感器新征程 PS-M3 衍生）：波导灵敏度 Hellmann-Feynman 闭式 B460 落地
+#   ⇒ 严格独立 456 → 457（降级 3、自证桩 18 不变）。棘轮地板同步单调上调：456 → 457。
+# Batch B-35（光子传感器新征程 PS-M4 衍生）：表面灵敏度 HF 闭式 B461 + 朗缪尔闭式 B462
+#   共 2 道严格独立锚落地 ⇒ 严格独立 457 → 459（降级 3、自证桩 18 不变）。
+#   棘轮地板同步单调上调：457 → 459。
+# Batch B-36（光子传感器新征程 PS-M5 衍生）：矩形微通道 Hagen-Poiseuille 流量 B463 +
+#   Lucas-Washburn 毛细填充长度 B464 + 圆柱微通道径向热阻 B465 共 3 道严格独立锚落地
+#   ⇒ 严格独立 459 → 462（降级 3、自证桩 18 不变）。
+#   棘轮地板同步单调上调：459 → 462。
+MIN_INDEPENDENT = 462
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

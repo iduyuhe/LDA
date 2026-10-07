@@ -1,5 +1,40 @@
 # Changelog
 
+## v0.9.204（2026-10-06 · **光子传感器新征程 PS-M5 微流控/Lab-on-chip 多物理场 + B463 矩形微通道 Hagen-Poiseuille 流量 + B464 Lucas-Washburn 毛细填充 + B465 圆柱微通道径向热阻入 B 账本** · 账本 **480 → 483** · 严格独立 **459 → 462** · CI core **288 → 290** · 端点 **147 不变**）
+
+- **PS-M5 立项（微流控 / Lab-on-chip 多物理场）**：把光子传感器的「流体输运 + 毛细填充 + 热管理」建成常驻能力。新建 `lda_l2/ps_m5.py`（18 项自检全 PASS）+ 自建内核 `lda_harness/_batch_b36_numeric.py`（纯 numpy、零外框架）。
+- **B463（Batch B-36 · 严格独立锚）**：矩形微通道体积流量 Q，golden = Hagen-Poiseuille 级数闭式 `Q = (w·h)³·ΔP/(12·μ·L)·Σ_coef(α)`（α=w/h，含二阶修正项、连续域精确）；候选 = 2D 有限差分 Poisson（红黑棋盘 SOR 矢量解，200 网格）数值积分壁面切应力 → 流量。判据 D 干净通过：|Δ|=5.31e-08 / tol 5e-5（941×）· 比值 1.57~2.59（单调收敛）· golden/tol 22.9（≫13.5）· margin tol/|Δ| 941（≫2）。
+- **B464（Batch B-36 · 严格独立锚）**：Lucas-Washburn 毛细填充长度 L，golden = 闭式 `L=√((γ·D·cosθ)/(4·η)·t)`；候选 = 后向欧拉时间步进（2000 步）数值积分长度依赖渗透率（守恒界面通量）。判据 D 干净通过：|Δ|=8.33e-03 / tol 1e-1（12.0×）· 比值 1.85~2.23 · golden/tol 134.2 · margin 12.0。
+- **B465（Batch B-36 · 严格独立锚）**：圆柱微通道壁面径向热阻 R，golden = Fourier 闭式 `R=ln(r_o/r_i)/(2π·k·L)`；候选 = 1D 有限差分径向 Laplace（N=600，守恒界面通量）数值积分热流 → 热阻。判据 D 干净通过：|Δ|=4.68e-05 / tol 1e-2（213.8×）· 比值 1.78~2.78 · golden/tol 12489.3 · margin 213.8。
+- **🔴 反向探针常驻（先证能变红）**：falsifiability guard 新增 PERTURB_SPEC `("B463","mu_pas","mul")` / `("B464","gamma_Nm","mul")` / `("B465","k_WmK","mul")`——μ×1.1 ⇒ |golden 偏差|≫tol 5e-5；γ×1.1 ⇒ 毛细驱动力响应；k×1.1 ⇒ 热导响应 ⇒ 守卫必 FAIL，证参数是真算出来的（非恒真文案）；MIN_INDEPENDENT 棘轮地板 459 → 462。
+- **门禁**：新增 `run_ps_m5_smoke.py`（<2s，CORE，入 CORE_SMOKES）；🔴 清 B20 盲区债（PS-M5 同口径以 300.0 登记 `_BUILTIN_TIMEOUT_OVERRIDE`，盲区现 []）；🔴 CI 全量回扫（289 项，6402s）抓出 6 项 FAIL 并全部收口：①补登前序未接线的 `run_perf_bench_median_smoke.py`（计时基线中位数化护栏，CORE）⇒ 门禁覆盖 303/303 无缺口、CI core 289 → 290；②`run_report_determinism` ⑪ 发现器补「形参默认值回溯」（前序把 `perf_baseline.json` 写入抽进 `_write_baseline(path=_BASELINE)` 致 def-use 失明、真写入者被漏报 ⇒ 修发现器而非删基线）；③pyflakes 清零（`_batch_b34/b35_numeric.py` F841 ×3 + F821 `Optional` 未导入 · `run_perf_bench_median_smoke.py` F841）；④重新标定 `timeout_budget_baseline.json`（补 PS-M2/M3/M4/M5 + median 五项基线行）；⑤`run_ecosystem_smoke` 报告快照 476 → 483 刷新；⑥`run_webui_pm_render_path` W10-P1 突变探针修复。count_consistency / statistical / three_class / webui_ledger / falsifiability / pyflakes / coverage / determinism / timeout_budget 全 PASS；CI core **290 PASS / 0 FAIL**。
+
+## v0.9.203（2026-10-06 · **光子传感器新征程 PS-M4 生物/化学功能化与表面传感 + B461 表面灵敏度闭式 + B462 Langmuir 吸附入 B 账本** · 账本 **478 → 480** · 严格独立 **457 → 459** · CI core **287 → 288** · 端点 **147 不变**）
+
+- **PS-M4 立项（生物/化学功能化与表面传感）**：把光子传感器的「表面吸附层 → 有效折射率变化 → 共振位移 → LOD」链路建成常驻能力。新建 `lda_l2/ps_m4.py`（14 项自检全 PASS）+ 自建内核 `lda_harness/_batch_b35_numeric.py`（纯 numpy、零外框架）。
+- **B461（Batch B-35 · 严格独立锚）**：表面/吸附层灵敏度 dneff/dn_a 的 Hellmann-Feynman 微扰闭式 golden `S_surface = (n_a/n_eff)·Γ_adlayer`（Γ_adlayer = Γ_clad·(1−exp(−2γ·ds))，γ 为倏逝衰减常数）；候选 = 三层对称平板 TE0 转移矩阵/模式匹配（连续域、无空间网格、无 UV 灾难）精确求 n_eff(n_a) → 中心差商。ds→∞ 退化为 B460（Γ_adlayer→Γ_clad）。ds=0.05µm 设计薄层处残余 |Δ|=4.8e-4 是**真实的二阶物理平台**（HF 一阶微扰 ≠ 精确三层解），非离散误差 ⇒ tol=2e-3 落在设计薄层（判据 D 比值/窗口自检通过）。
+- **🔴 连续域求解器数值稳定性根治**：三层 TMM 原用 `f=num/den+gc` 含分母极点 ⇒ 厚 ds 时端点同号、bisection 漏基模根（候选返回 nan）。改用**无极点** `g(neff)=num+gc·den` + 粗扫符号变位（N=400）定位首根 → bisection 取最低（基模 TE0）根，sinh/cosh 改 `np.sinh/np.cosh`（非有限返回 nan 兜底）；实测 neff 随 ds 单调收敛至 n_a-包层极限（2.85004），全 ds 稳定。
+- **B462（Batch B-35 · 严格独立锚）**：Langmuir 吸附覆盖度 θ，golden `θ_eq=K_A·C/(1+K_A·C)`、`θ(t)=θ_eq·(1−e^(−(k_on·C+k_off)·t))`；候选 = RK4 积分 `dθ/dt=k_on·C·(1−θ)−k_off·θ`；闭式 ⇄ RK4 |Δ|=1.03e-09（判据 D 干净通过）。
+- **表面传感能力链**：de Feijter 质量面密度 `Γ_g=(n_a−n_c)·d/(dn/dc)` + 共振位移 Δλ=λ·Δn_eff/n_g + LOD 噪声模型（S_nm_per_riu 喂入 PS-M2 的 LOD_real）；四情景（soi_slab_protein / soi_slab_thick / bench_referenced）现算。
+- **🔴 反向探针常驻（先证能变红）**：falsifiability guard 新增 PERTURB_SPEC `("B461","n_a","mul")` / `("B462","k_on","mul")`——n_a×1.1 ⇒ |Δ|≈8.7e-3 ≫ tol 2e-3；k_on×1.1 ⇒ |Δ|≈2.38e-2 ≫ tol 1e-3 ⇒ 守卫必 FAIL，证参数是真算出来的（非恒真文案）；MIN_INDEPENDENT 棘轮地板 457 → 459。
+- **门禁**：新增 `run_ps_m4_smoke.py`（<0.4s，CORE，入 CORE_SMOKES）；🔴 **清 B20 盲区债**（pre-existing 纪律债：PS-M2/M3/M4 三 smoke 此前在 CORE_SMOKES 但漏登 `_BUILTIN_TIMEOUT_OVERRIDE` ⇒ 2-3 项 B20 盲区，本版一并结清，盲区现 []，预算 300s 实测 <0.4s，既不收紧也不放宽）；count_consistency / statistical / three_class / webui_ledger / falsifiability 全 PASS；CI core **288 PASS / 0 FAIL**。
+
+## v0.9.202（2026-10-06 · **光子传感器新征程 PS-M3 灵敏度物理链对齐 + B460 波导灵敏度 Hellmann-Feynman 闭式入 B 账本** · 账本 **477 → 478** · 严格独立 **456 → 457** · CI core **286 → 287** · 端点 **147 不变**）
+
+- **PS-M3 立项（对齐灵敏度物理链 · 结清 PS-M2 B460 发现）**：把 PS-M2 遗留的「灵敏度 dneff/dn_clad 的 Hellmann-Feynman 闭式 golden 与有限差分扰动重算偏差约 44%」真正立项对齐——根因是 Γ_clad 口径不一致（功率加权 vs **实际场 L² 分数**），而非数值误差。新建 `lda_l2/ps_m3.py`（9 项自检全 PASS）+ 自建内核 `lda_harness/_batch_b34_numeric.py`（纯 numpy、零外框架）。
+- **B460（Batch B-34 · 严格独立锚）**：波导灵敏度 dneff/dn_clad 的 Hellmann-Feynman 微扰闭式 golden `S = (n_clad/n_eff)·Γ_clad`（Γ_clad = 由标量 TE 方程标准 L² 内积导出的**实际场** L² 分数），候选 = 有限差分 perturb n_clad ±δ → 重解 n_eff → 中心差商；二者一致到 |Δ|=2.17e-10（判据 D 扫描 6 档、O(δ²) 单调收敛，比值 4.00~8.64）。对称平板 TE0 analytic 特征方程 `u=V·cos(u)` 双解 n_eff/Γ，Γ 解析 vs 数值积分 |Δ|=2.7e-10。
+- **真实波导几何 LOD 实测**：对齐后的真实灵敏度 S（HF golden，FD 验证）喂入 PS-M2 LOD 噪声模型（`S_nm_per_riu = λ·S/n_g`，n_g 由固定折射率 FD 求下界）；对称平板 TE0 真实几何（n_eff=2.839071 · γ=0.184423 · S_golden=0.086395 · S_nm_per_riu=37.309）上 LOD_real_riu ≈ 9.30e-7。
+- **🔴 诚实结账**：旧 44% 偏差根因已用**方法学独立的 FD 候选**定位（非强行填数），PS-M2 原登记的「发现/待办」**正式关闭**；不粉饰、不强行入账。
+- **反向探针常驻（先证能变红）**：falsifiability guard 新增 PERTURB_SPEC `("B460","n_c","mul")`——n_c×1.1 ⇒ |golden 偏差|=0.0113 ≫ tol 1e-3 ⇒ 守卫必 FAIL，证灵敏度是真算出来的；MIN_INDEPENDENT 棘轮地板 456 → 457。
+- **门禁**：新增 `run_ps_m3_smoke.py`（<0.4s，CORE，入 CORE_SMOKES）；count_consistency / statistical / three_class / webui_ledger / falsifiability 全 PASS；CI core **287 PASS / 0 FAIL**。
+
+## v0.9.201（2026-10-06 · **光子传感器新征程 PS-M2 指标框架入账 + B459 洛伦兹谐振斜率入 B 账本** · 账本 **476 → 477** · 严格独立 **455 → 456** · CI core **285 → 286** · 端点 **147 不变**）
+
+- **PS-M2 指标框架注册为常驻 CI 守卫**：LOD_real = √(LOD_elec² + LOD_temp²)（LOD_temp 与灵敏度 S 解耦，是 PS-M2 头号物理结论），四情景（v0_baseline / cited / degraded / bench_referenced）现算 + 口径自洽 + 7 组判据含反向探针。纯 stdlib，实测 <5s（无豁免）⇒ 入 core。
+- **B459（Batch B-33 · 严格独立锚）**：洛伦兹谐振线型斜率极值 |dT/dλ|_max = depth·3√3/4/FWHM，闭式 golden × 中心差分数值微分候选，判据 D 干净通过（|d|=1.27e-04 < 5e-2）。
+- **🔴 诚实发现（不强行入账，v0.9.202 已结清）**：灵敏度 dneff/dn_clad 的 Hellmann-Feynman 闭式 golden 与有限差分扰动重算偏差约 44%（Γ_clad 口径不一致），记为**发现/待办**，待 PS-M3 专门立项对齐（v0.9.202）后决定是否入 B 账本；当时由 B2（n_eff）+ CI 守卫覆盖，不失守。
+- **门禁**：新增 `run_ps_m2_smoke.py`（CORE）；count_consistency / statistical / three_class / webui_ledger / 定向 falsifiability 全 PASS；CI core **286 PASS / 0 FAIL**。
+
 ## v0.9.200（2026-10-06 · **光子存储征程 PM-G11 重标定批次：按标定 Γ=0.084 重算现役几何 ⇒ 重出全部受跟踪 GDS + 快照 + 对拍表；机器可拦** · 账本 **476 不变（零锚改动）** · CI core **285 不变** · 端点 **147 不变**）
 
 - **三档 Γ 框架（根治「假设更小≠更保守」血案 · 来自 v0.9.198 结算登记）**：`g_legacy=0.05`（v0.9.198 历史固定假设，仅作并报披露，非现役几何）/ `g_cal=0.0840054905578339`（四路径互证标定值，标定窗 [0.07708,0.09269]）/ `g_active=M0.GAMMA_DEFAULT`（现役几何，重标定后==标定值）。`L∝1/Γ` 缩放律精确等式：`L_mid(Γ_cal)=L_mid(Γ_assumed)·Γ_assumed/Γ_cal`，law_rel_dev=1.3548e-16（机器现算，非转录）。

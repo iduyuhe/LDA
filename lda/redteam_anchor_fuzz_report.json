@@ -1,12 +1,12 @@
 {
-  "strict_total": 455,
-  "strict_attacked": 455,
+  "strict_total": 462,
+  "strict_attacked": 462,
   "strict_coverage": 1.0,
-  "attacks_total": 4539,
-  "genuine_div": 266,
+  "attacks_total": 4658,
+  "genuine_div": 273,
   "cand_limitation": 70,
   "golden_unstable": 88,
-  "divergence_rate": 0.0779907469,
+  "divergence_rate": 0.0775010734,
   "findings": [
     {
       "bid": "B1",
@@ -3127,6 +3127,91 @@
           "oracle": null,
           "cand": null,
           "err": Infinity
+        }
+      ]
+    },
+    {
+      "bid": "B461",
+      "as_strict": true,
+      "n_attacks": 25,
+      "genuine_div": 7,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "n_f": 3.999355,
+            "n_c": 1.33,
+            "n_a": 1.45,
+            "d_um": 0.22,
+            "ds_um": 0.05,
+            "wl_um": 1.55
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.0423025402,
+          "cand": 0.0,
+          "err": 0.0423025402,
+          "tol": 0.002
+        },
+        {
+          "params": {
+            "n_f": 4.52101,
+            "n_c": 1.33,
+            "n_a": 1.45,
+            "d_um": 0.22,
+            "ds_um": 0.05,
+            "wl_um": 1.55
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.0302862444,
+          "cand": 0.0,
+          "err": 0.0302862444,
+          "tol": 0.002
+        },
+        {
+          "params": {
+            "n_f": 3.4777,
+            "n_c": 1.33,
+            "n_a": 1.885,
+            "d_um": 0.22,
+            "ds_um": 0.05,
+            "wl_um": 1.55
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.0781508253,
+          "cand": 0.0815499218,
+          "err": 0.00339909655,
+          "tol": 0.002
+        },
+        {
+          "params": {
+            "n_f": 3.4777,
+            "n_c": 1.33,
+            "n_a": 1.45,
+            "d_um": 0.253,
+            "ds_um": 0.05,
+            "wl_um": 1.55
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.0461374319,
+          "cand": 0.0,
+          "err": 0.0461374319,
+          "tol": 0.002
+        },
+        {
+          "params": {
+            "n_f": 3.4777,
+            "n_c": 1.33,
+            "n_a": 1.45,
+            "d_um": 0.286,
+            "ds_um": 0.05,
+            "wl_um": 1.55
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.0360971399,
+          "cand": 0.0,
+          "err": 0.0360971399,
+          "tol": 0.002
         }
       ]
     },

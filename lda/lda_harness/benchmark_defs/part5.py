@@ -50,6 +50,21 @@ from .._batch_b31_numeric import (  # Batch B-31 量子征程再评估（WCS/Poi
 from .._batch_b32_numeric import (  # Batch B-32 几何栅格化收敛（解析 Shoelace 闭式 × 亚格平均栅格化）
     golden_b458,
 )
+from .._batch_b33_numeric import (  # Batch B-33 光子传感器新征程 PS-M2 衍生（洛伦兹谐振线型斜率极值：解析闭式 × 中心差分数值微分）
+    golden_b459,
+)
+from .._batch_b34_numeric import (  # Batch B-34 光子传感器新征程 PS-M3 衍生（波导灵敏度 HF 微扰闭式 golden × 有限差分候选）
+    golden_b460,
+)
+from .._batch_b35_numeric import (  # Batch B-35 光子传感器新征程 PS-M4 衍生（表面灵敏度 HF 闭式 golden × 三层 TMM-FD 候选 / 朗缪尔闭式 golden × RK4 候选）
+    golden_b461,
+    golden_b462,
+)
+from .._batch_b36_numeric import (  # Batch B-36 光子传感器新征程 PS-M5 衍生（微流控/Lab-on-chip 多物理场：矩形 Hagen-Poiseuille 级数 × 2D FD Poisson / Lucas-Washburn 闭式 × 后向欧拉 / 圆柱径向热阻 Fourier 闭式 × 1D FD 径向 Laplace）
+    golden_b463,
+    golden_b464,
+    golden_b465,
+)
 DEFS = {
     "B359": {
         "title": "Bernstein 多项式逼近 f(t)=1/(1+2t)（t=0.6）",
@@ -1236,6 +1251,83 @@ DEFS = {
         "golden_fn": golden_b458,
         "candidate": "b458_polygon_area_cand",
         "candidate_desc": "平台 `lda_solver.voxel_field.rasterize_polygon` 的**亚格平均**覆盖率 Σfrac·dl²（even-odd 交叉数 + s×s 子采样，s→∞ 精确）；离散参数 = subpixel（默认 16）",
-        "note": "A = |Σ(x_i·y_{i+1} − x_{i+1}·y_i)|/2（教科书 Shoelace，独立实现）⇒ 4.0250000000 µm²。candidate=平台 `rasterize_polygon` 的**亚格平均**覆盖率 Σfrac·dl²（even-odd 交叉数 + s×s 子采样）。实测 |Δ|=4.297e-04（tol=5e-2 的 116.4× 余量）；判据 D 实测比值 2.40/2.00/2.00/1.82（**线性收敛**，MONO），粗端 7.50e-03 < tol、默认档 4.30e-04 ≫ 1e-12。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`voxel|体素|rasteri|栅格|subpixel|亚像素|多边形面积|polygon.?area|shoelace` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ **几何栅格化族零锚占用（本批为本族首锚）**。与既有「几何回提」锚族 **E1–E10** 不同：E1–E10 是「版图/实测 → **器件物理参数回提**」（几何→物理量），本题是「**多边形 → 栅格覆盖率**」的**数值积分误差**（几何→面积测度），被测标量/数值机制/golden 三处均不同 ⇒ **非重复计数**。⚠️ **诚实边界**：多边形顶点与网格分辨率为**设计示例**（非实测版图）；栅格化是**面积测度**的数值近似（非电磁/量子计算），结论只可用于数值方法与量级，不得作制造/性能宣称。零商业依赖。",
+        "note": "A = |Σ(x_i·y_{i+1} − x_{i+1}·y_i)|/2（教科书 Shoelace，独立实现）⇒ 4.0250000000 µm²。candidate=平台 `rasterize_polygon` 的**亚格平均**覆盖率 Σfrac·dl²（even-odd 交叉数 + s×s 子采样）。实测 |Δ|=4.297e-04（tol=5e-2 的 116.4× 余量）；判据 D 实测比值 2.40/2.00/2.00/1.82（**线性收敛**，MONO），粗端 7.50e-03 < tol、默认档 4.30e-04 ≫ 1e-12。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`voxel|体素|rasteri|栅格|subpixel|亚像素|多边形面积|polygon.?area|shoelace` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ **几何栅格化族零锚占用（本批为本族首锚）**。与既有「几何回提」锚族 **E1–E10** 不同：E1–E10 是「版图/实测 → **器件物理参数回提**」（几何→物理量），本题是「**多边形 → 栅格覆盖率**」的**数值积分误差**（几何→面积测度），被测标量/数值机制/golden 三处均不同 ⇒ **非重复计数**。⚠️ **诚实边界**：多边形顶点与网格分辨率为**设计示例**（非实测版图）；栅格化是**面积测度**的数值近似（非电磁/量子计算），结论只可用于数值方法与量级，        不得作制造/性能宣称。零商业依赖。",
+    },
+    "B459": {
+        "title": "洛伦兹谐振线型斜率极值（解析闭式 golden vs 中心差分数值微分候选）",
+        "metric": "lorentzian_slope_max",
+        "oracle": "closed_form(slope_closed = depth·(3√3/4)/FWHM) + central-difference numerical derivative independent_cross_check",
+        "tol": 5e-2,
+        "default_params": {"depth": 0.9, "FWHM": 0.1},
+        "golden_fn": golden_b459,
+        "candidate": "b459_lorentzian_slope_cand",
+        "candidate_desc": "等距采样洛伦兹线型 T(λ)=T_bg−depth·Γ²/((λ−λ0)²+Γ²)（Γ=FWHM/2），中心差分 np.gradient 取 |dT/dλ| 最大值 ↔ 闭式 slope_closed=depth·(3√3/4)/FWHM；离散参数 = 采样点数 n（默认 4001）",
+        "note": "slope_closed = depth·(3√3/4)/FWHM（洛伦兹线型 |dT/dλ| 极值闭式，与 T_bg、λ0 无关）。depth=0.9、FWHM=0.1 ⇒ 11.6913429511 1/µm。candidate=等距采样 + 中心差分 np.gradient 取 |dT/dλ| 最大值（离散参数 n=4001）。实测 |Δ|=1.273e-04（tol=5e-2 的 392.7× 余量）；判据 D 实测比值 6.27/3.48/2.88/2.87（中心差分 O(h²)，粗端未入渐近区偏高，MONO），粗端 2.29e-02 < tol、默认档 1.273e-04 ≫ 1e-12；|golden|/tol = 233.8× ≥ 13.5。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`洛伦兹|lorentz|谐振.*斜率|dT/dλ|resonance_slope|线型.*斜率` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ **洛伦兹线型斜率族零锚占用（本族首锚）**；与 B4（FSR）/B11（环谱匹配）/B12（谐振频率）被测标量/数值机制/golden 三处均不同 ⇒ **非重复计数**。与同征程 PS-M2 模块 `lda_l2.ps_m2.resonance_slope_max` 同源异形（独立自测 + 判据 D 扫描 + 常驻账本封装）。⚠️ **诚实边界**：depth/FWHM 为**设计示例参数**（非实测谐振峰）；候选是离散采样 + 中心差分的数值微分近似（非电磁全波），本锚只证明「数值微分收敛到解析斜率极值」这一数学事实，结论只可用于数值方法与量级，不得作制造/性能宣称。零商业依赖（纯 numpy + math）。",
+    },
+    "B460": {
+        "title": "波导灵敏度 HF 微扰闭式 golden vs 有限差分候选（对称平板波导 TE0）",
+        "metric": "waveguide_sensitivity_dneff_dn_clad",
+        "oracle": "closed_form(sensitivity_golden = (n_clad/n_eff)·Γ_clad, Γ_clad=实际场 L² 份额) + finite_difference independent_cross_check",
+        "tol": 1e-3,
+        "default_params": {"n_f": 3.4777, "n_c": 1.33, "d_um": 0.22, "wl_um": 1.55},
+        "golden_fn": golden_b460,
+        "candidate": "b460_sensitivity_cand",
+        "candidate_desc": "对称平板波导 TE0 解析特征方程 u=V·cos(u) 解 n_eff；perturb n_clad ±dp → 重解 n_eff → 中心差商 dneff/dn_clad；离散参数 = dp（默认 1e-6）",
+        "note": "golden = Hellmann-Feynman 微扰闭式 dneff/dn_clad = (n_clad/n_eff)·Γ_clad（Γ_clad=实际场 L² 份额，对称平板 TE0 解析场）；candidate=有限差分 perturb n_clad 重解 n_eff。实测默认档 |Δ|=2.17e-10（tol=1e-3 的 4.6e6× 余量）；判据 D 实测比值 4.00~8.64（中心差分 O(δ²)，MONO），粗端 7.49e-07 < tol、默认档 2.17e-10 ≫ 1e-12；|golden|/tol = 86.4× ≥ 13.5。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`hellmann|feynman|dneff/dn|灵敏度.*波导|sensitivity.*waveguide|Γ_clad` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ **HF 波导灵敏度族零锚占用（本族首锚）**；与 PS-M0 `bulk_sensitivity`（整包层/顶部暴露 FD 灵敏度）同源异形（PS-M0 只算 FD，未与 HF 闭式对齐）；与 B2（n_eff）被测标量/物理意义/数值机制三处均不同 ⇒ **非重复计数**。⚠️ **诚实边界**：几何为**设计示例**（SOI 220nm 平板/水包层 @1550nm）；候选是离散差分近似（非电磁全波），本锚只证明「HF 微扰闭式 = 有限差分」这一物理事实，结论只可用于数值方法与量级，不得作制造/性能宣称。零商业依赖（纯 numpy + math）。",
+    },
+    "B461": {
+        "title": "表面/吸附层灵敏度 HF 微扰闭式 golden vs 三层 TMM 有限差分候选（对称平板波导 TE0 · 含吸附层）",
+        "metric": "surface_sensitivity_dneff_dn_adlayer",
+        "oracle": "closed_form(sensitivity_golden = (n_a/n_eff)·Γ_adlayer, Γ_adlayer=Γ_clad·(1−e^(−2γ·ds)) 实际场 L² 份额) + three_layer_transfer_matrix independent_cross_check",
+        "tol": 2e-3,
+        "default_params": {"n_f": 3.4777, "n_c": 1.33, "n_a": 1.45, "d_um": 0.22, "ds_um": 0.05, "wl_um": 1.55},
+        "golden_fn": golden_b461,
+        "candidate": "b461_sensitivity_cand",
+        "candidate_desc": "三层对称平板 TE0 传递矩阵/匹配法（连续域无空间网格）精确解 n_eff(n_a) → 中心差商 dneff/dn_adlayer；离散参数 = da（默认 1e-5）",
+        "note": "golden = Hellmann-Feynman 微扰闭式 dneff/dn_a = (n_a/n_eff)·Γ_adlayer（Γ_adlayer=吸附层内实际场 L² 份额=Γ_clad·(1−e^(−2γ·ds))，γ=倏逝衰减常数，对称平板 TE0 解析场）；candidate=三层 TMM 精确解 n_eff 中心差商。实测默认档 |Δ|=4.803e-04（tol=2e-3 的 4.16× 余量）；判据 D 残差随 da 恒定 4.80e-04（比值 1.00，与 da 无关）= 真实二阶物理平台（HF 一阶微扰 vs 精确三层解，非离散误差），粗端 4.80e-04 < tol、默认档 ≫ 1e-12；|golden|/tol = 30.1× ≥ 13.5。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`surface|吸附层|adlayer|表面灵敏度|Γ_adlayer` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ **表面灵敏度族零锚占用（本族首锚）**；与 B460（体灵敏度 dneff/dn_clad）同源异形（B461 测**表面吸附层**倏逝尾 dneff/dn_a，ds→∞ 退化为 B460，连续一致 rel=0）；与 B2（n_eff）被测标量/物理意义/数值机制三处均不同 ⇒ **非重复计数**。⚠️ **诚实边界**：几何/生物参数为**设计示例**（SOI 220nm 平板/水包层 @1550nm；蛋白吸附层 n_a≈1.45、ds≈50nm）；候选是连续域匹配法精确解（非电磁全波），本锚只证明「HF 一阶微扰闭式 vs 精确三层解」的二阶平台差（残差与离散参数无关），结论只可用于数值方法与量级，不得作制造/性能宣称。零商业依赖（纯 numpy + math）。",
+    },
+    "B462": {
+        "title": "朗缪尔吸附平衡覆盖度 θ_eq 闭式 golden vs RK4 积分候选（理想单位点模型）",
+        "metric": "langmuir_coverage_theta_eq",
+        "oracle": "closed_form(θ_eq = K_A·C/(1+K_A·C), K_A=k_on/k_off) + rk4_integration independent_cross_check",
+        "tol": 1e-3,
+        "default_params": {"k_on": 1e6, "k_off": 1e-3, "C": 1e-9},
+        "golden_fn": golden_b462,
+        "candidate": "b462_langmuir_cand",
+        "candidate_desc": "四阶 RK4 积分 dθ/dt=k_on·C·(1−θ)−k_off·θ，θ(0)=0，积分到 ~20 时间常数 ≈ 平衡；离散参数 = n_steps（默认 2000）",
+        "note": "golden = 朗缪尔平衡闭式 θ_eq=K_A·C/(1+K_A·C)（K_A=k_on/k_off=1e9 M⁻¹，C=1e-9 M ⇒ K_A·C=1 ⇒ θ_eq=0.5 中段，反向探针灵敏）；candidate=RK4 积分到 ~20τ 趋平衡。实测默认档 |Δ|=1.031e-09（tol=1e-3 的 9.7e5× 余量）；判据 D 残差随 n_steps 恒定 1.03e-09（比值 1.00，与步数无关，已达机器精度）；|golden|/tol = 500× ≥ 13.5。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`langmuir|朗缪尔|θ_eq|结合动力学|吸附覆盖|coverage` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ **朗缪尔吸附族零锚占用（本族首锚）**；与 B460/B461 被测标量（折射率导数）完全不同 ⇒ **非重复计数**。⚠️ **诚实边界**：朗缪尔为理想单位点模型（忽略协同/空间位阻/再生）；本锚只证明「闭式 ⇄ RK4 积分」一致这一数学事实，K_A/C 为**设计示例**，结论只可用于数值方法与量级，不得作制造/性能宣称。零商业依赖（纯 numpy + math）。",
+    },
+    "B463": {
+        "title": "矩形微通道 Hagen-Poiseuille 体积流量（精确矩形级数 golden vs 2D 有限差分 Poisson 候选）",
+        "metric": "poiseuille_flow_rate_nl_s",
+        "oracle": "analytical(rectangular series Q=(ΔP/μL)·(a·b³/12)·C_f(α), α=b/a, C_f→1 平行板缝 / 0.4217 方管) + 2D finite-difference Poisson red-black SOR independent_cross_check",
+        "tol": 5e-5,
+        "default_params": {"dp_pa": 1000.0, "mu_pas": 1e-3, "L_m": 1e-3, "w_m": 20e-6, "h_m": 10e-6},
+        "golden_fn": golden_b463,
+        "candidate": "b463_poiseuille_cand",
+        "candidate_desc": "2D 有限差分 Poisson（红黑棋盘 SOR 矢量解，纯 numpy 无空间双循环，Young 最优 ω*）：解 −∇²u=ΔP/(μL)，u|边=0，Q=∫∫u dA；离散参数 = N_grid（默认 200）",
+        "note": "golden = 矩形截面 Hagen-Poiseuille 精确级数 Q=(ΔP/μL)·(a·b³/12)·C_f(α)（α=b/a，C_f 由 tanh 级数，α→0 退化为平行板缝 C_f→1、α=1 方管 C_f=0.4217）；candidate=2D 有限差分 Poisson（红黑棋盘 SOR 矢量解，纯 numpy 无空间双循环，Young 最优 ω*，解 −∇²u=ΔP/(μL)、u|边=0、Q=∫∫u dA）。实测默认档 |Δ|=5.313e-08（tol=5e-5 的 941× 余量）；判据 D 实测比值 1.57~2.59（红黑 SOR 二阶收敛，MONO），粗端 8.71e-07 < tol、默认档 5.31e-08 ≫ 1e-12；|golden|/tol = 22.9× ≥ 13.5。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`hagen|poiseuille|泊肃叶|矩形.*流|微通道|microchannel` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ **矩形微通道流族零锚占用（本族首锚）**；与 PS-M4(B461/B462) 被测标量（折射率导数/覆盖度）完全不同 ⇒ **非重复计数**。⚠️ **诚实边界**：几何/流体参数为**设计示例**（水 µ=1e-3 Pa·s；通道 20×10 µm²、长 1 mm）；候选为充分发展层流假设（忽略入口效应/可压缩性），结论只可用于数值方法与量级，不得作制造/性能宣称。零商业依赖（纯 numpy + math）。",
+    },
+    "B464": {
+        "title": "Lucas-Washburn 毛细填充长度（闭式 golden vs 后向欧拉隐式积分候选）",
+        "metric": "washburn_length_mm",
+        "oracle": "closed_form(L=√[(D·γ·cosθ)/(4η)·t]) + backward-euler implicit integration independent_cross_check",
+        "tol": 1e-1,
+        "default_params": {"D_m": 10e-6, "gamma_Nm": 0.072, "cos_theta": 1.0, "eta_Pas": 1e-3, "t_s": 1.0},
+        "golden_fn": golden_b464,
+        "candidate": "b464_washburn_cand",
+        "candidate_desc": "后向欧拉（隐式·无条件稳定）积分 ODE dL/dt=(D·γ·cosθ)/(8ηL)，规避 L(0)=0 处斜率无限的首步爆裂（前向/显式法必爆），从 L₀=0 平滑起步、1 阶收敛、残差随步数单调下降；离散参数 = n_steps（默认 2000）",
+        "note": "golden = Lucas-Washburn 闭式 L=√[(D·γ·cosθ)/(4η)·t]（毛细压 ⇄ 粘性阻准稳态力平衡）；candidate=后向欧拉（隐式·无条件稳定）积分 ODE dL/dt=(D·γ·cosθ)/(8ηL)，规避 L(0)=0 处斜率无限的首步爆裂（前向/显式法必爆），从 L₀=0 平滑起步、1 阶收敛、残差随步数单调下降。实测默认档 |Δ|=8.328e-03（tol=0.1 的 12.0× 余量）；判据 D 实测比值 1.85~2.23（后向欧拉 1 阶、MONO），粗端 6.40e-02 < tol、默认档 8.33e-03 ≫ 1e-12；|golden|/tol = 134.2× ≥ 13.5。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`washburn|lucas|毛细|capillar|表面张力.*填充` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ **Lucas-Washburn 毛细族零锚占用（本族首锚）**；与 PS-M4(B461/B462) 被测标量完全不同 ⇒ **非重复计数**。⚠️ **诚实边界**：几何/流体参数为**设计示例**（水 γ=0.072 N/m、η=1e-3 Pa·s；Ø10 µm 毛细管、t=1 s）；候选为理想圆柱毛细（忽略重力/动态接触角滞后），结论只可用于数值方法与量级，不得作制造/性能宣称。零商业依赖（纯 numpy + math）。",
+    },
+    "B465": {
+        "title": "圆柱微通道壁面径向热阻（Fourier 闭式 golden vs 1D 有限差分径向 Laplace 候选）",
+        "metric": "thermal_resistance_k_W",
+        "oracle": "closed_form(R_th=ln(r_o/r_i)/(2πkL)) + 1D finite-difference radial Laplace conservative-flux independent_cross_check",
+        "tol": 1e-2,
+        "default_params": {"r_i_m": 10e-6, "r_o_m": 30e-6, "k_WmK": 1.4, "L_m": 1e-3},
+        "golden_fn": golden_b465,
+        "candidate": "b465_thermal_cand",
+        "candidate_desc": "1D 有限差分径向 Laplace（守恒界面通量格式，解 d/dr(r·dT/dr)=0，界面半径 r_{1/2}=r_i+dr/2 处守恒通量 Q=−2π·r_{1/2}·k·(T_1−T_0)/dr·L，比「前向差分 × r_i」一阶格式高一级精度）；离散参数 = N（默认 600）",
+        "note": "golden = 圆柱壳稳态径向导热 Fourier 闭式 R_th=ln(r_o/r_i)/(2πkL)；candidate=1D 有限差分径向 Laplace（守恒界面通量格式，解 d/dr(r·dT/dr)=0，界面半径 r_{1/2}=r_i+dr/2 处守恒通量 Q=−2π·r_{1/2}·k·(T_1−T_0)/dr·L，比「前向差分 × r_i」一阶格式高一级精度）。实测默认档 |Δ|=4.678e-05（tol=1e-2 的 213.8× 余量）；判据 D 实测比值 1.78~2.78（守恒格式二阶、MONO），粗端 1.17e-03 < tol、默认档 4.68e-05 ≫ 1e-12；|golden|/tol = 12489.3× ≥ 13.5。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`热阻|thermal resistance|径向导热|fourier|圆柱.*壁` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ **圆柱壁面热阻族零锚占用（本族首锚）**；与 PS-M4(B461/B462) 被测标量完全不同 ⇒ **非重复计数**。⚠️ **诚实边界**：几何/热参数为**设计示例**（玻璃 k=1.4 W/m·K；r_i=10 µm、r_o=30 µm、长 1 mm）；候选为一维径向稳态导热（忽略轴向漏热），结论只可用于数值方法与量级，不得作制造/性能宣称。零商业依赖（纯 numpy + math）。",
     },
 }

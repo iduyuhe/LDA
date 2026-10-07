@@ -12,7 +12,9 @@ benchmark_fdtd3d）：同一规格下纯 numpy / numba-cpu / cuda(可用时) 计
   ③ GPU（torch.cuda 可用时）：cuda greens(N=48) 计时 + cuda↔cpu fp64
      bit-equivalent（≤1e-9，换设备不换物理）；
   ④ 历史基线：与 reports/perf_baseline.json 对比（首跑生成基线），
-     numba 加速比漂移 ≥±30% 预警。
+     numba 加速比漂移 ≥±30% 预警。写基线时多次运行取**中位数**（默认 5 次），
+     避免单次墙钟噪声（numpy 计时方差可达 ±40%）污染基线，使 ±30% 漂移预警
+     指向真实性能回归而非偶发快/慢跑。
 
 验收（死标量）：numpy↔numba rel diff ≤1e-2（物理一致）；numba 加速比 ≥5×
 （D-50 实测 43× 的保守下限）；GPU bit-equivalent ≤1e-9（若可用）。
@@ -227,13 +229,70 @@ def run_perf_bench(compare_baseline: bool = True,
     }
 
 
+def _aggregate_baseline(greens_numpy_s, greens_numba_s, greens_speedup,
+                        spectrum_overall_speedup, n_runs):
+    """把 N 次运行的标量样本聚合成「中位数基线」（纯函数，无 IO）。
+
+    墙钟计时方差大（numpy 计时 ±40%），单次采样写入基线会被偶发快/慢跑带偏，
+    使 ±30% 漂移预警失去意义。多次运行取中位数 ⇒ 基线收敛到稳定代表值。
+    纯函数便于门禁反向探针验证「聚合非空转」（median 与原样本首项可不同）。
+    """
+    import numpy as np
+    med = lambda xs: round(float(np.median(xs)), 3)
+    return {
+        "greens": {
+            "speedup": med(greens_speedup),
+            "numpy_s": med(greens_numpy_s),
+            "numba_s": med(greens_numba_s),
+        },
+        "spectrum": {"overall_speedup": med(spectrum_overall_speedup)},
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "_quantile": {
+            "method": "median",
+            "runs": int(n_runs),
+            "greens_speedup_samples":
+                [round(float(x), 3) for x in greens_speedup],
+            "spectrum_overall_speedup_samples":
+                [round(float(x), 3) for x in spectrum_overall_speedup],
+        },
+    }
+
+
+def _write_baseline(first_run_report, quick, n_runs, path=_BASELINE):
+    """采集 N 次运行样本（首跑 + N-1 次补充），写中位数基线。
+
+    首跑已通过 run_perf_bench() 完成预热 + 全量报告，其标量直接计入样本池，
+    避免重复一次完整 run；其余 N-1 次只跑计时相关 bench（GPU/drift 不进基线，
+    不重复）。返回写入的基线 dict。
+    """
+    g0 = first_run_report["benchmarks"]["greens"]
+    s0 = first_run_report["benchmarks"]["spectrum"]
+    g_np = [g0["numpy_s"]]; g_nb = [g0["numba_s"]]; g_sp = [g0["speedup"]]
+    s_ov = [s0["overall_speedup"]]
+    for _ in range(max(0, int(n_runs) - 1)):
+        g = bench_greens()
+        s = bench_spectrum(quick=quick)
+        g_np.append(g["numpy_s"]); g_nb.append(g["numba_s"]); g_sp.append(g["speedup"])
+        s_ov.append(s["overall_speedup"])
+    bl = _aggregate_baseline(g_np, g_nb, g_sp, s_ov, len(g_np))
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(bl, f, ensure_ascii=False, indent=2)
+    return bl
+
+
 def main() -> int:
     import argparse
     ap = argparse.ArgumentParser(description="D-77 求解器性能基准")
     ap.add_argument("--out", default=None)
     ap.add_argument("--no-baseline", action="store_true")
     ap.add_argument("--quick", action="store_true", help="spectrum 只跑 1 case 提速")
+    ap.add_argument("--baseline-runs", type=int, default=5,
+                   help="写基线时多次运行取中位数（默认 5，减小墙钟噪声）")
+    ap.add_argument("--baseline-out", default=None,
+                   help="基线写出路径（默认 reports/perf_baseline.json）")
     a = ap.parse_args()
+    n_runs = max(1, a.baseline_runs)
+    baseline_path = a.baseline_out or _BASELINE
     r = run_perf_bench(compare_baseline=not a.no_baseline, quick=a.quick)
     print(json.dumps({k: r[k] for k in
                       ("title", "benchmarks", "drift", "acceptance", "verdict")},
@@ -242,17 +301,11 @@ def main() -> int:
         with open(a.out, "w", encoding="utf-8") as f:
             json.dump(r, f, ensure_ascii=False, indent=2)
         print(f"[written] {a.out}")
-    # 生成/更新基线（仅 PASS 时固化）
+    # 生成/更新基线（仅 PASS 时固化）：N 次运行取中位数，减小墙钟噪声
     if r["acceptance"]["passed"] and not a.no_baseline:
-        bl = {"greens": {"speedup": r["benchmarks"]["greens"]["speedup"],
-                         "numpy_s": r["benchmarks"]["greens"]["numpy_s"],
-                         "numba_s": r["benchmarks"]["greens"]["numba_s"]},
-              "spectrum": {"overall_speedup":
-                           r["benchmarks"]["spectrum"]["overall_speedup"]},
-              "created_at": time.strftime("%Y-%m-%dT%H:%M:%S")}
-        with open(_BASELINE, "w", encoding="utf-8") as f:
-            json.dump(bl, f, ensure_ascii=False, indent=2)
-        print(f"[baseline updated] {_BASELINE}")
+        bl = _write_baseline(r, quick=a.quick, n_runs=n_runs, path=baseline_path)
+        print(f"[baseline updated] {baseline_path} (method=median, runs={n_runs}, "
+              f"greens.speedup={bl['greens']['speedup']}×)")
     return 0 if r["acceptance"]["passed"] else 1
 
 

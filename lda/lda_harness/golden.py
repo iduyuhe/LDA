@@ -222,6 +222,21 @@ from ._batch_b31_numeric import (  # Batch B-31 双方法独立锚数值核（�
 from ._batch_b32_numeric import (  # Batch B-32 双方法独立锚数值核（几何栅格化收敛 · 解析 Shoelace 闭式 × 亚格平均栅格化：多边形面积）
     golden_b458,
 )
+from ._batch_b33_numeric import (  # Batch B-33 双方法独立锚数值核（光子传感器新征程 PS-M2 衍生 · 洛伦兹谐振线型斜率极值：解析闭式 golden × 中心差分数值微分候选）
+    golden_b459,
+)
+from ._batch_b34_numeric import (  # Batch B-34 双方法独立锚数值核（光子传感器新征程 PS-M3 衍生 · 波导灵敏度 HF 微扰闭式 golden × 有限差分候选）
+    golden_b460,
+)
+from ._batch_b35_numeric import (  # Batch B-35 双方法独立锚数值核（光子传感器新征程 PS-M4 衍生 · 表面灵敏度 HF 闭式 golden × 三层 TMM-FD 候选 / 朗缪尔闭式 golden × RK4 候选）
+    golden_b461,
+    golden_b462,
+)
+from ._batch_b36_numeric import (  # Batch B-36 双方法独立锚数值核（光子传感器新征程 PS-M5 衍生 · 微流控/Lab-on-chip 多物理场：矩形 Hagen-Poiseuille 级数 golden × 2D FD Poisson 候选 / Lucas-Washburn 闭式 golden × 后向欧拉候选 / 圆柱径向热阻 Fourier 闭式 golden × 1D FD 径向 Laplace 候选）
+    golden_b463,
+    golden_b464,
+    golden_b465,
+)
 
 from .oracle_pyepr import resolve_pyepr_transmon
 
@@ -989,6 +1004,16 @@ _GOLDEN_DISPATCH = {
     "B456": golden_b456, "B457": golden_b457,
     # ---- Batch B-32（几何栅格化收敛 · 解析 Shoelace 闭式 × 亚格平均栅格化）----
     "B458": golden_b458,
+    "B459": golden_b459,
+    # ---- Batch B-34（光子传感器新征程 PS-M3 衍生 · 波导灵敏度 HF 微扰闭式 golden × 有限差分候选）----
+    "B460": golden_b460,
+    # ---- Batch B-35（光子传感器新征程 PS-M4 衍生 · 表面灵敏度 HF 闭式 golden × 三层 TMM-FD 候选 / 朗缪尔闭式 golden × RK4 候选）----
+    "B461": golden_b461,
+    "B462": golden_b462,
+    # ---- Batch B-36（光子传感器新征程 PS-M5 衍生 · 微流控/Lab-on-chip 多物理场：矩形 Hagen-Poiseuille 级数 golden × 2D FD Poisson 候选 / Lucas-Washburn 闭式 golden × 后向欧拉候选 / 圆柱径向热阻 Fourier 闭式 golden × 1D FD 径向 Laplace 候选）----
+    "B463": golden_b463,
+    "B464": golden_b464,
+    "B465": golden_b465,
 
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
@@ -1076,6 +1101,10 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B453", "B454", "B455",  # Batch B-30（量子征程回填 · 有限维 Fock 截断 × 解析闭式：连续变量光量子器件 —— 预报单光子源纯度/g²(0) + 损耗通道保真度）
                  "B456", "B457",  # Batch B-31（量子征程再评估 · WCS/Poisson 有限维 Fock 截断 × 解析闭式：WCS 单光子概率 + 多光子污染）
                  "B458",  # Batch B-32（几何栅格化收敛 · 解析 Shoelace 闭式 × 亚格平均栅格化：多边形面积）
+                 "B459",  # Batch B-33（光子传感器新征程 PS-M2 衍生 · 洛伦兹谐振线型斜率极值：解析闭式 golden × 中心差分数值微分候选）
+                 "B460",  # Batch B-34（光子传感器新征程 PS-M3 衍生 · 波导灵敏度 HF 微扰闭式 golden × 有限差分候选）
+                 "B461", "B462",  # Batch B-35（光子传感器新征程 PS-M4 衍生 · 表面灵敏度 + 朗缪尔吸附）
+                 "B463", "B464", "B465",  # Batch B-36（光子传感器新征程 PS-M5 衍生 · 微流控/Lab-on-chip 多物理场）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

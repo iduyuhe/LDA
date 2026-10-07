@@ -207,3 +207,13 @@ _msg*.txt
 _cmsg*.txt
 _*.log
 [qrst][0-9].log
+
+# ---- 光子传感器征程（PS）本地运行产物 + 一次性诊断稿（2026-10-07 新增）----
+# 同「运行产物：smoke / 演示脚本的 out_path 输出（绝不入库）」纪律：
+#   outputs/ps_m*/            <- lda/run_ps_m0..m5_smoke.py 的 out_path 输出（每次跑 CI 重生成）
+#   _tmp_*.py / _*_precheck.py <- 逐轮一次性实证探测稿（非产品代码、无模块 import、不在 CI 清单内）
+# 副作用自证：两项均不改变 run_pyflakes_ratchet_smoke 的扫描面之外的有效性（只从
+# `--others` 面移出本地稿，绝不遮蔽任何已跟踪 .py）；outputs 下无 .py ⇒ 无影响。
+outputs/ps_m*/
+_tmp_*.py
+_*_precheck.py

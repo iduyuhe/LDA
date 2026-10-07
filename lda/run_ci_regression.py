@@ -1601,6 +1601,34 @@ CORE_SMOKES: List[str] = [
     #   组 C C1 `make_check` 拒 printf 模板 + C2 全仓 AST 扫 cwd 相对读法（不做白名单）。
     #   实测 <5s ⇒ timeout 120s 留足余量。
     "run_ci_gate_contract_smoke.py",
+    #   光子传感器新征程 PS-M2 指标框架 + LOD_real 噪声模型（几何无关）常驻门禁：
+    #   7 组判据——LOD_real = √(LOD_elec² + LOD_temp²)（LOD_temp 与灵敏度 S 解耦，
+    #   是 PS-M2 头号物理结论）；四情景（v0_baseline / cited / degraded /
+    #   bench_referenced）现算 + 口径自洽 + 反向探针。纯 stdlib，实测 <5s（无权豁免）
+    #   ⇒ 入 core；timeout 120s 留足余量。
+    "run_ps_m2_smoke.py",
+    #   光子传感器新征程 PS-M3 灵敏度物理链对齐 + 真实波导几何 LOD 实测常驻门禁：
+    #   9 组判据——对称平板 TE0 analytic 求解器（u=V·cos(u) 双解 n_eff/Γ）· Hellmann-Feynman
+    #   闭式 golden（Γ_clad = 实际场 L² 分数）vs 有限差分 perturb n_clad 候选（|Δ|~1e-10）·
+    #   真实灵敏度 S 喂入 PS-M2 LOD 噪声模型（S_nm_per_riu = λ·S/n_g）· LOD_real_riu 实测。
+    #   纯 stdlib，实测 <0.4s（无权豁免）⇒ 入 core；timeout 120s 留足余量。
+    "run_ps_m3_smoke.py",
+    #   光子传感器新征程 PS-M4 生物/化学功能化与表面传感常驻门禁：
+    #   14 组判据——表面灵敏度 HF 闭式 golden（Γ_adlayer=Γ_clad·(1−e^(−2γ·ds))）vs
+    #   三层 TMM-FD 候选 · 倏逝穿透深度 1/γ · 体/表灵敏度比 · 谐振位移 Δλ=λ·Δn_eff/n_g ·
+    #   Langmuir 平衡 θ_eq + 动力学 θ(t) 闭式⇄RK4 · de Feijter 表面质量标定（µg/cm²）。
+    #   纯 stdlib，实测 <0.5s（无权豁免）⇒ 入 core；timeout 120s 留足余量。
+    "run_ps_m4_smoke.py",
+    #   光子传感器新征程 PS-M5 微流控/Lab-on-chip 多物理场常驻门禁：
+    #   18 组判据——矩形微通道 Hagen-Poiseuille 流量（级数闭式 golden × 2D FD Poisson 红黑 SOR）·
+    #   Lucas-Washburn 毛细填充长度（闭式 golden × 后向欧拉）· 圆柱微通道径向热阻（Fourier 闭式 × 1D FD）。
+    #   纯 stdlib，实测 <2s（无权豁免）⇒ 入 core；timeout 300s 留足余量。
+    "run_ps_m5_smoke.py",
+    #   计时基线「中位数化」门禁（前序未提交工作，本次随 CI 回扫补登 CORE）：
+    #   6 组判据——`_aggregate_baseline` 偏斜样本 median≠首项（证非空转）· 退化样本下限 ·
+    #   perf_baseline schema 存活 · `_write_baseline` monkeypatch 集成（样本池完整）。
+    #   纯函数 + monkeypatch，实测 <0.5s（无权豁免）⇒ 入 core；timeout 120s 留足余量。
+    "run_perf_bench_median_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2306,6 +2334,20 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 实测：3 轮 @10 线程（复刻 `_child_env()`）· 每行注释给跨轮上界。
     # 最低余量 = run_ring_kappa_calib_smoke 57.60s ⇒ 300/57.60 = **5.21×**（≥3× 目标）。
     # ══════════════════════════════════════════════════════════════════════
+    # 🔴 光子传感器新征程 PS-M2/M3/M4 守卫盲区清偿（v0.9.203 · CI core 287→288）：
+    #   run_ps_m2/m3/m4_smoke 此前进 CORE_SMOKES 但漏登本表 ⇒ B20 盲区 2~3 项。
+    #   三项均纯 stdlib、实测 <1s（远低默认 300s），按 §7 同口径以 300.0 登记
+    #   （实际生效预算，既不收紧也不放宽），消除盲区、满足 B20 反向完备。
+    # 实测上界 <1s（纯标准库 · 远低于默认 300s）
+    "run_ps_m2_smoke.py": 300.0,
+    # 实测上界 <0.5s（纯标准库 · 远低于默认 300s）
+    "run_ps_m3_smoke.py": 300.0,
+    # 实测上界 <0.5s（纯标准库 · 远低于默认 300s）
+    "run_ps_m4_smoke.py": 300.0,
+    # 实测上界 <2s（纯标准库 · 远低于默认 300s）
+    "run_ps_m5_smoke.py": 300.0,
+    # 实测上界 <0.5s（纯函数 + monkeypatch · 远低于默认 300s）
+    "run_perf_bench_median_smoke.py": 300.0,
     # 实测上界 57.60s（3 轮 max · @10T）
     "run_ring_kappa_calib_smoke.py": 300.0,
     # 实测上界 24.13s（3 轮 max · @10T）

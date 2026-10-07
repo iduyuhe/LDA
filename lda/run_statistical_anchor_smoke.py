@@ -8,7 +8,7 @@
      agent/llm 模块；harness S7 的 oracle_kind 为确定性统计量）
   ⑤ S7 harness reference PASS（golden 自洽）
   ⑥ 扰动负例：损耗整体 +1dB → 分布下移 → candidate 偏离 golden > tol 被 FAIL 抓
-  ⑦ 题库计数 483 题（B1-B465 = 460 + E1-E10 = 10 + S1-S13 = 13）
+  ⑦ 题库计数 486 题（B1-B468 = 463 + E1-E10 = 10 + S1-S13 = 13）
   ⑧ S8 OSNR 统计锚（模板复用：Jensen 方向 + golden 收敛）
   ⑨ 蒙特卡洛收敛性（N 扫描收敛带）
 
@@ -145,8 +145,8 @@ def main() -> int:
                   + [f"B{i}" for i in range(361, 374)]    # B361-B373 = Batch B-22 十三锚（阶跃/渐变光纤物理定律族）
                   + [f"B{i}" for i in range(374, 387)]     # B374-B386 = Batch B-23 十三锚（高斯光束旁轴光学族）
                   + [f"B{i}" for i in range(387, 400)]      # B387-B399 = Batch B-24 十三锚（标量衍射族 Fraunhofer/Fresnel Simpson 求积）
-                  + [f"B{i}" for i in range(400, 466)])    # + Batch B-30（量子征程回填 · B453-B455 三锚）    # B400-B412 = Batch B-25 十三锚（静电/静磁有限源族 库仑/Biot-Savart Simpson 求积） + Batch B-26 十三锚（单界面 Fresnel/Snell 光学族 1D FD Helmholtz） + Batch B-27 十三锚（色散与群速度族 中心差分数值微分） + Batch B-28 十三锚（不完全 Beta 族 复合 Simpson 双重数值积分 / 积分正余弦族 RK4 积分定义 ODE） + Batch B-29 一锚（一阶 RC 阶跃充电，解析闭式 golden × 四阶 RK4 积分定义 ODE） + Batch B-33（光子传感器新征程 PS-M2 衍生 · B459 洛伦兹谐振线型斜率极值） + Batch B-34（光子传感器新征程 PS-M3 衍生 · B460 波导灵敏度 Hellmann-Feynman 闭式） + Batch B-35（光子传感器新征程 PS-M4 衍生 · B461 表面灵敏度闭式 / B462 Langmuir 吸附） + Batch B-36（光子传感器新征程 PS-M5 衍生 · B463 矩形微通道 Hagen-Poiseuille 流量 / B464 Lucas-Washburn 毛细填充 / B465 圆柱微通道径向热阻）
-    check("题库（B1-B465 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + Batch B-7 十六锚 + Batch B-8 十六锚 + Batch B-9 十六锚 + Batch B-10 十六锚 + Batch B-11 十六锚 + Batch B-12 十三锚 + Batch B-13 十三锚 + Batch B-14 十六锚 + Batch B-15 十六锚 + Batch B-16 十六锚 + Batch B-17 十六锚 + Batch B-18 十六锚 + Batch B-19 十六锚 + Batch B-20 十六锚 + Batch B-21 十六锚 + Batch B-22 十三锚 + Batch B-23 十三锚 + Batch B-24 十三锚 + Batch B-25 十三锚 + Batch B-26 十三锚 + Batch B-27 十三锚 + Batch B-28 十三锚 + Batch B-29 一锚 + Batch B-30 三锚 + Batch B-33 一锚（洛伦兹谐振线型斜率极值） + Batch B-34 一锚（波导灵敏度 Hellmann-Feynman 闭式） + Batch B-35 二锚（表面灵敏度闭式 / Langmuir 吸附） + Batch B-36 三锚（矩形微通道 Hagen-Poiseuille 流量 / Lucas-Washburn 毛细填充 / 圆柱微通道径向热阻） + E1-E10 + S1-S13 动态计数）",
+                  + [f"B{i}" for i in range(400, 469)])    # + Batch B-30（量子征程回填 · B453-B455 三锚）    # B400-B412 = Batch B-25 十三锚（静电/静磁有限源族 库仑/Biot-Savart Simpson 求积） + Batch B-26 十三锚（单界面 Fresnel/Snell 光学族 1D FD Helmholtz） + Batch B-27 十三锚（色散与群速度族 中心差分数值微分） + Batch B-28 十三锚（不完全 Beta 族 复合 Simpson 双重数值积分 / 积分正余弦族 RK4 积分定义 ODE） + Batch B-29 一锚（一阶 RC 阶跃充电，解析闭式 golden × 四阶 RK4 积分定义 ODE） + Batch B-33（光子传感器新征程 PS-M2 衍生 · B459 洛伦兹谐振线型斜率极值） + Batch B-34（光子传感器新征程 PS-M3 衍生 · B460 波导灵敏度 Hellmann-Feynman 闭式） + Batch B-35（光子传感器新征程 PS-M4 衍生 · B461 表面灵敏度闭式 / B462 Langmuir 吸附） + Batch B-36（光子传感器新征程 PS-M5 衍生 · B463 矩形微通道 Hagen-Poiseuille 流量 / B464 Lucas-Washburn 毛细填充 / B465 圆柱微通道径向热阻） + Batch B-37（光子传感器新征程 PS-M6 衍生 · B466 密集阵列热串扰比 / B467 TIA 读出噪声底 kT/C / B468 封装对准耦合效率）
+    check("题库（B1-B468 含 Batch B-1 五锚 + Batch B-2 十锚 + Batch B-3 十三锚 + Batch B-4 二十二锚 + Batch B-5 十六锚 + Batch B-6 十六锚 + Batch B-7 十六锚 + Batch B-8 十六锚 + Batch B-9 十六锚 + Batch B-10 十六锚 + Batch B-11 十六锚 + Batch B-12 十三锚 + Batch B-13 十三锚 + Batch B-14 十六锚 + Batch B-15 十六锚 + Batch B-16 十六锚 + Batch B-17 十六锚 + Batch B-18 十六锚 + Batch B-19 十六锚 + Batch B-20 十六锚 + Batch B-21 十六锚 + Batch B-22 十三锚 + Batch B-23 十三锚 + Batch B-24 十三锚 + Batch B-25 十三锚 + Batch B-26 十三锚 + Batch B-27 十三锚 + Batch B-28 十三锚 + Batch B-29 一锚 + Batch B-30 三锚 + Batch B-33 一锚（洛伦兹谐振线型斜率极值） + Batch B-34 一锚（波导灵敏度 Hellmann-Feynman 闭式） + Batch B-35 二锚（表面灵敏度闭式 / Langmuir 吸附） + Batch B-36 三锚（矩形微通道 Hagen-Poiseuille 流量 / Lucas-Washburn 毛细填充 / 圆柱微通道径向热阻） + Batch B-37（光子传感器新征程 PS-M6 衍生 · B466 密集阵列热串扰比 / B467 TIA 读出噪声底 kT/C / B468 封装对准耦合效率） + E1-E10 + S1-S13 动态计数）",
           b_ids == expected_b
           and s_ids == [f"S{i}" for i in range(1, 14)]
           and e_ids == [f"E{i}" for i in range(1, len(e_ids) + 1)],

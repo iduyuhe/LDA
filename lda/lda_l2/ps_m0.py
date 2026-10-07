@@ -213,13 +213,20 @@ def design_sensor_v0(w: float = 0.5, h: float = 0.22, wl_um: float = 1.55,
 # ---------------------------------------------------------------------------
 def selfcheck_ps_m0(tol_central_vs_fwd: float = 0.02,
                     S_lo: float = 1.0, S_hi: float = 5000.0,
-                    LOD_hi: float = 1.0) -> Dict[str, Any]:
+                    LOD_hi: float = 1.0,
+                    rep: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """v0 守卫：物理量合理 + 差商互验 + 反向探针。
 
     反向探针（抹平断口必红）：若 dneff/dn 被置 0 ⇒ S=0 ⇒ LOD→∞ ⇒ 判据必红；
     若 Δn 取负 ⇒ Δλ 必为负（红移/蓝移符号正确）。
+
+    ``rep`` 允许传入**已算好的** ``design_sensor_v0()`` 结果以复用 —— 门禁
+    `run_ps_m0_smoke` 借此让「判据复核」与「落盘交付物」共用**同一次**现算，
+    避免重复跑主权流片链（DRC/LVS，实测 ~26s/次）。缺省 ``None`` ⇒ 内部现算，
+    对既有调用方行为**逐位不变**。
     """
-    rep = design_sensor_v0()
+    if rep is None:
+        rep = design_sensor_v0()
     s = rep["sensitivity"]
     ring = rep["ring_metrics"]
 

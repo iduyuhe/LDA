@@ -5,9 +5,9 @@
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - via：L1 KernelGateway
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **478 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **481 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
 
-## 汇总：480/483 通过（独立候选 5 项中 **2 项通过=已验证** · 478 项自证闭环，**非验证结论**）
+## 汇总：483/486 通过（独立候选 5 项中 **2 项通过=已验证** · 481 项自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -415,6 +415,9 @@
 | B463 | poiseuille_flow_rate_nl_s | physical-law | 0.00114341 | 0.00114341 | 0 | 5e-05 | ✅ PASS |
 | B464 | washburn_length_mm | physical-law | 13.4164 | 13.4164 | 0 | 0.1 | ✅ PASS |
 | B465 | thermal_resistance_k_W | physical-law | 124.893 | 124.893 | 0 | 0.01 | ✅ PASS |
+| B466 | array_thermal_crosstalk_ratio | physical-law | 0.487205 | 0.487205 | 0 | 0.01 | ✅ PASS |
+| B467 | tia_noise_floor_uV | physical-law | 203.518 | 203.518 | 0 | 0.02 | ✅ PASS |
+| B468 | align_overlap_efficiency | physical-law | 0.606531 | 0.606531 | 0 | 0.003 | ✅ PASS |
 | B47 | E2_eV | physical-law | 0.822319 | 0.822319 | 0 | 0.1 | ✅ PASS |
 | B48 | E0_eV | physical-law | -0.350171 | -0.350171 | 0 | 0.01 | ✅ PASS |
 | B49 | T | physical-law | 0.308027 | 0.308027 | 0 | 0.02 | ✅ PASS |

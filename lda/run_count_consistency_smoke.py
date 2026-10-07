@@ -18,10 +18,10 @@ README 引擎域计数「光子 9 + 量子 6」与代码 ENGINE_DOMAIN 实际 8+
 断言维度（全部死标量，LLM 不进判决路径）：
   1. 引擎结构：ENGINE_KINDS 22（15 设计量 + 5 loss + 2 有源）、光子 15、量子 7
   2. 包结构：PACKAGE_KINDS 11（22 引擎 + 11 包 = 33 类端到端）
-  3. 题库：BENCHMARK_ORDER 483 题（B1-B465 共 460 题 + E1-E10 10 题 + S1-S13 13 题）
+  3. 题库：BENCHMARK_ORDER 486 题（B1-B468 共 463 题 + E1-E10 10 题 + S1-S13 13 题）
   4. CI 门禁：CORE_SMOKES 条数（动态）↔ README `## 当前账本` 段 `CI core N 条` 严格一致
   5. README 宣传串：动态构造「22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）」
-     「483 题（B1-B465 + E1-E10 + S1-S13）」；反向断言 README 不含已废弃错误串
+     「486 题（B1-B468 + E1-E10 + S1-S13）」；反向断言 README 不含已废弃错误串
      「光子 9 + 量子 6」（防回退）；版本行 = pyproject 版本（防滞后）。
 """
 from __future__ import annotations
@@ -176,13 +176,18 @@ class CountConsistencySmoke(unittest.TestCase):
         # v0.9.111 Batch B-30（量子征程回填）加 B453-B455 → 450
         # v0.9.143 Batch B-31（量子征程再评估）加 B456-B457 → 452
     # v0.9.144 Batch B-32（几何栅格化收敛）加 B458 → 453
-        self.assertEqual(len(b_ids), 460, f"B 题应 460（B1-B465，缺口 B35/B38/B39/B69/B72 预留），实际 {len(b_ids)}")
+    # v0.9.201 Batch B-33（光子传感器征程 PS-M2）加 B459 → 454
+    # v0.9.202 Batch B-34（光子传感器征程 PS-M3）加 B460 → 455
+    # v0.9.203 Batch B-35（光子传感器征程 PS-M4）加 B461-B462 → 457
+    # v0.9.204 Batch B-36（光子传感器征程 PS-M5）加 B463-B465 → 460
+    # v0.9.206 Batch B-37（光子传感器征程 PS-M6）加 B466-B468 → 463
+        self.assertEqual(len(b_ids), 463, f"B 题应 463（B1-B468，缺口 B35/B38/B39/B69/B72 预留），实际 {len(b_ids)}")
         self.assertEqual(len(e_ids), len([f"E{i}" for i in range(1, len(e_ids) + 1)]),
                          f"E 题数异常，实际 {len(e_ids)}")
         self.assertEqual(len(s_ids), 13, f"S 题应 13，实际 {len(s_ids)}")
         self.assertEqual(b_ids[0], "B1")
         self.assertEqual(max(b_ids, key=lambda x: int(x[1:])),
-                         "B465", f"B 题最大编号应 B465，实际 {max(b_ids, key=lambda x: int(x[1:]))}")
+                         "B468", f"B 题最大编号应 B468，实际 {max(b_ids, key=lambda x: int(x[1:]))}")
         self.assertEqual(e_ids, [f"E{i}" for i in range(1, len(e_ids) + 1)],
                          f"E 题须连续编号 E1..E{len(e_ids)}，实际 {e_ids}")
         self.assertEqual(s_ids,

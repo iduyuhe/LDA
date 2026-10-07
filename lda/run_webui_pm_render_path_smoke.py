@@ -129,7 +129,12 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {"run_ci_gate_contract_s
 #: 本版改的是 `run_report_determinism_smoke`（不属 PM 门禁族）⇒ 对照面须覆盖它。
 #: 贵门禁（`run_ecosystem_smoke` 实测 ~207s）**不入**此表 ⇒ 免拖垮本门禁预算；
 #: 它自己的判据数由 `run_ecosystem_smoke` 内「报告快照 == 仓库现算」常驻判据守。
-_W10_EXTRA = ("run_report_determinism_smoke.py",)
+#: 🔴 v0.9.205：本版真改动 = PS-M0 自检判据接入 CORE（迁入 lda/ + 登记）。其**直接相关**
+#:   的便宜门禁 = `run_ci_coverage_gate_smoke`（正是抓出「未接线缺口」的那道闸）⇒ 纳
+#:   对照面，令其 README 判据数由机器守（非手写）。**不纳** `run_ps_m0_smoke` 本体：
+#:   它实测 ~27s（主权流片链 DRC/LVS），会令本 smoke 从 ~45s 升至 ~75-95s、余量跌破
+#:   3× 目标档甚至 2× 硬闸（B9 只降不升 ⇒ 必红）—— 违反本表「便宜可实跑」准入准则。
+_W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py")
 
 
 def _declared_judge_counts(text):

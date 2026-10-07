@@ -670,3 +670,26 @@ def _get_batch_b36():
         import _batch_b36_numeric as _m
     _BATCH_B36_MOD = _m
     return _m
+
+
+# B-37 数值核缓存占位（与 B-31~B-36 同构，项目铁律）
+_BATCH_B37_MOD = None
+
+
+def _get_batch_b37():
+    """B-37 数值核（光子传感器新征程 PS-M6 衍生 · 规模与集成：密集阵列热串扰闭式 golden × 1D FD 三对角候选 / TIA 读出噪声底 kT/C 频域闭式 golden × 时域冲激响应数值积分候选 / 对准耦合效率高斯重叠闭式 golden × 采样-插值重叠积分候选，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B37** 沿用连字符写法 `_batch_b37_numeric` / `_get_batch_b37`
+        （与 B-35/B-36 同构；接手前已实 grep 核占名：`_BATCH_B37` / `_get_batch_b37` / `b37_`
+        全仓零命中，B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B37_MOD
+    if _BATCH_B37_MOD is not None:
+        return _BATCH_B37_MOD
+    try:
+        from lda_harness import _batch_b37_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b37_numeric as _m
+    _BATCH_B37_MOD = _m
+    return _m

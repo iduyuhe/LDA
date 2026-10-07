@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """BENCHMARK_DEFS 数据分片 5/5（F-08 巨石治理 · v0.9.117）。
 
-覆盖 key：B359 … B457（共 99 条，按原 `benchmarks.py` 文件顺序**连续**切分）。
+覆盖 key：B359 … B468（共 102 条，按原 `benchmarks.py` 文件顺序**连续**切分）。
 
 本文件由机械拆分生成：条目正文**逐字节**取自原 BENCHMARK_DEFS 字面量，不重排、
 不重格式化。合并顺序由 `benchmark_defs/__init__.py` 保证与原文逐项一致；判据：
@@ -64,6 +64,11 @@ from .._batch_b36_numeric import (  # Batch B-36 光子传感器新征程 PS-M5 
     golden_b463,
     golden_b464,
     golden_b465,
+)
+from .._batch_b37_numeric import (  # Batch B-37 光子传感器新征程 PS-M6 衍生（规模与集成：密集阵列热串扰阻尼扩散闭式 × 1D FD 三对角 / TIA 读出噪声底 kT/C 频域闭式 × 时域冲激响应数值积分 / 对准耦合效率高斯重叠闭式 × 采样-插值重叠积分）
+    golden_b466,
+    golden_b467,
+    golden_b468,
 )
 DEFS = {
     "B359": {
@@ -1329,5 +1334,38 @@ DEFS = {
         "candidate": "b465_thermal_cand",
         "candidate_desc": "1D 有限差分径向 Laplace（守恒界面通量格式，解 d/dr(r·dT/dr)=0，界面半径 r_{1/2}=r_i+dr/2 处守恒通量 Q=−2π·r_{1/2}·k·(T_1−T_0)/dr·L，比「前向差分 × r_i」一阶格式高一级精度）；离散参数 = N（默认 600）",
         "note": "golden = 圆柱壳稳态径向导热 Fourier 闭式 R_th=ln(r_o/r_i)/(2πkL)；candidate=1D 有限差分径向 Laplace（守恒界面通量格式，解 d/dr(r·dT/dr)=0，界面半径 r_{1/2}=r_i+dr/2 处守恒通量 Q=−2π·r_{1/2}·k·(T_1−T_0)/dr·L，比「前向差分 × r_i」一阶格式高一级精度）。实测默认档 |Δ|=4.678e-05（tol=1e-2 的 213.8× 余量）；判据 D 实测比值 1.78~2.78（守恒格式二阶、MONO），粗端 1.17e-03 < tol、默认档 4.68e-05 ≫ 1e-12；|golden|/tol = 12489.3× ≥ 13.5。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`热阻|thermal resistance|径向导热|fourier|圆柱.*壁` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ **圆柱壁面热阻族零锚占用（本族首锚）**；与 PS-M4(B461/B462) 被测标量完全不同 ⇒ **非重复计数**。⚠️ **诚实边界**：几何/热参数为**设计示例**（玻璃 k=1.4 W/m·K；r_i=10 µm、r_o=30 µm、长 1 mm）；候选为一维径向稳态导热（忽略轴向漏热），结论只可用于数值方法与量级，不得作制造/性能宣称。零商业依赖（纯 numpy + math）。",
+    },
+    "B466": {
+        "title": "密集传感阵列热串扰比（阻尼热扩散闭式 golden vs 1D 有限差分三对角候选）",
+        "metric": "array_thermal_crosstalk_ratio",
+        "oracle": "closed_form(sinh(a/L)·e^{−d/L}/(1−e^{−a/L}), 1D damped heat-diffusion T''−T/L²+q/k'=0) + 1D finite-difference BVP tridiagonal-Thomas independent_cross_check",
+        "tol": 1e-2,
+        "default_params": {"L_th_um": 1.0, "d_um": 1.0, "a_um": 0.5},
+        "golden_fn": golden_b466,
+        "candidate": "b466_array_crosstalk_cand",
+        "candidate_desc": "1D 有限差分 BVP（三对角 Thomas O(N)，条带源 q=1/(2a)（|x|<a），Dirichlet 端 T(±X)=0，域 X=12L），解 T''−T/L²+q/k'=0 取 T(d)/T(0)；离散参数 = N（默认 6400）",
+        "note": "golden = 密集传感阵列相邻通道稳态热串扰比 ΔT(d)/ΔT(0)=sinh(a/L)·e^{−d/L}/(1−e^{−a/L})（1D 阻尼热扩散 T''−T/L²+q/k'=0 的对称解，区外指数衰减、区内 cosh，在 x=±a 匹配 T 与 T'；a→0 退化为纯指数 e^{−d/L}，实测 rel=2.83e-8）；candidate=1D 有限差分 BVP（三对角 Thomas O(N)，条带源，Dirichlet 端）。实测默认档 |Δ|=4.212e-04（tol=1e-2 的 23.7× 余量）；判据 D 实测比值 1.90~2.21（**FD O(h)** —— 条带源边界 |x|=a 处 RHS 不连续 ⇒ 点值一阶，非 O(h²)，如实登记不假称二阶），MONO，粗端(N=400) 7.15e-03 < tol、默认档(N=6400) 4.21e-04 ≫ 1e-12；|golden|/tol = 48.7× ≥ 13.5；反向探针 d_um×1.1 ⇒ |Δ|=4.64e-02（tol 的 4.6×）必红。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`crosstalk|串扰|thermal.*crosstalk|热串扰` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ **热串扰族零锚占用（本族首锚）**；与 PS-M5(B465) 圆柱**径向**稳态热阻的被测标量（R_th K/W，无热源、纯导热）**不同**（本题 = 沿阵列方向的**横向**阻尼扩散温度比，含分布式热源），与 B459~B464 亦完全不同 ⇒ **非重复计数**。⚠️ **诚实边界**：L=1 µm、a=0.5 µm、d=1 µm 为**设计示例**（等效表面散热的薄板「散热鳍」近似，忽略衬底 3D 扩展与对流非线性）；结论只可用于数值方法与量级，不得作制造/性能宣称。零商业依赖（纯 numpy + math）。",
+    },
+    "B467": {
+        "title": "TIA 读出噪声底 kT/C（频域闭式 golden vs 时域冲激响应数值积分候选）",
+        "metric": "tia_noise_floor_uV",
+        "oracle": "closed_form(sqrt(S_i·R_f²·(π/2)·f_p), f_p=1/(2πR_fC) ⇒ collapses to sqrt(kT/C), R_f-independent) + time-domain impulse-response numerical integration independent_cross_check",
+        "tol": 2e-2,
+        "default_params": {"C_fF": 100.0, "R_kOhm": 10.0, "T_K": 300.0},
+        "golden_fn": golden_b467,
+        "candidate": "b467_tia_noise_floor_cand",
+        "candidate_desc": "时域冲激响应数值积分（z=(1/C)·e^{−t/τ}，τ=R_f·C，T=40τ，n 步梯形）：v_n²=(S_i/2)·∫_0^T z²dt；离散参数 = n（默认 32000）",
+        "note": "golden = 单极点跨阻放大器（TIA）输出 rms 噪声电压 v_n=√(S_i·R_f²·(π/2)·f_p)=**√(kT/C)**（S_i=4kT/R_f 为反馈电阻热噪声输入参考单边谱，f_p=1/(2πR_fC)；R_f 显式出现并相消 ⇒ 噪声底与跨阻增益无关，实测 R=10k vs 20k rel=0.0）；candidate=时域脉冲响应数值积分（梯形，因果 z(t)=(1/C)e^{−t/τ}，**1/2 因子为单边→双边谱的 Parseval 必需项**，漏掉偏 √2 且残差恒不降）。实测默认档 |Δ|=5.300e-05 µV（tol=2e-2 的 377× 余量）；判据 D 实测比值恒 **4.00**（梯形 O(h²)），MONO，粗端(n=2000) 1.36e-02 < tol、默认档(n=32000) 5.30e-05 ≫ 1e-12；|golden|/tol = 1.02e4× ≥ 13.5。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`transimpedance|跨阻|TIA|kT/C|kTC` 在 BENCHMARK_DEFS 内 **0 命中** ⇒ **跨阻读出/噪声底族零锚占用（本族首锚）**；与 **B33**（探测器 RC 限制 3dB 带宽）**三方分歧** —— ①**被测标量不同**（B33=f3dB_Hz 带宽 vs 本题=输出 rms 噪声电压 µV）②**物理构型不同**（B33=探测器结电容+50Ω 负载 vs 本题=跨阻放大器反馈电阻热噪声+运放输入节点电容）③**数值格式不同**（B33=梯形法+τ 最小二乘拟合 vs 本题=时域冲激响应数值积分）⇒ **非重复计数**（本仓先例：B452 vs B33、B448/B449 同函数不同 X）。⚠️ **诚实边界**：C=100 fF / R_f=10 kΩ / T=300 K 为**设计示例**，模型为单极点白噪（忽略运放有限 GBW、散粒噪声、1/f 噪声），本锚**无实测锚**；结论只可用于预算与量级，不得作性能宣称。零商业依赖。",
+    },
+    "B468": {
+        "title": "光纤-波导横向对准耦合效率（高斯模场重叠闭式 golden vs 采样-插值重叠积分候选）",
+        "metric": "align_overlap_efficiency",
+        "oracle": "closed_form(exp(−d²/(2w²)), Gaussian mode-field overlap) + discrete-sampled linear-interpolated overlap-integral independent_cross_check",
+        "tol": 3e-3,
+        "default_params": {"d_um": 5.0, "w_um": 5.0},
+        "golden_fn": golden_b468,
+        "candidate": "b468_align_overlap_cand",
+        "candidate_desc": "离散采样 + 线性插值 + 数值重叠积分（域 [−6w,6w]，N+1 节点，平移场 E2(x)=E1(x−d) 由线性插值取，d/h ∉ ℤ）：η=I12²/(I11·I22)；离散参数 = N（默认 1024）",
+        "note": "golden = 光纤-波导横向错位 d 的模式重叠耦合效率 η(d)=exp(−d²/(2w²))（两侧高斯模场 E(x)=exp(−x²/(2w²))，w=1/e **场**半径；∫E(x)E(x−d)dx=w√π·e^{−d²/(4w²)}、∫E²dx=w√π ⇒ η=比值平方；d→0 ⇒ η=1，实测 1.000000000000；1 dB 容差 d_1dB=w√(2·0.1·ln10)=3.3931 µm ⇒ η=0.794328=10^{−0.1} 精确自洽）；candidate=离散采样+线性插值+数值重叠积分。实测默认档 |Δ|=4.642e-06（tol=3e-3 的 646× 余量）；判据 D 实测比值 3.84~4.31（**插值 O(h²)**），MONO，粗端(N=64) 1.24e-03 < tol、默认档(N=1024) 4.64e-06 ≫ 1e-12；|golden|/tol = 202× ≥ 13.5。🔴 **血案规避**：全域高斯+梯形是**谱精度**（残差落 ~1e-13 地板、随 N 不降反升，实测 6.7e-14→4.2e-13）⇒ 判「超收敛 ⇒ 假独立」（B-10 同族）；本实现引入**插值离散误差**（O(h²)）方成立。同族被否：**角度失配复振荡被积函数**（E1·e^{iβx} 仍为高斯 ⇒ 梯形同样谱精度精确，实测 |Δ|≡0.0）——换被积函数不换**离散机制**无效。🔴 **同源体检（实 grep 全仓，如实登记不掩盖）**：`mode.*overlap|模场重叠|重叠积分|align|对准|misalign` 在 BENCHMARK_DEFS 内 **0 命中**（唯一 `gaussian.*overlap` 命中是 part1.py 一条 erfc 读出链锚的交叉校核标注，其被测标量为 erfc 链路值，非模场重叠效率）⇒ **对准容差族零锚占用（本族首锚）**；与 B459~B467 被测标量完全不同 ⇒ **非重复计数**。⚠️ **诚实边界**：w=5 µm / d=5 µm 为**设计示例**；模型为理想高斯模场重叠（忽略非球面像差、角度失配、端面反射），本锚**无实测锚**；结论只可用于数值方法与量级，不得作制造/性能宣称。零商业依赖（纯 numpy + math）。",
     },
 }

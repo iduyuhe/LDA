@@ -133,6 +133,18 @@ PERTURB_SPEC = [
     #   （Fourier 闭式 golden × 1D FD 径向 Laplace 候选；扰 k ⇒ 热导响应：
     #   实测 k×1.1 ⇒ |golden 偏差|≫tol 1e-2 ⇒ 守卫必 FAIL）。
     ("B465", "k_WmK", "mul"),
+    # v0.9.206（Batch B-37 · 光子传感器新征程 PS-M6 衍生）：B466 密集阵列热串扰比
+    #   （阻尼热扩散闭式 golden=sinh(a/L)·e^{−d/L}/(1−e^{−a/L}) × 1D FD 三对角候选；
+    #   扰 pitch=d_um ⇒ 串扰比 e^{−d/L} 响应：实测 d_um×1.1 ⇒ |golden 偏差|=4.64e-02 ≫ tol 1e-2 ⇒ 守卫必 FAIL）。
+    ("B466", "d_um", "mul"),
+    # v0.9.206（Batch B-37 · 光子传感器新征程 PS-M6 衍生）：B467 TIA 读出噪声底 kT/C
+    #   （频域闭式 golden=√(S_i·R_f²·(π/2)·f_p)=√(kT/C) × 时域冲激响应数值积分候选；
+    #   扰 C ⇒ v_n=√(kT/C) 响应：实测 C_fF×1.1 ⇒ |golden 偏差|≈9.48 µV ≫ tol 2e-2 ⇒ 守卫必 FAIL）。
+    ("B467", "C_fF", "mul"),
+    # v0.9.206（Batch B-37 · 光子传感器新征程 PS-M6 衍生）：B468 对准耦合效率 η=e^{−d²/(2w²)}
+    #   （高斯模场重叠闭式 golden × 采样-插值重叠积分候选；
+    #   扰 d ⇒ 耦合效率响应：实测 d_um×1.1 ⇒ |golden 偏差|≈6.05e-02 ≫ tol 3e-3 ⇒ 守卫必 FAIL）。
+    ("B468", "d_um", "mul"),
     # v0.9.23（P0 续）：E2 由「降级量级参考」**升为严格独立候选**
     # （候选 fdfd_ng → semivec_ng，2D 半矢量本征模；FDFD 的 ±0.04~0.08 窗口
     #  散射缺陷被解决，半矢量散射 <1e-5）。
@@ -296,7 +308,10 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 #   Lucas-Washburn 毛细填充长度 B464 + 圆柱微通道径向热阻 B465 共 3 道严格独立锚落地
 #   ⇒ 严格独立 459 → 462（降级 3、自证桩 18 不变）。
 #   棘轮地板同步单调上调：459 → 462。
-MIN_INDEPENDENT = 462
+# Batch B-37（光子传感器新征程 PS-M6 衍生）：密集阵列热串扰 B466 + TIA 读出噪声底 kT/C B467
+#   + 对准耦合效率 B468 共 3 道严格独立锚落地 ⇒ 严格独立 462 → 465（降级 3、自证桩 18 不变）。
+#   棘轮地板同步单调上调：462 → 465。
+MIN_INDEPENDENT = 465
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

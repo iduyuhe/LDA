@@ -12,6 +12,7 @@ from ._adapter_core import (
     _get_batch_b5, _get_batch_b6, _get_batch_b7, _get_batch_b8, _register_candidate,
     _get_batch_b30, _get_batch_b31, _get_batch_b32, _get_batch_b33, _get_batch_b34,
     _get_batch_b35, _get_batch_b36,
+    _get_batch_b37,
 )
 
 from typing import (
@@ -1122,3 +1123,33 @@ def _b465_thermal_cand(spec: VerificationSpec, oracle_value: Any) -> float:
     return float(m.thermal_resistance_fd_k_W(
         float(p["r_i_m"]), float(p["r_o_m"]), float(p["k_WmK"]),
         float(p["L_m"]), N=600))
+
+
+@_register_candidate(
+    "b466_array_crosstalk_cand",
+    "密集传感阵列热串扰比·1D 有限差分 BVP（三对角 Thomas O(N)，条带源，T(±X)=0）↔ 阻尼热扩散闭式 golden sinh(a/L)·e^{−d/L}/(1−e^{−a/L})，方法学独立（离散参数=N，默认 6400）")
+def _b466_array_crosstalk_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b37()
+    return float(m.array_crosstalk_fd(
+        float(p["L_th_um"]), float(p["d_um"]), float(p["a_um"]), N=6400))
+
+
+@_register_candidate(
+    "b467_tia_noise_floor_cand",
+    "TIA 读出噪声底·时域冲激响应数值积分（梯形，z=(1/C)e^{−t/τ}，τ=R_f·C）↔ 频域闭式 golden √(S_i·R_f²·(π/2)·f_p)=√(kT/C)（R_f 显式相消），方法学独立（离散参数=n，默认 32000）")
+def _b467_tia_noise_floor_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b37()
+    return float(m.tia_noise_floor_td_uV(
+        float(p["C_fF"]), float(p["R_kOhm"]), float(p["T_K"]), n=32000))
+
+
+@_register_candidate(
+    "b468_align_overlap_cand",
+    "光纤-波导横向对准耦合效率·离散采样+线性插值+数值重叠积分（模拟模式剖面仅在有限网格已知、平移落点非格点）↔ 高斯模场重叠闭式 golden e^{−d²/(2w²)}，方法学独立（离散参数=N，默认 1024）")
+def _b468_align_overlap_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    p = spec.params
+    m = _get_batch_b37()
+    return float(m.align_overlap_sampled(
+        float(p["d_um"]), float(p["w_um"]), N=1024))

@@ -237,6 +237,11 @@ from ._batch_b36_numeric import (  # Batch B-36 双方法独立锚数值核（�
     golden_b464,
     golden_b465,
 )
+from ._batch_b37_numeric import (  # Batch B-37 双方法独立锚数值核（光子传感器新征程 PS-M6 衍生 · 规模与集成：密集阵列热串扰闭式 golden × 1D FD 三对角候选 / TIA 读出噪声底 kT/C 频域闭式 golden × 时域冲激响应数值积分候选 / 对准耦合效率高斯重叠闭式 golden × 采样-插值重叠积分候选）
+    golden_b466,
+    golden_b467,
+    golden_b468,
+)
 
 from .oracle_pyepr import resolve_pyepr_transmon
 
@@ -1014,6 +1019,10 @@ _GOLDEN_DISPATCH = {
     "B463": golden_b463,
     "B464": golden_b464,
     "B465": golden_b465,
+    # ---- Batch B-37（光子传感器新征程 PS-M6 衍生 · 规模与集成：密集阵列热串扰阻尼扩散闭式 golden × 1D FD 三对角候选 / TIA 读出噪声底 kT/C 频域闭式 golden × 时域冲激响应数值积分候选 / 对准耦合效率高斯重叠闭式 golden × 采样-插值重叠积分候选）----
+    "B466": golden_b466,
+    "B467": golden_b467,
+    "B468": golden_b468,
 
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
@@ -1105,6 +1114,7 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B460",  # Batch B-34（光子传感器新征程 PS-M3 衍生 · 波导灵敏度 HF 微扰闭式 golden × 有限差分候选）
                  "B461", "B462",  # Batch B-35（光子传感器新征程 PS-M4 衍生 · 表面灵敏度 + 朗缪尔吸附）
                  "B463", "B464", "B465",  # Batch B-36（光子传感器新征程 PS-M5 衍生 · 微流控/Lab-on-chip 多物理场）
+                 "B466", "B467", "B468",  # Batch B-37（光子传感器新征程 PS-M6 衍生 · 规模与集成：阵列热串扰 / TIA 读出噪声底 kT/C / 对准耦合效率）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

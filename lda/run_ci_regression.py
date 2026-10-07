@@ -1601,6 +1601,16 @@ CORE_SMOKES: List[str] = [
     #   组 C C1 `make_check` 拒 printf 模板 + C2 全仓 AST 扫 cwd 相对读法（不做白名单）。
     #   实测 <5s ⇒ timeout 120s 留足余量。
     "run_ci_gate_contract_smoke.py",
+    #   光子传感器新征程 PS-M0 v0 环谐振折射率传感器基线常驻门禁（2026-10-07 迁入 lda/）：
+    #   8 项判据——差商互验 central vs fwd ×2 / 灵敏度正值+区间 ×2 / LOD 有限正 ×1 /
+    #   Δn 符号反向探针 ×1 / 「抹平断口」S=0 ⇒ LOD=∞ 反向探针 ×1 / 主权流片链路 ×1；
+    #   并落盘 GDS/报告交付物。纯 stdlib；单次现算逻辑（判据复用同一次流片链，见下）
+    #   本机 @1T 实测 27.28s（3 轮 max）⇒ 入 core；timeout 300s 留 ≥11× 余量。
+    #   🔴 现算去重：`selfcheck_ps_m0(rep=…)` 复用 `design_sensor_v0(out_dir=…)` 的返回，
+    #   不重复跑主权流片链（DRC/LVS 单次 ~26s）——否则本 smoke 需 ~54s。
+    #   🔴 债务清偿：本 smoke 原建在**仓库根**（覆盖门禁只扫 lda/ ⇒ 对它不可见、PS-M0 自检
+    #   判据此前**无 CI 门禁**），本次迁入 lda/ 并接线，消除「标签≠行为」缺口。
+    "run_ps_m0_smoke.py",
     #   光子传感器新征程 PS-M2 指标框架 + LOD_real 噪声模型（几何无关）常驻门禁：
     #   7 组判据——LOD_real = √(LOD_elec² + LOD_temp²)（LOD_temp 与灵敏度 S 解耦，
     #   是 PS-M2 头号物理结论）；四情景（v0_baseline / cited / degraded /
@@ -1624,6 +1634,13 @@ CORE_SMOKES: List[str] = [
     #   Lucas-Washburn 毛细填充长度（闭式 golden × 后向欧拉）· 圆柱微通道径向热阻（Fourier 闭式 × 1D FD）。
     #   纯 stdlib，实测 <2s（无权豁免）⇒ 入 core；timeout 300s 留足余量。
     "run_ps_m5_smoke.py",
+    #   光子传感器新征程 PS-M6 规模与集成（阵列 + 读出 + 封装/对准）常驻门禁：
+    #   30 组判据——密集阵列热串扰（阻尼扩散闭式 golden × 1D FD 三对角）· TIA 读出噪声底 kT/C
+    #   （频域闭式 golden × 时域冲激响应数值积分）· 光纤-波导对准耦合效率（高斯重叠闭式 golden ×
+    #   采样-插值重叠积分）· 阵列 pitch/密度 · 读出带宽/输入参考电流 · 1 dB 容差律 · 集成插损/帧率 ·
+    #   反向探针 ×3 · 非法参数红标。
+    #   纯 stdlib + numpy，实测 <1s（无权豁免）⇒ 入 core；timeout 300s 留足余量。
+    "run_ps_m6_smoke.py",
     #   计时基线「中位数化」门禁（前序未提交工作，本次随 CI 回扫补登 CORE）：
     #   6 组判据——`_aggregate_baseline` 偏斜样本 median≠首项（证非空转）· 退化样本下限 ·
     #   perf_baseline schema 存活 · `_write_baseline` monkeypatch 集成（样本池完整）。
@@ -2338,6 +2355,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   run_ps_m2/m3/m4_smoke 此前进 CORE_SMOKES 但漏登本表 ⇒ B20 盲区 2~3 项。
     #   三项均纯 stdlib、实测 <1s（远低默认 300s），按 §7 同口径以 300.0 登记
     #   （实际生效预算，既不收紧也不放宽），消除盲区、满足 B20 反向完备。
+    # 实测上界 27.28s（3 轮 max · 本机 @1T；@10T 预算由 ci_core_batched 基线复测记录）
+    "run_ps_m0_smoke.py": 300.0,
     # 实测上界 <1s（纯标准库 · 远低于默认 300s）
     "run_ps_m2_smoke.py": 300.0,
     # 实测上界 <0.5s（纯标准库 · 远低于默认 300s）
@@ -2346,6 +2365,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ps_m4_smoke.py": 300.0,
     # 实测上界 <2s（纯标准库 · 远低于默认 300s）
     "run_ps_m5_smoke.py": 300.0,
+    # 实测上界 <1s（纯标准库 + numpy · 远低于默认 300s）
+    "run_ps_m6_smoke.py": 300.0,
     # 实测上界 <0.5s（纯函数 + monkeypatch · 远低于默认 300s）
     "run_perf_bench_median_smoke.py": 300.0,
     # 实测上界 57.60s（3 轮 max · @10T）

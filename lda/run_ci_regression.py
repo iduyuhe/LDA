@@ -1641,6 +1641,14 @@ CORE_SMOKES: List[str] = [
     #   反向探针 ×3 · 非法参数红标。
     #   纯 stdlib + numpy，实测 <1s（无权豁免）⇒ 入 core；timeout 300s 留足余量。
     "run_ps_m6_smoke.py",
+    #   光子传感器征程 PS-M7 WebUI 案例卡 + 客户自助设计向导门禁（/api/sensor_demo）：
+    #   守「内部能力 ↔ 对外载体」真拉平 —— 面板常量必须 ≡ ps_m3 HF 灵敏度 / ps_m6 集成 /
+    #   ps_m2 噪声模型 的**现算值**（漂移即红）；守诚实边界（verdict 恒 DESIGN_BUDGET ·
+    #   温漂主导如实 · LLM 不进判决路径）；守嵌套块**反向完备**（含前缀归一化 + 假绿复现探针 +
+    #   注入探针）；守免登录/零重计算/优雅降级/路由与面板接线/API 参考。
+    #   纯 stdlib（不 import 求解器；对拍时才 lazy import lda_l2），实测 <1s（无权豁免）
+    #   ⇒ 入 core；timeout 300s 留足余量。
+    "run_sensor_panel_smoke.py",
     #   计时基线「中位数化」门禁（前序未提交工作，本次随 CI 回扫补登 CORE）：
     #   6 组判据——`_aggregate_baseline` 偏斜样本 median≠首项（证非空转）· 退化样本下限 ·
     #   perf_baseline schema 存活 · `_write_baseline` monkeypatch 集成（样本池完整）。
@@ -2367,6 +2375,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ps_m5_smoke.py": 300.0,
     # 实测上界 <1s（纯标准库 + numpy · 远低于默认 300s）
     "run_ps_m6_smoke.py": 300.0,
+    # 实测上界 <1s（纯标准库；对拍时 lazy import lda_l2 · 远低于默认 300s）
+    "run_sensor_panel_smoke.py": 300.0,
     # 实测上界 <0.5s（纯函数 + monkeypatch · 远低于默认 300s）
     "run_perf_bench_median_smoke.py": 300.0,
     # 实测上界 57.60s（3 轮 max · @10T）

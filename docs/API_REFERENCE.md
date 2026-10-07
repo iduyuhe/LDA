@@ -22,12 +22,12 @@
 | 项 | 值 |
 |---|---|
 
-| 端点总数 | 147（精确 130 + 前缀/后缀 17） |
-| 方法分布 | GET 52 · PATCH 1 · POST 94 |
-| 有描述 | 147（**100.0%**） |
+| 端点总数 | 148（精确 131 + 前缀/后缀 17） |
+| 方法分布 | GET 53 · PATCH 1 · POST 94 |
+| 有描述 | 148（**100.0%**） |
 | 需登录（重计算闸门） | 60 |
 
-## GET（52）
+## GET（53）
 
 | 路径 | 用途 | 参数 | 鉴权 |
 |---|---|---|---|
@@ -70,6 +70,7 @@
 | `/api/qchip_demo` | GET /api/qchip_demo —— 光量子计算芯片案例卡（只读 · 免登录 · 微秒级）。 A 档接入（D-131）：把「量子征程（吃狗粮）」九步成果在 UI 中以**只读案例** 呈现（可编程 MZI 干涉仪网格 = LOQC 通用处理器）。 🔴 与站内重计算端点（cpo_array / design_* 等）**不同**：本端点**零重计算** —— 全部数字为闭式现算（深度 / 损耗 / 参数 / 维数），不跑 P&R、不 import 求解器 ⇒ **无 DoS 面**，故**不进 HEAVY_POST_PATHS、不要求登录**，与 `/api/verification_ledger`、`/api/benchmarks` 同属「公开只读验货」类 （维持「可被外部验货」战略可达性）。 🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`（**非** ACCEPT/PASS）， 返回体自带 `honest_note` 说明「非流片后实测 / 设计预算口径」。 查询参数（B 档 D-132 扩充）： `n`       目标模数，默认 216，范围 2..4096（非法值回落默认） `topology` 拓扑：`rect`（矩形 Clements · 默认）/ `reck`（三角）/ `temporal`（时间复用） `per_mzi`  单个 MZI 插损覆盖（dB，> 0；缺省取平台设计预算常量） `per_step` 时间复用每步插损覆盖（dB，> 0；缺省取平台常量） 异常不 500（返回 200 + error 字段，与 `h_design_catalog` 同风格）。 | — | public |
 | `/api/scale_demo` | A3 · 规模能力现场演示（1k/4k/32k 全链耗时，总 ~1.1s）。 | `verdict` | public |
 | `/api/schip_demo` | GET /api/schip_demo —— 超导 transmon 量子芯片案例卡（只读 · 免登录 · 微秒级）。 A 档接入（D-148）：把超导征程「吃狗粮」LDA-S1…S5（D-133…D-145）成果在 UI 中 以**只读案例**呈现（transmon 比特 + 可调耦合器 + 读出/控制 + 阵列布线与签核）。 🔴 与 `/api/qchip_demo`（光量子 LOQC 案例卡 · D-131）**并列**：量子两条路线在 LDA 均已走完真 GDS 闭环。 🔴 **零重计算**：不跑 P&R、不 import 求解器、不解析 GDS —— 数字来自 ① 静态里程碑/结论 ② 闭式几何 ③ 对 `examples/` 产出物只 `stat` 的元信息 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**（与 `/api/qchip_demo`、 `/api/verification_ledger` 同属「公开只读验货」类）。 🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_SIGNOFF`（**非** ACCEPT/PASS）， 返回体自带 `honest_note`（非流片实测 / 非 foundry PDK / 规模=版图容量）。 异常不 500（返回 200 + error 字段，与 `h_qchip_demo` 同风格）。 | — | public |
+| `/api/sensor_demo` | GET /api/sensor_demo —— 光子传感器案例卡 + 客户自助设计向导（只读 · 免登录 · 微秒级）。 PS-M7（光子传感器征程收官）：把 PS-M0…PS-M6 **已机器自检通过**的能力在 UI 中 以**只读案例 + 设计向导**呈现 —— 客户自助「选架构 → 调 R/Q/Δn → 读指标 → 看 GDS/DRC/LVS 签核 → 看征程报告」。 🔴 与 `/api/pm_demo`（光子存储）、`/api/oi_demo`（光联接）**并列**：三者都是 「光域器件/链路级」只读案例卡；PS 卡的独特处是**旋钮可调**（架构 + R/Q/Δn）， 但全部走**闭式算术** ⇒ 仍属微秒级。 🔴 **零重计算**：不跑 P&R、不 import 求解器/numpy/scipy、不解析 GDS —— 数字来自 ① 闭式物理律现算（微环 FSR/线宽/谐振位移/LOD_intrinsic + 噪声模型 LOD_real） ② 参考常量（架构 n_eff/Γ/n_g/S 取自 PS-M3 HF 闭式；集成预算取自 PS-M6） ③ 对 `examples/photo_sensor/` 产出物只 `getsize`/读一行 JSON 的元信息 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS** （与 `/api/qchip_demo`、`/api/schip_demo`、`/api/pm_demo` 同属「公开只读验货」类）。 查询参数（可选，越界自动钳制；非法值退回首值）：`arch` / `R_um` / `Q` / `delta_n`。 🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`（**非** ACCEPT/PASS），返回体自带 `honest_note`（设计预算 / 非流片实测签核 / 温漂主导 / LLM 不进判决路径）。 异常不 500（返回 200 + error 字段，与 `h_schip_demo` 同风格）。 | — | public |
 | `/api/shelf` | A2 · 创新超市货架元数据（快，零计算）。含按当前身份计算的实付价。 | — | public |
 | `/api/shelf/**`（前缀匹配） | GET /api/shelf/<id>/opinions 与 /api/shelf/<id>/(package\|download)。 | — | public |
 | `/api/stats` | 管理后台数据看板（admin 专属）。真实/测试账号分离计数。 | — | public |

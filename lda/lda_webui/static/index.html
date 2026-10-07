@@ -1644,6 +1644,25 @@ body{padding-top:56px}
     <div class="conclusion" id="ecoreConclusion"></div>
   </div>
 
+  <div class="sec" data-stage="accept" data-stack="photonic" data-roles="engineer,expert" id="sec-sensor">
+    <h2>★ 光子传感器案例 + 客户自助设计向导（PS-M0…PS-M6 能力对外窗口）</h2>
+    <div class="hint">
+      用 LDA 从零设计一枚 <b>微环折射率传感器</b>：<b>选架构 → 调环半径 / 品质因数 / 待测 Δn → 读指标 → 看 GDS/DRC/LVS 签核 → 看征程报告</b>。<br/>
+      🔵 <b>只读 · 免登录 · 零重计算</b>：数字全部由<b>闭式物理律现算</b>（微环 FSR = λ²/(n<sub>g</sub>·2πR)、线宽 = λ/Q、谐振位移 Δλ = S·Δn、LOD<sub>real</sub> = √(LOD<sub>elec</sub>²+LOD<sub>temp</sub>²)）+ 参考常量（架构 n<sub>eff</sub>/Γ/n<sub>g</sub>/S 取自 <b>PS-M3 HF 闭式</b>，已有限差分验证；集成预算取自 <b>PS-M6</b>）⇒ 微秒级、无 DoS 面。<br/>
+      🔵 <b>口径</b>：判决恒为 <b>DESIGN_BUDGET（设计预算）</b>，<b>非</b>流片实测签核；架构为设计示例几何（SOI 平板 220 nm / 水包层 @1550 nm）；LOD<sub>real</sub> 受 <b>温漂主导</b> ⇒ 真实器件须温控 / referencing。<b>LLM 不进判决路径</b>。
+    </div>
+    <div class="row" style="flex-wrap:wrap;gap:10px">
+      <label>架构 <select id="sensorArch"></select></label>
+      <label>环半径 R (µm) <input id="sensorR" type="number" value="10" min="3" max="50" step="0.5"></label>
+      <label>品质因数 Q <input id="sensorQ" type="number" value="10000" min="1000" max="1000000" step="1000"></label>
+      <label>待测 Δn (RIU) <input id="sensorDn" type="number" value="0.001" min="0.00001" max="0.01" step="0.0001"></label>
+      <button class="btn" id="runSensor">运行传感器设计向导</button>
+    </div>
+    <div id="sensorSummary" class="summary"></div>
+    <div id="sensorBody"></div>
+    <div class="conclusion" id="sensorConclusion"></div>
+  </div>
+
   <div class="footer" data-page-node-id="n4rEeCHGtMlHrVaGZxjXUN">
     本界面所有数据均为<strong data-page-node-id="swf6kw75EiLlFDeLcjsQXv">实时真跑</strong> LDA 内核产出，非演示稿。<br data-page-node-id="lDMKpIy4YCjFkzGCzg3IPK"/>
     后端零依赖（Python 标准库 http.server），复用已落地的验证裁判 / L1 KernelGateway / agent 设计闭环。<br data-page-node-id="NkqVPBGLvjnjvojcUO4fcZ"/>
@@ -6883,6 +6902,139 @@ function renderECore(d){
   return false;
 }
 if($('runECore')) $('runECore').onclick = runECore;
+// ===== PS-M7 · 光子传感器案例 + 客户自助设计向导（只读 · 免登录 · 闭式现算） =====
+function _sxF(v,dp){ return (v!=null && isFinite(v)) ? Number(v).toFixed(dp==null?4:dp) : '-'; }
+function _sxE(v,dp){ return (v!=null && isFinite(v)) ? Number(v).toExponential(dp==null?3:dp) : '-'; }
+async function runSensor(){
+  const btn=$('runSensor'); if(!btn) return;
+  btn.disabled=true;
+  $('sensorSummary').innerHTML='<span class="spin"></span> 正在按闭式物理律现算传感器指标（微环 FSR/线宽/位移/LOD + 噪声模型）…';
+  try{
+    const p='/api/sensor_demo?arch='+encodeURIComponent(($('sensorArch')||{}).value||'')
+      +'&R_um='+encodeURIComponent(($('sensorR')||{}).value||'')
+      +'&Q='+encodeURIComponent(($('sensorQ')||{}).value||'')
+      +'&delta_n='+encodeURIComponent(($('sensorDn')||{}).value||'');
+    const d=await apiGet(p);
+    renderSensor(d);
+  }catch(e){ $('sensorSummary').textContent='错误：'+(e&&e.message?e.message:e); }
+  finally{ btn.disabled=false; }
+}
+function _sxSyncKnobs(knobs){
+  // 由后端旋钮定义驱动输入框的 min/max/default（保证面板与后端同源）
+  var map={R_um:'sensorR', Q:'sensorQ', delta_n:'sensorDn'};
+  (knobs||[]).forEach(function(k){
+    var el=$(map[k.id]); if(!el) return;
+    el.min=k.min; el.max=k.max; el.step=(k.max-k.min)/1000;
+    if(!el.value) el.value=k.default;
+    el.title=k.label+(k.unit?'（'+k.unit+'）':'');
+  });
+}
+function renderSensor(d){
+  if(!d||d.error){ $('sensorSummary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
+  var wiz=d.wizard||{}, knobs=wiz.knobs||[], arches=wiz.architectures||[], steps=wiz.steps||[];
+  // 架构下拉（按后端清单渲染，保证同源）
+  var sel=$('sensorArch');
+  if(sel && sel.options.length!==arches.length){
+    sel.innerHTML=arches.map(function(a){ return '<option value="'+a.id+'">'+a.label+'</option>'; }).join('');
+  }
+  if(sel) sel.value=d.design.arch_id;
+  _sxSyncKnobs(knobs);
+  $('sensorSummary').innerHTML='判决 <b>'+d.verdict+'</b>（设计预算）· 架构 <b>'+d.design.arch_label+'</b> · 端点 <code>'+d.endpoint+'</code>';
+  var h='';
+  var m=d.metrics||{}, g=d.integration||{}, s=d.signoff||{};
+
+  // ① 向导步骤 + 架构对照 + 旋钮
+  h+='<h3 style="margin:14px 0 4px">① 客户自助设计向导</h3>';
+  h+='<div class="hint">'+steps.join(' &nbsp;→&nbsp; ')+'</div>';
+  h+=_qcTbl(['架构','体灵敏度 S (nm/RIU)','群折射率 n_g','架构 id'],
+    arches.map(function(a){ return [a.label, _sxF(a.S_nm_per_riu,3), _sxF(a.n_g,4), '<code>'+a.id+'</code>']; }));
+  h+=_qcTbl(['可调旋钮','键','单位','默认','范围'],
+    knobs.map(function(k){ return [k.label, '<code>'+k.id+'</code>', k.unit||'—', k.default, k.min+' ~ '+k.max]; }));
+
+  // ② 设计点
+  h+='<h3 style="margin:14px 0 4px">② 设计点</h3>';
+  h+=_qcTbl(['参数','值'],[
+    ['架构', d.design.arch_label],
+    ['波长 λ (µm)', _sxF(d.design.wavelength_um,3)],
+    ['环半径 R (µm)', _sxF(d.design.R_um,2)],
+    ['品质因数 Q', _sxF(d.design.Q,0)],
+    ['待测 Δn (RIU)', _sxE(d.design.delta_n,3)]
+  ]);
+
+  // ③ 传感指标（闭式现算）
+  h+='<h3 style="margin:14px 0 4px">③ 传感指标（闭式现算）</h3>';
+  h+=_qcTbl(['指标','值','口径'],[
+    ['体灵敏度 S (nm/RIU)', _sxF(m.S_nm_per_riu,3), 'λ/n_g·dneff/dn'],
+    ['物理灵敏度 dneff/dn', _sxF(m.dneff_dn_clad,6), '由 S·n_g/λ 反推'],
+    ['有效折射率 n_eff', _sxF(m.n_eff,4), 'PS-M3 平板 HF'],
+    ['群折射率 n_g', _sxF(m.n_g,4), '固定折射率 FD 下限'],
+    ['包层限制因子 Γ', _sxF(m.gamma_clad,4), '实际场 L² 份额'],
+    ['自由光谱范围 FSR (nm)', _sxF(m.FSR_nm,4), 'λ²/(n_g·2πR)'],
+    ['谐振线宽 FWHM (nm)', _sxF(m.FWHM_nm,4), 'λ/Q'],
+    ['谐振位移 Δλ (nm)', _sxF(m.resonance_shift_nm,4), 'S·Δn'],
+    ['谐振斜率 |dT/dλ|max (/nm)', _sxF(m.slope_per_nm,3), 'Lorentzian 陡点'],
+    ['LOD 本征 (RIU)', _sxE(m.LOD_intrinsic_riu,3), '线宽受限（无噪）'],
+    ['LOD 电学 (RIU)', _sxE(m.LOD_elec_riu,3), '散粒/NEP/RIN/暗电流'],
+    ['LOD 温漂 (RIU)', _sxE(m.LOD_temp_riu,3), 'dn/dT·ΔT/CMR（与 S 解耦）'],
+    ['LOD 实测预算 (RIU)', _sxE(m.LOD_real_riu,3), '√(LOD_elec²+LOD_temp²)'],
+    ['主导限制', (m.dominant_limit==='temp'?'温漂':'电学'), '当前工作点']
+  ]);
+
+  // ④ 规模与集成（PS-M6）
+  h+='<h3 style="margin:14px 0 4px">④ 规模与集成（PS-M6：阵列 / 读出 / 对准 / 预算）</h3>';
+  h+=_qcTbl(['项','值','口径'],[
+    ['阵列通道数', _sxF(g.n_ch,0), '示例阵列'],
+    ['通道热串扰 (dB)', _sxF(g.crosstalk_db,3), '近邻阻尼热扩散'],
+    ['20 dB 隔离最小节距 (µm)', _sxF(g.pitch_min_um,3), 'pitch_min'],
+    ['通道密度 (/mm)', _sxF(g.channel_density_per_mm,1), '1/pitch'],
+    ['TIA 噪声底 (µV)', _sxF(g.v_n_uV,2), '√(kT/C)'],
+    ['读出 3 dB 带宽 (Hz)', _sxE(g.f_3dB_Hz,3), '1/(2πτ)'],
+    ['封装对准耦合效率 η', _sxF(g.align_eta,4), 'exp(−d²/2w²)'],
+    ['对准插损 (dB)', _sxF(g.align_il_db,3), '−10log10(η)'],
+    ['通道分光损 (dB)', _sxF(g.channel_split_loss_db,3), '1×N 分光'],
+    ['总光损 (dB)', _sxF(g.total_optical_loss_db,3), '分光 + 对准'],
+    ['帧率 (Hz)', _sxE(g.frame_rate_hz,3), '1/t_settle'],
+    ['阵列面积 (mm²)', _sxE(g.area_mm2,3), 'n_ch·pitch²'],
+    ['读出受限 LOD (RIU)', _sxE(g.LOD_readout_riu,3), '读出噪声预算']
+  ]);
+
+  // ⑤ GDS / DRC / LVS 签核（PS-M0 主权流片链）
+  h+='<h3 style="margin:14px 0 4px">⑤ GDS / DRC / LVS 签核（PS-M0 主权流片链产出的真 GDSII）</h3>';
+  if(s.available===false){
+    h+='<div class="hint">⚠️ 结果源不可用（生产未随包 <code>examples/photo_sensor/</code>）⇒ 如实降级，不伪造签核数字。</div>';
+  }
+  h+=_qcTbl(['项','值'],[
+    ['产出物', '<code>'+s.artifact+'</code>'],
+    ['GDS 字节数（报告）', _sxF(s.gds_bytes,0)],
+    ['GDS 文件字节数（实测 getsize）', _sxF(s.gds_file_bytes,0)],
+    ['GDS 元素数', _sxF(s.n_elements,0)],
+    ['DRC 全部通过', (s.drc_all_pass?'<b>是</b>':'否')],
+    ['DRC 检查项数', _sxF(s.n_drc_checked,0)],
+    ['LVS 报告存在', (s.lvs_present?'<b>是</b>':'否')],
+    ['未布线网络数', _sxF(s.blocked_nets,0)],
+    ['结果源可用', (s.available?'是':'否（降级）')]
+  ]);
+
+  // ⑥ 征程报告（PS-M0…PS-M6 门禁）
+  h+='<h3 style="margin:14px 0 4px">⑥ 光子传感器征程报告（PS-M0…PS-M6 · 常驻 CI 门禁）</h3>';
+  h+=_qcTbl(['里程碑','内容','常驻门禁','判据数'],
+    (d.milestones||[]).map(function(x){ return [x.id, x.title, '<code>'+x.gate+'</code>', x.n_checks]; }));
+
+  // ⑦ 诚实边界
+  h+='<h3 style="margin:14px 0 4px">⑦ 诚实边界 / 未闭合缺口</h3>';
+  h+=_qcTbl(['缺口','状态','说明'],
+    (d.gaps||[]).map(function(x){ return ['<code>'+x.id+'</code>', x.status, x.note]; }));
+  $('sensorBody').innerHTML=h;
+  $('sensorConclusion').innerHTML='<b>口径（判决落非 AI ground）</b>：'+d.honest_note;
+  return true;
+}
+if($('runSensor')) $('runSensor').onclick = runSensor;
+$('runSensor') && ['change','input'].forEach(function(ev){
+  ['sensorArch','sensorR','sensorQ','sensorDn'].forEach(function(id){
+    var el=$(id); if(el) el.addEventListener(ev, function(){ runSensor(); });
+  });
+});
+
 </script>
 <script src="/nav.js"></script>
 <script src="/cs_widget.js"></script>
@@ -6984,7 +7136,7 @@ if($('runECore')) $('runECore').onclick = runECore;
   var CASE_MAP = {"#sec-qchip": "runQChip", "#sec-schip": "runSChip",
                   "#sec-pchip": "runPChip", "#sec-ecore": "runECore",
                   "#sec-accel": "runAccel", "#sec-d4": "runD4", "#sec-oi": "runOi",
-                  "#sec-pm": "runPm"};
+                  "#sec-pm": "runPm", "#sec-sensor": "runSensor"};
   var fired = {};
   function maybeRun() {
     var btnId = CASE_MAP[location.hash];

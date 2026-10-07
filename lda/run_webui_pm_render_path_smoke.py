@@ -134,7 +134,11 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {"run_ci_gate_contract_s
 #:   对照面，令其 README 判据数由机器守（非手写）。**不纳** `run_ps_m0_smoke` 本体：
 #:   它实测 ~27s（主权流片链 DRC/LVS），会令本 smoke 从 ~45s 升至 ~75-95s、余量跌破
 #:   3× 目标档甚至 2× 硬闸（B9 只降不升 ⇒ 必红）—— 违反本表「便宜可实跑」准入准则。
-_W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py")
+#: 🔴 v0.9.207：本版真改动 = PS-M7 WebUI 传感器面板。其**直接相关**的便宜门禁 =
+#:   `run_sensor_panel_smoke`（实测 ~0.9s / 45 判据）⇒ 纳对照面，令 README 顶行
+#:   （对外第一屏）的 PS-M7 判据数由机器守（非手写）；且它无自指、无递归风险。
+_W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py",
+              "run_sensor_panel_smoke.py")
 
 
 def _declared_judge_counts(text):

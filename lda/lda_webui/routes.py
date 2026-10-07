@@ -350,6 +350,43 @@ def h_pm_demo(h, p, q, path):
                       "case_id": _pm.CASE_ID, "verdict": "ERROR"})
 
 
+def h_sensor_demo(h, p, q, path):
+    """GET /api/sensor_demo —— 光子传感器案例卡 + 客户自助设计向导（只读 · 免登录 · 微秒级）。
+
+    PS-M7（光子传感器征程收官）：把 PS-M0…PS-M6 **已机器自检通过**的能力在 UI 中
+    以**只读案例 + 设计向导**呈现 —— 客户自助「选架构 → 调 R/Q/Δn → 读指标 →
+    看 GDS/DRC/LVS 签核 → 看征程报告」。
+
+    🔴 与 `/api/pm_demo`（光子存储）、`/api/oi_demo`（光联接）**并列**：三者都是
+    「光域器件/链路级」只读案例卡；PS 卡的独特处是**旋钮可调**（架构 + R/Q/Δn），
+    但全部走**闭式算术** ⇒ 仍属微秒级。
+
+    🔴 **零重计算**：不跑 P&R、不 import 求解器/numpy/scipy、不解析 GDS —— 数字来自
+    ① 闭式物理律现算（微环 FSR/线宽/谐振位移/LOD_intrinsic + 噪声模型 LOD_real）
+    ② 参考常量（架构 n_eff/Γ/n_g/S 取自 PS-M3 HF 闭式；集成预算取自 PS-M6）
+    ③ 对 `examples/photo_sensor/` 产出物只 `getsize`/读一行 JSON 的元信息
+    ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**
+    （与 `/api/qchip_demo`、`/api/schip_demo`、`/api/pm_demo` 同属「公开只读验货」类）。
+
+    查询参数（可选，越界自动钳制；非法值退回首值）：`arch` / `R_um` / `Q` / `delta_n`。
+
+    🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`（**非** ACCEPT/PASS），返回体自带
+    `honest_note`（设计预算 / 非流片实测签核 / 温漂主导 / LLM 不进判决路径）。
+
+    异常不 500（返回 200 + error 字段，与 `h_schip_demo` 同风格）。
+    """
+    try:
+        from . import sensor_case as _sx
+    except ImportError:
+        from lda_webui import sensor_case as _sx
+    try:
+        return (200, _sx.case_card(arch_id=q.get("arch"), R_um=q.get("R_um"),
+                                   Q=q.get("Q"), delta_n=q.get("delta_n")))
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/sensor_demo", "error": str(e)[:160],
+                      "verdict": "ERROR"})
+
+
 def h_accel_demo(h, p, q, path):
     """GET /api/accel_demo —— 光子/模拟混合 AI 推理加速器案例卡（阶段 4 · L6 参考设计 · 只读）。
 
@@ -2032,6 +2069,8 @@ GET_ROUTES = {
     "/api/oi_demo": h_oi_demo,
     # 光子存储（PCM）征程 M0→M3：非易失光子存储阵列版图 + 真 GDS + DRC/LVS（只读 · 免登录）
     "/api/pm_demo": h_pm_demo,
+    # 光子传感器征程 PS-M7：案例卡 + 客户自助设计向导（只读 · 免登录 · 闭式现算）
+    "/api/sensor_demo": h_sensor_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,

@@ -1,0 +1,57 @@
+{
+  "schema": "lda.photo_sensor.case.v1",
+  "generated_by": "examples/photo_sensor/build_ps_sensor.py",
+  "source_modules": [
+    "lda_l2.ps_m0",
+    "lda_l2.ps_m3",
+    "lda_l2.ps_m6"
+  ],
+  "sense": "参考快照（非判决）· 面板请求期零重算 · 跨源一致性由 run_sensor_panel_smoke B 节守护",
+  "architectures": [
+    {
+      "id": "slab_hf_water",
+      "label": "微环 · SOI 平板波导（水包层 · 真实传感窗）",
+      "source": "PS-M3 · HF 闭式（FD 验证）",
+      "n_eff": 2.839070582845509,
+      "gamma_clad": 0.1844231876617586,
+      "n_g": 3.589250698523721,
+      "S_bulk_nm_per_riu": 37.30945285270887
+    },
+    {
+      "id": "slab_hf_oxide",
+      "label": "微环 · SOI 平板波导（氧化包层 · 上限对照）",
+      "source": "PS-M3 · HF 闭式（FD 验证）",
+      "n_eff": 2.849463699938886,
+      "gamma_clad": 0.1895276721215868,
+      "n_g": 3.5786963035153545,
+      "S_bulk_nm_per_riu": 41.599062797877416
+    }
+  ],
+  "integration": {
+    "n_ch": 8,
+    "crosstalk_db": -6.2457643677770305,
+    "pitch_min_um": 2.583514896614207,
+    "channel_density_per_mm": 1000.0,
+    "v_n_uV": 203.51773878460816,
+    "f_3dB_Hz": 159154943.09189534,
+    "align_eta": 0.6065306597126334,
+    "align_il_db": 2.171472409516259,
+    "channel_split_loss_db": 9.030899869919436,
+    "total_optical_loss_db": 11.302372279435694,
+    "frame_rate_hz": 25000000.0,
+    "area_mm2": 0.00047999999999999996,
+    "LOD_readout_riu": 3.6666183727421164e-07
+  },
+  "signoff": {
+    "artifact": "lda_ps_sensor_ring.gds",
+    "gds_bytes": 684,
+    "n_elements": 3,
+    "drc_all_pass": true,
+    "n_drc_checked": 1,
+    "lvs_present": true,
+    "blocked_nets": 0,
+    "wg_width_um": 0.5,
+    "ring_R_um": 10.0,
+    "ring_Q": 10000.0
+  }
+}

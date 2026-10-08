@@ -28,7 +28,8 @@ class PhcAnchorSmoke(unittest.TestCase):
         )
         self.assertIn("B21", BENCHMARK_DEFS)
         h = VerificationHarness(BENCHMARK_DEFS)
-        specs = h.resolve_specs()
+        # v0.9.211：本 smoke 只断言 B21 ⇒ 只解析 B21，免全账本 golden 税。
+        specs = h.resolve_specs(only=("B21",))
         results = h.run(specs, ReferenceCandidate())
         b21 = [r for r in results if r.bid == "B21"]
         self.assertEqual(len(b21), 1)

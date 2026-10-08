@@ -268,12 +268,20 @@ def main() -> int:
     ids = [e.id for e in BUILTIN_DEVICE_ENTRIES]
     reg = builtin_registry()
     e_ring = reg.get("lda.SensingRing")
-    check("E1 内置器件本体含 lda.SensingRing / lda.SensingMZI（class=C · layers 含 WINDOW）",
-          ids == ["lda.SensingRing", "lda.SensingMZI"]
+    # 🔴 v0.9.211 修（全量 CI「照妖镜」抓出）：原判据用 `ids == ["lda.SensingRing",
+    #   "lda.SensingMZI"]` **精确等** ⇒ 后续征程（PS-M9）追加内置器件时**必然误红**
+    #   —— 守卫把「集合成员」错写成「集合相等」，属「守卫的数据源自己写死」同族。
+    #   改为**包含语义**（必需条目须在）+ **规模下限棘轮**（条目被清空仍须红）。
+    #   下限 6 = PS-M1 2 条 + PS-M9 4 条，由 `run_ps_m9_smoke` C 段（4 条 ps-m9 条目现存）
+    #   机器对照 ⇒ 非孤立手写数字。
+    _req = ["lda.SensingRing", "lda.SensingMZI"]
+    check("E1 内置器件本体**含** lda.SensingRing / lda.SensingMZI（class=C · layers 含 WINDOW）"
+          "｜包含语义 + 规模下限（防追加误红 / 防清空漏判）",
+          all(r in ids for r in _req) and len(ids) >= 6
           and e_ring is not None and e_ring.sovereign_class == "C"
           and "WINDOW" in e_ring.layers
           and reg.get("lda.SensingMZI") is not None,
-          str(ids))
+          "ids=%s n=%d" % (ids, len(ids)))
     check("E2 🔴 单一真源纪律：内置条目 `params` 空（不复制数值）+ note 指向真源模块",
           all(not e.params for e in BUILTIN_DEVICE_ENTRIES)
           and all("lda_l2.primitives" in e.note and "lda_l2.drc" in e.note

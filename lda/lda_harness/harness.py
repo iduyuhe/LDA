@@ -83,7 +83,7 @@ class VerificationHarness:
             anchor = _default_empirical_anchor()
         self.anchor = anchor
 
-    def resolve_specs(self, l0_ir=None):
+    def resolve_specs(self, l0_ir=None, only=None):
         """解析 benchmark 规格。
 
         若给定 L0 IR 且含 verification.benchmarks，则以其为准（target/tol/oracle
@@ -92,14 +92,22 @@ class VerificationHarness:
 
         D-62 实证锚题（anchor=empirical，golden_fn=None）：target 不在此解析——
         由 run() 经 EmpiricalAnchor 从实测语料实时取（第二道非 AI ground，死标量比对）。
+
+        only：可选 id 子集（可迭代）。过滤**前移到 golden 求值之前** ⇒ 只需少数锚的
+        调用方不再为全账本付出昂贵 golden 求解代价（v0.9.211；实证：B469–B471 的 FV
+        本征求解 ~6.5 s/道 ⇒ 全量解析 ~19 s，而多数门禁只需自己那 1–3 道）。
+        默认 None ⇒ 与既有行为**逐位一致**（全部既有调用方零变化）。
         """
         specs = []
         benchmarks = []
+        _only = None if only is None else {str(x) for x in only}
         if l0_ir:
             benchmarks = (l0_ir.get("verification") or {}).get("benchmarks") or []
         if benchmarks:
             for b in benchmarks:
                 bid = b["id"]
+                if _only is not None and bid not in _only:
+                    continue
                 d = self.defs.get(bid)
                 if not d:
                     specs.append({"id": bid, "metric": b.get("metric"),
@@ -131,6 +139,8 @@ class VerificationHarness:
                 })
         else:
             for bid in sorted(self.defs.keys()):
+                if _only is not None and bid not in _only:
+                    continue
                 d = self.defs[bid]
                 params = dict(d["default_params"])
                 anchor = d.get("anchor")

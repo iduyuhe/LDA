@@ -30,7 +30,8 @@ class B28ModulatorVpiSmoke(unittest.TestCase):
         )
         self.assertIn("B28", BENCHMARK_DEFS)
         h = VerificationHarness(BENCHMARK_DEFS)
-        specs = h.resolve_specs()
+        # v0.9.211：本 smoke 只断言 B28 ⇒ 只解析 B28，免全账本 golden 税。
+        specs = h.resolve_specs(only=("B28",))
         results = h.run(specs, ReferenceCandidate())
         b28 = [r for r in results if r.bid == "B28"]
         self.assertEqual(len(b28), 1)

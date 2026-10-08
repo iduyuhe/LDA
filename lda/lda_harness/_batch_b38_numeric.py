@@ -77,6 +77,13 @@ from typing import Dict, Optional, Tuple
 
 import numpy as np
 
+# 🔴 截面参数**单一真源**（PS 征程 M9（G2 器件本体） 起）：设计侧（PDK 器件本体 / DRC / 版图）
+#    与验证侧（本模块的 golden / 候选）**共用同一张表**，杜绝「设计一套、验证一套」
+#    的数值副本漂移（与 LIB_LAYER_SI / LIB_LAYER_WINDOW 同型纪律）。
+# ⚠️ 本文件顶层仍 **scipy-free**：`lda_l2.primitives` 只依赖 math / typing
+#    （实测 import 后 scipy 不入 sys.modules）⇒ 闭式门禁的依赖隔离不受影响。
+from lda_l2.primitives import WAVEGUIDE_XS_DEFAULTS as _XS
+
 
 # ===========================================================================
 # 公共几何 / 材料（设计示例）
@@ -88,18 +95,15 @@ WL = 1.55                # µm
 H_GRID_DEFAULT = 0.010    # µm（与 FV 求解器生产档对齐：0.22/0.45/0.06 均为 0.01 整数倍）
 L_HALF_DEFAULT = 1.5     # µm 半窗（water/spin 低对比度，留足模场余量）
 
-# 逐几何默认档（均为 h_grid=0.01 的整数倍尺寸，避免楼梯误差）
-# thinwire 需 w≥0.22（0.12/0.16/0.18/0.20 全截止→nan）；slot 需 rail≥0.18 且 gap≤0.05
-# （rail=0.18 gap=0.08/0.10→nan）。默认档经扫参确认可受限。
+# 逐几何档：**截面参数一律引自 `_XS`（L2 单一真源）**，此处只补求解窗口半宽。
+# 扫参事实（v0.9.211，h_grid=0.01 的整数倍尺寸以避免楼梯误差）：
+#   thinwire 需 w≥0.22（0.12–0.20 全截止→nan）；slot 需 rail≥0.18 且 gap≤0.05；
+#   suspended h 必须 0.22（0.15 截止 / 0.30 灵敏度腰斩 1.171→0.482）。
 _DEFAULTS = {
-    "strip":   dict(w_um=0.45, h_um=0.22, gap_um=0.0, w_rail_um=0.0,
-                    substrate=True, Lhalf_um=L_HALF_DEFAULT),
-    "thinwire": dict(w_um=0.22, h_um=0.22, gap_um=0.0, w_rail_um=0.0,
-                     substrate=True, Lhalf_um=L_HALF_DEFAULT),
-    "slot":    dict(w_um=0.0, h_um=0.22, gap_um=0.05, w_rail_um=0.22,
-                    substrate=True, Lhalf_um=L_HALF_DEFAULT),
-    "suspended": dict(w_um=0.45, h_um=0.22, gap_um=0.0, w_rail_um=0.0,
-                      substrate=False, Lhalf_um=L_HALF_DEFAULT),
+    "strip":     dict(_XS["strip"], Lhalf_um=L_HALF_DEFAULT),
+    "thinwire":  dict(_XS["thinwire"], Lhalf_um=L_HALF_DEFAULT),
+    "slot":      dict(_XS["slot"], Lhalf_um=L_HALF_DEFAULT),
+    "suspended": dict(_XS["suspended"], Lhalf_um=L_HALF_DEFAULT),
 }
 
 

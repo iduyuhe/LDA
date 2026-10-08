@@ -155,6 +155,14 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {"run_ci_gate_contract_s
 #:   直接相关且**便宜**的门禁 = `run_ps_m1_smoke`（实测 **~0.5 s** / **27 判据**，
 #:   纯标准库 + lazy import lda_l2/lda_pdk）⇒ 纳对照面，令本版 README 顶行声明的
 #:   27 判据由机器守（非手写）；它无自指、无递归、无重算风险。
+#: 🔴 v0.9.211：本版真改动 = PS-M9（G2 器件本体）+ `resolve_specs(only=…)` 子集过滤。
+#:   ⚠️ **不纳** `run_ps_m9_smoke`（实测 **26 s**）：本 smoke 宿主预算 **180 s**，纳入
+#:   对照面会令其 48.6 s → ~75 s、余量跌至 **2.4×**（< 3× 目标档）—— 与 v0.9.209 对
+#:   `run_ps_m8_smoke`（~64 s）的判定同族。故本版 README 顶行**不声明** PS-M9 判据数，
+#:   改声明 `run_count_consistency_smoke` **13 判据**（0.4 s · 在对照面内）。
+#:   🔴 **通则（v0.9.211 首轮全量 CI 当场抓出 · 已入 IRONLAWS）**：**README 顶行声明的
+#:   每个 `run_*` 判据数都必须在 `_W10_EXTRA` 内** —— 声明了却不在对照面 ⇒
+#:   `W10b`（条目须在对照面）+ `W10-P1`（README 旧值必红）**双红**，即守卫按设计顶回。
 _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py",
               "run_sensor_panel_smoke.py", "run_webui_entry_smoke.py",
               "run_count_consistency_smoke.py", "run_ps_m1_smoke.py")

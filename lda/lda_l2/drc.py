@@ -46,6 +46,16 @@ DEFAULT_RULES: Dict[str, float] = {
     "min_window_margin_um": 0.20,   # 窗口边缘 → 波导芯外缘最小余量（防过刻蚀伤芯）
     "min_window_end_um": 2.0,       # 窗口端 → 最近端口/耦合区最小留白（防暴露耦合区）
     "min_clad_enclosure_um": 0.40,  # 包层对硅芯最小单边包封（通用规则；开窗区被工艺例外豁免）
+    # ── v0.9.211（PS 征程 M9（G2 器件本体））· 高灵敏几何器件（狭缝 / 悬浮）工艺规则 ──
+    # 来源 = **工艺可实现性常识**（狭缝由光刻极限决定；悬浮膜受塌陷/应力决定），
+    # **非任何 foundry PDK deck**；与其余键同属「可被 PDK 覆盖」的设计规则层。
+    # 🔴 狭缝 rail=0.22 **小于**通用 min_width(0.35) ⇒ 必须用专用键，否则
+    #    狭缝波导「本该可制造」却被通用规则判违规（口径错 ⇒ 结论反向）。
+    "min_rail_width_um": 0.15,      # 狭缝 rail 最小宽度（光刻可实现）
+    "min_slot_gap_um": 0.04,        # 狭缝最小缝宽（光刻极限）
+    "min_support_width_um": 0.50,   # 悬浮段两端支撑块最小宽度（防塌陷）
+    "max_suspended_span_um": 50.0,  # 最大悬空跨度（超此长度悬浮膜易塌陷/断裂）
+    "min_anchor_len_um": 1.00,      # 最小锚定段长度（保证与衬底可靠连接）
 }
 
 
@@ -69,6 +79,9 @@ CHECK_RULES = (
     "min_width", "min_space", "min_bend_R", "max_split", "min_pad",
     # v0.9.210（PS 征程 M1/G4）· 传感窗口
     "min_window", "min_window_margin", "min_window_end", "min_clad_enclosure",
+    # v0.9.211（PS 征程 M9（G2 器件本体））· 高灵敏几何器件（狭缝 / 悬浮）
+    "min_rail_width", "min_slot_gap", "min_support_width",
+    "max_suspended_span", "min_anchor_len", "min_support_overhang",
 )
 
 
@@ -331,6 +344,34 @@ def drc_check_device(kind: str, params: Dict[str, float],
         add("min_clad_enclosure", "clad_enclosure", g["clad_enclosure"],
             rules.get("min_clad_enclosure_um",
                       DEFAULT_RULES["min_clad_enclosure_um"]))
+    elif kind in ("SlotWaveguide", "SuspendedWaveguide", "SlotRing", "SuspendedRing"):
+        # ── v0.9.211（PS 征程 M9（G2 器件本体））· 高灵敏几何器件本体（狭缝 / 悬浮）─────
+        # 几何量由 `primitives.high_sens_geometry` **同源导出**（与版图几何共用
+        # 同一函数 + 同一参数解析），绝不在此重算 ⇒ 杜绝 DRC 与版图脱钩。
+        # 🔴 狭缝走**专用**规则名（rail / gap 由光刻极限决定），悬浮走
+        #    支撑宽 / 锚定长 / 悬空跨度 / **支撑外扩（释放开孔不得开穿锚定块）**。
+        from lda_l2.primitives import high_sens_geometry, canon_high_sens
+        K = canon_high_sens(kind)
+        g = high_sens_geometry(K, params)
+        if K.startswith("Slot"):
+            add("min_rail_width", "rail_width", g["rail_width"],
+                rules.get("min_rail_width_um", DEFAULT_RULES["min_rail_width_um"]))
+            add("min_slot_gap", "slot_gap", g["slot_gap"],
+                rules.get("min_slot_gap_um", DEFAULT_RULES["min_slot_gap_um"]))
+        else:
+            add("min_width", "wg_width", g["wg_width"], rules["min_width_um"])
+            add("min_support_width", "support_w", g["support_w"],
+                rules.get("min_support_width_um", DEFAULT_RULES["min_support_width_um"]))
+            add("min_anchor_len", "anchor_len", g["anchor_len"],
+                rules.get("min_anchor_len_um", DEFAULT_RULES["min_anchor_len_um"]))
+            add("max_suspended_span", "suspended_span", g["suspended_span"],
+                rules.get("max_suspended_span_um", DEFAULT_RULES["max_suspended_span_um"]))
+            # 释放开孔不得开穿锚定块：支撑块相对开孔的单边外扩 ≥ 通用最小间距。
+            add("min_support_overhang", "support_overhang", g["support_overhang"],
+                rules["min_space_um"])
+        if K.endswith("Ring"):
+            add("min_bend_R", "R", g["R"], rules["min_bend_R_um"])
+            add("min_space", "bus_gap", g["bus_gap"], rules["min_space_um"])
     elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler",
                   # v0.9.178（M2 · G-OI2）：收发器器件类接入参数级 DRC。
                   # 此前这 4 类无分支 ⇒ raise ValueError ⇒ 收发器真 GDS 里

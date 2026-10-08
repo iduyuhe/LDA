@@ -27,7 +27,9 @@ class KernelSealSmoke(unittest.TestCase):
         for bid in ("B25", "B26", "B27"):
             self.assertIn(bid, BENCHMARK_DEFS)
         h = VerificationHarness(BENCHMARK_DEFS)
-        results = h.run(h.resolve_specs(), ReferenceCandidate())
+        # v0.9.211：本 smoke 只断言 B25/B26/B27 ⇒ 只解析这三道，免全账本 golden 税。
+        results = h.run(h.resolve_specs(only=("B25", "B26", "B27")),
+                        ReferenceCandidate())
         for bid in ("B25", "B26", "B27"):
             r = [x for x in results if x.bid == bid]
             self.assertEqual(len(r), 1)

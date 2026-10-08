@@ -87,7 +87,8 @@ def main() -> int:
 
     # ⑤ S7 harness reference PASS（golden 自洽）
     harness = VerificationHarness(BENCHMARK_DEFS)
-    s7_specs = [s for s in harness.resolve_specs(None) if s.get("id") == "S7"]
+    # v0.9.211：只要 S7 ⇒ 只解析 S7（only=），免全账本 golden 税。
+    s7_specs = harness.resolve_specs(None, only=("S7",))
     from lda_harness.harness import ReferenceCandidate
     cand = ReferenceCandidate()
     res = harness.run(s7_specs, cand)
@@ -280,7 +281,8 @@ def main() -> int:
     # ⑨ harness S13 reference PASS（golden 自洽，复用 S7 同款构造）
     from lda_harness.harness import ReferenceCandidate
     h13 = VerificationHarness(BENCHMARK_DEFS)
-    spec_s13 = [s for s in h13.resolve_specs(None) if s.get("id") == "S13"]
+    # v0.9.211：只要 S13 ⇒ 只解析 S13（only=），免全账本 golden 税。
+    spec_s13 = h13.resolve_specs(None, only=("S13",))
     check("S13 已注册进 harness 题库", len(spec_s13) == 1,
           f"specs={len(spec_s13)}")
     if spec_s13:

@@ -30,7 +30,8 @@ class MziAnchorSmoke(unittest.TestCase):
         )
         self.assertIn("B20", BENCHMARK_DEFS)
         h = VerificationHarness(BENCHMARK_DEFS)
-        specs = h.resolve_specs()
+        # v0.9.211：本 smoke 只断言 B20 ⇒ 只解析 B20，免全账本 golden 税。
+        specs = h.resolve_specs(only=("B20",))
         results = h.run(specs, ReferenceCandidate())
         b20 = [r for r in results if r.bid == "B20"]
         self.assertEqual(len(b20), 1)

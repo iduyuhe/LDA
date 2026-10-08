@@ -27,7 +27,8 @@ class FluxoniumAnchorSmoke(unittest.TestCase):
         self.assertIn("B23", BENCHMARK_DEFS)
         self.assertIn("B24", BENCHMARK_DEFS)
         h = VerificationHarness(BENCHMARK_DEFS)
-        specs = h.resolve_specs()
+        # v0.9.211：本 smoke 只断言 B23/B24 ⇒ 只解析这两道，免全账本 golden 税。
+        specs = h.resolve_specs(only=("B23", "B24"))
         results = h.run(specs, ReferenceCandidate())
         for bid in ("B23", "B24"):
             r = [x for x in results if x.bid == bid]

@@ -147,10 +147,10 @@ class KernelGateway:
         l0_ir = payload.get("l0_ir")
         candidate = self._build_candidate(payload.get("candidate", {}))
 
-        specs = self.harness.resolve_specs(l0_ir)
         wanted = payload.get("benchmarks")
-        if wanted:
-            specs = [s for s in specs if s["id"] in wanted]
+        # v0.9.211：把 id 过滤**前移到解析阶段**（only=）—— 只请求子集的调用方
+        # 不再为全账本付昂贵 golden 求解代价；wanted 为空 ⇒ None ⇒ 全量，行为不变。
+        specs = self.harness.resolve_specs(l0_ir, only=(wanted or None))
 
         results = self.harness.run(specs, candidate)
         passed = sum(1 for r in results if r.passed)

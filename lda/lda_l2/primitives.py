@@ -690,6 +690,226 @@ def sensing_window_descs(kind: str, params: Dict[str, float]) -> List[Dict]:
     return descs
 
 
+# ---------------------------------------------------------------------------
+# PS 征程 M9（G2 器件本体） · 高灵敏几何器件本体（slot / suspended 波导与谐振环）
+# ---------------------------------------------------------------------------
+#: 衬底释放开孔工艺层（suspended 器件的 BOX 去除区）。
+#: 🔴 与 `LIB_LAYER_WINDOW=7` **同族但语义不同**：WINDOW = 去**上包层**（暴露倏逝场），
+#:    RELEASE = 去**衬底**（形成悬浮膜）。两者都是「设计规则层」，非 foundry PDK 映射。
+_LAYER_RELEASE = 8      # 衬底释放开孔（suspended 器件）
+
+#: 波导截面参数 **单一真源**（PS 征程 M9（G2 器件本体））。
+#: 🔴 与 B469–B471 的 golden 几何 **严格同源**：`lda_harness._batch_b38_numeric` 的
+#:    `_DEFAULTS` **引用本表**（不再自持第二份）⇒ 杜绝「设计侧一套、验证侧一套」的
+#:    数值副本漂移（与 `LIB_LAYER_SI` / `LIB_LAYER_WINDOW` 同型纪律）。
+#: 🔴 取值依据 = v0.9.211 扫参实测（B469–B471 同口径）：
+#:    · suspended `h_um` **必须 0.22** —— 0.15 模式截止（nan）、0.30 灵敏度腰斩（1.171→0.482）；
+#:    · slot 的 gap / rail 在 ±4% 内不敏感（0.03–0.08 扫参），取现行值；
+#:    · suspended `w_um` 0.35 略优于 0.45（+1.4%）**但不改** —— 改它会变更 B471 的
+#:      golden 数值（= 动锚），收益属噪声级，不值得（登记为设计备选）。
+WAVEGUIDE_XS_DEFAULTS: Dict[str, Dict[str, object]] = {
+    "strip":     {"w_um": 0.45, "h_um": 0.22, "gap_um": 0.0,
+                  "w_rail_um": 0.0, "substrate": True},
+    "thinwire":  {"w_um": 0.22, "h_um": 0.22, "gap_um": 0.0,
+                  "w_rail_um": 0.0, "substrate": True},
+    "slot":      {"w_um": 0.0, "h_um": 0.22, "gap_um": 0.05,
+                  "w_rail_um": 0.22, "substrate": True},
+    "suspended": {"w_um": 0.45, "h_um": 0.22, "gap_um": 0.0,
+                  "w_rail_um": 0.0, "substrate": False},
+}
+
+#: 器件级默认参数（长度 / 支撑 / 释放 / 耦合）—— 高灵敏器件本体专用。
+#: 🔴 自洽约束（由 DRC 机器校验，不靠人记）：`support_w ≥ w + 2·release_margin`
+#:    —— 否则释放开孔会**开穿锚定块** ⇒ 悬浮段失去支撑（= 不可制造却判绿）。
+HIGH_SENS_DEFAULTS: Dict[str, float] = {
+    "L_um": 20.0,              # 悬浮 / 狭缝段长度
+    "R": 10.0,                 # 谐振环半径（环类）
+    "bus_gap_um": 0.30,        # bus ↔ 环耦合间隙（环类）
+    "bus_w_um": 0.45,          # bus 波导宽（环类）
+    "support_w_um": 1.40,      # 两端支撑块宽度（suspended 类；≥ w + 2·release_margin + 2·min_space）
+    "anchor_len_um": 2.00,     # 锚定段长度（suspended 类）
+    "release_margin_um": 0.25,  # 释放开孔相对悬浮条每侧外扩（suspended 类）
+    "spoke_len_um": 3.00,      # 支撑辐条长度（SuspendedRing）
+}
+
+#: 高灵敏器件 kind 归一名（大小写 / 下划线 / 空格不敏感）。
+_HIGH_SENS_ALIAS: Dict[str, str] = {
+    "slotwaveguide": "SlotWaveguide",
+    "suspendedwaveguide": "SuspendedWaveguide",
+    "slotring": "SlotRing",
+    "suspendedring": "SuspendedRing",
+}
+
+
+def canon_high_sens(kind: str) -> str:
+    """高灵敏器件 kind 归一（`slot_waveguide` / `SLOTWAVEGUIDE` → `SlotWaveguide`）。"""
+    k = str(kind).lower().replace("_", "").replace("-", "").replace(" ", "")
+    if k not in _HIGH_SENS_ALIAS:
+        raise ValueError(f"高灵敏器件不支持的 kind={kind}"
+                         f"（支持 {sorted(set(_HIGH_SENS_ALIAS.values()))}）")
+    return _HIGH_SENS_ALIAS[k]
+
+
+def _hs_p(kind: str, params: Dict[str, float]) -> Dict[str, object]:
+    """高灵敏器件参数解析：**截面真源 + 器件级默认**，缺项逐键回落（单一真源）。"""
+    k = canon_high_sens(kind)
+    xs = "slot" if k.startswith("Slot") else "suspended"
+    out: Dict[str, object] = dict(HIGH_SENS_DEFAULTS)
+    out.update(WAVEGUIDE_XS_DEFAULTS[xs])
+    for key in list(out):
+        if params and key in params:
+            out[key] = params[key]
+    return out
+
+
+def _annulus(cx: float, cy: float, r_in: float, r_out: float, n: int = 72) -> List[Tuple[float, float]]:
+    """完整圆环带多边形（外圈逆时针 + 内圈顺时针）—— slot 双环 / release 环带。"""
+    outer = [(cx + r_out * math.cos(2.0 * math.pi * i / n),
+              cy + r_out * math.sin(2.0 * math.pi * i / n)) for i in range(n)]
+    inner = [(cx + r_in * math.cos(-2.0 * math.pi * i / n),
+              cy + r_in * math.sin(-2.0 * math.pi * i / n)) for i in range(n)]
+    return outer + inner
+
+
+def _annulus_arc(cx: float, cy: float, r_in: float, r_out: float,
+                 a0_deg: float, a1_deg: float, n: int = 24) -> List[Tuple[float, float]]:
+    """**部分**圆环带多边形（a0→a1 逆时针）—— suspended 环的释放开孔须**避开支撑辐条**。"""
+    a0 = math.radians(a0_deg)
+    a1 = math.radians(a1_deg)
+    outer = [(cx + r_out * math.cos(a0 + (a1 - a0) * i / n),
+              cy + r_out * math.sin(a0 + (a1 - a0) * i / n)) for i in range(n + 1)]
+    inner = [(cx + r_in * math.cos(a1 - (a1 - a0) * i / n),
+              cy + r_in * math.sin(a1 - (a1 - a0) * i / n)) for i in range(n + 1)]
+    return outer + inner
+
+
+def high_sens_geometry(kind: str, params: Dict[str, float]) -> Dict[str, float]:
+    """高灵敏几何器件的**可制造性几何量**（DRC 检查源 · 单一真源）。
+
+    派生量**全部由主参数算出**（不许手写重复值）：
+
+      slot 类        rail_width = w_rail；slot_gap = gap；min_width = rail_width；
+                     min_space = slot_gap（狭缝最窄处 = 光刻极限，用专用规则名）
+      suspended 类   support_w / anchor_len / suspended_span = L；
+                     release_extent = L + 2·anchor_len（工艺开孔总长）；
+                     support_overhang = (support_w − w − 2·release_margin) / 2
+                     ⇒ 🔴 机器校验「释放开孔不得开穿锚定块」（≥ 0 才可制造）
+      环类           另含 R（min_bend_R）/ bus_gap（耦合间距）
+    """
+    k = canon_high_sens(kind)
+    p = _hs_p(k, params)
+    g: Dict[str, float] = {"L": float(p["L_um"]), "h": float(p["h_um"])}
+    if k.startswith("Slot"):
+        g["rail_width"] = float(p["w_rail_um"])
+        g["slot_gap"] = float(p["gap_um"])
+        g["min_width"] = g["rail_width"]
+        g["min_space"] = g["slot_gap"]
+    else:
+        w = float(p["w_um"])
+        sw = float(p["support_w_um"])
+        al = float(p["anchor_len_um"])
+        rm = float(p["release_margin_um"])
+        g["wg_width"] = w
+        g["support_w"] = sw
+        g["anchor_len"] = al
+        g["release_margin"] = rm
+        g["suspended_span"] = g["L"]
+        g["release_extent"] = g["L"] + 2.0 * al
+        g["release_half_w"] = w / 2.0 + rm
+        g["support_overhang"] = (sw - w - 2.0 * rm) / 2.0
+        g["min_width"] = w
+        g["min_space"] = g["support_overhang"]
+    if k.endswith("Ring"):
+        g["R"] = float(p["R"])
+        g["bus_gap"] = float(p["bus_gap_um"])
+        g["min_bend_R"] = g["R"]
+        g["spoke_len"] = float(p["spoke_len_um"])
+    return g
+
+
+def high_sens_descs(kind: str, params: Dict[str, float]) -> List[Dict]:
+    """高灵敏几何器件版图（PS 征程 M9（G2 器件本体））。
+
+    = 芯层（Si）几何 ＋ **衬底释放层**几何（suspended 类）。
+
+    🔴 与 `high_sens_geometry` **同源**（同一 `_hs_p` 参数解析 + 同一派生量），
+       杜绝「DRC 量算一套、版图画另一套」。层号经懒加载取
+       `gds_export.LIB_LAYER_SI`（单一真源）。
+    """
+    from lda_l2.gds_export import LIB_LAYER_SI
+    k = canon_high_sens(kind)
+    p = _hs_p(k, params)
+    g = high_sens_geometry(k, params)
+    si = LIB_LAYER_SI
+    ra = _LAYER_RELEASE
+    descs: List[Dict] = []
+    L = g["L"]
+
+    def _rect(x0, y0, x1, y1, layer):
+        descs.append({"kind": "boundary", "layer": layer,
+                      "rings_um": [_poly_rect(x0, y0, x1, y1)]})
+
+    if k == "SlotWaveguide":
+        gp, wr = g["slot_gap"], g["rail_width"]
+        for sgn in (+1.0, -1.0):
+            y0 = gp / 2.0
+            y1 = gp / 2.0 + wr
+            _rect(0.0, sgn * y0, L, sgn * y1, si)
+        return descs
+
+    if k == "SuspendedWaveguide":
+        w, sw, al = g["wg_width"], g["support_w"], g["anchor_len"]
+        rh = g["release_half_w"]
+        _rect(al, -w / 2.0, al + L, w / 2.0, si)                    # 悬浮条
+        _rect(0.0, -sw / 2.0, al, sw / 2.0, si)                     # 左锚定块
+        _rect(al + L, -sw / 2.0, 2.0 * al + L, sw / 2.0, si)        # 右锚定块
+        # 释放开孔：仅覆盖悬浮段（两端止于锚定块）⇒ 锚定块仍被衬底支撑。
+        _rect(al, -rh, al + L, rh, ra)
+        return descs
+
+    if k == "SlotRing":
+        R, gp, wr = g["R"], g["slot_gap"], g["rail_width"]
+        bg, bw = g["bus_gap"], float(p["bus_w_um"])
+        descs.append({"kind": "boundary", "layer": si,
+                      "rings_um": [_annulus(0.0, 0.0, R + gp / 2.0, R + gp / 2.0 + wr)]})
+        descs.append({"kind": "boundary", "layer": si,
+                      "rings_um": [_annulus(0.0, 0.0, R - gp / 2.0 - wr, R - gp / 2.0)]})
+        r_out = R + gp / 2.0 + wr
+        yc = -(r_out + bg + bw / 2.0)
+        bh = R * 1.4
+        _rect(-bh, yc - bw / 2.0, bh, yc + bw / 2.0, si)
+        return descs
+
+    # SuspendedRing
+    R, w = g["R"], g["wg_width"]
+    sw, sl = g["support_w"], g["spoke_len"]
+    rh = g["release_half_w"]
+    outer = R + w / 2.0 + sl
+    descs.append({"kind": "boundary", "layer": si,
+                  "rings_um": [_annulus(0.0, 0.0, R - w / 2.0, R + w / 2.0)]})
+    # 4 条支撑辐条（0/90/180/270°）+ 4 个锚定块
+    for a_deg in (0.0, 90.0, 180.0, 270.0):
+        a = math.radians(a_deg)
+        ca, sa = math.cos(a), math.sin(a)
+        r0, r1 = R - w / 2.0, outer
+        hw = sw / 2.0
+        # 辐条 = 沿径向的矩形（用四个角点，垂直于径向的半宽 = sw/2）
+        px, py = -sa * hw, ca * hw
+        rings = [(r0 * ca + px, r0 * sa + py), (r1 * ca + px, r1 * sa + py),
+                 (r1 * ca - px, r1 * sa - py), (r0 * ca - px, r0 * sa - py)]
+        descs.append({"kind": "boundary", "layer": si, "rings_um": [rings]})
+        # 锚定块（辐条外端的小方块，尺寸 support_w × support_w）
+        cx, cy = (outer + sw / 2.0) * ca, (outer + sw / 2.0) * sa
+        _rect(cx - hw, cy - hw, cx + hw, cy + hw, si)
+    # 释放环带：**分段**开口，避开 4 条辐条（否则辐条也被释放 = 无支撑）
+    d_deg = math.degrees(sw / R)          # 辐条占角（小角）
+    for a0 in (0.0, 90.0, 180.0, 270.0):
+        descs.append({"kind": "boundary", "layer": ra,
+                      "rings_um": [_annulus_arc(0.0, 0.0, R - rh, R + rh,
+                                                a0 + d_deg, a0 + 90.0 - d_deg)]})
+    return descs
+
+
 def splitter_descs(params: Dict[str, float]) -> List[Dict]:
     """MMI 型 1×2 分束器几何（IR kind `Splitter` · v0.9.141 G4/M4）。
 
@@ -821,8 +1041,11 @@ def primitive_descs(kind: str, params: Dict[str, float]) -> List[Dict]:
     # v0.9.210（PS 征程 M1/G4）：传感窗口开窗器件（环 / 双 MZI 臂 + 窗口层）。
     if kind in ("sensingring", "sensing_ring"):
         return sensing_window_descs("SensingRing", params)
-    if kind in ("sensingmzi", "sensing_mzi"):
-        return sensing_window_descs("SensingMZI", params)
+    # v0.9.211（PS 征程 M9（G2 器件本体））：高灵敏几何器件本体（狭缝 / 悬浮 × 波导 / 谐振环）。
+    if kind in ("slotwaveguide", "slot_waveguide", "suspendedwaveguide",
+                "suspended_waveguide", "slotring", "slot_ring",
+                "suspendedring", "suspended_ring"):
+        return high_sens_descs(kind, params)
     raise ValueError(f"真实版图基元暂不支持 kind={kind}")
 
 
@@ -898,5 +1121,26 @@ def primitive_geometry(kind: str, params: Dict[str, float]) -> Dict[str, float]:
                "min_clad_enclosure": g["clad_enclosure"]}
         if K == "SensingRing":
             out["min_bend_R"] = sp["R"]
+        return out
+    # v0.9.211（PS 征程 M9（G2 器件本体））：高灵敏几何器件——狭缝用**专用**规则名。
+    # 🔴 狭缝 rail=0.22 < 通用 min_width(0.35) ⇒ 若沿用通用规则会被**误判违规**；
+    #    rail/gap 是光刻极限决定的可实现特征，须专用限值（min_rail_width_um /
+    #    min_slot_gap_um）。悬浮类另加支撑/悬空跨度/锚定几何量。
+    if kind in ("slotwaveguide", "slot_waveguide", "suspendedwaveguide",
+                "suspended_waveguide", "slotring", "slot_ring",
+                "suspendedring", "suspended_ring"):
+        K = canon_high_sens(kind)
+        g = high_sens_geometry(K, params)
+        out = {"min_width": g["min_width"], "min_space": g["min_space"]}
+        if K.startswith("Slot"):
+            out["min_rail_width"] = g["rail_width"]
+            out["min_slot_gap"] = g["slot_gap"]
+        else:
+            out["min_support_width"] = g["support_w"]
+            out["min_anchor_len"] = g["anchor_len"]
+            out["max_suspended_span"] = g["suspended_span"]
+            out["min_support_overhang"] = g["support_overhang"]
+        if K.endswith("Ring"):
+            out["min_bend_R"] = g["R"]
         return out
     raise ValueError(f"真实版图基元暂不支持 kind={kind}")

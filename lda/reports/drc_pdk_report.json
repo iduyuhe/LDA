@@ -16,7 +16,12 @@
       "min_window_um": 1.0,
       "min_window_margin_um": 0.2,
       "min_window_end_um": 2.0,
-      "min_clad_enclosure_um": 0.4
+      "min_clad_enclosure_um": 0.4,
+      "min_rail_width_um": 0.15,
+      "min_slot_gap_um": 0.04,
+      "min_support_width_um": 0.5,
+      "max_suspended_span_um": 50.0,
+      "min_anchor_len_um": 1.0
     },
     "CUMEC(演示近似)::SOI 180nm": {
       "min_width_um": 0.35,
@@ -29,7 +34,12 @@
       "min_window_um": 1.0,
       "min_window_margin_um": 0.2,
       "min_window_end_um": 2.0,
-      "min_clad_enclosure_um": 0.4
+      "min_clad_enclosure_um": 0.4,
+      "min_rail_width_um": 0.15,
+      "min_slot_gap_um": 0.04,
+      "min_support_width_um": 0.5,
+      "max_suspended_span_um": 50.0,
+      "min_anchor_len_um": 1.0
     },
     "SITRI(演示近似)::SOI 180nm": {
       "min_width_um": 0.45,
@@ -42,7 +52,12 @@
       "min_window_um": 1.0,
       "min_window_margin_um": 0.2,
       "min_window_end_um": 2.0,
-      "min_clad_enclosure_um": 0.4
+      "min_clad_enclosure_um": 0.4,
+      "min_rail_width_um": 0.15,
+      "min_slot_gap_um": 0.04,
+      "min_support_width_um": 0.5,
+      "max_suspended_span_um": 50.0,
+      "min_anchor_len_um": 1.0
     }
   }
 }

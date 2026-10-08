@@ -28,7 +28,8 @@ class QresAnchorSmoke(unittest.TestCase):
         )
         self.assertIn("B22", BENCHMARK_DEFS)
         h = VerificationHarness(BENCHMARK_DEFS)
-        specs = h.resolve_specs()
+        # v0.9.211：本 smoke 只断言 B22 ⇒ 只解析 B22，免全账本 golden 税。
+        specs = h.resolve_specs(only=("B22",))
         results = h.run(specs, ReferenceCandidate())
         b22 = [r for r in results if r.bid == "B22"]
         self.assertEqual(len(b22), 1)

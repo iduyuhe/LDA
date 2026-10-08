@@ -133,6 +133,80 @@ BUILTIN_DEVICE_ENTRIES: List["DeviceEntry"] = [
               "`lda_l2.primitives.sensing_window_geometry('SensingMZI', …)`；"
               "工艺例外真源 = `lda_l2.drc.WINDOW_EXCEPTIONS`。"),
     ),
+
+    # ── v0.9.211（PS 征程 M9（G2 器件本体））· 高灵敏几何器件本体 ─────────────────────
+    # 🔴 灵敏度**口径**必须写明：本族给出的 S = dn_eff/dn_a（**bulk** 灵敏度），
+    #    国际先进区间 100–500 nm/RIU；**不得**与 surface / Vernier 口径（常被宣传为
+    #    「≥10³ nm/RIU」）混比 —— 量纲不同（路线图 §5 已警告）。
+    # 🔴 params 一律留空：几何真源在 `lda_l2.primitives`，灵敏度真源在账本锚
+    #    B469/B470/B471 —— 此处**不复制任何数值**（防第二份副本漂移）。
+    DeviceEntry(
+        id="lda.SlotWaveguide",
+        name="狭缝波导（slot waveguide）",
+        tech="SOI",
+        foundry="self",
+        sovereign_class="C",
+        layers=["SI"],
+        params={},
+        tags=["photonics", "sensor", "high-sensitivity", "slot", "ps-m9"],
+        note=("PS 征程 M9（G2 器件本体）：狭缝高灵敏波导段。几何真源 = "
+              "`lda_l2.primitives.high_sens_geometry('SlotWaveguide', …)` / "
+              "`high_sens_descs`；截面参数真源 = `primitives.WAVEGUIDE_XS_DEFAULTS['slot']`；"
+              "DRC 真源 = `lda_l2.drc` 的 min_rail_width / min_slot_gap（专用规则："
+              "rail/gap 由光刻极限决定，**不适用**通用 min_width）。"
+              "灵敏度真源 = 账本锚 B470（bulk S = dn_eff/dn_a 口径）。"
+              "⚠️ 实测诚实梯度：SOI 220nm 全衬底下狭缝 S 与 strip 基线同量级"
+              "（并非天然高灵敏）；不得作制造/性能宣称。"),
+    ),
+    DeviceEntry(
+        id="lda.SuspendedWaveguide",
+        name="悬浮波导（suspended waveguide）",
+        tech="SOI",
+        foundry="self",
+        sovereign_class="C",
+        layers=["SI", "RELEASE"],
+        params={},
+        tags=["photonics", "sensor", "high-sensitivity", "suspended", "ps-m9"],
+        note=("PS 征程 M9（G2 器件本体）：去衬底悬浮高灵敏波导段（唯一大幅增强杠杆 ≈2.4×）。"
+              "几何真源 = `lda_l2.primitives.high_sens_geometry('SuspendedWaveguide', …)`；"
+              "截面真源 = `primitives.WAVEGUIDE_XS_DEFAULTS['suspended']`；"
+              "释放开孔层 = `gds_export.LIB_LAYER_RELEASE`。"
+              "可制造性真源 = `lda_l2.drc` 的 min_support_width / min_anchor_len / "
+              "max_suspended_span / **min_support_overhang**（释放开孔不得开穿锚定块）。"
+              "灵敏度真源 = 账本锚 B471（bulk S 口径）。⚠️ 不得作制造/性能宣称。"),
+    ),
+    DeviceEntry(
+        id="lda.SlotRing",
+        name="狭缝谐振环（slot ring）",
+        tech="SOI",
+        foundry="self",
+        sovereign_class="C",
+        layers=["SI"],
+        params={},
+        tags=["photonics", "sensor", "high-sensitivity", "slot", "ring", "ps-m9"],
+        note=("PS 征程 M9（G2 器件本体）：狭缝截面 + 谐振环（同心双环带 + bus）。"
+              "几何真源 = `lda_l2.primitives.high_sens_geometry/descs('SlotRing', …)`；"
+              "DRC 真源 = `lda_l2.drc` 的 min_rail_width / min_slot_gap"
+              "（同 `lda.SlotWaveguide`）+ min_bend_R / min_space(bus_gap)。"
+              "灵敏度真源 = 账本锚 B470（bulk S 口径）。⚠️ 不得作制造/性能宣称。"),
+    ),
+    DeviceEntry(
+        id="lda.SuspendedRing",
+        name="悬浮谐振环（suspended ring）",
+        tech="SOI",
+        foundry="self",
+        sovereign_class="C",
+        layers=["SI", "RELEASE"],
+        params={},
+        tags=["photonics", "sensor", "high-sensitivity", "suspended", "ring", "ps-m9"],
+        note=("PS 征程 M9（G2 器件本体）：去衬底悬浮谐振环（环带 + 4 条径向支撑辐条 + 4 个锚定块 + "
+              "**分段释放开孔**，弧段避开辐条以保留支撑）。"
+              "几何真源 = `lda_l2.primitives.high_sens_geometry/descs('SuspendedRing', …)`；"
+              "DRC 真源 = `lda_l2.drc` 的 min_support_width / min_anchor_len / "
+              "max_suspended_span / min_support_overhang"
+              "（同 `lda.SuspendedWaveguide`）+ min_bend_R / min_space(bus_gap)。"
+              "灵敏度真源 = 账本锚 B471（bulk S 口径）。⚠️ 不得作制造/性能宣称。"),
+    ),
 ]
 
 

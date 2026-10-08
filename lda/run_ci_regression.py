@@ -1653,6 +1653,15 @@ CORE_SMOKES: List[str] = [
     #   🔴 本档零净增锚（灵敏度物理已由 B469–B471 锚定）⇒ 账本 490 不变，仅 CI core +1。
     #   纯标准库（lazy import lda_l2/lda_pdk）+ 无网络，实测 <1s ⇒ 入 core；timeout 300s 留足余量。
     "run_ps_m1_smoke.py",
+    #   光子传感器征程 PS-M9（G2 器件本体）高灵敏几何器件（slot/suspended × 波导/谐振环）：
+    #   几何单一真源（层号跨源一致 / descs↔geometry 同源 / 释放开孔不覆盖锚定块）/ DRC 六条新规则
+    #   （狭缝走**专用**规则名，防通用 min_width 误判）/ PDK 器件本体 4 条（params 恒空）/
+    #   🔴 harness  ↔ L2 真源逐键对拍 + 真源漂移反向探针 / 灵敏度如实口径
+    #   （狭缝不天然高灵敏 · 10³ nm/RIU 门槛在本参数空间不可达 —— 现算 golden）/ 反向探针 ×6。
+    #   🔴 本档零净增锚（灵敏度物理已由 B469–B471 锚定）⇒ 账本 490 不变，仅 CI core +1。
+    #   纯标准库 + lazy import lda_l2/lda_pdk/lda_harness；golden 段需 scipy（3.14.3 齐备），
+    #   实测 ~30s ⇒ 入 core；timeout 300s 留足余量。
+    "run_ps_m9_smoke.py",
     #   光子传感器征程 PS-M7 WebUI 案例卡 + 客户自助设计向导门禁（/api/sensor_demo）：
     #   守「内部能力 ↔ 对外载体」真拉平 —— 面板常量必须 ≡ ps_m3 HF 灵敏度 / ps_m6 集成 /
     #   ps_m2 噪声模型 的**现算值**（漂移即红）；守诚实边界（verdict 恒 DESIGN_BUDGET ·
@@ -2408,6 +2417,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ps_m8_smoke.py": 300.0,
     # 实测上界 <1s（纯标准库 + lazy import lda_l2/lda_pdk；远低于默认 300s）
     "run_ps_m1_smoke.py": 300.0,
+    # 几何/DRC/PDK 段纯标准库；golden 段现算 FV 本征（scipy）⇒ 实测 ~30s（3.14.3）
+    "run_ps_m9_smoke.py": 300.0,
     # 实测上界 <1s（纯标准库；对拍时 lazy import lda_l2 · 远低于默认 300s）
     "run_sensor_panel_smoke.py": 300.0,
     # 实测上界 <0.5s（纯函数 + monkeypatch · 远低于默认 300s）

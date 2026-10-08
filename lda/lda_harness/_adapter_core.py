@@ -693,3 +693,26 @@ def _get_batch_b37():
         import _batch_b37_numeric as _m
     _BATCH_B37_MOD = _m
     return _m
+
+
+# B-38 数值核缓存占位（与 B-31~B-37 同构，项目铁律）
+_BATCH_B38_MOD = None
+
+
+def _get_batch_b38():
+    """B-38 数值核（光子传感器新征程 PS-M8 衍生 · 几何灵敏度半 + Q 增强 LOD 缩放：薄线/狭缝/悬浮高灵敏几何折射率灵敏度一阶本征值微扰 golden × FV-FD 候选 / Q-scaling LOD 闭式 golden × 模型实算候选，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B38** 沿用连字符写法 `_batch_b38_numeric` / `_get_batch_b38`
+        （与 B-35/B-36/B-37 同构；接手前已实 grep 核占名：`_BATCH_B38` / `_get_batch_b38` / `b38_`
+        全仓零命中，B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B38_MOD
+    if _BATCH_B38_MOD is not None:
+        return _BATCH_B38_MOD
+    try:
+        from lda_harness import _batch_b38_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b38_numeric as _m
+    _BATCH_B38_MOD = _m
+    return _m

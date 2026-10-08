@@ -13,6 +13,7 @@ from ._adapter_core import (
     _get_batch_b30, _get_batch_b31, _get_batch_b32, _get_batch_b33, _get_batch_b34,
     _get_batch_b35, _get_batch_b36,
     _get_batch_b37,
+    _get_batch_b38,
 )
 
 from typing import (
@@ -1153,3 +1154,36 @@ def _b468_align_overlap_cand(spec: VerificationSpec, oracle_value: Any) -> float
     m = _get_batch_b37()
     return float(m.align_overlap_sampled(
         float(p["d_um"]), float(p["w_um"]), N=1024))
+
+
+@_register_candidate(
+    "b469_thinwire_sensitivity_cand",
+    "薄线波导折射率灵敏度·FV-FD 有限差分（perturb n_a±δ→重解 n_eff→中心差商，δ=1e-4）↔ 一阶本征值微扰闭式 golden（Rayleigh 商 + 左本征矢），方法学独立（薄线 w=0.22/substrate/water n_a=1.33）")
+def _b469_thinwire_sensitivity_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b38()
+    return float(m.cand_b469())
+
+
+@_register_candidate(
+    "b470_slot_sensitivity_cand",
+    "狭缝波导折射率灵敏度·FV-FD 有限差分（perturb n_a±δ→重解 n_eff→中心差商，δ=1e-4）↔ 一阶本征值微扰闭式 golden（Rayleigh 商 + 左本征矢），方法学独立（slot rail=0.22/gap=0.05/substrate/water 填缝）")
+def _b470_slot_sensitivity_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b38()
+    return float(m.cand_b470())
+
+
+@_register_candidate(
+    "b471_suspended_sensitivity_cand",
+    "悬浮波导折射率灵敏度·FV-FD 有限差分（perturb n_a±δ→重解 n_eff→中心差商，δ=1e-4；suspended 去衬底）↔ 一阶本征值微扰闭式 golden（Rayleigh 商 + 左本征矢），方法学独立（suspended w=0.45/无 substrate/water 包围）")
+def _b471_suspended_sensitivity_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b38()
+    return float(m.cand_b471())
+
+
+# 🔴 v0.9.209：**B472 无候选登记**（诚实降级为自证桩）。
+# 原实现 `b472_q_scaling_lod_cand`（PS-M2 lod_real(Q) 逐分量合成）与 golden **代数恒等**
+# （slope=depth·(3√3/4)/FWHM、FWHM=λ/Q ⇒ slope 严格 ∝Q ⇒ LOD_elec 严格 ∝1/Q ⇒ 缩放闭式
+# 精确重现 lod_real，实测 |Δ|=0.0），经 `run_benchmark_falsifiability_smoke` 实测判为**自证桩**
+# （B28 同型「同式异写 ⇒ 虚报」）。故撤下登记、不越级谎报；golden 仍为物理律锚
+# （golden.py `_GOLDEN_DISPATCH`/`_PHYSICAL_LAW` 保留 B472）。升级路径见 part6.py B472 note。
+

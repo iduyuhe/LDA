@@ -8,11 +8,11 @@
     "self_consistent": false
   },
   "summary": {
-    "total": 486,
-    "passed": 483,
+    "total": 490,
+    "passed": 487,
     "self_consistent": false,
     "verified": 2,
-    "self_consistent_stub_count": 481,
+    "self_consistent_stub_count": 485,
     "independent_candidate_count": 5,
     "candidate_class_totals": null
   },
@@ -5309,6 +5309,19 @@
       "candidate_class": null
     },
     {
+      "id": "B469",
+      "metric": "geometry_refractive_index_sensitivity",
+      "oracle": "closed_form(Rayleigh 商一阶本征值微扰 + 左本征矢 w，非对称算子; S=dγ/dn_a/(2 k0² n_eff)) + FV-FD 有限差分独立_cross_check",
+      "source": "physical-law",
+      "golden": 0.446980809,
+      "candidate": 0.446980809,
+      "tol": 0.005,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
       "id": "B47",
       "metric": "E2_eV",
       "oracle": "analytical(harmonic oscillator E2=2.5ℏω) + 1D FD oscillator Hamiltonian eigenmode_mode3 independent_cross_check",
@@ -5316,6 +5329,45 @@
       "golden": 0.822318821,
       "candidate": 0.822318821,
       "tol": 0.1,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
+      "id": "B470",
+      "metric": "geometry_refractive_index_sensitivity",
+      "oracle": "closed_form(Rayleigh 商一阶本征值微扰 + 左本征矢 w; S=dγ/dn_a/(2 k0² n_eff)) + FV-FD 有限差分独立_cross_check",
+      "source": "physical-law",
+      "golden": 0.460019387,
+      "candidate": 0.460019387,
+      "tol": 0.005,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
+      "id": "B471",
+      "metric": "geometry_refractive_index_sensitivity",
+      "oracle": "closed_form(Rayleigh 商一阶本征值微扰 + 左本征矢 w; S=dγ/dn_a/(2 k0² n_eff)) + FV-FD 有限差分独立_cross_check",
+      "source": "physical-law",
+      "golden": 1.17091199,
+      "candidate": 1.17091199,
+      "tol": 0.005,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
+      "id": "B472",
+      "metric": "q_scaling_lod",
+      "oracle": "closed_form(LOD_real(Q)=√((LOD_elec_ref·Q0/Q)² + LOD_temp_ref²), Q↑⇒LOD↓∝1/Q) · 自证桩（无方法学独立候选）",
+      "source": "physical-law",
+      "golden": 9.46722488e-11,
+      "candidate": 9.46722488e-11,
+      "tol": 1e-09,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,

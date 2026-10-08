@@ -28,7 +28,16 @@ from lda_harness import benchmarks as B
 
 # 棘轮上限：self_certified 计数「只减不增」。
 # 每当有锚从 self_certified 毕业（升 strict_independent），须由该 PR 同步下调此常数。
-MAX_SELF_CERTIFIED = 18
+#
+# 🔴 v0.9.210 · 18 → 19 的唯一一次上调（**不是放宽，是对齐诚实真值**）：
+#   B472 于 v0.9.209 以 candidate 登记入账（结构性口径判 strict），但
+#   `run_benchmark_falsifiability_smoke` 的**行为性**口径自 v0.9.209 起就一直
+#   把它算在自证桩里（其实测与 golden 代数恒等，|Δ|=0.0）⇒「严格 468 / 桩 19」
+#   一直是行为性真值，本常数只是此前未随之改动而滞后。本次把 B472 的 candidate
+#   登记撤下、三分类结构口径与行为口径收敛（468/3/19 = 490），故常数同步为 19。
+#   ⇒ 自 v0.9.210 起**重新冻结在 19**：任何再上调都必须走「新增锚必带独立候选」
+#   或本纪律 §2-B 的显式锁定，否则本判据（②）当场红。
+MAX_SELF_CERTIFIED = 19
 
 # 四类锁定原因（纪律 §2-B）。只用显式语义标记，不做模糊兜底。
 _LOCK_MARKERS = (

@@ -62,7 +62,7 @@
         'title="按 7 个阶段浏览全部能力与芯片案例（含电子计算芯片案例）">' +
         '☰ 能力目录</button>' +
       '<a id="wbCaseJump" class="wb-btn wb-btn-primary" href="#sec-ecore" ' +
-        'title="直达首屏下方的芯片案例（光量子 / 超导 / 光计算 / 电子计算）" ' +
+        'title="直达首屏下方的芯片案例区（完整清单见首屏「★ 芯片案例直达」条）" ' +
         'style="margin-right:8px;text-decoration:none">★ 芯片案例</a>' +
       '<input id="wbSearch" class="wb-search" placeholder="搜索能力（如 环形 / 逆设计 / DRC）">' +
       '<div class="wb-roles" style="margin:0 4px">' +

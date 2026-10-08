@@ -565,6 +565,131 @@ def pcm_cell_pads(params: Dict[str, float]) -> Dict[str, Tuple[float, float]]:
             "h3": (0.0, -y_h), "h4": (p["length"], -y_h)}
 
 
+# ---------------------------------------------------------------------------
+# 传感窗口开窗器件（PS 征程 M1 / G4 · SensingRing / SensingMZI）· v0.9.210
+# ---------------------------------------------------------------------------
+# 🔴 层号**单一真源在 `gds_export`**（与 PCM 同纪律）：此处只做「同号引用」，
+#    并由门禁 `run_ps_m1_smoke` 的跨源判据断言
+#    `gds_export.LIB_LAYER_WINDOW == _LAYER_WINDOW`（防「几何画在 7 层、
+#    DRC/解码找 8 层」这类静默失配）。
+_LAYER_WINDOW = 7      # 传感窗口（局部去上包层开口）工艺层
+
+#: 传感窗口默认参数（**单一真源**：`sensing_window_geometry` / `sensing_window_descs`
+#: 两处同源引用，不许各自写一份默认值）。
+SENSING_WINDOW_DEFAULTS: Dict[str, float] = {
+    "R": 10.0,             # 环形半径（SensingRing）
+    "Lu": 20.0,            # 单元长度（SensingMZI）
+    "dy": 4.0,             # 双臂轨间距（SensingMZI）
+    "wg_width": 0.45,      # 波导芯宽
+    "gap": 0.30,           # 耦合间隙（SensingRing：bus ↔ ring）
+    "window_w": 3.00,      # 窗口横向（径向）宽度
+    "window_len": 8.00,    # 窗口沿光程长度
+}
+
+
+def _sens_p(kind: str, params: Dict[str, float]) -> Dict[str, float]:
+    """传感窗口参数解析（缺项回落 `SENSING_WINDOW_DEFAULTS`，单一真源）。"""
+    out = dict(SENSING_WINDOW_DEFAULTS)
+    for k in list(out):
+        if params and k in params:
+            out[k] = float(params[k])
+    return out
+
+
+def _sensing_path_extent(kind: str, p: Dict[str, float]) -> float:
+    """传感光程总长（窗口端留白的判据基准）。
+    SensingRing = 环周长 2πR；SensingMZI = 单元长 Lu。"""
+    if kind == "SensingRing":
+        return 2.0 * math.pi * p["R"]
+    if kind == "SensingMZI":
+        return p["Lu"]
+    raise ValueError(f"传感窗口不支持的 kind={kind}")
+
+
+def sensing_window_geometry(kind: str, params: Dict[str, float]) -> Dict[str, float]:
+    """传感窗口的**可制造性几何量**（DRC 检查源 · 单一真源）。
+
+    结构（局部坐标 µm，器件原点 = 环心 / MZI 左下角）：
+
+        SensingRing  环心线 PATH（半径 R）+ 下 bus；窗口 = 覆盖环**顶部**弧段的
+                     矩形，居中于 (0, R)，弦长近似 window_len
+                     （window_len ≪ R 时弧长误差 O(window_len²/R)，本档 window_len=8 /
+                     R=10 ⇒ 约 0.7%，设计规则量级可忽略）。
+        SensingMZI   双平行臂 PATH（y=0 / y=dy）；窗口 = 覆盖**两臂**的矩形，
+                     沿程 window_len、横向 = dy + window_w（每臂各留 window_w/2）。
+
+    派生量（**不许手写重复值**，全部由主参数算出）：
+      window_margin  = (window_w − wg_width) / 2   （窗口边 → 波导芯外缘余量）
+      window_h       = window_w（Ring）/ dy + window_w（MZI）  （窗口矩形总高）
+      window_end_gap = (总光程 − window_len) / 2    （窗口端 → 最近端口/耦合区的留白）
+      clad_enclosure = 0.0                          （开窗区包层被人为去除 ⇒ 恒违反通用包封规则，
+                                                     由工艺例外 `WINDOW_EXCEPTIONS` 豁免）
+    """
+    p = _sens_p(kind, params)
+    W = _sensing_path_extent(kind, p)
+    margin = (p["window_w"] - p["wg_width"]) / 2.0
+    out: Dict[str, float] = {
+        "window_w": p["window_w"],
+        "window_len": p["window_len"],
+        "window_margin": margin,
+        "window_end_gap": (W - p["window_len"]) / 2.0,
+        "clad_enclosure": 0.0,
+        "path_extent": W,
+    }
+    if kind == "SensingRing":
+        out["R"] = p["R"]
+        out["bus_off"] = p["R"] + p["wg_width"] / 2.0 + p["gap"]
+        out["window_h"] = p["window_w"]
+        out["window_center_x"] = 0.0
+        out["window_center_y"] = p["R"]
+        # 🔴 bus 半长是**端口锚与版图共用**的量 ⇒ 在此一次性导出（单一真源），
+        #    `sensing_window_descs` 与 `placement.port_anchor` 都取它，
+        #    不许各自写 1.4 这个魔数（防「锚点一套、版图一套」漂移）。
+        out["bus_half"] = p["R"] * 1.4
+    elif kind == "SensingMZI":
+        out["Lu"] = p["Lu"]
+        out["dy"] = p["dy"]
+        out["window_h"] = p["dy"] + p["window_w"]
+        out["window_center_x"] = p["Lu"] / 2.0
+        out["window_center_y"] = p["dy"] / 2.0
+    else:
+        raise ValueError(f"传感窗口不支持的 kind={kind}")
+    return out
+
+
+def sensing_window_descs(kind: str, params: Dict[str, float]) -> List[Dict]:
+    """传感窗口开窗器件版图几何（PS 征程 M1/G4）。
+
+    = 芯层几何（环 + bus / 双 MZI 臂） + **窗口层**（去上包层开口）矩形。
+
+    🔴 窗口多边形与 `sensing_window_geometry` **同源**（同一函数导出的
+    window_center_x/y、window_w/len/h），杜绝「DRC 量算一套、版图画另一套」。
+    层号经 lazy import 取 `gds_export.LIB_LAYER_SI`（单一真源）。
+    """
+    from lda_l2.gds_export import LIB_LAYER_SI, ring_centerline
+    p = _sens_p(kind, params)
+    g = sensing_window_geometry(kind, params)
+    wg = p["wg_width"]
+    descs: List[Dict] = []
+    if kind == "SensingRing":
+        descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": wg,
+                      "points_um": ring_centerline(p["R"])})
+        descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": wg,
+                      "points_um": [(-g["bus_half"], -g["bus_off"]),
+                                    (g["bus_half"], -g["bus_off"])]})
+    else:
+        for y in (0.0, p["dy"]):
+            descs.append({"kind": "path", "layer": LIB_LAYER_SI, "width_um": wg,
+                          "points_um": [(0.0, y), (p["Lu"], y)]})
+    cx, cy = g["window_center_x"], g["window_center_y"]
+    descs.append({"kind": "boundary", "layer": _LAYER_WINDOW,
+                  "rings_um": [_poly_rect(cx - g["window_len"] / 2.0,
+                                          cy - g["window_h"] / 2.0,
+                                          cx + g["window_len"] / 2.0,
+                                          cy + g["window_h"] / 2.0)]})
+    return descs
+
+
 def splitter_descs(params: Dict[str, float]) -> List[Dict]:
     """MMI 型 1×2 分束器几何（IR kind `Splitter` · v0.9.141 G4/M4）。
 
@@ -693,6 +818,11 @@ def primitive_descs(kind: str, params: Dict[str, float]) -> List[Dict]:
     # v0.9.191（PM 征程 M3）：光子存储单元（光通路 + GST 相变段 + 双侧微加热器）。
     if kind in ("pcmcell", "pcm_cell", "pcm"):
         return pcm_cell_descs(params)
+    # v0.9.210（PS 征程 M1/G4）：传感窗口开窗器件（环 / 双 MZI 臂 + 窗口层）。
+    if kind in ("sensingring", "sensing_ring"):
+        return sensing_window_descs("SensingRing", params)
+    if kind in ("sensingmzi", "sensing_mzi"):
+        return sensing_window_descs("SensingMZI", params)
     raise ValueError(f"真实版图基元暂不支持 kind={kind}")
 
 
@@ -755,4 +885,18 @@ def primitive_geometry(kind: str, params: Dict[str, float]) -> Dict[str, float]:
         g = pcm_cell_geometry(params)
         return {"min_width": g["min_width"], "min_space": g["min_space"],
                 "min_pad": g["min_pad"]}
+    # v0.9.210（PS 征程 M1/G4）：传感窗口器件——基础几何（宽/间距/弯曲半径）
+    # + **窗口工艺规则**（窗口宽 / 窗口边→芯余量 / 窗口端留白）+ 开窗区包封=0。
+    if kind in ("sensingring", "sensing_ring", "sensingmzi", "sensing_mzi"):
+        K = ("SensingRing" if kind.startswith("sensingr") else "SensingMZI")
+        g = sensing_window_geometry(K, params)
+        sp = _sens_p(K, params)
+        out = {"min_width": sp["wg_width"], "min_space": sp["gap"],
+               "min_window": g["window_w"],
+               "min_window_margin": g["window_margin"],
+               "min_window_end": g["window_end_gap"],
+               "min_clad_enclosure": g["clad_enclosure"]}
+        if K == "SensingRing":
+            out["min_bend_R"] = sp["R"]
+        return out
     raise ValueError(f"真实版图基元暂不支持 kind={kind}")

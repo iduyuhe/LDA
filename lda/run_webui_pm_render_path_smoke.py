@@ -137,8 +137,27 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {"run_ci_gate_contract_s
 #: 🔴 v0.9.207：本版真改动 = PS-M7 WebUI 传感器面板。其**直接相关**的便宜门禁 =
 #:   `run_sensor_panel_smoke`（实测 ~0.9s / 45 判据）⇒ 纳对照面，令 README 顶行
 #:   （对外第一屏）的 PS-M7 判据数由机器守（非手写）；且它无自指、无递归风险。
+#: 🔴 v0.9.208：本版真改动 = 入口可达性补漏（首屏案例条漏登 `sec-sensor` + 案例卡族
+#:   「现算」化）。直接相关且**便宜**的门禁 = `run_webui_entry_smoke`（实测 ~0.1s ·
+#:   纯文本解析零网络）⇒ 纳对照面，令其 README 顶行判据数（24）由机器守。
+#:   附注：W10b 要求**顶行提到的每个 `run_*` 都在对照面内** —— 本版顶行同时提
+#:   `run_webui_entry_smoke` / `run_sensor_panel_smoke` / `run_ci_coverage_gate_smoke`，
+#:   三者现均在 `_counts10`，故 W10-W10b-W10-P1 形成闭环（漏一个即 W10b 当场红）。
+#: 🔴 v0.9.209：本版真改动 = PS-M8（G2 几何半 + Q 增强 LOD）。其**直接相关**的便宜门禁 =
+#:   `run_count_consistency_smoke`（实测 ~0.4s / 13 判据，纯读取 BENCHMARK_ORDER/DEFS +
+#:   README/CONTRIBUTING 文本，零网络零子进程）⇒ 纳对照面，令其 README 顶行判据数由机器守。
+#:   **不纳** `run_ps_m8_smoke`：实测 ~64s（FV 全矢量本征求解 ×3 几何 × golden/cand），
+#:   超出本表「便宜可实跑」准入准则（会令本 smoke 从 ~45s 升至 ~110s、余量跌破 3× 目标档）。
+#:   故顶行**只声明** `run_count_consistency_smoke` 判据数（`_readme_decl_drift` 对不在
+#:   `counts` 内的条目不作守卫，属诚实边界；PS-M8 判据数由 `run_ci_coverage_gate_smoke`
+#:   的 CORE 计数 + 本文件顶部 README 版本行一致性间接覆盖）。
+#: 🔴 v0.9.210：本版真改动 = PS-M1/G4（传感窗口工艺层 + DRC 工艺例外 + PDK 器件）。
+#:   直接相关且**便宜**的门禁 = `run_ps_m1_smoke`（实测 **~0.5 s** / **27 判据**，
+#:   纯标准库 + lazy import lda_l2/lda_pdk）⇒ 纳对照面，令本版 README 顶行声明的
+#:   27 判据由机器守（非手写）；它无自指、无递归、无重算风险。
 _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py",
-              "run_sensor_panel_smoke.py")
+              "run_sensor_panel_smoke.py", "run_webui_entry_smoke.py",
+              "run_count_consistency_smoke.py", "run_ps_m1_smoke.py")
 
 
 def _declared_judge_counts(text):

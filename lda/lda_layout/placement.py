@@ -89,6 +89,21 @@ def port_anchor(kind: str, port: str, params: dict) -> Tuple[float, float]:
         off = (gap + core_w) / 2.0
         return {"in1": (0.0, off), "in2": (0.0, -off),
                 "out1": (Lc, off), "out2": (Lc, -off)}.get(port, (0.0, 0.0))
+    if kind in ("SensingRing", "SensingMZI"):
+        # v0.9.210（PS 征程 M1/G4）：端口锚**直接取几何单一真源**
+        # `primitives.sensing_window_geometry`（与版图 `sensing_window_descs`
+        # 同一函数、同一默认参数）——杜绝「锚点用一套默认值、版图用另一套」
+        # 的静默漂移（本版首跑即撞见：wg_width 缺省 0.5 vs 0.45 ⇒ 锚点差 0.025 µm）。
+        from lda_l2.primitives import sensing_window_geometry, _sens_p
+        sp = _sens_p(kind, params)
+        g = sensing_window_geometry(kind, params)
+        if kind == "SensingRing":
+            half = g["bus_half"]
+            off = g["bus_off"]
+            return {"in": (-half, -off), "out": (half, -off)}.get(port, (0.0, 0.0))
+        Lu, dy = sp["Lu"], sp["dy"]
+        return {"in1": (0.0, 0.0), "out1": (Lu, 0.0),
+                "in2": (0.0, dy), "out2": (Lu, dy)}.get(port, (0.0, 0.0))
     if kind == "MZI":
         # P0 网格 P&R · 单 MZI 单元局部端口锚（Clements 矩形网格相邻耦合约定）。
         # 局部原点 = 下轨 (rail j) 左端；上轨 (rail j+1) 在 local y=dy（=rail_pitch）。

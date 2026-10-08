@@ -4,8 +4,8 @@
   "snapshot_note": "本报告的数值与计数为「最近一次生成时」的仓库当前状态（B14-B18 物理值 / 全量 harness 计数与全过标志 / 主权依赖分级），由 `run_ecosystem_smoke` 的「报告快照 == 仓库现算」判据强制同步 —— 改 golden 或加锚后未重生成本报告 ⇒ CI 必红。D-93 交付当日（2026-08-24）的历史口径见 CHANGELOG。",
   "honest_boundary": "harness 题库 B14-B18 为确定性物理定律锚（能力圈内，立即落地）；PDK Registry 为 L2 开放标准接口框架 + 主权依赖分级 A/B/C 代码化（系统开发可做）；真实晶圆厂 PDK 对接/实测语料采集属发动期事项（D-62 联动），暂缓，不在此硬编码。",
   "harness": {
-    "total": 486,
-    "passed": 486,
+    "total": 490,
+    "passed": 490,
     "new_benchmarks": [
       "B14",
       "B15",

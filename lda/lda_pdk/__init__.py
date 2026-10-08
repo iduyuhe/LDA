@@ -36,7 +36,9 @@ L2 = 开放 PDK/器件本体 Registry（社区共建）。本模块提供：
 许可证纪律：Registry 仅存元数据（器件几何/工艺参数/来源），不依赖
 任何 GPL 求解器代码；主权清单用于分发层决策（B 级 fork 到 Gitee/GitCode）。
 """
-from .registry import PDKRegistry, DeviceEntry
+from .registry import (
+    PDKRegistry, DeviceEntry, BUILTIN_DEVICE_ENTRIES, builtin_registry,
+)
 from .sovereign_deps import (
     SOVEREIGN_DEPS, Dependency, classify_dependency, by_class,
 )
@@ -59,7 +61,7 @@ from .empirical import (
 )
 
 __all__ = [
-    "PDKRegistry", "DeviceEntry",
+    "PDKRegistry", "DeviceEntry", "BUILTIN_DEVICE_ENTRIES", "builtin_registry",
     "SOVEREIGN_DEPS", "Dependency", "classify_dependency", "by_class",
     "submit_device", "submit_devices_batch",
     "BenchmarkProposal", "ProposalStore", "submit_benchmark_proposal",

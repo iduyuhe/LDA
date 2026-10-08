@@ -47,6 +47,8 @@ _VMM_OVERRIDES = {
             "2.4→0.25、2.8→0.54、3.2→0.92、3.6→1.48、4.0→2.21（全 < tol 3.0µm，覆盖 "
             "2.0–4.0µm 全宽度域）；残差=抛物线近似固有误差（非零、有界、物理，非假绿）。"
             "（原 self_authored_closed_form 升级路径已打通；golden 因子 3→9/4 已修）"),
+    "B472": ("self_authored_closed_form",
+            "v0.9.210 锁定类型 = **re_review（待重审 · P1-1 §2-B）**。本锚 v0.9.209 由「候选严格独立」**如实降为自证桩**——原候选与 golden **代数恒等**（resonance_slope ∝ Q ⇒ LOD_elec ∝ 1/Q ⇒ golden 缩放闭式精确重现候选，实测 |Δ|=0.0，非 1e-16），属 B28 同型「同式异写 ⇒ 虚报」；由反自证桩护栏`run_benchmark_falsifiability_smoke` 实测判桩，详见其 note。**升级路径明确、待执行 ⇒ re_review（不是「永不升」桶）**：① 独立光-热耦合全波求解器直接算 LOD（不经 FWHM=λ/Q 闭式链），或 ② 外部 Q-LOD 实测语料；二者任一到位即重审升 Tier-3。"),
     "B17": ("self_authored_closed_form",
             "本就不升：定义同义反复（terminal Tier-1）"),
     "B18": ("self_authored_closed_form",

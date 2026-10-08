@@ -1,5 +1,17 @@
 # P1-1 自证桩常态化纪律：「PR 必接独立候选」
 
+> ## 📌 现状（v0.9.210 · 2026-10-08 · harness 动态推导，非记忆）
+> **账本 490**（严格独立 **468** / 降级 **3** / 自证桩 **19**，三类和 = 490），独立率 **95.51%**。
+> 自证桩 19 道分桶：`terminal_tier1` **12** · `design_rule_anchor` **0** · `t2_blocked` **6** ·
+> `re_review` **1（首个实例 = B472，v0.9.210 登记）**。
+> 🔴 **棘轮 `MAX_SELF_CERTIFIED = 19`**（v0.9.210 由 18 上调一次，理由见下；此后只减不增）：
+> B472 在 v0.9.209 以 candidate 入账（结构性口径判 strict），但行为性口径
+> （`run_benchmark_falsifiability_smoke`）**自 v0.9.209 起就一直把它算作自证桩**
+> （其实测与 golden **代数恒等**，|Δ|=0.0）⇒「严格 468 / 桩 19」本就是行为性真值，
+> 常数只是滞后未改。v0.9.209 已撤下其 candidate 登记 ⇒ 两口径收敛，常数对齐真值。
+> ⚠️ 本文件下文 §1/§3/§6 的数字均为 **v0.9.82 时代的历史口径**（84 锚 / 63·3·18），
+> 保留作方法学追溯；**当前真值以上方 banner 与 harness 动态推导为准**。
+
 > 配套 B-3 收官 + B16 重审（v0.9.80）+ B567（v0.9.81）+ B7 golden 语义订正（v0.9.82，84 锚 / 严格独立 63/84 = 75.0%）。
 > 本文件把**剩余 18 道自证桩**从「B-3 冲刺对象」转为**常态化工程纪律**，并订正此前过时口径。
 > 所有数据均来自 `lda/lda_harness/benchmarks.py` 的 `_vmm_classify` 真值推导，非记忆推断。
@@ -26,7 +38,7 @@
   - `terminal_tier1`：定义同义反复 / 算术自检 / regime 越界——**按设计永不升**，不是缺口。
   - `design_rule_anchor`：行业经验边界（几何无关下限/上限），待场级 ORACLE 升 strict。
   - `t2_blocked`：外部实测通道未就绪（E 簇 光子 PDA 实证锚），路径明确但卡通道。
-  - `re_review`：已有明确升级路径待执行（**当前无实例**；B16 已于 v0.9.80 重审升 `strict_independent` 结清）。
+  - `re_review`：已有明确升级路径待执行（**首个实例 B472，v0.9.210 登记**；此前 B16 已于 v0.9.80 重审升 `strict_independent`、该桶一度空置）。
 
 **红线**
 - `self_certified` 计数**只减不增**。
@@ -35,7 +47,7 @@
 
 ---
 
-## 3. 18 道处置映射（权威，harness 推导 · v0.9.82 刷新）
+## 3. 18 道处置映射（**v0.9.82 历史快照**；当前 19 道见顶部 banner）
 
 | 桶 | 锚（共 18） | 锁类型 | 升级路径 | 是否「必接候选」范围 |
 |---|---|---|---|---|
@@ -43,7 +55,26 @@
 | **design_rule（0）** | —（桶**已清空**：B7 于 v0.9.82 结清） | — | — | — |
 | **t2_blocked（6）** | E1, E3, E4, E5, E6, E7 | `t2_blocked` | T2 实测数据集（光子 PDA 实证锚）升 Tier-3 | ✅ 是（卡 T2 外部通道） |
 
-> 合计 12 + 0 + 6 = **18**，与 `run_p0_count_guard_sync_smoke.py` 的动态推导一致。
+> 合计 12 + 0 + 6 = **18**（v0.9.82 时点），与 `run_p0_count_guard_sync_smoke.py` 的动态推导一致。
+>
+> ---
+>
+> ### 3bis. v0.9.210 增量：`re_review` 桶首个实例（B472）
+>
+> | 桶 | 锚 | 锁类型 | 升级路径 | 是否「必接候选」范围 |
+> |---|---|---|---|---|
+> | **re_review（1）** | **B472** | `re_review` | **路径明确、待执行**：① 独立光-热耦合全波求解器直接算 LOD（不经 `FWHM=λ/Q` 闭式链）或 ② 外部 Q-LOD 实测语料；任一到位即重审升 Tier-3 | ✅ 是（路径已定） |
+>
+> **B472 定谳经过**：v0.9.209 以 `candidate=b472_q_scaling_lod_cand` 入账并自称方法学独立；
+> 经反自证桩护栏 `run_benchmark_falsifiability_smoke` 实测判桩 —— 候选与 golden
+> **代数恒等**（`resonance_slope=depth·(3√3/4)/FWHM`、`FWHM=λ/Q` ⇒ slope 严格 ∝Q ⇒
+> `lod_elec` ∝1/Q ⇒ golden 缩放闭式**精确重现**候选，实测 **|Δ|=0.0**，非 1e-16），
+> 属 **B28 同型「同式异写 ⇒ 虚报」**。⇒ 用户裁定走 **A 方案：如实降为自证桩**
+> （撤 `candidate` 登记 + 保留 golden 物理律 + 显式锁定 + 全面同步计数），
+> **不撤锚、不越级谎报**。锁类型取 `re_review` 而非 `terminal_tier1`：
+> 该锚**并非按设计永不升**（存在独立 ORACLE 路径），归 terminal 桶会是错误归类。
+>
+> ⇒ 当前分桶 **12 / 0 / 6 / 1 = 19**（`run_self_certified_lock_smoke` ③ 实测输出）。
 >
 > **B5/B6 已于 v0.9.81 结清**（各接第二独立求解器升 `strict_independent`）：B5 `ybranch_eme`（双芯超模 EME 3.0321 vs golden 3.4，|diff|0.368 < tol 1.0）/ B6 `grating_fp`（首原理四因子 0.3909 vs golden 0.5，|diff|0.109 < tol 0.15）。
 >
@@ -75,14 +106,14 @@
 | E 簇解锁 | 启动 T2 外部通道，接入**光子 PDA 实测数据集**，E1/E3-E7 升 Tier-3（=严格独立候选）；**方案详见 `P1-E_T2_unlock_plan.md`** | 卡 T2 实测通道（S8） | 🔴 高（受外部 KPI） |
 | ~~B5/B6~~ | ✅ **v0.9.81 已完成**：各接第二独立求解器升 `strict_independent`（B5=`ybranch_eme` / B6=`grating_fp`） | — | ✅ 结清 |
 | ~~B7~~ | ✅ **v0.9.82 已完成**：先修离线 golden 三层缺陷（σ 标准公式 + `exp(−σdt)` / 全程 CW + 基模匹配 / 净功率流度量）→ 判明 2D 内不可修复的模型-器件不匹配（与 E-SOI-CROSS-XT 实证差 20~30 dB）→ golden 语义订正为守则锚 −40 dB + 接线 CMT 候选升 strict（边缘通过 93%） | — | ✅ 结清 |
-| ~~CI Enforcement~~ | ✅ **v0.9.83 已完成**：`run_self_certified_lock_smoke.py`（四判据，登 `CORE_SMOKES`，CI core 177→178）——(a) 棘轮上限 `self_certified ≤ 18` 只减不增；(b) 无锁定原因 = 0（每道须归入 `terminal_tier1`/`design_rule_anchor`/`t2_blocked`/`re_review` 之一，分类器不模糊兜底）；(c) 反向测试证明会响 | 无 | ✅ 结清 |
+| ~~CI Enforcement~~ | ✅ **v0.9.83 已完成**：`run_self_certified_lock_smoke.py`（四判据，登 `CORE_SMOKES`，CI core 177→178）——(a) 棘轮上限 `self_certified ≤ 19` 只减不增（v0.9.210 对齐行为性真值后重新冻结）；(b) 无锁定原因 = 0（每道须归入 `terminal_tier1`/`design_rule_anchor`/`t2_blocked`/`re_review` 之一，分类器不模糊兜底）；(c) 反向测试证明会响 | 无 | ✅ 结清 |
 
 ---
 
 ## 6. 诚实边界
 
 - **12 道 terminal Tier-1 是设计上诚实的自检桩**，不是缺陷、不是待清项，不计入「升级缺口」——它们是算术/定义守恒校验（如分束比归一、能量守恒），本就无需独立物理候选。
-- **self_certified 占比 22.6%（19/84）是真实短板但已持续缓解**：B-3 前 31.0%（22/71）→ B-3 后 26.2%（22/84）→ B16 重审后 25.0%（21/84）→ **B567 后 22.6%（19/84）→ B7 语义订正后 21.4%（18/84）**，且余下 6 道真候选均有明确路径，**无「伪绿」**。
+- **self_certified 占比 22.6%（19/84）是真实短板但已持续缓解**：B-3 前 31.0%（22/71）→ B-3 后 26.2%（22/84）→ B16 重审后 25.0%（21/84）→ **B567 后 22.6%（19/84）→ B7 语义订正后 21.4%（18/84）→ v0.9.210 后 19/490 = 3.9%**，且余下 6 道真候选均有明确路径，**无「伪绿」**。
 - **degraded_ordinal（3 道）不计入自证桩**，它们有独立候选（跑了真求解器）但不进死标量判决列，是另一种诚实降级，受 P1-2/P1-3 纪律约束。
 
 ---
@@ -90,7 +121,7 @@
 ## 7. 关联纪律
 
 - 计数护栏同步：`run_p0_count_guard_sync_smoke.py`（84/63/3/18 动态校验，PR 必查）。
-- 自证桩锁定机器断言：`run_self_certified_lock_smoke.py`（棘轮上限 `self_certified≤18` 只减不增 + 每桩须带四类锁之一；v0.9.83 登 `CORE_SMOKES`）。
+- 自证桩锁定机器断言：`run_self_certified_lock_smoke.py`（棘轮上限 `self_certified≤19` 只减不增 + 每桩须带四类锁之一；v0.9.83 登 `CORE_SMOKES`，v0.9.210 棘轮对齐真值 + B472 首次以 `re_review` 入桶）。
 - 锚接线流程：技能 `lda-anchor-wiring`（判据先于代码 + maintainer 写判据）。
 - 生产部署：`lda-prod-deploy`（`sync_push.py` + `remote_deploy.py --expect-head`）。
 - T2 解锁方案：`P1-E_T2_unlock_plan.md`（E1/E3-E7 逐锚所需实测数据/计量 + MPW 路径与成本 + 升 strict 验收条件）。

@@ -40,7 +40,12 @@ from typing import Any, Dict, Optional
 import numpy as np
 
 # 复用 PS-M0 的 LOD_intrinsic / FSR 单一真源，杜绝口径漂移
-from lda_l2.ps_m0 import ring_sensor_metrics  # noqa: E402
+# 🔴 惰性 import：ps_m0 顶层 import FV 求解器（scipy），但本模块仅 `lod_real`
+#    （纯 numpy）被 B472 golden 在闭式门禁使用；ps_m0 仅 `metric_report` 需要，
+#   故惰性加载，避免 scipy 泄漏进闭式解释器。
+def _ring_sensor_metrics(R_um, wl_um, ng, S_nm_per_riu, Q):
+    from lda_l2.ps_m0 import ring_sensor_metrics  # 惰性（scipy 依赖）
+    return ring_sensor_metrics(R_um, wl_um, ng, S_nm_per_riu, Q)
 
 # ---------------------------------------------------------------------------
 # 物理常数
@@ -210,7 +215,7 @@ def metric_report(S_nm_per_riu: float, Q: float, wl_um: float,
         "LOD_intrinsic_riu": lod_intrinsic,
     }
     if ng is not None and R_um is not None:
-        ring = ring_sensor_metrics(R_um, wl_um, ng, S_nm_per_riu, Q)
+        ring = _ring_sensor_metrics(R_um, wl_um, ng, S_nm_per_riu, Q)
         rep["FSR_nm"] = ring["FSR_nm"]
         # 与上式 LOD_intrinsic 互验（同式）
         rep["LOD_intrinsic_crosscheck_riu"] = ring["LOD_riu"]

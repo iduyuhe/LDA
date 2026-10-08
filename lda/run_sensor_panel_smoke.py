@@ -432,6 +432,15 @@ def main() -> int:
     check("F10b sec-sensor 映射到 runSensor", _cm_pairs.get("#sec-sensor") == "runSensor",
           "got=%r" % _cm_pairs.get("#sec-sensor"))
 
+    # F10c 🔴 首屏 `#wbCaseBar` 直达条目（**第三种入口面**：抽屉按钮 / hash 深链 /
+    #   首屏条）。教训（2026-10-08 用户实测「导航条里没有光传感器」）：面板同时要出现在
+    #   **首屏案例条**里，否则用户首屏扫不到、只能靠深链/滚动。E1（entry_smoke）已从
+    #   族现算覆盖全部案例卡；此处为**面板自带的上线清单**再钉一次（本地即检）。
+    _bar = re.search(r'id="wbCaseBar".{0,12000}?</div>', idx, re.S)
+    _bar_hrefs = re.findall(r'href="(#[^"]+)"', _bar.group(0)) if _bar else []
+    check("F10c 🔴 sec-sensor 已登记首屏案例条 #wbCaseBar（否则首屏扫不到 · 用户实测缺）",
+          "#sec-sensor" in _bar_hrefs, "bar 条目=%s" % (_bar_hrefs or "无"))
+
     # F9 🔴 面板诚实标注不得被静默抹掉（**限定在 sec-sensor 面板内** —— 全文件搜索会被
     #    其他面板的同名标注满足 ⇒ 探针假绿）
     _sec = _sensor_sec(idx)

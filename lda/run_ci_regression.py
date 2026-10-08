@@ -1641,6 +1641,18 @@ CORE_SMOKES: List[str] = [
     #   反向探针 ×3 · 非法参数红标。
     #   纯 stdlib + numpy，实测 <1s（无权豁免）⇒ 入 core；timeout 300s 留足余量。
     "run_ps_m6_smoke.py",
+    #   光子传感器征程 PS-M8 几何灵敏度半 + Q 增强 LOD 缩放（B469/B470/B471/B472 四锚）：
+    #   零参 lambda 锚；golden=左本征矢 Rayleigh 商 / Q-scaling 闭式，candidate=FV-FD / lod_real 模型；
+    #   四锚对齐 + 几何诚实梯度（suspended≫strip≈thinwire≈slot）+ Q 缩放单调/热漂解耦 + 反向探针 ×4 + 非法参数红标。
+    #   FV 求解器需 scipy ⇒ 入 core（3.14.3 齐备）；timeout 300s 留足余量。
+    "run_ps_m8_smoke.py",
+    #   光子传感器征程 PS-M1/G4 传感窗口工艺层 + DRC 工艺例外 + PDK 器件：
+    #   层号跨源一致 / 窗口矩形↔几何单一真源 / 端口锚↔版图 descs 逐点一致 / 窗口覆盖波导芯 /
+    #   DRC 四条窗口规则 + 开窗区包封=0 被**已登记工艺例外**豁免 / 例外≠消音器护栏（缺替代规则 ⇒
+    #   ValueError/RuntimeError）/ exceptions=() 可关 ⇒ 包封真判红 / 反向探针 ×4 / PDK 器件本体登记。
+    #   🔴 本档零净增锚（灵敏度物理已由 B469–B471 锚定）⇒ 账本 490 不变，仅 CI core +1。
+    #   纯标准库（lazy import lda_l2/lda_pdk）+ 无网络，实测 <1s ⇒ 入 core；timeout 300s 留足余量。
+    "run_ps_m1_smoke.py",
     #   光子传感器征程 PS-M7 WebUI 案例卡 + 客户自助设计向导门禁（/api/sensor_demo）：
     #   守「内部能力 ↔ 对外载体」真拉平 —— 面板常量必须 ≡ ps_m3 HF 灵敏度 / ps_m6 集成 /
     #   ps_m2 噪声模型 的**现算值**（漂移即红）；守诚实边界（verdict 恒 DESIGN_BUDGET ·
@@ -1889,7 +1901,24 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   候选数**线性增长**，属**结构性**。按「余量底线 ≥3×」提到 **660s**（≈3.25×，
     #   与 `run_splitter_readout_smoke` 同档）。**判据一字未改**，属**单调放宽**
     #   ⇒ 本轮全量结论仍有效，不必重跑。
-    "run_d_criterion_smoke.py": 660.0,
+    # 🔴 v0.9.210（全量 CI core 295 后的「预算余量体检」）：并入本轮样本后上界抬到
+    #   **233.34s** ⇒ 660s 仅 **2.828×**，跌破 ≥3× 目标档、且是全表唯一 <3× 项
+    #   （`low_margin` 仍空，2× 硬闸未触）⇒ B9 目标棘轮红（`ratchet_below_target`
+    #   被 `min(prev=0, …)` 语义钉在 0，正是 v0.9.132 立的那道锁**按设计**红了）。
+    #   **归因三问**：① 本项 ③ 为**全部已接线严格独立候选的基线残差普查**，耗时随
+    #   候选数**线性增长**，属**结构性**——v0.9.115 记的 448 道 → 本轮 **468 道**
+    #   （+4.5%）且账本 486→490；② 本项**不在 v0.9.208~210 改动面内**（零因果，
+    #   PS-M1/G4 传感窗口 + B469~B472 锚均不触碰判据 D 普查面）；③ 同轮对照**整轮
+    #   存在 ~+20s 常量开销**（小项 `run_l1_spec_smoke` 1.58→20.4s、`run_mcp_smoke`
+    #   4.19→22.5s 等十余项同幅抬升）⇒ 属**整轮口径/负载**现象，非本项单独劣化。
+    #   ⇒ 两层成因叠加（结构性增长 + 整轮常量开销），按先例「**一次给足**」并吸收
+    #   ±25~30% 抖动：`budget ≥ 233.34 × 1.25 × 3 = 875.0s` ⇒ 取 **900s（3.857×）**，
+    #   对齐仓库既有 900s 档先例（`run_ecosystem_smoke` 3.935× / `run_harness`
+    #   4.149× / `run_ci_industrial_smoke`）。**判据一字未改**，属**单调放宽**
+    #   ⇒ 本轮 294 项 PASS 结论仍有效，不必重跑。
+    #   ⚠️ **不得**改用「抬高 `ratchet_below_target`」来消 B9 红——那正是 v0.9.132
+    #   修掉的「刷新即放宽」失效形态。
+    "run_d_criterion_smoke.py": 900.0,
     "run_b28_nullfit_smoke.py": 120.0,
     # v0.9.75：报告确定性护栏，纯标准库单元级，实测 <2s
     "run_report_determinism_smoke.py": 120.0,
@@ -2375,6 +2404,10 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ps_m5_smoke.py": 300.0,
     # 实测上界 <1s（纯标准库 + numpy · 远低于默认 300s）
     "run_ps_m6_smoke.py": 300.0,
+    # FV 求解器需 scipy；实测上界 ~s 级（scipy 齐备的 3.14.3）
+    "run_ps_m8_smoke.py": 300.0,
+    # 实测上界 <1s（纯标准库 + lazy import lda_l2/lda_pdk；远低于默认 300s）
+    "run_ps_m1_smoke.py": 300.0,
     # 实测上界 <1s（纯标准库；对拍时 lazy import lda_l2 · 远低于默认 300s）
     "run_sensor_panel_smoke.py": 300.0,
     # 实测上界 <0.5s（纯函数 + monkeypatch · 远低于默认 300s）

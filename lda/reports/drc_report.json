@@ -6,7 +6,11 @@
     "max_split_angle_deg": 30.0,
     "min_pad_um": 2.0,
     "max_il_per_mode_db": 15.0,
-    "max_il_total_db": 25.0
+    "max_il_total_db": 25.0,
+    "min_window_um": 1.0,
+    "min_window_margin_um": 0.2,
+    "min_window_end_um": 2.0,
+    "min_clad_enclosure_um": 0.4
   },
   "library": {
     "DirectionalCoupler": {

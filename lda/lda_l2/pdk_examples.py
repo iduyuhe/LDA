@@ -24,7 +24,11 @@ def _noeic_soi_180nm() -> PDK:
                       "最小弯曲半径约 5um（弯曲损耗可控）。本参数为公开近似，"
                       "非真实 NDA-PDK，仅用于驱动链路演示。",
         design_rules={"min_width_um": 0.40, "min_space_um": 0.20,
-                      "min_bend_R_um": 5.0, "max_split_angle_deg": 30.0},
+                      "min_bend_R_um": 5.0, "max_split_angle_deg": 30.0,
+                      # v0.9.210（PS 征程 M1/G4）：传感窗口工艺规则——演示
+                      # 「工艺规则可被 PDK 覆盖」（不同代工的刻蚀窗口能力不同）。
+                      "min_window_um": 1.0, "min_window_margin_um": 0.20,
+                      "min_window_end_um": 2.0, "min_clad_enclosure_um": 0.40},
     )
     # 模板1：环形谐振器 FSR 逆设计（B4，单规格）
     pdk.add_template(DeviceTemplate(

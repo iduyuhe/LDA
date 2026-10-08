@@ -11,8 +11,9 @@ from .part2 import DEFS as _P2
 from .part3 import DEFS as _P3
 from .part4 import DEFS as _P4
 from .part5 import DEFS as _P5
+from .part6 import DEFS as _P6
 
 BENCHMARK_DEFS: dict = {}
-for _part in (_P1, _P2, _P3, _P4, _P5):
+for _part in (_P1, _P2, _P3, _P4, _P5, _P6):
     BENCHMARK_DEFS.update(_part)
 del _part

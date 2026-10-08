@@ -99,3 +99,43 @@ class PDKRegistry:
         for it in items:
             reg.add(DeviceEntry(**it))
         return reg
+
+
+#: 本仓**内置器件本体条目**（生态地基里「我们自己的第一批」）。
+#: 🔴 只存**元数据**（id/name/tech/foundry/layers/params/tags/note）；几何与工艺
+#:    参数的**单一真源**在 `lda_l2.primitives` / `lda_l2.drc` —— 此处 `params`
+#:    一律留空，note 里给出真源指针，**不复制一份数值**（防第二份副本漂移）。
+BUILTIN_DEVICE_ENTRIES: List["DeviceEntry"] = [
+    DeviceEntry(
+        id="lda.SensingRing",
+        name="传感环（局部开窗）",
+        tech="SOI",
+        foundry="self",
+        sovereign_class="C",
+        layers=["SI", "WINDOW"],
+        params={},
+        tags=["photonics", "sensor", "sensing-window", "ps-m1"],
+        note=("PS 征程 M1/G4：局部去上包层的开窗传感环。几何真源 = "
+              "`lda_l2.primitives.sensing_window_geometry('SensingRing', …)`；"
+              "工艺例外真源 = `lda_l2.drc.WINDOW_EXCEPTIONS`；"
+              "DRC 规则键 = min_window_um / min_window_margin_um / min_window_end_um。"),
+    ),
+    DeviceEntry(
+        id="lda.SensingMZI",
+        name="传感 MZI（双臂开窗）",
+        tech="SOI",
+        foundry="self",
+        sovereign_class="C",
+        layers=["SI", "WINDOW"],
+        params={},
+        tags=["photonics", "sensor", "sensing-window", "ps-m1"],
+        note=("PS 征程 M1/G4：双臂均开窗的传感 MZI。几何真源 = "
+              "`lda_l2.primitives.sensing_window_geometry('SensingMZI', …)`；"
+              "工艺例外真源 = `lda_l2.drc.WINDOW_EXCEPTIONS`。"),
+    ),
+]
+
+
+def builtin_registry() -> "PDKRegistry":
+    """返回预置了**本仓内置器件本体**的 Registry（PS-M1/G4 起）。"""
+    return PDKRegistry(BUILTIN_DEVICE_ENTRIES)

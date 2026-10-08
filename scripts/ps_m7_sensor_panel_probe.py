@@ -88,6 +88,10 @@ def main() -> int:
          "['GDS 文件字节数（实测 getsize）', '-'],"),
         ("P11 删 CASE_MAP 的 #sec-sensor 登记（面板失去 hash 深链直达）", IDX,
          ', "#sec-sensor": "runSensor"', ""),
+        # P12：首屏案例条直达（第三种入口面）。2026-10-08 用户实测「导航条里没有光传感器」
+        #   —— 当时 F10/F10b（深链）与 F5（抽屉按钮）都绿，唯独首屏条漏登。此探针钉住它。
+        ("P12 删首屏案例条 #sec-sensor 直达（首屏扫不到面板）", IDX,
+         'href="#sec-sensor"', 'href="#sec-sensor-nowhere"'),
     ]
 
     bad = 0

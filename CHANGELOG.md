@@ -1,5 +1,80 @@
 # Changelog
 
+## v0.9.212（2026-10-09 · 光子计算 SoC 征程 S0–S5-ext + G6 全链落地：主权光子计算 mesh 全链路 + 主权 GDS 签核 + 多核 tiling + WDM/TDM + foundry 闭集 signoff + NDA deck 替换 + 多 foundry PDK 对接 · 账本 490 不变 · 严格独立 468 不变 · CI core 296→306 · 端点 148 不变）
+
+> 本段为 SoC 征程 S2/S3/S4/S5/S5-ext/G6 杠杆②+①③+闭集 signoff+NDA deck 替换+S5-ext 多 foundry PDK 对接机制 的**发版记录**（**已随 v0.9.212 推送**，2026-10-09）。CI core 计数已在 README `## 当前账本` 与 CONTRIBUTING 顶块同步到 **306**（S2：296→297，S3：297→298，S4：298→299，S5：299→300，S5-ext：300→301，G6 tiling：301→302，G6 WDM/TDM：302→303，G6 闭集 signoff：303→304，G6 NDA deck 替换：304→305，S5-ext 多 foundry PDK 对接机制：305→306），`run_count_consistency_smoke` 13/13 PASS。
+
+### S2（2026-10-09 · 平台短板补齐 G2/G3/G5，已全部落盘）
+- `lda/lda_l2/eic_functional.py`（G2 功能级 EIC：理想 DAC/ADC + DriverFunctional/TiaFunctional + soc_calibration_fsm）
+- `lda/lda_l2/soc_calibration.py`（G5 冷态：eo_calibration_loop ↔ CalibrationStateMachine 对接）
+- `lda/lda_l2/soc_gds_assemble.py`（G3 雏形：复用 gds_export 既有 SI/METAL/HEATER 三层协同组装）
+- `lda/run_soc_s2_smoke.py`：覆盖 C2/C3/C6/C8/C9 + G2/G3/G5，挂 CI core（296→297）
+
+### S3（2026-10-09 · 端到端 SoC 设计 + 行为验证，C1–C9 全绿）
+- `lda/lda_l2/soc_design_package.py`：整芯片设计包装配（真实 N×N 主权 P&R GDS / EIC / 光 IO / 封装光源 / 标定环）+ C1–C9 机器核验
+- `lda/run_soc_s3_smoke.py`：覆盖 C1/C2/C3/C4/C5/C6/C7/C8/C9，挂 CI core（297→298）
+- 实测（N=16）：MZI **120**（=N(N−1)/2）/ DRC **PASS** / LVS **ACCEPT** / 光 IO **32 端口** + 2 GratingCoupler（cpo IL=10.63 dB）/ G5 **BYPASSABLE** / 端到端 MVM 相对误差 **8.2e-3 < 量化容差 1.5e-2** / 分类精度 **1.0** / 同一 GDS **3 层**（SI/METAL/HEATER）协同 / 无锚 **BLOCKED_NO_ANCHOR**
+- 诚实边界：S3 仅做集成与行为验证，**未新增热串扰/工艺角标定模型**（G5 热串扰/工艺角部分仍留 S5-ext 或后续）；能效维度仍禁止宣称（红线）
+
+### S4（2026-10-09 · 规模爬升 G6：N 16→32→64→128 · 照妖镜抓出并修复两处规模债 · C1–C9 全绿）
+- `lda/run_soc_s4_smoke.py`：复用 S3 全链路 C1–C9 + 规模债照妖镜（n_unresolved_crossings==0 / n_mzi==N(N−1)/2），挂 CI core（298→299）
+- 主权 P&R 规模债修复：`examples/sovereign_evidence/build_nxn_mzi_mesh.py` 的 `_assign_layers_multicolor` 用 **M3 三层着色**确定性破解交叉图奇圈（2 层物理不可解 ⇒ 鸽巢原理；奇圈残量注入 M3 信号层）。N=64 实测：`n_crossing_pairs=5799` / `n_bridged_nets=2084` / `n_layer_repairs=31` / **`n_unresolved_crossings=0`** / LVS=ACCEPT / DRC=PASS
+- C6 可辨识性条件化规模债修复：`calibration_protocol.py` 的 `identifiability_report` 改用 **`min(数值谱秩, 秩定律)`** 夹回 —— N=64 复场因 mesh 参数 Jacobian 条件数 ~1e14 双精度病态，数值 SVD 把真满秩（秩 N²=4096）误判亏秩 123 维 ⇒ S4 smoke 照妖镜当场抓红；夹回后复场 N² 满秩 ⇒ 可辨识、功率 (N−1)² 结构不可辨识、DFT 退化族真 deficit（N=4/6/8 功率秩 8/21/44）保留不丢。`rank_report` 已为 gap-aware（深谷 >1e3 才停秩，条件化平滑尾计为非零）。校准固件回归 **153/153 PASS**
+- 实测（N=64）：MZI **2016**（=N(N−1)/2）/ DRC **PASS** / LVS **ACCEPT** / 光 IO **128 端口** / 端到端 MVM 相对误差 **3.75e-2 < 量化容差 6.14e-2** / 分类精度 **1.0** / 同一 GDS **3 层**协同 / 无锚 **BLOCKED_NO_ANCHOR**
+- 三同步：README `## 当前账本` + CONTRIBUTING 顶块 CI core 计数 298→299，`run_count_consistency_smoke` 13/13 PASS
+- 诚实边界：S4 仅验证**单核规模爬升**（主权 P&R + 集成度 + 端到端保真），未做多核 array tiling / WDM 多 λ 复用 / 时间复用调度（G6 第二、三杠杆留后续）；N=128 主权构建长时验证留 CI 预算外单独压测；能效维度仍禁止宣称（红线）
+
+### S5（2026-10-09 · 主权 GDS 真实导出 + DRC/LVS 全流程签核 · C1–C9 全绿）
+- `lda/run_soc_s5_smoke.py`：主权 GDS 真实导出 + 文件级签核，挂 CI core（299→300）
+- 主权 mesh GDS 真实落盘（`examples/sovereign_evidence/lda_{N}x{N}_mzi_mesh.gds`）+ 文件往返无损：`build_nxn_mzi_mesh` 返回 `gds_bytes_raw`（原始字节），S5 比对 `sha256(落盘) == sha256(内存 bytes)` ⇒ 文件 IO 无损坏；`parse_gds` 确认落盘文件可解析且含 M3 奇圈破局层（LIB_LAYER_METAL3=9）
+- 文件级几何 DRC 全流程：`gds_drc.check_geometry` 对落盘 GDSII 做最小线宽/间距/面积快查（新增签核层，区别于 `export_chip_gds` 内的器件级 `chip_drc_report`）；N=64 PASS
+- 整芯片 SoC GDS 升级（`soc_design_package.build_soc_gds`）：S4 的 `build_soc_gds` 把 route 一律画 SI 层会**丢失 M3 奇圈破局层**且只返回内存 bytes 不写盘 —— S5 改为按 route 真实层映射 GDS 层（M3→METAL3 / M2→METAL / M1→SI）+ 真实写盘 `lda_soc_{N}x{N}.gds`（4 层 SI/METAL/HEATER/M3）+ 接受复用 `core` 避免重复 P&R；S5 验证整芯片 GDS 含 M3 且 mesh 子集（SI+M3 层多边形数）与主权 mesh GDS 逐层一致（装配不破坏主权版图）
+- 实测（N=64）：主权 mesh GDS 1.8MB / 往返 sha256 一致 / 含 M3 / 几何 DRC PASS；整芯片 SoC GDS 含 M3 / mesh 子集一致；MVM 相对误差 3.75e-2 < 量化容差 6.14e-2 / 分类精度 1.0 / C1–C9 全 PASS
+- 三同步：README `## 当前账本` + CONTRIBUTING 顶块 CI core 计数 299→300，`run_count_consistency_smoke` 13/13 PASS
+- 诚实边界：整芯片 EIC/HEATER pad 为行为级几何占位（S3 声明），未做 netlist 级 LVS（留后续）；G1 单片激光 / G4 foundry PDK 对接为可选外部依赖未做；能效维度仍禁止宣称（红线）
+
+### S5-ext（2026-10-09 · G1 单片激光 + G4 foundry PDK 对接，建立在 S5 之上 · C1–C9 + G1/G4 全绿）
+- `lda/lda_l2/foundry_pdk.py`（G4 真实 PDK 对接层）：`FoundrySpec` + `build_aim_photonics_spec()`（AIM Photonics 公开近似 foundry，层栈 SI/METAL/HEATER/M3 → 1/10/11/12 + DRC 规则 + 逐条规格锚）+ `map_layers`（主权 GDS 层号 → foundry 层号）+ `layer_map_report` / `foundry_drc_signoff`（gds_drc.check_geometry 全流程）+ `pdk_signoff_report`
+- `lda/lda_l2/monolithic_laser.py`（G1 单片激光）：Fabry-Perot 腔解析模型（`design_monolithic_laser` / `monolithic_laser_integration_report`）—— 谐振 λ=2·n_eff·L/m、镜面损耗 α_mirror=(1/2L)·ln(1/R²)、阈值增益 g_th=(α_wg+α_mirror)/Γ；物理锚（α_wg=3 dB/cm / FACET_R=0.3 / Γ=0.3 / GAIN_PEAK=150 cm⁻¹）为公开文献量级占位，非 foundry NDA 真值；不做 3D FDTD
+- `lda/run_soc_s5_ext_smoke.py`：在 `run_soc_s5_smoke` 全链路（C1–C9 + S5-G1~G5）之上叠加 G1/G4 签核，挂 CI core（300→301）；N=64 实测全 PASS（层映射 all_mapped + foundry DRC all_pass + 谐振 1.5497µm∈C 波段 + 阈值增益 82.6<150 cm⁻¹ + 耦合 1.5<3 dB + MVM 3.75e-2<6.14e-2 / 分类 1.0）
+- 三同步：README `## 当前账本` + CONTRIBUTING 顶块 CI core 计数 300→301，`run_count_consistency_smoke` 13/13 PASS
+- 诚实边界：foundry 规则为公开近似（非 NDA 真值，真实 deck 须 AIM/Tower/GF/IMEC 签约注入）；增益介质参数为公开量级占位，不做 3D FDTD；能效维度仍禁止宣称（红线）；G1 仅建 FP 腔解析判据，未做 III-V 异质集成工艺级建模
+
+### G6 杠杆②（2026-10-09 · 多核 array tiling，建立在 S5-ext 单核之上 · 阵列 DRC/LVS/层栈/MVM/跨核 IO 全绿）
+- `lda/lda_l2/soc_array_tiling.py`（G6 杠杆② 多核阵列）：`_parse_single_core`（build_soc_gds 写盘单核 → parse_gds_polygons 还原几何，bit-exact 复用已验证单核）+ `tile_mesh_array`（按 pitch = 核 bbox 跨度 + 裕度，平移复制成 M×M 结构落盘阵列 GDS `lda_soc_array_{M}x{M}_{N}x{N}.gds`）+ `array_drc_signoff`（gds_drc.check_geometry 全流程）+ `array_layer_integrity`（阵列层集 == 单核实际层集，不丢层）+ `array_mvm_fidelity`（每核独立随机酉 MVM，全核 < 量化容差）+ `soc_array_tiling_report`（主入口）
+- `lda/run_soc_g6_tiling_smoke.py`：G6 tiling 门禁，挂 CI core（301→302）；N=8 M=4（16 核）实测全 PASS（单核 DRC PASS / LVS ACCEPT、阵列 DRC 0 违规、16/16 核 MVM max_rel_err 4.62e-3 < 量化容差、跨核 IO 256 端口、cross_core_separation_ok）；实测 ~1.4s（纯几何复制，仅一次 P&R）
+- 三同步：README `## 当前账本` + CONTRIBUTING 顶块 CI core 计数 301→302，`run_count_consistency_smoke` 13/13 PASS
+- 诚实边界：阵列 LVS = 每核 LVS（ACCEPT）× M²（tiling 为几何复制，跨核无 via，不重跑阵列级 LVS 引擎）；跨核间距由 pitch ≥ 核 bbox 跨度 + 裕度 **构造性保证** + `cross_core_separation_ok` 判据断言，主权几何 DRC 对跨核间距（核间相距 ≥ 裕度、超出网格候选邻域）按 checker 诚实语义标「未覆盖」而非假绿（与 S5 单核 mesh DRC 行为一致）；阵列几何 DRC 真查的是**阵列内每核**几何（含已验证的 N=8 单核线宽/间距/面积），0 违规；能效维度仍禁止宣称（红线）
+
+### G6 杠杆①③（2026-10-09 · WDM 多 λ 复用 + 时间复用调度，建立在 S5-ext 单核主权 GDS 之上 · C1–C9 + G1/G4 + 复用 S5 全链路全绿）
+- `lda/lda_l2/soc_wdm.py`（G6 杠杆① WDM 多 λ 复用）：主权 mesh 波长相关酉真算 + demux/mux GDS DRC。核心物理修正：① 定向耦合器是 fabricated 固定器件，波长依赖仅二阶小量 ⇒ **θ 不缩放**；② 相移器相位 φ(λ) ∝ 1/λ ⇒ φ(λ) = φ(λ₀)·(λ₀/λ)；③ 物理相移器只实现光学相位 φ mod 2π ⇒ **缩放前 φ 必须 `_wrap` 卷绕到 (−π,π]**（unwrap 缩放会因 2πk·f 项失真，N=8 在 1.3% 波长偏移时 wrapped vs unwrapped MVM 误差 11% vs 22% 差异即源于此）；④ 对角 arg(D)(λ) = arg(D₀)·(λ₀/λ)。`default_wdm_channels(W)` 居中 λ₀ 的 ITU 致密栅格（100GHz = 0.8nm）；`build_wdm_gds(N, W)` 复用 `build_soc_gds(N)` 核心几何 + W 个 demux(左)/mux(右) SI 层矩形占位光栅（间距 3µm ≫ 最小间距），写盘 `lda_soc_wdm_{W}ch_{N}x{N}.gds` + `gds_drc.check_geometry` 签核；`soc_wdm_report` 主入口返回 per_channel / worst_mvm_rel_err / gds_drc_all_pass。
+- `lda/lda_l2/soc_tdm.py`（G6 杠杆③ 时间复用调度）：K 帧时分复用 + 时序状态机 + 重配置相位变更计数。`_random_haar(N, rng)`（QR 分解）+ `tdm_frame_unitary(N, seed)`（reck_decompose → assemble_mesh → 保真度≈机器精度）+ `_phi_vector` / `tdm_reconfig_cost`（相邻帧 MZI φ 变更计数，诚实度量、非物理时延）+ `TDMController`（tick() 推进帧 + current_phi() + reconfig_from() 累计相位变更）；`soc_tdm_report(N, K, ...)` 主入口返回 per_frame / worst_mvm_rel_err / reconfig_total_phase_updates。
+- `lda/run_soc_g6_wdm_tdm_smoke.py`：G6 ①③ 门禁，挂 CI core（302→303）；复用 `run_soc_s5_smoke`（C1–C9 + S5-G1~G5）后叠加 WDM/TDM 判据。N=8/W=4/K=4 实测：**ALL_PASS = True**；WDM worst_mvm_rel_err = **7.499e-3**（tol 0.05）+ gds_drc True；TDM worst_mvm_rel_err = **6.083e-16**（tol 0.05）+ reconfig_total_phase_updates = 112。
+- 三同步：README `## 当前账本` + CONTRIBUTING 顶块 CI core 计数 302→303，`run_count_consistency_smoke` 13/13 PASS
+- 🔴 诚实边界（色散容限）：网格色散敏感，单一固定配置酉在离带波长 MVM 误差 ~17%/1% 波长偏移（N=8 实测外推），10nm（1.2THz）离带误差达 ~21% 物理极限 ⇒ WDM **须用致密栅格**（≤~2nm 间距满足 5% 规格）；100GHz ITU 栅格（0.8nm）实测 <1.1%。foundry 规则为公开近似（非 NDA 真值）；TDM 重配置开销为相位变更计数而非物理时延（真实时延需工艺角 NDA 真值）；能效维度仍禁止宣称（红线）
+
+### G6 收官：主权 GDS → foundry DRC 闭集 流片 signoff（2026-10-09 · 建立在 G4 foundry PDK 对接层 + S5 完整 SoC 主权 GDS 之上 · CI core 303→304）
+- `lda/lda_l2/soc_tapeout_signoff.py`（G6 收官 · foundry DRC 闭集 signoff）：在 G4 `foundry_pdk.py`（主权 GDS → AIM Photonics 公开近似 foundry 层映射 SI/METAL/HEATER/M3 → 1/10/11/12 + 几何 DRC 签核）之上，把 foundry DRC 从「开放几何快查」升级为**显式闭集**（有限、可枚举、逐项规格锚登记的规则集合）。`FoundryDRCRule` 数据类 + `build_closed_set_deck(spec)` 派生闭集规则牌：逐层（SI/METAL/HEATER/M3 → foundry 1/10/11/12）min_width / min_spacing / min_area 三条 + `FDRC-LAYER-ALLOWED` 层集允许规则，共 **13 条闭集规则**；`_run_one_rule` 过滤到单 foundry 层调 `gds_drc.check_geometry`（仅启用对应 kind 阈值）逐条判；`tapeout_signoff_report(gds_path|N)` 主入口输出 per_rule / n_rules_pass / signoff_ready / 层映射 / 诚实边界；`tapeout_signoff_markdown` 渲染逐条闭集规则表。
+- `lda/run_soc_tapeout_signoff_smoke.py`：G6 收官门禁，挂 CI core（303→304）；复用 `run_soc_s5_smoke`（C1–C9 + S5-G1~G5）拿完整 SoC 主权 GDS（`lda_soc_{N}x{N}.gds`，含 SI/METAL/HEATER/M3 的可 tape-out 交付物）后跑闭集 signoff。N=16 默认（控 CI 预算，实测 ~4s：S5 3.3s + 闭集 DRC <0.3s）实测：**ALL_PASS = True**；**13/13 闭集规则通过** + signoff_ready = True。N=64/N=128 主权版图 signoff 已按需验证（13/13 通过，<0.3s）。
+- 三同步：README `## 当前账本` + CONTRIBUTING 顶块 CI core 计数 303→304，`run_count_consistency_smoke` 13/13 PASS。
+- 🔴 诚实边界（核心）：闭集规则数值为「公开近似 + 逐条规格锚」，**非 foundry NDA 真值**；`signoff_ready=True` 仅代表「主权自洽可制造性就绪」，**不构成**真实 foundry tape-out 授权（真实授权须由各 foundry 商务签约注入 NDA deck 替换本闭集；密度 / 天线 / 阱邻近 / 金属填充 / 封装余量等未列入闭集的 foundry 规则一律显式标「未覆盖」，不静默放过）。能效维度仍禁止宣称（红线）。
+
+### G6 收官增量：真实 foundry NDA deck 替换闭集（2026-10-09 · 建立在 G6 闭集 signoff 之上 · CI core 304→305）
+- `lda/lda_l2/soc_tapeout_signoff.py` 扩展 **NDA deck 替换机制**（不伪造任何 NDA 数值，只提供替换能力）：新增 `FoundryDeck` 数据类（name/node/provenance/rules/spec_anchors）+ `load_foundry_deck(path_or_dict)` 加载器（JSON 文件或 dict）；`tapeout_signoff_report(gds_path, deck=None, auto_env=False)` 决策序：显式 `deck=` → 否则 `auto_env=True` 且 `LDA_FOUNDRY_DECK` 指向存在文件 → 否则回退闭集。🔴 **诚实护栏**：`load_foundry_deck` 强制要求 deck.provenance 与每条 rule.prov 以 `NDA:`（真实签约 deck）或 `public:`（近似）开头，否则拒绝加载——任何 deck 真伪由 provenance 显式声明，不静默冒充 NDA；报告逐条输出 `prov`，`honest_boundary` 随 deck 来源改写（闭集/近似则重申「非 tape-out 授权」）。
+- `examples/sovereign_evidence/foundry_deck_TEMPLATE.json`：foundry 授权方的**填空模板**——13 条规则与闭集等价（provenance `public:template-placeholder`），顶部 `_README` 写明替换流程与强制 provenance 前缀约束；复制后填入签约 NDA 真值、provenance 改 `NDA:...` 即零改动生效。
+- `lda/run_soc_tapeout_signoff_deck_smoke.py`：G6 收官增量门禁，挂 CI core（304→305）；复用 `run_soc_s5_smoke` 拿主权 GDS 后五段验证：① 基线闭集默认 signoff 仍全 PASS（不破坏既有）；② 模板文件 `load_foundry_deck` 加载替换 → deck_source=模板名且仍 PASS；③ **反向探针**：合成更严 deck（SI min_width=2.0µm）→ 判定必须翻转 `signoff_ready=False` 且该规则 `pass=False`，证明替换是「真走替换 deck」而非退回默认值（死测试自证护栏）；④ env 注入 `LDA_FOUNDRY_DECK` → `auto_env=True` 自动加载模板且 PASS；⑤ 加载器护栏：provenance 非 `NDA:/public:` 开头的 deck 必须被拒绝。N=16 默认实测：**ALL_PASS = True**（五段全绿）。
+- 三同步：README `## 当前账本` + CONTRIBUTING 顶块 CI core 计数 304→305，`run_count_consistency_smoke` 13/13 PASS。
+- 🔴 诚实边界（强化）：本增量**不持有任何 foundry NDA 数值**；模板 / 合成 deck 均为 public 近似或反向测试用途。真实 NDA deck 由 foundry 授权方按 `FoundryDeck` schema 提供（provenance 以 `NDA:` 开头），经同一 `load_foundry_deck` 入口零改动生效，替换闭集后即输出「主权 GDS 满足该签约 deck」的 signoff。能效维度仍禁止宣称（红线）。
+
+### S5-ext 真实 foundry PDK 对接机制（2026-10-09 · 建立在 G4 单一 AIM spec 之上 · CI core 305→306）
+- 把「真实 PDK 对接」从 G4 单一 AIM 公开近似 spec 升级为**对接机制本身**：新建 `lda/lda_l2/foundry_pdk_registry.py`（`FoundryPDK`/`PDKLayer`/`PDKDevicePrimitive` dataclass + `REGISTRY` 多 foundry 注册表 + `load_foundry_pdk` 加载器 + `pdk_conformance_report` 符合性校验 + `convert_pdk_to_spec` 复用 G4 层映射）+ 门禁 `lda/run_soc_pdk_integration_smoke.py`（复用 S5 全链路拿主权 GDS）。
+- **多 foundry 公开近似注册表**：AIM Photonics / Tower Semiconductor / GlobalFoundries / imec 四家 MPW 公开文档工艺参数（层映射 + 最小/典型/最大线宽窗口 + 器件原语目录），逐条 `prov` 强制 `public:` 开头，明确标非 NDA 真值。
+- **主权 GDS 符合性校验**（`pdk_conformance_report`）：层映射 `all_mapped`（主权层 ⊆ PDK 支持层）+ 逐层最小特征宽度（PATH 用 `width_um`、BOUNDARY 用 bbox 短边）≥ PDK `min_width_um` + 工艺窗口观测（超 `max_width` 标「宽线/焊盘按设计允许」仅信息非硬失败）+ 器件原语目录信息；`conformant = all_mapped ∧ 所有层 min_feature_ok ∧ primitive_ready`。
+- **真实 NDA PDK 替换**：`load_foundry_pdk`（foundry 授权方按 schema 注入 JSON/dict，pdk 级与每条 layer/primitive `prov` 强制 `NDA:`/`public:` 开头否则拒绝加载）+ **反向探针**（合成更严 PDK（SI min_width=2.0µm）→ `conformant` 必须翻转 `False`，证明替换真生效而非走默认）；另提供 `examples/sovereign_evidence/foundry_pdk_TEMPLATE.json` 填空模板（`prov=public:template-placeholder`）。
+- N=16 默认（控 CI 预算）实测：**ALL_PASS = True**：S5 全链路 + 4 foundry 注册表均 `conformant=True` + 模板 PDK 替换 `conformant=True` + 反向探针 `conformant=False`（SI 层 `min_feature_ok=False`）+ 加载器护栏拒绝坏 `provenance`；N=64 主权版图符合性已按需验证（AIM PDK 四层均 ≥ min_width，conformant=True，<0.2s）。
+- 三同步：README `## 当前账本` + CONTRIBUTING 顶块 CI core 计数 305→306，`run_count_consistency_smoke` 13/13 PASS。
+- 🔴 诚实边界（核心）：本增量**不持有任何 foundry NDA 真值**；注册表数值为「公开 MPW 文档近似 + 逐条规格锚」，非真实 PDK deck；`conformant=True` 仅代表「主权 GDS 满足该 PDK 契约（层 + 特征级）」，**不构成**真实 tape-out 授权（真实授权须由 foundry 商务签约注入 NDA PDK 替换；per-cell 器件原语名比对维度显式标未覆盖，不静默放过）。能效维度仍禁止宣称（红线）。
+
 ## v0.9.211（2026-10-08 · **光子传感器新征程 PS-M9（G2 器件本体）· slot/suspended 截面几何单一真源 + 可制造性 DRC + PDK 器件本体 + `resolve_specs(only=…)` 子集过滤前移** · 账本 **490 不变** · 严格独立 **468 不变** · 降级 **3** · 自证桩 **19** · 独立率 **95.51%** · 天花板 **97.55%** · CI core **295 → 296** · 端点 **148 不变**）
 
 - **① 截面几何单一真源（L2）**：`lda_l2/primitives.py` 新增 `WAVEGUIDE_XS_DEFAULTS`（**strip / thinwire / slot / suspended 四档**截面参数唯一真源）+ `HIGH_SENS_DEFAULTS` + `_LAYER_RELEASE = 8`。harness 侧 `_batch_b38_numeric._DEFAULTS` 由**副本改为引用**（`dict(_XS["strip"], Lhalf_um=L_HALF_DEFAULT)` 等四档）⇒ 消灭「同一物理在库内有两份可独立漂移的数值」。

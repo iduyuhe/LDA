@@ -25,6 +25,7 @@ DBU = 1e-3                     # 数据库单位（µm）→ 1 DBU = 1 nm
 LIB_LAYER_SI = 1               # 顶层硅（芯层）
 LIB_LAYER_CLAD = 2             # 包层/BOX
 LIB_LAYER_METAL = 3            # 金属层
+LIB_LAYER_METAL3 = 9           # 金属层 3（M2 之上互连；S4 规模债 3-着色破奇圈，号段避开他域）
 LIB_LAYER_LABEL = 4
 # ── 超导层（D-133 · 超导 transmon 征程 S1）──
 LIB_LAYER_SC_FILM = 10       # 超导薄膜（Al/Nb 量子比特导体岛 + CPW 馈线）

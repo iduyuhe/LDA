@@ -64,6 +64,16 @@ CORE_SMOKES: List[str] = [
     "run_schip_s3_smoke.py",       # 超导征程 S3：N 比特阵列 P&R + 规模 DRC/LVS + 逐边物理（D-135）
     "run_schip_s4_smoke.py",       # 超导征程 S4：读出/控制线路 + 串扰/损耗预算（D-136）
     "run_schip_s5_smoke.py",       # 超导征程 S5：大 N 路由 + 频率避撞 + 规模压力（D-137/142/143）
+    "run_soc_s2_smoke.py",         # 光子计算 SoC 征程 S2：集成度判据 C2/C3/C6/C8/C9 机器核验（G2 功能级 EIC / G3 多层光电 GDS / G5 冷态标定对接）
+    "run_soc_s3_smoke.py",         # 光子计算 SoC 征程 S3：端到端设计包 + C1-C9 机器核验（真实 N×N 主权 P&R GDS / EIC / 光 IO / 封装光源 / 标定环 / 端到端推理 vs 数字 golden）· CI core 297→298
+    "run_soc_s4_smoke.py",         # 光子计算 SoC 征程 S4：规模爬升 G6（N 16→32→64→128）· 复用 S3 全链路 C1-C9 + 规模债照妖镜（n_unresolved_crossings==0 / n_mzi==N(N−1)/2）· CI core 298→299
+    "run_soc_s5_smoke.py",         # 光子计算 SoC 征程 S5：主权 GDS 真实导出 + DRC/LVS 全流程签核（N=64 落盘 lda_64x64_mzi_mesh.gds + 文件往返 sha256 无损 + 几何 DRC + 含 M3 奇圈破局层 + 整芯片 SoC GDS 含 M3 + mesh 子集逐层一致）· 复用 C1-C9 · CI core 299→300
+    "run_soc_s5_ext_smoke.py",     # 光子计算 SoC 征程 S5-ext：在 S5 之上叠加 G1 单片激光 + G4 foundry PDK 对接（AIM Photonics 公开近似层映射 + foundry DRC 签核 + FP 腔单片激光集成判据）· 复用 S5 全链路 C1-C9 + S5-G1~G5 · CI core 300→301
+    "run_soc_g6_tiling_smoke.py",  # 光子计算 SoC 征程 G6 杠杆②：多核 array tiling（M×M 主权核几何复制 + 阵列 DRC/LVS/层栈/MVM/跨核光 IO）· 复用 S5-ext 单核主权 GDS（build_soc_gds）· CI core 301→302
+    "run_soc_g6_wdm_tdm_smoke.py",  # 光子计算 SoC 征程 G6 杠杆①③：WDM 多 λ 复用（主权 mesh 波长相关酉真算 + demux/mux GDS DRC）+ 时间复用调度（K 帧 MVM 保真 + 重配置相位变更计数）· 复用 S5 全链路 C1-C9 + S5-G1~G5 · CI core 302→303
+    "run_soc_tapeout_signoff_smoke.py",  # 光子计算 SoC 征程 G6 收官：主权 GDS → foundry DRC 闭集 流片 signoff（G4 foundry_pdk + 显式闭集规则牌，13 条闭集规则全过）· 复用 S5 全链路 C1-C9 + S5-G1~G5 拿主权 GDS · CI core 303→304
+    "run_soc_tapeout_signoff_deck_smoke.py",  # 光子计算 SoC 征程 G6 收官增量：真实 foundry NDA deck 替换闭集机制（FoundryDeck schema + load_foundry_deck + 模板文件加载替换 + 反向探针证明替换真生效 + env 注入 + 加载器 provenance 护栏）· 复用 S5 全链路 · CI core 304→305
+    "run_soc_pdk_integration_smoke.py",  # 光子计算 SoC 征程 S5-ext：真实 foundry PDK 对接机制（多 foundry 公开近似注册表 AIM/Tower/GF/imec + FoundryPDK 契约 schema + load_foundry_pdk + 主权 GDS 符合性校验 + 反向探针证明替换真生效 + 加载器 provenance 护栏）· 复用 S5 全链路 · CI core 305→306
     "run_large_scale_smoke.py",
     # 工业化验证（D-76：FAIL 检出机制 + 性能基准——坏 smoke 残留根治的守卫）
     "run_ci_industrial_smoke.py",
@@ -2178,6 +2188,18 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_l1_spec_smoke.py": 120.0,
     # T7-B4 新增：183-run 实测 0.3s · 3.05× 取整 · 不低于默认 300s
     "run_large_scale_smoke.py": 300.0,
+    # 🔴 S4 规模爬升压力门（N=64 主权 mesh 构建 ~9min + C7 MVM + C8 GDS 装配数千波导）：
+    #   本机 3.14.3 实测上界 ~1200s（~20min）。作为**规模债照妖镜**刻意压 N=64（C6 复场可辨识
+    #   条件化规模债即在此规模暴露），登记 2400s ≈ 2× 实测（慢机裕度）；若 CI 机显著更慢按超时
+    #   预算纪律提至 ≥3×。判据一字未改（纯耗时），且属单调放宽（放宽上限不使已 PASS 项变 FAIL）。
+    "run_soc_s4_smoke.py": 2400.0,
+    "run_soc_s5_smoke.py": 2400.0,
+    "run_soc_s5_ext_smoke.py": 2400.0,
+    "run_soc_g6_tiling_smoke.py": 600.0,  # 🔴 G6 多核 array tiling（N=8 M=4 实测 ~1.4s，登记 600s 留慢机裕度；判据一字未改，纯耗时）
+    "run_soc_g6_wdm_tdm_smoke.py": 600.0,  # 🔴 G6 WDM/TDM（N=8 W=4 K=4 实测数秒，登记 600s 留慢机裕度；判据一字未改，纯耗时）
+    "run_soc_tapeout_signoff_smoke.py": 600.0,  # 🔴 G6 foundry DRC 闭集 signoff（N=16 实测 ~4s：S5 3.3s + 闭集 DRC <0.3s，登记 600s 留慢机裕度；判据一字未改，纯耗时）
+    "run_soc_tapeout_signoff_deck_smoke.py": 600.0,  # 🔴 G6 NDA deck 替换机制（N=16 实测 ~4s：S5 3.3s + 闭集/替换 DRC <0.3s + 反向探针，登记 600s 留慢机裕度；判据一字未改，纯耗时）
+    "run_soc_pdk_integration_smoke.py": 600.0,  # 🔴 S5-ext 真实 PDK 对接机制（N=16 实测 ~4s：S5 3.3s + 4 foundry 注册表 + 模板/更严 PDK 符合性 + 反向探针，登记 600s 留慢机裕度；判据一字未改，纯耗时）
     # T7-B4 新增：183-run 实测 18.7s · 3.05× 取整 · 不低于默认 300s
     "run_layout_sim_smoke.py": 300.0,
     # T7-B4 新增：183-run 实测 0.1s · 3.05× 取整 · 不低于默认 300s

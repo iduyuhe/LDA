@@ -1,0 +1,22 @@
+{
+  "_README": "S5-ext 真实 PDK 对接 · foundry 授权方填空模板。复制本文件 → 填入签约 NDA 真值（层映射 / 工艺窗口 / 器件原语）→ 每条 prov 改为 'NDA:<来源>'（近似则保持 'public:'）→ 设环境变量 LDA_FOUNDRY_PDK 指向本文件，或调用 load_foundry_pdk(path) 注入。provenance 与每条 layer/primitive 的 prov 必须以 'NDA:'（真实签约）或 'public:'（近似）开头，否则加载器拒绝（防冒充 NDA）。",
+  "foundry": "YOUR_FOUNDRY(占位)",
+  "node": "SOI xxx nm",
+  "provenance": "public:template-placeholder",
+  "layers": [
+    {"sovereign_layer": 1, "foundry_layer": 1, "purpose": "Si 波导/器件层", "min_width_um": 0.12, "typ_width_um": 0.45, "max_width_um": 20.0, "prov": "public:template-placeholder"},
+    {"sovereign_layer": 3, "foundry_layer": 10, "purpose": "Cu metal1 布线", "min_width_um": 0.20, "typ_width_um": 1.0, "max_width_um": 50.0, "prov": "public:template-placeholder"},
+    {"sovereign_layer": 6, "foundry_layer": 11, "purpose": "TiN 热相移层", "min_width_um": 0.50, "typ_width_um": 1.0, "max_width_um": 5.0, "prov": "public:template-placeholder"},
+    {"sovereign_layer": 9, "foundry_layer": 12, "purpose": "Cu metal3 / 通孔", "min_width_um": 0.20, "typ_width_um": 1.0, "max_width_um": 50.0, "prov": "public:template-placeholder"}
+  ],
+  "primitives": [
+    {"name": "strip_waveguide", "purpose": "单模 strip 波导", "ports": null, "bbox_um": null, "prov": "public:template-placeholder"},
+    {"name": "grating_coupler", "purpose": "光栅耦合器（光纤 IO）", "ports": 1, "bbox_um": null, "prov": "public:template-placeholder"},
+    {"name": "mzi", "purpose": "Mach-Zehnder 干涉单元", "ports": 2, "bbox_um": null, "prov": "public:template-placeholder"},
+    {"name": "thermal_phase_shifter", "purpose": "热光相移器", "ports": 2, "bbox_um": null, "prov": "public:template-placeholder"},
+    {"name": "ge_photodetector", "purpose": "Ge 光电探测器", "ports": 2, "bbox_um": null, "prov": "public:template-placeholder"},
+    {"name": "metal_pad", "purpose": "金属焊盘（EIC 键合）", "ports": null, "bbox_um": null, "prov": "public:template-placeholder"}
+  ],
+  "spec_anchors": ["占位：填入 foundry 签约文档来源"],
+  "honest_boundary": "占位：本 PDK 为 foundry 授权方注入；provenance 以 'NDA:' 开头方为真实签约 deck。"
+}

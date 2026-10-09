@@ -99,8 +99,10 @@ def _route_points(rr) -> List[Tuple[float, float]]:
 
 
 def _gds_layer_of(seg) -> int:
-    """段 → GDS 层常量（多层路由忠实绘制用）。M1→芯层 / M2→金属层。"""
+    """段 → GDS 层常量（多层路由忠实绘制用）。M1→芯层 / M2→金属层 / M3→金属层3。"""
     name = str(getattr(seg, "layer", "M1")).upper()
+    if name == "M3":
+        return gds_export.LIB_LAYER_METAL3
     if name == "M2":
         return gds_export.LIB_LAYER_METAL
     return gds_export.LIB_LAYER_SI

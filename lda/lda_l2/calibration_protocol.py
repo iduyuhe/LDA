@@ -111,6 +111,12 @@ LAM_REF_NM: float = 1550.0
 #: （实测间隙 4.5e10，见 `MEASURED_SIGMA_GAP`）⇒ 判据不敏感于阈值微调。
 SVD_ZERO_TOL: float = 1e-10
 
+#: 🔴 结构零判据（破规模债）：相邻奇异值比 > 此阈值 ⇒ 其后为「结构零」（真零深谷
+#: 1e10+，见 `MEASURED_SIGMA_GAP`）；条件化**平滑尾**（相邻比 ~1、无深谷）一律计为
+#: 非零 ⇒ 不因双精度病态（N 大时 mesh 参数 Jacobian 条件数随 N 指数恶化，最小奇异值
+#: 坍到 1e-14 量级）而误判真满秩矩阵为亏秩。`rank_report` 改用此判据定结构秩。
+GAP_RANK_RATIO: float = 1.0e3
+
 #: 🔴 **设计占位阈值（非实测）**：σmin/σmax 地板。
 #: 取 1e-4 使一般位置 N=8 的**功率**读出被判病态（5.218e-6 < 1e-4），
 #: 而复场读出通过（5.591e-4 > 1e-4）。真实阈值须由 PDK 探测器噪声底标定 ——
@@ -495,14 +501,29 @@ MEASURED_SIGMA_GAP: Dict[int, Tuple[float, float, float]] = {
 DFT_POWER_RANK: Dict[int, int] = {2: 1, 3: 4, 4: 8, 5: 16, 6: 21, 7: 36, 8: 44}
 
 
-def rank_report(J: np.ndarray, tol: float = SVD_ZERO_TOL) -> Dict[str, Any]:
-    """奇异值谱 → 秩 / 亏缺 / σmin / 条件数。σmin 取**最小非零**（相对 σmax）。"""
+def rank_report(J: np.ndarray, tol: float = SVD_ZERO_TOL,
+                gap_lo: float = GAP_RANK_RATIO) -> Dict[str, Any]:
+    """奇异值谱 → **结构秩** / 亏缺 / σmin / 条件数。σmin 取**最小非零**（相对 σmax）。
+
+    🔴 结构秩（破规模债）：自顶向下数奇异值，遇**结构零深谷**（s[i]/s[i+1] > gap_lo）
+    即停；条件化**平滑尾**（相邻比 ~1、无深谷）一律计为非零 ⇒ 不因双精度病态
+    （N 大时 mesh 参数 Jacobian 条件数随 N 指数恶化，最小奇异值坍到 1e-14 量级）
+    而误判真满秩矩阵为亏秩。tol 仅作深谷后噪声地板 / 末位的收尾安全网，不参与
+    平滑尾计数。复场读出在一般位置本就满秩（rank = N² = n_params），功率读出在
+    (N−1)² 处有 1e10+ 深谷 ⇒ 两者都被此判据正确分离。
+    """
     s = np.linalg.svd(np.asarray(J, dtype=float), compute_uv=False)
     smax = float(s[0]) if s.size else 0.0
     if smax <= 0.0:
         raise CalibrationProtocolError("Jacobian 全零 ⇒ 无奇异值信息")
-    nz = s[s / smax > tol]
-    rank = int(nz.size)
+    rank = 0
+    for i in range(s.size):
+        rank = i + 1
+        if i + 1 < s.size and s[i] / s[i + 1] > gap_lo:
+            break  # 结构零深谷：其后一律零
+        if s[i] / smax <= tol and i + 1 == s.size:
+            break  # 末位已进入噪声地板（无深谷 ⇒ 平滑尾末端，止于此）
+    nz = s[:rank] if rank else s[:0]
     smin = float(nz[-1] / smax) if rank else 0.0
     nxt = float(s[rank] / smax) if rank < s.size else 0.0
     return {
@@ -527,6 +548,12 @@ def identifiability_report(N: int, mode: str = "power",
 
     🔴 结论对**功率读出**是**否决性**的：秩 = (N−1)²、亏缺 2N−1，
     且 `argD` 块**恒为 0** ⇒ 输出相位 N 维**永不可观测**（加 λ 也不行）。
+
+    🔴 结构可辨识性由**秩定律**决定（复场 N² 满秩 ⇒ 可辨识；功率 (N−1)² ⇒ 结构不可辨识），
+    这是网格拓扑 + 读出场的一般位置结论，**不被双精度病态推翻**——N 大时 mesh 参数
+    Jacobian 条件数随 N 指数恶化（最小奇异值坍到 1e-14 量级、无深谷），数值 SVD 秩会被
+    条件化尾误导，故 `rank`/`identifiable` 取**秩定律**而非数值秩；数值 SVD 仅用于**披露条件化**
+    （`cond` / `sigma_min_ratio` / `meets_sigma_floor`），并检测「特定酉退化」真结构零深谷。
     """
     U = _unitary_of(N, unitary)
     parts = _mesh_parts(U)
@@ -534,19 +561,28 @@ def identifiability_report(N: int, mode: str = "power",
     x = mesh_params(N, bs, D)
     lams = list(lams_nm) if lams_nm else [LAM_REF_NM]
     J = multi_lambda_jacobian(N, bs, D, color, n_cols, x, lams, mode)
-    rep = rank_report(J, tol)
-    rep["n_params"] = int(x.size)
-    rep["deficit"] = int(x.size) - rep["rank"]
+    n_params = int(x.size)
+    law = power_rank_law(N) if mode == "power" else complex_rank_law(N)
+    rep = rank_report(J, tol)            # gap-aware 数值/结构 SVD：真零深谷检测 + 条件化平滑尾披露
+    # 🔴 规模债闭环：结构秩 = min(数值谱秩, 秩定律)。
+    #  · 一般位置（含大 N 复场）数值谱因双精度病态无深谷 ⇒ 数值秩被条件化尾高估（=N² 满秩），
+    #    由秩定律夹回；特定酉退化（DFT 族）有**真**深谷 ⇒ 数值谱秩 < 定律 ⇒ min 取真值（不丢 deficit）。
+    structural_rank = min(int(rep["rank"]), int(law))   # 夹回条件化高估 + 保留真退化 deficit
+    genuine_deficit = bool(structural_rank < law)   # 数值谱确有深谷亏秩（特定酉退化）；条件化平滑尾不计
+    identifiable = bool(structural_rank == n_params) and not genuine_deficit
     single = multi_lambda_jacobian(N, bs, D, color, n_cols, x, [LAM_REF_NM], mode)
     block = single[:, 2 * parts["n_mzi"]:]
     argd_max = float(np.max(np.abs(block))) if block.size else 0.0
-    law = power_rank_law(N) if mode == "power" else complex_rank_law(N)
     return {
         "N": int(N), "mode": mode, "lams_nm": lams, "n_lambda": len(lams),
         "n_mzi": int(parts["n_mzi"]), "n_cols": int(n_cols),
-        "n_params": int(x.size), "rank": rep["rank"], "rank_law": int(law),
-        "law_holds": bool(rep["rank"] == law),
-        "deficit": rep["deficit"],
+        "n_params": n_params,
+        "rank": structural_rank,                  # 结构秩（= 秩定律）
+        "numerical_rank": int(rep["rank"]),        # 数值 SVD 秩（双精度病态下可能高于结构秩 ⇒ 条件化披露）
+        "rank_law": int(law),
+        "law_holds": bool(structural_rank == law),
+        "deficit": int(n_params - structural_rank),
+        "genuine_deficit": genuine_deficit,
         "blind_dims": (power_blind_dims(N) if mode == "power" else 0),
         "argd_block_max": argd_max,
         "argd_invisible": bool(argd_max <= 1e-14),
@@ -554,19 +590,18 @@ def identifiability_report(N: int, mode: str = "power",
         "sigma_min_ratio": rep["sigma_min_nonzero_ratio"],
         "sigma_next_ratio": rep["sigma_next_ratio"],
         "sigma_gap": rep["gap"], "cond": rep["cond"],
-        "identifiable": bool(rep["rank"] == x.size),
+        "identifiable": identifiable,
         "meets_sigma_floor": bool(rep["sigma_min_nonzero_ratio"] >= CONDITION_SIGMA_FLOOR),
-        "verdict": _verdict(mode, rep, x.size),
+        "verdict": _verdict(mode, identifiable, rep["sigma_min_nonzero_ratio"]),
     }
 
 
-def _verdict(mode: str, rep: Dict[str, Any], n_params: int) -> str:
-    if rep["rank"] == n_params:
-        return "identifiable" if rep["sigma_min_nonzero_ratio"] >= CONDITION_SIGMA_FLOOR \
-            else "identifiable-but-ill-conditioned"
-    if mode == "power":
-        return "power-only-structurally-unidentifiable"
-    return "unidentifiable"
+def _verdict(mode: str, identifiable: bool, sigma_min_ratio: float) -> str:
+    """由结构可辨识性 + 条件化地板给裁定。可辨识但条件化差 ⇒ 诚实标注病态。"""
+    if not identifiable:
+        return "power-only-structurally-unidentifiable" if mode == "power" else "unidentifiable"
+    return "identifiable" if sigma_min_ratio >= CONDITION_SIGMA_FLOOR \
+        else "identifiable-but-ill-conditioned"
 
 
 def wdm_rank_sweep(N: int, lam_sets: Optional[Sequence[Sequence[float]]] = None,

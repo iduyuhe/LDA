@@ -84,8 +84,12 @@ DEFAULT_SOI_STACK = LayerStack(
         "M1": Layer("M1", "signal", z_top_um=0.22, z_bot_um=0.0),    # Si 波导层
         "VIA12": Layer("VIA12", "via", z_top_um=0.42, z_bot_um=0.22),  # W 通孔
         "M2": Layer("M2", "signal", z_top_um=0.62, z_bot_um=0.42),   # 金属互连层
+        # S4 规模债（N≥64 交叉图含奇圈）：注入第 3 信号层 M3，异层恒隔离
+        # （can_cross(M3, M1/M2)=False，物理正确），确定性破解 2 层不可解的奇圈。
+        "VIA23": Layer("VIA23", "via", z_top_um=0.82, z_bot_um=0.62),  # W 通孔 M2↔M3
+        "M3": Layer("M3", "signal", z_top_um=1.02, z_bot_um=0.82),   # 金属互连层 3
     },
-    via_map={"VIA12": ("M1", "M2")},
+    via_map={"VIA12": ("M1", "M2"), "VIA23": ("M2", "M3")},
 )
 
 # 量子工艺栈（Al-AlOx：M1 超导布线 / VIA1 通孔 / M2 超导地平面）——预留

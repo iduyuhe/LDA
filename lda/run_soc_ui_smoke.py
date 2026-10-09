@@ -78,7 +78,7 @@ def _tdm_ok() -> bool:
 
 def main() -> int:
     print("=" * 74)
-    print("光子计算 SoC 案例卡 跨源一致性 + 前端取值路径门禁（v0.9.213）")
+    print("光子计算 SoC 案例卡 跨源一致性 + 前端取值路径门禁（v0.9.214 · 含交互式 tiling 预览）")
     print("=" * 74)
 
     # ── B 跨源一致性 ───────────────────────────────────────────────
@@ -113,6 +113,25 @@ def main() -> int:
     check("B6 MZI 计数闭式 N(N−1)/2 ≡ 实测档（120/2016/8128）", ok6,
           "16=%d 64=%d 128=%d" % (sc.reck_mzi_count(16), sc.reck_mzi_count(64),
                                   sc.reck_mzi_count(128)))
+
+    # 🔴 B8 前端闭式同源：index.html 的 socTilingMzi(n) ≡ 后端 reck_mzi_count(N(N−1)/2)
+    #    （防前端预览把 MZI 数硬编码/漂离真源 —— 跨层变体：卡内常量≠真源）
+    _html_b8 = read_text(os.path.join(STATIC, "index.html"))
+    _mzi_fn = re.search(r'function\s+socTilingMzi\(n\)\s*\{\s*return\s*([^;]+);', _html_b8)
+    ok8 = False
+    _d8 = "未匹配 socTilingMzi"
+    if _mzi_fn:
+        _expr = _mzi_fn.group(1).strip()
+        _closed = "n*(n-1)/2" in _expr.replace(" ", "")
+        try:
+            ok8 = _closed and all(
+                abs(eval(_expr, {"__builtins__": {}}, {"n": k}) - k * (k - 1) // 2) < 1e-9
+                for k in (2, 8, 16, 64, 128))
+            _d8 = "expr=%r 同源=%s" % (_expr, ok8)
+        except Exception as e:  # pragma: no cover
+            _d8 = "eval error: %s" % e
+    check("B8 前端 socTilingMzi(n) 闭式 ≡ 后端 reck_mzi_count(N(N−1)/2)（同源对拍）",
+          ok8, _d8)
 
     # 🔴 B7 反向完备：改真源常量 ⇒ 跨源判据必红（证守卫读真源、非硬编码镜像）
     _orig_lam = _wdm.LAMBDA0_UM

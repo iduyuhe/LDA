@@ -416,9 +416,10 @@ def main() -> int:
           "%d vs %d" % (len(re.findall(r"<div\b", idx)), idx.count("</div>")))
 
     # F10 🔴 案例卡面板必须可经 hash **深链**直达（CASE_MAP 覆盖）。
-    #   教训：`sec-sensor` 面板初版只登记了容器与按钮，**漏登 CASE_MAP** ⇒ 与 8 个
+    #   教训：`sec-sensor` 面板初版只登记了容器与按钮，**漏登 CASE_MAP** ⇒ 与当时 8 个
     #   `data-stage="accept"` 同族案例卡（qchip/schip/pchip/d4/oi/pm/accel/ecore）不一致，
     #   客户无法用 `#sec-sensor` 一键直达。「能点到」≠「能深链到」——本判据把它机器化。
+    #   🔴 棘轮：族随新增面板（现含 sec-soc）只增不减，下限随之 9→10。
     _cm = re.search(r"var\s+CASE_MAP\s*=\s*\{(.*?)\}\s*;", idx, re.S)
     _cm_pairs = dict(re.findall(r'"(#sec-[A-Za-z0-9_]+)"\s*:\s*"([A-Za-z0-9_]+)"',
                                 _cm.group(1) if _cm else ""))
@@ -427,7 +428,7 @@ def main() -> int:
         [m.group(1) for m in re.finditer(r'id="(sec-[A-Za-z0-9_]+)"[^>]*data-stage="accept"', idx)]))
     _missing = [s for s in _accept_ids if ("#" + s) not in _cm_pairs]
     check("F10 🔴 全部 accept 案例卡均登记 CASE_MAP（hash 深链可达 · 曾漏 sec-sensor）",
-          len(_accept_ids) >= 9 and not _missing,
+          len(_accept_ids) >= 10 and not _missing,
           "accept=%d map=%d missing=%s" % (len(_accept_ids), len(_cm_pairs), _missing))
     check("F10b sec-sensor 映射到 runSensor", _cm_pairs.get("#sec-sensor") == "runSensor",
           "got=%r" % _cm_pairs.get("#sec-sensor"))

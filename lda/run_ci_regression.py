@@ -1417,6 +1417,11 @@ CORE_SMOKES: List[str] = [
     # 🔴 突变探针须先证「真能变红」且 patch 到被消费的那份引用（血案 #3/#21）。
     "run_ecore_e19_smoke.py",
     "run_webui_entry_smoke.py",
+    # 🔴 v0.9.213 光子计算 SoC 案例卡（/api/soc_demo · #sec-soc）跨源一致性 + 前端取值路径门禁：
+    #   卡内 WDM/TDM 杠杆常量 ≡ lda_l2 真源（soc_wdm/soc_tdm）逐位同源 + 反向探针（改真源必红）；
+    #   端点接线 / 三入口面齐备 / verdict 恒 DESIGN_SIGNOFF；零外部光学 SDK / 零能效键 / 诚实边界；
+    #   纯文本解析 + 轻量 import，零浏览器零网络。CI core 306→307。
+    "run_soc_ui_smoke.py",
     # 🔴 v0.9.169（D-193）WebUI 案例卡前端**取值路径**门禁 —— 把血案 #32 机器化：
     #   E17-e 生产实测发现前端取 `synthesis_law.serial_ns` 而该值实际在 `.demo` 下 ⇒ **三格显示 0.0**，
     #   靠人肉翻生产页才发现。后端侧一切门禁（案例卡 B1–B24 / API 验收）**看不到这一层** ——
@@ -2590,6 +2595,9 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   同档。判据一字未改，仅按「≥3 × 跨轮实测上界」单调放宽耗时上限。
     "run_webui_json_hard_smoke.py": 120.0,
     "run_webui_entry_smoke.py": 120.0,
+    # 光子计算 SoC 案例卡跨源一致性 + 前端取值路径门禁（v0.9.213）：轻量 import lda_l2 常量
+    # + 纯文本解析，实测上界 <2s（跨源对拍 + 前端源码扫描），120.0s ≈ 60× 余量
+    "run_soc_ui_smoke.py": 120.0,
     # WebUI 案例卡前端取值路径门禁（v0.9.169 · D-193）· 纯文本解析（不执行 JS），实测 ~0.19s
     "run_webui_ecore_render_path_smoke.py": 120.0,
     # 阶段 4 · L6 参考设计门禁（W4-1 混合加速器）· 实测上界 <2s（14 自检含 3 次全量 run_reference + 3 探针）

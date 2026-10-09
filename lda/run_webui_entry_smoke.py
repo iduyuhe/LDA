@@ -72,7 +72,7 @@ INJECTOR_SCRIPTS = ("nav.js", "cs_widget.js", "guide_widget.js", "onboard_widget
 #:   现在改为**现算**：案例卡族 = `index.html` 中 `.sec[data-stage="accept"]` 的 id。
 #:   `CASE_PANELS_MIN` = **非空下限**（棘轮，随族增长只增不减）：防"把 data-stage 摘掉
 #:   即脱族"把族缩小到空，令 `all(空集)` 恒真 = 假绿（血案 #32 第二层）。
-CASE_PANELS_MIN = 9
+CASE_PANELS_MIN = 10
 _ACCEPT_PATTERNS = (
     re.compile(r'data-stage="accept"[^>]*id="(sec-[A-Za-z0-9_]+)"'),
     re.compile(r'id="(sec-[A-Za-z0-9_]+)"[^>]*data-stage="accept"'),
@@ -349,13 +349,13 @@ def main() -> int:
     g6 = audit(m6, js)["e1"] is False
     check("G6 反向：删掉 #sec-sensor 首屏直达 ⇒ E1 必红（新增面板漏首屏入口 · 本版血案）", g6)
 
-    # G7 减面攻击：把某案例卡（sec-sensor）的 data-stage 摘掉 ⇒ 族 9→8 ⇒ E1b 必红
+    # G7 减面攻击：把某案例卡（sec-sensor）的 data-stage 摘掉 ⇒ 族 10→9 ⇒ E1b 必红
     #    （若不设下限，族缩到空时 all(空集) 恒真 ⇒ E1/E3/F2 全部假绿）
     m7 = re.sub(r'(<div class="sec" )data-stage="accept"([^>]*id="sec-sensor">)',
                 r"\g<1>\g<2>", html, count=1)
     a7 = audit(m7, js)
     g7 = (a7["e1b"] is False) and (len(a7["case_panels"]) == len(r["case_panels"]) - 1)
-    check("G7 反向：摘掉某案例卡 data-stage（族 9→8）⇒ E1b 必红（减面假绿防线）", g7,
+    check("G7 反向：摘掉某案例卡 data-stage（族 10→9）⇒ E1b 必红（减面假绿防线）", g7,
           "族=%d" % len(a7["case_panels"]))
 
     # G8 🔴 **假绿复现**（verbatim 旧实现）：在"删掉 sec-sensor 直达"的缺陷页上，

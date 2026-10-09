@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.9.213（2026-10-09 · 光子计算 SoC 征程 WebUI 只读案例卡接入：独立案例卡 #sec-soc + GET /api/soc_demo + 跨源一致性门禁 run_soc_ui_smoke · 账本 490 不变 · 严格独立 468 不变 · 降级 3 · 自证桩 19 · 独立率 95.51% · 天花板 97.55% · CI core 306→307 · 端点 148→149）
+
+**本版只动对外窗口层，不动后端/求解器/账本**（零净增锚 ⇒ 账本 490 / strict 468 / 桩 19 / 独立率 95.51% / 天花板 97.55% / `_PHYSICAL_LAW` 478 全不变）。
+
+**① WebUI 只读案例卡（A 档接入 · 三入口面齐备）**：
+- 新建 `lda/lda_webui/soc_case.py`（顶层只 `import json/math/os/typing` · 零重计算 · 自检 14/14 ALL PASS）：把 v0.9.212 已在后端 + CI core 落地的 SoC 全链（S0–S5-ext + G6）组装成只读案例卡；`verdict` 恒 `DESIGN_SIGNOFF`（**非** ACCEPT/PASS），返回体自带 `honest_note`（非流片实测 / 不报任何 fabricated 能效 / NDA 真值本机不持有 / signoff_ready 非真实 tape-out 授权）。
+- `routes.py` 新增 `h_soc_demo` 并登记 `GET_ROUTES`（**不进** `HEAVY_POST_PATHS`）；免登录、异常不 500（返 200+error）、零重计算、无 DoS 面。
+- `static/index.html` 新增 `#sec-soc` 面板（含 `id="runSoc"` 按钮 + `runSoc`/`renderSoc`）+ 首屏 `#wbCaseBar` 直达条目 + `CASE_MAP` 的 `#sec-soc → runSoc` hash 深链登记（与 9 个同族 `data-stage="accept"` 案例卡一致）。
+
+**② 跨源一致性 + 前端取值路径门禁 `run_soc_ui_smoke.py`（19 判据 · 入 CORE）**：
+- B 节：卡内 `LEVERS` 的 WDM λ0/栅格/tol、TDM 帧数/tol **逐位 ≡ `lda_l2/soc_wdm.py` / `soc_tdm.py` 真源** + 反向探针（改真源常量 ⇒ 判据必红，证守卫读真源非硬编码镜像）；MZI 计数闭式 `N(N−1)/2` ≡ 实测档（120/2016/8128）。
+- C 节：端点接线 + 三入口面齐备 + `verdict` 恒 `DESIGN_SIGNOFF` + 反向探针（摘 CASE_MAP 深链必红）。
+- D 节：零外部光学 SDK / 零 numpy / 零 lda_l2 import；返回体不含任何能效键；诚实边界四短语齐全。
+
+**③ 入口可达性门禁棘轮（防减面假绿）**：`run_webui_entry_smoke` 的 `CASE_PANELS_MIN` 9→10（案例卡族随新增面板只增不减）；`run_sensor_panel_smoke` F10 下限 9→10。两道门禁复跑全绿（entry 24/0、sensor 46/0、soc_ui 19/0）。
+
+**🔴 诚实边界不变**：主权 GDS 经 foundry DRC 闭集（公开近似 + 逐条规格锚）签核 = 可制造性就绪，**非**真实 foundry NDA tape-out 授权（真实授权须签约注入 NDA deck/PDK 替换闭集）；WDM 须致密栅格（网格色散敏感，10nm 离带 MVM 误差 ~21% 物理极限）；能效维度仍禁止宣称（红线）。
+
 ## v0.9.212（2026-10-09 · 光子计算 SoC 征程 S0–S5-ext + G6 全链落地：主权光子计算 mesh 全链路 + 主权 GDS 签核 + 多核 tiling + WDM/TDM + foundry 闭集 signoff + NDA deck 替换 + 多 foundry PDK 对接 · 账本 490 不变 · 严格独立 468 不变 · CI core 296→306 · 端点 148 不变）
 
 > 本段为 SoC 征程 S2/S3/S4/S5/S5-ext/G6 杠杆②+①③+闭集 signoff+NDA deck 替换+S5-ext 多 foundry PDK 对接机制 的**发版记录**（**已随 v0.9.212 推送**，2026-10-09）。CI core 计数已在 README `## 当前账本` 与 CONTRIBUTING 顶块同步到 **306**（S2：296→297，S3：297→298，S4：298→299，S5：299→300，S5-ext：300→301，G6 tiling：301→302，G6 WDM/TDM：302→303，G6 闭集 signoff：303→304，G6 NDA deck 替换：304→305，S5-ext 多 foundry PDK 对接机制：305→306），`run_count_consistency_smoke` 13/13 PASS。

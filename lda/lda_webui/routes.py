@@ -317,6 +317,39 @@ def h_pchip_demo(h, p, q, path):
                       "case_id": _pc.CASE_ID, "verdict": "ERROR"})
 
 
+def h_soc_demo(h, p, q, path):
+    """GET /api/soc_demo —— 光子计算 SoC（PIC）案例卡（只读 · 免登录 · 微秒级）。
+
+    v0.9.213：把 SoC 征程（S0–S5-ext + G6）「吃狗粮」全链在 UI 中
+    以**只读案例**呈现（多核 array tiling + WDM 多 λ 复用 + 时间复用调度 +
+    foundry 闭集 signoff + NDA deck 替换 + 多 foundry PDK 对接）。
+
+    🔴 与 `/api/pchip_demo`（硅光张量核）、`/api/qchip_demo`（光量子 LOQC）、
+    `/api/schip_demo`（超导 transmon）、`/api/ecore_demo`（电子计算芯片）**并列**：
+    这是 LDA 又一条「吃自己狗粮」征程的对外窗口。
+
+    🔴 **零重计算**：不跑仿真、不 import 求解器 —— 数字来自 ① 静态里程碑/结论
+    （可回溯到 S0–S5-ext + G6 门禁）② 纯闭式现算（MZI 计数）③ 对产出物只 `stat` 的元信息
+    ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**（与 `/api/pchip_demo`、
+    `/api/qchip_demo`、`/api/verification_ledger` 同属「公开只读验货」类）。
+
+    🔴 **不伪装实测 / 不报 fabricated 能效**：`verdict` 恒为 `DESIGN_SIGNOFF`
+    （**非** ACCEPT/PASS），返回体自带 `honest_note`（非流片实测 / 设计容量 /
+    不报任何 fabricated 能效 / foundry NDA 真值本机不持有）。
+
+    异常不 500（返回 200 + error 字段，与 `h_pchip_demo` 同风格）。
+    """
+    try:
+        from . import soc_case as _sc
+    except ImportError:
+        from lda_webui import soc_case as _sc
+    try:
+        return (200, _sc.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/soc_demo", "error": str(e)[:160],
+                      "case_id": _sc.CASE_ID, "verdict": "ERROR"})
+
+
 def h_pm_demo(h, p, q, path):
     """GET /api/pm_demo —— 非易失光子存储阵列（GST 相变 · 电辅助写）案例卡（只读 · 免登录 · 微秒级）。
 
@@ -2060,6 +2093,8 @@ GET_ROUTES = {
     "/api/schip_demo": h_schip_demo,
     # A 档接入（M5 收尾）：硅光张量核（光计算芯片）只读案例卡（零重计算 · 免登录）
     "/api/pchip_demo": h_pchip_demo,
+    # A 档接入（v0.9.213）：光子计算 SoC（PIC）只读案例卡（零重计算 · 免登录）
+    "/api/soc_demo": h_soc_demo,
     "/api/accel_demo": h_accel_demo,
     # A 档接入（E 征程收官）：电子计算芯片（模拟计算核 / MVM 交叉阵列）只读案例卡（零重计算 · 免登录）
     "/api/ecore_demo": h_ecore_demo,

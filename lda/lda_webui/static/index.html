@@ -146,6 +146,7 @@ body{padding-top:56px}
     <a href="#sec-oi" style="color:#04201b;background:#5eead4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光联接模块 M0–M5（3.2T/CPO · 热-光-电协同 + VπL 断口结算）</a>
     <a href="#sec-pm" style="color:#1a1205;background:#fcd34d;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子存储阵列 M0–M5（GST 相变 · 真 GDS + DRC/LVS · 外设与系统 · 国际对标）</a>
     <a href="#sec-sensor" style="color:#3b0721;background:#f9a8d4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子传感器 PS-M0–M6（微环折射率传感 · 真 GDS + DRC/LVS · 客户自助设计向导）</a>
+    <a href="#sec-soc" style="color:#1e1b4b;background:#c4b5fd;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子计算 SoC 芯片（S0–S5-ext + G6 · 多核/WDM/TDM/foundry signoff）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1662,6 +1663,28 @@ body{padding-top:56px}
     <div id="sensorSummary" class="summary"></div>
     <div id="sensorBody"></div>
     <div class="conclusion" id="sensorConclusion"></div>
+  </div>
+
+  <!-- 光子计算 SoC 征程（S0–S5-ext + G6）案例卡：首屏直达 #sec-soc + 只读 GET /api/soc_demo -->
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-soc">
+    <h2>★ 光子计算 SoC 芯片案例（S0–S5-ext + G6 全链：多核 tiling + WDM/TDM + foundry 闭集 signoff）</h2>
+    <div class="hint">
+      用 LDA 从零设计的一颗<b>光子计算 SoC 整芯片</b>：光子核 + 电子外设 + 光 IO + 封装光源 + 标定环，
+      在<b>同一份主权 GDS</b>内协同集成，机器核验集成度 C1–C9 全绿（S0–S5-ext + G6）。<br/>
+      三大杠杆：<b>多核 array tiling</b>（N=8 M=4 = 16 核，阵列 DRC 0 违规）·
+      <b>WDM 多 λ 复用</b>（100GHz ITU 致密栅格 0.8nm，规避网格色散）·
+      <b>时间复用调度 TDM</b>（K 帧 Haar 酉，重配置相位变更计数）。<br/>
+      🔴 本面板为<b>只读案例</b>（零重计算、免登录、不跑仿真、零外部光学 SDK）；
+      全部为<b>设计&验证能力证明</b>，<b>非流片后实测</b>；规模数字是<b>设计容量</b>，非已制备器件数；
+      <b>不报任何 fabricated 能效数字</b>；`signoff_ready=True` 仅代表主权自洽可制造性就绪，<b>非真实 foundry tape-out 授权</b>。
+      判决位由死标量给出，LLM 不进判决路径。
+    </div>
+    <div class="row">
+      <button class="btn" id="runSoc">运行光子计算 SoC 案例</button>
+    </div>
+    <div id="socSummary" class="summary"></div>
+    <div id="socBody"></div>
+    <div class="conclusion" id="socConclusion"></div>
   </div>
 
   <div class="footer" data-page-node-id="n4rEeCHGtMlHrVaGZxjXUN">
@@ -4984,6 +5007,73 @@ function renderPChip(d){
 }
 if($('runPChip')) $('runPChip').onclick = runPChip;
 if($('runAccel')) $('runAccel').onclick = runAccel;
+if($('runSoc')) $('runSoc').onclick = runSoc;
+
+/* ═══════════ 光子计算 SoC 案例（S0–S5-ext + G6 · /api/soc_demo）═══════════ */
+async function runSoc(){
+  const btn=$('runSoc'); if(!btn) return;
+  btn.disabled=true;
+  $('socSummary').innerHTML='<span class="spin"></span> 正在装配光子计算 SoC 案例（多核 tiling + WDM/TDM + foundry signoff）…';
+  try{
+    const d=await apiGet('/api/soc_demo');
+    renderSoc(d);
+  }catch(e){ $('socSummary').textContent='错误：'+(e&&e.message?e.message:e); }
+  finally{ btn.disabled=false; }
+}
+function renderSoc(d){
+  if(!d||d.error){ $('socSummary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
+  const SP=d.span||{}, ID=d.identity||{}, LV=d.levers||{}, FS=d.foundry_signoff||{};
+  $('socSummary').innerHTML='<b>'+d.case_id+'</b> · 判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）'
+    +' · 征程 <b>'+(SP.journey_stages||'?')+'</b> 段 · 新增 CI 门禁 <b>'+(SP.new_ci_gates||'?')+'</b> 道（CI core '+(SP.ci_core_before||'?')+'→'+(SP.ci_core_after||'?')+'）';
+  var h='';
+  h+='<div class="note">物理：'+ID.physics+' · 层级：'+(ID.level||'系统级 SoC')+' · 零外部光学 SDK：<b>'+(ID.zero_optical_sdk?'是':'否')+'</b></div>';
+  h+='<div class="note">子系统（'+(ID.subsystems||'?')+'）：光子核 / 电子外设 / 光 IO / 封装光源 / 标定环</div>';
+
+  h+='<div class="summary" style="margin-top:12px">征程阶段（S0–S5-ext + G6）</div>';
+  h+=_qcTbl(['阶段','标题','关键结果'],
+    (d.journey||[]).map(function(j){ return [j.id, j.title, j.result]; }));
+
+  h+='<div class="summary" style="margin-top:12px">经端到端验证的规模档（N×N 主权 mesh · MZI = N(N−1)/2）</div>';
+  h+=_qcTbl(['N','MZI','阶段','DRC','LVS','光 IO 端口','端到端 MVM 相对误差','分类精度'],
+    (d.verified_sizes||[]).map(function(s){
+      return [String(s.n), String(s.mzi), s.stage, s.drc, s.lvs,
+              String(s.io_ports), (s.mvm_rel_err!=null? (s.mvm_rel_err+' < '+(s.mvm_tol!=null?s.mvm_tol:'-')) : '—'),
+              (s.cls_acc!=null? (s.cls_acc*100).toFixed(0)+'%' : '—')];
+    }));
+
+  h+='<div class="summary" style="margin-top:12px">三大杠杆（G6）</div>';
+  var T=LV.tiling||{}, W=LV.wdm||{}, TD=LV.tdm||{};
+  h+=_qcTbl(['杠杆','关键实测','口径'],
+    [['多核 array tiling（②）', T.verified+' · 阵列 DRC '+(T.array_drc_violations==0?'0 违规':'')+' · per-core MVM '+(T.per_core_mvm_max_rel_err!=null?T.per_core_mvm_max_rel_err:'-'), T.note||''],
+     ['WDM 多 λ 复用（①）', 'λ₀='+(W.lambda0_um!=null?W.lambda0_um:'-')+'µm · 栅格 '+(W.channel_spacing_um!=null?(W.channel_spacing_um*1000).toFixed(1):'-')+'nm · worst_mvm_err '+(W.worst_mvm_err!=null?W.worst_mvm_err:'-')+' < '+(W.mvm_tol!=null?W.mvm_tol:'-'), (W.spacing_note||'')+'；'+(W.dispersion_note||'')],
+     ['TDM 时间复用（③）', '默认 '+(TD.default_frames!=null?TD.default_frames:'-')+' 帧 · worst_mvm_err '+(TD.worst_mvm_err!=null?TD.worst_mvm_err:'-')+' < '+(TD.mvm_tol!=null?TD.mvm_tol:'-')+' · reconfig_updates '+(TD.reconfig_updates!=null?TD.reconfig_updates:'-'), TD.note||'']]);
+
+  h+='<div class="summary" style="margin-top:12px">foundry 闭集 signoff + 多 foundry PDK</div>';
+  h+=_qcTbl(['项','值','口径'],
+    [['闭集规则数', String(FS.closed_set_rules||'?'), '公开近似 + 逐条规格锚'],
+     ['signoff_ready', String(FS.signoff_ready), FS.note||''],
+     ['未覆盖项', (FS.uncovered||''), '显式标未覆盖，不静默放过'],
+     ['多 foundry 注册表', (FS.multi_foundry||[]).join(' / '), 'AIM/Tower/GF/imec 公开近似；真实 NDA 须签约注入']]);
+
+  h+='<div class="summary" style="margin-top:12px">集成度成功判据（C1–C9 机器核验）</div>';
+  h+=_qcTbl(['#','判据','结果'],
+    (d.integration_criteria||[]).map(function(c){ return [c.id, c.title, c.ok?'✅ PASS':'❌ FAIL']; }));
+
+  h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
+  (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });
+  h+='</div>';
+
+  h+='<div class="summary" style="margin-top:12px">G1–G6 缺口（全部闭合）</div>';
+  h+=_qcTbl(['#','缺口','状态','说明'],
+    (d.gaps||[]).map(function(g){ return [g.id, g.title, g.status, g.detail]; }));
+
+  h+='<div class="note" style="margin-top:10px">'+d.honest_note+'</div>';
+  $('socBody').innerHTML=h;
+  $('socConclusion').innerHTML='<strong>结论：</strong>光子计算 SoC 整芯片（光子核 + 电子外设 + 光 IO + 封装光源 + 标定环）'
+    +'已在 LDA 内完成「设计 → 主权 GDS → DRC/LVS → 多核 tiling/WDM/TDM → foundry 闭集 signoff」全链，集成度 C1–C9 全绿。'
+    +'<br/><strong>诚实边界：</strong>'+d.honest_note;
+  return false;
+}
 
 /* ═══════════ D4 交付闭环扩面（电子 + 超导量子 · /api/d4_demo）═══════════ */
 async function runD4(){
@@ -7137,7 +7227,8 @@ $('runSensor') && ['change','input'].forEach(function(ev){
   var CASE_MAP = {"#sec-qchip": "runQChip", "#sec-schip": "runSChip",
                   "#sec-pchip": "runPChip", "#sec-ecore": "runECore",
                   "#sec-accel": "runAccel", "#sec-d4": "runD4", "#sec-oi": "runOi",
-                  "#sec-pm": "runPm", "#sec-sensor": "runSensor"};
+                  "#sec-pm": "runPm", "#sec-sensor": "runSensor",
+                  "#sec-soc": "runSoc"};
   var fired = {};
   function maybeRun() {
     var btnId = CASE_MAP[location.hash];

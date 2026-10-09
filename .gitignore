@@ -217,3 +217,11 @@ _*.log
 outputs/ps_m*/
 _tmp_*.py
 _*_precheck.py
+
+# ---- 光子计算 SoC 主权 GDS 实证（2026-10-09 根因治理：GDS 不入库，避免二进制膨胀 + 部分跟踪不一致）----
+# `examples/sovereign_evidence/*.gds` / `*.svg` 为 build 脚本生成的主权实证，本地保留、不进版本库
+examples/**/*.gds
+examples/**/*.svg
+
+# ---- smoke 临时 GDS 输出（run_schip_s*_smoke.py 写入 lda/reports/schip_tmp/，重跑重建，不入库）----
+lda/reports/schip_tmp/

@@ -25,6 +25,9 @@ _HERE = os.path.dirname(os.path.abspath(__file__))       # = …/lda
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
+_SCHIP_TMP = os.path.join(_HERE, "reports", "schip_tmp")
+os.makedirs(_SCHIP_TMP, exist_ok=True)
+
 from lda_qeda import sc_layout as SCD                           # noqa: E402
 import lda_solver.transmon_solver as TS                         # noqa: E402
 from lda_harness.smoke_kit import make_check                    # noqa: E402
@@ -142,7 +145,7 @@ def main() -> int:
 
     # ════════════════ E 节：GDS round-trip ════════════════
     print("── E GDS 真出 + 解析 round-trip ──")
-    data = SCD.transmon_gds({}, os.path.join(_HERE, "_sc_s1_tmp.gds"))
+    data = SCD.transmon_gds({}, os.path.join(_SCHIP_TMP, "_sc_s1_tmp.gds"))
     parsed = SCD.G.parse_gds(data)
     layers = set()
     total_elems = 0

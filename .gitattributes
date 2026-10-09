@@ -1,0 +1,9 @@
+# LDA .gitattributes —— 二进制资产保护 + 文本行尾纪律
+# 根因（2026-10-09 治理）：仓库 core.autocrlf=true 但此前无 .gitattributes，
+# 导致 SVG（XML 文本）被 CRLF 转换噪声污染工作树，GDS 二进制亦无显式保护。
+
+# GDSII 为二进制（含 NUL 字节），禁用任何换行转换，避免潜在损坏
+*.gds binary
+
+# SVG 是 XML 文本，强制 LF 行尾，消除 autocrlf 带来的 CRLF 噪声
+*.svg text eol=lf

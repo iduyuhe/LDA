@@ -41,6 +41,9 @@ _HERE = os.path.dirname(os.path.abspath(__file__))       # = …/lda
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
+_SCHIP_TMP = os.path.join(_HERE, "reports", "schip_tmp")
+os.makedirs(_SCHIP_TMP, exist_ok=True)
+
 from lda_qeda import sc_routing as SR                                # noqa: E402
 from lda_qeda import sc_freq_alloc as FA                             # noqa: E402
 from lda_qeda import sc_coupler as SC                                # noqa: E402
@@ -182,7 +185,7 @@ def main() -> int:
     # ════════════════ E 节：GDS round-trip ════════════════
     print("── E GDS 真出 + 解析 round-trip ──")
     data = SR.routed_gds({"rows": 3, "cols": 3},
-                         os.path.join(_HERE, "_sc_s5_tmp.gds"))
+                         os.path.join(_SCHIP_TMP, "_sc_s5_tmp.gds"))
     parsed = SR.G.parse_gds(data)
     layers = set()
     total_elems = 0
@@ -433,7 +436,7 @@ def main() -> int:
             ("G4 读出 mux", MX.mux_gds, {"rows": 2, "cols": 3}, "mux"),
             ("G5 控制多线", CT.control_gds, {"rows": 2, "cols": 3}, "control"),
             ("G2 heavy-hex", TP.heavy_hex_gds, {"rows": 3, "cols": 3}, "hex")):
-        data = fn(params, os.path.join(_HERE, f"_sc_s5_{tag}_tmp.gds"))
+        data = fn(params, os.path.join(_SCHIP_TMP, f"_sc_s5_{tag}_tmp.gds"))
         parsed = SR.G.parse_gds(data)
         layers = set()
         for st in parsed.get("structures", {}).values():
@@ -530,7 +533,7 @@ def main() -> int:
           vdg["verdict"] == "REJECT"
           and any(v["rule"] == "SCD-TOPO-NODE-SPACING" for v in vdg["violations"]), None)
     # 统一 GDS round-trip（方阵）
-    dg_gds = TC.topology_gds(tg33, {}, os.path.join(_HERE, "_sc_s5_grid_tmp.gds"))
+    dg_gds = TC.topology_gds(tg33, {}, os.path.join(_SCHIP_TMP, "_sc_s5_grid_tmp.gds"))
     pg = SR.G.parse_gds(dg_gds)
     glayers = set()
     for st in pg.get("structures", {}).values():

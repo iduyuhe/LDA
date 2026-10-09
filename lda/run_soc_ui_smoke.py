@@ -191,6 +191,19 @@ def main() -> int:
         c7 = False
     check("C7 反向：摘掉 CASE_MAP 的 #sec-soc 映射 ⇒ C3 必红（深链断线回归）", c7)
 
+    # C8：16×16 真实版图内联完整性（用户「扩展到 16×16」交付物 · 零后端）
+    _host16 = re.search(r'<div id="socRealSvgHost16"[^>]*>(.*?)</div>', html, re.S)
+    _inlined_svg = bool(_host16) and ('<svg' in _host16.group(1)) and ('viewBox' in _host16.group(1))
+    _js_switch = ('socRealSvgHost16' in html) and ('socRealHint' in html)
+    c8 = bool(_host16) and _inlined_svg and _js_switch
+    check("C8 16×16 真实主权版图已内联（socRealSvgHost16 含 <svg viewBox>）+ JS 切换逻辑就位", c8,
+          "host16=%s inlined=%s jsswitch=%s" % (bool(_host16), _inlined_svg, _js_switch))
+
+    # C8 反向：把 id 改名 ⇒ 内联完整性判据必红（证守卫真读 DOM，非恒真）
+    m8 = html.replace('id="socRealSvgHost16"', 'id="socRealSvgHost16_x"', 1)
+    _h8 = re.search(r'<div id="socRealSvgHost16"[^>]*>(.*?)</div>', m8, re.S)
+    check("C8 反向：摘 id=socRealSvgHost16 ⇒ C8 必红（守卫真读 DOM）", (_h8 is None) and c8)
+
     # ── D 红线（外部对拍，防 soc_case 自检被绕过）────────────────────
     sc_src = read_text(SOC_CASE).lower()
     banned = ("numpy", "scipy", "meep", "tidy3d", "lumerical", "torch",

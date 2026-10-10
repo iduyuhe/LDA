@@ -207,6 +207,62 @@ BUILTIN_DEVICE_ENTRIES: List["DeviceEntry"] = [
               "（同 `lda.SuspendedWaveguide`）+ min_bend_R / min_space(bus_gap)。"
               "灵敏度真源 = 账本锚 B471（bulk S 口径）。⚠️ 不得作制造/性能宣称。"),
     ),
+
+    # ── v0.9.220（QS 征程 M3b（G5 器件本体））· 量子传感专用器件本体 ─────────────────
+    # 🔴 与 QS-M3 的**单一真源对拍**：NV 柱柱高 h = qs_m3.optimal_depth_closed(d0,d_att)
+    #    + h_top（现算），深度真源唯一在 `lda_l2.qs_m3`；此处**不复制任何数值**。
+    # 🔴 灵敏度/光子学量口径：腔增强 Purcell 量（g/κ/γ₁）真源在 `qs_m3.SCENARIOS`
+    #    （与账本锚 B18 同物理量 ⇒ **不**新增锚，只作器件本体登记）。
+    DeviceEntry(
+        id="lda.NVPillar",
+        name="NV 色心纳米柱（nanopillar）",
+        tech="Diamond",
+        foundry="self",
+        sovereign_class="C",
+        layers=["SI", "METAL"],
+        params={},
+        tags=["quantum", "sensor", "nv-center", "pillar", "qs-m3b"],
+        note=("QS 征程 M3b（G5 器件本体）：承载单个 NV 色心的纳米柱（柱身锥形 + 基底平台 + "
+              "侧壁保护层）。几何真源 = `lda_l2.primitives.qs_device_geometry/descs('NVPillar', …)`；"
+              "🔴 柱高 h 由 `primitives.nv_pillar_height_um()` 现算（= "
+              "`qs_m3.optimal_depth_closed` 的最优色心深度 d* + 柱顶余量）⇒ 与 QS-M3 "
+              "**严格同源**，不在此复制数值。"
+              "可制造性真源 = `lda_l2.drc` 的 min_pillar_dia / max_pillar_height / "
+              "max_taper_angle / min_pillar_gap / min_base_overhang / min_anchor_len。"
+              "⚠️ 几何为设计示例，非 foundry 悬浮/金刚石工艺 deck；不得作制造/性能宣称。"),
+    ),
+    DeviceEntry(
+        id="lda.NVCavity",
+        name="NV 耦合光子晶体腔（photonic crystal cavity）",
+        tech="Diamond",
+        foundry="self",
+        sovereign_class="C",
+        layers=["SI"],
+        params={},
+        tags=["quantum", "sensor", "nv-center", "cavity", "purcell", "qs-m3b"],
+        note=("QS 征程 M3b（G5 器件本体）：中心波导 + 双侧孔阵列的缺孔腔（NV 耦合，Purcell 增强）。"
+              "几何真源 = `lda_l2.primitives.qs_device_geometry/descs('NVCavity', …)`；"
+              "🔴 腔增强**光子学量**（g/κ/γ₁ → F_P）真源 = `qs_m3.SCENARIOS['cavity_enhanced']` / "
+              "`qs_m3.purcell_factor`（与账本锚 B18 同物理量 ⇒ **不**新增锚）。"
+              "可制造性真源 = `lda_l2.drc` 的 min_cavity_web（孔间壁厚）/ min_cavity_hole（孔半径）"
+              "/ min_width（波导线宽）。⚠️ 不得作制造/性能宣称。"),
+    ),
+    DeviceEntry(
+        id="lda.MWAntenna",
+        name="微波环形天线（microwave loop antenna）",
+        tech="Diamond",
+        foundry="self",
+        sovereign_class="C",
+        layers=["METAL"],
+        params={},
+        tags=["quantum", "sensor", "nv-center", "antenna", "microwave", "qs-m3b"],
+        note=("QS 征程 M3b（G5 器件本体）：微波环形天线（环 + 馈线 + 焊盘），用于 NV 自旋操控/读出。"
+              "几何真源 = `lda_l2.primitives.qs_device_geometry/descs('MWAntenna', …)`；"
+              "🔴 「天线 → NV 间距」与 QS-M1 微波噪声链同源，微波场强/噪声量真源在 "
+              "`qs_m1`（不在此复制数值）。"
+              "可制造性真源 = `lda_l2.drc` 的 min_antenna_gap / min_antenna_trace。"
+              "⚠️ 不得作制造/性能宣称。"),
+    ),
 ]
 
 

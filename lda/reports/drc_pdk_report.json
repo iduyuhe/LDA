@@ -21,7 +21,16 @@
       "min_slot_gap_um": 0.04,
       "min_support_width_um": 0.5,
       "max_suspended_span_um": 50.0,
-      "min_anchor_len_um": 1.0
+      "min_anchor_len_um": 1.0,
+      "min_pillar_dia_um": 0.2,
+      "max_pillar_height_um": 0.5,
+      "max_taper_angle_deg": 20.0,
+      "min_pillar_gap_um": 0.4,
+      "min_base_overhang_um": 0.1,
+      "min_cavity_web_um": 0.05,
+      "min_cavity_hole_um": 0.05,
+      "min_antenna_gap_um": 0.6,
+      "min_antenna_trace_um": 0.5
     },
     "CUMEC(演示近似)::SOI 180nm": {
       "min_width_um": 0.35,
@@ -39,7 +48,16 @@
       "min_slot_gap_um": 0.04,
       "min_support_width_um": 0.5,
       "max_suspended_span_um": 50.0,
-      "min_anchor_len_um": 1.0
+      "min_anchor_len_um": 1.0,
+      "min_pillar_dia_um": 0.2,
+      "max_pillar_height_um": 0.5,
+      "max_taper_angle_deg": 20.0,
+      "min_pillar_gap_um": 0.4,
+      "min_base_overhang_um": 0.1,
+      "min_cavity_web_um": 0.05,
+      "min_cavity_hole_um": 0.05,
+      "min_antenna_gap_um": 0.6,
+      "min_antenna_trace_um": 0.5
     },
     "SITRI(演示近似)::SOI 180nm": {
       "min_width_um": 0.45,
@@ -57,7 +75,16 @@
       "min_slot_gap_um": 0.04,
       "min_support_width_um": 0.5,
       "max_suspended_span_um": 50.0,
-      "min_anchor_len_um": 1.0
+      "min_anchor_len_um": 1.0,
+      "min_pillar_dia_um": 0.2,
+      "max_pillar_height_um": 0.5,
+      "max_taper_angle_deg": 20.0,
+      "min_pillar_gap_um": 0.4,
+      "min_base_overhang_um": 0.1,
+      "min_cavity_web_um": 0.05,
+      "min_cavity_hole_um": 0.05,
+      "min_antenna_gap_um": 0.6,
+      "min_antenna_trace_um": 0.5
     }
   }
 }

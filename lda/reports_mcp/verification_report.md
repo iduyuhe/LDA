@@ -5,9 +5,9 @@
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - via：L1 KernelGateway
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **485 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **497 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
 
-## 汇总：487/490 通过（独立候选 5 项中 **2 项通过=已验证** · 485 项自证闭环，**非验证结论**）
+## 汇总：499/502 通过（独立候选 5 项中 **2 项通过=已验证** · 497 项自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -423,7 +423,19 @@
 | B470 | geometry_refractive_index_sensitivity | physical-law | 0.460019 | 0.460019 | 0 | 0.005 | ✅ PASS |
 | B471 | geometry_refractive_index_sensitivity | physical-law | 1.17091 | 1.17091 | 0 | 0.005 | ✅ PASS |
 | B472 | q_scaling_lod | physical-law | 9.46722e-11 | 9.46722e-11 | 0 | 1e-09 | ✅ PASS |
+| B473 | nv_magnetometer_sensitivity | physical-law | 8.4659e-10 | 8.4659e-10 | 0 | 0.001 | ✅ PASS |
+| B474 | qs_sensitivity_fom_linewidth_path | physical-law | 8.4659e-10 | 8.4659e-10 | 0 | 0.001 | ✅ PASS |
+| B475 | spin_echo_phase_variance | physical-law | 0.422644 | 0.422644 | 0 | 0.001 | ✅ PASS |
+| B476 | optimal_nv_depth_nm | physical-law | 45.8852 | 45.8852 | 0 | 0.001 | ✅ PASS |
+| B477 | na_collection_efficiency | physical-law | 0.152533 | 0.152533 | 0 | 0.001 | ✅ PASS |
+| B478 | nv_array_crosstalk_coefficient | physical-law | 0.015625 | 0.015625 | 0 | 0.001 | ✅ PASS |
+| B479 | nv_array_crosstalk_sensitivity_penalty | physical-law | 1.00125 | 1.00125 | 0 | 0.001 | ✅ PASS |
 | B48 | E0_eV | physical-law | -0.350171 | -0.350171 | 0 | 0.01 | ✅ PASS |
+| B480 | nv_array_gradiometer_cmrr_db | physical-law | 40 | 40 | 0 | 0.001 | ✅ PASS |
+| B481 | nv_array_gradiometer_eta | physical-law | 1.17851e-09 | 1.17851e-09 | 0 | 0.001 | ✅ PASS |
+| B482 | qs_freqlock_discriminator_slope | physical-law | -2.56e-07 | -2.56e-07 | 0 | 0.001 | ✅ PASS |
+| B483 | qs_fieldloop_scale_factor | physical-law | 1000 | 1000 | 0 | 0.001 | ✅ PASS |
+| B484 | qs_ac_sensitivity_bandwidth | physical-law | 4.47214e-08 | 4.47214e-08 | 0 | 0.005 | ✅ PASS |
 | B49 | T | physical-law | 0.308027 | 0.308027 | 0 | 0.02 | ✅ PASS |
 | B5 | split_loss_dB | numpy-overlap-offline | 3.4 | 3.4 | 0 | 1 | ✅ PASS |
 | B50 | fc_Hz | physical-law | 1.96714e+10 | 1.96714e+10 | 0 | 1e+07 | ✅ PASS |

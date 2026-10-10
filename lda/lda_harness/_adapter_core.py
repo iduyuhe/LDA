@@ -716,3 +716,138 @@ def _get_batch_b38():
         import _batch_b38_numeric as _m
     _BATCH_B38_MOD = _m
     return _m
+
+
+# B-39 数值核缓存占位（与 B-31~B-38 同构，项目铁律）
+_BATCH_B39_MOD = None
+
+
+def _get_batch_b39():
+    """B-39 数值核（量子传感器芯片征程 QS-M0 衍生 · NV 色心磁力计磁灵敏度谱密度 η：闭式散粒极限 golden × 数值误差传播链候选，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B39** 沿用连字符写法 `_batch_b39_numeric` / `_get_batch_b39`
+        （与 B-35~B-38 同构；接手前已实 grep 核占名：`_BATCH_B39` / `_get_batch_b39` / `b39_`
+        全仓零命中，B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B39_MOD
+    if _BATCH_B39_MOD is not None:
+        return _BATCH_B39_MOD
+    try:
+        from lda_harness import _batch_b39_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b39_numeric as _m
+    _BATCH_B39_MOD = _m
+    return _m
+
+
+# B-40 数值核缓存占位（与 B-31~B-39 同构，项目铁律）
+_BATCH_B40_MOD = None
+
+
+def _get_batch_b40():
+    """B-40 数值核（量子传感器芯片征程 QS-M1 衍生 · 灵敏度 FOM 体系：T2* 路径闭式 golden × 数值线宽提取链候选，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B40** 沿用连字符写法 `_batch_b40_numeric` / `_get_batch_b40`
+        （与 B-35~B-39 同构；接手前已实 grep 核占名：`_BATCH_B40` / `_get_batch_b40` / `b40_`
+        全仓零命中，B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B40_MOD
+    if _BATCH_B40_MOD is not None:
+        return _BATCH_B40_MOD
+    try:
+        from lda_harness import _batch_b40_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b40_numeric as _m
+    _BATCH_B40_MOD = _m
+    return _m
+
+
+_BATCH_B41_MOD = None
+
+
+def _get_batch_b41():
+    """B-41 数值核（量子传感器芯片征程 QS-M2 衍生 · 自旋回波相位方差：闭式 golden × 时间域数值积分候选，缓存，项目铁律）。
+
+    🔴 命名避让：单锚 **B41** 沿用连字符写法 `_batch_b41_numeric` / `_get_batch_b41`
+        （与 B-35~B-40 同构；接手前已实 grep 核占名：`_BATCH_B41` / `_get_batch_b41` / `b41_`
+        全仓零命中，B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B41_MOD
+    if _BATCH_B41_MOD is not None:
+        return _BATCH_B41_MOD
+    try:
+        from lda_harness import _batch_b41_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b41_numeric as _m
+    _BATCH_B41_MOD = _m
+    return _m
+
+
+_BATCH_B42_MOD = None
+
+
+def _get_batch_b42():
+    """B-42 数值核（量子传感器芯片征程 QS-M3 衍生 · 灵敏度几何优化：最优色心深度 + NA 立体角收集效率，缓存，项目铁律）。
+
+    🔴 命名避让：单批 **B42** 沿用连字符写法 `_batch_b42_numeric` / `_get_batch_b42`
+        （与 B-35~B-41 同构；接手前已实 grep 核占名：`_BATCH_B42` / `_get_batch_b42` / `b42_`
+        全仓零命中，B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B42_MOD
+    if _BATCH_B42_MOD is not None:
+        return _BATCH_B42_MOD
+    try:
+        from lda_harness import _batch_b42_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b42_numeric as _m
+    _BATCH_B42_MOD = _m
+    return _m
+
+
+_BATCH_B43_MOD = None
+
+
+def _get_batch_b43():
+    """B-43 数值核（量子传感器芯片征程 QS-M4 衍生 · 阵列化与规模：串扰系数 + 串扰恶化倍率 + 梯度计 CMRR + 梯度灵敏度，缓存，项目铁律）。
+
+    🔴 命名避让：单批 **B43** 沿用连字符写法 `_batch_b43_numeric` / `_get_batch_b43`
+        （与 B-35~B-42 同构；接手前已实 grep 核占名：`_BATCH_B43` / `_get_batch_b43`
+        全仓零命中——`b43` 仅命中旧锚 `golden_b43`（B43，与批次号无关），B-16 型
+        静默撞名风险已排除）。
+    """
+    global _BATCH_B43_MOD
+    if _BATCH_B43_MOD is not None:
+        return _BATCH_B43_MOD
+    try:
+        from lda_harness import _batch_b43_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b43_numeric as _m
+    _BATCH_B43_MOD = _m
+    return _m
+
+
+_BATCH_B44_MOD = None
+
+
+def _get_batch_b44():
+    """B-44 数值核（量子传感器芯片征程 QS-M5 衍生 · 闭环标定与动态范围：频锁鉴别器中心斜率 + 磁场标度因子自标定 + AC 灵敏度带宽折算，缓存，项目铁律）。
+
+    🔴 命名避让：单批 **B44** 沿用连字符写法 `_batch_b44_numeric` / `_get_batch_b44`
+        （与 B-35~B-43 同构；接手前已实 grep 核占名：`_BATCH_B44` / `_get_batch_b44`
+        全仓零命中——`b44` 不命中任何旧锚，B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B44_MOD
+    if _BATCH_B44_MOD is not None:
+        return _BATCH_B44_MOD
+    try:
+        from lda_harness import _batch_b44_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b44_numeric as _m
+    _BATCH_B44_MOD = _m
+    return _m

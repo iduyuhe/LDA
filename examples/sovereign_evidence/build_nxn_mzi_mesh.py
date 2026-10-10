@@ -562,7 +562,6 @@ def _assign_layers_multicolor(route_paths, net_ids, cum_len, hop, stub_min,
     # 2) 按 HOP 聚类（同网相邻交叉/重叠合并为节点）
     cluster_of_event = {}
     clusters = {}
-    ci_counter = defaultdict(int)
     for n in net_ids:
         evs = events.get(n, [])
         if not evs:

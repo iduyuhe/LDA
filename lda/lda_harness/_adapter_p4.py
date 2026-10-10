@@ -14,6 +14,12 @@ from ._adapter_core import (
     _get_batch_b35, _get_batch_b36,
     _get_batch_b37,
     _get_batch_b38,
+    _get_batch_b39,
+    _get_batch_b40,
+    _get_batch_b41,
+    _get_batch_b42,
+    _get_batch_b43,
+    _get_batch_b44,
 )
 
 from typing import (
@@ -1187,3 +1193,163 @@ def _b471_suspended_sensitivity_cand(spec: VerificationSpec, oracle_value: Any) 
 # （B28 同型「同式异写 ⇒ 虚报」）。故撤下登记、不越级谎报；golden 仍为物理律锚
 # （golden.py `_GOLDEN_DISPATCH`/`_PHYSICAL_LAW` 保留 B472）。升级路径见 part6.py B472 note。
 
+
+
+@_register_candidate(
+    "b473_nv_eta_error_propagation_cand",
+    "NV 色心磁力计磁灵敏度·数值误差传播链（相位噪声率 ρ_φ=√(1+a²)/(C√n_ph) → 最优时间 τ_opt=T2*/√2 → 磁场-相位斜率用双能级量子时间演化核的数值中心差商 → 谱密度归一 η=√2·ρ_φ·τ_opt/(|dφ/dB|·√T2*)）↔ 闭式散粒极限 golden，方法学独立（复指数演化核+有限差分 vs 代数标量闭式）")
+def _b473_nv_eta_error_propagation_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b39()
+    # 从 spec.params 取物理设计参数（缺省回落到真源默认值）——使反自证桩护栏的
+    # 行为判据能真正扰动参数（详见 _batch_b39_numeric.B473_DEFAULT_PARAMS 注释）。
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b473(
+        T2star_s=float(p.get("T2star_s", 1e-6)),
+        n_ph_per_s=float(p.get("n_ph_per_s", 1e5)),
+        contrast=float(p.get("contrast", 0.03)),
+        dark_ratio=float(p.get("dark_ratio", 0.0)),
+    ))
+
+
+@_register_candidate(
+    "b474_qs_fom_linewidth_cand",
+    "量子传感器灵敏度 FOM 体系·数值线宽提取链（时间域对比度包络 C(τ)=e^(−(τ/T2*)²) 数值 FWHM 提取 → 频域宽度 σ_f → 反解等效 T2*'=√2/(2πσ_f) → 合成 η）↔ T2* 路径闭式散粒极限 golden，方法学独立（时间/频域数值提取 vs 相位域代数闭式；与 B473 物理域不同）")
+def _b474_qs_fom_linewidth_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b40()
+    # 从 spec.params 取物理设计参数（缺省回落到真源默认值）——使反自证桩护栏的
+    # 行为判据能真正扰动参数（详见 _batch_b40_numeric.B474_DEFAULT_PARAMS 注释）。
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b474(
+        T2star_s=float(p.get("T2star_s", 1e-6)),
+        n_ph_per_s=float(p.get("n_ph_per_s", 1e5)),
+        contrast=float(p.get("contrast", 0.03)),
+        dark_ratio=float(p.get("dark_ratio", 0.0)),
+    ))
+
+
+@_register_candidate(
+    "b475_echo_variance_time_integration_cand",
+    "自旋回波（Hahn echo）相位方差·时间域数值积分链（时间网格+均匀初相 → 噪声波形 B(s;φ)=cos(ωs+φ) → t/2 处符号翻转（π 脉冲） → 梯形积分 Φ(φ) → 对 φ 取 ⟨Φ²⟩ → 乘 ω² 归一化）↔ 回波方差闭式 2(1−cos(ωt/2))² golden，方法学独立（数值时域积分 vs 解析闭式 + φ 平均恒等式）")
+def _b475_echo_variance_time_integration_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b41()
+    # 从 spec.params 取物理设计参数（缺省回落到真源默认值）——使反自证桩护栏的
+    # 行为判据能真正扰动参数（详见 _batch_b41_numeric.B475_DEFAULT_PARAMS 注释）。
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b475(
+        omega_t=float(p.get("omega_t", 2.0)),
+        t=float(p.get("t", 1.0)),
+    ))
+
+
+@_register_candidate(
+    "b476_optimal_depth_grid_search_cand",
+    "最优色心深度 d*·网格扫描+三点抛物插值定极小（离散网格逐点算 η_tot(d)=√(1+(d₀/d)³)/√exp(−d/d_att)，argmin 后用三点抛物精修） ↔ 闭式根方程 d⁴+d₀³·d=3·d₀³·d_att（由 d(ln η_tot)/dd=0 解析导出，二分求唯一正根） golden，方法学独立（网格+抛物插值 vs 解析求导+根方程）")
+def _b476_optimal_depth_grid_search_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b42()
+    # 从 spec.params 取物理设计参数（缺省回落到真源默认值）——使反自证桩护栏的
+    # 行为判据能真正扰动参数（详见 _batch_b42_numeric.B476_DEFAULT_PARAMS 注释）。
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b476(
+        d0_nm=float(p.get("d0_nm", 20.0)),
+        d_att_nm=float(p.get("d_att_nm", 200.0)),
+    ))
+
+
+@_register_candidate(
+    "b477_na_efficiency_sampling_cand",
+    "NA 立体角收集效率 η_NA·数值角分布采样（偶极图样 w(θ)=sin³θ·dθ 全半球归一，取 θ≤arcsin(NA) 的权重占比逐点求和） ↔ 闭式解析积分 η_NA=[cos³θ/3−cosθ]₀^{θmax}/(2/3) golden，方法学独立（数值求和 vs 解析积分）")
+def _b477_na_efficiency_sampling_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b42()
+    # 从 spec.params 取物理设计参数（缺省回落到真源默认值）——使反自证桩护栏的
+    # 行为判据能真正扰动参数（详见 _batch_b42_numeric.B477_DEFAULT_PARAMS 注释）。
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b477(
+        na=float(p.get("na", 0.75)),
+    ))
+
+
+@_register_candidate(
+    "b478_crosstalk_dipole_field_cand",
+    "磁偶极近场串扰系数 X·点偶极场数值积分（把偶极离散成 ±q 分离 δ 的双单极子，逐点算带符号场 [1/(r−δ/2)² − 1/(r+δ/2)²] 再取比值） ↔ 闭式立方律 X=(d_crit/r)³ golden，方法学独立（双单极子差分场数值求和 vs 解析立方律）")
+def _b478_crosstalk_dipole_field_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b43()
+    # 从 spec.params 取物理设计参数（缺省回落到真源默认值）——使反自证桩护栏的
+    # 行为判据能真正扰动参数（详见 _batch_b43_numeric.B478_DEFAULT_PARAMS 注释）。
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b478(
+        r_um=float(p.get("r_um", 1.20)),
+        d_crit_um=float(p.get("d_crit_um", 0.30)),
+    ))
+
+
+@_register_candidate(
+    "b479_crosstalk_penalty_montecarlo_cand",
+    "串扰恶化灵敏度倍率 √(1+X_tot²)·蒙特卡洛噪声功率叠加（生成独立白噪声对 s/c，构造信号+X_tot·c 泄露通道，由数值方差比反推倍率） ↔ 闭式平方和 golden，方法学独立（随机样本数值方差 vs 解析平方和）")
+def _b479_crosstalk_penalty_montecarlo_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b43()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b479(
+        x_total=float(p.get("x_total", 0.05)),
+    ))
+
+
+@_register_candidate(
+    "b480_cmrr_noisy_lsq_slope_cand",
+    "梯度计共模抑制比 CMRR·含噪样本 LSQ 斜率比（含读出噪声的共模/差模激励序列，过原点最小二乘斜率求比值再取 dB） ↔ 闭式 20log₁₀(1/ε) golden，方法学独立（含噪样本 LSQ 斜率比 vs 解析 ε 代入 log 闭式）")
+def _b480_cmrr_noisy_lsq_slope_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b43()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b480(
+        mismatch=float(p.get("mismatch", 0.01)),
+    ))
+
+
+@_register_candidate(
+    "b481_grad_eta_montecarlo_diff_cand",
+    "梯度计差模灵敏度 η_grad·蒙特卡洛两点差分标准差（两独立通道噪声序列取差分序列的数值标准差 ⇒ 直接得 √2 因子，再 /baseline） ↔ 闭式 η√2/baseline golden，方法学独立（样本差分标准差 vs 解析 √2 因子）")
+def _b481_grad_eta_montecarlo_diff_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b43()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b481(
+        eta_single=float(p.get("eta_single", 1.0e-9)),
+        baseline_um=float(p.get("baseline_um", 1.20)),
+    ))
+
+
+@_register_candidate(
+    "b482_freqlock_slope_fid_cand",
+    "微波频锁鉴别器中心斜率·时域 FID 数值变换线型的中心差分斜率（指数衰减包络 C(t)=e^{−πwt} 数值 Fourier 变换构造洛伦兹线型，采集窗 t_max=t_max_factor/(πw)，再对鉴别器 S=L(f−δ)−L(f+δ) 在 f₀ 处中心差分） ↔ 闭式解析洛伦兹差分斜率 golden，方法学独立（FID 数值变换微分 vs 解析差分）")
+def _b482_freqlock_slope_fid_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b44()
+    # 从 spec.params 取物理设计参数（缺省回落到真源默认值）——使反自证桩护栏的
+    # 行为判据能真正扰动参数（详见 _batch_b44_numeric.B482_DEFAULT_PARAMS 注释）。
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b482(
+        f0_hz=float(p.get("f0_hz", 2.87e9)),
+        linewidth_hz=float(p.get("linewidth_hz", 1.0e7)),
+        probe_offset_hz=float(p.get("probe_offset_hz", 2.5e6)),
+    ))
+
+
+@_register_candidate(
+    "b483_fieldloop_scale_lsq_cand",
+    "磁场标度因子自标定·全跨多点最小二乘斜率（±B_ref 全量程取 n 点激励，读数含相对读出噪声，过原点 LSQ 斜率 ⇒ k̂） ↔ 闭式两点法 k̂=V_ref/B_ref golden，方法学独立（多点 LSQ vs 单点相除）")
+def _b483_fieldloop_scale_lsq_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b44()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b483(
+        v_ref_v=float(p.get("v_ref_v", 1.0e-1)),
+        b_ref_t=float(p.get("b_ref_t", 1.0e-4)),
+    ))
+
+
+@_register_candidate(
+    "b484_ac_sensitivity_mc_cand",
+    "AC 灵敏度带宽折算·蒙特卡洛带限噪声 rms（生成 n 对白噪声样本 σ=η，取差分序列数值 rms ⇒ 直接得 √2 因子，再按 √Δf 折算带宽） ↔ 闭式 η·√(2Δf) golden，方法学独立（样本差分 rms vs 解析因子）")
+def _b484_ac_sensitivity_mc_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b44()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b484(
+        eta_t_per_sqrt_hz=float(p.get("eta_t_per_sqrt_hz", 1.0e-9)),
+        bandwidth_hz=float(p.get("bandwidth_hz", 1.0e3)),
+    ))

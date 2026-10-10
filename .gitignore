@@ -218,6 +218,18 @@ outputs/ps_m*/
 _tmp_*.py
 _*_precheck.py
 
+# ---- 量子传感器芯片征程（QS）本地运行产物（2026-10-10 新增）----
+# 同「运行产物：smoke 的 out_path 输出（绝不入库、每次跑 CI 重生成）」纪律：
+#   outputs/qs_m0/            <- lda/run_qs_m0_smoke.py 的 out_path 输出
+#   outputs/qs_m1/            <- lda/run_qs_m1_smoke.py 的 out_path 输出
+#   outputs/qs_m2/            <- lda/run_qs_m2_smoke.py 的 out_path 输出
+#   outputs/qs_m3/            <- lda/run_qs_m3_smoke.py 的 out_path 输出
+# 与 PS 征程 outputs/ps_m*/ 同构；outputs 下无 .py ⇒ 不影响 pyflakes 扫描面。
+outputs/qs_m0/
+outputs/qs_m1/
+outputs/qs_m2/
+outputs/qs_m3/
+
 # ---- 光子计算 SoC 主权 GDS 实证（2026-10-09 根因治理：GDS 不入库，避免二进制膨胀 + 部分跟踪不一致）----
 # `examples/sovereign_evidence/*.gds` / `*.svg` 为 build 脚本生成的主权实证，本地保留、不进版本库
 examples/**/*.gds

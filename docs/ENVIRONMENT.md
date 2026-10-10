@@ -4,10 +4,10 @@
 > 它用 `ast` 穷举 `lda/**/*.py` 与 `scripts/**/*.py` 中**由进程环境读取**的
 > `LDA_*` 变量（识别 `os.environ.get` / `os.getenv` / `os.environ[...]`），
 > 任一变量未在本文件出现即判红（防「加了变量却没人写文档」）。
-> **当前共 29 个**（并集）：`lda/` 侧 25 个 + `scripts/` 侧 6 个，其中两侧都读的 2 个
+> **当前共 39 个**（并集）：`lda/` 侧 35 个 + `scripts/` 侧 6 个，其中两侧都读的 2 个
 > （`LDA_ADMIN_TOKEN`、`LDA_FDTD_THREADS`）。
 >
-> ⚠️ 规划文档曾按「7 个变量」立项，实际代码为 29 个 —— 本表以代码为准（差额已如实登记）。
+> ⚠️ 规划文档曾按「7 个变量」立项，实际代码为 39 个 —— 本表以代码为准（差额已如实登记）。
 > 数量由门禁断言：本文件必须出现扫描到的变量总数，数字漂了即红。
 
 ## 速查：生产必设 / 常改
@@ -85,6 +85,25 @@
 | `LDA_SKIP_LIVE` | （未设 ⇒ 跑实况） | 跳过需要实况资源的用例（无网 / 无 GPU 环境） |
 | `LDA_FORCE_RING_FDTD` | `""` | 强制走环形 FDTD 路径（默认空 ⇒ 按可用性自动选择） |
 | `LDA_PY` | （受管解释器绝对路径） | 子进程调用用的解释器（`run_cli_smoke.py` 等） |
+
+## §6′ SoC（光子计算）征程规模旋钮（仅调**规模**、不调判据；CI 降载用）
+
+> 全部为「吃狗粮」SoC 征程 smoke 的规模压测档位。**语义 = 只改被测规模 N/档位**，
+> 不改任何 PASS/FAIL 判据；CI 上仅用于超时降载/复现（如 `LDA_S4_N=32` 避开 64 档长耗时）。
+> 🔴 这些旋钮**不参与判决**，与 §6 同属「测试专用」。
+
+| 变量 | 默认 | 作用 |
+|---|---|---|
+| `LDA_G6_N` | `"8"` | G6 tiling / WDM-TDM 的阵列规模 N（多核 tiling 预览与 WDM/TDM 复用 smoke） |
+| `LDA_G6_M` | `"4"` | G6 tiling 的并行度 M（`soc_array_tiling` / `run_soc_g6_tiling_smoke`） |
+| `LDA_G6W_N` | `"8"` | G6 WDM 波导/通道规模 N（`soc_wdm` / `run_soc_g6_wdm_tdm_smoke`） |
+| `LDA_G6W_W` | `"4"` | G6 WDM 复用波长数 W |
+| `LDA_G6T_N` | `"8"` | G6 TDM 时间槽规模 N（`soc_tdm`） |
+| `LDA_G6T_K` | `"4"` | G6 TDM 复用帧数 K |
+| `LDA_G6D_N` | `"16"` | G6 foundry 签核 deck（tapeout signoff deck）规模 N |
+| `LDA_PDK_N` | `"16"` | SoC 多 foundry PDK 对接规模 N（`run_soc_pdk_integration_smoke`） |
+| `LDA_S4_N` | `"64"` | SoC S4 规模爬升压力档 N（N=64 主权 mesh 构建；CI 超时风险时设 `32` 降载） |
+| `LDA_TAPE_N` | `"16"` | SoC 流片 signoff 规模 N（`run_soc_tapeout_signoff_smoke`） |
 
 ## §7 红线与诚实边界
 

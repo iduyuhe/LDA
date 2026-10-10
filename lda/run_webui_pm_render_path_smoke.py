@@ -163,9 +163,23 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {"run_ci_gate_contract_s
 #:   🔴 **通则（v0.9.211 首轮全量 CI 当场抓出 · 已入 IRONLAWS）**：**README 顶行声明的
 #:   每个 `run_*` 判据数都必须在 `_W10_EXTRA` 内** —— 声明了却不在对照面 ⇒
 #:   `W10b`（条目须在对照面）+ `W10-P1`（README 旧值必红）**双红**，即守卫按设计顶回。
+#: 🔴 v0.9.220：本版真改动 = QS-M3b（G5 器件本体：NV 柱/腔/天线 + 可制造性 DRC + PDK 条目）。
+#:   直接相关且**便宜**的门禁 = `run_qs_m3b_smoke`（实测 **~2.5 s** / **36 判据**，
+#:   纯 numpy + lazy import lda_l2/lda_pdk，零网络零子进程）⇒ 纳对照面，令本版 README
+#:   顶行声明的 36 判据由机器守（非手写）。⚠️ **不纳** `run_qs_m3_smoke`（实测 ~2 s 亦便宜，
+#:   但本版无改动 ⇒ 按「本版真改动」准入准则不入；故顶行**不声明**其判据数，属诚实边界）。
+#: 🔴 v0.9.221：本版真改动 = QS-M4（G6 阵列/集成：2×N 磁力计阵列 + 串扰 + 读出 mux + 梯度计）。
+#:   直接相关且**便宜**的门禁 = `run_qs_m4_smoke`（实测 **~1.5 s** / **37 判据**，
+#:   纯 numpy + lazy import，零网络零子进程）⇒ 纳对照面，令本版 README 顶行声明的
+#:   37 判据由机器守（非手写）。
+#: 🔴 v0.9.222：本版真改动 = QS-M5（G7 标定/读出闭环：频锁 + 磁场闭环 + 动态范围）。
+#:   直接相关且**便宜**的门禁 = `run_qs_m5_smoke`（实测 **~2 s** / **36 判据**，
+#:   纯 numpy + lazy import，零网络零子进程）⇒ 纳对照面，令本版 README 顶行声明的
+#:   36 判据由机器守（非手写）。
 _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py",
               "run_sensor_panel_smoke.py", "run_webui_entry_smoke.py",
-              "run_count_consistency_smoke.py", "run_ps_m1_smoke.py")
+              "run_count_consistency_smoke.py", "run_ps_m1_smoke.py",
+              "run_qs_m3b_smoke.py", "run_qs_m4_smoke.py", "run_qs_m5_smoke.py")
 
 
 def _declared_judge_counts(text):

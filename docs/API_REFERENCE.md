@@ -22,12 +22,12 @@
 | 项 | 值 |
 |---|---|
 
-| 端点总数 | 148（精确 131 + 前缀/后缀 17） |
-| 方法分布 | GET 53 · PATCH 1 · POST 94 |
-| 有描述 | 148（**100.0%**） |
+| 端点总数 | 149（精确 132 + 前缀/后缀 17） |
+| 方法分布 | GET 54 · PATCH 1 · POST 94 |
+| 有描述 | 149（**100.0%**） |
 | 需登录（重计算闸门） | 60 |
 
-## GET（53）
+## GET（54）
 
 | 路径 | 用途 | 参数 | 鉴权 |
 |---|---|---|---|
@@ -73,6 +73,7 @@
 | `/api/sensor_demo` | GET /api/sensor_demo —— 光子传感器案例卡 + 客户自助设计向导（只读 · 免登录 · 微秒级）。 PS-M7（光子传感器征程收官）：把 PS-M0…PS-M6 **已机器自检通过**的能力在 UI 中 以**只读案例 + 设计向导**呈现 —— 客户自助「选架构 → 调 R/Q/Δn → 读指标 → 看 GDS/DRC/LVS 签核 → 看征程报告」。 🔴 与 `/api/pm_demo`（光子存储）、`/api/oi_demo`（光联接）**并列**：三者都是 「光域器件/链路级」只读案例卡；PS 卡的独特处是**旋钮可调**（架构 + R/Q/Δn）， 但全部走**闭式算术** ⇒ 仍属微秒级。 🔴 **零重计算**：不跑 P&R、不 import 求解器/numpy/scipy、不解析 GDS —— 数字来自 ① 闭式物理律现算（微环 FSR/线宽/谐振位移/LOD_intrinsic + 噪声模型 LOD_real） ② 参考常量（架构 n_eff/Γ/n_g/S 取自 PS-M3 HF 闭式；集成预算取自 PS-M6） ③ 对 `examples/photo_sensor/` 产出物只 `getsize`/读一行 JSON 的元信息 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS** （与 `/api/qchip_demo`、`/api/schip_demo`、`/api/pm_demo` 同属「公开只读验货」类）。 查询参数（可选，越界自动钳制；非法值退回首值）：`arch` / `R_um` / `Q` / `delta_n`。 🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`（**非** ACCEPT/PASS），返回体自带 `honest_note`（设计预算 / 非流片实测签核 / 温漂主导 / LLM 不进判决路径）。 异常不 500（返回 200 + error 字段，与 `h_schip_demo` 同风格）。 | — | public |
 | `/api/shelf` | A2 · 创新超市货架元数据（快，零计算）。含按当前身份计算的实付价。 | — | public |
 | `/api/shelf/**`（前缀匹配） | GET /api/shelf/<id>/opinions 与 /api/shelf/<id>/(package\|download)。 | — | public |
+| `/api/soc_demo` | GET /api/soc_demo —— 光子计算 SoC（PIC）案例卡（只读 · 免登录 · 微秒级）。 v0.9.213：把 SoC 征程（S0–S5-ext + G6）「吃狗粮」全链在 UI 中 以**只读案例**呈现（多核 array tiling + WDM 多 λ 复用 + 时间复用调度 + foundry 闭集 signoff + NDA deck 替换 + 多 foundry PDK 对接）。 🔴 与 `/api/pchip_demo`（硅光张量核）、`/api/qchip_demo`（光量子 LOQC）、 `/api/schip_demo`（超导 transmon）、`/api/ecore_demo`（电子计算芯片）**并列**： 这是 LDA 又一条「吃自己狗粮」征程的对外窗口。 🔴 **零重计算**：不跑仿真、不 import 求解器 —— 数字来自 ① 静态里程碑/结论 （可回溯到 S0–S5-ext + G6 门禁）② 纯闭式现算（MZI 计数）③ 对产出物只 `stat` 的元信息 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**（与 `/api/pchip_demo`、 `/api/qchip_demo`、`/api/verification_ledger` 同属「公开只读验货」类）。 🔴 **不伪装实测 / 不报 fabricated 能效**：`verdict` 恒为 `DESIGN_SIGNOFF` （**非** ACCEPT/PASS），返回体自带 `honest_note`（非流片实测 / 设计容量 / 不报任何 fabricated 能效 / foundry NDA 真值本机不持有）。 异常不 500（返回 200 + error 字段，与 `h_pchip_demo` 同风格）。 | — | public |
 | `/api/stats` | 管理后台数据看板（admin 专属）。真实/测试账号分离计数。 | — | public |
 | `/api/status` | GET /api/status —— 系统落地状态（各层 built/planned、PDK 数等），供前端与健康检查取用。 | — | public |
 | `/api/store/config` | GET /api/store/config —— 前台公开配置（收款码 / 对公账户 / 身份分层），**不含管理员信息**。 | — | public |

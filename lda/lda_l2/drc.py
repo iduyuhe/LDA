@@ -56,6 +56,19 @@ DEFAULT_RULES: Dict[str, float] = {
     "min_support_width_um": 0.50,   # 悬浮段两端支撑块最小宽度（防塌陷）
     "max_suspended_span_um": 50.0,  # 最大悬空跨度（超此长度悬浮膜易塌陷/断裂）
     "min_anchor_len_um": 1.00,      # 最小锚定段长度（保证与衬底可靠连接）
+    # ── v0.9.220（QS 征程 M3b（G5 器件本体））· 量子传感专用器件（NV 柱 / 腔 / 天线）──
+    # 来源 = **量子传感器件工艺可实现性常识**（纳米柱刻蚀深宽比 / 光子晶体孔壁厚 /
+    # 微波天线线间距），**非任何 foundry PDK deck**；与其余键同属「可被 PDK 覆盖」层。
+    # 🔴 柱径 0.30 **小于**通用 min_width(0.35) ⇒ 必须用专用键（否则误判违规）。
+    "min_pillar_dia_um": 0.20,      # NV 纳米柱最小直径（刻蚀可实现 + 承载单 NV）
+    "max_pillar_height_um": 0.50,   # 柱最大高度（超此高宽比侧壁塌陷/刻蚀不均）
+    "max_taper_angle_deg": 20.0,    # 柱侧壁最大锥角（超此干法刻蚀难实现）
+    "min_pillar_gap_um": 0.40,      # 相邻柱最小间距（防刻蚀负载效应粘连）
+    "min_base_overhang_um": 0.10,   # 柱基底相对柱身的单边外扩（防柱根悬空）
+    "min_cavity_web_um": 0.05,      # 光子晶体相邻孔间最小残余壁厚（结构强度）
+    "min_cavity_hole_um": 0.05,     # 光子晶体孔最小半径（刻蚀可实现）
+    "min_antenna_gap_um": 0.60,     # 微波天线最小线间距（防击穿/串扰）
+    "min_antenna_trace_um": 0.50,   # 微波天线最小线宽（电迁移/损耗）
 }
 
 
@@ -82,6 +95,10 @@ CHECK_RULES = (
     # v0.9.211（PS 征程 M9（G2 器件本体））· 高灵敏几何器件（狭缝 / 悬浮）
     "min_rail_width", "min_slot_gap", "min_support_width",
     "max_suspended_span", "min_anchor_len", "min_support_overhang",
+    # v0.9.220（QS 征程 M3b（G5 器件本体））· 量子传感专用器件（NV 柱 / 腔 / 天线）
+    "min_pillar_dia", "max_pillar_height", "max_taper_angle", "min_pillar_gap",
+    "min_base_overhang", "min_cavity_web", "min_cavity_hole",
+    "min_antenna_gap", "min_antenna_trace",
 )
 
 
@@ -372,6 +389,40 @@ def drc_check_device(kind: str, params: Dict[str, float],
         if K.endswith("Ring"):
             add("min_bend_R", "R", g["R"], rules["min_bend_R_um"])
             add("min_space", "bus_gap", g["bus_gap"], rules["min_space_um"])
+    elif kind in ("NVPillar", "NVCavity", "MWAntenna"):
+        # ── v0.9.220（QS 征程 M3b（G5 器件本体））· 量子传感专用器件本体 ─────────────
+        # 几何量由 `primitives.qs_device_geometry` **同源导出**（与版图几何共用同一
+        # 函数 + 同一参数解析），绝不在此重算 ⇒ 杜绝 DRC 与版图脱钩。
+        # 🔴 柱径 0.30 < 通用 min_width(0.35) ⇒ 必须走**专用**规则名
+        #    （min_pillar_dia / min_pillar_gap / min_base_overhang / min_taper_angle），
+        #    否则「本该可制造」的 NV 柱被通用规则判违规（口径错 ⇒ 结论反向）。
+        from lda_l2.primitives import qs_device_geometry
+        g = qs_device_geometry(kind, params)
+        if kind == "NVPillar":
+            add("min_pillar_dia", "dia", g["dia"],
+                rules.get("min_pillar_dia_um", DEFAULT_RULES["min_pillar_dia_um"]))
+            add("max_pillar_height", "h", g["h"],
+                rules.get("max_pillar_height_um", DEFAULT_RULES["max_pillar_height_um"]))
+            add("max_taper_angle", "taper_deg", g["taper_deg"],
+                rules.get("max_taper_angle_deg", DEFAULT_RULES["max_taper_angle_deg"]))
+            add("min_pillar_gap", "pillar_gap", g["pillar_gap"],
+                rules.get("min_pillar_gap_um", DEFAULT_RULES["min_pillar_gap_um"]))
+            # 柱基底不得窄于柱身：单边外扩 ≥ 通用最小间距（防柱根悬空）。
+            add("min_base_overhang", "base_overhang", g["base_overhang"],
+                rules.get("min_base_overhang_um", DEFAULT_RULES["min_base_overhang_um"]))
+            add("min_anchor_len", "anchor_len", g["anchor_len"],
+                rules.get("min_anchor_len_um", DEFAULT_RULES["min_anchor_len_um"]))
+        elif kind == "NVCavity":
+            add("min_cavity_web", "min_web", g["min_web"],
+                rules.get("min_cavity_web_um", DEFAULT_RULES["min_cavity_web_um"]))
+            add("min_cavity_hole", "hole_r", g["hole_r_um"],
+                rules.get("min_cavity_hole_um", DEFAULT_RULES["min_cavity_hole_um"]))
+            add("min_width", "wg_w", g["wg_w"], rules["min_width_um"])
+        else:  # MWAntenna
+            add("min_antenna_gap", "antenna_gap", g["antenna_gap"],
+                rules.get("min_antenna_gap_um", DEFAULT_RULES["min_antenna_gap_um"]))
+            add("min_antenna_trace", "trace_w", g["trace_w"],
+                rules.get("min_antenna_trace_um", DEFAULT_RULES["min_antenna_trace_um"]))
     elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler",
                   # v0.9.178（M2 · G-OI2）：收发器器件类接入参数级 DRC。
                   # 此前这 4 类无分支 ⇒ raise ValueError ⇒ 收发器真 GDS 里

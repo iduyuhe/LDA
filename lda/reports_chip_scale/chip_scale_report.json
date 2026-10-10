@@ -31,15 +31,21 @@
       "name": "SOI-3L（公开近似）",
       "signal_layers": [
         "M1",
-        "M2"
+        "M2",
+        "M3"
       ],
       "via_layers": [
-        "VIA12"
+        "VIA12",
+        "VIA23"
       ],
       "via_map": {
         "VIA12": [
           "M1",
           "M2"
+        ],
+        "VIA23": [
+          "M2",
+          "M3"
         ]
       }
     }

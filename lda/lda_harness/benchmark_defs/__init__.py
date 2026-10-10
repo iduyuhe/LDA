@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""BENCHMARK_DEFS 装配点（F-08 巨石治理 · v0.9.117）。
+"""BENCHMARK_DEFS 装配点（F-08 巨石治理 · v0.9.117；v0.9.216 增 part7 QS 征程）。
 
 🔴 合并顺序契约：**必须**按 part1→partN 顺序 `update`，不得调换、不得改用 dict 合并
 表达式（`{**a, **b}` 亦可但需保序）。`BENCHMARK_DEFS` 的**插入序**与 `BENCHMARK_ORDER`
@@ -12,8 +12,9 @@ from .part3 import DEFS as _P3
 from .part4 import DEFS as _P4
 from .part5 import DEFS as _P5
 from .part6 import DEFS as _P6
+from .part7 import DEFS as _P7
 
 BENCHMARK_DEFS: dict = {}
-for _part in (_P1, _P2, _P3, _P4, _P5, _P6):
+for _part in (_P1, _P2, _P3, _P4, _P5, _P6, _P7):
     BENCHMARK_DEFS.update(_part)
 del _part

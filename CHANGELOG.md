@@ -1,5 +1,305 @@
 # Changelog
 
+## v0.9.222（2026-10-10 · 量子传感器芯片新征程 QS-M5 第七档：G7 标定/读出闭环落地 · **净增 3 道锚 B482–B484**（账本 499 → 502 · 严格独立 477 → 480 / 降级 3 / 自证桩 19）· CI core 313 → 314 · 端点 149 不变）
+
+**本版把 QS-M5 蓝图规格「闭环标定 + 动态范围」建成**：微波频率锁定 + 磁场闭环自标定 + 动态范围 + AC 灵敏度，**四件齐备**（蓝图 §QS-M5 档 G7 标定/读出闭环）。QS-M0–M4 已建「能测多少」（灵敏度/几何/阵列），本档补「**怎么把读数锁准并自标定**」—— 这是真实传感器的另一半：开环传感器无法报绝对值（漂移即真值漂），闭环锁定 + 标度自标定才能把频率/磁场读数转为可信绝对值。
+
+### ① 微波频率锁定（`lda/lda_l2/qs_m5.py`）
+
+- **`odmr_lorentzian(f, f0, w, C)`**：闭式 Lorentzian 线型 `L(f)=1−C·(w²/4)/((f−f₀)²+w²/4)`（共振处凹陷最深）。
+- **`odmr_lorentzian_numeric(..., n_omega)`**：**方法学独立**——**时域 FID → 数值 Fourier 变换**（相干包络 `C(t)=e^{−πwt}`，`t_max=60/(πw)`，numpy 梯形积分），真截断残差 ~1.9e-9。
+- **`lock_error_signal(f, f0, w, δ, C)`**：鉴别器 **S(f)=L(f−δ)−L(f+δ)**（中心差分线型），零点是 f₀、反号对称 ⇒ 可判方向。
+- **`frequency_lock(f_set, f0_true, …)`**：闭环反馈 `step=−S/(slope_nom·loop_gain)`；返回 `converged`/`residual_rel_linewidth`。🔴 **收敛判据 = 残差/线宽**（相对线宽 < 1e-6），**非绝对 Hz**（物理鉴别器非线性致 Gain=1 也有 ~0.4 Hz 残差）。
+- **`lock_by_bisection(...)`**：数值二分求根（零点即锁定点），与反馈律不动点互验。
+
+### ② 磁场闭环自标定（scale-factor self-calibration）
+
+- **`scale_factor_estimate(v, b_ref)`**：两点法 `k̂=V_ref/B_ref`。
+- **`scale_factor_estimate_numeric(..., n_points, noise_rel, seed)`**：**方法学独立**——**全跨多点 LSQ 斜率**（含噪样本回归，非两点代数）。
+- **`scale_mismatch(k̂, k)`** / **`closed_loop_field_readout(v, k̂)`**：读数相对误差 = 标度失配 **ε_k**。
+- **`field_loop_calibrate(...)`**：闭环标定（无噪 ⇒ 误差恰 0，如实标注；有噪 ⇒ 残差 > 0）。
+
+### ③ 动态范围 + AC 灵敏度
+
+- **`noise_floor_field(η, τ)`** = η·√(1/τ)（噪声底随积分时间降）· **`linear_range_max_field(w, γ)`** = (w/2)/γ（线性段耗尽）· **`dynamic_range_db(b_min, b_max)`** = 20·log₁₀(ratio)（定义式）· **`ac_sensitivity(η, Δf)`** = η·√(2Δf)。
+- **`dynamic_range_db_numeric(...)`**（数值阶梯扫描）· **`ac_sensitivity_numeric(..., n_samples, seed)`**（MC 带限噪声 rms）。
+- **`evaluate_dynamic_range`** / **`locked_sensor_physics`**（三合一签核：频锁 + 磁场闭环 + 动态范围）· `SCENARIOS`（baseline/narrowline/wideline/longint）· `dynamic_range_table()`。
+
+### ④ 三道新锚（`lda/lda_harness/_batch_b44_numeric.py` + `benchmark_defs/part7.py`）
+
+| 锚 | 物理量 | golden | candidate（方法学独立） | 实测 rel | 判级 |
+|---|---|---|---|---|---|
+| **B482** | 频锁鉴别器中心斜率 dS/df\|f₀ | 闭式 Lorentzian 中心差分斜率 | **时域 FID 数值变换斜率**（可控截断） | 6.696e-06 | 严格独立 |
+| **B483** | 磁场标度因子自标定 k̂ | 两点法 `V_ref/B_ref` | **全跨多点 LSQ 斜率**（含噪样本回归） | 3.439e-08 | 严格独立 |
+| **B484** | AC 灵敏度带宽折算 η_AC | 闭式 `η·√(2Δf)` | **MC 带限噪声 rms** | 1.560e-04 | 严格独立 |
+
+- 🔴 **反自证桩骨架实证三处**：① B482 初版用「**二分法求锁定点**」得**零残差** —— 鉴别器**严格反对称** ⇒ 锁定点 ≡ f₀ **代数恒等**，遂**改用鉴别器中心斜率**（FID 数值线有真截断残差 6.7e-6 ≫ 机器精度）；② 「两点法自标定」无噪声时**代数精确**（如实标注，走全跨 LSQ 才有真残差）；③ 「DR 定义 dB」系**纯定义**（代数恒等无残差）⇒ **如实归 smoke、不登记为锚**。
+- 🔴 **参数二次标定（贴线坑，QS-M4 B480 同型）**：B484 candidate 初版 n=8e6 ⇒ 跨 30 种子最坏偏差 **5.1e-4 > tol 1e-3**（仅 2× 余量，重跑即红）⇒ 改 n=32e6（最坏→2.1e-4）+ **tol 1e-3→5e-3**（24× 余量），并验 n→64e6 无收益（σ 由样本分布形状主导，非 n）。
+- 🔴 **正向含义验证**：B482/B483/B484 残差均随 `t_max_factor`/n **单调收敛**（实测扫描）⇒ 真数值残差、非代数恒等。
+- 🔴 **与既有锚边界（非重复计数）**：B473（**单器件**灵敏度标量）/ B474（FOM 体系）/ B475（自旋回波相位方差）/ B476–B477（**单器件**几何量）/ B478–B481（**阵列**集成量）**物理对象不同** —— 本档三锚均为**闭环标定/读出**专属物理量。
+- 🔴 **诚实规模**：QS-M5 另含「闭环收敛 gain=1 一步 / gain=0.9 几何」「鉴别器反号对称」「DR 定义」「AC ∝√Δf」「动态范围随线宽/积分时间单调」（收敛性/定义/单调性 ⇒ **非独立标量物理量**）⇒ 归 `run_qs_m5_smoke` 覆盖，**如实不登记为 B 锚**（同 Batch B-38~B-43 纪律：宁可少，不越级谎报）。
+
+### ⑤ 常驻门禁（`lda/run_qs_m5_smoke.py`，**36 判据**）
+
+- A ODMR 线型/鉴别器（9）· B 磁场闭环（6）· C 动态范围/AC（7）· D 三合一签核（2）· E 反向探针（8）· F 增锚契约（3）· G 模块自检直连（1）。
+- 🔴 **8 道反向探针各红在期望判据**：探测偏置超 w/2 · 零参考场 · η≤0 · 零线宽 · 零带宽 · 错误口径 · 非对称区间二分 · 线宽真源漂移 —— 分别命中对应护栏（证判据有鉴别力，非「红对了但红在别处」）。
+- 🔴 **F2/F3（增锚同登契约）**：B482–B484 的 golden 必在 `_GOLDEN_DISPATCH` 内有定义（**防漏登 ⇒ 假自证桩**，v0.9.221 血案常驻化）∧ 必在 `BENCHMARK_ORDER` 内。
+- 入 `CORE_SMOKES`（313→314）+ timeout 300 s + 纳 `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面（README 顶行 36 判据由机器守）。
+
+### ⑥ 三同步
+
+- `README.md`：v0.9.222 顶行（声明 `run_qs_m5_smoke` **36 判据**）+ v0.9.221 降级「上一版」+ 当前账本段（账本 502 / 严格独立 480 / 降级 3 / 自证桩 19 / 独立率 95.62% / CI core 314）+ 602/609 行（题库 499 题→502 题 / 三分类三类和 499→502）。
+- `CONTRIBUTING.md` 顶块（v0.9.222 / 502 道锚 / 严格独立 480 / CI core 314）· `pyproject.toml` `0.9.221 → 0.9.222` · `run_webui_verification_ledger_smoke.py` docstring（477/499 → 480/502）· `run_count_consistency_smoke.py`（B 题 476→479 / max B481→B484）· `run_statistical_anchor_smoke.py`（`range(400,485)` + B1-B484 + Batch B-44 描述）。
+
+### ⑦ 诚实边界
+
+- 线宽 w / 探测偏置 δ / 环增益 / 磁场参考值 / η / 积分时间 τ 均为**设计示例 / 建模标度**，非实测。
+- 环增益 / 收敛判据 / 动态范围下限为**设计规则**（非 golden）。
+- 🔴 本档**不做**器件级/系统级性能宣称，不宣称「已达国际水平」。
+
+## v0.9.221（2026-10-10 · 量子传感器芯片新征程 QS-M4 第六档：G6 阵列/集成落地 · **净增 4 道锚 B478–B481**（账本 495 → 499 · 严格独立 473 → 477 / 降级 3 / 自证桩 19）· CI core 312 → 313 · 端点 149 不变）
+
+**本版把 QS-M4 蓝图规格「2×N 磁力计阵列」建成**：阵列布局 + 磁偶极近场串扰 + 多通道读出 mux（思路复用 `sc_readout_mux`）+ 梯度计，**四件齐备**（蓝图 §QS-M4 档 G6 阵列/集成）。
+
+### ① 阵列布局（`lda/lda_l2/qs_m4.py`）
+
+- **`array_positions(params)`**：2×N 柱心坐标现算（居中对称、节距单调、通道号连续唯一）；**单一真源**——版图 / DRC / LVS 均从此取坐标。
+- **`array_layout(params)`**：**复用 QS-M3b 的 NVPillar 单器件本体**（`qs_device_descs("NVPillar", {})` 全部图元按柱心平移 + 标 `ch`/`row`/`col`/`net="pillar"`）+ 阵列级新增几何「每行一条读出馈线」（`net="feedline"`，Metal 层）。
+- **`pillar_diameter_um()`**：**委派** `primitives.qs_device_geometry` 取柱径 ⇒ 不复制第二份数值（真源漂移即被门禁 F6 抓）。
+- 🔴 **尺度口径**：NV 柱直径 ~0.3 µm（QS-M3b），相邻柱心距取 **1.2 µm**（= 4× 柱径，柱面净距 0.9 µm）——这是**磁偶极近场真正起作用的尺度**（r⁻³ 在 µm 级显著）。初版误用 350 µm 节距 ⇒ 串扰 ≡ 0（X≈6e-10），物理上「柱太远无串扰」虽是事实但**体现不出阵列约束** ⇒ 改到真实作用尺度。
+
+### ② 磁偶极近场串扰（阵列密度的根本物理约束）
+
+- **`crosstalk_coefficient(r_um, d_crit_um)`**：闭式 **X=(d_crit/r)³**（轴向点偶极近场 B∝2m/r³ 与自场标度 m/d_crit³ 之比）。
+- **`crosstalk_coefficient_numeric(r_um, d_crit_um)`**：**方法学独立**——把偶极离散成 ±q 分离 δ 的双单极子，逐点算带符号场 `[1/(r−δ/2)² − 1/(r+δ/2)²]` 再取比值（不用 r⁻³ 解析）。
+  - 🔴 **血案（吃狗粮当场抓到的真 bug）**：初版数值链误用**单极子场之和** `Σ 1/d²` ⇒ 得 **1/r² 而非 1/r³**（X(2r)=0.25 vs 正确 0.125）。根因 = 双单极子在轴上的场是**带符号差**（方向相反相消），不是和。修正后 rel=4.679e-09。
+- **`array_crosstalk(params)`**：全阵列串扰矩阵（**按所有对累计**，对角邻居如实计入不截断）；每通道 `X_tot = √(Σ_{j≠k} X_kj²)`；`x_max_pair` 供 DRC「单对上限」判据。
+- **`crosstalk_sensitivity_eta(eta_single, x_total)`**：串扰恶化灵敏度上界 **η_eff = η_single·√(1+X_tot²)**（正交噪声平方和）。
+
+### ③ 多通道读出 mux（**思路复用 `sc_readout_mux`（D-140 超导 FDM）**）
+
+- **`readout_mux_plan(params)`**：FDM 音规划——一馈线多音、**同馈线音互异**、音间隔 ≥ 下限、音落带（每行独立端口可复用音）；载体改为 NV 的 **ODMR 微波音**（2.87 GHz 零场分裂邻域）。
+  - 🔴 **单一真源思路复用**：`sc_readout_mux.mux_plan` 的两条核心判据（同馈线音唯一 + 最小音间隔）迁移到磁力计阵列；**物理载体不同**（ODMR 微波音 vs 超导读出腔音）⇒ 自建轻量实现，非代码复制、非重复计数（离散/逻辑判据属 smoke，不入锚）。
+- **`array_lvs(elements, params)`**：四判据（通道号连续唯一 / 馈线数=行数 / 音唯一 / 音数=通道数）。
+
+### ④ 梯度计（两近邻柱差分抑共模）
+
+- **`gradiometer_cmrr_db(mismatch)`**：闭式 **CMRR=20·log₁₀(1/ε)**，ε=|ΔS|/S̄ 标度失配。
+- **`gradiometer_cmrr_numeric(mismatch, …)`**：**方法学独立**——含噪样本 LSQ 斜率比（不用 ε 与 log 闭式）。
+- **`gradiometer_eta(eta_single, baseline_um, mismatch)`**：梯度灵敏度 **η_grad = η_single·√2/baseline**（两点差分噪声 ×√2；÷ baseline 归一）。
+- **`array_physics(params)`**：三合一签核（串扰 + 读出 mux + 梯度计 CMRR ≥ 下限）。
+
+### ⑤ 阵列 DRC（`run_array_drc`，五则几何 + 频域）
+
+- 柱最近表面间距 ≥ 下限 · 单对串扰 ≤ 上限 · 音间隔 ≥ 下限 · 音落带 · 梯度基线 ≥ 下限 · 通道数 = rows×cols。
+- `DEFAULT_ARRAY_LIMITS`：`min_pillar_sep_um=0.30` / `min_tone_spacing_mhz=30.0` / `min_grad_baseline_um=0.80` / `max_crosstalk=0.05` / `min_cmrr_db=40.0`（**设计规则 · 可覆盖 · 非实测 golden**）。
+
+### ⑥ 四道新锚（`lda/lda_harness/_batch_b43_numeric.py` + `benchmark_defs/part7.py`）
+
+| 锚 | 物理量 | golden | candidate（方法学独立） | 实测 rel | 判级 |
+|---|---|---|---|---|---|
+| **B478** | 磁偶极近场串扰系数 X | 闭式 `(d_crit/r)³` | **点偶极场数值积分**（双单极子差分场） | 4.679e-09 | 严格独立 |
+| **B479** | 串扰恶化灵敏度倍率 | 闭式 `√(1+X_tot²)` | **蒙特卡洛噪声功率叠加** | 1.918e-06 | 严格独立 |
+| **B480** | 梯度计共模抑制比 CMRR | 闭式 `20log₁₀(1/ε)` | **含噪样本 LSQ 斜率比** | 2.295e-05 | 严格独立 |
+| **B481** | 梯度计差模灵敏度 η_grad | 闭式 `η√2/baseline` | **蒙特卡洛两点差分标准差** | 1.000e-04 | 严格独立 |
+
+- 🔴 **口径对齐血案（B480）**：candidate 初版误用 S₁=S̄(1±ε) ⇒ 数值链**系统性差 6 dB**（因 ε≡|S₁−S₂|/S̄ 要求 S₁=S̄(1+ε/2)、S₂=S̄(1−ε/2)）；**修正并登记为本锚口径**。
+- 🔴 **反自证桩护栏当场抓出的第二处**：candidate 初版用**中心差分**求斜率比，而对**线性函数**中心差分**恰精确** ⇒ 残差 2e-15 被判**代数恒等**（自证桩）；改用**含噪样本 LSQ 斜率比**（引入读出噪声统计起伏）才有真残差（4.2e-5 ≫ 机器精度）。
+- 🔴 **与既有锚边界（非重复计数）**：B473（**单器件**灵敏度标量）/ B476–B477（**单器件**几何量）/ QS-M3b（器件本体几何）**物理对象不同**。
+- 🔴 **诚实规模**：QS-M4 另含「串扰随 r 单调降」「阵列布局对称/节距」「读出 mux 音唯一性」「阵列 DRC/LVS」（单调性/几何约束/逻辑判据 ⇒ **非独立标量物理量**）⇒ 归 `run_qs_m4_smoke` 覆盖，**如实不登记为 B 锚**（同 Batch B-38~B-42 纪律：宁可少，不越级谎报）。
+
+### ⑦ 常驻门禁（`lda/run_qs_m4_smoke.py`，**37 判据**）
+
+- A 布局/单一真源（7）· B 串扰物理（7）· C 读出 mux（5）· D 梯度计（4）· E 阵列 DRC/LVS（4）· F 反向探针（7）· G 自入 CI（2）· H 模块自检直连（1）。
+- 🔴 **7 道反向探针各红在期望判据**：密阵列串扰超限（QS-ARR-CROSSTALK/PILLAR-SEP）· 音间隔过密（spacing_ok=False）· 失配过大 CMRR 不达标（cmrr_ok=False）· 同馈线音重复（tone_dup=True）· 通道缺失（QS-LVS-CH）· 柱径真源漂移（现算值变更）· 异常输入（抛错）。
+- 🔴 **G2（新 · 本档补）**：B478–B481 的 golden 必在 `_GOLDEN_DISPATCH` 内有定义（防漏登 ⇒ 假自证桩）。根因见 §⑩。
+- 入 `CORE_SMOKES`（312→313）+ timeout 300 s + 纳 `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面（README 顶行 37 判据由机器守）。
+
+### ⑧ 三同步
+
+- `README.md`：v0.9.221 顶行（声明 `run_qs_m4_smoke` **37 判据**）+ v0.9.220 降级「上一版」+ 当前账本段（账本 499 / 严格独立 477 / 降级 3 / 自证桩 19 / 独立率 95.59% / CI core 313）+ 601/608 行。
+- `CONTRIBUTING.md` 顶块 · `pyproject.toml` `0.9.220 → 0.9.221` · `run_webui_verification_ledger_smoke.py` docstring。
+
+### ⑨ 诚实边界
+
+- 阵列节距（1.2 µm = 4× 柱径）与 d_crit（取柱径，µm）为**设计示例 / 建模标度**，非任何 foundry 的真实金刚石阵列 deck。
+- 音间隔 / 失配 ε / 摩擦系数为**设计规则**（非 golden）。
+- 🔴 本档**不做**器件级/系统级性能宣称，不宣称「已达国际水平」。
+
+### ⑩ 🔴 全量 CI 照妖镜抓出的两笔真缺陷（「定向全绿 ≠ 无债」再实证）
+
+**(a) golden 分派漏登 ⇒ 四锚被误判自证桩。** 首轮全量 `run_benchmark_falsifiability_smoke` **9/13 PASS**：B478–B481 虽已正确登记进 `BENCHMARK_DEFS`（part7）+ `BENCHMARK_ORDER`（benchmarks），但 `lda_harness/golden.py` 的 **`_GOLDEN_DISPATCH` 是手工硬编码字典**，**漏登四锚** ⇒ `golden_value("B478")` 抛 `KeyError` ⇒ harness 静默回落 ⇒ 四锚被判**自证桩**（CLI verified=473 ≠ 端点 477；路径②报「无黄金参考定义: B478」）。定向门禁当初不解析 golden ⇒ 漏抓。
+- **处置**：修根因（`golden.py` +4 import +4 `_GOLDEN_DISPATCH` +4 `_PHYSICAL_LAW`）∧ 补常驻守卫（`run_qs_m4_smoke.py` **G2**，含「删一条 dispatch ⇒ 必红」反向探针）。
+- **通则**：**加锚必同登三处** —— ① `BENCHMARK_DEFS` ② `BENCHMARK_ORDER` ③ **`_GOLDEN_DISPATCH`（最易漏）**。前两处漏会被覆盖率/计数门禁抓，**第三处漏只在全量照妖镜路径②暴露**。
+
+**(b) 加噪 candidate 余量按单次 seed 判 ⇒ 跨轮非确定。** B480 candidate（含噪 LSQ 斜率比）首版 σ=0.001/n=2e6 ⇒ 跨种子最坏偏差 **2.8e-3 dB > tol 1e-3**（首轮侥幸 4.2e-5，重跑即 1.68e-3 ⇒ 判决**跨轮非确定**，违确定性纪律）。**根因**：CMRR 是 **dB 量** ⇒ `20·log₁₀(ratio)` 把斜率比相对噪声放大 20/ln10≈**8.686 倍**；且共模斜率幅度只 ε=0.01 ⇒ `1/√<x²>` 再放大。**处置**：σ 0.001→**0.0001**（×10）、n 2e6→**4e6**（√2）⇒ seed 档 dev **2.3e-5**、跨 30 种子最坏 **1.4e-4**（tol 的 **7× 余量**，跨轮确定；n 再大无收益 ⇒ σ 由**粗网格噪声实现**主导）。
+- **通则**：加噪 candidate 的余量必须按「**跨种子最坏偏差 < tol**」标定，**不得**按单次 seed 值判余量。
+
+## v0.9.220（2026-10-10 · 量子传感器芯片新征程 QS-M3b 第五档：G5 器件本体落地 · **零净增锚**（账本 495 不变 · 严格独立 473 / 降级 3 / 自证桩 19 全不变）· CI core 311 → 312 · 端点 149 不变）
+
+**本版把 QS-M3 明列的未竟项「量子传感专用 PDK 器件本体（NV 柱 / 腔 / 天线）」建成"真实的设计示例几何 + 可制造性 DRC + PDK 器件本体登记"**（蓝图 §QS-M3 档 G5 的后一半）。
+
+### ① 器件本体几何真源（`lda/lda_l2/primitives.py`）
+
+- 新增三器件族（对齐 PS-M9 `high_sens_*` 范式：单一真源 + 派生量现算 + 懒加载层号）：
+  - **`NV_PILLAR_DEFAULTS` / `qs_device_geometry('NVPillar', …)` / `qs_device_descs('NVPillar', …)`**
+    —— NV 色心纳米柱：锥形柱身 + 左右基底平台 + 侧壁保护层（Si 芯层 + Metal 侧壁层）。
+  - **`NV_CAVITY_DEFAULTS` / `qs_device_geometry('NVCavity', …)` / `qs_device_descs('NVCavity', …)`**
+    —— NV 耦合光子晶体腔：中心波导 + 双侧孔阵列（缺孔腔，Purcell 增强）。
+  - **`NV_ANTENNA_DEFAULTS` / `qs_device_geometry('MWAntenna', …)` / `qs_device_descs('MWAntenna', …)`**
+    —— 微波环形天线：环 + 馈线 + 焊盘（Metal 层，自旋操控/读出）。
+- 🔴 **与 QS-M3 严格同源的深度真源**：常量 `NV_D0_NM = 20.0` / `NV_D_ATT_NM = 200.0`（与 `qs_m3.optimal_depth_closed` 默认形参同源）；函数 `nv_pillar_height_um()` **现算** 柱高 = `qs_m3.optimal_depth_closed(d0, d_att)`（最优色心深度 d\*）/1000 + 柱顶余量 ⇒ **不复制第二份深度数值**。
+- 🔴 **单位红线**：腔孔周期/半径以 nm 输入，可制造性派生量**一律换算 µm**（DRC 限值同为 µm 口径）—— 杜绝「nm 当 µm」口径错（口径错 ⇒ 结论反向）。
+- 登记进 `primitive_descs()` / `primitive_geometry()` 统一派发（NV 器件 kind 归一名 `canon_qs_device`）。
+
+### ② 可制造性 DRC（`lda/lda_l2/drc.py`）
+
+- 新增九条工艺规则（`DEFAULT_RULES` + `CHECK_RULES` 双登记）：
+  `min_pillar_dia_um=0.20` / `max_pillar_height_um=0.50` / `max_taper_angle_deg=20.0` /
+  `min_pillar_gap_um=0.40` / `min_base_overhang_um=0.10` / `min_cavity_web_um=0.05` /
+  `min_cavity_hole_um=0.05` / `min_antenna_gap_um=0.60` / `min_antenna_trace_um=0.50`。
+- 新增 DRC 检查分支 `elif kind in ("NVPillar", "NVCavity", "MWAntenna")`，几何量由 `primitives.qs_device_geometry` **同源导出**（绝不在此重算）。
+- 🔴 **专用规则名而非通用 min_width**：柱径 0.30 < 通用 min_width 0.35 ⇒ 若沿用通用规则，「本该可制造」的 NV 柱会被**误判违规**（专用规则名 `min_pillar_dia` / `min_pillar_gap` / `min_base_overhang` / `min_taper_angle`）。
+
+### ③ PDK 器件本体登记（`lda/lda_pdk/registry.py`）
+
+- `BUILTIN_DEVICE_ENTRIES` 新增三条 `DeviceEntry`：`lda.NVPillar` / `lda.NVCavity` / `lda.MWAntenna`（`tech="Diamond"`，`sovereign_class="C"`，tags 含 `qs-m3b`）。
+- 🔴 `params` **恒空**（几何真源在 `primitives` / 物理量真源在 `qs_m3`·`qs_m1` ⇒ 不复制数值，防第二份副本漂移）；note 给出真源指针。
+
+### ④ 新模块 + 常驻门禁
+
+- 新增 `lda/lda_l2/qs_m3b.py`（`device_geometry_table` / `drc_table` / `pillar_height_consistency` / `selfcheck_qs_m3b` 22 项自检 / `design_qs_devices` 主入口）。
+- 新增 `lda/run_qs_m3b_smoke.py`（**36 判据**：A 几何与单一真源 7 / B DRC 6 / C PDK 器件本体 5 / D 同源对拍 3 / E 单位口径 2 / F 反向探针 11 / G 自入 CI 1 / H 模块自检直连 1）。
+- 登记进 `CORE_SMOKES`（311 → **312**）+ `_BUILTIN_TIMEOUT_OVERRIDE`（300s）+ `run_webui_pm_render_path_smoke._W10_EXTRA`（令 README 顶行判据数由机器守）。
+
+### ⑤ 🔴 修一处 QS-M3 遗留守卫空转
+
+- v0.9.219 顶行把 `run_qs_m3_smoke` 判据数写成「（25 判据）」而**未加 `**` 强调标记** ⇒ W10 正则（`` `run_x` **N 判据``）**恒不匹配** ⇒ **W10b「当前版本行至少含 1 条可对照条目」当场判红**（守卫按设计顶回，非误报；此前未被定向门禁覆盖 ⇒ 由全量 CI 照妖镜抓出）。
+- 本档以 `run_qs_m3b_smoke` **36 判据** 补足可对照条目（并纳 `_W10_EXTRA`），W10 / W10b / W10-P1 重新闭环。
+
+### ⑥ 三条同步 + 账本口径
+
+- `README.md` 新增 v0.9.220 顶行（并降级 v0.9.219 为「上一版」）；当前账本行 `CI core 311 → 312`。
+- `CONTRIBUTING.md` 顶部块 `v0.9.219 → v0.9.220` / `CI core 311 → 312`。
+- `pyproject.toml` `version = "0.9.219" → "0.9.220"`。
+- 🔴 **零净增锚**：NV 柱柱高与 QS-M3 最优深度严格同源、腔增强 Purcell 量与 **B18 同物理量**、天线几何与 QS-M1 微波噪声链同源 ⇒ **账本 495 不变**（严格独立 473 / 降级 3 / 自证桩 19 全不变）。
+
+### ⑦ 诚实边界
+
+- 器件几何为**设计示例**（柱径 0.30 µm / 柱高 ≈ d\*+0.12 / 腔周期 320 nm / 环半径 20 µm），可制造性规则为**工艺常识建模**，非任何 foundry 的真实金刚石/悬浮工艺 deck。
+- 🔴 本档**不做**任何器件级性能宣称（灵敏度 / Purcell 增强 / 自旋相干时间），不宣称「已达国际水平」。
+
+## v0.9.219（2026-10-10 · 量子传感器芯片新征程 QS-M3 第四档：灵敏度几何优化 · 净增 2 严格独立锚 B476/B477 · 账本 493 → 495 · 严格独立 471 → 473 · 降级 3 · 自证桩 19 · 独立率 95.54% → 95.56% · 天花板 97.77% → 97.78% · CI core 310 → 311 · 端点 149 不变）
+
+**本版把 QS 征程从「灵敏度 FOM 体系 + 真实噪声」推进到「几何设计」**（蓝图 §QS-M3 档），落地平台缺口 **G5**（量子传感专用 PDK 器件 —— NV 柱 / 腔 / 天线）的**几何半**：回答「色心做多深」「数值孔径取多大」这两个 NV 量子传感最核心的几何设计问题。
+
+**① 灵敏度几何优化模块 `lda/lda_l2/qs_m3.py`**（纯 numpy，15 项自检全 PASS）：
+- **链① NA 立体角收集效率**：偶极图样 `I(θ)∝sin²θ`（θ 自偶极轴量起），上半球总能量 ∝ `∫₀^{π/2}sin³θdθ = 2/3`；`η_NA(NA) = [cos³θ/3 − cosθ]₀^{θmax} / (2/3)`（θmax=arcsin NA）。闭式由 `∫sin³θdθ` 直接代入；**数值链**对 `w(θ)=sin²θ·sinθ·dθ` 逐点求和取 θ≤θmax 占比。NA=1⇒η_NA=1（全半球）；NA→0⇒η_NA→0。
+- **链② 深度 → 收集效率**：`η_coll(d) = η_NA · exp(−d/d_att)`（越深越难收集）。
+- 🔴 **链③ 最优深度 d\\***（本档核心）：几何灵敏度 FOM `η_tot(d) = √(1+(d₀/d)³) / √η_coll(d)`（分子 = 表面自旋浴噪声 谱扩散 ∝1/d³ 劣化对比度；分母 = 收集效率越低光子越少）。取 `d(ln η_tot)/dd = 0` ⇒ 闭式根方程 **`d⁴ + d₀³·d = 3·d₀³·d_att`**（`f(d)=d⁴+d₀³d−3d₀³d_att` 严格单调增 ⇒ 唯一正根，二分必收敛）。默认 `d₀=20nm / d_att=200nm` ⇒ **d\\*=45.885 nm**。
+- **链④ Purcell 腔增强计数率比**：`R/R₀ = 1 + β·F_P`（`F_P=4g²/(κγ₁)`；β=进腔模分支比）。🔴 **与 B18 同物理量 ⇒ 不另登记锚**，归 smoke 覆盖。
+- **链⑤ bulk 极限对照**：`η_structured/η_bulk ∈ (0,1]`（bulk 取 η_NA(1)=1 的理想上限）。
+- **四情景** `SCENARIOS`：baseline（NA=0.75 d=d\\* ⇒ η_coll=**12.13%**）/ shallow（d=10nm ⇒ η_coll=**14.51%**，收集高但表面噪声重）/ deep（d=150nm ⇒ η_coll=**7.21%**）/ cavity_enhanced（NA=0.9 + 腔增强 β=0.9 ⇒ η_coll=**30.81%** + R/R₀=**451**）。`design_geometry` 主入口。
+- **反向探针**（先证能变红）：NA 越界 ⇒ `ValueError` · 负深度 ⇒ `ValueError` · **错模型判别力**（去掉深度惩罚项 ⇒ FOM 单调增、内部极小消失，必判红）· **β=0 无增强**（恰为 1）· **κ=0 发散**。
+
+**② harness 锚 `lda/lda_harness/_batch_b42_numeric.py`（顶层 scipy-free · Batch B-42 · 双锚）**：
+- **B476 = 最优色心深度 d\\***（**严格独立锚**）：golden = 闭式根方程 `optimal_depth_golden`（解析求导 → 根方程 → 二分求唯一正根）/ candidate = **网格扫描 + 三点抛物插值定极小** `optimal_depth_candidate`（200000 点全网格 + 抛物精修，**不用任何导数/根方程**）。判据：**rel = 3.617e-08 / tol 1e-3**（≈**2.76e4×** 余量；网格离散化 + 抛物三阶项引入，非机器精度）。
+- **B477 = NA 立体角收集效率 η_NA**（**严格独立锚**）：golden = 闭式解析积分 `na_efficiency_golden`（`[cos³θ/3−cosθ]₀^{θmax}/(2/3)`）/ candidate = **数值角分布采样** `na_efficiency_candidate`（`w(θ)=sin³θ·dθ` 逐点求和，**不用任何闭式**）。判据：默认档(NA=0.75) **rel = 3.830e-06**（≈**261×** 余量）；NA 扫描 0.3→1.0 残差 1.76e-05（NA=0.3，56×）→0，均 ≫ 机器精度。
+- 🔴 **与既有锚不同物理对象（非重复）**：B473/B474/B475 均为灵敏度/相干时间的**标量或函数族**；B476/B477 是**几何量**（深度 nm / 立体角收集比 无量纲）。B18（Purcell 因子）与本档链④ 同物理量 ⇒ 链④ 不另登记锚。
+- 🔴 **诚实规模**：QS-M3 另含「Purcell 计数率比闭式 ⇄ 数值峰值提取」（与 B18 同物理量 ⇒ 属 smoke）、「bulk 对照 ∈(0,1]」（不等式约束 ⇒ 属 smoke）、「收集效率随深度单调降」（单调性 ⇒ 属 smoke），三者归 `run_qs_m3_smoke` 覆盖、**不登记为 B 锚**。
+- 🔴 **锚携带可扰动参数**：`B476_DEFAULT_PARAMS`（d0_nm / d_att_nm）/ `B477_DEFAULT_PARAMS`（na），对输出单调、非零响应 ⇒ 反自证桩护栏 `candidate_responds` 可证伪。
+
+**③ 接线五处 + 门禁**：
+- `benchmark_defs/part7.py`（B476/B477 DEFS）/ `benchmarks.py::BENCHMARK_ORDER`（493 → 495）/ `golden.py`（`_GOLDEN_DISPATCH` + `_PHYSICAL_LAW` 481 → 483）/ `_adapter_core.py`（`_BATCH_B42_MOD` + `_get_batch_b42`）/ `_adapter_p4.py`（两候选注册，threads `spec.params`）。
+- 新增常驻门禁 **`run_qs_m3_smoke.py`（25 判据 = 15 自校 + 10 锚接线）** 入 CORE（310 → **311**）+ `_BUILTIN_TIMEOUT_OVERRIDE` 300.0；含**锚接线复核**（B476/B477 入账 + golden 有限 + 候选有响应 + within_tol + **非恒等 rel>1e-12**）常驻防线。
+- **三同步**（README 顶行 + 当前账本段 + 题数 + 三分类 / CONTRIBUTING 顶块）+ 计数门禁（`run_count_consistency_smoke` B 题 470→472 · max B475→B477；`run_webui_verification_ledger_smoke` docstring 473/3/19/495；`run_statistical_anchor_smoke` 493→495 题 · range 476→478 · B1-B477）。
+
+**④ 本轮定向验证面**（全绿）：`run_qs_m3_smoke` **25/0** · `run_count_consistency_smoke` **13/0** · `run_three_class_consistency_smoke` **4/4**（473/3/19=495）· `run_maturity_baseline_smoke` PASS（(473,3,19)）· `run_ci_gate_contract_smoke` PASS（scanned=311/311）· `run_statistical_anchor_smoke` **34/0** · `run_webui_verification_ledger_smoke` **15/0** · pyflakes 干净（12 文件）· EOL 全 LF（15 文件）。
+
+⚠️ **诚实边界**：`d₀=20nm / d_att=200nm / NA=0.75 / (g,κ,γ₁)` 均为**设计示例量级**（室温 NV 典型），**无实测锚**；报告为**建模值**，本档只证明「解析根方程 ⇄ 网格扫描」与「解析积分 ⇄ 数值采样」数值一致这一数学事实，**不得作制造 / 性能宣称**（真实最优深度受晶体取向、表面处理、实际出射几何等未建模因素影响）；本档不宣称「已达国际水平」。C 级自主（纯 numpy/math），零商业依赖。
+
+## v0.9.218（2026-10-10 · 量子传感器芯片新征程 QS-M2 第三档：退相干 + 多源噪声 · 净增 1 严格独立锚 B475 · 账本 492 → 493 · 严格独立 470 → 471 · 独立率 95.72% → 95.54% · 天花板 97.76% → 97.77% · CI core 309 → 310 · 端点 149 不变）
+
+**本版把 QS 征程的 η 从「理想散粒极限」推到「真实灵敏度建模」**（蓝图 §4 QS-M2 档），闭合平台缺口 **G4**（自旋相干时间建模 —— 复用 `open_system` 滤波函数积分思路）。
+
+**① 退相干 + 多源噪声模块 `lda/lda_l2/qs_m2.py`**（纯 numpy，14 项自检全 PASS）：
+- 🔴 **退相干物理闭式**：单色噪声 `B(t)=b·cos(ωt+φ)`（φ 均匀）下相位积累 `Φ(t)=γ∫B(s)ds`，对 φ 平均：
+  - **FID**：`⟨Φ²⟩_fid = 2(1−cos ωt)`（DC 极限 `~(ωt)²`，**二阶**）；
+  - **Hahn 回波**：`⟨Φ²⟩_echo = 2(1−cos(ωt/2))²`（DC 极限 `~(ωt)⁴/32`，**四阶**）⇒ 回波把低频噪声**四阶压制**，正是**动力学去耦（DD）**提升相干时间的物理根因。
+  - 🔴 **haversine 求值**（`_haversine_sq`）：`2sin²(x/2)` 等价改写，小 x 下**相对精度**保持（直接 `1−cos` 会灾难性抵消到 0 ⇒ 相对判据假绿）。
+- **CPMG-n 滤波函数** `F_n(ω,t)=|Σ_j(−1)^j(e^{iωt_{j+1}}−e^{iωt_j})|²`（`t_j=(2j−1)t/(2n)`）⇒ `F_n(ω→0)=0`（DC 恒被重聚）+ 通带峰 `ω_peak∝n/t`；`coherent_chi` 相干积分（幂律谱 `S(ω)=A·ω^(−α)`，**自实现 `_trapezoid`** 避开 NumPy 2.0 移除的 `np.trapz`）。
+- 🔴 **四源噪声正交合成**：`η_real = √(η_ph² + η_mw² + η_temp² + η_mag²)`；`η_mw` 口径为**散粒极限之外的附加项** `η_mw = η_shot(C) − η_shot(C_eff)`（`C_eff=C·e^(−σ_φ²/2)`）⇒ σ_φ=0 时 η_mw **恰为 0**（**不得**把 C_eff 直接回代散粒式，否则散粒被重复计入 ⇒ baseline 虚高 √2）。
+- **四情景** `SCENARIOS`：baseline（纯光子散粒 ⇒ **846.59 pT/√Hz**）/ realistic（叠加微波抖动+温度+环境磁 ⇒ **847.88 pT/√Hz**）/ dd_enhanced（T₂=10µs > T₂* ⇒ **267.91 pT/√Hz**）/ bench（反向探针）。`design_coherence_noise` 主入口。
+- **反向探针**（先证能变红）：零对比度 ⇒ η→∞ · 负 T₂ ⇒ `ValueError` · 零脉冲 ⇒ `ValueError` · **DC 阶数判别力**（把回波按二阶归一必判红）· **微波零抖动口径**（σ_φ=0 ⇒ η_mw==0）。
+
+**② harness 锚 `lda/lda_harness/_batch_b41_numeric.py`（顶层 scipy-free）**：
+- **B475 = 自旋回波（Hahn echo）相位方差**（Batch B-41 · **严格独立锚**）：golden = 解析闭式 `echo_variance_golden`（`2(1−cos(ωt/2))²`，haversine 稳定式）/ candidate = **时间域数值积分链** `echo_variance_candidate`（时间网格 + 均匀初相 φ_k → 噪声波形 `B(s;φ)=cos(ωs+φ)` → t/2 处符号翻转（π 脉冲时序）→ 梯形积分 `Φ(φ_k)` → 对 φ 取 `⟨Φ²⟩` → 乘 (γb/ω)²=ω² 恢复归一化）。
+- 判据（干净通过）：B475 **rel = 2.541e-09 / tol 1e-3**（≈3.9e5×；时间/φ 网格离散化引入，**非**机器精度）。
+- 🔴 **与 B474 不同物理对象（非重复）**：B474 走灵敏度 η 的**线宽 FOM 路径**（时间包络 FWHM→σ_f→η 标量）；B475 走**相干时间建模本身**（回波相位方差函数族）——candidate 物理对象不同，方法学互不重叠。
+- 🔴 **诚实收敛**：QS-M2 另含「四源噪声正交合成」（平方和恒等）「CPMG 滤波函数 DC 归零」（极限恒等）两项，均**非独立标量物理量** ⇒ 如实归 `run_qs_m2_smoke` 覆盖、**不登记为 B 锚**（同 B472/B473/B474 纪律）。
+- 🔴 **锚携带可扰动参数**：`B475_DEFAULT_PARAMS`（`omega_t` = 无量纲 ωt，非 2π 整数倍 ⇒ 对 `⟨Φ²⟩` 单调非零响应）⇒ `candidate_responds=True` ⇒ 正确判严格独立。
+
+**③ 常驻门禁 `run_qs_m2_smoke.py`（入 CI core）**：19 判据 = `selfcheck_qs_m2` 14 项（回波≤FID ×1 + DC 阶数 ×2 + CPMG DC 归零 ×1 + 四源合成口径 ×2 + 单调性 ×2 + 反向探针 ×5 + 口径自检 ×1）+ **锚接线复核 5 项**（B475 入 BENCHMARK_ORDER / golden 有限 / candidate_responds / within tol / **非代数恒等**）。
+- 🔴 **锚接线复核是 QS-M0 血案的常驻防线**：「账本登记了」≠「候选链接上了」，必须现算验证。
+- 纯 numpy（无 scipy 泄漏），实测 <2s ⇒ 入 core；`_BUILTIN_TIMEOUT_OVERRIDE` 300s 留足余量。CORE_SMOKES 309 → **310**。
+
+**④ 三同步**：`README.md` 顶行（v0.9.218 新段）+ `## 当前账本` 段（492→493 / 470→471 / CI core 309→310）+ 三分类段（三类和 492→493）；`CONTRIBUTING.md` 顶部账本块（v0.9.218 · 493 道 · 严格独立 471 · CI core 310）；`run_webui_verification_ledger_smoke.py` docstring（470→471 / 492→493）；`run_count_consistency_smoke.py`（B 题 469→470 · max B474→B475 · 题数 492→493）；`run_statistical_anchor_smoke.py`（题库 492→493 · `range(400,475)`→`range(400,476)`）；`pyproject.toml` version 0.9.217→0.9.218。
+
+**⑤ 锚接线（同登两处 + 适配层）**：`benchmark_defs/part7.py`（B475 DEFS + `B475_DEFAULT_PARAMS` 引用）· `benchmarks.py::BENCHMARK_ORDER`（B475 追加）· `golden.py`（`golden_b475` 导入 + `_GOLDEN_DISPATCH["B475"]` + `_PHYSICAL_LAW`）· `_adapter_core.py`（`_get_batch_b41`）· `_adapter_p4.py`（`_b475_echo_variance_time_integration_cand` 候选注册，thread spec.params）。
+
+**⑥ 诚实边界**：四源噪声参数（σ_φ / |dB/dT| / S_T / B_noise）均为**设计示例量级**，**非实测**；η_real 为**建模值**，不作制造/性能宣称；本档**不宣称「已达国际水平」**。退相干闭式为**归一化无量纲**相位方差（b=1, γ=1 约定）。C 级自主（纯 numpy；`_batch_b41_numeric` 顶层 scipy-free），LLM 不进判决路径。
+
+## v0.9.217（2026-10-10 · 量子传感器芯片新征程 QS-M1 第二档：灵敏度 FOM 体系 · 净增 1 严格独立锚 B474 · 账本 491 → 492 · 严格独立 469 → 470 · 独立率 95.52% → 95.72% · 天花板 97.55% → 97.76% · CI core 308 → 309 · 端点 149 不变）
+
+**本版把 QS 征程的「灵敏度」从单标量升级为可比较、可溯源的 FOM 体系**（蓝图 §4 QS-M1 档），闭合平台缺口 **G3**（量子传感指标求解与报告 —— **避免 PS 征程「指标从零建」血案**：FOM 口径与噪声合成框架直接从 `qs_m0`/`ps_m2` 复用改写，未另起炉灶）。
+
+**① FOM 体系模块 `lda/lda_l2/qs_m1.py`**（纯 numpy，12 项自检全 PASS）：
+- 🔴 **统一口径单一真源**：`SENSITIVITY_CALIBER = "eta_dB_sqrtT__amplitude_spectral_density__T_per_sqrtHz"`（η = δB·√T，白噪声幅度谱密度）+ `assert_caliber()` **报告前强制自检** —— 混入「线宽受限 LOD」口径即 `ValueError`（PS 征程血案防线）。`MEASUREMENT_CONDITIONS` 逐项标注（室温 300K · DC · 单点 · per√Hz）。
+- **FOM 三独立可测量**：对比度 C、频域线宽 σ_f（`fom_from_linewidth` / `fom_from_T2star` 双向反解）、光子计数率 n_ph → 散粒噪声极限。
+- `sensitivity_via_T2star`（T₂* 路径，**金标**）↔ `sensitivity_via_linewidth`（线宽路径，**物理量不同**）双算互验。
+- **四情景** `SCENARIOS`：baseline（QS-M0 设计点 T₂*=1µs/C=0.03/n_ph=1e5 ⇒ **846.59 pT/√Hz**）/ cited（公开文献量级 T₂*=10µs/C=0.1/n_ph=1e6 ⇒ **25.40 pT/√Hz**）/ degraded（含微波展宽+磁场不均匀降级 ⇒ **25429.43 pT/√Hz**）/ bench（反向探针）。`design_fom_system` 主入口。
+- **反向探针**（先证能变红）：零对比度 ⇒ η→∞ · 零光子率 ⇒ η→∞ · 零线宽 ⇒ `ValueError` · 口径混比 ⇒ 被拒。
+
+**② harness 锚 `lda/lda_harness/_batch_b40_numeric.py`（顶层 scipy-free）**：
+- **B474 = 灵敏度 FOM 体系 · 线宽 FOM 路径**（Batch B-40 · **严格独立锚**）：golden = 散粒极限闭式（T₂* 路径，`_b474_golden_c`）/ candidate = **数值线宽提取链**（`fom_extract_linewidth_hz`：时间域对比度包络 `C(τ)=e^(−(τ/T₂*)²)` 数值 FWHM 提取 → σ_f → 反解等效 T₂*' → 合成 η；`_b474_cand_c`）。
+- 判据（干净通过）：B474 **|Δ| = 2.769e-06 / tol 1e-3**（≈361×；网格离散化引入，**非**机器精度）。
+- 🔴 **与 B473 不同物理量（非重复）**：B473 candidate 走**相位域**（ρ_φ + 复指数演化核差商）；B474 candidate 走**时间/频域**（对比度包络 FWHM 数值提取）——两锚方法学互不重叠。
+- 🔴 **诚实收敛**：初版另拟「口径自检反向探针」「四情景单调性」两项，均**非标量物理量**（守卫逻辑/不等式约束）⇒ 如实归 `run_qs_m1_smoke` 覆盖、**不登记为 B 锚**（同 B472/B473 纪律）。
+- 🔴 **锚携带可扰动参数**（承 v0.9.216 血案通法）：`B474_DEFAULT_PARAMS`（T₂*/n_ph/C/a 四物理设计量，均对 η 单调非零响应）⇒ `candidate_responds=True`（实测 T₂*±10% ⇒ Δ≈−3.9e-11/4.6e-11）⇒ 正确判严格独立。
+
+**③ 常驻门禁 `run_qs_m1_smoke.py`（入 CI core）**：17 判据 = `selfcheck_qs_m1` 12 项（口径自检 + 口径反向探针 + 双路径一致 + 单调性 ×3 + 情景序 ×2 + 反向探针 ×3 + 暗计数劣化）+ **锚接线复核 5 项**（B474 入 BENCHMARK_ORDER / golden 有限 / candidate_responds / within tol / **非代数恒等**）。
+- 🔴 **锚接线复核是 QS-M0 血案的常驻防线**：「账本登记了」≠「候选链接上了」，必须现算验证（`run_qs_m1_smoke` 直接 import `_b474_qs_fom_linewidth_cand` 跑 `candidate_responds`）。
+- 纯 numpy（无 scipy 泄漏），实测 <2s ⇒ 入 core；`_BUILTIN_TIMEOUT_OVERRIDE` 300s 留足余量。CORE_SMOKES 308 → **309**。
+
+**④ 三同步**：`README.md` 顶行（v0.9.217 新段）+ `## 当前账本` 段（491→492 / 469→470 / 独立率 95.52%→95.72% / 天花板 97.55%→97.76% / CI core 308→309）+ 三分类段（三类和 491→492）；`CONTRIBUTING.md` 顶部账本块（v0.9.217 · 492 道 · 严格独立 470 · CI core 309）；`run_webui_verification_ledger_smoke.py` docstring（469→470 / 491→492）；`run_count_consistency_smoke.py`（B 题 468→469 · max B473→B474 · 题数 491→492）；`run_statistical_anchor_smoke.py`（题库 491→492 · `range(400,474)`→`range(400,475)`）；`pyproject.toml` version 0.9.216→0.9.217。
+
+**⑤ 锚接线（同登两处 + 适配层）**：`benchmark_defs/part7.py`（B474 DEFS + `B474_DEFAULT_PARAMS` 引用）· `benchmarks.py::BENCHMARK_ORDER`（B474 追加）· `golden.py`（`golden_b474` 导入 + `_GOLDEN_DISPATCH["B474"]` + `_PHYSICAL_LAW`）· `_adapter_core.py`（`_get_batch_b40`）· `_adapter_p4.py`（`_b474_qs_fom_linewidth_cand` 候选注册，thread spec.params）。
+
+**⑥ 诚实边界**：四情景参数（T₂*/C/n_ph）均为**设计示例/公开文献量级**（室温 NV 集合体），**非实测**；cited 情景为**对标准星**非 LDA 实测值；η 为闭式散粒极限**建模值**，不作制造/性能宣称（真灵敏度受微波功率展宽、磁场不均匀、表象噪声等未建模因素降级）。C 级自主（纯 numpy；`_batch_b40_numeric` 顶层 scipy-free），LLM 不进判决路径。
+
+## v0.9.216（2026-10-10 · 量子传感器芯片新征程 QS-M0 首档：NV 色心磁强计基线全链落地 · 净增 1 严格独立锚 B473 · 账本 490 → 491 · 严格独立 468 → 469 · 独立率 95.51% → 95.52% · CI core 307 → 308 · 端点 149 不变）
+
+**本版是「量子传感器芯片征程」的开局档**（吃自己狗粮第 N 征程）：用 LDA 亲手设计一款量子传感器芯片，先「能设计出来」→ 逐步升性能与规模 → 分步达到国际水平，并借该芯片设计**检阅平台能力、补齐短板**。QS-M0 取 **NV 色心磁强计**（室温、芯片级、ODMR/Ramsey）为主线，SQUID 为第二腿（后续档）。
+
+**① 基线设计模块 `lda/lda_l2/qs_m0.py`**（纯 numpy，18 项自检全 PASS）：
+- 自旋哈密顿量 `H = D·Sz² + γe·B·Sz`（D = 2.87 GHz 零场劈裂 · γe = 28.024 GHz/T）。
+- `zeeman_split_closed_form`（Δf = 2γeB）↔ `zeeman_split_numeric`（按 **ms 标签**定位 ±1 本征值，非首末排序）—— 闭式↔数值 **rel_err = 0.0**。
+- `ramsey_phase`（φ = 2πγeBτ）/ `ramsey_contrast` / `ramsey_signal`。
+- 🔴 **灵敏度口径统一**：`η = δB·√T*`（白噪声功率谱密度，T/√Hz）——**禁止**与线宽受限 LOD 混比（PS 征程血案教训）。
+- `magnetometer_sensitivity`（含 √T2* 归一）/ `sensitivity_shot_limit_closed`：设计函数 `design_magnetometer_v0` ⇒ **η = 0.847 nT/√Hz**（设计预算参数）。
+
+**② harness 锚 `lda/lda_harness/_batch_b39_numeric.py`（顶层 scipy-free）**：
+- **B473 = NV 磁强计灵敏度误差传递**（Batch B-39 · **严格独立锚**）：golden = 散粒噪声极限闭式（`_eta_golden_c`）/ candidate = `magnetometer_eta_error_propagation_cand`（独立误差传递链 `_eta_cand_c`，相位噪声率 `ρ_φ=1/(C·√n_ph)`）。
+- 判据（干净通过）：B473 **|Δ| = 2.431e-05 / tol 1e-3**（≈41×）。
+- 🔴 **诚实收敛：本档只加 1 锚（非凑数）**——三候选逐一实测：① Ramsey 相位对角演化 = 标量相乘（机器精度 1.6e-16，代数恒等）② Zeeman 加横场 = NV 劈裂对横向场近不敏感（8.5e-12，二阶小量）③ Ramsey sinc² 条纹 = 傅里叶定义恒等 —— 三者**均被判定为自证桩风险**，如实撤下 ⇒ **宁少不虚报**。
+- 🔴🔴 **吃狗粮抓到「反自证桩护栏」的真盲区（本档第二血案）**：B473 初版 `default_params={}`（物理量写死在函数体内）⇒ `candidate_responds` 的**行为判据无参可扰、恒返回 False**；而 η 本身是极小物理量（≈8.5e-10 T/√Hz），候选与 golden 的**绝对**残差 |Δ|=2.06e-14 **< 1e-12** 阈值 ⇒ 被 `run_benchmark_falsifiability_smoke` **误判为自证桩**（尽管其**相对**一致性 2.43e-05 是真独立方法吻合、tol 的 41× 余量）。**根因** = 「桩判据用绝对残差阈值 + 无参可扰」双因叠加，与 B10 血案（残差物理上不可标定）同族但方向相反。**通法**：锚必须携带**可扰动的物理参数**。已把 `default_params` 设为四个物理设计量（T2*/n_ph/C/a）并 thread 到 golden(**params) + 候选 spec.params ⇒ `candidate_responds=True` ⇒ 正确判**严格独立**（golden/cand 数值逐位不变）。
+
+**③ 三同步**：`README.md` 顶行 + `## 当前账本` 段 + 三分类段（490→491 / 468→469 / 三类和 491）；`CONTRIBUTING.md` 顶部账本块（版本 v0.9.216 · 491 道 · 严格独立 469 · CI core 308）；`run_webui_verification_ledger_smoke.py` docstring（468→469 / 490→491）；`run_count_consistency_smoke.py`（B 题 467→468 · max B472→B473 · 题数 490→491）；`run_p0_count_guard_sync_smoke` 四处表面全绿。
+
+**④ CI 接线**：新增门禁 `lda/run_qs_m0_smoke.py` 入 `CORE_SMOKES`（CI core 307 → 308）+ `_BUILTIN_TIMEOUT_OVERRIDE`（300.0s · 实测 <2s 留足余量）。
+
+⚠️ **诚实边界**：NV 参数（T2*、光子计数率、对比度等）均为**设计预算值**，**非实测**；η = 0.847 nT/√Hz 是**设计点**，非流片实测灵敏度；本档只判**闭式物理律 ↔ 独立数值方法的一致性**，不作任何「已达国际水平」宣称（国际对标由后续档逐步逼近）。
+
 ## v0.9.215（2026-10-09 · 光子计算 SoC 案例卡交互式 tiling 预览增强：真实版图内联扩展到 16×16 · 零后端重计算 · 免登录 · run_soc_ui_smoke 加 C8 内联完整性判据 · 账本 490 不变 · CI core 307 不变 · 端点 149 不变）
 
 **本版只增强对外窗口层交互，不动后端/求解器/账本/端点**（零净增锚 ⇒ 账本 490 / strict 468 / 桩 19 / 独立率 95.51% / 天花板 97.55% / `_PHYSICAL_LAW` 478 全不变；CI core 307 与端点 149 不变——未新增端点、未新增 smoke 文件，仅扩展现有门禁判据 20→22）。

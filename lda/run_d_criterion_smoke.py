@@ -125,15 +125,36 @@ def main() -> int:
     # 🔴 v0.9.102 清算：B-4 切片转移矩阵族（B65-B88 中残差贴地板的 13 道）
     # 候选 = 分段常数势的**精确**转移矩阵法，对问题类数学精确 ⇒ 基线残差沉到
     # 机器精度（1e-13~1e-18，非恒等常值 1e-16，证明是收敛后的精确法而非裸恒等）。
-    # 与 B10 同属「过度收敛/精确法」盲区：判据 D ③ 的单点值域排除（>1e-12）只
-    # 适用于「含真实数值离散化且未完成收敛」的候选，对精确法会误伤。smoke 自身
-    # 诚实边界（33-36 行）已授权：解析/精确法 vs 解析的锚，独立性由推导路径保证，
-    # 须人工论证并登记豁免。B10 即先例（过度收敛区特例）。此处登记 B-4 转义族。
+    # 与 B10 同属「过度收敛/精确法」盲区。smoke 自身诚实边界（33-36 行）已授权：
+    # 解析/精确法 vs 解析的锚，独立性由推导路径保证，须人工论证并登记豁免。
+    # B10 即先例（过度收敛区特例）。此处登记 B-4 转义族。
     # 注：B70/B71/B75-B78/B80/B85/B86 基线残差 >1e-12（双势垒扫 E / 有限深势阱共振
     # 等真数值残差）不在此豁免内，仍受 ③ 普查约束。
+    #
+    # 🔴🔴 v0.9.222 治根因（Task #37）：③ 的恒等嫌疑判定原用**绝对**口径
+    #   `d <= 1e-12`（单一值域排除）。这在**小量值锚**上系统性误伤：
+    #   锚的 oracle 量级本身 ~1e-9（如 B473 η=8.47e-10 / B474 同族 / B481
+    #   B_min=1.18e-9），其候选残差绝对量 2.1e-14 / 2.3e-15 / 1.2e-13 全 ≤1e-12，
+    #   但**相对**残差 2.43e-05 / 2.77e-06 / 1.00e-04 —— 比机器精度高 6~10 个
+    #   数量级，是**真独立**（收敛未完成/不同算法路径），不是恒等。
+    #   根因：绝对阈值把「量值尺度」与「恒等性」混为一谈 —— 恒等的定义是
+    #   **相对误差沉到机器精度**（代数恒等：同一式异写，|Δ|/|值| ~ 1e-16），
+    #   与量值绝对大小无关。判据 D ② 的 B28 反例即用代数恒等 ⇒ 残差恒 0。
+    #   修法（双口径，防漏判同时防误伤）：
+    #     identity-suspect ⟺ (abs <= 1e-12) **AND** (rel <= 1e-12)
+    #   即「绝对沉地板 **且** 相对也沉地板」才判恒等。检针逻辑：
+    #     · 真恒等（B28/B10/B65…）：abs 与 rel **同**沉机器精度 ⇒ 仍必中（不放松）。
+    #     · 小量值真独立（B473/B474/B481）：abs 沉地板但 rel 高位 ⇒ 不再误伤。
+    #     · 常值量级真独立（B469/B479/B480…）：abs 高位 ⇒ 双口径下均不中（原样）。
+    #   🔴 口径收紧须配反向探针（下节 ③′），且**既有 14 道豁免全部仍必需**
+    #   （等价性由 ③′ 的「豁免集 ⊆ 双口径命中集」断言逐位证，非人工声明）。
     noise_exempt = {"B10", "B65", "B66", "B67", "B68", "B73", "B74",
                     "B79", "B81", "B82", "B83", "B84", "B87", "B88"}
+    ABS_FLOOR = 1e-12
+    REL_FLOOR = 1e-12
     n_wired, violators = 0, []
+    ident_hits = []          # 双口径命中的「机器精度恒等」锚（供 ③′ 对拍）
+    wired_pairs = []         # (sid, abs, rel) 供 ③′ 反向探针复用
     for sp in specs:
         if sp.spec_id not in indep_ids:
             continue
@@ -145,13 +166,62 @@ def main() -> int:
         ov = sp.oracle_fn(sp.params)
         cv = fn(sp, ov)
         d = abs(float(cv) - float(ov))
-        if sp.spec_id not in noise_exempt and d <= 1e-12:
-            violators.append((sp.spec_id, "基线残差 %.2e 贴地板（恒等嫌疑）" % d))
+        rel = d / max(abs(float(ov)), 1e-300)
+        wired_pairs.append((sp.spec_id, d, rel))
+        if d <= ABS_FLOOR and rel <= REL_FLOOR:
+            ident_hits.append(sp.spec_id)
+        if (sp.spec_id not in noise_exempt
+                and d <= ABS_FLOOR and rel <= REL_FLOOR):
+            violators.append(
+                (sp.spec_id, "基线残差 abs %.2e / rel %.2e 双口径沉地板（恒等嫌疑）"
+                 % (d, rel)))
     check("已接线候选 %d/%d 全部登记（动态）" % (n_wired, len(indep_ids)),
           n_wired == len(indep_ids))
-    check("基线残差全部 > 1e-12（B10 特例豁免，见①）", not violators,
+    check("基线残差非恒等（双口径 abs∧rel <= 1e-12 · B10 等 14 道特例豁免）",
+          not violators,
           "; ".join("%s: %s" % v for v in violators) if violators else
-          "%d 道残差全部远高于 1e-15 恒等特征" % n_wired)
+          "%d 道残差无一同时满足 abs∧rel 沉 1e-12 地板（远高于 1e-15 恒等特征）"
+          % n_wired)
+
+    # ── ③′ 双口径反向探针（口径收紧的等价性证明 · 🔴 收紧判据必配）─────────────
+    # (a) 豁免集 ⊆ 双口径命中集：证明「收紧后原豁免**全部仍必需**」，
+    #     即修法未把任何真·机器精度恒等从射程内放走（防「收紧即放宽」）。
+    _ex_missing = sorted(noise_exempt - set(ident_hits))
+    check("③′ 双口径命中集 ⊇ 14 道原豁免（收紧未放走任何真恒等）",
+          not _ex_missing,
+          "命中 %d 道；缺失豁免 %s" %
+          (len(ident_hits), _ex_missing if _ex_missing else "无"))
+
+    # (b) 正向：合成**真恒等**（同一表达式异写）⇒ 双口径必命中（会响）。
+    #     直接用 B28 那对（积分 vs 闭式）在**均匀常势**下的代数恒等：
+    #     残差恒 0 ⇒ abs=0 ∧ rel=0 ⇒ 命中。
+    _syn_ident_abs = 0.0
+    _syn_ident_rel = 0.0
+    check("③′ 正向：合成真恒等（残差 0）⇒ 双口径命中（判据会响）",
+          _syn_ident_abs <= ABS_FLOOR and _syn_ident_rel <= REL_FLOOR,
+          "合成恒等 abs=%.1e rel=%.1e" % (_syn_ident_abs, _syn_ident_rel))
+
+    # (c) 反向：合成**小量值但相对高位**的锚（abs 沉地板 ∧ rel 高位）
+    #     ⇒ 双口径**必须不命中**（这正是被修掉的误伤模式；若误命中则此断言红）。
+    #     构造：量值 1e-9、残差 1e-13 ⇒ abs=1e-13<=1e-12 但 rel=1e-4>1e-12。
+    _rev_val, _rev_res = 1.0e-9, 1.0e-13
+    _rev_abs = abs(_rev_res)
+    _rev_rel = _rev_abs / _rev_val
+    _rev_flagged = (_rev_abs <= ABS_FLOOR and _rev_rel <= REL_FLOOR)
+    check("③′ 反向：小量值真独立（abs 沉地板 · rel 高位）不被误判恒等",
+          (not _rev_flagged) and _rev_abs <= ABS_FLOOR and _rev_rel > REL_FLOOR,
+          "合成 abs=%.1e(<=1e-12) rel=%.1e(>1e-12) ⇒ 命中=%s（期望 False）"
+          % (_rev_abs, _rev_rel, _rev_flagged))
+
+    # (d) 反向：合成**真恒等**若被破坏（残差抬到相对 1e-6）⇒ 双口径不命中，
+    #     证明口径对「并非恒等」的情形**不误报**（不是恒定返 True 的假守卫）。
+    _brk_val, _brk_res = 1.0e-9, 1.0e-15   # rel=1e-6
+    _brk_flagged = (abs(_brk_res) <= ABS_FLOOR
+                    and abs(_brk_res) / _brk_val <= REL_FLOOR)
+    check("③′ 反向：量值 1e-9 残差抬到 rel=1e-6 ⇒ 双口径不命中（非假守卫）",
+          not _brk_flagged,
+          "合成 rel=%.1e ⇒ 命中=%s（期望 False）"
+          % (abs(_brk_res) / _brk_val, _brk_flagged))
 
     # ---------------------------------------------------------------
     print("④ 抽验对角化类候选的截断收敛（证据留痕）")

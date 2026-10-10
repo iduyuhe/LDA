@@ -249,6 +249,36 @@ from ._batch_b38_numeric import (  # Batch B-38 双方法独立锚数值核（�
     golden_b472,
 )
 
+from ._batch_b39_numeric import (  # Batch B-39 双方法独立锚数值核（量子传感器芯片征程 QS-M0 衍生 · NV 色心磁力计磁灵敏度谱密度 η「闭式散粒极限 golden × 数值误差传播链候选」）
+    golden_b473,
+)
+
+from ._batch_b40_numeric import (  # Batch B-40 双方法独立锚数值核（量子传感器芯片征程 QS-M1 衍生 · 灵敏度 FOM 体系「T2* 路径闭式 golden × 数值线宽提取链候选」）
+    golden_b474,
+)
+
+from ._batch_b41_numeric import (  # Batch B-41 双方法独立锚数值核（量子传感器芯片征程 QS-M2 衍生 · 自旋回波相位方差「闭式 golden × 时间域数值积分候选」· 退相干/DD）
+    golden_b475,
+)
+
+from ._batch_b42_numeric import (  # Batch B-42 双方法独立锚数值核（量子传感器芯片征程 QS-M3 衍生 · 灵敏度几何优化「最优深度根方程闭式 × 网格扫描候选」+「NA 收集效率解析积分闭式 × 数值采样候选」）
+    golden_b476,
+    golden_b477,
+)
+
+from ._batch_b43_numeric import (  # Batch B-43 双方法独立锚数值核（量子传感器芯片征程 QS-M4 衍生 · 阵列化「磁偶极近场串扰立方律闭式 × 点偶极场数值积分候选」+「串扰灵敏度平方和闭式 × 蒙特卡洛候选」+「梯度计 CMRR 解析闭式 × 含噪 LSQ 斜率比候选」+「梯度计差模灵敏度闭式 × 蒙特卡洛差分候选」）
+    golden_b478,
+    golden_b479,
+    golden_b480,
+    golden_b481,
+)
+
+from ._batch_b44_numeric import (  # Batch B-44 双方法独立锚数值核（量子传感器芯片征程 QS-M5 衍生 · 闭环标定「频锁鉴别器解析斜率闭式 × FID 数值线型中心差分候选」+「磁场标度两点法闭式 × 全跨多点 LSQ 斜率候选」+「AC 灵敏度带宽折算解析闭式 × 蒙特卡洛带限噪声 rms 候选」）
+    golden_b482,
+    golden_b483,
+    golden_b484,
+)
+
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -1034,6 +1064,24 @@ _GOLDEN_DISPATCH = {
     "B470": golden_b470,
     "B471": golden_b471,
     "B472": golden_b472,
+    # ---- Batch B-39（量子传感器芯片征程 QS-M0 衍生 · NV 色心磁力计磁灵敏度谱密度 η 闭式散粒极限 golden × 数值误差传播链候选）----
+    "B473": golden_b473,
+    # ---- Batch B-40（量子传感器芯片征程 QS-M1 衍生 · 灵敏度 FOM 体系 T2* 路径闭式 golden × 数值线宽提取链候选）----
+    "B474": golden_b474,
+    # ---- Batch B-41（量子传感器芯片征程 QS-M2 衍生 · 自旋回波相位方差 闭式 golden × 时间域数值积分候选 · 退相干/DD）----
+    "B475": golden_b475,
+    # ---- Batch B-42（量子传感器芯片征程 QS-M3 衍生 · 灵敏度几何优化：最优色心深度根方程闭式 × 网格扫描候选 + NA 收集效率解析积分闭式 × 数值采样候选）----
+    "B476": golden_b476,
+    "B477": golden_b477,
+    # ---- Batch B-43（量子传感器芯片征程 QS-M4 衍生 · 阵列化：磁偶极近场串扰系数立方律闭式 × 点偶极场数值积分 + 串扰灵敏度平方和闭式 × 蒙特卡洛 + 梯度计 CMRR 解析闭式 × 含噪 LSQ 斜率比 + 梯度计差模灵敏度闭式 × 蒙特卡洛差分）----
+    "B478": golden_b478,
+    "B479": golden_b479,
+    "B480": golden_b480,
+    "B481": golden_b481,
+    # ---- Batch B-44（量子传感器芯片征程 QS-M5 衍生 · 闭环标定与动态范围：频锁鉴别器中心斜率解析闭式 × FID 数值线型中心差分 + 磁场标度两点法闭式 × 全跨多点 LSQ 斜率 + AC 灵敏度带宽折算解析闭式 × 蒙特卡洛带限噪声 rms）----
+    "B482": golden_b482,
+    "B483": golden_b483,
+    "B484": golden_b484,
 
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
@@ -1127,6 +1175,12 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B463", "B464", "B465",  # Batch B-36（光子传感器新征程 PS-M5 衍生 · 微流控/Lab-on-chip 多物理场）
                  "B466", "B467", "B468",  # Batch B-37（光子传感器新征程 PS-M6 衍生 · 规模与集成：阵列热串扰 / TIA 读出噪声底 kT/C / 对准耦合效率）
                  "B469", "B470", "B471", "B472",  # Batch B-38（光子传感器新征程 PS-M8 衍生 · G2 几何半 + G4 传感窗口：thin-wire/slot/suspended 折射率灵敏度 / Q 增强 LOD 缩放）
+                 "B473",  # Batch B-39（量子传感器芯片征程 QS-M0 衍生 · NV 色心磁力计磁灵敏度谱密度 η）
+                 "B474",  # Batch B-40（量子传感器芯片征程 QS-M1 衍生 · 灵敏度 FOM 体系 · 线宽 FOM 路径）
+                 "B475",  # Batch B-41（量子传感器芯片征程 QS-M2 衍生 · 自旋回波相位方差 · 退相干/DD 相干时间建模）
+                 "B476", "B477",  # Batch B-42（量子传感器芯片征程 QS-M3 衍生 · 灵敏度几何优化：最优色心深度 + NA 立体角收集效率）
+                 "B478", "B479", "B480", "B481",  # Batch B-43（量子传感器芯片征程 QS-M4 衍生 · 阵列化：磁偶极近场串扰系数 / 串扰恶化灵敏度倍率 / 梯度计共模抑制比 / 梯度计差模灵敏度）
+                 "B482", "B483", "B484",  # Batch B-44（量子传感器芯片征程 QS-M5 衍生 · 闭环标定与动态范围：频锁鉴别器中心斜率 / 磁场标度因子自标定 / AC 灵敏度带宽折算）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

@@ -910,6 +910,241 @@ def high_sens_descs(kind: str, params: Dict[str, float]) -> List[Dict]:
     return descs
 
 
+# ---------------------------------------------------------------------------
+# QS 征程 M3b（G5 器件本体） · 量子传感专用器件本体（NV 柱 / 光子晶体腔 / 微波天线）
+# ---------------------------------------------------------------------------
+#: 🔴 与 `qs_m3.py` **严格同源**的深度真源：NV 色心到金刚石表面的深度（nm）。
+#:    QS-M3 的几何灵敏度 FOM 的最优深度 d* 由 `qs_m3.optimal_depth_closed(20, 200)`
+#:    现算 = 45.885 nm ⇒ 器件本体**不得**自持另一份深度值（否则「设计侧一套、
+#:    物理侧一套」的副本漂移）。此处只**引用**同源常量名（`D0_NM`/`D_ATT_NM`
+#:    与 `qs_m3.optimal_depth_closed` 的默认形参同源），深度值由现算导出。
+NV_D0_NM = 20.0            # 表面噪声特征深度（nm）—— 与 qs_m3.optimal_depth_closed 同源
+NV_D_ATT_NM = 200.0        # 倏逝衰减长度（nm）—— 与 qs_m3.collection_efficiency_depth 同源
+
+#: NV 柱（nanopillar）几何参数 **单一真源**（QS-M3b）；单位 µm。
+#: 🔴 取值依据 = 量子传感工程常识 + QS-M3 现算最优深度：
+#:    · pillar 直径必须 ≥ 光刻极限（DRC 机器校验 min_pillar_dia）；
+#:    · pillar 高度由「色心深度 d* + 顶部余量」现算 ⇒ 与 QS-M3 的最优深度同源；
+#:    · taper 半角受限于刻蚀侧壁角可实现性（DRC 校验 max_taper_angle）。
+NV_PILLAR_DEFAULTS: Dict[str, float] = {
+    "dia_um": 0.30,            # 柱顶直径（≥ min_pillar_dia）
+    "h_top_um": 0.12,          # 柱顶到 NV 色心的余量（保护表面态）
+    "taper_deg": 12.0,         # 锥形侧壁半角（度）
+    "h_um": 0.22,              # 金刚石膜厚（承载柱基底）
+    "gap_um": 0.60,            # 相邻柱最小间距（≥ min_pillar_gap）
+    "sidewall_um": 0.05,       # 侧壁保护层厚（钝化 / 抑制表面噪声）
+    "anchor_len_um": 2.00,     # 锚定段长度（柱根与基底连接）
+    "base_w_um": 1.40,         # 柱基底平台宽（≥ dia + 2·sidewall + 2·anchor_margin）
+}
+
+#: 光子晶体腔（NV 耦合）几何参数 **单一真源**（QS-M3b）；单位 µm。
+#: 🔴 腔增强（Purcell）与 QS-M3 `purcell_factor` 同源：本表给**几何**
+#:    （孔周期 / 孔半径 / 腔区），光子学量（g/κ/γ₁）真源在 `qs_m3.SCENARIOS`。
+NV_CAVITY_DEFAULTS: Dict[str, float] = {
+    "period_nm": 320.0,        # 光子晶体孔周期（nm）
+    "hole_r_nm": 90.0,         # 孔半径（nm）
+    "n_holes": 9,              # 单侧孔数（共 2×n_holes 个）
+    "wg_w_um": 0.45,           # 中心波导线宽（µm）
+    "cav_len_um": 0.60,        # 腔区（缺孔段）长度（µm）
+    "h_um": 0.22,              # 膜厚（µm）
+    "nv_offset_um": 0.15,      # NV 相对腔中心的偏移（µm）
+    "min_web_nm": 60.0,        # 相邻孔间最小残余壁厚（≥ min_cavity_web）
+}
+
+#: 微波天线（环 / 线）几何参数 **单一真源**（QS-M3b）；单位 µm。
+#: 🔴 「天线 → NV 间距」与 QS-M1 的微波噪声链同源（越近耦合越强但噪声越大）；
+#:    本表给几何，微波场强/噪声量真源在 QS-M1 模块（不在此复制数值）。
+NV_ANTENNA_DEFAULTS: Dict[str, float] = {
+    "loop_r_um": 20.0,         # 天线环半径（µm）
+    "trace_w_um": 1.20,        # 导线宽（µm）
+    "gap_um": 1.00,            # 线间距（≥ min_antenna_gap）
+    "nv_dist_um": 2.00,        # 天线平面 → NV 平面垂直距离（µm）
+    "feed_w_um": 2.00,         # 馈线宽（µm）
+    "feed_len_um": 15.0,       # 馈线长度（µm）
+    "pad_w_um": 20.0,          # 焊盘边长（µm）
+    "metal_thick_nm": 200.0,   # 金属层厚（nm）
+    "min_antenna_gap_um": 0.80,  # 天线内圈最小间距（自洽下限）
+}
+
+#: 量子传感器件 kind 归一名（大小写 / 下划线 / 空格不敏感）。
+_QS_DEVICE_ALIAS: Dict[str, str] = {
+    "nvpillar": "NVPillar",
+    "nv_pillar": "NVPillar",
+    "photoniccrystalcavity": "NVCavity",
+    "nvcavity": "NVCavity",
+    "nv_cavity": "NVCavity",
+    "microwaveantenna": "MNAAntenna",
+    "mwanenna": "MWAntenna",
+    "mwantenna": "MWAntenna",
+    "mw_antenna": "MWAntenna",
+    "nvantenna": "MWAntenna",
+}
+
+
+def canon_qs_device(kind: str) -> str:
+    """量子传感器件 kind 归一（`nv_pillar` / `NV_PILLAR` → `NVPillar`）。"""
+    k = str(kind).lower().replace("_", "").replace("-", "").replace(" ", "")
+    if k not in _QS_DEVICE_ALIAS:
+        raise ValueError(f"量子传感器件不支持的 kind={kind}"
+                         f"（支持 {sorted(set(_QS_DEVICE_ALIAS.values()))}）")
+    return _QS_DEVICE_ALIAS[k]
+
+
+def _nv_p(kind: str, params: Dict[str, float]) -> Dict[str, object]:
+    """NV 器件参数解析：**本族默认 + 调用方覆盖**，缺项逐键回落（单一真源）。"""
+    k = canon_qs_device(kind)
+    src = {"NVPillar": NV_PILLAR_DEFAULTS,
+           "NVCavity": NV_CAVITY_DEFAULTS,
+           "MWAntenna": NV_ANTENNA_DEFAULTS}[k]
+    out: Dict[str, object] = dict(src)
+    for key in list(out):
+        if params and key in params:
+            out[key] = params[key]
+    return out
+
+
+def nv_pillar_height_um(h_top_um: float = NV_PILLAR_DEFAULTS["h_top_um"],
+                        d0_nm: float = NV_D0_NM,
+                        d_att_nm: float = NV_D_ATT_NM) -> float:
+    """NV 柱柱高（µm）—— **由 QS-M3 现算最优深度同源导出**（不许手写重复值）。
+
+    柱高 = 最优色心深度 d*（µm） + 柱顶余量 h_top。
+    🔴 d* 现算自 `qs_m3.optimal_depth_closed(d0, d_att)`（唯一真源）；
+       若两处各自维护深度常数，则在参数变更时会静默分家。
+    """
+    from lda_l2.qs_m3 import optimal_depth_closed
+    d_star_nm = optimal_depth_closed(float(d0_nm), float(d_att_nm))
+    return d_star_nm / 1000.0 + float(h_top_um)
+
+
+def qs_device_geometry(kind: str, params: Dict[str, float]) -> Dict[str, float]:
+    """量子传感专用器件的**可制造性几何量**（DRC 检查源 · 单一真源）。
+
+    派生量**全部由主参数算出**（不许手写重复值）：
+
+      NVPillar    dia / h（= d* + h_top，**与 QS-M3 最优深度同源**）/ taper_deg /
+                  gap / base_w / sidewall；min_width = dia；
+                  base_overhang = (base_w − dia − 2·sidewall) / 2 ⇒ 机器校验「基底不得窄于柱」
+      NVCavity    period / hole_r / min_web（= period − 2·hole_r）/ n_holes / cav_len /
+                  wg_w；min_width = wg_w
+      MWAntenna   trace_w / gap / feed_w / loop_r / nv_dist / pad_w；
+                  min_width = min(trace_w, feed_w)
+    """
+    k = canon_qs_device(kind)
+    p = _nv_p(k, params)
+    g: Dict[str, float] = {}
+    if k == "NVPillar":
+        dia = float(p["dia_um"])
+        sw = float(p["sidewall_um"])
+        bw = float(p["base_w_um"])
+        g["dia"] = dia
+        g["h"] = nv_pillar_height_um(float(p["h_top_um"]))
+        g["film_h"] = float(p["h_um"])
+        g["taper_deg"] = float(p["taper_deg"])
+        g["pillar_gap"] = float(p["gap_um"])
+        g["sidewall"] = sw
+        g["base_w"] = bw
+        g["anchor_len"] = float(p["anchor_len_um"])
+        g["base_overhang"] = (bw - dia - 2.0 * sw) / 2.0
+        g["min_width"] = dia
+        g["min_space"] = g["pillar_gap"]
+    elif k == "NVCavity":
+        period = float(p["period_nm"])
+        hr = float(p["hole_r_nm"])
+        g["period"] = period
+        g["hole_r"] = hr
+        # 🔴 统一到 µm（DRC 限值同为 µm 口径）—— 孔周期/半径以 nm 输入便于读，
+        #    但可制造性派生量一律换算成 µm，杜绝「nm 当 µm」的单位错（口径错⇒结论反向）。
+        g["min_web"] = (period - 2.0 * hr) / 1000.0
+        g["hole_r_um"] = hr / 1000.0
+        g["n_holes"] = float(p["n_holes"])
+        g["cav_len"] = float(p["cav_len_um"])
+        g["wg_w"] = float(p["wg_w_um"])
+        g["film_h"] = float(p["h_um"])
+        g["nv_offset"] = float(p["nv_offset_um"])
+        g["min_width"] = g["wg_w"]
+        g["min_space"] = g["min_web"]
+    else:  # MWAntenna
+        tw = float(p["trace_w_um"])
+        fw = float(p["feed_w_um"])
+        g["trace_w"] = tw
+        g["antenna_gap"] = float(p["gap_um"])
+        g["feed_w"] = fw
+        g["loop_r"] = float(p["loop_r_um"])
+        g["nv_dist"] = float(p["nv_dist_um"])
+        g["feed_len"] = float(p["feed_len_um"])
+        g["pad_w"] = float(p["pad_w_um"])
+        g["metal_thick"] = float(p["metal_thick_nm"])
+        g["min_width"] = min(tw, fw)
+        g["min_space"] = g["antenna_gap"]
+    return g
+
+
+def qs_device_descs(kind: str, params: Dict[str, float]) -> List[Dict]:
+    """量子传感专用器件版图（QS 征程 M3b（G5 器件本体））。
+
+    = 金刚石膜芯层几何 + **金属层**几何（天线类）。
+
+    🔴 与 `qs_device_geometry` **同源**（同一 `_nv_p` 参数解析 + 同一派生量），
+       杜绝「DRC 量算一套、版图画另一套」。层号经懒加载取
+       `gds_export.LIB_LAYER_SI` / `LIB_LAYER_METAL`（单一真源）。
+    """
+    from lda_l2.gds_export import LIB_LAYER_SI, LIB_LAYER_METAL
+    k = canon_qs_device(kind)
+    g = qs_device_geometry(k, params)
+    si = LIB_LAYER_SI
+    mt = LIB_LAYER_METAL
+    descs: List[Dict] = []
+
+    def _rect(x0, y0, x1, y1, layer):
+        descs.append({"kind": "boundary", "layer": layer,
+                      "rings_um": [_poly_rect(x0, y0, x1, y1)]})
+
+    if k == "NVPillar":
+        dia, h, bw = g["dia"], g["h"], g["base_w"]
+        al, sw = g["anchor_len"], g["sidewall"]
+        r = dia / 2.0
+        # 基底平台（左右锚定块）+ 柱身锥形 + 侧壁保护层（用同心多边形近似）
+        _rect(-al - bw / 2.0, -bw / 2.0, -al + bw / 2.0, bw / 2.0, si)   # 左基底
+        _rect(al - bw / 2.0, -bw / 2.0, al + bw / 2.0, bw / 2.0, si)     # 右基底
+        # 柱身：从基底到柱顶的锥形（底宽 dia+2·taper_extent → 顶宽 dia）
+        taper_ext = h * math.tan(math.radians(g["taper_deg"]))
+        rb = r + taper_ext
+        descs.append({"kind": "boundary", "layer": si,
+                      "rings_um": [[(-rb, 0.0), (-r, h), (r, h), (rb, 0.0)]]})
+        # 侧壁保护层（沿柱身两侧的薄带）
+        for sgn in (+1.0, -1.0):
+            descs.append({"kind": "boundary", "layer": mt,
+                          "rings_um": [[(sgn * r, h), (sgn * (r + sw), h),
+                                        (sgn * (rb + sw), 0.0), (sgn * rb, 0.0)]]})
+        return descs
+
+    if k == "NVCavity":
+        # period 以 nm 存储（物理口径），此处换算为 µm 作版图坐标；hole_r_um 已是 µm 派生量。
+        period, hr = g["period"] / 1000.0, g["hole_r_um"]
+        n = int(g["n_holes"])
+        wg, cL, h = g["wg_w"], g["cav_len"], g["film_h"]
+        # 中心波导（芯层）—— 腔区长度 cL，两侧光子晶体段
+        total = cL + 2 * n * period
+        _rect(-total / 2.0, -wg / 2.0, total / 2.0, wg / 2.0, si)
+        # 孔阵列（沿波导两侧各一排）—— 用圆多边形近似
+        for i in range(n):
+            xc = cL / 2.0 + (i + 0.5) * period
+            for sgn in (+1.0, -1.0):
+                descs.append({"kind": "boundary", "layer": si,
+                              "rings_um": [_annulus(sgn * xc, 0.0, 0.0, hr, 16)]})
+        return descs
+
+    # MWAntenna：环 + 馈线 + 焊盘（金属层）
+    lr, tw = g["loop_r"], g["trace_w"]
+    fl, fw, pw = g["feed_len"], g["feed_w"], g["pad_w"]
+    descs.append({"kind": "boundary", "layer": mt,
+                  "rings_um": [_annulus(0.0, 0.0, lr - tw / 2.0, lr + tw / 2.0)]})
+    _rect(-fw / 2.0, lr, fw / 2.0, lr + fl, mt)          # 馈线（向上引出）
+    _rect(-pw / 2.0, lr + fl, pw / 2.0, lr + fl + pw, mt)  # 焊盘
+    return descs
+
+
 def splitter_descs(params: Dict[str, float]) -> List[Dict]:
     """MMI 型 1×2 分束器几何（IR kind `Splitter` · v0.9.141 G4/M4）。
 
@@ -1046,6 +1281,12 @@ def primitive_descs(kind: str, params: Dict[str, float]) -> List[Dict]:
                 "suspended_waveguide", "slotring", "slot_ring",
                 "suspendedring", "suspended_ring"):
         return high_sens_descs(kind, params)
+    # v0.9.220（QS 征程 M3b（G5 器件本体））：量子传感专用器件本体（NV 柱 / 光子晶体腔 / 微波天线）。
+    if kind in ("nvpillar", "nv_pillar", "photoniccrystalcavity",
+                "nvcavity", "nv_cavity", "nvphccavity",
+                "microwaveantenna", "mwantenna", "mw_antenna",
+                "nvantenna", "nv_antenna"):
+        return qs_device_descs(kind, params)
     raise ValueError(f"真实版图基元暂不支持 kind={kind}")
 
 
@@ -1142,5 +1383,29 @@ def primitive_geometry(kind: str, params: Dict[str, float]) -> Dict[str, float]:
             out["min_support_overhang"] = g["support_overhang"]
         if K.endswith("Ring"):
             out["min_bend_R"] = g["R"]
+        return out
+    # v0.9.220（QS 征程 M3b（G5 器件本体））：量子传感专用器件本体——专用规则名
+    # （柱径 / 柱高（= d*+h_top，与 QS-M3 同源）/ 侧壁角 / 腔孔壁厚 / 天线间距），
+    # 与通用 min_width 分家（柱径 0.30 < 通用 0.35 ⇒ 若沿用通用规则会被误判）。
+    if kind in ("nvpillar", "nv_pillar", "photoniccrystalcavity",
+                "nvcavity", "nv_cavity", "nvphccavity",
+                "microwaveantenna", "mwantenna", "mw_antenna",
+                "nvantenna", "nv_antenna"):
+        K = canon_qs_device(kind)
+        g = qs_device_geometry(K, params)
+        out = {"min_width": g["min_width"], "min_space": g["min_space"]}
+        if K == "NVPillar":
+            out["min_pillar_dia"] = g["dia"]
+            out["max_pillar_height"] = g["h"]
+            out["max_taper_angle"] = g["taper_deg"]
+            out["min_pillar_gap"] = g["pillar_gap"]
+            out["min_base_overhang"] = g["base_overhang"]
+            out["min_anchor_len"] = g["anchor_len"]
+        elif K == "NVCavity":
+            out["min_cavity_web"] = g["min_web"]
+            out["min_cavity_hole"] = g["hole_r"]
+        else:  # MWAntenna
+            out["min_antenna_gap"] = g["antenna_gap"]
+            out["min_antenna_trace"] = g["trace_w"]
         return out
     raise ValueError(f"真实版图基元暂不支持 kind={kind}")

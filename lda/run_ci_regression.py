@@ -1690,6 +1690,71 @@ CORE_SMOKES: List[str] = [
     #   perf_baseline schema 存活 · `_write_baseline` monkeypatch 集成（样本池完整）。
     #   纯函数 + monkeypatch，实测 <0.5s（无权豁免）⇒ 入 core；timeout 120s 留足余量。
     "run_perf_bench_median_smoke.py",
+    #   量子传感器芯片征程 QS-M0（NV 色心磁强计基线）：
+    #   守「先能设计出来」的起点 —— 自旋哈密顿量（D=2.87GHz 零场劈裂）/ Zeeman 劈裂闭式
+    #   Δf=2γeB ↔ 数值（按 ms 标签定位，非首末特征值）/ Ramsey 相位 φ=2πγeBτ / 对比度与
+    #   信号 / 灵敏度 η=δB·√T*（T/√Hz 白噪声口径，**禁止**与线宽受限 LOD 混比）/
+    #   散粒噪声极限闭式 ↔ 数值 / 设计函数 v0 = 0.847 nT/√Hz / 反向探针（零对比度 ⇒ 抛异常）。
+    #   🔴 本档净增 1 锚（B473 = η 灵敏度误差传递，strict_independent，rel=2.43e-05）⇒ 账本 490→491。
+    #   纯 numpy（闭式 + 数值特征值，无 scipy 泄漏），实测 <2s ⇒ 入 core；timeout 300s 留足余量。
+    "run_qs_m0_smoke.py",
+    # run_qs_m1_smoke.py —— QS-M1 灵敏度 FOM 体系（量子传感器芯片征程 · 吃狗粮 v2）。
+    #   覆盖：统一口径 η=δB·√T 自检 + 口径反向探针（混入线宽受限 LOD 必被拒）/
+    #   双路径一致（T2* 路径 ↔ 线宽路径）/ 单调性（T2*/C/n_ph）/ 情景序（degraded 劣于
+    #   baseline、cited 优于 baseline）/ 反向探针（零对比度、零光子率发散；零线宽抛异常）/
+    #   暗计数只劣化 + **锚接线复核**（B474 入账 + 严格独立 + 候选有响应，防 QS-M0
+    #   「账本登记了但候选没接上」的静默漏）。
+    #   🔴 本档净增 1 锚（B474 = 线宽 FOM 路径，strict_independent，rel=2.77e-06）⇒ 账本 491→492。
+    #   纯 numpy（无 scipy 泄漏），实测 <2s ⇒ 入 core；timeout 300s 留足余量。
+    "run_qs_m1_smoke.py",
+    # run_qs_m2_smoke.py —— QS-M2 退相干 + 多源噪声（量子传感器芯片征程 · 吃狗粮 v3）。
+    #   覆盖：回波方差 ≤ FID / DC 阶数（回波四阶 1/32、FID 二阶 1）/ CPMG 滤波函数 DC 归零 /
+    #   四源合成口径（baseline==纯光子散粒、η_real≥任一分量）/ 单调性（realistic 劣于
+    #   baseline、DD 优于 baseline）/ 反向探针 5 项（零对比度发散、负 T₂ 抛异常、零脉冲
+    #   抛异常、**DC 阶数判别力**、**微波零抖动口径**）+ **锚接线复核**（B475 入账 +
+    #   严格独立 + 候选有响应，防「账本登记了但候选没接上」的静默漏）。
+    #   🔴 本档净增 1 锚（B475 = 自旋回波相位方差，strict_independent，rel=2.54e-09）⇒ 账本 492→493。
+    #   纯 numpy（无 scipy 泄漏），实测 <2s ⇒ 入 core；timeout 300s 留足余量。
+    "run_qs_m2_smoke.py",
+    # run_qs_m3_smoke.py —— QS-M3 灵敏度几何优化（量子传感器芯片征程 · 吃狗粮 v3）。
+    #   覆盖：NA 收集效率 闭式∧数值一致 / η_NA 随 NA 单调+边界 NA=1⇒1 / 收集效率随深度
+    #   单调降 / 最优深度 闭式∧数值一致+确为极小点 / Purcell 计数率比 闭式∧数值一致+≥1 /
+    #   bulk 对照 ∈(0,1] / 反向探针 5 项（NA 越界抛异常、负深度抛异常、**错模型被判红**、
+    #   **β=0 无增强**、**κ=0 发散**）+ **锚接线复核**（B476/B477 入账 + 严格独立 +
+    #   候选有响应，防「账本登记了但候选没接上」的静默漏）。
+    #   🔴 本档净增 2 锚（B476 = 最优色心深度，rel=3.62e-08；B477 = NA 立体角收集效率，
+    #   rel=3.83e-06；均 strict_independent）⇒ 账本 493→495。
+    #   纯 numpy（无 scipy 泄漏），实测 <2s ⇒ 入 core；timeout 300s 留足余量。
+    "run_qs_m3_smoke.py",
+    # run_qs_m3b_smoke.py —— QS-M3b 量子传感专用 PDK 器件本体（NV 柱/腔/天线）（吃狗粮 v3）。
+    #   覆盖：三器件几何/版图可生成 / 🔴 柱高 = qs_m3 最优深度 d*（现算）**同源对拍** /
+    #   腔壁厚与柱基底外扩**派生量由主参数算出** / 单位口径 µm（防 nm 当 µm 口径错） /
+    #   三器件默认档 DRC 全 PASS / 层号跨源一致 / **无释放层**（非悬浮膜） /
+    #   **既有 PS-M9 四器件零影响** / 新规则入 CHECK_RULES / **10 条反向探针各自必红
+    #   且红在期望规则**（柱径/柱高/锥角/柱间距/基底外扩/锚定/腔壁厚/腔孔/天线间距/线宽）。
+    #   🔴 本档**零净增锚**（器件本体里程碑：柱高与 QS-M3 同源、Purcell 与 B18 同物理量）
+    #   ⇒ 账本 495 不变，只 +1 条 CI core 门禁（311→312）。**36 判据**（实测 ~2.5 s ⇒ 纳
+    #   `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面，令 README 顶行判据数由机器守）。
+    #   纯 numpy（无 scipy 泄漏）⇒ 入 core；timeout 300s 留足余量。
+    "run_qs_m3b_smoke.py",
+    # QS-M4（v0.9.221 · G6 阵列/集成）：量子传感器 **2×N 磁力计阵列** 门禁 —— 阵列布局
+    #   （复用 QS-M3b NVPillar 单器件本体 + 每行馈线）+ 磁偶极近场串扰 X=(d_crit/r)³
+    #   （闭式 ∧ 数值点偶极积分）+ 多通道读出 FDM mux（思路复用 sc_readout_mux/D-140）
+    #   + 梯度计 CMRR=20log₁₀(1/ε) + 阵列 DRC/LVS + 7 道反向探针。
+    #   🔴 **净增 4 道锚**（B478 串扰系数 / B479 串扰恶化倍率 / B480 CMRR /
+    #   B481 梯度灵敏度）⇒ 账本 495→499，CI core 312→313。**37 判据**（纳
+    #   `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面，令 README 顶行判据数机器守）。
+    #   纯 numpy（无 scipy 泄漏）⇒ 入 core；timeout 300s 留足余量。
+    "run_qs_m4_smoke.py",
+    # QS-M5（v0.9.222 · G7 标定/读出闭环）：量子传感器 **闭环标定 + 动态范围** 门禁 ——
+    #   微波频锁（ODMR 线型 闭式 ⇄ 时域 FID 数值变换 + 鉴别器零点/反号 + 闭环收敛
+    #   gain=1 一步 / gain=0.9 几何）+ 磁场闭环标度自标定（两点法 ⇄ 全跨 LSQ）+
+    #   动态范围（噪声底 ∝√(1/τ) + 线性上限 ∝w + DR 定义 + AC 灵敏度 ∝√Δf）。
+    #   🔴 **净增 3 道锚**（B482 频锁鉴别器中心斜率 / B483 磁场标度因子自标定 /
+    #   B484 AC 灵敏度带宽折算）⇒ 账本 499→502，CI core 313→314。**36 判据**（纳
+    #   `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面，令 README 顶行判据数机器守）。
+    #   纯 numpy（无 scipy 泄漏）⇒ 入 core；timeout 300s 留足余量。
+    "run_qs_m5_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2193,11 +2258,20 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_l1_spec_smoke.py": 120.0,
     # T7-B4 新增：183-run 实测 0.3s · 3.05× 取整 · 不低于默认 300s
     "run_large_scale_smoke.py": 300.0,
+    # 🔴 v0.9.222 补登（B20 反向完备债清欠 · pre-existing）：`run_soc_s2_smoke` /
+    #   `run_soc_s3_smoke` 自 S2/S3 建起即在 CORE_SMOKES，却**从未登记进本 override 表**
+    #   ⇒ B20 盲区 2 项长期裸奔（同 v0.9.204 PS-M5 清欠族 / v0.9.211 PS-M9 族）。
+    #   实测上界：s2 ≈1 s · s3 ≈7 s（纯 numpy + 懒加载，零网络零子进程）⇒ 300.0 s
+    #   （不低于默认 300s 地板，≫3× 余量）。判据一字未改（纯耗时登记）。
+    "run_soc_s2_smoke.py": 300.0,
+    "run_soc_s3_smoke.py": 300.0,
     # 🔴 S4 规模爬升压力门（N=64 主权 mesh 构建 ~9min + C7 MVM + C8 GDS 装配数千波导）：
-    #   本机 3.14.3 实测上界 ~1200s（~20min）。作为**规模债照妖镜**刻意压 N=64（C6 复场可辨识
-    #   条件化规模债即在此规模暴露），登记 2400s ≈ 2× 实测（慢机裕度）；若 CI 机显著更慢按超时
-    #   预算纪律提至 ≥3×。判据一字未改（纯耗时），且属单调放宽（放宽上限不使已 PASS 项变 FAIL）。
-    "run_soc_s4_smoke.py": 2400.0,
+    #   作为**规模债照妖镜**刻意压 N=64（C6 复场可辨识条件化规模债即在此规模暴露）。
+    #   🔴 v0.9.222 按超时预算棘轮纪律上调 2400 → **4200s（3.91×）**：v0.9.222 全量 CI core
+    #   （314 成员 · 10 线程）实测上界 **1074.24s** ⇒ 2400s 仅 **2.234×** < 目标档 3× ⇒ B9 红
+    #   （棘轮把「欠标定」按设计顶回给人）。一次给足 ≈3.8~4.5× ⇒ 取 4200s（3.91×）。
+    #   判据一字未改（纯耗时上限），且属单调放宽（放宽上限不使已 PASS 项变 FAIL）。
+    "run_soc_s4_smoke.py": 4200.0,
     "run_soc_s5_smoke.py": 2400.0,
     "run_soc_s5_ext_smoke.py": 2400.0,
     "run_soc_g6_tiling_smoke.py": 600.0,  # 🔴 G6 多核 array tiling（N=8 M=4 实测 ~1.4s，登记 600s 留慢机裕度；判据一字未改，纯耗时）
@@ -2663,6 +2737,26 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_photonic_compute_m5_smoke.py": 300.0,
     # 错误显示守卫 · 实测上界 0.27s（单测）
     "run_report_error_display_smoke.py": 300.0,
+    # 量子传感器芯片征程 QS-M0 门禁（NV 色心磁强计基线）：自旋哈密顿量/Zeeman 闭式↔数值/
+    # Ramsey 相位与对比度/灵敏度 η=δB·√T*（T/√Hz 口径）/散粒噪声闭式/V0 设计/零对比度反向探针。
+    # 纯 numpy（闭式 + 数值特征值，无 scipy 泄漏），实测 <2s ⇒ 300.0s 留足余量。
+    "run_qs_m0_smoke.py": 300.0,
+    # QS-M1 灵敏度 FOM 体系：统一口径自检/口径反向探针/双路径一致/单调性/情景序/
+    # 零对比度/零光子率/零线宽反向探针 + B474 锚接线复核。
+    # 纯 numpy（无 scipy 泄漏），实测 <2s ⇒ 300.0s 留足余量。
+    "run_qs_m1_smoke.py": 300.0,
+    # QS-M2 退相干 + 多源噪声：回波方差 ≤ FID / DC 阶数（回波四阶、FID 二阶）/
+    # CPMG 滤波函数 DC 归零 / 四源合成口径 / 单调性 / 反向探针 5 项 + B475 锚接线复核。
+    # 纯 numpy（无 scipy 泄漏），实测 <2s ⇒ 300.0s 留足余量。
+    "run_qs_m2_smoke.py": 300.0,
+    "run_qs_m3_smoke.py": 300.0,
+    "run_qs_m3b_smoke.py": 300.0,
+    "run_qs_m4_smoke.py": 300.0,
+    # QS-M5（v0.9.222 · G7 标定/读出闭环）：ODMR 线型/鉴别器 + 磁场闭环标度自标定 +
+    # 动态范围/AC 灵敏度 + 三合一签核 + 8 反向探针 + 增锚契约（B482–B484 的
+    # _GOLDEN_DISPATCH / BENCHMARK_ORDER）+ 33 项自检直连。纯 numpy（无 scipy 泄漏），
+    # 实测 ~2s ⇒ 300.0s 留足余量（B20 反向完备：CORE ⊆ 超时表）。
+    "run_qs_m5_smoke.py": 300.0,
 }
 
 

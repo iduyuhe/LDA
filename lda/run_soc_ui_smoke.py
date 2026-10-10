@@ -33,6 +33,15 @@ ROUTES = os.path.join(ROOT, "lda", "lda_webui", "routes.py")
 SOC_CASE = os.path.join(ROOT, "lda", "lda_webui", "soc_case.py")
 CI_REG = os.path.join(ROOT, "lda", "run_ci_regression.py")
 
+# 🔴 修复（Task #36）：本门禁在 CI 官方口径下**不设 PYTHONPATH**（run_ci_regression
+#   以 `python lda/run_xxx.py` 启动，sys.path[0] = `lda/` 而非仓库根）。此前直接
+#   `from lda.lda_l2 import ...` 依赖调用者恰好把**仓库根**放进 sys.path —— 那是
+#   环境巧合，不是契约 ⇒ 官方 CI 下 `_wdm=None` 且 B0 必红（假红：门禁自身环境脆）。
+#   修复：显式把仓库根插入 sys.path（幂等），使 import 与调用者的 PYTHONPATH 解耦。
+#   注意 `lda_harness` 走 sys.path[0]=`lda/` 已可解析，故插入顺序置于其后不影响它。
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
 # ── 真源模块（跨源对拍目标）────────────────────────────────────────────
 try:
     from lda.lda_webui import soc_case as sc  # type: ignore

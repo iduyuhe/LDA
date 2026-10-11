@@ -1755,6 +1755,26 @@ CORE_SMOKES: List[str] = [
     #   `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面，令 README 顶行判据数机器守）。
     #   纯 numpy（无 scipy 泄漏）⇒ 入 core；timeout 300s 留足余量。
     "run_qs_m5_smoke.py",
+    # QS-M6（v0.9.223 · G8 超导量子器件物理）：量子传感器 **超导 SQUID 磁力计** 门禁
+    #   （第二腿）—— 约瑟夫森 RCSJ 结（I_s=I_c·sinδ + Ambegaokar–Baratoff 闭式 +
+    #   ω_p∝√I_c + β_c + RCSJ 积分器锁定/逃逸 + 0.99/1.01I_c 翻转）+ SQUID 环路
+    #   I_c(Φ) 磁通调制（f=0/0.5/周期 + 闭式⇄相位扫描 + 转导闭式⇄数值差分 + 有效面积）
+    #   + 磁通噪声→磁场灵敏度（Johnson S_I ∝T、∝1/R + 闭式 S_Φ⇄MC + 标度律 + B_N）。
+    #   🔴 **净增 3 道锚**（B485 I_c(Φ) 磁通调制 / B486 磁通-电压转导 ∂I_c/∂Φ /
+    #   B487 磁场灵敏度谱密度 B_N）⇒ 账本 502→505，CI core 314→315。**约 40 判据**
+    #   （纳 `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面，令 README 顶行判据数机器守）。
+    #   纯 numpy（无 scipy 泄漏）⇒ 入 core；timeout 300s 留足余量。
+    "run_qs_m6_smoke.py",
+    # QS-M7（v0.9.224 · G9 超导量子传感优化）· SQUID 性能冲刺（噪声优化）：
+    #   A 磁通聚焦变压器有效面积（washer 电感 L≅1.25µ0d + 闭式分压比⇄离散 Neumann
+    #   互感重建 + 粗网格残差放大 + γ↑⇒A_eff↑ + 阻抗匹配最优 + 增益>1）+ B 亚微米结
+    #   噪声（Johnson S_I ∝T、∝1/R + 闭式 S_Φ,opt⇄MC + A-B 乘积 + R_n 抬升饱和）
+    #   + C 优化后磁场灵敏度（闭式 B_N,opt⇄MC+数值互感 + 优化增益>1 + 低温更优 + 情景表）。
+    #   🔴 **净增 3 道锚**（B488 磁通聚焦变压器有效面积 A_eff / B489 亚微米结噪声谱密度
+    #   S_Φ,opt / B490 优化后磁场灵敏度 B_N,opt）⇒ 账本 505→508，CI core 315→316。**28 判据**
+    #   （纳 `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面，令 README 顶行判据数机器守）。
+    #   纯 numpy（无 scipy 泄漏）⇒ 入 core；timeout 300s 留足余量。
+    "run_qs_m7_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2099,7 +2119,11 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   216.91s 的跨轮上界无实质影响，但**仍按新规给足余量**）。
     #   跨轮 207.28~216.91s（n=11，抖动带极窄 ±2.3%）。3 × 216.91 = 650.7 ⇒ 取 900s
     #   （**4.15×**，可达 300s 仍守 3×）。
-    "run_harness.py": 900.0,
+    #   🔴 v0.9.223：全量基线（n=48）上界升至 **304.78s**（QS-M6 加锚后账本 505 道，
+    #   本 smoke 走全账本独立候选 ⇒ 结构性变慢，非负载抖动）⇒ 原 900s 仅 **2.953×**
+    #   （**B9 目标棘轮红**，按设计顶回）。按「一次给足 ≈3.8~4.5×」抬到 **1400s**
+    #   = **4.59×**（**只抬该项耗时上限 · 属单调放宽 · 绝不抬 ratchet_below_target**）。
+    "run_harness.py": 1400.0,
     # 逆设计 IR smoke，跨轮实测 113.73s（n 较小）。3 × 113.73 = 341.2 ⇒ 取 450s
     #   （**3.96×**，可达 150s 仍守 3×）。
     "run_ir_inverse_design_smoke.py": 450.0,
@@ -2722,7 +2746,10 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 光子存储阵列案例卡前端门禁（取值路径 + 反向完备 + onclick）：29 判据（含 10 探针）
     # · 实测上界 ~45s（W8 逐档子进程实跑门禁；v0.9.198 起 _GATE_SMOKE 含 M6b ⇒ 增跑
     #   run_pm_g2_smoke ~23s ⇒ 宿主耗时自 ~12s 升至 ~45s ⇒ 预算 120→180 单调放宽）
-    "run_webui_pm_render_path_smoke.py": 180.0,
+    #   🔴 v0.9.223：新纳 `run_qs_m6_smoke`（41 判据）入 `_W10_EXTRA` ⇒ 全量基线（n=20）
+    #   上界升至 **63.17s** ⇒ 原 180s 仅 **2.849×**（**B9 目标棘轮红**）。按「一次给足
+    #   ≈3.8~4.5×」抬到 **280s** = **4.43×**（**只抬该项耗时上限 · 绝不抬 ratchet**）。
+    "run_webui_pm_render_path_smoke.py": 280.0,
     # CI 门禁自身契约（棘轮时序 + 退出码契约 + cwd/模板/注释数字守卫）· 受控 fake 驱动，实测上界 <5s
     "run_ci_gate_contract_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）
@@ -2757,6 +2784,18 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # _GOLDEN_DISPATCH / BENCHMARK_ORDER）+ 33 项自检直连。纯 numpy（无 scipy 泄漏），
     # 实测 ~2s ⇒ 300.0s 留足余量（B20 反向完备：CORE ⊆ 超时表）。
     "run_qs_m5_smoke.py": 300.0,
+    # QS-M6（v0.9.223 · G8 超导量子器件物理）：约瑟夫森 RCSJ 结 + SQUID I_c(Φ) 磁通调制
+    # + 磁通-电压转导 + 磁通噪声→磁场灵敏度 + 三链签核 + 6 反向探针 + 增锚契约
+    # （B485–B487 的 _GOLDEN_DISPATCH / BENCHMARK_ORDER）+ 42 项自检直连。
+    # 🔴 RCSJ 积分器含 400000 步 RK4 ⇒ 本 smoke 略重于其余 QS 门禁（实测 ~2s）；
+    # 纯 numpy（无 scipy 泄漏），300.0s 留足余量（B20 反向完备：CORE ⊆ 超时表）。
+    "run_qs_m6_smoke.py": 300.0,
+    # QS-M7（v0.9.224 · G9 超导量子传感优化）：磁通聚焦变压器有效面积 + 亚微米结噪声
+    # + 优化后磁场灵敏度 + 三链签核 + 5 反向探针 + 增锚契约（B488–B490 的
+    # _GOLDEN_DISPATCH / BENCHMARK_ORDER）+ 13 项自检直连。
+    # 🔴 离散 Neumann 互感重建（n_seg=2048 × 2 网格）+ 4e6 MC 样本 ⇒ 本 smoke 略重
+    # （实测 ~5s）；纯 numpy（无 scipy 泄漏），300.0s 留足余量（B20 反向完备：CORE ⊆ 超时表）。
+    "run_qs_m7_smoke.py": 300.0,
 }
 
 

@@ -20,6 +20,8 @@ from ._adapter_core import (
     _get_batch_b42,
     _get_batch_b43,
     _get_batch_b44,
+    _get_batch_b45,
+    _get_batch_b46,
 )
 
 from typing import (
@@ -1352,4 +1354,86 @@ def _b484_ac_sensitivity_mc_cand(spec: VerificationSpec, oracle_value: Any) -> f
     return float(m.cand_b484(
         eta_t_per_sqrt_hz=float(p.get("eta_t_per_sqrt_hz", 1.0e-9)),
         bandwidth_hz=float(p.get("bandwidth_hz", 1.0e3)),
+    ))
+
+
+@_register_candidate(
+    "b485_squid_ic_phase_scan_cand",
+    "SQUID 环路临界电流磁通调制 I_c(Φ)·数值相空间扫描（对 I(δ)=I_c0·[sinδ+sin(δ+2πf)] 在 δ∈[0,2π) 以 2^18 网格扫 |I| 最大 ⇒ 独立复算临界电流，固定非对齐 f=0.30） ↔ 闭式 2·I_c0·|cos(πf)| golden，方法学独立（逐相位扫描取极值 vs 闭式矢量叠加）")
+def _b485_squid_ic_phase_scan_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b45()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b485(
+        ic0_a=float(p.get("ic0_a", 2.0e-6)),
+        flux_phi0=float(p.get("flux_phi0", 0.30)),
+    ))
+
+
+@_register_candidate(
+    "b486_squid_transfer_fd_cand",
+    "磁通-电压转导 ∂I_c/∂Φ·数值中心差分（对闭式 I_c(Φ±ΔΦ) 做 (hi−lo)/(2ΔΦ)，ΔΦ=1e-6，固定 f=0.30） ↔ 闭式解析导数 −2π·I_c0·sin(πf)·sgn(cosπf)/Φ0 golden，方法学独立（离散差分 vs 解析求导）")
+def _b486_squid_transfer_fd_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b45()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b486(
+        ic0_a=float(p.get("ic0_a", 2.0e-6)),
+        flux_phi0=float(p.get("flux_phi0", 0.30)),
+    ))
+
+
+@_register_candidate(
+    "b487_field_sens_mc_cand",
+    "磁场灵敏度谱密度 B_N·蒙特卡洛 Johnson 噪声传播（生成 n_mc=4e6 个电流样本 σ=√(4k_BT/R)，经数值转导折算为磁通样本，取数值方差 ⇒ S_Φ ⇒ √/A_eff ⇒ B_N，固定 seed） ↔ 闭式 √(4k_BT/R)/|∂I/∂Φ|/A_eff golden，方法学独立（样本方差统计 vs 闭式逐级代入）")
+def _b487_field_sens_mc_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b45()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b487(
+        temp_k=float(p.get("temp_k", 4.2)),
+        resistance_ohm=float(p.get("resistance_ohm", 20.0)),
+        ic0_a=float(p.get("ic0_a", 2.0e-6)),
+        loop_side_m=float(p.get("loop_side_m", 100.0e-6)),
+    ))
+
+
+@_register_candidate(
+    "b488_flux_transformer_neumann_cand",
+    "磁通聚焦变压器有效面积 A_eff·离散 Neumann 互感重建（把拾取环/输入线圈离散为 n_seg=2048 段，逐段互感双和数值重建耦合几何比，再还原分压比） ↔ 闭式分压比 γ_A·A_p·M/(L_i+L_p) golden，方法学独立（离散互感求和 vs 闭式分式）")
+def _b488_flux_transformer_neumann_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b46()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b488(
+        pickup_area_m2=float(p.get("pickup_area_m2", (500.0e-6) ** 2)),
+        mutual_h=float(p.get("mutual_h", 1.6e-9)),
+        input_inductance_h=float(p.get("input_inductance_h", 2.0e-9)),
+        pickup_inductance_h=float(p.get("pickup_inductance_h", 2.0e-9)),
+    ))
+
+
+@_register_candidate(
+    "b489_submicron_noise_mc_cand",
+    "亚微米结噪声约束磁通噪声谱密度 S_Φ,opt·蒙特卡洛 Johnson 噪声传播（生成 n_mc=4e6 个电流样本 σ=√(4k_BT/R_n,opt)，经数值转导折算磁通样本，取数值方差） ↔ 闭式逐级代入 golden，方法学独立（样本方差统计 vs 闭式逐级代入）")
+def _b489_submicron_noise_mc_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b46()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b489(
+        temp_k=float(p.get("temp_k", 4.2)),
+        ic0_a=float(p.get("ic0_a", 2.0e-6)),
+        rn_ohm=float(p.get("rn_ohm", 142.5)),
+    ))
+
+
+@_register_candidate(
+    "b490_opt_field_sens_mc_neumann_cand",
+    "优化后磁场灵敏度 B_N,opt·MC 噪声 + 离散 Neumann 变压器解（有效面积走数值互感，噪声走样本方差） ↔ 闭式三重叠加 golden，方法学独立（MC 统计 + 数值互感 vs 闭式逐级代入）")
+def _b490_opt_field_sens_mc_neumann_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b46()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b490(
+        temp_k=float(p.get("temp_k", 4.2)),
+        ic0_a=float(p.get("ic0_a", 2.0e-6)),
+        rn_ohm=float(p.get("rn_ohm", 142.5)),
+        pickup_area_m2=float(p.get("pickup_area_m2", (500.0e-6) ** 2)),
+        mutual_h=float(p.get("mutual_h", 1.6e-9)),
+        input_inductance_h=float(p.get("input_inductance_h", 2.0e-9)),
+        pickup_inductance_h=float(p.get("pickup_inductance_h", 2.0e-9)),
     ))

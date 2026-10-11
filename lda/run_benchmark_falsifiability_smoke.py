@@ -758,14 +758,20 @@ def main() -> int:
               False, f"检查自身异常：{str(e)[:80]}")
 
     # ⑩ 行为判据反向自检（v0.9.25 新增 · **验证判据本身，不是验证锚题**）：
-    #   用三个**合成候选**钉死 `candidate_responds` 的判定方向。若有人把判据
+    #   用合成候选钉死 `candidate_responds` 的判定方向。若有人把判据
     #   改回「比 |cand − golden|」的老写法，第 (b) 条会立刻变红。
     #   🔴 根因（v0.9.24 版判据的洞）：老判据比的是候选与 **golden** 的差，
     #     但响应性该比的是候选与**它自己未扰动时**的差。对不等式型锚
     #     （cmp='le'，如 B19 golden=1.0），一个 `return golden*0.99988` 的
     #     **常量缩放桩**每个扰动下都返回同一个数，与 golden 差 1.2e-4 ≫ thresh
     #     ⇒ 老判据判「有响应」⇒ 常量桩被放行。
-    #   🔴 本项是**判据的护栏**：判据漏了 ⇒ 全库 48 道锚的分类都不可信。
+    #   🔴 本项是**判据的护栏**：判据漏了 ⇒ 全库锚的分类都不可信。
+    #   🔴🔴 v0.9.223 再补**尺度不变性**专项（B487 血案）：判据曾用**绝对**阈
+    #     1e-12 ⇒ 对「物理量纲 ≪ 1」的锚尺度盲（B487 的 B_N≈7.9e-14 T/√Hz，
+    #     真候选的 10% 扰动响应 ~1e-14 < 1e-12 ⇒ 误判自证桩）。本项新增两个
+    #     **小量纲**合成候选（纯桩 / 真候选）——若有人把判据改回纯绝对阈，
+    #     `小量纲真候选` 会立刻变红；若改得过松（把纯桩也判真），`小量纲纯桩`
+    #     会变红。双向钉死。
     try:
         from lda_harness.harness import _SpecShim, candidate_responds as _cr
         _syn_spec = _SpecShim("SYNTH", {"gap_um": 0.3, "n_g": 4.2,
@@ -782,20 +788,32 @@ def main() -> int:
             return g * (1.0 - 0.001 * float(sp.params["gap_um"])
                         - 1e-5 * float(sp.params["alpha_cm"]))
 
+        # 小量纲（~1e-14）专项 —— 钉死判据的尺度不变性（B487 血案）
+        _TINY = 1.0e-14
+
+        def _tiny_stub_pure(sp, g):   # 小量纲纯桩：返回常量，不看 params
+            return _TINY
+
+        def _tiny_real(sp, g):        # 小量纲真候选：读 params 并真实响应
+            return _TINY * (1.0 - 0.1 * float(sp.params["gap_um"]))
+
         _cases = [("纯自证桩(return golden)", _stub_pure, False),
                   ("常量缩放桩(golden×0.99988)", _stub_scaled, False),
-                  ("真候选(读 params)", _real_cand, True)]
+                  ("真候选(读 params)", _real_cand, True),
+                  ("小量纲纯桩(~1e-14·不看params)", _tiny_stub_pure, False),
+                  ("小量纲真候选(~1e-14·读params)", _tiny_real, True)]
         _bad10 = []
         for _nm, _fn, _want in _cases:
             _got = _cr(_syn_spec, _fn, _oracle)
             if _got is not _want:
                 _bad10.append(f"{_nm}: 期望 {_want} 实得 {_got}")
-        check("行为判据反向自检（纯桩/常量缩放桩→False，真候选→True）",
+        check("行为判据反向自检（纯桩/常量缩放桩/小量纲纯桩→False，真候选/小量纲真候选→True）",
               not _bad10,
               "；".join(_bad10) if _bad10 else
-              "3/3 合成候选判定正确（常量缩放桩被抓 ⇒ 判据未退回 golden-相对版）")
+              "5/5 合成候选判定正确（常量缩放桩被抓 ⇒ 判据未退回 golden-相对版；"
+              "小量纲真候选被抓 ⇒ 判据尺度不变、未退回纯绝对阈）")
     except Exception as e:  # noqa: BLE001
-        check("行为判据反向自检（纯桩/常量缩放桩→False，真候选→True）",
+        check("行为判据反向自检（纯桩/常量缩放桩/小量纲纯桩→False，真候选/小量纲真候选→True）",
               False, f"检查自身异常：{str(e)[:80]}")
 
     # ⑥ 诚实披露剩余自证桩（不构成失败，但必须可见）

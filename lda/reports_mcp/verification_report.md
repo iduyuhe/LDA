@@ -5,9 +5,9 @@
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - via：L1 KernelGateway
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **497 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **503 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
 
-## 汇总：499/502 通过（独立候选 5 项中 **2 项通过=已验证** · 497 项自证闭环，**非验证结论**）
+## 汇总：505/508 通过（独立候选 5 项中 **2 项通过=已验证** · 503 项自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -436,7 +436,13 @@
 | B482 | qs_freqlock_discriminator_slope | physical-law | -2.56e-07 | -2.56e-07 | 0 | 0.001 | ✅ PASS |
 | B483 | qs_fieldloop_scale_factor | physical-law | 1000 | 1000 | 0 | 0.001 | ✅ PASS |
 | B484 | qs_ac_sensitivity_bandwidth | physical-law | 4.47214e-08 | 4.47214e-08 | 0 | 0.005 | ✅ PASS |
+| B485 | qs_squid_ic_flux_modulation | physical-law | 2.35114e-06 | 2.35114e-06 | 0 | 1e-12 | ✅ PASS |
+| B486 | qs_squid_flux_transfer | physical-law | -4.91645e+09 | -4.91645e+09 | 0 | 5000 | ✅ PASS |
+| B487 | qs_squid_field_sensitivity | physical-law | 7.92505e-14 | 7.92505e-14 | 0 | 1e-15 | ✅ PASS |
+| B488 | qs_flux_transformer_effective_area | physical-law | 1e-07 | 1e-07 | 0 | 0.02 | ✅ PASS |
+| B489 | qs_submicron_junction_noise_psd | physical-law | 6.73401e-44 | 6.73401e-44 | 0 | 0.01 | ✅ PASS |
 | B49 | T | physical-law | 0.308027 | 0.308027 | 0 | 0.02 | ✅ PASS |
+| B490 | qs_optimized_field_sensitivity | physical-law | 2.595e-15 | 2.595e-15 | 0 | 0.02 | ✅ PASS |
 | B5 | split_loss_dB | numpy-overlap-offline | 3.4 | 3.4 | 0 | 1 | ✅ PASS |
 | B50 | fc_Hz | physical-law | 1.96714e+10 | 1.96714e+10 | 0 | 1e+07 | ✅ PASS |
 | B51 | fc_Hz | physical-law | 2.62286e+10 | 2.62286e+10 | 0 | 1e+07 | ✅ PASS |

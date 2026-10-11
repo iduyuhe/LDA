@@ -851,3 +851,47 @@ def _get_batch_b44():
         import _batch_b44_numeric as _m
     _BATCH_B44_MOD = _m
     return _m
+
+
+_BATCH_B45_MOD = None
+
+
+def _get_batch_b45():
+    """B-45 数值核（量子传感器芯片征程 QS-M6 衍生 · 超导 SQUID 磁力计：I_c(Φ) 磁通调制 + 磁通-电压转导 + 磁场灵敏度 B_N，缓存，项目铁律）。
+
+    🔴 命名避让：单批 **B45** 沿用连字符写法 `_batch_b45_numeric` / `_get_batch_b45`
+        （与 B-35~B-44 同构；接手前已实 grep 核占名：`_BATCH_B45` / `_get_batch_b45`
+        全仓零命中——`b45` 不命中任何旧锚，B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B45_MOD
+    if _BATCH_B45_MOD is not None:
+        return _BATCH_B45_MOD
+    try:
+        from lda_harness import _batch_b45_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b45_numeric as _m
+    _BATCH_B45_MOD = _m
+    return _m
+
+
+_BATCH_B46_MOD = None
+
+
+def _get_batch_b46():
+    """B-46 数值核（量子传感器芯片征程 QS-M7 衍生 · SQUID 性能冲刺/噪声优化：磁通聚焦变压器有效面积 A_eff + 亚微米结噪声谱密度 S_Φ,opt + 优化后磁场灵敏度 B_N,opt，缓存，项目铁律）。
+
+    🔴 命名避让：单批 **B46** 沿用连字符写法 `_batch_b46_numeric` / `_get_batch_b46`
+        （与 B-35~B-45 同构；接手前已实 grep 核占名：`_BATCH_B46` / `_get_batch_b46`
+        全仓零命中——`b46` 不命中任何旧锚，B-16 型静默撞名风险已排除）。
+    """
+    global _BATCH_B46_MOD
+    if _BATCH_B46_MOD is not None:
+        return _BATCH_B46_MOD
+    try:
+        from lda_harness import _batch_b46_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b46_numeric as _m
+    _BATCH_B46_MOD = _m
+    return _m

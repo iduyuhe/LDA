@@ -279,6 +279,18 @@ from ._batch_b44_numeric import (  # Batch B-44 双方法独立锚数值核（�
     golden_b484,
 )
 
+from ._batch_b45_numeric import (  # Batch B-45 双方法独立锚数值核（量子传感器芯片征程 QS-M6 衍生 · 超导 SQUID 磁力计「I_c(Φ) 闭式矢量叠加 × 相位空间扫描候选」+「∂I_c/∂Φ 解析导数闭式 × 数值中心差分候选」+「B_N 闭式逐级代入 × 蒙特卡洛 Johnson 噪声传播候选」）
+    golden_b485,
+    golden_b486,
+    golden_b487,
+)
+
+from ._batch_b46_numeric import (  # Batch B-46 双方法独立锚数值核（量子传感器芯片征程 QS-M7 衍生 · SQUID 性能冲刺「A_eff 闭式分压比 × 离散 Neumann 互感重建候选」+「S_Φ,opt 闭式逐级代入 × 蒙特卡洛 Johnson 噪声传播候选」+「B_N,opt 闭式三重叠加 × MC + 数值互感候选」）
+    golden_b488,
+    golden_b489,
+    golden_b490,
+)
+
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -1082,6 +1094,12 @@ _GOLDEN_DISPATCH = {
     "B482": golden_b482,
     "B483": golden_b483,
     "B484": golden_b484,
+    "B485": golden_b485,
+    "B486": golden_b486,
+    "B487": golden_b487,
+    "B488": golden_b488,
+    "B489": golden_b489,
+    "B490": golden_b490,
 
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
@@ -1181,6 +1199,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B476", "B477",  # Batch B-42（量子传感器芯片征程 QS-M3 衍生 · 灵敏度几何优化：最优色心深度 + NA 立体角收集效率）
                  "B478", "B479", "B480", "B481",  # Batch B-43（量子传感器芯片征程 QS-M4 衍生 · 阵列化：磁偶极近场串扰系数 / 串扰恶化灵敏度倍率 / 梯度计共模抑制比 / 梯度计差模灵敏度）
                  "B482", "B483", "B484",  # Batch B-44（量子传感器芯片征程 QS-M5 衍生 · 闭环标定与动态范围：频锁鉴别器中心斜率 / 磁场标度因子自标定 / AC 灵敏度带宽折算）
+                 "B485", "B486", "B487",  # Batch B-45（量子传感器芯片征程 QS-M6 衍生 · 超导 SQUID 磁力计：I_c(Φ) 磁通调制 / 磁通-电压转导 ∂I_c/∂Φ / 磁场灵敏度谱密度 B_N）
+                 "B488", "B489", "B490",  # Batch B-46（量子传感器芯片征程 QS-M7 衍生 · SQUID 性能冲刺/噪声优化：磁通聚焦变压器有效面积 / 亚微米结噪声谱密度 / 优化后磁场灵敏度）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

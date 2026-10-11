@@ -270,7 +270,7 @@ class PerturbedCandidate:
 
 
 def candidate_responds(spec, cand_fn, oracle_value, rel=0.10,
-                       thresh=1e-12) -> bool:
+                       thresh=1e-12, thresh_rel=1e-9) -> bool:
     """候选是否对参数扰动有**物理响应** —— 真候选 vs 自证桩的**行为判据**。
 
     🔴🔴🔴 **全库唯一权威定义处**（v0.9.24）。`run_harness.py`（路径②）与
@@ -311,7 +311,31 @@ def candidate_responds(spec, cand_fn, oracle_value, rel=0.10,
     cand_fn : 候选函数，签名 (spec, oracle_value) -> float
     oracle_value : 原 golden 值（扰动后不再重算 golden，模拟「求解器算错」）
     rel : 相对扰动幅度，默认 ±10%
-    thresh : 判定「有响应」的阈值，默认 1e-12
+    thresh : **绝对**响应阈（兜底 · 候选基线接近 0 时用），默认 1e-12
+    thresh_rel : **相对**响应阈（相对候选自身基线 |base|），默认 1e-9
+
+    🔴🔴🔴 **v0.9.223 再升级：阈必须**尺度无关**（B487 血案 · 前两版都漏）**
+    前两版判据都是 `abs(cv2 − base) > thresh`（**绝对**阈 1e-12）。这在
+    「物理量量纲为 O(1)」的锚上碰巧对，但对**量纲本身很小**的锚是**尺度盲**的：
+      B487 = 超导 SQUID 磁场灵敏度 B_N ≈ 7.93e-14 T/√Hz（≈ 0.08 pT/√Hz，
+        正是国际 SQUID 磁力计的正确量级）。
+      该锚候选**确实**对参数物理响应（10% 扰 loop_side_m ⇒ Δ≈1.86e-14、
+      ic0_a ⇒ Δ≈8.8e-15、temp_k ⇒ Δ≈3.9e-15），但**每个 Δ 都 < 1e-12**
+      ⇒ 旧判据判「纹丝不动」⇒ 真候选被**误判自证桩**（全量照妖镜实测：
+      `标非自证桩却 |diff|≡0 的假独立=['B487']`）。
+    根因与 v0.9.24 的 B10、v0.9.25 的常量缩放桩**同源**——都是把
+    「响应性」错当成一个**绝对**量来判断。正确语义：响应 = 候选在扰动下的
+    **相对**变化 `|cv2 − base| / |base|` 是否显著（尺度无关）。
+    新判据 = `abs(cv2 − base) > thresh` **或** `abs(cv2 − base)/|base| > thresh_rel`
+    （**任一**满足即算「有响应」；两者是**并列的下限**，不是取大）：
+      · 真候选（B487）：rel ≈ 2.4e-1 ≫ 1e-9 ⇒ True ✅（旧版因绝对 1e-12 挡掉）
+      · 真候选（B10 · 残差 1.11e-16 但行为响应 1.5e-5）：绝对 ≫ 1e-12 ⇒ True ✅
+      · 纯桩 `return golden`：Δ ≡ 0 ⇒ 两式皆不满足 ⇒ False ✅
+      · 常量缩放桩 `golden×0.99988`：Δ ≡ 0 ⇒ 两式皆不满足 ⇒ False ✅
+    对**既有 18 道 O(1) 量纲锚零回归**（它们的 |base| 使 `thresh_rel·|base|`
+    落到 `thresh` 以下或同量级，判向不变）；对**小量纲锚**则从「误判桩」修正为
+    「正确识别真候选」。新增 `thresh_rel` 为**下限类收紧**：口径更严（有反向探针
+    钉死，见 `run_benchmark_falsifiability_smoke` 第 ⑩ 项）。
 
     返回
     ----
@@ -328,6 +352,11 @@ def candidate_responds(spec, cand_fn, oracle_value, rel=0.10,
         return True
     if not isinstance(base, (int, float)):
         return True   # 非标量结果无法用残差判，放行（与 run_harness 口径一致）
+    # 🔴 v0.9.223：**并列**双重判阈（绝对 ∨ 相对）⇒ 尺度无关（B487 血案）。
+    # 不能用 max()——那会让绝对阈 1e-12 压过相对阈（B487 的 |base|=7.9e-14 ⇒
+    # thresh_rel·|base|=7.9e-23 < 1e-12 ⇒ max 取 1e-12 ⇒ 又变回尺度盲）。
+    # 正确语义：改动**超过绝对地板** OR **超过候选自身基线的相对地板** 即算响应。
+    _base_mag = abs(float(base))
     for key, val in params.items():
         if isinstance(val, bool) or not isinstance(val, (int, float)):
             continue
@@ -339,7 +368,12 @@ def candidate_responds(spec, cand_fn, oracle_value, rel=0.10,
                 cv2 = cand_fn(sp2, oracle_value)
             except Exception:  # noqa: BLE001 —— 扰动后求解器报错=有响应
                 return True
-            if isinstance(cv2, (int, float)) and abs(cv2 - base) > thresh:
+            if not isinstance(cv2, (int, float)):
+                continue
+            _delta = abs(float(cv2) - float(base))
+            if _delta > thresh:
+                return True
+            if _base_mag > 0.0 and _delta / _base_mag > thresh_rel:
                 return True
     return False
 

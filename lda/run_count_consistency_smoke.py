@@ -18,10 +18,10 @@ README 引擎域计数「光子 9 + 量子 6」与代码 ENGINE_DOMAIN 实际 8+
 断言维度（全部死标量，LLM 不进判决路径）：
   1. 引擎结构：ENGINE_KINDS 22（15 设计量 + 5 loss + 2 有源）、光子 15、量子 7
   2. 包结构：PACKAGE_KINDS 11（22 引擎 + 11 包 = 33 类端到端）
-  3. 题库：BENCHMARK_ORDER 508 题（B1-B490 共 485 题 + E1-E10 10 题 + S1-S13 13 题）
+  3. 题库：BENCHMARK_ORDER 514 题（B1-B496 共 491 题 + E1-E10 10 题 + S1-S13 13 题）
   4. CI 门禁：CORE_SMOKES 条数（动态）↔ README `## 当前账本` 段 `CI core N 条` 严格一致
   5. README 宣传串：动态构造「22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）」
-     「508 题（B1-B490 + E1-E10 + S1-S13）」；反向断言 README 不含已废弃错误串
+     「514 题（B1-B496 + E1-E10 + S1-S13）」；反向断言 README 不含已废弃错误串
      「光子 9 + 量子 6」（防回退）；版本行 = pyproject 版本（防滞后）。
 """
 from __future__ import annotations
@@ -189,14 +189,16 @@ class CountConsistencySmoke(unittest.TestCase):
     # v0.9.221 Batch B-43（量子传感器芯片征程 QS-M4）加 B478-B481 → 476
     # v0.9.222 Batch B-44（量子传感器芯片征程 QS-M5）加 B482-B484 → 479
     # v0.9.223 Batch B-45（量子传感器芯片征程 QS-M6）加 B485-B487 → 482
+    # v0.9.226 Batch B-47（量子传感器芯片征程 QS-M9）加 B491-B493 → 488
+    # v0.9.227 Batch B-48（量子传感器芯片征程 QS-M3c · 腔 QED 物理链）加 B494-B496 → 491
     # v0.9.224 Batch B-46（量子传感器芯片征程 QS-M7）加 B488-B490 → 485
-        self.assertEqual(len(b_ids), 485, f"B 题应 485（B1-B490，缺口 B35/B38/B39/B69/B72 预留），实际 {len(b_ids)}")
+        self.assertEqual(len(b_ids), 491, f"B 题应 491（B1-B496，缺口 B35/B38/B39/B69/B72 预留），实际 {len(b_ids)}")
         self.assertEqual(len(e_ids), len([f"E{i}" for i in range(1, len(e_ids) + 1)]),
                          f"E 题数异常，实际 {len(e_ids)}")
         self.assertEqual(len(s_ids), 13, f"S 题应 13，实际 {len(s_ids)}")
         self.assertEqual(b_ids[0], "B1")
         self.assertEqual(max(b_ids, key=lambda x: int(x[1:])),
-                         "B490", f"B 题最大编号应 B490，实际 {max(b_ids, key=lambda x: int(x[1:]))}")
+                         "B496", f"B 题最大编号应 B496，实际 {max(b_ids, key=lambda x: int(x[1:]))}")
         self.assertEqual(e_ids, [f"E{i}" for i in range(1, len(e_ids) + 1)],
                          f"E 题须连续编号 E1..E{len(e_ids)}，实际 {e_ids}")
         self.assertEqual(s_ids,

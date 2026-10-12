@@ -1775,6 +1775,50 @@ CORE_SMOKES: List[str] = [
     #   （纳 `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面，令 README 顶行判据数机器守）。
     #   纯 numpy（无 scipy 泄漏）⇒ 入 core；timeout 300s 留足余量。
     "run_qs_m7_smoke.py",
+    # QS-M8（v0.9.225 · G10 WebUI 量子传感面板 = 量子传感器征程**收官档**）：
+    #   把 QS-M0…QS-M7 的九档建模能力，在首页露成**只读案例卡** `#sec-qsensor` +
+    #   GET `/api/qsensor_demo`（免登录 · 零重计算 · 不进 HEAVY_POST_PATHS），
+    #   三入口面齐备（首屏 `#wbCaseBar` / hash 深链 `CASE_MAP` / 运行按钮 → `renderQsensor`）。
+    #   A 模块自检（`qs_case.run_selfchecks` 12 项）· B **跨源一致性**（面板快照常量 ≡
+    #   `qs_m0`…`qs_m7` **现算值逐位**：腿 A 五情景 η 7 项 / 几何 11 项 / 阵列 9 项 /
+    #   标定 7 项 / SQUID 基线 7 项 / 性能冲刺 15 项 + 闭式镜像 2 项 + **九档模块自检项数
+    #   逐一对照**（手写数字机器对照））· C 6 条 in-process 突变探针（诚实边界删条 /
+    #   verdict 冒充 ACCEPT / 两腿快照漂移 / 缺口粉饰 / 自检项数谎报）· D 嵌套块**反向完备**
+    #   （13 个展示块 + 前缀归一 + **假绿复现探针** + 注入探针 + 抹引用探针）· E 免登录 /
+    #   零重计算（ast 遍历真实 import）· F 路由 + 三入口面 + div 配平 + API 参考 ·
+    #   K 自入 CI。**46 判据**。⚠️ **不纳 `_W10_EXTRA` 对照面**（实测 ~21 s，纳之会令
+    #   `run_webui_pm_render_path_smoke` 宿主余量跌破 3× 目标档）⇒ README 顶行**不声明**
+    #   其判据数（属诚实边界）；CI core 316→317，账本 508 不变（案例卡**零净增锚**）。
+    #   纯 numpy + lazy import（无 scipy）⇒ 入 core；timeout 300s 留足余量。
+    "run_qs_panel_smoke.py",
+    # QS-M9（v0.9.226 · G11 多物理场量子传感整合 = 量子传感器征程**收官档**）：
+    #   开 **第三条腿 · 光泵原子磁力计（OPM / SERF）**（碱金属气室 + 泵浦/探测光路 +
+    #   磁场线圈 · 光-自旋-磁-热-几何五场耦合）。A 五链物理（光抽运 R_op/P∞ · FID 闭式⇄RK4 ·
+    #   气室密度闭式⇄梯形 · 光路透过率闭式⇄RK4 · SERF 灵敏度量级/单调/归一自洽 · 线圈闭式）·
+    #   B **跨源一致性**（模块闭式/数值候选 ≡ 锚核 `_batch_b47_numeric` **逐位**）·
+    #   C **判据 D 扫描**（三锚残差严格单调收敛 · 非代数恒等）· D **三锚接线复核**
+    #   （B491–B493 入 DEFS · strict_independent · 残差非零 · tol 读自 DEFS · 默认=网格末端 ·
+    #   键集 ⊆ 形参集）· E 反向探针 6 条 · F 多物理场整合（三腿同口径对照 / SOTA 对照比 /
+    #   五情景 / 签核）· G 自入 CI + golden 分派 + BENCHMARK_ORDER + `_PHYSICAL_LAW` ·
+    #   H 模块自检直连。**39 判据**（纳 `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面，
+    #   令 README 顶行判据数机器守 · 实测 ~0.91 s 属便宜档）。🔴 **净增 3 道锚**（B491 自由进动横向极化 /
+    #   B492 碱金属饱和蒸气数密度 / B493 泵浦光 Beer–Lambert 透过率）⇒ 账本 508→511，
+    #   CI core 317→318。纯 numpy（无 scipy 泄漏）⇒ 入 core；timeout 300s 留足余量。
+    "run_qs_m9_smoke.py",
+    # QS-M3c（v0.9.227 · G5 量子传感 PDK 腔几何 · 腔 QED 物理链）：把 QS-M3 链④ Purcell
+    #   因子 F_P=4g²/(κγ₁) 的三个输入量（腔品质因子 Q=ω/κ / 有效模体积 V_eff=A·8a/15 /
+    #   单光子耦合 g=(μ/ħ)√(ħω/(εV_eff))）拆成**方法学独立可证伪锚**（B494 腔 Q / B495 V_eff /
+    #   B496 单光子耦合 g · 三锚全判 strict_independent）。A 三链物理（Q 闭式⇄RK4 能量衰减反解 ·
+    #   V_eff 闭式⇄中点求积 · g 闭式⇄数值场能积分）· B **跨源一致性**（模块闭式/数值候选 ≡
+    #   锚核 `_batch_qs_m3c_numeric` 逐位）· C **判据 D 扫描**（三锚残差严格单调收敛 · O(h⁴) ·
+    #   非代数恒等）· D **三锚接线复核**（B494–B496 入 DEFS · strict · 残差非零 · tol 读自 DEFS ·
+    #   默认=网格末端 · 键集⊆形参集）· E 反向探针 6 条 · F 物理整合（finesse 两式 / cooperativity
+    #   约定因子 2n / Purcell FOM / 签核）· G 自入 CI + golden 分派 + BENCHMARK_ORDER + `_PHYSICAL_LAW`
+    #   · H 模块自检直连（17 项）。**31 判据**（纳 `run_webui_pm_render_path_smoke._W10_EXTRA`
+    #   对照面，令 README 顶行判据数机器守 · 实测 ~0.6 s 属便宜档）。🔴 **净增 3 道锚**
+    #   （B494 腔品质因子 Q / B495 有效模体积 V_eff / B496 单光子耦合 g）⇒ 账本 511→514，
+    #   CI core 318→319。纯标准库（无 numpy/scipy 泄漏）⇒ 入 core；timeout 300s 留足余量。
+    "run_qs_m3c_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2796,6 +2840,25 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 🔴 离散 Neumann 互感重建（n_seg=2048 × 2 网格）+ 4e6 MC 样本 ⇒ 本 smoke 略重
     # （实测 ~5s）；纯 numpy（无 scipy 泄漏），300.0s 留足余量（B20 反向完备：CORE ⊆ 超时表）。
     "run_qs_m7_smoke.py": 300.0,
+    # QS-M8（v0.9.225 · G10 WebUI 量子传感面板）：qs_case 自检 + **跨源一致性**
+    # （面板快照 ≡ qs_m0…qs_m7 现算 · 含九档 selfcheck 长度对照）+ 6 条 in-process
+    # 突变探针 + 13 块反向完备 + 三入口面 + ast 零重计算断言，共 **46 判据**。
+    # 🔴 本门禁**现算九档 selfcheck**（qs_m4/5/6/7 较重）⇒ 实测上界 ~21s（@10 线程），
+    # 300.0s = **~14×** 留足余量（B20 反向完备：CORE ⊆ 超时表）。
+    # ⚠️ **不纳** `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面（~21s 会令宿主余量
+    # 跌破 3× 目标档）⇒ README 顶行不声明其判据数（诚实边界 · 见 v0.9.209/211 先例）。
+    "run_qs_panel_smoke.py": 300.0,
+    # QS-M9（v0.9.226 · G11 多物理场量子传感整合）：五链物理 + 跨源一致性（模块 ≡ 锚核逐位）
+    # + 判据 D 扫描（三锚）+ 三锚接线复核 + 6 反向探针 + 三腿对照 + 自入 CI/golden/ORDER/LAW，
+    # 共 **39 判据**。纯 numpy（无 scipy 泄漏）⇒ 入 core；实测 ~0.91 s ⇒ 300.0s 留足余量
+    # （B20 反向完备：CORE ⊆ 超时表）。
+    "run_qs_m9_smoke.py": 300.0,
+    # QS-M3c（v0.9.227 · G5 量子传感 PDK 腔几何 · 腔 QED 物理链）：三链物理 + 跨源一致性
+    # （模块 ≡ 锚核逐位）+ 判据 D 扫描（三锚）+ 三锚接线复核 + 6 反向探针 + 物理整合（finesse/
+    # cooperativity/Purcell/签核）+ 自入 CI/golden/ORDER/LAW + 模块自检直连（17 项），
+    # 共 **31 判据**。纯标准库（无 numpy/scipy 泄漏）⇒ 入 core；实测 ~0.6 s ⇒ 300.0s 留足余量
+    # （B20 反向完备：CORE ⊆ 超时表）。
+    "run_qs_m3c_smoke.py": 300.0,
 }
 
 

@@ -15,7 +15,13 @@
           B484（QS-M5 衍生：AC 灵敏度带宽折算 η_AC —— 动态范围/读出）
           B485（QS-M6 衍生：SQUID 环路临界电流磁通调制 I_c(Φ) —— 超导磁力计）
           B486（QS-M6 衍生：磁通-电压转导 ∂I_c/∂Φ —— 超导磁力计）
-          B487（QS-M6 衍生：磁场灵敏度谱密度 B_N —— 超导磁力计）。
+          B487（QS-M6 衍生：磁场灵敏度谱密度 B_N —— 超导磁力计）
+          B488（QS-M7 衍生：磁通聚焦变压器有效面积 A_eff —— SQUID 噪声优化）
+          B489（QS-M7 衍生：亚微米结噪声约束磁通噪声谱密度 S_Φ,opt —— SQUID 噪声优化）
+          B490（QS-M7 衍生：优化后磁场灵敏度 B_N,opt —— SQUID 噪声优化）
+          B491（QS-M9 衍生：自由进动横向极化 P_x(t*) —— OPM/SERF 腿 C 时域信号）
+          B492（QS-M9 衍生：碱金属饱和蒸气数密度 n(T) —— OPM 气室温度定标）
+          B493（QS-M9 衍生：泵浦光 Beer–Lambert 透过率 T(L) —— OPM 气室光路）。
 分类（诚实）：**B473 = 严格独立**（`candidate` 指向 `_batch_b39_numeric` 注册的
   数值误差传播链候选；实测 rel≈2.4e-5，非代数恒等）。
   **B478–B481 = 严格独立**（`candidate` 指向 `_batch_b43_numeric` 注册的
@@ -94,6 +100,22 @@ from .._batch_b46_numeric import (  # Batch B-46 量子传感器芯片征程 QS-
     B489_DEFAULT_PARAMS,
     golden_b490,
     B490_DEFAULT_PARAMS,
+)
+from .._batch_b47_numeric import (  # Batch B-47 量子传感器芯片征程 QS-M9 衍生（光泵原子磁力计 OPM/SERF · 自由进动横向极化 + 碱金属数密度 + 光路吸收）
+    golden_b491,
+    B491_DEFAULT_PARAMS,
+    golden_b492,
+    B492_DEFAULT_PARAMS,
+    golden_b493,
+    B493_DEFAULT_PARAMS,
+)
+from .._batch_qs_m3c_numeric import (  # Batch B-48 量子传感器芯片征程 QS-M3c 衍生（腔 QED 物理链 · 腔品质因子 Q / 有效模体积 V_eff / 单光子耦合 g）
+    golden_b494,
+    B494_DEFAULT_PARAMS,
+    golden_b495,
+    B495_DEFAULT_PARAMS,
+    golden_b496,
+    B496_DEFAULT_PARAMS,
 )
 DEFS = {
     "B473": {
@@ -293,5 +315,71 @@ DEFS = {
         "candidate": "b490_opt_field_sens_mc_neumann_cand",
         "candidate_desc": "MC 噪声 + 离散 Neumann 变压器解：有效面积走离散 Neumann 互感重建（n_seg=2048），噪声走 n_mc=4e6 样本方差 ⇒ B_N,opt（复合独立路径，不用闭式）。方法学独立：golden=闭式逐级代入，cand=MC 统计 + 数值互感（固定 seed）",
         "note": "golden = QS-M7（超导 SQUID 性能冲刺 · 噪声优化）的**优化后磁场灵敏度**闭式：B_N,opt=√(S_Φ,opt)/A_eff（T/√Hz）——三重叠加（变压器增益 A_eff ↑ + 亚微米结 R_n ↑ + 温降 T ↓）。🔴 **物理意义**：本锚是 QS-M7 的**落地标量**——三链串联终值，把「磁通聚焦/亚微米结 → 灵敏度」的优化叠加钉进账本（缺口 G9 的落地标量，是「分步达国际水平」的性能靶；本档建模 B_N,opt≈1.73 fT/√Hz，**进入**蓝图 §3 的集成 SOTA 带 1–5 fT/√Hz）。candidate=**MC 噪声 + 离散 Neumann 变压器解**（样本方差 + 数值互感），方法学独立（golden=闭式逐级代入；cand=MC 统计 + 数值互感）。实测默认档 **rel=2.105e-03**（abs 3.6e-18 · **tol=2e-2**〔按量级标定 · 同 B33/B36/B473 约定〕⇒ **~9.5×** 余量；**MC 统计 + Neumann 截断复合残差**，**非**代数恒等）。🔴 **与 B487 不同物理量**：B487 是**裸环基线**灵敏度（79.25 fT/√Hz）；本锚是**优化后**灵敏度（1.73 fT/√Hz）—— 同链不同优化档，且本锚含变压器增益 / 亚微米结 / 温三重叠加 ⇒ 物理量不同（基线 vs 优化）。🔴 **与 B480/B481 不同物理量**：B480/B481 是**梯度计差分读出**；本锚是**单器件优化灵敏度**，物理对象不同。🔴 **诚实规模**：同 B488 note。⚠️ **诚实边界**：全部参数为**设计示例**（建模值 1.73 fT/√Hz，**非实测**）；蓝图 §3 的「集成 1–5 fT/√Hz」系**公开文献值**（物理学报 2025,74,20250426），本档只把它作**对标准星**引用，**不冒充 LDA 实测**；本锚只证明「闭式三重叠加 ⇄ MC + 数值互感」数值一致这一数学事实，**不得作制造/性能宣称**。零商业依赖（纯 numpy + math）。",
+    },
+    "B491": {
+        "title": "光抽运关闭后自由进动横向极化 P_x(t*)（OPM/SERF 腿 C 时域信号）：闭式 Bloch 精确解 golden vs RK4 时间推进候选 · 无量纲",
+        "metric": "qs_opm_fid_polarization",
+        "oracle": "closed_form(P_x(t)=P₀·e^(−R_tot·t)·cos(2π·γ_e·B·t)，2D 线性 Bloch 方程初值 (P₀,0) 的精确解) + RK4 时间推进独立_cross_check",
+        "tol": 1e-7,
+        "default_params": dict(B491_DEFAULT_PARAMS),
+        "golden_fn": golden_b491,
+        "candidate": "b491_fid_polarization_rk4_cand",
+        "candidate_desc": "RK4 时间推进 2D Bloch 方程（固定步长 h=t*/n=64，逐点四阶 Runge–Kutta，不含任何解析指数/余弦成分）⇒ 取 t* 处 P_x。方法学独立：golden=闭式精确解，cand=数值时间推进",
+        "note": "golden = QS-M9（光泵原子磁力计 OPM/SERF · 腿 C）的**自由进动横向极化**闭式：P_x(t)=P₀·e^(−R_tot·t)·cos(ω_L·t)（无量纲，ω_L=2π·γ_e·B）——光抽运关闭后自旋在静磁场中自由进动，横向极化按自旋相关时间 1/R_tot 衰减、按 Larmor 频率振荡；该式是 2D 线性 Bloch 方程的**精确解**（不含近似）⇒ 可作 golden。🔴 **物理意义**：这是 OPM 的**时域信号本体**（与腿 A 的 ODMR/Ramsey、腿 B 的 SQUID 磁通调制并列）—— 本锚把「光-自旋-磁」三场耦合的时域响应钉进账本（平台缺口 G11 多物理场量子传感整合）。candidate=**RK4 时间推进**（方法学独立），实测默认档(P₀=1, R_tot=300 1/s, B=10 nT, t*=2 ms) **rel=7.071e-10**（abs 2.475e-10 · **tol=1e-7** ⇒ **141×** 余量；残差链 2.770e-6 → 1.779e-7 → 1.125e-8 → 7.071e-10，**比值 15.57/15.81/15.91×** ⇒ **O(h⁴)**，与 RK4 标称阶一致 ⇒ **非**代数恒等；n_steps=8 粗网格残差放大 ~3917×）。🔴 **与 B475 不同物理量**：B475 是**自旋回波（Hahn echo）的相位方差**（退相干谱 · 时间域数值积分链）；本锚是**自由进动的横向极化分量** P_x(t) ⇒ 被测标量不同（相位方差 vs 极化）+ 构型不同（脉冲序列 vs 自由进动）⇒ 记新锚（先例 B452 vs B33）。🔴 **与 B452 不同物理量**：B452 是**驱动器一阶 RC 阶跃电压**（1D 单调弛豫）；本锚是**衰减振荡的 2D 耦合 Bloch 系统**（横向极化）⇒ 标量/构型/解的结构（振荡 vs 单调）三处分歧 ⇒ 记新锚（同上先例）。🔴 **与 B473–B484（腿 A NV）不同物理对象**：NV 是**金刚石固体单自旋**（ODMR/Ramsey）；本锚是**碱金属蒸气集合自旋**（光抽运 + 自由进动）⇒ 换能机制与物态均不同。🔴 **诚实规模**：QS-M9 另含「稳态极化 P∞=R_op/(R_op+R_sd)」「亥姆霍兹线圈 B(0)=(4/5)^{3/2}µ₀NI/R」「自旋破坏率=壁+缓冲气体+探测光」「SERF 灵敏度 η=√(R_tot/N_a)/(2πγ_eP∞)」等量 —— 前二者为**闭式算术/速率方程稳态**、后者其自旋投影噪声因子 √(1/N_a) **无可行数值候选**（任何 MC 需模拟 N_a≈1e13 个独立自旋）⇒ 均归 `run_qs_m9_smoke` 覆盖，**如实不登记为锚**（本批只 B491–B493 三锚 · 同 B-44/B-45/B-46 纪律：宁可少，不越级谎报）。⚠️ **诚实边界**：P₀ / R_tot / B / t* 为**设计示例量级**（SERF OPM 典型），**非实测装置 PDK**；本锚只证明「闭式精确解 ⇄ RK4 时间推进」数值一致这一数学事实，**不得作制造/性能宣称**、**不冒充 LDA 实测**。零商业依赖（纯 numpy + math）。",
+    },
+    "B492": {
+        "title": "碱金属（Rb）饱和蒸气数密度 n(T)（OPM 气室温度定标）：闭式 Clausius–Clapeyron golden vs 复合梯形数值积分候选 · m⁻³",
+        "metric": "qs_alkali_vapor_density",
+        "oracle": "closed_form(n(T)=n_ref·exp(−(ΔH/k_B)·(1/T − 1/T_ref))，Clausius–Clapeyron 常数汽化焓模型) + 复合梯形数值积分独立_cross_check",
+        "tol": 5e12,
+        "default_params": dict(B492_DEFAULT_PARAMS),
+        "golden_fn": golden_b492,
+        "candidate": "b492_alkali_density_trapezoid_cand",
+        "candidate_desc": "复合梯形数值积分 d(ln n)/dT=ΔH/(k_B·T²)（n_seg=256 段，逐段梯形平均，不含闭式指数）⇒ 由积分结果取 exp。方法学独立：golden=闭式指数，cand=数值求积",
+        "note": "golden = QS-M9（OPM/SERF · 腿 C）的**碱金属饱和蒸气数密度**闭式：n(T)=n_ref·exp(−(ΔH/k_B)(1/T−1/T_ref))（m⁻³，Rb 汽化焓/k_B=8384 K）—— 气室的**温度→密度**定标律。🔴 **物理意义**：N_a=n(T)·V_cell 是**自旋投影噪声的分母**（N_a ↑ ⇒ 灵敏度 ↑），同时决定光抽运与自旋交换弛豫 ⇒ 多物理场「热-几何-自旋」耦合的第一环；本锚把气室热力学钉进账本（缺口 G11）。candidate=**复合梯形数值积分**（方法学独立），实测默认档(n_ref=1e17 m⁻³ @40 °C, T=60 °C) **rel=4.708e-08**（abs 2.349e10 · **tol=5e12**〔**绝对口径** · 对 |golden|≈4.99e17 即相对 1.0e-5 —— 同 B486「量级标定」先例〕⇒ **213×** 余量；残差链 3.013e-6 → 7.532e-7 → 1.883e-7 → 4.708e-8，**比值 4.00/4.00/4.00×** ⇒ **O(h²)**，与梯形标称阶一致）。🔴🔴 **非剖分守恒（关键区分）**：被积函数 ΔH/(k_B·T²) **随 T 变化**（非常数）⇒ 与 B28「均匀段 ΣΓ_i·Δz_i ≡ Γ·L **剖分守恒**」型代数恒等**不同**（n_seg=32 粗网格残差放大 ~64×，反向探针确证）⇒ **真数值残差**，非「同式异写」。🔴 **与 B473–B490 不同物理对象**：本锚是**气室热力学**（原子数密度），既不属腿 A 的固体自旋物理量、也不属腿 B 的超导磁通物理量 ⇒ 记新锚。🔴 **诚实规模**：QS-M9 另含「气室壁/缓冲气体/探测光弛豫率分量（定义式求和）」⇒ 闭式算术，归 `run_qs_m9_smoke` 覆盖、**不登记为锚**。⚠️ **诚实边界**：n_ref / T_ref / T / (ΔH/k_B) 为**设计示例量级**（常数汽化焓**模型**，真实 Rb 蒸气压有更精细的多项式拟合 ⇒ 本锚证明的是「闭式模型 ⇄ 数值积分」数值一致这一数学事实，**非**与实测蒸气压比对）；**不得作制造/性能宣称**。零商业依赖（纯 numpy + math）。",
+    },
+    "B493": {
+        "title": "泵浦光 Beer–Lambert 透过率 T(L)（OPM 气室光路）：闭式指数 golden vs RK4 空间推进候选 · 无量纲",
+        "metric": "qs_pump_transmission",
+        "oracle": "closed_form(T(L)=T₀·exp(−n·σ_abs·L)，Beer–Lambert 吸收律) + RK4 空间推进独立_cross_check",
+        "tol": 1e-7,
+        "default_params": dict(B493_DEFAULT_PARAMS),
+        "golden_fn": golden_b493,
+        "candidate": "b493_pump_transmission_rk4_cand",
+        "candidate_desc": "RK4 沿 z 数值积分 dI/dz=−n·σ_abs·I（n_steps=64 段，四阶 Runge–Kutta，不含闭式指数）⇒ 取 L 处透过率。方法学独立：golden=闭式指数，cand=数值空间推进",
+        "note": "golden = QS-M9（OPM/SERF · 腿 C）的**泵浦光透过率**闭式：T(L)=T₀·exp(−n·σ_abs·L)（无量纲 · Beer–Lambert），光学厚度 τ_opt=n·σ_abs·L。🔴 **物理意义**：气室的**光路**物理 —— 光学厚度决定抽运均匀性与（探测/泵浦功率权衡的）信噪比 ⇒ 多物理场「光-几何」耦合；本锚把它钉进账本（缺口 G11）。candidate=**RK4 沿 z 数值积分**（方法学独立），实测默认档(T₀=1, n=1e19 m⁻³, σ_abs=5e-18 m², L=2 cm ⇒ τ_opt=1.0) **rel=5.032e-10**（abs 1.851e-10 · **tol=1e-7** ⇒ **199×** 余量；残差链 2.258e-6 → 1.340e-7 → 8.157e-9 → 5.032e-10，**比值 16.86/16.42/16.21×** ⇒ **O(h⁴)**）⇒ **非**代数恒等；τ_opt=1 时 T=1/e 恰为自洽点（smoke 覆盖）。🔴 **与 B452/B491 不同物理量**：B452 是 RC 阶跃电压、B491 是 2D 衰减振荡的横向极化；本锚是**光强沿传播方向的单调衰减（空间推进）**⇒ 被测标量（透过率）、构型（碱金属气室光吸收）、推进维（空间 z vs 时间 t）三处分歧 ⇒ 记新锚（先例 B452 vs B33）。🔴 **与 B462（Langmuir 吸附 RK4）不同体系**：本锚是**光抽运气室**的光吸收，非表面吸附平衡。🔴 **诚实规模**：QS-M9 另含「亥姆霍兹线圈 B(0)=(4/5)^{3/2}µ₀NI/R」（**闭式算术** ⇒ 属 smoke，**不登记为锚**；亦因此**无**「离散 Biot–Savart 线圈」锚 ⇒ 不与 B488 的离散 Neumann 互感撞车）。⚠️ **诚实边界**：T₀ / n / σ_abs / L 为**设计示例量级**（缓冲气体压致展宽后的有效截面），**非实测 PDK**；本锚只证明「闭式指数 ⇄ RK4 空间推进」数值一致这一数学事实，**不得作制造/性能宣称**。零商业依赖（纯 numpy + math）。",
+    },
+    "B494": {
+        "title": "腔品质因子 Q=ω/κ（腔 QED 物理链）：闭式 Q=ω/κ golden vs RK4 能量衰减反解 κ 候选 · 无量纲",
+        "metric": "qs_cavity_quality_factor",
+        "oracle": "closed_form(Q=ω/κ，ω=2πc/λ) + RK4 能量衰减 dU/dt=−κU 反解 κ_cand=−ln(U(T))/T ⇒ Q_cand=ω/κ_cand 独立_cross_check",
+        "tol": 1e-3,
+        "default_params": dict(B494_DEFAULT_PARAMS),
+        "golden_fn": golden_b494,
+        "candidate": "b494_q_factor_rk4_cand",
+        "candidate_desc": "RK4 时间推进能量衰减 dU/dt=−κU（U₀=1，n_steps=64 四阶 Runge–Kutta，不含闭式除式）⇒ 取 U(T) ⇒ 反解 κ_cand=−ln(U(T))/T ⇒ Q_cand=ω/κ_cand。方法学独立：golden=闭式除式，cand=数值 ODE 反解",
+        "note": "golden = QS-M3c（腔 QED 物理链 · 平台缺口 G5 量子传感 PDK 腔几何）的**腔品质因子**闭式：Q=ω/κ（ω=2πc/λ 谐振角频率，κ 为能量衰减率）。🔴 **物理意义**：Q 衡量腔损耗 / 光子寿命 —— 高 Q 腔才能把发射体强耦合进谐振模式；本锚把「腔损耗 → Q」钉进账本（承 QS-M3 链④ Purcell 因子的腔几何拆分）。candidate=**RK4 时间推进能量衰减** dU/dt=−κU（方法学独立），实测默认档(ω=2πc/1550nm, Q=1e4, κ·t_observe≈1) **rel=5.011e-10**（abs 5.011e-6 · **tol=1e-3**〔按量级标定 · 同 B491/B493 约定〕⇒ **200×** 余量；残差链 2.248e-6 → 1.334e-7 → 8.122e-9 → 5.011e-10，**比值 16.86/16.42/16.21×** ⇒ **O(h⁴)** ⇒ **非**代数恒等）。🔴 **与 B18 不同物理量**：B18 是**谐振腔 Purcell 因子 F_P=4g²/(κγ₁)**（**组合标量**）；本锚是 **Q 这一输入量本身**（F_P 由 Q/V/g 决定，但 Q ≠ F_P）⇒ 物理对象不同 ⇒ 记新锚（先例 B491 vs B475：同物理域不同标量即分立）。🔴 **诚实规模**：QS-M3c 另含「finesse ℱ=Q·λ/(2na)」「γ_rad=ω³μ²/(3πε₀ħc³)」「cooperativity C=4g²/(κγ_rad)=(3λ³Q/4π²V)(γ_rad/γ₁)」「Purcell FOM F_P=(3/4π²)(λ/n)³(Q/V)」—— 前二者为**闭式算术 / 组合自洽**，后二者**约定因子 2n 的闭式自洽** ⇒ 均归 `run_qs_m3c_smoke` 覆盖，**如实不登记为锚**（本批只 B494–B496 三锚 · 同 B-44~B-47 纪律：宁可少，不越级谎报）。⚠️ **诚实边界**：ω/κ 为**设计示例量级**（金刚石微盘腔 telecom 典型），**非实测 PDK**；本锚只证明「闭式 Q=ω/κ ⇄ RK4 能量衰减反解」数值一致这一数学事实，**不得作制造/性能宣称**。零商业依赖（纯 math）。",
+    },
+    "B495": {
+        "title": "有效模体积 V_eff（腔 QED 物理链）：闭式 A·8a/15 golden vs 单波腹腔模包络中点求积候选 · m³",
+        "metric": "qs_effective_mode_volume",
+        "oracle": "closed_form(V_eff=A·∫(1−4x²/a²)²dx=A·8a/15) + 中点求积 ∫_{-a/2}^{a/2}(1−4x²/a²)²dx 独立_cross_check",
+        "tol": 1e-27,
+        "default_params": dict(B495_DEFAULT_PARAMS),
+        "golden_fn": golden_b495,
+        "candidate": "b495_mode_volume_midpoint_cand",
+        "candidate_desc": "中点求积 ∫_{-a/2}^{a/2}(1−4x²/a²)²dx（n_seg=256 段，不含闭式积分）⇒ ×A。方法学独立：golden=解析积分，cand=数值求积",
+        "note": "golden = QS-M3c（腔 QED 物理链 · 平台缺口 G5）的**有效模体积**闭式：V_eff=∫ε|E|²dV/max(ε|E|²)；取单波腹腔模包络 E(x)=E₀(1−4x²/a²)（x∈[−a/2,a/2]，中心单极大、边界归零）⇒ V_eff=A·8a/15（∫_{-a/2}^{a/2}(1−4x²/a²)²dx=8a/15）。🔴 **物理意义**：V_eff 衡量模式场空间局域程度 —— V_eff 越小耦合越强，是腔 QED 耦合 g 与 Purcell 因子 F_P 的核心几何量；本锚把它钉进账本。candidate=**中点求积**（方法学独立），实测默认档(a=1.55µm, A=5e-14 m²) **rel=2.037e-10**（abs 8.421e-30 · **tol=1e-27**〔**绝对口径 · 对 |golden|≈4.13e-20 即相对 2.04e-10 —— 同 B492/B494 量级标定先例**〕⇒ **118×** 余量；残差链 8.345e-7 → 5.215e-8 → 3.260e-9 → 2.037e-10，**比值 16.00×** ⇒ **O(h⁴)**（偶函数在对称区间中点法额外加速），被积函数是四次非多项式 ⇒ 中点非精确 ⇒ **真数值残差**，非「同式异写」/ 非机器零残差）。🔴 **与 B18 不同物理量**：B18 是 Purcell 组合标量；本锚是 **V_eff 这一输入量** ⇒ 物理对象不同 ⇒ 记新锚。🔴 **诚实规模**：V_eff 量级极小（~1e-20 m³），tol 取**绝对口径** 1e-27（绝不同用 O(1) 相对量当绝对 tol，血案 B492：同族量级标定）。⚠️ **诚实边界**：a/A 为**设计示例量级**（金刚石微盘腔典型），**非实测 PDK**；本锚只证明「闭式积分 ⇄ 中点求积」数值一致这一数学事实，**不得作制造/性能宣称**。零商业依赖（纯 math）。",
+    },
+    "B496": {
+        "title": "单光子耦合 g=(μ/ħ)√(ħω/(εV_eff))（腔 QED 物理链）：闭式 golden vs 数值场能积分候选 · Hz",
+        "metric": "qs_single_photon_coupling",
+        "oracle": "closed_form(g=(μ/ħ)·√(ħω/(ε·V_eff))，V_eff=A·8a/15) + 数值 ∫|E|²dV（⇒ 数值 V_eff）独立_cross_check",
+        "tol": 1e3,
+        "default_params": dict(B496_DEFAULT_PARAMS),
+        "golden_fn": golden_b496,
+        "candidate": "b496_coupling_field_energy_cand",
+        "candidate_desc": "数值积分 ∫|E|²dV（中点求积 ⇒ 数值 V_eff_num）⇒ 单光子场幅 E₀=√(ħω/(ε·V_eff_num)) ⇒ g=μE₀/ħ。方法学独立：golden=闭式 V_eff，cand=数值场能积分",
+        "note": "golden = QS-M3c（腔 QED 物理链 · 平台缺口 G5）的**单光子耦合**闭式：g=(μ/ħ)·√(ħω/(ε·V_eff))（μ=跃迁偶极矩，E₀=√(ħω/(εV_eff)) 为单光子场幅，V_eff=A·8a/15）。🔴 **物理意义**：g 是发射体偶极与腔模场幅的耦合强度（单光子 Rabi 频率），强耦合判据 g>κ,γ；本锚把它钉进账本（与单锚 B48 = 单光子 Rabi 耦合同物理族，但本锚是**腔 QED 组合链**的可证伪数值实现 —— 经独立数值场能积分验证，非直接引用）。candidate=**数值积分 ∫|E|²dV**（方法学独立），实测默认档(μ=1e-29 C·m, ω=2πc/1550nm, ε=ε₀·3.4², a=1.55µm, A=5e-14 m²) **rel=1.019e-10**（abs 1.681 Hz · **tol=1e3**〔按量级标定〕⇒ **595×** 余量；残差链 4.172e-7 → 2.608e-8 → 1.630e-9 → 1.019e-10，**比值 16.00×** ⇒ **O(h⁴)**；g ∝ V_eff^(−1/2)，残差随 V_eff 积分残差）⇒ **非**代数恒等。🔴 **与 B18 不同物理量**：B18 是 Purcell 组合标量 F_P=4g²/(κγ₁)；本锚是 **g 这一输入量** ⇒ 物理对象不同 ⇒ 记新锚。🔴 **与 B48（单锚）不同实现**：B48 是量子力学单光子 Rabi 耦合的闭式/数值对；本锚是**腔 QED 组合链**（g 由腔模场能导出），命名上以连字符 `_batch_qs_m3c_numeric` / `b494_/b495_/b496_` 规避 B-48 与单锚 B48 号段撞名（实 grep 核验：`_BATCH_QS_M3C` / `_get_qs_m3c_numeric` / `b48_` 全仓占用检查已做）。⚠️ **诚实边界**：μ/ω/ε/a/A 为**设计示例量级**（金刚石微盘腔 telecom 典型），**非实测 PDK**；本锚只证明「闭式 g ⇄ 数值场能积分」数值一致这一数学事实，**不得作制造/性能宣称**。零商业依赖（纯 math）。",
     },
 }

@@ -1,12 +1,12 @@
 {
-  "strict_total": 486,
-  "strict_attacked": 486,
+  "strict_total": 492,
+  "strict_attacked": 492,
   "strict_coverage": 1.0,
-  "attacks_total": 4845,
-  "genuine_div": 273,
+  "attacks_total": 4905,
+  "genuine_div": 277,
   "cand_limitation": 70,
   "golden_unstable": 88,
-  "divergence_rate": 0.0745098039,
+  "divergence_rate": 0.0744138634,
   "findings": [
     {
       "bid": "B1",
@@ -3212,6 +3212,68 @@
           "cand": 0.0,
           "err": 0.0360971399,
           "tol": 0.002
+        }
+      ]
+    },
+    {
+      "bid": "B492",
+      "as_strict": true,
+      "n_attacks": 17,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "n_ref_m3": 1e+17,
+            "t_ref_k": 219.205,
+            "dh_over_kb_k": 8384.0,
+            "t_k": 333.15
+          },
+          "issue": "genuine_divergence",
+          "oracle": 4.79961677e+22,
+          "cand": 4.79970698e+22,
+          "err": 9.02111799e+17,
+          "tol": 5000000000000.0
+        },
+        {
+          "params": {
+            "n_ref_m3": 1e+17,
+            "t_ref_k": 266.1775,
+            "dh_over_kb_k": 8384.0,
+            "t_k": 333.15
+          },
+          "issue": "genuine_divergence",
+          "oracle": 5.62244903e+19,
+          "cand": 5.622463e+19,
+          "err": 139699780000000.0,
+          "tol": 5000000000000.0
+        },
+        {
+          "params": {
+            "n_ref_m3": 1e+17,
+            "t_ref_k": 313.15,
+            "dh_over_kb_k": 8384.0,
+            "t_k": 383.1225
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.3292323e+19,
+          "cand": 1.32923435e+19,
+          "err": 20512212200000.0,
+          "tol": 5000000000000.0
+        },
+        {
+          "params": {
+            "n_ref_m3": 1e+17,
+            "t_ref_k": 313.15,
+            "dh_over_kb_k": 8384.0,
+            "t_k": 433.095
+          },
+          "issue": "genuine_divergence",
+          "oracle": 1.66033145e+20,
+          "cand": 1.66034177e+20,
+          "err": 1031581940000000.0,
+          "tol": 5000000000000.0
         }
       ]
     },

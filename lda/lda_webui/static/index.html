@@ -147,6 +147,7 @@ body{padding-top:56px}
     <a href="#sec-pm" style="color:#1a1205;background:#fcd34d;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子存储阵列 M0–M5（GST 相变 · 真 GDS + DRC/LVS · 外设与系统 · 国际对标）</a>
     <a href="#sec-sensor" style="color:#3b0721;background:#f9a8d4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子传感器 PS-M0–M6（微环折射率传感 · 真 GDS + DRC/LVS · 客户自助设计向导）</a>
     <a href="#sec-soc" style="color:#1e1b4b;background:#c4b5fd;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子计算 SoC 芯片（S0–S5-ext + G6 · 多核/WDM/TDM/foundry signoff）</a>
+    <a href="#sec-qsensor" style="color:#0b1220;background:#f0abfc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 量子传感器 QS-M0–M7（NV 色心 + 超导 SQUID 双腿 · 建模设计预算 · 只读案例）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -1663,6 +1664,30 @@ body{padding-top:56px}
     <div id="sensorSummary" class="summary"></div>
     <div id="sensorBody"></div>
     <div class="conclusion" id="sensorConclusion"></div>
+  </div>
+
+  <!-- 量子传感器征程 QS-M0…QS-M7（吃狗粮第三征程）案例卡：只读 GET /api/qsensor_demo
+       首屏直达 #sec-qsensor + hash 深链 CASE_MAP + 抽屉按钮（三入口面齐备） -->
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-qsensor">
+    <h2>★ 量子传感器案例（QS-M0…QS-M7 · 双腿：NV 色心 + 超导 SQUID · 建模设计预算）</h2>
+    <div class="hint">
+      用 LDA 从零设计一枚<b>量子传感器芯片</b>——两条腿：<b>腿 A · NV 色心磁力计</b>（光-自旋-磁 · 室温）
+      与 <b>腿 B · 超导 SQUID 磁力计</b>（电-磁通 · 4 K），从自旋/约瑟夫森物理反解到
+      <b>器件本体 → 阵列/集成 → 闭环标定 → 噪声优化</b>全链机器校验（九档征程）。<br/>
+      🔵 <b>只读 · 免登录 · 零重计算</b>：数字全部由<b>闭式算术</b>（散粒极限灵敏度
+      η=ħ/(gμB)·√2/(C·√(n<sub>ph</sub>·T2*))、Zeeman 分裂 Δf=2γ<sub>e</sub>B、优化收益比）+ <b>参考常量</b>
+      （各档建模值，与 <b>qs_m0…qs_m7 现算值逐位对拍</b>）⇒ 微秒级、无 DoS 面。<br/>
+      🔵 <b>口径</b>：判决恒为 <b>DESIGN_BUDGET（设计预算 / 建模值）</b>，<b>非</b>流片实测签核；
+      灵敏度统一 <b>η = δB·√T</b>（T/√Hz，禁与线宽受限 LOD 混比）；蓝图 §3 的国际 SOTA 数字为
+      <b>公开文献值</b>，仅作<b>对标准星</b>，<b>不宣称「已达国际水平」</b>、<b>不报 fabricated 能效</b>；
+      零量子 SDK（不依赖 Qiskit/Cirq/PennyLane/QuTiP）。<b>LLM 不进判决路径</b>。
+    </div>
+    <div class="row">
+      <button class="btn" id="runQsensor">运行量子传感器案例</button>
+    </div>
+    <div id="qsSummary" class="summary"></div>
+    <div id="qsBody"></div>
+    <div class="conclusion" id="qsConclusion"></div>
   </div>
 
   <!-- 光子计算 SoC 征程（S0–S5-ext + G6）案例卡：首屏直达 #sec-soc + 只读 GET /api/soc_demo -->
@@ -10193,6 +10218,169 @@ $('runSensor') && ['change','input'].forEach(function(ev){
   });
 });
 
+// ===== QS-M8 · 量子传感器案例卡（双腿 NV 色心 + 超导 SQUID · 只读 · 免登录 · 零重计算）=====
+if($('runQsensor')) $('runQsensor').onclick = runQsensor;
+async function runQsensor(){
+  const btn=$('runQsensor'); if(!btn) return;
+  btn.disabled=true;
+  $('qsSummary').innerHTML='<span class="spin"></span> 正在读取量子传感器案例卡（建模设计预算 · 闭式现算）…';
+  try{
+    const d=await apiGet('/api/qsensor_demo');
+    renderQsensor(d);
+  }catch(e){ $('qsSummary').textContent='错误：'+(e&&e.message?e.message:e); }
+  finally{ btn.disabled=false; }
+}
+function renderQsensor(d){
+  if(!d||d.error){ $('qsSummary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
+  var idf=d.identity||{}, sp=d.span||{}, nv=d.nv_leg||{}, sq=d.squid_leg||{};
+  var gm=d.geometry||{}, ar=d.array||{}, cl=d.calibration||{}, op=d.optimization||{};
+  var pos=d.positioning||{};
+  $('qsSummary').innerHTML='判决 <b>'+d.verdict+'</b>（设计预算 · 建模值）· 案例 <b>'+d.case_id
+    +'</b> · 端点 <code>'+d.endpoint+'</code> · 缺口 <b>'+d.gaps_closed+'/'+d.gaps_total+'</b> 已闭合';
+  var h='';
+
+  // ① 案例身份
+  h+='<h3 style="margin:14px 0 4px">① 案例身份</h3>';
+  h+=_qcTbl(['项','值'],[
+    ['案例口号', d.claim],
+    ['物理域', idf.physics],
+    ['器件', idf.device],
+    ['换能单元', idf.unit],
+    ['两条腿', (idf.legs||[]).join(' ｜ ')],
+    ['路线说明', idf.route_note],
+    ['灵敏度口径', '<code>'+idf.caliber+'</code>'],
+    ['零量子 SDK', (idf.zero_quantum_sdk?'<b>是</b>（不依赖 Qiskit/Cirq/PennyLane/QQuTiP）':'否')],
+    ['征程档数', _sxF(sp.milestones,0)],
+    ['可回溯门禁数', _sxF(sp.gates,0)],
+    ['模块自检项合计', _sxF(sp.module_selfchecks,0)]
+  ]);
+
+  // ② 腿 A · NV 色心磁力计
+  h+='<h3 style="margin:14px 0 4px">② 腿 A · NV 色心磁力计（光-自旋-磁 · 室温 · 建模值）</h3>';
+  h+=_qcTbl(['指标','值','口径'],[
+    ['基线灵敏度 η (pT/√Hz)', _sxF(nv.eta_baseline_pT_per_sqrtHz,3), '散粒极限 · T2*=1µs/C=3%/1e5 s⁻¹'],
+    ['引用档 η (pT/√Hz)', _sxF(nv.eta_cited_pT_per_sqrtHz,3), 'T2*=10µs/C=10%/1e6 s⁻¹'],
+    ['退化档 η (pT/√Hz)', _sxF(nv.eta_degraded_pT_per_sqrtHz,3), 'T2*=0.1µs/C=1%/1e4 s⁻¹'],
+    ['含噪(现实) η (pT/√Hz)', _sxF(nv.eta_realistic_pT_per_sqrtHz,3), '四源正交合成'],
+    ['DD 增强 η (pT/√Hz)', _sxF(nv.eta_dd_enhanced_pT_per_sqrtHz,3), '动力学去耦 T2 延展'],
+    ['散粒极限闭式核对 (pT/√Hz)', _sxF(nv.shot_limit_check_pT_per_sqrtHz,4), 'ħ/(gμB)·√2/(C·√(n_ph·T2*))'],
+    ['最优色心深度 d* (nm)', _sxF(nv.optimal_depth_nm,3), '闭式根方程 d⁴+d₀³d=3d₀³d_att'],
+    ['收集效率 η_coll（基线）', _sxF(nv.eta_collection_baseline,5), '深度+NA 链'],
+    ['收集效率 η_coll（腔增强）', _sxF(nv.eta_collection_cavity,5), 'Purcell 腔增强'],
+    ['Purcell 计数率比 R/R₀', _sxF(nv.purcell_rate_ratio,1), '1+β·F_P'],
+    ['阵列通道数', _sxF(nv.array_channels,0), '2×N 示例阵列'],
+    ['阵列串扰总量 X_tot', _sxF(nv.max_crosstalk_total,5), '(d_crit/r)³ 全对累计'],
+    ['梯度计 CMRR (dB)', _sxF(nv.cmrr_db,1), '20log₁₀(1/ε)'],
+    ['mux 每馈线音数', _sxF(nv.mux_tones_per_feedline,0), 'FDM 音规划'],
+    ['动态范围 (dB)', _sxF(nv.dynamic_range_db,2), '20log₁₀(B_max/B_min)'],
+    ['AC 灵敏度 (nT)', _sxF(nv.ac_sensitivity_nT,2), 'η·√(2Δf)'],
+    ['频锁残差 / 线宽', _sxE(nv.lock_residual_rel_linewidth,3), '闭环收敛'],
+    ['对标准星 · 芯片级 (nT/√Hz)', _sxF(nv.sota_chip_nT_per_sqrtHz,1), '公开文献值（仅背景）'],
+    ['对标准星 · 腔最优 (nT/√Hz)', _sxF(nv.sota_cavity_nT_per_sqrtHz,1), '公开文献值（仅背景）']
+  ]);
+
+  // ③ 腿 B · 超导 SQUID 磁力计
+  h+='<h3 style="margin:14px 0 4px">③ 腿 B · 超导 SQUID 磁力计（电-磁通 · 4 K · 含性能冲刺）</h3>';
+  h+=_qcTbl(['指标','值','口径'],[
+    ['基线灵敏度 B_N (fT/√Hz)', _sxF(sq.b_n_baseline_fT_per_sqrtHz,3), '裸环 · 100 µm 环'],
+    ['结临界电流 I_c0 (A)', _sxE(sq.ic0_a,3), '单结 · 设计示例'],
+    ['裸结 R_n (Ω)', _sxF(sq.rn_ohm,2), '正常态电阻'],
+    ['工作温度 (K)', _sxF(sq.temp_k,2), '液氦'],
+    ['环路面积 (m²)', _sxE(sq.loop_area_m2,3), '100 µm 见方'],
+    ['McCumber β_c', _sxF(sq.beta_c,4), 'ω_p·R·C（非滞回）'],
+    ['等离子频率 (GHz)', _sxF(sq.plasma_freq_ghz,3), 'ω_p/2π'],
+    ['有效面积 A_eff (m²)', _sxE(sq.a_eff_m2,3), '变压器放大后'],
+    ['面积增益 A_eff/A_bare', _sxF(sq.area_gain,2), '磁通聚焦'],
+    ['亚微米结 R_n,opt (Ω)', _sxF(sq.rn_opt_ohm,2), '面积压缩 ⇒ 抬升'],
+    ['结 R_n 增益', _sxF(sq.rn_gain,3), '饱和增益模型'],
+    ['优化后 B_N,opt (fT/√Hz)', _sxF(sq.b_n_opt_fT_per_sqrtHz,4), '√(S_Φ,opt)/A_eff'],
+    ['优化收益倍率', _sxF(sq.optimization_gain,2), '基线/优化后'],
+    ['SOTA 比 sota_ratio', _sxF(sq.sota_ratio,4), '1 ⇒ 公开带中点'],
+    ['公开集成带下限 (fT/√Hz)', _sxF(sq.sota_band_low_fT,1), '公开文献值（仅背景）'],
+    ['公开集成带上限 (fT/√Hz)', _sxF(sq.sota_band_high_fT,1), '公开文献值（仅背景）']
+  ]);
+
+  // ④ 几何优化 / 器件本体（QS-M3 / QS-M3b）
+  h+='<h3 style="margin:14px 0 4px">④ 几何优化与器件本体（QS-M3 / QS-M3b）</h3>';
+  h+=_qcTbl(['项','值','口径'],[
+    ['最优色心深度 d* (nm)', _sxF(gm.d_star_nm,3), '闭式根方程'],
+    ['NA 立体角收集效率 η_NA', _sxF(gm.eta_na,5), '[cos³θ/3−cosθ] 解析积分'],
+    ['NV 柱柱高 (µm)', _sxF(gm.pillar_height_um,5), '≡ d*(µm) + 柱顶余量（同源派生）'],
+    ['光子晶体腔孔间壁厚 (µm)', _sxF(gm.cavity_web_um,3), '周期 − 2·孔半径'],
+    ['微波环形天线半径 (µm)', _sxF(gm.antenna_loop_r_um,1), '环 + 馈线 + 焊盘'],
+    ['器件族数', _sxF(gm.n_device_kinds,0), 'NV 柱 / 腔 / 天线'],
+    ['DRC 检查项合计', _sxF(gm.drc_checks_total,0), '专用可制造性规则'],
+    ['DRC 违规数', _sxF(gm.drc_violations_total,0), '默认档 0 违规']
+  ]);
+
+  // ⑤ 阵列 / 集成（QS-M4）
+  h+='<h3 style="margin:14px 0 4px">⑤ 阵列与集成（QS-M4：串扰 + 读出 mux + 梯度计）</h3>';
+  h+=_qcTbl(['项','值','口径'],[
+    ['阵列通道数', _sxF(ar.n_channels,0), '2×N'],
+    ['最大单对串扰 X_pair', _sxF(ar.max_pair,5), '(d_crit/r)³'],
+    ['最大总串扰 X_total', _sxF(ar.max_total,5), '全对累计（不截断）'],
+    ['阵列有效灵敏度 (nT/√Hz)', _sxF(ar.eta_eff_nT_per_sqrtHz,4), 'η·√(1+X_tot²)'],
+    ['梯度计 CMRR (dB)', _sxF(ar.cmrr_db,1), '20log₁₀(1/ε)'],
+    ['mux 行数', _sxF(ar.mux_rows,0), '读出馈线'],
+    ['mux 列数', _sxF(ar.mux_cols,0), '每馈线音数'],
+    ['mux 每馈线音数', _sxF(ar.mux_tones_per_feedline,0), 'FDM'],
+    ['最小音间隔 (MHz)', _sxF(ar.mux_min_tone_spacing_mhz,2), '音间隔设计规则']
+  ]);
+
+  // ⑥ 闭环标定 / 动态范围（QS-M5）
+  h+='<h3 style="margin:14px 0 4px">⑥ 闭环标定与动态范围（QS-M5）</h3>';
+  h+=_qcTbl(['项','值','口径'],[
+    ['ODMR 线宽 (MHz)', _sxF(cl.linewidth_mhz,2), 'Lorentzian w'],
+    ['动态范围 (dB)', _sxF(cl.dynamic_range_db,2), '20log₁₀(B_max/B_min)'],
+    ['AC 灵敏度 (nT)', _sxF(cl.ac_sensitivity_nT,2), 'η·√(2Δf)'],
+    ['频锁迭代次数', _sxF(cl.lock_n_iter,0), 'gain=1 一步收敛'],
+    ['频锁残差 / 线宽', _sxE(cl.lock_residual_rel_linewidth,3), '收敛判据（非绝对 Hz）'],
+    ['磁场标度失配', _sxE(cl.field_scale_mismatch,3), '无噪两点法代数精确'],
+    ['线性段上限 B_max (nT)', _sxF(cl.b_max_nT,2), '(w/2)/γ']
+  ]);
+
+  // ⑦ 性能冲刺（QS-M7）
+  h+='<h3 style="margin:14px 0 4px">⑦ 性能冲刺（QS-M7：磁通聚焦 + 亚微米结）</h3>';
+  h+=_qcTbl(['项','值','口径'],[
+    ['有效面积 A_eff (m²)', _sxE(op.a_eff_m2,3), 'γ_A·A_p·M/(L_i+L_p)'],
+    ['面积增益', _sxF(op.area_gain,2), 'A_eff / A_bare'],
+    ['结 R_n 增益', _sxF(op.rn_gain,3), '1+(max_gain−1)(1−1/ρ)'],
+    ['优化后 R_n (Ω)', _sxF(op.rn_opt_ohm,2), '20 Ω × 7.125'],
+    ['优化后 B_N,opt (fT/√Hz)', _sxF(op.b_n_opt_fT_per_sqrtHz,4), '√(S_Φ,opt)/A_eff'],
+    ['优化收益倍率', _sxF(op.optimization_gain,2), '79.25 / 1.73'],
+    ['SOTA 比', _sxF(op.sota_ratio,4), '<1 ⇒ 进入公开集成带'],
+    ['基线 B_N (fT/√Hz)', _sxF(op.baseline_b_n_fT_per_sqrtHz,2), 'QS-M6 建模基线']
+  ]);
+
+  // ⑧ 九档征程（门禁 + 模块自检）
+  h+='<h3 style="margin:14px 0 4px">⑧ 九档征程（QS-M0…QS-M7 · 常驻 CI 门禁）</h3>';
+  h+=_qcTbl(['档位','版本','内容','常驻门禁','模块自检','关键产出'],
+    (d.milestones||[]).map(function(ms){ return [ms.id, ms.code, ms.title,
+      '<code>'+ms.gate+'</code>', _sxF(ms.selfchecks,0), ms.result]; }));
+
+  // ⑨ 关键结论
+  h+='<h3 style="margin:14px 0 4px">⑨ 关键结论（物理 + 方法学）</h3>';
+  h+=_qcTbl(['结论','说明'],
+    (d.findings||[]).map(function(fn){ return [fn.title, fn.detail]; }));
+
+  // ⑩ 对标准星（公开文献值 · 仅背景坐标）
+  h+='<h3 style="margin:14px 0 4px">⑩ 对标准星（公开文献值 · 仅作背景坐标 · 不同台比较）</h3>';
+  h+='<div class="hint">'+pos.disclaimer+'</div>';
+  h+=_qcTbl(['指标','国际公开值','出处口径','LDA 本卡（建模值）'],
+    (d.sota_stars||[]).map(function(st){ return [st.metric, st.intl, st.caliber, st.lda_target]; }));
+  h+='<div class="hint"><b>差异定位</b>：'+(pos.what_is_different||[]).join(' &nbsp;•&nbsp; ')+'</div>';
+  h+='<div class="hint"><b>诚实限制</b>：'+(pos.honest_limits||[]).join(' &nbsp;•&nbsp; ')+'</div>';
+
+  // ⑪ 缺口登记（G1–G11）
+  h+='<h3 style="margin:14px 0 4px">⑪ 缺口登记（G1–G11 · 逐档闭合 · 未闭者不粉饰）</h3>';
+  h+=_qcTbl(['缺口','标题','状态','说明'],
+    (d.gaps||[]).map(function(gp){ return ['<code>'+gp.id+'</code>', gp.title, gp.status, gp.detail]; }));
+
+  $('qsBody').innerHTML=h;
+  $('qsConclusion').innerHTML='<b>口径（判决落非 AI ground）</b>：'+d.honest_note;
+  return true;
+}
+
 </script>
 <script src="/nav.js"></script>
 <script src="/cs_widget.js"></script>
@@ -10295,7 +10483,7 @@ $('runSensor') && ['change','input'].forEach(function(ev){
                   "#sec-pchip": "runPChip", "#sec-ecore": "runECore",
                   "#sec-accel": "runAccel", "#sec-d4": "runD4", "#sec-oi": "runOi",
                   "#sec-pm": "runPm", "#sec-sensor": "runSensor",
-                  "#sec-soc": "runSoc"};
+                  "#sec-soc": "runSoc", "#sec-qsensor": "runQsensor"};
   var fired = {};
   function maybeRun() {
     var btnId = CASE_MAP[location.hash];

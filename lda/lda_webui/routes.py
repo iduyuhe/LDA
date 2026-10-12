@@ -420,6 +420,39 @@ def h_sensor_demo(h, p, q, path):
                       "verdict": "ERROR"})
 
 
+def h_qsensor_demo(h, p, q, path):
+    """GET /api/qsensor_demo —— 量子传感器案例卡（QS-M8 · 只读 · 免登录 · 微秒级）。
+
+    量子传感器芯片征程（吃狗粮第三征程 · QS-M0…QS-M7）的**只读对外窗口**：两条腿
+    ——腿 A NV 色心磁力计（光-自旋-磁 · 室温）+ 腿 B 超导 SQUID 磁力计（电-磁通 · 4 K）
+    ——从物理反解到器件本体、阵列、闭环标定与噪声优化的全链建模结果。
+
+    🔴 与 `/api/sensor_demo`（**光子**传感器 PS-M7）**并列但不同域**：PS 卡是折射率换能
+    （PDA），本卡是自旋/磁通换能（QEDA 的第二支柱）。本卡**不带旋钮**（纯只读案例）。
+
+    🔴 **零重计算**：不跑求解器、不 import numpy/scipy/lda_l2、不解析 GDS —— 数字来自
+    ① 闭式算术（散粒极限灵敏度 / Zeeman 分裂 / 优化收益比 —— 与 `qs_m0`/`qs_m7` 的闭式镜像）
+    ② 参考常量（各档建模值，由 `run_qs_panel_smoke` 对 `qs_m0…qs_m7` 现算值逐位校验）
+    ③ 对 `outputs/qs_m*` 产出物只 `listdir` 的元信息
+    ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**
+    （与 `/api/sensor_demo`、`/api/qchip_demo`、`/api/verification_ledger` 同属「公开只读验货」类）。
+
+    无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`
+    （**非** ACCEPT/PASS），返回体自带 `honest_note`。
+
+    异常不 500（返回 200 + error 字段，与 `h_sensor_demo` 同风格）。
+    """
+    try:
+        from . import qs_case as _qs
+    except ImportError:
+        from lda_webui import qs_case as _qs
+    try:
+        return (200, _qs.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/qsensor_demo", "error": str(e)[:160],
+                      "case_id": _qs.CASE_ID, "verdict": "ERROR"})
+
+
 def h_accel_demo(h, p, q, path):
     """GET /api/accel_demo —— 光子/模拟混合 AI 推理加速器案例卡（阶段 4 · L6 参考设计 · 只读）。
 
@@ -2106,6 +2139,8 @@ GET_ROUTES = {
     "/api/pm_demo": h_pm_demo,
     # 光子传感器征程 PS-M7：案例卡 + 客户自助设计向导（只读 · 免登录 · 闭式现算）
     "/api/sensor_demo": h_sensor_demo,
+    # 量子传感器征程 QS-M8：双腿（NV 色心 + 超导 SQUID）只读案例卡（零重计算 · 免登录）
+    "/api/qsensor_demo": h_qsensor_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,

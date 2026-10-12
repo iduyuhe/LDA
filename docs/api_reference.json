@@ -1,9 +1,9 @@
 {
   "counts": {
-    "described": 149,
+    "described": 150,
     "needs_login": 60,
-    "precise": 132,
-    "total": 149,
+    "precise": 133,
+    "total": 150,
     "undescribed": 0,
     "wildcard": 17
   },
@@ -527,6 +527,20 @@
       "note": "",
       "params": [],
       "path": "/api/qchip_demo",
+      "source": "handler_docstring",
+      "wildcard": false
+    },
+    {
+      "app_function": null,
+      "auth": "public",
+      "binary": false,
+      "description": "GET /api/qsensor_demo —— 量子传感器案例卡（QS-M8 · 只读 · 免登录 · 微秒级）。 量子传感器芯片征程（吃狗粮第三征程 · QS-M0…QS-M7）的**只读对外窗口**：两条腿 ——腿 A NV 色心磁力计（光-自旋-磁 · 室温）+ 腿 B 超导 SQUID 磁力计（电-磁通 · 4 K） ——从物理反解到器件本体、阵列、闭环标定与噪声优化的全链建模结果。 🔴 与 `/api/sensor_demo`（**光子**传感器 PS-M7）**并列但不同域**：PS 卡是折射率换能 （PDA），本卡是自旋/磁通换能（QEDA 的第二支柱）。本卡**不带旋钮**（纯只读案例）。 🔴 **零重计算**：不跑求解器、不 import numpy/scipy/lda_l2、不解析 GDS —— 数字来自 ① 闭式算术（散粒极限灵敏度 / Zeeman 分裂 / 优化收益比 —— 与 `qs_m0`/`qs_m7` 的闭式镜像） ② 参考常量（各档建模值，由 `run_qs_panel_smoke` 对 `qs_m0…qs_m7` 现算值逐位校验） ③ 对 `outputs/qs_m*` 产出物只 `listdir` 的元信息 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS** （与 `/api/sensor_demo`、`/api/qchip_demo`、`/api/verification_ledger` 同属「公开只读验货」类）。 无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET` （**非** ACCEPT/PASS），返回体自带 `honest_note`。 异常不 500（返回 200 + error 字段，与 `h_sensor_demo` 同风格）。",
+      "handler": "h_qsensor_demo",
+      "heavy": false,
+      "method": "GET",
+      "note": "",
+      "params": [],
+      "path": "/api/qsensor_demo",
       "source": "handler_docstring",
       "wildcard": false
     },

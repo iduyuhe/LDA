@@ -895,3 +895,49 @@ def _get_batch_b46():
         import _batch_b46_numeric as _m
     _BATCH_B46_MOD = _m
     return _m
+
+
+_BATCH_B47_MOD = None
+
+
+def _get_batch_b47():
+    """B-47 数值核（量子传感器芯片征程 QS-M9 衍生 · 光泵原子磁力计 OPM/SERF 腿 C：自由进动横向极化 P_x(t*) + 碱金属饱和蒸气数密度 n(T) + 泵浦光 Beer–Lambert 透过率 T(L)，缓存，项目铁律）。
+
+    🔴 命名避让（**本批实踩**）：批次号 **B47** 与**单锚 B47**（`_b47_qm_ho_e2_candidate`，
+    量子力学谐振子跃迁）号段重叠 ⇒ 沿用连字符写法 `_batch_b47_numeric` /
+    `_get_batch_b47`（实 grep 核验：`_BATCH_B47` / `_get_batch_b47` 全仓零命中；
+    而裸 `b47_` 前缀**已被占用** ⇒ 与 B-16 型静默撞名同族，故**禁止**裸 `b47_` 命名）。
+    """
+    global _BATCH_B47_MOD
+    if _BATCH_B47_MOD is not None:
+        return _BATCH_B47_MOD
+    try:
+        from lda_harness import _batch_b47_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_b47_numeric as _m
+    _BATCH_B47_MOD = _m
+    return _m
+
+
+_BATCH_QS_M3C_MOD = None
+
+
+def _get_qs_m3c_numeric():
+    """B-48 数值核（量子传感器芯片征程 QS-M3c 衍生 · 腔 QED 物理链：腔品质因子 Q / 有效模体积 V_eff / 单光子耦合 g，缓存，项目铁律）。
+
+    🔴 命名避让（**本批实踩**）：批次号 **B48** 与**单锚 B48**（`_b48_qm_ho_e2_candidate`，
+    量子力学单光子 Rabi 耦合）号段重叠 ⇒ 沿用连字符写法 `_batch_qs_m3c_numeric` /
+    `_get_qs_m3c_numeric`（实 grep 核验：`_BATCH_QS_M3C` / `_get_qs_m3c_numeric` 全仓零命中；
+    而裸 `b48_` 前缀**已被占用** ⇒ 与 B-16 型静默撞名同族，故**禁止**裸 `b48_` 命名）。
+    """
+    global _BATCH_QS_M3C_MOD
+    if _BATCH_QS_M3C_MOD is not None:
+        return _BATCH_QS_M3C_MOD
+    try:
+        from lda_harness import _batch_qs_m3c_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_qs_m3c_numeric as _m
+    _BATCH_QS_M3C_MOD = _m
+    return _m

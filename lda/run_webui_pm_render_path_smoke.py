@@ -180,6 +180,12 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {"run_ci_gate_contract_s
 #:   直接相关且**便宜**的门禁 = `run_qs_m6_smoke`（实测 **~2 s** / **41 判据**，
 #:   纯 numpy + lazy import，零网络零子进程）⇒ 纳对照面，令本版 README 顶行声明的
 #:   41 判据由机器守（非手写）。
+#: 🔴 v0.9.226：本版真改动 = QS-M9（G11 多物理场量子传感整合 · 光泵原子磁力计 OPM/SERF 腿 C）。
+#:   直接相关且**便宜**的门禁 = `run_qs_m9_smoke`（实测 **~0.91 s** / **39 判据**，
+#:   纯 numpy + lazy import，零网络零子进程）⇒ 纳对照面，令本版 README 顶行声明的
+#:   39 判据由机器守（非手写）；它无自指、无递归风险。
+#:   ⚠️ 同版新增的 `run_qs_panel_smoke`（v0.9.225 · 46 判据）**不纳**（实测 ~21 s，
+#:   会令本 smoke 宿主余量跌破 3× 目标档 ⇒ 顶行不声明其判据数，属诚实边界）。
 #: 🔴 v0.9.224：本版真改动 = QS-M7（G9 超导量子传感优化：磁通聚焦变压器 + 亚微米结噪声优化）。
 #:   直接相关且**便宜**的门禁 = `run_qs_m7_smoke`（实测 **~5 s** / **28 判据**，
 #:   纯 numpy + lazy import，零网络零子进程）⇒ 纳对照面，令本版 README 顶行声明的
@@ -188,7 +194,8 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               "run_sensor_panel_smoke.py", "run_webui_entry_smoke.py",
               "run_count_consistency_smoke.py", "run_ps_m1_smoke.py",
               "run_qs_m3b_smoke.py", "run_qs_m4_smoke.py", "run_qs_m5_smoke.py",
-              "run_qs_m6_smoke.py", "run_qs_m7_smoke.py")
+              "run_qs_m6_smoke.py", "run_qs_m7_smoke.py",
+              "run_qs_m9_smoke.py", "run_qs_m3c_smoke.py")
 
 
 def _declared_judge_counts(text):

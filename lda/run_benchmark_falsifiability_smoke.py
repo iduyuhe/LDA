@@ -340,7 +340,7 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 #   + B483 磁场标度因子自标定 + B484 AC 灵敏度带宽折算 共 3 道严格独立锚落地
 #   ⇒ 严格独立 477 → **480**（降级 3、自证桩 19 不变）。
 #   棘轮地板同步单调上调：477 → 480（按行为性真值上抬）。
-MIN_INDEPENDENT = 480
+MIN_INDEPENDENT = 492
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

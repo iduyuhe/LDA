@@ -22,6 +22,8 @@ from ._adapter_core import (
     _get_batch_b44,
     _get_batch_b45,
     _get_batch_b46,
+    _get_batch_b47,
+    _get_qs_m3c_numeric,
 )
 
 from typing import (
@@ -1436,4 +1438,86 @@ def _b490_opt_field_sens_mc_neumann_cand(spec: VerificationSpec, oracle_value: A
         mutual_h=float(p.get("mutual_h", 1.6e-9)),
         input_inductance_h=float(p.get("input_inductance_h", 2.0e-9)),
         pickup_inductance_h=float(p.get("pickup_inductance_h", 2.0e-9)),
+    ))
+
+
+@_register_candidate(
+    "b491_fid_polarization_rk4_cand",
+    "光抽运关闭后自由进动横向极化 P_x(t*)·RK4 时间推进 2D Bloch 方程（固定步长 h=t*/64 逐点四阶 Runge–Kutta，不含解析指数/余弦） ↔ 闭式 Bloch 精确解 golden，方法学独立（数值时间推进 vs 闭式精确解）")
+def _b491_fid_polarization_rk4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b47()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b491(
+        p0=float(p.get("p0", 1.0)),
+        r_tot_s1=float(p.get("r_tot_s1", 300.0)),
+        b_t=float(p.get("b_t", 10.0e-9)),
+        t_s=float(p.get("t_s", 2.0e-3)),
+    ))
+
+
+@_register_candidate(
+    "b492_alkali_density_trapezoid_cand",
+    "碱金属（Rb）饱和蒸气数密度 n(T)·复合梯形数值积分 d(ln n)/dT=ΔH/(k_B·T²)（n_seg=256 逐段梯形平均后取 exp，不含闭式指数） ↔ 闭式 Clausius–Clapeyron golden，方法学独立（数值求积 vs 闭式指数）")
+def _b492_alkali_density_trapezoid_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b47()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b492(
+        n_ref_m3=float(p.get("n_ref_m3", 1.0e17)),
+        t_ref_k=float(p.get("t_ref_k", 313.15)),
+        dh_over_kb_k=float(p.get("dh_over_kb_k", 8384.0)),
+        t_k=float(p.get("t_k", 333.15)),
+    ))
+
+
+@_register_candidate(
+    "b493_pump_transmission_rk4_cand",
+    "泵浦光 Beer–Lambert 透过率 T(L)·RK4 沿 z 数值积分 dI/dz=−n·σ_abs·I（n_steps=64 四阶 Runge–Kutta，不含闭式指数） ↔ 闭式 Beer–Lambert golden，方法学独立（数值空间推进 vs 闭式指数）")
+def _b493_pump_transmission_rk4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_batch_b47()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b493(
+        trans0=float(p.get("trans0", 1.0)),
+        n_density_m3=float(p.get("n_density_m3", 1.0e19)),
+        sigma_abs_m2=float(p.get("sigma_abs_m2", 5.0e-18)),
+        length_m=float(p.get("length_m", 0.02)),
+    ))
+
+
+@_register_candidate(
+    "b494_q_factor_rk4_cand",
+    "腔品质因子 Q=ω/κ·RK4 时间推进能量衰减 dU/dt=−κU（U₀=1，n_steps=64 四阶 Runge–Kutta，不含闭式除式）⇒ U(T) ⇒ 反解 κ_cand=−ln(U(T))/T ⇒ Q_cand=ω/κ_cand ↔ 闭式 Q=ω/κ golden，方法学独立（数值 ODE 反解 vs 闭式除式）")
+def _b494_q_factor_rk4_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_qs_m3c_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b494(
+        omega=float(p.get("omega", 1.0)),
+        kappa=float(p.get("kappa", 1.0)),
+        t_observe=float(p.get("t_observe", 8.22e-12)),
+    ))
+
+
+@_register_candidate(
+    "b495_mode_volume_midpoint_cand",
+    "有效模体积 V_eff·中点求积 ∫_{-a/2}^{a/2}(1−4x²/a²)²dx（n_seg=256 段，不含闭式积分）⇒ ×A ↔ 闭式 V_eff=A·8a/15 golden，方法学独立（数值求积 vs 解析积分）")
+def _b495_mode_volume_midpoint_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_qs_m3c_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b495(
+        a=float(p.get("a", 1.55e-6)),
+        A=float(p.get("A", 5.0e-14)),
+    ))
+
+
+@_register_candidate(
+    "b496_coupling_field_energy_cand",
+    "单光子耦合 g=(μ/ħ)√(ħω/(εV_eff))·数值积分 ∫|E|²dV（中点求积 ⇒ 数值 V_eff_num）⇒ 单光子场幅 E₀=√(ħω/(ε·V_eff_num)) ⇒ g=μE₀/ħ ↔ 闭式 g golden，方法学独立（数值场能积分 vs 闭式 V_eff）")
+def _b496_coupling_field_energy_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_qs_m3c_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b496(
+        mu=float(p.get("mu", 1.0e-29)),
+        omega=float(p.get("omega", 1.0)),
+        eps=float(p.get("eps", 1.0)),
+        a=float(p.get("a", 1.55e-6)),
+        A=float(p.get("A", 5.0e-14)),
     ))

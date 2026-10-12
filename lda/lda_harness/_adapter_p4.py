@@ -1561,3 +1561,83 @@ def _b499_match_cost_moment_trapz_cand(spec: VerificationSpec, oracle_value: Any
     return float(m.cand_b499(
         L=float(p.get("L", 5.0)),
     ))
+
+
+@_register_candidate(
+    "b500_flag_hook_erfc_trapz_cand",
+    "旗比特钩错检测概率·高斯尾一维梯形求积 ∫_{φ_th}^{φ_th+6σ} (1/(σ√(2π)))e^{−φ²/2σ²}dφ（n=65536 点，不含 erfc 闭式）→ P(φ>φ_th) ↔ 闭式 ½·erfc(φ_th/(σ√2)) golden，方法学独立（数值求积 vs 闭式）")
+def _b500_flag_hook_erfc_trapz_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_j1_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b500(
+        phi_th=float(p.get("phi_th", 2.0)),
+        sigma=float(p.get("sigma", 1.0)),
+    ))
+
+
+@_register_candidate(
+    "b501_adjacent_syndrome_2d_trapz_cand",
+    "相邻稳定子综合征关联·二维梯形求积 ∫₀ᵈ∫₀ᵈ g(x,y)g(x+r,y)dxdy（N×N=512² 均匀网格，不含 erf 闭式）→ 关联 ↔ 闭式 erf² 高斯积 golden，方法学独立（数值求积 vs 闭式）")
+def _b501_adjacent_syndrome_2d_trapz_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_j1_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b501(
+        d=float(p.get("d", 5.0)),
+        sigma=float(p.get("sigma", 1.0)),
+        cx=float(p.get("cx", 2.5)),
+        cy=float(p.get("cy", 2.5)),
+        r=float(p.get("r", 1.0)),
+    ))
+
+
+@_register_candidate(
+    "b502_transversal_fid_trapz_cand",
+    "transversal CNOT 保真预算链·一维中点求积 ∫₀ᵀ p₀(1+αt+βt²)dt 后 exp（n=1024 点，不含指数积分闭式）→ F ↔ 闭式 exp(−p₀(T+αT²/2+βT³/3)) golden，方法学独立（数值积分 vs 闭式）")
+def _b502_transversal_fid_trapz_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_j1_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b502(
+        p0=float(p.get("p0", 0.01)),
+        alpha=float(p.get("alpha", 0.1)),
+        beta=float(p.get("beta", 0.1)),
+        T=float(p.get("T", 10.0)),
+    ))
+
+
+@_register_candidate(
+    "b503_merge_fid_trapz_cand",
+    "lattice surgery 合并保真·一维中点求积 ∫₀ᵈ c(2x²−1)p dx 后 exp（n=1024 点，不含积分闭式）→ F ↔ 闭式 exp(−c·p·(2d³/3−d)) golden，方法学独立（数值积分 vs 闭式）")
+def _b503_merge_fid_trapz_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_j1_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b503(
+        c=float(p.get("c", 0.01)),
+        p=float(p.get("p", 0.01)),
+        d=float(p.get("d", 5)),
+    ))
+
+
+@_register_candidate(
+    "b504_accumulated_fail_trapz_cand",
+    "端到端累计逻辑失效·一维中点求积 ∫₀ᵀ λ(1+βt+γt²)dt 后 1−exp（n=1024 点，不含积分闭式）→ P ↔ 闭式 1−exp(−λ(T+βT²/2+γT³/3)) golden，方法学独立（数值积分 vs 闭式）")
+def _b504_accumulated_fail_trapz_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_j1_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b504(
+        lam=float(p.get("lam", 1e-3)),
+        beta=float(p.get("beta", 0.1)),
+        gamma=float(p.get("gamma", 0.001)),
+        T=float(p.get("T", 100.0)),
+    ))
+
+
+@_register_candidate(
+    "b505_logical_area_trapz_cand",
+    "累计逻辑错误面积·一维梯形求积 ∫₀ᴸ(1−e^{−kx})dx（n=1024 点，不含初等闭式）→ 面积 ↔ 闭式 L−(1−e^{−kL})/k golden，方法学独立（数值求积 vs 闭式）")
+def _b505_logical_area_trapz_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_j1_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b505(
+        k=float(p.get("k", 0.01)),
+        L=float(p.get("L", 100.0)),
+    ))

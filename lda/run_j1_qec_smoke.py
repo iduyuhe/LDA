@@ -200,6 +200,79 @@ def main() -> int:
           % cross_trials,
           cross_trials > 0 and equiv_ok, "n=%d" % cross_trials)
 
+    # ----------------------------------------------------------------- M2
+    # 综合征提取能力（蓝图 M2）：旗比特钩错检测 + 期望/MC 综合征权重 + 相邻稳定子关联
+    from lda_qeda.qec_noise import (
+        flag_hook_detection,
+        expected_syndrome_weight,
+        mc_syndrome_weight,
+        adjacent_syndrome_correlation,
+        adjacent_syndrome_correlation_cand,
+    )
+    n_hook, flag_faults = 8, 1
+    fh = flag_hook_detection(n_hook=n_hook, flag_faults=flag_faults)
+    check("M2-A 旗比特钩错检测：flag_faults/n_hook 闭式（%d/%d=%.4f）" % (flag_faults, n_hook, fh),
+          abs(fh - flag_faults / n_hook) < 1e-12, "P=%.6f" % fh)
+
+    p_sy, L_sy = 0.01, 7
+    exp_w = expected_syndrome_weight(p_sy, L_sy)
+    mc_w = mc_syndrome_weight(p_sy, L_sy, n_shots=4000, seed=11)[0]
+    rel_w = abs(mc_w - exp_w) / max(exp_w, 1e-12)
+    check("M2-B 综合征权重：蒙特卡洛(4000 shots) 逼近闭式期望（rel=%.2f%%）" % (100.0 * rel_w),
+          rel_w < 0.05, "exp=%.4f mc=%.4f" % (exp_w, mc_w))
+
+    ac_g = adjacent_syndrome_correlation(d=5.0, sigma=1.0, cx=2.5, cy=2.5, r=1.0)
+    ac_c = adjacent_syndrome_correlation_cand(d=5.0, sigma=1.0, cx=2.5, cy=2.5, r=1.0, n=512)
+    rel_ac = abs(ac_c - ac_g) / max(abs(ac_g), 1e-12)
+    check("M2-C 相邻稳定子关联：2D 梯形候选逼近 erf² 闭式（rel=%.2e）" % rel_ac,
+          rel_ac < 0.01, "golden=%.6f cand=%.6f" % (ac_g, ac_c))
+
+    # ----------------------------------------------------------------- M3
+    # 容错逻辑门能力（蓝图 M3）：transversal CNOT 预算链 + lattice surgery 合并 + 保持码
+    from lda_qeda.fault_tolerant_gates import (
+        transversal_cnot_fidelity,
+        transversal_cnot_fidelity_cand,
+        lattice_surgery_merge_fidelity,
+        lattice_surgery_merge_fidelity_cand,
+        transversal_cnot_preserves_code,
+        lattice_surgery_resource,
+    )
+    p0, alpha, beta_g, Tg = 0.01, 0.1, 0.1, 10.0
+    fc_g = transversal_cnot_fidelity(p0, alpha, beta_g, Tg)
+    fc_c = transversal_cnot_fidelity_cand(p0, alpha, beta_g, Tg, n=1024)
+    rel_fc = abs(fc_c - fc_g) / max(abs(fc_g), 1e-12)
+    check("M3-A transversal CNOT 保真：1D 中点求积逼近 exp 积分闭式（rel=%.2e）" % rel_fc,
+          rel_fc < 1e-3, "golden=%.6f cand=%.6f" % (fc_g, fc_c))
+
+    c_ls, p_ls, d_ls = 0.01, 0.01, 5
+    mf_g = lattice_surgery_merge_fidelity(c_ls, p_ls, d_ls)
+    mf_c = lattice_surgery_merge_fidelity_cand(c_ls, p_ls, d_ls, n=1024)
+    rel_mf = abs(mf_c - mf_g) / max(abs(mf_g), 1e-12)
+    check("M3-B lattice surgery 合并保真：1D 中点求积逼近 exp 积分闭式（rel=%.2e）" % rel_mf,
+          rel_mf < 1e-3, "golden=%.6f cand=%.6f" % (mf_g, mf_c))
+    check("M3-C lattice surgery 资源计数：2d²−1 闭式（d=%d ⇒ %d）" % (d_ls, lattice_surgery_resource(d_ls)),
+          lattice_surgery_resource(d_ls) == 2 * d_ls * d_ls - 1,
+          "R=%d" % lattice_surgery_resource(d_ls))
+    check("M3-D transversal CNOT 保持码：单物理错误仍可被解码器纠正",
+          transversal_cnot_preserves_code(L=3) is True,
+          "defects==2 ⇒ 可纠")
+
+    # ----------------------------------------------------------------- M4
+    # 端到端能力（蓝图 M4 收官）：子阈值标度 p_L(7)≪p_L(3) + 累计失效闭式 vs 候选
+    from lda_qeda.logical_error_rate import (
+        subthreshold_suppression,
+        logical_error_accumulated,
+        logical_error_accumulated_cand,
+    )
+    p3, p7, ratio = subthreshold_suppression(p=0.006, n_shots=6000, seed=3)
+    check("M4-A 端到端子阈值标度：p_L(7) < p_L(3)（比值=%.3f）" % ratio,
+          p3 > 0 and p7 < p3, "p_L(3)=%.4f p_L(7)=%.4f ratio=%.3f" % (p3, p7, ratio))
+    la_g = logical_error_accumulated(lam=1e-3, T=100.0, beta=0.1, gamma=0.001)
+    la_c = logical_error_accumulated_cand(lam=1e-3, T=100.0, beta=0.1, gamma=0.001, n=1024)
+    rel_la = abs(la_c - la_g) / max(abs(la_g), 1e-12)
+    check("M4-B 端到端累计失效：1D 中点求积逼近 1−exp 积分闭式（rel=%.2e）" % rel_la,
+          rel_la < 1e-3, "golden=%.6f cand=%.6f" % (la_g, la_c))
+
     # ----------------------------------------------------------------- R
     # 🔴 反向探针：证明合法性 gate 非真空绿——空集 recovery 施加于单错误 ⇒ 修正后仍为原错误
     # ⇒ 综合征非空 ⇒ A 档必须判非法（否则 A 档是假绿制造机）。

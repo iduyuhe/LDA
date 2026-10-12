@@ -941,3 +941,28 @@ def _get_qs_m3c_numeric():
         import _batch_qs_m3c_numeric as _m
     _BATCH_QS_M3C_MOD = _m
     return _m
+
+
+_BATCH_J1_MOD = None
+
+
+def _get_j1_numeric():
+    """Batch J1 数值核（量子纠错征程 QEC · M0 阈值标度 + M1 解码器（G_Q9 主项）：
+    表面码阈值距离 d*（闭式反解 × 二分根求解）+ 解码器综合症状概率场（erf 闭式 × 二维梯形求积）
+    + 解码器匹配代价二阶矩（L²/3 闭式 × 一维梯形求积），缓存，项目铁律）。
+
+    🔴 命名避让（**本批实踩**）：批次号 **J1** 与量子征程里程碑 **J1**（量子纠错）同名 ⇒
+    沿用连字符写法 `_batch_j1_numeric` / `_get_j1_numeric`（实 grep 核验：`_BATCH_J1` /
+    `_get_j1` 全仓零命中；而 `b497_`/`b498_`/`b499_` 前缀**尚未占用** ⇒ 候选统一
+    `b497_/b498_/b499_`）。
+    """
+    global _BATCH_J1_MOD
+    if _BATCH_J1_MOD is not None:
+        return _BATCH_J1_MOD
+    try:
+        from lda_harness import _batch_j1_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_j1_numeric as _m
+    _BATCH_J1_MOD = _m
+    return _m

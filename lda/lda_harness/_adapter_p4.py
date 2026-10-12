@@ -24,6 +24,7 @@ from ._adapter_core import (
     _get_batch_b46,
     _get_batch_b47,
     _get_qs_m3c_numeric,
+    _get_j1_numeric,
 )
 
 from typing import (
@@ -1520,4 +1521,43 @@ def _b496_coupling_field_energy_cand(spec: VerificationSpec, oracle_value: Any) 
         eps=float(p.get("eps", 1.0)),
         a=float(p.get("a", 1.55e-6)),
         A=float(p.get("A", 5.0e-14)),
+    ))
+
+
+@_register_candidate(
+    "b497_threshold_distance_bisect_cand",
+    "表面码逻辑错误阈值距离 d*·二分根求解 f(d)=A·(p_phys/p_th)^((d+1)/2)−target=0 于 [3,121]（n_steps=35 步取中点，不含闭式对数反解）→ d* ↔ 闭式 d*=2·log(target/A)/log(p_phys/p_th)−1 golden，方法学独立（通用根求解器 vs 闭式反解）")
+def _b497_threshold_distance_bisect_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_j1_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b497(
+        p_phys=float(p.get("p_phys", 5e-3)),
+        target=float(p.get("target", 1e-15)),
+        p_th=float(p.get("p_th", 0.01)),
+        A=float(p.get("A", 0.03)),
+    ))
+
+
+@_register_candidate(
+    "b498_syndrome_field_trapz_cand",
+    "解码器综合症状概率场总权重·二维梯形求积 ∫₀ᵈ∫₀ᵈ exp(−((x−cx)²+(y−cy)²)/(2σ²))dxdy（N×N=1024² 均匀网格，不含 erf 闭式）→ 权重 ↔ 闭式 erf 二维分解 golden，方法学独立（数值求积 vs 闭式）")
+def _b498_syndrome_field_trapz_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_j1_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b498(
+        d=float(p.get("d", 5.0)),
+        sigma=float(p.get("sigma", 1.0)),
+        cx=float(p.get("cx", 2.5)),
+        cy=float(p.get("cy", 2.5)),
+    ))
+
+
+@_register_candidate(
+    "b499_match_cost_moment_trapz_cand",
+    "解码器匹配代价二阶矩·一维梯形求积 ∫₀ᴸ x²·(1/L)dx（N=1024 点，不含多项式闭式）→ L²/3 ↔ 闭式 L²/3 golden，方法学独立（数值求积 vs 闭式）")
+def _b499_match_cost_moment_trapz_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    m = _get_j1_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b499(
+        L=float(p.get("L", 5.0)),
     ))

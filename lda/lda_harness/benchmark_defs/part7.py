@@ -117,6 +117,14 @@ from .._batch_qs_m3c_numeric import (  # Batch B-48 量子传感器芯片征程 
     golden_b496,
     B496_DEFAULT_PARAMS,
 )
+from .._batch_j1_numeric import (  # Batch J1 量子纠错征程 QEC · M0 阈值标度 + M1 解码器（G_Q9 主项）：表面码阈值距离 d* / 解码器综合征概率场 / 解码器匹配代价二阶矩
+    golden_b497,
+    B497_DEFAULT_PARAMS,
+    golden_b498,
+    B498_DEFAULT_PARAMS,
+    golden_b499,
+    B499_DEFAULT_PARAMS,
+)
 DEFS = {
     "B473": {
         "title": "NV 色心磁力计磁灵敏度谱密度 η（闭式散粒极限 golden vs 数值误差传播链候选 · T/√Hz）",
@@ -381,5 +389,38 @@ DEFS = {
         "candidate": "b496_coupling_field_energy_cand",
         "candidate_desc": "数值积分 ∫|E|²dV（中点求积 ⇒ 数值 V_eff_num）⇒ 单光子场幅 E₀=√(ħω/(ε·V_eff_num)) ⇒ g=μE₀/ħ。方法学独立：golden=闭式 V_eff，cand=数值场能积分",
         "note": "golden = QS-M3c（腔 QED 物理链 · 平台缺口 G5）的**单光子耦合**闭式：g=(μ/ħ)·√(ħω/(ε·V_eff))（μ=跃迁偶极矩，E₀=√(ħω/(εV_eff)) 为单光子场幅，V_eff=A·8a/15）。🔴 **物理意义**：g 是发射体偶极与腔模场幅的耦合强度（单光子 Rabi 频率），强耦合判据 g>κ,γ；本锚把它钉进账本（与单锚 B48 = 单光子 Rabi 耦合同物理族，但本锚是**腔 QED 组合链**的可证伪数值实现 —— 经独立数值场能积分验证，非直接引用）。candidate=**数值积分 ∫|E|²dV**（方法学独立），实测默认档(μ=1e-29 C·m, ω=2πc/1550nm, ε=ε₀·3.4², a=1.55µm, A=5e-14 m²) **rel=1.019e-10**（abs 1.681 Hz · **tol=1e3**〔按量级标定〕⇒ **595×** 余量；残差链 4.172e-7 → 2.608e-8 → 1.630e-9 → 1.019e-10，**比值 16.00×** ⇒ **O(h⁴)**；g ∝ V_eff^(−1/2)，残差随 V_eff 积分残差）⇒ **非**代数恒等。🔴 **与 B18 不同物理量**：B18 是 Purcell 组合标量 F_P=4g²/(κγ₁)；本锚是 **g 这一输入量** ⇒ 物理对象不同 ⇒ 记新锚。🔴 **与 B48（单锚）不同实现**：B48 是量子力学单光子 Rabi 耦合的闭式/数值对；本锚是**腔 QED 组合链**（g 由腔模场能导出），命名上以连字符 `_batch_qs_m3c_numeric` / `b494_/b495_/b496_` 规避 B-48 与单锚 B48 号段撞名（实 grep 核验：`_BATCH_QS_M3C` / `_get_qs_m3c_numeric` / `b48_` 全仓占用检查已做）。⚠️ **诚实边界**：μ/ω/ε/a/A 为**设计示例量级**（金刚石微盘腔 telecom 典型），**非实测 PDK**；本锚只证明「闭式 g ⇄ 数值场能积分」数值一致这一数学事实，**不得作制造/性能宣称**。零商业依赖（纯 math）。",
+    },
+    "B497": {
+        "title": "表面码逻辑错误阈值距离 d*（量子纠错 QEC · M0 阈值标度）：闭式反解 golden vs 二分根求解候选 · 无量纲",
+        "metric": "qec_threshold_distance",
+        "oracle": "closed_form(d*=2·log(target/A)/log(p_phys/p_th)−1) + 二分根求解 f(d)=A·(p_phys/p_th)^((d+1)/2)−target=0 独立_cross_check",
+        "tol": 1e-6,
+        "default_params": dict(B497_DEFAULT_PARAMS),
+        "golden_fn": golden_b497,
+        "candidate": "b497_threshold_distance_bisect_cand",
+        "candidate_desc": "二分根求解 f(d)=0 于 [3,121]（n_steps=35 步取中点，不含闭式对数反解）⇒ d*。方法学独立：golden=闭式反解，cand=通用根求解器（二分）",
+        "note": "golden = 量子纠错征程 J1（M0 阈值标度）的**表面码逻辑错误阈值距离**闭式：由标度律 p_L(d,p)=A·(p/p_th)^((d+1)/2) ≤ target 反解 d*=2·log(target/A)/log(p_phys/p_th)−1。🔴 **物理意义**：表面码阈值 p_th≈1% 以下，逻辑错误率随距离 d 指数下降；达到容错预算目标逻辑错误率所需的最小距离 d* 是容错架构的核心标量。本锚把「阈值标度律 ⇄ 通用二分根求解器」钉进账本（承 J1 蓝图 M0 阈值标度）。candidate=**二分根求解**（方法学独立），实测默认档(p_phys=5e-3, target=1e-15, p_th=0.01, A=0.03 ⇒ golden≈88.54) **rel=1.468e-11**（abs 1.300e-9 · **tol=1e-6**〔**绝对口径·对 |golden|≈88.54 即相对 1.47e-11**〕⇒ **769×** 余量；残差链 5.383e-10 → 7.286e-11 → 3.407e-11 → 1.468e-11，**比值 7.39/2.14/2.32×** ⇒ 二分区间每步折半 ⇒ 残差严格单调、且 **非**机器零残差 ⇒ **非**代数恒等）。🔴 **与 B494–B496 不同物理量**：本锚是表面码阈值标度（量子纠错 QEC 征程），QS 三锚是腔 QED 物理量 ⇒ 零占用新族（实 grep 核验：`surface|阈值|标度|解码|syndrome|matching|Union` 在 `lda_harness/` 内仅本批命中）。⚠️ **诚实边界**：p_th=1% / A=0.03 / target=1e-15 为**公认/设计示例量级**（rotated surface code 典型阈值的文献值、标度前因子为设计示例），**非实测 PDK**；本锚只证明「闭式反解 ⇄ 二分根求解」数值一致这一数学事实，**不得作制造/性能宣称**。零商业依赖（纯 math）。",
+    },
+    "B498": {
+        "title": "解码器综合症状概率场总权重（量子纠错 QEC · M1 解码器）：闭式 erf golden vs 二维梯形求积候选 · 无量纲",
+        "metric": "qec_syndrome_field_weight",
+        "oracle": "closed_form(∫₀ᵈ∫₀ᵈ exp(−((x−cx)²+(y−cy)²)/(2σ²))dxdy=σ²(π/2)[erf((d−cx)/(σ√2))−erf(−cx/(σ√2))]²) + 二维梯形求积 独立_cross_check",
+        "tol": 1e-2,
+        "default_params": dict(B498_DEFAULT_PARAMS),
+        "golden_fn": golden_b498,
+        "candidate": "b498_syndrome_field_trapz_cand",
+        "candidate_desc": "二维梯形求积（N×N=1024² 均匀网格，不含 erf 闭式）⇒ ∫∫exp(...)dxdy。方法学独立：golden=erf 闭式，cand=数值求积",
+        "note": "golden = 量子纠错征程 J1（M1 解码器信念传播前置量）的**解码器综合症状概率场总权重**闭式：∫₀ᵈ∫₀ᵈ exp(−((x−cx)²+(y−cy)²)/(2σ²))dxdy = σ²(π/2)[erf((d−cx)/(σ√2))−erf(−cx/(σ√2))]²（二维分解）。🔴 **物理意义**：Union-Find / MWPM 解码器的信念传播依赖每个数据比特的错误概率场；其全片积分（综合症状权重）是解码置信度的归一化量。本锚把它钉进账本（承 J1 蓝图 M1 解码器）。candidate=**二维梯形求积**（方法学独立），实测默认档(d=5, σ=1, cx=cy=2.5 ⇒ golden≈6.128) **rel=1.763e-07**（abs 1.080e-6 · **tol=1e-2**〔**绝对口径·对 |golden|≈6.128 即相对 1.76e-7**〕⇒ **9255×** 余量；残差链 1.128e-5 → 2.821e-6 → 7.053e-7 → 1.763e-7，**比值 4.00×** ⇒ **O(h²)**（高斯光滑被积函数梯形收敛），严格单调、残差 >0 ⇒ **非**代数恒等）。🔴 **与 B497 不同物理量**：B497 是阈值标度距离（一维标度），本锚是解码器二维概率场积分 ⇒ 物理对象不同 ⇒ 记新锚。⚠️ **诚实边界**：d/σ/cx/cy 为**设计示例量级**（rotated surface code d=5 码片典型），**非实测 PDK**；本锚只证明「erf 闭式 ⇄ 二维梯形求积」数值一致这一数学事实，**不得作制造/性能宣称**。零商业依赖（纯 math）。",
+    },
+    "B499": {
+        "title": "解码器匹配代价二阶矩（量子纠错 QEC · M1 解码器）：闭式 L²/3 golden vs 一维梯形求积候选 · 无量纲",
+        "metric": "qec_match_cost_moment",
+        "oracle": "closed_form(∫₀ᴸ x²·(1/L)dx=L²/3) + 一维梯形求积 独立_cross_check",
+        "tol": 1e-3,
+        "default_params": dict(B499_DEFAULT_PARAMS),
+        "golden_fn": golden_b499,
+        "candidate": "b499_match_cost_moment_trapz_cand",
+        "candidate_desc": "一维梯形求积（N=1024 点，不含多项式闭式）⇒ ∫₀ᴸ x²dx/L。方法学独立：golden=多项式闭式，cand=数值求积",
+        "note": "golden = 量子纠错征程 J1（M1 解码器代价分布）的**解码器匹配代价二阶矩**闭式：缺陷均匀分布于 [0,L]，代价 cost(x)=x 的二阶矩 ∫₀ᴸ x²·(1/L)dx = L²/3。🔴 **物理意义**：解码器最小权匹配的总代价随缺陷位置分布成随机变量；其二阶矩（方差尺度）量化解码不确定度。本锚把它钉进账本（承 J1 蓝图 M1 解码器）。candidate=**一维梯形求积**（方法学独立），实测默认档(L=5 ⇒ golden≈8.333) **rel=2.384e-07**（abs 1.987e-6 · **tol=1e-3**〔**绝对口径·对 |golden|≈8.333 即相对 2.38e-7**〕⇒ **503×** 余量；残差链 1.526e-5 → 3.815e-6 → 9.537e-7 → 2.384e-7，**比值 4.00×** ⇒ **O(h²)**（x² 光滑被积函数梯形收敛），严格单调、残差 >0 ⇒ **非**代数恒等）。🔴 **与 B497/B498 不同物理量**：B497 是阈值标度、B498 是二维概率场；本锚是解码器一维代价矩 ⇒ 物理对象不同 ⇒ 记新锚。⚠️ **诚实边界**：L=5 为**设计示例量级**（缺陷均匀分布于码片边长量级），**非实测 PDK**；本锚只证明「多项式闭式 ⇄ 一维梯形求积」数值一致这一数学事实，**不得作制造/性能宣称**。零商业依赖（纯 math）。",
     },
 }

@@ -300,6 +300,11 @@ from ._batch_qs_m3c_numeric import (  # Batch B-48 双方法独立锚数值核�
     golden_b495,
     golden_b496,
 )
+from ._batch_j1_numeric import (  # Batch J1 双方法独立锚数值核（量子纠错征程 QEC · M0 阈值标度 + M1 解码器（G_Q9 主项）「表面码逻辑错误阈值距离 d* 闭式反解 × 二分根求解候选」+「解码器综合症状概率场总权重 闭式 erf × 二维梯形求积候选」+「解码器匹配代价二阶矩 闭式 L²/3 × 一维梯形求积候选」）
+    golden_b497,
+    golden_b498,
+    golden_b499,
+)
 
 from .oracle_pyepr import resolve_pyepr_transmon
 
@@ -1116,6 +1121,9 @@ _GOLDEN_DISPATCH = {
     "B494": golden_b494,
     "B495": golden_b495,
     "B496": golden_b496,
+    "B497": golden_b497,
+    "B498": golden_b498,
+    "B499": golden_b499,
 
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
@@ -1219,6 +1227,7 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B488", "B489", "B490",  # Batch B-46（量子传感器芯片征程 QS-M7 衍生 · SQUID 性能冲刺/噪声优化：磁通聚焦变压器有效面积 / 亚微米结噪声谱密度 / 优化后磁场灵敏度）
                  "B491", "B492", "B493",  # Batch B-47（量子传感器芯片征程 QS-M9 衍生 · 光泵原子磁力计 OPM/SERF 腿 C：自由进动横向极化 / 碱金属饱和蒸气数密度 / 泵浦光 Beer–Lambert 透过率）
                  "B494", "B495", "B496",  # Batch B-48（量子传感器芯片征程 QS-M3c 衍生 · 腔 QED 物理链 · 腔品质因子 Q / 有效模体积 V_eff / 单光子耦合 g）
+                 "B497", "B498", "B499",  # Batch J1（量子纠错征程 QEC · M0 阈值标度 + M1 解码器（G_Q9 主项）· 表面码阈值距离 d* / 解码器综合征概率场 / 解码器匹配代价二阶矩）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

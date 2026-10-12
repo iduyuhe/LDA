@@ -1819,6 +1819,14 @@ CORE_SMOKES: List[str] = [
     #   （B494 腔品质因子 Q / B495 有效模体积 V_eff / B496 单光子耦合 g）⇒ 账本 511→514，
     #   CI core 318→319。纯标准库（无 numpy/scipy 泄漏）⇒ 入 core；timeout 300s 留足余量。
     "run_qs_m3c_smoke.py",
+    # J1 量子纠错征程（QEC）· M0+M1 落地配套：解码器能力门禁（非账本锚，能力验证）。
+    #   覆盖 `lda_qeda.decoder` 自主 Union-Find 解码器内核：A 两路径（MWPM↔UF）合法性（recovery 施加后
+    #   综合征归零）· B 单错误 UF 与 MWPM 位级一致 · C 低误码率 UF↔MWPM 逻辑判决逐例一致（高率次优分歧
+    #   属预期不判红）· D 跨源一致（decode_pair 确定性 + 入口等价）· E 主权纪律（仅 numpy+标准库，不借
+    #   networkx/商业求解器）· R1 反向探针证 gate 非真空绿。**10 判据**。净增解码器能力（M1 主项 G_Q9），
+    #   不增账本锚（B497–B499 标量闭式锚由 harness 另判）。numpy 可用（解码器依赖）⇒ 入 core；
+    #   timeout 300s 留足余量。CI core 319→320。
+    "run_j1_qec_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2859,6 +2867,9 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 共 **31 判据**。纯标准库（无 numpy/scipy 泄漏）⇒ 入 core；实测 ~0.6 s ⇒ 300.0s 留足余量
     # （B20 反向完备：CORE ⊆ 超时表）。
     "run_qs_m3c_smoke.py": 300.0,
+    # J1 量子纠错征程（QEC）· 解码器能力门禁：MWPM↔UF 对拍 + 反向探针，纯 numpy + 标准库，
+    # 实测 ~0.3 s ⇒ 300.0s 留足余量（B20 反向完备：CORE ⊆ 超时表）。
+    "run_j1_qec_smoke.py": 300.0,
 }
 
 

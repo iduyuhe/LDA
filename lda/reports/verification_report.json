@@ -5317,7 +5317,7 @@
       "oracle": "closed_form(Rayleigh 商一阶本征值微扰 + 左本征矢 w，非对称算子; S=dγ/dn_a/(2 k0² n_eff)) + FV-FD 有限差分独立_cross_check",
       "source": "physical-law",
       "golden": 0.446980809,
-      "candidate": 0.446981681,
+      "candidate": 0.44698168,
       "tol": 0.005,
       "passed": true,
       "note": "确定性物理定律/解析解",

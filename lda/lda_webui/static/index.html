@@ -148,6 +148,7 @@ body{padding-top:56px}
     <a href="#sec-sensor" style="color:#3b0721;background:#f9a8d4;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子传感器 PS-M0–M6（微环折射率传感 · 真 GDS + DRC/LVS · 客户自助设计向导）</a>
     <a href="#sec-soc" style="color:#1e1b4b;background:#c4b5fd;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 光子计算 SoC 芯片（S0–S5-ext + G6 · 多核/WDM/TDM/foundry signoff）</a>
     <a href="#sec-qsensor" style="color:#0b1220;background:#f0abfc;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ 量子传感器 QS-M0–M7（NV 色心 + 超导 SQUID 双腿 · 建模设计预算 · 只读案例）</a>
+    <a href="#sec-j2" style="color:#ecfdf5;background:#065f46;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ J2 超导 transmon QPU 物理比特层（M0–M4 · J1↔J2 复利闭环 · 设计预算 · 只读案例）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -4712,6 +4713,35 @@ body{padding-top:56px}
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- J2 征程（LDA-J2 · v0.9.230…v0.9.233 · M0–M4）案例卡：只读 GET /api/j2_qpu
+       首屏直达 #sec-j2 + hash 深链 CASE_MAP + 抽屉按钮（三入口面齐备） -->
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-j2">
+    <h2>★ 超导 transmon QPU 物理比特层案例（J2 · M0–M4 · J1↔J2 复利闭环 · 设计预算）</h2>
+    <div class="hint">
+      用 LDA 走完超导 <b>transmon QPU 的物理比特层（L2）</b>四档征程：<b>物理错误模型</b> →
+      <b>两比特 CR 门</b> → <b>色散读出链 + 串扰</b> → <b>QPU 误差预算集成 + 拓扑↔表面码对接</b>，
+      并把 <b>J1↔J2 复利闭环</b>接通——J2 给出真实物理错误率 p<sub>phys</sub>，
+      注入 J1 表面码阈值标度（p<sub>L</sub>=A·(p/p<sub>th</sub>)<sup>(d+1)/2</sup>）；
+      反之 J1 阈值 <b>p<sub>th</sub>≈1%</b> 成为 J2 门设计的<b>保真度硬指标</b>。<br/>
+      🔵 <b>只读 · 免登录 · 零重计算</b>：数字全部由<b>闭式算术</b>现算
+      （退相干极限 F=(3+2e<sup>−t/T2</sup>+e<sup>−t/T1</sup>)/6、CR 有效模型
+      g<sub>CR</sub>=2J²Δ/(α²−Δ²)、读出 SNR=2χ√(n̄ηt<sub>m</sub>/(κ(1+2N<sub>amp</sub>)))、
+      残余 ZZ (4/5)sin²(ζt/2)、方阵 Laplacian 谱定理 λ₂=2−2cos(π/max)）
+      ⇒ 微秒级、无 DoS 面、不进重端点护栏。<br/>
+      🔵 <b>分工</b>：与 <b>S 分支「超导量子计算芯片」案例</b>（器件/版图层：真 GDS · DRC/LVS · 频率避撞）
+      <b>互补不重复</b>——本卡在<b>物理比特层</b>（门错误率 / 读出误判 / 误差预算 / 拓扑谱不变量）。<br/>
+      🔵 <b>口径</b>：判决恒为 <b>DESIGN_BUDGET（设计预算 / 建模值）</b>，<b>非</b>流片后实测签核；
+      参数为<b>设计示例量级</b>（非任何 foundry 的 PDK deck）；<b>零量子 SDK</b>
+      （不依赖 Qiskit/Cirq/PennyLane/QuTiP）；<b>LLM 不进判决路径</b>。
+    </div>
+    <div class="row">
+      <button class="btn" id="runJ2">运行 J2 QPU 案例</button>
+    </div>
+    <div id="j2Summary" class="summary"></div>
+    <div id="j2Body"></div>
+    <div class="conclusion" id="j2Conclusion"></div>
   </div>
 
   <div class="footer" data-page-node-id="n4rEeCHGtMlHrVaGZxjXUN">
@@ -10381,6 +10411,150 @@ function renderQsensor(d){
   return true;
 }
 
+// ===== J2 · 超导 transmon QPU 物理比特层案例卡（M0–M4 · 只读 · 免登录 · 零重计算）=====
+if($('runJ2')) $('runJ2').onclick = runJ2;
+async function runJ2(){
+  const btn=$('runJ2'); if(!btn) return;
+  btn.disabled=true;
+  $('j2Summary').innerHTML='<span class="spin"></span> 正在读取 J2 QPU 案例卡（设计预算 · 闭式现算）…';
+  try{
+    const d=await apiGet('/api/j2_qpu');
+    renderJ2(d);
+  }catch(e){ $('j2Summary').textContent='错误：'+(e&&e.message?e.message:e); }
+  finally{ btn.disabled=false; }
+}
+function renderJ2(d){
+  if(!d||d.error){ $('j2Summary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
+  var idf=d.identity||{}, sp=d.span||{}, lp=d.loop||{}, er=d.errors||{}, ro=d.readout||{};
+  var bg=d.budget||{}, tp=d.topology||{}, pos=d.positioning||{};
+  $('j2Summary').innerHTML='判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）· 案例 <b>'+d.case_id
+    +'</b> · 端点 <code>'+d.endpoint+'</code>';
+  var h='';
+
+  // ① 案例身份
+  h+='<h3 style="margin:14px 0 4px">① 案例身份</h3>';
+  h+=_qcTbl(['项','值'],[
+    ['案例口号', d.claim],
+    ['物理域', idf.physics],
+    ['器件', idf.device],
+    ['单元', idf.unit],
+    ['口径', '<code>'+idf.caliber+'</code>'],
+    ['路线说明', idf.route_note],
+    ['零量子 SDK', (idf.zero_quantum_sdk?'<b>是</b>（不依赖 Qiskit/Cirq/PennyLane/QuTiP）':'否')],
+    ['征程档数', _sxF(sp.milestones,0)],
+    ['门禁判据合计（逐档新增之和）', _sxF(sp.gate_checks,0)],
+    ['门禁判据累计（末档）', _sxF(sp.gate_total,0)],
+    ['模块自检项合计', _sxF(sp.module_selfchecks,0)],
+    ['自检模块', (sp.selfcheck_modules||[]).map(function(x){ return '<code>'+x+'</code>'; }).join(' · ')],
+    ['突变探针数', _sxF(sp.probe_mutations,0)]
+  ]);
+
+  // ② 征程四档（M0–M4）
+  h+='<h3 style="margin:14px 0 4px">② 征程四档（M0–M4 · 物理比特层 L2）</h3>';
+  h+=_qcTbl(['档','版本','标题','新增判据','累计判据','判据带','成果'],
+    (d.milestones||[]).map(function(m){
+      return ['<b>'+m.id+'</b>', '<code>'+m.code+'</code>', m.title,
+              _sxF(m.gate,0), _sxF(m.gate_total,0),
+              '<code>'+(m.bands||[]).join('/')+'</code>', m.result]; }));
+
+  // ③ 物理错误率链（门 · CR · 2q · ZZ）
+  h+='<h3 style="margin:14px 0 4px">③ 物理错误率链（闭式 · 建模值）</h3>';
+  h+=_qcTbl(['物理量','值','口径 / 闭式'],[
+    ['单比特门时长 t<sub>1q</sub> (ns)', _sxF(er.t_1q_ns,1), '设计示例'],
+    ['单比特门错误率 ε<sub>1q</sub>', _sxE(er.eps_1q,4), 'F=(3+2e<sup>−t/T2</sup>+e<sup>−t/T1</sup>)/6 ⇒ ε=1−F'],
+    ['CR 门有效耦合 g<sub>CR</sub> (MHz)', _sxF(er.g_cr_mhz,4), 'g<sub>CR</sub>=2J²Δ/(α²−Δ²)'],
+    ['CR 门时长 t<sub>CR</sub> (µs)', _sxF(er.t_cr_us,4), 't<sub>CR</sub>=π/|g<sub>CR</sub>|'],
+    ['两比特 CR 门错误率 ε<sub>2q</sub>', _sxE(er.eps_2q,4), 'F<sub>pro</sub>² 张量 ⇒ ε=1−(4F²+1)/5'],
+    ['最近邻静态 ZZ ζ (MHz)', _sxF(er.zeta_zz_mhz,4), 'S 分支串扰预算（最近邻）'],
+    ['ZZ 杂散上限 (MHz)', _sxF(er.zeta_limit_mhz,2), 'S 铁律② 上限'],
+    ['残余 ZZ 错误率 ε<sub>ZZ</sub>', _sxE(er.eps_zz,4), '(4/5)sin²(ζt/2)（B507 同律）']
+  ]);
+
+  // ④ 色散读出链
+  h+='<h3 style="margin:14px 0 4px">④ 色散读出链（SNR + 误判率）</h3>';
+  h+=_qcTbl(['参数','值','口径'],[
+    ['色散频移 χ (GHz)', _sxF(ro.chi_ghz,4)],
+    ['腔线宽 κ<sub>r</sub> (GHz)', _sxF(ro.kappa_r_ghz,4)],
+    ['腔内光子数 n̄', _sxF(ro.nbar,2)],
+    ['量子效率 η', _sxF(ro.eta,3)],
+    ['放大器噪声因子 N<sub>amp</sub>', _sxF(ro.n_amp,2)],
+    ['读出时长 t<sub>m</sub> (ns)', _sxF(ro.t_ro_ns,3)],
+    ['单发读出 SNR', _sxF(ro.snr,4), '2χ<sub>rad</sub>√(n̄ηt<sub>m</sub>/(κ<sub>rad</sub>(1+2N<sub>amp</sub>)))'],
+    ['读出误判率 ε<sub>ro</sub>', _sxE(ro.eps,4), '½·erfc(SNR/√2)（B30 同律）'],
+    ['读出占 T1 比例', _sxE(ro.t1_pollution_rel,3), 't<sub>m</sub>/T1 ⇒ T1 污染下界']
+  ]);
+
+  // ⑤ QPU 每周期误差预算（签核口径 = 每操作平均）
+  h+='<h3 style="margin:14px 0 4px">⑤ QPU 误差预算集成（每周期 · 签核口径 = 每操作平均）</h3>';
+  h+=_qcTbl(['分量','<code>key</code>','单次错误率','次数','小计'],
+    (bg.components||[]).map(function(c){
+      return [c.label, '<code>'+c.key+'</code>', _sxE(c.eps,4), _sxF(c.count,0), _sxE(c.subtotal,4)]; }));
+  h+=_qcTbl(['集成汇总','值'],[
+    ['周期内操作次数 n_ops', _sxF(bg.n_ops,0)],
+    ['每周期总错误率 Σ', _sxE(bg.p_cycle_sum,4)],
+    ['<b>每操作平均错误率</b> p_op（签核主判据）', '<b>'+_sxE(bg.p_op_avg,4)+'</b>'],
+    ['最差分量 p_op_max', _sxE(bg.p_op_max,4)],
+    ['表面码阈值 p_th', _sxF(bg.p_th,4)],
+    ['阈值余量 p_th − p_op', _sxE(bg.threshold_margin,4)],
+    ['签核', (bg.signoff==='ACCEPT'?'<b>ACCEPT</b>（欠阈值）':'<b>REJECT</b>（超阈值）')],
+    ['ZZ 在杂散限内', (bg.zz_within_limit?'是':'否')],
+    ['ZZ 杂散上限 (MHz)', _sxF(bg.zeta_limit_mhz,2)]
+  ]);
+
+  // ⑥ 拓扑 ↔ 表面码对接
+  h+='<h3 style="margin:14px 0 4px">⑥ 拓扑 ↔ 表面码对接（图论谱不变量 + 资源核算）</h3>';
+  h+=_qcTbl(['项','值','口径'],[
+    ['耦合图规模', _sxF(tp.rows,0)+' × '+_sxF(tp.cols,0)],
+    ['物理比特数', _sxF(tp.n_qubits,0)],
+    ['耦合边数', _sxF(tp.n_couplings,0), '方阵 4 邻居'],
+    ['最大度', _sxF(tp.max_degree,0)],
+    ['表面码原生所需度', _sxF(tp.native_degree,0)],
+    ['嵌入判定', '<b>'+tp.embedding+'</b>'],
+    ['代数连通度 λ₂（精确闭式）', _sxF(tp.lambda2_closed,6), 'λ₂=2−2cos(π/max(rows,cols))（B509 golden）'],
+    ['d=3 每逻辑比特所需物理比特', _sxF(tp.resource_required_d3,0), '2d²−1（J1 口径）'],
+    ['资源充足', (tp.resource_ok?'是':'否')],
+    ['可容逻辑比特数', _sxF(tp.n_logical_capacity,0)]
+  ]);
+
+  // ⑦ J1↔J2 复利闭环
+  h+='<h3 style="margin:14px 0 4px">⑦ J1↔J2 复利闭环（物理错误率 ⇒ 逻辑错误率）</h3>';
+  h+=_qcTbl(['项','值'],[
+    ['表面码阈值 p_th', _sxF(lp.p_th,4)],
+    ['标度前因子 A', _sxF(lp.a_scale,4)],
+    ['注入的物理错误率 p_phys', _sxE(lp.p_phys_used,4)],
+    ['注入口径', lp.p_phys_caliber],
+    ['阈值下数量级 log10(p_th/p_phys)', _sxF(lp.orders_below,3)],
+    ['目标数量级', _sxF(lp.margin_orders,1)],
+    ['目标达成', (lp.target_met?'<b>是</b>':'<b>否</b>（如实披露：未达 ≥2 数量级目标）')]
+  ]);
+  h+=_qcTbl(['码距 d','逻辑错误率 p_L'],
+    (lp.curve||[]).map(function(c){ return [_sxF(c.d,0), _sxE(c.p_logic,4)]; }));
+  h+='<div class="hint">'+lp.note+'</div>';
+
+  // ⑧ 关键结论
+  h+='<h3 style="margin:14px 0 4px">⑧ 关键结论（物理 + 方法学）</h3>';
+  h+=_qcTbl(['结论','说明'],
+    (d.findings||[]).map(function(fn){ return [fn.title, fn.detail]; }));
+
+  // ⑨ 对标准星（公开报道值 · 仅背景坐标）
+  h+='<h3 style="margin:14px 0 4px">⑨ 对标准星（公开报道的产业界已交付芯片 · 仅背景坐标 · 不同台比较）</h3>';
+  h+='<div class="hint">'+pos.disclaimer+'</div>';
+  h+=_qcTbl(['公开坐标（产业界已交付芯片）'],
+    (pos.public_landscape||[]).map(function(x){ return [x]; }));
+  h+='<div class="hint"><b>差异定位</b>：'+(pos.what_is_different||[]).join(' &nbsp;•&nbsp; ')+'</div>';
+  h+='<div class="hint"><b>诚实限制</b>：'+(pos.honest_limits||[]).join(' &nbsp;•&nbsp; ')+'</div>';
+
+  // ⑩ 缺口登记
+  h+='<h3 style="margin:14px 0 4px">⑩ 缺口登记（J2-G-A…D · 未闭者不粉饰）</h3>';
+  h+=_qcTbl(['缺口','标题','状态','说明'],
+    (d.gaps||[]).map(function(gp){
+      return ['<code>'+gp.id+'</code>', gp.title, gp.status, gp.detail]; }));
+
+  $('j2Body').innerHTML=h;
+  $('j2Conclusion').innerHTML='<b>口径（判决落非 AI ground）</b>：'+d.honest_note;
+  return true;
+}
+
 </script>
 <script src="/nav.js"></script>
 <script src="/cs_widget.js"></script>
@@ -10483,7 +10657,8 @@ function renderQsensor(d){
                   "#sec-pchip": "runPChip", "#sec-ecore": "runECore",
                   "#sec-accel": "runAccel", "#sec-d4": "runD4", "#sec-oi": "runOi",
                   "#sec-pm": "runPm", "#sec-sensor": "runSensor",
-                  "#sec-soc": "runSoc", "#sec-qsensor": "runQsensor"};
+                  "#sec-soc": "runSoc", "#sec-qsensor": "runQsensor",
+                  "#sec-j2": "runJ2"};
   var fired = {};
   function maybeRun() {
     var btnId = CASE_MAP[location.hash];

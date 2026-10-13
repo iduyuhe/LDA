@@ -453,6 +453,40 @@ def h_qsensor_demo(h, p, q, path):
                       "case_id": _qs.CASE_ID, "verdict": "ERROR"})
 
 
+def h_j2_qpu_demo(h, p, q, path):
+    """GET /api/j2_qpu —— J2 超导 transmon QPU 物理比特层案例卡（只读 · 免登录 · 微秒级）。
+
+    J2 征程（吃狗粮 · LDA-J2 · v0.9.230…v0.9.233 · M0–M4）的**只读对外窗口**：
+    物理错误模型 → 两比特 CR 门 → 色散读出链 → QPU 误差预算 + 拓扑↔表面码对接，
+    并把 **J1↔J2 复利闭环**（物理错误率 p_phys ⇒ 表面码阈值下的逻辑错误率曲线）呈现出来。
+
+    🔴 与 `/api/schip_demo`（**S 分支超导芯片级 P&R** 案例卡 · 真 GDS/DRC/LVS/频率避撞）
+    **分工不同、互补非重复**：`schip_demo` 在**器件/版图**层，本卡在**物理比特层 L2**
+    （门错误率 / 读出误判 / 误差预算 / 拓扑谱不变量）。
+
+    🔴 **零重计算**：不跑仿真、不 import 求解器、不 import numpy/scipy、不解析 GDS ——
+    全部数字由**闭式算术现算**（退相干极限 / CR 有效模型 / 读出 SNR / ZZ 二阶微扰 /
+    QPU 预算集成 / 方阵 Laplacian 谱定理），并由常驻门禁 `run_webui_j2_render_path_smoke`
+    对 `lda_qeda` / `lda_agent` 各真源模块**逐值跨源对拍**。
+    ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**
+    （与 `/api/schip_demo`、`/api/qsensor_demo`、`/api/verification_ledger` 同属「公开只读验货」类）。
+
+    无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`
+    （**非** ACCEPT/PASS），返回体自带 `honest_note`。
+
+    异常不 500（返回 200 + error 字段，与 `h_qsensor_demo` 同风格）。
+    """
+    try:
+        from . import j2_case as _j2
+    except ImportError:
+        from lda_webui import j2_case as _j2
+    try:
+        return (200, _j2.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/j2_qpu", "error": str(e)[:160],
+                      "case_id": _j2.CASE_ID, "verdict": "ERROR"})
+
+
 def h_accel_demo(h, p, q, path):
     """GET /api/accel_demo —— 光子/模拟混合 AI 推理加速器案例卡（阶段 4 · L6 参考设计 · 只读）。
 
@@ -2141,6 +2175,9 @@ GET_ROUTES = {
     "/api/sensor_demo": h_sensor_demo,
     # 量子传感器征程 QS-M8：双腿（NV 色心 + 超导 SQUID）只读案例卡（零重计算 · 免登录）
     "/api/qsensor_demo": h_qsensor_demo,
+    # J2 征程收官（v0.9.234）：超导 transmon QPU 物理比特层（L2）只读案例卡
+    # （门错误率 / 读出 / QPU 误差预算 / 拓扑↔表面码 / J1↔J2 复利闭环 · 零重计算 · 免登录）
+    "/api/j2_qpu": h_j2_qpu_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,

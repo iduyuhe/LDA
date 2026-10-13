@@ -205,7 +205,13 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               "run_qs_m3b_smoke.py", "run_qs_m4_smoke.py", "run_qs_m5_smoke.py",
               "run_qs_m6_smoke.py", "run_qs_m7_smoke.py",
               "run_qs_m9_smoke.py", "run_qs_m3c_smoke.py",
-              "run_j2_qpu_smoke.py")
+              "run_j2_qpu_smoke.py",
+              # 🔴 v0.9.234：本版真改动 = J2 收官「WebUI 面板落地」（新 `sec-j2` 面板 +
+              #   `/api/j2_qpu` + `run_webui_j2_render_path_smoke`）。直接相关且**便宜**
+              #   的门禁 = 新门禁本体（实测 ~6s / 53 判据）⇒ 纳对照面，令本版 README 顶行
+              #   声明的 53 判据由机器守（非手写）；它无自指、无递归（不反向调 PM 门禁）。
+              #   ⚠️ 同版 `run_j2_qpu_smoke`（37 判据）已在表内（v0.9.231 纳入）⇒ 两处均受守。
+              "run_webui_j2_render_path_smoke.py")
 
 
 def _declared_judge_counts(text):

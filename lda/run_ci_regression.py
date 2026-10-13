@@ -1836,6 +1836,22 @@ CORE_SMOKES: List[str] = [
     #   账本锚**（同源体检：三者全同 = 只是换名）；净增价值为 J1↔J2 复利闭环桥。numpy 可用 ⇒ 入 core；
     #   timeout 300s 留足余量。CI core 320→321。
     "run_j2_qpu_smoke.py",
+    # J2 收官（v0.9.234）· WebUI J2 面板落地的常驻护栏（**J2 章程 §2.4/§3-M4 强制交付项**：
+    #   M0–M4 四档后端做完了、面板全档漏交付且落地记录未披露 ⇒ 本版补做）：
+    #   覆盖 `lda_webui/j2_case.py`（只读 GET 案例卡）+ `index.html` 的 `sec-j2` 面板 +
+    #   `/api/j2_qpu` 路由。A 前端接线（onclick/DOM 契约/首屏直达/十段/抽屉映射）·
+    #   B 取值路径存在性（82 条引用逐条解析）· C 反向完备（17 顶层键 / 8 嵌套块 /
+    #   5 个 `[]` 项目块 / 零豁免）· D 🔴 **跨源一致性**（10 组物理量逐值对拍真源：
+    #   单比特门错误率 / CR 门时间+耦合 / 两比特门错误率 / 残余 ZZ / 读出 SNR+误判率 /
+    #   QPU 预算 3 量+签核 / 杂散 ZZ 常量副本 / λ₂ 闭式⇄Krylov / 拓扑嵌入+资源 /
+    #   J1↔J2 **去极化口径**标度）· E 🔴 里程碑 `gate` 机械对照（`run_j2_qpu_smoke`
+    #   实跑 37 PASS 按**判据字母带** A–E+R/F/G/H 分档 == 卡内逐档 gate ∧ 模块自检实跑和
+    #   54 == span.module_selfchecks）· F 真实性护栏（verdict=DESIGN_BUDGET / 边界关键词 /
+    #   路由登记 ∧ 不在 HEAVY_POST_PATHS / 顶层 import 白名单 / 缺口未闭合 / 自入 CI）·
+    #   G 突变探针 19 条 + 条数自洽。**53 判据**（纳
+    #   `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面，令 README 顶行判据数机器守）。
+    #   不增账本锚（纯 WebUI 落地）；CI core 321→322。
+    "run_webui_j2_render_path_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2810,7 +2826,16 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   🔴 v0.9.223：新纳 `run_qs_m6_smoke`（41 判据）入 `_W10_EXTRA` ⇒ 全量基线（n=20）
     #   上界升至 **63.17s** ⇒ 原 180s 仅 **2.849×**（**B9 目标棘轮红**）。按「一次给足
     #   ≈3.8~4.5×」抬到 **280s** = **4.43×**（**只抬该项耗时上限 · 绝不抬 ratchet**）。
-    "run_webui_pm_render_path_smoke.py": 280.0,
+    # 🔴 v0.9.234：PM 门禁本版新增 J2 对照面（`_W10_EXTRA` 纳
+    #   `run_webui_j2_render_path_smoke.py` ⇒ 宿主须**实跑该门禁子进程**做跨源核对）
+    #   ⇒ 实测上界 87.5s → **95.03s**（+8.6%），原 280s 掉到 **2.946×**（**B9 目标棘轮红** ·
+    #   跌破 3× 档）。按「一次给足 ≈3.8~4.5×」抬到 **380s** = **4.00×**
+    #   （**只抬该项耗时上限 · 绝不抬 ratchet**）。
+    "run_webui_pm_render_path_smoke.py": 380.0,
+    # J2 案例卡 WebUI 门禁（取值路径 + 反向完备 + **跨源一致性** + gate 机械对照）：
+    #   53 判据（含 19 探针）· 实测上界 ~6s（内含 `run_j2_qpu_smoke` 子进程实跑 1 次 +
+    #   3 个能力层模块 `run_selfchecks` 实跑 + λ₂ Krylov 数值对拍）⇒ 预算 300s 留足余量。
+    "run_webui_j2_render_path_smoke.py": 300.0,
     # CI 门禁自身契约（棘轮时序 + 退出码契约 + cwd/模板/注释数字守卫）· 受控 fake 驱动，实测上界 <5s
     "run_ci_gate_contract_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）

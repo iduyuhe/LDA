@@ -1,12 +1,12 @@
 {
-  "strict_total": 492,
-  "strict_attacked": 492,
+  "strict_total": 505,
+  "strict_attacked": 505,
   "strict_coverage": 1.0,
-  "attacks_total": 4905,
-  "genuine_div": 277,
+  "attacks_total": 5074,
+  "genuine_div": 286,
   "cand_limitation": 70,
   "golden_unstable": 88,
-  "divergence_rate": 0.0744138634,
+  "divergence_rate": 0.0737091052,
   "findings": [
     {
       "bid": "B1",
@@ -3274,6 +3274,107 @@
           "cand": 1.66034177e+20,
           "err": 1031581940000000.0,
           "tol": 5000000000000.0
+        }
+      ]
+    },
+    {
+      "bid": "B497",
+      "as_strict": true,
+      "n_attacks": 13,
+      "genuine_div": 2,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "p_phys": 0.0065,
+            "target": 1e-15,
+            "p_th": 0.01,
+            "A": 0.03
+          },
+          "issue": "genuine_divergence",
+          "oracle": 143.07358,
+          "cand": 121.0,
+          "err": 22.0735802,
+          "tol": 1e-06
+        },
+        {
+          "params": {
+            "p_phys": 0.005,
+            "target": 1e-15,
+            "p_th": 0.007,
+            "A": 0.03
+          },
+          "issue": "genuine_divergence",
+          "oracle": 183.456339,
+          "cand": 121.0,
+          "err": 62.4563392,
+          "tol": 1e-06
+        }
+      ]
+    },
+    {
+      "bid": "B509",
+      "as_strict": true,
+      "n_attacks": 9,
+      "genuine_div": 7,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "rows": 8.5,
+            "cols": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.0978869674,
+          "cand": 0.0979044988,
+          "err": 1.75314183e-05,
+          "tol": 1e-07
+        },
+        {
+          "params": {
+            "rows": 11.5,
+            "cols": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.0810140528,
+          "cand": 0.0828949927,
+          "err": 0.00188093992,
+          "tol": 1e-07
+        },
+        {
+          "params": {
+            "rows": 13.0,
+            "cols": 10
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.0581163651,
+          "cand": 0.0591272239,
+          "err": 0.00101085876,
+          "tol": 1e-07
+        },
+        {
+          "params": {
+            "rows": 10,
+            "cols": 7.0
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.0978869674,
+          "cand": 0.0978883338,
+          "err": 1.36640991e-06,
+          "tol": 1e-07
+        },
+        {
+          "params": {
+            "rows": 10,
+            "cols": 8.5
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.0978869674,
+          "cand": 0.0978871072,
+          "err": 1.39785204e-07,
+          "tol": 1e-07
         }
       ]
     },

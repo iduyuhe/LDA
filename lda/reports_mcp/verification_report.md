@@ -5,9 +5,9 @@
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - via：L1 KernelGateway
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **509 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **522 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
 
-## 汇总：511/514 通过（独立候选 5 项中 **2 项通过=已验证** · 509 项自证闭环，**非验证结论**）
+## 汇总：524/527 通过（独立候选 5 项中 **2 项通过=已验证** · 522 项自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -449,8 +449,21 @@
 | B494 | qs_cavity_quality_factor | physical-law | 10000 | 10000 | 0 | 0.001 | ✅ PASS |
 | B495 | qs_effective_mode_volume | physical-law | 4.13333e-20 | 4.13333e-20 | 0 | 1e-27 | ✅ PASS |
 | B496 | qs_single_photon_coupling | physical-law | 1.65041e+10 | 1.65041e+10 | 0 | 1000 | ✅ PASS |
+| B497 | qec_threshold_distance | physical-law | 88.5401 | 88.5401 | 0 | 1e-06 | ✅ PASS |
+| B498 | qec_syndrome_field_weight | physical-law | 6.12809 | 6.12809 | 0 | 0.01 | ✅ PASS |
+| B499 | qec_match_cost_moment | physical-law | 8.33333 | 8.33333 | 0 | 0.001 | ✅ PASS |
 | B5 | split_loss_dB | numpy-overlap-offline | 3.4 | 3.4 | 0 | 1 | ✅ PASS |
 | B50 | fc_Hz | physical-law | 1.96714e+10 | 1.96714e+10 | 0 | 1e+07 | ✅ PASS |
+| B500 | qec_flag_hook_detection | physical-law | 0.0227501 | 0.0227501 | 0 | 0.001 | ✅ PASS |
+| B501 | qec_adjacent_syndrome_correlation | physical-law | 2.43993 | 2.43993 | 0 | 0.01 | ✅ PASS |
+| B502 | qec_transversal_cnot_fidelity | physical-law | 0.616724 | 0.616724 | 0 | 0.001 | ✅ PASS |
+| B503 | qec_lattice_surgery_merge_fidelity | physical-law | 0.992197 | 0.992197 | 0 | 0.001 | ✅ PASS |
+| B504 | qec_end_to_end_accumulated_failure | physical-law | 0.606759 | 0.606759 | 0 | 0.001 | ✅ PASS |
+| B505 | qec_logical_error_area | physical-law | 36.7879 | 36.7879 | 0 | 0.01 | ✅ PASS |
+| B506 | cr_gate_decoherence_error | physical-law | 0.217928 | 0.217928 | 0 | 1e-07 | ✅ PASS |
+| B507 | residual_zz_error | physical-law | 0.183879 | 0.183879 | 0 | 1e-06 | ✅ PASS |
+| B508 | fdm_mux_overlap_ratio | physical-law | 0.409836 | 0.409836 | 0 | 1e-07 | ✅ PASS |
+| B509 | qpu_graph_algebraic_connectivity | physical-law | 0.097887 | 0.097887 | 0 | 1e-07 | ✅ PASS |
 | B51 | fc_Hz | physical-law | 2.62286e+10 | 2.62286e+10 | 0 | 1e+07 | ✅ PASS |
 | B52 | E1_eV | physical-law | -1.52962 | -1.52962 | 0 | 0.05 | ✅ PASS |
 | B53 | E2_eV | physical-law | -0.964812 | -0.964812 | 0 | 0.05 | ✅ PASS |

@@ -966,3 +966,75 @@ def _get_j1_numeric():
         import _batch_j1_numeric as _m
     _BATCH_J1_MOD = _m
     return _m
+
+
+_BATCH_J2_MOD = None
+
+
+def _get_j2_numeric():
+    """Batch J2 数值核（超导 Transmon 征程 J2 · M2 两比特门层：两比特 CR 门退相干错误率
+    （张量 A+D 信道闭式 × 16×16 Liouvillian RK4）+ 残余 ZZ 诱导门错误率
+    （闭式 (4/5)sin²(ζt/2) × 矩阵传播子 RK4）），缓存，项目铁律。
+
+    🔴 命名避让：批次号 **J2** 与量子征程里程碑 **J2**（Transmon）同名 ⇒
+    沿用连字符写法 `_batch_j2_numeric` / `_get_j2_numeric`；候选 key
+    `b506_`/`b507_` 前缀尚未占用。
+    """
+    global _BATCH_J2_MOD
+    if _BATCH_J2_MOD is not None:
+        return _BATCH_J2_MOD
+    try:
+        from lda_harness import _batch_j2_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_j2_numeric as _m
+    _BATCH_J2_MOD = _m
+    return _m
+
+
+_BATCH_J2M3_MOD = None
+
+
+def _get_j2m3_numeric():
+    """Batch J2-M3 数值核（超导 Transmon 征程 J2 · M3 色散读出链 + 串扰：FDM 多音读出
+    相邻通道频谱重叠串扰比 —— 闭式洛伦兹自相关 4γ²/(4γ²+δ²) × sinh 换元+复合 Simpson
+    数值卷积），缓存，项目铁律。
+
+    🔴 命名避让：批次号 **J2-M3** 沿用连字符写法 `_batch_j2m3_numeric` / `_get_j2m3_numeric`
+    （与 M2 的 `_batch_j2_numeric` / `_get_j2_numeric` 并列，互不覆盖）；候选 key
+    前缀 `b508_` 尚未占用。磁盘 `_adapter_p*.py` **不新建**（L9 守卫：恒 6 片）。
+    """
+    global _BATCH_J2M3_MOD
+    if _BATCH_J2M3_MOD is not None:
+        return _BATCH_J2M3_MOD
+    try:
+        from lda_harness import _batch_j2m3_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_j2m3_numeric as _m
+    _BATCH_J2M3_MOD = _m
+    return _m
+
+
+_BATCH_J2M4_MOD = None
+
+
+def _get_j2m4_numeric():
+    """Batch J2-M4 数值核（超导 Transmon 征程 J2 · M4 QPU 误差预算集成 + 拓扑对接：
+    QPU 耦合图代数连通度 λ₂（Fiedler 值）—— 谱定理闭式 2−2cos(π/max(rows,cols)) ×
+    嵌套 Krylov 子空间 Rayleigh–Ritz 最小值），缓存，项目铁律。
+
+    🔴 命名避让：批次号 **J2-M4** 沿用连字符写法 `_batch_j2m4_numeric` / `_get_j2m4_numeric`
+    （与 M2 的 `_batch_j2_numeric` / M3 的 `_batch_j2m3_numeric` 并列，互不覆盖）；候选 key
+    前缀 `b509_` 尚未占用。磁盘 `_adapter_p*.py` **不新建**（L9 守卫：恒 6 片）。
+    """
+    global _BATCH_J2M4_MOD
+    if _BATCH_J2M4_MOD is not None:
+        return _BATCH_J2M4_MOD
+    try:
+        from lda_harness import _batch_j2m4_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_j2m4_numeric as _m
+    _BATCH_J2M4_MOD = _m
+    return _m

@@ -258,6 +258,23 @@ PERTURB_SPEC = [
     ("B503", "d", "mul"),
     ("B504", "T", "mul"),
     ("B505", "L", "mul"),
+    # v0.9.231（Batch J2 · 超导 Transmon QPU 征程 · M2 两比特 CR 门层）：B506/B507 两道严格独立锚落地
+    #   （B506 交叉谐振门退相干错误率 闭式 ⇄ 16×16 Liouvillian RK4；扰 t ⇒ 门错误率随门时长响应：
+    #   实测 t×1.1 ⇒ |golden 偏差|≈1.76e-2 ≫ tol 1e-7 ⇒ 守卫必 FAIL）
+    ("B506", "t", "mul"),
+    #   （B507 残余 ZZ 串扰诱导门错误率 闭式 (4/5)sin²(ζt/2) ⇄ 4×4 矩阵传播子 RK4；扰 zeta ⇒ sin² 响应：
+    #   实测 zeta×1.1 ⇒ |golden 偏差|≈3.47e-2 ≫ tol 1e-6 ⇒ 守卫必 FAIL）
+    ("B507", "zeta", "mul"),
+    # v0.9.232（Batch J2-M3 · 超导 Transmon QPU 征程 · M3 色散读出链 + 串扰）：B508 严格独立锚落地
+    #   （B508 FDM 多音读出相邻通道频谱重叠串扰比 闭式洛伦兹自相关 4γ²/(4γ²+δ²)
+    #    ⇄ sinh 换元+复合 Simpson 数值卷积；扰 delta ⇒ 重叠比随通道间隔响应：
+    #    实测 delta×1.1 ⇒ |golden 偏差|≈4.5e-2 ≫ tol 1e-7 ⇒ 守卫必 FAIL）
+    ("B508", "delta", "mul"),
+    # v0.9.233（Batch J2-M4 · 超导 Transmon QPU 征程 · M4 QPU 误差预算集成 + 拓扑对接）：B509 严格独立锚落地
+    #   （B509 QPU 耦合图代数连通度 λ₂（Fiedler 值） 谱定理闭式 2−2cos(π/max(rows,cols))
+    #    ⇄ 嵌套 Krylov 子空间 Rayleigh–Ritz 最小值；扰 cols ⇒ λ₂ 随图尺度响应：
+    #    实测 cols×1.1(=11) ⇒ |golden 偏差|≈1.65e-2 ≫ tol 1e-7 ⇒ 守卫必 FAIL）
+    ("B509", "cols", "mul"),
 ]
 PERTURB_REL = 0.10          # 反向测试扰动幅度（10%）
 SENSITIVITY_GRID = (0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20)
@@ -366,7 +383,16 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 # v0.9.229（Batch J1 · 量子纠错新征程 QEC M2+M3+M4）：B500-B505 六道严格独立锚落地
 #   ⇒ 严格独立 495 → **501**（降级 3、自证桩 19 不变）。
 #   棘轮地板同步单调上调：495 → 501（按行为性真值上抬）。
-MIN_INDEPENDENT = 501
+# v0.9.231（Batch J2 · 超导 Transmon QPU 征程 · M2 两比特 CR 门层）：B506/B507 两道严格独立锚落地
+#   ⇒ 严格独立 501 → **503**（降级 3、自证桩 19 不变）。
+#   棘轮地板同步单调上调：501 → 503（按行为性真值上抬）。
+# v0.9.232（Batch J2-M3 · 超导 Transmon QPU 征程 · M3 色散读出链 + 串扰）：B508 一道严格独立锚落地
+#   ⇒ 严格独立 503 → **504**（降级 3、自证桩 19 不变）。
+#   棘轮地板同步单调上调：503 → 504（按行为性真值上抬）。
+# v0.9.233（Batch J2-M4 · 超导 Transmon QPU 征程 · M4 QPU 误差预算集成 + 拓扑对接）：B509 一道严格独立锚落地
+#   ⇒ 严格独立 504 → **505**（降级 3、自证桩 19 不变）。
+#   棘轮地板同步单调上调：504 → 505（按行为性真值上抬）。
+MIN_INDEPENDENT = 505
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

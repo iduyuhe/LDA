@@ -1,7 +1,7 @@
 {
-  "total": 213,
-  "expected_extreme": 120,
-  "in_domain_suspect": 93,
+  "total": 220,
+  "expected_extreme": 123,
+  "in_domain_suspect": 97,
   "suspects": [
     {
       "bid": "B165",
@@ -1339,6 +1339,68 @@
       "cand": 1.32923435e+19,
       "err": 20512212200000.0,
       "tol": 5000000000000.0,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B497",
+      "as_strict": true,
+      "params": {
+        "p_phys": 0.0065,
+        "target": 1e-15,
+        "p_th": 0.01,
+        "A": 0.03
+      },
+      "oracle": 143.07358,
+      "cand": 121.0,
+      "err": 22.0735802,
+      "tol": 1e-06,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B509",
+      "as_strict": true,
+      "params": {
+        "rows": 8.5,
+        "cols": 10
+      },
+      "oracle": 0.0978869674,
+      "cand": 0.0979044988,
+      "err": 1.75314183e-05,
+      "tol": 1e-07,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B509",
+      "as_strict": true,
+      "params": {
+        "rows": 11.5,
+        "cols": 10
+      },
+      "oracle": 0.0810140528,
+      "cand": 0.0828949927,
+      "err": 0.00188093992,
+      "tol": 1e-07,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B509",
+      "as_strict": true,
+      "params": {
+        "rows": 10,
+        "cols": 8.5
+      },
+      "oracle": 0.0978869674,
+      "cand": 0.0978871072,
+      "err": 1.39785204e-07,
+      "tol": 1e-07,
       "passed": false,
       "max_perturbation": 0.15,
       "classification": "in_domain_divergence"
@@ -4593,6 +4655,115 @@
       "passed": false,
       "max_perturbation": 0.3,
       "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B497",
+      "as_strict": true,
+      "params": {
+        "p_phys": 0.0065,
+        "target": 1e-15,
+        "p_th": 0.01,
+        "A": 0.03
+      },
+      "oracle": 143.07358,
+      "cand": 121.0,
+      "err": 22.0735802,
+      "tol": 1e-06,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B497",
+      "as_strict": true,
+      "params": {
+        "p_phys": 0.005,
+        "target": 1e-15,
+        "p_th": 0.007,
+        "A": 0.03
+      },
+      "oracle": 183.456339,
+      "cand": 121.0,
+      "err": 62.4563392,
+      "tol": 1e-06,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B509",
+      "as_strict": true,
+      "params": {
+        "rows": 8.5,
+        "cols": 10
+      },
+      "oracle": 0.0978869674,
+      "cand": 0.0979044988,
+      "err": 1.75314183e-05,
+      "tol": 1e-07,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B509",
+      "as_strict": true,
+      "params": {
+        "rows": 11.5,
+        "cols": 10
+      },
+      "oracle": 0.0810140528,
+      "cand": 0.0828949927,
+      "err": 0.00188093992,
+      "tol": 1e-07,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B509",
+      "as_strict": true,
+      "params": {
+        "rows": 13.0,
+        "cols": 10
+      },
+      "oracle": 0.0581163651,
+      "cand": 0.0591272239,
+      "err": 0.00101085876,
+      "tol": 1e-07,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B509",
+      "as_strict": true,
+      "params": {
+        "rows": 10,
+        "cols": 7.0
+      },
+      "oracle": 0.0978869674,
+      "cand": 0.0978883338,
+      "err": 1.36640991e-06,
+      "tol": 1e-07,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B509",
+      "as_strict": true,
+      "params": {
+        "rows": 10,
+        "cols": 8.5
+      },
+      "oracle": 0.0978869674,
+      "cand": 0.0978871072,
+      "err": 1.39785204e-07,
+      "tol": 1e-07,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
     },
     {
       "bid": "B6",

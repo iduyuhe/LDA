@@ -311,6 +311,16 @@ from ._batch_j1_numeric import (  # Batch J1 双方法独立锚数值核（量�
     golden_b504,
     golden_b505,
 )
+from ._batch_j2_numeric import (  # Batch J2 超导 Transmon 征程 · M2 两比特门层（CR 门退相干错误率 张量 A+D 信道闭式 × 16×16 Liouvillian RK4 + 残余 ZZ 诱导门错误率 闭式 (4/5)sin²(ζt/2) × 矩阵传播子 RK4）
+    golden_b506,
+    golden_b507,
+)
+from ._batch_j2m3_numeric import (  # Batch J2-M3 超导 Transmon 征程 · M3 色散读出链 + 串扰（FDM 通道频谱重叠串扰比 闭式洛伦兹自相关 × sinh 换元+复合 Simpson 数值卷积）
+    golden_b508,
+)
+from ._batch_j2m4_numeric import (  # Batch J2-M4 超导 Transmon 征程 · M4 QPU 误差预算集成 + 拓扑对接（QPU 耦合图代数连通度 λ₂ 谱定理闭式 2−2cos(π/max) × 嵌套 Krylov Rayleigh–Ritz）
+    golden_b509,
+)
 
 from .oracle_pyepr import resolve_pyepr_transmon
 
@@ -1136,6 +1146,10 @@ _GOLDEN_DISPATCH = {
     "B503": golden_b503,
     "B504": golden_b504,
     "B505": golden_b505,
+    "B506": golden_b506,
+    "B507": golden_b507,
+    "B508": golden_b508,
+    "B509": golden_b509,
 
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
@@ -1241,6 +1255,9 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B494", "B495", "B496",  # Batch B-48（量子传感器芯片征程 QS-M3c 衍生 · 腔 QED 物理链 · 腔品质因子 Q / 有效模体积 V_eff / 单光子耦合 g）
                  "B497", "B498", "B499",  # Batch J1（量子纠错征程 QEC · M0 阈值标度 + M1 解码器（G_Q9 主项）· 表面码阈值距离 d* / 解码器综合征概率场 / 解码器匹配代价二阶矩）
                  "B500", "B501", "B502", "B503", "B504", "B505",  # Batch J1 续（M2 综合征提取 + M3 容错逻辑门 + M4 端到端收官 · G_Q9 收官）：旗比特钩错 / 相邻稳定子关联 / transversal CNOT 预算链 / lattice surgery 合并 / 端到端累计失效 / 累计逻辑错误面积
+                 "B506", "B507",  # Batch J2（超导 Transmon 征程 · M2 两比特门层）：两比特 CR 门退相干错误率 / 残余 ZZ 诱导门错误率
+                 "B508",  # Batch J2-M3（超导 Transmon 征程 · M3 色散读出链 + 串扰）：FDM 多音读出相邻通道频谱重叠串扰比
+                 "B509",  # Batch J2-M4（超导 Transmon 征程 · M4 QPU 误差预算集成 + 拓扑对接）：QPU 耦合图代数连通度 λ₂（Fiedler 值）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

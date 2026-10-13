@@ -1,5 +1,179 @@
 # Changelog
 
+## v0.9.233（2026-10-13 · J2 超导 Transmon QPU 征程（物理比特层 L2）· **M4 QPU 误差预算集成 + 拓扑对接收官** · **账本 526 → 527（净增 1 锚 B509）** · CI core 321 不变 · 端点 150 不变）
+
+**收官 J2 M4**（蓝图 §3 最后一档）：把 **QPU 级误差预算集成**与 **拓扑↔表面码对接**两块收官能力建起来，并把 M4 里*唯一*未被既有锚覆盖的**连续**物理量——**耦合图代数连通度 λ₂（Fiedler 值）**——钉进账本。
+
+### ① 净增一锚（B509 · 全判严格独立）
+
+- **B509 QPU 耦合图代数连通度 λ₂（Fiedler 值）**：golden = 方阵耦合图（= Cartesian 积 `P_rows □ P_cols`）组合 Laplacian `L=D−A` 的次小本征值闭式 `λ₂=2−2·cos(π/max(rows,cols))`（由「Cartesian 积 Laplacian 谱 = 因子谱的 **Kronecker 和**」+ 路径图本征 `λ_k=2−2cos(kπ/n)` 推得，**精确解析解、非截断近似**；实测与稠密 `eigvalsh` 差 ≤ 3.84e-15）；candidate = **嵌套 Krylov 子空间 Rayleigh–Ritz 最小值**（`K_m=span{v₀,Lv₀,…,L^{m−1}v₀}`，`v₀⊂1⊥`，全程**全重正交**防基病态；min-max 原理 ⇒ 最小 Ritz 值**单调非增**且恒 ≥ λ₂）。默认档（方阵 10×10, N=100）golden=**9.788696740969e-02** · 残差链 **m=4→4.626e-01 → 8→9.999e-02 → 16→1.082e-02 → 32→1.122e-10** · 比值 **4.63/9.25/9.64e7×** · 余量 **891.4×**（tol 1e-7）· `|golden|/tol=9.789e+05` · MONO=True · 残差动态范围 **4.1e9×**。
+
+### ② 同源体检（实 grep · 零占用）· 宪章 M4 两候选**双双证否**
+
+- 🔴 **B513（宪章原定 M4 候选 1 = 拓扑连通性 vs 表面码需求：heavy-hex 度3 / 方阵度4 ⇄ 表面码最近邻判据）⇒ 否决字面形式**：「连通性」是**布尔**量、度是**整数** ⇒ 精确/离散量、残差恒沉地板 ⇒ 属**不可锚**（同 S1–S6 纯算术 / B17 定义式）。**改靶到其连续化** = 同一「连通性」概念的**谱形式 λ₂**。
+- 🔴 **B514（宪章原定 M4 候选 2 = QPU 总错误率 ≤ 阈值余量：闭式预算 ⇄ 数值）⇒ 完全占用**：①「总错误率预算」= ∏/Σ **算术级联** ⇒ 与既有 **S4**（`part1.py`「量子门保真度预算（∏fᵢ 乘法级联）」`golden_fn=s4_fidelity_budget`）**同源**（S1/S3/S5/S6 同为 margin 型预算锚）；②若走「∫率 dt ⇒ 累计错误」数值路线 ⇒ 与 **J1 锚 B502/B503**（`F=exp(−∫率)`）+ **B504/B505**（`1−exp(−∫率)` / `∫(1−e^{−kx})dx`）**同原子族** ⇒ 否。
+- ✅ **取代靶 = B509（耦合图谱隙 λ₂）**：与 **B10/B506/B507**（门错误率 ⇄ Lindblad/矩阵 RK4）在**被测标量 / 物理构型 / 数值格式三者均异** ⇒ 计新锚（承 **B452↔B33** 先例）。实 grep 核验 `fiedler|algebraic_connect|laplacian|lanczos|krylov|power_iter|eigsh|谱隙|spectral_gap|graph_spectr` 在**锚定义**内**零占用**（part2 2D 方势阱注释的 Laplacian=量子阱本征、`_batch_b15/b19` 的 Laplacian 验调和、`_batch_b9/b22`/`_adapter_p1` 的 eigsh 求**物理本征值** ⇒ 标量均不同）。
+
+### ③ 判据 D 标定档 + 退化防护（承 B10 血案）
+
+- Krylov 维 **m=32 ≪ N=100**：**m→N 时**重正交残差把常数向量泄漏进子空间 ⇒ 最小 Ritz 滑向 λ₁=0（首轮探针 m=20=N 时残差 → −3.82e-01 已实证）；数值核 `_krylov_lambda2` 对 `m>N` **显式抛 ValueError**，能力层 `topology_lambda2` **显式钳到 `min(m, N−1)`**（非静默）。
+- `_TOL_BY_BID["B509"]=1e-7`（量级 O(1e-1)，余量 **891.4×**）；默认档残差 1.122e-10 > 1e-12 且 ≪ tol。
+
+### ④ 物理正确性 + 能力层↔账本锚同律核对
+
+- 闭式 `2−2cos(π/max)` 对 6 组图（含扰动档 11×10）与稠密 `eigvalsh` 差 ≤ 3.84e-15；`λ₂(P_n)` 随 n↑ 单调↓。
+- 🔴 **能力层 `topology_lambda2` ≡ B509 golden**（方阵 10×10 实测 `rel=1.15e-09 < 1e-8`）⇒ 防漂移（护栏 H7 钉住）。
+
+### ⑤ 接线（新增数值核 + 两个能力层 + 五处同登）
+
+- 新增 **`lda/lda_harness/_batch_j2m4_numeric.py`**（纯 numpy · 顶层 import · 三表 `_M_BY_BID`/`_GRID_BY_BID`/`_TOL_BY_BID` + `graph_algebraic_connectivity_golden`/`_candidate` + `golden_b509`/`cand_b509` + lru_cache + `B509_DEFAULT_PARAMS` + `_CASES` + `__main__` 自检 **8 判据全 PASS**；**零 RNG** 确定性起始向量 `v₀_i=sin(1+0.7i)+cos(0.3i)`）。
+- 新增 **`lda/lda_qeda/qpu_error_budget.py`**（M4 能力层 · **23 判据自检 ALL PASS**）：`cr_gate_time_us`（复用 `cross_resonance`：`g_CR=2J²Δ/(α²−Δ²)` ⇒ `t_CR=π/|g_CR|`）/ `cr_gate_error_2q`（**与 B506 同律**）/ `residual_zz_error`（**与 B507 同律**）/ `qpu_cycle_error_budget`（1q/2q/读出/idle/ZZ 逐分量 ⇒ 每操作平均错误率 `p_op_avg=Σ分量×次数/n_ops` 与阈值余量 · **并列披露**每周期总量与最差分量 · 不选择性披露）。实测默认档：1q=**1.528e-04** / 2q=**8.051e-03** / ro=**1.390e-02** / idle=**2.286e-03** / zz=**1.502e-06** · t_CR=**0.4418µs** · ζ_zz=**0.9872**≤1.0 MHz · p_cyc=**5.0993e-02** · **ACCEPT**（每操作余量 **6.0775e-03**）；反向 T1/T2÷10 ⇒ **REJECT**。
+- 新增 **`lda/lda_qeda/topology_qec_bridge.py`**（M4 能力层 · **15 判据自检 ALL PASS**）：`topology_lambda2`（复用 `sc_topology_core` 拓扑构建器）/ `graph_connectivity`（BFS 连通分量）/ `surface_code_2d_nn_verdict`（度≥4⇒DIRECT / 度3⇒ADAPTED / 度<3⇒FAIL）/ `surface_code_resource_check`（J1 口径 `2d²−1`）/ `bridge_verdict`（单连通 ∧ λ₂>0 ∧ 非 FAIL ∧ 资源足）。实测：方阵 10×10 ⇒ λ₂=**0.097887** DIRECT **ACCEPT**；heavy-hex 3×3 N=39 ⇒ λ₂=**0.049953** ADAPTED **ACCEPT**。
+- 五处同登：`benchmark_defs/part7.py`（DEFS + import + docstring）· `benchmarks.py`（`BENCHMARK_ORDER` 手改，`len(ORDER)==len(DEFS)==527`）· `golden.py`（`_GOLDEN_DISPATCH` + `_PHYSICAL_LAW` 集）· `_adapter_core.py`（`_get_j2m4_numeric` 双路兜底）· `_adapter_p4.py`（`b509_graph_algebraic_connectivity_cand`；L9 守卫：磁盘分片数恒 6，不新建 `_adapter_p7`）。
+
+### ⑥ 计数七处同步
+
+- README（顶行 + 当前账本 527/505/95.83% + 题数 B1-B509 + 三分类 505/3/19 和 527）· CONTRIBUTING 顶块 · `run_webui_verification_ledger_smoke` docstring · `run_count_consistency_smoke`（docstring + B 计数 503→504 + max-B B508→B509）· `run_statistical_anchor_smoke`（docstring + `range(400,509)→range(400,510)` + 「B1-B509」+ check 名）· `run_benchmark_falsifiability_smoke`（`MIN_INDEPENDENT` 504→**505** + `PERTURB_SPEC` 加 B509@cols）。
+
+### ⑦ 常驻护栏
+
+- `run_j2_qpu_smoke.py` **由 28 判据扩至 37 判据**（新增 **H1–H9**：B509 谱定理闭式⇄Krylov 数值一致 + 判据 D 单调（粗端 >1e-12 显著放大）+ 反自证桩 + 反向探针 + M4 两能力层常驻自检 + **能力层↔账本锚同物理律** + QPU 预算**双签核**反向可 REJECT（T1/T2÷10）+ 拓扑↔QEC 桥签核（方阵 DIRECT / heavy-hex ADAPTED）；tol/golden 一律**读自 `BENCHMARK_DEFS` 不硬编码**）。实测 **37 PASS / 0 FAIL**；CI core **321 不变**。
+
+### ⑧ 诚实边界
+
+- Krylov 极值收敛**非均匀**（低维段近似线性、末段**超收敛** 9.64e7×）—— **如实披露「非均匀收敛」不虚报「恰 O(hᵏ)」**。
+- rows/cols/B/X_tol/T1/T2/t 等均为**设计示例量级（非实测 PDK/非流片）**；B509 是**图论谱不变量**（不耦合器件物理常数）。
+- 只证「谱定理闭式⇄Krylov 数值」一致 + 拓扑↔QEC 对接自洽，**不得作制造/性能宣称**。零商业依赖（纯 numpy；候选零 RNG）。
+
+## v0.9.232（2026-10-13 · J2 超导 Transmon QPU 征程（物理比特层 L2）· M3 色散读出链 + 串扰落地 · **账本 525 → 526（净增 1 锚 B508）** · CI core 321 不变 · 端点 150 不变）
+
+**开 J2 M3**：承 M2 两比特门层，把**读出链**这块此前完全空缺的签核环节补上——FDM 多音读出的**相邻通道频谱重叠（串扰比）**这条连续物理量钉进账本 + 建读出链能力层。
+
+### ① 净增一锚（B508 · 全判严格独立）
+
+- **B508 FDM 多音读出相邻通道频谱重叠串扰比**：golden = 洛伦兹通道归一化重叠 `X(δ;γ)=4γ²/(4γ²+δ²)`（`γ=κ/2` 半高半宽；由 `FT[L(f)](t)=e^{−2πγ|t|}` ⇒ `∫L_iL_j df=2γ/(π(4γ²+δ²))`、`∫L²df=1/(2πγ)`）；candidate = **复合 Simpson 数值积分**（sinh 换元 `f=γ(a+sinh u)`、`a=δ/(2γ)` 拉平洛伦兹尾；两个积分 f1/f0 同档 n；`_simpson` 硬拦奇数区间）。默认档 golden=**4.098360655738e-01** · 残差链 **n=32→2.191e-02 → 64→2.302e-03 → 128→1.481e-05 → 256→4.253e-10** · 比值 **9.52/155.45/34825.33×** · 余量 **235.1×**（tol 1e-7）· `|golden|/tol=4.098e+06` · MONO=True · 官方判据 D 网格 (2,4,8,32,128,512) 残差 `[2.42e-01, 2.42e-01, 2.39e-01, 2.19e-02, 1.48e-05, 5.55e-16]` ⇒ responds=True。
+
+### ② 同源体检（实 grep · 零占用）· 宪章 M3 两候选**双双证否**
+
+- 🔴 **B511（宪章原定 M3 候选 1 = 读出分配错误率 χ/κ/SNR ⇄ 数值二态分类）⇒ 否决**：被既有账本锚 **B30**（`benchmark_defs/part1.py`「读出保真度 F（色散读出 SNR → erfc 误判链 · Krantz 2019）」，metric=`readout_fidelity_F`，candidate=`readout_fidelity_quad` = 误判概率高斯重叠数值积分 = **二态分类**）**完全占用** —— 被测标量 / 物理构型 / 数值格式**三者全同** ⇒ 只是换名 ⇒ 否。
+- 🔴 **B512（宪章原定 M3 候选 2 = 杂散 ZZ 串扰错误预算 σ_zz ⇄ 数值）⇒ 否决**：被**本征程 B507**（残余 ZZ 诱导错误率 `(4/5)sin²(ζt/2)` ⇄ 矩阵传播子 RK4）**完全占用**；且 `σ_zz≤1.0 MHz` 属**纯算术规格检查**（不可锚）。
+- ✅ **取代靶 = B508（FDM mux 频谱重叠串扰比）**：与 **B459**（洛伦兹**幅度斜率极值** / 中心差分）· **B197·B199**（Voigt **线心值** / sinh 换元**单**积分）· **B30**（**误判概率**含 erfc/SNR/T1 权重）在**被测标量 / 物理构型 / 数值格式三者均异** ⇒ 计新锚（承 **B452↔B33** 先例）。
+
+### ③ 判据 D 标定档 + tol 绝对口径（承 B10 血案）
+
+- 选**标定档**（γ=0.5, δ=1.2 ⇒ X≈0.41 O(1)）使 Simpson 截断误差**浮出 1e-12 之上**（生产档会沉双精度噪声地板 ⇒ 判据 D 不可标定）。
+- `_TOL_BY_BID["B508"]=1e-7`（量级 O(1e-1)，余量 **235.1×**）。
+- 🔴 **未定稿过程如实登记**：原型首轮 n=16→24 残差**反升**（3.917e-02→1.280e-01）—— 根因是**截断上限 U 太小**（U=10 时残差 1.87e-13 与 U≥12 差异）；固定 `_U_SINH=12.0` 后残差恒定 7.77e-17 级 ⇒ 单调。并**不**把 16/24 放进扫描网格（用官方公比 2 网格 32/64/128/256）。
+
+### ④ 物理正确性 + 能力层↔账本锚同律核对
+
+- `X(δ→0)=1`（1e-15）· `X(δ≫γ)→0`（<1e-8）· 严格单调降；最小间隔代数反解自洽 `X(Δf_min)=X_tol`（1e-12，X_tol∈{0.01,0.02,0.05,0.1}）。
+- 🔴 **能力层 `mux_overlap_ratio` ≡ B508 golden**（实测 `|Δ|=0.0e+00`）⇒ 防漂移（护栏 G6 钉住）。
+
+### ⑤ 接线（新增数值核 + 新增能力层 + 五处同登）
+
+- 新增 **`lda/lda_harness/_batch_j2m3_numeric.py`**（纯 numpy · 顶层 import · 三表 `_N_BY_BID`/`_GRID_BY_BID`/`_TOL_BY_BID` + `golden_b508`/`cand_b508` + lru_cache + `B508_DEFAULT_PARAMS` + `_CASES` + `__main__` 自检 **8 判据全 PASS**）。
+- 新增 **`lda/lda_qeda/j2_readout_mux.py`**（M3 能力层 · **16 判据自检 ALL PASS**）：`mux_overlap_ratio` / `min_spacing_for_crosstalk`（**代数反解 ⇒ 不锚声明**，承 B-11 被否候选先例）/ `mux_capacity`（`Δf_min=2γ√(1/X_tol−1)`、`N_max=⌊B/Δf_min⌋` 复用 `sc_freq_alloc.frequency_capacity`）/ `readout_zz_budget`（复用 `S4.crosstalk_budget` · σ_zz≤1.0 MHz 铁律②）/ `readout_chain_budget`（隔离 ∧ ZZ **双 ACCEPT**）。实测：`mux_capacity()` ⇒ Δf_min=**7.0 MHz**、N_max=**72 通道/500 MHz**；`readout_chain_budget()` ⇒ verdict=**ACCEPT**、stray_zz=**0.459808** ≤ 1.0。
+- 五处同登：`benchmark_defs/part7.py`（DEFS + import + docstring）· `benchmarks.py`（`BENCHMARK_ORDER` 手改，`len(ORDER)==len(DEFS)==526`）· `golden.py`（`_GOLDEN_DISPATCH` + `_PHYSICAL_LAW` 集）· `_adapter_core.py`（`_get_j2m3_numeric` 双路兜底）· `_adapter_p4.py`（`b508_fdm_mux_overlap_cand`；L9 守卫：磁盘分片数恒 6，不新建 `_adapter_p7`）。
+
+### ⑥ 计数七处同步
+
+- README（顶行 + 当前账本 526/504/95.82% + 题数 B1-B508 + 三分类 504/3/19 和 526）· CONTRIBUTING 顶块 · `run_webui_verification_ledger_smoke` docstring · `run_count_consistency_smoke`（docstring + B 计数 502→503 + max-B B507→B508）· `run_statistical_anchor_smoke`（docstring + `range(400,508)→range(400,509)` + 「B1-B508」+ check 名）· `run_benchmark_falsifiability_smoke`（`MIN_INDEPENDENT` 503→**504** + `PERTURB_SPEC` 加 B508@δ）。
+
+### ⑦ 常驻护栏
+
+- `run_j2_qpu_smoke.py` **由 21 判据扩至 28 判据**（新增 **G1–G7**：B508 闭式⇄Simpson 数值一致 + 判据 D 单调（粗端 >1e-12 显著放大）+ 反自证桩 + 反向探针 + M3 能力层自检 + **能力层↔账本锚同物理律** + 读出链**双签核**且反向 X_tol→0 必 REJECT；tol/golden 一律**读自 `BENCHMARK_DEFS` 不硬编码** · ZZ 上限读自 `sc_readout.ZZ_STRAY_LIMIT_MHZ`）。实测 **28 PASS / 0 FAIL / 0.6s**；CI core **321 不变**（沿用 300.0s 超时）。
+
+### ⑧ 诚实边界
+
+- 🔴 被积函数**解析** ⇒ 复合 Simpson 收敛**快于标称 O(h⁴)**（比值 9.52/155/34825×），**不虚报「恰 O(h⁴)」**；n≥384 撞双精度地板（7.216e-16）弃用 ⇒ 默认档取 n=256（残差 4.253e-10 > 1e-12 值域排除代数恒等）。
+- 🔴 γ/δ/B/X_tol 均为**设计示例量级（非实测 PDK / 非流片）**；本档只证「闭式⇄数值」一致 + 读出链签核自洽，**不作制造/性能宣称**；`min_spacing_for_crosstalk` 为 **X(δ) 的代数反解（非独立物理量）⇒ 不登记为锚**，只放能力层。
+
+## v0.9.231（2026-10-13 · J2 超导 Transmon QPU 征程（物理比特层 L2）· M2 两比特 CR 门层落地 · **账本 523 → 525（净增 2 锚 B506/B507）** · CI core 321 不变 · 端点 150 不变）
+
+**开 J2 M2**：承 M0+M1 复利闭环能力层，把**两比特门错误率**这条此前账本未覆盖的物理链钉进账本（宪章原定 M2 = B509/B510；因 M0+M1 净增 0，实际取**连号** B506/B507，避免破坏 `BENCHMARK_ORDER` 连续守卫 `range(400,N)`）。
+
+### ① 净增两锚（B506 / B507 · 全判严格独立）
+
+- **B506 交叉谐振（CR）门退相干错误率**（两比特门错误率）：golden = 单比特 A+D 信道过程保真度组合 `F_pro=(1+e^{−t/T1}+2e^{−t/T2})/4` ⇒ 两比特平均门错误率 `ε=1−(4·F_pro^A·F_pro^B+1)/5`（d=4）；candidate = **16×16 Liouvillian 超算子 RK4 时间推进**（F 序 vec 约定 `vec(AρB)=(Bᵀ⊗A)vec(ρ)`，`_liouvillian_2q`/`_two_qubit_pauli_basis`/`_rk4_linear`）。默认档 golden=**2.179276e-01** · rel 链 **1.44e-05→8.20e-07→4.89e-08→2.99e-09** · 判据 D 比值 **17.56/16.76/16.37×**（准 O(h⁴)）· 余量 **153.6×**（tol 1e-7）。
+- **B507 残余 ZZ 串扰诱导门错误率**（两比特门错误率）：golden = **`(4/5)sin²(ζt/2)`**；candidate = **4×4 矩阵传播子 RK4**（H_ZZ=(ζ/2)Z⊗Z · U(t)=exp(−iHt) 的 RK4 积分，`residual_zz_hamiltonian`/`_rk4_unitary`）。默认档 golden=**1.838791e-01** · rel 链 **3.57e-05→2.99e-06→2.10e-07→1.39e-08** · 比值 **11.93/14.24/15.18×** · 余量 **392.7×**（tol 1e-6）。
+
+### ② 同源体检（实 grep · 零占用）
+
+- 全仓核验**无既有锚占用**「两比特 CR 门错误率」或「残余 ZZ 错误率」。最近邻：**B10**（**单比特**门保真度 F）· **B26/B27**（χ、t_CZ 色散量·非错误率）· **S4**（∏fᵢ 纯算术）· **B502–B504**（J1 QEC 率积分）—— 与 B506/B507 **物理构型 / 被测标量 / 数值格式三者均异** ⇒ 计新锚（承 **B452↔B33** 先例）。
+- `cross_resonance.py`（D-74 有效 SW 模型 g_CR/t_CR/σ_zz）· `sc_coupler.py`（S2/S5 耦合器版图）**只算有效模型中间量、无错误率换算** ⇒ 零占用。
+
+### ③ 判据 D 标定档（承 B10 血案）
+
+- 生产档（t≪T1）残差沉噪声地板 ⇒ 判据 D 不可标定。B506/B507 默认档取**标定档**（t 与 T1 同量级 / ζt≈O(1)），使 RK4 截断误差浮出 1e-12 之上 ⇒ 残差严格单调、收敛阶与算法标称 O(h⁴) 一致。
+- `_TOL_BY_BID` 绝对口径按量级标定：B506 量级 O(1e-1) ⇒ tol **1e-7**；B507 量级 O(1e-1) ⇒ tol **1e-6**（首跑 1e-7 仅 39.3× 余量 < 100× 门槛 ⇒ 实测标定为 1e-6，余量 392.7×）。
+
+### ④ 物理正确性独立核对（scipy 3.14.3）
+
+- B507 golden 与 scipy `expm`（精确矩阵指数）**精确一致**（≤8.33e-17）；B506 golden 在 ident-qubit 极限（T1/T2→∞）**精确退化到 B10 公式**；两候选在 n=256 收敛 golden（9.77e-15 / 4.14e-14）。
+
+### ⑤ 接线（新增数值核 + 五处同登）
+
+- 新增 **`lda/lda_harness/_batch_j2_numeric.py`**（纯 numpy · 顶层 import · 三表 `_N_BY_BID`/`_GRID_BY_BID`/`_TOL_BY_BID` + `golden_b506`/`cand_b506`/`golden_b507`/`cand_b507` + lru_cache + `_CASES` + `__main__` 自检**全 PASS**）。
+- 五处同登：`benchmark_defs/part7.py`（DEFS + import + docstring）· `benchmarks.py`（`BENCHMARK_ORDER` 手改，`len(ORDER)==len(DEFS)==525`）· `golden.py`（`_GOLDEN_DISPATCH` + `_PHYSICAL_LAW` 集）· `_adapter_core.py`（`_get_j2_numeric` 双路兜底）· `_adapter_p4.py`（`b506_cr_gate_decoherence_cand`/`b507_residual_zz_error_cand`；L9 守卫：磁盘分片数恒 6，不新建 `_adapter_p7`）。
+- 计数七处同步：README（顶行 + 当前账本 + 题数 + 三分类）· CONTRIBUTING 顶块 · `run_webui_verification_ledger_smoke` docstring · `run_count_consistency_smoke`（docstring + B 计数 500→502 + max-B B505→B507）· `run_statistical_anchor_smoke`（docstring + `range(400,506)→range(400,508)` + check 名）· `run_benchmark_falsifiability_smoke`（`MIN_INDEPENDENT` 501→**503** + `PERTURB_SPEC` 加 B506@t / B507@zeta）。
+
+### ⑥ 常驻护栏
+
+- `run_j2_qpu_smoke.py` **由 15 判据扩至 21 判据**（新增 F1–F6：B506/B507 闭式⇄数值一致 + 判据 D 单调收敛 + 反自证桩 + 反向探针；tol/golden 读自 `BENCHMARK_DEFS` 不硬编码）；CI core **321 不变**（沿用 300.0s 超时）。
+
+### ⑦ 全量 CI 照妖镜：修一处**潜伏红**（v0.9.228 起）
+
+- 全量 CI core（321 smokes · 2h42m）**320 PASS / 1 FAIL** —— 唯一红 = **`run_webui_pm_render_path_smoke` W10b + W10-P1**（27/2）。**根因（非本版引入 · git 二分定位）**：README「当前版本」行自 **v0.9.228（`1731a01`）** 起把判据数写成 `` `run_j1_qec_smoke.py`（**19 判据**`` —— **全角 `（` 卡在反引号与 `**` 之间** ⇒ W10 正则（`` `run_x` **N 判据``）恒不匹配 ⇒ W10b（≥1 条可对照条目）**恒红**（`0dddfd7`/`fd4d838` 同族）。
+- **修法**：当前版本行改回**规范形** `` `run_j2_qpu_smoke` **21 判据** ``（脚本名不带 `.py`、反引号后仅空白）+ 把 `run_j2_qpu_smoke.py`（实测 **0.57 s / 21 判据** · 纯 numpy 零网络）**纳入 `_W10_EXTRA` 对照面** ⇒ W10 / W10b / W10-P1 三判据闭环恢复，实测 **29 PASS / 0 FAIL**（`p10=[True,True,True] t=run_j2_qpu_smoke.py`）。
+- 通则（承 IRONLAWS）：README 顶行声明的每个 `run_*` 判据数都必须在 `_W10_EXTRA` 内**且**写成 `` **N 判据** ``（反引号后仅空白）。
+
+### ⑧ 诚实边界
+
+- T1/T2/ζ/t 均为**设计示例量级**（非实测 PDK/非流片）；只证「闭式⇄数值」一致与物理桥自洽，**不作制造/性能宣称**、不报能效/TOPS。
+
+## v0.9.230（2026-10-13 · J2 超导 Transmon QPU 征程（物理比特层 L2）· M0+M1 复利闭环能力层落地 · **账本 523 不变（本批零净增锚 · 同源体检否决 B506/B508）** · CI core 320 → 321 · 端点 150 不变）
+
+**开 J2 征程**（蓝图 v1 · 承接 J1 QEC 收官）：把「transmon 物理参数 → 每门错误率 → 注入 J1 表面码 → 逻辑错误预算」的 **J1↔J2 复利闭环**建成可吃狗粮的能力层 + 常驻护栏。
+
+### ① 交付物（能力层 + 门禁）
+
+- **`lda/lda_qeda/physical_error_model.py`**（纯标准库）：单比特门退相干极限平均门保真度闭式 F=(3+2e^{−t/T2}+e^{−t/T1})/6 ⇄ **Bloch 向量 Lindblad 主方程 RK4** 数值对拍（方法学独立）；`dephasing_time_from_T2`（1/T2=1/(2T1)+1/Tφ 反解）；`depolarizing_parameter`（J1 注入口径 p_depol=2E）；`frequency_band_ok`（S 铁律① 频率限带守护，复用不重造）。
+- **`lda/lda_qeda/j2_to_j1_calibration.py`**（纯标准库 + 懒载 J1 解码器）：J2 物理错误率 → J1 逻辑错误率标度 p_L=A·(p/p_th)^((d+1)/2)「理想 vs 物理标定」对照 + `orders_below_threshold` + `j2_hard_target_met`（J1→J2 硬指标）+ `logical_error_rate_decoder`（注入 J1 端到端解码器路径）。
+- **`lda/run_j2_qpu_smoke.py`**（**15 判据**）入 CORE（+`_BUILTIN_TIMEOUT_OVERRIDE` 300.0s）：A 闭式⇄Lindblad RK4 · B T1/T2/Tφ 一致 · C 去极化口径 · D 频率限带 · E J1↔J2 闭环 · R 反向探针。
+
+### ② 证否记录（同源体检 · 本批关键）
+
+- 🔴 **B506/B508 不登记为独立锚**：宪章原定「单比特门错误率 闭式退相干极限 ⇄ 数值 Lindblad 主方程」，但既有账本锚 **B10**（`benchmark_defs/part1.py`「单量子比特门保真度 F（退相干极限）」，**v0.9.24 起已接入 Lindblad 候选** `lindblad_gate_f`）在被测标量 / 物理构型 / 数值格式**三者全同** ⇒ 属「只是换名」⇒ 按 `lda-anchor-wiring` §0 同源体检红线**否决**（宪章 §1.2「B10 无数值对拍」的前提已过时）。
+- 🔴 **B507（J1↔J2 校准）不登记为独立锚**：其 golden（阈值标度闭式）与 J1 账本锚 **B497** 同式（B497 = 反解距离 d\*、本桥 = 正算 p_L）；且 golden 与候选同属 J1 QEC 框架 ⇒ **本质是标定/一致性关系**，以常驻护栏承载，不伪造成「方法学独立锚」（避免虚假独立）。
+- ⇒ **J2 新锚应落既有锚未覆盖的物理量**：M2 两比特 CR 门错误率 / M3 色散读出分配错误率 + 残余 ZZ 串扰 / M4 拓扑连通性 vs 表面码。待确认后按 `lda-anchor-wiring` 落地。
+
+### ③ 坑
+
+- **J1 解码器子阈值逻辑错误率极低**（p=5e-3 ⇒ p_L~1e-4）⇒ MC 4000 shots 无法分辨（0 事件）⇒ 门禁 E4 改判「MC p_L **≤ 闭式标度上界**（标度式保守）」，而非「逼近」。
+- **无关机词**：本批不新建 `_adapter_p7`（L9 守卫：磁盘分片数恒 6）；不触发加锚流程（零净增锚）。
+
+### ④ 独立验证
+
+- 门禁 A1 闭式⇄RK4 现实档 rel **1.11e-16**；A2 RK4 残差链 **8.42e-07 → 4.85e-08 → 2.91e-09 → 1.78e-10 → 1.10e-11**（比值 ~16 ⇒ **O(h⁴)**）；E2 物理标定逻辑错误率随码距指数抑制 p_L(3)=2.80e-05 / p_L(5)=8.55e-07 / p_L(7)=2.61e-08。
+
+### ⑤ 反向测试
+
+- R1：p_phys 抬到阈值以上（0.02>p_th）⇒ 子阈值判据必红（p_L 饱和=1.0、orders<0）；R2：T1×1.5 扰动 ⇒ 门错误率 |ΔE|=1.39e-05 有可测响应。
+
+### ⑥ 常驻护栏
+
+- `run_j2_qpu_smoke.py` 入 `CORE_SMOKES`（CI core 320→321）+ 300.0s 超时；`run_ci_coverage_gate_smoke` 8/8 · `run_adapter_shard_layout_smoke` 13/13 · `run_count_consistency_smoke` 13 OK · `run_pyflakes_ratchet_smoke` 8/8（新文件零告警）· `run_three_class_consistency_smoke` 4/4 · `run_self_certified_lock_smoke` 4/4 · `run_maturity_baseline_smoke` PASS · `run_harness` 501/3/19=523 回路闭合 · `run_ecosystem_smoke` 5/5（快照==现算）。
+
+### ⑦ 诚实边界
+
+- T1/T2/t_gate/p_th/A 均为**设计示例量级**（非实测 PDK/非流片）；只证「闭式⇄数值」一致与物理桥自洽，**不作制造/性能宣称**、不报能效/TOPS。
+- 现实设计档（T1=80µs/T2=60µs/20ns）单比特门错误率 **1.53e-4**，阈值下 **1.51 数量级** ⇒ **未达**宪章「阈值下 2 数量级」硬指标（须更长 T1/T2 或更短门）；如实披露。
+
+### ⑧ 与 S1–S5 关系
+
+- 复用 S-branch 铁律①（频率限带）作守护，不重造；不碰 S 模块、不新增 S 判据。
+
 ## v0.9.227（2026-10-12 · 量子传感器芯片征程 QS-M3c · G5 量子传感 PDK 腔几何 —— 腔 QED 物理链 · **净增 3 道锚 B494–B496**（账本 511 → 514 · 严格独立 489 → 492 / 降级 3 / 自证桩 19 · 独立率 95.72% · CI core 318 → 319 · 端点 150 不变））
 
 **本档把 QS-M3 链④ Purcell 因子 F_P=4g²/(κγ₁) 的三个输入量（腔品质因子 Q / 有效模体积 V_eff / 单光子耦合 g）拆成「闭式 golden ⇔ 数值候选 方法学独立」的可证伪锚**（蓝图 §QS-M3 · 平台缺口 **G5 量子传感 PDK 腔几何**：QS-M3 定稿「未竟项」明列「腔的真实几何（光子晶体腔 / 微盘）未建模」）。

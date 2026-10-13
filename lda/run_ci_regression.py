@@ -1827,6 +1827,15 @@ CORE_SMOKES: List[str] = [
     #   不增账本锚（B497–B499 标量闭式锚由 harness 另判）。numpy 可用（解码器依赖）⇒ 入 core；
     #   timeout 300s 留足余量。CI core 319→320。
     "run_j1_qec_smoke.py",
+    # J2 超导 Transmon QPU 征程（物理比特层 L2）· M0/M1 落地配套：物理错误模型 + J1↔J2 复利闭环
+    #   能力门禁（非账本锚，能力验证）。覆盖 `lda_qeda.physical_error_model`（单比特门退相干极限
+    #   闭式 F=(3+2e^{−t/T2}+e^{−t/T1})/6 ⇄ Bloch 向量 Lindblad RK4 数值对拍 + T1/T2/Tφ 一致性 +
+    #   去极化参数口径 + S 铁律① 频率限带守护）+ `lda_qeda.j2_to_j1_calibration`（J2 物理错误率→
+    #   J1 逻辑错误率标定闭环 + 阈值下余量 + J1→J2 硬指标）+ R1/R2 反向探针。**15 判据**。
+    #   🔴 单比特门保真度已由既有账本锚 B10 全权覆盖（v0.9.24 已含 Lindblad 候选）⇒ 本批**不新增
+    #   账本锚**（同源体检：三者全同 = 只是换名）；净增价值为 J1↔J2 复利闭环桥。numpy 可用 ⇒ 入 core；
+    #   timeout 300s 留足余量。CI core 320→321。
+    "run_j2_qpu_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2870,6 +2879,10 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # J1 量子纠错征程（QEC）· 解码器能力门禁：MWPM↔UF 对拍 + 反向探针，纯 numpy + 标准库，
     # 实测 ~0.3 s ⇒ 300.0s 留足余量（B20 反向完备：CORE ⊆ 超时表）。
     "run_j1_qec_smoke.py": 300.0,
+    # J2 超导 Transmon QPU 征程（物理比特层 L2）· 物理错误模型 + J1↔J2 复利闭环门禁：闭式⇄Lindblad RK4
+    # 对拍 + 频率限带 + 标定闭环 + 反向探针，纯 numpy + 标准库，实测 ~1 s ⇒ 300.0s 留足余量
+    # （B20 反向完备：CORE ⊆ 超时表）。
+    "run_j2_qpu_smoke.py": 300.0,
 }
 
 

@@ -25,6 +25,9 @@ from ._adapter_core import (
     _get_batch_b47,
     _get_qs_m3c_numeric,
     _get_j1_numeric,
+    _get_j2_numeric,
+    _get_j2m3_numeric,
+    _get_j2m4_numeric,
 )
 
 from typing import (
@@ -1640,4 +1643,84 @@ def _b505_logical_area_trapz_cand(spec: VerificationSpec, oracle_value: Any) -> 
     return float(m.cand_b505(
         k=float(p.get("k", 0.01)),
         L=float(p.get("L", 100.0)),
+    ))
+
+
+@_register_candidate(
+    "b506_cr_gate_decoherence_cand",
+    "两比特 CR 门退相干错误率·16×16 Liouville 超算子（vec-F 序）RK4 传播 16 个 2q Pauli 基算子（n=16 步）"
+    "→ 过程保真度 F_pro=Σ_m tr(σ_m E(σ_m))/64 ⇒ ε=1−(4F_pro+1)/5 ↔ 张量 A+D 信道闭式 golden，方法学独立（Lindblad 数值积分 vs 解析闭式）")
+def _b506_cr_gate_decoherence_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B506 独立候选：两比特 CR 门退相干错误率（16×16 Liouvillian RK4）。
+
+    golden=张量 A+D 信道闭式（F_pro=(1+e^{−t/T1}+2e^{−t/T2})/4 ⇒ 2q 张量 ⇒ (4F_pro+1)/5）；
+    cand=RK4 数值积分 Liouville 超算子。残差=RK4 截断误差（O(h⁴)，实测比值 17.56/16.76/16.37）。
+    余量 153.6×；零商业依赖（numpy）。"""
+    m = _get_j2_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b506(
+        T1_A=float(p.get("T1_A", 10.0)),
+        T1_B=float(p.get("T1_B", 12.0)),
+        T2_A=float(p.get("T2_A", 8.0)),
+        T2_B=float(p.get("T2_B", 9.0)),
+        t=float(p.get("t", 2.0)),
+    ))
+
+
+@_register_candidate(
+    "b507_residual_zz_error_cand",
+    "残余 ZZ 诱导门错误率·4×4 复矩阵传播子 RK4 积分 dU/dt=−iH U（H=(ζ/2)Z⊗Z, U(0)=I₄, n=16 步）"
+    "⇒ F_pro=|tr(U)/4|² ⇒ ε=1−(4F_pro+1)/5 ↔ 闭式 (4/5)sin²(ζt/2) golden，方法学独立（矩阵 ODE 数值积分 vs 闭式）")
+def _b507_residual_zz_error_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B507 独立候选：残余 ZZ 诱导门错误率（4×4 矩阵传播子 RK4）。
+
+    golden=闭式 (4/5)sin²(ζt/2)（H=(ζ/2)Z⊗Z 严格演化）；cand=RK4 数值积分矩阵 ODE。
+    残差=RK4 截断误差（O(h⁴)，实测比值 11.93/14.24/15.18）。余量 392.7×；零商业依赖（numpy）。"""
+    m = _get_j2_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b507(
+        zeta=float(p.get("zeta", 0.5)),
+        t=float(p.get("t", 2.0)),
+    ))
+
+
+@_register_candidate(
+    "b508_fdm_mux_overlap_cand",
+    "FDM 多音读出相邻通道频谱重叠串扰比·sinh 换元 + 复合 Simpson 数值卷积"
+    "（∫L_iL_j/∫L_i²，两积分各 n=256 区间）↔ 闭式洛伦兹自相关 4γ²/(4γ²+δ²) golden，"
+    "方法学独立（数值卷积求积 vs 解析自相关）")
+def _b508_fdm_mux_overlap_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B508 独立候选：FDM 多音读出相邻通道频谱重叠串扰比（sinh 换元 + 复合 Simpson）。
+
+    golden=洛伦兹自相关闭式 X=4γ²/(4γ²+δ²)；cand=数值卷积求积（两积分同 n）。
+    残差=Simpson 截断误差（实测残差链 2.191e-02→2.302e-03→1.481e-05→4.253e-10，
+    比值 9.52/155.45/34825×，被积函数解析故快于标称 O(h⁴)，如实披露）。
+    余量 235.1×；零商业依赖（numpy）。"""
+    m = _get_j2m3_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b508(
+        gamma=float(p.get("gamma", 0.5)),
+        delta=float(p.get("delta", 1.2)),
+    ))
+
+
+@_register_candidate(
+    "b509_graph_algebraic_connectivity_cand",
+    "QPU 耦合图代数连通度 λ₂（Fiedler 值）·嵌套 Krylov 子空间 Rayleigh–Ritz 最小值"
+    "（对组合 Laplacian L=D−A 取确定性起始向量 v₀⊂1⊥，逐维扩张 Krylov 基 K_m 全重正交，"
+    "取 K_m 上最小 Ritz 值作 λ₂ 上界）↔ 谱定理闭式 2−2cos(π/max(rows,cols)) golden，"
+    "方法学独立（大规模稀疏特征值数值下界 vs Cartesian 积谱定理解析闭式）")
+def _b509_graph_algebraic_connectivity_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B509 独立候选：QPU 耦合图代数连通度 λ₂（嵌套 Krylov 子空间 Rayleigh–Ritz 最小值）。
+
+    golden=方阵耦合图（Cartesian 积 P_rows□P_cols）Laplacian 谱定理闭式 λ₂=2−2cos(π/max)；
+    cand=嵌套 Krylov 子空间最小 Ritz 值（min-max 原理 ⇒ 单调非增上界，恒 ≥ λ₂）。
+    残差=Krylov 极值收敛误差（实测残差链 m=4→4.626e-01 → 8→9.999e-02 → 16→1.082e-02
+    → 32→1.122e-10，比值 4.63/9.25/9.64e7×，低维段近似线性+末段超收敛 ⇒ 非均匀收敛，
+    如实披露不虚报「恰 O(hᵏ)」）。余量 891.4×；零商业依赖（numpy；零 RNG）。"""
+    m = _get_j2m4_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b509(
+        rows=int(p.get("rows", 10)),
+        cols=int(p.get("cols", 10)),
     ))

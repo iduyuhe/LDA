@@ -21,7 +21,11 @@
           B490（QS-M7 衍生：优化后磁场灵敏度 B_N,opt —— SQUID 噪声优化）
           B491（QS-M9 衍生：自由进动横向极化 P_x(t*) —— OPM/SERF 腿 C 时域信号）
           B492（QS-M9 衍生：碱金属饱和蒸气数密度 n(T) —— OPM 气室温度定标）
-          B493（QS-M9 衍生：泵浦光 Beer–Lambert 透过率 T(L) —— OPM 气室光路）。
+          B493（QS-M9 衍生：泵浦光 Beer–Lambert 透过率 T(L) —— OPM 气室光路）
+          B506（J2 超导 Transmon · M2 衍生：两比特 CR 门退相干错误率 —— 张量 A+D 信道闭式 ⇄ 16×16 Liouvillian RK4）
+          B507（J2 超导 Transmon · M2 衍生：残余 ZZ 诱导门错误率 —— 闭式 (4/5)sin²(ζt/2) ⇄ 矩阵传播子 RK4）。
+          B508（J2 超导 Transmon · M3 衍生：FDM 多音读出相邻通道频谱重叠串扰比 —— 闭式洛伦兹自相关 4γ²/(4γ²+δ²) ⇄ sinh 换元 + 复合 Simpson 数值卷积）。
+          B509（J2 超导 Transmon · M4 衍生：QPU 耦合图代数连通度 λ₂（Fiedler 值）—— 谱定理闭式 2−2cos(π/max(rows,cols)) ⇄ 嵌套 Krylov 子空间 Rayleigh–Ritz 最小值）。
 分类（诚实）：**B473 = 严格独立**（`candidate` 指向 `_batch_b39_numeric` 注册的
   数值误差传播链候选；实测 rel≈2.4e-5，非代数恒等）。
   **B478–B481 = 严格独立**（`candidate` 指向 `_batch_b43_numeric` 注册的
@@ -136,6 +140,20 @@ from .._batch_j1_numeric import (  # Batch J1 量子纠错征程 QEC · M0 阈�
     B504_DEFAULT_PARAMS,
     golden_b505,
     B505_DEFAULT_PARAMS,
+)
+from .._batch_j2_numeric import (  # Batch J2 超导 Transmon 征程 · M2 两比特门层（CR 门退相干错误率 / 残余 ZZ 诱导错误率）
+    golden_b506,
+    B506_DEFAULT_PARAMS,
+    golden_b507,
+    B507_DEFAULT_PARAMS,
+)
+from .._batch_j2m3_numeric import (  # Batch J2 超导 Transmon 征程 · M3 色散读出链 + 串扰（FDM 通道频谱重叠串扰比）
+    golden_b508,
+    B508_DEFAULT_PARAMS,
+)
+from .._batch_j2m4_numeric import (  # Batch J2 超导 Transmon 征程 · M4 QPU 误差预算集成 + 拓扑对接（耦合图代数连通度 λ₂）
+    golden_b509,
+    B509_DEFAULT_PARAMS,
 )
 DEFS = {
     "B473": {
@@ -500,5 +518,49 @@ DEFS = {
         "candidate": "b505_logical_area_trapz_cand",
         "candidate_desc": "一维梯形求积（n=1024 点，不含初等闭式）⇒ ∫₀ᴸ(1−e^{−kx})dx。方法学独立：golden=初等闭式，cand=数值积分",
         "note": "golden = 量子纠错征程 J1（M4 端到端收官）的**累计逻辑错误面积**闭式：沿码链长 L 的累积错误 ∫₀ᴸ(1−e^{−kx})dx=L−(1−e^{−kL})/k。🔴 **物理意义**：把逻辑错误在物理链长上的累积量化为「面积」，是端到端规模标度的几何判据（逻辑错误面积须低于裸标度界）。本锚把它钉进账本（承 J1 蓝图 M4 端到端收官 / 累计逻辑错误面积）。candidate=**一维梯形求积**（方法学独立），实测默认档(k=0.01, L=100 ⇒ golden≈3.679e+1) **rel=6.828e-08**（abs 2.512e-6 · **tol=1e-2**〔**绝对口径·对 |golden|≈3.679e+1 即相对 6.83e-8**〕⇒ **3.98e3×** 余量；残差链 4.370e-6 → 1.092e-6 → 2.731e-7 → 6.828e-8，**比值 4.00×** ⇒ **O(h²)**（指数被积函数梯形收敛），严格单调、残差 >0 ⇒ **非**代数恒等）。🔴 **与 B504 不同物理量**：B504 是时间累计失效概率；本锚是空间（链长）累计错误面积 ⇒ 物理对象不同 ⇒ 记新锚。⚠️ **诚实边界**：k/L 为**设计示例量级**（逻辑错误沿链衰减的典型尺度），**非实测 PDK**；本锚只证明「初等闭式 ⇄ 一维梯形求积」数值一致这一数学事实，**不得作制造/性能宣称**。零商业依赖（纯 math）。",
+    },
+    "B506": {
+        "title": "两比特 CR 门退相干错误率 ε=1−(4·F_pro^A·F_pro^B+1)/5（超导 Transmon J2 · M2 两比特门层）：张量 A+D 信道闭式 golden vs 16×16 Liouvillian RK4 候选 · 无量纲",
+        "metric": "cr_gate_decoherence_error",
+        "oracle": "closed_form(ε=1−(4·F_pro+1)/5, F_pro=F_pro^A·F_pro^B, F_proⁱ=(1+e^{−t/T1ⁱ}+2e^{−t/T2ⁱ})/4) + 16×16 Liouvillian RK4 独立_cross_check",
+        "tol": 1e-7,
+        "default_params": dict(B506_DEFAULT_PARAMS),
+        "golden_fn": golden_b506,
+        "candidate": "b506_cr_gate_decoherence_cand",
+        "candidate_desc": "16×16 Liouville 超算子（vec-F 序）RK4 传播 16 个 2q Pauli 基算子 ⇒ 过程保真度 F_pro=Σ_m tr(σ_m E(σ_m))/64 ⇒ ε=1−(4F_pro+1)/5。方法学独立：golden=张量 A+D 信道解析闭式，cand=Lindblad 超算子数值积分（n=16 步）",
+        "note": "golden = 超导 Transmon 征程 J2（M2 两比特门层）的**两比特 CR（cross-resonance）门退相干错误率**闭式：门执行期间两比特各经受幅度阻尼（T1）+ 纯退相（Tφ，1/T2=1/2T1+1/Tφ）⇒ 单比特 A+D 信道过程保真度 F_proⁱ=(1+e^{−t/T1ⁱ}+2e^{−t/T2ⁱ})/4（与 B10 的 (3+2e^{−t/T2}+e^{−t/T1})/6 同源换算 F_avg=(2F_pro+1)/3）；2q 张量信道 F_pro=F_pro^A·F_pro^B ⇒ 平均门保真度 (d·F_pro+1)/(d+1), d=4。🔴 **物理意义**：CR 门是固定频率 transmon 的主流 2q 门（控制比特微波驱动经交换耦合 J 生成有效 ZX，门时间 t_CR=π/|g_CR|）；退相干是 CR 门错误首要项。本锚把**器件物理层（T1/T2）→ 2q 门错误率**钉进账本。candidate=**16×16 Liouville 超算子（vec-F 序）RK4**（方法学独立），实测默认档(T1_A=10, T1_B=12, T2_A=8, T2_B=9, t=2 ⇒ golden≈2.179e-1) **rel=2.988e-09**（abs 6.511e-10 · **tol=1e-7**〔绝对口径〕⇒ **153.6×** 余量；|golden|/tol=2.18e6；残差链 1.439e-05 → 8.198e-07 → 4.892e-08 → 2.988e-09，**比值 17.56/16.76/16.37×** ⇒ **O(h⁴)**（RK4 标称阶），严格单调、残差 >0 ⇒ **非**代数恒等）。🔴 **同源体检**：与 **B10**（单量子比特门保真度）**标量/构型/格式三者均不同**（1q 门保真 F vs 2q CR 门错误率 ε；单比特信道 vs 两比特 CR 门张量信道；4×4 vs 16×16 超算子）⇒ 按 B452↔B33 先例计新锚（宪章原 B508「单比特门错误率」与 B10 三者全同 ⇒ 已否决，见 `docs/LDA_J2_..._2026-10-13.md` §7.1）；与 B26/B27（χ / t_CZ，门时间非错误率）、S4（∏fᵢ 纯算术）、B502–B504（J1 QEC 率积分）**均不同源**。⚠️ **诚实边界**：默认档为**退相干标定档**（t 与 T1/T2 同量级 ⇒ 截断误差可标定；典型生产门 t_CR≪T1 ⇒ 残差沉噪声地板、判据 D 不可标定）。T1/T2/t 为**设计示例量级**（非实测 PDK）；本锚只证「张量信道闭式 ⇄ Lindblad 数值」一致这一数学事实，**不得作制造/性能宣称**（未建模泄漏/ZZ/驱动误差——另由 B507 与 M3/M4 覆盖）。零商业依赖（纯 numpy）。",
+    },
+    "B507": {
+        "title": "残余 ZZ 诱导门错误率 ε=(4/5)·sin²(ζt/2)（超导 Transmon J2 · M2 两比特门层）：闭式 golden vs 矩阵传播子 RK4 候选 · 无量纲",
+        "metric": "residual_zz_error",
+        "oracle": "closed_form(ε=(4/5)sin²(ζt/2)) + 4×4 复矩阵传播子 RK4 dU/dt=−iH U 独立_cross_check",
+        "tol": 1e-6,
+        "default_params": dict(B507_DEFAULT_PARAMS),
+        "golden_fn": golden_b507,
+        "candidate": "b507_residual_zz_error_cand",
+        "candidate_desc": "4×4 复矩阵传播子 RK4 积分 dU/dt=−iH U（H=(ζ/2)Z⊗Z, U(0)=I₄, n=16 步）⇒ F_pro=|tr(U)/4|² ⇒ ε=1−(4F_pro+1)/5。方法学独立：golden=闭式 cos²，cand=矩阵 ODE 数值积分",
+        "note": "golden = 超导 Transmon 征程 J2（M2 两比特门层）的**残余 ZZ 诱导门错误率**闭式：固定频率 transmon 对存在静态残余 ZZ 角耦合 ζ（交换耦合二阶虚交换），门/idle 期间累积条件相位 ⇒ H=(ζ/2)·Z⊗Z 严格演化 U=e^{−iHt}，本征值 {e^{∓iζt/2}}×2 ⇒ F_pro=|tr(U)/4|²=cos²(ζt/2) ⇒ F_avg=(4F_pro+1)/5 ⇒ ε=1−F_avg=(4/5)sin²(ζt/2)（小角极限 ε→(1/5)(ζt)²）。🔴 **物理意义**：残余 ZZ 是固定频率 transmon 相干错误主要来源（crosstalk 使「不操作」的邻居比特也积累 ZZ 相位）；本锚把它钉进账本。candidate=**4×4 复矩阵传播子 RK4**（方法学独立），实测默认档(ζ=0.5 rad/µs, t=2 µs ⇒ golden≈1.839e-1) **rel=1.385e-08**（abs 2.547e-09 · **tol=1e-6**〔绝对口径〕⇒ **392.7×** 余量；|golden|/tol=1.84e5；残差链 3.571e-05 → 2.995e-06 → 2.103e-07 → 1.385e-08，**比值 11.93/14.24/15.18×** ⇒ **O(h⁴)**（RK4 标称阶），严格单调、残差 >0 ⇒ **非**代数恒等）。🔴 **同源体检**：与 B26/B27（χ / t_CZ，色散量非 ZZ 错误率）、B506（退相干信道 vs 相干 ZZ 相位，**不同算子**）、B502–B504（exp(−∫率) 一维积分 vs 4×4 矩阵演化）**均不同源**；实 grep 核验 `residual ZZ|残余 ZZ|zz_error` 在 BENCHMARK_DEFS/lda_solver 零占用。⚠️ **诚实边界**：默认档为 **ZZ 标定档**（ζ·t≈O(1) ⇒ 相位演化误差可标定；典型 ζ~0.1–1 MHz、t~0.1–0.4 µs ⇒ ζ·t~O(0.1) 时错误更小、残差同步变小）。ζ/t 为**设计示例量级**（非实测 PDK）；本锚只证「ZZ 相位闭式 ⇄ 矩阵演化数值」一致这一数学事实，**不得作制造/性能宣称**（未建模 echoed-CR 抵消、ζ 的时间噪声）。零商业依赖（纯 numpy）。",
+    },
+    "B508": {
+        "title": "FDM 多音读出相邻通道频谱重叠串扰比 X=4γ²/(4γ²+δ²)（超导 Transmon J2 · M3 色散读出链 + 串扰）：闭式 golden vs sinh 换元+复合 Simpson 数值卷积候选 · 无量纲",
+        "metric": "fdm_mux_overlap_ratio",
+        "oracle": "closed_form(X=4γ²/(4γ²+δ²)=1/(1+(δ/(2γ))²)，洛伦兹自相关) + sinh 换元 + 复合 Simpson 数值卷积独立_cross_check",
+        "tol": 1e-7,
+        "default_params": dict(B508_DEFAULT_PARAMS),
+        "golden_fn": golden_b508,
+        "candidate": "b508_fdm_mux_overlap_cand",
+        "candidate_desc": "sinh 换元（f=γ(a+sinh u), a=δ/(2γ)）+ 复合 Simpson 数值卷积：∫L_iL_j / ∫L_i²，两积分各 n=256 区间。方法学独立：golden=洛伦兹自相关解析闭式，cand=数值卷积求积",
+        "note": "golden = 超导 Transmon 征程 J2（M3 色散读出链 + 串扰）的 **FDM 多音读出相邻通道频谱重叠串扰比**闭式：FDM 把 N 个 λ/4 读出谐振器挂同一 feedline，每通道线型是洛伦兹 L(f)=(γ/π)/((f−f_c)²+γ²)（γ=κ/2 半高半宽，κ 为读出线宽）。相邻通道间隔 δ 时归一化频谱重叠（串扰比）X=∫L_iL_j df/∫L_i² df；由 FT[L]=e^{−2πγ|t|} ⇒ ∫L_iL_j=2γ/(π(4γ²+δ²))、∫L²=1/(2πγ) ⇒ **X=4γ²/(4γ²+δ²)=1/(1+(δ/(2γ))²)**（洛伦兹自相关，**精确闭式、非截断近似**）。🔴 **物理意义**：X 是 mux 频率规划的**物理判据**——给定串扰容限 X_tol 的最小通道间隔 Δf_min=2γ√(1/X_tol−1)、带宽内通道数 N_max=⌊B/Δf_min⌋（能力层 `lda_qeda/j2_readout_mux.py`）。candidate=**sinh 换元 + 复合 Simpson 数值卷积**（方法学独立；换元把 1/f² 慢衰减尾部压成 e^{−3|u|}，避免尾部截断主导残差 —— B-11 族 D 血案解法）。实测默认档(γ=0.5 MHz, δ=1.2 MHz ⇒ golden=4.098360e-1)：残差链 n=32→2.191e-02 → 64→2.302e-03 → 128→1.481e-05 → **256→4.253e-10**（**tol=1e-7**〔绝对口径〕⇒ **235.1×** 余量；|golden|/tol=4.10e6），**严格单调**、残差 >0 ⇒ **非**代数恒等；实测比值 **9.52/155.45/34825×**（被积函数解析 ⇒ 收敛快于标称 O(h⁴)，**如实披露不虚报「恰 O(h⁴)」**）。🔴 **同源体检（实 grep 零占用）**：宪章原定 M3 两候选**均被否决** —— ①宪章 B511「读出分配错误率（χ/κ/SNR ⇄ 数值二态分类）」被既有 **B30**（读出保真度 F：SNR→erfc 误判链 ⇄ `readout_fidelity_quad` 高斯重叠数值积分=二态分类）**三者全同** ⇒ 只是换名；②宪章 B512「杂散 ZZ 串扰错误预算（σ_zz ⇄ 数值）」被本征程 **B507**（残余 ZZ 诱导错误率 ⇄ 矩阵传播子 RK4）占用。本锚落在 M3 中唯一未覆盖的连续量（FDM 通道间频谱重叠）：与 **B459**（洛伦兹**幅度斜率极值** / 中心差分）、**B197·B199**（Voigt **线心值** / sinh 换元单积分）、**B30**（**误判概率**，含 erfc/SNR/T1 权重）**标量·构型·格式三者均异** ⇒ 计新锚（承 B452↔B33 先例）。⚠️ **诚实边界**：γ/δ 为**设计示例量级**（非实测 PDK/非流片）；本锚只证「洛伦兹自相关闭式 ⇄ 数值卷积求积」一致这一数学事实 + mux 规划物理链自洽，**不得作制造/性能宣称**（未建模 feedline 阻抗失配、非线性 Kerr 频移、tone 间互调）。零商业依赖（纯 numpy）。",
+    },
+    "B509": {
+        "title": "QPU 耦合图代数连通度 λ₂（Fiedler 值）（超导 Transmon J2 · M4 QPU 误差预算集成 + 拓扑对接）：谱定理闭式 golden vs 嵌套 Krylov 子空间 Rayleigh–Ritz 候选 · 无量纲",
+        "metric": "qpu_graph_algebraic_connectivity",
+        "oracle": "closed_form(λ₂=2−2·cos(π/max(rows,cols))，Cartesian 积 P_rows□P_cols 的 Laplacian Kronecker 和) + 嵌套 Krylov 子空间 Rayleigh–Ritz 最小值独立_cross_check",
+        "tol": 1e-7,
+        "default_params": dict(B509_DEFAULT_PARAMS),
+        "golden_fn": golden_b509,
+        "candidate": "b509_graph_algebraic_connectivity_cand",
+        "candidate_desc": "嵌套 Krylov 子空间 Rayleigh–Ritz 最小值：对组合 Laplacian L=D−A（方阵最近邻耦合图）取确定性起始向量 v₀⊂1⊥，逐维扩张 Krylov 基 K_m=L^(m−1)v₀（全重正交防基病态），在 K_m 上求最小 Ritz 值作 λ₂ 上界。方法学独立：golden=Cartesian 积谱定理闭式，cand=大规模稀疏特征值数值下界估计（min-max 原理）",
+        "note": "golden = 超导 Transmon 征程 J2（M4 QPU 误差预算集成 + 拓扑对接）的 **QPU 耦合图代数连通度 λ₂（Fiedler 值）**闭式：qubit 耦合图（heavy-hex / 方阵，最近邻连接）的组合 Laplacian L=D−A 的第二小特征值 λ₂ 度量图的「连通紧密度」，是 QEC 局部解码（表面码 2D 最近邻匹配 / Union-Find / MWPM）可行性的**谱判据**。方阵耦合图 = Cartesian 积 P_rows □ P_cols ⇒ Laplacian 谱 = 因子谱的 **Kronecker 和** ⇒ **λ₂ = 2 − 2·cos(π / max(rows, cols))**（精确闭式、**非截断近似**；实测与稠密 `eigvalsh` 差 ≤ 3.84e-15）。🔴 **物理意义**：λ₂ 越小 ⇒ 图越「瓶颈化」⇒ 局部割能力差；配合 Cheeger 不等式 λ₂/2 ≤ h(G) ≤ √(2λ₂) 把谱隙与等周数 h(G)（局部割能力）钉在一起，给出表面码 2D 局部匹配可行性的物理门槛（能力层 `lda_qeda/topology_qec_bridge.py`：方阵度≥4⇒DIRECT、heavy-hex 度3⇒ADAPTED、度<3⇒FAIL）。candidate=**嵌套 Krylov 子空间 Rayleigh–Ritz 最小值**（方法学独立；min-max 原理下嵌套子空间 K_m⊂K_{m+1}（⊂1⊥）上最小 Ritz 值**单调非增**且恒 ≥ λ₂ ⇒ 残差单调降；🔴 必须**全重正交**防基病态 + **m<N** 防常数向量泄漏。实测默认档(rows=10, cols=10 ⇒ N=100, **golden=9.788696740969e-02**)：残差链 m=4→**4.626e-01** → 8→**9.999e-02** → 16→**1.082e-02** → **32→1.122e-10**（**tol=1e-7**〔绝对口径〕⇒ **891.4×** 余量；|golden|/tol=9.789e5），**严格单调**、残差 >0 ⇒ **非**代数恒等；实测比值 **4.63/9.25/9.64e7×**（**动态范围 4.1e9×**）。🔴 **诚实边界（不虚报收敛阶）**：Krylov 极值收敛在**低维段近似线性、末段超收敛**（m 从 16→32 残差骤降 9.6e7×），**非等比收敛** ⇒ 如实披露「非均匀收敛」，**不虚报「恰 O(hᵏ)」**。🔴 **同源体检（实 grep 零占用）**：宪章原定 M4 两候选**均被否决** —— ①宪章 B513「拓扑连通性 vs 表面码需求（heavy-hex 度3 / 方阵度4 ⇄ 表面码最近邻判据）」的「连通性」是**布尔/整数**量（度是整数）、残差恒沉地板 ⇒ 属**不可锚**（同 S1–S6 纯算术 / B17 定义式）⇒ **改靶到其连续化**：同一「连通性」概念的**谱形式 λ₂**；②宪章 B514「QPU 总错误率 ≤ 阈值余量（闭式预算 ⇄ 数值）」被完全占用 —— ∏/Σ 算术级联与既有 **S4**（∏fᵢ 乘法级联保真预算，`s4_fidelity_budget`）同源、∫率 dt 数值路线与 J1 锚 **B502/B503/B504/B505**（exp(−∫率) / 1−exp(−∫率)）同原子族 ⇒ 否决。本锚落在 M4 中唯一未被覆盖的**连续**物理量（耦合图谱隙）：与 **B10/B506/B507**（门错误率 ⇄ Lindblad/矩阵 RK4）**标量·构型·格式三者均异**；实 grep 核验 `fiedler|algebraic_connect|laplacian|lanczos|krylov|power_iter|eigsh|谱隙|spectral_gap|graph_spectr` 在**锚定义**内零占用（part2 2D 方势阱注释的 Laplacian=量子阱本征、`_batch_b15/b19` 的 Laplacian 验调和、`_batch_b9/b22`/`_adapter_p1` 的 eigsh 求**物理本征值** ⇒ 标量均不同）⇒ 计新锚（承 B452↔B33 先例）。⚠️ **诚实边界**：rows/cols 为**设计示例量级**（非实测 PDK/非流片）；本锚只证「谱定理闭式 ⇄ Krylov 数值下界」一致这一数学事实 + 拓扑↔QEC 物理链自洽，**不得作制造/性能宣称**。零商业依赖（纯 numpy；candidate 零 RNG——确定性起始向量）。",
     },
 }

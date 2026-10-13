@@ -190,12 +190,22 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {"run_ci_gate_contract_s
 #:   直接相关且**便宜**的门禁 = `run_qs_m7_smoke`（实测 **~5 s** / **28 判据**，
 #:   纯 numpy + lazy import，零网络零子进程）⇒ 纳对照面，令本版 README 顶行声明的
 #:   28 判据由机器守（非手写）。
+#: 🔴 v0.9.231：本版真改动 = J2 M2（两比特 CR 门层 · B506/B507 净增 2 锚）。
+#:   直接相关且**便宜**的门禁 = `run_j2_qpu_smoke`（实测 **~0.6 s** / **21 判据**，
+#:   纯 numpy + lazy import lda_harness，零网络零子进程）⇒ 纳对照面，令本版 README
+#:   顶行声明的 21 判据由机器守（非手写）。
+#:   🔴 **同时修一处**潜伏**红**（v0.9.228 起）：README「当前版本」行（v0.9.228/229/230）
+#:   把判据数写成 `` `run_j1_qec_smoke.py`（**19 判据**`` —— 全角 `（` 卡在反引号与 `**`
+#:   之间 ⇒ 正则不匹配 ⇒ W10b（≥1 条可对照条目）**恒红**。此处把当前版本行改回
+#:   `` `run_j2_qpu_smoke` **21 判据** `` 规范形（脚本名不带 `.py`、反引号后仅空白），
+#:   并把它纳入对照面 ⇒ W10/W10b/W10-P1 三判据闭环恢复。
 _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py",
               "run_sensor_panel_smoke.py", "run_webui_entry_smoke.py",
               "run_count_consistency_smoke.py", "run_ps_m1_smoke.py",
               "run_qs_m3b_smoke.py", "run_qs_m4_smoke.py", "run_qs_m5_smoke.py",
               "run_qs_m6_smoke.py", "run_qs_m7_smoke.py",
-              "run_qs_m9_smoke.py", "run_qs_m3c_smoke.py")
+              "run_qs_m9_smoke.py", "run_qs_m3c_smoke.py",
+              "run_j2_qpu_smoke.py")
 
 
 def _declared_judge_counts(text):

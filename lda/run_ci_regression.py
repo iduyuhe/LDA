@@ -1852,6 +1852,48 @@ CORE_SMOKES: List[str] = [
     #   `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面，令 README 顶行判据数机器守）。
     #   不增账本锚（纯 WebUI 落地）；CI core 321→322。
     "run_webui_j2_render_path_smoke.py",
+    # J3 量子测控与读出征程（Layer 3 测控闭环层 · 缺口 G-CTRL*）· M0/M1 落地配套：
+    #   时域驱动脉冲 + DRAG 泄漏抑制 + 测控闭环能力门禁（**净增账本锚 B510/B511**）。
+    #   覆盖 A 🔴 B510 广义 Rabi 时域布居（RWA 常矩阵**精确解析闭式**
+    #   (Ω²/Ω_R²)sin²(Ω_R t/2) ⇄ 时域 TDSE 四阶 RK4）+ B 🔴 B511 三能级 transmon 驱动泄漏布居
+    #   （特征多项式 λ³−αλ²−(3Ω²/4)λ+αΩ²/4=0 的 **depressed-cubic 三角法精确谱闭式** ⇄ 时域 RK4）
+    #   （各含：DEFS tol 内且残差 >0 非恒等 · 判据 D 残差随步数严格单调↓ O(h⁴) 粗端 >1e-12 ·
+    #   反自证桩 · 反向探针 · 防回退候选键）+ C 三能力层常驻自检（`pulse_library` /
+    #   `qubit_dynamics` / `control_closed_loop`）+ D 🔴 **能力层↔账本锚同物理律**
+    #   （rabi_population ≡ B510 · qutrit_leakage ≡ B511）+ **测控闭环可用性**
+    #   （`control_loop_report()` 默认 ACCEPT ∧ 反向 SNR⇒REJECT ∧ **捕获范围守卫**：θ₀>π 显式 diverged
+    #   不静默溢出）+ E 🔴 跨模块口径同源（读出误判 ½erfc(SNR/√2) ≡ D-47 `readout_fidelity.eps` 逐位）
+    #   + tol 三表一致 + 零量子 SDK 机械核。**21 判据**。numpy 可用 ⇒ 入 core；
+    #   timeout 默认 300s 留足余量（实测 ~14s）。CI core 322→323。
+    "run_j3_ctrl_smoke.py",
+    # ---- v0.9.236（J3 征程 M2+M3+M4 收官 + WebUI J3 面板）----
+    #   `run_webui_j3_render_path_smoke.py`：J3 案例卡渲染路径门禁（前端 renderJ3 取值路径
+    #   存在性 + 反向完备 C1/C2 + 跨源逐值对拍 D1–D7 + 判据数自洽 E1 + 红线 F1–F7 + 突变探针 G1–G11）。
+    #   与 `run_webui_j2_render_path_smoke.py` 并列（同范式）；numpy 可用 ⇒ 入 core；
+    #   timeout 默认 300s 留足余量（实测 ~20s，含实跑 run_j3_ctrl_smoke 子模块）。CI core 323→324。
+    "run_webui_j3_render_path_smoke.py",
+    # ---- v0.9.237（J4 量子传感系统集成征程 · M0 多参数传感）----
+    # J4 量子传感系统集成征程（Layer 4 传感系统 · 缺口 G-QSYS*）· M0 落地配套：
+    #   多参数 NV 传感的交叉灵敏度解耦能力门禁（**净增账本锚 B515**）。覆盖
+    #   A 🔴 B515 多参数解耦温度分量 τ̂（4×4 灵敏度方程 S·x=b 的 **Cramer 闭式解析反演**
+    #   【行列式按第一行 Laplace 展开 → 3×3 余子式手写展开】⇄ **Landweber 迭代解耦**
+    #   【固定最优步长 τ*=2/(λ_min+λ_max) 的梯度下降最小二乘】）—— DEFS tol 内且残差 >0
+    #   非恒等 · 判据 D 残差随迭代步数严格单调↓（**几何收敛**：等差扫描格 ⇒ 比值恒定
+    #   ~36.8 = ρ^{−64}，粗端 >1e-12 显著放大）· 反自证桩（coupling 扰动有响应）·
+    #   **反向探针用离散参数 k**（coupling 扰动会同时改 golden 与候选、残差仍 <tol ⇒
+    #   物理参数扰动不能证明可证伪；只有收敛未达标的粗档 k=64 才使残差浮出 tol 之上）
+    #   · 防回退候选键 + B 能力层 `qs_j4_multiparam` 常驻自检 + C 🔴 **能力层↔账本锚同物理律**
+    #   （`_C` ≡ `_C_MP` 逐位 · Cramer 解 ≡ golden 逐位 · Landweber ≡ 候选逐位）
+    #   + D 三表/默认档一致（tol ≡ DEFS · 默认档 = 扫描格末端）+ E 零量子 SDK 机械核。
+    #   **12 判据**。numpy 可用 ⇒ 入 core；timeout 默认 300s 留足余量（实测 ~0.6s）。
+    #   CI core 324→325。
+    "run_j4_multiparam_smoke.py",
+    # J4 案例卡渲染路径门禁（v0.9.237 · J4 征程 M4 收官配套）：
+    #   A 前端接线 3 + B 取值路径 1 + C 反向完备 1 + D 跨源逐值对拍 4 + E 判据数自洽 1
+    #   + F 红线 3 + G 突变探针 4。**17 判据**（含实跑 `run_j4_multiparam_smoke` 子模块 1 次
+    #   做判据数自洽 + 跨源对拍 `qs_j4_*` 四模块与账本锚 B518 现算值）。
+    #   numpy 可用 ⇒ 入 core；timeout 默认 300s 留足余量（实测 ~1.2s）。CI core 325→326。
+    "run_webui_j4_render_path_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2828,14 +2870,35 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   ≈3.8~4.5×」抬到 **280s** = **4.43×**（**只抬该项耗时上限 · 绝不抬 ratchet**）。
     # 🔴 v0.9.234：PM 门禁本版新增 J2 对照面（`_W10_EXTRA` 纳
     #   `run_webui_j2_render_path_smoke.py` ⇒ 宿主须**实跑该门禁子进程**做跨源核对）
-    #   ⇒ 实测上界 87.5s → **95.03s**（+8.6%），原 280s 掉到 **2.946×**（**B9 目标棘轮红** ·
-    #   跌破 3× 档）。按「一次给足 ≈3.8~4.5×」抬到 **380s** = **4.00×**
+    #   ⇒ 实测上界 87.5s → **95.03s** →（v0.9.236 `_W10_EXTRA` 增纳 `run_webui_j3_render_path_smoke.py`
+    #   （17.9s）+ `run_j3_ctrl_smoke.py`（17.6s）⇒ 对照面实跑更重）→ **133.1s**；
+    #   原 380s 掉到 **2.855×**（**B9 目标棘轮红** · 跌破 3× 档）。
+    #   按「一次给足 ≈3.8~4.5×」抬到 **520s** = **3.91×**
     #   （**只抬该项耗时上限 · 绝不抬 ratchet**）。
-    "run_webui_pm_render_path_smoke.py": 380.0,
+    "run_webui_pm_render_path_smoke.py": 520.0,
     # J2 案例卡 WebUI 门禁（取值路径 + 反向完备 + **跨源一致性** + gate 机械对照）：
     #   53 判据（含 19 探针）· 实测上界 ~6s（内含 `run_j2_qpu_smoke` 子进程实跑 1 次 +
     #   3 个能力层模块 `run_selfchecks` 实跑 + λ₂ Krylov 数值对拍）⇒ 预算 300s 留足余量。
     "run_webui_j2_render_path_smoke.py": 300.0,
+    # J3 测控征程 M0/M1 门禁（两锚 + 三能力层 + 测控闭环 + 跨模块口径）：21 判据（含 9 探针）
+    #   · 实测上界 **12.89s**（v0.9.235 首次全量 CI 实测）⇒ 预算 300s = **23.3×**。
+    #   🔴 为何必须显式登记（而不是"走默认 300s 也行"）：`run_timeout_budget_ratchet_smoke`
+    #   的 **B20 覆盖反向完备**要求 `CORE_SMOKES` 每项都在本表内，否则判「盲区」必红
+    #   （v0.9.235 首跑全量 CI 当场抓出：盲区 1 项 = `run_j3_ctrl_smoke.py`）。
+    "run_j3_ctrl_smoke.py": 300.0,
+    # J3 案例卡渲染路径门禁（v0.9.236 · J3 征程 M2+M3+M4 收官 + WebUI J3 面板）：
+    #   A–G 判据（含实跑 `run_j3_ctrl_smoke` 子模块 1 次做判据数自洽 + 跨源逐值对拍）。
+    #   timeout 默认 300s 留足余量（实测 ~20s）。
+    "run_webui_j3_render_path_smoke.py": 300.0,
+    # J4 传感系统集成征程 M0 门禁（B515 多参数解耦 + 能力层 + 跨模块同源 + 三表一致）：
+    #   12 判据 · 实测上界 **~0.6s** ⇒ 预算 300s = **500×**。
+    #   🔴 必须显式登记（`run_timeout_budget_ratchet_smoke` 的 B20 覆盖反向完备要求
+    #   `CORE_SMOKES` 每项都在本表内，否则判「盲区」必红 —— v0.9.235/236 两次当场抓出）。
+    "run_j4_multiparam_smoke.py": 300.0,
+    # J4 案例卡渲染路径门禁（v0.9.237 · J4 征程 M4 收官配套）：
+    #   A–G 判据（含实跑 `run_j4_multiparam_smoke` 子模块 1 次做判据数自洽 + 跨源逐值对拍）。
+    #   timeout 默认 300s 留足余量（实测 ~1.2s）。
+    "run_webui_j4_render_path_smoke.py": 300.0,
     # CI 门禁自身契约（棘轮时序 + 退出码契约 + cwd/模板/注释数字守卫）· 受控 fake 驱动，实测上界 <5s
     "run_ci_gate_contract_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）

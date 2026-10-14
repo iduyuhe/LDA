@@ -1,5 +1,453 @@
 # Changelog
 
+## v0.9.237（2026-10-14 · **J4 量子传感系统集成征程 · M0–M4 全档收官**（Layer 4 传感系统 · 缺口 G-QSYS*）· **净增 2 锚 B515/B518** · 账本 532 → 534 · CI core 324 → 326 · 端点 152 → 153）
+
+承量子赛道蓝图 v1（J1 QEC → J2 Transmon → J3 测控 → **J4 传感系统**）与 J4 立项章程
+（`docs/LDA_J4_量子传感系统集成_可行性评估_架构定义_蓝图补丁_2026-10-14.md` §3 建议首发 M0），
+把 **QS 器件征程（M0–M9 + M3c，B473–B496）刻意留下的「器件 → 系统」缺口**开出第一刀。
+
+### 一、净增锚 B515（代码三件 + 登记一件 + 陈述七处 · 严格独立）
+
+**B515 多参数 NV 交叉灵敏度解耦温度分量 τ̂**
+
+- **问题背景**：QS 三腿（NV/SQUID/OPM）全部只回答「**单参数**（B 场）多少」；而真实 NV 的
+  ODMR 谱特征**同时**被四参数调制 —— ①磁场 B（Zeeman `Δf=2γ_eB`，γ_e=28.024 MHz/µT）
+  ②温度 ΔT（零场劈裂温度系数 `dD/dT≈−74.2 kHz/K`）③轴向电场 E（Stark `dD/dE_⊥=17.0 kHz/(kV/cm)`）
+  ④应力 σ（`dD/dσ=1.4 kHz/MPa`）⇒ 读数方程 `b=S·x`（4×4 交叉灵敏度矩阵）是**四参数耦合线性组合**，
+  「一次读数=一个参数」的朴素做法会把交叉项误当本参数变化（**多参数串扰**）⇒ **解耦才是多参数传感的可用性前提**。
+- **golden**：4×4 灵敏度方程 `S·x=b` 的 **Cramer 闭式解析反演**（行列式按第一行 Laplace 展开 →
+  3×3 余子式**手写展开**，τ̂=det(S₁)/det(S)）—— **精确代数式（非迭代、非截断、非近似）**。
+- **candidate**：**Landweber 迭代解耦**（固定**最优步长** τ\*=2/(λ_min+λ_max) 的梯度下降最小二乘
+  `x_{k+1}=x_k+τ*·Sᵀ(b−S·x_k)`，谱半径 ρ=(λ_max−λ_min)/(λ_max+λ_min)<1 ⇒ 恒收敛；k=320 步）。
+- 🔴 **为何以温度为代表**：QS-M2（`qs_m2.temperature_eta`）把温度当**噪声源**（污染磁灵敏度 η）；
+  本锚第一次把温度**升为被测量**并给出解耦后的估计 ⇒ 落点「温度既是被测参数、又是串扰源」
+  这一多参数传感特有张力（缺口 G-QSYS-1）。
+- 默认档 coupling=1.0 ⇒ golden=**6.475252706753e-01** · **tol=1e-6** · 残差 **6.634e-09**（余量 **150.7×**）·
+  残差链 k=64→1.217e-02 → 128→3.312e-04 → 192→8.996e-06 → 256→2.443e-07 → **320→6.634e-09**
+  （比值 **36.74/36.82/36.82/36.82×** ⇒ **恒定**）· 动态范围 **1.83e6×** · |golden|/tol=6.48e5。
+- **代码三件**：数值核 `lda/lda_harness/_batch_j4_numeric.py`（`golden_b515` / `cand_b515` /
+  三表 `_M_BY_BID`·`_GRID_BY_BID`·`_TOL_BY_BID` / 自检 ALL PASS）· 锚定义 `benchmark_defs/part7.py`
+  （DEFS append + docstring 覆盖 key 更新）· 金标双登 `golden.py`（import + `_GOLDEN_DISPATCH`
+  + `_PHYSICAL_LAW`）。
+- **登记一件**：`_adapter_core.py` 加 `_BATCH_J4_MOD` + `_get_j4_numeric()`（双路兜底 import）；
+  `_adapter_p4.py` 加 `@_register_candidate("b515_multiparam_decoupling_cand", ...)`
+  （返回值 `float()` 包裹 · 磁盘 `_adapter_p*.py` **不新建**，恒 6 片）。
+- **陈述七处**：README「当前账本」题数行 + 三分类行 + 顶行版本块 · CONTRIBUTING 顶部账本块 ·
+  `run_webui_verification_ledger_smoke` docstring · `run_count_consistency_smoke`（docstring 题数 +
+  B 计数断言 509→510 + max-B 断言 B514→B515）· `run_statistical_anchor_smoke`（docstring 题数 +
+  `range(400,515)→(400,516)` + check 名 + 批次描述）· `run_benchmark_falsifiability_smoke`
+  （`MIN_INDEPENDENT` 510→**511**，棘轮只升不降）。
+
+### 二、同源体检与证否记录（实 grep 全仓 BENCHMARK_DEFS）
+
+- 🔴 **零占用（本族首锚）**：`解耦|decoupl` **0** · `多参数|multi_param|multiparam` **0** ·
+  `交叉灵敏度|cross_sensitivity|sensitivity_matrix` **0** · `cramer|伴随矩阵|adjugate` **0** ·
+  `landweber|梯度下降|gradient_descent` **0** · `条件数|condition_number` **0**。
+- **与 B473 三方分歧**：①被测标量（**归一化解耦解 τ̂** vs **灵敏度谱密度 η·T/√Hz**）
+  ②物理构型（**四场耦合观测方程组** vs **单场 Ramsey + 误差传播**）③数值格式（**Cramer 解析求逆
+  ⇄ Landweber 迭代** vs **闭式代数 ⇄ 复指数演化核差商**）⇒ 计新锚（承 B452↔B33 先例）。
+- **与 B478/B479 分歧**：同是「串扰」，但本锚是**参数空间**的四场耦合（单一 NV 内），
+  B478/B479 是**空间**的近场磁偶极耦合（相邻 NV 柱）⇒ 三者（标量/构型/格式）均异。
+- 🔴 **章程两候选被占（如实登记 · 本档最有价值的分析）**：J4 章程 §1.2 原提案「**集成串扰**」
+  已被 **B478/B479** 占用、「**封装热负载**」已被 **B465/B466** 占用 ⇒ 须改靶或净增 0；
+  本锚**不碰空间串扰族**，改在「多参数解耦」这一**零占用族**出锚。
+
+### 三、坑（本轮实测血案）
+
+1. 🔴🔴 **门禁 `main()` 恒 `return 0` = 假绿**（初版真实踩到，被突变探针当场抓出）：新门禁初版尾部写
+   `return 0`，于是**任何判据 FAIL 时 rc 仍为 0** ⇒ 12 条突变探针中 9 条「判据红了但探针判 PASS」。
+   正解照 `run_j3_ctrl_smoke` 体例：`bad = globals().get("FAIL", 0); return 0 if bad == 0 else 1`
+   （+ `__main__` 里 try/except 包 rc=2）。**教训：护栏自身必须被反向测试验过**，否则「全绿」无信息量。
+2. 🔴 **反向探针必须用「离散参数」而非「物理参数」**：B515 的候选是**迭代收敛到 golden**，扰动
+   物理参数（coupling×1.1）会**同时**改变 golden 与候选 ⇒ 残差仍 2.01e-08 < tol ⇒ **不能证明可证伪**。
+   只有「收敛未达标的粗档」（k=64 ⇒ 残差 1.217e-02 > tol）才是有效反向信号。门禁 A4 按此设计。
+3. **κ 不能太小**：实测对角抬高族 κ=1.58 / 2.06 档**收敛过快**（k=64 即沉机器地板 1.11e-16，
+   与自证桩不可区分）⇒ 本档选 κ≈5.96 使「默认档残差 ∈[1e-10,1e-8] ∧ 动态范围 ≥1e4」同时成立。
+4. **等差扫描格 ⇒ 比值恒定**：k 网格取等差数列（Δk=64）时，几何收敛的残差比值恒为 ρ^{−64}=36.8×
+   （若取等比网格则比值随 k 变化、非「恒定」）⇒ 判据 D 的「比值恒定」断言须与网格取法配套。
+
+### 四、独立验证
+
+- `run_harness.py`：**独立候选 verified=511 · 降级 3 · 自证桩 19 · 判决回路 533/533 闭合** ✓
+- 判据 D：残差随离散参数严格单调↓、粗端浮出地板、动态范围 ≥1e4×、**比值恒定**（几何收敛）。
+- `run_d_criterion_smoke` / `run_benchmark_falsifiability_smoke`（`MIN_INDEPENDENT=511`）/
+  `run_self_certified_lock_smoke`（4/4）· `run_maturity_baseline_smoke`（三分类 511/3/19 和 533）。
+- 跨模块同源：能力层 `_C` ≡ 数值核 `_C_MP` 逐位 · Cramer 解 ≡ golden 逐位 · Landweber ≡ 候选逐位
+  （门禁 C1–C3 机器守）。
+
+### 五、反向测试（突变探针 `scripts/d155_j4_probe.py` · 12 条全 PASS）
+
+baseline 全绿 · M2 候选退回自证桩⇒A1 红 · M3 候选粗化(k=64)⇒A1 红 · M4 候选忽略步数⇒A2 红 ·
+M5 候选丢弃 coupling⇒A3 红 · M6 能力层 `_C` 被改⇒C1 红 · M7 能力层 Cramer 恒 0⇒C2 红 ·
+M8 能力层 Landweber 恒 0⇒C3 红 · M9 tol 三表漂移⇒D1 红 · M10 默认档漂移⇒D2 红 ·
+M11 候选键回退⇒A5 红 · M12 全部还原⇒复绿。
+
+### 六、常驻护栏
+
+- `lda/run_j4_multiparam_smoke.py`（**12 判据** · 实测 ~0.6 s）入 `CORE_SMOKES`
+  （CI core 324 → **325**）；同时登记 `_BUILTIN_TIMEOUT_OVERRIDE`（300s，**B20 覆盖反向完备**要求）
+  与 `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面（README 顶行声明的 13 判据由机器守）。
+- **能力层** `lda/lda_l2/qs_j4_multiparam.py`（**20 判据**自检 · 物理系数 → 无量纲响应矩阵 C →
+  解耦 → 条件数 κ → 噪声放大 N_amp → 交叉耦合表；实测 κ=**5.9586** · N_amp=**2.1262** ·
+  解耦残差 1.59e-08 · 签核 **ACCEPT**）。
+- 受跟踪生成物重生：`lda/reports/ecosystem_d93.json`（`harness.total/passed` = 账本题数）。
+
+### 七、诚实边界
+
+- γ_e / dD/dT / dD/dE / dD/dσ 为**文献量级的设计示例**（非任何 foundry 实测标定）；
+  响应矩阵 C 与读数向量 b 为**设计示例**（非实测 ODMR 谱拟合）；模型为**一阶线性化**
+  （未建模高阶项、谱线非洛伦兹化、参数间非线性耦合）。
+- 只证「Cramer 闭式解析反演 ⇄ Landweber 迭代解耦」数值一致 + 多参数解耦物理链自洽，
+  **不作制造/性能宣称**，不报能效 / TOPS / fJ-op。
+- **J4 征程 M1–M4 于同版一并收官（v0.9.237 · M1/M2 锚净增 0 如实登记 · M3 净增 B518 · M4 WebUI 面板）**：
+  M1 芯片级 OPM / M2 单芯片集成 / M3 封装热负载 / M4 WebUI `/api/j4_qs_system` 面板均**已交付**，
+  详见下方「八、M1–M4 收官补记」。
+- 零量子 SDK（不依赖 Qiskit/Cirq/PennyLane/QuTiP）；LLM 不进判决路径。
+
+### 八、M1–M4 收官补记（同版 · 2026-10-14）
+
+**⑤ M3 净增锚 B518 低温布线束热负载**
+
+- **golden**：无源稳态一维传导 `Q=(A/L)·∫k(T)dT` + **Wiedemann–Franz 电子热导**
+  `k_el(T)=L₀T/ρ(T)`（`L₀=π²k_B²/(3e²)=2.44e-8 W·Ω/K²`）+ 铜**两区简化电阻率** `ρ(T)=ρ₀+βT`
+  ⇒ 令 `u=ρ₀+βT` 得 `∫T/(ρ₀+βT)dT=(1/β²)[u−ρ₀ln u]` ⇒ **初等有理闭式**。
+- **candidate**：**RK4 积分定义 ODE** `dQ/dT=(A/L)·k_el(T)`（O(h⁴)）。
+- 实测默认档(ρ₀=1.0e-10 Ω·m · β=5.6e-11 Ω·m/K · A=1.0e-7 m² · L=0.5 m · T_h=300 K · T_c=4 K)
+  ⇒ golden=**2.517894426405e-02 W** · tol=1e-8 · 残差 **3.213e-11（311.2×）** ·
+  残差链 n=32→1.019e-06 … n=512→3.213e-11 · 比值 10.15/13.21/**15.03/15.73**× ⇒ 趋向 **O(h⁴)** ·
+  动态范围 3.17e4×。
+- 🔴 **判据 D 前提（实测踩过）**：被积函数须**非线性** —— 若 `ρ(T)≡ρ₀`（线性被积函数），
+  RK4 对多项式**精确** ⇒ 残差恒 ~1e-16 ⇒ 判据 D 不成立（**同 B28 剖分守恒陷阱**）⇒ 取 β>0。
+- **同源体检**：`heat_load`/`Wiedemann`/`wiring`/`thermal_load`/`低温布线` 在 `BENCHMARK_DEFS`
+  内 **0 命中** ⇒ 低温布线热负载族**零锚占用（本族首锚）**；与 **B465**（圆柱壳径向热阻 · K/W · FD BVP）
+  / **B466**（阵列热串扰比 · 无量纲 · 横向扩散）**三方分歧** ⇒ 计新锚。
+
+**⑥ M1 芯片级 OPM / M2 单芯片集成 —— 锚净增 0（如实登记）**
+
+- **M1 四重避让**：`voigt_profile`（B197–B199 Voigt 族）占线型 · B492/B493 占气室数密度/透过率 ·
+  弛豫三源 = QS-M9 定义式 · 扩散热核 = B-10 族。候选清单 + 理由表写入
+  `lda_l2/qs_j4_microcell.py` 的 `ANCHOR_AVOIDANCE`（门禁 I1 机器守 `ANCHOR_STATUS="none"`）。
+- **M2 三重避让**：`1/|S21|²` 与 **B513** 同数值格式 · 耦合模与 **B14** 结构同源 ·
+  串扰恶化倍率 `√(1+X²)` 与 **B479** 同被测标量 · 级联隔离度与 **S4** 同源。
+- 交付**能力层**（可复算的微型化/集成预算模型）而非硬凑锚 —— 同 B-44/B-45/B-46 与
+  PS-M8 B472、QS-M9 的纪律：**宁可少，不越级谎报**。
+
+**⑦ M4 WebUI J4 面板（强制交付项）**
+
+- `lda/lda_webui/j4_case.py`（**13 判据**自检 · **零重计算**：顶层仅 `math`/`os`/`typing`（ast 断言）·
+  闭式现算 · `verdict=DESIGN_BUDGET`）。
+- `GET /api/j4_qs_system`（免登录 · 不在 `HEAVY_POST_PATHS`）。
+- `index.html` **`sec-j4`** 面板 + **三入口面齐备**（首屏 `#wbCaseBar` + `CASE_MAP` 深链 + 抽屉 `runJ4`）。
+- 常驻门禁 `run_webui_j4_render_path_smoke.py`（**17 判据**）：前端接线 3 · 取值路径 1 · 反向完备 1 ·
+  **跨源逐值对拍 4**（τ̂ ≡ `qs_j4_multiparam`（≤1 ULP）· Q ≡ `qs_j4_packaging` ≡ **B518 golden**（逐位）·
+  净劣化 ≡ `qs_j4_integration` · 微型化 ≡ `qs_j4_microcell`）· 判据数自洽 1 · 红线 3 · 突变探针 4。
+- `CASE_PANELS_MIN 13 → 14`。门禁 `run_j4_multiparam_smoke` **12 → 25 判据** ·
+  探针 `scripts/d155_j4_probe.py` **12 → 20 条**。
+
+**⑧ M1–M4 血案（同版新沉淀）**
+
+- 🔴 **`_adapter_p1.build_harness_specs` 需先 import `verification_adapters`** 才触发全分片注册 ——
+  否则 `cand_map` 全落 `_harness_reference_candidate`（自证桩）⇒ **误判「接线失效」**（本轮为此白跑一轮诊断）。
+- 🔴 **能力层默认参数必须与 case 卡同源**：`qs_j4_microcell.diffusion_coefficient` 内含
+  **÷ 缓冲气体压强**（D₀=1.9e-4 @1 Torr ÷ 100 Torr）⇒ `j4_case` 若直接用 1.9e-4 ⇒ 劣化倍率差 **100×**
+  （跨源对拍 D4 当场红）。
+- 🔴 **note/docstring 里的 `\|` 触发 `SyntaxWarning`**（Python 3.12+）⇒ 应写 `|`。
+
+## v0.9.236（2026-10-14 · **J3 量子测控与读出征程 · M2+M3+M4 收官 + WebUI J3 面板落地**（Layer 3 测控闭环层 · 缺口 G-CTRL*）· **净增 3 锚 B512/B513/B514** · 账本 529 → 532 · CI core 323 → 324 · 端点 151 → 152）
+
+承 v0.9.235 的 M0+M1（脉冲层出锚），把 J3 剩余三档**一次收官** ⇒ 「脉冲 → 门 → 读出 →
+反馈 → 低温电子学」这条**测控闭环链全档闭合**（J3 征程 M0–M4 收官）。
+
+### 一、三锚（代码三件 + 登记五处 · 均严格独立 · 判据 D 干净 O(h⁴)）
+
+- **B512 去极化信道纯度衰减（二阶 unitarity）** P(t)=Tr(ρ²)=(1+e^{−2Γt})/2
+  - **golden**：去极化 Lindblad 主方程 dρ/dt=(Γ/4)(Σᵢσᵢρσᵢ−3ρ) 的 Bloch 形式 **dr/dt=−Γr**
+    有**严格指数解**（**非截断近似**）；初态 |0⟩ ⇒ P(0)=1、P(∞)=1/2。
+  - **candidate**：**密度矩阵 Liouvillian 四阶 RK4 时间推进**（2×2 复 ρ，n=64 步）。
+  - 🔴 **物理意义（M2 核心）**：**二阶**量（∝e^{−2Γt}）⇒ 对**相干（酉）误差不敏感**（u=1）、
+    对**非相干（去极化）误差敏感**（u=p²）；与一阶 RB 保真度联立可**分离相干/非相干误差**
+    （Wallman 2015）。**与 B10 三方分歧**：①二阶纯度 vs 一阶保真度 ②对称去极化 vs T1/T2 非对称
+    ③2×2 密度矩阵 RK4 vs 4×4 PTM。
+  - 默认档 Γ=0.02 /ns · t=100 ns ⇒ golden=**5.091578194444e-01** · **tol=1e-7** ·
+    残差 **2.988e-10**（余量 **334.7×**）· 残差链 2.905e-05→1.470e-06→8.272e-08→4.907e-09→2.988e-10
+    （比值 19.77/17.77/16.86/16.42×）· 动态范围 9.72e4×。
+- **B513 Purcell 滤波器抑制比** S=Γ_P^{no}/Γ_P^{filter}=1/|S21(f_q)|²
+  - **golden**：并联开路 λ/4 短截线带阻滤波器的 **ABCD 代数闭式** S21=2/(2+j(Z₀/Z_s)tanβl)
+    （**精确式**）；f_q→f_s ⇒ S→∞（完美带阻）。
+  - **candidate**：**导纳 ODE dy/dθ=j(1−y²)（y(0)=0 ⇒ y=j·tanθ）的四阶 RK4 数值积分**。
+  - **与 B18 三方分歧**：①系统级抑制倍率 S vs 器件级 F_P 因子 ②传输线滤波器网络 vs 单腔 qubit
+    ③导纳 ODE 数值积分 vs 纯代数闭式。
+  - 默认档 f_q=5.5 / f_s=6.0 GHz ⇒ golden=**1.542387013525e+01** · **tol=1e-6** ·
+    残差 **4.652e-09**（余量 **215.0×**）· 残差链 2.988e-04→1.905e-05→1.193e-06→7.451e-08→4.652e-09
+    （比值 15.69/15.96/16.02/16.02×）· 动态范围 6.42e4×。
+- **B514 分布式相位不敏感放大链附加噪声（Caves 极限）** n_add=(η/g)(1−e^{−gL})
+  - **golden**：逐段噪声 e^{−gz} 权重积分的**解析闭式**；gL→∞ ⇒ n_add→η/g = **Caves 量子极限 1/2 光子**。
+  - **candidate**：**复合 Simpson 数值求积**（O(h⁴)）。
+  - **与 B467 三方分歧**：①附加噪声光子数 vs 输出 rms 噪声电压（µV）②微波分布放大器 vs 跨阻放大器
+    ③复合 Simpson vs 冲激响应 Parseval 积分。
+  - 默认档 η/g=0.5 · g=0.5 /mm · L=10 mm ⇒ golden=**4.966310265005e-01** · **tol=1e-6** ·
+    残差 **4.015e-10**（余量 **2490.8×**）· 残差链 2.601e-05→1.640e-06→1.027e-07→6.423e-09→4.015e-10
+    （比值 15.86/15.97/15.99/16.00×）· 动态范围 6.48e4×。
+- 数值核 `lda/lda_harness/_batch_j3_numeric.py`（扩为五锚 · 三表 `_M/_GRID/_TOL_BY_BID` · 逐锚自检 ALL PASS · 零 RNG）。
+- 登记五处：`benchmark_defs/part7.py` DEFS（+ 片头 docstring）· `benchmarks.py::BENCHMARK_ORDER` ·
+  `golden.py`（import + `_GOLDEN_DISPATCH` + `_PHYSICAL_LAW`）· `_adapter_core.py`（`_get_j3_numeric` 已存在）·
+  `_adapter_p4.py`（`b512_/b513_/b514_` 候选）；**未新建 `_adapter_p*.py`**（L9 守卫：恒 6 片）。
+
+### 二、三新能力层 + 闭环总装
+
+- **`lda_qeda/rb_benchmark.py`**（M2）：随机 Clifford 群（24 元，复用 `gates.py` 精确群论）·
+  一阶 RB 参数 p=e^{−Γ} · **二阶 unitarity u=e^{−2Γ}=p²** · 纯度衰减 · **纯度序列反解 unitarity** ·
+  **相干/非相干误差分解**（u−p²；纯酉 u=1、纯去极化 u=p²）· `rb_report()` 签核。**16 判据**自检 ALL PASS。
+- **`lda_qeda/readout_demod.py`**（M3）：匹配滤波 √n 律 · **IQ 判别误判率** ε=½·erfc(SNR/√2)
+  （与 D-47/B30 同口径）· 判别阈值 · **分配矩阵**（列和=1）· **Purcell 滤波抑制比**
+  （与 B513 同律）· `readout_chain_report()` 双条件签核。**16 判据**自检 ALL PASS。
+  🔴 修一处口径：分配矩阵是**列和**=1（列=真实态），初版误写"行和"⇒ 自检当场抓出并改正。
+- **`lda_qeda/cryo_electronics.py`**（M4）：**Caves 量子极限**（n_add ≥ 1/2）· **分布式放大链**
+  n_add=(η/g)(1−e^{−gL}) · **Friis 级联** n₁+n₂/G₁+… · 光子数↔噪声温度 · **cryo-CMOS 功耗/噪声权衡** ·
+  `cryo_noise_report()` 签核。**13 判据**自检 ALL PASS。
+- **`lda_qeda/control_closed_loop.py` 扩为七环 + 总装**：新增 Ring E（门保真 unitarity）·
+  Ring F（读出链）· Ring G（低温电子学）+ **`full_control_loop_report()` 测控闭环总装**
+  （脉冲→门→读出→反馈→**参数回写**→低温，回写规格 8 键：脉冲幅度/β\*/p/u/阈值/误判/抑制比/附加噪声），
+  四子报告全 ACCEPT 才 ACCEPT（**G-CTRL***闭合）。
+
+### 三、常驻护栏 `lda/run_j3_ctrl_smoke.py`（**21 → 44 判据** · 入 CORE）
+
+- A/B 两锚 + **F/G/H 三新锚各 5 项**（DEFS tol 内 + 残差>0 非恒等 · 判据 D 单调 O(h⁴) · 反自证桩 ·
+  反向探针 · 防回退候选键）；**tol/golden 一律读自 `BENCHMARK_DEFS` 不硬编码**。
+- C 三能力层 + **I 三新能力层 + 总装**（4 项）；D 同律 + **J 能力层↔锚同物理律**（三处逐位一致）
+  + 总装反向可证伪；E 跨模块 + **K 三表一致（五锚）**。
+
+### 四、突变探针 `scripts/d154_j3_probe.py`（**18 → 32 条** · 全符预期）
+
+新增 14 条：B512/B513/B514 各「退自证桩 / 忽略步数 / 丢弃被扰键」必红（F1/F2/F3 · G1/G2/G3 · H1/H2）
++ 三能力层同律破坏（J1）+ 总装签核脱钩（I4）+ tol 三表漂移（K1）+ 候选键回退（G5）+ 还原复绿。
+🔴 **纪律复核**：突变必须打在**门禁反向探针扰动的那一个键上**（B512→Γ · B513→f_q · B514→g）。
+
+### 五、WebUI J3 面板（J3 章程 §2.4/§3-M4 强制交付项）
+
+- 新建 `lda/lda_webui/j3_case.py`（只读案例卡 · **零重计算**：顶层仅 `math`/`os`/`typing`（ast 断言）·
+  不 import 求解器/numpy/scipy · 闭式现算 · **17 判据**自检 · `verdict=DESIGN_BUDGET` 不伪装实测）。
+- 新增 `GET /api/j3_ctrl`（**免登录 · 不在 HEAVY_POST_PATHS** ⇒ 无 DoS 面 · 微秒级 · handler `h_j3_ctrl_demo`）。
+- `index.html` 新增 `sec-j3` 面板（**八段**：案例身份 / 征程五档 / 脉冲层+泄漏 / 门保真 / 读出链 /
+  低温电子学 / 关键发现 / 定位）+ **三入口面齐备**（首屏 `#wbCaseBar` 直达 + hash 深链 `CASE_MAP` + 抽屉按钮 `runJ3`）。
+- 新建常驻门禁 `run_webui_j3_render_path_smoke.py` **27 判据**：A 前端接线 8 · B 取值路径存在性 1 ·
+  C 反向完备 2 · **D 🔴 跨源逐值对拍 7**（pulse/leakage/gate_fidelity/readout/cryo 卡内闭式 ≡ `lda_qeda`
+  真源现算值 + 分配矩阵列和）· E 判据数自洽 1（实跑 `run_j3_ctrl_smoke` 44 PASS == `span.gate_checks`）·
+  F 红线 7 · G 突变探针 11（逐条必红）。
+- `CASE_PANELS_MIN 12 → 13`（案例卡族 12→13 · 减面探针同步）。
+
+### 六、全量口径同步
+
+- `pyproject` 版本 0.9.235 → **0.9.236** · README 顶行新段 + `## 当前账本`（账本 **532** / 严格独立 **510** /
+  独立率 **95.86%** / CI core **324**）+ 题数行 + 三分类行 · CONTRIBUTING 顶块。
+- `run_count_consistency_smoke`（docstring + B 计数 506→**509** + max-B→**B514**）·
+  `run_statistical_anchor_smoke`（docstring + `range(400,515)` + check 名）·
+  `run_webui_verification_ledger_smoke` docstring · `run_benchmark_falsifiability_smoke`
+  （`MIN_INDEPENDENT` 507→**510** + `PERTURB_SPEC` 加 B512/B513/B514）·
+  `run_webui_entry_smoke.CASE_PANELS_MIN` 12→**13** · `run_ci_regression` CORE +2 成员 + 超时预算行 ·
+  `run_webui_pm_render_path_smoke._W10_EXTRA` 加 `run_webui_j3_render_path_smoke.py` ·
+  受跟踪生成物重生。
+
+### 七、诚实边界（如实披露，不声称已做）
+
+- Γ/t/f_q/f_s/Z₀/Z_s/η/g/L/SNR 为**设计示例量级**（非实测 PDK / 非流片 / 非商用放大器数据表）；
+  三能级模型未建模 |3⟩+ 高阶能级、驱动线非线性、T1/T2 退相干（属 J2 `physical_error_model`）；
+  B513 为**理想传输线 + 集中式 stub**（忽略介质损耗/接头反射/有限 Q）；B514 为**理想分布式放大器**
+  （忽略增益饱和/泵浦噪声/温度依赖），SOTA（商用 JPA 实际噪声）**未达如实标注**。
+- 只证「闭式 ⇄ 数值」一致 + 测控物理链自洽，**不作制造/性能宣称**，不报能效/TOPS/fJ-op。
+- 🔴 **B513 带阻极点（如实登记）**：f_q → f_s 时 tan βl 发散 ⇒ S → ∞（物理 = 完美带阻）；
+  跨过极点（f_q > f_s）时 tan 变号、导纳 ODE 候选在极点附近数值发散 ⇒ 本设计档取
+  f_q/f_s = 11/12（离极点留余量）；`run_benchmark_falsifiability_smoke` 的 B513 扰动键
+  **取 f_s（远离极点）而非 f_q（跨极点 ⇒ division by zero）**—— 这是**物理极点**而非判据失效。
+- **零量子 SDK**（不依赖 Qiskit/Cirq/PennyLane/QuTiP）；**LLM 不进判决路径**。
+- 🔴 **未推送、未部署**（等「发布」）。
+
+### 八、全量 CI core 回归记录（324 条 · 本机分批跑法）
+
+- 跑法（防掉电纪律）：`scripts/ci_core_batched.py --batch 18 --cooldown 12 --write-baseline`
+  （单实例 · 10 线程 · 18 批 · 实测总耗时 ~150 min）。
+- **首跑结果：323 PASS / 0 SKIP / 1 FAIL**。本版两新门禁均 PASS：
+  `run_j3_ctrl_smoke.py`（44 判据 · **17.55s**）· `run_webui_j3_render_path_smoke.py`
+  （27 判据 · **17.91s**——内含实跑 `run_j3_ctrl_smoke` 子模块做判据数自洽）。
+- 唯一 FAIL = `run_timeout_budget_ratchet_smoke.py`（**与物理判据零关系**，属超时预算欠标定）：
+  `run_webui_pm_render_path_smoke.py` 因 **`_W10_EXTRA` 增纳两个 J3 门禁**
+  （`run_webui_j3_render_path_smoke` 17.9s + `run_j3_ctrl_smoke` 17.6s）⇒ 实测上界
+  **95.03s → 133.1s** ⇒ 原预算 380s 掉到 **2.855× < 3×**（**B9 目标棘轮红**、跌破 3× 档）；
+  改预算后又触发 **B10 预算一致性**（基线记 380 ≠ 现值）。
+  ⇒ 处置：按「一次给足 ≈3.8~4.5×」把该项预算 **380 → 520s = 3.91×**
+  （**只抬耗时上限，属单调放宽**）⇒ `--from-report` 刷新基线（**324 项**）⇒ 复跑
+  **21/21 ALL PASS**（最低 **3.018×**，目标 ≥3.0× 未破）。
+- 🔴 **未重跑第二轮全量**（依防掉电技能 §2c：本处置为「抬耗时上限 + 刷新基线」的**单调放宽**，
+  **不可能使已 PASS 项变 FAIL**）⇒ 已跑完首轮的通过性结论对改后代码**仍然有效**；受影响的
+  `run_timeout_budget_ratchet_smoke` 已**单独复跑绿**。**若用户要求「单次干净全量」记录，须再跑
+  ≈150min**（本版如实标注：当前持有的是「首跑 323/324 + 唯一缺口已修复并复跑绿」，
+  **不是**「单次全量 324/324」，不冒充）。
+- 🔴 **未推送、未部署**（等「发布」）。
+
+## v0.9.235（2026-10-13 · **J3 量子测控与读出（Control & Readout）征程 · M0+M1 落地**（Layer 3 测控闭环层 · 缺口 G-CTRL*）· **净增 2 锚 B510/B511** · 账本 527 → 529 · CI core 322 → 323 · 端点 151 不变）
+
+承蓝图 v1 的 **J1（QEC）→ J2（Transmon）→ J3（测控）** 排序。J2 收官后，链路「器件参数 →
+物理错误率 → 逻辑错误预算」已通，但整条链**是开环**的：`lda_qeda/gates.py` 的 docstring
+自己写明边界——「**不声称具体物理门的脉冲实现保真度**（那是器件层，归 transmon_solver /
+实测标定）」。本版把这句话点名的空白补上第一段：**脉冲怎么打（Rabi/DRAG）→ 门保真怎么标
+（闭环定标）→ 读出怎么判（误判链）→ 参数怎么回写（闭环）**。
+
+### 一、候选接线（代码三件 + 登记一件 · 两锚）
+
+- **B510 广义 Rabi 时域布居** P₁=(Ω²/Ω_R²)·sin²(Ω_R t/2)（Ω_R=√(Ω²+δ²)）
+  - **golden**：二能级 RWA 驱动哈密顿 `H=(δ/2)σ_z+(Ω/2)σ_x` 是**常矩阵** ⇒ `e^{−iHt}` 有
+    **精确解析解**（**非截断近似**）；δ=0 退化 `sin²(Ωt/2)`、Ω=0 退化 0。
+  - **candidate**：**时域 TDSE 四阶 RK4 态矢推进**（`i dψ/dt=Hψ`，ψ(0)=|0⟩，n=128 步）——
+    方法学独立（解析闭式 vs 时间推进数值积分）。
+  - 默认档 Ω=0.05 rad/ns · δ=0.03 rad/ns · t=100 ns ⇒ golden=**3.695830882409e-02** ·
+    **tol=1e-6** · 残差 **2.092e-09**（余量 **478.1×** · |golden|/tol=3.70e4）。
+- **B511 三能级 transmon 驱动泄漏布居** P_leak(t)=|Σ_k⟨0|v_k⟩⟨v_k|2⟩e^{−iλ_k t}|²
+  - **golden**：三能级 RWA 驱动哈密顿（含 **√2 升降矩阵元** + 非谐性 α）的**精确谱分解**——
+    特征多项式 `λ³−αλ²−(3Ω²/4)λ+αΩ²/4=0` 经 **depressed-cubic 三角法**（λ=μ−A/3；
+    p=−(a²+b²)−α²/3、**q=−2α³/27，Ω 在 q 中恰好相消**）解析求三实根，本征矢
+    v_k∝(1, λ_k/ a, (λ_k²−a²)/(a·b)) 归一化。**精确式、非数值迭代、非截断近似**。
+  - **candidate**：同一 ODE 的**时域 RK4 三能级态矢推进**（n=256 步）。
+  - 默认档 Ω=0.05 / α=−0.3 rad/ns / t=π/Ω=62.831853 ns ⇒ golden=**1.284900255689e-02** ·
+    **tol=1e-5** · 残差 **1.030e-08**（余量 **970.5×** · |golden|/tol=1.285e3）。
+- 数值核 **`lda/lda_harness/_batch_j3_numeric.py`**（三表 `_M_BY_BID` / `_GRID_BY_BID` /
+  `_TOL_BY_BID` · 逐锚自检全 PASS · **零 RNG**）。
+- 登记同登**五处**：`benchmark_defs/part7.py` DEFS（+ 片头 docstring 覆盖 key 与分类）·
+  `benchmarks.py::BENCHMARK_ORDER`（**硬编码显式表，必须手改**）· `golden.py`
+  （import + `_GOLDEN_DISPATCH` + **`_PHYSICAL_LAW`**）· `_adapter_core.py`
+  （`_get_j3_numeric`）· `_adapter_p4.py`（`b510_`/`b511_` 候选，**返回值 `float()` 包裹**）；
+  **未新建 `_adapter_p*.py`**（L9 守卫：磁盘分片数恒 6）。
+
+### 二、同源体检（实 grep 全仓核验 · 两锚零占用）
+
+- `drag` **0 命中** · `leakage` **0 命中** · `脉冲面积|pulse_area` **0 命中**；
+  `泄漏` 仅出现在 note 文本（B10 note「未含…泄漏」= **显式声明不在其口径内**；
+  part2 隧穿尾泄漏；part7 的 J2 描述）⇒ **无任何锚以泄漏/DRAG 为被测标量**。
+- `rabi` 在 `BENCHMARK_DEFS` 内仅命中 B494/B496 的 **note 文本**（描述腔 QED **单光子耦合 g**
+  被称「单光子 Rabi 频率」，**不是**驱动下的时域振荡）⇒ 锚定义零占用。
+- **与 B10（单比特门保真度 F·退相干极限）三方分歧**：①被测标量（时域布居/泄漏概率
+  vs 平均门保真度）②物理构型（**含时驱动演化** vs 纯退相干信道）③数值格式
+  （**态矢 RK4** vs 4×4 PTM 超算子积分）⇒ 计新锚（承 B452↔B33 先例）。
+- **与 B506/B507（J2 两比特 CR / 残余 ZZ 错误率）**同样三方分歧（门错误率 ε vs 布居概率 /
+  两比特门或静态 ZZ 相位 vs 单比特相干 Rabi 动力学 / 16×16·4×4 传播子 vs 2 维态矢）。
+- **与本征程 D-91 `solve_drive`（`lda_solver/qeda_depth_solver.py`）分歧**：D-91 只算
+  **静态 RWA 本征分裂=Ω** 与 AC Stark 位移（`eigvalsh` 解析），**且不是账本锚**（无
+  `BENCHMARK_DEFS` 条目）⇒ 与「时域布居函数 / 含时演化 / RK4 步进」三点均异。
+- **B510 vs B511 互相分歧**：算子**维度与结构**不同（2×2 纯驱动 vs 3×3 含 √2 与非谐性 α）、
+  被测标量不同（计算态布居 vs 非计算态泄漏）⇒ **非「同算子换语境」** ⇒ 各计一锚。
+
+### 三、坑（本轮三条，均已入库为可复用纪律）
+
+1. 🔴🔴 **闭环捕获范围（新发现）**：`θ_measured=2·asin(√P₁) ∈ [0,π]` 是**折叠**的（asin 主值）
+   ⇒ 乘性固定增益更新 `A_req ← A_req·(π/θ_measured)^γ` 只在 **θ₀=g·A₀·t ∈ (0,π)** 内是收缩
+   映射（误差每步 ×½）；**一旦 θ₀>π**，测得的 θ 反而变小 ⇒ A_req 单调放大 ⇒ **发散**
+   （实测 g=2.5 ⇒ θ₀=4.0 ⇒ numpy matmul 溢出）。
+   ⇒ 加**显式捕获范围守卫**（越界即 `diverged=True` 并 `break`，**不静默溢出**），
+   并由门禁 D4 + 探针 M13 双向钉死。真实实验靠「从小到大扫功率先定位第一个 π 脉冲」解决。
+2. 🔴 **极限行为纠正（错直觉）**：泄漏极小来自 **|α|≫Ω**；**α→0（谐振子极限）泄漏反而显著**
+   （实测 α=−1e-6、Ω=0.02、t=300 ⇒ P_leak≈**6.36e-02**，因 1-2 跃迁共振、粒子沿能级阶梯
+   上行）。「α→0 泄漏塌陷」是**错的** ⇒ 常驻判据改写为「**|α| 增大 ⇒ 泄漏单调降**」
+   （实测 −0.1→−0.3→−1.0→−3.0 对应 1.43e-3→3.15e-5→4.60e-6→4.22e-7）+「α→0 泄漏显著」。
+3. 🔴 **RK4 稳定性边界**：三能级含 α 的**实对角项** ⇒ 稳定域 |hλ| ≤ 2√2；t=100 ns 时 n=8
+   （h=12.5 ⇒ |hα|=3.75）**已越界发散**（实测残差 **1.95e8**）⇒ B511 扫描格**从 n=16 起**
+   （t=π/Ω 档 n=8 虽边缘稳定，但未入渐近区、比值仅 1.16 ⇒ 一并弃用）。
+4. 🔴 **突变探针须打在被扰键上（探针自身血案）**：初版 M5 把候选改成「丢弃失谐 δ」，
+   而门禁反向探针扰动的是 **Ω** ⇒ 候选仍响应 ⇒ 门禁仍全绿、被误读成「护栏不响」。
+   ⇒ 教训入库：**突变必须落在门禁扰动/检出的那一个键上**，否则「变异无效」与「护栏失效」不可分辨。
+
+### 四、独立验证（判据 D 双向标定）
+
+- **B510**：残差链 n=8→**1.218e-04** → 16→8.205e-06 → 32→5.269e-07 → 64→3.330e-08 →
+  **128→2.092e-09**；实测比值 **14.85/15.57/15.82/15.92×** ⇒ **O(h⁴)**（RK4 标称阶）；
+  **动态范围 5.82e4×**；默认档残差 2.092e-09 > 1e-12（**非代数恒等**）。
+- **B511**：残差链 n=16→**4.461e-04** → 32→4.244e-05 → 64→2.715e-06 → 128→1.671e-07 →
+  **256→1.030e-08**；比值 **10.51/15.63/16.24/16.22×** ⇒ **O(h⁴)**；动态范围 **4.33e4×**。
+- 三角法本征值 vs 稠密 `eigvalsh` 交叉核对：max|Δeig| ≤ **1.11e-16**（7 组参数族全覆盖）；
+  谱分解 golden vs numpy `eigh` 路径：1.284900255689e-02 ↔ 1.284900255689e-02。
+- harness：**独立候选 verified 505 → 507 · 降级 3 · 自证桩 19 · 判决回路 529/529 闭合**；
+  报告实测 **B510 |Δ|=2.0915e-09（tol 1e-6）· B511 |Δ|=1.0304e-08（tol 1e-5）** 双 PASS。
+
+### 五、反向测试（先证能变红）
+
+- 门禁内 in-gate：A3/B3 反自证桩（候选对参数扰动有响应）· A4/B4 反向探针
+  （**B510 @Ω×1.1 ⇒ dev=3.69e-02 ≫ tol 1e-6；B511 @α×1.1 ⇒ dev=2.82e-03 ≫ tol 1e-5**）·
+  D4 闭环反向（SNR=0.5 ⇒ REJECT ∧ 捕获范围外 ⇒ 显式 diverged）· E1a/E1b 跨模块口径。
+- 可证伪性守卫 `run_benchmark_falsifiability_smoke`：`PERTURB_SPEC` 新增
+  `("B510","Omega","mul")` / `("B511","alpha","mul")`；`MIN_INDEPENDENT` 棘轮 **505 → 507**。
+- **`scripts/d154_j3_probe.py` 18 条**（baseline + 16 条突变各必红 + 还原复绿）—— 断言
+  **预期判据 id** 落在 `[FAIL]` 行（不只数 `FAIL>0`）：自证桩回退（A1/B1）· 候选粗化（A1/A2）·
+  忽略步数（A2/B2）· 丢弃被扰键（A3）· 越稳定性界（B1）· 能力层同律破坏（C2/D1）·
+  DRAG 趋势反转（D2）· 定标不收敛（C3/D3）· 捕获范围守卫抹掉（D4）· 读出链破坏（E1a/E1b）·
+  签核脱钩（C3/D4）· tol 三表漂移（E2）· 候选键回退（A5）。
+
+### 六、常驻护栏 `lda/run_j3_ctrl_smoke.py`（**21 判据** · 入 CORE）
+
+- A/B：两锚 DEFS tol 内且残差>0 非恒等 · 判据 D 单调（O(h⁴)，粗端 >1e-12）· 反自证桩 ·
+  反向探针 · 防回退候选键；**tol/golden 一律读自 `BENCHMARK_DEFS` 不硬编码**。
+- C：三能力层常驻自检（`pulse_library` 16 · `qubit_dynamics` 17 · `control_closed_loop` 17）。
+- **D 🔴 能力层↔账本锚同物理律**：`rabi_population`≡B510（rel **6.35e-14**）、
+  `qutrit_leakage`≡B511（rel **7.29e-13**）；**测控闭环可用性** `control_loop_report()`
+  默认档 **ACCEPT**（Ring A **16 迭代**收敛 · Ring B P_leak **7.144e-03**<1e-02 ·
+  Ring C 误判 **2.87e-07**）。
+- **E 🔴 跨模块口径同源**：`½erfc(SNR/√2)` ≡ D-47 `lda_agent.readout_fidelity.eps`
+  （同 SNR 下**逐位相同**，ε=2.277186546707596e-02）· tol 三表一致 · 零量子 SDK 机械核。
+- 🔴 **模块级导入**（不是 `main()` 内局部导入）—— 使 `scripts/d154_j3_probe.py` 能 patch
+  到**同一模块对象**（本仓 M-121 血案：patch 打空 ⇒ 假绿）。
+
+### 七、能力层（三模块 · 全入常驻自检）
+
+- **`lda_qeda/pulse_library.py`**：高斯包络与其导数 · **DRAG 正交分量** `Ω_y=−(β/α)·dΩ_x/dt` ·
+  脉冲面积（复合梯形）· **幅度定标**（π 脉冲 ⇒ 目标面积 π）· S 铁律① 频率限带守护。
+- **`lda_qeda/qubit_dynamics.py`**：常/含时 TDSE **RK4 演化器**（2 能级 / 3 能级）·
+  `drag_leakage`（Gaussian+DRAG π 脉冲）· `leakage_suppression_ratio` ·
+  `drag_optimal_beta`。**实测**：P_leak(无 DRAG)=**1.6096e-01** → P_leak(DRAG)=**7.1443e-03**
+  ⇒ **抑制比 22.53×**，最优 **β\*=1.0（= DRAG 标准值，物理自洽）**。
+- **`lda_qeda/control_closed_loop.py`**：**测控闭环四环** —— Ring A Rabi 幅度定标闭环
+  （未知硬件增益 g 被标定掉；**标定不变量** `A*·g·t→π` 在 g∈{0.8,1.0,1.37,1.8} 一致）·
+  Ring B DRAG 泄漏抑制 · Ring C 读出判别（复用 D-47/B30 的 erfc 误判链口径）· Ring D 签核。
+  🔴 **与 J2 `qpu_error_budget` 口径边界**：后者是**物理比特层**误差预算（退相干/门/读出/
+  idle/ZZ），本模块是**控制层**闭环签核（定标收敛 + 相干泄漏 + 读出误判）—— 不同抽象层、
+  **不重复计数**；本模块**不建模 T1/T2**。
+
+### 八、计数、诚实边界与未交付项
+
+- **账本 527 → 529（净增 2 道锚 B510/B511）· 严格独立 505 → 507 · 独立率 95.83% → 95.84% ·
+  降级 3 / 自证桩 19 不变 · CI core 322 → 323 · 端点 151 不变**。
+- 同步：`pyproject` 版本 · README 顶行新段 + `## 当前账本` 段 + 题数行 + 三分类行 ·
+  CONTRIBUTING 顶块 · `run_count_consistency_smoke`（docstring + B 计数 504→506 + max-B→B511）·
+  `run_statistical_anchor_smoke`（docstring + `range(400,512)` + check 名）·
+  `run_webui_verification_ledger_smoke` docstring 三分类 · `run_benchmark_falsifiability_smoke`
+  （`MIN_INDEPENDENT` + `PERTURB_SPEC`）· 受跟踪生成物 `lda/reports/ecosystem_d93.json` 重生。
+- 🔴 **未交付项（如实披露，不声称已做）**：J3 **M2–M4 未做**（RB/unitarity · Purcell 滤波 +
+  实时解调 · cryo-CMOS + 系统集成）；WebUI 面板 `/api/j3_ctrl` 属 **M4 交付项**（章程 §2.4）
+  ⇒ 本版**未交付**（本版只做 M0/M1，故不涉面板；v0.9.234 的教训已登记为纪律）。
+- 🔴 **诚实边界**：Ω/α/δ/σ/β/t/g/SNR 均为**设计示例量级（非实测 PDK / 非流片 / 非任意波形
+  发生器标定）**；三能级模型**未建模** |3⟩+ 高阶能级、驱动线非线性、T1/T2 退相干（属 J2）；
+  只证「闭式 ⇄ 时域数值」一致 + 测控物理链自洽，**不作制造/性能宣称**，不报能效/TOPS/fJ-op；
+  **零量子 SDK**（不依赖 Qiskit/Cirq/PennyLane/QuTiP）；**LLM 不进判决路径**。
+
+### 九、全量 CI core 回归记录（323 条 · 本机分批跑法）
+
+- 跑法（防掉电纪律）：`scripts/ci_core_batched.py --batch 18 --cooldown 12 --write-baseline`
+  （单实例 · 10 线程 · 18 批 · 实测总耗时 **9481.1s ≈ 158 min**）。
+- **首跑结果：321 PASS / 0 SKIP / 2 FAIL**。本版新门禁 `run_j3_ctrl_smoke.py` **PASS（12.89s）**。
+- 两个 FAIL **均为「本版新增成员的连带登记缺口」**，与物理判据零关系（按技能 §2b/§2c 归因）：
+  1. `run_timeout_budget_ratchet_smoke.py` —— 判据 **B20 覆盖反向完备**报「盲区 1 项 =
+     `run_j3_ctrl_smoke.py`」：**新 CORE 成员未登 `_BUILTIN_TIMEOUT_OVERRIDE`**
+     （该表要求 `CORE_SMOKES` 每项都有显式预算行）。⇒ 处置：按实测上界 **12.89s** 显式
+     登记预算 **300s = 23.3×**（**只加耗时上限，属单调放宽**）⇒ 复跑 **21/21 ALL PASS**
+     （最低 3.018×，目标 ≥3.0× 未破）。
+  2. `run_webui_pm_render_path_smoke.py` —— 判据 **W10-P1**（README 旧值必红）恒 False：
+     README 顶行已声明 `` `run_j3_ctrl_smoke.py` **21 判据** ``，但新门禁**未纳 `_W10_EXTRA`
+     对照面** ⇒ `_readme_decl_drift` 查不到该脚本 ⇒ 返空 ⇒ 探针失效（**v0.9.211 已立的通则「README
+     顶行声明的每个 `run_*` 判据数都必须同时进 `_W10_EXTRA`」在本版二次兑现**）。
+     ⇒ 处置：纳入对照面（并留痕）⇒ 复跑修复。
+- 🔴 **未重跑第二轮全量**（依技能 §2c 论证：两处处置均为「**加登记 / 放宽上限**」，
+  **不可能使已 PASS 项变 FAIL**）⇒ 已跑完首轮的通过性结论对改后代码**仍然有效**；
+  受影响两项已**逐项复跑绿**。**若用户要求「单次干净全量」记录，须再跑一轮 ≈160min**
+  （本版如实标注：当前持有的是「首跑 321/323 + 两项连带缺口已修复并复跑绿」，
+  **不是**「单次全量 323/323」，不冒充）。
+- 🔴 **未推送、未部署**（等用户发「发布」）。
+
 ## v0.9.234（2026-10-13 · **J2 收官 · WebUI J2 面板落地**（J2 章程 §2.4/§3-M4 强制交付项补做）· **账本 527 不变（零净增锚）** · CI core 321 → 322 · 端点 150 → 151）
 
 **补齐 J2 征程「对外窗口」这一全档漏交付的强制项。** J2 章程 §2.4 / §3-M4 明文要求交付

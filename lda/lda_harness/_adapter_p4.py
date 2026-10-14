@@ -28,6 +28,8 @@ from ._adapter_core import (
     _get_j2_numeric,
     _get_j2m3_numeric,
     _get_j2m4_numeric,
+    _get_j3_numeric,
+    _get_j4_numeric,
 )
 
 from typing import (
@@ -1723,4 +1725,159 @@ def _b509_graph_algebraic_connectivity_cand(spec: VerificationSpec, oracle_value
     return float(m.cand_b509(
         rows=int(p.get("rows", 10)),
         cols=int(p.get("cols", 10)),
+    ))
+
+
+@_register_candidate(
+    "b510_rabi_population_cand",
+    "广义 Rabi 时域布居·时域 TDSE 四阶 RK4 态矢推进"
+    "（H=(δ/2)σz+(Ω/2)σx，ψ(0)=|0⟩，n=128 步 ⇒ P₁=|ψ₁|²）"
+    "↔ 解析闭式 (Ω²/Ω_R²)sin²(Ω_R t/2) golden，方法学独立（时间推进数值积分 vs RWA 常矩阵精确解析解）")
+def _b510_rabi_population_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B510 独立候选：广义 Rabi 时域布居（时域 TDSE 四阶 RK4）。
+
+    golden=二能级 RWA 驱动哈密顿 H=(δ/2)σz+(Ω/2)σx 的**精确解析解**
+    P₁=(Ω²/Ω_R²)sin²(Ω_R t/2)；cand=时域态矢 RK4 推进。
+    残差=RK4 截断误差（实测残差链 n=8→1.218e-04 … n=128→2.092e-09，
+    比值 14.85/15.57/15.82/15.92× ⇒ O(h⁴)，RK4 标称阶）。余量 478.1×；
+    零商业依赖（纯 numpy + math；零 RNG）。"""
+    m = _get_j3_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b510(
+        Omega=float(p.get("Omega", 0.05)),
+        delta=float(p.get("delta", 0.03)),
+        t=float(p.get("t", 100.0)),
+    ))
+
+
+@_register_candidate(
+    "b511_qutrit_leakage_cand",
+    "三能级 transmon 驱动泄漏布居·时域 RK4 态矢推进"
+    "（H=(Ω/2)(a+a†)+α|2⟩⟨2|，a 为 √2 升降算符，ψ(0)=|0⟩，n=256 步 ⇒ P_leak=|ψ₂|²）"
+    "↔ depressed-cubic 三角法精确谱闭式 golden，方法学独立（时间推进 vs 特征方程解析求根 + 谱分解）")
+def _b511_qutrit_leakage_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B511 独立候选：三能级 transmon 驱动泄漏布居（时域 RK4）。
+
+    golden=三能级 RWA 驱动哈密顿的**精确谱分解闭式**（特征多项式
+    λ³−αλ²−(3Ω²/4)λ+αΩ²/4=0 经三角法解析求根 + 本征矢归一化）；
+    cand=同一 ODE 的时域三能级态矢 RK4。
+    残差=RK4 截断误差（实测残差链 n=16→4.461e-04 … n=256→1.030e-08，
+    比值 10.51/15.63/16.24/16.22× ⇒ O(h⁴)）。余量 970.5×；
+    🔴 稳定性边界：含 α 实对角项 ⇒ |hλ|≤2√2，扫描格从 n=16 起（t=100/n=8 实测发散）。
+    零商业依赖（纯 numpy + math；零 RNG）。"""
+    m = _get_j3_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b511(
+        Omega=float(p.get("Omega", 0.05)),
+        alpha=float(p.get("alpha", -0.3)),
+        t=float(p.get("t", m.B511_DEFAULT_PARAMS["t"])),
+    ))
+
+
+@_register_candidate(
+    "b512_unitarity_purity_cand",
+    "去极化信道纯度衰减·密度矩阵 Liouvillian 时域四阶 RK4"
+    "（2×2 复 ρ，初态 |0⟩⟨0|，dρ/dt=(Γ/4)(Σσiρσi−3ρ)，n=64 步 ⇒ P=Tr(ρ²)）"
+    "↔ Bloch 线性 ODE 的精确指数闭式 golden，方法学独立（数值时间推进 vs 解析闭式）")
+def _b512_unitarity_purity_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B512 独立候选：去极化信道纯度衰减（密度矩阵 Liouvillian RK4）。
+
+    golden=Bloch 各向同性收缩 r(t)=e^{−Γt} 的**精确指数闭式** P(t)=(1+e^{−2Γt})/2；
+    cand=2×2 复密度矩阵 Liouvillian 的四阶 RK4 时间推进。
+    残差=RK4 截断误差（实测残差链 n=4→2.905e-05 … n=64→2.988e-10，
+    比值 19.77/17.77/16.86/16.42× ⇒ O(h⁴)）。余量 334.7×；
+    零商业依赖（纯 numpy + math；零 RNG）。"""
+    m = _get_j3_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b512(
+        Gamma=float(p.get("Gamma", 0.02)),
+        t=float(p.get("t", 100.0)),
+    ))
+
+
+@_register_candidate(
+    "b513_purcell_suppression_cand",
+    "Purcell 滤波器抑制比·导纳 ODE dy/dθ=j(1−y²)（y(0)=0 ⇒ y=j·tanθ）"
+    "的四阶 RK4 数值积分（沿 stub 长度，n=1024 步）⇒ Y_stub ⇒ S21 ⇒ S=1/|S21|²"
+    "↔ ABCD 矩阵代数闭式 golden，方法学独立（数值 ODE 积分 vs 解析代数式）")
+def _b513_purcell_suppression_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B513 独立候选：Purcell 滤波器抑制比（导纳 ODE 的四阶 RK4 数值积分）。
+
+    golden=并联开路 λ/4 短截线 ABCD 代数闭式 S21=2/(2+j(Z0/Zs)tanβl)、S=1/|S21|²；
+    cand=导纳 ODE dy/dθ=j(1−y²)（y(0)=0）的 RK4 数值积分。
+    残差=RK4 截断误差（实测残差链 n=64→2.988e-04 … n=1024→4.652e-09，
+    比值 15.69/15.96/16.02/16.02× ⇒ O(h⁴)）。余量 215.0×；
+    零商业依赖（纯 numpy + math；零 RNG）。"""
+    m = _get_j3_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b513(
+        f_q=float(p.get("f_q", 5.5)),
+        f_s=float(p.get("f_s", 6.0)),
+        z_ratio=float(p.get("z_ratio", 1.0)),
+    ))
+
+
+@_register_candidate(
+    "b514_amp_noise_cand",
+    "分布式相位不敏感放大链附加噪声·复合 Simpson 数值求积"
+    "（[0,L] 等分 n=256 段，权重 1,4,2,4,…,1，O(h⁴)）⇒ n_add=(η/g)∫₀^L g·e^{−gz}dz"
+    "↔ 解析积分闭式 golden，方法学独立（数值求积 vs 解析闭式）")
+def _b514_amp_noise_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B514 独立候选：分布式放大链附加噪声（复合 Simpson 求积）。
+
+    golden=z 处噪声 e^{−gz} 权重积分的解析闭式 n_add=(η/g)(1−e^{−gL})；
+    cand=复合 Simpson 数值求积（O(h⁴)）。
+    残差=Simpson 截断误差（实测残差链 n=16→2.601e-05 … n=256→4.015e-10，
+    比值 15.86/15.97/15.99/16.00× ⇒ O(h⁴)）。余量 2490.8×；
+    零商业依赖（纯 numpy + math；零 RNG）。"""
+    m = _get_j3_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b514(
+        eta_ratio=float(p.get("eta_ratio", 0.5)),
+        g=float(p.get("g", 0.5)),
+        L=float(p.get("L", 10.0)),
+    ))
+
+
+@_register_candidate(
+    "b515_multiparam_decoupling_cand",
+    "多参数 NV 交叉灵敏度解耦温度分量·Landweber 迭代解耦"
+    "（梯度下降最小二乘 x_{k+1}=x_k+τ*·Sᵀ(b−S·x_k)，固定最优步长 τ*=2/(λ_min+λ_max)，"
+    "k=320 步 ⇒ 温度分量 τ̂_k）"
+    "↔ Cramer 闭式解析反演 golden，方法学独立（迭代逼近 vs 解析行列式展开）")
+def _b515_multiparam_decoupling_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B515 独立候选：多参数 NV 交叉灵敏度解耦（Landweber 迭代解耦）。
+
+    golden=4×4 灵敏度方程 S·x=b 的 **Cramer 闭式解析反演**（行列式 Laplace 展开），
+    取温度分量 τ̂=det(S₁)/det(S)；
+    cand=Landweber 梯度下降最小二乘（固定最优步长 ⇒ 谱半径 ρ<1 恒收敛）。
+    残差=迭代截断误差（实测残差链 k=64→1.217e-02 … k=320→6.634e-09，
+    比值**恒定** ~36.82× ⇒ 几何收敛，∝ρ^{−64}）。余量 150.7×；
+    零商业依赖（纯 numpy + math；零 RNG）。"""
+    m = _get_j4_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b515(
+        coupling=float(p.get("coupling", 1.0)),
+    ))
+
+
+@_register_candidate(
+    "b518_cryo_wiring_heat_cand",
+    "低温布线束热负载·RK4 积分定义 ODE"
+    "（dQ/dT=(A/L)·L₀·T/(ρ₀+βT)，Q(T_c)=0，从 4 K 积到 300 K，n=512 步）"
+    "↔ Wiedemann–Franz 电子热导有理闭式 golden，方法学独立（数值积分 vs 解析原函数）")
+def _b518_cryo_wiring_heat_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B518 独立候选：低温布线束热负载（RK4 积分定义 ODE）。
+
+    golden=∫T/(ρ₀+βT)dT 的**初等有理闭式** Q=(A/L)·L₀/β²·{[(ρ₀+βT)−ρ₀ln(ρ₀+βT)]}；
+    cand=RK4 数值积分同一积分定义 ODE（O(h⁴)）。
+    残差= RK4 截断误差（实测残差链 n=32→1.019e-06 … n=512→3.213e-11，比值 10.15→15.73
+    ⇒ 趋向 O(h⁴)）。余量 311.2×；
+    🔴 被积函数须**非线性**（β>0）—— β=0 的线性极限下 RK4 精确 ⇒ 判据 D 不成立。
+    零商业依赖（纯 numpy + math；零 RNG）。"""
+    m = _get_j4_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b518(
+        rho0_ohm_m=float(p.get("rho0_ohm_m", 1.0e-10)),
+        beta_ohm_m_per_K=float(p.get("beta_ohm_m_per_K", 5.6e-11)),
     ))

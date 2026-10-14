@@ -1038,3 +1038,51 @@ def _get_j2m4_numeric():
         import _batch_j2m4_numeric as _m
     _BATCH_J2M4_MOD = _m
     return _m
+
+
+_BATCH_J3_MOD = None
+
+
+def _get_j3_numeric():
+    """Batch J3-M0M1 数值核（量子测控与读出征程 J3 · M0 时域驱动脉冲 + M1 DRAG 泄漏抑制：
+    广义 Rabi 时域布居 解析闭式 × 时域 TDSE RK4；三能级 transmon 驱动泄漏布居
+    depressed-cubic 三角法精确谱闭式 × 时域 RK4），缓存，项目铁律。
+
+    🔴 命名避让：批次号 **J3-M0M1** 沿用连字符写法 `_batch_j3_numeric` / `_get_j3_numeric`
+    （与 J2 的 `_batch_j2_numeric` / `_batch_j2m3_numeric` / `_batch_j2m4_numeric` 并列，
+    互不覆盖）；候选 key 前缀 `b510_` / `b511_` 尚未占用。磁盘 `_adapter_p*.py`
+    **不新建**（L9 守卫：恒 6 片）。
+    """
+    global _BATCH_J3_MOD
+    if _BATCH_J3_MOD is not None:
+        return _BATCH_J3_MOD
+    try:
+        from lda_harness import _batch_j3_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_j3_numeric as _m
+    _BATCH_J3_MOD = _m
+    return _m
+
+
+_BATCH_J4_MOD = None
+
+
+def _get_j4_numeric():
+    """Batch J4 数值核（量子传感系统集成征程 J4 · M0 多参数传感：
+    多参数 NV 交叉灵敏度解耦温度分量 —— Cramer 闭式解析反演 × Landweber 迭代解耦），缓存，项目铁律。
+
+    🔴 命名避让：批次号 **J4-M0** 沿用连字符写法 `_batch_j4_numeric` / `_get_j4_numeric`
+    （与 `_batch_j1_*` / `_batch_j2*_numeric` / `_batch_j3_numeric` 并列，互不覆盖）；
+    候选 key 前缀 `b515_` 尚未占用。磁盘 `_adapter_p*.py` **不新建**（L9 守卫：恒 6 片）。
+    """
+    global _BATCH_J4_MOD
+    if _BATCH_J4_MOD is not None:
+        return _BATCH_J4_MOD
+    try:
+        from lda_harness import _batch_j4_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_j4_numeric as _m
+    _BATCH_J4_MOD = _m
+    return _m

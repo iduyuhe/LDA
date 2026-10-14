@@ -487,6 +487,67 @@ def h_j2_qpu_demo(h, p, q, path):
                       "case_id": _j2.CASE_ID, "verdict": "ERROR"})
 
 
+def h_j3_ctrl_demo(h, p, q, path):
+    """GET /api/j3_ctrl —— J3 量子测控与读出闭环层案例卡（只读 · 免登录 · 微秒级）。
+
+    J3 征程（吃狗粮 · LDA-J3 · v0.9.235+ · M0–M4）的**只读对外窗口**：
+    时域驱动脉冲 → DRAG 泄漏抑制 → 门保真标定（unitarity 二阶纯度衰减）→
+    读出链（IQ 解调 + 分配矩阵 + Purcell 滤波）→ 低温电子学（Caves 极限 + Friis）
+    + 测控闭环总装（脉冲→门→读出→反馈→参数回写）。
+
+    🔴 与 `/api/j2_qpu`（**J2 物理比特层 L2 · 错误率预算**）**分工不同、互补非重复**：
+    `j2_qpu` 在**物理比特层**（退相干门错误 / CR 门 / 读出误判 / QPU 预算 / 拓扑），
+    本卡在**控制层 L3**（脉冲怎么打 / 门保真怎么标 / 读出怎么判 / 参数怎么回写 / 低温噪声）。
+
+    🔴 **零重计算**：不跑仿真、不 import 求解器、不 import numpy/scipy —— 全部数字由
+    **闭式算术现算**（Rabi 闭式 / 三角法精确谱 / 去极化纯度指数 / ABCD 代数 /
+    分布式噪声积分），并由常驻门禁 `run_webui_j3_render_path_smoke` 对 `lda_qeda`
+    各真源模块**逐值跨源对拍**。⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**。
+
+    无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`。
+    异常不 500（返回 200 + error 字段，与 `h_qsensor_demo` 同风格）。
+    """
+    try:
+        from . import j3_case as _j3
+    except ImportError:
+        from lda_webui import j3_case as _j3
+    try:
+        return (200, _j3.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/j3_ctrl", "error": str(e)[:160],
+                      "case_id": _j3.CASE_ID, "verdict": "ERROR"})
+
+
+def h_j4_qs_system_demo(h, p, q, path):
+    """GET /api/j4_qs_system —— J4 量子传感**系统集成**案例卡（只读 · 免登录 · 微秒级）。
+
+    J4 征程（吃狗粮 · LDA-J4 · v0.9.237+ · M0–M4）的**只读对外窗口**：
+    多参数 NV 交叉灵敏度解耦（B515）→ 芯片级 OPM 微型化（锚净增 0）→
+    单芯片集成预算（锚净增 0）→ 低温布线热负载（B518）→ 系统总装签核。
+
+    🔴 与 `/api/qsensor_demo`（**QS 器件级**：NV/SQUID/OPM 三腿灵敏度）**分工不同、互补非重复**：
+    `qsensor_demo` 在**器件级**（单参数灵敏度），本卡在**系统级**
+    （多参数解耦可用性 / 微型化代价 / 集成隔离度 / 热负载预算）。
+
+    🔴 **零重计算**：不跑仿真、不 import 求解器、不 import numpy/scipy —— 全部数字由
+    **闭式算术现算**（Cramer 行列式展开 / WF 有理积分 / dB 比值 / 弛豫求和），
+    并由常驻门禁 `run_webui_j4_render_path_smoke` 对 `lda_l2/qs_j4_*` 各真源模块
+    **逐值跨源对拍**。⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**。
+
+    无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`。
+    异常不 500（返回 200 + error 字段，与 `h_j3_ctrl_demo` 同风格）。
+    """
+    try:
+        from . import j4_case as _j4
+    except ImportError:
+        from lda_webui import j4_case as _j4
+    try:
+        return (200, _j4.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/j4_qs_system", "error": str(e)[:160],
+                      "case_id": _j4.CASE_ID, "verdict": "ERROR"})
+
+
 def h_accel_demo(h, p, q, path):
     """GET /api/accel_demo —— 光子/模拟混合 AI 推理加速器案例卡（阶段 4 · L6 参考设计 · 只读）。
 
@@ -2178,6 +2239,12 @@ GET_ROUTES = {
     # J2 征程收官（v0.9.234）：超导 transmon QPU 物理比特层（L2）只读案例卡
     # （门错误率 / 读出 / QPU 误差预算 / 拓扑↔表面码 / J1↔J2 复利闭环 · 零重计算 · 免登录）
     "/api/j2_qpu": h_j2_qpu_demo,
+    # J3 征程（v0.9.236+）：量子测控与读出闭环层（L3）只读案例卡
+    # （脉冲 / DRAG / unitarity / 读出链 / Purcell 滤波 / Caves 极限 / 闭环总装 · 零重计算 · 免登录）
+    "/api/j3_ctrl": h_j3_ctrl_demo,
+    # J4 征程（v0.9.237+）：量子传感**系统集成**层（L4）只读案例卡
+    # （多参数解耦 / 微型化 / 集成隔离度 / 热负载预算 / 系统签核 · 零重计算 · 免登录）
+    "/api/j4_qs_system": h_j4_qs_system_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,

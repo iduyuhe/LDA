@@ -211,7 +211,39 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               #   的门禁 = 新门禁本体（实测 ~6s / 53 判据）⇒ 纳对照面，令本版 README 顶行
               #   声明的 53 判据由机器守（非手写）；它无自指、无递归（不反向调 PM 门禁）。
               #   ⚠️ 同版 `run_j2_qpu_smoke`（37 判据）已在表内（v0.9.231 纳入）⇒ 两处均受守。
-              "run_webui_j2_render_path_smoke.py")
+              "run_webui_j2_render_path_smoke.py",
+              # 🔴 v0.9.235：本版真改动 = J3 测控征程 M0/M1（B510/B511 两锚 + 三能力层 +
+              #   测控闭环 + `run_j3_ctrl_smoke`）。直接相关且**便宜**的门禁 = 新门禁本体
+              #   （实测 **12.89s** / **21 判据**）⇒ 纳对照面，令本版 README 顶行声明的
+              #   21 判据由机器守（非手写）；它无自指、无递归（不反向调 PM 门禁）。
+              #   🔴 **v0.9.235 首跑全量 CI 当场抓出**：新门禁加了 CORE 且 README 顶行声明了
+              #   `` `run_j3_ctrl_smoke.py` **21 判据** ``，却**未纳本对照面** ⇒ W10-P1
+              #   （README 旧值必红）**恒 False**（`_readme_decl_drift` 查不到该 t ⇒ 返空）
+              #   ⇒ 本 smoke 判红。**通则（v0.9.211 已立，本轮二次兑现）**：README 顶行声明的
+              #   每个 `run_*` 判据数都必须同时进 `_W10_EXTRA`。
+              "run_j3_ctrl_smoke.py",
+              # 🔴 v0.9.236：本版真改动 = J3 征程 M2+M3+M4 收官（B512/B513/B514 三锚 + 三新能力层 +
+              #   闭环总装）**+ WebUI J3 面板落地**（新 `sec-j3` + `/api/j3_ctrl` +
+              #   `run_webui_j3_render_path_smoke`）。直接相关且**便宜**的门禁 = 新渲染门禁本体
+              #   （实测 **~20s** / **27 判据**）⇒ 纳对照面，令本版 README 顶行声明的 27 判据
+              #   由机器守（非手写）；它无自指、无递归（不反向调 PM 门禁）。
+              #   ⚠️ 同版两门禁（`run_j3_ctrl_smoke` 44 判据 / `run_webui_j3_render_path_smoke` 27 判据）
+              #   均在表内 ⇒ 两处均受守。
+              "run_webui_j3_render_path_smoke.py",
+              # 🔴 v0.9.237：本版真改动 = J4 量子传感系统集成征程 M0（B515 多参数解耦 +
+              #   新能力层 `qs_j4_multiparam` + `run_j4_multiparam_smoke`）。直接相关且**便宜**
+              #   的门禁 = 新门禁本体（实测 **~0.6s** / **12 判据**）⇒ 纳对照面，令本版 README
+              #   顶行声明的 13 判据由机器守（非手写）；它无自指、无递归（不反向调 PM 门禁）。
+              #   通则（v0.9.211 立 · v0.9.235/236 两次兑现）：README 顶行声明的每个 `run_*`
+              #   判据数都必须同时进本对照面，否则 W10-P1 恒 False。
+              "run_j4_multiparam_smoke.py",
+              # 🔴 v0.9.237（M4 收官）：本版真改动 = J4 量子传感系统集成 M1–M4（B518 锚 +
+              #   三能力层 + 系统总装 + `run_j4_multiparam_smoke` 扩 12→25 判据）**+ WebUI J4 面板**
+              #   （新 `sec-j4` + `/api/j4_qs_system` + `run_webui_j4_render_path_smoke`）。
+              #   直接相关的**便宜**门禁 = 新渲染门禁本体（实测 ~1.2s / **17 判据**）⇒ 纳对照面，
+              #   令本版 README 顶行声明的 17 判据由机器守（非手写）。
+              #   ⚠️ 同版 `run_j4_multiparam_smoke`（25 判据）亦在表内 ⇒ 两处均受守。
+              "run_webui_j4_render_path_smoke.py")
 
 
 def _declared_judge_counts(text):

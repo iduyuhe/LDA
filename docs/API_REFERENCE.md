@@ -22,12 +22,12 @@
 | 项 | 值 |
 |---|---|
 
-| 端点总数 | 151（精确 134 + 前缀/后缀 17） |
-| 方法分布 | GET 56 · PATCH 1 · POST 94 |
-| 有描述 | 151（**100.0%**） |
+| 端点总数 | 153（精确 136 + 前缀/后缀 17） |
+| 方法分布 | GET 58 · PATCH 1 · POST 94 |
+| 有描述 | 153（**100.0%**） |
 | 需登录（重计算闸门） | 60 |
 
-## GET（56）
+## GET（58）
 
 | 路径 | 用途 | 参数 | 鉴权 |
 |---|---|---|---|
@@ -63,6 +63,8 @@
 | `/api/gc_benchmarks` | A1 · GC 整芯片对照（golden_product_benchmarks：5 GP + 20 GC）。 run=False 返回元数据（快，零计算）；run=True 现场真跑 25/25（~2.5s， 用户显式点击才触发）。数据源 = lda_l2.golden_product_benchmarks 已验证库，不在此重写任何验证逻辑（LLM 不进判决路径）。 | — | public |
 | `/api/health` | P2.1 产品级健康检查（供 Docker/K8s liveness & readiness 探针）。 返回服务存活 + 版本 + 部署形态 + 内核落地概览。 db 字段在 P2.2（多用户数据层）落地后改为真实连通性；当前尚未配置 DB， 诚实标注 "not_configured"，不谎报健康。 | — | public |
 | `/api/j2_qpu` | GET /api/j2_qpu —— J2 超导 transmon QPU 物理比特层案例卡（只读 · 免登录 · 微秒级）。 J2 征程（吃狗粮 · LDA-J2 · v0.9.230…v0.9.233 · M0–M4）的**只读对外窗口**： 物理错误模型 → 两比特 CR 门 → 色散读出链 → QPU 误差预算 + 拓扑↔表面码对接， 并把 **J1↔J2 复利闭环**（物理错误率 p_phys ⇒ 表面码阈值下的逻辑错误率曲线）呈现出来。 🔴 与 `/api/schip_demo`（**S 分支超导芯片级 P&R** 案例卡 · 真 GDS/DRC/LVS/频率避撞） **分工不同、互补非重复**：`schip_demo` 在**器件/版图**层，本卡在**物理比特层 L2** （门错误率 / 读出误判 / 误差预算 / 拓扑谱不变量）。 🔴 **零重计算**：不跑仿真、不 import 求解器、不 import numpy/scipy、不解析 GDS —— 全部数字由**闭式算术现算**（退相干极限 / CR 有效模型 / 读出 SNR / ZZ 二阶微扰 / QPU 预算集成 / 方阵 Laplacian 谱定理），并由常驻门禁 `run_webui_j2_render_path_smoke` 对 `lda_qeda` / `lda_agent` 各真源模块**逐值跨源对拍**。 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS** （与 `/api/schip_demo`、`/api/qsensor_demo`、`/api/verification_ledger` 同属「公开只读验货」类）。 无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET` （**非** ACCEPT/PASS），返回体自带 `honest_note`。 异常不 500（返回 200 + error 字段，与 `h_qsensor_demo` 同风格）。 | — | public |
+| `/api/j3_ctrl` | GET /api/j3_ctrl —— J3 量子测控与读出闭环层案例卡（只读 · 免登录 · 微秒级）。 J3 征程（吃狗粮 · LDA-J3 · v0.9.235+ · M0–M4）的**只读对外窗口**： 时域驱动脉冲 → DRAG 泄漏抑制 → 门保真标定（unitarity 二阶纯度衰减）→ 读出链（IQ 解调 + 分配矩阵 + Purcell 滤波）→ 低温电子学（Caves 极限 + Friis） + 测控闭环总装（脉冲→门→读出→反馈→参数回写）。 🔴 与 `/api/j2_qpu`（**J2 物理比特层 L2 · 错误率预算**）**分工不同、互补非重复**： `j2_qpu` 在**物理比特层**（退相干门错误 / CR 门 / 读出误判 / QPU 预算 / 拓扑）， 本卡在**控制层 L3**（脉冲怎么打 / 门保真怎么标 / 读出怎么判 / 参数怎么回写 / 低温噪声）。 🔴 **零重计算**：不跑仿真、不 import 求解器、不 import numpy/scipy —— 全部数字由 **闭式算术现算**（Rabi 闭式 / 三角法精确谱 / 去极化纯度指数 / ABCD 代数 / 分布式噪声积分），并由常驻门禁 `run_webui_j3_render_path_smoke` 对 `lda_qeda` 各真源模块**逐值跨源对拍**。⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**。 无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`。 异常不 500（返回 200 + error 字段，与 `h_qsensor_demo` 同风格）。 | — | public |
+| `/api/j4_qs_system` | GET /api/j4_qs_system —— J4 量子传感**系统集成**案例卡（只读 · 免登录 · 微秒级）。 J4 征程（吃狗粮 · LDA-J4 · v0.9.237+ · M0–M4）的**只读对外窗口**： 多参数 NV 交叉灵敏度解耦（B515）→ 芯片级 OPM 微型化（锚净增 0）→ 单芯片集成预算（锚净增 0）→ 低温布线热负载（B518）→ 系统总装签核。 🔴 与 `/api/qsensor_demo`（**QS 器件级**：NV/SQUID/OPM 三腿灵敏度）**分工不同、互补非重复**： `qsensor_demo` 在**器件级**（单参数灵敏度），本卡在**系统级** （多参数解耦可用性 / 微型化代价 / 集成隔离度 / 热负载预算）。 🔴 **零重计算**：不跑仿真、不 import 求解器、不 import numpy/scipy —— 全部数字由 **闭式算术现算**（Cramer 行列式展开 / WF 有理积分 / dB 比值 / 弛豫求和）， 并由常驻门禁 `run_webui_j4_render_path_smoke` 对 `lda_l2/qs_j4_*` 各真源模块 **逐值跨源对拍**。⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**。 无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`。 异常不 500（返回 200 + error 字段，与 `h_j3_ctrl_demo` 同风格）。 | — | public |
 | `/api/oi_demo` | GET /api/oi_demo —— 光联接模块 M0–M4 案例卡（新征程 · 只读 · 免登录）。 🔴 与 `/api/qchip_demo` / `/api/pchip_demo` / `/api/ecore_demo` / `/api/d4_demo` 同属「公开只读验货」类：本卡把 **M0**（2 通道 WDM 收发器）的链路预算、 **M1**（800G · 8×100G PAM4）的**频域/时域预算**、**M2/M2b**（1.6T · LPO · G-OI2 真 GDS · 多通道均衡/热调/Γ/良率/封装）、**M3**（3.2T/CPO：带宽墙 · 电通道 · 热 · 功耗账 · G-OI6 2.5D 版图）与 **M4**（CPO 形态深化 · 热-光-电 协同设计空间）以确定性现算呈现（闭式 + lda_chain 级联引擎 + `lda_l2.oi_m1`… `oi_m4`，零重计算、不跑 P&R/FDTD），免登录、不进 HEAVY_POST_PATHS。 返回体的 `m4` 块含：热-光-电耦合链 / 固化点预偏移 / 热致偏移⟷WDM 重规划 / 三形态三域矩阵 / FAU CTE 失准 / 三域 Pareto + **VπL 断口**。 🔴 不伪装实测：`verdict` 恒 DESIGN_BUDGET；M0–M4 均属**设计预算层** （L0 解析器件模型 + A 档闭式/行为级），BER 为**光通道预算级**闭式 估计（不含 SerDes/DSP/FEC/均衡/CDR，与 `eic_behavioral` 的 EIC 电路级 排除**显式分层**）、接受 SNR 为**设计输入假设**；M4 的 CTE/VπL/模场半径/ 三形态总线长均为**规格锚**（公开近似，非 foundry 真值）；真实版图 GDS 由 D4 域 photonic_interconnect / oi_transceiver / 2.5D 承载；不报 TOPS/TOPS-W/fJ/op/fJ-op/pJ-bit。 无查询参数（固定设计点）。异常不 500（200 + error 字段，与 h_qchip_demo 同风格）。 | — | public |
 | `/api/pchip_demo` | GET /api/pchip_demo —— 硅光张量核（光计算芯片）案例卡（只读 · 免登录 · 微秒级）。 M5 收尾（2026-09-30）：把光计算征程「吃狗粮」LDA-P（M1→M5）成果在 UI 中 以**只读案例**呈现（MZI mesh 干涉架构：SVD 双网格 + 对角衰减 + 光电协同 + tiling）。 🔴 与 `/api/qchip_demo`（光量子 LOQC 案例卡 · D-131）、`/api/schip_demo` （超导 transmon 案例卡 · D-148）**并列**：三条物理路线在 LDA 均已吃狗粮。 🔴 **零重计算**：不跑仿真、不 import 求解器 —— 数字来自 ① 静态里程碑/结论 （可回溯到 M1–M5 门禁）② 纯闭式现算（MZI 计数）③ 对产出物只 `stat` 的元信息 ⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**（与 `/api/qchip_demo`、 `/api/schip_demo`、`/api/verification_ledger` 同属「公开只读验货」类）。 🔴 **不伪装实测 / 不报 fabricated 能效**：`verdict` 恒为 `DESIGN_SIGNOFF` （**非** ACCEPT/PASS），返回体自带 `honest_note`（非流片实测 / 设计容量 / 不报任何 fabricated 能效数字）。 异常不 500（返回 200 + error 字段，与 `h_schip_demo` 同风格）。 | — | public |
 | `/api/pdks` | 返回（惰性构建并缓存）默认 Registry 实例。 | — | public |

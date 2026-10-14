@@ -321,6 +321,17 @@ from ._batch_j2m3_numeric import (  # Batch J2-M3 超导 Transmon 征程 · M3 �
 from ._batch_j2m4_numeric import (  # Batch J2-M4 超导 Transmon 征程 · M4 QPU 误差预算集成 + 拓扑对接（QPU 耦合图代数连通度 λ₂ 谱定理闭式 2−2cos(π/max) × 嵌套 Krylov Rayleigh–Ritz）
     golden_b509,
 )
+from ._batch_j3_numeric import (  # Batch J3 量子测控与读出征程 · M0–M4（Rabi 布居 / 三能级泄漏 / unitarity 纯度衰减 / Purcell 滤波抑制比 / Caves 级联噪声）
+    golden_b510,
+    golden_b511,
+    golden_b512,
+    golden_b513,
+    golden_b514,
+)
+from ._batch_j4_numeric import (  # Batch J4 量子传感系统集成征程 · M0（多参数 NV 交叉灵敏度解耦）+ M3（低温布线束热负载）
+    golden_b515,
+    golden_b518,
+)
 
 from .oracle_pyepr import resolve_pyepr_transmon
 
@@ -1150,6 +1161,13 @@ _GOLDEN_DISPATCH = {
     "B507": golden_b507,
     "B508": golden_b508,
     "B509": golden_b509,
+    "B510": golden_b510,
+    "B511": golden_b511,
+    "B512": golden_b512,
+    "B513": golden_b513,
+    "B514": golden_b514,
+    "B515": golden_b515,
+    "B518": golden_b518,
 
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
@@ -1258,6 +1276,10 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B506", "B507",  # Batch J2（超导 Transmon 征程 · M2 两比特门层）：两比特 CR 门退相干错误率 / 残余 ZZ 诱导门错误率
                  "B508",  # Batch J2-M3（超导 Transmon 征程 · M3 色散读出链 + 串扰）：FDM 多音读出相邻通道频谱重叠串扰比
                  "B509",  # Batch J2-M4（超导 Transmon 征程 · M4 QPU 误差预算集成 + 拓扑对接）：QPU 耦合图代数连通度 λ₂（Fiedler 值）
+                 "B510", "B511",  # Batch J3-M0M1（量子测控与读出征程 · M0 时域驱动脉冲 + M1 DRAG 泄漏抑制）：广义 Rabi 时域布居 / 三能级 transmon 驱动泄漏布居
+                 "B512", "B513", "B514",  # Batch J3-M2M3M4（量子测控与读出征程 · M2 门保真标定 + M3 读出链 + M4 低温电子学）：去极化信道纯度衰减 unitarity / Purcell 滤波器抑制比 / 分布式相位不敏感放大链附加噪声（Caves 极限）
+                 "B515",  # Batch J4-M0（量子传感系统集成征程 · M0 多参数传感）：多参数 NV 交叉灵敏度解耦温度分量 τ̂（Cramer 闭式解析反演）
+                 "B518",  # Batch J4-M3（量子传感系统集成征程 · M3 封装热负载）：低温布线束热负载（Wiedemann–Franz 电子热导有理闭式）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

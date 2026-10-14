@@ -76,8 +76,11 @@ INJECTOR_SCRIPTS = ("nav.js", "cs_widget.js", "guide_widget.js", "onboard_widget
 #:   🔴 v0.9.234 收紧 **11 → 12**：新增 `sec-j2`（超导 transmon QPU 物理比特层 L2 · J2 收官
 #:   面板）⇒ 族 11→12。该面板是 **J2 章程 §2.4/§3-M4 的强制交付项**（M0–M4 四档后端做完了、
 #:   面板全档漏交付且落地记录未披露）⇒ 本版补做并同步抬下限。
+#:   🔴 v0.9.236 收紧 **12 → 13**：新增 `sec-j3`（量子测控与读出闭环层 L3 · J3 · M0–M4
+#:   面板）⇒ 族 12→13。该面板是 **J3 章程 §2.4/§3-M4 的强制交付项**（M0–M4 后端做完了、
+#:   面板属 M4 交付且落地记录披露）⇒ 本版补做并同步抬下限。
 #:   **不收紧则减面探针 G7 静默失效** —— 详见本节末尾血案注。
-CASE_PANELS_MIN = 12
+CASE_PANELS_MIN = 14
 _ACCEPT_PATTERNS = (
     re.compile(r'data-stage="accept"[^>]*id="(sec-[A-Za-z0-9_]+)"'),
     re.compile(r'id="(sec-[A-Za-z0-9_]+)"[^>]*data-stage="accept"'),

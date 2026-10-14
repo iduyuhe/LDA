@@ -275,6 +275,26 @@ PERTURB_SPEC = [
     #    ⇄ 嵌套 Krylov 子空间 Rayleigh–Ritz 最小值；扰 cols ⇒ λ₂ 随图尺度响应：
     #    实测 cols×1.1(=11) ⇒ |golden 偏差|≈1.65e-2 ≫ tol 1e-7 ⇒ 守卫必 FAIL）
     ("B509", "cols", "mul"),
+    # v0.9.235（Batch J3-M0M1 · 量子测控与读出征程 · M0 时域驱动脉冲 + M1 DRAG 泄漏抑制）：B510/B511 两道严格独立锚落地
+    #   （B510 广义 Rabi 时域布居 解析闭式 (Ω²/Ω_R²)sin²(Ω_R t/2) ⇄ 时域 TDSE 四阶 RK4；
+    #    扰 Omega ⇒ 布居随 Rabi 角响应：实测 Ω×1.1 ⇒ |golden 偏差|≈3.69e-2 ≫ tol 1e-6 ⇒ 守卫必 FAIL）
+    ("B510", "Omega", "mul"),
+    #   （B511 三能级 transmon 驱动泄漏布居 depressed-cubic 三角法精确谱闭式 ⇄ 时域 RK4；
+    #    扰 alpha ⇒ 泄漏随非谐性失谐响应：实测 α×1.1 ⇒ |golden 偏差|≈2.82e-3 ≫ tol 1e-5 ⇒ 守卫必 FAIL）
+    ("B511", "alpha", "mul"),
+    # v0.9.236（Batch J3-M2M3M4 · 量子测控与读出征程 · M2 门保真 + M3 读出链 + M4 低温电子学）：B512/B513/B514 三道严格独立锚落地
+    #   （B512 去极化纯度衰减 unitarity 解析指数闭式 (1+e^{−2Γt})/2 ⇄ 密度矩阵 Liouvillian RK4；
+    #    扰 Gamma ⇒ 纯度随去极化率响应：实测 Γ×1.1 ⇒ |golden 偏差|≈3.02e-3 ≫ tol 1e-7 ⇒ 守卫必 FAIL）
+    ("B512", "Gamma", "mul"),
+    #   （B513 Purcell 滤波器抑制比 ABCD 代数闭式 1/|S21|² ⇄ 导纳 ODE RK4；
+    #    🔴 扰 **f_s**（不扰 f_q）：f_q×1.1 ⇒ θ=(π/2)(f_q/f_s) 跨过 π/2 带阻极点 ⇒ tan 变号、
+    #     导纳 ODE 在极点发散（division by zero）—— 这是**物理极点**而非判据失效；
+    #     改扰 f_s×1.1 ⇒ θ 减小（远离极点）⇒ candidate 稳定；
+    #    实测 f_s×1.1 ⇒ |golden 偏差|≈10.94 ≫ tol 1e-6 ⇒ 守卫必 FAIL）
+    ("B513", "f_s", "mul"),
+    #   （B514 分布式放大链附加噪声解析闭式 (η/g)(1−e^{−gL}) ⇄ 复合 Simpson 求积；
+    #    扰 g ⇒ 噪声随增益率响应：实测 g×1.1 ⇒ |golden 偏差|≈1.33e-3 ≫ tol 1e-6 ⇒ 守卫必 FAIL）
+    ("B514", "g", "mul"),
 ]
 PERTURB_REL = 0.10          # 反向测试扰动幅度（10%）
 SENSITIVITY_GRID = (0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20)
@@ -392,7 +412,13 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 # v0.9.233（Batch J2-M4 · 超导 Transmon QPU 征程 · M4 QPU 误差预算集成 + 拓扑对接）：B509 一道严格独立锚落地
 #   ⇒ 严格独立 504 → **505**（降级 3、自证桩 19 不变）。
 #   棘轮地板同步单调上调：504 → 505（按行为性真值上抬）。
-MIN_INDEPENDENT = 505
+# v0.9.235（Batch J3-M0M1 · 量子测控与读出征程 · M0 时域驱动脉冲 + M1 DRAG 泄漏抑制）：B510/B511 两道严格独立锚落地
+#   ⇒ 严格独立 505 → **507**（降级 3、自证桩 19 不变）。
+#   棘轮地板同步单调上调：505 → 507（按行为性真值上抬）。
+# v0.9.236（Batch J3-M2M3M4 · 量子测控与读出征程 · M2 门保真 + M3 读出链 + M4 低温电子学）：B512/B513/B514 三道严格独立锚落地
+#   ⇒ 严格独立 507 → **510**（降级 3、自证桩 19 不变）。
+#   棘轮地板同步单调上调：507 → 510（按行为性真值上抬）。
+MIN_INDEPENDENT = 512
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

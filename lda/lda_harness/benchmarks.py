@@ -181,6 +181,13 @@ BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B506", "B507",  # Batch J2（超导 Transmon 征程 · M2 两比特门层）：两比特 CR 门退相干错误率（张量 A+D 信道闭式 ⇄ 16×16 Liouvillian RK4）+ 残余 ZZ 诱导门错误率（闭式 (4/5)sin²(ζt/2) ⇄ 矩阵传播子 RK4）
                    "B508",  # Batch J2-M3（超导 Transmon 征程 · M3 色散读出链 + 串扰）：FDM 多音读出相邻通道频谱重叠串扰比（闭式洛伦兹自相关 4γ²/(4γ²+δ²) ⇄ sinh 换元+复合 Simpson 数值卷积）
                    "B509",  # Batch J2-M4（超导 Transmon 征程 · M4 QPU 误差预算集成 + 拓扑对接）：QPU 耦合图代数连通度 λ₂（Fiedler 值）（谱定理闭式 2−2cos(π/max(rows,cols)) ⇄ 嵌套 Krylov 子空间 Rayleigh–Ritz 最小值）
+                   "B510",  # Batch J3-M0M1（量子测控与读出征程 · M0 时域驱动脉冲）：广义 Rabi 时域布居（解析闭式 (Ω²/Ω_R²)sin²(Ω_R t/2) ⇄ 时域 TDSE 四阶 RK4 态矢推进）
+                   "B511",  # Batch J3-M0M1（量子测控与读出征程 · M1 DRAG 泄漏抑制）：三能级 transmon 驱动泄漏布居（depressed-cubic 三角法精确谱闭式 ⇄ 时域 RK4）
+                   "B512",  # Batch J3-M2M3M4（量子测控与读出征程 · M2 门保真标定）：去极化信道纯度衰减 unitarity（解析指数闭式 (1+e^{−2Γt})/2 ⇄ 密度矩阵 Liouvillian RK4）
+                   "B513",  # Batch J3-M2M3M4（量子测控与读出征程 · M3 读出链）：Purcell 滤波器抑制比（ABCD 代数闭式 1/|S21|² ⇄ 导纳 ODE 四阶 RK4 数值积分）
+                   "B514",  # Batch J3-M2M3M4（量子测控与读出征程 · M4 低温电子学）：分布式相位不敏感放大链附加噪声 Caves 极限（解析闭式 (η/g)(1−e^{−gL}) ⇄ 复合 Simpson 求积）
+                   "B515",  # Batch J4-M0（量子传感系统集成征程 · M0 多参数传感）：多参数 NV 交叉灵敏度解耦温度分量 τ̂（Cramer 闭式解析反演 ⇄ Landweber 迭代解耦）
+                   "B518",  # Batch J4-M3（量子传感系统集成征程 · M3 封装热负载）：低温布线束热负载（Wiedemann–Franz 电子热导有理闭式 ⇄ RK4 积分定义 ODE）
                    "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "E10",
                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                    "S9", "S10", "S11", "S12", "S13"]  # S 系统锚（Phase 0-4；S9=LVS/S10=多层/S11=规模/S12=阵列分布/S13=设计良率）

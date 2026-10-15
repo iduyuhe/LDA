@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""J5 M0 突变探针（`scripts/d156_j5_probe.py`）—— **先证门禁能变红**。
+"""J5 突变探针（`scripts/d156_j5_probe.py` · M0/M1/M2 三档）—— **先证门禁能变红**。
 
 纪律（J4 血案沉淀）：
   ① 突变必须打在**门禁判据扰动/检出的那个键**上（否则「红对了但红在别处」）；
@@ -29,11 +29,13 @@ S = importlib.import_module("run_j5_qnet_smoke")
 J5 = S.J5
 CH = S.CH
 DS = S.DS
+RP = S.RP
 SR = S.SR
 DEFS = S.BENCHMARK_DEFS
 
 D519 = DEFS["B519"]
 D520 = DEFS["B520"]
+D521 = DEFS["B521"]
 _ORIG = {
     "golden_fn": D519["golden_fn"],
     "tol": D519["tol"],
@@ -207,12 +209,49 @@ def main() -> int:
     rec("M13 qnet_source 自检破坏 ⇒ B3", "B3 ", fails, npass)
     SR.selfcheck_qnet_source = _sr
 
-    # M14 还原复绿
+    # M15 B521 golden 偏移 ⇒ A2·B521
+    _g521 = D521["golden_fn"]
+    D521["golden_fn"] = lambda **kw: _g521(**kw) + 1.0
     fails, npass = run_smoke()
-    print("\n[M14] 全部还原")
-    print("  [%s] M14 全部还原（复绿完整性 · FAIL 行 = %d）"
+    rec("M15 B521 golden +1.0 ⇒ A2·B521", "A2\u00b7B521", fails, npass)
+    D521["golden_fn"] = _g521
+
+    # M16 B521 候选≡golden（自证桩）⇒ A7·B521（同样须 patch 门禁读取路径）
+    _c521, _b521 = J5.cand_b521, J5._CAND_BY_BID["B521"]
+    _fake521 = lambda **kw: _g521(**{k: v for k, v in kw.items() if k != "n"})  # noqa: E731
+    J5.cand_b521 = _fake521
+    J5._CAND_BY_BID["B521"] = _fake521
+    fails, npass = run_smoke()
+    rec("M16 B521 候选≡golden ⇒ A7·B521", "A7\u00b7B521", fails, npass)
+    J5.cand_b521 = _c521
+    J5._CAND_BY_BID["B521"] = _b521
+
+    # M17 qnet_repeater 自检破坏 ⇒ B4
+    _rp = RP.selfcheck_qnet_repeater
+    RP.selfcheck_qnet_repeater = lambda: {"broken": False}
+    fails, npass = run_smoke()
+    rec("M17 qnet_repeater 自检破坏 ⇒ B4", "B4 ", fails, npass)
+    RP.selfcheck_qnet_repeater = _rp
+
+    # M18 qnet_repeater.repeater_yield 漂移 ⇒ C5
+    _ry = RP.repeater_yield
+    RP.repeater_yield = lambda *a, **kw: 0.5
+    fails, npass = run_smoke()
+    rec("M18 qnet_repeater.repeater_yield 漂移 ⇒ C5", "C5", fails, npass)
+    RP.repeater_yield = _ry
+
+    # M19 B521 默认档漂移 ⇒ D3（数值核常量对象被门禁 `_DEFPARAMS` 绑定 ⇒ 当场红）
+    J5.B521_DEFAULT_PARAMS["t_mem_s"] = 3.0e-4
+    fails, npass = run_smoke()
+    rec("M19 B521_DEFAULT_PARAMS 漂移 ⇒ D3", "D3", fails, npass)
+    J5.B521_DEFAULT_PARAMS["t_mem_s"] = 1.6e-4
+
+    # M20 还原复绿
+    fails, npass = run_smoke()
+    print("\n[M20] 全部还原")
+    print("  [%s] M20 全部还原（复绿完整性 · FAIL 行 = %d）"
           % ("PASS" if len(fails) == 0 else "FAIL", len(fails)))
-    records.append(("M14 还原复绿", len(fails) == 0, "无红", npass, fails[:2]))
+    records.append(("M20 还原复绿", len(fails) == 0, "无红", npass, fails[:2]))
 
     bad = sum(1 for _, ok, _, _, _ in records if not ok)
     print("\n" + "=" * 78)

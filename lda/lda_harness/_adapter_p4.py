@@ -1929,3 +1929,29 @@ def _b520_hom_visibility_cand(spec: VerificationSpec, oracle_value: Any) -> floa
         delay_s=float(p.get("delay_s", 2.0e-12)),
         dw_rad_s=float(p.get("dw_rad_s", 1.0e12)),
     ))
+
+
+@_register_candidate(
+    "b521_repeater_yield_cand",
+    "中继站期望交换产出数 N_swap·单重复合 Simpson 求积"
+    "（∫₀ᵀh(t)dt，h=(e^{−λt}−e^{−γt})/(γ−λ)，γ=μ+κ，n=256 段）"
+    "↔ 生成窗 ⊗ 存储窗 嵌套卷积初等闭式 golden，方法学独立（数值求积 vs 解析积分）")
+def _b521_repeater_yield_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B521 独立候选：中继站期望交换产出数（单重复合 Simpson 求积）。
+
+    golden = N_swap 的**初等闭式** κλ/(γ−λ)·[(1−e^{−λT})/λ−(1−e^{−γT})/γ]；
+    cand  = 对被积函数 h(t)=(e^{−λt}−e^{−γt})/(γ−λ) 的复合 Simpson 求积。
+    残差 = Simpson 截断误差（实测残差链 n=8→4.1444e-04 … n=256→4.1157e-10，
+    比值 15.52→16.00 ⇒ 从**下方**趋近 O(h⁴)〔复合 Simpson 标称阶〕）。余量 243.0×。
+    🔴 **嵌套双重复合 Simpson 实测被否**：内层域随外层节点变化 ⇒ 主误差退化 O(h²)、
+    动态范围仅 ~30× < 章程 R2 的 1e4× 线。
+    🔴 **与 B19 passivity** 物理地位不同：本条是**产出计数**，非传递矩阵、非增益比值。
+    零商业依赖（纯 math；零 RNG）。"""
+    m = _get_j5_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b521(
+        t_obs_s=float(p.get("t_obs_s", 2.0e-4)),
+        t_gen_s=float(p.get("t_gen_s", 5.0e-5)),
+        t_mem_s=float(p.get("t_mem_s", 1.6e-4)),
+        t_swap_s=float(p.get("t_swap_s", 1.0e-4)),
+    ))

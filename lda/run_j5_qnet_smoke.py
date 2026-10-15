@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-"""J5 量子网络与接口征程 · **常驻门禁**（B519 分发后两体纠缠保真度 + B520 HOM 干涉可见度）。
+"""J5 量子网络与接口征程 · **常驻门禁**（B519 分发后两体纠缠保真度 + B520 HOM 干涉可见度 + B521 中继交换产出数）。
 
 判据分节（**按锚遍历** · 判据数实跑现数）：
   A 锚项（每锚 11 条 · 读自 BENCHMARK_DEFS 不硬编码）：tol 内 / 残差 >0 非代数恒等 /
     判据 D（严格单调 + 比值形态与算法一致）/ 动态范围 · 反自证桩 · 防回退候选键 /
     🔴 反向探针必须打「离散参数 n」/ 纪律佐证 / n 非法必抛
-  B 能力层：`qnet_channel` 14 + `qnet_distribution` 10 + `qnet_source` 8
-  C 跨模块同源（逐位）：分发 ≡ B519 golden · 信道 ≡ B519 golden · 源 ≡ B520 golden
-  D 三表一致：`_TOL_BY_BID` ≡ DEFS tol（两锚）· `_M_BY_BID` = 扫描格末端（两锚）· 默认档 ≡ DEFS
+  B 能力层：`qnet_channel` 14 + `qnet_distribution` 10 + `qnet_source` 8 + `qnet_repeater` 20
+  C 跨模块同源（逐位）：分发 ≡ B519 golden · 信道 ≡ B519 golden · 源 ≡ B520 golden · 中继 ≡ B521 golden
+  D 三表一致：`_TOL_BY_BID` ≡ DEFS tol（三锚）· `_M_BY_BID` = 扫描格末端（三锚）· 默认档 ≡ DEFS
   E 红线：零量子 SDK（不依赖 Qiskit/Cirq/PennyLane/QuTiP）
 
 🔴 `main()` 返回「真值」而非恒 0（J4 血案：恒 `return 0` = 假绿）。
@@ -28,21 +28,24 @@ from lda_harness.benchmarks import BENCHMARK_DEFS  # noqa: E402
 from lda_harness.smoke_kit import make_check  # noqa: E402  # 助手单一来源（棘轮 J3：禁自定义检查函数）
 from lda_l2 import qnet_channel as CH  # noqa: E402
 from lda_l2 import qnet_distribution as DS  # noqa: E402
+from lda_l2 import qnet_repeater as RP  # noqa: E402
 from lda_l2 import qnet_source as SR  # noqa: E402
 
 check = make_check(globals(), ok_key="PASS", bad_key="FAIL", detail_fmt="  |  {d}")
 
-_BIDS = ("B519", "B520")
+_BIDS = ("B519", "B520", "B521")
 
 #: 期望的候选键（防「回退自证桩」：DEFS 必须指向本征程专用候选）
 _EXPECT_CAND = {
     "B519": "b519_entanglement_distribution_fidelity_cand",
     "B520": "b520_hom_visibility_cand",
+    "B521": "b521_repeater_yield_cand",
 }
 
 #: 数值核里各锚的默认参数常量（D3 用）
 _DEFPARAMS = {"B519": getattr(J5, "B519_DEFAULT_PARAMS"),
-              "B520": getattr(J5, "B520_DEFAULT_PARAMS")}
+              "B520": getattr(J5, "B520_DEFAULT_PARAMS"),
+              "B521": getattr(J5, "B521_DEFAULT_PARAMS")}
 
 
 def _anchor_checks(bid: str) -> None:
@@ -69,9 +72,13 @@ def _anchor_checks(bid: str) -> None:
           " → ".join("%d:%.2e" % (n, x) for n, x in chain))
     ratios = [chain[i - 1][1] / chain[i][1] if chain[i][1] > 0 else float("inf")
               for i in range(1, len(chain))]
-    # B519 = RK4 ⇒ O(h⁴) 比值趋向 16（粗端偏高）；B520 = 复合梯形 ⇒ 超几何收敛（比值单调递增）
-    shape_ok = ((4.0 <= ratios[-1] <= 22.0 and ratios[-1] <= ratios[0]) if bid == "B519"
-                else all(ratios[i] < ratios[i + 1] for i in range(len(ratios) - 1)))
+    # B519 = RK4 ⇒ O(h⁴)，比值从上方逼近 16；B521 = 复合 Simpson ⇒ O(h⁴)，从下方逼近 16；
+    # B520 = 复合梯形 ⇒ 超几何收敛（比值单调递增）。判据 = 「趋近标称阶 16」（不限方向）。
+    if bid == "B520":
+        shape_ok = all(ratios[i] < ratios[i + 1] for i in range(len(ratios) - 1))
+    else:
+        shape_ok = (4.0 <= ratios[-1] <= 22.0
+                    and abs(ratios[-1] - 16.0) <= abs(ratios[0] - 16.0))
     check("A5·%s 判据 D：比值形态与算法一致" % bid, shape_ok,
           " / ".join("%.2f" % r for r in ratios))
     dyn = (chain[0][1] / chain[-1][1]) if chain[-1][1] > 0 else float("nan")
@@ -103,7 +110,7 @@ def _anchor_checks(bid: str) -> None:
 
 def main() -> int:  # noqa: C901
     print("=" * 78)
-    print("J5 门禁（B519 分发保真度 + B520 HOM 可见度）")
+    print("J5 门禁（B519 分发保真度 + B520 HOM 可见度 + B521 中继交换产出数）")
     print("=" * 78)
 
     for bid in _BIDS:
@@ -119,12 +126,17 @@ def main() -> int:  # noqa: C901
     sc_sr = SR.selfcheck_qnet_source()
     check("B3 qnet_source 全部自检通过", not [k for k, v in sc_sr.items() if not v],
           "%d 项" % len(sc_sr))
+    sc_rp = RP.selfcheck_qnet_repeater()
+    check("B4 qnet_repeater 全部自检通过", not [k for k, v in sc_rp.items() if not v],
+          "%d 项" % len(sc_rp))
 
     print("\n[C] 跨模块同源（逐位）")
     g519 = float(BENCHMARK_DEFS["B519"]["golden_fn"](
         **BENCHMARK_DEFS["B519"]["default_params"]))
     g520 = float(BENCHMARK_DEFS["B520"]["golden_fn"](
         **BENCHMARK_DEFS["B520"]["default_params"]))
+    g521 = float(BENCHMARK_DEFS["B521"]["golden_fn"](
+        **BENCHMARK_DEFS["B521"]["default_params"]))
     check("C1 qnet_distribution.distribution_fidelity ≡ B519 golden（逐位）",
           abs(DS.distribution_fidelity(1.0e5, 2.2e4) - g519) < 1e-15)
     check("C2 qnet_channel.link_fidelity ≡ B519 golden（逐位）",
@@ -133,20 +145,23 @@ def main() -> int:  # noqa: C901
           abs(SR.hom_visibility() - g520) < 1e-15)
     check("C4 qnet_source.overlap_magnitude_sq ≡ 数值核同律",
           abs(SR.overlap_magnitude_sq() - J5.hom_visibility_golden()) < 1e-15)
+    check("C5 qnet_repeater.repeater_yield ≡ B521 golden（逐位）",
+          abs(RP.repeater_yield() - g521) < 1e-15)
 
     print("\n[D] 三表 / 默认档一致")
-    check("D1 _TOL_BY_BID ≡ BENCHMARK_DEFS tol（两锚）",
+    check("D1 _TOL_BY_BID ≡ BENCHMARK_DEFS tol（三锚）",
           all(float(J5._TOL_BY_BID[b]) == float(BENCHMARK_DEFS[b]["tol"]) for b in _BIDS))
-    check("D2 _M_BY_BID = 扫描格末端（两锚）",
+    check("D2 _M_BY_BID = 扫描格末端（三锚）",
           all(int(J5._M_BY_BID[b]) == int(J5._GRID_BY_BID[b][-1]) for b in _BIDS))
-    check("D3 默认档 ≡ DEFS default_params（两锚）",
+    check("D3 默认档 ≡ DEFS default_params（三锚）",
           all(dict(_DEFPARAMS[b]) == dict(BENCHMARK_DEFS[b]["default_params"])
               for b in _BIDS))
 
     print("\n[E] 红线")
     src = ""
     for fn in ("lda_l2/qnet_channel.py", "lda_l2/qnet_distribution.py",
-               "lda_l2/qnet_source.py", "lda_harness/_batch_j5_numeric.py"):
+               "lda_l2/qnet_source.py", "lda_l2/qnet_repeater.py",
+               "lda_harness/_batch_j5_numeric.py"):
         p = os.path.join(_HERE, fn)
         if os.path.exists(p):
             src += open(p, encoding="utf-8").read()

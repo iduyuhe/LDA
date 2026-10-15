@@ -1899,7 +1899,7 @@ CORE_SMOKES: List[str] = [
     #   ≥1e4 · 反自证桩 · 防回退候选键 · 🔴 反向探针打**离散参数 n** · 纪律佐证 · n=0 必抛）
     #   + B 能力层 2（`qnet_channel` 14 自检 + `qnet_distribution` 10 自检）
     #   + C 跨模块同源 3（分发 ≡ B519 golden 逐位 · 信道 ≡ golden 逐位 · Werner 同律）
-    #   + D 三表/默认档一致 3 + E 零量子 SDK 机械核 1。**33 判据**（v0.9.239 起按锚遍历：A 节 11×2）。
+    #   + D 三表/默认档一致 3 + E 零量子 SDK 机械核 1。**46 判据**（v0.9.240 起三锚遍历：A 节 11×2）。
     #   numpy 可用 ⇒ 入 core；timeout 默认 300s 留足余量（实测 ~0.7s）。CI core 326→327。
     "run_j5_qnet_smoke.py",
 ]

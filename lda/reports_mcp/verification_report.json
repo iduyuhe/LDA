@@ -8,11 +8,11 @@
     "self_consistent": false
   },
   "summary": {
-    "total": 536,
-    "passed": 533,
+    "total": 537,
+    "passed": 534,
     "self_consistent": false,
     "verified": 2,
-    "self_consistent_stub_count": 531,
+    "self_consistent_stub_count": 532,
     "independent_candidate_count": 5,
     "candidate_class_totals": null
   },
@@ -6044,6 +6044,19 @@
       "golden": 0.135335283,
       "candidate": 0.135335283,
       "tol": 3e-09,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
+      "id": "B521",
+      "metric": "repeater_swap_yield",
+      "oracle": "closed_form(N_swap=κλ/(γ−λ)·[(1−e^{−λT})/λ−(1−e^{−γT})/γ], γ=μ+κ) + composite-simpson quadrature independent_cross_check",
+      "source": "physical-law",
+      "golden": 0.536967381,
+      "candidate": 0.536967381,
+      "tol": 1e-07,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,

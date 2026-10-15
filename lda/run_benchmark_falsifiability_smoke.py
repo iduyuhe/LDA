@@ -418,7 +418,7 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 # v0.9.236（Batch J3-M2M3M4 · 量子测控与读出征程 · M2 门保真 + M3 读出链 + M4 低温电子学）：B512/B513/B514 三道严格独立锚落地
 #   ⇒ 严格独立 507 → **510**（降级 3、自证桩 19 不变）。
 #   棘轮地板同步单调上调：507 → 510（按行为性真值上抬）。
-MIN_INDEPENDENT = 512
+MIN_INDEPENDENT = 513
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

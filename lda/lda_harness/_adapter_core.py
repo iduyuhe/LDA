@@ -1086,3 +1086,26 @@ def _get_j4_numeric():
         import _batch_j4_numeric as _m
     _BATCH_J4_MOD = _m
     return _m
+
+
+_BATCH_J5_MOD = None
+
+
+def _get_j5_numeric():
+    """Batch J5 数值核（量子网络与接口征程 J5 · M0 纠缠分发：
+    分发后两体纠缠保真度 —— Werner 族解析闭式 (1+3p)/4 × 4×4 密度矩阵距离步进 RK4），缓存，项目铁律。
+
+    🔴 命名避让：批次号 **J5-M0** 沿用连字符写法 `_batch_j5_numeric` / `_get_j5_numeric`
+    （与 `_batch_j1_*` / `_batch_j2*_numeric` / `_batch_j3_numeric` / `_batch_j4_numeric` 并列，互不覆盖）；
+    候选 key 前缀 `b519_` 尚未占用（`b518_` 已用于 J4-M3）。磁盘 `_adapter_p*.py` **不新建**（L9 守卫：恒 6 片）。
+    """
+    global _BATCH_J5_MOD
+    if _BATCH_J5_MOD is not None:
+        return _BATCH_J5_MOD
+    try:
+        from lda_harness import _batch_j5_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_j5_numeric as _m
+    _BATCH_J5_MOD = _m
+    return _m

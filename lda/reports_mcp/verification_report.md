@@ -5,9 +5,9 @@
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - via：L1 KernelGateway
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **529 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **530 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
 
-## 汇总：531/534 通过（独立候选 5 项中 **2 项通过=已验证** · 529 项自证闭环，**非验证结论**）
+## 汇总：532/535 通过（独立候选 5 项中 **2 项通过=已验证** · 530 项自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -472,6 +472,7 @@
 | B514 | amp_added_noise_photons | physical-law | 0.496631 | 0.496631 | 0 | 1e-06 | ✅ PASS |
 | B515 | nv_multiparam_decoupling_temperature | physical-law | 0.647525 | 0.647525 | 0 | 1e-06 | ✅ PASS |
 | B518 | cryo_wiring_heat_load | physical-law | 0.0251789 | 0.0251789 | 0 | 1e-08 | ✅ PASS |
+| B519 | entanglement_distribution_fidelity | physical-law | 0.257962 | 0.257962 | 0 | 1e-08 | ✅ PASS |
 | B52 | E1_eV | physical-law | -1.52962 | -1.52962 | 0 | 0.05 | ✅ PASS |
 | B53 | E2_eV | physical-law | -0.964812 | -0.964812 | 0 | 0.05 | ✅ PASS |
 | B54 | E4_eV | physical-law | 6.01648 | 6.01648 | 0 | 0.01 | ✅ PASS |

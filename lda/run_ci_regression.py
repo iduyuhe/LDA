@@ -1894,6 +1894,14 @@ CORE_SMOKES: List[str] = [
     #   做判据数自洽 + 跨源对拍 `qs_j4_*` 四模块与账本锚 B518 现算值）。
     #   numpy 可用 ⇒ 入 core；timeout 默认 300s 留足余量（实测 ~1.2s）。CI core 325→326。
     "run_webui_j4_render_path_smoke.py",
+    # J5 量子网络与接口征程 M0 门禁（v0.9.238 · B519 分发后两体纠缠保真度 + 第 0 号动作信道层）：
+    #   A 锚项 11（DEFS tol 内 · 残差 >0 非恒等 · 判据 D 单调 + 比值形态趋向 O(h⁴) · 动态范围
+    #   ≥1e4 · 反自证桩 · 防回退候选键 · 🔴 反向探针打**离散参数 n** · 纪律佐证 · n=0 必抛）
+    #   + B 能力层 2（`qnet_channel` 14 自检 + `qnet_distribution` 10 自检）
+    #   + C 跨模块同源 3（分发 ≡ B519 golden 逐位 · 信道 ≡ golden 逐位 · Werner 同律）
+    #   + D 三表/默认档一致 3 + E 零量子 SDK 机械核 1。**20 判据**。
+    #   numpy 可用 ⇒ 入 core；timeout 默认 300s 留足余量（实测 ~0.7s）。CI core 326→327。
+    "run_j5_qnet_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2414,7 +2422,10 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   （314 成员 · 10 线程）实测上界 **1074.24s** ⇒ 2400s 仅 **2.234×** < 目标档 3× ⇒ B9 红
     #   （棘轮把「欠标定」按设计顶回给人）。一次给足 ≈3.8~4.5× ⇒ 取 4200s（3.91×）。
     #   判据一字未改（纯耗时上限），且属单调放宽（放宽上限不使已 PASS 项变 FAIL）。
-    "run_soc_s4_smoke.py": 4200.0,
+    #   🔴 v0.9.238 再上调 4200 → **4500s（3.18×）**：跨轮实测上界漂到 **1416.2s**（机器抖动 +1.8%）
+    #   ⇒ 4200s 仅 **2.966×** < 目标档 3× ⇒ B9 红（与 v0.9.222 同型：棘轮按设计顶回）。
+    #   取 4500s（3.18×）。**仍只改耗时上限，物理判据一字未动。**
+    "run_soc_s4_smoke.py": 4500.0,
     "run_soc_s5_smoke.py": 2400.0,
     "run_soc_s5_ext_smoke.py": 2400.0,
     "run_soc_g6_tiling_smoke.py": 600.0,  # 🔴 G6 多核 array tiling（N=8 M=4 实测 ~1.4s，登记 600s 留慢机裕度；判据一字未改，纯耗时）
@@ -2899,6 +2910,11 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   A–G 判据（含实跑 `run_j4_multiparam_smoke` 子模块 1 次做判据数自洽 + 跨源逐值对拍）。
     #   timeout 默认 300s 留足余量（实测 ~1.2s）。
     "run_webui_j4_render_path_smoke.py": 300.0,
+    # J5 量子网络与接口征程 M0 门禁（B519 分发保真度 + 信道层 + 分发能力层 + 跨模块同源 + 三表一致）：
+    #   20 判据 · 实测上界 **~0.7s** ⇒ 预算 300s = **≈428×**。
+    #   🔴 必须显式登记（`run_timeout_budget_ratchet_smoke` 的 B20 反向完备要求
+    #   `CORE_SMOKES` 每项都在本表内，否则判「盲区」必红）。
+    "run_j5_qnet_smoke.py": 300.0,
     # CI 门禁自身契约（棘轮时序 + 退出码契约 + cwd/模板/注释数字守卫）· 受控 fake 驱动，实测上界 <5s
     "run_ci_gate_contract_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）

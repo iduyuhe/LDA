@@ -8,11 +8,11 @@
     "self_consistent": false
   },
   "summary": {
-    "total": 534,
-    "passed": 531,
+    "total": 535,
+    "passed": 532,
     "self_consistent": false,
     "verified": 2,
-    "self_consistent_stub_count": 529,
+    "self_consistent_stub_count": 530,
     "independent_candidate_count": 5,
     "candidate_class_totals": null
   },
@@ -6004,6 +6004,19 @@
       "source": "physical-law",
       "golden": 0.0251789443,
       "candidate": 0.0251789443,
+      "tol": 1e-08,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
+      "id": "B519",
+      "metric": "entanglement_distribution_fidelity",
+      "oracle": "closed_form(F=(1+3p)/4, p=exp(−L/L_depol), Werner 族) + 4x4 density-matrix distance-stepping RK4 independent_cross_check",
+      "source": "physical-law",
+      "golden": 0.25796151,
+      "candidate": 0.25796151,
       "tol": 1e-08,
       "passed": true,
       "note": "确定性物理定律/解析解",

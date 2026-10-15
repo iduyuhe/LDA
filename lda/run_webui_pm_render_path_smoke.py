@@ -243,7 +243,13 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               #   直接相关的**便宜**门禁 = 新渲染门禁本体（实测 ~1.2s / **17 判据**）⇒ 纳对照面，
               #   令本版 README 顶行声明的 17 判据由机器守（非手写）。
               #   ⚠️ 同版 `run_j4_multiparam_smoke`（25 判据）亦在表内 ⇒ 两处均受守。
-              "run_webui_j4_render_path_smoke.py")
+              "run_webui_j4_render_path_smoke.py",
+              # 🔴 v0.9.238（J5 M0）：本版真改动 = J5 量子网络与接口征程 M0（B519 分发后两体
+              #   纠缠保真度 + **第 0 号动作** 公里级信道层 `qnet_channel` + 分发能力层
+              #   `qnet_distribution`）+ 新常驻门禁 `run_j5_qnet_smoke`（**20 判据**）。
+              #   直接相关的**便宜**门禁 = 新门禁本体（实测 ~0.7s）⇒ 纳对照面，
+              #   令本版 README 顶行声明的 20 判据由机器守（非手写）。
+              "run_j5_qnet_smoke.py")
 
 
 def _declared_judge_counts(text):

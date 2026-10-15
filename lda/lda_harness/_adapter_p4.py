@@ -30,6 +30,7 @@ from ._adapter_core import (
     _get_j2m4_numeric,
     _get_j3_numeric,
     _get_j4_numeric,
+    _get_j5_numeric,
 )
 
 from typing import (
@@ -1880,4 +1881,27 @@ def _b518_cryo_wiring_heat_cand(spec: VerificationSpec, oracle_value: Any) -> fl
     return float(m.cand_b518(
         rho0_ohm_m=float(p.get("rho0_ohm_m", 1.0e-10)),
         beta_ohm_m_per_K=float(p.get("beta_ohm_m_per_K", 5.6e-11)),
+    ))
+
+
+@_register_candidate(
+    "b519_entanglement_distribution_fidelity_cand",
+    "分发后两体纠缠保真度·4×4 密度矩阵距离步进 RK4"
+    "（dρ/dL=−(ρ−I/4)/L_depol，ρ(0)=|Φ+⟩⟨Φ+|，n=256 步走完 100 km，末端读 Tr(ρ·ρ_ideal)）"
+    "↔ Werner 族解析闭式 golden，方法学独立（数值时间推进 vs 解析）")
+def _b519_entanglement_distribution_fidelity_cand(spec: VerificationSpec,
+                                                   oracle_value: Any) -> float:
+    """B519 独立候选：分发后两体纠缠保真度（4×4 密度矩阵距离步进 RK4）。
+
+    golden=Werner 族**解析闭式** F(L)=(1+3·exp(−L/L_depol))/4（退极化信道保留相干度 p(L)）；
+    cand=距离域 Liouvillian dρ/dL=−(ρ−I/4)/L_depol 的 RK4 步进（16 实分量全演化，O(h⁴)）。
+    残差= RK4 截断误差（实测残差链 n=16→2.4914e-06 … n=256→3.0420e-11，比值 18.02→16.24
+    ⇒ 趋向 O(h⁴)）。余量 328.7×；
+    🔴 与 **B453**（相干态损耗保真度）的数值格式分歧：本条是**距离步进时间推进**（离散参数=步数 n），
+    B453 是**静态 Fock 截断 Kraus 算子代数**（离散参数=截断维数）—— 本条刻意避开 Kraus 求和。
+    零商业依赖（纯 numpy + math；零 RNG）。"""
+    m = _get_j5_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b519(
+        l_depol_m=float(p.get("l_depol_m", 2.2e4)),
     ))

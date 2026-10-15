@@ -332,8 +332,9 @@ from ._batch_j4_numeric import (  # Batch J4 量子传感系统集成征程 · M
     golden_b515,
     golden_b518,
 )
-from ._batch_j5_numeric import (  # Batch J5 量子网络与接口征程 · M0（分发后两体纠缠保真度）
+from ._batch_j5_numeric import (  # Batch J5 量子网络与接口征程 · M0（分发后两体纠缠保真度）+ M1（HOM 干涉可见度）
     golden_b519,
+    golden_b520,
 )
 
 from .oracle_pyepr import resolve_pyepr_transmon
@@ -1172,6 +1173,7 @@ _GOLDEN_DISPATCH = {
     "B515": golden_b515,
     "B518": golden_b518,
     "B519": golden_b519,
+    "B520": golden_b520,
 
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
@@ -1285,6 +1287,7 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B515",  # Batch J4-M0（量子传感系统集成征程 · M0 多参数传感）：多参数 NV 交叉灵敏度解耦温度分量 τ̂（Cramer 闭式解析反演）
                  "B518",  # Batch J4-M3（量子传感系统集成征程 · M3 封装热负载）：低温布线束热负载（Wiedemann–Franz 电子热导有理闭式）
                  "B519",  # Batch J5-M0（量子网络与接口征程 · M0 纠缠分发）：分发后两体纠缠保真度（Werner 族解析闭式 (1+3p)/4 ⇄ 4×4 密度矩阵距离步进 RK4）
+                 "B520",  # Batch J5-M1（量子网络与接口征程 · M1 纠缠源）：光子不可分辨性 → HOM 干涉可见度（高斯波包重叠解析闭式 ⇄ 复合梯形时间域数值积分）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

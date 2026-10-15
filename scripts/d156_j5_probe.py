@@ -29,9 +29,11 @@ S = importlib.import_module("run_j5_qnet_smoke")
 J5 = S.J5
 CH = S.CH
 DS = S.DS
+SR = S.SR
 DEFS = S.BENCHMARK_DEFS
 
 D519 = DEFS["B519"]
+D520 = DEFS["B520"]
 _ORIG = {
     "golden_fn": D519["golden_fn"],
     "tol": D519["tol"],
@@ -127,12 +129,17 @@ def main() -> int:
     restore()
 
     # M3 候选回退成 golden（自证桩）⇒ A7 + A1
-    # 🔴 突变须「可被判据区分」而非「令门禁崩溃」⇒ 吞掉离散参数 n 后再转发
-    J5.cand_b519 = lambda **kw: _ORIG["golden_fn"](
+    # 🔴 门禁读 `J5._CAND_BY_BID[bid]`（import 时绑定）⇒ 必须**同时** patch 该路径，
+    #    只 patch `J5.cand_b519` 不会影响门禁（J4 血案变体：patch 目标须与门禁读取路径一致）。
+    _c519, _b519 = J5.cand_b519, J5._CAND_BY_BID["B519"]
+    _fake519 = lambda **kw: _ORIG["golden_fn"](  # noqa: E731
         **{k: v for k, v in kw.items() if k != "n"})
+    J5.cand_b519 = _fake519
+    J5._CAND_BY_BID["B519"] = _fake519
     fails, npass = run_smoke()
     rec("M3 候选≡golden（自证桩回退）⇒ A7 反自证桩", "A7", fails, npass)
-    restore()
+    J5.cand_b519 = _c519
+    J5._CAND_BY_BID["B519"] = _b519
 
     # M4 候选键改错 ⇒ A8
     D519["candidate"] = "b999_fake_candidate"
@@ -176,12 +183,36 @@ def main() -> int:
     rec("M10 qnet_channel.link_fidelity 漂移 ⇒ C2", "C2", fails, npass)
     restore()
 
-    # M11 还原复绿
+    # M11 B520 golden 偏移 ⇒ A2·B520
+    _g520 = D520["golden_fn"]
+    D520["golden_fn"] = lambda **kw: _g520(**kw) + 1.0
     fails, npass = run_smoke()
-    print("\n[M11] 全部还原")
-    print("  [%s] M11 全部还原（复绿完整性 · FAIL 行 = %d）"
+    rec("M11 B520 golden +1.0 ⇒ A2·B520", "A2\u00b7B520", fails, npass)
+    D520["golden_fn"] = _g520
+
+    # M12 B520 候选≡golden（自证桩）⇒ A7·B520（同样须 patch 门禁读取路径）
+    _c520, _b520 = J5.cand_b520, J5._CAND_BY_BID["B520"]
+    _fake520 = lambda **kw: _g520(**{k: v for k, v in kw.items() if k != "n"})  # noqa: E731
+    J5.cand_b520 = _fake520
+    J5._CAND_BY_BID["B520"] = _fake520
+    fails, npass = run_smoke()
+    rec("M12 B520 候选≡golden ⇒ A7·B520", "A7\u00b7B520", fails, npass)
+    J5.cand_b520 = _c520
+    J5._CAND_BY_BID["B520"] = _b520
+
+    # M13 qnet_source 自检破坏 ⇒ B3
+    _sr = SR.selfcheck_qnet_source
+    SR.selfcheck_qnet_source = lambda: {"broken": False}
+    fails, npass = run_smoke()
+    rec("M13 qnet_source 自检破坏 ⇒ B3", "B3 ", fails, npass)
+    SR.selfcheck_qnet_source = _sr
+
+    # M14 还原复绿
+    fails, npass = run_smoke()
+    print("\n[M14] 全部还原")
+    print("  [%s] M14 全部还原（复绿完整性 · FAIL 行 = %d）"
           % ("PASS" if len(fails) == 0 else "FAIL", len(fails)))
-    records.append(("M11 还原复绿", len(fails) == 0, "无红", npass, fails[:2]))
+    records.append(("M14 还原复绿", len(fails) == 0, "无红", npass, fails[:2]))
 
     bad = sum(1 for _, ok, _, _, _ in records if not ok)
     print("\n" + "=" * 78)

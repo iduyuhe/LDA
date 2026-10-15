@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
-"""J5 量子网络与接口征程 · **M0 常驻门禁**（B519 分发后两体纠缠保真度 + 信道层）。
+"""J5 量子网络与接口征程 · **常驻门禁**（B519 分发后两体纠缠保真度 + B520 HOM 干涉可见度）。
 
-判据分节：
-  A 锚项（B519 · 读自 BENCHMARK_DEFS 不硬编码）：tol 内 / 残差 >0 非代数恒等 /
-    判据 D（严格单调 + 比值形态符合 RK4 标称阶）/ 反自证桩（候选 ≠ golden）/
-    🔴 反向探针必须打「离散参数 n」（候选是数值收敛 ⇒ 物理参数扰动同时改 golden 与候选，
-    残差仍 < tol ⇒ 无鉴别力，同 J4 血案）/ 防回退候选键
-  B 能力层：`qnet_channel` 14 自检 + `qnet_distribution` 10 自检
-  C 跨模块同源：`qnet_distribution.distribution_fidelity` ≡ B519 golden（逐位）；
-    `qnet_channel.werner_fidelity` ≡ 数值核同律
-  D 三表一致：`_TOL_BY_BID` ≡ DEFS tol；`_M_BY_BID` = 扫描格末端；默认档 ≡ DEFS default_params
-  E 红线：零量子 SDK（不依赖 Qiskit/Cirq/PennyLane/QuTiP）；纯 numpy/math
+判据分节（**按锚遍历** · 判据数实跑现数）：
+  A 锚项（每锚 11 条 · 读自 BENCHMARK_DEFS 不硬编码）：tol 内 / 残差 >0 非代数恒等 /
+    判据 D（严格单调 + 比值形态与算法一致）/ 动态范围 · 反自证桩 · 防回退候选键 /
+    🔴 反向探针必须打「离散参数 n」/ 纪律佐证 / n 非法必抛
+  B 能力层：`qnet_channel` 14 + `qnet_distribution` 10 + `qnet_source` 8
+  C 跨模块同源（逐位）：分发 ≡ B519 golden · 信道 ≡ B519 golden · 源 ≡ B520 golden
+  D 三表一致：`_TOL_BY_BID` ≡ DEFS tol（两锚）· `_M_BY_BID` = 扫描格末端（两锚）· 默认档 ≡ DEFS
+  E 红线：零量子 SDK（不依赖 Qiskit/Cirq/PennyLane/QuTiP）
 
-🔴 `main()` 返回「真值」而非恒 0 —— 判据红必须让进程退出码非 0（J4 血案：恒 `return 0` = 假绿）。
+🔴 `main()` 返回「真值」而非恒 0（J4 血案：恒 `return 0` = 假绿）。
+🔴 一律走 `smoke_kit.make_check`（助手单一来源棘轮 J3）。
 """
 
 from __future__ import annotations
@@ -29,106 +28,125 @@ from lda_harness.benchmarks import BENCHMARK_DEFS  # noqa: E402
 from lda_harness.smoke_kit import make_check  # noqa: E402  # 助手单一来源（棘轮 J3：禁自定义检查函数）
 from lda_l2 import qnet_channel as CH  # noqa: E402
 from lda_l2 import qnet_distribution as DS  # noqa: E402
+from lda_l2 import qnet_source as SR  # noqa: E402
 
 check = make_check(globals(), ok_key="PASS", bad_key="FAIL", detail_fmt="  |  {d}")
 
+_BIDS = ("B519", "B520")
 
-def main() -> int:
-    d519 = BENCHMARK_DEFS["B519"]
-    p519 = dict(d519.get("default_params") or {})
-    tol515 = float(d519["tol"])
-    gold = float(d519["golden_fn"](**p519))
+#: 期望的候选键（防「回退自证桩」：DEFS 必须指向本征程专用候选）
+_EXPECT_CAND = {
+    "B519": "b519_entanglement_distribution_fidelity_cand",
+    "B520": "b520_hom_visibility_cand",
+}
 
-    print("=" * 78)
-    print("J5 M0 门禁（B519 分发后两体纠缠保真度 · tol=%.1e · golden=%.15e）"
-          % (tol515, gold))
-    print("=" * 78)
+#: 数值核里各锚的默认参数常量（D3 用）
+_DEFPARAMS = {"B519": getattr(J5, "B519_DEFAULT_PARAMS"),
+              "B520": getattr(J5, "B520_DEFAULT_PARAMS")}
 
-    # ── A 锚项 ────────────────────────────────────────────────────────────
-    print("\n[A] 锚项（B519）")
-    n_end = int(J5._M_BY_BID["B519"])
-    grid = list(J5._GRID_BY_BID["B519"])
-    d_res = abs(J5.cand_b519(**p519) - gold)
-    check("A1 默认档残差 > 0（非代数恒等）", d_res > 0.0, "resid=%.4e" % d_res)
-    check("A2 默认档残差 < tol（判决通过）", d_res < float(d519["tol"]),
-          "resid=%.4e < tol=%.1e" % (d_res, float(d519["tol"])))
-    check("A3 基线残差 > 1e-12（不沉双精度地板）", d_res > 1e-12, "resid=%.4e" % d_res)
 
-    chain = [(n, abs(J5.cand_b519(n=n, **p519) - gold)) for n in grid]
+def _anchor_checks(bid: str) -> None:
+    d = BENCHMARK_DEFS[bid]
+    p = dict(d.get("default_params") or {})
+    tol = float(d["tol"])
+    gold = float(d["golden_fn"](**p))
+    print("\n[A·%s] 锚项（golden=%.15e · tol=%.1e）" % (bid, gold, tol))
+
+    n_end = int(J5._M_BY_BID[bid])
+    grid = list(J5._GRID_BY_BID[bid])
+    cand_fn = J5._CAND_BY_BID[bid]
+    d_res = abs(cand_fn(**p) - gold)
+
+    check("A1·%s 默认档残差 > 0（非代数恒等）" % bid, d_res > 0.0, "resid=%.4e" % d_res)
+    check("A2·%s 默认档残差 < tol（判决通过）" % bid, d_res < tol,
+          "resid=%.4e < tol=%.1e" % (d_res, tol))
+    check("A3·%s 基线残差 > 1e-12（不沉双精度地板）" % bid, d_res > 1e-12,
+          "resid=%.4e" % d_res)
+
+    chain = [(n, abs(cand_fn(n=n, **p) - gold)) for n in grid]
     mono = all(chain[i][1] > chain[i + 1][1] for i in range(len(chain) - 1))
-    check("A4 判据 D：残差链严格单调递减", mono,
-          " → ".join("%d:%.2e" % (n, d) for n, d in chain))
-    # 🔴 防 0 除：候选≡golden（自证桩）时末档残差恒 0 ⇒ 必须判红而非崩溃（否则 A7 永不执行）
+    check("A4·%s 判据 D：残差链严格单调递减" % bid, mono,
+          " → ".join("%d:%.2e" % (n, x) for n, x in chain))
     ratios = [chain[i - 1][1] / chain[i][1] if chain[i][1] > 0 else float("inf")
               for i in range(1, len(chain))]
-    check("A5 判据 D：比值形态符合 RK4 标称阶（趋向 16，粗端偏高）",
-          4.0 <= ratios[-1] <= 22.0 and ratios[-1] <= ratios[0],
+    # B519 = RK4 ⇒ O(h⁴) 比值趋向 16（粗端偏高）；B520 = 复合梯形 ⇒ 超几何收敛（比值单调递增）
+    shape_ok = ((4.0 <= ratios[-1] <= 22.0 and ratios[-1] <= ratios[0]) if bid == "B519"
+                else all(ratios[i] < ratios[i + 1] for i in range(len(ratios) - 1)))
+    check("A5·%s 判据 D：比值形态与算法一致" % bid, shape_ok,
           " / ".join("%.2f" % r for r in ratios))
     dyn = (chain[0][1] / chain[-1][1]) if chain[-1][1] > 0 else float("nan")
-    check("A6 动态范围 ≥ 1e4×（末档残差须 > 0）", bool(dyn >= 1e4),
+    check("A6·%s 动态范围 ≥ 1e4×（末档残差须 > 0）" % bid, bool(dyn >= 1e4),
           "dyn=%.3g×" % dyn)
 
-    cand_end = J5.cand_b519(n=n_end, **p519)
-    check("A7 反自证桩：候选 ≠ golden（非恒等）", abs(cand_end - gold) > 0.0,
+    cand_end = cand_fn(n=n_end, **p)
+    check("A7·%s 反自证桩：候选 ≠ golden（非恒等）" % bid, abs(cand_end - gold) > 0.0,
           "cand=%.15e" % cand_end)
-    check("A8 防回退候选键：DEFS 指向 J5 专用候选",
-          d519.get("candidate") == "b519_entanglement_distribution_fidelity_cand",
-          "key=%s" % d519.get("candidate"))
+    check("A8·%s 防回退候选键：DEFS 指向本征程专用候选" % bid,
+          d.get("candidate") == _EXPECT_CAND[bid], "key=%s" % d.get("candidate"))
 
-    # 🔴 反向探针：必须打「离散参数 n」（同 J4 血案）
-    coarse = abs(J5.cand_b519(n=16, **p519) - gold)
-    fine = abs(J5.cand_b519(n=n_end, **p519) - gold)
-    check("A9 反向探针（离散参数 n）：粗档残差 ≫ 默认档残差（可被判据区分）",
-          coarse > fine * 1e3, "coarse=%.3e vs fine=%.3e" % (coarse, fine))
-    # 物理参数扰动虽有响应，但**两侧同扰动**后判决残差仍 < tol ⇒ 证明「必须用离散参数」这一纪律
-    p_pert = {**p519, "l_depol_m": p519["l_depol_m"] * 1.1}
-    pert_resid = abs(J5.cand_b519(n=n_end, **p_pert) - J5.golden_b519(**p_pert))
-    check("A10 纪律佐证：物理参数扰动（两侧同扰动）后判决残差仍 < tol ⇒ 无判别力的反向探针",
-          pert_resid < tol515, "pert_resid=%.3e < tol=%.1e" % (pert_resid, tol515))
+    coarse = abs(cand_fn(n=grid[0], **p) - gold)
+    check("A9·%s 反向探针（离散参数 n）：粗档残差 ≫ 默认档残差" % bid,
+          coarse > d_res * 1e3, "coarse=%.3e vs fine=%.3e" % (coarse, d_res))
+    key0 = sorted(p)[0]
+    p_pert = {**p, key0: p[key0] * 1.1}
+    pert_resid = abs(cand_fn(n=n_end, **p_pert) - d["golden_fn"](**p_pert))
+    check("A10·%s 纪律佐证：物理参数扰动（两侧同扰动）后残差仍 < tol" % bid,
+          pert_resid < tol, "pert_resid=%.3e < tol=%.1e" % (pert_resid, tol))
+
     raised = False
     try:
-        J5.cand_b519(n=0, **p519)
+        cand_fn(n=0, **p)
     except ValueError:
         raised = True
-    check("A11 反向：n=0 必抛 ValueError", raised)
+    check("A11·%s 反向：n=0 必抛 ValueError" % bid, raised)
 
-    # ── B 能力层 ──────────────────────────────────────────────────────────
+
+def main() -> int:  # noqa: C901
+    print("=" * 78)
+    print("J5 门禁（B519 分发保真度 + B520 HOM 可见度）")
+    print("=" * 78)
+
+    for bid in _BIDS:
+        _anchor_checks(bid)
+
     print("\n[B] 能力层自检")
     sc_ch = CH.selfcheck_qnet_channel()
-    bad_ch = [k for k, v in sc_ch.items() if not v]
-    check("B1 qnet_channel 全部自检通过", not bad_ch,
-          "%d 项 · 失败=%s" % (len(sc_ch), bad_ch or "无"))
+    check("B1 qnet_channel 全部自检通过", not [k for k, v in sc_ch.items() if not v],
+          "%d 项" % len(sc_ch))
     sc_ds = DS.selfcheck_qnet_distribution()
-    bad_ds = [k for k, v in sc_ds.items() if not v]
-    check("B2 qnet_distribution 全部自检通过", not bad_ds,
-          "%d 项 · 失败=%s" % (len(sc_ds), bad_ds or "无"))
+    check("B2 qnet_distribution 全部自检通过", not [k for k, v in sc_ds.items() if not v],
+          "%d 项" % len(sc_ds))
+    sc_sr = SR.selfcheck_qnet_source()
+    check("B3 qnet_source 全部自检通过", not [k for k, v in sc_sr.items() if not v],
+          "%d 项" % len(sc_sr))
 
-    # ── C 跨模块同源 ──────────────────────────────────────────────────────
     print("\n[C] 跨模块同源（逐位）")
-    ds_f = DS.distribution_fidelity(1.0e5, 2.2e4)
+    g519 = float(BENCHMARK_DEFS["B519"]["golden_fn"](
+        **BENCHMARK_DEFS["B519"]["default_params"]))
+    g520 = float(BENCHMARK_DEFS["B520"]["golden_fn"](
+        **BENCHMARK_DEFS["B520"]["default_params"]))
     check("C1 qnet_distribution.distribution_fidelity ≡ B519 golden（逐位）",
-          abs(ds_f - gold) < 1e-15, "ds=%.15e vs golden=%.15e" % (ds_f, gold))
-    ch_f = CH.link_fidelity(1.0e5, 2.2e4)
+          abs(DS.distribution_fidelity(1.0e5, 2.2e4) - g519) < 1e-15)
     check("C2 qnet_channel.link_fidelity ≡ B519 golden（逐位）",
-          abs(ch_f - gold) < 1e-15, "ch=%.15e" % ch_f)
-    check("C3 qnet_channel.werner_fidelity(p) ≡ 数值核同律",
-          abs(CH.werner_fidelity(0.3) - (1.0 + 3.0 * 0.3) / 4.0) < 1e-15)
+          abs(CH.link_fidelity(1.0e5, 2.2e4) - g519) < 1e-15)
+    check("C3 qnet_source.hom_visibility ≡ B520 golden（逐位）",
+          abs(SR.hom_visibility() - g520) < 1e-15)
+    check("C4 qnet_source.overlap_magnitude_sq ≡ 数值核同律",
+          abs(SR.overlap_magnitude_sq() - J5.hom_visibility_golden()) < 1e-15)
 
-    # ── D 三表一致 ────────────────────────────────────────────────────────
     print("\n[D] 三表 / 默认档一致")
-    check("D1 _TOL_BY_BID ≡ BENCHMARK_DEFS tol",
-          float(J5._TOL_BY_BID["B519"]) == float(d519["tol"]),
-          "tbl=%.1e defs=%.1e" % (J5._TOL_BY_BID["B519"], d519["tol"]))
-    check("D2 _M_BY_BID = 扫描格末端", n_end == grid[-1], "n=%d end=%d" % (n_end, grid[-1]))
-    check("D3 B519_DEFAULT_PARAMS ≡ DEFS default_params",
-          dict(J5.B519_DEFAULT_PARAMS) == p519,
-          "j5=%s defs=%s" % (J5.B519_DEFAULT_PARAMS, p519))
+    check("D1 _TOL_BY_BID ≡ BENCHMARK_DEFS tol（两锚）",
+          all(float(J5._TOL_BY_BID[b]) == float(BENCHMARK_DEFS[b]["tol"]) for b in _BIDS))
+    check("D2 _M_BY_BID = 扫描格末端（两锚）",
+          all(int(J5._M_BY_BID[b]) == int(J5._GRID_BY_BID[b][-1]) for b in _BIDS))
+    check("D3 默认档 ≡ DEFS default_params（两锚）",
+          all(dict(_DEFPARAMS[b]) == dict(BENCHMARK_DEFS[b]["default_params"])
+              for b in _BIDS))
 
-    # ── E 红线 ────────────────────────────────────────────────────────────
     print("\n[E] 红线")
     src = ""
     for fn in ("lda_l2/qnet_channel.py", "lda_l2/qnet_distribution.py",
-               "lda_harness/_batch_j5_numeric.py"):
+               "lda_l2/qnet_source.py", "lda_harness/_batch_j5_numeric.py"):
         p = os.path.join(_HERE, fn)
         if os.path.exists(p):
             src += open(p, encoding="utf-8").read()

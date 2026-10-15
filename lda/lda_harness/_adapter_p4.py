@@ -1905,3 +1905,27 @@ def _b519_entanglement_distribution_fidelity_cand(spec: VerificationSpec,
     return float(m.cand_b519(
         l_depol_m=float(p.get("l_depol_m", 2.2e4)),
     ))
+
+
+@_register_candidate(
+    "b520_hom_visibility_cand",
+    "光子不可分辨性 → HOM 干涉可见度·复合梯形时间域数值积分"
+    "（∫ψ₁*(t)ψ₂(t)dt，两个高斯波包含 δt/δω，n=28 步）"
+    "↔ 高斯波包重叠解析闭式 golden，方法学独立（数值求积 vs 解析积分）")
+def _b520_hom_visibility_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B520 独立候选：HOM 干涉可见度（复合梯形时间域数值积分）。
+
+    golden=V=|M|² 的高斯积分**解析闭式**（M=∫ψ₁*ψ₂dt）；
+    cand=复合梯形数值积分同一重叠积分（复值被积函数）。
+    残差= 求积截断误差（实测残差链 n=8→2.709e-01 … n=28→1.045e-11，比值 11.06→1541.59
+    ⇒ **超几何收敛**、非幂律）。余量 287.1×；
+    🔴 **刻意不用 Simpson**：被积函数含振荡因子 exp(iδωt) ⇒ Simpson 粗端非单调，判据 D 不成立。
+    🔴 **与 loqc_states.hom_*** 的分歧：本条自变量是**波包参数（δt/δω）**而非 BS 角度 θ。
+    零商业依赖（纯 numpy + math；零 RNG）。"""
+    m = _get_j5_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b520(
+        packet_sigma_s=float(p.get("packet_sigma_s", 1.0e-12)),
+        delay_s=float(p.get("delay_s", 2.0e-12)),
+        dw_rad_s=float(p.get("dw_rad_s", 1.0e12)),
+    ))

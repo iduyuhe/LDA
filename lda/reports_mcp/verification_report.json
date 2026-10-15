@@ -8,11 +8,11 @@
     "self_consistent": false
   },
   "summary": {
-    "total": 535,
-    "passed": 532,
+    "total": 536,
+    "passed": 533,
     "self_consistent": false,
     "verified": 2,
-    "self_consistent_stub_count": 530,
+    "self_consistent_stub_count": 531,
     "independent_candidate_count": 5,
     "candidate_class_totals": null
   },
@@ -6031,6 +6031,19 @@
       "golden": -1.52961817,
       "candidate": -1.52961817,
       "tol": 0.05,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
+      "id": "B520",
+      "metric": "hom_interference_visibility",
+      "oracle": "closed_form(V=|M|^2, M=gaussian wavepacket overlap, σ1=σ2) + composite-trapezoid time-domain numerical integration independent_cross_check",
+      "source": "physical-law",
+      "golden": 0.135335283,
+      "candidate": 0.135335283,
+      "tol": 3e-09,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,

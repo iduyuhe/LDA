@@ -1,7 +1,7 @@
 {
-  "total": 220,
+  "total": 221,
   "expected_extreme": 123,
-  "in_domain_suspect": 97,
+  "in_domain_suspect": 98,
   "suspects": [
     {
       "bid": "B165",
@@ -1403,6 +1403,22 @@
       "tol": 1e-07,
       "passed": false,
       "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B520",
+      "as_strict": true,
+      "params": {
+        "packet_sigma_s": 7e-13,
+        "delay_s": 2e-12,
+        "dw_rad_s": 1000000000000.0
+      },
+      "oracle": 0.079594019,
+      "cand": 0.0795952767,
+      "err": 1.25769138e-06,
+      "tol": 3e-09,
+      "passed": false,
+      "max_perturbation": 0.3,
       "classification": "in_domain_divergence"
     },
     {
@@ -4763,6 +4779,22 @@
       "tol": 1e-07,
       "passed": false,
       "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B520",
+      "as_strict": true,
+      "params": {
+        "packet_sigma_s": 7e-13,
+        "delay_s": 2e-12,
+        "dw_rad_s": 1000000000000.0
+      },
+      "oracle": 0.079594019,
+      "cand": 0.0795952767,
+      "err": 1.25769138e-06,
+      "tol": 3e-09,
+      "passed": false,
+      "max_perturbation": 0.3,
       "classification": "in_domain_divergence"
     },
     {

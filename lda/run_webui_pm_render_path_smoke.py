@@ -249,6 +249,11 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               #   `qnet_distribution`）+ 新常驻门禁 `run_j5_qnet_smoke`（**20 判据**）。
               #   直接相关的**便宜**门禁 = 新门禁本体（实测 ~0.7s）⇒ 纳对照面，
               #   令本版 README 顶行声明的 20 判据由机器守（非手写）。
+              #   🔴 v0.9.239（J5 M1）：本门禁本体扩至 **33 判据**（自 20 扩 · 改按锚遍历
+              #   B519+B520）⇒ `_pass_count` 实跑数随之变化，README 顶行声明须写 **33 判据**。
+              #   ⚠️ **写「20 → 33 判据」这种箭头区间会令 W10 正则解析为空**（正则要求
+              #   `` `run_x.py` **N 判据** `` **紧跟单个数字**）⇒ W10b 红 + W10-P1 动态取条目
+              #   落到旧条目 ⇒ 假红。**通则：README 顶行判据数只写终值单数，区间写法放别处。**
               "run_j5_qnet_smoke.py")
 
 

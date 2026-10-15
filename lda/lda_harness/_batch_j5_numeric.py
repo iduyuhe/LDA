@@ -58,9 +58,9 @@ _PHI[0, 0] = _PHI[3, 3] = 0.5
 _PHI[0, 3] = _PHI[3, 0] = 0.5
 
 # ── 三表（判据 D 扫描格 / 默认档 = 格末端 / tol 绝对口径按量级标定）───────────
-_M_BY_BID = {"B519": 256}
-_GRID_BY_BID = {"B519": [16, 32, 64, 128, 256]}
-_TOL_BY_BID = {"B519": 1e-8}
+_M_BY_BID = {"B519": 256, "B520": 28}
+_GRID_BY_BID = {"B519": [16, 32, 64, 128, 256], "B520": [8, 12, 16, 20, 24, 28]}
+_TOL_BY_BID = {"B519": 1e-8, "B520": 3e-9}
 
 #: 默认物理参数（只放 golden 接受的键；离散参数 n 由候选签名默认值承载）
 _B519_DEFAULT = {"l_depol_m": 2.2e4}
@@ -119,6 +119,80 @@ def distribution_fidelity_candidate(l_depol_m: float = _DEFAULT_L_DEPOL_M,
     return float(np.trace(rho @ _PHI).real)
 
 
+# ══════════════════════════════════════════════════════════════════════
+# B520 · 光子不可分辨性 → HOM 干涉可见度 V（高斯波包重叠闭式 ⇄ 复合梯形数值积分）
+# ══════════════════════════════════════════════════════════════════════
+#: 波包宽度 σ（s · 设计示例 1 ps）
+_PACKET_SIGMA = 1.0e-12
+#: 时间延迟 δt（取 2σ）
+_PACKET_DELAY = 2.0 * _PACKET_SIGMA
+#: 频率差 δω（取 1/σ ⇒ 被积函数含振荡因子，令求积误差可标定）
+_PACKET_DW = 1.0 / _PACKET_SIGMA
+#: 积分半域（10σ）
+_INT_HALF = 10.0 * _PACKET_SIGMA
+
+_B520_DEFAULT = {
+    "packet_sigma_s": 1.0e-12,
+    "delay_s": 2.0e-12,
+    "dw_rad_s": 1.0e12,
+}
+
+
+def hom_visibility_golden(packet_sigma_s: float = _PACKET_SIGMA,
+                          delay_s: float = _PACKET_DELAY,
+                          dw_rad_s: float = _PACKET_DW) -> float:
+    """B520 golden：两高斯波包重叠幅度的**解析闭式**（高斯积分精确求值）。
+
+        ψ_i(t) ∝ (2πσ_i²)^{−1/4}·exp(−(t−t_i)²/(4σ_i²))·exp(−iω_i t)
+        M = ∫ψ₁*(t)ψ₂(t)dt  ⇒  |M|² =
+            [2σ₁σ₂/(σ₁²+σ₂²)]·exp(−δt²/(2(σ₁²+σ₂²)))·exp(−2δω²σ₁²σ₂²/(σ₁²+σ₂²))
+
+    推导：配方后两次用 ∫exp(−a x²+b x)dx=√(π/a)·exp(b²/4a)（**精确闭式，非截断**）。
+    HOM 可见度 V = |M|²（两光子波包不可分辨性 ⇒ HOM dip 深度）。
+    """
+    s = float(packet_sigma_s)
+    if s <= 0.0:
+        raise ValueError("波包宽度 σ 须 > 0")
+    s2sum = 2.0 * s * s                      # σ₁²+σ₂²（σ₁=σ₂=σ）
+    return ((2.0 * s * s / s2sum)
+            * math.exp(-float(delay_s) ** 2 / (2.0 * s2sum))
+            * math.exp(-2.0 * float(dw_rad_s) ** 2 * s ** 4 / s2sum))
+
+
+def hom_visibility_candidate(packet_sigma_s: float = _PACKET_SIGMA,
+                             delay_s: float = _PACKET_DELAY,
+                             dw_rad_s: float = _PACKET_DW,
+                             n: int = _M_BY_BID["B520"]) -> float:
+    """B520 candidate：**复合梯形法**时间域数值积分 `∫ψ₁*(t)ψ₂(t)dt` ⇒ |M|²。
+
+    🔴 为何**不用 Simpson**：被积函数含振荡因子 exp(iδωt) ⇒ Simpson 在粗端**非单调**
+    （实测 n=8→10 残差反升），判据 D 不成立；**复合梯形 O(h²)** 给出严格单调残差链。
+    🔴 本问题为**超几何收敛**（高斯×振荡被积函数的解析性所致，非幂律）⇒ 比值单调递增，
+    如实登记不假称「恰 4」。
+    """
+    n = int(n)
+    if n < 2:
+        raise ValueError("步数 n 须 ≥ 2")
+    s = float(packet_sigma_s)
+    if s <= 0.0:
+        raise ValueError("波包宽度 σ 须 > 0")
+    dt_lag = float(delay_s)
+    dw = float(dw_rad_s)
+    a = -_INT_HALF
+    b = dt_lag + _INT_HALF
+    t = np.linspace(a, b, n + 1)
+    h = (b - a) / n
+    norm = (2.0 * math.pi * s * s) ** (-0.5)
+    psi1 = np.exp(-(t ** 2) / (4.0 * s * s))
+    psi2 = np.exp(-((t - dt_lag) ** 2) / (4.0 * s * s)) * np.exp(-1j * dw * t)
+    f = norm * np.conj(psi1) * psi2
+    w = np.ones(n + 1)
+    w[0] = w[-1] = 0.5
+    # 🔴 必须保持**复数**（`float()` 作用于复数组会静默丢弃虚部 ⇒ 结果错）
+    M = h * np.sum(w * f)
+    return float(abs(M) ** 2)
+
+
 # ── 统一入口（harness / golden.py 按名调用）────────────────────────────────
 def golden_b519(l_depol_m: float = _DEFAULT_L_DEPOL_M) -> float:
     return distribution_fidelity_golden(l_depol_m)
@@ -129,14 +203,28 @@ def cand_b519(l_depol_m: float = _DEFAULT_L_DEPOL_M,
     return distribution_fidelity_candidate(l_depol_m, n)
 
 
+def golden_b520(packet_sigma_s: float = _PACKET_SIGMA,
+                delay_s: float = _PACKET_DELAY,
+                dw_rad_s: float = _PACKET_DW) -> float:
+    return hom_visibility_golden(packet_sigma_s, delay_s, dw_rad_s)
+
+
+def cand_b520(packet_sigma_s: float = _PACKET_SIGMA,
+              delay_s: float = _PACKET_DELAY,
+              dw_rad_s: float = _PACKET_DW,
+              n: int = _M_BY_BID["B520"]) -> float:
+    return hom_visibility_candidate(packet_sigma_s, delay_s, dw_rad_s, n)
+
+
 #: 暴露给锚定义（键集必须 ⊆ golden 形参集）
 B519_DEFAULT_PARAMS = dict(_B519_DEFAULT)
+B520_DEFAULT_PARAMS = dict(_B520_DEFAULT)
 
-_GOLDEN_BY_BID = {"B519": golden_b519}
-_CAND_BY_BID = {"B519": cand_b519}
+_GOLDEN_BY_BID = {"B519": golden_b519, "B520": golden_b520}
+_CAND_BY_BID = {"B519": cand_b519, "B520": cand_b520}
 
 #: 自检用例：bid, 物理参数（golden 键）
-_CASES = (("B519", _B519_DEFAULT),)
+_CASES = (("B519", _B519_DEFAULT), ("B520", _B520_DEFAULT))
 
 
 # ── 自检 ───────────────────────────────────────────────────────────────────
@@ -180,8 +268,11 @@ def _selfcheck() -> int:
             "余量 ≥ 100×": margin >= 100.0,
             "|golden| / tol ≥ 13.5×": abs(gold) / tol >= 13.5,
             # RK4 ⇒ 比值趋向 16（粗端未入渐近区略高，如实登记不假称「恰 16」）
-            "比值形态与 RK4 标称阶一致（趋向 16）":
-                4.0 <= ratios[-1] <= 22.0 and ratios[-1] <= ratios[0],
+            # B519 = RK4 ⇒ O(h⁴) 比值趋向 16（粗端偏高）；
+            # B520 = 复合梯形 ⇒ **超几何收敛**（比值单调递增，非幂律 ⇒ 如实登记不假称「恰 4」）
+            "比值形态与算法一致（B519 趋向 16 / B520 超几何递增）":
+                (4.0 <= ratios[-1] <= 22.0 and ratios[-1] <= ratios[0]) if bid == "B519"
+                else all(ratios[i] < ratios[i + 1] for i in range(len(ratios) - 1)),
             "默认档 = 扫描格末端": n_end == grid[-1],
         }
         for k, v in checks.items():
@@ -190,7 +281,9 @@ def _selfcheck() -> int:
                 bad += 1
 
         # 反向探针：物理参数扰动 ±10% 必须显著改变候选（C3/C5）
-        d_pert = abs(_CAND_BY_BID[bid](n=n_end, **{**params, "l_depol_m": params["l_depol_m"] * 1.1})
+        # 🔴 通用化：取 params 字典序第一个键作扰动键（B519=l_depol_m · B520=delay_s）
+        key0 = sorted(params)[0]
+        d_pert = abs(_CAND_BY_BID[bid](n=n_end, **{**params, key0: params[key0] * 1.1})
                      - _CAND_BY_BID[bid](n=n_end, **params))
         sig = d_pert / tol
         ok_sig = sig >= 1.4

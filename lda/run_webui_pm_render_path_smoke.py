@@ -265,7 +265,13 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               #   门禁本体（实测 **~1.5s** / **20 判据**）⇒ 纳对照面，令本版 README 顶行
               #   声明的 20 判据由机器守（非手写）；它无自指、无递归（不反向调 PM 门禁）。
               #   ⚠️ 同版 `run_j5_qnet_smoke`（**66 判据** · v0.9.238 纳入）仍在表内 ⇒ 两处均受守。
-              "run_webui_j5_render_path_smoke.py")
+              "run_webui_j5_render_path_smoke.py",
+              # 🔴 v0.9.243：本版真改动 = K 征程 K0 结算审计（新受跟踪台账
+              #   `lda/reports/k0_audit.json` + 新门禁 `run_k0_audit_smoke`）。
+              #   直接相关且**便宜**的门禁 = 新门禁本体（实测 **~1.5s** / **28 判据**）⇒
+              #   纳对照面，令本版 README 顶行声明的 28 判据由机器守（非手写）；
+              #   它无自指、无递归（不反向调 PM 门禁）。
+              "run_k0_audit_smoke.py")
 
 
 def _declared_judge_counts(text):

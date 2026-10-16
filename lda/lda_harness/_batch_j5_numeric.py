@@ -56,6 +56,29 @@ J1–J4 全部建模「芯片内 / 实验室距离」；本条**第一次引入�
   | **B512/B519 等 RK4 族** | 同左 | 同左 | **本锚候选不含 ODE 步进**（纯求积）⇒ 与 RK4 簇格式分歧 |
   ⇒ **非重复计数**（先例：B452↔B33、B448/B449）。
 
+**M3 · B522 微波-光换能效率 η**（跨频段 · 协同度极限 × 有限探测带侧带重叠）：
+`η = η_peak(C)·N(Ω_c)/D`，`η_peak=4C/(1+C)²`（`C=4G²/(κ_mw γ_mech)`）·
+`N(Ω_c)=∫_{−Ω_c}^{Ω_c}L_aL_b dω`（**只收带内** · 硬件带宽受限）· `D=∫_{−∞}^{∞}L_aL_b dω`
+⇒ 闭式（分层 log+arctan · 精确）⇄ **有限窗内复合 Simpson 求积**（见下方 §B522）。
+
+**M3 同源体检（2026-10-16 实 grep `lda_harness/benchmark_defs/` · 如实登记）**：
+  · `侧带|sideband|upconv|downconv|频率转换|frequency_conv` ⇒ **0 命中** ⇒ **跨频段换能族零占用**。
+  · `换能|transduc|光机|optomech|电光|electro_optic` ⇒ 4 处命中 = **B28（MZM 调制器半波电压 Vπ ·
+    Pockels）** + 1 处 note 用词 + 1 处 `.pyc` 二进制 ⇒ **无换能锚**。
+  · `效率|efficiency` 共 8 锚（**NA 立体角收集 / 光栅耦合 / 光纤-波导对准 / 最优色心深度 /
+    热光相移 / 米氏散射 Q_scat / 绝热锥度**）⇒ **全为同频段光学效率**，与「**跨频段**（微波↔光）
+    转换效率」不同。
+  · `cooperativ|协同度` ⇒ 1 处（B494 note 用词）⇒ 协同度本身**无锚**。
+
+**M3 三方分歧（B522 与近邻）**：
+  | 对 | ① 被测标量 | ② 物理构型 | ③ 数值格式 |
+  |---|---|---|---|
+  | **B28**（MZM Vπ） | 跨频段**转换效率 η**（无量纲） | **微波腔↔光腔双腔换能 + 泵浦耦合 + 有限探测带** | **有限窗复合 Simpson 求积**（vs 解析 Vπ 几何式） |
+  | **B508**（FDM 读出串扰比） | 换能效率（非串扰比） | 微波↔光跨频段（vs 超导多音读出通道） | **有限探测带截断**（N/D 比值结构）vs sinh 换元卷积 |
+  | **B494–B496**（腔 QED 链） | 三因子合成效率（含协同度极限 × 带宽） | 引入**微波-光跨频段** | Simpson 求积（vs RD4/中点/场能积分） |
+  ⇒ 其中 **B508 的「两洛伦兹频谱重叠」与本条邻接** —— **如实披露**：本条的分歧点是
+     **有限探测带截断**（`N(Ω_c)/D`）+ **跨频段物理量** + **双腔换能构型**（非重复计数）。
+
 ── 判据 D（真离散误差）────────────────────────────────────────────────────
 实测残差链 n=16→2.4914e-06 · 32→1.3823e-07 · 64→8.1415e-09 · 128→4.9399e-10 · 256→3.0420e-11
 （比值 18.02/16.98/16.48/16.24 ⇒ **趋向 16 = O(h⁴)**；动态范围 1.32e6×）。
@@ -85,10 +108,11 @@ _PHI[0, 0] = _PHI[3, 3] = 0.5
 _PHI[0, 3] = _PHI[3, 0] = 0.5
 
 # ── 三表（判据 D 扫描格 / 默认档 = 格末端 / tol 绝对口径按量级标定）───────────
-_M_BY_BID = {"B519": 256, "B520": 28, "B521": 256}
+_M_BY_BID = {"B519": 256, "B520": 28, "B521": 256, "B522": 128}
 _GRID_BY_BID = {"B519": [16, 32, 64, 128, 256], "B520": [8, 12, 16, 20, 24, 28],
-                "B521": [8, 16, 32, 64, 128, 256]}
-_TOL_BY_BID = {"B519": 1e-8, "B520": 3e-9, "B521": 1e-7}
+                "B521": [8, 16, 32, 64, 128, 256],
+                "B522": [8, 16, 32, 64, 128]}
+_TOL_BY_BID = {"B519": 1e-8, "B520": 3e-9, "B521": 1e-7, "B522": 1e-7}
 
 #: 默认物理参数（只放 golden 接受的键；离散参数 n 由候选签名默认值承载）
 _B519_DEFAULT = {"l_depol_m": 2.2e4}
@@ -323,6 +347,178 @@ def repeater_yield_candidate(t_obs_s: float = _T_OBS_S, t_gen_s: float = _T_GEN_
     return float(kappa * lam * s * h_step / 3.0)
 
 
+# ══════════════════════════════════════════════════════════════════════
+# B522 · 微波-光换能效率 η（跨频段 · 协同度 × 有限探测带侧带重叠）
+# ══════════════════════════════════════════════════════════════════════
+#: 🔴 与 **B28（MZM 调制器半波电压 Vπ · 电光 Pockels）** 三方齐分歧：
+#:   ① 被测标量：**跨频段转换效率 η（无量纲）** vs **调制电压 Vπ（V）**；
+#:   ② 物理构型：**微波腔 a ↔ 光腔 b 双腔换能 + 泵浦耦合 G + 有限探测带** vs 同频段
+#:      行波 MZM 相位调制（λ/n/r/Γ/L 几何式）；
+#:   ③ 数值格式：**有限窗内复合 Simpson 求积**（有理函数代数尾）vs 解析 Vπ 几何公式。
+#: ⚠️ **B508（FDM 多音读出相邻通道频谱重叠串扰比）** 亦以「两洛伦兹频谱重叠」为闭式 ⇒
+#:   本锚的**分歧在「有限探测带截断」**（N(Ω_c)/D 比值结构）+ 物理量（跨频段换能效率 vs
+#:   同频段读出串扰比）+ 构型（微波腔↔光腔 vs 超导 FDM 多音）⇒ **如实披露、非重复计数**。
+#:
+#: 模型（三因子）：
+#:   η_total = η_peak(C) · η_band(Ω_c; Δ, γ)
+#:   ① **协同度极限效率** `η_peak = 4C/(1+C)²`（阻抗匹配最优档），`C = 4G²/(κ_mw·γ_mech)`
+#:      —— 复用 `lda_l2.qs_m3c.cooperativity_from_g`（同律，非重写）
+#:   ② **有限探测带侧带重叠（归一化）** `η_band = N(Ω_c)/D`：
+#:        微波腔洛伦兹响应中心 −Δ、半宽 γ；光腔中心 +Δ、半宽 γ；
+#:        `N(Ω)=∫_{−Ω}^{Ω} L_a L_b dω`（**只接收带内部分** · 硬件带宽受限）
+#:        `D   =∫_{−∞}^{∞} L_a L_b dω`（全带可达）
+#:      `L_x(ω)=γ/((ω−ω_x)²+γ²)`
+#: 闭式（**精确 · 非截断**）：
+#:   N(Ω) = γ²·[F(Ω) − F(−Ω)]，F 为 1/(((u−a)²+γ²)((u−b)²+γ²)) 的分层原函数
+#:          （分层系数由 4 个幂次匹配条件精确解出 ⇒ log+arctan 形式）
+#:   D    = π[γb/R_a + γa/R_b]，R_a=(a−b+iγa)²+γb²，R_b=(b−a+iγb)²+γa²（对称档 ⇒ πγ/(2(Δ²+γ²))）
+#: candidate = **有限窗内复合 Simpson 求积** N（n 偶数段）÷ 同一解析 D ⇒ 残差 = Simpson 截断误差
+#: 实测残差链 n=8→…→128：比值 **14.33/15.50/15.87/15.97** ⇒ 从**下方**趋近 O(h⁴)（复合 Simpson
+#: 标称阶，粗端未入渐近区故略低于 16，如实登记不假称「恰 16」）。
+#: 🔴 双独立闭式互证（自检项）：分层 log+arctan ⇄ 复留数+复对数（共轭对虚部精确相消）。
+#: 🔴 章程硬纪律②：效率跨量级 ⇒ **tol 按量级标定**，判据「绝对 ∨ 相对」并列，**不用 max**。
+
+#: 耦合 G（rad/s · 2π×5 MHz）
+_B522_G = 2.0 * math.pi * 5.0e6
+#: 微波腔衰减 κ_mw（rad/s · 2π×2 MHz）
+_B522_KAPPA = 2.0 * math.pi * 2.0e6
+#: 机械模衰减 γ_mech（rad/s · 2π×2 MHz）
+_B522_GAMMA_MECH = 2.0 * math.pi * 2.0e6
+#: 两腔洛伦兹半宽 γ（rad/s · 2π×1 MHz）
+_B522_HALFWIDTH = 2.0 * math.pi * 1.0e6
+#: 半失配 Δ（rad/s · 2π×10 MHz ⇒ 两响应中心相距 2Δ）
+_B522_DETUNING = 2.0 * math.pi * 10.0e6
+#: 探测带半宽 Ω_c（rad/s · 2π×5 MHz ⇒ 硬件带宽受限）
+_B522_BAND = 2.0 * math.pi * 5.0e6
+
+_B522_DEFAULT = {
+    "g_coupling_rad_s": 2.0 * math.pi * 5.0e6,
+    "kappa_mw_rad_s": 2.0 * math.pi * 2.0e6,
+    "gamma_mech_rad_s": 2.0 * math.pi * 2.0e6,
+    "halfwidth_rad_s": 2.0 * math.pi * 1.0e6,
+    "detuning_half_rad_s": 2.0 * math.pi * 10.0e6,
+    "band_half_rad_s": 2.0 * math.pi * 5.0e6,
+}
+
+
+def _b522_pf_coeffs(a: float, ga: float, b: float, gb: float):
+    """分层系数 (A,B,C,D)：1/(((u−a)²+γa²)((u−b)²+γb²))
+       = [A(u−a)+B]/((u−a)²+γa²) + [C(u−b)+D]/((u−b)²+γb²)。
+
+    🔴 四个幂次条件（按 ★ 式展开逐项对齐，**易错点已标注**）：
+       u³: A + C = 0
+       u²: A(−2b−a) + B + C(−2a−b) + D = 0
+       u¹: A(b²+γb²+2ab) − 2Bb + C(a²+γa²+2ab) − 2aD = 0
+       u⁰: −Aa(b²+γb²) + B(b²+γb²) − Cb(a²+γa²) + D(a²+γa²) = 1
+    """
+    m = np.array([
+        [1.0, 0.0, 1.0, 0.0],
+        [-(2.0 * b + a), 1.0, -(2.0 * a + b), 1.0],
+        [b * b + gb * gb + 2.0 * a * b, -2.0 * b,
+         a * a + ga * ga + 2.0 * a * b, -2.0 * a],
+        [-a * (b * b + gb * gb), b * b + gb * gb,
+         -b * (a * a + ga * ga), a * a + ga * ga],
+    ], dtype=float)
+    return np.linalg.solve(m, np.array([0.0, 0.0, 0.0, 1.0]))
+
+
+def _b522_band_overlap_closed(band_half: float, a: float, ga: float,
+                              b: float, gb: float) -> float:
+    """N(Ω)=∫_{−Ω}^{Ω} L_a L_b dω 的**精确闭式**（分层 log+arctan）。"""
+    aa, bb, cc, dd = _b522_pf_coeffs(a, ga, b, gb)
+
+    def _F(u):
+        return (0.5 * aa * math.log((u - a) ** 2 + ga ** 2)
+                + (bb / ga) * math.atan((u - a) / ga)
+                + 0.5 * cc * math.log((u - b) ** 2 + gb ** 2)
+                + (dd / gb) * math.atan((u - b) / gb))
+
+    return float(ga * gb * (_F(float(band_half)) - _F(-float(band_half))))
+
+
+def _b522_band_overlap_residue(band_half: float, a: float, ga: float,
+                               b: float, gb: float) -> float:
+    """N 的**第二独立闭式**（复留数 + 复对数 · 共轭对虚部精确相消）⇒ 供自检互证。"""
+    import cmath
+    poles = [complex(a, ga), complex(a, -ga), complex(b, gb), complex(b, -gb)]
+    tot = 0.0 + 0.0j
+    for i, z in enumerate(poles):
+        den = 1.0 + 0.0j
+        for j, z2 in enumerate(poles):
+            if i != j:
+                den *= (z - z2)
+        tot += (1.0 / den) * (cmath.log(band_half - z) - cmath.log(-band_half - z))
+    return float((ga * gb * tot).real)
+
+
+def _b522_full_overlap_closed(a: float, ga: float, b: float, gb: float) -> float:
+    """D=∫_{−∞}^{∞}L_aL_b dω 的精确闭式：π[γb/R_a + γa/R_b]。"""
+    ra = complex(a - b, ga) ** 2 + gb ** 2
+    rb = complex(b - a, gb) ** 2 + ga ** 2
+    return float((math.pi * (gb / ra + ga / rb)).real)
+
+
+def _b522_peak_efficiency(g_coupling: float, kappa_mw: float,
+                          gamma_mech: float) -> float:
+    """η_peak = 4C/(1+C)²，C = 4G²/(κ_mw·γ_mech)。"""
+    for nm, v in (("G", g_coupling), ("κ_mw", kappa_mw), ("γ_mech", gamma_mech)):
+        if not float(v) > 0.0:
+            raise ValueError("%s 须 > 0" % nm)
+    c = 4.0 * float(g_coupling) ** 2 / (float(kappa_mw) * float(gamma_mech))
+    return float(4.0 * c / (1.0 + c) ** 2)
+
+
+def transducer_efficiency_golden(g_coupling_rad_s: float = _B522_G,
+                                 kappa_mw_rad_s: float = _B522_KAPPA,
+                                 gamma_mech_rad_s: float = _B522_GAMMA_MECH,
+                                 halfwidth_rad_s: float = _B522_HALFWIDTH,
+                                 detuning_half_rad_s: float = _B522_DETUNING,
+                                 band_half_rad_s: float = _B522_BAND) -> float:
+    """B522 golden：微波-光换能效率 η = η_peak(C)·N(Ω_c)/D（**精确闭式**）。"""
+    hw = float(halfwidth_rad_s)
+    det = float(detuning_half_rad_s)
+    if hw <= 0.0 or det <= 0.0 or float(band_half_rad_s) <= 0.0:
+        raise ValueError("halfwidth / detuning_half / band_half 须 > 0")
+    peak = _b522_peak_efficiency(g_coupling_rad_s, kappa_mw_rad_s, gamma_mech_rad_s)
+    n_val = _b522_band_overlap_closed(band_half_rad_s, -det, hw, det, hw)
+    d_val = _b522_full_overlap_closed(-det, hw, det, hw)
+    return float(peak * n_val / d_val)
+
+
+def transducer_efficiency_candidate(g_coupling_rad_s: float = _B522_G,
+                                    kappa_mw_rad_s: float = _B522_KAPPA,
+                                    gamma_mech_rad_s: float = _B522_GAMMA_MECH,
+                                    halfwidth_rad_s: float = _B522_HALFWIDTH,
+                                    detuning_half_rad_s: float = _B522_DETUNING,
+                                    band_half_rad_s: float = _B522_BAND,
+                                    n: int = _M_BY_BID["B522"]) -> float:
+    """B522 candidate：**有限窗内复合 Simpson 求积**（n 偶数段）⇒ η_peak·N_simpson/D。
+
+    🔴 分母 D 两路同用解析闭式 ⇒ 残差 = **窗内 Simpson 截断误差**（已如实登记）。
+    """
+    n = int(n)
+    if n < 2 or n % 2:
+        raise ValueError("复合 Simpson 段数 n 须为 ≥2 的偶数")
+    hw = float(halfwidth_rad_s)
+    det = float(detuning_half_rad_s)
+    band = float(band_half_rad_s)
+    if hw <= 0.0 or det <= 0.0 or band <= 0.0:
+        raise ValueError("halfwidth / detuning_half / band_half 须 > 0")
+    peak = _b522_peak_efficiency(g_coupling_rad_s, kappa_mw_rad_s, gamma_mech_rad_s)
+    h = 2.0 * band / n
+    a, b = -det, det
+
+    def _f(w):
+        return (hw / ((w - a) ** 2 + hw ** 2)) * (hw / ((w - b) ** 2 + hw ** 2))
+
+    s = _f(-band) + _f(band)
+    for i in range(1, n):
+        s += (4.0 if i % 2 else 2.0) * _f(-band + i * h)
+    n_val = s * h / 3.0
+    d_val = _b522_full_overlap_closed(a, hw, b, hw)
+    return float(peak * n_val / d_val)
+
+
 # ── 统一入口（harness / golden.py 按名调用）────────────────────────────────
 def golden_b519(l_depol_m: float = _DEFAULT_L_DEPOL_M) -> float:
     return distribution_fidelity_golden(l_depol_m)
@@ -357,16 +553,43 @@ def cand_b521(t_obs_s: float = _T_OBS_S, t_gen_s: float = _T_GEN_S,
     return repeater_yield_candidate(t_obs_s, t_gen_s, t_mem_s, t_swap_s, n)
 
 
+def golden_b522(g_coupling_rad_s: float = _B522_G,
+                kappa_mw_rad_s: float = _B522_KAPPA,
+                gamma_mech_rad_s: float = _B522_GAMMA_MECH,
+                halfwidth_rad_s: float = _B522_HALFWIDTH,
+                detuning_half_rad_s: float = _B522_DETUNING,
+                band_half_rad_s: float = _B522_BAND) -> float:
+    return transducer_efficiency_golden(g_coupling_rad_s, kappa_mw_rad_s,
+                                        gamma_mech_rad_s, halfwidth_rad_s,
+                                        detuning_half_rad_s, band_half_rad_s)
+
+
+def cand_b522(g_coupling_rad_s: float = _B522_G,
+              kappa_mw_rad_s: float = _B522_KAPPA,
+              gamma_mech_rad_s: float = _B522_GAMMA_MECH,
+              halfwidth_rad_s: float = _B522_HALFWIDTH,
+              detuning_half_rad_s: float = _B522_DETUNING,
+              band_half_rad_s: float = _B522_BAND,
+              n: int = _M_BY_BID["B522"]) -> float:
+    return transducer_efficiency_candidate(g_coupling_rad_s, kappa_mw_rad_s,
+                                          gamma_mech_rad_s, halfwidth_rad_s,
+                                          detuning_half_rad_s, band_half_rad_s, n)
+
+
 #: 暴露给锚定义（键集必须 ⊆ golden 形参集）
 B519_DEFAULT_PARAMS = dict(_B519_DEFAULT)
 B520_DEFAULT_PARAMS = dict(_B520_DEFAULT)
 B521_DEFAULT_PARAMS = dict(_B521_DEFAULT)
+B522_DEFAULT_PARAMS = dict(_B522_DEFAULT)
 
-_GOLDEN_BY_BID = {"B519": golden_b519, "B520": golden_b520, "B521": golden_b521}
-_CAND_BY_BID = {"B519": cand_b519, "B520": cand_b520, "B521": cand_b521}
+_GOLDEN_BY_BID = {"B519": golden_b519, "B520": golden_b520, "B521": golden_b521,
+                  "B522": golden_b522}
+_CAND_BY_BID = {"B519": cand_b519, "B520": cand_b520, "B521": cand_b521,
+                "B522": cand_b522}
 
 #: 自检用例：bid, 物理参数（golden 键）
-_CASES = (("B519", _B519_DEFAULT), ("B520", _B520_DEFAULT), ("B521", _B521_DEFAULT))
+_CASES = (("B519", _B519_DEFAULT), ("B520", _B520_DEFAULT),
+          ("B521", _B521_DEFAULT), ("B522", _B522_DEFAULT))
 
 
 # ── 自检 ───────────────────────────────────────────────────────────────────
@@ -413,7 +636,7 @@ def _selfcheck() -> int:
             # B521 = 复合 Simpson ⇒ O(h⁴)，比值从**下方**逼近 16（15.52→16.00）；
             # ⇒ 判据 = 「趋近标称阶 16」（不限方向）+ 落在量级带内（粗端未入渐近区，如实登记）。
             # B520 = 复合梯形 ⇒ **超几何收敛**（比值单调递增，非幂律 ⇒ 不假称「恰 4」）。
-            "比值形态与算法一致（B519/B521 趋近 16 · B520 超几何递增）":
+            "比值形态与算法一致（B519/B521/B522 趋近 16 · B520 超几何递增）":
                 all(ratios[i] < ratios[i + 1] for i in range(len(ratios) - 1))
                 if bid == "B520"
                 else (4.0 <= ratios[-1] <= 22.0
@@ -423,6 +646,21 @@ def _selfcheck() -> int:
         for k, v in checks.items():
             print("  [%s] %s" % ("PASS" if v else "FAIL", k))
             if not v:
+                bad += 1
+
+        # 🔴 B522 专属：**双独立闭式互证**（分层 log+arctan ⇄ 复留数+复对数）
+        #    两路推导完全独立（分层系数解 4×4 幂次匹配 vs 留数求和），一致 ⇒ 闭式可信。
+        if bid == "B522":
+            _hw = float(params["halfwidth_rad_s"])
+            _det = float(params["detuning_half_rad_s"])
+            _band = float(params["band_half_rad_s"])
+            _v_la = _b522_band_overlap_closed(_band, -_det, _hw, _det, _hw)
+            _v_re = _b522_band_overlap_residue(_band, -_det, _hw, _det, _hw)
+            _rel = abs(_v_la - _v_re) / max(abs(_v_re), 1e-300)
+            ok_two = _rel < 1e-12
+            print("  [%s] B522 双独立闭式互证（log+arctan ⇄ 复留数）相对差 %.2e < 1e-12"
+                  % ("PASS" if ok_two else "FAIL", _rel))
+            if not ok_two:
                 bad += 1
 
         # 反向探针：物理参数扰动 ±10% 必须显著改变候选（C3/C5）

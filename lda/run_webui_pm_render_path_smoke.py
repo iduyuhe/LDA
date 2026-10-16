@@ -257,6 +257,8 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               #   🔴 v0.9.240（J5 M2）：本门禁本体再扩至 **46 判据**（自 33 扩 · 加 B521 锚 +
               #   `qnet_repeater` 能力层自检 + C5 跨模块逐位对拍）⇒ README 顶行声明须写
               #   **46 判据**（🔴 只写终值单数；箭头/区间写法会令 W10 正则解析为空）。
+              #   🔴 v0.9.241（J5 M3）：本体再扩至 **59 判据**（自 46 扩 · 加 B522 锚 +
+              #   `qnet_transducer` 能力层 + C6 跨模块对拍）⇒ README 顶行声明须写 **59 判据**。
               "run_j5_qnet_smoke.py")
 
 

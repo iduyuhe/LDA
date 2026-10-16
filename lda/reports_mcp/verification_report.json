@@ -8,11 +8,11 @@
     "self_consistent": false
   },
   "summary": {
-    "total": 537,
-    "passed": 534,
+    "total": 538,
+    "passed": 535,
     "self_consistent": false,
     "verified": 2,
-    "self_consistent_stub_count": 532,
+    "self_consistent_stub_count": 533,
     "independent_candidate_count": 5,
     "candidate_class_totals": null
   },
@@ -6056,6 +6056,19 @@
       "source": "physical-law",
       "golden": 0.536967381,
       "candidate": 0.536967381,
+      "tol": 1e-07,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
+      "id": "B522",
+      "metric": "microwave_optical_transduction_efficiency",
+      "oracle": "closed_form(η=4C/(1+C)²·N(Ω_c)/D, C=4G²/(κ_mw·γ_mech), N=∫_{−Ω_c}^{Ω_c}L_aL_b, D=∫_{−∞}^{∞}L_aL_b; 分层 log+arctan 精确原函数) + composite-simpson finite-window quadrature independent_cross_check",
+      "source": "physical-law",
+      "golden": 0.011251469,
+      "candidate": 0.011251469,
       "tol": 1e-07,
       "passed": true,
       "note": "确定性物理定律/解析解",

@@ -18,7 +18,7 @@ README 引擎域计数「光子 9 + 量子 6」与代码 ENGINE_DOMAIN 实际 8+
 断言维度（全部死标量，LLM 不进判决路径）：
   1. 引擎结构：ENGINE_KINDS 22（15 设计量 + 5 loss + 2 有源）、光子 15、量子 7
   2. 包结构：PACKAGE_KINDS 11（22 引擎 + 11 包 = 33 类端到端）
-  3. 题库：BENCHMARK_ORDER 537 题（B1-B521 共 514 题 + E1-E10 10 题 + S1-S13 13 题）
+  3. 题库：BENCHMARK_ORDER 538 题（B1-B522 共 515 题 + E1-E10 10 题 + S1-S13 13 题）
   4. CI 门禁：CORE_SMOKES 条数（动态）↔ README `## 当前账本` 段 `CI core N 条` 严格一致
   5. README 宣传串：动态构造「22 引擎 + 11 包 = 33 类端到端（光子 15 + 量子 7）」
      「517 题（B1-B499 + E1-E10 + S1-S13）」；反向断言 README 不含已废弃错误串
@@ -199,13 +199,13 @@ class CountConsistencySmoke(unittest.TestCase):
     # v0.9.233 Batch J2-M4（超导 Transmon QPU 征程 · M4 QPU 误差预算集成 + 拓扑对接）加 B509 → 504
     # v0.9.235 Batch J3-M0M1（量子测控与读出征程 · M0 时域驱动脉冲 + M1 DRAG 泄漏抑制）加 B510-B511 → 506
     # v0.9.236 Batch J3-M2M3M4（量子测控与读出征程 · M2 门保真 + M3 读出链 + M4 低温电子学）加 B512-B514 → 509
-        self.assertEqual(len(b_ids), 514, f"B 题应 514（B1-B521，缺口 B35/B38/B39/B69/B72/B516/B517 预留），实际 {len(b_ids)}")
+        self.assertEqual(len(b_ids), 515, f"B 题应 515（B1-B522，缺口 B35/B38/B39/B69/B72/B516/B517 预留），实际 {len(b_ids)}")
         self.assertEqual(len(e_ids), len([f"E{i}" for i in range(1, len(e_ids) + 1)]),
                          f"E 题数异常，实际 {len(e_ids)}")
         self.assertEqual(len(s_ids), 13, f"S 题应 13，实际 {len(s_ids)}")
         self.assertEqual(b_ids[0], "B1")
         self.assertEqual(max(b_ids, key=lambda x: int(x[1:])),
-                         "B521", f"B 题最大编号应 B521，实际 {max(b_ids, key=lambda x: int(x[1:]))}")
+                         "B522", f"B 题最大编号应 B522，实际 {max(b_ids, key=lambda x: int(x[1:]))}")
         self.assertEqual(e_ids, [f"E{i}" for i in range(1, len(e_ids) + 1)],
                          f"E 题须连续编号 E1..E{len(e_ids)}，实际 {e_ids}")
         self.assertEqual(s_ids,

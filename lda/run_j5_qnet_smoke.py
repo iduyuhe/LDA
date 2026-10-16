@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-"""J5 量子网络与接口征程 · **常驻门禁**（B519 分发后两体纠缠保真度 + B520 HOM 干涉可见度 + B521 中继交换产出数）。
+"""J5 量子网络与接口征程 · **常驻门禁**（B519 分发保真度 + B520 HOM 可见度 + B521 中继交换产出数 + B522 微波-光换能效率）。
 
 判据分节（**按锚遍历** · 判据数实跑现数）：
   A 锚项（每锚 11 条 · 读自 BENCHMARK_DEFS 不硬编码）：tol 内 / 残差 >0 非代数恒等 /
     判据 D（严格单调 + 比值形态与算法一致）/ 动态范围 · 反自证桩 · 防回退候选键 /
     🔴 反向探针必须打「离散参数 n」/ 纪律佐证 / n 非法必抛
-  B 能力层：`qnet_channel` 14 + `qnet_distribution` 10 + `qnet_source` 8 + `qnet_repeater` 20
-  C 跨模块同源（逐位）：分发 ≡ B519 golden · 信道 ≡ B519 golden · 源 ≡ B520 golden · 中继 ≡ B521 golden
-  D 三表一致：`_TOL_BY_BID` ≡ DEFS tol（三锚）· `_M_BY_BID` = 扫描格末端（三锚）· 默认档 ≡ DEFS
+  B 能力层：`qnet_channel` 14 + `qnet_distribution` 10 + `qnet_source` 8 + `qnet_repeater` 20 + `qnet_transducer` 16
+  C 跨模块同源（逐位）：分发 ≡ B519 golden · 信道 ≡ B519 golden · 源 ≡ B520 golden · 中继 ≡ B521 golden · 换能 ≡ B522 golden
+  D 三表一致：`_TOL_BY_BID` ≡ DEFS tol（四锚）· `_M_BY_BID` = 扫描格末端（四锚）· 默认档 ≡ DEFS
   E 红线：零量子 SDK（不依赖 Qiskit/Cirq/PennyLane/QuTiP）
 
 🔴 `main()` 返回「真值」而非恒 0（J4 血案：恒 `return 0` = 假绿）。
@@ -30,22 +30,25 @@ from lda_l2 import qnet_channel as CH  # noqa: E402
 from lda_l2 import qnet_distribution as DS  # noqa: E402
 from lda_l2 import qnet_repeater as RP  # noqa: E402
 from lda_l2 import qnet_source as SR  # noqa: E402
+from lda_l2 import qnet_transducer as TR  # noqa: E402
 
 check = make_check(globals(), ok_key="PASS", bad_key="FAIL", detail_fmt="  |  {d}")
 
-_BIDS = ("B519", "B520", "B521")
+_BIDS = ("B519", "B520", "B521", "B522")
 
 #: 期望的候选键（防「回退自证桩」：DEFS 必须指向本征程专用候选）
 _EXPECT_CAND = {
     "B519": "b519_entanglement_distribution_fidelity_cand",
     "B520": "b520_hom_visibility_cand",
     "B521": "b521_repeater_yield_cand",
+    "B522": "b522_transducer_efficiency_cand",
 }
 
 #: 数值核里各锚的默认参数常量（D3 用）
 _DEFPARAMS = {"B519": getattr(J5, "B519_DEFAULT_PARAMS"),
               "B520": getattr(J5, "B520_DEFAULT_PARAMS"),
-              "B521": getattr(J5, "B521_DEFAULT_PARAMS")}
+              "B521": getattr(J5, "B521_DEFAULT_PARAMS"),
+              "B522": getattr(J5, "B522_DEFAULT_PARAMS")}
 
 
 def _anchor_checks(bid: str) -> None:
@@ -79,7 +82,7 @@ def _anchor_checks(bid: str) -> None:
     else:
         shape_ok = (4.0 <= ratios[-1] <= 22.0
                     and abs(ratios[-1] - 16.0) <= abs(ratios[0] - 16.0))
-    check("A5·%s 判据 D：比值形态与算法一致" % bid, shape_ok,
+    check("A5·%s 判据 D：比值形态与算法一致（趋近标称阶）" % bid, shape_ok,
           " / ".join("%.2f" % r for r in ratios))
     dyn = (chain[0][1] / chain[-1][1]) if chain[-1][1] > 0 else float("nan")
     check("A6·%s 动态范围 ≥ 1e4×（末档残差须 > 0）" % bid, bool(dyn >= 1e4),
@@ -110,7 +113,7 @@ def _anchor_checks(bid: str) -> None:
 
 def main() -> int:  # noqa: C901
     print("=" * 78)
-    print("J5 门禁（B519 分发保真度 + B520 HOM 可见度 + B521 中继交换产出数）")
+    print("J5 门禁（B519 分发保真度 + B520 HOM 可见度 + B521 中继产出数 + B522 换能效率）")
     print("=" * 78)
 
     for bid in _BIDS:
@@ -129,6 +132,9 @@ def main() -> int:  # noqa: C901
     sc_rp = RP.selfcheck_qnet_repeater()
     check("B4 qnet_repeater 全部自检通过", not [k for k, v in sc_rp.items() if not v],
           "%d 项" % len(sc_rp))
+    sc_tr = TR.selfcheck_qnet_transducer()
+    check("B5 qnet_transducer 全部自检通过", not [k for k, v in sc_tr.items() if not v],
+          "%d 项" % len(sc_tr))
 
     print("\n[C] 跨模块同源（逐位）")
     g519 = float(BENCHMARK_DEFS["B519"]["golden_fn"](
@@ -147,13 +153,17 @@ def main() -> int:  # noqa: C901
           abs(SR.overlap_magnitude_sq() - J5.hom_visibility_golden()) < 1e-15)
     check("C5 qnet_repeater.repeater_yield ≡ B521 golden（逐位）",
           abs(RP.repeater_yield() - g521) < 1e-15)
+    g522 = float(BENCHMARK_DEFS["B522"]["golden_fn"](
+        **BENCHMARK_DEFS["B522"]["default_params"]))
+    check("C6 qnet_transducer.transducer_efficiency ≡ B522 golden（相对 < 1e-12）",
+          abs(TR.transducer_efficiency() - g522) / max(abs(g522), 1e-300) < 1e-12)
 
     print("\n[D] 三表 / 默认档一致")
-    check("D1 _TOL_BY_BID ≡ BENCHMARK_DEFS tol（三锚）",
+    check("D1 _TOL_BY_BID ≡ BENCHMARK_DEFS tol（四锚）",
           all(float(J5._TOL_BY_BID[b]) == float(BENCHMARK_DEFS[b]["tol"]) for b in _BIDS))
-    check("D2 _M_BY_BID = 扫描格末端（三锚）",
+    check("D2 _M_BY_BID = 扫描格末端（四锚）",
           all(int(J5._M_BY_BID[b]) == int(J5._GRID_BY_BID[b][-1]) for b in _BIDS))
-    check("D3 默认档 ≡ DEFS default_params（三锚）",
+    check("D3 默认档 ≡ DEFS default_params（四锚）",
           all(dict(_DEFPARAMS[b]) == dict(BENCHMARK_DEFS[b]["default_params"])
               for b in _BIDS))
 
@@ -161,6 +171,7 @@ def main() -> int:  # noqa: C901
     src = ""
     for fn in ("lda_l2/qnet_channel.py", "lda_l2/qnet_distribution.py",
                "lda_l2/qnet_source.py", "lda_l2/qnet_repeater.py",
+               "lda_l2/qnet_transducer.py",
                "lda_harness/_batch_j5_numeric.py"):
         p = os.path.join(_HERE, fn)
         if os.path.exists(p):

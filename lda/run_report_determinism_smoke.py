@@ -446,6 +446,16 @@ def main() -> int:
         "run_ecosystem_d96_report.py": _WALL,
         "run_ecosystem_d97_report.py": _WALL,
         "run_ecosystem_d98_report.py": _WALL,
+        # ——— 2026-10-16（v0.9.244 · K 征程 K0）：精确发现式判据 ⑪ 抓出的漏登记项 ———
+        #   `scripts/k0_audit.py`（K0 结算审计生成器，写**受跟踪** `lda/reports/k0_audit.json`）
+        #   自建立起即为报告写入者，但未登记本表 ⇒ ⑪ 当场判红（这正是本判据的设计意图）。
+        #   🔴 确定性证据（现算）：源码**零** `生成时间/裁决时间/闭环耗时/datetime.now/
+        #   time.strftime` 命中，亦无 random / mkdtemp / `json.dump(`；写盘显式
+        #   `newline="\n"`（LF）；并由 `run_k0_audit_smoke` 的「子进程重跑 ≡ 磁盘台账
+        #   （逐字节）」+「幂等」+「LF only」三判据与 3 道反向探针常驻守。
+        #   ⚠️ 路径注意：本表键**相对 `lda/`**，而该脚本在**仓库根** ⇒ 键写
+        #   `../scripts/k0_audit.py`（⑪ 的 `registered` 归一化已加 `os.path.normpath` 配对）。
+        "../scripts/k0_audit.py": _WALL,
     }
     lint_bad = []
     no_det = []
@@ -510,7 +520,11 @@ def main() -> int:
               False, f"发现器不可用（门禁依赖缺失=红，不静默跳过）：{disc_err}")
     else:
         # lint_spec 的键相对 `lda/`；发现集的路径相对仓库根 ⇒ 归一化到仓库根
-        registered = {("lda/" + k) if not k.startswith("lda/") else k
+        # 🔴 v0.9.244：键允许写 `../scripts/x.py`（仓库根脚本）⇒ 必须 `normpath`
+        #   消解 `..`；但 Windows 的 `os.path.normpath` 会把 `/` 变 `\` ⇒ 再归一回
+        #   POSIX 分隔符，否则与发现集（恒 `/`）永不匹配（本轮实测踩到）。
+        registered = {os.path.normpath(("lda/" + k) if not k.startswith("lda/") else k
+                                       ).replace(os.sep, "/")
                       for k in lint_spec}
         unregistered = sorted(set(disc) - registered)
         # 双向断言：未登记集必须**恰好**等于显式基线 ⇒ 新漏项红 · 偷放行红

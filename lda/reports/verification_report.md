@@ -423,7 +423,7 @@
 | B468 | align_overlap_efficiency | physical-law | 0.606531 | 0.606535 | 4.6425e-06 | 0.003 | ✅ PASS |
 | B469 | geometry_refractive_index_sensitivity | physical-law | 0.446981 | 0.446982 | 8.7139e-07 | 0.005 | ✅ PASS |
 | B47 | E2_eV | physical-law | 0.822319 | 0.822278 | 4.0823e-05 | 0.1 | ✅ PASS |
-| B470 | geometry_refractive_index_sensitivity | physical-law | 0.460019 | 0.460019 | 3.9675e-08 | 0.005 | ✅ PASS |
+| B470 | geometry_refractive_index_sensitivity | physical-law | 0.460019 | 0.460019 | 3.9588e-08 | 0.005 | ✅ PASS |
 | B471 | geometry_refractive_index_sensitivity | physical-law | 1.17091 | 1.17092 | 1.2907e-05 | 0.005 | ✅ PASS |
 | B472 | q_scaling_lod | physical-law | 9.46722e-11 | 9.46722e-11 | 0 | 1e-09 | ✅ PASS |
 | B473 | nv_magnetometer_sensitivity | physical-law | 8.4659e-10 | 8.46611e-10 | 0 | 0.001 | ✅ PASS |

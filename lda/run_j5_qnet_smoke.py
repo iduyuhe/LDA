@@ -6,7 +6,7 @@
     判据 D（严格单调 + 比值形态与算法一致）/ 动态范围 · 反自证桩 · 防回退候选键 /
     🔴 反向探针必须打「离散参数 n」/ 纪律佐证 / n 非法必抛
   B 能力层：`qnet_channel` 14 + `qnet_distribution` 10 + `qnet_source` 8 + `qnet_repeater` 20 +
-    `qnet_transducer` 16 + `qnet_classical` 14 + `qnet_system` 17
+    `qnet_transducer` 20 + `qnet_classical` 14 + `qnet_system` 17
   C 跨模块同源（逐位）：分发 ≡ B519 golden · 信道 ≡ B519 golden · 源 ≡ B520 golden · 中继 ≡ B521 golden ·
     换能 ≡ B522 golden · 经典接口 ≡ `qs_m2.cpmg_filter`（复用对拍）· 总装六段 ≡ 六能力层
   D 三表一致：`_TOL_BY_BID` ≡ DEFS tol（四锚）· `_M_BY_BID` = 扫描格末端（四锚）· 默认档 ≡ DEFS

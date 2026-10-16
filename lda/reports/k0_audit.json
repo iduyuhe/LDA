@@ -7,13 +7,13 @@
     "head（每次提交都变 ⇒ 非确定量，故意不入台账）"
   ],
   "frozen_snapshot": {
-    "version": "0.9.243",
+    "version": "0.9.244",
     "ledger_total": 538,
     "ledger_strict": 516,
     "ledger_degraded": 3,
     "ledger_stub": 19,
     "independence_rate": 0.959108,
-    "ci_core": 329,
+    "ci_core": 330,
     "endpoints": 154,
     "case_panels_min": 15,
     "max_anchor": "B522",
@@ -44,6 +44,7 @@
     ]
   },
   "items_total": 8,
+  "items_settled": 1,
   "items": [
     {
       "id": "G-K-1",
@@ -63,7 +64,7 @@
     },
     {
       "id": "G-K-2",
-      "title": "QS-M3c cooperativity 两口径断口未结算（登记 ≠ 结算 · 消费侧未并报）",
+      "title": "QS-M3c cooperativity 两口径断口**已结算**（K1）· 消费侧已并报",
       "type": "债务·断口",
       "owner_stage": "K1",
       "evidence": {
@@ -71,25 +72,31 @@
         "cooperativity_g_form": 11844.81668093885,
         "cooperativity_qv_form": 1.318462929256079,
         "ratio_g_over_qv": 8983.807,
+        "ratio_closed_form": 8983.807142474674,
+        "ratio_closed_form_expr": "2n*g1/gamma_rad",
         "two_caliber_functions": {
-          "cooperativity_from_g": 218,
-          "cooperativity_from_qv": 225
+          "cooperativity_from_g": 223,
+          "cooperativity_from_qv": 230
         },
         "consumer_file": "lda/lda_l2/qnet_transducer.py",
         "consumer_import_line": 81,
         "consumer_caliber_term_hits": {
-          "口径": 0,
+          "口径": 4,
           "约定": 0,
           "convention": 0,
-          "2n": 0,
+          "2n": 1,
           "8982": 0,
-          "8983": 0
+          "8983": 1
         },
         "consumer_side_fulfilled": true,
+        "wrong_identity_hits": 0,
+        "settled_by_stage": "K1",
+        "settlement_surface": "lda_l2.qs_m3c.cooperativity_calibers()",
+        "settlement_gate": "lda/run_k1_cooperativity_settlement_smoke.py",
         "registered_in_charter": "docs/LDA_J5_...md R3b（必须并报两口径）"
       },
       "exit_criterion": "定主账口径 ∧ 并报另一口径（机读字段强制·缺字段即红）∧「抹平断口必红」探针 ∧ 消费侧复核（防口径翻转打反既有判据）",
-      "status": "open"
+      "status": "settled"
     },
     {
       "id": "G-K-3",

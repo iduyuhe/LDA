@@ -1914,6 +1914,11 @@ CORE_SMOKES: List[str] = [
     #   + 快照 ≡ 现算 + 证据现算对拍。**28 判据**。纯标准库 + 两次子进程调生成器（实测 ~1.5s）。
     #   CI core 328→329。
     "run_k0_audit_smoke.py",
+    # v0.9.244（K1）：协同度**两口径断口结算**门禁（缺口 G-K-2 · A 金级）。
+    #   结算面字段/并报 + 闭式恒等式机器精度 + 消费侧并报兑现 + 旧错误等式纠正
+    #   + 「抹平断口必红」反向探针 4 道。**23 判据**。纯标准库 + 纯 math（零 numpy/scipy）。
+    #   CI core 329→330。
+    "run_k1_cooperativity_settlement_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2933,6 +2938,9 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # K 征程 K0 结算审计门禁（一期未结项台账）：28 判据 · 实测上界 ~1.5s（含两次子进程调生成器）
     #   ⇒ 预算 300s = ≈200×。🔴 必须显式登记（`run_timeout_budget_ratchet_smoke` 的 B20 反向完备要求）。
     "run_k0_audit_smoke.py": 300.0,
+    # K 征程 K1 协同度两口径断口结算门禁：23 判据 · 实测上界 ~0.3s（纯 math）⇒ 预算 300s = ≈1000×。
+    #   🔴 必须显式登记（`run_timeout_budget_ratchet_smoke` 的 B20 反向完备要求）。
+    "run_k1_cooperativity_settlement_smoke.py": 300.0,
     # CI 门禁自身契约（棘轮时序 + 退出码契约 + cwd/模板/注释数字守卫）· 受控 fake 驱动，实测上界 <5s
     "run_ci_gate_contract_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）

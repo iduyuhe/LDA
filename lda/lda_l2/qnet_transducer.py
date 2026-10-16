@@ -34,7 +34,7 @@ from __future__ import annotations
 
 import cmath
 import math
-from typing import Dict
+from typing import Any, Dict
 
 __all__ = [
     "QNET_TRANSDUCER_CALIBER",
@@ -81,6 +81,30 @@ def cooperativity(g_coupling: float = DEFAULT_G_RAD_S,
     from lda_l2.qs_m3c import cooperativity_from_g
     return float(cooperativity_from_g(float(g_coupling), float(kappa_mw),
                                       float(gamma_mech)))
+
+
+def cooperativity_caliber_notice() -> Dict[str, Any]:
+    """🔴 K1 结算 · **消费侧并报**（兑现 K0 台账 G-K-2：J5 章程 R3b「不得选择性披露」）。
+
+    本模块因子 ① 复用 `lda_l2.qs_m3c.cooperativity_from_g` —— 而 `qs_m3c` 上
+    **两口径并存**（`g_form` / `qv_form`），两者**不是同一个物理量**，比值有**精确闭式**
+
+        C_g / C_qv = 2n · γ₁ / γ_rad
+
+    （`n` 腔介质折射率 · `γ₁` 总线宽 · `γ_rad` 真空辐射率；本仓 `n_r=3.4` 设计点实测
+    比值 `8983.807` · 闭式残差 `6.1e-16` ⇒ 机器精度级）。旧注释曾断言两式相等 ⇒ **假自洽**。
+
+    🔴 **本模块落在哪一口径**：本模块传入 `γ_mech`（**机械模总衰减率**）⇒ 取 `g_form`，
+    且因分母是**总**衰减率 ⇒ 它就是**标准协同度** `C_std = 4G²/(κ_mw·γ_mech)`
+    （**不是** `qs_m3c` 设计点上那个「相对辐射通道」的口径，也**不是** `qv_form`）。
+    """
+    from lda_l2.qs_m3c import cooperativity_calibers
+    cal = dict(cooperativity_calibers())
+    cal["this_module_caliber"] = "g_form"
+    cal["this_module_denominator"] = "gamma_mech (total mechanical decay)"
+    cal["this_module_is_standard_cooperativity"] = True
+    cal["this_module_cooperativity"] = cooperativity()
+    return cal
 
 
 def peak_efficiency(c_val: float) -> float:
@@ -150,11 +174,12 @@ def added_noise_photons(eta: float) -> float:
 
 
 def transducer_report() -> Dict[str, float]:
-    """换能能力层报告（三因子一次给全 · 零重计算）。"""
+    """换能能力层报告（三因子一次给全 · 零重计算 · **含消费侧口径并报**）。"""
     c_val = cooperativity()
     eta_peak = peak_efficiency(c_val)
     eta_band = band_overlap()
     eta = eta_peak * eta_band
+    _cal = cooperativity_caliber_notice()
     return {
         "cooperativity": float(c_val),
         "peak_efficiency": float(eta_peak),
@@ -164,6 +189,11 @@ def transducer_report() -> Dict[str, float]:
         "detuning_over_halfwidth": float(DEFAULT_DETUNING_HALF_RAD_S
                                          / DEFAULT_HALFWIDTH_RAD_S),
         "band_over_halfwidth": float(DEFAULT_BAND_HALF_RAD_S / DEFAULT_HALFWIDTH_RAD_S),
+        # 🔴 K1 消费侧并报（机读字段强制 · 缺项由 `run_k1_..._smoke` 判红）
+        "qs_m3c_cooperativity_g_form": float(_cal["g_form"]),
+        "qs_m3c_cooperativity_qv_form": float(_cal["qv_form"]),
+        "qs_m3c_cooperativity_ratio": float(_cal["ratio_g_over_qv"]),
+        "qs_m3c_cooperativity_ratio_closed_form": float(_cal["ratio_closed_form"]),
         "caliber": QNET_TRANSDUCER_CALIBER,
     }
 
@@ -182,6 +212,24 @@ def selfcheck_qnet_transducer() -> Dict[str, bool]:
                                                       DEFAULT_GAMMA_MECH_RAD_S)) < 1e-15)
     except Exception:
         checks["cooperativity_matches_qs_m3c"] = False
+
+    # ①b 🔴 K1 消费侧并报（兑现 G-K-2：不得选择性披露）
+    _n = cooperativity_caliber_notice()
+    checks["cooperativity_two_calibers_disclosed_in_report"] = bool(
+        "qs_m3c_cooperativity_g_form" in r and "qs_m3c_cooperativity_qv_form" in r
+        and abs(r["qs_m3c_cooperativity_g_form"] - r["qs_m3c_cooperativity_qv_form"])
+        / r["qs_m3c_cooperativity_g_form"] > 1e-3)
+    _need = ("g_form", "qv_form", "ratio_g_over_qv", "ratio_closed_form",
+             "is_cooperativity", "main_account", "this_module_caliber")
+    checks["cooperativity_caliber_notice_fields_present"] = bool(
+        all(k in _n for k in _need))
+    checks["cooperativity_ratio_closed_form_matches"] = bool(
+        abs(r["qs_m3c_cooperativity_ratio"]
+            - r["qs_m3c_cooperativity_ratio_closed_form"])
+        / r["qs_m3c_cooperativity_ratio_closed_form"] < 1e-12)
+    checks["this_module_caliber_is_standard_cooperativity"] = bool(
+        _n["this_module_caliber"] == "g_form"
+        and _n["this_module_is_standard_cooperativity"] is True)
 
     # ② η_peak 极限与极值
     checks["peak_efficiency_at_c1_is_unity"] = bool(abs(peak_efficiency(1.0) - 1.0) < 1e-15)

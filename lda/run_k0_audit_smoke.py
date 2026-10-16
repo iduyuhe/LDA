@@ -67,7 +67,7 @@ def validate(led: dict, fresh: dict) -> dict:
     r["A1 台账文件存在"] = os.path.exists(_LEDGER)
     r["A2 顶层字段齐备（schema/generated_by/roadmap/subject/frozen_snapshot/items）"] = all(
         k in led for k in ("schema", "generated_by", "roadmap", "subject",
-                           "frozen_snapshot", "items", "items_total"))
+                           "frozen_snapshot", "items", "items_total", "items_settled"))
     ids = [it.get("id") for it in led.get("items", [])]
     r["A3 条目数 8 且 items_total ≡ len(items)"] = (
         led.get("items_total") == 8 and len(led.get("items", [])) == 8)
@@ -106,10 +106,16 @@ def validate(led: dict, fresh: dict) -> dict:
         e2.get("cooperativity_g_form") == f2.get("cooperativity_g_form")
         and e2.get("cooperativity_qv_form") == f2.get("cooperativity_qv_form")
         and e2.get("two_caliber_functions") == f2.get("two_caliber_functions"))
-    r["E2 G-K-2 消费侧未并报（口径术语 grep 全 0）≡ 现算"] = (
-        e2.get("consumer_caliber_term_hits") == f2.get("consumer_caliber_term_hits")
-        and all(v == 0 for v in e2.get("consumer_caliber_term_hits", {}).values())
-        and e2.get("consumer_import_line") == f2.get("consumer_import_line"))
+    # 🔴 K1 结算后语义翻转：旧判据曾断言「消费侧**未**并报（口径术语全 0）」——
+    #   K1 兑现后该判据被**打反** ⇒ 必须改为「消费侧**已**并报（结构化字段）∧ 错误等式 0 命中」。
+    r["E2 G-K-2 已结算：消费侧并报兑现 ∧ 错误等式 0 命中 ∧ items_settled 一致"] = (
+        e2.get("consumer_side_fulfilled") is True
+        and e2.get("wrong_identity_hits") == 0
+        and f2.get("wrong_identity_hits") == 0
+        and e2.get("settled_by_stage") == "K1"
+        and e2.get("ratio_closed_form") == f2.get("ratio_closed_form")
+        and e2.get("consumer_caliber_term_hits") == f2.get("consumer_caliber_term_hits")
+        and led.get("items_settled") == 1)
     e3 = ev("G-K-3")
     r["E3 G-K-3 B516/B517 均不在账本（DEFS ∧ ORDER）"] = (
         e3.get("in_benchmark_defs") == {"B516": False, "B517": False}
@@ -209,7 +215,7 @@ def main() -> int:
 
     print("\n[E] 证据现算对拍（G-K-2/3/4/5/7/8）")
     emit(["E1 G-K-2 两口径值/函数行号 ≡ 现算",
-          "E2 G-K-2 消费侧未并报（口径术语 grep 全 0）≡ 现算",
+          "E2 G-K-2 已结算：消费侧并报兑现 ∧ 错误等式 0 命中 ∧ items_settled 一致",
           "E3 G-K-3 B516/B517 均不在账本（DEFS ∧ ORDER）",
           "E4 G-K-4 sec-j1 缺位 ∧ J2–J5 齐备 ∧ j1_case 不存在",
           "E5 G-K-5 跨档复用站点 ≥2 ∧ 行号现算一致 ∧ 常量表不存在",

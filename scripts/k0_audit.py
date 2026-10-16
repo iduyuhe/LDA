@@ -39,6 +39,12 @@ _LDA = os.path.join(_ROOT, "lda")
 if _LDA not in sys.path:
     sys.path.insert(0, _LDA)
 
+#: 🔴 落盘走仓内 **确定性唯一口径**（`det.write_text`：UTF-8 + LF + 末尾恰一换行）。
+#:   注意**不用** `det.write_json` —— 后者经 `canon()` 会把 float 截到
+#:   `SIGNIFICANT_DIGITS = 9` 位有效数字，而本台账需保留 `ratio_closed_form` 等
+#:   全精度值（`run_k1_..._smoke` 的 B2 判据按 `1e-12` 比残差）⇒ 会被截断误红。
+from lda_harness import deterministic as det  # noqa: E402
+
 SCHEMA = "lda_k0_audit_v1"
 OUT_REL = "lda/reports/k0_audit.json"
 
@@ -155,16 +161,32 @@ def collect_snapshot() -> dict:
 def collect_items() -> list:
     from lda_l2 import qs_m3c as M
 
-    # ── G-K-2 证据：QS-M3c 两口径（现算） ────────────────────────────────
+    # ── G-K-2 证据：QS-M3c 两口径（现算 · K1 结算面） ──────────────────
     phys = M.design_qs_m3c()["physics"]
     cg = float(phys["cooperativity_g_form"])
     cqv = float(phys["cooperativity_qv_form"])
     ratio = (cg / cqv) if cqv else float("inf")
-    # 消费侧（J5 M3 换能层）是否并报另一口径
+    _cal_set = M.cooperativity_calibers()
+    # 消费侧（J5 M3 换能层）是否并报另一口径 —— 🔴 **结构化判据**（不靠散文）
     _consumer = "lda/lda_l2/qnet_transducer.py"
     _caliber_terms = ["口径", "约定", "convention", "2n", "8982", "8983"]
     consumer_caliber_hits = {t: _count(_consumer, t) for t in _caliber_terms}
     consumer_import_line = _first_line(_consumer, "from lda_l2.qs_m3c import")
+    try:
+        from lda_l2 import qnet_transducer as _TR
+        _rep = _TR.transducer_report()
+        consumer_disclosed = all(k in _rep for k in (
+            "qs_m3c_cooperativity_g_form", "qs_m3c_cooperativity_qv_form",
+            "qs_m3c_cooperativity_ratio", "qs_m3c_cooperativity_ratio_closed_form"))
+    except Exception:  # pragma: no cover
+        consumer_disclosed = False
+    # 被订正的错误等式（断言两口径相等）· 纠正后必须 0 命中
+    _wrong = ("4g²/(κγ_rad)=(3λ³Q/4π²V)(γ_rad/γ₁)",
+              "4g²/(κγ_rad) = (3λ³Q/4π²V)(γ_rad/γ₁)")
+    _wrong_files = ("lda/lda_l2/qs_m3c.py", "lda/run_qs_m3c_smoke.py",
+                    "lda/lda_harness/_batch_qs_m3c_numeric.py",
+                    "lda/lda_harness/benchmark_defs/part7.py")
+    wrong_identity_hits = sum(_count(f, w) for f in _wrong_files for w in _wrong)
 
     # ── G-K-3 证据：B516/B517 是否入账 ───────────────────────────────────
     from lda_harness.benchmarks import BENCHMARK_DEFS, BENCHMARK_ORDER
@@ -233,7 +255,7 @@ def collect_items() -> list:
         },
         {
             "id": "G-K-2",
-            "title": "QS-M3c cooperativity 两口径断口未结算（登记 ≠ 结算 · 消费侧未并报）",
+            "title": "QS-M3c cooperativity 两口径断口**已结算**（K1）· 消费侧已并报",
             "type": "债务·断口",
             "owner_stage": "K1",
             "evidence": {
@@ -241,6 +263,8 @@ def collect_items() -> list:
                 "cooperativity_g_form": cg,
                 "cooperativity_qv_form": cqv,
                 "ratio_g_over_qv": round(ratio, 3),
+                "ratio_closed_form": _cal_set["ratio_closed_form"],
+                "ratio_closed_form_expr": _cal_set["ratio_closed_form_expr"],
                 "two_caliber_functions": {
                     "cooperativity_from_g": _first_line("lda/lda_l2/qs_m3c.py",
                                                         "def cooperativity_from_g"),
@@ -250,12 +274,16 @@ def collect_items() -> list:
                 "consumer_file": _consumer,
                 "consumer_import_line": consumer_import_line,
                 "consumer_caliber_term_hits": consumer_caliber_hits,
-                "consumer_side_fulfilled": all(v == 0 for v in consumer_caliber_hits.values()),
+                "consumer_side_fulfilled": bool(consumer_disclosed),
+                "wrong_identity_hits": int(wrong_identity_hits),
+                "settled_by_stage": "K1",
+                "settlement_surface": "lda_l2.qs_m3c.cooperativity_calibers()",
+                "settlement_gate": "lda/run_k1_cooperativity_settlement_smoke.py",
                 "registered_in_charter": "docs/LDA_J5_...md R3b（必须并报两口径）",
             },
             "exit_criterion": ("定主账口径 ∧ 并报另一口径（机读字段强制·缺字段即红）"
                                "∧「抹平断口必红」探针 ∧ 消费侧复核（防口径翻转打反既有判据）"),
-            "status": "open",
+            "status": "settled",
         },
         {
             "id": "G-K-3",
@@ -380,6 +408,7 @@ def collect() -> dict:
         "excluded_fields": ["head（每次提交都变 ⇒ 非确定量，故意不入台账）"],
         "frozen_snapshot": snap,
         "items_total": len(items),
+        "items_settled": sum(1 for it in items if it.get("status") == "settled"),
         "items": items,
     }
 
@@ -398,9 +427,7 @@ def main(argv=None) -> int:
     text = dumps(payload)
     if args.write:
         dest = _p(OUT_REL)
-        os.makedirs(os.path.dirname(dest), exist_ok=True)
-        with open(dest, "w", encoding="utf-8", newline="\n") as f:
-            f.write(text + "\n")
+        det.write_text(dest, text)   # 确定性唯一口径：UTF-8 + LF + 末尾恰一换行
         print("[written] %s（%d 条未结项）" % (OUT_REL, payload["items_total"]))
     else:
         print(text)

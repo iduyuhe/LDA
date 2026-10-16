@@ -271,7 +271,12 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               #   直接相关且**便宜**的门禁 = 新门禁本体（实测 **~1.5s** / **28 判据**）⇒
               #   纳对照面，令本版 README 顶行声明的 28 判据由机器守（非手写）；
               #   它无自指、无递归（不反向调 PM 门禁）。
-              "run_k0_audit_smoke.py")
+              "run_k0_audit_smoke.py",
+              # 🔴 v0.9.244：本版真改动 = K 征程 K1 协同度两口径**断口结算**
+              #   （`qs_m3c.cooperativity_calibers` 结算面 + 消费侧并报 + 旧错误等式订正）。
+              #   直接相关且**便宜**的门禁 = 新结算门禁本体（实测 **~0.3s** / **23 判据**）⇒
+              #   纳对照面，令本版 README 顶行声明的 23 判据由机器守（非手写）。
+              "run_k1_cooperativity_settlement_smoke.py")
 
 
 def _declared_judge_counts(text):

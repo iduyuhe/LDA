@@ -37,9 +37,14 @@ QS-M3 链④ 把 Purcell 因子 **F_P = 4g²/(κγ₁)** 当 design-magnitude �
 
 ═══ 🔴 真实物理整合（诚实口径 · 模块内自洽）═══
 · **finesse ↔ Q**：ℱ = FSR/Δν，FSR = c/(2n a)，Δν = κ/(2π) ⇒ ℱ = Q·λ/(2na)；
-· **cooperativity 自洽**：C = 4g²/(κγ_rad) = (3λ³Q/4π²V)(γ_rad/γ₁)；本仓约定
-  γ_rad = 真空 Einstein-A = ω³μ²/(3πε₀ħc³)、腔模 ε = ε₀n² ⇒ 两式差一个**约定因子
-  2n**（已严格推导出界），selfcheck 验该因子到 1e-9（查实现 bug，非物理恒等式宣示）；
+· **cooperativity 两口径（🔴 K1 结算 · 断口 G-K-2 · 二者**不是**同一个量）**：
+  `g_form` `C_g = 4g²/(κγ_rad)`（**协同度** · 语义由第三参数决定：传总线宽 ⇒ 标准协同度）·
+  `qv_form` `C_qv = F_P·(γ_rad/γ₁)`（**非协同度** · Purcell 因子 × 分支比）；
+  🔴 **精确闭式比值** `C_g/C_qv = 2n·γ₁/γ_rad`（本仓约定 γ_rad = 真空 Einstein-A =
+  ω³μ²/(3πε₀ħc³)、腔模 ε = ε₀n² ⇒ `C_g = 2n·F_P`，为两因子的乘积）。🔴 **旧版本行曾断言
+  `4g²/(κγ_rad) ≡ (3λ³Q/4π²V)(γ_rad/γ₁)` —— 该等式不成立**（实测差 `2n·γ₁/γ_rad`，
+  旧门禁只查 `C_g/F_P = 2n` ⇒ 无判据拦截）⇒ 见 `cooperativity_calibers()` 与
+  `run_k1_cooperativity_settlement_smoke`；
 · **Purcell FOM**：F_P = (3/4π²)(λ/n)³(Q/V)（标准腔 QED）。
 
 ═══ 🔴 红线自检标注 ═══
@@ -232,6 +237,79 @@ def cooperativity_from_qv(Q: float, lambda0: float, n_r: float, v_eff: float,
 
 
 # ---------------------------------------------------------------------------
+# 🔴 K 征程 K1 · 断口 G-K-2 结算：协同度两口径**并报**（不得选择性披露）
+# ---------------------------------------------------------------------------
+#: 协同度口径登记（两口径**并存但物理量不同** · 比值有精确闭式）：
+#:   `g_form`  `C_g  = 4g²/(κ·γ)`    —— **协同度**（标准形式；**语义由第三参数决定**：
+#:                                      传**总线宽** γ₁ ⇒ 标准协同度；传辐射率 γ_rad ⇒ 相对辐射通道）
+#:   `qv_form` `C_qv = F_P·(γ_rad/γ₁)` —— **不是协同度**（Purcell 因子 × 分支比；
+#:                                      未计 Purcell 对分母本身的增强 ⇒ 亦不可读作 β）
+#: 🔴 **闭式比值（机器精度级实测）**：`C_g/C_qv = 2n · γ₁/γ_rad`
+#:   —— 两个因子的乘积：① 约定因子 **2n**（`C_g = 2n·F_P` · 本仓实现自洽 · 见
+#:   `run_qs_m3c_smoke` F2）② 分母口径差 **γ₁/γ_rad**（总线宽 vs 辐射通道）。
+#: 🔴 **断口本体（J5 章程 R3b 登记 · 本档结算）**：模块旧注释与账本 note 曾断言
+#:   `4g²/(κγ_rad) ≡ (3λ³Q/4π²V)(γ_rad/γ₁)` —— **该等式不成立**（实测差
+#:   `2n·γ₁/γ_rad` 倍），且旧门禁只查 `C_g/F_P = 2n` ⇒ **无判据拦截**（假自洽）。
+COOPERATIVITY_CALIBERS = ("g_form", "qv_form")
+
+#: 主账口径（**被消费面**（`qnet_transducer` ⇒ B522 golden）用的那一条）
+COOPERATIVITY_MAIN_ACCOUNT = "g_form"
+
+
+def cooperativity_calibers(**overrides: Any) -> Dict[str, Any]:
+    """**协同度两口径并报**（K1 结算面 · 机读字段强制 · 缺字段即红）。
+
+    返回**同一次调用**下的两个口径值 + **精确闭式比值** + **恒等式残差** +
+    「哪一条才是协同度」的判定字段。🔴 并报是硬要求：调用方不得只取其一。
+
+    🔴 **为什么 g 口径为主账**：
+      ① 它是**被消费的口径**（`lda_l2/qnet_transducer.cooperativity()` 复用 ⇒ B522 的
+         `C=25` 与其 golden 依赖它）；
+      ② 其函数形式 `4x²/(yz)` 即**标准协同度形式**，语义由第三参数（应为**总**衰减率）决定；
+      ③ Q/V 口径 `F_P·(γ_rad/γ₁)` 经分析**既非协同度亦非有效 β**（用 `F_Pγ_rad/γ₁` 当 β
+         会 >1 —— 它忽略了 Purcell 对**分母本身**的增强）⇒ 不能作主账。
+    """
+    ph = cavity_qed_physics(**overrides)
+    d = design_defaults()
+    d.update({k: float(v) for k, v in overrides.items()})
+
+    n_r = d["n_r"]
+    gr = ph["gamma_rad_s1"]
+    g1 = d["gamma1_s1"]
+    g = ph["g_Hz"]
+    kappa = ph["kappa_s1"]
+    fp = ph["purcell_F_P"]
+    c_g = ph["cooperativity_g_form"]
+    c_qv = ph["cooperativity_qv_form"]
+
+    ratio = c_g / c_qv
+    ratio_closed = 2.0 * n_r * g1 / gr
+    id_2n = 2.0 * n_r * fp                       # C_g = 2n·F_P（本仓实现自洽）
+
+    return {
+        "caliber": QS_M3C_CALIBER,
+        "n_r": n_r,
+        "gamma_rad_s1": gr,
+        "gamma1_s1": g1,
+        "purcell_F_P": fp,
+        "g_form": c_g,
+        "qv_form": c_qv,
+        "ratio_g_over_qv": ratio,
+        "ratio_closed_form": ratio_closed,
+        "ratio_closed_form_expr": "2n*g1/gamma_rad",
+        "ratio_closed_form_resid_rel": abs(ratio - ratio_closed) / ratio_closed,
+        "identity_2n_value": id_2n,
+        "identity_2n_resid_rel": abs(c_g - id_2n) / id_2n,
+        "cooperativity_std_total_linewidth": 4.0 * g * g / (kappa * g1),
+        "is_cooperativity": {"g_form": True, "qv_form": False},
+        "g_form_denominator": "gamma (third argument; pass total linewidth => standard cooperativity)",
+        "qv_form_is": "purcell_factor_times_branching_ratio (NOT a cooperativity)",
+        "main_account": COOPERATIVITY_MAIN_ACCOUNT,
+        "calibers": list(COOPERATIVITY_CALIBERS),
+    }
+
+
+# ---------------------------------------------------------------------------
 # 默认设计（金刚石微盘腔 · telecom 典型量级 · 设计示例 · 非实测）
 # ---------------------------------------------------------------------------
 def design_defaults() -> Dict[str, float]:
@@ -358,6 +436,22 @@ def selfcheck_qs_m3c() -> Dict[str, bool]:
     _ratio = _ph["cooperativity_g_form"] / _ph["purcell_F_P"]
     ok["cooperativity_convention_factor_2n"] = abs(_ratio - 2.0 * 3.4) < 1e-9
 
+    # ── 🔴 K1 结算面（断口 G-K-2）：两口径并报 + 闭式比值 + 防「以为相等」────
+    _cal = cooperativity_calibers()
+    ok["cooperativity_2n_identity_machine_precision"] = (
+        _cal["identity_2n_resid_rel"] < 1e-12)
+    ok["cooperativity_ratio_closed_form_machine_precision"] = (
+        _cal["ratio_closed_form_resid_rel"] < 1e-12)
+    # 🔴 两口径**不相等**（旧注释断言相等 ⇒ 该断言为假 · 本判据钉死「确有断口」）
+    ok["cooperativity_two_calibers_not_equal"] = (
+        abs(_cal["g_form"] - _cal["qv_form"]) / _cal["g_form"] > 1e-3)
+    ok["cooperativity_main_account_is_g_form"] = (
+        _cal["main_account"] == COOPERATIVITY_MAIN_ACCOUNT == "g_form")
+    # 🔴 并报硬要求：机读字段齐备（**缺字段即红** ⇒ 防选择性披露）
+    _need = ("g_form", "qv_form", "ratio_g_over_qv", "ratio_closed_form",
+             "is_cooperativity", "main_account")
+    ok["cooperativity_settlement_fields_present"] = all(k in _cal for k in _need)
+
     # 口径守卫
     try:
         assert_caliber(QS_M3C_CALIBER)
@@ -383,12 +477,13 @@ def _raises(fn) -> bool:
 
 
 def design_qs_m3c(run_checks: bool = True) -> Dict[str, Any]:
-    """QS-M3c 签核：物理链 + 整合 + 自检。"""
+    """QS-M3c 签核：物理链 + 整合 + 自检 + **协同度两口径结算面**（K1）。"""
     checks = selfcheck_qs_m3c() if run_checks else {}
     phys = cavity_qed_physics()
     verdict = "ACCEPT" if (not run_checks or all(checks.values())) else "REJECT"
     return {"caliber": QS_M3C_CALIBER, "checks": checks, "verdict": verdict,
-            "physics": phys}
+            "physics": phys,
+            "cooperativity_settlement": cooperativity_calibers()}
 
 
 def main() -> int:

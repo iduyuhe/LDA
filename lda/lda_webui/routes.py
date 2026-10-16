@@ -548,6 +548,37 @@ def h_j4_qs_system_demo(h, p, q, path):
                       "case_id": _j4.CASE_ID, "verdict": "ERROR"})
 
 
+def h_j5_qnet_demo(h, p, q, path):
+    """GET /api/j5_qnet —— J5 量子网络与接口**链路级**案例卡（只读 · 免登录 · 微秒级）。
+
+    J5 征程（吃狗粮 · LDA-J5 · v0.9.242+ · M0–M4）的**只读对外窗口**：
+    信道损耗（公里级）→ 纠缠分发保真（B519）→ 源不可分辨性 / HOM 可见度（B520）→
+    量子中继产出与吞吐（B521）→ 微波-光换能效率（B522）→ 量子-经典接口（**M4 净增 0**）。
+
+    🔴 与 `/api/j4_qs_system`（**传感系统级**：器件 → 系统）**分工不同、互补非重复**：
+    `j4_qs_system` 在**器件系统**（多参数解耦 / 微型化 / 集成 / 热负载），
+    本卡在**网络链路**（损耗-保真-速率-换能-定时 · 首次引入「公里级距离」维度）。
+
+    🔴 **零重计算**：不跑仿真、不 import 求解器、不 import numpy/scipy —— 全部数字由
+    **闭式算术现算**（对数衰减 / Werner 闭式 / 高斯重叠 / 三态卷积闭式 / 复留数侧带 /
+    CPMG 指数和），并由常驻门禁 `run_webui_j5_render_path_smoke` 对 `lda_l2/qnet_*`
+    各真源模块**逐值跨源对拍**。⇒ **无 DoS 面**，故**免登录、不进 HEAVY_POST_PATHS**。
+
+    无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`；
+    **M4 净增 0** 与三证据否决如实呈现（不虚报）。
+    异常不 500（返回 200 + error 字段，与 `h_j4_qs_system_demo` 同风格）。
+    """
+    try:
+        from . import j5_case as _j5
+    except ImportError:
+        from lda_webui import j5_case as _j5
+    try:
+        return (200, _j5.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/j5_qnet", "error": str(e)[:160],
+                      "case_id": _j5.CASE_ID, "verdict": "ERROR"})
+
+
 def h_accel_demo(h, p, q, path):
     """GET /api/accel_demo —— 光子/模拟混合 AI 推理加速器案例卡（阶段 4 · L6 参考设计 · 只读）。
 
@@ -2245,6 +2276,9 @@ GET_ROUTES = {
     # J4 征程（v0.9.237+）：量子传感**系统集成**层（L4）只读案例卡
     # （多参数解耦 / 微型化 / 集成隔离度 / 热负载预算 / 系统签核 · 零重计算 · 免登录）
     "/api/j4_qs_system": h_j4_qs_system_demo,
+    # J5 征程（v0.9.242+）：量子网络与接口**链路级**层（L5）只读案例卡
+    # （信道损耗 / 分发保真 / HOM 可见度 / 中继吞吐 / 换能 η / 经典接口 · 零重计算 · 免登录）
+    "/api/j5_qnet": h_j5_qnet_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,

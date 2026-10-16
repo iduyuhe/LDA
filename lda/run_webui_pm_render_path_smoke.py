@@ -259,7 +259,13 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               #   **46 判据**（🔴 只写终值单数；箭头/区间写法会令 W10 正则解析为空）。
               #   🔴 v0.9.241（J5 M3）：本体再扩至 **59 判据**（自 46 扩 · 加 B522 锚 +
               #   `qnet_transducer` 能力层 + C6 跨模块对拍）⇒ README 顶行声明须写 **59 判据**。
-              "run_j5_qnet_smoke.py")
+              # 🔴 v0.9.242：本版真改动 = J5 征程 M4 收官（能力层 `qnet_classical` +
+              #   总装 `qnet_system` + **WebUI J5 面板落地**：新 `sec-j5` + `/api/j5_qnet`
+              #   + `run_webui_j5_render_path_smoke`）。直接相关且**便宜**的门禁 = 新渲染
+              #   门禁本体（实测 **~1.5s** / **20 判据**）⇒ 纳对照面，令本版 README 顶行
+              #   声明的 20 判据由机器守（非手写）；它无自指、无递归（不反向调 PM 门禁）。
+              #   ⚠️ 同版 `run_j5_qnet_smoke`（**66 判据** · v0.9.238 纳入）仍在表内 ⇒ 两处均受守。
+              "run_webui_j5_render_path_smoke.py")
 
 
 def _declared_judge_counts(text):

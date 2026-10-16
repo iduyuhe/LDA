@@ -28,9 +28,11 @@ import importlib  # noqa: E402
 S = importlib.import_module("run_j5_qnet_smoke")
 J5 = S.J5
 CH = S.CH
+CL = S.CL
 DS = S.DS
 RP = S.RP
 SR = S.SR
+QS = S.QS
 TR = S.TR
 DEFS = S.BENCHMARK_DEFS
 
@@ -285,12 +287,44 @@ def main() -> int:
     rec("M25 B522_DEFAULT_PARAMS 漂移 ⇒ D3", "D3", fails, npass)
     J5.B522_DEFAULT_PARAMS["band_half_rad_s"] = 2.0 * 3.141592653589793 * 5.0e6
 
-    # M26 还原复绿
+    # M27 qnet_classical 自检破坏 ⇒ B6
+    _cl = CL.selfcheck_qnet_classical
+    CL.selfcheck_qnet_classical = lambda: {"broken": False}
     fails, npass = run_smoke()
-    print("\n[M26] 全部还原")
-    print("  [%s] M26 全部还原（复绿完整性 · FAIL 行 = %d）"
+    rec("M27 qnet_classical 自检破坏 ⇒ B6", "B6 ", fails, npass)
+    CL.selfcheck_qnet_classical = _cl
+
+    # M28 qnet_system 自检破坏 ⇒ B7
+    _sys = QS.selfcheck_qnet_system
+    QS.selfcheck_qnet_system = lambda: {"broken": False}
+    fails, npass = run_smoke()
+    rec("M28 qnet_system 自检破坏 ⇒ B7", "B7 ", fails, npass)
+    QS.selfcheck_qnet_system = _sys
+
+    # M29 qnet_system 六段第 6 段值漂移 ⇒ C8（须 patch 门禁读取路径 QS.link_segments）
+    _ls = QS.link_segments
+    def _ls_bad(*a, **kw):
+        rows = _ls(*a, **kw)
+        rows[5] = dict(rows[5]); rows[5]["value"] = rows[5]["value"] + 1.0
+        return rows
+    QS.link_segments = _ls_bad
+    fails, npass = run_smoke()
+    rec("M29 qnet_system 第 6 段值漂移 ⇒ C8", "C8", fails, npass)
+    QS.link_segments = _ls
+
+    # M30 避让表破坏（少一条）⇒ F1
+    _av = CL.avoidance_table
+    CL.avoidance_table = lambda: {"B475": {"title": "x", "kind": "y", "分歧": "z", "结论": "w"}}
+    fails, npass = run_smoke()
+    rec("M30 避让表缺条 ⇒ F1", "F1 ", fails, npass)
+    CL.avoidance_table = _av
+
+    # M31 还原复绿
+    fails, npass = run_smoke()
+    print("\n[M31] 全部还原")
+    print("  [%s] M31 全部还原（复绿完整性 · FAIL 行 = %d）"
           % ("PASS" if len(fails) == 0 else "FAIL", len(fails)))
-    records.append(("M26 还原复绿", len(fails) == 0, "无红", npass, fails[:2]))
+    records.append(("M31 还原复绿", len(fails) == 0, "无红", npass, fails[:2]))
 
     bad = sum(1 for _, ok, _, _, _ in records if not ok)
     print("\n" + "=" * 78)

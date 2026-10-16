@@ -5,10 +5,13 @@
   A 锚项（每锚 11 条 · 读自 BENCHMARK_DEFS 不硬编码）：tol 内 / 残差 >0 非代数恒等 /
     判据 D（严格单调 + 比值形态与算法一致）/ 动态范围 · 反自证桩 · 防回退候选键 /
     🔴 反向探针必须打「离散参数 n」/ 纪律佐证 / n 非法必抛
-  B 能力层：`qnet_channel` 14 + `qnet_distribution` 10 + `qnet_source` 8 + `qnet_repeater` 20 + `qnet_transducer` 16
-  C 跨模块同源（逐位）：分发 ≡ B519 golden · 信道 ≡ B519 golden · 源 ≡ B520 golden · 中继 ≡ B521 golden · 换能 ≡ B522 golden
+  B 能力层：`qnet_channel` 14 + `qnet_distribution` 10 + `qnet_source` 8 + `qnet_repeater` 20 +
+    `qnet_transducer` 16 + `qnet_classical` 14 + `qnet_system` 17
+  C 跨模块同源（逐位）：分发 ≡ B519 golden · 信道 ≡ B519 golden · 源 ≡ B520 golden · 中继 ≡ B521 golden ·
+    换能 ≡ B522 golden · 经典接口 ≡ `qs_m2.cpmg_filter`（复用对拍）· 总装六段 ≡ 六能力层
   D 三表一致：`_TOL_BY_BID` ≡ DEFS tol（四锚）· `_M_BY_BID` = 扫描格末端（四锚）· 默认档 ≡ DEFS
   E 红线：零量子 SDK（不依赖 Qiskit/Cirq/PennyLane/QuTiP）
+  F M4 净增 0 登记核验：避让表 3 条 · 负结果取证 3 条 · 总装报告净增 0 与理由可查
 
 🔴 `main()` 返回「真值」而非恒 0（J4 血案：恒 `return 0` = 假绿）。
 🔴 一律走 `smoke_kit.make_check`（助手单一来源棘轮 J3）。
@@ -27,9 +30,11 @@ from lda_harness import _batch_j5_numeric as J5  # noqa: E402
 from lda_harness.benchmarks import BENCHMARK_DEFS  # noqa: E402
 from lda_harness.smoke_kit import make_check  # noqa: E402  # 助手单一来源（棘轮 J3：禁自定义检查函数）
 from lda_l2 import qnet_channel as CH  # noqa: E402
+from lda_l2 import qnet_classical as CL  # noqa: E402
 from lda_l2 import qnet_distribution as DS  # noqa: E402
 from lda_l2 import qnet_repeater as RP  # noqa: E402
 from lda_l2 import qnet_source as SR  # noqa: E402
+from lda_l2 import qnet_system as QS  # noqa: E402
 from lda_l2 import qnet_transducer as TR  # noqa: E402
 
 check = make_check(globals(), ok_key="PASS", bad_key="FAIL", detail_fmt="  |  {d}")
@@ -135,6 +140,12 @@ def main() -> int:  # noqa: C901
     sc_tr = TR.selfcheck_qnet_transducer()
     check("B5 qnet_transducer 全部自检通过", not [k for k, v in sc_tr.items() if not v],
           "%d 项" % len(sc_tr))
+    sc_cl = CL.selfcheck_qnet_classical()
+    check("B6 qnet_classical 全部自检通过", not [k for k, v in sc_cl.items() if not v],
+          "%d 项" % len(sc_cl))
+    sc_sys = QS.selfcheck_qnet_system()
+    check("B7 qnet_system 全部自检通过", not [k for k, v in sc_sys.items() if not v],
+          "%d 项" % len(sc_sys))
 
     print("\n[C] 跨模块同源（逐位）")
     g519 = float(BENCHMARK_DEFS["B519"]["golden_fn"](
@@ -157,6 +168,12 @@ def main() -> int:  # noqa: C901
         **BENCHMARK_DEFS["B522"]["default_params"]))
     check("C6 qnet_transducer.transducer_efficiency ≡ B522 golden（相对 < 1e-12）",
           abs(TR.transducer_efficiency() - g522) / max(abs(g522), 1e-300) < 1e-12)
+    check("C7 qnet_classical 复用 `qs_m2.cpmg_filter`（逐点对拍）",
+          bool(sc_cl.get("matches_qs_m2_cpmg_filter", False)))
+    _rows = QS.link_segments()
+    check("C8 qnet_system 六段 ≡ 六能力层（逐位）",
+          all(r["verdict"] in ("PASS", "REVIEW") for r in _rows) and len(_rows) == 6
+          and abs(_rows[5]["value"] - CL.jitter_infidelity()) < 1e-15)
 
     print("\n[D] 三表 / 默认档一致")
     check("D1 _TOL_BY_BID ≡ BENCHMARK_DEFS tol（四锚）",
@@ -171,7 +188,8 @@ def main() -> int:  # noqa: C901
     src = ""
     for fn in ("lda_l2/qnet_channel.py", "lda_l2/qnet_distribution.py",
                "lda_l2/qnet_source.py", "lda_l2/qnet_repeater.py",
-               "lda_l2/qnet_transducer.py",
+               "lda_l2/qnet_transducer.py", "lda_l2/qnet_classical.py",
+               "lda_l2/qnet_system.py",
                "lda_harness/_batch_j5_numeric.py"):
         p = os.path.join(_HERE, fn)
         if os.path.exists(p):
@@ -180,6 +198,19 @@ def main() -> int:  # noqa: C901
            if ("import " + s) in src]
     check("E1 主权边界：零量子 SDK（不依赖 Qiskit/Cirq/PennyLane/QuTiP）",
           not sdk, "命中=%s" % (sdk or "无"))
+
+    print("\n[F] M4 净增 0 登记核验（章程 R8：无物理律者归 smoke）")
+    av = CL.avoidance_table()
+    check("F1 避让表 3 条齐备（B475 / qs_m2.coherent_chi / B522）",
+          set(av) == {"B475", "qs_m2.coherent_chi", "B522"},
+          "keys=%s" % sorted(av))
+    ev = CL.negative_evidence()
+    check("F2 负结果取证 3 条齐备（洛伦兹尾部 / 高斯精确 / Simpson 振荡）",
+          len(ev) == 3 and all(ev.values()), "n=%d" % len(ev))
+    _rep = QS.full_qnet_report()
+    check("F3 总装报告净增 0 且有可查理由",
+          _rep["net_new_anchors_M4"] == 0 and "negative_evidence" in _rep["net_new_reason"],
+          "reason=%s" % _rep["net_new_reason"][:40])
 
     bad = globals().get("FAIL", 0)
     print("\n" + "=" * 78)

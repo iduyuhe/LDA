@@ -1894,14 +1894,21 @@ CORE_SMOKES: List[str] = [
     #   做判据数自洽 + 跨源对拍 `qs_j4_*` 四模块与账本锚 B518 现算值）。
     #   numpy 可用 ⇒ 入 core；timeout 默认 300s 留足余量（实测 ~1.2s）。CI core 325→326。
     "run_webui_j4_render_path_smoke.py",
-    # J5 量子网络与接口征程 M0 门禁（v0.9.238 · B519 分发后两体纠缠保真度 + 第 0 号动作信道层）：
-    #   A 锚项 11（DEFS tol 内 · 残差 >0 非恒等 · 判据 D 单调 + 比值形态趋向 O(h⁴) · 动态范围
-    #   ≥1e4 · 反自证桩 · 防回退候选键 · 🔴 反向探针打**离散参数 n** · 纪律佐证 · n=0 必抛）
-    #   + B 能力层 2（`qnet_channel` 14 自检 + `qnet_distribution` 10 自检）
-    #   + C 跨模块同源 3（分发 ≡ B519 golden 逐位 · 信道 ≡ golden 逐位 · Werner 同律）
-    #   + D 三表/默认档一致 3 + E 零量子 SDK 机械核 1。**59 判据**（v0.9.241 起四锚遍历：A 节 11×2）。
-    #   numpy 可用 ⇒ 入 core；timeout 默认 300s 留足余量（实测 ~0.7s）。CI core 326→327。
+    # J5 量子网络与接口征程门禁（v0.9.238 起 · 四锚 B519/B520/B521/B522 + 七能力层）：
+    #   A 锚项 11×4（四锚遍历：DEFS tol 内 · 残差 >0 非恒等 · 判据 D 单调 + 比值形态趋向标称阶
+    #   · 动态范围 ≥1e4 · 反自证桩 · 防回退候选键 · 🔴 反向探针打**离散参数 n** · 纪律佐证 · n=0 必抛）
+    #   + B 能力层 7（`qnet_channel` 14 + `qnet_distribution` 10 + `qnet_source` 8 + `qnet_repeater` 20
+    #     + `qnet_transducer` 16 + `qnet_classical` 14 + `qnet_system` 17 自检）
+    #   + C 跨模块同源 8（分发/信道 ≡ B519 golden 逐位 · 源 ≡ B520 · 中继 ≡ B521 · 换能 ≡ B522 ·
+    #     经典接口 ≡ `qs_m2.cpmg_filter` 复用对拍 · 总装六段 ≡ 六能力层）
+    #   + D 三表/默认档一致 3 + E 零量子 SDK 机械核 1
+    #   + F M4 净增 0 登记核验 3（避让表 3 条 · 负结果取证 3 条 · 总装报告净增 0 与理由可查）。
+    #   **66 判据**。numpy 可用 ⇒ 入 core；timeout 默认 300s 留足余量（实测 ~0.9s）。
     "run_j5_qnet_smoke.py",
+    # v0.9.242（J5 M4）：J5 量子网络与接口**链路级** WebUI 面板渲染路径门禁
+    #   （`sec-j5` 三入口面 + `GET /api/j5_qnet` + 六段跨源逐值对拍 + M4 净增 0 诚实呈现）。
+    #   **20 判据**。纯标准库 + 一次子进程调 `run_j5_qnet_smoke`（实测 ~1.5s）。CI core 327→328。
+    "run_webui_j5_render_path_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2910,6 +2917,9 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   A–G 判据（含实跑 `run_j4_multiparam_smoke` 子模块 1 次做判据数自洽 + 跨源逐值对拍）。
     #   timeout 默认 300s 留足余量（实测 ~1.2s）。
     "run_webui_j4_render_path_smoke.py": 300.0,
+    #   20 判据 · 实测上界 ~1.5s（含一次 `run_j5_qnet_smoke` 子进程 ~0.9s）⇒ 给 300s 上限
+    #   （与 j4 渲染门禁同档；余量充裕，不构成欠标定）。
+    "run_webui_j5_render_path_smoke.py": 300.0,
     # J5 量子网络与接口征程 M0 门禁（B519 分发保真度 + 信道层 + 分发能力层 + 跨模块同源 + 三表一致）：
     #   20 判据 · 实测上界 **~0.7s** ⇒ 预算 300s = **≈428×**。
     #   🔴 必须显式登记（`run_timeout_budget_ratchet_smoke` 的 B20 反向完备要求

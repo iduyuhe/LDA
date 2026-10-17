@@ -1,5 +1,63 @@
 # Changelog
 
+## v0.9.245（2026-10-17 · **K 征程 K2 · B516/B517 终态裁决 + J1 面板补齐**（缺口 G-K-3 / G-K-4 · A 金级）· **净增 0 锚** · 账本 538 不变 · CI core 330 → 331 · 端点 154 → 155）
+
+K2 两条独立线一次收官。
+
+### 一、(a) B516/B517 终态 = `reserved_null`（**真 grep 同源体检**得出 · 非预设）
+
+| 靶 | 同源体检（现算命中面） | 裁决 |
+| --- | --- | --- |
+| **B516** 缓冲气体压致展宽 / Voigt 半宽 | 靶被 **B197–B200** 四锚占满 `voigt_profile` 族（线心 / 远翼 / 洛伦兹主导 / 深远翼）；其候选 = **卷积定义式数值积分** ⇒ B516 的 golden 与 candidate **两端都绕不开同一 Voigt 卷积** | **`reserved_null`** |
+| **B517** 片上微波-光寄生耦合隔离度 `I=1/|S21|²` | 与 **B513**（`S=1/|S21(f_q)|²` Purcell 抑制比）**同为该标量形式**、候选同族（**ODE 数值积分**）；「耦合模」面另被 **B14** 占用 | **`reserved_null`** |
+
+**曾评估改靶并如实否掉**：B516→Dicke 窄化 / 压力展宽系数温度定标（前者为**查表常量**、后者非闭式物理律）；
+B517→非互易隔离（需磁光效应闭式，本档无）⇒ **不改靶**。
+
+**机器登记**：K0 台账 `G-K-3` → `status: settled`（`b516_verdict`/`b517_verdict` = `reserved_null` ·
+`b516_reason`/`b517_reason` · `b516_keyword_hits`/`b517_keyword_hits` **现算** · `retarget_considered`）；
+K0 门禁 **E3** 由「均不在账本（DEFS ∧ ORDER）」升级为「**终态已裁决 ∧ reserved_null ∧ 体检证据齐备**」
+（并现算断言 B197–B200 必须出现在 B516 命中面、B513 必须出现在 B517 命中面）。
+
+### 二、(b) J1（QEC）WebUI 面板补齐 —— 补齐缺口 G-K-4（六层面板）
+
+🔴 **此前「六层」叙事不完整**：J2–J5 四层均有面板与端点，**J1（量子赛道首层）唯一缺位**
+（`sec-j1` / `/api/j1_qec` / `j1_case.py` 全仓 grep **0 命中**）。
+
+| 件 | 内容 |
+| --- | --- |
+| `lda/lda_webui/j1_case.py` | **33 自检** · **零重计算**（AST 断言顶层 import 仅 `math`/`typing`）· 九锚 B497–B505 登记 |
+| `GET /api/j1_qec` | 免登录 · 不进 `HEAVY_POST_PATHS`（无 DoS 面）· 异常返回 200 + error |
+| `index.html` `sec-j1` | **三入口面齐备**：首屏 nav 直达链接 + section + `CASE_MAP` 深链 `#sec-j1` → `runJ1` |
+| `CASE_PANELS_MIN` | **15 → 16** |
+
+**闭式预算链**（与 `lda_qeda/*` 真源同律 · 同参数）：M0 子阈值档 · M1 期望综合征权重
+`L²·½(1−(1−2q)⁴)` · M2 旗比特钩错占比 + erf² 相邻稳定子关联 · M3 transversal CNOT `exp(−∫p₀(1+αt+βt²)dt)`
++ lattice surgery `exp(−c·p·(2d³/3−d))` + 资源 `2d²−1` · M4 端到端 `1−exp(−λ(T+βT²/2+γT³/3))`
++ 累计逻辑错误面积 `L−(1−e^{−kL})/k`。
+
+### 三、新常驻门禁 `run_webui_j1_render_path_smoke.py`（21 判据 · 入 CORE）
+
+| 节 | 条 | 内容 |
+| --- | --- | --- |
+| **A** | 3 | 三入口面（`sec-j1` + `runJ1` + `renderJ1` + `apiGet('/api/j1_qec')`）· `CASE_MAP` 深链 · 首屏导航直达 |
+| **B** | 2 | 取值路径存在性 · **反向完备**（卡顶层键均被前端引用） |
+| **C** | 7 | **跨源逐值对拍**：`j1_case` 的 7 个闭式 ≡ `lda_qeda/{qec_noise,fault_tolerant_gates,logical_error_rate}` 真源（≤1 ULP · 实测 **rel = 0.00e+00 逐位**） |
+| **D** | 1 | 9 锚 B497–B505 齐备且与 `BENCHMARK_DEFS` 一致 |
+| **E** | 4 | 零重计算（AST）· 端点免登录且不进重端点 · `verdict` 恒 `DESIGN_BUDGET` · 模块自检全 PASS |
+| **F** | 3 | 突变探针：改坏 `syndrome_weight` / `transversal_cnot_fidelity` / `verdict` ⇒ 必红 |
+| **G** | 1 | 还原复绿 |
+
+### 四、计数（三同步）
+
+**账本 538 不变**（净增 0 锚 · 裁决不加锚）· 严格独立 516 / 降级 3 / 自证桩 19 不变 ·
+独立率 95.91% 不变 · **CI core 330 → 331**（+1 渲染门禁）· **端点 154 → 155** ·
+**`CASE_PANELS_MIN` 15 → 16** · 版本 **v0.9.245**。
+
+⚠️ **诚实边界**：全部参数为**设计示例量级**（非实测 PDK）；J1 案例卡只呈现**闭式预算链**
+（解码器内核正确性另由 `run_j1_qec_smoke` 的 MWPM ↔ 自主 Union-Find **位级对拍**守护）
+⇒ **不得作制造 / 性能宣称**，不报能效 / TOPS / fJ-op。**零量子 SDK**；**LLM 不进判决路径**。
+
 ## v0.9.244（2026-10-16 · **K 征程 K1 · 协同度两口径断口结算**（缺口 G-K-2 · A 金级 · `lda-gap-settlement`）· **净增 0 锚** · 账本 538 不变 · CI core 329 → 330 · 端点 154 不变）
 
 K1 = 把 K0 台账里那条「**登记 ≠ 结算**」的活体标本**真正结清**。

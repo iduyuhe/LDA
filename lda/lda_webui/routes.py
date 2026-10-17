@@ -579,6 +579,36 @@ def h_j5_qnet_demo(h, p, q, path):
                       "case_id": _j5.CASE_ID, "verdict": "ERROR"})
 
 
+def h_j1_qec_demo(h, p, q, path):
+    """GET /api/j1_qec —— J1 量子纠错（QEC）**逻辑比特层**案例卡（只读 · 免登录 · 微秒级）。
+
+    J1 征程（吃狗粮 · LDA-J1 · v0.9.228+ · M0–M4）的**只读对外窗口**：
+    阈值标度（B497）→ 解码器（B498/B499）→ 综合征提取与旗比特钩错（B500/B501）→
+    容错逻辑门（B502/B503）→ 端到端累计失效（B504/B505）。
+
+    🔴 与 `/api/j2_qpu`（**物理比特层 L2**）**分工不同、互补非重复**：
+    `j2_qpu` 在**物理比特**（能级/耦合/读出/串扰），本卡在**逻辑比特**（阈值/解码/容错门）
+    —— 二者正是 LDA 量子赛道蓝图 v1 的**连续两层**（J1 → J2）。
+
+    🔴 **零重计算**：不跑仿真、不 import 求解器、不 import numpy/scipy —— 全部数字由
+    **闭式算术现算**（症候权重闭式 / 旗比特占比 / erf² 关联 / exp 积分预算链 / 资源计数），
+    并由常驻门禁 `run_webui_j1_render_path_smoke` 对 `lda_qeda/*` 真源模块**逐值跨源对拍**。
+    ⇒ **无 DoS 面**，故**免登录、不进 `HEAVY_POST_PATHS`**。
+
+    无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`。
+    异常不 500（返回 200 + error 字段，与 `h_j5_qnet_demo` 同风格）。
+    """
+    try:
+        from . import j1_case as _j1
+    except ImportError:
+        from lda_webui import j1_case as _j1
+    try:
+        return (200, _j1.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/j1_qec", "error": str(e)[:160],
+                      "case_id": _j1.CASE_ID, "verdict": "ERROR"})
+
+
 def h_accel_demo(h, p, q, path):
     """GET /api/accel_demo —— 光子/模拟混合 AI 推理加速器案例卡（阶段 4 · L6 参考设计 · 只读）。
 
@@ -2279,6 +2309,7 @@ GET_ROUTES = {
     # J5 征程（v0.9.242+）：量子网络与接口**链路级**层（L5）只读案例卡
     # （信道损耗 / 分发保真 / HOM 可见度 / 中继吞吐 / 换能 η / 经典接口 · 零重计算 · 免登录）
     "/api/j5_qnet": h_j5_qnet_demo,
+    "/api/j1_qec": h_j1_qec_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,

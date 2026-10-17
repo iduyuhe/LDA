@@ -88,8 +88,9 @@ def validate(led: dict, fresh: dict) -> dict:
     r["B4 端点 ≡ 现算"] = ls.get("endpoints") == fs.get("endpoints")
     r["B5 CASE_PANELS_MIN ≡ 现算"] = ls.get("case_panels_min") == fs.get("case_panels_min")
     r["B6 最高锚 ≡ 现算"] = ls.get("max_anchor") == fs.get("max_anchor")
-    r["B7 面板清单 ≡ 现算（且不含 sec-j1 · 与 G-K-4 互证）"] = (
-        ls.get("panels") == fs.get("panels") and "sec-j1" not in ls.get("panels", []))
+    # 🔴 K2 补齐 J1 面板后语义翻转：旧判据曾断言面板清单「**不含** sec-j1」⇒ 已被打反。
+    r["B7 面板清单 ≡ 现算（**含 sec-j1** · K2 已补齐 · 与 G-K-4 互证）"] = (
+        ls.get("panels") == fs.get("panels") and "sec-j1" in ls.get("panels", []))
 
     # ── E 证据现算对拍 ────────────────────────────────────────────────
     by_id = {it.get("id"): it for it in led.get("items", [])}
@@ -115,21 +116,30 @@ def validate(led: dict, fresh: dict) -> dict:
         and e2.get("settled_by_stage") == "K1"
         and e2.get("ratio_closed_form") == f2.get("ratio_closed_form")
         and e2.get("consumer_caliber_term_hits") == f2.get("consumer_caliber_term_hits")
-        and led.get("items_settled") == 1)
+        and led.get("items_settled") == 3)
     e3 = ev("G-K-3")
-    r["E3 G-K-3 B516/B517 均不在账本（DEFS ∧ ORDER）"] = (
+    r["E3 G-K-3 B516/B517 均不在账本 ∧ 终态=reserved_null ∧ 体检证据齐备"] = (
         e3.get("in_benchmark_defs") == {"B516": False, "B517": False}
         and e3.get("in_benchmark_order") == {"B516": False, "B517": False}
         and "B516" not in BENCHMARK_DEFS and "B517" not in BENCHMARK_DEFS
-        and "B516" not in set(BENCHMARK_ORDER) and "B517" not in set(BENCHMARK_ORDER))
+        and "B516" not in set(BENCHMARK_ORDER) and "B517" not in set(BENCHMARK_ORDER)
+        and e3.get("b516_verdict") == "reserved_null"
+        and e3.get("b517_verdict") == "reserved_null"
+        and bool(e3.get("b516_reason")) and bool(e3.get("b517_reason"))
+        # 同源体检命中面**现算**（证据不手写）：B197–B200 必须出现在 B516 命中表内
+        and all(b in e3.get("b516_keyword_hits", {}) for b in ("B197", "B198", "B199", "B200"))
+        and "B513" in e3.get("b517_keyword_hits", {}))
     e4, f4 = ev("G-K-4"), fev("G-K-4")
-    r["E4 G-K-4 sec-j1 缺位 ∧ J2–J5 齐备 ∧ j1_case 不存在"] = (
+    # 🔴 K2 补齐后语义翻转：旧判据曾断言「sec-j1 **缺位** ∧ j1_case 不存在」⇒ 已被打反。
+    r["E4 G-K-4 **已补齐**：sec-j1 齐备 ∧ J2–J5 齐备 ∧ j1_case 存在 ∧ CASE_PANELS_MIN=16"] = (
         e4.get("panel_hits") == f4.get("panel_hits")
         and e4.get("endpoint_hits") == f4.get("endpoint_hits")
-        and e4.get("panel_hits", {}).get("sec-j1") == 0
-        and all(e4.get("panel_hits", {}).get(k, 0) >= 1 for k in ("sec-j2", "sec-j3",
-                                                                 "sec-j4", "sec-j5"))
-        and e4.get("j1_case_py_exists") is False)
+        and all(e4.get("panel_hits", {}).get(k, 0) >= 1
+                for k in ("sec-j1", "sec-j2", "sec-j3", "sec-j4", "sec-j5"))
+        and e4.get("j1_case_py_exists") is True
+        and e4.get("verdict") == "closed"
+        and e4.get("settled_by_stage") == "K2"
+        and f4.get("case_panels_min") == 16)
     e5, f5 = ev("G-K-5"), fev("G-K-5")
     r["E5 G-K-5 跨档复用站点 ≥2 ∧ 行号现算一致 ∧ 常量表不存在"] = (
         e5.get("reuse_sites") == f5.get("reuse_sites")
@@ -174,7 +184,7 @@ def main() -> int:
           "B4 端点 ≡ 现算",
           "B5 CASE_PANELS_MIN ≡ 现算",
           "B6 最高锚 ≡ 现算",
-          "B7 面板清单 ≡ 现算（且不含 sec-j1 · 与 G-K-4 互证）"],
+          "B7 面板清单 ≡ 现算（**含 sec-j1** · K2 已补齐 · 与 G-K-4 互证）"],
          detail_fn=lambda n: ("ledger %d/%d/%d/%d · rate=%s · ci_core=%d · eps=%d · cpm=%d · max=%s"
                               % (fs["ledger_total"], fs["ledger_strict"], fs["ledger_degraded"],
                                  fs["ledger_stub"], fs["independence_rate"], fs["ci_core"],
@@ -216,8 +226,8 @@ def main() -> int:
     print("\n[E] 证据现算对拍（G-K-2/3/4/5/7/8）")
     emit(["E1 G-K-2 两口径值/函数行号 ≡ 现算",
           "E2 G-K-2 已结算：消费侧并报兑现 ∧ 错误等式 0 命中 ∧ items_settled 一致",
-          "E3 G-K-3 B516/B517 均不在账本（DEFS ∧ ORDER）",
-          "E4 G-K-4 sec-j1 缺位 ∧ J2–J5 齐备 ∧ j1_case 不存在",
+          "E3 G-K-3 B516/B517 均不在账本 ∧ 终态=reserved_null ∧ 体检证据齐备",
+          "E4 G-K-4 **已补齐**：sec-j1 齐备 ∧ J2–J5 齐备 ∧ j1_case 存在 ∧ CASE_PANELS_MIN=16",
           "E5 G-K-5 跨档复用站点 ≥2 ∧ 行号现算一致 ∧ 常量表不存在",
           "E6 G-K-7 白皮书/论文/总览入口均缺",
           "E7 G-K-8 蓝图 v2 不存在（v1 已收官）"])

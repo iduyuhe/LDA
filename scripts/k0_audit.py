@@ -89,6 +89,31 @@ def _exists(rel: str) -> bool:
     return os.path.exists(_p(rel))
 
 
+def _anchor_keyword_hits(keys) -> dict:
+    """**同源体检现算**：在 `BENCHMARK_DEFS` 的锚定义文本里逐锚搜关键词。
+
+    返回 `{bid: [命中词...]}`（按 B 号数值升序）。用于 G-K-3 的「靶被谁占用」机器判定 ——
+    🔴 证据**现算**，不手写命中清单（手写必过期）。
+    """
+    from lda_harness.benchmarks import BENCHMARK_DEFS, BENCHMARK_ORDER
+
+    out = {}
+    for bid in BENCHMARK_ORDER:
+        e = BENCHMARK_DEFS.get(bid) or {}
+        parts = []
+        for k in ("title", "metric", "unit", "note", "candidate_desc",
+                  "definition", "physical_law"):
+            v = e.get(k)
+            if isinstance(v, str):
+                parts.append(v)
+        blob = "\n".join(parts).lower()
+        got = sorted({str(k) for k in keys if str(k).lower() in blob})
+        if got:
+            out[bid] = got
+    return dict(sorted(out.items(),
+                       key=lambda kv: int(re.sub(r"\D", "", kv[0]) or 0)))
+
+
 # ---------------------------------------------------------------------------
 # 冻结快照（审计相关稳定事实 · 排除 head）
 # ---------------------------------------------------------------------------
@@ -226,6 +251,14 @@ def collect_items() -> list:
     ]
     reuse_table_exists = _exists("lda/reports/cross_stage_constants.json")
 
+    # ── G-K-3 证据：B516/B517 终态（K2 同源体检裁决） ────────────────────
+    _b516_keys = ("voigt", "缓冲气体", "碰撞展宽", "压致展宽", "doppler", "多普勒",
+                  "气室", "谱线展宽", "fwhm", "hwhm", "卷积")
+    _b517_keys = ("隔离度", "isolation", "隔离比", "寄生耦合", "parasitic", "s21",
+                  "s21(f", "散射参数", "定向耦合", "微波-光")
+    b516_hits = _anchor_keyword_hits(_b516_keys)
+    b517_hits = _anchor_keyword_hits(_b517_keys)
+
     # ── G-K-6 证据：覆盖矩阵 ─────────────────────────────────────────────
     partial_matrix = "lda/run_anchor_coverage_matrix.py"
     partial_matrix_in_core = _count("lda/run_ci_regression.py",
@@ -287,7 +320,7 @@ def collect_items() -> list:
         },
         {
             "id": "G-K-3",
-            "title": "B516/B517 预留编号无终态（立靶 or 明示 reserved-null）",
+            "title": "B516/B517 预留编号**已裁决 reserved_null**（K2 同源体检）",
             "type": "债务·账面空洞",
             "owner_stage": "K2",
             "evidence": {
@@ -303,14 +336,32 @@ def collect_items() -> list:
                     "source": "docs/LDA_J4_...md",
                 },
                 "why_net_zero": "J4 M2 三重避让（1/|S21|² 与 B513 同格式 · 耦合模与 B14 同源 · √(1+X²) 与 B479 同量）",
+                # 🔴 K2 同源体检（现算 · 证据不手写）：靶被哪些既有锚占用
+                "adjudication": "K2（2026-10-17）· 真 grep 同源体检 ⇒ 两条均判 reserved_null",
+                "b516_keyword_hits": b516_hits,
+                "b516_verdict": "reserved_null",
+                "b516_reason": ("Voigt 轮廓族已被 B197–B200 四锚占满（线心/远翼/洛伦兹主导/"
+                                "深远翼 · 候选=卷积定义式数值积分）；B516 的靶（Voigt 半宽）"
+                                "golden 与 candidate **两端都绕不开同一 Voigt 卷积** ⇒ "
+                                "被测标量虽异（轮廓值 vs 半宽求根）但**方法学面不可区分**"),
+                "b517_keyword_hits": b517_hits,
+                "b517_verdict": "reserved_null",
+                "b517_reason": ("靶 `I=1/|S21|²` 与 **B513**（`S=1/|S21(f_q)|²`）**同为该标量形式**、"
+                                "候选同族（**ODE 数值积分**）；「耦合模」面另被 **B14** 占用 ⇒ "
+                                "同源重复 ⇒ 不可区分"),
+                "retarget_considered": ("曾评估改靶（B516→Dicke 窄化 / 压力展宽系数温度定标；"
+                                        "B517→非互易隔离）⇒ 前者为**查表常量**或非闭式物理律，"
+                                        "后者需磁光效应闭式（本档无）⇒ 如实不改靶"),
+                "note": "🔴 reserved-null 是**终态裁决**（非法：把已被占用的靶再立一遍）；"
+                        "`run_count_consistency_smoke` 的预留清单与此处一致（机器互证）",
             },
             "exit_criterion": ("同源体检（真 grep）后：可区分 ⇒ 按 lda-anchor-wiring 立靶；"
                                "不可区分 ⇒ 明示 reserved-null 并机器登记"),
-            "status": "open",
+            "status": "settled",
         },
         {
             "id": "G-K-4",
-            "title": "J1（QEC）WebUI 面板/端点缺位（六层面板不齐）",
+            "title": "J1（QEC）WebUI 面板/端点**已补齐**（K2 · 六层面板首次齐备）",
             "type": "平台·覆盖缺口",
             "owner_stage": "K2",
             "evidence": {
@@ -318,11 +369,21 @@ def collect_items() -> list:
                 "endpoint_hits": endpoint_hits,
                 "j1_case_py_exists": j1_case_exists,
                 "case_panels_min": None,      # 由 snapshot 填（避免双来源）
-                "note": "J2–J5 四层齐备，J1 唯一缺位（A 档三入口面纪律只对新增强制 ⇒ 老档漏网）",
+                "note": ("🔴 K2（2026-10-17）**已补齐**：新增 `j1_case.py` + `GET /api/j1_qec` + "
+                         "`index.html` `sec-j1` 三入口面 + `CASE_PANELS_MIN 15→16` ⇒ 六层面板首次齐备"
+                         "（此前 A 档三入口面纪律只对新增强制 ⇒ J1 老档漏网）"),
+                "settled_by_stage": "K2",
+                "settlement_artifacts": [
+                    "lda/lda_webui/j1_case.py",
+                    "lda/run_webui_j1_render_path_smoke.py",
+                    "lda/lda_webui/routes.py::h_j1_qec_demo",
+                    "lda/lda_webui/static/index.html::sec-j1",
+                ],
+                "verdict": "closed",
             },
             "exit_criterion": ("j1_case.py + GET /api/j1_qec + index.html sec-j1 三入口面齐备"
                                "∧ CASE_PANELS_MIN 15→16 ∧ 渲染门禁（照抄 J5 骨架）"),
-            "status": "open",
+            "status": "settled",
         },
         {
             "id": "G-K-5",

@@ -241,6 +241,10 @@ def main(argv=None):
               % (OUT_REL, payload["summary"]["sites_total"],
                  payload["summary"]["sites_cross_stage"]))
     else:
+        # ⚠️ Windows 下 `print` 输出到**管道**会做 `\n` → `\r\n`（LF 行数 = CR 数），
+        #   而 `det.write_text` 写盘是**纯 LF** ⇒ 原始字节会差「行数」个字节。
+        #   门禁 B1 用 `subprocess(..., text=True)`（universal newlines 归一）逐字节比，
+        #   故不受影响；若将来改 `text=False`，必须显式 `.replace(b"\r\n", b"\n")`。
         print(text)
     return 0
 

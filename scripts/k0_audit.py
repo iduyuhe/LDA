@@ -250,6 +250,16 @@ def collect_items() -> list:
          "style": "顶层 import"},
     ]
     reuse_table_exists = _exists("lda/reports/cross_stage_constants.json")
+    # K3 建表后：读表取现算规模（表未建时留 None，避免双来源）
+    _xtab = None
+    if reuse_table_exists:
+        try:
+            with open(_p("lda/reports/cross_stage_constants.json"),
+                      encoding="utf-8") as _f:
+                _xtab = json.load(_f)
+        except Exception:
+            _xtab = None
+    reuse_table_summary = (_xtab or {}).get("summary") if _xtab else None
 
     # ── G-K-3 证据：B516/B517 终态（K2 同源体检裁决） ────────────────────
     _b516_keys = ("voigt", "缓冲气体", "碰撞展宽", "压致展宽", "doppler", "多普勒",
@@ -395,10 +405,13 @@ def collect_items() -> list:
                 "known_sites": len(reuse_sites),
                 "table_exists": reuse_table_exists,
                 "expected_table": "lda/reports/cross_stage_constants.json",
+                "table_summary": reuse_table_summary,
+                "table_gate": "lda/run_k3_cross_stage_smoke.py",
+                "table_generator": "scripts/k3_cross_stage.py",
             },
             "exit_criterion": ("机器生成的跨档复用常量表 ∧ 常驻一致性判据（表 ≡ 现算）"
                                "∧ 反向探针（篡改上游原子必红）"),
-            "status": "open",
+            "status": "settled",
         },
         {
             "id": "G-K-6",

@@ -7,13 +7,13 @@
     "head（每次提交都变 ⇒ 非确定量，故意不入台账）"
   ],
   "frozen_snapshot": {
-    "version": "0.9.245",
+    "version": "0.9.246",
     "ledger_total": 538,
     "ledger_strict": 516,
     "ledger_degraded": 3,
     "ledger_stub": 19,
     "independence_rate": 0.959108,
-    "ci_core": 331,
+    "ci_core": 332,
     "endpoints": 155,
     "case_panels_min": 16,
     "max_anchor": "B522",
@@ -45,7 +45,7 @@
     ]
   },
   "items_total": 8,
-  "items_settled": 3,
+  "items_settled": 4,
   "items": [
     {
       "id": "G-K-1",
@@ -266,11 +266,24 @@
           }
         ],
         "known_sites": 2,
-        "table_exists": false,
-        "expected_table": "lda/reports/cross_stage_constants.json"
+        "table_exists": true,
+        "expected_table": "lda/reports/cross_stage_constants.json",
+        "table_summary": {
+          "by_kind": {
+            "const": 3,
+            "function": 28,
+            "module": 16
+          },
+          "modules_scanned": 45,
+          "sites_cross_stage": 20,
+          "sites_same_stage": 27,
+          "sites_total": 47
+        },
+        "table_gate": "lda/run_k3_cross_stage_smoke.py",
+        "table_generator": "scripts/k3_cross_stage.py"
       },
       "exit_criterion": "机器生成的跨档复用常量表 ∧ 常驻一致性判据（表 ≡ 现算）∧ 反向探针（篡改上游原子必红）",
-      "status": "open"
+      "status": "settled"
     },
     {
       "id": "G-K-6",

@@ -1,5 +1,57 @@
 # Changelog
 
+## v0.9.246（2026-10-17 · **K 征程 K3 · 跨档复用常量表**（缺口 G-K-5 · B 平台级 · 机器生成 · **禁手写**）· **净增 0 锚（表是元数据，不是物理量）** · 账本 538 不变 · CI core 331 → 332 · 端点 155 不变）
+
+### 一句话
+
+把「**上游改档 ⇒ 下游静默漂移**」从无人看守，变成**机器会拦**：跨档复用关系与接口指纹落成受跟踪台账，上游改常量值 / 改函数签名 / 增删站点，门禁必红。
+
+### 一、机器生成表（`lda/reports/cross_stage_constants.json` · 受跟踪）
+
+- **扫描域**：`lda_l2` + `lda_qeda` 的**量子赛道模块集合**（J1–J5 / QS-M* / J4 / SC / LOQC / 预算层）共 **45 模块**。
+- **规模（现算）**：**47 站点** = `const` 3 + `function` 28 + `module` 16（`class` 0）；其中 **跨档 20** / 同档 27。
+- **每条站点**：`consumer_pkg / consumer_module / consumer_symbol / consumer_file / consumer_line / holder` · `source_pkg / source_module / symbol / kind` · `stage_from / stage_to / cross_stage` · 指纹。
+- **指纹两类**（互补闸门）：
+  - `const` → **现算值**（`qs_m0.D_ZFS_HZ = 2870000000.0` · `qs_m0.GAMMA_E_HZ_T = 28024000000.0`；dict 类以 `repr` 快照，如 `pulse_library.DEFAULT_PULSE`）
+  - `function` / `class` → **`inspect.signature` 字符串**（含参数名与默认值 ⇒ **上游改默认值也拦得住**）
+- **档位映射** `stage_map` 一并入表（45 项）：`qs_m3c → "QS-M3c"` · `qnet_* → "J5"` · `qec_* → "J1"` · `j2_to_j1_calibration → "J2→J1"` …
+- **排除字段**显式登记：时间戳（非确定量）· git HEAD（每次提交都变）。
+
+### 二、生成器（`scripts/k3_cross_stage.py`）
+
+- **零时间戳 / 零随机 / 零 git HEAD**；`sites` 按 `(consumer_pkg, consumer_module, consumer_line, symbol)` **固定排序** ⇒ 逐字节可复现。
+- 写盘走 `lda_harness.deterministic.write_text`（UTF-8 + **LF**）；默认**打印正文**（供门禁子进程逐字节对拍），`--write` 才落盘。
+- 已登记 `run_report_determinism_smoke` 的 `lint_spec`（`../scripts/k3_cross_stage.py`）—— ⑪ 判据「报告写入者无漏登记」。
+
+### 三、常驻门禁（`lda/run_k3_cross_stage_smoke.py` · **22 判据** · 入 CORE）
+
+| 组 | 判据 | 要点 |
+|---|---|---|
+| **A** 表结构与 schema | 5 | 文件存在 · 顶层字段 8 项齐备 · schema 精确 · 计数自洽（total ≡ len ≡ cross+same）· `by_kind` 求和 ≡ total |
+| **B** 受跟踪生成物三件套 | 3 | **子进程重跑 ≡ 磁盘（逐字节）** · 生成器幂等 · LF only |
+| **C** 事实性（**独立重算**） | 6 | **站点三元组集 ≡ 门禁独立 AST 重扫**（不复用生成器代码路径）· 跨档条数 ≥ **20** 下限棘轮 · `stage` 映射 ≡ 现算 · `cross_stage` 标志 ≡ 现算 · **`const` 值 ≡ 现算（逐位）** · **签名 ≡ 现算** |
+| **D** 消费侧一致性 | 2 | `qnet_transducer.cooperativity()` ≡ `qs_m3c.cooperativity_from_g(TR 默认参数)` **`rel=0.00e+00`（逐位）** · `qs_m5` 的 `zero_field_splitting_hz()`/`nv_gyromagnetic_hz_per_t()` ≡ `qs_m0` 源常量 |
+| **E** 反向探针（**先证能变红**） | 4 | 篡改 `const` 值 ⇒ C5 红 · 删一个站点 ⇒ C1（+C2）红 · 篡改签名 ⇒ C6 红 · 翻 `cross_stage` 标志 ⇒ C4（+C2）红 |
+| **F** 红线 | 2 | 生成器**零手写证据**（`deterministic` + `det.write_text` + 零时钟/随机禁词）· 本门禁自身 ∈ `CORE_SMOKES` |
+
+### 四、🔴 Step-5：K0 门禁 E5 判据被「建表」打反 —— 已修正（本征程第 3 例）
+
+- **旧判据**：`E5 G-K-5 跨档复用站点 ≥2 ∧ 行号现算一致 ∧ **常量表不存在**` ⇒ K3 建表后**必红**。
+- **新判据**：`E5 G-K-5 **已结算**：表存在 ∧ 站点 ≥2 ∧ 行号现算 ∧ 表内规模自洽`（新增断言：`table_exists is True` · `table_summary.sites_total ≥ 2` · `sites_cross_stage ≥ 2` · 台账 `table_summary` ≡ 现算）。
+- 台账 `G-K-5` → **`settled`**（新增 `table_summary` / `table_gate` / `table_generator` 三字段）；`items_settled` 期望 3 → **4**。
+
+### 五、计数
+
+**账本 538 不变**（净增 0 锚 · 元数据不加锚）· **CI core 331 → 332** · **端点 155 不变** · `CASE_PANELS_MIN` **16 不变** · 版本 **v0.9.246**。
+
+### 六、诚实边界
+
+- 表只覆盖**量子赛道模块集合**（45 模块）的**静态 `import` 关系** —— 不含动态 `importlib` / 字符串间接引用 ⇒ 是**下限**而非全集。
+- `const` 为 dict/对象者以 `repr` 快照（非逐字段 diff）。
+- 表是**元数据**，**不是物理量** ⇒ **不构成任何新锚**，也不改变任何既有 golden。
+
+---
+
 ## v0.9.245（2026-10-17 · **K 征程 K2 · B516/B517 终态裁决 + J1 面板补齐**（缺口 G-K-3 / G-K-4 · A 金级）· **净增 0 锚** · 账本 538 不变 · CI core 330 → 331 · 端点 154 → 155）
 
 K2 两条独立线一次收官。

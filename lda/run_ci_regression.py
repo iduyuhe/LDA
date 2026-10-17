@@ -1924,6 +1924,11 @@ CORE_SMOKES: List[str] = [
     #   + 突变探针 3 道。**21 判据**。纯标准库（AST 断言零重计算）。
     #   CI core 330→331。
     "run_webui_j1_render_path_smoke.py",
+    # v0.9.246（K3）：跨档复用常量表门禁（闭环 G-K-5「上游改档下游静默漂移」）。
+    #   AST 独立重扫 47 站点（20 跨档）· const 值现算 · 接口签名现算 · 消费侧一致性 ·
+    #   反向探针 4 道。**22 判据**。纯标准库 + 一次子进程调生成器（实测 ~1s）。
+    #   CI core 331→332。
+    "run_k3_cross_stage_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2949,6 +2954,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # K2 J1 案例卡渲染路径门禁：21 判据 · 实测上界 ~1.2s ⇒ 预算 300s = ≈250×。
     #   🔴 必须显式登记（`run_timeout_budget_ratchet_smoke` 的 B20 反向完备要求）。
     "run_webui_j1_render_path_smoke.py": 300.0,
+    # K3 跨档复用常量表门禁 · 实测上界 ~1s（AST 扫描 45 模块 + 一次子进程重跑生成器）
+    "run_k3_cross_stage_smoke.py": 300.0,
     # CI 门禁自身契约（棘轮时序 + 退出码契约 + cwd/模板/注释数字守卫）· 受控 fake 驱动，实测上界 <5s
     "run_ci_gate_contract_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）

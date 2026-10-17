@@ -456,6 +456,16 @@ def main() -> int:
         #   ⚠️ 路径注意：本表键**相对 `lda/`**，而该脚本在**仓库根** ⇒ 键写
         #   `../scripts/k0_audit.py`（⑪ 的 `registered` 归一化已加 `os.path.normpath` 配对）。
         "../scripts/k0_audit.py": _WALL,
+        # ——— 2026-10-17（v0.9.246 · K 征程 K3）：跨档复用常量表生成器 ———
+        #   `scripts/k3_cross_stage.py` 写**受跟踪** `lda/reports/cross_stage_constants.json`。
+        #   🔴 确定性证据（现算）：源码零 `datetime.now/time.strftime/time.time/random./
+        #   uuid4/json.dump(/mkdtemp` 命中；键序固定（sites 按
+        #   `(consumer_pkg, consumer_module, consumer_line, symbol)` 排序）；
+        #   写盘走 `lda_harness.deterministic.write_text`（UTF-8 + LF）。
+        #   由 `run_k3_cross_stage_smoke` 的「子进程重跑 ≡ 磁盘台账（逐字节）」+
+        #   「幂等」+「LF only」三判据与 4 道反向探针常驻守。
+        #   ⚠️ 键相对 `lda/`，脚本在仓库根 ⇒ `../scripts/k3_cross_stage.py`。
+        "../scripts/k3_cross_stage.py": _WALL,
     }
     lint_bad = []
     no_det = []

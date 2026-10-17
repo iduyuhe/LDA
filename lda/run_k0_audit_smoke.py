@@ -116,7 +116,7 @@ def validate(led: dict, fresh: dict) -> dict:
         and e2.get("settled_by_stage") == "K1"
         and e2.get("ratio_closed_form") == f2.get("ratio_closed_form")
         and e2.get("consumer_caliber_term_hits") == f2.get("consumer_caliber_term_hits")
-        and led.get("items_settled") == 3)
+        and led.get("items_settled") == 4)
     e3 = ev("G-K-3")
     r["E3 G-K-3 B516/B517 均不在账本 ∧ 终态=reserved_null ∧ 体检证据齐备"] = (
         e3.get("in_benchmark_defs") == {"B516": False, "B517": False}
@@ -141,11 +141,16 @@ def validate(led: dict, fresh: dict) -> dict:
         and e4.get("settled_by_stage") == "K2"
         and f4.get("case_panels_min") == 16)
     e5, f5 = ev("G-K-5"), fev("G-K-5")
-    r["E5 G-K-5 跨档复用站点 ≥2 ∧ 行号现算一致 ∧ 常量表不存在"] = (
+    # 🔴 K3 建表后语义翻转：旧判据曾断言「**常量表不存在**」⇒ 已被打反（第 3 例 Step-5）。
+    r["E5 G-K-5 **已结算**：表存在 ∧ 站点 ≥2 ∧ 行号现算 ∧ 表内规模自洽"] = (
         e5.get("reuse_sites") == f5.get("reuse_sites")
         and len(e5.get("reuse_sites", [])) >= 2
         and all(s.get("line") for s in e5.get("reuse_sites", []))
-        and e5.get("table_exists") is False)
+        and e5.get("table_exists") is True
+        and f5.get("table_exists") is True
+        and (f5.get("table_summary") or {}).get("sites_total", 0) >= 2
+        and (f5.get("table_summary") or {}).get("sites_cross_stage", 0) >= 2
+        and e5.get("table_summary") == f5.get("table_summary"))
     e7 = ev("G-K-7")
     r["E6 G-K-7 白皮书/论文/总览入口均缺"] = (
         e7.get("whitepaper_exists") is False and e7.get("paper_exists") is False
@@ -228,7 +233,7 @@ def main() -> int:
           "E2 G-K-2 已结算：消费侧并报兑现 ∧ 错误等式 0 命中 ∧ items_settled 一致",
           "E3 G-K-3 B516/B517 均不在账本 ∧ 终态=reserved_null ∧ 体检证据齐备",
           "E4 G-K-4 **已补齐**：sec-j1 齐备 ∧ J2–J5 齐备 ∧ j1_case 存在 ∧ CASE_PANELS_MIN=16",
-          "E5 G-K-5 跨档复用站点 ≥2 ∧ 行号现算一致 ∧ 常量表不存在",
+          "E5 G-K-5 **已结算**：表存在 ∧ 站点 ≥2 ∧ 行号现算 ∧ 表内规模自洽",
           "E6 G-K-7 白皮书/论文/总览入口均缺",
           "E7 G-K-8 蓝图 v2 不存在（v1 已收官）"])
 

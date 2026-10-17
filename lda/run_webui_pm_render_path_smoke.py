@@ -281,7 +281,11 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               #   **J1 面板补齐**：新 `sec-j1` + `/api/j1_qec` + `run_webui_j1_render_path_smoke`）。
               #   直接相关且**便宜**的门禁 = 新渲染门禁本体（实测 **~1.2s** / **21 判据**）⇒
               #   纳对照面，令本版 README 顶行声明的 21 判据由机器守（非手写）。
-              "run_webui_j1_render_path_smoke.py")
+              "run_webui_j1_render_path_smoke.py",
+              # 🔴 v0.9.246：本版真改动 = K 征程 K3 **跨档复用常量表**（生成器 + 受跟踪台账 +
+              #   新门禁本体）。直接相关且**便宜**（实测 **~1.0s** / **22 判据**）⇒
+              #   纳对照面，令本版 README 顶行声明的 22 判据由机器守（非手写）。
+              "run_k3_cross_stage_smoke.py")
 
 
 def _declared_judge_counts(text):

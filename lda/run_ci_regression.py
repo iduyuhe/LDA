@@ -1911,7 +1911,7 @@ CORE_SMOKES: List[str] = [
     "run_webui_j5_render_path_smoke.py",
     # v0.9.243（K0）：量子赛道**一期未结项台账**常驻门禁（闭环缺口 G-K-1）。
     #   受跟踪生成物三件套（子进程重跑 ≡ 磁盘台账 · 幂等 · LF only）+ 反向探针 3 道
-    #   + 快照 ≡ 现算 + 证据现算对拍。**28 判据**。纯标准库 + 两次子进程调生成器（实测 ~1.5s）。
+    #   + 快照 ≡ 现算 + 证据现算对拍。**29 判据**（v0.9.247 补 E8 · G-K-6）。纯标准库 + 两次子进程调生成器（实测 ~1.5s）。
     #   CI core 328→329。
     "run_k0_audit_smoke.py",
     # v0.9.244（K1）：协同度**两口径断口结算**门禁（缺口 G-K-2 · A 金级）。
@@ -1929,6 +1929,11 @@ CORE_SMOKES: List[str] = [
     #   反向探针 4 道。**22 判据**。纯标准库 + 一次子进程调生成器（实测 ~1s）。
     #   CI core 331→332。
     "run_k3_cross_stage_smoke.py",
+    # v0.9.247（K4）：门禁×锚覆盖矩阵（闭环 G-K-6「覆盖盲区无下限棘轮」）。
+    #   三层覆盖 L1 统一判决 538 / L2 专属门禁 123 / L3 多重 65 · 盲区 415 如实登记 ·
+    #   ratchet 只升不降 + 硬编码下限防下调 · 反向探针 4 道。**23 判据**。
+    #   CI core 332→333。
+    "run_k4_coverage_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2945,7 +2950,7 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   🔴 必须显式登记（`run_timeout_budget_ratchet_smoke` 的 B20 反向完备要求
     #   `CORE_SMOKES` 每项都在本表内，否则判「盲区」必红）。
     "run_j5_qnet_smoke.py": 300.0,
-    # K 征程 K0 结算审计门禁（一期未结项台账）：28 判据 · 实测上界 ~1.5s（含两次子进程调生成器）
+    # K 征程 K0 结算审计门禁（一期未结项台账）：29 判据 · 实测上界 ~1.5s（含两次子进程调生成器）
     #   ⇒ 预算 300s = ≈200×。🔴 必须显式登记（`run_timeout_budget_ratchet_smoke` 的 B20 反向完备要求）。
     "run_k0_audit_smoke.py": 300.0,
     # K 征程 K1 协同度两口径断口结算门禁：23 判据 · 实测上界 ~0.3s（纯 math）⇒ 预算 300s = ≈1000×。
@@ -2956,6 +2961,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_webui_j1_render_path_smoke.py": 300.0,
     # K3 跨档复用常量表门禁 · 实测上界 ~1s（AST 扫描 45 模块 + 一次子进程重跑生成器）
     "run_k3_cross_stage_smoke.py": 300.0,
+    # K4 覆盖矩阵门禁 · 实测上界 ~3s（子进程重跑生成器 2 次 + 独立重扫 333 门禁）
+    "run_k4_coverage_smoke.py": 300.0,
     # CI 门禁自身契约（棘轮时序 + 退出码契约 + cwd/模板/注释数字守卫）· 受控 fake 驱动，实测上界 <5s
     "run_ci_gate_contract_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）

@@ -466,6 +466,15 @@ def main() -> int:
         #   「幂等」+「LF only」三判据与 4 道反向探针常驻守。
         #   ⚠️ 键相对 `lda/`，脚本在仓库根 ⇒ `../scripts/k3_cross_stage.py`。
         "../scripts/k3_cross_stage.py": _WALL,
+        # ——— 2026-10-17（v0.9.247 · K 征程 K4）：门禁×锚覆盖矩阵生成器 ———
+        #   `scripts/k4_coverage.py` 写**受跟踪** `lda/reports/anchor_gate_coverage.json`。
+        #   🔴 确定性证据（现算）：源码零 `datetime.now/time.strftime/time.time/random./
+        #   uuid4/json.dump(/mkdtemp`；键序固定（anchors/gates 均 sorted）；
+        #   `blind_anchors` 为字符串排序；写盘走 `det.write_text`（UTF-8 + LF）。
+        #   由 `run_k4_coverage_smoke` 的「子进程重跑 ≡ 磁盘（逐字节）」+「幂等」+
+        #   「LF only」三判据与 4 道反向探针 + G1/G2 排除面锁死常驻守。
+        #   ⚠️ 键相对 `lda/`，脚本在仓库根 ⇒ `../scripts/k4_coverage.py`。
+        "../scripts/k4_coverage.py": _WALL,
     }
     lint_bad = []
     no_det = []

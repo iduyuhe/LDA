@@ -116,7 +116,7 @@ def validate(led: dict, fresh: dict) -> dict:
         and e2.get("settled_by_stage") == "K1"
         and e2.get("ratio_closed_form") == f2.get("ratio_closed_form")
         and e2.get("consumer_caliber_term_hits") == f2.get("consumer_caliber_term_hits")
-        and led.get("items_settled") == 4)
+        and led.get("items_settled") == 5)
     e3 = ev("G-K-3")
     r["E3 G-K-3 B516/B517 均不在账本 ∧ 终态=reserved_null ∧ 体检证据齐备"] = (
         e3.get("in_benchmark_defs") == {"B516": False, "B517": False}
@@ -155,6 +155,19 @@ def validate(led: dict, fresh: dict) -> dict:
     r["E6 G-K-7 白皮书/论文/总览入口均缺"] = (
         e7.get("whitepaper_exists") is False and e7.get("paper_exists") is False
         and e7.get("overview_section_hits") == 0)
+    # 🔴 K4 关门后补建：G-K-6 此前**无对应判据**（台账有条目、门禁无判据 = 覆盖盲区本身）
+    e6, f6 = ev("G-K-6"), fev("G-K-6")
+    _m6 = f6.get("matrix_summary") or {}
+    _r6 = f6.get("matrix_ratchet") or {}
+    r["E8 G-K-6 **已结算**：矩阵存在 ∧ 三层覆盖自洽 ∧ ratchet ≥ 硬编码下限 ∧ 锚键集 ≡ 账本"] = (
+        e6.get("matrix_summary") == f6.get("matrix_summary")
+        and e6.get("matrix_ratchet") == f6.get("matrix_ratchet")
+        and _m6.get("anchors_total") == len(BENCHMARK_DEFS)
+        and _m6.get("l1_unified_covered") == _m6.get("anchors_total")
+        and (_m6.get("l2_bespoke_covered") or 0)
+            + (_m6.get("l2_blind") or 0) == _m6.get("anchors_total")
+        and int(_r6.get("l2_min", 0)) >= 123
+        and int(_r6.get("l3_min", 0)) >= 65)
     e8 = ev("G-K-8")
     r["E7 G-K-8 蓝图 v2 不存在（v1 已收官）"] = e8.get("blueprint_v2_exists") is False
     return r
@@ -235,7 +248,8 @@ def main() -> int:
           "E4 G-K-4 **已补齐**：sec-j1 齐备 ∧ J2–J5 齐备 ∧ j1_case 存在 ∧ CASE_PANELS_MIN=16",
           "E5 G-K-5 **已结算**：表存在 ∧ 站点 ≥2 ∧ 行号现算 ∧ 表内规模自洽",
           "E6 G-K-7 白皮书/论文/总览入口均缺",
-          "E7 G-K-8 蓝图 v2 不存在（v1 已收官）"])
+          "E7 G-K-8 蓝图 v2 不存在（v1 已收官）",
+          "E8 G-K-6 **已结算**：矩阵存在 ∧ 三层覆盖自洽 ∧ ratchet ≥ 硬编码下限 ∧ 锚键集 ≡ 账本"])
 
     print("\n[F] 红线")
     src = ""

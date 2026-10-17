@@ -1,0 +1,4640 @@
+{
+  "anchors": {
+    "B1": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B10": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B100": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_ecosystem_review3_smoke.py"
+      ],
+      "l3": false
+    },
+    "B101": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_ecosystem_review3_smoke.py"
+      ],
+      "l3": false
+    },
+    "B102": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_ecosystem_review3_smoke.py"
+      ],
+      "l3": false
+    },
+    "B103": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B104": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B105": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B106": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B107": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B108": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B109": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B11": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B110": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B111": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B112": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B113": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B114": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B115": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B116": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B117": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B118": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B119": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B12": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B120": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B121": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B122": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B123": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B124": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B125": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B126": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B127": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B128": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B129": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B13": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B130": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B131": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B132": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B133": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B134": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B135": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B136": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B137": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B138": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B139": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B14": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B140": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B141": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B142": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B143": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B144": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B145": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B146": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B147": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B148": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B149": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B15": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B150": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B151": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B152": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B153": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B154": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B155": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B156": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B157": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B158": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B159": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B16": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B160": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B161": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B162": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B163": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B164": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B165": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B166": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B167": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B168": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B169": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B17": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B170": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B171": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B172": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B173": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B174": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B175": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B176": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B177": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B178": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B179": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B18": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B180": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B181": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B182": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B183": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B184": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B185": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B186": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B187": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B188": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B189": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B19": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B190": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B191": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B192": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B193": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B194": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B195": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B196": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B197": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_k0_audit_smoke.py"
+      ],
+      "l3": false
+    },
+    "B198": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_k0_audit_smoke.py"
+      ],
+      "l3": false
+    },
+    "B199": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_k0_audit_smoke.py"
+      ],
+      "l3": false
+    },
+    "B2": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B20": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B200": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_k0_audit_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B201": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B202": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B203": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B204": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B205": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B206": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B207": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B208": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B209": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B21": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B210": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B211": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B212": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B213": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B214": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B215": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B216": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B217": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B218": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B219": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B22": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B220": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B221": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B222": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B223": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B224": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B225": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B226": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B227": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B228": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B229": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B23": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B230": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B231": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B232": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B233": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B234": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B235": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B236": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B237": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B238": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B239": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B24": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B240": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B241": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B242": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B243": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B244": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B245": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B246": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B247": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B248": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B249": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B25": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B250": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B251": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B252": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B253": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B254": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B255": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B256": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B257": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B258": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B259": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B26": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B260": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B261": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B262": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B263": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B264": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B265": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B266": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B267": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B268": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B269": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B27": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B270": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B271": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B272": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B273": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B274": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B275": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B276": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B277": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B278": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B279": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B28": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B280": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B281": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B282": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B283": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B284": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B285": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B286": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B287": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B288": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B289": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B29": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B290": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B291": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B292": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B293": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B294": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B295": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B296": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B297": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B298": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B299": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B3": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B30": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B300": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B301": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B302": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B303": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B304": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B305": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B306": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B307": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B308": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B309": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B31": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B310": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B311": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B312": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B313": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B314": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B315": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B316": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B317": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B318": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B319": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B32": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B320": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B321": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B322": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B323": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B324": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B325": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B326": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B327": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B328": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B329": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B33": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B330": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B331": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B332": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B333": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B334": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B335": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B336": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B337": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B338": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B339": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B34": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B340": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B341": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B342": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B343": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B344": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B345": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B346": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B347": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B348": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B349": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B350": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B351": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B352": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B353": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B354": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B355": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B356": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B357": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B358": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B359": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B36": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B360": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B361": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B362": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B363": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B364": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B365": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B366": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B367": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B368": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B369": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B37": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B370": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B371": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B372": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B373": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B374": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B375": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py"
+      ],
+      "l3": false
+    },
+    "B376": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py"
+      ],
+      "l3": false
+    },
+    "B377": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py"
+      ],
+      "l3": false
+    },
+    "B378": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py"
+      ],
+      "l3": false
+    },
+    "B379": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py"
+      ],
+      "l3": false
+    },
+    "B380": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py"
+      ],
+      "l3": false
+    },
+    "B381": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py"
+      ],
+      "l3": false
+    },
+    "B382": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py"
+      ],
+      "l3": false
+    },
+    "B383": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B384": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py"
+      ],
+      "l3": false
+    },
+    "B385": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py"
+      ],
+      "l3": false
+    },
+    "B386": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B387": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B388": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B389": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B390": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B391": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B392": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B393": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B394": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B395": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B396": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B397": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B398": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B399": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B4": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B40": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B400": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B401": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B402": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B403": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B404": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B405": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B406": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B407": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B408": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B409": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B41": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B410": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B411": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B412": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B413": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B414": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B415": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B416": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B417": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B418": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B419": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B42": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B420": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B421": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B422": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B423": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B424": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B425": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B426": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B427": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B428": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B429": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B43": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B430": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B431": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B432": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B433": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B434": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B435": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B436": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B437": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B438": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B439": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B44": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B440": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B441": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B442": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B443": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B444": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B445": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B446": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_report_error_display_smoke.py"
+      ],
+      "l3": false
+    },
+    "B447": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B448": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B449": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B45": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B450": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B451": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B452": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_report_error_display_smoke.py"
+      ],
+      "l3": true
+    },
+    "B453": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B454": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B455": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B456": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B457": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B458": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B459": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B46": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B460": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_ps_m3_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B461": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_ps_m4_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B462": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_ps_m4_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B463": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_ps_m5_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B464": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_ps_m5_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B465": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_ps_m5_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B466": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_ps_m6_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B467": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_ps_m6_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B468": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_ps_m6_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B469": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_ps_m1_smoke.py",
+        "run_ps_m9_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B47": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B470": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_ps_m1_smoke.py",
+        "run_ps_m9_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B471": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_ps_m1_smoke.py",
+        "run_ps_m9_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B472": {
+      "l1": true,
+      "l2_count": 1,
+      "l2_gates": [
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": false
+    },
+    "B473": {
+      "l1": true,
+      "l2_count": 4,
+      "l2_gates": [
+        "run_qs_m1_smoke.py",
+        "run_qs_m2_smoke.py",
+        "run_qs_m3_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B474": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m1_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B475": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_j5_qnet_smoke.py",
+        "run_qs_m2_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B476": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_qs_m3_smoke.py",
+        "run_qs_m3b_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B477": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m3_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B478": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m4_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B479": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m4_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B48": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B480": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_qs_m4_smoke.py",
+        "run_qs_m7_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B481": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m4_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B482": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m5_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B483": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m5_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B484": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m5_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B485": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m6_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B486": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m6_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B487": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m6_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B488": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_qs_m7_smoke.py",
+        "run_qs_m9_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B489": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m7_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B49": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B490": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m7_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B491": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m9_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B492": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m9_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B493": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m9_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B494": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m3c_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B495": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m3c_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B496": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_qs_m3c_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B497": {
+      "l1": true,
+      "l2_count": 5,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_j1_qec_smoke.py",
+        "run_j2_qpu_smoke.py",
+        "run_statistical_anchor_smoke.py",
+        "run_webui_j1_render_path_smoke.py"
+      ],
+      "l3": true
+    },
+    "B498": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B499": {
+      "l1": true,
+      "l2_count": 4,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_count_consistency_smoke.py",
+        "run_j1_qec_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B5": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B50": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B500": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B501": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B502": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B503": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B504": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B505": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_statistical_anchor_smoke.py",
+        "run_webui_j1_render_path_smoke.py"
+      ],
+      "l3": true
+    },
+    "B506": {
+      "l1": true,
+      "l2_count": 4,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_j2_qpu_smoke.py",
+        "run_statistical_anchor_smoke.py",
+        "run_webui_j2_render_path_smoke.py"
+      ],
+      "l3": true
+    },
+    "B507": {
+      "l1": true,
+      "l2_count": 4,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_j2_qpu_smoke.py",
+        "run_statistical_anchor_smoke.py",
+        "run_webui_j2_render_path_smoke.py"
+      ],
+      "l3": true
+    },
+    "B508": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_j2_qpu_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B509": {
+      "l1": true,
+      "l2_count": 4,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_j2_qpu_smoke.py",
+        "run_statistical_anchor_smoke.py",
+        "run_webui_j2_render_path_smoke.py"
+      ],
+      "l3": true
+    },
+    "B51": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B510": {
+      "l1": true,
+      "l2_count": 4,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_j3_ctrl_smoke.py",
+        "run_statistical_anchor_smoke.py",
+        "run_webui_j3_render_path_smoke.py"
+      ],
+      "l3": true
+    },
+    "B511": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_j3_ctrl_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B512": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_j3_ctrl_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B513": {
+      "l1": true,
+      "l2_count": 4,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_j3_ctrl_smoke.py",
+        "run_k0_audit_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B514": {
+      "l1": true,
+      "l2_count": 4,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
+        "run_j3_ctrl_smoke.py",
+        "run_statistical_anchor_smoke.py",
+        "run_webui_j3_render_path_smoke.py"
+      ],
+      "l3": true
+    },
+    "B515": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_j4_multiparam_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B518": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_j4_multiparam_smoke.py",
+        "run_statistical_anchor_smoke.py",
+        "run_webui_j4_render_path_smoke.py"
+      ],
+      "l3": true
+    },
+    "B519": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_j5_qnet_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B52": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B520": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_j5_qnet_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B521": {
+      "l1": true,
+      "l2_count": 2,
+      "l2_gates": [
+        "run_j5_qnet_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B522": {
+      "l1": true,
+      "l2_count": 3,
+      "l2_gates": [
+        "run_count_consistency_smoke.py",
+        "run_j5_qnet_smoke.py",
+        "run_statistical_anchor_smoke.py"
+      ],
+      "l3": true
+    },
+    "B53": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B54": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B55": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B56": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B57": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B58": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B59": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B6": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B60": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B61": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B62": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B63": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B64": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B65": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B66": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B67": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B68": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B7": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B70": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B71": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B73": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B74": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B75": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B76": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B77": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B78": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B79": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B8": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B80": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B81": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B82": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B83": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B84": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B85": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B86": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B87": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B88": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B89": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B9": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B90": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B91": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B92": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B93": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B94": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B95": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B96": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B97": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B98": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "B99": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "E1": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "E10": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "E2": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "E3": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "E4": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "E5": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "E6": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "E7": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "E8": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "E9": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "S1": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "S10": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "S11": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "S12": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "S13": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "S2": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "S3": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "S4": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "S5": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "S6": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "S7": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "S8": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    },
+    "S9": {
+      "l1": true,
+      "l2_count": 0,
+      "l2_gates": [],
+      "l3": false
+    }
+  },
+  "blind_anchors": [
+    "B1",
+    "B10",
+    "B103",
+    "B106",
+    "B107",
+    "B108",
+    "B109",
+    "B11",
+    "B110",
+    "B111",
+    "B112",
+    "B113",
+    "B114",
+    "B115",
+    "B116",
+    "B117",
+    "B118",
+    "B119",
+    "B12",
+    "B122",
+    "B123",
+    "B124",
+    "B125",
+    "B126",
+    "B127",
+    "B128",
+    "B129",
+    "B13",
+    "B130",
+    "B131",
+    "B132",
+    "B133",
+    "B134",
+    "B135",
+    "B138",
+    "B139",
+    "B14",
+    "B140",
+    "B141",
+    "B142",
+    "B143",
+    "B144",
+    "B145",
+    "B146",
+    "B147",
+    "B148",
+    "B149",
+    "B15",
+    "B150",
+    "B151",
+    "B154",
+    "B155",
+    "B156",
+    "B157",
+    "B158",
+    "B159",
+    "B16",
+    "B160",
+    "B161",
+    "B162",
+    "B163",
+    "B164",
+    "B165",
+    "B166",
+    "B167",
+    "B17",
+    "B170",
+    "B171",
+    "B172",
+    "B173",
+    "B174",
+    "B175",
+    "B176",
+    "B177",
+    "B178",
+    "B179",
+    "B18",
+    "B180",
+    "B181",
+    "B182",
+    "B183",
+    "B186",
+    "B187",
+    "B188",
+    "B189",
+    "B19",
+    "B190",
+    "B191",
+    "B192",
+    "B193",
+    "B194",
+    "B195",
+    "B196",
+    "B2",
+    "B20",
+    "B202",
+    "B203",
+    "B204",
+    "B205",
+    "B206",
+    "B207",
+    "B208",
+    "B209",
+    "B21",
+    "B210",
+    "B211",
+    "B212",
+    "B213",
+    "B214",
+    "B215",
+    "B218",
+    "B219",
+    "B22",
+    "B220",
+    "B221",
+    "B222",
+    "B223",
+    "B224",
+    "B225",
+    "B226",
+    "B227",
+    "B228",
+    "B229",
+    "B23",
+    "B230",
+    "B231",
+    "B234",
+    "B235",
+    "B236",
+    "B237",
+    "B238",
+    "B239",
+    "B24",
+    "B240",
+    "B241",
+    "B242",
+    "B243",
+    "B244",
+    "B245",
+    "B246",
+    "B247",
+    "B25",
+    "B250",
+    "B251",
+    "B252",
+    "B253",
+    "B254",
+    "B255",
+    "B256",
+    "B257",
+    "B258",
+    "B259",
+    "B26",
+    "B260",
+    "B261",
+    "B262",
+    "B263",
+    "B266",
+    "B267",
+    "B268",
+    "B269",
+    "B27",
+    "B270",
+    "B271",
+    "B272",
+    "B273",
+    "B274",
+    "B275",
+    "B276",
+    "B277",
+    "B278",
+    "B279",
+    "B28",
+    "B282",
+    "B283",
+    "B284",
+    "B285",
+    "B286",
+    "B287",
+    "B288",
+    "B289",
+    "B29",
+    "B290",
+    "B291",
+    "B292",
+    "B293",
+    "B294",
+    "B295",
+    "B298",
+    "B299",
+    "B3",
+    "B30",
+    "B300",
+    "B301",
+    "B302",
+    "B303",
+    "B304",
+    "B305",
+    "B306",
+    "B307",
+    "B308",
+    "B309",
+    "B31",
+    "B310",
+    "B311",
+    "B314",
+    "B315",
+    "B316",
+    "B317",
+    "B318",
+    "B319",
+    "B32",
+    "B320",
+    "B321",
+    "B322",
+    "B323",
+    "B324",
+    "B325",
+    "B326",
+    "B327",
+    "B33",
+    "B330",
+    "B331",
+    "B332",
+    "B333",
+    "B334",
+    "B335",
+    "B336",
+    "B337",
+    "B338",
+    "B339",
+    "B34",
+    "B340",
+    "B341",
+    "B342",
+    "B343",
+    "B346",
+    "B347",
+    "B348",
+    "B349",
+    "B350",
+    "B351",
+    "B352",
+    "B353",
+    "B354",
+    "B355",
+    "B356",
+    "B357",
+    "B358",
+    "B359",
+    "B36",
+    "B362",
+    "B363",
+    "B364",
+    "B365",
+    "B366",
+    "B367",
+    "B368",
+    "B369",
+    "B37",
+    "B370",
+    "B371",
+    "B372",
+    "B383",
+    "B388",
+    "B389",
+    "B390",
+    "B391",
+    "B392",
+    "B393",
+    "B394",
+    "B395",
+    "B396",
+    "B397",
+    "B398",
+    "B4",
+    "B40",
+    "B401",
+    "B402",
+    "B403",
+    "B404",
+    "B405",
+    "B406",
+    "B407",
+    "B408",
+    "B409",
+    "B41",
+    "B410",
+    "B411",
+    "B413",
+    "B414",
+    "B415",
+    "B416",
+    "B417",
+    "B418",
+    "B419",
+    "B42",
+    "B420",
+    "B421",
+    "B422",
+    "B423",
+    "B424",
+    "B425",
+    "B426",
+    "B427",
+    "B428",
+    "B429",
+    "B43",
+    "B430",
+    "B431",
+    "B432",
+    "B433",
+    "B434",
+    "B435",
+    "B436",
+    "B437",
+    "B438",
+    "B439",
+    "B44",
+    "B440",
+    "B441",
+    "B442",
+    "B443",
+    "B444",
+    "B445",
+    "B447",
+    "B448",
+    "B449",
+    "B45",
+    "B450",
+    "B451",
+    "B454",
+    "B456",
+    "B457",
+    "B458",
+    "B46",
+    "B47",
+    "B48",
+    "B49",
+    "B5",
+    "B50",
+    "B51",
+    "B52",
+    "B53",
+    "B54",
+    "B55",
+    "B56",
+    "B57",
+    "B58",
+    "B59",
+    "B6",
+    "B60",
+    "B61",
+    "B62",
+    "B63",
+    "B64",
+    "B65",
+    "B66",
+    "B67",
+    "B68",
+    "B7",
+    "B70",
+    "B71",
+    "B73",
+    "B74",
+    "B75",
+    "B76",
+    "B77",
+    "B78",
+    "B79",
+    "B8",
+    "B80",
+    "B81",
+    "B82",
+    "B83",
+    "B84",
+    "B85",
+    "B86",
+    "B87",
+    "B88",
+    "B89",
+    "B9",
+    "B90",
+    "B91",
+    "B92",
+    "B93",
+    "B94",
+    "B95",
+    "B96",
+    "B97",
+    "B98",
+    "B99",
+    "E1",
+    "E10",
+    "E2",
+    "E3",
+    "E4",
+    "E5",
+    "E6",
+    "E7",
+    "E8",
+    "E9",
+    "S1",
+    "S10",
+    "S11",
+    "S12",
+    "S13",
+    "S2",
+    "S3",
+    "S4",
+    "S5",
+    "S6",
+    "S7",
+    "S8",
+    "S9"
+  ],
+  "excluded_fields": [
+    "时间戳（非确定量）",
+    "git HEAD（每次提交都变）"
+  ],
+  "excluded_gates": {
+    "run_k4_coverage_smoke.py": "判决覆盖矩阵本身；_band() 的号段标签不是锚判据"
+  },
+  "gates": {
+    "lda_harness/run_empirical_bank.py": [],
+    "run_accel_case_smoke.py": [],
+    "run_active_device_smoke.py": [],
+    "run_adapter_shard_layout_smoke.py": [],
+    "run_admin_token_smoke.py": [],
+    "run_adversarial_scoring_smoke.py": [],
+    "run_agent_loop_smoke.py": [],
+    "run_agent_verify_link_contract_smoke.py": [],
+    "run_ai_accel_ref_smoke.py": [],
+    "run_api_v1_smoke.py": [],
+    "run_astar_route_smoke.py": [],
+    "run_b11_fsr_peakfit_smoke.py": [],
+    "run_b28_modulator_vpi_smoke.py": [],
+    "run_b28_nullfit_smoke.py": [],
+    "run_b29_thermal_phase_smoke.py": [],
+    "run_b30_readout_smoke.py": [],
+    "run_b31_soref_bennett_smoke.py": [],
+    "run_b32_qcse_smoke.py": [],
+    "run_b33_apd_smoke.py": [],
+    "run_b5b7_rollback_floor_smoke.py": [],
+    "run_benchmark_crosscheck_report.py": [],
+    "run_benchmark_falsifiability_smoke.py": [
+      "B374",
+      "B375",
+      "B376",
+      "B377",
+      "B378",
+      "B379",
+      "B380",
+      "B381",
+      "B382",
+      "B384",
+      "B385",
+      "B386",
+      "B452",
+      "B459",
+      "B460",
+      "B461",
+      "B462",
+      "B463",
+      "B464",
+      "B465",
+      "B466",
+      "B467",
+      "B468",
+      "B497",
+      "B498",
+      "B499",
+      "B500",
+      "B501",
+      "B502",
+      "B503",
+      "B504",
+      "B505",
+      "B506",
+      "B507",
+      "B508",
+      "B509",
+      "B510",
+      "B511",
+      "B512",
+      "B513",
+      "B514"
+    ],
+    "run_bounty_ledger_smoke.py": [],
+    "run_bragg_gds_smoke.py": [],
+    "run_calibrate_kappa_grid_smoke.py": [],
+    "run_calibration_protocol_smoke.py": [],
+    "run_chip_acceptance_smoke.py": [],
+    "run_chip_design_demo.py": [],
+    "run_chip_layout_smoke.py": [],
+    "run_chip_scale_demo.py": [],
+    "run_ci_coverage_gate_smoke.py": [],
+    "run_ci_crash_classify_smoke.py": [],
+    "run_ci_gate_contract_smoke.py": [],
+    "run_ci_industrial_smoke.py": [],
+    "run_cli_build_smoke.py": [],
+    "run_cli_smoke.py": [],
+    "run_compact_model_smoke.py": [],
+    "run_compiler_frontend_smoke.py": [],
+    "run_corner_performance_smoke.py": [],
+    "run_count_consistency_smoke.py": [
+      "B499",
+      "B522"
+    ],
+    "run_coupler_band_smoke.py": [],
+    "run_coverage_deadzone_closure_smoke.py": [],
+    "run_cpml_absorber_smoke.py": [],
+    "run_cpo_array_scale_smoke.py": [],
+    "run_cpo_array_smoke.py": [],
+    "run_cross_solver_matrix_smoke.py": [],
+    "run_crosscheck_flywheel_smoke.py": [],
+    "run_cs_agent_chat_smoke.py": [],
+    "run_cuda_venv_selfcheck_smoke.py": [],
+    "run_d06_smoke.py": [],
+    "run_d10_smoke.py": [],
+    "run_d4_case_smoke.py": [],
+    "run_d4_domain_smoke.py": [],
+    "run_d_criterion_smoke.py": [],
+    "run_data_layer_smoke.py": [],
+    "run_dc_transmission_smoke.py": [],
+    "run_dead_assert_guard_smoke.py": [],
+    "run_design_tapeout_smoke.py": [],
+    "run_device_fdtd_smoke.py": [],
+    "run_device_library_smoke.py": [],
+    "run_dispersive_smoke.py": [],
+    "run_dmm_scorecard_smoke.py": [],
+    "run_drc_fix_smoke.py": [],
+    "run_drc_loss_per_mode_smoke.py": [],
+    "run_drc_pdk_smoke.py": [],
+    "run_drc_smoke.py": [],
+    "run_e10_ring_fsr_smoke.py": [],
+    "run_ecore_capability_guard_smoke.py": [],
+    "run_ecore_case_smoke.py": [],
+    "run_ecore_e11_smoke.py": [],
+    "run_ecore_e11d_smoke.py": [],
+    "run_ecore_e12_smoke.py": [],
+    "run_ecore_e13_smoke.py": [],
+    "run_ecore_e14_smoke.py": [],
+    "run_ecore_e15_smoke.py": [],
+    "run_ecore_e16_smoke.py": [],
+    "run_ecore_e17_smoke.py": [],
+    "run_ecore_e18_smoke.py": [],
+    "run_ecore_e19_smoke.py": [],
+    "run_ecore_e1_smoke.py": [],
+    "run_ecore_e2_smoke.py": [],
+    "run_ecore_e3_smoke.py": [],
+    "run_ecore_e4_smoke.py": [],
+    "run_ecore_e6_smoke.py": [],
+    "run_ecore_e7_smoke.py": [],
+    "run_ecore_e8_smoke.py": [],
+    "run_ecore_e9_smoke.py": [],
+    "run_ecore_redline_scope_smoke.py": [],
+    "run_ecosystem_publish_smoke.py": [],
+    "run_ecosystem_review2_smoke.py": [],
+    "run_ecosystem_review3_smoke.py": [
+      "B100",
+      "B101",
+      "B102"
+    ],
+    "run_ecosystem_review_smoke.py": [],
+    "run_ecosystem_smoke.py": [],
+    "run_ecosystem_submit_smoke.py": [],
+    "run_eic_behavioral_smoke.py": [],
+    "run_eme_taper_smoke.py": [],
+    "run_empirical_anchor_smoke.py": [],
+    "run_fdtd2d_mmi_smoke.py": [],
+    "run_fluxonium_anchor_smoke.py": [],
+    "run_four_layer_redline_gate_smoke.py": [],
+    "run_full_vector_mode_smoke.py": [],
+    "run_gc_smoke.py": [],
+    "run_gds_drc_semantics_smoke.py": [],
+    "run_gds_smoke.py": [],
+    "run_gdsfactory_bridge_smoke.py": [],
+    "run_golden_product_smoke.py": [],
+    "run_harness.py": [],
+    "run_heavy_post_gate_smoke.py": [],
+    "run_helper_dup_ratchet_smoke.py": [],
+    "run_hier_gds_smoke.py": [],
+    "run_hierarchy_smoke.py": [],
+    "run_il_basis_platform_smoke.py": [],
+    "run_innovation_market_smoke.py": [],
+    "run_io_grating_offset_smoke.py": [],
+    "run_ir_d05_smoke.py": [],
+    "run_ir_inverse_design_smoke.py": [],
+    "run_ir_quantum_smoke.py": [],
+    "run_ir_ring_smoke.py": [],
+    "run_ir_solve_smoke.py": [],
+    "run_ir_spec_smoke.py": [],
+    "run_j1_qec_smoke.py": [
+      "B497",
+      "B499"
+    ],
+    "run_j2_qpu_smoke.py": [
+      "B497",
+      "B506",
+      "B507",
+      "B508",
+      "B509"
+    ],
+    "run_j3_ctrl_smoke.py": [
+      "B510",
+      "B511",
+      "B512",
+      "B513",
+      "B514"
+    ],
+    "run_j4_multiparam_smoke.py": [
+      "B515",
+      "B518"
+    ],
+    "run_j5_qnet_smoke.py": [
+      "B475",
+      "B519",
+      "B520",
+      "B521",
+      "B522"
+    ],
+    "run_k0_audit_smoke.py": [
+      "B197",
+      "B198",
+      "B199",
+      "B200",
+      "B513"
+    ],
+    "run_k1_cooperativity_settlement_smoke.py": [],
+    "run_k3_cross_stage_smoke.py": [],
+    "run_kernel_seal_smoke.py": [],
+    "run_l1_agent_smoke.py": [],
+    "run_l1_spec_smoke.py": [],
+    "run_large_scale_smoke.py": [],
+    "run_layout_sim_smoke.py": [],
+    "run_lindblad_gate_smoke.py": [],
+    "run_link_loss_smoke.py": [],
+    "run_link_m1_smoke.py": [],
+    "run_link_m2_smoke.py": [],
+    "run_link_m3_smoke.py": [],
+    "run_link_m4_smoke.py": [],
+    "run_llm_proposer_value_smoke.py": [],
+    "run_loqc_states_smoke.py": [],
+    "run_loss_aware_compile_smoke.py": [],
+    "run_loss_budget_smoke.py": [],
+    "run_loss_engine_smoke.py": [],
+    "run_lvs_cross_equiv_smoke.py": [],
+    "run_lvs_geom_smoke.py": [],
+    "run_lvs_smoke.py": [],
+    "run_maturity_baseline_smoke.py": [],
+    "run_mcp_smoke.py": [],
+    "run_mesh_tiling_smoke.py": [],
+    "run_mixed_system_smoke.py": [],
+    "run_mmi_eme_smoke.py": [],
+    "run_model_class_smoke.py": [],
+    "run_multiqubit_fidelity_smoke.py": [],
+    "run_multiqubit_smoke.py": [],
+    "run_mzi_anchor_smoke.py": [],
+    "run_nlp_requirement_smoke.py": [],
+    "run_noncore_reason_smoke.py": [],
+    "run_nonvolatile_weight_backend_smoke.py": [],
+    "run_oi_m0_smoke.py": [],
+    "run_oi_m1_smoke.py": [],
+    "run_oi_m2_smoke.py": [],
+    "run_oi_m2b_smoke.py": [],
+    "run_oi_m3_smoke.py": [],
+    "run_oi_m4_smoke.py": [],
+    "run_oi_m5_smoke.py": [],
+    "run_oi_transceiver_pnr_smoke.py": [],
+    "run_optical_pareto_smoke.py": [],
+    "run_optional_import_guard_smoke.py": [],
+    "run_p0_count_guard_sync_smoke.py": [],
+    "run_p2_usability_smoke.py": [],
+    "run_packaging_tolerance_smoke.py": [],
+    "run_parallel_routing_smoke.py": [],
+    "run_parasitic_rc_smoke.py": [],
+    "run_pareto_rank_smoke.py": [],
+    "run_pchip_case_smoke.py": [],
+    "run_pdk_smoke.py": [],
+    "run_perf_bench_median_smoke.py": [],
+    "run_photon_hardware_smoke.py": [],
+    "run_photonic_compute_m2_smoke.py": [],
+    "run_photonic_compute_m3_smoke.py": [],
+    "run_photonic_compute_m4_smoke.py": [],
+    "run_photonic_compute_m5_smoke.py": [],
+    "run_pipeline_multidevice_smoke.py": [],
+    "run_pipeline_realize_smoke.py": [],
+    "run_pipeline_smoke.py": [],
+    "run_platform_loss_basis_smoke.py": [],
+    "run_pm_g2_smoke.py": [],
+    "run_pm_g7_settlement_smoke.py": [],
+    "run_pm_m0_smoke.py": [],
+    "run_pm_m1_smoke.py": [],
+    "run_pm_m2_smoke.py": [],
+    "run_pm_m3_smoke.py": [],
+    "run_pm_m4_smoke.py": [],
+    "run_pm_m5_smoke.py": [],
+    "run_pm_m6_smoke.py": [],
+    "run_polygon_voxel_smoke.py": [],
+    "run_primitives_smoke.py": [],
+    "run_production_smoke.py": [],
+    "run_proposal_compiler_smoke.py": [],
+    "run_provenance_audit.py": [],
+    "run_ps_m0_smoke.py": [],
+    "run_ps_m1_smoke.py": [
+      "B469",
+      "B470",
+      "B471"
+    ],
+    "run_ps_m2_smoke.py": [],
+    "run_ps_m3_smoke.py": [
+      "B460"
+    ],
+    "run_ps_m4_smoke.py": [
+      "B461",
+      "B462"
+    ],
+    "run_ps_m5_smoke.py": [
+      "B463",
+      "B464",
+      "B465"
+    ],
+    "run_ps_m6_smoke.py": [
+      "B466",
+      "B467",
+      "B468"
+    ],
+    "run_ps_m8_smoke.py": [],
+    "run_ps_m9_smoke.py": [
+      "B469",
+      "B470",
+      "B471"
+    ],
+    "run_public_write_limit_smoke.py": [],
+    "run_pyflakes_ratchet_smoke.py": [],
+    "run_qchip_case_smoke.py": [],
+    "run_qeda_depth_smoke.py": [],
+    "run_qeda_topology_smoke.py": [],
+    "run_qres_anchor_smoke.py": [],
+    "run_qs_m0_smoke.py": [],
+    "run_qs_m1_smoke.py": [
+      "B473",
+      "B474"
+    ],
+    "run_qs_m2_smoke.py": [
+      "B473",
+      "B475"
+    ],
+    "run_qs_m3_smoke.py": [
+      "B473",
+      "B476",
+      "B477"
+    ],
+    "run_qs_m3b_smoke.py": [
+      "B476"
+    ],
+    "run_qs_m3c_smoke.py": [
+      "B494",
+      "B495",
+      "B496"
+    ],
+    "run_qs_m4_smoke.py": [
+      "B478",
+      "B479",
+      "B480",
+      "B481"
+    ],
+    "run_qs_m5_smoke.py": [
+      "B482",
+      "B483",
+      "B484"
+    ],
+    "run_qs_m6_smoke.py": [
+      "B485",
+      "B486",
+      "B487"
+    ],
+    "run_qs_m7_smoke.py": [
+      "B480",
+      "B488",
+      "B489",
+      "B490"
+    ],
+    "run_qs_m9_smoke.py": [
+      "B488",
+      "B491",
+      "B492",
+      "B493"
+    ],
+    "run_qs_panel_smoke.py": [],
+    "run_quantum_calib_bench_smoke.py": [],
+    "run_quantum_design_smoke.py": [],
+    "run_quantum_devices_smoke.py": [],
+    "run_quantum_scale_bench_smoke.py": [],
+    "run_qubit_resonator_smoke.py": [],
+    "run_quickverify_smoke.py": [],
+    "run_readout_chain_smoke.py": [],
+    "run_readout_fidelity_smoke.py": [],
+    "run_real_machine_oracle_contract_smoke.py": [],
+    "run_real_machine_oracle_example_smoke.py": [],
+    "run_real_machine_oracle_import_boundary_smoke.py": [],
+    "run_rect_mesh_smoke.py": [],
+    "run_redteam_adjudication_smoke.py": [],
+    "run_redteam_anchor_fuzz_smoke.py": [],
+    "run_redteam_automation_smoke.py": [],
+    "run_redteam_cron_smoke.py": [],
+    "run_redteam_llm_smoke.py": [],
+    "run_redteam_probe_smoke.py": [],
+    "run_report_determinism_smoke.py": [],
+    "run_report_error_display_smoke.py": [
+      "B446",
+      "B452"
+    ],
+    "run_requires_python_smoke.py": [],
+    "run_ring_double_verify_smoke.py": [],
+    "run_ring_fdtd_smoke.py": [],
+    "run_ring_kappa_calib_smoke.py": [],
+    "run_ring_weight_bank_smoke.py": [],
+    "run_router_p1_smoke.py": [],
+    "run_s8_anchor_smoke.py": [],
+    "run_scale_smoke.py": [],
+    "run_schip_s1_smoke.py": [],
+    "run_schip_s2_smoke.py": [],
+    "run_schip_s3_smoke.py": [],
+    "run_schip_s4_smoke.py": [],
+    "run_schip_s5_smoke.py": [],
+    "run_second_tier_smoke.py": [],
+    "run_self_certified_lock_smoke.py": [],
+    "run_semivec_mode_smoke.py": [],
+    "run_sensor_panel_smoke.py": [],
+    "run_shelf_listing_smoke.py": [],
+    "run_shelf_taxonomy_smoke.py": [],
+    "run_smoke_isolation_ratchet_smoke.py": [],
+    "run_soc_g6_tiling_smoke.py": [],
+    "run_soc_g6_wdm_tdm_smoke.py": [],
+    "run_soc_pdk_integration_smoke.py": [],
+    "run_soc_s2_smoke.py": [],
+    "run_soc_s3_smoke.py": [],
+    "run_soc_s4_smoke.py": [],
+    "run_soc_s5_ext_smoke.py": [],
+    "run_soc_s5_smoke.py": [],
+    "run_soc_tapeout_signoff_deck_smoke.py": [],
+    "run_soc_tapeout_signoff_smoke.py": [],
+    "run_soc_ui_smoke.py": [],
+    "run_solver_writer_sandbox_smoke.py": [],
+    "run_sovereign_evidence_smoke.py": [],
+    "run_spectrum_loop_smoke.py": [],
+    "run_spice_netlist_smoke.py": [],
+    "run_splitter_readout_cal_smoke.py": [],
+    "run_splitter_readout_smoke.py": [],
+    "run_statistical_anchor_smoke.py": [
+      "B104",
+      "B105",
+      "B120",
+      "B121",
+      "B136",
+      "B137",
+      "B152",
+      "B153",
+      "B168",
+      "B169",
+      "B184",
+      "B185",
+      "B200",
+      "B201",
+      "B216",
+      "B217",
+      "B232",
+      "B233",
+      "B248",
+      "B249",
+      "B264",
+      "B265",
+      "B280",
+      "B281",
+      "B296",
+      "B297",
+      "B312",
+      "B313",
+      "B328",
+      "B329",
+      "B344",
+      "B345",
+      "B360",
+      "B361",
+      "B373",
+      "B374",
+      "B386",
+      "B387",
+      "B399",
+      "B400",
+      "B412",
+      "B453",
+      "B455",
+      "B459",
+      "B460",
+      "B461",
+      "B462",
+      "B463",
+      "B464",
+      "B465",
+      "B466",
+      "B467",
+      "B468",
+      "B469",
+      "B470",
+      "B471",
+      "B472",
+      "B473",
+      "B474",
+      "B475",
+      "B476",
+      "B477",
+      "B478",
+      "B479",
+      "B480",
+      "B481",
+      "B482",
+      "B483",
+      "B484",
+      "B485",
+      "B486",
+      "B487",
+      "B488",
+      "B489",
+      "B490",
+      "B491",
+      "B492",
+      "B493",
+      "B494",
+      "B495",
+      "B496",
+      "B497",
+      "B498",
+      "B499",
+      "B500",
+      "B501",
+      "B502",
+      "B503",
+      "B504",
+      "B505",
+      "B506",
+      "B507",
+      "B508",
+      "B509",
+      "B510",
+      "B511",
+      "B512",
+      "B513",
+      "B514",
+      "B515",
+      "B518",
+      "B519",
+      "B520",
+      "B521",
+      "B522"
+    ],
+    "run_stats_nav_wiring_smoke.py": [],
+    "run_store_auth_gate_smoke.py": [],
+    "run_store_flow_smoke.py": [],
+    "run_store_guide_smoke.py": [],
+    "run_submanifold_smoke.py": [],
+    "run_system_budget_smoke.py": [],
+    "run_system_types_smoke.py": [],
+    "run_t1_reverse_bias_limitation_smoke.py": [],
+    "run_t1b_devsim_cold_backup_smoke.py": [],
+    "run_t1b_drift_diffusion_2d_smoke.py": [],
+    "run_t1b_drift_diffusion_smoke.py": [],
+    "run_t1c_w5_detector_bandwidth_smoke.py": [],
+    "run_t1c_w6_apd_avalanche_smoke.py": [],
+    "run_t2_anchor_upgrade_smoke.py": [],
+    "run_tapeout_fullchain_smoke.py": [],
+    "run_tapeout_smoke.py": [],
+    "run_temporal_mesh_smoke.py": [],
+    "run_three_class_consistency_smoke.py": [],
+    "run_timeout_budget_ratchet_smoke.py": [],
+    "run_torch_numba_optional_smoke.py": [],
+    "run_transmon_double_verify_smoke.py": [],
+    "run_tunable_wdm_smoke.py": [],
+    "run_verify_voxel_pipeline_smoke.py": [],
+    "run_verify_waveguide_2d_smoke.py": [],
+    "run_wdm_channel_plan_smoke.py": [],
+    "run_wdm_coupler_grid_smoke.py": [],
+    "run_wdm_coupler_smoke.py": [],
+    "run_wdm_coupler_wl_smoke.py": [],
+    "run_wdm_depth_smoke.py": [],
+    "run_wdm_mesh_pnr_smoke.py": [],
+    "run_wdm_shared_mesh_smoke.py": [],
+    "run_wdm_system_smoke.py": [],
+    "run_webui_api_smoke.py": [],
+    "run_webui_ecore_render_path_smoke.py": [],
+    "run_webui_entry_smoke.py": [],
+    "run_webui_j1_render_path_smoke.py": [
+      "B497",
+      "B505"
+    ],
+    "run_webui_j2_render_path_smoke.py": [
+      "B506",
+      "B507",
+      "B509"
+    ],
+    "run_webui_j3_render_path_smoke.py": [
+      "B510",
+      "B514"
+    ],
+    "run_webui_j4_render_path_smoke.py": [
+      "B518"
+    ],
+    "run_webui_j5_render_path_smoke.py": [],
+    "run_webui_json_hard_smoke.py": [],
+    "run_webui_oi_render_path_smoke.py": [],
+    "run_webui_pm_render_path_smoke.py": [],
+    "run_webui_tapeout_drc_smoke.py": [],
+    "run_webui_verification_ledger_smoke.py": [],
+    "run_yield_fault_tolerance_smoke.py": []
+  },
+  "generated_by": "scripts/k4_coverage.py",
+  "method": "三层：L1 = verification_report.results 的 id 集；L2/L3 = CORE 门禁源码去注释后显式锚号；锚全集 = BENCHMARK_DEFS ∪ BENCHMARK_ORDER",
+  "ratchet": {
+    "l2_min": 123,
+    "l3_min": 65,
+    "policy": "只升不降：新增锚必须补专属判据或显式登记为 L1-only"
+  },
+  "roadmap": "K（量子赛道一期结算与固化）",
+  "schema": "lda_anchor_gate_coverage_v1",
+  "subject": "hex-layer gate × anchor coverage matrix",
+  "summary": {
+    "anchors_total": 538,
+    "blind_by_band": {
+      "B100–B199": 82,
+      "B1–B99": 94,
+      "B200–B299": 86,
+      "B300–B399": 77,
+      "B400–B499": 53,
+      "E（实证）": 10,
+      "S（系统层）": 13
+    },
+    "by_gate_count": {
+      "1": 58,
+      "2": 34,
+      "3": 22,
+      "4": 8,
+      "5": 1
+    },
+    "core_smokes": 333,
+    "gates_excluded": 1,
+    "gates_scanned": 332,
+    "gates_with_anchors": 31,
+    "gates_zero_anchor": 301,
+    "l1_unified_covered": 538,
+    "l2_bespoke_covered": 123,
+    "l2_blind": 415,
+    "l3_multi_covered": 65
+  }
+}

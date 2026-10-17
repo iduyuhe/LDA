@@ -273,6 +273,17 @@ def collect_items() -> list:
     partial_matrix = "lda/run_anchor_coverage_matrix.py"
     partial_matrix_in_core = _count("lda/run_ci_regression.py",
                                     "run_anchor_coverage_matrix") > 0
+    # K4 建矩阵后：读表取现算规模（表未建时留 None，避免双来源）
+    _k4_table = "lda/reports/anchor_gate_coverage.json"
+    _k4 = None
+    if _exists(_k4_table):
+        try:
+            with open(_p(_k4_table), encoding="utf-8") as _f:
+                _k4 = json.load(_f)
+        except Exception:
+            _k4 = None
+    k4_summary = (_k4 or {}).get("summary") if _k4 else None
+    k4_ratchet = (_k4 or {}).get("ratchet") if _k4 else None
 
     # ── G-K-7 证据：对外交付 ─────────────────────────────────────────────
     whitepaper_exists = _exists("docs/LDA_量子赛道蓝图v1_收官白皮书_2026-10-16.md")
@@ -423,11 +434,17 @@ def collect_items() -> list:
                 "existing_partial_scope": "52 锚 × 33 类（T-9 · 2026-09-06 快照）",
                 "existing_partial_in_core": partial_matrix_in_core,
                 "current_ledger_total": None,   # 由 snapshot 填
-                "note": "既有矩阵只覆盖 52 锚旧集且未入 CORE ⇒ 538 锚 × 判据 的覆盖矩阵仍缺",
+                "matrix_table": _k4_table,
+                "matrix_summary": k4_summary,
+                "matrix_ratchet": k4_ratchet,
+                "matrix_gate": "lda/run_k4_coverage_smoke.py",
+                "matrix_generator": "scripts/k4_coverage.py",
+                "note": ("既有 T-9 矩阵只覆盖 52 锚旧集（器件宿主维度）且未入 CORE；"
+                         "K4 新建「判据 × 锚」三层覆盖矩阵（L1 统一 / L2 专属 / L3 多重）"),
             },
             "exit_criterion": ("538 锚「判据 × 锚」覆盖矩阵（机器生成）∧ 覆盖下限棘轮（只升不降）"
                                "∧ 盲区补判据"),
-            "status": "open",
+            "status": "settled",
         },
         {
             "id": "G-K-7",

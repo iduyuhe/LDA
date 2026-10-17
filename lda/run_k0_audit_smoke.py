@@ -116,7 +116,7 @@ def validate(led: dict, fresh: dict) -> dict:
         and e2.get("settled_by_stage") == "K1"
         and e2.get("ratio_closed_form") == f2.get("ratio_closed_form")
         and e2.get("consumer_caliber_term_hits") == f2.get("consumer_caliber_term_hits")
-        and led.get("items_settled") == 5)
+        and led.get("items_settled") == 7)
     e3 = ev("G-K-3")
     r["E3 G-K-3 B516/B517 均不在账本 ∧ 终态=reserved_null ∧ 体检证据齐备"] = (
         e3.get("in_benchmark_defs") == {"B516": False, "B517": False}
@@ -131,7 +131,8 @@ def validate(led: dict, fresh: dict) -> dict:
         and "B513" in e3.get("b517_keyword_hits", {}))
     e4, f4 = ev("G-K-4"), fev("G-K-4")
     # 🔴 K2 补齐后语义翻转：旧判据曾断言「sec-j1 **缺位** ∧ j1_case 不存在」⇒ 已被打反。
-    r["E4 G-K-4 **已补齐**：sec-j1 齐备 ∧ J2–J5 齐备 ∧ j1_case 存在 ∧ CASE_PANELS_MIN=16"] = (
+    # 🔴 K5 加了 sec-qtrack ⇒ 面板数 16→17；判据改为**下限棘轮语义**（≥16，只增不减）。
+    r["E4 G-K-4 **已补齐**：sec-j1 齐备 ∧ J2–J5 齐备 ∧ j1_case 存在 ∧ CASE_PANELS_MIN ≥ 16"] = (
         e4.get("panel_hits") == f4.get("panel_hits")
         and e4.get("endpoint_hits") == f4.get("endpoint_hits")
         and all(e4.get("panel_hits", {}).get(k, 0) >= 1
@@ -139,7 +140,7 @@ def validate(led: dict, fresh: dict) -> dict:
         and e4.get("j1_case_py_exists") is True
         and e4.get("verdict") == "closed"
         and e4.get("settled_by_stage") == "K2"
-        and f4.get("case_panels_min") == 16)
+        and (f4.get("case_panels_min") or 0) >= 16)
     e5, f5 = ev("G-K-5"), fev("G-K-5")
     # 🔴 K3 建表后语义翻转：旧判据曾断言「**常量表不存在**」⇒ 已被打反（第 3 例 Step-5）。
     r["E5 G-K-5 **已结算**：表存在 ∧ 站点 ≥2 ∧ 行号现算 ∧ 表内规模自洽"] = (
@@ -152,9 +153,13 @@ def validate(led: dict, fresh: dict) -> dict:
         and (f5.get("table_summary") or {}).get("sites_cross_stage", 0) >= 2
         and e5.get("table_summary") == f5.get("table_summary"))
     e7 = ev("G-K-7")
-    r["E6 G-K-7 白皮书/论文/总览入口均缺"] = (
-        e7.get("whitepaper_exists") is False and e7.get("paper_exists") is False
-        and e7.get("overview_section_hits") == 0)
+    # 🔴 K5 交付后语义翻转：旧判据曾断言「白皮书/论文/总览入口**均缺**」⇒ 已被打反（第 5 例 Step-5）。
+    r["E6 G-K-7 **已交付**：白皮书 ∧ 论文 ∧ 总览面板 ∧ 渲染门禁存在"] = (
+        e7.get("whitepaper_exists") is True and e7.get("paper_exists") is True
+        and e7.get("overview_section_hits") >= 1
+        and e7.get("overview_panel") == "sec-qtrack"
+        and e7.get("overview_endpoint") == "/api/qtrack"
+        and e7.get("overview_gate_exists") is True)
     # 🔴 K4 关门后补建：G-K-6 此前**无对应判据**（台账有条目、门禁无判据 = 覆盖盲区本身）
     e6, f6 = ev("G-K-6"), fev("G-K-6")
     _m6 = f6.get("matrix_summary") or {}
@@ -169,7 +174,12 @@ def validate(led: dict, fresh: dict) -> dict:
         and int(_r6.get("l2_min", 0)) >= 123
         and int(_r6.get("l3_min", 0)) >= 65)
     e8 = ev("G-K-8")
-    r["E7 G-K-8 蓝图 v2 不存在（v1 已收官）"] = e8.get("blueprint_v2_exists") is False
+    # 🔴 K6 起草后语义翻转：旧判据曾断言「蓝图 v2 **不存在**」⇒ 已被草案打反（第 6 例 Step-5）。
+    r["E7 G-K-8 **已起草**：v2 草案存在 ∧ 机器可读矩阵 ∧ status=draft_only"] = (
+        e8.get("blueprint_v2_exists") is True
+        and e8.get("blueprint_v2_status", "").startswith("draft_only")
+        and e8.get("blueprint_v2_matrix") == "lda/reports/blueprint_v2_gap_matrix.json"
+        and e8.get("blueprint_v2_generator") == "scripts/k6_blueprint_v2.py")
     return r
 
 
@@ -245,10 +255,10 @@ def main() -> int:
     emit(["E1 G-K-2 两口径值/函数行号 ≡ 现算",
           "E2 G-K-2 已结算：消费侧并报兑现 ∧ 错误等式 0 命中 ∧ items_settled 一致",
           "E3 G-K-3 B516/B517 均不在账本 ∧ 终态=reserved_null ∧ 体检证据齐备",
-          "E4 G-K-4 **已补齐**：sec-j1 齐备 ∧ J2–J5 齐备 ∧ j1_case 存在 ∧ CASE_PANELS_MIN=16",
+          "E4 G-K-4 **已补齐**：sec-j1 齐备 ∧ J2–J5 齐备 ∧ j1_case 存在 ∧ CASE_PANELS_MIN ≥ 16",
           "E5 G-K-5 **已结算**：表存在 ∧ 站点 ≥2 ∧ 行号现算 ∧ 表内规模自洽",
-          "E6 G-K-7 白皮书/论文/总览入口均缺",
-          "E7 G-K-8 蓝图 v2 不存在（v1 已收官）",
+          "E6 G-K-7 **已交付**：白皮书 ∧ 论文 ∧ 总览面板 ∧ 渲染门禁存在",
+          "E7 G-K-8 **已起草**：v2 草案存在 ∧ 机器可读矩阵 ∧ status=draft_only",
           "E8 G-K-6 **已结算**：矩阵存在 ∧ 三层覆盖自洽 ∧ ratchet ≥ 硬编码下限 ∧ 锚键集 ≡ 账本"])
 
     print("\n[F] 红线")

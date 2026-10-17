@@ -1,0 +1,312 @@
+{
+  "boundary": [
+    "本档**不动实现**：零新增锚、零新增门禁、不改任何产品面",
+    "新域落地须**另出章程并经用户定调**（章程 K6 明示）",
+    "候选域的现状证据为**源码关键词命中**（现算），属**下限**而非完备"
+  ],
+  "decision_points": [
+    "选哪个候选域作为 v2 首档（或另提新域）？",
+    "v2-D3 容错编译的 golden 是什么（物理闭式 / 规格锚 / 模拟基线）？—— 决定其能否沿用现有判据范式",
+    "是否允许引入 BP+OSD 类迭代解码（自研 vs 借用的主权分层归属）？",
+    "补盲 415 锚 与 新域扩张 的优先级如何排（棘轮只升不降 ⇒ 新域会同时抬 L2 下限）？"
+  ],
+  "excluded_fields": [
+    "时间戳（非确定量）",
+    "git HEAD（每次提交都变）"
+  ],
+  "gap_matrix": [
+    {
+      "current": "零（v1 未覆盖）",
+      "domain": "光-量异质集成",
+      "gap": "多模换能阵列（单模 → N 模）",
+      "gap_id": "G-V2-D1-1",
+      "owner": "待立项章程"
+    },
+    {
+      "current": "零（v1 未覆盖）",
+      "domain": "光-量异质集成",
+      "gap": "与低温 CMOS 的共集成热/电接口",
+      "gap_id": "G-V2-D1-2",
+      "owner": "待立项章程"
+    },
+    {
+      "current": "零（v1 未覆盖）",
+      "domain": "光-量异质集成",
+      "gap": "封装级光耦合（光纤阵列对准容差）",
+      "gap_id": "G-V2-D1-3",
+      "owner": "待立项章程"
+    },
+    {
+      "current": "零（v1 未覆盖）",
+      "domain": "光-量异质集成",
+      "gap": "异质材料界面损耗模型",
+      "gap_id": "G-V2-D1-4",
+      "owner": "待立项章程"
+    },
+    {
+      "current": "零（v1 未覆盖）",
+      "domain": "QEC 码族扩展",
+      "gap": "LDPC / 量子 LDPC 解码（BP + OSD）",
+      "gap_id": "G-V2-D2-1",
+      "owner": "待立项章程"
+    },
+    {
+      "current": "零（v1 未覆盖）",
+      "domain": "QEC 码族扩展",
+      "gap": "色码解码与阈值",
+      "gap_id": "G-V2-D2-2",
+      "owner": "待立项章程"
+    },
+    {
+      "current": "零（v1 未覆盖）",
+      "domain": "QEC 码族扩展",
+      "gap": "码族间资源-阈值折衷（同 p 下比较）",
+      "gap_id": "G-V2-D2-3",
+      "owner": "待立项章程"
+    },
+    {
+      "current": "零（v1 未覆盖）",
+      "domain": "QEC 码族扩展",
+      "gap": "逻辑门集合的可比性度量",
+      "gap_id": "G-V2-D2-4",
+      "owner": "待立项章程"
+    },
+    {
+      "current": "零（v1 未覆盖）",
+      "domain": "容错编译（QEC ↔ QPU 联合）",
+      "gap": "逻辑→物理映射与调度（含测量轮次）",
+      "gap_id": "G-V2-D3-1",
+      "owner": "待立项章程"
+    },
+    {
+      "current": "零（v1 未覆盖）",
+      "domain": "容错编译（QEC ↔ QPU 联合）",
+      "gap": "错误预算在编译期的分摊策略",
+      "gap_id": "G-V2-D3-2",
+      "owner": "待立项章程"
+    },
+    {
+      "current": "零（v1 未覆盖）",
+      "domain": "容错编译（QEC ↔ QPU 联合）",
+      "gap": "门序优化对保真的净收益模型",
+      "gap_id": "G-V2-D3-3",
+      "owner": "待立项章程"
+    },
+    {
+      "current": "零（v1 未覆盖）",
+      "domain": "容错编译（QEC ↔ QPU 联合）",
+      "gap": "编译期资源估计（T 态/魔术态）",
+      "gap_id": "G-V2-D3-4",
+      "owner": "待立项章程"
+    }
+  ],
+  "gap_matrix_n": 12,
+  "generated_by": "scripts/k6_blueprint_v2.py",
+  "inherited_gaps": [
+    {
+      "gap": "量子计算征程遗留",
+      "id": "G_Q9",
+      "status": "开放（J1–J5 未覆盖该遗留项）"
+    },
+    {
+      "gap": "一期结算与固化（K 征程）",
+      "id": "G-K-1…7",
+      "status": "已闭合（K0–K5）"
+    },
+    {
+      "gap": "全账本 538 锚中仅有统一判决、无专属门禁",
+      "id": "盲区 415",
+      "status": "K4 已机器登记，补盲长期化"
+    }
+  ],
+  "inherited_v1": {
+    "all_closed": true,
+    "anchors_n": 48,
+    "cross_stage": {
+      "sites_cross_stage": 20,
+      "sites_total": 47
+    },
+    "judges_n": 191,
+    "k0_items_total": 8,
+    "k0_settled": 7,
+    "layers": [
+      {
+        "anchors_n": 24,
+        "band": "B473–B496",
+        "closed": true,
+        "id": "L0",
+        "judges_n": 0,
+        "l2_n": 24,
+        "l3_n": 24,
+        "name": "器件与相位（QS-M*）"
+      },
+      {
+        "anchors_n": 9,
+        "band": "B497–B505",
+        "closed": true,
+        "id": "L1",
+        "judges_n": 19,
+        "l2_n": 9,
+        "l3_n": 9,
+        "name": "量子纠错（J1）"
+      },
+      {
+        "anchors_n": 4,
+        "band": "B506–B509",
+        "closed": true,
+        "id": "L2",
+        "judges_n": 37,
+        "l2_n": 4,
+        "l3_n": 4,
+        "name": "超导处理器（J2）"
+      },
+      {
+        "anchors_n": 5,
+        "band": "B510–B514",
+        "closed": true,
+        "id": "L3",
+        "judges_n": 44,
+        "l2_n": 5,
+        "l3_n": 5,
+        "name": "测控与读出（J3）"
+      },
+      {
+        "anchors_n": 2,
+        "band": "B515–B518",
+        "closed": true,
+        "id": "L4",
+        "judges_n": 25,
+        "l2_n": 2,
+        "l3_n": 2,
+        "name": "传感系统（J4）"
+      },
+      {
+        "anchors_n": 4,
+        "band": "B519–B522",
+        "closed": true,
+        "id": "L5",
+        "judges_n": 66,
+        "l2_n": 4,
+        "l3_n": 4,
+        "name": "量子网络（J5）"
+      }
+    ],
+    "ledger": {
+      "anchors_total": 538,
+      "blind": 415,
+      "core_smokes": 334,
+      "l1": 538,
+      "l2": 123,
+      "l3": 65
+    }
+  },
+  "new_domain_candidates": [
+    {
+      "entry_anchors_hint": [
+        "多模换能总效率",
+        "光纤阵列耦合容差预算",
+        "界面吸收损耗"
+      ],
+      "gaps": [
+        "多模换能阵列（单模 → N 模）",
+        "与低温 CMOS 的共集成热/电接口",
+        "封装级光耦合（光纤阵列对准容差）",
+        "异质材料界面损耗模型"
+      ],
+      "id": "V2-D1",
+      "name": "光-量异质集成",
+      "pitch": "把微波-光换能（J5 M3 已建 B522）推进到**系统级异质集成**：多模换能阵列、封装共集成、与 CMOS 控制电路的单片/2.5D 集成",
+      "probe_files": [
+        "lda_l2/qnet_transducer.py",
+        "lda_l2/qnet_channel.py"
+      ],
+      "probe_keyword_hits": {
+        "CMOS": 0,
+        "heterogeneous": 0,
+        "共集成": 0,
+        "多模": 1,
+        "封装": 0,
+        "阵列": 0
+      },
+      "probe_total_hits": 1,
+      "probe_verdict": "有命中 ⇒ 部分概念已存在，需逐项核可区分性",
+      "risk": "**跨域**（光 + 微波 + 封装），单锚难以自洽 ⇒ 建议先做「单指标」再扩系统",
+      "seed": "B522（微波-光换能效率 η = 1.125146902042377e-02）· qnet_transducer.py"
+    },
+    {
+      "entry_anchors_hint": [
+        "LDPC 阈值（BP+OSD）",
+        "色码阈值",
+        "同 p 下资源比"
+      ],
+      "gaps": [
+        "LDPC / 量子 LDPC 解码（BP + OSD）",
+        "色码解码与阈值",
+        "码族间资源-阈值折衷（同 p 下比较）",
+        "逻辑门集合的可比性度量"
+      ],
+      "id": "V2-D2",
+      "name": "QEC 码族扩展",
+      "pitch": "J1 只做**表面码**（阈值/解码/综合征/容错门）；扩到 LDPC / 色码 / 拓扑码，并比较同一物理错误率下的资源-阈值折衷",
+      "probe_files": [
+        "lda_qeda/decoder.py",
+        "lda_qeda/logical_error_rate.py",
+        "lda_qeda/qec_noise.py"
+      ],
+      "probe_keyword_hits": {
+        "LDPC": 0,
+        "bivariate": 0,
+        "color code": 0,
+        "hypergraph": 0,
+        "ldpc": 0,
+        "topological": 0,
+        "拓扑码": 0,
+        "色码": 0
+      },
+      "probe_total_hits": 0,
+      "probe_verdict": "零命中 ⇒ 该域在现有代码中**无对应实现**（缺口证据）",
+      "risk": "解码器实现重（BP+OSD 需迭代求解器）· **不得借第三方 QEC SDK**（红线）",
+      "seed": "J1 九锚（B497–B505）· decoder.py（MWPM ↔ 自主 Union-Find 位级对拍）"
+    },
+    {
+      "entry_anchors_hint": [
+        "编译后总保真（闭式 vs 模拟）",
+        "调度深度下界",
+        "魔术态消耗率"
+      ],
+      "gaps": [
+        "逻辑→物理映射与调度（含测量轮次）",
+        "错误预算在编译期的分摊策略",
+        "门序优化对保真的净收益模型",
+        "编译期资源估计（T 态/魔术态）"
+      ],
+      "id": "V2-D3",
+      "name": "容错编译（QEC ↔ QPU 联合）",
+      "pitch": "在 J1（逻辑层）与 J2（物理层）之间补**编译层**：逻辑门 → 物理脉冲序列的映射、调度与错误预算分摊",
+      "probe_files": [
+        "lda_qeda/logical_error_rate.py",
+        "lda_qeda/decoder.py",
+        "lda_qeda/fault_tolerant_gates.py",
+        "lda_l2/qnet_system.py",
+        "lda_l2/qnet_distribution.py"
+      ],
+      "probe_keyword_hits": {
+        "fault_tolerant_compil": 0,
+        "logical_schedul": 0,
+        "logical_to_physical": 0,
+        "magic_state": 0,
+        "transpile": 0,
+        "测量轮次": 0,
+        "魔术态": 0
+      },
+      "probe_total_hits": 0,
+      "probe_verdict": "零命中 ⇒ 该域在现有代码中**无对应实现**（缺口证据）",
+      "risk": "属**软件/算法层**，与现有「物理律锚」范式不同 ⇒ 须先定「golden 是什么」",
+      "seed": "J1 容错门（B502/B503）· J2 门错误（B506/B507）—— 两层已有量化输入，但**无编译中间层**"
+    }
+  ],
+  "roadmap": "K6（蓝图 v2 奠基 · 只起草矩阵不动实现）",
+  "schema": "lda_blueprint_v2_gap_matrix_v1",
+  "status": "draft_only",
+  "subject": "量子赛道蓝图 v2 缺口矩阵（草案）"
+}

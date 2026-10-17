@@ -289,7 +289,11 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               # 🔴 v0.9.247：本版真改动 = K 征程 K4 **门禁×锚覆盖矩阵**（生成器 + 受跟踪台账 +
               #   新门禁本体）。直接相关且**便宜**（实测 **~3.0s** / **25 判据**）⇒
               #   纳对照面，令本版 README 顶行声明的 25 判据由机器守（非手写）。
-              "run_k4_coverage_smoke.py")
+              "run_k4_coverage_smoke.py",
+              # 🔴 v0.9.248：本版真改动 = K 征程 K5 **对外级交付**（白皮书 + 论文 +
+              #   `sec-qtrack` 总览页 + `/api/qtrack` + 新渲染门禁本体）。
+              #   实测 **~1.0s** / **21 判据** ⇒ 纳对照面，令 README 顶行声明的 21 判据由机器守。
+              "run_webui_qtrack_render_path_smoke.py")
 
 
 def _declared_judge_counts(text):

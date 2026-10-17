@@ -1,9 +1,9 @@
 {
   "counts": {
-    "described": 155,
+    "described": 156,
     "needs_login": 60,
-    "precise": 138,
-    "total": 155,
+    "precise": 139,
+    "total": 156,
     "undescribed": 0,
     "wildcard": 17
   },
@@ -611,6 +611,20 @@
       "note": "",
       "params": [],
       "path": "/api/qsensor_demo",
+      "source": "handler_docstring",
+      "wildcard": false
+    },
+    {
+      "app_function": null,
+      "auth": "public",
+      "binary": false,
+      "description": "GET /api/qtrack —— 量子赛道**六层总览**案例卡（只读 · 免登录 · 微秒级）。 K5 对外窗口：把 Layer 0–5（QS-M* 器件 → J1 纠错 → J2 处理器 → J3 测控 → J4 传感 → J5 网络）聚合成**一屏入口**，每层给出锚数 / 严格独立数 / 专属门禁覆盖（L2/L3）/ 门禁名与判据数，并可深链到各层面板 `sec-j1`…`sec-j5`。 🔴 **零重计算 + 只用 stdlib + 读受跟踪 JSON**（`anchor_gate_coverage.json` 与 `verification_report.json`）—— **不 import `lda_harness.benchmarks`** （其 `__init__` 链会拉 `scipy`，生产环境无 `scipy` ⇒ 会 500）。 ⇒ **无 DoS 面**，故**免登录、不进 `HEAVY_POST_PATHS`**。 无查询参数。🔴 **不伪装实测**：`verdict` 恒为 `ACCEPT`（设计期签核）。 异常不 500（返回 200 + error 字段）。",
+      "handler": "h_qtrack_demo",
+      "heavy": false,
+      "method": "GET",
+      "note": "",
+      "params": [],
+      "path": "/api/qtrack",
       "source": "handler_docstring",
       "wildcard": false
     },

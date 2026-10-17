@@ -183,6 +183,9 @@ def collect_snapshot() -> dict:
 # ---------------------------------------------------------------------------
 # 未结项条目（G-K-1…G-K-8 · 证据全部现算）
 # ---------------------------------------------------------------------------
+_V2_DRAFT = "docs/LDA_量子赛道总蓝图_v2_草案_2026-10-17.md"
+
+
 def collect_items() -> list:
     from lda_l2 import qs_m3c as M
 
@@ -286,9 +289,13 @@ def collect_items() -> list:
     k4_ratchet = (_k4 or {}).get("ratchet") if _k4 else None
 
     # ── G-K-7 证据：对外交付 ─────────────────────────────────────────────
-    whitepaper_exists = _exists("docs/LDA_量子赛道蓝图v1_收官白皮书_2026-10-16.md")
-    paper_exists = _exists("docs/LDA_量子赛道_J1-J5六层复利_论文.md")
+    _whitepaper = "docs/LDA_量子赛道蓝图v1_收官白皮书_2026-10-17.md"
+    _paper = "docs/LDA_量子赛道_J1-J5六层复利_论文.md"
+    whitepaper_exists = _exists(_whitepaper)
+    paper_exists = _exists(_paper)
     overview_hits = _count(_sech, 'id="sec-qtrack"')
+    qtrack_gate = "lda/run_webui_qtrack_render_path_smoke.py"
+    qtrack_gate_exists = _exists(qtrack_gate)
 
     return [
         {
@@ -455,11 +462,17 @@ def collect_items() -> list:
                 "whitepaper_exists": whitepaper_exists,
                 "paper_exists": paper_exists,
                 "overview_section_hits": overview_hits,
+                "whitepaper_path": _whitepaper,
+                "paper_path": _paper,
+                "overview_panel": "sec-qtrack",
+                "overview_endpoint": "/api/qtrack",
+                "overview_gate": qtrack_gate,
+                "overview_gate_exists": qtrack_gate_exists,
                 "note": "对外口径只写「设计期签核 · 非流片实测」，不报能效/TOPS/fJ-op",
             },
             "exit_criterion": ("收官白皮书（docx/pdf）∧ WebUI 六层总览入口 ∧ 论文"
                                "（署名杜玉河 + 致谢 LDA 工程团队）"),
-            "status": "open",
+            "status": "settled",
         },
         {
             "id": "G-K-8",
@@ -468,13 +481,18 @@ def collect_items() -> list:
             "owner_stage": "K6",
             "evidence": {
                 "blueprint_v1": "docs/LDA_量子赛道总蓝图_v1_2026-10-12.md（Layer 0–5 全收官）",
-                "blueprint_v2_exists": _exists("docs/LDA_量子赛道总蓝图_v2_2026-10-16.md"),
+                "blueprint_v2_exists": _exists(_V2_DRAFT),
+                "blueprint_v2_path": _V2_DRAFT,
+                "blueprint_v2_status": ("draft_only（只起草矩阵 · 零锚 · 零门禁 · 待定调）"
+                                         if _exists(_V2_DRAFT) else "未起草"),
+                "blueprint_v2_matrix": "lda/reports/blueprint_v2_gap_matrix.json",
+                "blueprint_v2_generator": "scripts/k6_blueprint_v2.py",
                 "new_domain_candidates": ["光-量异质集成（换能器 B522 已建）",
                                           "QEC 码族扩展（J1 只做表面码）",
                                           "容错编译（QEC ↔ QPU 联合）"],
             },
             "exit_criterion": "缺口矩阵 v2（人读 MD + 机器可读清单）· 新域落地须另出章程",
-            "status": "open",
+            "status": "settled",
         },
     ]
 

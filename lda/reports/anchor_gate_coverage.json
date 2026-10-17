@@ -4595,6 +4595,7 @@
     "run_webui_json_hard_smoke.py": [],
     "run_webui_oi_render_path_smoke.py": [],
     "run_webui_pm_render_path_smoke.py": [],
+    "run_webui_qtrack_render_path_smoke.py": [],
     "run_webui_tapeout_drc_smoke.py": [],
     "run_webui_verification_ledger_smoke.py": [],
     "run_yield_fault_tolerance_smoke.py": []
@@ -4627,11 +4628,11 @@
       "4": 8,
       "5": 1
     },
-    "core_smokes": 333,
+    "core_smokes": 334,
     "gates_excluded": 1,
-    "gates_scanned": 332,
+    "gates_scanned": 333,
     "gates_with_anchors": 31,
-    "gates_zero_anchor": 301,
+    "gates_zero_anchor": 302,
     "l1_unified_covered": 538,
     "l2_bespoke_covered": 123,
     "l2_blind": 415,

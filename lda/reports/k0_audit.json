@@ -7,15 +7,15 @@
     "head（每次提交都变 ⇒ 非确定量，故意不入台账）"
   ],
   "frozen_snapshot": {
-    "version": "0.9.247",
+    "version": "0.9.249",
     "ledger_total": 538,
     "ledger_strict": 516,
     "ledger_degraded": 3,
     "ledger_stub": 19,
     "independence_rate": 0.959108,
-    "ci_core": 333,
-    "endpoints": 155,
-    "case_panels_min": 16,
+    "ci_core": 334,
+    "endpoints": 156,
+    "case_panels_min": 17,
     "max_anchor": "B522",
     "panels": [
       "sec-accel",
@@ -37,6 +37,7 @@
       "sec-pm",
       "sec-qchip",
       "sec-qsensor",
+      "sec-qtrack",
       "sec-schip",
       "sec-sensor",
       "sec-soc",
@@ -45,7 +46,7 @@
     ]
   },
   "items_total": 8,
-  "items_settled": 5,
+  "items_settled": 7,
   "items": [
     {
       "id": "G-K-1",
@@ -229,7 +230,7 @@
           "/api/j5_qnet": 3
         },
         "j1_case_py_exists": true,
-        "case_panels_min": 16,
+        "case_panels_min": 17,
         "note": "🔴 K2（2026-10-17）**已补齐**：新增 `j1_case.py` + `GET /api/j1_qec` + `index.html` `sec-j1` 三入口面 + `CASE_PANELS_MIN 15→16` ⇒ 六层面板首次齐备（此前 A 档三入口面纪律只对新增强制 ⇒ J1 老档漏网）",
         "settled_by_stage": "K2",
         "settlement_artifacts": [
@@ -314,11 +315,11 @@
             "4": 8,
             "5": 1
           },
-          "core_smokes": 333,
+          "core_smokes": 334,
           "gates_excluded": 1,
-          "gates_scanned": 332,
+          "gates_scanned": 333,
           "gates_with_anchors": 31,
-          "gates_zero_anchor": 301,
+          "gates_zero_anchor": 302,
           "l1_unified_covered": 538,
           "l2_bespoke_covered": 123,
           "l2_blind": 415,
@@ -342,13 +343,19 @@
       "type": "对外·交付欠账",
       "owner_stage": "K5",
       "evidence": {
-        "whitepaper_exists": false,
-        "paper_exists": false,
-        "overview_section_hits": 0,
+        "whitepaper_exists": true,
+        "paper_exists": true,
+        "overview_section_hits": 1,
+        "whitepaper_path": "docs/LDA_量子赛道蓝图v1_收官白皮书_2026-10-17.md",
+        "paper_path": "docs/LDA_量子赛道_J1-J5六层复利_论文.md",
+        "overview_panel": "sec-qtrack",
+        "overview_endpoint": "/api/qtrack",
+        "overview_gate": "lda/run_webui_qtrack_render_path_smoke.py",
+        "overview_gate_exists": true,
         "note": "对外口径只写「设计期签核 · 非流片实测」，不报能效/TOPS/fJ-op"
       },
       "exit_criterion": "收官白皮书（docx/pdf）∧ WebUI 六层总览入口 ∧ 论文（署名杜玉河 + 致谢 LDA 工程团队）",
-      "status": "open"
+      "status": "settled"
     },
     {
       "id": "G-K-8",
@@ -357,7 +364,11 @@
       "owner_stage": "K6",
       "evidence": {
         "blueprint_v1": "docs/LDA_量子赛道总蓝图_v1_2026-10-12.md（Layer 0–5 全收官）",
-        "blueprint_v2_exists": false,
+        "blueprint_v2_exists": true,
+        "blueprint_v2_path": "docs/LDA_量子赛道总蓝图_v2_草案_2026-10-17.md",
+        "blueprint_v2_status": "draft_only（只起草矩阵 · 零锚 · 零门禁 · 待定调）",
+        "blueprint_v2_matrix": "lda/reports/blueprint_v2_gap_matrix.json",
+        "blueprint_v2_generator": "scripts/k6_blueprint_v2.py",
         "new_domain_candidates": [
           "光-量异质集成（换能器 B522 已建）",
           "QEC 码族扩展（J1 只做表面码）",
@@ -365,7 +376,7 @@
         ]
       },
       "exit_criterion": "缺口矩阵 v2（人读 MD + 机器可读清单）· 新域落地须另出章程",
-      "status": "open"
+      "status": "settled"
     }
   ]
 }

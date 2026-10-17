@@ -475,6 +475,14 @@ def main() -> int:
         #   「LF only」三判据与 4 道反向探针 + G1/G2 排除面锁死常驻守。
         #   ⚠️ 键相对 `lda/`，脚本在仓库根 ⇒ `../scripts/k4_coverage.py`。
         "../scripts/k4_coverage.py": _WALL,
+        # ——— 2026-10-17（v0.9.249 · K 征程 K6）：蓝图 v2 缺口矩阵生成器 ———
+        #   `scripts/k6_blueprint_v2.py` 写**受跟踪** `lda/reports/blueprint_v2_gap_matrix.json`。
+        #   🔴 确定性证据（现算）：零 `datetime.now/time.strftime/time.time/random./
+        #   uuid4/json.dump(/mkdtemp`；键序固定（json sort_keys=True + 稳定排序）；
+        #   写盘走 `det.write_text`（UTF-8 + LF）。
+        #   本档为**只起草**（章程 K6）⇒ 暂无专属门禁；其确定性由本清单 ⑪/⑧b 覆盖，
+        #   门禁在蓝图 v2 立项时建。
+        "../scripts/k6_blueprint_v2.py": _WALL,
     }
     lint_bad = []
     no_det = []

@@ -1934,6 +1934,12 @@ CORE_SMOKES: List[str] = [
     #   ratchet 只升不降 + 硬编码下限防下调 · 反向探针 4 道。**23 判据**。
     #   CI core 332→333。
     "run_k4_coverage_smoke.py",
+    # v0.9.248（K5）：量子赛道六层总览渲染路径门禁（闭环 G-K-7 对外入口）。
+    #   `sec-qtrack` 三入口面 + `GET /api/qtrack` + 48 锚 100% 覆盖断言 +
+    #   与 K4 矩阵**独立对拍** + 突变探针 3 道。**21 判据**。
+    #   🔴 案例卡**只用 stdlib + 读受跟踪 JSON**（禁 lda_harness.benchmarks，生产无 scipy）。
+    #   CI core 333→334。
+    "run_webui_qtrack_render_path_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2963,6 +2969,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_k3_cross_stage_smoke.py": 300.0,
     # K4 覆盖矩阵门禁 · 实测上界 ~3s（子进程重跑生成器 2 次 + 独立重扫 333 门禁）
     "run_k4_coverage_smoke.py": 300.0,
+    # K5 六层总览渲染门禁 · 实测上界 ~1s（读 JSON 聚合 + 3 道突变）
+    "run_webui_qtrack_render_path_smoke.py": 300.0,
     # CI 门禁自身契约（棘轮时序 + 退出码契约 + cwd/模板/注释数字守卫）· 受控 fake 驱动，实测上界 <5s
     "run_ci_gate_contract_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）

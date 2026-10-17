@@ -151,6 +151,7 @@ body{padding-top:56px}
     <a href="#sec-j2" style="color:#ecfdf5;background:#065f46;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ J2 超导 transmon QPU 物理比特层（M0–M4 · J1↔J2 复利闭环 · 设计预算 · 只读案例）</a>
     <a href="#sec-j3" style="color:#eff6ff;background:#2563eb;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ J3 量子测控与读出闭环层（M0–M4 · 脉冲/DRAG/unitarity/读出/Purcell/Caves · 设计预算 · 只读案例）</a>
     <a href="#sec-j4" style="color:#eff6ff;background:#7c3aed;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ J4 量子传感系统集成（M0–M4 · 多参数解耦/微型化/集成/热负载 · 设计预算 · 只读案例）</a>
+    <a href="#sec-qtrack" style="color:#eff6ff;background:#0891b2;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">◆ 量子赛道六层总览（Layer 0–5 · 48 锚 · 六层复利 · 一屏入口 · 只读）</a>
     <a href="#sec-j1" style="color:#eff6ff;background:#7c3aed;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ J1 量子纠错（M0–M4 · 阈值/解码/综合征/容错门/端到端 · 逻辑比特层 L1 · 设计预算 · 只读免登录）</a>
     <a href="#sec-j5" style="color:#eff6ff;background:#059669;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ J5 量子网络与接口（M0–M4 · 信道/分发/源/中继/换能/经典接口 · km 级距离 · 设计预算 · 只读案例）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
@@ -4822,6 +4823,31 @@ body{padding-top:56px}
     <div id="j5Summary" class="summary"></div>
     <div id="j5Body"></div>
     <div class="conclusion" id="j5Conclusion"></div>
+  </div>
+
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-qtrack">
+    <h2>◆ 量子赛道六层总览（Layer 0–5 · 六层复利 · 设计期签核）</h2>
+    <div class="hint">
+      把量子赛道蓝图 v1 的<b>六层</b>聚合成<b>一屏入口</b>：
+      <b>Layer 0 器件与相位（QS-M*）</b> → <b>J1 量子纠错（逻辑比特）</b> →
+      <b>J2 超导 Transmon 处理器（物理比特）</b> → <b>J3 测控与读出</b> →
+      <b>J4 传感系统集成</b> → <b>J5 量子网络与接口</b>。<br/>
+      🔵 <b>每层给出</b>：锚数 · 严格独立数 · 专属门禁覆盖（L2）· 多重覆盖（L3）· 门禁名与判据数。<br/>
+      🔵 <b>只读 · 免登录 · 零重计算</b>：数字全部由<b>受跟踪台账</b>聚合
+      （<code>anchor_gate_coverage.json</code> + <code>verification_report.json</code>），
+      <b>不 import 任何求解器</b> ⇒ 微秒级、无 DoS 面、不进重端点护栏。<br/>
+      🔵 <b>为什么"复利"</b>：下层锚是上层锚的输入（器件 → 门保真 → 纠错阈值 → 网络保真），
+      跨档复用关系已由 <code>cross_stage_constants.json</code> 机器登记并加锁。<br/>
+      🔵 <b>诚实边界</b>：判决恒为 <b>ACCEPT（设计期签核）</b>，<b>非</b>流片实测；
+      参数为设计示例量级；规模数字为<b>版图容量</b>；不报 TOPS / fJ-op / 能效；
+      全账本仍有 <b>415 锚</b>仅有统一判决（已机器登记，不粉饰）。
+    </div>
+    <div class="row">
+      <button class="btn" id="runQTrack">运行量子赛道六层总览</button>
+    </div>
+    <div id="qtSummary" class="summary"></div>
+    <div id="qtBody"></div>
+    <div class="conclusion" id="qtConclusion"></div>
   </div>
 
   <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-j1">
@@ -10521,6 +10547,52 @@ function renderQsensor(d){
 if($('runJ3')) $('runJ3').onclick = runJ3;
 if($('runJ4')) $('runJ4').onclick = runJ4;
 if($('runJ1')) $('runJ1').onclick = runJ1;
+async function runQTrack(){
+  const btn=$('runQTrack'); if(!btn) return;
+  btn.disabled=true;
+  $('qtSummary').innerHTML='<span class="spin"></span> 正在读取量子赛道六层总览（受跟踪台账聚合）…'
+  try{ const d=await apiGet('/api/qtrack'); renderQTrack(d); }
+  catch(e){ $('qtSummary').textContent='错误：'+(e&&e.message?e.message:e); }
+  finally{ btn.disabled=false; }
+}
+function renderQTrack(d){
+  if(!d||d.error){ $('qtSummary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
+  $('qtSummary').innerHTML='判决 <b>'+d.verdict+'</b> · 案例 <b>'+d.case_id+'</b> · 端点 <code>/api/qtrack</code>';
+  var t=d.totals||{}, h='';
+  h+='<h3 style="margin:14px 0 4px">① 六层复利（Layer 0–5）</h3>';
+  h+='<table class="tbl"><tr><th>层</th><th>名称</th><th>锚</th><th>严格独立</th><th>L2</th><th>L3</th><th>门禁</th><th>判据</th></tr>';
+  (d.layers||[]).forEach(function(l){
+    h+='<tr><td><b>'+l.id+'</b></td><td>'+l.name+'<br/><span style="opacity:.65;font-size:12px">'+l.role+'</span></td>'
+      +'<td><b>'+l.anchors_n+'</b></td><td>'+l.strict_n+'</td>'
+      +'<td>'+l.l2_n+'</td><td>'+l.l3_n+'</td>'
+      +'<td><code style="font-size:11px">'+l.gate+'</code></td>'
+      +'<td>'+(l.judges==null?'—':l.judges)+'</td></tr>';
+  });
+  h+='<tr><td colspan="2"><b>合计</b></td><td><b>'+t.anchors_n+'</b></td><td><b>'+t.strict_n+'</b></td>'
+    +'<td><b>'+t.l2_n+'</b></td><td><b>'+t.l3_n+'</b></td><td>—</td><td><b>'+t.judges_n+'</b></td></tr>';
+  h+='</table>';
+  var lg=d.ledger||{}, c=d.coverage||{};
+  h+='<h3 style="margin:14px 0 4px">② 全账本对照（538 锚）</h3><table class="tbl"><tr><th>项</th><th>值</th></tr>';
+  h+='<tr><td>锚总数</td><td>'+lg.anchors+'</td></tr>';
+  h+='<tr><td>严格独立 / 降级 / 自证桩</td><td>'+lg.strict_independent+' / '+lg.degraded_ordinal+' / '+lg.self_consistent_stub+'</td></tr>';
+  h+='<tr><td>独立判出</td><td>'+lg.verified+'</td></tr>';
+  h+='<tr><td><b>量子赛道 48 锚专属覆盖</b></td><td><b>'+t.l2_n+' / '+t.anchors_n+' = 100%</b>（全账本仅 '+(c.anchors_total?((c.l2/c.anchors_total*100).toFixed(1)+'%'):'—')+'）</td></tr>';
+  h+='</table>';
+  h+='<h3 style="margin:14px 0 4px">③ 覆盖矩阵（K4 · 三层如实分层）</h3><table class="tbl"><tr><th>层</th><th>定义</th><th>数值</th></tr>';
+  h+='<tr><td>L1 统一判决</td><td>harness 跑全部锚</td><td>'+c.l1+' / '+c.anchors_total+'</td></tr>';
+  h+='<tr><td>L2 专属门禁</td><td>门禁源码显式提及锚号</td><td>'+c.l2+'</td></tr>';
+  h+='<tr><td>L3 多重专属</td><td>≥2 门禁提及</td><td>'+c.l3+'</td></tr>';
+  h+='<tr><td>盲区</td><td>仅 L1 兜底</td><td>'+c.blind+'（如实登记）</td></tr>';
+  h+='<tr><td>CORE 门禁</td><td>入 CI core</td><td>'+c.core_smokes+'</td></tr>';
+  h+='<tr><td>棘轮</td><td>只升不降</td><td>L2 ≥ '+(c.ratchet?c.ratchet.l2_min:'—')+' · L3 ≥ '+(c.ratchet?c.ratchet.l3_min:'—')+'</td></tr>';
+  h+='</table>';
+  h+='<h3 style="margin:14px 0 4px">④ 诚实边界</h3><table class="tbl"><tr><th>项</th></tr>';
+  (d.honesty||[]).forEach(function(x){ h+='<tr><td>'+x+'</td></tr>'; });
+  h+='</table>';
+  $('qtBody').innerHTML=h;
+  $('qtConclusion').textContent='判决 '+d.verdict+' · Layer 0–5 六层 · 锚 '+t.anchors_n+' 全部严格独立且专属门禁全覆盖 · 零重计算（heavy_post='+d.heavy_post+'）· 渲染路径门禁 '+(d.render_path_smoke||'');
+  return true;
+}
 async function runJ1(){
   const btn=$('runJ1'); if(!btn) return;
   btn.disabled=true;
@@ -10560,6 +10632,7 @@ function renderJ1(d){
   $('j1Conclusion').textContent='判决 '+d.verdict+' · 逻辑比特层 L1 · 零重计算（heavy_post='+d.heavy_post+'）· 渲染路径门禁 '+(d.render_path_smoke||'');
   return true;
 }
+if($('runQTrack')) $('runQTrack').onclick = runQTrack;
 if($('runJ5')) $('runJ5').onclick = runJ5;
 async function runJ5(){
   const btn=$('runJ5'); if(!btn) return;
@@ -10997,7 +11070,7 @@ function renderJ2(d){
                   "#sec-pm": "runPm", "#sec-sensor": "runSensor",
                   "#sec-soc": "runSoc", "#sec-qsensor": "runQsensor",
                   "#sec-j2": "runJ2", "#sec-j3": "runJ3", "#sec-j4": "runJ4", "#sec-j5": "runJ5",
-                  "#sec-j1": "runJ1"};
+                  "#sec-qtrack": "runQTrack", "#sec-j1": "runJ1"};
   var fired = {};
   function maybeRun() {
     var btnId = CASE_MAP[location.hash];

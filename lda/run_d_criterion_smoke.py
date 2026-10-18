@@ -148,8 +148,14 @@ def main() -> int:
     #     · 常值量级真独立（B469/B479/B480…）：abs 高位 ⇒ 双口径下均不中（原样）。
     #   🔴 口径收紧须配反向探针（下节 ③′），且**既有 14 道豁免全部仍必需**
     #   （等价性由 ③′ 的「豁免集 ⊆ 双口径命中集」断言逐位证，非人工声明）。
+    # 🔴 v0.9.252 BL-M1：`B82` **已移出豁免集**（14 → 13）。原候选「400 段等宽切片连乘」
+    #   对均匀势垒与闭式**数学等价**（`S(w)^N ≡ S(N·w)`）⇒ 残差恒 0 ⇒ 被双口径判为恒等。
+    #   换 Riccati+RK4 候选后残差 9.557e-12 > ABS_FLOOR（10 位/相对 9.6e-12 均出地板）
+    #   ⇒ 不再命中；若有人把它换回切片候选，③′ 的「豁免集 ⊆ 命中集」与下方
+    #   「B82 不得被豁免」双判据会一起红（见 ③″）。
     noise_exempt = {"B10", "B65", "B66", "B67", "B68", "B73", "B74",
-                    "B79", "B81", "B82", "B83", "B84", "B87", "B88"}
+                    "B79", "B81", "B83", "B84", "B87", "B88"}
+    B82_MUST_BE_NON_IDENTITY = True
     ABS_FLOOR = 1e-12
     REL_FLOOR = 1e-12
     n_wired, violators = 0, []
@@ -177,7 +183,7 @@ def main() -> int:
                  % (d, rel)))
     check("已接线候选 %d/%d 全部登记（动态）" % (n_wired, len(indep_ids)),
           n_wired == len(indep_ids))
-    check("基线残差非恒等（双口径 abs∧rel <= 1e-12 · B10 等 14 道特例豁免）",
+    check("基线残差非恒等（双口径 abs∧rel <= 1e-12 · B10 等 13 道特例豁免）",
           not violators,
           "; ".join("%s: %s" % v for v in violators) if violators else
           "%d 道残差无一同时满足 abs∧rel 沉 1e-12 地板（远高于 1e-15 恒等特征）"
@@ -187,10 +193,21 @@ def main() -> int:
     # (a) 豁免集 ⊆ 双口径命中集：证明「收紧后原豁免**全部仍必需**」，
     #     即修法未把任何真·机器精度恒等从射程内放走（防「收紧即放宽」）。
     _ex_missing = sorted(noise_exempt - set(ident_hits))
-    check("③′ 双口径命中集 ⊇ 14 道原豁免（收紧未放走任何真恒等）",
+    check("③′ 双口径命中集 ⊇ 13 道原豁免（收紧未放走任何真恒等）",
           not _ex_missing,
           "命中 %d 道；缺失豁免 %s" %
           (len(ident_hits), _ex_missing if _ex_missing else "无"))
+
+    # (e) 🔴 v0.9.252 BL-M1 反向：`B82` 换 Riccati 候选后**必须出恒等射程**
+    #     （否则等于"移出豁免集但病还在"）。这是本档换候选的**唯一验收点**：
+    #     旧核（同宽切片）残差恒 0；新核残差 9.557e-12 ⇒ abs 出 1e-12 地板。
+    _b82p = next((x for x in wired_pairs if x[0] == "B82"), None)
+    _b82_out = (B82_MUST_BE_NON_IDENTITY and _b82p is not None
+                and not (_b82p[1] <= ABS_FLOOR and _b82p[2] <= REL_FLOOR))
+    check("③″ B82 已脱离「机器精度恒等」射程（abs>1e-12 ∨ rel>1e-12 · "
+          "BL-M1 换候选的验收点）",
+          _b82_out,
+          ("B82 abs=%.3e rel=%.3e" % (_b82p[1], _b82p[2])) if _b82p else "B82 缺席")
 
     # (b) 正向：合成**真恒等**（同一表达式异写）⇒ 双口径必命中（会响）。
     #     直接用 B28 那对（积分 vs 闭式）在**均匀常势**下的代数恒等：

@@ -1635,21 +1635,21 @@
    "candidate": 0.9999534377,
    "compare": "cmp_abs",
    "flags": {
-    "cancellation_suspect": true,
+    "cancellation_suspect": false,
     "loose": false,
     "tight": false,
     "zero_injection_passes": false,
-    "zero_resid": true
+    "zero_resid": false
    },
    "golden": 0.9999534377,
-   "golden_over_tol": 99.99534377,
+   "golden_over_tol": 999953437.7,
    "id": "B82",
    "metric": "R",
    "passes": true,
-   "resid": 0.0,
-   "resid_over_tol": 0.0,
-   "title": "方势垒反射 R（异参数 v2）",
-   "tol": 0.01,
+   "resid": 9.557354907e-12,
+   "resid_over_tol": 0.009557354907,
+   "title": "方势垒反射 R（异参数 v2 · Riccati 候选）",
+   "tol": 1e-09,
    "zero_injection_err": 0.9999534377,
    "zero_injection_passes": false
   },
@@ -8725,7 +8725,6 @@
   "cancellation_suspect_ids": [
    "B68",
    "B73",
-   "B82",
    "B83"
   ],
   "l2_ceiling": 520,
@@ -8756,12 +8755,12 @@
    "E8",
    "E9"
   ],
-  "n_cancellation_suspect": 4,
+  "n_cancellation_suspect": 3,
   "n_fail_verdict": 0,
   "n_loose": 24,
   "n_tight": 10,
   "n_zero_injection_passes": 6,
-  "n_zero_resid": 1,
+  "n_zero_resid": 0,
   "non_anchorable_ids": [
    "B17",
    "B18",
@@ -8802,9 +8801,7 @@
    "B87",
    "B88"
   ],
-  "zero_resid_ids": [
-   "B82"
-  ]
+  "zero_resid_ids": []
  },
  "thresholds": {
   "cancellation_band": [

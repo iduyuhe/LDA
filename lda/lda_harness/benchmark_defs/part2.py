@@ -97,15 +97,22 @@ DEFS = {
         "note": "v0.9.84 Batch B-4：深隧穿 T≈4.7e-5，|d|~2e-18。",
     },
     "B82": {
-        "title": "方势垒反射 R（异参数 v2）",
+        "title": "方势垒反射 R（异参数 v2 · Riccati 候选）",
         "metric": "R",
         "oracle": "analytical(square-barrier R=1−T)",
-        "tol": 0.01,
+        "tol": 1e-09,
         "default_params": {"E_eV": 0.3, "V0_eV": 2.0, "a_nm": 0.8},
         "golden_fn": golden_b82,
-        "candidate": "b82_sqbarrier_R_v2_cand",
-        "candidate_desc": ("1 − 切片转移矩阵数值透射 ↔ 解析反射 R=1−T（异参数深隧穿，R≈0.99995），方法学独立"),
-        "note": "v0.9.84 Batch B-4：R≈0.99995，|d|~0。",
+        "candidate": "b82_sqbarrier_R_riccati_cand",
+        "candidate_desc": ("Riccati 对数导数 y=ψ'/ψ 的 RK4 反向积分 → R=|r|² ↔ 解析反射 "
+                           "R=1−T（异参数深隧穿），方法学独立"),
+        "note": ("v0.9.84 Batch B-4 立锚；🔴 v0.9.252 BL-M1 **换候选 + tol 0.01→1e-9**："
+                 "原候选「400 段等宽切片连乘」对**均匀势垒**与闭式**数学等价**"
+                 "（`S(w)^N ≡ S(N·w)`）⇒ `|ΔT|=2.2e-18` 被 `ulp(1)=2.22e-16` 抹平 ⇒ "
+                 "`1−cand` 与 `1−golden` 位模式相同 ⇒ 残差恒 0（BL-M0 的 `zero_resid`）。"
+                 "现候选从 `|r|²` **直接**得 R（不走 `1−T` 减法），RK4 有真实 O(h⁴) 截断："
+                 "N=8→512 残差 3.658e-05→5.874e-13，相邻比 35.15→16.27 趋近四阶；"
+                 "默认档 N=256 ⇒ resid=9.557e-12（tol/105）。"),
     },
     "B83": {
         "title": "方势垒透射 T（异参数·E>V0 振荡 v3）",

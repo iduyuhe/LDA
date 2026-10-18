@@ -6472,7 +6472,7 @@
       "source": "physical-law",
       "golden": 0.999953438,
       "candidate": 0.999953438,
-      "tol": 0.01,
+      "tol": 1e-09,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,

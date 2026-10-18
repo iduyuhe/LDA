@@ -507,7 +507,7 @@
 | B8 | T_taper | physical-law | 1 | 0.985 | 0.015 | 0.01 | ❌ FAIL |
 | B80 | T | physical-law | 0.0634554 | 0.0634554 | 0 | 0.01 | ✅ PASS |
 | B81 | T | physical-law | 4.65623e-05 | 4.65623e-05 | 0 | 0.01 | ✅ PASS |
-| B82 | R | physical-law | 0.999953 | 0.999953 | 0 | 0.01 | ✅ PASS |
+| B82 | R | physical-law | 0.999953 | 0.999953 | 0 | 1e-09 | ✅ PASS |
 | B83 | T | physical-law | 0.996781 | 0.996781 | 0 | 0.01 | ✅ PASS |
 | B84 | R | physical-law | 0.112612 | 0.112612 | 0 | 0.01 | ✅ PASS |
 | B85 | T | physical-law | 0.132245 | 0.132245 | 0 | 0.01 | ✅ PASS |

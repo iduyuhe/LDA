@@ -531,12 +531,13 @@ def _b81_sqbarrier_T_v2(spec: VerificationSpec, oracle_value: Any) -> float:
     return float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
 
 @_register_candidate(
-    "b82_sqbarrier_R_v2_cand",
-    "1 − 切片转移矩阵数值透射（异参数深隧穿）↔ 方势垒解析反射 R=1−T，方法学独立")
-def _b82_sqbarrier_R_v2(spec: VerificationSpec, oracle_value: Any) -> float:
+    "b82_sqbarrier_R_riccati_cand",
+    "Riccati 对数导数 + RK4 反向积分求反射 R=|r|² ↔ 解析反射 R=1−T，方法学独立"
+    "（v0.9.252 BL-M1：替换原「同宽切片连乘」候选 —— 后者对均匀势垒与闭式数学等价）")
+def _b82_sqbarrier_R_riccati(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b4()
-    return 1.0 - float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+    return float(m.cand_square_barrier_R_riccati(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m=m.ME))
 
 @_register_candidate(
     "b83_sqbarrier_T_v3_cand",

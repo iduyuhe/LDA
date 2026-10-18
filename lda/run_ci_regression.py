@@ -1940,6 +1940,12 @@ CORE_SMOKES: List[str] = [
     #   🔴 案例卡**只用 stdlib + 读受跟踪 JSON**（禁 lda_harness.benchmarks，生产无 scipy）。
     #   CI core 333→334。
     "run_webui_qtrack_render_path_smoke.py",
+    # v0.9.250（CF-M0）：码族参数律门禁（闭环 G-CF-1 · 🔴 **净增 0 锚**）。
+    #   A 能力层 6（闭式 vs **独立 GF(2) 图枚举**）· B **不可锚锁** 5（残差恒 0.0 /
+    #   ANCHORABLE=False / 未登记进锚定义 / Richardson 残差 0.0 / C3 杀手）·
+    #   C 反向探针 4 · D 红线 2。**17 判据**。纯标准库（不 import numpy）。
+    #   🔴 负结果机器化：任何人把码族参数当锚登记 ⇒ 本门禁必红。CI core 334→335。
+    "run_cf_code_family_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2971,6 +2977,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_k4_coverage_smoke.py": 300.0,
     # K5 六层总览渲染门禁 · 实测上界 ~1s（读 JSON 聚合 + 3 道突变）
     "run_webui_qtrack_render_path_smoke.py": 300.0,
+    # CF-M0 码族参数律门禁 · 实测 ~0.1s（纯 stdlib · GF(2) 秩 L≤6）
+    "run_cf_code_family_smoke.py": 120.0,
     # CI 门禁自身契约（棘轮时序 + 退出码契约 + cwd/模板/注释数字守卫）· 受控 fake 驱动，实测上界 <5s
     "run_ci_gate_contract_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）

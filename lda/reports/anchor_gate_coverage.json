@@ -2039,8 +2039,10 @@
     },
     "B391": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B392": {
@@ -3849,7 +3851,6 @@
     "B388",
     "B389",
     "B390",
-    "B391",
     "B392",
     "B393",
     "B394",
@@ -4069,6 +4070,9 @@
       "B512",
       "B513",
       "B514"
+    ],
+    "run_bl_anchor_guard_smoke.py": [
+      "B391"
     ],
     "run_bounty_ledger_smoke.py": [],
     "run_bragg_gds_smoke.py": [],
@@ -4617,26 +4621,26 @@
       "B100–B199": 82,
       "B1–B99": 94,
       "B200–B299": 86,
-      "B300–B399": 77,
+      "B300–B399": 76,
       "B400–B499": 53,
       "E（实证）": 10,
       "S（系统层）": 13
     },
     "by_gate_count": {
-      "1": 58,
+      "1": 59,
       "2": 34,
       "3": 22,
       "4": 8,
       "5": 1
     },
-    "core_smokes": 335,
+    "core_smokes": 336,
     "gates_excluded": 1,
-    "gates_scanned": 334,
-    "gates_with_anchors": 31,
+    "gates_scanned": 335,
+    "gates_with_anchors": 32,
     "gates_zero_anchor": 303,
     "l1_unified_covered": 538,
-    "l2_bespoke_covered": 123,
-    "l2_blind": 415,
+    "l2_bespoke_covered": 124,
+    "l2_blind": 414,
     "l3_multi_covered": 65
   }
 }

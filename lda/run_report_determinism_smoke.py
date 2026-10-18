@@ -483,6 +483,13 @@ def main() -> int:
         #   本档为**只起草**（章程 K6）⇒ 暂无专属门禁；其确定性由本清单 ⑪/⑧b 覆盖，
         #   门禁在蓝图 v2 立项时建。
         "../scripts/k6_blueprint_v2.py": _WALL,
+        # ——— 2026-10-18（v0.9.251 · BL-M0）：盲区锚体检生成器 ———
+        #   `scripts/bl_audit.py` 写**受跟踪** `lda/reports/bl_anchor_audit.json`。
+        #   🔴 确定性证据（现算）：源码零 `datetime.now/time.strftime/time.time/random./
+        #   uuid4/os.getpid/mkdtemp`；行按锚号稳定排序；`json.dumps(sort_keys=True)`；
+        #   写盘走 `det.write_text`（UTF-8 + LF）。
+        #   ⚠️ 键相对 `lda/`，脚本在仓库根 ⇒ `../scripts/bl_audit.py`。
+        "../scripts/bl_audit.py": _WALL,
     }
     lint_bad = []
     no_det = []

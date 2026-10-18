@@ -1946,6 +1946,11 @@ CORE_SMOKES: List[str] = [
     #   C 反向探针 4 · D 红线 2。**17 判据**。纯标准库（不 import numpy）。
     #   🔴 负结果机器化：任何人把码族参数当锚登记 ⇒ 本门禁必红。CI core 334→335。
     "run_cf_code_family_smoke.py",
+    # v0.9.251（BL-M0）：盲区锚判据有效性门禁（闭环 G-BL-1 · **不加锚**）。
+    #   A 台账三件套 3 · B 逐锚硬断言 4 · C 缺陷登记面锁死 5 · D 注入探针 3（**现算**）·
+    #   E 披露口径棘轮 4 · F 红线 3 · C6 脱离盲区面。**23 判据**。
+    #   🔴 不隐藏缺陷：7 条「放行候选=0」+ 4 条相消显式登记 + 条数棘轮。CI core 335→336。
+    "run_bl_anchor_guard_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -2930,7 +2935,14 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   原 380s 掉到 **2.855×**（**B9 目标棘轮红** · 跌破 3× 档）。
     #   按「一次给足 ≈3.8~4.5×」抬到 **520s** = **3.91×**
     #   （**只抬该项耗时上限 · 绝不抬 ratchet**）。
-    "run_webui_pm_render_path_smoke.py": 520.0,
+    # 🔴 v0.9.251（BL-M0）首轮全量 CI 当场抓出：BL 门禁（~195s，自带子进程整套体检重跑）
+    #   被**误纳** `_W10_EXTRA`（`_counts10` 会实跑表内每一项）⇒ 本宿主 126s → **321.6s**，
+    #   520s 掉到 **1.617×**（跌破 2× 硬闸 ⇒ B8 红）。**修法不是抬预算，而是把它移出对照面**
+    #   （违反「便宜可实跑」准入准则），移出后实测回到 **~126s**。
+    #   但基线按 `cross-round-max-elapsed` 聚合 ⇒ 那一次 321.6s 已永久留痕，须按 ≥3× 给足：
+    #   **1000s** = 3.11×（对 321.6s 上界）· 7.9×（对移出后的真实 ~126s）。
+    #   （**只抬该项耗时上限 · 绝不抬 ratchet**）
+    "run_webui_pm_render_path_smoke.py": 1000.0,
     # J2 案例卡 WebUI 门禁（取值路径 + 反向完备 + **跨源一致性** + gate 机械对照）：
     #   53 判据（含 19 探针）· 实测上界 ~6s（内含 `run_j2_qpu_smoke` 子进程实跑 1 次 +
     #   3 个能力层模块 `run_selfchecks` 实跑 + λ₂ Krylov 数值对拍）⇒ 预算 300s 留足余量。
@@ -2979,6 +2991,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_webui_qtrack_render_path_smoke.py": 300.0,
     # CF-M0 码族参数律门禁 · 实测 ~0.1s（纯 stdlib · GF(2) 秩 L≤6）
     "run_cf_code_family_smoke.py": 120.0,
+    # BL-M0 逐锚体检门禁 · 实测 ~210s（子进程重跑生成器 187s + 注入探针现算）
+    "run_bl_anchor_guard_smoke.py": 900.0,
     # CI 门禁自身契约（棘轮时序 + 退出码契约 + cwd/模板/注释数字守卫）· 受控 fake 驱动，实测上界 <5s
     "run_ci_gate_contract_smoke.py": 120.0,
     # 光计算案例卡 WebUI 门禁（M5 收尾）· 实测上界 0.14s（单测）

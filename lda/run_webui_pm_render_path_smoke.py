@@ -296,7 +296,18 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               "run_webui_qtrack_render_path_smoke.py",
               # 🔴 v0.9.250：本版真改动 = CF 征程 CF-M0 **码族参数律**（能力层 + 不可锚锁门禁本体）。
               #   实测 **~0.1s** / **17 判据** ⇒ 纳对照面，令 README 顶行声明的 17 判据由机器守（非手写）。
-              "run_cf_code_family_smoke.py")
+              "run_cf_code_family_smoke.py",
+              # 🔴 v0.9.251（BL 征程 BL-M0）**不纳** `run_bl_anchor_guard_smoke.py`：
+              #   实测 **~195s**（它自身要**子进程重跑整套体检**做逐字节对拍）⇒ 远超本表
+              #   「便宜可实跑」准入准则（同 v0.9.209 对 `run_ps_m8_smoke` ~64s、v0.9.211 对
+              #   `run_ps_m9_smoke` ~26s 的判定）。🔴 **首轮全量 CI 已当场付学费**：
+              #   误纳后本 smoke 由 ~126s 涨到 **321.6s**（`_counts10` 会**实跑**表内每一项），
+              #   余量跌破 2× 硬闸 ⇒ `run_timeout_budget_ratchet_smoke` B8 红。
+              #   ⇒ 移出对照面；本版 README 顶行**不声明**其判据数（诚实边界），改为声明
+              #   同一版真实改动过、且便宜的 `run_report_determinism_smoke`（新写入者
+              #   `scripts/bl_audit.py` 已登 `lint_spec`）。BL 门禁判据数由
+              #   `run_ci_coverage_gate_smoke` 的 CORE 计数 + 本文件 CORE 名单间接覆盖。
+              )
 
 
 def _declared_judge_counts(text):

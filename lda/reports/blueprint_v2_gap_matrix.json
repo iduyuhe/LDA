@@ -193,10 +193,10 @@
     ],
     "ledger": {
       "anchors_total": 538,
-      "blind": 415,
-      "core_smokes": 335,
+      "blind": 414,
+      "core_smokes": 336,
       "l1": 538,
-      "l2": 123,
+      "l2": 124,
       "l3": 65
     }
   },

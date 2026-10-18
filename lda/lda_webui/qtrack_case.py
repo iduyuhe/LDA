@@ -184,8 +184,12 @@ def run_selfchecks() -> Dict[str, bool]:
     c = card["coverage"]
     ok["coverage_l1_all"] = c["l1"] == c["anchors_total"] >= 538
     ok["coverage_l2_plus_blind"] = c["l2"] + c["blind"] == c["anchors_total"]
-    ok["ratchet_present"] = c["ratchet"]["l2_min"] == c["l2"] and \
-        c["ratchet"]["l3_min"] == c["l3"]
+    # 🔴 下限棘轮语义必须是 `>=`（「只增不减」），不能写 `==`：
+    #   v0.9.251 首轮全量 CI 当场抓出 —— BL 门禁**点名** `B391`（缺陷登记表）令 K4 的
+    #   文本代理 L2 由 123 涨到 124，`l2_min`（下限 123）未变 ⇒ `==` 把**涨**判成**红**。
+    #   同族血案第二次：v0.9.249 K0 的 `CASE_PANELS_MIN == 16` 被 17 打反。
+    ok["ratchet_present"] = c["l2"] >= c["ratchet"]["l2_min"] and \
+        c["l3"] >= c["ratchet"]["l3_min"]
     ok["core_smokes_at_least_333"] = c["core_smokes"] >= 333
 
     # 与 verification_report 口径一致

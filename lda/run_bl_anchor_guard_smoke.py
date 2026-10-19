@@ -3,7 +3,7 @@
 
 本门禁守的是「**判据有没有判别力**」，不是「覆盖率数字好不好看」。
 
-判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G33** + **H4** = **61**）：
+判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G33** + **H4** + **H5 组 5** = **66**）：
   A 台账三件套 3：**子进程重跑 ≡ 磁盘（逐字节）** · schema/摘要自洽 · LF only
   B 逐锚硬断言 4：全部锚 L1 判决 PASS · 非豁免锚 `resid > 0` · 非豁免锚 `resid/tol < 1` ·
     `candidate != golden`（防自证桩化回归）
@@ -98,7 +98,8 @@ BL_CANCEL_REVIEWED = {
 #   理由见该模块 docstring：写在这里会让 K4 的文本代理把「登记」当成「覆盖」
 #   （实测 L2 124→130、盲区 414→408 ⇒ 体检域自己缩水 6 条）。改 import 后结构上分开。
 from lda_harness.bl_registries import (  # noqa: E402
-    BL_LOOSE_UNFIXABLE, BL_TOL_RATCHET, BL_LOOSE_TOL_BASELINE)
+    BL_LOOSE_UNFIXABLE, BL_TOL_RATCHET, BL_LOOSE_TOL_BASELINE,
+    BL_FRAGILE_ULP_MAX, BL_PLATFORM_DELTA_MAX, BL_PLATFORM_FRAGILE)
 
 
 _RATCHET = {"zero_resid": 0, "inject0": 1, "cancel": 1, "loose": 8, "tight": 10}
@@ -365,6 +366,67 @@ def main() -> int:
           "B31" in BL_LOOSE_UNFIXABLE
           and abs(_sp3["B31"].tol - BL_LOOSE_TOL_BASELINE["B31"]) <= 0.0,
           "B31 tol=%g（基线 %g）" % (_sp3["B31"].tol, BL_LOOSE_TOL_BASELINE["B31"]))
+
+    # ── H5 跨平台余量判据（v0.9.255 BL-M2c）────────────────────────────
+    # 🔴 为什么需要这一组：tol 收到 1e-16 后，resid 落到**几十~几百 ulp 的噪声区**，
+    #   「换解释器重算得到逐位相同的 resid」物理上做不到（实测 B88 跨 py3.9/py3.14 差 10.7%）。
+    #   ⇒ 跨平台验收标准从「数值逐位相同」改为「**判决对 resid 扰动不敏感**」。
+    import math as _math
+    _frag_now = {}
+    for _r in rows:
+        if _r.get("compare") != "cmp_abs":
+            continue
+        _g = abs(float(_r["golden"]))
+        _res = float(_r["resid"])
+        if _g <= 0.0 or _res <= 0.0:
+            continue
+        _k = _res / _math.ulp(_g)
+        if _k <= BL_FRAGILE_ULP_MAX:
+            _frag_now[_r["id"]] = (_k, _res, float(_r["tol"]))
+    check("H5a 现算脆弱集（resid ≤ %g·ulp(|g|)）≡ 跨平台登记面（双向 · 防漏登/防陈旧）"
+          % BL_FRAGILE_ULP_MAX,
+          set(_frag_now) == set(BL_PLATFORM_FRAGILE),
+          "台账多出=%s 登记多出=%s" % (sorted(set(_frag_now) - set(BL_PLATFORM_FRAGILE)),
+                                  sorted(set(BL_PLATFORM_FRAGILE) - set(_frag_now))))
+    _weak = {b: v[2] / v[1] for b, v in _frag_now.items() if v[2] / v[1] < 5.0}
+    check("H5b 每条脆弱锚余量 tol/resid ≥ 5（跨平台验收的**主判据**）",
+          not _weak, "余量不足=%s" % {b: round(m, 3) for b, m in _weak.items()})
+    # 扰动探针：把 resid 按**实测最大漂移上界**放大 ⇒ 判决仍不得翻转，且保住 3× 余量
+    _unstable = {}
+    for _b, (_k, _res, _tol) in _frag_now.items():
+        if _tol < 3.0 * _res * (1.0 + BL_PLATFORM_DELTA_MAX):
+            _unstable[_b] = round(_tol / (_res * (1.0 + BL_PLATFORM_DELTA_MAX)), 3)
+    check("H5c 扰动探针：resid 放大 (1+δ_max)=%.2f 后判决不翻转且余量仍 ≥3×"
+          % (1.0 + BL_PLATFORM_DELTA_MAX),
+          not _unstable, "余量<3×=%s" % _unstable)
+    # 登记记录 vs 本地现算：比值必须落在 δ_max 内（改大记录值会在这里红）
+    _drift_bad = []
+    for _b, _rec in BL_PLATFORM_FRAGILE.items():
+        _rp = _rec.get("resid_prod")
+        if _rp is None or _b not in _frag_now:
+            continue
+        _res = _frag_now[_b][1]
+        _d = abs(float(_rp) / _res - 1.0)
+        if _d > BL_PLATFORM_DELTA_MAX:
+            _drift_bad.append((_b, round(_d, 4)))
+    check("H5d 登记的跨平台实测 resid 与本地现算比值 ≤ δ_max=%.2f（防登记值被随手改大）"
+          % BL_PLATFORM_DELTA_MAX,
+          not _drift_bad, "超界=%s" % _drift_bad)
+    # 🔴 反向探针（**必须是真判据，不能写成恒真式**）：把余量口径抽成函数，
+    #   对「人为压紧的 tol」必须返回 False，对台账现算值必须返回 True ——
+    #   两侧都验，才证明 H5b 有判别力（只验一侧 = 恒绿空转）。
+    def _h5_margin_ok(_tol, _res):
+        return (_tol / _res >= 5.0
+                and _tol >= 3.0 * _res * (1.0 + BL_PLATFORM_DELTA_MAX))
+
+    _h5_false_green = [b for b, (_k, _res, _tol) in _frag_now.items()
+                       if _h5_margin_ok(4.9 * _res, _res)]
+    _h5_true_green = [b for b, (_k, _res, _tol) in _frag_now.items()
+                      if not _h5_margin_ok(_tol, _res)]
+    check("H5e 反向探针：人为压紧 tol=4.9·resid ⇒ 余量口径**必判红** ∧ 台账值必判绿"
+          "（两侧都验 · 证明 H5b 不是恒真式）",
+          not _h5_false_green and not _h5_true_green,
+          "压紧却判绿=%s · 台账却判红=%s" % (_h5_false_green, _h5_true_green))
 
     # ── F 红线 ───────────────────────────────────────────────────────
     # 🔴 用 AST 判而非字面 grep：模块 docstring 里逐条**点名**了这些禁止项（自指陷阱）

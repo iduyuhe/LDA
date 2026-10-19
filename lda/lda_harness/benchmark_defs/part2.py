@@ -179,7 +179,7 @@ DEFS = {
         "golden_fn": golden_b87,
         "candidate": "b87_sqbarrier_T_v4_cand",
         "candidate_desc": ("切片转移矩阵数值透射 ↔ 方势垒解析闭式（极深隧穿 E=0.05/V0=0.5/a=1nm，T≈1.5e-3），方法学独立"),
-        "note": "🔴 v0.9.254 BL-M2b：tol 0.01 → 8.89e-16（窗口法 [2·resid, |g|/12] · 注入0 由放行转 REJECT）。v0.9.84 Batch B-4：极深隧穿 T≈0.00149，|d|~9e-17。",
+        "note": "🔴 v0.9.254 BL-M2b：tol 0.01 → 8.89e-16（窗口法 [2·resid, |g|/12] · 注入0 由放行转 REJECT）。v0.9.84 Batch B-4：极深隧穿 T≈0.00149，|d|~9e-17。🔴 v0.9.255 BL-M2c：resid 仅 **410 ulp**（噪声区）⇒ 跨解释器不逐位复现（py3.9.19 实测 8.782e-17 vs 本地 8.890e-17，δ=1.2%）；验收改判**余量** `tol/resid ≥ 5`。",
     },
     "B88": {
         "title": "双矩形势垒失谐透射 T（异参数 v2）",
@@ -190,7 +190,7 @@ DEFS = {
         "golden_fn": golden_b88,
         "candidate": "b88_dbbar_T_detune_v2_cand",
         "candidate_desc": ("切片转移矩阵双势垒透射 ↔ 双势垒总转移矩阵闭式（异参数 V0=1.5eV a=0.4nm b=3nm，T≈0.0045），方法学独立"),
-        "note": "🔴 v0.9.254 BL-M2b：tol 0.01 → 5.02e-15（窗口法 [2·resid, |g|/12] · 注入0 由放行转 REJECT）。v0.9.84 Batch B-4：双势垒失谐异参数 T≈0.00448，|d|~5e-16。",
+        "note": "🔴 v0.9.254 BL-M2b：tol 0.01 → 5.02e-15（窗口法 [2·resid, |g|/12] · 注入0 由放行转 REJECT）。v0.9.84 Batch B-4：双势垒失谐异参数 T≈0.00448，|d|~5e-16。🔴 v0.9.255 BL-M2c：resid 仅 **579 ulp**（噪声区）⇒ 跨解释器不逐位复现（py3.9.19 实测 4.484e-16 vs 本地 5.022e-16，**δ=10.7% 全表最大**）；验收改判**余量** `tol/resid ≥ 5`（现 10.0×，扰动后仍 ≥8.7×）。",
     },
     "B89": {
         "title": "氢原子 1s 能级 E（n=1, l=0）",

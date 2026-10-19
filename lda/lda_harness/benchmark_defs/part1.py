@@ -1883,7 +1883,7 @@ DEFS = {
         "golden_fn": golden_b74,
         "candidate": "b74_finwell_Tmin_cand",
         "candidate_desc": ("数值扫 E 取切片转移矩阵透射最小 ↔ 有限深势阱散射解析闭式反共振谷（T≈0），方法学独立"),
-        "note": "🔴 v0.9.254 BL-M2b：tol 0.01 → 2.81e-16（窗口法 [2·resid, |g|/12] · 注入0 由放行转 REJECT）。v0.9.84 Batch B-4：首反共振 T_min≈0.0010，|d|~3e-17。",
+        "note": "🔴 v0.9.254 BL-M2b：tol 0.01 → 2.81e-16（窗口法 [2·resid, |g|/12] · 注入0 由放行转 REJECT）。v0.9.84 Batch B-4：首反共振 T_min≈0.0010，|d|~3e-17。🔴 v0.9.255 BL-M2c：resid 仅 **130 ulp**（噪声区）⇒ 跨解释器不逐位复现（py3.9.19 实测 2.776e-17 vs 本地 2.819e-17，δ=1.5%）；验收改判**余量** `tol/resid ≥ 5`。",
     },
     "B75": {
         "title": "δ 势垒透射 T",

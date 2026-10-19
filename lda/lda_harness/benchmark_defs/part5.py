@@ -421,7 +421,7 @@ DEFS = {
         "title": "高斯光束发散半角 θ=λ/(π w0)（绿光 wl=0.6328µm，闭式 vs 旁轴 BPM 远场渐近）",
         "metric": "gaussian_divergence",
         "oracle": ("analytical(θ=λ/(π w0), green λ=0.6328µm) + paraxial BPM far-field asymptotic independent_cross_check"),
-        "tol": 5e-3,
+        "tol": 0.000153,
         "default_params": {"w0": 5.0e-6, "wl": 0.6328e-6},
         "golden_fn": golden_b377,
         "candidate": "bpm_divergence_fd",

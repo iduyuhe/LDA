@@ -271,7 +271,7 @@ DEFS = {
         "title": "环形谐振器 drop 端口透射谱 · 目标谱形 L2 匹配",
         "metric": "spectrum_match",
         "oracle": "analytical(ring-transfer-function)",
-        "tol": 0.03,
+        "tol": 4.35e-08,
         # v0.9.68（P1①）：接入独立候选 —— 数值扫 add-drop 环 drop 口传递函数、
         # 定峰后对 1/λ 做等距拟合（频域周期 Δu=1/(n_g·2πR)），换算 FSR_λ=λ0²·Δu，
         # 再算 |FSR−target|/target 与 golden 同一标量（B4 同族谱拟合法，方法学独立）。
@@ -280,7 +280,7 @@ DEFS = {
                            "—— 与 golden 闭式 FSR 方法学独立，同一标量"),
         "default_params": {"R": 10.0, "n_g": 4.2},
         "golden_fn": b11_ring_spectrum_match,
-        "note": "误差=计算谱与目标洛伦兹梳谱形的逐波长 L2 距离；调 R 命中目标 FSR "
+        "note": "🔴 v0.9.254 BL-M2b：tol 0.03 → 4.35e-08（窗口法 [2·resid, |g|/12] · 注入0 由放行转 REJECT）。误差=计算谱与目标洛伦兹梳谱形的逐波长 L2 距离；调 R 命中目标 FSR "
                 "即匹配谱形。确定性物理定律（环形传递函数）。逆设计'目标谱形'基准。"
                 "⚠️ 独立候选已接（v0.9.68）：数值峰周期拟合法与闭式 FSR 方法学独立，"
                 "基线残差 ~1e-9 << tol=0.03，余量 >>1000×，判据 D 不触发假独立。",
@@ -389,7 +389,7 @@ DEFS = {
         "title": "MMI 1×2 自映像长度",
         "metric": "L_mmi_um",
         "oracle": "design-rule(general-interference)",
-        "tol": 3.0,
+        "tol": 1.16,
         "default_params": {"W_e": 2.0, "n_eff": 2.4, "wl": 1.55},
         "golden_fn": b16_mmi_length,
         "candidate": "rib_mmi_recon",
@@ -946,7 +946,7 @@ DEFS = {
         "metric": "E2_eV",
         "oracle": ("analytical(harmonic oscillator E2=2.5ℏω) + "
                    "1D FD oscillator Hamiltonian eigenmode_mode3 independent_cross_check"),
-        "tol": 1e-1,   # eV
+        "tol": 0.000408,   # eV
         "candidate": "qm_ho_e2_cand",
         "candidate_desc": ("1D FD 谐振子哈密顿本征值第3模（与 B12/B22 同源 FD 核）"),
         "default_params": {"hbar_omega": 5.27e-20},
@@ -1259,7 +1259,7 @@ DEFS = {
         "metric": "qcse_shift_meV",
         "oracle": ("analytical(QCSE 二阶微扰闭式 Miller 1985) + "
                    "1D Schrodinger finite-difference diagonalization independent_cross_check"),
-        "tol": 0.3,
+        "tol": 0.113,
         # v0.9.69（T1-C W4 · 评审 §2 GO-条件已锁）：器件类型锁定 MQW-QCSE
         # （评审初稿误锁 FK 体材料；锚名 EAM-QCSE + 体 Si FK@1550nm 因间接带隙可
         #  忽略 => 锁定 MQW-QCSE）。golden = QCSE 吸收边位移二阶微扰闭式
@@ -1505,13 +1505,13 @@ DEFS = {
         "title": "光栅耦合器峰值耦合效率（实证语料锚升格 · 严格独立）",
         "metric": "coupling_eff",
         "oracle": "empirical-measurement(E-GRATING-EFF)",
-        "tol": 0.06,
+        "tol": 0.0349,
         "anchor": "empirical",
         "empirical_id": "E-GRATING-EFF",
         "candidate": "engine_grating_eff",
         "default_params": {"ff": 0.5, "theta_deg": 8.0, "tilt_sigma_deg": 15.0},
         "golden_fn": None,
-        "note": "实证锚升格（v0.9.51 · 任务②）：此前 E-GRATING-EFF 仅作 corpus 语料对照、"
+        "note": "🔴 v0.9.254 BL-M2b：tol 0.06 → 0.0349（窗口法 [2·resid, |g|/12] · 注入0 由放行转 REJECT）。实证锚升格（v0.9.51 · 任务②）：此前 E-GRATING-EFF 仅作 corpus 语料对照、"
                 "未正式进判决口径（覆盖矩阵标 K 失真）。现升格为**严格独立**判决锚："
                 "candidate=engine_grating_eff 解析模型（0.5·sin²(π·ff)·exp(−θ²/2σ²)）"
                 "vs 实测 golden 0.42±0.05（Liu APL 96, 051126, 2010）；"
@@ -1878,12 +1878,12 @@ DEFS = {
         "title": "有限深势阱散射反共振（首极小）",
         "metric": "T_min",
         "oracle": "analytical(finite-well scatter antiresonance)",
-        "tol": 0.01,
+        "tol": 2.81e-16,
         "default_params": {"V0_eV": 2.0, "a_nm": 1.5},
         "golden_fn": golden_b74,
         "candidate": "b74_finwell_Tmin_cand",
         "candidate_desc": ("数值扫 E 取切片转移矩阵透射最小 ↔ 有限深势阱散射解析闭式反共振谷（T≈0），方法学独立"),
-        "note": "v0.9.84 Batch B-4：首反共振 T_min≈0.0010，|d|~3e-17。",
+        "note": "🔴 v0.9.254 BL-M2b：tol 0.01 → 2.81e-16（窗口法 [2·resid, |g|/12] · 注入0 由放行转 REJECT）。v0.9.84 Batch B-4：首反共振 T_min≈0.0010，|d|~3e-17。",
     },
     "B75": {
         "title": "δ 势垒透射 T",

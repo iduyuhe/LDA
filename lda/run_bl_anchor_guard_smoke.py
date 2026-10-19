@@ -3,7 +3,7 @@
 
 本门禁守的是「**判据有没有判别力**」，不是「覆盖率数字好不好看」。
 
-判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G(8×4+1)=33** = **57**）：
+判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G33** + **H4** = **61**）：
   A 台账三件套 3：**子进程重跑 ≡ 磁盘（逐字节）** · schema/摘要自洽 · LF only
   B 逐锚硬断言 4：全部锚 L1 判决 PASS · 非豁免锚 `resid > 0` · 非豁免锚 `resid/tol < 1` ·
     `candidate != golden`（防自证桩化回归）
@@ -18,6 +18,8 @@
   G 候选方法学升级核验 33（v0.9.252 立 · v0.9.253 扩为 **8 条逐锚**）：
     每条 4 项 = **N 锁死 ≡ 注册实现** · **收敛趋近四阶** · `resid ≤ tol/20` · **抹平必红**；
     另 1 项全局「结清即双撤登记」。覆盖 `B65/B66/B67/B68/B81/B82/B83/B84`
+  H 「不可收紧」登记面 + tol 棘轮 4（v0.9.254 BL-M2b）：**台账偏松集 ≡ 登记面（双向）** ·
+    14 条 tol **只许更严** · 不可收紧 8 条 tol **不许放宽** · `B31` 原样留观
 
 🔴 **A1 为什么曾经随机红（v0.9.251 首轮全量 CI 当场抓出）**：台账在 10 线程与默认多线程
    环境下 `resid` 第 7–9 位有效数字就不同（BLAS 归约顺序 → 迭代求解器末位漂移 ~1e-9 相对），
@@ -71,11 +73,11 @@ BL_ZERO_RESID_REVIEWED = {}
 # 🔴 v0.9.253 BL-M2：`B81` **已结清并移除**（tol 0.01→1e-9 ⇒ 注入 0 被拒）；
 #   棘轮 `inject0` 同步 6 → 5。
 BL_INJECT0_PENDING = {
-    "B11": "环 FSR 峰值拟合；|golden|/tol=0.167，tol 0.03 对 5e-3 量级过松；BL-M2 批1 收紧或换观测",
-    "B31": "Soref-Bennett 载流子相移；|golden|/tol=0.537 且 resid/tol=0.516（双向贴边）；BL-M2 批1",
-    "B74": "有限深阱 T_min；|golden|/tol=0.102，tol 0.01 对 1e-3 量级过松；BL-M2 批1 收紧",
-    "B87": "方势垒透射 v4；|golden|/tol=0.149；与 B81 同族，合并处理；BL-M2 批1",
-    "B88": "双势垒透射去谐 v2；|golden|/tol=0.448；BL-M2 批1",
+    # 🔴 v0.9.254 BL-M2b：`B11/B74/B87/B88` 已结清并移除（tol 收紧后注入 0 被拒）；
+    #   仅剩 `B31` —— 它是「tol=1.5 掩盖 44° 误差」的疑似语义错位，**不能靠压 tol 修**，
+    #   转 M2b-1 语义裁决（H4 判据锁它原样留观）。
+    "B31": "🔴 相位语义疑似错位：golden 0.80494 vs cand 1.57947（差 0.7745 rad）；"
+           "tol=1.5 下注入 0 仍 PASS 只是 tol 过大所致 ⇒ 转 M2b-1 裁决，本档不压 tol",
 }
 
 # ③ 已脱离盲区（**口径伪影**：本门禁的登记表点了它的名字 ⇒ 被 K4 的文本代理计入 L2）
@@ -92,7 +94,14 @@ BL_CANCEL_REVIEWED = {
 # 🔴 v0.9.253 BL-M2：`B68`（`resid/tol=4.1e-03`）与 `B83`（`1.3e-03`）同因换核 + 收紧 tol
 #   出相消带 ⇒ **相消 3 → 1（仅剩 B73）**，棘轮同步收紧到 1。
 
-_RATCHET = {"zero_resid": 0, "inject0": 5, "cancel": 1, "loose": 25, "tight": 10}
+# 🔴 v0.9.254 BL-M2b：④⑤⑥ 三张登记表**搬去** `lda_harness/bl_registries.py`（**非门禁模块**）。
+#   理由见该模块 docstring：写在这里会让 K4 的文本代理把「登记」当成「覆盖」
+#   （实测 L2 124→130、盲区 414→408 ⇒ 体检域自己缩水 6 条）。改 import 后结构上分开。
+from lda_harness.bl_registries import (  # noqa: E402
+    BL_LOOSE_UNFIXABLE, BL_TOL_RATCHET, BL_LOOSE_TOL_BASELINE)
+
+
+_RATCHET = {"zero_resid": 0, "inject0": 1, "cancel": 1, "loose": 8, "tight": 10}
 
 
 def _load():
@@ -335,6 +344,27 @@ def main() -> int:
               or b in BL_INJECT0_PENDING]
     check("G4 已结清 4 条（B82/B68/B83/B81）均已双撤登记（台账 ∧ 登记面）",
           not _still, "仍在登记面=%s" % _still)
+
+    # ── H 「不可收紧」登记面 + tol 棘轮（v0.9.254 BL-M2b）────────────
+    from lda_harness import verification_adapters as _va3
+    _sp3 = {x.spec_id: x for x in _va3.build_harness_specs()[0]}
+    _loose_now = set(sm.get("loose_ids") or [])
+    check("H1 台账「偏松」集 ≡ 不可收紧登记面（22→8 的验收点 · 双向）",
+          _loose_now == set(BL_LOOSE_UNFIXABLE),
+          "台账多出=%s 登记多出=%s" % (sorted(_loose_now - set(BL_LOOSE_UNFIXABLE)),
+                                  sorted(set(BL_LOOSE_UNFIXABLE) - _loose_now)))
+    _relax = [(b, t, _sp3[b].tol) for b, t in BL_TOL_RATCHET.items()
+              if _sp3[b].tol > t * (1.0 + 1e-12)]
+    check("H2 tol 棘轮：14 条收紧值只许更严（放宽即红）",
+          not _relax, "被放宽=%s" % _relax)
+    _widened = [(b, t, _sp3[b].tol) for b, t in BL_LOOSE_TOL_BASELINE.items()
+                if _sp3[b].tol > t * (1.0 + 1e-12)]
+    check("H3 不可收紧 8 条的 tol 不许被放宽（收紧须同步改基线并重登）",
+          not _widened, "被放宽=%s" % _widened)
+    check("H4 B31 仍在不可收紧登记面 ∧ tol 未被改动（防「顺手调 tol 让它好看」）",
+          "B31" in BL_LOOSE_UNFIXABLE
+          and abs(_sp3["B31"].tol - BL_LOOSE_TOL_BASELINE["B31"]) <= 0.0,
+          "B31 tol=%g（基线 %g）" % (_sp3["B31"].tol, BL_LOOSE_TOL_BASELINE["B31"]))
 
     # ── F 红线 ───────────────────────────────────────────────────────
     # 🔴 用 AST 判而非字面 grep：模块 docstring 里逐条**点名**了这些禁止项（自指陷阱）

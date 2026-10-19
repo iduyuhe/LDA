@@ -6802,12 +6802,12 @@
    "zero_injection_passes": false
   },
   {
-   "candidate": 0.722453378,
+   "candidate": 0.725702075,
    "compare": "cmp_abs",
    "flags": {
     "cancellation_suspect": false,
     "loose": false,
-    "tight": true,
+    "tight": false,
     "zero_injection_passes": false,
     "zero_resid": false
    },
@@ -6816,20 +6816,20 @@
    "id": "B355",
    "metric": "bernstein_poly_approx",
    "passes": true,
-   "resid": 0.006515249462,
-   "resid_over_tol": 0.6515249462,
+   "resid": 0.003266552463,
+   "resid_over_tol": 0.3266552463,
    "title": "Bernstein 多项式逼近 f(t)=sin(2πt)（t=0.37）",
    "tol": 0.01,
    "zero_injection_err": 0.7289686274,
    "zero_injection_passes": false
   },
   {
-   "candidate": -0.678415885,
+   "candidate": -0.6814763458,
    "compare": "cmp_abs",
    "flags": {
     "cancellation_suspect": false,
     "loose": false,
-    "tight": true,
+    "tight": false,
     "zero_injection_passes": false,
     "zero_resid": false
    },
@@ -6838,8 +6838,8 @@
    "id": "B356",
    "metric": "bernstein_poly_approx",
    "passes": true,
-   "resid": 0.006131220944,
-   "resid_over_tol": 0.6131220944,
+   "resid": 0.003070760153,
+   "resid_over_tol": 0.3070760153,
    "title": "Bernstein 多项式逼近 f(t)=cos(2πt)（t=0.63）",
    "tol": 0.01,
    "zero_injection_err": 0.6845471059,
@@ -8740,7 +8740,7 @@
   "n_cancellation_suspect": 1,
   "n_fail_verdict": 0,
   "n_loose": 8,
-  "n_tight": 10,
+  "n_tight": 8,
   "n_zero_injection_passes": 0,
   "n_zero_resid": 0,
   "non_anchorable_ids": [
@@ -8769,8 +8769,6 @@
    "B13",
    "B31",
    "B77",
-   "B355",
-   "B356",
    "E10",
    "E2",
    "E9"

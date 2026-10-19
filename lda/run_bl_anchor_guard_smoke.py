@@ -3,7 +3,7 @@
 
 本门禁守的是「**判据有没有判别力**」，不是「覆盖率数字好不好看」。
 
-判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G33** + **H6** + **H5 组 5** = **68**）：
+判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G33** + **H4 组 3** + **H5 组 5** + **H6 组 3** = **71**）：
   A 台账三件套 3：**子进程重跑 ≡ 磁盘（逐字节）** · schema/摘要自洽 · LF only
   B 逐锚硬断言 4：全部锚 L1 判决 PASS · 非豁免锚 `resid > 0` · 非豁免锚 `resid/tol < 1` ·
     `candidate != golden`（防自证桩化回归）
@@ -97,10 +97,11 @@ BL_CANCEL_REVIEWED = {
 #   （实测 L2 124→130、盲区 414→408 ⇒ 体检域自己缩水 6 条）。改 import 后结构上分开。
 from lda_harness.bl_registries import (  # noqa: E402
     BL_LOOSE_UNFIXABLE, BL_TOL_RATCHET, BL_LOOSE_TOL_BASELINE,
-    BL_FRAGILE_ULP_MAX, BL_PLATFORM_DELTA_MAX, BL_PLATFORM_FRAGILE)
+    BL_FRAGILE_ULP_MAX, BL_PLATFORM_DELTA_MAX, BL_PLATFORM_FRAGILE,
+    BL_TIGHT_REVIEWED, BL_TIGHT_FIXED, BL_TIGHT_KINDS)
 
 
-_RATCHET = {"zero_resid": 0, "inject0": 0, "cancel": 1, "loose": 8, "tight": 10}
+_RATCHET = {"zero_resid": 0, "inject0": 0, "cancel": 1, "loose": 8, "tight": 8}
 
 
 def _load():
@@ -250,9 +251,13 @@ def main() -> int:
           not not_rejected, "放行=%s" % not_rejected[:6])
 
     # ── E 披露口径棘轮 ───────────────────────────────────────────────
-    check("E1 偏松锚计数 ≤ 25（只减不增）", (sm.get("n_loose") or 0) <= _RATCHET["loose"],
+    # 🔴 文案**从 `_RATCHET` 现读**，不写死数字：写死会在棘轮收紧后变成陈旧假守护
+    #   （v0.9.257 实测：棘轮已到 8，而文案还写「≤25 / ≤10」，反向探针失败时读起来误导）。
+    check("E1 偏松锚计数 ≤ %d（只减不增）" % _RATCHET["loose"],
+          (sm.get("n_loose") or 0) <= _RATCHET["loose"],
           "n_loose=%s" % sm.get("n_loose"))
-    check("E2 余量不足锚计数 ≤ 10（只减不增）", (sm.get("n_tight") or 0) <= _RATCHET["tight"],
+    check("E2 余量不足锚计数 ≤ %d（只减不增）" % _RATCHET["tight"],
+          (sm.get("n_tight") or 0) <= _RATCHET["tight"],
           "n_tight=%s" % sm.get("n_tight"))
     zr = set(sm.get("zero_resid_ids") or [])
     check("E3 零残差锚 ⊆ 缺陷登记面（不许有未登记的黑洞）",
@@ -454,6 +459,38 @@ def main() -> int:
           "（两侧都验 · 证明 H5b 不是恒真式）",
           not _h5_false_green and not _h5_true_green,
           "压紧却判绿=%s · 台账却判红=%s" % (_h5_false_green, _h5_true_green))
+
+    # ── H6 余量不足披露面（v0.9.257 BL-M3）──────────────────────────────
+    _tight_now = set(sm.get("tight_ids") or [])
+    check("H6a 台账「余量不足」集 ≡ 披露登记面（双向 · 防漏披露 / 防结清后仍挂账）",
+          _tight_now == set(BL_TIGHT_REVIEWED),
+          "台账多出=%s 登记多出=%s" % (sorted(_tight_now - set(BL_TIGHT_REVIEWED)),
+                                  sorted(set(BL_TIGHT_REVIEWED) - _tight_now)))
+    _h6_bad = []
+    for _b in sorted(set(BL_TIGHT_REVIEWED) & _tight_now):
+        _rec = BL_TIGHT_REVIEWED[_b]
+        _rt = float(by[_b]["resid"]) / float(by[_b]["tol"])
+        if (_rec.get("kind") not in BL_TIGHT_KINDS
+                or len(str(_rec.get("reason") or "")) < 12
+                or _rt > 1.0):
+            _h6_bad.append((_b, _rec.get("kind"), round(_rt, 4)))
+    check("H6b 每条披露：分类合法 ∧ 书面原因 ≥12 字 ∧ **resid/tol ≤ 1.0**（余量可薄但不许越界）",
+          not _h6_bad, "不合格=%s" % _h6_bad)
+    # 已修两条：margin ≥ 2× 且**不得**回到 tight 集（防「改回去又没人发现」）
+    _fix_bad = []
+    for _b, _need in BL_TIGHT_FIXED.items():
+        if _b not in by:
+            _fix_bad.append((_b, "缺席"))
+            continue
+        _m = float(by[_b]["tol"]) / max(float(by[_b]["resid"]), 1e-300)
+        if _m < _need or _b in _tight_now:
+            _fix_bad.append((_b, round(_m, 3), _b in _tight_now))
+    # 🔴 判据文案**不得写死锚号**：门禁里出现锚号会被 K4 的文本代理当成「专属判据覆盖」
+    #   ⇒ L2 虚增、盲区缩小、**体检域自己缩水**（v0.9.257 实测：点名两条 ⇒ L2 124→126、
+    #   盲区 414→412）。条目身份由 `BL_TIGHT_FIXED`（非门禁模块）提供，这里只说「已修条目」。
+    check("H6c 已修条目（见 `BL_TIGHT_FIXED`）必须 margin ≥ %.1f× ∧ 不在 tight 集"
+          % min(BL_TIGHT_FIXED.values()),
+          not _fix_bad, "不合格=%s（margin, 仍在tight）" % _fix_bad)
 
     # ── F 红线 ───────────────────────────────────────────────────────
     # 🔴 用 AST 判而非字面 grep：模块 docstring 里逐条**点名**了这些禁止项（自指陷阱）

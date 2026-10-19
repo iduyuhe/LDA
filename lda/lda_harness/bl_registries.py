@@ -94,3 +94,46 @@ BL_PLATFORM_FRAGILE = {
     "B79": {"resid_prod": None, "note": "1566 ulp；余量 5.8e10× ⇒ 无风险"},
     "B192": {"resid_prod": None, "note": "2472 ulp；余量 1.1e9× ⇒ 无风险"},
 }
+
+
+# ===========================================================================
+# ⑧ 「余量不足」披露面（v0.9.257 BL-M3）
+# ===========================================================================
+# 判据：`resid/tol > 0.5`（余量 < 2×）⇒ 一次小的扰动就可能翻转判决。
+# BL-M3 的处置原则：**能靠抬精度修的修，修不了的逐条披露并机器锁死**。
+#
+# 🔴 披露 ≠ 免责：登记后由 H6 组三条判据守着 —— ①台账的 tight 集必须**恰好**等于本表（双向，
+#   防止"漏披露"与"结清了还挂着"）；②每条必须有书面原因（≥12 字）与合法分类；
+#   ③每条 `resid/tol ≤ 1.0`（可以余量薄，**但不许越界**）。
+#   已修的两条（B355/B356）反过来被要求 `margin ≥ 2×` 且不得回到 tight 集 —— 防"改回去又没人发现"。
+BL_TIGHT_REVIEWED = {
+    "B6": {"kind": "model_offset",
+           "reason": "光栅四因子分解 vs 引擎常数 golden：残差是模型差；|g|/tol=3.33 已无收紧窗口",
+           "m3b": ""},
+    "B7": {"kind": "model_offset",
+           "reason": "CMT 双芯超模本征解 vs 守则锚：方法学不同源的模型差；|g|/tol=8 窗口为空",
+           "m3b": ""},
+    "B13": {"kind": "model_offset",
+            "reason": "4.15% 是 golden 渐近闭式的固有截断（Nq≥8 已收敛、抬阶无效）",
+            "m3b": "需改 golden 语义（须授权）"},
+    "B31": {"kind": "by_design",
+            "reason": "量级一致型锚：tol 必须 ~|g| ⇒ 余量 1.02× 是乘性模型差 1.962222 的定值",
+            "m3b": "换带 many-body 修正的候选（非压 tol）"},
+    "B77": {"kind": "discretization",
+            "reason": "阶跃切片 TMM 用内部固定切片数、候选无 N 参数 ⇒ 精度不可调",
+            "m3b": "给候选加 N 参数后抬阶"},
+    "E10": {"kind": "discretization",
+            "reason": "ARPACK 本征模 + 中心差分 n_g，网格步长固定 ⇒ 精度受网格限制",
+            "m3b": "抬网格并重跑模态求解（未验证）"},
+    "E2": {"kind": "discretization",
+           "reason": "半矢量本征模 h=0.015：差分步长限制 n_g 精度",
+           "m3b": "抬网格（未验证）"},
+    "E9": {"kind": "model_offset",
+           "reason": "引擎 y-branch 分束模型 vs golden：模型差；|g|/tol=2.15 窗口为空",
+           "m3b": ""},
+}
+
+# 已修的两条（BL-M3 抬阶）—— 要求 margin ≥ 2×，且**不得**再出现在 tight 集
+BL_TIGHT_FIXED = {"B355": 2.0, "B356": 2.0}
+
+BL_TIGHT_KINDS = ("model_offset", "discretization", "by_design")

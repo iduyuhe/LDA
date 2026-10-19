@@ -1031,24 +1031,31 @@ DEFS = {
     "B355": {
         "title": "Bernstein 多项式逼近 f(t)=sin(2πt)（t=0.37）",
         "metric": "bernstein_poly_approx",
-        "oracle": "closed_form(f(t)=sin(2πt))；degree-N Bernstein 基求和 N=512",
+        "oracle": "closed_form(f(t)=sin(2πt))；degree-N Bernstein 基求和 N=1024（v0.9.257 由 512 抬阶）",
         "tol": 0.01,
         "default_params": {"name": "sin", "t": 0.37},
         "golden_fn": golden_b355,
         "candidate": "b355_bernstein_cand",
         "candidate_desc": "degree-N Bernstein 基求和 Σ f(k/N)·C(N,k)·t^k·(1−t)^{N−k} ↔ 已知闭式 f(t)，方法学独立",
-        "note": "v0.9.101 Batch B-21：golden=+7.289686e-01 / cand |Δ|=6.52e-03（余量 1.53×）；O(h²) 收敛实测比值 1.99；扰动键 t 物理响应强。",
+        "note": ("v0.9.101 Batch B-21：golden=+7.289686e-01 / cand |Δ|=6.52e-03（余量 1.53×）；O(h²) 收敛实测比值 1.99；扰动键 t 物理响应强。"
+                 "🔴 v0.9.257 BL-M3：候选 degree **512 → 1024** ⇒ |Δ| 6.5152e-03 → **3.2666e-03**、"
+                 "余量 1.535× → **3.061×**（Bernstein 误差 O(1/N)）⇒ **退出「余量不足」面**。"
+                 "⚠️ **1024 是本实现的硬上限**：`math.comb(2048,1024)` 转 float 溢出 ⇒ 再抬阶须改实现"
+                 "（对数域/递推），不是改个常数。"),
     },
     "B356": {
         "title": "Bernstein 多项式逼近 f(t)=cos(2πt)（t=0.63）",
         "metric": "bernstein_poly_approx",
-        "oracle": "closed_form(f(t)=cos(2πt))；degree-N Bernstein 基求和 N=512",
+        "oracle": "closed_form(f(t)=cos(2πt))；degree-N Bernstein 基求和 N=1024（v0.9.257 由 512 抬阶）",
         "tol": 0.01,
         "default_params": {"name": "cos", "t": 0.63},
         "golden_fn": golden_b356,
         "candidate": "b356_bernstein_cand",
         "candidate_desc": "degree-N Bernstein 基求和 Σ f(k/N)·C(N,k)·t^k·(1−t)^{N−k} ↔ 已知闭式 f(t)，方法学独立",
-        "note": "v0.9.101 Batch B-21：golden=-6.845471e-01 / cand |Δ|=6.13e-03（余量 1.63×）；O(h²) 收敛实测比值 1.99；扰动键 t 物理响应强。",
+        "note": ("v0.9.101 Batch B-21：golden=-6.845471e-01 / cand |Δ|=6.13e-03（余量 1.63×）；O(h²) 收敛实测比值 1.99；扰动键 t 物理响应强。"
+                 "🔴 v0.9.257 BL-M3：候选 degree **512 → 1024** ⇒ |Δ| 6.1312e-03 → **3.0708e-03**、"
+                 "余量 1.631× → **3.257×**（Bernstein 误差 O(1/N)）⇒ **退出「余量不足」面**。"
+                 "⚠️ 同 B355：1024 是 `math.comb` 的硬上限。"),
     },
     "B357": {
         "title": "Bernstein 多项式逼近 f(t)=exp(t)-1（t=0.5）",

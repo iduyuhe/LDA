@@ -869,7 +869,7 @@ def _b354_laguerre_fd_cand(spec: VerificationSpec, oracle_value: Any) -> float:
 def _b355_bernstein_cand(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b21_numeric()
-    return float(m.bernstein(p["name"], float(p["t"]), 512))
+    return float(m.bernstein(p["name"], float(p["t"]), 1024))
 
 @_register_candidate(
     "b356_bernstein_cand",
@@ -877,7 +877,7 @@ def _b355_bernstein_cand(spec: VerificationSpec, oracle_value: Any) -> float:
 def _b356_bernstein_cand(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b21_numeric()
-    return float(m.bernstein(p["name"], float(p["t"]), 512))
+    return float(m.bernstein(p["name"], float(p["t"]), 1024))
 
 @_register_candidate(
     "b357_bernstein_cand",

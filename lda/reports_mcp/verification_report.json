@@ -3699,7 +3699,7 @@
     {
       "id": "B355",
       "metric": "bernstein_poly_approx",
-      "oracle": "closed_form(f(t)=sin(2πt))；degree-N Bernstein 基求和 N=512",
+      "oracle": "closed_form(f(t)=sin(2πt))；degree-N Bernstein 基求和 N=1024（v0.9.257 由 512 抬阶）",
       "source": "physical-law",
       "golden": 0.728968627,
       "candidate": 0.728968627,
@@ -3712,7 +3712,7 @@
     {
       "id": "B356",
       "metric": "bernstein_poly_approx",
-      "oracle": "closed_form(f(t)=cos(2πt))；degree-N Bernstein 基求和 N=512",
+      "oracle": "closed_form(f(t)=cos(2πt))；degree-N Bernstein 基求和 N=1024（v0.9.257 由 512 抬阶）",
       "source": "physical-law",
       "golden": -0.684547106,
       "candidate": -0.684547106,

@@ -297,8 +297,8 @@
 | B352 | laguerre_poly_central_diff | physical-law | -0.475662 | -0.475664 | 1.0734e-06 | 0.01 | ✅ PASS |
 | B353 | laguerre_poly_central_diff | physical-law | -0.533233 | -0.533226 | 7.1134e-06 | 0.01 | ✅ PASS |
 | B354 | laguerre_poly_central_diff | physical-law | -0.875 | -0.874999 | 1.4305e-06 | 0.01 | ✅ PASS |
-| B355 | bernstein_poly_approx | physical-law | 0.728969 | 0.722453 | 0.0065152 | 0.01 | ✅ PASS |
-| B356 | bernstein_poly_approx | physical-law | -0.684547 | -0.678416 | 0.0061312 | 0.01 | ✅ PASS |
+| B355 | bernstein_poly_approx | physical-law | 0.728969 | 0.725702 | 0.0032666 | 0.01 | ✅ PASS |
+| B356 | bernstein_poly_approx | physical-law | -0.684547 | -0.681476 | 0.0030708 | 0.01 | ✅ PASS |
 | B357 | bernstein_poly_approx | physical-law | 0.648721 | 0.649124 | 0.00040257 | 0.01 | ✅ PASS |
 | B358 | bernstein_poly_approx | physical-law | 0.714286 | 0.714457 | 0.0001709 | 0.01 | ✅ PASS |
 | B359 | bernstein_poly_approx | physical-law | 0.454545 | 0.454722 | 0.00017636 | 0.01 | ✅ PASS |
@@ -423,7 +423,7 @@
 | B468 | align_overlap_efficiency | physical-law | 0.606531 | 0.606535 | 4.6425e-06 | 0.003 | ✅ PASS |
 | B469 | geometry_refractive_index_sensitivity | physical-law | 0.446981 | 0.446982 | 8.7133e-07 | 0.005 | ✅ PASS |
 | B47 | E2_eV | physical-law | 0.822319 | 0.822278 | 4.0823e-05 | 0.000408 | ✅ PASS |
-| B470 | geometry_refractive_index_sensitivity | physical-law | 0.460019 | 0.460019 | 3.9642e-08 | 0.005 | ✅ PASS |
+| B470 | geometry_refractive_index_sensitivity | physical-law | 0.460019 | 0.460019 | 3.9524e-08 | 0.005 | ✅ PASS |
 | B471 | geometry_refractive_index_sensitivity | physical-law | 1.17091 | 1.17092 | 1.2907e-05 | 0.005 | ✅ PASS |
 | B472 | q_scaling_lod | physical-law | 9.46722e-11 | 9.46722e-11 | 0 | 1e-09 | ✅ PASS |
 | B473 | nv_magnetometer_sensitivity | physical-law | 8.4659e-10 | 8.46611e-10 | 0 | 0.001 | ✅ PASS |

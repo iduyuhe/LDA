@@ -153,9 +153,14 @@ def main() -> int:
     #   换 Riccati+RK4 候选后残差 9.557e-12 > ABS_FLOOR（10 位/相对 9.6e-12 均出地板）
     #   ⇒ 不再命中；若有人把它换回切片候选，③′ 的「豁免集 ⊆ 命中集」与下方
     #   「B82 不得被豁免」双判据会一起红（见 ③″）。
-    noise_exempt = {"B10", "B65", "B66", "B67", "B68", "B73", "B74",
-                    "B79", "B81", "B83", "B84", "B87", "B88"}
-    B82_MUST_BE_NON_IDENTITY = True
+    # 🔴 v0.9.253 BL-M2：`B65/B66/B67/B68/B81/B83/B84` **7 条一并移出豁免集**（13 → 6）。
+    #   它们与 `B82` 同病：原候选「400 段等宽切片连乘」对均匀段与闭式**数学等价**
+    #   （`S(w)^N ≡ S(N·w)`）⇒ 残差恒为舍入级 ⇒ 曾被双口径判为「恒等」而豁免。
+    #   换 Riccati+RK4 后残差 `3.6e-12 ~ 1.2e-08`，全部出 `1e-12` 地板 ⇒ 不再命中。
+    #   剩下 6 道豁免各有自己的成因（`B73` 有限阱共振 / `B74` 反共振 / `B79` 周期 /
+    #   `B87/B88` 异参数多势垒 / `B10` Lindblad），**不在本档范围**。
+    noise_exempt = {"B10", "B73", "B74", "B79", "B87", "B88"}
+    RICCATI_FAMILY = ("B65", "B66", "B67", "B68", "B81", "B82", "B83", "B84")
     ABS_FLOOR = 1e-12
     REL_FLOOR = 1e-12
     n_wired, violators = 0, []
@@ -183,7 +188,7 @@ def main() -> int:
                  % (d, rel)))
     check("已接线候选 %d/%d 全部登记（动态）" % (n_wired, len(indep_ids)),
           n_wired == len(indep_ids))
-    check("基线残差非恒等（双口径 abs∧rel <= 1e-12 · B10 等 13 道特例豁免）",
+    check("基线残差非恒等（双口径 abs∧rel <= 1e-12 · B10 等 6 道特例豁免）",
           not violators,
           "; ".join("%s: %s" % v for v in violators) if violators else
           "%d 道残差无一同时满足 abs∧rel 沉 1e-12 地板（远高于 1e-15 恒等特征）"
@@ -193,7 +198,7 @@ def main() -> int:
     # (a) 豁免集 ⊆ 双口径命中集：证明「收紧后原豁免**全部仍必需**」，
     #     即修法未把任何真·机器精度恒等从射程内放走（防「收紧即放宽」）。
     _ex_missing = sorted(noise_exempt - set(ident_hits))
-    check("③′ 双口径命中集 ⊇ 13 道原豁免（收紧未放走任何真恒等）",
+    check("③′ 双口径命中集 ⊇ 6 道原豁免（收紧未放走任何真恒等）",
           not _ex_missing,
           "命中 %d 道；缺失豁免 %s" %
           (len(ident_hits), _ex_missing if _ex_missing else "无"))
@@ -201,13 +206,13 @@ def main() -> int:
     # (e) 🔴 v0.9.252 BL-M1 反向：`B82` 换 Riccati 候选后**必须出恒等射程**
     #     （否则等于"移出豁免集但病还在"）。这是本档换候选的**唯一验收点**：
     #     旧核（同宽切片）残差恒 0；新核残差 9.557e-12 ⇒ abs 出 1e-12 地板。
-    _b82p = next((x for x in wired_pairs if x[0] == "B82"), None)
-    _b82_out = (B82_MUST_BE_NON_IDENTITY and _b82p is not None
-                and not (_b82p[1] <= ABS_FLOOR and _b82p[2] <= REL_FLOOR))
-    check("③″ B82 已脱离「机器精度恒等」射程（abs>1e-12 ∨ rel>1e-12 · "
-          "BL-M1 换候选的验收点）",
-          _b82_out,
-          ("B82 abs=%.3e rel=%.3e" % (_b82p[1], _b82p[2])) if _b82p else "B82 缺席")
+    for _bid in RICCATI_FAMILY:
+        _pp = next((x for x in wired_pairs if x[0] == _bid), None)
+        _out = (_pp is not None
+                and not (_pp[1] <= ABS_FLOOR and _pp[2] <= REL_FLOOR))
+        check("③″ %s 已脱离「机器精度恒等」射程（abs>1e-12 ∨ rel>1e-12 · 换核验收点）"
+              % _bid, _out,
+              ("abs=%.3e rel=%.3e" % (_pp[1], _pp[2])) if _pp else "缺席")
 
     # (b) 正向：合成**真恒等**（同一表达式异写）⇒ 双口径必命中（会响）。
     #     直接用 B28 那对（积分 vs 闭式）在**均匀常势**下的代数恒等：

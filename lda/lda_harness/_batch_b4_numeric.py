@@ -262,6 +262,57 @@ def cand_double_barrier_T(E_J, V0_J, a_m, b_m, m, dx_factor=200.0):
     return _slice_transfer_T(E_J, prof, dx, m)
 
 
+def cand_rect_scatter_riccati(E_J, V0_J, a_m, obs="T", N=256, m=ME):
+    """单层**均匀**矩形势垒/势阱的散射 —— **[y, I] 耦合系统的 RK4 反向积分**（BL-M2 · v0.9.253）。
+
+    🔴 为什么整族都必须换核（BL-M1 的发现，BL-M2 推广）：
+       均匀段的 400 段等宽切片连乘，在精确算术下 **恒等于单段闭式矩阵**
+       （`S(w)^N ≡ S(N·w)`）⇒ 候选与解析 golden **数学等价** ⇒ 残差只剩浮点路径差
+       （实测 `4.4e-16 ~ 2.5e-14`，与切片数无关）⇒ 观测 `R` 还会被 `ulp(1)` 抹平。
+       ⇒ **换观测量治不好**（`φ_R` 实测 `Δφ≡0`），只能换**有真实截断阶**的核。
+
+    ✅ 本法：`y = ψ'/ψ`、`I = ∫y dx`，常势段满足
+         y' = (2m/ħ²)(V−E) − y² ,  I' = y
+       出射边界 `y(a) = i·k0`，RK4 **反向**积分到 `x=0`（`h = −a/N`）⇒
+         r = (i k0 − y(0))/(i k0 + y(0))            ⇒ R = |r|²
+         t = (1 + r)·exp(−I(0) − i·k0·a)            ⇒ T = |t|²
+       · `R`、`T` **各自从模平方直接得**，不走 `1−T` 减法 ⇒ 不撞 `ulp(1)`；
+       · 两条都是 `O(h⁴)`；`|r|²+|t|²−1` 是**内建自洽量**，谁把符号或因子写错它立刻炸。
+       🔴 `t` 的两个陷阱（BL-M2 实测各踩一次）：
+          ① 反向积分给 `I(0) = ∫_a^0 y dx = −∫_0^a y dx` ⇒ 指数上必须是 `−I`；
+          ② `ψ(0) = 1+r`（不是 1）⇒ **必须乘 `(1+r)`**，漏了会让 `|R+T−1|` 破到 `1.6e-2`。
+
+    参数
+    ----
+    `obs`  : `"R"` 或 `"T"`
+    `N`    : 步数。深隧穿/近顶 `128~256` 足够；**阱内强振荡须按 `k_inside·a` 加大**
+             （`B84`：`k₁a ≈ 19.2 rad` ⇒ `N=2048`；`N=256` 残差 `5.0e-05`，`N=16` 出 `nan`）
+    `V0_J` : 势垒为正；**势阱传负值**（阱内 `V = −V0`）
+    """
+    k0 = math.sqrt(2.0 * m * E_J) / HBAR
+    k2 = 2.0 * m * (V0_J - E_J) / HBAR ** 2          # 常势 ⇒ 恒定
+    y, I, h = 1j * k0, 0j, -a_m / N                   # 反向积分步长（负）
+    for _ in range(N):
+        k1y = k2 - y * y
+        k1I = y
+        y2 = y + 0.5 * h * k1y
+        k2y = k2 - y2 * y2
+        k2I = y2
+        y3 = y + 0.5 * h * k2y
+        k3y = k2 - y3 * y3
+        k3I = y3
+        y4 = y + h * k3y
+        k4y = k2 - y4 * y4
+        k4I = y4
+        I = I + (h / 6.0) * (k1I + 2.0 * k2I + 2.0 * k3I + k4I)
+        y = y + (h / 6.0) * (k1y + 2.0 * k2y + 2.0 * k3y + k4y)
+    r = (1j * k0 - y) / (1j * k0 + y)
+    if obs == "R":
+        return abs(r) ** 2
+    t = (1.0 + r) * cmath.exp(-I - 1j * k0 * a_m)
+    return abs(t) ** 2
+
+
 def cand_finwell_scatter_T(E_J, V0_J, a_m, m, dx_factor=400.0):
     dx = a_m / dx_factor
     n = max(2, int(round(a_m / dx)))

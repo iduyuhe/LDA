@@ -408,36 +408,40 @@ def _b64_bragg_lambda_candidate(spec: VerificationSpec, oracle_value: Any) -> fl
         float(p["n1"]), float(p["n2"]), float(p["Lambda"]), 60))
 
 @_register_candidate(
-    "b65_sqbarrier_T_deep_cand",
-    "切片转移矩阵数值透射（深隧穿 E<V0）↔ 方势垒解析闭式 sinh²，方法学独立")
-def _b65_sqbarrier_T_deep(spec: VerificationSpec, oracle_value: Any) -> float:
+    "b65_sqbarrier_T_deep_riccati_cand",
+    "Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → T=|t|²（深隧穿 E<V0 · N=128）↔ 解析闭式，方法学独立"
+    "（v0.9.253 BL-M2：替换原「同宽切片连乘」—— 后者对均匀段与闭式数学等价 ⇒ 残差恒为舍入级）")
+def _b65_sqbarrier_T_deep_riccati(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b4()
-    return float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+    return float(m.cand_rect_scatter_riccati(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, obs="T", N=128, m=m.ME))
 
 @_register_candidate(
-    "b66_sqbarrier_T_neartop_cand",
-    "切片转移矩阵数值透射（近顶 E<V0）↔ 方势垒解析闭式 sinh²，方法学独立")
-def _b66_sqbarrier_T_neartop(spec: VerificationSpec, oracle_value: Any) -> float:
+    "b66_sqbarrier_T_neartop_riccati_cand",
+    "Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → T=|t|²（近顶 E<V0 · N=256）↔ 解析闭式，方法学独立"
+    "（v0.9.253 BL-M2：替换原「同宽切片连乘」—— 后者对均匀段与闭式数学等价 ⇒ 残差恒为舍入级）")
+def _b66_sqbarrier_T_neartop_riccati(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b4()
-    return float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+    return float(m.cand_rect_scatter_riccati(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, obs="T", N=256, m=m.ME))
 
 @_register_candidate(
-    "b67_sqbarrier_T_osc_cand",
-    "切片转移矩阵数值透射（E>V0 振荡区）↔ 方势垒解析闭式 sin²，方法学独立")
-def _b67_sqbarrier_T_osc(spec: VerificationSpec, oracle_value: Any) -> float:
+    "b67_sqbarrier_T_osc_riccati_cand",
+    "Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → T=|t|²（E>V0 振荡区 · N=128）↔ 解析闭式，方法学独立"
+    "（v0.9.253 BL-M2：替换原「同宽切片连乘」—— 后者对均匀段与闭式数学等价 ⇒ 残差恒为舍入级）")
+def _b67_sqbarrier_T_osc_riccati(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b4()
-    return float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+    return float(m.cand_rect_scatter_riccati(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, obs="T", N=128, m=m.ME))
 
 @_register_candidate(
-    "b68_sqbarrier_R_cand",
-    "1 − 切片转移矩阵数值透射 ↔ 方势垒解析反射 R=1−T（E<V0），方法学独立")
-def _b68_sqbarrier_R(spec: VerificationSpec, oracle_value: Any) -> float:
+    "b68_sqbarrier_R_riccati_cand",
+    "Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → R=|r|²（E<V0 反射 · N=128）↔ 解析闭式，方法学独立"
+    "（v0.9.253 BL-M2：替换原「同宽切片连乘」—— 后者对均匀段与闭式数学等价 ⇒ 残差恒为舍入级）")
+def _b68_sqbarrier_R_riccati(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b4()
-    return 1.0 - float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+    return float(m.cand_rect_scatter_riccati(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, obs="R", N=128, m=m.ME))
 
 @_register_candidate(
     "b70_dbbar_Tpeak_cand",
@@ -523,12 +527,13 @@ def _b80_asym_dbbar_T(spec: VerificationSpec, oracle_value: Any) -> float:
     return float(m.cand_asym_double_barrier_T(p["E1_eV"] * m.EV, p["E2_eV"] * m.EV, p["a_nm"] * 1e-9, p["b_nm"] * 1e-9, m.ME))
 
 @_register_candidate(
-    "b81_sqbarrier_T_v2_cand",
-    "切片转移矩阵数值透射（异参数深隧穿）↔ 方势垒解析闭式，方法学独立")
-def _b81_sqbarrier_T_v2(spec: VerificationSpec, oracle_value: Any) -> float:
+    "b81_sqbarrier_T_v2_riccati_cand",
+    "Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → T=|t|²（异参数深隧穿 · N=128）↔ 解析闭式，方法学独立"
+    "（v0.9.253 BL-M2：替换原「同宽切片连乘」—— 后者对均匀段与闭式数学等价 ⇒ 残差恒为舍入级）")
+def _b81_sqbarrier_T_v2_riccati(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b4()
-    return float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+    return float(m.cand_rect_scatter_riccati(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, obs="T", N=128, m=m.ME))
 
 @_register_candidate(
     "b82_sqbarrier_R_riccati_cand",
@@ -540,20 +545,22 @@ def _b82_sqbarrier_R_riccati(spec: VerificationSpec, oracle_value: Any) -> float
     return float(m.cand_square_barrier_R_riccati(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m=m.ME))
 
 @_register_candidate(
-    "b83_sqbarrier_T_v3_cand",
-    "切片转移矩阵数值透射（异参数 E>V0 振荡）↔ 方势垒解析闭式 sin²，方法学独立")
-def _b83_sqbarrier_T_v3(spec: VerificationSpec, oracle_value: Any) -> float:
+    "b83_sqbarrier_T_v3_riccati_cand",
+    "Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → T=|t|²（异参数 E>V0 振荡 · N=256）↔ 解析闭式，方法学独立"
+    "（v0.9.253 BL-M2：替换原「同宽切片连乘」—— 后者对均匀段与闭式数学等价 ⇒ 残差恒为舍入级）")
+def _b83_sqbarrier_T_v3_riccati(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b4()
-    return float(m.cand_square_barrier_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+    return float(m.cand_rect_scatter_riccati(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, obs="T", N=256, m=m.ME))
 
 @_register_candidate(
-    "b84_finwell_R_cand",
-    "1 − 切片转移矩阵数值透射 ↔ 有限深势阱散射解析反射 R=1−T（异参数），方法学独立")
-def _b84_finwell_R(spec: VerificationSpec, oracle_value: Any) -> float:
+    "b84_finwell_R_riccati_cand",
+    "Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → R=|r|²（有限深势阱（阱内 k₁a≈19.2） · N=2048）↔ 解析闭式，方法学独立"
+    "（v0.9.253 BL-M2：替换原「同宽切片连乘」—— 后者对均匀段与闭式数学等价 ⇒ 残差恒为舍入级）")
+def _b84_finwell_R_riccati(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b4()
-    return 1.0 - float(m.cand_finwell_scatter_T(p["E_eV"] * m.EV, p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, m.ME))
+    return float(m.cand_rect_scatter_riccati(p["E_eV"] * m.EV, -p["V0_eV"] * m.EV, p["a_nm"] * 1e-9, obs="R", N=2048, m=m.ME))
 
 @_register_candidate(
     "b85_delta_T_v2_cand",

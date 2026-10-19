@@ -3,7 +3,7 @@
 
 本门禁守的是「**判据有没有判别力**」，不是「覆盖率数字好不好看」。
 
-判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G4** = **28**）：
+判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G(8×4+1)=33** = **57**）：
   A 台账三件套 3：**子进程重跑 ≡ 磁盘（逐字节）** · schema/摘要自洽 · LF only
   B 逐锚硬断言 4：全部锚 L1 判决 PASS · 非豁免锚 `resid > 0` · 非豁免锚 `resid/tol < 1` ·
     `candidate != golden`（防自证桩化回归）
@@ -15,8 +15,9 @@
   E 披露口径棘轮 + 可复现锁 5：`n_loose ≤ 25` · `n_tight ≤ 10` · `n_zero_resid ≤ 1` 且 ⊆ 登记面 ·
     **量化位数锁死 10 位** · **生成器强制钉死 10 线程（须早于 harness 导入）**
   F 红线 3：生成器零时钟/随机 · 走 `det.write_text` · 本门禁 ∈ `CORE_SMOKES`
-  G 候选方法学升级核验 4（v0.9.252 BL-M1 · B82）：**收敛趋近四阶** · `resid ≤ tol/20` ·
-    **抹平必红（旧核残差恰 0 ∧ 新核 > 0）** · 结清后双撤登记（台账 ∧ 登记面）
+  G 候选方法学升级核验 33（v0.9.252 立 · v0.9.253 扩为 **8 条逐锚**）：
+    每条 4 项 = **N 锁死 ≡ 注册实现** · **收敛趋近四阶** · `resid ≤ tol/20` · **抹平必红**；
+    另 1 项全局「结清即双撤登记」。覆盖 `B65/B66/B67/B68/B81/B82/B83/B84`
 
 🔴 **A1 为什么曾经随机红（v0.9.251 首轮全量 CI 当场抓出）**：台账在 10 线程与默认多线程
    环境下 `resid` 第 7–9 位有效数字就不同（BLAS 归约顺序 → 迭代求解器末位漂移 ~1e-9 相对），
@@ -67,11 +68,12 @@ _SCHEMA = "lda_bl_anchor_audit_v1"
 #   `tol` 由 0.01 收紧到 1e-9（`resid/tol=9.6e-03`）。见 G 组判据。
 BL_ZERO_RESID_REVIEWED = {}
 # ② 注入「候选=0」仍判 PASS —— 判据结构性失效
+# 🔴 v0.9.253 BL-M2：`B81` **已结清并移除**（tol 0.01→1e-9 ⇒ 注入 0 被拒）；
+#   棘轮 `inject0` 同步 6 → 5。
 BL_INJECT0_PENDING = {
     "B11": "环 FSR 峰值拟合；|golden|/tol=0.167，tol 0.03 对 5e-3 量级过松；BL-M2 批1 收紧或换观测",
     "B31": "Soref-Bennett 载流子相移；|golden|/tol=0.537 且 resid/tol=0.516（双向贴边）；BL-M2 批1",
     "B74": "有限深阱 T_min；|golden|/tol=0.102，tol 0.01 对 1e-3 量级过松；BL-M2 批1 收紧",
-    "B81": "方势垒透射 T；|golden|/tol=0.005（tol 是 golden 的 215×）；BL-M2 批1 优先",
     "B87": "方势垒透射 v4；|golden|/tol=0.149；与 B81 同族，合并处理；BL-M2 批1",
     "B88": "双势垒透射去谐 v2；|golden|/tol=0.448；BL-M2 批1",
 }
@@ -84,14 +86,13 @@ BL_BLIND_EXIT = {
 }
 # ③ 相消嫌疑（|golden|≈1 且 resid/tol 极小）—— 已复核但未改
 BL_CANCEL_REVIEWED = {
-    "B68": "已复核：golden 与 candidate 为不同路径，resid 1e-13 量级属双精度地板而非同一式；保留观察",
     "B73": "已复核：接近 1 的透射类量，resid 落地板；与 B82 不同（无 1−T 结构），保留观察",
-    "B83": "已复核：同 B73 型，透射接近 1；resid 地板，保留观察",
 }
-# 🔴 v0.9.252 BL-M1：`B82` 亦从**相消嫌疑**移除 —— tol 由 0.01 收紧到 1e-9 后
-#   `resid/tol` 由 0 变 9.557e-03（> 1e-9 门限）⇒ 不再落「相消嫌疑」带（相消 4 → 3）。
+# 🔴 v0.9.252 BL-M1：`B82` 从相消嫌疑移除（tol 0.01→1e-9 ⇒ `resid/tol` 由 0 变 9.6e-03）。
+# 🔴 v0.9.253 BL-M2：`B68`（`resid/tol=4.1e-03`）与 `B83`（`1.3e-03`）同因换核 + 收紧 tol
+#   出相消带 ⇒ **相消 3 → 1（仅剩 B73）**，棘轮同步收紧到 1。
 
-_RATCHET = {"zero_resid": 0, "inject0": 6, "cancel": 3, "loose": 25, "tight": 10}
+_RATCHET = {"zero_resid": 0, "inject0": 5, "cancel": 1, "loose": 25, "tight": 10}
 
 
 def _load():
@@ -262,39 +263,78 @@ def main() -> int:
           and 'LDA_FDTD_THREADS"] = "10"' in _gsrc,
           "pin_at=%d imp_at=%d" % (_pin_at, _imp_at))
 
-    # ── G 候选方法学升级核验（v0.9.252 BL-M1 · B82「零残差 → 可测四阶收敛」）──
-    # 🔴 为什么 G 组挂在 BL 门禁而不是别处：B82 的零残差**不是观测选错**，是候选与
-    #   golden 数学等价（均匀势垒 `S(w)^N ≡ S(N·w)`）⇒ 必须有判据盯住「候选独立于闭式」。
+    # ── G 候选方法学升级核验（v0.9.252 BL-M1 立 · v0.9.253 BL-M2 扩为 **8 条逐锚**）──
+    # 🔴 为什么 G 组挂在 BL 门禁：这 8 条的病**不是观测选错**，是候选与 golden 数学等价
+    #   （均匀段 `S(w)^N ≡ S(N·w)`）⇒ 必须有判据盯住「候选真的独立于闭式、且残差有阶」。
     from lda_harness import _batch_b4_numeric as _b4
     from lda_harness import verification_adapters as _va2
-    _sp82 = [x for x in _va2.build_harness_specs()[0] if x.spec_id == "B82"][0]
-    _gR = float(_sp82.oracle_fn(_sp82.params))
-    _a82 = (_sp82.params["E_eV"] * _b4.EV, _sp82.params["V0_eV"] * _b4.EV,
-            _sp82.params["a_nm"] * 1e-9)
-    _chain = [abs(_b4.cand_square_barrier_R_riccati(*_a82, N=_N) - _gR)
-              for _N in (64, 128, 256, 512)]
-    _ratios = [_chain[_i] / _chain[_i + 1] for _i in range(len(_chain) - 1)]
-    check("G1 B82 候选离散化收敛**趋近四阶**（|r_last−4| ≤ |r_first−4| · 不写死方向）",
-          abs(_ratios[-1] - 4.0) <= abs(_ratios[0] - 4.0),
-          "相邻比=%s（标称 16）" % ["%.3f" % _x for _x in _ratios])
-    _c256 = abs(_b4.cand_square_barrier_R_riccati(*_a82) - _gR)
-    check("G2 B82 默认档残差 ≤ tol/20（余量 ≥20× · 防 tol 被悄悄放宽）",
-          _c256 <= float(_sp82.tol) / 20.0,
-          "resid=%.3e tol=%g ⇒ 余量 %.0f×" % (_c256, _sp82.tol, float(_sp82.tol) / _c256))
-    # 🔴 抹平必红：把候选**换回**旧核（1 − 同宽切片连乘）⇒ 残差必塌成 0.0，
-    #   即「本组的判据确实能看见那个病」；先证能变红，才谈得上新核已治好。
-    _old = abs((1.0 - _b4.cand_square_barrier_T(*_a82, _b4.ME))
-               - (1.0 - _b4.analytic_square_barrier_T(*_a82, _b4.ME)))
-    check("G3 抹平必红：旧核（同宽切片 · 1−T）残差**恰为 0.0** ∧ 新核 > 0"
-          "（证明 G1/G2 能区分两种候选）",
-          _old == 0.0 and _c256 > 0.0,
-          "旧核 resid=%.3e · 新核 resid=%.3e" % (_old, _c256))
-    check("G4 B82 已不在台账 `zero_resid_ids` ∧ 不在 `BL_ZERO_RESID_REVIEWED`"
-          "（结清即须双撤登记 · 棘轮只减不增）",
-          "B82" not in (sm.get("zero_resid_ids") or [])
-          and "B82" not in BL_ZERO_RESID_REVIEWED,
-          "台账=%s 登记面=%s" % ("B82" in (sm.get("zero_resid_ids") or []),
-                              "B82" in BL_ZERO_RESID_REVIEWED))
+    # (id, 候选名, 观测, N, 是否势阱) —— N 必须与 `_adapter_p4` 里注册的一致；
+    #   下方 G1a 用「同 N 复算 ≡ 注册候选输出」把这份表与实现**锁死**（防两边各说各话）。
+    _RIC = [
+        ("B65", "b65_sqbarrier_T_deep_riccati_cand", "T", 128, False),
+        ("B66", "b66_sqbarrier_T_neartop_riccati_cand", "T", 256, False),
+        ("B67", "b67_sqbarrier_T_osc_riccati_cand", "T", 128, False),
+        ("B68", "b68_sqbarrier_R_riccati_cand", "R", 128, False),
+        ("B81", "b81_sqbarrier_T_v2_riccati_cand", "T", 128, False),
+        ("B82", "b82_sqbarrier_R_riccati_cand", "R", 256, False),
+        ("B83", "b83_sqbarrier_T_v3_riccati_cand", "T", 256, False),
+        ("B84", "b84_finwell_R_riccati_cand", "R", 2048, True),
+    ]
+    _specs = {x.spec_id: x for x in _va2.build_harness_specs()[0]}
+    _cands = _va2.BENCHMARK_CANDIDATES
+    for _bid, _cname, _obs, _N, _well in _RIC:
+        _sp = _specs[_bid]
+        _g = float(_sp.oracle_fn(_sp.params))
+        _E = _sp.params["E_eV"] * _b4.EV
+        _V = (-1.0 if _well else 1.0) * _sp.params["V0_eV"] * _b4.EV
+        _a = _sp.params["a_nm"] * 1e-9
+
+        def _val(_n):
+            return abs(_b4.cand_rect_scatter_riccati(_E, _V, _a, _obs, _n) - _g)
+
+        # G1a：N 表 ≡ 注册实现（锁死「门禁以为的 N」与「适配器实际用的 N」）
+        _reg = float(_cands[_cname](_sp, _g))
+        _direct = _b4.cand_rect_scatter_riccati(_E, _V, _a, _obs, _N)
+        check("%s G1a 门禁的 N=%d ≡ 注册候选实现（防两处 N 各说各话）" % (_bid, _N),
+              _reg == _direct, "reg=%.17g direct=%.17g" % (_reg, _direct))
+
+        # G1b：收敛**趋近四阶**（N/4 → 2N；不写死方向）
+        _ch = [_val(_N // 4), _val(_N // 2), _val(_N), _val(_N * 2)]
+        _rt = [_ch[_i] / _ch[_i + 1] for _i in range(3)]
+        # 🔴 相邻比趋近的是 **16 = 2⁴**（4 阶），不是 4。首版写成 `|r−4|` ⇒ 5 条假红。
+        check("%s G1b 离散化收敛**趋近四阶**（|r_last−16| ≤ |r_first−16| · 不写死方向）" % _bid,
+              abs(_rt[-1] - 16.0) <= abs(_rt[0] - 16.0),
+              "链比=%s（标称 16）" % ["%.2f" % _x for _x in _rt])
+
+        # G2：默认档残差 ≤ tol/20（防 tol 被悄悄放宽）
+        _rd = _val(_N)
+        check("%s G2 resid ≤ tol/20（余量 ≥20× · 防 tol 悄悄放宽）" % _bid,
+              _rd <= float(_sp.tol) / 20.0,
+              "resid=%.3e tol=%g ⇒ 余量 %.0f×" % (_rd, _sp.tol, float(_sp.tol) / _rd))
+
+        # G3：抹平必红 —— 旧核（同宽切片）残差必塌到舍入级（**先证判据能看见病**）
+        if _well:
+            _old = abs((1.0 - _b4.cand_finwell_scatter_T(_E, _sp.params["V0_eV"] * _b4.EV, _a, _b4.ME)) - _g)
+        elif _obs == "T":
+            _old = abs(_b4.cand_square_barrier_T(_E, abs(_V), _a, _b4.ME) - _g)
+        else:
+            _old = abs((1.0 - _b4.cand_square_barrier_T(_E, abs(_V), _a, _b4.ME))
+                       - (1.0 - _b4.analytic_square_barrier_T(_E, abs(_V), _a, _b4.ME)))
+        # 🔴 判据不是「旧核恰为 0」（B83/B84 是 2.2e-14 / 2.5e-14 的舍入级，非 0），
+        #   而是**抹平的签名**：旧核贴舍入地板（≤1e-13）**且**新核比它大 ≥3 个数量级。
+        check("%s G3 抹平必红：旧核（同宽切片）贴舍入地板 ≤1e-13 ∧ 新核 ≥1000× 旧核" % _bid,
+              _old <= 1e-13 and _rd >= 1000.0 * max(_old, 1e-18),
+              "旧核=%.3e · 新核=%.3e（放大 %.1e×）"
+              % (_old, _rd, _rd / max(_old, 1e-18)))
+
+    # G4：结清即须**双撤登记**（台账 ∧ 登记面），否则等于没结清
+    _cleared = ["B82", "B68", "B83", "B81"]
+    _still = [b for b in _cleared
+              if b in (sm.get("zero_resid_ids") or [])
+              or b in BL_ZERO_RESID_REVIEWED or b in BL_CANCEL_REVIEWED
+              or b in BL_INJECT0_PENDING]
+    check("G4 已结清 4 条（B82/B68/B83/B81）均已双撤登记（台账 ∧ 登记面）",
+          not _still, "仍在登记面=%s" % _still)
 
     # ── F 红线 ───────────────────────────────────────────────────────
     # 🔴 用 AST 判而非字面 grep：模块 docstring 里逐条**点名**了这些禁止项（自指陷阱）

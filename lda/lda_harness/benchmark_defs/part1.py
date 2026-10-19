@@ -1782,50 +1782,64 @@ DEFS = {
                 " —— 盲区 fsr_nom_nm 已诚实披露，PERTURB 固定扰 delta（最强键）。",
     },
     "B65": {
-        "title": "方势垒透射 T（E<V0·深隧穿）",
+        "title": "方势垒透射 T（E<V0·深隧穿 · Riccati 候选）",
         "metric": "T",
         "oracle": "analytical(square-barrier sinh²)",
-        "tol": 0.01,
+        "tol": 1e-08,
         "default_params": {"E_eV": 0.1, "V0_eV": 1.0, "a_nm": 0.5},
         "golden_fn": golden_b65,
-        "candidate": "b65_sqbarrier_T_deep_cand",
-        "candidate_desc": ("切片转移矩阵数值透射（势能片乘 2×2 转移矩阵，随切片数收敛到闭式）"
-                           "↔ 方势垒解析闭式 T=1/(1+V0²·sinh²(κa)/4E(V0−E))，方法学独立"),
-        "note": "v0.9.84 Batch B-4：深隧穿 T≈0.0112，golden↔candidate |d|~1e-15（残差=切片收敛误差）。"
-                "判据 D 响应（E/V0/a 扰动信号 >> tol）。",
+        "candidate": "b65_sqbarrier_T_deep_riccati_cand",
+        "candidate_desc": ("Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → T=|t|²（N=128）"
+                           "↔ 解析闭式，方法学独立"),
+        "note": "🔴 v0.9.253 BL-M2 换核：原「400 段等宽切片连乘」对均匀段与闭式"
+                "**数学等价**（S(w)^N ≡ S(N·w)）⇒ 残差恒为舍入级（与切片数无关）；"
+                "换 Riccati+RK4 后 resid(N=128)=3.992e-11、四阶收敛、tol 由 0.01 收紧到 1e-08。"
+                "单元性 |r|²+|t|²=1 为内建自洽判据。",
     },
     "B66": {
-        "title": "方势垒透射 T（E<V0·近顶）",
+        "title": "方势垒透射 T（E<V0·近顶 · Riccati 候选）",
         "metric": "T",
         "oracle": "analytical(square-barrier sinh²)",
-        "tol": 0.01,
+        "tol": 1e-08,
         "default_params": {"E_eV": 0.9, "V0_eV": 1.0, "a_nm": 0.5},
         "golden_fn": golden_b66,
-        "candidate": "b66_sqbarrier_T_neartop_cand",
-        "candidate_desc": ("切片转移矩阵数值透射 ↔ 方势垒解析闭式（近顶 regime，T≈0.307），方法学独立"),
-        "note": "v0.9.84 Batch B-4：近顶 T≈0.3069，|d|~8e-15。",
+        "candidate": "b66_sqbarrier_T_neartop_riccati_cand",
+        "candidate_desc": ("Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → T=|t|²（N=256）"
+                           "↔ 解析闭式，方法学独立"),
+        "note": "🔴 v0.9.253 BL-M2 换核：原「400 段等宽切片连乘」对均匀段与闭式"
+                "**数学等价**（S(w)^N ≡ S(N·w)）⇒ 残差恒为舍入级（与切片数无关）；"
+                "换 Riccati+RK4 后 resid(N=256)=7.121e-11、四阶收敛、tol 由 0.01 收紧到 1e-08。"
+                "单元性 |r|²+|t|²=1 为内建自洽判据。",
     },
     "B67": {
-        "title": "方势垒透射 T（E>V0·振荡区）",
+        "title": "方势垒透射 T（E>V0·振荡区 · Riccati 候选）",
         "metric": "T",
         "oracle": "analytical(square-barrier sin²)",
-        "tol": 0.01,
+        "tol": 1e-08,
         "default_params": {"E_eV": 1.5, "V0_eV": 1.0, "a_nm": 0.5},
         "golden_fn": golden_b67,
-        "candidate": "b67_sqbarrier_T_osc_cand",
-        "candidate_desc": ("切片转移矩阵数值透射 ↔ 方势垒解析闭式（E>V0 振荡 regime，T=1/(1+V0²·sin²(k'a)/4E(E−V0))），方法学独立"),
-        "note": "v0.9.84 Batch B-4：振荡区 T≈0.7608，|d|~4e-16。",
+        "candidate": "b67_sqbarrier_T_osc_riccati_cand",
+        "candidate_desc": ("Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → T=|t|²（N=128）"
+                           "↔ 解析闭式，方法学独立"),
+        "note": "🔴 v0.9.253 BL-M2 换核：原「400 段等宽切片连乘」对均匀段与闭式"
+                "**数学等价**（S(w)^N ≡ S(N·w)）⇒ 残差恒为舍入级（与切片数无关）；"
+                "换 Riccati+RK4 后 resid(N=128)=6.131e-11、四阶收敛、tol 由 0.01 收紧到 1e-08。"
+                "单元性 |r|²+|t|²=1 为内建自洽判据。",
     },
     "B68": {
-        "title": "方势垒反射 R（E<V0）",
+        "title": "方势垒反射 R（E<V0 · Riccati 候选）",
         "metric": "R",
         "oracle": "analytical(square-barrier R=1−T)",
-        "tol": 0.01,
+        "tol": 1e-07,
         "default_params": {"E_eV": 0.1, "V0_eV": 1.0, "a_nm": 0.5},
         "golden_fn": golden_b68,
-        "candidate": "b68_sqbarrier_R_cand",
-        "candidate_desc": ("1 − 切片转移矩阵数值透射 ↔ 解析反射 R=1−T（E<V0，R≈0.989），方法学独立"),
-        "note": "v0.9.84 Batch B-4：R≈0.9888，|d|~1e-15。",
+        "candidate": "b68_sqbarrier_R_riccati_cand",
+        "candidate_desc": ("Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → R=|r|²（N=128）"
+                           "↔ 解析闭式，方法学独立"),
+        "note": "🔴 v0.9.253 BL-M2 换核：原「400 段等宽切片连乘」对均匀段与闭式"
+                "**数学等价**（S(w)^N ≡ S(N·w)）⇒ 残差恒为舍入级（与切片数无关）；"
+                "换 Riccati+RK4 后 resid(N=128)=4.050e-10、四阶收敛、tol 由 0.01 收紧到 1e-07。"
+                "单元性 |r|²+|t|²=1 为内建自洽判据。",
     },
     "B70": {
         "title": "双矩形势垒谐振峰透射 T_peak（Breit-Wigner 峰）",

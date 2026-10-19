@@ -86,15 +86,19 @@ DEFS = {
         "note": "v0.9.84 Batch B-4：非对称双势垒 V1=1eV V2=1.4eV T≈0.0635，|d|~5.4e-5。",
     },
     "B81": {
-        "title": "方势垒透射 T（异参数·深隧穿 v2）",
+        "title": "方势垒透射 T（异参数·深隧穿 v2 · Riccati 候选）",
         "metric": "T",
         "oracle": "analytical(square-barrier sinh²)",
-        "tol": 0.01,
+        "tol": 1e-09,
         "default_params": {"E_eV": 0.3, "V0_eV": 2.0, "a_nm": 0.8},
         "golden_fn": golden_b81,
-        "candidate": "b81_sqbarrier_T_v2_cand",
-        "candidate_desc": ("切片转移矩阵数值透射 ↔ 方势垒解析闭式（异参数域 E=0.3/V0=2.0/a=0.8nm，T≈4.7e-5 深隧穿），方法学独立"),
-        "note": "v0.9.84 Batch B-4：深隧穿 T≈4.7e-5，|d|~2e-18。",
+        "candidate": "b81_sqbarrier_T_v2_riccati_cand",
+        "candidate_desc": ("Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → T=|t|²（N=128）"
+                           "↔ 解析闭式，方法学独立"),
+        "note": "🔴 v0.9.253 BL-M2 换核：原「400 段等宽切片连乘」对均匀段与闭式"
+                "**数学等价**（S(w)^N ≡ S(N·w)）⇒ 残差恒为舍入级（与切片数无关）；"
+                "换 Riccati+RK4 后 resid(N=128)=3.634e-12、四阶收敛、tol 由 0.01 收紧到 1e-09。"
+                "单元性 |r|²+|t|²=1 为内建自洽判据。",
     },
     "B82": {
         "title": "方势垒反射 R（异参数 v2 · Riccati 候选）",
@@ -115,26 +119,34 @@ DEFS = {
                  "默认档 N=256 ⇒ resid=9.557e-12（tol/105）。"),
     },
     "B83": {
-        "title": "方势垒透射 T（异参数·E>V0 振荡 v3）",
+        "title": "方势垒透射 T（异参数·E>V0 振荡 v3 · Riccati 候选）",
         "metric": "T",
         "oracle": "analytical(square-barrier sin²)",
-        "tol": 0.01,
+        "tol": 1e-06,
         "default_params": {"E_eV": 1.2, "V0_eV": 0.8, "a_nm": 1.0},
         "golden_fn": golden_b83,
-        "candidate": "b83_sqbarrier_T_v3_cand",
-        "candidate_desc": ("切片转移矩阵数值透射 ↔ 方势垒解析闭式（异参数 E>V0 振荡 regime，T≈0.997），方法学独立"),
-        "note": "v0.9.84 Batch B-4：振荡区 T≈0.9968，|d|~2e-14。",
+        "candidate": "b83_sqbarrier_T_v3_riccati_cand",
+        "candidate_desc": ("Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → T=|t|²（N=256）"
+                           "↔ 解析闭式，方法学独立"),
+        "note": "🔴 v0.9.253 BL-M2 换核：原「400 段等宽切片连乘」对均匀段与闭式"
+                "**数学等价**（S(w)^N ≡ S(N·w)）⇒ 残差恒为舍入级（与切片数无关）；"
+                "换 Riccati+RK4 后 resid(N=256)=1.278e-09、四阶收敛、tol 由 0.01 收紧到 1e-06。"
+                "单元性 |r|²+|t|²=1 为内建自洽判据。",
     },
     "B84": {
-        "title": "有限深势阱反射 R（异参数）",
+        "title": "有限深势阱反射 R（异参数 · Riccati 候选）",
         "metric": "R",
         "oracle": "analytical(finite-well R=1−T)",
-        "tol": 0.01,
+        "tol": 1e-05,
         "default_params": {"E_eV": 0.5, "V0_eV": 3.0, "a_nm": 2.0},
         "golden_fn": golden_b84,
-        "candidate": "b84_finwell_R_cand",
-        "candidate_desc": ("1 − 切片转移矩阵数值透射 ↔ 有限深势阱散射解析反射 R=1−T（异参数 V0=3eV a=2nm，R≈0.113），方法学独立"),
-        "note": "v0.9.84 Batch B-4：有限深势阱反射 R≈0.1126，|d|~2.5e-14。",
+        "candidate": "b84_finwell_R_riccati_cand",
+        "candidate_desc": ("Riccati 对数导数 [y,I] 耦合 RK4 反向积分 → R=|r|²（N=2048）"
+                           "↔ 解析闭式，方法学独立"),
+        "note": "🔴 v0.9.253 BL-M2 换核：原「400 段等宽切片连乘」对均匀段与闭式"
+                "**数学等价**（S(w)^N ≡ S(N·w)）⇒ 残差恒为舍入级（与切片数无关）；"
+                "换 Riccati+RK4 后 resid(N=2048)=1.177e-08、四阶收敛、tol 由 0.01 收紧到 1e-05。"
+                "单元性 |r|²+|t|²=1 为内建自洽判据。",
     },
     "B85": {
         "title": "δ 势垒透射 T（异参数 v2）",

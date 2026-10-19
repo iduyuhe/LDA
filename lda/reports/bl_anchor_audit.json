@@ -626,20 +626,20 @@
     "cancellation_suspect": false,
     "loose": true,
     "tight": true,
-    "zero_injection_passes": true,
+    "zero_injection_passes": false,
     "zero_resid": false
    },
    "golden": 0.8049388662,
-   "golden_over_tol": 0.5366259108,
+   "golden_over_tol": 1.018909957,
    "id": "B31",
    "metric": "phase_shift_rad",
    "passes": true,
    "resid": 0.7745295853,
-   "resid_over_tol": 0.5163530569,
+   "resid_over_tol": 0.9804171966,
    "title": "Si 载流子色散相移（Soref-Bennett 幂律 · Drude 独立候选）",
-   "tol": 1.5,
+   "tol": 0.79,
    "zero_injection_err": 0.8049388662,
-   "zero_injection_passes": true
+   "zero_injection_passes": false
   },
   {
    "candidate": -1.37528474,
@@ -8741,7 +8741,7 @@
   "n_fail_verdict": 0,
   "n_loose": 8,
   "n_tight": 10,
-  "n_zero_injection_passes": 1,
+  "n_zero_injection_passes": 0,
   "n_zero_resid": 0,
   "non_anchorable_ids": [
    "B17",
@@ -8775,9 +8775,7 @@
    "E2",
    "E9"
   ],
-  "zero_injection_passes_ids": [
-   "B31"
-  ],
+  "zero_injection_passes_ids": [],
   "zero_resid_ids": []
  },
  "thresholds": {

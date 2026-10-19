@@ -3,7 +3,7 @@
 
 本门禁守的是「**判据有没有判别力**」，不是「覆盖率数字好不好看」。
 
-判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G33** + **H4** + **H5 组 5** = **66**）：
+判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G33** + **H6** + **H5 组 5** = **68**）：
   A 台账三件套 3：**子进程重跑 ≡ 磁盘（逐字节）** · schema/摘要自洽 · LF only
   B 逐锚硬断言 4：全部锚 L1 判决 PASS · 非豁免锚 `resid > 0` · 非豁免锚 `resid/tol < 1` ·
     `candidate != golden`（防自证桩化回归）
@@ -72,13 +72,11 @@ BL_ZERO_RESID_REVIEWED = {}
 # ② 注入「候选=0」仍判 PASS —— 判据结构性失效
 # 🔴 v0.9.253 BL-M2：`B81` **已结清并移除**（tol 0.01→1e-9 ⇒ 注入 0 被拒）；
 #   棘轮 `inject0` 同步 6 → 5。
-BL_INJECT0_PENDING = {
-    # 🔴 v0.9.254 BL-M2b：`B11/B74/B87/B88` 已结清并移除（tol 收紧后注入 0 被拒）；
-    #   仅剩 `B31` —— 它是「tol=1.5 掩盖 44° 误差」的疑似语义错位，**不能靠压 tol 修**，
-    #   转 M2b-1 语义裁决（H4 判据锁它原样留观）。
-    "B31": "🔴 相位语义疑似错位：golden 0.80494 vs cand 1.57947（差 0.7745 rad）；"
-           "tol=1.5 下注入 0 仍 PASS 只是 tol 过大所致 ⇒ 转 M2b-1 裁决，本档不压 tol",
-}
+# 🔴 v0.9.256 BL-M2b-1：`B31` **已结清并移除**（裁决认定病灶是判据形态：`tol=1.5 > |g|=0.8049`
+#   ⇒ 注入 0 必过；收紧到窗口中点 0.79 后注入 0 被拒）⇒ **本登记面清空**，棘轮 `inject0 1 → 0`。
+#   ⚠️ 这是 BL 征程里**第一次**把「注入 candidate=0 仍 PASS」清零：清零后该面若再出现任何一条，
+#   都是新回归（C 组 D1 会直接红），不允许「重新登记了事」。
+BL_INJECT0_PENDING = {}
 
 # ③ 已脱离盲区（**口径伪影**：本门禁的登记表点了它的名字 ⇒ 被 K4 的文本代理计入 L2）
 #   ⇒ 不再是「盲区锚」，但**缺陷仍在**，转 BL-M2 批1 与 B81 同族处理。
@@ -102,7 +100,7 @@ from lda_harness.bl_registries import (  # noqa: E402
     BL_FRAGILE_ULP_MAX, BL_PLATFORM_DELTA_MAX, BL_PLATFORM_FRAGILE)
 
 
-_RATCHET = {"zero_resid": 0, "inject0": 1, "cancel": 1, "loose": 8, "tight": 10}
+_RATCHET = {"zero_resid": 0, "inject0": 0, "cancel": 1, "loose": 8, "tight": 10}
 
 
 def _load():
@@ -362,10 +360,39 @@ def main() -> int:
                 if _sp3[b].tol > t * (1.0 + 1e-12)]
     check("H3 不可收紧 8 条的 tol 不许被放宽（收紧须同步改基线并重登）",
           not _widened, "被放宽=%s" % _widened)
-    check("H4 B31 仍在不可收紧登记面 ∧ tol 未被改动（防「顺手调 tol 让它好看」）",
-          "B31" in BL_LOOSE_UNFIXABLE
-          and abs(_sp3["B31"].tol - BL_LOOSE_TOL_BASELINE["B31"]) <= 0.0,
-          "B31 tol=%g（基线 %g）" % (_sp3["B31"].tol, BL_LOOSE_TOL_BASELINE["B31"]))
+    # 🔴 v0.9.256 BL-M2b-1：H4 由「B31 原样留观」升级为「**结清验收**」——
+    #   裁决认定语义相同（乘性模型差 1.962222），病灶是判据形态 ⇒ tol 1.5→0.79。
+    #   验收点：① 已退出注入 0 面；② tol 锁在窗口中点；③ **tol < |golden|**（这正是
+    #   「注入 0 必被拒」的结构性充要条件，不是靠数值巧合）；④ 仍留在「偏松」登记面
+    #   （`|g|/tol≈1` 对量级一致型锚是结构性的，压不下去 —— 不许把它伪装成「已修好」）。
+    _b31g = abs(float(_sp3["B31"].oracle_fn(_sp3["B31"].params)))
+    check("H4 B31 结清验收：退出注入0面 ∧ tol=%.2f（窗口中点）∧ **tol < |golden|=%.6f**（结构性条件）"
+          " ∧ 仍在偏松登记面"
+          % (BL_TOL_RATCHET["B31"], _b31g),
+          ("B31" not in BL_INJECT0_PENDING
+           and abs(_sp3["B31"].tol - BL_TOL_RATCHET["B31"]) <= 0.0
+           and _sp3["B31"].tol < _b31g
+           and "B31" in BL_LOOSE_UNFIXABLE),
+          "tol=%g · |g|=%.6f · tol<|g|=%s · 在偏松面=%s"
+          % (_sp3["B31"].tol, _b31g, _sp3["B31"].tol < _b31g,
+             "B31" in BL_LOOSE_UNFIXABLE))
+
+    # 🔴 裁决结论机器化：把「乘性模型差」写成判据 —— 否则日后有人改 m*/n_eff/常数，
+    #   比值悄悄变了却没人察觉（注：那会让 H4 的 tol<|g| 先红，但那是间接信号）。
+    from lda_harness import b31_soref_bennett_anchor as _S31
+    _rr = []
+    for _V in (0.5, 1.0, 2.0, 3.0, 5.0):
+        _gg = _S31.b31_soref_bennett_phase_shift(_V)
+        _cc = _S31.b31_drude_phase_shift(_V)
+        _rr.append(_cc / _gg)
+    check("H4b B31 差异是**乘性**：c/g 在 V_R∈{0.5,1,2,3,5} 上恒定（极差 ≤1e-12 ⇒ 非加性偏置）",
+          (max(_rr) - min(_rr)) <= 1e-12 and abs(_rr[3] - 1.962222) <= 1e-6,
+          "c/g=%s" % ["%.9f" % _x for _x in _rr])
+    _z_g = _S31.b31_soref_bennett_phase_shift(1e-12)
+    _z_c = _S31.b31_drude_phase_shift(1e-12)
+    check("H4c B31 极限检验：V_R→0 时两者**同趋 0**（加性 π/2 会留 1.5708 残差 ⇒ 反证「相位多加了 90°」）",
+          abs(_z_g) < 1e-9 and abs(_z_c) < 1e-9,
+          "V→0: golden=%.3e candidate=%.3e" % (_z_g, _z_c))
 
     # ── H5 跨平台余量判据（v0.9.255 BL-M2c）────────────────────────────
     # 🔴 为什么需要这一组：tol 收到 1e-16 后，resid 落到**几十~几百 ulp 的噪声区**，

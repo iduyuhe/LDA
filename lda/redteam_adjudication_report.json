@@ -1,7 +1,7 @@
 {
-  "total": 236,
-  "expected_extreme": 130,
-  "in_domain_suspect": 106,
+  "total": 241,
+  "expected_extreme": 132,
+  "in_domain_suspect": 109,
   "suspects": [
     {
       "bid": "B16",
@@ -505,6 +505,66 @@
       "cand": 0.352792107,
       "err": 0.199198876,
       "tol": 0.01,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B31",
+      "as_strict": true,
+      "params": {
+        "V_R": 3.45,
+        "V_bi": 0.85,
+        "N0": 2e+17,
+        "dN_h_ratio": 0.0,
+        "lambda_um": 1.55,
+        "L_um": 1000.0,
+        "n_eff": 2.4
+      },
+      "oracle": 0.891223961,
+      "cand": 1.74877893,
+      "err": 0.857554969,
+      "tol": 0.79,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B31",
+      "as_strict": true,
+      "params": {
+        "V_R": 3.0,
+        "V_bi": 0.7225,
+        "N0": 2e+17,
+        "dN_h_ratio": 0.0,
+        "lambda_um": 1.55,
+        "L_um": 1000.0,
+        "n_eff": 2.4
+      },
+      "oracle": 0.905973574,
+      "cand": 1.77772094,
+      "err": 0.871747366,
+      "tol": 0.79,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B31",
+      "as_strict": true,
+      "params": {
+        "V_R": 3.0,
+        "V_bi": 0.85,
+        "N0": 2.3e+17,
+        "dN_h_ratio": 0.0,
+        "lambda_um": 1.55,
+        "L_um": 1000.0,
+        "n_eff": 2.4
+      },
+      "oracle": 0.925679696,
+      "cand": 1.81638872,
+      "err": 0.890709023,
+      "tol": 0.79,
       "passed": false,
       "max_perturbation": 0.15,
       "classification": "in_domain_divergence"
@@ -2881,6 +2941,106 @@
       "passed": false,
       "max_perturbation": 0.3,
       "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B31",
+      "as_strict": true,
+      "params": {
+        "V_R": 3.45,
+        "V_bi": 0.85,
+        "N0": 2e+17,
+        "dN_h_ratio": 0.0,
+        "lambda_um": 1.55,
+        "L_um": 1000.0,
+        "n_eff": 2.4
+      },
+      "oracle": 0.891223961,
+      "cand": 1.74877893,
+      "err": 0.857554969,
+      "tol": 0.79,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B31",
+      "as_strict": true,
+      "params": {
+        "V_R": 3.9,
+        "V_bi": 0.85,
+        "N0": 2e+17,
+        "dN_h_ratio": 0.0,
+        "lambda_um": 1.55,
+        "L_um": 1000.0,
+        "n_eff": 2.4
+      },
+      "oracle": 0.9731004,
+      "cand": 1.90943865,
+      "err": 0.93633825,
+      "tol": 0.79,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B31",
+      "as_strict": true,
+      "params": {
+        "V_R": 3.0,
+        "V_bi": 0.595,
+        "N0": 2e+17,
+        "dN_h_ratio": 0.0,
+        "lambda_um": 1.55,
+        "L_um": 1000.0,
+        "n_eff": 2.4
+      },
+      "oracle": 1.04024031,
+      "cand": 2.04118204,
+      "err": 1.00094172,
+      "tol": 0.79,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B31",
+      "as_strict": true,
+      "params": {
+        "V_R": 3.0,
+        "V_bi": 0.7225,
+        "N0": 2e+17,
+        "dN_h_ratio": 0.0,
+        "lambda_um": 1.55,
+        "L_um": 1000.0,
+        "n_eff": 2.4
+      },
+      "oracle": 0.905973574,
+      "cand": 1.77772094,
+      "err": 0.871747366,
+      "tol": 0.79,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B31",
+      "as_strict": true,
+      "params": {
+        "V_R": 3.0,
+        "V_bi": 0.85,
+        "N0": 2.3e+17,
+        "dN_h_ratio": 0.0,
+        "lambda_um": 1.55,
+        "L_um": 1000.0,
+        "n_eff": 2.4
+      },
+      "oracle": 0.925679696,
+      "cand": 1.81638872,
+      "err": 0.890709023,
+      "tol": 0.79,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
     },
     {
       "bid": "B319",

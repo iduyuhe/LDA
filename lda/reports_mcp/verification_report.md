@@ -245,7 +245,7 @@
 | B307 | implicit_gauss_legendre_rk4 | physical-law | 0.437999 | 0.437999 | 0 | 0.01 | ✅ PASS |
 | B308 | adams_bashforth4_multistep | physical-law | 0.708815 | 0.708815 | 0 | 0.01 | ✅ PASS |
 | B309 | adams_bashforth4_multistep | physical-law | 0.288505 | 0.288505 | 0 | 0.01 | ✅ PASS |
-| B31 | phase_shift_rad | physical-law | 0.804939 | 0.804939 | 0 | 1.5 | ✅ PASS |
+| B31 | phase_shift_rad | physical-law | 0.804939 | 0.804939 | 0 | 0.79 | ✅ PASS |
 | B310 | adams_bashforth4_multistep | physical-law | 0.792863 | 0.792863 | 0 | 0.01 | ✅ PASS |
 | B311 | adams_bashforth4_multistep | physical-law | 0.469965 | 0.469965 | 0 | 0.01 | ✅ PASS |
 | B312 | adams_bashforth4_multistep | physical-law | 0.278612 | 0.278612 | 0 | 0.01 | ✅ PASS |

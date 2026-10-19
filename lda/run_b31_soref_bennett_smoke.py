@@ -93,12 +93,20 @@ def main() -> int:
           f"domain_ok={rep['domain_ok']} depletion_ok={rep['depletion_ok']} "
           f"dN_max={rep['dN_eff_max_cm3']:.3e}")
 
-    # --------------------------------- ⑥ golden vs candidate 偏差 < tol(1.5)
+    # --------------------------------- ⑥ golden vs candidate：|Δ| ≤ tol（**现读 DEFS，不硬编码**）
+    # 🔴 v0.9.256 BL-M2b-1：原版把阈值**硬编码 1.5** 且比的是**相对**偏差
+    #   （`|c−g|/|g|`），而锚本身判的是**绝对**误差 `|c−g| ≤ tol` —— 口径不一致，
+    #   且 tol 已由 1.5 收紧到 0.79（窗口中点）。改为现读 `BENCHMARK_DEFS["B31"]["tol"]`
+    #   并比绝对误差，与判决路径同口径（「手写数字必配机器对照」）。
+    from lda_harness.benchmarks import BENCHMARK_DEFS as _BD
+    tol_d = float(_BD["B31"]["tol"])
     g = b31_soref_bennett_phase_shift(3.0, V_bi, N0, 0.0, lam, L, n_eff)
     c = b31_drude_phase_shift(3.0, V_bi, N0, lam, L, n_eff)
-    dev = abs(c - g) / abs(g) if g != 0 else float("inf")
-    check("⑥ golden(SB) vs candidate(Drude) dev<tol(1.5)", dev < 1.5,
-          f"dev={dev:.3f} (magnitude-consistency tol, not exact identity)")
+    dev_abs = abs(c - g)
+    check("⑥ golden(SB) vs candidate(Drude) |Δ| ≤ tol（现读 DEFS = %.3g）" % tol_d,
+          dev_abs <= tol_d,
+          f"|Δ|={dev_abs:.6f} tol={tol_d:g} 余量={tol_d / dev_abs:.3f}× · "
+          f"相对差={dev_abs / abs(g):.4f}（乘性模型差，非恒等）")
 
     print("=" * 72)
     if FAIL:

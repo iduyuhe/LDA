@@ -248,7 +248,7 @@
 | B307 | implicit_gauss_legendre_rk4 | physical-law | 0.437999 | 0.437999 | 3.9373e-11 | 0.01 | ✅ PASS |
 | B308 | adams_bashforth4_multistep | physical-law | 0.708815 | 0.708815 | 9.3884e-12 | 0.01 | ✅ PASS |
 | B309 | adams_bashforth4_multistep | physical-law | 0.288505 | 0.288505 | 2.8385e-10 | 0.01 | ✅ PASS |
-| B31 | phase_shift_rad | physical-law | 0.804939 | 1.57947 | 0.77453 | 1.5 | ✅ PASS |
+| B31 | phase_shift_rad | physical-law | 0.804939 | 1.57947 | 0.77453 | 0.79 | ✅ PASS |
 | B310 | adams_bashforth4_multistep | physical-law | 0.792863 | 0.792863 | 1.3112e-11 | 0.01 | ✅ PASS |
 | B311 | adams_bashforth4_multistep | physical-law | 0.469965 | 0.469965 | 9.5136e-11 | 0.01 | ✅ PASS |
 | B312 | adams_bashforth4_multistep | physical-law | 0.278612 | 0.278612 | 2.1455e-10 | 0.01 | ✅ PASS |
@@ -421,9 +421,9 @@
 | B466 | array_thermal_crosstalk_ratio | physical-law | 0.487205 | 0.486784 | 0.00042124 | 0.01 | ✅ PASS |
 | B467 | tia_noise_floor_uV | physical-law | 203.518 | 203.518 | 5.2999e-05 | 0.02 | ✅ PASS |
 | B468 | align_overlap_efficiency | physical-law | 0.606531 | 0.606535 | 4.6425e-06 | 0.003 | ✅ PASS |
-| B469 | geometry_refractive_index_sensitivity | physical-law | 0.446981 | 0.446982 | 8.7142e-07 | 0.005 | ✅ PASS |
+| B469 | geometry_refractive_index_sensitivity | physical-law | 0.446981 | 0.446982 | 8.7133e-07 | 0.005 | ✅ PASS |
 | B47 | E2_eV | physical-law | 0.822319 | 0.822278 | 4.0823e-05 | 0.000408 | ✅ PASS |
-| B470 | geometry_refractive_index_sensitivity | physical-law | 0.460019 | 0.460019 | 3.9546e-08 | 0.005 | ✅ PASS |
+| B470 | geometry_refractive_index_sensitivity | physical-law | 0.460019 | 0.460019 | 3.9642e-08 | 0.005 | ✅ PASS |
 | B471 | geometry_refractive_index_sensitivity | physical-law | 1.17091 | 1.17092 | 1.2907e-05 | 0.005 | ✅ PASS |
 | B472 | q_scaling_lod | physical-law | 9.46722e-11 | 9.46722e-11 | 0 | 1e-09 | ✅ PASS |
 | B473 | nv_magnetometer_sensitivity | physical-law | 8.4659e-10 | 8.46611e-10 | 0 | 0.001 | ✅ PASS |

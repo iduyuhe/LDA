@@ -2,14 +2,18 @@
   "anchors": {
     "B1": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B10": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B100": {
@@ -38,8 +42,10 @@
     },
     "B103": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B104": {
@@ -60,98 +66,130 @@
     },
     "B106": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B107": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B108": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B109": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B11": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B110": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B111": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B112": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B113": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B114": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B115": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B116": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B117": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B118": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B119": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B12": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B120": {
@@ -172,92 +210,122 @@
     },
     "B122": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B123": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B124": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B125": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B126": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B127": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B128": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B129": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B13": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B130": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B131": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B132": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B133": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B134": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B135": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B136": {
@@ -278,98 +346,130 @@
     },
     "B138": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B139": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B14": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B140": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B141": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B142": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B143": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B144": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B145": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B146": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B147": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B148": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B149": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B15": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B150": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B151": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B152": {
@@ -390,92 +490,122 @@
     },
     "B154": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B155": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B156": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B157": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B158": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B159": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B16": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B160": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B161": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B162": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B163": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B164": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B165": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B166": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B167": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B168": {
@@ -502,62 +632,82 @@
     },
     "B170": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B171": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B172": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B173": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B174": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B175": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B176": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B177": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B178": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B179": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B18": {
@@ -568,26 +718,34 @@
     },
     "B180": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B181": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B182": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B183": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B184": {
@@ -608,74 +766,98 @@
     },
     "B186": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B187": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B188": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B189": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B19": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B190": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B191": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B192": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B193": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B194": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B195": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B196": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B197": {
@@ -704,14 +886,18 @@
     },
     "B2": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B20": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B200": {
@@ -733,92 +919,122 @@
     },
     "B202": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B203": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B204": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B205": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B206": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B207": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B208": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B209": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B21": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B210": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B211": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B212": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B213": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B214": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B215": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B216": {
@@ -839,98 +1055,130 @@
     },
     "B218": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B219": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B22": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B220": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B221": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B222": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B223": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B224": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B225": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B226": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B227": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B228": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B229": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B23": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B230": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B231": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B232": {
@@ -951,92 +1199,122 @@
     },
     "B234": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B235": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B236": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B237": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B238": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B239": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B24": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B240": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B241": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B242": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B243": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B244": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B245": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B246": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B247": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B248": {
@@ -1057,98 +1335,130 @@
     },
     "B25": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B250": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B251": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B252": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B253": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B254": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B255": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B256": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B257": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B258": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B259": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B26": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B260": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B261": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B262": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B263": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B264": {
@@ -1169,98 +1479,130 @@
     },
     "B266": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B267": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B268": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B269": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B27": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B270": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B271": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B272": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B273": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B274": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B275": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B276": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B277": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B278": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B279": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B28": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B280": {
@@ -1281,92 +1623,122 @@
     },
     "B282": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B283": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B284": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B285": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B286": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B287": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B288": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B289": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B29": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B290": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B291": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B292": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B293": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B294": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B295": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B296": {
@@ -1387,104 +1759,138 @@
     },
     "B298": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B299": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B3": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B30": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B300": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B301": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B302": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B303": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B304": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B305": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B306": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B307": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B308": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B309": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B31": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B310": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B311": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B312": {
@@ -1505,92 +1911,122 @@
     },
     "B314": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B315": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B316": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B317": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B318": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B319": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B32": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B320": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B321": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B322": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B323": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B324": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B325": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B326": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B327": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B328": {
@@ -1611,98 +2047,130 @@
     },
     "B33": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B330": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B331": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B332": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B333": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B334": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B335": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B336": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B337": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B338": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B339": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B34": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B340": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B341": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B342": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B343": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B344": {
@@ -1723,92 +2191,122 @@
     },
     "B346": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B347": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B348": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B349": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B350": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B351": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B352": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B353": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B354": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B355": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B356": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B357": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B358": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B359": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B36": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B360": {
@@ -1829,74 +2327,98 @@
     },
     "B362": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B363": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B364": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B365": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B366": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B367": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B368": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B369": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B37": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B370": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B371": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B372": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B373": {
@@ -1982,8 +2504,10 @@
     },
     "B383": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B384": {
@@ -2021,20 +2545,26 @@
     },
     "B388": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B389": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B390": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B391": {
@@ -2047,44 +2577,58 @@
     },
     "B392": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B393": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B394": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B395": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B396": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B397": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B398": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B399": {
@@ -2097,14 +2641,18 @@
     },
     "B4": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B40": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B400": {
@@ -2117,74 +2665,98 @@
     },
     "B401": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B402": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B403": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B404": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B405": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B406": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B407": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B408": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B409": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B41": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B410": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B411": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B412": {
@@ -2197,218 +2769,290 @@
     },
     "B413": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B414": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B415": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B416": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B417": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B418": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B419": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B42": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B420": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B421": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B422": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B423": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B424": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B425": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B426": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B427": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B428": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B429": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B43": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B430": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B431": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B432": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B433": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B434": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B435": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B436": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B437": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B438": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B439": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B44": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B440": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B441": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B442": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B443": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B444": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B445": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B446": {
@@ -2421,38 +3065,50 @@
     },
     "B447": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B448": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B449": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B45": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B450": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B451": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B452": {
@@ -2474,8 +3130,10 @@
     },
     "B454": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B455": {
@@ -2488,20 +3146,26 @@
     },
     "B456": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B457": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B458": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B459": {
@@ -2515,8 +3179,10 @@
     },
     "B46": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B460": {
@@ -2621,8 +3287,10 @@
     },
     "B47": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B470": {
@@ -2722,8 +3390,10 @@
     },
     "B48": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B480": {
@@ -2820,8 +3490,10 @@
     },
     "B49": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B490": {
@@ -2921,14 +3593,18 @@
     },
     "B5": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B50": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B500": {
@@ -3031,8 +3707,10 @@
     },
     "B51": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B510": {
@@ -3118,8 +3796,10 @@
     },
     "B52": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B520": {
@@ -3152,296 +3832,394 @@
     },
     "B53": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B54": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B55": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B56": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B57": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B58": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B59": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B6": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B60": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B61": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B62": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B63": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B64": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B65": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B66": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B67": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B68": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B7": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B70": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B71": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B73": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B74": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B75": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B76": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B77": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B78": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B79": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B8": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B80": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B81": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B82": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B83": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B84": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B85": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B86": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B87": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B88": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B89": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B9": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B90": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B91": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B92": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B93": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B94": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B95": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B96": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B97": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B98": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "B99": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "E1": {
@@ -3452,14 +4230,18 @@
     },
     "E10": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "E2": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "E3": {
@@ -3494,14 +4276,18 @@
     },
     "E8": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "E9": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "S1": {
@@ -3530,8 +4316,10 @@
     },
     "S13": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "S2": {
@@ -3566,14 +4354,18 @@
     },
     "S7": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "S8": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_bl_anchor_guard_smoke.py"
+      ],
       "l3": false
     },
     "S9": {
@@ -3584,419 +4376,23 @@
     }
   },
   "blind_anchors": [
-    "B1",
-    "B10",
-    "B103",
-    "B106",
-    "B107",
-    "B108",
-    "B109",
-    "B11",
-    "B110",
-    "B111",
-    "B112",
-    "B113",
-    "B114",
-    "B115",
-    "B116",
-    "B117",
-    "B118",
-    "B119",
-    "B12",
-    "B122",
-    "B123",
-    "B124",
-    "B125",
-    "B126",
-    "B127",
-    "B128",
-    "B129",
-    "B13",
-    "B130",
-    "B131",
-    "B132",
-    "B133",
-    "B134",
-    "B135",
-    "B138",
-    "B139",
-    "B14",
-    "B140",
-    "B141",
-    "B142",
-    "B143",
-    "B144",
-    "B145",
-    "B146",
-    "B147",
-    "B148",
-    "B149",
-    "B15",
-    "B150",
-    "B151",
-    "B154",
-    "B155",
-    "B156",
-    "B157",
-    "B158",
-    "B159",
-    "B16",
-    "B160",
-    "B161",
-    "B162",
-    "B163",
-    "B164",
-    "B165",
-    "B166",
-    "B167",
     "B17",
-    "B170",
-    "B171",
-    "B172",
-    "B173",
-    "B174",
-    "B175",
-    "B176",
-    "B177",
-    "B178",
-    "B179",
     "B18",
-    "B180",
-    "B181",
-    "B182",
-    "B183",
-    "B186",
-    "B187",
-    "B188",
-    "B189",
-    "B19",
-    "B190",
-    "B191",
-    "B192",
-    "B193",
-    "B194",
-    "B195",
-    "B196",
-    "B2",
-    "B20",
-    "B202",
-    "B203",
-    "B204",
-    "B205",
-    "B206",
-    "B207",
-    "B208",
-    "B209",
-    "B21",
-    "B210",
-    "B211",
-    "B212",
-    "B213",
-    "B214",
-    "B215",
-    "B218",
-    "B219",
-    "B22",
-    "B220",
-    "B221",
-    "B222",
-    "B223",
-    "B224",
-    "B225",
-    "B226",
-    "B227",
-    "B228",
-    "B229",
-    "B23",
-    "B230",
-    "B231",
-    "B234",
-    "B235",
-    "B236",
-    "B237",
-    "B238",
-    "B239",
-    "B24",
-    "B240",
-    "B241",
-    "B242",
-    "B243",
-    "B244",
-    "B245",
-    "B246",
-    "B247",
-    "B25",
-    "B250",
-    "B251",
-    "B252",
-    "B253",
-    "B254",
-    "B255",
-    "B256",
-    "B257",
-    "B258",
-    "B259",
-    "B26",
-    "B260",
-    "B261",
-    "B262",
-    "B263",
-    "B266",
-    "B267",
-    "B268",
-    "B269",
-    "B27",
-    "B270",
-    "B271",
-    "B272",
-    "B273",
-    "B274",
-    "B275",
-    "B276",
-    "B277",
-    "B278",
-    "B279",
-    "B28",
-    "B282",
-    "B283",
-    "B284",
-    "B285",
-    "B286",
-    "B287",
-    "B288",
-    "B289",
-    "B29",
-    "B290",
-    "B291",
-    "B292",
-    "B293",
-    "B294",
-    "B295",
-    "B298",
-    "B299",
-    "B3",
-    "B30",
-    "B300",
-    "B301",
-    "B302",
-    "B303",
-    "B304",
-    "B305",
-    "B306",
-    "B307",
-    "B308",
-    "B309",
-    "B31",
-    "B310",
-    "B311",
-    "B314",
-    "B315",
-    "B316",
-    "B317",
-    "B318",
-    "B319",
-    "B32",
-    "B320",
-    "B321",
-    "B322",
-    "B323",
-    "B324",
-    "B325",
-    "B326",
-    "B327",
-    "B33",
-    "B330",
-    "B331",
-    "B332",
-    "B333",
-    "B334",
-    "B335",
-    "B336",
-    "B337",
-    "B338",
-    "B339",
-    "B34",
-    "B340",
-    "B341",
-    "B342",
-    "B343",
-    "B346",
-    "B347",
-    "B348",
-    "B349",
-    "B350",
-    "B351",
-    "B352",
-    "B353",
-    "B354",
-    "B355",
-    "B356",
-    "B357",
-    "B358",
-    "B359",
-    "B36",
-    "B362",
-    "B363",
-    "B364",
-    "B365",
-    "B366",
-    "B367",
-    "B368",
-    "B369",
-    "B37",
-    "B370",
-    "B371",
-    "B372",
-    "B383",
-    "B388",
-    "B389",
-    "B390",
-    "B392",
-    "B393",
-    "B394",
-    "B395",
-    "B396",
-    "B397",
-    "B398",
-    "B4",
-    "B40",
-    "B401",
-    "B402",
-    "B403",
-    "B404",
-    "B405",
-    "B406",
-    "B407",
-    "B408",
-    "B409",
-    "B41",
-    "B410",
-    "B411",
-    "B413",
-    "B414",
-    "B415",
-    "B416",
-    "B417",
-    "B418",
-    "B419",
-    "B42",
-    "B420",
-    "B421",
-    "B422",
-    "B423",
-    "B424",
-    "B425",
-    "B426",
-    "B427",
-    "B428",
-    "B429",
-    "B43",
-    "B430",
-    "B431",
-    "B432",
-    "B433",
-    "B434",
-    "B435",
-    "B436",
-    "B437",
-    "B438",
-    "B439",
-    "B44",
-    "B440",
-    "B441",
-    "B442",
-    "B443",
-    "B444",
-    "B445",
-    "B447",
-    "B448",
-    "B449",
-    "B45",
-    "B450",
-    "B451",
-    "B454",
-    "B456",
-    "B457",
-    "B458",
-    "B46",
-    "B47",
-    "B48",
-    "B49",
-    "B5",
-    "B50",
-    "B51",
-    "B52",
-    "B53",
-    "B54",
-    "B55",
-    "B56",
-    "B57",
-    "B58",
-    "B59",
-    "B6",
-    "B60",
-    "B61",
-    "B62",
-    "B63",
-    "B64",
-    "B65",
-    "B66",
-    "B67",
-    "B68",
-    "B7",
-    "B70",
-    "B71",
-    "B73",
-    "B74",
-    "B75",
-    "B76",
-    "B77",
-    "B78",
-    "B79",
-    "B8",
-    "B80",
-    "B81",
-    "B82",
-    "B83",
-    "B84",
-    "B85",
-    "B86",
-    "B87",
-    "B88",
-    "B89",
-    "B9",
-    "B90",
-    "B91",
-    "B92",
-    "B93",
-    "B94",
-    "B95",
-    "B96",
-    "B97",
-    "B98",
-    "B99",
     "E1",
-    "E10",
-    "E2",
     "E3",
     "E4",
     "E5",
     "E6",
     "E7",
-    "E8",
-    "E9",
     "S1",
     "S10",
     "S11",
     "S12",
-    "S13",
     "S2",
     "S3",
     "S4",
     "S5",
     "S6",
-    "S7",
-    "S8",
     "S9"
   ],
   "excluded_fields": [
@@ -4606,9 +5002,410 @@
     "run_yield_fault_tolerance_smoke.py": []
   },
   "generated_by": "scripts/k4_coverage.py",
-  "method": "三层：L1 = verification_report.results 的 id 集；L2/L3 = CORE 门禁源码去注释后显式锚号；锚全集 = BENCHMARK_DEFS ∪ BENCHMARK_ORDER",
+  "manifest": {
+    "run_bl_anchor_guard_smoke.py": [
+      "B1",
+      "B10",
+      "B103",
+      "B106",
+      "B107",
+      "B108",
+      "B109",
+      "B11",
+      "B110",
+      "B111",
+      "B112",
+      "B113",
+      "B114",
+      "B115",
+      "B116",
+      "B117",
+      "B118",
+      "B119",
+      "B12",
+      "B122",
+      "B123",
+      "B124",
+      "B125",
+      "B126",
+      "B127",
+      "B128",
+      "B129",
+      "B13",
+      "B130",
+      "B131",
+      "B132",
+      "B133",
+      "B134",
+      "B135",
+      "B138",
+      "B139",
+      "B14",
+      "B140",
+      "B141",
+      "B142",
+      "B143",
+      "B144",
+      "B145",
+      "B146",
+      "B147",
+      "B148",
+      "B149",
+      "B15",
+      "B150",
+      "B151",
+      "B154",
+      "B155",
+      "B156",
+      "B157",
+      "B158",
+      "B159",
+      "B16",
+      "B160",
+      "B161",
+      "B162",
+      "B163",
+      "B164",
+      "B165",
+      "B166",
+      "B167",
+      "B170",
+      "B171",
+      "B172",
+      "B173",
+      "B174",
+      "B175",
+      "B176",
+      "B177",
+      "B178",
+      "B179",
+      "B180",
+      "B181",
+      "B182",
+      "B183",
+      "B186",
+      "B187",
+      "B188",
+      "B189",
+      "B19",
+      "B190",
+      "B191",
+      "B192",
+      "B193",
+      "B194",
+      "B195",
+      "B196",
+      "B2",
+      "B20",
+      "B202",
+      "B203",
+      "B204",
+      "B205",
+      "B206",
+      "B207",
+      "B208",
+      "B209",
+      "B21",
+      "B210",
+      "B211",
+      "B212",
+      "B213",
+      "B214",
+      "B215",
+      "B218",
+      "B219",
+      "B22",
+      "B220",
+      "B221",
+      "B222",
+      "B223",
+      "B224",
+      "B225",
+      "B226",
+      "B227",
+      "B228",
+      "B229",
+      "B23",
+      "B230",
+      "B231",
+      "B234",
+      "B235",
+      "B236",
+      "B237",
+      "B238",
+      "B239",
+      "B24",
+      "B240",
+      "B241",
+      "B242",
+      "B243",
+      "B244",
+      "B245",
+      "B246",
+      "B247",
+      "B25",
+      "B250",
+      "B251",
+      "B252",
+      "B253",
+      "B254",
+      "B255",
+      "B256",
+      "B257",
+      "B258",
+      "B259",
+      "B26",
+      "B260",
+      "B261",
+      "B262",
+      "B263",
+      "B266",
+      "B267",
+      "B268",
+      "B269",
+      "B27",
+      "B270",
+      "B271",
+      "B272",
+      "B273",
+      "B274",
+      "B275",
+      "B276",
+      "B277",
+      "B278",
+      "B279",
+      "B28",
+      "B282",
+      "B283",
+      "B284",
+      "B285",
+      "B286",
+      "B287",
+      "B288",
+      "B289",
+      "B29",
+      "B290",
+      "B291",
+      "B292",
+      "B293",
+      "B294",
+      "B295",
+      "B298",
+      "B299",
+      "B3",
+      "B30",
+      "B300",
+      "B301",
+      "B302",
+      "B303",
+      "B304",
+      "B305",
+      "B306",
+      "B307",
+      "B308",
+      "B309",
+      "B31",
+      "B310",
+      "B311",
+      "B314",
+      "B315",
+      "B316",
+      "B317",
+      "B318",
+      "B319",
+      "B32",
+      "B320",
+      "B321",
+      "B322",
+      "B323",
+      "B324",
+      "B325",
+      "B326",
+      "B327",
+      "B33",
+      "B330",
+      "B331",
+      "B332",
+      "B333",
+      "B334",
+      "B335",
+      "B336",
+      "B337",
+      "B338",
+      "B339",
+      "B34",
+      "B340",
+      "B341",
+      "B342",
+      "B343",
+      "B346",
+      "B347",
+      "B348",
+      "B349",
+      "B350",
+      "B351",
+      "B352",
+      "B353",
+      "B354",
+      "B355",
+      "B356",
+      "B357",
+      "B358",
+      "B359",
+      "B36",
+      "B362",
+      "B363",
+      "B364",
+      "B365",
+      "B366",
+      "B367",
+      "B368",
+      "B369",
+      "B37",
+      "B370",
+      "B371",
+      "B372",
+      "B383",
+      "B388",
+      "B389",
+      "B390",
+      "B392",
+      "B393",
+      "B394",
+      "B395",
+      "B396",
+      "B397",
+      "B398",
+      "B4",
+      "B40",
+      "B401",
+      "B402",
+      "B403",
+      "B404",
+      "B405",
+      "B406",
+      "B407",
+      "B408",
+      "B409",
+      "B41",
+      "B410",
+      "B411",
+      "B413",
+      "B414",
+      "B415",
+      "B416",
+      "B417",
+      "B418",
+      "B419",
+      "B42",
+      "B420",
+      "B421",
+      "B422",
+      "B423",
+      "B424",
+      "B425",
+      "B426",
+      "B427",
+      "B428",
+      "B429",
+      "B43",
+      "B430",
+      "B431",
+      "B432",
+      "B433",
+      "B434",
+      "B435",
+      "B436",
+      "B437",
+      "B438",
+      "B439",
+      "B44",
+      "B440",
+      "B441",
+      "B442",
+      "B443",
+      "B444",
+      "B445",
+      "B447",
+      "B448",
+      "B449",
+      "B45",
+      "B450",
+      "B451",
+      "B454",
+      "B456",
+      "B457",
+      "B458",
+      "B46",
+      "B47",
+      "B48",
+      "B49",
+      "B5",
+      "B50",
+      "B51",
+      "B52",
+      "B53",
+      "B54",
+      "B55",
+      "B56",
+      "B57",
+      "B58",
+      "B59",
+      "B6",
+      "B60",
+      "B61",
+      "B62",
+      "B63",
+      "B64",
+      "B65",
+      "B66",
+      "B67",
+      "B68",
+      "B7",
+      "B70",
+      "B71",
+      "B73",
+      "B74",
+      "B75",
+      "B76",
+      "B77",
+      "B78",
+      "B79",
+      "B8",
+      "B80",
+      "B81",
+      "B82",
+      "B83",
+      "B84",
+      "B85",
+      "B86",
+      "B87",
+      "B88",
+      "B89",
+      "B9",
+      "B90",
+      "B91",
+      "B92",
+      "B93",
+      "B94",
+      "B95",
+      "B96",
+      "B97",
+      "B98",
+      "B99",
+      "E10",
+      "E2",
+      "E8",
+      "E9",
+      "S13",
+      "S7",
+      "S8"
+    ]
+  },
+  "manifest_schema": "lda_gate_anchor_manifest_v1",
+  "method": "三层：L1 = verification_report.results 的 id 集；L2 = 文本（CORE 门禁源码去注释后显式锚号）∪ manifest（门禁运行时登记 asserted_anchor_ids）；L3 = ≥2 门禁；锚全集 = BENCHMARK_DEFS ∪ BENCHMARK_ORDER",
   "ratchet": {
-    "l2_min": 123,
+    "l2_min": 520,
     "l3_min": 65,
     "policy": "只升不降：新增锚必须补专属判据或显式登记为 L1-only"
   },
@@ -4618,16 +5415,12 @@
   "summary": {
     "anchors_total": 538,
     "blind_by_band": {
-      "B100–B199": 82,
-      "B1–B99": 94,
-      "B200–B299": 86,
-      "B300–B399": 76,
-      "B400–B499": 53,
-      "E（实证）": 10,
-      "S（系统层）": 13
+      "B1–B99": 2,
+      "E（实证）": 6,
+      "S（系统层）": 10
     },
     "by_gate_count": {
-      "1": 59,
+      "1": 455,
       "2": 34,
       "3": 22,
       "4": 8,
@@ -4639,8 +5432,11 @@
     "gates_with_anchors": 32,
     "gates_zero_anchor": 303,
     "l1_unified_covered": 538,
-    "l2_bespoke_covered": 124,
-    "l2_blind": 414,
+    "l2_bespoke_covered": 520,
+    "l2_blind": 18,
+    "l2_manifest_added": 396,
+    "l2_manifest_covered": 396,
+    "l2_text_covered": 124,
     "l3_multi_covered": 65
   }
 }

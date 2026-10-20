@@ -490,6 +490,15 @@ def main() -> int:
         #   写盘走 `det.write_text`（UTF-8 + LF）。
         #   ⚠️ 键相对 `lda/`，脚本在仓库根 ⇒ `../scripts/bl_audit.py`。
         "../scripts/bl_audit.py": _WALL,
+        # ——— 2026-10-19（v0.9.258 · BL-M4）：门禁运行时登记 → manifest 生成器 ———
+        #   `scripts/gate_manifest.py` 写**受跟踪** `lda/reports/gate_anchor_manifest.json`。
+        #   🔴 确定性证据（现算）：源码零 `datetime.now/time.strftime/time.time/random./
+        #   uuid4/os.getpid/mkdtemp/json.dump(`；键序固定（sort_keys=True）；
+        #   写盘走 `det.write_text`（UTF-8 + LF）。
+        #   双向锁死由 `run_bl_anchor_guard_smoke` 的 H7（manifest ≡ 运行时断言集）+
+        #   `run_k4_coverage_smoke` 的 M 组（coverage.manifest ≡ 本文件 · L2 ≡ 文本 ∪ manifest）守。
+        #   ⚠️ 键相对 `lda/`，脚本在仓库根 ⇒ `../scripts/gate_manifest.py`。
+        "../scripts/gate_manifest.py": _WALL,
     }
     lint_bad = []
     no_det = []

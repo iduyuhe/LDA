@@ -7,7 +7,7 @@
     "head（每次提交都变 ⇒ 非确定量，故意不入台账）"
   ],
   "frozen_snapshot": {
-    "version": "0.9.257",
+    "version": "0.9.258",
     "ledger_total": 538,
     "ledger_strict": 516,
     "ledger_degraded": 3,
@@ -300,16 +300,12 @@
         "matrix_summary": {
           "anchors_total": 538,
           "blind_by_band": {
-            "B100–B199": 82,
-            "B1–B99": 94,
-            "B200–B299": 86,
-            "B300–B399": 76,
-            "B400–B499": 53,
-            "E（实证）": 10,
-            "S（系统层）": 13
+            "B1–B99": 2,
+            "E（实证）": 6,
+            "S（系统层）": 10
           },
           "by_gate_count": {
-            "1": 59,
+            "1": 455,
             "2": 34,
             "3": 22,
             "4": 8,
@@ -321,12 +317,15 @@
           "gates_with_anchors": 32,
           "gates_zero_anchor": 303,
           "l1_unified_covered": 538,
-          "l2_bespoke_covered": 124,
-          "l2_blind": 414,
+          "l2_bespoke_covered": 520,
+          "l2_blind": 18,
+          "l2_manifest_added": 396,
+          "l2_manifest_covered": 396,
+          "l2_text_covered": 124,
           "l3_multi_covered": 65
         },
         "matrix_ratchet": {
-          "l2_min": 123,
+          "l2_min": 520,
           "l3_min": 65,
           "policy": "只升不降：新增锚必须补专属判据或显式登记为 L1-only"
         },

@@ -35,9 +35,14 @@ from lda_harness import deterministic as det  # noqa: E402  （⑧b：确定性�
 SCHEMA = "lda_anchor_gate_coverage_v1"
 OUT_REL = "lda/reports/anchor_gate_coverage.json"
 VERIF_REL = "lda/reports/verification_report.json"
+MANIFEST_REL = "lda/reports/gate_anchor_manifest.json"
+MANIFEST_SCHEMA = "lda_gate_anchor_manifest_v1"
 
-# 🔵 覆盖下限棘轮（**只升不降**）：L2 = 有专属门禁提及 · L3 = ≥2 门禁
-L2_MIN = 123
+# 🔵 覆盖下限棘轮（**只升不降**）：L2 = 有专属门禁提及（文本 ∪ manifest）· L3 = ≥2 门禁
+# 🔴 v0.9.258 BL-M4：L2 口径由「文本代理」升为「文本 ∪ manifest」⇒ 门禁运行时登记的
+#   396 条盲区锚（BL 门禁 B 组逐锚硬断言）计入 L2 ⇒ L2 124 → 520（上限 520，18 条
+#   已裁决不可接永不覆盖）。棘轮同步抬到 520（只升不降）。
+L2_MIN = 520
 L3_MIN = 65
 
 ANCHOR_RE = re.compile(r"\bB(\d{3})\b")
@@ -80,6 +85,23 @@ def _strip_comments(src: str) -> str:
                      if not ln.strip().startswith("#"))
 
 
+def _manifest():
+    """读受跟踪 `gate_anchor_manifest.json`（门禁**运行时登记** · 由 gate_manifest.py 生成）。
+
+    返回 (gate → 锚列表, schema)。文件缺失 ⇒ 空（L2 退回纯文本面；K4 门禁的 M 组会红）。
+    """
+    p = os.path.join(_REPO, MANIFEST_REL)
+    if not os.path.exists(p):
+        return {}, ""
+    with open(p, encoding="utf-8") as f:
+        d = json.load(f)
+    reg = d.get("registries") or {}
+    man = {}
+    for gate, v in reg.items():
+        man[gate] = sorted(set(v.get("anchors") or []))
+    return man, d.get("schema") or ""
+
+
 def _band(aid: str) -> str:
     if aid.startswith("E"):
         return "E（实证）"
@@ -109,19 +131,29 @@ def build():
         found = {"B" + n for n in ANCHOR_RE.findall(body)}
         gate_anchors[name] = sorted(found & idset)
 
-    anchor_gates = {}
+    # 文本驱动的 per-anchor（`gates` 字段保持纯文本面 ⇒ K4 门禁 C1 独立重扫仍成立）
+    anchor_text = {}
     for name, anchors in gate_anchors.items():
         for a in anchors:
-            anchor_gates.setdefault(a, []).append(name)
-    for a in anchor_gates:
-        anchor_gates[a].sort()
+            anchor_text.setdefault(a, set()).add(name)
+    # manifest 驱动的 per-anchor（门禁运行时登记）
+    man_gate_anchors, man_schema = _manifest()
+    anchor_man = {}
+    for name, anchors in man_gate_anchors.items():
+        for a in anchors:
+            anchor_man.setdefault(a, set()).add(name)
+    # 🔴 L2 = 文本 ∪ manifest（限制在账本全集内）
+    anchor_all = {}
+    for a in set(anchor_text) | set(anchor_man):
+        if a in idset:
+            anchor_all[a] = sorted(anchor_text.get(a, set()) | anchor_man.get(a, set()))
 
-    l2 = set(anchor_gates)
-    l3 = {a for a, gs in anchor_gates.items() if len(gs) >= 2}
+    l2 = set(anchor_all)
+    l3 = {a for a, gs in anchor_all.items() if len(gs) >= 2}
     blind = sorted(idset - l2)
 
     dist = {}
-    for gs in anchor_gates.values():
+    for gs in anchor_all.values():
         dist[str(len(gs))] = dist.get(str(len(gs)), 0) + 1
 
     blind_by_band = {}
@@ -131,7 +163,7 @@ def build():
 
     anchors_out = {}
     for a in ids:
-        gs = anchor_gates.get(a, [])
+        gs = anchor_all.get(a, [])
         anchors_out[a] = {
             "l1": a in l1,
             "l2_gates": gs,
@@ -145,7 +177,8 @@ def build():
         "roadmap": "K（量子赛道一期结算与固化）",
         "subject": "hex-layer gate × anchor coverage matrix",
         "method": ("三层：L1 = verification_report.results 的 id 集；"
-                   "L2/L3 = CORE 门禁源码去注释后显式锚号；锚全集 = "
+                   "L2 = 文本（CORE 门禁源码去注释后显式锚号）∪ manifest"
+                   "（门禁运行时登记 asserted_anchor_ids）；L3 = ≥2 门禁；锚全集 = "
                    "BENCHMARK_DEFS ∪ BENCHMARK_ORDER"),
         "excluded_fields": ["时间戳（非确定量）", "git HEAD（每次提交都变）"],
         "summary": {
@@ -155,6 +188,9 @@ def build():
             "gates_excluded": len(EXCLUDE_GATES),
             "l1_unified_covered": len(l1),
             "l2_bespoke_covered": len(l2),
+            "l2_text_covered": len(set(anchor_text) & idset),
+            "l2_manifest_covered": len(set(anchor_man) & idset),
+            "l2_manifest_added": len((set(anchor_man) & idset) - set(anchor_text)),
             "l3_multi_covered": len(l3),
             "l2_blind": len(blind),
             "gates_with_anchors": sum(1 for v in gate_anchors.values() if v),
@@ -162,6 +198,8 @@ def build():
             "by_gate_count": {k: dist[k] for k in sorted(dist, key=int)},
             "blind_by_band": {k: blind_by_band[k] for k in sorted(blind_by_band)},
         },
+        "manifest_schema": man_schema,
+        "manifest": {k: man_gate_anchors[k] for k in sorted(man_gate_anchors)},
         "excluded_gates": {k: EXCLUDE_GATES[k] for k in sorted(EXCLUDE_GATES)},
         "ratchet": {"l2_min": L2_MIN, "l3_min": L3_MIN,
                     "policy": "只升不降：新增锚必须补专属判据或显式登记为 L1-only"},

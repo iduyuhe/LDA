@@ -1,5 +1,47 @@
 # Changelog
 
+## v0.9.258（2026-10-19 · **BL 征程 BL-M4 · L2 口径升「文本 ∪ manifest」（覆盖率真实化）** · 账本 538 不变 · strict 516 不变 · 独立率 95.91% 不变 · CI core 336 不变 · 端点 156 不变）
+
+### 一句话
+
+把 K4 的 L2 从**文本代理**（门禁源码出现锚号即算覆盖）升为**「文本 ∪ manifest」**：manifest 由门禁**运行时登记**它实际断言过的锚号得到 —— 不是手写清单，也不是扫源码字符串。**L2 124 → 520 · 盲区 414 → 18**。
+
+### 问题
+
+K4 的 L2 原定义是「CORE 门禁源码（去注释后）显式出现锚号」。这是**文本代理**：在门禁里写一行锚号就能让 L2 +1，而判据强度一点没变 —— 纯指标游戏，与「不虚报」红线冲突。
+
+### 口径升级
+
+- 新增受跟踪 `lda/reports/gate_anchor_manifest.json` + 生成器 `scripts/gate_manifest.py`。
+- 机制：import 门禁模块 → 调用 `run_bl_anchor_guard_smoke.asserted_anchor_ids()`（从受跟踪 `bl_anchor_audit.json` 的 `rows` 派生 = B 组**逐锚硬断言**的锚集）⇒ 登记面与运行时断言集**同源**。
+- K4 的 `build()` 读 manifest ⇒ **L2 = 文本 `gates` ∪ manifest**（`gates` 字段保持纯文本面，保 C1 独立重扫成立）。
+- 结果：**L2 124 → 520**（文本 124 + manifest 新增 396，不相交）· **盲区 414 → 18**（18 条已裁决不可接永不覆盖）· L3 65 不变 · L2 上限 520。
+
+### 双向锁死
+
+- **BL 门禁 H7**：`manifest[本门禁]` ≡ 本次运行实际断言的锚集（逐元素 · 手改 manifest 或台账行集变化未重生 ⇒ 必红）。
+- **K4 门禁 M1–M3**：manifest schema 精确 · 门禁 ⊆ `CORE_SMOKES` ∧ 锚 ⊆ 账本 ∧ count 自洽 · **coverage.manifest ≡ gate_manifest.registries（两副本逐元素 · 防漂移）**。
+- **K4 门禁 C7**：**L2 ≡ 文本 `gates` ∪ manifest（逐元素）∧ blind ≡ total − L2**。
+- **K4 门禁 E5**：删除 manifest 一条 ⇒ C7 必红（双向锁的负向验证）。
+
+### 拆掉一个环（首轮重生即实测）
+
+`bl_audit` 的体检域必须取**文本盲区**（`gates` 文本覆盖的补集 = 414），不能取 K4 的并集盲区（18）：manifest 来自本审计的 `rows`，并集 L2 已含它们 ⇒ 若读并集盲区则 `rows` 塌成 0 ⇒ manifest 空（首轮重生实测 `rows: []`）。已改为 `账本全集 − 文本 gates 覆盖集`。
+
+### 门禁计数
+
+- `run_bl_anchor_guard_smoke`：**71 → 72 判据**（+H7）。
+- `run_k4_coverage_smoke`：**25 → 30 判据**（+C7 / M1 / M2 / M3 / E5）。
+- 新写入者 `scripts/gate_manifest.py` 已登 `run_report_determinism_smoke` 的 `lint_spec`（确定性由 29 判据守）。
+
+### 计数（三同步）
+
+账本 **538** 不变 · strict **516** 不变 · 独立率 **95.91%** 不变（零锚增减，只改覆盖率口径）· CI core **336** 不变 · 端点 **156** 不变 · `CASE_PANELS_MIN` **17** 不变 · 版本 **v0.9.258**。
+
+### 诚实边界
+
+manifest 只登记**门禁实际断言过的**锚（BL 门禁 B 组逐锚硬断言的 396 条），**不登记仅「提及」的锚**；18 条已裁决不可接永不补判据；L2 是「有专属判据」的下限，**不等于判据强**。零量子 SDK；LLM 不进判决路径。
+
 ## v0.9.257（2026-10-19 · **BL 征程 BL-M3 · 余量不足 10 条：修 2 条 + 披露 8 条并机器锁死**（承接 v0.9.256）· **账本 538 不变 · strict 516 不变** · CI core 336 不变 · 端点 156 不变）
 
 ### 一句话

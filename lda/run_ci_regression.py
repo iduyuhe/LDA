@@ -1930,9 +1930,11 @@ CORE_SMOKES: List[str] = [
     #   CI core 331→332。
     "run_k3_cross_stage_smoke.py",
     # v0.9.247（K4）：门禁×锚覆盖矩阵（闭环 G-K-6「覆盖盲区无下限棘轮」）。
-    #   三层覆盖 L1 统一判决 538 / L2 专属门禁 123 / L3 多重 65 · 盲区 415 如实登记 ·
-    #   ratchet 只升不降 + 硬编码下限防下调 · 反向探针 4 道。**23 判据**。
-    #   CI core 332→333。
+    #   🔴 v0.9.258（BL-M4）：L2 口径升「文本 ∪ manifest」⇒ L2 520 / 盲区 18（18 条不可接）·
+    #   新增 M1–M3（manifest schema / 门禁⊆CORE ∧ 锚⊆账本 / coverage≡gate_manifest 两副本）
+    #   + C7（L2 ≡ 文本∪manifest）+ E5（删 manifest 一条必红）⇒ **30 判据**；
+    #   ratchet 只升不降 + 硬编码下限防下调（_HARD_L2_MIN 123→520）· 反向探针 5 道。
+    #   CI core 332→333（成员数不变）。
     "run_k4_coverage_smoke.py",
     # v0.9.248（K5）：量子赛道六层总览渲染路径门禁（闭环 G-K-7 对外入口）。
     #   `sec-qtrack` 三入口面 + `GET /api/qtrack` + 48 锚 100% 覆盖断言 +
@@ -1973,6 +1975,9 @@ CORE_SMOKES: List[str] = [
     #   by_design + 书面原因）** ⇒ 新增 **H6 组 3**（台账 tight 集 ≡ 披露面双向 /
     #   kind 合法 ∧ 原因 ≥12 字 ∧ resid/tol ≤ 1.0 / 已修 2 条 margin ≥2× 且不在 tight）
     #   ⇒ 68 → **71 判据**；棘轮 `tight 10→8`。
+    #   🔴 v0.9.258（BL-M4）：L2 口径升「文本 ∪ manifest」⇒ 新增 **H7 组 1**
+    #   （manifest[本门禁] ≡ 本次实际断言锚集 · 运行时登记非手写 · 删一条必红）
+    #   ⇒ 71 → **72 判据**。
     "run_bl_anchor_guard_smoke.py",
 ]
 

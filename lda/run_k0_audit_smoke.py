@@ -171,7 +171,7 @@ def validate(led: dict, fresh: dict) -> dict:
         and _m6.get("l1_unified_covered") == _m6.get("anchors_total")
         and (_m6.get("l2_bespoke_covered") or 0)
             + (_m6.get("l2_blind") or 0) == _m6.get("anchors_total")
-        and int(_r6.get("l2_min", 0)) >= 123
+        and int(_r6.get("l2_min", 0)) >= 520
         and int(_r6.get("l3_min", 0)) >= 65)
     e8 = ev("G-K-8")
     # 🔴 K6 起草后语义翻转：旧判据曾断言「蓝图 v2 **不存在**」⇒ 已被草案打反（第 6 例 Step-5）。

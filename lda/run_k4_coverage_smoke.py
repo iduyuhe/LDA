@@ -7,10 +7,13 @@
   B 受跟踪生成物三件套：**子进程重跑 ≡ 磁盘（逐字节）** · 幂等 · LF only
   C 事实性（**独立重算**）：`gates` 锚集 ≡ 门禁**独立重扫** · L1 集 ≡ `verification_report` 现算 ·
     l2/l3 计数 ≡ 从 `anchors` 现算 · `by_gate_count` 分布求和 ≡ l2 · blind 集 ≡ total−l2 ·
-    `blind_by_band` 求和 ≡ blind 总数
+    `blind_by_band` 求和 ≡ blind 总数 · **C7 L2 ≡ 文本 ∪ manifest（逐元素）**
   D 覆盖下限棘轮（**只升不降**）：l2 ≥ ratchet.l2_min · l3 ≥ ratchet.l3_min ·
     ratchet 不得低于**硬编码历史下限**（防「偷偷下调棘轮」）
-  E 反向探针（**先证能变红**）：删一个锚 · 改某锚 `l2_gates` · 下调 ratchet · 篡改 blind 列表
+  E 反向探针（**先证能变红**）：删一个锚 · 改某锚 `l2_gates` · 下调 ratchet · 篡改 blind 列表 ·
+    删 manifest 一条 ⇒ C7 必红
+  M manifest 运行时登记（v0.9.258 BL-M4）：schema 精确 · 门禁 ⊆ CORE ∧ 锚 ⊆ 账本 ∧ count 自洽 ·
+    **coverage.manifest ≡ gate_anchor_manifest（两副本逐元素 · 防漂移）**
   F 红线：生成器零手写证据（`deterministic` + `det.write_text` + 零时钟/随机）· 本门禁 ∈ `CORE_SMOKES`
 
 🔴 `main()` 返回「真值」而非恒 0。
@@ -38,12 +41,15 @@ check = make_check(globals(), ok_key="PASS", bad_key="FAIL", detail_fmt="  |  {d
 
 _LEDGER = os.path.join(_HERE, "reports", "anchor_gate_coverage.json")
 _VERIF = os.path.join(_HERE, "reports", "verification_report.json")
+_MANIFEST = os.path.join(_HERE, "reports", "gate_anchor_manifest.json")
 _GEN = os.path.join(_ROOT, "scripts", "k4_coverage.py")
 _PY = sys.executable
 _SCHEMA = "lda_anchor_gate_coverage_v1"
+_MAN_SCHEMA = "lda_gate_anchor_manifest_v1"
 
 # 🔵 硬编码历史下限（只许上调；用于防「下调棘轮」）
-_HARD_L2_MIN = 123
+# 🔴 v0.9.258 BL-M4：L2 口径升「文本 ∪ manifest」⇒ 124 → 520，硬下限同步抬到 520。
+_HARD_L2_MIN = 520
 _HARD_L3_MIN = 65
 
 # 🔴 门禁侧**独立**登记的排除集（不 import 生成器常量 ⇒ 双向锁死）。
@@ -101,6 +107,13 @@ def load():
     return json.loads(raw), raw
 
 
+def _load_manifest():
+    if not os.path.exists(_MANIFEST):
+        return None
+    with open(_MANIFEST, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def _validate(led):
     r = {}
     ids = _ledger_ids()
@@ -142,6 +155,20 @@ def _validate(led):
         set(blind) == {a for a, v in anch.items() if not (v.get("l2_count") or 0)})
     band = sm.get("blind_by_band") or {}
     r["C6 blind_by_band 求和 ≡ blind 总数"] = sum(band.values()) == len(blind)
+
+    # ── C7：L2 = 文本 ∪ manifest（M4 口径真实化）──
+    text_anchor_set = set()
+    for gs in gates.values():
+        text_anchor_set |= set(gs or [])
+    man_anchors = set()
+    for gs in (led.get("manifest") or {}).values():
+        man_anchors |= set(gs or [])
+    l2_set = {a for a, v in anch.items() if (v.get("l2_count") or 0) > 0}
+    r["C7 L2 ≡ 文本 gates ∪ manifest（逐元素）∧ blind ≡ total − L2"] = (
+        l2_set == (text_anchor_set | man_anchors) & ids
+        and set(blind) == ids - l2_set
+        and sm.get("l2_text_covered") == len(text_anchor_set & ids)
+        and sm.get("l2_manifest_covered") == len(man_anchors & ids))
 
     # D 组：棘轮
     r["D1 l2 ≥ ratchet.l2_min"] = l2 >= int(rat.get("l2_min", 10 ** 9))
@@ -194,13 +221,34 @@ def main():
     # ── C 事实性 ───────────────────────────────────────────────────
     for k in ("C1 gates 锚集 ≡ 门禁独立重扫", "C2 L1 集 ≡ verification_report 现算",
               "C3 l2/l3 计数 ≡ 从 anchors 现算", "C4 by_gate_count 分布求和 ≡ l2",
-              "C5 blind 集 ≡ total − l2（逐元素）", "C6 blind_by_band 求和 ≡ blind 总数"):
+              "C5 blind 集 ≡ total − l2（逐元素）", "C6 blind_by_band 求和 ≡ blind 总数",
+              "C7 L2 ≡ 文本 gates ∪ manifest（逐元素）∧ blind ≡ total − L2"):
         check(k, r[k], "")
 
     # ── D 棘轮 ────────────────────────────────────────────────────
     for k in ("D1 l2 ≥ ratchet.l2_min", "D2 l3 ≥ ratchet.l3_min",
               "D3 ratchet 不低于硬编码历史下限（防下调）"):
         check(k, r[k], "")
+
+    # ── M manifest 运行时登记（v0.9.258 BL-M4）──────────────────────
+    manj = _load_manifest()
+    check("M1 gate_anchor_manifest.json 存在 ∧ schema 精确",
+          manj is not None and manj.get("schema") == _MAN_SCHEMA,
+          "schema=%r" % ((manj or {}).get("schema")))
+    regs = (manj or {}).get("registries") or {}
+    core_names = set(_core_smokes())
+    man_gate_ok = bool(regs) and all(g in core_names for g in regs)
+    man_anch_ok = all(set(v.get("anchors") or []) <= _ledger_ids() for v in regs.values())
+    man_cnt_ok = all(v.get("count") == len(v.get("anchors") or []) for v in regs.values())
+    check("M2 manifest 门禁 ⊆ CORE_SMOKES ∧ 锚 ⊆ 账本 ∧ count ≡ len(anchors)",
+          man_gate_ok and man_anch_ok and man_cnt_ok,
+          "gates=%s gate_ok=%s anch_ok=%s cnt_ok=%s"
+          % (sorted(regs), man_gate_ok, man_anch_ok, man_cnt_ok))
+    cov_man = {k: sorted(v) for k, v in (led.get("manifest") or {}).items()}
+    file_man = {k: sorted(v.get("anchors") or []) for k, v in regs.items()}
+    check("M3 coverage.manifest ≡ gate_anchor_manifest.registries（两副本逐元素 · 防漂移）",
+          cov_man == file_man,
+          "coverage=%d file=%d" % (len(cov_man), len(file_man)))
 
     # ── E 反向探针 ────────────────────────────────────────────────
     def mutated(fn):
@@ -239,6 +287,18 @@ def main():
     red4 = mutated(m_blind)
     check("E4 反向探针：篡改 blind 列表 ⇒ C5 必红",
           "C5 blind 集 ≡ total − l2（逐元素）" in red4, "红项=%s" % red4[:3])
+
+    def m_manifest(x):
+        man = x.get("manifest") or {}
+        for g in sorted(man):
+            if man[g]:
+                man[g] = man[g][:-1]
+                return
+
+    red5 = mutated(m_manifest)
+    check("E5 反向探针：删 manifest 一条 ⇒ C7 必红（M4 双向锁的负向验证）",
+          "C7 L2 ≡ 文本 gates ∪ manifest（逐元素）∧ blind ≡ total − L2" in red5,
+          "红项=%s" % red5[:3])
 
     # ── G 排除面锁死（防「为绿而扩大排除」） ────────────────────────
     exg = led.get("excluded_gates") or {}

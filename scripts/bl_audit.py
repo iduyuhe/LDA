@@ -115,7 +115,15 @@ def build() -> dict:
     """现算全部 strict 盲区锚，返回台账 payload（纯函数 · 无副作用）。"""
     with open(_p(COV_REL), encoding="utf-8") as f:
         cov = json.load(f)
-    blind = sorted(set(cov["blind_anchors"]), key=_sort_key)
+    # 🔴 v0.9.258 BL-M4：本审计的域 = **文本盲区**（K4 的 `gates` 字段只含文本面），
+    #   不是 K4 的 `blind_anchors`（M4 后已升为「文本 ∪ manifest」并集盲区 = 18 条不可接）。
+    #   🔴 若读并集盲区会形成**循环**：manifest 来自本审计的 rows ⇒ 并集 L2 已含它们 ⇒
+    #   并集盲区把它们全抹掉 ⇒ rows 空 ⇒ manifest 空（实测第一次重生即塌成 0 行）。
+    #   文本盲区 = 账本全集 − 文本 `gates` 覆盖集（始终 414 = 396 strict + 18 不可接）。
+    _text_cov = set()
+    for _gs in (cov.get("gates") or {}).values():
+        _text_cov |= set(_gs or [])
+    blind = sorted(set(cov.get("anchors") or {}) - _text_cov, key=_sort_key)
 
     specs, cand_map = _va.build_harness_specs()
     by_id = {s.spec_id: s for s in specs}

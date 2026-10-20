@@ -3,7 +3,7 @@
 
 本门禁守的是「**判据有没有判别力**」，不是「覆盖率数字好不好看」。
 
-判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G33** + **H4 组 3** + **H5 组 5** + **H6 组 3** = **71**）：
+判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G33** + **H4 组 3** + **H5 组 5** + **H6 组 3** + **H7 组 1** = **72**）：
   A 台账三件套 3：**子进程重跑 ≡ 磁盘（逐字节）** · schema/摘要自洽 · LF only
   B 逐锚硬断言 4：全部锚 L1 判决 PASS · 非豁免锚 `resid > 0` · 非豁免锚 `resid/tol < 1` ·
     `candidate != golden`（防自证桩化回归）
@@ -20,6 +20,8 @@
     另 1 项全局「结清即双撤登记」。覆盖 `B65/B66/B67/B68/B81/B82/B83/B84`
   H 「不可收紧」登记面 + tol 棘轮 4（v0.9.254 BL-M2b）：**台账偏松集 ≡ 登记面（双向）** ·
     14 条 tol **只许更严** · 不可收紧 8 条 tol **不许放宽** · `B31` 原样留观
+  H7 manifest 双向锁 1（v0.9.258 BL-M4）：受跟踪 `gate_anchor_manifest.json` 的
+    `manifest[本门禁]` ≡ **本次运行实际断言的锚集**（逐元素 · 运行时登记非手写 · 删一条必红）
 
 🔴 **A1 为什么曾经随机红（v0.9.251 首轮全量 CI 当场抓出）**：台账在 10 线程与默认多线程
    环境下 `resid` 第 7–9 位有效数字就不同（BLAS 归约顺序 → 迭代求解器末位漂移 ~1e-9 相对），
@@ -54,6 +56,7 @@ from lda_harness import verification_adapters as _va  # noqa: E402,F401
 from lda_harness import deterministic as det  # noqa: E402
 
 _LEDGER = os.path.join(_HERE, "reports", "bl_anchor_audit.json")
+_MANIFEST = os.path.join(_HERE, "reports", "gate_anchor_manifest.json")
 _GEN = os.path.join(_ROOT, "scripts", "bl_audit.py")
 _CI = os.path.join(_HERE, "run_ci_regression.py")
 _SCHEMA = "lda_bl_anchor_audit_v1"
@@ -107,6 +110,16 @@ _RATCHET = {"zero_resid": 0, "inject0": 0, "cancel": 1, "loose": 8, "tight": 8}
 def _load():
     with open(_LEDGER, encoding="utf-8") as f:
         return json.load(f)
+
+
+def asserted_anchor_ids():
+    """运行时登记：本门禁 B 组实际断言的锚集（从台账 `rows` 派生 · 非手写）。
+
+    BL-M4 把 K4 的 L2 由「文本代理」升为「文本 ∪ manifest」。manifest 由
+    `scripts/gate_manifest.py` **import 本模块并调用本函数**生成 ⇒ 登记面与运行时
+    断言集**同源**；H7 判据再把 manifest 与 `main()` 实际的 `rows` 逐元素锁死。
+    """
+    return sorted({r["id"] for r in (_load().get("rows") or [])})
 
 
 def _gen_stdout() -> str:
@@ -491,6 +504,27 @@ def main() -> int:
     check("H6c 已修条目（见 `BL_TIGHT_FIXED`）必须 margin ≥ %.1f× ∧ 不在 tight 集"
           % min(BL_TIGHT_FIXED.values()),
           not _fix_bad, "不合格=%s（margin, 仍在tight）" % _fix_bad)
+
+    # ── H7 manifest 双向锁（v0.9.258 BL-M4）──────────────────────────────
+    # 🔴 K4 的 L2 改为「文本 ∪ manifest」⇒ manifest 必须**运行时登记**（非手写）。
+    #   本判据把 manifest[本门禁] 与**本次运行实际断言的锚集**逐元素锁死：
+    #   ① 手改 manifest（加/删/换一条）⇒ 红；② 台账重生后行集变化而 manifest 未重生 ⇒ 红。
+    #   锚号只出现在受跟踪 manifest 与台账（数据面），本门禁文案不含任何锚号字面量。
+    _man_ids, _man_cnt, _man_schema = [], None, ""
+    if os.path.exists(_MANIFEST):
+        with open(_MANIFEST, encoding="utf-8") as _mf:
+            _mj = json.load(_mf)
+        _man_schema = _mj.get("schema") or ""
+        _reg = (_mj.get("registries") or {}).get("run_bl_anchor_guard_smoke.py") or {}
+        _man_ids = sorted(_reg.get("anchors") or [])
+        _man_cnt = _reg.get("count")
+    _rt_ids = sorted({r["id"] for r in rows})
+    _man_diff = sorted(set(_man_ids) ^ set(_rt_ids))
+    check("H7 manifest[本门禁] ≡ 本次实际断言锚集（逐元素 · 运行时登记非手写 · 删一条必红）",
+          (_man_schema == "lda_gate_anchor_manifest_v1"
+           and _man_cnt == len(_man_ids) == len(_rt_ids)
+           and _man_ids == _rt_ids),
+          "manifest=%d runtime=%d 差=%s" % (len(_man_ids), len(_rt_ids), _man_diff[:6]))
 
     # ── F 红线 ───────────────────────────────────────────────────────
     # 🔴 用 AST 判而非字面 grep：模块 docstring 里逐条**点名**了这些禁止项（自指陷阱）

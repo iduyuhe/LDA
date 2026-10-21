@@ -1909,6 +1909,12 @@ CORE_SMOKES: List[str] = [
     #   （`sec-j5` 三入口面 + `GET /api/j5_qnet` + 六段跨源逐值对拍 + M4 净增 0 诚实呈现）。
     #   **20 判据**。纯标准库 + 一次子进程调 `run_j5_qnet_smoke`（实测 ~1.5s）。CI core 327→328。
     "run_webui_j5_render_path_smoke.py",
+    # v0.9.261（D1 M4）：D1 光-量异质集成**设计预算**面板渲染路径门禁
+    #   （`sec-d1` 三入口面 + `GET /api/d1_hetero` + 五段跨源逐值对拍（阵列孔径 ≡
+    #   `qnet_hetero_array` · DMM/Debye/h_K/R_K ≡ `hetero_thermal`）+ **两条负结果如实呈现**
+    #   （M1/M2 均 NOT_ANCHORABLE 且各带 ≥3 证据）+ 4 道突变探针）。**20 判据**。
+    #   纯标准库 + 一次子进程调 `run_v2d1_smoke`（实测 ~0.9s）。**CI core 337→338**。
+    "run_webui_d1_render_path_smoke.py",
     # v0.9.243（K0）：量子赛道**一期未结项台账**常驻门禁（闭环缺口 G-K-1）。
     #   受跟踪生成物三件套（子进程重跑 ≡ 磁盘台账 · 幂等 · LF only）+ 反向探针 3 道
     #   + 快照 ≡ 现算 + 证据现算对拍。**29 判据**（v0.9.247 补 E8 · G-K-6）。纯标准库 + 两次子进程调生成器（实测 ~1.5s）。
@@ -3004,6 +3010,10 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   20 判据 · 实测上界 ~1.5s（含一次 `run_j5_qnet_smoke` 子进程 ~0.9s）⇒ 给 300s 上限
     #   （与 j4 渲染门禁同档；余量充裕，不构成欠标定）。
     "run_webui_j5_render_path_smoke.py": 300.0,
+    # D1 光-量异质集成面板渲染路径门禁（v0.9.261 · D1 M4）：
+    #   20 判据 · 实测上界 ~1.0s（含一次 `run_v2d1_smoke` 子进程 ~0.9s）⇒ 给 300s
+    #   （与 j4/j5 渲染门禁同档；余量充裕，不构成欠标定）。
+    "run_webui_d1_render_path_smoke.py": 300.0,
     # J5 量子网络与接口征程 M0 门禁（B519 分发保真度 + 信道层 + 分发能力层 + 跨模块同源 + 三表一致）：
     #   20 判据 · 实测上界 **~0.7s** ⇒ 预算 300s = **≈428×**。
     #   🔴 必须显式登记（`run_timeout_budget_ratchet_smoke` 的 B20 反向完备要求

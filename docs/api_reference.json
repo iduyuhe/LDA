@@ -1,9 +1,9 @@
 {
   "counts": {
-    "described": 156,
+    "described": 157,
     "needs_login": 60,
-    "precise": 139,
-    "total": 156,
+    "precise": 140,
+    "total": 157,
     "undescribed": 0,
     "wildcard": 17
   },
@@ -313,6 +313,20 @@
       "note": "",
       "params": [],
       "path": "/api/cpo_array",
+      "source": "handler_docstring",
+      "wildcard": false
+    },
+    {
+      "app_function": null,
+      "auth": "public",
+      "binary": false,
+      "description": "GET /api/d1_hetero —— 蓝图 v2 · D1 光-量异质集成**只读案例卡**（免登录 · 微秒级）。 D1 新域（M0 锚 B523 阵列孔径截断 → M3 前移 锚 B524 Kapitza 界面热导）的对外窗口： 🔴 **两条负结果如实同屏**（本卡的存在理由）： - **M1 异质界面损耗**：章程原定的 Fresnel 反射 / Beer–Lambert 吸收两条**均已被既有锚 100% 覆盖**（连候选方法都对得上）⇒ 判参数化扩展、**不立新锚**； - **M2 封装级耦合容差**：良率只是既有单通道耦合律的统计重写（**派生量**）；MC 跨种子 最坏达不到余量要求、限窗 Simpson 又与 M0 双重同族 ⇒ **不立新锚**。 🔴 **零重计算**：不跑仿真、不 import 求解器 / numpy / scipy —— 数字全部由**闭式算术现算** （erf 差 / DMM 比值 / Debye 四次幂 / 声子通量加权），并由常驻门禁 `run_webui_d1_render_path_smoke` 对 `lda_l2/qnet_hetero_array` 与 `lda_l2/hetero_thermal` **逐值跨源对拍** ⇒ **无 DoS 面**，故免登录、不进 `HEAVY_POST_PATHS`。 无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`。 异常不 500（返回 200 + error 字段，与 `h_j5_qnet_demo` 同风格）。",
+      "handler": "h_d1_hetero",
+      "heavy": false,
+      "method": "GET",
+      "note": "",
+      "params": [],
+      "path": "/api/d1_hetero",
       "source": "handler_docstring",
       "wildcard": false
     },

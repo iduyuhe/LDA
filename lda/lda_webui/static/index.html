@@ -154,6 +154,7 @@ body{padding-top:56px}
     <a href="#sec-qtrack" style="color:#eff6ff;background:#0891b2;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">◆ 量子赛道六层总览（Layer 0–5 · 48 锚 · 六层复利 · 一屏入口 · 只读）</a>
     <a href="#sec-j1" style="color:#eff6ff;background:#7c3aed;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ J1 量子纠错（M0–M4 · 阈值/解码/综合征/容错门/端到端 · 逻辑比特层 L1 · 设计预算 · 只读免登录）</a>
     <a href="#sec-j5" style="color:#eff6ff;background:#059669;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ J5 量子网络与接口（M0–M4 · 信道/分发/源/中继/换能/经典接口 · km 级距离 · 设计预算 · 只读案例）</a>
+    <a href="#sec-d1" style="color:#0b1220;background:#fbbf24;border-radius:8px;padding:5px 12px;text-decoration:none;font-weight:700">★ D1 光-量异质集成（M0 阵列孔径 + M3 Kapitza 界面热导 · M1/M2 双裁决 · 设计预算 · 只读案例）</a>
     <span style="color:#9fb0d4">← 点任一即跳到卡片并高亮（免登录）</span>
   </div>
 
@@ -4823,6 +4824,31 @@ body{padding-top:56px}
     <div id="j5Summary" class="summary"></div>
     <div id="j5Body"></div>
     <div class="conclusion" id="j5Conclusion"></div>
+  </div>
+
+  <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-d1">
+    <h2>★ 光-量异质集成案例（D1 · M0/M3 出锚 + M1/M2 双裁决 · 设计预算）</h2>
+    <div class="hint">
+      蓝图 v2 新域 <b>D1 光-量异质集成</b>：把「<b>单节点换能</b>」推进到「<b>多模阵列 + 低温共集成</b>」，
+      并<b>当场承认两条章程锚立不住</b>。<br/>
+      🔵 <b>两个真锚</b>：<b>B523 多模换能阵列平均孔径截断效率 γ̄</b>（erf 闭式 ⇄ 限窗复合 Simpson · O(h⁴)）·
+      <b>B524 Kapitza 界面热导 h_K</b>（DMM + 低温 Debye 闭式 ⇄ 内能温度中心差商 · O(ε²)）。<br/>
+      🔵 <b>两条负结果（如实同屏，不藏）</b>：<b>M1 异质界面损耗</b> —— Fresnel 反射 / Beer–Lambert 吸收
+      <b>均已被既有锚 100% 覆盖</b>（连候选方法都对得上）⇒ 参数化扩展，不立新锚；
+      <b>M2 封装级耦合容差</b> —— 良率只是既有单通道耦合律的<b>统计包装</b>（派生量），
+      MC 跨种子最坏达不到余量要求、限窗 Simpson 又与 M0 双重同族 ⇒ 不立新锚。<br/>
+      🔵 <b>只读 · 免登录 · 零重计算</b>：数字全部由<b>闭式算术</b>现算（erf 差 / DMM 比值 /
+      Debye 四次幂 / 声子通量加权）⇒ 微秒级、无 DoS 面、不进重端点护栏。<br/>
+      🔵 <b>诚实边界</b>：θ_D / v / n 为 Al / Si <b>手册量级设计示例</b>（非 foundry 标定、
+      <b>非实测 Kapitza 数据</b>）；模型为 DMM + 声学 Debye + 单支平均声速；
+      判决恒为 <b>DESIGN_BUDGET</b>，<b>非</b>流片实测；<b>LLM 不进判决路径</b>。
+    </div>
+    <div class="row">
+      <button class="btn" id="runD1">运行 D1 光-量异质集成案例</button>
+    </div>
+    <div id="d1Summary" class="summary"></div>
+    <div id="d1Body"></div>
+    <div class="conclusion" id="d1Conclusion"></div>
   </div>
 
   <div class="sec" data-stage="accept" data-stack="both" data-roles="engineer,expert" id="sec-qtrack">
@@ -10633,6 +10659,51 @@ function renderJ1(d){
   return true;
 }
 if($('runQTrack')) $('runQTrack').onclick = runQTrack;
+if($('runD1')) $('runD1').onclick = runD1;
+async function runD1(){
+  const btn=$('runD1'); if(!btn) return;
+  btn.disabled=true;
+  $('d1Summary').innerHTML='<span class="spin"></span> 正在读取 D1 光-量异质集成案例卡（设计预算 · 闭式现算）…';
+  try{
+    const d=await apiGet('/api/d1_hetero');
+    renderD1(d);
+  }catch(e){ $('d1Summary').textContent='错误：'+(e&&e.message?e.message:e); }
+  finally{ btn.disabled=false; }
+}
+function renderD1(d){
+  if(!d||d.error){ $('d1Summary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
+  var segs=d.segments||[], sg=d.signing||{}, bd=d.budget||{}, sp=d.span||{};
+  $('d1Summary').innerHTML='判决 <b>'+d.verdict+'</b> · 案例 <b>'+d.case_id+'</b> · 端点 <code>/api/d1_hetero</code> · 签核 <b>'+sg.n_pass+'/'+sg.n_total+'</b> ⇒ '+sg.verdict;
+  var h='';
+  h+='<h3 style="margin:14px 0 4px">① 征程五档（M0/M3 出锚 · M1/M2 双裁决）</h3>';
+  h+='<table class="tbl"><tr><th>档</th></tr>';
+  (d.milestones||[]).forEach(function(m){ h+='<tr><td>'+m+'</td></tr>'; });
+  h+='</table>';
+  h+='<h3 style="margin:14px 0 4px">② 五段闭式现算（逐段签核）</h3>';
+  h+='<table class="tbl"><tr><th>段</th><th>量</th><th>值</th><th>签核</th></tr>';
+  segs.forEach(function(x){ h+='<tr><td>'+x.segment+'</td><td>'+x.metric+'</td><td>'+_sxF(x.value,6)+'</td><td>'+x.verdict+'</td></tr>'; });
+  h+='</table>';
+  h+='<h3 style="margin:14px 0 4px">③ 两个真锚（严格独立）</h3><table class="tbl"><tr><th>锚</th><th>物理量</th></tr>';
+  var an=d.anchors||{}; Object.keys(an).forEach(function(k){ h+='<tr><td><b>'+k+'</b></td><td>'+an[k]+'</td></tr>'; });
+  h+='</table>';
+  h+='<h3 style="margin:14px 0 4px">④ 两条负结果（裁决不作为锚 · 证据同屏）</h3>';
+  var nr=d.negative_results||{}; Object.keys(nr).forEach(function(k){
+    var v=nr[k]||{};
+    h+='<div class="hint" style="margin:8px 0 2px"><b>'+k+'</b> ⇒ <b>'+v.verdict+'</b> —— '+(v.why||'')+'</div>';
+    h+='<table class="tbl"><tr><th>证据</th></tr>';
+    (v.evidence||[]).forEach(function(e){ h+='<tr><td>'+e+'</td></tr>'; });
+    h+='</table>';
+  });
+  h+='<h3 style="margin:14px 0 4px">⑤ 缺口登记（G-D1-1…4）</h3><table class="tbl"><tr><th>缺口</th></tr>';
+  (d.gaps||[]).forEach(function(g){ h+='<tr><td>'+g+'</td></tr>'; });
+  h+='</table>';
+  h+='<h3 style="margin:14px 0 4px">⑥ 预算明细（闭式 · 设计示例量级）</h3><table class="tbl"><tr><th>项</th><th>值</th></tr>';
+  Object.keys(bd).forEach(function(k){ h+='<tr><td>'+k+'</td><td>'+_sxF(bd[k],6)+'</td></tr>'; });
+  h+='</table>';
+  $('d1Body').innerHTML=h;
+  $('d1Conclusion').innerHTML='<b>结论</b>：'+d.honest_note+'<br/>门禁 <code>'+(sp.gate||'')+'</code> · 渲染路径 <code>'+(sp.render_path_smoke||'')+'</code> · 鉴权 '+(sp.auth||'');
+  return true;
+}
 if($('runJ5')) $('runJ5').onclick = runJ5;
 async function runJ5(){
   const btn=$('runJ5'); if(!btn) return;
@@ -11069,7 +11140,7 @@ function renderJ2(d){
                   "#sec-accel": "runAccel", "#sec-d4": "runD4", "#sec-oi": "runOi",
                   "#sec-pm": "runPm", "#sec-sensor": "runSensor",
                   "#sec-soc": "runSoc", "#sec-qsensor": "runQsensor",
-                  "#sec-j2": "runJ2", "#sec-j3": "runJ3", "#sec-j4": "runJ4", "#sec-j5": "runJ5",
+                  "#sec-j2": "runJ2", "#sec-j3": "runJ3", "#sec-j4": "runJ4", "#sec-j5": "runJ5", "#sec-d1": "runD1",
                   "#sec-qtrack": "runQTrack", "#sec-j1": "runJ1"};
   var fired = {};
   function maybeRun() {

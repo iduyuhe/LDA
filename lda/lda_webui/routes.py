@@ -579,6 +579,36 @@ def h_j5_qnet_demo(h, p, q, path):
                       "case_id": _j5.CASE_ID, "verdict": "ERROR"})
 
 
+def h_d1_hetero(h, p, q, path):
+    """GET /api/d1_hetero —— 蓝图 v2 · D1 光-量异质集成**只读案例卡**（免登录 · 微秒级）。
+
+    D1 新域（M0 锚 B523 阵列孔径截断 → M3 前移 锚 B524 Kapitza 界面热导）的对外窗口：
+
+    🔴 **两条负结果如实同屏**（本卡的存在理由）：
+      - **M1 异质界面损耗**：章程原定的 Fresnel 反射 / Beer–Lambert 吸收两条**均已被既有锚
+        100% 覆盖**（连候选方法都对得上）⇒ 判参数化扩展、**不立新锚**；
+      - **M2 封装级耦合容差**：良率只是既有单通道耦合律的统计重写（**派生量**）；MC 跨种子
+        最坏达不到余量要求、限窗 Simpson 又与 M0 双重同族 ⇒ **不立新锚**。
+
+    🔴 **零重计算**：不跑仿真、不 import 求解器 / numpy / scipy —— 数字全部由**闭式算术现算**
+    （erf 差 / DMM 比值 / Debye 四次幂 / 声子通量加权），并由常驻门禁
+    `run_webui_d1_render_path_smoke` 对 `lda_l2/qnet_hetero_array` 与
+    `lda_l2/hetero_thermal` **逐值跨源对拍** ⇒ **无 DoS 面**，故免登录、不进 `HEAVY_POST_PATHS`。
+
+    无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`。
+    异常不 500（返回 200 + error 字段，与 `h_j5_qnet_demo` 同风格）。
+    """
+    try:
+        from . import d1_case as _d1
+    except ImportError:
+        from lda_webui import d1_case as _d1
+    try:
+        return (200, _d1.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/d1_hetero", "error": str(e)[:160],
+                      "case_id": _d1.CASE_ID, "verdict": "ERROR"})
+
+
 def h_j1_qec_demo(h, p, q, path):
     """GET /api/j1_qec —— J1 量子纠错（QEC）**逻辑比特层**案例卡（只读 · 免登录 · 微秒级）。
 
@@ -2335,6 +2365,9 @@ GET_ROUTES = {
     # J5 征程（v0.9.242+）：量子网络与接口**链路级**层（L5）只读案例卡
     # （信道损耗 / 分发保真 / HOM 可见度 / 中继吞吐 / 换能 η / 经典接口 · 零重计算 · 免登录）
     "/api/j5_qnet": h_j5_qnet_demo,
+    # 蓝图 v2 新域 D1（v0.9.261+）：光-量异质集成**设计预算**只读案例卡
+    # （阵列孔径 γ̄ / DMM 透射 / Debye 热容 / Kapitza h_K · M1+M2 双裁决同屏 · 零重计算 · 免登录）
+    "/api/d1_hetero": h_d1_hetero,
     "/api/j1_qec": h_j1_qec_demo,
     "/api/qtrack": h_qtrack_demo,
     "/api/cpo_array": h_cpo_array,

@@ -303,6 +303,10 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               #   平均孔径截断效率）。新门禁本体实测 **~0.5s** / **13 判据** ⇒ 纳对照面，
               #   令本版 README 顶行声明的 13 判据由机器守（非手写）。
               "run_v2d1_smoke.py",
+              # 🔴 v0.9.261：本版真改动 = D1 **M4 WebUI 面板**（`sec-d1` + `/api/d1_hetero`
+              #   + 新渲染门禁本体）。实测 **~1.0s** / **20 判据**（含一次 `run_v2d1_smoke`
+              #   子进程）⇒ 纳对照面，令本版 README 顶行声明的 20 判据由机器守（非手写）。
+              "run_webui_d1_render_path_smoke.py",
               # 🔴 v0.9.251（BL 征程 BL-M0）**不纳** `run_bl_anchor_guard_smoke.py`：
               #   实测 **~195s**（它自身要**子进程重跑整套体检**做逐字节对拍）⇒ 远超本表
               #   「便宜可实跑」准入准则（同 v0.9.209 对 `run_ps_m8_smoke` ~64s、v0.9.211 对

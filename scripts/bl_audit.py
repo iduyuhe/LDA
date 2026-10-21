@@ -131,8 +131,8 @@ def build() -> dict:
     strict = [a for a in blind if BENCHMARK_DEFS.get(a, {}).get("candidate")]
     non_anchorable = [a for a in blind if a not in set(strict)]
 
-    rows = []
-    for a in strict:
+    def _audit_one(a):
+        """单锚体检（四指标同口径）——盲区集与文本覆盖集共用，防两套口径漂移。"""
         s = by_id[a]
         g = float(s.oracle_fn(s.params))
         c = float(cand_map[a](s, g))
@@ -152,7 +152,7 @@ def build() -> dict:
             z_err = float(s.compare_fn(0.0, g))
             z_pass = bool(z_err <= tol)
 
-        rows.append({
+        return {
             "id": a,
             "title": str(BENCHMARK_DEFS[a].get("title", ""))[:90],
             "metric": str(BENCHMARK_DEFS[a].get("metric", "")),
@@ -176,7 +176,9 @@ def build() -> dict:
                     and rt < CANCEL_MAX_RATIO),
                 "zero_injection_passes": bool(z_pass),
             },
-        })
+        }
+
+    rows = [_audit_one(a) for a in strict]
 
     def _ids(flag: str):
         return [r["id"] for r in rows if r["flags"][flag]]
@@ -202,6 +204,40 @@ def build() -> dict:
         "n_fail_verdict": sum(1 for r in rows if not r["passes"]),
     }
 
+    # ── 文本覆盖集（L2-text）同口径体检（v0.9.262 · 补齐「只审盲区、不审已覆盖」的口径缺口）──
+    #   🔴 动机：BL 征程只体检了**盲区集**（无专属门禁的锚）；而 K4 的 L2 里另有
+    #   「文本覆盖集」—— 它们**有**门禁提到，但从未按同一把尺子量过。实测该集合里存在
+    #   「|g|/tol 极小 ⇒ candidate=0 也放行」的锚 ⇒ 这是判别力的真空，必须登记并上棘轮。
+    _tc_rows, _tc_skip = [], []
+    for a in sorted(_text_cov, key=_sort_key):
+        if a not in by_id or not BENCHMARK_DEFS.get(a, {}).get("candidate"):
+            _tc_skip.append(a)
+            continue
+        try:
+            _tc_rows.append(_audit_one(a))
+        except Exception:                                    # noqa: BLE001
+            _tc_skip.append(a)
+
+    def _tids(flag: str):
+        return [r["id"] for r in _tc_rows if r["flags"][flag]]
+
+    text_covered = {
+        "ids_total": len(_text_cov),
+        "audited": len(_tc_rows),
+        "skipped": _tc_skip,
+        "n_zero_resid": len(_tids("zero_resid")),
+        "n_loose": len(_tids("loose")),
+        "n_tight": len(_tids("tight")),
+        "n_cancellation_suspect": len(_tids("cancellation_suspect")),
+        "n_zero_injection_passes": len(_tids("zero_injection_passes")),
+        "zero_resid_ids": _tids("zero_resid"),
+        "loose_ids": _tids("loose"),
+        "tight_ids": _tids("tight"),
+        "cancellation_suspect_ids": _tids("cancellation_suspect"),
+        "zero_injection_passes_ids": _tids("zero_injection_passes"),
+        "n_fail_verdict": sum(1 for r in _tc_rows if not r["passes"]),
+    }
+
     return {
         "schema": SCHEMA,
         "generated_by": "scripts/bl_audit.py",
@@ -216,6 +252,7 @@ def build() -> dict:
             "cancellation_max_ratio": CANCEL_MAX_RATIO,
         },
         "summary": summary,
+        "text_covered": text_covered,
         "rows": rows,
     }
 
@@ -235,6 +272,11 @@ def main() -> int:
               % (OUT_REL, s["blind_total"], s["blind_strict"], s["blind_non_anchorable"],
                  s["n_zero_resid"], s["n_loose"], s["n_tight"],
                  s["n_cancellation_suspect"], s["n_zero_injection_passes"]))
+        t = payload["text_covered"]
+        print("[written] 文本覆盖集（口径补齐）：可审 %d / %d · 零残差 %d · 偏松 %d · "
+              "余量不足 %d · 相消 %d · 放行注入0 %d"
+              % (t["audited"], t["ids_total"], t["n_zero_resid"], t["n_loose"],
+                 t["n_tight"], t["n_cancellation_suspect"], t["n_zero_injection_passes"]))
     else:
         print(text, end="")
     return 0

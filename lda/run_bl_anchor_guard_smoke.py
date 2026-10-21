@@ -557,6 +557,35 @@ def main() -> int:
         in_core = "run_bl_anchor_guard_smoke.py" in f.read()
     check("F3 本门禁自身 ∈ CORE_SMOKES（自食其规则）", in_core, "in_core=%s" % in_core)
 
+    # ── M 文本覆盖集体检（v0.9.262 · BL-M5：体检域从「盲区集」扩到「L2 文本覆盖集」）──
+    #   🔴 动机：M0–M4 只量了**无专属门禁**的锚；「有门禁提到」的锚从未按同一把尺子量过。
+    #   实测其中存在 `|g|/tol` 极小 ⇒ candidate=0 也放行的锚 = 判别力真空。
+    #   本组只做「已登记 + 棘轮只减不增」，不在此处改 tol（收紧走单独里程碑）。
+    from lda_harness import bl_registries as _BLR
+    _tc = led.get("text_covered") or {}
+    check("M1 文本覆盖集已体检（口径补齐 · 可审 ≥ %d ∧ 汇总齐备）"
+          % _BLR.BL_TEXT_AUDITED_MIN,
+          bool(_tc) and int(_tc.get("audited") or 0) >= _BLR.BL_TEXT_AUDITED_MIN
+          and all(k in _tc for k in ("n_zero_resid", "n_loose", "n_tight",
+                                     "n_cancellation_suspect", "n_zero_injection_passes")),
+          "audited=%s/%s" % (_tc.get("audited"), _tc.get("ids_total")))
+
+    def _text_ratchet_ok(tc, ratchet):
+        """纯函数：文本覆盖集棘轮（只减不增）。抽出来以便反向探针直接喂坏数据。"""
+        return (int(tc.get("n_loose") or 0) <= int(ratchet["loose"])
+                and int(tc.get("n_zero_injection_passes") or 0) <= int(ratchet["inject0"]))
+
+    check("M2 文本覆盖集棘轮（只减不增：偏松 ≤ %d · 注入0 放行 ≤ %d）"
+          % (_BLR.BL_TEXT_RATCHET["loose"], _BLR.BL_TEXT_RATCHET["inject0"]),
+          _text_ratchet_ok(_tc, _BLR.BL_TEXT_RATCHET),
+          "偏松=%s 注入0=%s" % (_tc.get("n_loose"), _tc.get("n_zero_injection_passes")))
+
+    _bad_tc = {"n_loose": _BLR.BL_TEXT_RATCHET["loose"] + 1,
+               "n_zero_injection_passes": 0}
+    check("M3 反向探针：偏松数 +1 ⇒ M2 型棘轮必红（非假绿）",
+          not _text_ratchet_ok(_bad_tc, _BLR.BL_TEXT_RATCHET),
+          "注入=%s" % _bad_tc["n_loose"])
+
     bad = globals().get("FAIL", 0)
     print("\n" + "=" * 78)
     print("BL-M0 门禁：%s（FAIL=%d）· 缺陷面：零残差 %d · 注入0 %d · 相消 %d · 偏松 %d · 余量 %d"

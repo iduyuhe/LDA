@@ -49,7 +49,7 @@ _MAN_SCHEMA = "lda_gate_anchor_manifest_v1"
 
 # 🔵 硬编码历史下限（只许上调；用于防「下调棘轮」）
 # 🔴 v0.9.258 BL-M4：L2 口径升「文本 ∪ manifest」⇒ 124 → 520，硬下限同步抬到 520。
-_HARD_L2_MIN = 520
+_HARD_L2_MIN = 522
 _HARD_L3_MIN = 65
 
 # 🔴 门禁侧**独立**登记的排除集（不 import 生成器常量 ⇒ 双向锁死）。
@@ -181,7 +181,7 @@ def _validate(led):
 
 def main():
     print("=" * 78)
-    print("K4 门禁×锚覆盖矩阵门禁（538 锚 × 332 门禁 · 缺口 G-K-6）")
+    print("K4 门禁×锚覆盖矩阵门禁（缺口 G-K-6）")
     print("=" * 78)
 
     # ── A 表结构 ──────────────────────────────────────────────────
@@ -195,6 +195,12 @@ def main():
           "缺=%s" % [k for k in need if k not in led])
     check("A3 schema 精确", led.get("schema") == _SCHEMA,
           "got=%r" % led.get("schema"))
+    # 🔴 计数一律**现读台账**打印，不写死（写死的横幅会随加锚静默过期）
+    _sm = led.get("summary") or {}
+    print("  · 现读台账：%s 锚 × %s 门禁 · L2 %s · L3 %s · 盲区 %s"
+          % (_sm.get("anchors_total"), _sm.get("gates_scanned"),
+             _sm.get("l2_bespoke_covered"), _sm.get("l3_multi_covered"),
+             _sm.get("l2_blind")))
     r = _validate(led)
     check("A4 anchors 键集 ≡ 账本全集（新增锚必被登记）", r["A4 anchors 键集 ≡ 账本全集（新增锚必被登记）"],
           "表内=%d 账本=%d" % (len(led.get("anchors") or {}), len(_ledger_ids())))

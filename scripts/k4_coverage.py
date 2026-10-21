@@ -42,7 +42,7 @@ MANIFEST_SCHEMA = "lda_gate_anchor_manifest_v1"
 # 🔴 v0.9.258 BL-M4：L2 口径由「文本代理」升为「文本 ∪ manifest」⇒ 门禁运行时登记的
 #   396 条盲区锚（BL 门禁 B 组逐锚硬断言）计入 L2 ⇒ L2 124 → 520（上限 520，18 条
 #   已裁决不可接永不覆盖）。棘轮同步抬到 520（只升不降）。
-L2_MIN = 520
+L2_MIN = 522
 L3_MIN = 65
 
 ANCHOR_RE = re.compile(r"\bB(\d{3})\b")

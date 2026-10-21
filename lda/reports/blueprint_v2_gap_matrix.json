@@ -192,12 +192,12 @@
       }
     ],
     "ledger": {
-      "anchors_total": 538,
+      "anchors_total": 540,
       "blind": 18,
-      "core_smokes": 336,
-      "l1": 538,
-      "l2": 520,
-      "l3": 65
+      "core_smokes": 337,
+      "l1": 540,
+      "l2": 522,
+      "l3": 66
     }
   },
   "new_domain_candidates": [

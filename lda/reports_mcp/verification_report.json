@@ -8,11 +8,11 @@
     "self_consistent": false
   },
   "summary": {
-    "total": 538,
-    "passed": 535,
+    "total": 540,
+    "passed": 537,
     "self_consistent": false,
     "verified": 2,
-    "self_consistent_stub_count": 533,
+    "self_consistent_stub_count": 535,
     "independent_candidate_count": 5,
     "candidate_class_totals": null
   },
@@ -6070,6 +6070,32 @@
       "golden": 0.011251469,
       "candidate": 0.011251469,
       "tol": 1e-07,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
+      "id": "B523",
+      "metric": "multimode_transducer_array_aperture_clip_efficiency",
+      "oracle": "closed_form(γ_i=0.5[erf((a−x_i)/(√2w))+erf((a+x_i)/(√2w))], γ̄=(1/N)Σγ_i, x_i=(i−(N−1)/2)d) + composite-simpson finite-window quadrature independent_cross_check",
+      "source": "physical-law",
+      "golden": 0.744204819,
+      "candidate": 0.744204819,
+      "tol": 1e-07,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
+      "id": "B524",
+      "metric": "kapitza_interface_thermal_conductance",
+      "oracle": "closed_form(h_K=(1/4)[α_{1→2}v₁C₁+α_{2→1}v₂C₂], α_{1→2}=v₁²/(v₁²+v₂²), C=(12π⁴/5)n k_B(T/θ)³) + energy-density central-difference numerical_differentiation independent_cross_check",
+      "source": "physical-law",
+      "golden": 116210.647,
+      "candidate": 116210.647,
+      "tol": 0.05,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,

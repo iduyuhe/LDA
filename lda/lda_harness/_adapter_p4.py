@@ -31,6 +31,7 @@ from ._adapter_core import (
     _get_j3_numeric,
     _get_j4_numeric,
     _get_j5_numeric,
+    _get_v2d1_numeric,
 )
 
 from typing import (
@@ -1991,4 +1992,58 @@ def _b522_transducer_efficiency_cand(spec: VerificationSpec, oracle_value: Any) 
         detuning_half_rad_s=float(p.get("detuning_half_rad_s",
                                          2.0 * 3.141592653589793 * 10.0e6)),
         band_half_rad_s=float(p.get("band_half_rad_s", 2.0 * 3.141592653589793 * 5.0e6)),
+    ))
+
+
+@_register_candidate(
+    "b523_array_average_clip_cand",
+    "多模换能阵列平均孔径截断效率 γ̄·限窗复合 Simpson 求积"
+    "（逐单元 [−a,a] 上 ∫exp(−(x−x_i)²/2w²)dx ÷ 解析总积分 w√(2π)，n=512 段取平均）"
+    "↔ erf 闭式 golden，方法学独立（数值求积 vs 闭式原函数）")
+def _b523_array_average_clip_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B523 独立候选：多模换能阵列平均孔径截断效率（有限孔径 · 复合 Simpson）。
+
+    golden = γ_i=0.5[erf((a−x_i)/(√2w))+erf((a+x_i)/(√2w))] 的 **erf 精确闭式**；
+    cand  = 逐单元在 [−a,a] 上复合 Simpson 求积 ÷ 解析总积分 w√(2π)，再平均。
+    残差 = 限窗 Simpson 截断误差（实测残差链 n=16→1.545e-05 … n=512→1.245e-11，
+    比值 18.18→16.01 ⇒ 从**下方**趋近 O(h⁴)〔复合 Simpson 标称阶〕）。余量 8034×。
+    🔴 与 B477（NA 立体角收集）· part5 光纤-波导横向对准（高斯**重叠**）三方分歧
+    （被测标量 / 物理构型 / 数值格式均异 · 详见 DEFS.note）。
+    零商业依赖（纯 math；零 RNG）。"""
+    m = _get_v2d1_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b523(
+        n_modes=int(p.get("n_modes", 8)),
+        spacing_m=float(p.get("spacing_m", 2.0e-6)),
+        waist_m=float(p.get("waist_m", 1.5e-6)),
+        aperture_half_m=float(p.get("aperture_half_m", 6.0e-6)),
+    ))
+
+
+@_register_candidate(
+    "b524_kapitza_cand",
+    "Kapitza 界面热导 h_K · 内能温度中心差商 + 谱积分数值求和"
+    "（C≈[U(T(1+ε))−U(T(1−ε))]/(2εT)，U 的谱积分用复合 Simpson 现算，不用 π⁴）"
+    "↔ DMM+低温 Debye 闭式 golden，方法学独立（数值微分 vs 解析求导）")
+def _b524_kapitza_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B524 独立候选：Kapitza 界面热导（内能差商 · 谱积分数值求和）。
+
+    golden = `h_K=(1/4)[α_{1→2}v₁C₁+α_{2→1}v₂C₂]`，`C=(12π⁴/5)n k_B(T/θ)³`（低温 Debye 精确极限）；
+    cand  = 内能温度中心差商 `C≈[U(T(1+ε))−U(T(1−ε))]/(2εT)`，`U` 的谱积分由复合 Simpson 现算。
+    残差 = 中心差商截断（实测 ε=1e-2→1.1621e+01 … 1.25e-3→1.8158e-01，比值恒 **4.00** ⇒ O(ε²)）。
+    🔴 **candidate 设计血案（实测量化 · 已规避 B28 型虚报）**：`x⁴e^x/(e^x−1)²` 与
+    `x³/(e^x−1)` 都是光滑指数衰减被积函数 ⇒ **梯形/Simpson 均指数收敛**，实测 n=256 时相对残差
+    已跌至 **1e-16（浮点地板）** ⇒ 「残差 ≫ 1e-13 非恒等」不成立 ⇒ 故把截断移到位移轴。
+    🔴 与 B465（体材料径向热阻）· B518（低温布线热负载）三处分歧（详见 DEFS.note）。
+    零商业依赖（纯 math；零 RNG）。"""
+    m = _get_v2d1_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b524(
+        T_K=float(p.get("T_K", 4.0)),
+        theta1_K=float(p.get("theta1_K", 428.0)),
+        v1_m_s=float(p.get("v1_m_s", 5100.0)),
+        n1_m3=float(p.get("n1_m3", 6.02e28)),
+        theta2_K=float(p.get("theta2_K", 645.0)),
+        v2_m_s=float(p.get("v2_m_s", 6400.0)),
+        n2_m3=float(p.get("n2_m3", 5.00e28)),
     ))

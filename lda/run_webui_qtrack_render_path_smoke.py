@@ -77,9 +77,9 @@ def _validate(card):
         and c.get("blind") == cov["summary"]["l2_blind"])
     r["D3 verdict 恒 ACCEPT 且诚实边界 ≥5"] = (
         card.get("verdict") == "ACCEPT" and len(card.get("honesty") or []) >= 5)
-    r["D4 账本口径自洽（538 = 516+3+19）"] = (
-        lg.get("anchors") == 538
-        and lg.get("strict_independent") == 516
+    r["D4 账本口径自洽（540 = 518+3+19）"] = (
+        lg.get("anchors") == 540
+        and lg.get("strict_independent") == 518
         and lg.get("degraded_ordinal") == 3
         and lg.get("self_consistent_stub") == 19)
     return r
@@ -151,7 +151,7 @@ def main():
           '"/api/qtrack": h_qtrack_demo' in routes and not in_heavy,
           "registered=%s in_heavy=%s"
           % ('"/api/qtrack": h_qtrack_demo' in routes, in_heavy))
-    for k in ("D3 verdict 恒 ACCEPT 且诚实边界 ≥5", "D4 账本口径自洽（538 = 516+3+19）"):
+    for k in ("D3 verdict 恒 ACCEPT 且诚实边界 ≥5", "D4 账本口径自洽（540 = 518+3+19）"):
         check(k, r[k], "")
     sc = Q.run_selfchecks()
     check("D5 模块自检全 PASS", all(sc.values()),

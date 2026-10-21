@@ -339,6 +339,9 @@ from ._batch_j5_numeric import (  # Batch J5 量子网络与接口征程 · M0�
     golden_b522,
 )
 
+from ._batch_v2d1_numeric import golden_b523  # 蓝图 v2 · D1 光-量异质集成 M0：多模换能阵列平均孔径截断效率
+from ._batch_v2d1_numeric import golden_b524  # 蓝图 v2 · D1 光-量异质集成 M3：Kapitza 界面热导
+
 from .oracle_pyepr import resolve_pyepr_transmon
 
 # B5–B7 设计守则锚（作为 ORACLE 缺失时的下限/上限验收基准）
@@ -1178,6 +1181,8 @@ _GOLDEN_DISPATCH = {
     "B520": golden_b520,
     "B521": golden_b521,
     "B522": golden_b522,
+    "B523": golden_b523,
+    "B524": golden_b524,
 
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
@@ -1294,6 +1299,8 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B520",  # Batch J5-M1（量子网络与接口征程 · M1 纠缠源）：光子不可分辨性 → HOM 干涉可见度（高斯波包重叠解析闭式 ⇄ 复合梯形时间域数值积分）
                  "B521",  # Batch J5-M2（量子网络与接口征程 · M2 中继）：中继站期望交换产出数（生成窗 ⊗ 存储窗 嵌套卷积初等闭式 ⇄ 单重复合 Simpson 求积）
                  "B522",  # Batch J5-M3（量子网络与接口征程 · M3 换能）：微波-光换能效率（协同度极限 × 有限探测带侧带重叠 分层 log+arctan 闭式 ⇄ 有限窗复合 Simpson 求积）
+                 "B523",  # 蓝图 v2 · D1 光-量异质集成 M0：多模换能阵列平均孔径截断效率（erf 闭式 ⇄ 限窗复合 Simpson 求积）
+                 "B524",  # 蓝图 v2 · D1 光-量异质集成 M3：Kapitza 界面热导（DMM+低温 Debye 闭式 ⇄ 内能温度中心差商）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）

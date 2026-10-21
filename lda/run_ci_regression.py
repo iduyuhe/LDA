@@ -1979,6 +1979,11 @@ CORE_SMOKES: List[str] = [
     #   （manifest[本门禁] ≡ 本次实际断言锚集 · 运行时登记非手写 · 删一条必红）
     #   ⇒ 71 → **72 判据**。
     "run_bl_anchor_guard_smoke.py",
+    # v0.9.259/260（蓝图 v2 · D1 光-量异质集成 M0+M3）：多模换能阵列平均孔径截断效率
+    #   （B523 · erf 闭式 ⇄ 限窗复合 Simpson · O(h⁴)）+ Kapitza 界面热导
+    #   （B524 · DMM+低温 Debye 闭式 ⇄ 内能温度中心差商 · O(ε²)）+ M1 裁决负结果锁
+    #   （覆盖锚未漂移 / 哨兵名未偷登记 / 裁决面完整）+ 4 道反向探针。**28 判据**。
+    "run_v2d1_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -3021,6 +3026,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_webui_qtrack_render_path_smoke.py": 300.0,
     # CF-M0 码族参数律门禁 · 实测 ~0.1s（纯 stdlib · GF(2) 秩 L≤6）
     "run_cf_code_family_smoke.py": 120.0,
+    # D1-M0 多模换能阵列门禁 · 实测 ~0.5s（纯 math + 收敛链 5 档）
+    "run_v2d1_smoke.py": 120.0,
     # BL-M0 逐锚体检门禁 · 实测 ~176–210s（子进程重跑生成器 173s + 注入探针现算 + G 组）
     #   🔴 预算 900s ≈ 4.3–5.1×（跨轮上界 195s）；v0.9.252 加 G 组后实测 ~180s，未跌破 3×。
     "run_bl_anchor_guard_smoke.py": 900.0,

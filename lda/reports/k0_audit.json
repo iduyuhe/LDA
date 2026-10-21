@@ -7,16 +7,16 @@
     "head（每次提交都变 ⇒ 非确定量，故意不入台账）"
   ],
   "frozen_snapshot": {
-    "version": "0.9.258",
-    "ledger_total": 538,
-    "ledger_strict": 516,
+    "version": "0.9.260",
+    "ledger_total": 540,
+    "ledger_strict": 518,
     "ledger_degraded": 3,
     "ledger_stub": 19,
-    "independence_rate": 0.959108,
-    "ci_core": 336,
+    "independence_rate": 0.959259,
+    "ci_core": 337,
     "endpoints": 156,
     "case_panels_min": 17,
-    "max_anchor": "B522",
+    "max_anchor": "B524",
     "panels": [
       "sec-accel",
       "sec-d4",
@@ -295,37 +295,37 @@
         "existing_partial": "lda/run_anchor_coverage_matrix.py",
         "existing_partial_scope": "52 锚 × 33 类（T-9 · 2026-09-06 快照）",
         "existing_partial_in_core": false,
-        "current_ledger_total": 538,
+        "current_ledger_total": 540,
         "matrix_table": "lda/reports/anchor_gate_coverage.json",
         "matrix_summary": {
-          "anchors_total": 538,
+          "anchors_total": 540,
           "blind_by_band": {
             "B1–B99": 2,
             "E（实证）": 6,
             "S（系统层）": 10
           },
           "by_gate_count": {
-            "1": 455,
-            "2": 34,
+            "1": 456,
+            "2": 35,
             "3": 22,
             "4": 8,
             "5": 1
           },
-          "core_smokes": 336,
+          "core_smokes": 337,
           "gates_excluded": 1,
-          "gates_scanned": 335,
-          "gates_with_anchors": 32,
+          "gates_scanned": 336,
+          "gates_with_anchors": 33,
           "gates_zero_anchor": 303,
-          "l1_unified_covered": 538,
-          "l2_bespoke_covered": 520,
+          "l1_unified_covered": 540,
+          "l2_bespoke_covered": 522,
           "l2_blind": 18,
           "l2_manifest_added": 396,
           "l2_manifest_covered": 396,
-          "l2_text_covered": 124,
-          "l3_multi_covered": 65
+          "l2_text_covered": 126,
+          "l3_multi_covered": 66
         },
         "matrix_ratchet": {
-          "l2_min": 520,
+          "l2_min": 522,
           "l3_min": 65,
           "policy": "只升不降：新增锚必须补专属判据或显式登记为 L1-only"
         },

@@ -299,6 +299,10 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               # 🔴 v0.9.250：本版真改动 = CF 征程 CF-M0 **码族参数律**（能力层 + 不可锚锁门禁本体）。
               #   实测 **~0.1s** / **17 判据** ⇒ 纳对照面，令 README 顶行声明的 17 判据由机器守（非手写）。
               "run_cf_code_family_smoke.py",
+              # 🔴 v0.9.259：本版真改动 = 蓝图 v2 · D1 光-量异质集成 M0（B523 多模换能阵列
+              #   平均孔径截断效率）。新门禁本体实测 **~0.5s** / **13 判据** ⇒ 纳对照面，
+              #   令本版 README 顶行声明的 13 判据由机器守（非手写）。
+              "run_v2d1_smoke.py",
               # 🔴 v0.9.251（BL 征程 BL-M0）**不纳** `run_bl_anchor_guard_smoke.py`：
               #   实测 **~195s**（它自身要**子进程重跑整套体检**做逐字节对拍）⇒ 远超本表
               #   「便宜可实跑」准入准则（同 v0.9.209 对 `run_ps_m8_smoke` ~64s、v0.9.211 对

@@ -49,7 +49,7 @@ _MAN_SCHEMA = "lda_gate_anchor_manifest_v1"
 
 # 🔵 硬编码历史下限（只许上调；用于防「下调棘轮」）
 # 🔴 v0.9.258 BL-M4：L2 口径升「文本 ∪ manifest」⇒ 124 → 520，硬下限同步抬到 520。
-_HARD_L2_MIN = 522
+_HARD_L2_MIN = 523
 _HARD_L3_MIN = 65
 
 # 🔴 门禁侧**独立**登记的排除集（不 import 生成器常量 ⇒ 双向锁死）。

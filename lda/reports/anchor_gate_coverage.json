@@ -3851,11 +3851,20 @@
     },
     "B524": {
       "l1": true,
-      "l2_count": 3,
+      "l2_count": 1,
       "l2_gates": [
+        "run_v2d1_smoke.py"
+      ],
+      "l3": false
+    },
+    "B525": {
+      "l1": true,
+      "l2_count": 4,
+      "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
         "run_count_consistency_smoke.py",
         "run_statistical_anchor_smoke.py",
-        "run_v2d1_smoke.py"
+        "run_v2d2_smoke.py"
       ],
       "l3": true
     },
@@ -4507,7 +4516,8 @@
       "B511",
       "B512",
       "B513",
-      "B514"
+      "B514",
+      "B525"
     ],
     "run_bl_anchor_guard_smoke.py": [
       "B391"
@@ -4532,7 +4542,7 @@
     "run_corner_performance_smoke.py": [],
     "run_count_consistency_smoke.py": [
       "B499",
-      "B524"
+      "B525"
     ],
     "run_coupler_band_smoke.py": [],
     "run_coverage_deadzone_closure_smoke.py": [],
@@ -4982,7 +4992,7 @@
       "B520",
       "B521",
       "B522",
-      "B524"
+      "B525"
     ],
     "run_stats_nav_wiring_smoke.py": [],
     "run_store_auth_gate_smoke.py": [],
@@ -5009,6 +5019,9 @@
     "run_v2d1_smoke.py": [
       "B523",
       "B524"
+    ],
+    "run_v2d2_smoke.py": [
+      "B525"
     ],
     "run_verify_voxel_pipeline_smoke.py": [],
     "run_verify_waveguide_2d_smoke.py": [],
@@ -5452,7 +5465,7 @@
   "manifest_schema": "lda_gate_anchor_manifest_v1",
   "method": "三层：L1 = verification_report.results 的 id 集；L2 = 文本（CORE 门禁源码去注释后显式锚号）∪ manifest（门禁运行时登记 asserted_anchor_ids）；L3 = ≥2 门禁；锚全集 = BENCHMARK_DEFS ∪ BENCHMARK_ORDER",
   "ratchet": {
-    "l2_min": 522,
+    "l2_min": 523,
     "l3_min": 65,
     "policy": "只升不降：新增锚必须补专属判据或显式登记为 L1-only"
   },
@@ -5460,30 +5473,30 @@
   "schema": "lda_anchor_gate_coverage_v1",
   "subject": "hex-layer gate × anchor coverage matrix",
   "summary": {
-    "anchors_total": 540,
+    "anchors_total": 541,
     "blind_by_band": {
       "B1–B99": 2,
       "E（实证）": 6,
       "S（系统层）": 10
     },
     "by_gate_count": {
-      "1": 452,
+      "1": 453,
       "2": 33,
-      "3": 27,
-      "4": 8,
+      "3": 26,
+      "4": 9,
       "5": 2
     },
-    "core_smokes": 338,
+    "core_smokes": 339,
     "gates_excluded": 1,
-    "gates_scanned": 337,
-    "gates_with_anchors": 33,
+    "gates_scanned": 338,
+    "gates_with_anchors": 34,
     "gates_zero_anchor": 304,
-    "l1_unified_covered": 540,
-    "l2_bespoke_covered": 522,
+    "l1_unified_covered": 541,
+    "l2_bespoke_covered": 523,
     "l2_blind": 18,
     "l2_manifest_added": 395,
     "l2_manifest_covered": 395,
-    "l2_text_covered": 127,
+    "l2_text_covered": 128,
     "l3_multi_covered": 70
   }
 }

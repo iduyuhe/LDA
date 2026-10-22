@@ -8,11 +8,11 @@
     "self_consistent": false
   },
   "summary": {
-    "total": 540,
-    "passed": 537,
+    "total": 541,
+    "passed": 538,
     "self_consistent": false,
     "verified": 2,
-    "self_consistent_stub_count": 535,
+    "self_consistent_stub_count": 536,
     "independent_candidate_count": 5,
     "candidate_class_totals": null
   },
@@ -6096,6 +6096,19 @@
       "golden": 116210.647,
       "candidate": 116210.647,
       "tol": 0.05,
+      "passed": true,
+      "note": "确定性物理定律/解析解",
+      "independent": false,
+      "candidate_class": null
+    },
+    {
+      "id": "B525",
+      "metric": "qec_depolarizing_hashing_bound",
+      "oracle": "analytical(1 − H₂(p) − p·log₂3, bit) + log-integral-representation composite-Simpson independent_cross_check",
+      "source": "physical-law",
+      "golden": 0.372508156,
+      "candidate": 0.372508156,
+      "tol": 0.031,
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,

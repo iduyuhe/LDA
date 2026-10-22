@@ -1113,6 +1113,25 @@ def _get_j5_numeric():
 
 _BATCH_V2D1_MOD = None
 
+_BATCH_V2D2_MOD = None
+
+
+def _get_v2d2_numeric():
+    """蓝图 v2 · D2 数值核（QEC 码族 M0：退极化信道 hashing 界 I_c）—— 缓存。
+
+    🔴 磁盘 `_adapter_p*.py` **不新建**（L9 守卫：恒 6 片）；候选追加到 `_adapter_p4`。
+    """
+    global _BATCH_V2D2_MOD
+    if _BATCH_V2D2_MOD is not None:
+        return _BATCH_V2D2_MOD
+    try:
+        from lda_harness import _batch_v2d2_numeric as _m
+    except ImportError:
+        _ensure_paths()
+        import _batch_v2d2_numeric as _m
+    _BATCH_V2D2_MOD = _m
+    return _m
+
 
 def _get_v2d1_numeric():
     """蓝图 v2 · D1 数值核（光-量异质集成 M0：多模换能阵列平均孔径截断效率 γ̄）—— 缓存。

@@ -262,6 +262,9 @@ PERTURB_SPEC = [
     ("B488", "mutual_h", "mul"),
     ("B489", "ic0_a", "mul"),
     ("B490", "ic0_a", "mul"),
+    # v0.9.265（蓝图 v2 · D2 QEC 码族 M0）：退极化信道 hashing 界。±10% 扰 p（0.10→0.11）
+    #   ⇒ |ΔI_c| ≈ 4.75e-2，对 tol 0.031 即 **1.53×** ⇒ 必被抓（实测）。
+    ("B525", "p", "mul"),
     # v0.9.264（BL-M5c · 数值语义变更）：B372/B373 的 golden 由「ω 中心差分 dw=1e9」改为
     #   **真解析闭式** λ³n''(λ)/(2πc²)，候选由「对 FD 解出的 n_eff 做二阶差分」（噪声）换成
     #   「对 n(λ) 采样做二阶差分」（真截断），参数集收敛为 {wl}。实测 ±10% 扰 wl ⇒
@@ -448,7 +451,7 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 # v0.9.236（Batch J3-M2M3M4 · 量子测控与读出征程 · M2 门保真 + M3 读出链 + M4 低温电子学）：B512/B513/B514 三道严格独立锚落地
 #   ⇒ 严格独立 507 → **510**（降级 3、自证桩 19 不变）。
 #   棘轮地板同步单调上调：507 → 510（按行为性真值上抬）。
-MIN_INDEPENDENT = 518
+MIN_INDEPENDENT = 519
 
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:

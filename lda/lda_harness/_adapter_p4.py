@@ -32,6 +32,7 @@ from ._adapter_core import (
     _get_j4_numeric,
     _get_j5_numeric,
     _get_v2d1_numeric,
+    _get_v2d2_numeric,
 )
 
 from typing import (
@@ -2019,6 +2020,25 @@ def _b523_array_average_clip_cand(spec: VerificationSpec, oracle_value: Any) -> 
         aperture_half_m=float(p.get("aperture_half_m", 6.0e-6)),
     ))
 
+
+@_register_candidate(
+    "b525_hashing_bound_cand",
+    "退极化信道 hashing 界 I_c(p) · 对数积分表示 −log₂x=(1/ln2)∫ₓ¹dt/t + 复合 Simpson"
+    "（不调用 log）↔ 闭式 1−H₂(p)−p·log₂3，残差 = 求积截断 O(h⁴)")
+def _b525_hashing_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B525 独立候选：退极化信道 hashing 界（对数积分表示 + 复合 Simpson）。
+
+    golden = `1 − H₂(p) − p·log₂3`（精确闭式）；
+    cand   = 用 `−log₂x=(1/ln2)∫ₓ¹ dt/t` 把 `H₂` 改写成两个积分后做复合 Simpson（n=1024，**不调用 log**）。
+    残差 = 求积截断，实测 n 64→1024 残差 1.799e-06 → 2.869e-11，相邻比 15.48/15.86/15.96/15.99
+    ⇒ 趋近 **16 = 2⁴**（O(h⁴) 真截断，非代数恒等）。
+    🔴 若候选也直接算 `log`，两条路径落在同一批 libm 调用上 ⇒ 残差 0~几 ulp ⇒ 跨平台不可复现
+    （ulp(|g|)=8.3e-17 < BL-M2c 要求的 1e4·ulp），故必须走积分表示。
+    🔴 端点语义：I_c(0)=1 · I_c(p*≈0.1893)=0 · **I_c(3/4)=−1**（不是 0）。
+    零商业依赖（纯 math；零 RNG）。"""
+    m = _get_v2d2_numeric()
+    p = getattr(spec, "params", None) or {}
+    return float(m.cand_b525(float(p.get("p", m.B525_DEFAULT_PARAMS["p"]))))
 
 @_register_candidate(
     "b524_kapitza_cand",

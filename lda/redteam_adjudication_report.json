@@ -1,7 +1,7 @@
 {
-  "total": 241,
-  "expected_extreme": 132,
-  "in_domain_suspect": 109,
+  "total": 245,
+  "expected_extreme": 134,
+  "in_domain_suspect": 111,
   "suspects": [
     {
       "bid": "B16",
@@ -968,6 +968,40 @@
       "cand": -54.573894,
       "err": 26.6342168,
       "tol": 20.0,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B391",
+      "as_strict": true,
+      "params": {
+        "a": 1e-05,
+        "d": 5e-05,
+        "wl": 1.55e-06,
+        "theta": 0.065875
+      },
+      "oracle": 0.454954113,
+      "cand": 0.454950881,
+      "err": 3.23125662e-06,
+      "tol": 2.1e-06,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B391",
+      "as_strict": true,
+      "params": {
+        "a": 1e-05,
+        "d": 5e-05,
+        "wl": 1.55e-06,
+        "theta": 0.089125
+      },
+      "oracle": 0.245771267,
+      "cand": 0.245774567,
+      "err": 3.30003504e-06,
+      "tol": 2.1e-06,
       "passed": false,
       "max_perturbation": 0.15,
       "classification": "in_domain_divergence"
@@ -4154,6 +4188,74 @@
       "tol": 0.01,
       "passed": false,
       "max_perturbation": 1.0,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B391",
+      "as_strict": true,
+      "params": {
+        "a": 1e-05,
+        "d": 5e-05,
+        "wl": 1.55e-06,
+        "theta": 0.05425
+      },
+      "oracle": 0.326689283,
+      "cand": 0.326686696,
+      "err": 2.58664085e-06,
+      "tol": 2.1e-06,
+      "passed": false,
+      "max_perturbation": 0.3,
+      "classification": "expected_extreme_perturbation"
+    },
+    {
+      "bid": "B391",
+      "as_strict": true,
+      "params": {
+        "a": 1e-05,
+        "d": 5e-05,
+        "wl": 1.55e-06,
+        "theta": 0.065875
+      },
+      "oracle": 0.454954113,
+      "cand": 0.454950881,
+      "err": 3.23125662e-06,
+      "tol": 2.1e-06,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B391",
+      "as_strict": true,
+      "params": {
+        "a": 1e-05,
+        "d": 5e-05,
+        "wl": 1.55e-06,
+        "theta": 0.089125
+      },
+      "oracle": 0.245771267,
+      "cand": 0.245774567,
+      "err": 3.30003504e-06,
+      "tol": 2.1e-06,
+      "passed": false,
+      "max_perturbation": 0.15,
+      "classification": "in_domain_divergence"
+    },
+    {
+      "bid": "B391",
+      "as_strict": true,
+      "params": {
+        "a": 1e-05,
+        "d": 5e-05,
+        "wl": 1.55e-06,
+        "theta": 0.10075
+      },
+      "oracle": 0.099160016,
+      "cand": 0.0991644198,
+      "err": 4.40384407e-06,
+      "tol": 2.1e-06,
+      "passed": false,
+      "max_perturbation": 0.3,
       "classification": "expected_extreme_perturbation"
     },
     {

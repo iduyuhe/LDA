@@ -8781,42 +8781,20 @@
   "cancellation_suspect_ids": [],
   "ids_total": 126,
   "loose_ids": [
-   "B105",
-   "B184",
-   "B373",
-   "B391",
-   "B473",
-   "B474",
-   "B481",
-   "B482",
-   "B484",
-   "B488",
-   "B489",
-   "B490"
+   "B373"
   ],
   "n_cancellation_suspect": 0,
   "n_fail_verdict": 0,
-  "n_loose": 12,
+  "n_loose": 1,
   "n_tight": 0,
-  "n_zero_injection_passes": 12,
+  "n_zero_injection_passes": 1,
   "n_zero_resid": 0,
   "skipped": [
    "B472"
   ],
   "tight_ids": [],
   "zero_injection_passes_ids": [
-   "B105",
-   "B184",
-   "B373",
-   "B391",
-   "B473",
-   "B474",
-   "B481",
-   "B482",
-   "B484",
-   "B488",
-   "B489",
-   "B490"
+   "B373"
   ],
   "zero_resid_ids": []
  },

@@ -3,7 +3,7 @@
 
 本门禁守的是「**判据有没有判别力**」，不是「覆盖率数字好不好看」。
 
-判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G33** + **H4 组 3** + **H5 组 5** + **H6 组 3** + **H7 组 1** = **72**）：
+判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G33** + **H4 组 3** + **H5 组 5** + **H6 组 3** + **H7 组 1** + **M 组 5** = **77**）：
   A 台账三件套 3：**子进程重跑 ≡ 磁盘（逐字节）** · schema/摘要自洽 · LF only
   B 逐锚硬断言 4：全部锚 L1 判决 PASS · 非豁免锚 `resid > 0` · 非豁免锚 `resid/tol < 1` ·
     `candidate != golden`（防自证桩化回归）
@@ -22,6 +22,11 @@
     14 条 tol **只许更严** · 不可收紧 8 条 tol **不许放宽** · `B31` 原样留观
   H7 manifest 双向锁 1（v0.9.258 BL-M4）：受跟踪 `gate_anchor_manifest.json` 的
     `manifest[本门禁]` ≡ **本次运行实际断言的锚集**（逐元素 · 运行时登记非手写 · 删一条必红）
+  M 文本覆盖集 5（v0.9.262 BL-M5 立项 · v0.9.263 BL-M5b 收口）：已体检（可审 ≥125）·
+    棘轮只减不增 · 反向探针（偏松 +1 必红）· **文本偏松集 ≡ `BL_TEXT_UNFIXABLE` 登记面
+    （双向逐元素）** · 反向探针（登记面偷删一条必红）
+    🔴 M4 的存在理由：没有它，日后随手落一条偏松锚只要不超过棘轮数就**永远不需要解释**；
+      有了它，「留一条偏松」必须付出一次**显式登记 + ≥40 字病因**。
 
 🔴 **A1 为什么曾经随机红（v0.9.251 首轮全量 CI 当场抓出）**：台账在 10 线程与默认多线程
    环境下 `resid` 第 7–9 位有效数字就不同（BLAS 归约顺序 → 迭代求解器末位漂移 ~1e-9 相对），
@@ -585,6 +590,26 @@ def main() -> int:
     check("M3 反向探针：偏松数 +1 ⇒ M2 型棘轮必红（非假绿）",
           not _text_ratchet_ok(_bad_tc, _BLR.BL_TEXT_RATCHET),
           "注入=%s" % _bad_tc["n_loose"])
+
+    # M4/M5（v0.9.263 · BL-M5b）：**登记面双向锁** —— 文本偏松集必须逐元素等于
+    #   `BL_TEXT_UNFIXABLE` 键集。没有这一条，日后随手落一条偏松锚只要不超过棘轮数
+    #   就永远不需要解释；有了它，「留一条偏松」必须付出一次显式登记（带 ≥40 字病因）。
+    def _text_registry_ok(tc, reg):
+        """纯函数：文本偏松集 ≡ 登记面（双向）∧ 注入0 放行 ⊆ 偏松集。"""
+        loose = set(tc.get("loose_ids") or [])
+        inj = set(tc.get("zero_injection_passes_ids") or [])
+        return loose == set(reg) and inj <= loose
+
+    check("M4 文本偏松集 ≡ 不可收紧登记面（双向 · 逐元素）",
+          _text_registry_ok(_tc, _BLR.BL_TEXT_UNFIXABLE),
+          "台账偏松集=%s vs 登记面=%s"
+          % (sorted(_tc.get("loose_ids") or []), sorted(_BLR.BL_TEXT_UNFIXABLE)))
+
+    _reg_bad = dict(_BLR.BL_TEXT_UNFIXABLE)
+    _reg_bad.pop(next(iter(_reg_bad)), None)   # 从登记面偷删一条 ⇒ M4 必红
+    check("M5 反向探针：登记面偷删一条 ⇒ M4 必红（非假绿）",
+          not _text_registry_ok(_tc, _reg_bad),
+          "偷删后登记面=%s" % sorted(_reg_bad))
 
     bad = globals().get("FAIL", 0)
     print("\n" + "=" * 78)

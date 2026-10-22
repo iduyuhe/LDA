@@ -514,7 +514,7 @@ DEFS = {
         "title": "双缝干涉强度比 = cos²(π d sinθ/λ)·sinc²(π a sinθ/λ)（闭式 vs Simpson 求积）",
         "metric": "double_slit_intensity",
         "oracle": "analytical(cos²·sinc²) + Fraunhofer double-slit 1D Simpson quadrature independent_cross_check",
-        "tol": 1e-3,
+        "tol": 2.1e-6,
         "default_params": {"a": 10.0e-6, "d": 50.0e-6, "wl": 1.55e-6, "theta": 0.0775},
         "golden_fn": golden_b391,
         "candidate": "double_slit_intensity_simpson",

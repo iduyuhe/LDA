@@ -377,7 +377,7 @@ DEFS = {
         "title": "刚性转子转动能级 E_J（J=1）",
         "metric": "E_eV",
         "oracle": "analytical(rigid rotor E_J=ℏ²J(J+1)/(2I), associated-Legendre FD)",
-        "tol": 0.01,
+        "tol": 5.8e-4,
         "default_params": {"mom_47": 1.0},
         "golden_fn": golden_b105,
         "candidate": "b105_rotor_J1_cand",

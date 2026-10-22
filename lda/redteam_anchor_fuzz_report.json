@@ -3,10 +3,10 @@
   "strict_attacked": 518,
   "strict_coverage": 1.0,
   "attacks_total": 5234,
-  "genuine_div": 314,
+  "genuine_div": 318,
   "cand_limitation": 74,
   "golden_unstable": 88,
-  "divergence_rate": 0.0768055025,
+  "divergence_rate": 0.0775697363,
   "findings": [
     {
       "bid": "B1",
@@ -2604,6 +2604,68 @@
           "cand": 0.0,
           "err": 0.392614873,
           "tol": 0.01
+        }
+      ]
+    },
+    {
+      "bid": "B391",
+      "as_strict": true,
+      "n_attacks": 14,
+      "genuine_div": 4,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "a": 1e-05,
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "theta": 0.05425
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.326689283,
+          "cand": 0.326686696,
+          "err": 2.58664085e-06,
+          "tol": 2.1e-06
+        },
+        {
+          "params": {
+            "a": 1e-05,
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "theta": 0.065875
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.454954113,
+          "cand": 0.454950881,
+          "err": 3.23125662e-06,
+          "tol": 2.1e-06
+        },
+        {
+          "params": {
+            "a": 1e-05,
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "theta": 0.089125
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.245771267,
+          "cand": 0.245774567,
+          "err": 3.30003504e-06,
+          "tol": 2.1e-06
+        },
+        {
+          "params": {
+            "a": 1e-05,
+            "d": 5e-05,
+            "wl": 1.55e-06,
+            "theta": 0.10075
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.099160016,
+          "cand": 0.0991644198,
+          "err": 4.40384407e-06,
+          "tol": 2.1e-06
         }
       ]
     },

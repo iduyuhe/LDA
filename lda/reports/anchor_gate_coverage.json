@@ -58,11 +58,12 @@
     },
     "B105": {
       "l1": true,
-      "l2_count": 1,
+      "l2_count": 2,
       "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
         "run_statistical_anchor_smoke.py"
       ],
-      "l3": false
+      "l3": true
     },
     "B106": {
       "l1": true,
@@ -750,11 +751,12 @@
     },
     "B184": {
       "l1": true,
-      "l2_count": 1,
+      "l2_count": 2,
       "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
         "run_statistical_anchor_smoke.py"
       ],
-      "l3": false
+      "l3": true
     },
     "B185": {
       "l1": true,
@@ -2569,11 +2571,12 @@
     },
     "B391": {
       "l1": true,
-      "l2_count": 1,
+      "l2_count": 2,
       "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
         "run_bl_anchor_guard_smoke.py"
       ],
-      "l3": false
+      "l3": true
     },
     "B392": {
       "l1": true,
@@ -3323,8 +3326,9 @@
     },
     "B473": {
       "l1": true,
-      "l2_count": 4,
+      "l2_count": 5,
       "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
         "run_qs_m1_smoke.py",
         "run_qs_m2_smoke.py",
         "run_qs_m3_smoke.py",
@@ -3334,8 +3338,9 @@
     },
     "B474": {
       "l1": true,
-      "l2_count": 2,
+      "l2_count": 3,
       "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
         "run_qs_m1_smoke.py",
         "run_statistical_anchor_smoke.py"
       ],
@@ -3408,8 +3413,9 @@
     },
     "B481": {
       "l1": true,
-      "l2_count": 2,
+      "l2_count": 3,
       "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
         "run_qs_m4_smoke.py",
         "run_statistical_anchor_smoke.py"
       ],
@@ -3417,8 +3423,9 @@
     },
     "B482": {
       "l1": true,
-      "l2_count": 2,
+      "l2_count": 3,
       "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
         "run_qs_m5_smoke.py",
         "run_statistical_anchor_smoke.py"
       ],
@@ -3435,8 +3442,9 @@
     },
     "B484": {
       "l1": true,
-      "l2_count": 2,
+      "l2_count": 3,
       "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
         "run_qs_m5_smoke.py",
         "run_statistical_anchor_smoke.py"
       ],
@@ -3471,8 +3479,9 @@
     },
     "B488": {
       "l1": true,
-      "l2_count": 3,
+      "l2_count": 4,
       "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
         "run_qs_m7_smoke.py",
         "run_qs_m9_smoke.py",
         "run_statistical_anchor_smoke.py"
@@ -3481,8 +3490,9 @@
     },
     "B489": {
       "l1": true,
-      "l2_count": 2,
+      "l2_count": 3,
       "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
         "run_qs_m7_smoke.py",
         "run_statistical_anchor_smoke.py"
       ],
@@ -3498,8 +3508,9 @@
     },
     "B490": {
       "l1": true,
-      "l2_count": 2,
+      "l2_count": 3,
       "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
         "run_qs_m7_smoke.py",
         "run_statistical_anchor_smoke.py"
       ],
@@ -4442,6 +4453,8 @@
     "run_b5b7_rollback_floor_smoke.py": [],
     "run_benchmark_crosscheck_report.py": [],
     "run_benchmark_falsifiability_smoke.py": [
+      "B105",
+      "B184",
       "B374",
       "B375",
       "B376",
@@ -4454,6 +4467,7 @@
       "B384",
       "B385",
       "B386",
+      "B391",
       "B452",
       "B459",
       "B460",
@@ -4465,6 +4479,14 @@
       "B466",
       "B467",
       "B468",
+      "B473",
+      "B474",
+      "B481",
+      "B482",
+      "B484",
+      "B488",
+      "B489",
+      "B490",
       "B497",
       "B498",
       "B499",
@@ -5443,11 +5465,11 @@
       "S（系统层）": 10
     },
     "by_gate_count": {
-      "1": 456,
-      "2": 35,
-      "3": 22,
+      "1": 453,
+      "2": 32,
+      "3": 27,
       "4": 8,
-      "5": 1
+      "5": 2
     },
     "core_smokes": 338,
     "gates_excluded": 1,
@@ -5460,6 +5482,6 @@
     "l2_manifest_added": 396,
     "l2_manifest_covered": 396,
     "l2_text_covered": 126,
-    "l3_multi_covered": 66
+    "l3_multi_covered": 69
   }
 }

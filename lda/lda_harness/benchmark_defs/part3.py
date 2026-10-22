@@ -185,7 +185,7 @@ DEFS = {
         "title": "线性扩散方程基础解归一剖面 R(x=200 nm, t=1800 s)",
         "metric": "C_norm",
         "oracle": "analytical(高斯热核精确, 双端零通量 Crank-Nicolson M=4000/nt=960)",
-        "tol": 0.01,
+        "tol": 3.2e-4,
         "default_params": {"x_nm": 200.0},
         "golden_fn": golden_b184,
         "candidate": "b184_diffusion_profile_200nm_cand",

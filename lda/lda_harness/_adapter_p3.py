@@ -71,20 +71,23 @@ def _b370_fiber_ng_silica_candidate(spec: VerificationSpec, oracle_value: Any) -
                                    float(p["wl"]), N=3000))
 
 @_register_candidate(
-    "fiber_lp_b2_silica_fd",
-    "SiO₂ 芯阶跃光纤角频率空间二阶差分群速度色散 β₂（与 golden Sellmeier 闭式同量纲、方法学不同源）")
-def _b372_fiber_b2_silica_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
-    """B372/B373 独立候选：SiO₂ 芯阶跃光纤 LP01 群速度色散 β₂（径向加权 FD ω 空间二阶差分）。
+    "bulk_sio2_beta2_fd",
+    "体材料 SiO₂ 群速度色散 β₂（Sellmeier n(λ) 采样后 ω 空间中心二阶差分 · 与 golden 解析闭式方法学不同源）")
+def _b372_bulk_b2_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B372/B373 独立候选：**体材料** SiO₂ 群速度色散 β₂（对 n(λ) 采样做数值微分）。
 
-    golden = SiO₂ Sellmeier 角频率空间二阶导 β₂=d²β/dω² 闭式（负值，色散零点 ~1.27µm）；
-    cand   = 径向加权 FD 求 n_eff(λ(ω)) 后 β(ω)=n_eff·ω/c 角频率空间二阶差分。
-    同量纲、同方法学对照；包层 n_cl=1.42 保证模约束→β₂ 收敛到体材料值（符号正确）。
-    N=3000 余量 2.9×~11.7×；判据 D：ω 差分随 dw 收敛、候选输出扰动必 FAIL。零商业依赖。
+    golden = **解析闭式** β₂ = λ³·n''(λ)/(2πc²)（n'' 由 Sellmeier 有理函数解析二阶导，零步长）；
+    cand   = 由 `sellmeier_sio2(λ)` 采样值构造 β(ω)=n·ω/c，再做 **ω 空间中心二阶差分**
+             （`dw = 2e11`），残差 = 差分截断 + 舍入（实测 1.19e-6 / 5.49e-6 ps²/km）。
+
+    🔴 v0.9.264 BL-M5c **换候选（数值语义变更）**：原 `fiber_lp_b2_silica_fd` 对**径向 FD 解出的
+      `n_eff`** 做二阶差分，而该 `n_eff` 分辨率仅 ~1e-4、二阶差分需 ~1e-9 ⇒ 残差是**求解器量化噪声**
+      （对 `d_wl`/`N` 不敏感；包层折射率差压到 1e-4 时直接返回 0.0）⇒ 原理性不可用，故弃用。
+      被测标量是**体材料** β₂（不含波导色散），故参数集收敛为 `{wl}`（原 `n_co/n_cl/a` 对 golden 无用）。
     """
     p = spec.params
     m = _get_batch_b22()
-    return float(m.fd_lp_b2_silica(float(p["n_cl"]), float(p["a"]),
-                                   float(p["wl"]), N=3000))
+    return float(m.bulk_sio2_beta2_fd(float(p["wl"])))
 
 @_register_candidate(
     "bpm_rayleigh_range_fd",

@@ -3,7 +3,7 @@
 
 本门禁守的是「**判据有没有判别力**」，不是「覆盖率数字好不好看」。
 
-判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G33** + **H4 组 3** + **H5 组 5** + **H6 组 3** + **H7 组 1** + **M 组 5** = **77**）：
+判据分节（**判据数实跑现数** · A3 + B4 + C6 + D3 + E5 + F3 + **G33** + **H4 组 3** + **H5 组 5** + **H6 组 3** + **H7 组 1** + **M 组 5** + **N 组 1** = **78**）：
   A 台账三件套 3：**子进程重跑 ≡ 磁盘（逐字节）** · schema/摘要自洽 · LF only
   B 逐锚硬断言 4：全部锚 L1 判决 PASS · 非豁免锚 `resid > 0` · 非豁免锚 `resid/tol < 1` ·
     `candidate != golden`（防自证桩化回归）
@@ -27,6 +27,9 @@
     （双向逐元素）** · 反向探针（登记面偷删一条必红）
     🔴 M4 的存在理由：没有它，日后随手落一条偏松锚只要不超过棘轮数就**永远不需要解释**；
       有了它，「留一条偏松」必须付出一次**显式登记 + ≥40 字病因**。
+  N BL-M5c 防回退锁 1（v0.9.264）：`BL_M5C_REPAIRED` 内的锚**数值语义变更**后不得回退 ——
+    golden ≡ 解析闭式现算（相对 1e-12）∧ resid>0 ∧ 余量 ≥1e4× ∧ candidate≠golden ∧
+    参数集 ∈ `{wl}`（表在非门禁模块 `BL_M5C_REPAIRED`，门禁文本不写锚号）
 
 🔴 **A1 为什么曾经随机红（v0.9.251 首轮全量 CI 当场抓出）**：台账在 10 线程与默认多线程
    环境下 `resid` 第 7–9 位有效数字就不同（BLAS 归约顺序 → 迭代求解器末位漂移 ~1e-9 相对），
@@ -381,7 +384,7 @@ def main() -> int:
           not _relax, "被放宽=%s" % _relax)
     _widened = [(b, t, _sp3[b].tol) for b, t in BL_LOOSE_TOL_BASELINE.items()
                 if _sp3[b].tol > t * (1.0 + 1e-12)]
-    check("H3 不可收紧 8 条的 tol 不许被放宽（收紧须同步改基线并重登）",
+    check("H3 不可收紧 7 条的 tol 不许被放宽（收紧须同步改基线并重登）",
           not _widened, "被放宽=%s" % _widened)
     # 🔴 v0.9.256 BL-M2b-1：H4 由「B31 原样留观」升级为「**结清验收**」——
     #   裁决认定语义相同（乘性模型差 1.962222），病灶是判据形态 ⇒ tol 1.5→0.79。
@@ -605,11 +608,45 @@ def main() -> int:
           "台账偏松集=%s vs 登记面=%s"
           % (sorted(_tc.get("loose_ids") or []), sorted(_BLR.BL_TEXT_UNFIXABLE)))
 
+    #   🔴 v0.9.264：`BL_TEXT_UNFIXABLE` 已清空（B373 修复出表）⇒ 探针**不能**假定非空
+    #   （否则 `next(iter({}))` 抛 StopIteration，把"已清零"变成崩溃）。空表时改用
+    #   "凭空多一条" 的反向探针 —— 两侧（多一条 / 少一条）都必须红，判据才算完备。
     _reg_bad = dict(_BLR.BL_TEXT_UNFIXABLE)
-    _reg_bad.pop(next(iter(_reg_bad)), None)   # 从登记面偷删一条 ⇒ M4 必红
-    check("M5 反向探针：登记面偷删一条 ⇒ M4 必红（非假绿）",
-          not _text_registry_ok(_tc, _reg_bad),
-          "偷删后登记面=%s" % sorted(_reg_bad))
+    if _reg_bad:
+        _reg_bad.pop(next(iter(_reg_bad)), None)      # 偷删一条
+        _probe = "偷删后登记面=%s" % sorted(_reg_bad)
+    else:
+        _reg_bad = {"B_ZZREG": "反向探针：登记面凭空多一条（非真实锚）"}
+        _probe = "凭空加一条后登记面=%s" % sorted(_reg_bad)
+    check("M5 反向探针：登记面与台账不一致（多一条或 少一条）⇒ M4 必红（非假绿）",
+          not _text_registry_ok(_tc, _reg_bad), _probe)
+
+    # ── N BL-M5c：数值语义变更后的**防回退锁**（v0.9.264）────────────────────
+    #   本版把 golden 从「ω 中心差分 dw=1e9」改成真解析闭式、把 candidate 从
+    #   「对 FD 解出的 n_eff 做二阶差分」换成「对 n(λ) 采样做二阶差分」。这两条是本仓
+    #   唯一一次**改动 golden 记录值**的修复，因此必须有机器锁防止悄悄退回旧实现。
+    _specs_n, _cands_n = _va.build_harness_specs()
+    _by_n = {x.spec_id: x for x in _specs_n}
+    _bad_n = []
+    for _bid, _exp in _BLR.BL_M5C_REPAIRED.items():
+        _spn = _by_n.get(_bid)
+        if _spn is None:
+            _bad_n.append("%s:缺失" % _bid)
+            continue
+        _keys = tuple(sorted(k for k in _spn.params
+                             if isinstance(_spn.params[k], (int, float))))
+        _g = float(_spn.oracle_fn(_spn.params))
+        _c = float(_cands_n[_bid](_spn, _g))
+        _r = abs(_c - _g)
+        _tol = float(_spn.tol)
+        if _keys != tuple(sorted(_exp["params_keys"])):
+            _bad_n.append("%s:参数集=%s" % (_bid, _keys))
+        if abs(_g - _exp["golden"]) > 1e-12 * abs(_exp["golden"]):
+            _bad_n.append("%s:golden=%.12f≠解析值" % (_bid, _g))
+        if not (_r > 0.0 and _r * _exp["min_margin"] <= _tol and _c != _g):
+            _bad_n.append("%s:resid=%.3e/tol=%.3e" % (_bid, _r, _tol))
+    check("N1 BL-M5c 数值语义变更不回退（golden≡解析 ∧ resid>0 ∧ 余量≥1e4× ∧ cand≠golden ∧ 参数集收敛）",
+          not _bad_n, "FAIL=%s" % _bad_n[:4])
 
     bad = globals().get("FAIL", 0)
     print("\n" + "=" * 78)

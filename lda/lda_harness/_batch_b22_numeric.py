@@ -284,11 +284,16 @@ def golden_b371(n_co, n_cl, a, wl):
     return sellmeier_sio2_ng(wl * 1e6)
 
 
-def golden_b372(n_co, n_cl, a, wl):
-    """LP01 群速度色散 β₂（闭式：β₂=d²β/dω²，ω 空间；单位 ps²/km）。
+def golden_b372(wl):
+    """体材料 SiO₂ 群速度色散 β₂（**真解析闭式**：β₂ = λ³·n''(λ)/(2πc²)；单位 ps²/km）。
 
     换算 1 s²/m = 1e27 ps²/km（光纤色散标准报数单位），使基线残差落在自然
     量级（~ps²/km）而非 SI 的 ~1e-27（会被判据 D ③ 的 1e-12 值域排除误判为恒等）。
+
+    🔴 v0.9.264 BL-M5c **数值语义变更**：本函数此前只接收 `(n_co, n_cl, a, wl)` 却
+      **完全不用前三个**（体材料 β₂ 与波导无关），且底层 `sellmeier_sio2_b2` 名实不符
+      （声称闭式、实为 ω 中心差分 `dw=1e9`）。现签名收敛为 `(wl)` —— 与 DEFS
+      `default_params = {"wl": ...}` **严格一致**，杜绝"喂了参数却不用"的假独立性。
     """
     return sellmeier_sio2_b2(wl * 1e6) * 1e27
 
@@ -335,19 +340,40 @@ def sellmeier_sio2_ng(wl_um: float) -> float:
     return n - wl_um * dn_dlam
 
 
+_SIO2_A = (0.6961663, 0.4079426, 0.8974794)
+_SIO2_B = (0.0684043 ** 2, 0.1162414 ** 2, 9.896161 ** 2)
+
+
 def sellmeier_sio2_b2(wl_um: float) -> float:
-    """SiO₂ 群速度色散 β₂ = d²β/dω²（SI, s²/m），角频率空间直接计算。
+    """体材料 SiO₂ 群速度色散 β₂ = λ³·n''(λ)/(2πc²)（SI, s²/m）—— **真解析闭式**。
 
-    令 λ(ω)=2πc/ω，β(ω)=n(λ(ω))·ω/c；β₂ = d²β/dω²（中心差分）。与 FD 候选
-    （fd_lp_b2 / fd_lp_b2_silica）同量纲、同方法学对照。"""
+    推导（零差分、零截断）：
+        n²(λ) = S(u) = 1 + Σᵢ Aᵢ·u/(u − Bᵢ)，u = λ²
+        dS/du  = −Σᵢ AᵢBᵢ/(u−Bᵢ)²
+        d²S/du² = 2Σᵢ AᵢBᵢ/(u−Bᵢ)³
+        dn/du  = S'/(2n) ·  d²n/du² = S''/(2n) − S'²/(4n³)
+        dn/dλ  = 2λ·dn/du ·  d²n/dλ² = 2·dn/du + 4λ²·d²n/du²
+        β₂     = d²β/dω² = λ³·n''(λ)/(2πc²)
+
+    🔴 v0.9.264 BL-M5c **修实现缺陷**：本函数此前用 ω 中心差分 `dw = 1e9`（硬编码、
+      **无收敛检验**），在 1310nm（近零色散点，β₂≈−3.26 ps²/km）已被**舍入主导** ——
+      实测给出 −3.7252902984619145（恰为 2 的幂型可精确表示量），比解析值偏 **14.2%**；
+      步长扫描 dw: 1e9→3e11 收敛到 **−3.263213**（见 docs/LDA_BL-M5c_..._2026-10-22.md）。
+      外部校验：同式在 1550nm 给出 D=+21.91 ps/(nm·km)，与体硅公认 ≈+22 吻合。
+    """
+    u = wl_um * wl_um
+    s = 1.0 + sum(a * u / (u - b) for a, b in zip(_SIO2_A, _SIO2_B))
+    ds = sum(-a * b / (u - b) ** 2 for a, b in zip(_SIO2_A, _SIO2_B))
+    d2s = sum(2.0 * a * b / (u - b) ** 3 for a, b in zip(_SIO2_A, _SIO2_B))
+    n = math.sqrt(s)
+    dn_du = ds / (2.0 * n)
+    d2n_du2 = d2s / (2.0 * n) - ds * ds / (4.0 * n ** 3)
+    # β₂ = λ³·n''(λ)/(2πc²) 只用到 n''（一阶导在 β₂ 表达式中已消去）
+    d2n_dlam2 = 2.0 * dn_du + 4.0 * wl_um * wl_um * d2n_du2
+    lam_m = wl_um * 1e-6
+    d2n_dlam2_si = d2n_dlam2 / (1e-6 ** 2)          # 1/m²
     c = 299792458.0
-    w0 = 2.0 * math.pi * c / (wl_um * 1e-6)
-    dw = 1e9
-
-    def beta_of_w(omega):
-        lam = 2.0 * math.pi * c / omega
-        return sellmeier_sio2(lam * 1e6) * omega / c
-    return (beta_of_w(w0 + dw) - 2.0 * beta_of_w(w0) + beta_of_w(w0 - dw)) / (dw * dw)
+    return lam_m ** 3 * d2n_dlam2_si / (2.0 * math.pi * c * c)
 
 
 def fd_lp_vc(n_co, n_cl, a_ref, wl, l, m=1, N=3000, r_max_mult=14):
@@ -399,17 +425,25 @@ def fd_lp_ng_silica(n_cl, a, wl, d_wl=5e-9, N=2000):
     return n0 - wl * (np_ - nm) / (2.0 * d_wl)
 
 
-def fd_lp_b2_silica(n_cl, a, wl, d_wl=5e-9, N=2000):
-    """FD 群速度色散 β₂（SiO₂ 芯：n_co(λ)=Sellmeier）；ω 空间二阶差分，与 golden 同量纲。
+def bulk_sio2_beta2_fd(wl, dw=2e11):
+    """体材料 SiO₂ 群速度色散 β₂（**数值微分**：对 Sellmeier n(λ) 采样后 ω 空间中心二阶差分）。
 
     返回单位 ps²/km（×1e27，理由同 golden_b372：避免 SI 下 ~1e-27 残差被判据 D 误判为恒等）。
+
+    🔴 v0.9.264 BL-M5c：本函数**替换**原 `fd_lp_b2_silica`。后者对**径向 FD 解出的 `n_eff`**
+      做二阶差分，而 `fiber_lp_neff` 的 `n_eff` 分辨率只有 ~1e-4、二阶差分需 ~1e-9 ⇒ 残差是
+      **求解器量化噪声**（实测对 `d_wl`/`N` 不敏感；把包层折射率差压到 1e-4 时甚至返回 0.0）。
+      现改为对**解析已知的 `n(λ)` 采样值**做数值微分 —— `n` 精确到机器精度，残差是真截断。
+
+    `dw = 2e11` 是「截断 ∝ dw² / 舍入 ∝ dw⁻²」两难窗口的甜点（实测）：1310nm resid 1.19e-6、
+    1550nm 5.49e-6；`dw > 2e11` 进截断区、`dw < 1e11` 进舍入区。
     """
     c = 299792458.0
     w0 = 2.0 * math.pi * c / wl
-    dw = 2.0 * math.pi * c / (wl + d_wl) - 2.0 * math.pi * c / (wl - d_wl)
+
     def beta_of_w(omega):
         lam = 2.0 * math.pi * c / omega
-        return fiber_lp_neff(sellmeier_sio2(lam * 1e6), n_cl, a, lam, N=N) * omega / c
+        return sellmeier_sio2(lam * 1e6) * omega / c
     return (beta_of_w(w0 + dw) - 2.0 * beta_of_w(w0) + beta_of_w(w0 - dw)) / (dw * dw) * 1e27
 
 
@@ -431,7 +465,8 @@ if __name__ == "__main__":
     print(f"B367 LP21 V_c    golden={golden_b367():.4f}  FD={fd_lp_vc(n_co,n_cl,a,wl,l=2,m=1):.4f}")
     print(f"B375 LP02 V_c    golden={golden_b375():.4f}  FD={fd_lp_vc(n_co,n_cl,a,wl,l=0,m=2):.4f}")
     print(f"B364 n_g         golden={golden_b364(n_co,n_cl,a,wl):.6f}  FD={fd_lp_ng(n_co,n_cl,a,wl):.6f}")
-    print(f"B372 beta2       golden={golden_b372(n_co,n_cl,a,wl):.3e}  FD={fd_lp_b2(n_co,n_cl,a,wl):.3e}")
+    print(f"B372 beta2       golden={golden_b372(wl):.9e}  FD={bulk_sio2_beta2_fd(wl):.9e}"
+          f"  |Δ|={abs(bulk_sio2_beta2_fd(wl) - golden_b372(wl)):.3e}")
     print(f"B365 A_eff       golden={golden_b365(n_co,n_cl,a,wl)*1e12:.3f}um^2  FD={fiber_effective_area(n_co,n_cl,a,wl)*1e12:.3f}um^2")
     print(f"B373 NA          golden={golden_b373(n_co,n_cl):.6f}  FD={fd_na_from_neff(n_co,n_cl,a,wl):.6f}")
     print(f"B374 V           golden={golden_b374(n_co,n_cl,a,wl):.4f}  FD={fiber_vnumber(n_co,n_cl,a,wl):.4f}")

@@ -7132,28 +7132,6 @@
    "zero_injection_passes": false
   },
   {
-   "candidate": -20.95393763,
-   "compare": "cmp_abs",
-   "flags": {
-    "cancellation_suspect": false,
-    "loose": true,
-    "tight": false,
-    "zero_injection_passes": false,
-    "zero_resid": false
-   },
-   "golden": -27.93967724,
-   "golden_over_tol": 1.396983862,
-   "id": "B372",
-   "metric": "silica_core_beta2_ps2_per_km",
-   "passes": true,
-   "resid": 6.985739605,
-   "resid_over_tol": 0.3492869803,
-   "title": "SiO₂ 芯阶跃光纤群速度色散 β₂ @1550nm（Sellmeier ω 空间二阶导闭式 vs 径向加权 FD ω 空间二阶差分，单位 ps²/km）",
-   "tol": 20.0,
-   "zero_injection_err": 27.93967724,
-   "zero_injection_passes": false
-  },
-  {
    "candidate": 0.04030063588,
    "compare": "cmp_abs",
    "flags": {
@@ -8720,8 +8698,8 @@
  "subject": "K4 盲区锚的判据判别力（现算 · 不读 verification_report）",
  "summary": {
   "blind_non_anchorable": 18,
-  "blind_strict": 396,
-  "blind_total": 414,
+  "blind_strict": 395,
+  "blind_total": 413,
   "cancellation_suspect_ids": [
    "B73"
   ],
@@ -8734,12 +8712,11 @@
    "B31",
    "B59",
    "B60",
-   "B372",
    "E9"
   ],
   "n_cancellation_suspect": 1,
   "n_fail_verdict": 0,
-  "n_loose": 8,
+  "n_loose": 7,
   "n_tight": 8,
   "n_zero_injection_passes": 0,
   "n_zero_resid": 0,
@@ -8777,25 +8754,21 @@
   "zero_resid_ids": []
  },
  "text_covered": {
-  "audited": 125,
+  "audited": 126,
   "cancellation_suspect_ids": [],
-  "ids_total": 126,
-  "loose_ids": [
-   "B373"
-  ],
+  "ids_total": 127,
+  "loose_ids": [],
   "n_cancellation_suspect": 0,
   "n_fail_verdict": 0,
-  "n_loose": 1,
+  "n_loose": 0,
   "n_tight": 0,
-  "n_zero_injection_passes": 1,
+  "n_zero_injection_passes": 0,
   "n_zero_resid": 0,
   "skipped": [
    "B472"
   ],
   "tight_ids": [],
-  "zero_injection_passes_ids": [
-   "B373"
-  ],
+  "zero_injection_passes_ids": [],
   "zero_resid_ids": []
  },
  "thresholds": {

@@ -313,8 +313,8 @@
 | B37 | fc_Hz | physical-law | 1.31143e+10 | 1.31143e+10 | 0 | 1e+08 | ✅ PASS |
 | B370 | silica_core_ng | physical-law | 1.4626 | 1.4626 | 0 | 0.01 | ✅ PASS |
 | B371 | silica_core_ng | physical-law | 1.46164 | 1.46164 | 0 | 0.01 | ✅ PASS |
-| B372 | silica_core_beta2_ps2_per_km | physical-law | -27.9397 | -27.9397 | 0 | 20 | ✅ PASS |
-| B373 | silica_core_beta2_ps2_per_km | physical-law | -3.72529 | -3.72529 | 0 | 20 | ✅ PASS |
+| B372 | silica_bulk_beta2_ps2_per_km | physical-law | -27.9474 | -27.9474 | 0 | 2.33 | ✅ PASS |
+| B373 | silica_bulk_beta2_ps2_per_km | physical-law | -3.26321 | -3.26321 | 0 | 0.272 | ✅ PASS |
 | B374 | gaussian_rayleigh_range | physical-law | 5.06708e-05 | 5.06708e-05 | 0 | 5e-07 | ✅ PASS |
 | B375 | gaussian_waist_at_z | physical-law | 7.07106e-06 | 7.07106e-06 | 0 | 5e-08 | ✅ PASS |
 | B376 | gaussian_confocal | physical-law | 0.000101342 | 0.000101342 | 0 | 1e-06 | ✅ PASS |

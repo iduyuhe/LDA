@@ -1,7 +1,7 @@
 {
-  "total": 245,
-  "expected_extreme": 134,
-  "in_domain_suspect": 111,
+  "total": 242,
+  "expected_extreme": 132,
+  "in_domain_suspect": 110,
   "suspects": [
     {
       "bid": "B16",
@@ -951,23 +951,6 @@
       "cand": 1.67325961,
       "err": 0.0421515914,
       "tol": 0.005,
-      "passed": false,
-      "max_perturbation": 0.15,
-      "classification": "in_domain_divergence"
-    },
-    {
-      "bid": "B372",
-      "as_strict": true,
-      "params": {
-        "n_co": 1.444,
-        "n_cl": 1.207,
-        "a": 4e-06,
-        "wl": 1.55e-06
-      },
-      "oracle": -27.9396772,
-      "cand": -54.573894,
-      "err": 26.6342168,
-      "tol": 20.0,
       "passed": false,
       "max_perturbation": 0.15,
       "classification": "in_domain_divergence"
@@ -4101,57 +4084,6 @@
       "cand": 1.45325294,
       "err": 0.0748699211,
       "tol": 0.005,
-      "passed": false,
-      "max_perturbation": 0.3,
-      "classification": "expected_extreme_perturbation"
-    },
-    {
-      "bid": "B372",
-      "as_strict": true,
-      "params": {
-        "n_co": 1.444,
-        "n_cl": 0.994,
-        "a": 4e-06,
-        "wl": 1.55e-06
-      },
-      "oracle": -27.9396772,
-      "cand": -58.3656529,
-      "err": 30.4259756,
-      "tol": 20.0,
-      "passed": false,
-      "max_perturbation": 0.3,
-      "classification": "expected_extreme_perturbation"
-    },
-    {
-      "bid": "B372",
-      "as_strict": true,
-      "params": {
-        "n_co": 1.444,
-        "n_cl": 1.207,
-        "a": 4e-06,
-        "wl": 1.55e-06
-      },
-      "oracle": -27.9396772,
-      "cand": -54.573894,
-      "err": 26.6342168,
-      "tol": 20.0,
-      "passed": false,
-      "max_perturbation": 0.15,
-      "classification": "in_domain_divergence"
-    },
-    {
-      "bid": "B372",
-      "as_strict": true,
-      "params": {
-        "n_co": 1.444,
-        "n_cl": 1.42,
-        "a": 2.8e-06,
-        "wl": 1.55e-06
-      },
-      "oracle": -27.9396772,
-      "cand": 4.98343203,
-      "err": 32.9231093,
-      "tol": 20.0,
       "passed": false,
       "max_perturbation": 0.3,
       "classification": "expected_extreme_perturbation"

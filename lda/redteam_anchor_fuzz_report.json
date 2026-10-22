@@ -2,11 +2,11 @@
   "strict_total": 518,
   "strict_attacked": 518,
   "strict_coverage": 1.0,
-  "attacks_total": 5234,
-  "genuine_div": 318,
-  "cand_limitation": 74,
+  "attacks_total": 5214,
+  "genuine_div": 315,
+  "cand_limitation": 70,
   "golden_unstable": 88,
-  "divergence_rate": 0.0775697363,
+  "divergence_rate": 0.0772919064,
   "findings": [
     {
       "bid": "B1",
@@ -2499,75 +2499,6 @@
           "cand": 1.45325294,
           "err": 0.0748699211,
           "tol": 0.005
-        }
-      ]
-    },
-    {
-      "bid": "B372",
-      "as_strict": true,
-      "n_attacks": 12,
-      "genuine_div": 3,
-      "cand_limitation": 2,
-      "golden_unstable": 0,
-      "samples": [
-        {
-          "params": {
-            "n_co": 1.444,
-            "n_cl": 0.994,
-            "a": 4e-06,
-            "wl": 1.55e-06
-          },
-          "issue": "genuine_divergence",
-          "oracle": -27.9396772,
-          "cand": -58.3656422,
-          "err": 30.4259649,
-          "tol": 20.0
-        },
-        {
-          "params": {
-            "n_co": 1.444,
-            "n_cl": 1.207,
-            "a": 4e-06,
-            "wl": 1.55e-06
-          },
-          "issue": "genuine_divergence",
-          "oracle": -27.9396772,
-          "cand": -54.5739156,
-          "err": 26.6342384,
-          "tol": 20.0
-        },
-        {
-          "params": {
-            "n_co": 1.444,
-            "n_cl": 1.633,
-            "a": 4e-06,
-            "wl": 1.55e-06
-          },
-          "issue": "candidate_limitation",
-          "diag": "执行异常：ValueError"
-        },
-        {
-          "params": {
-            "n_co": 1.444,
-            "n_cl": 1.846,
-            "a": 4e-06,
-            "wl": 1.55e-06
-          },
-          "issue": "candidate_limitation",
-          "diag": "执行异常：ValueError"
-        },
-        {
-          "params": {
-            "n_co": 1.444,
-            "n_cl": 1.42,
-            "a": 2.8e-06,
-            "wl": 1.55e-06
-          },
-          "issue": "genuine_divergence",
-          "oracle": -27.9396772,
-          "cand": 4.98343203,
-          "err": 32.9231093,
-          "tol": 20.0
         }
       ]
     },

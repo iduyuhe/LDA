@@ -265,42 +265,48 @@ DEFS = {
                  "判据 D：λ 扫描差分随步长收敛、候选输出扰动必 FAIL。零商业依赖。"),
     },
     "B372": {
-        "title": "SiO₂ 芯阶跃光纤群速度色散 β₂ @1550nm（Sellmeier ω 空间二阶导闭式 vs 径向加权 FD ω 空间二阶差分，单位 ps²/km）",
-        "metric": "silica_core_beta2_ps2_per_km",
-        "oracle": ("analytical(SiO₂ Sellmeier β₂=d²β/dω², ω-space, ps²/km) + "
-                   "cylindrical radial FD ω-space 2nd-difference independent_cross_check"),
-        "tol": 20.0,
-        "default_params": {"n_co": 1.444, "n_cl": 1.42, "a": 4.0e-6, "wl": 1.55e-6},
+        "title": "体材料 SiO₂ 群速度色散 β₂ @1550nm（Sellmeier 解析二阶导**闭式** vs n(λ) 采样 ω 空间二阶差分 · ps²/km）",
+        "metric": "silica_bulk_beta2_ps2_per_km",
+        "oracle": ("analytical(SiO₂ Sellmeier λ³·n''(λ)/(2πc²), 解析二阶导, ps²/km) + "
+                   "ω-space 2nd-difference on sampled n(λ) independent_cross_check"),
+        "tol": 2.33,
+        "default_params": {"wl": 1.55e-6},
         "golden_fn": golden_b372,
-        "candidate": "fiber_lp_b2_silica_fd",
-        "candidate_desc": ("SiO₂ 芯阶跃光纤角频率空间 β(ω)=n_eff(λ(ω))·ω/c 二阶差分求 β₂（ps²/km）"
-                           "（与 golden Sellmeier ω 空间闭式同量纲、方法学不同源）"),
-        "note": ("SiO₂ 芯阶跃光纤 LP01 群速度色散 β₂@1550nm（光纤标准单位 ps²/km，"
-                 "1 s²/m=1e27 ps²/km）。golden=SiO₂ Sellmeier 角频率空间二阶导 β₂=d²β/dω² 闭式"
-                 "（负值，色散零点 ~1.27µm）；candidate=径向加权 FD 求 n_eff(λ(ω)) 后"
-                 "β(ω)=n_eff·ω/c 角频率空间二阶差分。同量纲、同方法学对照。包层 n_cl=1.42 保证"
-                 "模约束→β₂ 收敛到体材料值（符号正确、量级一致）。用 ps²/km 使基线残差落在自然"
-                 "量级（~ps²/km）而非 SI 的 ~1e-27，避免判据 D ③ 的 1e-12 值域排除误判为恒等。"
-                 "实测 |Δ|=6.99 ps²/km（tol=20 的 2.9× 余量）；判据 D：ω 差分随 dw 收敛、"
-                 "候选输出扰动必 FAIL。零商业依赖。"),
+        "candidate": "bulk_sio2_beta2_fd",
+        "candidate_desc": ("由 sellmeier_sio2(λ) 采样构造 β(ω)=n(λ(ω))·ω/c，再做 **ω 空间中心二阶差分**"
+                           "（dw=2e11）求 β₂（ps²/km）—— 与 golden 的**解析**二阶导不同源"),
+        "note": ("体材料 SiO₂ 群速度色散 β₂@1550nm（光纤标准单位 ps²/km，1 s²/m=1e27 ps²/km）。"
+                 "golden=**真解析闭式** β₂=λ³·n''(λ)/(2πc²)（n'' 由 Sellmeier 有理函数解析二阶导，"
+                 "**零步长零截断**）；candidate=对 n(λ) 采样值做 ω 空间中心二阶差分（数值微分，真截断）。"
+                 "🔴 **v0.9.264 BL-M5c 数值语义变更**：① 旧 golden 名为闭式实为 ω 中心差分 dw=1e9，"
+                 "在近零色散点被舍入主导（1310nm 偏 14.2%）⇒ 改解析；② 旧候选对**径向 FD 解出的 n_eff**"
+                 "（分辨率仅 ~1e-4）做二阶差分（需 ~1e-9）⇒ 残差是求解器噪声，弃用；③ 被测标量是"
+                 "**体材料** β₂（不含波导色散），故参数集收敛为 {wl}（原 n_co/n_cl/a 对 golden 无用）。"
+                 "实测 golden=−27.947366138 · cand=−27.947360650 · |Δ|=5.49e-6（tol=2.33 的 **424379×**）· "
+                 "resid/ulp=8.8e8（非跨平台脆弱）。诚实披露：golden 与 cand 共用同一套 Sellmeier 系数"
+                 "（材料模型同源、方法学不同）⇒ 本锚检验「解析求导实现正确性」，不检验材料模型本身。"
+                 "零商业依赖。"),
     },
     "B373": {
-        "title": "SiO₂ 芯阶跃光纤群速度色散 β₂ @1310nm（Sellmeier ω 空间二阶导闭式 vs 径向加权 FD ω 空间二阶差分，单位 ps²/km）",
-        "metric": "silica_core_beta2_ps2_per_km",
-        "oracle": ("analytical(SiO₂ Sellmeier β₂=d²β/dω², ω-space, ps²/km) + "
-                   "cylindrical radial FD ω-space 2nd-difference independent_cross_check"),
-        "tol": 20.0,
-        "default_params": {"n_co": 1.444, "n_cl": 1.42, "a": 4.0e-6, "wl": 1.31e-6},
+        "title": "体材料 SiO₂ 群速度色散 β₂ @1310nm（Sellmeier 解析二阶导**闭式** vs n(λ) 采样 ω 空间二阶差分 · ps²/km）",
+        "metric": "silica_bulk_beta2_ps2_per_km",
+        "oracle": ("analytical(SiO₂ Sellmeier λ³·n''(λ)/(2πc²), 解析二阶导, ps²/km) + "
+                   "ω-space 2nd-difference on sampled n(λ) independent_cross_check"),
+        "tol": 0.272,
+        "default_params": {"wl": 1.31e-6},
         "golden_fn": golden_b372,
-        "candidate": "fiber_lp_b2_silica_fd",
-        "candidate_desc": ("SiO₂ 芯阶跃光纤角频率空间 β(ω)=n_eff(λ(ω))·ω/c 二阶差分求 β₂（ps²/km）"
-                           "（与 golden Sellmeier ω 空间闭式同量纲、方法学不同源）"),
-        "note": ("SiO₂ 芯阶跃光纤 LP01 群速度色散 β₂@1310nm（光纤标准单位 ps²/km）。golden=SiO₂ "
-                 "Sellmeier 角频率空间二阶导 β₂ 闭式（色散零点 ~1.27µm，故 @1310nm 接近零、符号正）；"
-                 "candidate=径向加权 FD ω 空间二阶差分。包层 n_cl=1.42 保证模约束。用 ps²/km 单位"
-                 "使基线残差落在自然量级（避免判据 D ③ 误判恒等）。实测 |Δ|=1.70 ps²/km"
-                 "（tol=20 的 11.7× 余量）；判据 D：ω 差分随 dw 收敛、候选输出扰动必 FAIL。"
-                 "零商业依赖。"),
+        "candidate": "bulk_sio2_beta2_fd",
+        "candidate_desc": ("由 sellmeier_sio2(λ) 采样构造 β(ω)=n(λ(ω))·ω/c，再做 **ω 空间中心二阶差分**"
+                           "（dw=2e11）求 β₂（ps²/km）—— 与 golden 的**解析**二阶导不同源"),
+        "note": ("体材料 SiO₂ 群速度色散 β₂@1310nm（近零色散点，β₂ 仅 −3.26 ps²/km，条件数差）。"
+                 "golden=**真解析闭式** β₂=λ³·n''(λ)/(2πc²)；candidate=对 n(λ) 采样做 ω 空间中心二阶差分。"
+                 "🔴 **v0.9.264 BL-M5c 数值语义变更（最重的一条）**：旧 golden 用 ω 中心差分 dw=1e9，"
+                 "@1310nm 已被**舍入主导** —— 给出 −3.7252902984619145（恰为 2 的幂型可精确表示量），"
+                 "比解析值偏 **14.2%**；步长扫描 dw 1e9→3e11 收敛到 **−3.263213**（见 "
+                 "docs/LDA-BL-M5c 章程 §2.2）。外部校验：同式 @1550nm 给 D=+21.91 ps/(nm·km)，与体硅公认"
+                 "≈+22 吻合、色散零点 ~1.275µm。旧候选（对 FD n_eff 做二阶差分）残差 1.70 是**噪声**，弃用。"
+                 "实测 golden=−3.263213413 · cand=−3.263214603 · |Δ|=1.19e-6（tol=0.272 的 **228549×**）· "
+                 "resid/ulp=1.6e9。诚实披露同 B372（材料模型同源）。零商业依赖。"),
     },
     "B374": {
         "title": "高斯光束瑞利范围 zR = π w0²/λ（闭式 vs 旁轴 BPM 初值传播）",

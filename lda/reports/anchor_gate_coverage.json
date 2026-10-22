@@ -2419,17 +2419,18 @@
       "l1": true,
       "l2_count": 1,
       "l2_gates": [
-        "run_bl_anchor_guard_smoke.py"
+        "run_benchmark_falsifiability_smoke.py"
       ],
       "l3": false
     },
     "B373": {
       "l1": true,
-      "l2_count": 1,
+      "l2_count": 2,
       "l2_gates": [
+        "run_benchmark_falsifiability_smoke.py",
         "run_statistical_anchor_smoke.py"
       ],
-      "l3": false
+      "l3": true
     },
     "B374": {
       "l1": true,
@@ -4455,6 +4456,8 @@
     "run_benchmark_falsifiability_smoke.py": [
       "B105",
       "B184",
+      "B372",
+      "B373",
       "B374",
       "B375",
       "B376",
@@ -5309,7 +5312,6 @@
       "B37",
       "B370",
       "B371",
-      "B372",
       "B383",
       "B388",
       "B389",
@@ -5465,8 +5467,8 @@
       "S（系统层）": 10
     },
     "by_gate_count": {
-      "1": 453,
-      "2": 32,
+      "1": 452,
+      "2": 33,
       "3": 27,
       "4": 8,
       "5": 2
@@ -5479,9 +5481,9 @@
     "l1_unified_covered": 540,
     "l2_bespoke_covered": 522,
     "l2_blind": 18,
-    "l2_manifest_added": 396,
-    "l2_manifest_covered": 396,
-    "l2_text_covered": 126,
-    "l3_multi_covered": 69
+    "l2_manifest_added": 395,
+    "l2_manifest_covered": 395,
+    "l2_text_covered": 127,
+    "l3_multi_covered": 70
   }
 }

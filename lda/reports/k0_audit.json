@@ -7,19 +7,20 @@
     "head（每次提交都变 ⇒ 非确定量，故意不入台账）"
   ],
   "frozen_snapshot": {
-    "version": "0.9.265",
+    "version": "0.9.266",
     "ledger_total": 541,
     "ledger_strict": 519,
     "ledger_degraded": 3,
     "ledger_stub": 19,
     "independence_rate": 0.959335,
-    "ci_core": 339,
-    "endpoints": 157,
-    "case_panels_min": 18,
+    "ci_core": 340,
+    "endpoints": 158,
+    "case_panels_min": 19,
     "max_anchor": "B525",
     "panels": [
       "sec-accel",
       "sec-d1",
+      "sec-d2",
       "sec-d4",
       "sec-eco",
       "sec-ecopub",
@@ -231,7 +232,7 @@
           "/api/j5_qnet": 3
         },
         "j1_case_py_exists": true,
-        "case_panels_min": 18,
+        "case_panels_min": 19,
         "note": "🔴 K2（2026-10-17）**已补齐**：新增 `j1_case.py` + `GET /api/j1_qec` + `index.html` `sec-j1` 三入口面 + `CASE_PANELS_MIN 15→16` ⇒ 六层面板首次齐备（此前 A 档三入口面纪律只对新增强制 ⇒ J1 老档漏网）",
         "settled_by_stage": "K2",
         "settlement_artifacts": [
@@ -312,11 +313,11 @@
             "4": 9,
             "5": 2
           },
-          "core_smokes": 339,
+          "core_smokes": 340,
           "gates_excluded": 1,
-          "gates_scanned": 338,
+          "gates_scanned": 339,
           "gates_with_anchors": 34,
-          "gates_zero_anchor": 304,
+          "gates_zero_anchor": 305,
           "l1_unified_covered": 541,
           "l2_bespoke_covered": 523,
           "l2_blind": 18,

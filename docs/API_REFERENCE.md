@@ -22,12 +22,12 @@
 | 项 | 值 |
 |---|---|
 
-| 端点总数 | 157（精确 140 + 前缀/后缀 17） |
-| 方法分布 | GET 62 · PATCH 1 · POST 94 |
-| 有描述 | 157（**100.0%**） |
+| 端点总数 | 158（精确 141 + 前缀/后缀 17） |
+| 方法分布 | GET 63 · PATCH 1 · POST 94 |
+| 有描述 | 158（**100.0%**） |
 | 需登录（重计算闸门） | 60 |
 
-## GET（62）
+## GET（63）
 
 | 路径 | 用途 | 参数 | 鉴权 |
 |---|---|---|---|
@@ -54,6 +54,7 @@
 | `/api/capability_demos` | A4 · 能力演示场景元数据（12 条，快，零计算）。 | — | public |
 | `/api/cpo_array` | GET /api/cpo_array —— CPO 共封装光引擎阵列死锚判决（外部可验货）。 默认 32 引擎 × 34 通道 × 8 波长 = 100,096 器件；?oe=&ch=&lane=&ch_per_row= 缩放（如 ?oe=40&ch=68 → 250,240 器件）。?gds=1 含 GDS 导出（默认跳过省时）。 返回死标量验收 JSON：器件数 / DRC / LVS / 断路反例 / 耗时 / accepted。 读-only、无鉴权——直接服务「可被外部验货的验证可信度」战略主线。 | — | public |
 | `/api/d1_hetero` | GET /api/d1_hetero —— 蓝图 v2 · D1 光-量异质集成**只读案例卡**（免登录 · 微秒级）。 D1 新域（M0 锚 B523 阵列孔径截断 → M3 前移 锚 B524 Kapitza 界面热导）的对外窗口： 🔴 **两条负结果如实同屏**（本卡的存在理由）： - **M1 异质界面损耗**：章程原定的 Fresnel 反射 / Beer–Lambert 吸收两条**均已被既有锚 100% 覆盖**（连候选方法都对得上）⇒ 判参数化扩展、**不立新锚**； - **M2 封装级耦合容差**：良率只是既有单通道耦合律的统计重写（**派生量**）；MC 跨种子 最坏达不到余量要求、限窗 Simpson 又与 M0 双重同族 ⇒ **不立新锚**。 🔴 **零重计算**：不跑仿真、不 import 求解器 / numpy / scipy —— 数字全部由**闭式算术现算** （erf 差 / DMM 比值 / Debye 四次幂 / 声子通量加权），并由常驻门禁 `run_webui_d1_render_path_smoke` 对 `lda_l2/qnet_hetero_array` 与 `lda_l2/hetero_thermal` **逐值跨源对拍** ⇒ **无 DoS 面**，故免登录、不进 `HEAVY_POST_PATHS`。 无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`。 异常不 500（返回 200 + error 字段，与 `h_j5_qnet_demo` 同风格）。 | — | public |
+| `/api/d2_code_family` | GET /api/d2_code_family —— 蓝图 v2 · D2 QEC 码族**只读案例卡**（免登录 · 微秒级）。 D2 新域（M0 锚：退极化信道 hashing 界 · M1 裁决：码族比较/开销四类不可锚）的对外窗口： 🔴 **四类负结果如实同屏**（本卡的存在理由）： - **精确整数开销**（`n/k` / `(2d−1)²` / T 计数 / 深度 / `4^g` / `2^(n−k)`）⇒ `resid ≡ 0`； - **拟合阈值参数**（各族 `p_th` / `A` 来自文献拟合或 MC 标定）⇒ 无闭式 golden； - **离散 argmin 比较**（「哪个族更省」输出是族标签）⇒ 与整数同类；`(2d*−1)²` 属派生量； - **GV 界与 hashing 界同函数**（四点差恒 0.0）⇒ 同式异写，换观测量也治不好。 🔴 **可行性分界**：`p_phys ≥ p_th` ⇒ 该族在此噪声下不可用 ⇒ `d* < 0`（不是 0、不是 inf）。 本卡把参考族 `d*(p_phys)` 曲线与分界一起给出，供前端画折线。 🔴 **零重计算**：不跑仿真、不 import 求解器 / numpy / scipy —— 数字全部由**闭式算术现算** （对数反解 / 二元熵 / 整数组合），并由常驻门禁 `run_v2d2_m1_smoke` 对既有锚的 golden 与 `lda_l2/qec_code_family` **逐值跨源对拍** ⇒ **无 DoS 面**，故免登录、不进 `HEAVY_POST_PATHS`。 无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`； 各族 `(A, p_th)` 为**文献拟合/示意量级**，非平台实测。异常不 500（返回 200 + error 字段）。 | — | public |
 | `/api/d4_demo` | GET /api/d4_demo —— D4 交付闭环扩面案例卡（ecore + 超导量子 · 只读 · 免登录）。 🔴 与 `/api/design_tapeout` → `/api/design_gds`（光子侧 D4 单路径）**同口径**： 本卡把电子（ecore 交叉阵列）与超导（transmon 阵列）两条既有真产线一并对外， 逐域给出 GDS 字节数 + **确定性 sha256** + DRC/LVS 双闸 verdict。 🔴 零重计算：`d4_domains.deliver_report` 只跑几何 + 双闸（微秒级）+ 模块级缓存， 不跑 P&R / 不跑 FDTD ⇒ 免登录、不进 HEAVY_POST_PATHS（公开只读验货类）。 🔴 不伪装实测：`verdict` 恒 DESIGN_BUDGET；层规为公开工艺近似（非 Foundry PDK）； verdict 属设计期签核、非实测签核、非流片结果；不报 TOPS/TOPS-W/fJ/op。 无查询参数（固定设计点）。异常不 500（200 + error 字段，与 h_qchip_demo 同风格）。 | — | public |
 | `/api/d4_gds` | GET /api/d4_gds?domain=<ecore\|quantum_sc> —— 新两域的 `.gds` 下载（G-D 缺口收口）。 与 `/api/design_gds`（光子侧，全站原「唯一二进制端点」）**同口径**： `application/octet-stream` + `Content-Disposition: attachment` + `X-LDA-GDS-Sha256` 响应头。sha256 由 `d4_domains.deliver_download` 随字节 一并给出 ⇒ 本层**不再重算一遍**（响应头与实体同源，杜绝「头≠体」）。 🔴 免登录 + 参数可控 ⇒ `d4_domains.DOMAIN_PARAM_LIMITS` 硬限幅（防 `?domain=ecore&n=100000` 单请求 OOM）；未知域 / 越界 / 非数值 ⇒ **400 + JSON**， **不返回空文件、不静默丢弃**。 ⚠️ 二进制响应会被 `run_webui_api_smoke` 的通用 GET 循环误判 ⇒ 已登记进 `BINARY_GET` 并配专项断言（状态码 / Content-Type / 魔数 / `X-LDA-GDS-Sha256` ≡ 实体 sha256 / 附件名 ≡ `gds_filename` / 与 `/api/d4_demo` 案例卡登记值 MATCH）。 | — | public · **二进制** |
 | `/api/design_catalog` | GET /api/design_catalog —— 设计引擎与设计包目录（`engine_catalog` / `package_catalog`）。 导入失败时返回空目录 + `error` 字段（服务不 500）。 | — | public |

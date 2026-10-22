@@ -5020,6 +5020,7 @@
       "B523",
       "B524"
     ],
+    "run_v2d2_m1_smoke.py": [],
     "run_v2d2_smoke.py": [
       "B525"
     ],
@@ -5486,11 +5487,11 @@
       "4": 9,
       "5": 2
     },
-    "core_smokes": 339,
+    "core_smokes": 340,
     "gates_excluded": 1,
-    "gates_scanned": 338,
+    "gates_scanned": 339,
     "gates_with_anchors": 34,
-    "gates_zero_anchor": 304,
+    "gates_zero_anchor": 305,
     "l1_unified_covered": 541,
     "l2_bespoke_covered": 523,
     "l2_blind": 18,

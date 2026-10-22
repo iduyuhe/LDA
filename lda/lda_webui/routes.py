@@ -609,6 +609,38 @@ def h_d1_hetero(h, p, q, path):
                       "case_id": _d1.CASE_ID, "verdict": "ERROR"})
 
 
+def h_d2_code_family(h, p, q, path):
+    """GET /api/d2_code_family —— 蓝图 v2 · D2 QEC 码族**只读案例卡**（免登录 · 微秒级）。
+
+    D2 新域（M0 锚：退极化信道 hashing 界 · M1 裁决：码族比较/开销四类不可锚）的对外窗口：
+
+    🔴 **四类负结果如实同屏**（本卡的存在理由）：
+      - **精确整数开销**（`n/k` / `(2d−1)²` / T 计数 / 深度 / `4^g` / `2^(n−k)`）⇒ `resid ≡ 0`；
+      - **拟合阈值参数**（各族 `p_th` / `A` 来自文献拟合或 MC 标定）⇒ 无闭式 golden；
+      - **离散 argmin 比较**（「哪个族更省」输出是族标签）⇒ 与整数同类；`(2d*−1)²` 属派生量；
+      - **GV 界与 hashing 界同函数**（四点差恒 0.0）⇒ 同式异写，换观测量也治不好。
+
+    🔴 **可行性分界**：`p_phys ≥ p_th` ⇒ 该族在此噪声下不可用 ⇒ `d* < 0`（不是 0、不是 inf）。
+    本卡把参考族 `d*(p_phys)` 曲线与分界一起给出，供前端画折线。
+
+    🔴 **零重计算**：不跑仿真、不 import 求解器 / numpy / scipy —— 数字全部由**闭式算术现算**
+    （对数反解 / 二元熵 / 整数组合），并由常驻门禁 `run_v2d2_m1_smoke` 对既有锚的 golden
+    与 `lda_l2/qec_code_family` **逐值跨源对拍** ⇒ **无 DoS 面**，故免登录、不进 `HEAVY_POST_PATHS`。
+
+    无查询参数（固定设计档）。🔴 **不伪装实测**：`verdict` 恒为 `DESIGN_BUDGET`；
+    各族 `(A, p_th)` 为**文献拟合/示意量级**，非平台实测。异常不 500（返回 200 + error 字段）。
+    """
+    try:
+        from . import d2_case as _d2
+    except ImportError:
+        from lda_webui import d2_case as _d2
+    try:
+        return (200, _d2.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/d2_code_family", "error": str(e)[:160],
+                      "case_id": _d2.CASE_ID, "verdict": "ERROR"})
+
+
 def h_j1_qec_demo(h, p, q, path):
     """GET /api/j1_qec —— J1 量子纠错（QEC）**逻辑比特层**案例卡（只读 · 免登录 · 微秒级）。
 
@@ -2368,6 +2400,9 @@ GET_ROUTES = {
     # 蓝图 v2 新域 D1（v0.9.261+）：光-量异质集成**设计预算**只读案例卡
     # （阵列孔径 γ̄ / DMM 透射 / Debye 热容 / Kapitza h_K · M1+M2 双裁决同屏 · 零重计算 · 免登录）
     "/api/d1_hetero": h_d1_hetero,
+    # 蓝图 v2 新域 D2（v0.9.266+）：QEC 码族**设计预算**只读案例卡
+    # （d* 参考档 / 可行性分界 / GV⇄hashing 同函数 / 整数开销 · M1 四类裁决同屏 · 零重计算 · 免登录）
+    "/api/d2_code_family": h_d2_code_family,
     "/api/j1_qec": h_j1_qec_demo,
     "/api/qtrack": h_qtrack_demo,
     "/api/cpo_array": h_cpo_array,

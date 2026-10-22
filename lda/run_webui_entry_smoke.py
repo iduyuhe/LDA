@@ -80,7 +80,9 @@ INJECTOR_SCRIPTS = ("nav.js", "cs_widget.js", "guide_widget.js", "onboard_widget
 #:   面板）⇒ 族 12→13。该面板是 **J3 章程 §2.4/§3-M4 的强制交付项**（M0–M4 后端做完了、
 #:   面板属 M4 交付且落地记录披露）⇒ 本版补做并同步抬下限。
 #:   **不收紧则减面探针 G7 静默失效** —— 详见本节末尾血案注。
-CASE_PANELS_MIN = 18
+#:   🔴 v0.9.266 收紧 **18 → 19**：新增 `sec-d2`（QEC 码族 · D2-M1 裁决 + 可行性分界面板）
+#:   ⇒ 族 18→19。M1 净增 0 锚但**新增面板**，故下限只随面板族增长而上抬（不因文本面涨）。
+CASE_PANELS_MIN = 19
 _ACCEPT_PATTERNS = (
     re.compile(r'data-stage="accept"[^>]*id="(sec-[A-Za-z0-9_]+)"'),
     re.compile(r'id="(sec-[A-Za-z0-9_]+)"[^>]*data-stage="accept"'),

@@ -306,6 +306,11 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               # 🔴 v0.9.265：本版真改动 = D2 QEC 码族 M0（B525 + 新门禁本体）。
               #   实测 ~0.3s / **19 判据** ⇒ 纳对照面，令 README 顶行声明的 19 判据由机器守。
               "run_v2d2_smoke.py",
+              # 🔴 v0.9.266：本版真改动 = D2 QEC 码族 **M1**（码族比较/开销裁决净增 0 +
+              #   `sec-d2` 面板 + `/api/d2_code_family` + 新门禁本体）。实测 **~0.2s** /
+              #   **13 判据**（纯 stdlib + 一次读 index.html）⇒ 纳对照面，令本版 README
+              #   顶行声明的 13 判据由机器守（非手写）；无自指、无递归。
+              "run_v2d2_m1_smoke.py",
               # 🔴 v0.9.261：本版真改动 = D1 **M4 WebUI 面板**（`sec-d1` + `/api/d1_hetero`
               #   + 新渲染门禁本体）。实测 **~1.0s** / **20 判据**（含一次 `run_v2d1_smoke`
               #   子进程）⇒ 纳对照面，令本版 README 顶行声明的 20 判据由机器守（非手写）。

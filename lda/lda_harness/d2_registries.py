@@ -36,6 +36,11 @@ __all__ = [
     "d2_sentinel_metrics",
     "d2_anchorable_ids",
     "selfcheck_d2_adjudication",
+    "D2_M1_ADJUDICATION",
+    "d2_m1_unanchorable_classes",
+    "d2_m1_sentinel_metrics",
+    "d2_m1_reused_metrics",
+    "selfcheck_d2_m1_adjudication",
 ]
 
 #: D2 裁决面：三类不可锚 + 唯一可锚
@@ -129,6 +134,137 @@ def selfcheck_d2_adjudication() -> Dict[str, bool]:
     return c
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# D2-M1 裁决面（码族比较 / 开销 · G-V2-D2-3 + G-V2-D2-4）
+# ══════════════════════════════════════════════════════════════════════════════
+#: D2-M1 裁决面：**四类不可锚 · 净增 0 锚**
+#:
+#: 依据 `docs/LDA_V2-D2_QEC码族_M1短评估_码族比较与开销_2026-10-22.md`（先体检后动手）：
+#: 码族「比较 / 开销」这一面**没有可锚物** —— 连续部分已被既有锚占满，非连续部分全是
+#: 整数 / 拟合值 / 离散选择。四类各带 ≥3 条证据，哨兵指标名防「换名重立」。
+D2_M1_ADJUDICATION: Dict[str, object] = {
+    "verdict": "NOT_ANCHORABLE",
+    "scope": "G-V2-D2-3 码族间资源-阈值折衷（同 p 下比较）+ G-V2-D2-4 逻辑门集合的可比性度量",
+    "unanchorable_classes": {
+        "exact_integer_overhead": {
+            "anchorable": False,
+            "reason": "码族开销面（空间开销 n/k、物理比特数 (2d−1)²、T 计数、门深度、"
+                      "基态简并度、稳定子群阶、逻辑类数）全是精确整数或精确有理数：任何"
+                      "「独立算法」都给出同一个数 ⇒ resid ≡ 0 ⇒ 触 BL 的「零残差」红线"
+                      "（n_zero_resid 只许 =0）⇒ 不是「难锚」，是原理上不可锚。",
+            "evidence": [
+                "空间开销 n/k：[[5,1,3]]⇒5 · [[7,1,3]](Steane)⇒7 · [[9,1,3]](Shor)⇒9（精确整数，无截断项）",
+                "表面码物理比特数 (2d−1)²：d=3/5/7 ⇒ 25/81/169（精确整数）",
+                "拓扑/稳定子组合量：4^g(g=2)⇒16 · 2^(n−k)⇒64 · 2^(2k)⇒4 · Steane 松紧度 2^6/(1+7·3)=32/11（精确有理）",
+                "T 计数 / 门深度为编译后精确整数计数，不存在随步长收敛的数值路径 ⇒ 残差恒 0",
+            ],
+            "sentinel_metrics": [
+                "qec_code_space_overhead_ratio",
+                "qec_surface_code_physical_qubit_count",
+                "qec_logical_t_count",
+                "qec_code_circuit_depth_count",
+            ],
+        },
+        "fitted_threshold_parameters": {
+            "anchorable": False,
+            "reason": "跨族比较必须引入各族的阈值 p_th 与前置系数 A，这两个量来自文献拟合或"
+                      "蒙特卡洛 + 有限尺寸标定 ⇒ 没有闭式 golden。若拿拟合值当 golden，"
+                      "「golden ⇄ candidate」的方法学独立性被切断，只剩自己跟自己比 ⇒ 不可锚。",
+            "evidence": [
+                "LDPC / 色码 / 表面码的 p_th 与 A 均为拟合量（文献值随解码器与噪声模型漂移）",
+                "同一 p_th 在两篇文献可相差数倍 ⇒ 不构成「可复现的死标量」",
+                "仓库红线禁第三方 QEC SDK ⇒ 无法引入独立实现做交叉对照 ⇒ 缺第二个闭式",
+            ],
+            "sentinel_metrics": [
+                "qec_code_cross_family_threshold_fit",
+                "qec_color_code_threshold_scaling",
+                "qec_family_fit_coefficient_a",
+            ],
+        },
+        "discrete_argmin_comparison": {
+            "anchorable": False,
+            "reason": "「同 p 下哪个族更省」是比较的**结果**，本质是离散 argmin / 整数比较 "
+                      "⇒ 与精确整数同类：任何实现都给同一个族名，没有连续残差可言。"
+                      "而把 d* 再做代数合成（如 (2d*−1)²）只是既有闭式的单调变换 ⇒ 派生量。",
+            "evidence": [
+                "argmin 输出是族标签（离散），resid 无从定义 ⇒ 判据只能是「等于某个名字」",
+                "d*=88.5400554685（既有闭式）⇒ (2d*−1)²=31004.205468、2d*²=15678.682845 均为纯代数合成",
+                "可行性判定 p_phys ≥ p_th ⇒ d*<0（实测 −283.7152649994）也是符号比较，非新物理量",
+            ],
+            "sentinel_metrics": [
+                "qec_code_family_argmin_choice",
+                "qec_derived_physical_qubit_footprint",
+                "qec_code_family_feasibility_flag",
+            ],
+        },
+        "same_function_asymptotic_bound": {
+            "anchorable": False,
+            "reason": "码族比较的渐近速率口径（量子 Gilbert–Varshamov 界）与已落账本的退极化 "
+                      "hashing 界是**同一个函数**：R_GV(δ)=1−H₂(δ)−δ·log₂3 ≡ I_c(p) 只换自变量名。"
+                      "实测四点差恒 0.0（代数恒等签名，非 1e-16）⇒ 同式异写，换任何观测量都治不好。",
+            "evidence": [
+                "δ=0.05: 两式同得 0.63435491784798592（差 0.0）",
+                "δ=0.11: 同得 0.32573816675614475 · δ=0.25: 同得 −0.20751874963942185（差均 0.0）",
+                "δ=0.18929（穿零点）: 同得 −5.5511151231257827e-17 ⇒ 连穿零位置都一致",
+                "数值格式也相同（熵→积分表示→复合 Simpson）⇒ 被测标量∧数值格式两处全同",
+            ],
+            "sentinel_metrics": [
+                "qec_gilbert_varshamov_rate",
+                "qec_asymptotic_code_rate_bound",
+            ],
+        },
+    },
+    #: 复核（非新锚）：M1 用到的连续标量已在既有锚内 —— 门禁按 **metric 名**取用，不写锚号
+    "reused_anchor_metrics": {
+        "qec_threshold_distance": "阈值标度律反解的最小距离 d*（既有的连续标量，跨族只换 (A,p_th) 参数）",
+        "qec_depolarizing_hashing_bound": "退极化信道 hashing / coherent-information 界（与 GV 界同函数）",
+    },
+}
+
+
+def d2_m1_unanchorable_classes() -> List[str]:
+    """返回 D2-M1 全部「不可锚」类名。"""
+    return sorted(D2_M1_ADJUDICATION["unanchorable_classes"])
+
+
+def d2_m1_sentinel_metrics() -> List[str]:
+    """返回 D2-M1 全部哨兵指标名（被任何锚采用 ⇒ 门禁必红）。"""
+    out: List[str] = []
+    for spec in D2_M1_ADJUDICATION["unanchorable_classes"].values():
+        out.extend(spec["sentinel_metrics"])
+    return sorted(out)
+
+
+def d2_m1_reused_metrics() -> List[str]:
+    """返回 D2-M1 判定「复用既有锚」的 metric 名（门禁据此取既有 golden）。"""
+    return sorted(D2_M1_ADJUDICATION["reused_anchor_metrics"])
+
+
+def d2_all_sentinel_metrics() -> List[str]:
+    """M0 + M1 的哨兵并集（门禁一次性扫全）。"""
+    return sorted(set(d2_sentinel_metrics()) | set(d2_m1_sentinel_metrics()))
+
+
+def selfcheck_d2_m1_adjudication() -> Dict[str, bool]:
+    """D2-M1 裁决面自洽自检（门禁 A 组会用 · 证据门槛 ≥3）。"""
+    c: Dict[str, bool] = {}
+    cls = D2_M1_ADJUDICATION["unanchorable_classes"]
+    c["verdict_is_not_anchorable"] = D2_M1_ADJUDICATION.get("verdict") == "NOT_ANCHORABLE"
+    c["four_classes"] = len(cls) == 4
+    c["every_class_has_reason_30"] = all(
+        isinstance(v.get("reason"), str) and len(v["reason"]) >= 30 for v in cls.values())
+    c["every_class_has_three_evidence"] = all(
+        isinstance(v.get("evidence"), list) and len(v["evidence"]) >= 3 for v in cls.values())
+    c["every_class_has_sentinel"] = all(
+        isinstance(v.get("sentinel_metrics"), list) and len(v["sentinel_metrics"]) >= 1
+        for v in cls.values())
+    c["sentinel_names_unique"] = len(set(d2_m1_sentinel_metrics())) == len(d2_m1_sentinel_metrics())
+    c["no_sentinel_collides_with_reused"] = not (
+        set(d2_m1_sentinel_metrics()) & set(d2_m1_reused_metrics()))
+    c["reused_metrics_not_empty"] = len(d2_m1_reused_metrics()) >= 2
+    return c
+
+
 if __name__ == "__main__":
     print("可锚:", d2_anchorable_ids())
     print("不可锚类:", d2_unanchorable_classes())
@@ -136,3 +272,11 @@ if __name__ == "__main__":
     sc = selfcheck_d2_adjudication()
     bad = [k for k, v in sc.items() if not v]
     print("自检 %d 项：%s" % (len(sc), "ALL PASS" if not bad else "FAIL=%s" % bad))
+    print("─" * 70)
+    print("D2-M1 决:", D2_M1_ADJUDICATION["verdict"], "· 范围:", D2_M1_ADJUDICATION["scope"])
+    print("D2-M1 不可锚类:", d2_m1_unanchorable_classes())
+    print("D2-M1 哨兵名 %d 个:" % len(d2_m1_sentinel_metrics()), d2_m1_sentinel_metrics())
+    print("D2-M1 复用既有 metric:", d2_m1_reused_metrics())
+    sc1 = selfcheck_d2_m1_adjudication()
+    bad1 = [k for k, v in sc1.items() if not v]
+    print("D2-M1 自检 %d 项：%s" % (len(sc1), "ALL PASS" if not bad1 else "FAIL=%s" % bad1))

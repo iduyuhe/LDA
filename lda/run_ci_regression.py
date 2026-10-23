@@ -2041,6 +2041,16 @@ CORE_SMOKES: List[str] = [
     #   **净增 0 锚**（四类判死机器化进 why_not_anchored）。纯 stdlib · 实测 ~0.2s。
     #   **16 判据**。**CI core 343→344**。
     "run_ft_compiler_smoke.py",
+    # v0.9.271（量子征程续行 A2）：**λ/4 正/反闭式的量纲与往返**（D-219）——
+    #   修审计续行勘察挖出的确定 bug：`sc_readout_mux.resonator_freq_ghz` 把长度转成 m
+    #   与 µm/s 混除 ⇒ **结果偏 1e6 倍**（5 GHz 腔 5879.5617 µm 回代得 5e6 而非 5.0）。
+    #   🔴 它能潜伏是因为**全仓零引用** ⇒ 344 道门禁无一覆盖 = 「死函数⇒自由腐烂」。
+    #   修法 `v_ph/(4.0*length_um)/1e9`；并把它接进 `run_selfchecks` ⑦b（生产路径可达）。
+    #   判据 = **往返恒等 freq(length(f))≡f 与 length(freq(L))≡L（22 组，rel<1e-12）**
+    #   + 量纲锚 ε=1 ⇒ L(1GHz)=74950 µm（解析值，与单位无关）+ 跨模块同口径
+    #   （cpw_quasi_static 反提 n_eff²、既有 CPW 锚的 c/(4fn)）+ 旧写法必被证伪。
+    #   **净增 0 锚**（能力层修正）。纯 stdlib · 实测 <0.1s。**15 判据**。**CI core 344→345**。
+    "run_readout_mux_units_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -3107,6 +3117,9 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 容错编译层门禁（v0.9.270 · D-218）：16 判据 · 实测上界 <0.3s
     #   （纯 stdlib：BFS + 分层 + 整数恒等式，零 numpy 零子进程零落盘）⇒ 给 120s（同档）。
     "run_ft_compiler_smoke.py": 120.0,
+    # λ/4 往返/量纲门禁（v0.9.271 · D-219）：15 判据 · 实测 <0.1s
+    #   （纯 stdlib 闭式 + 往返比对，零子进程零落盘）⇒ 给 120s（同档，余量 ~1200×）。
+    "run_readout_mux_units_smoke.py": 120.0,
     # BL-M0 逐锚体检门禁 · 实测 ~176–210s（子进程重跑生成器 173s + 注入探针现算 + G 组）
     #   🔴 预算 900s ≈ 4.3–5.1×（跨轮上界 195s）；v0.9.252 加 G 组后实测 ~180s，未跌破 3×。
     "run_bl_anchor_guard_smoke.py": 900.0,

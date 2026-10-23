@@ -234,7 +234,7 @@ def main() -> int:
     print("── G S5 P1 模块自检 ──")
     for gi, (nm, fn, cnt) in enumerate((
             ("G3 D-139 可调耦合器", SC.run_tunable_selfchecks, 8),
-            ("G4 D-140 读出 mux", MX.run_selfchecks, 9),
+            ("G4 D-140 读出 mux", MX.run_selfchecks, 10),
             ("G5 D-141 控制多线", CT.run_selfchecks, 9),
             ("G8 D-144 阵列损耗", S4.run_array_loss_selfchecks, 5),
             ("G2 D-138 heavy-hex", TP.run_selfchecks, 9)), start=1):

@@ -79,15 +79,27 @@ ROLE = RED_LINE_DISCLOSURE["role"]
 # λ/4 谐振腔闭式（几何 ↔ 频率）
 # ---------------------------------------------------------------------------
 def resonator_length_um(f_ghz: float, eps_eff: float = 6.5) -> float:
-    """λ/4 谐振腔物理长度（µm）：L = v_ph/(4·f)，v_ph = c/√ε_eff。"""
+    """λ/4 谐振腔物理长度（µm）：L = v_ph/(4·f)，v_ph = c/√ε_eff。
+
+    量纲：C_UM_PER_S 是 **µm/s**，除以 √ε_eff 仍是 µm/s；
+    除以 4·f(Hz) 直接得 **µm**（µm/s ÷ 1/s = µm）。
+    """
     v_ph = C_UM_PER_S / math.sqrt(float(eps_eff))
     return float(v_ph / (4.0 * float(f_ghz) * 1e9))
 
 
 def resonator_freq_ghz(length_um: float, eps_eff: float = 6.5) -> float:
-    """λ/4 谐振腔频率（GHz）：f = v_ph/(4·L)。"""
+    """λ/4 谐振腔频率（GHz）：f = v_ph/(4·L)。
+
+    🔴 **量纲陷阱（D-219 修）**：`v_ph` 单位是 **µm/s**，`length_um` 也是 **µm**，
+    二者相除直接得 **1/s（Hz）**，再 `/1e9` 得 GHz。
+    此前写成 `v_ph / (4.0 * length_um * 1e-6) / 1e9` —— 把长度转成了 m，
+    与 µm/s 混除 ⇒ **结果偏 1e6 倍**（5 GHz 腔回代得 5e6）。
+    该函数当时**全仓零引用**，344 道门禁无一覆盖，故长期未被发现。
+    现由门禁 `run_readout_mux_units_smoke` 的往返恒等 + 本模块自检 ⑦b 双重看守。
+    """
     v_ph = C_UM_PER_S / math.sqrt(float(eps_eff))
-    return float(v_ph / (4.0 * float(length_um) * 1e-6) / 1e9)
+    return float(v_ph / (4.0 * float(length_um)) / 1e9)
 
 
 # ---------------------------------------------------------------------------
@@ -433,6 +445,23 @@ def run_selfchecks(verbose: bool = False) -> bool:
     l_hi = resonator_length_um(7.0)
     chk("⑦ λ/4 闭式：f↑⇒L↓ 单调 · L(6GHz)≈L(7GHz)·7/6",
         l_hi < l_lo and abs(l_lo / l_hi - 7.0 / 6.0) < 1e-6)
+
+    # ⑦b 正向/反向闭式的**往返恒等**（D-219：此前 resonator_freq_ghz 偏 1e6 倍、
+    #    且全仓零引用 ⇒ 无任何判据看守。本条让它进入自检路径，当时即可抓到。）
+    rt = []
+    for _f in (4.0, 5.0, 6.0, 7.0, 8.0):
+        for _e in (6.0, 6.224562, 6.5):
+            _L = resonator_length_um(_f, eps_eff=_e)
+            rt.append(abs(resonator_freq_ghz(_L, eps_eff=_e) - _f) <= 1e-12 * _f)
+    #   另一端：给定长度反推再回代
+    for _L in (4000.0, 5879.5617, 6119.6419):
+        for _e in (6.0, 6.5):
+            _f = resonator_freq_ghz(_L, eps_eff=_e)
+            rt.append(abs(resonator_length_um(_f, eps_eff=_e) - _L) <= 1e-12 * _L)
+    #   量纲锚点：ε_eff=1 时 λ/4 @1 GHz 恰为 c/(4f) = 74950 µm（与单位无关的解析值）
+    rt.append(abs(resonator_length_um(1.0, eps_eff=1.0) - 74950.0) <= 1e-9)
+    chk("⑦b 正/反 λ/4 闭式往返恒等（freq(length(f))≡f 与 length(freq(L))≡L，%d 组）· ε=1 量纲锚 74950 µm"
+        % len(rt), all(rt))
 
     # 几何 ↔ 频域一致：腔高编码随音单调（λ/4）
     h = {r["qubit"]: r["readout_half_h_um"] for r in plan["per_readout"]}

@@ -207,6 +207,9 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               #   令 README 顶行（对外第一屏）声明的判据数由机器守（非手写）。
               #   W10b 要求「顶行提到的每个 run_* 都在对照面内」—— 故这两个入表是闭环条件。
               "run_quantum_deck_smoke.py", "run_schip_case_smoke.py",
+              # 🔴 v0.9.269：本版真改动 = CPW 准静态 + 版图反提（D-217）。实测 ~0.3s /
+              #   15 判据 ⇒ 纳对照面，令顶行判据数由机器守（W10b 闭环条件）。
+              "run_cpw_quasi_static_smoke.py",
               "run_qs_m3b_smoke.py", "run_qs_m4_smoke.py", "run_qs_m5_smoke.py",
               "run_qs_m6_smoke.py", "run_qs_m7_smoke.py",
               "run_qs_m9_smoke.py", "run_qs_m3c_smoke.py",

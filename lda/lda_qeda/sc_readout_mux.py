@@ -27,6 +27,7 @@ from typing import Dict, List, Optional, Tuple
 
 from lda_l2 import gds_export as G
 from lda_qeda import sc_readout as S4
+from lda_qeda import substrate_caliber as CAL
 from lda_qeda.sc_coupler import _bbox
 from lda_solver import coupler_solver as CS
 
@@ -51,7 +52,11 @@ MUX_DRC_RULES = tuple(list(S4.READOUT_DRC_RULES) + [
 
 DEFAULT_MUX_PLAN = {
     "f_min_ghz": 6.8, "f_max_ghz": 8.2,
-    "eps_eff": 6.5,
+    # 🔴 D-220：**不写字面量** —— 取 substrate_caliber 从版图几何反提的
+    #   **全截面填充** ε_eff（参考几何 w=10/g=6/Si h=500/εr=11.45 ⇒ 6.224562）。
+    #   此前这里硬编码 6.5，与反提真值差 +4.425%（λ/4 腔长偏 −2.142%，
+    #   5 GHz 下 128.7 µm；与 `sc_control`/`sc_readout` 的 6.0 互差 8.333%）。
+    "eps_eff": CAL.TL_EPS_EFF_REF,
     "f_ref_ghz": 6.5, "readout_h_ref_um": 1.5,   # 参考音 / 参考腔半高（λ/4 缩放基准）
     "kappa_ghz": 0.002, "g_rq_ghz": 0.05,        # 读出耦合（Purcell 预算用，设计参数）
 }
@@ -78,7 +83,7 @@ ROLE = RED_LINE_DISCLOSURE["role"]
 # ---------------------------------------------------------------------------
 # λ/4 谐振腔闭式（几何 ↔ 频率）
 # ---------------------------------------------------------------------------
-def resonator_length_um(f_ghz: float, eps_eff: float = 6.5) -> float:
+def resonator_length_um(f_ghz: float, eps_eff: float = CAL.TL_EPS_EFF_REF) -> float:
     """λ/4 谐振腔物理长度（µm）：L = v_ph/(4·f)，v_ph = c/√ε_eff。
 
     量纲：C_UM_PER_S 是 **µm/s**，除以 √ε_eff 仍是 µm/s；
@@ -88,7 +93,7 @@ def resonator_length_um(f_ghz: float, eps_eff: float = 6.5) -> float:
     return float(v_ph / (4.0 * float(f_ghz) * 1e9))
 
 
-def resonator_freq_ghz(length_um: float, eps_eff: float = 6.5) -> float:
+def resonator_freq_ghz(length_um: float, eps_eff: float = CAL.TL_EPS_EFF_REF) -> float:
     """λ/4 谐振腔频率（GHz）：f = v_ph/(4·L)。
 
     🔴 **量纲陷阱（D-219 修）**：`v_ph` 单位是 **µm/s**，`length_um` 也是 **µm**，

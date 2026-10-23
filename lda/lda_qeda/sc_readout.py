@@ -33,6 +33,7 @@ from typing import Dict, List, Optional, Tuple
 from lda_l2 import gds_export as G
 # 复用 S3 阵列 P&R 与 S2 单元原语（保证与 S2/S3 同口径，零重复造轮子）
 from lda_qeda import sc_array as SA
+from lda_qeda import substrate_caliber as CAL
 from lda_qeda.sc_coupler import (_bbox, _overlap)
 from lda_solver import coupler_solver as CS
 
@@ -687,7 +688,8 @@ def _control_xtalk(params: Optional[Dict],
     rows = int(p.get("rows", 2))
     cols = int(p.get("cols", 2))
     control_len = float(p.get("control_len", 4.0))
-    eps_eff = float(p.get("eps_eff", 6.0))
+    # 🔴 D-220：取 substrate_caliber 的 **fringe 口径**（设计参数登记值 6.0）。
+    eps_eff = float(p.get("eps_eff", CAL.FRINGE_EPS_DESIGN))
     t_film = float(p.get("t_film_um", 0.05))
     C_q = float(p.get("C_q_fF", 50.0))
     eps0 = 8.854e-12

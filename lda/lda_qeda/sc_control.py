@@ -28,6 +28,7 @@ from typing import Dict, List, Optional, Tuple
 
 from lda_l2 import gds_export as G
 from lda_qeda import sc_readout as S4
+from lda_qeda import substrate_caliber as CAL
 from lda_qeda.sc_coupler import _bbox
 
 FILM = G.LIB_LAYER_SC_FILM
@@ -232,7 +233,10 @@ def _fringe_x(gap_um: float, length_um: float, params: Dict) -> float:
     """平行段 fringe 电容闭式 → 串扰系数 X=C_x/C_q（gap ≤ 0 ⇒ 强串扰 1.0）。"""
     if gap_um <= 1e-9:
         return 1.0
-    eps_eff = float(params.get("eps_eff", 6.0))
+    # 🔴 D-220：取 substrate_caliber 的 **fringe 口径**（设计参数登记值 6.0），
+    #   不是传输线全截面 ε_eff —— 二者场分布区域不同，允许不等（差值已量化）。
+    #   此前这里写字面量 6.0，与 mux 的 6.5 互差 8.333% 且互相零引用。
+    eps_eff = float(params.get("eps_eff", CAL.FRINGE_EPS_DESIGN))
     t_film = float(params.get("t_film_um", 0.05))
     C_q = float(params.get("C_q_fF", 50.0))
     eps0 = 8.854e-12

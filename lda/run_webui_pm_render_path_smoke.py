@@ -202,6 +202,11 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {"run_ci_gate_contract_s
 _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py",
               "run_sensor_panel_smoke.py", "run_webui_entry_smoke.py",
               "run_count_consistency_smoke.py", "run_ps_m1_smoke.py",
+              # 🔴 v0.9.268：本版真改动 = 量子闭环两项（deck 契约层 + 超导案例卡门禁）。
+              #   二者均**便宜可实跑**（实测 0.35s / 0.33s · 各 15 判据）⇒ 纳对照面，
+              #   令 README 顶行（对外第一屏）声明的判据数由机器守（非手写）。
+              #   W10b 要求「顶行提到的每个 run_* 都在对照面内」—— 故这两个入表是闭环条件。
+              "run_quantum_deck_smoke.py", "run_schip_case_smoke.py",
               "run_qs_m3b_smoke.py", "run_qs_m4_smoke.py", "run_qs_m5_smoke.py",
               "run_qs_m6_smoke.py", "run_qs_m7_smoke.py",
               "run_qs_m9_smoke.py", "run_qs_m3c_smoke.py",

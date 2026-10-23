@@ -1,5 +1,70 @@
 # Changelog
 
+## v0.9.268（2026-10-23 · **量子闭环 · 审计建议 A1 + 审计发现 F-1 修复**：foundry deck 限值契约层（D-215）+ 超导案例卡专属门禁（D-216）· **净增 0 锚** · 账本 541 不变 · **CI core 340 → 342**）
+
+### 一句话
+
+量子域全景审计（同日交付）把「能力已够、闭环缺三处」讲清楚后，本版先做**两件不需要外部数据、当天可验证**的事：给 DRC/LVS 装一个**可追溯、不可自封**的限值入口（deck 契约层），并补上审计抓到的 **F-1**——一张对外案例卡的自检**此前没有任何 CI 门禁看守**。
+
+### ① 量子 foundry deck 限值契约层（D-215 · 新模块 `lda/lda_qeda/quantum_deck.py`）
+
+**问题**：量子 DRC/LVS 两条入口本来就吃 `limits` 字典，但限值来源不可追溯——光子侧 10 个 / 超导侧 3 个限值全是模块常量常量；「过自己的规则」与「过工艺厂规则」在同一路径里**不可区分**；谁手改一个限值，判决变了却无元信息说明依据。
+
+**做法（只做契约层，不解析任何商业 deck 格式）**：
+
+| 机制 | 内容 | 防的是什么 |
+|---|---|---|
+| schema | `lda_quantum_foundry_deck_v1`（domain / foundry / process / version / provenance / attestation / limits） | 限值无出处 |
+| **键集守恒** | limits 键集必须**恰好等于**真源 `DEFAULT_DRC_LIMITS` 键集（**动态取，不抄第二份**）；缺键/多键均抛 `ValueError` | 静默默认、拼写错键被当新规则 |
+| **可信等级天花板** | `self_built`→`DESIGN_SIGNOFF`(allow_external=False) · `foundry_public`→`AUDIT_ONLY` · `foundry_nda`→`FOUNDRY_SIGNOFF` | 自建规则冒充工艺厂签核 |
+| **防自封** | `foundry_nda` 必须带非空 `attestation`（NDA 凭据串），无/空/空白三例均拒 | 手写一个字段就"变出"对外签核 |
+| **元信息不进判决** | foundry/process/version/provenance **只回带、不参与比较** | 元数据污染判决路径 |
+
+**判据强度**：`run_quantum_deck_smoke` **15 判据**，核心三条——
+- **C1/C2**：自建 deck 的判决与 violations 与**直传 `limits` 逐字相同** ⇒ 证明这层**真接进了判决**而不是接了个壳；
+- **D1**：把每模损耗限值 15→1 dB，同一设计**必从 ACCEPT 翻 REJECT**（`QDR-LOSS-BUDGET`）⇒ 证明限值**真进判决**；
+- **D2/D3**：只改厂名/工艺/版本 ⇒ 判决**逐字不变**；降级到 `foundry_public` ⇒ 判决不变、签核档降 `AUDIT_ONLY` ⇒ 证明**元信息不进判决**。
+
+突变探针 `scripts/d215_quantum_deck_probe.py` **9 条全红**（含「deck_limits 回默认」「signoff 恒对外」「validate 缺键补默认」「放行 NDA 无凭据」「不校验域错配」）。
+
+### ② 修审计发现 F-1：超导案例卡专属门禁（D-216 · `lda/run_schip_case_smoke.py`）
+
+**问题（审计原文）**：`lda/lda_webui/schip_case.py` 的 `run_selfchecks`（12 条）docstring 自称「门禁同源调用」，但**全仓无任何 CI 门禁调用它** —— 自检本体是绿的，**回归改坏它不会亮红**（对照 `qchip_case` 有 30 判据专属门禁）。
+
+**做法**：新建 `run_schip_case_smoke`（**15 判据 / 5 节**），A1 直接把 `run_selfchecks` 接进 CI；并补上对照 qchip 缺失的判据：
+
+- **X2（本门禁最有价值的一条）**：案例卡的 heavy-hex 4×5「**91 比特**」是**闭式现算**，而 `sc_topology_core.heavy_hex_topology` 的度直方图 `{1:2, 2:65, 3:24}` 合计 **91** 是**另一条独立引擎**数出来的 ⇒ 两者必须相等（任一侧漂移当场红）；
+- X1：方阵 32×32 的 1984 耦合 ≡ `r(c−1)+(r−1)c`；
+- G1–G3：`/api/schip_demo` 免登录 GET + 不进 `HEAVY_POST_PATHS` + `gate_checks=200` ≡ MILESTONES 现算；
+- H1–H3：`verdict=DESIGN_SIGNOFF`（非流片实测）· 规模口径必标「版图容量」· 缺口台账 5 条 ID 齐全；
+- Z1–Z4：四例非法输入必抛错 · 卡模块不 import 求解器/numpy · 零量子 SDK · 无 LLM/网络。
+
+突变探针 `scripts/d216_schip_case_probe.py` **6 条全红**（含「自检恒 False ⇒ A1 红」——这条正是 F-1 的修复证明：**门禁真的在跑自检，而不是只 import 了它**）。
+
+### ③ 两处刻意的命名/结构避让（都是血案换来的）
+
+1. **门禁节标签用 A / X / G / H / Z** —— 刻意**避开 B/E/S 前缀**：这三个是账本锚号前缀，CORE 门禁源码里写 `B1`/`S2` 会被 K4 的文本代理误判成「覆盖了那些锚」⇒ **覆盖率虚高**（既有的 `run_qchip_case_smoke` 就有 `B1..B5` 这类写法，属已知文本代理噪声面）。
+2. **deck 限值只经 `deck_limits` 一处取出** —— `drc_with_deck` 内部改调 `deck_limits(deck)`（单一真源），否则探针 patch `deck_limits` 打空 ⇒ 该条突变**假绿**（本轮实测：首版探针 M1 就是这么假绿的，改结构后才真红）。
+
+### 计数
+
+| 项 | 变化 |
+|---|---|
+| 账本 / 严格独立 / 降级 / 自证桩 | **541 / 519 / 3 / 19 全不变**（净增 **0 锚**） |
+| 独立率 | 95.93% 不变 |
+| **CI core** | **340 → 342**（+2 门禁：deck 15 判据 · schip 卡片 15 判据） |
+| 端点 / 面板 | 158 / 19 不变 |
+| L2 / L3 / 盲区 | 523 / 70 / 18 不变 |
+
+### 诚实边界
+
+- deck 契约层**不产生新物理量、不改变任何既有判决**：自建 deck ≡ 平台默认限值（C1/C2 逐字核验）。
+- 本模块**不校验 NDA 凭据真伪**（无从校验），只校验"有没有声明" ⇒ `FOUNDRY_SIGNOFF` 的成立仍依赖人工作业与真实 NDA 文件。
+- 本版**未接任何真实 foundry deck**（属数据缺口，需 NDA），也**未做**审计建议里的 A2（CPW 场解反提）与 A3（编译层）——那两档另立。
+- 全部仍是**设计期签核**：`DESIGN_SIGNOFF` / `AUDIT_ONLY` 都 `allow_external=False`。
+
+---
+
 ## v0.9.267（2026-10-23 · **蓝图 v2 · D3 容错编译域 —— 短评估裁决「锚域不成立」+ v2 三域收官** · **零锚 · 零门禁 · 零计数变化**）
 
 ### 一句话

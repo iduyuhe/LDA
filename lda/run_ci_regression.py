@@ -2001,6 +2001,22 @@ CORE_SMOKES: List[str] = [
     #   纯标准库 · 实测 ~0.2s。**13 判据**。**CI core 339→340**。
     "run_v2d2_m1_smoke.py",
     "run_v2d1_smoke.py",
+    # v0.9.268（量子闭环 · 审计建议 A1）：**量子 foundry deck 限值契约层**（D-215）——
+    #   把「自建规则」与「工艺厂 deck」收进同一接口：deck schema + **键集守恒**（动态取自
+    #   两条 DRC 的真源 `DEFAULT_DRC_LIMITS`，不抄第二份）+ **可信等级天花板**
+    #   （self_built→DESIGN_SIGNOFF / foundry_public→AUDIT_ONLY / foundry_nda→FOUNDRY_SIGNOFF，
+    #   且 NDA 必须带 attestation ⇒ **防自封对外签核**）+ **元信息不进判决**。
+    #   🔴 **净增 0 锚**（能力层）：自建 deck 的判决与直传 limits **逐字相同**（C 组核验），
+    #   改限值必翻判（D1）、改厂名必不翻（D2）。纯标准库 · 实测 ~0.4s。**15 判据**。
+    #   **CI core 340→341**。
+    "run_quantum_deck_smoke.py",
+    # v0.9.268（量子闭环 · 审计发现 F-1 修复）：**超导案例卡专属门禁**（D-216）——
+    #   `schip_case.run_selfchecks`（12 条，docstring 自称「门禁同源调用」）此前**无任何
+    #   CORE 门禁调用** ⇒ 自检是绿的但改坏不亮红。本门禁把它接进 CI，并补上对照 qchip
+    #   缺失的**跨源一致性**（闭式 91 比特 ≡ `sc_topology_core` 度直方图节点数，两条独立
+    #   引擎；方阵 1984 耦合 ≡ r(c−1)+(r−1)c）+ 面板接线 + 诚实边界 + 护栏。
+    #   纯标准库 · 实测 ~0.2s。**15 判据**。**CI core 341→342**。
+    "run_schip_case_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -3055,6 +3071,12 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # D2 QEC 码族 **M1** 门禁（v0.9.266）：13 判据 · 实测上界 <0.5s（纯 stdlib + 读 index.html）
     #   ⇒ 给 120s（与 v2d1/v2d2 同档；余量充裕，不构成欠标定）。
     "run_v2d2_m1_smoke.py": 120.0,
+    # 量子 foundry deck 契约层门禁（v0.9.268 · D-215）：15 判据 · 实测上界 <0.5s
+    #   （纯 stdlib：字典校验 + N=5 DFT 网格跑一次 DRC）⇒ 给 120s（与 v2d1/v2d2 同档）。
+    "run_quantum_deck_smoke.py": 120.0,
+    # 超导案例卡门禁（v0.9.268 · D-216）：15 判据 · 实测上界 <0.5s
+    #   （闭式 + 拓扑内核度统计 + 静态扫描）⇒ 给 120s（同档；余量充裕，不构成欠标定）。
+    "run_schip_case_smoke.py": 120.0,
     # BL-M0 逐锚体检门禁 · 实测 ~176–210s（子进程重跑生成器 173s + 注入探针现算 + G 组）
     #   🔴 预算 900s ≈ 4.3–5.1×（跨轮上界 195s）；v0.9.252 加 G 组后实测 ~180s，未跌破 3×。
     "run_bl_anchor_guard_smoke.py": 900.0,

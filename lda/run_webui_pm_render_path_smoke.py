@@ -219,6 +219,9 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               # 🔴 v0.9.272：本版真改动 = 介电口径单一真源（D-220）。实测 <0.2s / 19 判据
               #   ⇒ 纳对照面，令顶行判据数由机器守（W10b 闭环条件）。
               "run_substrate_caliber_smoke.py",
+              # 🔴 v0.9.273：本版真改动 = 动力学电感能力层（D-221）。实测 main 0.74s / 21 判据
+              #   ⇒ 纳对照面，令顶行判据数由机器守（W10b 闭环条件）。
+              "run_kinetic_inductance_smoke.py",
               "run_qs_m3b_smoke.py", "run_qs_m4_smoke.py", "run_qs_m5_smoke.py",
               "run_qs_m6_smoke.py", "run_qs_m7_smoke.py",
               "run_qs_m9_smoke.py", "run_qs_m3c_smoke.py",

@@ -2029,6 +2029,18 @@ CORE_SMOKES: List[str] = [
     #   不单调 ⇒ ANCHORABLE=False + 候选实测 + 重评条件（Z1）。**净增 0 锚**。
     #   纯 stdlib+numpy · 实测 ~0.3s。**15 判据**。**CI core 342→343**。
     "run_cpw_quasi_static_smoke.py",
+    # v0.9.270（量子闭环 A3）：**容错编译层**（D-218 · 能力层 + **整数恒等判据**）——
+    #   补审计三处断点里的最后一处「逻辑 → 物理编译层整域空白」（transpile/magic_state
+    #   此前全仓 0 命中）。链路：逻辑线路 → 门集闭包 → 布局 → BFS 最短路路由（SWAP 展开
+    #   3 CX）→ ASAP 分层 → 资源报告。
+    #   🔴 **按 D3 裁决施工：不接浮点保真**（编译后总保真两实现只差 3–53 ulp，而跨平台
+    #   判据线 1e4·ulp），改判**七条整数/集合恒等式**：I1 门计数守恒 · I2 距离恒等 ·
+    #   I3 置换复原 · I4 同层不冲突 · I5 覆盖守恒 · I6 边上合法 · I7 T 态平衡。
+    #   🔴 **跨模块对拍**：资源 `2d²−1` ≡ `surface_code.rotated_surface_code(d)` 的
+    #   `n_data+n_stab`（d=3/5/7 逐点）。🔴 **拓扑无关**：grid 与 heavy-hex（maxDeg=3）都过。
+    #   **净增 0 锚**（四类判死机器化进 why_not_anchored）。纯 stdlib · 实测 ~0.2s。
+    #   **16 判据**。**CI core 343→344**。
+    "run_ft_compiler_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -3092,6 +3104,9 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # CPW 准静态 + 版图反提门禁（v0.9.269 · D-217）：15 判据 · 实测上界 <0.4s
     #   （闭式椭圆积分 AGM + 版图反提 + 静态扫描，零子进程零落盘）⇒ 给 120s（同档）。
     "run_cpw_quasi_static_smoke.py": 120.0,
+    # 容错编译层门禁（v0.9.270 · D-218）：16 判据 · 实测上界 <0.3s
+    #   （纯 stdlib：BFS + 分层 + 整数恒等式，零 numpy 零子进程零落盘）⇒ 给 120s（同档）。
+    "run_ft_compiler_smoke.py": 120.0,
     # BL-M0 逐锚体检门禁 · 实测 ~176–210s（子进程重跑生成器 173s + 注入探针现算 + G 组）
     #   🔴 预算 900s ≈ 4.3–5.1×（跨轮上界 195s）；v0.9.252 加 G 组后实测 ~180s，未跌破 3×。
     "run_bl_anchor_guard_smoke.py": 900.0,

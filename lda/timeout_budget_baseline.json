@@ -7,10 +7,9 @@
   "target_x": 3.0,
   "ratchet_below_target": 0,
   "anchors_at_measurement": 541,
-  "core_smokes_at_measurement": 343,
+  "core_smokes_at_measurement": 344,
   "updated_at": "2026-10-23",
   "source_reports": [
-    "_oi_m1_baseline_report.json",
     "_oi_rebase_report.json",
     "_oi_ci_two_report.json",
     "ci_core_v09182.json",
@@ -49,7 +48,8 @@
     "ci_d2m0.json",
     "ci_d2m1.json",
     "v0.9.268-new-two-gates",
-    "v0.9.269-cpw"
+    "v0.9.269-cpw",
+    "v0.9.270-ft-compiler"
   ],
   "rules": "预算 ≥ 2 × 跨轮实测上界（硬闸）；目标 3×（棘轮：低于 3× 的项数只降不升）；锚数或 CI core 成员数变化 ⇒ 基线过期，须重跑全量并 --write-baseline 刷新",
   "rows": [
@@ -11461,6 +11461,17 @@
         0.29
       ],
       "n_rounds": 16,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ft_compiler_smoke.py",
+      "budget_s": 120.0,
+      "elapsed_max_s": 0.29,
+      "margin_x": 413.793,
+      "samples_s": [
+        0.29
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {

@@ -7,10 +7,9 @@
   "target_x": 3.0,
   "ratchet_below_target": 0,
   "anchors_at_measurement": 541,
-  "core_smokes_at_measurement": 348,
+  "core_smokes_at_measurement": 349,
   "updated_at": "2026-10-24",
   "source_reports": [
-    "_ci_186.json",
     "lda_pmm0_ci_20261004.json",
     "lda_pmm1_ci_20261004.json",
     "lda_pmm2_ci_20261004.json",
@@ -49,7 +48,8 @@
     "v0.9.271-readout-mux-units",
     "v0.9.272-substrate-caliber",
     "v0.9.273-kinetic-inductance",
-    "v0.9.274-conductor-surface"
+    "v0.9.274-conductor-surface",
+    "v0.9.275-reachability"
   ],
   "rules": "预算 ≥ 2 × 跨轮实测上界（硬闸）；目标 3×（棘轮：低于 3× 的项数只降不升）；锚数或 CI core 成员数变化 ⇒ 基线过期，须重跑全量并 --write-baseline 刷新",
   "rows": [
@@ -5641,6 +5641,17 @@
         4.73
       ],
       "n_rounds": 26,
+      "censored_events": 0
+    },
+    {
+      "script": "run_reachability_smoke.py",
+      "budget_s": 120.0,
+      "elapsed_max_s": 4.46,
+      "margin_x": 26.906,
+      "samples_s": [
+        4.46
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     },
     {

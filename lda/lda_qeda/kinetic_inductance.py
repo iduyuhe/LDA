@@ -53,7 +53,7 @@ Al/Nb 只有 ~0.7%，但**高动力学电感材料（NbTiN / TiN）会让纯几�
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from lda_qeda import cpw_quasi_static as CQS
 from lda_qeda import substrate_caliber as CAL
@@ -251,7 +251,7 @@ def delta_gross(tc_k: float, t_k: float) -> float:
     return 1.764 * KB_EV * tc_k * math.tanh(1.74 * math.sqrt(tc_k / t_k - 1.0))
 
 
-def ns_two_fluid(tc_k: float, t_k: float) -> float:
+def _ns_two_fluid(tc_k: float, t_k: float) -> float:
     """双流体超流密度比 `1 − (T/Tc)^4`。"""
     return 1.0 - (t_k / tc_k) ** 4
 

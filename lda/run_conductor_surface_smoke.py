@@ -28,15 +28,15 @@ from lda_qeda import conductor_surface as CS
 from lda_qeda import cpw_quasi_static as CQS
 from lda_qeda import kinetic_inductance as KI
 from lda_qeda import substrate_caliber as CAL
+from lda_harness.smoke_kit import make_check
 
-_RESULT = []
+_CNT = {"PASS": 0, "FAIL": 0}
+# 🔴 v0.9.275：本文件的 `check` 改用 `smoke_kit` 单一实现（`run_helper_dup_ratchet_smoke`
+#   J3/J4 要求「不得再添本地 `def check`」—— 本版把 .271~.275 新增的 5 道门禁全部归一）。
+check = make_check(_CNT, ok_key="PASS", bad_key="FAIL", indent="  ",
+                   detail_fmt="  |  {d}", detail_on="both", return_ok=True)
 
 
-def check(name: str, cond: bool, detail: str = "") -> bool:
-    _RESULT.append((name, bool(cond)))
-    print(("  [PASS] " if cond else "  [FAIL] ") + name
-          + (("  |  " + detail) if detail else ""))
-    return bool(cond)
 
 
 def _raises(fn, *a) -> bool:
@@ -49,7 +49,7 @@ def _raises(fn, *a) -> bool:
 
 
 def main() -> int:
-    _RESULT.clear()
+    _CNT["PASS"] = _CNT["FAIL"] = 0
     print("有限导体厚度 / 表面阻抗 门禁 smoke（D-222）")
 
     RHO = 1.0e-9
@@ -254,10 +254,10 @@ def main() -> int:
     except Exception as e:                                   # noqa: BLE001
         check("Z4 零增量：账本锚数不变", False, "不可读：%s" % e)
 
-    n_pass = sum(1 for _, v in _RESULT if v)
+    n_pass = _CNT["PASS"]
     print("\n门禁 smoke：%d PASS / %d FAIL（共 %d 项）"
-          % (n_pass, len(_RESULT) - n_pass, len(_RESULT)))
-    return 0 if n_pass == len(_RESULT) else 1
+          % (n_pass, _CNT["FAIL"], n_pass + _CNT["FAIL"]))
+    return 0 if _CNT["FAIL"] == 0 else 1
 
 
 if __name__ == "__main__":

@@ -16,12 +16,20 @@
 于是「设计输入 n_eff=2.5」第一次可以被**版图几何**回答（实测 0.2% 差异，门禁 D 组）。
 
 ═══════════════════════════ 三条硬边界（必读）═══════════════════════════
-① **半反提，不是全反提**：`w` 从版图 `path.width_um` **真回提**；
-   `g` 在现有版图里**没有共面间隙字段**（Transmon 的地建在 y=±3 µm 的**上下方**，
-   不是共面），故 `g` 只能来自设计参数或 `ground_gap` 的**等效假设** ——
-   返回值里必带 `gap_source`，调用方不得把它当成实测。
-   🔴 **由此登记一条新缺口**：`transmon_cell` 的「CPW 馈线 + 上下地平面框」几何
-   与 CPW 物理模型（**共面**地）不匹配 ⇒ 版图→参数反提在这一处只能是等效级。
+① **间隙有三档来源，必须自曝是哪一档**（v0.9.276 · D-224 起）：
+   `w` 恒从版图 `path.width_um` **真回提**；`g` 的来源由 `gap_source` 标明：
+
+   | `gap_source` | 含义 | 档位 |
+   |---|---|---|
+   | `"caller"` | 调用方显式给 `gap_um` | 输入 |
+   | **`"layout_true"`** | 版图含 `coplanar_ground=True` 的地条，`g` 由几何读出 | **真反提** |
+   | `"ground_gap_equiv"` | legacy 版图地平面在 y=±gj 的**上下方**（端面间隙 2.75 µm），只能拿 `ground_gap` 作等效假设 | **半反提** |
+
+   🔴 **只认显式 `coplanar_ground` 标记、不做几何启发式** —— legacy 版图里最近的地是
+   2.75 µm（端面间隙），按「最近的地」去猜会把它当共面间隙 ⇒ 把等效洗成真反提 = 假绿。
+   🔴 **原缺口（D-217 登记）的解法**：`transmon_cell(cpw_ground="coplanar")`（D-224）
+   给出共面地几何 ⇒ 可 `layout_true`；但**默认仍是 legacy**，因为切默认会重定
+   S1–S5 的 DRC/LVS 基线（既有 9 元素逐位不变是硬约束）。
 ② **不含导体厚度 / 不含表面阻抗 / 不含辐射**：本模块是**准静态**（∇·(ε∇φ)=0）解，
    无限薄导体、准 TEM。超导薄膜的动力学电感（K ≈ λ_L² 项）**未建模**。
 ③ **不加锚**（可锚性三问已做，结论见 `ANCHORABLE` 与 `why_not_anchored()`）：
@@ -52,8 +60,8 @@ __all__ = [
     "run_selfchecks",
 ]
 
-ROLE = ("D-217 · CPW 准静态场解 + 版图反提（能力层）—— 把『版图几何 → (C, ε_eff, Z0, n_eff)』"
-        "接起来，补『版图 → 器件参数不可反提』断点的第一段（半反提：w 真回提，g 为等效输入）")
+ROLE = ("D-217/D-224 · CPW 准静态场解 + 版图反提（能力层）—— 把『版图几何 → (C, ε_eff, Z0, n_eff)』"
+        "接起来。间隙三档自曝：caller / **layout_true（共面地真反提）** / ground_gap_equiv（半反提）")
 
 #: 🔴 可锚性裁决（负结果机器化）：不做锚，理由见 `why_not_anchored()`
 ANCHORABLE = False
@@ -201,11 +209,22 @@ def cpw_from_layout(elements: List[Dict[str, Any]], *,
                     gap_um: Optional[float] = None,
                     ground_gap_um: Optional[float] = None,
                     h_um: Optional[float] = DEFAULT_H_UM,
-                    eps_r: float = DEFAULT_EPS_R) -> Dict[str, Any]:
+                    eps_r: float = DEFAULT_EPS_R,
+                    read_coplanar_gap: bool = True) -> Dict[str, Any]:
     """从**整份版图元素表**挑出该 net 的馈线 path，回提 `w` 并出 CPW 参数。
 
-    `gap_um` 优先；否则用 `ground_gap_um` 作**等效共面间隙**（`gap_source="ground_gap_equiv"`，
-    显式标注为等效假设）；两者皆无 ⇒ `ok=False`。
+    **间隙优先级（v0.9.276 · D-224 起三档）**：
+
+    | 档 | 条件 | `gap_source` | 含义 |
+    |---|---|---|---|
+    | ① | `gap_um` 显式给出 | `"caller"` | 调用方输入 |
+    | ② | 版图含 `coplanar_ground=True` 的地元素 | **`"layout_true"`** | **真反提**：w 与 g 都来自版图 |
+    | ③ | 只给了 `ground_gap_um` | `"ground_gap_equiv"` | **半反提**：g 是等效假设（非共面地） |
+    | — | 三档皆无 | `ok=False` | 拒绝猜测 |
+
+    🔴 ②只认**显式标记**，不做几何启发式：legacy 版图的地平面在 y=±gj 的上下方，
+    最近垂直距离 2.75 µm 是**端面间隙**，按「最近的地」去猜会把它当共面间隙 ⇒
+    把「等效」洗成「真反提」= 假绿。`cpw_gap_from_layout()` 因此只读 `coplanar_ground`。
 
     选中规则：`kind="path"` ∧ `net` 匹配 ∧ `layer` 为超导薄膜层（取最宽的 path 作馈线，
     因为 Transmon 单元里两臂等宽；若不等宽则报 `multi_width` 让调用方定夺）。
@@ -226,8 +245,15 @@ def cpw_from_layout(elements: List[Dict[str, Any]], *,
                 "n_paths": len(paths), "widths_um": widths}
 
     w = widths[0]
+    layout_gap: Optional[Dict[str, Any]] = None
+    if gap_um is None and read_coplanar_gap:
+        from lda_qeda.sc_layout import cpw_gap_from_layout
+        layout_gap = cpw_gap_from_layout(elements, net=net)
+
     if gap_um is not None:
         g, src = float(gap_um), "caller"
+    elif layout_gap is not None:
+        g, src = float(layout_gap["gap_um"]), "layout_true"
     elif ground_gap_um is not None:
         g, src = float(ground_gap_um), "ground_gap_equiv"
     else:
@@ -238,12 +264,19 @@ def cpw_from_layout(elements: List[Dict[str, Any]], *,
     out.update({
         "ok": True,
         "n_paths": len(paths),
+        "gap_um": g,
         "w_source": "layout.path.width_um",
         "gap_source": src,
-        "caveat": ("w 为真回提；g 为 %s ⇒ **半反提**（非实测、非全反提）；"
-                   "Transmon 版图的地是上下平面框，与共面 CPW 模型存在几何不匹配"
-                   % ("调用方输入" if src == "caller" else "ground_gap 等效"))
     })
+    if src == "layout_true":
+        out["gap_element_idx"] = layout_gap["source_element_idx"]
+        out["n_coplanar_grounds"] = layout_gap["n_coplanar"]
+        out["caveat"] = ("w 与 g 均为**版图真回提**（含 coplanar_ground 标记的共面地）；"
+                         "仍不含导体有限厚度与辐射 ⇒ 准静态级，非全波")
+    else:
+        out["caveat"] = ("w 为真回提；g 为 %s ⇒ **半反提**（非实测、非全反提）；"
+                         "Transmon 版图的地是上下平面框，与共面 CPW 模型存在几何不匹配"
+                         % ("调用方输入" if src == "caller" else "ground_gap 等效"))
     return out
 
 

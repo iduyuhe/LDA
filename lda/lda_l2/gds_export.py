@@ -379,6 +379,30 @@ def geometry_desc(kind: str, params: Dict[str, float], **opt) -> List[Dict]:
                       "rings_um": [[(-co, -gj), (-gi, -gj), (-gi, gj), (-co, gj)]]})
         descs.append({"kind": "boundary", "layer": LIB_LAYER_SC_GROUND, "net": "ground",
                       "rings_um": [[(gi, -gj), (co, -gj), (co, gj), (gi, gj)]]})
+        # ── v0.9.276（D-224）：CPW **共面地**模式（默认关闭 ⇒ 上面 9 个元素逐位不变）──
+        # 既有几何的地平面建在 y=±gj 的**上下方**（端面间隙 2.75 µm），与共面 CPW 模型
+        # 不匹配 ⇒ `cpw_from_layout` 只能拿 `ground_gap` 作**等效假设**
+        # （`gap_source="ground_gap_equiv"`）。本模式沿馈线两侧各铺一条地条，顶端与
+        # 外围地平面接触 ⇒ 「版图 → 间隙」可真反提（`gap_source="layout_true"`）。
+        # 🔴 默认 `legacy`：不改任何既有判决、不改 S1–S5 的 DRC/LVS 基线。
+        if str(opt.get("cpw_ground", "legacy")).strip().lower() == "coplanar":
+            off = cpw_w / 2.0 + ground_gap   # 地条内边到馈线中心线的距离（= 真共面间隙）
+            x_in = pad_w + ground_gap        # 离开岛屿一个间隙，防 DRC 判短接
+            x_out = gi                       # 与外围地平面几何接触（连通）
+            if x_out > x_in + 1e-12:
+                for sx in (+1.0, -1.0):             # 左右两条馈线各一组
+                    x0, x1 = sorted((sx * x_in, sx * x_out))
+                    for sy in (+1.0, -1.0):         # 馈线上/下两侧
+                        y0, y1 = sorted((sy * off, sy * gj))
+                        descs.append({
+                            "kind": "boundary", "layer": LIB_LAYER_SC_GROUND,
+                            "net": "ground",
+                            # 🔴 显式声明「这是共面地」：反提层**只认此标记**，不做几何
+                            #    启发式猜测 —— 否则会把既有端面间隙（2.75 µm）误当共面
+                            #    间隙，把「等效」洗成「真反提」（等同于假绿）。
+                            "coplanar_ground": True,
+                            "rings_um": [[(x0, y0), (x1, y0), (x1, y1), (x0, y1)]],
+                        })
     elif kind in ("Taper", "EulerBend", "MMI", "GratingCoupler",
                   "BraggMirror", "Splitter", "MMIC", "MZI",
                   "PhaseShifter", "MziModulator", "Photodetector",

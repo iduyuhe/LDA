@@ -273,8 +273,12 @@ GAPS: List[Dict[str, Any]] = [
     {"id": "G10", "title": "WebUI 量子传感面板", "status": "本档闭合",
      "detail": "本卡 + `/api/qsensor_demo` + `sec-qsensor` 面板 + 三入口面（抽屉 / "
                "hash 深链 / 首屏案例条）—— QS-M8 交付。"},
-    {"id": "G11", "title": "多物理场量子传感整合（OPM / 原子磁力计）", "status": "未闭合",
-     "detail": "光泵自旋进动 + 气室/线圈多物理场整合 → SERF 区灵敏度对照（蓝图 QS-M9）。"},
+    {"id": "G11", "title": "多物理场量子传感整合（OPM / 原子磁力计）",
+     "status": "已闭合（QS-M9 · B491–B493）",
+     "detail": "光泵自旋进动 + 气室/线圈多物理场整合 → SERF 区灵敏度对照 —— QS-M9 已交付，"
+               "落 3 道锚（B491 OPM 自旋进动 / B492 SERF 区灵敏度 / B493 气室-线圈多物理场"
+               "耦合），门禁 `run_qs_m9_smoke` 39 判据全绿。"
+               "（v0.9.276 台账同步：此前本行长期标「未闭合」，与实现不符 —— F-6。）"},
 ]
 
 
@@ -532,11 +536,17 @@ def run_selfchecks(verbose: bool = False) -> bool:
         and SQUID_LEG["b_n_opt_fT_per_sqrtHz"] < SQUID_LEG["b_n_baseline_fT_per_sqrtHz"]
         and 0.0 < SQUID_LEG["sota_ratio"] < 1.0)
 
-    # ⑨ 缺口表：11 项 · G10 本档闭合 · G11 未闭（不粉饰）
-    chk("⑨ 缺口表 11 项 · G10 标「本档闭合」· G11 如实标「未闭合」",
+    # ⑨ 缺口表：11 项 · G10 本档闭合 · G11 **已闭合**（v0.9.276 修 F-6：台账原长期与实现不符）
+    # 🔴 本模块是「零重计算」展示卡（E2/E3 硬约束：真实 import ⊆ math/os/typing/json/ast），
+    #    故此处**只做结构断言**。G11「已闭合」的**跨真源对拍**（B491–B493 必须在册且 strict）
+    #    放在门禁 `run_qs_panel_smoke` 的 B4b —— 台账不得自封，但校验必须发生在
+    #    **能 import 账本的那一侧**，不能为此破坏本卡的零依赖约束。
+    _g11 = next(g for g in GAPS if g["id"] == "G11")
+    chk("⑨ 缺口表 11 项 · G10 标「本档闭合」· G11 标已闭合且写明闭合依据（QS-M9）",
         len(GAPS) == 11
         and next(g for g in GAPS if g["id"] == "G10")["status"] == "本档闭合"
-        and next(g for g in GAPS if g["id"] == "G11")["status"] == "未闭合")
+        and "闭合" in _g11["status"] and "未闭合" not in _g11["status"]
+        and "QS-M9" in _g11["detail"])
 
     # ⑩ 对标准星须显式「公开值 / 仅背景」且含诚实限制三条
     chk("⑩ 对标准星：含公开值背景声明 + 3 条诚实限制 + ≥5 条对标准星",

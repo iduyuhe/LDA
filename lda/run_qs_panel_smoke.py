@@ -159,7 +159,7 @@ def main() -> int:
     ok_a = QS.run_selfchecks(verbose=False)
     check("A1 模块自检 12/12 PASS（零框架 import / verdict 非 PASS·ACCEPT / 诚实边界齐备 / "
           "九档征程齐备 / 闭式镜像 / Zeeman 闭式 / 增益派生 / 物理合理 / 缺口 11 项且 G11 "
-          "如实未闭 / 对标准星背景声明 / 优雅降级 / 护栏）", ok_a)
+          "已闭合且写明依据 / 对标准星背景声明 / 优雅降级 / 护栏）", ok_a)
 
     # ══════════════════════ B 关键事实 + 跨源一致性 ══════════════════════
     card = QS.case_card(repo_root="__nonexistent_root__")
@@ -171,11 +171,26 @@ def main() -> int:
           == ["QS-M0", "QS-M1", "QS-M2", "QS-M3", "QS-M3b",
               "QS-M4", "QS-M5", "QS-M6", "QS-M7"]
           and all(m["gate"].startswith("run_qs_") for m in card["milestones"]))
-    check("B4 缺口 11 项（G1–G11）· G10 标「本档闭合」· G11 如实标「未闭合」",
+    check("B4 缺口 11 项（G1–G11）· G10 标「本档闭合」· G11 标已闭合（QS-M9）· 闭合 11/11",
           len(card["gaps"]) == 11 and card["gaps_total"] == 11
           and next(g for g in card["gaps"] if g["id"] == "G10")["status"] == "本档闭合"
-          and next(g for g in card["gaps"] if g["id"] == "G11")["status"] == "未闭合"
-          and card["gaps_closed"] == 10)
+          and "闭合" in next(g for g in card["gaps"] if g["id"] == "G11")["status"]
+          and "未闭合" not in next(g for g in card["gaps"] if g["id"] == "G11")["status"]
+          and card["gaps_closed"] == 11)
+
+    # B4b 🔴 跨真源对拍（v0.9.276 修 F-6）：台账说「已闭合」必须由账本背书。
+    #     **只断言"现在标已闭合"等于允许台账自封**（把 G11 从表里删掉也照样绿）。
+    #     🔴 本判据**不写锚号字面量** —— K4 的 L2 文本代理会把门禁源码里出现的锚号
+    #        算成「该门禁覆盖了这些锚」⇒ 覆盖率虚高（v0.9.268 已踩过同类）。
+    #        改用**标题关键词**从账本动态筛：口径跟随账本，M9 新增锚自动纳入。
+    from lda_harness.benchmarks import BENCHMARK_DEFS as _D
+    _m9 = {k: v for k, v in _D.items()
+           if "OPM" in str(v.get("title", "")) or "SERF" in str(v.get("title", ""))}
+    _m9_bad = sorted(k for k, v in _m9.items()
+                     if v.get("maturity_tier") != "strict_independent")
+    check("B4b 🔴 G11 已闭合须账本背书：OPM/SERF 族锚 3 道全在册且 strict（台账不得自封）",
+          len(_m9) == 3 and not _m9_bad,
+          "n=%d 非strict=%s" % (len(_m9), _m9_bad))
     check("B5 honest_note 含关键限定（设计预算 / 口径 η=δB·√T / 不宣称「已达国际水平」/ "
           "公开文献值仅对标准星 / 零量子 SDK / LLM 不进判决路径）",
           all(kw in card["honest_note"] for kw in
@@ -394,12 +409,15 @@ def main() -> int:
     QS.SQUID_LEG["b_n_opt_fT_per_sqrtHz"] = _b
     check("C4 反向：腿 B 优化后 B_N ×2 ⇒ B14 判据必红（跨源漂移可见）", _drift4 > 1e-9)
 
-    # C5 缺口粉饰（G11 谎报已闭合）⇒ B4/A1 必红
+    # C5 反向（v0.9.276 语义反转）：G11 已由 QS-M9 实质闭合 ⇒ 「倒退成未闭合」必须被抓。
+    #    （原反向是「谎报已闭合」；F-6 修完后真值变了，反向也要跟着反向 ——
+    #      否则这条判据会变成**永远为真的假判据**：无论实现怎样它都绿。）
     _st = QS.GAPS[10]["status"]
-    QS.GAPS[10]["status"] = "已闭合"
+    QS.GAPS[10]["status"] = "未闭合"
     ok_c5 = QS.run_selfchecks(verbose=False)
     QS.GAPS[10]["status"] = _st
-    check("C5 反向：G11 谎报「已闭合」⇒ A1 必红（缺口粉饰被拒）", ok_c5 is False)
+    check("C5 反向：G11 倒退标「未闭合」⇒ A1 必红（台账不得与已交付实现脱钩）",
+          ok_c5 is False)
 
     # C6 手写自检项数谎报 ⇒ B15 必红
     _sc = QS.MILESTONES[0]["selfchecks"]

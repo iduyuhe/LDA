@@ -95,9 +95,76 @@ def _ring_pts(d: Dict) -> List[Tuple[float, float]]:
     return pts
 
 
-def transmon_cell(params: Optional[Dict] = None) -> List[Dict]:
-    """Transmon 单元几何元素（带 net 标签），单一真源 = gds_export.geometry_desc。"""
-    return G.geometry_desc("Transmon", params or {})
+def transmon_cell(params: Optional[Dict] = None, **opt) -> List[Dict]:
+    """Transmon 单元几何元素（带 net 标签），单一真源 = gds_export.geometry_desc。
+
+    `**opt` 直通 `geometry_desc`。目前唯一的开关是 **`cpw_ground`**（v0.9.276 · D-224）：
+
+    | 值 | 含义 | 元素数 |
+    |---|---|---|
+    | `"legacy"`（默认） | 既有几何：地平面在 y=±gj 上下方 ⇒ 只能**等效**反提 | **9** |
+    | `"coplanar"` | 馈线两侧追加共面地条（带 `coplanar_ground=True`）⇒ 可**真反提** | **13** |
+
+    🔴 默认值必须保持 `legacy`：切默认会重定 S1–S5 的 DRC/LVS 基线（见 v0.9.276 规划）。
+    """
+    return G.geometry_desc("Transmon", params or {}, **opt)
+
+
+# ---------------------------------------------------------------------------
+# 共面间隙反提（v0.9.276 · D-224）
+# ---------------------------------------------------------------------------
+def cpw_gap_from_layout(elements: List[Dict], *, net: str = "qubit") -> Optional[Dict]:
+    """从版图**真回提** CPW 共面间隙（µm）。
+
+    只认 `coplanar_ground=True` 的地元素 —— **不做几何启发式**。理由：既有 legacy
+    几何里外围地平面与馈线的垂直距离是 2.75 µm（端面间隙），若按「最近的地」去猜，
+    会把端面间隙误当共面间隙 ⇒ 把「等效」洗成「真反提」= 假绿。
+
+    返回：
+      - 找到 ⇒ `{"gap_um": g, "source_element_idx": i, "n_coplanar": k}`（`g` 为最近共面地的内边到馈线边缘距离）
+      - 未找到 / 多值不一致 ⇒ `None`（调用方须回落等效并如实标注）
+
+    判据：同一 net 的馈线 `widths` 必须唯一（与 `cpw_from_layout` 同口径）；共面地条
+    必须与馈线 **x 区间有重叠** 且位于其 **上侧或下侧**，取最小正值。
+    """
+    paths = [e for e in (elements or [])
+             if isinstance(e, dict) and e.get("kind") == "path"
+             and e.get("net", net) == net and e.get("layer") == FILM]
+    if not paths:
+        return None
+    widths = sorted({round(float(e.get("width_um", -1.0)), 6) for e in paths})
+    if len(widths) > 1:
+        return None
+
+    cands: List[Tuple[float, int]] = []
+    for i, e in enumerate(elements or []):
+        if not (isinstance(e, dict) and e.get("coplanar_ground") is True):
+            continue
+        if e.get("kind") != "boundary" or e.get("layer") != GROUND:
+            continue
+        gb = _bbox(e)
+        for p in paths:
+            pb = _bbox(p)
+            # x 区间须有重叠（共面地必须沿馈线方向延伸）
+            if gb[1] < pb[0] - 1e-9 or gb[0] > pb[1] + 1e-9:
+                continue
+            up = gb[2] - (pb[3])          # 地在馈线上方：内边 ymin − 馈线上边缘
+            dn = (pb[2]) - gb[3]          # 地在馈线下方：馈线下边缘 − 地内边 ymax
+            for d in (up, dn):
+                if d > 1e-9:
+                    cands.append((float(d), i))
+    if not cands:
+        return None
+    cands.sort()
+    g = cands[0][0]
+    # 一致性：所有共面地给出的最小间隙必须同值（防"一版图多条共面条互相打架"）
+    if any(abs(c[0] - g) > 1e-6 for c in cands):
+        return None
+    # 间隙按「地内边 − 馈线边缘」直接算（_bbox 已含 path 半宽，不重复减）
+    return {"gap_um": g,
+            "source_element_idx": cands[0][1],
+            "n_coplanar": len(cands)}
+
 
 
 # ---------------------------------------------------------------------------

@@ -1,16 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""CPW 准静态场解 + 版图反提 门禁 smoke（D-217 · 净增 0 锚 · 能力层）。
+"""CPW 准静态场解 + 版图反提 门禁 smoke（D-217 建 · D-224 扩 · 净增 0 锚 · 能力层）。
 
-═══ 判什么（分五节 · 15 条）═══
-A 闭式正确性 3 · X 极限与单调 4 · G 版图反提 3 · H 跨模块对账 2 · Z 负结果与红线 3。
+═══ 判什么（分五节 · 18 条）═══
+A 闭式正确性 3 · X 极限与单调 4 · G 版图反提 6 · H 跨模块对账 2 · Z 负结果与红线 3。
 
-🔴 **本门禁要守住的不是"公式对不对"，而是三件工程事实**：
-  ① **半反提必须自曝**：`w` 从版图真回提，`g` 在现有版图里**没有共面字段**
+🔴 **本门禁要守住的不是"公式对不对"，而是四件工程事实**：
+  ① **半反提必须自曝**：`w` 从版图真回提，`g` 在 **legacy** 版图里**没有共面字段**
      （Transmon 的地建在 y=±gj 的**上下方**）⇒ `gap_source` 必须标 `ground_gap_equiv`，
-     且 `caveat` 里必须出现"半反提"。不许把等效假设说成实测（A/G 组）。
-  ② **不猜**：拿不到间隙就返回 `ok=False` 并给原因，不得默认一个 g（G2）。
-  ③ **设计输入第一次被版图回答**：`n_eff=2.5`（既有 CPW 锚的默认设计值）与
+     且 `caveat` 里必须出现"半反提"。不许把等效假设说成实测（G1/G2）。
+  ② **真反提必须真**（v0.9.276 · D-224）：`cpw_ground="coplanar"` 版图带
+     `coplanar_ground=True` 地条 ⇒ `gap_source="layout_true"` 且 `g` 从几何读回 1.0 µm
+     残差 <1e-12（G4）；同 g 下 `layout_true` 与 `ground_gap_equiv` 的 n_eff/ε_eff/Z0
+     **逐位相同** ⇒ 证明差异只在"g 从哪来"，不是另算一套物理（G5）。
+  ③ **标记必须被消费**：抹掉 `coplanar_ground` ⇒ 必须回落到 `ground_gap_equiv`（G6）。
+     否则该标记只是装饰，"真反提"是可自封的。
+  ④ **不猜**：拿不到间隙就返回 `ok=False` 并给原因，不得默认一个 g（G3）。
+  ⑤ **设计输入第一次被版图回答**：`n_eff=2.5`（既有 CPW 锚的默认设计值）与
      从几何反提的 `n_eff=2.4949`（w=10/g=6/Si）相对差 **0.2037%** ⇒ 判 CONSISTENT。
      这是"版图 → 参数"断点被补上的**可复算证据**（H 组）。
 
@@ -105,6 +111,38 @@ def main():
           miss.get("ok") is False and "不猜" in miss.get("reason", ""),
           miss.get("reason", "")[:60])
 
+    # ── G4–G6 · v0.9.276（D-224）：真反提档（gap_source="layout_true"）──
+    cp_els = SL.transmon_cell(cpw_ground="coplanar")
+    tr = QS.cpw_from_layout(cp_els)
+    check("G4 共面地模式 ⇒ gap_source=layout_true ∧ g 从版图真读回 1.0 µm（残差<1e-12）"
+          "∧ 共面地条 4 条",
+          tr.get("ok") is True and tr["gap_source"] == "layout_true"
+          and abs(tr["gap_um"] - 1.0) < 1e-12
+          and tr.get("n_coplanar_grounds") == 4,
+          "g=%.12f idx=%s n_cop=%s" % (tr.get("gap_um", -1),
+                                        tr.get("gap_element_idx"),
+                                        tr.get("n_coplanar_grounds")))
+
+    # 同 g ⇒ 同物理量：真反提与等效反提必须**逐位相同**（差异只在"g 从哪来"）
+    eq = QS.cpw_from_layout(SL.transmon_cell(), ground_gap_um=1.0)
+    # 🔴 突变下必须**判红不崩溃**：两档任一 ok=False（如真反提被关掉）时不得索引缺键
+    pair_ok = (tr.get("ok") is True and eq.get("ok") is True)
+    d_n = abs(tr.get("n_eff", 0.0) - eq.get("n_eff", 0.0)) if pair_ok else float("nan")
+    d_e = abs(tr.get("eps_eff", 0.0) - eq.get("eps_eff", 0.0)) if pair_ok else float("nan")
+    d_z = abs(tr.get("Z0_ohm", 0.0) - eq.get("Z0_ohm", 0.0)) if pair_ok else float("nan")
+    check("G5 同一 g 下 layout_true ≡ ground_gap_equiv（n_eff/eps_eff/Z0 逐位相同）"
+          "⇒ 真反提不是另算一套物理",
+          pair_ok and d_n < 1e-15 and d_e < 1e-15 and d_z < 1e-12,
+          "pair_ok=%s Δn_eff=%.3e ΔZ0=%.3e" % (pair_ok, d_n, d_z))
+
+    # 🔴 反向：抹掉 coplanar_ground 标记 ⇒ 必须回落契约（证明标记真被消费）
+    stripped = [{k: v for k, v in e.items() if k != "coplanar_ground"} for e in cp_els]
+    ng = QS.cpw_from_layout(stripped, ground_gap_um=1.0)
+    check("G6 🔴 反向：抹掉 coplanar_ground 标记 ⇒ 必回 ground_gap_equiv（标记不是装饰）",
+          ng.get("gap_source") == "ground_gap_equiv"
+          and SL.cpw_gap_from_layout(stripped) is None,
+          "src=%s" % ng.get("gap_source"))
+
     # ═══════════════ H 跨模块对账（本门禁的核心价值）═══════════════
     so = QS.layout_to_resonator_signoff(10.0, 6.0, 4000.0, h_um=500.0)
     check("H1 反提 n_eff=%.4f vs 设计输入 2.5 ⇒ 相对差 %.4f%% 判 CONSISTENT"
@@ -136,6 +174,11 @@ def main():
             bad()
         except ValueError:
             guard += 1
+        except Exception:
+            # 🔴 突变下必须「判红」不得「崩溃」：被 patch 的实现可能抛 ZeroDivisionError /
+            # TypeError 等（实测 M8 λ/2 版本即抛 ZeroDivisionError ⇒ 旧窄捕令整门禁 rc=99、
+            # 后续判据全丢）。非 ValueError 不算护栏生效，但不得让门禁崩。
+            pass
     check("Z2 护栏：五例非法输入均抛 ValueError", guard == 5, "guard=%d/5" % guard)
 
     src = _read(os.path.join("lda_qeda", "cpw_quasi_static.py"))

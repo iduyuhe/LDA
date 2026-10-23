@@ -12,7 +12,12 @@
   · M6 反提 w 放大 10%                              ⇒ G1 应红（w 真回提）
   · M7 `why_not_anchored` 把 anchorable 改 True     ⇒ Z1 应红（负结果被抹）
   · M8 `resonator_f0_ghz` 分母用 2L 而非 4L         ⇒ H1 应红（f0 口径错 ⇒ 与设计值漂移）
+  · M9 关掉真反提（`cpw_gap_from_layout` 恒 None）    ⇒ G4 应红（真反提档失效）
+  · M10 忽略 `coplanar_ground` 标记、任何地都当共面   ⇒ G1/G6 应红（legacy 被洗成真反提 = 假绿）
 🔴 教训：patch 必须打门禁同一模块对象（`lda_qeda.cpw_quasi_static`）。
+🔴 M9/M10 补丁打在 **`lda_qeda.sc_layout`** 上 —— `cpw_from_layout` 内部是
+   **函数体内** `from ... import cpw_gap_from_layout`（每次调用重取模块属性），
+   故 patch `sc_layout` 的属性生效；patch `QS` 上不存在的同名属性**无效**（会静默假绿）。
 """
 from __future__ import annotations
 
@@ -27,6 +32,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
 
 import run_cpw_quasi_static_smoke as S       # noqa: E402
 from lda_qeda import cpw_quasi_static as QS  # noqa: E402
+from lda_qeda import sc_layout as SL         # noqa: E402
 
 
 def run_smoke():
@@ -137,6 +143,28 @@ def main() -> int:
                                               / (2.0 * (L_um * 1e-6) * n_eff)) / 1e9
     rows.append(("M8 f0 分母用 2L（λ/2 冒称 λ/4）", *run_smoke()))
     QS.resonator_f0_ghz = _f0
+
+    # ── M9/M10 · v0.9.276（D-224）真反提档的反向证据 ──
+    _gap = SL.cpw_gap_from_layout
+
+    # M9 关掉真反提：恒 None ⇒ 共面版图也只能回落等效
+    SL.cpw_gap_from_layout = lambda elements, **kw: None
+    rows.append(("M9 关掉真反提（gap 恒 None）", *run_smoke()))
+    SL.cpw_gap_from_layout = _gap
+
+    # M10 忽略 coplanar_ground 标记：任何 ground 都当共面地 ⇒ legacy 被洗成真反提
+    def _gap_any_ground(elements, **kw):
+        relabeled = [
+            (dict(e, coplanar_ground=True)
+             if (isinstance(e, dict) and e.get("kind") == "boundary"
+                 and e.get("layer") == SL.GROUND) else e)
+            for e in (elements or [])
+        ]
+        return _gap(relabeled, **kw)
+
+    SL.cpw_gap_from_layout = _gap_any_ground
+    rows.append(("M10 任何地都当共面（legacy 被洗成真反提）", *run_smoke()))
+    SL.cpw_gap_from_layout = _gap
 
     print("=" * 78)
     bad = 0

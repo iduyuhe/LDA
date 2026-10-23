@@ -19,7 +19,7 @@ def run(name, expect_pass, **kw):
     detail = (f"passed={passed} (期望 {expect_pass})" +
               (f" | {r.get('verdict', '')[:80]}" if passed else
                f" | {r.get('error', '')[:80]}"))
-    print(f"  {'PASS' if ok else 'FAIL'} | {name} | {detail}")
+    print(f"  [{'PASS' if ok else 'FAIL'}] {name}  |  {detail}")
     return ok
 
 
@@ -35,4 +35,7 @@ ok5 = run("weights 与 f01s 长度不匹配（应 FAIL）", False,
 
 all_ok = all([ok1, ok2, ok3, ok4, ok5])
 print(f"=== {'ALL PASS' if all_ok else 'HAS FAILURE'}（{sum(results)}/{len(results)}）===")
+# v0.9.276（D-224 / F-9）：补标准计数末行 —— 此前用 `PASS |` 与中文括号「（5/5）」，
+# 机械统计（认 `[PASS]` 或末行 `N/N PASS`）判成「0 判据」，实为 5 条。语义不变。
+print(f"D-63 方向耦合器×量子读出 smoke：{sum(results)}/{len(results)} PASS")
 sys.exit(0 if all_ok else 1)

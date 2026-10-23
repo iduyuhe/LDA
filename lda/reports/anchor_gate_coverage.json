@@ -4539,6 +4539,7 @@
     "run_cli_smoke.py": [],
     "run_compact_model_smoke.py": [],
     "run_compiler_frontend_smoke.py": [],
+    "run_conductor_surface_smoke.py": [],
     "run_corner_performance_smoke.py": [],
     "run_count_consistency_smoke.py": [
       "B499",
@@ -5494,11 +5495,11 @@
       "4": 9,
       "5": 2
     },
-    "core_smokes": 347,
+    "core_smokes": 348,
     "gates_excluded": 1,
-    "gates_scanned": 346,
+    "gates_scanned": 347,
     "gates_with_anchors": 34,
-    "gates_zero_anchor": 312,
+    "gates_zero_anchor": 313,
     "l1_unified_covered": 541,
     "l2_bespoke_covered": 523,
     "l2_blind": 18,

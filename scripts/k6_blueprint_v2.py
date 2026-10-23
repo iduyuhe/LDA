@@ -101,6 +101,77 @@ INHERITED_GAPS = [
     ("盲区 415", "全账本 538 锚中仅有统一判决、无专属门禁", "K4 已机器登记，补盲长期化"),
 ]
 
+# ── 域级裁决（**结算记录**，非新锚/新门禁） ──────────────────────────
+#   某域经「先体检后落锚」评估后若判**不可锚**，在这里登记逐条理由与证据，
+#   矩阵对应行的 `current` 由「零（v1 未覆盖）」改为「已评估 · 判不可锚」，
+#   并附 `adjudication` 子对象（机器可读）。**裁决不改账本、不建门禁。**
+ADJUDICATIONS = {
+    "V2-D3": {
+        "doc": "docs/LDA_V2-D3_容错编译域_短评估_可锚性判定_2026-10-23.md",
+        "date": "2026-10-23",
+        "verdict": "NOT_ANCHORABLE",
+        "basis": "可锚性三问 + 占用体检（全账本 541 锚实扫 + 逐条三处比对）",
+        "gaps": {
+            1: {
+                "cls": "exact_combinatorial",
+                "why": "调度深度下界（⌈N/Q⌉ / 关键路径 / LNN 平均 SWAP (n²−1)/(3n)）"
+                       "与测量轮次均为整数或精确有理数：任何独立算法都给同一个值 "
+                       "⇒ resid ≡ 0 ⇒ 触「零残差」红线 ⇒ 原理上不可锚。",
+                "evidence": [
+                    "n=4/6/10/16 平均 SWAP 闭式 5/4 · 35/18 · 33/10 · 85/16 与精确枚举（Fraction）差恒 0",
+                    "测量轮次为整数（每次 lattice surgery 2d 轮），无截断项",
+                ],
+            },
+            2: {
+                "cls": "derived_quantity",
+                "why": "同族同预算下等分即最优 ⇒「分摊策略带来的收益」恒 0；非同族时最优解是"
+                       "闭式代数（水注）⇒ resid ≡ 0。属既有闭式的派生量，非新物理量。",
+                "evidence": [
+                    "ε_budget=1e-3 · n=100 ⇒ ε_i=1.000000e-05，Σ=1.000000e-03（精确）",
+                    "成本 Σc(2d_i−1)² 在同族同 ε 下同 d ⇒ 等分最优 ⇒ 收益 = 0",
+                ],
+            },
+            3: {
+                "cls": "closed_form_direct_candidate",
+                "why": "「编译后总保真」= 逐门保真连乘；两种独立实现（连乘 vs exp∘Σlog）实测仅差 "
+                       "3–53 ulp，远低于跨平台判据线 1e4·ulp ⇒ 不可复现；若改写成 "
+                       "exp(−∫rate·dt) 则与既有三条同形同候选（exp∘中点求积）⇒ 参数化扩展。",
+                "evidence": [
+                    "n=100/1000/10000（ε=1e-3）⇒ |Δ|/ulp = 3 / 7 / 53；n=1000（ε=1e-4）⇒ 50",
+                    "判据线 1e4·ulp = 2.01e-12 / 8.16e-13 / 1.00e-16 / 2.01e-12 ⇒ 全部不过",
+                    "累积型写法已被三条既有锚占用（同被测标量 ∧ 同数值格式）",
+                ],
+            },
+            4: {
+                "cls": "exact_combinatorial",
+                "why": "T 态/魔术态资源全是精确整数或精确有理：15-to-1 产出率 = 1/15、蒸馏轮数为"
+                       "整数、Toffoli 的 T 计数下界为 7 ⇒ any 算法同值 ⇒ resid ≡ 0 ⇒ 不可锚。",
+                "evidence": [
+                    "15-to-1 产出率 = 1/15（精确有理）",
+                    "p=1e-2 降到 ≤1e-12 需 3 轮（末轮 p=1.183e-34）",
+                    "Toffoli T 计数下界 7 / T 深度 1（整数）",
+                ],
+            },
+        },
+    },
+}
+
+# ── 蓝图 v2 三域收官（机器可读的结算面 · 2026-10-23） ───────────────────
+V2_DOMAIN_OUTCOMES = [
+    {"id": "V2-D1", "name": "光-量异质集成", "outcome": "CLOSED_WITH_ANCHORS",
+     "anchors_n": 2,
+     "detail": "M0 锚 B523（多模换能阵列平均孔径截断效率）· M3 前移锚 B524（Kapitza 界面热导）；"
+               "M1/M2 两条章程锚判「已被既有锚 100% 覆盖 / 派生量」⇒ 净增 0；M4 面板交付。"},
+    {"id": "V2-D2", "name": "QEC 码族扩展", "outcome": "PARTIALLY_ANCHORABLE",
+     "anchors_n": 1,
+     "detail": "M0 锚 B525（退极化信道 hashing 界）；三类「不可锚」机器化；"
+               "M1 判「码族比较/开销无可锚物」（四类）⇒ 净增 0，改面板 + 裁决。"},
+    {"id": "V2-D3", "name": "容错编译（QEC ↔ QPU 联合）", "outcome": "NOT_ANCHORABLE",
+     "anchors_n": 0,
+     "detail": "四类 gap 逐条判死（精确组合 / 派生量 / 闭式直算脆弱 / 同形同候选）；"
+               "结论：「物理律闭式锚」的射程 = 物理层，编译/调度层无物理律标量可锚。"},
+]
+
 
 def _read_json(rel: str):
     p = os.path.join(_REPO, rel)
@@ -178,14 +249,27 @@ def build():
 
     gap_matrix = []
     for i, d in enumerate(domains, 1):
+        adj = ADJUDICATIONS.get(d["id"])
         for j, g in enumerate(d["gaps"], 1):
-            gap_matrix.append({
+            row = {
                 "gap_id": "G-V2-D%d-%d" % (i, j),
                 "domain": d["name"],
                 "gap": g,
                 "current": "零（v1 未覆盖）",
                 "owner": "待立项章程",
-            })
+            }
+            if adj:
+                spec = (adj.get("gaps") or {}).get(j) or {}
+                row["current"] = "已评估 · 判不可锚（%s）" % adj["date"]
+                row["owner"] = "已结算（短评估 · 不立项）"
+                row["adjudication"] = {
+                    "verdict": adj["verdict"],
+                    "anchorability_class": spec.get("cls"),
+                    "why": spec.get("why"),
+                    "evidence": list(spec.get("evidence") or []),
+                    "doc": adj["doc"],
+                }
+            gap_matrix.append(row)
 
     payload = {
         "schema": SCHEMA,
@@ -222,6 +306,7 @@ def build():
         "inherited_gaps": [{"id": a, "gap": b, "status": c}
                            for a, b, c in INHERITED_GAPS],
         "new_domain_candidates": domains,
+        "v2_domain_outcomes": [dict(x) for x in V2_DOMAIN_OUTCOMES],
         "gap_matrix": gap_matrix,
         "gap_matrix_n": len(gap_matrix),
         "decision_points": [

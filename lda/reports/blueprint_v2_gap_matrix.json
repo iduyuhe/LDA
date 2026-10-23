@@ -72,32 +72,74 @@
       "owner": "待立项章程"
     },
     {
-      "current": "零（v1 未覆盖）",
+      "adjudication": {
+        "anchorability_class": "exact_combinatorial",
+        "doc": "docs/LDA_V2-D3_容错编译域_短评估_可锚性判定_2026-10-23.md",
+        "evidence": [
+          "n=4/6/10/16 平均 SWAP 闭式 5/4 · 35/18 · 33/10 · 85/16 与精确枚举（Fraction）差恒 0",
+          "测量轮次为整数（每次 lattice surgery 2d 轮），无截断项"
+        ],
+        "verdict": "NOT_ANCHORABLE",
+        "why": "调度深度下界（⌈N/Q⌉ / 关键路径 / LNN 平均 SWAP (n²−1)/(3n)）与测量轮次均为整数或精确有理数：任何独立算法都给同一个值 ⇒ resid ≡ 0 ⇒ 触「零残差」红线 ⇒ 原理上不可锚。"
+      },
+      "current": "已评估 · 判不可锚（2026-10-23）",
       "domain": "容错编译（QEC ↔ QPU 联合）",
       "gap": "逻辑→物理映射与调度（含测量轮次）",
       "gap_id": "G-V2-D3-1",
-      "owner": "待立项章程"
+      "owner": "已结算（短评估 · 不立项）"
     },
     {
-      "current": "零（v1 未覆盖）",
+      "adjudication": {
+        "anchorability_class": "derived_quantity",
+        "doc": "docs/LDA_V2-D3_容错编译域_短评估_可锚性判定_2026-10-23.md",
+        "evidence": [
+          "ε_budget=1e-3 · n=100 ⇒ ε_i=1.000000e-05，Σ=1.000000e-03（精确）",
+          "成本 Σc(2d_i−1)² 在同族同 ε 下同 d ⇒ 等分最优 ⇒ 收益 = 0"
+        ],
+        "verdict": "NOT_ANCHORABLE",
+        "why": "同族同预算下等分即最优 ⇒「分摊策略带来的收益」恒 0；非同族时最优解是闭式代数（水注）⇒ resid ≡ 0。属既有闭式的派生量，非新物理量。"
+      },
+      "current": "已评估 · 判不可锚（2026-10-23）",
       "domain": "容错编译（QEC ↔ QPU 联合）",
       "gap": "错误预算在编译期的分摊策略",
       "gap_id": "G-V2-D3-2",
-      "owner": "待立项章程"
+      "owner": "已结算（短评估 · 不立项）"
     },
     {
-      "current": "零（v1 未覆盖）",
+      "adjudication": {
+        "anchorability_class": "closed_form_direct_candidate",
+        "doc": "docs/LDA_V2-D3_容错编译域_短评估_可锚性判定_2026-10-23.md",
+        "evidence": [
+          "n=100/1000/10000（ε=1e-3）⇒ |Δ|/ulp = 3 / 7 / 53；n=1000（ε=1e-4）⇒ 50",
+          "判据线 1e4·ulp = 2.01e-12 / 8.16e-13 / 1.00e-16 / 2.01e-12 ⇒ 全部不过",
+          "累积型写法已被三条既有锚占用（同被测标量 ∧ 同数值格式）"
+        ],
+        "verdict": "NOT_ANCHORABLE",
+        "why": "「编译后总保真」= 逐门保真连乘；两种独立实现（连乘 vs exp∘Σlog）实测仅差 3–53 ulp，远低于跨平台判据线 1e4·ulp ⇒ 不可复现；若改写成 exp(−∫rate·dt) 则与既有三条同形同候选（exp∘中点求积）⇒ 参数化扩展。"
+      },
+      "current": "已评估 · 判不可锚（2026-10-23）",
       "domain": "容错编译（QEC ↔ QPU 联合）",
       "gap": "门序优化对保真的净收益模型",
       "gap_id": "G-V2-D3-3",
-      "owner": "待立项章程"
+      "owner": "已结算（短评估 · 不立项）"
     },
     {
-      "current": "零（v1 未覆盖）",
+      "adjudication": {
+        "anchorability_class": "exact_combinatorial",
+        "doc": "docs/LDA_V2-D3_容错编译域_短评估_可锚性判定_2026-10-23.md",
+        "evidence": [
+          "15-to-1 产出率 = 1/15（精确有理）",
+          "p=1e-2 降到 ≤1e-12 需 3 轮（末轮 p=1.183e-34）",
+          "Toffoli T 计数下界 7 / T 深度 1（整数）"
+        ],
+        "verdict": "NOT_ANCHORABLE",
+        "why": "T 态/魔术态资源全是精确整数或精确有理：15-to-1 产出率 = 1/15、蒸馏轮数为整数、Toffoli 的 T 计数下界为 7 ⇒ any 算法同值 ⇒ resid ≡ 0 ⇒ 不可锚。"
+      },
+      "current": "已评估 · 判不可锚（2026-10-23）",
       "domain": "容错编译（QEC ↔ QPU 联合）",
       "gap": "编译期资源估计（T 态/魔术态）",
       "gap_id": "G-V2-D3-4",
-      "owner": "待立项章程"
+      "owner": "已结算（短评估 · 不立项）"
     }
   ],
   "gap_matrix_n": 12,
@@ -194,7 +236,7 @@
     "ledger": {
       "anchors_total": 541,
       "blind": 18,
-      "core_smokes": 339,
+      "core_smokes": 340,
       "l1": 541,
       "l2": 523,
       "l3": 70
@@ -308,5 +350,28 @@
   "roadmap": "K6（蓝图 v2 奠基 · 只起草矩阵不动实现）",
   "schema": "lda_blueprint_v2_gap_matrix_v1",
   "status": "draft_only",
-  "subject": "量子赛道蓝图 v2 缺口矩阵（草案）"
+  "subject": "量子赛道蓝图 v2 缺口矩阵（草案）",
+  "v2_domain_outcomes": [
+    {
+      "anchors_n": 2,
+      "detail": "M0 锚 B523（多模换能阵列平均孔径截断效率）· M3 前移锚 B524（Kapitza 界面热导）；M1/M2 两条章程锚判「已被既有锚 100% 覆盖 / 派生量」⇒ 净增 0；M4 面板交付。",
+      "id": "V2-D1",
+      "name": "光-量异质集成",
+      "outcome": "CLOSED_WITH_ANCHORS"
+    },
+    {
+      "anchors_n": 1,
+      "detail": "M0 锚 B525（退极化信道 hashing 界）；三类「不可锚」机器化；M1 判「码族比较/开销无可锚物」（四类）⇒ 净增 0，改面板 + 裁决。",
+      "id": "V2-D2",
+      "name": "QEC 码族扩展",
+      "outcome": "PARTIALLY_ANCHORABLE"
+    },
+    {
+      "anchors_n": 0,
+      "detail": "四类 gap 逐条判死（精确组合 / 派生量 / 闭式直算脆弱 / 同形同候选）；结论：「物理律闭式锚」的射程 = 物理层，编译/调度层无物理律标量可锚。",
+      "id": "V2-D3",
+      "name": "容错编译（QEC ↔ QPU 联合）",
+      "outcome": "NOT_ANCHORABLE"
+    }
+  ]
 }

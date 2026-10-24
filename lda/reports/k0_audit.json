@@ -7,7 +7,7 @@
     "head（每次提交都变 ⇒ 非确定量，故意不入台账）"
   ],
   "frozen_snapshot": {
-    "version": "0.9.281",
+    "version": "0.9.282",
     "ledger_total": 541,
     "ledger_strict": 519,
     "ledger_degraded": 3,
@@ -302,15 +302,15 @@
         "matrix_summary": {
           "anchors_total": 541,
           "blind_by_band": {
-            "B1–B99": 2,
+            "B1–B99": 1,
             "E（实证）": 6,
             "S（系统层）": 10
           },
           "blind_without_any_coverage": 0,
           "blind_without_subset_coverage": 0,
           "by_gate_count": {
-            "1": 453,
-            "2": 33,
+            "1": 449,
+            "2": 38,
             "3": 26,
             "4": 9,
             "5": 2
@@ -321,22 +321,22 @@
           "gates_with_anchors": 34,
           "gates_zero_anchor": 315,
           "l1_unified_covered": 541,
-          "l2_bespoke_covered": 523,
-          "l2_blind": 18,
-          "l2_global_blind_covered": 18,
-          "l2_global_blind_subset_covered": 18,
+          "l2_bespoke_covered": 524,
+          "l2_blind": 17,
+          "l2_global_blind_covered": 17,
+          "l2_global_blind_subset_covered": 17,
           "l2_global_covered": 541,
           "l2_global_excluded_gates": 5,
           "l2_global_registered_gates": 2,
           "l2_global_subset_covered": 19,
-          "l2_manifest_added": 395,
-          "l2_manifest_covered": 395,
+          "l2_manifest_added": 396,
+          "l2_manifest_covered": 396,
           "l2_text_covered": 128,
-          "l3_multi_covered": 70
+          "l3_multi_covered": 75
         },
         "matrix_ratchet": {
-          "l2_min": 523,
-          "l3_min": 65,
+          "l2_min": 524,
+          "l3_min": 75,
           "policy": "只升不降：新增锚必须补专属判据或显式登记为 L1-only"
         },
         "matrix_gate": "lda/run_k4_coverage_smoke.py",

@@ -397,11 +397,22 @@ def main():
           "C5 blind 集 ≡ total − l2（逐元素）" in red4, "红项=%s" % red4[:3])
 
     def m_manifest(x):
+        """删一条**覆盖度为 1** 的 manifest 条目 ⇒ L2 必减 ⇒ C7 必红。
+
+        🔴 N2（v0.9.282）修复：原实现是「删 `sorted(manifest)` 第一个门禁的
+        最后一条」。B30 等 5 条超导锚接入 manifest 后，排序第一个变成
+        `run_b30_readout_smoke`，而 B30 **同时**被 `bl_anchor_guard` 覆盖 ⇒
+        删它只让 L3 变，而 C7 只判 L2/blind ⇒ **探针恒绿（反向探针退化）**。
+        ⇒ 改为按「l2_gates 覆盖度 == 1」动态选点：删掉的锚一定只被这一个门禁
+        覆盖，L2 必减 1。仍不硬编码任何锚号（选点随台账自动漂移）。
+        """
         man = x.get("manifest") or {}
+        anc = x.get("anchors") or {}
         for g in sorted(man):
-            if man[g]:
-                man[g] = man[g][:-1]
-                return
+            for a in list(man[g]):
+                if len(((anc.get(a) or {}).get("l2_gates")) or []) == 1:
+                    man[g] = [y for y in man[g] if y != a]
+                    return
 
     red5 = mutated(m_manifest)
     check("E5 反向探针：删 manifest 一条 ⇒ C7 必红（M4 双向锁的负向验证）",

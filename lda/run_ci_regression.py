@@ -438,7 +438,7 @@ CORE_SMOKES: List[str] = [
     #   锚不在门禁内 = 失真无警报。core 98→116。
     "run_mzi_anchor_smoke.py",          # MZI FSR × 物理定律锚 B20 死标量比对（unittest 6 断言）
     "run_qres_anchor_smoke.py",         # qubit-resonator 锚（unittest 7 断言）
-    "run_fluxonium_anchor_smoke.py",    # fluxonium 锚（unittest 13 断言）
+    "run_fluxonium_anchor_smoke.py",    # fluxonium 锚（unittest 14 断言 · N2 加 H7 双向锁死）
     "run_transmon_double_verify_smoke.py",  # transmon 双路互证
     "run_qeda_depth_smoke.py",          # QEDA 纵深三件套（含负例）
     "run_qubit_resonator_smoke.py",     # qubit-resonator 求解器（含色散区失效负例）

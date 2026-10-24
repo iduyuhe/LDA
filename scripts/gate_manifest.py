@@ -47,6 +47,32 @@ _GATES = {
         "asserted_anchor_ids",
         "lda/reports/bl_anchor_audit.json",
     ),
+    # ─────────────────────────────────────────────────────────────────────
+    # N2（v0.9.282）· 超导域判据深度：以下门禁**真的执行**账本锚
+    # （`BENCHMARK_DEFS[锚]` / `resolve_specs(only=(...))`），导出运行时断言集。
+    # 🔴 接入条件（缺一不可）：① 门禁内确有执行语句 ② 有 H7 双向锁死判据
+    #    ③ 不是"为刷覆盖而写的锚号字面量"（见 N2 规划 §1.3 反例）。
+    # ─────────────────────────────────────────────────────────────────────
+    "run_b30_readout_smoke.py": (
+        "asserted_anchor_ids",
+        "内联：run_verification(B30) 正向 + nbar 反向",
+    ),
+    "run_fluxonium_anchor_smoke.py": (
+        "asserted_anchor_ids",
+        "内联：VerificationHarness.resolve_specs(only=B23,B24) + 引擎对拍",
+    ),
+    "run_transmon_double_verify_smoke.py": (
+        "asserted_anchor_ids",
+        "内联：build_harness_specs → run_verification(B9)（Koch ↔ 严格对角化）",
+    ),
+    "run_qubit_resonator_smoke.py": (
+        "asserted_anchor_ids",
+        "内联：build_harness_specs → run_verification(B12)（λ/4 谐振器）",
+    ),
+    "run_j3_ctrl_smoke.py": (
+        "asserted_anchor_ids",
+        "内联：build_harness_specs → run_verification(B18)（Purcell，**自证锚**）",
+    ),
 }
 
 

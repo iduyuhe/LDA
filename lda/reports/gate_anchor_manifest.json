@@ -6,6 +6,14 @@
   "generated_by": "scripts/gate_manifest.py",
   "method": "门禁运行时登记：import 门禁模块 → asserted_anchor_ids()（从实际断言行集派生 · 非手写清单 · 非源码字符串扫描）",
   "registries": {
+    "run_b30_readout_smoke.py": {
+      "anchors": [
+        "B30"
+      ],
+      "count": 1,
+      "runtime_symbol": "asserted_anchor_ids",
+      "source_rel": "内联：run_verification(B30) 正向 + nbar 反向"
+    },
     "run_bl_anchor_guard_smoke.py": {
       "anchors": [
         "B1",
@@ -407,15 +415,53 @@
       "count": 395,
       "runtime_symbol": "asserted_anchor_ids",
       "source_rel": "lda/reports/bl_anchor_audit.json"
+    },
+    "run_fluxonium_anchor_smoke.py": {
+      "anchors": [
+        "B23",
+        "B24"
+      ],
+      "count": 2,
+      "runtime_symbol": "asserted_anchor_ids",
+      "source_rel": "内联：VerificationHarness.resolve_specs(only=B23,B24) + 引擎对拍"
+    },
+    "run_j3_ctrl_smoke.py": {
+      "anchors": [
+        "B18"
+      ],
+      "count": 1,
+      "runtime_symbol": "asserted_anchor_ids",
+      "source_rel": "内联：build_harness_specs → run_verification(B18)（Purcell，**自证锚**）"
+    },
+    "run_qubit_resonator_smoke.py": {
+      "anchors": [
+        "B12"
+      ],
+      "count": 1,
+      "runtime_symbol": "asserted_anchor_ids",
+      "source_rel": "内联：build_harness_specs → run_verification(B12)（λ/4 谐振器）"
+    },
+    "run_transmon_double_verify_smoke.py": {
+      "anchors": [
+        "B9"
+      ],
+      "count": 1,
+      "runtime_symbol": "asserted_anchor_ids",
+      "source_rel": "内联：build_harness_specs → run_verification(B9)（Koch ↔ 严格对角化）"
     }
   },
   "schema": "lda_gate_anchor_manifest_v1",
   "subject": "gate runtime-registered anchor manifest (L2 union source)",
   "summary": {
-    "anchors_union": 395,
-    "gates": 1,
+    "anchors_union": 396,
+    "gates": 6,
     "per_gate": {
-      "run_bl_anchor_guard_smoke.py": 395
+      "run_b30_readout_smoke.py": 1,
+      "run_bl_anchor_guard_smoke.py": 395,
+      "run_fluxonium_anchor_smoke.py": 2,
+      "run_j3_ctrl_smoke.py": 1,
+      "run_qubit_resonator_smoke.py": 1,
+      "run_transmon_double_verify_smoke.py": 1
     }
   }
 }

@@ -199,7 +199,13 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {"run_ci_gate_contract_s
 #:   之间 ⇒ 正则不匹配 ⇒ W10b（≥1 条可对照条目）**恒红**。此处把当前版本行改回
 #:   `` `run_j2_qpu_smoke` **21 判据** `` 规范形（脚本名不带 `.py`、反引号后仅空白），
 #:   并把它纳入对照面 ⇒ W10/W10b/W10-P1 三判据闭环恢复。
-_W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py",
+_W10_EXTRA = (
+              # 🔴 v0.9.282：本版真改动 = B30 读出保真度门禁接线（N2 超导判据深度）。
+              #   实测 ~3s / **7 判据**（5→7，含 H7 双向锁死）⇒ 纳对照面，令 README
+              #   顶行（对外第一屏）声明的判据数由机器守。W10b 闭环条件：顶行里
+              #   `` `run_x` **N 判据** `` 形式的每个名字都必须在对照面内。
+              "run_b30_readout_smoke.py",
+              "run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py",
               "run_sensor_panel_smoke.py", "run_webui_entry_smoke.py",
               "run_count_consistency_smoke.py", "run_ps_m1_smoke.py",
               # 🔴 v0.9.268：本版真改动 = 量子闭环两项（deck 契约层 + 超导案例卡门禁）。

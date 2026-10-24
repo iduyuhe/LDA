@@ -16,6 +16,36 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lda_solver"))
 from device_library import DeviceLibrary  # noqa: E402
 
 
+# ===========================================================================
+# N2 · 超导域判据深度：门禁运行时登记（v0.9.282）
+# ---------------------------------------------------------------------------
+# 本门禁**真的执行**账本锚（harness 统一判决：闭式 golden vs 已注册候选），
+# 不是"为刷覆盖写锚号"（见 N2 规划 §1.3 的反例）。
+# 登记面走 `asserted_anchor_ids()`（scripts/gate_manifest.py 消费），
+# 由末尾 H7 **双向锁死**：声明集 ≡ 本次运行实际断言集 ⇒ 删掉执行代码必红。
+# 🔴 本段只用 print + 退出码，**不增加门禁判据数**（护住 `run_webui_*` 的
+#    「N PASS == span.gate_checks」自洽判据）。
+# ===========================================================================
+ASSERTED_ANCHORS = ('B9',)
+_RUNTIME_ASSERTED: list = []
+
+
+def asserted_anchor_ids():
+    """本门禁运行时实际断言的锚集（未运行则回落到声明面）。"""
+    return tuple(_RUNTIME_ASSERTED) or tuple(ASSERTED_ANCHORS)
+
+
+def _run_ledger_anchor(bid):
+    """真跑一条账本锚（golden 与已注册候选均由 harness 解析）。"""
+    from lda_harness.verification_adapters import build_harness_specs
+    from lda_harness.verification_spec import run_verification
+    specs, cand = build_harness_specs()
+    sp = [s for s in specs if s.spec_id == bid][0]
+    ov = sp.oracle_fn(sp.params)
+    cv = cand[bid](sp, ov)
+    return sp, run_verification(sp, cand[bid], oracle_value=ov), float(cv), float(ov)
+
+
 def main() -> int:
     lib = DeviceLibrary()
     print("=== Transmon 双验证 (Koch 解析 ↔ 严格对角化) ===")
@@ -38,7 +68,18 @@ def main() -> int:
     print(f"  levels_ghz={num['levels_ghz']}")
     print(f"verdict: {r['verdict']}")
 
-    ok = bool(c["passed"] and r["passed"])
+    # ── N2（v0.9.282）：账本锚真跑 + 运行时登记（H7 双向锁死）──
+    _sp, _res, _cv, _ov = _run_ledger_anchor('B9')
+    if bool(_res.passed):
+        _RUNTIME_ASSERTED.append('B9')
+    _h7 = tuple(_RUNTIME_ASSERTED) == tuple(ASSERTED_ANCHORS)
+    print("  [%s] 账本锚 %s 真跑：残差=%.3e tol=%s"
+          % ("PASS" if _res.passed else "FAIL", 'B9',
+             abs(_cv - _ov), _sp.tol))
+    print("  [%s] H7 声明面 ≡ 运行时断言集 —— 声明=%s 运行=%s"
+          % ("PASS" if _h7 else "FAIL", ASSERTED_ANCHORS, tuple(_RUNTIME_ASSERTED)))
+    _n2_ok = bool(_res.passed) and _h7
+    ok = bool(c["passed"] and r["passed"]) and _n2_ok
     print("\n=== Transmon 双验证 smoke: " + ("ALL GREEN" if ok else "FAIL") + " ===")
     return 0 if ok else 1
 

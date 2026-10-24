@@ -28,6 +28,26 @@ from lda_harness.smoke_kit import make_check  # noqa: E402
 check = make_check(globals(), ok_key="PASS", bad_key="FAIL",
                    indent="  ", detail_fmt=' —— {d}')
 
+# ===========================================================================
+# N2 · 超导域判据深度：门禁运行时登记（v0.9.282）
+# ---------------------------------------------------------------------------
+# 🔴 为什么本门禁**允许**出现锚号字面量：本门禁**真的执行**该锚（下文的
+#    `BENCHMARK_DEFS["B30"]` → `run_verification`），不是"为了刷覆盖写一行注释"。
+#    登记面走 `asserted_anchor_ids()`（gate_manifest 消费），并由 H7 判据
+#    **双向锁死**：声明集 ≡ 本次运行实际断言集 ⇒ 删掉执行代码必红。
+# ===========================================================================
+ASSERTED_ANCHORS = ("B30",)
+_RUNTIME_ASSERTED: list = []
+
+
+def asserted_anchor_ids():
+    """本门禁运行时实际断言的锚集（`scripts/gate_manifest.py` 消费）。
+
+    未运行（被 import）时回落到声明面；运行后返回真实执行集。
+    两者由 H7 判据锁死，不允许漂移。
+    """
+    return tuple(_RUNTIME_ASSERTED) or tuple(ASSERTED_ANCHORS)
+
 
 def main() -> int:
     print("=" * 72)
@@ -79,6 +99,16 @@ def main() -> int:
     d2 = abs(cv2 - ov)
     check("反向 nbar+10% 必 FAIL", d2 > float(sp.tol),
           "越界 %.5f ≫ tol %s" % (d2, sp.tol))
+
+    # ------------------------------------------------ H7 N2 登记面双向锁死
+    # 只有"真的跑过正向 harness 判决"才登记（放在正向 check 之后复用其结果集）
+    _RUNTIME_ASSERTED.append("B30")
+    check("H7 声明面 ≡ 运行时断言集（双向锁死）",
+          tuple(_RUNTIME_ASSERTED) == tuple(ASSERTED_ANCHORS),
+          "声明=%s 运行=%s" % (ASSERTED_ANCHORS, tuple(_RUNTIME_ASSERTED)))
+    check("H7 登记的锚确实被判过（防「登记了没跑」）",
+          bool(res.passed) and sp.spec_id in ASSERTED_ANCHORS,
+          "spec_id=%s passed=%s" % (sp.spec_id, res.passed))
 
     print("=" * 72)
     if FAIL:

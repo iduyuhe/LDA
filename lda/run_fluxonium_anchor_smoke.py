@@ -16,6 +16,22 @@ _LDA = os.path.dirname(os.path.abspath(__file__))
 if _LDA not in sys.path:
     sys.path.insert(0, _LDA)
 
+# ===========================================================================
+# N2 · 超导域判据深度：门禁运行时登记（v0.9.282）
+# ---------------------------------------------------------------------------
+# 本门禁**真的执行**账本锚（`resolve_specs(only=("B23","B24"))` → `h.run(...)`），
+# 不是"为刷覆盖写锚号"（见 N2 规划 §1.3 的反例）。
+# 登记面走 `asserted_anchor_ids()`（gate_manifest 消费），由 `test_zz_h7_*`
+# **双向锁死**：声明集 ≡ 本次运行实际断言集 ⇒ 删一条断言必红。
+# ===========================================================================
+ASSERTED_ANCHORS = ("B23", "B24")
+_RUNTIME_ASSERTED: list = []
+
+
+def asserted_anchor_ids():
+    """本门禁运行时实际断言的锚集（未运行则回落到声明面）。"""
+    return tuple(_RUNTIME_ASSERTED) or tuple(ASSERTED_ANCHORS)
+
 
 class FluxoniumAnchorSmoke(unittest.TestCase):
 
@@ -34,6 +50,8 @@ class FluxoniumAnchorSmoke(unittest.TestCase):
             r = [x for x in results if x.bid == bid]
             self.assertEqual(len(r), 1)
             self.assertTrue(r[0].passed, msg=r[0].note)
+            # ✅ 只有真正 passed 才登记（assertTrue 失败会抛 ⇒ 到不了这里）
+            _RUNTIME_ASSERTED.append(bid)
 
     def test_fluxonium_engine_dual_basis(self):
         from lda_design.design_engine import DesignEngine
@@ -66,6 +84,15 @@ class FluxoniumAnchorSmoke(unittest.TestCase):
         # 引擎输出 |g_eff|（三模对角化真跑）= B24 解析锚，死标量比对，
         # LLM 不进判决路径；delta 取验证容差上限 5%（passed 保证 ≤3%）。
         self.assertAlmostEqual(cand, golden, delta=0.05 * golden)
+
+    def test_zz_h7_registration_locked(self):
+        """H7（N2）：声明面 ≡ 运行时断言集 —— 删一条断言必红。
+
+        `zz` 前缀保证本测试在字母序里最后执行（其余测试已填满 `_RUNTIME_ASSERTED`）。
+        """
+        self.assertEqual(
+            tuple(_RUNTIME_ASSERTED), tuple(ASSERTED_ANCHORS),
+            msg="声明=%s 运行=%s" % (ASSERTED_ANCHORS, tuple(_RUNTIME_ASSERTED)))
 
 
 if __name__ == "__main__":

@@ -417,9 +417,10 @@
     },
     "B12": {
       "l1": true,
-      "l2_count": 1,
+      "l2_count": 2,
       "l2_gates": [
-        "run_bl_anchor_guard_smoke.py"
+        "run_bl_anchor_guard_smoke.py",
+        "run_qubit_resonator_smoke.py"
       ],
       "l2_global": [
         {
@@ -431,7 +432,7 @@
       "l2_global_calibers": [
         "ALL_LEDGER"
       ],
-      "l3": false
+      "l3": true
     },
     "B120": {
       "l1": true,
@@ -1609,8 +1610,10 @@
     },
     "B18": {
       "l1": true,
-      "l2_count": 0,
-      "l2_gates": [],
+      "l2_count": 1,
+      "l2_gates": [
+        "run_j3_ctrl_smoke.py"
+      ],
       "l2_global": [
         {
           "caliber": "SUBSET",
@@ -2623,9 +2626,10 @@
     },
     "B23": {
       "l1": true,
-      "l2_count": 1,
+      "l2_count": 2,
       "l2_gates": [
-        "run_bl_anchor_guard_smoke.py"
+        "run_bl_anchor_guard_smoke.py",
+        "run_fluxonium_anchor_smoke.py"
       ],
       "l2_global": [
         {
@@ -2637,7 +2641,7 @@
       "l2_global_calibers": [
         "ALL_LEDGER"
       ],
-      "l3": false
+      "l3": true
     },
     "B230": {
       "l1": true,
@@ -2821,9 +2825,10 @@
     },
     "B24": {
       "l1": true,
-      "l2_count": 1,
+      "l2_count": 2,
       "l2_gates": [
-        "run_bl_anchor_guard_smoke.py"
+        "run_bl_anchor_guard_smoke.py",
+        "run_fluxonium_anchor_smoke.py"
       ],
       "l2_global": [
         {
@@ -2835,7 +2840,7 @@
       "l2_global_calibers": [
         "ALL_LEDGER"
       ],
-      "l3": false
+      "l3": true
     },
     "B240": {
       "l1": true,
@@ -4027,8 +4032,9 @@
     },
     "B30": {
       "l1": true,
-      "l2_count": 1,
+      "l2_count": 2,
       "l2_gates": [
+        "run_b30_readout_smoke.py",
         "run_bl_anchor_guard_smoke.py"
       ],
       "l2_global": [
@@ -4041,7 +4047,7 @@
       "l2_global_calibers": [
         "ALL_LEDGER"
       ],
-      "l3": false
+      "l3": true
     },
     "B300": {
       "l1": true,
@@ -9262,9 +9268,10 @@
     },
     "B9": {
       "l1": true,
-      "l2_count": 1,
+      "l2_count": 2,
       "l2_gates": [
-        "run_bl_anchor_guard_smoke.py"
+        "run_bl_anchor_guard_smoke.py",
+        "run_transmon_double_verify_smoke.py"
       ],
       "l2_global": [
         {
@@ -9276,7 +9283,7 @@
       "l2_global_calibers": [
         "ALL_LEDGER"
       ],
-      "l3": false
+      "l3": true
     },
     "B90": {
       "l1": true,
@@ -9939,7 +9946,6 @@
   },
   "blind_anchors": [
     "B17",
-    "B18",
     "E1",
     "E3",
     "E4",
@@ -10620,6 +10626,9 @@
     "run_three_class_consistency_smoke.py": "遍历全账本，但断言的是**分类标签自洽**（tier 与字段一致）⇒ 对每道锚恒真，无判别力；算进覆盖会让\"纪律覆盖\"退化成同义反复"
   },
   "manifest": {
+    "run_b30_readout_smoke.py": [
+      "B30"
+    ],
     "run_bl_anchor_guard_smoke.py": [
       "B1",
       "B10",
@@ -11016,13 +11025,26 @@
       "S13",
       "S7",
       "S8"
+    ],
+    "run_fluxonium_anchor_smoke.py": [
+      "B23",
+      "B24"
+    ],
+    "run_j3_ctrl_smoke.py": [
+      "B18"
+    ],
+    "run_qubit_resonator_smoke.py": [
+      "B12"
+    ],
+    "run_transmon_double_verify_smoke.py": [
+      "B9"
     ]
   },
   "manifest_schema": "lda_gate_anchor_manifest_v1",
   "method": "三层：L1 = verification_report.results 的 id 集；L2 = 文本（CORE 门禁源码去注释后显式锚号）∪ manifest（门禁运行时登记 asserted_anchor_ids）；L3 = ≥2 门禁；锚全集 = BENCHMARK_DEFS ∪ BENCHMARK_ORDER。另设**第三档 l2_global（形态级）**：来自 `global_gate_registry` 登记的「按类遍历全账本」门禁 —— 它**只断言元数据纪律、不断言数值**，故**不计入 L2/L3/blind**，仅作诊断列（F-8 正解）。",
   "ratchet": {
-    "l2_min": 523,
-    "l3_min": 65,
+    "l2_min": 524,
+    "l3_min": 75,
     "policy": "只升不降：新增锚必须补专属判据或显式登记为 L1-only"
   },
   "roadmap": "K（量子赛道一期结算与固化）",
@@ -11031,15 +11053,15 @@
   "summary": {
     "anchors_total": 541,
     "blind_by_band": {
-      "B1–B99": 2,
+      "B1–B99": 1,
       "E（实证）": 6,
       "S（系统层）": 10
     },
     "blind_without_any_coverage": 0,
     "blind_without_subset_coverage": 0,
     "by_gate_count": {
-      "1": 453,
-      "2": 33,
+      "1": 449,
+      "2": 38,
       "3": 26,
       "4": 9,
       "5": 2
@@ -11050,17 +11072,17 @@
     "gates_with_anchors": 34,
     "gates_zero_anchor": 315,
     "l1_unified_covered": 541,
-    "l2_bespoke_covered": 523,
-    "l2_blind": 18,
-    "l2_global_blind_covered": 18,
-    "l2_global_blind_subset_covered": 18,
+    "l2_bespoke_covered": 524,
+    "l2_blind": 17,
+    "l2_global_blind_covered": 17,
+    "l2_global_blind_subset_covered": 17,
     "l2_global_covered": 541,
     "l2_global_excluded_gates": 5,
     "l2_global_registered_gates": 2,
     "l2_global_subset_covered": 19,
-    "l2_manifest_added": 395,
-    "l2_manifest_covered": 395,
+    "l2_manifest_added": 396,
+    "l2_manifest_covered": 396,
     "l2_text_covered": 128,
-    "l3_multi_covered": 70
+    "l3_multi_covered": 75
   }
 }

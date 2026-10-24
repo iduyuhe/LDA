@@ -445,6 +445,21 @@ def check_redline():
               not re.search(r"LLM[^。\n]{0,12}(判|决定)(对错|正确)", qs))
 
 
+def check_gap_settlement():
+    """⑬ 缺口台账并账与代码同源（N4 · v0.9.283）。
+
+    🔴 为什么需要它：审计 v3 写「94 条缺口」，现算 **112** —— 漏了 18 条
+    （`j1`/`j3` 模块级无 `GAPS` 常量、`oi`/`accel` 只在 `case_card()` 里返回）。
+    更严重的是 112 条里 **58 条没有闭合状态标记**（台账有 6 种形态）。
+    并账表若手写，这两类错都会静默复发 ⇒ 改为**生成器 + --check 零漂移**。
+    """
+    rc = subprocess.run([_PY, os.path.join(_REPO, "scripts", "gen_gap_settlement.py"),
+                         "--check"], capture_output=True, text=True,
+                        errors="replace", cwd=_REPO, timeout=600).returncode
+    check("⑬ 缺口台账并账与代码同源（重跑 gen_gap_settlement.py --check 零漂移 ⇒ 不许手改）",
+          rc == 0, "gen --check rc=%d" % rc)
+
+
 def main():
     print("=" * 72)
     print("LDA P2「让别人能用」smoke · 文档/可用性判据（M5 · M8）")
@@ -455,6 +470,7 @@ def main():
     check_interpreter()
     check_quickstart()
     check_api_reference()
+    check_gap_settlement()
     check_env_doc()
     check_stale_doc()
     check_entry_hint()

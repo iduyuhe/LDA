@@ -122,7 +122,15 @@ def _gate_drift(milestones, counts, mapping):
 #:    结果 `_pass_count(自身)` ⇒ **子进程自递归** ⇒ 300s 超时（实测 rc=2）。⇒ 本门禁
 #:    的判据数**结构上不可能**由它自己守（自指），只能由 `run_ci_regression` 注释 +
 #:    CORE_SMOKES 注释两处人工对齐（本版把注释里长期漂移的 28 更正为实测 29）。
-_GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {"run_ci_gate_contract_smoke.py"})
+#: 🔴 v0.9.283 N4（修 F-5）：**新增两个跨四版漂移的门禁** —— 它们长期"注释写 24、实跑 30"，
+#:   且是**行尾注释**格式（解析器只读条目上方注释块 ⇒ 原本连"缺声明"都会被判红）。
+#:   两者都便宜（实测 0.29 s + 1.19 s）⇒ 纳入后判据数由机器守，不再依赖人记得改注释。
+#:   对应改动：把说明从行尾移到上方注释块 + 数字改 30（见 `run_ci_regression.py`）。
+_GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {
+    "run_ci_gate_contract_smoke.py",
+    "run_qchip_case_smoke.py",
+    "run_temporal_mesh_smoke.py",
+})
 
 #: W10 对照面**增量**：本版真改动、且**便宜可实跑**的门禁（**不扩** W8/W9 的目标范围）。
 #: 🔴 v0.9.197：W10b 抓出「当前版本行无可对照条目」为**真问题**（非守卫空转）——

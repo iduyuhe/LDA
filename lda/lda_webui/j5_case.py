@@ -283,6 +283,7 @@ def case_card() -> Dict[str, Any]:
     return {
         "case_id": CASE_ID,
         "verdict": "DESIGN_BUDGET",
+        "verdict_label": "设计预算（建模值 · 非流片实测）",
         "anchors": ANCHORS,
         "anchors_source": ANCHORS_SOURCE,
         "anchors_note": ANCHORS_NOTE,

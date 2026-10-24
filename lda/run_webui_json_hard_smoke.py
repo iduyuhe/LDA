@@ -374,6 +374,38 @@ def main() -> int:
     check("S7c 反向探针：note_attr 少一条必红 ∧ 常量名写错必红",
           _miss_one and _typo, "少一条=%s 写错=%s" % (_miss_one, _typo))
 
+    # ── N5：对外口径（S8/S8b）────────────────────────────────────────
+    # 🔴 **扫描面只含"对外宣称"，不含 `honest_note`** —— `honest_note` 的性质是
+    #    「我不能做什么」，天然满篇「不报 TOPS/W」「不产出 fJ/op」。扫它必然大量误报，
+    #    而"为了过判据去改诚实边界"是本项目最不能做的事（判据反过来鼓励说谎）。
+    from lda_harness import outward_claim as OC
+    _lbl = _au["verdict_label_by_case"]
+    _lbl_empty = sorted(k for k, v in _lbl.items() if not str(v).strip())
+    _bad_claim = []
+    for _k in sorted(SS.CASES):
+        _card = SS.read_card(_k)
+        _line = OC.claim_line(_card)["line"]
+        _hits = OC.scan(_line)
+        if _hits:
+            _bad_claim.append((_k, [h["term"] for h in _hits]))
+    check("S8 18 卡 verdict_label 全非空 ∧ 对外一句话无禁忌词"
+          "（流片/量子优势/TOPS·fJ-op/CLM）",
+          not _lbl_empty and not _bad_claim,
+          "label 空=%s · 禁忌=%s" % (_lbl_empty or "无", _bad_claim or "无"))
+
+    # S8b：扫描器**两侧都验** —— 正面宣称必红、免责声明必绿、禁令陈述必绿
+    _p8 = [
+        bool(OC.scan("已流片并量产")),            # 正面宣称 ⇒ 必红
+        bool(OC.scan("实现量子优势")),            # 正面宣称 ⇒ 必红
+        bool(OC.scan("TOPS/W 达到 100")),         # 正面宣称 ⇒ 必红
+        bool(OC.scan("CLM 18/24")),               # CLM 对外 ⇒ 必红
+        not OC.scan("本卡非流片实测"),            # 免责声明 ⇒ 必绿
+        not OC.scan("不报任何 TOPS/W"),           # 免责声明 ⇒ 必绿
+        not OC.scan("CLM（闭环成熟度，仅内部）"),  # 禁令陈述 ⇒ 必绿
+    ]
+    check("S8b 反向探针：正面宣称必红 ∧ 免责/禁令陈述必绿（防「一刀切禁字」误伤诚实边界）",
+          all(_p8), "p8=%s" % _p8)
+
     check("K1 本门禁已登记进 CORE_SMOKES（防静默漏接 · 血案 #28 同族）",
           "run_webui_json_hard_smoke.py" in _ci)
 

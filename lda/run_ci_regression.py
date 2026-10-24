@@ -478,7 +478,10 @@ CORE_SMOKES: List[str] = [
     #   ④Borealis 浅晶格（3 环）可及参数 ≪ N² ⇒ 维度计数判非通用（放弃通用性换浅深度）。
     #   纯 numpy · C 级自主 · 零量子 SDK；建表与重建均亚秒级 ⇒ 无需预算覆盖。
     #   突变探针 `scripts/d121_temporal_probe.py` 反证其会响。CI core 213→214。
-    "run_temporal_mesh_smoke.py",       # D-121 时间复用可编程酉（24 判据）
+    # 🔴 F-5 根治（v0.9.283 N4）：判据数改由 W9 机器守 ⇒ 说明必须移到**上方注释块**
+    #   （`_declared_judge_counts` 只读条目上方注释块，行尾注释解析不到 = 判"缺声明"）。
+    #   D-121 时间复用可编程酉 · 实跑 **30 判据**（原行尾注释写 24，跨四版漂移 6 条）
+    "run_temporal_mesh_smoke.py",
     # 🔴 M5（量子征程 · 2026-09-29）· D-122 `rect_mesh`：**坐实「紧界 N 可达」** ——
     #   回答 D-121 留下的唯一悬问（参数界 N−1 已证不可达，那**紧界 N** 可达吗？）：
     #   ①★约定桥★ `_ref_T(θ,φ) ≡ mzi_unit_cell(2θ,0)·diag(e^{iφ},1)`（无标量）
@@ -562,7 +565,9 @@ CORE_SMOKES: List[str] = [
     #   另加红线断言（verdict 恒 DESIGN_BUDGET 非 PASS/ACCEPT、LLM 不进判决、免登录不进
     #   HEAVY_POST_PATHS、零重计算=不 import 求解器）。
     #   突变探针 `scripts/d131_qchip_case_probe.py` 反证其会响（10 条突变各必红）。CI core 220→221。
-    "run_qchip_case_smoke.py",           # D-131 光量子芯片案例卡 · 跨源一致 + 红线（24 判据）
+    # 🔴 D-131 光量子芯片案例卡 · 跨源一致 + 红线 · 实跑 **30 判据**
+    #   （原行尾注释写 24，跨四版漂移 6 条；F-5 根治后由 W9 机器守）
+    "run_qchip_case_smoke.py",
     "run_ir_solve_smoke.py",            # L0/L3 直接消费 IR 真值计算
     "run_wdm_coupler_smoke.py",         # ⚠️ 文件头旧注称其「重」→ 实测 0.30s，属过时排除
     "run_wdm_coupler_wl_smoke.py",

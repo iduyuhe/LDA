@@ -1385,6 +1385,12 @@ _SIGNING_CACHE = {}
 _SIGNING_CACHE_TTL = 300.0
 
 
+def _oc():
+    """懒取 `outward_claim`（N5）：只在真正构造 payload 时导入。"""
+    from lda_harness import outward_claim as OC
+    return OC
+
+
 def _signing_payload():
     """构造 `/api/signing` 响应体（现算一次，供缓存）。
 
@@ -1411,6 +1417,10 @@ def _signing_payload():
             "anchors_note": card.get("anchors_note"),
             # N3-d：诚实边界统一从卡上取（不看模块变量名 —— 18 个模块有 3 种形态）
             "honest_note": card.get("honest_note"),
+            # N5：对外一句话（只用卡上可机核字段；capacity/evidence 是 schema 登记值，不进此句）
+            "verdict_label": card.get("verdict_label"),
+            "claim_line": _oc().claim_line(card)["line"],
+            "claim_source_note": _oc().claim_line(card)["source_note"],
         }
     return {
         "schema": SS.SCHEMA,

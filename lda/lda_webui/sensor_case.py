@@ -461,6 +461,7 @@ def case_card(arch_id: Optional[str] = None, R_um: Optional[float] = None,
     return {
         "endpoint": "/api/sensor_demo",
         "verdict": "DESIGN_BUDGET",
+        "verdict_label": "设计预算（非流片实测）",
         "anchors": ANCHORS,
         "anchors_source": ANCHORS_SOURCE,
         "anchors_note": ANCHORS_NOTE,

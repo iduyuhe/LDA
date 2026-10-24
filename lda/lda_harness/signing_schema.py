@@ -439,6 +439,7 @@ def audit() -> Dict[str, object]:
     drift: Dict[str, List[str]] = {}
     sources: Dict[str, str] = {}
     notes: Dict[str, str] = {}
+    labels: Dict[str, str] = {}
     for k in sorted(CASES):
         g = CASES[k]["grade"]                    # 工程链深度（事实）
         c = CASES[k]["claimable_grade"]          # 对外口径（限制）
@@ -452,6 +453,7 @@ def audit() -> Dict[str, object]:
         dist_src[src] = dist_src.get(src, 0) + 1
         sources[k] = src
         notes[k] = str(card.get("honest_note") or "")   # N3-d：统一从卡上取
+        labels[k] = str(card.get("verdict_label") or "")  # N5：对外标签（卡片字段）
         if "anchors" not in card:
             unregistered.append(k)
             continue
@@ -477,6 +479,7 @@ def audit() -> Dict[str, object]:
         "anchors_drift": drift,               # 🔴 本表 anchors ≠ 卡上 anchors
         "anchors_source_by_case": sources,    # 逐卡证据等级（runtime/segment/none）
         "honest_note_by_case": notes,         # N3-d：逐卡诚实边界（统一从卡上取）
+        "verdict_label_by_case": labels,      # N5：逐卡对外标签（卡片字段，6 张原为 None）
         "note_attr": dict(sorted(NOTE_ATTR.items())),   # 模块级常量名登记（可发现性）
         "ceiling_violations_ratchet": CEILING_VIOLATIONS,
         "anchor_unregistered_cases_ratchet": ANCHOR_UNREGISTERED_CASES,

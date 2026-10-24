@@ -10350,7 +10350,7 @@ function renderSensor(d){
   }
   if(sel) sel.value=d.design.arch_id;
   _sxSyncKnobs(knobs);
-  $('sensorSummary').innerHTML='判决 <b>'+d.verdict+'</b>（设计预算）· 架构 <b>'+d.design.arch_label+'</b> · 端点 <code>'+d.endpoint+'</code>';
+  $('sensorSummary').innerHTML='判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）· 架构 <b>'+d.design.arch_label+'</b> · 端点 <code>'+d.endpoint+'</code>';
   var h='';
   var m=d.metrics||{}, g=d.integration||{}, s=d.signoff||{};
 
@@ -10669,7 +10669,7 @@ async function runJ1(){
 }
 function renderJ1(d){
   if(!d||d.error){ $('j1Summary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
-  $('j1Summary').innerHTML='判决 <b>'+d.verdict+'</b> · 案例 <b>'+d.case_id+'</b> · 端点 <code>/api/j1_qec</code>';
+  $('j1Summary').innerHTML='判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）· 案例 <b>'+d.case_id+'</b> · 端点 <code>/api/j1_qec</code>';
   var m0=d.m0_threshold_scaling||{}, m1=d.m1_decoder||{}, m2=d.m2_syndrome_extraction||{}, m3=d.m3_fault_tolerant_gates||{}, m4=d.m4_end_to_end||{};
   var h='';
   h+='<h3 style="margin:14px 0 4px">① 征程五档（M0–M4 · 逻辑比特层 L1）</h3><table class="tbl"><tr><th>档</th></tr>';
@@ -10715,7 +10715,7 @@ async function runD1(){
 function renderD1(d){
   if(!d||d.error){ $('d1Summary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
   var segs=d.segments||[], sg=d.signing||{}, bd=d.budget||{}, sp=d.span||{};
-  $('d1Summary').innerHTML='判决 <b>'+d.verdict+'</b> · 案例 <b>'+d.case_id+'</b> · 端点 <code>/api/d1_hetero</code> · 签核 <b>'+sg.n_pass+'/'+sg.n_total+'</b> ⇒ '+sg.verdict;
+  $('d1Summary').innerHTML='判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）· 案例 <b>'+d.case_id+'</b> · 端点 <code>/api/d1_hetero</code> · 签核 <b>'+sg.n_pass+'/'+sg.n_total+'</b> ⇒ '+sg.verdict;
   var h='';
   h+='<h3 style="margin:14px 0 4px">① 征程五档（M0/M3 出锚 · M1/M2 双裁决）</h3>';
   h+='<table class="tbl"><tr><th>档</th></tr>';
@@ -10762,7 +10762,7 @@ async function runJ5(){
 function renderJ5(d){
   if(!d||d.error){ $('j5Summary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
   var segs=d.segments||[], sg=d.signing||{}, m4=d.m4||{}, sp=d.span||{};
-  $('j5Summary').innerHTML='判决 <b>'+d.verdict+'</b> · 案例 <b>'+d.case_id+'</b> · 端点 <code>/api/j5_qnet</code> · 签核 <b>'+sg.n_pass+'/'+sg.n_total+'</b> ⇒ '+sg.verdict;
+  $('j5Summary').innerHTML='判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）· 案例 <b>'+d.case_id+'</b> · 端点 <code>/api/j5_qnet</code> · 签核 <b>'+sg.n_pass+'/'+sg.n_total+'</b> ⇒ '+sg.verdict;
   var h='';
   h+='<h3 style="margin:14px 0 4px">① 征程五档（M0–M4 · 首次引入 km 级距离）</h3>';
   h+='<table class="tbl"><tr><th>档</th></tr>';
@@ -10810,7 +10810,7 @@ async function runJ4(){
 function renderJ4(d){
   if(!d||d.error){ $('j4Summary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
   var mp=d.multiparam||{}, mc=d.microcell||{}, ig=d.integration||{}, pk=d.packaging||{}, sp=d.span||{};
-  $('j4Summary').innerHTML='判决 <b>'+d.verdict+'</b> · 案例 <b>'+d.case_id+'</b> · 端点 <code>/api/j4_qs_system</code>';
+  $('j4Summary').innerHTML='判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）· 案例 <b>'+d.case_id+'</b> · 端点 <code>/api/j4_qs_system</code>';
   var h='';
   h+='<h3 style="margin:14px 0 4px">① 征程五档（M0–M4）</h3><table class="tbl"><tr><th>档</th><th>内容</th><th>门禁判据</th></tr>';
   (d.milestones||[]).forEach(function(m){
@@ -11242,7 +11242,7 @@ function _d2CurveSvg(pts){
 function renderD2(d){
   if(!d||d.error){ $('d2Summary').textContent='错误：'+((d&&d.error)||'空响应'); return false; }
   var segs=d.segments||[], sg=d.signing||{}, bd=d.budget||{}, sp=d.span||{}, fams=d.families||[];
-  $('d2Summary').innerHTML='判决 <b>'+d.verdict+'</b> · 案例 <b>'+d.case_id+'</b> · 端点 <code>/api/d2_code_family</code> · 签核 <b>'+sg.n_pass+'/'+sg.n_total+'</b> ⇒ '+sg.verdict;
+  $('d2Summary').innerHTML='判决 <b>'+d.verdict+'</b>（'+d.verdict_label+'）· 案例 <b>'+d.case_id+'</b> · 端点 <code>/api/d2_code_family</code> · 签核 <b>'+sg.n_pass+'/'+sg.n_total+'</b> ⇒ '+sg.verdict;
   var h='';
   h+='<h3 style="margin:14px 0 4px">① 征程三档（M0 出锚 · M1 四类裁决 · M1 面板）</h3>';
   h+='<table class="tbl"><tr><th>档</th></tr>';

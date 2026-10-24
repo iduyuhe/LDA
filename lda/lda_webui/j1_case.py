@@ -177,6 +177,7 @@ def case_card() -> Dict[str, Any]:
         "anchors_note": ANCHORS_NOTE,
         "honest_note": J1_HONEST_NOTE,
         "verdict": "DESIGN_BUDGET",
+        "verdict_label": "设计预算（建模值 · 非流片实测）",
         "render_path_smoke": RENDER_PATH_SMOKE,
         "heavy_post": HEAVY_POST,
         "design_point": {

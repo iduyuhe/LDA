@@ -45,7 +45,7 @@ v0.9.271 修的那个 bug（`resonator_freq_ghz` 偏 1e6 倍）能潜伏很久�
   一旦变回死函数就意味着「接线被拆了」，必须立刻红（v0.9.271 同类事故防复发）。
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 ROLE = ("D-223 · 公开函数可达性登记表 —— 记录 95 个已知零引用公开函数的形态分类，"
         "并反向锁定 17 个「必须是活的」关键函数。非门禁模块。")
@@ -329,7 +329,225 @@ DEAD_BASELINE: Dict[str, str] = {
     "lda/lda_webui/ecore_case.py::wire_resistance_ohm": "PUBLIC_API_NO_CONSUMER",
     # ── lda/lda_webui/email_delivery.py ──
     "lda/lda_webui/email_delivery.py::fetch_unread_envelopes": "PUBLIC_API_NO_CONSUMER",
+    # ── lda/lda_agent/*.py（v0.9.281 · D-229 · M7：扫描面扩容后才可见）──
+    # 🔴 这两条**不是新产生的死代码**，而是「此前没人看」：`lda_agent` 从未进过
+    #    `reachability.DEFAULT_TARGET_DIRS`。扫描面补入后一次性暴露 ⇒ 按纪律登记，
+    #    不为了让数字好看去删代码，也不假装它们不存在。
+    "lda/lda_agent/drc_fix_loop.py::demo_fix": "PUBLIC_API_NO_CONSUMER",
+    "lda/lda_agent/inverse_design.py::list_designs": "PUBLIC_API_NO_CONSUMER",
 }
+
+
+# ===========================================================================
+# 成对实现契约（v0.9.281 · D-229 · M7 · 光子域方法论回灌）
+# ===========================================================================
+#: 扫描面：光子侧「能力模块」两个包。**不含 lda_qeda** —— 量子侧的可锚性
+#: 由各模块自己的 `ANCHORABLE` + `why_not_anchored()` 声明，机制不同不混用。
+PAIRED_SCAN_DIRS: List[str] = ["lda_l2", "lda_agent"]
+
+#: 「数值/独立方法」侧的**函数名后缀**（成对实现的第二半）
+_NUMERIC_SUFFIXES: Tuple[str, ...] = (
+    "_numeric", "_num", "_rk4", "_ladder", "_marching", "_fem", "_fdtd",
+    "_mc", "_sim", "_candidate", "_cand", "_bisection", "_enumerated",
+)
+#: 「闭式/解析」侧的后缀（第一半**可带**后缀，也可以裸名，如 `odmr_lorentzian`）
+_CLOSED_SUFFIXES: Tuple[str, ...] = (
+    "_closed_form", "_closed", "_golden", "_analytic", "_exact",
+)
+
+#: 例外登记：模块 → 门禁文件名。**只给命名不符 `<stem>` 惯例的模块用**。
+#: 空表 = 全部符惯例；出现条目必须同时在 `paired_gate_contract()["override_not_paired"]`
+#: 里被判为「指向一个真的成对模块」，否则是**豁免换沉默**。
+PAIRED_GATE_OVERRIDE: Dict[str, str] = {
+    # 按**功能**命名而非模块名的门禁。本轮实测唯一一条：
+    # `ring_loop.verify_ring` / `verify_ring_fdtd` 这对由 D-31 的「双重验证」
+    # 门禁覆盖（它确实 `from lda_agent.ring_loop import ... verify_ring_fdtd`），
+    # 只是文件名不叫 `run_ring_loop_smoke.py`。**方向是"补映射"，不是"免检"** ——
+    # 若指向的门禁不存在或不 import 该模块，契约仍判红。
+    "lda/lda_agent/ring_loop.py": "run_ring_double_verify_smoke.py",
+}
+
+
+def _top_level_public_fns(path: str) -> List[str]:
+    """模块顶层公开函数名（跳过 `_` 前缀；保持源码顺序 ⇒ 确定性）。"""
+    import ast
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            tree = ast.parse(fh.read())
+    except (OSError, SyntaxError):
+        return []
+    return [n.name for n in tree.body
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and not n.name.startswith("_")]
+
+
+def paired_implementation_modules() -> Dict[str, List[Tuple[str, str]]]:
+    """现算「成对实现」模块：模块内同时有**闭式**与**独立数值**两条实现。
+
+    判据（**结构性**，不靠散文关键词，也不靠文件名猜）：
+
+    ① 裸名配对：`X` 与 `X<suffix>` 同时存在（`odmr_lorentzian` ⇄ `odmr_lorentzian_numeric`）
+    ② 后缀配对：`X_closed` 与 `X<suffix>` 同时存在（`mode_volume_closed` ⇄ `mode_volume_numeric`）
+
+    🔴 为什么这个信号值得立契约：**成对实现 = 天然的锚候选**（golden 与 candidate
+       都已在模块里写好）。M7 结构扫描实测 **10/10** 个这样的模块都配了专属门禁，
+       但这条依赖是**惯例**而非机制 —— 新模块一旦加了对函数却不写门禁，
+       那对实现就是"做了但没人验"，与 F-11（声明存在、机器面无）同族。
+    """
+    import os
+
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    out: Dict[str, List[Tuple[str, str]]] = {}
+    for pkg in PAIRED_SCAN_DIRS:
+        d = os.path.join(base, pkg)
+        if not os.path.isdir(d):
+            continue
+        for fn in sorted(os.listdir(d)):
+            if not fn.endswith(".py") or fn == "__init__.py" or fn.startswith("_"):
+                continue
+            path = os.path.join(d, fn)
+            fns = _top_level_public_fns(path)
+            fset = set(fns)
+            pairs: List[Tuple[str, str]] = []
+            for f in fns:
+                for suf in _NUMERIC_SUFFIXES:
+                    if f.endswith(suf):
+                        stem = f[:-len(suf)]
+                        if stem and stem in fset and (stem, f) not in pairs:
+                            pairs.append((stem, f))
+                for suf in _CLOSED_SUFFIXES:
+                    if f.endswith(suf):
+                        stem = f[:-len(suf)]
+                        for g in fns:
+                            if (g != f and g.startswith(stem)
+                                    and any(g.endswith(x) for x in _NUMERIC_SUFFIXES)
+                                    and (f, g) not in pairs):
+                                pairs.append((f, g))
+            if pairs:
+                out["lda/%s/%s" % (pkg, fn)] = sorted(pairs)
+    return out
+
+
+def _gate_imports_module(gate_path: str, pkg: str, stem: str) -> bool:
+    """门禁是否**真的拿到了**该模块（AST 判据，不看散文）。
+
+    接受的三种形态（都是**结构性**证据，不是文本匹配）：
+
+    1. `import lda_l2.qs_m3c` / `import lda_l2.qs_m3c as M`
+    2. `from lda_l2 import qs_m3c` / `from lda_l2.qs_m3c import X`
+    3. `importlib.import_module("lda_l2.qs_m3c")` —— 含 `_M3 = "lda_l2.oi_m3"`
+       再 `import_module(_M3)` 这种**先赋给模块级常量**的写法（本轮就踩到：
+       `run_oi_m3_smoke.py` 正是这么写的，第一版判据把它误判成"没 import"）。
+
+    🔴 **刻意不认「文档字符串里出现了模块名」**：那正是文本代理（K4 的锚号字面量
+       教训）。`run_oi_m3_smoke.py` 的 docstring 里就有 `lda_l2.oi_m3`，若把它算
+       证据，任意门禁只要在注释/说明里写一句就能"满足"契约 —— 判据立刻失去判别力。
+    """
+    import ast
+    try:
+        with open(gate_path, encoding="utf-8", errors="replace") as fh:
+            src = fh.read()
+        tree = ast.parse(src)
+    except (OSError, SyntaxError):
+        return False
+    want = "%s.%s" % (pkg, stem)
+
+    # ① 模块级字符串常量 → 名字（供 import_module(NAME) / patch(NAME, ...) 解析）
+    consts: Dict[str, str] = {}
+    for n in tree.body:
+        if isinstance(n, ast.Assign) and isinstance(n.value, ast.Constant) \
+                and isinstance(n.value.value, str):
+            for t in n.targets:
+                if isinstance(t, ast.Name):
+                    consts[t.id] = n.value.value
+
+    def _hits_call_arg(node) -> bool:
+        """调用参数位置出现 `want`（字面量或指向它的模块级常量）。"""
+        for n in ast.walk(node):
+            if not isinstance(n, ast.Call):
+                continue
+            fname = ""
+            f = n.func
+            if isinstance(f, ast.Attribute):
+                fname = f.attr
+            elif isinstance(f, ast.Name):
+                fname = f.id
+            if fname not in ("import_module", "patch"):
+                continue
+            for a in n.args:
+                if isinstance(a, ast.Constant) and a.value == want:
+                    return True
+                if isinstance(a, ast.Name) and consts.get(a.id) == want:
+                    return True
+        return False
+
+    # ③ `_M3 = "lda_l2.oi_m3"` 且该常量在别处被**读取**（如 `def _mod(name: str = _M3)`）
+    #    —— 仍是结构性证据：值出现在**表达式位置**，不是文档字符串里的叙述。
+    for _nm, _v in consts.items():
+        if _v != want:
+            continue
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Name) and n.id == _nm and isinstance(n.ctx, ast.Load):
+                return True
+
+    for n in ast.walk(tree):
+        if isinstance(n, ast.ImportFrom):
+            if (n.module or "") == want:
+                return True
+            # `from lda_l2 import qs_m3c` 形态
+            if (n.module or "") == pkg and any(a.name == stem for a in n.names):
+                return True
+        elif isinstance(n, ast.Import):
+            if any(a.name == want for a in n.names):
+                return True
+    return _hits_call_arg(tree)
+
+
+def paired_gate_contract(core: Optional[Sequence[str]] = None) -> Dict[str, Any]:
+    """成对实现 ⇄ 专属门禁 的契约完整性现算（不写死任何数字）。
+
+    `core` 传 CI 门禁清单时，额外要求**门禁真的在 CI 里跑**（`gate_in_core`）。
+
+    🔴 为什么需要这一层：只判"文件存在 + import 了模块"能被一个**永不被执行**的
+       门禁文件糊弄过去 —— 那就是"写了门禁但没人跑"，与「子集全绿 ≠ 全量绿」
+       是同一类失效。本版实测 12/12 都在 `CORE_SMOKES` 里，所以这条**起步即绿**，
+       作用是棘轮：新加的成对实现不能配一个不跑的门禁。
+    """
+    import os
+
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    core_set = set(core) if core is not None else None
+    mods = paired_implementation_modules()
+    details: Dict[str, Dict[str, Any]] = {}
+    ungated: List[str] = []
+    not_in_core: List[str] = []
+    for rel, pairs in sorted(mods.items()):
+        _, pkg, fn = rel.split("/")
+        stem = fn[:-3]
+        gate = PAIRED_GATE_OVERRIDE.get(rel) or ("run_%s_smoke.py" % stem)
+        gate_path = os.path.join(base, gate)
+        exists = os.path.isfile(gate_path)
+        imports = exists and _gate_imports_module(gate_path, pkg, stem)
+        in_core = (gate in core_set) if core_set is not None else None
+        details[rel] = {"pairs": len(pairs), "gate": gate,
+                        "gate_exists": exists, "gate_imports": bool(imports),
+                        "gate_in_core": in_core}
+        if not (exists and imports):
+            ungated.append(rel)
+        elif in_core is False:
+            not_in_core.append(rel)
+    return {
+        "n_modules": len(mods),
+        "n_pairs": sum(len(v) for v in mods.values()),
+        "n_gated": len(mods) - len(ungated),
+        "ungated": ungated,
+        "not_in_core": not_in_core,
+        "core_checked": core_set is not None,
+        "modules": sorted(mods),
+        "details": details,
+        "override_not_paired": sorted(set(PAIRED_GATE_OVERRIDE) - set(mods)),
+        "n_override": len(PAIRED_GATE_OVERRIDE),
+    }
 
 
 def baseline_stats() -> Dict[str, Any]:

@@ -69,7 +69,14 @@ ROLE = ("D-223 · 公开函数动态可达性分析 —— 找出「零引用 �
 ANCHORABLE = False
 
 #: 默认扫描面：这些目录下的**顶层公开函数**是分析对象
-DEFAULT_TARGET_DIRS = ("lda/lda_qeda", "lda/lda_l2", "lda/lda_harness", "lda/lda_webui")
+#: 🔴 v0.9.281（D-229 · M7）：补入 `lda/lda_agent`。此前它**从未在扫描面内** ——
+#:    53 个模块 / 156 个公开函数对"防腐烂"机制完全不可见（不是"零死函数"，
+#:    是"没人看"）。补入后实测 **2 条**零引用（95 → 97），数字上升是扫描面扩容，
+#:    不是退化；两条均已按 DEAD_CLASSES 分类登记。
+#:    这条是 M7 结构扫描唯一发现的**真盲区**（其余"缺 ANCHORABLE 声明"的判读见
+#:    `docs/LDA_光子域方法论回灌_M7_2026-10-24.md`：光子侧纪律在锚层，不在模块层）。
+DEFAULT_TARGET_DIRS = ("lda/lda_qeda", "lda/lda_l2", "lda/lda_harness",
+                       "lda/lda_webui", "lda/lda_agent")
 #: 默认语料面：这些目录下的一切 Python 文件都算「可能的引用方」
 DEFAULT_CORPUS_DIRS = ("lda", "scripts", "examples")
 #: 语料里要跳过的目录名

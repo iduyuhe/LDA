@@ -12,7 +12,8 @@ v0.9.271 修的那个 bug（`resonator_freq_ghz` 偏 1e6 倍）能潜伏很久�
         · 新增零引用函数 ⇒ 红（必须先分类登记，或改成私有）
         · 修好了但没删登记 ⇒ **也红**（防「登记了就不管」，这是登记制最常见的腐烂方式）
   X 组  互补性 —— 与 `dead_assert_guard`（扫 probe 突变锚点）分工不重叠
-  G 组  **判别力反向验证** —— 注入假死/假活函数，分析器必须分别抓到/放过；
+  G 组  **判别力反向验证** —— 注入假死/假活函数，分析器必须分别抓到/放过·
+    G11 成对实现契约（闭式+独立数值的模块必须有**真在 CI 里跑**的门禁）· G11b 三形态反向；
         以及**锁定面契约完整性**（v0.9.279 · D-227 · F-10 正解）：
         G7 能力层模块 100% 至少一个入口被反向锁定 · G8 锁定面与死函数面无交集 ·
         G9 豁免面自洽 · **G10 双粒度反向**（清空锁定 ⇒ 全模块缺口；删单模块锁定 ⇒ 缺口恰为该模块）
@@ -209,6 +210,76 @@ def main() -> int:
           "全清空缺口=%d/%d · 单模块(%s) %s" % (
               bad["n_uncovered"], bad["n_modules"], _victim,
               "恰命中" if single_ok else "未命中"))
+
+    # ── G11 · 成对实现契约（v0.9.281 · D-229 · M7 光子域方法论回灌）──
+    # 判据对象：`lda_l2` / `lda_agent` 里**同时有闭式与独立数值实现**的模块
+    #   （= 天然的锚候选：golden 与 candidate 两半都已在模块里写好）。
+    # 🔴 为什么这条属于"可达性"：它守的同样是"机制消失而无人知" —— 新模块加了一对
+    #    closed/numeric 却不写门禁，那对实现就是"做了但没人验"，与 F-11 同族。
+    #    此前这条依赖只是**命名惯例**，不是机制。
+    # 🔴 判据三层递进（缺任一层都能被绕过）：
+    #    ① 门禁文件**存在**            —— 缺②③ 时一个空文件即可糊弄
+    #    ② 该门禁**真拿到**该模块      —— 缺③ 时"写了但永不执行"即可糊弄
+    #    ③ 该门禁**真在 CORE_SMOKES 里跑**
+    #    本版实测 12/12 三层全满足 ⇒ 起步即绿，作用是**棘轮**（不是补缺口）。
+    try:
+        from run_ci_regression import CORE_SMOKES as _CORE
+    except Exception:                                          # noqa: BLE001
+        _CORE = None
+    pc = REG.paired_gate_contract(_CORE)
+    check("G11 成对实现契约完整：%d 模块 / %d 对 · 门禁既**拿到模块**又**在 CI core 里跑**"
+          % (pc["n_modules"], pc["n_pairs"]),
+          _CORE is not None and pc["core_checked"] and pc["n_modules"] > 0
+          and not pc["ungated"] and not pc["not_in_core"]
+          and not pc["override_not_paired"],
+          "未配=%s · 不在CI=%s · 例外=%d 条（无效 %s）"
+          % (pc["ungated"], pc["not_in_core"], pc["n_override"],
+             pc["override_not_paired"]))
+
+    # 🔴 G11b 反向：**先证能变红**，三层各探一例：
+    #   ① 有对实现但**门禁文件不存在** ⇒ 落进 ungated
+    #   ② 门禁文件**存在但不 import 该模块** ⇒ 同样落进 ungated
+    #   ③ 门禁存在 ∧ 真 import ∧ 但**从 CI 清单摘掉** ⇒ 落进 not_in_core
+    #      （③ 用**真模块 + 裁剪后的真 core** 探，不造假文件 —— 探的是判据，不是我把假数据喂对）
+    _fake_mods = dict(REG.paired_implementation_modules())
+    _fake_mods["lda/lda_l2/__probe_no_gate__.py"] = [("a_closed", "a_numeric")]
+    _fake_mods["lda/lda_l2/q__probe_wrong_gate__.py"] = [("b_closed", "b_numeric")]
+    _saved_fns = REG.paired_implementation_modules
+    _saved_ovr = dict(REG.PAIRED_GATE_OVERRIDE)
+    red1 = red2 = red3 = False
+    try:
+        REG.paired_implementation_modules = lambda: _fake_mods
+        REG.PAIRED_GATE_OVERRIDE = dict(_saved_ovr, **{
+            "lda/lda_l2/__probe_no_gate__.py": "run___no_such_gate__.py",
+            # 这个门禁**确实存在**，但从不 import `q__probe_wrong_gate__`
+            "lda/lda_l2/q__probe_wrong_gate__.py": "run_benchmark_falsifiability_smoke.py",
+        })
+        _bad = REG.paired_gate_contract(_CORE)
+        red1 = "lda/lda_l2/__probe_no_gate__.py" in _bad["ungated"]
+        red2 = ("lda/lda_l2/q__probe_wrong_gate__.py" in _bad["ungated"]
+                and _bad["details"]["lda/lda_l2/q__probe_wrong_gate__.py"]["gate_exists"]
+                and not _bad["details"]["lda/lda_l2/q__probe_wrong_gate__.py"]
+                ["gate_imports"])
+    finally:
+        REG.paired_implementation_modules = _saved_fns
+        REG.PAIRED_GATE_OVERRIDE = _saved_ovr
+    # ③ 第三形态：门禁**存在且真 import 了模块**，但把它从 CI 清单里摘掉 ⇒ 必须被
+    #    `not_in_core` 抓到。（用真模块 + 裁剪后的真 core，不造假文件 —— 这样探的是
+    #    判据本身，而不是我把假数据喂对。）
+    _real = REG.paired_gate_contract(_CORE)
+    _victim_mod = next((m for m, d in sorted(_real["details"].items())
+                        if d["gate_imports"]), None)
+    if _victim_mod:
+        _victim_gate = _real["details"][_victim_mod]["gate"]
+        _core_minus = [g for g in _CORE if g != _victim_gate]
+        _red = REG.paired_gate_contract(_core_minus)
+        red3 = (_victim_mod in _red["not_in_core"]
+                and _red["details"][_victim_mod]["gate_exists"] is True
+                and _red["details"][_victim_mod]["gate_imports"] is True)
+    check("G11b 🔴 反向三形态：门禁缺失 ⇒ 红 ∧ 门禁在但不 import 模块 ⇒ 红 ∧ "
+          "门禁在且 import 但不在 CI ⇒ 红",
+          red1 and red2 and red3,
+          "缺门禁=%s · 空门禁=%s · 摘出CI=%s(%s)" % (red1, red2, red3, _victim_mod))
 
     # ---------------- Z 组：零增量 + 统计 ----------------
     print("\n[Z] 零增量与统计区间")

@@ -65,7 +65,7 @@ DEFAULT_TARGET_DIRS = ("lda/lda_qeda", "lda/lda_l2", "lda/lda_harness",
 | 项 | 前 | 后 |
 |---|---|---|
 | `target_files` | 328 | **382** |
-| `public_total` | 3,420 | **3,576** |
+| `public_total` | 3,420 | **3,578**（其中 +156 来自 `lda_agent` 补入扫描面、+2 来自本版新增的两个公开函数 `paired_implementation_modules` / `paired_gate_contract`） |
 | `dead_total` | 95 | **97** |
 | 新增零引用 | — | `drc_fix_loop.py::demo_fix` · `inverse_design.py::list_designs` |
 
@@ -136,7 +136,7 @@ DEFAULT_TARGET_DIRS = ("lda/lda_qeda", "lda/lda_l2", "lda/lda_harness",
 | 账本 / strict / 降级 / 自证桩 / 独立率 | **541 / 519 / 3 / 19 / 95.93% 全不变**（净增 **0 锚**） |
 | **CI core** | **350 不变**（不新增门禁 ⇒ 基线不过期、**无需重跑**） |
 | `run_reachability_smoke` | 20 → **22**（+G11 / G11b） |
-| 可达性扫描面 | `target_files` 328 → **382** · `public` 3,420 → **3,576** |
+| 可达性扫描面 | `target_files` 328 → **382** · `public` 3,420 → **3,578**（+156 补入 `lda_agent`，+2 本版新增公开函数） |
 | `DEAD_BASELINE` | 95 → **97**（扫描面扩容暴露，非新死代码） |
 | 能力层锁定契约 | **11/11 不变** |
 | 端点 / 面板 / L2 / L3 / 盲区 / 报告 | 158 / 19 / 523 / 70 / 18 / 全不变 |
@@ -155,6 +155,10 @@ DEFAULT_TARGET_DIRS = ("lda/lda_qeda", "lda/lda_l2", "lda/lda_harness",
 - **`ANCHORABLE` 双语义只诊断、未拆解**（原因见 ③）。
 - **F-11 域分布读的是报告里的标签**（`independence_evidence` 字符串），不是数值 ——
   报告 float 只留 9 位有效数字，任何"从报告反算残差"都会错（v0.9.280 实测差 6 倍）。
+- 🔴 **一处我自己的数字错误（发布时对拍抓出，已修）**：`public_total` 文档里写 **3,576**，
+  实测 **3,578** —— 先量数、后又加 2 个公开函数（`paired_implementation_modules` /
+  `paired_gate_contract`），没重新量。「落文档的数字必须先跑命令取、再抄」的复发形态：
+  **数字对但取样时点错了**。已改为 3,578 并写出差额来源（+156 补入 `lda_agent` / +2 本版新增）。
 
 ---
 

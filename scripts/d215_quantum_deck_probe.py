@@ -14,6 +14,9 @@
   · M7 `build_deck` 放行 NDA 无凭据                   ⇒ E1 应红（防自封通道被破）
   · M8 `drc_with_deck` 不校验 rule_check 与域一致性   ⇒ E3 应红（错配域被放行）
   · M9 `self_built_deck` 允许 provenance 覆盖         ⇒ A1 应红
+  · M10 加载器把 sha256 写成常量（虚报来源）          ⇒ G2 / A2 应红（v0.9.277 · D-225）
+  · M11 加载器吞掉坏 deck（缺键/坏 JSON 都补默认）     ⇒ G5 / G3 应红（键集守恒被绕开）
+  · M12 env 通道无视 LDA_QUANTUM_DECK（恒返 None）    ⇒ G6 / A2 应红
 🔴 教训：探针必须 patch 门禁**同一模块对象**（S.QD）——
    另起 `from lda_qeda import quantum_deck` 会拿到不同实例 ⇒ patch 打空 ⇒ 假绿。
    门禁内一律 `QD.foo(...)` 模块属性访问，故本探针可命中。
@@ -30,7 +33,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
 
 import run_quantum_deck_smoke as S      # noqa: E402
 from lda_qeda import quantum_deck as QD  # noqa: E402  同一 sys.modules 实例
-from lda_qeda import quantum_drc_lvs as QDR  # noqa: E402
+from lda_qeda import quantum_deck_io as QDI   # noqa: E402  同一 sys.modules 实例
 
 
 def run_smoke():
@@ -147,6 +150,41 @@ def main() -> int:
     QD.self_built_deck = _m9
     rows.append(("M9 self_built_deck 允许 provenance 覆盖", *run_smoke()))
     QD.self_built_deck = _self_built
+
+    # ── M10–M12 · v0.9.277（D-225）导入链的反向证据 ──
+    _qdi_load = QDI.load_quantum_deck
+    _qdi_env = QDI.load_quantum_deck_from_env
+
+    # M10 加载器虚报 sha256（写成常量）
+    def _load_fake_sha(x, **kw):
+        d = _qdi_load(x, **kw)
+        d["loader"] = dict(d.get("loader") or {})
+        d["loader"]["sha256"] = "0" * 64
+        return d
+
+    QDI.load_quantum_deck = _load_fake_sha
+    rows.append(("M10 加载器虚报 sha256（恒常量）", *run_smoke()))
+    QDI.load_quantum_deck = _qdi_load
+
+    # M11 加载器吞掉坏 deck：任何错误都补成自建 deck（静默回退）
+    def _load_swallow(x, **kw):
+        try:
+            return _qdi_load(x, **kw)
+        except Exception:                       # noqa: BLE001 — 故意吞，模拟"静默回落"
+            d = dict(QD.self_built_deck("photonic"))
+            d["loader"] = {"schema": QDI.LOADER_SCHEMA, "source": "file",
+                           "basename": "swallowed", "sha256": None,
+                           "env_var": None, "domain_checked": False}
+            return d
+
+    QDI.load_quantum_deck = _load_swallow
+    rows.append(("M11 加载器吞掉坏 deck（静默补默认）", *run_smoke()))
+    QDI.load_quantum_deck = _qdi_load
+
+    # M12 env 通道失效（恒返 None，等于永远读不到外部 deck）
+    QDI.load_quantum_deck_from_env = lambda **kw: None
+    rows.append(("M12 env 通道无视 %s" % QDI.ENV_DECK_VAR, *run_smoke()))
+    QDI.load_quantum_deck_from_env = _qdi_env
 
     print("=" * 78)
     bad = 0

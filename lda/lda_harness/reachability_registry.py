@@ -120,6 +120,13 @@ MUST_BE_REACHABLE: List[str] = [
     # 可达性机制自身（此前**零锁定** —— 机制自己不受保护，最讽刺的一处）
     "lda/lda_harness/reachability.py::analyze",
     "lda/lda_harness/reachability_registry.py::baseline_stats",
+    # v0.9.280（D-228 · F-11）：独立性证据分档器
+    #   `classify` 被 `run_harness.py`（生成证据）与门禁（反向探针）共用；
+    #   `summary_of` 被 `report.py`（输出分布）与门禁（守恒判据）共用。
+    #   🔴 这两个函数一旦变死，就等于「证据分档的接线被拆了」——
+    #      报告会静默回落到「只有 passed」的旧状态，正是 F-11 要防的复发。
+    "lda/lda_harness/independence_evidence.py::classify",
+    "lda/lda_harness/independence_evidence.py::summary_of",
 ]
 
 #: 🔴 **契约豁免**：能力层模块若确实没有「值得锁的入口」，必须在此**逐条写明理由**。

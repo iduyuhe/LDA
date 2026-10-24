@@ -453,6 +453,14 @@ SENSITIVITY_MAX = 0.10      # 灵敏度上界断言：10% 扰动必须可检出
 #   棘轮地板同步单调上调：507 → 510（按行为性真值上抬）。
 MIN_INDEPENDENT = 519
 
+#: 🔴 v0.9.280（D-228 · F-11）：**扰动响应证据**条数上限（**只减不增**）。
+#: 残差 `|cand−golden| < 1e-12` 的锚无法用残差验证独立性，只能退到「候选对参数
+#: 扰动有物理响应」。这是弱证据 —— 新增一道就意味着新增了一道无法用残差验证的锚，
+#: 该 PR **必须**在 CHANGELOG 里解释原因并同步上调此常数（与 MIN_INDEPENDENT
+#: 的方向相反：那个只升、这个只降）。
+#: 实测（v0.9.280 首次落定）：strict 519 = **505 有残差 + 14 靠响应**。
+MAX_PERTURBATION_RESPONSE = 14
+
 
 def _clone_with(sp: VerificationSpec, key: str, value: float) -> VerificationSpec:
     """克隆 spec 并替换单个参数（oracle 仍取原 golden，模拟「求解器算错」）。"""
@@ -800,16 +808,20 @@ def main() -> int:
         # 🔴 v0.9.24：① 的判据加**行为**条件（同路径①，见 _candidate_responds）。
         #   B10 的 |diff|=1.11e-16（物理上不可标定，非回落 golden），靠
         #   「扰动 T1/T2/t_gate 有 1.5e-5 响应」证明是真候选。
-        _labeled_stub = [r.bid for r in _r2
-                         if getattr(r, "candidate_class", None)
-                         not in (None, "self_consistent_stub")
-                         and isinstance(r.candidate, (int, float))
-                         and isinstance(r.golden, (int, float))
-                         and abs(r.candidate - r.golden) < 1e-12
-                         and not (r.bid in by_id
-                                  and _candidate_responds(by_id[r.bid],
-                                                          cand_map[r.bid],
-                                                          r.golden))]
+        # 🔴 v0.9.280（D-228 · F-11）：responds 只算一次，缓存后供
+        #    ⑧ 的「假独立」判定与 ⑨ 的「证据分档」**共用** ——
+        #    否则同一批 93 道锚会被跑两遍扰动（各 2~3 次求解），白白翻倍。
+        _resp2 = {}
+        for _r in _r2:
+            if (getattr(_r, "candidate_class", None)
+                    not in (None, "self_consistent_stub")
+                    and isinstance(_r.candidate, (int, float))
+                    and isinstance(_r.golden, (int, float))
+                    and abs(_r.candidate - _r.golden) < 1e-12):
+                _resp2[_r.bid] = bool(
+                    _r.bid in by_id
+                    and _candidate_responds(by_id[_r.bid], cand_map[_r.bid], _r.golden))
+        _labeled_stub = sorted(b for b, ok in _resp2.items() if not ok)
         if _labeled_stub:
             _bad8.append(f"标非自证桩却 |diff|≡0 的假独立={sorted(_labeled_stub)}")
         _mislabeled_stub = [r.bid for r in _r2
@@ -828,6 +840,68 @@ def main() -> int:
               (f"独立{_n_ind2} · verified={_verified2} · "
                f"按题标注{_n_marked2}/{len(_r2)}")
               + (" ⚠ " + "；".join(_bad8) if _bad8 else ""))
+
+        # ── ⑨ 独立性**证据分档**（v0.9.280 · D-228 · F-11）──────────────
+        # 🔴 这一组要解决的**不是**「有没有假独立」（⑧ 已在管），而是
+        #    「独立性靠什么证明，能不能被看见」。血案：519 道 strict 里
+        #    87 道 golden≡candidate，报告只写 passed=True ⇒ 任何外部读者
+        #    （包括写这一组的人）第一反应都是「候选取了黄金值」。
+        #    实际它们靠 ⑧ 刚算出来的扰动响应通过。
+        from lda_harness.independence_evidence import (
+            classify as _iev_classify, summary_of as _iev_summary)
+        for _r in _r2:
+            _r.independence_evidence = _iev_classify(
+                _r.golden, _r.candidate, _resp2.get(_r.bid),
+                getattr(_r, "candidate_class", None))
+        _evs = _iev_summary(_r2)
+        _dist = _evs["dist"]
+        # 🔴 守恒是**两级**的，别混（本轮实测踩过）：
+        #   非 STUB 之和 = **non_stub_total**（含降级 3 道）
+        #   verified_total = 非 STUB − 降级（strict 519）
+        #   第一版拿「非STUB之和 == verified_total」⇒ 522 ≠ 519 ⇒ 假红。
+        check("⑨a 证据分档守恒（非桩逐条落档 ∧ 两级计数与三分类一致）",
+              _evs["conserved"]
+              and _evs["verified_total"] == len(strict)
+              and _evs["degraded_total"] == len(degraded)
+              and _evs["stub_total"] == len(stub)
+              and sum(v for k, v in _dist.items() if k != "STUB") == _evs["non_stub_total"]
+              and (_evs["non_stub_total"] - _evs["degraded_total"]) == _evs["verified_total"],
+              "分布=%s · 非桩=%d（降级%d）· strict=%d · 守恒=%s · 未判定=%d"
+              % (_dist, _evs["non_stub_total"], _evs["degraded_total"],
+                 _evs["verified_total"], _evs["conserved"], len(_evs["missing_evidence"])))
+
+        check("⑨b 残差证据与扰动响应证据**各非空**（防某档恒 0 的空判据）",
+              _dist.get("RESIDUAL_NONZERO", 0) > 0
+              and _dist.get("PERTURBATION_RESPONSE", 0) > 0,
+              "残差=%d 响应=%d" % (_dist.get("RESIDUAL_NONZERO", 0),
+                                   _dist.get("PERTURBATION_RESPONSE", 0)))
+
+        # 🔴 棘轮：扰动响应是「退而求其次」的证据，只减不增。
+        #   新增一道意味着新增了一道无法用残差验证的锚 —— 必须有人解释。
+        _n_pert = _dist.get("PERTURBATION_RESPONSE", 0)
+        check("⑨c 🔴 棘轮：扰动响应证据只减不增（≤ %d）" % MAX_PERTURBATION_RESPONSE,
+              _n_pert <= MAX_PERTURBATION_RESPONSE,
+              "当前=%d 上限=%d" % (_n_pert, MAX_PERTURBATION_RESPONSE))
+
+        # ⑨d 报告文件里的分档 ≡ 本处现算（逐档）—— 防「报告被手改 / 生成器漂移」
+        _rep_dist = None
+        try:
+            _rp = os.path.join(_HERE, "reports", "verification_report.json")
+            with open(_rp, encoding="utf-8") as _f:
+                _sj = json.load(_f).get("summary") or {}
+            _rep_dist = (_sj.get("independence_evidence") or {}).get("dist")
+            _rep_ver = (_sj.get("independence_evidence") or {}).get("verified_total")
+        except Exception:  # noqa: BLE001
+            _rep_dist, _rep_ver = None, None
+        check("⑨d 报告 summary 的证据分布 ≡ 现算（逐档 · 防手改/漂移）",
+              _rep_dist is not None and _rep_dist == _dist and _rep_ver == _evs["verified_total"],
+              "报告=%s vs 现算=%s" % (_rep_dist, _dist))
+
+        # ⑨e 反向：残差为零且扰动无响应 ⇒ 必判 SUSPECT，不得报成扰动响应
+        #      （这条守的是「不许把假独立洗成弱证据」）
+        check("⑨e 🔴 反向：|Δ|≡0 ∧ 无响应 ⇒ SUSPECT（不得洗成 PERTURBATION_RESPONSE）",
+              _iev_classify(1.0, 1.0, False) == "SUSPECT"
+              and _iev_classify(1.0, 1.0, None) == "PERTURBATION_UNVERIFIED")
     except Exception as e:  # noqa: BLE001 —— 路径②复现失败即判 FAIL
         check("路径②（CLI 对外主报告）verified 口径与路径①一致且按题全标注",
               False, f"路径②复现异常：{str(e)[:80]}")

@@ -17,6 +17,28 @@
       "strict_independent": 519,
       "degraded_ordinal": 3,
       "self_consistent_stub": 19
+    },
+    "independence_evidence": {
+      "dist": {
+        "RESIDUAL_NONZERO": 508,
+        "PERTURBATION_RESPONSE": 14,
+        "NON_SCALAR": 0,
+        "PERTURBATION_UNVERIFIED": 0,
+        "STUB": 19
+      },
+      "strict_dist": {
+        "RESIDUAL_NONZERO": 505,
+        "PERTURBATION_RESPONSE": 14,
+        "NON_SCALAR": 0,
+        "PERTURBATION_UNVERIFIED": 0,
+        "STUB": 0
+      },
+      "strict_total": 519,
+      "verified_total": 519,
+      "degraded_total": 3,
+      "stub_total": 19,
+      "missing_evidence": 0,
+      "conserved": true
     }
   },
   "results": [
@@ -31,7 +53,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B10",
@@ -44,7 +67,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B100",
@@ -57,7 +81,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B101",
@@ -70,7 +95,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B102",
@@ -83,7 +109,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B103",
@@ -96,7 +123,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B104",
@@ -109,7 +137,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B105",
@@ -122,7 +151,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B106",
@@ -135,7 +165,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B107",
@@ -148,7 +179,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B108",
@@ -161,7 +193,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B109",
@@ -174,7 +207,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B11",
@@ -187,7 +221,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B110",
@@ -200,7 +235,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B111",
@@ -213,7 +249,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B112",
@@ -226,7 +263,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B113",
@@ -239,7 +277,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B114",
@@ -252,7 +291,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B115",
@@ -265,7 +305,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B116",
@@ -278,7 +319,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B117",
@@ -291,7 +333,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B118",
@@ -304,7 +347,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B119",
@@ -317,7 +361,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B12",
@@ -330,7 +375,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B120",
@@ -343,7 +389,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B121",
@@ -356,7 +403,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B122",
@@ -369,7 +417,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B123",
@@ -382,7 +431,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B124",
@@ -395,7 +445,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B125",
@@ -408,7 +459,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B126",
@@ -421,7 +473,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B127",
@@ -434,7 +487,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B128",
@@ -447,7 +501,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B129",
@@ -460,7 +515,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B13",
@@ -473,7 +529,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B130",
@@ -486,7 +543,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B131",
@@ -499,7 +557,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B132",
@@ -512,7 +571,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B133",
@@ -525,7 +585,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B134",
@@ -538,7 +599,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B135",
@@ -551,7 +613,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B136",
@@ -564,7 +627,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B137",
@@ -577,7 +641,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B138",
@@ -590,7 +655,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B139",
@@ -603,7 +669,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B14",
@@ -616,7 +683,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B140",
@@ -629,7 +697,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B141",
@@ -642,7 +711,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B142",
@@ -655,7 +725,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B143",
@@ -668,7 +739,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B144",
@@ -681,7 +753,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B145",
@@ -694,7 +767,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B146",
@@ -707,7 +781,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B147",
@@ -720,7 +795,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B148",
@@ -733,7 +809,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B149",
@@ -746,7 +823,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B15",
@@ -759,7 +837,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B150",
@@ -772,7 +851,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B151",
@@ -785,7 +865,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B152",
@@ -798,7 +879,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B153",
@@ -811,7 +893,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B154",
@@ -824,7 +907,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B155",
@@ -837,7 +921,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B156",
@@ -850,7 +935,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B157",
@@ -863,7 +949,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B158",
@@ -876,7 +963,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B159",
@@ -889,7 +977,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B16",
@@ -902,7 +991,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B160",
@@ -915,7 +1005,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B161",
@@ -928,7 +1019,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B162",
@@ -941,7 +1033,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B163",
@@ -954,7 +1047,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B164",
@@ -967,7 +1061,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B165",
@@ -980,7 +1075,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B166",
@@ -993,7 +1089,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B167",
@@ -1006,7 +1103,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B168",
@@ -1019,7 +1117,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B169",
@@ -1032,7 +1131,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B17",
@@ -1045,7 +1145,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "B170",
@@ -1058,7 +1159,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B171",
@@ -1071,7 +1173,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B172",
@@ -1084,7 +1187,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B173",
@@ -1097,7 +1201,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B174",
@@ -1110,7 +1215,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B175",
@@ -1123,7 +1229,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B176",
@@ -1136,7 +1243,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B177",
@@ -1149,7 +1257,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B178",
@@ -1162,7 +1271,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B179",
@@ -1175,7 +1285,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B18",
@@ -1188,7 +1299,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "B180",
@@ -1201,7 +1313,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B181",
@@ -1214,7 +1327,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B182",
@@ -1227,7 +1341,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B183",
@@ -1240,7 +1355,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B184",
@@ -1253,7 +1369,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B185",
@@ -1266,7 +1383,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B186",
@@ -1279,7 +1397,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B187",
@@ -1292,7 +1411,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B188",
@@ -1305,7 +1425,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B189",
@@ -1318,7 +1439,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B19",
@@ -1331,7 +1453,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B190",
@@ -1344,7 +1467,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B191",
@@ -1357,7 +1481,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B192",
@@ -1370,7 +1495,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B193",
@@ -1383,7 +1509,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B194",
@@ -1396,7 +1523,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B195",
@@ -1409,7 +1537,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B196",
@@ -1422,7 +1551,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B197",
@@ -1435,7 +1565,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B198",
@@ -1448,7 +1579,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B199",
@@ -1461,7 +1593,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B2",
@@ -1474,7 +1607,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B20",
@@ -1487,7 +1621,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B200",
@@ -1500,7 +1635,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B201",
@@ -1513,7 +1649,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B202",
@@ -1526,7 +1663,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B203",
@@ -1539,7 +1677,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B204",
@@ -1552,7 +1691,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B205",
@@ -1565,7 +1705,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B206",
@@ -1578,7 +1719,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B207",
@@ -1591,7 +1733,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B208",
@@ -1604,7 +1747,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B209",
@@ -1617,7 +1761,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B21",
@@ -1630,7 +1775,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "degraded_ordinal"
+      "candidate_class": "degraded_ordinal",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B210",
@@ -1643,7 +1789,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B211",
@@ -1656,7 +1803,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B212",
@@ -1669,7 +1817,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B213",
@@ -1682,7 +1831,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B214",
@@ -1695,7 +1845,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B215",
@@ -1708,7 +1859,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B216",
@@ -1721,7 +1873,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B217",
@@ -1734,7 +1887,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B218",
@@ -1747,7 +1901,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B219",
@@ -1760,7 +1915,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B22",
@@ -1773,7 +1929,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B220",
@@ -1786,7 +1943,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B221",
@@ -1799,7 +1957,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B222",
@@ -1812,7 +1971,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B223",
@@ -1825,7 +1985,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B224",
@@ -1838,7 +1999,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B225",
@@ -1851,7 +2013,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B226",
@@ -1864,7 +2027,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B227",
@@ -1877,7 +2041,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B228",
@@ -1890,7 +2055,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B229",
@@ -1903,7 +2069,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B23",
@@ -1916,7 +2083,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B230",
@@ -1929,7 +2097,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B231",
@@ -1942,7 +2111,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B232",
@@ -1955,7 +2125,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B233",
@@ -1968,7 +2139,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B234",
@@ -1981,7 +2153,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B235",
@@ -1994,7 +2167,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B236",
@@ -2007,7 +2181,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B237",
@@ -2020,7 +2195,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B238",
@@ -2033,7 +2209,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B239",
@@ -2046,7 +2223,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B24",
@@ -2059,7 +2237,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B240",
@@ -2072,7 +2251,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B241",
@@ -2085,7 +2265,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B242",
@@ -2098,7 +2279,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B243",
@@ -2111,7 +2293,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B244",
@@ -2124,7 +2307,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B245",
@@ -2137,7 +2321,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B246",
@@ -2150,7 +2335,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B247",
@@ -2163,7 +2349,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B248",
@@ -2176,7 +2363,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B249",
@@ -2189,7 +2377,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B25",
@@ -2202,7 +2391,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B250",
@@ -2215,7 +2405,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B251",
@@ -2228,7 +2419,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B252",
@@ -2241,7 +2433,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B253",
@@ -2254,7 +2447,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B254",
@@ -2267,7 +2461,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B255",
@@ -2280,7 +2475,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B256",
@@ -2293,7 +2489,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B257",
@@ -2306,7 +2503,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B258",
@@ -2319,7 +2517,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B259",
@@ -2332,7 +2531,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B26",
@@ -2345,7 +2545,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B260",
@@ -2358,7 +2559,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B261",
@@ -2371,7 +2573,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B262",
@@ -2384,7 +2587,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B263",
@@ -2397,7 +2601,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B264",
@@ -2410,7 +2615,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B265",
@@ -2423,7 +2629,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B266",
@@ -2436,7 +2643,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B267",
@@ -2449,7 +2657,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B268",
@@ -2462,7 +2671,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B269",
@@ -2475,7 +2685,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B27",
@@ -2488,7 +2699,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B270",
@@ -2501,7 +2713,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B271",
@@ -2514,7 +2727,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B272",
@@ -2527,7 +2741,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B273",
@@ -2540,7 +2755,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B274",
@@ -2553,7 +2769,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B275",
@@ -2566,7 +2783,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B276",
@@ -2579,7 +2797,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B277",
@@ -2592,7 +2811,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B278",
@@ -2605,7 +2825,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B279",
@@ -2618,7 +2839,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B28",
@@ -2631,7 +2853,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B280",
@@ -2644,7 +2867,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B281",
@@ -2657,7 +2881,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B282",
@@ -2670,7 +2895,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B283",
@@ -2683,7 +2909,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B284",
@@ -2696,7 +2923,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B285",
@@ -2709,7 +2937,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B286",
@@ -2722,7 +2951,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B287",
@@ -2735,7 +2965,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B288",
@@ -2748,7 +2979,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B289",
@@ -2761,7 +2993,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B29",
@@ -2774,7 +3007,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B290",
@@ -2787,7 +3021,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B291",
@@ -2800,7 +3035,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B292",
@@ -2813,7 +3049,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B293",
@@ -2826,7 +3063,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B294",
@@ -2839,7 +3077,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B295",
@@ -2852,7 +3091,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B296",
@@ -2865,7 +3105,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B297",
@@ -2878,7 +3119,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B298",
@@ -2891,7 +3133,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B299",
@@ -2904,7 +3147,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B3",
@@ -2917,7 +3161,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B30",
@@ -2930,7 +3175,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B300",
@@ -2943,7 +3189,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B301",
@@ -2956,7 +3203,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B302",
@@ -2969,7 +3217,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B303",
@@ -2982,7 +3231,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B304",
@@ -2995,7 +3245,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B305",
@@ -3008,7 +3259,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B306",
@@ -3021,7 +3273,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B307",
@@ -3034,7 +3287,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B308",
@@ -3047,7 +3301,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B309",
@@ -3060,7 +3315,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B31",
@@ -3073,7 +3329,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B310",
@@ -3086,7 +3343,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B311",
@@ -3099,7 +3357,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B312",
@@ -3112,7 +3371,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B313",
@@ -3125,7 +3385,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B314",
@@ -3138,7 +3399,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B315",
@@ -3151,7 +3413,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B316",
@@ -3164,7 +3427,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B317",
@@ -3177,7 +3441,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B318",
@@ -3190,7 +3455,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B319",
@@ -3203,7 +3469,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B32",
@@ -3216,7 +3483,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B320",
@@ -3229,7 +3497,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B321",
@@ -3242,7 +3511,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B322",
@@ -3255,7 +3525,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B323",
@@ -3268,7 +3539,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B324",
@@ -3281,7 +3553,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B325",
@@ -3294,7 +3567,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B326",
@@ -3307,7 +3581,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B327",
@@ -3320,7 +3595,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B328",
@@ -3333,7 +3609,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B329",
@@ -3346,7 +3623,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B33",
@@ -3359,7 +3637,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B330",
@@ -3372,7 +3651,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B331",
@@ -3385,7 +3665,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B332",
@@ -3398,7 +3679,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B333",
@@ -3411,7 +3693,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B334",
@@ -3424,7 +3707,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B335",
@@ -3437,7 +3721,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B336",
@@ -3450,7 +3735,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B337",
@@ -3463,7 +3749,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B338",
@@ -3476,7 +3763,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B339",
@@ -3489,7 +3777,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B34",
@@ -3502,7 +3791,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B340",
@@ -3515,7 +3805,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B341",
@@ -3528,7 +3819,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B342",
@@ -3541,7 +3833,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B343",
@@ -3554,7 +3847,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B344",
@@ -3567,7 +3861,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B345",
@@ -3580,7 +3875,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B346",
@@ -3593,7 +3889,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B347",
@@ -3606,7 +3903,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B348",
@@ -3619,7 +3917,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B349",
@@ -3632,7 +3931,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B350",
@@ -3645,7 +3945,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B351",
@@ -3658,7 +3959,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B352",
@@ -3671,7 +3973,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B353",
@@ -3684,7 +3987,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B354",
@@ -3697,7 +4001,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B355",
@@ -3710,7 +4015,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B356",
@@ -3723,7 +4029,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B357",
@@ -3736,7 +4043,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B358",
@@ -3749,7 +4057,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B359",
@@ -3762,7 +4071,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B36",
@@ -3775,7 +4085,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B360",
@@ -3788,7 +4099,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B361",
@@ -3801,7 +4113,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B362",
@@ -3814,7 +4127,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B363",
@@ -3827,7 +4141,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B364",
@@ -3840,7 +4155,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B365",
@@ -3853,7 +4169,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B366",
@@ -3866,7 +4183,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B367",
@@ -3879,7 +4197,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B368",
@@ -3892,7 +4211,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B369",
@@ -3905,7 +4225,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B37",
@@ -3918,7 +4239,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B370",
@@ -3931,7 +4253,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B371",
@@ -3944,7 +4267,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B372",
@@ -3957,7 +4281,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B373",
@@ -3970,7 +4295,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B374",
@@ -3983,7 +4309,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B375",
@@ -3996,7 +4323,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B376",
@@ -4009,7 +4337,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B377",
@@ -4022,7 +4351,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B378",
@@ -4035,7 +4365,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B379",
@@ -4048,7 +4379,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B380",
@@ -4061,7 +4393,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B381",
@@ -4074,7 +4407,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B382",
@@ -4087,7 +4421,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B383",
@@ -4100,7 +4435,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B384",
@@ -4113,7 +4449,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B385",
@@ -4126,7 +4463,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B386",
@@ -4139,7 +4477,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B387",
@@ -4152,7 +4491,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B388",
@@ -4165,7 +4505,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B389",
@@ -4178,7 +4519,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B390",
@@ -4191,7 +4533,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B391",
@@ -4204,7 +4547,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B392",
@@ -4217,7 +4561,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B393",
@@ -4230,7 +4575,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B394",
@@ -4243,7 +4589,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B395",
@@ -4256,7 +4603,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B396",
@@ -4269,7 +4617,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B397",
@@ -4282,7 +4631,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B398",
@@ -4295,7 +4645,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B399",
@@ -4308,7 +4659,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B4",
@@ -4321,7 +4673,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B40",
@@ -4334,7 +4687,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B400",
@@ -4347,7 +4701,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B401",
@@ -4360,7 +4715,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B402",
@@ -4373,7 +4729,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B403",
@@ -4386,7 +4743,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B404",
@@ -4399,7 +4757,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B405",
@@ -4412,7 +4771,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B406",
@@ -4425,7 +4785,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B407",
@@ -4438,7 +4799,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B408",
@@ -4451,7 +4813,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B409",
@@ -4464,7 +4827,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B41",
@@ -4477,7 +4841,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B410",
@@ -4490,7 +4855,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B411",
@@ -4503,7 +4869,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B412",
@@ -4516,7 +4883,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B413",
@@ -4529,7 +4897,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B414",
@@ -4542,7 +4911,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B415",
@@ -4555,7 +4925,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B416",
@@ -4568,7 +4939,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B417",
@@ -4581,7 +4953,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B418",
@@ -4594,7 +4967,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B419",
@@ -4607,7 +4981,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B42",
@@ -4620,7 +4995,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B420",
@@ -4633,7 +5009,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B421",
@@ -4646,7 +5023,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B422",
@@ -4659,7 +5037,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B423",
@@ -4672,7 +5051,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B424",
@@ -4685,7 +5065,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B425",
@@ -4698,7 +5079,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B426",
@@ -4711,7 +5093,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B427",
@@ -4724,7 +5107,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B428",
@@ -4737,7 +5121,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B429",
@@ -4750,7 +5135,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B43",
@@ -4763,7 +5149,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B430",
@@ -4776,7 +5163,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B431",
@@ -4789,7 +5177,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B432",
@@ -4802,7 +5191,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B433",
@@ -4815,7 +5205,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B434",
@@ -4828,7 +5219,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B435",
@@ -4841,7 +5233,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B436",
@@ -4854,7 +5247,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B437",
@@ -4867,7 +5261,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B438",
@@ -4880,7 +5275,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B439",
@@ -4893,7 +5289,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B44",
@@ -4906,7 +5303,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B440",
@@ -4919,7 +5317,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B441",
@@ -4932,7 +5331,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B442",
@@ -4945,7 +5345,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B443",
@@ -4958,7 +5359,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B444",
@@ -4971,7 +5373,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B445",
@@ -4984,7 +5387,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B446",
@@ -4997,7 +5401,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B447",
@@ -5010,7 +5415,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B448",
@@ -5023,7 +5429,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B449",
@@ -5036,7 +5443,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B45",
@@ -5049,7 +5457,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B450",
@@ -5062,7 +5471,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B451",
@@ -5075,7 +5485,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B452",
@@ -5088,7 +5499,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B453",
@@ -5101,7 +5513,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B454",
@@ -5114,7 +5527,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B455",
@@ -5127,7 +5541,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B456",
@@ -5140,7 +5555,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B457",
@@ -5153,7 +5569,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B458",
@@ -5166,7 +5583,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B459",
@@ -5179,7 +5597,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B46",
@@ -5192,7 +5611,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B460",
@@ -5205,7 +5625,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B461",
@@ -5218,7 +5639,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B462",
@@ -5231,7 +5653,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B463",
@@ -5244,7 +5667,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B464",
@@ -5257,7 +5681,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B465",
@@ -5270,7 +5695,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B466",
@@ -5283,7 +5709,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B467",
@@ -5296,7 +5723,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B468",
@@ -5309,7 +5737,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B469",
@@ -5322,7 +5751,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B47",
@@ -5335,7 +5765,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B470",
@@ -5348,7 +5779,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B471",
@@ -5361,7 +5793,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B472",
@@ -5374,7 +5807,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "B473",
@@ -5387,7 +5821,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B474",
@@ -5400,7 +5835,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B475",
@@ -5413,7 +5849,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B476",
@@ -5426,7 +5863,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B477",
@@ -5439,7 +5877,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B478",
@@ -5452,7 +5891,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B479",
@@ -5465,7 +5905,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B48",
@@ -5478,7 +5919,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B480",
@@ -5491,7 +5933,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B481",
@@ -5504,7 +5947,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B482",
@@ -5517,7 +5961,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B483",
@@ -5530,7 +5975,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B484",
@@ -5543,7 +5989,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B485",
@@ -5556,7 +6003,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B486",
@@ -5569,7 +6017,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B487",
@@ -5582,7 +6031,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B488",
@@ -5595,7 +6045,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B489",
@@ -5608,7 +6059,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B49",
@@ -5621,7 +6073,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B490",
@@ -5634,7 +6087,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B491",
@@ -5647,7 +6101,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B492",
@@ -5660,7 +6115,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B493",
@@ -5673,7 +6129,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B494",
@@ -5686,7 +6143,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B495",
@@ -5699,7 +6157,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B496",
@@ -5712,7 +6171,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B497",
@@ -5725,7 +6185,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B498",
@@ -5738,7 +6199,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B499",
@@ -5751,7 +6213,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B5",
@@ -5764,7 +6227,8 @@
       "passed": true,
       "note": "overlap-estimate; theta=10.0deg",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B50",
@@ -5777,7 +6241,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B500",
@@ -5790,7 +6255,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B501",
@@ -5803,7 +6269,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B502",
@@ -5816,7 +6283,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B503",
@@ -5829,7 +6297,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B504",
@@ -5842,7 +6311,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B505",
@@ -5855,7 +6325,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B506",
@@ -5868,7 +6339,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B507",
@@ -5881,7 +6353,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B508",
@@ -5894,7 +6367,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B509",
@@ -5907,7 +6381,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B51",
@@ -5920,7 +6395,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B510",
@@ -5933,7 +6409,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B511",
@@ -5946,7 +6423,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B512",
@@ -5959,7 +6437,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B513",
@@ -5972,7 +6451,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B514",
@@ -5985,7 +6465,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B515",
@@ -5998,7 +6479,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B518",
@@ -6011,7 +6493,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B519",
@@ -6024,7 +6507,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B52",
@@ -6037,7 +6521,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B520",
@@ -6050,7 +6535,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B521",
@@ -6063,7 +6549,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B522",
@@ -6076,7 +6563,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B523",
@@ -6089,7 +6577,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B524",
@@ -6102,7 +6591,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B525",
@@ -6115,7 +6605,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B53",
@@ -6128,7 +6619,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B54",
@@ -6141,7 +6633,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B55",
@@ -6154,7 +6647,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B56",
@@ -6167,7 +6661,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B57",
@@ -6180,7 +6675,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B58",
@@ -6193,7 +6689,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B59",
@@ -6206,7 +6703,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B6",
@@ -6219,7 +6717,8 @@
       "passed": true,
       "note": "ORACLE 不可用，回退设计守则锚",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B60",
@@ -6232,7 +6731,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B61",
@@ -6245,7 +6745,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B62",
@@ -6258,7 +6759,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B63",
@@ -6271,7 +6773,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B64",
@@ -6284,7 +6787,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B65",
@@ -6297,7 +6801,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B66",
@@ -6310,7 +6815,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B67",
@@ -6323,7 +6829,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B68",
@@ -6336,7 +6843,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B7",
@@ -6349,7 +6857,8 @@
       "passed": true,
       "note": "ORACLE 不可用，回退设计守则锚",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B70",
@@ -6362,7 +6871,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B71",
@@ -6375,7 +6885,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B73",
@@ -6388,7 +6899,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B74",
@@ -6401,7 +6913,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B75",
@@ -6414,7 +6927,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B76",
@@ -6427,7 +6941,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B77",
@@ -6440,7 +6955,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B78",
@@ -6453,7 +6969,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B79",
@@ -6466,7 +6983,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B8",
@@ -6479,7 +6997,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B80",
@@ -6492,7 +7011,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B81",
@@ -6505,7 +7025,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B82",
@@ -6518,7 +7039,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B83",
@@ -6531,7 +7053,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B84",
@@ -6544,7 +7067,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B85",
@@ -6557,7 +7081,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B86",
@@ -6570,7 +7095,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B87",
@@ -6583,7 +7109,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B88",
@@ -6596,7 +7123,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "PERTURBATION_RESPONSE"
     },
     {
       "id": "B89",
@@ -6609,7 +7137,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B9",
@@ -6622,7 +7151,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B90",
@@ -6635,7 +7165,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B91",
@@ -6648,7 +7179,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B92",
@@ -6661,7 +7193,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B93",
@@ -6674,7 +7207,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B94",
@@ -6687,7 +7221,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B95",
@@ -6700,7 +7235,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B96",
@@ -6713,7 +7249,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B97",
@@ -6726,7 +7263,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B98",
@@ -6739,7 +7277,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "B99",
@@ -6752,7 +7291,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "E1",
@@ -6765,7 +7305,8 @@
       "passed": true,
       "note": "Advanced Micro Foundry (AMF) 商用 SOI 平台；二氧化硅埋层条形波导 500x220 nm^2 | F. Garrisi et al., 'Characterization of photon pairs generated by a silicon ring resonator under electrical self-pumping,' arXiv:2011.03273 (2020), DOI 10.48550/arXiv.2011.03273 | σ=0.05 | tol=0.05 | tier=A",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "E10",
@@ -6778,7 +7319,8 @@
       "passed": true,
       "note": "Advanced Micro Foundry (AMF) 商用 SOI 平台；二氧化硅埋层条形波导 500x220 nm^2 | F. Garrisi et al., 'Characterization of photon pairs generated by a silicon ring resonator under electrical self-pumping,' arXiv:2011.03273 (2020), DOI 10.48550/arXiv.2011.03273 | σ=0.1 | tol=0.1 | tier=A",
       "independent": false,
-      "candidate_class": "degraded_ordinal"
+      "candidate_class": "degraded_ordinal",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "E2",
@@ -6791,7 +7333,8 @@
       "passed": true,
       "note": "LPCVD Si3N4 300nm 平台（公开文献）：热氧 SiO2 2.5um 下包层 + PECVD SiO2 2.0um 上包层，全刻蚀条形波导 | P. Munoz et al., Si3N4 300 nm photonic integration platform, Sensors (MDPI) 2017: OFDR ring-resonator group index TE=1.892 / TM=1.717; MZI transmission cross-check TE 1.90-1.92 | σ=0.03 | tol=0.03 | tier=A",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "E3",
@@ -6804,7 +7347,8 @@
       "passed": true,
       "note": "SOITEC SOI 250nm 器件层 / 400nm 薄埋氧（局部衬底去除，Cornell OxideMEMS Lab） | S. Sridaran & S. A. Bhave, Opt. Express 18(4), 3850-3857 (2010), https://opg.optica.org/oe/viewmedia.cfm?URI=oe-18-4-3850 | σ=0.1 | tol=0.1 | tier=A",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "E4",
@@ -6817,7 +7361,8 @@
       "passed": true,
       "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=0.03 | tol=0.03 | tier=A",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "E5",
@@ -6830,7 +7375,8 @@
       "passed": true,
       "note": "SOI 平台（EME 设计 + 实验演示） | D. Chack & S. Hassan, Opt. Eng. 59(10), 105102 (2020), DOI 10.1117/1.OE.59.10.105102 | σ=0.05 | tol=0.05 | tier=A",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "E6",
@@ -6843,7 +7389,8 @@
       "passed": true,
       "note": "8 英寸晶圆厚 SiN（LPCVD 两步沉积 + 退火，大马士革工艺） | 丛庆宇 等, 光子学报 53(9), 0913002 (2024), DOI 10.3788/gzxb20245309.0913002 | σ=0.01 | tol=0.01 | tier=A",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "E7",
@@ -6856,7 +7403,8 @@
       "passed": true,
       "note": "CMOS 兼容工艺 248nm 光刻，8 英寸晶圆实测 | Y. Zhang et al., IEEE Photon. Technol. Lett. 25(13), 1225 (2013), DOI 10.1109/LPT.2013.2241049 | σ=2.0 | tol=2.0 | tier=A",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "E8",
@@ -6869,7 +7417,8 @@
       "passed": true,
       "note": "SOI 220 nm 器件层，电子束光刻 + 全刻蚀（与条形波导同工序） | L. Liu, M. Pu, K. Yvind, J. M. Hvam, 'High-efficiency, large-bandwidth silicon-on-insulator grating coupler based on a fully-etched photonic crystal structure,' Appl. Phys. Lett. 96(5), 051126 (2010), DOI 10.1063/1.3304791 | σ=0.05 | tol=0.05 | tier=A",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "E9",
@@ -6882,7 +7431,8 @@
       "passed": true,
       "note": "248 nm CMOS 兼容工艺，8 英寸晶圆（跨晶圆均匀性实测） | Y. Zhang, S. Yang, A. E.-J. Lim, G.-Q. Lo, C. Galland, T. Baehr-Jones, M. Hochberg, 'A compact and low loss Y-junction for submicron silicon waveguide,' Opt. Express 21(1), 1310-1316 (2013), DOI 10.1364/OE.21.001310 | σ=0.02 | tol=0.02 | tier=A",
       "independent": false,
-      "candidate_class": "degraded_ordinal"
+      "candidate_class": "degraded_ordinal",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "S1",
@@ -6895,7 +7445,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "S10",
@@ -6908,7 +7459,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "S11",
@@ -6921,7 +7473,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "S12",
@@ -6934,7 +7487,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "S13",
@@ -6947,7 +7501,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "S2",
@@ -6960,7 +7515,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "S3",
@@ -6973,7 +7529,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "S4",
@@ -6986,7 +7543,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "S5",
@@ -6999,7 +7557,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "S6",
@@ -7012,7 +7571,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     },
     {
       "id": "S7",
@@ -7025,7 +7585,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "S8",
@@ -7038,7 +7599,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": true,
-      "candidate_class": "strict_independent"
+      "candidate_class": "strict_independent",
+      "independence_evidence": "RESIDUAL_NONZERO"
     },
     {
       "id": "S9",
@@ -7051,7 +7613,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": false,
-      "candidate_class": "self_consistent_stub"
+      "candidate_class": "self_consistent_stub",
+      "independence_evidence": "STUB"
     }
   ]
 }

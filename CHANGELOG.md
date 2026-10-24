@@ -1,5 +1,121 @@
 # Changelog
 
+## v0.9.280（2026-10-24 · **量子征程 M6 · 独立性证据可观测**（D-228 · 平台侧 · **净增 0 锚** · 账本 541 / strict 519 / 独立率 95.93% · **CI core 350 不变**）
+
+### 一句话
+
+F-11 不是「有假独立」，而是**判据存在、证据丢失**，而且失真有两层：
+① **报告数值精度不足以判断残差**（float 被格式化到 9 位有效数字）；
+② **证据类型从没进过报告**（只有 `passed=True`）。
+两层叠加的结果是：**任何人拿报告做分析都会得出错误结论** —— 我自己就是活例，而且错了两次。
+
+### ① 我错在哪（这是本版最该记的部分）
+
+**第一遍**：拿 `verification_report.json` 里的 `golden`/`candidate` 反算 `|Δ|`，得出
+「519 道 strict 里有 **87 条（16.8%）数值逐位相同**」，判定「honest_note 的 519 声明与实测矛盾，
+这是平台最严重的诚实性风险」。
+
+**第一处错：口径**。我用**相对残差**分桶（得 432/87），而平台判据是**绝对差** `|Δ| < 1e-12`。
+两者差 6 条 ⇒ **统计口径必须与被检查的判据同源**。
+
+**第二处错（更严重）：数据源**。报告里的 float 经 `deterministic.canon()` **只保留 9 位有效数字**：
+
+```
+B100  圆波导 TE01 截止   golden = 3.65647835e+16 Hz   tol = 1e7
+      9 位有效数字的最后一位本身就有 1e7
+      ⇒ 报告里 golden 与 candidate 显示完全相同
+      而真实残差 1e5~1e7  ≫ 1e-12  ⇒ 它属于 RESIDUAL_NONZERO，与"假独立"毫无关系
+```
+
+⇒ **报告数值不能用来反算残差**。真值（由 `run_harness` 用原始 float 直接分档）是：
+
+| 档 | strict 519 | 全体 541 |
+|---|---|---|
+| `RESIDUAL_NONZERO` | **505** | 508（+3 道降级） |
+| `PERTURBATION_RESPONSE` | **14** | 14 |
+| `STUB` | — | 19 |
+| 合计 | 519 ✓ | 541 ✓ |
+
+**两个口径能对上，这本身就是交叉验证**：87 条「报告显示相同」里 **79 条真实残差 ≥1e-12**、
+只有 **8 条**真落在机器精度内；加 6 条「报告显示不同、真实 `0<|Δ|<1e-12`」⇒ **8+6=14** ✓。
+
+### ② 六档分类器（`lda_harness/independence_evidence.py`）
+
+判定顺序**即语义，不可调**：
+
+| 顺序 | 判据 | 档 |
+|---|---|---|
+| ① | `candidate_class == stub` | `STUB`（分类优先，不看残差） |
+| ② | 任一非数值（`bool` 也不算） | `NON_SCALAR` |
+| ③ | `\|Δ\| ≥ 1e-12` | `RESIDUAL_NONZERO` |
+| ④ | `responds is True` | `PERTURBATION_RESPONSE` |
+| ⑤ | `responds is False` | **`SUSPECT`**（疑似假独立；**不进报告**——真出现就说明 `run_harness` 的 assert 已失败、报告生成不出来） |
+| ⑥ | `responds is None`（本次没算） | `PERTURBATION_UNVERIFIED`（**未验证 ≠ 已验证**） |
+
+🔴 **每条都有 `STRENGTH` 强度序**，因为「扰动响应」比「残差非零」弱 —— 机器可读地写下来，
+防止后人把它当等价证据宣传。
+
+**报告侧**：每条 `results` 加 `independence_evidence`；`summary` 加
+`{dist, strict_dist, strict_total, verified_total, degraded_total, stub_total, missing_evidence, conserved}`。
+🔴 **`dist` 与 `strict_dist` 必须分开**：对外文案说「**这 519 道里** N 道有残差证据」，这里的 N 是
+strict 的 **505**，不是全体 `dist` 的 **508**（后者含 3 道降级量级参考）。第一版用了 `dist`
+⇒ 把 505 说成 508 —— **凡是指代某个具体集合的计数，就必须从该集合现算，不能借用更大的集合**。
+
+### ③ 棘轮方向是**反的**
+
+```python
+MIN_INDEPENDENT = 519            # 只升（独立锚越多越好）
+MAX_PERTURBATION_RESPONSE = 14   # 只降（弱证据越多越糟）
+```
+
+新增一道扰动响应证据 = 新增了一道**无法用残差验证**的锚，必须有人解释。
+
+### ④ 判据：并入既有门禁，**不新增 CORE 成员**
+
+`run_benchmark_falsifiability_smoke` 加 **⑨a–⑨e**（13 → **18 判据**）：
+
+- **⑨a** 守恒（非桩逐条落档 ∧ verified/桩数与三分类一致）
+- **⑨b** `RESIDUAL_NONZERO` 与 `PERTURBATION_RESPONSE` **各非空**（`NON_SCALAR` 实测 0，允许 0 但须登记）
+- **⑨c** 🔴 棘轮（≤ 14）
+- **⑨d** 报告 summary 的分档 ≡ 本处现算（逐档，防手改/漂移）
+- **⑨e** 🔴 反向：`|Δ|≡0 ∧ 无响应 ⇒ SUSPECT`（不得洗成 `PERTURBATION_RESPONSE`）
+
+🔴 **零额外成本**：⑧ 组本来就在算 `candidate_responds`，本版把结果缓存成 `_resp2` 供 ⑨ 组复用，
+**没有多跑一次求解**。
+
+🔴 **为什么不新建门禁**（规划原写「新增 `run_independence_evidence_smoke`」）：新增 CORE 成员要走
+**七处连带 + 3 小时基线全量重跑**，而该门禁已 1383 s；并入既有门禁后 **CI core 350 不变、基线不过期**。
+
+### ⑤ 第 8 处连带当场被验证
+
+`independence_evidence.py` 带 `ANCHORABLE = False` ⇒ 自动进 `reachability_registry.capability_modules()`
+扫描面 ⇒ 必须同步把 `classify` / `summary_of` 加进 `MUST_BE_REACHABLE`，否则 G7 当即红。
+**v0.9.279 刚记录的第 8 处连带，这一版真的踩上了** —— 加完后 `11/11 模块全覆盖`。
+
+### 计数
+
+| 项 | 变化 |
+|---|---|
+| 账本 / 严格独立 / 降级 / 自证桩 / 独立率 | **541 / 519 / 3 / 19 / 95.93% 全不变**（净增 **0 锚**） |
+| **CI core** | **350 不变**（判据并入既有门禁 ⇒ 基线不过期、**无需重跑**） |
+| `run_benchmark_falsifiability_smoke` | 13 → **18** |
+| `run_k4_coverage_smoke` / `run_reachability_smoke` | 36 / 20（不变） |
+| 端点 / 面板 / L2 / L3 / 盲区 | 158 / 19 / **523 / 70 / 18 不变** |
+| 报告 schema | `lda-verification-report/1`（**不升**，只加字段 —— 与 v0.9.16 加 `candidate_class_totals` 同惯例） |
+
+### 诚实边界
+
+- **505/508 那批「有残差证据」只说明两条路径给出了不同但接近的值，不说明两条路径都对。**
+- **14 条扰动响应证据是弱证据**：它只排除「跟着 golden 走」这一种最坏情形，**不证明方法学独立**。
+  这句话同时写进了 `EVIDENCE_CLASSES`、`honest_note` 和本文档 —— 三处一致才算说清。
+- **`B10` 是那 14 条里最典型的**：候选是真的 4×4 Liouvillian 超算子 RK4 积分，但生产档位
+  `|L|·t ≈ 2.5e-4` ⇒ 残差恒 1.11e-16、与步数无关（物理上不可标定）。
+- 🔴 **拿报告数值做二次统计是陷阱**：本版实测差 6 倍（87 vs 14）。一切残差结论必须由
+  生成端写下来，不能事后反算 —— 这条对**所有**拿 `verification_report.json` 做分析的人成立。
+- 分档**不提升任何锚的可信度**：它只把「证据类型」写清楚。
+
+---
+
 ## v0.9.279（2026-10-24 · **量子闭环 M4 · 可观测性收口**（D-227 · 平台侧 · **净增 0 锚** · 账本 541 / strict 519 / 独立率 95.93% · **CI core 350 不变**）
 
 ### 一句话

@@ -1170,6 +1170,24 @@ def h_verification_ledger(h, p, q, path):
             _indep, _degraded, _stub = [], [], []
             empirical_ids, empirical_seed, empirical_stale = [], None, True
             _vmm = {"stale": True, "error": "VMM 推导失败，详见服务端日志"}
+
+        # v0.9.280（D-228 · F-11）：独立性**证据分档** —— 读 CLI 报告，**不重跑 harness**。
+        # 🔴 为什么必须读报告而不是现算：证据分档要对残差 <1e-12 的锚跑参数扰动
+        #    （`candidate_responds`），本端点必须在微秒级完成 ⇒ 现算会把对外账本
+        #    变成 DoS 面。报告由 `run_harness.py`（CI core 常驻）生成，本身就是
+        #    「上一次全量判决的存证」，读它与账本其余静态字段同源。
+        # 🔴 失败时如实标 stale，不猜、不回落「看起来完整」的空分布。
+        _ev, _ev_stale = {}, False
+        try:
+            _rp = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                               "reports", "verification_report.json")
+            with open(_rp, encoding="utf-8") as _f:
+                _ev = (((json.load(_f).get("summary") or {})
+                        .get("independence_evidence")) or {})
+            if not _ev:
+                _ev, _ev_stale = {}, True
+        except Exception:  # noqa: BLE001
+            _ev, _ev_stale = {}, True
         ledger = {
             "endpoint": "/api/verification_ledger",
             "ci_core": {"count": ci_core, "tag": "core", "stale": ci_core_stale,
@@ -1196,6 +1214,10 @@ def h_verification_ledger(h, p, q, path):
             "judgment_paths": {
                 "note": ("判决路径独立性：golden 可溯源只是必要不充分条件。"
                          "若 candidate 直接取 golden，则 |candidate−golden|≡0 恒 PASS，零验证价值。"),
+                # v0.9.280（D-228 · F-11）：独立性**靠什么证明**。
+                #   此前只有「N 道独立」一个标量，外部读者看到 87 道 golden≡candidate
+                #   会判成「候选取了黄金值」——实际它们靠扰动响应证据通过。
+                "independence_evidence": dict(_ev, stale=_ev_stale),
                 # v0.9.15（P0-2）：以下全部**从代码动态推导**，不再硬编码。
                 # 此前此处写死 independent_candidate=["E2"]，而 E2 已在 v0.9.14
                 # 降级为量级参考（degraded_ordinal）⇒ 对外账本宣称的唯一独立
@@ -1335,9 +1357,17 @@ def h_verification_ledger(h, p, q, path):
                 "判决（curl 复现）。design-anchor 与 empirical 规模缺口为已知诚实边界。"
                 "⚠️ 另须注意**判决路径独立性**：候选值若直接取黄金值，则「N/N 通过」"
                 "只代表判决回路闭合、不代表 N 项已验证。"
-                f"当前真正由独立候选判出的只有 {len(_indep)} 道"
+                f"当前由独立候选判出的 {len(_indep)} 道"
                 f"（{','.join(_indep) or '无'}），另有 {len(_degraded)} 道降级量级参考、"
-                f"{len(_stub)} 道仍是占位自证 —— 详见本响应 judgment_paths 字段（D-64/P0-2）。"),
+                f"{len(_stub)} 道仍是占位自证 —— 详见本响应 judgment_paths 字段（D-64/P0-2）。"
+                + ("" if _ev_stale else (
+                    " 🔴 独立性**证据分档**（v0.9.280 · D-228）：这 %d 道里 "
+                    "%s 道有残差证据（|cand−golden| ≥ 1e-12）；"
+                    "%s 道残差落在机器精度内、但候选对参数扰动有物理响应 —— "
+                    "后者只证明「候选真在算」，**不证明**两条方法学独立，请勿当成等价证据。"
+                    % (len(_indep),
+                       (_ev.get("strict_dist") or {}).get("RESIDUAL_NONZERO", "?"),
+                       (_ev.get("strict_dist") or {}).get("PERTURBATION_RESPONSE", "?"))))),
         }
         return (200, ledger)
     except Exception as e:  # noqa: BLE001

@@ -119,6 +119,52 @@ def main():
 
     results = harness.run(specs, candidate)
 
+    # ── v0.9.280（D-228 · F-11）：独立性证据分档 ──────────────────────────
+    # 🔴 **必须在 `format_json` 之前算**。第一版把这段放在文件末尾的机器断言块里
+    #    （即写报告**之后**），结果报告里 541 条 evidence 全是 null、
+    #    `missing_evidence=541`；而 `summary.verified=519` 又是对的（它从
+    #    `independent` 标签算、不依赖证据）⇒ 两处看起来都"正常"，
+    #    只有"分档全 0"这个反常值暴露了顺序错。**写入顺序是判据的一部分。**
+    _EV = {}
+    from lda_harness.independence_evidence import classify as _classify_ev
+    if isinstance(candidate, IndependentCandidateRouter):
+        from lda_harness.harness import (
+            _SpecShim as _Shim, candidate_responds as _responds)
+        from lda_harness.verification_adapters import BENCHMARK_CANDIDATES as _CANDS
+        _spec_by_id_ev = {s.get("id"): s for s in specs}
+
+        def _evidence_of(r):
+            """返回 (是否独立, 证据档) —— 两者**同源一次算**，不许分叉。"""
+            _cls = getattr(r, "candidate_class", None)
+            if not (isinstance(r.candidate, (int, float))
+                    and isinstance(r.golden, (int, float))):
+                # 非标量结果（如 dict/复数）无法用残差判 ⇒ 放行并如实标注
+                return True, _classify_ev(r.golden, r.candidate, None, _cls)
+            if abs(r.candidate - r.golden) >= 1e-12:
+                return True, _classify_ev(r.golden, r.candidate, None, _cls)
+            _sp = _spec_by_id_ev.get(r.bid)
+            _key = candidate.resolve_key(r.bid)
+            _fn = _CANDS.get(_key) if _key else None
+            if _sp is None or _fn is None:
+                # 拿不到 spec 或候选 ⇒ 无法自证，按假独立报（档位随之判 SUSPECT）
+                return False, _classify_ev(r.golden, r.candidate, False, _cls)
+            _resp = _responds(
+                _Shim(r.bid, dict(_sp.get("params") or {})), _fn, r.golden)
+            return _resp, _classify_ev(r.golden, r.candidate, _resp, _cls)
+
+        # 🔴 工作量不变：残差非零的 426 道在第二行就返回、不跑 responds；
+        #    只有残差 <1e-12 的 93 道才走扰动分支（与改动前完全一致）。
+        for _r in results:
+            _ok, _e = _evidence_of(_r)
+            _EV[_r.bid] = _ok
+            _r.independence_evidence = _e
+    else:
+        # 非独立路由（--ai / --perturb 等）：无法判扰动响应 ⇒ 如实标 UNVERIFIED，
+        # 不猜、也不沿用上一种路径的结论。
+        for _r in results:
+            _r.independence_evidence = _classify_ev(
+                _r.golden, _r.candidate, None, getattr(_r, "candidate_class", None))
+
     meta = {
         "L0_IR": args.l0 or "(内置默认 B1–B4,B8)",
         "candidate": cand_name,
@@ -170,29 +216,12 @@ def main():
         #   🔴 判据必须与 `run_benchmark_falsifiability_smoke` 路径①⑧ **同源**
         #   —— 两处若判据不同会当场打架（v0.9.24 实测：只升 smoke 没升 CLI ⇒
         #   smoke 8/8 全绿而本文件断言失败）。故统一调 `harness.candidate_responds`。
-        from lda_harness.harness import _SpecShim, candidate_responds
-        from lda_harness.verification_adapters import BENCHMARK_CANDIDATES
-        _spec_by_id = {s.get("id"): s for s in specs}
-
-        def _behaves_independently(r):
-            """该锚的候选是否真在算（||diff|| 非零 **或** 对扰动有物理响应）。"""
-            if not (isinstance(r.candidate, (int, float))
-                    and isinstance(r.golden, (int, float))):
-                return True   # 非标量结果（如 dict/复数）无法用残差判，放行
-            if abs(r.candidate - r.golden) >= 1e-12:
-                return True
-            _sp = _spec_by_id.get(r.bid)
-            _key = candidate.resolve_key(r.bid)
-            _fn = BENCHMARK_CANDIDATES.get(_key) if _key else None
-            if _sp is None or _fn is None:
-                return False  # 拿不到 spec 或候选 ⇒ 无法自证，按假独立报
-            return candidate_responds(
-                _SpecShim(r.bid, dict(_sp.get("params") or {})), _fn, r.golden)
-
+        # 证据档已在**写报告之前**算好（`_EV`），此处只复用 —— 不许重复算：
+        #   responds 对 93 道锚各要多跑 2~3 次求解，算两遍就是白白翻倍。
         _fake_independent = [r.bid for r in results
                              if getattr(r, "candidate_class", None)
                              not in (None, CANDIDATE_CLASS_STUB)
-                             and not _behaves_independently(r)]
+                             and not _EV[r.bid]]
         assert not _fake_independent, (
             f"标为独立/降级候选却 candidate≡golden（假独立）：{sorted(_fake_independent)}"
             "——路由或候选实现可能已静默回落 golden，verified 会被虚报")

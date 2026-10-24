@@ -48,7 +48,8 @@ CANDIDATE_CLASS_STUB = "self_consistent_stub"
 
 class BenchmarkResult:
     def __init__(self, bid, metric, golden, candidate, tol, oracle, passed,
-                 note="", source="", independent=None, candidate_class=None):
+                 note="", source="", independent=None, candidate_class=None,
+                 independence_evidence=None):
         self.bid = bid
         self.metric = metric
         self.golden = golden
@@ -70,6 +71,11 @@ class BenchmarkResult:
         # （此前 E2 是 degraded 却被算进 stub，导致路径② stub=44、三分类 stub=43
         # 两套口径打架，只能靠注释解释；现在三分类本身就是一等公民）。
         self.candidate_class = candidate_class
+        # v0.9.280（D-228 · F-11）：「独立性靠什么证明」的证据档。
+        #   None = 本次未判定（旧路径 / 未进 IndependentCandidateRouter 分支）。
+        #   🔴 只是**记录**，不参与任何判决 —— passed/verified/三分类逐位不变。
+        #   分档逻辑与阈值见 `lda_harness/independence_evidence.py`（单一真源）。
+        self.independence_evidence = independence_evidence
 
 
 class VerificationHarness:

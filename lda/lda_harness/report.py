@@ -201,6 +201,19 @@ def format_json(results, meta=None):
     _n_ind, _n_marked, _n_stub = independence_counts(results)
     _n_strict, _n_deg, _n_stub_cls, _n_cls = candidate_class_counts(results)
     _verified = verified_count(results, _sc)
+    # v0.9.280（D-228 · F-11）：独立性证据分布。
+    # 🔴 只是**诊断列**：不进 verified / 不改任何计数。
+    # 它的用途是让外部读者看出「519 道独立里，505 道有残差证据、14 道靠扰动响应证据」。
+    # 🔴🔴 为什么非它不可（本轮实测双层失真）：
+    #   ① 报告 float 经 `deterministic.canon()` 只保留 **9 位有效数字** ⇒
+    #      量级大的锚（如 B100 = 3.65647835e+16）在报告里 golden 与 candidate
+    #      **显示完全相同**，而它们的真实残差是 1e5~1e7（远超 1e-12）。
+    #      外部读者拿报告数值算 |Δ| 会得出**系统性错误的结论**（本轮实测：
+    #      报告口径统计出 87 条"逐位相同"，真实只有 14 条落在机器精度内）。
+    #   ② 证据类型（残差 / 扰动响应）从未暴露 ⇒ 那 14 道看起来像"候选取了黄金值"。
+    #   ⇒ **报告数值精度本身不足以判断残差**，必须由生成端把结论写下来。
+    from lda_harness import independence_evidence as _iev
+    _ev = _iev.summary_of(results)
     if not _n_marked:
         _n_stub = len(results) if _sc else 0
     out = {
@@ -223,6 +236,19 @@ def format_json(results, meta=None):
                 "degraded_ordinal": _n_deg,
                 "self_consistent_stub": _n_stub_cls,
             } if _n_cls else None),
+            # v0.9.280（D-228 · F-11）：独立性靠什么证明（诊断列，不进上面任何计数）。
+            #   `missing_evidence` = 本次未判定的条数（非 CLI 路径未进独立候选分支时为全部）。
+            "independence_evidence": {
+                "dist": _ev["dist"],
+                # 只统计严格独立的分布 —— 对外文案「这 519 道里 N 道…」用的就是它
+                "strict_dist": _ev["strict_dist"],
+                "strict_total": _ev["strict_total"],
+                "verified_total": _ev["verified_total"],
+                "degraded_total": _ev["degraded_total"],
+                "stub_total": _ev["stub_total"],
+                "missing_evidence": len(_ev["missing_evidence"]),
+                "conserved": _ev["conserved"],
+            },
         },
         "results": [
             {
@@ -235,6 +261,10 @@ def format_json(results, meta=None):
                 # 三分类：strict_independent / degraded_ordinal /
                 #        self_consistent_stub / null（旧路径未标注）
                 "candidate_class": getattr(r, "candidate_class", None),
+                # v0.9.280（D-228 · F-11）：证据档。null=本次未判定。
+                #   RESIDUAL_NONZERO / PERTURBATION_RESPONSE / NON_SCALAR /
+                #   PERTURBATION_UNVERIFIED / STUB
+                "independence_evidence": getattr(r, "independence_evidence", None),
             }
             for r in results
         ],

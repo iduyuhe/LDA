@@ -26,6 +26,23 @@ def _fmt_pct(v: float) -> str:
     return f"{v * 100.0:.2f}%"
 
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+# N3-a · 签核锚登记（v0.9.283 · 让"签的是哪些锚"外部可复核）
+# ---------------------------------------------------------------------------
+# 🔴 `ANCHORS_SOURCE` 是**证据等级**，不是装饰：
+#      "runtime"  该卡代码**真的跑**这条锚（可观测字段/调用）
+#      "segment"  依据账本**号段归属**登记，卡内无运行时引用
+#      "none"     本卡确实不依赖账本锚（如实登记为空，非缺漏）
+#    把 segment 当 runtime 读，就是"把号段归属当已验证" —— 本项目的头号复发错。
+# ═══════════════════════════════════════════════════════════════════════════
+ANCHORS = {}
+ANCHORS_SOURCE = 'none'
+
+ANCHORS_NOTE = (
+    "本卡是**跨域拼接演示**（光子 MZI 层 + ReLU + 电子交叉阵列），基准为**全精度数字参考**，不依赖任何账本锚 ⇒ 如实登记为空。"
+    "这不是缺陷登记，是事实登记。。")
+
 def case_card(phase_bits: int = 6, dac_bits: int = 8, adc_bits: int = 8,
               use_cache: bool = True) -> dict:
     """组装案例卡（确定性现算 + 模块级缓存）。phase/dac/adc 各位数为可调设计点。"""
@@ -149,6 +166,9 @@ def case_card(phase_bits: int = 6, dac_bits: int = 8, adc_bits: int = 8,
         "gaps_total": 5,
         "verdict": "DESIGN_BUDGET",
         "verdict_label": "设计行为验证口径（合成任务 · 确定性现算 · 非流片实测）",
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": ("🔴 本卡为只读案例：数字由固定种子确定性现算（零重计算缓存秒回 · "
                         "免登录 · 不跑 P&R/FDTD）；精度为合成任务上的链路行为验证，"
                         "非流片后实测；不报 TOPS/TOPS-W/fJ/op；判决位由死标量给出，"

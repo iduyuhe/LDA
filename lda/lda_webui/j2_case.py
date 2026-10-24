@@ -323,6 +323,28 @@ def qpu_budget() -> Dict[str, Any]:
 
 
 # ═══════════════════════════════ 案例卡 ═══════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════════
+# N3-a · 签核锚登记（v0.9.283 · 让"签的是哪些锚"外部可复核）
+# ---------------------------------------------------------------------------
+# 🔴 `ANCHORS_SOURCE` 是**证据等级**，不是装饰：
+#      "runtime"  该卡代码**真的跑**这条锚（可观测字段/调用）
+#      "segment"  依据账本**号段归属**登记，卡内无运行时引用
+#      "none"     本卡确实不依赖账本锚（如实登记为空，非缺漏）
+#    把 segment 当 runtime 读，就是"把号段归属当已验证" —— 本项目的头号复发错。
+# ═══════════════════════════════════════════════════════════════════════════
+ANCHORS = {
+    "B506": "两比特 CR 门退相干错误率 ε=1−(4·F_pro^A·F_pro^B+1)/5（超导 Transmon J2 · M2 两比特门层）：张量 A+D 信道闭式 golden vs 16×16 Liouvillian RK4 候选 · 无量纲",
+    "B507": "残余 ZZ 诱导门错误率 ε=(4/5)·sin²(ζt/2)（超导 Transmon J2 · M2 两比特门层）：闭式 golden vs 矩阵传播子 RK4 候选 · 无量纲",
+    "B508": "FDM 多音读出相邻通道频谱重叠串扰比 X=4γ²/(4γ²+δ²)（超导 Transmon J2 · M3 色散读出链 + 串扰）：闭式 golden vs sinh 换元+复合 Simpson 数值卷积候选 · 无量纲",
+    "B509": "QPU 耦合图代数连通度 λ₂（Fiedler 值）（超导 Transmon J2 · M4 QPU 误差预算集成 + 拓扑对接）：谱定理闭式 golden vs 嵌套 Krylov 子空间 Rayleigh–Ritz 候选 · 无量纲",
+}
+ANCHORS_SOURCE = 'segment'
+
+ANCHORS_NOTE = (
+    "J2 号段 B506–B509（CR 门退相干错误率 / 残余 ZZ / FDM 多音串扰 / 耦合图代数连通度 λ₂）。"
+    "🔴 卡内无运行时锚引用。。")
+
 def case_card() -> Dict[str, Any]:
     """组装 J2 QPU 案例卡（只读 · 零重计算 · 免登录）。
 
@@ -429,6 +451,9 @@ def case_card() -> Dict[str, Any]:
                 "参数为设计示例量级，误读为实测标定值即为失真。",
             ],
         },
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": J2_HONEST_NOTE,
     }
 

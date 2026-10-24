@@ -1,9 +1,9 @@
 {
   "counts": {
-    "described": 158,
+    "described": 159,
     "needs_login": 60,
-    "precise": 141,
-    "total": 158,
+    "precise": 142,
+    "total": 159,
     "undescribed": 0,
     "wildcard": 17
   },
@@ -727,6 +727,20 @@
       "path": "/api/shelf/**",
       "source": "handler_docstring",
       "wildcard": true
+    },
+    {
+      "app_function": null,
+      "auth": "public",
+      "binary": false,
+      "description": "GET /api/signing —— 18 张案例卡的**签核登记审计**（公开只读 · 无鉴权）。 一条 URL 回答外部最常问的那句话：「这一张卡，到底是什么级别的签核？」 暴露三件**可机器复核**的事实（真源 `lda_harness/signing_schema.py`）： · `grade`（工程链深度）与 `claimable_grade`（对外口径）**分开报**，不压成一个数； · 每张卡的 `anchors` + `anchors_source`（runtime/segment/none 三档证据等级）； · `anchors_drift`（登记面 ⇄ 卡上实况的差异，正常应为空）。 🔴 与 `/api/verification_ledger` 同属「公开只读验货」类：不鉴权、不写盘、 不改任何判决；**不报 TOPS/fJ-op/能效**。 ⚠️ 首次请求需运行时读 18 张案例卡（~6s，qchip 216 模现算最重）， 之后命中 TTL 缓存（300s）秒回；并发按串行锁排队。",
+      "handler": "h_signing",
+      "heavy": false,
+      "method": "GET",
+      "note": "",
+      "params": [],
+      "path": "/api/signing",
+      "source": "handler_docstring",
+      "wildcard": false
     },
     {
       "app_function": null,

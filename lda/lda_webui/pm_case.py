@@ -946,6 +946,26 @@ def _phase_domain_case() -> Dict[str, Any]:
     return M6.phase_case_summary("Sb2Se3")
 
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+# N3-a · 签核锚登记（v0.9.283 · 让"签的是哪些锚"外部可复核）
+# ---------------------------------------------------------------------------
+# 🔴 `ANCHORS_SOURCE` 是**证据等级**，不是装饰：
+#      "runtime"  该卡代码**真的跑**这条锚（可观测字段/调用）
+#      "segment"  依据账本**号段归属**登记，卡内无运行时引用
+#      "none"     本卡确实不依赖账本锚（如实登记为空，非缺漏）
+#    把 segment 当 runtime 读，就是"把号段归属当已验证" —— 本项目的头号复发错。
+# ═══════════════════════════════════════════════════════════════════════════
+ANCHORS = {
+    "B28": "MZM 调制器半波电压 Vπ（电光相位调制 · Pockels）",
+    "B29": "热光相移效率（热光系数 dn/dT · 1D 散热鳍 PDE 相移）",
+}
+ANCHORS_SOURCE = 'segment'
+
+ANCHORS_NOTE = (
+    "B28（MZM Vπ · 电光相位调制）· B29（热光相移）—— 非易失光子存储的写/读物理即电光与热光相移。🔴 卡内无运行时锚引用。"
+    "。")
+
 def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
     """组装光子存储阵列案例卡（只读 · 零重计算 · 免登录）。"""
     rep = _load_report(repo_root)
@@ -1050,6 +1070,9 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "scope_note": "本卡覆盖**单元/阵列版图/外设系统与签核/国际对标收官**；单元物理闭式见 "
                           "`lda_l2/pm_m0…pm_m5`，非 UI 可点面板。",
         },
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": PM_HONEST_NOTE,
     }
 

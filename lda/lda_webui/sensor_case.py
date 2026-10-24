@@ -386,6 +386,38 @@ def design_options() -> Dict[str, Any]:
     }
 
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+# N3-a · 签核锚登记（v0.9.283 · 让"签的是哪些锚"外部可复核）
+# ---------------------------------------------------------------------------
+# 🔴 `ANCHORS_SOURCE` 是**证据等级**，不是装饰：
+#      "runtime"  该卡代码**真的跑**这条锚（可观测字段/调用）
+#      "segment"  依据账本**号段归属**登记，卡内无运行时引用
+#      "none"     本卡确实不依赖账本锚（如实登记为空，非缺漏）
+#    把 segment 当 runtime 读，就是"把号段归属当已验证" —— 本项目的头号复发错。
+# ═══════════════════════════════════════════════════════════════════════════
+ANCHORS = {
+    "B459": "洛伦兹谐振线型斜率极值（解析闭式 golden vs 中心差分数值微分候选）",
+    "B460": "波导灵敏度 HF 微扰闭式 golden vs 有限差分候选（对称平板波导 TE0）",
+    "B461": "表面/吸附层灵敏度 HF 微扰闭式 golden vs 三层 TMM 有限差分候选（对称平板波导 TE0 · 含吸附层）",
+    "B462": "朗缪尔吸附平衡覆盖度 θ_eq 闭式 golden vs RK4 积分候选（理想单位点模型）",
+    "B463": "矩形微通道 Hagen-Poiseuille 体积流量（精确矩形级数 golden vs 2D 有限差分 Poisson 候选）",
+    "B464": "Lucas-Washburn 毛细填充长度（闭式 golden vs 后向欧拉隐式积分候选）",
+    "B465": "圆柱微通道壁面径向热阻（Fourier 闭式 golden vs 1D 有限差分径向 Laplace 候选）",
+    "B466": "密集传感阵列热串扰比（阻尼热扩散闭式 golden vs 1D 有限差分三对角候选）",
+    "B467": "TIA 读出噪声底 kT/C（频域闭式 golden vs 时域冲激响应数值积分候选）",
+    "B468": "光纤-波导横向对准耦合效率（高斯模场重叠闭式 golden vs 采样-插值重叠积分候选）",
+    "B469": "薄线（thin-wire）波导折射率灵敏度 S=dn_eff/dn_a（一阶本征值微扰闭式 golden vs FV-FD 候选）",
+    "B470": "狭缝（slot）波导折射率灵敏度 S=dn_eff/dn_a（一阶本征值微扰闭式 golden vs FV-FD 候选）",
+    "B471": "悬浮（suspended）波导折射率灵敏度 S=dn_eff/dn_a（一阶本征值微扰闭式 golden vs FV-FD 候选 · 去衬底 2.4× 增强杠杆）",
+    "B472": "Q 增强 LOD 缩放闭式（LOD_real(Q)=√((LOD_elec_ref·Q0/Q)²+LOD_temp_ref²) · 自证桩 · 电学受限区间）",
+}
+ANCHORS_SOURCE = 'segment'
+
+ANCHORS_NOTE = (
+    "PS 光子传感号段 B459–B472 全 14 条（洛伦兹线型 / 波导灵敏度 HF 微扰 / 吸附覆盖度 / 微流 Hagen-Poiseuille / 毛细填充 / 壁面热阻 / 阵列热串扰 / TIA kT-C 噪声 / 对准耦合 / 薄线-狭缝-悬浮灵敏度 / Q 增强 LOD）。"
+    "🔴 卡内无运行时锚引用。。")
+
 def case_card(arch_id: Optional[str] = None, R_um: Optional[float] = None,
               Q: Optional[float] = None, delta_n: Optional[float] = None,
               repo_root: Optional[str] = None) -> Dict[str, Any]:
@@ -429,6 +461,9 @@ def case_card(arch_id: Optional[str] = None, R_um: Optional[float] = None,
     return {
         "endpoint": "/api/sensor_demo",
         "verdict": "DESIGN_BUDGET",
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": HONEST_NOTE,
         "design": {
             "arch_id": arch["id"],

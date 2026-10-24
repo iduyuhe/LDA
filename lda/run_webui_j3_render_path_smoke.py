@@ -249,9 +249,15 @@ def main() -> int:
     unused = sorted(tops - used_tops)
     check("C1 🔴 反向完备（顶层）：`case_card()` 全部 %d 个顶层键都被前端引用" % len(tops),
           not unused, "未被引用=%s" % unused)
+    # 🔴 N3-a（v0.9.283）判据修正：`anchors` 是**动态键集块** —— 其键 = 账本锚号，
+    #    由账本决定（新增一条锚就变）。对动态键集要求"逐字段字面引用"意味着
+    #    **账本每加一锚就要改 18 个 render 函数** ⇒ 那是反模式，不是保护。
+    #    ⇒ 豁免逐字段，但**换成更严的替代判据 C2b**：必须对该块做 `Object.keys`
+    #    别名遍历渲染。只出现一次 `d.anchors` 而不用它，C2b 照样红。
+    _DYNAMIC_KEY_BLOCKS = {"anchors"}
     blocks = []
     for k, v in card.items():
-        if isinstance(v, dict):
+        if isinstance(v, dict) and k not in _DYNAMIC_KEY_BLOCKS:
             blocks.append((k, set(v.keys())))
     miss_fields = []
     for blk, keys in blocks:
@@ -261,6 +267,15 @@ def main() -> int:
             miss_fields.append((blk, sorted(d)))
     check("C2 🔴 反向完备（%d 个嵌套块）：每块每个字段都被前端引用" % len(blocks),
           not miss_fields, "缺字段=%s" % miss_fields)
+
+    # C2b：动态键集块（anchors）必须被**别名遍历**渲染，不是只被"提了一下"
+    _m = re.search(r"var\s+(\w+)\s*=\s*d\.anchors\s*\|\|\s*\{\}", rj3)
+    _alias = _m.group(1) if _m else None
+    _loop_ok = bool(_alias) and ("Object.keys(" + _alias + ")" in rj3) \
+        and ".forEach(" in rj3
+    check("C2b 🔴 动态键集块 anchors 必须别名遍历渲染（Object.keys(<别名>).forEach；"
+          "防「只引用不显示」）", _loop_ok,
+          "别名=%s 遍历=%s" % (_alias, _loop_ok))
 
     # ----------------------------------------------------------------- D
     dres = _cross_source(card)

@@ -150,6 +150,12 @@ def logical_error_area(k: float = K_AREA, big_l: float = L_AREA) -> float:
 # ---------------------------------------------------------------------------
 # 案例卡
 # ---------------------------------------------------------------------------
+ANCHORS_SOURCE = "segment"
+
+ANCHORS_NOTE = (
+    "QEC 号段 B497–B505 全 9 条（阈值距离 / 解码器权重与二阶矩 / 旗比特检测 / 稳定子关联 / CNOT 与 lattice surgery 保真 / 端到端失效）。"
+    "。")
+
 def case_card() -> Dict[str, Any]:
     """J1 只读案例卡（零重计算 · 闭式算术现算）。"""
     sw = syndrome_weight()
@@ -166,6 +172,9 @@ def case_card() -> Dict[str, Any]:
         "milestones": list(MILESTONES),
         "anchors": dict(ANCHORS),
         "gaps": list(GAPS),
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": J1_HONEST_NOTE,
         "verdict": "DESIGN_BUDGET",
         "render_path_smoke": RENDER_PATH_SMOKE,

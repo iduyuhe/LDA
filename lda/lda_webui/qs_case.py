@@ -397,6 +397,48 @@ def _artifact_manifest(repo_root: Optional[str] = None) -> Dict[str, Any]:
 
 
 # ═══════════════════════════════ 案例卡 ═══════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════════
+# N3-a · 签核锚登记（v0.9.283 · 让"签的是哪些锚"外部可复核）
+# ---------------------------------------------------------------------------
+# 🔴 `ANCHORS_SOURCE` 是**证据等级**，不是装饰：
+#      "runtime"  该卡代码**真的跑**这条锚（可观测字段/调用）
+#      "segment"  依据账本**号段归属**登记，卡内无运行时引用
+#      "none"     本卡确实不依赖账本锚（如实登记为空，非缺漏）
+#    把 segment 当 runtime 读，就是"把号段归属当已验证" —— 本项目的头号复发错。
+# ═══════════════════════════════════════════════════════════════════════════
+ANCHORS = {
+    "B473": "NV 色心磁力计磁灵敏度谱密度 η（闭式散粒极限 golden vs 数值误差传播链候选 · T/√Hz）",
+    "B474": "量子传感器灵敏度 FOM 体系（线宽 FOM 路径）：闭式散粒极限 golden vs 数值线宽提取链候选 · T/√Hz",
+    "B475": "自旋回波（Hahn echo）相位方差（退相干/DD 相干时间建模）：闭式 golden vs 时间域数值积分候选 · 无量纲",
+    "B476": "最优色心深度 d*（灵敏度几何优化：深度 ⇄ 收集效率 ⇄ 表面噪声权衡）：闭式根方程 golden vs 网格扫描+抛物插值候选 · nm",
+    "B477": "NA 立体角收集效率 η_NA（偶极图样 sin²θ 在 NA 锥内能量占比）：闭式解析积分 golden vs 数值角分布采样候选 · 无量纲",
+    "B478": "磁偶极近场串扰系数 X（阵列相邻 NV 柱互相污染）：闭式立方律 golden vs 点偶极场数值积分候选 · 无量纲",
+    "B479": "串扰恶化灵敏度倍率 √(1+X_tot²)（阵列通道被串扰噪声污染）：闭式平方和 golden vs 蒙特卡洛噪声功率叠加候选 · 无量纲",
+    "B480": "梯度计共模抑制比 CMRR（两近邻 NV 柱差分抑共模）：闭式 20log₁₀(1/ε) golden vs 含噪样本 LSQ 斜率比候选 · dB",
+    "B481": "梯度计差模灵敏度 η_grad（两点差分噪声 ×√2 传播）：闭式 η√2/baseline golden vs 蒙特卡洛两点差分标准差候选 · T/√Hz/µm",
+    "B482": "微波频锁鉴别器中心斜率（ODMR 锁定增益）：闭式解析线型差分斜率 golden vs 时域 FID 数值线型中心差分斜率候选 · 无量纲（Hz⁻¹）",
+    "B483": "磁场标度因子自标定 k̂（磁场闭环核心）：闭式两点法 golden vs 全跨多点 LSQ 斜率候选 · V/T",
+    "B484": "AC 灵敏度带宽折算 η_AC（动态范围/读出）：闭式 η·√(2Δf) golden vs 蒙特卡洛带限噪声 rms 候选 · T",
+    "B485": "SQUID 环路临界电流磁通调制 I_c(Φ)（超导磁力计）：闭式矢量叠加 golden vs 数值相空间扫描候选 · A",
+    "B486": "磁通-电压转导 ∂I_c/∂Φ（超导磁力计）：闭式解析导数 golden vs 数值中心差分候选 · A/Wb",
+    "B487": "磁场灵敏度谱密度 B_N（超导磁力计）：闭式逐级代入 golden vs 蒙特卡洛 Johnson 噪声传播候选 · T/√Hz",
+    "B488": "磁通聚焦变压器有效面积 A_eff（超导磁力计优化）：闭式分压比 golden vs 离散 Neumann 互感重建候选 · m²",
+    "B489": "亚微米结噪声约束磁通噪声谱密度 S_Φ,opt（超导磁力计优化）：闭式逐级代入 golden vs 蒙特卡洛 Johnson 噪声传播候选 · Wb²/Hz",
+    "B490": "优化后磁场灵敏度 B_N,opt（超导磁力计优化）：闭式三重叠加 golden vs MC + 数值变压器解候选 · T/√Hz",
+    "B491": "光抽运关闭后自由进动横向极化 P_x(t*)（OPM/SERF 腿 C 时域信号）：闭式 Bloch 精确解 golden vs RK4 时间推进候选 · 无量纲",
+    "B492": "碱金属（Rb）饱和蒸气数密度 n(T)（OPM 气室温度定标）：闭式 Clausius–Clapeyron golden vs 复合梯形数值积分候选 · m⁻³",
+    "B493": "泵浦光 Beer–Lambert 透过率 T(L)（OPM 气室光路）：闭式指数 golden vs RK4 空间推进候选 · 无量纲",
+    "B494": "腔品质因子 Q=ω/κ（腔 QED 物理链）：闭式 Q=ω/κ golden vs RK4 能量衰减反解 κ 候选 · 无量纲",
+    "B495": "有效模体积 V_eff（腔 QED 物理链）：闭式 A·8a/15 golden vs 单波腹腔模包络中点求积候选 · m³",
+    "B496": "单光子耦合 g=(μ/ħ)√(ħω/(εV_eff))（腔 QED 物理链）：闭式 golden vs 数值场能积分候选 · Hz",
+}
+ANCHORS_SOURCE = 'segment'
+
+ANCHORS_NOTE = (
+    "量子传感号段 B473–B496 全 24 条（NV 色心磁力计 / 梯度计 CMRR / SQUID 磁通调制 / OPM-SERF / 腔 QED）。"
+    "🔴 卡内无运行时锚引用。。")
+
 def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
     """组装量子传感器案例卡（只读 · 零重计算 · 免登录）。
 
@@ -456,6 +498,9 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "honest_limits": list(POSITIONING["honest_limits"]),
         },
         "artifacts": _artifact_manifest(repo_root),
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": QS_HONEST_NOTE,
     }
 

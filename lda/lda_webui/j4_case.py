@@ -155,6 +155,26 @@ def microcell_rates(cell_mm: float = 2.0, bulk_mm: float = 20.0,
             "penalty": g_cell / g_bulk}
 
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+# N3-a · 签核锚登记（v0.9.283 · 让"签的是哪些锚"外部可复核）
+# ---------------------------------------------------------------------------
+# 🔴 `ANCHORS_SOURCE` 是**证据等级**，不是装饰：
+#      "runtime"  该卡代码**真的跑**这条锚（可观测字段/调用）
+#      "segment"  依据账本**号段归属**登记，卡内无运行时引用
+#      "none"     本卡确实不依赖账本锚（如实登记为空，非缺漏）
+#    把 segment 当 runtime 读，就是"把号段归属当已验证" —— 本项目的头号复发错。
+# ═══════════════════════════════════════════════════════════════════════════
+ANCHORS = {
+    "B515": "多参数 NV 传感交叉灵敏度解耦温度分量 τ̂（J4 量子传感系统集成 · M0 多参数传感）：Cramer 闭式解析反演 golden vs Landweber 迭代解耦候选 · 无量纲",
+    "B518": "低温布线束热负载 Q（J4 量子传感系统集成 · M3 封装热负载）：Wiedemann–Franz 电子热导有理闭式 golden vs RK4 积分定义 ODE 候选 · W",
+}
+ANCHORS_SOURCE = 'segment'
+
+ANCHORS_NOTE = (
+    "J4 号段 B515（多参数交叉灵敏度解耦）+ B518（低温布线束热负载）；**B516/B517 是账本 reserved_null 空位**，不计入。"
+    "🔴 卡内无运行时锚引用。。")
+
 def case_card() -> Dict[str, Any]:
     """案例卡数据（只读 GET 用）。"""
     tau = cramer_temperature()
@@ -164,6 +184,9 @@ def case_card() -> Dict[str, Any]:
     return {
         "case_id": CASE_ID,
         "verdict": "DESIGN_BUDGET",
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": J4_HONEST_NOTE,
         "milestones": MILESTONES,
         "findings": FINDINGS,

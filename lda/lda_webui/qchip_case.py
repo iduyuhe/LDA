@@ -308,6 +308,30 @@ def _artifact_manifest(repo_root: str | None = None) -> dict:
 
 
 # ═══════════════════════════════ 案例卡 ═══════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════════
+# N3-a · 签核锚登记（v0.9.283 · 让"签的是哪些锚"外部可复核）
+# ---------------------------------------------------------------------------
+# 🔴 `ANCHORS_SOURCE` 是**证据等级**，不是装饰：
+#      "runtime"  该卡代码**真的跑**这条锚（可观测字段/调用）
+#      "segment"  依据账本**号段归属**登记，卡内无运行时引用
+#      "none"     本卡确实不依赖账本锚（如实登记为空，非缺漏）
+#    把 segment 当 runtime 读，就是"把号段归属当已验证" —— 本项目的头号复发错。
+# ═══════════════════════════════════════════════════════════════════════════
+ANCHORS = {
+    "B453": "相干态经损耗通道的输入-输出保真度（解析闭式 golden vs 截断 Fock 空间 Kraus 算子求和）",
+    "B454": "TMSS on/off 预报条件态纯度（解析闭式 golden vs 截断 Fock 空间矩阵指数 + 投影 + 部分迹）",
+    "B455": "TMSS on/off 预报条件态 g²(0)（解析闭式 golden vs 截断 Fock 空间矩阵指数 + 投影 + 部分迹）",
+    "B456": "WCS（弱相干态）单光子概率·有限 Fock 空间（解析闭式 golden vs 截断 Fock 空间归一密态 ρ₁₁）",
+    "B457": "WCS（弱相干态）多光子污染 P(≥2)·有限 Fock 空间（解析闭式 golden vs 截断 Fock 空间归一密态 Π_{≥2} 迹）",
+    "S4": "量子门保真度预算（∏fᵢ 乘法级联）",
+}
+ANCHORS_SOURCE = 'segment'
+
+ANCHORS_NOTE = (
+    "LOQC 号段 B453–B457（损耗通道保真度 / TMSS 条件态纯度 / g²(0) / WCS 单光子概率 / 多光子污染）+ S4（量子门保真度预算）。"
+    "🔴 卡内无运行时锚引用。。")
+
 def case_card(n_modes: int = FLAGSHIP_N, repo_root: str | None = None,
               topology: str = "rect",
               per_mzi_db: float | None = None,
@@ -385,6 +409,9 @@ def case_card(n_modes: int = FLAGSHIP_N, repo_root: str | None = None,
         "artifacts": _artifact_manifest(repo_root),
         "verdict": "DESIGN_BUDGET",
         "verdict_label": "设计预算口径（非实测签核）",
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": QCHIP_HONEST_NOTE,
     }
 

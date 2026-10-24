@@ -246,6 +246,11 @@ def _gate(seg: str, value: float) -> str:
     return "PASS" if ok else "REVIEW"
 
 
+ANCHORS_SOURCE = "segment"
+
+ANCHORS_NOTE = (
+    "量子网络号段 B519–B522 全 4 条（纠缠分发保真 / HOM 可见度 / 中继交换产出 / 微波-光换能效率）。。")
+
 def case_card() -> Dict[str, Any]:
     """J5 只读案例卡（六段链路 + 四锚 + M4 净增 0 登记 · 零重计算）。"""
     t_link = transmission()
@@ -278,6 +283,9 @@ def case_card() -> Dict[str, Any]:
     return {
         "case_id": CASE_ID,
         "verdict": "DESIGN_BUDGET",
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": J5_HONEST_NOTE,
         "milestones": MILESTONES,
         "anchors": ANCHORS,

@@ -87,7 +87,9 @@ CORE_SMOKES: List[str] = [
     #    Python float 跨 HTTP 边界 ⇒ `json.dumps` 产出 `-Infinity`（非标准 JSON）⇒
     #    浏览器 `JSON.parse` 抛 "No number after minus sign" ⇒ 整卡崩；而 Python
     #    `json.load` **接受**该字面 ⇒ 旧验收是**假绿**。本门禁守「前端能不能打开」。
-    "run_webui_json_hard_smoke.py",         # 7 张公开 demo 卡标准 JSON 出口 + oi 真 −∞ tag
+    "run_webui_json_hard_smoke.py",         # 8 张 demo 卡标准 JSON 出口 + oi 真 −∞ tag
+    #   + N3 签核 schema（v0.9.283 · 18 张卡 × grade/evidence/deck 三维）
+    #   + N3-a 锚登记对拍（S5b 登记≡卡上 · S5c 三档自洽 · S6b 对拍器反向探针）
     # 实证语料库入口（D-66 入 core）：ci.yml 自 v0.9.8 起一直跑它，但**本地 core 未收录**
     # → D-63 引入的相对导入 bug 让 GitHub 主干红了多个版本而本地全绿（典型「宣称全绿、
     # 主干红」）。入 core 后该类缺口由本地门禁兜底。以子路径调用（cwd=lda/）。

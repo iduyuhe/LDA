@@ -165,6 +165,11 @@ def kapitza_R(T: float = T_K) -> float:
     return 1.0 / kapitza_h(T)
 
 
+ANCHORS_SOURCE = "segment"
+
+ANCHORS_NOTE = (
+    "蓝图 v2 B523（换能阵列孔径截断）+ B524（Kapitza 界面热导）。。")
+
 def case_card() -> Dict[str, object]:
     """只读案例卡（全部闭式现算 · 零重计算）。"""
     g = array_average_clip()
@@ -198,6 +203,9 @@ def case_card() -> Dict[str, object]:
     return {
         "case_id": CASE_ID,
         "verdict": "DESIGN_BUDGET",
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": HONEST_NOTE,
         "milestones": MILESTONES,
         "anchors": ANCHORS,

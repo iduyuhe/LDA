@@ -1375,6 +1375,106 @@ def h_verification_ledger(h, p, q, path):
 
 
 # --------------------------------------------------------------------------
+# /api/signing 签核登记审计（N3-c · 公开只读）
+# `signing_schema.audit()` 要**运行时读 18 张案例卡**（首次 ~6s，qchip 216 模现算
+# 最重）⇒ 与 benchmark_crosscheck 同款纪律：串行锁 + TTL 缓存，防并发打爆线程。
+# 🔴 数据**无参数** ⇒ 缓存键固定，不存在"按请求泄漏内存"（有参数的端点才需要上限）。
+# --------------------------------------------------------------------------
+_SIGNING_LOCK = threading.Lock()
+_SIGNING_CACHE = {}
+_SIGNING_CACHE_TTL = 300.0
+
+
+def _signing_payload():
+    """构造 `/api/signing` 响应体（现算一次，供缓存）。
+
+    只做**转发 + 整形**，不重算任何判据 —— 真源是 `lda_harness.signing_schema`。
+    `anchors_note` / `anchors_source` 取自**卡上实际字段**（与门禁 S5b 同源）。
+    """
+    from lda_harness import signing_schema as SS
+
+    au = SS.audit()
+    cases = {}
+    for k in sorted(SS.CASES):
+        r = SS.CASES[k]
+        card = SS.read_card(k)
+        cases[k] = {
+            "grade": r["grade"],
+            "claimable_grade": r["claimable_grade"],
+            "allow_external": r["allow_external"],
+            "claim_downgraded": r["claim_downgraded"],
+            "evidence": r["evidence"],
+            "deck": r["deck"],
+            "capacity_basis": r["capacity_basis"],
+            "anchors": sorted(r["anchors"]),
+            "anchors_source": card.get("anchors_source"),
+            "anchors_note": card.get("anchors_note"),
+            # N3-d：诚实边界统一从卡上取（不看模块变量名 —— 18 个模块有 3 种形态）
+            "honest_note": card.get("honest_note"),
+        }
+    return {
+        "schema": SS.SCHEMA,
+        "endpoint": "/api/signing",
+        "summary": {
+            "cases_total": au["cases_total"],
+            "by_grade": au["by_grade"],
+            "by_claimable_grade": au["by_claimable_grade"],
+            "by_evidence": au["by_evidence"],
+            "by_anchors_source": au["by_anchors_source"],
+            "violations": au["violations"],
+            "claim_downgraded": au["claim_downgraded"],
+            "allow_external_cases": au["allow_external_cases"],
+            "anchors_unregistered": au["anchors_unregistered"],
+            "anchors_drift": au["anchors_drift"],
+        },
+        "cases": cases,
+        "honest_note": (
+            "① `grade` 是**工程链深度事实**（版图/DRC/LVS 走到哪一步），"
+            "**不代表流片实测**；② `claimable_grade` 是**对外可宣称口径**，受 deck 可信等级限制 —— "
+            "两者是独立维度，不可互读（deck 是公开近似时，工程链再深也只能对外称审计级）；"
+            "③ `allow_external_cases` 为空 ⇒ **全部 18 张卡不得进对外材料**（无任何 NDA deck）；"
+            "④ `anchors_source=segment` 表示该卡的锚按**账本号段归属**登记，"
+            "**卡内无运行时引用** ⇒ 是「有据可查」而非「已验证」，别读成 runtime；"
+            "⑤ `anchors_source=runtime` 全项目仅 1 张（oi→B19，卡内实测 True）；"
+            "⑥ 本端点只转发 `lda_harness/signing_schema.py` 的审计结果，不产生任何新物理量，"
+            "LLM 不进判决路径。"
+        ),
+    }
+
+
+def h_signing(h, p, q, path):
+    """GET /api/signing —— 18 张案例卡的**签核登记审计**（公开只读 · 无鉴权）。
+
+    一条 URL 回答外部最常问的那句话：「这一张卡，到底是什么级别的签核？」
+
+    暴露三件**可机器复核**的事实（真源 `lda_harness/signing_schema.py`）：
+      · `grade`（工程链深度）与 `claimable_grade`（对外口径）**分开报**，不压成一个数；
+      · 每张卡的 `anchors` + `anchors_source`（runtime/segment/none 三档证据等级）；
+      · `anchors_drift`（登记面 ⇄ 卡上实况的差异，正常应为空）。
+
+    🔴 与 `/api/verification_ledger` 同属「公开只读验货」类：不鉴权、不写盘、
+    不改任何判决；**不报 TOPS/fJ-op/能效**。
+
+    ⚠️ 首次请求需运行时读 18 张案例卡（~6s，qchip 216 模现算最重），
+    之后命中 TTL 缓存（300s）秒回；并发按串行锁排队。
+    """
+    try:
+        now = time.time()
+        with _SIGNING_LOCK:
+            cached = _SIGNING_CACHE.get("payload")
+            at = _SIGNING_CACHE.get("at", 0.0)
+            if cached is not None and (now - at) < _SIGNING_CACHE_TTL:
+                return (200, cached)
+            payload = _signing_payload()
+            _SIGNING_CACHE["payload"] = payload
+            _SIGNING_CACHE["at"] = time.time()
+        return (200, payload)
+    except Exception as e:  # noqa: BLE001 —— 如实暴露，不静默回退假数据
+        return (500, {"endpoint": "/api/signing", "error": "%s: %s"
+                      % (type(e).__name__, e)})
+
+
+# --------------------------------------------------------------------------
 # /api/benchmark_crosscheck 重计算端点并发护栏（与 cpo_array 同款纪律）
 # 无鉴权公开 GET、默认实跑 run_crosscheck(quick=True) ~9s（本地实测 9.2s），
 # ThreadingHTTPServer 下并发会被并行打爆。串行锁 + 结果缓存（TTL 120s）。
@@ -2437,6 +2537,8 @@ GET_ROUTES = {
     "/api/qtrack": h_qtrack_demo,
     "/api/cpo_array": h_cpo_array,
     "/api/verification_ledger": h_verification_ledger,
+    # N3-c：18 张案例卡签核登记审计（一条 URL 自查「这卡是什么级别签核」）
+    "/api/signing": h_signing,
     "/api/benchmark_crosscheck": h_benchmark_crosscheck,
     "/api/about": h_about,
 }

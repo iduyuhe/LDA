@@ -79,6 +79,30 @@ def _load_modules():
     }, oi_case
 
 
+def _signing_cards():
+    """N3（v0.9.283）：载入签核 schema 覆盖的 **18 张**案例卡（只取 verdict，便宜）。
+
+    实测 11 张未在上述 builders 内的卡合计 **0.06s**（均为硬编码/缓存，零重算），
+    故可全量对拍而不拖垮本门禁 120s 预算。
+    """
+    from lda_webui import (accel_case, d1_case, d2_case, d4case, ecore_case,
+                           j1_case, j2_case, j3_case, j4_case, j5_case, oi_case,
+                           pchip_case, pm_case, qchip_case, qs_case, schip_case,
+                           sensor_case, soc_case)
+    return {
+        "accel": lambda: accel_case.case_card(phase_bits=4, dac_bits=6, adc_bits=6),
+        "d1": d1_case.case_card, "d2": d2_case.case_card, "d4": d4case.case_card,
+        "ecore": ecore_case.case_card,
+        "j1": j1_case.case_card, "j2": j2_case.case_card, "j3": j3_case.case_card,
+        "j4": j4_case.case_card, "j5": j5_case.case_card,
+        "oi": oi_case.case_card,
+        "pchip": pchip_case.case_card, "pm": pm_case.case_card,
+        "qchip": lambda: qchip_case.case_card(12, topology="rect"),
+        "qs": qs_case.case_card, "schip": schip_case.case_card,
+        "sensor": sensor_case.case_card, "soc": soc_case.case_card,
+    }
+
+
 def main() -> int:
     builders, oi_case = _load_modules()
 
@@ -190,6 +214,166 @@ def main() -> int:
         _ci = open(CI, encoding="utf-8").read() if os.path.exists(CI) else ""
     except Exception:                                      # noqa: BLE001
         _ci = ""
+    # ══════════════════════════════════════════════════════════════════════
+    # N3 签核 schema（v0.9.283 · D-231）：四域用**同一套话**回答
+    #   「这一张卡，到底是什么级别的签核？」
+    # 三维正交：grade（工程链深度）× evidence（证据强度）× deck（可信等级）。
+    # 🔴 拆维度的理由：`ecore` 的 DESIGN_VERIFIED（工程链到后仿）与 `schip` 的
+    #    DESIGN_SIGNOFF（走完版图+DRC/LVS）**不是同一维度上的强弱**；而"有没有可
+    #    复核的锚"是第三件事（电子域 0 锚）。压进一个字符串会得出错误结论。
+    # ══════════════════════════════════════════════════════════════════════
+    from lda_harness import signing_schema as SS
+    _signed = _signing_cards()
+    _au = SS.audit()
+
+    check("S1 签核 schema 覆盖 ≡ 案例卡全集（18 张）",
+          set(_signed) == set(SS.CASES),
+          "卡=%d schema=%d 差=%s" % (len(_signed), len(SS.CASES),
+                                     sorted(set(_signed) ^ set(SS.CASES))))
+
+    _drift = []
+    for _k in sorted(SS.CASES):
+        if _k not in _signed:
+            continue
+        _card = _signed[_k]() or {}
+        _v = _card.get("verdict")
+        _d = SS.CASES[_k]["declared_grade"]
+        if _v != _d:
+            _drift.append((_k, _d, _v))
+    check("S1b 注册 declared_grade ≡ 卡上 verdict（逐卡防漂移）",
+          not _drift, "漂移=%s" % (_drift[:4] or "无"))
+
+    # 🔴 N3-b（v0.9.283）：**拆维度** —— deck 限制不再判"违规"，也不再降 grade。
+    #    改前 `min(grade, ceiling)` 把 soc 判成 AUDIT_ONLY，读起来像"工程深度比
+    #    13 张设计预算卡还浅"（AUDIT_ONLY 在旧序列里 rank 1 < DESIGN_BUDGET 2）。
+    #    改后：`grade` 保留事实、`claimable_grade` 表达限制，两者各说各的事。
+    check("S2 违规 0 ∧ 对外口径压制登记 == 棘轮 %d（soc：公开近似 deck ⇒ 只可审计）"
+          % SS.CLAIM_DOWNGRADED_CASES,
+          _au["violations"] == SS.CEILING_VIOLATIONS
+          and _au["claim_downgraded"] == ["soc"],
+          "violations=%s downgraded=%s detail=%s"
+          % (_au["violations"], _au["claim_downgraded"], _au["violation_detail"]))
+
+    # S2b：**防"拆维度"被用来偷偷降级** —— grade 必须保留事实，claimable 才是限制
+    _soc = SS.CASES["soc"]
+    check("S2b 拆维度未偷偷降级：soc grade 仍 DESIGN_SIGNOFF（事实）∧ "
+          "claimable=AUDIT_ONLY（限制）",
+          _soc["grade"] == "DESIGN_SIGNOFF"
+          and _soc["claimable_grade"] == "AUDIT_ONLY"
+          and _soc["claim_downgraded"] is True,
+          "grade=%s claimable=%s downgraded=%s"
+          % (_soc["grade"], _soc["claimable_grade"], _soc["claim_downgraded"]))
+
+    # S2c：无 NDA deck ⇒ **零对外**。这是防自封的另一侧：
+    #     有人把某卡 deck 改成 foundry_nda 而不带 attestation，R2 会红；
+    #     而若真有人拿到 NDA，这里会从 [] 变非空 —— 必须人决策，不得静默。
+    check("S2c 无任何卡 allow_external（18 张全无 NDA deck ⇒ 零对外签核）",
+          _au["allow_external_cases"] == [],
+          "可对外=%s" % (_au["allow_external_cases"] or "无"))
+
+    _noanc = [k for k, r in SS.CASES.items()
+              if r["evidence"] in ("STRICT", "EMPIRICAL") and not r["anchors"]]
+    check("S3 声称 STRICT/EMPIRICAL 的卡必须有锚号（防「无锚也称强证据」）",
+          not _noanc, "缺锚=%s" % (_noanc or "无"))
+
+    _fab = [k for k, r in SS.CASES.items()
+            if r["capacity_basis"] == "fabricated_devices"]
+    check("S4 无卡声称 fabricated_devices（四域均无实测回流 ⇒ 规模一律版图容量）",
+          not _fab, "越级=%s" % (_fab or "无"))
+
+    check("S5 卡上未登记 anchors 的卡数 == 棘轮 %d（只降不升）"
+          % SS.ANCHOR_UNREGISTERED_CASES,
+          len(_au["anchors_unregistered"]) == SS.ANCHOR_UNREGISTERED_CASES,
+          "实得=%d 已登记=%d 张" % (len(_au["anchors_unregistered"]),
+                                    len(_au["anchors_on_card"])))
+
+    # ── S5b/S5c（v0.9.283 N3-a）：登记面 ⇄ 卡上实况 双向锁死 ──────────────
+    # 🔴 为什么必须运行时对拍：上一版 `anchors_on_card` 是 make_record 的**手填 bool**，
+    #    等于自证。N3-a 改成 audit() 运行时读卡；对拍当场抓出 3 处漂移
+    #    （pchip 多登 B1/B21 无据 · oi 漏登 B19 有实测 · qchip 漏登 S4）。
+    check("S5b 登记 anchors ≡ 卡上 anchors（逐卡运行时对拍 · 漂移即红）",
+          not _au["anchors_drift"],
+          "漂移=%s" % (_au["anchors_drift"] or "无"))
+
+    _src = _au["anchors_source_by_case"]
+    _bad_src = [k for k, v in _src.items() if v not in ("runtime", "segment", "none")]
+    _selfcontra = [k for k, v in _src.items()
+                   if (v == "none" and SS.CASES[k]["anchors"])
+                   or (v == "runtime" and not SS.CASES[k]["anchors"])]
+    check("S5c anchors_source 三档合法 ∧ 自洽（none⇒空锚 · runtime⇒非空锚）",
+          not _bad_src and not _selfcontra,
+          "非法=%s 自相矛盾=%s 分布=%s"
+          % (_bad_src or "无", _selfcontra or "无", _au["by_anchors_source"]))
+
+    # 反向探针：每条规则各必红，且合规写法必绿（两侧都验）
+    # 🔴 N3-b：`claimable_grade` 现在是 R1 的校验对象 ⇒ 探针必须**跟着重算**，
+    #    否则"合规化后必绿"会因 claimable_mismatch 误红（反向探针随真值一起反向）。
+    _p6 = [
+        SS.validate(dict(SS.CASES["ecore"], declared_grade="FOUNDRY_SIGNOFF",
+                         attestation="")),                       # 自封必红
+        SS.validate(dict(SS.CASES["ecore"],
+                         capacity_basis="fabricated_devices")),  # 容量无据必红
+        SS.validate(dict(SS.CASES["j1"], evidence="STRICT", anchors=())),  # 强证据无锚必红
+        # 合规化：deck 换 NDA **且 claimable 重算** ⇒ 必绿
+        SS.validate(dict(SS.CASES["soc"], deck="foundry_nda", attestation="NDA-001",
+                         claimable_grade="DESIGN_SIGNOFF",
+                         claim_ceiling="FOUNDRY_SIGNOFF",
+                         allow_external=True, claim_downgraded=False)),
+        # 只换 deck 不重算 claimable ⇒ 必红（拆维度后的新失败通道）
+        SS.validate(dict(SS.CASES["schip"], deck="foundry_public")),
+        # grade 落回 AUDIT_ONLY（旧"压扁"行为）⇒ 必红（它不在 GRADES 里）
+        SS.validate(dict(SS.CASES["soc"], grade="AUDIT_ONLY", declared_grade="AUDIT_ONLY")),
+    ]
+    check("S6 反向探针：自封／容量无据／强证据无锚／只换deck不重算／grade落回AUDIT_ONLY "
+          "四改必红 ∧ 合规必绿",
+          bool(_p6[0]) and bool(_p6[1]) and bool(_p6[2]) and not _p6[3]
+          and bool(_p6[4]) and bool(_p6[5]),
+          "自封=%d 容量=%d 无锚=%d 合规=%d 只换deck=%d 旧压扁=%d"
+          % (len(_p6[0]), len(_p6[1]), len(_p6[2]), len(_p6[3]),
+             len(_p6[4]), len(_p6[5])))
+
+    # S6b：对拍器本身的探针（**两侧都验** —— 不一致必非空、一致必空）
+    _p6b = [
+        SS.anchors_diff(("B1", "B2"), ("B2", "B3")),   # 两侧各有差 ⇒ 必非空
+        SS.anchors_diff(("B2",), ("B2",)),             # 完全一致 ⇒ 必空
+    ]
+    check("S6b 反向探针：anchors_diff 不一致必非空 ∧ 一致必空（防对拍器恒绿）",
+          bool(_p6b[0]) and not _p6b[1],
+          "不一致=%s 一致=%s" % (_p6b[0], _p6b[1] or "空"))
+
+    # ── N3-d：诚实边界统一读取（S7/S7b/S7c）────────────────────────────
+    # 🔴 收敛点放在**对外契约**（`case_card()["honest_note"]`）而非 Python 变量名：
+    #    18 个模块实际是 **4 张 `HONEST_NOTE` + 12 张 `XXX_HONEST_NOTE` + 2 张内联**
+    #    （`oi`/`accel` 无模块级常量）。改名会连带改 7 个「改模块变量 ⇒ case_card
+    #    必红」的突变探针；而加**别名**是快照 —— 突变后统一入口会给过期值。
+    _nt = _au["honest_note_by_case"]
+    _nt_miss = sorted(k for k, v in _nt.items() if not str(v).strip())
+    check("S7 18 张卡 honest_note 全非空（统一从卡上取 · 不看变量名）",
+          len(_nt) == len(SS.CASES) and not _nt_miss,
+          "卡数=%d 空=%s" % (len(_nt), _nt_miss or "无"))
+
+    from importlib import import_module as _im
+    _bad_cov = sorted(set(SS.CASES) ^ set(SS.NOTE_ATTR))
+    _bad_attr = []
+    for _k, _a in sorted(SS.NOTE_ATTR.items()):
+        if _a is None or _k not in SS.CARD_MODULE:
+            continue
+        if not hasattr(_im("lda_webui." + SS.CARD_MODULE[_k]), _a):
+            _bad_attr.append((_k, _a))
+    check("S7b note_attr 覆盖 == 18 ∧ 登记的模块级常量真存在（防表过期/漏登记）",
+          not _bad_cov and not _bad_attr,
+          "覆盖差=%s 不存在=%s" % (_bad_cov or "无", _bad_attr or "无"))
+
+    # S7c 反向探针（两侧都验）：表少一条必红 · 常量名写错必红
+    _t1 = dict(SS.NOTE_ATTR)
+    _t1.pop("soc")
+    _t2 = dict(SS.NOTE_ATTR)
+    _t2["soc"] = "SOC_HONEST_NOTE_TYPO"
+    _miss_one = set(_t1) != set(SS.CASES)
+    _typo = not hasattr(_im("lda_webui." + SS.CARD_MODULE["soc"]), _t2["soc"])
+    check("S7c 反向探针：note_attr 少一条必红 ∧ 常量名写错必红",
+          _miss_one and _typo, "少一条=%s 写错=%s" % (_miss_one, _typo))
+
     check("K1 本门禁已登记进 CORE_SMOKES（防静默漏接 · 血案 #28 同族）",
           "run_webui_json_hard_smoke.py" in _ci)
 

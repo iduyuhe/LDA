@@ -1062,6 +1062,25 @@ def probe_json_hard_ok() -> bool:
     return True
 
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+# N3-a · 签核锚登记（v0.9.283 · 让"签的是哪些锚"外部可复核）
+# ---------------------------------------------------------------------------
+# 🔴 `ANCHORS_SOURCE` 是**证据等级**，不是装饰：
+#      "runtime"  该卡代码**真的跑**这条锚（可观测字段/调用）
+#      "segment"  依据账本**号段归属**登记，卡内无运行时引用
+#      "none"     本卡确实不依赖账本锚（如实登记为空，非缺漏）
+#    把 segment 当 runtime 读，就是"把号段归属当已验证" —— 本项目的头号复发错。
+# ═══════════════════════════════════════════════════════════════════════════
+ANCHORS = {
+    "B19": "无源链路物理定律锚：无增益（passivity / max|T|≤1）",
+}
+ANCHORS_SOURCE = 'runtime'
+
+ANCHORS_NOTE = (
+    "B19 无源无增益不等式锚 —— **本卡 `b19_passivity` 字段实测 True**（M0/M1/M2 全部满足 max|T|≤1）。"
+    "这是 18 张卡里唯一的运行时锚证据。。")
+
 def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
     """组装 M0 案例卡（确定性现算 + 模块级缓存）。
 
@@ -1435,6 +1454,9 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
         "gaps_total": 7,
         "verdict": "DESIGN_BUDGET",
         "verdict_label": "链路预算设计行为验证口径（确定性现算 · 非流片实测 · 非实测签核）",
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": ("🔴 本卡为只读案例：数字由确定性现算（闭式 + lda_chain 级联引擎 + "
                         "oi_m1/oi_m2 时域与预算 + 几何搜索 + 收发器真 GDS，零重计算 · 免登录 · "
                         "不跑 P&R/FDTD）；M0/M1/M2 均属**设计预算层**（L0 解析器件模型 / A 档闭式"

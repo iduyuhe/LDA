@@ -160,6 +160,27 @@ def _domain_facts() -> Dict[str, Any]:
     return facts
 
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+# N3-a · 签核锚登记（v0.9.283 · 让"签的是哪些锚"外部可复核）
+# ---------------------------------------------------------------------------
+# 🔴 `ANCHORS_SOURCE` 是**证据等级**，不是装饰：
+#      "runtime"  该卡代码**真的跑**这条锚（可观测字段/调用）
+#      "segment"  依据账本**号段归属**登记，卡内无运行时引用
+#      "none"     本卡确实不依赖账本锚（如实登记为空，非缺漏）
+#    把 segment 当 runtime 读，就是"把号段归属当已验证" —— 本项目的头号复发错。
+# ═══════════════════════════════════════════════════════════════════════════
+ANCHORS = {
+    "B523": "多模换能阵列平均孔径截断效率 γ̄（蓝图 v2 · D1 光-量异质集成 · M0）：erf 闭式 golden vs 限窗复合 Simpson 求积候选 · 无量纲",
+    "B524": "Kapitza 界面热导 h_K（蓝图 v2 · D1 光-量异质集成 · M3 低温共集成热接口）：DMM+低温 Debye 闭式 golden vs 内能温度中心差商候选 · W/(m²·K)",
+    "B525": "退极化信道 hashing（coherent-information）界 I_c(p)（闭式 1−H₂(p)−p·log₂3 vs 对数积分表示 + 复合 Simpson · bit/信道使用）",
+}
+ANCHORS_SOURCE = 'segment'
+
+ANCHORS_NOTE = (
+    "蓝图 v2 号段 B523–B525（D1 换能阵列孔径截断 / Kapitza 界面热导 / 退极化信道 hashing 界）。"
+    "🔴 卡内无运行时锚引用。。")
+
 def case_card(use_cache: bool = True) -> Dict[str, Any]:
     """组装 D4 扩面案例卡（确定性现算 + 模块级缓存）。"""
     if use_cache and CASE_ID in _CARD_CACHE:
@@ -173,6 +194,9 @@ def case_card(use_cache: bool = True) -> Dict[str, Any]:
         "identity": IDENTITY,
         "verdict": "DESIGN_BUDGET",
         "verdict_label": "设计期签核口径（几何 + DRC/LVS 双闸 · 确定性哈希 · 非流片实测）",
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": HONEST_NOTE,
         "domains": facts,
         "domain_list": list(facts),

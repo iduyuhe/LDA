@@ -218,6 +218,11 @@ def curve_points(p_th: float = 0.01, A: float = 0.03,
     return out
 
 
+ANCHORS_SOURCE = "segment"
+
+ANCHORS_NOTE = (
+    "蓝图 v2 B525（退极化信道 hashing 界 I_c(p)）。。")
+
 def case_card() -> Dict[str, object]:
     """只读案例卡（全部闭式现算 · 零重计算）。"""
     ref = d_star()                       # 参考档（与既有锚默认档同源）
@@ -263,6 +268,9 @@ def case_card() -> Dict[str, object]:
     return {
         "case_id": CASE_ID,
         "verdict": "DESIGN_BUDGET",
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": HONEST_NOTE,
         "literature_note": LITERATURE_NOTE,
         "milestones": MILESTONES,

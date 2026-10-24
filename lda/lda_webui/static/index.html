@@ -4979,6 +4979,12 @@ const postJson = api;
 
 function fmt(v){ return (typeof v==='number') ? (Math.abs(v)<1e-3 ? v.toExponential(3) : v.toPrecision(7)) : v; }
 
+function _ancSrc(s){
+  var M={runtime:'runtime — 卡内代码/字段实测该锚（唯一可观测级）',
+         segment:'segment — 依据账本号段归属登记，卡内无运行时引用',
+         none:'none — 本卡不依赖账本锚（如实登记为空）'};
+  return M[s]||('未标注('+s+')');
+}
 function renderStatus(st){
   const built = st.layers.filter(l=>l.status==='built').length;
   $('c-layers').textContent = built + '/' + st.layers.length;
@@ -9724,6 +9730,10 @@ function renderPm(d){
     +' · 关联面板 '+JSON.stringify(UI.related_panels||[])+'</div>';
   h+='<div class="note">面板范围：'+(UI.scope_note||'-')+'</div>';
 
+  h+='<h3 style="margin:14px 0 4px">签核锚登记（N3-a · 可核可追）</h3><table class="tbl"><tr><th>锚</th><th>物理量</th></tr>';
+  var an=d.anchors||{}; Object.keys(an).forEach(function(k){ h+='<tr><td><b>'+k+'</b></td><td>'+an[k]+'</td></tr>'; });
+  h+='<tr><td>锚来源（证据等级）</td><td>'+_ancSrc(d.anchors_source)+'</td></tr>';
+  h+='<tr><td colspan="2" class="hint">'+d.anchors_note+'</td></tr></table>';
   $('pmBody').innerHTML=h;
   $('pmConclusion').innerHTML='<b>结论：</b>用 LDA 从零走通了「非易失光子存储单元 → 阵列版图 → 真 GDSII → '
     +'几何 DRC/LVS → 从最终字节独立解码复核 → 读出/写驱动 → 系统误码预算 → 2.5D 装配」的完整签核链：主阵列 '
@@ -10679,6 +10689,8 @@ function renderJ1(d){
   h+='</table>';
   h+='<h3 style="margin:14px 0 4px">③ 九锚（B497–B505 · 逻辑比特层）</h3><table class="tbl"><tr><th>锚</th><th>物理量</th></tr>';
   var an=d.anchors||{}; Object.keys(an).forEach(function(k){ h+='<tr><td><b>'+k+'</b></td><td>'+an[k]+'</td></tr>'; });
+  h+='<tr><td>锚来源（证据等级）</td><td>'+_ancSrc(d.anchors_source)+'</td></tr>';
+  h+='<tr><td colspan="2" class="hint">'+d.anchors_note+'</td></tr>';
   h+='</table>';
   h+='<h3 style="margin:14px 0 4px">④ 缺口登记</h3><table class="tbl"><tr><th>缺口</th></tr>';
   (d.gaps||[]).forEach(function(g){ h+='<tr><td>'+g+'</td></tr>'; });
@@ -10715,6 +10727,8 @@ function renderD1(d){
   h+='</table>';
   h+='<h3 style="margin:14px 0 4px">③ 两个真锚（严格独立）</h3><table class="tbl"><tr><th>锚</th><th>物理量</th></tr>';
   var an=d.anchors||{}; Object.keys(an).forEach(function(k){ h+='<tr><td><b>'+k+'</b></td><td>'+an[k]+'</td></tr>'; });
+  h+='<tr><td>锚来源（证据等级）</td><td>'+_ancSrc(d.anchors_source)+'</td></tr>';
+  h+='<tr><td colspan="2" class="hint">'+d.anchors_note+'</td></tr>';
   h+='</table>';
   h+='<h3 style="margin:14px 0 4px">④ 两条负结果（裁决不作为锚 · 证据同屏）</h3>';
   var nr=d.negative_results||{}; Object.keys(nr).forEach(function(k){
@@ -10760,6 +10774,8 @@ function renderJ5(d){
   h+='</table>';
   h+='<h3 style="margin:14px 0 4px">③ 四锚（严格独立）</h3><table class="tbl"><tr><th>锚</th><th>物理量</th></tr>';
   var an=d.anchors||{}; Object.keys(an).forEach(function(k){ h+='<tr><td><b>'+k+'</b></td><td>'+an[k]+'</td></tr>'; });
+  h+='<tr><td>锚来源（证据等级）</td><td>'+_ancSrc(d.anchors_source)+'</td></tr>';
+  h+='<tr><td colspan="2" class="hint">'+d.anchors_note+'</td></tr>';
   h+='</table>';
   h+='<h3 style="margin:14px 0 4px">④ M4 净增 0 登记（三证据否决 · 不虚报）</h3>';
   h+='<table class="tbl"><tr><th>邻接项</th><th>理由</th></tr>';
@@ -10812,6 +10828,10 @@ function renderJ4(d){
   (d.gaps||[]).forEach(function(g){ h+='<tr><td>'+g.id+' · '+g.name+'</td><td>'+g.state+'</td></tr>'; });
   h+='</table>';
   h+='<h3 style="margin:14px 0 4px">④ 诚实边界</h3><div class="hint">'+d.honest_note+'</div>';
+  h+='<h3 style="margin:14px 0 4px">签核锚登记（N3-a · 可核可追）</h3><table class="tbl"><tr><th>锚</th><th>物理量</th></tr>';
+  var an=d.anchors||{}; Object.keys(an).forEach(function(k){ h+='<tr><td><b>'+k+'</b></td><td>'+an[k]+'</td></tr>'; });
+  h+='<tr><td>锚来源（证据等级）</td><td>'+_ancSrc(d.anchors_source)+'</td></tr>';
+  h+='<tr><td colspan="2" class="hint">'+d.anchors_note+'</td></tr></table>';
   $('j4Body').innerHTML=h;
   $('j4Conclusion').innerHTML='<b>结论</b>：J4 四档签核链可运行 · 系统链锚 = <b>B515 + B518</b> · M1/M2 <b>锚净增 0</b>（如实登记）· 判决恒为 '+d.verdict+'。';
   return true;
@@ -10915,6 +10935,10 @@ function renderJ3(d){
   h+=_qcTbl(['与产业界的不同'], (pos.what_is_different||[]).map(function(x){ return [x]; }));
   h+=_qcTbl(['诚实边界'], (pos.honest_limits||[]).map(function(x){ return [x]; }));
 
+  h+='<h3 style="margin:14px 0 4px">签核锚登记（N3-a · 可核可追）</h3><table class="tbl"><tr><th>锚</th><th>物理量</th></tr>';
+  var an=d.anchors||{}; Object.keys(an).forEach(function(k){ h+='<tr><td><b>'+k+'</b></td><td>'+an[k]+'</td></tr>'; });
+  h+='<tr><td>锚来源（证据等级）</td><td>'+_ancSrc(d.anchors_source)+'</td></tr>';
+  h+='<tr><td colspan="2" class="hint">'+d.anchors_note+'</td></tr></table>';
   $('j3Body').innerHTML=h;
   $('j3Conclusion').innerHTML='<b>结论：</b>J3 测控与读出闭环层（L3）M0–M4 —— '
     +'脉冲（Rabi P₁='+_sxE(pu.p1,4)+' · t_π='+_sxF(pu.pi_pulse_ns,3)+' ns）→ 泄漏抑制（P_leak='
@@ -11062,6 +11086,10 @@ function renderJ2(d){
     (d.gaps||[]).map(function(gp){
       return ['<code>'+gp.id+'</code>', gp.title, gp.status, gp.detail]; }));
 
+  h+='<h3 style="margin:14px 0 4px">签核锚登记（N3-a · 可核可追）</h3><table class="tbl"><tr><th>锚</th><th>物理量</th></tr>';
+  var an=d.anchors||{}; Object.keys(an).forEach(function(k){ h+='<tr><td><b>'+k+'</b></td><td>'+an[k]+'</td></tr>'; });
+  h+='<tr><td>锚来源（证据等级）</td><td>'+_ancSrc(d.anchors_source)+'</td></tr>';
+  h+='<tr><td colspan="2" class="hint">'+d.anchors_note+'</td></tr></table>';
   $('j2Body').innerHTML=h;
   $('j2Conclusion').innerHTML='<b>口径（判决落非 AI ground）</b>：'+d.honest_note;
   return true;

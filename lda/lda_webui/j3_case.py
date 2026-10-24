@@ -181,6 +181,29 @@ def calibration_iterations(loop_gain: float = 0.5, rel_tol: float = 1e-9) -> int
 
 
 # ═══════════════════════════════ 案例卡 ═══════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════════
+# N3-a · 签核锚登记（v0.9.283 · 让"签的是哪些锚"外部可复核）
+# ---------------------------------------------------------------------------
+# 🔴 `ANCHORS_SOURCE` 是**证据等级**，不是装饰：
+#      "runtime"  该卡代码**真的跑**这条锚（可观测字段/调用）
+#      "segment"  依据账本**号段归属**登记，卡内无运行时引用
+#      "none"     本卡确实不依赖账本锚（如实登记为空，非缺漏）
+#    把 segment 当 runtime 读，就是"把号段归属当已验证" —— 本项目的头号复发错。
+# ═══════════════════════════════════════════════════════════════════════════
+ANCHORS = {
+    "B510": "广义 Rabi 时域布居 P₁=(Ω²/Ω_R²)·sin²(Ω_R t/2)（量子测控 J3 · M0 时域驱动脉冲）：解析闭式 golden vs 时域 TDSE RK4 候选 · 无量纲",
+    "B511": "三能级 transmon 驱动泄漏布居 P_leak（量子测控 J3 · M1 DRAG 泄漏抑制）：三角法精确谱闭式 golden vs 时域 RK4 候选 · 无量纲",
+    "B512": "去极化信道纯度衰减 P(t)=Tr(ρ²)（量子测控 J3 · M2 门保真标定 · unitarity）：解析闭式 golden vs 密度矩阵 Liouvillian RK4 候选 · 无量纲",
+    "B513": "Purcell 滤波器抑制比 S=1/|S21(f_q)|²（量子测控 J3 · M3 读出链）：ABCD 代数闭式 golden vs 导纳 ODE RK4 数值积分候选 · 无量纲",
+    "B514": "分布式相位不敏感放大链附加噪声 n_add（量子测控 J3 · M4 低温电子学 · Caves 极限）：解析闭式 golden vs 复合 Simpson 求积候选 · 光子数",
+}
+ANCHORS_SOURCE = 'segment'
+
+ANCHORS_NOTE = (
+    "J3 号段 B510–B514（广义 Rabi / DRAG 泄漏 / 去极化纯度衰减 / Purcell 滤波抑制比 / 放大链附加噪声）。"
+    "🔴 卡内无运行时锚引用。。")
+
 def case_card() -> Dict[str, Any]:
     """组装 J3 测控闭环案例卡（只读 · 零重计算 · 免登录）。"""
     p1 = rabi_population()
@@ -268,6 +291,9 @@ def case_card() -> Dict[str, Any]:
                 "参数为设计示例量级，误读为实测标定值即为失真。",
             ],
         },
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": J3_HONEST_NOTE,
         "render_path_smoke": RENDER_PATH_SMOKE,
     }

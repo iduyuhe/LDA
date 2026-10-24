@@ -238,6 +238,26 @@ def _artifact_manifest(repo_root: Optional[str] = None) -> Dict[str, Any]:
 
 
 # ═══════════════════════════════ 案例卡 ═══════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════════
+# N3-a · 签核锚登记（v0.9.283 · 让"签的是哪些锚"外部可复核）
+# ---------------------------------------------------------------------------
+# 🔴 `ANCHORS_SOURCE` 是**证据等级**，不是装饰：
+#      "runtime"  该卡代码**真的跑**这条锚（可观测字段/调用）
+#      "segment"  依据账本**号段归属**登记，卡内无运行时引用
+#      "none"     本卡确实不依赖账本锚（如实登记为空，非缺漏）
+#    把 segment 当 runtime 读，就是"把号段归属当已验证" —— 本项目的头号复发错。
+# ═══════════════════════════════════════════════════════════════════════════
+ANCHORS = {
+    "B2": "SOI 条形波导有效折射率 n_eff",
+    "B20": "MZI 马赫曾德尔干涉仪自由光谱范围 FSR",
+}
+ANCHORS_SOURCE = 'segment'
+
+ANCHORS_NOTE = (
+    "依据账本光子基座号段：B2（SOI 波导 n_eff）· B20（MZI FSR）—— 张量核由 MZI 网格构成。"
+    "🔴 卡内无运行时锚引用（见 N3-a §2）。。")
+
 def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
     """组装光计算芯片案例卡（只读 · 零重计算 · 免登录）。
 
@@ -310,6 +330,9 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
         "source_note": LANDMARK_SOURCE_NOTE,
         "artifacts": _artifact_manifest(repo_root),
         "positioning": _positioning(),
+        "anchors": ANCHORS,
+        "anchors_source": ANCHORS_SOURCE,
+        "anchors_note": ANCHORS_NOTE,
         "honest_note": PCHIP_HONEST_NOTE,
     }
 

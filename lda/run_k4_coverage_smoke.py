@@ -14,7 +14,17 @@
     删 manifest 一条 ⇒ C7 必红
   M manifest 运行时登记（v0.9.258 BL-M4）：schema 精确 · 门禁 ⊆ CORE ∧ 锚 ⊆ 账本 ∧ count 自洽 ·
     **coverage.manifest ≡ gate_anchor_manifest（两副本逐元素 · 防漂移）**
+  L **第三档「形态级」覆盖**（v0.9.279 D-227 · F-8 正解）：**正交性**（`l2_gates` 内不得出现
+    纪律门禁）· 结构合法 ∧ calibers 自洽 · ≡ `global_gate_registry` 现算（不得手改）·
+    🔴 **独立性（清空登记面重算 ⇒ l2/l3/盲区 三数全不变）** · 盲区×纪律覆盖交叉计数自洽 ·
+    登记表自检 8/8
   F 红线：生成器零手写证据（`deterministic` + `det.write_text` + 零时钟/随机）· 本门禁 ∈ `CORE_SMOKES`
+
+🔴 **L 组要解决的是一类「读起来像裸锚」的误判**：`run_self_certified_lock_smoke` 这类门禁
+   一个锚号都不写，而是遍历全账本对某**类**锚统一断言 —— K4 原本完全看不见，
+   于是 B18 显示 `l2_count == 0`，读起来像"无人看守"。真相是：**数值面裸、纪律面有覆盖**。
+   L 组把这两件事分开计量，且 L4 用「清空登记面重算」**端到端证明**第三档不进前两档计数
+   （若混进去，独立率与覆盖率会虚高 —— 那是虚报，不是改进）。
 
 🔴 `main()` 返回「真值」而非恒 0。
 🔴 一律走 `smoke_kit.make_check`（助手单一来源棘轮 J3）。
@@ -190,8 +200,12 @@ def main():
     led, raw = load()
     need = ("schema", "generated_by", "roadmap", "subject", "method",
             "summary", "ratchet", "anchors", "gates", "blind_anchors",
-            "excluded_gates")
-    check("A2 顶层字段齐备", all(k in led for k in need),
+            "excluded_gates",
+            # v0.9.279（D-227）：第三档「形态级」覆盖的登记面与交叉台账
+            "global_gates", "global_gates_excluded",
+            "blind_without_any_coverage", "blind_without_subset_coverage")
+    check("A2 顶层字段齐备（含第三档 l2_global 的登记面与交叉台账）",
+          all(k in led for k in need),
           "缺=%s" % [k for k in need if k not in led])
     check("A3 schema 精确", led.get("schema") == _SCHEMA,
           "got=%r" % led.get("schema"))
@@ -255,6 +269,94 @@ def main():
     check("M3 coverage.manifest ≡ gate_anchor_manifest.registries（两副本逐元素 · 防漂移）",
           cov_man == file_man,
           "coverage=%d file=%d" % (len(cov_man), len(file_man)))
+
+    # ── L 第三档「形态级」覆盖（v0.9.279 · D-227 · F-8 正解）──────────
+    # 🔴 本组的核心不是「多了一列诊断」，而是**证明这一列与前两档正交**：
+    #    纪律级覆盖若悄悄混进 l2_count，独立率与覆盖率会虚高 ⇒ 那是虚报。
+    from lda_harness.global_gate_registry import (
+        GLOBAL_GATES, global_coverage, run_selfchecks as _greg_self, registry_stats)
+    from lda_harness.benchmarks import BENCHMARK_DEFS as _BD
+
+    anch = led.get("anchors") or {}
+    greg_gates = set(GLOBAL_GATES)
+
+    # L1 🔴 反污染：数值档 l2_gates 里**不许出现任何纪律门禁名**
+    pollute = sorted({g for v in anch.values() for g in (v.get("l2_gates") or [])
+                      if g in greg_gates})
+    check("L1 🔴 正交性：l2_gates 内不得出现纪律门禁（第三档未污染数值档）",
+          not pollute, "污染=%s" % pollute[:3])
+
+    # L2 第三档结构合法：条条带 mechanism/caliber 且在登记面
+    bad_rows = []
+    for a, v in anch.items():
+        for row in (v.get("l2_global") or []):
+            if (row.get("gate") not in greg_gates
+                    or not row.get("mechanism") or not row.get("caliber")):
+                bad_rows.append((a, row))
+        cal = sorted({r.get("caliber") for r in (v.get("l2_global") or [])})
+        if cal != (v.get("l2_global_calibers") or []):
+            bad_rows.append((a, "l2_global_calibers 不一致"))
+    check("L2 第三档结构合法：gate ∈ 登记面 ∧ mechanism/caliber 非空 ∧ calibers 字段自洽",
+          not bad_rows, "坏行=%s" % bad_rows[:3])
+
+    # L3 覆盖面 ≡ 登记表现算（生成器不许手改第三档）
+    fresh = {k: v for k, v in global_coverage(_BD).items() if k in _ledger_ids()}
+    ledger_g = {a: sorted((r.get("gate"), r.get("caliber"))
+                          for r in (v.get("l2_global") or []))
+                for a, v in anch.items()}
+    fresh_g = {a: sorted((r["gate"], r["caliber"]) for r in rows)
+               for a, rows in fresh.items()}
+    ledger_g = {a: v for a, v in ledger_g.items() if v}
+    check("L3 第三档 ≡ global_gate_registry 现算（逐元素 · 生成器不得手改）",
+          ledger_g == fresh_g,
+          "台账=%d 现算=%d 差=%s" % (len(ledger_g), len(fresh_g),
+                                     sorted(set(ledger_g) ^ set(fresh_g))[:4]))
+
+    # L4 🔴 **独立性**：把登记面清空重算生成器 ⇒ L2/L3/盲区**三个数一个都不变**
+    #    这是「第三档不参与前两档计数」的**端到端证明**（不靠读代码，靠跑两次比数）。
+    _gen2 = importlib.util.spec_from_file_location("_k4_gen_l4", _GEN)
+    _m2 = importlib.util.module_from_spec(_gen2)
+    _gen2.loader.exec_module(_m2)
+    import lda_harness.global_gate_registry as _greg
+    _saved = dict(_greg.GLOBAL_GATES)
+    try:
+        _greg.GLOBAL_GATES.clear()          # build() 内是局部 import ⇒ patch 模块属性即生效
+        s0 = _m2.build()["summary"]
+    finally:
+        _greg.GLOBAL_GATES.clear()
+        _greg.GLOBAL_GATES.update(_saved)
+    sm_led = led.get("summary") or {}
+    trip = ("l2_bespoke_covered", "l3_multi_covered", "l2_blind")
+    same = all(s0.get(k) == sm_led.get(k) for k in trip)
+    check("L4 🔴 独立性：清空登记面重算 ⇒ l2 / l3 / 盲区 三数全不变（第三档不进前两档）",
+          same, "清空后=%s vs 台账=%s" % ({k: s0.get(k) for k in trip},
+                                          {k: sm_led.get(k) for k in trip}))
+
+    # L5 交叉计数自洽
+    blind_set = set(led.get("blind_anchors") or [])
+    any_cov = set(led.get("blind_without_any_coverage") or [])
+    sub_cov = set(led.get("blind_without_subset_coverage") or [])
+    gcov_any = {a for a, v in anch.items() if (v.get("l2_global") or [])}
+    gcov_sub = {a for a, v in anch.items()
+                if any(r.get("caliber") == "SUBSET" for r in (v.get("l2_global") or []))}
+    ok5 = (any_cov == (blind_set - gcov_any) and sub_cov == (blind_set - gcov_sub)
+           and any_cov <= blind_set and sub_cov <= blind_set
+           and sm_led.get("blind_without_any_coverage") == len(any_cov)
+           and sm_led.get("blind_without_subset_coverage") == len(sub_cov)
+           and sm_led.get("l2_global_blind_covered") == len(blind_set & gcov_any)
+           and sm_led.get("l2_global_blind_subset_covered") == len(blind_set & gcov_sub))
+    check("L5 盲区×纪律覆盖交叉计数自洽（无任何覆盖 / 无 SUBSET 覆盖 逐元素 ≡ 现算）",
+          ok5, "any=%d subset=%d" % (len(any_cov), len(sub_cov)))
+
+    # L6 登记表自检
+    try:
+        _g_self = _greg_self(verbose=False)
+    except Exception:                                  # noqa: BLE001
+        _g_self = False
+    _gs = registry_stats()
+    check("L6 登记表自检 8/8 ∧ 登记面与排除面均非空（排除面须写明理由，防随手登记）",
+          _g_self and _gs["n_gates"] >= 1 and _gs["n_excluded"] >= 1,
+          "gates=%d excluded=%d" % (_gs["n_gates"], _gs["n_excluded"]))
 
     # ── E 反向探针 ────────────────────────────────────────────────
     def mutated(fn):

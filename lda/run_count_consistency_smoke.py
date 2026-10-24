@@ -111,6 +111,27 @@ class CountConsistencySmoke(unittest.TestCase):
         except Exception:
             pass
         cls.pyproject_version = ver
+        with open(CONTRIB_PATH, encoding="utf-8") as f:
+            cls.contrib = f.read()
+
+    # ---- 6b. CONTRIBUTING 版本号（v0.9.279 补 · 此前**无判据覆盖**）----
+    def test_contributing_version_matches_pyproject(self):
+        """`CONTRIBUTING.md` 顶部「当前版本：**vX**」须 == pyproject version。
+
+        为什么单列：**版本号是多处手写面**（pyproject 真相源 / README 顶行 /
+        CONTRIBUTING 账本块），README 侧早有一条判据、CONTRIBUTING 侧一直裸奔。
+        实测血案：v0.9.279 开工时发现 CONTRIBUTING 停在 **v0.9.277**，跨两版无人知
+        （v0.9.278 时又漏改 pyproject ⇒ 生产 health 仍报旧版本）。
+        ⇒ 三处必须各有判据，缺一处就会滞后。反向断言「不含任何更早的 v0.9.x 版本号」，
+        防「只把新号加进去、旧号还留在同一行」这种半吊子改法。
+        """
+        self.assertTrue(self.pyproject_version, "无法读取 pyproject version")
+        self.assertIn(f"当前版本：**v{self.pyproject_version}**", self.contrib,
+                      f"CONTRIBUTING 版本须 = pyproject {self.pyproject_version}")
+        stale = sorted(set(re.findall(r"当前版本：\*\*v(0\.9\.\d+)\*\*", self.contrib))
+                       - {self.pyproject_version})
+        self.assertEqual(stale, [],
+                         f"CONTRIBUTING 不得残留更早版本号（残留={stale}）")
 
     # ---- 1. 引擎结构 ----
     def test_engine_total_22(self):

@@ -12,8 +12,23 @@ v0.9.271 修的那个 bug（`resonator_freq_ghz` 偏 1e6 倍）能潜伏很久�
         · 新增零引用函数 ⇒ 红（必须先分类登记，或改成私有）
         · 修好了但没删登记 ⇒ **也红**（防「登记了就不管」，这是登记制最常见的腐烂方式）
   X 组  互补性 —— 与 `dead_assert_guard`（扫 probe 突变锚点）分工不重叠
-  G 组  **判别力反向验证** —— 注入假死/假活函数，分析器必须分别抓到/放过
+  G 组  **判别力反向验证** —— 注入假死/假活函数，分析器必须分别抓到/放过；
+        以及**锁定面契约完整性**（v0.9.279 · D-227 · F-10 正解）：
+        G7 能力层模块 100% 至少一个入口被反向锁定 · G8 锁定面与死函数面无交集 ·
+        G9 豁免面自洽 · **G10 双粒度反向**（清空锁定 ⇒ 全模块缺口；删单模块锁定 ⇒ 缺口恰为该模块）
   Z 组  零增量 + 统计区间
+
+## F-10 的口径修正（v0.9.279）
+
+审计第二轮写「反向锁定只覆盖 **17/95 = 17.9%**」。**这个分母是错的**：
+95 是 `DEAD_BASELINE`（已知**死**函数基线），拿"锁活"去比"已知死"永远不可能接近 100%。
+真正该问的是「**能力层模块有没有一个入口被锁**」——那才是"有机制防它腐烂"。
+
+实测：10 个带 `ANCHORABLE =` 声明的模块里，有 4 个**零锁定**（`noise_aware_schedule` /
+`code_family` / `reachability` / `reachability_registry`）。它们**当前零死函数**，
+所以一直没红 —— 但「现在恰好都活着」≠「有机制防它变死」，v0.9.271 的 1e6 倍 bug
+正是「无锁 ⇒ 自由腐烂」。故本版按模块补入口，把契约从「若干条精确键」升级为
+「**模块级全覆盖 + 反向可证伪**」。
 
 ## 为什么用**精确集合**而不是通配正则
 
@@ -149,6 +164,51 @@ def main() -> int:
           R.run_selfchecks(verbose=False))
     check("G5 登记表自检 5/5（分类齐备/键格式/无交集/无自造分类）",
           REG.run_selfchecks(verbose=False))
+
+    # ── G7~G10 · v0.9.279（D-227 · F-10 正解）：锁定面**契约完整性** ──
+    # 🔴 F-10 的原始表述是「反向锁定只覆盖 17/95 = 17.9%」，但 **17/95 这个分母是错的**：
+    #    95 是 `DEAD_BASELINE`（已知**死**函数基线），拿"锁活"去比"已知死"永远不可能接近
+    #    100%。真正该问的是：**能力层模块有没有一个入口被锁** —— 那才是"有机制防它腐烂"。
+    #    故本组把口径换成「按模块计量」，并要求两个方向都能证伪。
+    ct = REG.lock_contract()
+    check("G7 锁定契约完整：能力层模块 %d/%d 至少一个入口被反向锁定（零锁模块 %d）"
+          % (ct["n_covered"], ct["n_modules"], ct["n_uncovered"]),
+          ct["n_uncovered"] == 0 and ct["n_modules"] > 0,
+          "未覆盖=%s" % ct["uncovered"])
+
+    check("G8 锁定面与死函数面**无交集**（不许把已知死函数写成\"必须活\"）",
+          not ct["contradiction"], "矛盾=%s" % ct["contradiction"])
+
+    check("G9 豁免面自洽（豁免项须真在能力层模块集内 ∧ 不与已锁模块重叠）",
+          not ct["exempt_not_capability"] and not ct["exempt_but_locked"],
+          "非能力层=%s 既锁又豁免=%s" % (ct["exempt_not_capability"],
+                                         ct["exempt_but_locked"]))
+
+    # 🔴 G10 反向：**把锁定面清空 ⇒ G7 必红**。
+    #    没有这条，「10/10 覆盖」可能只是"恰好都覆盖了"，删掉条目它照样绿 ——
+    #    这正是登记制最典型的失效模式（覆盖率 ≠ 判别力）。
+    _saved = list(REG.MUST_BE_REACHABLE)
+    try:
+        REG.MUST_BE_REACHABLE.clear()
+        bad = REG.lock_contract()
+    finally:
+        REG.MUST_BE_REACHABLE[:] = _saved
+    # 再做一个**单模块**粒度的反向：只删某一模块的全部锁定条目 ⇒ 缺口恰为该模块
+    _victim = REG.capability_modules()[0] if REG.capability_modules() else None
+    single_ok = False
+    if _victim:
+        keep = [k for k in _saved if k.split("::")[0] != _victim]
+        try:
+            REG.MUST_BE_REACHABLE[:] = keep
+            one = REG.lock_contract()
+        finally:
+            REG.MUST_BE_REACHABLE[:] = _saved
+        single_ok = (one["uncovered"] == [_victim])
+    check("G10 🔴 反向：清空锁定面 ⇒ 全模块缺口；删单模块锁定 ⇒ 缺口恰为该模块",
+          bad["n_uncovered"] == bad["n_modules"] > 0 and single_ok,
+          "全清空缺口=%d/%d · 单模块(%s) %s" % (
+              bad["n_uncovered"], bad["n_modules"], _victim,
+              "恰命中" if single_ok else "未命中"))
 
     # ---------------- Z 组：零增量 + 统计 ----------------
     print("\n[Z] 零增量与统计区间")

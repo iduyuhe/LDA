@@ -13,10 +13,50 @@
 from typing import Any, Dict, List, Optional
 
 import argparse
+import copy
 import json
 import math
 import os
 import sys
+
+# ── 单级 DC 设计缓存（v0.9.279 · D-227 · F-9）────────────────────────────
+# 🔴 **为什么可以缓存**：`_design_dc` 是 `target_cross`（+ calibrated/grid）的**纯函数** ——
+#    同样的 target_cross 必得同样的 FDTD 分束比、同样的 L/gap。实测两次同参调用
+#    `cross_val_fdtd` **逐位相同**（0.336700 == 0.336700），耗时各 ~20 s。
+#    而同一次 `design_splitter_readout` 的二叉树里，**等功率二分的各层 target_cross
+#    会重复**：4 qubit 均匀分束的三级全是 0.5，3 qubit 的次层也是 0.5。
+#    ⇒ 门禁 5 例合计 9 次 DC 设计，**唯一只 3 个**（2/3、0.5、0.1）。
+# 🔴 **为什么不能返回同一个 dict**：调用方（`build()`）会往 dc 上写
+#    `left_span/right_span/left_frac/right_frac`，共享对象会串味 ⇒ 一律 deepcopy，
+#    且 `id` 由调用点覆盖（缓存里存的是上一次的 id）。
+# 🔴 **为什么不放进返回值**：把 `cost_profile` 塞进 `design_splitter_readout` 的返回
+#    会让「同参两次调用的输出字节」因缓存状态而不同 ⇒ 直接违反
+#    `run_report_determinism_smoke`（相同输入 ⇒ 字节一致）。故统计只经
+#    `dc_cache_stats()` 侧路暴露，**产品返回值零变化**。
+_DC_CACHE: Dict[tuple, Dict[str, Any]] = {}
+_DC_STATS = {"calls": 0, "unique": 0, "hits": 0, "hit_keys": 0}
+#: 🔴 **缓存容量上限**：本模块不只在门禁里跑 —— WebUI `/api/splitter` 也调用它，
+#: 且 `f01s` / `weights` 由用户任意输入 ⇒ `target_cross` 取值**无界**。
+#: 无上限的模块级缓存等于**按请求数泄漏内存**。故超过上限即整体清空
+#: （不做 LRU 排序：稳态下二叉树各级 target_cross 高度重复，清空后立刻重建，
+#:  比引入排序状态更简单且不会引入"淘汰顺序影响输出"的新不确定性）。
+_DC_CACHE_MAX = 64
+
+
+def reset_dc_cache() -> None:
+    """清空 DC 缓存与计数（门禁/测试用；产品路径无需调用）。"""
+    _DC_CACHE.clear()
+    _DC_STATS.update(calls=0, unique=0, hits=0, hit_keys=0)
+
+
+def dc_cache_stats() -> Dict[str, Any]:
+    """DC 设计缓存计数（**可观测性侧路**，不进产品返回值）。"""
+    return dict(_DC_STATS, cached_keys=len(_DC_CACHE))
+
+
+def _dc_cache_key(target_cross: float, calibrated: bool) -> tuple:
+    # 9 位小数：`target_cross` 来自权重相除，round 到 9 位远细于任何物理容差
+    return (round(float(target_cross), 9), bool(calibrated))
 
 # 默认参数
 _DEF_F01S = [4.8, 5.0, 5.2]          # 3 qubit 读出（GHz）
@@ -86,6 +126,20 @@ def _design_dc(target_cross: float, dc_id: str,
     ——反解 L_est=asin(√cross)/κ_c 落在合理工艺窗的最小 gap），而非固定 0.3。
     """
     from lda_agent.directional_coupler import design_coupler  # noqa: E402
+    _DC_STATS["calls"] += 1
+    # grid 传入时不缓存（dict 不可哈希，且调用方显式给了网格就该按网格算）
+    _cacheable = grid is None
+    _key = _dc_cache_key(target_cross, calibrated) if _cacheable else None
+    if _cacheable and _key in _DC_CACHE:
+        _DC_STATS["hits"] += 1
+        # 🔴 命中时**重建** dict 且 `id` 置首位 —— 与未命中路径的键序完全一致。
+        #    否则 `json.dumps(dc)`（不排序）会因键序不同而字节不同，
+        #    悄悄破坏「同参 ⇒ 同字节」的确定性判据。
+        hit: Dict[str, Any] = {"id": dc_id}
+        hit.update(copy.deepcopy(_DC_CACHE[_key]))
+        return hit
+    _DC_STATS["unique"] += 1
+
     extra: Dict[str, Any] = {}
     kwargs: Dict[str, Any] = {}
     if calibrated:
@@ -119,6 +173,11 @@ def _design_dc(target_cross: float, dc_id: str,
         "iteration": rep["iteration"],
     }
     out.update(extra)
+    if _cacheable:
+        if len(_DC_CACHE) >= _DC_CACHE_MAX:
+            _DC_CACHE.clear()      # 见 `_DC_CACHE_MAX` 注释：无界缓存 = 按请求泄漏内存
+        # 只存**与调用点无关**的部分（id 不缓存），失败结果也不缓存
+        _DC_CACHE[_key] = {k: copy.deepcopy(v) for k, v in out.items() if k != "id"}
     return out
 
 

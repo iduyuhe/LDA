@@ -523,6 +523,32 @@ def main() -> int:
                              for g in gaps),
           "缺口=%s" % [(g.get("id"), g.get("status")) for g in gaps])
 
+    # 🔴 F6b（v0.9.279 · D-227 · F-6 收口）：**台账不得与已交付实现脱钩**。
+    #    血案：J2-G-C 长期写「不做量子线路编译/噪声仿真」，而 D-218 早已交付
+    #    `ft_compiler`、D-226 又交付 `noise_aware_schedule` ⇒ 台账把已完成的说成"不做"。
+    #    只靠人工同步会反复脱钩，故让**模块存在性**反过来咬台账文字：
+    #    若编译/核算模块可 import，则 detail 不得再声称"不做…编译/噪声仿真"。
+    def _importable(mod: str) -> bool:
+        try:
+            __import__(mod)
+            return True
+        except Exception:                              # noqa: BLE001
+            return False
+
+    _cap = {"lda_qeda.ft_compiler": "编译", "lda_qeda.noise_aware_schedule": "资源核算"}
+    _have = {m: _importable(m) for m in _cap}
+    _gc = next((g for g in gaps if g.get("id") == "J2-G-C"), {})
+    _detail = str(_gc.get("detail", ""))
+    _stale = [w for w in ("不做量子线路编译", "不做噪声仿真", "不含线路级仿真")
+              if w in _detail]
+    check("F6b 🔴 台账与实现不脱钩：编译/核算模块在册 ⇒ J2-G-C 不得再声称「不做」",
+          not (_have.get("lda_qeda.ft_compiler") and _stale),
+          "在册=%s 过期表述=%s" % (_have, _stale))
+    check("F6c J2-G-C 如实分列「已有 / 仍缺」（既不许虚报闭合，也不许抹掉已交付）",
+          "已有" in _detail and "仍缺" in _detail and _gc.get("status") == "未闭合",
+          "status=%r 有已有=%s 有仍缺=%s" % (_gc.get("status"), "已有" in _detail,
+                                             "仍缺" in _detail))
+
     ck = open(CI, encoding="utf-8").read() if os.path.exists(CI) else ""
     check("F7 本门禁已登记进 CORE_SMOKES（防静默漏接 · 血案 #28）",
           "run_webui_j2_render_path_smoke.py" in ck)

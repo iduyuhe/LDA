@@ -98,7 +98,90 @@ MUST_BE_REACHABLE: List[str] = [
     # v0.9.268：foundry deck 限值契约层
     "lda/lda_qeda/quantum_deck.py::drc_with_deck",
     "lda/lda_qeda/quantum_deck.py::build_deck",
+    # ── v0.9.279（D-227 · F-10 正解）：扩容 + 补「能力层模块全覆盖」契约 ──
+    # 🔴 扩容理由：上面 17 条只覆盖了 5 个能力层模块，而平台有 10 个模块带
+    #    `ANCHORABLE =` 声明。缺的 5 个**当前零死函数**，所以此前一直没有红 ——
+    #    但「现在恰好都活着」≠「有机制防它变死」。v0.9.271 的 1e6 倍 bug 正是
+    #    「无锁 ⇒ 自由腐烂」的实例，故按模块逐个补入口。
+    # v0.9.276（M1）：真反提链路（`g` 从版图真读回）
+    "lda/lda_qeda/cpw_quasi_static.py::cpw_gap_from_layout",
+    # v0.9.277（M2）：deck 导入链（拿到 NDA 文件当天就能用）
+    "lda/lda_qeda/quantum_deck_io.py::load_quantum_deck",
+    "lda/lda_qeda/quantum_deck_io.py::load_quantum_deck_from_env",
+    "lda/lda_qeda/quantum_deck_io.py::loader_provenance",
+    # v0.9.278（M3）：噪声感知资源核算（四条核算的出口 + 双侧界判据本体）
+    "lda/lda_qeda/noise_aware_schedule.py::build_schedule_report",
+    "lda/lda_qeda/noise_aware_schedule.py::budget_double_bound",
+    # v0.9.279（M4）：全局纪律门禁登记表（第三档覆盖的唯一数据源）
+    "lda/lda_harness/global_gate_registry.py::global_coverage",
+    # D2 码族（既有能力层，此前**零锁定**）：枚举法独立路径 + 自检入口
+    "lda/lda_qeda/code_family.py::toric_params_enumerated",
+    "lda/lda_qeda/code_family.py::selfcheck_code_family",
+    # 可达性机制自身（此前**零锁定** —— 机制自己不受保护，最讽刺的一处）
+    "lda/lda_harness/reachability.py::analyze",
+    "lda/lda_harness/reachability_registry.py::baseline_stats",
 ]
+
+#: 🔴 **契约豁免**：能力层模块若确实没有「值得锁的入口」，必须在此**逐条写明理由**。
+#: 空集 = 每个能力层模块至少有一个函数被反向锁定。
+#: 判据 `run_reachability_smoke` 的 Z6 会双向核：豁免项必须真在能力层模块集里，
+#: 且不得与已锁定模块重叠（防止「既锁又豁免」的和稀泥）。
+CAPABILITY_MODULE_EXEMPT: Dict[str, str] = {}
+
+#: 扫描面：能力层模块（以源码是否含 `ANCHORABLE =` 声明为准，不靠文件名猜）
+CAPABILITY_SCAN_DIRS: List[str] = ["lda_qeda", "lda_l2", "lda_harness"]
+
+
+def capability_modules() -> List[str]:
+    """现扫能力层模块清单（`<pkg>/*.py` 中顶层声明了 `ANCHORABLE =` 的那些）。
+
+    纯静态、确定性（排序固定）；`__init__.py` 与私有模块跳过。
+    """
+    import os
+    import re as _re
+
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    pat = _re.compile(r"^ANCHORABLE\s*=", _re.M)
+    out: List[str] = []
+    for pkg in CAPABILITY_SCAN_DIRS:
+        d = os.path.join(base, pkg)
+        if not os.path.isdir(d):
+            continue
+        for fn in sorted(os.listdir(d)):
+            if not fn.endswith(".py") or fn == "__init__.py" or fn.startswith("_"):
+                continue
+            path = os.path.join(d, fn)
+            try:
+                with open(path, encoding="utf-8", errors="replace") as f:
+                    src = f.read()
+            except OSError:
+                continue
+            if pat.search(src):
+                out.append("lda/%s/%s" % (pkg, fn))
+    return sorted(out)
+
+
+def lock_contract() -> Dict[str, Any]:
+    """契约完整性现算：哪些能力层模块**零反向锁定**（且未豁免）。
+
+    返回值供门禁直接判红，不写死任何数字。
+    """
+    mods = capability_modules()
+    locked_mods = {k.split("::")[0] for k in MUST_BE_REACHABLE}
+    covered = [m for m in mods if m in locked_mods]
+    uncovered = [m for m in mods if m not in locked_mods
+                 and m not in CAPABILITY_MODULE_EXEMPT]
+    return {
+        "n_modules": len(mods),
+        "n_covered": len(covered),
+        "n_uncovered": len(uncovered),
+        "uncovered": uncovered,
+        "n_exempt": len(CAPABILITY_MODULE_EXEMPT),
+        "exempt_not_capability": sorted(set(CAPABILITY_MODULE_EXEMPT) - set(mods)),
+        "exempt_but_locked": sorted(set(CAPABILITY_MODULE_EXEMPT) & locked_mods),
+        "n_locked": len(MUST_BE_REACHABLE),
+        "contradiction": sorted(set(MUST_BE_REACHABLE) & set(DEAD_BASELINE)),
+    }
 
 #: 已知零引用公开函数基线（**精确集合**，不许用通配正则代替）
 DEAD_BASELINE: Dict[str, str] = {

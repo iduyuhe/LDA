@@ -152,6 +152,13 @@ def build():
     l3 = {a for a, gs in anchor_all.items() if len(gs) >= 2}
     blind = sorted(idset - l2)
 
+    # ── 第三档：形态级（纪律门禁）覆盖。**平行列，不参与上面任何集合** ──
+    from lda_harness.global_gate_registry import (
+        GLOBAL_GATES, EXCLUDED_TRAVERSING_GATES, global_coverage, registry_stats)
+    from lda_harness.benchmarks import BENCHMARK_DEFS as _BD
+    global_cov = {k: v for k, v in global_coverage(_BD).items() if k in idset}
+    gstats = registry_stats()
+
     dist = {}
     for gs in anchor_all.values():
         dist[str(len(gs))] = dist.get(str(len(gs)), 0) + 1
@@ -169,7 +176,19 @@ def build():
             "l2_gates": gs,
             "l2_count": len(gs),
             "l3": len(gs) >= 2,
+            # 🔴 v0.9.279（D-227 / F-8 正解）：第三档「形态级」覆盖。
+            #    **绝不并入 l2_count / l3** —— 纪律级覆盖只断言元数据合规，
+            #    不断言数值；混入会让独立率虚高（虚报）。
+            "l2_global": global_cov.get(a, []),
+            "l2_global_calibers": sorted({r["caliber"] for r in global_cov.get(a, [])}),
         }
+
+    # ── 第三档统计（平行列，不参与 L2/L3/blind 任何计数）──
+    gcov = set(global_cov)
+    gcov_subset = {a for a in global_cov
+                   if any(r["caliber"] == "SUBSET" for r in global_cov[a])}
+    blind_g = sorted(set(blind) - gcov)          # 真·无任何覆盖的锚
+    blind_subset_g = sorted(set(blind) - gcov_subset)   # 无**实质（SUBSET）**纪律覆盖
 
     payload = {
         "schema": SCHEMA,
@@ -179,7 +198,10 @@ def build():
         "method": ("三层：L1 = verification_report.results 的 id 集；"
                    "L2 = 文本（CORE 门禁源码去注释后显式锚号）∪ manifest"
                    "（门禁运行时登记 asserted_anchor_ids）；L3 = ≥2 门禁；锚全集 = "
-                   "BENCHMARK_DEFS ∪ BENCHMARK_ORDER"),
+                   "BENCHMARK_DEFS ∪ BENCHMARK_ORDER。"
+                   "另设**第三档 l2_global（形态级）**：来自 `global_gate_registry` "
+                   "登记的「按类遍历全账本」门禁 —— 它**只断言元数据纪律、不断言数值**，"
+                   "故**不计入 L2/L3/blind**，仅作诊断列（F-8 正解）。"),
         "excluded_fields": ["时间戳（非确定量）", "git HEAD（每次提交都变）"],
         "summary": {
             "anchors_total": len(idset),
@@ -197,15 +219,31 @@ def build():
             "gates_zero_anchor": sum(1 for v in gate_anchors.values() if not v),
             "by_gate_count": {k: dist[k] for k in sorted(dist, key=int)},
             "blind_by_band": {k: blind_by_band[k] for k in sorted(blind_by_band)},
+            # ── 第三档（诊断列 · 不参与上面任何计数）──
+            "l2_global_registered_gates": gstats["n_gates"],
+            "l2_global_excluded_gates": gstats["n_excluded"],
+            "l2_global_covered": len(gcov),
+            "l2_global_subset_covered": len(gcov_subset),
+            "l2_global_blind_covered": len(set(blind) & gcov),
+            "l2_global_blind_subset_covered": len(set(blind) & gcov_subset),
+            "blind_without_any_coverage": len(blind_g),
+            "blind_without_subset_coverage": len(blind_subset_g),
         },
         "manifest_schema": man_schema,
         "manifest": {k: man_gate_anchors[k] for k in sorted(man_gate_anchors)},
         "excluded_gates": {k: EXCLUDE_GATES[k] for k in sorted(EXCLUDE_GATES)},
+        "global_gates": {g: {"mechanism": s["mechanism"], "caliber": s["caliber"],
+                             "asserts": s["asserts"]}
+                         for g, s in sorted(GLOBAL_GATES.items())},
+        "global_gates_excluded": {g: EXCLUDED_TRAVERSING_GATES[g]
+                                  for g in sorted(EXCLUDED_TRAVERSING_GATES)},
         "ratchet": {"l2_min": L2_MIN, "l3_min": L3_MIN,
                     "policy": "只升不降：新增锚必须补专属判据或显式登记为 L1-only"},
         "anchors": anchors_out,
         "gates": {k: gate_anchors[k] for k in sorted(gate_anchors)},
         "blind_anchors": blind,
+        "blind_without_any_coverage": blind_g,
+        "blind_without_subset_coverage": blind_subset_g,
     }
     return payload
 

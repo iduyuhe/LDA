@@ -62,6 +62,10 @@ DEFAULT_GATE_ERROR: Dict[str, float] = {
     "H": 5.0e-5,
     "X": 5.0e-5,
     "Z": 5.0e-5,
+    # 🔴 与 `ft_compiler.GATES_*` 的实际门名对齐：测量门是 **"M"**（不是 "MEASURE"）。
+    #    本版首轮实测 `fallback_kinds=["M"]` 才发现名字对不上 —— 兜底值恰好也是 5e-3，
+    #    所以**数值没变**，但"走兜底"与"已登记"是两件事，必须显式登记。
+    "M": 5.0e-3,
     "MEASURE": 5.0e-3,
     "RESET": 2.0e-3,
 }

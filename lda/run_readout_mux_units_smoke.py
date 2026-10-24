@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import inspect
 import math
+import os
 import sys
 
 from lda_qeda import sc_readout_mux as MUX
@@ -178,7 +179,7 @@ def main() -> int:
     # ---------------- Z 组：零增量 ----------------
     # Z1 本门禁不新增锚（能力层修正）：账本总数必须与 v0.9.270 基线一致
     try:
-        sys.path.insert(0, "D:/agent_LDA/lda")
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         from lda_harness.benchmarks import BENCHMARK_DEFS as D
         n_anchors = len(D)
         check("Z1 零增量：账本锚数 = %d（与 v0.9.270 基线一致，本门禁不加锚）" % n_anchors,

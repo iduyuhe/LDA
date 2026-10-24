@@ -718,7 +718,7 @@
     },
     {
       "consumer_file": "lda/lda_qeda/sc_control.py",
-      "consumer_line": 31,
+      "consumer_line": 32,
       "consumer_module": "sc_control",
       "consumer_pkg": "lda_qeda",
       "consumer_symbol": "_bbox",

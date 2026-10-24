@@ -29,6 +29,7 @@ v0.9.271 修的那个 bug（`resonator_freq_ghz` 偏 1e6 倍）能潜伏很久�
 from __future__ import annotations
 
 import ast
+import os
 import sys
 
 from lda_harness import reachability as R
@@ -153,7 +154,7 @@ def main() -> int:
     print("\n[Z] 零增量与统计区间")
 
     try:
-        sys.path.insert(0, "D:/agent_LDA/lda")
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         from lda_harness.benchmarks import BENCHMARK_DEFS as D
         n = len(D)
         check("Z1 零增量：账本锚数 = %d（能力层，不加锚）" % n, n == 541)

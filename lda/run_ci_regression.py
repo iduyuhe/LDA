@@ -2109,6 +2109,25 @@ CORE_SMOKES: List[str] = [
     #   纯 stdlib（ast/os/sys）· 实测 main 4.28s ⇒ 120s 预算 28× 余量。**16 判据**。
     #   **CI core 348→349**。
     "run_reachability_smoke.py",
+    # 🔴 v0.9.277（量子闭环 M2 · D-225）：**deck 导入链** —— 把 D-215 的契约层接到
+    #   文件/env 导入（路径 / dict / `LDA_QUANTUM_DECK` → 已校验 deck + loader 元信息）。
+    #   🔴 **不塞进 `quantum_deck.py`**：该模块被本门禁 F3 断言**零文件 IO**（源码无
+    #   `open(`）⇒ 契约层不认识"文件"。**loader 段只回带不进判决**（G7 机器核、
+    #   文件加载 vs 程序内构造同限值 ⇒ verdict+violations 逐字相同）。
+    #   **sha256 记账不写 `loaded_at`**（时间戳会让 determinism 门禁红）。
+    #   **env 独立 `LDA_QUANTUM_DECK`**（光子 `LDA_FOUNDRY_DECK`，键集 10 vs 3 不可混）。
+    #   **净增 0 锚** · 纯 stdlib · 实测 0.32s。**15 → 24 判据**（本版只扩判据，
+    #   门禁本身 v0.9.268 已在册，不重复登记）。
+    #
+    # 🔴 v0.9.278（量子闭环 M3 · D-226）：**编译后噪声感知资源核算** —— 在 ft_compiler 的
+    #   物理 op 序列上叠加门级错误率预算，出四条核算：累积上界 / **可证双侧界**
+    #   （`p_max ≤ p_exact ≤ Σp`，Weierstrass 不等式的直接推论）/ 并行化整数比 /
+    #   纠错轮数（**定义式复算** `1−(1−p_L)^{r−1} < p_c ≤ 1−(1−p_L)^r`）。
+    #   🔴 **不是仿真器**（R3 断言 `not_a_simulator`）—— 只补 `schip_case.G-D` 的
+    #   "资源核算"半边，"线路级仿真"那半边**仍然缺**。**净增 0 锚**（累积上界是定义式、
+    #   轮数是整数恒等、gain 是精确有理 ⇒ 三类都撞已判死理由）。
+    #   纯 stdlib · 实测 0.30s。**19 判据**。
+    "run_noise_aware_schedule_smoke.py",
 ]
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
@@ -3166,6 +3185,7 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 量子 foundry deck 契约层门禁（v0.9.268 · D-215）：15 判据 · 实测上界 <0.5s
     #   （纯 stdlib：字典校验 + N=5 DFT 网格跑一次 DRC）⇒ 给 120s（与 v2d1/v2d2 同档）。
     "run_quantum_deck_smoke.py": 120.0,
+    "run_noise_aware_schedule_smoke.py": 120.0,   # v0.9.278 · D-226 实测 0.30s（400× 余量）
     # 超导案例卡门禁（v0.9.268 · D-216）：15 判据 · 实测上界 <0.5s
     #   （闭式 + 拓扑内核度统计 + 静态扫描）⇒ 给 120s（同档；余量充裕，不构成欠标定）。
     "run_schip_case_smoke.py": 120.0,

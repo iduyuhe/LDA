@@ -228,6 +228,9 @@ _W10_EXTRA = ("run_report_determinism_smoke.py", "run_ci_coverage_gate_smoke.py"
               # 🔴 v0.9.275：本版真改动 = 公开函数可达性（D-223）。
               #   实测 main 4.28s / 15 判据 ⇒ 纳对照面，令顶行判据数由机器守（W10b 闭环条件）。
               "run_reachability_smoke.py",
+              # 🔴 v0.9.278：本版真改动 = 噪声感知资源核算（D-226）。实测 0.30s / 19 判据
+              #   ⇒ 纳对照面，令顶行判据数由机器守（W10b 闭环条件）。
+              "run_noise_aware_schedule_smoke.py",
               "run_qs_m3b_smoke.py", "run_qs_m4_smoke.py", "run_qs_m5_smoke.py",
               "run_qs_m6_smoke.py", "run_qs_m7_smoke.py",
               "run_qs_m9_smoke.py", "run_qs_m3c_smoke.py",

@@ -22,6 +22,7 @@
 from __future__ import annotations
 
 import math
+import os
 import sys
 
 from lda_qeda import conductor_surface as CS
@@ -247,7 +248,7 @@ def main() -> int:
           and bool(wn["replacement"]) and bool(wn["revisit_condition"]))
 
     try:
-        sys.path.insert(0, "D:/agent_LDA/lda")
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         from lda_harness.benchmarks import BENCHMARK_DEFS as D
         n = len(D)
         check("Z4 零增量：账本锚数 = %d（能力层，不加锚）" % n, n == 541)

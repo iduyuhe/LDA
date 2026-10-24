@@ -176,7 +176,7 @@ def main() -> int:
 
     # ---------------- Z 组：零增量 ----------------
     try:
-        sys.path.insert(0, "D:/agent_LDA/lda")
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         from lda_harness.benchmarks import BENCHMARK_DEFS as D
         n = len(D)
         check("Z1 零增量：账本锚数 = %d（本门禁只统一来源，不加锚）" % n, n == 541)

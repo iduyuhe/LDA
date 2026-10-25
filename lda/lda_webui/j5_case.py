@@ -39,9 +39,11 @@ CASE_ID = "LDA-J5 · 量子网络与接口（节点 → 网络）"
 J5_HONEST_NOTE = (
     "本卡为**设计预算**（design budget），所有数值由闭式算术现算，**非流片实测**、"
     "**非 foundry PDK**、**非商用器件数据表**。参数（α/L_depol/波包 σ/时序常数/换能参数/"
-    "抖动 σ_t）为**文献量级的设计示例**；模型为**一阶/解析**近似 —— 端到端保真**已含**"
-    "多级纠缠交换递推（Werner 组合 `p_tot=p_seg^N`）与 DEJMPS 单轮纯化闭式，"
-    "**仍不含**多轮纯化的资源计数、交换失败时序统计与实测标定。"
+    "抖动 σ_t/机械模频率/浴温）为**文献量级的设计示例**；模型为**一阶/解析**近似 —— "
+    "端到端保真**已含**多级纠缠交换递推（Werner 组合 `p_tot=p_seg^N`）与 DEJMPS 单轮纯化闭式，"
+    "换能侧**已含**机械模热噪声（Bose 占据 + 参考到输入的总附加噪声，量子极限为其 T→0 特例），"
+    "**仍不含**多轮纯化的资源计数、交换失败时序统计、机械模**非热**占据（自振/参量驱动）、"
+    "泵浦加热导致的有效温度抬升、浴与模非共温、以及实测标定。"
     "**M4 经典接口净增 0**（三证据否决，如实呈现）。"
     "不作制造/性能宣称，不报能效/TOPS/fJ-op；不作任何与他人同台比较。"
 )
@@ -72,7 +74,12 @@ GAPS_STATUS = [
     "**最优段数解析解 N* = β = α_ln·L**（由 d(lnG)/dN=β/N²−1/N=0 得）；参考档 β=4.605 ⇒ 整数 N*=5 ⇒ "
     "G=**7.96**；🔴 旧 `repeater_gain=53.70×` 是「站内理想率÷直传率」的**无损耗上界**（不含段内透射与串行摊薄），"
     "与端到端最优差 **6.74 倍**，两者并列披露不可混用；仍未含存储退相干对并发的限制与经典通信时延）",
-    "未闭合（跨频段换能）",
+    "已闭合（v0.9.296 · 换能侧补上**机械模热噪声**：`lda_l2/qnet_thermal_noise` 给 "
+    "n_add(η,n_th)=(1−η)/η·(n_th+½)，n_th=1/(exp(ħΩ/k_BT)−1)；🔴 n_th=0 时**逐位退化**到既有量子极限 "
+    "(1−η)/(2η)，且 T=T*≡ħΩ/(k_B ln3) 时 n_th **恰为 ½**、n_add **恰为 T=0 的 2 倍**。"
+    "参考档（Ω/2π=5 GHz）T_q=239.96 mK · **T*=218.42 mK** · 热项≤10% 需 T≤78.82 mK；"
+    "🔴 诚实分诊：本卡设计点 η=1.13% ⇒ T=0 量子极限已 43.94 quanta，20 mK 热项只增 1.2e-5 ⇒ "
+    "**此处绑定约束是 η、不是温度**；仍不含非热占据/泵浦加热有效温度抬升/非平衡浴）",
     "已结算（经典接口 · 裁决净增 0）",
 ]
 
@@ -92,10 +99,11 @@ M4_NEGATIVE_EVIDENCE = [
 
 SELFCHECK_MODULES = ["qnet_channel", "qnet_distribution", "qnet_source", "qnet_repeater",
                      "qnet_transducer", "qnet_classical", "qnet_system", "qnet_swap",
-                     "qnet_throughput", "qnet_indistinguishability"]
+                     "qnet_throughput", "qnet_indistinguishability",
+                     "qnet_thermal_noise"]
 # 🔴 逐模块自检数（改任一模块的自检条数都必须同步这里 —— 同一事实两处表示）
 #    v0.9.292：qnet_system 17→20（+3 条组合律订正核验）· 新增 qnet_swap 13
-MODULE_SELFCHECKS_TOTAL = 14 + 10 + 8 + 20 + 16 + 14 + 20 + 13 + 12 + 10
+MODULE_SELFCHECKS_TOTAL = 14 + 10 + 8 + 20 + 16 + 14 + 20 + 13 + 12 + 10 + 16
 RENDER_PATH_SMOKE = "run_webui_j5_render_path_smoke.py"
 HEAVY_POST = False
 
@@ -329,7 +337,7 @@ def case_card() -> Dict[str, Any]:
         },
         "selfcheck_modules": SELFCHECK_MODULES,
         "module_selfchecks_total": MODULE_SELFCHECKS_TOTAL,
-        "gate_checks": 92,   # 实跑 `lda/run_j5_qnet_smoke.py` 的 PASS 数（常驻门禁自洽核验）
+        "gate_checks": 102,  # 实跑 `lda/run_j5_qnet_smoke.py` 的 PASS 数（常驻门禁自洽核验）
         "span": {"heavy_post": HEAVY_POST, "render_path_smoke": RENDER_PATH_SMOKE,
                  "auth": "免登录（只读 GET）"},
     }

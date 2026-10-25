@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+import math
 import os
 import sys
 
@@ -38,6 +39,8 @@ from lda_l2 import qnet_swap as SW  # noqa: E402
 from lda_l2 import qnet_system as QS  # noqa: E402
 from lda_l2 import qnet_throughput as TP  # noqa: E402
 from lda_l2 import qnet_indistinguishability as QI  # noqa: E402
+from lda_l2 import qnet_thermal_noise as TN  # noqa: E402
+from lda_l2 import qnet_transducer as TR  # noqa: E402
 from lda_l2 import qnet_transducer as TR  # noqa: E402
 
 check = make_check(globals(), ok_key="PASS", bad_key="FAIL", detail_fmt="  |  {d}")
@@ -196,6 +199,7 @@ def main() -> int:  # noqa: C901
                "lda_l2/qnet_swap.py",
                "lda_l2/qnet_throughput.py",
                "lda_l2/qnet_indistinguishability.py",
+               "lda_l2/qnet_thermal_noise.py",
                "lda_harness/_batch_j5_numeric.py"):
         p = os.path.join(_HERE, fn)
         if os.path.exists(p):
@@ -373,6 +377,80 @@ def main() -> int:  # noqa: C901
     _j3_red = (0.7 * (1.0 - 0.5)) != 0.7
     check("J8 反向探针：ω 项丢因子 2 ⇒ J2 必红 ∧ 端点改 0.5 ⇒ J3 必红",
           _j2_red and _j3_red, "j2=%s j3=%s" % (_j2_red, _j3_red))
+
+    print("\\n[K] 换能器的机械模热噪声：量子极限只在浴真空时成立（v0.9.296 · G-QNET-4）")
+    # 🔴 改前：`qnet_transducer` 只给 `n_add = (1−η)/(2η)`（量子极限），披露里如实写着
+    #    「未含**机械模热噪声谱**」。这句不是「更细的修正」——它是「量子极限」能不能用的分界线。
+    _sc_tn = TN.selfcheck_qnet_thermal_noise()
+    check("K1 qnet_thermal_noise 自检全过（两条闭式已知答案 / 退化 / 恒等式 / 绝对量级 / 非法入参）",
+          not [k for k, v in _sc_tn.items() if not v],
+          "fail=%s" % [k for k, v in _sc_tn.items() if not v])
+    _tn = TN.thermal_noise_report()
+    # 🔴 K2 最强对照支路：浴真空 ⇒ 逐位退化到**已实现的特例**（那个 ½ 是最易漏的因子）
+    check("K2 🔴 对照支路：n_th=0 ⇒ n_add **逐位等于**既有 `added_noise_photons(η)`（`==` 判定）",
+          TN.added_noise_with_bath(_tn["eta"], 0.0) == TR.added_noise_photons(_tn["eta"]),
+          "%r vs %r" % (TN.added_noise_with_bath(_tn["eta"], 0.0), TR.added_noise_photons(_tn["eta"])))
+    check("K3 独立路径恒等式：n_th+½ ≡ ½coth(T_q/2T)（相对 ≤1e-15 · 两式互证）",
+          abs((TN.thermal_occupancy() + 0.5) - TN.occupancy_plus_half_symmetrized())
+          <= 1e-15 * TN.occupancy_plus_half_symmetrized(),
+          "Δ=%.3e" % abs((TN.thermal_occupancy() + 0.5) - TN.occupancy_plus_half_symmetrized()))
+    # 🔴 K4 第二闭式已知答案：T = T* ⇒ n_th 恰 ½ ⇒ n_add 恰为 T=0 的 **2 倍**
+    #    ⚠️ 两件事分开判（我自己在这里踩过一次）：
+    #      · `T* = T_q/ln3` 是**浮点数**，`1/expm1(ln3)` 只到 ~1e-16 ⇒ 对 `n_th(T*)` 只能用 rel 1e-12；
+    #      · 「n_th = ½ ⇒ n_add 翻倍」是**精确代数恒等** ⇒ 对**精确 ½** 用逐位 `==`。
+    #    对「由逆解得到的量」用 `==` = 把判据写成必然红（不是严格的证据，是假的证据）。
+    _ts = _tn["crossover_temperature_K"]
+    check("K4 🔴 T=T* ⇒ n_th = ½（rel ≤1e-12）∧ 在**精确 ½** 处 n_add **逐位 ==** 2·n_add(T0)",
+          abs(TN.thermal_occupancy(_ts) - 0.5) <= 1e-12
+          and TN.added_noise_with_bath(_tn["eta"], 0.5)
+          == 2.0 * TN.added_noise_with_bath(_tn["eta"], 0.0),
+          "n_th(T*)=%.17f" % TN.thermal_occupancy(_ts))
+    _e10 = abs(TN.thermal_to_quantum_ratio(TN.thermal_occupancy(
+        TN.temperature_for_thermal_fraction(0.1))) - 0.1)
+    _e01 = abs(TN.thermal_to_quantum_ratio(TN.thermal_occupancy(
+        TN.temperature_for_thermal_fraction(0.01))) - 0.01)
+    check("K5 设计约束反解往返：ε=0.1 ⇒ r 恰 0.1 ∧ ε=0.01 ⇒ r 恰 0.01（两档 ≤1e-12）",
+          _e10 <= 1e-12 and _e01 <= 1e-12, "Δ=%.2e / %.2e" % (_e10, _e01))
+    check("K6 🔴 参考档**绝对量级锚点**：ħ/k_B∈[7.63,7.65]e-12 ∧ T_q∈[0.230,0.250] ∧ "
+          "T*∈[0.210,0.230] ∧ T(10%)∈[0.070,0.090] K",
+          7.63e-12 <= TN.HBAR / TN.KB_SI <= 7.65e-12
+          and 0.230 <= _tn["thermal_quantum_temperature_K"] <= 0.250
+          and 0.210 <= _ts <= 0.230
+          and 0.070 <= _tn["temp_for_10pct_thermal_K"] <= 0.090,
+          "T_q=%.6f T*=%.6f T10=%.6f"
+          % (_tn["thermal_quantum_temperature_K"], _ts, _tn["temp_for_10pct_thermal_K"]))
+    check("K7 双侧单调：n_th 随 T 严格增（4 点）∧ 随 f 严格减（3 点）",
+          TN.thermal_occupancy(0.01) < TN.thermal_occupancy(0.1) < TN.thermal_occupancy(1.0)
+          < TN.thermal_occupancy(10.0)
+          and TN.thermal_occupancy(0.02, 1.0e9) > TN.thermal_occupancy(0.02, 5.0e9)
+          > TN.thermal_occupancy(0.02, 2.0e10))
+    # 🔴 K8 把「比值判据的盲区」本身写成判据：r 与 η 完全无关 ⇒ 必须并报绝对量
+    _r3 = [TN.thermal_to_quantum_ratio(TN.thermal_occupancy(0.5)) for _ in (0.01, 0.5, 0.99)]
+    check("K8 🔴 r ≡ 2·n_th **与 η 无关**（三档逐位 `==`）⇒ 比值判据对绝对噪声彻底无能，"
+          "故报告必须并报 `added_noise_at_bath` 与 `added_noise_T0`",
+          _r3[0] == _r3[1] == _r3[2]
+          and "added_noise_at_bath" in _tn and "added_noise_T0" in _tn,
+          "r=%.6e" % _r3[0])
+    # 🔴 K9 设计点判读（**诚实分诊**：此处约束不是温度，是 η 本身）
+    _hot = TN.thermal_noise_report(temp_k=1.0)
+    check("K9 设计点分诊：20 mK ⇒ ×%.6f **可忽略** ∧ 1 K ⇒ n_add>300（热项主导）∧ "
+          "但 T=0 量子极限已 %.3f quanta ⇒ **此处绑定约束是 η、不是温度**"
+          % (_tn["added_noise_increase_factor"], _tn["added_noise_T0"]),
+          _tn["added_noise_increase_factor"] < 1.001
+          and _hot["added_noise_at_bath"] > 300.0
+          and _tn["added_noise_T0"] > 40.0
+          and _tn["bath_is_effectively_vacuum"] is True
+          and _tn["quantum_limit_claim_valid"] is True
+          and _hot["quantum_limit_claim_valid"] is False,
+          "20mK ×%.6f · 1K n=%.2f · T0 n=%.3f"
+          % (_tn["added_noise_increase_factor"], _hot["added_noise_at_bath"],
+             _tn["added_noise_T0"]))
+    # K10 反向探针：① 丢掉 ½（写成 n_th）⇒ K2 必红 ② ln3→ln2 ⇒ K4 必红
+    _drop_half = (1.0 - _tn["eta"]) / _tn["eta"] * 0.0
+    _ln2_n = 1.0 / math.expm1(math.log(2.0))
+    check("K10 反向探针：丢 ½ ⇒ K2 必红（退化得 0 而非 %.4f）∧ ln3→ln2 ⇒ K4 的 n_th 变 %.6f ≠ ½",
+          _drop_half != TR.added_noise_photons(_tn["eta"]) and abs(_ln2_n - 0.5) > 0.4,
+          "ln2 档 n_th=%.6f" % _ln2_n)
 
     bad = globals().get("FAIL", 0)
     print("\n" + "=" * 78)

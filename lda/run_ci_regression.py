@@ -1909,9 +1909,9 @@ CORE_SMOKES: List[str] = [
     # J5 量子网络与接口征程门禁（v0.9.238 起 · 四锚 B519/B520/B521/B522 + 七能力层）：
     #   A 锚项 11×4（四锚遍历：DEFS tol 内 · 残差 >0 非恒等 · 判据 D 单调 + 比值形态趋向标称阶
     #   · 动态范围 ≥1e4 · 反自证桩 · 防回退候选键 · 🔴 反向探针打**离散参数 n** · 纪律佐证 · n=0 必抛）
-    #   + B 能力层 10（`qnet_channel` 14 + `qnet_distribution` 10 + `qnet_source` 8 + `qnet_repeater` 20
+    #   + B 能力层 11（`qnet_channel` 14 + `qnet_distribution` 10 + `qnet_source` 8 + `qnet_repeater` 20
     #     + `qnet_transducer` 16 + `qnet_classical` 14 + `qnet_system` 20 + `qnet_swap` 13
-    #     + `qnet_throughput` 12 + `qnet_indistinguishability` 10 自检）
+    #     + `qnet_throughput` 12 + `qnet_indistinguishability` 10 + `qnet_thermal_noise` 16 自检）
     #   + C 跨模块同源 8（分发/信道 ≡ B519 golden 逐位 · 源 ≡ B520 · 中继 ≡ B521 · 换能 ≡ B522 ·
     #     经典接口 ≡ `qs_m2.cpmg_filter` 复用对拍 · 总装六段 ≡ 六能力层）
     #   + D 三表/默认档一致 3 + E 零量子 SDK 机械核 1
@@ -1925,7 +1925,11 @@ CORE_SMOKES: List[str] = [
     #   + J 源不可分辨性 8（v0.9.295 G-QNET-2：自检 10 项 · 🔴 **σ₁=σ₂ 逐位退化**到 qnet_source ·
     #     多光子两端点 g²=0⇒不变/g²=1⇒0 · σ 失配与时延双单调 · 🔴 绝对量级锚点 · 通式真区分不对称 ·
     #     反向探针（ω 项丢因子 2 ⇒ 退化判据必红））。
-    #   **92 判据**。numpy 可用 ⇒ 入 core；timeout 默认 300s 留足余量（实测 ~1.2s）。
+    #   + K 换能热噪声 10（v0.9.296 G-QNET-4：自检 16 项 · 🔴 n_th=0 **逐位退化**到既有量子极限 ·
+    #     n+½ ≡ ½coth(T_q/2T) 双路径 · T=T* ⇒ n_th=½ ∧ **精确 ½ 处 n_add 逐位翻倍** ·
+    #     设计约束反解往返两档 · 🔴 绝对量级锚点 · 双侧单调 · 🔴 **r≡2n_th 与 η 无关**（比值盲区写成判据）·
+    #     设计点分诊（此处绑定约束是 η 不是温度）· 反向探针）。
+    #   **102 判据**。numpy 可用 ⇒ 入 core；timeout 默认 300s 留足余量（实测 ~1.3s）。
     "run_j5_qnet_smoke.py",
     # v0.9.242（J5 M4）：J5 量子网络与接口**链路级** WebUI 面板渲染路径门禁
     #   （`sec-j5` 三入口面 + `GET /api/j5_qnet` + 六段跨源逐值对拍 + M4 净增 0 诚实呈现）。

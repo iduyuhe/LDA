@@ -31,6 +31,12 @@ H 🔴 **M4 QPU 误差预算集成 + 拓扑对接（净增账本锚 B509）**：
    与阈值余量）与 **`lda_qeda/topology_qec_bridge.py`**（拓扑↔表面码：λ₂ ≡ B509 golden、嵌入 DIRECT/
    ADAPTED/FAIL、资源 2d²−1、桥签核）**与账本锚同物理律**、**双签核**且反向可 REJECT。
 R 🔴 **反向探针（先证能变红）**：p_phys 抬到阈值以上 ⇒ 子阈值判据必红；参数扰动（T1×1.5）须有响应。
+J 🔴 **读出 shelving / 有效寿命层（v0.9.305 · 闭合 `G-READSHELV` · 净增 0 锚）**：
+   闭式 `P_decay = (1 − e^(−t_m/T1))^n`（`n` = shelving 级数，等比阶梯 `i/T1` 下由二项式定理给出）
+   ⇄ **阶梯主方程 RK4 独立数值解**（n=1..4，残差 <1e-9）；`n=1` **精确**退化为单指数；
+   新旧口径之差 ≡ 闭式 `Δ = x−(1−e^(−x))` 且落在交错级数夹逼内；乘性律 `P(n+1)/P(n) ≡ (1−e^(−x))`；
+   🔴 **上界判据**：`F_max(n=1) < 实测 0.995 ≤ F_max(n=2)` —— 这是旧模型够不到 0.995 的真原因；
+   与公开实测三档衰减误差的**披露级**对照（绝对百分点 <0.01）；反向探针（闭式误写 `x^n` ⇒ J2 必红）。
 
 ═══ 诚实边界 ═══
 · 本门禁是**能力验证**模块（`lda_qeda/physical_error_model.py` + `j2_to_j1_calibration.py`），
@@ -478,6 +484,81 @@ def main() -> int:
     _i4_red = abs(QL.chain_fidelity_closed((0.9, 0.9)) - _bad_closed(0.81)) > 1e-3
     check("I9 反向探针：闭式误用 `p+(1−p)/3` ⇒ I3/I4 必红（差值 >1e-3，非恒真）",
           _i3_red and _i4_red)
+
+    # ══════════════ J 节 · 读出 shelving / 有效寿命层（v0.9.305 · 补 G-READSHELV）══════════════
+    # 背景（v0.9.304 判 A2 时算出来的硬结论）：旧读出预算 `F1=(1−ε)(1−t_m/T1)` 把整个读出期
+    # 都记成「|1⟩ 在按 T1 衰减」，于是在 `t_m=140 ns / T1=6.18 µs`（Chen 2023, npj QI 9）下
+    # **上界只有 0.9888，够不到实测的 0.995** —— 不是参数没调好，是缺了 shelving 这一层。
+    from lda_agent import readout_shelving as RS
+
+    _t1 = RS.PAPER["t1_us"] * 1e-6
+    _tm = RS.PAPER["t_m_ns"] * 1e-9
+    _fid_ref = RS.PAPER["assignment_fidelity_2state"]
+
+    # J1 模块自检全过（9 项：闭式⇄ODE / n=1 退化 / 截断差 / 单调 / 乘性律 / 上界 / 论文对照 / 拦截 / 零窗口）
+    _p, _t, _ = RS.run_selfchecks(verbose=False)
+    check("J1 M6 能力层 readout_shelving 自检全过（%d/%d）" % (_p, _t), _p == _t)
+
+    # J2 闭式 ⇄ 阶梯主方程 RK4 数值解（**门禁自己算，不转调模块自检**，防"自检说过了"闭环）
+    _worst = max(abs(RS.decay_error(_tm, _t1, n) - RS.decay_error_ladder_ode(_tm, _t1, n))
+                 for n in (1, 2, 3, 4))
+    check("J2 闭式 (1−e^(−x))^n ⇄ 阶梯主方程 RK4（n=1..4，门禁独立复算）残差 < 1e-9",
+          _worst < 1e-9, "max|Δ|=%.2e" % _worst)
+
+    # J3 🔴 **本版的核心结论**：旧模型的天花板够不到实测，补上 shelving 层后够得到
+    _f1 = RS.fidelity_ceiling(_tm, _t1, 1)
+    _f2 = RS.fidelity_ceiling(_tm, _t1, 2)
+    check("J3 🔴 上界判据：F_max(n=1)=%.5f < 实测 %.3f ≤ F_max(n=2)=%.5f"
+          "（旧模型的真天花板，非参数问题）" % (_f1, _fid_ref, _f2),
+          _f1 < _fid_ref <= _f2)
+
+    # J4 新旧口径的差必须**恰为** Δ/2（防有人把两个模型混用而无人发现）
+    #    F_max = (1 + (1−P))/2 ⇒ ΔF_max = (P_lin − P_exact)/2 = Δ/2
+    #    ⚠️ 阈值 1e-15 而不是 1e-18：两边都由 ~0.988 的两个数相减得出，浮点抵消误差 ~1e-16；
+    #    被测的量本身是 1.27e-4 ⇒ 仍有 11 个数量级余量（不是"放宽到看不见"）。
+    _d = RS.linear_model_delta(_tm, _t1)
+    _fmax_lin = (1.0 + (1.0 - _d["linear"])) / 2.0
+    check("J4 旧线性模型 F_max=%.5f 与精确指数 F_max=%.5f 之差 ≡ Δ/2=%.2e（可精确预测，非随机）"
+          % (_fmax_lin, _f1, -_d["delta"] / 2.0),
+          abs((_fmax_lin - _f1) - (-_d["delta"] / 2.0)) < 1e-15,
+          "|残差|=%.1e" % abs((_fmax_lin - _f1) - (-_d["delta"] / 2.0)))
+
+    # J5 乘性律：每多一级 shelving，P_decay 被**再乘一个 (1−e^(−x))**（收益是乘性的，不是线性）
+    _seq = [RS.decay_error(_tm, _t1, n) for n in (1, 2, 3)]
+    _base = -math.expm1(-_tm / _t1)
+    check("J5 乘性律：P(n+1)/P(n) ≡ (1−e^(−x))=%.6f（n=1→2→3，收益乘性而非线性）" % _base,
+          all(abs(_seq[i + 1] / _seq[i] - _base) < 1e-12 for i in range(2)),
+          "比值=%s" % ["%.6f" % (_seq[i + 1] / _seq[i]) for i in range(2)])
+
+    # J6 与公开实测三档的**披露级**对照（绝对百分点；相对误差在此分母趋零时无意义）
+    _rows = RS.paper_benchmark()
+    check("J6 论文三档衰减误差对照（绝对偏差 < 0.01 个百分点，不用相对误差）",
+          all(r["abs_diff_pp"] < 0.01 for r in _rows),
+          "; ".join("n=%d: %.4g%% vs %.4g%% (Δ=%.1e pp)"
+                    % (r["n_shelve"], r["predicted_pct"], r["reported_pct"],
+                       r["abs_diff_pp"]) for r in _rows))
+
+    # J7 反向探针：若把闭式错写成「线性项的 n 次方」`x^n`，J2 必红（证明 J2 不是恒真）
+    _wrong2 = (_tm / _t1) ** 2
+    check("J7 反向探针：闭式误写成 `x^n` ⇒ 与正确闭式差 >1e-6（n=2 时）⇒ J2 必红",
+          abs(_wrong2 - RS.decay_error(_tm, _t1, 2)) > 1e-6,
+          "错写=%.6e 正确=%.6e 差=%.2e"
+          % (_wrong2, RS.decay_error(_tm, _t1, 2), _wrong2 - RS.decay_error(_tm, _t1, 2)))
+
+    # J8 完整预算入口 `readout_fidelity_shelved`：n=1 与「旧线性模型 + 同 ε」之差必须 ≡ (1−ε)·Δ/2
+    #    （把 J4 的关系从「只有衰减项」推广到「含 ε 的完整保真度」，两处口径互相对拍）
+    #    ⚠️ 参数刻意取到 ε≈1e-3 量级（不是 ε→0），否则 (1−ε) 这个因子根本没被测到。
+    _kw = dict(chi_ghz=0.004, kappa_r_ghz=0.002, nbar=10.0, eta=0.5, N_amp=5.0)
+    _r1 = RS.readout_fidelity_shelved(**_kw, t_m_s=_tm, t1_s=_t1, n_shelve=1)
+    _r2 = RS.readout_fidelity_shelved(**_kw, t_m_s=_tm, t1_s=_t1, n_shelve=2)
+    _f_old = (1.0 - _r1["eps"]) * (2.0 - _d["linear"]) / 2.0
+    check("J8 完整预算 n=1 与「旧线性 + 同 ε」之差 ≡ (1−ε)·Δ/2（1e-6<ε≈%.1e<1e-2，非零且小）；"
+          "且 n=2 保真度更高" % _r1["eps"],
+          abs((_r1["F"] - _f_old) - (1.0 - _r1["eps"]) * _d["delta"] / 2.0) < 1e-15
+          and _r2["F"] > _r1["F"] > 0.0 and 1e-6 < _r1["eps"] < 1e-2,
+          "F(n=1)=%.9f F_old=%.9f 差=%.2e ≡ (1−ε)Δ/2=%.2e | F(n=2)=%.9f"
+          % (_r1["F"], _f_old, _r1["F"] - _f_old,
+             (1.0 - _r1["eps"]) * _d["delta"] / 2.0, _r2["F"]))
 
     bad = globals().get("FAIL", 0)
     good = globals().get("PASS", 0)

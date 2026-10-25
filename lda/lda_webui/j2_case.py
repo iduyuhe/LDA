@@ -86,7 +86,7 @@ J2_HONEST_NOTE = (
 # ═══════════════════════ 五档征程（静态事实 · 可回溯门禁）═══════════════════════
 # 🔴 **口径（机器可核对 · 非手写漂移）**：`gate` = 该档**新增**的 `run_j2_qpu_smoke`
 #    判据数（该门禁是**单脚本累计**，判据按字母带分档：A–E+R = M0+M1 · F = M2 ·
-#    G = M3 · H = M4）；`gate_total` = 累计到该档的判据数。二者由常驻门禁
+#    G+J = M3 · H+I = M4）；`gate_total` = 累计到该档的判据数。二者由常驻门禁
 #    `run_webui_j2_render_path_smoke` 实跑该 smoke 并按字母带**逐档核对**。
 MILESTONES = [
     {"id": "M0+M1", "code": "v0.9.230", "title": "物理错误模型 + J1 闭环校准",
@@ -98,14 +98,17 @@ MILESTONES = [
      "gate": 6, "gate_total": 21, "bands": ["F"],
      "result": "净增 **B506**（CR 门退相干错误率 闭式 ⇄ 16×16 Liouvillian RK4）"
                "+ **B507**（残余 ZZ (4/5)sin²(ζt/2) 闭式 ⇄ 4×4 矩阵传播子 RK4）"},
-    {"id": "M3", "code": "v0.9.232", "title": "色散读出链 + 串扰",
-     "gate": 7, "gate_total": 28, "bands": ["G"],
+    {"id": "M3", "code": "v0.9.232", "title": "色散读出链 + 串扰 + shelving 层",
+     # v0.9.305：并入 J（读出 shelving / 有效寿命层 8 条）⇒ 7+8=15，累计 21+15=36
+     "gate": 15, "gate_total": 36, "bands": ["G", "J"],
      "result": "净增 **B508**（FDM 多音读出相邻通道频谱重叠串扰比 4γ²/(4γ²+δ²) 闭式 "
                "⇄ sinh 换元 + 复合 Simpson）；同源体检否决宪章 B511（被 B30 占用）/ "
-               "B512（被 B507 占用）"},
+               "B512（被 B507 占用）；v0.9.305 补 **读出 shelving / 有效寿命层**"
+               "（`P_decay=(1−e^(−t_m/T1))^n` ⇄ 阶梯主方程 RK4，净增 0 锚，闭合 `J2-G-E`）"},
     {"id": "M4", "code": "v0.9.233", "title": "QPU 误差预算集成 + 拓扑对接 + 收官",
-     # v0.9.301：末档并入 I（线路级量子态演化 9 条）⇒ 9+9=18，累计 28+18=46
-     "gate": 18, "gate_total": 46, "bands": ["H", "I"],
+     # v0.9.301：末档并入 I（线路级量子态演化 9 条）⇒ 9+9=18
+     # v0.9.305：M3 并入 J（8 条）⇒ 累计 36+18=54
+     "gate": 18, "gate_total": 54, "bands": ["H", "I"],
      "result": "净增 **B509**（QPU 耦合图代数连通度 λ₂ 谱定理闭式 2−2cos(π/max) "
                "⇄ 嵌套 Krylov Rayleigh–Ritz）；同源体检否决宪章 B513（布尔量不可锚）/ "
                "B514（与 S4 + J1 B502–B505 同源）⇒ 改靶 λ₂"},
@@ -187,6 +190,22 @@ GAPS = [
      "detail": "λ₂ 为图论谱不变量；2D 最近邻嵌入判定为设计规则。"
                "**已有** QEC 码族闭式与 hashing 界（D2 · 唯一可锚量）；"
                "**仍缺**编译/映射实测与真实硬件拓扑下的往返验证。"},
+    {"id": "J2-G-E", "title": "读出预算缺 shelving / 有效寿命层", "status":
+     "已闭合（v0.9.305 · `lda_agent/readout_shelving`：闭式 `P_decay=(1−e^(−t_m/T1))^n`"
+     "（n = shelving 级数，等比阶梯下由二项式定理给出）⇄ 阶梯主方程 RK4 独立数值解（n=1..4，残差 <1e-9），"
+     "自检 **9 项**）",
+     "detail": "**这条缺口是 v0.9.304 判 A2 时算出来的，不是猜的**：把旧读出预算 "
+               "`F1=(1−ε)(1−t_m/T1)` 用在公开实测器件上（Chen et al., npj Quantum Inf. 9 (2023)，"
+               "`t_m=140 ns`、`T01=6.18 µs`），取**极限乐观**（ε→0）上界只有 **0.98867**，"
+               "**够不到实测的 0.995**；且两档完全不同的 χ/κ/n̄ 参数算出的 F 都停在同一天花板 ⇒ "
+               "**不是参数没调好，是模型缺一层**（把整个读出期都记成「|1⟩ 在按 T1 衰减」）。"
+               "现补上 shelving 层：π12/π23 把布居搬到更高能级，致错通道变成**多级串联**，"
+               "要走完 n 步才落到 |0⟩ ⇒ `P_decay = (1−e^(−x))^n`，收益是**乘性**的。"
+               "补层后 `F_max(n=2) = 0.99975 ≥ 0.995` ✓。"
+               "🔴 判据：`run_j2_qpu_smoke` **J 节 7 条**（闭式⇄RK4 · n=1 精确退化 · 截断差夹逼 · "
+               "**上界判据** · 乘性律 · 论文三档披露对照 · 反向探针「误写 x^n 必红」）。"
+               "⚠️ 仍不含：shelving 脉冲的**非绝热误差**（π12 不完备的残余布居）、读出驱动下 AC Stark、"
+               "光子数引起的额外跃迁、assignment matrix 非对角元 ⇒ 本层给的是**衰减通道的下界收益**。"},
 ]
 
 
@@ -557,7 +576,7 @@ def run_selfchecks(verbose: bool = False) -> bool:
         and orders_below_threshold(p_phys) > 0.0
         and all(curve[i] > curve[i + 1] for i in range(len(curve) - 1)))
 
-    # ⑬ 案例卡组装：4 里程碑 · 5 结论 · 4 缺口 · 顶层 verdict=DESIGN_BUDGET
+    # ⑬ 案例卡组装：4 里程碑 · 5 结论 · **6 缺口**（v0.9.305 增 J2-G-E）· 顶层 verdict=DESIGN_BUDGET
     #    ∧ gate 口径自洽（逐档累计 == gate_total ∧ sum(gate) == span.gate_checks）
     card = case_card()
     _ms = card["milestones"]
@@ -566,9 +585,9 @@ def run_selfchecks(verbose: bool = False) -> bool:
         _cum += _m["gate"]
         if _m["gate_total"] != _cum or not _m["bands"]:
             _bands_ok = False
-    chk("⑬ 案例卡组装：4 里程碑 / 5 结论 / 4 缺口 / verdict=DESIGN_BUDGET ∧ gate 口径自洽",
+    chk("⑬ 案例卡组装：4 里程碑 / 5 结论 / 6 缺口 / verdict=DESIGN_BUDGET ∧ gate 口径自洽",
         len(_ms) == 4 and len(card["findings"]) == 5
-        and len(card["gaps"]) == 5 and card["verdict"] == "DESIGN_BUDGET"   # v0.9.301：J2-G-C 拆出 Cb
+        and len(card["gaps"]) == 6 and card["verdict"] == "DESIGN_BUDGET"   # v0.9.301: 拆出 Cb · v0.9.305: 补 J2-G-E
         and _bands_ok and _cum == card["span"]["gate_checks"])
 
     # ⑭ 🔴 不伪装实测：verdict 非 PASS/ACCEPT ∧ 诚实边界关键词齐全

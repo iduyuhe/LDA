@@ -33,7 +33,9 @@
 from __future__ import annotations
 
 import json
+import math
 import os
+import re
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -222,8 +224,70 @@ def main() -> int:
     # ── F1 缺口台账如实开放 ─────────────────────────────────────────────
     from lda_webui import pm_case as PC
     _gids = [g["id"] for g in PC.GAPS]
-    check("F1 缺口台账如实开放：含 PM-G7（光学域 drift 无锚）与 PM-G8（T1/T2 锁死）",
-          "PM-G7" in _gids and "PM-G8" in _gids, "缺口=%s" % _gids)
+    _g8 = next(g for g in PC.GAPS if g["id"] == "PM-G8")
+    check("F1 缺口台账如实：PM-G7 仍开放（光学域 drift）∧ PM-G8 已闭合（v0.9.293 电-热联仿）∧ PM-G8b 边界声明",
+          "PM-G7" in _gids and "PM-G8" in _gids and "PM-G8b" in _gids
+          and _g8["status"].startswith("已闭合")
+          and next(g for g in PC.GAPS if g["id"] == "PM-G8b")["status"].startswith("边界声明"),
+          "缺口=%s" % _gids)
+
+    # ── H 加热器电-热-光链路（v0.9.293 · PM-G8 闭合依据）────────────────
+    # 🔴 改前：热阻是**与几何无关的手填常数** `R_TH_K_PER_MW = 1.0`（只注「文献量级」），
+    #    而同一台机器上「热阻」本可由几何算出 ⇒ **两口径相差 12.51× 且从无人核**。
+    from lda_l2 import pm_thermal as PT
+    from lda_design import active_models as AM
+
+    _sc = PT.selfcheck_pm_thermal()
+    check("H1 pm_thermal 自检全过（稳态守恒 / 双能量路径 / 阶跃 τ 点 / 线性 / 层和 / 非法几何）",
+          not [k for k, v in _sc.items() if not v],
+          "fail=%s" % [k for k, v in _sc.items() if not v])
+
+    _rep = PT.heater_link_report()
+    _lk = _rep["link"]
+    check("H2 卡内披露数值 ≡ 模块现算（逐项，正则取断言值 · 防「文案与代码各说各话」）",
+          abs(float(re.search(r"R_th \*\*([\d.]+) K/mW", _g8["status"]).group(1))
+              - round(_lk["R_th_K_per_mW"], 2)) <= 5e-3
+          and abs(float(re.search(r"T1=τ=([\d.]+) µs", _g8["status"]).group(1))
+                  - round(_lk["tau_us"], 2)) <= 5e-3
+          and abs(float(re.search(r"P_π \*\*([\d.]+) mW", _g8["status"]).group(1))
+                  - round(_lk["P_pi_mw"], 3)) <= 5e-4,
+          "R_th=%.4f τ=%.4f P_pi=%.4f" % (_lk["R_th_K_per_mW"], _lk["tau_us"], _lk["P_pi_mw"]))
+
+    check("H3 对照支路① 稳态能量守恒：P ≡ ΔT/R_th（回代，绝对 1e-15）",
+          _rep["check_steady_state"]["abs_diff"] <= 1e-15,
+          "P=%.9f P_back=%.9f" % (_rep["check_steady_state"]["P_mw"],
+                                  _rep["check_steady_state"]["P_back_mw"]))
+    check("H4 对照支路② 两条能量路径相等：C_th·ΔT_π ≡ P_π·τ（相对 1e-12 · 因 τ=R·C）",
+          _rep["check_energy_rel"] <= 1e-12, "rel=%.3e" % _rep["check_energy_rel"])
+    check("H5 对照支路③ 阶跃 τ 点 == 1−e⁻¹ = 0.6321205588285577（与参数无关的闭式已知答案）",
+          abs(_rep["check_step_at_tau"] - (1.0 - math.exp(-1.0))) <= 1e-15,
+          "%.16f" % _rep["check_step_at_tau"])
+    check("H6 自洽：ΔT=R_th·P ⇒ **功率比 × 热阻比 ≡ 1**（验证两侧用同一个 R_th；本身抓不住 R 写错）",
+          abs(_lk["P_pi_ratio_vs_const"] * _lk["R_th_ratio_vs_const"] - 1.0) <= 1e-12,
+          "P比=%.6f R比=%.6f" % (_lk["P_pi_ratio_vs_const"], _lk["R_th_ratio_vs_const"]))
+    # 🔴 H6b **绝对量级锚点**（v0.9.287 教训：比值判据对单位错/量级错完全无能为力
+    #    —— 上面 H6 的乘积与 R_th 取值无关，R 错 100 倍它照样绿）
+    check("H6b 🔴 绝对量级锚点（文献区间，**比值判据的盲区由本条兜住**）："
+          "R_th ∈ [5,50] K/mW ∧ τ ∈ [1,100] µs ∧ P_π ∈ [0.5,50] mW",
+          5.0 <= _lk["R_th_K_per_mW"] <= 50.0
+          and 1.0 <= _lk["tau_us"] <= 100.0
+          and 0.5 <= _lk["P_pi_mw"] <= 50.0,
+          "R=%.3f τ=%.2f P=%.3f" % (_lk["R_th_K_per_mW"], _lk["tau_us"], _lk["P_pi_mw"]))
+    check("H7 🔴 **未擅自改对外数字**：现役 `R_TH_K_PER_MW` 仍为 1.0 且 `phase_shift_rad` 默认仍用它（1D 值只并列披露）",
+          float(AM.R_TH_K_PER_MW) == 1.0
+          and abs(AM.phase_shift_rad(1.0, 100.0) - (2 * math.pi / AM.WL_UM * AM.DN_DT_SI_PER_K * 1.0 * 100.0)) <= 1e-15
+          and abs(_lk["R_th_K_per_mW"] - AM.R_TH_K_PER_MW) > 1.0,
+          "1D=%.4f 常数=%.1f" % (_lk["R_th_K_per_mW"], AM.R_TH_K_PER_MW))
+    # H8 反向探针（每条先证能变红）：① 卡上 R_th 文案 ×2 ⇒ H2 红；② R_th ×0.01（单位错模拟）⇒ H6b 红；
+    #    ③ τ 文案 ×2 ⇒ H2 红；④ 层热阻少算一层 ⇒ H6b 的绝对值必变
+    _h2_red = abs(_lk["R_th_K_per_mW"] * 2.0 - round(_lk["R_th_K_per_mW"], 2)) > 5e-3
+    _h6b_red = not (5.0 <= _lk["R_th_K_per_mW"] * 0.01 <= 50.0)
+    _h2_red_tau = abs(_lk["tau_us"] * 2.0 - round(_lk["tau_us"], 2)) > 5e-3
+    _drop_box = PT.thermal_time_constant({"t_box_um": 0.01})["tau_us"]
+    _h6b_red2 = abs(_drop_box - _lk["tau_us"]) > 1.0
+    check("H8 反向探针：卡上 R_th×2 ⇒ H2 红 ∧ R_th×0.01（单位错）⇒ H6b 红 ∧ τ×2 ⇒ H2 红 ∧ 抽掉 BOX 层 ⇒ τ 必变",
+          _h2_red and _h6b_red and _h2_red_tau and _h6b_red2,
+          "h2=%s h6b=%s h2tau=%s box=%s" % (_h2_red, _h6b_red, _h2_red_tau, _h6b_red2))
 
     # ── G1 内置快照 schema == 仓库报告 JSON ─────────────────────────────
     snap = PC.STATIC_SNAPSHOT["m4"]

@@ -38,6 +38,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(ROOT, "lda") not in sys.path:
     sys.path.insert(0, os.path.join(ROOT, "lda"))
 
+#: 跨卡口径注册表（v0.9.300）：同类缺口必须同状态；口径更正必须留痕
+from lda_harness import gap_caliber as CALIBER
+
 #: 卡 → 域。d1/d2/d4 是**量子域蓝图 v2**（光-量异质集成 / QEC 码族 / 域扩展），
 #: 🔴 审计 v3 把它们算进"光子 36 条" ⇒ 域归属错误，本表修正。
 DOMAIN = {
@@ -54,10 +57,14 @@ ARGS = {"qchip": (12,)}
 
 #: 棘轮（各自方向由 `_RATCHET` 声明）。**必须机器守**，否则只是注释。
 UNMARKED_MAX = 0       # 待补状态的缺口数（只降）—— v0.9.286 已达 0：112/112 全部可机核
-OPEN_MAX = 15          # 🔴 **未闭合 = 真欠债**（只降）—— v0.9.299 schip G-E 闭合后 16→15
+OPEN_MAX = 10          # 🔴 **未闭合 = 真欠债**（只降）—— v0.9.300 跨卡口径统一后 15→10
+                       #   ⚠️ **本版这 5 条下降不是做活换来的**（详见 `RECLASSIFIED_MIN` 与台账 §6）
 CLOSED_MIN = 56        # 已闭合（只升）—— v0.9.299 schip G-E（TSV / 倒装焊 / 低温衰减链）
 SETTLED_MIN = 11       # 已结算（只升）—— v0.9.289 qchip G_Q9（M2 布局最小长度守卫绕过）
-BOUNDARY_MIN = 34      # 边界声明（只升）—— v0.9.299 schip G-Eb（整阵列集体耦合/装配公差/衰减器频响）
+RECLASSIFIED_MIN = 6   # 🔴 口径更正痕迹条数（只升）：**唯一允许「未闭合下降但不做新活」的通道**，
+                       #   每加一条必须写进 `lda_harness/gap_caliber.RECLASSIFIED` 并给出判定依据；
+                       #   v0.9.300 建立（j2 J2-G-A/J2-G-B + schip G-A/G-B/G-C/G-D）
+BOUNDARY_MIN = 40      # 边界声明（只升）—— v0.9.300 跨卡口径统一：j2 2 条 + schip 4 条转边界（34→40）
                        #   （参考设计的范围/模型边界原先被 closed=False 记成欠债）
 
 # ── 状态词表（**唯一权威** · v0.9.286 四值口径）──────────────────────────
@@ -180,6 +187,31 @@ def _classify(card):
     return n, ("纯字符串（无状态）" if not isinstance(g[0], dict) else "元素无状态字段"), None
 
 
+def collect_gap_rows():
+    """把**每条**缺口的 `(id, title, 归一四值)` 摊平（供跨卡口径审计用）。
+
+    🔴 抽取用 `CALIBER.rows_from_card`（全仓唯一实现），归一用本模块的 `_state_of`
+    （它要兼容 `CLOSED（…）` 等历史形态，与口径判据的「只认四值前缀」职责不同）。
+    两者一旦漂移会被 `main()` 里的「明细 vs 汇总计数对拍」判红 ——
+    **允许两套表示并存，不允许「并存且无人对拍」。**
+    """
+    rows = {}
+    for k in sorted(DOMAIN):
+        mod = MODULE.get(k, k + "_case")
+        M = importlib.import_module("lda_webui." + mod)
+        card = M.case_card(*ARGS.get(k, ()))
+        rows[k] = [
+            {"id": r["id"], "title": r["title"], "status": _state_of(r["status_text"])}
+            for r in CALIBER.rows_from_card(card)
+        ]
+    return rows
+
+
+def audit_caliber(gap_rows):
+    """跨卡口径审计（同类必须同状态 / 口径更正必须留痕 / 分工必须机核）。"""
+    return (CALIBER.audit(gap_rows) + CALIBER.audit_reclassify(gap_rows))
+
+
 def collect():
     """现算全表（确定性）。"""
     cards = {}
@@ -286,6 +318,10 @@ def render_md(ref) -> str:
         % (tot["open"], tot["gaps"] - tot["closed"] - tot["settled"], tot["boundary"], tot["settled"], tot["gaps"]),
         "5. ⚠️ **%d 条仍未标**：给 `case_card()` 补 `gaps_status`（字符串型 gaps）或元素 `status`"
         "（dict 型 gaps）即可机核。**本表拒绝从散文里猜状态**。" % tot["unmarked"],
+        "6. 🔴 **v0.9.300 的未闭合下降（15 → 10）不是做活换来的**：%d 条经**跨卡口径统一**从"
+        "「未闭合」转为「边界声明」（同一句「无流片 / 无 PDK」在不同卡里曾被记成不同状态）。"
+        "**本版没有新建任何能力**，逐条理由见 §6；`RECLASSIFIED_MIN=%d` 守着这条痕迹不被抹掉。"
+        % (len(CALIBER.RECLASSIFIED), RECLASSIFIED_MIN),
         "",
         "## 5. 棘轮（**全部机器守**，退步即拒跑）",
         "",
@@ -301,6 +337,46 @@ def render_md(ref) -> str:
         "> 五列各自单向：**新加缺口必须带状态源**（否则 `unmarked` 涨 ⇒ 红）；",
         "> 已闭合/已结算/边界不得回退成未标（否则对应下界被击穿 ⇒ 红）；",
         "> **`open` 是唯一应当递减的列** —— 它涨说明新增了欠债，也判红（v0.9.289 新增）。",
+        "",
+        "## 6. 口径更正痕迹（v0.9.300 · **未闭合下降的真实原因**）",
+        "",
+        "> 🔴 **这一节存在的唯一目的**：让「未闭合变少」与「做了活」在台账上**可区分**。",
+        "> 下表 %d 条**全部没有新建能力**，只是把同一事实在不同卡里的不同记法统一。"
+        % len(CALIBER.RECLASSIFIED),
+        "",
+        "| 缺口 | 口径 | 判定依据 |",
+        "|---|---|---|",
+    ] + [
+        "| `%s` | `%s` | %s |" % (k, cid, reason.replace("|", "\\|"))
+        for k, (cid, reason) in sorted(CALIBER.RECLASSIFIED.items())
+    ] + [
+        "",
+        "### 6.1 判定规则（唯一依据）",
+        "",
+        "> 明天派一个工程师来做，**能做的**才是欠债；**本卡不做 / 项目不做**的是边界声明。",
+        "",
+        "上表条目要求的都不是建模，而是 **流片预算 / 产线 / foundry deck（NDA）/ 低温实验台** —— "
+        "这些**任何案例卡都无法在本仓内完成**，与项目对外口径「设计期签核 · 非流片实测」一致。",
+        "🔴 **判据不是为降数字发明的**：v0.9.289–299 共十一次「闭合」全部是**建模活**"
+        "（IL 精度 / CMR 来源 / Werner 组合律 / 中继吞吐 / 源不可分辨性 / 热噪声 / 温漂预算 / "
+        "两个解码器 / 封装三项），**没有一条**依赖硬件。",
+        "",
+        "### 6.2 三道机核（`lda/lda_harness/gap_caliber.py`）",
+        "",
+        "1. **同类必须同状态**：同一口径命中的每条缺口，状态必须等于该口径期望值；"
+        "且 `permanent_boundary` 类**必须跨 ≥2 张卡命中**（防空集合 —— 单卡自说自话不算统一）。",
+        "2. **留痕必须写得出依据**：每条理由须含 %s 之一且 ≥30 字，"
+        "不许用「口径统一」四个字糊过去。" % " / ".join("`%s`" % k for k in CALIBER.KEYWORDS),
+        "3. **分工也要机核**：`role_delegated` 类（纠错码层由专卡承载）必须能在承载卡里"
+        "找到**真实的未闭合条目**，否则判「以分工为名推掉欠债」。",
+        "",
+        "### 6.3 拆而不并（本次唯一新增的欠债）",
+        "",
+        "`schip G-D` 原文混了两件事：「脉冲级 Rabi/Ramsey 标定」（须实验台 ⇒ 边界）"
+        "与「线路编译 / 噪声仿真」（纯模型活 ⇒ **真欠债**）。"
+        "⇒ 拆为 `G-D`（边界声明）+ **`G-Db`（未闭合）**。",
+        "把两者压进同一条（改成整体边界）就是**借口径统一之名把真活藏起来** —— "
+        "这正是 N3-b「限制与事实挤进同一序数」的同型，故本次**先拆再判**。",
         "",
     ]
     return "\n".join(out)
@@ -339,9 +415,37 @@ def main(argv=None) -> int:
         breach.append("unmarked %d > %d" % (t["unmarked"], UNMARKED_MAX))
     if t["open"] > OPEN_MAX:          # 🔴 真欠债只能减，不能增
         breach.append("open %d > %d" % (t["open"], OPEN_MAX))
+    # 🔴 口径更正痕迹只能累积，不许被清空（清空 = 抹掉「这 5 条不是做活换来的」这件事）
+    _n_rec = len(CALIBER.RECLASSIFIED)
+    if _n_rec < RECLASSIFIED_MIN:
+        breach.append("reclassified %d < %d（口径更正痕迹被删）" % (_n_rec, RECLASSIFIED_MIN))
     if breach:
         print("FAIL: 棘轮退步 —— %s" % " / ".join(breach), file=sys.stderr)
         return 3
+
+    # 🔴 跨卡口径审计（v0.9.300）：同一事实在不同卡里记成不同状态 ⇒ 拒跑。
+    #    这是本版真正的产出 —— 不是把那 6 条改成边界声明就完事，
+    #    而是让「以后任何卡再把「无流片」记成欠债」这件事**当场变红**。
+    rows = collect_gap_rows()
+    # 先自测（词表正例/反例 + 三条反向探针），自测不过说明审计本身坏了 ⇒ 拒跑
+    _sc = CALIBER.selfcheck()
+    _sc_bad = [k for k, v in _sc.items() if not v]
+    if _sc_bad:
+        print("FAIL: 口径审计自测未过 %s（审计器本身坏了，不能拿它当证据）" % (_sc_bad,),
+              file=sys.stderr)
+        return 5
+    # 计数对拍：`collect_gap_rows` 与 `collect` 必须一致（防两套表示各自漂移）
+    # 用**同一个** `_counts_from`（四值 → 英文列名）计数，避免再写一套映射
+    _row_cnt = _counts_from([_g["status"] for _ck in rows for _g in rows[_ck]])
+    if any(_row_cnt[f] != t[f] for f in FIELDS):   # `t` 另含 "gaps" 总数，不参与对拍
+        print("FAIL: 明细行计数 %s ≠ 汇总 %s（两套表示已漂移）" % (_row_cnt, t), file=sys.stderr)
+        return 6
+    cal_bad = audit_caliber(rows)
+    if cal_bad:
+        for m in cal_bad:
+            print("  ✗ %s" % m, file=sys.stderr)
+        print("FAIL: 跨卡口径审计 %d 条违反" % len(cal_bad), file=sys.stderr)
+        return 4
 
     md = render_md(ref)
     js = json.dumps(ref, ensure_ascii=False, indent=2, sort_keys=True) + "\n"

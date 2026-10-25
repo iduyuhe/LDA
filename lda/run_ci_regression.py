@@ -1860,7 +1860,8 @@ CORE_SMOKES: List[str] = [
     #   实跑 37 PASS 按**判据字母带** A–E+R/F/G/H 分档 == 卡内逐档 gate ∧ 模块自检实跑和
     #   54 == span.module_selfchecks）· F 真实性护栏（verdict=DESIGN_BUDGET / 边界关键词 /
     #   路由登记 ∧ 不在 HEAVY_POST_PATHS / 顶层 import 白名单 / 缺口未闭合 / 自入 CI）·
-    #   G 突变探针 19 条 + 条数自洽。**53 判据**（纳
+    #   G 突变探针 19 条 + 条数自洽。**55 判据**（v0.9.300 订正：注释原写 **53**，
+    #   实跑一直是 **55** —— 又一处「两处表示、无人对拍」的陈旧漂移；判据数本身未变，只改注释。纳
     #   `run_webui_pm_render_path_smoke._W10_EXTRA` 对照面，令 README 顶行判据数机器守）。
     #   不增账本锚（纯 WebUI 落地）；CI core 321→322。
     "run_webui_j2_render_path_smoke.py",
@@ -3163,7 +3164,7 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   （**只抬该项耗时上限 · 绝不抬 ratchet**）
     "run_webui_pm_render_path_smoke.py": 1000.0,
     # J2 案例卡 WebUI 门禁（取值路径 + 反向完备 + **跨源一致性** + gate 机械对照）：
-    #   53 判据（含 19 探针）· 实测上界 ~6s（内含 `run_j2_qpu_smoke` 子进程实跑 1 次 +
+    #   55 判据（含 19 探针）· 实测上界 ~6s（内含 `run_j2_qpu_smoke` 子进程实跑 1 次 +
     #   3 个能力层模块 `run_selfchecks` 实跑 + λ₂ Krylov 数值对拍）⇒ 预算 300s 留足余量。
     "run_webui_j2_render_path_smoke.py": 300.0,
     # J3 测控征程 M0/M1 门禁（两锚 + 三能力层 + 测控闭环 + 跨模块口径）：21 判据（含 9 探针）

@@ -112,9 +112,9 @@ def main():
           "版图容量" in card["scale_tiers"]["note"],
           "note=%s" % card["scale_tiers"]["note"][:40])
     gap_ids = [g["id"] for g in card["gaps"]]
-    check("H3 缺口台账 6 条且 ID 齐全（G-A…G-E + G-Eb 边界声明）",
-          card["gaps_total"] == 6
-          and gap_ids == ["G-A", "G-B", "G-C", "G-D", "G-E", "G-Eb"],
+    check("H3 缺口台账 7 条且 ID 齐全（G-A…G-E + G-Eb 边界声明 + G-Db 拆出的真欠债）",
+          card["gaps_total"] == 7
+          and gap_ids == ["G-A", "G-B", "G-C", "G-D", "G-Db", "G-E", "G-Eb"],
           "ids=%s" % gap_ids)
 
     # ═══════════════ Z 护栏与红线 ═══════════════

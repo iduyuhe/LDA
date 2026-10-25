@@ -517,11 +517,28 @@ def main() -> int:
           "越界：%s" % sorted(top_mods - _TOP_IMPORT_ALLOW))
 
     gaps = card["gaps"]
-    check("F6 缺口登记：全部 status=未闭合 ∧ 每条含 id/title/detail（不粉饰）",
-          bool(gaps) and all(g.get("status") == "未闭合"
-                             and g.get("id") and g.get("title") and g.get("detail")
-                             for g in gaps),
-          "缺口=%s" % [(g.get("id"), g.get("status")) for g in gaps])
+    # ⚠️ v0.9.300：原判据要求「全部 status=未闭合」—— 它**本身就是跨卡口径冲突的产物**
+    #    （同一句「无流片 / 无 PDK」在 ecore/pchip 记边界声明、在 j2 记未闭合）。
+    #    改判后不能简单放宽成「任意状态都行」（那就成死判据），故**三向收紧**：
+    #      ① 每条必须是四值之一（不接受自由文本 / 空）
+    #      ② 至少 1 条真欠债（防空集合：不许把整卡都判成边界来清债）
+    #      ③ 每条边界声明**必须写明判定依据**（`非流片`/`须 NDA`/`实验台`/`专卡`/`不重复计债`）
+    _FOUR = ("已闭合", "已结算", "未闭合", "边界声明")
+    _BADGE = ("非流片", "须 NDA", "实验台", "专卡", "不重复计债")
+    _bad_stat = [g.get("id") for g in gaps
+                 if not any(str(g.get("status") or "").startswith(x) for x in _FOUR)]
+    _bad_field = [g.get("id") for g in gaps
+                  if not (g.get("id") and g.get("title") and g.get("detail"))]
+    _n_open = sum(1 for g in gaps if str(g.get("status") or "").startswith("未闭合"))
+    _bad_bd = [g.get("id") for g in gaps
+               if str(g.get("status") or "").startswith("边界声明")
+               and not any(k in str(g.get("status")) for k in _BADGE)]
+    check("F6 缺口登记：状态全为四值之一 ∧ 每条含 id/title/detail ∧ **至少 1 条真欠债** ∧ "
+          "每条边界声明写明判定依据（不粉饰）",
+          bool(gaps) and not _bad_stat and not _bad_field and _n_open >= 1 and not _bad_bd,
+          "缺口=%s 非法状态=%s 缺字段=%s 无依据边界=%s 真欠债=%d"
+          % ([(g.get("id"), str(g.get("status"))[:6]) for g in gaps],
+             _bad_stat, _bad_field, _bad_bd, _n_open))
 
     # 🔴 F6b（v0.9.279 · D-227 · F-6 收口）：**台账不得与已交付实现脱钩**。
     #    血案：J2-G-C 长期写「不做量子线路编译/噪声仿真」，而 D-218 早已交付

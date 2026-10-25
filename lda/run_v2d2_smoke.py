@@ -182,6 +182,131 @@ def main() -> int:
           not _adjudication_ok(bad_adj),
           "被截断类=%s" % first)
 
+    # ══════════════════════ J LDPC 解码 BP + OSD-0（v0.9.298 · G-V2-D2-1）══════════════════════
+    # 🔴 改前：该缺口只写着「解码器重且禁第三方 SDK ⇒ 未开工」。本层把它建起来，
+    #    并且**不靠跑分**——用「无环图 ⇒ BP 后验 ≡ 精确逐位 MAP」这条精确性定理做验证。
+    from lda_l2 import d2_ldpc_decoder as LDPC
+
+    _sc_l = LDPC.selfcheck_d2_ldpc_decoder()
+    check("J1 d2_ldpc_decoder 自检 %d 项全过（GF2 / 精确性定理 / 结构不变量 / 反向探针）"
+          % len(_sc_l),
+          not [k for k, v in _sc_l.items() if not v],
+          "fail=%s" % [k for k, v in _sc_l.items() if not v])
+
+    _tree = LDPC.tree_vs_exact_scan()
+    check("J2 🔴 **无环图 ⇒ BP 后验 ≡ 精确逐位 MAP 后验**：穷举 512 个错误模式 · 破例 %d · "
+          "最大偏差 %.2e（≤1e-9）" % (_tree["violations"], _tree["worst_abs_diff"]),
+          _tree["violations"] == 0 and _tree["worst_abs_diff"] <= 1e-9,
+          "%d/%d 码字" % (_tree["patterns"], _tree["codewords"]))
+    check("J3 判据非空转：树码 512 模式 / 32 码字（左集合非 0）",
+          _tree["patterns"] == 512 and _tree["codewords"] == 32)
+
+    # 🔴 J4 反向探针：加一条边造出环 ⇒ 精确性**必须破**（证明 J2 不是恒真）
+    _cyc = LDPC.tree_vs_exact_scan(LDPC.H_TREE_WITH_CYCLE)
+    check("J4 🔴 反向探针：加一条边成环 ⇒ 精确性必破（破例 %d/%d）"
+          % (_cyc["violations"], _cyc["patterns"]),
+          _cyc["violations"] > 0)
+
+    # 🔴 J5 OSD-0 结构性不变量：输出恒为合法码字（不是「近似对」，是 syndrome 恒 0）
+    _n = 9
+    _base = LDPC.deterministic_llr(_n)
+    _bad_osd = [pat for pat in range(1 << _n)
+                if LDPC.osd0_decode([(-_base[v] if (pat >> v) & 1 else _base[v])
+                                     for v in range(_n)], LDPC.H_TREE)["syndrome"] != 0]
+    check("J5 🔴 OSD-0 结构不变量：全部 512 个模式下输出 syndrome ≡ 0（合法码字）",
+          not _bad_osd, "违约=%d" % len(_bad_osd))
+
+    # 🔴 J6 无噪极限（闭式已知答案）：大 LLR ⇒ BP 一次迭代命中 ∧ OSD-0 恒返回该码字
+    _cws = LDPC.enumerate_codewords(LDPC.H_TREE, _n)
+    _bp_ok = all(
+        (lambda r: r["converged"] and r["iterations"] == 1 and r["word"] == cw)(
+            LDPC.bp_decode([(-40.0 if b else 40.0) for b in cw], LDPC.H_TREE))
+        for cw in _cws)
+    _osd_ok = all(
+        LDPC.osd0_decode([(-40.0 if b else 40.0) for b in cw], LDPC.H_TREE)["word"] == cw
+        for cw in _cws)
+    check("J6 🔴 无噪极限：%d 个码字上 BP **一次迭代**即命中 ∧ OSD-0 恒返回该码字" % len(_cws),
+          _bp_ok and _osd_ok, "bp=%s osd=%s" % (_bp_ok, _osd_ok))
+
+    # J7 Hamming[7,4,3]（d=3）：OSD-0 必纠全部单比特错误 + 距离确实是 3
+    _h_ok = all(
+        LDPC.osd0_decode([(-0.6 if i == j else 3.0) for i in range(7)],
+                         LDPC.H_HAMMING743)["word"] == tuple(0 for _ in range(7))
+        for j in range(7))
+    _hw = [sum(cw) for cw in LDPC.enumerate_codewords(LDPC.H_HAMMING743, 7)]
+    check("J7 Hamming[7,4,3]：OSD-0 纠全部 7 个单错（错位最不可靠 ⇒ 不在 MRB）∧ d_min 确为 3",
+          _h_ok and min(w for w in _hw if w > 0) == 3,
+          "n_words=%d" % len(_hw))
+
+    # ══════════════════════ K 色码精确译码 + 闭式失效概率（v0.9.298 · G-V2-D2-2）══════════════════════
+    from lda_l2 import d2_color_code as CC
+
+    _sc_c = CC.selfcheck_d2_color_code()
+    check("K1 d2_color_code 自检 %d 项全过（闭式 / 完备码 / 失效≠逻辑错 / 反向探针）"
+          % len(_sc_c),
+          not [k for k, v in _sc_c.items() if not v],
+          "fail=%s" % [k for k, v in _sc_c.items() if not v])
+
+    # 🔴 K2 闭式已知答案（一）：闭式 P_fail = 1−(1−p)⁷−7p(1−p)⁶ ≡ 穷举 128 图样加权和
+    _worst = max(abs(CC.closed_form_decoder_failure(q) - CC.exhaustive_decoder_failure(q))
+                 for q in (1e-3, 5e-3, 0.05, 0.25))
+    check("K2 🔴 闭式 ≡ 穷举（四档 p · 绝对 ≤1e-15）：实测 max|Δ| = %.2e" % _worst,
+          _worst <= 1e-15)
+
+    # 🔴 K3 闭式已知答案（二）：p=1/2 处两条路径都**恰好**等于 15/16（无容差 `==`）
+    check("K3 🔴 p=1/2 ⇒ 闭式与穷举**都恰为 15/16 = 0.9375**（`==` 判定，非 isclose）",
+          CC.closed_form_decoder_failure(0.5) == 0.9375
+          and CC.exhaustive_decoder_failure(0.5) == 0.9375)
+
+    # K4 色码判据性特征 + 完备码结构
+    _st = CC.stab_x_elements()
+    _leaders = set()
+    for v in range(7):
+        e = [0] * 7
+        e[v] = 1
+        _leaders.add(CC._syndrome_mask(tuple(e)))
+    check("K4 色码特征：`H_X ≡ H_Z`（同常量）∧ Stab_X = 8 元素且非零重量**全为 4**（Steiner S(3,4,7)）"
+          "∧ 完备码 7 个单错恰好覆盖全部 7 个非零伴随式",
+          len(_st) == 8 and sorted({sum(w) for w in _st if any(w)}) == [4]
+          and _leaders == set(range(1, 8)))
+
+    # 🔴 K5 「失效」≠「逻辑错」（概念压扁是 N3-b 同型）：
+    #    重量 2 必为逻辑错、重量 3 **不全是**；两量在 p=0.05 处必须可分辨
+    _w3 = [CC._all_patterns()[i] for i in range(128)
+           if sum(CC._all_patterns()[i]) == 3]
+    check("K5 🔴 **失效 ≠ 逻辑错**：重量 2 全为逻辑错 ∧ 重量 3 既有也有非 ∧ p=0.05 处两量差 >1e-9",
+          all(CC._is_logical_error(e) for e in CC._all_patterns() if sum(e) == 2)
+          and any(CC._is_logical_error(e) for e in _w3)
+          and any(not CC._is_logical_error(e) for e in _w3)
+          and abs(CC.exhaustive_decoder_failure(0.05)
+                  - CC.logical_error_probability(0.05)) > 1e-9,
+          "w3=%d" % len(_w3))
+
+    # K6 逻辑错在 p=1/2 处为**整数比** N/128（无容差）
+    _nb = sum(1 for e in CC._all_patterns() if CC._is_logical_error(e))
+    check("K6 p=1/2 ⇒ 逻辑错 = %d/128 = %.6f（整数比 · 与穷举一致，无容差）"
+          % (_nb, _nb / 128.0),
+          abs(CC.logical_error_probability(0.5) - _nb / 128.0) <= 1e-16)
+
+    # K7 伪阈值只作**披露**（拟合量 ⇒ 非锚）：落在 (0,0.5) 且求根残差极小
+    _pt = CC.pseudo_threshold()
+    check("K7 伪阈值 = %.6f ∈ (0,0.5) ∧ 求根残差 %.1e（**披露数字 · 非锚**：拟合量不作 golden）"
+          % (_pt["pseudo_threshold"], _pt["residual"]),
+          0.0 < _pt["pseudo_threshold"] < 0.5 and _pt["residual"] < 1e-12)
+
+    # K8 🔴 判据数自洽（本卡 gate_checks 原写 13、实跑 19 ⇒ **陈旧漂移**，本版补上机器对拍）
+    #    ⚠️ 注意 `D2` 是 `lda_harness.d2_registries`（注册表），**不是** `d2_case` —— 我第一次就写混了，
+    #       当场 AttributeError 崩掉整个门禁（「门禁突变必须判红，不得崩溃」）。故这里显式导入 + try 兜底。
+    _sofar = globals().get("PASS", 0) + globals().get("FAIL", 0)
+    try:
+        from lda_webui import d2_case as _D2C
+        _decl = int(_D2C.case_card()["gate_checks"])
+        _err = ""
+    except Exception as exc:                      # pragma: no cover
+        _decl, _err = -1, "%s: %s" % (type(exc).__name__, exc)
+    check("K8 🔴 判据数自洽：卡内 gate_checks(%d) == 实跑 PASS 总数(%d，含本条)" % (_decl, _sofar + 1),
+          _decl == _sofar + 1, "卡内=%d 实跑=%d %s" % (_decl, _sofar + 1, _err))
+
     n_bad = globals().get("FAIL", 0)
     print("\n" + "=" * 78)
     print("D2-M0 门禁：%s（FAIL=%d）· golden=%.15f · resid=%.3e（%.2e×）· |g|/tol=%.2f"

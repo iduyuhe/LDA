@@ -181,8 +181,11 @@ def pi_shift_link(geom: Optional[Dict[str, float]] = None,
     dnd = float(AM.DN_DT_SI_PER_K if dn_dT is None else dn_dT)
     g = _geom(geom)
     L_um = float(g["L_h_um"])
+    # 🔴 K/mW 走**单一 accessor**（`thermal_resistance_k_per_mw`），不再 `["R_th_K_per_mW"]` 直取
+    #    —— 同一口径两个入口 = 会漂；v0.9.298 的可达性门禁当场抓出这个 accessor 「零引用」。
+    #    K/W 仍直接取自 `rth_report`（该 dict 另有分层明细），不在此重复换算。
     rth_report = layer_thermal_resistance(g)
-    r_th_mw = rth_report["R_th_K_per_mW"]
+    r_th_mw = thermal_resistance_k_per_mw(g)
     tau = thermal_time_constant(g)
     c_th = tau["C_th_J_K"]
 

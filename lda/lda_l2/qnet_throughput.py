@@ -191,6 +191,12 @@ def throughput_report(length_m: float = DEFAULT_LINK_LENGTH_M,
         # 旧口径（站内理想率 ÷ 直传率 · 不含段内透射与串行摊薄）
         "legacy_repeater_gain": float(legacy),
         "legacy_over_optimum": float(legacy / g_int),
+        # 🔴 v0.9.298 补：报告此前只有**增益比**，没有**绝对速率** —— 而 v0.9.294 的题目就叫
+        #    「端到端吞吐」。这里直接复用 `end_to_end_rate` 与 `segments_throughput_sweep`（单一真源），
+        #    不再在报告里另算一遍（同口径两个入口 = 会漂）。
+        "end_to_end_rate_per_s": float(
+            end_to_end_rate(length_m, n_int, alpha_db_per_km=alpha_db_per_km)["rate_per_s"]),
+        "sweep": segments_throughput_sweep(length_m, alpha_db_per_km=alpha_db_per_km),
         "note": (
             "旧 `repeater_gain` 是「站内理想产出率 ÷ 同长度直传率」，**不含段内透射与串行摊薄** ⇒ 无损耗上界；"
             "本层计入两者后，最优增益 `G(N*)=e^{β−1}/β` 才是**端到端**口径。两者定义不同、都不是错，"

@@ -335,6 +335,19 @@ DEAD_BASELINE: Dict[str, str] = {
     #    不为了让数字好看去删代码，也不假装它们不存在。
     "lda/lda_agent/drc_fix_loop.py::demo_fix": "PUBLIC_API_NO_CONSUMER",
     "lda/lda_agent/inverse_design.py::list_designs": "PUBLIC_API_NO_CONSUMER",
+    # ── 公开辅助函数（v0.9.298 · 可达性门禁**红了一段时间无人知**：它不在发布前子集里）──
+    # 🔴 这三条与上面 `lda_agent` 同型：**不是新写出来的死代码**，而是「门禁没跑就一直没人看」。
+    #    v0.9.298 跑通该门禁时一次性暴露 6 条：其中 3 条是 v0.9.293/294 我自己留下的
+    #    （`pm_thermal.thermal_resistance_k_per_mw` · `qnet_throughput.end_to_end_rate` ·
+    #    `segments_throughput_sweep`）—— 那 3 条**已接线**（前者改走单一 accessor，
+    #    后两者并入 `throughput_report` 的 `end_to_end_rate_per_s` / `sweep` 字段），
+    #    **不在基线里**；剩下这 3 条确认是「库语义的公开入口、目前无消费者」，如实留痕：
+    #      · `scan_by_category` / `forbidden_terms` 的真源 `scan()` / `FORBIDDEN` 已在用，
+    #        二者只是**便于打印与反向探针**的包装；
+    #      · `honest_note_of` 是 N3-d 的**统一读取入口**（约定式，等有门禁用它时删本行）。
+    "lda/lda_harness/outward_claim.py::scan_by_category": "PUBLIC_API_NO_CONSUMER",
+    "lda/lda_harness/outward_claim.py::forbidden_terms": "PUBLIC_API_NO_CONSUMER",
+    "lda/lda_harness/signing_schema.py::honest_note_of": "PUBLIC_API_NO_CONSUMER",
 }
 
 

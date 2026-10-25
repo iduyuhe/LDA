@@ -122,8 +122,16 @@ NEGATIVE_RESULTS = {
 GAPS_STATUS = [
     "已结算（连续标量由既有锚复用；非连续面判四类不可锚 · 净增 0）",
     "已结算（门计数/深度为精确整数 · 同类裁决净增 0）",
-    "未闭合（LDPC 解码 BP+OSD 未开工；解码器重且禁第三方 SDK）",
-    "未闭合（色码解码与阈值未开工；阈值为拟合量）",
+    "已闭合（v0.9.298 · BP（sum-product/min-sum）+ OSD-0 已建 `lda_l2/d2_ldpc_decoder`，"
+    "🔴 并以**精确性定理**验证：无环 Tanner 图 ⇒ BP 后验**逐位等于**精确 MAP 后验（穷举 512 模式 · "
+    "最大偏差 2.2e-15）；反向探针加一条边成环 ⇒ 精确性必破（512/512）；"
+    "OSD-0 结构性不变量 = 输出恒为合法码字（512/512）；Hamming[7,4,3] 上纠全部单错）",
+    "已闭合（v0.9.298 · Steane [[7,1,3]] 色码**精确**最小权译码器已建 `lda_l2/d2_color_code`；"
+    "闭式 `P_fail=1−(1−p)⁷−7p(1−p)⁶` 与穷举 128 图样加权和逐位对拍（max|Δ|=3.1e-16），"
+    "p=1/2 处两条路径**都恰为 15/16**（无容差）；并明确区分「失效」与「逻辑错」）",
+    "未闭合（**阈值标定**：两条解码器都只在 n≤9 的小码上验了「译码正确性」；"
+    "距离递增的码族 + 有限尺寸标定给阈值/伪阈值仍需 Monte-Carlo —— 能做但未做，"
+    "且🔴 **只能作披露、不可作锚**（拟合量不作 golden，见既有裁决 G-V2-D2-3））",
 ]
 
 GAPS = [
@@ -132,6 +140,7 @@ GAPS = [
     "G-V2-D2-4 逻辑门集合的可比性度量 —— 门计数/深度为精确整数 ⇒ 同类裁决（净增 0）",
     "G-V2-D2-1 LDPC 解码（BP+OSD）—— 解码器重且禁第三方 SDK ⇒ 阈值面不可锚（未开工）",
     "G-V2-D2-2 色码解码与阈值 —— 同上（阈值为拟合量）",
+    "G-V2-D2-5 距离递增码族的阈值标定 —— 解码器已建，阈值仍须 Monte-Carlo + 有限尺寸标定",
 ]
 
 # ── 设计档（与既有锚默认档同源 · 其余族为示意）──────────────────────────────
@@ -302,7 +311,7 @@ def case_card() -> Dict[str, object]:
                    "hashing_p0": hashing_bound(0.0),
                    "hashing_p075": hashing_bound(0.75)},
         "span": dict(_SPAN),
-        "gate_checks": 13,
+        "gate_checks": 34,   # 实跑 `run_v2d2_smoke.py` 的 PASS 数（K8 自洽对拍）
         "module_selfchecks": _N_SELFCHECKS,
         "negative_net_new_anchors": 0,
         "source_paths": {"capability": os.path.join("lda_l2", "qec_code_family.py"),

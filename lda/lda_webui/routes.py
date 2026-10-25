@@ -1208,8 +1208,12 @@ def h_verification_ledger(h, p, q, path):
                 "dispatch_ids": list(dispatch.keys()),
             },
             # D-64：golden 真实只是必要条件，candidate 还必须**独立求解**。
-            # 9 道实证锚里只有 E2 接通了独立候选求解器（v0.9.23 起为 2D 半矢量；v0.9.51 升格 E8/E9 后共 9 道）
-            # 本征模 semivec_ng），其余 6 道候选≡黄金（恒 PASS）。
+            # 🔴 v0.9.302 口径订正：此处原写「9 道实证锚里只有 E2 接通独立候选」，是
+            #   v0.9.23 的残留，与本版实测不符（且「9 道」这个数本身来自
+            #   `provenance=="external_empirical"` 的误读——那是**验证强度**标签，
+            #   不是「实证锚条数」）。**条数只认 `benchmarks.empirical_anchor_census()`**：
+            #   实证锚 10 道；按验证强度 = 自证桩 6 / 严格独立 2 / 降级量级 2；
+            #   即有独立候选求解器的是 4 道（2 道严格 + 2 道降级），其余 6 道候选≡golden。
             # 这是对外验货面必须自己说出口的事——宁可难看，不可假绿。
             "judgment_paths": {
                 "note": ("判决路径独立性：golden 可溯源只是必要不充分条件。"

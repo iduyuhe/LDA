@@ -3503,7 +3503,12 @@ def _summarize_submit(results):
 
 def empirical_status():
     """D-62 实证大数据锚快照：语料库统计 + 逐条溯源 + 对抗题库 +
-    harness 实证锚题（E1-E3）golden 来源 + 语料评审流状态。"""
+    harness 实证锚题 golden 来源 + 语料评审流状态。
+
+    🔴 v0.9.302：新增 `harness_anchors` —— 「实证锚到底几条」的**唯一**口径，
+    取自 `lda_harness.benchmarks.empirical_anchor_census()`（不在本文件里数一遍）。
+    此前本函数 docstring 与 honest_note 都写「E1-E3」，是 v0.8 残留；实测 10 道。
+    """
     anchor = _load_empirical_anchor()
     corpus = anchor.corpus
     corpus_records = []
@@ -3516,7 +3521,7 @@ def empirical_status():
             "method": m.method, "tags": m.tags,
             "provenance": m.provenance,
         })
-    # harness 实证锚题（E1-E3）golden 来源
+    # harness 实证锚题 golden 来源（逐条；条数口径见下方 `harness_anchors`）
     from lda_harness.benchmarks import BENCHMARK_DEFS
     e_benchmarks = []
     for bid, d in BENCHMARK_DEFS.items():
@@ -3536,16 +3541,37 @@ def empirical_status():
         proposals = list_measurements()
     except Exception:
         mstats, proposals = {}, []
+    # 「实证锚到底几条」——单一真源，勿在此另写过滤条件（见 benchmarks 同名函数注释）
+    from lda_harness.benchmarks import empirical_anchor_census
+    _census = empirical_anchor_census()
     return {
         "corpus": {"total": len(corpus_records), "by_metric": corpus.stats()["by_metric"],
                    "records": corpus_records},
         "adversarial": {"total": _adv_bank_total()},
         "e_benchmarks": e_benchmarks,
+        "harness_anchors": {
+            "total": _census["total"],
+            "ids": _census["ids"],
+            "by_maturity": _census["by_maturity"],
+            "by_provenance": _census["by_provenance"],
+            "naive_provenance_count": _census["naive_provenance_count"],
+            "violations": _census["violations"],
+            "note": ("实证锚 = golden 取自公开实测语料的锚（判据看 `anchor=='empirical'`）。"
+                     "`by_maturity` 是**验证强度**（自证桩 / 严格独立 / 降级量级），"
+                     "`by_provenance` 是同一维度的派生标签。"
+                     "⚠️ 拿 `provenance=='external_empirical'` 数会得到 "
+                     f"{_census['naive_provenance_count']} 道，比总数少"
+                     f" {_census['total'] - _census['naive_provenance_count']} 道——"
+                     "少掉的正是「实测 golden 且已被独立候选证伪通过」的那些，"
+                     "它们是**最强**的实证锚，不该被漏计。"),
+        },
         "review": {"stats": mstats, "proposals": proposals},
         "honest_note": "实证大数据锚 = 验证的第二道非 AI ground（真实测量语料，跨多源可溯源）。"
                        "种子语料为公开文献/PDK 量级；真实晶圆厂 NDA 流片实测属发动期 D-62 联动，"
                        "经「具名人工评审（LLM 不进判决路径）→ 落库」流持续流入，"
-                       "落地后 harness E1-E3 实证锚题实时生效。比对=|candidate−measured|≤σ（死标量）。",
+                       f"落地后 harness 实证锚题（现 {_census['total']} 道，"
+                       f"其中 {_census['by_maturity'].get('self_certified', 0)} 道仍是候选≡golden 的自证桩）"
+                       "实时生效。比对=|candidate−measured|≤σ（死标量）。",
     }
 
 

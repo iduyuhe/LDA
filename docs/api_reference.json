@@ -432,7 +432,7 @@
       "app_function": "empirical_status",
       "auth": "public",
       "binary": false,
-      "description": "D-62 实证大数据锚快照：语料库统计 + 逐条溯源 + 对抗题库 + harness 实证锚题（E1-E3）golden 来源 + 语料评审流状态。",
+      "description": "D-62 实证大数据锚快照：语料库统计 + 逐条溯源 + 对抗题库 + harness 实证锚题 golden 来源 + 语料评审流状态。 🔴 v0.9.302：新增 `harness_anchors` —— 「实证锚到底几条」的**唯一**口径， 取自 `lda_harness.benchmarks.empirical_anchor_census()`（不在本文件里数一遍）。 此前本函数 docstring 与 honest_note 都写「E1-E3」，是 v0.8 残留；实测 10 道。",
       "handler": "h_empirical",
       "heavy": false,
       "method": "GET",

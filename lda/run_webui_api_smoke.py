@@ -304,6 +304,9 @@ EMPIRICAL_REQUIRED_FIELDS = [
     "corpus.total", "corpus.by_metric", "corpus.records",
     "adversarial.total",
     "e_benchmarks",
+    # v0.9.302 新增：「实证锚到底几条」的唯一口径（benchmarks.empirical_anchor_census）
+    "harness_anchors.total", "harness_anchors.by_maturity",
+    "harness_anchors.by_provenance", "harness_anchors.violations",
     "review.stats", "review.proposals",
     "honest_note",
 ]

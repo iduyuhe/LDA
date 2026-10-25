@@ -81,6 +81,103 @@ for _bid, _def in BENCHMARK_DEFS.items():
     _def.setdefault("upgrade_path", _vmm_upgrade_path(_bid, _def))
 
 
+# ===========================================================================
+# 实证锚条数 · **唯一真源**（v0.9.302）
+# ---------------------------------------------------------------------------
+# 为什么需要这一段：v0.9.302 之前「实证锚到底几条」有**三个都自称正确**的数：
+#   · `anchor == "empirical"`            → 10
+#   · `provenance == "external_empirical"` → 8
+#   · `BENCHMARK_ORDER` 的 E 前缀集        → 10
+# 三者被不同文档、不同注释分别引用，于是同一件事对外报过 8 / 9 / 10 三个值
+# （`routes.py` 的「9 道实证锚」、`app.py` 的「E1-E3」都是残留）。这不是笔误，
+# 是**把两个正交维度压进一个字段**的必然后果：
+#
+#   维度 A「golden 是不是公开实测」 → 由 `anchor` + `empirical_id` 表达
+#   维度 B「验证强度到哪一级」      → 由 `maturity_tier` 表达
+#
+# 而 `provenance` 是**维度 B 的派生标签**（见 `_vmm_provenance`：它的取值完全由
+# `maturity_tier` 决定，`strict_independent` ⇒ `independent_cross_check`，与
+# golden 是否实测**无关**）。所以拿 `provenance == "external_empirical"` 数实证锚
+# 是**类别错误**：它漏掉的正是「实测 golden 且已被独立候选证伪通过」的那 2 道，
+# 而那 2 道恰恰是**验证强度最高**的实证锚。
+#
+# ⇒ 纪律：任何人想问「实证锚几条」，只能调 `empirical_anchor_census()`，
+#   不许自己写过滤条件。判据 `run_empirical_anchor_smoke.py` ⑪ 组守着四路一致。
+# ===========================================================================
+
+#: `anchor` 字段中代表「golden 取自公开实测语料」的取值（维度 A 的唯一定义）
+EMPIRICAL_ANCHOR_KIND = "empirical"
+
+#: 实证锚条数下限（**棘轮 · 只增不减**）。加锚时不动它；只有真删锚才需要改，
+#: 且必须同步在 CHANGELOG 写明「删了哪道、为什么」——改这里是**需要评审的动作**。
+#: 用 `>=` 而非 `==`：新增实证锚不该被判红，减少必须判红。
+EMPIRICAL_ANCHOR_MIN = 10
+
+#: `provenance` 中可与「实测 golden」共存的取值。注意这是**允许集**，不是判据：
+#: 8 道落在 `external_empirical`、2 道落在 `independent_cross_check`，
+#: 二者之和 = 实证锚总数——这才是一致的读法。
+EMPIRICAL_ANCHOR_PROVENANCE_OK = ("external_empirical", "independent_cross_check")
+
+
+def empirical_anchor_census(defs=None) -> dict:
+    """「实证锚到底几条」的**唯一**计算处（返回条数 + 二维分解 + 不一致项）。
+
+    Args:
+        defs: 待盘点的账本，默认 `BENCHMARK_DEFS`。显式传入用于反向探针
+            （喂一份人为造错的账本，断言 `violations` 非空——证明判据会响）。
+
+    Returns:
+        dict，键：
+          total / ids            —— 实证锚条数与清单（维度 A）
+          by_maturity            —— 验证强度分布（维度 B：self_certified /
+                                    strict_independent / degraded）
+          by_provenance          —— `provenance` 派生标签分布（**不是**条数口径）
+          naive_provenance_count —— 用 `provenance == "external_empirical"` 数出来
+                                    的那个数（刻意保留，好让误读一眼可辨）
+          violations             —— 四路表示互相矛盾的条目（空 = 一致）
+    """
+    if defs is None:
+        defs = BENCHMARK_DEFS
+    ids, violations = [], []
+    by_maturity, by_prov = {}, {}
+    naive = 0
+    for bid, d in defs.items():
+        title = str(d.get("title") or "")
+        kind = d.get("anchor")
+        eid = d.get("empirical_id")
+        prov = d.get("provenance")
+        oracle = str(d.get("oracle") or "")
+        is_emp = (kind == EMPIRICAL_ANCHOR_KIND)
+        if prov == "external_empirical":
+            naive += 1
+        if is_emp:
+            ids.append(bid)
+            by_maturity[d.get("maturity_tier")] = by_maturity.get(d.get("maturity_tier"), 0) + 1
+            by_prov[prov] = by_prov.get(prov, 0) + 1
+        # ── 五路表示必须同指一件事（任一断裂都说明有人在只改一处）──
+        if is_emp and not eid:
+            violations.append(f"{bid}: anchor=empirical 但 empirical_id 为空")
+        if eid and not is_emp:
+            violations.append(f"{bid}: empirical_id={eid} 但 anchor={kind!r}")
+        if is_emp and "实证" not in title:
+            violations.append(f"{bid}: anchor=empirical 但 title 未声明实证（{title[:20]}）")
+        if (not is_emp) and "实证语料锚" in title:
+            violations.append(f"{bid}: title 自称实证语料锚 但 anchor={kind!r}")
+        if is_emp and prov not in EMPIRICAL_ANCHOR_PROVENANCE_OK:
+            violations.append(f"{bid}: 实证锚的 provenance={prov!r} 不在允许集"
+                              f"{EMPIRICAL_ANCHOR_PROVENANCE_OK}")
+        if is_emp and not oracle.startswith("empirical-measurement"):
+            violations.append(f"{bid}: 实证锚 oracle 未指向 empirical-measurement（{oracle[:24]}）")
+    return {
+        "total": len(ids),
+        "ids": ids,
+        "by_maturity": by_maturity,
+        "by_provenance": by_prov,
+        "naive_provenance_count": naive,
+        "violations": violations,
+    }
+
+
 # 对齐顺序（报告展示用）
 BENCHMARK_ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10",
                    "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18",

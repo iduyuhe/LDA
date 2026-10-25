@@ -16,6 +16,11 @@
   ⑩ M6 实证锚指标门禁（T5.3）：语料 ≥60 条全 A 级（含定位符/geometry/σ）
      + 实测对照 ≥12 条（**真实执行**引擎并算 rel%）；三档分账，
      `calibration_anchor` 透明登记但不计入（单一来源：`lda_harness.empirical_m6`）
+  ⑪ 实证锚**条数口径**（v0.9.302）：四路表示（`anchor` / `empirical_id` /
+     title / harness `oracle_kind`）同指一个集合；二维分解（验证强度 × provenance）
+     自洽；并显式钉住「用 `provenance=="external_empirical"` 数会得到总数 −
+     严格独立道数」这个等式——它是把「8 vs 10」之争变成可执行断言的唯一办法。
+     单一计算处：`benchmarks.empirical_anchor_census()`。
 """
 import os
 import sys
@@ -370,6 +375,73 @@ def main():
     _m6 = audit_m6()
     for _c in gate_m6(_m6):
         check(f"⑩ {_c['name']}", _c["ok"], _c["detail"])
+
+    # ---- ⑪ 实证锚条数口径（v0.9.302）----
+    # 背景：v0.9.302 之前「实证锚到底几条」有三个都自称正确的数——
+    #   `anchor=="empirical"` → 10 · `provenance=="external_empirical"` → 8 ·
+    #   `BENCHMARK_ORDER` 的 E 前缀集 → 10。
+    # 根因不是笔误：`provenance` 是**验证强度**（`maturity_tier`）的派生标签，
+    # 与「golden 是否实测」正交（见 `benchmarks._vmm_provenance`）。拿它数实证锚
+    # 会漏掉「实测 golden 且已被独立候选证伪通过」的道——而那恰恰是最强的实证锚。
+    # ⇒ 本组判据要求**四路表示同指一件事**，并显式钉住「误读会得到另一个数」。
+    from lda_harness.benchmarks import (
+        empirical_anchor_census, EMPIRICAL_ANCHOR_MIN, EMPIRICAL_ANCHOR_KIND,
+    )
+
+    _census = empirical_anchor_census()
+    check(f"⑪-1 实证锚条数 = {_census['total']}（下限 {EMPIRICAL_ANCHOR_MIN}，只增不减）"
+          f"· 四路表示零矛盾",
+          _census["total"] >= EMPIRICAL_ANCHOR_MIN and not _census["violations"],
+          f"total={_census['total']} min={EMPIRICAL_ANCHOR_MIN} "
+          f"violations={_census['violations']}")
+
+    # 独立性：census 只认 `anchor` 字段，此处用**另外两路**（harness spec 的
+    # oracle_kind、账本的 empirical_id）对拍，防「census 自己改了口径一起漂」。
+    _by_anchor = set(_census["ids"])
+    _by_spec = {s.spec_id for s in emp}
+    _by_eid = {b for b, d in BENCHMARK_DEFS.items() if d.get("empirical_id")}
+    check("⑪-2 三路独立真源同指一个集合（anchor 字段 / harness oracle_kind / empirical_id）",
+          _by_anchor == _by_spec == _by_eid,
+          f"anchor={len(_by_anchor)} spec={len(_by_spec)} eid={len(_by_eid)} "
+          f"差集={sorted(_by_anchor ^ _by_spec) + sorted(_by_anchor ^ _by_eid)}")
+
+    # 二维分解：条数 = Σ验证强度 = Σprovenance 派生标签；且
+    # 「provenance==external_empirical 的道数」必须等于「总数 − 严格独立的道数」
+    # —— 这条等式把「8 与 10 差在哪」变成可执行断言，而不是靠人记住。
+    _bm, _bp = _census["by_maturity"], _census["by_provenance"]
+    _strict = _bm.get("strict_independent", 0)
+    check("⑪-3 二维分解自洽（总数 = Σ验证强度 = Σprovenance；且 "
+          "provenance=external_empirical 的道数 ≡ 总数 − 严格独立道数）",
+          sum(_bm.values()) == _census["total"] == sum(_bp.values())
+          and _census["naive_provenance_count"] == _census["total"] - _strict
+          and _strict > 0,
+          f"by_maturity={_bm} by_provenance={_bp} "
+          f"naive(provenance数法)={_census['naive_provenance_count']} "
+          f"= total {_census['total']} − strict {_strict}")
+
+    # 反向探针：把账本人为造错 4 类，census 必须**每类都响**。
+    # 不造错的探针等于没探针——「判据恒绿」和「判据有效」是两件事。
+    _bad = {
+        "P1": {"anchor": EMPIRICAL_ANCHOR_KIND, "title": "普通锚",
+               "empirical_id": None,
+               "provenance": "self_authored_closed_form",
+               "oracle": "physical-law(x)", "maturity_tier": "self_certified"},
+        "P2": {"anchor": "physical_law", "title": "某量（实证语料锚）",
+               "empirical_id": "E-SYNTH", "provenance": "external_empirical",
+               "oracle": "physical-law(y)", "maturity_tier": "self_certified"},
+    }
+    _bad_v = empirical_anchor_census(_bad)["violations"]
+    _kinds_hit = sum([
+        any("empirical_id 为空" in v for v in _bad_v),
+        any("title 未声明实证" in v for v in _bad_v),
+        any("不在允许集" in v for v in _bad_v),
+        any("oracle 未指向" in v for v in _bad_v),
+        any("但 anchor=" in v and "empirical_id=" in v for v in _bad_v),
+        any("title 自称实证语料锚" in v for v in _bad_v),
+    ])
+    check("⑪-4 反向探针：人为造错账本时 census 必须逐类判不一致（6 类全响）",
+          _kinds_hit == 6 and len(_bad_v) >= 6,
+          f"命中 {_kinds_hit}/6 类，violations={len(_bad_v)}")
 
     npass_t = sum(1 for c in CHECKS if c[1])
     print("-" * 60)

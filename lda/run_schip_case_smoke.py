@@ -112,9 +112,9 @@ def main():
           "版图容量" in card["scale_tiers"]["note"],
           "note=%s" % card["scale_tiers"]["note"][:40])
     gap_ids = [g["id"] for g in card["gaps"]]
-    check("H3 缺口台账 5 条且 ID 齐全（G-A…G-E，如实登记未闭合）",
-          card["gaps_total"] == 5
-          and gap_ids == ["G-A", "G-B", "G-C", "G-D", "G-E"],
+    check("H3 缺口台账 6 条且 ID 齐全（G-A…G-E + G-Eb 边界声明）",
+          card["gaps_total"] == 6
+          and gap_ids == ["G-A", "G-B", "G-C", "G-D", "G-E", "G-Eb"],
           "ids=%s" % gap_ids)
 
     # ═══════════════ Z 护栏与红线 ═══════════════
@@ -143,6 +143,108 @@ def main():
     check("Z4 无 LLM / 无网络调用（静态扫描）",
           all(k not in src for k in ("openai", "anthropic", "requests.get", "urllib.request")),
           "静态扫描 source")
+
+    # ═══════════════ P 封装 / 低温布线（v0.9.299 · G-E）═══════════════
+    # 🔴 改前 G-E 只写着「倒装焊、TSV、低温衰减链未实现」。三项都已建，且**各自配一条精确对照支路**。
+    # ⚠️ 本卡 Z2 红线要求 `schip_case` 零重计算 ⇒ 封装能力层**不挂进卡片**，只在这里对拍。
+    from lda_l2 import schip_packaging as PKG
+
+    _sc_p = PKG.selfcheck_schip_packaging()
+    check("P1 schip_packaging 自检 %d 项全过（三条闭式 / 望远镜恒等式 / 绝对量级 / 反向探针）"
+          % len(_sc_p),
+          not [k for k, v in _sc_p.items() if not v],
+          "fail=%s" % [k for k, v in _sc_p.items() if not v])
+
+    _pk = PKG.packaging_report()
+    _t, _b, _ch = _pk["tsv"], _pk["bump"], _pk["chain"]
+
+    # P2 🔴 TSV 闭式已知答案：v_p 必须 == c/√ε_r（这条当场抓出我用「总量 L·C」算 v_p，差 1e4×）
+    _rel_vp = abs(_t["v_p_m_per_s"] - _t["v_p_expected_m_per_s"]) / _t["v_p_expected_m_per_s"]
+    check("P2 🔴 TSV `v_p` ≡ `c/√ε_r`（相对 %.1e ≤1e-12）：%.6e vs %.6e m/s"
+          % (_rel_vp, _t["v_p_m_per_s"], _t["v_p_expected_m_per_s"]),
+          _rel_vp <= 1e-12)
+
+    # P3 恒等式 L·C ≡ μ₀ε₀ε_r h² ∧ Z₀ 两条独立推导一致
+    check("P3 TSV 恒等式 `L·C ≡ μ₀ε₀ε_r h²`（相对 ≤1e-15）∧ `Z₀` 两路径一致（相对 ≤1e-14）",
+          abs(_t["LC_identity"] - _t["LC_expected"]) <= 1e-15 * _t["LC_expected"]
+          and abs(_t["Z0_ohm"] - _t["Z0_closed_form_ohm"]) <= 1e-14 * _t["Z0_ohm"],
+          "Z0=%.4f Ω" % _t["Z0_ohm"])
+
+    # P4 🔴 凸点互感：Neumann 精确闭式 ≡ 二维复合 Simpson（独立路径 · 相对 ≤1e-8）
+    _m_cf = PKG.mutual_inductance_parallel(20.0, 50.0)
+    _m_sp = PKG.mutual_neumann_simpson(20.0, 50.0, n=200)
+    _rel_m = abs(_m_cf - _m_sp) / _m_cf
+    check("P4 🔴 凸点互感：Neumann 闭式 ≡ 二维复合 Simpson（相对 %.1e ≤1e-8）：%.6e vs %.6e H"
+          % (_rel_m, _m_cf, _m_sp),
+          _rel_m <= 1e-8)
+
+    # P5 🔴 望远镜恒等式 + **同温链透明**（链在热平衡下不许凭空造噪声）
+    _dl = PKG.drive_line_noise([(10.0, 300.0), (10.0, 4.0), (10.0, 0.020)])
+    _tel_ok = abs(_dl["telescope_sum"] - _dl["telescope_expected"]) <= 1e-14 * abs(_dl["telescope_expected"])
+    _transp = all(
+        abs(PKG.drive_line_noise([(10.0, q)] * 4, source_temp_k=q)["n_out"]
+            - PKG.drive_line_noise([(10.0, q)] * 4, source_temp_k=q)["n_source"])
+        <= 1e-14 * max(PKG.drive_line_noise([(10.0, q)] * 4, source_temp_k=q)["n_source"], 1e-300)
+        for q in (0.020, 4.0, 300.0))
+    check("P5 🔴 望远镜恒等式 `Σ(1−1/A)Π_down(1/A) ≡ 1−Π(1/A)` ∧ **整链同温 ⇒ 链透明**"
+          "（`n_out ≡ n_th(T)`，20 mK/4 K/300 K 三档）",
+          _tel_ok and _transp,
+          "tel=%.2e" % (_dl["telescope_sum"] - _dl["telescope_expected"]))
+
+    # P6 🔴 设计结论机核：大衰减放**最冷、最靠器件**一级（冷端在后 > 冷端在前）
+    check("P6 🔴 设计结论：冷端在**后**（%.4f）优于冷端在前（%.4f），约 **%.1f×**"
+          % (_ch["n_out_cold_last"], _ch["n_out_cold_first"], _ch["ratio_cold_first_over_last"]),
+          _ch["cold_last_is_better"] and _ch["ratio_cold_first_over_last"] > 5.0)
+
+    # P7 同温链 ≡ 单级等效（n 级同温同损 ≡ 一级 A^n）
+    _mg = PKG.drive_line_noise([(1000.0, 4.0)], source_temp_k=4.0)["n_out"]
+    _sp = PKG.drive_line_noise([(10.0, 4.0)] * 3, source_temp_k=4.0)["n_out"]
+    check("P7 同温链 ≡ 单级等效：3 级 10 dB@4 K ≡ 1 级 30 dB@4 K（相对 ≤1e-14）",
+          abs(_mg - _sp) <= 1e-14 * max(_mg, 1e-300), "%.15g vs %.15g" % (_mg, _sp))
+
+    # P8 绝对量级锚点（防单位/量级错 —— P2 的比值判据抓不住 Z₀/R_dc 的量级）
+    check("P8 🔴 参考档绝对量级锚点：Z₀∈[10,60] Ω ∧ v_p∈[8.0,9.5]e7 m/s ∧ L_self∈[1e-13,1e-10] H ∧ "
+          "R_dc∈[1e-7,1e-2] Ω ∧ n_out∈[1e-3,10]",
+          10.0 <= _t["Z0_ohm"] <= 60.0
+          and 8.0e7 <= _t["v_p_m_per_s"] <= 9.5e7
+          and 1e-13 <= _b["L_self_H"] <= 1e-10
+          and 1e-7 <= _t["R_dc_ohm"] <= 1e-2
+          and 1e-3 <= _ch["n_out_cold_last"] <= 10.0,
+          "Z0=%.3f v=%.3e L=%.3e R=%.3e n=%.4f"
+          % (_t["Z0_ohm"], _t["v_p_m_per_s"], _b["L_self_H"],
+             _t["R_dc_ohm"], _ch["n_out_cold_last"]))
+
+    # P9 无源不放大：输出噪声不超过源噪声（结构不变量）
+    check("P9 无源不放大：到达器件 `n_out ≤ n_source`（%.4f ≤ %.4g）"
+          % (_dl["n_out"], _dl["n_source"]),
+          _dl["n_out"] <= _dl["n_source"] + 1e-15)
+
+    # P10 反向探针：非法几何 / 非法级必抛（判红不崩溃）
+    def _pkg_raises(fn):
+        try:
+            fn()
+        except ValueError:
+            return True
+        return False
+
+    check("P10 反向探针：r_o≤r_i · h=0 · A<1 · 空级表 四例均抛 ValueError",
+          _pkg_raises(lambda: PKG.tsv_coax(r_inner_um=20.0, r_outer_um=5.0))
+          and _pkg_raises(lambda: PKG.tsv_coax(height_um=0.0))
+          and _pkg_raises(lambda: PKG.drive_line_noise([(0.5, 4.0)]))
+          and _pkg_raises(lambda: PKG.drive_line_noise([])))
+
+    # P11 🔴 红线纪律：封装层**不挂进卡片**（Z2 要求 schip_case 零重计算）——
+    #     把「改方案不改红线」这件事本身写成判据，防止以后为了「面板可见」把 import 加回去
+    #  ⚠️ 判据只认**import 形态**，不认子串：G-E 的 status 文本里**提到** `lda_l2/schip_packaging`
+    #     是**披露**（该能力层存在），不是接线 —— 用裸子串判会把自己写红的（第一版就误判了）。
+    _src_schip = open(os.path.join(_HERE, "lda_webui", "schip_case.py"),
+                      encoding="utf-8").read().split("def run_selfchecks")[0]
+    _imp_forms = ("import schip_packaging", "schip_packaging import",
+                  "from lda_l2 import", "import lda_l2")
+    check("P11 🔴 未为方便去松红线：`schip_case` **不得 import** `schip_packaging`/`lda_l2`"
+          "（零重计算红线 Z2 保持；提及不算接线）",
+          not any(f in _src_schip for f in _imp_forms),
+          "命中=%s" % [f for f in _imp_forms if f in _src_schip])
 
     bad_n = globals().get("FAIL", 0)
     good_n = globals().get("PASS", 0)

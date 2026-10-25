@@ -126,8 +126,21 @@ GAPS = [
      "detail": "surface code / qLDPC 逻辑比特、解码器与阈值分析不在本案例范围。"},
     {"id": "G-D", "status": "未闭合（脉冲级标定与线路级仿真不在本案例范围）", "title": "无量子线路级仿真与门标定",
      "detail": "不做脉冲级 Rabi/Ramsey 标定流程、不做线路编译与噪声仿真。"},
-    {"id": "G-E", "status": "未闭合（倒装焊/TSV/低温衰减链未实现）", "title": "封装 / 低温布线未落地",
-     "detail": "封装只做到「腔模规避 + 参与比预算」；倒装焊、TSV、低温衰减链未实现。"},
+    {"id": "G-E",
+     "status": "已闭合（v0.9.299 · 三项都建了 `lda_l2/schip_packaging`，且**各自配一条精确对照支路**："
+               "① TSV 同轴 `L=(μ₀h/2π)ln(r_o/r_i)`/`C=2πεε_r h/ln` ⇒ 🔴 `v_p` **必须等于 `c/√ε_r`**"
+               "（参考档 8.6905e7 m/s · 相对 1e-12）；② 凸点互感 Neumann **精确闭式** ≡ 二维复合 Simpson"
+               "（相对 ≤1e-8）· 细线对数渐近；③ 低温衰减链 🔴 **望远镜恒等式** "
+               "`Σ(1−1/A)Π_down(1/A) ≡ 1−Π(1/A)` ⇒ 整链同温时**链是透明的**（`n_out ≡ n_th(T)`，三档温度机核））",
+     "title": "封装 / 低温布线（TSV · 倒装焊 · 低温衰减链）",
+     "detail": "改前：只有「腔模规避 + 参与比预算」。改后三项闭式齐备；🔴 设计结论也机核了——"
+               "**大衰减要放最冷、最靠器件那一级**（冷端在后比在前优 6.1×），因为每级贡献被**下游**损耗压低。"},
+    {"id": "G-Eb",
+     "status": "边界声明（整阵列集体电磁耦合 / 装配公差 / 衰减器频响须 3D-EM 或实测）",
+     "title": "封装的集体与频变效应不在本卡范围",
+     "detail": "只建模**单根同轴 TSV**（未含 TSV 阵列的衬底耦合与应力）、**两根平行凸点**（未含整阵列集体效应）、"
+               "**频率无关的分段衰减器**（未含频响/连接器反射/同轴驻波）。这些须 3D-EM 仿真或实测数据 ⇒ 非流片纪律，"
+               "**不是欠债**。"},
 ]
 
 # ═══════════════════════ 规模档案（来自 examples 实测 report）═══════════════════
@@ -525,7 +538,7 @@ def run_selfchecks(verbose: bool = False) -> bool:
     card = case_card(repo_root="__nonexistent_root__")
     chk("⑥ 案例卡组装：5 里程碑 / 5 结论 / 5 缺口 / 门禁判据合计 200",
         len(card["milestones"]) == 5 and len(card["findings"]) == 5
-        and card["gaps_total"] == 5 and card["span"]["gate_checks"] == 200)
+        and card["gaps_total"] == 6 and card["span"]["gate_checks"] == 200)
 
     # ⑦ 产出物优雅降级（root 不存在 ⇒ available False，不抛错）
     chk("⑦ 产出物探测优雅降级（root 不存在 ⇒ available=False）",

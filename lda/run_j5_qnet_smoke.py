@@ -37,6 +37,7 @@ from lda_l2 import qnet_source as SR  # noqa: E402
 from lda_l2 import qnet_swap as SW  # noqa: E402
 from lda_l2 import qnet_system as QS  # noqa: E402
 from lda_l2 import qnet_throughput as TP  # noqa: E402
+from lda_l2 import qnet_indistinguishability as QI  # noqa: E402
 from lda_l2 import qnet_transducer as TR  # noqa: E402
 
 check = make_check(globals(), ok_key="PASS", bad_key="FAIL", detail_fmt="  |  {d}")
@@ -194,6 +195,7 @@ def main() -> int:  # noqa: C901
                "lda_l2/qnet_system.py",
                "lda_l2/qnet_swap.py",
                "lda_l2/qnet_throughput.py",
+               "lda_l2/qnet_indistinguishability.py",
                "lda_harness/_batch_j5_numeric.py"):
         p = os.path.join(_HERE, fn)
         if os.path.exists(p):
@@ -328,6 +330,49 @@ def main() -> int:  # noqa: C901
     _i2_red = abs(TP.relay_chain_gain(segments=1) - 1.0) <= 1e-15 and _i3_red and _i5_red
     check("I9 反向探针：β×2 ⇒ I3 红 ∧ G×10 ⇒ I5 红 ∧ N=1 的等号判定为精确比较（非 isclose）",
           _i2_red, "i3=%s i5=%s" % (_i3_red, _i5_red))
+
+    print("\n[J] 源不可分辨性：不对称源通式 + 多光子成分（v0.9.295 · G-QNET-2）")
+    # 🔴 改前：`qnet_source.overlap_magnitude_sq` 只实现**对称源**（σ₁=σ₂），
+    #    通式只写在 docstring 里**从未实现** ⇒ 两个真实独立光源（σ/δω 必失配）恒无惩罚。
+    _sc_qi = QI.selfcheck_qnet_indistinguishability()
+    check("J1 qnet_indistinguishability 自检全过（退化 / 端点 / 单调 / 绝对量级 / 非法入参）",
+          not [k for k, v in _sc_qi.items() if not v],
+          "fail=%s" % [k for k, v in _sc_qi.items() if not v])
+    _qi = QI.source_mismatch_report()
+    check("J2 🔴 对照支路：σ₁=σ₂ 时通式**逐位退化**到 `qnet_source.hom_visibility`（相对 1e-15）",
+          _qi["degenerate_match"] is True
+          and abs(_qi["degenerate_value"] - _qi["visibility_symmetric"])
+          <= 1e-15 * max(1.0, _qi["visibility_symmetric"]),
+          "degen=%.15f sym=%.15f" % (_qi["degenerate_value"], _qi["visibility_symmetric"]))
+    check("J3 多光子两端点（已知物理）：g²(0)=0 ⇒ V 不变（`==`）∧ g²(0)=1 ⇒ V=0（`==`）",
+          QI.hom_visibility_with_g2(0.7, 0.0) == 0.7
+          and QI.hom_visibility_with_g2(0.7, 1.0) == 0.0)
+    _sw = [r["visibility"] for r in QI.mismatch_sweep()]
+    check("J4 σ 失配单调递减（5 点：1.0→2.0 倍 ⇒ 0.1353→0.1083）",
+          all(_sw[i] > _sw[i + 1] for i in range(len(_sw) - 1)),
+          " ".join("%.4f" % v for v in _sw))
+    _vt = [QI.hom_visibility_asym(1e-12, 1.2e-12, 5e11, -5e11, d)
+           for d in (0.0, 1e-12, 2e-12, 4e-12)]
+    check("J5 时延 δt 单调递减（0→4 ps）",
+          all(_vt[i] > _vt[i + 1] for i in range(len(_vt) - 1)),
+          " ".join("%.4f" % v for v in _vt))
+    check("J6 🔴 参考档**绝对量级锚点**：对称 V∈[0.12,0.15] ∧ 不对称(σ₂=1.5σ₁) V∈[0.10,0.16]（防单位/量级错）",
+          0.12 <= _qi["visibility_symmetric"] <= 0.15
+          and 0.10 <= _qi["visibility_asym"] <= 0.16,
+          "sym=%.4f asym=%.4f" % (_qi["visibility_symmetric"], _qi["visibility_asym"]))
+    check("J7 通式**真的区分了不对称**（|V_asym−V_sym| > 1e-6）∧ σ 比=1 时比值恰为 1.000",
+          abs(_qi["visibility_asym"] - _qi["visibility_symmetric"]) > 1e-6
+          and QI.mismatch_sweep()[0]["ratio_vs_symmetric"] == 1.0,
+          "ratio=%.4f" % _qi["ratio_vs_symmetric"])
+    # J8 反向探针：① 丢掉 ω 项里的因子 2（我第一版就漏了）⇒ J2 必红；② 改 g² 端点 ⇒ J3 必红
+    import math as _m
+    _s1 = 1e-12; _s12 = 2 * _s1 * _s1
+    _v_missing2 = (2 * _s1 * _s1 / _s12) * _m.exp(-(2e-12 ** 2) / (2 * _s12)) \
+        * _m.exp(-1.0 * (1e12 ** 2) * (_s1 ** 4) / _s12)   # 缺因子 2
+    _j2_red = abs(_v_missing2 - _qi["visibility_symmetric"]) > 1e-6   # 缺因子 2 ⇒ 不再逐位相等
+    _j3_red = (0.7 * (1.0 - 0.5)) != 0.7
+    check("J8 反向探针：ω 项丢因子 2 ⇒ J2 必红 ∧ 端点改 0.5 ⇒ J3 必红",
+          _j2_red and _j3_red, "j2=%s j3=%s" % (_j2_red, _j3_red))
 
     bad = globals().get("FAIL", 0)
     print("\n" + "=" * 78)

@@ -479,7 +479,10 @@ _ITEM_BLOCKS = (
         "m.gate": "gate", "m.result": "result",
     }),
     ("findings[]", "设计洞察", {"f.title": "title", "f.detail": "detail"}),
-    ("gaps[]", "缺口", {"g.id": "id", "g.title": "title", "g.detail": "detail"}),
+    # 🔴 v0.9.286：缺口台账改四值口径（已闭合/已结算/未闭合/边界声明），
+    #    `gaps[].status` 是**每条的机核状态**，前端必须真渲染（不是后端算了前端不问）。
+    ("gaps[]", "缺口", {"g.id": "id", "g.title": "title", "g.detail": "detail",
+                        "g.status": "status"}),
     ("artifacts.items[]", "产出物清单", {"it.name": "name", "it.bytes": "bytes"}),
     ("m4.system_budget.t_hold_table[]", "M4 保持时间扫描", {
         "tt.t_hold_s": "t_hold_s", "tt.ber": "ber", "tt.eps_drift": "eps_drift",

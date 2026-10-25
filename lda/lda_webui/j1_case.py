@@ -44,6 +44,13 @@ ANCHORS = {
     "B505": "累计逻辑错误面积 ∫₀ᴸ(1−e^{−kx})dx（闭式 ⇄ 数值积分）",
 }
 
+#: 逐条缺口状态（**顺序与下方 GAPS 一一对应** · v0.9.286 四值口径）
+#: 字符串型 gaps 不改形状（前端仍按字符串渲染），状态走这个并行列表。
+GAPS_STATUS = [
+    "未闭合（量子计算遗留缺口 G_Q9）",
+    "未闭合（容错：阈值/解码/综合征/容错门）",
+]
+
 GAPS = ["G_Q9 量子计算遗留缺口", "G-QEC* 容错（阈值/解码/综合征/容错门）"]
 
 SELFCHECK_MODULES = ["decoder", "qec_noise", "fault_tolerant_gates", "logical_error_rate"]
@@ -172,6 +179,7 @@ def case_card() -> Dict[str, Any]:
         "milestones": list(MILESTONES),
         "anchors": dict(ANCHORS),
         "gaps": list(GAPS),
+"gaps_status": GAPS_STATUS,
         "anchors": ANCHORS,
         "anchors_source": ANCHORS_SOURCE,
         "anchors_note": ANCHORS_NOTE,

@@ -54,6 +54,16 @@ ANCHORS = {
     "B522": "微波-光换能效率 η（分层 log+arctan 闭式 ⇄ 有限窗内复合 Simpson）",
 }
 
+#: 逐条缺口状态（**顺序与下方 GAPS 一一对应** · v0.9.286 四值口径）
+#: 字符串型 gaps 不改形状（前端仍按字符串渲染），状态走这个并行列表。
+GAPS_STATUS = [
+    "未闭合（分发保真）",
+    "未闭合（源不可分辨性）",
+    "未闭合（中继吞吐）",
+    "未闭合（跨频段换能）",
+    "已结算（经典接口 · 裁决净增 0）",
+]
+
 GAPS = ["G-QNET-1 分发保真", "G-QNET-2 源不可分辨性", "G-QNET-3 中继吞吐",
         "G-QNET-4 跨频段换能", "G-QNET-5 经典接口（净增 0）"]
 
@@ -291,6 +301,7 @@ def case_card() -> Dict[str, Any]:
         "milestones": MILESTONES,
         "anchors": ANCHORS,
         "gaps": GAPS,
+        "gaps_status": GAPS_STATUS,
         "segments": segs,
         "signing": {"n_pass": n_pass, "n_total": len(segs),
                     "verdict": "ACCEPT" if n_pass == len(segs) else "REVIEW"},

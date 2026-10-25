@@ -63,10 +63,12 @@
     "strict_total": 519
   },
   "gaps": {
-    "closed": 28,
+    "boundary": 23,
+    "closed": 44,
     "gaps": 112,
-    "open": 26,
-    "unmarked": 58
+    "open": 35,
+    "settled": 10,
+    "unmarked": 0
   },
   "schema": "lda_progress_dashboard_v1"
 }

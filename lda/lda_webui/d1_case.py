@@ -87,6 +87,15 @@ NEGATIVE_RESULTS = {
     },
 }
 
+#: 逐条缺口状态（**顺序与下方 GAPS 一一对应** · v0.9.286 四值口径）
+#: 字符串型 gaps 不改形状（前端仍按字符串渲染），状态走这个并行列表。
+GAPS_STATUS = [
+    "已闭合（锚 B523 · 多模换能阵列）",
+    "已结算（复用覆盖：Fresnel 族 + Beer–Lambert · 裁决净增 0）",
+    "已结算（判为派生量：既有耦合律的统计包装 · 不立新锚）",
+    "已闭合（锚 B524 · 低温共集成热接口 · M3 前移）",
+]
+
 GAPS = [
     "G-D1-1 多模换能阵列 —— 已闭（锚 B523）",
     "G-D1-2 异质界面损耗 —— 物理面由既有 Fresnel 族 + Beer–Lambert 锚**复用覆盖**（裁决净增 0）",
@@ -212,6 +221,7 @@ def case_card() -> Dict[str, object]:
         "anchors": ANCHORS,
         "negative_results": NEGATIVE_RESULTS,
         "gaps": GAPS,
+        "gaps_status": GAPS_STATUS,
         "segments": segs,
         "signing": {"n_pass": n_pass, "n_total": len(segs),
                     "verdict": "ACCEPT" if n_pass == len(segs) else "REVIEW"},

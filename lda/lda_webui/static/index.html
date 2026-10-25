@@ -9612,7 +9612,7 @@ function renderPm(d){
   // ⑭ 缺口（逐条登记 · 含已结算与开放）
   h+='<h3 style="margin:14px 0 4px">⑭ 诚实缺口台账（<b>'+(d.gaps_total||0)+'</b> 条 · 逐条标状态 · 已结算 ≠ 从台账消失）</h3>';
   h+='<p>'+(d.gaps||[]).map(function(g){
-        return '<b>'+g.id+'</b> '+g.title+' —— '+g.detail;
+        return '<b>'+g.id+'</b> '+(g.status?('<span style="opacity:.72">['+g.status+']</span> '):'')+g.title+' —— '+g.detail;
       }).join('<br/>')+'</p>';
 
   // ⑮ M5 国际对标收官（逐条对拍表 + 缺口台账终态）
@@ -10693,7 +10693,7 @@ function renderJ1(d){
   h+='<tr><td colspan="2" class="hint">'+d.anchors_note+'</td></tr>';
   h+='</table>';
   h+='<h3 style="margin:14px 0 4px">④ 缺口登记</h3><table class="tbl"><tr><th>缺口</th></tr>';
-  (d.gaps||[]).forEach(function(g){ h+='<tr><td>'+g+'</td></tr>'; });
+  (d.gaps||[]).forEach(function(g,i){ var _gs=(d.gaps_status||[])[i]||''; h+='<tr><td>'+g+(_gs?(' <span style="opacity:.72">'+_gs+'</span>'):'')+'</td></tr>'; });
   h+='</table>';
   h+='<div class="hint" style="margin-top:8px">'+d.honest_note+'</div>';
   $('j1Body').innerHTML=h;
@@ -10739,7 +10739,7 @@ function renderD1(d){
     h+='</table>';
   });
   h+='<h3 style="margin:14px 0 4px">⑤ 缺口登记（G-D1-1…4）</h3><table class="tbl"><tr><th>缺口</th></tr>';
-  (d.gaps||[]).forEach(function(g){ h+='<tr><td>'+g+'</td></tr>'; });
+  (d.gaps||[]).forEach(function(g,i){ var _gs=(d.gaps_status||[])[i]||''; h+='<tr><td>'+g+(_gs?(' <span style="opacity:.72">'+_gs+'</span>'):'')+'</td></tr>'; });
   h+='</table>';
   h+='<h3 style="margin:14px 0 4px">⑥ 预算明细（闭式 · 设计示例量级）</h3><table class="tbl"><tr><th>项</th><th>值</th></tr>';
   Object.keys(bd).forEach(function(k){ h+='<tr><td>'+k+'</td><td>'+_sxF(bd[k],6)+'</td></tr>'; });
@@ -10782,7 +10782,7 @@ function renderJ5(d){
   var av=m4.avoidance||{}; Object.keys(av).forEach(function(k){ h+='<tr><td><b>'+k+'</b></td><td>'+av[k]+'</td></tr>'; });
   h+='</table><div class="hint" style="margin-top:6px">负结果取证：<br/>'+(m4.negative_evidence||[]).join('<br/>')+'</div>';
   h+='<h3 style="margin:14px 0 4px">⑤ 缺口登记</h3><table class="tbl"><tr><th>缺口</th></tr>';
-  (d.gaps||[]).forEach(function(g){ h+='<tr><td>'+g+'</td></tr>'; });
+  (d.gaps||[]).forEach(function(g,i){ var _gs=(d.gaps_status||[])[i]||''; h+='<tr><td>'+g+(_gs?(' <span style="opacity:.72">'+_gs+'</span>'):'')+'</td></tr>'; });
   h+='</table>';
   var bd=d.budget||{};
   h+='<h3 style="margin:14px 0 4px">⑥ 端到端预算（朴素上界 · 不含交换递推/纯化）</h3>';
@@ -10927,7 +10927,7 @@ function renderJ3(d){
 
   h+='<h3 style="margin:14px 0 4px">⑦ 关键发现 / 缺口</h3>';
   h+=_qcTbl(['发现','说明'], (d.findings||[]).map(function(f){ return [f.k, f.v]; }));
-  h+=_qcTbl(['缺口','状态'], (d.gaps||[]).map(function(g){ return [g, '已闭合']; }));
+  h+=_qcTbl(['缺口','状态'], (d.gaps||[]).map(function(g,i){ return [g, (d.gaps_status||[])[i]||'未标']; }));
 
   h+='<h3 style="margin:14px 0 4px">⑧ 定位（不与他人同台比较）</h3>';
   h+='<div class="note">'+(pos.disclaimer||'')+'</div>';
@@ -11273,7 +11273,7 @@ function renderD2(d){
     h+='</table>';
   });
   h+='<h3 style="margin:14px 0 4px">⑦ 缺口登记（G-V2-D2-1…4）</h3><table class="tbl"><tr><th>缺口</th></tr>';
-  (d.gaps||[]).forEach(function(g){ h+='<tr><td>'+g+'</td></tr>'; });
+  (d.gaps||[]).forEach(function(g,i){ var _gs=(d.gaps_status||[])[i]||''; h+='<tr><td>'+g+(_gs?(' <span style="opacity:.72">'+_gs+'</span>'):'')+'</td></tr>'; });
   h+='</table>';
   h+='<h3 style="margin:14px 0 4px">⑧ 预算明细（闭式 · 设计示例量级）</h3><table class="tbl"><tr><th>项</th><th>值</th></tr>';
   Object.keys(bd).forEach(function(k){ h+='<tr><td>'+k+'</td><td>'+_sxF(bd[k],6)+'</td></tr>'; });

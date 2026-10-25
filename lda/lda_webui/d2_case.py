@@ -117,6 +117,15 @@ NEGATIVE_RESULTS = {
     },
 }
 
+#: 逐条缺口状态（**顺序与下方 GAPS 一一对应** · v0.9.286 四值口径）
+#: 字符串型 gaps 不改形状（前端仍按字符串渲染），状态走这个并行列表。
+GAPS_STATUS = [
+    "已结算（连续标量由既有锚复用；非连续面判四类不可锚 · 净增 0）",
+    "已结算（门计数/深度为精确整数 · 同类裁决净增 0）",
+    "未闭合（LDPC 解码 BP+OSD 未开工；解码器重且禁第三方 SDK）",
+    "未闭合（色码解码与阈值未开工；阈值为拟合量）",
+]
+
 GAPS = [
     "G-V2-D2-3 码族间资源-阈值折衷 —— 连续标量已由既有锚复用（换族只换参数）；"
     "非连续面判四类不可锚 ⇒ 裁决净增 0",
@@ -278,6 +287,7 @@ def case_card() -> Dict[str, object]:
         "anchors": ANCHORS,
         "negative_results": NEGATIVE_RESULTS,
         "gaps": GAPS,
+        "gaps_status": GAPS_STATUS,
         "segments": segs,
         "families": fams,
         "curve": pts,

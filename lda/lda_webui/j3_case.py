@@ -77,6 +77,15 @@ FINDINGS: List[Dict[str, str]] = [
     {"k": "Caves 极限", "v": "相位不敏感放大器附加噪声 n_add ≥ 1/2 光子；分布式链 gL→∞ ⇒ →1/2"},
 ]
 
+#: 逐条缺口状态（**顺序与下方 GAPS 一一对应** · v0.9.286 四值口径）
+#: 字符串型 gaps 不改形状（前端仍按字符串渲染），状态走这个并行列表。
+GAPS_STATUS = [
+    "已闭合（M0/M1 · 测控闭环三环签核）",
+    "已闭合（M2 · 门保真二阶量 unitarity）",
+    "已闭合（M3 · 读出链实时解调 + 分配矩阵）",
+    "已闭合（M4 · 低温电子学噪声预算）",
+]
+
 GAPS: List[str] = [
     "G-CTRL-1 测控闭环可用性（Rabi 定标 + DRAG + 读出判别 三环签核）— M0/M1 已闭合",
     "G-CTRL-2 门保真二阶量（unitarity）与相干/非相干分解 — M2 已闭合",
@@ -273,6 +282,7 @@ def case_card() -> Dict[str, Any]:
         },
         "findings": FINDINGS,
         "gaps": GAPS,
+        "gaps_status": GAPS_STATUS,
         "positioning": {
             "disclaimer": "下列为公开报道的产业界**已交付系统**背景坐标；本卡为**设计预算**，"
                           "两者**不同台比较**。",

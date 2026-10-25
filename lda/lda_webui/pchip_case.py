@@ -137,20 +137,20 @@ FINDINGS = [
 
 # ═══════════════════════ 诚实边界（未闭合项 · 逐条登记）═══════════════════════
 GAPS = [
-    {"id": "G-A", "title": "非流片 / 非实测芯片",
+    {"id": "G-A", "status": "边界声明（非流片实测 · 设计期验证范畴）", "title": "非流片 / 非实测芯片",
      "detail": "全部为设计期验证；无 foundry 回片、无光学校准实测、无 TOPS/W 实测。"},
-    {"id": "G-B", "title": "不报任何 fabricated 能效数字",
+    {"id": "G-B", "status": "边界声明（零能效数字纪律 · 不产出 pj/MAC、TOPS/W）", "title": "不报任何 fabricated 能效数字",
      "detail": "公开基准的 TOPS/W 是「已交付芯片」实测/厂商标称；LDA 不产出 pj/MAC、TOPS/W。"},
-    {"id": "G-C", "title": "对标按架构族 + 设计质量方法论",
+    {"id": "G-C", "status": "边界声明（不按 die 级 benchmark 同台比较）", "title": "对标按架构族 + 设计质量方法论",
      "detail": "不按 die 级 benchmark 数字同台比较；LDA 的 MZI mesh 与 MIT 学术 lineage 同族。"},
-    {"id": "G-D", "title": "规模 = 设计容量",
+    {"id": "G-D", "status": "边界声明（256 为设计容量，非已制备器件）", "title": "规模 = 设计容量",
      "detail": "256 是「可设计且可验证保真度」的矩阵规模，非已制备器件；"
                "延展到 800×800 类靠 scale-blind 性质（理想 fab 假设），非流片实测。"},
-    {"id": "G-E", "title": "EO 链路为行为级（T1 候选，非 ORACLE）",
+    {"id": "G-E", "status": "边界声明（EO 链路为行为级模型；T1 候选不进 ORACLE）", "title": "EO 链路为行为级（T1 候选，非 ORACLE）",
      "detail": "驱动/TIA 用一阶 RC + 单极点模型，不碰晶体管级 DAC/ADC/SerDes/DSP。"},
-    {"id": "G-F", "title": "零能效数字纪律",
+    {"id": "G-F", "status": "边界声明（本模块不输出任何能效指标键）", "title": "零能效数字纪律",
      "detail": "复用 assert_no_energy_metrics；本模块不输出任何能效指标键。"},
-    {"id": "G-G", "title": "Vπ 跨模块口径未统一",
+    {"id": "G-G", "status": "未闭合（Vπ 跨模块口径未统一；根因统一留作独立 sprint · 任务 #7）", "title": "Vπ 跨模块口径未统一",
      "detail": "光侧 25 V·cm vs EIC 侧 7.5 V·mm（差 ~3.3×），已在 co-sim 层用单一 vpi_v 贯穿规避；"
                "根因统一留作独立 sprint（任务 #7）。"},
 ]

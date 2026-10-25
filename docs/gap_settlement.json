@@ -1,185 +1,377 @@
 {
   "by_domain": {
     "光子": {
-      "closed": 5,
+      "boundary": 6,
+      "closed": 13,
       "gaps": 36,
-      "open": 17,
-      "unmarked": 14
+      "open": 15,
+      "settled": 2,
+      "unmarked": 0
     },
     "电子": {
-      "closed": 0,
+      "boundary": 17,
+      "closed": 2,
       "gaps": 20,
       "open": 0,
-      "unmarked": 20
+      "settled": 1,
+      "unmarked": 0
     },
     "超导": {
+      "boundary": 0,
       "closed": 0,
       "gaps": 5,
-      "open": 0,
-      "unmarked": 5
+      "open": 5,
+      "settled": 0,
+      "unmarked": 0
     },
     "量子": {
-      "closed": 23,
+      "boundary": 0,
+      "closed": 29,
       "gaps": 51,
-      "open": 9,
-      "unmarked": 19
+      "open": 15,
+      "settled": 7,
+      "unmarked": 0
     }
   },
   "cards": {
     "accel": {
+      "boundary": 0,
       "closed": 0,
+      "counts": {
+        "boundary": 0,
+        "closed": 0,
+        "open": 5,
+        "settled": 0,
+        "unmarked": 0
+      },
       "domain": "光子",
       "gaps": 5,
+      "machine_checkable": true,
       "open": 5,
-      "status_source": "gaps_closed 字段",
+      "settled": 0,
+      "status_source": "元素 closed 键",
       "unmarked": 0
     },
     "d1": {
-      "closed": null,
+      "boundary": 0,
+      "closed": 2,
+      "counts": {
+        "boundary": 0,
+        "closed": 2,
+        "open": 0,
+        "settled": 2,
+        "unmarked": 0
+      },
       "domain": "量子",
       "gaps": 4,
-      "open": null,
-      "status_source": "纯字符串（无状态）",
-      "unmarked": 4
+      "machine_checkable": true,
+      "open": 0,
+      "settled": 2,
+      "status_source": "gaps_status 列表",
+      "unmarked": 0
     },
     "d2": {
-      "closed": null,
+      "boundary": 0,
+      "closed": 0,
+      "counts": {
+        "boundary": 0,
+        "closed": 0,
+        "open": 2,
+        "settled": 2,
+        "unmarked": 0
+      },
       "domain": "量子",
       "gaps": 4,
-      "open": null,
-      "status_source": "纯字符串（无状态）",
-      "unmarked": 4
+      "machine_checkable": true,
+      "open": 2,
+      "settled": 2,
+      "status_source": "gaps_status 列表",
+      "unmarked": 0
     },
     "d4": {
+      "boundary": 0,
       "closed": 2,
+      "counts": {
+        "boundary": 0,
+        "closed": 2,
+        "open": 2,
+        "settled": 0,
+        "unmarked": 0
+      },
       "domain": "量子",
       "gaps": 4,
+      "machine_checkable": true,
       "open": 2,
+      "settled": 0,
       "status_source": "元素 closed 键",
       "unmarked": 0
     },
     "ecore": {
-      "closed": null,
+      "boundary": 17,
+      "closed": 2,
+      "counts": {
+        "boundary": 17,
+        "closed": 2,
+        "open": 0,
+        "settled": 1,
+        "unmarked": 0
+      },
       "domain": "电子",
       "gaps": 20,
-      "open": null,
-      "status_source": "元素无状态字段",
-      "unmarked": 20
+      "machine_checkable": true,
+      "open": 0,
+      "settled": 1,
+      "status_source": "元素 status 键",
+      "unmarked": 0
     },
     "j1": {
-      "closed": null,
+      "boundary": 0,
+      "closed": 0,
+      "counts": {
+        "boundary": 0,
+        "closed": 0,
+        "open": 2,
+        "settled": 0,
+        "unmarked": 0
+      },
       "domain": "量子",
       "gaps": 2,
-      "open": null,
-      "status_source": "纯字符串（无状态）",
-      "unmarked": 2
+      "machine_checkable": true,
+      "open": 2,
+      "settled": 0,
+      "status_source": "gaps_status 列表",
+      "unmarked": 0
     },
     "j2": {
+      "boundary": 0,
       "closed": 0,
+      "counts": {
+        "boundary": 0,
+        "closed": 0,
+        "open": 4,
+        "settled": 0,
+        "unmarked": 0
+      },
       "domain": "量子",
       "gaps": 4,
+      "machine_checkable": true,
       "open": 4,
+      "settled": 0,
       "status_source": "元素 status 键",
       "unmarked": 0
     },
     "j3": {
-      "closed": null,
+      "boundary": 0,
+      "closed": 4,
+      "counts": {
+        "boundary": 0,
+        "closed": 4,
+        "open": 0,
+        "settled": 0,
+        "unmarked": 0
+      },
       "domain": "量子",
       "gaps": 4,
-      "open": null,
-      "status_source": "纯字符串（无状态）",
-      "unmarked": 4
+      "machine_checkable": true,
+      "open": 0,
+      "settled": 0,
+      "status_source": "gaps_status 列表",
+      "unmarked": 0
     },
     "j4": {
+      "boundary": 0,
       "closed": 2,
+      "counts": {
+        "boundary": 0,
+        "closed": 2,
+        "open": 0,
+        "settled": 2,
+        "unmarked": 0
+      },
       "domain": "量子",
       "gaps": 4,
-      "open": 2,
+      "machine_checkable": true,
+      "open": 0,
+      "settled": 2,
       "status_source": "元素 state 键",
       "unmarked": 0
     },
     "j5": {
-      "closed": null,
+      "boundary": 0,
+      "closed": 0,
+      "counts": {
+        "boundary": 0,
+        "closed": 0,
+        "open": 4,
+        "settled": 1,
+        "unmarked": 0
+      },
       "domain": "量子",
       "gaps": 5,
-      "open": null,
-      "status_source": "纯字符串（无状态）",
-      "unmarked": 5
+      "machine_checkable": true,
+      "open": 4,
+      "settled": 1,
+      "status_source": "gaps_status 列表",
+      "unmarked": 0
     },
     "oi": {
+      "boundary": 0,
       "closed": 5,
+      "counts": {
+        "boundary": 0,
+        "closed": 5,
+        "open": 2,
+        "settled": 0,
+        "unmarked": 0
+      },
       "domain": "光子",
       "gaps": 7,
+      "machine_checkable": true,
       "open": 2,
-      "status_source": "gaps_closed 字段",
+      "settled": 0,
+      "status_source": "元素 closed 键",
       "unmarked": 0
     },
     "pchip": {
-      "closed": null,
+      "boundary": 6,
+      "closed": 0,
+      "counts": {
+        "boundary": 6,
+        "closed": 0,
+        "open": 1,
+        "settled": 0,
+        "unmarked": 0
+      },
       "domain": "光子",
       "gaps": 7,
-      "open": null,
-      "status_source": "元素无状态字段",
-      "unmarked": 7
+      "machine_checkable": true,
+      "open": 1,
+      "settled": 0,
+      "status_source": "元素 status 键",
+      "unmarked": 0
     },
     "pm": {
-      "closed": null,
+      "boundary": 0,
+      "closed": 2,
+      "counts": {
+        "boundary": 0,
+        "closed": 2,
+        "open": 3,
+        "settled": 2,
+        "unmarked": 0
+      },
       "domain": "光子",
       "gaps": 7,
-      "open": null,
-      "status_source": "元素无状态字段",
-      "unmarked": 7
+      "machine_checkable": true,
+      "open": 3,
+      "settled": 2,
+      "status_source": "元素 status 键",
+      "unmarked": 0
     },
     "qchip": {
+      "boundary": 0,
       "closed": 8,
+      "counts": {
+        "boundary": 0,
+        "closed": 8,
+        "open": 1,
+        "settled": 0,
+        "unmarked": 0
+      },
       "domain": "量子",
       "gaps": 9,
+      "machine_checkable": true,
       "open": 1,
-      "status_source": "gaps_closed 字段",
+      "settled": 0,
+      "status_source": "元素 closed 键",
       "unmarked": 0
     },
     "qs": {
+      "boundary": 0,
       "closed": 11,
+      "counts": {
+        "boundary": 0,
+        "closed": 11,
+        "open": 0,
+        "settled": 0,
+        "unmarked": 0
+      },
       "domain": "量子",
       "gaps": 11,
+      "machine_checkable": true,
       "open": 0,
-      "status_source": "gaps_closed 字段",
+      "settled": 0,
+      "status_source": "元素 status 键",
       "unmarked": 0
     },
     "schip": {
-      "closed": null,
+      "boundary": 0,
+      "closed": 0,
+      "counts": {
+        "boundary": 0,
+        "closed": 0,
+        "open": 5,
+        "settled": 0,
+        "unmarked": 0
+      },
       "domain": "超导",
       "gaps": 5,
-      "open": null,
-      "status_source": "元素无状态字段",
-      "unmarked": 5
+      "machine_checkable": true,
+      "open": 5,
+      "settled": 0,
+      "status_source": "元素 status 键",
+      "unmarked": 0
     },
     "sensor": {
+      "boundary": 0,
       "closed": 0,
+      "counts": {
+        "boundary": 0,
+        "closed": 0,
+        "open": 4,
+        "settled": 0,
+        "unmarked": 0
+      },
       "domain": "光子",
       "gaps": 4,
+      "machine_checkable": true,
       "open": 4,
+      "settled": 0,
       "status_source": "元素 status 键",
       "unmarked": 0
     },
     "soc": {
-      "closed": 0,
+      "boundary": 0,
+      "closed": 6,
+      "counts": {
+        "boundary": 0,
+        "closed": 6,
+        "open": 0,
+        "settled": 0,
+        "unmarked": 0
+      },
       "domain": "光子",
       "gaps": 6,
-      "open": 6,
+      "machine_checkable": true,
+      "open": 0,
+      "settled": 0,
       "status_source": "元素 status 键",
       "unmarked": 0
     }
   },
   "ratchet": {
-    "closed_min": 28,
-    "unmarked_min": 58
+    "boundary_min": 23,
+    "closed_min": 44,
+    "settled_min": 10,
+    "unmarked_max": 0
   },
-  "schema": "lda_gap_settlement_v1",
+  "schema": "lda_gap_settlement_v2",
   "total": {
-    "closed": 28,
+    "boundary": 23,
+    "closed": 44,
     "gaps": 112,
-    "open": 26,
-    "unmarked": 58
+    "open": 35,
+    "settled": 10,
+    "unmarked": 0
   }
 }

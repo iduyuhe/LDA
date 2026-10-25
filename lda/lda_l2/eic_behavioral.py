@@ -24,12 +24,17 @@ from __future__ import annotations
 import math
 from typing import Any, Dict
 
+from lda_l2.vpi_l import VPI_L_TYP_TIN_VMM
+
 # ---------------------------------------------------------------------------
 # 设计预算常数（**非实测**；改这些值即改预算，不构成能力宣称）
 # ---------------------------------------------------------------------------
 TAU_DRIVER_S_DEFAULT = 20e-12        # 驱动器一阶时间常数 τ（20 ps）
 V_DD_DEFAULT = 2.0                   # 驱动满摆幅（V）
-VPI_L_V_MM_DEFAULT = 7.5             # Vπ·L（V·mm）—— 与 mesh_pnr / wdm_shared_mesh_pnr 默认同源
+# 🔴 v0.9.287：**不再写本地字面量**，改从 `lda_l2.vpi_l`（V·mm 单一真值源）取。
+#   此前这里是字面量 7.5，与 `vpi_l.VPI_L_TYP_TIN_VMM` 只是**数值巧合** ——
+#   任一处单独改就静默漂移，而「同源」只写在注释里、没有任何判据守。
+VPI_L_V_MM_DEFAULT = VPI_L_TYP_TIN_VMM   # = 7.5 V·mm（TiN 加热器代表值）
 PS_ARM_UM_DEFAULT = 1000.0           # 相移臂长（µm）
 R_F_OHM_DEFAULT = 2.0e3              # TIA 反馈电阻（Ω）
 C_F_F_DEFAULT = 20e-15               # TIA 反馈电容（F）
@@ -44,8 +49,9 @@ EIC_DISCLOSURE: Dict[str, str] = {
     "order_is_numeric": "线性 ODE 的 RK4 收敛阶 O(h⁴) 是**数值格式**属性，**不是器件物理**；不得据此宣称器件精度。",
     "no_noise": "无噪声 / 无非线性 / 无温度 / 无失配 ⇒ **不含**任何保真度或 BER 结论。",
     "use": "结论仅可用于**驱动上升沿预算**与**接收带宽预算**；对外引用须同时引用本披露。",
-    "vpi_source": "VπL 默认 7.5 V·mm，与 `build_mesh_pnr(vpi_l_v_mm=...)` / "
-                  "`build_wdm_shared_mesh_pnr` 同源（口径一致，非新常量）。",
+    "vpi_source": "VπL 默认取自 `lda_l2.vpi_l.VPI_L_TYP_TIN_VMM`（7.5 V·mm · V·mm 单一真值源），"
+                  "与 `build_mesh_pnr(vpi_l_v_mm=...)` / `build_wdm_shared_mesh_pnr` 同源。"
+                  "🔴 与光侧 `VPI_L_REDLINE_VMM=250` 的 33× 是 **red-line 上界 vs 代表值** 的设计语义差，不是 bug。",
 }
 
 

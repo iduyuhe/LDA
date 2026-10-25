@@ -44,7 +44,7 @@ def derive_responses(spec: CompactModelSpec) -> Dict[str, float]:
       C_total_fF      = C_junction + C_electrode              （总负载电容）
       bw_3db_ghz      = 1 / (2π · R_electrode · C_total)     （RC 限制带宽）
       responsivity_AW = quantum_eff · λ_nm / 1240            （量子效率 → 响应度）
-      Vpi_at_length_V = VpiL_Vcm / length_mm                 （该长度下半波电压）
+      Vpi_at_length_V = VpiL_Vcm * 10 / length_mm            （该长度下半波电压；🔴 V·cm→V·mm 必须 ×10）
     暗电流直接透传（参数即响应）。C_electrode 进入 C_total → 无悬空死参数。
     """
     c_total_ff = spec.C_junction_fF + spec.C_electrode_fF
@@ -52,7 +52,12 @@ def derive_responses(spec: CompactModelSpec) -> Dict[str, float]:
     bw_3db_hz = 1.0 / (2.0 * math.pi * spec.R_electrode_ohm * c_total)
     bw_3db_ghz = bw_3db_hz / 1e9
     responsivity = spec.quantum_eff * spec.wavelength_nm / 1240.0
-    vpi_v = spec.VpiL_Vcm / max(spec.length_mm, 1e-9)
+    # 🔴 v0.9.287 修单位错：VπL 是 **V·cm**，length 是 **mm**。
+    #   `VπL / L_mm` 等于「V·cm ÷ mm」，量纲不成立 ⇒ 结果整整小 10×
+    #   （VπL=2 V·cm、L=1 mm 时应为 20 V，旧式给 2.0 V）。
+    #   正确：VπL[V·cm] = VπL×10 [V·mm] ⇒ Vπ = 10·VπL / L_mm。
+    #   门禁 `run_compact_model_smoke` 已加「10 mm ⇒ Vπ ≡ VπL[V·cm]」单位锚点守住。
+    vpi_v = spec.VpiL_Vcm * 10.0 / max(spec.length_mm, 1e-9)
     return {
         "bw_3db_ghz": round(bw_3db_ghz, 6),
         "C_total_fF": round(c_total_ff, 6),

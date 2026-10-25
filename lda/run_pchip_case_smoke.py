@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -55,6 +56,19 @@ def main() -> int:
     check("B3 五段征程（M1→M5）", len(card["milestones"]) == 5)
     check("B4 关键结论 5 条", len(card["findings"]) == 5)
     check("B5 诚实边界 7 条", card["gaps_total"] == 7)
+    # 🔴 v0.9.287 跨源一致性：`honest_note` 的 Vπ 口径文案必须与 `lda_l2/vpi_l.py` 同源。
+    #   旧文案写「差 ~3.3×」= 25/7.5 直接相除（漏乘 V·cm→V·mm），真值 33×；
+    #   且写「根因统一留作独立 sprint」，而任务 #7 早已落地（vpi_l.py 已建单一真值源）。
+    #   诚实边界写错比不写更糟 —— 它是**披露**，不是营销文案，必须可核。
+    _hn = card.get("honest_note") or ""
+    # 🔴 判据只认「相差 **N×**」这一处**断言**，不禁用「3.3×」字样 ——
+    #    文案里**提及旧错误**（「旧文案写 3.3× 是漏乘」）是允许且有益的，
+    #    禁用字符串会逼人删掉这段解释（同「扫 honest_note 会逼人删边界」）。
+    _m = re.search(r"相差\s*\*\*(\d+(?:\.\d+)?)×\*\*", _hn)
+    _claim = float(_m.group(1)) if _m else None
+    check("B5b Vπ 口径文案与 `vpi_l` 同源：断言须为「相差 33×」且提到 vpi_l",
+          _claim == 33.0 and ("vpi_l" in _hn),
+          "断言=%s vpi_l=%s" % (_claim, "vpi_l" in _hn))
     check("B6 规模盲 ratio 相对标准差 = 0.0766（随 N 不塌缩）",
           abs(card["flagship"]["scale_blind_ratio_rel_std"] - 0.0766) < 1e-9)
     check("B7 tiling 局部标定增益 = 2.8×",

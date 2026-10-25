@@ -2,9 +2,9 @@
   "by_domain": {
     "光子": {
       "boundary": 6,
-      "closed": 13,
+      "closed": 14,
       "gaps": 36,
-      "open": 15,
+      "open": 14,
       "settled": 2,
       "unmarked": 0
     },
@@ -234,18 +234,18 @@
     },
     "pchip": {
       "boundary": 6,
-      "closed": 0,
+      "closed": 1,
       "counts": {
         "boundary": 6,
-        "closed": 0,
-        "open": 1,
+        "closed": 1,
+        "open": 0,
         "settled": 0,
         "unmarked": 0
       },
       "domain": "光子",
       "gaps": 7,
       "machine_checkable": true,
-      "open": 1,
+      "open": 0,
       "settled": 0,
       "status_source": "元素 status 键",
       "unmarked": 0
@@ -361,16 +361,16 @@
   },
   "ratchet": {
     "boundary_min": 23,
-    "closed_min": 44,
+    "closed_min": 45,
     "settled_min": 10,
     "unmarked_max": 0
   },
   "schema": "lda_gap_settlement_v2",
   "total": {
     "boundary": 23,
-    "closed": 44,
+    "closed": 45,
     "gaps": 112,
-    "open": 35,
+    "open": 34,
     "settled": 10,
     "unmarked": 0
   }

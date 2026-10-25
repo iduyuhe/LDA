@@ -54,7 +54,7 @@ ARGS = {"qchip": (12,)}
 
 #: 棘轮（各自方向由 `_RATCHET` 声明）。**必须机器守**，否则只是注释。
 UNMARKED_MAX = 0       # 待补状态的缺口数（只降）—— v0.9.286 已达 0：112/112 全部可机核
-CLOSED_MIN = 44        # 已闭合（只升）
+CLOSED_MIN = 45        # 已闭合（只升）—— v0.9.287 pchip G-G 由未闭合转已闭合
 SETTLED_MIN = 10       # 已结算（只升）
 BOUNDARY_MIN = 23      # 边界声明（只升）
 

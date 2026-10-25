@@ -29,6 +29,10 @@ if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
 from lda_harness.smoke_kit import make_check  # noqa: E402
+from lda_l2.vpi_l import (  # noqa: E402
+    VPI_L_REDLINE_VMM,
+    VPI_L_TYP_TIN_VMM,
+)
 from lda_l2.eic_behavioral import (  # noqa: E402
     C_F_F_DEFAULT,
     DAC_BITS_DEFAULT,
@@ -48,6 +52,11 @@ from lda_l2.eic_behavioral import (  # noqa: E402
     tia_transimpedance_ohm,
     vpi_from_vpi_l,
 )
+
+import inspect
+import re
+
+import lda_l2.eic_behavioral as _eic_mod
 
 PASS = 0
 FAIL = 0
@@ -123,7 +132,19 @@ def main():  # noqa: C901
     check("E1 Vπ = VπL / (arm/1000)（独立重算）",
           abs(vpi_from_vpi_l(7.5, 1000.0) - 7.5) < 1e-15,
           "%.17g" % vpi_from_vpi_l(7.5, 1000.0))
-    check("E2 VπL 口径与 mesh_pnr 默认同源（7.5 V·mm）", VPI_L_V_MM_DEFAULT == 7.5)
+    check("E2 VπL 取自 `lda_l2.vpi_l` 单一真值源（V·mm）且 = 7.5",
+          VPI_L_V_MM_DEFAULT == VPI_L_TYP_TIN_VMM == 7.5)
+    # 🔴 v0.9.287：「同源」不能只写在注释里 —— 旧版这里同时有
+    #    `eic_behavioral.VPI_L_V_MM_DEFAULT = 7.5`（本地字面量）和 `vpi_l.VPI_L_TYP_TIN_VMM = 7.5`，
+    #    数值相等、**对象无关**：任改一处即静默漂移，而判据（当时只查 == 7.5）照样绿。
+    #    下面两条把「真值源」变成可核事实：定义必须是引用、且两层语义之比可复算。
+    _eic_src = inspect.getsource(_eic_mod)
+    check("E2b 🔴 常量定义是**引用** `VPI_L_TYP_TIN_VMM`，不是本地字面量（防两处各改一处静默漂移）",
+          re.search(r"^VPI_L_V_MM_DEFAULT\s*=\s*VPI_L_TYP_TIN_VMM\b.*$", _eic_src, re.M) is not None,
+          "未匹配到 VPI_L_V_MM_DEFAULT = VPI_L_TYP_TIN_VMM")
+    check("E2c 两层语义差可复算：red-line 250 / 典型 7.5 = 33.33…（旧文案「3.3×」是漏乘 V·cm→V·mm）",
+          abs(VPI_L_REDLINE_VMM / VPI_L_TYP_TIN_VMM - 100.0 / 3.0) < 1e-12,
+          "%.15g" % (VPI_L_REDLINE_VMM / VPI_L_TYP_TIN_VMM))
     check("E3 φ(v) = π·v/Vπ（独立重算）",
           abs(mzi_phase_from_voltage(V_DD_DEFAULT) - math.pi * 2.0 / 7.5) < 1e-15,
           "%.17g" % mzi_phase_from_voltage(V_DD_DEFAULT))

@@ -25,6 +25,47 @@ class TestCompactModel(unittest.TestCase):
         self.assertGreater(r["responsivity_AW"], 0.0)
         self.assertGreater(r["Vpi_at_length_V"], 0.0)
 
+    # ── 🔴 v0.9.287 单位口径（V·cm → V·mm）──────────────────────────
+    # 旧实现 `VpiL_Vcm / length_mm` 是「V·cm ÷ mm」，量纲不成立 ⇒ 整整小 10×，
+    # 而当时门禁只断言 `Vpi_at_length_V > 0.0` ⇒ **有门禁提到 ≠ 门禁能证伪**。
+    # 下面四条：一条**绝对量级锚点** + 一条单位不变量 + 一条跨模块互证 + 一条反向探针。
+    def test_vpi_unit_anchor_10mm_equals_vpil_vcm(self):
+        """单位锚点：10 mm = 1 cm ⇒ Vπ 数值上必须**恰好等于** VπL[V·cm]。
+
+        🔴 必须是绝对量级判据：比值型不变量（Vπ × L = const）**对单位错无能为力**
+        —— 旧式 `VπL/L` 也满足 Vπ×L = VπL，只是绝对值小 10×。
+        """
+        for vpil in (1.0, 2.0, 7.5):
+            r = derive_responses(CompactModelSpec(VpiL_Vcm=vpil, length_mm=10.0))
+            self.assertAlmostEqual(r["Vpi_at_length_V"], vpil, places=9)
+
+    def test_vpi_length_invariant_in_v_mm(self):
+        """Vπ × L[mm] == 10 × VπL[V·cm]（即 V·mm 口径下的 VπL 不变量）。"""
+        vpil = 2.0
+        for L in (0.5, 1.0, 4.0, 10.0):
+            r = derive_responses(CompactModelSpec(VpiL_Vcm=vpil, length_mm=L))
+            self.assertAlmostEqual(r["Vpi_at_length_V"] * L, 10.0 * vpil, places=9)
+
+    def test_vpi_cross_module_agrees_with_eic_behavioral(self):
+        """与 `eic_behavioral.vpi_from_vpi_l`（V·mm 口径）逐点一致 —— 两套单位处理互证。"""
+        from lda_l2.eic_behavioral import vpi_from_vpi_l
+        vpil_vcm = 2.0
+        for L in (0.5, 1.0, 4.0):
+            a = derive_responses(CompactModelSpec(VpiL_Vcm=vpil_vcm,
+                                                  length_mm=L))["Vpi_at_length_V"]
+            b = vpi_from_vpi_l(vpil_vcm * 10.0, L * 1000.0)
+            self.assertAlmostEqual(a, b, places=9)
+
+    def test_vpi_reverse_probe_old_bug_would_be_caught(self):
+        """反向探针：旧式 `VπL/L`（漏 ×10）必须被上面三条抓住。"""
+        vpil, L = 2.0, 10.0
+        buggy = vpil / L                                   # 0.2 V（旧实现）
+        good = derive_responses(CompactModelSpec(VpiL_Vcm=vpil,
+                                                 length_mm=L))["Vpi_at_length_V"]
+        self.assertAlmostEqual(good / buggy, 10.0, places=9)   # 正好差 10×
+        with self.assertRaises(AssertionError):
+            self.assertAlmostEqual(buggy, vpil, places=9)      # 旧值过不了单位锚点
+
     def test_perturb_relectrode_changes_bandwidth(self):
         base = CompactModelSpec()
         rb = derive_responses(base)["bw_3db_ghz"]

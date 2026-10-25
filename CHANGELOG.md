@@ -1,5 +1,77 @@
 # Changelog
 
+## v0.9.302（2026-10-25 · **「实证锚到底几条」这件事，自己都对不上**（口径工程 + 语料勘查 · 净增 0 锚 · 缺口四值 58 · 11 · 8 · 41）
+
+### 一句话
+
+一个数在**四个地方同时被用着**：`anchor=="empirical"` → 10 · `provenance=="external_empirical"` → 8 ·
+`routes.py` 注释 → 「9 道」· `app.py` docstring → 「E1-E3」。**v3 审计的 10 是对的，我上一版写的 8 是错的。**
+
+### ① 根因：把两个正交维度压进一个字段
+
+| 维度 | 由什么表达 | 取值 |
+|---|---|---|
+| A「golden 是不是公开实测」 | `anchor` + `empirical_id` | **10 道** ← **这才是"条数"** |
+| B「验证强度到哪一级」 | `maturity_tier` | 自证桩 6 / 严格独立 2 / 降级 2 |
+
+`provenance` 是 **B 的派生标签**（`benchmarks._vmm_provenance` 完全按 `maturity_tier` 推导：
+`strict_independent⇒independent_cross_check` · `degraded⇒external_empirical` ·
+`self_certified⇒self_authored_closed_form`，E1/E3–E7 靠 `_VMM_OVERRIDES` 改回）。
+它与 A **无关** ⇒ 拿它数实证锚是**类别错误**：它精确漏掉「实测 golden **且**已被独立候选证伪通过」的 2 道，
+而那 2 道恰恰是**最强**的实证锚。等式 **`8 = 10 − 2`** 就是这件事的全部。
+
+### ② 落地（单一真源，不许自己写过滤条件）
+
+| 落点 | 内容 |
+|---|---|
+| `benchmarks.empirical_anchor_census()` | 唯一计算处：条数 + `by_maturity` + `by_provenance` + `naive_provenance_count` + `violations`（六类不一致） |
+| `EMPIRICAL_ANCHOR_MIN = 10` | 棘轮，`>=` 语义：加锚不判红，**减锚必判红** |
+| `run_empirical_anchor_smoke` ⑪ 组 | **42 → 46 判据**：⑪-1 条数 ≥ 下限且零矛盾 · ⑪-2 三路独立真源同指一个集合 · ⑪-3 二维分解自洽 + `provenance` 数法 ≡ 总数 − 严格独立道数 · ⑪-4 **6 类反向探针**（造错账本 ⇒ 逐类判不一致，实测 6/6 全响） |
+| `/api/empirical` | 新增 `harness_anchors`（含 `naive_provenance_count`，把**误读数明写出来**）+ 入 `EMPIRICAL_REQUIRED_FIELDS` |
+
+### ③ 撤销上一版自造的错误结论
+
+`docs/LDA_N系列征程完成情况与推进规划_2026-10-25.md` §3 曾把「E2/E8 的 `title` 与 `provenance` 不一致」
+记成**活缺陷**、并据此写「实证锚只有 8 条」。**原文留痕不删**，改为止订正说明 + 四路对拍表。
+同型教训：**数「某类有几条」只能数原始字段，不能数派生标签。**
+
+### ④ P1 · 电子域语料可得性勘查（`docs/LDA_N1_电子域实证锚_语料可得性勘查_2026-10-25.md`）
+
+10 个候选逐条核验（每条标注**本轮用什么方式核验**）：**数字表 5 · 待确认 1 · 仅曲线 2 · 伪可得 2 · 需 NDA 0**。
+
+- **语料不是不存在，是没去找**：Murmann ADC survey（`github.com/bmurmann/ADC-survey`，BSD-3）直连下载解包 =
+  **778 条实测记录**（467 + 313），36 列含 `Csamp`/`VSUP1`/`SNDR_lf`/`P`/`fs`/`OSR`，每行带 DOI。
+- 🔴 **新坑类别「伪可得」**：MESD（IEEE DataPort `10.21227/wa5-r991`，11 PDK / 44 器件 / 3–350 nm / CC-BY-4.0 / DOI）
+  摘要写 "I-V and C-V characteristics **data**"，真正的定语是 "**simulated**" ⇒ 照 v3 审计取它，一上手就踩「仿真值永不作 golden」。
+- 🔴 **数据仓标签 ≠ 有数据**：Zenodo `18133051` open-access + CC-BY-4.0 + 标题就叫 "MOSFET Extracted **Parameters**"，
+  调 API 列文件清单 = **只有 1 个 PDF**。⇒ **必须列文件清单**，别看落地页描述。
+- 🔴 **结构性矛盾（N1 至今 0 条的真原因）**：**参数齐的必是仿真，实测的必缺参数**
+  （Hacker Fab 原始 I–V 最干净但无 `tox`/`Na` · NBSDC 是 **Ge 沟道**而 `ecore` 无 Ge 参数 ·
+  MOSIS 参数齐却是**拟合导出量**，与 D-64 把 E1 从 `n_eff` 改判 `n_g` 同型）。
+  参数缺失**不会让残差变大，只会让残差看起来很小但符号错** —— 这正是上次 `V_th(L)` 趋势反号的真因。
+- **ADC kT/C 上限探针（如实记，未成锚）**：三列齐备只有 **40/778**；按「单端全摆幅正弦」口径算，越界 5 条，
+  其中 4 条是过采样型（需 `+10log10(OSR)`），折算后仍 3 条越界 2.6–3.7 dB。
+  ⇒ **幅度口径的 0–6 dB 不确定度，大于观测到的 ≤3.7 dB 偏差** ⇒ 现阶段只能作**披露级一致性检查**，不能作判决锚。
+- 规划修订：新增 **P2b 前置验证**（ADC 衰落绕开摆幅口径 · MOSIS 闭式复算看**绝对量级**不看趋势，任一不过即判死）；
+  P3 目标由「≥8 条」**下调为 ≥3 条**（T 类语料只有 5 个，且全部缺候选模型输入参数）。
+
+### ⑤ 记账与门禁
+
+锚 **541 不变**（净增 0）· strict 519 · 缺口 **58 / 11 / 8 / 41** 不变 · 台账 §6 口径更正痕迹仍 6 条未增 · 端点 159。
+
+`run_empirical_anchor_smoke` **46/46** · `run_webui_api_smoke` PASS=162 / FAIL=0 ·
+`run_p2_usability` 40/40 · `run_k0_audit` ALL PASS · `run_ci_gate_contract` 全 PASS ·
+`run_reachability` 22/22 · `api_reference` 已重生成零漂移 · `k0_audit.json` 已重生 · 全改动文件 `CR=0`。
+
+### ⑥ 诚实边界
+
+本版**没有减任何欠债，也没有新增任何锚**。P1 是**勘查不是开工**。
+`EMPIRICAL_ANCHOR_MIN = 10` 只守"实证锚不许变少"，它**不证明**任何一条能被外部复算。
+Hacker Fab 的**数据落地页我没找到**（文档写明 100 个 `.xls`、`github.com/hacker-fab` 20 个仓库我列过，`storage` 是 CAD），
+只能说"数据存在且公开描述"，不能说"可以下载"。
+
+---
+
 ## v0.9.301（2026-10-25 · **「线路总保真度 = Π 门保真度」这一行，到底错多少**（判据工程 · 净增 0 锚 · 缺口四值 58 · 11 · 8 · 41）
 
 ### 一句话

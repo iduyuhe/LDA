@@ -460,6 +460,21 @@ def check_gap_settlement():
           rc == 0, "gen --check rc=%d" % rc)
 
 
+def check_progress_dashboard():
+    """⑭ 对外进度仪表盘与代码同源（F-19 · B+C · v0.9.285）。
+
+    🔴 为什么需要它：四域判决锚已 0 增长 14+ 版（量子）/ 35+ 版（光子）/ 从未（电子）。
+    F-19 诊断确认「闭式 + 第二条独立数值路径」这类量已扫完（86.1% 是闭式/解析）。
+    ⇒ 计量改为**多维仪表盘**，并**显式声明锚已饱和** —— 若不用生成器守，
+    这张表会像所有手写数字一样漂移，而它偏偏是**对外讲进展**的那张表。
+    """
+    rc = subprocess.run([_PY, os.path.join(_REPO, "scripts", "gen_progress_dashboard.py"),
+                         "--check"], capture_output=True, text=True,
+                        errors="replace", cwd=_REPO, timeout=600).returncode
+    check("⑭ 进度仪表盘与代码同源（重跑 gen_progress_dashboard.py --check 零漂移）",
+          rc == 0, "gen --check rc=%d" % rc)
+
+
 def main():
     print("=" * 72)
     print("LDA P2「让别人能用」smoke · 文档/可用性判据（M5 · M8）")
@@ -471,6 +486,7 @@ def main():
     check_quickstart()
     check_api_reference()
     check_gap_settlement()
+    check_progress_dashboard()
     check_env_doc()
     check_stale_doc()
     check_entry_hint()

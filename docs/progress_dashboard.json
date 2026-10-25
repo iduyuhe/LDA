@@ -1,0 +1,72 @@
+{
+  "anchor_saturated": true,
+  "anchor_saturated_reason": "86.1% 的锚是闭式/解析类（analytical 249 + closed_form 217 = 466/541）；6 个被判死模块（R_s / cpw_quasi_static / ft_compiler / kinetic_inductance / noise_aware_schedule / conductor_surface）的 why_not_anchored 理由已逐条核实**全部成立**；唯一有实证的新机制（收敛阶锚）验实现不验物理，不能并入同一计数。详见 docs/LDA_F19_锚产出机制诊断_2026-10-25.md",
+  "anchors": {
+    "by_oracle": {
+      "analytical": 249,
+      "closed_form": 217,
+      "design-rule": 4,
+      "deterministic": 3,
+      "empirical-measurement": 10,
+      "integer-parameter binomial closed form Σ_{j=a}^{a+b-1}C": 2,
+      "physical-law": 6,
+      "scipy.special.betainc（精确特殊函数 oracle） + composite-Simpson double-integral independent_cross_check": 5,
+      "scipy.special.exp1/expn": 5,
+      "scipy.special.iv": 6,
+      "scipy.special.shichi（精确特殊函数 oracle） + RK4-defining-ODE integration independent_cross_check": 2,
+      "scipy.special.sici（精确特殊函数 oracle） + RK4-defining-ODE integration independent_cross_check": 4,
+      "special_function": 19,
+      "statistical": 4,
+      "正交归一恒等式 = 1（精确）；均匀网格（θ×φ）复合梯形球面积分 N=160": 5
+    },
+    "by_tier": {
+      "degraded": 3,
+      "self_certified": 19,
+      "strict_independent": 519
+    },
+    "closed_like": 466,
+    "closed_like_pct": 86.1,
+    "total": 541
+  },
+  "api": {
+    "case_panels": 19,
+    "described": 159,
+    "endpoints": 159,
+    "needs_login": 60
+  },
+  "core_gates": 350,
+  "coverage": {
+    "anchors_total": 541,
+    "blind_by_band": {
+      "B1–B99": 1,
+      "E（实证）": 6,
+      "S（系统层）": 10
+    },
+    "blind_without_any_coverage": 0,
+    "blind_without_subset_coverage": 0
+  },
+  "evidence": {
+    "dist": {
+      "NON_SCALAR": 0,
+      "PERTURBATION_RESPONSE": 14,
+      "PERTURBATION_UNVERIFIED": 0,
+      "RESIDUAL_NONZERO": 508,
+      "STUB": 19
+    },
+    "strict_dist": {
+      "NON_SCALAR": 0,
+      "PERTURBATION_RESPONSE": 14,
+      "PERTURBATION_UNVERIFIED": 0,
+      "RESIDUAL_NONZERO": 505,
+      "STUB": 0
+    },
+    "strict_total": 519
+  },
+  "gaps": {
+    "closed": 28,
+    "gaps": 112,
+    "open": 26,
+    "unmarked": 58
+  },
+  "schema": "lda_progress_dashboard_v1"
+}

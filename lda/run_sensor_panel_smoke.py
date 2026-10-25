@@ -13,6 +13,8 @@ D 🔴 **嵌套块反向完备**（每个展示块的叶子键都必须被前端
 E 免登录 / 零重计算（不进 HEAVY_POST_PATHS · 模块无 numpy/scipy/求解器 import）·
 F 路由与面板接线（GET_ROUTES 注册 / 面板属性齐 / 三容器齐 / .sec 总数 / div 配平 /
   按钮 id 以 run 开头）+ API 参考已登记 + **优雅降级**（结果源缺失不抛错）·
+S 温漂预算「处方可行性」（v0.9.297 · 闭式已知答案 / 两条处方互为倒数替代 /
+  🔴 比值不变性探针 / 两条**各自独立**的物理上限对拍 / 绝对量级锚点 / 跨模块同源）·
 K 自入 CI core（防静默漏接）。
 
 🔴 本门禁的核心价值：守「内部能力 ↔ 对外载体」**真拉平** —— 面板数字必须 ≡ 底层模块现算，
@@ -22,6 +24,7 @@ LLM 不进判决路径）。
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 import sys
@@ -183,9 +186,10 @@ def main() -> int:
           len(card["wizard"]["steps"]) == 5
           and len(card["wizard"]["architectures"]) == 2
           and len(card["wizard"]["knobs"]) == 3)
-    check("B5 诚实边界 4 条（温漂/非流片实测/设计几何/referencing）",
-          len(card["gaps"]) == 4
-          and any(g["id"] == "G_temp_drift" for g in card["gaps"]))
+    check("B5 诚实边界 5 条（温漂处方已判死 / 温漂参考通道仍开放 / 非流片实测 / 设计几何 / referencing）",
+          len(card["gaps"]) == 5
+          and any(g["id"] == "G_temp_drift" for g in card["gaps"])
+          and any(g["id"] == "G_temp_drift_ref" for g in card["gaps"]))
     check("B6 honest_note 含关键限定（设计预算 · 非流片实测签核 · LLM 不进判决路径）",
           all(kw in card["honest_note"]
               for kw in ("设计预算", "非流片实测签核", "LLM 不进判决路径")))
@@ -515,6 +519,116 @@ def main() -> int:
     check("R9 反向探针：伪造典型档=1e4（假装幅度平衡可达）⇒ R6 必红 ∧ δ=0 ⇒ inf 不静默 ∧ 删『不可达』⇒ R7 必红",
           _r6_red and _r2_red and _r7_red,
           "r6=%s r2=%s r7=%s" % (_r6_red, _r2_red, _r7_red))
+
+    # ══════════════════════ S 温漂预算：处方可行性（v0.9.297）══════════════════════
+    # 🔴 改前：`G_temp_drift` 只写着「须片载温控 / 参考通道」—— 一句**处方**，
+    #    从没人算过它要多稳。本层把它算出来，然后判定：**温控这条处方不可行**。
+    # ⚠️ 本卡红线 E2 规定 `sensor_case` **顶层不得 import `lda_l2`**（零重计算·请求期零求解器）
+    #    ⇒ 温漂预算**不挂进卡片**，只在本门禁里用「卡上现算值 + 模块现算」**对拍**。
+    from lda_l2 import sensor_temp_budget as TB
+
+    _sc_tb = TB.selfcheck_sensor_temp_budget()
+    check("S1 sensor_temp_budget 自检 %d 项全过（两条闭式 / 两条恒等式 / 绝对量级 / 非法入参）"
+          % len(_sc_tb),
+          not [k for k, v in _sc_tb.items() if not v],
+          "fail=%s" % [k for k, v in _sc_tb.items() if not v])
+
+    _met = card["metrics"]
+    _tb = TB.temp_budget_report(
+        R_um=float(card["design"]["R_um"]),
+        lod_elec_riu=float(_met["LOD_elec_riu"]),
+        dn_dT=float(SC.DEFAULT_NOISE["dn_dT"]),
+        dT_stab_k=float(SC.DEFAULT_NOISE["dT_stability_K"]),
+        cmr=float(SC.DEFAULT_NOISE["CMR"]),
+    )
+    _dp, _rq, _fs = _tb["design_point"], _tb["requirement"], _tb["feasibility"]
+
+    # S2 🔴 跨源一致：模块现算的温漂项 ≡ 卡上 metrics 现算值（逐位）
+    check("S2 🔴 跨源一致：temp_budget.LOD_temp ≡ 卡上 metrics.LOD_temp_riu（逐位 `==`）∧ "
+          "温差比 ≡ LOD_temp/LOD_elec（相对 1e-15）",
+          _dp["LOD_temp_riu"] == _met["LOD_temp_riu"]
+          and abs(_dp["temp_over_elec"] - _met["LOD_temp_riu"] / _met["LOD_elec_riu"])
+          <= 1e-15 * _dp["temp_over_elec"],
+          "%.6e vs %.6e" % (_dp["LOD_temp_riu"], _met["LOD_temp_riu"]))
+
+    # S3 🔴 跨模块同源：工艺典型 CMR 与卡内 cmr_from_mismatch 口径**逐位**一致
+    check("S3 🔴 跨模块同源：CMR_typical_public ≡ cmr_from_mismatch(REFERENCING_MISMATCH_TYPICAL)"
+          "（逐位 `==`）",
+          _fs["CMR_typical_public"] == SC.cmr_from_mismatch(SC.REFERENCING_MISMATCH_TYPICAL),
+          "%r vs %r" % (_fs["CMR_typical_public"],
+                        SC.cmr_from_mismatch(SC.REFERENCING_MISMATCH_TYPICAL)))
+
+    # S4 🔴 处方 A（片载温控）反解往返：用 dT_req 代回必须恰好 parity
+    check("S4 处方 A 反解往返：LOD_temp(dT_req) == LOD_elec（相对 1e-14）",
+          abs(TB.lod_temp_riu(_dp["dn_dT_per_K"], _rq["dT_req_K"], _dp["CMR"])
+              - _dp["LOD_elec_riu"]) <= 1e-14 * _dp["LOD_elec_riu"],
+          "dT_req=%.4e K" % _rq["dT_req_K"])
+
+    # S5 🔴 处方 B（参考通道）反解往返（退到热力学下限时）
+    check("S5 处方 B 反解往返：LOD_temp(δT_floor, CMR_req) == LOD_elec（相对 1e-14）",
+          _fs["identity_holds_on_floor"] is True
+          and abs(TB.lod_temp_riu(_dp["dn_dT_per_K"], _fs["thermal_floor_K"],
+                                  _rq["CMR_req_at_floor"]) - _dp["LOD_elec_riu"])
+          <= 1e-14 * _dp["LOD_elec_riu"],
+          "CMR_req=%.4f" % _rq["CMR_req_at_floor"])
+
+    # S6 🔴 两条处方互为倒数替代：CMR_req × dT_req ≡ δT（恒等式，不是巧合）
+    check("S6 🔴 恒等式 CMR_req × dT_req ≡ δT_floor（相对 1e-12）"
+          "—— 温控与参考通道**可任意兑换**",
+          abs(_fs["identity_cmr_req_times_dt_req"] - _fs["thermal_floor_K"])
+          <= 1e-12 * _fs["thermal_floor_K"],
+          "%.6e vs %.6e" % (_fs["identity_cmr_req_times_dt_req"], _fs["thermal_floor_K"]))
+
+    # S7 🔴 比值不变性（老陷阱第五次）：dT×100 且 CMR×100 ⇒ LOD **逐位不变**
+    #    ⇒ 只判比值等于什么都没判；故判决必须挂在**两个各自独立的物理上限**上：
+    #      温控 ↔ 器件自身热涨落 δT=T√(k_B/C) · 参考 ↔ 工艺失配 CMR=1/δ
+    check("S7 🔴 比值不变性：dT×100 且 CMR×100 ⇒ LOD_temp **逐位不变**（`==`）"
+          "⇒ 判决必须靠两条独立上限，不能靠比值",
+          TB.lod_temp_riu(_dp["dn_dT_per_K"], 100.0 * _dp["dT_stab_K"],
+                          100.0 * _dp["CMR"]) == _dp["LOD_temp_riu"])
+
+    # S8 判定是**机核**而非手填 bool
+    check("S8 判定机核：温控不可行（缺口 %.1f× > 10×）∧ verdict 与 flag 一致 ∧ 现役点确为温漂主导"
+          % _fs["temp_control_shortfall"],
+          _fs["temp_control_feasible"] is False
+          and _fs["temp_control_shortfall"] > 10.0
+          and ((_fs["verdict"] == "temp_control_infeasible_use_referencing")
+               == (_fs["temp_control_feasible"] is False))
+          and _dp["temp_over_elec"] > 1.0,
+          "over_elec=%.1f×" % _dp["temp_over_elec"])
+
+    # S9 🔴 绝对量级锚点（S7 已证比值判据在此恒失效）
+    check("S9 🔴 参考档**绝对量级锚点**：C∈[5,30]e-12 J/K ∧ δT_floor∈[0.2,0.5] mK ∧ "
+          "dT_req∈[5,10] µK ∧ 温控缺口∈[20,80]×",
+          5.0e-12 <= _dp["heat_capacity_J_per_K"] <= 3.0e-11
+          and 2.0e-4 <= _fs["thermal_floor_K"] <= 5.0e-4
+          and 5.0e-6 <= _rq["dT_req_K"] <= 1.0e-5
+          and 20.0 <= _fs["temp_control_shortfall"] <= 80.0,
+          "C=%.3e δT=%.3e dT=%.3e 缺口=%.1f"
+          % (_dp["heat_capacity_J_per_K"], _fs["thermal_floor_K"],
+             _rq["dT_req_K"], _fs["temp_control_shortfall"]))
+
+    # S10 未擅自改现役设计点与对外数字（同 v0.9.293 H7 纪律）
+    check("S10 🔴 未擅自改对外数字：现役噪声仍 dT_stab=5e-3 / CMR=1.0 ∧ "
+          "卡上 LOD_real 仍由温漂主导（新层只并列披露，不替换设计点）",
+          SC.DEFAULT_NOISE["dT_stability_K"] == 5e-3
+          and SC.DEFAULT_NOISE["CMR"] == 1.0
+          and _met["dominant_limit"] == "temp",
+          "dT=%.3g CMR=%.3g" % (SC.DEFAULT_NOISE["dT_stability_K"],
+                                SC.DEFAULT_NOISE["CMR"]))
+
+    # S11 反向探针：① 热容 ×10 ⇒ 热涨落下限降 √10（物理必然）
+    #                ② 伪造「热涨落下限只有 dT_req 的一半」⇒ 缺口缩到 0.5
+    #                   ⇒ S8 的「不可行 ∧ >10×」与 S9 的 [20,80] 区间**双红**
+    _c10 = TB.thermal_fluctuation_floor_k(TB.DEFAULT_TEMP_K,
+                                          10.0 * _dp["heat_capacity_J_per_K"])
+    _faked_shortfall = 0.5 * _rq["dT_req_K"] / _rq["dT_req_K"]
+    check("S11 反向探针：C×10 ⇒ δT_floor 降 √10 ∧ 伪造 δT_floor=dT_req/2 ⇒ 缺口 0.5 "
+          "⇒ S8（不可行 ∧ >10×）与 S9（[20,80]）**双红**",
+          abs(_c10 / _fs["thermal_floor_K"] - 1.0 / math.sqrt(10.0)) < 1e-14
+          and _faked_shortfall < 1.0
+          and not (20.0 <= _faked_shortfall <= 80.0),
+          "δT×%.6f 伪造缺口=%.3f" % (_c10 / _fs["thermal_floor_K"], _faked_shortfall))
 
     # ══════════════════════ K 自入 CI core ══════════════════════
     try:

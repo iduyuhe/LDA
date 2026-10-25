@@ -1660,7 +1660,7 @@ body{padding-top:56px}
     <div class="hint">
       用 LDA 从零设计一枚 <b>微环折射率传感器</b>：<b>选架构 → 调环半径 / 品质因数 / 待测 Δn → 读指标 → 看 GDS/DRC/LVS 签核 → 看征程报告</b>。<br/>
       🔵 <b>只读 · 免登录 · 零重计算</b>：数字全部由<b>闭式物理律现算</b>（微环 FSR = λ²/(n<sub>g</sub>·2πR)、线宽 = λ/Q、谐振位移 Δλ = S·Δn、LOD<sub>real</sub> = √(LOD<sub>elec</sub>²+LOD<sub>temp</sub>²)）+ 参考常量（架构 n<sub>eff</sub>/Γ/n<sub>g</sub>/S 取自 <b>PS-M3 HF 闭式</b>，已有限差分验证；集成预算取自 <b>PS-M6</b>）⇒ 微秒级、无 DoS 面。<br/>
-      🔵 <b>口径</b>：判决恒为 <b>DESIGN_BUDGET（设计预算）</b>，<b>非</b>流片实测签核；架构为设计示例几何（SOI 平板 220 nm / 水包层 @1550 nm）；LOD<sub>real</sub> 受 <b>温漂主导</b> ⇒ 真实器件须温控 / referencing。<b>LLM 不进判决路径</b>。
+      🔵 <b>口径</b>：判决恒为 <b>DESIGN_BUDGET（设计预算）</b>，<b>非</b>流片实测签核；架构为设计示例几何（SOI 平板 220 nm / 水包层 @1550 nm）；LOD<sub>real</sub> 受 <b>温漂主导</b> ⇒ 真实器件须 <b>referencing</b>；「片载温控」经量化判定<b>不可行</b>（所需稳定度低于器件自身热涨落）。<b>LLM 不进判决路径</b>。
     </div>
     <div class="row" style="flex-wrap:wrap;gap:10px">
       <label>架构 <select id="sensorArch"></select></label>

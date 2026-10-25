@@ -8174,9 +8174,26 @@ function renderAccel(d){
   h+='<div class="summary" style="margin-top:12px">关键结论</div><div>';
   (d.findings||[]).forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.title+'</b><br/>'+f.detail+'</p>'; });
   h+='</div>';
-  h+='<div class="summary" style="margin-top:12px">未闭合项（逐条登记）</div>';
-  h+=_qcTbl(['#','项目','说明'],
-    (d.gaps||[]).map(function(g){ return [g.id, g.title, g.detail]; }));
+  h+='<div class="summary" style="margin-top:12px">缺口台账（四值口径：已闭合 / 边界声明）</div>';
+  h+=_qcTbl(['#','项目','状态（四值口径）','说明'],
+    (d.gaps||[]).map(function(g){ return [g.id, g.title,
+      escapeHtml(g.status||(g.closed?'已闭合':'未标')), g.detail]; }));
+  // 🔴 v0.9.290（G-A3）：IL 对精度的影响**已建模** —— 三档标定策略模型实测
+  var ILP=d.il_precision||{};
+  if(ILP.verdict){
+    h+='<h3 style="margin:14px 0 4px">IL 对精度的影响（三档标定 · 模型实测）</h3>';
+    h+=_qcTbl(['标定策略','相对残差','含义'],[
+      ['IL 均匀 · 标量归一化', (ILP.uniform_il_rel_err!=null?ILP.uniform_il_rel_err.toExponential(2):'-'),
+        '论证成立的**充分条件**'],
+      ['IL 非均匀 · 全局归一化', (ILP.global_norm_rel_err!=null?ILP.global_norm_rel_err.toFixed(4):'-'),
+        '本卡最坏模口径（跨模 '+(ILP.loss_span_db_across_modes!=null?ILP.loss_span_db_across_modes.toFixed(1):'-')+' dB）'],
+      ['IL 非均匀 · 逐模标定', (ILP.per_mode_cal_rel_err!=null?ILP.per_mode_cal_rel_err.toExponential(2):'-'),
+        '**必要条件**；残余由标定漂移决定']
+    ]);
+    h+='<p style="color:#555">'+(ILP.verdict||'')+'</p>';
+    h+='<p style="color:#555">'+(ILP.basis_note||'')+'</p>';
+    h+='<p style="color:#555">'+(ILP.noise_note||'')+'</p>';
+  }
   h+='<div class="note" style="margin-top:10px">'+d.honest_note+'</div>';
   $('accelBody').innerHTML=h;
   $('accelConclusion').innerHTML='<b>结论</b>：光子网格与模拟交叉阵列可以拼成一台端到端 AI 推理加速器，'
@@ -8451,9 +8468,14 @@ function renderD4(d){
   h+='<p>'+(d.milestones||[]).map(function(m){return '<b>'+m.id+'</b> '+m.label;}).join(' · ')+'</p>';
   // 🔴 只列**未闭合**缺口：已闭合的（G-D 下载扩面 / G-U LOQC 入编排）不该再挂着
   //   「未闭合」误导读者（曾全量罗列 ⇒ 面板自相矛盾）
-  var gs=(d.gaps||[]).filter(function(g){return !g.closed;})
-                    .map(function(g){return '<b>'+g.id+'</b> '+g.label;});
-  $('d4Body').innerHTML=h+'<p style="margin-top:8px"><b>未闭合缺口：</b>'
+  // 🔴 v0.9.289 四值口径：`closed` 布尔装不下「边界声明」—— G-P「物理不可闭合」与
+  //   G-B「真实多边形布尔不在本层」原先都算未闭合 ⇒ 面板显示成两笔欠账。
+  var gs=(d.gaps||[]).map(function(g){return {id:g.id,label:g.label,
+        status:(g.status||(g.closed?'已闭合':'未闭合'))};})
+                    .filter(function(g){return g.status.indexOf('已闭合')!==0;})
+                    .map(function(g){return '<b>'+g.id+'</b> '+g.label
+                      +' <span style="opacity:.7">['+g.status+']</span>';});
+  $('d4Body').innerHTML=h+'<p style="margin-top:8px"><b>未闭合／边界缺口：</b>'
     +(gs.length?gs.join(' · '):'（本卡无未闭合缺口）')+'</p>';
   $('d4Conclusion').innerHTML='<strong>结论：</strong>电子侧、超导量子侧与光量子 LOQC 侧都能出'
     +'<b>真 GDS</b> 且双闸 ACCEPT，交付物 sha256 可确定性重建，'

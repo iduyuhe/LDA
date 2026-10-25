@@ -1,10 +1,10 @@
 {
   "by_domain": {
     "光子": {
-      "boundary": 7,
-      "closed": 14,
+      "boundary": 13,
+      "closed": 15,
       "gaps": 36,
-      "open": 13,
+      "open": 6,
       "settled": 2,
       "unmarked": 0
     },
@@ -25,31 +25,31 @@
       "unmarked": 0
     },
     "量子": {
-      "boundary": 0,
+      "boundary": 2,
       "closed": 29,
       "gaps": 51,
-      "open": 14,
+      "open": 12,
       "settled": 8,
       "unmarked": 0
     }
   },
   "cards": {
     "accel": {
-      "boundary": 0,
-      "closed": 0,
+      "boundary": 4,
+      "closed": 1,
       "counts": {
-        "boundary": 0,
-        "closed": 0,
-        "open": 5,
+        "boundary": 4,
+        "closed": 1,
+        "open": 0,
         "settled": 0,
         "unmarked": 0
       },
       "domain": "光子",
       "gaps": 5,
       "machine_checkable": true,
-      "open": 5,
+      "open": 0,
       "settled": 0,
-      "status_source": "元素 closed 键",
+      "status_source": "元素 status 键",
       "unmarked": 0
     },
     "d1": {
@@ -89,21 +89,21 @@
       "unmarked": 0
     },
     "d4": {
-      "boundary": 0,
+      "boundary": 2,
       "closed": 2,
       "counts": {
-        "boundary": 0,
+        "boundary": 2,
         "closed": 2,
-        "open": 2,
+        "open": 0,
         "settled": 0,
         "unmarked": 0
       },
       "domain": "量子",
       "gaps": 4,
       "machine_checkable": true,
-      "open": 2,
+      "open": 0,
       "settled": 0,
-      "status_source": "元素 closed 键",
+      "status_source": "元素 status 键",
       "unmarked": 0
     },
     "ecore": {
@@ -323,19 +323,19 @@
       "unmarked": 0
     },
     "sensor": {
-      "boundary": 0,
+      "boundary": 2,
       "closed": 0,
       "counts": {
-        "boundary": 0,
+        "boundary": 2,
         "closed": 0,
-        "open": 4,
+        "open": 2,
         "settled": 0,
         "unmarked": 0
       },
       "domain": "光子",
       "gaps": 4,
       "machine_checkable": true,
-      "open": 4,
+      "open": 2,
       "settled": 0,
       "status_source": "元素 status 键",
       "unmarked": 0
@@ -360,18 +360,18 @@
     }
   },
   "ratchet": {
-    "boundary_min": 24,
-    "closed_min": 45,
-    "open_max": 32,
+    "boundary_min": 32,
+    "closed_min": 46,
+    "open_max": 23,
     "settled_min": 11,
     "unmarked_max": 0
   },
   "schema": "lda_gap_settlement_v2",
   "total": {
-    "boundary": 24,
-    "closed": 45,
+    "boundary": 32,
+    "closed": 46,
     "gaps": 112,
-    "open": 32,
+    "open": 23,
     "settled": 11,
     "unmarked": 0
   }

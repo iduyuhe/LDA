@@ -116,15 +116,18 @@ FINDINGS = [
 GAPS = [
     {"id": "G-U", "label": "光量子（LOQC）侧已纳入统一编排（本轮闭合）",
      "closed": True,
+     "status": "已闭合（LOQC 纳入统一编排 · 三域同口径：真 GDS + 双闸 ACCEPT + 下载 sha256 互证）",
      "note": "`loqc` 域（Clements 可编程 MZI 网格）与另两域同口径：真 GDS + 双闸 ACCEPT + "
              "下载 sha256 互证；余下：LOQC 仅覆盖 Clements 网格，时间复用/2D 压实以外的"
              "LOQC 拓扑未纳入"},
     {"id": "G-D", "label": "下载端点已扩面到新两域（本轮闭合）",
      "closed": True,
+     "status": "已闭合（下载端点扩面到新两域 · sha256 与登记值逐位一致）",
      "note": "`/api/d4_gds?domain=<域>` 与光子侧同口径出 .gds，下载 sha256 ≡ 本卡登记值；"
              "余下：光子侧 kind 参数面仍各自一套（未走统一编排）"},
     {"id": "G-P", "label": "层规仍是公开工艺近似（不可闭合 · 已机器化锁死）",
      "closed": False,
+     "status": "边界声明（层规为公开工艺近似；Foundry PDK 属外部依赖 D5、平台不沾 ⇒ 物理不可闭合，已机器化锁死）",
      "note": "层规为**公开工艺近似**设计规则（非 Foundry PDK 标定值）：Foundry PDK 层规"
              "属外部依赖（D5），平台不沾 ⇒ 签核结论不可当流片放行依据。"
              "此条**物理不可闭合**：任何「已符合 Foundry 层规 / 已 PDK 标定 / 可流片放行」"
@@ -132,6 +135,7 @@ GAPS = [
              "禁词拦住对外物料（否定式『非 Foundry PDK』豁免）"},
     {"id": "G-B", "label": "DRC 为 bbox 级近似（保守方向 · 已实证锁死）",
      "closed": False,
+     "status": "边界声明（DRC 为 bbox 级保守近似：宁可多报、零漏报；真实多边形布尔不在本层，已实证锁死）",
      "note": "bbox 相交偏保守（宁可多报、零漏报）——真实多边形布尔运算不在本层。"
              "判据 ⑭ 以真实 `run_edrc` 算例实证两条性质：①真重叠必报（零漏报）"
              "②外接 bbox 重叠而本体不相交的 L 形布局仍报（多报 ⇒ 安全侧）"},

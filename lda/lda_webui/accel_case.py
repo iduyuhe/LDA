@@ -62,6 +62,14 @@ def case_card(phase_bits: int = 6, dac_bits: int = 8, adc_bits: int = 8,
     ps = rep["phase_bits_sweep_e1"]
     us = rep["unit_bits_sweep_e2_iso"]
 
+    # 🔴 v0.9.290（G-A3 闭合依据）：把「IL 只进功率预算不进精度」这个论证**真的建模**。
+    #    建模后发现它缺前提 —— 见 `ilp["verdict"]` 与 `profile_sensitivity`。
+    from lda_l2.accel_il_budget import il_precision_report
+    ilp = il_precision_report(
+        per_mzi_loss_db=float(ms["per_mzi_loss_db"]),
+        worst_depth=int(ms["per_mode_optical_depth"]),
+    )
+
     card = {
         "endpoint": "/api/accel_demo",
         "case_id": CASE_ID,
@@ -102,6 +110,19 @@ def case_card(phase_bits: int = 6, dac_bits: int = 8, adc_bits: int = 8,
             "crossing_loss_included_in_per_mode": ms["crossing_loss_included_in_per_mode"],
             "basis_note": ms["basis_note"],
         },
+        # 🔴 G-A3 的闭合证据：三档标定策略的相对残差 + 剖面敏感性 + 漂移换算
+        "il_precision": {
+            "uniform_il_rel_err": ilp["uniform_il_rel_err"],
+            "global_norm_rel_err": ilp["global_norm_rel_err"],
+            "per_mode_cal_rel_err": ilp["per_mode_cal_rel_err"],
+            "loss_span_db_across_modes": ilp["loss_span_db_across_modes"],
+            "depth_profile": ilp["depth_profile"],
+            "profile_sensitivity": ilp["profile_sensitivity"],
+            "drift": ilp["drift"],
+            "verdict": ilp["verdict"],
+            "basis_note": ilp["basis_note"],
+            "noise_note": ilp["noise_note"],
+        },
         "mesh_fidelity": {
             "unquantized": rep["mesh_fidelity_unquantized"],
             "at_design_point": rep["mesh_fidelity_to_O1_at_design_point"],
@@ -141,28 +162,42 @@ def case_card(phase_bits: int = 6, dac_bits: int = 8, adc_bits: int = 8,
              "detail": "训练在约束内完成 ⇒ 报出的 0.984375 是物理可达精度；"
                        "任意权重矩阵需走 SVD 双网格 + 对角衰减路线（见 pchip 卡）"},
         ],
+        # 🔴 v0.9.289：`closed` 布尔 + `status` 四值并存（一致性由 json_hard 的 S9 机核）。
+        #    分类理由：这是**参考设计**卡，A1/A2/A4/A5 是「本卡不建模 / 主权红线 / 规模上限」
+        #    ⇒ **边界声明，不是欠债**；只有 A3「IL 消除论证未建模」是确有待做的分析 ⇒ 未闭合。
+        #    改前 5 条全按 `closed=False` 记「未闭合」，等于把参考设计的范围边界记成 5 笔欠账。
         "gaps": [
             {"id": "G-A1", "closed": False,
+             "status": "边界声明（参考设计范围：固定种子合成高斯团；真实任务需数据管道与训练基础设施，不属本卡交付）",
              "title": "数据集为固定种子合成高斯团",
              "detail": "精度只证端到端链路行为正确；真实任务（MNIST/语音等）需数据管道与"
                        "训练基础设施，不在本参考设计范围"},
             {"id": "G-A2", "closed": False,
+             "status": "边界声明（模型简化：移相器一阶均匀相位，不含校准残差/热漂移/串扰/相位噪声；校准闭环见 E8/E16）",
              "title": "移相器量化为一阶均匀相位模型",
              "detail": "不含校准残差 / 热漂移 / 串扰 / 相位噪声；校准闭环见 E8/E16 纪律"},
-            {"id": "G-A3", "closed": False,
-             "title": "插入损耗只进功率预算、不进精度",
-             "detail": "均匀衰减可被差分检测/归一化消除的论证未建模；per_mode 31.2 dB / "
-                       "total 67.2 dB 为设计预算口径（非实测）"},
+            {"id": "G-A3", "closed": True,
+             "status": "已闭合（论证已建模 · 但订正：IL 不损精度的充分条件是**逐模标定**，全局归一化只在均匀 IL 下成立）",
+             "title": "插入损耗对精度的影响（原「只进功率预算、不进精度」已建模并订正）",
+             "detail": "`lda_l2/accel_il_budget.il_precision_report` 三档标定实测："
+                       "① IL 均匀 ⇒ 标量归一化残差 **5.7e-17**（论证成立）；"
+                       "② 但本卡 per_mode 31.2 dB 是**最坏模**口径（深度 13×2.4 dB）⇒ 各模损耗不同"
+                       "（跨度 28.8 dB）⇒ **全局归一化残差 0.84**（温和剖面 7.2 dB 跨度仍有 0.29）——"
+                       "🔴 **原表述「只进功率预算不进精度」不成立**；"
+                       "③ 逐模标定后残差 **5.6e-17**，残余由**标定漂移**决定（±0.1 dB ⇒ 0.68% rms，±1 dB ⇒ 6.8%，"
+                       "与解析 10^(δ/20)−1 吻合）。IL 抬高噪声底属功率预算，另账。"},
             {"id": "G-A4", "closed": False,
+             "status": "边界声明（主权红线 · 零能效数字纪律：无 foundry 数据即无权宣称能效 · T2 锁死区）",
              "title": "电路级模型 · 无 PDK · 不报 TOPS",
              "detail": "继承 E3/E19 红线：无 foundry 数据 ⇒ 无能效宣称资格；"
                        "规模与能效外推属 T2 锁死区"},
             {"id": "G-A5", "closed": False,
+             "status": "边界声明（参考设计规模上限：N=8 网格 × 4×8 交叉阵列；更大规模需 tiling/多核 与 WDM/时间复用，见 E9/E18）",
              "title": "规模止步于 N=8 网格 × 4×8 交叉阵列",
              "detail": "更大规模需 tiling/多核（E9/E18 纪律）与 WDM/时间复用（光子线），"
                        "本卡为单核行为验证参考设计"},
         ],
-        "gaps_closed": 0,
+        "gaps_closed": 1,     # v0.9.290：G-A3 已闭合（IL 精度模型），其余 4 条为边界声明
         "gaps_total": 5,
         "verdict": "DESIGN_BUDGET",
         "verdict_label": "设计行为验证口径（合成任务 · 确定性现算 · 非流片实测）",

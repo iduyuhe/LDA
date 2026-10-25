@@ -70,9 +70,37 @@ def main() -> int:
     blob = repr(card["claim"]) + repr(card["identity"]) + repr(card["accuracy"])
     check("②b 主张面无 TOPS / 无「实测」宣称（血案 #17：只扫肯定表述字段）",
           "TOPS" not in blob and "实测" not in blob)
-    check("②c gaps 计数自洽且全部未闭合（诚实边界逐条登记）",
+    check("②c gaps 计数自洽 ∧ closed 与 status 逐条自洽（已闭合 ⇔ 以「已闭合」开头）",
           card["gaps_total"] == len(card["gaps"]) == 5
-          and all(g["closed"] is False for g in card["gaps"]))
+          and all(bool(g["closed"]) == str(g.get("status") or "").startswith("已闭合")
+                  for g in card["gaps"]),
+          "%s" % [(bool(g["closed"]), str(g.get("status"))[:4]) for g in card["gaps"]])
+    # 🔴 v0.9.289 四值口径：`closed=False` 只能表达「未闭合」，装不下「边界声明」。
+    #    本卡是**参考设计**，5 条里 4 条是「本卡不建模 / 主权红线 / 规模上限」= 边界声明，
+    #    只有 A3「IL 消除论证未建模」是真欠债。旧口径把 5 条全记未闭合 = 记账虚增 4 笔。
+    _four = [str(g.get("status") or "") for g in card["gaps"]]
+    # 判据按「前缀」比，不按固定宽度切片 —— 「未闭合」3 字、「边界声明」4 字，切片会错位。
+    _kind = ["边界" if x.startswith("边界声明") else
+             "未闭" if x.startswith("未闭合") else
+             "已闭" if x.startswith("已闭合") else
+             "已结" if x.startswith("已结算") else "越界" for x in _four]
+    check("②e 四值口径：A1/A2/A4/A5 = 边界声明 · A3 = 已闭合（有 IL 模型作证，见 ②f）",
+          _kind == ["边界", "边界", "已闭", "边界", "边界"],
+          "%s" % _kind)
+    # 🔴 v0.9.290（G-A3 闭合依据）：IL 精度模型必须**真的区分**三种标定策略 ——
+    #    这条同时是桩检测：若模块返回全零/常值，`global_norm_rel_err>0.2` 与
+    #    `sensitivity[uniform].global_norm_rel_err<1e-12` 不可能同时成立。
+    _ilp = card.get("il_precision") or {}
+    _sens = {x["profile"]: x for x in (_ilp.get("profile_sensitivity") or [])}
+    _uni = (_sens.get("worst_only_uniform") or {}).get("global_norm_rel_err", 1.0)
+    check("②f IL 精度模型：均匀归一化<1e-12 ∧ 非均匀全局归一化>0.2 ∧ 逐模标定<1e-12 ∧ 均匀剖面≈0",
+          float(_ilp.get("uniform_il_rel_err") or 1.0) < 1e-12
+          and float(_ilp.get("global_norm_rel_err") or 0.0) > 0.2
+          and float(_ilp.get("per_mode_cal_rel_err") or 1.0) < 1e-12
+          and _uni < 1e-12,
+          "unif=%.2e global=%.4f per_mode=%.2e 均匀剖面=%.2e"
+          % (float(_ilp.get("uniform_il_rel_err") or -1), float(_ilp.get("global_norm_rel_err") or -1),
+             float(_ilp.get("per_mode_cal_rel_err") or -1), _uni))
     check("②d honest_note 在场且含不报 TOPS 声明",
           "不报 TOPS" in card["honest_note"] and "LLM 不进判决路径" in card["honest_note"])
 

@@ -446,6 +446,28 @@ def main() -> int:
           and not _s9_probe[2] and not _s9_probe[3],
           "覆盖=%s 探针=%s" % (_s9_cov, [bool(x) for x in _s9_probe]))
 
+    # ── S10：四值口径覆盖到「参考设计卡」与「面板卡」────────────────────
+    # `accel`（参考设计）与 `sensor`（传感面板）原先一个用 `closed` 布尔、一个用裸「开放」，
+    # 都把**范围/模型边界**算成了欠债。现已改四值，此处守「不许漂回旧写法」。
+    _FOUR_PREFIX = ("已闭合", "已结算", "未闭合", "边界声明")
+    _s10 = {}
+    for _k in ("accel", "sensor", "d4"):
+        _c = _s9_cards.get(_k) or {}
+        _bad = [str(g.get("status") or "")[:14] for g in (_c.get("gaps") or [])
+                if not str(g.get("status") or "").startswith(_FOUR_PREFIX)]
+        if _bad:
+            _s10[_k] = _bad
+    check("S10 accel / sensor / d4 的每条 gap 都带四值前缀（防漂回「开放」/裸 closed）",
+          not _s10, "越界=%s" % (_s10 or "无"))
+
+    _s10_probe = [
+        [x for x in ["开放"] if not x.startswith(_FOUR_PREFIX)],          # 裸「开放」⇒ 必红
+        [x for x in ["边界声明（范围）"] if not x.startswith(_FOUR_PREFIX)],  # 合规 ⇒ 必绿
+    ]
+    check("S10b 反向探针：裸「开放」必红 ∧ 四值前缀必绿",
+          bool(_s10_probe[0]) and not _s10_probe[1],
+          "probe=%s" % [bool(x) for x in _s10_probe])
+
     check("K1 本门禁已登记进 CORE_SMOKES（防静默漏接 · 血案 #28 同族）",
           "run_webui_json_hard_smoke.py" in _ci)
 

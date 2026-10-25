@@ -154,10 +154,10 @@ MILESTONES: List[Dict[str, Any]] = [
 # 诚实边界 / 未闭合缺口（非本卡粉饰对象）
 # ---------------------------------------------------------------------------
 GAPS: List[Dict[str, Any]] = [
-    {"id": "G_temp_drift", "status": "开放", "note": "LOD_real 由温漂主导（LOD_temp ≫ LOD_elec）⇒ 须片载温控/referencing"},
-    {"id": "G_no_tapeout", "status": "开放", "note": "各里程碑为自研求解器 + 闭式预算，非流片实测签核"},
-    {"id": "G_pdk_geometry", "status": "开放", "note": "架构参考几何为设计示例（SOI 平板 220 nm / 水包层 @1550 nm）"},
-    {"id": "G_referencing", "status": "开放", "note": "共模抑制（CMR）仅在 PS-M3 情景中作为对照量，未入现役设计点"},
+    {"id": "G_temp_drift", "status": "未闭合（LOD_real 由温漂主导（LOD_temp ≫ LOD_elec），须片载温控/参考通道；现役设计点未含）", "note": "LOD_real 由温漂主导（LOD_temp ≫ LOD_elec）⇒ 须片载温控/referencing"},
+    {"id": "G_no_tapeout", "status": "边界声明（各里程碑为自研求解器 + 闭式预算，非流片实测签核）", "note": "各里程碑为自研求解器 + 闭式预算，非流片实测签核"},
+    {"id": "G_pdk_geometry", "status": "边界声明（架构参考几何为设计示例：SOI 平板 220 nm / 水包层 @1550 nm）", "note": "架构参考几何为设计示例（SOI 平板 220 nm / 水包层 @1550 nm）"},
+    {"id": "G_referencing", "status": "未闭合（共模抑制 CMR 仅在 PS-M3 情景作对照量，未入现役设计点）", "note": "共模抑制（CMR）仅在 PS-M3 情景中作为对照量，未入现役设计点"},
 ]
 
 

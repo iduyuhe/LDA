@@ -104,7 +104,8 @@ MILESTONES = [
                "⇄ sinh 换元 + 复合 Simpson）；同源体检否决宪章 B511（被 B30 占用）/ "
                "B512（被 B507 占用）"},
     {"id": "M4", "code": "v0.9.233", "title": "QPU 误差预算集成 + 拓扑对接 + 收官",
-     "gate": 9, "gate_total": 37, "bands": ["H"],
+     # v0.9.301：末档并入 I（线路级量子态演化 9 条）⇒ 9+9=18，累计 28+18=46
+     "gate": 18, "gate_total": 46, "bands": ["H", "I"],
      "result": "净增 **B509**（QPU 耦合图代数连通度 λ₂ 谱定理闭式 2−2cos(π/max) "
                "⇄ 嵌套 Krylov Rayleigh–Ritz）；同源体检否决宪章 B513（布尔量不可锚）/ "
                "B514（与 S4 + J1 B502–B505 同源）⇒ 改靶 λ₂"},
@@ -163,10 +164,25 @@ GAPS = [
      "detail": "参数为设计示例量级；不含 Rabi/Ramsey 标定流程与器件回片。"
                "🔴 **能力事实不变**：参数仍是公开典型量级占位、仍无标定流程；"
                "判为边界是因为这两件事**都须外部硬件/产线**，不是本卡能做的活。"},
-    {"id": "J2-G-C", "title": "不含线路级量子态仿真与解码器实测", "status": "未闭合",
+    {"id": "J2-G-C", "title": "无解码器实测（真机表现）", "status":
+     "边界声明（v0.9.301 口径统一：解码器在**真机**上的表现须**低温实验台** ⇒ 与 `schip G-A` 同口径。"
+     "**解码器本身不做实测也能建**，那部分已由 d2 的 LDPC（BP+OSD）/ Steane 色码译码器交付）",
      "detail": "**已有**容错编译（D-218 · ft_compiler）与编译后噪声感知资源核算"
-               "（D-226 · noise_aware_schedule：累积上界 / 可证双侧界 / 并行化整数比 / 纠错轮数）；"
-               "**仍缺**线路级量子态演化（不演化态、不算保真度）与解码器在真机上的表现。"},
+               "（D-226 · noise_aware_schedule）；**已有** d2 的 LDPC（BP+OSD）与 Steane 色码译码器。"
+               "**仍缺**解码器在**真实硬件**上的表现（须实测）⇒ 边界声明。"
+               "🔴 本条原把「线路级量子态仿真」（纯模型活）与「解码器实测」（硬件）压在一起，"
+               "v0.9.301 按 v0.9.300 立的规则「混着两类 ⇒ 先拆再判」拆出 `J2-G-Cb`。"},
+    {"id": "J2-G-Cb", "title": "线路级量子态演化（态演化 / 保真度合成）", "status":
+     "已闭合（v0.9.301 · `lda_l2/qcircuit_level`：密度矩阵演化器（Kraus）⇄ 闭式逐位对拍，自检 26 项。"
+     "**三级结论**：① depolarizing 下「Π门保真度」**系统性偏低**（偏差闭式 `(1−p₁)(1−p₂)/4`）；"
+     "② amplitude damping 下保真度**随输入态变**（|0⟩ 恰 1、|+⟩ 有损）⇒ 单一门保真度数字有歧义；"
+     "③ AD 串联律是 `1−(1−γ)²`，与 depol 的 `Πpᵢ` **结构不同**）",
+     "detail": "本卡原只到**门级**闭式（`gate_error_1q` 的 `F=(3+2e^{−t/T2}+e^{−t/T1})/6`），"
+               "**不演化态、不算线路级保真度**。现已建：态演化（`evolve_channel`/`evolve_unitary`）、"
+               "保真度（`state_fidelity`）、组合律与偏差闭式。"
+               "🔴 判据：`run_j2_qpu_smoke` I 节 9 条（空线路恰 1 · 演化器⇄闭式 5 档×2 态 · 两级双闭式 · "
+               "系统性偏低 6 组 · 参数化混用差 `(1−p)/6` · AD 态依赖 · AD 串联律 · 反向探针）。"
+               "⚠️ 仍不含：真实设备门表、串扰、leaky 态、门期间自由演化（由门级闭式单独给）、20+ 比特线路。"},
     {"id": "J2-G-D", "title": "拓扑↔表面码仅设计对接", "status": "未闭合",
      "detail": "λ₂ 为图论谱不变量；2D 最近邻嵌入判定为设计规则。"
                "**已有** QEC 码族闭式与 hashing 界（D2 · 唯一可锚量）；"
@@ -552,7 +568,7 @@ def run_selfchecks(verbose: bool = False) -> bool:
             _bands_ok = False
     chk("⑬ 案例卡组装：4 里程碑 / 5 结论 / 4 缺口 / verdict=DESIGN_BUDGET ∧ gate 口径自洽",
         len(_ms) == 4 and len(card["findings"]) == 5
-        and len(card["gaps"]) == 4 and card["verdict"] == "DESIGN_BUDGET"
+        and len(card["gaps"]) == 5 and card["verdict"] == "DESIGN_BUDGET"   # v0.9.301：J2-G-C 拆出 Cb
         and _bands_ok and _cum == card["span"]["gate_checks"])
 
     # ⑭ 🔴 不伪装实测：verdict 非 PASS/ACCEPT ∧ 诚实边界关键词齐全

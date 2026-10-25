@@ -524,7 +524,9 @@ def main() -> int:
     #      ② 至少 1 条真欠债（防空集合：不许把整卡都判成边界来清债）
     #      ③ 每条边界声明**必须写明判定依据**（`非流片`/`须 NDA`/`实验台`/`专卡`/`不重复计债`）
     _FOUR = ("已闭合", "已结算", "未闭合", "边界声明")
-    _BADGE = ("非流片", "须 NDA", "实验台", "专卡", "不重复计债")
+    #   ⚠️ 词表必须覆盖**数据里实际出现的写法**（v0.9.286 纪律）：「实测台」与「实验台」同类，
+    #      本仓两种写法都出现过 ⇒ 都认（否则一条合规的边界声明会被误判成「无依据」）。
+    _BADGE = ("非流片", "须 NDA", "实验台", "实测台", "专卡", "不重复计债")
     _bad_stat = [g.get("id") for g in gaps
                  if not any(str(g.get("status") or "").startswith(x) for x in _FOUR)]
     _bad_field = [g.get("id") for g in gaps
@@ -561,10 +563,16 @@ def main() -> int:
     check("F6b 🔴 台账与实现不脱钩：编译/核算模块在册 ⇒ J2-G-C 不得再声称「不做」",
           not (_have.get("lda_qeda.ft_compiler") and _stale),
           "在册=%s 过期表述=%s" % (_have, _stale))
-    check("F6c J2-G-C 如实分列「已有 / 仍缺」（既不许虚报闭合，也不许抹掉已交付）",
-          "已有" in _detail and "仍缺" in _detail and _gc.get("status") == "未闭合",
-          "status=%r 有已有=%s 有仍缺=%s" % (_gc.get("status"), "已有" in _detail,
-                                             "仍缺" in _detail))
+    # 🔴 v0.9.301：原判据钉死 `status == "未闭合"` —— 它本身就是口径冲突的产物
+    #    （本条原把「线路级仿真（纯模型活）」与「解码器实测（硬件）」压在一起）。
+    #    拆开后保留**原意图**（不许虚报闭合、不许抹掉已交付），只把状态约束改成
+    #    「**不得**以「已闭合」开头」：本条剩的都是须实测的部分，任何「已闭合」都是虚报。
+    check("F6c J2-G-C 如实分列「已有 / 仍缺」∧ status **不得**以「已闭合」开头"
+          "（既不许虚报闭合，也不许抹掉已交付）",
+          "已有" in _detail and "仍缺" in _detail
+          and not str(_gc.get("status") or "").startswith("已闭合"),
+          "status=%r 有已有=%s 有仍缺=%s" % (str(_gc.get("status"))[:24],
+                                             "已有" in _detail, "仍缺" in _detail))
 
     ck = open(CI, encoding="utf-8").read() if os.path.exists(CI) else ""
     check("F7 本门禁已登记进 CORE_SMOKES（防静默漏接 · 血案 #28）",

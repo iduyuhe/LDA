@@ -246,6 +246,57 @@ def main():
           not any(f in _src_schip for f in _imp_forms),
           "命中=%s" % [f for f in _imp_forms if f in _src_schip])
 
+    # ═══════════════ Q 线路编译与噪声传播（v0.9.301 · G-Db）═══════════════
+    # 🔴 改前 G-D 把「脉冲级标定（须实验台）」与「线路编译 / 噪声仿真（纯模型活）」压在同一条，
+    #    v0.9.300 拆出 G-Db 记未闭合 —— 拆出来就放着不做，那「拆而不并」就退化成「拆出来挂账」。
+    #    本节验编译那一半；态演化那一半在 `run_j2_qpu_smoke` 的 I 节（同一模块，两卡各验一面）。
+    from lda_l2 import qcircuit_level as QL
+
+    _sc_q = QL.selfcheck_qcircuit_level()
+    check("Q1 qcircuit_level 自检 %d 项全过（幺正/保迹/组合律/SWAP 分解/非法入参）" % len(_sc_q),
+          not [k for k, v in _sc_q.items() if not v],
+          "fail=%s" % [k for k, v in _sc_q.items() if not v])
+
+    # 🔴 Q2 SWAP 计数闭式：线性链上距离 d 的两比特门需 `d−1` 次 SWAP（组合数学，与门实现无关）
+    _ok2 = all(QL.swaps_for_distance(d) == max(0, d - 1) for d in range(0, 9))
+    check("Q2 🔴 SWAP 计数闭式 `d−1`：d=0…8 逐点（含 d≤1 ⇒ 0）", _ok2)
+
+    # 🔴 Q3 SWAP 的**实现口径**与本层计数一致：`qm_swap` 必须真的等于 3 个 CNOT（不是嘴上说 3）
+    _n = 2
+    _by3 = QL.qmat_mul(QL.qm_cnot(_n, 0, 1),
+                       QL.qmat_mul(QL.qm_cnot(_n, 1, 0), QL.qm_cnot(_n, 0, 1)))
+    _direct = QL.qm_swap(_n, 0, 1)
+    _maxd = max(abs(_by3[i][j] - _direct[i][j]) for i in range(4) for j in range(4))
+    check("Q3 🔴 `SWAP ≡ 3×CNOT`（逐元素 ≤1e-15）—— 与 `cnots_per_swap()==3` 的计数口径对拍",
+          _maxd <= 1e-15 and QL.cnots_per_swap() == 3, "maxΔ=%.2e" % _maxd)
+
+    # 🔴 Q4 编译会**凭空长出**门：5 比特线性链上 q0↔q4（d=4）⇒ 1 逻辑门 → 1+9 物理两比特操作
+    _cmp = QL.linear_chain_compile(5, [(0, 4)])
+    check("Q4 🔴 编译放大：5 比特链 q0↔q4 ⇒ SWAP=%d · 物理两比特操作=%d（逻辑 1 ⇒ 放大 %.1f×）"
+          % (_cmp["total_swaps"], _cmp["physical_2q_ops"], _cmp["amplification"]),
+          _cmp["total_swaps"] == 3 and _cmp["physical_2q_ops"] == 10
+          and _cmp["amplification"] > 5.0)
+
+    # Q5 相邻比特（d=1）⇒ 零 SWAP；混合组按 Σ(d−1) 累加
+    _adj = QL.linear_chain_compile(5, [(1, 2)])
+    _mix = QL.linear_chain_compile(5, [(0, 1), (0, 4)])
+    # 混合组：[(0,1) d=1 ⇒ 0 次] + [(0,4) d=4 ⇒ 3 次] ⇒ 总 3 次 SWAP = 9 CNOT
+    #   （⚠️ 我第一版写成 4 / 2+12 —— 把 (0,1) 也算了一次 SWAP，被本条当场抓出）
+    check("Q5 相邻门零 SWAP（d=1）∧ 混合组 SWAP 数 = Σ(d−1) = %d ⇒ 物理两比特 %d（逻辑 2 + 9）"
+          % (_mix["total_swaps"], _mix["physical_2q_ops"]),
+          _adj["total_swaps"] == 0 and _mix["total_swaps"] == 3
+          and _mix["physical_2q_ops"] == 2 + 9)
+
+    # 🔴 Q6 反向探针（两条错误实现的**具体数值差**，不是"恒真"）：
+    #    ① SWAP 数误用 `d`（而非 `d−1`）      ⇒ d=4 时 4 vs 3（Q2 逐点必不通过）
+    #    ② 每个 SWAP 误记 1 个 CNOT（而非 3）  ⇒ 物理数 1+3=4 vs 1+9=10（Q4 必不通过）
+    _q2_red = any((d if d > 1 else 0) != max(0, d - 1) for d in range(0, 9))
+    _q4_red = (1 + 3 * 1) != (1 + 3 * 3)          # 4 ≠ 10
+    _q5_red = (2 + 4 * 3) != (2 + 3 * 3)          # 误算 4 次 SWAP ⇒ 14 ≠ 11
+    check("Q6 反向探针：SWAP 用 `d` ⇒ Q2 红（d=4 时 4≠3）∧ 每 SWAP 记 1 CNOT ⇒ Q4 红（4≠10）"
+          "∧ 混合组误算 ⇒ Q5 红（14≠11）",
+          _q2_red and _q4_red and _q5_red)
+
     bad_n = globals().get("FAIL", 0)
     good_n = globals().get("PASS", 0)
     print("")

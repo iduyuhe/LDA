@@ -18,17 +18,17 @@
     },
     "超导": {
       "boundary": 5,
-      "closed": 1,
+      "closed": 2,
       "gaps": 7,
-      "open": 1,
+      "open": 0,
       "settled": 0,
       "unmarked": 0
     },
     "量子": {
-      "boundary": 4,
-      "closed": 35,
-      "gaps": 52,
-      "open": 5,
+      "boundary": 5,
+      "closed": 36,
+      "gaps": 53,
+      "open": 4,
       "settled": 8,
       "unmarked": 0
     }
@@ -143,19 +143,19 @@
       "unmarked": 0
     },
     "j2": {
-      "boundary": 2,
-      "closed": 0,
+      "boundary": 3,
+      "closed": 1,
       "counts": {
-        "boundary": 2,
-        "closed": 0,
-        "open": 2,
+        "boundary": 3,
+        "closed": 1,
+        "open": 1,
         "settled": 0,
         "unmarked": 0
       },
       "domain": "量子",
-      "gaps": 4,
+      "gaps": 5,
       "machine_checkable": true,
-      "open": 2,
+      "open": 1,
       "settled": 0,
       "status_source": "元素 status 键",
       "unmarked": 0
@@ -306,18 +306,18 @@
     },
     "schip": {
       "boundary": 5,
-      "closed": 1,
+      "closed": 2,
       "counts": {
         "boundary": 5,
-        "closed": 1,
-        "open": 1,
+        "closed": 2,
+        "open": 0,
         "settled": 0,
         "unmarked": 0
       },
       "domain": "超导",
       "gaps": 7,
       "machine_checkable": true,
-      "open": 1,
+      "open": 0,
       "settled": 0,
       "status_source": "元素 status 键",
       "unmarked": 0
@@ -360,18 +360,18 @@
     }
   },
   "ratchet": {
-    "boundary_min": 40,
-    "closed_min": 56,
-    "open_max": 10,
+    "boundary_min": 41,
+    "closed_min": 58,
+    "open_max": 8,
     "settled_min": 11,
     "unmarked_max": 0
   },
   "schema": "lda_gap_settlement_v2",
   "total": {
-    "boundary": 40,
-    "closed": 56,
-    "gaps": 117,
-    "open": 10,
+    "boundary": 41,
+    "closed": 58,
+    "gaps": 118,
+    "open": 8,
     "settled": 11,
     "unmarked": 0
   }

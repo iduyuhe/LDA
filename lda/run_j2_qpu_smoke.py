@@ -393,6 +393,92 @@ def main() -> int:
           % (bv_g["verdict"], bv_g["embedding"], bv_g["graph"]["n_nodes"],
              bv_h["verdict"], bv_h["embedding"], bv_h["graph"]["n_nodes"]))
 
+    # ══════════════════════ I 线路级量子态演化与噪声传播（v0.9.301 · J2-G-Cb）══════════════════════
+    # 🔴 改前：J2-G-C 写着「不含线路级量子态仿真（不演化态、不算保真度）」——
+    #    这句话把**纯模型活**（可做，不需硬件）与「解码器实测」（须实验台）压在同一条里。
+    #    v0.9.300 立的规则：混着两类 ⇒ **先拆再判**。本条验拆出来的那半（量子态演化）。
+    from lda_l2 import qcircuit_level as QL
+
+    _sc = QL.selfcheck_qcircuit_level()
+    check("I1 qcircuit_level 自检 %d 项全过（保迹 / 幺正 / 组合律 / 端点 / 非法入参）" % len(_sc),
+          not [k for k, v in _sc.items() if not v],
+          "fail=%s" % [k for k, v in _sc.items() if not v])
+
+    # 🔴 I2 桩检测：空线路（只作用恒等）⇒ 基态 F **恰为 1.0**（`==`；基态 ρ 元素是精确 0/1）
+    _z = QL.qm_state(0, 1)
+    check("I2 桩检测：空线路（恒等）⇒ 基态保真度**恰为 1.0**（`==` 判定，非 isclose）",
+          QL.state_fidelity(QL.evolve_unitary(_z, QL.QM_I), _z) == 1.0,
+          "%r" % (QL.state_fidelity(QL.evolve_unitary(_z, QL.QM_I), _z),))
+
+    # 🔴 I3 密度矩阵演化器 ⇄ 闭式：单级 depolarizing 对纯态 F=(1+p)/2（5 档 p × 2 个态）
+    _worst = 0.0
+    for _p in (1.0, 0.99, 0.9, 0.5, 0.0):
+        for _psi in (_z, QL.qm_plus_state(1, 0)):
+            _got = QL.state_fidelity(QL.evolve_channel(_psi, QL.kraus_depolarizing(_p)), _psi)
+            _worst = max(_worst, abs(_got - QL.depol_state_fidelity_closed(_p)))
+    check("I3 演化器 ⇄ 闭式 (1+p)/2：5 档 p × 2 个输入态，最大偏差 %.1e（≤1e-15）" % _worst,
+          _worst <= 1e-15)
+
+    # 🔴 I4 两级串联：演化 ≡ (1+p₁p₂)/2 **且** 与朴素 ΠF 之差 **== (1−p₁)(1−p₂)/4**（双闭式互证）
+    _p1, _p2 = 0.93, 0.87
+    _psi = QL.qm_plus_state(1, 0)
+    _r = QL.evolve_channel(QL.evolve_channel(_psi, QL.kraus_depolarizing(_p1)),
+                           QL.kraus_depolarizing(_p2))
+    _f2 = QL.state_fidelity(_r, _psi)
+    check("I4 🔴 两级串联双闭式：演化 ≡ (1+p₁p₂)/2 ∧ 偏差 ≡ (1−p₁)(1−p₂)/4（均 ≤1e-15）",
+          abs(_f2 - QL.chain_fidelity_closed((_p1, _p2))) <= 1e-15
+          and abs((_f2 - QL.naive_product_fidelity((_p1, _p2)))
+                  - QL.two_stage_gap_closed(_p1, _p2)) <= 1e-15,
+          "F=%.15f 闭式=%.15f 偏差=%.6e" % (_f2, QL.chain_fidelity_closed((_p1, _p2)),
+                                          _f2 - QL.naive_product_fidelity((_p1, _p2))))
+
+    # 🔴 I5 方向确定：**ΠF 系统性偏低**（扫 6 组参数全部成立；不是随机误差而是 `(1−p₁)(1−p₂)/4>0`）
+    _dirs = [QL.naive_product_fidelity((a, b)) < QL.chain_fidelity_closed((a, b))
+             for a, b in ((0.99, 0.95), (0.9, 0.9), (0.75, 0.6), (0.5, 0.5),
+                          (0.999, 0.999), (0.6, 0.95))]
+    check("I5 🔴 「门保真度相乘」对 depolarizing **系统性偏低**（6 组参数全部成立）",
+          all(_dirs), "dirs=%s" % _dirs)
+
+    # 🔴 I6 参数化混用探针：`√p·I` 写法（Pauli 噪声均匀分三轴）给出的是 `p+(1−p)/3`，差 (1−p)/6
+    _pm = 0.5
+    _wrong = _pm + (1.0 - _pm) / 3.0
+    check("I6 🔴 参数化混用会差 (1−p)/6：p=0.5 时 `√p` 口径=%.4f vs 本层=%.4f"
+          % (_wrong, QL.depol_state_fidelity_closed(_pm)),
+          abs(_wrong - QL.depol_state_fidelity_closed(_pm)) > 1e-3
+          and QL.selfcheck_qcircuit_level()["depol_parametrizations_differ"])
+
+    # 🔴 I7 amplitude damping 的**态依赖性**：同一 γ 下 |0⟩ 无损（恰 1）而 |+⟩ 有损
+    #    ⇒ 「单一个门保真度数字」隐含了输入态假设，而这个假设从不写在卡上
+    _g = 0.12
+    _ad0 = QL.state_fidelity(QL.evolve_channel(_z, QL.kraus_amplitude_damping(_g)), _z)
+    _adp = QL.state_fidelity(QL.evolve_channel(_psi, QL.kraus_amplitude_damping(_g)), _psi)
+    check("I7 🔴 AD 保真度**随输入态变**：|0⟩ 恰 %.1f vs |+⟩ %.6f（歧义 %.6f > 1e-3）"
+          % (_ad0, _adp, _ad0 - _adp),
+          _ad0 == 1.0 and abs(_adp - QL.ad_plus_fidelity_closed(_g)) <= 1e-15
+          and (_ad0 - _adp) > 1e-3)
+
+    # 🔴 I8 AD 的串联律是 **`1−(1−γ)²`**（残存幅度相乘），既不是 `γ+γ`、也不是保真度相乘
+    #    与 depol 的 I4（`Πpᵢ`）形成**结构对照**：两种信道的组合代数不同 ⇒ 不能套同一个公式
+    _r_ad = QL.evolve_channel(QL.evolve_channel(_psi, QL.kraus_amplitude_damping(_g)),
+                              QL.kraus_amplitude_damping(_g))
+    _ad2 = QL.state_fidelity(_r_ad, _psi)
+    _geff = QL.ad_chain_gamma((_g, _g))
+    check("I8 🔴 AD 串联律 `γ_eff=1−(1−γ)²`：演化 ≡ 闭式（≤1e-15）∧ **≠ γ+γ**（差 >1e-3）"
+          "∧ ≠ 保真度相乘（差 >1e-6）",
+          abs(_ad2 - QL.ad_plus_fidelity_closed(_geff)) <= 1e-15
+          and abs(_geff - 2.0 * _g) > 1e-3
+          and abs(_ad2 - _adp * _adp) > 1e-6,
+          "两级=%.6f 闭式=%.6f γeff=%.4f 2γ=%.4f F²=%.6f"
+          % (_ad2, QL.ad_plus_fidelity_closed(_geff), _geff, 2.0 * _g, _adp * _adp))
+
+    # I9 反向探针：把 p 口径错成 `√p`（等价于闭式改成 p+(1−p)/3）⇒ I3/I4 必红
+    _bad_closed = lambda q: q + (1.0 - q) / 3.0            # noqa: E731
+    _i3_red = abs(QL.state_fidelity(QL.evolve_channel(_z, QL.kraus_depolarizing(0.5)), _z)
+                  - _bad_closed(0.5)) > 1e-3
+    _i4_red = abs(QL.chain_fidelity_closed((0.9, 0.9)) - _bad_closed(0.81)) > 1e-3
+    check("I9 反向探针：闭式误用 `p+(1−p)/3` ⇒ I3/I4 必红（差值 >1e-3，非恒真）",
+          _i3_red and _i4_red)
+
     bad = globals().get("FAIL", 0)
     good = globals().get("PASS", 0)
     print("")

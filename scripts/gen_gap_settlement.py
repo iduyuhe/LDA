@@ -54,8 +54,8 @@ ARGS = {"qchip": (12,)}
 
 #: 棘轮（各自方向由 `_RATCHET` 声明）。**必须机器守**，否则只是注释。
 UNMARKED_MAX = 0       # 待补状态的缺口数（只降）—— v0.9.286 已达 0：112/112 全部可机核
-OPEN_MAX = 23          # 🔴 **未闭合 = 真欠债**（只降）—— v0.9.290 G-A3 真闭合后 24→23
-CLOSED_MIN = 46        # 已闭合（只升）—— v0.9.290 accel G-A3 由未闭合转已闭合（IL 精度模型）
+OPEN_MAX = 22          # 🔴 **未闭合 = 真欠债**（只降）—— v0.9.291 sensor G_referencing 闭合后 23→22
+CLOSED_MIN = 47        # 已闭合（只升）—— v0.9.291 sensor G_referencing（CMR 由失配闭式反解）
 SETTLED_MIN = 11       # 已结算（只升）—— v0.9.289 qchip G_Q9（M2 布局最小长度守卫绕过）
 BOUNDARY_MIN = 32      # 边界声明（只升）—— v0.9.289 oi G-OI4 + accel 4 + sensor 2 + d4 2
                        #   （参考设计的范围/模型边界原先被 closed=False 记成欠债）

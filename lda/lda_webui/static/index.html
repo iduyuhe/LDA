@@ -10413,6 +10413,24 @@ function renderSensor(d){
     ['主导限制', (m.dominant_limit==='temp'?'温漂':'电学'), '当前工作点']
   ]);
 
+  // ③b referencing 三档（v0.9.291：CMR 由通道失配闭式反解 CMR=1/δ · 设计预算非实测）
+  var rf=d.referencing||{};
+  if(rf.tiers){
+    h+='<h3 style="margin:14px 0 4px">③b referencing 三档（CMR=1/δ 反解）</h3>';
+    h+=_qcTbl(['档位','机制','失配 δ','CMR','CMR (dB)','LOD 温漂 (RIU)','LOD 预算 (RIU)'],
+      rf.tiers.map(function(t){ return [t.label, t.mechanism,
+        (t.mismatch==null?'—':_sxE(t.mismatch,2)), _sxF(t.CMR,2), _sxF(t.CMR_dB,1),
+        _sxE(t.LOD_temp_riu,3), _sxE(t.LOD_real_riu,3)]; }));
+    h+='<div class="hint">温漂抑制（相对现役无 referencing）：工艺可达 <b>'
+      +_sxF(rf.temp_suppression_typical,1)+'×</b> · 锚测试区间 '+_sxF(rf.temp_suppression_anchor,0)+'×'
+      +(rf.anchor_mismatch_reachable?' · 锚区间失配可达'
+        :' · 🔴 锚区间需 '+_sxE(rf.anchor_implied_mismatch,2)+' 失配 ⇒ <b>非设计可达</b>')
+      +(rf.typical_mismatch_is_public_typical?' · 工艺典型为公开工程量级、非本项目实测锚':'')
+      +(rf.anchor_mismatch_roundtrip?' · 反解往返自洽':' · 🔴 反解往返不自洽')
+      +'</div>';
+    h+='<div class="hint">'+rf.note+'</div>';
+  }
+
   // ④ 规模与集成（PS-M6）
   h+='<h3 style="margin:14px 0 4px">④ 规模与集成（PS-M6：阵列 / 读出 / 对准 / 预算）</h3>';
   h+=_qcTbl(['项','值','口径'],[

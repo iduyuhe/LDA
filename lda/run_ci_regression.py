@@ -1689,6 +1689,8 @@ CORE_SMOKES: List[str] = [
     #   ps_m2 噪声模型 的**现算值**（漂移即红）；守诚实边界（verdict 恒 DESIGN_BUDGET ·
     #   温漂主导如实 · LLM 不进判决路径）；守嵌套块**反向完备**（含前缀归一化 + 假绿复现探针 +
     #   注入探针）；守免登录/零重计算/优雅降级/路由与面板接线/API 参考。
+    #   R 节（v0.9.291）：CMR 来源闭式 —— CMR=1/δ 逐位/对照支路(δ=1⇒恰为1)/单调性/反解往返/
+    #   卡内同源/解析关系 LOD_temp∝1/CMR/可达性判定/跨模块同源 B472_NOISE/三路反向探针。
     #   纯 stdlib（不 import 求解器；对拍时才 lazy import lda_l2），实测 <1s（无权豁免）
     #   ⇒ 入 core；timeout 300s 留足余量。
     "run_sensor_panel_smoke.py",

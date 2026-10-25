@@ -157,7 +157,11 @@ GAPS: List[Dict[str, Any]] = [
     {"id": "G_temp_drift", "status": "未闭合（LOD_real 由温漂主导（LOD_temp ≫ LOD_elec），须片载温控/参考通道；现役设计点未含）", "note": "LOD_real 由温漂主导（LOD_temp ≫ LOD_elec）⇒ 须片载温控/referencing"},
     {"id": "G_no_tapeout", "status": "边界声明（各里程碑为自研求解器 + 闭式预算，非流片实测签核）", "note": "各里程碑为自研求解器 + 闭式预算，非流片实测签核"},
     {"id": "G_pdk_geometry", "status": "边界声明（架构参考几何为设计示例：SOI 平板 220 nm / 水包层 @1550 nm）", "note": "架构参考几何为设计示例（SOI 平板 220 nm / 水包层 @1550 nm）"},
-    {"id": "G_referencing", "status": "未闭合（共模抑制 CMR 仅在 PS-M3 情景作对照量，未入现役设计点）", "note": "共模抑制（CMR）仅在 PS-M3 情景中作为对照量，未入现役设计点"},
+    {"id": "G_referencing",
+     "status": "已闭合（v0.9.291 · CMR 已由通道失配闭式反解（CMR=1/δ）+ 三档设计点 + 对照支路与单调性机核；"
+               "on 档须片载参考通道**硬件** ⇒ 对外仍按设计预算、不宣称实测抑制）",
+     "note": "改前：CMR 为手填常数（本卡 1.0 / B472 测试区间 1e4），无来源、无归因；"
+             "改后：CMR=1/δ 可反解（δ=3% ⇒ ≈33 · 30.5 dB），并订正「80 dB 由平衡双通道可达」的归因错误"},
 ]
 
 
@@ -166,6 +170,8 @@ HONEST_NOTE = (
     "指标由闭式物理律现算、参考常量取自 PS-M0…PS-M6 已机器自检通过的求解器链路；"
     "架构为设计示例几何、非特定代工厂 PDK 表征；LOD_real 受温漂主导，"
     "真实器件须片载温控 / referencing 方能逼近 LOD_intrinsic。"
+    "CMR 由通道失配闭式反解（CMR=1/δ）：工艺典型 3% ⇒ 30.5 dB；80 dB 需 0.01% 失配，"
+    "幅度平衡双通道不可达 ⇒ 锚测试区间为假设、非设计可达，且 referencing 三档均为设计预算非实测。"
     "LLM 不进判决路径（本模块无任何模型/网络调用）。"
 )
 
@@ -283,6 +289,114 @@ def _lod_real(S_nm_per_riu: float, Q: float, wl_um: float,
         "dT_eff_K": dT_eff,
         "LOD_temp_riu": LOD_temp,
         "LOD_real_riu": LOD_real,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# v0.9.291 · CMR（共模抑制比）**来源闭式** —— 把一处手填常数变成可反解的量
+# ---------------------------------------------------------------------------
+# 🔴 改前状态：`CMR` 在两处各自手填、无人核 ——
+#      · 本卡现役设计点 `DEFAULT_NOISE["CMR"] = 1.0`（= 无 referencing）
+#      · `_batch_b38_numeric.B472_NOISE["CMR"] = 1e4`（≈80 dB，注释写「平衡双通道可达」）
+#    两个值相差 1e4，且**都没有给出「凭什么能有这么大抑制」**。
+#    ⇒ 与 v0.9.290 的 IL 同型：一句论证（「可达」）从未被写成可复算的数。
+#
+# 本段给出**幅度平衡双通道**架构的闭式极限：两通道增益 a(1±δ/2)，对同一共模扰动 E_cm
+# 相减后残留 a·δ·E_cm ⇒ 共模抑制比（幅度） **CMR = 1/δ**，δ 为**比例失配**。
+#   · 对照支路（闭式已知答案）：δ = 1（完全失配）⇒ CMR = 1.0 = 零抑制 —— 差分退化为
+#     「两路增益差 100% 的单通道相减」，共模与差模同权通过，必须恰为 1；
+#   · 单调性：δ 递减 ⇒ CMR 严格递增，δ→0 ⇒ CMR→∞（理想平衡）。
+# ⇒ 反解 `B472_NOISE` 的 1e4 ⇒ δ = 1e-4 = **0.01%** 失配。片上 MMI 分光比失配的工程
+#   典型量级是 **1–3%**（本卡取 3% 作 `REFERENCING_MISMATCH_TYPICAL`）⇒ 对应 CMR ≈ 33（30.5 dB）。
+#   🔴 **结论：1e4（80 dB）不是「幅度平衡双通道」能达到的数**（差 2 个数量级）；
+#   它只能由**锁相/调制参考**（共模被调制后解调，抑制由调制深度与相位噪声决定）实现。
+#   原注释的归因（「平衡双通道可达」）**不成立** —— v0.9.291 订正为机制分档。
+# ═══════════════════════════════════════════════════════════════════════════
+#: 片上 MMI 分光比失配工程典型量级（3% · **公开工程典型，非本项目实测锚**）
+REFERENCING_MISMATCH_TYPICAL = 3.0e-2
+#: `B472_NOISE["CMR"]=1e4` 反解出的隐含失配（**非设计可达**，仅供反解往返校验）
+REFERENCING_MISMATCH_ANCHOR = 1.0e-4
+
+
+def cmr_from_mismatch(delta: float) -> float:
+    """幅度平衡双通道的共模抑制比 CMR = 1/δ（δ = 比例失配，定义域 (0, 1]）。
+
+    🔴 这是**架构极限**，不是「实际能达到」：实际还会被探测器非线性和时序失配进一步恶化。
+    """
+    d = float(delta)
+    if not (d > 0.0):
+        return float("inf")          # δ→0 ⇒ 理想平衡 ⇒ 无限抑制（不静默给假数）
+    if d > 1.0:
+        d = 1.0                      # >100% 失配无物理意义，钳到「完全失配」
+    return 1.0 / d
+
+
+def mismatch_from_cmr(cmr: float) -> float:
+    """CMR 反解失配 δ = 1/CMR（往返校验用；CMR<1 无物理意义）。"""
+    c = float(cmr)
+    if not (c >= 1.0):
+        return float("inf")
+    return 1.0 / c
+
+
+def cmr_db(cmr: float) -> float:
+    """CMR（幅度比）→ dB（20log10）。"""
+    c = float(cmr)
+    return float("inf") if c <= 0.0 else 20.0 * math.log10(c)
+
+
+def _lod_with_cmr(S_nm_per_riu: float, Q: float, wl_um: float,
+                  cmr: float) -> Dict[str, float]:
+    """把指定 CMR 代入噪声模型算 LOD（解析关系：LOD_temp = dn_dT·dT_stab / CMR）。"""
+    noise = dict(DEFAULT_NOISE)
+    noise["CMR"] = float(cmr)
+    return _lod_real(S_nm_per_riu, Q, wl_um, noise=noise)
+
+
+def referencing_profile(S_nm_per_riu: float, Q: float,
+                        wl_um: float = WAVELENGTH_UM) -> Dict[str, Any]:
+    """referencing 三档设计点（**全闭式，可复算**）。
+
+    ① off     现役设计点（CMR=1.0，无 referencing）—— 卡上对外数字用的就是这一档；
+    ② typical 工艺可达（δ=3% ⇒ CMR≈33）；③ anchor = B472 锚的测试区间（δ=1e-4 ⇒ CMR=1e4）。
+    🔴 只在 ② 及以下才是「不流片也能宣称的量级」；③ 是锚的**测试区间假设**，属设计预算。
+    """
+    rows = []
+    for tag, label, delta, mech in (
+        ("off", "现役设计点（无 referencing）", None, "无参考通道"),
+        ("typical", "幅度平衡双通道 · 工艺可达", REFERENCING_MISMATCH_TYPICAL, "幅度平衡"),
+        ("anchor", "B472 锚测试区间（非设计可达）", REFERENCING_MISMATCH_ANCHOR, "锁相/调制参考"),
+    ):
+        cmr = 1.0 if delta is None else cmr_from_mismatch(delta)
+        lod = _lod_with_cmr(S_nm_per_riu, Q, wl_um, cmr)
+        rows.append({
+            "tag": tag,
+            "label": label,
+            "mechanism": mech,
+            "mismatch": None if delta is None else float(delta),
+            "CMR": float(cmr),
+            "CMR_dB": cmr_db(cmr),
+            "LOD_temp_riu": lod["LOD_temp_riu"],
+            "LOD_real_riu": lod["LOD_real_riu"],
+            "dominant_limit": "temp" if lod["LOD_temp_riu"] >= lod["LOD_elec_riu"] else "elec",
+        })
+    off, typ, anc = rows
+    return {
+        "tiers": rows,
+        "temp_suppression_typical": off["LOD_temp_riu"] / typ["LOD_temp_riu"],
+        "temp_suppression_anchor": off["LOD_temp_riu"] / anc["LOD_temp_riu"],
+        "anchor_implied_mismatch": mismatch_from_cmr(anc["CMR"]),
+        "anchor_mismatch_roundtrip": bool(
+            abs(mismatch_from_cmr(anc["CMR"]) - REFERENCING_MISMATCH_ANCHOR) <= 1e-15),
+        # 🔴 物理可达性 ≠ 往返自洽：1e-4 的失配比工艺典型(3%)小 300 倍 ⇒ **不可达**
+        "anchor_mismatch_reachable": bool(
+            mismatch_from_cmr(anc["CMR"]) >= REFERENCING_MISMATCH_TYPICAL),
+        "typical_mismatch_is_public_typical": True,
+        "note": (
+            "CMR 由通道失配闭式反解（CMR=1/δ）：工艺典型 3% ⇒ CMR≈33（30.5 dB）；"
+            "80 dB 需 0.01% 失配，**幅度平衡双通道不可达**，只能由锁相/调制参考实现 ⇒ "
+            "锚测试区间（1e4）是假设、非设计可达；三档均为设计预算，非实测。"
+        ),
     }
 
 
@@ -475,6 +589,8 @@ def case_card(arch_id: Optional[str] = None, R_um: Optional[float] = None,
             "delta_n": d["delta_n"],
         },
         "metrics": metrics,
+        "referencing": referencing_profile(float(arch["S_bulk_nm_per_riu"]),
+                                           float(d["Q"])),
         "integration": {k: float(v) for k, v in INTEGRATION_REF.items()},
         "signoff": signoff,
         "wizard": design_options(),

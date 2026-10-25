@@ -142,6 +142,11 @@ _BLOCK_ALIAS = {
     "wizard.knobs[]": ["k"],
     "milestones[]": ["x"],
     "gaps[]": ["x"],
+    # v0.9.291 · CMR 来源闭式（三档 + 反解 + 可达性）必须被前端渲染 ——
+    # 🔴 加块的动机不是「多一个表」，而是**新增展示字段必须被消费**：
+    #   本门禁 D5 探针实测「往块里注入假字段 ⇒ 缺字段集合恰为该假键」，
+    #   故任何只加后端不加前端的字段都会被 D3 当场判红。
+    "referencing": ["rf"],
 }
 # 纯元数据键（不是展示字段 ⇒ 不纳入反向完备）
 _META_KEYS = {"endpoint"}
@@ -459,6 +464,57 @@ def main() -> int:
               "found=%s" % (ep is not None))
     except Exception as e:  # pragma: no cover
         check("F8 API 参考已含 /api/sensor_demo", False, "读参考失败: %s" % e)
+
+    # ══════════════════════ R CMR 来源闭式（v0.9.291）══════════════════════
+    # 🔴 改前：`CMR` 是**手填常数**（本卡 1.0 / `B472_NOISE` 1e4），两处相差 1e4，
+    #   且没有任何一处说明「凭什么能有这么大抑制」——与 v0.9.290 的 IL 同型：
+    #   一句论证（「平衡双通道可达」）从未被写成可复算的数。
+    #   本节把 CMR 钉在**通道失配**上：CMR = 1/δ，并保留一条「闭式已知答案」的对照支路。
+    from lda_webui import sensor_case as SCr
+    check("R1 CMR 闭式逐位：δ=1% ⇒ CMR 恰为 100（== 判定，不用 isclose）",
+          SCr.cmr_from_mismatch(1e-2) == 100.0, "%r" % (SCr.cmr_from_mismatch(1e-2),))
+    check("R2 🔴 对照支路（本应恰好为 1）：δ=1（完全失配）⇒ CMR=1.0 = 零抑制",
+          SCr.cmr_from_mismatch(1.0) == 1.0, "%r" % (SCr.cmr_from_mismatch(1.0),))
+    _ds = [1.0, 0.5, 0.1, 0.03, 0.01, 1e-4]
+    _cs = [SCr.cmr_from_mismatch(d) for d in _ds]
+    check("R3 单调性：δ 递减 ⇒ CMR 严格递增（6 点）",
+          all(_cs[i] < _cs[i + 1] for i in range(len(_cs) - 1)),
+          " ".join("%.3g" % c for c in _cs))
+    check("R4 反解往返逐位自洽：mismatch_from_cmr(cmr_from_mismatch(δ)) == δ",
+          all(abs(SCr.mismatch_from_cmr(SCr.cmr_from_mismatch(d)) - d) <= 1e-18 for d in _ds))
+    _rp = card["referencing"]
+    _tiers = {t["tag"]: t for t in _rp["tiers"]}
+    check("R5 卡内同源：typical 档 CMR ≡ cmr_from_mismatch(REFERENCING_MISMATCH_TYPICAL)（逐位）",
+          _tiers["typical"]["CMR"] == SCr.cmr_from_mismatch(SCr.REFERENCING_MISMATCH_TYPICAL)
+          and _tiers["typical"]["mismatch"] == SCr.REFERENCING_MISMATCH_TYPICAL)
+    check("R6 解析关系：LOD_temp ∝ 1/CMR（off/typical 的温漂比 == CMR 比，相对 1e-12）",
+          abs(_rp["temp_suppression_typical"]
+              - _tiers["typical"]["CMR"] / _tiers["off"]["CMR"]) <= 1e-12 * _rp["temp_suppression_typical"],
+          "%.6f vs %.6f" % (_rp["temp_suppression_typical"],
+                            _tiers["typical"]["CMR"] / _tiers["off"]["CMR"]))
+    check("R7 🔴 可达性判定：锚区间(1e-4)比工艺典型(3%)小 300× ⇒ 必须判「非设计可达」∧ note 写明",
+          _rp["anchor_mismatch_reachable"] is False
+          and _rp["anchor_mismatch_roundtrip"] is True
+          and ("不可达" in _rp["note"]))
+    _b472 = None
+    try:
+        from lda_harness._batch_b38_numeric import B472_NOISE
+        _b472 = B472_NOISE["CMR"]
+    except Exception:
+        pass
+    check("R8 🔴 跨模块同源：卡上反解失配 ≡ mismatch_from_cmr(B472_NOISE['CMR'])（1e4 ⇒ 1e-4）",
+          _b472 is not None and abs(_rp["anchor_implied_mismatch"]
+                                    - SCr.mismatch_from_cmr(_b472)) <= 1e-18,
+          "B472_NOISE.CMR=%r" % (_b472,))
+    # R9 反向探针：① 伪造「幅度平衡可达 80 dB」⇒ R6 必红；② δ=0 不得静默给有限值；
+    #    ③ 抹掉 note 里的「不可达」⇒ R7 必红
+    _fake = dict(_tiers["typical"], CMR=_b472)
+    _r6_red = abs((_fake["CMR"] / _tiers["off"]["CMR"]) - _tiers["typical"]["CMR"]) > 1e-9
+    _r2_red = SCr.cmr_from_mismatch(0.0) == float("inf")
+    _r7_red = "不可达" not in _rp["note"].replace("不可达", "")
+    check("R9 反向探针：伪造典型档=1e4（假装幅度平衡可达）⇒ R6 必红 ∧ δ=0 ⇒ inf 不静默 ∧ 删『不可达』⇒ R7 必红",
+          _r6_red and _r2_red and _r7_red,
+          "r6=%s r2=%s r7=%s" % (_r6_red, _r2_red, _r7_red))
 
     # ══════════════════════ K 自入 CI core ══════════════════════
     try:

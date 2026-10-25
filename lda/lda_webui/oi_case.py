@@ -1397,26 +1397,37 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                        "被支配点 0 个。这不是「模型没收敛」，而是「三域本来就没有单一最优」——"
                        "设计点必须由**系统级约束**（带宽线 + CMOS 摆幅）钉住，不能靠单域调优"},
         ],
+        # 🔴 v0.9.289：`closed` 布尔（旧表示）与 `status` 四值（v0.9.286 口径）**并存**。
+        #    `closed` 仍被 `gaps_closed` 汇总、`run_qchip_case_smoke` 与前端 `!g.closed` 使用；
+        #    `status` 才能区分「已结算 / 边界声明」。**两者必须一致** —— 由
+        #    `run_webui_json_hard_smoke` 的 S9 逐卡逐条机核（`closed` ≡ status 以「已闭合」开头）。
+        #    🔴 分类理由：G-OI4 是**主权红线边界**（零能效数字纪律，无 foundry 数据即无权宣称），
+        #    **不是欠债**；G-OI7 是**真值缺失**（CTE/公差/翘曲均无实测），**仍是欠债**。
         "gaps": [
             {"id": "G-OI1", "closed": True,
+             "status": "已闭合（M1 梳齿规避信道规划 · oi_m1.plan_lwdm_channels）",
              "title": "相邻信道隔离（M1 已闭合：−0.85dB → 39.5dB）",
              "detail": "靠**梳齿规避信道规划**（m=129 / gap=0.55µm，最小梳齿偏移 1.24nm）闭合；"
                        "新增平台能力 `oi_m1.plan_lwdm_channels`（搜索解与设计常量由门禁互锁）"},
             {"id": "G-OI2", "closed": True,
+             "status": "已闭合（M2 oi_transceiver_pnr 真 GDS · DRC/LVS 双闸）",
              "title": "M2 已闭合：收发器拓扑专用真 GDS builder",
              "detail": "新增 `lda_layout/oi_transceiver_pnr.py`（Tx 调制器阵列 + MMIC 合波 + GC 出片 / "
                        "GC 入片 + 环解波 + 探测器阵列，片外 fiber 不落版图）⇒ 单 LinkModel + 单次"
                        "主权 DRC/LVS 双闸 + D4 新域 `oi_transceiver`（下载端点 + 限幅 + 诚实注记）；"
                        "门禁 `run_oi_transceiver_pnr_smoke.py` 40 项（含逐规模 n∈{1,2,4,8,12} 双闸）"},
             {"id": "G-OI3", "closed": True,
+             "status": "已闭合（M1 四项：EO S21 / 眼图 BER / 驱动-TIA / 色散 · lda_l2/oi_m1.py）",
              "title": "级电光行为模型（M1 已闭合四项）",
              "detail": "EO S21 带宽（G-OI3-a）· 眼图/BER（G-OI3-b，光链路预算级 + 与 EIC 电路级"
                        "显式分层）· 驱动-TIA 协同（G-OI3-c，复用 eic_behavioral）· 光纤色散"
                        "（G-OI3-d）四子项全部落地，见 `lda_l2/oi_m1.py`"},
             {"id": "G-OI4", "closed": False,
+             "status": "边界声明（主权红线 · 零能效数字纪律：无 foundry 数据即无权宣称能效 · T2 锁死区）",
              "title": "电路级模型 · 无 PDK · 不报 TOPS",
              "detail": "继承主权红线：无 foundry 数据 ⇒ 无能效宣称资格；规模与能效外推属 T2 锁死区"},
             {"id": "G-OI5", "closed": True,
+             "status": "已闭合（M2b 五项全落地 · run_oi_m2b_smoke 89 项）",
              "title": "M2b 已闭合：多通道均衡 · 热调 · 热串扰 Γ · 良率 MC · 封装容差",
              "detail": "五项全部落地（`lda_l2/oi_m2b.py` + 门禁 `run_oi_m2b_smoke.py` "
                        "**89 行 = 39 基线判据 ×2 + 10 突变探针 + 1 还原一致** + 模块自检 31 项）："
@@ -1429,6 +1440,7 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                        "(对准 IL 预算先扣模场失配底 + GC 出射角温溢真物理）。"
                        "与 G-OI4 合并考虑后，G-OI4「电路级模型 · 无 PDK · 不报 TOPS」**仍开放**"},
             {"id": "G-OI6", "closed": True,
+             "status": "已闭合（M3 cpo_2p5d 版图签核 · 拓扑 LVS + 电层 DRC + OE 显式豁免）",
              "title": "M3 已闭合：2.5D 版图签核（ASIC die + 中介层 + 光引擎 die + FAU）",
              "detail": "`lda_l2/oi_m3.cpo_2p5d_geometry/cpo_2p5d_layout`：ASIC die 1800 µm + "
                        "中介层 `d_out = a + 2·margin`（margin=16·pad，**相对 die 尺寸**外扩，"
@@ -1441,6 +1453,7 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                        "device_elements`（与 `export_chip_gds` 同源）后 6 结构/247 元素/22 KB "
                        "GDS 出图。G-OI4「电路级模型 · 无 PDK · 不报 TOPS」**仍开放**"},
             {"id": "G-OI7", "closed": False,
+             "status": "未闭合（封装级热-机械-光真值缺失：CTE 为公开手册值 · FAU 公差无分布 · 应力/翘曲无实测）",
              "title": "封装级热-机械-光真值缺失（M4 新增）",
              "detail": "M4（CPO 形态深化）暴露：材料 CTE 用**公开手册值**（Si 2.6e-6 / 玻璃 FAU "
                        "3.2e-6 /K，**不是本封装实测**）· FAU 对准公差**无分布数据** · "

@@ -130,6 +130,10 @@ MILESTONE_PATHS = [  # `m` 为 milestones 元素
 ]
 GAP_PATHS = [  # `g` 为 gaps 元素
     ("g.closed", "gaps[].closed"),
+    # 🔴 v0.9.289：四值状态（已闭合/已结算/未闭合/边界声明）。`closed` 布尔无法区分
+    #    「边界声明」与「欠债」—— G-OI4 是主权红线（不是欠债）、G-OI7 是真值缺失（是欠债），
+    #    两者 `closed` 都是 False。双表示的一致性由 json_hard 的 S9 机核。
+    ("g.status", "gaps[].status"),
     ("g.id", "gaps[].id"),
     ("g.title", "gaps[].title"),
     # 🔴 F5（v0.9.185）：缺口**闭合证据链**（`closed ⇔ evidence_ok`，由 oi_case 门禁守）

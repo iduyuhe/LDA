@@ -104,15 +104,18 @@ FINDINGS = [
 
 # ══════════════════ 平台能力缺口 G_Q1–G_Q9（吃狗粮反向长出）══════════════════
 GAPS = [
-    {"id": "G_Q1", "what": "单光子源 / SNSPD 探测器模型", "closed": True, "by": "D-114 / D-115"},
-    {"id": "G_Q2", "what": "Fock / Wigner 量子态仿真器", "closed": True, "by": "D-113"},
-    {"id": "G_Q3", "what": "量子过程保真度（开放系统）", "closed": True, "by": "D-116"},
-    {"id": "G_Q4", "what": "HOM 双光子干涉可见度", "closed": True, "by": "D-113"},
-    {"id": "G_Q5", "what": "L3 标定闭环", "closed": True, "by": "D-117"},
-    {"id": "G_Q6", "what": "N×N 可扩 P&R 生成器", "closed": True, "by": "M2"},
-    {"id": "G_Q7", "what": "量子器件 DRC / LVS 规则", "closed": True, "by": "D-118"},
-    {"id": "G_Q8", "what": "量子基准", "closed": True, "by": "D-119"},
-    {"id": "G_Q9", "what": "结构代理无法表示平凡 MZI（Lc=0 塌缩）",
+    {"id": "G_Q1", "status": "已闭合（D-114 / D-115）", "what": "单光子源 / SNSPD 探测器模型", "closed": True, "by": "D-114 / D-115"},
+    {"id": "G_Q2", "status": "已闭合（D-113）", "what": "Fock / Wigner 量子态仿真器", "closed": True, "by": "D-113"},
+    {"id": "G_Q3", "status": "已闭合（D-116）", "what": "量子过程保真度（开放系统）", "closed": True, "by": "D-116"},
+    {"id": "G_Q4", "status": "已闭合（D-113）", "what": "HOM 双光子干涉可见度", "closed": True, "by": "D-113"},
+    {"id": "G_Q5", "status": "已闭合（D-117）", "what": "L3 标定闭环", "closed": True, "by": "D-117"},
+    {"id": "G_Q6", "status": "已闭合（M2）", "what": "N×N 可扩 P&R 生成器", "closed": True, "by": "M2"},
+    {"id": "G_Q7", "status": "已闭合（D-118）", "what": "量子器件 DRC / LVS 规则", "closed": True, "by": "D-118"},
+    {"id": "G_Q8", "status": "已闭合（D-119）", "what": "量子基准", "closed": True, "by": "D-119"},
+    # 🔴 v0.9.289：G_Q9 是**已结算**（有裁决：M2 布局最小长度守卫绕过；缺陷本身仍在），
+    #    不是欠债 —— 与 `ecore` G-N「不改 mna + B14 锁死」同型。
+    {"id": "G_Q9", "status": "已结算（M2 用布局最小长度守卫绕过；缺陷本身仍在）",
+     "what": "结构代理无法表示平凡 MZI（Lc=0 塌缩）",
      "closed": False, "by": "M2 用布局最小长度守卫绕过"},
 ]
 

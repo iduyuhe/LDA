@@ -8000,8 +8000,8 @@ function renderQChip(d){
   h+='<h3 style="margin:14px 0 4px">⑨ 四条硬结论</h3>';
   d.findings.forEach(function(f){ h+='<p style="margin:6px 0"><b>'+f.tag+'</b> —— '+f.text+'</p>'; });
   h+='<h3 style="margin:14px 0 4px">⑩ 吃狗粮反向长出的平台能力（G_Q1–G_Q9 · 已闭合 '+d.gaps_closed+'/'+d.gaps_total+'）</h3>';
-  h+=_qcTbl(['缺口','内容','闭合','由'],
-    d.gaps.map(function(g){ return [g.id, g.what, g.closed?'是':'否', g.by]; }));
+  h+=_qcTbl(['缺口','内容','状态','由'],
+    d.gaps.map(function(g){ return [g.id, g.what, escapeHtml(g.status||(g.closed?'已闭合':'开放')), g.by]; }));
   h+='<h3 style="margin:14px 0 4px">⑪ 产出物</h3>';
   if(A.available){
     h+='<p style="margin:4px 0">'+A.count+' 件（只读元信息）· '+A.note+'</p>';
@@ -8771,9 +8771,9 @@ function renderOi(d){
   h+='<p style="color:#555">'+m2bp.note+'</p>';
   // ㉓ 缺口终态
   var Gob=(d.gaps||[]).filter(function(g){return g.closed;}).map(function(g){return g.id;});
-  h+='<h3 style="margin:14px 0 4px">㉓ M2b 缺口终态（G-OI5 闭合 · G-OI4 诚实保留开放）</h3>';
+  h+='<h3 style="margin:14px 0 4px">㉓ M2b 缺口终态（G-OI5 已闭合 · G-OI4 边界声明 · G-OI7 未闭合）</h3>';
   h+=_qcTbl(['缺口','闭合','闭合证据（机器可查 · 重算）','说明'],(d.gaps||[]).map(function(g){
-    return [ g.id, g.closed?'<b>已闭合</b>':'<b>仍开放</b>',
+    return [ g.id, '<b>'+escapeHtml(g.status||(g.closed?'已闭合':'仍开放'))+'</b>',
       (g.closed?(g.evidence_ok?'✅ ':'🔴 '):'—')+escapeHtml(g.evidence||'')
         +'<br/><span style="color:#666">'+escapeHtml(g.evidence_detail||'')+'</span>',
       g.title ];
@@ -8987,7 +8987,7 @@ function renderOi(d){
      m3ru.reused_not_rebuilt?'<b>成立</b>':'<b>不成立</b>']
   ]);
   h+='<p><b>M3 缺口终态：</b>已闭合 <b>'+Gob.length+' / '+(d.gaps_total||(d.gaps||[]).length)
-    +'</b>（'+(Gob.join(' · ')||'-')+'）· 🔴 <b>G-OI4 仍诚实保留开放</b>。</p>';
+    +'</b>（'+(Gob.join(' · ')||'-')+'）· 🔴 <b>G-OI4 边界声明（零能效数字纪律 · 非欠债）</b>。</p>';
   h+='<p style="color:#555">'+m3.honest_note_m3+'</p>';
 
   /* ── M4（CPO 形态深化）块：热-光-电协同设计空间（耦合链 · 预偏移 · 重规划 · 三形态 · CTE · Pareto/VπL）── */
@@ -9147,7 +9147,7 @@ function renderOi(d){
   h+='<p style="color:#555">'+(m4s.note||'')+'</p>';
   var Gma=d.gaps||[];
   h+='<p><b>M4 缺口终态：</b>已闭合 <b>'+Gob.length+' / '+(d.gaps_total||Gma.length)
-    +'</b>（'+(Gob.join(' · ')||'-')+'）· 🔴 <b>G-OI4 与 G-OI7 诚实保留开放</b>'
+    +'</b>（'+(Gob.join(' · ')||'-')+'）· 🔴 <b>G-OI4 边界声明 · G-OI7 未闭合（真值缺失）</b>'
     +'（G-OI4 = 电路级无 PDK；G-OI7 = 封装级热-机械-光无实测，M4 新增，域不同不重复记账）。</p>';
   h+='<p style="color:#555">'+m4.honest_note_m4+'</p>';
 

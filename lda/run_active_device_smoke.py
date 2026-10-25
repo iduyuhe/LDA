@@ -99,6 +99,24 @@ def main() -> int:
           len(ENGINE_KINDS) == 22 and n_ph == 15 and n_q == 7,
           f"{len(ENGINE_KINDS)} = {n_ph}+{n_q}")
 
+    # ⑤ 🔴 物理常量口径（v0.9.288）：h / c 自 SI 2019 起是**定义值、精确**，
+    #    写近似值 = 同一条物理律在不同模块给出不同的数（旧值致响应度偏 0.069%）。
+    #    这条同时守两件事：本模块用的是精确值 ∧ 与其他模块**对数**（不是"差不多对"）。
+    from lda_design import active_models as _AM
+    check("⑤a h / c 为 SI 定义值（精确，不得写 6.626e-34 / 3.0e8 这类近似）",
+          _AM.H_PLANCK == 6.62607015e-34 and _AM.C_LIGHT == 299792458.0,
+          "h=%r c=%r" % (_AM.H_PLANCK, _AM.C_LIGHT))
+    try:
+        from lda_solver.ge_pd_responsivity_true import H_PLANCK as _H2, C_LIGHT as _C2
+        from lda_qeda.cryo_electronics import _H_PLANCK as _H3
+    except Exception as _e:                                  # 导入失败必须是红，不是跳过
+        _H2 = _C2 = _H3 = None
+        check("⑤b 跨模块同名常量一致", False, "导入失败：%s" % type(_e).__name__)
+    else:
+        check("⑤b 跨模块同名常量一致（active_models ↔ ge_pd_responsivity ↔ cryo_electronics）",
+              _AM.H_PLANCK == _H2 == _H3 and _AM.C_LIGHT == _C2,
+              "h=%r/%r/%r c=%r/%r" % (_AM.H_PLANCK, _H2, _H3, _AM.C_LIGHT, _C2))
+
     print(f"\n汇总：{PASS} PASS / {FAIL} FAIL")
     return 0 if FAIL == 0 else 1
 

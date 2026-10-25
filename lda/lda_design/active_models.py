@@ -105,8 +105,12 @@ def mzi_mod_response(V: float, V_pi: float,
 
 # ---- 探测器（Merge-2b · 黑箱三件套收口） ----
 Q_E = 1.602e-19       # 电子电荷 (C)
-H_PLANCK = 6.626e-34  # 普朗克常数 (J·s)
-C_LIGHT = 3.0e8       # 光速 (m/s)
+# 🔴 v0.9.288：改 **SI 2019 定义值**（这两个量自 2019 起是**定义值、精确无误差**）。
+#   旧值 6.626e-34 / 3.0e8 是四位近似 ⇒ 响应度 η·q·λ/(h·c) 相对误差 **+6.85e-4**（0.069%）。
+#   本项目其余模块（ge_pd_responsivity_true / cryo_electronics / b31_soref_bennett）早已用精确值，
+#   只此一处是例外 ⇒ 同一条物理律在不同模块给出**不同的数**。
+H_PLANCK = 6.62607015e-34   # 普朗克常数 (J·s) —— SI 定义值（精确）
+C_LIGHT = 299792458.0       # 光速 (m/s) —— SI 定义值（精确）
 
 
 def detector_responsivity(eta: float = 0.8, wl_um: float = WL_UM) -> float:

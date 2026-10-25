@@ -54,9 +54,10 @@ ARGS = {"qchip": (12,)}
 
 #: 棘轮（各自方向由 `_RATCHET` 声明）。**必须机器守**，否则只是注释。
 UNMARKED_MAX = 0       # 待补状态的缺口数（只降）—— v0.9.286 已达 0：112/112 全部可机核
+OPEN_MAX = 32          # 🔴 **未闭合 = 真欠债**（只降 · v0.9.289 新增）—— 唯一应当递减的列
 CLOSED_MIN = 45        # 已闭合（只升）—— v0.9.287 pchip G-G 由未闭合转已闭合
-SETTLED_MIN = 10       # 已结算（只升）
-BOUNDARY_MIN = 23      # 边界声明（只升）
+SETTLED_MIN = 11       # 已结算（只升）—— v0.9.289 qchip G_Q9（M2 布局最小长度守卫绕过）
+BOUNDARY_MIN = 24      # 边界声明（只升）—— v0.9.289 oi G-OI4（主权红线 · 零能效数字纪律）
 
 # ── 状态词表（**唯一权威** · v0.9.286 四值口径）──────────────────────────
 # 🔴 **为什么是四值而不是二值**（用户定调 A 案）：`gaps` 里混了不同性质的东西，
@@ -208,7 +209,8 @@ def collect():
     return {"schema": "lda_gap_settlement_v2", "cards": cards,
             "by_domain": agg, "total": total,
             "ratchet": {"unmarked_max": UNMARKED_MAX, "closed_min": CLOSED_MIN,
-                        "settled_min": SETTLED_MIN, "boundary_min": BOUNDARY_MIN}}
+                        "settled_min": SETTLED_MIN, "boundary_min": BOUNDARY_MIN,
+                        "open_max": OPEN_MAX}}
 
 
 
@@ -292,9 +294,12 @@ def render_md(ref) -> str:
         "| `closed` | **%d** | 只升不降 | 已闭合（证据链可查） |" % tot["closed"],
         "| `settled` | **%d** | 只升不降 | 已结算（裁决不再挂账） |" % tot["settled"],
         "| `boundary` | **%d** | 只升不降 | 永久边界声明 |" % tot["boundary"],
+        "| 🔴 `open` | **%d** | **只降不升** | **未闭合 = 真欠债**（唯一应当递减的列） |"
+        % tot["open"],
         "",
-        "> 四列都只有单向：**新加缺口必须带状态源**（否则 `unmarked` 涨 ⇒ 红）；",
-        "> 已闭合/已结算/边界不得回退成未标（否则对应下界被击穿 ⇒ 红）。",
+        "> 五列各自单向：**新加缺口必须带状态源**（否则 `unmarked` 涨 ⇒ 红）；",
+        "> 已闭合/已结算/边界不得回退成未标（否则对应下界被击穿 ⇒ 红）；",
+        "> **`open` 是唯一应当递减的列** —— 它涨说明新增了欠债，也判红（v0.9.289 新增）。",
         "",
     ]
     return "\n".join(out)
@@ -331,6 +336,8 @@ def main(argv=None) -> int:
         breach.append("boundary %d < %d" % (t["boundary"], BOUNDARY_MIN))
     if t["unmarked"] > UNMARKED_MAX:
         breach.append("unmarked %d > %d" % (t["unmarked"], UNMARKED_MAX))
+    if t["open"] > OPEN_MAX:          # 🔴 真欠债只能减，不能增
+        breach.append("open %d > %d" % (t["open"], OPEN_MAX))
     if breach:
         print("FAIL: 棘轮退步 —— %s" % " / ".join(breach), file=sys.stderr)
         return 3

@@ -406,6 +406,46 @@ def main() -> int:
     check("S8b 反向探针：正面宣称必红 ∧ 免责/禁令陈述必绿（防「一刀切禁字」误伤诚实边界）",
           all(_p8), "p8=%s" % _p8)
 
+    # ── S9：缺口双表示必须一致（`closed` 布尔 ≡ `status` 四值）──────────
+    # 🔴 为什么允许两套表示并存、却必须机核：
+    #    `closed` 是 v0.9.285 及之前的唯一表示（`gaps_closed` 汇总、`run_qchip_case_smoke`、
+    #    前端 `!g.closed` 都在用）；`status` 是 v0.9.286 的四值口径（能区分已结算/边界声明）。
+    #    两套并存本身可接受，**但一旦不一致就是「同源只写在注释里」**（v0.9.287 h/c 教训）。
+    def _closed_status_conflicts(card):
+        out = []
+        for g in (card.get("gaps") or []):
+            if not isinstance(g, dict) or "closed" not in g or "status" not in g:
+                continue
+            want = str(g["status"]).startswith("已闭合")
+            if bool(g["closed"]) != want:
+                out.append((g.get("id"), bool(g["closed"]), str(g["status"])[:28]))
+        return out
+
+    _s9_cards = {k: fn() for k, fn in _signed.items()}
+    _s9_conf = {k: v for k, v in
+                ((k, _closed_status_conflicts(c)) for k, c in _s9_cards.items()) if v}
+    check("S9 缺口双表示一致：`closed` 布尔 ≡ `status` 以「已闭合」开头（逐卡逐条）",
+          not _s9_conf, "冲突=%s" % (_s9_conf or "无"))
+
+    _s9_cov = [k for k, c in _s9_cards.items()
+               if any(isinstance(g, dict) and "closed" in g and "status" in g
+                      for g in (c.get("gaps") or []))]
+    _s9_probe = [
+        _closed_status_conflicts({"gaps": [{"id": "X", "closed": True,
+                                           "status": "未闭合"}]}),        # closed 却称未闭合 ⇒ 必红
+        _closed_status_conflicts({"gaps": [{"id": "Y", "closed": True,
+                                           "status": "已结算（裁决）"}]}),  # 已结算不是已闭合 ⇒ 必红
+        _closed_status_conflicts({"gaps": [{"id": "Z", "closed": False,
+                                           "status": "边界声明"}]}),      # 合规 ⇒ 必绿
+        _closed_status_conflicts({"gaps": [{"id": "W", "closed": True,
+                                           "status": "已闭合（证据）"}]}),  # 合规 ⇒ 必绿
+    ]
+    check("S9b 覆盖面 ≥2 张卡同时带两种表示（防空集合假绿）∧ 反向探针：错配必红、合规必绿",
+          len(_s9_cov) >= 2
+          and bool(_s9_probe[0]) and bool(_s9_probe[1])
+          and not _s9_probe[2] and not _s9_probe[3],
+          "覆盖=%s 探针=%s" % (_s9_cov, [bool(x) for x in _s9_probe]))
+
     check("K1 本门禁已登记进 CORE_SMOKES（防静默漏接 · 血案 #28 同族）",
           "run_webui_json_hard_smoke.py" in _ci)
 

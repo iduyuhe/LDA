@@ -23,6 +23,7 @@ from lda_l2 import qnet_classical as CL
 from lda_l2 import qnet_distribution as DS
 from lda_l2 import qnet_repeater as RP
 from lda_l2 import qnet_source as SR
+from lda_l2 import qnet_swap as SW
 from lda_l2 import qnet_transducer as TR
 
 QNET_SYSTEM_CALIBER = "qnet_end_to_end_signing__design_stage_only"
@@ -114,20 +115,28 @@ def signing_chain(length_m: float = DEFAULT_LINK_LENGTH_M,
 
 def end_to_end_fidelity(length_m: float = DEFAULT_LINK_LENGTH_M,
                         segments: int = DEFAULT_SEGMENTS) -> Dict[str, float]:
-    """端到端**设计期**保真度预算（直接链路 vs 中继链路 · 逐段乘法近似）。
+    """端到端**设计期**保真度预算（直接链路 vs 中继链路）。
 
-    🔴 **近似口径**（诚实边界）：逐段保真度按**独立乘性衰减**近似
-       （`F_tot = Π F_i`），未建模**纠缠交换递推 / 纯化 / 纠错**；
-       ⇒ `relay_chain_fidelity = F_seg^N` **只是朴素上界**，
-       **不可**据它断言「中继保真 > 直连保真」（中继的真实优势在**速率**，见 M2
-       `repeater_gain = 53.70×`）。本函数仅作**设计期量级判据**。
+    🔴 **v0.9.292 订正组合律**（改前错在两处，见 `lda_l2/qnet_swap.py` 头注释）：
+       · 理想纠缠交换组合的是 **Werner 参数**（`p_out = p₁·p₂`），不是保真度；
+         `F = (1+3p)/4` 是仿射函数，`Π F_i ≠ F(Π p_i)`。
+       · 旧口径 `F_seg^N` 恒 **小于**正确值（N≥2），是**下界** —— 原注释称其为
+         「朴素上界」，**方向说反了**。默认档（100 km / 20 段）实测：
+         旧口径 0.03657 vs 正确 0.25796，比值 0.1417（**小 7.05 倍**）。
+     ⇒ `relay_chain_fidelity` 现为**正确口径** `F(p_seg^N)`；旧值保留在
+        `relay_chain_fidelity_naive` 供对拍与审计（如实标注为下界）。
+     🔴 **核心物理**：理想段下 `p_seg^N ≡ exp(−L/L_depol)` ⇒
+        **中继链保真度恒等于直连保真度**（`werner_equals_direct`）——
+        分段只提**吞吐**，提保真只能靠**纯化**（`SW.dejmps_once`）。
     """
     if segments < 1 or length_m <= 0.0:
         raise ValueError("参数非法")
     seg_len = length_m / segments
     f_direct = CH.link_fidelity(length_m)
     f_seg = CH.link_fidelity(seg_len)
-    f_relay = f_seg ** segments            # 中继链：每段独立
+    p_seg = DS.werner_parameter(seg_len)
+    f_relay_naive = f_seg ** segments                              # 旧口径（下界，非上界）
+    f_relay = SW.swap_chain_fidelity(p_seg, segments)              # 正确口径（Werner 组合）
     f_source = SR.overlap_magnitude_sq()
     f_tr = TR.transducer_report()["efficiency"]
     f_cl = CL.jitter_limited_fidelity()
@@ -135,6 +144,7 @@ def end_to_end_fidelity(length_m: float = DEFAULT_LINK_LENGTH_M,
         "direct_fidelity": float(f_direct),
         "relay_segment_fidelity": float(f_seg),
         "relay_chain_fidelity": float(f_relay),
+        "relay_chain_fidelity_naive": float(f_relay_naive),
         "source_factor": float(f_source),
         "transducer_factor": float(f_tr),
         "classical_factor": float(f_cl),
@@ -189,13 +199,23 @@ def selfcheck_qnet_system() -> Dict[str, bool]:
         rows[4]["value"] - TR.transducer_report()["band_overlap"]) < 1e-15
     checks["matches_classical"] = abs(rows[5]["value"] - CL.jitter_infidelity()) < 1e-15
 
-    # 中继的**物理优势在速率**（M2 真源：`repeater_gain = 53.70×`），不在「逐段乘法」的保真度
-    # 🔴 逐段乘积 `F_seg^N` 只是**朴素上界**（不含纠缠交换递推/纯化/纠错），
-    #    故**不可**用它断言「中继保真 > 直连保真」——那是错误近似。
+    # 中继的**物理优势在速率**（M2 真源：`repeater_gain = 53.70×`），不在保真度
+    # 🔴 v0.9.292：保真度口径已订正为 Werner 组合（见 `qnet_swap`）。
+    #    正确口径下 N 段链 ≡ 直连（理想段）⇒ **分段不提保真、只提吞吐**；
+    #    旧口径 `F_seg^N` 是**下界**（原注释误称上界），保留在 `_naive` 供对拍。
     checks["repeater_rate_gain_beats_direct"] = bool(
         RP.repeater_report()["gain"] > 1.0)
+    checks["relay_chain_matches_direct"] = abs(
+        budget["relay_chain_fidelity"] - budget["direct_fidelity"]) <= 1e-15
+    checks["relay_naive_is_lower_bound"] = bool(
+        budget["relay_chain_fidelity_naive"] < budget["relay_chain_fidelity"])
+    checks["relay_chain_matches_qnet_swap"] = abs(
+        budget["relay_chain_fidelity"]
+        - SW.swap_chain_fidelity(DS.werner_parameter(DEFAULT_LINK_LENGTH_M / DEFAULT_SEGMENTS),
+                                 DEFAULT_SEGMENTS)) <= 1e-15
     checks["budget_keys_complete"] = set(budget) == {
         "direct_fidelity", "relay_segment_fidelity", "relay_chain_fidelity",
+        "relay_chain_fidelity_naive",
         "source_factor", "transducer_factor", "classical_factor",
         "end_to_end_direct", "end_to_end_relay"}
 

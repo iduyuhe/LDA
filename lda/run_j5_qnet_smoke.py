@@ -34,6 +34,7 @@ from lda_l2 import qnet_classical as CL  # noqa: E402
 from lda_l2 import qnet_distribution as DS  # noqa: E402
 from lda_l2 import qnet_repeater as RP  # noqa: E402
 from lda_l2 import qnet_source as SR  # noqa: E402
+from lda_l2 import qnet_swap as SW  # noqa: E402
 from lda_l2 import qnet_system as QS  # noqa: E402
 from lda_l2 import qnet_transducer as TR  # noqa: E402
 
@@ -190,6 +191,7 @@ def main() -> int:  # noqa: C901
                "lda_l2/qnet_source.py", "lda_l2/qnet_repeater.py",
                "lda_l2/qnet_transducer.py", "lda_l2/qnet_classical.py",
                "lda_l2/qnet_system.py",
+               "lda_l2/qnet_swap.py",
                "lda_harness/_batch_j5_numeric.py"):
         p = os.path.join(_HERE, fn)
         if os.path.exists(p):
@@ -211,6 +213,68 @@ def main() -> int:  # noqa: C901
     check("F3 总装报告净增 0 且有可查理由",
           _rep["net_new_anchors_M4"] == 0 and "negative_evidence" in _rep["net_new_reason"],
           "reason=%s" % _rep["net_new_reason"][:40])
+
+    print("\n[G] 纠缠交换递推与纯化（v0.9.292 · 订正组合律）")
+    # 🔴 改前：`end_to_end_fidelity` 把 N 段链保真度写成 **F_seg^N**（对保真度取幂），
+    #    并称其为「朴素上界」。两处错：① 理想交换组合的是 **Werner 参数**（p_out=p₁p₂），
+    #    不是保真度；② F_seg^N 恒**小于**正确值 ⇒ 是**下界**，方向说反。
+    sc_sw = SW.selfcheck_qnet_swap()
+    check("G1 qnet_swap 全部自检通过（对照支路 + 恒等式 + 解析根）",
+          not [k for k, v in sc_sw.items() if not v],
+          "fail=%s" % [k for k, v in sc_sw.items() if not v])
+    _sweep = SW.segments_sweep()
+    _fs = [x["fidelity"] for x in _sweep]
+    check("G2 🔴 **分段不改保真**：N=1…100 七档端到端 F 逐位相同（相对 1e-15）",
+          all(abs(f - _fs[0]) <= 1e-15 for f in _fs),
+          "F=%.12f 全同" % _fs[0] if all(abs(f - _fs[0]) <= 1e-15 for f in _fs)
+          else str(["%.10f" % f for f in _fs]))
+    _bud = QS.end_to_end_fidelity()
+    _seg_len = QS.DEFAULT_LINK_LENGTH_M / QS.DEFAULT_SEGMENTS
+    _expect = SW.swap_chain_fidelity(DS.werner_parameter(_seg_len), QS.DEFAULT_SEGMENTS)
+    check("G3 卡/总装同源：relay_chain_fidelity ≡ qnet_swap.swap_chain_fidelity（逐位）",
+          abs(_bud["relay_chain_fidelity"] - _expect) <= 1e-15,
+          "got=%.12f want=%.12f" % (_bud["relay_chain_fidelity"], _expect))
+    check("G4 旧口径是**下界**（naive < werner）∧ 比值 == 解析预测 F_seg^N / F(p^N)",
+          _bud["relay_chain_fidelity_naive"] < _bud["relay_chain_fidelity"]
+          and abs(_bud["relay_chain_fidelity_naive"] / _bud["relay_chain_fidelity"]
+                  - (CH.link_fidelity(_seg_len) ** QS.DEFAULT_SEGMENTS)
+                  / _bud["relay_chain_fidelity"]) <= 1e-15,
+          "naive/werner=%.6f（≈1/7.05）"
+          % (_bud["relay_chain_fidelity_naive"] / _bud["relay_chain_fidelity"]))
+    check("G5 对照支路三条：n=1 恒等 ∧ p=1 ⇒ 1（任意 N）∧ p=0 ⇒ 0（不能无中生有）",
+          abs(SW.werner_swap_chain(0.7, 1) - 0.7) <= 1e-18
+          and all(abs(SW.werner_swap_chain(1.0, n) - 1.0) <= 1e-18 for n in (1, 2, 5, 20))
+          and SW.werner_swap_chain(0.0, 5) == 0.0)
+    _d1, _d0 = SW.dejmps_once(1.0), SW.dejmps_once(0.0)
+    check("G6 DEJMPS 对照支路：p=1 ⇒ p'=1 且 P_succ=1 ∧ p=0 ⇒ p' **恰为 1/6**（解析）",
+          abs(_d1["p_out"] - 1.0) <= 1e-18 and abs(_d1["p_success"] - 1.0) <= 1e-18
+          and abs(_d0["p_out"] - 1.0 / 6.0) <= 1e-15,
+          "p0_out=%.15f" % _d0["p_out"])
+    _lo, _hi = SW.dejmps_thresholds()
+    check("G7 纯化临界点：两根代回 9p²−7p+1 == 0 ∧ F(p_high) ≈ 0.6919（文献口径独立校验）",
+          abs(9 * _lo * _lo - 7 * _lo + 1) <= 1e-15
+          and abs(9 * _hi * _hi - 7 * _hi + 1) <= 1e-15
+          and abs(SW.fidelity_from_werner(_hi) - 0.6919) < 5e-4,
+          "p_low=%.6f p_high=%.6f F_high=%.5f"
+          % (_lo, _hi, SW.fidelity_from_werner(_hi)))
+    check("G8 🔴「p'>p」≠「纯化有用」：p=0.3 ⇒ p'<p（降低）；p=0.01 ⇒ p'>p 但 F_out<0.5 ⇒ 二者均判无用",
+          SW.dejmps_once(0.3)["p_out"] < 0.3
+          and SW.dejmps_once(0.01)["p_out"] > 0.01
+          and SW.dejmps_once(0.01)["fidelity_out"] < 0.5
+          and not SW.dejmps_is_useful(0.3) and not SW.dejmps_is_useful(0.01),
+          "p0.3_out=%.4f p0.01_out=%.4f F_out=%.4f"
+          % (SW.dejmps_once(0.3)["p_out"], SW.dejmps_once(0.01)["p_out"],
+             SW.dejmps_once(0.01)["fidelity_out"]))
+    # G9 反向探针：把 relay_chain_fidelity 换成旧口径值 ⇒ G2 / G3 / G4 三条必红
+    _fake = dict(_bud, relay_chain_fidelity=_bud["relay_chain_fidelity_naive"])
+    _red2 = not all(abs(f - _fake["relay_chain_fidelity"]) <= 1e-15 for f in _fs)
+    _red3 = abs(_fake["relay_chain_fidelity"]
+                - SW.swap_chain_fidelity(DS.werner_parameter(
+                    QS.DEFAULT_LINK_LENGTH_M / QS.DEFAULT_SEGMENTS),
+                    QS.DEFAULT_SEGMENTS)) > 1e-15
+    _red4 = not (_fake["relay_chain_fidelity_naive"] < _fake["relay_chain_fidelity"])
+    check("G9 反向探针：把 relay_chain_fidelity 退回旧口径 ⇒ G2/G3/G4 三条必红",
+          _red2 and _red3 and _red4, "g2=%s g3=%s g4=%s" % (_red2, _red3, _red4))
 
     bad = globals().get("FAIL", 0)
     print("\n" + "=" * 78)

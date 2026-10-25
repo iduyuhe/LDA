@@ -39,8 +39,10 @@ CASE_ID = "LDA-J5 · 量子网络与接口（节点 → 网络）"
 J5_HONEST_NOTE = (
     "本卡为**设计预算**（design budget），所有数值由闭式算术现算，**非流片实测**、"
     "**非 foundry PDK**、**非商用器件数据表**。参数（α/L_depol/波包 σ/时序常数/换能参数/"
-    "抖动 σ_t）为**文献量级的设计示例**；模型为**一阶/解析**近似（端到端保真未含"
-    "纠缠交换递推与纯化协议）。**M4 经典接口净增 0**（三证据否决，如实呈现）。"
+    "抖动 σ_t）为**文献量级的设计示例**；模型为**一阶/解析**近似 —— 端到端保真**已含**"
+    "多级纠缠交换递推（Werner 组合 `p_tot=p_seg^N`）与 DEJMPS 单轮纯化闭式，"
+    "**仍不含**多轮纯化的资源计数、交换失败时序统计与实测标定。"
+    "**M4 经典接口净增 0**（三证据否决，如实呈现）。"
     "不作制造/性能宣称，不报能效/TOPS/fJ-op；不作任何与他人同台比较。"
 )
 
@@ -57,7 +59,10 @@ ANCHORS = {
 #: 逐条缺口状态（**顺序与下方 GAPS 一一对应** · v0.9.286 四值口径）
 #: 字符串型 gaps 不改形状（前端仍按字符串渲染），状态走这个并行列表。
 GAPS_STATUS = [
-    "未闭合（分发保真）",
+    "已闭合（v0.9.292 · 单跳闭式 B519 + **多级纠缠交换递推**（Werner 组合 p_tot=p_seg^N）已建；"
+    "并订正旧口径「F_seg^N 是上界」的方向错误（实为下界，默认档小 7.05 倍）；"
+    "🔴 由此得诚实结论：**分段只提吞吐、不提保真**，提保真只能靠纯化（DEJMPS 单轮闭式，"
+    "p>0.5892 才既提升又仍可用）；仍不含多轮纯化资源计数与实测）",
     "未闭合（源不可分辨性）",
     "未闭合（中继吞吐）",
     "未闭合（跨频段换能）",
@@ -79,8 +84,10 @@ M4_NEGATIVE_EVIDENCE = [
 ]
 
 SELFCHECK_MODULES = ["qnet_channel", "qnet_distribution", "qnet_source", "qnet_repeater",
-                     "qnet_transducer", "qnet_classical", "qnet_system"]
-MODULE_SELFCHECKS_TOTAL = 14 + 10 + 8 + 20 + 16 + 14 + 17
+                     "qnet_transducer", "qnet_classical", "qnet_system", "qnet_swap"]
+# 🔴 逐模块自检数（改任一模块的自检条数都必须同步这里 —— 同一事实两处表示）
+#    v0.9.292：qnet_system 17→20（+3 条组合律订正核验）· 新增 qnet_swap 13
+MODULE_SELFCHECKS_TOTAL = 14 + 10 + 8 + 20 + 16 + 14 + 20 + 13
 RENDER_PATH_SMOKE = "run_webui_j5_render_path_smoke.py"
 HEAVY_POST = False
 
@@ -314,7 +321,7 @@ def case_card() -> Dict[str, Any]:
         },
         "selfcheck_modules": SELFCHECK_MODULES,
         "module_selfchecks_total": MODULE_SELFCHECKS_TOTAL,
-        "gate_checks": 66,   # 实跑 `lda/run_j5_qnet_smoke.py` 的 PASS 数（常驻门禁自洽核验）
+        "gate_checks": 75,   # 实跑 `lda/run_j5_qnet_smoke.py` 的 PASS 数（常驻门禁自洽核验）
         "span": {"heavy_post": HEAVY_POST, "render_path_smoke": RENDER_PATH_SMOKE,
                  "auth": "免登录（只读 GET）"},
     }

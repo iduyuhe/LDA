@@ -1906,13 +1906,16 @@ CORE_SMOKES: List[str] = [
     # J5 量子网络与接口征程门禁（v0.9.238 起 · 四锚 B519/B520/B521/B522 + 七能力层）：
     #   A 锚项 11×4（四锚遍历：DEFS tol 内 · 残差 >0 非恒等 · 判据 D 单调 + 比值形态趋向标称阶
     #   · 动态范围 ≥1e4 · 反自证桩 · 防回退候选键 · 🔴 反向探针打**离散参数 n** · 纪律佐证 · n=0 必抛）
-    #   + B 能力层 7（`qnet_channel` 14 + `qnet_distribution` 10 + `qnet_source` 8 + `qnet_repeater` 20
-    #     + `qnet_transducer` 16 + `qnet_classical` 14 + `qnet_system` 17 自检）
+    #   + B 能力层 8（`qnet_channel` 14 + `qnet_distribution` 10 + `qnet_source` 8 + `qnet_repeater` 20
+    #     + `qnet_transducer` 16 + `qnet_classical` 14 + `qnet_system` 20 + `qnet_swap` 13 自检）
     #   + C 跨模块同源 8（分发/信道 ≡ B519 golden 逐位 · 源 ≡ B520 · 中继 ≡ B521 · 换能 ≡ B522 ·
     #     经典接口 ≡ `qs_m2.cpmg_filter` 复用对拍 · 总装六段 ≡ 六能力层）
     #   + D 三表/默认档一致 3 + E 零量子 SDK 机械核 1
-    #   + F M4 净增 0 登记核验 3（避让表 3 条 · 负结果取证 3 条 · 总装报告净增 0 与理由可查）。
-    #   **66 判据**。numpy 可用 ⇒ 入 core；timeout 默认 300s 留足余量（实测 ~0.9s）。
+    #   + F M4 净增 0 登记核验 3（避让表 3 条 · 负结果取证 3 条 · 总装报告净增 0 与理由可查）
+    #   + G 纠缠交换递推与纯化 9（v0.9.292 订正组合律：自检 13 项 · **分段不改保真**七档逐位同值 ·
+    #     总装同源 · 旧口径是下界且比值 == 解析预测 · 对照支路三条 · DEJMPS p=1/p=0 两条 ·
+    #     临界点代回 9p²−7p+1==0 且 F≈0.6919 · 「p'>p」≠「纯化有用」· 反向探针）。
+    #   **75 判据**。numpy 可用 ⇒ 入 core；timeout 默认 300s 留足余量（实测 ~1.0s）。
     "run_j5_qnet_smoke.py",
     # v0.9.242（J5 M4）：J5 量子网络与接口**链路级** WebUI 面板渲染路径门禁
     #   （`sec-j5` 三入口面 + `GET /api/j5_qnet` + 六段跨源逐值对拍 + M4 净增 0 诚实呈现）。

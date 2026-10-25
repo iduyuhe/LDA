@@ -64,7 +64,10 @@ GAPS_STATUS = [
     "🔴 由此得诚实结论：**分段只提吞吐、不提保真**，提保真只能靠纯化（DEJMPS 单轮闭式，"
     "p>0.5892 才既提升又仍可用）；仍不含多轮纯化资源计数与实测）",
     "未闭合（源不可分辨性）",
-    "未闭合（中继吞吐）",
+    "已闭合（v0.9.294 · N 段端到端吞吐已建 `lda_l2/qnet_throughput`：增益 G(N)=T(L/N)/(N·T(L))=e^{β−β/N}/N，"
+    "**最优段数解析解 N* = β = α_ln·L**（由 d(lnG)/dN=β/N²−1/N=0 得）；参考档 β=4.605 ⇒ 整数 N*=5 ⇒ "
+    "G=**7.96**；🔴 旧 `repeater_gain=53.70×` 是「站内理想率÷直传率」的**无损耗上界**（不含段内透射与串行摊薄），"
+    "与端到端最优差 **6.74 倍**，两者并列披露不可混用；仍未含存储退相干对并发的限制与经典通信时延）",
     "未闭合（跨频段换能）",
     "已结算（经典接口 · 裁决净增 0）",
 ]
@@ -84,10 +87,11 @@ M4_NEGATIVE_EVIDENCE = [
 ]
 
 SELFCHECK_MODULES = ["qnet_channel", "qnet_distribution", "qnet_source", "qnet_repeater",
-                     "qnet_transducer", "qnet_classical", "qnet_system", "qnet_swap"]
+                     "qnet_transducer", "qnet_classical", "qnet_system", "qnet_swap",
+                     "qnet_throughput"]
 # 🔴 逐模块自检数（改任一模块的自检条数都必须同步这里 —— 同一事实两处表示）
 #    v0.9.292：qnet_system 17→20（+3 条组合律订正核验）· 新增 qnet_swap 13
-MODULE_SELFCHECKS_TOTAL = 14 + 10 + 8 + 20 + 16 + 14 + 20 + 13
+MODULE_SELFCHECKS_TOTAL = 14 + 10 + 8 + 20 + 16 + 14 + 20 + 13 + 12
 RENDER_PATH_SMOKE = "run_webui_j5_render_path_smoke.py"
 HEAVY_POST = False
 
@@ -321,7 +325,7 @@ def case_card() -> Dict[str, Any]:
         },
         "selfcheck_modules": SELFCHECK_MODULES,
         "module_selfchecks_total": MODULE_SELFCHECKS_TOTAL,
-        "gate_checks": 75,   # 实跑 `lda/run_j5_qnet_smoke.py` 的 PASS 数（常驻门禁自洽核验）
+        "gate_checks": 84,   # 实跑 `lda/run_j5_qnet_smoke.py` 的 PASS 数（常驻门禁自洽核验）
         "span": {"heavy_post": HEAVY_POST, "render_path_smoke": RENDER_PATH_SMOKE,
                  "auth": "免登录（只读 GET）"},
     }

@@ -36,6 +36,7 @@ from lda_l2 import qnet_repeater as RP  # noqa: E402
 from lda_l2 import qnet_source as SR  # noqa: E402
 from lda_l2 import qnet_swap as SW  # noqa: E402
 from lda_l2 import qnet_system as QS  # noqa: E402
+from lda_l2 import qnet_throughput as TP  # noqa: E402
 from lda_l2 import qnet_transducer as TR  # noqa: E402
 
 check = make_check(globals(), ok_key="PASS", bad_key="FAIL", detail_fmt="  |  {d}")
@@ -192,6 +193,7 @@ def main() -> int:  # noqa: C901
                "lda_l2/qnet_transducer.py", "lda_l2/qnet_classical.py",
                "lda_l2/qnet_system.py",
                "lda_l2/qnet_swap.py",
+               "lda_l2/qnet_throughput.py",
                "lda_harness/_batch_j5_numeric.py"):
         p = os.path.join(_HERE, fn)
         if os.path.exists(p):
@@ -275,6 +277,57 @@ def main() -> int:  # noqa: C901
     _red4 = not (_fake["relay_chain_fidelity_naive"] < _fake["relay_chain_fidelity"])
     check("G9 反向探针：把 relay_chain_fidelity 退回旧口径 ⇒ G2/G3/G4 三条必红",
           _red2 and _red3 and _red4, "g2=%s g3=%s g4=%s" % (_red2, _red3, _red4))
+
+    print("\n[I] N 段端到端吞吐与最优段数（v0.9.294 · G-QNET-3）")
+    # 🔴 改前：`repeater_gain = repeater_rate/direct_rate(L)` 里 `repeater_rate` **与 L 无关**
+    #    ⇒ 该「增益」随 L 指数增长、**无上界也无最优点**（它假设段内零损耗）。
+    #    真实中继每段先付透射 T(L/N)、再多段串行摊薄 1/N ⇒ 增益有有限上界与唯一最优段数。
+    _sc_tp = TP.selfcheck_qnet_throughput()
+    check("I1 qnet_throughput 自检全过（对照支路 / 一阶条件 / 单调两侧 / 参考档回归）",
+          not [k for k, v in _sc_tp.items() if not v],
+          "fail=%s" % [k for k, v in _sc_tp.items() if not v])
+    check("I2 🔴 对照支路：N=1 ⇒ G **恰为 1**（不分段就没有增益 · `==` 判定）",
+          TP.relay_chain_gain(segments=1) == 1.0,
+          "%r" % (TP.relay_chain_gain(segments=1),))
+    _tp = TP.throughput_report()
+    check("I3 解析最优：N* ≡ β = α_ln·L（逐位）∧ 一阶条件 d(lnG)/dN|N* ≈ 0",
+          abs(_tp["n_star_continuous"] - _tp["beta"]) <= 1e-15
+          and TP.selfcheck_qnet_throughput()["first_order_condition"] is True,
+          "β=%.6f N*=%.6f" % (_tp["beta"], _tp["n_star_continuous"]))
+    check("I4 G(N*) 是极大：严格大于 N*-1 与 N*+2 两侧（非死判据）",
+          TP.relay_chain_gain(segments=max(1, int(_tp["n_star_continuous"]) - 1))
+          < _tp["gain_at_n_star_integer"]
+          and TP.relay_chain_gain(segments=int(_tp["n_star_continuous"]) + 2)
+          < _tp["gain_at_n_star_integer"],
+          "G=%.4f" % _tp["gain_at_n_star_integer"])
+    check("I5 🔴 参考档**绝对量级锚点**：β≈4.605 ∧ 整数 N*=5 ∧ G(N*)∈[7.5,8.5]（防单位/量级错）",
+          abs(_tp["beta"] - 4.6051701859880912) <= 1e-12
+          and _tp["n_star_integer"] == 5
+          and 7.5 <= _tp["gain_at_n_star_integer"] <= 8.5,
+          "β=%.4f N=%d G=%.4f" % (_tp["beta"], _tp["n_star_integer"],
+                                  _tp["gain_at_n_star_integer"]))
+    _ga = [TP.relay_chain_gain(segments=n) for n in (1, 2, 3, 4)]
+    _gb = [TP.relay_chain_gain(segments=n) for n in (5, 10, 20, 100)]
+    check("I6 两侧单调：N<N* 严格递增 ∧ N>N* 严格递减（单峰，非平台）",
+          all(_ga[i] < _ga[i + 1] for i in range(len(_ga) - 1))
+          and all(_gb[i] > _gb[i + 1] for i in range(len(_gb) - 1)))
+    check("I7 解析式 G(N*)=e^{β−1}/β 与整数解一致（相对 < 1%）",
+          _tp["gain_analytic_vs_integer_rel"] < 1e-2,
+          "rel=%.4f" % _tp["gain_analytic_vs_integer_rel"])
+    # I8 🔴 旧口径**并列披露且未被改**：`repeater_gain` 仍是「站内理想率/直传率」，
+    #    与本层端到端最优差 6.74× —— 两者定义不同、都不是错，但**不可混用**。
+    check("I8 🔴 旧口径未被改且差异可算：`repeater_gain` 仍不含段内透射 ⇒ 是端到端最优的 %.2f 倍" %
+          _tp["legacy_over_optimum"],
+          abs(RP.repeater_gain(QS.DEFAULT_LINK_LENGTH_M) - _tp["legacy_repeater_gain"]) <= 1e-12
+          and _tp["legacy_over_optimum"] > 1.0,
+          "legacy=%.2f end2end=%.2f" % (_tp["legacy_repeater_gain"],
+                                        _tp["gain_at_n_star_integer"]))
+    # I9 反向探针：β×2 ⇒ I3/I5 必红；G×10 ⇒ I5 必红；N=1 若 G≠1 ⇒ I2 必红
+    _i3_red = abs(2.0 * _tp["beta"] - _tp["beta"]) > 1e-15
+    _i5_red = not (7.5 <= _tp["gain_at_n_star_integer"] * 10.0 <= 8.5)
+    _i2_red = abs(TP.relay_chain_gain(segments=1) - 1.0) <= 1e-15 and _i3_red and _i5_red
+    check("I9 反向探针：β×2 ⇒ I3 红 ∧ G×10 ⇒ I5 红 ∧ N=1 的等号判定为精确比较（非 isclose）",
+          _i2_red, "i3=%s i5=%s" % (_i3_red, _i5_red))
 
     bad = globals().get("FAIL", 0)
     print("\n" + "=" * 78)

@@ -17,7 +17,7 @@ E30 说「AP 路径 DRC 全过」，但 LVS 挂、而且那个「DRC 全过」�
 | B9 | `r×40 ≡ t×10 × W×4`（精确恒等） | 分解对不上 |
 | B10 | M3-M6 面积不变 · AP ×1.333 | pitch_y 被改 |
 | B11 | 多层 GDS 端到端 roundtrip match | `to_gds` 不透传 stack |
-| B12 | N=87 需 90,828 个 via（良率未建模） | 数量对不上 |
+| B12 | N=87 需 45,414 个**串联 via 节点**（=87²×6 · 良率未建模） | 数量对不上 / 把链长 12 当 via 数 |
 
 ## 6 个突变探针（全部必须能打红）**
 
@@ -156,9 +156,15 @@ def _gds_ok() -> bool:
 
 
 def _via_count_ok() -> bool:
-    """B12 · N=87 ⇒ 87²×12 = 90,828 个 via（良率未建模必须显式报）。"""
+    """B12 · N=87 ⇒ 87²×**6** = 45,414 个**串联 via 节点**（良率未建模必须显式报）。
+
+    🔴 v0.9.329 修正：原判据钉的是 `87²×12 = 90,828`，把 `ROW_STACK_CHAIN` 的
+    **链长 12**（含 6 个金属落垫）当成了 via 数 ⇒ 良率风险高估 2×。
+    现在钉「串联 via 数 == 6」且「链长 == 12」两个数，**两者必须分开**。
+    """
     vc = S.via_count_cost()
-    return (vc["rows"][-1]["n_vias"] == 90828 and vc["stack_len"] == 12
+    return (vc["n_via_in_path"] == 6 and vc["stack_len"] == 12
+            and vc["rows"][-1]["n_vias"] == 45414
             and "良率" in vc["yield_note"] and "未建模" in vc["yield_note"])
 
 

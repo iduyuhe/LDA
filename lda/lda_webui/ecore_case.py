@@ -1610,9 +1610,9 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "milestones": len(MILESTONES),
             "gate_checks": GATE_CHECKS_TOTAL,
             "probe_checks": PROBE_CHECKS_TOTAL,
-            "modules": 36,               # ecore 包内模块数（能力模块 35 + 能力清单自身 · 不含 __init__.py）
-            "capability_modules": 35,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
-            "entrypoints": 34,           # 常驻门禁数（lda/run_ecore_*_smoke.py：E1–E9 八道 + 能力守护 +
+            "modules": 37,               # ecore 包内模块数（能力模块 36 + 能力清单自身 · 不含 __init__.py）
+            "capability_modules": 36,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
+            "entrypoints": 35,           # 常驻门禁数（lda/run_ecore_*_smoke.py：E1–E9 八道 + 能力守护 +
                                          #   案例卡 + 红线 + E11 两道 + E12…E20 九道）
                                          # 🔴 这三个数由 `run_ecore_case_smoke` B6c 与
                                          #   **文件系统 + manifest 独立对拍**（此前是硬编码对硬编码）。

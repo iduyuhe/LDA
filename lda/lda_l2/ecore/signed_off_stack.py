@@ -78,10 +78,11 @@ E30 的 AP 强制 1.60 宽线）。
 | 每单元 via stack 面积 | 0.40×0.40 = 0.16 µm² |
 | 占单元面积 | 2.08%（AP · 单元 7.68 µm²）/ 2.78%（M3-M6 · 单元 5.76 µm²） |
 | N=12 的 via 总数 | 144 × 12 = **1,728** |
-| **N=87 的 via 总数** | 7,569 × 12 = **90,828** |
+| **N=87 的串联 via 节点** | 7,569 × **6** = **45,414**（链长 12 含 6 个金属落垫） |
 | 阵列面积（N=87 · `pitch_y` 3.20） | 207.6 × 276.9 µm = **0.0575 mm²** |
 
-🔴 **90,828 个 via 的良率未建模** —— 每个 via 1 ppm 失效率即整体 ~8.7% 失效。
+🔴 **45,414 个串联 via 节点的良率未建模** —— 每个 1 ppm 即整体 ~4.5% 失效。
+（v0.9.329 修正：原写 90,828 / 8.7% 是把链长 12 当成 via 数，高估 2×。）
 这是本段**最大的未建模风险**，不能因为 DRC/LVS 过了就当它不存在。
 
 ## 诚实边界
@@ -362,9 +363,23 @@ def best_layer() -> Dict:
 # ⑥ via 数量与良率风险（未建模项必须显式报）
 # ---------------------------------------------------------------------------
 def via_count_cost(n_list: Optional[List[int]] = None) -> Dict:
-    """栈长 12（AP）⇒ 每单元 12 个 via。这是**真实的版图代价**，不能只报 r×40。"""
+    """漏极通路的 **串联 via 数** × 单元数（良率风险必须显式报）。
+
+    🔴 **本函数 v0.9.329 修正过一个口径错**（E33 串流程时抓到）：
+    第一版写 `n_vias = n² × len(ROW_STACK_CHAIN)` = `n² × 12`，但 `ROW_STACK_CHAIN`
+    的 12 项里**只有 6 项是 via**（VIA1..VIA5 + VIA_AP），另外 6 项是**金属落垫**
+    （M1..M6）。把金属算成 via ⇒ 良率风险**高估 2 倍**（9.1% vs 实际 4.5%）。
+
+    ⇒ 现在区分两个量：
+      · `n_via_in_path` = 串联 via 数 = **6**（漏极 → AP 行线，任一失效即通路失效）
+      · `n_via_total`   = 串联数 × 单元数（良率口径）
+      · `stack_len`     = 链长 **12**（含金属落垫，**不是 via 数**）
+    """
     lim = _lim()
+    st10 = EL.get_estack("ecmos10")
     stack_len = len(LY.ROW_STACK_CHAIN)
+    n_via_in_path = sum(1 for nm in LY.ROW_STACK_CHAIN
+                        if st10.layers[nm].kind == "via")
     pad = max(0.40, lim["via_ap_size_um"] + 2.0 * lim["via_ap_enclosure_um"])  # 0.80（M6 落垫）
     cell_area_ap = (LY.DEFAULT_CELL_PARAMS["pitch_x_um"]
                     * (max(BASE_WIDTH_UM, lim["ap_min_width_um"])
@@ -373,20 +388,25 @@ def via_count_cost(n_list: Optional[List[int]] = None) -> Dict:
     for n in (n_list or [12, 29, 87]):
         rows.append({
             "n": int(n), "n_cells": int(n) * int(n),
-            "n_vias": int(n) * int(n) * stack_len,
+            # 🔴 `n_vias` 是**串联节点总数**（良率口径），不是链长 × 单元数
+            "n_vias": int(n) * int(n) * n_via_in_path,
+            "n_vias_in_path": n_via_in_path,
             "stack_area_um2": (int(n) * int(n)) * BASE_WIDTH_UM * BASE_WIDTH_UM,
         })
     return {
         "stack_len": stack_len,
+        "n_via_in_path": n_via_in_path,
         "pad_side_um": pad,
         "stack_area_frac": (BASE_WIDTH_UM ** 2) / cell_area_ap,
         "rows": rows,
-        "yield_note": ("🔴 %d 个 via（N=87）的**良率未建模**：每个 via 1 ppm 失效"
-                       "即整体 ~%.1f%% 失效。DRC/LVS 过 ≠ 可制造" % (rows[-1]["n_vias"],
-                                                                     rows[-1]["n_vias"] * 1e-6 * 100)),
-        "verdict": ("🔴 N=87 需 **%s** 个 via（栈长 %d）· 栈面积占单元 %.2f%% · "
-                    "**良率是拒绝清单外的最大未知**"
-                    % (format(rows[-1]["n_vias"], ","), stack_len,
+        "yield_note": ("🔴 漏极通路 **串联 %d 个 via** × %s 单元 = **%s 个串联节点**（N=87）"
+                       "⇒ 1 ppm/节点即整体 ~%.2f%% 失效。**良率未建模**；DRC/LVS 过 ≠ 可制造"
+                       % (n_via_in_path, format(rows[-1]["n_cells"], ","),
+                          format(rows[-1]["n_vias"], ","),
+                          rows[-1]["n_vias"] * 1e-6 * 100)),
+        "verdict": ("🔴 N=87 需 **串联 %d 个 via/单元**（链长 %d 含金属落垫）· 共 **%s 个串联节点** · "
+                    "栈面积占单元 %.2f%% · **良率是拒绝清单外的最大未知**"
+                    % (n_via_in_path, stack_len, format(rows[-1]["n_vias"], ","),
                        (BASE_WIDTH_UM ** 2) / cell_area_ap * 100)),
         "tier": E.OUTPUT_TIER,
     }
@@ -518,10 +538,16 @@ def signed_off_stack_self_check(verbose: bool = False) -> bool:
 
     # ⑫ via 数量代价必须显式
     vc = via_count_cost()
-    ok &= chk("⑫ 🔴 N=87 需 **%s** 个 via（栈长 %d）· 良率未建模（1 ppm ⇒ ~%.1f%% 失效）"
-              % (format(vc["rows"][-1]["n_vias"], ","), vc["stack_len"],
+    # 🔴 判据必须钉**串联 via 数 = 6**（不是链长 12）：链里有 6 个金属落垫，
+    #   把它们算成 via 会让良率风险高估 2×（v0.9.329 修正）
+    ok &= chk("⑫ 🔴 N=87 需 **串联 %d 个 via/单元**（链长 %d 含金属落垫）⇒ 共 %s 个串联节点 · "
+              "良率未建模（1 ppm ⇒ ~%.2f%%）"
+              % (vc["n_via_in_path"], vc["stack_len"],
+                 format(vc["rows"][-1]["n_vias"], ","),
                  vc["rows"][-1]["n_vias"] * 1e-6 * 100),
-              vc["rows"][-1]["n_vias"] == 87 * 87 * 12)
+              vc["n_via_in_path"] == 6
+              and vc["rows"][-1]["n_vias"] == 87 * 87 * 6
+              and vc["stack_len"] == 12)
 
     # ⑬ 恒标 MODEL_ESTIMATE
     ok &= chk("⑬ 全部输出恒标 `MODEL_ESTIMATE`",
@@ -545,7 +571,7 @@ SIGNED_OFF_STACK_DISCLOSURE = {
                     "④ 行线端帽（AP 最外侧 via 差 0.025）· ⑤ `to_gds` 透传（否则 stack 静默丢失）",
     "what_it_does_not_mean": "DRC/LVS 过只说明**几何自洽**，不是可制造性（无 CMP/OPC/天线/密度规则）；"
                              "N=87 是一维规模律上界，未做电路仿真；"
-                             "90,828 个 via 的良率**完全未建模**",
+                             "45,414 个串联 via 节点的良率**完全未建模**",
     "tier": E.OUTPUT_TIER,
 }
 

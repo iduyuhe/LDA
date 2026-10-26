@@ -418,6 +418,12 @@ ECORE_CAPABILITY_MANIFEST = [
         "symbols": ["Grid", "near_pairs", "brute_pairs", "PARITY_CASES", "parity_matrix", "parity_summary", "SCALE_NS", "scale_table", "scale_summary", "spatial_self_check", "SPATIAL_DISCLOSURE"],
         "introduced_by": "D-207 (E32)", "guard": "run_ecore_e32_smoke.py",
     },
+    {
+        "capability": "**端到端流程编排**（8 Stage：device→scale→stack→layout→drc→lvs→gds→report · fail-fast · **反向完备**「少一步不算跑通」）· 🔴 **每数字带 basis/claimable**（能效双口径：实测锚 ✅ ⟷ 自算下界 ❌；面积双口径：同 N 代价 ✅ ⟷ 总比含规模 ❌）· **可复现对拍**（两次跑逐位一致）· **fail 与未达标分离**（4 场景机核）· **N=87 全链**（143,985 元素 · 5.8MB GDS · roundtrip）· 人可读签核报告渲染",
+        "module": "lda_l2.ecore.soc_flow",
+        "symbols": ["STAGES", "STAGE_ROLE", "SPEC_DEFAULT", "MIN_N", "G_READ_TYP_S", "stage_device", "stage_scale", "stage_stack", "stage_layout", "stage_drc", "stage_lvs", "stage_gds", "stage_report", "run_flow", "report_text", "flow_parity", "fail_semantics_check", "soc_flow_self_check", "SOC_FLOW_DISCLOSURE"],
+        "introduced_by": "D-208 (E33)", "guard": "run_ecore_e33_smoke.py",
+    },
 ]
 
 
@@ -459,7 +465,7 @@ def manifest_check() -> dict:
 
 
 ECORE_CAPABILITY_DISCLOSURE = {
-    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19 · E20 扩面至 e1~e20 · E21 扩面至 e1~e21 · E22 扩面至 e1~e22 · E23 扩面至 e1~e23 · E24 扩面至 e1~e24 · E25 扩面至 e1~e25 · E26 扩面至 e1~e26 · E27 扩面至 e1~e27 · E28 扩面至 e1~e28 · E29 扩面至 e1~e29 · E30 扩面至 e1~e30 · E31 扩面至 e1~e31 · E32 扩面至 e1~e32",
+    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19 · E20 扩面至 e1~e20 · E21 扩面至 e1~e21 · E22 扩面至 e1~e22 · E23 扩面至 e1~e23 · E24 扩面至 e1~e24 · E25 扩面至 e1~e25 · E26 扩面至 e1~e26 · E27 扩面至 e1~e27 · E28 扩面至 e1~e28 · E29 扩面至 e1~e29 · E30 扩面至 e1~e30 · E31 扩面至 e1~e31 · E32 扩面至 e1~e32 · E33 扩面至 e1~e33",
     "e5_scope": "把 E1~E9 逼出的平台能力固化为机器可读清单（单向真源）+ 常驻门禁（正向完备 + 反向完备 + 披露一致 + 诚实边界）",
     "hardening_semantics": "能力面必须被门禁守着：任一模模块/符号缺失、隐身模块出现、或注入 fabricated 指标 ⇒ 门禁必红",
     "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"

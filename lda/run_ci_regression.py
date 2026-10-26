@@ -1471,6 +1471,11 @@ CORE_SMOKES: List[str] = [
     # E32 空间索引门禁（D-207）：DRC/LVS 从 O(N⁴) 降到 N^2.35 ⇒ **N=87 从 ~7h 到 4.1s**；
     #   守「索引只筛候选、判定不变」—— 9 案例（含 5 REJECT）新旧逐条一致 + 超集性机核。
     "run_ecore_e32_smoke.py",
+    # E33 端到端流程编排门禁（D-208）：**从规格到 GDS 第一次串成一条链** ——
+    #   8 Stage fail-fast + 反向完备 + 每数字带 basis/claimable + 可复现对拍。
+    #   守三类口径分离：能效（实测锚 ✅ / 自算下界 ❌）· 面积（同 N 代价 ✅ / 总比 ❌）·
+    #   via（串联 6 ✅ / 链长 12 ❌ —— E31 曾把链长当 via 数，良率高估 2×）。
+    "run_ecore_e33_smoke.py",
     "run_webui_entry_smoke.py",
     # 🔴 v0.9.213 光子计算 SoC 案例卡（/api/soc_demo · #sec-soc）跨源一致性 + 前端取值路径门禁：
     #   卡内 WDM/TDM 杠杆常量 ≡ lda_l2 真源（soc_wdm/soc_tdm）逐位同源 + 反向探针（改真源必红）；
@@ -3170,6 +3175,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e31_smoke.py": 300.0,
     # E32 空间索引门禁（D-207）· 实测 ~9s（含 N=87 的 143,985 元素 DRC+LVS）
     "run_ecore_e32_smoke.py": 300.0,
+    # E33 流程编排门禁（D-208）· 实测 ~23.6s（含 N=87 全链：几何+DRC+LVS+5.8MB GDS）
+    "run_ecore_e33_smoke.py": 300.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     # 🔴 v0.9.186：新增「标准 JSON 出口」门禁（`run_webui_json_hard_smoke.py`,
     #   13 判据 + 4 道突变探针；因浏览器 JSON.parse 崩于 `-Infinity` 而立）。

@@ -41,7 +41,6 @@ from lda_l2 import qnet_throughput as TP  # noqa: E402
 from lda_l2 import qnet_indistinguishability as QI  # noqa: E402
 from lda_l2 import qnet_thermal_noise as TN  # noqa: E402
 from lda_l2 import qnet_transducer as TR  # noqa: E402
-from lda_l2 import qnet_transducer as TR  # noqa: E402
 
 check = make_check(globals(), ok_key="PASS", bad_key="FAIL", detail_fmt="  |  {d}")
 

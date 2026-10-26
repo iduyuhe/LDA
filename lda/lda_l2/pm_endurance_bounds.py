@@ -375,8 +375,9 @@ def run_selfchecks(verbose: bool = True) -> Tuple[int, int, List[str]]:
     rest_after = bp["rest_min"] - nn * d0 * d0
     eps_after = math.sqrt(max(nn * d0 * d0, 0.0) + bp["eps_write"] ** 2 + bp["eps_read"] ** 2)
     chk("⑤ 反解回代：N_max 处 ε_tot = %.12f ≡ ε_bud = %.12f（|Δ| = %.1e）"
-        % (eps_after, bp["eps_bud"], abs(eps_after - bp["eps_bud"])),
-        abs(eps_after - bp["eps_bud"]) < 1e-12)
+        "· 且循环项已吃满剩余预算 rest_after = %.1e"
+        % (eps_after, bp["eps_bud"], abs(eps_after - bp["eps_bud"]), rest_after),
+        abs(eps_after - bp["eps_bud"]) < 1e-12 and abs(rest_after) < 1e-12)
 
     # ⑥ 0 失效样本量闭式（三档已知值 + 二项夹逼）
     ss = {k: zero_failure_sample_size(*k) for k in ((0.90, 0.90), (0.95, 0.90), (0.90, 0.50))}

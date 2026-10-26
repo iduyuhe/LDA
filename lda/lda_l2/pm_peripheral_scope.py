@@ -221,7 +221,6 @@ def p_min_law(mat: str = "GST", n_levels: Optional[int] = None, *,
     """
     from lda_l2 import pm_m4 as M4
 
-    rf = None
     f = M4.F_READ_HZ_DEFAULT if f_read_hz is None else float(f_read_hz)
     rows: List[Dict[str, Any]] = []
     for r in r_values:

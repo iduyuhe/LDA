@@ -505,8 +505,6 @@ def run_selfchecks(verbose: bool = True) -> Tuple[int, int, List[str]]:
     chk("① 匹配图计数逐值 ==（(d−1)(T+1)+1 节点 · 空间 (d−2)T · 时间 (d−1)T · 边界 2T）",
         ok_counts, " ".join(det1))
 
-    g3 = matching_graph(3, 2)
-
     # ② 缺陷映射是**线性**的（GF(2)）：D(E1 ⊕ E2) = D(E1) ⊕ D(E2)，全对枚举
     rng = random.Random(7)
     cases = []

@@ -196,9 +196,8 @@ def case_card() -> Dict[str, Any]:
     return {
         "case_id": CASE_ID,
         "milestones": list(MILESTONES),
-        "anchors": dict(ANCHORS),
         "gaps": list(GAPS),
-"gaps_status": GAPS_STATUS,
+        "gaps_status": GAPS_STATUS,
         "anchors": ANCHORS,
         "anchors_source": ANCHORS_SOURCE,
         "anchors_note": ANCHORS_NOTE,

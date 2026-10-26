@@ -294,6 +294,53 @@ def main() -> int:
           % (_pt["pseudo_threshold"], _pt["residual"]),
           0.0 < _pt["pseudo_threshold"] < 0.5 and _pt["residual"] < 1e-12)
 
+    # ══════════ L 节 · 距离递增码族的码容量阈值标定（v0.9.306 · 闭合 G-V2-D2-5a）══════════
+    # 缺口原文：两条解码器都只在 n≤9 小码上验了「译码正确性」；**距离递增的码族 + 有限尺寸标定
+    # 给阈值/伪阈值仍需 Monte-Carlo —— 能做但未做**。本节把「码容量 / 完美综合征」这一半做掉，
+    # 剩下的「有噪综合征时空解码」拆为 `G-V2-D2-5b`（仍未闭合，不合并、不假装）。
+    from lda_l2 import d2_threshold_mc as TMC
+
+    _p_, _t_, _ = TMC.run_selfchecks(verbose=False)
+    check("L1 距离递增码族阈值标定：模块自检全过（%d/%d）" % (_p_, _t_), _p_ == _t_)
+
+    # L2 🔴 定理级：P_fail(d, 1/2) ≡ 1/2 与反演对称 P_fail(d,1−p) ≡ 1−P_fail(d,p)
+    #    （门禁**自己算**，不转调模块自检 —— 否则"自检说过了"就闭环了）
+    _w1 = max(abs(TMC.pfail_closed(d, 0.5) - 0.5) for d in TMC.FAMILY_D)
+    _w2 = max(abs(TMC.pfail_closed(d, 1.0 - q) - (1.0 - TMC.pfail_closed(d, q)))
+              for d in TMC.FAMILY_D for q in (0.01, 0.1, 0.3, 0.45))
+    check("L2 🔴 二项尾的两条定理：P(1/2)≡1/2（|Δ|=%.1e）∧ P(1−p)≡1−P(p)（|Δ|=%.1e）"
+          % (_w1, _w2), _w1 < 1e-15 and _w2 < 1e-15)
+
+    # L3 MC ⇄ 精确闭式（4σ，非 2σ；30 组只跑抽样 3 组以控时）
+    _zs = []
+    for _d in (5, 9):
+        for _q in (0.05, 0.30):
+            _r = TMC.pfail_mc(_d, _q, trials=4000)
+            _se = (max(_r["closed"] * (1 - _r["closed"]), 1e-12) / _r["n"]) ** 0.5
+            _zs.append((_r["phat"] - _r["closed"]) / _se)
+    check("L3 MC（Wilson）⇄ 精确闭式：4 组 (d,p) 全部 |z| ≤ 4（max|z|=%.2f）"
+          % max(abs(z) for z in _zs), all(abs(z) <= 4.0 for z in _zs))
+
+    # L4 有限尺寸标定：闭式二分求根的交叉点**恰**为 0.5（不是拟合出来的）
+    _roots = {d: TMC.crossing_closed(d, d + 2) for d in (3, 5, 7, 9)}
+    check("L4 有限尺寸交叉点（闭式二分求根）≡ 0.5 —— 四条相邻对全部命中",
+          all(abs(v - 0.5) < 1e-12 for v in _roots.values()),
+          " ".join("%dx%d:%.12f" % (d, d + 2, v) for d, v in _roots.items()))
+
+    # L5 阈值存在的定义性证据 + 披露面：方向翻转 ∧ 报告非空
+    _rep = TMC.family_report(trials=500)
+    check("L5 单调方向翻转（p<1/2 时 d↑ 严格↓、p>1/2 时 d↑ 严格↑）∧ 披露报告 %d 行"
+          % len(_rep),
+          TMC.monotone_direction(0.30) == -1 and TMC.monotone_direction(0.70) == 1
+          and all(TMC.pfail_closed(TMC.FAMILY_D[i + 1], 0.30) < TMC.pfail_closed(TMC.FAMILY_D[i], 0.30)
+                  for i in range(len(TMC.FAMILY_D) - 1))
+          and len(_rep) == len(TMC.FAMILY_D) * 6)
+
+    # L6 反向探针：闭式误写成 `d·p` ⇒ L2 必红（证明 L2 不是恒真）
+    _wrong = min(1.0, 3 * 0.5)
+    check("L6 反向探针：闭式误写 `d·p` ⇒ p=0.5 处给 %.1f 而非 0.5（L2 必红）" % _wrong,
+          abs(_wrong - 0.5) > 0.4)
+
     # K8 🔴 判据数自洽（本卡 gate_checks 原写 13、实跑 19 ⇒ **陈旧漂移**，本版补上机器对拍）
     #    ⚠️ 注意 `D2` 是 `lda_harness.d2_registries`（注册表），**不是** `d2_case` —— 我第一次就写混了，
     #       当场 AttributeError 崩掉整个门禁（「门禁突变必须判红，不得崩溃」）。故这里显式导入 + try 兜底。

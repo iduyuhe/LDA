@@ -73,6 +73,11 @@ DEAD_CLASSES: Dict[str, str] = {
 #: 一旦变回死函数 ⇒ 说明「接线被拆了」，门禁立即红。
 #: 格式 `module::name`，与 `reachability.dead_key()` 同构。
 MUST_BE_REACHABLE: List[str] = [
+    # v0.9.306：d2 码容量阈值标定的三个入口 —— 它们若变回死函数，说明 L 节判据被拆了
+    #   （「阈值是算出来的不是拟合出来的」这条结论就再无人守）。
+    "lda/lda_l2/d2_threshold_mc.py::pfail_closed",
+    "lda/lda_l2/d2_threshold_mc.py::crossing_closed",
+    "lda/lda_l2/d2_threshold_mc.py::pfail_mc_pair",
     # v0.9.271（A2）：那个偏 1e6 倍的函数 —— 修好后接进 selfchecks ⑦b 与专属门禁，
     #   它若再次变死，就意味着「门禁接线被拆」，1e6 倍错会重新无人看守。
     "lda/lda_qeda/sc_readout_mux.py::resonator_freq_ghz",
@@ -378,6 +383,11 @@ PAIRED_GATE_OVERRIDE: Dict[str, str] = {
     # 只是文件名不叫 `run_ring_loop_smoke.py`。**方向是"补映射"，不是"免检"** ——
     # 若指向的门禁不存在或不 import 该模块，契约仍判红。
     "lda/lda_agent/ring_loop.py": "run_ring_double_verify_smoke.py",
+    # v0.9.306：`d2_threshold_mc` 的成对实现（闭式二项尾 ⇄ Monte-Carlo/二分求根）
+    # 由 **d2 卡自己的门禁**覆盖（L 节 6 条：`from lda_l2 import d2_threshold_mc`），
+    # 不新开 `run_d2_threshold_mc_smoke.py` —— 新开 CORE 成员要走「七处 + 3h 全量重跑」，
+    # 而这条能力的判据本来就属于 d2 卡。**同样不是免检**：门禁必须真 import 该模块。
+    "lda/lda_l2/d2_threshold_mc.py": "run_v2d2_smoke.py",
 }
 
 

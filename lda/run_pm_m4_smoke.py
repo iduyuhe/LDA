@@ -21,6 +21,10 @@
   D4 2.5D GDS 字节 ≠ PIC 阵列 GDS 字节（真装配，非原样复用）
   E1 披露守卫：`disclosure` 全真 ∧ 真实输出**肯定式面**禁词零命中
   F1 缺口台账如实开放：含 `PM-G7`（光学域 drift 无锚）与 `PM-G8`（T1/T2 锁死）
+  T1–T9 外设参数**物理核验与作用域**（v0.9.311 · `PM-G9a` 闭合依据）：响应度硬上限
+     `R ≤ λ/1239.84`（η≤1）∧ 真实链路 `SNR(2R,P/2) ≡ SNR(R,P)` ∧ `P_min·R ≡ u*` ∧
+     **`worst_pair` 是退化标签**（15 对同 SNR，min() 按浮点噪声挑）∧ 方阻作用域
+     `P∝1/R_sheet`(电压驱动) ⇄ `V∝√R_sheet`(恒功率) ∧ 3.3 V 直驱过驱 ≥5×
   G1 🔴 内置快照 schema **逐块 == 仓库报告 JSON**（防「每加一批锚就多一份静默失真」）
 
 突变探针（每条**先证能变红**，还原后复绿）：
@@ -231,6 +235,10 @@ def main() -> int:
           and next(g for g in PC.GAPS if g["id"] == "PM-G8b")["status"].startswith("边界声明"),
           "缺口=%s" % _gids)
 
+    check("F1b 缺口台账含 v0.9.311 拆分结果 G9a/G9b（且旧 PM-G9 号已退役）",
+          "PM-G9a" in _gids and "PM-G9b" in _gids and "PM-G9" not in _gids,
+          "缺口=%s" % _gids)
+
     # ── H 加热器电-热-光链路（v0.9.293 · PM-G8 闭合依据）────────────────
     # 🔴 改前：热阻是**与几何无关的手填常数** `R_TH_K_PER_MW = 1.0`（只注「文献量级」），
     #    而同一台机器上「热阻」本可由几何算出 ⇒ **两口径相差 12.51× 且从无人核**。
@@ -353,6 +361,138 @@ def main() -> int:
     check("P5 探针：EIC pitch=0.8 µm ⇒ 通道条宽 < min_width ⇒ DRC 必红（判据可被证伪）",
           _tight["drc"]["channel_width_ok"] is False and _tight["drc"]["all_pass"] is False,
           "ch_w=%.3f" % (0.8 * 0.5))
+
+    # ── T 外设参数的物理核验与作用域（v0.9.311 · PM-G9a 闭合依据）──────────
+    # 缺口原文：「PD 响应度 / 加热器方阻取公开工程典型区间（非实测、非逐条 DOI）…
+    # ⇒ 外设结论只给区间 + 恒等式 + 单调性，**无绝对真值**」。
+    # 本节不改任何区间（改区间才是编数据），只把「无绝对真值」这句话**按条拆开**：
+    # 哪些结论其实**是绝对的**、哪些只是区间、以及方阻的不确定度**从哪个口子**进去。
+    from lda_l2 import pm_peripheral_scope as PSC
+
+    _p, _t, _ = PSC.run_selfchecks(verbose=False)
+    check("T1 `pm_peripheral_scope` 自检全过（%d 项：恒等式 / 上限 / 反比律 / 作用域 / 反向）"
+          % _t, _p == _t, "PASS=%d/%d" % (_p, _t))
+
+    # T2 🔴 物理上限（门禁**自己算**，不读模块自检结论）：R ≤ λ/1239.84（η≤1）
+    _rmax = 1550.0 / 1239.841984
+    _ap = PSC.anchor_physics_check()
+    check("T2 🔴 响应度硬上限 R_max(1550) = %.6f A/W（≈教科书 1.25，相对差 %.1e）∧ "
+          "锚区间隐含 η ∈ [%.3f, %.3f] ⊂ (0,1] ∧ 距上限余量 %.1f%%"
+          % (_rmax, abs(_rmax / 1.25 - 1.0), _ap["eta_lo"], _ap["eta_hi"],
+             100.0 * _ap["headroom_to_physics"]),
+          abs(_rmax / 1.25 - 1.0) < 0.01 and _ap["eta_in_unit_interval"]
+          and not _ap["upper_bound_violated"] and _ap["headroom_to_physics"] > 0.2,
+          "η=[%.4f, %.4f]" % (_ap["eta_lo"], _ap["eta_hi"]))
+
+    # T3 反向探针：声称 R=1.3 A/W @1550 ⇒ η>1 ⇒ **可证不可能**（判据非恒真）
+    check("T3 反向探针：R=1.3 A/W @1550 ⇒ η = %.3f > 1 ⇒ 违反 η≤1 ⇒ 该声明可证不可能"
+          % PSC.qe_from_responsivity(1.3, 1550.0),
+          PSC.qe_from_responsivity(1.3, 1550.0) > 1.0)
+
+    # T4 🔴 真实链路：SNR 只依赖 `R·P`（若某处单独用了 R 或 P，本条立红）
+    _inv = PSC.snr_invariance()
+    check("T4 🔴 真实读出链 SNR(2R, P/2) ≡ SNR(R, P)（相对差 %.1e ≤ 1e-12）"
+          % _inv["rel_diff"], _inv["rel_diff"] < 1e-12,
+          "SNR=%.4f ⇄ %.4f" % (_inv["snr_a"], _inv["snr_b"]))
+
+    # T5 🔴 反比律：`P_min(R)·R ≡ u*`（真实链路二分逆解，两档；容差 = 二分相对分辨率量级）
+    _law = PSC.p_min_law(r_values=(0.8, 1.0), iters=52)
+    check("T5 🔴 P_min(R)·R ≡ u*：R=0.8 与 R=1.0 两档乘积相对离散 %.2e ≤ 1e-9 ⇒ "
+          "**灵敏度精确反比于响应度**" % _law["product_spread_rel"],
+          _law["product_spread_rel"] < 1e-9,
+          "P_min: " + " ".join("%.4e" % r["p_min_w"] for r in _law["rows"]))
+
+    # T6 🔴 本版最意外的发现：`worst_pair` 是**退化标签**（15 对同 SNR，min() 按浮点噪声挑）
+    _wpi = PSC.worst_pair_invariance()
+    check("T6 🔴 全部 %d 个判决对 SNR 相同（相对离散 %.1e）⇒ `worst_pair` 由 min() 在并列值里"
+          "挑 ⇒ 三档 R 给出 %s ⇒ **该标签不可引用为结论**"
+          % (_wpi["n_pairs"], _wpi["max_pair_spread"], _wpi["distinct_worst_pairs"]),
+          _wpi["all_pairs_equal"] and _wpi["worst_pair_is_degenerate"],
+          "spread=%s" % [("%.1e" % x["pair_snr_spread"]) for x in _wpi["rows"]])
+
+    # T7 🔴 方阻的作用域：电压驱动 P ∝ 1/R_sheet（跨度 == 方阻跨度）↔ 恒功率驱动
+    #    V ∝ √R_sheet（跨度 == √5）而功耗绝对值；方阻上界反解回代 == V_max
+    _hd = PSC.heater_drive_scope()
+    _span = _hd["sheet_hi"] / _hd["sheet_lo"]
+    _rsmax = PSC.rsheet_max_for_power_drive(_hd["v_drv"], _hd["p_req_w"], _hd["n_squares"])
+    _back = math.sqrt(_hd["p_req_w"] * _rsmax * _hd["n_squares"])
+    check("T7 方阻作用域：电压驱动功耗跨度 %.4f× == 方阻跨度 %.4f×（P∝1/R_sheet）↔ "
+          "恒功率驱动电压跨度 %.4f× == √%.0f ∧ 功耗绝对值；R_sheet,max=%.1f Ω/sq 回代 V=%.12f"
+          % (_hd["voltage_drive"]["p_span"], _span, _hd["power_drive"]["v_span"],
+             _span, _rsmax, _back),
+          abs(_hd["voltage_drive"]["p_span"] - _span) < 1e-12
+          and abs(_hd["power_drive"]["v_span"] - math.sqrt(_span)) < 1e-12
+          and abs(_back - _hd["v_drv"]) < 1e-12,
+          "P_π=%.4f mW · R=%.1f…%.1f Ω" % (_hd["p_req_w"] * 1e3,
+                                           _hd["r_lo_ohm"], _hd["r_hi_ohm"]))
+
+    # T8 🔴 可判定的设计结论：现役 3.3 V **电压直驱**对 P_π 过驱 ≥5× 且跨 5×
+    #    ⇒ 「3.3 V 直驱」不可用于写相变（必须限流/调占空比/闭环调功），这不是区间问题
+    _od = _hd["voltage_drive"]["overdrive_vs_req"]
+    check("T8 🔴 现役 3.3 V 电压直驱对 P_π(%.4f mW) 过驱 %.2f–%.2f× ⇒ 直驱不可用"
+          "（须限流/占空比/闭环调功）" % (_hd["p_req_w"] * 1e3, _od[0], _od[1]),
+          _od[0] >= 5.0 and abs(_od[1] / _od[0] - _span) < 1e-12)
+
+    # T10 🔴 汇总表的**分档**必须与三节结论一致（防「表里写绝对、正文算出来是区间」）
+    _ss = PSC.scope_summary()
+    check("T10 作用域汇总自洽：硬上限 %.4f A/W ∧ η=[%.4f,%.4f] ∧ 真实链路只依赖 R·P=%s ∧ "
+          "15 对同 SNR=%s ∧ 电压驱动功耗跨 %.3f× / 恒功率电压跨 %.4f× ∧ 绝对结论 %d 条"
+          % (_ss["responsivity_hard_bound_a_per_w"], _ss["anchor_eta_lo"],
+             _ss["anchor_eta_hi"], _ss["snr_depends_only_on_r_times_p"],
+             _ss["all_pairs_snr_equal"], _ss["heater_power_span_voltage_drive"],
+             _ss["heater_voltage_span_power_drive"], len(_ss["absolute_conclusions"])),
+          _ss["snr_depends_only_on_r_times_p"] and _ss["all_pairs_snr_equal"]
+          and _ss["worst_pair_is_degenerate"]
+          and abs(_ss["heater_power_span_voltage_drive"] - _span) < 1e-12
+          and abs(_ss["heater_voltage_span_power_drive"] - math.sqrt(_span)) < 1e-12
+          and _ss["anchor_eta_lo"] > 0.5 and _ss["anchor_eta_hi"] <= 1.0
+          and len(_ss["absolute_conclusions"]) >= 4
+          and len(_ss["range_only_conclusions"]) >= 2,
+          "absolute=%d range_only=%d" % (len(_ss["absolute_conclusions"]),
+                                         len(_ss["range_only_conclusions"])))
+
+    # T11 🔴 卡上 `R_h` 区间 ≡ 模块现算（v0.9.311 抓到的一处 18 版陈旧数）
+    #   原卡写「183.6–917.9 Ω」= v0.9.200 重标定**之前**的几何（L=11.015 µm, n_sq=18.36）算的；
+    #   现役 L=6.556 µm ⇒ n_sq=10.93 ⇒ 109.3–546.3 Ω。同一比例 1.679 = 11.015/6.556。
+    #   本判据用**正则从卡里取数**再与现算逐位对拍 —— 与 H2 的「卡内披露 ≡ 模块现算」同一手法。
+    _hr = M4.heater_resistance()
+    _m4res = next(m["result"] for m in PC.MILESTONES if m["id"] == "M4")
+    _mm = re.search(r"`R_h`\s*\**\s*([\d.]+)\s*[–\-]\s*([\d.]+)\s*Ω", _m4res)
+    _card_lo, _card_hi = (float(_mm.group(1)), float(_mm.group(2))) if _mm else (-1.0, -1.0)
+    check("T11 🔴 卡上 `R_h` 区间 %.1f–%.1f Ω ≡ 模块现算 %.1f–%.1f Ω（n_sq=%.4f；"
+          "原卡 183.6–917.9 是 v0.9.200 重标定前几何）"
+          % (_card_lo, _card_hi, _hr["r_lo_ohm"], _hr["r_hi_ohm"], _hr["n_squares"]),
+          _mm is not None and abs(_card_lo - _hr["r_lo_ohm"]) < 0.05
+          and abs(_card_hi - _hr["r_hi_ohm"]) < 0.05)
+
+    # T9 反向探针：把反比律误写成 `P_min ∝ 1/R²` ⇒ T5 必红（证明 T5 不是恒真）
+    _w = [r["product_r_p"] / r["r_a_per_w"] for r in _law["rows"]]
+    _spread_wrong = max(_w) / min(_w) - 1.0
+    check("T9 反向探针：误写 P_min ∝ 1/R² ⇒ 守恒量离散度 %.3f ≫ 1e-9 ⇒ T5 必红"
+          % _spread_wrong, _spread_wrong > 1e-2)
+
+    # ── U 卡片自检接线 + PM-G9 拆分的口径守卫（v0.9.311）──────────────────
+    # 🔴 **为什么要有 U1**：`pm_case.run_selfchecks()` 此前**没有任何门禁调用**
+    #    （`run_pchip_case_smoke` import 的是 `pchip_case`，不是 `pm_case`）⇒ 它的 ⑥
+    #    写死 `gaps_total == 7` 而 GAPS 早已长到 8，**静默红了 18 版**。
+    #    「护栏子集的补集是自由的」这条纪律的反面：**不在任何子集里的自检 = 没人跑的自检**。
+    _pc_ok = PC.run_selfchecks(verbose=False)
+    check("U1 🔴 `pm_case.run_selfchecks()` 全过（此前**无任何门禁调用** ⇒ ⑥ 的陈旧字面量 "
+          "静默红了 18 版）", bool(_pc_ok))
+
+    # U2 PM-G9 拆分如实：G9a 已闭合（带机读证据）+ G9b 边界声明，且**同号不同物不混**
+    _g9a = next((g for g in PC.GAPS if g["id"] == "PM-G9a"), None)
+    _g9b = next((g for g in PC.GAPS if g["id"] == "PM-G9b"), None)
+    _g9old = [g for g in PC.GAPS if g["id"] == "PM-G9"]
+    check("U2 🔴 PM-G9 拆成 G9a（已闭合，证据指名模块 `pm_peripheral_scope`）/ "
+          "G9b（边界声明）∧ 旧 `PM-G9` 号**不再存在**（防同一号两个含义）",
+          _g9a is not None and _g9b is not None and not _g9old
+          and _g9a["status"].startswith("已闭合")
+          and "pm_peripheral_scope" in _g9a["status"]
+          and _g9b["status"].startswith("边界声明"),
+          "G9a=%s G9b=%s 旧号=%d" % (
+              (_g9a or {}).get("status", "")[:14], (_g9b or {}).get("status", "")[:14],
+              len(_g9old)))
 
     # ── S1 自入 CI core ─────────────────────────────────────────────────
     cut = os.path.join(_HERE, "run_ci_regression.py")

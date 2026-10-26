@@ -93,6 +93,12 @@ MUST_BE_REACHABLE: List[str] = [
     "lda/lda_l2/oi_fau_yield.py::convention_table",
     "lda/lda_l2/oi_fau_yield.py::yield_closed",
     "lda/lda_l2/oi_fau_yield.py::corner_vs_expected",
+    # v0.9.311：外设参数作用域的四个入口 —— 若变回死函数，T 节判据就被拆了，
+    #   「R ≤ λ/1239.84」「P_min·R ≡ u*」「方阻只从驱动口径进去」三条结论就再无人守。
+    "lda/lda_l2/pm_peripheral_scope.py::anchor_physics_check",
+    "lda/lda_l2/pm_peripheral_scope.py::p_min_law",
+    "lda/lda_l2/pm_peripheral_scope.py::heater_drive_scope",
+    "lda/lda_l2/pm_peripheral_scope.py::worst_pair_invariance",
     # v0.9.271（A2）：那个偏 1e6 倍的函数 —— 修好后接进 selfchecks ⑦b 与专属门禁，
     #   它若再次变死，就意味着「门禁接线被拆」，1e6 倍错会重新无人看守。
     "lda/lda_qeda/sc_readout_mux.py::resonator_freq_ghz",

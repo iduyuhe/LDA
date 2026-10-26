@@ -18,7 +18,7 @@
   D1 缺口台账：机器账本仍有 PM-G7 且 closed ∧ 对外台账行含「已结算」+ Cheng 2019
      DOI ∧ **未闭合 spec 缺口全披露** —— 不用「条目数 == 常数」这类字面量判据
      （v0.9.194：写死 5 ⇒ M5 合法新增 PM-G10 后必红；「条目数不变」本身语义就错）
-  D1b 🔴 对外台账 id 集合 == 开放 spec 缺口 ∪ 已登记例外 `{PM-G2, PM-G6, PM-G7, PM-G8, PM-G9, PM-G11}`
+  D1b 🔴 对外台账 id 集合 == 开放 spec 缺口 ∪ 已登记例外 `{PM-G2, PM-G6, PM-G7, PM-G8, PM-G8b, PM-G9a, PM-G9b, PM-G11}`
      （**精确指纹** · 防「新条目只进看得见的集合、无独立证据链」静默进盲区）
      · v0.9.195：PM-G6 由「开放」转「已结算但仍对外披露」⇒ 移入例外集合（同 G7 处置）
   D2 🔴 快照 schema == 仓库报告 JSON（system_budget 含 drift_anchor，逐块同构）
@@ -110,7 +110,12 @@ def _g7_ledger_ok(case_gaps, ledger, spec):
 #:     并把**热阻真值 / 2D 焦耳热分布 / 实测 T1** 拆出为 `PM-G8b` **边界声明**
 #:     —— 拆而不并：把「本卡不做（须 2D-FEM 或工艺标定）」与「已做」压进同一条，
 #:     就会重演 N3-b 的「限制与事实挤进同一序数」。
-_LEDGER_EXTRA = {"PM-G2", "PM-G6", "PM-G7", "PM-G8", "PM-G8b", "PM-G9", "PM-G11"}
+#:   · v0.9.311：`PM-G9`（外设参数缺实测锚）拆为 **`PM-G9a`**（外设参数的物理核验与
+#:     作用域划分 · **已闭合**）与 **`PM-G9b`**（真值须本项目实测 / 逐条 DOI · **边界声明**）
+#:     —— 同一份「先拆再判」：区间本身不改（改区间才是编数据），只把「无绝对真值」
+#:     这句话按条拆成「哪些结论其实绝对、哪些只是区间」。旧号 `PM-G9` 退役。
+_LEDGER_EXTRA = {"PM-G2", "PM-G6", "PM-G7", "PM-G8", "PM-G8b",
+                 "PM-G9a", "PM-G9b", "PM-G11"}
 
 
 def main() -> int:
@@ -332,7 +337,8 @@ def main() -> int:
         _case_ids == (_open_ids | _LEDGER_EXTRA),                     # 原样绿
         (_case_ids | {"PM-G0"}) == (_open_ids | _LEDGER_EXTRA),       # 偷加条目必红
         (_case_ids - {"PM-G10"}) == (_open_ids | _LEDGER_EXTRA),      # 偷删条目必红
-        (_case_ids - {"PM-G9"} | {"PM-G99"}) == (_open_ids | _LEDGER_EXTRA),  # 换名必红
+        # v0.9.311：换名样本改用 `PM-G9a`（`PM-G9` 已退役，拿退役号当样本会变成"偷加"）
+        (_case_ids - {"PM-G9a"} | {"PM-G99"}) == (_open_ids | _LEDGER_EXTRA),  # 换名必红
     ]
     check("P5 D1b 指纹反向探针：原样绿 ∧ 偷加(PM-G0)/偷删/换名 三改必红",
           _fp[0] and not any(_fp[1:]), "fp=%s" % _fp)

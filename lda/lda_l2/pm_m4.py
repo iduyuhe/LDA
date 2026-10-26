@@ -250,6 +250,7 @@ def readout_chain(mat: str = "GST", n_levels: Optional[int] = None, *,
 def readout_sensitivity(mat: str = "GST", n_levels: Optional[int] = None, *,
                         ber_target: Optional[float] = None,
                         r_f_ohm: Optional[float] = None,
+                        resp_a_per_w: Optional[float] = None,
                         f_read_hz: float = F_READ_HZ_DEFAULT,
                         p_lo_w: float = 1e-9, p_hi_w: float = 1e-2,
                         iters: int = 40) -> Dict[str, Any]:
@@ -262,7 +263,10 @@ def readout_sensitivity(mat: str = "GST", n_levels: Optional[int] = None, *,
     tgt = float(M1.BER_TARGET if ber_target is None else ber_target)
 
     def _ber(p: float) -> float:
+        # 🔴 v0.9.311：`resp_a_per_w` 直通 `readout_chain` —— 否则「灵敏度 ⇄ 响应度」
+        #    的反比律只能靠另写一份玩具公式来验，而**真链路的** 1/R 律就没人核了。
         return readout_chain(mat, n_levels, p_in_w=p, r_f_ohm=r_f_ohm,
+                             resp_a_per_w=resp_a_per_w,
                              f_read_hz=f_read_hz)["worst_ber"]
 
     b_hi = _ber(p_hi_w)

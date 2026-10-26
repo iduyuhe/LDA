@@ -92,7 +92,11 @@ CALIBERS: Dict[str, Dict[str, Any]] = {
             "纠错码层由 **j1（`G-QEC*` 容错）与 d2（LDPC / 色码解码器）专卡承载**；"
             "同一项目级缺口不得在案例卡里**重复计债**，否则一处欠债被数两次。"
         ),
-        #: 承载卡 → 该卡里必须存在的欠债 id 子串（机核「分工」不是嘴上说的）
+        #: 承载卡 → 该卡里必须存在的**承接条目** id/标题子串（机核「分工」不是嘴上说的）。
+        #: 🔴 v0.9.307 订正语义：承接条目可以是**未闭合欠债**，也可以是**已闭合交付**——
+        #:    但后者必须**指名门禁或锚号**（`run_*_smoke` / `B\d{3}`）作为证据，
+        #:    否则仍判「以分工为名推掉欠债」。此前只认未闭合，于是 j1 把 `G_Q9` 真做完
+        #:    之后反而判红（要求留在"未闭合"才是欠债，等于**逼人写假账**）。
         "delegated_to": {"j1": "QEC", "d2": "G-V2-D2"},
     },
 }
@@ -258,7 +262,12 @@ def audit(cards: Mapping[str, Iterable[Mapping[str, Any]]]) -> List[str]:
         if not hits:
             bad.append("口径「%s」零命中 ⇒ 词表已失效（必须能被真实数据命中）" % cid)
 
-    # ③ 角色分工机核：`role_delegated` 的承载卡里必须有**真实欠债**
+    # ③ 角色分工机核：`role_delegated` 的承载卡里必须有**承接条目**
+    #    v0.9.307 订正：承接 = 未闭合欠债 **或** 指名了门禁/锚号的已闭合交付。
+    #    只认未闭合会**逼人写假账**（j1 真做完 G_Q9 之后反而判红），而完全不认已闭合又会让
+    #    「分工」变成一句空话 ⇒ 折中：已闭合必须带**可机读证据**（`run_*_smoke` 或 `B\d{3}`）。
+    import re as _re
+    _ev = _re.compile(r"run_[a-z0-9_]+_smoke|B\d{3}")
     for cid, spec in CALIBERS.items():
         if spec["kind"] != "role_delegated":
             continue
@@ -266,12 +275,19 @@ def audit(cards: Mapping[str, Iterable[Mapping[str, Any]]]) -> List[str]:
             rows = list(cards.get(carrier) or [])
             # 🔴 匹配 **id 或标题**：`j1`/`d2` 的 gaps 是**纯字符串型**（无 id，id 恒为 "-"），
             #    只按 id 匹配会永远失败 ⇒ 把「分工」判成「推掉欠债」（第一版就这样误判了）。
-            has = any((needle in (str(g.get("id") or "-") + " " + str(g.get("title") or "")))
-                      and (prefix4(g.get("status")) == GAP_OPEN) for g in rows)
-            if not has:
+            _hit = [g for g in rows
+                    if needle in (str(g.get("id") or "-") + " " + str(g.get("title") or ""))]
+            _st4 = [prefix4(g.get("status")) for g in _hit]
+            _open_ok = any(x == GAP_OPEN for x in _st4)
+            # 证据在**原始** status_text 里（`status` 已归一成四值前缀，名字/锚号都在前面被剥掉了）
+            _closed_ok = any(x == GAP_CLOSED
+                             and _ev.search(str(g.get("status_text") or g.get("status") or ""))
+                             for g, x in zip(_hit, _st4))
+            if not (_open_ok or _closed_ok):
                 bad.append(
-                    "口径「%s」声称由 %s 承载（含 `%s` 的欠债），但该卡里找不到这样的未闭合条目"
-                    " ⇒ 以分工为名推掉欠债" % (cid, carrier, needle)
+                    "口径「%s」声称由 %s 承载（含 `%s`），但该卡里既无未闭合欠债、"
+                    "也无**指名门禁/锚号**的已闭合交付 ⇒ 以分工为名推掉欠债"
+                    % (cid, carrier, needle)
                 )
     return bad
 
@@ -355,6 +371,27 @@ def selfcheck() -> Dict[str, bool]:
         "d2": [{"id": "G-V2-D2-5", "title": "阈值", "status": GAP_OPEN}],
     }
     c["audit_clean_passes"] = audit(good) == []
+
+    # ③b 🔴 v0.9.307 新增：分工承载方可由「已闭合交付」承接 —— 但**必须指名门禁/锚号**。
+    #    为什么要有这条：j1 把 `G_Q9` 真做完后，旧逻辑（只认未闭合）会把「分工」判成
+    #    「以分工为名推掉欠债」⇒ **逼人写假账**。但完全不认已闭合又会让分工变成空话。
+    _good_closed = {k: [dict(g) for g in v] for k, v in good.items()}
+    _good_closed["j1"] = [{"id": "G-QEC-a", "title": "容错阈值", "status": GAP_CLOSED,
+                           "status_text": "已闭合（机核：`run_j1_qec_smoke` M4-A + 锚 B497）"}]
+    c["delegated_closed_with_evidence_ok"] = audit(_good_closed) == []
+
+    _bad_closed = {k: [dict(g) for g in v] for k, v in good.items()}
+    _bad_closed["j1"] = [{"id": "G-QEC-a", "title": "容错阈值", "status": GAP_CLOSED,
+                          "status_text": "已闭合（做完了）"}]
+    _msg3 = audit(_bad_closed)
+    c["delegated_closed_no_evidence_caught"] = (len(_msg3) == 1
+                                               and "qec_out_of_scope" in _msg3[0])
+
+    _bad_none = {k: [dict(g) for g in v] for k, v in good.items()}
+    _bad_none["j1"] = [{"id": "G-OTHER", "title": "别的事", "status": GAP_OPEN}]
+    _msg4 = audit(_bad_none)
+    c["delegated_missing_entry_caught"] = (len(_msg4) == 1
+                                          and "qec_out_of_scope" in _msg4[0])
 
     # ④ 🔴 反向探针 1：把一条改成未闭合 ⇒ 必须指名判红
     bad1 = {k: [dict(g) for g in v] for k, v in good.items()}

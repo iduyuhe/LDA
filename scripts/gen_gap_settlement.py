@@ -57,8 +57,8 @@ ARGS = {"qchip": (12,)}
 
 #: 棘轮（各自方向由 `_RATCHET` 声明）。**必须机器守**，否则只是注释。
 UNMARKED_MAX = 0       # 待补状态的缺口数（只降）—— v0.9.286 已达 0：112/112 全部可机核
-OPEN_MAX = 8           # 🔴 **未闭合 = 真欠债**（只降）—— v0.9.301 线路级仿真闭合 −2（schip G-Db · j2 拆出 Cb）⇒ 10→8
-CLOSED_MIN = 60        # 已闭合（只升）—— v0.9.306 d2 G-V2-D2-5a（码容量阈值 MC 标定 · 5 拆成 5a/5b）
+OPEN_MAX = 6           # 🔴 **未闭合 = 真欠债**（只降）—— v0.9.307 j1 G_Q9/G-QEC* 界定并回写 −2（**回写非做活**，守卫按条见 j1 门禁 Q1/Q2）⇒ 8→6
+CLOSED_MIN = 64        # 已闭合（只升）—— v0.9.307 j1 G_Q9 + G-QEC* 拆 4 条并回写（**回写非做活**）
 SETTLED_MIN = 11       # 已结算（只升）—— v0.9.289 qchip G_Q9（M2 布局最小长度守卫绕过）
 RECLASSIFIED_MIN = 6   # 🔴 口径更正痕迹条数（只升）：**唯一允许「未闭合下降但不做新活」的通道**，
                        #   每加一条必须写进 `lda_harness/gap_caliber.RECLASSIFIED` 并给出判定依据；
@@ -200,7 +200,10 @@ def collect_gap_rows():
         M = importlib.import_module("lda_webui." + mod)
         card = M.case_card(*ARGS.get(k, ()))
         rows[k] = [
-            {"id": r["id"], "title": r["title"], "status": _state_of(r["status_text"])}
+            # 🔴 v0.9.307：额外带上**原始** `status_text` —— 口径审计要用它核「已闭合交付是否
+            #    指名了门禁/锚号」（`status` 是**归一后的四值前缀**，证据信息在里面已经丢了）。
+            {"id": r["id"], "title": r["title"], "status": _state_of(r["status_text"]),
+             "status_text": r["status_text"]}
             for r in CALIBER.rows_from_card(card)
         ]
     return rows

@@ -287,6 +287,48 @@ def main() -> int:
           len(code0.syndrome_x(cxh0, cxv0)) > 0,
           "defects=%d" % len(code0.syndrome_x(cxh0, cxv0)))
 
+    # ══════════ Q 节 · 台账口径机核（v0.9.307 · j1 `G_Q9` / `G-QEC*` 边界界定后的回写守卫）══════════
+    # 背景：j1 卡的两条缺口从 v0.9.286 四值化起一直是零证据串「未闭合（量子计算遗留缺口 G_Q9）」，
+    # 而 J1 征程在 v0.9.228/229 就已交付（9 条锚 + 本节 19 条判据）。v0.9.307 把它们拆成 4 条并回写。
+    # 🔴 守卫方式**按条**（不是按计数）：谁把其中任意一条改回「未闭合」，Q1 立刻红。
+    _j1c = None
+    try:
+        from lda_webui import j1_case as _j1c
+        _card = _j1c.case_card()
+        _st = [str(x) for x in (_card.get("gaps_status") or [])]
+        _gaps = list(_card.get("gaps") or [])
+        _open = [g for g, t in zip(_gaps, _st) if not t.startswith("已闭合")]
+        _pair_ok = len(_gaps) == len(_st) == 4
+        _err = ""
+    except Exception as exc:                       # noqa: BLE001  不可用时显式 FAIL，不静默放过
+        _st, _gaps, _open, _pair_ok = [], [], ["<import-fail>"], False
+        _err = "%s: %s" % (type(exc).__name__, exc)
+
+    check("Q1 🔴 j1 卡口径机核：%d 条缺口**全部**以「已闭合」开头（%d 条未闭合）∧ gaps/gaps_status 等长=4"
+          % (len(_gaps), len(_open)),
+          _pair_ok and not _open,
+          "未闭合=%s %s" % (_open, _err))
+
+    # Q2 锚在位：B497–B505 九条全在账本且 strict_independent（**现存且在跑**才是「已闭合」的定义）
+    try:
+        from lda_harness.benchmarks import BENCHMARK_DEFS as _D
+        _ids = ["B%d" % i for i in range(497, 506)]
+        _miss = [b for b in _ids if b not in _D]
+        _notstrict = [b for b in _ids if b in _D
+                      and _D[b].get("maturity_tier") != "strict_independent"]
+        _q2ok, _q2d = (not _miss and not _notstrict), "缺=%s 非严格独立=%s" % (_miss, _notstrict)
+    except Exception as exc:                       # noqa: BLE001
+        _q2ok, _q2d = False, "%s: %s" % (type(exc).__name__, exc)
+    check("Q2 j1 九条锚（B497–B505）全部在账本 ∧ maturity_tier=strict_independent", _q2ok, _q2d)
+
+    # Q3 反向探针：把一条状态在内存里改成「未闭合（x）」⇒ Q1 的口径必须能判出它（证明 Q1 非恒真）
+    _probe = _st[:]
+    if _probe:
+        _probe[0] = "未闭合（反向探针：人造未闭合）"
+    _probe_open = [g for g, t in zip(_gaps, _probe) if not t.startswith("已闭合")]
+    check("Q3 反向探针：人造一条「未闭合」⇒ Q1 必红（守卫不是恒真）",
+          len(_probe_open) == 1, "探针捕获=%d 条" % len(_probe_open))
+
     bad = globals().get("FAIL", 0)
     good = globals().get("PASS", 0)
     print("")

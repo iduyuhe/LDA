@@ -64,9 +64,9 @@
   },
   "gaps": {
     "boundary": 41,
-    "closed": 60,
-    "gaps": 120,
-    "open": 8,
+    "closed": 64,
+    "gaps": 122,
+    "open": 6,
     "settled": 11,
     "unmarked": 0
   },

@@ -26,9 +26,9 @@
     },
     "量子": {
       "boundary": 5,
-      "closed": 38,
-      "gaps": 55,
-      "open": 4,
+      "closed": 42,
+      "gaps": 57,
+      "open": 2,
       "settled": 8,
       "unmarked": 0
     }
@@ -126,18 +126,18 @@
     },
     "j1": {
       "boundary": 0,
-      "closed": 0,
+      "closed": 4,
       "counts": {
         "boundary": 0,
-        "closed": 0,
-        "open": 2,
+        "closed": 4,
+        "open": 0,
         "settled": 0,
         "unmarked": 0
       },
       "domain": "量子",
-      "gaps": 2,
+      "gaps": 4,
       "machine_checkable": true,
-      "open": 2,
+      "open": 0,
       "settled": 0,
       "status_source": "gaps_status 列表",
       "unmarked": 0
@@ -361,17 +361,17 @@
   },
   "ratchet": {
     "boundary_min": 41,
-    "closed_min": 60,
-    "open_max": 8,
+    "closed_min": 64,
+    "open_max": 6,
     "settled_min": 11,
     "unmarked_max": 0
   },
   "schema": "lda_gap_settlement_v2",
   "total": {
     "boundary": 41,
-    "closed": 60,
-    "gaps": 120,
-    "open": 8,
+    "closed": 64,
+    "gaps": 122,
+    "open": 6,
     "settled": 11,
     "unmarked": 0
   }

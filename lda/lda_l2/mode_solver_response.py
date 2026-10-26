@@ -223,6 +223,181 @@ def bend_delta_ng(R_um: float, w_um: float = 0.5, h_um: float = 0.22,
 
 
 # ---------------------------------------------------------------------------
+# 4b. 层堆任意截面：默认种子一进层堆就静默选不到模（v0.9.315）
+# ---------------------------------------------------------------------------
+def stacked_section(wl_um: float, w_um: float, h_um: float, box_um: float,
+                    clad: str = "air", h_grid: float = 0.025,
+                    width_um: float = 4.0,
+                    sub_um: float = 0.8, top_um: float = 0.8,
+                    n_si: float = N_SI, n_sio2: float = N_SIO2) -> Dict[str, object]:
+    """薄埋氧 SOI 的三层截面（Si 衬底 / BOX / Si 芯）→ ε 场 + 顶点掩码。
+
+    为什么需要它：`full_vector_mode_solver.solve_modes_eps` 早就支持"任意 2D 截面"，
+    但**没有任何调用方构造过层堆**（14 处调用全是单芯）。E3 的薄 BOX 一直卡在这里。
+
+    🔴 掩码必须**只含波导芯**。若用缺省的 `core_vertex_mask(eps)`，它会用
+    (min+max)/2 判"芯"，而 Si 衬底比芯还宽 ⇒ 衬底模被算成"芯内模"，
+    选模立刻被衬底模污染。这是层堆特有的坑，单芯结构永远不会遇到。
+    """
+    import numpy as np
+    nxc = int(round(width_um / h_grid))
+    y_lo = -box_um - h_um / 2.0 - sub_um
+    y_hi = h_um / 2.0 + top_um
+    nyc = int(round((y_hi - y_lo) / h_grid))
+    xv = np.linspace(-width_um / 2.0, width_um / 2.0, nxc + 1)
+    yv = np.linspace(y_lo, y_hi, nyc + 1)
+    xc = 0.5 * (xv[:-1] + xv[1:])
+    yc = 0.5 * (yv[:-1] + yv[1:])
+    n_clad = 1.0 if clad == "air" else n_sio2
+    eps = np.full((nyc, nxc), n_clad ** 2)
+    eps[yc < -box_um - h_um / 2.0, :] = n_si ** 2               # Si 衬底
+    m_box = (yc >= -box_um - h_um / 2.0) & (yc < -h_um / 2.0)
+    eps[m_box, :] = n_sio2 ** 2                                  # 400 nm BOX
+    m_core = ((np.abs(xc) <= w_um / 2.0 + 1e-12)[None, :]
+              & ((yc >= -h_um / 2.0 - 1e-12) & (yc <= h_um / 2.0 + 1e-12))[:, None])
+    eps = np.where(m_core, n_si ** 2, eps)
+    xvg = np.abs(xv) <= w_um / 2.0 + 1e-12
+    yvg = (yv >= -h_um / 2.0 - 1e-12) & (yv <= h_um / 2.0 + 1e-12)
+    return {"eps": eps, "xv": xv, "yv": yv, "mask": yvg[:, None] & xvg[None, :],
+            "n_hi": n_si, "n_lo": n_clad, "h_grid": h_grid,
+            "on_grid": {"w_half_over_h": (w_um / 2.0) / h_grid,
+                        "h_half_over_h": (h_um / 2.0) / h_grid}}
+
+
+def default_seed_blind_spot(wl_um: float = 1.5476, w_um: float = 0.45,
+                            h_um: float = 0.25, box_um: float = 0.4,
+                            clad: str = "air") -> Dict[str, object]:
+    """**实测**：同一层堆截面，用 solver 的**缺省种子**得 0 个模（静默空列表），
+    扫一片 σ 才找到 2 个模。
+
+    缺省种子是 `σ = k0·(n_lo + 0.85·(n_hi − n_lo))` —— 它假设「只有一个高折射率芯，
+    基模靠近折射率上限」。层堆里 `n_hi` 是 Si 衬底，σ 落在**衬底模簇**，被
+    `conf_min` 全部剔除 ⇒ 返回 `[]`。调用方看到的是「这结构没有导模」，
+    而真相是「搜索中心放错了地方」。**静默的空列表比报错更危险。**
+    """
+    import math
+    import numpy as np
+    fvm = _solver("full_vector_mode_solver")
+    sec = stacked_section(wl_um, w_um, h_um, box_um, clad)
+    k0 = 2.0 * math.pi / wl_um
+    kw = dict(k=8, n_lo=sec["n_lo"], n_hi=sec["n_hi"],
+              core_vmask=sec["mask"], conf_min=0.30)
+    by_default = fvm.solve_modes_eps(sec["eps"], sec["xv"], sec["yv"], k0, **kw)
+    scanned = spectrum_scan(wl_um, w_um, h_um, box_um, clad)
+    return {"n_default": len(by_default),
+            "n_scanned": len(scanned),
+            "modes": [(round(r["neff"], 4), r["pol"], round(r["conf"], 3))
+                      for r in scanned]}
+
+
+def spectrum_scan(wl_um: float = 1.5476, w_um: float = 0.45, h_um: float = 0.25,
+                  box_um: float = 0.4, clad: str = "air",
+                  sigma_lo: float = 1.6, sigma_hi: float = 3.45,
+                  step: float = 0.15, conf_min: float = 0.10,
+                  sub_um: float = 0.8, h_grid: float = 0.025) -> List[Dict[str, object]]:
+    """把 σ 扫一片再合并去重 —— **层堆/多芯几何的正确用法**。
+
+    🔴 这不是"调参找答案"：σ 只是 ARPACK 的搜索中心，扫一片的代价是 k·N 次求解，
+    换来的是**不漏模**。单点 σ 在层堆下会漏（见 `default_seed_blind_spot`），
+    而漏掉的模不会被任何断言发现 —— 它只会让结果安静地变成 nan。
+    """
+    import math
+    import numpy as np
+    fvm = _solver("full_vector_mode_solver")
+    sec = stacked_section(wl_um, w_um, h_um, box_um, clad,
+                          sub_um=sub_um, h_grid=h_grid)
+    k0 = 2.0 * math.pi / wl_um
+    found: Dict[float, object] = {}
+    for sg in np.arange(sigma_lo, sigma_hi, step):
+        rs = fvm.solve_modes_eps(sec["eps"], sec["xv"], sec["yv"], k0, k=6,
+                                 sigma=(float(sg) * k0) ** 2,
+                                 n_lo=sec["n_lo"], n_hi=sec["n_hi"],
+                                 core_vmask=sec["mask"], conf_min=conf_min)
+        for r in rs:
+            key = round(r.neff, 3)
+            if key not in found or r.conf_core > found[key].conf_core:
+                found[key] = r
+    out = []
+    for r in sorted(found.values(), key=lambda q: -q.neff):
+        out.append({"neff": r.neff, "conf": r.conf_core,
+                    "pol": "TE" if r.frac_hy_core > 0.5 else "TM"})
+    return out
+
+
+def stacked_group_index(pol: str = "TM", w_um: float = 0.45, h_um: float = 0.25,
+                        box_um: float = 0.4, clad: str = "air",
+                        wl_um: float = 1.5476, d_wl: float = 0.02) -> Dict[str, object]:
+    """薄 BOX 层堆的群折射率（三点差分，三点同网格同窗口）。
+
+    ⚠️ 这是**实算子 + Dirichlet 盒**给出的**实** n_eff。薄 BOX 下的 TM 模向 Si 衬底
+    泄漏（leaky），真实 n_eff 是复数；这里的值只能当"上界型估计"，不能当精密真值。
+    """
+    want = pol.upper()
+    vals = []
+    for wl in (wl_um - d_wl, wl_um, wl_um + d_wl):
+        sp = spectrum_scan(wl, w_um, h_um, box_um, clad)
+        pick = [m for m in sp if m["pol"] == want]
+        vals.append(pick[0]["neff"] if pick else float("nan"))
+    ng = vals[1] - wl_um * (vals[2] - vals[0]) / (2.0 * d_wl)
+    return {"pol": want, "neff_mid": vals[1],
+            "neff_lo": vals[0], "neff_hi": vals[2], "n_g": ng,
+            "neffs": vals}
+
+
+def window_sensitivity(pol: str = "TM", wl_um: float = 1.5476,
+                       w_um: float = 0.45, h_um: float = 0.25,
+                       box_um: float = 0.4, clad: str = "air",
+                       subs: Sequence[float] = (0.8, 1.4, 2.0)) -> Dict[str, object]:
+    """改求解窗口，答案动多少？——**「导模 vs 漏模」的单点判据**。
+
+    真导模：场在包层指数衰减 ⇒ 窗口加大，n_eff 逐位不变。
+    漏模（薄 BOX 的 TM）：场持续向 Si 衬底辐射 ⇒ 实算子只能靠 Dirichlet 盒截断，
+    窗口就是人为边界 ⇒ **窗口一动答案就动**。
+
+    ⇒ 窗口敏感度 > 1e-2 就该判定「这不是可判的实模」，而不是把它当成求解器噪声。
+    """
+    vals = []
+    for sub in subs:
+        sp = spectrum_scan(wl_um, w_um, h_um, box_um, clad, sub_um=sub)
+        pick = [m for m in sp if m["pol"] == pol.upper()]
+        vals.append(pick[0]["neff"] if pick else float("nan"))
+    finite = [v for v in vals if v == v]
+    spread = (max(finite) - min(finite)) if len(finite) > 1 else float("nan")
+    # 🔴 阈值 1e-3 不是拍的：同仓半矢量对**真导模**的窗口散射实测 **<1e-5**
+    #    （见 E2 note），比它大两个数量级就不是"数值噪声"。
+    #    「任一窗口丢模」也算 LEAKY —— 导模不会因为盒子加大就消失。
+    lost = len(finite) < len(vals)
+    verdict = ("GUIDED" if (spread == spread and spread < 1e-3 and not lost)
+               else "LEAKY")
+    return {"pol": pol.upper(), "windows": list(subs), "neffs": vals,
+            "spread": spread, "lost_window": lost, "verdict": verdict}
+
+
+def e3_budget(n_g_ref: float = 4.92, n_g_cand: Optional[float] = None,
+              fsr_meas: float = 10.44, tol_fsr: float = 0.10,
+              R_um: float = 7.5, wl_um: float = 1.5576) -> Dict[str, float]:
+    """E3 的 tol 预算：要判到 FSR 0.1 nm，n_g 需要准到多少？
+
+    FSR = λ²/(n_g·2πR) ⇒ dFSR/FSR = −dn_g/n_g ⇒ 相对容差 ≡ tol_fsr/FSR。
+    """
+    if n_g_cand is None:
+        n_g_cand = float(stacked_group_index("TM", wl_um=wl_um)["n_g"])
+    # λ、R 都是 µm ⇒ FSR 先得 µm，×1000 转 nm 才能与实测 10.44 nm 比
+    fsr = lambda ng: (wl_um ** 2) / (ng * 2.0 * math.pi * R_um) * 1000.0   # noqa: E731
+    fsr_c = fsr(n_g_cand)
+    rel_tol = tol_fsr / fsr_meas
+    return {
+        "n_g_ref": n_g_ref, "n_g_cand": n_g_cand,
+        "n_g_abs_tol": rel_tol * n_g_ref,
+        "n_g_rel_err": abs(n_g_cand - n_g_ref) / n_g_ref,
+        "fsr_meas": fsr_meas, "fsr_cand": fsr_c,
+        "fsr_err": abs(fsr_c - fsr_meas),
+        "margin_x": (tol_fsr / abs(fsr_c - fsr_meas)) if abs(fsr_c - fsr_meas) > 0 else float("inf"),
+        "verdict": ("PASS" if abs(fsr_c - fsr_meas) <= tol_fsr else "FAIL"),
+    }
+
+
+# ---------------------------------------------------------------------------
 # 5. 新立判据：响应率 ρ 与符号一致率
 # ---------------------------------------------------------------------------
 def response_ratio(pairs: Sequence[Tuple[float, float]],
@@ -361,6 +536,30 @@ def run_selfchecks(verbose: bool = False) -> List[Tuple[str, bool, str]]:
     chk("⑩ ρ 够大但反向 ⇒ NOT_RESPONSIVE（符号能把「动错方向」抓出来）",
         verdict_from_rho(r3["min_ratio"], r3["sign_consistency"]) == "NOT_RESPONSIVE",
         "rho=%.3f sign=%.2f" % (r3["min_ratio"], r3["sign_consistency"]))
+
+    # ⑪ 层堆截面：默认种子静默返回 0 模，扫 σ 才能拿到（v0.9.315）
+    _bs = default_seed_blind_spot()
+    chk("⑪ 层堆截面：缺省种子返回 0 模（静默空列表）而扫描 σ 得 ≥2 模",
+        _bs["n_default"] == 0 and _bs["n_scanned"] >= 2,
+        "default=%d scanned=%d modes=%s" % (_bs["n_default"], _bs["n_scanned"],
+                                            _bs["modes"]))
+    # ⑫ 掩码只含波导芯（衬底不得被算成"芯内"）
+    _sec = stacked_section(1.5476, 0.45, 0.25, 0.4)
+    _mask_cells = int(_sec["mask"].sum())
+    _core_cells = int(round(0.45 / 0.025 + 1) * round(0.25 / 0.025 + 1))
+    chk("⑫ 层堆掩码只圈波导芯（顶点数 ≤ 芯格数，不含 4µm 宽衬底）",
+        _mask_cells <= _core_cells + 8,
+        "mask=%d core≈%d（若用缺省 core_vertex_mask 会把衬底算进去）"
+        % (_mask_cells, _core_cells))
+
+    # ⑬ E3 预算的**双向**：喂实测 n_g 必须 PASS，喂现算 n_g 必须 FAIL
+    _pass = e3_budget(n_g_cand=4.92)
+    _fail = e3_budget(n_g_cand=4.5403)
+    chk("⑬ E3 预算双向（n_g=4.92⇒PASS / 4.5403⇒FAIL，差 9.0× tol）",
+        _pass["verdict"] == "PASS" and _fail["verdict"] == "FAIL"
+        and _fail["margin_x"] < 0.2,
+        "PASS@4.92 FSR=%.3f / FAIL@4.5403 FSR=%.3f 差=%.3f nm 余量=%.3f×"
+        % (_pass["fsr_cand"], _fail["fsr_cand"], _fail["fsr_err"], _fail["margin_x"]))
 
     for name, ok, detail in out:
         if verbose:

@@ -123,6 +123,15 @@ MUST_BE_REACHABLE: List[str] = [
     "lda/lda_l2/mode_solver_response.py::verdict_from_rho",
     "lda/lda_l2/mode_solver_response.py::e1_budget",
     "lda/lda_l2/mode_solver_response.py::falsifiability_signal",
+    # v0.9.315：层堆任意截面的四个入口 —— 若变回死函数，
+    #   「缺省种子在层堆上静默返回 0 模」「E3 的 TM n_g 差 9.0×tol」「掩码必须只圈芯」
+    #   三条结论就再无人守。
+    "lda/lda_l2/mode_solver_response.py::stacked_section",
+    "lda/lda_l2/mode_solver_response.py::spectrum_scan",
+    "lda/lda_l2/mode_solver_response.py::stacked_group_index",
+    "lda/lda_l2/mode_solver_response.py::window_sensitivity",
+    "lda/lda_l2/mode_solver_response.py::e3_budget",
+    "lda/lda_l2/mode_solver_response.py::default_seed_blind_spot",
     # v0.9.271（A2）：那个偏 1e6 倍的函数 —— 修好后接进 selfchecks ⑦b 与专属门禁，
     #   它若再次变死，就意味着「门禁接线被拆」，1e6 倍错会重新无人看守。
     "lda/lda_qeda/sc_readout_mux.py::resonator_freq_ghz",

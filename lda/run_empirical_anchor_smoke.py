@@ -134,6 +134,20 @@ def main():
     check("v0.9.314 mode_solver_response 自检全绿（含 ρ 判据三档 + EIM 宽度收缩）",
           not _bad_msc, f"{len(_msc)-len(_bad_msc)}/{len(_msc)} PASS 失败={_bad_msc}")
 
+    # 🔴 v0.9.315：E3 从「须层堆+TM（没做）」升级为「做了，差 9.0× tol」
+    #   层堆截面（Si 衬底 / 400nm BOX / 450×250 Si 芯）→ 全矢量 + 谱扫描 → TM n_g
+    _e3 = _msr.e3_budget()
+    check("v0.9.315 E3 层堆 TM 候选实测（FSR 11.34 vs 实测 10.44 ⇒ 差 9.0× tol，仍不可接）",
+          _e3["verdict"] == "FAIL" and 5.0 < _e3["fsr_err"] / 0.1 < 15.0,
+          f"n_g={_e3['n_g_cand']:.4f} vs 反演 {_e3['n_g_ref']} "
+          f"(相对差 {_e3['n_g_rel_err']*100:.1f}%) ⇒ FSR={_e3['fsr_cand']:.3f} nm "
+          f"差 {_e3['fsr_err']:.3f} nm = {_e3['fsr_err']/0.1:.1f}× tol")
+    _ws = _msr.window_sensitivity()
+    check("v0.9.315 E3 的「导模/漏模」单点判据（答案随窗口动 / 有窗口直接丢模 ⇒ LEAKY）",
+          _ws["verdict"] == "LEAKY",
+          f"窗口 {_ws['windows']} ⇒ n_eff {[None if v!=v else round(v,4) for v in _ws['neffs']]} "
+          f"散布={_ws['spread']:.4f}（真导模应<1e-5）丢窗={_ws['lost_window']} ⇒ {_ws['verdict']}")
+
     # 反向断言：其余 E 题仍为占位自证（如实标注，不得假装已验证）
     _still_self = [s.spec_id for s in emp
                    if s.spec_id not in ("E1", "E2")

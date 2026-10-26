@@ -37,7 +37,8 @@ __all__ = [
     "SELFCHECK_MODULES", "MODULE_SELFCHECKS_TOTAL", "RENDER_PATH_SMOKE",
     "gate_error_1q", "depolarizing_parameter", "cr_gate_time_us",
     "cr_gate_error_2q", "readout_snr", "residual_zz_error", "qpu_budget",
-    "lambda2_closed_form", "orders_below_threshold", "logical_error_rate_ideal",
+    "lambda2_closed_form", "grid_max_degree", "embed_rule_verdict",
+    "min_square_side_closed", "orders_below_threshold", "logical_error_rate_ideal",
     "case_card", "run_selfchecks",
 ]
 
@@ -108,23 +109,27 @@ MILESTONES = [
     {"id": "M4", "code": "v0.9.233", "title": "QPU 误差预算集成 + 拓扑对接 + 收官",
      # v0.9.301：末档并入 I（线路级量子态演化 9 条）⇒ 9+9=18
      # v0.9.305：M3 并入 J（8 条）⇒ 累计 36+18=54
-     "gate": 18, "gate_total": 54, "bands": ["H", "I"],
+     # v0.9.308：并入 K（编译/映射 · 真嵌入 8 条）⇒ 18+8=26，累计 36+26=62
+     "gate": 26, "gate_total": 62, "bands": ["H", "I", "K"],
      "result": "净增 **B509**（QPU 耦合图代数连通度 λ₂ 谱定理闭式 2−2cos(π/max) "
                "⇄ 嵌套 Krylov Rayleigh–Ritz）；同源体检否决宪章 B513（布尔量不可锚）/ "
-               "B514（与 S4 + J1 B502–B505 同源）⇒ 改靶 λ₂"},
+               "B514（与 S4 + J1 B502–B505 同源）⇒ 改靶 λ₂；"
+               "v0.9.308 补 **编译/映射（真嵌入判定）**——把「度 ≥ 4 ⇒ 可嵌」这条**必要条件**"
+               "换成子图同构三值判决（净增 0 锚 · 闭合 `J2-G-Da`，`J2-G-Db` 记边界）"},
 ]
 
 #: 能力层模块（该征程落地的 `lda_qeda` 模块）⇒ 自检项总数由门禁**实跑**核对。
 #: `run_webui_j2_render_path_smoke` 逐模块跑 `run_selfchecks(verbose=True)` 并数
 #: 行首 `[PASS]` 行 ⇒ 与 `span.module_selfchecks` 对照（防手写数字漂移）。
-SELFCHECK_MODULES = ("j2_readout_mux", "qpu_error_budget", "topology_qec_bridge")
+SELFCHECK_MODULES = ("j2_readout_mux", "qpu_error_budget", "topology_qec_bridge",
+                     "sc_embedding")
 
 #: 本卡配对的常驻门禁（探针条数 ⇒ `span.probe_mutations` 的核对真源）
 RENDER_PATH_SMOKE = "run_webui_j2_render_path_smoke.py"
 
 #: `SELFCHECK_MODULES` 的 `run_selfchecks()` 行首 `[PASS]` 行数之和（实跑值）。
 #: 🔴 由 `run_webui_j2_render_path_smoke` 实跑三者并断言 `== MODULE_SELFCHECKS_TOTAL`。
-MODULE_SELFCHECKS_TOTAL = 54      # j2_readout_mux 16 + qpu_error_budget 23 + topology_qec_bridge 15
+MODULE_SELFCHECKS_TOTAL = 70      # readout_mux 16 + error_budget 23 + topology_qec_bridge 18 + sc_embedding 13
 
 
 # ═══════════════════════ 关键结论（物理 + 方法学）═══════════════════════
@@ -186,10 +191,30 @@ GAPS = [
                "🔴 判据：`run_j2_qpu_smoke` I 节 9 条（空线路恰 1 · 演化器⇄闭式 5 档×2 态 · 两级双闭式 · "
                "系统性偏低 6 组 · 参数化混用差 `(1−p)/6` · AD 态依赖 · AD 串联律 · 反向探针）。"
                "⚠️ 仍不含：真实设备门表、串扰、leaky 态、门期间自由演化（由门级闭式单独给）、20+ 比特线路。"},
-    {"id": "J2-G-D", "title": "拓扑↔表面码仅设计对接", "status": "未闭合",
-     "detail": "λ₂ 为图论谱不变量；2D 最近邻嵌入判定为设计规则。"
-               "**已有** QEC 码族闭式与 hashing 界（D2 · 唯一可锚量）；"
-               "**仍缺**编译/映射实测与真实硬件拓扑下的往返验证。"},
+    {"id": "J2-G-Da", "title": "拓扑↔表面码「编译/映射」（真嵌入判定）", "status":
+     "已闭合（v0.9.308 · `lda_qeda/sc_embedding`：把「度 ≥ 4 ⇒ 可嵌」这条**必要条件**"
+     "换成真**子图同构**判定（三值 DIRECT / IMPOSSIBLE（附证明）/ UNKNOWN），自检 13 项）",
+     "detail": "缺口原文自己写着「编译/映射」——**那是纯建模活**，不需要流片。"
+               "🔴 **旧判据的错**：`max_degree ≥ 4 ⇒ DIRECT` 是**必要条件被当充分条件**用。"
+               "反例（门禁 K3）：3-ary 树内部节点度恰 4、24 节点 ≥ 17，旧规则判 DIRECT，"
+               "实际**可证不可能**——表面码关联图含 4-圈（相邻两个稳定子交叠 2 个数据比特），"
+               "树一个 4-圈都没有。"
+               "**新结论三条**：① heavy-hex（最大度 3）**原生嵌入可证不可能**"
+               "（内部稳定子权重 4 ⇒ 须有度 4 节点）⇒ 「适配」是**换码**不是换版图，"
+               "旧 `ACCEPT` 读成「能跑」是错的；② 方阵最小边长 = **2d−1**（d=2..5 穷尽搜索标定，"
+               "门禁 K6 与闭式 `min_square_side_closed` 逐值对拍）⇒ 占位 `(2d−1)²` 比码本体 "
+               "`2d²−1` 多 **`2(d−1)²`** 个比特（d=3 时 25 vs 17，多 8）；"
+               "③ 方阵 6×6（36 站点 ≥ 31 节点）仍无解且是**穷尽**结论 ⇒ 下界不是计数界。"
+               "🔴 **三值判决不许压扁**：预算用尽只记 UNKNOWN，**不得**记 IMPOSSIBLE"
+               "（「搜不到」≠「不存在」，门禁 K8 钉死）。"
+               "⚠️ **图论口径**：不验证映射的 2D 局部性（允许蛇形折叠）⇒ DIRECT 只说明"
+               "「耦合器够、拓扑不挡」，**不等于**有一个可制造的版图。"},
+    {"id": "J2-G-Db", "title": "真实硬件拓扑下的往返验证（逻辑错误率实测）", "status":
+     "边界声明（须真机：在具体器件上跑码并与本层预测的 distance/overhead **往返**对拍）",
+     "detail": "本层给的是**图论**口径的嵌入可行性；把它变成「这个器件上 d=5 真能跑出 lower "
+               "logical error」需要真机 logical error rate ⇒ 与 `J2-G-A`（无流片/无低温实测）"
+               "同一条边界。公共器件耦合图本身可得（drop-in 可用：`native_verdict` 只吃邻接表），"
+               "缺的是**往返**那一半——没有实测就无从对拍，故记为边界而非欠债。"},
     {"id": "J2-G-E", "title": "读出预算缺 shelving / 有效寿命层", "status":
      "已闭合（v0.9.305 · `lda_agent/readout_shelving`：闭式 `P_decay=(1−e^(−t_m/T1))^n`"
      "（n = shelving 级数，等比阶梯下由二项式定理给出）⇄ 阶梯主方程 RK4 独立数值解（n=1..4，残差 <1e-9），"
@@ -314,6 +339,53 @@ def logical_error_rate_ideal(p_phys: float, d: int, p_th: float = P_TH,
     if p_phys >= p_th:
         return 1.0
     return float(A * (p_phys / p_th) ** ((int(d) + 1) / 2.0))
+
+
+def grid_max_degree(rows: int, cols: int) -> int:
+    """方阵耦合图的最大度（**闭式**，不是手填常数）。
+
+    rows×cols 近邻图：内部 4 / 边 3 / 角 2 ⇒ 4；单行或单列是路径 ⇒ 2（两节点时 1）；
+    1×1 ⇒ 0。**存在的理由**：卡上原来写的是字面量 `"max_degree": 4` 与
+    `"embedding": "DIRECT" if 4 >= 4 else "ADAPTED"` —— 后者是**恒真表达式**
+    （`4 >= 4` 永远真），判据自己证明自己。改成读这个函数后，改 rows/cols 会真的改结论。
+    """
+    r, c = int(rows), int(cols)
+    if r < 1 or c < 1:
+        raise ValueError("rows / cols 须 ≥ 1")
+    n = r * c
+    if n == 1:
+        return 0
+    if r == 1 or c == 1:
+        return min(2, n - 1)
+    return 4
+
+
+def embed_rule_verdict(max_degree: int) -> str:
+    """**设计规则**（**必要条件**口径）⇒ DIRECT / ADAPTED / FAIL。
+
+    🔴 这不是可行性判据：`max_degree ≥ 4` 只是必要条件（内部稳定子权重 4）。
+    反例见 `lda_qeda/sc_embedding` 自检 ③（3-ary 树度 4 却可证不可嵌）。
+    真嵌入判决在 `run_j2_qpu_smoke` K 节（子图同构三值）。
+    """
+    md = int(max_degree)
+    if md >= 4:
+        return "DIRECT"
+    if md == 3:
+        return "ADAPTED"
+    return "FAIL"
+
+
+def min_square_side_closed(d: int) -> int:
+    """方阵硬件图能容下距离-d 表面码的**最小边长** = `2d − 1`。
+
+    🔴 这是 d=2…5 **穷尽子图同构搜索**标定出来的模式（`lda_qeda/sc_embedding
+    .min_square_side`），不是定理；门禁 K6 逐值对拍搜索值与这个闭式。
+    推论：占位 `(2d−1)²` 比码本体 `2d²−1` 多 `2(d−1)²` 个比特（d=3 ⇒ 25 vs 17，多 8）。
+    """
+    d = int(d)
+    if d < 2:
+        raise ValueError("表面码距离须 ≥ 2")
+    return 2 * d - 1
 
 
 def lambda2_closed_form(rows: int, cols: int) -> float:
@@ -462,10 +534,17 @@ def case_card() -> Dict[str, Any]:
         "budget": budget,
         "topology": {
             "rows": int(ROWS), "cols": int(COLS), "n_qubits": int(n_qubits),
-            "max_degree": 4,
+            # 🔴 v0.9.308：这两个字段原来是字面量 `4` 与 `"DIRECT" if 4 >= 4 else …`
+            #    （`4 >= 4` 恒真 ⇒ 自证）。现改为**派生**：换 rows/cols 结论会真的变。
+            "max_degree": int(grid_max_degree(ROWS, COLS)),
             "lambda2_closed": float(lam),
             "native_degree": 4,
-            "embedding": "DIRECT" if 4 >= 4 else "ADAPTED",
+            "embedding": embed_rule_verdict(grid_max_degree(ROWS, COLS)),
+            "embedding_rule_scope": "necessary_only",
+            "embedding_sufficiency_checked_by": "run_j2_qpu_smoke K1-K8（子图同构三值）",
+            "min_square_side_d3": int(min_square_side_closed(3)),
+            "footprint_d3": int(min_square_side_closed(3) ** 2),
+            "overhead_d3": int(min_square_side_closed(3) ** 2 - required_d3),
             "n_couplings": int(ROWS * (COLS - 1) + COLS * (ROWS - 1)),
             "resource_required_d3": int(required_d3),
             "resource_ok": bool(required_d3 <= n_qubits),
@@ -576,7 +655,7 @@ def run_selfchecks(verbose: bool = False) -> bool:
         and orders_below_threshold(p_phys) > 0.0
         and all(curve[i] > curve[i + 1] for i in range(len(curve) - 1)))
 
-    # ⑬ 案例卡组装：4 里程碑 · 5 结论 · **6 缺口**（v0.9.305 增 J2-G-E）· 顶层 verdict=DESIGN_BUDGET
+    # ⑬ 案例卡组装：4 里程碑 · 5 结论 · **7 缺口**（v0.9.305 增 J2-G-E · v0.9.308 拆 D→Da/Db）· 顶层 verdict=DESIGN_BUDGET
     #    ∧ gate 口径自洽（逐档累计 == gate_total ∧ sum(gate) == span.gate_checks）
     card = case_card()
     _ms = card["milestones"]
@@ -585,9 +664,9 @@ def run_selfchecks(verbose: bool = False) -> bool:
         _cum += _m["gate"]
         if _m["gate_total"] != _cum or not _m["bands"]:
             _bands_ok = False
-    chk("⑬ 案例卡组装：4 里程碑 / 5 结论 / 6 缺口 / verdict=DESIGN_BUDGET ∧ gate 口径自洽",
+    chk("⑬ 案例卡组装：4 里程碑 / 5 结论 / 7 缺口 / verdict=DESIGN_BUDGET ∧ gate 口径自洽",
         len(_ms) == 4 and len(card["findings"]) == 5
-        and len(card["gaps"]) == 6 and card["verdict"] == "DESIGN_BUDGET"   # v0.9.301: 拆出 Cb · v0.9.305: 补 J2-G-E
+        and len(card["gaps"]) == 7 and card["verdict"] == "DESIGN_BUDGET"   # v0.9.301 拆 Cb · v0.9.305 补 E · v0.9.308 拆 Da/Db
         and _bands_ok and _cum == card["span"]["gate_checks"])
 
     # ⑭ 🔴 不伪装实测：verdict 非 PASS/ACCEPT ∧ 诚实边界关键词齐全
@@ -622,6 +701,25 @@ def run_selfchecks(verbose: bool = False) -> bool:
         except ValueError:
             guard += 1
     chk("⑯ 护栏：rows<1 · 非物理 T2>2T1 · d<1 均抛 ValueError", guard == 3)
+
+    # ⑰ 🔴 反自证（v0.9.308）：拓扑那三个字段必须**随输入变**，不能是恒真表达式
+    #    原来写的是 `"embedding": "DIRECT" if 4 >= 4 else "ADAPTED"` —— `4 >= 4` 永远真
+    #    ⇒ 判据自己证明自己。改成派生后，这里三条钉死「派生是真的」：
+    #    ① 规则函数必须能给出 3 个不同取值（常量表达式只能给 1 个）
+    #    ② 度数闭式必须随形状变（至少 3 个不同取值）
+    #    ③ 卡上 `embedding` ≡ 由卡上 `max_degree` 现算（两处表示对拍，不是各写一遍）
+    _rule_vals = {embed_rule_verdict(m) for m in range(0, 7)}
+    _deg_vals = {grid_max_degree(*rc) for rc in ((1, 1), (1, 5), (2, 2), (10, 10))}
+    _tp = card["topology"]
+    chk("⑰ 反自证：embed_rule 有 %d 种取值 ∧ 度数闭式有 %d 种 ∧ 卡上 embedding ≡ "
+        "规则(max_degree)=%s ∧ 占位开销 ≡ 2(d−1)²=%d"
+        % (len(_rule_vals), len(_deg_vals),
+           embed_rule_verdict(_tp["max_degree"]), 2 * (3 - 1) ** 2),
+        len(_rule_vals) == 3 and len(_deg_vals) >= 3
+        and _tp["embedding"] == embed_rule_verdict(_tp["max_degree"])
+        and _tp["overhead_d3"] == _tp["footprint_d3"] - _tp["resource_required_d3"]
+        and _tp["overhead_d3"] == 2 * (3 - 1) ** 2
+        and _tp["footprint_d3"] == min_square_side_closed(3) ** 2)
 
     ok_all = all(res.values())
     if verbose:

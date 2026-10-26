@@ -270,6 +270,7 @@ def _cross_source(card, jc):
     from lda_qeda import topology_qec_bridge as TQ
     from lda_qeda import sc_topology_core as TOPO
     from lda_qeda import j2_to_j1_calibration as CAL
+    from lda_qeda import sc_embedding as SCE
     from lda_agent import readout_fidelity as RF
 
     out = {}
@@ -341,13 +342,22 @@ def _cross_source(card, jc):
     near("D8", "topology.lambda2_closed", tp["lambda2_closed"],
          TQ.topology_lambda2(topo, m=32), 1e-6)
 
-    # D9 拓扑↔表面码对接（嵌入判定 + 资源核算）
+    # D9 拓扑↔表面码对接（嵌入判定 + 资源核算 + v0.9.308 的真嵌入三值）
     bv = TQ.bridge_verdict(topo, d=3, m=32)
     same("D9", "topology.embedding", tp["embedding"], bv["embedding"])
     same("D9", "topology.resource_ok", tp["resource_ok"], bv["resource_ok"])
     near("D9", "topology.n_logical_capacity", tp["n_logical_capacity"],
          bv["n_logical_capacity"])
     same("D9", "topology.n_qubits", tp["n_qubits"], topo["n_qubits"])
+    # 🔴 v0.9.308：卡上那两个字段原来是字面量/恒真式。现在必须与**现算**一致，
+    #    且卡上「最小方阵边长」必须与**穷尽搜索**（sc_embedding.min_square_side）逐值相等
+    #    —— 卡片声明的是「标定值」，这里就是标定本身，两处表示不许各写一遍。
+    same("D9", "topology.max_degree", tp["max_degree"], jc.grid_max_degree(jc.ROWS, jc.COLS))
+    same("D9", "topology.embedding_rule_scope", tp["embedding_rule_scope"], "necessary_only")
+    # 注：卡上**不写** native_status —— 卡片是「零重计算」，跑不了搜索；
+    #     真嵌入判决由 `run_j2_qpu_smoke` K1–K8 出。写个常量在卡上就是新的自证。
+    near("D9", "topology.min_square_side_d3", tp["min_square_side_d3"],
+         SCE.min_square_side(3)["side"])
 
     # D10 J1↔J2 复利闭环（**注入口径 = 去极化参数 2ε**，非 ε 本身）
     p_phys = PEM.depolarizing_parameter(jc.T_1Q_S, jc.T1_S, jc.T2_S)
@@ -526,21 +536,48 @@ def main() -> int:
     _FOUR = ("已闭合", "已结算", "未闭合", "边界声明")
     #   ⚠️ 词表必须覆盖**数据里实际出现的写法**（v0.9.286 纪律）：「实测台」与「实验台」同类，
     #      本仓两种写法都出现过 ⇒ 都认（否则一条合规的边界声明会被误判成「无依据」）。
-    _BADGE = ("非流片", "须 NDA", "实验台", "实测台", "专卡", "不重复计债")
+    #   ⚠️ v0.9.308 补「须真机」：本卡新拆出的 `J2-G-Db`（真实硬件往返验证）用的就是这个
+    #      写法。词表必须覆盖**数据里实际出现的写法**（v0.9.286 纪律）——否则一条合规的
+    #      边界声明会被误判成「无依据」，那就成了「词表缺项逼人改口径」。
+    _BADGE = ("非流片", "须 NDA", "实验台", "实测台", "专卡", "不重复计债", "须真机")
     _bad_stat = [g.get("id") for g in gaps
                  if not any(str(g.get("status") or "").startswith(x) for x in _FOUR)]
     _bad_field = [g.get("id") for g in gaps
                   if not (g.get("id") and g.get("title") and g.get("detail"))]
     _n_open = sum(1 for g in gaps if str(g.get("status") or "").startswith("未闭合"))
+    _n_closed = sum(1 for g in gaps if str(g.get("status") or "").startswith("已闭合"))
+
+    # 🔴 v0.9.308：原判据要求「至少 1 条真欠债」。它本来是防「把整卡都判成边界来清债」，
+    #    但 j2 的真欠债（`J2-G-D` 的编译/映射那半）**真的做完了**之后，这条会**逼人留一条假债**
+    #    —— 与 v0.9.307 修 `role_delegated` 是同一类错：**判据逼人写假账**。
+    #    正解不是删掉这条，而是把「清债」也要求**可机读证据**（做完 ≠ 改标签）：
+    #    每条「已闭合」必须指名 ① `run_*_smoke` 门禁 ② `B\d{3}` 锚 ③ 一个**真实存在**的模块路径。
+    def _closed_evidence(status: str):
+        """返回 (是否有证据, 证据说明)。三条通路任一即可，但必须是可机核的实体。"""
+        st = str(status or "")
+        if re.search(r"run_[a-z0-9_]+_smoke", st):
+            return True, "gate"
+        if re.search(r"\bB\d{3}\b", st):
+            return True, "anchor"
+        for tok in re.findall(r"`([A-Za-z0-9_/]+)`", st):
+            if os.path.exists(os.path.join(_HERE, tok + ".py")):
+                return True, "module:" + tok
+        return False, ""
+
+    _ev = {g.get("id"): _closed_evidence(g.get("status")) for g in gaps
+           if str(g.get("status") or "").startswith("已闭合")}
+    _ev_bad = [k for k, v in _ev.items() if not v[0]]
     _bad_bd = [g.get("id") for g in gaps
                if str(g.get("status") or "").startswith("边界声明")
                and not any(k in str(g.get("status")) for k in _BADGE)]
-    check("F6 缺口登记：状态全为四值之一 ∧ 每条含 id/title/detail ∧ **至少 1 条真欠债** ∧ "
-          "每条边界声明写明判定依据（不粉饰）",
-          bool(gaps) and not _bad_stat and not _bad_field and _n_open >= 1 and not _bad_bd,
-          "缺口=%s 非法状态=%s 缺字段=%s 无依据边界=%s 真欠债=%d"
+    # 清债口径：要么还有真欠债，要么**所有**「已闭合」都带可机读证据（不许靠改标签清债）
+    _clearance_ok = _n_open >= 1 or (_n_closed >= 1 and not _ev_bad)
+    check("F6 缺口登记：状态全为四值之一 ∧ 每条含 id/title/detail ∧ (真欠债 ≥1 或 "
+          "全部「已闭合」带可机读证据) ∧ 每条边界声明写明判定依据（不粉饰）",
+          bool(gaps) and not _bad_stat and not _bad_field and _clearance_ok and not _bad_bd,
+          "缺口=%s 非法状态=%s 缺字段=%s 无依据边界=%s 真欠债=%d 已闭合=%d 无证据闭合=%s"
           % ([(g.get("id"), str(g.get("status"))[:6]) for g in gaps],
-             _bad_stat, _bad_field, _bad_bd, _n_open))
+             _bad_stat, _bad_field, _bad_bd, _n_open, _n_closed, _ev_bad))
 
     # 🔴 F6b（v0.9.279 · D-227 · F-6 收口）：**台账不得与已交付实现脱钩**。
     #    血案：J2-G-C 长期写「不做量子线路编译/噪声仿真」，而 D-218 早已交付

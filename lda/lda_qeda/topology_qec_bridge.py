@@ -11,8 +11,14 @@
      `2−2cos(π/max(rows,cols))`）；本层对任一拓扑（方阵 / heavy-hex）用
      Krylov Rayleigh–Ritz 现算，`run_j2_qpu_smoke` 常驻断言方阵实例逐值一致。
   2. **2D 最近邻嵌入判定**：rotated surface code 需耦合图给出 2D 最近邻格
-     （内部度 4）。方阵（度 ≤ 4）⇒ `DIRECT`；heavy-hex（度 ≤ 3，含边 qubit 度 2）
-     ⇒ `ADAPTED`（须以边 qubit 作辅助 / flag 适配，非原生直接嵌入）。
+     （内部稳定子权重 4 ⇒ 硬件图须有度 4 节点）。方阵（度 ≤ 4）⇒ `DIRECT`；
+     heavy-hex（度 ≤ 3，含边 qubit 度 2）⇒ `ADAPTED`；度 < 3 ⇒ `FAIL`。
+     🔴 **v0.9.308 订正：这条判据只是「必要条件」，不是充分条件。**
+     反例（`lda_qeda/sc_embedding` 自检 ③ 造出来）：3-ary 树内部节点度恰 4、24 个节点
+     ≥ 17，按本函数判 `DIRECT`，实际**可证不可能** —— 表面码关联图含 4-圈（相邻两个
+     稳定子交叠 2 个数据比特），树一个 4-圈都没有。⇒ 本函数返回的 `verdict` **只能用来
+     否证**（判 `FAIL` 是可靠的），判 `DIRECT`/`ADAPTED` **不能**当「能落上去」用。
+     真嵌入判定见 `native_embedding` 字段（三值：DIRECT / IMPOSSIBLE / UNKNOWN）。
   3. **资源核对**：J1 口径 `2d²−1` 物理比特 / 逻辑比特 ⇒ 给定 QPU 比特数可容
      逻辑比特数 = ⌊N / (2d²−1)⌋。
 
@@ -29,6 +35,7 @@ from typing import Dict, List
 import numpy as np
 
 from lda_qeda import sc_topology_core as TOPO
+from lda_qeda import sc_embedding as SCE
 
 #: 嵌入判定取值（设计规则口径）
 EMBED_DIRECT = "DIRECT"
@@ -111,7 +118,12 @@ def graph_connectivity(topo: Dict) -> Dict:
 
 
 def surface_code_2d_nn_verdict(topo: Dict) -> Dict:
-    """2D 最近邻嵌入判定：度 4 ⇒ DIRECT；度 3（heavy-hex）⇒ ADAPTED；度 <3 ⇒ FAIL。"""
+    """2D 最近邻嵌入判定（**设计规则 · 只是必要条件**）：度 4 ⇒ DIRECT；度 3 ⇒ ADAPTED。
+
+    🔴 v0.9.308：本函数判 `DIRECT` **不等于**「表面码能落上去」。它只是必要条件
+    （内部稳定子权重 4 ⇒ 要有度 4 的节点）。充分性由 `sc_embedding.native_verdict`
+    用真子图同构判定。判 `FAIL` 方向仍可靠（必要条件不满足 ⇒ 一定不行）。
+    """
     deg = TOPO.topology_degree_stats(topo)
     md = int(deg["max_degree"])
     if md >= SURFACE_CODE_NATIVE_DEGREE and bool(deg["within_limit"]):
@@ -126,7 +138,24 @@ def surface_code_2d_nn_verdict(topo: Dict) -> Dict:
             "max_degree_limit": int(deg["max_degree_limit"]),
             "histogram": {int(k): int(v) for k, v in deg["histogram"].items()},
             "topology": topo["name"], "reason": reason,
-            "native_degree_required": SURFACE_CODE_NATIVE_DEGREE}
+            "native_degree_required": SURFACE_CODE_NATIVE_DEGREE,
+            # 🔴 口径自述：本判据是**必要条件**。`DIRECT` 只说明「度数不挡」，
+            #    不说明「拓扑能落下」；反例见 `lda_qeda/sc_embedding` 自检 ③（树）。
+            "rule_scope": "necessary_only",
+            "sufficiency_checked_by": "lda_qeda/sc_embedding.native_verdict",
+            "sufficiency_counterexample": "3-ary 树（最大度 4、24 ≥ 17 节点）本函数判 DIRECT，"
+                                          "实际可证不可能（关联图含 4-圈，树没有）"}
+
+
+def native_embedding(topo: Dict, d: int = 3, budget: int = SCE.DEFAULT_BUDGET) -> Dict:
+    """**真嵌入**判定（子图同构 · 三值）：DIRECT / IMPOSSIBLE（附证明）/ UNKNOWN。
+
+    🔴 与 `surface_code_2d_nn_verdict` 的关系：后者答「度数够不够」（必要），
+    本函数答「关联图能不能真落上去」（充要，除预算用尽记 UNKNOWN）。
+    两者不一致是**允许且必须显式并存**的（heavy-hex：design=ADAPTED / native=IMPOSSIBLE）。
+    """
+    return SCE.native_verdict(topo["adjacency"], int(d), budget=budget)
+
 
 
 def surface_code_resource_check(d: int, n_qubits: int) -> Dict:
@@ -141,16 +170,29 @@ def surface_code_resource_check(d: int, n_qubits: int) -> Dict:
             "n_logical_capacity": (n_qubits // required) if required > 0 else 0}
 
 
-def bridge_verdict(topo: Dict, d: int = 3, m: int = 32) -> Dict:
-    """拓扑↔表面码对接签核 = 单连通 ∧ λ₂>0 ∧ 嵌入非 FAIL ∧ 资源足。"""
+def bridge_verdict(topo: Dict, d: int = 3, m: int = 32,
+                   native_budget: int = SCE.DEFAULT_BUDGET) -> Dict:
+    """拓扑↔表面码对接签核 = 单连通 ∧ λ₂>0 ∧ 嵌入非 FAIL ∧ 资源足。
+
+    🔴 v0.9.308：`verdict` 是**设计对接**（必要条件口径）的结论，`native` 才是
+    「关联图能不能真落上去」。两者**必须一起读**：
+    `verdict=ACCEPT ∧ native=IMPOSSIBLE`（heavy-hex 就是）意味着「度数不够，
+    适配后已不是同一个码」—— 那时资源/λ₂ 的数字仍然对，但**不能读成「能跑」**。
+    """
     conn = graph_connectivity(topo)
     lam = topology_lambda2(topo, m=m)
     emb = surface_code_2d_nn_verdict(topo)
     res = surface_code_resource_check(d, int(topo["n_qubits"]))
+    native = native_embedding(topo, d, budget=native_budget)
     ok = (conn["connected"] and lam > 0.0 and emb["verdict"] != EMBED_FAIL
           and res["ok"])
     return {
         "verdict": "ACCEPT" if ok else "REJECT",
+        # 🔴 设计对接口径（必要条件）——单独读会误判 feasibility
+        "verdict_scope": "design_rule_necessary_only",
+        "native": native,
+        "native_status": native["status"],
+        "native_feasible": native["status"] == SCE.STATUS_DIRECT,
         "topology": topo["name"], "d": int(d),
         "lambda2": float(lam), "connected": bool(conn["connected"]),
         "embedding": emb["verdict"], "embedding_reason": emb["reason"],
@@ -158,18 +200,21 @@ def bridge_verdict(topo: Dict, d: int = 3, m: int = 32) -> Dict:
         "n_logical_capacity": int(res["n_logical_capacity"]),
         "graph": conn, "resource": res,
         "note": ("λ₂ = 耦合图代数连通度（Cheeger 不等式 ⇒ 等周/扩张能力 ⇒ 2D 局部匹配"
-                 "可行性）；嵌入 DIRECT（度≥4）/ADAPTED（度3 heavy-hex）；资源按 J1 "
-                 "口径 2d²−1。设计对接，不含解码器实测。"),
+                 "可行性）；嵌入 DIRECT（度≥4）/ADAPTED（度3 heavy-hex）**只是必要条件**；"
+                 "资源按 J1 口径 2d²−1。真嵌入见 `native`（三值 · 附证明）。"
+                 "图论口径，不验证 2D 局部性（允许折叠），不含解码器实测。"),
     }
 
 
+
 def run_selfchecks(verbose: bool = False) -> bool:
-    """常驻自检：方阵 λ₂ 与 B509 闭式一致 / 连通性 / 嵌入判定 / 资源单调 / 反向。"""
+    """常驻自检：方阵 λ₂ 与 B509 闭式一致 / 连通性 / 设计规则 / 资源 / 反向 / **真嵌入**。"""
     bad = []
 
-    def chk(name: str, cond: bool) -> None:
+    def chk(name: str, cond: bool, detail: str = "") -> None:
         if verbose:
-            print("  [%s] %s" % ("PASS" if cond else "FAIL", name))
+            print("  [%s] %s%s" % ("PASS" if cond else "FAIL", name,
+                                   ("  |  " + detail) if detail else ""))
         if not cond:
             bad.append(name)
 
@@ -217,6 +262,46 @@ def run_selfchecks(verbose: bool = False) -> bool:
     # ⑧ 反向：资源不足 ⇒ REJECT（小 QPU 大码距）
     chk("反向：小 QPU 大码距 ⇒ REJECT",
         bridge_verdict(g3, d=9)["verdict"] == "REJECT")
+
+    # ───────── v0.9.308 追加：设计规则（必要）⇄ 真嵌入（充要）必须显式并存 ─────────
+    # ⑨ heavy-hex：设计规则说 ADAPTED（不 FAIL）、λ₂ 与资源都过 ⇒ verdict=ACCEPT；
+    #    但**真嵌入可证不可能**（最大度 3 < 内部稳定子权重 4）。两个结论都对，必须同时给出。
+    bv_h = bridge_verdict(h3, d=3)
+    chk("⑨ heavy-hex 3×3 d=3：design=ACCEPT/ADAPTED 但 native=IMPOSSIBLE(degree_bound)"
+        " —— 两口径并存，不得用 ACCEPT 代表「能跑」",
+        bv_h["verdict"] == "ACCEPT" and bv_h["embedding"] == EMBED_ADAPTED
+        and bv_h["native_status"] == SCE.STATUS_IMPOSSIBLE
+        and bv_h["native"]["proof"] == "degree_bound"
+        and bv_h["native_feasible"] is False,
+        "design=%s/%s native=%s(%s)"
+        % (bv_h["verdict"], bv_h["embedding"], bv_h["native_status"],
+           bv_h["native"]["proof"]))
+
+    # ⑩ 反例（本版存在的理由）：3-ary 树（最大度 4、24 ≥ 17 节点）
+    #    设计规则判 DIRECT（`max_degree >= 4`），真嵌入 IMPOSSIBLE（关联图有 4-圈、树没有）
+    #    ⇒ 证明「度 ≥ 4」只是**必要**条件，把它当充分用会给出假绿。
+    tree = {"name": "kary-3-tree", "adjacency": SCE.kary_tree(3, 24),
+            "couplers": [], "kind": {}, "n_qubits": 24,
+            "max_degree_limit": 4}
+    rule_tree = surface_code_2d_nn_verdict(tree)["verdict"]
+    nat_tree = native_embedding(tree, 3)
+    chk("⑩ 反例：3-ary 树 design=%s（度 4 ⇒ 旧规则判可嵌）但 native=%s(%s)"
+        " ⇒ 「度 ≥ 4」只是必要条件" % (rule_tree, nat_tree["status"], nat_tree["proof"]),
+        rule_tree == EMBED_DIRECT and nat_tree["status"] == SCE.STATUS_IMPOSSIBLE
+        and nat_tree["proof"] == "four_cycle")
+
+    # ⑪ 方阵 10×10 d=3 ⇒ native=DIRECT（真映射，非度数推断）；
+    #    且最小方阵边长 ≡ 闭式 2d−1（卡片用的那个常数必须与搜索一致）
+    bv_g10 = bridge_verdict(g10, d=3)
+    ms = SCE.min_square_side(3)
+    chk("⑪ 方阵 10×10 d=3 ⇒ native=DIRECT（显式映射 %s 项）；最小边长 %s ≡ 闭式 2d−1=%d"
+        % (bv_g10["native"].get("map_size"), ms["side"], SCE.min_square_side_closed(3)),
+        bv_g10["native_status"] == SCE.STATUS_DIRECT and ms["side"] == 5
+        and ms["side"] == SCE.min_square_side_closed(3),
+        "native=%s map=%s 最小边长 trace=%s"
+        % (bv_g10["native_status"], bv_g10["native"].get("map_size"),
+           [(t["n"], t["status"]) for t in ms["trace"]]))
+
 
     if verbose:
         print("自检：%d FAIL" % len(bad))

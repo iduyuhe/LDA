@@ -25,10 +25,10 @@
       "unmarked": 0
     },
     "量子": {
-      "boundary": 5,
-      "closed": 42,
-      "gaps": 57,
-      "open": 2,
+      "boundary": 6,
+      "closed": 43,
+      "gaps": 58,
+      "open": 1,
       "settled": 8,
       "unmarked": 0
     }
@@ -143,19 +143,19 @@
       "unmarked": 0
     },
     "j2": {
-      "boundary": 3,
-      "closed": 2,
+      "boundary": 4,
+      "closed": 3,
       "counts": {
-        "boundary": 3,
-        "closed": 2,
-        "open": 1,
+        "boundary": 4,
+        "closed": 3,
+        "open": 0,
         "settled": 0,
         "unmarked": 0
       },
       "domain": "量子",
-      "gaps": 6,
+      "gaps": 7,
       "machine_checkable": true,
-      "open": 1,
+      "open": 0,
       "settled": 0,
       "status_source": "元素 status 键",
       "unmarked": 0
@@ -360,18 +360,18 @@
     }
   },
   "ratchet": {
-    "boundary_min": 41,
-    "closed_min": 64,
-    "open_max": 6,
+    "boundary_min": 42,
+    "closed_min": 65,
+    "open_max": 5,
     "settled_min": 11,
     "unmarked_max": 0
   },
   "schema": "lda_gap_settlement_v2",
   "total": {
-    "boundary": 41,
-    "closed": 64,
-    "gaps": 122,
-    "open": 6,
+    "boundary": 42,
+    "closed": 65,
+    "gaps": 123,
+    "open": 5,
     "settled": 11,
     "unmarked": 0
   }

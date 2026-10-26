@@ -78,6 +78,11 @@ MUST_BE_REACHABLE: List[str] = [
     "lda/lda_l2/d2_threshold_mc.py::pfail_closed",
     "lda/lda_l2/d2_threshold_mc.py::crossing_closed",
     "lda/lda_l2/d2_threshold_mc.py::pfail_mc_pair",
+    # v0.9.308：编译/映射（真嵌入）的三个入口 —— 它们若变回死函数，说明 K 节判据被拆了
+    #   （「度 ≥ 4 只是必要条件、搜不到 ≠ 不存在」这两条结论就再无人守）。
+    "lda/lda_qeda/sc_embedding.py::native_verdict",
+    "lda/lda_qeda/sc_embedding.py::min_square_side",
+    "lda/lda_qeda/sc_embedding.py::verify_map",
     # v0.9.271（A2）：那个偏 1e6 倍的函数 —— 修好后接进 selfchecks ⑦b 与专属门禁，
     #   它若再次变死，就意味着「门禁接线被拆」，1e6 倍错会重新无人看守。
     "lda/lda_qeda/sc_readout_mux.py::resonator_freq_ghz",
@@ -388,6 +393,13 @@ PAIRED_GATE_OVERRIDE: Dict[str, str] = {
     # 不新开 `run_d2_threshold_mc_smoke.py` —— 新开 CORE 成员要走「七处 + 3h 全量重跑」，
     # 而这条能力的判据本来就属于 d2 卡。**同样不是免检**：门禁必须真 import 该模块。
     "lda/lda_l2/d2_threshold_mc.py": "run_v2d2_smoke.py",
+    # 🔴 v0.9.308 记录一次**没有登记**的判断：`lda_qeda/sc_embedding` 里
+    #    `min_square_side`（穷尽子图同构搜索）⇄ `min_square_side_closed`（闭式 2d−1）
+    #    看起来像成对实现，但 **`PAIRED_SCAN_DIRS` 只扫 `lda_l2` / `lda_agent`，不含
+    #    `lda_qeda`**（量子侧可锚性由各模块 `ANCHORABLE` + `why_not_anchored()` 管，
+    #    机制不混用）。所以这里**不登记** —— 登记了会被 `override_not_paired` 判红
+    #    （实测：加进去当场红）。这对的一致性由 `run_j2_qpu_smoke` K6 逐值对拍，
+    #    但那是**判据**，不是「成对实现契约」的一部分。别把两者混成一张表。
 }
 
 

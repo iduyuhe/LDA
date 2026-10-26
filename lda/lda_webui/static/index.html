@@ -11078,14 +11078,21 @@ function renderJ2(d){
   ]);
 
   // ⑥ 拓扑 ↔ 表面码对接
-  h+='<h3 style="margin:14px 0 4px">⑥ 拓扑 ↔ 表面码对接（图论谱不变量 + 资源核算）</h3>';
+  h+='<h3 style="margin:14px 0 4px">⑥ 拓扑 ↔ 表面码对接（图论谱不变量 + 编译/映射 + 资源核算）</h3>';
   h+=_qcTbl(['项','值','口径'],[
     ['耦合图规模', _sxF(tp.rows,0)+' × '+_sxF(tp.cols,0)],
     ['物理比特数', _sxF(tp.n_qubits,0)],
     ['耦合边数', _sxF(tp.n_couplings,0), '方阵 4 邻居'],
     ['最大度', _sxF(tp.max_degree,0)],
     ['表面码原生所需度', _sxF(tp.native_degree,0)],
-    ['嵌入判定', '<b>'+tp.embedding+'</b>'],
+    ['嵌入判定', '<b>'+tp.embedding+'</b>',
+      tp.embedding_rule_scope==='necessary_only'
+        ? '⚠️ 仅<b>必要条件</b>（度数够 ≠ 能落下）' : tp.embedding_rule_scope],
+    ['真嵌入判决（三值）由谁出', tp.embedding_sufficiency_checked_by,
+      '子图同构：DIRECT / IMPOSSIBLE（附证明）/ UNKNOWN'],
+    ['d=3 方阵最小边长', _sxF(tp.min_square_side_d3,0), '2d−1（d=2…5 穷尽搜索标定，非定理）'],
+    ['d=3 方阵占位比特数', _sxF(tp.footprint_d3,0), '(2d−1)²'],
+    ['占位开销（比码本体多）', _sxF(tp.overhead_d3,0), '2(d−1)²'],
     ['代数连通度 λ₂（精确闭式）', _sxF(tp.lambda2_closed,6), 'λ₂=2−2cos(π/max(rows,cols))（B509 golden）'],
     ['d=3 每逻辑比特所需物理比特', _sxF(tp.resource_required_d3,0), '2d²−1（J1 口径）'],
     ['资源充足', (tp.resource_ok?'是':'否')],

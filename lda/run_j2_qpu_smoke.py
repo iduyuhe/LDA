@@ -37,6 +37,15 @@ J 🔴 **读出 shelving / 有效寿命层（v0.9.305 · 闭合 `G-READSHELV` ·
    新旧口径之差 ≡ 闭式 `Δ = x−(1−e^(−x))` 且落在交错级数夹逼内；乘性律 `P(n+1)/P(n) ≡ (1−e^(−x))`；
    🔴 **上界判据**：`F_max(n=1) < 实测 0.995 ≤ F_max(n=2)` —— 这是旧模型够不到 0.995 的真原因；
    与公开实测三档衰减误差的**披露级**对照（绝对百分点 <0.01）；反向探针（闭式误写 `x^n` ⇒ J2 必红）。
+K 🔴 **编译/映射：表面码「真嵌入」（v0.9.308 · 闭合 `J2-G-Da` · 净增 0 锚）**：
+   把 `max_degree ≥ 4 ⇒ DIRECT` 这条**必要条件**换成真**子图同构**判定
+   （`lda_qeda/sc_embedding`）。三值 `DIRECT`/`IMPOSSIBLE`(附证明)/`UNKNOWN`，
+   证据只能来自「显式映射 + 独立复核 / 节点数 / 度数界 / 4-圈 / **搜索树穷尽**」。
+   正例：方阵 5×5 落 d=3（映射在门禁里**自己**逐边复核）；反例：3-ary 树（度 4、24 ≥ 17 节点）
+   旧规则判 DIRECT 而实际**可证不可能**（关联图含 4-圈、树没有）；heavy-hex **可证不可能**
+   （度 3 < 权重 4）⇒ 与设计规则的 `ADAPTED⇒ACCEPT` **显式并存**，不得用后者代表「能跑」。
+   方阵最小边长 **2d−1**（d=2..5 穷尽搜索标定）与闭式逐值对拍；6×6（36 站点 ≥ 31 节点）
+   仍无解且**穷尽** ⇒ 下界不是计数界。🔴 **预算用尽只记 `UNKNOWN`**，不许压成「无解」。
 
 ═══ 诚实边界 ═══
 · 本门禁是**能力验证**模块（`lda_qeda/physical_error_model.py` + `j2_to_j1_calibration.py`），
@@ -392,12 +401,14 @@ def main() -> int:
     h3 = TOPO.heavy_hex_topology(3, 3)
     bv_g = TQB.bridge_verdict(g10, d=3)
     bv_h = TQB.bridge_verdict(h3, d=3)
-    check("H9 拓扑↔QEC 桥签核：方阵 10×10 d=3 ⇒ ACCEPT/DIRECT；heavy-hex 3×3 d=3 ⇒ ACCEPT/ADAPTED",
+    check("H9 拓扑↔QEC 桥签核：方阵 10×10 d=3 ⇒ ACCEPT/DIRECT；heavy-hex 3×3 d=3 ⇒ "
+          "ACCEPT/ADAPTED（🔴 设计规则口径；真嵌入见 K2 —— ACCEPT 不等于「能跑」）",
           bv_g["verdict"] == "ACCEPT" and bv_g["embedding"] == "DIRECT"
           and bv_h["verdict"] == "ACCEPT" and bv_h["embedding"] == "ADAPTED",
-          "grid=%s/%s(N=%d) hex=%s/%s(N=%d)"
+          "grid=%s/%s(N=%d, native=%s) hex=%s/%s(N=%d, native=%s)"
           % (bv_g["verdict"], bv_g["embedding"], bv_g["graph"]["n_nodes"],
-             bv_h["verdict"], bv_h["embedding"], bv_h["graph"]["n_nodes"]))
+             bv_g["native_status"], bv_h["verdict"], bv_h["embedding"],
+             bv_h["graph"]["n_nodes"], bv_h["native_status"]))
 
     # ══════════════════════ I 线路级量子态演化与噪声传播（v0.9.301 · J2-G-Cb）══════════════════════
     # 🔴 改前：J2-G-C 写着「不含线路级量子态仿真（不演化态、不算保真度）」——
@@ -559,6 +570,79 @@ def main() -> int:
           "F(n=1)=%.9f F_old=%.9f 差=%.2e ≡ (1−ε)Δ/2=%.2e | F(n=2)=%.9f"
           % (_r1["F"], _f_old, _r1["F"] - _f_old,
              (1.0 - _r1["eps"]) * _d["delta"] / 2.0, _r2["F"]))
+
+    # ══════════════════ K 编译/映射：表面码「真嵌入」（v0.9.308 · J2-G-Da）══════════════════
+    # 🔴 改前：`surface_code_2d_nn_verdict` 用 `max_degree >= 4 ⇒ DIRECT` 判嵌入 —— 那是
+    #    **必要条件被当充分条件**用。本节把它换成一个真的子图同构判定（三值，附证明），
+    #    并把「必要条件 ≠ 充分条件」这件事本身做成判据（K3）。
+    from lda_qeda import sc_embedding as SCE
+
+    _sce_ok = SCE.run_selfchecks(verbose=False)
+    check("K1 sc_embedding 自检全过（计数逐值 / 必要条件 / 反例 / 正例 / 预算语义 / 反向探针）",
+          _sce_ok is True, "run_selfchecks() = %r" % (_sce_ok,))
+
+    # K2 🔴 定理级：内部稳定子权重 4 ⇒ 硬件图最大度须 ≥ 4。heavy-hex（度 3）**可证不可能**，
+    #    而旧设计规则对同一张图返回 ADAPTED/ACCEPT ⇒ 两个结论必须显式并存，不得互相覆盖。
+    _vhex = TQB.native_embedding(h3, 3)
+    _rule_hex = TQB.surface_code_2d_nn_verdict(h3)["verdict"]
+    check("K2 heavy-hex 3×3：设计规则=%s（不判 FAIL）但真嵌入=%s（证明=%s）—— "
+          "「适配」是换码不是换版图" % (_rule_hex, _vhex["status"], _vhex["proof"]),
+          _rule_hex == "ADAPTED"
+          and _vhex["status"] == SCE.STATUS_IMPOSSIBLE
+          and _vhex["proof"] == "degree_bound", _vhex["detail"])
+
+    # K3 反例（本节存在的理由）：3-ary 树 最大度 4、24 节点 ≥ 17 ⇒ 旧规则判 DIRECT，
+    #    实际可证不可能（表面码关联图含 4-圈：相邻稳定子交叠 2 个数据比特；树没有 4-圈）。
+    _tree = {"name": "kary-3-tree", "adjacency": SCE.kary_tree(3, 24), "couplers": [],
+             "kind": {}, "n_qubits": 24, "max_degree_limit": 4}
+    _vtr = TQB.native_embedding(_tree, 3)
+    check("K3 反例：「度 ≥ 4 ⇒ DIRECT」不充分 —— 树 design=%s / native=%s(%s)"
+          % (TQB.surface_code_2d_nn_verdict(_tree)["verdict"], _vtr["status"], _vtr["proof"]),
+          TQB.surface_code_2d_nn_verdict(_tree)["verdict"] == "DIRECT"
+          and _vtr["status"] == SCE.STATUS_IMPOSSIBLE and _vtr["proof"] == "four_cycle",
+          _vtr["detail"])
+
+    # K4 正例：方阵 5×5（25 比特）真能落下 d=3，映射**在门禁里独立复核**（不转调模块自检）
+    _g5 = TOPO.grid_topology(5, 5)
+    _sc3 = SCE.sc_tanner_graph(3)["required"]
+    _r5 = SCE.embed(_sc3, _g5["adjacency"])
+    _ver5 = SCE.verify_map(_sc3, _g5["adjacency"], _r5["map"] or {})
+    check("K4 方阵 5×5 可嵌 d=3：搜索 %d 步得 17 节点注入 ∧ 逐边在位（门禁自己复核 ok=%s）"
+          % (_r5["steps"], _ver5["ok"]),
+          _r5["status"] == "DIRECT" and _ver5["ok"]
+          and TQB.native_embedding(_g5, 3)["status"] == SCE.STATUS_DIRECT,
+          "verify=%r" % (_ver5,))
+
+    # K5 负例**不只是节点数不够**：方阵 6×6 = 36 站点 ≥ 31，d=4 仍无解，且是**穷尽**结论
+    _v66 = TQB.native_embedding(TOPO.grid_topology(6, 6), 4)
+    check("K5 方阵 6×6（36 站点 ≥ 31 节点）仍 IMPOSSIBLE（证明=%s）⇒ 下界不是计数界"
+          % _v66["proof"],
+          _v66["status"] == SCE.STATUS_IMPOSSIBLE and _v66["proof"] == "exhaustive_search",
+          _v66["detail"])
+
+    # K6 最小方阵边长（穷尽搜索）≡ 卡片用的闭式 2d−1（d=2..5 逐值 · 两处表示必须对拍）
+    _sides = {_d: SCE.min_square_side(_d)["side"] for _d in (2, 3, 4, 5)}
+    check("K6 最小方阵边长（搜索）≡ 闭式 2d−1：%s"
+          % " ".join("d=%d:%s" % (k, v) for k, v in _sides.items()),
+          all(_sides[_d] == SCE.min_square_side_closed(_d) for _d in _sides),
+          "占位开销 (2d−1)²−(2d²−1)：%s"
+          % " ".join("d=%d:%d" % (_d, (2 * _d - 1) ** 2 - (2 * _d * _d - 1)) for _d in _sides))
+
+    # K7 反向探针：把好映射改坏（交换两项 / 复制目标）⇒ 复核器必判红（不是恒真）
+    _good = dict(_r5["map"])
+    _ks = sorted(_good, key=str)
+    _bad1 = dict(_good)
+    _bad1[_ks[0]], _bad1[_ks[1]] = _good[_ks[1]], _good[_ks[0]]
+    _bad2 = dict(_good)
+    _bad2[_ks[1]] = _good[_ks[0]]
+    _rej = [SCE.verify_map(_sc3, _g5["adjacency"], _m)["ok"] for _m in (_bad1, _bad2)]
+    check("K7 反向探针：交换两项 / 挤占同一目标 ⇒ verify_map 两例全判红", _rej == [False, False],
+          "误判通过 %d/2" % sum(_rej))
+
+    # K8 🔴 语义判据：预算用尽 ⇒ UNKNOWN，**不许**被压成 IMPOSSIBLE（"搜不到" ≠ "不存在"）
+    _vb = TQB.native_embedding(_g5, 3, budget=1)
+    check("K8 预算=1 步 ⇒ UNKNOWN（proof 为空）—— 三值判决不得压扁成二值",
+          _vb["status"] == SCE.STATUS_UNKNOWN and _vb["proof"] is None, _vb["detail"])
 
     bad = globals().get("FAIL", 0)
     good = globals().get("PASS", 0)

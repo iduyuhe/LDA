@@ -4,7 +4,7 @@
     "no_fabricated_efficiency_claims": true,
     "no_fabrication_of_measurability": true
   },
-  "gaps_closed": 8,
+  "gaps_closed": 9,
   "gaps_final": [
     {
       "closed": true,
@@ -42,9 +42,14 @@
       "title": "光学域 drift 定量锚（透射电平漂移 · v0.9.193 结算：实测上界锚 + 检测下限假设显式披露）"
     },
     {
+      "closed": true,
+      "id": "PM-G10a",
+      "title": "endurance 的**可判定边界**（v0.9.312 闭合：任何循环数宣称 ≡ δ 上界承诺 · 两累加口径差 √N · 0 失效样本量闭式；**不给 δ 数值、不改判词**）"
+    },
+    {
       "closed": false,
-      "id": "PM-G10",
-      "title": "写读耐久（endurance）模型与锚 —— M5 对拍表判定「不可判」（开放）"
+      "id": "PM-G10b",
+      "title": "写读耐久（endurance）**真值**与失效机制 —— M5 对拍表判定「不可判」（边界）"
     },
     {
       "closed": true,
@@ -52,7 +57,7 @@
       "title": "Γ 标定后的全链设计点/版图重标定（v0.9.200 重标定批次**闭合**：现役几何改用标定 Γ=0.084 ⇒ 设计点 L=6.556µm 落入标定窗 [3.559,9.553]µm）"
     }
   ],
-  "gaps_total": 9,
+  "gaps_total": 10,
   "generated_by": "examples/photo_memory/build_pm_m5.py",
   "honest_note": "本表不产生任何「实测」声明：LDA 全部数字为闭式/行为级设计值；文献值全部 DOI 级器件实测；比值仅判量级（三带规则）。",
   "material": "GST",
@@ -171,14 +176,14 @@
       "verdict": "derived_from_same_source"
     },
     {
-      "gap_id": "PM-G10",
+      "gap_id": "PM-G10b",
       "lda_source": null,
       "lda_value": null,
       "lit_sources": [],
       "lit_value": null,
       "metric": "endurance",
       "metric_cn": "写读循环耐久",
-      "note": "🔴 征程内**无 endurance 模型**；文献检索未取得光子 GST 器件级循环数实测锚（Ríos 2015 原文未报循环数）⇒ **不可判**。不引用电学 PCM 的 10⁶–10⁹ 量级作粉饰（器件口径不同）。",
+      "note": "🔴 征程内**无 endurance 模型**；文献检索未取得光子 GST 器件级循环数实测锚（Ríos 2015 原文未报循环数）⇒ **不可判**。不引用电学 PCM 的 10⁶–10⁹ 量级作粉饰（器件口径不同）。🔴 v0.9.312：**可判定边界**已建（`pm_endurance_bounds`：任何循环数宣称 ≡ δ 上界承诺，两口径差 √N；0 失效样本量 n=⌈ln(1−C)/ln(R)⌉）—— 但**本行判词不变**：δ 的数值、失效机制、失效判据、器件级分布仍缺。",
       "verdict": "not_modeled"
     },
     {
@@ -227,7 +232,7 @@
       "verdict": "no_anchor"
     }
   ],
-  "summary_note": "收官口径：对拍 7 行 —— same_order/within_5x 均为**量级**结论（LDA 无流片实测，全部 design_only）；drift 行是自洽检查非独立对标；endurance 与密度两行**不可判**（如实登记 PM-G10 / 无锚）。国际对标收官 = 「知道自己每一项站在哪」，不是「全面领先」。",
+  "summary_note": "收官口径：对拍 7 行 —— same_order/within_5x 均为**量级**结论（LDA 无流片实测，全部 design_only）；drift 行是自洽检查非独立对标；endurance 与密度两行**不可判**（如实登记 PM-G10b / 无锚）。国际对标收官 = 「知道自己每一项站在哪」，不是「全面领先」。",
   "verdict_counts": {
     "derived_from_same_source": 1,
     "no_anchor": 1,

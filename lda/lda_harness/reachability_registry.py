@@ -99,6 +99,12 @@ MUST_BE_REACHABLE: List[str] = [
     "lda/lda_l2/pm_peripheral_scope.py::p_min_law",
     "lda/lda_l2/pm_peripheral_scope.py::heater_drive_scope",
     "lda/lda_l2/pm_peripheral_scope.py::worst_pair_invariance",
+    # v0.9.312：endurance 可判定边界的入口 —— 若变回死函数，V 节判据就被拆了，
+    #   「循环数宣称 ≡ δ 上界」「两口径差 √N」「0 失效样本量」三条结论就再无人守。
+    "lda/lda_l2/pm_endurance_bounds.py::cycle_damage_bounds",
+    "lda/lda_l2/pm_endurance_bounds.py::n_cycles_max",
+    "lda/lda_l2/pm_endurance_bounds.py::zero_failure_sample_size",
+    "lda/lda_l2/pm_endurance_bounds.py::endurance_verdict",
     # v0.9.271（A2）：那个偏 1e6 倍的函数 —— 修好后接进 selfchecks ⑦b 与专属门禁，
     #   它若再次变死，就意味着「门禁接线被拆」，1e6 倍错会重新无人看守。
     "lda/lda_qeda/sc_readout_mux.py::resonator_freq_ghz",

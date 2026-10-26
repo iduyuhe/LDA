@@ -14,7 +14,7 @@ DOI 级第②层 golden）逐条对拍。纪律：
    - `drift` 行 verdict=`derived_from_same_source`（LDA 上界**推导自** Cheng 2019 ⇒
      与该源对拍是**自洽性检查**，不是独立对标）；
    - `endurance` 行 verdict=`not_modeled`（征程内无模型、文献无器件级循环数锚 ⇒
-     **不可判**，宁开放不粉饰 ⇒ 派生缺口 PM-G10）；
+     **不可判**，宁开放不粉饰 ⇒ 派生缺口 PM-G10b · v0.9.312 另拆出可判定边界 PM-G10a）；
    - `areal_density` 行 verdict=`no_anchor`（文献均为单胞演示，无同口径密度锚）。
 4. 🔴 红线：不报 fabricated 能效/带宽；LDA 侧不声称「实测」；写能量口径差
    （电辅助焦耳热 vs 光脉冲）显式标注 `cross_domain=True`。
@@ -173,16 +173,21 @@ def benchmark_rows(mat: str = "GST") -> List[Dict[str, Any]]:
                  "真正独立对标需第二来源的器件级 drift 实测（尚无）。"),
     })
 
-    # ── 行 6：endurance（🔴 不可判 —— 宁开放不粉饰 ⇒ PM-G10）────────────
+    # ── 行 6：endurance（🔴 不可判 —— 宁开放不粉饰 ⇒ PM-G10b）────────────
+    # 🔴 v0.9.312：原挂 `PM-G10`；该号已拆为 **G10a（可判定边界 · 已闭合）/ G10b（真值 · 边界）**
+    #    ⇒ 本行（真值仍不可判）改挂 `PM-G10b`，**旧号退役**（同一号两个含义是本仓明令禁止的）。
     rows.append({
         "metric": "endurance", "metric_cn": "写读循环耐久",
         "lda_value": None, "lda_source": None,
         "lit_value": None, "lit_sources": [],
         "verdict": "not_modeled",
-        "gap_id": "PM-G10",
+        "gap_id": "PM-G10b",
         "note": ("🔴 征程内**无 endurance 模型**；文献检索未取得光子 GST 器件级循环数"
                  "实测锚（Ríos 2015 原文未报循环数）⇒ **不可判**。"
-                 "不引用电学 PCM 的 10⁶–10⁹ 量级作粉饰（器件口径不同）。"),
+                 "不引用电学 PCM 的 10⁶–10⁹ 量级作粉饰（器件口径不同）。"
+                 "🔴 v0.9.312：**可判定边界**已建（`pm_endurance_bounds`：任何循环数宣称 "
+                 "≡ δ 上界承诺，两口径差 √N；0 失效样本量 n=⌈ln(1−C)/ln(R)⌉）"
+                 "—— 但**本行判词不变**：δ 的数值、失效机制、失效判据、器件级分布仍缺。"),
     })
 
     # ── 行 7：集成密度（LDA 可算；文献无同口径锚）───────────────────────
@@ -269,7 +274,7 @@ def m5_report(mat: str = "GST") -> Dict[str, Any]:
         "gaps_closed": sum(1 for g in gaps if g["closed"]),
         "summary_note": ("收官口径：对拍 7 行 —— same_order/within_5x 均为**量级**结论"
                          "（LDA 无流片实测，全部 design_only）；drift 行是自洽检查非独立对标；"
-                         "endurance 与密度两行**不可判**（如实登记 PM-G10 / 无锚）。"
+                         "endurance 与密度两行**不可判**（如实登记 PM-G10b / 无锚）。"
                          "国际对标收官 = 「知道自己每一项站在哪」，不是「全面领先」。"),
         "disclosure": {
             "all_lda_values_computed": True,
@@ -338,10 +343,10 @@ def run_selfchecks(verbose: bool = False) -> bool:
         and by["drift_index_nu"].get("self_consistency_only") is True
         and abs(by["drift_index_nu"]["lda_value"]["nu_ub"] - nuo["nu_ub_max"]) < 1e-18)
 
-    # ⑧ endurance 行不可判 ∧ 挂 PM-G10
-    check("⑧ endurance 行 verdict=not_modeled ∧ 挂缺口 PM-G10",
+    # ⑧ endurance 行不可判 ∧ 挂 PM-G10b（v0.9.312：G10 已拆 10a/10b，旧号退役）
+    check("⑧ endurance 行 verdict=not_modeled ∧ 挂缺口 PM-G10b（旧号 PM-G10 已退役）",
         by["endurance"]["verdict"] == "not_modeled"
-        and by["endurance"].get("gap_id") == "PM-G10"
+        and by["endurance"].get("gap_id") == "PM-G10b"
         and by["endurance"]["lda_value"] is None and by["endurance"]["lit_value"] is None)
 
     # ⑨ 密度行：两口径都由 pitch 重算（P 口径 = 4/(18.045µm×6.2µm)）
@@ -362,8 +367,9 @@ def run_selfchecks(verbose: bool = False) -> bool:
 
     # ⑪ 缺口终态：G7 已闭合 ∧ G10 开放 ∧ declared==evidence 不变式
     led = {g["id"]: g for g in rep["gaps_final"]}
-    check("⑪ 缺口台账终态：G7 闭合 ∧ G10 开放 ∧ 全表 declared==evidence_ok",
-        led["PM-G7"]["closed"] is True and led["PM-G10"]["closed"] is False
+    check("⑪ 缺口台账终态：G7 闭合 ∧ G10b 开放 ∧ G10a 闭合 ∧ 全表 declared==evidence_ok",
+        led["PM-G7"]["closed"] is True and led["PM-G10b"]["closed"] is False
+        and led["PM-G10a"]["closed"] is True
         and all(g["closed"] == (g["closed"] and True) for g in rep["gaps_final"]))
 
     # ⑫ verdict 计数与行一致（聚合不撒谎）

@@ -131,9 +131,15 @@ def main() -> int:
     check("C7b PM-G1（材料常数库）已闭合", gaps["PM-G1"]["closed"] is True)
     check("C7c PM-G3/G4/G5 已闭合（锚 + 律自检 · v0.9.189 证据升级）",
           all(gaps[g]["closed"] is True for g in ("PM-G3", "PM-G4", "PM-G5")))
-    check("C7c2 PM-G2/G6/G7 已结算（v0.9.198 / 0.9.195 / 0.9.193 · 不粉饰）",
+    # 🔴 v0.9.312：`PM-G10` 拆为 `G10a`（可判定边界 · 已闭合）/ `G10b`（真值 · 边界）
+    #    ⇒ 用 `.get()` 取值：**缺号要判红，不许 KeyError 崩掉整个门禁**（血案 #28 同类）。
+    _g10a = gaps.get("PM-G10a") or {}
+    _g10b = gaps.get("PM-G10b") or {}
+    check("C7c2 PM-G2/G6/G7 已结算（v0.9.198 / 0.9.195 / 0.9.193 · 不粉饰）∧ "
+          "G10a 闭合 / G10b 边界（旧号 PM-G10 已退役）",
           all(gaps[g]["closed"] is True for g in ("PM-G2", "PM-G6", "PM-G7"))
-          and gaps["PM-G10"]["closed"] is False)
+          and _g10b.get("closed") is False and _g10a.get("closed") is True
+          and "PM-G10" not in gaps)
     check("C7c3 台账人机两源一致性（declared ⇔ evidence · 非同义反复）",
           all(g["declared_closed"] == g["evidence_ok"] for g in rep["gaps"]))
     check("C7d 每条缺口都挂证据明细（非空）",
@@ -189,13 +195,15 @@ def main() -> int:
     check("P3 探针须造分歧（假实测声明 ⇒ C1 必红）", raised)
 
     # P4 台账造假（人工声明与机器验算打架）⇒ C7 不变式必红
-    #    🔴 v0.9.198 起 PM-G2 已真闭合 ⇒ 造假样本改用**仍开放**的 PM-G10（否则探针恒绿）。
+    #    🔴 v0.9.198 起 PM-G2 已真闭合 ⇒ 造假样本改用**仍开放**的那条。
+    #    🔴 v0.9.312：`PM-G10` 拆为 G10a/G10b ⇒ 样本改用仍开放的 **`PM-G10b`**
+    #       （拿 `G10a` 当样本会恒绿 —— 它本来就是 declared=True 且 evidence=True）。
     fake = [dict(g) for g in rep["gaps"]]
     for g in fake:
-        if g["id"] == "PM-G10":
+        if g["id"] == "PM-G10b":
             g["declared_closed"] = True          # 声明闭合，但 evidence_ok=False
             g["closed"] = True
-    check("P4 探针须造分歧（G10 声明闭合而证据不成立 ⇒ 台账不变式必红）",
+    check("P4 探针须造分歧（G10b 声明闭合而证据不成立 ⇒ 台账不变式必红）",
           not all(g["declared_closed"] == g["evidence_ok"] for g in fake))
 
     # P5 长度压到 0.01µm ⇒ 读出能量下限爆炸

@@ -235,8 +235,10 @@ def main() -> int:
           and next(g for g in PC.GAPS if g["id"] == "PM-G8b")["status"].startswith("边界声明"),
           "缺口=%s" % _gids)
 
-    check("F1b 缺口台账含 v0.9.311 拆分结果 G9a/G9b（且旧 PM-G9 号已退役）",
-          "PM-G9a" in _gids and "PM-G9b" in _gids and "PM-G9" not in _gids,
+    check("F1b 缺口台账含拆分结果 G9a/G9b（v0.9.311）与 G10a/G10b（v0.9.312），"
+          "且旧号 PM-G9 / PM-G10 已退役",
+          all(x in _gids for x in ("PM-G9a", "PM-G9b", "PM-G10a", "PM-G10b"))
+          and "PM-G9" not in _gids and "PM-G10" not in _gids,
           "缺口=%s" % _gids)
 
     # ── H 加热器电-热-光链路（v0.9.293 · PM-G8 闭合依据）────────────────
@@ -471,6 +473,90 @@ def main() -> int:
     check("T9 反向探针：误写 P_min ∝ 1/R² ⇒ 守恒量离散度 %.3f ≫ 1e-9 ⇒ T5 必红"
           % _spread_wrong, _spread_wrong > 1e-2)
 
+    # ── V endurance 的**可判定边界**（v0.9.312 · PM-G10a 闭合依据）──────────
+    # 缺口原文：「无 endurance 模型；文献未取得光子 GST 器件级循环数实测锚 ⇒ 对拍表该行
+    # verdict=not_modeled。🔴 不引用电学 PCM 的 10⁶–10⁹ 量级作粉饰（器件口径不同）」。
+    # 本节**不造模型、不给 δ 值、不改判词**，只把「不可判」做成可逐条核的结论。
+    from lda_l2 import pm_endurance_bounds as EB
+
+    _p, _t, _ = EB.run_selfchecks(verbose=False)
+    check("V1 `pm_endurance_bounds` 自检全过（%d 项：反解 / 退化对拍 / 两口径 / 样本量 / 反向）"
+          % _t, _p == _t, "PASS=%d/%d" % (_p, _t))
+
+    # V2 🔴 两条独立路线：闭式 ln t_max 与 `pm_m4` 的 BER 几何二分（门禁**自己算**）
+    _bp = EB.budget_parts()
+    _tm = EB.t_max_log(0, 0.0)
+    _dlog = abs(_tm["log_t_max"] - math.log(_bp["t_max_gate_s"]))
+    check("V2 🔴 δ=0 退化：闭式 `ln t_max = ln t₀ + √rest/ν` = %.9f ≡ `pm_m4` BER 二分 %.9f"
+          "（|Δ| = %.2e ≤ 1e-10）" % (_tm["log_t_max"], math.log(_bp["t_max_gate_s"]), _dlog),
+          _dlog < 1e-10, "rest_min=%.6e ε_bud=%.6f" % (_bp["rest_min"], _bp["eps_bud"]))
+
+    # V3 🔴 两口径差 √N：宣称「10⁶ 次 · 保持 10⁴ s」隐含的 δ 上界（并报，不选一个）
+    _cb = EB.cycle_damage_bounds(1.0e4, 1000000)
+    check("V3 🔴 「10⁶ 次 · 10⁴ s」隐含 δ ≤ %.4e（独立累积）/ %.4e（最坏累积）"
+          " ⇒ 两口径差 %.6f = √N（N=10⁶ ⇒ **1000×**）"
+          % (_cb["delta_max_quadrature"], _cb["delta_max_linear"], _cb["spread_x"]),
+          abs(_cb["spread_x"] - 1000.0) < 1e-6 and _cb["feasible"],
+          "drift_eps=%.4e" % _cb["drift_eps"])
+
+    # V4 反解回代：N_max 处 ε_tot ≡ ε_bud（逐位）
+    _d0 = 1e-6
+    _nmax = EB.n_cycles_max(1.0, _d0)["n_max"]
+    _eps_back = math.sqrt(_nmax * _d0 * _d0
+                          + _bp["eps_write"] ** 2 + _bp["eps_read"] ** 2)
+    check("V4 反解回代：N_max = %.6e 处 ε_tot = %.12f ≡ ε_bud = %.12f（|Δ| = %.1e）"
+          % (_nmax, _eps_back, _bp["eps_bud"], abs(_eps_back - _bp["eps_bud"])),
+          abs(_eps_back - _bp["eps_bud"]) < 1e-12)
+
+    # V5 标度律：N_max ∝ 1/δ²（独立）↔ ∝ 1/δ（最坏）—— 两口径的**指数**不同
+    _a = EB.n_cycles_max(1.0, _d0)["n_max"]
+    _b = EB.n_cycles_max(1.0, 2.0 * _d0)["n_max"]
+    _c = EB.n_cycles_max(1.0, 2.0 * _d0, mode="linear")["n_max"]
+    _c0 = EB.n_cycles_max(1.0, _d0, mode="linear")["n_max"]
+    check("V5 标度律：独立口径 N(2δ)/N(δ) = %.6f（应 1/4）∧ 最坏口径 = %.6f（应 1/2）"
+          % (_b / _a, _c / _c0),
+          abs(_b / _a - 0.25) < 1e-12 and abs(_c / _c0 - 0.5) < 1e-12)
+
+    # V6 0 失效样本量闭式（与有无模型无关的统计硬约束）
+    _s1 = EB.zero_failure_sample_size(0.90, 0.90)
+    _s2 = EB.zero_failure_sample_size(0.95, 0.90)
+    _s3 = EB.zero_failure_sample_size(0.90, 0.50)
+    check("V6 0 失效样本量：n(90/90)=%d ∧ n(95/90)=%d ∧ n(90/50)=%d ∧ R^n ≤ 1−C < R^(n−1)"
+          % (_s1["n_devices"], _s2["n_devices"], _s3["n_devices"]),
+          _s1["n_devices"] == 22 and _s2["n_devices"] == 29 and _s3["n_devices"] == 4
+          and all(v["check_lower"] <= 1.0 - v["confidence"] < v["check_upper"] + 1e-18
+                  for v in (_s1, _s2, _s3)))
+
+    # V7 保持时间与循环**共用同一个**误差预算 ⇒ t↑ 则 δ 界↓
+    _q1 = EB.cycle_damage_bounds(1.0, 1000)["delta_max_quadrature"]
+    _q2 = EB.cycle_damage_bounds(1.0e4, 1000)["delta_max_quadrature"]
+    check("V7 保持时间 1 s → 10⁴ s ⇒ δ 界 %.6e → %.6e 严格下降（drift 与循环共用预算）"
+          % (_q1, _q2), _q2 < _q1)
+
+    # V8 🔴 判词锁死：对拍行仍 `not_modeled` ∧ 缺项四条齐（不许把「界定边界」写成「已解决」）
+    _ev = EB.endurance_verdict()
+    _rows5 = (PC.case_card()["m5"].get("rows") or [])
+    _endur = next((r for r in _rows5 if r.get("metric") == "endurance"), {})
+    # 🔴 gap_id 必须指向**现存**缺口号（v0.9.312：G10→G10b 已改，旧号退役）
+    _live = {g["id"] for g in PC.GAPS}
+    check("V8 🔴 判词锁死：`endurance_verdict()` = `%s` ∧ 对拍表该行 verdict = `%s` ∧ "
+          "gap_id = `%s`（**现存**号）∧ 缺项 %d 条"
+          % (_ev["verdict"], _endur.get("verdict"), _endur.get("gap_id"),
+             len(_ev["missing"])),
+          _ev["verdict"] == "not_modeled" and _endur.get("verdict") == "not_modeled"
+          and _endur.get("gap_id") == "PM-G10b" and _endur.get("gap_id") in _live
+          and len(_ev["missing"]) == 4 and len(_ev["judgeable_now"]) == 3)
+
+    # V9 🔴 纠正卡上一处隐含论证：**体积比单独推不出循环数比**
+    _vs = EB.volume_scale()
+    check("V9 🔴 尺度比 %.0f× 已算，但 `n_ratio_from_volume_alone` = %.1f（status=%s）"
+          " ⇒ 「光子体积大 10³–10⁴ 倍」**单独不是理由**"
+          % (_vs["scale_ratio"], _vs["n_ratio_from_volume_alone"], _vs["argument_status"]),
+          _vs["scale_ratio"] > 100.0 and _vs["n_ratio_from_volume_alone"] == 1.0
+          and _vs["argument_status"] == "insufficient",
+          "V_ph=%.4f µm³ V_el=%.2e µm³" % (_vs["photonic_volume_um3"],
+                                            _vs["electrical_volume_um3"]))
+
     # ── U 卡片自检接线 + PM-G9 拆分的口径守卫（v0.9.311）──────────────────
     # 🔴 **为什么要有 U1**：`pm_case.run_selfchecks()` 此前**没有任何门禁调用**
     #    （`run_pchip_case_smoke` import 的是 `pchip_case`，不是 `pm_case`）⇒ 它的 ⑥
@@ -484,15 +570,22 @@ def main() -> int:
     _g9a = next((g for g in PC.GAPS if g["id"] == "PM-G9a"), None)
     _g9b = next((g for g in PC.GAPS if g["id"] == "PM-G9b"), None)
     _g9old = [g for g in PC.GAPS if g["id"] == "PM-G9"]
-    check("U2 🔴 PM-G9 拆成 G9a（已闭合，证据指名模块 `pm_peripheral_scope`）/ "
-          "G9b（边界声明）∧ 旧 `PM-G9` 号**不再存在**（防同一号两个含义）",
+    _g10a = next((g for g in PC.GAPS if g["id"] == "PM-G10a"), None)
+    _g10b = next((g for g in PC.GAPS if g["id"] == "PM-G10b"), None)
+    _g10old = [g for g in PC.GAPS if g["id"] == "PM-G10"]
+    check("U2 🔴 缺口按「先拆再判」拆开：G9a（已闭合 · 指名 `pm_peripheral_scope`）/ G9b（边界）· "
+          "G10a（已闭合 · 指名 `pm_endurance_bounds`）/ G10b（边界）∧ 两个旧号均不再存在",
           _g9a is not None and _g9b is not None and not _g9old
+          and _g10a is not None and _g10b is not None and not _g10old
           and _g9a["status"].startswith("已闭合")
           and "pm_peripheral_scope" in _g9a["status"]
-          and _g9b["status"].startswith("边界声明"),
-          "G9a=%s G9b=%s 旧号=%d" % (
-              (_g9a or {}).get("status", "")[:14], (_g9b or {}).get("status", "")[:14],
-              len(_g9old)))
+          and _g9b["status"].startswith("边界声明")
+          and _g10a["status"].startswith("已闭合")
+          and "pm_endurance_bounds" in _g10a["status"]
+          and _g10b["status"].startswith("边界声明"),
+          "G9a=%s G10a=%s 旧号=%d" % (
+              (_g9a or {}).get("status", "")[:12],
+              (_g10a or {}).get("status", "")[:12], len(_g9old) + len(_g10old)))
 
     # ── S1 自入 CI core ─────────────────────────────────────────────────
     cut = os.path.join(_HERE, "run_ci_regression.py")

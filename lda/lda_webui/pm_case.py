@@ -111,8 +111,9 @@ MILESTONES = [
                "**从最终 GDS 字节独立解码复核**（层 5 = 单元数、层 6 = 6×单元数）；"
                "规模档 4/8/16/32 单元 + 4×8 全部 **DRC PASS + LVS ACCEPT(0 违规)**"},
     {"id": "M4", "code": "v0.9.192", "title": "外设与系统（读出链 + 写驱动 + 系统预算 + 2.5D）",
-     "gate": 48,   # v0.9.293：25 → 34（PM-G8 电-热-光联仿 H1–H8 九条）
+     "gate": 57,   # v0.9.293：25 → 34（PM-G8 电-热-光联仿 H1–H8 九条）
                    # v0.9.311：34 → 48（PM-G9a 外设参数物理核验/作用域 T1–T11 + U1/U2 + F1b）
+                   # v0.9.312：48 → 57（PM-G10a endurance 可判定边界 V1–V9）
      "result": "读出链 `T→I_pd→V_TIA→判决→BER`（行为级）：存储读出**低频高灵敏** ⇒ "
                "TIA 反馈电阻可取带宽上界 ⇒ 灵敏度 −39.8 dBm、余量 **9495×**"
                "（读出不是瓶颈）；写驱动行为级 `R_h` **109.3–546.3 Ω**（🔴 v0.9.311 订正：原写 "
@@ -138,7 +139,8 @@ MILESTONES = [
                "非流片实测**）· 写脉冲能量与光写入同量级（比值 3.39 · 🔴 电辅助 vs "
                "光写入**口径差**显式）· 胞长 11.01 vs 2–5 µm · 二元对比度 0.70 vs "
                "1.02 dB（保守侧）· drift 行=**自洽检查**非独立对标（上界推导自同一来源）· "
-               "🔴 **endurance 行=不可判**（无模型 ∧ 无器件级循环数锚 ⇒ **PM-G10**）· "
+               "🔴 **endurance 行=不可判**（无模型 ∧ 无器件级循环数锚 ⇒ **PM-G10b**；"
+               "可判定边界 `PM-G10a` v0.9.312 已闭合）· "
                "密度行=无同口径文献锚（不比）。**收官口径：知道自己每项站在哪，"
                "不是「全面领先」**"},
     {"id": "M6", "code": "v0.9.195", "title": "相位域（干涉/谐振）多电平口径（PM-G6 结算）",
@@ -224,7 +226,7 @@ FINDINGS = [
     {"title": "🔴 国际对标收官口径：**知道自己每一项站在哪**（M5 · 不是「全面领先」）",
      "detail": "逐条对拍 7 行：LDA 全部数字是**闭式/行为级设计值**（无流片实测），"
                "文献值全部 **DOI 级器件实测**；比值仅判量级（三带规则 0.5–2 / 2–5）。"
-               "两个「不可判」如实登记：endurance 无模型（**PM-G10**）、密度无同口径"
+               "两个「不可判」如实登记：endurance 无模型（**PM-G10b**）、密度无同口径"
                "文献锚（单胞演示无阵列）。drift 行是**自洽检查**（上界推导自同一来源），"
                "不是独立对标——真正独立对标需第二来源实测。"},
     {"title": "🔴 Γ 标定暴露跨档断口：**按假设出的设计点，在标定口径下读不出来**（PM-G11）",
@@ -356,10 +358,38 @@ GAPS = [
                "⚠️ 边界：`R ≤ λ/1239.84` 的前提是**无内部增益**，APD 可超此界（代价是过剩噪声"
                "因子 F(M)）；本层不含暗电流/1-f/ISI，一旦加入暗电流，`P_min·R ≡ u*` 立刻"
                "退化为**近似**。"},
-    {"id": "PM-G10", "status": "未闭合（无 endurance 模型；文献未取得光子 GST 器件级循环数实测锚）", "title": "写读耐久（endurance）模型与锚（M5 对拍判定「不可判」）",
-     "detail": "征程内**无 endurance 模型**；文献检索未取得光子 GST 器件级循环数"
-               "实测锚（Ríos 2015 原文未报循环数）⇒ 对拍表该行 verdict=not_modeled。"
-               "🔴 不引用电学 PCM 的 10⁶–10⁹ 量级作粉饰（器件口径不同）。"},
+    {"id": "PM-G10a", "status": "已闭合（v0.9.312 · `lda_l2/pm_endurance_bounds`：endurance 的"
+                              "**可判定边界** —— 把「N 次循环」翻译成 δ 上界 + 样本量闭式）",
+     "title": "endurance 的可判定边界（PM-G10 拆出的纯代数那半）",
+     "detail": "本层**不造 endurance 模型**、**不给 δ 数值**、也**不改**对拍判词 —— "
+               "只把「不可判」从一句托词变成可逐条核的结论："
+               "① **任何循环数宣称 ≡ 一个每循环损伤上界 δ 的承诺**：现有预算 "
+               "`ε_tot² = ε_w² + ε_r² + ν_T²ln²(t/t₀)` 加循环项后反解 ⇒ 宣称 "
+               "「**10⁶ 次 · 保持 10⁴ s**」隐含 δ ≤ **6.4613e-5**（独立累积）"
+               "或 ≤ **6.4613e-8**（最坏累积）—— 🔴 **两口径差 √N = 1000×**。"
+               "② 🔴 **「不可判」的结构性原因是缺机制不是缺数据**：数据能定 δ 的数值，"
+               "但**定不了该用哪个累加口径**，而口径错 3 个数量级。"
+               "③ 新层在 δ=0 处必须**逐位退化**：闭式 "
+               "`ln t_max = ln t₀ + √(ε_bud²−ε_w²−ε_r²)/ν_T` 与 `pm_m4.system_link_budget` 的 "
+               "BER 几何二分是**两条独立路线**，log 空间实测差 **5.7e-14**。"
+               "④ **要宣称「10⁶ 次无失效 @90/90」需 22 个器件各跑 10⁶ 次**"
+               "（0 失效二项闭式 `n=⌈ln(1−C)/ln(R)⌉`；@95/90 需 29 个）—— 与有没有模型无关。"
+               "🔴 **顺带纠正卡上一处隐含论证**：「光子体积大 10³–10⁴ 倍」"
+               "**单独推不出**循环数比（若注入与临界量都 ∝ V 则 N 与 V 无关，实测尺度比 "
+               "**2360×** 而 `n_ratio_from_volume_alone = 1.0`）；真正成立的理由是"
+               "**判据不同 + 失效机制未定**，后者才是决定性的。自检 **14 项**；"
+               "门禁 `run_pm_m4_smoke` V 节 9 条。"},
+    {"id": "PM-G10b",
+     "status": "边界声明（**真值**须实测：每循环损伤 δ 的数值 / 失效机制 / 器件级循环数分布）",
+     "title": "写读耐久（endurance）真值与失效机制 —— 须器件级循环实测",
+     "detail": "缺的四项**本卡无法自造**：① 每循环等效电平损伤 `δ` 的数值；"
+               "② 累加**机制**（独立 vs 线性，两口径的 δ 界差 √N）；"
+               "③ 失效**判据**的实测定义（透射/相移窗口跌到多少算失效）；"
+               "④ 器件级循环数实测分布（Ríos 2015 原文未报循环数）。"
+               "🔴 **对拍表该行 verdict 仍为 `not_modeled`**（`PM-G10a` 闭合的是"
+               "「可判定边界」，不是这一行）。"
+               "🔴 不引用电学 PCM 的 10⁶–10⁹ 量级作粉饰（判据与机制都不同）；"
+               "也**不得**用「光子体积大 10³–10⁴ 倍」当理由（体积比单独推不出 N 比）。"},
 ]
 
 #: 报告 JSON 不在本部署时的**内置快照**（2026-10-04 实测 · 仅供降级展示）。
@@ -650,7 +680,7 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
             "no_fabricated_efficiency_claims": True,
             "no_fabrication_of_measurability": True
         },
-        "gaps_closed": 8,
+        "gaps_closed": 9,
         "gaps_final": [
             {
                 "closed": True,
@@ -688,9 +718,14 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
                 "title": "光学域 drift 定量锚（透射电平漂移 · v0.9.193 结算：实测上界锚 + 检测下限假设显式披露）"
             },
             {
+                "closed": True,
+                "id": "PM-G10a",
+                "title": "endurance 的可判定边界（v0.9.312 闭合：循环数宣称 ≡ δ 上界承诺 · 两口径差 √N · 0 失效样本量闭式）"
+            },
+            {
                 "closed": False,
-                "id": "PM-G10",
-                "title": "写读耐久（endurance）模型与锚 —— M5 对拍表判定「不可判」（开放）"
+                "id": "PM-G10b",
+                "title": "写读耐久（endurance）真值与失效机制 —— M5 对拍表判定「不可判」（边界）"
             },
             {
                 "closed": True,
@@ -698,7 +733,7 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
                 "title": "Γ 标定后的全链设计点/版图重标定（v0.9.200 重标定批次闭合：现役几何改用标定 Γ=0.084 ⇒ L=6.556µm 落入标定窗 [3.559,9.553]µm）"
             }
         ],
-        "gaps_total": 9,
+        "gaps_total": 10,
         "generated_by": "examples/photo_memory/build_pm_m5.py",
         "honest_note": "本表不产生任何「实测」声明：LDA 全部数字为闭式/行为级设计值；文献值全部 DOI 级器件实测；比值仅判量级（三带规则）。",
         "material": "GST",
@@ -817,7 +852,7 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
                 "verdict": "derived_from_same_source"
             },
             {
-                "gap_id": "PM-G10",
+                "gap_id": "PM-G10b",
                 "lda_source": None,
                 "lda_value": None,
                 "lit_sources": [],
@@ -873,7 +908,7 @@ STATIC_SNAPSHOT: Dict[str, Any] = {
                 "verdict": "no_anchor"
             }
         ],
-        "summary_note": "收官口径：对拍 7 行 —— same_order/within_5x 均为**量级**结论（LDA 无流片实测，全部 design_only）；drift 行是自洽检查非独立对标；endurance 与密度两行**不可判**（如实登记 PM-G10 / 无锚）。国际对标收官 = 「知道自己每一项站在哪」，不是「全面领先」。",
+        "summary_note": "收官口径：对拍 7 行 —— same_order/within_5x 均为**量级**结论（LDA 无流片实测，全部 design_only）；drift 行是自洽检查非独立对标；endurance 与密度两行**不可判**（如实登记 PM-G10b / 无锚）。国际对标收官 = 「知道自己每一项站在哪」，不是「全面领先」。",
         "verdict_counts": {
             "derived_from_same_source": 1,
             "no_anchor": 1,
@@ -1245,13 +1280,15 @@ def run_selfchecks(verbose: bool = False) -> bool:
     m5 = card.get("m5") or {}
     _rows = {r.get("metric"): r for r in (m5.get("rows") or [])}
     _gids = {g.get("id"): g.get("closed") for g in (m5.get("gaps_final") or [])}
-    chk("⑬ M5 对拍块齐备：7 行 ∧ endurance=not_modeled ∧ G7/G2 闭合 ∧ G10 开放/G11 闭合",
+    chk("⑬ M5 对拍块齐备：7 行 ∧ endurance=not_modeled ∧ G7/G2 闭合 ∧ G10b 开放 ∧ G10a/G11 闭合",
         len(_rows) == 7
         and _rows.get("endurance", {}).get("verdict") == "not_modeled"
         and _rows.get("drift_index_nu", {}).get("verdict") == "derived_from_same_source"
         and _gids.get("PM-G7") is True and _gids.get("PM-G2") is True
-        and _gids.get("PM-G10") is False and _gids.get("PM-G11") is True
-        and m5.get("gaps_closed") == 8 and m5.get("gaps_total") == 9
+        and _gids.get("PM-G10b") is False and _gids.get("PM-G10a") is True
+        and _gids.get("PM-G11") is True
+        # 🔴 v0.9.312：PM-G10 拆 10a/10b ⇒ M5 台账 10 条 / 已闭合 9 条
+        and m5.get("gaps_closed") == 9 and m5.get("gaps_total") == 10
         and m5.get("data_source"))
 
     # ⑭ 🔴 Γ 口径两口径并报（PM-G2 结算 ⇒ PM-G11）：胞长/密度两行必须带

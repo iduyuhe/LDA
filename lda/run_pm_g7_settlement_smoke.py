@@ -114,8 +114,10 @@ def _g7_ledger_ok(case_gaps, ledger, spec):
 #:     作用域划分 · **已闭合**）与 **`PM-G9b`**（真值须本项目实测 / 逐条 DOI · **边界声明**）
 #:     —— 同一份「先拆再判」：区间本身不改（改区间才是编数据），只把「无绝对真值」
 #:     这句话按条拆成「哪些结论其实绝对、哪些只是区间」。旧号 `PM-G9` 退役。
+#:   · v0.9.312：`PM-G10`（写读耐久）拆为 **`PM-G10a`**（endurance 的**可判定边界** · 已闭合）
+#:     与 **`PM-G10b`**（真值/失效机制 · **边界声明**）；旧号退役。同一份「先拆再判」。
 _LEDGER_EXTRA = {"PM-G2", "PM-G6", "PM-G7", "PM-G8", "PM-G8b",
-                 "PM-G9a", "PM-G9b", "PM-G11"}
+                 "PM-G9a", "PM-G9b", "PM-G10a", "PM-G10b", "PM-G11"}
 
 
 def main() -> int:
@@ -310,7 +312,8 @@ def main() -> int:
             _x["detail"] = _x["detail"].replace("doi:10.1126/sciadv.aau5759",
                                                 "（无 DOI）")
     _m_del_g7 = [x for x in PC.GAPS if x["id"] != "PM-G7"]
-    _m_del_g10 = [x for x in PC.GAPS if x["id"] != "PM-G10"]
+    # v0.9.312：藏的是 `PM-G10b`（真值那条；`PM-G10a` 是已闭合的边界项）
+    _m_del_g10 = [x for x in PC.GAPS if x["id"] != "PM-G10b"]
     _m_led_del = [r for r in _ledger if r["id"] != "PM-G7"]
     _m_led_open = [{**r, "closed": False} if r["id"] == "PM-G7" else r
                    for r in _ledger]
@@ -323,7 +326,7 @@ def main() -> int:
         _g7_ledger_ok(PC.GAPS, _m_led_del, _spec) is False,        # 机器账本删行必红
         _g7_ledger_ok(PC.GAPS, _m_led_open, _spec) is False,       # 账本判「未闭合」必红
         _g7_ledger_ok(PC.GAPS, _ledger,
-                      [_s for _s in _spec if _s["id"] != "PM-G10"]) is True,
+                      [_s for _s in _spec if _s["id"] != "PM-G10b"]) is True,
     ]
     check("P4 台账判据变异探针：原样绿 ∧ 抹已结算/抹 DOI/删 G7/藏 G10/账本删行/"
           "账本改判 六改必红",
@@ -336,7 +339,9 @@ def main() -> int:
     _fp = [
         _case_ids == (_open_ids | _LEDGER_EXTRA),                     # 原样绿
         (_case_ids | {"PM-G0"}) == (_open_ids | _LEDGER_EXTRA),       # 偷加条目必红
-        (_case_ids - {"PM-G10"}) == (_open_ids | _LEDGER_EXTRA),      # 偷删条目必红
+        (_case_ids - {"PM-G10a"}) == (_open_ids | _LEDGER_EXTRA),     # 偷删条目必红
+        # v0.9.312：换名样本改用 `PM-G10a`（`PM-G9a` 已被上一版用作换名样本，
+        # 同一轮里两个样本撞车会让"三改必红"退化成两改）
         # v0.9.311：换名样本改用 `PM-G9a`（`PM-G9` 已退役，拿退役号当样本会变成"偷加"）
         (_case_ids - {"PM-G9a"} | {"PM-G99"}) == (_open_ids | _LEDGER_EXTRA),  # 换名必红
     ]

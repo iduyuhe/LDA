@@ -79,8 +79,13 @@ GAP_SPECS: Tuple[Dict[str, Any], ...] = (
      "evidence": "_ev_g6", "declared_closed": True},
     {"id": "PM-G7", "title": "光学域 drift 定量锚（透射电平漂移 · v0.9.193 结算：实测上界锚 + 检测下限假设显式披露）",
      "evidence": "_ev_g7", "declared_closed": True},
-    {"id": "PM-G10", "title": "写读耐久（endurance）模型与锚 —— M5 对拍表判定「不可判」（开放）",
-     "evidence": "_ev_g10", "declared_closed": False},
+    # 🔴 v0.9.312：`PM-G10` 拆为 **G10a（可判定边界 · 已闭合）/ G10b（真值 · 边界）**，
+    #    旧号退役 —— 同一号两个含义是本仓明令禁止的（同 v0.9.307 的 `G_Q9` 同名不同物）。
+    {"id": "PM-G10a", "title": "endurance 的**可判定边界**（v0.9.312 闭合：任何循环数宣称 ≡ δ 上界承诺 · "
+                                "两累加口径差 √N · 0 失效样本量闭式；**不给 δ 数值、不改判词**）",
+     "evidence": "_ev_g10a", "declared_closed": True},
+    {"id": "PM-G10b", "title": "写读耐久（endurance）**真值**与失效机制 —— M5 对拍表判定「不可判」（边界）",
+     "evidence": "_ev_g10b", "declared_closed": False},
     {"id": "PM-G11", "title": "Γ 标定后的全链设计点/版图重标定（v0.9.200 重标定批次**闭合**："
                              "现役几何改用标定 Γ=0.084 ⇒ 设计点 L=6.556µm 落入标定窗 [3.559,9.553]µm）",
      "evidence": "_ev_g11", "declared_closed": True},
@@ -348,10 +353,32 @@ def _ev_g7() -> Tuple[bool, str]:
         % (st["n_optical_anchors"], st["n_bound_anchors"], nuo["nu_ub_max"]))
 
 
-def _ev_g10() -> Tuple[bool, str]:
-    """PM-G10：写读耐久（endurance）模型与锚 —— 当前**未建模** ⇒ 开放（M5 判「不可判」）。
+def _ev_g10a() -> Tuple[bool, str]:
+    """PM-G10a：endurance 的**可判定边界** —— 已建（`pm_endurance_bounds`）。
 
-    开放口径 = 「征程内无 endurance 模型、文献检索未取得器件级循环数实测锚
+    闭合口径 = 三条**可机核**的事实同时成立：
+      ① 模块自检全过（含「δ=0 时闭式 ≡ `pm_m4` 的 BER 二分」这条退化对拍）；
+      ② 两累加口径的 δ 界相差恰 `√N`（口径不定 ⇒ 并报，不选一个）；
+      ③ 判词仍是 `not_modeled`（**闭合的是边界，不是这一行**）。
+    🔴 本项**不给 δ 数值**、不给循环数预测 —— 那是 `PM-G10b`。
+    """
+    try:
+        from lda_l2 import pm_endurance_bounds as EB
+        p, t, _ = EB.run_selfchecks(verbose=False)
+        cb = EB.cycle_damage_bounds(1.0e4, 1000000)
+        vs = (EB.endurance_verdict()["verdict"] == "not_modeled")
+        spread_ok = abs(cb["spread_x"] - math.sqrt(1e6)) < 1e-6
+        return bool(p == t and spread_ok and vs), (
+            "自检 %d/%d · 两口径差 %.6f（应 1000）· 判词仍 not_modeled=%s"
+            % (p, t, cb["spread_x"], vs))
+    except Exception as exc:                       # noqa: BLE001
+        return False, "%s: %s" % (type(exc).__name__, exc)
+
+
+def _ev_g10b() -> Tuple[bool, str]:
+    """PM-G10b：写读耐久（endurance）**真值** —— 当前**未建模、无实测锚** ⇒ 边界。
+
+    边界口径 = 「征程内无 endurance 模型、文献检索未取得器件级循环数实测锚
     （Ríos 2015 原文未给循环数）⇒ 对拍表该行 verdict=not_modeled」。
     🔴 宁可开放也不粉饰：不给任何循环数声明。
     """

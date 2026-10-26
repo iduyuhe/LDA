@@ -191,8 +191,12 @@ def main() -> int:
     gaps = {g["id"]: g for g in M0.gap_ledger()}
     check("C12a PM-G6 已闭合（declared_closed ∧ evidence_ok）",
           gaps["PM-G6"]["closed"] is True)
-    check("C12b PM-G2 已结算（v0.9.198）∧ PM-G10 仍如实开放",
-          gaps["PM-G2"]["closed"] is True and gaps["PM-G10"]["closed"] is False)
+    # 🔴 v0.9.312：`PM-G10` → `G10a`（闭合）/`G10b`（边界）；`.get()` 防缺号崩门禁
+    _g10a = gaps.get("PM-G10a") or {}
+    _g10b = gaps.get("PM-G10b") or {}
+    check("C12b PM-G2 已结算（v0.9.198）∧ G10b 仍如实开放 ∧ G10a 已闭合（旧号已退役）",
+          gaps["PM-G2"]["closed"] is True and _g10b.get("closed") is False
+          and _g10a.get("closed") is True and "PM-G10" not in gaps)
     check("C12c 台账人机两源不变式（declared ⇔ evidence）", M0.gap_ledger_consistent() is True)
 
     # ---------------- C13 披露 + 禁词 ----------------

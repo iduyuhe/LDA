@@ -11,7 +11,7 @@
     B3 比值 == LDA/文献 现算（非手抄）
     B4 三带规则边界语义（0.5/2/5）
     B5 drift 行 = 自洽行（self_consistency_only）—— 🔴 不是独立对标
-    B6 endurance 行 not_modeled ∧ 挂 PM-G10 ∧ 值为 None
+    B6 endurance 行 not_modeled ∧ 挂 PM-G10b（旧号退役）∧ 值为 None
     B7 密度行 no_anchor ∧ 双口径并报
     B8 文献锚逐条 DOI ∧ 无「本项目实测」自称
     B9 m5_report 缺口终态 == pm_m0.gap_ledger（同源）∧ G10 开放 ∧ G7 闭合
@@ -25,7 +25,7 @@
   探针：
     P1 改锚写能量 ×100 ⇒ 写能量行比值跟着跳 100× 且 verdict 翻红（真读锚）
     P2 改锚电平数 13→4/8→4 ⇒ 电平数行 verdict 翻转（真读锚）
-    P3 monkeypatch benchmark_rows ⇒ _ev_g10 翻转（PM-G10 证据链真读对拍表）
+    P3 monkeypatch benchmark_rows ⇒ _ev_g10b 翻转（PM-G10b 证据链真读对拍表）
     P4 肯定式面禁词（TOPS/fJ-op/pJ-bit 等）零命中
     P5 🔴 反 CWD 依赖：chdir 到临时目录后仍能定位到同一报告；**相对写法在同一
        临时目录里必读不到**（探针先证能变红），钉死「不许用相对路径读仓库产物」。
@@ -139,9 +139,9 @@ def main() -> int:
           and by["drift_index_nu"].get("self_consistency_only") is True)
 
     # ── B6 endurance 不可判 ────────────────────────────────────────────
-    check("B6 endurance 行 not_modeled ∧ 挂 PM-G10 ∧ 两侧值 None",
+    check("B6 endurance 行 not_modeled ∧ 挂 PM-G10b ∧ 两侧值 None",
           by["endurance"]["verdict"] == "not_modeled"
-          and by["endurance"].get("gap_id") == "PM-G10"
+          and by["endurance"].get("gap_id") == "PM-G10b"
           and by["endurance"]["lda_value"] is None
           and by["endurance"]["lit_value"] is None)
 
@@ -161,8 +161,9 @@ def main() -> int:
     rep = M5.m5_report("GST")
     led0 = {g["id"]: g["closed"] for g in M0.gap_ledger()}
     ledr = {g["id"]: g["closed"] for g in rep["gaps_final"]}
-    check("B9 m5_report 缺口终态 == pm_m0.gap_ledger（同源）∧ G7 闭合 ∧ G10 开放",
-          led0 == ledr and ledr.get("PM-G7") is True and ledr.get("PM-G10") is False)
+    check("B9 m5_report 缺口终态 == pm_m0.gap_ledger（同源）∧ G7 闭合 ∧ G10b 开放",
+          led0 == ledr and ledr.get("PM-G7") is True
+          and ledr.get("PM-G10b") is False and ledr.get("PM-G10a") is True)
 
     # ── B10 聚合与披露 ─────────────────────────────────────────────────
     vc = {}
@@ -256,10 +257,12 @@ def main() -> int:
     orig_bench = M5.benchmark_rows
     try:
         M5.benchmark_rows = lambda mat="GST": fake_rows          # type: ignore[assignment]
-        ok_fake = M0._ev_g10()[0]
+        # 🔴 v0.9.312：`PM-G10` 拆为 G10a/G10b ⇒ 证据函数改名 `_ev_g10b`
+        #    （原 `_ev_g10` 已退役；这一处是**探针**，改名后仍须真读对拍表）
+        ok_fake = M0._ev_g10b()[0]
         M5.benchmark_rows = orig_bench
-        ok_real = M0._ev_g10()[0]
-        check("P3 PM-G10 证据链真读对拍表（verdict 变 ⇒ _ev_g10 翻转）",
+        ok_real = M0._ev_g10b()[0]
+        check("P3 PM-G10b 证据链真读对拍表（verdict 变 ⇒ _ev_g10b 翻转）",
               ok_fake is True and ok_real is False)
     finally:
         M5.benchmark_rows = orig_bench

@@ -58,12 +58,12 @@ ARGS = {"qchip": (12,)}
 #: 棘轮（各自方向由 `_RATCHET` 声明）。**必须机器守**，否则只是注释。
 UNMARKED_MAX = 0       # 待补状态的缺口数（只降）—— v0.9.286 已达 0：112/112 全部可机核
 OPEN_MAX = 1           # 🔴 **未闭合 = 真欠债**（只降）—— v0.9.312 pm PM-G10 拆 10a（做掉）/10b（边界）⇒ 2→1
-CLOSED_MIN = 69        # 已闭合（只升）—— v0.9.312 pm PM-G10a（endurance 可判定边界）
+CLOSED_MIN = 70        # 已闭合（只升）—— v0.9.313 sensor G_temp_drift_ref-a（参考通道三档闭合）
 SETTLED_MIN = 11       # 已结算（只升）—— v0.9.289 qchip G_Q9（M2 布局最小长度守卫绕过）
 RECLASSIFIED_MIN = 6   # 🔴 口径更正痕迹条数（只升）：**唯一允许「未闭合下降但不做新活」的通道**，
                        #   每加一条必须写进 `lda_harness/gap_caliber.RECLASSIFIED` 并给出判定依据；
                        #   v0.9.300 建立（j2 J2-G-A/J2-G-B + schip G-A/G-B/G-C/G-D）
-BOUNDARY_MIN = 45      # 边界声明（只升）—— v0.9.301 j2 J2-G-C 拆出后余下「解码器实测」转边界（40→41）
+BOUNDARY_MIN = 46      # 边界声明（只升）—— v0.9.301 j2 J2-G-C 拆出后余下「解码器实测」转边界（40→41）
                        #   （参考设计的范围/模型边界原先被 closed=False 记成欠债）
 
 # ── 状态词表（**唯一权威** · v0.9.286 四值口径）──────────────────────────

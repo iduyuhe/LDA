@@ -186,10 +186,15 @@ def main() -> int:
           len(card["wizard"]["steps"]) == 5
           and len(card["wizard"]["architectures"]) == 2
           and len(card["wizard"]["knobs"]) == 3)
-    check("B5 诚实边界 5 条（温漂处方已判死 / 温漂参考通道仍开放 / 非流片实测 / 设计几何 / referencing）",
-          len(card["gaps"]) == 5
-          and any(g["id"] == "G_temp_drift" for g in card["gaps"])
-          and any(g["id"] == "G_temp_drift_ref" for g in card["gaps"]))
+    # 🔴 v0.9.313：`G_temp_drift_ref` 拆为 **-a（设计点三档闭合 · 已闭合）/ -b（硬件+实测 · 边界）**
+    #    ⇒ 6 条；旧号退役（同一号两个含义是本仓明令禁止的）。
+    _gids = [g["id"] for g in card["gaps"]]
+    check("B5 诚实边界 6 条（温漂处方已判死 / 参考通道拆 a 闭合 + b 边界 / 非流片实测 / 设计几何 / referencing）",
+          len(card["gaps"]) == 6
+          and "G_temp_drift" in _gids
+          and "G_temp_drift_ref-a" in _gids and "G_temp_drift_ref-b" in _gids
+          and "G_temp_drift_ref" not in _gids,
+          "缺口=%s" % _gids)
     check("B6 honest_note 含关键限定（设计预算 · 非流片实测签核 · LLM 不进判决路径）",
           all(kw in card["honest_note"]
               for kw in ("设计预算", "非流片实测签核", "LLM 不进判决路径")))
@@ -526,6 +531,8 @@ def main() -> int:
     # ⚠️ 本卡红线 E2 规定 `sensor_case` **顶层不得 import `lda_l2`**（零重计算·请求期零求解器）
     #    ⇒ 温漂预算**不挂进卡片**，只在本门禁里用「卡上现算值 + 模块现算」**对拍**。
     from lda_l2 import sensor_temp_budget as TB
+    # v0.9.313：参考通道设计点三档（`G_temp_drift_ref-a` 的闭合依据 · T 节）
+    from lda_l2 import sensor_ref_design as _RD
 
     _sc_tb = TB.selfcheck_sensor_temp_budget()
     check("S1 sensor_temp_budget 自检 %d 项全过（两条闭式 / 两条恒等式 / 绝对量级 / 非法入参）"
@@ -613,9 +620,13 @@ def main() -> int:
           "卡上 LOD_real 仍由温漂主导（新层只并列披露，不替换设计点）",
           SC.DEFAULT_NOISE["dT_stability_K"] == 5e-3
           and SC.DEFAULT_NOISE["CMR"] == 1.0
-          and _met["dominant_limit"] == "temp",
-          "dT=%.3g CMR=%.3g" % (SC.DEFAULT_NOISE["dT_stability_K"],
-                                SC.DEFAULT_NOISE["CMR"]))
+          and _met["dominant_limit"] == "temp"
+          # v0.9.313：新层声明的「现役 CMR / 现役 R」必须与卡内逐位一致（两处表示不许各写一遍）
+          and _RD.CURRENT_DESIGN_CMR == SC.DEFAULT_NOISE["CMR"]
+          and _RD.R_UM_DESIGN == card["design"]["R_um"],
+          "dT=%.3g CMR=%.3g R=%.3g(新层 %.3g)"
+          % (SC.DEFAULT_NOISE["dT_stability_K"], SC.DEFAULT_NOISE["CMR"],
+             card["design"]["R_um"], _RD.R_UM_DESIGN))
 
     # S11 反向探针：① 热容 ×10 ⇒ 热涨落下限降 √10（物理必然）
     #                ② 伪造「热涨落下限只有 dT_req 的一半」⇒ 缺口缩到 0.5
@@ -629,6 +640,92 @@ def main() -> int:
           and _faked_shortfall < 1.0
           and not (20.0 <= _faked_shortfall <= 80.0),
           "δT×%.6f 伪造缺口=%.3f" % (_c10 / _fs["thermal_floor_K"], _faked_shortfall))
+
+    # ═══════════ T 参考通道入设计点：三档闭合（v0.9.313 · `G_temp_drift_ref-a`）═══════════
+    # 缺口原文：「现役 CMR=1.0（无参考通道）：须 CMR ≥ 42.37，比工艺典型 33.33 高 1.27×
+    # ⇒ 需锁相/调制参考或更优分光比 ⇒ **把参考通道纳入现役设计点（不是硬件锁死，是设计点选择）**」。
+    # 本节把那个「设计点选择」做成**三条可机核的闭合档**，并**不改**现役对外数字。
+    _tp, _tt, _ = _RD.run_selfchecks(verbose=False)
+    check("T1 `sensor_ref_design` 自检全过（%d 项：恒等式 / 不变式 / 三档反解 / 取整过冲 / 反向）"
+          % _tt, _tp == _tt, "PASS=%d/%d" % (_tp, _tt))
+
+    # T2 🔴 与 v0.9.297 的既存数字一致 + 恒等式（门禁**自己算**，不转调模块自检）
+    _bd = _RD.budget()
+    _d1 = abs(_bd["cmr_req"] - _rq["CMR_req_at_floor"]) / _rq["CMR_req_at_floor"]
+    _ident = _fs["thermal_floor_K"] / _rq["dT_req_K"]
+    check("T2 🔴 CMR_req %.6f ≡ S5 的 %.6f（相对 %.1e）∧ ≡ δT_floor/dT_req = %.6f（|Δ|=%.1e）"
+          % (_bd["cmr_req"], _rq["CMR_req_at_floor"], _d1, _ident,
+             abs(_bd["cmr_req"] - _ident)),
+          _d1 < 1e-12 and abs(_bd["cmr_req"] - _ident) < 1e-12)
+
+    # T3 🔴 两条**精确**不变式（4 档 dT）：
+    #    ① CMR_req · dT_req ≡ dT_stab   ② CMR_req/dT_stab ≡ (dn/dT)/LOD_elec
+    #    （第一版写成 `CMR_req × dT_stab ≡ const` —— 错的，乘积 ∝ dT²，离散 1e6）
+    _p1 = _p2 = 0.0
+    for _t in (1e-5, 1e-3, 5e-3, 1e-2):
+        _c = TB.required_cmr_for_parity(1.86e-4, _t, _met["LOD_elec_riu"])
+        _p1 = max(_p1, abs(_c * _rq["dT_req_K"] - _t) / _t)
+        _p2 = max(_p2, abs(_c / _t - 1.86e-4 / _met["LOD_elec_riu"])
+                  / (1.86e-4 / _met["LOD_elec_riu"]))
+    check("T3 🔴 两条不变式（4 档 dT=1e-5…1e-2）：`CMR_req·dT_req ≡ dT_stab`（%.1e）∧ "
+          "`CMR_req/dT_stab ≡ (dn/dT)/LOD_elec`（%.1e）" % (_p1, _p2),
+          _p1 < 1e-12 and _p2 < 1e-12)
+
+    # T4 A 档（分光比）：δ_max = 1/CMR_req，紧度 = CMR_req/CMR_typ（与 S3 的工艺典型同源）
+    _a = _RD.trim_closure(_bd["cmr_req"], _bd["cmr_typ"])
+    check("T4 A 档：δ ≤ %.6f（= 1/%.4f）∧ 只比工艺典型 %.4f%% 紧 %.6f×（= CMR_req/CMR_typ）"
+          % (_a["delta_max"], _bd["cmr_req"], 100 * _a["delta_typ"], _a["tighten_x"]),
+          abs(_a["delta_max"] * _bd["cmr_req"] - 1.0) < 1e-15
+          and abs(_a["tighten_x"] - _bd["cmr_req"] / _bd["cmr_typ"]) < 1e-12
+          and _a["feasible"])
+
+    # T5 B 档（锁相平均）：N_min = ⌈(req/typ)²⌉，且 N−1 次不够
+    _b = _RD.lockin_closure(_bd["cmr_req"], _bd["cmr_typ"])
+    check("T5 B 档：N_min = %d（连续解 n*=%.6f）⇒ CMR_eff %.6f ≥ %.6f，且 N−1 次只有 %.4f < 需求"
+          % (_b["n_min"], _b["n_star_continuous"], _b["cmr_eff"], _bd["cmr_req"],
+             _b["cmr_floor_with_n_minus_1"]),
+          _b["n_min"] == 2 and _b["feasible"]
+          and _b["cmr_floor_with_n_minus_1"] < _bd["cmr_req"])
+
+    # T6 C 档（放大热容）：C ×1.6158 ⇒ 回代所需 CMR 恰为工艺典型
+    _c = _RD.thermal_mass_closure(_bd["cmr_req"], _bd["cmr_typ"],
+                                  dT_req_k=_rq["dT_req_K"])
+    check("T6 C 档：C ×%.6f（R %.3f → %.3f µm）⇒ 回代 CMR_req' %.9f ≡ 工艺典型 %.9f"
+          % (_c["c_scale"], _c["r_um_from"], _c["r_um_to"],
+             _c["cmr_req_after"], _c["cmr_typ"]),
+          abs(_c["cmr_req_after"] - _c["cmr_typ"]) < 1e-9 and _c["feasible"])
+
+    # T7 🔴 反向探针（两条）：
+    #    ① δ 取工艺典型 3% ⇒ CMR 只有 33.33 < 42.37 ⇒ 「A 档必须比典型更紧」非恒真
+    #    ② 锁相用 4× 比值：√N 律要 16 次、线性律只要 4 次 ⇒ 两律可分道
+    #       （1.27× 时两律都给 2 —— **没有判别力**，第一版就在此踩空）
+    _probe = _RD.lockin_closure(400.0, 100.0)
+    check("T7 反向探针：δ=3%% ⇒ CMR=%.4f < %.4f（A 档必要）∧ 4× 比值下 √N 律 N=%d ≫ 线性律 N=%d"
+          % (_RD.cmr_from_delta(_a["delta_typ"]), _bd["cmr_req"],
+             _probe["n_min"], _probe["n_min_linear_law"]),
+          _RD.cmr_from_delta(_a["delta_typ"]) < _bd["cmr_req"]
+          and _probe["n_min"] == 16 and _probe["n_min_linear_law"] == 4)
+
+    # T8 🔴 代价量纲不同 ⇒ **不给排序、不相加**（写成显式断言，防「三档都行随便挑」）
+    _co = _RD.closure_options()
+    _kinds = {_co["A_trim"]["cost_kind"], _co["B_lockin"]["cost_kind"],
+              _co["C_thermal_mass"]["cost_kind"]}
+    check("T8 🔴 三档代价量纲互不相同（%d 类）⇒ `cost_units_distinct`=%s ∧ 三档全可闭合=%s "
+          "⇒ **不排序、不相加**" % (len(_kinds), _co["cost_units_distinct"],
+                                 _co["all_closable"]),
+          _co["cost_units_distinct"] and len(_kinds) == 3 and _co["all_closable"])
+
+    # T9 判词分两半：设计点侧 closed / 硬件侧 boundary ∧ 缺口 -a 已闭合、-b 边界
+    _v = _RD.verdict()
+    _ga = next((g for g in card["gaps"] if g["id"] == "G_temp_drift_ref-a"), {})
+    _gb = next((g for g in card["gaps"] if g["id"] == "G_temp_drift_ref-b"), {})
+    check("T9 判词：设计点侧 `%s` / 硬件侧 `%s` ∧ 卡上 -a `%s` / -b `%s`（现役数字未改）"
+          % (_v["design_point_side"], _v["hardware_side"],
+             _ga.get("status", "")[:3], _gb.get("status", "")[:4]),
+          _v["design_point_side"] == "closed" and _v["hardware_side"] == "boundary"
+          and _v["current_design_unchanged"] is True
+          and _ga.get("status", "").startswith("已闭合")
+          and _gb.get("status", "").startswith("边界声明"))
 
     # ══════════════════════ K 自入 CI core ══════════════════════
     try:

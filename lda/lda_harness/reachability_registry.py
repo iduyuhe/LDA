@@ -105,6 +105,12 @@ MUST_BE_REACHABLE: List[str] = [
     "lda/lda_l2/pm_endurance_bounds.py::n_cycles_max",
     "lda/lda_l2/pm_endurance_bounds.py::zero_failure_sample_size",
     "lda/lda_l2/pm_endurance_bounds.py::endurance_verdict",
+    # v0.9.313：参考通道设计点三档的入口 —— 若变回死函数，T 节判据就被拆了，
+    #   「同一道墙三个旋钮」「N 取整必然过冲」「三档代价不可排序」三条结论就再无人守。
+    "lda/lda_l2/sensor_ref_design.py::trim_closure",
+    "lda/lda_l2/sensor_ref_design.py::lockin_closure",
+    "lda/lda_l2/sensor_ref_design.py::thermal_mass_closure",
+    "lda/lda_l2/sensor_ref_design.py::closure_options",
     # v0.9.271（A2）：那个偏 1e6 倍的函数 —— 修好后接进 selfchecks ⑦b 与专属门禁，
     #   它若再次变死，就意味着「门禁接线被拆」，1e6 倍错会重新无人看守。
     "lda/lda_qeda/sc_readout_mux.py::resonator_freq_ghz",

@@ -358,6 +358,10 @@ _W10_EXTRA = (
               #   直接相关且便宜的门禁 = `run_pm_m4_smoke`（实测 ~0.7 s / **47 判据**）。
               #   W10b 闭环条件：顶行 `` `run_x` **N 判据** `` 的每个名字都必须在对照面内。
               "run_pm_m4_smoke.py",
+              # 🔴 v0.9.313：本版真改动 = sensor `G_temp_drift_ref-a`（参考通道三档闭合）。
+              #   直接相关且便宜的门禁 = `run_sensor_panel_smoke`（实测 ~0.6 s / **75 判据**）。
+              #   W10b 闭环条件：顶行 `` `run_x` **N 判据** `` 的每个名字都必须在对照面内。
+              "run_sensor_panel_smoke.py",
               # 🔴 v0.9.266：本版真改动 = D2 QEC 码族 **M1**（码族比较/开销裁决净增 0 +
               #   `sec-d2` 面板 + `/api/d2_code_family` + 新门禁本体）。实测 **~0.2s** /
               #   **13 判据**（纯 stdlib + 一次读 index.html）⇒ 纳对照面，令本版 README

@@ -266,8 +266,24 @@ def audit(cards: Mapping[str, Iterable[Mapping[str, Any]]]) -> List[str]:
     #    v0.9.307 订正：承接 = 未闭合欠债 **或** 指名了门禁/锚号的已闭合交付。
     #    只认未闭合会**逼人写假账**（j1 真做完 G_Q9 之后反而判红），而完全不认已闭合又会让
     #    「分工」变成一句空话 ⇒ 折中：已闭合必须带**可机读证据**（`run_*_smoke` 或 `B\d{3}`）。
+    import os as _os
     import re as _re
     _ev = _re.compile(r"run_[a-z0-9_]+_smoke|B\d{3}")
+    #  🔴 v0.9.309 统一证据口径：v0.9.308 在 `run_webui_j2_render_path_smoke` 的 F6 里
+    #     定的「可机读证据」是**三条通路**（门禁名 / 锚号 / **真实存在的模块路径**），
+    #     而这里只认前两条 ⇒ 同一个问题（「已闭合」有没有机器可查的落点）在两处给了
+    #     两个答案。本版把这里补齐成同一条口径。
+    #     ⚠️ 模块路径必须**真在盘上**（`lda/<path>.py` 存在）才算证据，写个不存在的路径不行。
+    _LDA_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+
+    def _has_evidence(txt: str) -> bool:
+        t = str(txt or "")
+        if _ev.search(t):
+            return True
+        for tok in _re.findall(r"`([A-Za-z0-9_/]+)`", t):
+            if _os.path.exists(_os.path.join(_LDA_ROOT, tok + ".py")):
+                return True
+        return False
     for cid, spec in CALIBERS.items():
         if spec["kind"] != "role_delegated":
             continue
@@ -281,7 +297,7 @@ def audit(cards: Mapping[str, Iterable[Mapping[str, Any]]]) -> List[str]:
             _open_ok = any(x == GAP_OPEN for x in _st4)
             # 证据在**原始** status_text 里（`status` 已归一成四值前缀，名字/锚号都在前面被剥掉了）
             _closed_ok = any(x == GAP_CLOSED
-                             and _ev.search(str(g.get("status_text") or g.get("status") or ""))
+                             and _has_evidence(g.get("status_text") or g.get("status"))
                              for g, x in zip(_hit, _st4))
             if not (_open_ok or _closed_ok):
                 bad.append(
@@ -392,6 +408,20 @@ def selfcheck() -> Dict[str, bool]:
     _msg4 = audit(_bad_none)
     c["delegated_missing_entry_caught"] = (len(_msg4) == 1
                                           and "qec_out_of_scope" in _msg4[0])
+
+    # ③c 🔴 v0.9.309：证据的**第三条通路**（真实存在的模块路径）必须与另两条同权，
+    #     且「写个不存在的路径」不许充数 —— 否则这条口径等于给假证据开门。
+    _mod_ok = {k: [dict(g) for g in v] for k, v in good.items()}
+    _mod_ok["j1"] = [{"id": "G-QEC-a", "title": "容错阈值", "status": GAP_CLOSED,
+                      "status_text": "已闭合（`lda_l2/d2_threshold_mc` 已建）"}]
+    c["delegated_closed_by_module_path_ok"] = audit(_mod_ok) == []
+
+    _mod_bad = {k: [dict(g) for g in v] for k, v in good.items()}
+    _mod_bad["j1"] = [{"id": "G-QEC-a", "title": "容错阈值", "status": GAP_CLOSED,
+                       "status_text": "已闭合（`lda_l2/this_module_does_not_exist` 已建）"}]
+    _msg5 = audit(_mod_bad)
+    c["delegated_fake_module_path_caught"] = (len(_msg5) == 1
+                                             and "qec_out_of_scope" in _msg5[0])
 
     # ④ 🔴 反向探针 1：把一条改成未闭合 ⇒ 必须指名判红
     bad1 = {k: [dict(g) for g in v] for k, v in good.items()}

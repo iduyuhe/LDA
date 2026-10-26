@@ -83,6 +83,11 @@ MUST_BE_REACHABLE: List[str] = [
     "lda/lda_qeda/sc_embedding.py::native_verdict",
     "lda/lda_qeda/sc_embedding.py::min_square_side",
     "lda/lda_qeda/sc_embedding.py::verify_map",
+    # v0.9.309：时空解码器的三个入口 —— 若变回死函数，M 节判据就被拆了，
+    #   「最小权 = 最大似然」与「阈值掉进百分量级」两条结论就再无人守。
+    "lda/lda_l2/d2_spacetime_decoder.py::min_weight_decode",
+    "lda/lda_l2/d2_spacetime_decoder.py::run_mc",
+    "lda/lda_l2/d2_spacetime_decoder.py::brute_force_census",
     # v0.9.271（A2）：那个偏 1e6 倍的函数 —— 修好后接进 selfchecks ⑦b 与专属门禁，
     #   它若再次变死，就意味着「门禁接线被拆」，1e6 倍错会重新无人看守。
     "lda/lda_qeda/sc_readout_mux.py::resonator_freq_ghz",

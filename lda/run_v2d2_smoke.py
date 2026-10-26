@@ -341,6 +341,100 @@ def main() -> int:
     check("L6 反向探针：闭式误写 `d·p` ⇒ p=0.5 处给 %.1f 而非 0.5（L2 必红）" % _wrong,
           abs(_wrong - 0.5) > 0.4)
 
+    # ══════════ M 节 · 有噪综合征的**时空解码器**（v0.9.309 · 闭合 G-V2-D2-5b）══════════
+    # 缺口原文：「每轮 stabilizer 测量本身也以概率 p 出错时，解码要落在**时空图**上
+    # （MWPM / union-find），阈值才落到百分量级。本仓目前没有任何时空解码器 ⇒ 属独立一版。」
+    # ⇒ 本节建那个解码器，并把「阈值从 0.5 掉到百分量级」这件事做成判据。
+    from lda_l2 import d2_spacetime_decoder as STD
+
+    _p_, _t_, _ = STD.run_selfchecks(verbose=False)
+    check("M1 时空解码器自检全过（%d 项：计数/线性/单错误/暴力普查/闭合/降维/阈值/反向）"
+          % _t_, _p_ == _t_, "PASS=%d/%d" % (_p_, _t_))
+
+    # M2 🔴 暴力普查对照（门禁**自己跑**，不转调模块自检）：穷举全部 2^10 个错误模式，
+    #    按缺陷集分类，解码器的权重必须逐类等于组内最小权、奇偶必须落在最小权可达集。
+    _cen = STD.brute_force_census(3, 2)
+    _g = STD.matching_graph(3, 2)
+    _bad_w = _bad_p = 0
+    for _det, _info in _cen["census"].items():
+        _dec = STD.min_weight_decode(_det, _g)
+        if _dec["weight"] != _info["min_weight"]:
+            _bad_w += 1
+        if _dec["parity"] not in _info["parities_at_min"]:
+            _bad_p += 1
+    check("M2 暴力普查（%d 个模式 / %d 个缺陷类）：最小权逐类相等 ∧ 奇偶落在可达集"
+          % (2 ** _cen["n_bits"], _cen["n_classes"]),
+          _bad_w == 0 and _bad_p == 0, "权重错=%d 奇偶错=%d" % (_bad_w, _bad_p))
+
+    # M3 闭合复核（结构判据）：解码器的修正路径**重算缺陷**必须逐位等于输入缺陷集。
+    import random as _rnd
+    _rr = _rnd.Random(2026)
+    _okc = 0
+    _gg = STD.matching_graph(5, 4)
+    for _ in range(20):
+        _sim = STD.simulate_errors(5, 4, 0.12, _rr)
+        _det = STD.defects_of(5, 4, _sim["data"], _sim["meas"])
+        _corr = STD.reconstruct_correction(STD.min_weight_decode(_det, _gg)["pairs"], _gg)
+        _okc += int(STD.defects_of(5, 4, _corr["data"], _corr["meas"]) == _det)
+    check("M3 闭合复核：20 例随机错误的「解码→重算缺陷」逐位还原输入缺陷集", _okc == 20,
+          "还原 %d/20" % _okc)
+
+    # M4 🔴 5a ⇄ 5b **两处表示对拍**：把测量噪声关掉并只留一轮，时空解码必须退化为
+    #    5a 的「错位 > (d−1)/2」闭式（4σ）。这条把两半钉在一起 —— 任何一边改口径都会红。
+    _z = []
+    for _d in (3, 5):
+        _r = STD.run_mc(_d, 1, 0.20, trials=1500, seed=4242 + _d, p_meas=0.0)
+        _c = TMC.pfail_closed(_d, 0.20)
+        _se = (max(_c * (1 - _c), 1e-12) / _r["trials"]) ** 0.5
+        _z.append((_r["p_fail"] - _c) / _se)
+    check("M4 5a⇄5b 对拍：p_meas=0 ∧ T=1 ⇒ 失败率 ≡ 5a 闭式（2 组 |z|≤4，max=%.2f）"
+          % max(abs(x) for x in _z), all(abs(x) <= 4.0 for x in _z),
+          "z=%s" % [round(x, 2) for x in _z])
+
+    # M5 🔴 本版标题：**同一个码**，完美测量档交叉点**恰 0.5**，加上测量噪声后交叉点
+    #    落到 (0.06, 0.14) —— 这就是「阈值才落到百分量级」的可判定形式。
+    _pc_perfect = TMC.crossing_closed(3, 5)
+    _lo = STD.run_mc(3, 3, 0.06, trials=400, seed=11)["p_fail"] > \
+          STD.run_mc(5, 5, 0.06, trials=400, seed=12)["p_fail"]
+    _hi = STD.run_mc(5, 5, 0.14, trials=400, seed=13)["p_fail"] > \
+          STD.run_mc(3, 3, 0.14, trials=400, seed=14)["p_fail"]
+    check("M5 完美测量档交叉点 = %.12f（切确）↔ 有噪档（p_meas=p, T=d）交叉落在 (0.06, 0.14)"
+          " ⇒ 阈值从 0.5 掉进百分量级" % _pc_perfect,
+          abs(_pc_perfect - 0.5) < 1e-12 and _lo and _hi,
+          "p=0.06 时 d5<d3=%s · p=0.14 时 d5>d3=%s" % (_lo, _hi))
+
+    # M6 🔴 歧义不许藏起来：最小权解码在「绕边界跨整条链」的情形下可能两个奇偶同权
+    #    （= 逻辑错误的代价为零）。实测不是罕见事件 ⇒ 必须**计量并披露**，不得沉默。
+    _ra = STD.run_mc(5, 3, 0.10, trials=300, seed=77)
+    check("M6 歧义披露：p=0.10 时同权双奇偶占比 %.1f%% 被**显式计量**（`ambiguous_rate`），"
+          "不当作噪声吞掉" % (100 * _ra["ambiguous_rate"]),
+          _ra["ambiguous_rate"] > 0.0 and _ra["n_fallback"] == 0,
+          "歧义=%d/%d 回退=%d" % (int(_ra["ambiguous_rate"] * _ra["trials"]),
+                                  _ra["trials"], _ra["n_fallback"]))
+
+    # M7 🔴 诚实边界做成判据：缺陷数超上限 ⇒ 走贪心，**必须**自报 `exact=False`；
+    #    并且 d=7,T=7 在 p=0.10 的回退率 > 0 ⇒ 那一档**不得**用于阈值（本版只用 d≤5）。
+    _dg = STD.min_weight_decode(
+        frozenset((k, t) for k in range(4) for t in range(1, 6)),
+        STD.matching_graph(5, 5), max_exact=4)
+    _de = STD.min_weight_decode(
+        frozenset((k, t) for k in range(4) for t in range(1, 6)),
+        STD.matching_graph(5, 5), max_exact=64)
+    _r7 = STD.run_mc(7, 7, 0.10, trials=120, seed=99)
+    check("M7 反向探针：贪心（max_exact=4）自报 exact=False 且权重 %d ≥ 精确 %d；"
+          "d=7/T=7 回退 %d/120 > 0 ⇒ 该档**不得**用于阈值"
+          % (_dg["weight"], _de["weight"], _r7["n_fallback"]),
+          _dg["exact"] is False and _dg["weight"] >= _de["weight"] and _r7["n_fallback"] > 0,
+          "d=7 回退率=%.2f 歧义率=%.2f" % (_r7["n_fallback"] / 120.0, _r7["ambiguous_rate"]))
+
+    # M8 逻辑失败的**真值表**（精确已知）+ p=0 档必须恰不失败
+    _tt = [(a, b, STD.is_failure(a, b)) for a in (0, 1) for b in (0, 1)]
+    _z0 = STD.run_mc(5, 4, 0.0, trials=200, seed=3)
+    check("M8 逻辑失败真值表 = XOR（(0,0)/(1,1) 不失败，(0,1)/(1,0) 失败）∧ p=0 ⇒ 失败数恰 0",
+          _tt == [(0, 0, False), (0, 1, True), (1, 0, True), (1, 1, False)]
+          and _z0["p_fail"] == 0.0,
+          "truth=%s p=0 失败率=%.3f" % (_tt, _z0["p_fail"]))
+
     # K8 🔴 判据数自洽（本卡 gate_checks 原写 13、实跑 19 ⇒ **陈旧漂移**，本版补上机器对拍）
     #    ⚠️ 注意 `D2` 是 `lda_harness.d2_registries`（注册表），**不是** `d2_case` —— 我第一次就写混了，
     #       当场 AttributeError 崩掉整个门禁（「门禁突变必须判红，不得崩溃」）。故这里显式导入 + try 兜底。

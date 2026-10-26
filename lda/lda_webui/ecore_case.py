@@ -42,7 +42,7 @@ from typing import Any, Dict, List, Optional
 
 __all__ = [
     "CASE_ID", "ECORE_HONEST_NOTE", "MILESTONES", "FINDINGS", "GAPS",
-    "SCALE_TIERS", "SCALE_PRESSURE_TIERS", "SCALE_CEILING",
+    "SCALE_TIERS", "SCALE_PRESSURE_TIERS", "SCALE_CEILING", "SCALE_CEILING_FULL_CHAIN",
     "MOSFET_FACTS", "KEY_METRICS", "LAYOUT_FACTS", "PARASITIC_FACTS",
     "MISMATCH_FACTS", "SCALE_FACTS", "GATE_CHECKS_TOTAL", "PROBE_CHECKS_TOTAL",
     "DEVICE_PDE_FACTS", "DEVICE_LIMITS_FACTS", "DEVICE_2D_FACTS", "TIMING_FACTS",
@@ -157,8 +157,11 @@ SCALE_FACTS = {
     "compression_1024": 3571.0,
     "structural_count_256": 459264,      # AREF 元数据结构性核算 ≡ flat 闭式
     "algorithms": "版图：cell + AREF 层次化（O(N)）· 后仿：一维三对角 Thomas（O(N)）",
-    "one_d_vs_two_d": "1D 模型 ≡ E7 的 2D 稠密 MNA（最坏列口径 · 相对差 ≤1.7e-13）",
-    "note": "1D 行线模型**忽略列线电阻**（二阶项，已披露）；千级阵列是**设计期版图与规模律**，非流片",
+    "one_d_vs_two_d": "1D 模型 ≡ E7 的 2D 稠密 MNA **仅当列线电阻置零**（最坏列口径 · 相对差 ≤1.7e-13）；"
+                      "🔴 含列线电阻时 1D 把最坏列压降**低估 +29.8%（N=32）~ +40.7%（N=8）**"
+                      "（E20 实测 · **非二阶小量**）",
+    "note": "1D 行线模型**忽略列线电阻**（🔴 E20 实测低估 +29.8%~+40.7%，**非二阶小量**）；"
+            "千级阵列是**设计期版图与规模律**，非流片",
 }
 
 #: 规模档（E4 实测 · 8bit · 数据通路）
@@ -170,23 +173,44 @@ SCALE_TIERS = [
 ]
 
 #: 规模压力档（E9 实测 · **三重规模律**）
+#: 🔴 **E20（D-195）口径修正**：`ir_drop_rel` 口径 = **全列平均输出误差**
+#:    （`array_scale.row_line_profile()["avg_rel_err"]`，即 E9 规模律与蓝图公布值同源）。
+#:    每档**同时给出** `ir_far_drop_rel`（最坏列压降）—— 两个口径**不可互读**，
+#:    单报其一即口径丢失。数值由 `lda_l2.ecore.scale_basis.card_pressure_tiers()`
+#:    现算产出，并由 `run_ecore_e20_smoke` **逐点对拍**（此前从未对拍过）。
 SCALE_PRESSURE_TIERS = [
-    {"n": 16, "synapses": 256, "ir_drop_rel": 0.0375, "area_mm2": 0.0014,
+    {"n": 16, "synapses": 256, "ir_drop_rel": 0.037539, "ir_far_drop_rel": 0.058008,
+     "basis": "ir_avg_rel_err", "area_mm2": 0.0014,
      "sigma_rel": 0.004209, "tau_elmore_s": 1.34e-14},
-    {"n": 64, "synapses": 4096, "ir_drop_rel": 0.152, "area_mm2": 0.0236,
+    {"n": 64, "synapses": 4096, "ir_drop_rel": 0.373847, "ir_far_drop_rel": 0.547776,
+     "basis": "ir_avg_rel_err", "area_mm2": 0.0236,
      "sigma_rel": 0.001052, "tau_elmore_s": 2.15e-13},
-    {"n": 256, "synapses": 65536, "ir_drop_rel": 0.549, "area_mm2": 0.3772,
+    {"n": 256, "synapses": 65536, "ir_drop_rel": 0.824733, "ir_far_drop_rel": 0.993690,
+     "basis": "ir_avg_rel_err", "area_mm2": 0.3772,
      "sigma_rel": 0.000263, "tau_elmore_s": 3.44e-12},
-    {"n": 1024, "synapses": 1048576, "ir_drop_rel": 0.956, "area_mm2": 6.035,
+    {"n": 1024, "synapses": 1048576, "ir_drop_rel": 0.956182, "ir_far_drop_rel": 1.000000,
+     "basis": "ir_avg_rel_err", "area_mm2": 6.035,
      "sigma_rel": 0.0000526, "tau_elmore_s": 5.50e-11},
 ]
 
-#: 可及规模上界（按输出误差预算二分反解 · E9 实测）
+#: 可及规模上界（**仅 IR-drop** 口径 · E9 实测 · 二分反解）
+#: 🔴 **这一档是乐观上界**（只把行线压降当约束）。对外必须与
+#:    `SCALE_CEILING_FULL_CHAIN` **成对报出**，单报此档 = 虚报能力（E20 立此规矩）。
 SCALE_CEILING = [
-    {"budget_rel": 0.10, "max_rows": 26},
-    {"budget_rel": 0.05, "max_rows": 18},
-    {"budget_rel": 0.02, "max_rows": 11},
-    {"budget_rel": 0.01, "max_rows": 8},
+    {"budget_rel": 0.10, "max_rows": 26, "basis": "max_rows_ir_only"},
+    {"budget_rel": 0.05, "max_rows": 18, "basis": "max_rows_ir_only"},
+    {"budget_rel": 0.02, "max_rows": 11, "basis": "max_rows_ir_only"},
+    {"budget_rel": 0.01, "max_rows": 8, "basis": "max_rows_ir_only"},
+]
+
+#: 可及规模上界（**全链误差预算**口径 · E15 实测 · 扫描法）
+#: 🔴 **对外应报这一档**：含 IR + 失配 + 量化 + 编程 + 列共享的**全部已建模误差项**。
+#:    2%/1% 预算下全链只能到 **N=1**（单行）—— 紧预算由失配/量化主导，**不是 IR**。
+SCALE_CEILING_FULL_CHAIN = [
+    {"budget_rel": 0.10, "max_rows": 22, "basis": "max_rows_full_chain"},
+    {"budget_rel": 0.05, "max_rows": 12, "basis": "max_rows_full_chain"},
+    {"budget_rel": 0.02, "max_rows": 1, "basis": "max_rows_full_chain"},
+    {"budget_rel": 0.01, "max_rows": 1, "basis": "max_rows_full_chain"},
 ]
 
 #: 公开 landmark（A级公开来源·照录·未验证·仅背景坐标；不作 LDA 成就值）
@@ -847,7 +871,7 @@ ECORE_HONEST_NOTE = (
     "非流片芯片）；Mythic 等公开 landmark 仅作背景坐标，**不同台比较**；"
     "⑤ 电路级验证引擎是**设计验证引擎**，非签核级 SPICE（无温度/噪声/稀疏矩阵/收敛增强）；"
     "版图几何判据为 **bbox 级**、寄生提取为一阶几何闭式（无 3D 场解）、"
-    "规模模型为 **1D 行线**（忽略列线电阻这一二阶项）；"
+    "规模模型为 **1D 行线**（忽略列线电阻 —— 🔴 E20 实测低估 +29.8%~+40.7%，**非二阶小量**）；"
     "⑥ **LLM 不进判决路径**：判决为死标量比对（闭式物理律 golden）；"
     "全程零外部 SPICE 引擎——C 级自主（纯 numpy/标准库）；"
     "⑦ E12 的 **2D MOS 求解器（准平衡静电）**与 E13 的 **2D 漂移扩散输运**是**两段互补能力**："
@@ -1241,8 +1265,9 @@ GAPS = [
      "detail": "晶体管参数为公开典型量级占位（非 PDK 标定、无实测锚）。"},
     {"id": "G-C", "status": "边界声明（数据通路用理想运放；引擎无温度/噪声/收敛增强）", "title": "理想 TIA 路径 / 非签核级 SPICE",
      "detail": "数据通路主路径用理想运放（无限增益）；电路引擎无温度/噪声/稀疏矩阵/收敛增强。"},
-    {"id": "G-D", "status": "边界声明（零能效数字纪律 · 不报 TOPS/fJ-op）", "title": "无实测能效 / 吞吐",
-     "detail": "不报任何 TOPS / TOPS-W / fJ/op（无流片、无硅实测）。"},
+    {"id": "G-D", "status": "🟡 **已解除（E21 · D-196 · 分三档，非放开）**",
+     "title": "能效口径：从「一律不报」改为「必须标档」（MODEL_ESTIMATE 可报 · MEASURED 空置）",
+     "detail": "E21 起**解「不许算」**（平台已有功耗模型 `ecore/energy.py`），**不解「不许宣称」**：\n① `INTERNAL_TARGET` 内部目标反解 —— 可算，**不得对外引用**；\n② `MODEL_ESTIMATE` 模型推算 —— **可对外**，但必须带假设清单且 `is_measured=False`；\n③ `MEASURED` 实测 —— 🔴 **永久空置**（`MEASURED_AVAILABLE=False`，本仓无流片无硅）；\n任何声称「实测/达到 N TOPS/W」的数字仍属 fabricated。原「零能效数字纪律」条文作废。"},
     {"id": "G-E", "status": "边界声明（电阻负载固有特性，golden 已计入）", "title": "transistor 路径列增益含电阻负载因子",
      "detail": "晶体管权重路径的列增益随该列总电导变化（电阻负载固有特性，golden 已计入）。"},
     {"id": "G-F", "status": "边界声明（版图层/规则为公开近似，几何判据为 bbox 级）", "title": "版图层 / 规则为公开近似（非 PDK）",
@@ -1254,9 +1279,12 @@ GAPS = [
     {"id": "G-H", "status": "边界声明（失配/噪声/温度为公开量级；假定独立同分布）", "title": "失配/噪声/温度参数为公开量级 · 校准为理想化",
      "detail": "A_VT / A_β / k_T / K_f 为公开典型量级；L2 逐单元校准为理想化模型；"
                "噪声仅给谱密度量级；假定**独立同分布**（不建模空间相关）。"},
-    {"id": "G-I", "status": "边界声明（规模模型为 1D 行线，忽略列线电阻）", "title": "规模模型为 1D 行线（忽略列线电阻）",
-     "detail": "千级阵列的 IR-drop 用一维三对角线模型，**忽略列线电阻**（二阶项）；"
-               "在校核规模内与 E7 的 2D 稠密 MNA 对拍一致；千级是**设计期版图与规模律**，非流片。"},
+    {"id": "G-I", "status": "边界声明（规模模型为 1D 行线；列线电阻贡献已由 E20 量化并证伪「二阶项」）",
+     "title": "规模模型为 1D 行线（忽略列线电阻 —— **E20 证伪「二阶项」，实测 +29.8%~+40.7%**）",
+     "detail": "千级阵列的 IR-drop 用一维三对角线模型，**忽略列线电阻**；"
+               "🔴 E20（D-195）实测该省略使**最坏列压降**低估 **+29.8%（N=32）~ +40.7%（N=8）**"
+               "⇒ **不是二阶小量**，旧措辞已作废；1D ⟷ 2D 对拍一致**仅在列线电阻置零时**成立。"
+               "千级是**设计期版图与规模律**，非流片。量化见 `lda_l2.ecore.scale_basis.col_contribution_sweep`。"},
     {"id": "G-J", "status": "已闭合（E12 补 2D MOS 能力；历史项保留可追溯 · 新边界见 G-K）", "title": "短沟道效应原不在模型内（E11-d 测绘）→ **已由 E12 闭合**（历史项 · 保留可追溯）",
      "detail": "E11-d 曾登记「平台无 2D MOS 能力」并用**文献经验式**量化缺口（L=65 nm roll-off "
                "占 V_th **37.9%**，每项 `computed_by_lda=False`）。**E12 已补上该能力**："
@@ -1582,10 +1610,12 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "milestones": len(MILESTONES),
             "gate_checks": GATE_CHECKS_TOTAL,
             "probe_checks": PROBE_CHECKS_TOTAL,
-            "modules": 23,               # ecore 包内模块数（含能力清单自身 · 不含 __init__.py）
-            "capability_modules": 22,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
-            "entrypoints": 21,           # 常驻门禁数（E1–E9 八道 + 能力守护 + 案例卡 + 红线 +
-                                         #   E11 两道 + E12…E19 八道）
+            "modules": 36,               # ecore 包内模块数（能力模块 35 + 能力清单自身 · 不含 __init__.py）
+            "capability_modules": 35,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
+            "entrypoints": 34,           # 常驻门禁数（lda/run_ecore_*_smoke.py：E1–E9 八道 + 能力守护 +
+                                         #   案例卡 + 红线 + E11 两道 + E12…E20 九道）
+                                         # 🔴 这三个数由 `run_ecore_case_smoke` B6c 与
+                                         #   **文件系统 + manifest 独立对拍**（此前是硬编码对硬编码）。
             "modules_dir": "lda/lda_l2/ecore/",
         },
         "milestones": MILESTONES,
@@ -1622,8 +1652,12 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "facts": SCALE_FACTS,
             "tiers": SCALE_PRESSURE_TIERS,
             "ceiling": SCALE_CEILING,
+            "ceiling_full_chain": SCALE_CEILING_FULL_CHAIN,
             "note": "**三重规模律**：IR drop ∝N²（超线性）· 面积 ∝N² · 失配 σ ∝1/√N（方向相反）；"
-                    "**规模上界由 IR drop 主导**：5% 输出误差预算 ⇒ 被动单端驱动 ~18 行",
+                    "🔴 **规模上界有两个口径，必须成对读**：5% 输出误差预算 ⇒ "
+                    "**仅 IR-drop 18 行**（乐观上界）／**全链 12 行**（含失配+量化+编程+列共享，**对外应报这一档**）。"
+                    "IR drop 用**全列平均**口径（`ir_avg_rel_err`，对应 `tiers[].ir_drop_rel`），"
+                    "最坏列压降另报于 `ir_far_drop_rel` —— **两者不可互读**（同一阵列实测可差 1.5~5 倍）。",
         },
         "physics": {
             "mosfet": MOSFET_FACTS,
@@ -1655,7 +1689,9 @@ def _positioning() -> Dict[str, Any]:
     return {
         "disclaimer": "下列为公开报道的**产业界/学术界模拟计算（compute-in-memory）**数字，"
                       "仅作背景坐标；本案例为**设计期验证**（无流片），两者**不同台比较**；"
-                      "LDA **不报任何 TOPS / TOPS-W**。",
+                      "LDA 能效口径：**只报 `MODEL_ESTIMATE` 档（模型推算 · 非实测）**，"
+                      "`MEASURED`（实测）档**永久空置** ⇒ **不报任何实测 TOPS / TOPS-W**，"
+                      "且所报模型值必须同时给出假设清单。",
         "public_landscape": LANDMARKS_BRIEF + [
             {"who": "学术界", "item": "RRAM/ReRAM MVM 交叉阵列加速器提案"
                                      "（ISAAC / PUMA 系列，架构族参照）"},
@@ -1754,9 +1790,11 @@ def run_selfchecks(verbose: bool = False) -> bool:
 
     # ⑬ 🔴 不报 fabricated 能效：定位声明 + 3 条诚实限制
     pos = card["positioning"]
-    chk("⑬ 先进性定位：含不同台比较声明 + 3 条诚实限制 + 「不报任何 TOPS/TOPS-W」",
+    chk("⑬ 先进性定位：含不同台比较声明 + 3 条诚实限制 + 能效**分档**（MEASURED 空置）",
         bool(pos["disclaimer"]) and len(pos["honest_limits"]) == 3
-        and "不报任何 TOPS / TOPS-W" in pos["disclaimer"])
+        and "MODEL_ESTIMATE" in pos["disclaimer"]
+        and "MEASURED" in pos["disclaimer"]
+        and "不报任何实测" in pos["disclaimer"])
 
     # ⑭ 🔴 规模口径明标「可建模/可验证容量」
     chk("⑭ 规模口径明标「可建模并可验证的交叉点容量」",

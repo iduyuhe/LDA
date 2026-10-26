@@ -268,6 +268,156 @@ ECORE_CAPABILITY_MANIFEST = [
                     "col_share_dynamic_self_check"],
         "introduced_by": "D-194 (E19)", "guard": "run_ecore_e19_smoke.py",
     },
+    {
+        "capability": "规模/误差口径的单一真源 + 行线 IR-drop **解析金标**（闭式 p_m=(u^{m+1}+u^{−m})/(1+u) "
+                      "⟷ Thomas 数值解独立对拍 <1e-9）· 五口径登记 + 成对约束机检 + 反向完备 · "
+                      "对外载体取数（`card_pressure_tiers`）· **列线电阻贡献量化**（+29.8%~+40.7%，"
+                      "推翻「二阶项」旧措辞）· 成对规模上界（仅IR ⟷ 全链）",
+        "module": "lda_l2.ecore.scale_basis",
+        "symbols": ["SCALE_BASIS", "PAIRED_GROUPS", "BUDGET_UNIT", "row_line_alpha",
+                    "row_line_closed_form", "closed_form_sum_n", "dual_ir_basis",
+                    "scale_ceiling_paired", "card_pressure_tiers",
+                    "col_resistance_contribution", "col_contribution_sweep",
+                    "basis_coverage_report", "pairing_report",
+                    "scale_basis_self_check", "SCALE_BASIS_DISCLOSURE"],
+        "introduced_by": "D-195 (E20)", "guard": "run_ecore_e20_smoke.py",
+    },
+    {
+        "capability": "功耗模型 + 能效三档口径（`INTERNAL_TARGET` / `MODEL_ESTIMATE` / `MEASURED` 空置）· "
+                      "逐部件功耗分解 · 吞吐 2N²/T_conv · 两条标度律（阵列主导 TOPS/W 与 N 无关 ⟷ "
+                      "ADC 主导 ∝N）· Landauer 地板 · ½CV² 金标 · 电导敏感性（∝1/g，含精确偏离闭式）",
+        "module": "lda_l2.ecore.energy",
+        "symbols": ["ENERGY_TIERS", "ENERGY_PROCESS", "EFFICIENCY_LANDMARKS",
+                    "MEASURED_AVAILABLE", "OUTPUT_TIER", "KB", "cap_energy_j",
+                    "landauer_limit_j", "cdac_switching_energy_j", "cdac_total_cap_f",
+                    "array_static_power_w", "row_line_dynamic_power_w", "adc_power_w",
+                    "logic_power_w", "leakage_power_w", "throughput_ops_per_s",
+                    "system_energy_report", "efficiency_vs_n",
+                    "array_dominated_efficiency_gops_per_w", "crossover_n",
+                    "sensitivity_on_unit_conductance", "energy_vs_landmark",
+                    "energy_self_check", "ENERGY_DISCLOSURE"],
+        "introduced_by": "D-196 (E21)", "guard": "run_ecore_e21_smoke.py",
+    },
+    {
+        "capability": "器件族登记（NOR Flash / RRAM / PCM / 模拟 SRAM · 公开 A 级来源照录）· "
+                      "**可行性反解**（目标 fJ/op ⇒ 所需 g，含 P_other 地板；低于地板**显式无解**）· "
+                      "**能效地板** `P_other·T_conv/(2N²)` · 四必要条件逐族判定（电导/精度/耐久/工艺）· "
+                      "**瓶颈迁移表**（器件 → 行线驱动/ADC/外围）",
+        "module": "lda_l2.ecore.device_family",
+        "symbols": ["DEVICE_FAMILIES", "EFFICIENCY_TARGETS", "DEFAULT_N", "DEFAULT_BITS",
+                    "efficiency_floor_fj_per_op", "conductance_inverse", "roundtrip_error",
+                    "family_feasibility", "recommend_family", "dominant_shift_table",
+                    "device_family_self_check", "DEVICE_FAMILY_DISCLOSURE"],
+        "introduced_by": "D-197 (E22)", "guard": "run_ecore_e22_smoke.py",
+    },
+    {
+        "capability": "外围能耗空间（行线驱动 4 式 · ADC 列共享 · 逻辑时钟）· **优化阶梯**（逐杠杆改善与达标状态）· "
+                      "**可达性矩阵**（只报「要到目标需要什么」，不宣称达到）· 🔴 行线电容**强制取 E7 真源**"
+                      "（禁 τ/R 反解 —— 该缺陷曾使地板偏大 3.89×）",
+        "module": "lda_l2.ecore.drive_scheme",
+        "symbols": ["DRIVE_SCHEMES", "ADC_SCHEMES", "LADDER_STEPS", "scheme_energy_report",
+                    "floor_by_scheme", "optimization_ladder", "reachability_matrix",
+                    "drive_scheme_self_check", "DRIVE_SCHEME_DISCLOSURE"],
+        "introduced_by": "D-198 (E23)", "guard": "run_ecore_e23_smoke.py",
+    },
+    {
+        "capability": "ADC 架构能耗（标准 SAR / 单调 SAR / 两步式 / 两步+单调）· "
+                      "**不变性** `E_op=e_sample/(2nK)` 与 f_s 无关 · 列共享功耗-带宽权衡 · "
+                      "**未建模项区间披露**（比较器/参考缓冲/残差放大/校准 ⇒ ADC 能耗是**下界**）· "
+                      "三项占位参数敏感性（duty_read/c_unit_fF/c_logic_fF_per_cell）",
+        "module": "lda_l2.ecore.adc_arch",
+        "symbols": ["ADC_ARCHITECTURES", "UNMODELED_OVERHEAD", "cdac_cap_units",
+                    "adc_energy_per_op", "overhead_bounds", "sharing_tradeoff",
+                    "sensitivity_analysis", "adc_arch_self_check", "ADC_ARCH_DISCLOSURE"],
+        "introduced_by": "D-199 (E24)", "guard": "run_ecore_e24_smoke.py",
+    },
+    {
+        "capability": "ADC 能耗**可信度校准**：真实单位电容（0.3~2 fF · 带出处）· "
+                      "**三条实测 FOM 外锚**（16.8 / 2.07 / 15.99 fJ/c-s）· "
+                      "🔴 **CDAC 只占 ADC 总能耗 0.6~3.6%%** ⇒ 优化电容抓错 98%% · "
+                      "用实测锚反推**可信地板**（33.7 fJ/op，模型自算的 3.3×）",
+        "module": "lda_l2.ecore.adc_calibration",
+        "symbols": ["C_UNIT_LITERATURE", "PLACEHOLDER_C_UNIT_FF", "MEASURED_ADC_ANCHORS",
+                    "anchor_energy_per_conversion", "cdac_share_vs_measured",
+                    "cdac_share_table", "adc_energy_per_op_from_anchor",
+                    "floor_with_measured_adc", "c_unit_sensitivity",
+                    "adc_calibration_self_check", "ADC_CALIBRATION_DISCLOSURE"],
+        "introduced_by": "D-200 (E25)", "guard": "run_ecore_e25_smoke.py",
+    },
+    {
+        "capability": "ADC 能耗**四项物理预算**（CDAC / 比较器 / 时钟 / 逻辑，闭式齐全）· "
+                      "**覆盖率分析**（跨设计 18~89%% · 4.9× 离散）· **单参数集可标定性**"
+                      "（s_i = 1.13/5.46/5.63，常规档 3.2%% 一致 ⟷ 低速档偏离 4.83×）· "
+                      "**自由度分析**（dof=−3 ⇒ 不可校核 · 守「不得宣称精度」）· "
+                      "**区间地板**（14.9~66.2 fJ/op · 替代单点报法）· f_s 依赖结构性预言",
+        "module": "lda_l2.ecore.adc_budget",
+        "symbols": ["PROCESS_NODES", "CIRCUIT_ASSUMPTIONS", "UNEXPLAINED_SOURCES",
+                    "budget_terms", "coverage_vs_measured", "coverage_table",
+                    "coverage_spread", "required_scale", "scalability_analysis",
+                    "dof_analysis", "fs_dependence", "floor_interval",
+                    "adc_budget_self_check", "ADC_BUDGET_DISCLOSURE"],
+        "introduced_by": "D-201 (E26)", "guard": "run_ecore_e26_smoke.py",
+    },
+    {
+        "capability": "N×K **联合规模优化**：N 上界 vs 行线电阻（5%% 预算 12→26→42→140 行）· "
+                      "ADC 项**摊薄 ∝1/N**（可及 N=12 是 N=64 的 5.33×）· "
+                      "**列共享 K 净收益**（只有静态部分随 K 除 × E19 mux 侵蚀 · "
+                      "**β* 盈亏平衡闭式**：K=64 需 β>0.0270）· **杠杆排序**（行线电阻 ≫ K）",
+        "module": "lda_l2.ecore.joint_scale",
+        "symbols": ["baseline_r_seg", "BETA_PLACEHOLDER", "BETA_SCENARIOS", "R_DIVS",
+                    "n_ceiling", "n_ceiling_table", "adc_dilution", "k_net_gain",
+                    "k_breakeven_beta", "k_gain_table", "attainable_efficiency",
+                    "leverage_ranking", "joint_scale_self_check",
+                    "JOINT_SCALE_DISCLOSURE"],
+        "introduced_by": "D-202 (E27)", "guard": "run_ecore_e27_smoke.py",
+    },
+    {
+        "capability": "行线电阻**反解与版图可行性**：金属层登记（M1→RDL）· 三条降阻路径"
+                      "（换层 / 加宽 / 双端驱动）· **两条精确不变性**（`R·C` 与线宽无关 · "
+                      "`C` 与金属厚度无关）· 方案表（N 12→29→42→87→125→200）· "
+                      "**代价模型**（电容比/行线份额/via/掩模/驱动器 ×2 · 明写未做 DRC）",
+        "module": "lda_l2.ecore.row_metal",
+        "symbols": ["METAL_LAYERS", "DRIVE_MODES", "WIDTHS", "PLANS",
+                    "seg_rc", "rc_invariance", "c_vs_thickness", "n_ceiling_for",
+                    "plan_table", "best_plan", "cost_model", "row_metal_self_check",
+                    "ROW_METAL_DISCLOSURE"],
+        "introduced_by": "D-203 (E28)", "guard": "run_ecore_e28_smoke.py",
+    },
+    {
+        "capability": "**版图可行性**：层栈缺口量化（平台 7 层 · E28 换层需 +8~+10 层）· "
+                      "**DRC 临界线宽扫描**（0.52 µm 放行 / 0.55 REJECT）· "
+                      "DRC/LVS/GDS 矩阵（roundtrip + 几何回提）· **三路径可行判定**"
+                      "（realizable 全 False）· **DRC 复杂度 O(N⁴) 实测**· 双端端口代价（不编数）",
+        "module": "lda_l2.ecore.layout_feasibility",
+        "symbols": ["current_layers", "REQUIRED_LAYERS", "DRC_NS", "DRC_WIDTHS",
+                    "layer_gap", "drc_width_scan", "max_drc_width", "drc_matrix",
+                    "drc_scaling", "feasible_paths", "dual_drive_cost",
+                    "layout_feasibility_self_check", "LAYOUT_FEASIBILITY_DISCLOSURE"],
+        "introduced_by": "D-204 (E29)", "guard": "run_ecore_e29_smoke.py",
+    },
+    {
+        "capability": "**层栈扩展**（6→16 层 · +M3/M4/M5/M6/AP + VIA2-VIA5/VIA_AP · 纯加法）· "
+                      "行线可选层（`row_layer`）· **换层三障碍实测**（CONT 悬空 / AP 强制加宽 / "
+                      "AP 行距约束）· **第一条 DRC 全过的换层路径**（AP W1.60 pitch_y3.20 ⇒ r×40）",
+        "module": "lda_l2.ecore.layer_stack_ext",
+        "symbols": ["BASELINE_STACK", "EXTENDED_STACK", "BASELINE_GDS", "AP_PATHWAYS",
+                    "stack_comparison", "baseline_unchanged", "row_layer_matrix",
+                    "dangling_analysis", "ap_pathway", "ap_forced_widen", "gap_closure",
+                    "layer_stack_ext_self_check", "LAYER_STACK_EXT_DISCLOSURE"],
+        "introduced_by": "D-205 (E30)", "guard": "run_ecore_e30_smoke.py",
+    },
+    {
+        "capability": "**换层签核**：漏极 via stack（12 层链 · 落垫按上方 via enclosure 反算）· **层序审计**（每 via 严格夹层 · E30 曾错位一层）· **DRC/LVS 静默漏检修复**（`stack` 参数）· 签核矩阵（7 层 → 6 过 · M2 短路）· 规模能效表（N 12→87 · vs Mythic 21.6×→3.0×）· via 数量与良率风险（90,828 个未建模）",
+        "module": "lda_l2.ecore.signed_off_stack",
+        "symbols": ["MATRIX_N", "BASE_WIDTH_UM", "LAYER_THICKNESS_UM", "END_VIA_OF", "BASELINE_GDS", "z_order_audit", "pad_sizing_rule", "signoff_matrix", "signoff_summary", "m2_infeasibility", "attainable_table", "best_layer", "via_count_cost", "baseline_unchanged", "signed_off_stack_self_check", "SIGNED_OFF_STACK_DISCLOSURE"],
+        "introduced_by": "D-206 (E31)", "guard": "run_ecore_e31_smoke.py",
+    },
+    {
+        "capability": "**版图空间索引**（均匀网格 + 长条单列 · 候选筛选只缩小搜索范围、判定仍用 `_overlap`/`_gap`）· **新旧对拍**（9 案例含 5 个 REJECT · verdict + 违规集合逐条一致）· **规模表**（N=87 = 143,985 元素 · DRC+LVS **4.1s** 全 ACCEPT，旧实现外推 ~7h）· 经验复杂度 **N^2.35**（旧 N^4）· 超集性机核（`near ⊇ brute`）· 小规模回退阈值",
+        "module": "lda_l2.ecore.spatial",
+        "symbols": ["Grid", "near_pairs", "brute_pairs", "PARITY_CASES", "parity_matrix", "parity_summary", "SCALE_NS", "scale_table", "scale_summary", "spatial_self_check", "SPATIAL_DISCLOSURE"],
+        "introduced_by": "D-207 (E32)", "guard": "run_ecore_e32_smoke.py",
+    },
 ]
 
 
@@ -309,7 +459,7 @@ def manifest_check() -> dict:
 
 
 ECORE_CAPABILITY_DISCLOSURE = {
-    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19",
+    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19 · E20 扩面至 e1~e20 · E21 扩面至 e1~e21 · E22 扩面至 e1~e22 · E23 扩面至 e1~e23 · E24 扩面至 e1~e24 · E25 扩面至 e1~e25 · E26 扩面至 e1~e26 · E27 扩面至 e1~e27 · E28 扩面至 e1~e28 · E29 扩面至 e1~e29 · E30 扩面至 e1~e30 · E31 扩面至 e1~e31 · E32 扩面至 e1~e32",
     "e5_scope": "把 E1~E9 逼出的平台能力固化为机器可读清单（单向真源）+ 常驻门禁（正向完备 + 反向完备 + 披露一致 + 诚实边界）",
     "hardening_semantics": "能力面必须被门禁守着：任一模模块/符号缺失、隐身模块出现、或注入 fabricated 指标 ⇒ 门禁必红",
     "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"

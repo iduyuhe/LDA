@@ -103,9 +103,23 @@ def main() -> int:
     check("B5 诚实边界 20 条", card["gaps_total"] == 20)
     check("B6 门禁判据合计 = 430（含 94 条突变探针）",
           card["span"]["gate_checks"] == 430 and card["span"]["probe_checks"] == 94)
-    check("B6c 计数拉平：22 能力模块 / 23 模块 / 21 常驻门禁",
-          card["span"]["capability_modules"] == 22 and card["span"]["modules"] == 23
-          and card["span"]["entrypoints"] == 21)
+    # 🔴 E20（D-195）起：B6c 不再「硬编码对硬编码」，改为与**文件系统 + manifest 独立对拍**
+    #   —— 加模块/加门禁却忘了改卡片，或改了卡片却与目录不符，都必红（防「计数静默缩水」）。
+    from lda_l2.ecore.capability_manifest import (  # noqa: E402
+        ECORE_CAPABILITY_MANIFEST as _MF)
+    _ecore_dir = os.path.join(_HERE, "lda_l2", "ecore")
+    _n_mod = len([f for f in os.listdir(_ecore_dir)
+                  if f.endswith(".py") and f != "__init__.py"])
+    _n_gate = len([f for f in os.listdir(_HERE)
+                   if f.startswith("run_ecore_") and f.endswith("_smoke.py")])
+    check("B6c 计数与**文件系统 + manifest** 独立对拍：%d 能力 / %d 模块 / %d 门禁"
+          % (len(_MF), _n_mod, _n_gate),
+          card["span"]["capability_modules"] == len(_MF)
+          and card["span"]["modules"] == _n_mod
+          and card["span"]["entrypoints"] == _n_gate,
+          "card=%d/%d/%d · 真源=%d/%d/%d" % (
+              card["span"]["capability_modules"], card["span"]["modules"],
+              card["span"]["entrypoints"], len(_MF), _n_mod, _n_gate))
     check("B6b 判据合计 ≡ Σ 各段 gate（内部自洽）",
           sum(m["gate"] for m in card["milestones"]) == card["span"]["gate_checks"]
           and sum(m["seg_probes"] for m in card["milestones"]) == card["span"]["probe_checks"])
@@ -120,8 +134,12 @@ def main() -> int:
     check("B10 landmark 登记含 source（Mythic · mythic.ai）",
           len(EC.LANDMARKS_BRIEF) >= 1
           and all(e.get("source") for e in EC.LANDMARKS_BRIEF))
-    check("B11 定位声明含「不报任何 TOPS / TOPS-W」",
-          "不报任何 TOPS / TOPS-W" in card["positioning"]["disclaimer"])
+    # 🔴 E21（D-196）换代：判据**不放松** —— 从「出现 TOPS 即红」改为
+    #   「出现 TOPS 但**未标 MODEL_ESTIMATE 档**、或暗示实测 ⇒ 红」。
+    _disc = card["positioning"]["disclaimer"]
+    check("B11 定位声明含能效**分档**口径（MODEL_ESTIMATE 可报 · MEASURED 空置 · 不报实测）",
+          "MODEL_ESTIMATE" in _disc and "MEASURED" in _disc
+          and "不报任何实测" in _disc)
 
     # B12–B15 E6–E9 四块新能力面（升级后必须出现在对外卡上）
     check("B12 E6 版图签核：1T 单元 7 元素 · 4×4=120 元素 · GDS 936 B · W/L=1.20/0.30",

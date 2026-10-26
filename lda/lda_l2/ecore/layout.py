@@ -43,12 +43,26 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from lda_l2 import gds_export as G
 from lda_l2.ecore import elayers as EL
+from lda_l2.ecore import spatial as _SP
 
 # 层名（gds_layer → 层名），单一真源 = elayers._LAYER_KIND
-_NAME_OF_LAYER: Dict[int, str] = {v: k for k, v in {
-    "DIFF": EL.L_DIFF, "POLY": EL.L_POLY, "CONT": EL.L_CONT,
-    "M1": EL.L_M1, "VIA1": EL.L_VIA1, "M2": EL.L_M2, "PAD": EL.L_PAD,
-}.items()}
+#: 层号 → 层名（🔴 **从层栈反推，单一真源** · 不再是手抄字典）
+#   旧 7 项逐位保留（DIFF/POLY/CONT/M1/VIA1/M2/PAD）· 新 10 项来自 `ecmos10`
+_NAME_OF_LAYER: Dict[int, str] = {}
+for _st in (EL.get_estack("ecmos"), EL.get_estack("ecmos10")):
+    for _n, _l in _st.layers.items():
+        _NAME_OF_LAYER[_l.gds_layer] = _n
+_NAME_OF_LAYER[EL.L_PAD] = "PAD"      # 焊盘不在任何栈的 layers 里（阵列不用，但 DRC 要认）
+
+#: 层名 → 层号（反查 · E30 选层用）
+_NAME_TO_LAYER: Dict[str, int] = {v: k for k, v in _NAME_OF_LAYER.items()}
+
+#: 新层 → 规则表键前缀（E30）
+_RULE_KEY: Dict[int, str] = {
+    EL.L_M3: "m3", EL.L_M4: "m4", EL.L_M5: "m5", EL.L_M6: "m6", EL.L_AP: "ap",
+    EL.L_VIA2: "via2", EL.L_VIA3: "via3", EL.L_VIA4: "via4",
+    EL.L_VIA5: "via5", EL.L_VIA_AP: "via_ap",
+}
 
 EDRC_RULES = (
     "EDR-MIN-WIDTH",         # 每层最小线宽
@@ -56,6 +70,16 @@ EDRC_RULES = (
     "EDR-CONT-ENCLOSURE",    # 接触孔须被上下层各包围 ≥ enclosure
     "EDR-MIN-AREA",          # 每层最小面积
 )
+
+#: 🔴 E32（D-207）：空间索引开关 —— **True 走网格索引，False 走 v0.9.327 的全对全实现**。
+#   两者的**语义必须逐位等价**（索引只筛候选，判定仍用 `_overlap`/`_gap`）；
+#   等价性由 `run_ecore_e32_smoke.py` 的对拍实证（verdict + violations 集合相等）。
+#   保留旧实现**不是兼容包袱**，是**对拍基准**：没有它就无法证明新实现没漏对。
+USE_SPATIAL_INDEX = True
+
+#: 小规模下索引开销大于收益（实测 n=120 时 0.9×）⇒ 低于此元素数走暴力，
+#   保证「小阵列不比原来慢」。两种路径结果相同，故切换点不影响正确性。
+SPATIAL_MIN_ELEMENTS = 256
 
 # 默认单元参数（µm）——公开工艺近似占位，非 PDK 标定
 DEFAULT_CELL_PARAMS: Dict[str, float] = {
@@ -193,23 +217,40 @@ def crosspoint_cell(net_drain: str, net_source: str, net_gate: str,
 # 阵列 P&R（节距闭式 + 行线/列线）
 # ---------------------------------------------------------------------------
 def array_lines(n: int, m: int,
-                params: Optional[Dict[str, float]] = None) -> List[Dict]:
-    """阵列布线（绝对坐标）：行线 M1 水平 + 列线 M2 竖直 —— **布线几何的唯一定义处**。
+                params: Optional[Dict[str, float]] = None,
+                row_layer: str = "M1",
+                end_margin_um: float = 0.0) -> List[Dict]:
+    """阵列布线（绝对坐标）：行线水平 + 列线 M2 竖直 —— **布线几何的唯一定义处**。
 
+    `row_layer`（E30）：行线所在层，缺省 `"M1"`（**行为与 v0.9.325 逐位一致**）。
+    可选 `M2/M3/M4/M5/M6/AP`。
+
+    🔴 **换层不等于"改个参数"**：行线离开 M1 后，与该单元漏极之间**必须有 via stack**
+    （`AP→M6→…→M1`），而本函数**不生成 via stack** ⇒
+    换层的几何是**悬空**的（`elvs_signoff` 会报未连接）。这是**故意的**：
+    它把"换层的版图代价"暴露成可机核的证据，而不是假装能做通。
     E6 `crossbar_array` 与 E9 `array_scale`（千级阵列，O(N) 不物化 N² 单元）**共用**本函数，
     杜绝第二份副本（平台 P0-0/P0-1 血案的通则）。
     """
+    code = _NAME_TO_LAYER.get(row_layer)
+    if code is None:
+        raise ValueError("未登记的行线层：%r（可选 %s）"
+                         % (row_layer, sorted(k for k in _NAME_TO_LAYER if k != "PAD")))
     p = dict(DEFAULT_CELL_PARAMS)
     if params:
         p.update(params)
     px, py = p["pitch_x_um"], p["pitch_y_um"]
     out: List[Dict] = []
     # 行线（M1 水平）——经每行全部单元的漏极接触孔
-    x_lo = 0.0 - (p["l_um"] / 2.0 + p["sd_um"])
-    x_hi = (m - 1) * px + (p["l_um"] / 2.0 + p["sd_um"])
+    # `end_margin_um`（E31）：行线两端额外延伸。
+    #   🔴 缺省 0.0 ⇒ 与 v0.9.326 **逐位一致**。
+    #   换层用 via stack 时，最外侧一列的 via 会落出行线端点之外
+    #   （实测：AP 的 VIA_AP 只被包围 0.025 < 0.200 ⇒ DRC REJECT），此时需延伸端帽。
+    x_lo = 0.0 - (p["l_um"] / 2.0 + p["sd_um"]) - end_margin_um
+    x_hi = (m - 1) * px + (p["l_um"] / 2.0 + p["sd_um"]) + end_margin_um
     for i in range(n):
         y = i * py + p["dy_um"]
-        out.append({"kind": "path", "layer": EL.L_M1, "net": f"row{i}",
+        out.append({"kind": "path", "layer": code, "net": f"row{i}",
                     "width_um": p["row_w_um"], "points_um": [(x_lo, y), (x_hi, y)]})
     # 列线（M2 竖直）——经每列全部单元的 VIA1
     cx_s = -(p["l_um"] / 2.0 + p["sd_um"] / 2.0)
@@ -219,6 +260,84 @@ def array_lines(n: int, m: int,
         x = j * px + cx_s
         out.append({"kind": "path", "layer": EL.L_M2, "net": f"col{j}",
                     "width_um": p["col_w_um"], "points_um": [(x, y_lo), (x, y_hi)]})
+    return out
+
+
+#: 漏极 via 栈的层序（E31）：M1 落垫 → 逐层 via + 中间层落垫 → 目标行线层
+#   🔴 **不含 AP 落垫**：AP 的 `min_width=1.60`，做不出 0.40 见方的小垫，
+#   而 1.60 见方又会与相邻行（间距 = pitch_y−W = 1.60）冲突 ⇒ **AP 行线本身充当落垫**。
+ROW_STACK_CHAIN: List[str] = ["M1", "VIA1", "M2", "VIA2", "M3", "VIA3",
+                              "M4", "VIA4", "M5", "VIA5", "M6", "VIA_AP"]
+
+
+def via_stack_descs(n: int, m: int,
+                    params: Optional[Dict[str, float]] = None,
+                    row_layer: str = "M1",
+                    stack: Optional[object] = None) -> List[Dict]:
+    """每单元漏极的 **via stack**（E31）：`M1 落垫 → VIA1 → M2 → … → row_layer`。
+
+    🔴 **为什么必须要有它**：E6 的单元里**行线本身就充当漏极 CONT 的上层金属**
+    （行线 y = `dy_um`，正好压在 CONT_D 上）。行线一离开 M1，CONT_D 就只剩 DIFF 一侧
+    ⇒ `ELVS-DANGLING-BRIDGE`（E30 实测 N=8 时 64 条 = N²）。
+
+    `row_layer="M1"` ⇒ 返回 `[]`（行线直连，无需栈）。
+    `row_layer=="M2"` ⇒ **物理不可行**（M2 是列线所在层，同层相交 = 真短路），
+    本函数照常生成几何，让 DRC/LVS 去判红 —— 不在这里静默拒绝，
+    因为「谁判红」这件事本身要留证据。
+
+    🔴 参数**一律从 `params` 取**（不从 `DEFAULT_CELL_PARAMS` 重取）：
+    stack 与行线若各取一份参数，`pitch_y` 不同就会错位到别的行（E31 开发时当场踩到）。
+    """
+    p = dict(DEFAULT_CELL_PARAMS)
+    if params:
+        p.update(params)
+    if row_layer == "M1":
+        return []
+    # 🔴 `AP` 是链的**端点**（不在链上，因为它不需要落垫 —— 行线本身充当）
+    #   ⇒ 整条链都要生成（最后一项 VIA_AP 直接打到 AP 行线）
+    if row_layer == "AP":
+        stop = len(ROW_STACK_CHAIN)
+    elif row_layer in ROW_STACK_CHAIN:
+        stop = ROW_STACK_CHAIN.index(row_layer)
+    else:
+        raise ValueError("row_layer 不在 via 栈序中：%r（可选 %s 或 AP）"
+                         % (row_layer, ROW_STACK_CHAIN[1:]))
+    # 🔴 `stack=None` ⇒ 旧 6 层栈里没有 VIA2+ ⇒ 自动取多层栈（唯一可能的那种）
+    #   （row_layer=="M1" 已提前返回，走不到这里）
+    st = EL.get_estack("ecmos10") if stack is None else stack
+    chain = ROW_STACK_CHAIN[:stop]
+
+    px, py = p["pitch_x_um"], p["pitch_y_um"]
+    cx_d = p["l_um"] / 2.0 + p["sd_um"] / 2.0     # 漏极接触孔 x（本地）
+    y = p["dy_um"]                                 # 漏极接触孔 y（本地，= 行线 y）
+    via = p["via_um"]
+    lim = EL.ELEC_DESIGN_RULES
+
+    def _via_side(name: str) -> float:
+        return 0.40 if name == "VIA_AP" else via
+
+    # 🔴 落垫尺寸**必须按它上面那个 via 的 enclosure 反算**，不能一律用 `pad_um`：
+    #   `side ≥ via_size + 2·enclosure`。缺省 0.40 只对 0.20 的 via（需 0.10）成立；
+    #   VIA_AP 是 0.40 且需 0.20 ⇒ 其下方 M6 落垫必须 **0.80**。
+    #   （v0.9.327 实测：一律 0.40 时 `VIA_AP 被 M6 包围 0.000 < 0.200` ⇒ DRC REJECT）
+    def _pad_side(upper_via: str) -> float:
+        need = lim.get(f"{upper_via.lower()}_enclosure_um", 0.10)
+        return max(p["pad_um"], _via_side(upper_via) + 2.0 * need)
+
+    out: List[Dict] = []
+    for i in range(n):
+        for j in range(m):
+            ox, oy = j * px, i * py
+            net = f"row{i}"
+            for k, name in enumerate(chain):
+                lay = st.layers[name]
+                if lay.kind == "via":
+                    side = _via_side(name)
+                else:
+                    # 该落垫上方的 via = chain 里的下一项（若没有下一项，说明它是行线层，不该在这里）
+                    nxt = chain[k + 1] if k + 1 < len(chain) else None
+                    side = _pad_side(nxt) if nxt else p["pad_um"]
+                out.append(_b_square(lay.gds_layer, cx_d + ox, y + oy, side, net))
     return out
 
 
@@ -239,8 +358,18 @@ def array_footprint(n: int, m: int,
 
 
 def crossbar_array(n: int, m: int,
-                   params: Optional[Dict[str, float]] = None) -> Dict:
-    """n×m 1T 交叉阵列版图（绝对坐标）：单元阵列 + 行线(M1) + 列线(M2)。"""
+                   params: Optional[Dict[str, float]] = None,
+                   row_layer: str = "M1",
+                   via_stack: bool = False) -> Dict:
+    """n×m 1T 交叉阵列版图（绝对坐标）：单元阵列 + 行线 + 列线(M2) + 可选 via stack。
+
+    `row_layer`（E30）：行线所在层，缺省 `"M1"` ⇒ **与 v0.9.325 逐位一致**。
+    `via_stack`（E31）：是否生成漏极 via stack。
+      · 缺省 **False** ⇒ 行为与 v0.9.326 **逐位一致**（换层则行线悬空，`elvs_signoff` 判红）
+      · True ⇒ 追加 `via_stack_descs` 的几何 ⇒ 换层可签核（E31 用 5 条路径实测过）
+
+    🔴 `via_stack=True` 而 `row_layer="M1"` 时**什么都不加**（行线直连 CONT，无需栈）。
+    """
     if n <= 0 or m <= 0:
         raise ValueError("n/m 必须为正")
     p = dict(DEFAULT_CELL_PARAMS)
@@ -265,8 +394,24 @@ def crossbar_array(n: int, m: int,
                                      for r in d["rings_um"]]
                 flat.append(e)
 
+    # 行线端帽（E31）：用 via stack 时，最外侧一列的 via 必须被行线完整包围
+    #   `x_needed = cx_d + via_side/2 + enclosure`；与 `l/2+sd` 的差即需延伸量。
+    _end_margin = 0.0
+    if via_stack and row_layer not in ("M1",):
+        _lim = EL.ELEC_DESIGN_RULES
+        _vname = "VIA_AP" if row_layer == "AP" else "VIA1"   # AP 的末端 via 是 VIA_AP，其余是 0.20 类
+        _vside = 0.40 if _vname == "VIA_AP" else p["via_um"]
+        _enc = _lim.get(f"{_vname.lower()}_enclosure_um", 0.10)
+        _need = p["l_um"] / 2.0 + p["sd_um"] / 2.0 + _vside / 2.0 + _enc
+        _have = p["l_um"] / 2.0 + p["sd_um"]
+        _end_margin = max(0.0, _need - _have)
+
     # 行线 / 列线（唯一定义处 = array_lines，与 E9 千级阵列共用）
-    flat.extend(array_lines(n, m, p))
+    flat.extend(array_lines(n, m, p, row_layer=row_layer,
+                            end_margin_um=_end_margin))
+    # 漏极 via stack（E31 · 可选）：换层时补齐 CONT → row_layer 的通路
+    if via_stack:
+        flat.extend(via_stack_descs(n, m, p, row_layer=row_layer))
 
     nets = sorted({d["net"] for d in flat})
     return {
@@ -279,6 +424,8 @@ def crossbar_array(n: int, m: int,
         "nets": nets,
         "footprint_um": array_footprint(n, m, p),
         "n_cells": n * m,
+        "row_layer": row_layer,
+        "via_stack": bool(via_stack),
     }
 
 
@@ -335,35 +482,60 @@ def extract_wl(descs: Sequence[Dict]) -> Dict[str, float]:
 # 几何 DRC
 # ---------------------------------------------------------------------------
 def run_edrc(descs: Sequence[Dict],
-             limits: Optional[Dict[str, float]] = None) -> Dict:
+             limits: Optional[Dict[str, float]] = None,
+             stack: Optional[object] = None,
+             spatial: Optional[bool] = None) -> Dict:
     """电子几何 DRC：最小线宽 / 同层间距 / 接触孔包围 / 最小面积。
 
     返回 {verdict, violations, n_rules, limits, checked}。verdict ∈ {ACCEPT, REJECT}；
     violation = {rule, detail}（死标量，零模型调用）。
+
+    `stack`（E31）：层栈对象，缺省 `EL.get_estack()`（**旧 6 层栈 ⇒ 既有调用零影响**）。
+    🔴 多层几何（含 M3-M6/AP）**必须显式传 16 层栈**：否则 `bridge_layers()` 里没有 VIA2+，
+    **那些 via 的 enclosure 完全不检查**（v0.9.327 实测：把 M3 落垫缩到 0.22、
+    enclosure 只剩 0.01 < 0.10，旧栈下 DRC 仍报 ACCEPT **0 违规** = 静默漏检）。
+
+    `spatial`（E32）：`True` 走网格索引、`False` 走 v0.9.327 的全对全实现、
+    `None` 用模块级 `USE_SPATIAL_INDEX`。**两条路径必须给出同一份违规集合**
+    （顺序不保证一致：旧实现是 `a<b` 字典序，新实现是格遍历顺序 ⇒ 对拍按集合比）。
     """
     lim = dict(EL.ELEC_DESIGN_RULES)
     if limits:
         lim.update(limits)
 
     def min_w_of(layer: int) -> Optional[float]:
-        return {EL.L_DIFF: lim["diff_min_width_um"],
-                EL.L_POLY: lim["poly_min_width_um"],
-                EL.L_CONT: lim["cont_size_um"],
-                EL.L_M1: lim["m1_min_width_um"],
-                EL.L_VIA1: lim["via1_size_um"],
-                EL.L_M2: lim["m2_min_width_um"]}.get(layer)
+        v = {EL.L_DIFF: lim["diff_min_width_um"],
+             EL.L_POLY: lim["poly_min_width_um"],
+             EL.L_CONT: lim["cont_size_um"],
+             EL.L_M1: lim["m1_min_width_um"],
+             EL.L_VIA1: lim["via1_size_um"],
+             EL.L_M2: lim["m2_min_width_um"]}.get(layer)
+        if v is not None:
+            return v                       # 🔴 旧 6 层走原路径 ⇒ 行为逐位不变
+        k = _RULE_KEY.get(layer)           # 新层（E30）走规则表
+        if not k:
+            return None
+        return lim.get(f"{k}_size_um") if k.startswith("via") else lim.get(f"{k}_min_width_um")
 
     def min_s_of(layer: int) -> Optional[float]:
-        return {EL.L_DIFF: lim["diff_min_space_um"],
-                EL.L_POLY: lim["poly_min_space_um"],
-                EL.L_CONT: lim["cont_min_space_um"],
-                EL.L_M1: lim["m1_min_space_um"],
-                EL.L_VIA1: lim["via1_size_um"],
-                EL.L_M2: lim["m2_min_space_um"]}.get(layer)
+        v = {EL.L_DIFF: lim["diff_min_space_um"],
+             EL.L_POLY: lim["poly_min_space_um"],
+             EL.L_CONT: lim["cont_min_space_um"],
+             EL.L_M1: lim["m1_min_space_um"],
+             EL.L_VIA1: lim["via1_size_um"],
+             EL.L_M2: lim["m2_min_space_um"]}.get(layer)
+        if v is not None:
+            return v                       # 🔴 旧 6 层走原路径 ⇒ 行为逐位不变
+        k = _RULE_KEY.get(layer)
+        if not k:
+            return None
+        return lim.get(f"{k}_size_um") if k.startswith("via") else lim.get(f"{k}_min_space_um")
 
     violations: List[Dict] = []
     checked = 0
     boxes = [(_bbox(d), d) for d in descs]
+    _use_sp = (USE_SPATIAL_INDEX if spatial is None else bool(spatial)) \
+        and len(boxes) >= SPATIAL_MIN_ELEMENTS
 
     # ① 最小线宽 + ④ 最小面积
     for bb, d in boxes:
@@ -398,26 +570,62 @@ def run_edrc(descs: Sequence[Dict],
         sp = min_s_of(layer)
         if sp is None:
             continue
-        for a in range(len(items)):
-            for b in range(a + 1, len(items)):
-                if items[a][1]["net"] == items[b][1]["net"]:
-                    continue
-                checked += 1
-                g = _gap(items[a][0], items[b][0])
-                if g < sp - 1e-9:
-                    lname = _NAME_OF_LAYER.get(layer, str(layer))
-                    violations.append({"rule": "EDR-MIN-SPACE",
-                                       "detail": f"{lname} 间距 {g:.3f} < {sp:.3f} µm"
-                                                 f"（{items[a][1]['net']} / {items[b][1]['net']}）"})
+        lname = _NAME_OF_LAYER.get(layer, str(layer))
+        lb = [it[0] for it in items]
+        if _use_sp:
+            # 🔴 索引只给**候选对**（外扩 sp 的超集），判定仍是 `_gap` —— 语义不变
+            pairs = _SP.near_pairs(lb, expand=sp)
+        else:
+            pairs = [(a, b) for a in range(len(items))
+                     for b in range(a + 1, len(items))]
+        for a, b in pairs:
+            if items[a][1]["net"] == items[b][1]["net"]:
+                continue
+            checked += 1
+            g = _gap(lb[a], lb[b])
+            if g < sp - 1e-9:
+                violations.append({"rule": "EDR-MIN-SPACE",
+                                   "detail": f"{lname} 间距 {g:.3f} < {sp:.3f} µm"
+                                             f"（{items[a][1]['net']} / {items[b][1]['net']}）"})
 
-    # ③ 接触孔包围（CONT 须被其 via_map 允许的层各包围 ≥ enclosure）
-    st = EL.get_estack()
-    for bb, d in boxes:
-        if _NAME_OF_LAYER.get(d["layer"]) not in st.bridge_layers():
+    # ③ 接触孔 / via 包围（须被其 via_map 允许的层各包围 ≥ enclosure）
+    st = EL.get_estack() if stack is None else stack
+    _bridges = set(st.bridge_layers())
+    # 🔴 E32：按层建网格（只对**被 allowed 的层**要），把 `桥 × 全部元素` 的 O(n²)
+    #   降为 `桥 × 邻近元素`。判定仍是 `_overlap` + `_enclosure`，语义不变。
+    _layer_grids: Dict[str, Tuple[object, List[int]]] = {}
+    if _use_sp:
+        _by_name: Dict[str, List[int]] = {}
+        for k, (bb, d) in enumerate(boxes):
+            ln = _NAME_OF_LAYER.get(d["layer"])
+            if ln is not None:
+                _by_name.setdefault(ln, []).append(k)
+        for ln, idxs in _by_name.items():
+            _layer_grids[ln] = (_SP.Grid([boxes[k][0] for k in idxs]), idxs)
+    for k_self, (bb, d) in enumerate(boxes):
+        if _NAME_OF_LAYER.get(d["layer"]) not in _bridges:
             continue
         bridge = _NAME_OF_LAYER[d["layer"]]
         allowed = {n for pair in st.via_map.get(bridge, []) for n in pair}
-        for ob, od in boxes:
+        # 🔴 按桥层名查自己的 enclosure（E31）：旧实现只认 CONT/VIA1 两档，
+        #   新层 via（VIA2-VIA_AP）会被当成 VIA1 或根本没机会走到这里
+        _bk = bridge.lower()
+        need = lim.get(f"{_bk}_enclosure_um")
+        if need is None:
+            need = (lim["cont_enclosure_um"] if bridge == "CONT"
+                    else lim["via1_enclosure_um"])
+        if _use_sp:
+            cand: List[Tuple[_Bbox, Dict]] = []
+            for oname in allowed:
+                g = _layer_grids.get(oname)
+                if g is None:
+                    continue
+                gr, idxs = g
+                for pos in gr.query(bb, 0.0):
+                    cand.append(boxes[idxs[pos]])
+        else:
+            cand = boxes
+        for ob, od in cand:
             if od is d or not _overlap(bb, ob):
                 continue
             oname = _NAME_OF_LAYER.get(od["layer"])
@@ -425,8 +633,6 @@ def run_edrc(descs: Sequence[Dict],
                 continue
             checked += 1
             enc = _enclosure(bb, ob)
-            need = (lim["cont_enclosure_um"] if bridge == "CONT"
-                    else lim["via1_enclosure_um"])
             if enc < need - 1e-9:
                 violations.append({"rule": "EDR-CONT-ENCLOSURE",
                                    "detail": f"{bridge} 被 {oname} 包围 {enc:.3f} < "
@@ -440,17 +646,27 @@ def run_edrc(descs: Sequence[Dict],
 # ---------------------------------------------------------------------------
 # 几何 LVS（连通分量 + 跨层桥 + 尺寸回提）
 # ---------------------------------------------------------------------------
-def elvs_signoff(descs: Sequence[Dict], expected: Dict) -> Dict:
+def elvs_signoff(descs: Sequence[Dict], expected: Dict,
+                 stack: Optional[object] = None,
+                 spatial: Optional[bool] = None) -> Dict:
     """几何 LVS：对**实际产出几何**做连通性提取与声明网表比对。
 
     判据（逐条 → issues）：
       ① 每元素有 net 标签 ② 同层 signal 层相交 ⇒ 短路 ③ 跨层桥**必须跨下层→上层**
       （CONT/VIA1 须同时接触其 via_map 允许层中的**下方**与**上方**层，否则悬空桥）
       ④ 声明端口全部实现 ⑤ 晶体管数 = 期望单元数 ⑥ W/L 几何回提 ≡ 声明 ⑦ 零悬空
+
+    `stack`（E31）：层栈对象，缺省 `EL.get_estack()`（**旧 6 层栈 ⇒ 既有调用零影响**）。
+    🔴 多层几何（含 M3-M6/AP）**必须显式传 16 层栈**，否则 VIA2+ 不在 `bridge_layers()`
+    里 ⇒ 那些桥**不会被检查**（静默漏检，比报错更危险）。
+
+    `spatial`（E32）：`True` 走网格索引、`False` 走 v0.9.327 的全对全实现、
+    `None` 用模块级 `USE_SPATIAL_INDEX`。两条路径的 `issues` **集合**必须相等
+    （顺序不保证一致：旧实现是 `a<b` 字典序，新实现是格遍历顺序 ⇒ 对拍按集合比）。
     """
     issues: List[str] = []
     n_checks = 0
-    st = EL.get_estack()
+    st = EL.get_estack() if stack is None else stack
     els = list(descs)
     n = len(els)
 
@@ -460,6 +676,17 @@ def elvs_signoff(descs: Sequence[Dict], expected: Dict) -> Dict:
         issues.append("ELVS-NO-NET: 存在无 net 标签的几何元素")
 
     boxes = [_bbox(e) for e in els]
+    _use_sp = (USE_SPATIAL_INDEX if spatial is None else bool(spatial)) \
+        and n >= SPATIAL_MIN_ELEMENTS
+    _layer_idx: Dict[str, List[int]] = {}
+    for _k, _e in enumerate(els):
+        _ln = _NAME_OF_LAYER.get(_e["layer"])
+        if _ln is not None:
+            _layer_idx.setdefault(_ln, []).append(_k)
+    _layer_grid: Dict[str, Tuple[object, List[int]]] = {}
+    if _use_sp:
+        for _ln, _idxs in _layer_idx.items():
+            _layer_grid[_ln] = (_SP.Grid([boxes[k] for k in _idxs]), _idxs)
     parent = list(range(n))
 
     def find(x: int) -> int:
@@ -475,25 +702,48 @@ def elvs_signoff(descs: Sequence[Dict], expected: Dict) -> Dict:
 
     # ② 同层 signal 层相交 ⇒ 连通（同层 short）；异层不连通
     n_checks += 1
-    for a in range(n):
-        for b in range(a + 1, n):
-            la = _NAME_OF_LAYER.get(els[a]["layer"])
-            lb = _NAME_OF_LAYER.get(els[b]["layer"])
-            if la != lb:
+    if _use_sp:
+        # 🔴 只需同层内查（异层"介质隔离"不连通）⇒ 按层分组 + 网格，判定仍是 `_overlap`
+        for _ln, _idxs in _layer_idx.items():
+            if not st.can_short(_ln, _ln):
                 continue
-            if st.can_short(la, lb) and _overlap(boxes[a], boxes[b]):
-                union(a, b)
+            _lb = [boxes[k] for k in _idxs]
+            for a, b in _SP.near_pairs(_lb, expand=0.0):
+                if _overlap(_lb[a], _lb[b]):
+                    union(_idxs[a], _idxs[b])
+    else:
+        for a in range(n):
+            for b in range(a + 1, n):
+                la = _NAME_OF_LAYER.get(els[a]["layer"])
+                lb = _NAME_OF_LAYER.get(els[b]["layer"])
+                if la != lb:
+                    continue
+                if st.can_short(la, lb) and _overlap(boxes[a], boxes[b]):
+                    union(a, b)
 
     # ③ 跨层桥：CONT/VIA1 是唯一合法桥；必须同时接触「允许层的下方 + 上方」各≥1 层
     n_checks += 1
+    _bridges = set(st.bridge_layers())
     for k in range(n):
         lk = _NAME_OF_LAYER.get(els[k]["layer"])
-        if lk not in st.bridge_layers():
+        if lk not in _bridges:
             continue
         allowed = {nm for pair in st.via_map.get(lk, []) for nm in pair}
         pos_b = st.pos_of(lk)
         touched: set = set()
-        for t in range(n):
+        if _use_sp:
+            # 🔴 只查 allowed 层的邻近元素（网格查询是超集，判定仍是 `_overlap`）
+            _cand: List[int] = []
+            for _nm in allowed:
+                _g = _layer_grid.get(_nm)
+                if _g is None:
+                    continue
+                _gr, _idxs = _g
+                for _pos in _gr.query(boxes[k], 0.0):
+                    _cand.append(_idxs[_pos])
+        else:
+            _cand = range(n)
+        for t in _cand:
             if t == k or not _overlap(boxes[k], boxes[t]):
                 continue
             lt = _NAME_OF_LAYER.get(els[t]["layer"])
@@ -567,13 +817,18 @@ def _desc_to_gds(d: Dict) -> bytes:
 
 
 def to_gds(n: int, m: int, params: Optional[Dict[str, float]] = None,
-           path: Optional[str] = None, hierarchical: bool = True) -> Dict:
+           path: Optional[str] = None, hierarchical: bool = True,
+           row_layer: str = "M1", via_stack: bool = False) -> Dict:
     """阵列 → GDSII 字节。hierarchical=True 用 **cell + AREF** 压缩单元阵列。
 
     返回 {gds_bytes, flat_elements, n_expanded, n_elements_top, applied, ...}。
     AREF 只压缩**单元阵列**（行/列线跨单元，留在 top）；展开后元素数必须 **≡ flat**。
+
+    `row_layer` / `via_stack`（E31）：缺省 `"M1"`/False ⇒ **与 v0.9.326 逐位一致**。
+    🔴 层次化模式下 **via stack 必须显式放进 top**：它们是 `boundary`（不是 `path`），
+    旧实现只把 `path` 放进 top ⇒ **stack 会静默丢失**（GDS 里没有它，DRC 却已签核 = 假绿）。
     """
-    arr = crossbar_array(n, m, params)
+    arr = crossbar_array(n, m, params, row_layer=row_layer, via_stack=via_stack)
     p = arr["params"]
     flat = arr["descs"]
     cell = arr["cell_descs"]
@@ -584,9 +839,14 @@ def to_gds(n: int, m: int, params: Optional[Dict[str, float]] = None,
     if hierarchical:
         px, py = p["pitch_x_um"], p["pitch_y_um"]
         top = [G.aref("XB_CELL", (0.0, 0.0), px, py, m, n, layer=EL.L_DIFF)]
+        # 单元几何在 cell 里（含 DIFF/POLY/CONT/M1 pad/VIA1）；
+        # 行线/列线（path）+ **via stack（boundary）** 都在 top。
         for d in flat:
             if d["kind"] == "path":
                 top.append(_desc_to_gds(d))
+        # 🔴 via stack：位于单元阵列之后、行/列线之前的 boundary（E31）
+        for d in via_stack_descs(n, m, p, row_layer=row_layer) if via_stack else []:
+            top.append(_desc_to_gds(d))
         data = G.gds_library(
             "LDA_ECORE",
             {"XB_CELL": [_desc_to_gds(d) for d in cell], "TOP": top},
@@ -607,9 +867,14 @@ def to_gds(n: int, m: int, params: Optional[Dict[str, float]] = None,
 
 
 def gds_roundtrip_check(n: int, m: int,
-                        params: Optional[Dict[str, float]] = None) -> Dict:
-    """层次化 GDS 解析回读：展开后元素数 ≡ flat 元素数（平台 P0-1 纪律）。"""
-    r = to_gds(n, m, params, hierarchical=True)
+                        params: Optional[Dict[str, float]] = None,
+                        row_layer: str = "M1", via_stack: bool = False) -> Dict:
+    """层次化 GDS 解析回读：展开后元素数 ≡ flat 元素数（平台 P0-1 纪律）。
+
+    `row_layer`/`via_stack`（E31）：缺省与 v0.9.326 一致。
+    """
+    r = to_gds(n, m, params, hierarchical=True,
+               row_layer=row_layer, via_stack=via_stack)
     parsed = G.parse_gds_polygons(r["gds_bytes"], expand_refs=True)
     top = parsed.get("top_structures", [])
     n_top = sum(len(parsed["structures"][s]) for s in top)

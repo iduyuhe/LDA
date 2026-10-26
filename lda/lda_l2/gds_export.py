@@ -42,6 +42,20 @@ LIB_LAYER_E_VIA1 = 24        # 通孔 1
 LIB_LAYER_E_M2 = 25          # 金属 2（列线）
 LIB_LAYER_E_PAD = 26         # 焊盘 / 钝化开口
 
+# ── 电子多层金属栈（E30 · D-205）：M3~M6 + AP/RDL + 对应 via ───────────────
+# 🔴 号段 27~36（避开 1-4/9 光子 · 5-8 PS · 10-14 超导 · 20-26 电子前道+M1/M2）
+# 🔴 **纯新增**：既有 20-26 的层号与语义**逐位不变**（旧栈 `ecmos` 不受影响）
+LIB_LAYER_E_M3 = 27           # 金属 3（中层厚金属起点）
+LIB_LAYER_E_VIA2 = 28         # 通孔 2（桥 M2 ↔ M3）
+LIB_LAYER_E_M4 = 29           # 金属 4
+LIB_LAYER_E_VIA3 = 30         # 通孔 3（桥 M3 ↔ M4）
+LIB_LAYER_E_M5 = 31           # 金属 5
+LIB_LAYER_E_VIA4 = 32         # 通孔 4（桥 M4 ↔ M5）
+LIB_LAYER_E_M6 = 33           # 金属 6（上层厚金属）
+LIB_LAYER_E_VIA5 = 34         # 通孔 5（桥 M5 ↔ M6）
+LIB_LAYER_E_AP = 35           # AP / RDL 顶层厚金属（降 IR drop 的常规手段）
+LIB_LAYER_E_VIA_AP = 36       # 通孔 AP（桥 M6 ↔ AP）
+
 # ── 光子存储（PM 征程 · v0.9.191）层栈 ─────────────────────────────────────
 # 🔴 号段选择：避开光子 1–4、超导 10–14、电子 20–26 ⇒ 取 5/6（同域无冲突）。
 #    **单一真源在此**；`lda_l2.primitives._LAYER_PCM/_LAYER_HEATER` 是同号引用，

@@ -42,6 +42,19 @@ L_VIA1 = G.LIB_LAYER_E_VIA1      # 24
 L_M2 = G.LIB_LAYER_E_M2          # 25
 L_PAD = G.LIB_LAYER_E_PAD        # 26
 
+# ── 多层金属栈（E30 · D-205）：M3~M6 + AP/RDL + 对应 via ─────────────────────
+# 🔴 **纯新增**：上面 20-26 的层号与语义**逐位不变**（旧栈 `ecmos` 不受影响）
+L_M3 = G.LIB_LAYER_E_M3          # 27
+L_VIA2 = G.LIB_LAYER_E_VIA2      # 28
+L_M4 = G.LIB_LAYER_E_M4          # 29
+L_VIA3 = G.LIB_LAYER_E_VIA3      # 30
+L_M5 = G.LIB_LAYER_E_M5          # 31
+L_VIA4 = G.LIB_LAYER_E_VIA4      # 32
+L_M6 = G.LIB_LAYER_E_M6          # 33
+L_VIA5 = G.LIB_LAYER_E_VIA5      # 34
+L_AP = G.LIB_LAYER_E_AP          # 35
+L_VIA_AP = G.LIB_LAYER_E_VIA_AP  # 36
+
 _LAYER_KIND: Dict[int, str] = {
     L_DIFF: "active",
     L_POLY: "gate",
@@ -50,6 +63,12 @@ _LAYER_KIND: Dict[int, str] = {
     L_VIA1: "via",
     L_M2: "signal",
     L_PAD: "pad",
+    # 多层金属栈（E30）
+    L_M3: "signal", L_VIA2: "via",
+    L_M4: "signal", L_VIA3: "via",
+    L_M5: "signal", L_VIA4: "via",
+    L_M6: "signal", L_VIA5: "via",
+    L_AP: "signal", L_VIA_AP: "via",
 }
 
 
@@ -144,7 +163,53 @@ DEFAULT_CMOS_STACK = ELayerStack(
     via_map={"CONT": [("DIFF", "M1"), ("POLY", "M1")], "VIA1": [("M1", "M2")]},
 )
 
-ESTACK_REGISTRY: Dict[str, ELayerStack] = {"ecmos": DEFAULT_CMOS_STACK}
+# ---------------------------------------------------------------------------
+# 多层金属栈（E30 · D-205）：E-CMOS-10L —— 在 6 层栈之上加 M3~M6 + AP/RDL
+# ---------------------------------------------------------------------------
+# 🔴 **旧 20-26 的 z 跨度逐位继承**（M1 0.45-0.75 / VIA1 0.75-0.95 / M2 0.95-1.35）
+#    ⇒ 新旧栈的 M1/M2 语义完全一致，只有"多了上面几层"这一个差别。
+# 🔴 新层的 z 跨度 = **金属电学厚度**（M4=0.60 / M6=1.00 / AP=2.00），
+#    与 E28 `row_metal.METAL_LAYERS` 的 `t_um` 对齐 ⇒ 换层后的 R 可直接算。
+DEFAULT_CMOS_STACK_10L = ELayerStack(
+    name="E-CMOS-10L（公开近似 · 含 M3-M6/AP）",
+    layers={
+        "DIFF": ELayer("DIFF", "active", L_DIFF, z_bot_um=0.00, z_top_um=0.10),
+        "POLY": ELayer("POLY", "gate", L_POLY, z_bot_um=0.10, z_top_um=0.25),
+        "CONT": ELayer("CONT", "contact", L_CONT, z_bot_um=0.25, z_top_um=0.45),
+        "M1": ELayer("M1", "signal", L_M1, z_bot_um=0.45, z_top_um=0.75),
+        "VIA1": ELayer("VIA1", "via", L_VIA1, z_bot_um=0.75, z_top_um=0.95),
+        "M2": ELayer("M2", "signal", L_M2, z_bot_um=0.95, z_top_um=1.35),
+        # 🔴 v0.9.327 修正（E31）：每层 via 必须**严格夹在其声称连接的两层之间**
+        #   E30 原值把 VIA_n 放在 M_n 与 M_{n+1} 之间（错位一层），
+        #   导致 VIA_AP 的 `pos_of` 落在 AP **之后** ⇒ LVS 永远判它「无上层」= 结构性悬空。
+        #   M1/VIA1/M2 三段 z **逐位保持**（旧栈继承不变）。
+        "VIA2": ELayer("VIA2", "via", L_VIA2, z_bot_um=1.35, z_top_um=1.55),
+        "M3": ELayer("M3", "signal", L_M3, z_bot_um=1.55, z_top_um=1.85),
+        "VIA3": ELayer("VIA3", "via", L_VIA3, z_bot_um=1.85, z_top_um=2.05),
+        "M4": ELayer("M4", "signal", L_M4, z_bot_um=2.05, z_top_um=2.65),
+        "VIA4": ELayer("VIA4", "via", L_VIA4, z_bot_um=2.65, z_top_um=2.85),
+        "M5": ELayer("M5", "signal", L_M5, z_bot_um=2.85, z_top_um=3.55),
+        "VIA5": ELayer("VIA5", "via", L_VIA5, z_bot_um=3.55, z_top_um=3.75),
+        "M6": ELayer("M6", "signal", L_M6, z_bot_um=3.75, z_top_um=4.75),
+        "VIA_AP": ELayer("VIA_AP", "via", L_VIA_AP, z_bot_um=4.75, z_top_um=4.95),
+        "AP": ELayer("AP", "signal", L_AP, z_bot_um=4.95, z_top_um=6.95),
+    },
+    via_map={
+        "CONT": [("DIFF", "M1"), ("POLY", "M1")],
+        "VIA1": [("M1", "M2")],
+        "VIA2": [("M2", "M3")],
+        "VIA3": [("M3", "M4")],
+        "VIA4": [("M4", "M5")],
+        "VIA5": [("M5", "M6")],
+        "VIA_AP": [("M6", "AP")],
+    },
+)
+
+ESTACK_REGISTRY: Dict[str, ELayerStack] = {
+    "ecmos": DEFAULT_CMOS_STACK,
+    # 🔴 多层栈**另开一个 key**：`get_estack()` 缺省仍返回 6 层栈 ⇒ 既有调用零影响
+    "ecmos10": DEFAULT_CMOS_STACK_10L,
+}
 
 
 def get_estack(name: str = "ecmos") -> ELayerStack:
@@ -176,6 +241,18 @@ ELEC_DESIGN_RULES: Dict[str, float] = {
     # 通孔
     "via1_size_um": 0.20,
     "via1_enclosure_um": 0.10,
+    # ── 多层金属栈（E30 · D-205 · 公开工艺近似 · 非 PDK）────────────────────
+    # 线宽/间距随层升高而放松（厚金属的宽厚比与 CMP 约束）
+    "m3_min_width_um": 0.28, "m3_min_space_um": 0.28,
+    "m4_min_width_um": 0.28, "m4_min_space_um": 0.28,
+    "m5_min_width_um": 0.30, "m5_min_space_um": 0.30,
+    "m6_min_width_um": 0.40, "m6_min_space_um": 0.40,
+    "ap_min_width_um": 1.60, "ap_min_space_um": 1.60,
+    "via2_size_um": 0.20, "via2_enclosure_um": 0.10,
+    "via3_size_um": 0.20, "via3_enclosure_um": 0.10,
+    "via4_size_um": 0.20, "via4_enclosure_um": 0.10,
+    "via5_size_um": 0.20, "via5_enclosure_um": 0.10,
+    "via_ap_size_um": 0.40, "via_ap_enclosure_um": 0.20,
 }
 
 ELEC_DISCLOSURE = {

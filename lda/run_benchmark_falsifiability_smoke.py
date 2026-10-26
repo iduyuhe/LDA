@@ -1001,6 +1001,56 @@ def main() -> int:
         check("行为判据反向自检（纯桩/常量缩放桩/小量纲纯桩→False，真候选/小量纲真候选→True）",
               False, f"检查自身异常：{str(e)[:80]}")
 
+    # ⑨ 响应率判据（v0.9.314）：**「不能失败的候选」是现有 8 项判据的共同盲区**。
+    #   ③ 扰动测试问的是「候选会不会跟着被扰动的 golden 走」；常数候选在 golden
+    #   移动时 diff 变大，看起来**更像**"抓到了错"。故必须**单列**一条判据：
+    #   ρ ≡ |Δ候选|/|Δ参考|，同一组参数扰动下比较；ρ≪1 或符号错 ⇒ 候选对该参数不响应。
+    try:
+        from lda_harness._adapter_p1 import _fvfdm_selected, _B2_SEED_NEFF
+        from lda_l2 import mode_solver_response as _msr
+
+        class _PV:  # 轻量 shim：候选只读 spec.params
+            def __init__(self, params):
+                self.params = params
+
+        _huge = {"w_core": 5.0, "h_core": 2.0, "n_si": 3.48,
+                 "n_clad": 1.444, "wl": 1.55}
+        _v_seed = _fvfdm_selected(_PV(_huge), _B2_SEED_NEFF)          # σ=2.65
+        _v_mid = _fvfdm_selected(_PV(_huge), 3.00)                     # σ=3.00
+        # ① 体材料极限：5×2 µm 的硅，TE0 必趋 n_core≈3.478；它答 2.6445 ⇒ 物理上不可能
+        check("⑨-1 已注销候选在体材料极限上给出物理不可能值（5×2µm 硅 → 2.64，真值趋 3.48）",
+              _v_seed < 3.0,
+              f"n_eff={_v_seed:.4f} vs n_core=3.4777（差 {3.4777-_v_seed:.3f}）")
+        # ② 同一几何、同一网格，**只改种子** ⇒ 答案跟着种子走 ⇒ 它解的不是物理
+        check("⑨-2 已注销候选的返回值由**种子**决定（σ 2.65→3.00 使答案跳 +0.358）",
+              abs(_v_seed - _B2_SEED_NEFF) < 0.05 and abs(_v_mid - 3.00) < 0.05,
+              f"σ=2.65→{_v_seed:.4f}  σ=3.00→{_v_mid:.4f}  差 {_v_mid-_v_seed:+.4f}")
+        # ③ 响应率 ρ：同一几何扰动 n_si ±10%，候选动 <0.01、参考动 ~0.2
+        _base = {"w_core": 0.5, "h_core": 0.22, "n_si": 3.48,
+                 "n_clad": 1.444, "wl": 1.55}
+        _cp, _rp = [], []
+        _c0 = _fvfdm_selected(_PV(_base), _B2_SEED_NEFF)
+        _r0 = _msr.vector_neff(0.5, 0.22, 1.55, h_grid=0.02)
+        for _f in (1.10, 0.90):
+            _p2 = dict(_base, n_si=_base["n_si"] * _f)
+            _cp.append((_c0, _fvfdm_selected(_PV(_p2), _B2_SEED_NEFF)))
+            _rp.append((_r0, _msr.vector_neff(0.5, 0.22, 1.55,
+                                             n_core=3.4777 * _f, h_grid=0.02)))
+        _rho = _msr.response_ratio(_cp, _rp)
+        _verdict = _msr.verdict_from_rho(_rho["min_ratio"], _rho["sign_consistency"])
+        check("⑨-3 已注销候选的响应率 ρ ≪ 1 ⇒ NOT_RESPONSIVE（在 tol 内通过只是常数巧合）",
+              _verdict == "NOT_RESPONSIVE",
+              f"ρ_min={_rho['min_ratio']:.4f} 符号一致={_rho['sign_consistency']:.2f} "
+              f"⇒ {_verdict}")
+        # ④ 该候选**不得**重新挂回任何锚（撤出必须可被门禁验证，而不是只写在注释里）
+        from lda_harness.benchmarks import BENCHMARK_DEFS as _defs
+        _reattached = [b for b, d in _defs.items()
+                       if d.get("candidate") == "b2_fvfdm_neff"]
+        check("⑨-4 已撤出候选未被任何锚重新挂载（防注释说撤了、账本还挂着）",
+              not _reattached, f"挂载={_reattached}")
+    except Exception as e:  # noqa: BLE001
+        check("⑨ 响应率判据（v0.9.314）", False, f"检查自身异常：{str(e)[:120]}")
+
     # ⑥ 诚实披露剩余自证桩（不构成失败，但必须可见）
     print()
     print(f"  [披露] 剩余自证桩 {len(stub)}/{len(specs)} 道"

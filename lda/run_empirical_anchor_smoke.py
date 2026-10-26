@@ -86,13 +86,61 @@ def main():
           abs(_c2 - _g2) > 1e-6 and abs(_c2 - _g2) <= _s2.tol,
           f"golden(实测)={_g2} candidate(semivec)={_c2:.4f} "
           f"|diff|={abs(_c2-_g2):.4f} tol={_s2.tol}")
+    # 🔴 v0.9.314：**E1 升为严格独立**（本仓第 3 道接独立候选的实证锚）。
+    #   凭据链：全矢量 staggered FV-FDM（外部独立实现逐位对拍 2e-7）+ Sellmeier 色散
+    #   ⇒ n_g=4.179230 vs 实测 4.18±0.05 ⇒ |Δ|=7.7e-4（tol 的 1/130）。
+    _s1 = next(s for s in emp if s.spec_id == "E1")
+    _g1 = _s1.oracle_fn(_s1.params)
+    _c1 = cand_map["E1"](_s1, _g1)
+    check("v0.9.314 E1 candidate 为独立全矢量求解（非 golden 自证，且落在容差内）",
+          abs(_c1 - _g1) > 1e-6 and abs(_c1 - _g1) <= _s1.tol,
+          f"golden(实测)={_g1} candidate(FV-FDM+Sellmeier)={_c1:.6f} "
+          f"|diff|={abs(_c1-_g1):.2e} tol={_s1.tol} 余量={_s1.tol/abs(_c1-_g1):.0f}×")
+    # 反向探针①：**关掉材料色散必须变假红** —— 证明 4.179 不是"随手调出来的数"
+    from lda_l2 import mode_solver_response as _msr
+    _nd = _msr.e1_group_index_no_dispersion(
+        _s1.params["w_um"], _s1.params["h_um"], _s1.params["wl_um"])
+    check("v0.9.314 反向探针：关材料色散 ⇒ E1 必红（常数 n 是错的物理，不是更保守）",
+          abs(_nd - _g1) > _s1.tol,
+          f"no_disp={_nd:.4f} |diff|={abs(_nd-_g1):.4f} > tol {_s1.tol}")
+    # 判据窗口（铁律 baseline < tol < signal）：使用**生产档**三点差分实测信号
+    _budget = _msr.e1_budget(_g1, _s1.tol, _c1)
+    _sig = _msr.falsifiability_signal(
+        _s1.params["w_um"], _s1.params["h_um"], _s1.params["wl_um"])
+    check("v0.9.314 E1 判据窗口 baseline < tol < signal（信号 ≥ 4×tol 才算「抓得住」）",
+          _budget["residual"] < _s1.tol < _sig["signal"]
+          and _sig["signal"] > 4.0 * _s1.tol,
+          f"baseline={_budget['residual']:.2e} < tol={_s1.tol} < "
+          f"signal={_sig['signal']:.4f}（{_sig['signal']/_s1.tol:.1f}× tol）")
+    # 弯曲效应：E1 的 golden 是环、候选是直波导 —— 这个差必须实测，不许再凭感觉写
+    _bend = _msr.bend_delta_ng(_s1.params["L_um"] / (2.0 * 3.141592653589793),
+                               _s1.params["w_um"], _s1.params["h_um"],
+                               _s1.params["wl_um"])
+    check("v0.9.314 弯曲效应实测 ≪ 残差（+0.0033 vs 0.157：旧记录 0.46/0.157 都错）",
+          abs(_bend["delta_ng"]) < 0.01,
+          f"R={_bend['R_um']:.2f}µm 直={_bend['ng_straight']:.4f} "
+          f"弯={_bend['ng_bend']:.4f} Δ={_bend['delta_ng']:+.6f}")
+
+    # 反向探针②：`bend_mode` 与 `golden._slab_neff` 两处表示的逐位一致（防"两处各写一遍"）
+    from lda_harness.golden import b2_soi_waveguide_neff as _eim_ref
+    _eim_mine = _msr.eim_two_step(0.5, 0.22, 3.48, 1.44, 1.55)
+    _eim_ref_v = _eim_ref(0.5, 0.22, 3.48, 1.44, 1.55)
+    check("v0.9.314 两处 EIM 表示逐位一致（模块内副本 ≡ golden 本尊）",
+          abs(_eim_mine - _eim_ref_v) < 1e-12,
+          f"mine={_eim_mine:.12f} ref={_eim_ref_v:.12f} d={abs(_eim_mine-_eim_ref_v):.1e}")
+    # 模块自检（判据本身也要被跑，不许"只在文档里成立"）
+    _msc = _msr.run_selfchecks()
+    _bad_msc = [n for n, ok, _ in _msc if not ok]
+    check("v0.9.314 mode_solver_response 自检全绿（含 ρ 判据三档 + EIM 宽度收缩）",
+          not _bad_msc, f"{len(_msc)-len(_bad_msc)}/{len(_msc)} PASS 失败={_bad_msc}")
+
     # 反向断言：其余 E 题仍为占位自证（如实标注，不得假装已验证）
     _still_self = [s.spec_id for s in emp
-                   if s.spec_id != "E2"
+                   if s.spec_id not in ("E1", "E2")
                    and abs(cand_map[s.spec_id](s, s.oracle_fn(s.params))
                            - s.oracle_fn(s.params)) < 1e-12]
-    check("D-64 其余 6 道 E 题仍为占位自证桩（candidate≡golden，如实标注非真验证）",
-          sorted(_still_self) == ["E1", "E3", "E4", "E5", "E6", "E7"],
+    check("D-64 其余 5 道 E 题仍为占位自证桩（candidate≡golden，如实标注非真验证）",
+          sorted(_still_self) == ["E3", "E4", "E5", "E6", "E7"],
           f"自证={sorted(_still_self)}")
 
     # ---- D-65 判定窗口鲁棒性（**历史候选 fdfd_ng** 的证据，v0.9.23 起不再管辖 E2）----

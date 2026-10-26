@@ -444,6 +444,51 @@ def _semivec_ng_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
         h_grid=sv.H_GRID, L=sv.L_WIN)
 
 @_register_candidate(
+    "full_vector_ng",
+    "2D 全矢量 staggered FV-FDM（Fallahkhair/Li/Murphy 2008，Yee 交错 H 场 + "
+    "散度消 Hz + 复坐标 PML）n_eff(λ) → 中心差分 n_g，Si/SiO₂ Sellmeier 色散 —— "
+    "与「实测 FSR 反演 n_g」方法学完全独立")
+def _full_vector_ng_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
+    """E1 独立候选：SOI 直波导群折射率（全矢量 staggered FV-FDM + 材料色散）。
+
+    ═══ 为什么它能接（v0.9.314 · 与 v0.9.9「E1 不可接」的结论相反）═══
+    v0.9.9 的判断建立在两把**当时唯一可用**的梯子上：标量 FDFD（n_g=3.74，差 10%）
+    与 3D 相位法 FDTD（非单调，n_g=8.76，荒谬）。两把梯子都坏了，结论是
+    「E1 不可接」——**结论没错，前提错了**。本版换梯子：
+    `lda_solver/full_vector_mode_solver.py` 是 staggered Yee 全矢量（与一篇公开论文
+    的独立实现逐位对拍 600×220：2.570410 vs 2.570409755，并与商用 FDE 差 0.004）。
+
+    ═══ 实测（本机，不依赖任何外部数据）═══
+      候选 n_g = **4.179230**  ·  golden（AMF 实测 FSR 反演）4.18  ·  tol 0.10
+      |Δ| = **7.70e-4** = tol 的 **1/130**，也远小于实测不确定度 ±0.05。
+
+    ═══ 三条不许省的细节 ═══
+      ① **必须开材料色散**：关掉（n 取常数）得 4.0383，|Δ|=0.142 > tol ⇒ 假红。
+         常数折射率在这里是**错的物理**，不是"更保守的近似"。
+      ② **三点差分网格与窗口必须完全相同**（模块内已固定 h_grid=0.01 / 同一窗口），
+         否则测到的是网格伪变化。
+      ③ **弯曲效应不解释残差**：E1 的 golden 来自环（R=10.63 µm），共形变换实测
+         弯曲只把 n_g 抬高 **+0.0033**（直波导 4.0228 → 弯曲 4.0261，1/R² 律自洽），
+         是残差预算的 **4.4 倍**不是"一部分"——旧记录写的 +0.46 / +0.157 都是错的。
+
+    ═══ 诚实边界 ═══
+      残差 7.7e-4 与实测 σ=0.05 同量级以下 ⇒ 只能宣称「与实测在测量不确定度内一致」，
+      **不能**宣称「求解器精度已被 7.7e-4 验证」（那需要更小的 σ）。
+    """
+    try:  # 双路兜底（项目铁律：包内模块导入不得只依赖单一路径）
+        from lda.lda_solver import full_vector_mode_solver as fvm   # noqa: F401
+    except ImportError:
+        _ensure_paths()
+        import full_vector_mode_solver as fvm                       # noqa: F401
+
+    p = spec.params
+    return fvm.group_index(
+        float(p["w_um"]), float(p["h_um"]), float(p["wl_um"]),
+        n_core=3.4777, n_clad=1.4441,
+        core_material="Si", clad_material="SiO2")
+
+
+@_register_candidate(
     "ring_fsr_independent_ng",
     "独立 n_g（半矢量直波导求解器）→ 闭式 FSR=λ²/(n_g·L) —— 与实测 golden 完全独立，"
     "避 C4 循环（n_g 由求解器算出，非由 8.6nm FSR 反演）")
@@ -681,13 +726,37 @@ def _mzi_fsr_peakfit_candidate(spec: VerificationSpec, oracle_value: Any) -> flo
 
     return _fit_fsr_peak_periodicity(_T, wl0)
 
-@_register_candidate(
-    "b2_fvfdm_neff",
-    "全矢量有限差分 FV-FDM（纯 numpy/scipy，与 EIM 降维闭式方法学独立）：离散 ∇×(n⁻²∇×H)=k0²H，"
-    "消去 Hz 得 (Hx,Hy) 广义本征值，shift-invert 取物理芯基模；选模纯物理（芯受限+Ex 主导 TE+"
-    "最低阶导引模），不依赖 golden；dx=0.015µm 收敛至 2.644，Δ=0.0069≤tol0.05；PWE 交叉 2.614 同窗口")
-def _b2_fvfdm_neff_candidate(spec: VerificationSpec, oracle_value: Any) -> float:
-    """B2 独立候选：SOI strip 波导 TE 基模 n_eff（FV-FDM 全矢量 ↔ EIM 两步 slab 闭式）。
+#: 🔴 v0.9.314：B2 候选的 shift-invert 种子 —— **写死的常数，也是它的死因**。
+#: 实测（5×2 µm 几何，只改种子）：σ=2.65 ⇒ 2.6445；σ=3.00 ⇒ 3.0028（+0.358）；
+#: 仍答 2.6445。原因：`eigsh(sigma=σ)` 只返回**最靠近 σ** 的 k 个本征值，而选模取
+#: 「该簇里 n_eff 最小者」⇒ 返回值下限 = σ。**这不是求解器，是常数函数**。
+_B2_SEED_NEFF = 2.65
+
+
+# 🔴 v0.9.314：原候选 `b2_fvfdm_neff` **已注销**（登记表里不留孤儿：注销是为了让
+#   「登记 ≡ 实测独立锚」这条护栏继续成立，而不是绕过它）。函数体保留为
+#   `_fvfdm_selected(spec, sigma)` —— `run_benchmark_falsifiability_smoke.py` ⑨
+#   要**持续**用不同种子跑它做反向探针（若有人把常数候选重新挂回任何锚，门禁立刻红）。
+
+
+# ⚠️ v0.9.314 撤出记录（保留，不删——它是"为什么这道候选不可信"的唯一凭据）
+#   本函数曾是 B2 的候选，现已注销登记（登记表不留孤儿：注销是为了让「登记 ≡ 实测独立锚」
+#   这条护栏继续成立，而不是绕过它）。撤出理由（全部本机实测）：
+#     ① **返回值的下限就是种子**：`eigsh(A, M=B, sigma=(σ·k0)²)` 只返回最靠近 σ 的
+#        k=8 个本征值，选模再取这簇里 n_eff 最小者 ⇒ 答案 ≈ σ − 6e-3。
+#        实测（5×2 µm）：σ=2.65→2.6445 / σ=3.00→3.0028，**同一几何、同一网格，只改种子**。
+#     ② **对几何不响应**：5×2 µm 的硅（2 µm 厚、5 µm 宽，TE0 必趋 3.478）答 2.6445；
+#        n_si −10% 时答 2.6526（**反而更高**，符号错）；w −10% 只动 0.0012。
+#        响应幅度 0.007 ≪ tol 0.05 ⇒ 它在 tol 内"通过"只是常数巧合。
+#     ③ 因此 B2 的 |2.644−2.651|=0.007「三法一致」是**种子与 golden 同源**的循环：
+#        σ=2.65 本来就是 EIM 算出来的那个数。
+#   同仓有一份**做对了**的实现可比：`lda_solver/full_vector_mode_solver.py`
+#   （σ 按 n_clad+0.85·(n_core−n_clad) 随几何自适应 + 限制因子门槛 + 取降序首个）。
+
+
+def _fvfdm_selected(spec: VerificationSpec, sigma_neff: float,
+                     dx: float = 0.015) -> float:
+    """B2 候选的原始实现（FV-FDM 全矢量 ↔ EIM 两步 slab 闭式）· 种子可注入版。
 
     golden = EIM 两步有效折射率法（先横向 slab 得 n_x，再纵向 slab 得 n_eff），解析降维近似。
     cand   = 全矢量有限差分求解完整 Maxwell 旋度本征方程 ∇×(n⁻²∇×H)=k0²H；由 div H=0 消去
@@ -704,7 +773,7 @@ def _b2_fvfdm_neff_candidate(spec: VerificationSpec, oracle_value: Any) -> float
     W = float(p["w_core"]); H = float(p["h_core"])
     NSI = float(p["n_si"]); NCL = float(p["n_clad"]); WL = float(p["wl"])
     K0 = 2.0 * np.pi / WL
-    dx = dy = 0.015
+    dy = dx
     x_half = W / 2.0 + 1.5; y_half = H / 2.0 + 1.5
     nx = int(round(2 * x_half / dx)) + 1
     ny = int(round(2 * y_half / dy)) + 1
@@ -757,7 +826,7 @@ def _b2_fvfdm_neff_candidate(spec: VerificationSpec, oracle_value: Any) -> float
     A = 0.5 * (A + A.T)
     B = _sp.bmat([[Einv, None], [None, Einv]]).tocsr()
 
-    vals, vecs = _spl.eigsh(A, k=8, M=B, sigma=(2.65 * K0) ** 2, which='LM', maxiter=4000)
+    vals, vecs = _spl.eigsh(A, k=8, M=B, sigma=(sigma_neff * K0) ** 2, which='LM', maxiter=4000)
     neff_all = np.sqrt(np.real(vals)) / K0
 
     # ---- pure-physics mode selection (NO golden dependency) ----

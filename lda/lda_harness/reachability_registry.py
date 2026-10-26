@@ -111,6 +111,18 @@ MUST_BE_REACHABLE: List[str] = [
     "lda/lda_l2/sensor_ref_design.py::lockin_closure",
     "lda/lda_l2/sensor_ref_design.py::thermal_mass_closure",
     "lda/lda_l2/sensor_ref_design.py::closure_options",
+    # v0.9.314：模式求解器「响应性」审计的四个入口 —— 若变回死函数，
+    #   「B2 候选是常数函数」「EIM 在窄条高对比度偏 0.198」「E1 残差 7.7e-4」
+    #   「弯曲只值 +0.0033」四条结论就再无人守。
+    "lda/lda_l2/mode_solver_response.py::slab_te0_neff",
+    "lda/lda_l2/mode_solver_response.py::eim_two_step",
+    "lda/lda_l2/mode_solver_response.py::eim_error_curve",
+    "lda/lda_l2/mode_solver_response.py::e1_group_index",
+    "lda/lda_l2/mode_solver_response.py::bend_delta_ng",
+    "lda/lda_l2/mode_solver_response.py::response_ratio",
+    "lda/lda_l2/mode_solver_response.py::verdict_from_rho",
+    "lda/lda_l2/mode_solver_response.py::e1_budget",
+    "lda/lda_l2/mode_solver_response.py::falsifiability_signal",
     # v0.9.271（A2）：那个偏 1e6 倍的函数 —— 修好后接进 selfchecks ⑦b 与专属门禁，
     #   它若再次变死，就意味着「门禁接线被拆」，1e6 倍错会重新无人看守。
     "lda/lda_qeda/sc_readout_mux.py::resonator_freq_ghz",

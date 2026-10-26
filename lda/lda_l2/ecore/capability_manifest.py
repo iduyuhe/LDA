@@ -424,7 +424,84 @@ ECORE_CAPABILITY_MANIFEST = [
         "symbols": ["STAGES", "STAGE_ROLE", "SPEC_DEFAULT", "MIN_N", "G_READ_TYP_S", "stage_device", "stage_scale", "stage_stack", "stage_layout", "stage_drc", "stage_lvs", "stage_gds", "stage_report", "run_flow", "report_text", "flow_parity", "fail_semantics_check", "soc_flow_self_check", "SOC_FLOW_DISCLOSURE"],
         "introduced_by": "D-208 (E33)", "guard": "run_ecore_e33_smoke.py",
     },
+    {
+        "capability": "**自有标准单元库**（静态互补 CMOS · 18 单元 / 130 管）· "
+                      "**晶体管数 `n_tr` 作绝对锚**（拓扑必然：INV=2T / NAND2=4T / DFF=24T，"
+                      "非拟合）· 一阶 RC 延时 `t_intr + k·ln2·R·C` · "
+                      "**族内 `k_drive` 与串联数同序 + 跨族方向判据**（NOR>NAND / AND>NAND）· "
+                      "解析金标 `chain_golden_ps`（0 级恰为 0）",
+        "module": "lda_l2.ecore.dcell",
+        "symbols": ["Cell", "Tech", "CELLS", "COMB_CELLS", "BASE_PRIMS", "DEFAULT_TECH",
+                    "cell", "eval_cell", "cell_delay_ps", "cell_area_um2", "cell_leak_nw",
+                    "chain_golden_ps", "library_self_check", "DCELL_DISCLOSURE"],
+        "introduced_by": "D-209 (E34)", "guard": "run_ecore_e34_smoke.py",
+    },
+    {
+        "capability": "**可综合 Verilog 子集前端 + RTL 解释器（引擎 A）**：词法/递归下降语法 · "
+                      "**位宽上下文传播**（`~0` 是 32 位；`[4:0]y=a+b` 必须保住进位）· "
+                      "**非阻塞语义（读旧值）** · 状态外提为一级输入（`sig@q` / `sig@d`）· "
+                      "超出子集显式抛 `Unsupported`（不静默降级）",
+        "module": "lda_l2.ecore.drtl",
+        "symbols": ["Unsupported", "Module", "parse", "tokenize", "Parser", "ev",
+                    "rtl_eval_all", "drtl_self_check", "DRTL_DISCLOSURE"],
+        "introduced_by": "D-210 (E34)", "guard": "run_ecore_e34_smoke.py",
+    },
+    {
+        "capability": "**AIG 布尔网络**：单节点 AND + 反相边（`lit=2*node+inv`）· "
+                      "常数传播 / 幂等 / 互补 / **结构哈希 CSE** · 派生 OR/XOR/XNOR/MUX · "
+                      "归约 / 相等 / **无符号小于（累积方向必须 LSB→MSB）** / 行波加法 · "
+                      "**只做可证明等价的变换**（不做可能更省但不保等价的优化）",
+        "module": "lda_l2.ecore.daig",
+        "symbols": ["Aig", "red_or", "red_and", "eq_bits", "ult_bits", "add_bits",
+                    "mux_bits", "const_bits", "bits_value", "DAIG_DISCLOSURE"],
+        "introduced_by": "D-211 (E34)", "guard": "run_ecore_e34_smoke.py",
+    },
+    {
+        "capability": "**逻辑综合 + 门级网表仿真（引擎 B）**：AST→AIG 位展开（组合不动点 · "
+                      "**latch 推断显式拒绝**）→ 技术映射（NAND2+INV+DFF+TIE）→ 网表 · "
+                      "**网表真实性判据**（输出必被单元驱动 / DFF 数==状态位 / 拓扑无前向引用）· "
+                      "`sim_netlist` 逐单元查真值表（与引擎 A 代码路径零共享）",
+        "module": "lda_l2.ecore.dsynth",
+        "symbols": ["Gate", "Netlist", "synth", "sim_netlist", "netlist_authenticity",
+                    "input_net", "dsynth_self_check", "DSYNTH_DISCLOSURE"],
+        "introduced_by": "D-212 (E34)", "guard": "run_ecore_e34_smoke.py",
+    },
+    {
+        "capability": "**静态时序分析 + 面积/功耗**：拓扑序到达时间传播 · clk→Q 起点 · "
+                      "建立检查 `t_clk_min=max(arrival(D)+t_setup)` · 关键路径回溯 · "
+                      "**三条独立路径金标**（图传播 / 逐级累加 / 代数相乘，rel<1e-12）· "
+                      "🔴 `hold_checked=False`（单角零偏斜下形式满足 ⇒ **不谎称验过**）",
+        "module": "lda_l2.ecore.dsta",
+        "symbols": ["Timing", "sta", "loads_of", "switching_power_nw", "clock_power_nw",
+                    "chain_golden_from_loads", "build_chain_nl", "sta_self_check",
+                    "DSTA_DISCLOSURE"],
+        "introduced_by": "D-213 (E34)", "guard": "run_ecore_e34_smoke.py",
+    },
+    {
+        "capability": "**等价性双引擎穷举 + 响应率 ρ + 锁步序列对拍**：逐位相等容差 0 · "
+                      "端口集合/位宽双向对齐 · 位宽≤14 **全穷举**（否则定向角点+随机并报实跑数）· "
+                      "**ρ ≡ 单门扰动被判红的比例（<0.8 视为判据无判别力，绿也不算数）** · "
+                      "`lockstep` 两条状态轨迹独立推进，覆盖**可达状态空间**（随机向量对 70 位输入等于零覆盖）",
+        "module": "lda_l2.ecore.dequiv",
+        "symbols": ["equiv", "rho", "lockstep", "compare_on", "unpack", "n_bits",
+                    "equiv_self_check", "DEQUIV_DISCLOSURE"],
+        "introduced_by": "D-214 (E34)", "guard": "run_ecore_e34_smoke.py",
+    },
+    {
+        "capability": "**CIM 控制壳（第一个真实数字设计）**：单 ADC 时分复用行扫描 FSM（5 态）· "
+                      "**位宽由物理动态范围反解**（row_sel=⌈log2 87⌉=7 · bit_sel=3 · "
+                      "**acc=⌈log2(87×8×255+1)⌉=18**（16/17 位会静默溢出）· scnt=5）· "
+                      "18 拍 SPI 读回 · **闭环**：数字壳 Fmax vs SAR 由 CDAC 建立时间决定的时钟 · "
+                      "架构差异显式声明（不与 E17 并行 ADC 相除）",
+        "module": "lda_l2.ecore.dctrl",
+        "symbols": ["CIM_CTRL_SRC", "ROW_N", "BITS", "ACC_EVENTS", "ACC_WIDTH",
+                    "ACC_WIDTH_MIN", "ADC_MAX", "build", "stimulus", "lockstep",
+                    "acc_width_witness", "closure", "power_at", "ctrl_self_check",
+                    "DCTRL_DISCLOSURE"],
+        "introduced_by": "D-215 (E34)", "guard": "run_ecore_e34_smoke.py",
+    },
 ]
+
 
 
 def _package_dir() -> str:

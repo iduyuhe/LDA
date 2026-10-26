@@ -737,8 +737,12 @@ SOC_FLOW_DISCLOSURE = {
     ],
     "not_a_chip": "产物是**设计期签核报告**，不是流片芯片；DRC/LVS 过 ≠ 可制造（无 CMP/OPC/天线/密度）",
     "not_a_yield_model": "漏极通路 6 个串联 via × 单元数 = 45,414 个串联节点（N=87）的良率完全未建模（1 ppm/节点 ⇒ ~4.5% 失效）",
-    "no_digital_shell": "🔴 流程里**没有数字控制壳**（E21 三红线第二条「数字链借不借」至今未决）"
-                        "⇒ 这是 CIM 阵列的签核，不是 SoC 的签核",
+    "digital_shell_scope": "数字壳已在 **E34 自主建成逻辑前端**（自有单元库 → Verilog 子集 → "
+                           "逻辑综合 → STA → 双引擎等价性；CIM 控制壳 1284 门 / 56 DFF / "
+                           "锁步 1500 拍零失配），E21 三红线第二条由**人**裁决为「自主建」；"
+                           "🔴 但**无 P&R ⇒ 无物理面积、无真实线延时、无 CTS/DFT/时钟树**，"
+                           "且控制壳**尚未与阵列版图拼装**（无顶层整合 / IO ring / 电源网格）"
+                           "⇒ 这仍是「CIM 阵列 + 数字前端」的签核，**不是 SoC 签核**",
     "fail_vs_shortfall": "fail 只留给物理/工具不可行；未达能效目标不算 fail（那是差距）",
     "tier": TIER,
 }
@@ -850,8 +854,11 @@ def soc_flow_self_check(verbose: bool = False) -> bool:
               and txt.count("| **PASS** |") >= 6)
 
     # ⑫ 披露：必须承认"没有数字壳"
-    ok &= chk("⑫ 🔴 披露明写「流程里没有数字控制壳」（这是 CIM 阵列签核，不是 SoC 签核）",
-              "没有数字控制壳" in SOC_FLOW_DISCLOSURE["no_digital_shell"])
+    # 🔴 E34 换代：数字壳已自主建成**逻辑前端**，边界从「完全没有」变成「无 P&R / 未拼装」
+    #    ⇒ 判据必须跟着换，否则会拿过时事实继续「诚实」（那是另一种假绿）
+    ok &= chk("⑫ 🔴 披露明写数字壳的真实边界（**无 P&R** · 未与版图拼装 · **不是 SoC 签核**）",
+              ("无 P&R" in SOC_FLOW_DISCLOSURE["digital_shell_scope"])
+              and ("不是 SoC 签核" in SOC_FLOW_DISCLOSURE["digital_shell_scope"]))
 
     npass = sum(1 for c, _, _ in checks if c)
     if verbose:

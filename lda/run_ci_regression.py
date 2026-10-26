@@ -1476,6 +1476,11 @@ CORE_SMOKES: List[str] = [
     #   守三类口径分离：能效（实测锚 ✅ / 自算下界 ❌）· 面积（同 N 代价 ✅ / 总比 ❌）·
     #   via（串联 6 ✅ / 链长 12 ❌ —— E31 曾把链长当 via 数，良率高估 2×）。
     "run_ecore_e33_smoke.py",
+    # E34 数字控制壳自主建门禁（D-216）：**电子域第一次有数字链** ——
+    #   自有标准单元库（n_tr 拓扑锚）+ Verilog 子集前端 + AIG + 综合 + STA + 双引擎等价性。
+    #   46 判据；4 道突变探针（拓扑锚 / 位宽上下文 / 比较器方向 / 非阻塞语义），全绿 ~1.1s。
+    #   🔴 守的是「数字壳到底存不存在」这件事本身（E20–E33 全程 no_digital_shell 未决）。
+    "run_ecore_e34_smoke.py",
     "run_webui_entry_smoke.py",
     # 🔴 v0.9.213 光子计算 SoC 案例卡（/api/soc_demo · #sec-soc）跨源一致性 + 前端取值路径门禁：
     #   卡内 WDM/TDM 杠杆常量 ≡ lda_l2 真源（soc_wdm/soc_tdm）逐位同源 + 反向探针（改真源必红）；
@@ -3177,6 +3182,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e32_smoke.py": 300.0,
     # E33 流程编排门禁（D-208）· 实测 ~23.6s（含 N=87 全链：几何+DRC+LVS+5.8MB GDS）
     "run_ecore_e33_smoke.py": 300.0,
+    # E34 数字链门禁（D-216）· 实测 ~1.1s（六层自检 + 1500 拍锁步 · 1284 门网表）
+    "run_ecore_e34_smoke.py": 120.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     # 🔴 v0.9.186：新增「标准 JSON 出口」门禁（`run_webui_json_hard_smoke.py`,
     #   13 判据 + 4 道突变探针；因浏览器 JSON.parse 崩于 `-Infinity` 而立）。

@@ -217,10 +217,16 @@ def _report_ok():
 
 
 def _disclosure_ok():
-    """B12 · 披露必须承认「没有数字控制壳」（这是 CIM 阵列签核，不是 SoC 签核）。"""
+    """B12 · 披露必须承认数字壳的真实边界。
+
+    🔴 E34 换代：数字壳已**自主建成逻辑前端**（E21 三红线第二条由人裁决「自主建」），
+    边界从「完全没有数字壳」变成「**无 P&R** · 未与版图拼装 · 不是 SoC 签核」。
+    判据跟着换 —— 拿过时事实继续「诚实」，是另一种假绿。
+    """
     d = F.SOC_FLOW_DISCLOSURE
-    return ("没有数字控制壳" in d["no_digital_shell"]
-            and d["no_digital_shell"].startswith("🔴"))
+    txt = d["digital_shell_scope"]
+    return ("无 P&R" in txt and "不是 SoC 签核" in txt
+            and "自主建成逻辑前端" in txt and "🔴" in txt)
 
 
 def _semantics_ok():

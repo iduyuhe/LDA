@@ -1030,12 +1030,11 @@ def main() -> int:
                  "n_clad": 1.444, "wl": 1.55}
         _cp, _rp = [], []
         _c0 = _fvfdm_selected(_PV(_base), _B2_SEED_NEFF)
-        _r0 = _msr.vector_neff(0.5, 0.22, 1.55, h_grid=0.02)
+        _r0 = _msr.vector_neff(0.5, 0.22, 1.55)   # 生产网格（h=0.01）：0.22 的半高 0.11 必须整格
         for _f in (1.10, 0.90):
             _p2 = dict(_base, n_si=_base["n_si"] * _f)
             _cp.append((_c0, _fvfdm_selected(_PV(_p2), _B2_SEED_NEFF)))
-            _rp.append((_r0, _msr.vector_neff(0.5, 0.22, 1.55,
-                                             n_core=3.4777 * _f, h_grid=0.02)))
+            _rp.append((_r0, _msr.vector_neff(0.5, 0.22, 1.55, n_core=3.4777 * _f)))
         _rho = _msr.response_ratio(_cp, _rp)
         _verdict = _msr.verdict_from_rho(_rho["min_ratio"], _rho["sign_consistency"])
         check("⑨-3 已注销候选的响应率 ρ ≪ 1 ⇒ NOT_RESPONSIVE（在 tol 内通过只是常数巧合）",

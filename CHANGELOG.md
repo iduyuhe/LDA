@@ -51,7 +51,7 @@ golden 动了、候选不动 ⇒ diff 变大 ⇒ 看起来"抓到了错"。故�
 DEAD_CONSTANT (ρ<1e-6) | NOT_RESPONSIVE (ρ<0.5 或符号一致率<0.99) | RESPONSIVE
 ```
 
-`b2_fvfdm_neff`：ρ≈**0.036**、符号一致 **1/2** ⇒ NOT_RESPONSIVE。
+`b2_fvfdm_neff`：ρ≈**0.013**（1.3%）、符号一致 **1/2** ⇒ NOT_RESPONSIVE（n_si ±10% 时它动 0.007，全矢量动 0.38/0.36）。
 门禁 ⑨-1~⑨-4：种子决定返回值 / 体材料极限 / ρ⇒NOT_RESPONSIVE / **未被重新挂载**（给"撤出"本身上的锁）。
 
 ### ④ 那个被写错两次的弯曲效应

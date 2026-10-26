@@ -500,6 +500,43 @@ ECORE_CAPABILITY_MANIFEST = [
                     "DCTRL_DISCLOSURE"],
         "introduced_by": "D-215 (E34)", "guard": "run_ecore_e34_smoke.py",
     },
+    {
+        "capability": "**CIM 加速器 IP 的 P&R（E35 · 自建最小但诚实）· 第 0 层 标准单元布局**："
+                      "行式布局（行高固定 · 宽=面积/行高 ⇒ **面积逐位守恒**）· 按连通度降序填充 + "
+                      "有限随机爬山降 HPWL · 端口沿边界落点 · 环绕 IO ring",
+        "module": "lda_l2.ecore.dplac",
+        "symbols": ["Placement", "place", "ip_digital_region", "plac_self_check",
+                    "DPLAC_DISCLOSURE", "IO_RING_UM", "H_ROW_UM", "SEED"],
+        "introduced_by": "D-216 (E35)", "guard": "run_ecore_e35_smoke.py",
+    },
+    {
+        "capability": "**P&R 第 1 层 全局布线**：曼哈顿度量 MST（Prim）把多端网拆成 2 端 L 形布线 · "
+                      "**金标：2 端网线长 ≥ 两端曼哈顿距离（精确下界）** · 多端网必布 · "
+                      "总线长 ≤ 1.5×HPWL（抓翻倍编数）",
+        "module": "lda_l2.ecore.droute",
+        "symbols": ["Route", "route", "route_self_check", "DROUTE_DISCLOSURE",
+                    "_validate", "_break_one_two_pin", "_net_pins"],
+        "introduced_by": "D-217 (E35)", "guard": "run_ecore_e35_smoke.py",
+    },
+    {
+        "capability": "**P&R 第 2 层 线载提取 + 线感知 STA**：线长×c_per_um → 每网 C_wire → "
+                      "注入 `dsta.sta` → **真实 Fmax** · 金标：Fmax(线载)<Fmax(理想) · "
+                      "线载×K 单调降 · 线载=0 逐位=理想",
+        "module": "lda_l2.ecore.dextract",
+        "symbols": ["WireSTA", "wire_loads", "wire_aware_sta", "extract_self_check",
+                    "DEXTRACT_DISCLOSURE", "C_WIRE_FF_PER_UM"],
+        "introduced_by": "D-218 (E35)", "guard": "run_ecore_e35_smoke.py",
+    },
+    {
+        "capability": "**P&R 第 3 层 IP 硬宏 + GDS 合并**：阵列 GDS（E33 栈）+ 数字单元包围盒 + "
+                      "外框 + 引脚 → 单一 IP GDS · **金标：合并元素 emit ≡ 回读 parse（零丢失）** · "
+                      "复用 gds_export 编码器与 parse_gds_polygons 回读",
+        "module": "lda_l2.ecore.dmacro",
+        "symbols": ["Macro", "build_ip", "closure", "macro_self_check",
+                    "DMACRO_DISCLOSURE", "GAP_UM", "LAYER_DIGITAL",
+                    "LAYER_IP_BOUNDARY", "LAYER_PIN", "_desc_bytes", "_box", "_pin"],
+        "introduced_by": "D-219 (E35)", "guard": "run_ecore_e35_smoke.py",
+    },
 ]
 
 
@@ -542,7 +579,7 @@ def manifest_check() -> dict:
 
 
 ECORE_CAPABILITY_DISCLOSURE = {
-    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19 · E20 扩面至 e1~e20 · E21 扩面至 e1~e21 · E22 扩面至 e1~e22 · E23 扩面至 e1~e23 · E24 扩面至 e1~e24 · E25 扩面至 e1~e25 · E26 扩面至 e1~e26 · E27 扩面至 e1~e27 · E28 扩面至 e1~e28 · E29 扩面至 e1~e29 · E30 扩面至 e1~e30 · E31 扩面至 e1~e31 · E32 扩面至 e1~e32 · E33 扩面至 e1~e33",
+    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19 · E20 扩面至 e1~e20 · E21 扩面至 e1~e21 · E22 扩面至 e1~e22 · E23 扩面至 e1~e23 · E24 扩面至 e1~e24 · E25 扩面至 e1~e25 · E26 扩面至 e1~e26 · E27 扩面至 e1~e27 · E28 扩面至 e1~e28 · E29 扩面至 e1~e29 · E30 扩面至 e1~e30 · E31 扩面至 e1~e31 · E32 扩面至 e1~e32 · E33 扩面至 e1~e33 · E35 扩面至 e1~e35",
     "e5_scope": "把 E1~E9 逼出的平台能力固化为机器可读清单（单向真源）+ 常驻门禁（正向完备 + 反向完备 + 披露一致 + 诚实边界）",
     "hardening_semantics": "能力面必须被门禁守着：任一模模块/符号缺失、隐身模块出现、或注入 fabricated 指标 ⇒ 门禁必红",
     "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"

@@ -740,9 +740,13 @@ SOC_FLOW_DISCLOSURE = {
     "digital_shell_scope": "数字壳已在 **E34 自主建成逻辑前端**（自有单元库 → Verilog 子集 → "
                            "逻辑综合 → STA → 双引擎等价性；CIM 控制壳 1284 门 / 56 DFF / "
                            "锁步 1500 拍零失配），E21 三红线第二条由**人**裁决为「自主建」；"
-                           "🔴 但**无 P&R ⇒ 无物理面积、无真实线延时、无 CTS/DFT/时钟树**，"
-                           "且控制壳**尚未与阵列版图拼装**（无顶层整合 / IO ring / 电源网格）"
-                           "⇒ 这仍是「CIM 阵列 + 数字前端」的签核，**不是 SoC 签核**",
+                           "**E35 在「不借 OpenROAD」前提下自建了简化 P&R**（行式布局 + 全局布线 "
+                           "+ 线载 STA + IP 硬宏 GDS 合并），终点定为 **CIM 加速器 IP 硬宏** "
+                           "（270×232 µm / 62,581 µm² / 108 引脚 / 6,9746 元素零丢失）；"
+                           "🔴 但仍是 **简化** P&R：**无 detail route 全解 · 数字单元只画包围盒 "
+                           "（非真实内部几何）· 无 IO 环电气连接 · 无 P&R 签核 DRC/LVS 对 IP 整体 "
+                           "· 线载 C 为估算（只算 C 不算 R·C 分布式延时 ⇒ Fmax 偏乐观）** "
+                           "⇒ 这是「CIM 加速器 IP 硬宏」的签核，**不是能流片的完整 SoC 签核**",
     "fail_vs_shortfall": "fail 只留给物理/工具不可行；未达能效目标不算 fail（那是差距）",
     "tier": TIER,
 }
@@ -853,12 +857,15 @@ def soc_flow_self_check(verbose: bool = False) -> bool:
               "claimable" in txt and "不可对外" in txt
               and txt.count("| **PASS** |") >= 6)
 
-    # ⑫ 披露：必须承认"没有数字壳"
-    # 🔴 E34 换代：数字壳已自主建成**逻辑前端**，边界从「完全没有」变成「无 P&R / 未拼装」
-    #    ⇒ 判据必须跟着换，否则会拿过时事实继续「诚实」（那是另一种假绿）
-    ok &= chk("⑫ 🔴 披露明写数字壳的真实边界（**无 P&R** · 未与版图拼装 · **不是 SoC 签核**）",
-              ("无 P&R" in SOC_FLOW_DISCLOSURE["digital_shell_scope"])
-              and ("不是 SoC 签核" in SOC_FLOW_DISCLOSURE["digital_shell_scope"]))
+    # ⑫ 披露：必须承认数字壳的真实边界
+    # 🔴 E34→E35 换代：数字壳从「无 P&R」变成「自建**简化** P&R · 终点是 CIM 加速器 IP 硬宏
+    #    而非能流片的完整 SoC」⇒ 判据必须跟着换，否则会拿过时事实继续「诚实」（另一种假绿）
+    ok &= chk("⑫ 🔴 披露明写数字壳的真实边界（自建**简化** P&R · CIM 加速器 IP **硬宏** · "
+              "**不是能流片的完整 SoC**）",
+              ("简化" in SOC_FLOW_DISCLOSURE["digital_shell_scope"])
+              and ("CIM 加速器 IP" in SOC_FLOW_DISCLOSURE["digital_shell_scope"])
+              and ("不是" in SOC_FLOW_DISCLOSURE["digital_shell_scope"]
+                   and "SoC" in SOC_FLOW_DISCLOSURE["digital_shell_scope"]))
 
     npass = sum(1 for c, _, _ in checks if c)
     if verbose:

@@ -58,8 +58,14 @@ class Timing:
     hold_checked: bool
 
 
-def loads_of(nl, port_load_ff: float = 0.0, tech=DC.DEFAULT_TECH) -> dict:
-    """每根网的**扇入电容**（fF）。走线电容 = 0（无 P&R ⇒ 诚实取 0，不编数）。"""
+def loads_of(nl, port_load_ff: float = 0.0, tech=DC.DEFAULT_TECH,
+             wire_load_ff: dict = None) -> dict:
+    """每根网的**总负载电容**（fF）。
+
+    🔴 E35 之前：走线电容 = 0（无 P&R ⇒ 诚实取 0，不编数）。
+    🔴 E35 起：可选注入 `wire_load_ff[net] = 该网的走线电容（fF）`，
+    由 `dextract` 根据真实布线线长算出。**零线时行为不变**（E34 三路径金标不受影响）。
+    """
     fan = {}
     for g in nl.gates:
         if g.cell == "DFF":
@@ -71,11 +77,15 @@ def loads_of(nl, port_load_ff: float = 0.0, tech=DC.DEFAULT_TECH) -> dict:
     for nts in nl.outputs.values():
         for n in nts:
             fan[n] = fan.get(n, 0.0) + port_load_ff
+    if wire_load_ff:
+        for n, c in wire_load_ff.items():
+            fan[n] = fan.get(n, 0.0) + float(c)
     return fan
 
 
-def sta(nl, tech=DC.DEFAULT_TECH, port_load_ff: float = 0.0) -> Timing:
-    load = loads_of(nl, port_load_ff, tech)
+def sta(nl, tech=DC.DEFAULT_TECH, port_load_ff: float = 0.0,
+        wire_load_ff: dict = None) -> Timing:
+    load = loads_of(nl, port_load_ff, tech, wire_load_ff)
     arr = {}
     pred = {}
 

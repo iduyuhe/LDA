@@ -219,14 +219,13 @@ def _report_ok():
 def _disclosure_ok():
     """B12 · 披露必须承认数字壳的真实边界。
 
-    🔴 E34 换代：数字壳已**自主建成逻辑前端**（E21 三红线第二条由人裁决「自主建」），
-    边界从「完全没有数字壳」变成「**无 P&R** · 未与版图拼装 · 不是 SoC 签核」。
-    判据跟着换 —— 拿过时事实继续「诚实」，是另一种假绿。
+    🔴 E34→E35 换代：数字壳从「无 P&R」变成「自建**简化** P&R · 终点是 CIM 加速器 IP 硬宏
+    而非能流片的完整 SoC」。判据跟着换 —— 拿过时事实继续「诚实」，是另一种假绿。
     """
     d = F.SOC_FLOW_DISCLOSURE
     txt = d["digital_shell_scope"]
-    return ("无 P&R" in txt and "不是 SoC 签核" in txt
-            and "自主建成逻辑前端" in txt and "🔴" in txt)
+    return ("简化" in txt and "CIM 加速器 IP" in txt
+            and "不是" in txt and "SoC" in txt and "🔴" in txt)
 
 
 def _semantics_ok():
@@ -447,7 +446,7 @@ def main():
     check("B11 报告含三类必备信息（status/basis/claimable）+ 不可对外警告 + 未建模项",
           _report_ok())
 
-    check("B12 🔴 披露承认「没有数字控制壳」（CIM 阵列签核 ≠ SoC 签核）",
+    check("B12 🔴 披露承认数字壳的真实边界（自建**简化** P&R · CIM 加速器 IP · 非完整 SoC 签核）",
           _disclosure_ok())
 
     check("B13 🔴 fail 与「未达标」分离（4 场景：该停的停、不该停的不停）",

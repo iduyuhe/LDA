@@ -39,6 +39,7 @@
 from __future__ import annotations
 
 import importlib
+import math
 import os
 import sys
 
@@ -243,7 +244,8 @@ def main() -> int:
     for k in sorted(base):
         check("  %s" % k, base[k])
     # 判据数自行锁住：门禁只管看得见的集合 ⇒ 新判据静默进盲区
-    check("R0 判据集合规模 == 46（新增判据必须同步本门禁与定稿索引）", len(base) == 46)
+    # v0.9.310：47（+1 = FAU 装配公差落窗 —— 该公差已从函数体字面量搬进参数表）
+    check("R0 判据集合规模 == 47（新增判据必须同步本门禁与定稿索引）", len(base) == 47)
 
     section("M4 真实输出禁词扫描（肯定式宣称面）")
     M = _mod()
@@ -264,6 +266,73 @@ def main() -> int:
     probes = run_probes()
     for k in sorted(probes):
         check("  %s" % k, bool(probes[k]))
+
+    section("S `G-OI7a` FAU 装配公差的**分布口径**（v0.9.310）")
+    # 缺口原文：「FAU 公差无分布」。分布→损耗的传播是**纯建模活** ⇒ 本节把它做掉，
+    # 并把「±tol 这句话本身不确定」这件事摊开成判据。
+    from lda_l2 import oi_fau_yield as FY
+
+    _p, _t, _ = FY.run_selfchecks(verbose=False)
+    check("S1 `oi_fau_yield` 自检全过（%d 项：口径钉死 / 退化 / MC / 互洽 / 反演 / 单调 / 反向）"
+          % _t, _p == _t, "PASS=%d/%d" % (_p, _t))
+
+    _W = float(M.OI_M4_PROCESS["mfd_w_um"])
+
+    # S2 门禁**自己跑** MC ⇄ 闭式（不转调模块自检）：E[η] 与良率各 2 组，4σ
+    _z = []
+    for _sig, _l0 in ((0.1667, 0.05), (0.3, 0.10)):
+        _mc = FY.mc_statistics(_W, _sig, _l0, trials=2500, seed=int(100 * _sig * 100 + _l0 * 1000))
+        _ce = FY.expected_eta_closed(_W, _sig)
+        _z.append((_mc["mean_eta"] - _ce) / (0.5 / math.sqrt(_mc["trials"])))
+        _cy = FY.yield_closed(_l0, _W, _sig)
+        _z.append((_mc["yield"] - _cy) / math.sqrt(max(_cy * (1 - _cy), 1e-12) / _mc["trials"]))
+    check("S2 MC ⇄ 闭式（E[η] 与良率各 2 组）：4 组全部 |z| ≤ 4（max=%.2f）"
+          % max(abs(x) for x in _z), all(abs(x) <= 4.0 for x in _z),
+          "z=%s" % [round(x, 2) for x in _z])
+
+    # S3 🔴 口径钉死：**功率 = 振幅重叠的模方**，w 取 1/e² 强度半径 ⇒ η = exp(−(d/w)²)
+    _ov = FY.mode_overlap_2d(0.8, _W)
+    _d1 = abs(_ov["eta_numeric"] - _ov["eta_exp_1_over_w2"])
+    _d2 = abs(_ov["eta_numeric"] - _ov["eta_exp_1_over_2w2"])
+    check("S3 口径钉死：2D 数值重叠 ⇄ exp(−(d/w)²) 差 %.1e ∧ ⇄ exp(−d²/2w²) 差 %.1e"
+          " ⇒ 指数系数由计算定，不靠注释" % (_d1, _d2),
+          _d1 < 1e-6 and _d2 > 1e-3)
+
+    # S4 🔴 诚实面：同一句「±tol」跨约定差多少 —— 不选一个，全给出来
+    _tol = float(M.OI_M4_PROCESS["fau_assembly_tol_um"])
+    _tab = FY.convention_table(_W, _tol)
+    _losses = [r["loss_db"] for r in _tab]
+    _spread = max(_losses) / min(_losses)
+    check("S4 「±%.2f µm」在 %d 种约定下跨 %.2f 倍（%.4f … %.4f dB）⇒ 这句话单独不成立"
+          % (_tol, len(_tab), _spread, min(_losses), max(_losses)), _spread >= 5.0,
+          "表=%s" % [(r["convention"], round(r["loss_db"], 4)) for r in _tab])
+
+    # S5 🔴 本版标题：把带边缘当位移 ⇒ 角点是 ±3σ 期望的 ≥4 倍
+    _cv = FY.corner_vs_expected(_W, _tol, "gauss_3sigma")
+    check("S5 角点 %.4f dB 是 ±3σ 期望 %.4f dB 的 %.2f 倍（≥4）⇒ 原文那个数是被放大的"
+          % (_cv["corner_loss_db"], _cv["expected_loss_db"], _cv["ratio"]),
+          _cv["ratio"] >= 4.0)
+
+    # S6 🔴 单一真源：公差在参数表里 ∧ 有窗口 ∧ 函数输出与之逐位相等
+    _in_tab = "fau_assembly_tol_um" in M.OI_M4_PROCESS
+    _banded = "fau_assembly_tol_um" in M._BANDS
+    _same_src = (_in_tab and float(M.fau_cte_misalignment()["assembly_tol_um"])
+                 == float(M.OI_M4_PROCESS["fau_assembly_tol_um"]))
+    check("S6 公差单一真源：进 `OI_M4_PROCESS` ∧ 有窗口 ∧ `fau_cte_misalignment()` 输出逐位相等",
+          bool(_in_tab and _banded and _same_src),
+          "入表=%s 有窗口=%s 同源=%s" % (_in_tab, _banded, _same_src))
+
+    # S7 反演：良率目标 → σ 上限，回代须**恰**命中（1e-12）
+    _ok7 = all(abs(FY.yield_closed(0.05, _W, FY.sigma_max_for_yield(0.05, _W, y)) - y) < 1e-12
+               for y in (0.9, 0.99))
+    check("S7 反演（良率目标 → σ 上限）回代 90% / 99% 恰命中（1e-12）", _ok7)
+
+    # S8 🔴 措辞判据：CTE 仍非主因（方向不变），但「远小于」在 3σ 口径下不成立
+    _ca = FY.cte_vs_assembly(convention="gauss_3sigma")
+    check("S8 CTE ⇄ 装配：角点口径 1/%.1f（可称「远小于」）↔ 3σ 期望 1/%.2f ⇒ 方向不变、措辞须改"
+          % (_ca["ratio_corner"], _ca["ratio_expected"]),
+          _ca["cte_is_dominant"] is False and 3.0 < _ca["ratio_expected"] < 6.0,
+          "CTE=%.5f dB 装配期望=%.5f dB" % (_ca["il_cte_db"], _ca["il_assembly_expected_db"]))
 
     section("M4 探针还原后基线复检")
     after = base_checks()

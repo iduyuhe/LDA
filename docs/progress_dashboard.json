@@ -63,10 +63,10 @@
     "strict_total": 519
   },
   "gaps": {
-    "boundary": 42,
-    "closed": 66,
-    "gaps": 123,
-    "open": 4,
+    "boundary": 43,
+    "closed": 67,
+    "gaps": 124,
+    "open": 3,
     "settled": 11,
     "unmarked": 0
   },

@@ -88,6 +88,11 @@ MUST_BE_REACHABLE: List[str] = [
     "lda/lda_l2/d2_spacetime_decoder.py::min_weight_decode",
     "lda/lda_l2/d2_spacetime_decoder.py::run_mc",
     "lda/lda_l2/d2_spacetime_decoder.py::brute_force_census",
+    # v0.9.310：FAU 公差分布口径的三个入口 —— 若变回死函数，S 节判据就被拆了，
+    #   「±tol 这句话单独不确定」与「角点是 3σ 期望的 4.5 倍」两条结论就再无人守。
+    "lda/lda_l2/oi_fau_yield.py::convention_table",
+    "lda/lda_l2/oi_fau_yield.py::yield_closed",
+    "lda/lda_l2/oi_fau_yield.py::corner_vs_expected",
     # v0.9.271（A2）：那个偏 1e6 倍的函数 —— 修好后接进 selfchecks ⑦b 与专属门禁，
     #   它若再次变死，就意味着「门禁接线被拆」，1e6 倍错会重新无人看守。
     "lda/lda_qeda/sc_readout_mux.py::resonator_freq_ghz",

@@ -733,7 +733,7 @@ def _m4_block() -> dict:
             "光纤耦合损耗均为**规格锚**（公开工艺近似，**不是** foundry 真值，属 T2 锁死区）；"
             "三形态热耦合 θ 差异用**几何标度**（1/d 远场近似），非实测封装数据；"
             "`P_drv ∝ 1/L` 是 `VπL` 恒定假设下的 A 档闭式；"
-            "FAU 对准公差**无分布数据**、封装应力/翘曲**无实测** ⇒ **G-OI7 诚实保留**；"
+            "FAU 对准公差的**分布口径已建**（`G-OI7a` · v0.9.310）、但**真分布/CTE/翘曲仍无实测** ⇒ **G-OI7b 边界**；"
             "🔴 三域代价**只出 mW / W / K / nm / dB / GHz**，"
             "**不报** TOPS / TOPS-W / fJ-op / pJ-bit 能效比；verdict 恒 `DESIGN_BUDGET`。"),
     }
@@ -804,7 +804,7 @@ def _m5_block() -> dict:
             "（封装线口径 CPO 省 %.1f mW/lane ⇒ 电极口径 CPO 多付 %.1f mW/lane）。"
             "🔴 边界：VπL 与 CMOS 摆幅是**公开规格锚**（非 foundry 真值）；只出 "
             "mW / W / GHz / mm / V / V·cm，**不报** TOPS / TOPS-W / fJ-op / pJ-bit；"
-            "G-OI4（电路级无 PDK）与 G-OI7（封装级无实测）**仍开放**。"
+            "G-OI4（电路级无 PDK）与 G-OI7b（封装级**真值**无实测）**仍开放**；G-OI7a（公差分布口径）v0.9.310 已闭合。"
             % (M5.V_PP_DIFF_V, M5.L_ELECTRODE_MM, st["implied_vpi_l_v_cm"],
                st["vpi_l_critical_v_cm"], st["public_band_v_cm"][0],
                st["gap_ratio_vs_typical"], st["public_band_v_cm"][0],
@@ -851,6 +851,10 @@ _GAP_EVIDENCE_SPEC: dict = {
     "G-OI3": "m1：EO f₃dB>0 ∧ worst BER < KP4 门限 ∧ 驱动 t90<0.5UI ∧ TIA>1×Nyq ∧ 色散 penalty 可达",
     "G-OI5": "m2b 五项：形态↔均衡 ∧ per-lane 均衡成效 ∧ 热调>0 ∧ Γ 三律 ∧ 良率闭式⟷MC ∧ 封装温窗",
     "G-OI6": "m3.layout_2p5d：拓扑 LVS ∧ 电层 DRC ∧ OE 元素真复用 ∧ OE-LVS 显式豁免(verdict=REJECT+note)",
+    # 🔴 v0.9.310：公差分布口径（现算，不读清单字面量）—— 角点/3σ期望 ≥4× ∧ 跨约定 ≥5×
+    #    ∧ 公差已入参数表且有窗口 ∧ 函数输出与参数表逐位同源
+    "G-OI7a": "oi_fau_yield.convention_table / corner_vs_expected：角点/3σ期望≥4× ∧ "
+              "跨约定≥5× ∧ `fau_assembly_tol_um` 入表+有窗口 ∧ 与函数输出逐位同源",
 }
 
 
@@ -968,8 +972,35 @@ def _gap_evidence_ok(card: dict) -> dict:
         o6, d6 = False, "EXC %s" % type(e).__name__
     out["G-OI6"] = {"ok": o6, "detail": d6}
 
+    # ── G-OI7a：FAU 装配公差的**分布口径**（v0.9.310 闭合）
+    #    🔴 证据必须**现算**（读模块现算值，不读清单字面量）⇒ 打坏实现时本项自红。
+    #    只算 O(1) 的量（不跑 MC）—— `case_card()` 会被反复构建，不能塞秒级计算。
+    try:
+        from lda_l2 import oi_fau_yield as _FY
+        from lda_l2 import oi_m4 as _M4
+        # 🔴 必须同时读**卡内值**与**模块现算值**并逐位对拍 —— 只读模块的话，
+        #    「把卡内数字改坏」不会有任何反应（探针也就打不坏），那等于没绑上。
+        _cte = (card.get("m4", {}) or {}).get("cte", {}) or {}
+        _w_c = float(_cte.get("mfd_w_um", -1.0))
+        _tol_c = float(_cte.get("assembly_tol_um", -1.0))
+        _w_m = float(_M4.OI_M4_PROCESS["mfd_w_um"])
+        _tol_m = float(_M4.OI_M4_PROCESS["fau_assembly_tol_um"])
+        _same = (_w_c == _w_m) and (_tol_c == _tol_m)
+        _cv = _FY.corner_vs_expected(_w_m, _tol_m, "gauss_3sigma")
+        _losses = [r["loss_db"] for r in _FY.convention_table(_w_m, _tol_m)]
+        _spread = max(_losses) / min(_losses)
+        _banded = "fau_assembly_tol_um" in _M4._BANDS
+        o7a = bool(_same and _cv["ratio"] >= 4.0 and _spread >= 5.0 and _banded)
+        d7a = ("卡内≡模块=%s(%.3f/%.3f µm) · 角点/3σ期望=%.2f× · 跨约定=%.1f×"
+               "（%.4f…%.4f dB）· 公差有窗口=%s"
+               % (_same, _tol_c, _tol_m, _cv["ratio"], _spread,
+                  min(_losses), max(_losses), _banded))
+    except Exception as e:                                    # noqa: BLE001
+        o7a, d7a = False, "EXC %s" % type(e).__name__
+    out["G-OI7a"] = {"ok": o7a, "detail": d7a}
+
     # ── 开放缺口：**无证据**（闭合必须由证据支撑，不许清单自说自话）
-    for gid in ("G-OI4", "G-OI7"):
+    for gid in ("G-OI4", "G-OI7b"):
         out[gid] = {"ok": False, "detail": "开放（T2 锁死区·诚实保留）—— 无证据"}
     return out
 
@@ -1452,19 +1483,36 @@ def case_card(use_cache: bool = True, channels_nm=None, n_lanes=None) -> dict:
                        "光引擎复用这条狗粮路径**根本没通**；改走 `chip_layout_export."
                        "device_elements`（与 `export_chip_gds` 同源）后 6 结构/247 元素/22 KB "
                        "GDS 出图。G-OI4「电路级模型 · 无 PDK · 不报 TOPS」**仍开放**"},
-            {"id": "G-OI7", "closed": False,
-             "status": "未闭合（封装级热-机械-光真值缺失：CTE 为公开手册值 · FAU 公差无分布 · 应力/翘曲无实测）",
-             "title": "封装级热-机械-光真值缺失（M4 新增）",
+            {"id": "G-OI7a", "closed": True,
+             "status": "已闭合（v0.9.310 · `lda_l2/oi_fau_yield`：**FAU 公差从角点变分布**）",
+             "title": "FAU 装配公差的**分布口径**（G-OI7 拆出的纯建模那半）",
+             "detail": "缺口原文里「**FAU 公差无分布**」是纯建模活（不需材料样品/应力台）⇒ 本版做掉。"
+                       "闭式三条：`E[η]=w²/(w²+2σ²)` · `η_p=p^{2σ²/w²}` · "
+                       "`Yield(L₀)=1−10^{−(w²/2σ²)L₀/10}`，反演 `σ_max=w/√(2β)`。"
+                       "🔴 **三条要可判定的结论**：① 「±0.5 µm」在 5 种常见约定下给 "
+                       "**0.0267…0.2348 dB**（跨 **8.8 倍**）⇒ 这句话单独拿出来**不确定**；"
+                       "② 现有实现把**公差带边缘**当位移 ⇒ 得到的是**角点**，是 ±3σ **期望**的 "
+                       "**4.51 倍**（角点 ≈ `σ=tol/√2` 的期望，即隐含 ±tol≈±1.41σ）；"
+                       "③ 卡上「CTE **远小于**装配损耗」在角点口径下是 1/17.7，**3σ 期望口径下只剩 1/3.9** "
+                       "⇒ 方向不变、措辞不成立。"
+                       "🔴 顺带修两处：公差 `0.5` 从**函数体字面量**搬进 `OI_M4_PROCESS`（单一真源+窗口）；"
+                       "`w` 是哪个半径由**数值 2D 重叠积分**钉死（功率=振幅模方，`exp(−(d/w)²)`），"
+                       "不靠注释。自检 **14 项**；门禁 `run_oi_m4_smoke` S 节 8 条"},
+            {"id": "G-OI7b", "closed": False,
+             "status": "边界声明（须材料样品 + 应力台：CTE 手册值 · 真公差分布 · 应力/翘曲实测）",
+             "title": "封装级热-机械-光**真值**缺失（G-OI7 拆出的须实测那半）",
              "detail": "M4（CPO 形态深化）暴露：材料 CTE 用**公开手册值**（Si 2.6e-6 / 玻璃 FAU "
                        "3.2e-6 /K，**不是本封装实测**）· FAU 对准公差**无分布数据** · "
                        "封装应力/翘曲**无实测** · CTE 失配→耦合损耗用**高斯模场闭式**"
                        "（未含实测模场交叠/端面反射/横向偏移之外的失配机制）；"
                        "三形态热耦合 θ 差异用几何标度（1/d 远场近似）。"
                        "🔴 属 **T2 锁死区**，是**诚实保留**项。"
-                       "与 G-OI4 **域不同、不重复记账**（G-OI4 = 电路级无 PDK；G-OI7 = 封装级无实测）"},
+                       "与 G-OI4 **域不同、不重复记账**（G-OI4 = 电路级无 PDK；G-OI7b = 封装级无实测）。"
+                       "🔴 **分布口径已做**（`G-OI7a`）：本层能「给定分布就算」，"
+                       "**不能推断分布** —— 分布本身仍须实测，这就是本条的边界。"},
         ],
-        "gaps_closed": 5,      # G-OI1 / G-OI2 / G-OI3 / G-OI5 / G-OI6（G-OI4 与 G-OI7 开放）
-        "gaps_total": 7,
+        "gaps_closed": 6,      # G-OI1/2/3/5/6 + **G-OI7a**（v0.9.310）；G-OI4 与 G-OI7b 未闭合/边界
+        "gaps_total": 8,
         "verdict": "DESIGN_BUDGET",
         "verdict_label": "链路预算设计行为验证口径（确定性现算 · 非流片实测 · 非实测签核）",
         "anchors": ANCHORS,
@@ -1865,9 +1913,10 @@ def probe_gap_evidence_binding() -> bool:
     try:
         c0 = case_card()
         ev0 = _gap_evidence_ok(c0)
-        if not all(ev0[g]["ok"] for g in ("G-OI1", "G-OI2", "G-OI3", "G-OI5", "G-OI6")):
+        if not all(ev0[g]["ok"] for g in ("G-OI1", "G-OI2", "G-OI3", "G-OI5", "G-OI6",
+                                          "G-OI7a")):
             return False
-        if any(ev0[g]["ok"] for g in ("G-OI4", "G-OI7")):
+        if any(ev0[g]["ok"] for g in ("G-OI4", "G-OI7b")):
             return False
         # 逐项：把**卡内现算块**打坏（= 实现坏掉后的样子），证据必须变红
         mutations = [
@@ -1877,6 +1926,8 @@ def probe_gap_evidence_binding() -> bool:
             (("m3", "layout_2p5d", "oe_lvs_verdict"), "UNKNOWN_NEW", "G-OI6"),
             (("m2b", "lane_equalizer", "flat_ok"), False, "G-OI5"),
             (("m2b", "yield", "yield_mc"), 0.0, "G-OI5"),
+            # v0.9.310：把卡内公差改坏 ⇒ 与模块现算不再逐位相等 ⇒ G-OI7a 证据必红
+            (("m4", "cte", "assembly_tol_um"), 0.9, "G-OI7a"),
         ]
         for path, bad, gid in mutations:
             cc = _copy.deepcopy(c0)
@@ -2043,8 +2094,9 @@ def run_selfchecks(verbose: bool = False) -> bool:
     # 🔴 缺口清单变了必须同步：M3 新增 G-OI6 ⇒ 5→6 项（首版漏改 ⇒ 旧断言仍要 5 项 ⇒ 自毁）
     # 🔴 缺口清单变了必须同步：M4 新增 G-OI7 ⇒ 6→7 项（首版漏改 ⇒ 旧断言仍要 6 项 ⇒ 自毁）
     ok_m2b_gap = ([g["id"] for g in c["gaps"]] == ["G-OI1", "G-OI2", "G-OI3",
-                                                   "G-OI4", "G-OI5", "G-OI6", "G-OI7"]
-                  and c["gaps_total"] == 7
+                                                   "G-OI4", "G-OI5", "G-OI6",
+                                                   "G-OI7a", "G-OI7b"]
+                  and c["gaps_total"] == 8
                   and bool([g for g in c["gaps"] if g["id"] == "G-OI5"
                             and g["closed"]])
                   and bool([g for g in c["gaps"] if g["id"] == "G-OI6"
@@ -2112,11 +2164,12 @@ def run_selfchecks(verbose: bool = False) -> bool:
     ok_m3_pkg = _m3_pkg_consistent(m3)
     # 缺口终态：G-OI7 新增开放 ⇒ 5/7（G-OI4 与 G-OI7 仍开放）
     ok_m3_gap = ([g["id"] for g in c["gaps"]] == ["G-OI1", "G-OI2", "G-OI3", "G-OI4",
-                                                  "G-OI5", "G-OI6", "G-OI7"]
-                 and c["gaps_total"] == 7
+                                                  "G-OI5", "G-OI6", "G-OI7a", "G-OI7b"]
+                 and c["gaps_total"] == 8
                  and bool([g for g in c["gaps"] if g["id"] == "G-OI6" and g["closed"]])
                  and bool([g for g in c["gaps"] if g["id"] == "G-OI4" and not g["closed"]])
-                 and bool([g for g in c["gaps"] if g["id"] == "G-OI7" and not g["closed"]]))
+                 and bool([g for g in c["gaps"] if g["id"] == "G-OI7b" and not g["closed"]])
+                 and bool([g for g in c["gaps"] if g["id"] == "G-OI7a" and g["closed"]]))
     # 🔴 `ok_m3_gap` 必须**进判决**（此前只出现在 debug print 里 ⇒ 装饰性判据：
     #    缺口清单被改坏时 `good` 仍绿 —— 正是「写得绿 ≠ 拦得住」的血案）。
     good4 = (ok_m3_scale and ok_m3_bw and ok_m3_chan and ok_m3_th
@@ -2151,9 +2204,10 @@ def run_selfchecks(verbose: bool = False) -> bool:
     ok_m4_vpi = _m4_vpi_l_honest(m4)
     # 缺口终态：M4 新增 G-OI7 开放 ⇒ 5/7
     ok_m4_gap = ([g["id"] for g in c["gaps"]] == ["G-OI1", "G-OI2", "G-OI3", "G-OI4",
-                                                  "G-OI5", "G-OI6", "G-OI7"]
-                 and c["gaps_total"] == 7
-                 and bool([g for g in c["gaps"] if g["id"] == "G-OI7" and not g["closed"]]
+                                                  "G-OI5", "G-OI6", "G-OI7a", "G-OI7b"]
+                 and c["gaps_total"] == 8
+                 and bool([g for g in c["gaps"] if g["id"] == "G-OI7a" and g["closed"]])
+                 and bool([g for g in c["gaps"] if g["id"] == "G-OI7b" and not g["closed"]]
                           ))
     good5 = (ok_m4_pkg and ok_m4_sem and ok_m4_vpi and ok_m4_gap)
 

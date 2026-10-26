@@ -74,6 +74,9 @@ OI_M4_PROCESS: Dict[str, Any] = {
     "fau_arm_len_mm": 12.0,       # 耦合臂/装配跨度（规格锚）
     "mfd_w_um": 3.0,              # 光栅耦合器模场半径（规格锚）
     "fiber_mfd_w_um": 5.2,        # 单模光纤模场半径
+    # 🔴 v0.9.310：FAU 装配公差原先**写在函数体里**（`assembly_tol_um = 0.5`）——
+    #    扫不动、没有窗口、改不了。规格锚必须落参数表（`G-OI7a`）。
+    "fau_assembly_tol_um": 0.5,   # FAU 横向装配公差 ±（规格锚；**分布口径**见 oi_fau_yield）
 
     # —— 🔴 三形态（总线长派生自 oi_m3 的 CPO 值；其余为规格锚）
     "bus_len_cpo_mm": float(_M3.OI_M3_PROCESS["bus_len_mm"]),   # 5.0
@@ -99,6 +102,7 @@ _BANDS: Dict[str, Tuple[float, float]] = {
     "cte_glass_fau_per_k": (1.0e-6, 8.0e-6),
     "fau_arm_len_mm": (1.0, 50.0),
     "mfd_w_um": (0.5, 10.0),
+    "fau_assembly_tol_um": (0.05, 2.0),
     "drv_overdrive": (1.0, 3.0),
     "vpp_cmos_limit_v": (0.8, 5.0),
     "il_couple_db": (0.0, 3.0),
@@ -431,8 +435,12 @@ def fau_cte_misalignment(p_asic_w: Optional[float] = None,
     ratio = dx_um / max(w, 1e-30)
     il_db = -10.0 * math.log10(max(math.exp(-(ratio ** 2)), 1e-300))
 
-    # 与**装配公差**（典型 ±0.5 µm 量级）对比 —— 判断谁是主因
-    assembly_tol_um = 0.5
+    # 与**装配公差**对比 —— 判断谁是主因。
+    # 🔴 v0.9.310 两处订正：
+    #   ① 公差从函数体字面量搬进 `OI_M4_PROCESS`（**单一真源**，可扫可核窗口）；
+    #   ② `il_assembly_db` 是**公差带边缘的角点**，不是典型值 —— 本字段名与 note 已改口径，
+    #      分布口径的期望/良率见 `lda_l2/oi_fau_yield`（角点 ≈ 1σ 期望，3σ 期望只有它的 1/9）。
+    assembly_tol_um = float(OI_M4_PROCESS["fau_assembly_tol_um"])
     il_assembly_db = -10.0 * math.log10(max(math.exp(-((assembly_tol_um / w) ** 2)), 1e-300))
 
     return {
@@ -451,9 +459,13 @@ def fau_cte_misalignment(p_asic_w: Optional[float] = None,
         "il_assembly_db": round(il_assembly_db, 6),
         "cte_is_dominant": bool(il_db > il_assembly_db),
         "note": ("🔴 **诚实结论（反直觉）**：CTE 失配在单次 ΔT=%.1f K 下只产生 **%.0f nm** 漂移 ⇒ "
-                 "耦合损耗 ≈ **%.4f dB**，**远小于**典型装配公差（±%.1f µm）带来的 %.3f dB ⇒ "
-                 "**CTE 不是耦合损耗主因**（主因是装配公差，属 G-OI7 无实测分布区）。"
-                 % (d_t, dx_um * 1000.0, il_db, assembly_tol_um, il_assembly_db)),
+                 "耦合损耗 ≈ **%.4f dB**；装配公差（±%.1f µm）在**带边缘**给 %.3f dB "
+                 "（角点，对应 1σ 口径；3σ 口径的**期望**只有 ≈%.4f dB ⇒ 角点是被放大的，"
+                 "分布口径见 `lda_l2/oi_fau_yield`）⇒ **CTE 不是耦合损耗主因**，"
+                 "但「远小于」只在角点口径下成立（3σ 期望下只剩 ~2×，同一量级）。"
+                 % (d_t, dx_um * 1000.0, il_db, assembly_tol_um, il_assembly_db,
+                    -10.0 * math.log10(max(
+                        (w * w) / (w * w + (assembly_tol_um / 3.0) ** 2), 1e-300)))),
     }
 
 
@@ -680,6 +692,10 @@ def oi_m4_self_check(verbose: bool = True) -> Dict[str, Any]:
     c.append(("M4 规格锚：玻璃 FAU CTE 落窗",
               _in_band("cte_glass_fau_per_k", OI_M4_PROCESS["cte_glass_fau_per_k"])))
     c.append(("M4 规格锚：模场半径落窗", _in_band("mfd_w_um", OI_M4_PROCESS["mfd_w_um"])))
+    # 🔴 v0.9.310：FAU 装配公差从**函数体字面量**搬进参数表 ⇒ 它也必须有窗口判据
+    #    （「窗口本身也是锚，须逐条核对」）。分布口径的统计见 `lda_l2/oi_fau_yield`。
+    c.append(("M4 规格锚：FAU 装配公差落窗（v0.9.310 从函数体搬进表）",
+              _in_band("fau_assembly_tol_um", OI_M4_PROCESS["fau_assembly_tol_um"])))
 
     # ── 双通路互锁（方法学独立）
     lock = thermal_optical_slope_lock()

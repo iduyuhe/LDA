@@ -1500,6 +1500,9 @@ CORE_SMOKES: List[str] = [
     #   控制组 100% 布通且 DRC/LVS 清（路由器非空转）；真实布局布通率如实报（本密度 3.2%，负结果）；
     #   密度扫描证放大即回升。3 金标 + 3 突变探针。真实几何 DRC/LVS 只作信息（单元黑盒共享终端）。
     "run_ecore_e38_smoke.py",
+    # E38b（D-226）：多轮 R&R + 完整密度曲线 + 多层对比（抽象容量研究）。R&R 原子性（不丢网）+
+    #   三层单调（层/密度）+ 控制组 100%。量化结论：R&R/加层/温和摊开都救不了，密度是根。CI core 369→370。
+    "run_ecore_e38b_smoke.py",
     "run_webui_entry_smoke.py",
     # 🔴 v0.9.213 光子计算 SoC 案例卡（/api/soc_demo · #sec-soc）跨源一致性 + 前端取值路径门禁：
     #   卡内 WDM/TDM 杠杆常量 ≡ lda_l2 真源（soc_wdm/soc_tdm）逐位同源 + 反向探针（改真源必红）；
@@ -3212,6 +3215,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e37_smoke.py": 500.0,
     # E38a 网格迷宫路由器门禁（D-225）· 实测 ~34s（控制组合成路由 + 真实布局路由 + ×1~×3 密度扫描 + 探针）
     "run_ecore_e38_smoke.py": 120.0,
+    # E38b R&R + 密度曲线门禁（D-226）· 实测 ~69s（×1~×4 全量密度扫描 + R&R + 层对比），预算 220s 留 ~3.20×
+    "run_ecore_e38b_smoke.py": 220.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     # 🔴 v0.9.186：新增「标准 JSON 出口」门禁（`run_webui_json_hard_smoke.py`,
     #   13 判据 + 4 道突变探针；因浏览器 JSON.parse 崩于 `-Infinity` 而立）。

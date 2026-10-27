@@ -591,6 +591,17 @@ ECORE_CAPABILITY_MANIFEST = [
                     "grid_dims", "DDROUTE_GRID_DISCLOSURE", "PITCH"],
         "introduced_by": "D-225 (E38a)", "guard": "run_ecore_e38_smoke.py",
     },
+    {
+        "capability": "**E38b 多轮 R&R + 完整密度曲线 + 多层对比（D-226）**：抽象多层网格(H/V 交替) · "
+                      "单阻塞者**原子 R&R**（net_occ 精确记账 ⇒ rip 后必还原、绝不丢网）· 密度曲线 ×K · "
+                      "层数对比 2/4/6 · **金标**：控制组 100% / R&R 原子性 routed(R&R)≥routed(贪心) / "
+                      "多层单调 layers4≥layers2 / 密度单调 ×K 非减 · 🔴 结论：R&R/加层/温和摊开都救不了，"
+                      "根因是符号级超窄单元密度（cells/node@K1≈0.5），需真实单元面积 · 抽象容量研究不产 GDS",
+        "module": "lda_l2.ecore.ddroute_rr",
+        "symbols": ["route_rr", "density_curve", "layer_compare", "route_rr_self_check",
+                    "make_layers", "DDROUTE_RR_DISCLOSURE", "PITCH"],
+        "introduced_by": "D-226 (E38b)", "guard": "run_ecore_e38b_smoke.py",
+    },
 ]
 
 
@@ -633,7 +644,7 @@ def manifest_check() -> dict:
 
 
 ECORE_CAPABILITY_DISCLOSURE = {
-    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19 · E20 扩面至 e1~e20 · E21 扩面至 e1~e21 · E22 扩面至 e1~e22 · E23 扩面至 e1~e23 · E24 扩面至 e1~e24 · E25 扩面至 e1~e25 · E26 扩面至 e1~e26 · E27 扩面至 e1~e27 · E28 扩面至 e1~e28 · E29 扩面至 e1~e29 · E30 扩面至 e1~e30 · E31 扩面至 e1~e31 · E32 扩面至 e1~e32 · E33 扩面至 e1~e33 · E35 扩面至 e1~e35 · E36 扩面至 e1~e36（D-220~D-223：detail route / 真实单元几何 / IP DRC / IP LVS）· E37 扩面至 e1~e37（D-224：DRC/LVS 校验器硬化 fast≡native + track 分配/拥堵负结果）· E38a 扩面至 e1~e38（D-225：网格迷宫路由器 + 可布通性诚实布通率）",
+    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19 · E20 扩面至 e1~e20 · E21 扩面至 e1~e21 · E22 扩面至 e1~e22 · E23 扩面至 e1~e23 · E24 扩面至 e1~e24 · E25 扩面至 e1~e25 · E26 扩面至 e1~e26 · E27 扩面至 e1~e27 · E28 扩面至 e1~e28 · E29 扩面至 e1~e29 · E30 扩面至 e1~e30 · E31 扩面至 e1~e31 · E32 扩面至 e1~e32 · E33 扩面至 e1~e33 · E35 扩面至 e1~e35 · E36 扩面至 e1~e36（D-220~D-223：detail route / 真实单元几何 / IP DRC / IP LVS）· E37 扩面至 e1~e37（D-224：DRC/LVS 校验器硬化 fast≡native + track 分配/拥堵负结果）· E38a 扩面至 e1~e38（D-225：网格迷宫路由器 + 可布通性诚实布通率）· E38b 扩面至 e1~e38（D-226：多轮 R&R + 密度曲线 + 多层对比）",
     "e5_scope": "把 E1~E9 逼出的平台能力固化为机器可读清单（单向真源）+ 常驻门禁（正向完备 + 反向完备 + 披露一致 + 诚实边界）",
     "hardening_semantics": "能力面必须被门禁守着：任一模模块/符号缺失、隐身模块出现、或注入 fabricated 指标 ⇒ 门禁必红",
     "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"

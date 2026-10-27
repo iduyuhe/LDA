@@ -1,0 +1,426 @@
+# -*- coding: utf-8 -*-
+"""E38b · **多轮 R&R + 完整密度曲线 + 多层对比**（`lda/lda_l2/ecore/ddroute_rr.py` · D-226）。
+
+══════════════════════════════════════════════════════════════
+定位：E38a 用两层（M3 横 / M4 竖）贪心迷宫路由，诚实测到真实符号布局布通率仅 **3.2%**
+（44/1354），并证明「放大布局布通率回升 ⇒ 是布局密度而非算法」。E38b 补齐三件事：
+1. **多轮 rip-up & reroute（R&R）**：原子替换（不丢网），看能否把布通率再抬。
+2. **完整密度曲线**：布通率 vs 布局放大 ×K（面积 ×K²），找 ~100% 可布通的操作点。
+3. **多层对比**：抽象层数 2 / 4 / 6（M3/M4 / +M5/M6 / +）⇒ 看「加层」能否替代「摊开密度」。
+
+🔴🔴 本模块是**抽象容量研究**（routability / connectivity），**不产 GDS 金属**（无 M5/M6 真实层），
+故只报「布通率」这一抽象连通性指标；真实几何 DRC/LVS 属 E38a 的两层范围。这是刻意的边界。
+
+══════════════════════════════════════════════════════════════
+🔴🔴 网格模型（抽象多层，H/V 交替）
+══════════════════════════════════════════════════════════════
+- 层 `l` 的 kind：偶层=H(沿行左右)、奇层=V(沿列上下)；相邻层可换层(via)。
+- 节点 `(i,j,l)`；边：H 层横移 / V 层竖移 / 邻居换层，每步代价 1。
+- 占用**逐层独立**：`occ[l][(i,j)]=net`；异网可在不同层的同点共存（不同层不短路）。
+- 终端簇：单元中心=单点，多网共享（单元黑盒，与 E36/E37/E38a 同口径）。
+- 每网用 `net_occ[net]={(l,i,j)...}` 精确记账 ⇒ **rip/restore 原子**（R&R 不丢网）。
+
+🔴🔴 绝对金标
+══════════════════════════════════════════════════════════════
+- 控制组（稀疏合成）：100% 布通。
+- **R&R 原子性**：`routed(R&R) ≥ routed(贪心)`（rip 后必还原，绝不丢网）——这是本版最关键的金标。
+- **多层单调**：`routability(layers=4) ≥ routability(layers=2)`（同密度下加层不劣）。
+- **密度单调**：`routability(×K)` 随 K 非减（放大不劣）。
+- 布通率如实报（低就低，不伪绿）。
+
+══════════════════════════════════════════════════════════════
+⚠️ 诚实边界（全部 `claimable=False`）
+══════════════════════════════════════════════════════════════
+- 抽象层（无 M5/M6 真实 GDS/DRC）；只报连通性布通率，不是可签核几何。
+- 单元几何仍符号级超窄；via 与线同权（每步 1）；`max_expand` 上限对大网格为**保守**估计。
+- R&R 是「单阻塞者原子替换」的轻量版，非工业多轮多阻塞者；不保证最优。
+"""
+from __future__ import annotations
+
+from collections import defaultdict, deque
+
+from . import ddetail as DD
+from . import dplac as PL
+from .dsynth import Netlist
+
+PITCH = DD.TRACK_PITCH
+
+
+def make_layers(n: int) -> list:
+    """n 层抽象层：偶层 H、奇层 V；物理层号 27,29,31,33,35,37（M3,M4,M5,M6,…）。"""
+    base = [27, 29, 31, 33, 35, 37, 39, 41]
+    layers = []
+    for i in range(n):
+        kind = "H" if i % 2 == 0 else "V"
+        layers.append((kind, base[i] if i < len(base) else base[-1] + 2 * (i - len(base) + 1)))
+    return layers
+
+
+def _snap(x, y, nx, ny):
+    i = min(max(int(round(x / PITCH)), 0), nx - 1)
+    j = min(max(int(round(y / PITCH)), 0), ny - 1)
+    return (i, j)
+
+
+def _dims(p, spread):
+    return (max(2, int(round(p.die_w_um * spread / PITCH)) + 1),
+            max(2, int(round(p.die_h_um * spread / PITCH)) + 1))
+
+
+def _terminals(nl, p, nx, ny, spread):
+    pins = DD._net_pins(nl, p)
+    term = {}
+    for net, pts in pins.items():
+        s = set()
+        for (x, y) in pts:
+            s.add(_snap(x * spread, y * spread, nx, ny))
+        term[net] = s
+    return term, pins
+
+
+def _bfs(start, goals, net, nx, ny, kinds, occ, TERM, max_expand):
+    L = len(kinds)
+
+    def passable(i, j, l):
+        if i < 0 or i >= nx or j < 0 or j >= ny:
+            return False
+        t = TERM.get((i, j))
+        if t and net not in t:
+            return False
+        o = occ[l].get((i, j))
+        if o is not None and o != net:
+            return False
+        return True
+
+    goals = set(goals)
+    si, sj = start
+    dq = deque()
+    parent = {}
+    seen = set()
+    for l in range(L):
+        if passable(si, sj, l):
+            st = (si, sj, l)
+            parent[st] = None
+            seen.add(st)
+            dq.append(st)
+    expanded = 0
+    while dq:
+        st = dq.popleft()
+        expanded += 1
+        if expanded > max_expand:
+            return None
+        i, j, l = st
+        if (i, j) in goals and parent.get(st) is not None:
+            path = []
+            cur = st
+            while cur is not None:
+                path.append(cur)
+                cur = parent[cur]
+            path.reverse()
+            return path
+        nbrs = []
+        if kinds[l][0] == "H":
+            nbrs.append((i - 1, j, l))
+            nbrs.append((i + 1, j, l))
+        else:
+            nbrs.append((i, j - 1, l))
+            nbrs.append((i, j + 1, l))
+        if l - 1 >= 0:
+            nbrs.append((i, j, l - 1))
+        if l + 1 < L:
+            nbrs.append((i, j, l + 1))
+        for (ni, nj, nl) in nbrs:
+            if not passable(ni, nj, nl):
+                continue
+            ns = (ni, nj, nl)
+            if ns in seen:
+                continue
+            seen.add(ns)
+            parent[ns] = st
+            dq.append(ns)
+    return None
+
+
+def _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand):
+    terms = sorted(nodes)
+    if len(terms) < 2:
+        return []
+    tree = {terms[0]}
+    edges = []
+    for tgt in terms[1:]:
+        if tgt in tree:
+            continue
+        path = _bfs(tgt, tree, net, nx, ny, kinds, occ, TERM, max_expand)
+        if path is None:
+            return None
+        for k in range(len(path) - 1):
+            edges.append((path[k], path[k + 1]))
+        for (i, j, _l) in path:
+            tree.add((i, j))
+    return edges
+
+
+def _edge_len(edges):
+    return sum(abs(a[0] - b[0]) + abs(a[1] - b[1]) for a, b in edges)
+
+
+def _key(item):
+    net, nodes = item
+    xs = [i for (i, j) in nodes]
+    ys = [j for (i, j) in nodes]
+    return (len(nodes), (max(xs) - min(xs)) + (max(ys) - min(ys)), net)
+
+
+def route_rr(nl: Netlist, p: PL.Placement, spread: float = 1.0, layers: int = 2,
+             rr_rounds: int = 3, sample: int = None, max_expand: int = 40000) -> dict:
+    """抽象多层网格 + 贪心布线 + 多轮原子 R&R。返回布通率等（不产 GDS）。"""
+    nx, ny = _dims(p, spread)
+    kinds = make_layers(layers)
+    L = len(kinds)
+    term, pins = _terminals(nl, p, nx, ny, spread)
+
+    TERM = defaultdict(set)
+    for net, ns in term.items():
+        for nd in ns:
+            TERM[nd].add(net)
+
+    multi = [(net, ns) for net, ns in term.items() if len(ns) >= 2]
+    multi.sort(key=_key)
+    n_total = len(multi)
+    if sample is not None and n_total > sample:
+        step = max(1, n_total // sample)
+        multi = multi[::step][:sample]
+
+    occ = [{} for _ in range(L)]
+    net_occ = defaultdict(set)
+    routed = {}
+    unrouted = []
+
+    def commit(net, edges):
+        for (a, b) in edges:
+            for (i, j, l) in (a, b):
+                occ[l][(i, j)] = net
+                net_occ[net].add((l, i, j))
+
+    def rip(net):
+        saved = set(net_occ[net])
+        for (l, i, j) in saved:
+            if occ[l].get((i, j)) == net:
+                del occ[l][(i, j)]
+        net_occ[net].clear()
+        return saved
+
+    def restore(net, saved):
+        for (l, i, j) in saved:
+            occ[l][(i, j)] = net
+            net_occ[net].add((l, i, j))
+
+    def try_route(net, nodes):
+        return _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand)
+
+    for net, nodes in multi:
+        e = try_route(net, nodes)
+        if e is None:
+            unrouted.append((net, nodes))
+        else:
+            commit(net, e)
+            routed[net] = e
+
+    # 多轮原子 R&R（单阻塞者替换；rip 后必还原 ⇒ 绝不丢网）
+    for _r in range(max(0, rr_rounds)):
+        progress = False
+        still = []
+        for net, nodes in unrouted:
+            xs = [i for (i, j) in nodes]
+            ys = [j for (i, j) in nodes]
+            i0, i1, j0, j1 = min(xs), max(xs), min(ys), max(ys)
+            cnt = defaultdict(int)
+            for l in range(L):
+                for (i, j), o in occ[l].items():
+                    if o != net and i0 <= i <= i1 and j0 <= j <= j1:
+                        cnt[o] += 1
+            victim = max(cnt, key=lambda k: (cnt[k], k)) if cnt else None
+            if victim is None or victim not in routed:
+                still.append((net, nodes))
+                continue
+            saved = rip(victim)
+            ve = routed.pop(victim)
+            ne = try_route(net, nodes)
+            if ne is not None:
+                commit(net, ne)
+                ve2 = try_route(victim, term[victim])
+                if ve2 is not None:
+                    commit(victim, ve2)
+                    routed[victim] = ve2
+                    routed[net] = ne
+                    progress = True
+                    continue            # net 已布通，不入 still
+                # 回滚 net
+                for (l, i, j) in list(net_occ[net]):
+                    if occ[l].get((i, j)) == net:
+                        del occ[l][(i, j)]
+                net_occ[net].clear()
+                routed.pop(net, None)
+            restore(victim, saved)
+            routed[victim] = ve
+            still.append((net, nodes))
+        unrouted = still
+        if not progress:
+            break
+
+    n_routed = len(routed)
+    wl = 0.0
+    mst = 0.0
+    for net, e in routed.items():
+        wl += _edge_len(e) * PITCH
+        mst += _mst_len(term[net])
+    return {
+        "nx": nx, "ny": ny, "layers": L,
+        "n_nets": len(multi), "n_total_nets": n_total,
+        "sampled": bool(sample is not None and n_total > sample),
+        "n_routed": n_routed,
+        "routability": (n_routed / len(multi)) if multi else 1.0,
+        "routed_nets": list(routed.keys()),
+        "unrouted_nets": [net for net, _ in unrouted],
+        "wirelength_um": wl, "mst_um": mst,
+    }
+
+
+def _mst_len(nodes):
+    pts = [(i * PITCH, j * PITCH) for (i, j) in nodes]
+    if len(pts) < 2:
+        return 0.0
+    tot = 0.0
+    for (a, b) in DD._mst_edges(pts):
+        tot += abs(pts[a][0] - pts[b][0]) + abs(pts[a][1] - pts[b][1])
+    return tot
+
+
+def density_curve(nl: Netlist, p: PL.Placement, factors=(1, 2, 3, 4), layers: int = 2,
+                  rr_rounds: int = 0, sample: int = None) -> list:
+    """布通率 vs 布局放大 ×K（面积 ×K²）。找「需要摊开多少倍才 ~100% 可布通」。
+
+    ⚠️ `max_expand=40000` 在 K≥3（网格×层数 > 4e4 状态）会截断长路径 ⇒ 大 K 布通率为
+    **保守下界**（真实值 ≥ 报出值），已在披露注明；K=1,2 不受限（网格状态 < 4e4）。
+    """
+    out = []
+    for K in factors:
+        r = route_rr(nl, p, spread=float(K), layers=layers, rr_rounds=rr_rounds, sample=sample)
+        out.append({"spread": K, "routability": r["routability"],
+                    "n_routed": r["n_routed"], "n_nets": r["n_nets"],
+                    "n_total_nets": r["n_total_nets"], "area_factor": float(K) * float(K)})
+    return out
+
+
+def layer_compare(nl: Netlist, p: PL.Placement, spread: float = 1.0,
+                  layer_counts=(2, 4, 6), rr_rounds: int = 0, sample: int = None) -> list:
+    """同密度下，抽象层数 2/4/6 的布通率对比（加层能否替代摊开密度）。"""
+    out = []
+    for Lc in layer_counts:
+        r = route_rr(nl, p, spread=spread, layers=Lc, rr_rounds=rr_rounds, sample=sample)
+        out.append({"layers": Lc, "routability": r["routability"],
+                    "n_routed": r["n_routed"], "n_nets": r["n_nets"]})
+    return out
+
+
+# ---------------------------------------------------------------------------
+# 自检（含「必须失败」的对照组）
+# ---------------------------------------------------------------------------
+def route_rr_self_check(verbose: bool = False) -> dict:
+    """E38b 自检：R&R 原子不丢网 + 多层单调 + 密度单调 + 控制组有效。
+
+    - ① 控制组：稀疏合成 2 层 100% 布通。
+    - ② R&R 原子：真实布局 `routed(R&R) ≥ routed(贪心)`（绝不丢网）。
+    - ③ 多层单调：layers=4 布通率 ≥ layers=2（同密度加层不劣）。
+    - ④ 密度单调：×1→×2→×3 布通率端点非减。
+    - 探针：C1 强制不可布（围死）必报未布；C2 R&R 关闭时 routed ≤ R&R 开启。
+    """
+    from collections import defaultdict as _dd
+    from . import dctrl as C
+    problems = []
+
+    # ① 控制组（稀疏合成，2 层）
+    synth = {"nA": {(2, 2), (10, 8)}, "nB": {(20, 20), (30, 10)}, "nC": {(5, 40), (45, 40)}}
+    KIND2 = make_layers(2)
+    TERM = _dd(set)
+    for n, ns in synth.items():
+        for nd in ns:
+            TERM[nd].add(n)
+    occ = [{} for _ in KIND2]
+    # 手工贪心布控制组（不走 route_rr，因其需 netlist）
+    ok_ctrl = True
+    for n, ns in synth.items():
+        e = _route_net(ns, n, 51, 53, KIND2, occ, TERM, 40000)
+        if e is None:
+            ok_ctrl = False
+            break
+        for (a, b) in e:
+            for (i, j, l) in (a, b):
+                occ[l][(i, j)] = n
+    if not ok_ctrl:
+        problems.append(("control_unrouted",))
+
+    # ②③④ 真实布局
+    b = C.build()
+    nl = b["netlist"]
+    p = PL.place(nl)
+
+    greedy = route_rr(nl, p, layers=2, rr_rounds=0)
+    rrd = route_rr(nl, p, layers=2, rr_rounds=3)
+    if rrd["n_routed"] < greedy["n_routed"]:
+        problems.append(("rr_lost_nets", greedy["n_routed"], rrd["n_routed"]))
+
+    lay = layer_compare(nl, p, spread=1.0, layer_counts=(2, 4), rr_rounds=0)
+    if lay[1]["routability"] < lay[0]["routability"] - 1e-9:
+        problems.append(("layers_not_monotone", lay))
+
+    dens = density_curve(nl, p, factors=(1, 2, 3, 4), layers=2, rr_rounds=0)
+    if dens[-1]["routability"] < dens[0]["routability"] - 1e-9:
+        problems.append(("density_not_monotone", dens))
+
+    # 探针 C1：围死某网 ⇒ 必报未布
+    wterm = _dd(set)
+    wterm[(0, 0)].add("w")
+    wterm[(5, 0)].add("w")
+    for i in range(1, 5):
+        for j in range(3):
+            wterm[(i, j)].add("__wall__")
+    occ2 = [{} for _ in KIND2]
+    c1 = _route_net({(0, 0), (5, 0)}, "w", 6, 3, KIND2, occ2, wterm, 40000)
+    if c1 is not None:
+        problems.append(("probe_wall_not_unrouted",))
+
+    if verbose:
+        cells = len(p.cell_xywh)
+        cpn = cells / float(greedy["nx"] * greedy["ny"]) if greedy["nx"] * greedy["ny"] else 0.0
+        print("  rr: greedy=%.1f%% R&R=%.1f%% | layers 2/4=%.1f%%/%.1f%% | cells/node@K1=%.2f | dens %s"
+              % (100 * greedy["routability"], 100 * rrd["routability"],
+                 100 * lay[0]["routability"], 100 * lay[1]["routability"], cpn,
+                 " ".join("×%g→%.0f%%" % (d["spread"], 100 * d["routability"]) for d in dens)))
+    return {
+        "ok": not problems, "problems": problems,
+        "control_routability": 1.0 if ok_ctrl else 0.0,
+        "greedy_routability": greedy["routability"],
+        "rr_routability": rrd["routability"],
+        "rr_n_routed": rrd["n_routed"], "greedy_n_routed": greedy["n_routed"],
+        "layers": lay,
+        "density": dens,
+    }
+
+
+DDROUTE_RR_DISCLOSURE = {
+    "route": "E38b · 多轮 R&R + 完整密度曲线 + 多层对比（D-226）",
+    "analysis": "抽象多层网格(H/V 交替) · 逐网 BFS · 单阻塞者原子 R&R（rip 后必还原）· "
+                "net_occ 精确记账 ⇒ 绝不丢网 · 密度曲线 ×K · 层数对比 2/4/6",
+    "golden": "控制组 100% · R&R 原子性 routed(R&R)≥routed(贪心) · 多层单调 layers4≥layers2 · "
+              "密度单调 ×K 非减 · 布通率如实报",
+    "not_included": "抽象层无 M5/M6 真实 GDS/DRC（只报连通性）· 单元几何符号级超窄 · "
+                    "单阻塞者轻量 R&R（非工业多阻塞者）· via 与线同权 · max_expand 为保守上限",
+    "e38b_note": "本模块是**容量研究**不是可签核几何：只回答「加 R&R / 加层 / 摊开密度各能把布通率"
+                 "抬到多少」。实测（K=1）：R&R 几乎无益（3.8%→3.8%，终端拥挤所致，非占用拥塞）；"
+                 "层数 2→4 约翻倍（3.8%→7.2%）但远不够；摊开 ×2/×3/×4 缓慢升（5.6/6.8/7.7%）。"
+                 "⚠️ `max_expand=40000` 在 K≥3 截断长路径 ⇒ 大 K 为**保守下界**（真实值 ≥ 报出值）。"
+                 "🔴 结论：**路由技巧（R&R/加层/温和摊开）都救不了**，根因是符号级超窄单元密度（cells/node@K1≈0.5）；"
+                 "正路是换真实单元面积。另注：本抽象变体比 E38a（含 landing-pad 占用）略宽松 ⇒ 3.8% vs 3.2%，皆 ~不可布通。",
+    "claimable": False,
+}

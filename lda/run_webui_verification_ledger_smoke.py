@@ -48,7 +48,7 @@ def _derive_doc_tiers():
 
 
 _DOC_TIERS = _derive_doc_tiers()
-_DOC_LOW_CONF = 13
+_DOC_LOW_CONF = 14
 
 
 def main() -> int:

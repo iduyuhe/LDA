@@ -602,6 +602,18 @@ ECORE_CAPABILITY_MANIFEST = [
                     "make_layers", "DDROUTE_RR_DISCLOSURE", "PITCH"],
         "introduced_by": "D-226 (E38b)", "guard": "run_ecore_e38b_smoke.py",
     },
+    {
+        "capability": "**E38c 真实标准单元面积标定 + 可布通性重测（D-227）**：area_per_tr 0.040(符号) → "
+                      "0.266(Nangate45 NAND2_X1 量级参考) ⇒ dplac.place(tech=real) 重摆（不动 DEFAULT_TECH）· "
+                      "**金标**：面积守恒 Σ(w·h)≡Σn_tr·area_per_tr(逐位) / cells/row 显著下降(223→89) / "
+                      "routability(real)>symbolic(3.8%→9.7% @2 层) / route-over-cell 层数单调(4L 21.9%≥2L) · "
+                      "🔴 诚实：真实面积只抬 2.6×，仍非 100%；残余瓶颈=粗引脚接入(无细 M1/M2)",
+        "module": "lda_l2.ecore.drealcell",
+        "symbols": ["real_tech", "realistic_place", "realistic_routability", "realcell_self_check",
+                    "cells_per_row", "placed_area_um2", "expected_area_um2",
+                    "REAL_AREA_PER_TR_45", "AREA_PER_TR_SYMBOLIC", "DREALCELL_DISCLOSURE"],
+        "introduced_by": "D-227 (E38c)", "guard": "run_ecore_e38c_smoke.py",
+    },
 ]
 
 

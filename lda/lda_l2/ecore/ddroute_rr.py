@@ -78,14 +78,17 @@ def _terminals(nl, p, nx, ny, spread):
     return term, pins
 
 
-def _bfs(start, goals, net, nx, ny, kinds, occ, TERM, max_expand):
+def _bfs(start, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to=None):
     L = len(kinds)
+    if cell_block_up_to is None:
+        cell_block_up_to = L          # 默认：所有层都被单元中心阻断（E38b 原行为）
 
     def passable(i, j, l):
         if i < 0 or i >= nx or j < 0 or j >= ny:
             return False
         t = TERM.get((i, j))
-        if t and net not in t:
+        # 单元中心只在 l < cell_block_up_to 的层阻断（低层=引脚接入层）；高层可**跨单元布线**
+        if t and net not in t and l < cell_block_up_to:
             return False
         o = occ[l].get((i, j))
         if o is not None and o != net:
@@ -141,7 +144,7 @@ def _bfs(start, goals, net, nx, ny, kinds, occ, TERM, max_expand):
     return None
 
 
-def _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand):
+def _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to=None):
     terms = sorted(nodes)
     if len(terms) < 2:
         return []
@@ -150,7 +153,7 @@ def _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand):
     for tgt in terms[1:]:
         if tgt in tree:
             continue
-        path = _bfs(tgt, tree, net, nx, ny, kinds, occ, TERM, max_expand)
+        path = _bfs(tgt, tree, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to)
         if path is None:
             return None
         for k in range(len(path) - 1):
@@ -172,8 +175,13 @@ def _key(item):
 
 
 def route_rr(nl: Netlist, p: PL.Placement, spread: float = 1.0, layers: int = 2,
-             rr_rounds: int = 3, sample: int = None, max_expand: int = 40000) -> dict:
-    """抽象多层网格 + 贪心布线 + 多轮原子 R&R。返回布通率等（不产 GDS）。"""
+             rr_rounds: int = 3, sample: int = None, max_expand: int = 40000,
+             cell_block_up_to: int = None) -> dict:
+    """抽象多层网格 + 贪心布线 + 多轮原子 R&R。返回布通率等（不产 GDS）。
+
+    `cell_block_up_to`：单元中心只在**前 N 层**阻断（低层=引脚接入），N 以上可跨单元布线
+    （=真实「高层金属跨过标准单元」；默认 None ⇒ 所有层阻断 = E38b 原行为）。
+    """
     nx, ny = _dims(p, spread)
     kinds = make_layers(layers)
     L = len(kinds)
@@ -216,7 +224,7 @@ def route_rr(nl: Netlist, p: PL.Placement, spread: float = 1.0, layers: int = 2,
             net_occ[net].add((l, i, j))
 
     def try_route(net, nodes):
-        return _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand)
+        return _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to)
 
     for net, nodes in multi:
         e = try_route(net, nodes)

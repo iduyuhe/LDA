@@ -562,6 +562,25 @@ ECORE_CAPABILITY_MANIFEST = [
                     "lvs_self_check", "DDRC_LVS_DISCLOSURE"],
         "introduced_by": "D-222…D-223 (E36)", "guard": "run_ecore_e36_smoke.py",
     },
+    {
+        "capability": "**E37 校验器硬化（D-224）**：DRC/LVS 空间哈希加速版 `fast_drc`/`fast_lvs` "
+                      "与原生 O(n²) `run_drc`/`run_lvs` **逐位一致**（DRC 总数+分类、LVS 总数+分类），"
+                      "并修复两个真 bug：① fast_lvs 漏检 short_via；② 金属-金属短路误用 routed 网格"
+                      "致下标串位重复计数 · 金标：等价 + 突变探针（窄金属/悬空孔）必红 · 大布局下 O(n²) 超时规避",
+        "module": "lda_l2.ecore.ddrc_lvs",
+        "symbols": ["fast_drc", "fast_lvs", "checker_equiv_self_check"],
+        "introduced_by": "D-224 (E37)", "guard": "run_ecore_e37_smoke.py",
+    },
+    {
+        "capability": "**E37 track 分配 + 拥堵负结果（D-224）**：interval 着色给 H(M3)/V(M4) 主段分配"
+                      "独立轨道 + landing pad 修 via · **诚实负结果**：主段能上轨但引脚接入压在稠密共享行/列，"
+                      "track 总 DRC=913k 反高于基线 204k；拥堵量化（每行 clique 87~120 vs 通道 2 轨）证"
+                      "真清零需 ≥14.6× 面积 ⇒ 2 层 L 路由在本密度**不能清零**（清零留给真实 maze/multilayer router）",
+        "module": "lda_l2.ecore.ddetail",
+        "symbols": ["track_route", "interval_color", "track_self_check",
+                    "congestion_analysis", "_via_landing", "TRACK_PITCH"],
+        "introduced_by": "D-224 (E37)", "guard": "run_ecore_e37_smoke.py",
+    },
 ]
 
 
@@ -604,7 +623,7 @@ def manifest_check() -> dict:
 
 
 ECORE_CAPABILITY_DISCLOSURE = {
-    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19 · E20 扩面至 e1~e20 · E21 扩面至 e1~e21 · E22 扩面至 e1~e22 · E23 扩面至 e1~e23 · E24 扩面至 e1~e24 · E25 扩面至 e1~e25 · E26 扩面至 e1~e26 · E27 扩面至 e1~e27 · E28 扩面至 e1~e28 · E29 扩面至 e1~e29 · E30 扩面至 e1~e30 · E31 扩面至 e1~e31 · E32 扩面至 e1~e32 · E33 扩面至 e1~e33 · E35 扩面至 e1~e35 · E36 扩面至 e1~e36（D-220~D-223：detail route / 真实单元几何 / IP DRC / IP LVS）",
+    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19 · E20 扩面至 e1~e20 · E21 扩面至 e1~e21 · E22 扩面至 e1~e22 · E23 扩面至 e1~e23 · E24 扩面至 e1~e24 · E25 扩面至 e1~e25 · E26 扩面至 e1~e26 · E27 扩面至 e1~e27 · E28 扩面至 e1~e28 · E29 扩面至 e1~e29 · E30 扩面至 e1~e30 · E31 扩面至 e1~e31 · E32 扩面至 e1~e32 · E33 扩面至 e1~e33 · E35 扩面至 e1~e35 · E36 扩面至 e1~e36（D-220~D-223：detail route / 真实单元几何 / IP DRC / IP LVS）· E37 扩面至 e1~e37（D-224：DRC/LVS 校验器硬化 fast≡native + track 分配/拥堵负结果）",
     "e5_scope": "把 E1~E9 逼出的平台能力固化为机器可读清单（单向真源）+ 常驻门禁（正向完备 + 反向完备 + 披露一致 + 诚实边界）",
     "hardening_semantics": "能力面必须被门禁守着：任一模模块/符号缺失、隐身模块出现、或注入 fabricated 指标 ⇒ 门禁必红",
     "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"

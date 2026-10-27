@@ -213,6 +213,195 @@ def run_lvs(shapes: list, net_pins: dict, verbose: bool = False) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# 快速版（空间哈希，避免大布局 O(n^2) 超时）：供 track_route / 自检 / 门禁使用
+# ---------------------------------------------------------------------------
+def _cell_span(s, cell):
+    gx0 = int(s.x0 / cell); gx1 = int(s.x1 / cell)
+    gy0 = int(s.y0 / cell); gy1 = int(s.y1 / cell)
+    return gx0, gx1, gy0, gy1
+
+
+def _index_bbox(shapes, cell):
+    grid = {}
+    for i, s in enumerate(shapes):
+        gx0, gx1, gy0, gy1 = _cell_span(s, cell)
+        gx0 = max(gx0, -100000); gx1 = min(gx1, 100000)
+        gy0 = max(gy0, -100000); gy1 = min(gy1, 100000)
+        for gx in range(gx0, gx1 + 1):
+            for gy in range(gy0, gy1 + 1):
+                grid.setdefault((gx, gy), []).append(i)
+    return grid
+
+
+def fast_drc(shapes, verbose: bool = False) -> dict:
+    """`run_drc` 的空间哈希加速版（包围盒登记），结果应逐位一致。
+
+    🔴 金属段可能很长（跨多个 µm），不能只按中心格索引——否则中心离过孔/端点很远、
+    邻域永远看不到重叠。改为把每个 shape 登记进其包围盒覆盖的全部网格；查询取其包围盒
+    覆盖格 + 1 环。
+    """
+    metals = [s for s in shapes if s.kind in ("metal", "pin")]
+    vias = [s for s in shapes if s.kind == "via"]
+    violations = []
+    for s in metals:
+        w = s.x1 - s.x0; h = s.y1 - s.y0
+        if max(w, h) >= 3.0 * W_MIN and min(w, h) < W_MIN - 1e-9:
+            violations.append(("min_width", s.layer, round(min(w, h), 4)))
+    half = S_MIN / 2.0
+    cell = max(DD.W_ROUTE, DD.VIA) + S_MIN + 0.05
+    grid = _index_bbox(metals, cell)
+    seen = set()
+    for i, a in enumerate(metals):
+        gx0, gx1, gy0, gy1 = _cell_span(a, cell)
+        cand = set()
+        for gx in range(gx0 - 1, gx1 + 2):
+            for gy in range(gy0 - 1, gy1 + 2):
+                cand.update(grid.get((gx, gy), ()))
+        for j in cand:
+            if j <= i or (i, j) in seen:
+                continue
+            seen.add((i, j))
+            b = metals[j]
+            if a.layer != b.layer or a.net == b.net:
+                continue
+            if DD.rects_overlap(a, b, inflate=half):
+                violations.append(("min_spacing", a.layer,
+                                   (round(a.x0, 3), round(a.y0, 3)),
+                                   (round(b.x0, 3), round(b.y0, 3))))
+    for v in vias:
+        bridge = VIA_BRIDGE.get(v.layer)
+        if bridge is None:
+            continue
+        ix0, iy0, ix1, iy1 = v.x0 + ENC, v.y0 + ENC, v.x1 - ENC, v.y1 - ENC
+        if ix1 <= ix0 or iy1 <= iy0:
+            violations.append(("via_not_enclosed_size", v.layer))
+            continue
+        touched_any = False
+        for lay in bridge:
+            if lay not in BRIDGE_PRESENT:
+                continue
+            touching = [m for m in metals
+                        if m.layer == lay and DD.rects_overlap(m, v, inflate=1e-6)]
+            if not touching:
+                continue
+            touched_any = True
+            ok = any((m.x0 <= ix0 and m.y0 <= iy0 and m.x1 >= ix1 and m.y1 >= iy1)
+                     for m in touching)
+            if not ok:
+                violations.append(("via_enclosure", v.layer, lay))
+        if not touched_any:
+            violations.append(("via_floating", v.layer))
+    if verbose:
+        print("  fast_drc: metals=%d vias=%d violations=%d"
+              % (len(metals), len(vias), len(violations)))
+    return {"ok": len(violations) == 0, "violations": violations,
+            "n_metals": len(metals), "n_vias": len(vias)}
+
+
+def fast_lvs(shapes, net_pins: dict, verbose: bool = False) -> dict:
+    """`run_lvs` 的空间哈希加速版（包围盒登记）。"""
+    routed = [s for s in shapes if s.net is not None and s.kind in ("metal", "via")]
+    cell = max(DD.W_ROUTE, DD.VIA) + S_MIN + 0.05
+    grid = _index_bbox(routed, cell)
+    n = len(routed)
+    parent = list(range(n))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    seen = set()
+    for i, s in enumerate(routed):
+        gx0, gx1, gy0, gy1 = _cell_span(s, cell)
+        cand = set()
+        for gx in range(gx0 - 1, gx1 + 2):
+            for gy in range(gy0 - 1, gy1 + 2):
+                cand.update(grid.get((gx, gy), ()))
+        for j in cand:
+            if j <= i or (i, j) in seen:
+                continue
+            seen.add((i, j))
+            t = routed[j]
+            if s.kind == "via" and t.kind == "metal":
+                if DD.rects_overlap(s, t, inflate=1e-6):
+                    union(i, j)
+            elif t.kind == "via" and s.kind == "metal":
+                if DD.rects_overlap(s, t, inflate=1e-6):
+                    union(i, j)
+            elif s.kind == "metal" and t.kind == "metal":
+                if s.layer == t.layer and DD.rects_overlap(s, t, inflate=1e-6):
+                    union(i, j)
+    comp = [find(i) for i in range(n)]
+    net_comp = defaultdict(set)
+    net_shapes = defaultdict(list)
+    for idx, s in enumerate(routed):
+        net_comp[s.net].add(comp[idx])
+        net_shapes[s.net].append((idx, s))
+    problems = []
+    for net, comps in net_comp.items():
+        if len(comps) > 1:
+            problems.append(("net_disconnected", net, len(comps)))
+    for net, pts in net_pins.items():
+        if net not in net_shapes:
+            if len(pts) >= 2:
+                problems.append(("net_no_shapes", net))
+            continue
+        for (px, py) in pts:
+            covered = any(DD.point_in_rect(px, py, s) for (_i, s) in net_shapes[net])
+            if not covered:
+                problems.append(("pin_not_reached", net, round(px, 3), round(py, 3)))
+    metals = [s for s in routed if s.kind == "metal"]
+    # 🔴 独立 metals 网格：i/j 必须同为 metals 下标（此前误用 routed 网格 ⇒ 下标空间错配
+    #    致 j<=i 失效、金属-金属短路被重复计数）
+    mgrid = _index_bbox(metals, cell)
+    seen2 = set()
+    for i, a in enumerate(metals):
+        gx0, gx1, gy0, gy1 = _cell_span(a, cell)
+        cand = set()
+        for gx in range(gx0 - 1, gx1 + 2):
+            for gy in range(gy0 - 1, gy1 + 2):
+                cand.update(mgrid.get((gx, gy), ()))
+        for j in cand:
+            if j <= i or (i, j) in seen2:
+                continue
+            seen2.add((i, j))
+            b = metals[j]
+            if a.layer != b.layer or a.net == b.net:
+                continue
+            if DD.rects_overlap(a, b, inflate=1e-6):
+                problems.append(("short", a.net, b.net, a.layer))
+    # ③b 异网通孔压在异网金属上 = 跨网连接短路（与 run_lvs 同口径；此前 fast 版漏检）
+    for vi, v in enumerate(routed):
+        if v.kind != "via":
+            continue
+        gx0, gx1, gy0, gy1 = _cell_span(v, cell)
+        cand = set()
+        for gx in range(gx0 - 1, gx1 + 2):
+            for gy in range(gy0 - 1, gy1 + 2):
+                cand.update(grid.get((gx, gy), ()))
+        for j in cand:
+            m = routed[j]
+            if m.kind != "metal":
+                continue
+            if m.net == v.net or v.net is None or m.net is None:
+                continue
+            if DD.rects_overlap(v, m, inflate=1e-6):
+                problems.append(("short_via", v.net, m.net, m.layer))
+    if verbose:
+        print("  fast_lvs: nets_checked=%d problems=%d"
+              % (len(net_shapes), len(problems)))
+    return {"ok": len(problems) == 0, "problems": problems,
+            "n_nets": len(net_shapes)}
+
+
+# ---------------------------------------------------------------------------
 # 自检（含「必须失败」的对照组）
 # ---------------------------------------------------------------------------
 def drc_self_check(verbose: bool = False) -> dict:
@@ -315,6 +504,66 @@ def lvs_self_check(verbose: bool = False) -> dict:
 
     return {"ok": not problems, "problems": problems,
             "baseline_ok": res["ok"], "baseline_problems": len(res["problems"])}
+
+
+def checker_equiv_self_check(verbose: bool = False) -> dict:
+    """E37 · 校验器硬化：`fast_drc`/`fast_lvs` 与原生 O(n²) `run_drc`/`run_lvs` **逐位一致**。
+
+    两道等价金标（baseline 真实几何上）：
+      - DRC：总数 + 按类 breakdown 完全相同；
+      - LVS：总数 + 按类 breakdown 完全相同（含 short_via 与金属-金属短路去重）。
+    两个判别式（防 fast 版静默变瞎子）：注入窄金属 / 悬空过孔 ⇒ fast_drc 必红。
+    """
+    from collections import Counter
+    from . import dctrl as C
+    problems = []
+    b = C.build()
+    nl = b["netlist"]
+    p = PL.place(nl)
+    base = DD.detail_route(nl, p)
+
+    rd = run_drc(base.shapes)
+    fd = fast_drc(base.shapes)
+    if len(rd["violations"]) != len(fd["violations"]):
+        problems.append(("drc_count_mismatch", len(rd["violations"]), len(fd["violations"])))
+    if Counter(v[0] for v in rd["violations"]) != Counter(v[0] for v in fd["violations"]):
+        problems.append(("drc_breakdown_mismatch",))
+
+    rl = run_lvs(base.shapes, base.net_pins)
+    fl = fast_lvs(base.shapes, base.net_pins)
+    if len(rl["problems"]) != len(fl["problems"]):
+        problems.append(("lvs_count_mismatch", len(rl["problems"]), len(fl["problems"])))
+    if Counter(pr[0] for pr in rl["problems"]) != Counter(pr[0] for pr in fl["problems"]):
+        problems.append(("lvs_breakdown_mismatch",))
+
+    # 判别式 1：注入窄金属 ⇒ fast_drc 必红 min_width
+    h = next((s for s in base.shapes if s.layer == DD.L_M3 and
+              (s.x1 - s.x0) >= 3.0 * W_MIN), None)
+    if h is not None:
+        bad = list(base.shapes)
+        bad.append(DD._rect(DD.L_M3, h.x0, h.y0, h.x1, h.y0 + 0.05,
+                            net="__bad__", kind="metal"))
+        if not any(v[0] == "min_width" for v in fast_drc(bad)["violations"]):
+            problems.append(("probe_narrow_not_red",))
+    else:
+        problems.append(("probe_no_h_segment",))
+
+    # 判别式 2：注入悬空过孔 ⇒ fast_drc 必红 via_floating
+    bad2 = list(base.shapes)
+    bad2.append(DD._rect(DD.L_VIA2, 9999.0, 9999.0, 9999.0 + DD.VIA, 9999.0 + DD.VIA,
+                         net="__badvia__", kind="via"))
+    if not any(v[0] == "via_floating" for v in fast_drc(bad2)["violations"]):
+        problems.append(("probe_floating_via_not_red",))
+
+    if verbose:
+        print("  checker_equiv: drc run=%d fast=%d  lvs run=%d fast=%d"
+              % (len(rd["violations"]), len(fd["violations"]),
+                 len(rl["problems"]), len(fl["problems"])))
+    return {"ok": not problems, "problems": problems,
+            "baseline_drc": len(rd["violations"]),
+            "baseline_lvs": len(rl["problems"]),
+            "drc_breakdown": dict(Counter(v[0] for v in rd["violations"])),
+            "lvs_breakdown": dict(Counter(pr[0] for pr in rl["problems"]))}
 
 
 DDRC_LVS_DISCLOSURE = {

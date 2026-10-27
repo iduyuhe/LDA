@@ -1492,6 +1492,10 @@ CORE_SMOKES: List[str] = [
     #   + 4 突变探针（C1 画短线 / C2 缺引脚 / C3 窄金属 / C4 短路），全绿 ~64s。
     #   🔴 baseline DRC 204320 / LVS 320737 是简化 L 路由无 track 的**已知诚实事实**，只验判别力不判红。
     "run_ecore_e36_smoke.py",
+    # E37（D-224）：DRC/LVS 校验器硬化（fast_drc/fast_lvs ≡ 原生逐位一致，修 short_via 漏检 +
+    #   金属短路下标串位）+ track 分配拥堵负结果（每行 clique 120 vs 通道 2 轨 ⇒ 真清零需 ×14.6 面积）。
+    #   3 金标（B1 等价 / B2 via=0 且拥堵不可行 / B3 拥堵量化）+ 4 突变探针（C1 重叠/C2 悬空孔/C3 窄线/C4 断网）。
+    "run_ecore_e37_smoke.py",
     "run_webui_entry_smoke.py",
     # 🔴 v0.9.213 光子计算 SoC 案例卡（/api/soc_demo · #sec-soc）跨源一致性 + 前端取值路径门禁：
     #   卡内 WDM/TDM 杠杆常量 ≡ lda_l2 真源（soc_wdm/soc_tdm）逐位同源 + 反向探针（改真源必红）；
@@ -3199,6 +3203,9 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e35_smoke.py": 120.0,
     # E36 P&R 深化门禁（D-220~D-223）· 实测 ~64s（build_ip 阵列 GDS 生成 ~50s + 五层自检 + 四突变探针）
     "run_ecore_e36_smoke.py": 200.0,
+    # E37 校验器硬化 + track 负结果门禁（D-224）· 实测 ~154.7s（track_route + fast_drc on ~10k shapes
+    #   ~37s + run_drc/run_lvs 与 fast 逐位对拍 + 四突变探针）⇒ 500s 留 ~3.23× 余量
+    "run_ecore_e37_smoke.py": 500.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     # 🔴 v0.9.186：新增「标准 JSON 出口」门禁（`run_webui_json_hard_smoke.py`,
     #   13 判据 + 4 道突变探针；因浏览器 JSON.parse 崩于 `-Infinity` 而立）。

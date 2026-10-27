@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
-"""E35 · **CIM 加速器 IP 硬宏 + GDS 合并**（`lda/lda_l2/ecore/dmacro.py` · D-219）。
+"""E36 · **CIM 加速器 IP 硬宏 + GDS 合并 + detail route/真实单元几何 + IP 级 DRC/LVS**
+（`lda/lda_l2/ecore/dmacro.py` · D-219 → D-220~D-223）。
 
 ══════════════════════════════════════════════════════════════
 定位：把 E33 的**阵列 GDS** 与 E34 的**数字控制壳网表** + E35 的**布局/布线**，
 打包成一个**真的硬宏（hard macro）** —— 有外框、有顶层引脚、有单一 GDS 文件。
+E36 在 E35 基础上进一步：
+  - D-220 **detail route**：把 MST 每网画成真实金属多边形（H=M3 / V=M4 / 弯角 VIA2）；
+  - D-221 **真实单元几何**：数字单元从包围盒升级为有源区标记 + M1 引脚焊垫 + 通孔栈；
+  - D-222/D-223 **IP 级 DRC/LVS**：对数字区路由几何做最小线宽/间距/通孔 + 连通性/短路。
 ══════════════════════════════════════════════════════════════
 终点已定为 **CIM 加速器 IP**（不是能流片的完整 SoC）：本宏就是那个「IP」实体。
 它把前四段（E33 阵列 + E34 数字 + E35 布局布线）**第一次合到一个几何与电气边界里**。
@@ -17,8 +22,10 @@ E33 的纪律「`flat_elements ≡ len(descs)`」在这里升级为「**喂给�
 ══════════════════════════════════════════════════════════════
 ⚠️ 诚实边界（全部 `claimable=False`）
 ══════════════════════════════════════════════════════════════
-- **数字单元只画了「包围盒矩形」，不是真实单元内部几何**（poly/diff/via 没画）
-  ⇒ 这是**布局占位** GDS，不是可制造的单元 GDS
+- **数字单元内部的真实几何仍是符号级**（模型尺度单元宽≈0.08µm，放不下真实晶体管）；
+  有源区/引脚/通孔栈是「占位标记」，不是 PDK 可制造单元
+- **简化 L 形路由无 track 分配/无绕障** ⇒ baseline 存在大量同层重叠/短路（已知诚实事实，
+  如实报告违例数，不因此判红；清零是下一阶段 maze/grid 路由器的事）
 - **阵列与数字块之间没有任何 IO 环电气连接几何**（只是摆在一起）
 - **顶层引脚是标记方块**，未画 pad 金属 / ESD / bump
 - 合并用 flat（非 AREF）⇒ 文件偏大，但**可机核零丢失**（这正是要的）
@@ -32,6 +39,8 @@ from . import dsta as ST
 from . import dplac as PL
 from . import droute as RT
 from . import dextract as DX
+from . import ddetail as DD
+from . import ddrc_lvs as DL
 from . import dctrl as C
 from . import layout as LY
 from .dsynth import Netlist
@@ -57,6 +66,10 @@ class Macro:
     n_pins: int
     n_digital_cells: int
     array_only_bytes: int     # 对照：仅阵列 GDS 字节数
+    n_route_shapes: int       # detail route 金属/通孔形状数
+    n_cell_shapes: int        # 真实单元几何形状数
+    drc_violations: int       # IP 级 DRC 违例（仅数字区 P&R）
+    lvs_problems: int         # IP 级 LVS 问题（仅数字区 P&R）
 
 
 def _desc_bytes(d: dict) -> bytes:
@@ -79,7 +92,14 @@ def _pin(layer: int, x: float, y: float, s: float = 1.5) -> bytes:
 
 
 def build_ip(nl: Netlist, tech=DC.DEFAULT_TECH) -> Macro:
-    """合成 CIM 加速器 IP 硬宏（阵列 + 数字壳 + 外框 + 引脚 → 单一 GDS）。"""
+    """合成 CIM 加速器 IP 硬宏（阵列 + 数字壳 + **E36 detail route 金属** + **E36 真实单元几何**
+    + 外框 + 引脚 → 单一 GDS）。
+
+    E36 新增（全部数字区局部坐标 + dig_off_x 偏移）：
+      - `DD.detail_route` 把 MST 每网画成 H=M3 / V=M4 / 弯角 VIA2 真实金属多边形；
+      - `DD.real_cell_geom` 每颗数字单元升级为 有源区标记(E_DIFF/20) + M1 引脚焊垫 + 通孔栈；
+      - `DL.run_drc` / `DL.run_lvs` 对数字区**路由几何**做 IP 级可制造性/连通性 signoff。
+    """
     # ① 阵列几何（复用 E33 签核栈：行线 M2 + via stack）
     arr = LY.crossbar_array(87, 87, None, row_layer="M2", via_stack=True)
     arr_descs = arr["descs"]
@@ -92,6 +112,10 @@ def build_ip(nl: Netlist, tech=DC.DEFAULT_TECH) -> Macro:
     p = PL.place(nl, tech=tech)
     dig_off_x = aw + GAP_UM
 
+    # E36 · detail route 金属/通孔（数字局部坐标）+ 真实单元几何
+    dr = DD.detail_route(nl, p, tech=tech)
+    cell_shapes = DD.real_cell_geom(p, tech=tech)
+
     top: list = []
     n_emit = 0
 
@@ -100,10 +124,22 @@ def build_ip(nl: Netlist, tech=DC.DEFAULT_TECH) -> Macro:
         top.append(_desc_bytes(d))
         n_emit += 1
 
-    # 数字单元包围盒（按布局坐标 + 偏移）
+    # 数字单元包围盒（保留为视觉区块标记，LAYER_DIGITAL=50；仍按布局坐标 + 偏移）
     for nm, (x0, y0, w, h) in p.cell_xywh.items():
         top.append(_box(LAYER_DIGITAL, dig_off_x + x0, y0,
                         dig_off_x + x0 + w, y0 + h))
+        n_emit += 1
+
+    # E36 · detail route 金属/通孔（M3/M4/VIA2）→ 真实多边形（偏移 dig_off_x）
+    for s in dr.shapes:
+        top.append(_box(s.layer, dig_off_x + s.x0, s.y0,
+                        dig_off_x + s.x1, s.y1))
+        n_emit += 1
+
+    # E36 · 真实单元几何（DIFF/M1/VIA1/VIA2）→ 真实多边形（偏移 dig_off_x）
+    for s in cell_shapes:
+        top.append(_box(s.layer, dig_off_x + s.x0, s.y0,
+                        dig_off_x + s.x1, s.y1))
         n_emit += 1
 
     # 数字块外框 + 阵列块外框
@@ -133,6 +169,10 @@ def build_ip(nl: Netlist, tech=DC.DEFAULT_TECH) -> Macro:
     top_names = parsed.get("top_structures", [])
     n_parsed = sum(len(parsed["structures"][s]) for s in top_names)
 
+    # E36 · IP 级 DRC/LVS（对数字区**路由几何** signoff；baseline 违例数如实报告，不判红）
+    drc = DL.run_drc(dr.shapes)
+    lvs = DL.run_lvs(dr.shapes, dr.net_pins)
+
     return Macro(
         gds_bytes=gds, n_emitted=n_emit, n_parsed=n_parsed,
         boundary_um=(bx0, by0, bx1, by1),
@@ -141,6 +181,10 @@ def build_ip(nl: Netlist, tech=DC.DEFAULT_TECH) -> Macro:
         digital_box_um=(dig_off_x, 0.0, dig_off_x + p.die_w_um, p.die_h_um),
         n_pins=len(p.pin_list), n_digital_cells=len(p.cell_xywh),
         array_only_bytes=len(arr_only),
+        n_route_shapes=len(dr.shapes),
+        n_cell_shapes=len(cell_shapes),
+        drc_violations=len(drc["violations"]),
+        lvs_problems=len(lvs["problems"]),
     )
 
 
@@ -170,6 +214,10 @@ def closure() -> dict:
         "gds_emitted": macro.n_emitted,
         "gds_parsed": macro.n_parsed,
         "array_only_bytes": macro.array_only_bytes,
+        "n_route_shapes": macro.n_route_shapes,
+        "n_cell_shapes": macro.n_cell_shapes,
+        "drc_violations": macro.drc_violations,
+        "lvs_problems": macro.lvs_problems,
     }
 
 
@@ -241,6 +289,9 @@ def macro_self_check(verbose: bool = False) -> dict:
         print("  macro: gds=%d B (emit=%d parse=%d)  array_only=%d B"
               % (c["gds_bytes"], c["gds_emitted"], c["gds_parsed"],
                  c["array_only_bytes"]))
+        print("  macro: route_shapes=%d  cell_shapes=%d  drc=%d  lvs=%d"
+              % (c["n_route_shapes"], c["n_cell_shapes"],
+                 c["drc_violations"], c["lvs_problems"]))
     return {
         "ok": not problems, "problems": problems,
         "n_emitted": m.n_emitted, "n_parsed": m.n_parsed,
@@ -248,18 +299,23 @@ def macro_self_check(verbose: bool = False) -> dict:
         "ip_area_um2": (m.boundary_um[2] - m.boundary_um[0]) *
                        (m.boundary_um[3] - m.boundary_um[1]),
         "ip_boundary_um": m.boundary_um,
+        "n_route_shapes": m.n_route_shapes, "n_cell_shapes": m.n_cell_shapes,
+        "drc_violations": m.drc_violations, "lvs_problems": m.lvs_problems,
     }
 
 
 DMACRO_DISCLOSURE = {
-    "route": "E35 · CIM 加速器 IP 的 P&R · 第 3 层（IP 硬宏 + GDS 合并）",
-    "analysis": "阵列 GDS（E33 栈）+ 数字单元包围盒（E35 布局）+ 外框 + 引脚 → 单一 GDS；"
-                "复用 gds_export 编码器与 parse_gds_polygons 回读",
+    "route": "E36 · CIM 加速器 IP 的 P&R 深化 · 第 3 层（IP 硬宏 + GDS 合并 + detail route/真实单元几何 + IP DRC/LVS）",
+    "analysis": "阵列 GDS（E33 栈）+ 数字单元包围盒 + **E36 detail route 金属(M3/M4/VIA2)** + "
+                "**E36 真实单元几何(有源/M1/通孔栈)** + 外框 + 引脚 → 单一 GDS；"
+                "复用 gds_export 编码器与 parse_gds_polygons 回读；对数字区路由几何跑 run_drc/run_lvs",
     "golden": "合并 GDS 元素数（emit）≡ 回读展开元素数（零丢失）· GDS 字节 > 仅阵列 · "
-              "外框包围阵列+数字",
-    "not_included": "数字单元只画包围盒（非真实内部几何）· 无 IO 环电气连接几何 · 引脚是标记方块 · "
-                    "flat 非 AREF（文件偏大但可机核零丢失）",
+              "外框包围阵列+数字 · E36 路由/单元几何真发进 GDS（计入 emit/parse 守恒）",
+    "not_included": "数字单元内部几何符号级(非 PDK) · 简化 L 路由无 track 分配(baseline 同层短路已知) · "
+                    "无 IO 环电气连接几何 · 引脚是标记方块 · flat 非 AREF · "
+                    "IP 级 DRC/LVS 规则值为假设(非 PDK) 仅验路由几何",
     "claimable": False,
-    "claimable_reason": "GDS 几何是布局的视觉化；IP 面积/引脚数是结构性事实可 signoff，"
-                       "但其**可制造性**未验证（无 DRC/LVS 对 IP 整体）",
+    "claimable_reason": "GDS 几何是布局的视觉化；IP 面积/引脚数/路由形状数是结构性事实可 signoff，"
+                       "但**可制造性**仍 MODEL_ESTIMATE（IP 级 DRC/LVS 规则非 Foundry PDK；"
+                       "baseline 违例数是简化路由器的诚实结果，非签核绿）",
 }

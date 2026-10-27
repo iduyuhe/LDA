@@ -528,14 +528,39 @@ ECORE_CAPABILITY_MANIFEST = [
         "introduced_by": "D-218 (E35)", "guard": "run_ecore_e35_smoke.py",
     },
     {
-        "capability": "**P&R 第 3 层 IP 硬宏 + GDS 合并**：阵列 GDS（E33 栈）+ 数字单元包围盒 + "
-                      "外框 + 引脚 → 单一 IP GDS · **金标：合并元素 emit ≡ 回读 parse（零丢失）** · "
-                      "复用 gds_export 编码器与 parse_gds_polygons 回读",
+        "capability": "**P&R 第 3 层 IP 硬宏 + GDS 合并（E36 深化）**：阵列 GDS（E33 栈）+ 数字单元包围盒 + "
+                      "**E36 detail route 真实金属(M3/M4/VIA2)** + **E36 真实单元几何(有源/M1/通孔栈)** + "
+                      "外框 + 引脚 → 单一 IP GDS · **金标：合并元素 emit ≡ 回读 parse（零丢失，含 route+cell 形状）** · "
+                      "对数字区路由几何跑 IP 级 DRC/LVS · 复用 gds_export 编码器与 parse_gds_polygons 回读",
         "module": "lda_l2.ecore.dmacro",
         "symbols": ["Macro", "build_ip", "closure", "macro_self_check",
                     "DMACRO_DISCLOSURE", "GAP_UM", "LAYER_DIGITAL",
                     "LAYER_IP_BOUNDARY", "LAYER_PIN", "_desc_bytes", "_box", "_pin"],
-        "introduced_by": "D-219 (E35)", "guard": "run_ecore_e35_smoke.py",
+        "introduced_by": "D-219 (E35) · E36 深化", "guard": "run_ecore_e36_smoke.py",
+    },
+    {
+        "capability": "**P&R 深化（D-220 detail route + D-221 真实单元几何）**：把 MST 每网画成真实金属多边形"
+                      "（H=M3 / V=M4 / 弯角 VIA2）· 金标：每网布出中心线长 ≥ MST 长（2 端网 ≡ 曼哈顿距离）；"
+                      "数字单元从包围盒升级为 有源区标记(E_DIFF/20) + M1 引脚焊垫 + 通孔栈(M1→M2→M3)；"
+                      "金标：每单元 ≥1 有源 + ≥1 引脚 · 🔴 模型尺度下内部几何符号级(非 PDK)",
+        "module": "lda_l2.ecore.ddetail",
+        "symbols": ["Shape", "DetailRoute", "detail_route", "real_cell_geom",
+                    "rects_overlap", "point_in_rect", "detail_self_check",
+                    "cellgeom_self_check", "DDETAIL_DISCLOSURE", "L_M1", "L_M2",
+                    "L_M3", "L_M4", "L_DIFF", "L_VIA1", "L_VIA2", "W_ROUTE",
+                    "VIA", "ENC", "PIN_R", "_rect", "_mst_edges", "_net_pins"],
+        "introduced_by": "D-220…D-221 (E36)", "guard": "run_ecore_e36_smoke.py",
+    },
+    {
+        "capability": "**P&R 深化（D-222 IP DRC + D-223 IP LVS）**：对数字区路由几何做签核 · "
+                      "DRC：最小线宽/最小间距(异网同层)/通孔包围+悬空；LVS：几何 flood-fill 连通性"
+                      "（每网单分量 + 终端被覆盖）+ 异网同层短路 · "
+                      "🔴 规则值假设(非 PDK) · 仅 M1/M3/M4+通孔 · 简化 L 路由 baseline 大量违例是已知诚实事实",
+        "module": "lda_l2.ecore.ddrc_lvs",
+        "symbols": ["W_MIN", "S_MIN", "ENC", "VIA_BRIDGE", "BRIDGE_PRESENT",
+                    "run_drc", "_union_find", "run_lvs", "drc_self_check",
+                    "lvs_self_check", "DDRC_LVS_DISCLOSURE"],
+        "introduced_by": "D-222…D-223 (E36)", "guard": "run_ecore_e36_smoke.py",
     },
 ]
 
@@ -579,7 +604,7 @@ def manifest_check() -> dict:
 
 
 ECORE_CAPABILITY_DISCLOSURE = {
-    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19 · E20 扩面至 e1~e20 · E21 扩面至 e1~e21 · E22 扩面至 e1~e22 · E23 扩面至 e1~e23 · E24 扩面至 e1~e24 · E25 扩面至 e1~e25 · E26 扩面至 e1~e26 · E27 扩面至 e1~e27 · E28 扩面至 e1~e28 · E29 扩面至 e1~e29 · E30 扩面至 e1~e30 · E31 扩面至 e1~e31 · E32 扩面至 e1~e32 · E33 扩面至 e1~e33 · E35 扩面至 e1~e35",
+    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19 · E20 扩面至 e1~e20 · E21 扩面至 e1~e21 · E22 扩面至 e1~e22 · E23 扩面至 e1~e23 · E24 扩面至 e1~e24 · E25 扩面至 e1~e25 · E26 扩面至 e1~e26 · E27 扩面至 e1~e27 · E28 扩面至 e1~e28 · E29 扩面至 e1~e29 · E30 扩面至 e1~e30 · E31 扩面至 e1~e31 · E32 扩面至 e1~e32 · E33 扩面至 e1~e33 · E35 扩面至 e1~e35 · E36 扩面至 e1~e36（D-220~D-223：detail route / 真实单元几何 / IP DRC / IP LVS）",
     "e5_scope": "把 E1~E9 逼出的平台能力固化为机器可读清单（单向真源）+ 常驻门禁（正向完备 + 反向完备 + 披露一致 + 诚实边界）",
     "hardening_semantics": "能力面必须被门禁守着：任一模模块/符号缺失、隐身模块出现、或注入 fabricated 指标 ⇒ 门禁必红",
     "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"

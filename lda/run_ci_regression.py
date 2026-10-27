@@ -1485,6 +1485,13 @@ CORE_SMOKES: List[str] = [
     #   终点定为 CIM 加速器 IP 硬宏（非完整 SoC 签核）；四层 + 四突变探针（C1 面积不守恒 /
     #   C2 2端网线长<L1 / C3 线载×100 不降 Fmax / C4 GDS emit≠parse），实测 ~35s。
     "run_ecore_e35_smoke.py",
+    # E36 P&R 深化（D-220~D-223）：**detail route 真实金属几何 + 真实单元几何 + IP 级 DRC/LVS** ——
+    #   E35 的「线」第一次画成真实金属（H=M3 / V=M4 / 弯角 VIA2）；数字单元包围盒升级为
+    #   有源区标记+M1 引脚焊垫+通孔栈；对数字区路由几何跑最小线宽/间距/通孔(DRC)+连通性/短路(LVS)。
+    #   5 金标（B1 detail 中心线≥MST / B2 单元几何完整 / B3 DRC 判别力 / B4 LVS 判别力 / B5 宏零丢失）
+    #   + 4 突变探针（C1 画短线 / C2 缺引脚 / C3 窄金属 / C4 短路），全绿 ~64s。
+    #   🔴 baseline DRC 204320 / LVS 320737 是简化 L 路由无 track 的**已知诚实事实**，只验判别力不判红。
+    "run_ecore_e36_smoke.py",
     "run_webui_entry_smoke.py",
     # 🔴 v0.9.213 光子计算 SoC 案例卡（/api/soc_demo · #sec-soc）跨源一致性 + 前端取值路径门禁：
     #   卡内 WDM/TDM 杠杆常量 ≡ lda_l2 真源（soc_wdm/soc_tdm）逐位同源 + 反向探针（改真源必红）；
@@ -3190,6 +3197,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e34_smoke.py": 120.0,
     # E35 P&R 门禁（D-220 区）· 实测 ~35s（四层自检 + 四突变探针 + 控制 GDS 重建）
     "run_ecore_e35_smoke.py": 120.0,
+    # E36 P&R 深化门禁（D-220~D-223）· 实测 ~64s（build_ip 阵列 GDS 生成 ~50s + 五层自检 + 四突变探针）
+    "run_ecore_e36_smoke.py": 200.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     # 🔴 v0.9.186：新增「标准 JSON 出口」门禁（`run_webui_json_hard_smoke.py`,
     #   13 判据 + 4 道突变探针；因浏览器 JSON.parse 崩于 `-Infinity` 而立）。

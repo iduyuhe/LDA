@@ -1,5 +1,54 @@
 # Changelog
 
+## v0.9.332（2026-10-27 · **E36 P&R 深化：detail route 真实金属 + 真实单元几何 + IP 级 DRC/LVS** · 净增 0 锚 · 账本 541 / strict 519 / 独立率 95.93% / CI core **367**）
+
+### 一句话
+
+E36 在 E35 的 CIM 加速器 IP 硬宏上，第一次把 P&R 的「线」画成**真实金属几何**，并把数字单元的**包围盒**升级为**真实单元几何**，再对数字区**路由几何**做 **IP 级 DRC/LVS** 签核 —— 把 E35「前端」向「可签核」推进一步（终点仍是 CIM 加速器 IP 硬宏，不是能流片完整 SoC）。
+
+### ① 三刀（4 个新模块 · 能力 D-220~D-223）
+
+| 刀 | 模块 | 关键金标 |
+|---|---|---|
+| detail route | `ddetail.detail_route` | 每网 MST → H(M3)+V(M4)+弯角 VIA2 真实金属；每网中心线长 ≥ MST（2 端网 ≡ 曼哈顿距离） |
+| 真实单元几何 | `ddetail.real_cell_geom` | 每单元 有源区标记(E_DIFF/20)+M1 引脚焊垫+通孔栈；每单元 ≥1 有源 + ≥1 引脚 |
+| IP DRC | `ddrc_lvs.run_drc` | 最小线宽/最小间距(异网同层)/通孔包围+悬空 |
+| IP LVS | `ddrc_lvs.run_lvs` | 几何 flood-fill 连通性（每网单分量 + 终端被覆盖）+ 异网同层短路 |
+
+### ② 四道突变探针（C1-C4）全打红 —— 防「假绿」
+
+| 探针 | 篡改 | 必须 |
+|---|---|---|
+| C1 | 2 端网 H 段砍到 0.4× ⇒ 中心线 < 曼哈顿距离 | B1 红 |
+| C2 | 删某单元引脚焊垫 | B2 红 |
+| C3 | 注入过窄金属(<W_MIN) | DRC 抓 min_width 红 |
+| C4 | 注入异网同层重叠(短路) | LVS 抓 short 红 |
+
+### ③ 真实产出（非仿真值，是版图几何）
+
+- IP = 270×232 µm / 62,581 µm² / 108 引脚 / 1340 摆放单元（同 E35 规模）
+- GDS 5,147,016 字节 / **80,481 元素零丢失**（emit=80481=parse；含 route 5375 + cell 5360 形状；array_only=4,367,114 B）
+- detail route：1359 网 / 3941 段 / 16,564.9 µm 金属中心线
+- 真实单元几何：1340 单元 / 5360 形状（每单元 有源+M1+2 通孔）
+
+### ④ 🔴 诚实边界（baseline 违例是已知事实，不因此判红）
+
+🔴 **简化 L 形路由无 track 分配 / 无绕障** ⇒ baseline 存在大量同层重叠/短路：
+
+- **DRC 204320**（min_spacing 203672 + via_enclosure 648）
+- **LVS 320737**（short 187107 + short_via 133630）
+
+这些是本征程「路由拓扑量」的诚实结果；**清零是下一阶段 maze/grid 路由器的事**，本门禁只验 DRC/LVS checker 有判别力（突变探针打红），绝不把 baseline 标绿。
+另：模型尺度下单元内部几何为**符号级**（非 PDK 真实单元）；IP 级 DRC/LVS 规则值为**假设**（非 Foundry PDK）；未检注入/阱/天线/密度；单角 tt；无 IO 环电气；未与完整 SoC 拼装。
+
+### ⑤ 连带改动
+
+`dmacro.build_ip` 集成 detail route 金属 + 真实单元几何（均带 dig_off_x 偏移发进 GDS）+ 跑 run_drc/run_lvs；`Macro` 扩 n_route_shapes/n_cell_shapes/drc_violations/lvs_problems 字段；能力清单 D-219 扩面 + 登记 ddetail/ddrc_lvs（D-220~D-223）；CI core 366→**367**；超时预算基线补 E36 行（实测 64.3s）；四处版本号升 0.9.332。
+
+### ⑥ 门禁全绿（零回归）
+
+E36 10/10 · E35 9/9 · E33 23/23 · capability_guard · helper_dup · ci_gate_contract · pyflakes · timeout（全量回归见 §⑦）。
+
 ## v0.9.331（2026-10-27 · **E35 CIM 加速器 IP 的 P&R（自建最小但诚实）** · 净增 0 锚 · 账本 541 / strict 519 / 独立率 95.93% / CI core **366**）
 
 ### 一句话

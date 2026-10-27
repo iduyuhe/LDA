@@ -614,6 +614,17 @@ ECORE_CAPABILITY_MANIFEST = [
                     "REAL_AREA_PER_TR_45", "AREA_PER_TR_SYMBOLIC", "DREALCELL_DISCLOSURE"],
         "introduced_by": "D-227 (E38c)", "guard": "run_ecore_e38c_smoke.py",
     },
+    {
+        "capability": "**E38d 细引脚接入逃逸 + 现实线距联调 + 容量结论（D-228）**：access_radius(细层逃逸) + "
+                      "现实线距(0.24µm) + 真实单元面积(0.266) + 跨单元布线 + 多层 联调 · **金标**：引脚接入单调 / "
+                      "层数单调(4L≥2L) / 线距单调(细≥粗) / 联调≥仅真实单元 / **诚实(联调<90%)** · "
+                      "实测联调 ~38.7%（vs 符号 3.8% / 仅真实单元 9.7%）· 🔴 瓶颈已迁到网络密度/布线容量，"
+                      "需更大 die（摊开 ×K）· 抽象容量研究不产 GDS",
+        "module": "lda_l2.ecore.dpinaccess",
+        "symbols": ["pin_access_routability", "pinaccess_self_check", "REAL_AREA_PER_TR",
+                    "PITCH_SYMBOLIC", "PITCH_REAL", "DPINACCESS_DISCLOSURE"],
+        "introduced_by": "D-228 (E38d)", "guard": "run_ecore_e38d_smoke.py",
+    },
 ]
 
 

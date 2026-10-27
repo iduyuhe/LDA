@@ -1506,6 +1506,9 @@ CORE_SMOKES: List[str] = [
     # E38c（D-227）：真实标准单元面积标定（0.266µm²/tr, Nangate45 量级）+ 可布通性重测。
     #   面积守恒（换 tech 逐位）+ cells/row 下降 + routability 提升(3.8→9.7%) + 层数单调。CI core 370→371。
     "run_ecore_e38c_smoke.py",
+    # E38d（D-228）：细引脚接入逃逸 + 现实线距联调。三单调（接入/层/线距）+ 联调≥单要素 + 诚实(联调<90%)。
+    #   实测联调 38.7%（vs 符号 3.8% / 仅真实单元 9.7%）；瓶颈=网络密度/布线容量，需更大 die。CI core 371→372。
+    "run_ecore_e38d_smoke.py",
     "run_webui_entry_smoke.py",
     # 🔴 v0.9.213 光子计算 SoC 案例卡（/api/soc_demo · #sec-soc）跨源一致性 + 前端取值路径门禁：
     #   卡内 WDM/TDM 杠杆常量 ≡ lda_l2 真源（soc_wdm/soc_tdm）逐位同源 + 反向探针（改真源必红）；
@@ -3222,6 +3225,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e38b_smoke.py": 220.0,
     # E38c 真实单元面积门禁（D-227）· 实测 ~63s（realistic 2L+4L 布线 + 摆放），预算 200s 留 ~3.2×
     "run_ecore_e38c_smoke.py": 200.0,
+    # E38d 引脚接入+线距联调门禁（D-228）· 实测 ~112s（联调真实布线 ~75s + 仅真实单元 ~15s + 符号单调探针），预算 350s 留 ~3.1×
+    "run_ecore_e38d_smoke.py": 350.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     # 🔴 v0.9.186：新增「标准 JSON 出口」门禁（`run_webui_json_hard_smoke.py`,
     #   13 判据 + 4 道突变探针；因浏览器 JSON.parse 崩于 `-Infinity` 而立）。

@@ -78,7 +78,27 @@ def _terminals(nl, p, nx, ny, spread):
     return term, pins
 
 
-def _bfs(start, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to=None):
+def _access_set(node, r, nx, ny):
+    """引脚接入逃逸集：细层(M1/M2)可把引脚接到半径 r 内的粗网格点（曼哈顿半径）。
+
+    r<=0 ⇒ 仅引脚本身（无逃逸，=E38b/c 原行为）。这是「真实设计靠细 M1/M2 把密排单元引脚接出」
+    的抽象：逃逸自身不计占用（细层独立），是**乐观上界**（见披露）。
+    """
+    if r <= 0:
+        return {(node[0], node[1])}
+    i0, j0 = node
+    s = set()
+    for di in range(-r, r + 1):
+        for dj in range(-r, r + 1):
+            if abs(di) + abs(dj) <= r:
+                i, j = i0 + di, j0 + dj
+                if 0 <= i < nx and 0 <= j < ny:
+                    s.add((i, j))
+    return s
+
+
+def _bfs(sources, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to=None):
+    """多源 BFS：从 sources（节点集合，可在任一层起步）到任一 goal 节点（树）。返回状态路径或 None。"""
     L = len(kinds)
     if cell_block_up_to is None:
         cell_block_up_to = L          # 默认：所有层都被单元中心阻断（E38b 原行为）
@@ -96,16 +116,18 @@ def _bfs(start, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_
         return True
 
     goals = set(goals)
-    si, sj = start
     dq = deque()
     parent = {}
     seen = set()
-    for l in range(L):
-        if passable(si, sj, l):
-            st = (si, sj, l)
-            parent[st] = None
-            seen.add(st)
-            dq.append(st)
+    for (si, sj) in sources:
+        for l in range(L):
+            if passable(si, sj, l):
+                st = (si, sj, l)
+                if st in seen:
+                    continue
+                parent[st] = None
+                seen.add(st)
+                dq.append(st)
     expanded = 0
     while dq:
         st = dq.popleft()
@@ -144,22 +166,26 @@ def _bfs(start, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_
     return None
 
 
-def _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to=None):
+def _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to=None,
+               access_radius=0):
     terms = sorted(nodes)
     if len(terms) < 2:
         return []
-    tree = {terms[0]}
+    sets = [_access_set(t, access_radius, nx, ny) for t in terms]
+    tree = set(sets[0])
     edges = []
-    for tgt in terms[1:]:
-        if tgt in tree:
+    for s in sets[1:]:
+        if s & tree:
+            tree |= s
             continue
-        path = _bfs(tgt, tree, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to)
+        path = _bfs(s, tree, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to)
         if path is None:
             return None
         for k in range(len(path) - 1):
             edges.append((path[k], path[k + 1]))
         for (i, j, _l) in path:
             tree.add((i, j))
+        tree |= s
     return edges
 
 
@@ -176,11 +202,12 @@ def _key(item):
 
 def route_rr(nl: Netlist, p: PL.Placement, spread: float = 1.0, layers: int = 2,
              rr_rounds: int = 3, sample: int = None, max_expand: int = 40000,
-             cell_block_up_to: int = None) -> dict:
+             cell_block_up_to: int = None, access_radius: int = 0) -> dict:
     """抽象多层网格 + 贪心布线 + 多轮原子 R&R。返回布通率等（不产 GDS）。
 
     `cell_block_up_to`：单元中心只在**前 N 层**阻断（低层=引脚接入），N 以上可跨单元布线
     （=真实「高层金属跨过标准单元」；默认 None ⇒ 所有层阻断 = E38b 原行为）。
+    `access_radius`：引脚接入逃逸半径（细层 M1/M2 把引脚接到半径 r 内粗网格点；默认 0=无逃逸）。
     """
     nx, ny = _dims(p, spread)
     kinds = make_layers(layers)
@@ -224,7 +251,8 @@ def route_rr(nl: Netlist, p: PL.Placement, spread: float = 1.0, layers: int = 2,
             net_occ[net].add((l, i, j))
 
     def try_route(net, nodes):
-        return _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to)
+        return _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand,
+                          cell_block_up_to, access_radius)
 
     for net, nodes in multi:
         e = try_route(net, nodes)

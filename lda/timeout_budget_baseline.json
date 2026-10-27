@@ -14845,6 +14845,17 @@
       ],
       "n_rounds": 1,
       "censored_events": 0
+    },
+    {
+      "script": "run_ecore_e38d_smoke.py",
+      "budget_s": 350.0,
+      "elapsed_max_s": 111.8,
+      "margin_x": 3.13,
+      "samples_s": [
+        111.8
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
     }
   ]
 }

@@ -37,7 +37,7 @@
 """
 from __future__ import annotations
 
-from collections import defaultdict, deque
+from collections import defaultdict
 
 from . import ddetail as DD
 from . import dplac as PL
@@ -97,11 +97,35 @@ def _access_set(node, r, nx, ny):
     return s
 
 
-def _bfs(sources, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to=None):
-    """多源 BFS：从 sources（节点集合，可在任一层起步）到任一 goal 节点（树）。返回状态路径或 None。"""
+def _bfs(sources, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to=None,
+         stats=None, centers=None, astar=False):
+    """多源搜索：从 sources（节点集合，可在任一层起步）到任一 goal 节点（树）。返回状态路径或 None。
+
+    🔴🔴 两种模式，**默认 BFS 保历史口径**（E38b/c/d 的数是 BFS 冻结的）：
+    - `astar=False`（默认）：普通 BFS（FIFO）。小网格足用，且与既有档逐位可比。
+    - `astar=True`：A 星（FIFO 换成按 `g+h` 的优先队列），`h`=到**本网任一终端**的 Manhattan
+      距离。注意这是**启发式**、非严格 admissible（最近终端可能还没连上）⇒ 不保证最短路径，
+      但保证连通；金标「线长 ≥ MST」对任何路径成立，不受影响。
+
+    🔴🔴 E38e 实证教训（为什么必须能换 A 星）：BFS 找距离 d 的点要展开 ~O(d²·L) 状态，
+    网格放大 K 倍后展开量 ~K² 倍 ⇒ **同一 `max_expand` 预算下大网格必然截断**。实测 K=2
+    （388×391×4）用 `max_expand=120000` 时失败 **997 网全部是截断**（与 stats 计数一致），
+    布通率 26.6% < K=1 的 38.7% **纯属测量假象**，跟密度无关。
+
+    `stats`（可选 dict）：累加 `truncated`（命中 `max_expand`）与 `expanded`（总扩展数）。
+    **必须区分「真无路」与「被预算截断」**，否则大网格上的失败数会被误读成「不可布通」。
+    """
+    import heapq
+
     L = len(kinds)
     if cell_block_up_to is None:
         cell_block_up_to = L          # 默认：所有层都被单元中心阻断（E38b 原行为）
+    cen = list(centers) if centers else None
+
+    def h(i, j):
+        if not cen:
+            return 0
+        return min(abs(i - a) + abs(j - b) for (a, b) in cen)
 
     def passable(i, j, l):
         if i < 0 or i >= nx or j < 0 or j >= ny:
@@ -115,9 +139,84 @@ def _bfs(sources, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_u
             return False
         return True
 
+    def nbrs_of(st):
+        i, j, l = st
+        out = []
+        if kinds[l][0] == "H":
+            out.append((i - 1, j, l))
+            out.append((i + 1, j, l))
+        else:
+            out.append((i, j - 1, l))
+            out.append((i, j + 1, l))
+        if l - 1 >= 0:
+            out.append((i, j, l - 1))
+        if l + 1 < L:
+            out.append((i, j, l + 1))
+        return out
+
+    def unwind(parent, st):
+        path = []
+        cur = st
+        while cur is not None:
+            path.append(cur)
+            cur = parent[cur]
+        path.reverse()
+        return path
+
+    def done(expanded):
+        if stats is not None:
+            stats["expanded"] = stats.get("expanded", 0) + expanded
+
+    def trunc(expanded):
+        done(expanded)
+        if stats is not None:
+            stats["truncated"] = stats.get("truncated", 0) + 1
+        return None
+
     goals = set(goals)
-    dq = deque()
     parent = {}
+
+    if astar:
+        heap = []
+        tie = 0
+        best_g = {}
+        for (si, sj) in sources:
+            for l in range(L):
+                if passable(si, sj, l):
+                    st = (si, sj, l)
+                    if st in best_g:
+                        continue
+                    best_g[st] = 0
+                    parent[st] = None
+                    heap.append((h(si, sj), tie, st))
+                    tie += 1
+        heapq.heapify(heap)
+        expanded = 0
+        while heap:
+            _f, _t, st = heapq.heappop(heap)
+            g = best_g[st]
+            expanded += 1
+            if expanded > max_expand:
+                return trunc(expanded)
+            if st[0:2] in goals and parent.get(st) is not None:
+                done(expanded)
+                return unwind(parent, st)
+            ng = g + 1
+            for ns in nbrs_of(st):
+                if not passable(ns[0], ns[1], ns[2]):
+                    continue
+                old = best_g.get(ns)
+                if old is not None and old <= ng:
+                    continue
+                best_g[ns] = ng
+                parent[ns] = st
+                heapq.heappush(heap, (ng + h(ns[0], ns[1]), tie, ns))
+                tie += 1
+        done(expanded)
+        return None
+
+    from collections import deque as _dq
+    dq = _dq()
     seen = set()
     for (si, sj) in sources:
         for l in range(L):
@@ -133,41 +232,24 @@ def _bfs(sources, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_u
         st = dq.popleft()
         expanded += 1
         if expanded > max_expand:
-            return None
-        i, j, l = st
-        if (i, j) in goals and parent.get(st) is not None:
-            path = []
-            cur = st
-            while cur is not None:
-                path.append(cur)
-                cur = parent[cur]
-            path.reverse()
-            return path
-        nbrs = []
-        if kinds[l][0] == "H":
-            nbrs.append((i - 1, j, l))
-            nbrs.append((i + 1, j, l))
-        else:
-            nbrs.append((i, j - 1, l))
-            nbrs.append((i, j + 1, l))
-        if l - 1 >= 0:
-            nbrs.append((i, j, l - 1))
-        if l + 1 < L:
-            nbrs.append((i, j, l + 1))
-        for (ni, nj, nl) in nbrs:
-            if not passable(ni, nj, nl):
+            return trunc(expanded)
+        if st[0:2] in goals and parent.get(st) is not None:
+            done(expanded)
+            return unwind(parent, st)
+        for ns in nbrs_of(st):
+            if not passable(ns[0], ns[1], ns[2]):
                 continue
-            ns = (ni, nj, nl)
             if ns in seen:
                 continue
             seen.add(ns)
             parent[ns] = st
             dq.append(ns)
+    done(expanded)
     return None
 
 
 def _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to=None,
-               access_radius=0):
+               access_radius=0, stats=None, astar=False):
     terms = sorted(nodes)
     if len(terms) < 2:
         return []
@@ -178,7 +260,8 @@ def _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_t
         if s & tree:
             tree |= s
             continue
-        path = _bfs(s, tree, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to)
+        path = _bfs(s, tree, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to,
+                    stats, terms, astar)
         if path is None:
             return None
         for k in range(len(path) - 1):
@@ -202,12 +285,16 @@ def _key(item):
 
 def route_rr(nl: Netlist, p: PL.Placement, spread: float = 1.0, layers: int = 2,
              rr_rounds: int = 3, sample: int = None, max_expand: int = 40000,
-             cell_block_up_to: int = None, access_radius: int = 0) -> dict:
+             cell_block_up_to: int = None, access_radius: int = 0,
+             astar: bool = False) -> dict:
     """抽象多层网格 + 贪心布线 + 多轮原子 R&R。返回布通率等（不产 GDS）。
 
     `cell_block_up_to`：单元中心只在**前 N 层**阻断（低层=引脚接入），N 以上可跨单元布线
     （=真实「高层金属跨过标准单元」；默认 None ⇒ 所有层阻断 = E38b 原行为）。
     `access_radius`：引脚接入逃逸半径（细层 M1/M2 把引脚接到半径 r 内粗网格点；默认 0=无逃逸）。
+    `astar`：搜索器（默认 False=BFS，与 E38b/c/d 冻结口径一致；True=A 星，仅大网格摊开研究用）。
+    返回额外含 `n_truncated`（被 `max_expand` 截断的网数，>0 时布通率只是**下界**）与
+    `expanded`（总搜索扩展数，用于成本模型）。
     """
     nx, ny = _dims(p, spread)
     kinds = make_layers(layers)
@@ -230,6 +317,7 @@ def route_rr(nl: Netlist, p: PL.Placement, spread: float = 1.0, layers: int = 2,
     net_occ = defaultdict(set)
     routed = {}
     unrouted = []
+    stats = {"truncated": 0, "expanded": 0}
 
     def commit(net, edges):
         for (a, b) in edges:
@@ -252,11 +340,18 @@ def route_rr(nl: Netlist, p: PL.Placement, spread: float = 1.0, layers: int = 2,
 
     def try_route(net, nodes):
         return _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand,
-                          cell_block_up_to, access_radius)
+                          cell_block_up_to, access_radius, stats, astar)
 
     for net, nodes in multi:
+        e0 = stats["expanded"]
         e = try_route(net, nodes)
         if e is None:
+            # 失败模式二分（E38e 诊断用）：扩展数=0 ⇒ 引脚接入点全被占（压死）；
+            # 否则是"搜完了确实没路" ⇒ 已布金属形成闭合墙把网格切断（墙效应）。
+            if stats["expanded"] == e0:
+                stats["fail_src_blocked"] = stats.get("fail_src_blocked", 0) + 1
+            else:
+                stats["fail_walled"] = stats.get("fail_walled", 0) + 1
             unrouted.append((net, nodes))
         else:
             commit(net, e)
@@ -315,6 +410,11 @@ def route_rr(nl: Netlist, p: PL.Placement, spread: float = 1.0, layers: int = 2,
         "n_nets": len(multi), "n_total_nets": n_total,
         "sampled": bool(sample is not None and n_total > sample),
         "n_routed": n_routed,
+        "n_truncated": stats["truncated"],
+        "expanded": stats["expanded"],
+        "capacity_nodes": nx * ny * L,
+        "fail_source_blocked": stats.get("fail_src_blocked", 0),
+        "fail_walled": stats.get("fail_walled", 0),
         "routability": (n_routed / len(multi)) if multi else 1.0,
         "routed_nets": list(routed.keys()),
         "unrouted_nets": [net for net, _ in unrouted],

@@ -98,7 +98,7 @@ def _access_set(node, r, nx, ny):
 
 
 def _bfs(sources, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to=None,
-         stats=None, centers=None, astar=False):
+         stats=None, centers=None, astar=False, frontier=None, reached=None):
     """多源搜索：从 sources（节点集合，可在任一层起步）到任一 goal 节点（树）。返回状态路径或 None。
 
     🔴🔴 两种模式，**默认 BFS 保历史口径**（E38b/c/d 的数是 BFS 冻结的）：
@@ -114,6 +114,13 @@ def _bfs(sources, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_u
 
     `stats`（可选 dict）：累加 `truncated`（命中 `max_expand`）与 `expanded`（总扩展数）。
     **必须区分「真无路」与「被预算截断」**，否则大网格上的失败数会被误读成「不可布通」。
+
+    🔴 E38f `reached`（可选 set）：搜索**失败**时导出**可达状态集**——用于把「口袋界面」定位到
+    具体格子（隧道式破墙只撕界面那几个网，而不是把一路占用者全撕掉）。
+    🔴 E38f `frontier`（可选 dict）：搜索**失败**时，把「被挡住」的邻居按**占用者网名**累加计数
+    ⇒ 得到 **BFS 前沿直方图**。这就是「墙」的直接证据：某个网在失败前沿上出现几百次，说明它的
+    走线正是把该网围死的那面墙（比「包围盒内占用最多」这个代理判据准得多）。仅计数
+    **被其他网金属占用**的邻居（终端阻断与网格边界属不可破，不计）；同一节点去重。
     """
     import heapq
 
@@ -173,6 +180,22 @@ def _bfs(sources, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_u
             stats["truncated"] = stats.get("truncated", 0) + 1
         return None
 
+    blk_seen = set() if frontier is not None else None
+
+    def note_blocked(ns, net):
+        """把「被挡住的邻居」按占用者计数（仅其他网金属；边界/终端阻断不计、同点去重）。"""
+        i, j, l = ns
+        if not (0 <= i < nx and 0 <= j < ny):
+            return
+        t = TERM.get((i, j))
+        if t and net not in t and l < cell_block_up_to:
+            return                       # 终端挡的：不可破（不是墙）
+        o = occ[l].get((i, j))
+        if o is None or o == net or ns in blk_seen:
+            return
+        blk_seen.add(ns)
+        frontier[o] = frontier.get(o, 0) + 1
+
     goals = set(goals)
     parent = {}
 
@@ -204,6 +227,8 @@ def _bfs(sources, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_u
             ng = g + 1
             for ns in nbrs_of(st):
                 if not passable(ns[0], ns[1], ns[2]):
+                    if frontier is not None:
+                        note_blocked(ns, net)
                     continue
                 old = best_g.get(ns)
                 if old is not None and old <= ng:
@@ -213,6 +238,8 @@ def _bfs(sources, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_u
                 heapq.heappush(heap, (ng + h(ns[0], ns[1]), tie, ns))
                 tie += 1
         done(expanded)
+        if reached is not None:
+            reached.update(best_g)
         return None
 
     from collections import deque as _dq
@@ -238,6 +265,8 @@ def _bfs(sources, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_u
             return unwind(parent, st)
         for ns in nbrs_of(st):
             if not passable(ns[0], ns[1], ns[2]):
+                if frontier is not None:
+                    note_blocked(ns, net)
                 continue
             if ns in seen:
                 continue
@@ -245,11 +274,13 @@ def _bfs(sources, goals, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_u
             parent[ns] = st
             dq.append(ns)
     done(expanded)
+    if reached is not None:
+        reached.update(seen)
     return None
 
 
 def _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to=None,
-               access_radius=0, stats=None, astar=False):
+               access_radius=0, stats=None, astar=False, frontier=None, reached=None):
     terms = sorted(nodes)
     if len(terms) < 2:
         return []
@@ -261,7 +292,7 @@ def _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_t
             tree |= s
             continue
         path = _bfs(s, tree, net, nx, ny, kinds, occ, TERM, max_expand, cell_block_up_to,
-                    stats, terms, astar)
+                    stats, terms, astar, frontier, reached)
         if path is None:
             return None
         for k in range(len(path) - 1):
@@ -286,13 +317,21 @@ def _key(item):
 def route_rr(nl: Netlist, p: PL.Placement, spread: float = 1.0, layers: int = 2,
              rr_rounds: int = 3, sample: int = None, max_expand: int = 40000,
              cell_block_up_to: int = None, access_radius: int = 0,
-             astar: bool = False) -> dict:
+             astar: bool = False, wall_rr: int = 0, wall_k: int = 3,
+             wall_mode: str = "frontier") -> dict:
     """抽象多层网格 + 贪心布线 + 多轮原子 R&R。返回布通率等（不产 GDS）。
 
     `cell_block_up_to`：单元中心只在**前 N 层**阻断（低层=引脚接入），N 以上可跨单元布线
     （=真实「高层金属跨过标准单元」；默认 None ⇒ 所有层阻断 = E38b 原行为）。
     `access_radius`：引脚接入逃逸半径（细层 M1/M2 把引脚接到半径 r 内粗网格点；默认 0=无逃逸）。
     `astar`：搜索器（默认 False=BFS，与 E38b/c/d 冻结口径一致；True=A 星，仅大网格摊开研究用）。
+    `wall_rr`/`wall_k`/`wall_mode`：**破墙 R&R**（E38f）——对前 `wall_rr` 个失败网撕 `wall_k` 个网后
+    **先重布失败网、再让被撕的网绕行**，任一环失败即**原子回滚**（绝不丢网）；默认 0=关闭。
+    `wall_mode`：
+    - `"tunnel"`（正解）：先取**可达集**把「口袋界面」定位到具体格子，只撕**界面处 5 格**上的网
+      （隧道口），再重布失败网 + 让被撕网绕行；
+    - `"corridor"`：沿 A→B 全路径撕（实测 cap 会被路径起点的密集走线吃光 ⇒ 120 次 0 成功）；
+    - `"frontier"`：按失败前沿直方图 top-k 撕（**实测 50 次 0 成功**，留作对照）。
     返回额外含 `n_truncated`（被 `max_expand` 截断的网数，>0 时布通率只是**下界**）与
     `expanded`（总搜索扩展数，用于成本模型）。
     """
@@ -338,14 +377,19 @@ def route_rr(nl: Netlist, p: PL.Placement, spread: float = 1.0, layers: int = 2,
             occ[l][(i, j)] = net
             net_occ[net].add((l, i, j))
 
-    def try_route(net, nodes):
+    def try_route(net, nodes, frontier=None, reached=None):
         return _route_net(nodes, net, nx, ny, kinds, occ, TERM, max_expand,
-                          cell_block_up_to, access_radius, stats, astar)
+                          cell_block_up_to, access_radius, stats, astar, frontier, reached)
+
+    fail_frontier = {} if wall_rr > 0 else None
 
     for net, nodes in multi:
         e0 = stats["expanded"]
-        e = try_route(net, nodes)
+        fr = {} if fail_frontier is not None else None
+        e = try_route(net, nodes, fr)
         if e is None:
+            if fail_frontier is not None:
+                fail_frontier[net] = fr
             # 失败模式二分（E38e 诊断用）：扩展数=0 ⇒ 引脚接入点全被占（压死）；
             # 否则是"搜完了确实没路" ⇒ 已布金属形成闭合墙把网格切断（墙效应）。
             if stats["expanded"] == e0:
@@ -399,6 +443,110 @@ def route_rr(nl: Netlist, p: PL.Placement, spread: float = 1.0, layers: int = 2,
         if not progress:
             break
 
+    # ------------------------------------------------------------------
+    # 破墙 R&R（E38f）：**用失败前沿直方图定位真正的墙**（不是包围盒占用计数那个代理判据），
+    # 撕掉墙上前 k 个网 ⇒ 先重布失败网（占住通道）、再让被撕的网绕行；任一环失败即原子回滚。
+    # 保证：无论成败，**已布网数只增不减、绝不丢网**（金标可由构造保证）。
+    # ------------------------------------------------------------------
+    wall_stats = {"attempts": 0, "success": 0, "ripped": 0,
+                  "r_net_fail": 0, "r_victim_fail": 0, "no_victim": 0, "probe_ok": 0}
+    if wall_rr > 0 and wall_k > 0 and fail_frontier:
+        def uncommit(net):
+            for (l, i, j) in list(net_occ[net]):
+                if occ[l].get((i, j)) == net:
+                    del occ[l][(i, j)]
+            net_occ[net].clear()
+            routed.pop(net, None)
+
+        still = []
+        for net, nodes in unrouted:
+            if wall_stats["attempts"] >= wall_rr:
+                still.append((net, nodes))
+                continue
+            if wall_mode == "tunnel":
+                # 先拿到「可达集」⇒ 把界面定位到具体格子，只撕界面那几条网（隧道口 5 格）
+                reached = set()
+                probe = try_route(net, nodes, None, reached)
+                if probe is not None:                       # 占用变了之后它已经能布
+                    commit(net, probe)
+                    routed[net] = probe
+                    wall_stats["success"] += 1
+                    continue
+                pts = sorted(term[net])
+                far = max(((a, b) for a in pts for b in pts if a != b),
+                          key=lambda ab: abs(ab[0][0] - ab[1][0]) + abs(ab[0][1] - ab[1][1]),
+                          default=None)
+                victims = []
+                if far is not None and reached:
+                    path = _l_path(far[0], far[1])
+                    idx = None
+                    for k, cell in enumerate(path):         # 第一个「所有层都不可达」的格子=界面
+                        if not any((cell[0], cell[1], l) in reached for l in range(L)):
+                            idx = k
+                            break
+                    if idx is not None:
+                        seen_v = set()
+                        for (i, j) in path[max(0, idx - 2): idx + 3]:
+                            for l in range(L):
+                                o = occ[l].get((i, j))
+                                if o and o != net and o not in seen_v and o in routed:
+                                    seen_v.add(o)
+                                    victims.append(o)
+            elif wall_mode == "corridor":
+                pts = sorted(term[net])
+                far = max(((a, b) for a in pts for b in pts if a != b),
+                          key=lambda ab: abs(ab[0][0] - ab[1][0]) + abs(ab[0][1] - ab[1][1]),
+                          default=None)
+                victims = [] if far is None else [
+                    v for v in corridor_victims(far[0], far[1], occ, L, wall_k)
+                    if v != net and v in routed]
+            else:
+                fr = fail_frontier.get(net) or {}
+                cands = sorted(((c, n) for n, c in fr.items() if n != net and n in routed),
+                               reverse=True)
+                victims = [n for (_c, n) in cands[:wall_k]]
+            if not victims:
+                still.append((net, nodes))
+                continue
+            wall_stats["attempts"] += 1
+            saved = []
+            for v in victims:
+                occ_saved = rip(v)
+                saved.append((v, routed.pop(v), occ_saved))
+            ne = try_route(net, nodes)
+            if ne is None:
+                wall_stats["r_net_fail"] += 1
+                for (v, ve, occ_saved) in saved:        # 原子回滚（原样还原）
+                    restore(v, occ_saved)
+                    routed[v] = ve
+                still.append((net, nodes))
+                continue
+            commit(net, ne)
+            routed[net] = ne
+            redone = []
+            ok_all = True
+            for (v, _ve, _occ) in saved:
+                ev = try_route(v, term[v])
+                if ev is None:
+                    ok_all = False
+                    break
+                commit(v, ev)
+                routed[v] = ev
+                redone.append(v)
+            if ok_all:
+                wall_stats["success"] += 1
+                wall_stats["ripped"] += len(victims)
+                continue
+            wall_stats["r_victim_fail"] += 1
+            uncommit(net)                               # 回滚：撤新布 + 恢复全部被撕网
+            for u in redone:
+                uncommit(u)
+            for (v, ve, occ_saved) in saved:
+                restore(v, occ_saved)
+                routed[v] = ve
+            still.append((net, nodes))
+        unrouted = still
+
     n_routed = len(routed)
     wl = 0.0
     mst = 0.0
@@ -414,12 +562,50 @@ def route_rr(nl: Netlist, p: PL.Placement, spread: float = 1.0, layers: int = 2,
         "expanded": stats["expanded"],
         "capacity_nodes": nx * ny * L,
         "fail_source_blocked": stats.get("fail_src_blocked", 0),
+        "fail_frontier_top": {n: [(c, m) for (c, m) in
+                                  sorted(((c, m) for m, c in fr.items() if m != n), reverse=True)[:3]]
+                              for n, fr in list((fail_frontier or {}).items())[:40]},
+        "fail_frontier_span": {n: len(fr) for n, fr in list((fail_frontier or {}).items())[:40]},
+        "wall_rr_attempts": wall_stats["attempts"],
+        "wall_rr_success": wall_stats["success"],
+        "wall_rr_ripped": wall_stats["ripped"],
+        "wall_rr_r_net_fail": wall_stats["r_net_fail"],
+        "wall_rr_r_victim_fail": wall_stats["r_victim_fail"],
         "fail_walled": stats.get("fail_walled", 0),
         "routability": (n_routed / len(multi)) if multi else 1.0,
         "routed_nets": list(routed.keys()),
         "unrouted_nets": [net for net, _ in unrouted],
         "wirelength_um": wl, "mst_um": mst,
     }
+
+
+def _l_path(pa, pb):
+    """pa→pb 的 L 型格点序列（先横后竖，含两端）。"""
+    ax, ay = pa
+    bx, by = pb
+    pts = [(x, ay) for x in range(min(ax, bx), max(ax, bx) + 1)]
+    pts += [(bx, y) for y in range(min(ay, by), max(ay, by) + 1)]
+    return pts
+
+
+def corridor_victims(pa, pb, occ, L, cap):
+    """**隧道选网**（E38f）：沿 pa→pb 的 L 型直线，收集被占节点上的占用者（按层去重、去重网）。
+
+    为什么不是「前沿 top-k」：实测失败前沿上被挡的 ~400 个节点来自 **~340 个不同网**
+    （每网只 1~2 个节点）⇒ 口袋是由几百根线首尾缝成的，撕 top-k 等于捅针眼（50 次尝试 0 成功）。
+    而 pa、pb 落在不同口袋 ⇒ 沿直线**必然穿过那道界面**，把一路占用者全撕掉才能真的开一条隧道。
+    """
+    out, seen = [], set()
+    for (i, j) in _l_path(pa, pb):
+        for l in range(L):
+            o = occ[l].get((i, j))
+            if o is None or o in seen:
+                continue
+            seen.add(o)
+            out.append(o)
+            if len(out) >= cap:
+                return out
+    return out
 
 
 def _mst_len(nodes):

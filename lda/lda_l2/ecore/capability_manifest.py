@@ -640,6 +640,20 @@ ECORE_CAPABILITY_MANIFEST = [
                     "UTIL_DRIFT_MAX", "REAL_AREA_PER_TR", "PITCH_REAL", "DSPREAD_DISCLOSURE"],
         "introduced_by": "D-229 (E38e)", "guard": "run_ecore_e38e_smoke.py",
     },
+    {
+        "capability": "**E38f 破墙路由器（D-230 · 诚实负结果）**：三种选网策略（`frontier` 失败前沿 top-k / "
+                      "`corridor` 沿 A→B 全路径 / `tunnel` 用可达集把「口袋界面」定位到格子）+ "
+                      "**原子多阻塞者 R&R**（先重布失败网、再让被撕网绕行，任一环失败即原样回滚）+ "
+                      "回滚原因分离计数（`r_net_fail`/`r_victim_fail`）· **金标**：原子不丢网（只增不减 + "
+                      "已布集合 ⊆ 贪心集）/ 回滚恒等 / 对比零截断 / 机制成立 / 开关无副作用 / 对照命中率 ≤10% · "
+                      "🔴 实测 K=1：greedy 38.70% → tunnel 38.70%（**Δ+0，40 次尝试：15 次失败网仍不通、"
+                      "25 次隧道已开但牺牲网无法重布 ⇒ 回滚**）⇒ **破墙是零和的**（前沿由 ~340 个网缝成）；"
+                      "杠杆只剩加面积(E38e ×3→94.26%) 或全局协商拥塞 · 抽象容量研究不产 GDS",
+        "module": "lda_l2.ecore.dwallrr",
+        "symbols": ["wall_break", "wall_self_check", "E38E_K1_ROUTABILITY", "FRONTIER_HIT_MAX",
+                    "PITCH_REAL", "DWALLRR_DISCLOSURE"],
+        "introduced_by": "D-230 (E38f)", "guard": "run_ecore_e38f_smoke.py",
+    },
 ]
 
 
@@ -682,7 +696,7 @@ def manifest_check() -> dict:
 
 
 ECORE_CAPABILITY_DISCLOSURE = {
-    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19 · E20 扩面至 e1~e20 · E21 扩面至 e1~e21 · E22 扩面至 e1~e22 · E23 扩面至 e1~e23 · E24 扩面至 e1~e24 · E25 扩面至 e1~e25 · E26 扩面至 e1~e26 · E27 扩面至 e1~e27 · E28 扩面至 e1~e28 · E29 扩面至 e1~e29 · E30 扩面至 e1~e30 · E31 扩面至 e1~e31 · E32 扩面至 e1~e32 · E33 扩面至 e1~e33 · E35 扩面至 e1~e35 · E36 扩面至 e1~e36（D-220~D-223：detail route / 真实单元几何 / IP DRC / IP LVS）· E37 扩面至 e1~e37（D-224：DRC/LVS 校验器硬化 fast≡native + track 分配/拥堵负结果）· E38a 扩面至 e1~e38（D-225：网格迷宫路由器 + 可布通性诚实布通率）· E38b 扩面至 e1~e38（D-226：多轮 R&R + 密度曲线 + 多层对比）· E38c 扩面至 e1~e38（D-227：真实标准单元面积标定）· E38d 扩面至 e1~e38（D-228：细引脚接入逃逸 + 现实线距联调）· E38e 扩面至 e1~e38（D-229：摊开 ×K 可测边界 + 失败模式诊断，修正 E38d 根因为墙效应）",
+    "route": "电子计算征程 E5 · 平台能力硬化（ecore 能力清单 + 常驻守护门禁）· E10 收官扩面至 e1~e10 · E11-c 扩面至 e1~e11 · E12 扩面至 e1~e12 · E18 扩面至 e1~e18 · E19 扩面至 e1~e19 · E20 扩面至 e1~e20 · E21 扩面至 e1~e21 · E22 扩面至 e1~e22 · E23 扩面至 e1~e23 · E24 扩面至 e1~e24 · E25 扩面至 e1~e25 · E26 扩面至 e1~e26 · E27 扩面至 e1~e27 · E28 扩面至 e1~e28 · E29 扩面至 e1~e29 · E30 扩面至 e1~e30 · E31 扩面至 e1~e31 · E32 扩面至 e1~e32 · E33 扩面至 e1~e33 · E35 扩面至 e1~e35 · E36 扩面至 e1~e36（D-220~D-223：detail route / 真实单元几何 / IP DRC / IP LVS）· E37 扩面至 e1~e37（D-224：DRC/LVS 校验器硬化 fast≡native + track 分配/拥堵负结果）· E38a 扩面至 e1~e38（D-225：网格迷宫路由器 + 可布通性诚实布通率）· E38b 扩面至 e1~e38（D-226：多轮 R&R + 密度曲线 + 多层对比）· E38c 扩面至 e1~e38（D-227：真实标准单元面积标定）· E38d 扩面至 e1~e38（D-228：细引脚接入逃逸 + 现实线距联调）· E38e 扩面至 e1~e38（D-229：摊开 ×K 可测边界 + 失败模式诊断，修正 E38d 根因为墙效应）· E38f 扩面至 e1~e38（D-230：破墙路由器三策略 + 原子多阻塞者 R&R，实测零和）",
     "e5_scope": "把 E1~E9 逼出的平台能力固化为机器可读清单（单向真源）+ 常驻门禁（正向完备 + 反向完备 + 披露一致 + 诚实边界）",
     "hardening_semantics": "能力面必须被门禁守着：任一模模块/符号缺失、隐身模块出现、或注入 fabricated 指标 ⇒ 门禁必红",
     "redline": "红线 = 分层口径（器件级 T1 内核已解锁 · T2 工艺真值/工艺角/流片永久锁）；"

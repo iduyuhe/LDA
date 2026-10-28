@@ -7,13 +7,13 @@
     "head（每次提交都变 ⇒ 非确定量，故意不入台账）"
   ],
   "frozen_snapshot": {
-    "version": "0.9.339",
+    "version": "0.9.340",
     "ledger_total": 541,
     "ledger_strict": 519,
     "ledger_degraded": 3,
     "ledger_stub": 19,
     "independence_rate": 0.959335,
-    "ci_core": 374,
+    "ci_core": 375,
     "endpoints": 159,
     "case_panels_min": 19,
     "max_anchor": "B525",

@@ -1511,6 +1511,7 @@ CORE_SMOKES: List[str] = [
     "run_ecore_e38d_smoke.py",
     "run_ecore_e38e_smoke.py",
     "run_ecore_e38f_smoke.py",
+    "run_ecore_e38g_smoke.py",
     "run_webui_entry_smoke.py",
     # 🔴 v0.9.213 光子计算 SoC 案例卡（/api/soc_demo · #sec-soc）跨源一致性 + 前端取值路径门禁：
     #   卡内 WDM/TDM 杠杆常量 ≡ lda_l2 真源（soc_wdm/soc_tdm）逐位同源 + 反向探针（改真源必红）；
@@ -3235,6 +3236,9 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # E38f 破墙 R&R 门禁（D-230）· 实测 ~263s（贪心 ~77s + tunnel 40 次 ~90s + frontier 12 次 ~80s + 符号探针），
     #   预算 900s 留 ~3.42×。corridor 策略的 120 次离线测量（0 命中）不进表。
     "run_ecore_e38f_smoke.py": 900.0,
+    # E38g 全局协商 PathFinder 门禁（D-231）· 实测 ~60s（符号确定性/记账/控制组 ~30s + 真实采样协商 ~28s），
+    # 留余量。只复算**机制**，全量 PF vs 贪心对照为离线测量（存 PF_K*_OFFLINE，断言在门禁内）。
+    "run_ecore_e38g_smoke.py": 200.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     # 🔴 v0.9.186：新增「标准 JSON 出口」门禁（`run_webui_json_hard_smoke.py`,
     #   13 判据 + 4 道突变探针；因浏览器 JSON.parse 崩于 `-Infinity` 而立）。

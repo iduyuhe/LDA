@@ -654,6 +654,23 @@ ECORE_CAPABILITY_MANIFEST = [
                     "PITCH_REAL", "DWALLRR_DISCLOSURE"],
         "introduced_by": "D-230 (E38f)", "guard": "run_ecore_e38f_smoke.py",
     },
+    {
+        "capability": "**E38g 全局协商拥塞路由 PathFinder（D-231 · 诚实负结果）**：每轮**全量重布全部网** + "
+                      "present-cost 协商（被多网占的节点代价抬高、不累积 runaway）⇒ 全局协商绕开热点；"
+                      "松弛布线(允许临时重叠、代价避让) + A*(Manhattan 启发式 admissible) 控展开量；"
+                      "冲突判定=本网全部节点 occ_count==1（否则=与他网同层短路=over-congested）· "
+                      "🔴 实测 **否证了「全局协商能破墙」的猜想**：本抽象网格每(格,层)只有一条线、无平行走线"
+                      "资源 ⇒ 温和代价下网宁可重叠也不绕远（死锁）、陡峭代价下绕远又撞进别处拥塞（乱窜、"
+                      "overflow 反升），两种 regime 都**不收敛到更优解**；根因是 K=1 下贪心已有 833 个网"
+                      "根本不存在无冲突路径（结构性不可布）。**结论：墙效应是结构性的，PathFinder（同局部"
+                      "破墙）救不了；E38 调查确定性收尾，唯一有效杠杆=加面积/层(E38e ×3→94.26%)** · "
+                      "机制门禁(记账/确定性/控制组/协商改善初值)全绿 · 抽象容量研究不产 GDS",
+        "module": "lda_l2.ecore.dpathfinder",
+        "symbols": ["route_pathfinder", "pathfinder_real", "pathfinder_self_check",
+                    "PF_K1_OFFLINE", "PF_K2_OFFLINE", "PF_K3_OFFLINE", "DPATHFINDER_DISCLOSURE",
+                    "PITCH_REAL", "REAL_AREA_PER_TR", "E38D_PUBLISHED_COMBINED"],
+        "introduced_by": "D-231 (E38g)", "guard": "run_ecore_e38g_smoke.py",
+    },
 ]
 
 

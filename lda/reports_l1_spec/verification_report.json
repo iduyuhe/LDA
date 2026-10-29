@@ -14,7 +14,29 @@
     "verified": 0,
     "self_consistent_stub_count": 3,
     "independent_candidate_count": 0,
-    "candidate_class_totals": null
+    "candidate_class_totals": null,
+    "independence_evidence": {
+      "dist": {
+        "RESIDUAL_NONZERO": 0,
+        "PERTURBATION_RESPONSE": 0,
+        "NON_SCALAR": 0,
+        "PERTURBATION_UNVERIFIED": 0,
+        "STUB": 0
+      },
+      "strict_dist": {
+        "RESIDUAL_NONZERO": 0,
+        "PERTURBATION_RESPONSE": 0,
+        "NON_SCALAR": 0,
+        "PERTURBATION_UNVERIFIED": 0,
+        "STUB": 0
+      },
+      "strict_total": 0,
+      "verified_total": 3,
+      "degraded_total": 0,
+      "stub_total": 0,
+      "missing_evidence": 3,
+      "conserved": false
+    }
   },
   "results": [
     {
@@ -28,7 +50,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": null,
-      "candidate_class": null
+      "candidate_class": null,
+      "independence_evidence": null
     },
     {
       "id": "B2",
@@ -41,7 +64,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": null,
-      "candidate_class": null
+      "candidate_class": null,
+      "independence_evidence": null
     },
     {
       "id": "B4",
@@ -54,7 +78,8 @@
       "passed": true,
       "note": "确定性物理定律/解析解",
       "independent": null,
-      "candidate_class": null
+      "candidate_class": null,
+      "independence_evidence": null
     }
   ]
 }

@@ -179,7 +179,7 @@ def main() -> int:
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         from lda_harness.benchmarks import BENCHMARK_DEFS as D
         n = len(D)
-        check("Z1 零增量：账本锚数 = %d（本门禁只统一来源，不加锚）" % n, n == 541)
+        check("Z1 零增量：账本锚数 = %d（本门禁只统一来源，不加锚）" % n, n == 546)
     except Exception as e:                                   # noqa: BLE001
         check("Z1 零增量：账本锚数不变", False, "不可读：%s" % e)
 

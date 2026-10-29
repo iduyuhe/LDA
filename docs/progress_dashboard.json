@@ -4,7 +4,7 @@
   "anchors": {
     "by_oracle": {
       "analytical": 249,
-      "closed_form": 217,
+      "closed_form": 222,
       "design-rule": 4,
       "deterministic": 3,
       "empirical-measurement": 10,
@@ -22,11 +22,11 @@
     "by_tier": {
       "degraded": 3,
       "self_certified": 19,
-      "strict_independent": 519
+      "strict_independent": 524
     },
-    "closed_like": 466,
-    "closed_like_pct": 86.1,
-    "total": 541
+    "closed_like": 471,
+    "closed_like_pct": 86.3,
+    "total": 546
   },
   "api": {
     "case_panels": 19,
@@ -34,12 +34,12 @@
     "endpoints": 159,
     "needs_login": 60
   },
-  "core_gates": 350,
+  "core_gates": 376,
   "coverage": {
-    "anchors_total": 541,
+    "anchors_total": 546,
     "blind_by_band": {
-      "B1–B99": 1,
-      "E（实证）": 6,
+      "B1–B99": 2,
+      "E（实证）": 5,
       "S（系统层）": 10
     },
     "blind_without_any_coverage": 0,
@@ -50,17 +50,17 @@
       "NON_SCALAR": 0,
       "PERTURBATION_RESPONSE": 14,
       "PERTURBATION_UNVERIFIED": 0,
-      "RESIDUAL_NONZERO": 508,
+      "RESIDUAL_NONZERO": 513,
       "STUB": 19
     },
     "strict_dist": {
       "NON_SCALAR": 0,
       "PERTURBATION_RESPONSE": 14,
       "PERTURBATION_UNVERIFIED": 0,
-      "RESIDUAL_NONZERO": 505,
+      "RESIDUAL_NONZERO": 510,
       "STUB": 0
     },
-    "strict_total": 519
+    "strict_total": 524
   },
   "gaps": {
     "boundary": 46,

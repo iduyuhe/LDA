@@ -172,7 +172,18 @@ def eol_lf(data: bytes) -> bytes:
 SCRUB_TS_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
 # tmpdir 名只允许出现在「Temp\<dir>\」路径上下文里（前后都有分隔符），
 # 防止误伤 `lda_harness` / `lda_webui` 等普通词。
-SCRUB_TMP_RE = re.compile(r"(?<=Temp\\)lda_[A-Za-z0-9_]+(?=\\)")
+# 🔴 v0.9.342（A2 连带）：原正则 `(?<=Temp\\)lda_...` 假设 mkdtemp 目录**直接**
+#    位于 `Temp\` 之下；但 `tempfile.gettempdir()` 可能返回**多级**路径
+#    （如 `...\Temp\workbuddy-update-x64-workbuddy\lda_d98r_xxx`）⇒ 原正则漏洗
+#    ⇒ 报告内嵌随机路径 ⇒ 同一台机器两次生成字节不同（⑬ 恒红），且把沙箱路径
+#    写进受跟踪报告。改为「Temp/tmp 目录后允许任意层中间目录」，两个约束不变：
+#    ① 必须以 `lda_` 开头 ② 后面必须紧跟路径分隔符（`lda_harness/golden.py` 这类
+#    普通词仍够不着）。lookbehind 用固定宽度分支拼接（`Temp\`/`Temp/`/`tmp\`/`tmp/`），
+#    保持零宽 ⇒ 不会吞掉 `Temp\` 前缀，哨兵位置与旧版一致（幂等）。
+SCRUB_TMP_RE = re.compile(
+    r"(?:(?<=Temp\\)|(?<=Temp/)|(?<=tmp\\)|(?<=tmp/))"
+    r"(?:[^\\/\r\n\"']+[\\/])*"
+    r"lda_[A-Za-z0-9_]+(?=[\\/])")
 SCRUB_TS_SENTINEL = "<ts>"
 SCRUB_TMP_SENTINEL = "<tmpdir>"
 

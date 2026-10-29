@@ -183,7 +183,7 @@ def main() -> int:
         from lda_harness.benchmarks import BENCHMARK_DEFS as D
         n_anchors = len(D)
         check("Z1 零增量：账本锚数 = %d（与 v0.9.270 基线一致，本门禁不加锚）" % n_anchors,
-              n_anchors == 541)
+              n_anchors == 546)
     except Exception as e:                                   # noqa: BLE001
         check("Z1 零增量：账本锚数不变", False, "不可读：%s" % e)
 

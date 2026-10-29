@@ -1,12 +1,12 @@
 {
-  "strict_total": 519,
-  "strict_attacked": 519,
+  "strict_total": 524,
+  "strict_attacked": 524,
   "strict_coverage": 1.0,
-  "attacks_total": 5219,
+  "attacks_total": 5300,
   "genuine_div": 315,
-  "cand_limitation": 70,
+  "cand_limitation": 60,
   "golden_unstable": 88,
-  "divergence_rate": 0.0772178578,
+  "divergence_rate": 0.0760377358,
   "findings": [
     {
       "bid": "B1",
@@ -383,77 +383,6 @@
           "cand": 295.207053,
           "err": 0.0657473165,
           "tol": 0.01
-        }
-      ]
-    },
-    {
-      "bid": "B2",
-      "as_strict": true,
-      "n_attacks": 21,
-      "genuine_div": 7,
-      "cand_limitation": 10,
-      "golden_unstable": 0,
-      "samples": [
-        {
-          "params": {
-            "w_core": 0.35,
-            "h_core": 0.22,
-            "n_si": 3.48,
-            "n_clad": 1.44,
-            "wl": 1.55
-          },
-          "issue": "genuine_divergence",
-          "oracle": 2.51476938,
-          "cand": 2.64913704,
-          "err": 0.134367663,
-          "tol": 0.05
-        },
-        {
-          "params": {
-            "w_core": 0.425,
-            "h_core": 0.22,
-            "n_si": 3.48,
-            "n_clad": 1.44,
-            "wl": 1.55
-          },
-          "issue": "candidate_limitation",
-          "diag": "执行异常：RuntimeError"
-        },
-        {
-          "params": {
-            "w_core": 0.65,
-            "h_core": 0.22,
-            "n_si": 3.48,
-            "n_clad": 1.44,
-            "wl": 1.55
-          },
-          "issue": "candidate_limitation",
-          "diag": "执行异常：RuntimeError"
-        },
-        {
-          "params": {
-            "w_core": 0.5,
-            "h_core": 0.154,
-            "n_si": 3.48,
-            "n_clad": 1.44,
-            "wl": 1.55
-          },
-          "issue": "candidate_limitation",
-          "diag": "执行异常：RuntimeError"
-        },
-        {
-          "params": {
-            "w_core": 0.5,
-            "h_core": 0.187,
-            "n_si": 3.48,
-            "n_clad": 1.44,
-            "wl": 1.55
-          },
-          "issue": "genuine_divergence",
-          "oracle": 2.53311305,
-          "cand": 2.65566311,
-          "err": 0.122550061,
-          "tol": 0.05
         }
       ]
     },
@@ -3492,6 +3421,86 @@
           "cand": 0.0795952767,
           "err": 1.25769138e-06,
           "tol": 3e-09
+        }
+      ]
+    },
+    {
+      "bid": "B526",
+      "as_strict": true,
+      "n_attacks": 21,
+      "genuine_div": 7,
+      "cand_limitation": 0,
+      "golden_unstable": 0,
+      "samples": [
+        {
+          "params": {
+            "Vin": 4.0,
+            "Rs": 0.7,
+            "Rg": 1.0,
+            "N": 8,
+            "k": 4
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.153940294,
+          "cand": 0.145719125,
+          "err": 0.00822116952,
+          "tol": 0.0042553
+        },
+        {
+          "params": {
+            "Vin": 4.0,
+            "Rs": 1.0,
+            "Rg": 1.3,
+            "N": 8,
+            "k": 4
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.132742766,
+          "cand": 0.126928469,
+          "err": 0.00581429711,
+          "tol": 0.0042553
+        },
+        {
+          "params": {
+            "Vin": 4.0,
+            "Rs": 1.0,
+            "Rg": 1.0,
+            "N": 5.6,
+            "k": 4
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.0812324825,
+          "cand": 0.0721434741,
+          "err": 0.0090890084,
+          "tol": 0.0042553
+        },
+        {
+          "params": {
+            "Vin": 4.0,
+            "Rs": 1.0,
+            "Rg": 1.0,
+            "N": 8,
+            "k": 2.8
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.27021519,
+          "cand": 0.579180003,
+          "err": 0.308964813,
+          "tol": 0.0042553
+        },
+        {
+          "params": {
+            "Vin": 4.0,
+            "Rs": 1.0,
+            "Rg": 1.0,
+            "N": 8,
+            "k": 3.4
+          },
+          "issue": "genuine_divergence",
+          "oracle": 0.151663865,
+          "cand": 0.219681959,
+          "err": 0.068018094,
+          "tol": 0.0042553
         }
       ]
     },

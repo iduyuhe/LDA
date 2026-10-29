@@ -407,6 +407,13 @@ DEAD_BASELINE: Dict[str, str] = {
     "lda/lda_harness/outward_claim.py::scan_by_category": "PUBLIC_API_NO_CONSUMER",
     "lda/lda_harness/outward_claim.py::forbidden_terms": "PUBLIC_API_NO_CONSUMER",
     "lda/lda_harness/signing_schema.py::honest_note_of": "PUBLIC_API_NO_CONSUMER",
+    # ── lda/lda_l2/ecore/ddetail.py ──
+    # 🔴 v0.9.342（A2 连带 · R1 当场抓出「新增 1」）：本函数由 E37（v0.9.333）引入，
+    #    体是 **一行直通包装** `return detail_route(nl, p)`，docstring 称「自检金标③
+    #    baseline 对照用」，但**全仓零引用**（含门禁的 `getattr(MOD, name)` 形态）。
+    #    复核结论：属「公开入口 / 目前无消费者」⇒ 如实登记进基线（不擅自删别人 API）；
+    #    若日后确认无用，删函数时**同时删本行**（门禁会提醒）。
+    "lda/lda_l2/ecore/ddetail.py::DD_detail_for_compare": "PUBLIC_API_NO_CONSUMER",
 }
 
 

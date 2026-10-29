@@ -671,6 +671,24 @@ ECORE_CAPABILITY_MANIFEST = [
                     "PITCH_REAL", "REAL_AREA_PER_TR", "E38D_PUBLISHED_COMBINED"],
         "introduced_by": "D-231 (E38g)", "guard": "run_ecore_e38g_smoke.py",
     },
+    {
+        "capability": "**E39 多 track 通道路由模型（D-232 · A2：把 E38g 负结果消化成可机核几何律）**："
+                      "把「单 track 网格零 slack」抽成一维**通道密度**问题 —— `channel_density` 由"
+                      "**三法互证**（`brute_max_overlap` O(n·span) / `sweep_density` 事件扫描线 / "
+                      "`diff_array_density` 坐标压缩差分数组）给出区间最大重叠 d；`left_edge_tracks` "
+                      "左边界算法按 `l` 升序优先复用 `r_prev ≤ l` 的轨（区间图完美 ⇒ 色数 == 最大团 == d）；"
+                      "`multitrack_route(T)` 判据 **可布通 ⇔ T ≥ d**，布通率 = min(1, T/d)。"
+                      "🔴 **消化 E38g**：T=1 且 d=6 ⇒ 布通率 0.167（「单 track 布不通」精确复现）；T=d ⇒ 1.0"
+                      "（多 track 解锁）⇒ 结构性缺口不再是玄学，被刻画为 **T 与 d 的比较**。"
+                      "🔴 **诚实边界**：一维通道模型，**不复现** E38g 的 2D 墙效应（只抽出可精确判定的子结构）；"
+                      "密度/轨道数为整数精确量（`resid≡0`）⇒ 以**门禁几何律**形态落地，**不登记 ledger 锚**"
+                      "（否则撞 zero_resid 棘轮被判自证桩）；抽象容量研究不产 GDS",
+        "module": "lda_l2.ecore.dmtrack",
+        "symbols": ["channel_density", "brute_max_overlap", "sweep_density", "diff_array_density",
+                    "left_edge_tracks", "multitrack_route", "dmtrack_self_check",
+                    "DMTRACK_DISCLOSURE", "E39_CHANNEL_CAPACITY"],
+        "introduced_by": "D-232 (A2/E39)", "guard": "run_ecore_e39_smoke.py",
+    },
 ]
 
 

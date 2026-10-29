@@ -308,11 +308,21 @@ def main() -> int:
     # 反向探针：每条规则各必红，且合规写法必绿（两侧都验）
     # 🔴 N3-b：`claimable_grade` 现在是 R1 的校验对象 ⇒ 探针必须**跟着重算**，
     #    否则"合规化后必绿"会因 claimable_mismatch 误红（反向探针随真值一起反向）。
+    # 🔴 v0.9.342（A1 连带）：ecore 卡的 `evidence` 由 `NONE` → `STRICT`（电子域拿到
+    #    B526–B530 五锚），而 R3「容量无据」**只对 evidence < EMPIRICAL 的卡生效**
+    #    ⇒ 继续拿 ecore 当靶，「容量无据必红」探针恒返 0（判据静默变恒绿，本门禁当场抓到）。
+    #    改为**按证据级别动态选靶**（仍取第一个 < EMPIRICAL 的卡），并显式断言靶子合格：
+    #    一旦全部卡的证据都被抬到 ≥ EMPIRICAL，探针会**报红**而不是空转。
+    _cap_targets = [k for k, v in SS.CASES.items()
+                    if SS.EVIDENCE_RANK.get(v.get("evidence"), -1)
+                    < SS.EVIDENCE_RANK["EMPIRICAL"]]
+    _cap_target = _cap_targets[0] if _cap_targets else None
     _p6 = [
         SS.validate(dict(SS.CASES["ecore"], declared_grade="FOUNDRY_SIGNOFF",
                          attestation="")),                       # 自封必红
-        SS.validate(dict(SS.CASES["ecore"],
-                         capacity_basis="fabricated_devices")),  # 容量无据必红
+        SS.validate(dict(SS.CASES[_cap_target],
+                         capacity_basis="fabricated_devices"))
+        if _cap_target else [],                                  # 容量无据必红
         SS.validate(dict(SS.CASES["j1"], evidence="STRICT", anchors=())),  # 强证据无锚必红
         # 合规化：deck 换 NDA **且 claimable 重算** ⇒ 必绿
         SS.validate(dict(SS.CASES["soc"], deck="foundry_nda", attestation="NDA-001",
@@ -325,12 +335,13 @@ def main() -> int:
         SS.validate(dict(SS.CASES["soc"], grade="AUDIT_ONLY", declared_grade="AUDIT_ONLY")),
     ]
     check("S6 反向探针：自封／容量无据／强证据无锚／只换deck不重算／grade落回AUDIT_ONLY "
-          "四改必红 ∧ 合规必绿",
+          "四改必红 ∧ 合规必绿（容量靶子须 < EMPIRICAL 且报的正是 capacity_unbacked）",
           bool(_p6[0]) and bool(_p6[1]) and bool(_p6[2]) and not _p6[3]
-          and bool(_p6[4]) and bool(_p6[5]),
-          "自封=%d 容量=%d 无锚=%d 合规=%d 只换deck=%d 旧压扁=%d"
+          and bool(_p6[4]) and bool(_p6[5])
+          and any("capacity_unbacked" in e for e in _p6[1]),
+          "自封=%d 容量=%d 无锚=%d 合规=%d 只换deck=%d 旧压扁=%d 容量靶=%s"
           % (len(_p6[0]), len(_p6[1]), len(_p6[2]), len(_p6[3]),
-             len(_p6[4]), len(_p6[5])))
+             len(_p6[4]), len(_p6[5]), _cap_target))
 
     # S6b：对拍器本身的探针（**两侧都验** —— 不一致必非空、一致必空）
     _p6b = [

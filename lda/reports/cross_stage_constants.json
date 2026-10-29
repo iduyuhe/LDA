@@ -131,7 +131,7 @@
     },
     {
       "consumer_file": "lda/lda_l2/qnet_system.py",
-      "consumer_line": 26,
+      "consumer_line": 27,
       "consumer_module": "qnet_system",
       "consumer_pkg": "lda_l2",
       "consumer_symbol": "<module>",

@@ -415,6 +415,14 @@ _W10_EXTRA = (
               #   同一版真实改动过、且便宜的 `run_report_determinism_smoke`（新写入者
               #   `scripts/bl_audit.py` 已登 `lint_spec`）。BL 门禁判据数由
               #   `run_ci_coverage_gate_smoke` 的 CORE 计数 + 本文件 CORE 名单间接覆盖。
+              #
+              # 🔴 v0.9.342（A2）：本版真改动 = E39 多 track 通道路由门禁（D-232 · 消化 E38g）。
+              #   实测 **~0.21 s** / **7 判据**（纯整数几何 + 零子进程零网络）⇒ 纳对照面。
+              #   🔴 顺带修复：v0.9.341/342 的 README 顶行**未提任何门禁** ⇒ W10b
+              #   （≥1 条可对照条目）当场红、W10-P1 第二项恒 False（守卫空转）——
+              #   与 v0.9.197/v0.9.231 同族。此处按既定准入准则把本版便宜门禁纳入，
+              #   并在顶行以规范形声明 `` `run_ecore_e39_smoke` **7 判据** ``（机器守，非手写）。
+              "run_ecore_e39_smoke.py",
               )
 
 

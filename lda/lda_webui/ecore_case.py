@@ -1265,7 +1265,12 @@ GAPS = [
      "detail": "晶体管参数为公开典型量级占位（非 PDK 标定、无实测锚）。"},
     {"id": "G-C", "status": "边界声明（数据通路用理想运放；引擎无温度/噪声/收敛增强）", "title": "理想 TIA 路径 / 非签核级 SPICE",
      "detail": "数据通路主路径用理想运放（无限增益）；电路引擎无温度/噪声/稀疏矩阵/收敛增强。"},
-    {"id": "G-D", "status": "🟡 **已解除（E21 · D-196 · 分三档，非放开）**",
+    # 🔴 v0.9.342（A2 连带 · 缺口台账棘轮当场抓出）：`status` 必须**以四值前缀开头**
+    #    （已闭合/已结算/未闭合/边界声明），否则 `gen_gap_settlement` 的分类器把它记成
+    #    「未标」⇒ boundary 46→45 / unmarked 0→1，`p2_usability ⑬` 的棘轮拒绝生成。
+    #    本条残余本质是**永久能力边界**（MEASURED 永久空置 ⇒ 本仓无流片无硅），
+    #    故前缀取「边界声明」；「已解除（…分三档，非放开）」原文**保留**（E21 B10 判据要它）。
+    {"id": "G-D", "status": "边界声明（能效口径「一律不报」已解除 · E21 · D-196 · 分三档，非放开）",
      "title": "能效口径：从「一律不报」改为「必须标档」（MODEL_ESTIMATE 可报 · MEASURED 空置）",
      "detail": "E21 起**解「不许算」**（平台已有功耗模型 `ecore/energy.py`），**不解「不许宣称」**：\n① `INTERNAL_TARGET` 内部目标反解 —— 可算，**不得对外引用**；\n② `MODEL_ESTIMATE` 模型推算 —— **可对外**，但必须带假设清单且 `is_measured=False`；\n③ `MEASURED` 实测 —— 🔴 **永久空置**（`MEASURED_AVAILABLE=False`，本仓无流片无硅）；\n任何声称「实测/达到 N TOPS/W」的数字仍属 fabricated。原「零能效数字纪律」条文作废。"},
     {"id": "G-E", "status": "边界声明（电阻负载固有特性，golden 已计入）", "title": "transistor 路径列增益含电阻负载因子",
@@ -1621,10 +1626,12 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             "milestones": len(MILESTONES),
             "gate_checks": GATE_CHECKS_TOTAL,
             "probe_checks": PROBE_CHECKS_TOTAL,
-            "modules": 37,               # ecore 包内模块数（能力模块 36 + 能力清单自身 · 不含 __init__.py）
-            "capability_modules": 36,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力模块数
-            "entrypoints": 35,           # 常驻门禁数（lda/run_ecore_*_smoke.py：E1–E9 八道 + 能力守护 +
-                                         #   案例卡 + 红线 + E11 两道 + E12…E20 九道）
+            # 🔴 v0.9.342：三个数与**文件系统 + manifest 独立对拍**（B6c）；此处长期停在
+            #    E19 口径（36/37/35）而真源已到 59/58/47 ⇒ B6c 一直红（「计数静默缩水」本尊）。
+            #    现按真源同步：清单 59 条（含 E39 dmtrack）/ ecore 包 .py 58 个 / 常驻门禁 47 道。
+            "modules": 58,               # ecore 包内模块数（不含 __init__.py）
+            "capability_modules": 59,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力条目数
+            "entrypoints": 47,           # 常驻门禁数（lda/run_ecore_*_smoke.py，含 E39）
                                          # 🔴 这三个数由 `run_ecore_case_smoke` B6c 与
                                          #   **文件系统 + manifest 独立对拍**（此前是硬编码对硬编码）。
             "modules_dir": "lda/lda_l2/ecore/",

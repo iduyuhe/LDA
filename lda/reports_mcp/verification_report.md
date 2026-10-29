@@ -5,9 +5,9 @@
 - oracle：确定性物理定律锚（analytical/EIM/Airy/Rayleigh）
 - via：L1 KernelGateway
 
-> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **536 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
+> ⚠️ **本报告不构成验证结论**：本次运行中 **5 项**由**独立候选求解器**判出（计入 `summary.verified`）；其余 **541 项**仍走 ReferenceCandidate 占位自证——候选值即黄金值、「误差」列恒为 0、恒 PASS，**零验证价值**。把「N/N 通过」整体读作「N 项已验证」是误读：真正被验证的只有那 5 项。
 
-## 汇总：538/541 通过（独立候选 5 项中 **2 项通过=已验证** · 536 项自证闭环，**非验证结论**）
+## 汇总：543/546 通过（独立候选 5 项中 **2 项通过=已验证** · 541 项自证闭环，**非验证结论**）
 
 | 题号 | 指标 | 真值来源 | 黄金值 | 候选值 | 误差 | 容差 | 判定 |
 |---|---|---|---|---|---|---|---|
@@ -480,7 +480,12 @@
 | B523 | multimode_transducer_array_aperture_clip_efficiency | physical-law | 0.744205 | 0.744205 | 0 | 1e-07 | ✅ PASS |
 | B524 | kapitza_interface_thermal_conductance | physical-law | 116211 | 116211 | 0 | 0.05 | ✅ PASS |
 | B525 | qec_depolarizing_hashing_bound | physical-law | 0.372508 | 0.372508 | 0 | 0.031 | ✅ PASS |
+| B526 | resistor_ladder_midnode_voltage | physical-law | 0.0851064 | 0.0851064 | 0 | 0.004255 | ✅ PASS |
+| B527 | mosfet_saturation_current | physical-law | 0.00015 | 0.00015 | 0 | 7.5e-06 | ✅ PASS |
+| B528 | tapered_wire_resistance | physical-law | 1.45561 | 1.45561 | 0 | 0.07278 | ✅ PASS |
+| B529 | elmore_delay | physical-law | 1250 | 1250 | 0 | 62.5 | ✅ PASS |
 | B53 | E2_eV | physical-law | -0.964812 | -0.964812 | 0 | 0.05 | ✅ PASS |
+| B530 | mos_threshold_voltage | physical-law | 0.426035 | 0.426035 | 0 | 0.0213 | ✅ PASS |
 | B54 | E4_eV | physical-law | 6.01648 | 6.01648 | 0 | 0.01 | ✅ PASS |
 | B55 | E5_eV | physical-law | 9.40075 | 9.40075 | 0 | 0.01 | ✅ PASS |
 | B56 | E3_eV | physical-law | 1.15125 | 1.15125 | 0 | 0.001 | ✅ PASS |

@@ -8678,9 +8678,8 @@
     },
     "B530": {
       "l1": true,
-      "l2_count": 2,
+      "l2_count": 1,
       "l2_gates": [
-        "run_bl_anchor_guard_smoke.py",
         "run_count_consistency_smoke.py"
       ],
       "l2_global": [
@@ -8693,7 +8692,7 @@
       "l2_global_calibers": [
         "ALL_LEDGER"
       ],
-      "l3": true
+      "l3": false
     },
     "B54": {
       "l1": true,
@@ -11090,7 +11089,6 @@
       "B528",
       "B529",
       "B53",
-      "B530",
       "B54",
       "B55",
       "B56",
@@ -11182,8 +11180,8 @@
     "blind_without_any_coverage": 0,
     "blind_without_subset_coverage": 0,
     "by_gate_count": {
-      "1": 453,
-      "2": 39,
+      "1": 454,
+      "2": 38,
       "3": 26,
       "4": 9,
       "5": 2
@@ -11203,8 +11201,8 @@
     "l2_global_registered_gates": 2,
     "l2_global_subset_covered": 19,
     "l2_manifest_added": 400,
-    "l2_manifest_covered": 401,
+    "l2_manifest_covered": 400,
     "l2_text_covered": 129,
-    "l3_multi_covered": 76
+    "l3_multi_covered": 75
   }
 }

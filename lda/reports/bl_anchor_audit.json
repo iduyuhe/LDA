@@ -8606,28 +8606,6 @@
    "zero_injection_passes": false
   },
   {
-   "candidate": 0.4260358007,
-   "compare": "cmp_abs",
-   "flags": {
-    "cancellation_suspect": false,
-    "loose": false,
-    "tight": false,
-    "zero_injection_passes": false,
-    "zero_resid": false
-   },
-   "golden": 0.4260351225,
-   "golden_over_tol": 19.99977103,
-   "id": "B530",
-   "metric": "mos_threshold_voltage",
-   "passes": true,
-   "resid": 6.781974426e-07,
-   "resid_over_tol": 3.183726611e-05,
-   "title": "器件级阈值电压 Vth（教科书耗尽近似闭式 golden ⇄ MOSCAP PDE 候选 · V）",
-   "tol": 0.021302,
-   "zero_injection_err": 0.4260351225,
-   "zero_injection_passes": false
-  },
-  {
    "candidate": 4.179230223,
    "compare": "cmp_abs",
    "flags": {
@@ -8808,8 +8786,8 @@
  "subject": "K4 盲区锚的判据判别力（现算 · 不读 verification_report）",
  "summary": {
   "blind_non_anchorable": 18,
-  "blind_strict": 400,
-  "blind_total": 418,
+  "blind_strict": 399,
+  "blind_total": 417,
   "cancellation_suspect_ids": [
    "B73"
   ],
@@ -8864,9 +8842,9 @@
   "zero_resid_ids": []
  },
  "text_covered": {
-  "audited": 127,
+  "audited": 128,
   "cancellation_suspect_ids": [],
-  "ids_total": 128,
+  "ids_total": 129,
   "loose_ids": [],
   "n_cancellation_suspect": 0,
   "n_fail_verdict": 0,

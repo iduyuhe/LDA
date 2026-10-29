@@ -57,7 +57,7 @@ class Counter:
 
 def make_check(ns, ok_key="PASS", bad_key="FAIL", indent="  ",
                detail_fmt=None, always_detail=False, return_ok=False,
-               detail_on="both"):
+               detail_on="both", record=None):
     """生成 ``check(name, cond, detail="")``，计数写进 ``ns[ok_key] / ns[bad_key]``。
 
     参数
@@ -94,6 +94,12 @@ def make_check(ns, ok_key="PASS", bad_key="FAIL", indent="  ",
     def check(name, cond, detail=""):
         ok = bool(cond)
         k = ok_key if ok else bad_key
+        # 🔴 v0.9.342（BL 血案）：`record` 是**失败名收集**的可选钩子 —— 有的门禁必须在
+        #    结尾把「哪几条红了」打到 stdout 尾部（CI runner 只留最后 4 行），而本模块是
+        #    ``def check`` 的唯一实现，调用方**不得**再包一层本地 ``def check`` 去记名
+        #    （那会把 helper_dup 棘轮 J3 的 ``def check(`` 计数顶上去：实测 56→57 必红）。
+        if not ok and record is not None:
+            record.append(name)
         # `.get` 兜底：调用方若把计数器声明放在 `def check` 之后（或 `__main__` 内），
         # 原实现的 `global X; X += 1` 会 NameError，这里退化为自动建立。
         ns[k] = ns.get(k, 0) + 1

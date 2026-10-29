@@ -58,19 +58,14 @@ if _HERE not in sys.path:
 
 from lda_harness.smoke_kit import make_check  # noqa: E402
 
-check = make_check(globals(), ok_key="PASS", bad_key="FAIL", detail_fmt="  |  {d}")
-
 # 🔴 v0.9.342（全量重跑血案）：CI runner 只保留子进程 stdout 的**最后 4 行**，
 #    而本门禁尾部只有一行 banner ⇒ 「有红色（FAIL=1）」之后**无从定位是哪一条**。
-#    故在此包一层，把**失败项名字**记下来，并在 banner 前打印（落进那 4 行里）。
+#    故要求 `make_check` 把失败名收集起来，在 banner 前打印（落进那 4 行）。
+#    🔴 **不得**在此另写本地 ``def check`` 包裹 —— 那会把 helper_dup 棘轮 J3 的
+#    ``def check(`` 计数顶上去（实测 56→57，当场红；本仓 v0.9.183 起的老坑）。
 _FAILED_CHECKS: list = []
-_check_raw = check
-
-
-def check(name, cond, detail=""):        # noqa: F811 —— 有意覆盖，语义完全相同
-    if not cond:
-        _FAILED_CHECKS.append(name)
-    return _check_raw(name, cond, detail)
+check = make_check(globals(), ok_key="PASS", bad_key="FAIL",
+                   detail_fmt="  |  {d}", record=_FAILED_CHECKS)
 
 from lda_harness import verification_adapters as _va  # noqa: E402,F401
 from lda_harness import deterministic as det  # noqa: E402

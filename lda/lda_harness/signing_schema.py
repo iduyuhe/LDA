@@ -326,10 +326,11 @@ CASES: Dict[str, SigningRecord] = {
                          deck="self_built",
                          anchors=_HELPER_10 + ("S4", "S9", "S10", "S11", "S12", "S13")),
     # ── 电子域 ────────────────────────────────────────────────────────
-    # 🔴 `evidence="NONE"`：电子域专属锚 **0 条**（四域审计 v3 §6.1 / N1 判死报告）。
-    #    它的 `DESIGN_VERIFIED` 说的是"工程链走到后仿/DRC"，**不是**"有可复核的锚"。
-    "ecore": make_record(case="ecore", declared="DESIGN_VERIFIED", evidence="NONE",
-                         deck="none", anchors=()),
+    # 🔴 `evidence="STRICT"`（v0.9.341 · A1）：电子域专属锚 **5 条（B526–B530）**，
+    #    均为确定性闭式物理律（教科书）golden ⇄ 独立数值法 candidate（R4 规则：STRICT 须配非空 anchors）。
+    #    `DESIGN_VERIFIED` 仍指工程链走到后仿/DRC，与锚证据正交。
+    "ecore": make_record(case="ecore", declared="DESIGN_VERIFIED", evidence="STRICT",
+                         deck="none", anchors=("B526", "B527", "B528", "B529", "B530")),
 }
 
 

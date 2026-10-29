@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.9.341（2026-10-29 · **A1 电子域闭式物理锚 B526–B530 接入 ecore 案例卡审计** · 净增 5 锚 · 账本 546 / strict 524 / 独立率 95.97% / CI core **375**）
+
+### 一句话
+
+把已实现的电子闭式物理模块（MNA 节点分析 / MOSFET 平方律 / 寄生 RC / 器件 PDE 泊松）包装成标准 benchmark 判决锚 B526–B530，接入 ecore（电子域）案例卡审计，使电子域由 0 锚 → 5 锚、账本 ledger_total 541 → 546、strict 519 → 524。
+
+### 五道新锚（golden=闭式物理律 · 候选=异构数学路径）
+
+- **B526** 直流 MNA 节点分析：golden=闭式节点电压解（`source=physical-law`）；candidate=Gauss-Seidel 迭代收敛。
+- **B527** MOSFET 平方律区 I_d：golden=闭式平方律；candidate=Riemann 数值积分跨 V_ov 求和。
+- **B528** 寄生 RC 一阶时延：golden=闭式 Elmore 近似（RC 乘积）；candidate=离散求和的多段 RC 链。
+- **B529** 互连线 RC 分布延时：golden=闭式传输线 RC 模型；candidate=PDE 显式步进（扩散）。
+- **B530** MOS 器件 PDE 泊松解：golden=闭式耗尽区宽度；candidate=有限差分 PDE 求解器。
+
+### 判别力（全绿）
+
+- 五锚 resid>0（非平凡）、|g|/tol≈20（量级锚点成立，非比值假绿）、resid/tol≤0.467（无新 tight/loose/zero_resid）；
+- 经 `benchmark_defs/part8.py` 注册，`_GOLDEN_DISPATCH`/`_PHYSICAL_LAW` 延迟登记（破 `benchmark_defs`↔`golden` 循环 import）；
+- `verification_report` 全量重跑 546/546 闭合 ⇒ L1 覆盖 541→546 ⇒ k0 G-K-6 `l1_unified_covered==anchors_total` 自洽。
+
+### 门禁
+
+`run_bl_anchor_guard_smoke`(A1 逐字节 + H7 manifest) / `run_k4_coverage_smoke` / `run_k0_audit_smoke`(C1/E8) / pyflakes 8/8 / timeout-budget 21/21 **全 PASS**。
+
+### 诚实边界
+
+电子域 5 锚为**闭式物理律 golden**（项目允许），非流片实测；属「注册缺口闭合」而非「能力缺口」——底层模块此前已实现并局部验证，本次补齐判决锚与反向探针。
+
 ## v0.9.340（2026-10-28 · **E38g 全局协商拥塞路由 PathFinder（诚实负结果）** · 净增 0 锚 · 账本 541 / strict 519 / 独立率 95.93% / CI core **375**）
 
 ### 一句话

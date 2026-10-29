@@ -1186,6 +1186,13 @@ _GOLDEN_DISPATCH = {
     "B524": golden_b524,
     "B525": golden_b525,
 
+    # ---- A1（电子域闭式物理锚 · v0.9.341 · ecore 底层闭式模块包装）----
+    # 🔴 B526–B530 的 golden 函数来自 benchmark_defs.part8；该模块经
+    #   benchmark_defs.__init__ 引入 part1/part2（二者 `from ..golden import`），
+    #   故**不能**在 golden 顶层 import（环 import）。改为首次调用时延迟注册——
+    #   见下方 `_ensure_part8_golden()`（golden_value / golden_with_source 入口调用）。
+    #   占位键在此不列；`_PHYSICAL_LAW` 已含 B526–B530（字符串，无环）。
+
     # ---- S 系统锚（Phase 0-1，2026-08-26）----
     "S1": s1_power_budget_margin_dB,
     "S2": s2_channel_plan_no_collision,
@@ -1304,13 +1311,39 @@ _PHYSICAL_LAW = {"B1", "B2", "B3", "B4", "B8", "B9", "B10", "B11",
                  "B523",  # 蓝图 v2 · D1 光-量异质集成 M0：多模换能阵列平均孔径截断效率（erf 闭式 ⇄ 限窗复合 Simpson 求积）
                  "B524",  # 蓝图 v2 · D1 光-量异质集成 M3：Kapitza 界面热导（DMM+低温 Debye 闭式 ⇄ 内能温度中心差商）
                  "B525",  # 蓝图 v2 · D2 QEC 码族 M0：退极化信道 hashing 界（闭式 1−H₂−p·log₂3 ⇄ 对数积分表示 + 复合 Simpson）
+                 "B526", "B527", "B528", "B529", "B530",  # A1 · 电子域闭式物理锚（v0.9.341）
                  "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
                  "S9", "S10", "S11", "S12",
                  "S13"}  # S 系统锚（…+S12 阵列分布+S13 设计良率）
 
 
+def _ensure_part8_golden():
+    """A1（v0.9.341）· 延迟注册电子域闭式物理锚 B526–B530 的 golden 函数。
+
+    🔴 不能在 golden 顶层 `from .benchmark_defs.part8 import …`：benchmark_defs.__init__
+       会顺带引入 part1/part2（二者 `from ..golden import …`），形成环 import ⇒
+       golden 半初始化时 `b10_gate_fidelity` 等尚未定义 ⇒ ImportError（实测
+       run_report_determinism_smoke 当场红）。改为**首次调用入口**时再 import 并注册，
+       此时 golden 已完全加载，环已解开。
+    """
+    if "B526" in _GOLDEN_DISPATCH:
+        return
+    from .benchmark_defs.part8 import (  # noqa: E402  （延迟 · 破环）
+        golden_b526, golden_b527, golden_b528, golden_b529, golden_b530,
+    )
+    _GOLDEN_DISPATCH.update({
+        "B526": golden_b526,
+        "B527": golden_b527,
+        "B528": golden_b528,
+        "B529": golden_b529,
+        "B530": golden_b530,
+    })
+    _PHYSICAL_LAW.update({"B526", "B527", "B528", "B529", "B530"})
+
+
 def golden_value(bid, params):
     """按 benchmark id 调用对应黄金参考函数（标量）。"""
+    _ensure_part8_golden()
     if bid not in _GOLDEN_DISPATCH:
         raise KeyError(f"无黄金参考定义: {bid}")
     return _GOLDEN_DISPATCH[bid](**params)
@@ -1339,6 +1372,7 @@ def golden_with_source(bid, params):
       - 'numpy-overlap-offline'  B5 numpy 重叠估计离线近似
       - 'design-anchor'          设计守则锚（ORACLE 不可用时的验收基准）
     """
+    _ensure_part8_golden()
     if bid in _PHYSICAL_LAW:
         return (golden_value(bid, params), "physical-law", "确定性物理定律/解析解")
     # B5–B7：查 ORACLE 来源

@@ -1568,12 +1568,23 @@ def _artifact_manifest(repo_root: Optional[str] = None) -> Dict[str, Any]:
 #      "none"     本卡确实不依赖账本锚（如实登记为空，非缺漏）
 #    把 segment 当 runtime 读，就是"把号段归属当已验证" —— 本项目的头号复发错。
 # ═══════════════════════════════════════════════════════════════════════════
-ANCHORS = {}
-ANCHORS_SOURCE = 'none'
+ANCHORS = {
+    "B526": "电阻梯形链中点电压：递推闭式 ⇄ Gauss–Seidel 迭代（电子域·A1 · v0.9.341）",
+    "B527": "MOSFET 饱和电流：平方律闭式 ⇄ 跨导积分（电子域·A1 · v0.9.341）",
+    "B528": "锥形导线电阻：对数均值闭式 ⇄ 左 Riemann 积分（电子域·A1 · v0.9.341）",
+    "B529": "Elmore 延迟：连续 RC 线闭式 ⇄ 离散 N 段求和（电子域·A1 · v0.9.341）",
+    "B530": "器件级 Vth：教科书耗尽近似闭式 ⇄ MOSCAP PDE（电子域·A1 · v0.9.341）",
+}
+ANCHORS_SOURCE = 'segment'
 
 ANCHORS_NOTE = (
-    "电子域专属账本锚 **0 条**（N1 判死报告 · 四域审计 v3 §6.1）⇒ 如实登记为空。"
-    "本卡 `DESIGN_VERIFIED` 指工程链走到后仿/DRC，**不代表有可复核的锚** —— 维正交，勿混读。。")
+    "电子域专属账本锚 **5 条（B526–B530，v0.9.341 · A1 任务）**：把 ecore 已落地的底层闭式物理模块"
+    "（mosfet 平方律 / parasitic 几何闭式 / device_pde 器件级交叉验证）包装成标准 benchmark 判决锚，"
+    "使电子域从 0 锚升到 5 锚、账本 541→546。每条均为**确定性闭式物理律 golden ⇄ 独立数值法 candidate**"
+    "（迭代 / 求积 / PDE），全部满足 0<resid/tol≤0.5 且 |g|/tol≥10（不碰 tight/loose/zero_resid 预算），"
+    "golden 用教科书闭式（可作 ORACLE）、candidate 方法学不同源（resid≫机器精度，非代数恒等）。"
+    "🔴 诚实边界：参数为公开典型量级占位（非 PDK）、无实测锚、不报 TOPS/fJ，结论是「闭式⇄数值」数学一致，"
+    "**不得作器件/电路性能宣称**；本卡 `DESIGN_VERIFIED` 仍指工程链走到后仿/DRC，**与锚证据正交**，勿混读。")
 
 def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
     """组装电子计算芯片案例卡（只读 · 零重计算 · 免登录）。

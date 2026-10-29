@@ -910,3 +910,108 @@ def _b360_bernstein_cand(spec: VerificationSpec, oracle_value: Any) -> float:
     p = spec.params
     m = _get_batch_b21_numeric()
     return float(m.bernstein(p["name"], float(p["t"]), 512))
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# A1 · 电子域闭式物理锚候选（B526–B530 · v0.9.341）
+# 每个候选都是与 golden 闭式**方法学不同源**的收敛数值法（迭代 / 求积 / PDE）。
+# 候选签名：(spec: VerificationSpec, oracle_value: Any) -> float，经 spec.params 取参。
+# ═══════════════════════════════════════════════════════════════════════════
+@_register_candidate(
+    "b526_ladder_gauss_seidel_cand",
+    "电阻梯形链中点电压：从零初值对内部节点做 Gauss–Seidel 松弛 K=4 轮取中点节点电压 "
+    "↔ 差分方程特征根递推闭式（方法学独立：迭代不动点 ⇄ 解析闭式）")
+def _b526_ladder_gauss_seidel_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B526 独立候选：电阻梯形链中点节点电压（Gauss–Seidel 迭代）。
+
+    golden = 差分方程特征根递推闭式 V_k=Vin·(λ^k−λ^{2N−k})/(1−λ^{2N})。
+    cand   = 同一网络从零初值做 Gauss–Seidel 松弛 K=4 轮，取中点节点电压。
+    两条路径方法学独立：解析特征根闭式 ⇄ 迭代数值求解（不调用任何闭式）。
+    """
+    p = spec.params
+    Vin = float(p["Vin"]); Rs = float(p["Rs"]); Rg = float(p["Rg"])
+    N = int(p["N"]); k = int(p["k"]); K = 4
+    V = [0.0] * (N + 1)
+    V[0] = Vin; V[N] = 0.0
+    denom = 2.0 / Rs + 1.0 / Rg
+    for _ in range(K):
+        for i in range(1, N):
+            V[i] = (V[i - 1] / Rs + V[i + 1] / Rs) / denom
+    return float(V[k])
+
+
+@_register_candidate(
+    "b527_mosfet_sat_current_cand",
+    "MOSFET 饱和电流：对跨导 gm(V)=β·V 在 [0,Vov] 上做左 Riemann 数值积分（N=50）还原 Id "
+    "↔ 平方律闭式 ½·β·Vov²（方法学独立：数值积分 ⇄ 闭式乘积）")
+def _b527_mosfet_sat_current_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B527 独立候选：MOSFET 饱和电流（跨导数值积分）。
+
+    golden = 平方律闭式 ½·β·Vov²；cand = 把 gm(V)=β·V 在 [0,Vov] 上做左 Riemann 和
+    （N=50 段）积分还原 Id。方法学独立：闭式乘积 ⇄ 数值积分（cand 不调用平方律）。
+    """
+    p = spec.params
+    beta = float(p["beta"]); vov = float(p["vov"]); N = 50
+    dV = vov / N
+    s = 0.0
+    for i in range(N):
+        s += (vov - i * dV) * dV
+    return float(beta * s)
+
+
+@_register_candidate(
+    "b528_tapered_wire_resistance_cand",
+    "锥形导线电阻：沿长度 L 均分 N=20 段，逐段 R_seg=ρ·dx/(t·W(x)) 累加 "
+    "↔ 对数均值闭式 ρ·L/t·ln(W1/W0)/(W1−W0)（方法学独立：数值积分 ⇄ 解析闭式）")
+def _b528_tapered_wire_resistance_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B528 独立候选：锥形导线电阻（左 Riemann 数值积分）。
+
+    golden = 对数均值闭式；cand = 将导线沿长度均分 N=20 段，逐段 ρ·dx/(t·W(x)) 累加。
+    方法学独立：解析闭式 ⇄ 数值求和（cand 不调用对数均值）。
+    """
+    p = spec.params
+    rho = float(p["rho"]); L = float(p["L"]); t = float(p["t"])
+    W0 = float(p["W0"]); W1 = float(p["W1"]); N = 20
+    dx = L / N
+    s = 0.0
+    for i in range(N):
+        x = i * dx
+        Wx = W0 + (W1 - W0) * x / L
+        s += rho / (t * Wx) * dx
+    return float(s)
+
+
+@_register_candidate(
+    "b529_elmore_discrete_sum_cand",
+    "Elmore 延迟：离散 N 段逐段累积 Σ_{k=1}^n k·r·c（循环累加，=r·c·n(n+1)/2） "
+    "↔ 连续极限集总闭式 R_tot·C_tot/2（方法学独立：离散求和 ⇄ 集总闭式近似）")
+def _b529_elmore_discrete_sum_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B529 独立候选：离散 N 段 Elmore 延迟（逐段累积）。
+
+    golden = 连续分布 RC 线集总闭式 R_tot·C_tot/2；cand = 真实离散 N 段 Elmore 求和
+    Σ_{k=1}^n k·r·c（循环累加）。方法学独立：集总闭式近似 ⇄ 离散求和（cand 不用集总近似）。
+    """
+    p = spec.params
+    n = int(p["n"]); r = float(p["r"]); c = float(p["c"])
+    total = 0.0
+    for k in range(1, n + 1):
+        total += float(k) * r * c
+    return float(total)
+
+
+@_register_candidate(
+    "b530_vth_pde_cand",
+    "器件级 Vth：由 MOSCAP 1D 自洽泊松 PDE 数值解（lda_solver T1 内核）取 ψ_s=2φ_F 处栅压 "
+    "↔ 教科书耗尽近似闭式（方法学独立：PDE 真解 ⇄ 闭式；判据=PDE 收敛到闭式）")
+def _b530_vth_pde_cand(spec: VerificationSpec, oracle_value: Any) -> float:
+    """B530 独立候选：器件级阈值电压（MOSCAP 1D 自洽泊松 PDE）。
+
+    golden = 教科书耗尽近似闭式（is_oracle=True）；cand = 同一对象由 MOSCAP 1D 自洽泊松
+    PDE 数值解求出的 V_th（lda_solver.mos_1d T1 内核，is_oracle=False）。方法学独立：
+    闭式 ⇄ PDE，判据方向 = PDE 收敛到闭式（绝不用 PDE 当真值标定闭式）。
+    """
+    p = spec.params
+    from lda_l2.ecore.device_pde import physics_vth_pde
+    return float(physics_vth_pde(
+        float(p["n_a_cm3"]), float(p["t_ox_nm"]), float(p["vfb_v"]),
+        float(p["dx_if_nm"]))["V_th"])

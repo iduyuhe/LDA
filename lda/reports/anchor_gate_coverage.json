@@ -8568,10 +8568,9 @@
     },
     "B525": {
       "l1": true,
-      "l2_count": 4,
+      "l2_count": 3,
       "l2_gates": [
         "run_benchmark_falsifiability_smoke.py",
-        "run_count_consistency_smoke.py",
         "run_statistical_anchor_smoke.py",
         "run_v2d2_smoke.py"
       ],
@@ -8679,9 +8678,10 @@
     },
     "B530": {
       "l1": true,
-      "l2_count": 1,
+      "l2_count": 2,
       "l2_gates": [
-        "run_bl_anchor_guard_smoke.py"
+        "run_bl_anchor_guard_smoke.py",
+        "run_count_consistency_smoke.py"
       ],
       "l2_global": [
         {
@@ -8693,7 +8693,7 @@
       "l2_global_calibers": [
         "ALL_LEDGER"
       ],
-      "l3": false
+      "l3": true
     },
     "B54": {
       "l1": true,
@@ -10166,7 +10166,7 @@
     "run_corner_performance_smoke.py": [],
     "run_count_consistency_smoke.py": [
       "B499",
-      "B525"
+      "B530"
     ],
     "run_coupler_band_smoke.py": [],
     "run_coverage_deadzone_closure_smoke.py": [],
@@ -11182,10 +11182,10 @@
     "blind_without_any_coverage": 0,
     "blind_without_subset_coverage": 0,
     "by_gate_count": {
-      "1": 454,
-      "2": 38,
-      "3": 25,
-      "4": 10,
+      "1": 453,
+      "2": 39,
+      "3": 26,
+      "4": 9,
       "5": 2
     },
     "core_smokes": 375,
@@ -11202,9 +11202,9 @@
     "l2_global_excluded_gates": 5,
     "l2_global_registered_gates": 2,
     "l2_global_subset_covered": 19,
-    "l2_manifest_added": 401,
+    "l2_manifest_added": 400,
     "l2_manifest_covered": 401,
-    "l2_text_covered": 128,
-    "l3_multi_covered": 75
+    "l2_text_covered": 129,
+    "l3_multi_covered": 76
   }
 }

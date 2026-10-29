@@ -1097,6 +1097,11 @@ def h_verification_ledger(h, p, q, path):
     try:
         sys.path.insert(0, _app.LDA_ROOT)
         from lda_harness import golden
+        # A1（v0.9.341）：B526–B530 的 golden 函数为**延迟注册**（破 benchmark_defs↔
+        #   golden 环 import，见 golden._ensure_part8_golden）。本端点直接读
+        #   `_GOLDEN_DISPATCH`，若不在读前触发一次性注册，dispatch/phys_ids 会漏掉这 5 个
+        #   电子域锚 ⇒ 生产 check_ledger「physical-law 含 B530」漏锚。_ensure 幂等，重复调用无副作用。
+        golden._ensure_part8_golden()
         dispatch = golden._GOLDEN_DISPATCH
         phys = golden._PHYSICAL_LAW
         phys_ids, anchor_ids = [], []

@@ -24,6 +24,10 @@
 
 `run_bl_anchor_guard_smoke`(A1 逐字节 + H7 manifest) / `run_k4_coverage_smoke` / `run_k0_audit_smoke`(C1/E8) / pyflakes 8/8 / timeout-budget 21/21 **全 PASS**。
 
+### 修复（发布核验发现）
+
+- `/api/verification_ledger` 直接读 `_GOLDEN_DISPATCH` 时**未触发** B526–B530 的延迟注册 ⇒ `physical-law.ids` 漏 5 锚（生产 `check_ledger`「physical-law 含 B530」假红；vmm 三分类/总数不受影响，因它们取自 `BENCHMARK_DEFS`）。修复：端点读取前调用幂等的 `golden._ensure_part8_golden()`。端点 `dispatch_ids 532→537 / physical-law 534 / anchors.total 547`。
+
 ### 诚实边界
 
 电子域 5 锚为**闭式物理律 golden**（项目允许），非流片实测；属「注册缺口闭合」而非「能力缺口」——底层模块此前已实现并局部验证，本次补齐判决锚与反向探针。

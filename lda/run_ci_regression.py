@@ -1520,6 +1520,7 @@ CORE_SMOKES: List[str] = [
     "run_ecore_e41_smoke.py",
     "run_ecore_e42_smoke.py",
     "run_ecore_e43_smoke.py",
+    "run_ecore_e44_smoke.py",
     "run_webui_entry_smoke.py",
     # 🔴 v0.9.213 光子计算 SoC 案例卡（/api/soc_demo · #sec-soc）跨源一致性 + 前端取值路径门禁：
     #   卡内 WDM/TDM 杠杆常量 ≡ lda_l2 真源（soc_wdm/soc_tdm）逐位同源 + 反向探针（改真源必红）；
@@ -3253,6 +3254,7 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e41_smoke.py": 60.0,
     "run_ecore_e42_smoke.py": 60.0,
     "run_ecore_e43_smoke.py": 60.0,
+    "run_ecore_e44_smoke.py": 60.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     # 🔴 v0.9.186：新增「标准 JSON 出口」门禁（`run_webui_json_hard_smoke.py`,
     #   13 判据 + 4 道突变探针；因浏览器 JSON.parse 崩于 `-Infinity` 而立）。

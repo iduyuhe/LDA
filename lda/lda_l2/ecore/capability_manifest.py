@@ -769,6 +769,28 @@ ECORE_CAPABILITY_MANIFEST = [
                     "SpefError", "SPEF_DISCLOSURE"],
         "introduced_by": "D-236 (B3+/E43)", "guard": "run_ecore_e43_smoke.py",
     },
+    {
+        "capability": "**B3+ 电源网格全域 IR 求解（D-237）**：把 IR 从「单轨 + 均匀抽流 + 只看末端」"
+                      "的一阶闭式 `I·R/2` 升级为**真矩阵解** `G·V = I`。① **建网**：`nx` 列 M4 竖条 × `ny` 行 "
+                      "M3 横条 + 每个交叉一个 via，节点分 M3/M4 **两套**由 via 电阻连接（这样 via 电阻真的进方程，"
+                      "不被并进金属段）；② **双解法**：自组装电导矩阵 + Dirichlet 边界（numpy 稠密解）⇄ 复用仓内 "
+                      "E1 `mna.Circuit`（电阻+电压源+电流源通用 MNA），两者相对差 <1e-14 才算过；"
+                      "③ **判据**：KCL 残差、能量守恒、Rayleigh 单调性（via 减半/加第二源必不升）、EM 段电流密度。"
+                      "🔴 **最强判据是退化**：网格退化成「单链 + 均匀抽流」时，全域解必须**精确等于** B3 的 "
+                      "`ir_drop_ladder = R·I·(n+1)/(2n)`（实测 n=1..64 相对差 ≤9.7e-12），n→大收敛到 `I·R/2`。"
+                      "🔴 **可证的假设差异**：同一总电流压在**远端单点**时压降恰为闭式的 **2×**（精确，"
+                      "`ratio=1.999999999996`）⇒ 用 `I·R/2` 报点负载工况会**系统性低估一半** —— 这是假设问题，"
+                      "不是精度问题。🔴 **反面必须同给**：**不能说「网格压降一定大于闭式」**（8×8 实测只有单轨闭式的 "
+                      "0.46×，因 ny 条横条并联），也**不能说「加列数一定降」**（加列同时拉宽网格，nx=8→16 反升 27.8%）"
+                      "⇒ 比值只报告不设带宽。实测 16×16（512 节点/736 支路）≈1 s。"
+                      "⚠️ 诚实边界：**只解静态 DC**（无 di/dt、无 decap、无封装/板级）、单角 tt、负载为理想电流沉"
+                      "（偏低估计 ⇒ 偏保守）、规则网格（不支持非均匀 pitch/阻挡/多源不等压）；**净增 0 锚**（门禁形态，E44 · 12 判据）",
+        "module": "lda_l2.ecore.dpgrid",
+        "symbols": ["build_grid", "build_ladder", "add_source", "solve_reduced", "solve_mna",
+                    "compare_solvers", "uniform_loads", "em_segments", "topology_report",
+                    "DPGRID_DISCLOSURE"],
+        "introduced_by": "D-237 (B3+/E44)", "guard": "run_ecore_e44_smoke.py",
+    },
 ]
 
 

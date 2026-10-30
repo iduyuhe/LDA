@@ -1630,9 +1630,9 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             #    E19 口径（36/37/35）而真源已到 60/59/48 ⇒ B6c 一直红（「计数静默缩水」本尊）。
             #    现按真源同步：清单 60 条（含 E39 dmtrack / B1 dcells）/ ecore 包 .py 59 个 /
             #    常驻门禁 48 道（含 E39/E40）。
-            "modules": 62,               # ecore 包内模块数（不含 __init__.py）
-            "capability_modules": 63,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力条目数
-            "entrypoints": 51,           # 常驻门禁数（lda/run_ecore_*_smoke.py，含 E39/E40）
+            "modules": 63,               # ecore 包内模块数（不含 __init__.py）
+            "capability_modules": 64,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力条目数
+            "entrypoints": 52,           # 常驻门禁数（lda/run_ecore_*_smoke.py，含 E39/E40）
                                          # 🔴 这三个数由 `run_ecore_case_smoke` B6c 与
                                          #   **文件系统 + manifest 独立对拍**（此前是硬编码对硬编码）。
             "modules_dir": "lda/lda_l2/ecore/",

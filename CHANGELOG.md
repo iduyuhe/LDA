@@ -1,5 +1,54 @@
 # Changelog
 
+## v0.9.345（2026-10-30 · **B3 签核级提取/时序骨架：C 提取 + 多角 + IR/EM** · 净增 0 锚 · 账本 546 / strict 524 / 独立率 95.97% / CI core **379**）
+
+### 一句话
+
+B1 只有 R、B2 只有布通。没有 C 就没有延迟；只有 tt 就看不见工艺波动；没有 IR/EM 电源网在
+签核里根本不存在。B3 把这三件补成一阶、**每条都两法互证**的骨架 —— 并明确列出「离真 signoff 还差哪七项」。
+
+### 交付
+
+- 新增 `lda/lda_l2/ecore/dsignoff.py`
+  · **电容**：平板 `ε₀ε_r·A/h` × 边缘因子 `(1+2t/w·k)`，按走线段逐段求和；
+  · **延迟**：Elmore `R·(C/2+C_load)`；另给 n 段梯形网络离散解做互证（n→∞ 收敛，n=1 精确）；
+  · **多角**：ff(0.85/0.90) / tt / ss(1.15/1.10) 对 R、C 各乘一套系数 ⇒ **延迟区间**；
+  · **IR**：均匀抽流均匀轨末端压降 `I·R/2`；离散节点方程解做互证；
+  · **EM**：`J = I/(w·t)` 对 `J_MAX` 判定（含裕量）。
+- 新增 `lda/run_ecore_e42_smoke.py`（E42 · **9 判据** · ~0.21s）：
+  电容线性+逐段≡闭式 / 多角**两侧都验** / Elmore 互证 / IR 互证 + L·W 标度 / EM 判别力 /
+  **抹平多角必红** / 与 B2 集成（真实布出形状提取）/ 确定性 / 耗时。
+- CI core **378 → 379**（CORE_SMOKES + timeout 60s + `_W10_EXTRA`，README 顶行声明 9 判据）。
+- 登记：capability_manifest 61→62、ecore_case span 61/60/49→62/61/50。
+
+### 实测
+
+| 项 | 结果 |
+|---|---|
+| B2 实布 4 条网提取 | R>0 · C>0 · 每网 ≥3 段 |
+| 三角延迟散布 | **31.0–31.4%**（tt 3.16ps / ss 4.15ps 量级，C_load=1fF） |
+| 多角两侧 | `C_load=0` 比值 == `kr·kc`=0.765；`C_load≫C` 比值 == `kr`=1.15 |
+| Elmore 收敛 | n=1 精确 == `R(C+C_load)`；n=16 误差 0.42% |
+| IR | 闭式 ⇄ 离散 n=200 相对差 0.5%；L×2⇒×2、W×2⇒×0.5 |
+| EM | 0.2mA 通过（裕量 1.68×）· 0.4mA 必红 |
+
+### 诚实边界（关键）
+
+🔴 **这不是 signoff。** 一阶解析模型；真实签核还缺 7 项，已在 `B3_DISCLOSURE.missing_for_real_signoff`
+逐条列出：foundry ITF/RC tech file、3D 场求解（耦合/衬底）、SPICE 级时序、完整 PVT + OCV 降额、
+电源网全域 IR 求解、工艺认证的 EM 规则表、硅实测校准。
+
+- 多角系数与 `J_MAX` 是**演示量级假设**，非工艺认证数据。
+- 电容只到一阶平板 + 边缘修正，耦合只按相邻同层间距估。
+- IR 用均匀抽流假设；`J_MAX = 1e10 A/m²` 为公开量级假设。
+- **净增 0 锚**（闭式算术）⇒ 门禁形态（同 E39/E40/E41）；不报 TOPS/fJ/能效。
+
+### 门禁
+
+`run_ecore_e42_smoke` 9/0 · `run_ecore_e41_smoke` 9/0 · `run_ecore_e40_smoke` 9/0 ·
+`run_ecore_case_smoke` 49/0 · `run_ecore_capability_guard_smoke` ALL GREEN · k4 · k0 ·
+pyflakes · timeout-budget。
+
 ## v0.9.344（2026-10-30 · **B2 完整 detail route：真实引脚 + 轨道容量律 + DRC 零违规** · 净增 0 锚 · 账本 546 / strict 524 / 独立率 95.97% / CI core **378**）
 
 ### 一句话

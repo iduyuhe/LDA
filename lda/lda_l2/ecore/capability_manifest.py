@@ -729,6 +729,24 @@ ECORE_CAPABILITY_MANIFEST = [
                     "net_components", "dcroute_self_check", "B2_DISCLOSURE"],
         "introduced_by": "D-234 (B2)", "guard": "run_ecore_e41_smoke.py",
     },
+    {
+        "capability": "**B3 签核级提取/时序骨架（D-235）**：补上 B1/B2 缺的三件 —— "
+                      "① **电容**（平板 `ε₀ε_r·A/h` × 边缘因子，按走线段逐段求和）；"
+                      "② **多角**（ff/ss 对 R、C 各乘一套系数 ⇒ 给出延迟**区间**而非单点）；"
+                      "③ **IR / EM**（均匀抽流的均匀轨末端压降 `I·R/2`；`J=I/(w·t)` 对 `J_MAX` 判定）。"
+                      "每条判据都**两法互证**：电容「逐段求和 ≡ 总长闭式」；Elmore「n 段梯形解 → 闭式 "
+                      "`R(C/2+C_load)`」；IR「闭式 ⇄ 离散节点解」；多角**两侧都验**（C 主导区比值 == kr·kc、"
+                      "负载主导区比值 == kr）。实测：B2 实布 4 条网提取后三角延迟区间 **31.0–31.4%** 散布"
+                      "（tt≈3.16ps / ss≈4.15ps 量级），EM 标称 0.2mA 通过（裕量 1.68×）、0.4mA 必红。"
+                      "🔴 **不是 signoff**：一阶解析模型，真实签核还需 foundry ITF/3D 场/SPEF/PVT/EM 规则表/"
+                      "硅实测 —— 七项缺口在 `B3_DISCLOSURE.missing_for_real_signoff` 里逐条列出（对外必须同给）。"
+                      "⚠️ 多角系数与 `J_MAX` 是**演示量级假设**，非工艺认证；**净增 0 锚**（闭式算术 ⇒ 门禁形态，E42 · 9 判据）",
+        "module": "lda_l2.ecore.dsignoff",
+        "symbols": ["wire_r", "wire_c", "net_rc", "elmore_closed", "elmore_ladder",
+                    "delay_at_corner", "corner_table", "ir_drop_closed", "ir_drop_ladder",
+                    "em_check", "CORNERS", "B3_DISCLOSURE"],
+        "introduced_by": "D-235 (B3)", "guard": "run_ecore_e42_smoke.py",
+    },
 ]
 
 

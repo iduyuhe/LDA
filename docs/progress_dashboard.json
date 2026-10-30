@@ -34,7 +34,7 @@
     "endpoints": 159,
     "needs_login": 60
   },
-  "core_gates": 378,
+  "core_gates": 379,
   "coverage": {
     "anchors_total": 546,
     "blind_by_band": {

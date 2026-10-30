@@ -362,11 +362,6 @@ def connectivity(cell: Cell) -> dict:
             "net_of": net_of, "net_of_group": net_of_group}
 
 
-def resolve_nets(cell: Cell) -> dict:
-    """{shape_index: net|None}（供诊断）。"""
-    return connectivity(cell)["net_of"]
-
-
 # ═══════════════════════════════════════════════════════════════════════════
 # ③ 器件抽取（几何求交）
 # ═══════════════════════════════════════════════════════════════════════════

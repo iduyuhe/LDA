@@ -73,7 +73,7 @@ def main():
     # ── B2 多角：两侧都验（C 主导区 vs C_load 主导区）─────────────────
     rc_wire = {"r_ohm": SG.wire_r(10.0, 0.24), "c_ff": SG.wire_c(10.0, 0.24)}
     tbl = SG.corner_table(rc_wire)
-    d = tbl["delay_ps"]
+    d = tbl["delay_fs"]
     order_ok = d["ff"] < d["tt"] < d["ss"]
     # ① C_load = 0 ⇒ 延迟 ∝ kr·kc
     kr_ff, kc_ff = SG.CORNERS["ff"]
@@ -133,7 +133,7 @@ def main():
         SG.CORNERS.clear()
         SG.CORNERS.update(saved)
     check("B6 反向探针：把三角系数抹平 ⇒ 延迟区间宽度归零（多角判据确实有牙）",
-          flat["max_ps"] == flat["min_ps"] and flat["spread_pct"] == 0.0,
+          flat["max_fs"] == flat["min_fs"] and flat["spread_pct"] == 0.0,
           "flat spread=%s%% · 恢复后 spread=%s%%" % (flat["spread_pct"], tbl["spread_pct"]))
 
     # ── B7 与 B2 集成：用真实布出的形状做提取 ───────────────────────
@@ -144,13 +144,13 @@ def main():
         per_net[n["name"]] = SG.net_rc(routed["shapes"], lambda L: _LAYER.get(L, "?"), n["name"])
     ok7 = all(v["r_ohm"] > 0 and v["c_ff"] > 0 and v["n_seg"] >= 3 for v in per_net.values())
     tables = {k: SG.corner_table(v) for k, v in per_net.items()}
-    tbl_ok = all(t["delay_ps"]["ff"] < t["delay_ps"]["tt"] < t["delay_ps"]["ss"]
-                 and t["max_ps"] > t["min_ps"] for t in tables.values())
-    worst = max(tables.items(), key=lambda kv: kv[1]["max_ps"])
+    tbl_ok = all(t["delay_fs"]["ff"] < t["delay_fs"]["tt"] < t["delay_fs"]["ss"]
+                 and t["max_fs"] > t["min_fs"] for t in tables.values())
+    worst = max(tables.items(), key=lambda kv: kv[1]["max_fs"])
     check("B7 与 B2 集成：真实布出形状提取 R>0 ∧ C>0 ∧ 三角严格有序 ∧ 区间宽度>0",
           ok7 and tbl_ok,
-          "worst=%s max=%.4fps spread=%.2f%%"
-          % (worst[0], worst[1]["max_ps"], worst[1]["spread_pct"]))
+          "worst=%s max=%.4ffs spread=%.2f%%"
+          % (worst[0], worst[1]["max_fs"], worst[1]["spread_pct"]))
 
     # ── B8 确定性 ─────────────────────────────────────────────────
     def sig():
@@ -158,7 +158,7 @@ def main():
         r = RT.route(c)
         v = SG.net_rc(r["shapes"], lambda L: _LAYER.get(L, "?"), "n0")
         return (round(v["r_ohm"], 12), round(v["c_ff"], 12),
-                tuple(round(x, 9) for x in SG.corner_table(v)["delay_ps"].values()))
+                tuple(round(x, 9) for x in SG.corner_table(v)["delay_fs"].values()))
     check("B8 确定性：两次提取/三角计算逐字节一致", sig() == sig())
 
     dt = time.time() - t0

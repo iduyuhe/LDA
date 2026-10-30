@@ -747,6 +747,28 @@ ECORE_CAPABILITY_MANIFEST = [
                     "em_check", "CORNERS", "B3_DISCLOSURE"],
         "introduced_by": "D-235 (B3)", "guard": "run_ecore_e42_smoke.py",
     },
+    {
+        "capability": "**B3+ SPEF 级提取（D-236）**：把寄生从「两个标量 R/C」升级成**分布式 RC 网络**，"
+                      "并交出/读回 IEEE 1481-1998 子集。① **提取**：从 B2 真实矩形几何（M3/M4/VIA2）建树 —— "
+                      "同一层同一线中心的重叠矩形先按**区间并集去重**（焊盘画在线上，逐矩形求和会重复计面积），"
+                      "长段按 seg_um 切分，via 作为电阻接入；② **写出**：`*NAME_MAP`/`*PORTS`/`*D_NET`/`*CONN`/"
+                      "`*CAP`/`*RES`；③ **读回**：自解析器还原成网络且**逐位相等**。"
+                      "能逐位相等的原因是数值走**整数定点网格**（R 1e-6 Ω、C 1e-6 fF）而非浮点，"
+                      "文本 `%d.%0*d` 与整数**十进制双射**，超网格即报错不静默截断。"
+                      "量化用**最大余数法** ⇒ 逐项量化之和 ≡ 量化总量（否则 8×312.5mΩ 会得 2496≠2500），"
+                      "故网络总量能与 B3 的 `net_rc` 标量口径**逐位对拍**。"
+                      "实测：4 网 / 3136 字节 / 227 行 · round-trip 差异 **0** · 与 net_rc 相对差 R 1.3e-7 / C 5.6e-6 · "
+                      "单段控制 Elmore 与闭式 `R(C/2+C_load)` 相对差 ≤4.8e-7（n=1,2,4,8,16 逐点）。"
+                      "🔴 **无第三方工具回读**：只是格式合规 + 自解析可逆，**不宣称**与商业 STA 流程互通；"
+                      "**精度未提升**（仍是 B3 一阶平板+边缘修正）；耦合只算相邻同层平行段；"
+                      "**净增 0 锚**（整数定点 ⇒ 门禁形态，E43 · 13 判据 · 含 8 类篡改必红）",
+        "module": "lda_l2.ecore.dspef",
+        "symbols": ["extract_network", "spef_write", "spef_parse", "elmore_network",
+                    "net_totals", "net_decl_total", "net_signature", "compare_networks",
+                    "build_wire_network", "q_r", "q_c", "fmt_fixed", "parse_fixed",
+                    "SpefError", "SPEF_DISCLOSURE"],
+        "introduced_by": "D-236 (B3+/E43)", "guard": "run_ecore_e43_smoke.py",
+    },
 ]
 
 

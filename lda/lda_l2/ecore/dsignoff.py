@@ -15,7 +15,7 @@ B1 给了**电阻**（`dcells.extract_r`：栅/扩散/接触/金属段），B2 �
 | 项 | 模型（一阶 · 全部显式假设） |
 |---|---|
 | 电容 | 平板对衬底 `ε₀ε_r·A/h` × 边缘因子 `(1+2t/w)`；按走线段逐段求和 |
-| 延迟 | Elmore：`R·(C_wire/2 + C_load)`；另给 N 段梯形网络的**离散解**做互证 |
+| 延迟 | Elmore：`R·(C_wire/2 + C_load)`；另给 N 段梯形网络的**离散解**做互证。🔴 单位 = **fs**（`Ω·fF = 1e-15 s`）|
 | 多角 | ff/ss 对 R、C 各乘一套系数，给出**延迟区间**（不是单点） |
 | IR | 均匀抽流的均匀轨：末端压降 `I·R/2`；另给离散节点方程解做互证 |
 | EM | `J = I/(w·t)` 对 `J_MAX` 判定（含裕量） |
@@ -42,6 +42,7 @@ CPP_FRINGE = 0.02         # 边缘电容系数（每边，按 w 归一）—— 
 
 RSH = {"M3": 0.12, "M4": 0.10}      # Ω/□（演示量级）
 C_LOAD_FF = 1.0                     # 典型扇出负载电容（假设）
+TIME_UNIT = "fs"                    # 🔴 Ω·fF = 1e-15 s = 1 fs（延迟量的真实量纲）
 J_MAX_A_M2 = 1.0e10                 # 1e6 A/cm²（公开量级假设，非工艺认证）
 
 #: 多角（R 缩放, C 缩放）—— 演示量级，非 PVT 数据
@@ -93,12 +94,17 @@ def net_rc(shapes: list, layer_of, net: str) -> dict:
 # ② Elmore 延迟（闭式 ⇄ 离散梯形网络互证）
 # ═══════════════════════════════════════════════════════════════════════════
 def elmore_closed(r_ohm: float, c_ff: float, c_load_ff: float = C_LOAD_FF) -> float:
-    """分布式 RC 线 + 集中负载的一阶 50% 延迟（ps）：`R·(C/2 + C_load)`。"""
+    """分布式 RC 线 + 集中负载的一阶 Elmore 延迟：`R·(C/2 + C_load)`。
+
+    🔴 **单位是 fs 不是 ps**：`Ω × fF = 1e-15 s = 1 fs`。
+    （v0.9.345 的文档把该量标成 ps —— 标签错、数值不错；v0.9.346 修正标签，
+    并新增 `TIME_UNIT` 常量与 E43 的量纲判据。）
+    """
     return r_ohm * (c_ff / 2.0 + c_load_ff)
 
 
 def elmore_ladder(r_ohm: float, c_ff: float, n: int, c_load_ff: float = C_LOAD_FF) -> float:
-    """把线切成 n 段：每段 R/n、C/n，末段带负载 C_load，按 Elmore 求和（ps）。
+    """把线切成 n 段：每段 R/n、C/n，末段带负载 C_load，按 Elmore 求和（**fs**）。
 
     逐节点延迟和 = Σ_k (R/n) · (C·(n-k)/n + C_load)。
     ⇒ 解析和 = R·C·(n+1)/(2n) + R·C_load ⇒ n→∞ 收敛到 `R·(C/2 + C_load)`。
@@ -116,7 +122,7 @@ def elmore_ladder(r_ohm: float, c_ff: float, n: int, c_load_ff: float = C_LOAD_F
 # ═══════════════════════════════════════════════════════════════════════════
 def delay_at_corner(rc: dict, corner: str, c_load_ff: float = C_LOAD_FF,
                     use_ladder_n: int = 0) -> float:
-    """某角下的延迟（ps）。`use_ladder_n>0` 时改用离散梯形解（互证用）。"""
+    """某角下的延迟（**fs**）。`use_ladder_n>0` 时改用离散梯形解（互证用）。"""
     if corner not in CORNERS:
         raise KeyError("unknown corner: %r" % (corner,))
     kr, kc = CORNERS[corner]
@@ -128,10 +134,10 @@ def delay_at_corner(rc: dict, corner: str, c_load_ff: float = C_LOAD_FF,
 
 
 def corner_table(rc: dict) -> dict:
-    """三角延迟表 + 区间（min/max）+ 相对 tt 的散布。"""
+    """三角延迟表 + 区间（min/max）+ 相对 tt 的散布。🔴 键名带 `_fs`：单位是 fs。"""
     d = {k: round(delay_at_corner(rc, k), 6) for k in CORNERS}
     lo, hi = min(d.values()), max(d.values())
-    return {"delay_ps": d, "min_ps": round(lo, 6), "max_ps": round(hi, 6),
+    return {"delay_fs": d, "min_fs": round(lo, 6), "max_fs": round(hi, 6),
             "spread_pct": round((hi - lo) / d["tt"] * 100.0, 6) if d["tt"] else None}
 
 
@@ -182,11 +188,11 @@ B3_DISCLOSURE = {
     "claimable": False,
     "not_signoff": True,
     "missing_for_real_signoff": [
-        "foundry RC tech file（ITF）与经校准的 SPEF 提取",
+        "foundry RC tech file（ITF）与**经校准**的 SPEF 提取（E43 已给未校准的 SPEF 子集，缺 ITF 与硅校准）",
         "3D 场求解器（耦合电容、衬底网络）",
         "SPICE 级时序（真实器件 I-V、串扰、噪声）",
         "完整 PVT 角 + OCV/AOCV 降额",
-        "电源网格全 \(\\mathbf{I\\cdot R}\) 求解（本模块只做均匀抽流一阶）",
+        "电源网格全域 IR 求解（本模块只做均匀抽流一阶，无网格求解器）",
         "EM 规则表（各层 J_max、通孔许用电流）来自工艺认证",
         "硅实测校准（本项目无流片）",
     ],

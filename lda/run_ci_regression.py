@@ -1516,6 +1516,7 @@ CORE_SMOKES: List[str] = [
     #   密度三法互证 / 左边界最优性(轨道数==d) / 多 track 阈值(T≥d⇒100%) / T=1 复现 E38g 布不通。
     #   净增 0 锚（整数精确量 resid≡0 ⇒ 以门禁几何律形态落地）。CI core 375→376。
     "run_ecore_e39_smoke.py",
+    "run_ecore_e40_smoke.py",
     "run_webui_entry_smoke.py",
     # 🔴 v0.9.213 光子计算 SoC 案例卡（/api/soc_demo · #sec-soc）跨源一致性 + 前端取值路径门禁：
     #   卡内 WDM/TDM 杠杆常量 ≡ lda_l2 真源（soc_wdm/soc_tdm）逐位同源 + 反向探针（改真源必红）；
@@ -3245,6 +3246,7 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e38g_smoke.py": 200.0,
     # E39 多 track 通道路由几何判据（A2）· 纯组合亚秒级（实测 ~0.21s），预算 60s 留 ~290×
     "run_ecore_e39_smoke.py": 60.0,
+    "run_ecore_e40_smoke.py": 60.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     # 🔴 v0.9.186：新增「标准 JSON 出口」门禁（`run_webui_json_hard_smoke.py`,
     #   13 判据 + 4 道突变探针；因浏览器 JSON.parse 崩于 `-Infinity` 而立）。

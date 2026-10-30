@@ -689,6 +689,27 @@ ECORE_CAPABILITY_MANIFEST = [
                     "DMTRACK_DISCLOSURE", "E39_CHANNEL_CAPACITY"],
         "introduced_by": "D-232 (A2/E39)", "guard": "run_ecore_e39_smoke.py",
     },
+    {
+        "capability": "**B1 标准单元内部几何（晶体管级 · D-233）**：把 E36 的「包围盒 + 0.06µm 有源标记」"
+                      "换成**真几何** —— 每颗单元由 DIFF / POLY / CONT / M1 / NWELL 矩形构成，栅（POLY∩DIFF）"
+                      "即沟道、源漏 = DIFF 被栅切开的相邻段，PMOS/NMOS 由「沟道是否被 NWELL 完全包住」判定。"
+                      "于是三件此前做不到的事第一次有真对象：**① 真实 DRC**（线宽/间距/面积 + 接触孔对 "
+                      "DIFF/POLY/M1 的单边包围 + 栅-孔间距 + NWELL 包围）；**② 真实 LVS**（几何抽器件 "
+                      "⇄ 期望网表，含**内部节点匹配**：NAND 串联中间节点）；**③ 真实寄生 R**（栅 = poly "
+                      "接触→沟道 = Rsh·d/W、源漏 = 扩散方块 + 接触电阻、金属段按长宽比）。"
+                      "实测：INV_X1 0.769µm²/2 管 = **0.384 µm²/管**、NAND2_X1 1.470µm²/4 管 = 0.368 µm²/管，"
+                      "均**大于**E38c 符号模型 0.266 µm²/管 ⇒ 真实几何比符号模型更贵，为 E38e「加面积是"
+                      "唯一有效杠杆」提供定量依据。🔴 **净增 0 锚**（整数几何 + 闭式算术 ⇒ resid≡0，硬做 "
+                      "ledger 锚会撞 zero_resid 棘轮）⇒ 以门禁几何律形态落地（E40 · 9 判据 · 反向探针 9 条）。"
+                      "⚠️ 诚实边界：规则集是**自建 LDA-DEMO45**（45nm 量级教科书尺度），**非任何 foundry "
+                      "PDK 真值**；**不是 SPICE**（只有 W/L + 方块电阻，无 I-V/C/温度/噪声）；"
+                      "电流拥挤未建模 ⇒ R 偏乐观；不含 M2 内部走线；不报 TOPS/fJ/能效（未流片）",
+        "module": "lda_l2.ecore.dcells",
+        "symbols": ["build_inv", "build_nand2", "CELLS", "RULES", "RSH", "R_CONTACT",
+                    "diff_segments", "connectivity", "extract_devices", "run_drc",
+                    "run_lvs", "extract_r", "gate_r", "cell_self_check", "B1_DISCLOSURE"],
+        "introduced_by": "D-233 (B1)", "guard": "run_ecore_e40_smoke.py",
+    },
 ]
 
 

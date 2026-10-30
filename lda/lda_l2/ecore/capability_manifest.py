@@ -710,6 +710,25 @@ ECORE_CAPABILITY_MANIFEST = [
                     "run_lvs", "extract_r", "gate_r", "cell_self_check", "B1_DISCLOSURE"],
         "introduced_by": "D-233 (B1)", "guard": "run_ecore_e40_smoke.py",
     },
+    {
+        "capability": "**B2 完整 detail route（D-234）**：把 E37 `track_route` 的两处结构性简化补上 —— "
+                      "① **引脚取自真实单元**（`dcells` 的 A/B 左边界矩形、Y 内部 strap 中心），"
+                      "不是几何中心；② **容量设上界**（行间通道只有 T 条 M3 轨道，"
+                      "所需轨道数 d 由 A2 的 `dmtrack.channel_density` 给出、左边界算法分配）⇒ "
+                      "**T < d 就是布不通**，而不是「多画几条」。"
+                      "实测：4+4 单元交叉网表 d=4 / T=5 ⇒ **4/4 全布通且 DRC 零违规**；"
+                      "同一网表用 E37 式「中心点 + 同 y 集中」基线 ⇒ **14 条 min_spacing 违规**"
+                      "（E36 报的 baseline DRC 就是这个成因）。T=d-1 ⇒ 布通降到 3/4（容量是硬的）。"
+                      "🔴 **净增 0 锚**（整数/闭式 ⇒ resid≡0）⇒ 门禁形态（E41 · 9 判据 · 含 T<d 与塞同轨两条反向探针）。"
+                      "⚠️ 诚实边界：两层通道模型（M3 横 / M4 竖 / VIA2），**不是通用迷宫路由器**、无 rip-up、"
+                      "不优化线长；单元内 M1→M3 via 串沿用 E37 约定（失效面见 E33）；演示用例 4+4 单元，"
+                      "不宣称真实设计布通率；不报面积/能效",
+        "module": "lda_l2.ecore.dcroute",
+        "symbols": ["build_case", "place_rows", "pin_point", "center_point",
+                    "train_tracks", "route", "route_center_baseline",
+                    "net_components", "dcroute_self_check", "B2_DISCLOSURE"],
+        "introduced_by": "D-234 (B2)", "guard": "run_ecore_e41_smoke.py",
+    },
 ]
 
 

@@ -7,7 +7,7 @@
     "head（每次提交都变 ⇒ 非确定量，故意不入台账）"
   ],
   "frozen_snapshot": {
-    "version": "0.9.348",
+    "version": "0.9.349",
     "ledger_total": 546,
     "ledger_strict": 524,
     "ledger_degraded": 3,

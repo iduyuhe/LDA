@@ -707,12 +707,13 @@ ECORE_CAPABILITY_MANIFEST = [
         "module": "lda_l2.ecore.dcells",
         "symbols": ["build_inv", "build_nand2", "CELLS", "RULES", "RSH", "R_CONTACT",
                     "diff_segments", "connectivity", "extract_devices", "run_drc",
-                    "run_lvs", "extract_r", "gate_r", "cell_self_check", "B1_DISCLOSURE"],
+                    "run_lvs", "extract_r", "gate_r", "cell_self_check", "B1_DISCLOSURE",
+                    "PINS_V2_NOTE"],
         "introduced_by": "D-233 (B1)", "guard": "run_ecore_e40_smoke.py",
     },
     {
         "capability": "**B2 完整 detail route（D-234）**：把 E37 `track_route` 的两处结构性简化补上 —— "
-                      "① **引脚取自真实单元**（`dcells` 的 A/B 左边界矩形、Y 内部 strap 中心），"
+                      "① **引脚取自真实单元**（`dcells` 的引脚 pad 接入点；v0.9.349 起为 240×240 pad 中心），"
                       "不是几何中心；② **容量设上界**（行间通道只有 T 条 M3 轨道，"
                       "所需轨道数 d 由 A2 的 `dmtrack.channel_density` 给出、左边界算法分配）⇒ "
                       "**T < d 就是布不通**，而不是「多画几条」。"
@@ -803,14 +804,21 @@ ECORE_CAPABILITY_MANIFEST = [
                       "相邻引脚 INV A-Y 0.2716µm / NAND2 A-B 0.2228µm < 两条 M4 需的 0.36µm）。"
                       "实测（12 单元 / 4 列 / 同网表同布局）：路由 DRC **34 → 14（2.43×）**，"
                       "连通性 **100%**（无断网），容量律无越界，提取 10 网全 `R>0∧C>0`。"
-                      "🔴 **不宣称零 DRC**：残差 14 条全部落在引脚邻近的 M3 间距/孔包围，"
-                      "归因是**单元引脚几何**而非路由算法 ⇒ 修法在单元版图（引脚重画），本模块只把它量化。"
+                      "🔴 v0.9.348 **不宣称零 DRC**：残差 14 条全部落在引脚邻近的 M3 间距/孔包围，"
+                      "归因是**单元引脚几何**而非路由算法 ⇒ 修法在单元版图（引脚重画）。"
+                      "✅ **v0.9.349 已收口（引脚可接入化）**：`dcells` 信号引脚改成 **240×240 pad**，"
+                      "接入点落在库级列网格 120/480/840nm（两两恰一个 pitch）；同时修掉路由器两个真缺陷"
+                      "（trunk 着色改按「引脚 ∪ 列」真实跨度、通道数改成 == 行数）⇒ 路由 DRC **34 → 0**、"
+                      "全量 DRC **0**、10/10 网布通、每网 1 连通分量、列失败 0。"
+                      "🔴 **零 DRC 只对这一个用例成立**（12 单元 / 4 列 / INV+NAND2 / LDA-DEMO45），"
+                      "换单元类型（DFF 未建模）、列数、通道高度都要重测。"
                       "⚠️ 子块接入非全 IP（dcells 仅 INV/NAND2，DFF 跳过并计数；DRC 为 O(n²) 规模受限）；"
                       "非通用路由器（每网单 trunk 星形，无 maze/rip-up）；M2 只画焊盘；行高取 max 底对齐；"
-                      "单元间距 0.36µm 换 pin 可达性；只布内部网（端口网如实计入未布）；**净增 0 锚**（E45 · 11 判据）",
+                      "单元间距 0.46µm（=1.44−0.98，为轨道间距整数倍）换 pin 可达性；"
+                      "只布内部网（端口网如实计入未布）；**净增 0 锚**（E45 · 12 判据）",
         "module": "lda_l2.ecore.dpnr",
         "symbols": ["place_real", "cell_shapes", "pin_points", "pin_access_points",
-                    "pin_access_conflicts", "net_pins", "route_block", "route_baseline",
+                    "pin_legality", "pin_access_conflicts", "net_pins", "route_block", "route_baseline",
                     "cell_drc_lvs", "routing_only", "access_only", "all_routing",
                     "net_components_rt", "DPNR_DISCLOSURE"],
         "introduced_by": "D-238 (B-series → P&R)", "guard": "run_ecore_e45_smoke.py",

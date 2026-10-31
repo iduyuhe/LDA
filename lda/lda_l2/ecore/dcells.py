@@ -60,6 +60,27 @@ RULES = {
     "nwell_enc": 80,
 }
 
+#: 🔴 **v0.9.349 引脚可接入化**（`PINS_V2_NOTE`）。判据不是「好看」，是几何硬约束：
+#:  · 路由器在每个引脚上要落 `VIA1 = 0.20` 见方，并由引脚金属提供 `ENC = 0.02` 单边包围
+#:    ⇒ 引脚 pad 两维必须 ≥ `0.20 + 2×0.02 = 0.24`；接入点还要离 pad 边 ≥0.12。
+#:  · 同一单元的多个引脚最终都要各自占用一条 M4 列（同一行内的 M4 y 区间必然重叠），
+#:    两个不同网的 M3 接入焊盘 = 0.242 见方 + 间距 0.10 ⇒ **接入点必须 ≥0.342µm**。
+#:  旧几何（v0.9.348）：A/Y 中心只差 **0.0375µm**、NAND2 的 B/Y 差 **0.0175µm**，
+#:  引脚高度 65–75nm（装不下 0.20 孔）⇒ 只能由路由器外挂 M1 焊盘、再把接入点沿 x 硬挪，
+#:  结果 M3 焊盘/跳线互相叠 ⇒ E45 的 14 条残差（8 条间距 + 6 条孔包围）。
+#:  本版：**pad 统一 240×240**，pad 中心 x 取 120 / 480 / 840 nm（库级列网格，两两恰一个 pitch），
+#:  纵向按「不同网的 y 带 ≥0.36」分配 ⇒ 接入点 = pad 中心（**零移动**）、跳线长度归零。
+PINS_V2_NOTE = {
+    "pad_nm": 240,
+    "access_x_nm": {"INV_X1": {"A": 120, "Y": 480},
+                    "NAND2_X1": {"A": 120, "B": 480, "Y": 840}},
+    "need_pad_nm": 240,      # VIA 200 + 2×ENC 20
+    "need_sep_um": 0.342,    # M3 pad 0.242 + S_MIN 0.10
+    "before": {"INV_X1_min_sep_um": 0.0375, "NAND2_X1_min_sep_um": 0.0175,
+               "pin_h_nm": (65, 75)},
+    "after": {"INV_X1_min_sep_um": 0.435, "NAND2_X1_min_sep_um": 0.360},
+}
+
 # ---- 方块电阻（Ω/□ · 教科书量级 · 一阶）----
 RSH = {"poly": 8.0, "diff": 120.0, "m1": 0.10}
 R_CONTACT = 6.0          # Ω / 个（单接触孔）
@@ -145,12 +166,22 @@ def build_inv() -> Cell:
     布局（nm · x 向右 · y 向上）::
 
         y=1240 ┌────────────── VDD rail (M1) ──────────────┐
-        1000   │             pfet diff  W=300               │ ← NWELL ±80 包住
+        1090   │                        ┌──── Y pin pad ──┐ │ ← 240×240，可落 VIA1
+        1000   │             pfet diff  │   W=300         │ │ ← NWELL ±80 包住
+         850   │                        └─────────────────┘ │
          700   │   [p_src]        ‖gate‖        [p_drn]     │
-               │        ↑ gap：栅接触 poly pad + 局部 M1     │
-         480   │             nfet diff  W=300               │
+         650   │ ┌── A pin pad ──┐      ↑ gap：栅接触      │
+         480   │ │               │      poly pad + M1      │
+         410   │ └───────────────┘                          │
           70   ├────────────── VSS rail (M1) ──────────────┤
            0   └────────────────────────────────────────────┘
+
+    🔴 **v0.9.349 引脚重画（E46）**：信号引脚从「65nm 高的窄条」改成 **240×240 的
+    pin pad**，且 A（中心 y=0.535）与 Y（中心 y=0.970）纵向拉开 **0.435µm**。
+    理由不是美观，是物理：路由器在引脚处要落 `VIA1(0.20) + 包围(0.02×2) = 0.24`
+    的焊盘，相邻**不同网**焊盘之间还要 ≥`S_MIN(0.10)` ⇒ 两引脚接入点必须 ≥**0.342µm**。
+    旧几何 A/Y 只差 0.0375µm（见 `PINS_V2_NOTE`），任何列分配策略都会让两个 M3
+    焊盘叠在一起 —— 这就是 E45 那 14 条残差的来源。
     """
     w = 620
     rects = _rails(w)
@@ -161,24 +192,28 @@ def build_inv() -> Cell:
     gx0, gx1 = 290, 340                       # 栅（L = 50）
     rects.append(R(L_POLY, gx0, Y_NDIFF[0] - 50, gx1, Y_PDIFF[1] + 50, role="gate"))
     # 栅接触处的 poly 焊盘：poly 条仅 50 宽，放不下 45 孔 + 15 包围 ⇒ 局部加宽（合法）
-    rects.append(R(L_POLY, 270, 545, 360, 620, role="gate_pad"))
+    rects.append(R(L_POLY, 225, 540, 335, 625, role="gate_pad"))
 
     rects += [_cont(182.5, 312.5, role="cont_sd"),     # NMOS 源 → VSS
               _cont(442.5, 312.5, role="cont_sd"),     # NMOS 漏 → Y
               _cont(182.5, 772.5, role="cont_sd"),     # PMOS 源 → VDD
               _cont(442.5, 772.5, role="cont_sd"),     # PMOS 漏 → Y
-              _cont(314.5, 582.5, role="cont_gate")]   # 栅接触 → A
+              _cont(267.5, 582.5, role="cont_gate")]   # 栅接触 → A（落在 poly 条内，reach>0）
 
-    m_y = R(L_M1, 410, 280, 475, 810, role="strap")    # Y：NMOS 漏 ↔ PMOS 漏
+    m_y = R(L_M1, 410, 280, 475, 1105, role="strap")   # Y：NMOS 漏 ↔ PMOS 漏（上延至 pin pad）
     rects += [R(L_M1, 150, Y_VSS[1], 215, 350, role="strap"),   # VSS → NMOS 源
               R(L_M1, 150, 740, 215, Y_VDD[0], role="strap"),   # VDD → PMOS 源
               m_y,
-              R(L_M1, 0, 550, 347, 615, role="pin")]            # A：栅接触 → 左边界
+              # A：240×240 pin pad（x 中心 120 = 列网格点），另有 240–315 的连接条接栅接触
+              R(L_M1, 0, 415, 240, 655, role="pin"),
+              R(L_M1, 233, 550, 300, 620, role="strap"),           # A pad → 栅接触（留 75 余量给 Y pad）
+              # Y：240×240 pin pad（中心 495 ⇒ 与 A 的 120 差 0.375µm）
+              R(L_M1, 375, 850, 615, 1090, role="pin")]
 
     pins = {"VDD": R(L_M1, 0, Y_VDD[0], w, Y_VDD[1], net="VDD"),
             "VSS": R(L_M1, 0, Y_VSS[0], w, Y_VSS[1], net="VSS"),
-            "A": R(L_M1, 0, 550, 347, 615, net="A"),
-            "Y": R(L_M1, 410, 280, 475, 810, net="Y")}
+            "A": R(L_M1, 0, 415, 240, 655, net="A"),
+            "Y": R(L_M1, 375, 850, 615, 1090, net="Y")}
     devs = [("pmos", 300, 50, "A", "VDD", "Y"),
             ("nmos", 300, 50, "A", "VSS", "Y")]
     return Cell("INV_X1", w, H_ROW, rects, pins, devs)
@@ -196,7 +231,7 @@ def build_nand2() -> Cell:
       · 两个输入焊垫都要在 gap 里放（poly 条只有 50 宽，放不下 45 孔 + 15 包围 ⇒ 需局部加宽），
         而 poly 焊盘之间必须 ≥ `poly_s=120`、焊盘与有源之间必须不重叠；
       · 并联 PMOS 的两个 Y 端（左/右）必须互连，而中间那段是 VDD ⇒ Y 的横向连接只能走
-        gap 里的一条专用 M1 带（y 620–690），它两侧要各留 60 给两个输入焊垫。
+        gap 里的一条专用 M1 带（y 780–850），它上方还要放三个靠 0.36 分开的 pin pad。
       ⇒ gap 至少 60+70+60+60+70+60 = 380，故 PMOS 行下移到 y=1000、单元高 1500。
     """
     w = 980
@@ -212,8 +247,8 @@ def build_nand2() -> Cell:
     # 两条栅（A / B）跨双有源；gap 内各自加宽成焊盘放接触孔
     rects += [R(L_POLY, 250, Y_NDIFF[0] - 50, 300, y_pdiff[1] + 10, role="gate"),
               R(L_POLY, 560, Y_NDIFF[0] - 50, 610, y_pdiff[1] + 10, role="gate"),
-              R(L_POLY, 235, 485, 315, 560, role="gate_pad"),     # A 焊盘
-              R(L_POLY, 545, 645, 625, 720, role="gate_pad")]     # B 焊盘
+              R(L_POLY, 145, 545, 310, 660, role="gate_pad"),     # A 焊盘（含栅接触位）
+              R(L_POLY, 505, 545, 615, 660, role="gate_pad")]     # B 焊盘
 
     # 源漏接触孔：NMOS 左=VSS / 右=Y；PMOS 左=Y / 中=VDD / 右=Y
     rects += [_cont(172.5, 312.5, role="cont_sd"),
@@ -221,26 +256,30 @@ def build_nand2() -> Cell:
               _cont(172.5, 1087.5, role="cont_sd"),
               _cont(422.5, 1087.5, role="cont_sd"),
               _cont(722.5, 1087.5, role="cont_sd"),
-              _cont(274.5, 522.5, role="cont_gate"),
-              _cont(584.5, 682.5, role="cont_gate")]
+              _cont(260.0, 585.0, role="cont_gate"),
+              _cont(565.0, 585.0, role="cont_gate")]
 
-    # M1：电源引下 / 两输入焊垫（都从左边界出，分处两条 y 带）/ Y 三段（左竖 + gap 横 + 右竖）
-    # 🔴 y 带分配（gap 480–1000）：A 输入 485–560 · B 输入 645–720 · Y 横连 780–850，
-    #    两两间距 ≥60（M1 最小间距）。Y 左竖从 PMOS 左端下到横连带，途中不与任何输入网相交。
+    # M1：电源引下 / 两输入 pin pad / 输出 pin pad / Y 三段（左竖 + gap 横 + 右竖）
+    # 🔴 y 带分配（v0.9.349 重画后）：A/B 输入 pad 410–650 · Y pad 780–1020。
+    #    输入 pad 高 240、中心 y=0.530 两两 x 间距 0.360（A 0–300 / B 390–630）；
+    #    Y pad 下沉到 780–1020（中心 y=0.900），与输入中心纵向差 0.370 ⇒ 三引脚的
+    #    M3 接入焊盘（0.242）两两间距 ≥0.10 全部成立（见 `PINS_V2_NOTE`）。
     m_y_r = R(L_M1, 690, 280, 755, 1120, role="strap")
     rects += [R(L_M1, 140, Y_VSS[1], 205, 345, role="strap"),          # VSS
               R(L_M1, 390, 1055, 455, y_vdd[0], role="strap"),         # VDD
-              R(L_M1, 0, 485, 315, 560, role="pin"),                   # A
-              R(L_M1, 0, 645, 625, 720, role="pin"),                   # B
+              R(L_M1, 0, 410, 240, 650, role="pin"),                   # A pin pad（x 中心 120）
+              R(L_M1, 226, 550, 294, 620, role="strap"),               # A pad → 栅接触
+              R(L_M1, 360, 410, 600, 650, role="pin"),                 # B pin pad（x 中心 480）
               m_y_r,
+              R(L_M1, 720, 780, 960, 1020, role="pin"),                # Y pin pad（x 中心 840）
               R(L_M1, 140, 780, 205, 1120, role="strap"),              # Y 接 PMOS 左端（左竖）
               R(L_M1, 140, 780, 755, 850, role="strap")]               # Y gap 横连
 
     pins = {"VDD": R(L_M1, 0, y_vdd[0], w, y_vdd[1], net="VDD"),
             "VSS": R(L_M1, 0, Y_VSS[0], w, Y_VSS[1], net="VSS"),
-            "A": R(L_M1, 0, 485, 315, 560, net="A"),
-            "B": R(L_M1, 0, 645, 625, 720, net="B"),
-            "Y": R(L_M1, 690, 280, 755, 1120, net="Y")}
+            "A": R(L_M1, 0, 410, 240, 650, net="A"),
+            "B": R(L_M1, 360, 410, 600, 650, net="B"),
+            "Y": R(L_M1, 720, 780, 960, 1020, net="Y")}
     devs = [("pmos", 300, 50, "A", "Y", "VDD"),
             ("pmos", 300, 50, "B", "VDD", "Y"),
             ("nmos", 300, 50, "A", "VSS", "n1"),

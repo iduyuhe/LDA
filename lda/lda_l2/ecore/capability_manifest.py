@@ -823,6 +823,28 @@ ECORE_CAPABILITY_MANIFEST = [
                     "net_components_rt", "DPNR_DISCLOSURE"],
         "introduced_by": "D-238 (B-series → P&R)", "guard": "run_ecore_e45_smoke.py",
     },
+    {
+        "capability": "**多角（PVT）互连线延迟窗口（D-239）**：把主链的「单角 tt 单点」升级为 "
+                      "**min/typ/max 窗口**。核心是**一个定理 + 一个刻意的破例**："
+                      "① 纯 RC 树 + 统一缩放时 `τ_corner = kr·kc·τ_tt` **精确成立** ⇒ 只有片电阻的模型，"
+                      "多角窗口退化成**单一标量**，各网宽度完全相同（这种「多角」是空转的，判据 D4 用 "
+                      "`kv:=kr` 精确复现该退化）；② 让窗口有结构的必须是**不跟片电阻同角**的量 —— "
+                      "本模型取**通孔电阻**：`τ_k = kr_k·kc_k·τ_metal + kv_k·kc_k·τ_via`，两项之比随网自身"
+                      "构成变化 ⇒ 每网窗口不同（实测 **1.9134× .. 1.9646×**，判据 D5 守「确有差异」）。"
+                      "实测（E45 那条主链的 12 单元块 / 10 网）：延迟 **0.0818 .. 3.1627 fs**（网间 38.65×）、"
+                      "**通孔电阻贡献 79.2%–93.9%**（本块尺度下延迟由通孔主导，片电阻只占 6%–21%）、"
+                      "拆分加法闭合残差 **4.4e-16 fs**、tt 角与 v0.9.349 既有 `elmore_network` 逐位一致、"
+                      "窗口全部落在**闭式界** [1.6536, 1.9861]（全金属界 … 全通孔界，由角因子直接推出）。"
+                      "🔴 **只做互连线**：不含标准单元/器件角 ⇒ **不是**「路径延迟窗口」；"
+                      "**不是 OCV/AOCV/POCV**（无 derating、无统计变异、无 clock）；角因子（含 "
+                      "`VIA_CORNERS` 比片电阻更宽这一点）是**演示假设**，非任何 foundry PVT 数据；"
+                      "一阶 Elmore（无 RLC / 无串扰时延 / 无 R(T)）。**净增 0 锚**（E47 · 12 判据）",
+        "module": "lda_l2.ecore.dpvt",
+        "symbols": ["CORNERS", "VIA_CORNERS", "CORNER_ORDER", "VIA_EDGE_R",
+                    "split_tau", "corner_tau", "net_window", "block_window",
+                    "theorem_check", "DPVT_DISCLOSURE"],
+        "introduced_by": "D-239 (PVT corners)", "guard": "run_ecore_e47_smoke.py",
+    },
 ]
 
 

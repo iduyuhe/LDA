@@ -1522,6 +1522,12 @@ CORE_SMOKES: List[str] = [
     "run_ecore_e43_smoke.py",
     "run_ecore_e44_smoke.py",
     "run_ecore_e45_smoke.py",
+    # E47（D-239 · 多角 PVT 接主链）：把单角 tt 升级为 min/typ/max 窗口。
+    #   τ 拆成金属段 + 通孔段，两段各带自己的角因子（kv 比 kr 更宽：接触电阻工艺灵敏度不同源）。
+    #   **12 判据**：加法闭合 / 语义对照组 / tt 纯增量 / 定理退化(kv:=kr ⇒ 精确标量积) /
+    #   非平凡(各网窗口因网而异) / 通孔主导 / 三角单调 / 闭式界 / 反向探针 / 同源 / 确定性 / 耗时。
+    #   净增 0 锚（浮点组合 resid≡0）⇒ 门禁形态。CI core 382→383。
+    "run_ecore_e47_smoke.py",
     "run_webui_entry_smoke.py",
     # 🔴 v0.9.213 光子计算 SoC 案例卡（/api/soc_demo · #sec-soc）跨源一致性 + 前端取值路径门禁：
     #   卡内 WDM/TDM 杠杆常量 ≡ lda_l2 真源（soc_wdm/soc_tdm）逐位同源 + 反向探针（改真源必红）；
@@ -3257,6 +3263,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e43_smoke.py": 60.0,
     "run_ecore_e44_smoke.py": 60.0,
     "run_ecore_e45_smoke.py": 60.0,
+    # E47 多角 PVT 延迟窗口 · 纯浮点组合，实测 ~0.28s（三轮 0.2683/0.2708/0.2754）⇒ 预算 60s 留 ~218×
+    "run_ecore_e47_smoke.py": 60.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     # 🔴 v0.9.186：新增「标准 JSON 出口」门禁（`run_webui_json_hard_smoke.py`,
     #   13 判据 + 4 道突变探针；因浏览器 JSON.parse 崩于 `-Infinity` 而立）。

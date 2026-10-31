@@ -25,7 +25,7 @@ E45 的主链只报**单角 tt** 的一个 Elmore 值。signoff 要的是**窗�
 | D3 | 纯增量 | tt 角（kr=kc=kv=1）与 v0.9.349 的 `elmore_network` 逐位一致（≤1e-12） |
 | D4 | **定理退化** | `kv:=kr` ⇒ `τ_k == kr·kc·τ_tt` 精确（≤1e-9）∧ 各网 spread 均匀（比 == 1） |
 | D5 | **非平凡** | 默认 `kv≠kr` ⇒ 各网窗口宽度**不同**（hi/lo > 1.01） |
-| D6 | 通孔主导 + 量级 | `via_share ≥ 0.5`（实测 0.79–0.94）∧ 延迟落在正的 fs 量级 |
+| D6 | 通孔主导 + 量级 | `via_share ≥ 0.5`（v0.9.351 实测 0.54–0.90）∧ 延迟落在正的 fs 量级 |
 | D7 | 三角单调 | 每网 `min ≤ typ ≤ max` |
 | D8 | 窗口落在闭式界内 | 每网 spread ∈ `[kr_ss·kc_ss/(kr_ff·kc_ff), kv_ss·kc_ss/(kv_ff·kc_ff)]`（全金属界 … 全通孔界） |
 | D9 | 反向探针 | 交换 ff/ss 的通孔因子 ⇒ 单调性必**破**（`τ_ss < τ_ff`） |
@@ -63,7 +63,7 @@ AN_ELAPSED_MAX_S = 120.0
 AN_TOL_FS = 1e-9            # 拆分/定理的绝对容差（fs）
 AN_TOL_TT = 1e-12           # tt 角与既有实现的逐位一致（fs）
 AN_TRIVIAL_MIN_X = 1.01     # 各网窗口宽度的「确有差异」门限
-AN_VIA_SHARE_MIN = 0.5      # 通孔主导门限（实测 0.79–0.94）
+AN_VIA_SHARE_MIN = 0.5      # 通孔主导门限（v0.9.351 实测 0.54–0.90：trunk 缩短后金属占比升了）
 
 CASE_N = 12
 CASE_COLS = 4
@@ -158,11 +158,15 @@ def main():
           % (lo_b, hi_b),
           not out_band, "实测 %.4f..%.4f · 越界 %s" % (lo_s, hi_s, out_band or "无"))
 
-    # ── D9 反向探针：交换 ff/ss 通孔因子 ⇒ 单调性必破 ─────────────
+    # ── D9 反向探针：交换 ff/ss 的**整组**角因子 ⇒ 单调性必破 ──────
+    # 🔴 只换通孔因子在 v0.9.351 之后不够了：trunk 缩短使部分网的通孔占比降到 ~54%，
+    #    单换 kv 不足以翻转（实测 2/10 未破）。改成**片电阻角 + 通孔角一起对调**，
+    #    此时 τ_ss 与 τ_ff 的每一项都反向 ⇒ 全部网必破。
+    bad_rc = {"ff": PV.CORNERS["ss"], "tt": (1.00, 1.00), "ss": PV.CORNERS["ff"]}
     bad_via = {"ff": PV.VIA_CORNERS["ss"], "tt": 1.00, "ss": PV.VIA_CORNERS["ff"]}
-    bw_bad = PV.block_window(nets, via_corners=bad_via)
+    bw_bad = PV.block_window(nets, corners=bad_rc, via_corners=bad_via)
     broken = [n for n, v in bw_bad["nets"].items() if v["tau_fs"]["ss"] < v["tau_fs"]["ff"]]
-    check("D9 反向探针：把 ff/ss 的通孔因子对调 ⇒ 慢角必须反而更快（单调性判据确有牙）",
+    check("D9 反向探针：把 ff/ss 的角因子（片 RC + 通孔）整组对调 ⇒ 慢角必须反而更快",
           len(broken) == bw_bad["n_nets"],
           "对调后 ss<ff 的网数 %d/%d（ss=%.4f < ff=%.4f 于最坏网 %s）"
           % (len(broken), bw_bad["n_nets"],

@@ -77,7 +77,12 @@ from .ddetail import Shape
 #: 🔴 DFF 未建模（`dcells` 只有 INV/NAND2）⇒ 如实跳过并计数，不装作能布。
 CELL_MAP = {"INV": "INV_X1", "NAND2": "NAND2_X1"}
 
-CELL_GAP_UM = 0.46        # 单元间距 ⇒ pitch_x = 0.98 + 0.46 = 1.44 = **4×轨道间距**
+CELL_GAP_UM = 0.46        # 默认单元间距 ⇒ pitch_x = 0.98 + 0.46 = 1.44 = **4×轨道间距**
+#: 🔴 v0.9.351：M2 可承担「引脚 → 列」横向偏移后的**紧凑间距**（0.98 + 0.36 = 1.34，
+#: 不再是轨道间距整数倍 ⇒ 引脚相位会漂移，偏移由 M2 吸收而不是 M3 跳线）。
+CELL_GAP_TIGHT_UM = 0.36
+#: M2 横向绕行长度上限（超过则退回 M3 跳线并计数）。0.72 = 2×轨道间距。
+M2_JOG_MAX = 0.72
 CH_UM = 1.60              # 行间通道高度
 PITCH = DD.TRACK_PITCH    # 0.36
 EXT = DD.VIA / 2.0 + DL.ENC   # 0.12：金属须超出孔边 ENC
@@ -102,11 +107,12 @@ def tracks_in_channel(ch_um: float = CH_UM) -> int:
 # ═══════════════════════════════════════════════════════════════════════════
 # ① 布局（用 B1 的真实单元宽度，不用面积模型反推）
 # ═══════════════════════════════════════════════════════════════════════════
-def place_real(nl, max_cells: int = 32, cols: int = None) -> dict:
+def place_real(nl, max_cells: int = 32, cols: int = None, cell_gap: float = None) -> dict:
     """行式布局：单元按 `dcells` 真实宽度排进行，行高 = 1.50µm。
 
     只用 `dcells` 里有的单元类型；遇到未建模类型（如 DFF）**跳过并计数**（披露 ①）。
     """
+    gap = CELL_GAP_UM if cell_gap is None else float(cell_gap)
     h_row = row_height_um()
     row_pitch = h_row + CH_UM
     #: 🔴 通道数 == 行数：每行**上方**各有一条通道（v0.9.349 修）。
@@ -129,7 +135,7 @@ def place_real(nl, max_cells: int = 32, cols: int = None) -> dict:
     rows = int(math.ceil(len(picked) / cols))
     n_ch = rows
     insts = []
-    pitch_x = max(f().w for f in CL.CELLS.values()) / 1000.0 + CELL_GAP_UM
+    pitch_x = max(f().w for f in CL.CELLS.values()) / 1000.0 + gap
     for k, (g, kind) in enumerate(picked):
         r, c = divmod(k, cols)
         cell = CL.CELLS[kind]()
@@ -137,10 +143,10 @@ def place_real(nl, max_cells: int = 32, cols: int = None) -> dict:
                       "r": r, "c": c, "x0": c * pitch_x, "y0": r * row_pitch,
                       "w": cell.w / 1000.0, "h": cell.h / 1000.0, "geom": cell})
 
-    die_w = max((i["x0"] + i["w"] for i in insts)) + CELL_GAP_UM
+    die_w = max((i["x0"] + i["w"] for i in insts)) + gap
     die_h = rows * row_pitch + CH_UM          # 含最上一行的通道
     return {"insts": insts, "rows": rows, "cols": cols, "die_w_um": die_w,
-            "pitch_x_um": pitch_x, "n_channels": n_ch,
+            "pitch_x_um": pitch_x, "n_channels": n_ch, "cell_gap_um": gap,
             "die_h_um": die_h, "h_row_um": h_row, "row_pitch_um": row_pitch,
             "ch_um": CH_UM, "t_tracks": tracks_in_channel(CH_UM),
             "skipped_cells": dict(skipped), "n_picked": len(picked),
@@ -198,25 +204,36 @@ def net_pins(pl: dict) -> dict:
     return dict(pins)
 
 
-def pin_stub(x: float, y: float, net: str) -> list:
-    """引脚接入栈：**VIA1 → M2 pad → V2 → M3 pad**。
+def pin_stub(x: float, y: float, net: str, cx: float = None) -> list:
+    """引脚接入栈：**VIA1 → M2 pad → M2 横条 → V2 → M3 pad**。
+
+    🔴 **v0.9.351：把「引脚 → 列」的横向偏移交给 M2**（真实设计的做法）。
+    · 旧版在 M3 上画横向跳线：跳线落在 pin 的 y 上，与邻网的 M3 焊盘/跳线抢同一层，
+      单元间距一旦退回 0.36µm 就出 `min_spacing`（实测 4 条）；
+    · 新版把偏移交给 **M2**（原本只用来放焊盘的那一层）：M1 pad --VIA1--> M2 --横条-->
+      V2 --> M3。于是 **M3 侧永远落在列网格上**，不需要横向跳线；trunk 也能只覆盖列
+      （更短 ⇒ 同轨重叠面更小）。`M2_JOG_MAX` 限长，超出则退回 M3 跳线并计数。
 
     🔴 **不再另加 M1 焊盘**（v0.9.349 起）：单元引脚本身就是 240×240 的 pad，接入点
     内缩 `VIA/2+ENC = 0.12` ⇒ VIA1 的 M1 侧包围由**单元引脚**提供 —— 这正是
-    「引脚可接入」的定义。旧几何（引脚仅 65nm 高）装不下 200nm 孔，只能由路由器
-    补一块 M1 焊盘；那块焊盘没有单元版图约束，会与相邻网的焊盘互撞，是 E45 残差
-    的来源之一。
+    「引脚可接入」的定义。
     🔴 必须走 **V2（M2↔M3）**：原 `VIA_BRIDGE` 只有 M1–M2 与 M3–M4，**没有 M2–M3**
-    ⇒ 单元引脚（M1）在几何上根本到不了 M3。本层于 v0.9.348 补入。
+    ⇒ 单元引脚（M1）在几何上根本到不了 M3。该层于 v0.9.348 补入。
     """
     hv = DD.VIA / 2.0
     hp = DD.VIA / 2.0 + DL.ENC + 0.001
-    return [
+    cx = x if cx is None else cx
+    out = [
         Shape(DD.L_VIA1, x - hv, y - hv, x + hv, y + hv, net=net, kind="via"),
         Shape(DD.L_M2, x - hp, y - hp, x + hp, y + hp, net=net, kind="metal"),
-        Shape(DD.L_V2, x - hv, y - hv, x + hv, y + hv, net=net, kind="via"),
-        Shape(DD.L_M3, x - hp, y - hp, x + hp, y + hp, net=net, kind="metal"),
+        Shape(DD.L_V2, cx - hv, y - hv, cx + hv, y + hv, net=net, kind="via"),
+        Shape(DD.L_M3, cx - hp, y - hp, cx + hp, y + hp, net=net, kind="metal"),
     ]
+    if abs(cx - x) > 1e-9:
+        # M2 横条：两端各延伸 hp，把 VIA1 与 V2 都包进去
+        out.append(Shape(DD.L_M2, min(x, cx) - hp, y - W / 2.0,
+                         max(x, cx) + hp, y + W / 2.0, net=net, kind="metal"))
+    return out
 
 
 def pin_access_points(inst: dict) -> list:
@@ -345,7 +362,12 @@ def _color_intervals(ivs: list, gap: float = 0.0) -> list:
 def _alloc_columns(runs: list, x0_grid: float, die_w: float) -> tuple:
     """M4 列分配：离散列网格 + y 区间着色 ⇒ 不同网的 M4 在 y 上永不重叠。
 
-    `runs` = [(net, y_lo, y_hi, x_desired)]，返回 (每段的列 x, 用到的列数, 失败列表)。
+    `runs` = [(net, y_lo, y_hi, x_desired, dir_pref)]，返回 (每段的列 x, 用到的列数, 失败列表)。
+
+    🔴 `dir_pref`（v0.9.351）：**搜索方向的偏好**（−1 向左 / +1 向右 / 0 不限）。
+    起因：M2 逃逸条本身占 y 带（高 W），**同一 y 带上的相邻引脚**若都朝同一侧逃逸，
+    两条就会撞（实测 NAND2 的 A/B 同 y、只差 0.36µm）。让它们**左右交替**逃逸，
+    自然分开；偏好只是搜索顺序，找不到合适的仍回退到另一侧/更远的列。
     """
     ncol = max(1, int((die_w - W) // PITCH) + 1)
     col_ivs: list = [[] for _ in range(ncol)]     # 每列已占用的 y 区间
@@ -353,7 +375,7 @@ def _alloc_columns(runs: list, x0_grid: float, die_w: float) -> tuple:
     fail = []
     order = sorted(range(len(runs)), key=lambda i: (runs[i][3], runs[i][1], i))
     for i in order:
-        _net, ya, yb, xd = runs[i]
+        _net, ya, yb, xd, pref = runs[i]
         if yb - ya <= 1e-9:
             xs[i] = xd
             continue
@@ -361,7 +383,8 @@ def _alloc_columns(runs: list, x0_grid: float, die_w: float) -> tuple:
         k0 = int(round((xd - x0_grid) / PITCH))
         best = None
         for d in range(0, ncol):
-            for k in (k0 + d, k0 - d):
+            cands = (k0 - d, k0 + d) if pref < 0 else ((k0, k0) if d == 0 else (k0 + d, k0 - d))
+            for k in cands:
                 if k < 0 or k >= ncol:
                     continue
                 if all(ib <= e0 or ia >= e1 for (e0, e1) in col_ivs[k]):
@@ -379,7 +402,8 @@ def _alloc_columns(runs: list, x0_grid: float, die_w: float) -> tuple:
     return xs, used, fail
 
 
-def route_block(nl, pl: dict, ch_um: float = None) -> dict:
+def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
+                m2_jog_max: float = None) -> dict:
     """按通道分轨 + 列分配布内部网。返回路由结果与**容量判定**。
 
     🔴 **顺序是本模块的第二个真修复（v0.9.349）**：trunk 的实际长度是
@@ -395,6 +419,7 @@ def route_block(nl, pl: dict, ch_um: float = None) -> dict:
     大于密度下界，只查 d 会漏判。
     """
     ch_um = pl["ch_um"] if ch_um is None else ch_um
+    jog_max = M2_JOG_MAX if m2_jog_max is None else float(m2_jog_max)
     t_cap = tracks_in_channel(ch_um)
     pins = net_pins(pl)
     n_rows = pl["rows"]
@@ -412,15 +437,27 @@ def route_block(nl, pl: dict, ch_um: float = None) -> dict:
 
     # —— ② 预分配列：yt 取该通道**最高轨**（最坏情况，竖直段只长不短）——
     x0_grid = PIN_GRID_UM
+    # 同一 y 带内的引脚按 x 排序后**左右交替**逃逸：M2 逃逸条本身占 y 带（高 W），
+    # 同 y 的相邻引脚若都朝同一侧走，两条必然相撞（NAND2 的 A/B 就是同 y、只差 0.36µm）。
+    pt_pref = {}
+    bands = defaultdict(list)
+    for net in sorted(net_ch):
+        for i, (_iname, _p, x, y) in enumerate(pins[net]):
+            bands[round(y, 2)].append((x, net, i))
+    for _yk, items in bands.items():
+        for rank, (_x, net, i) in enumerate(sorted(items)):
+            pt_pref[(net, i)] = -1 if rank % 2 == 0 else 1
+
     runs = []
     for net in sorted(net_ch):
         y_worst = channel_y(pl, net_ch[net]) + W / 2.0 + (t_cap - 1) * PITCH
-        for (_i, _p, x, y) in pins[net]:
-            runs.append((net, min(y, y_worst) - EXT, max(y, y_worst) + EXT, x))
+        for i, (_iname, _p, x, y) in enumerate(pins[net]):
+            runs.append((net, min(y, y_worst) - EXT, max(y, y_worst) + EXT, x,
+                         pt_pref.get((net, i), 0)))
     xs, ncol_used, col_fail = _alloc_columns(runs, x0_grid, pl["die_w_um"])
     cols = defaultdict(list)
-    for (net, _ya, _yb, _x), cx in zip(runs, xs):
-        cols[net].append(cx)
+    for r, cx in zip(runs, xs):
+        cols[r[0]].append(cx)
     col_fail = sorted(set(col_fail))
 
     # —— ③ 用「引脚 ∪ 列」的真实跨度着色（trunk 的实际长度）——
@@ -456,18 +493,28 @@ def route_block(nl, pl: dict, ch_um: float = None) -> dict:
     acc: list = []      # 引脚接入栈（M1/M2/M3 pad + 孔）—— 受**单元引脚几何**限制
     shapes: list = []   # 走线金属（M3 trunk / M4 竖 / 弯角孔与 landing）
     hv = DD.VIA / 2.0
+    n_m2_jog = 0
+    n_m3_jog = 0
     for net in routed:
         yt = y_of[net]
         cols_net = cols[net]
+        m3_xs = []                     # trunk 还需覆盖的引脚 x（只在退回 M3 跳线时才有）
         for (_iname, _p, x, y), cx in zip(pins[net], cols_net):
-            acc += pin_stub(x, y, net)
-            if abs(cx - x) > 1e-9:
-                # M3 短跳线：引脚 → 列。**两端都延伸 EXT**：远端要包围 VIA2，
-                # 近端也要 —— 否则 |cx−x| 落在 (0.04, 0.08) 时跳线与引脚焊盘
-                # 都盖不住孔（v0.9.348 的 6 条 via_enclosure 就是这个区间）。
-                shapes.append(Shape(DD.L_M3, min(x, cx) - EXT, y - W / 2.0,
-                                    max(x, cx) + EXT, y + W / 2.0,
-                                    net=net, kind="metal"))
+            off = abs(cx - x)
+            if m2_jog and off <= jog_max + 1e-9:
+                # 🔴 M2 承担横向偏移：M3 侧直接落在列上 ⇒ 不需要 M3 跳线
+                acc += pin_stub(x, y, net, cx)
+                if off > 1e-9:
+                    n_m2_jog += 1
+            else:
+                acc += pin_stub(x, y, net)
+                if off > 1e-9:
+                    # 退回 M3 跳线：**两端都延伸 EXT**（远端包围 VIA2，近端盖住引脚焊盘）
+                    shapes.append(Shape(DD.L_M3, min(x, cx) - EXT, y - W / 2.0,
+                                        max(x, cx) + EXT, y + W / 2.0,
+                                        net=net, kind="metal"))
+                    m3_xs.append(x)
+                    n_m3_jog += 1
             # 列底部：M3 → M4 必须过一个 VIA2（否则 M3 与 M4 在几何上不相连）
             shapes.append(Shape(DD.L_VIA2, cx - hv, y - hv, cx + hv, y + hv,
                                 net=net, kind="via"))
@@ -477,7 +524,7 @@ def route_block(nl, pl: dict, ch_um: float = None) -> dict:
             # trunk 端：VIA2（trunk 与竖段宽度 0.24 已包围 0.20 孔）
             shapes.append(Shape(DD.L_VIA2, cx - hv, yt - hv, cx + hv, yt + hv,
                                 net=net, kind="via"))
-        xspan = [p[2] for p in pins[net]] + cols_net
+        xspan = cols_net + m3_xs
         # trunk 两端各延伸 EXT：否则末端的 VIA2 没有 M3 侧包围（via_enclosure）
         shapes.append(Shape(DD.L_M3, min(xspan) - EXT, yt - W / 2.0,
                             max(xspan) + EXT, yt + W / 2.0, net=net, kind="metal"))
@@ -488,6 +535,7 @@ def route_block(nl, pl: dict, ch_um: float = None) -> dict:
             "routed": routed, "unrouted": unrouted, "n_unrouted": len(unrouted),
             "ch_info": ch_info, "t_cap": t_cap, "n_cols_used": ncol_used,
             "col_fail": col_fail, "track_of": track_of,
+            "n_m2_jog": n_m2_jog, "n_m3_jog": n_m3_jog, "m2_jog_on": bool(m2_jog),
             "trunk_y": y_of, "pins": pins, "n_pins": sum(len(v) for v in pins.values())}
 
 

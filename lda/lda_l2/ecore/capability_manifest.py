@@ -815,12 +815,23 @@ ECORE_CAPABILITY_MANIFEST = [
                       "⚠️ 子块接入非全 IP（dcells 仅 INV/NAND2，DFF 跳过并计数；DRC 为 O(n²) 规模受限）；"
                       "非通用路由器（每网单 trunk 星形，无 maze/rip-up）；M2 只画焊盘；行高取 max 底对齐；"
                       "单元间距 0.46µm（=1.44−0.98，为轨道间距整数倍）换 pin 可达性；"
-                      "只布内部网（端口网如实计入未布）；**净增 0 锚**（E45 · 12 判据）",
+                      "只布内部网（端口网如实计入未布）；**净增 0 锚**（E45 · 12 判据）"
+                      "✅ **v0.9.351（E48 · D-240）M2 逃逸走线**：把「引脚 → 列」的横向偏移交给 **M2**"
+                      "（M1 pad --VIA1--> M2 横条 --> V2 --> M3），于是 M3 侧永远落在列网格上、"
+                      "**M3 跳线 8→0**、**trunk 总长 −22.6%**（trunk 只覆盖列）。"
+                      "🔴 但「把间距从 0.46 收回到 0.36 以赚回 ≈8% 面积」这个假设**被证伪**："
+                      "gap 0.36 时路由层 DRC 归零（4→0），却在 **M2 层**出 4 条 —— 同 y 两引脚"
+                      "（NAND2 的 A/B）净空只有 `P − pad = 0.12µm`，扣 S_MIN 后**内向逃逸总量仅 0.02µm**；"
+                      "外向逃逸又在单元边界撞上。⇒ **0.46µm 不是保守取值，是必要代价**"
+                      "（扫描 0.36/0.40/0.44 恒 4 条，≥0.46 才为 0）。要真正回收只能把同 y 引脚的 y 带分开，"
+                      "而 NAND2 的 gap 需 660nm > 现有 520nm ⇒ +140nm（面积 +9.3%）> 省下的 8% ⇒ **不做**。",
         "module": "lda_l2.ecore.dpnr",
         "symbols": ["place_real", "cell_shapes", "pin_points", "pin_access_points",
-                    "pin_legality", "pin_access_conflicts", "net_pins", "route_block", "route_baseline",
+                    "pin_legality", "pin_access_conflicts", "pin_stub", "net_pins",
+                    "route_block", "route_baseline",
                     "cell_drc_lvs", "routing_only", "access_only", "all_routing",
-                    "net_components_rt", "DPNR_DISCLOSURE"],
+                    "net_components_rt", "CELL_GAP_UM", "CELL_GAP_TIGHT_UM", "M2_JOG_MAX",
+                    "DPNR_DISCLOSURE"],
         "introduced_by": "D-238 (B-series → P&R)", "guard": "run_ecore_e45_smoke.py",
     },
     {

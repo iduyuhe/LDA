@@ -7,7 +7,7 @@
   "target_x": 3.0,
   "ratchet_below_target": 0,
   "anchors_at_measurement": 546,
-  "core_smokes_at_measurement": 381,
+  "core_smokes_at_measurement": 382,
   "updated_at": "2026-10-31",
   "source_reports": [
     "lda_pmm0_ci_20261004.json",
@@ -14965,6 +14965,19 @@
         1.2325,
         1.2605,
         1.2857
+      ],
+      "n_rounds": 3,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ecore_e45_smoke.py",
+      "budget_s": 60.0,
+      "elapsed_max_s": 0.298,
+      "margin_x": 201.342,
+      "samples_s": [
+        0.2849,
+        0.2853,
+        0.298
       ],
       "n_rounds": 3,
       "censored_events": 0

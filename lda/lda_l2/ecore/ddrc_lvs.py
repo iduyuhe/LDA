@@ -47,10 +47,11 @@ ENC = 0.02              # µm · 通孔包围（金属比孔大出的单边量�
 # 通孔桥接的层对（via layer -> [layer_a, layer_b]）
 VIA_BRIDGE = {
     DD.L_VIA1: [DD.L_M1, DD.L_M2],   # M1 <-> M2
+    DD.L_V2: [DD.L_M2, DD.L_M3],     # M2 <-> M3（v0.9.348 补：原表缺这一层 ⇒ M1 到不了 M3）
     DD.L_VIA2: [DD.L_M3, DD.L_M4],   # M3 <-> M4
 }
 # 桥接层中本征程实际会有的金属（M2 在数字区未画 ⇒ 跳过其包围检查，见披露）
-BRIDGE_PRESENT = {DD.L_M1, DD.L_M3, DD.L_M4}
+BRIDGE_PRESENT = {DD.L_M1, DD.L_M2, DD.L_M3, DD.L_M4}
 
 
 def run_drc(shapes: list, verbose: bool = False) -> dict:

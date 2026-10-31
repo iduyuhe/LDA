@@ -791,6 +791,30 @@ ECORE_CAPABILITY_MANIFEST = [
                     "DPGRID_DISCLOSURE"],
         "introduced_by": "D-237 (B3+/E44)", "guard": "run_ecore_e44_smoke.py",
     },
+    {
+        "capability": "**B 系列接入 P&R 主链（D-238）**：把 B1/B2/B3 从演示用例接进 E35/E36 主链，"
+                      "替换三处结构性简化 —— ① 单元几何从「索引形（0.06µm 有源标记 + 中心焊盘）」换成 "
+                      "`dcells` **真几何**（DIFF/POLY/CONT/M1/NWELL）；② 引脚从「塌缩到单元中心」换成 "
+                      "**逐引脚真矩形**（INV 的 A/Y、NAND2 的 A/B 各自独立）；③ 布线从「无容量上界」换成 "
+                      "**按通道分轨 + 列分配 + `T<d` 即布不通**。另接 B3+ 的分布式 RC 网络提取与网格 IR。"
+                      "🔴 **顺带查出两个真缺陷**：① `VIA_BRIDGE` 缺 **M2–M3 通孔**（原表只有 M1-M2 / M3-M4）"
+                      "⇒ 单元引脚（M1）在几何上根本到不了 M3 —— 本版补 **V2（层 26）**；"
+                      "② `dcells` **引脚不可做 pin access**（M1 引脚矩形仅 65nm 高，装不下 200nm 孔 + 20nm 包围；"
+                      "相邻引脚 INV A-Y 0.2716µm / NAND2 A-B 0.2228µm < 两条 M4 需的 0.36µm）。"
+                      "实测（12 单元 / 4 列 / 同网表同布局）：路由 DRC **34 → 14（2.43×）**，"
+                      "连通性 **100%**（无断网），容量律无越界，提取 10 网全 `R>0∧C>0`。"
+                      "🔴 **不宣称零 DRC**：残差 14 条全部落在引脚邻近的 M3 间距/孔包围，"
+                      "归因是**单元引脚几何**而非路由算法 ⇒ 修法在单元版图（引脚重画），本模块只把它量化。"
+                      "⚠️ 子块接入非全 IP（dcells 仅 INV/NAND2，DFF 跳过并计数；DRC 为 O(n²) 规模受限）；"
+                      "非通用路由器（每网单 trunk 星形，无 maze/rip-up）；M2 只画焊盘；行高取 max 底对齐；"
+                      "单元间距 0.36µm 换 pin 可达性；只布内部网（端口网如实计入未布）；**净增 0 锚**（E45 · 11 判据）",
+        "module": "lda_l2.ecore.dpnr",
+        "symbols": ["place_real", "cell_shapes", "pin_points", "pin_access_points",
+                    "pin_access_conflicts", "net_pins", "route_block", "route_baseline",
+                    "cell_drc_lvs", "routing_only", "access_only", "all_routing",
+                    "net_components_rt", "DPNR_DISCLOSURE"],
+        "introduced_by": "D-238 (B-series → P&R)", "guard": "run_ecore_e45_smoke.py",
+    },
 ]
 
 

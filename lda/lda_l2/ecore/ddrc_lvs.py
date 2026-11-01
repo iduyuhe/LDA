@@ -42,6 +42,12 @@ from . import dplac as PL
 # ---- 规则假设（MODEL_ESTIMATE · 一阶）----
 W_MIN = 0.10             # µm · 最小金属线宽
 S_MIN = 0.10             # µm · 最小同层间距
+#: 🔴 数值容差（µm）：**1e-6 µm = 1e-3 nm**，远小于本仓的 1nm 制造网格。
+#: 存在的唯一原因：当 `pitch == W + S` 时，相邻轨道恰好「间距 == S_MIN」，
+#: 而浮点累加（如 0.07 的二进制误差）会把 `gap == S_MIN` 判成 `gap < S_MIN`
+#: ⇒ 在 28nm 级规则下成片假违例（实测 12 单元就有 2 条、256 单元 40 条）。
+#: 取 1e-3 nm 是「只吸收浮点噪声、不放过任何真实违规」的量级。
+SPACE_EPS = 1e-6
 ENC = 0.02              # µm · 通孔包围（金属比孔大出的单边量）
 
 # 通孔桥接的层对（via layer -> [layer_a, layer_b]）
@@ -70,7 +76,7 @@ def run_drc(shapes: list, verbose: bool = False) -> dict:
 
     # ② 最小间距（同层膨胀 S_MIN/2 后重叠 = 违例）。🔴 同网金属可邻近/重叠（同一导体），
     #    只检**异网**同层（短路风险）。
-    half = S_MIN / 2.0
+    half = S_MIN / 2.0 - SPACE_EPS
     for i in range(len(metals)):
         for j in range(i + 1, len(metals)):
             a, b = metals[i], metals[j]
@@ -248,7 +254,7 @@ def fast_drc(shapes, verbose: bool = False) -> dict:
         w = s.x1 - s.x0; h = s.y1 - s.y0
         if max(w, h) >= 3.0 * W_MIN and min(w, h) < W_MIN - 1e-9:
             violations.append(("min_width", s.layer, round(min(w, h), 4)))
-    half = S_MIN / 2.0
+    half = S_MIN / 2.0 - SPACE_EPS
     cell = max(DD.W_ROUTE, DD.VIA) + S_MIN + 0.05
     grid = _index_bbox(metals, cell)
     seen = set()

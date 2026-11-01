@@ -71,6 +71,15 @@ class Node:
         """轨道节距（nm）= W + S。"""
         return self.w_min + self.s_min
 
+    def route_rules(self, unit: str = "um") -> dict:
+        """布线侧的规则包（**单位显式**，避免 µm/nm 混用 —— 本仓踩过单位血案）。
+
+        `unit="nm"` 给单元库/几何比较用；`unit="um"` 给布线器/DRC 用（它们以 µm 为口径）。
+        """
+        k = 1.0 if unit == "nm" else 0.001
+        return {"w_min": self.w_min * k, "s_min": self.s_min * k,
+                "via": self.via * k, "enc": self.enc * k, "pitch": self.pitch * k}
+
     def inner_tracks(self, pin_ys_nm, n_rows_cells=1) -> list:
         """**行内可用轨道 y**（nm，相对行底）：避开所有引脚 pad 后的空闲带。
 

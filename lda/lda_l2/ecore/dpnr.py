@@ -81,6 +81,12 @@ CELL_GAP_UM = 0.46        # 默认单元间距 ⇒ pitch_x = 0.98 + 0.46 = 1.44 
 #: 🔴 v0.9.351：M2 可承担「引脚 → 列」横向偏移后的**紧凑间距**（0.98 + 0.36 = 1.34，
 #: 不再是轨道间距整数倍 ⇒ 引脚相位会漂移，偏移由 M2 吸收而不是 M3 跳线）。
 CELL_GAP_TIGHT_UM = 0.36
+#: 🔴 行内布线的**严格空隙规则**开关（供反向探针使用）。
+#: `True`（默认）= 多带网只准用「夹在自己带之间」的空隙、单带网只准向外走；
+#: `False` = 放开成「范围之内及紧邻上下」，会允许竖段穿过异网引脚带 ⇒ 必然撞
+#: 那条带里的 M2 逃逸条（E53 实测 DRC 由 0 变 >0）。判据 H9 用它证明规则不是摆设。
+IN_ROW_STRICT = True
+
 #: M2 横向绕行长度上限（超过则如实报 too_far，不画长跳线）。0.72 = 2×轨道间距。
 M2_JOG_MAX = 0.72
 #: 引脚 pad 半宽 = `VIA/2 + ENC` = 0.12（E45 起单元引脚就是 240×240 pad）。
@@ -257,7 +263,7 @@ def pin_stub(x: float, y: float, net: str, cx: float = None) -> list:
     ⇒ 单元引脚（M1）在几何上根本到不了 M3。该层于 v0.9.348 补入。
     """
     hv = DD.VIA / 2.0
-    hp = DD.VIA / 2.0 + DL.ENC + 0.001
+    hp = M2_HALF                      # = VIA/2 + ENC + 1nm（可被 `dproc.use()` 替换）
     cx = x if cx is None else cx
     out = [
         Shape(DD.L_VIA1, x - hv, y - hv, x + hv, y + hv, net=net, kind="via"),
@@ -472,9 +478,183 @@ def _alloc_columns(runs: list, x0_grid: float, die_w: float,
     return xs, used, fail
 
 
+def _in_row_conflicts(shapes_all: list, inrow_nets: set) -> set:
+    """返回**行内网的形状**与异网同层形状之间间距 < S_MIN 的网集合。
+
+    用 `fast_drc` 已经被证明等价的空间哈希思路不在这里重复实现 —— 这里只需要
+    「哪些网涉事」，用逐对 + 层分组即可（行内网数量少，且只在有行内网时调用一次）。
+    """
+    bad = set()
+    by_layer = defaultdict(list)
+    for s in shapes_all:
+        if s.kind in ("metal", "pin") and s.net:
+            by_layer[s.layer].append(s)
+    half = DL.S_MIN / 2.0 - DL.SPACE_EPS
+    for _lay, rs in by_layer.items():
+        for i in range(len(rs)):
+            a = rs[i]
+            for j in range(i + 1, len(rs)):
+                b = rs[j]
+                if a.net == b.net:
+                    continue
+                if a.net not in inrow_nets and b.net not in inrow_nets:
+                    continue
+                if DD.rects_overlap(a, b, inflate=half):
+                    bad.add(a.net if a.net in inrow_nets else b.net)
+    return bad
+
+
+def row_bands(pl: dict, pins: dict, pad_half: float = None) -> dict:
+    """每行的**引脚带**与**带间空隙**（µm，绝对坐标）。
+
+    行内布线的关键几何在这里：同一行内所有引脚只落在少数几条 y 带里
+    （DEMO45 只有两条：A/B ≈0.41–0.65、Y ≈0.78–1.09），带与带之间是**空隙**。
+    水平走线只能放空隙里；竖向走线**必须只穿过自己网的引脚带**，否则会撞上
+    别的网在那条带里的 M2 逃逸条（实测就是这个撞法）。
+
+    返回 `{row: {"bands": [(y0,y1)...], "gaps": [{"i":k,"y0","y1","tracks":[y...]}]}}`
+    """
+    # 🔴 带半宽取 `M2_HALF`（比 PAD_HALF 大 1nm）：实际画出来的 M3 焊盘是 M2_HALF 半宽，
+    # 用 PAD_HALF 会少算 1nm ⇒ 轨道贴到焊盘边缘就撞。
+    ph = (max(PAD_HALF, M2_HALF) if pad_half is None else pad_half)
+    occ = defaultdict(list)
+    for _net, pts in pins.items():
+        for (_i, _p, _x, y) in pts:
+            r = int(y // pl["row_pitch_um"])
+            occ[r].append((y - ph, y + ph, y))
+    out = {}
+    for r, ivs in occ.items():
+        ivs.sort()
+        base = r * pl["row_pitch_um"]
+        top = base + pl["h_row_um"]
+        bands: list = []
+        for (a, b, _y) in ivs:
+            a, b = max(a, base), min(b, top)
+            if b <= a:
+                continue
+            if bands and a <= bands[-1][1]:
+                bands[-1] = (bands[-1][0], max(bands[-1][1], b))
+            else:
+                bands.append((a, b))
+        gaps = []
+        prev = base
+        for (a, b) in bands:
+            if a > prev:
+                gaps.append((prev, a))
+            prev = max(prev, b)
+        if top > prev:
+            gaps.append((prev, top))
+        # 🔴 轨道切片必须留够 **W/2 + S**（不是 S/2）：轨道本身有宽度 W，
+        # 它与两侧引脚带的净距必须是 S_MIN。初版写成 `a + PITCH/2` 起排 ⇒ 只留 S/2，
+        # 实测立刻在 12 单元就出 2 条 min_spacing（行内水平段贴到邻网引脚焊盘）。
+        gs = []
+        margin = W / 2.0 + DL.S_MIN
+        for k, (a, b) in enumerate(gaps):
+            lo, hi = a + margin, b - margin
+            n = 0 if hi < lo else int((hi - lo) // PITCH) + 1
+            tr = [round(lo + i * PITCH, 6) for i in range(n)]
+            gs.append({"i": k, "y0": a, "y1": b, "tracks": tr})
+        out[r] = {"bands": bands, "gaps": gs}
+    return out
+
+
+def band_of(bands: list, y: float) -> int:
+    """`y` 落在第几条带（0-based；不在任何带内返回 -1）。"""
+    for k, (a, b) in enumerate(bands):
+        if a - 1e-9 <= y <= b + 1e-9:
+            return k
+    return -1
+
+
+def plan_in_row(pl: dict, pins: dict) -> dict:
+    """把「所有引脚都在同一行」的网分配到**行内水平轨道**（按空隙 + 区间着色）。
+
+    🔴 **可布性判据（这是 E53 相对 E51 的实质修复）**：一条行内竖向段从引脚 y 走到
+    轨道 y，途中**只能穿过属于本网引脚的带**；穿过任何别的带 ⇒ 必然撞上那个带里
+    异网的 M2 逃逸条（实测 `min_spacing`）。
+    所以允许的空隙 = 本网引脚带范围之内及紧邻上下：设本网占第 `lo..hi` 条带
+    （且必须**连续**），允许空隙下标 ∈ [lo, hi+1]。
+    不连续（例如占了第 0 和第 2 条、中间第 1 条是别人的）⇒ **不按行内布**，如实退回常规布线。
+
+    返回 `{plan: {net: (row, gap_i, track_y)}, n_int, n_same_row, eligible, fail, n_tracks}`。
+    """
+    rb = row_bands(pl, pins)
+    per_row_gap = defaultdict(list)          # (row, gap_i) -> [(x0, x1, net)]
+    n_int = n_same = 0
+    eligible, fail = 0, []
+    net_gap = {}
+    for net, pts in pins.items():
+        if len(pts) < 2:
+            continue
+        n_int += 1
+        rows = {int(p[3] // pl["row_pitch_um"]) for p in pts}
+        if len(rows) != 1:
+            continue
+        n_same += 1
+        r = rows.pop()
+        info = rb.get(r)
+        if info is None:
+            fail.append(net)
+            continue
+        bs = sorted({band_of(info["bands"], p[3]) for p in pts} - {-1})
+        if not bs:
+            fail.append(net)
+            continue
+        lo, hi = bs[0], bs[-1]
+        if len(bs) != hi - lo + 1:            # 不连续 ⇒ 必穿过别人的带
+            fail.append(net)
+            continue
+        # 🔴 空隙选择规则（v0.9.356 第二修，就是这条把 DRC 打到 0）：
+        #   · 单带网：竖向只**向外**走（gap `lo` 在下、`lo+1` 在上）⇒ 不穿任何别的带；
+        #   · 多带网：**必须**用**严格夹在自己带之间**的空隙（`lo+1..hi`）——
+        #     竖向从两端向中间走，谁都不穿别人的带。若中间没有放得下轨道的空隙，
+        #     就**如实退回常规布线**（不去试外侧空隙：那会让一端穿过另一条带，
+        #     而那条带里躺着异网的 M2 逃逸条，实测就是 2 条 min_spacing）。
+        by_i = {g["i"]: g for g in info["gaps"]}
+        if IN_ROW_STRICT:
+            order = [lo, lo + 1] if len(bs) == 1 else list(range(lo + 1, hi + 1))
+        else:                                    # 反向探针通道：放开的（错）规则
+            order = list(range(max(0, lo - 1), min(len(info["gaps"]), hi + 2)))
+        cand = [by_i[k] for k in order if k in by_i and by_i[k]["tracks"]]
+        if not cand:
+            fail.append(net)
+            continue
+        net_gap[net] = (r, cand)
+        eligible += 1
+
+    # 按 (row, gap) 做区间着色；空隙内轨道不够的网如实记 fail
+    # 🔴 **必须按 `(row, gap_i)` 分组，不能按列表对象的 id 分组**（初版就这么错的：
+    # 每个网的候选空隙列表是**不同的对象** ⇒ id 不同 ⇒ 每个网独占一组 ⇒ 全部拿 track 0
+    # ⇒ 同轨异网直接叠死，实测 86 条 min_spacing）。
+    plan = {}
+    pick = {}
+    for net, (r, cand) in net_gap.items():
+        g = cand[0]                     # 优先最靠近本网引脚带的空隙（竖向最短）
+        pick[net] = (r, g)
+        xs = [p[2] for p in pins[net]]
+        per_row_gap[(r, g["i"])].append((min(xs), max(xs), net))
+    used = {}
+    for (r, gi), ivs in per_row_gap.items():
+        g = pick[ivs[0][2]][1]
+        ivs.sort()
+        trk, ntrk = _color_intervals([(a, b) for (a, b, _q) in ivs], gap=DL.S_MIN)
+        for (a, b, net), t in zip(ivs, trk):
+            if t < len(g["tracks"]):
+                plan[net] = (r, gi, g["tracks"][t])
+            else:
+                fail.append(net)
+        used[(r, gi)] = max(used.get((r, gi), 0), ntrk)
+    n_tracks = sum(len(g["tracks"]) for info in rb.values() for g in info["gaps"])
+    return {"plan": plan, "bands": rb, "n_int": n_int, "n_same_row": n_same,
+            "eligible": eligible, "fail": sorted(set(fail)), "n_tracks": n_tracks,
+            "used": used}
+
+
 def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
                 m2_jog_max: float = None, in_row: bool = False,
-                col_iters: int = 1, vert_layer: str = "M4") -> dict:
+                col_iters: int = 1, vert_layer: str = "M4",
+                in_row_m3: bool = False, in_row_exclude=None,
+                in_row_check: bool = True) -> dict:
     """按通道分轨 + 列分配布内部网。返回路由结果与**容量判定**。
 
     🔴 **顺序是本模块的第二个真修复（v0.9.349）**：trunk 的实际长度是
@@ -495,10 +675,21 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
     pins = net_pins(pl)
     n_rows = pl["rows"]
 
+    # —— ⓿ 行内布线预规划（v0.9.356 · E53）────────────────────────────
+    # 所有引脚都在同一行的网，**不需要 trunk / 通道 / M4 列**：它可以在行内用
+    # M2 竖段 + M3 水平段（走在行内空闲 y 带）自成一网。于是它同时释放
+    # **1 条通道轨道 + 每引脚 1 条 M4 列** —— 这正是 E50/E51 卡住的两种资源。
+    ip = (plan_in_row(pl, pins) if in_row_m3
+          else {"plan": {}, "fail": [], "n_int": 0, "n_same_row": 0,
+                "n_tracks": 0, "eligible": 0})
+    inrow = {n: v for n, v in ip["plan"].items()
+             if not in_row_exclude or n not in in_row_exclude}
+    inrow_fail = set(ip["fail"])
+
     # —— ① 每网选一个通道（离引脚 y 中位最近的通道）——
     net_ch = {}
     for net, pts in pins.items():
-        if len(pts) < 2:
+        if len(pts) < 2 or net in inrow:
             continue
         ys = [p[3] for p in pts]
         rows_of = [min(n_rows - 1, max(0, int(y // pl["row_pitch_um"]))) for y in ys]
@@ -634,8 +825,9 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
         for (a, b, n), t in zip(ivs, trk):
             track_of[n] = (ch, t)
 
-    routed = sorted(track_of)
-    unrouted = sorted(n for n in (spans_to_nets(spans) | set(net_ch)) if n not in track_of)
+    routed = sorted(set(track_of) | set(inrow))
+    unrouted = sorted(n for n in (spans_to_nets(spans) | set(net_ch))
+                      if n not in track_of and n not in inrow)
 
     # —— ④ 引脚竖直（M4）：y 从引脚到 trunk（列已在 ② 分配好）——
     y_of = {}
@@ -649,7 +841,24 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
     n_m2_jog = 0
     n_m3_jog = 0
     n_in_row = 0
+    # ── 行内网建形（v0.9.356 · E53）──────────────────────────────────
+    # 每网：引脚 M1 --VIA1--> M2 竖段 --V2--> M3 水平段（走在**行内空闲 y 带**）。
+    # 🔴 与 E51 的差别只有一处，但决定成败：水平段的 y 不是引脚 y，而是**空出来的轨道 y**。
+    for net in sorted(inrow):
+        _r, _gi, ty = inrow[net]
+        xs_n = [p[2] for p in pins[net]]
+        for (_i, _p, x, y) in pins[net]:
+            acc += pin_stub(x, y, net)
+            shapes.append(Shape(DD.L_M2, x - W / 2.0, min(y, ty) - EXT,
+                                x + W / 2.0, max(y, ty) + EXT, net=net, kind="metal"))
+            shapes.append(Shape(DD.L_V2, x - hv, ty - hv, x + hv, ty + hv,
+                                net=net, kind="via"))
+        shapes.append(Shape(DD.L_M3, min(xs_n) - EXT, ty - W / 2.0,
+                            max(xs_n) + EXT, ty + W / 2.0, net=net, kind="metal"))
+
     for net in routed:
+        if net in inrow:
+            continue
         yt = y_of[net]
         cols_net = cols[net]
         m3_xs = []                     # trunk 还需覆盖的引脚 x（只在退回 M3 跳线时才有）
@@ -734,6 +943,21 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
 
     # 全量 = 接入 + 走线（连通性/端口检查要看全量，DRC 归因要看分开的）
     shapes_all = shapes + acc
+
+    # ── 行内网的**诚实退回**（v0.9.356）──────────────────────────────
+    # 行内竖段占的是「本网引脚的那一列 x」，而邻网的 M2 逃逸条也从它自己的引脚出发、
+    # 终点在它的列上 —— 在 28nm 节距下两者侧向净距可能只有 (pitch − pad)/2 量级，
+    # 不足以留 S_MIN。这类冲突**不能靠选轨道躲开**（竖段必须穿过自己的引脚 y 带）。
+    # 处置：检出冲突网 → 把它们退回常规布线（重跑一次），而不是画出违例。
+    _ex = set(in_row_exclude or ())
+    if in_row_m3 and inrow and in_row_check:
+        bad = _in_row_conflicts(shapes_all, set(inrow))
+        bad -= _ex
+        if bad:
+            return route_block(nl, pl, ch_um=ch_um, m2_jog=m2_jog, m2_jog_max=m2_jog_max,
+                               in_row=in_row, col_iters=col_iters, vert_layer=vert_layer,
+                               in_row_m3=True, in_row_exclude=_ex | bad,
+                               in_row_check=in_row_check)
     return {"shapes": shapes_all, "shapes_route": shapes, "shapes_access": acc,
             "routed": routed, "unrouted": unrouted, "n_unrouted": len(unrouted),
             "ch_info": ch_info, "t_cap": t_cap, "n_cols_used": ncol_used,
@@ -743,6 +967,11 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
             "col_fail_reason": {k: sorted(v) for k, v in sorted(fail_reason.items())},
             "n_m2_jog": n_m2_jog, "n_m3_jog": n_m3_jog, "m2_jog_on": bool(m2_jog),
             "n_in_row": n_in_row, "in_row_on": bool(in_row),
+            "n_in_row_m3": len(inrow), "in_row_m3_on": bool(in_row_m3),
+            "in_row_m3_tracks": ip["n_tracks"], "in_row_m3_fail": sorted(inrow_fail),
+            "in_row_assign": {n: v for n, v in inrow.items()},
+            "in_row_plan": {"n_int": ip["n_int"], "n_same_row": ip["n_same_row"],
+                            "eligible": ip["eligible"], "n_tracks": ip["n_tracks"]},
             "col_iters": int(col_iters), "n_col_fail_nets": len(col_fail),
             "vert_layer": vert_layer,
             "trunk_y": y_of, "pins": pins, "n_pins": sum(len(v) for v in pins.values())}

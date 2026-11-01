@@ -946,6 +946,41 @@ ECORE_CAPABILITY_MANIFEST = [
                     "compare", "inner_tracks_for", "capacity_projection", "NODE_DISCLOSURE"],
         "introduced_by": "D-244 (node parametrization)", "guard": "run_ecore_e52_smoke.py",
     },
+    {
+        "capability": "**HD 标准单元库（D-245）**：按 28nm 级规则（LDA-DEMO28）重画 INV/NAND2，"
+                      "把 E52 的**几何下界**变成可布线实体。三处关键差别，全部由规则派生而非手抄："
+                      "① 引脚 pad **240 → 70nm**（= `VIA 50 + 2·ENC 10`，同样是**必然**不是选美）；"
+                      "② 栅接触**不再需要 poly 焊盘**（`cont 20 + 2×enc 5 = 30 = poly_w`，恰好放得下）；"
+                      "③ **两单元等高 1000nm** ⇒ 消除 E45 披露里的「行高取 max、INV 上方留空行」限制。"
+                      "实测：DRC/LVS 双零；面积 INV **2.75×** / NAND2 **3.42×** 更小"
+                      "（0.7688→0.2800、1.4700→0.4300 µm²）；每管面积 0.3844/0.3675 → 0.1400/0.1075；"
+                      "行内可用水平轨道 **5 条**，且**两单元轨道 y 完全一致**（70/410/550/780/920nm）"
+                      "⇒ 库级共用轨道网格，行内线可跨单元连通；DEMO45 的 INV 只有 **1 条**。"
+                      "🔴 **规则参数化是参数不是常量**：`dcells.run_drc(cell, rules=...)` 用**同一份检查器**"
+                      "查不同节点的单元（同一块 HD 单元换 45nm 规则立刻报 **22 条**，换规则真的会翻面）；"
+                      "反方向（45nm 单元过 28nm 规则）**本应为 0**，那是性质不是缺陷。"
+                      "🔴 规则集是**自建教科书尺度**，非 foundry PDK；器件电学不变（只有 W/L 与方块电阻）"
+                      "⇒ 与 DEMO45 之间**只能比几何容量**，不可比延迟/功耗；只有 INV/NAND2（DFF 未建模）；"
+                      "无 M2 内部绕行/多高度引脚/dummy/well-tap。**净增 0 锚**（E53 · 11 判据）",
+        "module": "lda_l2.ecore.dhdlib",
+        "symbols": ["HD_RULES", "HD_ROUTE", "H_ROW_HD", "RAIL_HD", "W_DEV_HD", "L_GATE_HD",
+                    "pad_nm", "build_inv_hd", "build_nand2_hd", "CELLS", "CELL_MAP",
+                    "pin_bands", "inner_tracks", "lib_summary", "run_drc",
+                    "HD_DISCLOSURE"],
+        "introduced_by": "D-245 (HD cell library)", "guard": "run_ecore_e53_smoke.py",
+    },
+    {
+        "capability": "**工艺规则运行期切换（D-245）**：`use(node)` 在**一个上下文内**把布线/DRC 规则"
+                      "（`PITCH/W/EXT/PAD_HALF/M2_HALF/S_MIN/ENC/W_MIN/VIA/TRACK_PITCH/CH/CELL_GAP`"
+                      "以及单元库与 `CELL_MAP`）整体切到指定节点，退出时**逐项还原**（13 项逐位一致）。"
+                      "🔴 **为什么不是再造一套 HD 布线器**：两份实现必然漂移（`dnode.tracks_for` 自己重算 `T` "
+                      "已经踩过一次）⇒ 只做「参数切换」，**算法一份**。默认不进入 ⇒ 现有门禁读到原值、"
+                      "行为逐位不变。🔴 运行期可变状态、**非线程安全**（本仓门禁单进程串行）；"
+                      "只切规则数值、不提高算法能力；不切器件电学。**净增 0 锚**（E53 · 11 判据）",
+        "module": "lda_l2.ecore.dproc",
+        "symbols": ["TOUCHED", "snapshot", "diff", "use", "DPROC_DISCLOSURE"],
+        "introduced_by": "D-245 (proc switch)", "guard": "run_ecore_e53_smoke.py",
+    },
 ]
 
 

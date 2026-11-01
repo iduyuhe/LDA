@@ -444,16 +444,22 @@ def extract_devices(cell: Cell) -> list:
 # ═══════════════════════════════════════════════════════════════════════════
 # ④ DRC（显式规则集 · 逐层 width/space/area + 接触孔包围 + 栅-孔间距）
 # ═══════════════════════════════════════════════════════════════════════════
-def run_drc(cell: Cell) -> dict:
-    """返回 {violations: [(规则, 明细)], n}。"""
+def run_drc(cell: Cell, rules: dict = None) -> dict:
+    """返回 {violations: [(规则, 明细)], n}。
+
+    🔴 `rules`（v0.9.356）：规则集参数，默认 `RULES`（LDA-DEMO45）。
+    这是「可复用/可扩展」的关键 —— **同一份 DRC 实现**可以查不同节点的单元，
+    不必为 HD 库再写一套检查器（两份真源 = 必然漂移）。
+    """
+    R = RULES if rules is None else rules
     v: list = []
     cx = connectivity(cell)
     shapes, node_of = cx["shapes"], cx["node_of"]
     # 以「原始图形」查 width/area（段是派生量，不参与）
-    wmin = {L_DIFF: RULES["diff_w"], L_POLY: RULES["poly_w"],
-            L_CONT: RULES["cont_w"], L_M1: RULES["m1_w"]}
-    amin = {L_DIFF: RULES["diff_a"], L_POLY: RULES["poly_a"],
-            L_CONT: 0, L_M1: RULES["m1_a"]}
+    wmin = {L_DIFF: R["diff_w"], L_POLY: R["poly_w"],
+            L_CONT: R["cont_w"], L_M1: R["m1_w"]}
+    amin = {L_DIFF: R["diff_a"], L_POLY: R["poly_a"],
+            L_CONT: 0, L_M1: R["m1_a"]}
     for r in cell.rects:
         if r.layer in wmin:
             if min(r.w, r.h) < wmin[r.layer]:
@@ -463,7 +469,7 @@ def run_drc(cell: Cell) -> dict:
 
     # 同层 space：只在不同**节点**之间查（同节点重叠/相接不算违规）
     idx = {id(s): i for i, s in enumerate(shapes)}
-    smin = {L_DIFF: RULES["diff_s"], L_POLY: RULES["poly_s"], L_M1: RULES["m1_s"]}
+    smin = {L_DIFF: R["diff_s"], L_POLY: R["poly_s"], L_M1: R["m1_s"]}
     for layer, s_rule in smin.items():
         rs = [s for s in shapes if s.layer == layer]
         for i in range(len(rs)):
@@ -489,8 +495,8 @@ def run_drc(cell: Cell) -> dict:
         if not base_diff and not base_poly:
             v.append(("cont_no_base", c.role))
             continue
-        for bases, need, tag in ((base_diff, RULES["cont_enc_diff"], "diff"),
-                                 (base_poly, RULES["cont_enc_poly"], "poly")):
+        for bases, need, tag in ((base_diff, R["cont_enc_diff"], "diff"),
+                                 (base_poly, R["cont_enc_poly"], "poly")):
             if not bases:
                 continue
             best = max(bases, key=lambda s: min(c.x0 - s.x0, s.x1 - c.x1,
@@ -505,8 +511,8 @@ def run_drc(cell: Cell) -> dict:
         best = max(m1s, key=lambda s: min(c.x0 - s.x0, s.x1 - c.x1,
                                           c.y0 - s.y0, s.y1 - c.y1))
         enc = min(c.x0 - best.x0, best.x1 - c.x1, c.y0 - best.y0, best.y1 - c.y1)
-        if enc < RULES["cont_enc_m1"]:
-            v.append(("cont_enc_m1", "%s enc=%d < %d" % (c.role, enc, RULES["cont_enc_m1"])))
+        if enc < R["cont_enc_m1"]:
+            v.append(("cont_enc_m1", "%s enc=%d < %d" % (c.role, enc, R["cont_enc_m1"])))
 
     # 栅到有源上接触孔的间距（栅-孔间距是真实 DRC 规则，不能漏）
     for g in cell.by_layer(L_POLY):
@@ -520,9 +526,9 @@ def run_drc(cell: Cell) -> dict:
                 if _touch(c, g) or not _touch(c, d):
                     continue
                 dx = max(0, max(ox0, c.x0) - min(ox1, c.x1))
-                if dx < RULES["gate_cont"]:
+                if dx < R["gate_cont"]:
                     v.append(("gate_cont", "gate@%d-%d cont@%d gap=%d < %d"
-                              % (ox0, ox1, c.x0, dx, RULES["gate_cont"])))
+                              % (ox0, ox1, c.x0, dx, R["gate_cont"])))
 
     # NWELL 包围 PMOS 有源
     wells = cell.by_layer(L_NWELL)
@@ -533,9 +539,9 @@ def run_drc(cell: Cell) -> dict:
         best = max(inside, key=lambda w: min(d.x0 - w.x0, w.x1 - d.x1,
                                              d.y0 - w.y0, w.y1 - d.y1))
         enc = min(d.x0 - best.x0, best.x1 - d.x1, d.y0 - best.y0, best.y1 - d.y1)
-        if enc < RULES["nwell_enc"]:
+        if enc < R["nwell_enc"]:
             v.append(("nwell_enc", "diff@y%d-%d enc=%d < %d"
-                      % (d.y0, d.y1, enc, RULES["nwell_enc"])))
+                      % (d.y0, d.y1, enc, R["nwell_enc"])))
     return {"violations": v, "n": len(v)}
 
 

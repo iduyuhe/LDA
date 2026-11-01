@@ -981,6 +981,31 @@ ECORE_CAPABILITY_MANIFEST = [
         "symbols": ["TOUCHED", "snapshot", "diff", "use", "DPROC_DISCLOSURE"],
         "introduced_by": "D-245 (proc switch)", "guard": "run_ecore_e53_smoke.py",
     },
+    {
+        "capability": "**DFF 进 HD 库（D-246）**：库里唯一的**时序单元**，22T = 11 列 ×（1 PMOS + 1 NMOS），"
+                      "TG 主从 + 输出缓冲，**正沿触发**，输出 Q/QN。这是「按规则生成单元」这条路的真正验收 ——"
+                      "器件数是 INV 的 11 倍、大半栅网是**内部无名节点**。"
+                      "**为画它必须先补两处基础能力**：① `dcells` 的跨层桥接从「只有 CONT 硬编码」改成**表驱动**"
+                      "（`_VIA_BRIDGE`: CONT→DIFF/POLY/M1、VIA1→M1/M2、V2→M2/M3），否则单元里一放 M2 走线，"
+                      "LVS 就看不到连通（实测：每个器件第二个端子都成独立无名网）；"
+                      "② DRC 增加 M2/M3 的宽/间距（`m2_w/m2_s/m3_w/m3_s`）。"
+                      "**版图三处关键设计**：M1 只做水平总线（13 网共享 8 条电平，同电平 x 不相交，判据 J4 机核）、"
+                      "M2 只做竖直跨层（正交两层，交叉不必让步）、TG 的 P/N 栅**断成两条 poly**（互补控制，"
+                      "占空比 430..505nm），互补时钟拆成低段+高段并用 M2 竖链跨接（P 栅接触只能落上半区、"
+                      "N 栅只能落下半区）。"
+                      "实测：**DRC 0 / 双射 LVS 0**（22 器件 / 13 网）、面积 **2.5000 µm² = 8.93× INV**、"
+                      "等高 1000nm、行内可用轨道 **3 条**（4 个引脚吃掉更多空隙）、功能**开关级 16 拍逐拍**"
+                      "与理想正沿 DFF 一致且「非沿不跟随」。"
+                      "🔴 **22T ≠ 抽象模型 24T**（`dcell.DFF.n_tr`）⇒ 面积按实测几何报，不套抽象模型。"
+                      "🔴 **无 SPICE**：功能证据只到开关级，不含时序/噪声/亚稳态。"
+                      "🔴 **单元内部用了 M2**，而布线器只认引脚 ⇒ **本版不接入布线**（接之前必须先把单元内部"
+                      "图形纳入 DRC，否则是盲区）。规则集 LDA-DEMO28 非 foundry PDK。"
+                      "**净增 0 锚**（E54 · 10 判据）",
+        "module": "lda_l2.ecore.dhdlib",
+        "symbols": ["DFF_PITCH", "DFF_NCOL", "DFF_LEVELS", "DFF_COLS", "DFF_BUS",
+                    "DFF_LINKS", "build_dff_hd", "run_lvs_pos"],
+        "introduced_by": "D-246 (DFF in HD lib)", "guard": "run_ecore_e54_smoke.py",
+    },
 ]
 
 

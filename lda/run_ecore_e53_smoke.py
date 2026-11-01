@@ -57,7 +57,10 @@ def main() -> int:
     nl = CT.build()["netlist"]
 
     # ── H1 HD 库自身合法 ────────────────────────────────────────────
-    cells = {n: f() for n, f in sorted(HD.CELLS.items())}
+    # 🔴 只查**组合单元**：DFF 有 22 个器件、大半栅网是内部无名节点，既有
+    # `run_lvs`（`_canon` 排序键含 `str(gate)`）在它上面必误报；DFF 的合法性由 E54
+    # 用**双射 LVS**（`dhdlib.run_lvs_pos`）单独守 —— 两个门禁分工，互不越界。
+    cells = {n: f() for n, f in sorted(HD.CELLS.items()) if n != "DFF_X1_HD"}
     d = {n: HD.run_drc(c, HD.HD_RULES) for n, c in cells.items()}
     lv = {n: HD.run_lvs(c) for n, c in cells.items()}
     check("H1 HD 库 DRC/LVS 双零（%s）" % ", ".join(

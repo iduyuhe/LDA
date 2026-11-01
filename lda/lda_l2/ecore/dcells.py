@@ -44,8 +44,12 @@ from ..gds_export import (
     LIB_LAYER_E_CONT as L_CONT,
     LIB_LAYER_E_DIFF as L_DIFF,
     LIB_LAYER_E_M1 as L_M1,
+    LIB_LAYER_E_M2 as L_M2,
+    LIB_LAYER_E_M3 as L_M3,
     LIB_LAYER_E_POLY as L_POLY,
+    LIB_LAYER_E_VIA1 as L_VIA1,
 )
+from .ddetail import L_V2
 
 #: NWELL 无现成真源（此前电子域只用 DIFF/POLY/CONT/M1），取未占用号 19 并在此登记。
 L_NWELL = 19
@@ -352,6 +356,16 @@ def _union(p: list, i: int, j: int) -> None:
         p[ri] = rj
 
 
+#: 单元内的跨层桥接：通孔层 → 它能连通的金属/扩散层。
+#: 🔴 与 `ddrc_lvs.VIA_BRIDGE` 是**同一个物理事实**的两种用途（这里判连通，那里判包围），
+#: 两边都必须改才自洽 —— 由 E54 判据 `J3` 机核两张表逐项一致。
+_VIA_BRIDGE = {
+    L_CONT: (L_DIFF, L_POLY, L_M1),
+    L_VIA1: (L_M1, L_M2),
+    L_V2: (L_M2, L_M3),
+}
+
+
 def _groups(shapes: list) -> list:
     n = len(shapes)
     p = _uf(n)
@@ -360,11 +374,16 @@ def _groups(shapes: list) -> list:
             a, b = shapes[i], shapes[j]
             if a.layer == b.layer and _touch(a, b):
                 _union(p, i, j)
+    # 跨层桥接：接触孔连「它压在的东西」，通孔连「它桥接的两层」。
+    # 🔴 v0.9.357（E54）：原先只硬编码了 CONT ⇒ 单元里一放 M2/M3 走线，
+    # 连通性就断（LVS 会看到「PMOS 漏和 NMOS 漏不是一个网」）。这里改成**表驱动**：
+    # 每类通孔声明它能桥接哪些层，和 `ddrc_lvs.VIA_BRIDGE` 是同一个物理事实的两种用途。
     for k, c in enumerate(shapes):
-        if c.layer != L_CONT:
+        bridges = _VIA_BRIDGE.get(c.layer)
+        if bridges is None:
             continue
         for i, s in enumerate(shapes):
-            if s.layer in (L_DIFF, L_POLY, L_M1) and _touch(c, s):
+            if s.layer in bridges and _touch(c, s):
                 _union(p, k, i)
     g: dict = {}
     for i in range(n):
@@ -436,8 +455,12 @@ def extract_devices(cell: Cell) -> list:
                 if s.layer == L_POLY and _touch(s, g) and s.x0 == g.x0 and s.x1 == g.x1:
                     gate_node = node_of.get(i)
                     break
+            # `x`/`y`：沟道左下角（v0.9.357 新增，供**几何排序**用）。
+            # 🔴 不能拿「栅网的 x」当排序键 —— 同一个网可能驱动多列（如 ckb 同时驱动
+            # INV_CK2 与 TG1 的 N 栅），取 min 会把不同列压成同一个键。
             devs.append({"kind": "pmos" if inside else "nmos", "w": oy1 - oy0,
-                         "l": ox1 - ox0, "gate": gate_node, "sd": sd})
+                         "l": ox1 - ox0, "gate": gate_node, "sd": sd,
+                         "x": ox0, "y": oy0})
     return devs
 
 
@@ -456,10 +479,12 @@ def run_drc(cell: Cell, rules: dict = None) -> dict:
     cx = connectivity(cell)
     shapes, node_of = cx["shapes"], cx["node_of"]
     # 以「原始图形」查 width/area（段是派生量，不参与）
-    wmin = {L_DIFF: R["diff_w"], L_POLY: R["poly_w"],
-            L_CONT: R["cont_w"], L_M1: R["m1_w"]}
-    amin = {L_DIFF: R["diff_a"], L_POLY: R["poly_a"],
-            L_CONT: 0, L_M1: R["m1_a"]}
+    wmin = {L_DIFF: R["diff_w"], L_POLY: R["poly_w"], L_CONT: R["cont_w"],
+            L_M1: R["m1_w"], L_M2: R.get("m2_w", R["m1_w"]),
+            L_M3: R.get("m3_w", R["m1_w"])}
+    amin = {L_DIFF: R["diff_a"], L_POLY: R["poly_a"], L_CONT: 0,
+            L_M1: R["m1_a"], L_M2: R.get("m2_a", R["m1_a"]),
+            L_M3: R.get("m3_a", R["m1_a"])}
     for r in cell.rects:
         if r.layer in wmin:
             if min(r.w, r.h) < wmin[r.layer]:
@@ -469,7 +494,8 @@ def run_drc(cell: Cell, rules: dict = None) -> dict:
 
     # 同层 space：只在不同**节点**之间查（同节点重叠/相接不算违规）
     idx = {id(s): i for i, s in enumerate(shapes)}
-    smin = {L_DIFF: R["diff_s"], L_POLY: R["poly_s"], L_M1: R["m1_s"]}
+    smin = {L_DIFF: R["diff_s"], L_POLY: R["poly_s"], L_M1: R["m1_s"],
+            L_M2: R.get("m2_s", R["m1_s"]), L_M3: R.get("m3_s", R["m1_s"])}
     for layer, s_rule in smin.items():
         rs = [s for s in shapes if s.layer == layer]
         for i in range(len(rs)):

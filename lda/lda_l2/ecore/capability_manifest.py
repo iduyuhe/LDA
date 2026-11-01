@@ -901,6 +901,30 @@ ECORE_CAPABILITY_MANIFEST = [
                     "jog_probe", "DWIDTH_DISCLOSURE"],
         "introduced_by": "D-242 (width/channel trade-off)", "guard": "run_ecore_e50_smoke.py",
     },
+    {
+        "capability": "**行内局部布线可行性判定（D-243）** —— **负结果**：E50 的 87% 卡在"
+                      "「每网独占一条跨行 M4 竖线」，本文去验最直接的出路「让网在行内互联」"
+                      "（动机很强：**60–80% 的内部网全引脚同行**，256 单元 cols=8 时 61%、cols=24 时 79%）。"
+                      "**三个独立证据表明这条路走不通**："
+                      "① 行内 M3 水平段**必撞**同行异网 pad —— 布通 **+0 网**、DRC 从 **0 爆到 786 条**"
+                      "（cols=16 时 288、cols=8 时 70）；"
+                      "② 行内 M2 **没空间**（闭式）：INV 最大空隙 **345nm**、NAND2 **410nm**，"
+                      "而一条 M2 走线需 `W+S_MIN=340nm` ⇒ **最多 1 条轨道**，INV 余量只剩 **5nm**；"
+                      "③ 列分配迭代**零收益**（iters 1/2/3 布通 233/233/233、no_column 34/34/34）"
+                      "⇒ 冲突不是来自 y 区间长度，而是「同行引脚 y **必然重叠**」。"
+                      "🔴 并给出 **87% 的结构解释**：加宽 die 让「列数」与「每行引脚数」**同比例**增长，"
+                      "实测**供给/需求比恒定 1.33–1.43** ⇒ `no_column` 从 89 降到 34 却**永不归零**；"
+                      "通道从 CH=3.40 加到 6.00（**T 9→17**）布通率**一动不动 87.3%**、通道一个不满 ⇒ "
+                      "瓶颈只剩列。⇒ **唯一能突破的杠杆是加一层垂直层（M5）**：分子（列）可翻倍、分母不变。"
+                      "🔴 渐近线依赖本实现的**星形拓扑**，换 Steiner/多干后会变，**不是能力上限**；"
+                      "**不是**说「行内布线在真实设计里也不行」（真实 std-cell 的 pin access 由单元库自带 M2 绕行）。"
+                      "**净增 0 锚**（E51 · 10 判据）",
+        "module": "lda_l2.ecore.dinrow",
+        "symbols": ["CASE_CELLS", "COLS_GRID", "CH_GRID", "ITER_GRID", "row_gaps",
+                    "net_row_span", "in_row_probe", "col_iter_probe",
+                    "channel_saturation", "supply_demand", "DINROW_DISCLOSURE"],
+        "introduced_by": "D-243 (in-row feasibility)", "guard": "run_ecore_e51_smoke.py",
+    },
 ]
 
 

@@ -473,7 +473,8 @@ def _alloc_columns(runs: list, x0_grid: float, die_w: float,
 
 
 def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
-                m2_jog_max: float = None) -> dict:
+                m2_jog_max: float = None, in_row: bool = False,
+                col_iters: int = 1) -> dict:
     """按通道分轨 + 列分配布内部网。返回路由结果与**容量判定**。
 
     🔴 **顺序是本模块的第二个真修复（v0.9.349）**：trunk 的实际长度是
@@ -552,6 +553,55 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
     cols = defaultdict(list)
     for r, cx in zip(runs, xs):
         cols[r[0]].append(cx)
+
+    # ── 列分配迭代（v0.9.354 · E51）──────────────────────────────────
+    # 🔴 第一轮用「通道**最高轨**」估 M4 竖段的 y 区间（最坏情况，保证不冲突但区间偏长）。
+    # 实际轨号只会 ≤ 最高轨 ⇒ 真实 y 区间更短 ⇒ **同一列本可容纳更多网**。
+    # 这里用第一轮的实际轨号再来一遍，取「列失败网数更少」的那一轮。
+    # （为什么要有界：改列 ⇒ trunk 跨度变 ⇒ 着色变，迭代不保证单调收敛。）
+    if col_iters >= 2:
+        _best = (len({n for (n, _r) in col_fails}), xs, cols, runs, col_fails)
+        for _it in range(col_iters - 1):
+            # 用上一轮 cols 估「引脚 → trunk」的真实 y 跨度
+            _sp = defaultdict(list)
+            for _n, _ch in net_ch.items():
+                if _n in {x for (x, _r) in col_fails}:
+                    continue
+                _xr = [p[2] for p in pins[_n]] + cols[_n]
+                _sp[_ch].append((min(_xr), max(_xr), _n))
+            _tof = {}
+            for _ch, _ivs in _sp.items():
+                _trk, _nt = _color_intervals([(a0, b0) for (a0, b0, _q) in _ivs], gap=DL.S_MIN)
+                if _nt > t_cap:
+                    continue
+                for (a0, b0, _q), _t in zip(_ivs, _trk):
+                    _tof[_q] = (_ch, _t)
+            _runs = []
+            for _n in sorted(net_ch):
+                if _n not in _tof:
+                    continue
+                _ch, _t = _tof[_n]
+                _yt = channel_y(pl, _ch) + W / 2.0 + _t * PITCH
+                for _i, (_iname, _p, _x, _y) in enumerate(pins[_n]):
+                    _runs.append((_n, min(_y, _yt) - EXT, max(_y, _yt) + EXT, _x,
+                                  pt_pref.get((_n, _i), 0),
+                                  (point_off_budget(near.get((_n, _i), []), _x, _n, jog_max)
+                                   if m2_jog else None)))
+            if not _runs:
+                break
+            _xs2, _nc2, _cf2 = _alloc_columns(
+                _runs, x0_grid, pl["die_w_um"], max_off=(jog_max if m2_jog else None))
+            _cols2 = defaultdict(list)
+            for _r, _cx in zip(_runs, _xs2):
+                _cols2[_r[0]].append(_cx)
+            _nf = len({n for (n, _r) in _cf2})
+            # 只在**覆盖的网数一致**时采用：否则会有网在新 cols 里没有条目，
+            # 建形时 `xspan` 为空（第一版就这么崩的）。
+            if _nf < _best[0] and len(_cols2) == len(cols) and len(_runs) == len(runs):
+                _best = (_nf, _xs2, _cols2, _runs, _cf2)
+            xs, cols, runs, col_fails = _best[1], _best[2], _best[3], _best[4]
+            if _nf >= _best[0] and _it > 0:
+                break
     col_fail = sorted({n for (n, _r) in col_fails})
     fail_reason = defaultdict(set)
     for (n, r) in col_fails:
@@ -598,10 +648,45 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
     hv = DD.VIA / 2.0
     n_m2_jog = 0
     n_m3_jog = 0
+    n_in_row = 0
     for net in routed:
         yt = y_of[net]
         cols_net = cols[net]
         m3_xs = []                     # trunk 还需覆盖的引脚 x（只在退回 M3 跳线时才有）
+
+        # ── 行内局部互联（v0.9.354 · E51）────────────────────────────
+        # 🔴 实测 **60–80% 的内部网所有引脚在同一行**（256 单元 cols=24 时 79%）。
+        # 这些网根本不需要跨行长竖线：让它们**共享一条 M4 列**（锚 = 最左引脚），
+        # 其余引脚用 M3 水平段在自己的 y 上接到锚列 ⇒ 列需求从「引脚数」降到「1」。
+        # 同一列也因此能被**多行复用**（不同行的 y 区间不重叠），列压力大幅下降。
+        # 代价：M3 水平段会横穿同行其他单元的上方，可能撞异网的 pad（判据 B2 守 DRC）。
+        if in_row and len(cols_net) > 1:
+            rows_of = {int(y // pl["row_pitch_um"]) for (_i, _pp, _xx, y) in pins[net]}
+            if len(rows_of) == 1:
+                cx = cols_net[0]
+                ys = [y for (_i, _pp, _xx, y) in pins[net]]
+                for (_i, _pp, x, y) in pins[net]:
+                    if abs(x - cx) < 1e-9:
+                        acc += pin_stub(x, y, net, cx)
+                        continue
+                    acc += pin_stub(x, y, net)          # 自身位置打孔到 M3
+                    shapes.append(Shape(DD.L_M3, min(x, cx) - EXT, y - W / 2.0,
+                                        max(x, cx) + EXT, y + W / 2.0,
+                                        net=net, kind="metal"))
+                    n_in_row += 1
+                # 锚列上一条 M4 竖线（覆盖所有引脚的 y 到 trunk）
+                shapes.append(Shape(DD.L_M4, cx - W / 2.0, min(min(ys), yt) - EXT,
+                                    cx + W / 2.0, max(max(ys), yt) + EXT,
+                                    net=net, kind="metal"))
+                for y in ys:                            # 每个引脚在锚列的 VIA2
+                    shapes.append(Shape(DD.L_VIA2, cx - hv, y - hv, cx + hv, y + hv,
+                                        net=net, kind="via"))
+                shapes.append(Shape(DD.L_VIA2, cx - hv, yt - hv, cx + hv, yt + hv,
+                                    net=net, kind="via"))
+                shapes.append(Shape(DD.L_M3, cx - EXT, yt - W / 2.0,
+                                    cx + EXT, yt + W / 2.0, net=net, kind="metal"))
+                continue
+
         for (_iname, _p, x, y), cx in zip(pins[net], cols_net):
             off = abs(cx - x)
             if m2_jog and off <= jog_max + 1e-9:
@@ -628,6 +713,8 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
             shapes.append(Shape(DD.L_VIA2, cx - hv, yt - hv, cx + hv, yt + hv,
                                 net=net, kind="via"))
         xspan = cols_net + m3_xs
+        if not xspan:                       # 兜底：列分配没覆盖到该网时用引脚 x（不该发生）
+            xspan = [p[2] for p in pins[net]]
         # trunk 两端各延伸 EXT：否则末端的 VIA2 没有 M3 侧包围（via_enclosure）
         shapes.append(Shape(DD.L_M3, min(xspan) - EXT, yt - W / 2.0,
                             max(xspan) + EXT, yt + W / 2.0, net=net, kind="metal"))
@@ -642,6 +729,8 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
             "n_col_fail_segments": n_seg_fails,
             "col_fail_reason": {k: sorted(v) for k, v in sorted(fail_reason.items())},
             "n_m2_jog": n_m2_jog, "n_m3_jog": n_m3_jog, "m2_jog_on": bool(m2_jog),
+            "n_in_row": n_in_row, "in_row_on": bool(in_row),
+            "col_iters": int(col_iters), "n_col_fail_nets": len(col_fail),
             "trunk_y": y_of, "pins": pins, "n_pins": sum(len(v) for v in pins.values())}
 
 

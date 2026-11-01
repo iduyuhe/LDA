@@ -15033,6 +15033,19 @@
       ],
       "n_rounds": 3,
       "censored_events": 0
+    },
+    {
+      "script": "run_ecore_e51_smoke.py",
+      "budget_s": 180.0,
+      "elapsed_max_s": 5.7844,
+      "margin_x": 31.118,
+      "samples_s": [
+        5.7548,
+        5.7784,
+        5.7844
+      ],
+      "n_rounds": 3,
+      "censored_events": 0
     }
   ]
 }

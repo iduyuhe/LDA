@@ -877,6 +877,30 @@ ECORE_CAPABILITY_MANIFEST = [
                     "DSCALE_DISCLOSURE"],
         "introduced_by": "D-241 (scale ladder)", "guard": "run_ecore_e49_smoke.py",
     },
+    {
+        "capability": "**宽度/通道二维权衡（D-242）**：E49 说「扩规模必须等比加宽 die」，"
+                      "本模块把它做二维扫描量化，结论是那句话**不完整**："
+                      "① **加宽 die 单独做是负收益** —— CH=1.60（T=4）下 cols 4→32 布通率 "
+                      "**51.3% → 0.0%**；机制是 cols 增大 ⇒ rows 减小 ⇒ **通道数减少**"
+                      "（每行上方一条），T 不变 ⇒ 通道容量律先崩。⇒ 必须**同时加高通道**。"
+                      "② **最优点真实存在且布通率对 cols 单峰**（4 个 CH 切片全单峰）："
+                      "256 单元在 cols≈24 / CH=3.40 达 **87.3%**（默认 56.9%），面积 **+71%**；"
+                      "峰值随 CH 单调抬升 56.9%→73.0%→85.8%→87.3%，最优 cols 随之上移 8→16→20→24。"
+                      "越过最优点必崩（cols=32 时通道只剩 8 条、4 个通道超容量覆盖 124 网 ⇒ 43%）。"
+                      "③ **证伪「候选列不够」**：`M2_JOG_MAX` 0.72→2.16（每引脚候选列 **5→13**，2.6×）"
+                      "只多布通 **2 个网** ⇒ 剩余 ~13% 的真根因是**每网独占一条跨行 M4 竖线**"
+                      "（星形拓扑），出路是**加层 M5** 或**行内局部布线**，不是继续加宽。"
+                      "面积代价（Pareto）：85% 档需 **1691 µm²（+47%）**。"
+                      "🔴 依赖「通道数 == 行数」这条实现约定，真实设计不可直接外推；"
+                      "最优点随规模漂移（64/128/256 单元实测 cols≈20/24/24）不是常数。"
+                      "**净增 0 锚**（E50 · 10 判据）",
+        "module": "lda_l2.ecore.dwidth",
+        "symbols": ["COLS_GRID", "CH_GRID", "CASE_CELLS", "tracks_for", "probe_config",
+                    "width_sweep", "slice_at", "best_of", "is_unimodal",
+                    "monotonically_non_increasing", "pareto", "min_area_for",
+                    "jog_probe", "DWIDTH_DISCLOSURE"],
+        "introduced_by": "D-242 (width/channel trade-off)", "guard": "run_ecore_e50_smoke.py",
+    },
 ]
 
 

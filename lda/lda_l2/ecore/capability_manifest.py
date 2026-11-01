@@ -925,6 +925,27 @@ ECORE_CAPABILITY_MANIFEST = [
                     "channel_saturation", "supply_demand", "DINROW_DISCLOSURE"],
         "introduced_by": "D-243 (in-row feasibility)", "guard": "run_ecore_e51_smoke.py",
     },
+    {
+        "capability": "**工艺节点参数化（D-244）**：把「节点」变成可替换参数集（器件缩放与金属规则**分离**），"
+                      "派生「行内可用轨道数」这个关键量。**回答「成熟 EDA 肯定做得到布通」这个质疑：成立** ——"
+                      "E45–E51 的 87% 不是物理极限，而是把一套 **0.35µm 级规则写死**的结果："
+                      "`W=240/S=100/VIA=200/ENC=20/行高1500nm` ⇒ 引脚 pad 必须 **240×240nm**（VIA+2·ENC 的必然），"
+                      "而 pad 是**行内资源的头号消费者** —— 它把行内空闲带压到 **2 条** 340nm 节距轨道，"
+                      "而 **pin access 正好用掉这 2 条** ⇒ M2 不能做布线层（实测：直接用它布线 DRC **0→65 条**）"
+                      "⇒ 只剩 **M4 一层竖直** ⇒ 列供给/需求比恒 1.33–1.43 ⇒ **87% 渐近线**。"
+                      "换 DEMO28（pad **70nm**）：行内 **5 条**，扣 pin access 剩 **3 条** ⇒ 行内布线可行 "
+                      "⇒ 每网只需 1 条锚列 ⇒ **列需求 0.512×**（同行网 78.7%、平均 2.63 引脚）。"
+                      "🔴 **关键反例：等比缩规则无效** —— pad/节距/行高**同比**缩 0.6，轨道数**仍是 2**"
+                      "（比值不变）；只有「金属规则比器件缩得更快」才腾出空间，这正是真实工艺演进的形态。"
+                      "🔴 **本模块不做布通率实测宣称**：0.512× 是几何下界；"
+                      "要把它变成实测需**重做 HD 单元库**（pad 70nm + M1 strap 重画 + DRC/LVS 归零），"
+                      "那是独立里程碑。两个节点都是**教科书尺度参数，非 any foundry PDK**。"
+                      "**净增 0 锚**（E52 · 9 判据）",
+        "module": "lda_l2.ecore.dnode",
+        "symbols": ["NM", "Node", "DEMO45", "DEMO28", "NODES", "DEFAULT_NODE", "get",
+                    "compare", "inner_tracks_for", "capacity_projection", "NODE_DISCLOSURE"],
+        "introduced_by": "D-244 (node parametrization)", "guard": "run_ecore_e52_smoke.py",
+    },
 ]
 
 

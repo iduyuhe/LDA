@@ -474,7 +474,7 @@ def _alloc_columns(runs: list, x0_grid: float, die_w: float,
 
 def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
                 m2_jog_max: float = None, in_row: bool = False,
-                col_iters: int = 1) -> dict:
+                col_iters: int = 1, vert_layer: str = "M4") -> dict:
     """按通道分轨 + 列分配布内部网。返回路由结果与**容量判定**。
 
     🔴 **顺序是本模块的第二个真修复（v0.9.349）**：trunk 的实际长度是
@@ -703,15 +703,28 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
                                         net=net, kind="metal"))
                     m3_xs.append(x)
                     n_m3_jog += 1
-            # 列底部：M3 → M4 必须过一个 VIA2（否则 M3 与 M4 在几何上不相连）
-            shapes.append(Shape(DD.L_VIA2, cx - hv, y - hv, cx + hv, y + hv,
-                                net=net, kind="via"))
-            # M4 竖直：列底部 → trunk，两端各延伸 EXT 以包围两端的 VIA2
-            shapes.append(Shape(DD.L_M4, cx - W / 2.0, min(y, yt) - EXT,
-                                cx + W / 2.0, max(y, yt) + EXT, net=net, kind="metal"))
-            # trunk 端：VIA2（trunk 与竖段宽度 0.24 已包围 0.20 孔）
-            shapes.append(Shape(DD.L_VIA2, cx - hv, yt - hv, cx + hv, yt + hv,
-                                net=net, kind="via"))
+            # ── 竖直段所在的层（v0.9.355 架构修正）────────────────────────
+            # 真实工艺层方向是 M1 水平 / **M2 竖直** / M3 水平 / **M4 竖直** / M5 水平…
+            # 而本仓原先把 M2 当成「水平逃逸条」用 ⇒ **白扔了一套竖直资源**，
+            # 只剩 M4 一层竖直线 ⇒ 列资源只有真实设计的一半。
+            # 这里支持把竖直段放到 M2（用 L_V2 = M2↔M3）或 M4（用 L_VIA2 = M3↔M4）。
+            if vert_layer == "M2":
+                shapes.append(Shape(DD.L_V2, cx - hv, y - hv, cx + hv, y + hv,
+                                    net=net, kind="via"))
+                shapes.append(Shape(DD.L_M2, cx - W / 2.0, min(y, yt) - EXT,
+                                    cx + W / 2.0, max(y, yt) + EXT, net=net, kind="metal"))
+                shapes.append(Shape(DD.L_V2, cx - hv, yt - hv, cx + hv, yt + hv,
+                                    net=net, kind="via"))
+            else:
+                # 列底部：M3 → M4 必须过一个 VIA2（否则 M3 与 M4 在几何上不相连）
+                shapes.append(Shape(DD.L_VIA2, cx - hv, y - hv, cx + hv, y + hv,
+                                    net=net, kind="via"))
+                # M4 竖直：列底部 → trunk，两端各延伸 EXT 以包围两端的 VIA2
+                shapes.append(Shape(DD.L_M4, cx - W / 2.0, min(y, yt) - EXT,
+                                    cx + W / 2.0, max(y, yt) + EXT, net=net, kind="metal"))
+                # trunk 端：VIA2（trunk 与竖段宽度 0.24 已包围 0.20 孔）
+                shapes.append(Shape(DD.L_VIA2, cx - hv, yt - hv, cx + hv, yt + hv,
+                                    net=net, kind="via"))
         xspan = cols_net + m3_xs
         if not xspan:                       # 兜底：列分配没覆盖到该网时用引脚 x（不该发生）
             xspan = [p[2] for p in pins[net]]
@@ -731,6 +744,7 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
             "n_m2_jog": n_m2_jog, "n_m3_jog": n_m3_jog, "m2_jog_on": bool(m2_jog),
             "n_in_row": n_in_row, "in_row_on": bool(in_row),
             "col_iters": int(col_iters), "n_col_fail_nets": len(col_fail),
+            "vert_layer": vert_layer,
             "trunk_y": y_of, "pins": pins, "n_pins": sum(len(v) for v in pins.values())}
 
 

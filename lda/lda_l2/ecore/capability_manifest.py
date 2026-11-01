@@ -856,6 +856,27 @@ ECORE_CAPABILITY_MANIFEST = [
                     "theorem_check", "DPVT_DISCLOSURE"],
         "introduced_by": "D-239 (PVT corners)", "guard": "run_ecore_e47_smoke.py",
     },
+    {
+        "capability": "**规模上探与复杂度界（D-241）**：把「这套链路能用到多大规模」变成可引用的数。"
+                      "12…1024 单元阶梯实测：**全档路由 DRC 恒 0**，但代价如实变成「布不通」——"
+                      "列失败率 **0% → 51.3%**（单调不降）。"
+                      "🔴 **上限来自布线资源，不是算法**：M4 列数由 **die 宽度**决定、与行数无关 "
+                      "⇒ 行数一多列必然枯竭；扩规模必须等比加宽 die（与 E38 链「唯一杠杆是加面积」同向）。"
+                      "**时间界**：DRC 占绝对主导（1024 单元 **96.2%**），`t_drc ∝ M^1.96`（R²=0.9999）"
+                      "与逐对 O(M²) 一致；按该幂律外推 1 万单元 DRC ≈ **130 s（上界，纯 Python 单核）**。"
+                      "🔴 **查出并修掉两个真缺陷**：① 列被推远超过 M2 逃逸上限后，旧代码退回 **M3 长跳线**，"
+                      "而跳线只能画在**引脚 y** 上 ⇒ 同行同 y 的跳线全叠死（64 单元实测 **41 条**）；"
+                      "修成把逃逸上限当**硬约束**，超出如实报 `too_far`/`no_column`。"
+                      "② 逐引脚逃逸额度必须**按方向**算（向左只受左邻约束），且判邻必须按 "
+                      "**y 区间重叠**（`round(y,2)` 分带会把 INV 535nm 与 NAND2 530nm 错开 ⇒ 漏 2 条）。"
+                      "🔴 外推是**上界不是点估计**（`metals/cells` 随规模下降 ⇒ 系统性高估，实测 +85%）；"
+                      "**布通率不外推**。**净增 0 锚**（E49 · 10 判据）",
+        "module": "lda_l2.ecore.dscale",
+        "symbols": ["LADDER", "COLS", "probe", "size_ladder", "fit_exponent",
+                    "complexity", "extrapolate", "failure_breakdown", "monotonic",
+                    "DSCALE_DISCLOSURE"],
+        "introduced_by": "D-241 (scale ladder)", "guard": "run_ecore_e49_smoke.py",
+    },
 ]
 
 

@@ -79,8 +79,9 @@ check = make_check(globals(), ok_key="PASS", bad_key="FAIL", indent="",
                    detail_fmt="  :: {d}", return_ok=True)
 
 
-def _route(nl, gap, m2_jog=True):
-    pl = PN.place_real(nl, max_cells=CASE_N, cols=CASE_COLS, cell_gap=gap)
+def _route(nl, gap, m2_jog=True, max_cells=None, cols=None):
+    pl = PN.place_real(nl, max_cells=(CASE_N if max_cells is None else max_cells),
+                       cols=(CASE_COLS if cols is None else cols), cell_gap=gap)
     rt = PN.route_block(nl, pl, m2_jog=m2_jog)
     vr = DL.run_drc(PN.routing_only(rt))["violations"]
     va = DL.run_drc(PN.all_routing(rt))["violations"]
@@ -121,45 +122,73 @@ def main():
           "M2 版 %d 条 vs 旧形态 %d 条 · 布通 %d"
           % (len(vr_t), len(vr_off), len(rt_t["routed"])))
 
-    # ── C3 不得宣称零 DRC：残差全在 M2 ─────────────────────────
-    layers = sorted({v[1] for v in va_t})
-    check("C3 🔴 不得宣称零 DRC：gap %.2f 下全量 DRC > 0，且残差**全在 M2 层**"
-          % GAP_TIGHT,
-          len(va_t) > 0 and layers == [DD.L_M2],
-          "全量 %d 条 · 涉及层 %s（M2=%d）" % (len(va_t), layers, DD.L_M2))
+    # ── C3 🔴 口径修正（v0.9.352）：0.36 也零 DRC，代价转为「布不通」──────
+    # v0.9.351 的 C3 断言「gap 0.36 下全量 DRC > 0，残差全在 M2」。那是**旧口径**：
+    # 旧实现会把 M2 条逃到超出同 y 邻引脚净空的位置、并画 M3 长跳线 —— 于是「有违例」
+    # 被当成「布通了」。规模上探（E49）发现这类违例在 64 单元时会成片（41 条）。
+    # 修正后把逃逸上限当硬约束：**违例归零，代价如实变成「布不通」**。
+    # 所以这条判据现在守的是「不许把违例当布通」，比原来更严。
+    # 🔴 口径：`pins` 里含只有 1 个引脚的端口网（primary I/O），它们本来就不该布。
+    # 「内部网」= routed + unrouted。12 单元的基线是**内部网 10/10**。
+    n_int_t = len(rt_t["routed"]) + len(rt_t["unrouted"])
+    n_rt_t = len(rt_t["routed"])
+    unrt_t = len(rt_t["unrouted"])
+    # 12 单元（本模块的基线块）：零 DRC 且 **10/10 布通** —— 收紧约束不许牺牲这条。
+    # 64 单元（规模放大）：零 DRC，但代价**如实显形**为布不通，且每个未布网都有分类理由。
+    pl_b, rt_b, _vr_b, va_b = _route(nl, GAP_TIGHT, True, max_cells=64)
+    n_int_b = len(rt_b["routed"]) + len(rt_b["unrouted"])
+    n_rt_b = len(rt_b["routed"])
+    fails_b = rt_b["n_col_fail_too_far"] + rt_b["n_col_fail_no_column"]
+    unrt_b = len(rt_b["unrouted"])
+    check("C3 🔴 口径修正：gap %.2f 下 **全量 DRC 恒 0**；12 单元内部网仍 %d/%d 布通，"
+          "64 单元代价如实显形为布不通（不得把违例当布通）"
+          % (GAP_TIGHT, n_rt_t, n_int_t),
+          len(va_t) == 0 and unrt_t == 0 and n_rt_t > 0
+          and len(va_b) == 0 and n_rt_b < n_int_b and fails_b > 0
+          and unrt_b >= fails_b,
+          "12 单元 DRC %d · 内部网 %d/%d · 未布 %d ｜ 64 单元 DRC %d · 内部网 %d/%d · 其中列失败 %d"
+          % (len(va_t), n_rt_t, n_int_t, unrt_t, len(va_b), n_rt_b, n_int_b, fails_b))
 
-    # ── C4 几何必然性（闭式余量）──────────────────────────────
-    pad = DD.VIA + 2.0 * DL.ENC               # 0.24
-    room = PN.PITCH - pad                     # 两 pad 之间的净空
-    inward = room - DL.S_MIN                  # 扣掉间距后可用于「内向逃逸」的总量
-    # 实测最差 M2 间隙（同 y 带上两个不同网的 M2 条之间的最大重叠/最近距离）
+    # ── C4 逐点逃逸额度的闭式（与实现逐位对拍）──────────────────
+    # 同 y 带上 A(x=0.12) 与 B(x=0.48) 相距一个 pitch。A 向左没有邻居 ⇒ 额度 = jog_max；
+    # A 向右受 B 约束 ⇒ 额度 = P − 2·M2_HALF − S_MIN = 0.36 − 0.242 − 0.10 = 0.018。
+    # 这个 0.018 正是本模块 v0.9.351 算出的「内向逃逸总量 0.02」的精确化。
+    # 新签名（v0.9.352）：`others = [(x, net)]` + 本引脚 net（同网不算邻居）
+    bud_ab = PN.point_off_budget([(0.12, "A"), (0.48, "B")], 0.12, "A", PN.M2_JOG_MAX)
+    want_right = PN.PITCH - 2.0 * PN.M2_HALF - DL.S_MIN
+    # 实测：全量 DRC 已归零 ⇒ 同 y 带上异网 M2 条的最近间隙必须 ≥ S_MIN（不再靠「违例」)
     metals = [s for s in PN.all_routing(rt_t) if s.kind == "metal" and s.layer == DD.L_M2]
     worst = None
     for i in range(len(metals)):
         for j in range(i + 1, len(metals)):
             a, b = metals[i], metals[j]
-            if a.net == b.net:
-                continue
-            if max(a.y0, b.y0) > min(a.y1, b.y1):     # y 不重叠
+            if a.net == b.net or max(a.y0, b.y0) > min(a.y1, b.y1):
                 continue
             gap = max(0.0, max(a.x0, b.x0) - min(a.x1, b.x1))
             worst = gap if worst is None else min(worst, gap)
-    check("C4 几何必然性：同 y 两引脚净空 %.3fµm，扣 S_MIN 后内向逃逸总量只有 %.3fµm ⇒ 两条 M2 条无法共存"
-          % (room, inward),
-          inward <= 0.03 and worst is not None and worst < DL.S_MIN - 1e-9,
-          "P−pad=%.3f · 可内向总量 %.3f · 实测最差 M2 间隙 %.4f < S_MIN %.2f"
-          % (room, inward, worst if worst is not None else -1, DL.S_MIN))
+    check("C4 逐点逃逸额度 = 闭式：A 向左 %.3f（无邻）· 向右 %.4f = P−2·M2_HALF−S_MIN，"
+          "且实测 M2 最近间隙 ≥ S_MIN" % (bud_ab[0], bud_ab[1]),
+          abs(bud_ab[1] - want_right) < 1e-9 and abs(bud_ab[0] - PN.M2_JOG_MAX) < 1e-9
+          and (worst is None or worst >= DL.S_MIN - 1e-9),
+          "闭式 %.4f vs 实现 %.4f · 最差间隙 %.4f ≥ S_MIN %.2f"
+          % (want_right, bud_ab[1], worst if worst is not None else -1.0, DL.S_MIN))
 
-    # ── C5 间距不可回收（扫描）──────────────────────────────────
+    # ── C5 间距的真实收益：布通率，不是 DRC 数（口径修正 · v0.9.352）──────
+    # 旧 C5 断言「0.36/0.40/0.44 DRC 恒 >0，≥0.46 才为 0 ⇒ 0.46 是必要值」。
+    # 但那批「>0」正是被当成「布通了」的违例。修正后所有 gap 的 DRC 都是 0，
+    # 0.46 的真实收益必须改用**布通率**衡量 —— 实测 12 单元 **0 网**、64 单元 **+3 网**。
     scan = []
     for gap in SCAN:
         _pl, _rt, _vr, _va = _route(nl, gap, True)
-        scan.append((gap, len(_vr), len(_va)))
-    ok_scan = all(va > 0 for (g, vr, va) in scan if g < GAP_LOOSE - 1e-9) \
-        and all(va == 0 for (g, vr, va) in scan if g >= GAP_LOOSE - 1e-9)
-    check("C5 间距不可回收：%.2f/%.2f/%.2f 全量 DRC 恒 >0，只有 ≥%.2f 才为 0 ⇒ %.2f 是**必要值**"
-          % (SCAN[0], SCAN[1], SCAN[2], GAP_LOOSE, GAP_LOOSE),
-          ok_scan, "扫描 (gap, 路由, 全量) = %s" % (scan,))
+        scan.append((gap, len(_va), len(_rt["routed"]), len(_rt["pins"])))
+    gain = {round(g, 3): nr for (g, _d, nr, _n) in scan}
+    base = gain.get(round(SCAN[0], 3), 0)
+    loose = gain.get(round(GAP_LOOSE, 3), 0)
+    check("C5 间距的真实收益 = **布通率**（不是 DRC 数）：所有 gap 全量 DRC 恒 0，"
+          "%.2f 相对 %.2f 多布通 %d 网 ⇒ 0.46 的必要性被旧口径夸大了"
+          % (GAP_LOOSE, SCAN[0], loose - base),
+          all(d == 0 for (_g, d, _nr, _n) in scan) and loose >= base,
+          "扫描 (gap, 全量DRC, 布通, 网) = %s" % (scan,))
 
     # ── C6 反向探针：关掉 M2 逃逸 ⇒ gap 0.36 路由 DRC 必回 4 ──────
     check("C6 反向探针：关掉 M2 逃逸（退回 M3 跳线）⇒ gap %.2f 的路由 DRC 必回 >0"

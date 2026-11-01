@@ -81,8 +81,12 @@ CELL_GAP_UM = 0.46        # 默认单元间距 ⇒ pitch_x = 0.98 + 0.46 = 1.44 
 #: 🔴 v0.9.351：M2 可承担「引脚 → 列」横向偏移后的**紧凑间距**（0.98 + 0.36 = 1.34，
 #: 不再是轨道间距整数倍 ⇒ 引脚相位会漂移，偏移由 M2 吸收而不是 M3 跳线）。
 CELL_GAP_TIGHT_UM = 0.36
-#: M2 横向绕行长度上限（超过则退回 M3 跳线并计数）。0.72 = 2×轨道间距。
+#: M2 横向绕行长度上限（超过则如实报 too_far，不画长跳线）。0.72 = 2×轨道间距。
 M2_JOG_MAX = 0.72
+#: 引脚 pad 半宽 = `VIA/2 + ENC` = 0.12（E45 起单元引脚就是 240×240 pad）。
+PAD_HALF = DD.VIA / 2.0 + DL.ENC
+#: M2 逃逸条半宽 = pad 半宽 + 1nm 余量（条比 pad 略宽）。
+M2_HALF = DD.VIA / 2.0 + DL.ENC + 0.001
 CH_UM = 1.60              # 行间通道高度
 PITCH = DD.TRACK_PITCH    # 0.36
 EXT = DD.VIA / 2.0 + DL.ENC   # 0.12：金属须超出孔边 ENC
@@ -202,6 +206,38 @@ def net_pins(pl: dict) -> dict:
                 if k < len(g.ins):
                     pins[g.ins[k]].append((inst["name"], p["pin"], p["x"], p["y"]))
     return dict(pins)
+
+
+def point_off_budget(others: list, x: float, net: str, jog_max: float) -> tuple:
+    """**y 邻域内**某个引脚允许的 M2 逃逸长度，**按方向分开**：`(向左, 向右)`。
+
+    `others` = 该引脚 y 邻域内的 `[(x_other, net_other)]`（由调用方按 y 区间重叠筛好）。
+
+    🔴 为什么必须分方向（v0.9.352）：逃逸条只朝**一个方向**扩张 ⇒ 向左逃只受**左邻**约束、
+    向右逃只受**右邻**约束。初版用「两侧各摊一半」的单一额度，把「向左 0.5µm 完全合法」
+    误判成「只能逃 0.01µm」—— 实测 12 单元布通率从 10/10 掉到 9/10（判据立刻抓到）。
+
+    🔴 为什么必须按 **y 区间重叠**判邻（v0.9.352 第二修）：初版按 `round(y,2)` 分带，
+    而 INV 的引脚中心 y=535nm、NAND2 是 530nm —— 两者 M2 条在 y 上**确实重叠**，却被
+    分进不同的带 ⇒ 互不约束 ⇒ 64 单元 gap=0.36 时冒出 2 条 `min_spacing`。
+    M2 条高 `W`、两条共存须留 `S_MIN` ⇒ **y 差 < W + S_MIN 就必须算邻居**。
+
+    闭式：向左逃 δ 时条左端 = `x − M2_HALF − δ`，须与左邻条右端留 `S_MIN`
+    ⇒ `δ ≤ (x − x_left) − 2·M2_HALF − S_MIN`。同单元 A/B（相隔一个 pitch）给出
+    `0.36 − 0.242 − 0.10 = 0.018`，与 E48「内向逃逸总量 0.02µm」逐位一致。
+    """
+    left = right = None
+    for (xo, no) in others:
+        if no == net or abs(xo - x) < 1e-9:
+            continue
+        if xo < x:
+            v = (x - xo) - 2.0 * M2_HALF - DL.S_MIN
+            left = v if left is None else min(left, v)
+        else:
+            v = (xo - x) - 2.0 * M2_HALF - DL.S_MIN
+            right = v if right is None else min(right, v)
+    return (max(0.0, min(jog_max, left if left is not None else jog_max)),
+            max(0.0, min(jog_max, right if right is not None else jog_max)))
 
 
 def pin_stub(x: float, y: float, net: str, cx: float = None) -> list:
@@ -359,10 +395,20 @@ def _color_intervals(ivs: list, gap: float = 0.0) -> list:
     return assign, len(track_end)
 
 
-def _alloc_columns(runs: list, x0_grid: float, die_w: float) -> tuple:
+def _alloc_columns(runs: list, x0_grid: float, die_w: float,
+                   max_off: float = None) -> tuple:
     """M4 列分配：离散列网格 + y 区间着色 ⇒ 不同网的 M4 在 y 上永不重叠。
 
-    `runs` = [(net, y_lo, y_hi, x_desired, dir_pref)]，返回 (每段的列 x, 用到的列数, 失败列表)。
+    `runs` = [(net, y_lo, y_hi, x_desired, dir_pref)]，
+    返回 (每段的列 x, 用到的列数, 失败列表)，失败项是 `(net, reason)`：
+
+    🔴 `too_far`（v0.9.352，**规模上探查出的真缺陷**）：`max_off` 给定时，列必须落在
+    引脚 x 的 `±max_off` 内。起因是规模放大的真实失效路径 —— 列被推远超过 M2 逃逸上限后，
+    旧代码退回 **M3 横向长跳线**，而跳线只能画在**引脚 y** 上；同一行所有引脚 y 相同 ⇒
+    多条长跳线全部叠在同一 y、同层不同网 ⇒ `min_spacing` 成片（64 单元 8 行实测 41 条）。
+    这是**资源冲突**而非算法缺陷：同 y 引脚的 M3 横向资源是有限的。正确做法是像容量律
+    一样**如实报布不通**，不能画出违例假装布通。
+    `no_column`：列网格已满（y 区间着色找不到空位）。
 
     🔴 `dir_pref`（v0.9.351）：**搜索方向的偏好**（−1 向左 / +1 向右 / 0 不限）。
     起因：M2 逃逸条本身占 y 带（高 W），**同一 y 带上的相邻引脚**若都朝同一侧逃逸，
@@ -370,22 +416,33 @@ def _alloc_columns(runs: list, x0_grid: float, die_w: float) -> tuple:
     自然分开；偏好只是搜索顺序，找不到合适的仍回退到另一侧/更远的列。
     """
     ncol = max(1, int((die_w - W) // PITCH) + 1)
+    # 搜索半径：给了 max_off 就只在引脚 ±max_off 内找列（超出的段如实报 too_far）
+    dmax = (ncol - 1) if max_off is None else min(ncol - 1, int(max_off // PITCH + 1e-9))
     col_ivs: list = [[] for _ in range(ncol)]     # 每列已占用的 y 区间
     xs = [0.0] * len(runs)
     fail = []
     order = sorted(range(len(runs)), key=lambda i: (runs[i][3], runs[i][1], i))
     for i in order:
-        _net, ya, yb, xd, pref = runs[i]
+        row = runs[i]
+        _net, ya, yb, xd, pref = row[0], row[1], row[2], row[3], row[4]
+        pt_off = row[5] if len(row) > 5 else None       # (向左, 向右) 或 None
         if yb - ya <= 1e-9:
             xs[i] = xd
             continue
         ia, ib = ya - DL.S_MIN / 2.0, yb + DL.S_MIN / 2.0
         k0 = int(round((xd - x0_grid) / PITCH))
         best = None
-        for d in range(0, ncol):
+        for d in range(0, dmax + 1):
             cands = (k0 - d, k0 + d) if pref < 0 else ((k0, k0) if d == 0 else (k0 + d, k0 - d))
             for k in cands:
                 if k < 0 or k >= ncol:
+                    continue
+                if pt_off is not None:
+                    cx = x0_grid + k * PITCH
+                    lim = pt_off[0] if cx < xd else pt_off[1]
+                    if abs(cx - xd) > lim + 1e-9:
+                        continue
+                elif max_off is not None and abs(x0_grid + k * PITCH - xd) > max_off + 1e-9:
                     continue
                 if all(ib <= e0 or ia >= e1 for (e0, e1) in col_ivs[k]):
                     best = k
@@ -393,7 +450,20 @@ def _alloc_columns(runs: list, x0_grid: float, die_w: float) -> tuple:
             if best is not None:
                 break
         if best is None:
-            fail.append(_net)
+            # 区分「网格满」与「超出逃逸半径」：前者是布线资源不足，后者是引脚横向可达性不足
+            # 判「网格满」还是「超出逃逸半径」：任一方向额度内存在网格列 ⇒ 是前者
+            reachable = False
+            for k in range(ncol):
+                cx = x0_grid + k * PITCH
+                if pt_off is not None:
+                    lim = pt_off[0] if cx < xd else pt_off[1]
+                    if abs(cx - xd) <= lim + 1e-9:
+                        reachable = True
+                        break
+                elif max_off is None or abs(cx - xd) <= max_off + 1e-9:
+                    reachable = True
+                    break
+            fail.append((_net, "no_column" if reachable else "too_far"))
             xs[i] = xd
             continue
         col_ivs[best].append((ia, ib))
@@ -448,17 +518,50 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
         for rank, (_x, net, i) in enumerate(sorted(items)):
             pt_pref[(net, i)] = -1 if rank % 2 == 0 else 1
 
+    # y 邻域：M2 条高 W、两条共存须留 S_MIN ⇒ |Δy| < W + S_MIN 就算邻居。
+    # 用**滑窗**而不是哈希分带（分带会把 y 相差 5nm 的引脚错开，正是那 2 条 DRC 的来源）。
+    y_tol = W + DL.S_MIN
+    flat = []
+    for net in sorted(net_ch):
+        for i, (_iname, _p, x, y) in enumerate(pins[net]):
+            flat.append((y, x, net, i))
+    flat.sort()
+    near = {}
+    hi = 0
+    for idx, (y, x, net, i) in enumerate(flat):
+        lo = idx
+        while lo > 0 and flat[lo - 1][0] >= y - y_tol:
+            lo -= 1
+        while hi < len(flat) and flat[hi][0] <= y + y_tol:
+            hi += 1
+        near[(net, i)] = [(fx, fn) for (_fy, fx, fn, _fi) in flat[lo:hi]]
+
     runs = []
     for net in sorted(net_ch):
         y_worst = channel_y(pl, net_ch[net]) + W / 2.0 + (t_cap - 1) * PITCH
         for i, (_iname, _p, x, y) in enumerate(pins[net]):
+            # 🔴 `m2_jog=False` 时**不给逐点额度**：这是刻意保留的「旧行为」通道，
+            # 供反向探针使用（退回无上限列搜索 ⇒ M3 长跳线 ⇒ DRC 成片）。
+            # 若能随便关掉而不产生违例，就说明判据 A 不是修出来的、是天生如此。
+            moff = (point_off_budget(near.get((net, i), []), x, net, jog_max)
+                    if m2_jog else None)
             runs.append((net, min(y, y_worst) - EXT, max(y, y_worst) + EXT, x,
-                         pt_pref.get((net, i), 0)))
-    xs, ncol_used, col_fail = _alloc_columns(runs, x0_grid, pl["die_w_um"])
+                         pt_pref.get((net, i), 0), moff))
+    xs, ncol_used, col_fails = _alloc_columns(
+        runs, x0_grid, pl["die_w_um"], max_off=(jog_max if m2_jog else None))
     cols = defaultdict(list)
     for r, cx in zip(runs, xs):
         cols[r[0]].append(cx)
-    col_fail = sorted(set(col_fail))
+    col_fail = sorted({n for (n, _r) in col_fails})
+    fail_reason = defaultdict(set)
+    for (n, r) in col_fails:
+        fail_reason[n].add(r)
+    # 🔴 计数口径：**按网去重**（一个网可能有多个引脚段失败）。按「段」计数会让
+    # 「列失败率」超过 100%（1024 单元实测 117%），那是口径错误不是数据。
+    nets_too_far = {n for (n, r) in col_fails if r == "too_far"}
+    nets_no_col = {n for (n, r) in col_fails if r == "no_column"}
+    n_too_far, n_no_col = len(nets_too_far), len(nets_no_col)
+    n_seg_fails = len(col_fails)
 
     # —— ③ 用「引脚 ∪ 列」的真实跨度着色（trunk 的实际长度）——
     spans = defaultdict(list)
@@ -535,6 +638,9 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
             "routed": routed, "unrouted": unrouted, "n_unrouted": len(unrouted),
             "ch_info": ch_info, "t_cap": t_cap, "n_cols_used": ncol_used,
             "col_fail": col_fail, "track_of": track_of,
+            "n_col_fail_too_far": n_too_far, "n_col_fail_no_column": n_no_col,
+            "n_col_fail_segments": n_seg_fails,
+            "col_fail_reason": {k: sorted(v) for k, v in sorted(fail_reason.items())},
             "n_m2_jog": n_m2_jog, "n_m3_jog": n_m3_jog, "m2_jog_on": bool(m2_jog),
             "trunk_y": y_of, "pins": pins, "n_pins": sum(len(v) for v in pins.values())}
 

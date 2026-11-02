@@ -1006,6 +1006,33 @@ ECORE_CAPABILITY_MANIFEST = [
                     "DFF_LINKS", "build_dff_hd", "run_lvs_pos"],
         "introduced_by": "D-246 (DFF in HD lib)", "guard": "run_ecore_e54_smoke.py",
     },
+    {
+        "capability": "**E55 单元内部图形接入 DRC（D-247）**：把「哪块图形属于哪个网」从"
+                      "**几何连通性**（结果）里拆出来，单独记成**网标签**（设计意图）—— "
+                      "`dcells.label_cell` 给每块形状定名（引脚分量用真引脚名、其余按几何稳定编号 `#k`），"
+                      "`compose` 把多颗单元/走线**拼成一个 Cell**，于是联合场景原样复用**同一份** "
+                      "`run_drc`（不造第二套检查器，E53/E54 的教训）。"
+                      "🔴 **修的是判据方向**：旧口径「几何并成同一分量 ⇒ 视为同网 ⇒ 跳过间距」会让"
+                      "**短路被当成同网**而静默通过；新口径标签不同即按异网查 ⇒ 必报。"
+                      "实测三处旧口径静默现已必红：两单元**完全重合**（conflicts 10 条，旧 DRC=0）、"
+                      "**跨行错位**（DRC 4 + 短路 1）、**走线穿过单元内部**（DRC 5）。"
+                      "🔴 另修一处真缺陷：`diff_seg` 的跳过条件原按 `role` 字符串相等，"
+                      "而 role 只写 y 区间不写父有源 ⇒ 拼接后**不同实例的两段必然同名**，"
+                      "跨单元异网有源相接被静默跳过；改为**物理判据**（间隙是否被栅完全覆盖）。"
+                      "🔴 补层：`_VIA_BRIDGE` 原止于 M3 ⇒ 走线在联合图上没有连通性"
+                      "（8 单元 `n_unrouted` 7→56）；补 VIA2/M4 后 **unrouted=0**，"
+                      "这是「走线真的接到引脚」的机核证据。"
+                      "实测：8 单元真实布局 + `route_block` 走线联合签核 **DRC 0 / 短路 0 / 待布线 0**；"
+                      "abutment 下界 = M1 最小间距 **30nm**（可推可测单调）；abutment 后"
+                      "**合成电路双射 LVS 仍通过**（拼起来电路还对），带缝则如实报开路。"
+                      "🔴 边界：只做几何间距/短路，无串扰/天线/密度/OPC/ESD；LDA-DEMO28/45 非 foundry PDK；"
+                      "`ddetail.L_V2=26` 与真源（26=PAD、28=M2↔M3）存在历史双口径，本版不动单元几何。"
+                      "**净增 0 锚**（E55 · 21 判据）",
+        "module": "lda_l2.ecore.dcnet",
+        "symbols": ["to_nm", "from_nm", "route_tile", "pin_shapes", "obstacles",
+                    "place_tiles", "joint_drc", "row_of"],
+        "introduced_by": "D-247 (cell-internal DRC)", "guard": "run_ecore_e55_smoke.py",
+    },
 ]
 
 

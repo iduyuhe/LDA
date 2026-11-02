@@ -51,6 +51,20 @@ from ..gds_export import (
 )
 from .ddetail import L_V2
 
+#: 🔴 **v0.9.358/E55 补层**：布线器（`dpnr`/`ddrc_lvs`）用 `gds_export` 的真源层号，
+#: 而本模块此前只认到 M3 ⇒ M4 与 VIA2（M3↔M4）在联合场景里**没有连通性**，
+#: 走线自身被切成多个分量（实测 8 单元 `label_report.n_unrouted` 从 7 涨到 56）。
+#: 这里从**真源**取号，不另立常量。
+#: ⚠️ 诚实披露一处历史双口径：`ddetail.L_V2 = 26` 注释写「M2↔M3 通孔」，而
+#: `gds_export` 的 26 是 **PAD（钝化开口）**、真正的 M2↔M3 是 28。单元几何（E53/E54）
+#: 一直用 26 画内部通孔 ⇒ 内部自洽但落库后层号含义与真源不一致。本版**不改**它
+#: （改号会让 E53/E54 的既有几何与 GDS 字节全部变动），只把 28/29 补进桥接表，
+#: 使布线侧与单元侧能在同一张图上求连通性。这个不一致列为已知边界。
+from ..gds_export import (
+    LIB_LAYER_E_M4 as L_M4,
+    LIB_LAYER_E_VIA2 as L_VIA2,
+)
+
 #: NWELL 无现成真源（此前电子域只用 DIFF/POLY/CONT/M1），取未占用号 19 并在此登记。
 L_NWELL = 19
 
@@ -141,6 +155,14 @@ class Cell:
     rects: list = field(default_factory=list)
     pins: dict = field(default_factory=dict)      # net -> R（网名标签）
     devices_expected: list = field(default_factory=list)   # [(kind, w, l, gate, sd_a, sd_b)]
+    #: v0.9.358/E55：**网标签**（几何键 → 网名）。空 = 未标，DRC 退回几何连通性口径。
+    #: 由 `label_cell()` 生成、`compose()` 迁移；这是「设计意图」这一侧的对照面。
+    labels: dict = field(default_factory=dict)
+    #: v0.9.358/E55：`compose()` 发现的**图形位置冲突**（同一几何键被两个不同网占用）。
+    #: 🔴 为什么必须单独记：标签以**纯几何键**索引，两块图形若完全重合，键相同 ⇒ 后者覆盖
+    #: 前者 ⇒ 两组标签塌成一个 ⇒ 「同网」⇒ DRC 静默放行。这是几何键的固有盲区，
+    #: 只能由拼接器在**写入时**比对发现（实测：两颗 INV 完全叠放，DRC=0）。
+    conflicts: list = field(default_factory=list)
 
     def by_layer(self, layer: int) -> list:
         return [r for r in self.rects if r.layer == layer]
@@ -303,6 +325,26 @@ def _touch(a: R, b: R, tol: int = 0) -> bool:
             and a.y0 <= b.y1 + tol and b.y0 <= a.y1 + tol)
 
 
+def _split_by_gate(a: "R", b: "R", polys: list) -> bool:
+    """两段 DIFF 是否「同一有源行、被栅**完全覆盖**的间隙切开」—— 物理判据，不看 role 字符串。
+
+    🔴 为什么必须换掉字符串判据（v0.9.358/E55）：旧版跳过条件 `a.role == b.role`，
+    而 `diff_seg` 的 role 只写 y 区间、**不写父有源**，因此拼接后来自**不同实例**的两段
+    必然同名 ⇒ 跨单元异网有源相接被当成「同一行被栅切开」而静默跳过（实测两个 INV
+    贴合放置，DRC=0 但其实是真短路）。
+    正解不是往 role 里塞更多字符串（那就成了「靠命名约定保证正确性」），而是直接问几何：
+    **这两段之间那块间隙上，有没有栅盖住？** 有 ⇒ 是沟道两侧的源漏，本就不适用间距规则；
+    没有 ⇒ 两段有源是裸露相邻，必须查间距。
+    """
+    if a.y0 != b.y0 or a.y1 != b.y1:
+        return False
+    lo, hi = (a.x1, b.x0) if a.x1 <= b.x0 else (b.x1, a.x0)
+    if hi <= lo:
+        return False                     # 重叠或贴合：不是「被切开」，要照常查间距
+    return any(p.x0 <= lo and p.x1 >= hi and p.y0 <= a.y0 and p.y1 >= a.y1
+               for p in polys)
+
+
 def diff_segments(cell: Cell) -> list:
     """把每块 DIFF 按覆盖它的 POLY（栅）在 x 上切开，返回各段矩形。
 
@@ -363,6 +405,9 @@ _VIA_BRIDGE = {
     L_CONT: (L_DIFF, L_POLY, L_M1),
     L_VIA1: (L_M1, L_M2),
     L_V2: (L_M2, L_M3),
+    #: v0.9.358/E55：布线器的 M3↔M4 通孔与 M4（真源层号）。缺这两项 ⇒ 联合场景里
+    #: 走线被切成多个分量，「同网多片段」数量会假性暴涨（实测 7 → 56）。
+    L_VIA2: (L_M3, L_M4),
 }
 
 
@@ -421,6 +466,266 @@ def connectivity(cell: Cell) -> dict:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# ②b 网标签（E55）—— 把「设计意图」变成可机核的一等公民
+# ═══════════════════════════════════════════════════════════════════════════
+#: 跨实例**直接相连**的网（电源/地）。拼接时不加实例前缀 —— 它们本来就是同一根轨。
+GLOBAL_NETS = ("VDD", "VSS")
+
+#: **非信号层**：工艺岛/标记层，不是互连。拼接时相邻合法，不参与短路判定。
+#: 🔴 NWELL 是其中最容易被误判的一个（E55 实测）：两颗单元贴合，两块 NWELL 正好接上，
+#: 几何上并成一个节点、标签却是两个无名网 ⇒ 被 `bridges` 当成跨实例短路（假红）。
+#: 真实版图里 NWELL 本来就是可以连成一片的工艺岛，所以它必须**同标签且不参与网比对**。
+NON_SIGNAL_LAYERS = (L_NWELL,)
+_NON_SIGNAL_NAME = "NWELL"
+
+
+def _geom_key(r) -> tuple:
+    """几何键（层 + 四边）—— 网标签以它索引，**纯平移即可迁移**，不依赖对象身份。"""
+    return (r.layer, r.x0, r.y0, r.x1, r.y1)
+
+
+def _qualify(name, prefix, global_nets=GLOBAL_NETS):
+    """给非全局网加实例前缀。已带前缀的幂等（可重复调用）。"""
+    if not prefix or name in global_nets or name.startswith(prefix + "/"):
+        return name
+    return "%s/%s" % (prefix, name)
+
+
+def label_cell(cell: Cell, prefix: str = None,
+               global_nets=GLOBAL_NETS, pin_names: dict = None) -> dict:
+    """**几何键 → 网标签**（`{_geom_key: name}`）。
+
+    规则只有两条，且都可机核：
+      · 连通分量上有引脚落入 ⇒ 用**引脚网名**（真名，唯一真源是 `cell.pins`）；
+      · 没有 ⇒ 无名内部节点，按 `(层, y0, x0)` **稳定排序**编号 `#1, #2, …`。
+
+    🔴 为什么要它（E55 的核心）：在此之前「哪块图形属于哪个网」只存在于
+    **几何连通性**里 —— 而连通性是**结果**，不是**意图**。单元一旦拼接，两条本不该
+    相接的走线若真的搭上，几何会「正确地把它们并成一个网」，于是 DRC 的
+    「同网跳过间距」判据把**短路当成同网**放行。标签把意图单独记一份，两者不一致
+    就是缺陷 ⇒ 短路必报（见 `run_drc(labels=)` 的 docstring）。
+
+    🔴 `prefix` 的作用不是美化：两个 INV 实例各有 `A`/`Y`，拼接后若不加前缀，
+    调用方会把它们误当同一网 ⇒ 假「同网」⇒ 又回到静默放行。全局网（VDD/VSS）例外。
+
+    🔴 `pin_names`（v0.9.358/E55 追加）：**电路网名**映射 `{引脚名: 网表网名}`。
+    真实装配时「u0.Y 与 u1.A 是同一个网」是**电路事实**，此时标签必须用网表网名、
+    且**不加实例前缀**（网表网名本来就全局唯一）。不给 `pin_names` 时保持
+    「一实例一前缀」的保守语义 —— 那种语义下两个实例的引脚**永远不同网**，
+    只适合「检查单个/并排摆放是否打架」，不适合「判断真实网表连得对不对」。
+    """
+    cx = connectivity(cell)
+    shapes, groups = cx["shapes"], cx["groups"]
+    named = dict(cx["net_of_group"])            # group_idx -> 真名
+    anon = [gi for gi in range(len(groups)) if gi not in named]
+
+    def _min_key(gi):
+        return min((s.layer, s.y0, s.x0) for s in (shapes[i] for i in groups[gi]))
+
+    anon.sort(key=_min_key)                     # 编号只依赖几何，与遍历顺序无关
+    name_of = dict(named)
+    for k, gi in enumerate(anon):
+        name_of[gi] = "#%d" % (k + 1)
+
+    out: dict = {}
+    for gi, grp in enumerate(groups):
+        raw = name_of[gi]
+        if pin_names and raw in pin_names:
+            nm = pin_names[raw]                 # 电路网名：全局唯一，不加实例前缀
+        else:
+            nm = _qualify(raw, prefix, global_nets)
+        for i in grp:
+            s = shapes[i]
+            # 非信号层统一标成固定名（相邻合法、且不参与网比对，见 NON_SIGNAL_LAYERS）
+            out[_geom_key(s)] = (_NON_SIGNAL_NAME if s.layer in NON_SIGNAL_LAYERS else nm)
+    return out
+
+
+def compose(tiles: list, name: str = "COMPOSED",
+            global_nets=GLOBAL_NETS) -> Cell:
+    """把多个单元实例拼成**一个 Cell** —— 于是联合场景也走同一份 `run_drc`/`extract_devices`。
+
+    `tiles = [(cell, dx, dy, prefix), …]`，`dx/dy` 为 **nm 整数**（与单元几何同单位）。
+
+    🔴 为什么不新写一个「多单元 DRC」（E55 的架构决定）：单元内、单元间、单元↔走线
+    的检查规则**完全一样**（同层宽/距、孔包围、NWELL 包住）。造第二套检查器必然与第一套
+    漂移 —— 本仓已踩过（E53 的 `run_drc(rules=)`、E54 的 `_VIA_BRIDGE` 表驱动都是同一
+    教训）。**拼接成一个大 Cell** 就能让现有实现原样覆盖联合场景，新增代码只有「平移 + 标签迁移」。
+
+    器件表按 tile 顺序累加、网名加前缀；`run_lvs_pos` 的排序键是**全局沟道 x**，
+    因此 `tiles` 必须**按 x 升序**给出（判据 E55-K3 机核：走查器 vs 声明表的 kind 序列逐项相等）。
+    """
+    if not tiles:
+        raise ValueError("compose 需要至少一个 tile")
+    rects: list = []
+    pins: dict = {}
+    devs: list = []
+    labels: dict = {}
+    conflicts: list = []
+    x1 = y1 = 0
+    seen_pins: dict = {}
+    for tile in tiles:
+        # tile = (cell, dx, dy, prefix) 或 (cell, dx, dy, prefix, pin_names)
+        if len(tile) == 4:
+            cell, dx, dy, prefix = tile
+            pin_names = None
+        else:
+            cell, dx, dy, prefix, pin_names = tile
+        dx, dy = int(dx), int(dy)
+        for r in cell.rects:
+            rects.append(R(r.layer, r.x0 + dx, r.y0 + dy, r.x1 + dx, r.y1 + dy,
+                           net=r.net, role=r.role))
+        x1 = max(x1, cell.w + dx)
+        y1 = max(y1, cell.h + dy)
+
+        def _name(pn):
+            """网名定名规则（**唯一**一处）：电路网名 > 全局网 > 实例前缀。"""
+            if pin_names and pn in pin_names:
+                return pin_names[pn]        # 电路网名：全局唯一，不再加实例前缀
+            return _qualify(pn, prefix, global_nets)
+
+        # 🔴 自带标签优先（E55）：走线 Cell 的网名不是「从几何推出来的」，而是**外部给定**的
+        # 事实（哪条线属于哪一网）。若这里无条件重算 `label_cell`，走线网名会被重新编号成
+        # `rt/#1`，与布线的网名全部失配 ⇒ 同网接触被误报成短路。
+        if cell.labels:
+            raw = {k: _qualify(v, prefix, global_nets) for k, v in cell.labels.items()}
+        else:
+            raw = label_cell(cell, prefix=prefix, global_nets=global_nets,
+                             pin_names=pin_names)
+        for k, v in raw.items():
+            key = (k[0], k[1] + dx, k[2] + dy, k[3] + dx, k[4] + dy)
+            old = labels.get(key)
+            if old is not None and old != v:
+                conflicts.append(("shape_conflict",
+                                  "L%d@(%d,%d)-(%d,%d): %s vs %s"
+                                  % (key[0], key[1], key[2], key[3], key[4], old, v)))
+            labels[key] = v
+        for pn, pr in cell.pins.items():
+            key = _name(pn)
+            if key in seen_pins:
+                # 🔴 三种情形必须分开（E55）：
+                #   · 全局网（VDD/VSS）：每颗单元都有这两根轨，重复是**必然**的 ⇒ 跳过；
+                #   · 有 `pin_names`（真实网表装配）：同一网连多个引脚本来就是对的
+                #     （u0.Y 与 u1.A 同属 n3）⇒ 必须允许；`pins` 只保留一个代表矩形，
+                #     因为它的用途是「网名集合 + 命中判定」，不是「引脚清单」；
+                #   · 无 `pin_names`（并排摆放）：同名非全局网出现在两个实例里 = 前缀缺失，
+                #     那是调用方的错，不能静默合并 ⇒ 抛错。
+                if key in global_nets or pin_names:
+                    continue
+                raise ValueError("实例引脚网名冲突：%r（请给唯一 prefix 或 pin_names）" % key)
+            seen_pins[key] = 1
+            pins[key] = R(pr.layer, pr.x0 + dx, pr.y0 + dy,
+                          pr.x1 + dx, pr.y1 + dy, net=key, role=pr.role)
+        for (kind, w, l, gate, a, b) in cell.devices_expected:
+            devs.append((kind, w, l,
+                         _name(gate) if gate else gate,
+                         _name(a) if a else a,
+                         _name(b) if b else b))
+    return Cell(name=name, w=x1, h=y1, rects=rects, pins=pins,
+                devices_expected=devs, labels=labels, conflicts=conflicts)
+
+
+def label_report(cell: Cell, global_nets=GLOBAL_NETS,
+                 allow_multi_fragment: bool = False) -> dict:
+    """机核「标签 ⇔ 几何连通性」一致性 —— 两者互为对照面，不一致就是缺陷。
+
+    返回 {groups, named, anon, mismatches, n, unrouted}：
+      · `split` = 同一连通分量被标成两个网（意图说分开、实际连着 ⇒ **短路**）；
+      · `merge` = **同一实例内**两个不同分量被标成同一网（意图说连着、实际断开 ⇒ **开路**）。
+
+    🔴 `allow_multi_fragment`（v0.9.358/E55）：真实网表装配时必须开。
+    因为「`u0.Y` 与 `u1.A` 同属网 n3、几何上还没连」**不是缺陷，是待布线的网** ——
+    把它判成开路会让任何多单元场景恒红。开启后这些分量计入 `unrouted`（信息性），
+    只有**同一个实例内部**被拆开的网仍算 `merge`。
+
+    另有两处刻意豁免，都是物理事实而不是放水：
+      · **全局网**（VDD/VSS）允许同名的多个几何片段 —— 单元电源轨本来就靠**上层金属/共用
+        轨**连起来，本模块只画 M1..M3 的单元内部，不画那条上层连接。
+      · **非信号层**（NWELL 工艺岛）不参与网比对，见 `NON_SIGNAL_LAYERS`。
+    """
+    lab = cell.labels or label_cell(cell)
+    cx = connectivity(cell)
+    shapes, groups = cx["shapes"], cx["groups"]
+    gnet: dict = {}
+    net_g: dict = {}
+    mism: list = []
+    unrouted: list = []
+
+    def _signal(grp):
+        """该组里有**信号层**图形才参与网比对；纯工艺岛（NWELL）跳过。"""
+        return any(shapes[i].layer not in NON_SIGNAL_LAYERS for i in grp)
+
+    for gi, grp in enumerate(groups):
+        if not _signal(grp):
+            continue
+        names = {lab.get(_geom_key(shapes[i])) for i in grp
+                 if shapes[i].layer not in NON_SIGNAL_LAYERS}
+        names.discard(None)
+        if len(names) > 1:
+            mism.append(("split", "group#%d: %s" % (gi, sorted(names))))
+        if len(names) == 1:
+            nm = names.pop()
+            if nm in global_nets:
+                gnet[gi] = nm
+                continue            # 电源轨跨实例可多片段（靠上层金属连，模块不画）
+            if nm in net_g and net_g[nm] != gi:
+                prev = net_g[nm]
+                if allow_multi_fragment:
+                    unrouted.append((nm, prev, gi))     # 待布线的网（信息性，非缺陷）
+                else:
+                    mism.append(("merge", "%s: group#%d vs group#%d" % (nm, prev, gi)))
+            net_g[nm] = gi
+            gnet[gi] = nm
+    n_named = sum(1 for v in lab.values() if not str(v).startswith("#")
+                  and "/#" not in str(v) and v != _NON_SIGNAL_NAME)
+    return {"groups": len(groups), "named": n_named,
+            "anon": len(lab) - n_named, "mismatches": mism, "n": len(mism),
+            "unrouted": unrouted, "n_unrouted": len(unrouted),
+            "labels": len(lab), "net_of_group": gnet}
+
+
+def bridges(cell: Cell, tiles: list, global_nets=GLOBAL_NETS) -> list:
+    """跨实例**意外桥接**：合成后某个连通分量同时含有**两个不同实例**的非全局图形。
+
+    合法情形只有一种：两者标签相同（确实是同一根网被连上，例如 VDD 轨对接）。
+    其余一律是短路 —— 这条判据补上了「拼接后 DRC 看不到单元间短路」的最后一个口子。
+    """
+    lab = cell.labels or label_cell(cell)
+    cx = connectivity(cell)
+    shapes, groups = cx["shapes"], cx["groups"]
+    origin: dict = {}          # 几何键 -> prefix
+    for tile in tiles:
+        c, dx, dy, prefix = tile[0], tile[1], tile[2], tile[3]
+        dx, dy = int(dx), int(dy)
+        for r in c.rects:
+            origin[(r.layer, r.x0 + dx, r.y0 + dy, r.x1 + dx, r.y1 + dy)] = prefix
+        for s in diff_segments(c):
+            origin[(s.layer, s.x0 + dx, s.y0 + dy, s.x1 + dx, s.y1 + dy)] = prefix
+    out: list = []
+    for gi, grp in enumerate(groups):
+        who: dict = {}
+        for i in grp:
+            s = shapes[i]
+            if s.layer in NON_SIGNAL_LAYERS:
+                continue
+            k = _geom_key(s)
+            p = origin.get(k)
+            if p is None:
+                continue
+            who.setdefault(p, set()).add(lab.get(k))
+        if len(who) < 2:
+            continue
+        allnames = set()
+        for v in who.values():
+            allnames |= v
+        allnames.discard(None)
+        if len(allnames) > 1:
+            out.append(("cross_instance", "group#%d: %s"
+                        % (gi, sorted((p, sorted(v)) for p, v in who.items()))))
+    return out
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # ③ 器件抽取（几何求交）
 # ═══════════════════════════════════════════════════════════════════════════
 def extract_devices(cell: Cell) -> list:
@@ -467,24 +772,43 @@ def extract_devices(cell: Cell) -> list:
 # ═══════════════════════════════════════════════════════════════════════════
 # ④ DRC（显式规则集 · 逐层 width/space/area + 接触孔包围 + 栅-孔间距）
 # ═══════════════════════════════════════════════════════════════════════════
-def run_drc(cell: Cell, rules: dict = None) -> dict:
+def run_drc(cell: Cell, rules: dict = None, labels: dict = None) -> dict:
     """返回 {violations: [(规则, 明细)], n}。
 
     🔴 `rules`（v0.9.356）：规则集参数，默认 `RULES`（LDA-DEMO45）。
     这是「可复用/可扩展」的关键 —— **同一份 DRC 实现**可以查不同节点的单元，
     不必为 HD 库再写一套检查器（两份真源 = 必然漂移）。
+
+    🔴 `labels`（v0.9.358/E55）：**网标签**（几何键 → 网名，见 `label_cell`）。
+    给定时，同层间距的「同网跳过」判据从「几何连通分量相同」改成「**标签相同**」。
+    两处差别就是 E55 要消灭的盲区：
+
+      · 旧口径：两块金属只要在几何上被并进同一连通分量，就当作同网 ⇒ 间距不查。
+        单元拼接后，若两条**本不该相接**的走线真的搭在一起，几何上**恰好并成一个分量**
+        ⇒ 「短路」反而成了「同网」，DRC 静默放行。
+      · 新口径：标签来自**设计意图**（谁该连谁），几何来自**实际图形**。两者矛盾时
+        「标签不同 ⇒ 必须按异网查间距」⇒ 短路必报。这是「同一事实写两次必须机核」的
+        构造函数化用法：标签与几何**互为对照**，不一致就是缺陷，不是豁免。
+
+    未给 `labels` 时行为与旧版**逐位相同**（向后兼容，E40–E54 的门禁不受影响）。
     """
     R = RULES if rules is None else rules
-    v: list = []
+    # 标签优先级：显式参数 > 单元自带 > 空（退回旧口径）
+    _labels = labels if labels is not None else (getattr(cell, "labels", None) or {})
+    # 拼接器在写入时发现的图形位置冲突（几何键相同 ⇒ 标签会塌成一个）必须先报
+    v: list = list(getattr(cell, "conflicts", None) or [])
     cx = connectivity(cell)
     shapes, node_of = cx["shapes"], cx["node_of"]
     # 以「原始图形」查 width/area（段是派生量，不参与）
     wmin = {L_DIFF: R["diff_w"], L_POLY: R["poly_w"], L_CONT: R["cont_w"],
             L_M1: R["m1_w"], L_M2: R.get("m2_w", R["m1_w"]),
-            L_M3: R.get("m3_w", R["m1_w"])}
+            L_M3: R.get("m3_w", R["m1_w"]),
+            # M4 只在联合场景出现（单元内部不用 M4）⇒ 规则缺省回退到 M3，不新造规则键
+            L_M4: R.get("m4_w", R.get("m3_w", R["m1_w"]))}
     amin = {L_DIFF: R["diff_a"], L_POLY: R["poly_a"], L_CONT: 0,
             L_M1: R["m1_a"], L_M2: R.get("m2_a", R["m1_a"]),
-            L_M3: R.get("m3_a", R["m1_a"])}
+            L_M3: R.get("m3_a", R["m1_a"]),
+            L_M4: R.get("m4_a", R.get("m3_a", R["m1_a"]))}
     for r in cell.rects:
         if r.layer in wmin:
             if min(r.w, r.h) < wmin[r.layer]:
@@ -492,19 +816,33 @@ def run_drc(cell: Cell, rules: dict = None) -> dict:
             if amin[r.layer] and r.area < amin[r.layer]:
                 v.append(("min_area", "%s L%d a=%d" % (r.role, r.layer, r.area)))
 
-    # 同层 space：只在不同**节点**之间查（同节点重叠/相接不算违规）
+    # 同层 space：只在**不同网**之间查（同网重叠/相接不算违规）。
+    # E55：判「同网」优先用标签（设计意图），无标签才退回几何连通分量（旧口径）。
     idx = {id(s): i for i, s in enumerate(shapes)}
     smin = {L_DIFF: R["diff_s"], L_POLY: R["poly_s"], L_M1: R["m1_s"],
-            L_M2: R.get("m2_s", R["m1_s"]), L_M3: R.get("m3_s", R["m1_s"])}
+            L_M2: R.get("m2_s", R["m1_s"]), L_M3: R.get("m3_s", R["m1_s"]),
+            L_M4: R.get("m4_s", R.get("m3_s", R["m1_s"]))}
+    polys = [p for p in cell.by_layer(L_POLY)]
     for layer, s_rule in smin.items():
         rs = [s for s in shapes if s.layer == layer]
         for i in range(len(rs)):
             for j in range(i + 1, len(rs)):
                 a, b = rs[i], rs[j]
-                if node_of.get(idx[id(a)]) == node_of.get(idx[id(b)]):
+                la, lb = _labels.get(_geom_key(a)), _labels.get(_geom_key(b))
+                if la is not None and lb is not None:
+                    same_net = (la == lb)
+                else:
+                    same_net = (node_of.get(idx[id(a)]) == node_of.get(idx[id(b)]))
+                if same_net:
                     continue
-                if a.role == b.role and a.role.startswith("diff_seg@"):
-                    continue                     # 同一有源行被栅切开的相邻段
+                # 🔴 v0.9.358/E55：**同一有源行被栅切开的相邻段**不适用同层间距。
+                # 旧版按 `role` 字符串相等判（`diff_seg@y0-y1`）—— 单单元内恰好等价，
+                # 但**拼接后来自不同实例的两段 role 完全相同** ⇒ 跨单元的真短路被静默跳过
+                # （E55 判据 K5 实测：两个 INV 贴合放，DIFF 异网相接却 DRC=0）。
+                # 正解是**物理判据**：两段同 y 行且它们之间的间隙被**栅（POLY）完全覆盖**。
+                if (a.role.startswith("diff_seg@") and b.role.startswith("diff_seg@")
+                        and _split_by_gate(a, b, polys)):
+                    continue
                 dx = max(0, max(a.x0, b.x0) - min(a.x1, b.x1))
                 dy = max(0, max(a.y0, b.y0) - min(a.y1, b.y1))
                 gap = max(dx, dy)

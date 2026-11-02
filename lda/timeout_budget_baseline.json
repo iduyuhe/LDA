@@ -7,7 +7,7 @@
   "target_x": 3.0,
   "ratchet_below_target": 0,
   "anchors_at_measurement": 546,
-  "core_smokes_at_measurement": 391,
+  "core_smokes_at_measurement": 392,
   "updated_at": "2026-11-02",
   "source_reports": [
     "lda_pmm0_ci_20261004.json",
@@ -15095,6 +15095,19 @@
         0.4548,
         0.45,
         0.4466
+      ],
+      "n_rounds": 3,
+      "censored_events": 0
+    },
+    {
+      "script": "run_xcheck_isolation_smoke.py",
+      "budget_s": 120.0,
+      "elapsed_max_s": 1.313,
+      "margin_x": 91.394,
+      "samples_s": [
+        1.313,
+        1.3042,
+        1.2847
       ],
       "n_rounds": 3,
       "censored_events": 0

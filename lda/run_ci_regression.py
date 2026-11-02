@@ -79,6 +79,15 @@ CORE_SMOKES: List[str] = [
     "run_ci_industrial_smoke.py",
     # 生态共建链（D-93~D-98：harness 扩展 / 提交 / 评审→落地→发布，纯 numpy 快速）
     "run_ecosystem_smoke.py",        # harness B1-B18 + 主权 A/B/C + Registry 自检 + eco_d93 快照同步
+    # 🔴 v0.9.359 **对拍隔离（自主可控红线）**：把「外部工具只能当尺子、不能当裁判」
+    #   做成机核判据。**不另造黑名单，直接读既有主权注册表 `SOVEREIGN_DEPS`（A/B/C）**——
+    #   两份名单必然漂移。三条判据：P1 账本角色（外部工具出现在 golden/source/evidence
+    #   判定位 ⇒ 红；出现在 candidate/oracle ⇒ 允许，这正是「独立候选」的正当用法）、
+    #   P2 主链零外部 import、P4 对拍脚本不得进 CORE（参考工具缺席时全量必须仍全绿）。
+    #   顺带逼出一处真缺口：数字后端要对的四个开源参考（OpenROAD/OpenSTA/Yosys/nextpnr）
+    #   在既有 17 条里**一条都没登记** ⇒ 补登记为 B 级（OpenSTA 的 GPL 传染写明「只黑盒」）。
+    #   **14 判据**（含 4 条反向探针 + 别名表自洽 + CORE 抽取下界）。净增 0 锚。CI core 391→392。
+    "run_xcheck_isolation_smoke.py",
     "run_ecosystem_submit_smoke.py", # 社区提交入口（器件 + 批量 + 提案）
     "run_ecosystem_publish_smoke.py",# 评审→落地→发布 全链（含补丁生成）
     # 实证大数据锚（D-62：harness E1-E3 实证锚题 + 语料评审流，纯 numpy 快速）
@@ -2696,6 +2705,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # 生态闭环 smoke（含 d9x 报告链），跨轮 194.48~228.74s（n=11）。
     # 3 × 228.74 = 686.2 ⇒ 取 900s（**3.93×**，可达 300s 仍守 3×）。
     "run_ecosystem_smoke.py": 900.0,
+    # 对拍隔离 · 纯静态扫描（97 个报告 + 202 个源码 + CORE 名单），实测 ~1.31s ⇒ 预算 120s 留 ~92×
+    "run_xcheck_isolation_smoke.py": 120.0,
     # 验证 harness 主入口（本版 T6.3 的改动面：线程预算下沉到 harness 自身，
     #   仅多一次 `apply_thread_budget()` 调用与一行披露打印，量级 ~ms ⇒ 对
     #   216.91s 的跨轮上界无实质影响，但**仍按新规给足余量**）。

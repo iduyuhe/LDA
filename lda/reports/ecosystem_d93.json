@@ -75,10 +75,10 @@
     }
   },
   "pdk_sovereign": {
-    "sovereign_deps_total": 17,
+    "sovereign_deps_total": 21,
     "by_class": {
       "A": 5,
-      "B": 8,
+      "B": 12,
       "C": 4
     },
     "class_A_names": [
@@ -96,7 +96,11 @@
       "SAX",
       "MPB",
       "Nazca",
-      "Tidy3D"
+      "Tidy3D",
+      "OpenROAD",
+      "OpenSTA",
+      "Yosys",
+      "nextpnr"
     ],
     "class_C_names": [
       "L0 IR/DSL",

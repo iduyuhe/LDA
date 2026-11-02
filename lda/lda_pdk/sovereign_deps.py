@@ -46,6 +46,17 @@ SOVEREIGN_DEPS: List[Dependency] = [
     Dependency("Nazca", "B", "MIT", "版图框架", "Gitee"),
     Dependency("Tidy3D", "B", "前端 LGPL-2.1/云美属",
                "仅外部 ORACLE 校验、零硬编码、无 Key 自动回退", "Gitee"),
+    # ---- 数字后端开源参考（v0.9.359 · 对拍用，**只黑盒、不链接、不分发**）----
+    # 🔴 由 `run_xcheck_isolation_smoke` P1e 逼出来登记的：门禁要求「点名即须登记」，
+    #    而数字后端对拍必然要点名这四个，既有的 17 条（光/量子域）覆盖不到。
+    Dependency("OpenROAD", "B", "Apache-2.0",
+               "数字后端参考（P&R）；仅独立进程 + 文本交换用于对拍，不作 golden", "Gitee"),
+    Dependency("OpenSTA", "B", "GPL-3.0",
+               "静态时序参考；GPL 传染 ⇒ 只允许独立可执行文件黑盒调用，禁链接/禁 vendored", "Gitee"),
+    Dependency("Yosys", "B", "ISC",
+               "综合/网表参考；用于 Verilog 子集读入的交叉核对", "Gitee"),
+    Dependency("nextpnr", "B", "ISC",
+               "小规模布局布线参考；用于 10²–10³ 门量级的对拍", "Gitee"),
 
     # ---------- C 级：第一天自主（LDA 自有） ----------
     Dependency("L0 IR/DSL", "C", "LDA 自有", "光子+量子统一中间表示，主权自主", "LDA"),

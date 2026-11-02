@@ -441,6 +441,100 @@ def main() -> int:
     check("P7 探针须造分歧（三种相对读法必命中 ∧ 锚定/助手转发不误报）",
           all(_p7), "p7=%s" % _p7)
 
+    # ── F 组：**分档纪律**（v0.9.360 · core-fast）──────────────────────
+    # 分档省时间，但历史上「子集全绿当全量绿」出过 4 次事故。所以分档必须自带守卫：
+    # 「快档存在且在变快」、「排除集由台账驱动」、「完整 core 的凭证与当前道数一致」。
+    heavy = R.heavy_smokes()
+    fast = set(R.CORE_FAST)
+    core = set(R.CORE_SMOKES)
+    check("F1 快档是**真子集**且排除集非空（core %d 道 → fast %d 道，排除 %d 道）"
+          % (len(core), len(fast), len(heavy)),
+          fast < core and len(heavy) >= 10,
+          "fast<core=%s heavy=%d" % (fast < core, len(heavy)))
+
+    # 台账驱动：排除集必须**全部**来自 CORE，且与台账口径逐项一致（防手写名单漂移）
+    offbook = sorted(heavy - core)
+    recomputed = {r["script"] for r in
+                  json.load(open(os.path.join(_HERE, "timeout_budget_baseline.json"),
+                                 encoding="utf-8"))["rows"]
+                  if float(r.get("elapsed_max_s", 0) or 0) >= R.FAST_EXCLUDE_SECONDS}
+    check("F2 排除集**由实测台账驱动**（与 `timeout_budget_baseline.json` 逐项一致 · "
+          "越界项 %d 个）—— 手写名单必然漂移"
+          % len(offbook), not offbook and recomputed == heavy,
+          "offbook=%s 台账不一致=%d" % (offbook[:3], len(recomputed ^ heavy)))
+
+    # 名存实亡守卫：快档的实测耗时必须显著小于全量（否则分档毫无意义）
+    _el = {r["script"]: float(r.get("elapsed_max_s", 0) or 0)
+           for r in json.load(open(os.path.join(_HERE, "timeout_budget_baseline.json"),
+                                   encoding="utf-8"))["rows"]}
+    _tot = sum(_el.get(x, 0) for x in core)
+    _fst = sum(_el.get(x, 0) for x in fast)
+    _ratio = (100.0 * _fst / _tot) if _tot else 100.0
+    check("F3 快档实测耗时占比 **%.1f%% < 25%%**（%.0f min vs %.1f h）—— 防「分档名存实亡」"
+          % (_ratio, _fst / 60.0, _tot / 3600.0), _ratio < 25.0, "占比 %.1f%%" % _ratio)
+
+    # ── F4 完整 core 凭证 ──────────────────────────────────────────────
+    # 目标：让「加了门禁却没跑过完整 core」当场红，而不是等发布时才发现。
+    # 🔴 但直接要求「凭证道数 == 当前道数」会**自指死锁**：第一次跑 N+1 门时磁盘上还是 N 的
+    #    凭证 ⇒ F4 红 ⇒ 回归必红 ⇒ 永远写不出 N+1 的凭证。解法是凭证带 `status` 两态：
+    #      · `running` = 完整 core **正在跑**（开跑即写），道数已更新、结论未出；
+    #      · `green`   = 已全绿（跑完写）。
+    #    `running` 因此是「本次即为完整 core」这个**事实**的可机核形态，不是放宽。
+    #    配 6h 陈旧上界：崩溃后残留的 `running` 会过期转红，不会永久放行。
+    _rc_path = os.path.join(_HERE, "reports", "last_full_core_green.json")
+    try:
+        _rc = json.load(open(_rc_path, encoding="utf-8"))
+    except (OSError, ValueError):
+        _rc = {}
+    _st = _rc.get("status")
+    _stale_h = None
+    try:
+        _t = __import__("datetime").datetime.strptime(_rc.get("written_at", ""),
+                                                      "%Y-%m-%dT%H:%M:%S")
+        _stale_h = (__import__("datetime").datetime.now() - _t).total_seconds() / 3600.0
+    except (TypeError, ValueError):
+        _stale_h = None
+    _green = (_st == "green" and _rc.get("n_scripts") == len(core)
+              and _rc.get("fail") == 0 and _rc.get("tag") == "core")
+    _running = (_st == "running" and _rc.get("n_scripts") == len(core)
+                and _stale_h is not None and _stale_h < 6.0)
+    check("F4 存在**完整 core 凭证**且道数与当前一致（凭证 %s 道/%s 态 · 现 %d 道 · "
+          "陈旧 %.2fh）—— `green` 表示已全绿，`running` 表示本次正在跑（<6h）"
+          % (_rc.get("n_scripts", "缺失"), _st or "无", len(core),
+             _stale_h if _stale_h is not None else -1.0),
+          _green or _running,
+          "凭证=%s" % ({k: _rc.get(k) for k in ("tag", "n_scripts", "fail",
+                                                "status", "written_at")},))
+
+    # F5 反向探针：凭证**过期/陈旧/道数不符**时必须红 —— 否则 F4 只是「文件存在就算过」
+    _cases = [
+        ("道数不符", {"tag": "core", "n_scripts": len(core) - 1, "fail": 0,
+                      "status": "green", "written_at": "2099-01-01T00:00:00"}, False),
+        ("有失败", {"tag": "core", "n_scripts": len(core), "fail": 1,
+                    "status": "green", "written_at": "2099-01-01T00:00:00"}, False),
+        ("running 陈旧 7h", {"tag": "core", "n_scripts": len(core), "fail": 0,
+                             "status": "running", "written_at": "2000-01-01T00:00:00"}, False),
+        ("green 且道数一致", {"tag": "core", "n_scripts": len(core), "fail": 0,
+                              "status": "green", "written_at": "2099-01-01T00:00:00"}, True),
+    ]
+    _f5 = []
+    for _nm, _c, _want in _cases:
+        _okg = (_c["status"] == "green" and _c["n_scripts"] == len(core)
+                and _c["fail"] == 0 and _c["tag"] == "core")
+        try:
+            _tt = __import__("datetime").datetime.strptime(_c["written_at"],
+                                                           "%Y-%m-%dT%H:%M:%S")
+            _sh = (__import__("datetime").datetime.now() - _tt).total_seconds() / 3600.0
+        except (TypeError, ValueError):
+            _sh = None
+        _okr = (_c["status"] == "running" and _c["n_scripts"] == len(core)
+                and _sh is not None and _sh < 6.0)
+        _f5.append((_nm, (_okg or _okr) == _want))
+    check("F5 反向探针：凭证四种形态（%s）判定须与预期一致 —— 防 F4 退化成「文件存在即过」"
+          % " / ".join("%s=%s" % (n, ok) for n, ok in _f5),
+          all(ok for _, ok in _f5),
+          "p5=%s" % _f5)
+
     print()
     return 0 if (globals().get("PASS", 0) and not globals().get("FAIL", 0)) else 1
 

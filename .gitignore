@@ -54,6 +54,11 @@ lda/reports/patches/
 # ---- CLI / 飞轮 运行生成物（阻塞生产 git pull，绝不入库）----
 lda/reports/cli_smoke/
 lda/reports/crosscheck_history/
+# ---- 本机「完整 core 全绿」凭证（v0.9.360）----
+# 🔴 **故意不入库**：`F4` 要证明的是「**这台机器**跑过完整 core」，而不是「仓库里有这么个文件」。
+#    入库会让它变成可被继承的声明 —— 那就退化成「有个 json 就算跑过」。
+#    新克隆上 F4 会红并提示「请先跑 --tag core」，这是正确状态（跑完自动写绿）。
+lda/reports/last_full_core_green.json
 
 # ---- IDE ----
 .idea/

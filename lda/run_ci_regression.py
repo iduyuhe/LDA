@@ -1608,6 +1608,20 @@ CORE_SMOKES: List[str] = [
     #   abutment 必报 / 阈值闭式 / 单调 / 三处反例+复绿 / 网表装配 / µm-nm 零误差 /
     #   待布线口径分离 / 走线联合 / 真接线 / 桥接表一致 / 穿线必红 / 合成 LVS 正反 / 规则参数 / 老单元自动标签 / 耗时。
     "run_ecore_e55_smoke.py",
+    # 🔴 v0.9.360 **S1 统一数据模型（B1）**：把「电子域各模块各说各话」这件事收口。
+    #   此前 6 类对象（矩形/引脚/单元视图/实例/线网/布局）分散在 13 个模块里各定义一份，
+    #   每加一项能力就要写一次转换 —— 这是「加了 12 个模块却没进主链」的结构性原因。
+    #   `lda_l2/model.py` 用**适配器**把它们统一（不改既有模块一行），并用三条纪律守住：
+    #   单位进字段名（`_nm`/`_ff`/`_ps` 是后缀不是注释）· 长度必须是 nm **整数值**
+    #   （`70.0` 归一化、`70.5` 报错 —— 上游 HD 库确有 10 处 `70.0`）· 保留**全量几何**
+    #   而非只留引脚（否则等于把 E55 修掉的「内部图形盲区」再造一遍）。
+    #   门禁首跑即抓到一处真缺口：`dhdlib` 的 DFF 四个信号引脚（CLK/D/Q/QN）**声明了
+    #   70×70 pad 但从没 append 进 rects** ⇒ 布线器会当它可落孔而实际只有 30nm 走线穿过。
+    #   根因是 E54 结构性几何矛盾（DFF 电平间距 60nm < pad 70 + m1_s 30 = 100nm），
+    #   不在本版硬修 ⇒ 改为**双向登记**判据：新缺口必红、修好忘删登记也红。
+    #   实测 13 判据 / 0.28s；往返双射五颗单元逐位一致；适配器只读（既有模块零改动机核）。
+    #   净增 0 锚。CI core 392→393。
+    "run_l2_model_smoke.py",
     "run_webui_entry_smoke.py",
     # 🔴 v0.9.213 光子计算 SoC 案例卡（/api/soc_demo · #sec-soc）跨源一致性 + 前端取值路径门禁：
     #   卡内 WDM/TDM 杠杆常量 ≡ lda_l2 真源（soc_wdm/soc_tdm）逐位同源 + 反向探针（改真源必红）；
@@ -1816,8 +1830,10 @@ CORE_SMOKES: List[str] = [
     #   实测 <1s ⇒ timeout 120s 留足余量。
     "run_webui_pm_render_path_smoke.py",
     #   CI 门禁自身契约（棘轮时序 + 退出码契约 + cwd 相对路径 / printf 模板 / 注释数字守卫）：
-    #   18 判据（**含** 7 条突变探针 P1–P7）——组 A 棘轮时序 A1–A6 / 组 B 退出码契约 B1–B3 /
-    #   组 C C1 `make_check` 拒 printf 模板 + C2 全仓 AST 扫 cwd 相对读法（不做白名单）。
+    #   22 判据（**含** 7 条突变探针 P1–P7）——组 A 棘轮时序 A1–A6 / 组 B 退出码契约 B1–B3 /
+    #   组 C C1 `make_check` 拒 printf 模板 + C2 全仓 AST 扫 cwd 相对读法（不做白名单）/
+    #   组 F 分档纪律 F1–F5（v0.9.360：快档真子集 / 排除集由台账驱动 / 快档耗时占比 <25% /
+    #   完整 core 凭证与当前道数一致 / 凭证四形态反向探针 —— 把「发布前跑 full」变成判据）。
     #   实测 <5s ⇒ timeout 120s 留足余量。
     "run_ci_gate_contract_smoke.py",
     #   光子传感器新征程 PS-M0 v0 环谐振折射率传感器基线常驻门禁（2026-10-07 迁入 lda/）：
@@ -2367,6 +2383,41 @@ CORE_SMOKES: List[str] = [
     #   纯 stdlib · 实测 0.30s。**19 判据**。
     "run_noise_aware_schedule_smoke.py",
 ]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# `--tag core-fast`：**日常反馈档**（v0.9.360）
+# ═══════════════════════════════════════════════════════════════════════════
+#: 排除阈值（秒）。实测耗时 ≥ 此值的门禁不进 fast 档。
+#:
+#: 🔴 **判据是「读实测台账」，不是手写名单**（`timeout_budget_baseline.json` 的
+#: `elapsed_max_s`）。理由是本仓最贵的一条教训：手写名单与实测必然漂移
+#: （`dnode.tracks_for` 重算一次、`run_drc` 再造一套检查器 —— 都是「两份真源」）。
+#: 用台账的副作用是好的一面：某道门禁变慢会自动被排除，变快会自动回来。
+FAST_EXCLUDE_SECONDS = 30.0
+
+
+def heavy_smokes(threshold_s: float = FAST_EXCLUDE_SECONDS) -> set:
+    """实测耗时 ≥ `threshold_s` 的 core 门禁集合（从超时预算台账读，不硬编码）。"""
+    import json as _json
+    path = os.path.join(_HERE, "timeout_budget_baseline.json")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = _json.load(fh)
+    except (OSError, ValueError):
+        return set()
+    rows = data.get("rows", []) if isinstance(data, dict) else []
+    return {r.get("script", "") for r in rows
+            if float(r.get("elapsed_max_s", 0.0) or 0.0) >= threshold_s}
+
+
+def core_fast_smokes(threshold_s: float = FAST_EXCLUDE_SECONDS) -> List[str]:
+    """`core` 减去实测重门禁 —— 日常迭代用这一档，**发布前必须跑完整 core**。"""
+    heavy = heavy_smokes(threshold_s)
+    return [s for s in CORE_SMOKES if s not in heavy]
+
+
+#: 预计算（供门禁与 CLI 共用；`heavy` 由台账决定 ⇒ 台账更新后随之变化）
+CORE_FAST: List[str] = core_fast_smokes()
 
 # 🔴🔴 非 core 豁免登记表（v0.9.41 补建）——**没登记 = 门禁缺口**。
 #
@@ -3363,6 +3414,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e54_smoke.py": 120.0,
     # E55 单元内部图形接入 DRC · 标签+拼接+联合签核，实测 ~0.19s ⇒ 预算 120s 留 ~630×
     "run_ecore_e55_smoke.py": 120.0,
+    # S1 统一数据模型 · 六类对象 + 适配器 + 引脚⇄金属体检，实测 ~0.28s ⇒ 预算 120s 留 ~430×
+    "run_l2_model_smoke.py": 120.0,
     # WebUI 入口可达性门禁（v0.9.160）· 纯文本解析，实测 ~0.22s ⇒ 余量 545×
     # 🔴 v0.9.186：新增「标准 JSON 出口」门禁（`run_webui_json_hard_smoke.py`,
     #   13 判据 + 4 道突变探针；因浏览器 JSON.parse 崩于 `-Infinity` 而立）。
@@ -3706,11 +3759,29 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
     elif tag == "core":
         scripts = [s for s in CORE_SMOKES
                    if os.path.exists(os.path.join(_HERE, s))]
+    elif tag == "core-fast":
+        # 日常反馈档：core 减去实测重门禁（阈值见 FAST_EXCLUDE_SECONDS）。
+        scripts = [s for s in CORE_FAST
+                   if os.path.exists(os.path.join(_HERE, s))]
     else:
         scripts = _discover_all()
     exclude = set(exclude or [])
     scripts = [s for s in scripts if s not in exclude]
     overrides = timeout_override or {}
+    if tag == "core":
+        # 开跑即登记「完整 core 进行中」（F4 用；见 `_write_full_core_receipt` 的死锁说明）
+        _write_full_core_receipt({"tag": tag, "n_scripts": len(scripts),
+                                  "summary": {"pass": 0, "skip": 0, "fail": 0,
+                                              "total_s": 0.0}}, status="running")
+    if tag == "core-fast":
+        # 🔴 快档必须自己说出来「我不是验收」。历史上「子集全绿当全量绿」出过 4 次事故
+        # （helper_dup 红 5 版 → A1 漏 10 处 → BL 偶发 → 本地 def check）。
+        _heavy = heavy_smokes()
+        print("⚠️  core-fast 档：%d 道（已剔除 %d 道实测 ≥%.0fs 的重门禁）"
+              % (len(scripts), len(_heavy), FAST_EXCLUDE_SECONDS), flush=True)
+        print("⚠️  这一档**不是验收**：发布前必须跑 `--tag core`（%d 道）"
+              % len(CORE_SMOKES), flush=True)
+        print(flush=True)
 
     results: List[Dict[str, Any]] = []
     t_total0 = time.perf_counter()
@@ -3721,7 +3792,10 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
             s, NON_CORE_TIMEOUT_OVERRIDE.get(s, timeout)))
         r = _run_one(python, s, to)
         results.append(r)
-        print(f"  [{r['status']:<6}] {r['script']}  ({r['elapsed_s']}s)")
+        # 🔴 v0.9.360：**必须 flush**。此前 392 门跑 3 小时，日志文件长期 0 字节
+        # （stdout 重定向是块缓冲，8KB 才吐一次）⇒ 整个回归是黑盒：看不到进度、
+        # 无法判断「在跑」还是「卡死」。分档省时间，但**可观测性**不是奢侈品。
+        print(f"  [{r['status']:<6}] {r['script']}  ({r['elapsed_s']}s)", flush=True)
         # 🔴 CRASH 必须在内：新状态若漏进此元组 ⇒ 不计入失败 ⇒ 静默假绿。
         if r["status"] in _FAIL_STATUSES:
             # 故障可见性（2026-09-05 血案）：非 PASS 项必须当场打印子进程 tail，
@@ -3772,9 +3846,57 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
     }
 
 
+#: 最近一次**完整 core 全绿**的凭证（v0.9.360）。
+#: 🔴 为什么要有它：分档之后「日常只跑 fast」会成为常态，而发布前必须跑完整 core ——
+#: 这条纪律若只写在文档里，就只是注释（本仓的标准：**没有判据的纪律 = 没有**）。
+#: 凭证由 `--tag core` 全绿时自动写；`run_ci_gate_contract_smoke` 断言它的道数与当前
+#: `CORE_SMOKES` 一致 ⇒ 「加了门禁却没跑过 full」这件事故会当场红。
+_FULL_CORE_RECEIPT = os.path.join(_HERE, "reports", "last_full_core_green.json")
+
+
+def _git_head() -> str:
+    try:
+        import subprocess
+        return subprocess.run(["git", "rev-parse", "HEAD"], cwd=_HERE,
+                              capture_output=True, text=True, timeout=20
+                              ).stdout.strip()
+    except Exception:                                  # noqa: BLE001
+        return ""
+
+
+def _write_full_core_receipt(r: Dict[str, Any], status: str = "green") -> None:
+    """写「完整 core 凭证」（不含时间戳以外的易变量，便于门禁比对）。
+
+    🔴 `status` 有两态，解决一个**死锁**：
+      · `running` —— 完整 core **正在跑**（开跑时写）。此时凭证道数已是新值、但结论还没出；
+      · `green`   —— 完整 core **已全绿**（跑完写）。
+    没有 `running` 态，F4 就会陷入自指：第一次跑 393 门时，磁盘上的凭证还是 392 的 ⇒ F4 红
+    ⇒ 整个回归必红 ⇒ **永远写不出 393 的凭证**。这不是「放宽」，而是把「本次即为完整 core」
+    这个事实也记成可机核的凭证（并带 6h 陈旧上界，防崩溃后永久「进行中」）。
+    """
+    payload = {"tag": r.get("tag"), "n_scripts": r.get("n_scripts"),
+               "pass": r["summary"]["pass"], "skip": r["summary"]["skip"],
+               "fail": r["summary"]["fail"], "git_head": _git_head(),
+               "total_s": r["summary"]["total_s"],
+               "status": status,
+               "core_smokes_len": len(CORE_SMOKES),
+               "written_at": __import__("datetime").datetime.now()
+                              .strftime("%Y-%m-%dT%H:%M:%S")}
+    try:
+        os.makedirs(os.path.dirname(_FULL_CORE_RECEIPT), exist_ok=True)
+        with open(_FULL_CORE_RECEIPT, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2, sort_keys=True)
+            f.write("\n")
+        print("[receipt] 完整 core 凭证已写（%s）：%s" % (status, _FULL_CORE_RECEIPT),
+              flush=True)
+    except Exception as _e:                            # noqa: BLE001
+        print("[warn] 凭证写入失败（不影响判决）：%s" % _e, file=sys.stderr)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="D-77 验证合约工业化 · 全量回归")
-    ap.add_argument("--tag", choices=["core", "all"], default="all")
+    ap.add_argument("--tag", choices=["core", "core-fast", "all"], default="all",
+                    help="core=发布前全量（≈3.3h）· core-fast=日常反馈（剔除实测 ≥30s 的重门禁）· all=全部")
     ap.add_argument("--python", default=None, help="解释器（全量推荐 venv）")
     ap.add_argument("--timeout", type=float, default=300.0)
     ap.add_argument("--fail-fast", action="store_true")
@@ -3786,6 +3908,8 @@ def main() -> int:
                           fail_fast=a.fail_fast, exclude=excl)
     print(r["verdict"])
     rc = 0 if r["acceptance"]["passed"] else 1
+    if a.tag == "core" and rc == 0:
+        _write_full_core_receipt(r)
     if a.out:
         try:
             _d = os.path.dirname(a.out) or "."

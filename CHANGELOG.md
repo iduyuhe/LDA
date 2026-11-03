@@ -1,5 +1,34 @@
 # Changelog
 
+## v0.9.363（2026-11-04 · **S3 数字链输入三件套 + B3 干线：LEF/DEF/Verilog 子集 + 端到端守恒** · 净增 0 锚 · CI core **398**）
+
+### 一句话
+
+阶段一 B2/S3 的入口层：三个**不求值、不建模、不静默吞错**的工业格式子集解析器（LEF/DEF/Verilog）+ 一条把「综合→布局→布线→DRC」串起来的数字链干线。外部格式只作**可核输入**、不当 golden 判决源（自主可控红线 P1 角色位）。
+
+### ① 解析器三件套
+
+- **`dverilog.py`**：结构级 Verilog 子集（c17 → `dsynth.Netlist`，6 门 / 5 输入 / 2 输出；多比特端口拆位 LSB first + 位选引用 `a[0]` 往返零丢失；未知原语 / 升序向量 / 输出当输入一律带位置 `fail-closed`）。
+- **`ddef.py`**：DEF 5.8 子集（COMPONENTS `PLACED/FIXED` + NETS `ROUTED` → S1 Layout；实例几何**逐字来自 LEF**，INV 840×1240 / NAND2 1240×1240nm；引用未声明 MACRO 带位置报错）。
+- **`dlef.py`**：LEF 5.8 子集（MACRO 几何 SIZE/LAYER/RECT/PORT 逐字段读入 S1 `CellView`；字节级往返双射；未知语法带行号报错）。
+- 三者注册进 `ecore.__init__` 与 `capability_manifest`（反向完备零 undeclared）。
+
+### ② B3 干线 `db3_trunk.py`
+
+- `dverilog.parse → dsynth.Netlist → dplac.place → ddetail.detail_route → ddrc_lvs.run_drc/run_lvs`。
+- **每段显式断言「吃的是上一段的输出」**：place 覆盖每颗门 / route 覆盖每条网 / DRC-LVS 如实报告。
+- c17 端到端跑通（6 门 / 11 网）；守恒失败一律 `AssertionError`（`fail-closed`）。
+
+### ③ 门禁与台账
+
+- `run_ecore_s3/s4/s5/s6_smoke.py` 共 **70 判据**（25 / 20 / 18 / 7）入 CI core（394→398），`_BUILTIN_TIMEOUT_OVERRIDE` 120s，实测各 **0.25s**。
+- `timeout_budget_baseline.json` 并入 4 行实测（`core_smokes_at_measurement` 394→398），`run_timeout_budget_ratchet_smoke` 复跑 **21 PASS / 0 FAIL**。
+- 版本四处同步 `0.9.362→0.9.363`（`pyproject.toml` / `lda/reports/k0_audit.json` / `README.md` / `CONTRIBUTING.md`）。
+
+### 诚实边界
+
+**不综合不求值** · 几何在布局阶段（Verilog 子集只到门级连接）· **非 foundry PDK**（规则集自建教科书尺度）· `ddetail` 路由器 **`claimable=False`**（c17 实测 101 DRC + 183 LVS 违规为已知限制，如实报告不伪造 clean）· OpenROAD 读回为**可选**、不当 golden · LLM 不进判决路径。
+
 ## v0.9.362（2026-11-03 · **S2 Liberty 子集解析器：公开 PDK .lib 逐字段忠实读入** · 净增 0 锚 · CI core **394**）
 
 ### 一句话

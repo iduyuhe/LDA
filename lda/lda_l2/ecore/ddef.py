@@ -382,11 +382,6 @@ def to_model(d: DefDesign, lef_lib=None):
                      shapes=shapes)
 
 
-def to_design(src: str, lef_lib=None):
-    """源文本 → DefDesign（便捷别名）。"""
-    return parse_def(src)
-
-
 # 别名：与 __init__ 导出名一致（def_to_model = to_model）
 def_to_model = to_model
 

@@ -1830,7 +1830,7 @@ CORE_SMOKES: List[str] = [
     #   实测 <1s ⇒ timeout 120s 留足余量。
     "run_webui_pm_render_path_smoke.py",
     #   CI 门禁自身契约（棘轮时序 + 退出码契约 + cwd 相对路径 / printf 模板 / 注释数字守卫）：
-    #   22 判据（**含** 7 条突变探针 P1–P7）——组 A 棘轮时序 A1–A6 / 组 B 退出码契约 B1–B3 /
+    #   24 判据（**含** 8 条突变探针 P1–P7 + F6）——组 A 棘轮时序 A1–A6 / 组 B 退出码契约 B1–B3 /
     #   组 C C1 `make_check` 拒 printf 模板 + C2 全仓 AST 扫 cwd 相对读法（不做白名单）/
     #   组 F 分档纪律 F1–F5（v0.9.360：快档真子集 / 排除集由台账驱动 / 快档耗时占比 <25% /
     #   完整 core 凭证与当前道数一致 / 凭证四形态反向探针 —— 把「发布前跑 full」变成判据）。
@@ -3737,7 +3737,8 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
                       timeout: float = 300.0, fail_fast: bool = False,
                       exclude: Optional[List[str]] = None,
                       timeout_override: Optional[Dict[str, float]] = None,
-                      scripts: Optional[List[str]] = None
+                      scripts: Optional[List[str]] = None,
+                      resume: bool = False
                       ) -> Dict[str, Any]:
     """全量/核心回归。返回 {results, summary, acceptance, verdict}。
 
@@ -3783,15 +3784,53 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
               % len(CORE_SMOKES), flush=True)
         print(flush=True)
 
+    # ── 断点续跑状态（v0.9.361）───────────────────────────────────────
+    _dig = code_digest()
+    _csha = core_sha()
+    _py = os.path.basename(python) if python else ""
+    try:                                   # 解释器 identity 用「版本串 + 路径」更稳
+        import subprocess as _sp
+        _py = "%s|%s" % (_sp.run([python, "-V"], capture_output=True, text=True,
+                                 timeout=30).stdout.strip(), python)
+    except Exception:                      # noqa: BLE001
+        pass
+    _ck = _load_checkpoint() if resume else {}
+    if not resume or _ck.get("digest") != _dig:
+        # 指纹不同 ⇒ 旧记录全作废（不是「逐条比对」：指纹就差，逐条复用毫无意义）
+        _ck = {"digest": _dig, "python": _py, "core_sha": _csha,
+               "created_at": __import__("datetime").datetime.now()
+                              .strftime("%Y-%m-%dT%H:%M:%S"), "results": {}}
+    else:
+        print("[resume] 续跑：代码指纹一致，复用已记录的 PASS 项", flush=True)
+    _ck.setdefault("results", {})
+
     results: List[Dict[str, Any]] = []
+    n_reused = 0
     t_total0 = time.perf_counter()
     for s in scripts:
         # run_ci_industrial_smoke 内部含子回归+greens 基准（~300-315s 浮动），
         # 内置放宽至 600s 根治偶发 TIMEOUT；其余 smoke 用全局 timeout。
         to = overrides.get(s, _BUILTIN_TIMEOUT_OVERRIDE.get(
             s, NON_CORE_TIMEOUT_OVERRIDE.get(s, timeout)))
+        _ssha = _sha256_file(os.path.join(_HERE, s))
+        _prev = _ck["results"].get(s) or {}
+        if resume and can_reuse(_ck, _prev, digest=_dig, python=_py,
+                                core_sha_=_csha, script_sha=_ssha):
+            r = {"script": s, "status": "PASS", "elapsed_s": 0.0, "rc": 0,
+                 "tail": "", "reused": True}
+            n_reused += 1
+            results.append(r)
+            print(f"  [REUSE ] {s}  (上一轮已 PASS · 脚本 sha 与代码指纹均一致)",
+                  flush=True)
+            continue
         r = _run_one(python, s, to)
+        r["script_sha"] = _ssha
         results.append(r)
+        # 逐条落盘：崩溃/重启后最多丢一条（本轮的价值全在这里）
+        _ck["results"][s] = {"status": r["status"], "rc": r.get("rc"),
+                             "elapsed_s": r.get("elapsed_s"),
+                             "script_sha": _ssha}
+        _save_checkpoint(_ck)
         # 🔴 v0.9.360：**必须 flush**。此前 392 门跑 3 小时，日志文件长期 0 字节
         # （stdout 重定向是块缓冲，8KB 才吐一次）⇒ 整个回归是黑盒：看不到进度、
         # 无法判断「在跑」还是「卡死」。分档省时间，但**可观测性**不是奢侈品。
@@ -3828,6 +3867,8 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
     passed = n_fail == 0
     verdict = (f"验证合约工业化回归 {tag} 集：{n_pass} PASS / {n_skip} SKIP / "
                f"{n_fail} FAIL，总耗时 {total_s}s"
+               + (f"（复用 {n_reused} 道 / 实跑 {len(results) - n_reused} 道）"
+                  if n_reused else "")
                + (" —— 全绿" if passed else
                   f" —— 失败项：{'; '.join(r['script'] for r in failed[:5])}"))
     return {
@@ -3836,7 +3877,8 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
         "tag": tag, "python": python,
         "n_scripts": len(scripts),
         "summary": {"pass": n_pass, "skip": n_skip, "fail": n_fail,
-                    "total_s": total_s, "failed": failed, "skipped": skipped},
+                    "total_s": total_s, "failed": failed, "skipped": skipped,
+                    "n_reused": n_reused},
         "results": results,
         "acceptance": {"checks": checks, "passed": passed},
         "verdict": verdict,
@@ -3844,6 +3886,103 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
                  "优雅降级（无 GPU/numba），FAIL=真失败；LLM 不进判决路径。"
                  "core 集对齐 CI 可跑（纯 numpy）；all 集含重 FDTD/GPU 项。"),
     }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 断点续跑（v0.9.361）
+# ═══════════════════════════════════════════════════════════════════════════
+#: checkpoint 落盘路径。**不入库**（见 `.gitignore`）：它是「这台机器跑到哪」的本机状态，
+#: 入库等于把它变成可继承的声明（与 `last_full_core_green.json` 同一条纪律）。
+_CI_CHECKPOINT = os.path.join(_HERE, "reports", "ci_checkpoint.json")
+#: 参与「代码指纹」的**代码外**受跟踪文件 —— 它们会被门禁读（README 判据数、版本号），
+#: 改它们同样能改变门禁结果，所以必须一起进指纹。文档/CHANGELOG 不进（不影响判定）。
+_DIGEST_EXTRA = ("pyproject.toml", "README.md", "CONTRIBUTING.md")
+
+
+def _sha256_file(path: str) -> str:
+    import hashlib
+    h = hashlib.sha256()
+    try:
+        with open(path, "rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b""):
+                h.update(chunk)
+    except OSError:
+        return ""
+    return h.hexdigest()
+
+
+def code_digest() -> str:
+    """`lda/` 下全部 `.py` + 三份会被门禁读的根文件的**内容指纹**。
+
+    🔴 为什么不用 git HEAD：HEAD 会把「改一句注释」也算成全新代码（续跑全失效），
+    又会在「没提交但改了文件」时**漏判**（同一 HEAD 下内容已变 ⇒ 复用旧结果 = 假绿）。
+    内容指纹两头都对：改了就是改了，没改就是没改。
+    """
+    import hashlib
+    h = hashlib.sha256()
+    paths = []
+    for root, dirs, files in os.walk(_HERE):
+        dirs[:] = sorted(d for d in dirs
+                         if d not in ("__pycache__", "reports", "dist", ".pytest_cache"))
+        for f in sorted(files):
+            if f.endswith(".py"):
+                paths.append(os.path.join(root, f))
+    repo = os.path.dirname(_HERE)
+    for extra in _DIGEST_EXTRA:
+        q = os.path.join(repo, extra)
+        if os.path.exists(q):
+            paths.append(q)
+    for q in paths:
+        rel = os.path.relpath(q, repo).replace("\\", "/")
+        h.update(rel.encode("utf-8"))
+        h.update(_sha256_file(q).encode("ascii"))
+    return h.hexdigest()
+
+
+def core_sha() -> str:
+    """`CORE_SMOKES` **顺序敏感**的指纹：道数或顺序变了，旧结果不得复用。"""
+    import hashlib
+    return hashlib.sha256("\n".join(CORE_SMOKES).encode("utf-8")).hexdigest()
+
+
+def can_reuse(top: dict, entry: dict, *, digest: str, python: str,
+              core_sha_: str, script_sha: str) -> bool:
+    """**纯判定**：这条已记录的结果能不能当本次结果复用。
+
+    六条**必须同时**成立，任何一条不满足就重跑（宁可多跑，不可假绿）：
+      ① 代码指纹一致；② 解释器一致；③ `CORE_SMOKES` 指纹一致；
+      ④ 原状态是 `PASS`（FAIL/SKIP/TIMEOUT 一律重跑 —— 复用失败没有意义，
+         「上次红了这次也算红」不是续跑，是掩盖）；⑤ 该脚本自身 sha 一致；
+      ⑥ `script_sha` 非空（读不到文件时 `_sha256_file` 返回空串，不能当「相等」）。
+    """
+    if not script_sha:
+        return False
+    return (top.get("digest") == digest
+            and top.get("python") == python
+            and top.get("core_sha") == core_sha_
+            and entry.get("status") == "PASS"
+            and entry.get("script_sha") == script_sha)
+
+
+def _load_checkpoint() -> dict:
+    try:
+        with open(_CI_CHECKPOINT, encoding="utf-8") as fh:
+            d = json.load(fh)
+        return d if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _save_checkpoint(d: dict) -> None:
+    try:
+        os.makedirs(os.path.dirname(_CI_CHECKPOINT), exist_ok=True)
+        tmp = _CI_CHECKPOINT + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(d, fh, ensure_ascii=False, indent=1, sort_keys=True)
+            fh.write("\n")
+        os.replace(tmp, _CI_CHECKPOINT)      # 🔴 原子替换：半截文件不得被下次续跑读到
+    except OSError as _e:                    # noqa: BLE001
+        print("[warn] checkpoint 写入失败（不影响判决）：%s" % _e, file=sys.stderr)
 
 
 #: 最近一次**完整 core 全绿**的凭证（v0.9.360）。
@@ -3879,6 +4018,7 @@ def _write_full_core_receipt(r: Dict[str, Any], status: str = "green") -> None:
                "fail": r["summary"]["fail"], "git_head": _git_head(),
                "total_s": r["summary"]["total_s"],
                "status": status,
+               "n_reused": (r.get("summary") or {}).get("n_reused", 0),
                "core_smokes_len": len(CORE_SMOKES),
                "written_at": __import__("datetime").datetime.now()
                               .strftime("%Y-%m-%dT%H:%M:%S")}
@@ -3901,15 +4041,21 @@ def main() -> int:
     ap.add_argument("--timeout", type=float, default=300.0)
     ap.add_argument("--fail-fast", action="store_true")
     ap.add_argument("--exclude", default="", help="逗号分隔排除脚本")
+    ap.add_argument("--resume", action="store_true",
+                    help="断点续跑：仅当代码指纹/解释器/CORE_SMOKES/脚本 sha 全一致时才复用"
+                         "已 PASS 项；任何一处变化即重跑（宁可多跑，不可假绿）")
     ap.add_argument("--out", default=None, help="JSON 报告路径")
     a = ap.parse_args()
     excl = [x.strip() for x in a.exclude.split(",") if x.strip()]
     r = run_ci_regression(python=a.python, tag=a.tag, timeout=a.timeout,
-                          fail_fast=a.fail_fast, exclude=excl)
+                          fail_fast=a.fail_fast, exclude=excl, resume=a.resume)
     print(r["verdict"])
     rc = 0 if r["acceptance"]["passed"] else 1
-    if a.tag == "core" and rc == 0:
-        _write_full_core_receipt(r)
+    if a.tag == "core":
+        # 🔴 v0.9.361：**失败也要写**（status="failed"）。此前只在 rc==0 时写，
+        # 于是一次失败的全量会留下上一轮的 `running`，F4 在 6h 陈旧界内仍判过 ——
+        # 「跑过但要红」被误当成「正在跑」。这是 F4 的漏洞，不是它的设计。
+        _write_full_core_receipt(r, status="green" if rc == 0 else "failed")
     if a.out:
         try:
             _d = os.path.dirname(a.out) or "."

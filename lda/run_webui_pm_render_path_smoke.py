@@ -98,12 +98,19 @@ def _pass_count(sname):
     （`run_ci_gate_contract_smoke` 的 C1 detail 含 `输出='[PASS] 样例判据…'` ⇒ 偏 +1）。
     **度量工具自身口径错 = 漂移检测器自己漂**，且与它自称的 `grep -c`（按行）不符。
     改为按行首锚定 —— 口径 == 人工复核口径。
+
+    🔴 v0.9.361 第三血案（**同一份数字在红绿两态间摆动**）：这里原来只数 `[PASS]`，
+    于是「判据数」会随**结果**变化 —— `run_ci_gate_contract_smoke` 的 F4 一红，
+    总数就从 24 掉到 23，而注释里只能写一个数字 ⇒ 红时 W9 报「24 vs 23」、绿时报「24 vs 24」，
+    **判据数成了结果的函数**。判据数应当只由**代码里有几条 `check()`** 决定。
+    ⇒ 改为数 `[PASS]` **加** `[FAIL]`（同一个 check 的两种结果，同属一条判据）。
+    `[SKIP]` 仍不计入：它是另一类状态，纳入会改动既有已校准数字。
     """
     p = os.path.join(_HERE, sname)
     r = subprocess.run([sys.executable, p], cwd=_HERE, capture_output=True,
                        text=True, timeout=300)
     return sum(1 for ln in (r.stdout or "").splitlines()
-               if ln.lstrip().startswith("[PASS"))
+               if ln.lstrip().startswith(("[PASS", "[FAIL")))
 
 
 def _gate_drift(milestones, counts, mapping):

@@ -535,6 +535,36 @@ def main() -> int:
           all(ok for _, ok in _f5),
           "p5=%s" % _f5)
 
+    # ── F6 断点续跑：复用判据必须**六条同时**成立（v0.9.361）────────────
+    # 续跑是省时间的手段，但它天然是「假绿」的高危区：一旦复用判据松一格，
+    # 「上次绿 ⇒ 这次也绿」就会静默成立，而全量回归的存在意义正是推翻这种默认。
+    # 所以这里**只测纯函数**（`can_reuse`），不跑真回归：判据正确性可独立机核。
+    _base_top = {"digest": "D", "python": "P", "core_sha": "C"}
+    _base_ent = {"status": "PASS", "rc": 0, "script_sha": "S"}
+    _kw = dict(digest="D", python="P", core_sha_="C", script_sha="S")
+
+    def _mut(top=None, ent=None, **kw):
+        _t = dict(_base_top) if top is None else dict(top)
+        _e = dict(_base_ent) if ent is None else dict(ent)
+        _k = dict(_kw)
+        _k.update(kw)
+        return R.can_reuse(_t, _e, **_k)
+
+    _f6 = [
+        ("全一致", _mut(), True),
+        ("原状态 FAIL", _mut(ent={"status": "FAIL", "rc": 1, "script_sha": "S"}), False),
+        ("脚本 sha 变", _mut(script_sha="S2"), False),
+        ("代码指纹变", _mut(digest="D2"), False),
+        ("解释器变", _mut(python="P2"), False),
+        ("CORE 清单变", _mut(core_sha_="C2"), False),
+        ("脚本 sha 读不到（空串）", _mut(script_sha=""), False),
+    ]
+    check("F6 续跑复用判据**六条同时成立**才复用（%s）—— 任一条不满足即重跑，"
+          "「上次绿≠这次绿」不得靠默认成立"
+          % " / ".join("%s=%s" % (n, "OK" if ok == want else "错") for n, ok, want in _f6),
+          all(ok == want for _, ok, want in _f6),
+          "p6=%s" % [(n, ok, w) for n, ok, w in _f6 if ok != w])
+
     print()
     return 0 if (globals().get("PASS", 0) and not globals().get("FAIL", 0)) else 1
 

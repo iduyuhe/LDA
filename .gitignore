@@ -59,6 +59,9 @@ lda/reports/crosscheck_history/
 #    入库会让它变成可被继承的声明 —— 那就退化成「有个 json 就算跑过」。
 #    新克隆上 F4 会红并提示「请先跑 --tag core」，这是正确状态（跑完自动写绿）。
 lda/reports/last_full_core_green.json
+# 断点续跑 checkpoint（v0.9.361）：同属「本机跑到哪」的状态，不入库
+lda/reports/ci_checkpoint.json
+lda/reports/ci_checkpoint.json.tmp
 
 # ---- IDE ----
 .idea/

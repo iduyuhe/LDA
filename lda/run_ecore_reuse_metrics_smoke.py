@@ -70,8 +70,8 @@ _ECORE = os.path.join(_HERE, "lda_l2", "ecore")
 # ═══════════════════════════════════════════════════════════════════════════
 # 阈值与冻结表（**只许收紧**；改动此块必须在提交信息里写明「棘轮收紧」）
 # ═══════════════════════════════════════════════════════════════════════════
-#: 零入度模块数上限（当前 30）—— 只降不升
-ZERO_MAX = 30
+#: 零入度模块数上限（当前 29；v0.9.366 收紧自 30 —— dliberty 已接回 dsta）
+ZERO_MAX = 29
 #: 入度中位数下限（当前 1.0；规划目标 3.0）—— 只升不降
 MEDIAN_MIN = 1.0
 #: 入度 ≥3 的模块数下限（当前 28）—— 只升不降
@@ -89,8 +89,9 @@ ZERO_ALLOWED = frozenset({
     "layout_feasibility", "scale_basis", "scale_bench",
     "dcnet", "ddroute_grid", "dhdlib", "dinrow", "dmacro", "dpathfinder",
     "dpgrid", "dproc", "dpvt", "dscale", "dwallrr", "dwidth",
-    # 本阶段（S1–S4）新增、尚未接回主链的 4 个 —— 见 R3_DEBT
-    "dliberty", "ddef", "db3_trunk", "dxcheck",
+    # 本阶段（S1–S4）新增、尚未接回主链的 3 个 —— 见 R3_DEBT
+    #   （dliberty 已于 v0.9.366 接回 dsta ⇒ 从本集合与债务表一并移除，棘轮收紧）
+    "ddef", "db3_trunk", "dxcheck",
 })
 
 #: 零入度**允许**的顶层项（登记 ≠ 免检：必须真的零入度 + 理由非空 + 双向完备）
@@ -103,7 +104,6 @@ TOPLEVEL_ALLOW = {
 #: 🔴 R3 冻结债务表：本阶段新增但尚无「非门禁」下游的模块。
 #: 契约 = **精确相等**：债务缩小了必须同步删表（强制收口）；债务变大必红。
 R3_DEBT = {
-    "dliberty": ("S6", "让 dsta 从 Liberty 查表取延时，替换 dcell 里的硬编码"),
     "ddef": ("S6", "让 db3_trunk 用它写出/读回 DEF，补 B3 的出口段"),
     "db3_trunk": ("S6", "给一个非门禁消费者（webui 只读端点或案例卡 facts）"),
     "dxcheck": ("S6", "差异表进 /api/ecore_demo 的只读 facts，让对拍对外可见"),

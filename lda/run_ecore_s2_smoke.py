@@ -232,6 +232,51 @@ def main() -> int:
           {"positive_unate", "negative_unate", "non_unate"} <= senses,
           "senses=%s" % senses)
 
+    # ══════════════════ L 段：Liberty → STA 延时桥（S6 · v0.9.366）══════════
+    # 🔴 这一段让 S2 的解析结果第一次有**非门禁**消费者（R3：dliberty 0 → 1），
+    #    且必守保护性约束：`lib=None` 时 sta 的历史数字必须逐位不变。
+    from lda_l2.ecore import dcell as DC      # noqa: E402
+    from lda_l2.ecore import dsta as ST       # noqa: E402
+
+    _nl = ST.build_chain_nl("INV", 3, 1.0)
+    _closed = ST.sta(_nl, port_load_ff=2000.0)
+    _hand = sum(DC.cell_delay_ps("INV", 1.0) for _ in range(2)) + \
+        DC.cell_delay_ps("INV", 2000.0)
+    check("L1 闭式回归：lib=None 时 sta 延时 == 逐项闭式相加（逐位相等，既有数字不变）",
+          _closed.comb_delay_ps == _hand and _closed.lib_used is False,
+          "sta=%r hand=%r" % (_closed.comb_delay_ps, _hand))
+
+    _lib2 = DL.parse_liberty(DL.SAMPLE_LIBERTY.replace("INVX1", "INV"))
+    _tbl = next(a.table for a in ST.lib_map(_lib2)["INV"].arcs if a.table)
+    _mid = ST.interp_nldm(_tbl, 200.0, 2000.0)
+    check("L2 NLDM 中点插值 = 50.0 ps（绝对量级锚，不是比值）", _mid == (50.0, False),
+          "mid=%r" % (_mid,))
+
+    _hi = ST.interp_nldm(_tbl, 200.0, 99999.0)
+    _lo = ST.interp_nldm(_tbl, 1.0, 1.0)
+    check("L3 越界**钳位**不外插：负载 99999 ⇒ 80.0 ps · 负载 1 ⇒ 10.0 ps（且 clamped=True）",
+          _hi == (80.0, True) and _lo == (10.0, True), "hi=%r lo=%r" % (_hi, _lo))
+
+    check("L4 单位口径：表中心格 0.050 ns ⇒ 50 ps（防 ns/ps 混用，本仓踩过 1000× 血案）",
+          abs(_mid[0] - 0.050 * 1000.0) < 1e-12, "mid=%.6f" % _mid[0])
+
+    _tl = ST.sta(_nl, port_load_ff=2000.0, lib=_lib2, slew_ps=200.0)
+    _d0 = ST.interp_nldm(_tbl, 200.0, 1.0)[0]
+    _d2 = ST.interp_nldm(_tbl, 200.0, 2000.0)[0]
+    check("L5 lib 集成：延时 == 手算(2×%.1f + %.1f) 逐位一致 ∧ lib_used ∧ 面积不变"
+          % (_d0, _d2),
+          abs(_tl.comb_delay_ps - (2 * _d0 + _d2)) < 1e-12
+          and _tl.lib_used is True and _tl.area_um2 == _closed.area_um2
+          and _tl.lib_clamped == 2,
+          "lib=%r used=%r clamped=%r" % (_tl.comb_delay_ps, _tl.lib_used, _tl.lib_clamped))
+
+    _libA = DL.parse_liberty(DL.SAMPLE_LIBERTY)      # 单元名 INVX1，与 dcell 的 INV 对不上
+    _tf = ST.sta(_nl, port_load_ff=2000.0, lib=_libA, slew_ps=200.0)
+    check("L6 缺表**明确回退**：库无名 ⇒ fallback_cells=('INV',) ∧ 延时 == 闭式（不静默）",
+          _tf.lib_fallback_cells == ("INV",)
+          and abs(_tf.comb_delay_ps - _closed.comb_delay_ps) < 1e-12,
+          "fallback=%r" % (_tf.lib_fallback_cells,))
+
     dt = time.time() - T0
     check("S0 门禁耗时 %.2f s < %.0f s" % (dt, AN_ELAPSED_MAX_S),
           dt < AN_ELAPSED_MAX_S, "%.2f s" % dt)
@@ -242,6 +287,8 @@ def main() -> int:
     print("  [S2] 未知语法必报错（define/type/表达式值/顶层非library/未闭合/非法字符）带行号")
     print("  [S3] 零数据丢失不变量（3 cell/8 pin/4 timing/1 template 守恒）")
     print("  [S4] to_model 适配器：direction/cap_ff(pf→ff)/NLDM 表喂给 S1 Pin/TimingArc")
+    print("  [S6] Liberty → STA 延时桥：NLDM 双线性 + 越界钳位（不外插）+ 缺表明确回退")
+    print("       且 lib=None 时 sta 的历史数字**逐位不变**（保护性约束）")
     print("  [边界] 不求值不建模 · 几何在 LEF(S3) · 非 foundry PDK")
     print()
     if _FALS:

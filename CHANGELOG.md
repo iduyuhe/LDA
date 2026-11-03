@@ -1,5 +1,51 @@
 # Changelog
 
+## v0.9.366（2026-11-04 · **S6 第一步：Liberty → STA 延时桥（R3 首次真下降）** · 净增 0 锚 · CI core **400**）
+
+### 一句话
+
+S2 的解析结果第一次有**非门禁**消费者：`dsta.sta(..., lib=...)` 从 NLDM 表取延时，
+替掉 `dcell` 里的硬编码。这不是「多一条门禁」，是**接回主链**。
+
+### ① 桥的设计（三条保护性约束）
+
+- **`lib=None` 逐位不变**：仍走 `tin[k] + DC.cell_delay_ps(...)` 原表达式 ⇒ E34/E35 金标不受影响（L1 用 `==` 机核）。
+- **越界钳位、不外插**：外插给出无物理依据的延时；钳位确定性且可数（`Timing.lib_clamped`）。
+- **缺表明确回退**：库里没有该单元 ⇒ 回落闭式并记入 `Timing.lib_fallback_cells`（不静默）。
+
+### ② 口径与边界
+
+- 插值是**双线性**，表布局沿用 dliberty：`(slew_ps, load_ff, delays[slew][load])`。
+- **插值放在 `dsta`，不放 `dliberty`** —— 后者「不求值、不建模、不做 STA」的披露边界不动。
+- 每个 arc 只用**一张表**（`cell_fall` 优先、否则 `cell_rise`）：不取 rise/fall 的大者，属已知简化。
+- `lib` 模式下输入 slew 是**声明假设**（`_DEFAULT_SLEW_PS = 50 ps`）：合成样本库不含
+  `rise_transition`，故**不做 slew 传播**。
+
+### ③ 实测（L1–L6 判据）
+
+| 项 | 结果 |
+|---|---|
+| 闭式回归（lib=None） | `sta` 延时 == 逐项闭式相加，`==` 成立 |
+| NLDM 中点插值 | (200 ps, 2000 ff) ⇒ **50.0 ps**（绝对量级锚） |
+| 越界钳位 | 99999 ff ⇒ **80.0 ps**、1 ff ⇒ **10.0 ps**，`clamped=True` |
+| 单位口径 | 0.050 ns ⇒ 50 ps |
+| lib 集成 | 延时 == 手算 `2×20.0 + 50.0` 逐位一致 ∧ `lib_used` ∧ 面积不变 ∧ `clamped=2` |
+| 缺表回退 | `fallback_cells == ('INV',)` ∧ 延时 == 闭式 |
+
+### ④ 棘轮收紧（R1/R3 首次真下降）
+
+- 零入度 **30 → 29**（37.2%）：`ZERO_MAX` 由 30 收紧为 **29**，`ZERO_ALLOWED` 移除 `dliberty`。
+- R3 已接回 **3/6**（`dlef`→`ddef`、`dverilog`→`db3_trunk`、**`dliberty`→`dsta`**）；债务表 **4 → 3**。
+- 门禁 `run_ecore_s2_smoke` **24 → 30 判据**（新增 L1–L6）；顺带修正一处历史声明：此前 README/提交
+  写「21 判据」，实跑一直是 **24** —— 又一次「声明数 ≠ 实跑数」，本版据实改正。
+
+### 诚实边界
+
+桥只解决「延时从哪来」，**不解决** slew 传播、多角、SPEF、hold 检查；
+`hold_checked` 仍为 False；仍无寄生（`wire_load_ff` 未由 `dextract` 注入）。
+库仍是**合成样本**（非 foundry PDK），`INVX1`/`NAND2X1` 与 dcell 的 `INV`/`NAND2` 不同名 ⇒
+真实混用需一张映射表（本版不做，靠回退保持诚实）。
+
 ## v0.9.365（2026-11-04 · **S5 基础复用度量门禁：R1/R2/R3 从规划口号变成冻结上限** · 净增 0 锚 · CI core **400**）
 
 ### 一句话

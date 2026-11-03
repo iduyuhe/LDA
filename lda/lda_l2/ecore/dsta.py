@@ -56,6 +56,10 @@ class Timing:
     leak_nw: float
     hold_ok: bool
     hold_checked: bool
+    # ── v0.9.366：Liberty 延时桥（`lib=None` 时三项保持默认 ⇒ 既有数字逐位不变）──
+    lib_used: bool = False              # 本次是否用了 Liberty 表
+    lib_fallback_cells: tuple = ()      # 库里查不到/无表 ⇒ 回落闭式的单元名
+    lib_clamped: int = 0                # 插值越界被**钳位**的次数（不外插）
 
 
 def loads_of(nl, port_load_ff: float = 0.0, tech=DC.DEFAULT_TECH,
@@ -83,11 +87,88 @@ def loads_of(nl, port_load_ff: float = 0.0, tech=DC.DEFAULT_TECH,
     return fan
 
 
+#: `lib` 模式下输入 transition 的默认假设（ps）。**是假设，不是测量** ——
+#: 合成样本库只给 `cell_rise/cell_fall`（不含 rise_transition），故不做 slew 传播。
+_DEFAULT_SLEW_PS = 50.0
+
+
+def lib_map(lib):
+    """`LibertyLibrary` → `{cell: CellView}`（**复用** `dliberty.to_model`，绝不另写解析）。
+
+    延迟表布局由 dliberty 定：`(slew_ps, load_ff, delays_ps[slew][load])`。
+    """
+    from . import dliberty as DL
+
+    return DL.to_model(lib)
+
+
+def _bracket(vec, x: float):
+    """在单调向量里找插值区间：返回 `(lo, hi, frac)`；端点退化时 `lo == hi`。"""
+    n = len(vec)
+    if n == 0:
+        return 0, 0, 0.0
+    if n == 1 or x <= vec[0]:
+        return 0, min(1, n - 1), 0.0
+    if x >= vec[-1]:
+        return n - 2 if n >= 2 else 0, n - 1, 1.0
+    for k in range(n - 1):
+        if vec[k] <= x <= vec[k + 1]:
+            span = vec[k + 1] - vec[k]
+            return k, k + 1, (0.0 if span == 0 else (x - vec[k]) / span)
+    return n - 2 if n >= 2 else 0, n - 1, 1.0
+
+
+def interp_nldm(table, slew_ps: float, load_ff: float):
+    """NLDM 双线性插值。返回 `(delay_ps, clamped)`。
+
+    🔴 **越界钳位、不外插**：外插会给出无物理依据的延时（大负载时尤其危险）；
+    钳位是确定性的，且调用方可数（`Timing.lib_clamped`）。
+    """
+    sl, ld, z = table
+    s = min(max(float(slew_ps), sl[0]), sl[-1])
+    l = min(max(float(load_ff), ld[0]), ld[-1])
+    clamped = (s != float(slew_ps)) or (l != float(load_ff))
+    s0, s1, fs = _bracket(sl, s)
+    l0, l1, fl = _bracket(ld, l)
+    v = (z[s0][l0] * (1.0 - fs) * (1.0 - fl)
+         + z[s1][l0] * fs * (1.0 - fl)
+         + z[s0][l1] * (1.0 - fs) * fl
+         + z[s1][l1] * fs * fl)
+    return float(v), clamped
+
+
+def _delay_from_lib(lib_tables, cell: str, load_ff: float, slew_ps: float):
+    """从 `{cell: CellView}` 取一条带表的 arc 求延时。返回 `(delay_ps|None, clamped)`。
+
+    取**第一条有表的 arc**（`dliberty` 每 arc 只保留一张表：`cell_fall` 优先、否则
+    `cell_rise`）—— 这是已知口径简化，不是「算了 rise 和 fall 再取大」。
+    """
+    cv = lib_tables.get(cell)
+    if cv is None:
+        return None, False
+    for arc in getattr(cv, "arcs", ()) or ():
+        t = getattr(arc, "table", None)
+        if t:
+            return interp_nldm(t, slew_ps, load_ff)
+    return None, False
+
+
 def sta(nl, tech=DC.DEFAULT_TECH, port_load_ff: float = 0.0,
-        wire_load_ff: dict = None) -> Timing:
+        wire_load_ff: dict = None, lib=None, slew_ps: float = None) -> Timing:
+    """静态时序（一阶）。`lib` 给 LibertyLibrary 时延时改查 NLDM 表，否则走闭式。
+
+    🔴 **保护性约束**：`lib=None` 时走的是与历史**完全相同**的表达式
+    `tin[k] + DC.cell_delay_ps(g.cell, load, tech)` ⇒ E34/E35 等既有数字逐位不变。
+    `lib` 模式下：库里查不到该单元的**表** ⇒ 该单元回落闭式并记入
+    `lib_fallback_cells`（不静默）；插值越界**钳位**（不外插）并计数 `lib_clamped`。
+    """
     load = loads_of(nl, port_load_ff, tech, wire_load_ff)
     arr = {}
     pred = {}
+    lib_tables = lib_map(lib) if lib is not None else None
+    _slew = _DEFAULT_SLEW_PS if slew_ps is None else float(slew_ps)
+    fallback = []
+    clamped = 0
 
     for (port, w) in nl.inputs:
         for i in range(w):
@@ -105,7 +186,17 @@ def sta(nl, tech=DC.DEFAULT_TECH, port_load_ff: float = 0.0,
             tin = [0.0]
         k = max(range(len(tin)), key=lambda j: tin[j])
         ins = [n for n in g.ins if n != "CLK"]
-        arr[g.out] = tin[k] + DC.cell_delay_ps(g.cell, load.get(g.out, 0.0), tech)
+        ld = load.get(g.out, 0.0)
+        d = None
+        if lib_tables is not None:
+            d, cl = _delay_from_lib(lib_tables, g.cell, ld, _slew)
+            if d is None:
+                fallback.append(g.cell)       # 库里没有 ⇒ 明确回落，不静默
+            elif cl:
+                clamped += 1
+        if d is None:
+            d = DC.cell_delay_ps(g.cell, ld, tech)
+        arr[g.out] = tin[k] + d
         pred[g.out] = (g.cell, ins[k] if ins else None)
 
     # ---- 建立检查 ----
@@ -153,6 +244,9 @@ def sta(nl, tech=DC.DEFAULT_TECH, port_load_ff: float = 0.0,
         leak_nw=nl.leak_nw(tech),
         hold_ok=True,            # 单角零偏斜下形式上成立 —— 见 hold_checked
         hold_checked=False,      # 🔴 **没有真正检验**（无偏斜/无角/无串扰）
+        lib_used=lib_tables is not None,
+        lib_fallback_cells=tuple(sorted(set(fallback))),
+        lib_clamped=clamped,
     )
 
 

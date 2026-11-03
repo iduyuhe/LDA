@@ -224,6 +224,8 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {
 _W10_EXTRA = (
               # v0.9.365：S5 基础复用度量门禁（实测 ~0.2s，极便宜）
               "run_ecore_reuse_metrics_smoke.py",
+              # v0.9.366：S6 Liberty→STA 延时桥（s2 判据 21→27，实测 ~0.02s）
+              "run_ecore_s2_smoke.py",
               )
 
 

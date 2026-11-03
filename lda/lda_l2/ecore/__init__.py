@@ -704,7 +704,7 @@ ECORE_DISCLOSURE: dict = {
     "s2_scope": "S2 Liberty 子集（B2 之一）：`dliberty.py` 纯标准库递归下降，属性/括号值/组三态全覆盖，"
                 "byte-faithful 往返（`serialize(reparse(serialize))==serialize`），未知语法带行号 "
                 "fail-closed；`to_model` 做单位换算与 NLDM 表维度对齐。**不求值、不建模、不做 STA**；"
-                "读入的公开 .lib 只作**可核输入**，不当 golden 判决源（自主红线 P1 角色位）。",
+                "读入的公开 .lib 只作**可核输入**，不当 golden 判决源（自主红线 P1 角色位）。**v0.9.366 起**其表由 `dsta` 消费（NLDM 双线性 + 越界钳位不外插 + 缺表明确回退；`lib=None` 时 sta 历史数字逐位不变）——插值在 `dsta`，本模块自身仍**不求值**。",
     "s3_scope": "S3 格式层之几何/网表三件套（B2 之三）+ 干线骨架（B3）：`dlef.py`（LEF 5.8 子集 · "
                 "MACRO 几何逐字段读入 CellView）、`ddef.py`（DEF 5.8 子集 · COMPONENTS/NETS+ROUTED → "
                 "Layout · 实例几何逐字来自 LEF）、`dverilog.py`（结构级 Verilog 子集 · 门级网表 → "

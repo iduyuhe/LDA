@@ -24,6 +24,18 @@ from .capability_manifest import (
     ecore_module_names,
     manifest_check,
 )
+from .dliberty import (
+    LIBERTY_DISCLOSURE,
+    LibertyGroup,
+    LibertyLibrary,
+    LibertySyntaxError,
+    LibertyValue,
+    SAMPLE_LIBERTY,
+    parse_liberty,
+    parse_liberty_file,
+    serialize_liberty,
+    to_model,
+)
 from .mna import Circuit
 from .mvm_datapath import (
     MVM_DATAPATH_DISCLOSURE,
@@ -298,6 +310,17 @@ __all__ = [
     "ECORE_CAPABILITY_DISCLOSURE",
     "manifest_check",
     "ecore_module_names",
+    # S2 Liberty 子集解析器（D-248 · B2/S2）
+    "LIBERTY_DISCLOSURE",
+    "LibertyGroup",
+    "LibertyLibrary",
+    "LibertySyntaxError",
+    "LibertyValue",
+    "SAMPLE_LIBERTY",
+    "parse_liberty",
+    "parse_liberty_file",
+    "serialize_liberty",
+    "to_model",
     "ELayer",
     "ELayerStack",
     "DEFAULT_CMOS_STACK",

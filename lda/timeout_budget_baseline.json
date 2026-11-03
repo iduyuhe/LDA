@@ -7,8 +7,8 @@
   "target_x": 3.0,
   "ratchet_below_target": 0,
   "anchors_at_measurement": 546,
-  "core_smokes_at_measurement": 393,
-  "updated_at": "2026-11-02",
+  "core_smokes_at_measurement": 394,
+  "updated_at": "2026-11-03",
   "source_reports": [
     "lda_pmm0_ci_20261004.json",
     "lda_pmm1_ci_20261004.json",
@@ -53,6 +53,17 @@
   ],
   "rules": "预算 ≥ 2 × 跨轮实测上界（硬闸）；目标 3×（棘轮：低于 3× 的项数只降不升）；锚数或 CI core 成员数变化 ⇒ 基线过期，须重跑全量并 --write-baseline 刷新",
   "rows": [
+    {
+      "script": "run_ecore_s2_smoke.py",
+      "budget_s": 120.0,
+      "elapsed_max_s": 5.0,
+      "margin_x": 24.0,
+      "samples_s": [
+        5.0
+      ],
+      "n_rounds": 1,
+      "censored_events": 0
+    },
     {
       "script": "run_ecosystem_smoke.py",
       "budget_s": 900.0,

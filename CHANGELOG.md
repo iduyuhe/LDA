@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.9.362（2026-11-03 · **S2 Liberty 子集解析器：公开 PDK .lib 逐字段忠实读入** · 净增 0 锚 · CI core **394**）
+
+### 一句话
+
+阶段一 B2/S2 的底座：一个**不求值、不建模、不静默吞错**的 Liberty 子集解析器。把「读 foundry/公开 PDK 时序库」的输入通道打开，但明确它**只作数据读入、不当 golden 判决源**（自主可控红线 P1 角色位）。
+
+### ① 解析器 `lda_l2/ecore/dliberty.py`（纯标准库递归下降）
+
+- **三态语法全覆盖**：属性 `name:value;`、括号值属性 `name(args);`（含 NLDM 矩阵、`index_*` 向量、strlist）、组 `name(args){}`（library/cell/pin/timing 任意嵌套）。保序 `OrderedDict` + `args_raw`/`raw` 逐字符保留。
+- **byte-faithful 往返**：`serialize(reparse(serialize))==serialize`，商业 .lib 的续行 `\`、注释、空格噪声原样回来（不丢不漂），作为「零丢失」机核判据。
+- **严格报错 fail-closed**：非 `library` 顶层 / `define`/`type` 非法 token / 表达式值 `area:(2*3)` / 未闭合组 / 非法字符 `@` 一律 `LibertySyntaxError` 带**行号**，绝不把格式错当「跳过就好」。
+
+### ② `to_model` 适配器（S1 统一数据模型）
+
+- 单位换算：capacitance `pf→ff`、NLDM `load pf→ff`、`slew/delay ns→ps`。
+- 极性：取 `related_pin`；`sense` 默认 `positive_unate`。
+- NLDM 表维度对齐 S1 `delays[slew][load]`（transpose）。
+
+### ③ 门禁与连带
+
+- 新增 `run_ecore_s2_smoke.py` **21 判据**入 `CORE_SMOKES`（CI core 393→394）；实测 <1s，`_BUILTIN_TIMEOUT_OVERRIDE` 120s。
+- `capability_manifest` 增 S2 条目（`module=lda_l2.ecore.dliberty`，`guard=run_ecore_s2_smoke.py`）；`ecore/__init__` 导出 dliberty 全部符号。
+- `timeout_budget_baseline.json` 增 S2 row；`core_smokes_at_measurement` 393→394。
+
+### 🔴 诚实边界
+
+不求值不建模、不做 STA、不报任何 signoff 口径；LEF 几何在 S3；规则集非 foundry PDK；读入的公开 .lib **只作输入不当 golden**。净增 0 锚（解析器不产物理锚 —— 底层闭式早已实现，这是「注册缺口非能力缺口」的又一处实证）。账本 546 / strict 524 / 独立率 95.97% / CI core **394**。
+
 ## v0.9.361（2026-11-03 · **CI 断点续跑 + 两处自指漏洞** · 净增 0 锚 · CI core **393**）
 
 ### 一句话

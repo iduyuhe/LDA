@@ -1353,6 +1353,12 @@ CORE_SMOKES: List[str] = [
     # ③ guard 文件真实存在 ④ ECORE_DISCLOSURE 含 e1~e5 scope ⑤ 诚实边界（无 TOPS/TOPS-W）。
     # 含 3 道突变探针（符号损坏/注入 fabricated 指标/移除模块登记 必红）+ 还原完整性。CI core 241→242。
     "run_ecore_capability_guard_smoke.py",
+    # 🔴 S2 Liberty 子集解析器门禁（D-248 · B2/S2）：把公开 PDK 的 `.lib` 读进来，让 S1 统一数据模型的
+    # Pin.direction / TimingArc 有「往哪儿填」的来源。守三件：① 逐 cell 逐字段字节级往返双射（含 NLDM
+    # 矩阵）② 未知语法必报错（define/type/表达式值/顶层非 library/未闭合/非法字符 带行号，绝不静默）
+    # ③ 零数据丢失不变量（3 cell/8 pin/4 timing/1 template 守恒）+ to_model 适配器（极性/cap_ff pf→ff/
+    # NLDM 表）。纯标准库 · 实测上界 <1s。CI core 393→394。
+    "run_ecore_s2_smoke.py",
     # 🔴 电子计算芯片案例卡 WebUI 门禁（E 征程收官 · D-155）：守 /api/ecore_demo 只读案例卡的诚实边界
     # （verdict 恒 DESIGN_VERIFIED / 不报 fabricated 能效 TOPS-TOPS-W / 规模按「可建模可验证容量」解读 /
     # landmark 仅背景坐标），跨源一致性（模块↔API 参考↔routes），含突变探针（破坏诚实边界/清空 landmark
@@ -3301,6 +3307,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e4_smoke.py": 300.0,
     # E5 电子计算征程平台能力硬化门禁（D-154）· 实测上界 0.22s（单测）
     "run_ecore_capability_guard_smoke.py": 300.0,
+    # S2 Liberty 子集解析器门禁（D-248 · B2/S2）· 实测上界 <1s（@本机）
+    "run_ecore_s2_smoke.py": 120.0,
     # E 征程收官 · 电子计算芯片案例卡 WebUI 门禁（D-155）· 实测上界 0.1s（单测）
     "run_ecore_case_smoke.py": 300.0,
     # E6 电子计算征程版图与几何签核门禁（D-156）· 实测上界 0.36s（3 轮 max · @本机）

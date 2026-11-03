@@ -1033,6 +1033,15 @@ ECORE_CAPABILITY_MANIFEST = [
                     "place_tiles", "joint_drc", "row_of"],
         "introduced_by": "D-247 (cell-internal DRC)", "guard": "run_ecore_e55_smoke.py",
     },
+    {
+        "capability": "S2 Liberty 子集解析器（D-248 · B2/S2）：把公开 PDK 的 .lib 读进来，让 S1 统一数据模型（model.py）的 Pin.direction / TimingArc 有往哪儿填的来源。递归下降解析 + 保序 OrderedDict + 括号内容逐字符保留（args_raw/raw）⇒ parse→serialize→re-parse 逐位相等（连 NLDM 矩阵行列数都不差），不靠归一化偷偷变形。未知语法必报错、绝不静默跳过：define/type/group/library_domain 等宏与类型定义指令、表达式值 area:(2*3)、顶层非 library 组、未闭合组、非法字符 —— 一律抛 LibertySyntaxError（带行号）。零数据丢失不变量：rich 样本 parse 后 cell/pin/timing/attr 计数往返完全守恒。to_model() 把 direction/极性/capacitance pf→ff/NLDM 表（load pf→ff、slew/delay ns→ps，矩阵按 S1 约定 delays[slew][load] 转置）喂给 S1 的 Pin/TimingArc。不求值不建模（那会是第二套实现、与既有模块漂移）；几何在 LEF(S3)；非 foundry PDK（自带按公开单元库惯例构造的 SAMPLE_LIBERTY）；C 级自主纯标准库、LLM 不进判决路径。",
+        "module": "lda_l2.ecore.dliberty",
+        "symbols": ["LibertySyntaxError", "LibertyValue", "LibertyGroup", "LibertyLibrary",
+                    "parse_liberty", "parse_liberty_file", "serialize_liberty", "to_model",
+                    "SAMPLE_LIBERTY", "LIBERTY_DISCLOSURE"],
+        "introduced_by": "D-248 (S2)",
+        "guard": "run_ecore_s2_smoke.py",
+    },
 ]
 
 

@@ -66,6 +66,24 @@ from .ddef import (
     serialize_def,
     to_model as def_to_model,
 )
+from .dxcheck import (
+    ATTRIBUTION_CODES as DIFF_ATTRIBUTION_CODES,
+    Band as DiffBand,
+    CrossCheckError as DiffTableError,
+    DXCHECK_DISCLOSURE,
+    build_diff_table,
+    digest as diff_table_digest,
+    golden_area_um2,
+    golden_hpwl_center_um,
+    parse_openroad_area_text,
+    parse_opensta_wns_text,
+    probe_reference,
+    run_reference_text,
+    sample_seq_netlist,
+    serialize as serialize_diff_table,
+    validate_table as validate_diff_table,
+    xcheck as xcheck_netlist,
+)
 from .mna import Circuit
 from .mvm_datapath import (
     MVM_DATAPATH_DISCLOSURE,
@@ -559,6 +577,12 @@ __all__ = [
     "aperture_jitter_sigma_v", "jitter_bandwidth_limits",
     "mux_settling_tau", "mux_settling_erosion",
     "dynamic_budget_terms", "dynamic_cost_report", "col_share_dynamic_self_check",
+    # —— S4 B4 对拍框架（逐项差异表 + 归因 + 可复现）
+    "DXCHECK_DISCLOSURE", "DIFF_ATTRIBUTION_CODES", "DiffBand", "DiffTableError",
+    "build_diff_table", "validate_diff_table", "serialize_diff_table",
+    "diff_table_digest", "golden_area_um2", "golden_hpwl_center_um",
+    "probe_reference", "run_reference_text", "parse_openroad_area_text",
+    "parse_opensta_wns_text", "xcheck_netlist", "sample_seq_netlist",
 ]
 
 # 征程入口披露（对外引用须携此诚实边界）

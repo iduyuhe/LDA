@@ -1381,6 +1381,11 @@ CORE_SMOKES: List[str] = [
     # 「吃的是上一段的输出」（place 覆盖每颗门 / route 覆盖每条网 / drc-lvs 如实报告，claimable=False
     # 不伪造 clean）。fail-closed：空输入直接报错。纯标准库 · 实测上界 <120s。
     "run_ecore_s6_smoke.py",
+    # 🔴 B4 对拍框架门禁（S4 · 逐项差异表 + 归因 + 可复现）：面积/线长/WNS 三行差异表，
+    # 每行必须「超界/未超界（三态 true/false/null）+ 闭式词表归因」；禁用「参考工具如此」式借口（P5）；
+    # 可复现 = 同进程两次 + 跨进程 × 两个 PYTHONHASHSEED 三种口径 digest 一致；参考工具缺席时只降级
+    # 为同定义自检、绝不冒充外部对拍（P1/P3）。纯标准库 · 实测上界 <30s。
+    "run_ecore_s7_smoke.py",
     # 🔴 电子计算芯片案例卡 WebUI 门禁（E 征程收官 · D-155）：守 /api/ecore_demo 只读案例卡的诚实边界
     # （verdict 恒 DESIGN_VERIFIED / 不报 fabricated 能效 TOPS-TOPS-W / 规模按「可建模可验证容量」解读 /
     # landmark 仅背景坐标），跨源一致性（模块↔API 参考↔routes），含突变探针（破坏诚实边界/清空 landmark
@@ -3339,6 +3344,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_s5_smoke.py": 120.0,
     # B3 数字链干线门禁（S3→B3 · c17 端到端）· 实测上界 <120s（@本机）
     "run_ecore_s6_smoke.py": 120.0,
+    # B4 对拍框架门禁（S4 · 差异表 + 归因 + 跨进程可复现）· 实测上界 <30s（@本机）
+    "run_ecore_s7_smoke.py": 120.0,
     # E 征程收官 · 电子计算芯片案例卡 WebUI 门禁（D-155）· 实测上界 0.1s（单测）
     "run_ecore_case_smoke.py": 300.0,
     # E6 电子计算征程版图与几何签核门禁（D-156）· 实测上界 0.36s（3 轮 max · @本机）

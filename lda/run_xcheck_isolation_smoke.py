@@ -11,7 +11,8 @@ Yosys / Meep / SAX …）。这件事**本身不损害自主可控** —— 损�
   ③ **口径滑移**：为了缩小差异去改自己的定义 ⇒ 从「独立实现」变成「模仿」；
   ④ **证据滑移**：报告写「与 X 一致 ⇒ 正确」⇒ 裁判权递出去了。
 
-本门禁把 ① 与 ② 变成**结构性判据**，③ ④ 靠 §P3/P5 的对拍框架 schema 守（待落地）。
+本门禁把 ① 与 ② 变成**结构性判据**；③ ④ 由 P3 / P5 机器守
+（v0.9.364 对拍框架 `lda_l2/ecore/dxcheck.py` 落地后启用，不再是占位）。
 
 🔴 **关键设计：不另造黑名单，直接读既有的主权分级表**（`lda_pdk/sovereign_deps.py`
 的 `SOVEREIGN_DEPS`，A/B/C 三级，来自战略审计 LDA-ST-001）。理由：
@@ -20,7 +21,7 @@ Yosys / Meep / SAX …）。这件事**本身不损害自主可控** —— 损�
     门禁要做的是**守住那个策略**，而不是另立一套更严或更松的规矩。
 
 ═══════════════════════════════════════════════════════════════════════════════
-判据（当前启用 P1 / P2 / P4；P3 / P5 为占位）
+判据（P1 / P2 / P3 / P4 / P5 全部启用）
 ───────────────────────────────────────────────────────────────────────────────
 **P1 角色判据（账本）**：`lda/reports/*.json` 里，外部工具名若出现在
   `golden / golden_fn / source / evidence / verified_by / provenance` 这类**判定位** ⇒ 违例
@@ -36,9 +37,13 @@ Yosys / Meep / SAX …）。这件事**本身不损害自主可控** —— 损�
 **P4 缺席可运行**：`CORE_SMOKES` 不得包含对拍脚本；若将来加入 `run_xcheck_*.py`，
 其源码必须有 **SKIP 分支**（参考工具缺席时 `SKIP` 且 rc=0），否则「不依赖」无法机核。
 
-**P3 / P5（未启用，显式登记而非遗忘）**：
-  · P3 = 对拍只读文本输出（不 import 其库、不读其内存对象）—— 待对拍框架落地后配 AST 判据；
-  · P5 = 差异表每行 `attribution` 非空且不得为「参考工具如此」—— 待差异表 schema 定型。
+**P3 对拍只读文本输出（已启用 · v0.9.364）**：对拍框架不得 `import` 任何外部工具包，
+  只能经**独立进程 + 文本**交换；工具缺席时通道降级为 `unavailable`（绝不回落到猜值）。
+  判据 P3 用 AST 扫 `dxcheck.py` 的顶层 import；P3c 用合成 `import opensta` 反证判据不空转。
+
+**P5 差异表归因非空且非借口（已启用 · v0.9.364）**：差异表每行 `attribution` 必须非空、
+  且落在**闭式词表**（`dxcheck.ATTRIBUTION_CODES`）内；写「参考工具如此」这类把判决权
+  交给外部工具的「解释」⇒ 必红。P5b 为该禁令的反向探针。
 
 ═══════════════════════════════════════════════════════════════════════════════
 诚实边界
@@ -341,11 +346,51 @@ def main() -> int:
     check("P4b 反向：名单里塞一个对拍脚本 ⇒ 必红（证明 P4 不是恒真）",
           n_probe > 0, "未报")
 
-    # ── 占位判据：显式登记未启用的两条 ────────────────────────────────
-    pending = ("P3", "P5")
-    check("P3/P5 **显式登记为未启用**（对拍只读文本输出 / 差异表归因非空）—— "
-          "待对拍框架落地，不留「以为有守」的错觉",
-          len(pending) == 2 and "P3 / P5（未启用" in __doc__, "占位声明缺失")
+    # ── P3 对拍只读文本输出（v0.9.364 启用：对拍框架 dxcheck 落地）────
+    from lda_l2.ecore import dxcheck as _X
+
+    def _ext_imports(src):
+        """返回源码里命中的外部工具包顶层名（合成源码也走这条，供反向探针）。"""
+        try:
+            tree = ast.parse(src)
+        except SyntaxError:
+            return ["<syntax-error>"]
+        mods = set()
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Import):
+                mods |= {a.name.split(".")[0] for a in n.names}
+            elif isinstance(n, ast.ImportFrom) and not n.level and n.module:
+                mods.add(n.module.split(".")[0])
+        return sorted(m for m in mods if m.lower() in set(_ALIAS_TO_NAME))
+
+    _dxc_src = io.open(os.path.join(_HERE, "lda_l2", "ecore", "dxcheck.py"),
+                       encoding="utf-8", errors="replace").read()
+    _hit3 = _ext_imports(_dxc_src)
+    check("P3 对拍只读文本输出：框架不 import 任何外部工具包（AST 扫 dxcheck.py）",
+          not _hit3, "命中 %r" % (_hit3,))
+    _chan = _X.run_reference_text("__no_such_tool__", ["-v"])
+    check("P3b 参考通道只经独立进程 + 文本，且缺席 ⇒ unavailable（不回落猜值）",
+          _chan["status"] == "unavailable" and _chan["text"] is None,
+          "chan=%r" % (_chan,))
+    check("P3c 反向：合成源码 `import opensta` ⇒ 扫描器必报（证明判据不空转）",
+          bool(_ext_imports("import opensta\n")), "")
+
+    # ── P5 差异表每行归因非空且非借口（v0.9.364 启用）──────────────────
+    from lda_l2.ecore import dverilog as _V
+
+    _tbl = _X.xcheck(_V.parse(_V.SAMPLE_VERILOG), subject="c17")
+    _rows = _tbl["rows"]
+    _bad5 = [r["metric"] for r in _rows
+             if r["attribution"]["code"] not in _X.ATTRIBUTION_CODES
+             or not r["attribution"]["detail"].strip()]
+    check("P5 差异表每行 attribution 非空 ∧ 在闭式词表（%d 行 · %d 个码）"
+          % (len(_rows), len(_X.ATTRIBUTION_CODES)),
+          bool(_rows) and not _bad5, "bad=%r" % (_bad5,))
+    import copy as _copy
+    _t2 = _copy.deepcopy(_tbl)
+    _t2["rows"][0]["attribution"]["detail"] = "参考工具如此，所以没问题"
+    check("P5b 反向：归因写「参考工具如此」⇒ 检测器必报（判决权不得交给参考工具）",
+          bool(_X.validate_table(_t2)), "")
 
     dt = time.time() - T0
     check("P0 门禁耗时 %.2f s < %.0f s" % (dt, AN_ELAPSED_MAX_S),
@@ -355,7 +400,8 @@ def main() -> int:
     print("  [角色] 外部工具只能当**候选**，不能当 golden（B4 锚即正例：golden=解析解、candidate=SAX）")
     print("  [依赖] 主链零外部工具 import；对拍脚本不得进 CORE（缺席必须可跑）")
     print("  [登记] 未在主权注册表出现的工具名 ⇒ 判红（点名即须登记）")
-    print("  [待办] P3 只读文本输出 · P5 差异表归因非空 —— 对拍框架落地时补，现在显式登记为未启用")
+    print("  [已启用] P3 只读文本输出（框架零外部 import + 只经独立进程）"
+          " · P5 差异表归因非空且不得为「参考工具如此」")
     print()
     if _FAILED:
         print("xcheck isolation 有红色：%s" % ", ".join(_FAILED))

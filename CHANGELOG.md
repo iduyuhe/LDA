@@ -1,5 +1,49 @@
 # Changelog
 
+## v0.9.364（2026-11-04 · **S4/B4 对拍框架：逐项差异表 + 闭式归因 + 跨进程可复现** · 净增 0 锚 · CI core **399**）
+
+### 一句话
+
+把对拍从「事后手写一张表」变成**有 schema、有归因、可复现**的机器物：`dxcheck.py`
+产出逐项差异表，每行必须回答「超界/未超界（三态）+ 为什么」，并把隔离门里长期占位的
+P3（只读文本）/ P5（归因非空）真正启用。
+
+### ① 差异表 schema（`lda_l2/ecore/dxcheck.py`）
+
+- 每行字段：`metric / lda / reference / golden / baseline_used / delta / delta_pct / band / exceeds / evidence_level / attribution`。
+- 首个对拍对象 **ISCAS c17**：面积 **0.88 µm²**、线长 **0.45 µm**（**绝对量级锚**，不是比值）。
+- 时序对象（最小时序环）：**WNS = 目标周期 − `t_clk_min`**；target 30 ps ⇒ **+3.761675 ps** 未超界 / target 20 ps ⇒ **−6.238325 ps** 超界（归因切 `TIMING_TARGET_VIOLATED`）。
+
+### ② 三条纪律（都可机核）
+
+1. **三态**：`exceeds ∈ {true,false,null}`；`baseline_used=="none"` ⇒ 必须 `null`（「测不了」不得压扁成「未超界」）。
+2. **归因闭式**：10 个码的闭式词表 + 非空文本；写「参考工具如此」⇒ 判红（P5：判决权不出让）。
+3. **角色位**：外部工具只作 `reference`（candidate），**永不入 `golden`**（P1）；只经独立进程 + 文本（P3）。
+
+### ③ 可复现（同输入 ⇒ 同结果）
+
+- 无时间戳 / 无绝对路径 / 无工具版本猜测；浮点 `round(·, 6)`；`json.dumps(sort_keys=True)`。
+- 门禁实测：**同进程两次** + **跨进程 × 两个 `PYTHONHASHSEED`** 三种口径 sha256 一致；换输入 digest 必变。
+
+### ④ 隔离门 P3/P5 由「未启用」翻为「启用」
+
+- P3：AST 扫 `dxcheck.py` 零外部工具 import + 参考通道缺席降级为 `unavailable` + 合成 `import opensta` 反证。
+- P5：差异表逐行归因非空且在词表 + 「参考工具如此」反证。
+- 占位断言（`pending=("P3","P5")`）删除 —— 不再是「以为有守」。
+
+### ⑤ 门禁与台账
+
+- 新增 `run_ecore_s7_smoke.py` **23 判据**（实测 0.56s）入 CI core（398→399）。
+- `capability_manifest` 增 `dxcheck` 条目；`ecore/__init__` 导出 16 个符号；`ecore_case` span 77/79/67 → 78/80/68。
+- 版本四处同步 `0.9.363→0.9.364`。
+
+### 诚实边界
+
+参考工具**本机 PATH 无 openroad/opensta** ⇒ 本版证明的是**框架**与**同定义自检**，**不**证明与
+OpenROAD/OpenSTA 一致（`evidence_level` 逐行标明）；面积/线长 golden 与平台实现**同定义**
+（`independent=False`）；文本解析器只吃**合成样本**（非实测语料）；**不做 P&R、不做 STA 本身**；
+WNS 的 target 是**声明约束**不是硅上实测；`claimable=False`；不报 TOPS/TOPS-W/fJ/op。
+
 ## v0.9.363（2026-11-04 · **S3 数字链输入三件套 + B3 干线：LEF/DEF/Verilog 子集 + 端到端守恒** · 净增 0 锚 · CI core **398**）
 
 ### 一句话

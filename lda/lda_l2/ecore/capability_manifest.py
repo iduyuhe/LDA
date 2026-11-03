@@ -1073,6 +1073,17 @@ ECORE_CAPABILITY_MANIFEST = [
         "introduced_by": "B3 trunk",
         "guard": "run_ecore_s6_smoke.py",
     },
+    {
+        "capability": "B4 对拍框架（差分差异表）：逐项产出「metric / lda / reference / golden / baseline_used / delta / band / exceeds / attribution / evidence_level」。覆盖面积（闭式 Σ 单元面积）、线长（闭式中心矩 HPWL）、WNS（target 周期 − t_clk_min；纯组合无时钟域则三态 null）。🔴 三条纪律：① `exceeds` **三态** true/false/null，无基线一律 null（禁压扁成 false）；② 每行归因必须在**闭式词表**内且非空，禁用「参考工具如此」式借口（P5，判决权不进外部工具）；③ 外部参考只经**独立进程 + 文本**（P3）、只作 candidate 不作 golden（P1）。输出无时间戳/路径/版本、浮点 round 6、sort_keys ⇒ 两次构建字节一致（sha256 digest 机核，跨进程 × 不同 PYTHONHASHSEED 亦一致）。参考工具缺席时降级为 SELF_CONSISTENCY_ONLY，绝不冒充外部对拍；claimable=False。",
+        "module": "lda_l2.ecore.dxcheck",
+        "symbols": ["DXCHECK_DISCLOSURE", "ATTRIBUTION_CODES", "CrossCheckError",
+                    "Band", "build_diff_table", "validate_table", "serialize", "digest",
+                    "golden_area_um2", "golden_hpwl_center_um", "probe_reference",
+                    "run_reference_text", "parse_openroad_area_text",
+                    "parse_opensta_wns_text", "xcheck", "sample_seq_netlist"],
+        "introduced_by": "S4 B4",
+        "guard": "run_ecore_s7_smoke.py",
+    },
 ]
 
 

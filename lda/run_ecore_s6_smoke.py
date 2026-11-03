@@ -82,6 +82,41 @@ def main() -> int:
                                          dl["lvs_problems"] if dl else None,
                                          detail.get("claimable")))
 
+    # ── D1–D4 DEF 写出段（v0.9.367：ddef 接回干线，补 B3 的 DEF 出口）──────
+    dw = _stage(rep, "def_write")
+    check("D1 DEF 段守恒：组件 == 6 颗门 ∧ 网 == 11 条（与 parse 段逐值对齐）",
+          dw is not None and dw["components"] == p["gates"] == 6
+          and dw["nets"] == p["nets"] == 11,
+          "def=%s" % (dw,))
+    check("D2 DEF 往返字节级双射：写出→读回→再写出 完全一致（roundtrip_ok）",
+          dw is not None and dw["roundtrip_ok"] is True, "def=%s" % (dw,))
+
+    # 🔴 独立复算（不信报告自述）：重跑 place + from_placement + serialize，逐项对拍
+    from lda_l2.ecore import ddef as DD      # noqa: E402
+    from lda_l2.ecore import dplac as PL     # noqa: E402
+    from lda_l2.ecore import dverilog as V   # noqa: E402
+
+    nl = V.parse(src)
+    _p2 = PL.place(nl)
+    _txt = DD.serialize_def(DD.from_placement(_p2, nl, name="lda_c17"))
+    check("D3 DEF 内容独立复算：字节数一致 ∧ **不含 ROUTED**（shapes 无网归属 ⇒ 写了就是编造）"
+          " ∧ UNITS DISTANCE MICRONS 1000（1 DBU = 1 nm）",
+          len(_txt) == dw["bytes"] and "ROUTED" not in _txt
+          and "UNITS DISTANCE MICRONS 1000 ;" in _txt,
+          "bytes=%d vs %s" % (len(_txt), dw["bytes"]))
+
+    # D4 反向探针：落点缺失必须 fail-closed（不许写出半个 DEF）
+    class _NoPlc:
+        cell_xywh = {}
+
+    _raised = False
+    try:
+        DD.from_placement(_NoPlc(), nl)
+    except ValueError:
+        _raised = True
+    check("D4 反向：placement 缺落点 ⇒ from_placement 抛 ValueError（不写半个 DEF）",
+          _raised, "未报错")
+
     # ── S5 fail-closed：空/None 输入必报错 ────────────────────────────
     raised = False
     try:
@@ -103,6 +138,8 @@ def main() -> int:
     print("  [S2] 布局段守恒：place 覆盖每颗门")
     print("  [S3] 布线段守恒：route 覆盖每条网")
     print("  [S4] DRC/LVS 如实报告（claimable=False，不伪造 clean）")
+    print("  [D1–D4] DEF 写出段：placed DEF（落点 + 连接）· 往返字节双射 · **不写 ROUTED**")
+    print("         （ddetail.shapes 无网归属 ⇒ 写布线就是编造；缺落点 ⇒ fail-closed）")
     print("  [S5] fail-closed：空输入直接报错")
     print("  [边界] ddetail 路由器 claimable=False · 几何/时序为模型假设 · 非 foundry PDK")
 

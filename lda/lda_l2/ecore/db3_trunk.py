@@ -99,6 +99,32 @@ def run_trunk(nl):
         "lvs_ok": lvs["ok"], "lvs_problems": len(lvs["problems"]),
     }))
 
+    # ── 段 4：DEF 写出（输入 = 段1 的落点 + 段0 的 Netlist）──────────────
+    #    🔴 只写 placed DEF（落点 + 连接），**不写 ROUTED**：ddetail.shapes 没有网归属，
+    #       强行写就是编造。布线导出须先给 shape 打网标签（后续里程碑）。
+    from lda_l2.ecore import ddef as DD
+    design = DD.from_placement(p, nl, name="lda_c17")
+    text = DD.serialize_def(design)
+    back = DD.parse_def(text)
+    if DD.serialize_def(back) != text:                 # 写出→读回→再写出 必须字节一致
+        raise AssertionError("段4 守恒失败：DEF 往返不是字节级双射")
+    if len(back.components) != len(nl.gates):
+        raise AssertionError("段4 守恒失败：DEF 组件 %d != 门数 %d"
+                             % (len(back.components), len(nl.gates)))
+    if len(back.nets) != len(nets_all):
+        raise AssertionError("段4 守恒失败：DEF 网 %d != Netlist 网 %d"
+                             % (len(back.nets), len(nets_all)))
+    _got = {c.name: (c.macro, c.x, c.y) for c in back.components}
+    for c in design.components:
+        if _got.get(c.name) != (c.macro, c.x, c.y):
+            raise AssertionError("段4 守恒失败：组件 %s 的宏名/落点在往返后变了" % c.name)
+    report["stages"].append(("def_write", {
+        "bytes": len(text), "components": len(back.components),
+        "nets": len(back.nets), "terms": sum(len(n.terms) for n in back.nets),
+        "units": back.units, "roundtrip_ok": True,
+        "routed_exported": False,
+    }))
+
     report["drc_lvs_detail"] = {
         "drc": drc, "lvs": lvs,
         "claimable": False,

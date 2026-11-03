@@ -1,5 +1,48 @@
 # Changelog
 
+## v0.9.367（2026-11-04 · **S6 第二步：`ddef` 接回干线，B3 补上 DEF 出口** · 净增 0 锚 · CI core **400**）
+
+### 一句话
+
+干线从 5 段变 **6 段**：把 LDA 的落点与连接写成**真 DEF**，并**当场读回**做字节级双射。
+同时守住两条不可越的线：**不写没归属的布线**、**不冒充库引脚名**。
+
+### ① 新增 `ddef.from_placement(placement, nl)`
+
+- 坐标：`Placement.cell_xywh`（µm）× **1000** ⇒ 整数 DBU（**1 DBU = 1 nm**），`UNITS DISTANCE MICRONS 1000`。
+- 组件：每颗门一个 `COMPONENT`（macro = netlist 单元名，orient = `N`，可切 `FIXED`）。
+- 连接：`NETS` 的 terminal 名 —— 输入取 `dcell.CELLS[cell].pins`（LDA 自有真源），
+  输出记 **`z`**（LDA 约定）；`CLK` 保持 `CLK`。
+- **fail-closed**：任何门缺落点 ⇒ `ValueError`，**不写半个 DEF**。
+
+### ② 两处绝不粉饰
+
+| 风险 | 处置 |
+|---|---|
+| `ddetail.shapes` 无网归属 ⇒ 写 `ROUTED` 就是编造 | **不写**；D3 判据直接断言生成文本里不含 `ROUTED` |
+| `dcell` 未声明输出引脚名 ⇒ 写「ZN」是冒充库 | 统一记 `z`，并在 `DEF_OUT_PIN` 注释与披露里写明「非库真名，真实互通须 LEF PORT 覆盖」 |
+
+### ③ 实测（c17）
+
+| 项 | 值 |
+|---|---|
+| 组件 / 网 / terminal | **6 / 11 / 17** |
+| DEF 字节 | **559** |
+| 往返 | 写出→`parse_def`→再写出 **字节一致** |
+| 独立复算 | 门禁重跑 `place`+`from_placement`+`serialize`，字节数与报告一致 |
+
+### ④ 棘轮继续收紧
+
+- 零入度 **29 → 28**（35.9%）；`ZERO_MAX` 29→28，`ZERO_ALLOWED` 移除 `ddef`。
+- R3 已接回 **4/6**；债务表 **3 → 2**（`db3_trunk` / `dxcheck`）。
+- B3 现状 **6/8 段**（缺 时序 / 综合）；`ECORE_DISCLOSURE.s4_scope` 同步改口径。
+
+### 诚实边界
+
+placed DEF **不含布线**（`ROUTED` 未导出）⇒ 不可称「布线结果可交换」；
+引脚名是 LDA 约定、**宏名是 netlist 单元名**（无匹配 LEF）⇒ `validate_macro_refs` 未被行使，
+不可称与商业工具互通。`ddetail` 仍 `claimable=False`（c17 实测 101 DRC 违规）。
+
 ## v0.9.366（2026-11-04 · **S6 第一步：Liberty → STA 延时桥（R3 首次真下降）** · 净增 0 锚 · CI core **400**）
 
 ### 一句话

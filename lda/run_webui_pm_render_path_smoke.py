@@ -222,10 +222,8 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {
 #:   （`` `run_x` **N 判据 ``）声明某门禁时，才把它加入本表；版本下线时请同批移除。
 #:   不变式（W10b 机核）：当前行里每个 `run_x` **N 判据 都必须能在 `_counts10` 内查到。
 _W10_EXTRA = (
-              # v0.9.365：S5 基础复用度量门禁（实测 ~0.2s，极便宜）
-              "run_ecore_reuse_metrics_smoke.py",
-              # v0.9.366：S6 Liberty→STA 延时桥（s2 判据 21→27，实测 ~0.02s）
-              "run_ecore_s2_smoke.py",
+              # v0.9.367：S6 第二步 ddef→干线（s6 判据 7→11，实测 ~0.02s）
+              "run_ecore_s6_smoke.py",
               )
 
 

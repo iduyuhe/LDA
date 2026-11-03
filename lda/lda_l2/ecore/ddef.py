@@ -326,6 +326,67 @@ def serialize_def(d: DefDesign) -> str:
     return "\n".join(L) + "\n"
 
 
+# ── 适配器：Placement + Netlist → DefDesign（**只写落点与连接，不写 ROUTED**）──
+#: DEF 数据库单位：1 DBU = 1 nm ⇒ `UNITS DISTANCE MICRONS 1000`（不丢 nm 精度）
+DEF_DBUNIT_PER_UM = 1000
+
+#: 🔴 **LDA 约定**：`dcell` 只声明**输入**引脚名（如 `("a","b")`），**输出引脚名未声明**，
+#:    统一记为 `z`。这不是库真名（HD 库用 A/Y）——真实互通须由 LEF `PORT` 名覆盖；
+#:    在拿到 LEF 之前，写「看起来像库名」的引脚才是编造。
+DEF_OUT_PIN = "z"
+
+
+def from_placement(placement, nl, *, name: str = "lda_design",
+                   units: int = DEF_DBUNIT_PER_UM, out_pin: str = DEF_OUT_PIN,
+                   fixed: bool = False) -> DefDesign:
+    """`dplac.Placement` + `dsynth.Netlist` → `DefDesign`（**placed DEF**）。
+
+    🔴 **只写「落点 + 连接」，不写 `ROUTED`**：`ddetail.DetailRoute.shapes` 是整块 Shape
+    列表、**没有按网归属** —— 强行写 ROUTED 等于编造布线。布线导出须先给 shape 打网标签
+    （已登记为后续里程碑）。
+
+    坐标：`Placement.cell_xywh` 是 **µm**，按 `units` 换算成整数 DBU（默认 1000 ⇒ 1 nm）。
+    引脚：输入取 `dcell.CELLS[cell].pins`（LDA 自有真源）；输出记 `out_pin`（见上注）。
+    落点缺失 ⇒ `ValueError`（**fail-closed**，不写半个 DEF）。
+    """
+    from . import dcell as DC
+
+    def dbu(v_um) -> int:
+        return int(round(float(v_um) * units))
+
+    xywh = getattr(placement, "cell_xywh", None) or {}
+    lacking = [g.name for g in nl.gates if g.name not in xywh]
+    if lacking:
+        raise ValueError("from_placement：以下门没有落点，拒绝写出半个 DEF：%s" % (lacking,))
+
+    d = DefDesign(name=name, units=int(units))
+    dw = float(getattr(placement, "die_w_um", 0.0) or 0.0)
+    dh = float(getattr(placement, "die_h_um", 0.0) or 0.0)
+    if dw > 0.0 and dh > 0.0:
+        d.diearea = [(0, 0), (dbu(dw), dbu(dh))]
+
+    for g in nl.gates:
+        x0, y0, _w, _h = xywh[g.name]
+        d.components.append(DefComponent(
+            name=g.name, macro=g.cell, placed=not fixed,
+            x=dbu(x0), y=dbu(y0), orient="N"))
+
+    terms: dict = {}
+    for g in nl.gates:
+        cell = DC.CELLS.get(g.cell)
+        pins = tuple(getattr(cell, "pins", ()) or ())
+        for k, net in enumerate(g.ins):
+            if net == "CLK":
+                pin = "CLK"
+            else:
+                pin = pins[k] if k < len(pins) else ("p%d" % k)
+            terms.setdefault(net, []).append((g.name, pin))
+        terms.setdefault(g.out, []).append((g.name, out_pin))
+    for net in sorted(terms):
+        d.nets.append(DefNet(name=net, terms=sorted(terms[net])))
+    return d
+
+
 # ── 适配器：DefDesign → S1 Layout（需 LEF 库解析 MACRO 几何）────────────────
 # DEF 层名 → model 整数层（与 ddetail/ddrc_lvs 同约定：Metal1=1…Metal4=4, Via1=5…）
 _LAYER_INDEX = {

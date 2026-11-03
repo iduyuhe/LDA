@@ -1830,7 +1830,7 @@ CORE_SMOKES: List[str] = [
     #   实测 <1s ⇒ timeout 120s 留足余量。
     "run_webui_pm_render_path_smoke.py",
     #   CI 门禁自身契约（棘轮时序 + 退出码契约 + cwd 相对路径 / printf 模板 / 注释数字守卫）：
-    #   24 判据（**含** 8 条突变探针 P1–P7 + F6）——组 A 棘轮时序 A1–A6 / 组 B 退出码契约 B1–B3 /
+    #   25 判据（**含** 8 条突变探针 P1–P7 + F6 续跑判据 + F7 异常终止跨平台判据）——组 A 棘轮时序 A1–A6 / 组 B 退出码契约 B1–B3 /
     #   组 C C1 `make_check` 拒 printf 模板 + C2 全仓 AST 扫 cwd 相对读法（不做白名单）/
     #   组 F 分档纪律 F1–F5（v0.9.360：快档真子集 / 排除集由台账驱动 / 快档耗时占比 <25% /
     #   完整 core 凭证与当前道数一致 / 凭证四形态反向探针 —— 把「发布前跑 full」变成判据）。
@@ -3695,6 +3695,22 @@ def _child_env() -> Dict[str, Any]:
     return env
 
 
+def _is_abnormal_exit(rc: int) -> bool:
+    """`rc` 是否表示**被外部强行终止**（而非脚本自己 `sys.exit(非0)`）。
+
+    🔴 必须同时认两套语义，否则这条判据在 Windows 上恒不触发：
+      · POSIX：被信号杀死 ⇒ `subprocess` 给**负** rc（-9 / -15 …）；
+      · Windows：`ExitProcess` 只带 32 位码，异常终止（Ctrl-C / 越界 / OOM / 栈溢出）
+        表现为 **NTSTATUS**，即 `rc >= 0xC0000000`（如 0xC000013A 控制台中断、
+        0xC0000005 访问违例、0xC0000017 内存不足）。
+    只看 `rc < 0` 是**在 Linux 上写的判据**，在本机（win32）永远不成立 —— 这类
+    「平台无关性假设」正是本项目反复踩的坑（同族：路径分隔符、换行、时钟精度）。
+    """
+    if rc < 0:
+        return True
+    return rc >= 0xC0000000
+
+
 def _run_one(python: str, script: str, timeout: float) -> Dict[str, Any]:
     t0 = time.perf_counter()
     try:
@@ -3704,13 +3720,25 @@ def _run_one(python: str, script: str, timeout: float) -> Dict[str, Any]:
         rc, out = p.returncode, (p.stdout or "") + (p.stderr or "")
         dt = time.perf_counter() - t0
         status = "PASS" if rc == 0 else "FAIL"
+        tail = "\n".join(out.strip().splitlines()[-4:])
         if rc != 0:
             has_skip_line = any(_SKIP_LINE_RE.match(ln) for ln in out.splitlines())
             has_fail_evidence = bool(_FAIL_EVIDENCE_RE.search(out))
             has_env_marker = any(m in out for m in _SKIP_ENV_MARKERS)
             if has_skip_line or (has_env_marker and not has_fail_evidence):
                 status = "SKIP"
-        tail = "\n".join(out.strip().splitlines()[-4:])
+            elif _is_abnormal_exit(rc):
+                # 🔴 v0.9.361 血案（run_coupler_band_smoke · 2026-11-03 全量）：
+                # 输出**完整**（末行 `ALL GREEN`，而这句话由 `ok` 派生，不可能与断言矛盾），
+                # 但 rc≠0。`subprocess` 只在**被信号杀死**时给负 rc ⇒ 外部硬杀
+                # （OOM/掉电/热保护/持续负载），**不是断言失败**。
+                # 旧口径仅把「rc≠0 **且零输出**」判 CRASH ⇒「有输出、末尾被杀」落进 FAIL，
+                # 等于把一次硬件抖动记成**物理判据回归** —— 本仓最危险的失真通道
+                # （同族血案：v0.9.10 把漏算 3.0103dB 当成物理结论）。
+                # 判据只认内核给的信号（负 rc），不猜文本。
+                status = "CRASH"
+                tail = (f"子进程被信号杀死（rc={rc}）—— 输出完整到末行仍为正常收尾。"
+                        f"多为外部硬杀(OOM/掉电/热保护)，非断言失败；请单独重跑该 smoke 复验。")
         if status not in ("PASS", "SKIP") and not out.strip():
             # 🔴 2026-09-06 血案：run_coupler_band_smoke 在持续负载下被硬杀
             # （136s 后 rc≠0 且零输出；单独重跑 267s ALL GREEN）。Python 重定向到
@@ -3834,7 +3862,8 @@ def run_ci_regression(python: Optional[str] = None, tag: str = "all",
         # 🔴 v0.9.360：**必须 flush**。此前 392 门跑 3 小时，日志文件长期 0 字节
         # （stdout 重定向是块缓冲，8KB 才吐一次）⇒ 整个回归是黑盒：看不到进度、
         # 无法判断「在跑」还是「卡死」。分档省时间，但**可观测性**不是奢侈品。
-        print(f"  [{r['status']:<6}] {r['script']}  ({r['elapsed_s']}s)", flush=True)
+        print(f"  [{r['status']:<6}] {r['script']}  ({r['elapsed_s']}s, rc={r.get('rc')})",
+              flush=True)
         # 🔴 CRASH 必须在内：新状态若漏进此元组 ⇒ 不计入失败 ⇒ 静默假绿。
         if r["status"] in _FAIL_STATUSES:
             # 故障可见性（2026-09-05 血案）：非 PASS 项必须当场打印子进程 tail，

@@ -565,6 +565,28 @@ def main() -> int:
           all(ok == want for _, ok, want in _f6),
           "p6=%s" % [(n, ok, w) for n, ok, w in _f6 if ok != w])
 
+    # ── F7 异常终止的**跨平台**判据（v0.9.361 · run_coupler_band_smoke 血案）──
+    # 血案：该门禁在持续负载下「输出完整到末行 ALL GREEN，但 rc≠0」，旧口径只把
+    # 「rc≠0 且**零输出**」判 CRASH ⇒ 落进 FAIL ⇒ 一次硬件抖动被记成物理判据回归。
+    # 🔴 Windows 上 `ExitProcess` 只带 32 位码，异常终止是 **NTSTATUS**（≥0xC0000000），
+    # 而 POSIX 是**负** rc ⇒ 只看 `rc < 0` 在本机恒不触发（平台无关性假设的坑）。
+    # 这里直接机核纯判据：四类取值必须各自落到正确一侧。
+    _rc_cases = [
+        (0, False, "正常退出"),
+        (1, False, "脚本自己 sys.exit(1)"),
+        (-9, True, "POSIX SIGKILL"),
+        (-15, True, "POSIX SIGTERM"),
+        (0xC000013A, True, "Windows 控制台中断"),
+        (0xC0000005, True, "Windows 访问违例"),
+    ]
+    _f7 = [(nm, R._is_abnormal_exit(v), want) for v, want, nm in _rc_cases]
+    check("F7 异常终止判据跨平台（%s）—— 负 rc 与 NTSTATUS 皆属「被外部杀」，"
+          "不得与断言失败混为一谈"
+          % " / ".join("%s=%s" % (nm, "OK" if got == want else "错")
+                       for nm, got, want in _f7),
+          all(got == want for _, got, want in _f7),
+          "p7=%s" % [(nm, got, w) for nm, got, w in _f7 if got != w])
+
     print()
     return 0 if (globals().get("PASS", 0) and not globals().get("FAIL", 0)) else 1
 

@@ -1359,6 +1359,28 @@ CORE_SMOKES: List[str] = [
     # ③ 零数据丢失不变量（3 cell/8 pin/4 timing/1 template 守恒）+ to_model 适配器（极性/cap_ff pf→ff/
     # NLDM 表）。纯标准库 · 实测上界 <1s。CI core 393→394。
     "run_ecore_s2_smoke.py",
+    # 🔴 S3 LEF 子集解析器门禁（B2/S3 · 几何落地）：把公开 PDK 的 `.lef` 库几何（MACRO 的 PORT/OBS
+    # 矩形、SIZE）逐字段读进 S1 统一模型 CellView。守四件：① 字节级往返双射（serialize(reparse(
+    # serialize))==serialize）+ 幂等 ② 零数据丢失不变量（2 macro/5 pin/6 rect/9 顶层语句 守恒）
+    # ③ 未知语法必报错（未闭合/顶层非LIBRARY END/缺;/END名错配/RECT参数量错或反向/SIZE格式错 带行号）
+    # ④ to_model 适配器精确几何反向探针。纯标准库 · 实测上界 <30s。CI core +4（S3 数字子集）。
+    "run_ecore_s3_smoke.py",
+    # 🔴 S4 结构级 Verilog 子集解析器门禁（B2/S3 · 门级网表入口）：把 ISCAS/EPFL 门级网表读进
+    # dsynth.Netlist（与 drtl RTL 子集分工，汇合点同为 dsynth.Netlist）。守四件：① 字节级往返双射
+    # （门按名排序吐回）+ 幂等 ② 零数据丢失不变量（门实例/网名集合守恒）③ 未知语法必报错（未闭合/
+    # 非法原语/升序向量/输出当输入/缺; 带位置）④ to_model 适配器 + 链路咬合（parse 输出被 dplac.place
+    # 直接消费）。纯标准库 · 实测上界 <30s。
+    "run_ecore_s4_smoke.py",
+    # 🔴 S5 DEF 子集解析器门禁（B2/S3 · 布局布线结果）：引用 LEF MACRO 名的「一次具体布局布线」结果
+    # 读进 S1 Layout（实例落点 + 布线走线 → Rect）。守四件：① 字节级往返双射（实例/网按名排序）+ 幂等
+    # ② 零数据丢失不变量（实例/网/终端/落点守恒）③ 未知语法必报错（未闭合/缺朝向/未声明MACRO/坐标错
+    # 带位置）④ to_model 适配器（实例几何逐字来自 LEF）。纯标准库 · 实测上界 <30s。
+    "run_ecore_s5_smoke.py",
+    # 🔴 B3 数字链干线门禁（S3→B3）：把 S3 结构级 Verilog 子集直接喂进现状数字链（dverilog.parse →
+    # dsynth.Netlist → dplac.place → ddetail.detail_route → ddrc_lvs），跑通 ISCAS-85 c17，每段显式断言
+    # 「吃的是上一段的输出」（place 覆盖每颗门 / route 覆盖每条网 / drc-lvs 如实报告，claimable=False
+    # 不伪造 clean）。fail-closed：空输入直接报错。纯标准库 · 实测上界 <120s。
+    "run_ecore_s6_smoke.py",
     # 🔴 电子计算芯片案例卡 WebUI 门禁（E 征程收官 · D-155）：守 /api/ecore_demo 只读案例卡的诚实边界
     # （verdict 恒 DESIGN_VERIFIED / 不报 fabricated 能效 TOPS-TOPS-W / 规模按「可建模可验证容量」解读 /
     # landmark 仅背景坐标），跨源一致性（模块↔API 参考↔routes），含突变探针（破坏诚实边界/清空 landmark
@@ -3309,6 +3331,14 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_capability_guard_smoke.py": 300.0,
     # S2 Liberty 子集解析器门禁（D-248 · B2/S2）· 实测上界 <1s（@本机）
     "run_ecore_s2_smoke.py": 120.0,
+    # S3 LEF 子集解析器门禁（B2/S3 · 几何落地）· 实测上界 <30s（@本机）
+    "run_ecore_s3_smoke.py": 120.0,
+    # S4 结构级 Verilog 子集解析器门禁（B2/S3 · 门级网表入口）· 实测上界 <30s（@本机）
+    "run_ecore_s4_smoke.py": 120.0,
+    # S5 DEF 子集解析器门禁（B2/S3 · 布局布线结果）· 实测上界 <30s（@本机）
+    "run_ecore_s5_smoke.py": 120.0,
+    # B3 数字链干线门禁（S3→B3 · c17 端到端）· 实测上界 <120s（@本机）
+    "run_ecore_s6_smoke.py": 120.0,
     # E 征程收官 · 电子计算芯片案例卡 WebUI 门禁（D-155）· 实测上界 0.1s（单测）
     "run_ecore_case_smoke.py": 300.0,
     # E6 电子计算征程版图与几何签核门禁（D-156）· 实测上界 0.36s（3 轮 max · @本机）

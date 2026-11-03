@@ -36,6 +36,36 @@ from .dliberty import (
     serialize_liberty,
     to_model,
 )
+from .dlef import (
+    DLEF_DISCLOSURE,
+    LefItem,
+    LefLibrary,
+    LefSyntaxError,
+    SAMPLE_LEF,
+    parse_lef,
+    parse_lef_file,
+    serialize_lef,
+    to_model as lef_to_model,
+)
+from .dverilog import (
+    PHYSICALLY_MODELED,
+    SAMPLE_VERILOG,
+    VerilogSyntaxError as VerilogSyntaxError,
+    parse as parse_verilog,
+    serialize as serialize_verilog,
+    to_model as verilog_to_model,
+    to_netlist,
+)
+from .ddef import (
+    DDEF_DISCLOSURE,
+    DefDesign,
+    DefSyntaxError,
+    SAMPLE_DEF,
+    parse_def,
+    parse_def_file,
+    serialize_def,
+    to_model as def_to_model,
+)
 from .mna import Circuit
 from .mvm_datapath import (
     MVM_DATAPATH_DISCLOSURE,
@@ -321,6 +351,33 @@ __all__ = [
     "parse_liberty_file",
     "serialize_liberty",
     "to_model",
+    # S3 LEF 子集解析器（B2/S3 · 几何在 LEF 落地）
+    "DLEF_DISCLOSURE",
+    "LefItem",
+    "LefLibrary",
+    "LefSyntaxError",
+    "SAMPLE_LEF",
+    "parse_lef",
+    "parse_lef_file",
+    "serialize_lef",
+    "lef_to_model",
+    # S3 结构级 Verilog 子集解析器（B2/S3 · 门级网表入口 → dsynth.Netlist）
+    "PHYSICALLY_MODELED",
+    "SAMPLE_VERILOG",
+    "VerilogSyntaxError",
+    "parse_verilog",
+    "serialize_verilog",
+    "verilog_to_model",
+    "to_netlist",
+    # S3 DEF 子集解析器（B2/S3 · 布局布线结果 · 引用 LEF MACRO 名 → S1 Layout）
+    "DDEF_DISCLOSURE",
+    "DefDesign",
+    "DefSyntaxError",
+    "SAMPLE_DEF",
+    "parse_def",
+    "parse_def_file",
+    "serialize_def",
+    "def_to_model",
     "ELayer",
     "ELayerStack",
     "DEFAULT_CMOS_STACK",

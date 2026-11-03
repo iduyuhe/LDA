@@ -1042,6 +1042,37 @@ ECORE_CAPABILITY_MANIFEST = [
         "introduced_by": "D-248 (S2)",
         "guard": "run_ecore_s2_smoke.py",
     },
+    {
+        "capability": "S3 LEF 子集解析器（B2/S3 · 几何落地）：把公开 PDK 的 .lef 库几何（MACRO 的 PORT/OBS 矩形、SIZE）逐字段读进 S1 统一模型 CellView（尺寸 DATABASE MICRONS 换算成 nm 整数）。递归下降 + 括号内容逐字符保留（args_raw/raw）⇒ parse→serialize→re-parse 字节级往返双射 + 幂等；零数据丢失不变量（2 macro/5 pin/6 rect/9 顶层语句守恒）；未知语法必报错（未闭合块/顶层非LIBRARY END/语句缺;/END名错配/RECT参数量错或反向/SIZE格式错 带行号）；to_model 精确几何反向探针。不求值不建模；DEF(S3后半)引用本模块 MACRO 名；OpenROAD 仅可选读回不当 golden；非 foundry PDK；C 级自主纯标准库、LLM 不进判决路径。",
+        "module": "lda_l2.ecore.dlef",
+        "symbols": ["DLEF_DISCLOSURE", "LefItem", "LefLibrary", "LefSyntaxError",
+                    "SAMPLE_LEF", "parse_lef", "parse_lef_file", "serialize_lef", "to_model"],
+        "introduced_by": "S3 LEF",
+        "guard": "run_ecore_s3_smoke.py",
+    },
+    {
+        "capability": "S4 结构级 Verilog 子集解析器（B2/S3 · 门级网表入口）：把 ISCAS/EPFL 这类已综合好的结构网表（nand g(y,a,b) 门实例）读进 dsynth.Netlist（与 drtl RTL 子集分工，汇合点同为 dsynth.Netlist），让 B3 干线 place→route→drc 能直接吃上一段输出。字节级往返双射（门按名排序吐回）+ 幂等；零数据丢失不变量（门实例/网名集合守恒）；未知语法必报错（未闭合/非法原语/升序向量/输出当输入/缺; 带位置）；多比特端口拆位（LSB first）+ 位选门引用；to_model→S1 Layout（坐标留 0，几何在布局阶段）；PHYSICALLY_MODELED={INV,NAND2}（其余原语物理链诚实跳过）。不综合不求值；非 foundry PDK；C 级自主纯标准库、LLM 不进判决路径。",
+        "module": "lda_l2.ecore.dverilog",
+        "symbols": ["PHYSICALLY_MODELED", "SAMPLE_VERILOG", "VerilogSyntaxError",
+                    "parse", "serialize", "to_model", "to_netlist"],
+        "introduced_by": "S3 Verilog",
+        "guard": "run_ecore_s4_smoke.py",
+    },
+    {
+        "capability": "S5 DEF 子集解析器（B2/S3 · 布局布线结果）：把引用 LEF MACRO 名的「一次具体布局布线」结果（DESIGN/COMPONENTS 落点/NETS 走线）读进 S1 Layout。递归下降解析 + canonical 重写 ⇒ 字节级往返双射（实例/网按名排序）+ 幂等；零数据丢失不变量（实例/网/终端/落点守恒）；未知语法必报错（未闭合/缺朝向/未声明MACRO/坐标错 带位置）；to_model 需 LEF 库解析 MACRO 真实 w/h 与端口几何。OpenROAD 仅可选读回不当 golden；非 foundry PDK；C 级自主纯标准库、LLM 不进判决路径。",
+        "module": "lda_l2.ecore.ddef",
+        "symbols": ["DDEF_DISCLOSURE", "DefDesign", "DefSyntaxError",
+                    "SAMPLE_DEF", "parse_def", "parse_def_file", "serialize_def", "to_model"],
+        "introduced_by": "S3 DEF",
+        "guard": "run_ecore_s5_smoke.py",
+    },
+    {
+        "capability": "B3 数字链干线（S3→B3）：把 S3 结构级 Verilog 子集直接喂进现状数字链 dverilog.parse→dsynth.Netlist→dplac.place→ddetail.detail_route→ddrc_lvs，跑通 ISCAS-85 c17，并每段显式断言「吃的是上一段的输出」（place 覆盖每颗门 / route 覆盖每条网 / drc-lvs 如实报告 claimable=False 不伪造 clean）。fail-closed：空输入直接报错；ddetail 路由器 claimable=False 为已知诚实边界（c17 实测 101 DRC 违规）；几何/时序为模型假设；非 foundry PDK；C 级自主纯标准库、LLM 不进判决路径。",
+        "module": "lda_l2.ecore.db3_trunk",
+        "symbols": ["run_trunk", "run_trunk_from_verilog"],
+        "introduced_by": "B3 trunk",
+        "guard": "run_ecore_s6_smoke.py",
+    },
 ]
 
 

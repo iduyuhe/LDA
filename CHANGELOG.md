@@ -25,6 +25,26 @@
 - `timeout_budget_baseline.json` 并入 4 行实测（`core_smokes_at_measurement` 394→398），`run_timeout_budget_ratchet_smoke` 复跑 **21 PASS / 0 FAIL**。
 - 版本四处同步 `0.9.362→0.9.363`（`pyproject.toml` / `lda/reports/k0_audit.json` / `README.md` / `CONTRIBUTING.md`）。
 
+### ④ 门禁自身缺陷修复：`_W10_EXTRA` 只增不减 ⇒ 单门禁 400s+ 跑不完
+
+版本同步时发现 `run_webui_pm_render_path_smoke` **跑不完**（日志恒 0 字节 + 4 分钟无输出）。
+根因**不是**子进程卡死：它的对照面 `_W10_EXTRA` **按版本只追加不清理**（累积 **77 条**、含重复项），
+每条都要跑一次完整子进程；而 W10 只读 README「**当前**版本」行声明的门禁 ⇒ 其余历史条目
+**只白跑、零守卫价值**。实测该门禁 400s+（预算 1000s；按棘轮「≥3× 余量」口径真实余量已跌破 3×，
+属「耗时不随成员增长同步标定」同族）。
+
+修法（根因，非抬预算）：
+
+- `_W10_EXTRA` 收窄为**本版当前行真正声明的 4 条**（s3–s6，各 0.25s），并写明纪律
+  「仅当 README 当前版本行以**规范形**声明某门禁时才加入；版本下线同批移除」。历史条目可经
+  `git show 上一提交:lda/run_webui_pm_render_path_smoke.py` 追溯（未删信息，仅下线冗余）。
+- 🔴 **顺带修一处必红**：README 当前版本行原写合并式 `` `run_ecore_s3/s4/s5/s6_smoke` **25+20+18+7=70 判据** ``，
+  而 W10b 正则只认 `` `run_x` **N 判据 `` 规范形 ⇒ 条目为空 ⇒ **W10b 必红**。改为四条独立声明
+  （`run_ecore_s3_smoke` **25 判据** · `run_ecore_s4_smoke` **20 判据** · `run_ecore_s5_smoke` **18 判据** ·
+  `run_ecore_s6_smoke` **7 判据**）。
+
+实测：**42s（原 400s+）· 29 PASS / 0 FAIL** · W10 漂移=无 · W10b 条目=4 条 · W10-P1 三改必红仍在。
+
 ### 诚实边界
 
 **不综合不求值** · 几何在布局阶段（Verilog 子集只到门级连接）· **非 foundry PDK**（规则集自建教科书尺度）· `ddetail` 路由器 **`claimable=False`**（c17 实测 101 DRC + 183 LVS 违规为已知限制，如实报告不伪造 clean）· OpenROAD 读回为**可选**、不当 golden · LLM 不进判决路径。

@@ -56,6 +56,8 @@ HONEST_NOTES = (
     "单元库为教科书尺度、非 foundry PDK；不改称任何制造/性能结论。",
     "不报 TOPS / TOPS-W / fJ/op；不宣称与 OpenROAD/OpenSTA 等外部工具一致。",
     "DEF 引脚名为 LDA 约定（输出记 z），宏名为 netlist 单元名，非库真名。",
+    "B4 差异表的参考列是 unavailable（本机无 OpenROAD/OpenSTA）⇒ evidence_level "
+    "只到 SELF_CONSISTENCY_ONLY，不构成与外部工具一致的证据。",
 )
 
 _LOCK = threading.Lock()
@@ -90,15 +92,52 @@ def digest(card: Dict[str, Any]) -> str:
     return hashlib.sha256(_canonical(body).encode("utf-8")).hexdigest()
 
 
+def _xcheck_facts(X, table: Dict[str, Any]) -> Dict[str, Any]:
+    """把 B4 差异表压成卡片可承载的形状（**逐行保留三态与归因，不压扁、不改写**）。"""
+    rows = []
+    for r in table.get("rows") or []:
+        rows.append({
+            "metric": r.get("metric"),
+            "unit": r.get("unit"),
+            "lda_value": (r.get("lda") or {}).get("value"),
+            "lda_source": (r.get("lda") or {}).get("source"),
+            "reference_status": (r.get("reference") or {}).get("status"),
+            "reference_tool": (r.get("reference") or {}).get("tool"),
+            "baseline_used": r.get("baseline_used"),
+            "delta": r.get("delta"),
+            "exceeds": r.get("exceeds"),          # 🔴 true / false / null 三态，原样保留
+            "evidence_level": r.get("evidence_level"),
+            "attribution_code": (r.get("attribution") or {}).get("code"),
+        })
+    codes = {r["attribution_code"] for r in rows}
+    known = set(getattr(X, "ATTRIBUTION_CODES", ()) or ())
+    meta = table.get("meta") or {}
+    return {
+        "schema": table.get("schema"),
+        "digest_sha256": X.digest(table),
+        "claimable": bool(meta.get("claimable", False)),
+        "claimable_reason": meta.get("claimable_reason"),
+        "reference_available": bool(meta.get("reference_available", False)),
+        "n_rows": len(rows),
+        "rows": rows,
+        # 机核用：归因码是否都落在闭式词表内 / dxcheck 自己的表校验是否零问题
+        "attribution_codes_ok": bool(codes) and codes <= known,
+        "table_problems": list(X.validate_table(table) or []),
+    }
+
+
 def _compute() -> Dict[str, Any]:
-    """跑一次干线，抽成纯数据事实（**只搬运真值，不做二次推断**）。"""
+    """跑一次干线 + 一次 B4 对拍，抽成纯数据事实（**只搬运真值，不做二次推断**）。"""
     import time
 
     from lda_l2.ecore import db3_trunk as T
     from lda_l2.ecore import dverilog as V
+    from lda_l2.ecore import dxcheck as X
 
     t0 = time.perf_counter()
-    report = T.run_trunk(V.parse(V.SAMPLE_VERILOG))
+    nl = V.parse(V.SAMPLE_VERILOG)          # 🔴 只解析一次，干线与对拍共用同一 netlist
+    report = T.run_trunk(nl)
+    table = X.xcheck(nl, subject="c17")
     ms = (time.perf_counter() - t0) * 1000.0
 
     st = {name: payload for name, payload in report["stages"]}
@@ -151,6 +190,7 @@ def _compute() -> Dict[str, Any]:
         },
         "conservation_ok": bool(report.get("conservation_ok")),
         "problems": list(report.get("problems") or []),
+        "xcheck": _xcheck_facts(X, table),
         "segments_covered": list(SEGMENTS_COVERED),
         "segments_missing": list(SEGMENTS_MISSING),
         "synthesized": False,
@@ -189,6 +229,7 @@ def case_card() -> Dict[str, Any]:
         "def_export": f["def_export"],
         "conservation_ok": f["conservation_ok"],
         "problems": f["problems"],
+        "xcheck": f["xcheck"],
         "segments_covered": f["segments_covered"],
         "segments_missing": f["segments_missing"],
         "synthesized": f["synthesized"],
@@ -239,6 +280,37 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
         bad.append("有违规但分规则计数为空 —— 记账不完整")
     if card.get("conservation_ok") is not True:
         bad.append("干线守恒断言未通过 —— 不能对外声称「跑通」")
+
+    # ── B4 差异表（对拍对外可见）：三态、归因、证据等级三条都不能软 ──────────
+    xc = card.get("xcheck") or {}
+    rows = xc.get("rows") or []
+    if not rows:
+        bad.append("xcheck 行为空 —— 对拍结果不得静默缺失")
+    if not xc.get("attribution_codes_ok"):
+        bad.append("归因码不在闭式词表内（P5：归因必须可枚举、非空）")
+    if xc.get("table_problems"):
+        bad.append("dxcheck 表校验有问题：%r" % (xc.get("table_problems"),))
+    # 三态纪律：exceeds 只许 true/false/null；值为 None 时**不许**报「未超界」
+    for r in rows:
+        _m, _ex = r.get("metric"), r.get("exceeds")
+        if _ex not in (True, False, None):
+            bad.append("%s: exceeds 非法取值 %r（只允许三态）" % (_m, _ex))
+        if r.get("lda_value") is None and _ex is False:
+            bad.append("%s: 值为 None 却报「未超界」—— 把「测不了」压扁成「没问题」" % _m)
+    # 🔴 以**卡片级** `reference_available` 反推逐行状态：参考工具缺席时，任何一行都不许
+    #    自称 measured / EXTERNAL_CROSSCHECK —— 否则就是「本机没跑过，却对外说跑过」。
+    #    （反过来 reference_available=True（装了 OpenROAD 的机器）不在此处判红：那是
+    #      真实更强的证据，不该被本规则误伤。）
+    _avail = xc.get("reference_available")
+    if _avail is False:
+        for r in rows:
+            m = r.get("metric")
+            if r.get("reference_status") != "unavailable":
+                bad.append("%s: 参考工具缺席却报 reference_status=%r（虚报外部对拍）"
+                           % (m, r.get("reference_status")))
+            if r.get("evidence_level") != "SELF_CONSISTENCY_ONLY":
+                bad.append("%s: 参考未实测却把证据等级报成 %r" % (m, r.get("evidence_level")))
+
     # 文字层面禁止签核/流片类宣称（防「披露写了一堆，结论仍吹」）
     claim = str(card.get("claim") or "")
     for bad_word in ("签核通过", "流片验证", "silicon proven", "signoff clean"):

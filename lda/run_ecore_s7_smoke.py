@@ -26,6 +26,10 @@
   X18 **WNS 语义**：`wns == target − t_clk_min`（逐值），t_clk_min 落在 (0, 1000) ps。
   X19 **fail-closed**：空表 / 未知归因码 ⇒ 抛 `CrossCheckError`。
   X20 **诚实披露**：`claimable=False`。
+  X22–X24 **对外可见**：差异表进 `/api/digital_demo` 卡片（此前 `dxcheck` **只有自己的
+        门禁在调它**）—— 卡片逐行 6 字段 + digest 必须 == 门禁**独立重跑**的真值；
+        三态对外**不压扁**；反向两向必红（把 `null` 改成 `false` / 参考没跑却报
+        `EXTERNAL_CROSSCHECK`）。
 
 诚实边界
 ────────
@@ -276,6 +280,53 @@ def main() -> int:
           and all(k in d for k in ("p3", "p5", "golden", "determinism")),
           "keys=%r" % sorted(d))
 
+    # ── X22–X24 对外可见：差异表进案例卡（B4 不再只有门禁在看）────────────
+    #   🔴 补的是真缺口：`dxcheck` 此前**只有自己的门禁在调它**（R3 债务「差异表进只读
+    #      facts，让对拍对外可见」）。现在 `/api/digital_demo` 的卡片承载它。
+    from lda_webui import digital_case as DC                  # noqa: E402
+
+    DC.clear_cache()
+    card = DC.case_card()
+    xc = card["xcheck"]
+
+    _tbl2 = X.xcheck(V.parse(V.SAMPLE_VERILOG), subject="c17")
+    _rows2 = [{"metric": r["metric"],
+               "lda_value": r["lda"]["value"],
+               "reference_status": r["reference"]["status"],
+               "exceeds": r["exceeds"],
+               "evidence_level": r["evidence_level"],
+               "attribution_code": r["attribution"]["code"]} for r in _tbl2["rows"]]
+    _rows_card = [{k: r[k] for k in ("metric", "lda_value", "reference_status",
+                                    "exceeds", "evidence_level", "attribution_code")}
+                  for r in xc["rows"]]
+    check("X22 卡片差异表 == 独立重跑 dxcheck 的真值（逐行 6 字段 + digest）—— "
+          "**不信卡片自述**",
+          _rows_card == _rows2 and xc["digest_sha256"] == X.digest(_tbl2)
+          and xc["n_rows"] == len(_tbl2["rows"]),
+          "卡片=%r 真值=%r" % (_rows_card, _rows2))
+    check("X23 三态对外**不压扁**：WNS 行 lda_value=None ⇒ exceeds 必须 None；"
+          "参考未实测 ⇒ 每行 evidence_level == SELF_CONSISTENCY_ONLY",
+          all((r["exceeds"] is None) if r["lda_value"] is None else True
+              for r in xc["rows"])
+          and any(r["metric"] == "wns_ps" and r["exceeds"] is None for r in xc["rows"])
+          and all(r["evidence_level"] == "SELF_CONSISTENCY_ONLY" for r in xc["rows"]),
+          "rows=%r" % ([r["exceeds"] for r in xc["rows"]],))
+
+    # 反向探针：把三态压扁 / 把参考冒充成实测 ⇒ 卡片自检必红
+    _flat = copy.deepcopy(card)
+    for _r in _flat["xcheck"]["rows"]:
+        if _r["exceeds"] is None:
+            _r["exceeds"] = False
+    _fake = copy.deepcopy(card)
+    for _r in _fake["xcheck"]["rows"]:
+        _r["reference_status"] = "measured"
+        _r["evidence_level"] = "EXTERNAL_CROSSCHECK"
+    check("X24 反向两向必红：① 把 WNS 的 None 压扁成 false ⇒ 自检报「压扁」；"
+          "② 参考 unavailable 却报 EXTERNAL_CROSSCHECK ⇒ 自检报证据等级不实",
+          any("压扁" in p for p in DC.selfcheck(_flat))
+          and any("证据等级" in p for p in DC.selfcheck(_fake)),
+          "flat=%r fake=%r" % (DC.selfcheck(_flat)[:2], DC.selfcheck(_fake)[:2]))
+
     # ── X21 自入 CI core ───────────────────────────────────────────────
     with open(os.path.join(_HERE, "run_ci_regression.py"), encoding="utf-8") as fh:
         ck = fh.read()
@@ -291,6 +342,7 @@ def main() -> int:
     if _FALS:
         print("S7 有红色：%s" % ", ".join(_FALS))
         return 1
+    print("  [X22–X24] 对外可见：/api/digital_demo 卡片承载差异表（逐行对拍 · 三态不压扁 · 两向可判红）")
     print("S7 全绿 · B4 对拍框架落地：逐项差异表（面积/线长/WNS）+ 闭式归因词表 + "
           "三态纪律 + 跨进程可复现（参考工具缺席时只到同定义自检，不冒充外部对拍）")
     return 0

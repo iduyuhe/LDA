@@ -1,5 +1,64 @@
 # Changelog
 
+## v0.9.369（2026-11-04 · **S6 收官：差异表进对外卡片，R3 债务清零** · 净增 0 锚 · CI core **400**）
+
+### 一句话
+
+把 B4 的逐项差异表搬进 `/api/digital_demo` 卡片的 `xcheck` 段——`dxcheck` 从此有了
+**非门禁消费者**，R3 债务表清零（6/6）。同时**三态纪律升格为对外约定**：`null` 不许被
+压扁成 `false`，没跑过的参考不许自称 `measured`。
+
+### ① 卡片新增 `xcheck` 段
+
+| 字段 | 值 |
+|---|---|
+| 表 schema / digest | `lda.b4_diff_table/1` · **`1a726905…`**（两次调用稳定） |
+| 行数 | **3**（`area_um2` / `hpwl_um` / `wns_ps`） |
+| 面积 | **0.88 µm²**（闭式 Σ 单元面积 · `WITHIN_BAND_NO_CAUSE`） |
+| 线长 | **0.45 µm**（闭式中心矩） |
+| WNS | **`null`** + `exceeds=null` + `NO_CLOCK_DOMAIN`（c17 纯组合，无时钟域） |
+| 参考 | 3 行全 `unavailable`（本机无 openroad/opensta）· `evidence_level=SELF_CONSISTENCY_ONLY` |
+| 披露 | `claimable=False` + `claimable_reason` 原文 |
+
+### ② 三态与证据等级：对外也生效，不只是门禁内部
+
+- `lda_value is None` ⇒ `exceeds` **必须** `null`；压扁成 `false` ⇒ 自检报
+  「把『测不了』压扁成『没问题』」。
+- `reference_available is False` ⇒ 逐行 `reference_status` 必须 `unavailable`、
+  `evidence_level` 必须 `SELF_CONSISTENCY_ONLY`；自称 `measured` / `EXTERNAL_CROSSCHECK`
+  ⇒ 必红（**本机没跑过，不许对外说跑过**）。
+- 归因码必须落在 `dxcheck.ATTRIBUTION_CODES` 闭式词表内（P5：判决权不出让）。
+
+🔴 **本轮改判据时抓到自己一处放行漏洞**：原写法是「参考没标 `measured` 才查证据等级」——
+只要把行标成 `measured` 就绕过了。改为**以卡片级 `reference_available` 反推逐行状态**
+（反向约束），并由 X24 两向探针守住（压扁 / 虚报各一次）。
+
+### ③ R3 债务清零
+
+| 新模块 | 全仓消费者 |
+|---|---|
+| `dliberty` | `lda_l2/ecore/dsta.py` |
+| `dlef` | `lda_l2/ecore/ddef.py` |
+| `dverilog` | `db3_trunk.py` · `lda_webui/digital_case.py` |
+| `ddef` | `db3_trunk.py` |
+| `db3_trunk` | `lda_webui/digital_case.py` |
+| **`dxcheck`** | **`lda_webui/digital_case.py`（本版）** |
+
+`R3_DEBT = {}`，并写明：**空表不是「没事可做」，是一出生没消费者就判红**（M7）。
+🔴 **R1 仍不动**（28/78 = 35.9%）：新消费者都在 webui、不在 ecore 包内 —— 换口径不冒充指标变好。
+
+### ④ 门禁
+
+- `run_ecore_s7_smoke` **23 → 26 判据**：X22 卡片逐行 6 字段 + digest == 门禁**独立重跑**真值；
+  X23 三态不压扁 + 逐行证据等级；X24 反向两向必红。
+- `run_ecore_reuse_metrics_smoke` **18 判据**（债务清零，阈值不变）。
+
+### 诚实边界
+
+参考列**全部** `unavailable`：本版证明的是「对拍框架 + 同定义自检对外可见」，
+**不**证明与 OpenROAD/OpenSTA 一致。面积/线长 golden 与平台实现**同定义**
+（`independent=False`）；不做 P&R、不做 STA 本身；非 foundry PDK；不报 TOPS/TOPS-W/fJ/op。
+
 ## v0.9.368（2026-11-04 · **S6 第三步：B3 干线接对外入口 + 修掉「按定义还不掉的债」** · 净增 0 锚 · CI core **400**）
 
 ### 一句话

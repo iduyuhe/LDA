@@ -222,9 +222,9 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {
 #:   （`` `run_x` **N 判据 ``）声明某门禁时，才把它加入本表；版本下线时请同批移除。
 #:   不变式（W10b 机核）：当前行里每个 `run_x` **N 判据 都必须能在 `_counts10` 内查到。
 _W10_EXTRA = (
-              # v0.9.368：S6 第三步 干线接对外入口（s6 判据 11→17，实测 ~0.02s）
-              "run_ecore_s6_smoke.py",
-              # v0.9.368：R3 全仓消费者口径（reuse 判据 15→18，实测 ~1.1s）
+              # v0.9.369：S6 收官 差异表进卡片（s7 判据 23→26，实测 ~0.6s）
+              "run_ecore_s7_smoke.py",
+              # v0.9.369：R3 债务清零（reuse 判据 18 不变，实测 ~1.2s）
               "run_ecore_reuse_metrics_smoke.py",
               )
 

@@ -106,9 +106,9 @@ TOPLEVEL_ALLOW = {
 
 #: 🔴 R3 冻结债务表：本阶段新增但尚无「非门禁」下游的模块。
 #: 契约 = **精确相等**：债务缩小了必须同步删表（强制收口）；债务变大必红。
-R3_DEBT = {
-    "dxcheck": ("S6", "差异表进 /api/ecore_demo 的只读 facts，让对拍对外可见"),
-}
+#: 🔴 空表 = **6/6 全部接回**。空表不是「没事可做」，是棘轮已收紧到零欠债：
+#:   任何新模块一出生没消费者，M7 立刻判红（不是「先记债以后还」）。
+R3_DEBT = {}
 
 #: 本阶段新增模块（R3 的对象）。必须都真实存在（防拼错 ⇒ 判据空转）。
 NEW_MODULES = ("dliberty", "dlef", "dverilog", "ddef", "db3_trunk", "dxcheck")
@@ -436,7 +436,7 @@ def main() -> int:
           % (M["median"], M["mean"], M["ge3"], M["ge3_pct"]))
     print("  R3 新模块 %d 个 · 已接回 %d · 债务 %d 条（%s）"
           % (len(NEW_MODULES), len(NEW_MODULES) - len(missing), len(R3_DEBT),
-             ", ".join("%s(→%s)" % (k, v[0]) for k, v in sorted(R3_DEBT.items()))))
+             ", ".join("%s(→%s)" % (k, v[0]) for k, v in sorted(R3_DEBT.items())) or "无"))
     for _m in NEW_MODULES:
         print("      %-10s ← %s" % (_m, ", ".join(cons.get(_m) or ["（无消费者 · 欠债）"])))
     print("")

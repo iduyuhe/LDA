@@ -693,4 +693,34 @@ ECORE_DISCLOSURE: dict = {
     "honest_boundary": "电路级设计验证引擎，非签核级 SPICE（无温度/噪声/稀疏矩阵/收敛增强）；"
                        "晶体管参数为公开典型量级占位，非 PDK 标定，无实测锚 ⇒ 不宣称器件性能。",
     "not_oracle": "golden 均为闭式物理律（分压/平方律/一阶 RC）；不引入任何外部 ORACLE。",
+
+    # ── S 段（基础复用阶段：统一数据模型 / 格式层 / 干线 / 对拍）──────────
+    #   口径以 docs/PLAN_foundation_2026-11.md 为准，修订见该文「修订记录」。
+    "s1_scope": "S1 统一数据模型（B1）：`lda_l2/model.py` 六类对象（Rect/Pin/TimingArc/CellView/"
+                "Instance/Net/Layout）+ 适配器；**既有模块零改动**（用适配器，不改实现）。"
+                "三条纪律写进字段：单位进字段名（_nm/_ff/_ps）、长度必须 nm 整数（70.0 归一、"
+                "70.5 报错）、保留全量几何（不只留引脚）。**不是** Liberty/LEF 解析器，不含算法，"
+                "不取代 dcells.Cell。",
+    "s2_scope": "S2 Liberty 子集（B2 之一）：`dliberty.py` 纯标准库递归下降，属性/括号值/组三态全覆盖，"
+                "byte-faithful 往返（`serialize(reparse(serialize))==serialize`），未知语法带行号 "
+                "fail-closed；`to_model` 做单位换算与 NLDM 表维度对齐。**不求值、不建模、不做 STA**；"
+                "读入的公开 .lib 只作**可核输入**，不当 golden 判决源（自主红线 P1 角色位）。",
+    "s3_scope": "S3 格式层之几何/网表三件套（B2 之三）+ 干线骨架（B3）：`dlef.py`（LEF 5.8 子集 · "
+                "MACRO 几何逐字段读入 CellView）、`ddef.py`（DEF 5.8 子集 · COMPONENTS/NETS+ROUTED → "
+                "Layout · 实例几何逐字来自 LEF）、`dverilog.py`（结构级 Verilog 子集 · 门级网表 → "
+                "`dsynth.Netlist` · 多比特端口拆位 + 位选引用）。三者均字节级往返双射 + 未知语法带位置 "
+                "fail-closed。🔴 **诚实边界**：**外部读回（OpenROAD 能读回 LEF/DEF）从未验证** —— "
+                "运行环境无 Linux 运行时，门禁对该项 SKIP；因此只可称「格式合规 + 自解析可逆」，"
+                "**不可**称与商业/开源工具互通。",
+    "s4_scope": "S4 端到端干线（B3）+ 对拍框架（B4）。🔴 **B3 口径（2026-11-04 澄清）**：干线"
+                "`db3_trunk` 的**入口是门级网表，不包含综合**（`综合` 不在本阶段范围，属未做项而非隐去项）；"
+                "已串 5 段：`dverilog.parse → dsynth.Netlist → dplac.place → ddetail.detail_route → "
+                "ddrc_lvs.run_drc/run_lvs`，每段显式断言「吃的是上一段的输出」。**尚未串的 3 段**："
+                "时序（`dsta` 未接入，且无寄生 ⇒ 即使接也是零线延时）、**DEF 写出**（缺 "
+                "`Placement→DefDesign` 适配器）、以及综合。`ddetail` 路由器 `claimable=False`"
+                "（c17 实测 101 DRC 违规），故干线**不产可签核结果**。B4 对拍框架 `dxcheck` 产出"
+                "逐项差异表（面积/线长/WNS + 超界三态 + 闭式归因 + 跨进程可复现），但**参考工具缺席** "
+                "⇒ `reference.status=unavailable`、`evidence_level=SELF_CONSISTENCY_ONLY`，"
+                "**不声称**与 OpenROAD/OpenSTA 一致；启用路径见 "
+                "`docs/XCHECK_REFERENCE_RUNBOOK.md`。",
 }

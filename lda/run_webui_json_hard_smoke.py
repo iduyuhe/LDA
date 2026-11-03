@@ -226,7 +226,8 @@ def main() -> int:
     _signed = _signing_cards()
     _au = SS.audit()
 
-    check("S1 签核 schema 覆盖 ≡ 案例卡全集（18 张）",
+    check("S1 签核 schema 覆盖 ≡ 签核卡全集（18 张；`/api/digital_demo` 是流程卡，"
+          "verdict=FLOW_RUN_NOT_SIGNOFF，**不属签核卡**，故不在本 schema）",
           set(_signed) == set(SS.CASES),
           "卡=%d schema=%d 差=%s" % (len(_signed), len(SS.CASES),
                                      sorted(set(_signed) ^ set(SS.CASES))))

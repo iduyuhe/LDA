@@ -36,6 +36,9 @@
 · `ZERO_ALLOWED` 是**冻结集合**：任何模块**新**变成零入度 ⇒ 必红（删模块/改依赖忘了接回）
 · `R3_DEBT` 是**冻结债务表**：精确相等才算过 ⇒ 债务缩小了必须同步删表（强制收口），
   债务变大了必红。每条债务必须写「到期里程碑 + 理由」。
+· R3 的消费者口径是**全仓**（`lda_l2/**` + `lda_webui/` + `scripts/`，排除
+  `run_*_smoke.py` 与 `__init__.py`）—— 债务理由写的就是「webui 只读端点」，
+  只在 ecore 内部数则**按定义还不掉**（v0.9.368 修）。R1/R2 仍是包内口径。
 · 白名单（`TOPLEVEL_ALLOW`）**登记 ≠ 免检**：必须双向完备（写了必须真的零入度）+ 理由非空。
 
 诚实边界
@@ -104,7 +107,6 @@ TOPLEVEL_ALLOW = {
 #: 🔴 R3 冻结债务表：本阶段新增但尚无「非门禁」下游的模块。
 #: 契约 = **精确相等**：债务缩小了必须同步删表（强制收口）；债务变大必红。
 R3_DEBT = {
-    "db3_trunk": ("S6", "给一个非门禁消费者（webui 只读端点或案例卡 facts）"),
     "dxcheck": ("S6", "差异表进 /api/ecore_demo 的只读 facts，让对拍对外可见"),
 }
 
@@ -154,6 +156,117 @@ def graph_from_dir(dirpath: str) -> dict:
     return graph_from_sources(sources)
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# R3 的消费者口径：**全仓**（不再只看 ecore 包内部）
+# ───────────────────────────────────────────────────────────────────────────
+# 🔴 口径缺陷（v0.9.368 修）：R3 的债务理由写着「给一个**非门禁**消费者
+#    （webui 只读端点或案例卡 facts）」，但原实现只在 `lda_l2/ecore/*.py` 内部
+#    数入度 ⇒ **webui 端点作为消费者根本看不见** ⇒ 这类债务**按定义永远还不掉**。
+#    现改为扫 `lda_l2/**.py` + `lda_webui/*.py` + `scripts/*.py`，
+#    并排除门禁（`run_*_smoke.py`）与 `__init__.py`（重导出不算「用」）。
+#    注意：R1/R2 仍是**包内**复用口径（阈值与冻结快照不动，未放宽）。
+_LDA = os.path.dirname(os.path.abspath(__file__))
+_REPO = os.path.dirname(_LDA)
+SCAN_ROOTS = (
+    os.path.join(_LDA, "lda_l2"),
+    os.path.join(_LDA, "lda_webui"),
+    os.path.join(_REPO, "scripts"),
+)
+
+
+def _is_gate_file(relpath: str) -> bool:
+    """门禁文件（`run_*_smoke.py`）**不算消费者** —— 否则「为凑指标造假消费者」。"""
+    base = os.path.basename(relpath)
+    return base.startswith("run_") and base.endswith("_smoke.py")
+
+
+def _iter_sources(roots=SCAN_ROOTS):
+    """`[(相对仓库根的路径, 源码)]`，已排除门禁与 `__init__.py`。"""
+    out = []
+    for root in roots:
+        if not os.path.isdir(root):
+            continue
+        for dirpath, _dirnames, filenames in os.walk(root):
+            for fn in sorted(filenames):
+                if not fn.endswith(".py") or fn == "__init__.py":
+                    continue
+                p = os.path.join(dirpath, fn)
+                if _is_gate_file(p):
+                    continue
+                try:
+                    with open(p, encoding="utf-8", errors="replace") as fh:
+                        src = fh.read()
+                except OSError:
+                    continue
+                out.append((os.path.relpath(p, _REPO).replace("\\", "/"), src))
+    return out
+
+
+def _pkg_of(relpath: str) -> list:
+    """文件所在包（相对 `lda/`）——用于解析相对 import。"""
+    abs_p = os.path.join(_REPO, relpath.replace("/", os.sep))
+    rel = os.path.relpath(abs_p, _LDA).replace("\\", "/")
+    parts = rel.split("/")[:-1]
+    return [] if rel.startswith("..") else parts
+
+
+def resolved_imports(src: str, pkg) -> set:
+    """源码里所有 import 的**绝对模块路径**集合（含 `pkg.mod` 与 `pkg.mod.name` 两种形态）。"""
+    out = set()
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return out
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Import):
+            for a in n.names:
+                out.add(a.name)
+        elif isinstance(n, ast.ImportFrom):
+            # 🔴 level==0 是**绝对**导入 ⇒ 基准必须是空，不能拼文件所在包
+            #    （否则 `from lda_l2.ecore import x` 会被解析成 `lda_webui.lda_l2.ecore.x`）
+            base = [] if not n.level else list(pkg)
+            if n.level and n.level > 1:
+                base = base[: len(base) - (n.level - 1)] if len(base) >= n.level - 1 else []
+            if n.module:
+                base = base + n.module.split(".")
+            full = ".".join(base)
+            if full:
+                out.add(full)
+            for a in n.names:
+                if full:
+                    out.add(full + "." + a.name)
+    return out
+
+
+def repo_consumers(mods, roots=SCAN_ROOTS, exclude=()) -> dict:
+    """`{模块: [消费者相对路径...]}` —— 全仓非门禁消费者（排除自身与 `exclude`）。"""
+    sources = _iter_sources(roots)
+    res = {m: [] for m in mods}
+    for rel, src in sources:
+        imps = resolved_imports(src, _pkg_of(rel))
+        for m in mods:
+            if rel in exclude or rel.endswith("/%s.py" % m) or rel == "%s.py" % m:
+                continue
+            if "lda_l2.ecore." + m in imps:
+                res[m].append(rel)
+    return {m: sorted(v) for m, v in res.items()}
+
+
+def r3_missing(consumers, mods=NEW_MODULES) -> list:
+    """R3：没有任何全仓消费者的新模块（= 仍欠债）。"""
+    return sorted(m for m in mods if not consumers.get(m))
+
+
+def r3_debt_growth(missing, debt=R3_DEBT, mods=NEW_MODULES) -> list:
+    """R3：没有消费者但**不在债务表**的项（债务扩大）。"""
+    return sorted(set(missing) - set(debt))
+
+
+def r3_debt_resolved(missing, debt=R3_DEBT) -> list:
+    """R3：债务表里写了但**已经有消费者**的项 —— 该删表却没删（强制收口）。"""
+    return sorted(m for m in debt if m not in set(missing))
+
+
 def indegree(edges: dict) -> dict:
     deg = {m: 0 for m in edges}
     for deps in edges.values():
@@ -180,17 +293,6 @@ def metrics(deg: dict) -> dict:
 def zero_violations(zero, allowed=ZERO_ALLOWED) -> list:
     """零入度里**不在冻结集合**的项（新增孤岛）—— 反向探针直接喂变异体。"""
     return sorted(set(zero) - set(allowed))
-
-
-def r3_debt_growth(deg: dict, debt=R3_DEBT, mods=NEW_MODULES) -> list:
-    """R3：新模块里「零下游」但**不在债务表**的项（债务扩大）。"""
-    zero_down = [m for m in mods if deg.get(m, 0) == 0]
-    return sorted(set(zero_down) - set(debt))
-
-
-def r3_debt_resolved(deg: dict, debt=R3_DEBT, mods=NEW_MODULES) -> list:
-    """R3：债务表里写了但**已经有下游**（或模块不存在）的项 —— 该删表却没删。"""
-    return sorted(m for m in debt if deg.get(m, 0) != 0)
 
 
 def main() -> int:
@@ -233,14 +335,18 @@ def main() -> int:
     check("M6 入度 ≥3 的模块 %d 个（%.1f%%）≥ 下限 %d"
           % (M["ge3"], M["ge3_pct"], GE3_MIN), M["ge3"] >= GE3_MIN)
 
+    # ── R3 的全仓消费者（口径见上方常量注释：**看得见 webui 端点**）─────────
+    cons = repo_consumers(NEW_MODULES)
+    missing = r3_missing(cons)
+
     # ── M7 R3 债务未扩大（精确契约）─────────────────────────────────────
-    grew = r3_debt_growth(deg)
-    check("M7 R3 债务未扩大：新模块零下游集合 ⊆ 冻结债务表（%d 条）" % len(R3_DEBT),
-          not grew, "债务扩大=%r" % (grew,))
+    grew = r3_debt_growth(missing)
+    check("M7 R3 债务未扩大：新模块「全仓无消费者」集合 ⊆ 冻结债务表（%d 条）"
+          % len(R3_DEBT), not grew, "债务扩大=%r" % (grew,))
 
     # ── M8 R3 债务该删没删 ⇒ 红（强制收口，防「永久欠账」）──────────────
-    stale = r3_debt_resolved(deg)
-    check("M8 R3 债务表无过期条目（已有下游却仍在表内 ⇒ 必须删表）",
+    stale = r3_debt_resolved(missing)
+    check("M8 R3 债务表无过期条目（已有消费者却仍在表内 ⇒ 必须删表）",
           not stale, "过期=%r" % (stale,))
 
     # ── M9 债务条目必须有「到期里程碑 + 理由」───────────────────────────
@@ -279,16 +385,43 @@ def main() -> int:
 
     # ── M12 反向：新增孤岛 / 债务扩大 ⇒ 检测器必报 ──────────────────────
     probe_zero = zero_violations(M["zero"] + ["__fake_new_island__"])
-    probe_debt = r3_debt_growth(dict(deg, **{"dliberty": 0}),
+    probe_debt = r3_debt_growth(missing + ["dliberty"],
                                debt={k: v for k, v in R3_DEBT.items() if k != "dliberty"})
-    check("M12 反向：塞一个假孤岛 ⇒ M2 必报 ∧ 从债务表删一条（模块仍零下游）⇒ M7 必报",
+    check("M12 反向：塞一个假孤岛 ⇒ M2 必报 ∧ 从债务表删一条（模块仍无消费者）⇒ M7 必报",
           probe_zero == ["__fake_new_island__"] and probe_debt == ["dliberty"],
           "zero=%r debt=%r" % (probe_zero, probe_debt))
 
-    # ── M13 自入 CI core ────────────────────────────────────────────────
+    # ── M13 R3 口径自证：消费者必须**真的扫到 ecore 之外** ───────────────
+    #   若判据只在 ecore 内部数，db3_trunk 的真实消费者（lda_webui/digital_case.py）
+    #   就永远看不见 ⇒ 那条债务按定义还不掉。这里用「缩根 ⇒ 必判缺」反证口径有效。
+    cons_ecore_only = repo_consumers(NEW_MODULES, roots=(os.path.join(_LDA, "lda_l2", "ecore"),))
+    miss_ecore_only = r3_missing(cons_ecore_only)
+    check("M13 R3 口径自证：扫描根缩回 ecore 内部 ⇒ db3_trunk 必判「无消费者」，"
+          "全仓口径下则看得见它的 webui 端点消费者（判据不是恒真）",
+          "db3_trunk" in miss_ecore_only and "db3_trunk" not in missing,
+          "ecore_only 缺=%r 全仓缺=%r" % (miss_ecore_only, missing))
+
+    # ── M14 反向：门禁文件不得计为消费者（「为凑指标造假消费者」）────────
+    gate_like = [p for p in ("lda/run_x_smoke.py", "lda/run_ecore_s6_smoke.py")
+                 if _is_gate_file(p)]
+    scanned = [rel for rel, _src in _iter_sources()]
+    scan_has_gate = any(_is_gate_file(p) for p in scanned)
+    check("M14 门禁文件不计为消费者：`run_*_smoke.py` 一律排除（扫到 %d 个源文件，"
+          "其中门禁 %d 个）" % (len(scanned), sum(1 for p in scanned if _is_gate_file(p))),
+          len(gate_like) == 2 and not scan_has_gate,
+          "gate_like=%r scan_has_gate=%s" % (gate_like, scan_has_gate))
+
+    # ── M15 db3_trunk 的消费者必须是**真的代码**（不是重导出/门禁）────────
+    c_db3 = cons.get("db3_trunk") or []
+    check("M15 db3_trunk 已有非门禁消费者（B3 干线不再只有门禁在调它）",
+          any(p.endswith("lda_webui/digital_case.py") for p in c_db3)
+          and not any(_is_gate_file(p) for p in c_db3),
+          "consumers=%r" % (c_db3,))
+
+    # ── M16 自入 CI core ────────────────────────────────────────────────
     with open(os.path.join(_HERE, "run_ci_regression.py"), encoding="utf-8") as fh:
         ck = fh.read()
-    check("M13 本门禁已登记进 CORE_SMOKES（防静默漏接）",
+    check("M16 本门禁已登记进 CORE_SMOKES（防静默漏接）",
           "run_ecore_reuse_metrics_smoke.py" in ck)
 
     # ── M14 耗时 ────────────────────────────────────────────────────────
@@ -296,14 +429,16 @@ def main() -> int:
     check("M0t 门禁耗时 %.2f s < %.0f s" % (dt, AN_ELAPSED_MAX_S), dt < AN_ELAPSED_MAX_S)
 
     print("")
-    print("  度量口径：lda_l2/ecore/*.py · 入度=引用它的不同模块数 · 不数门禁")
+    print("  口径：R1/R2 = 包内（lda_l2/ecore/*.py 的入度）· R3 = 全仓非门禁消费者")
     print("  R1 零入度 %d/%d = %.1f%%（上限 %d · 目标 ≤12%%）"
           % (len(M["zero"]), M["n_modules"], M["zero_pct"], ZERO_MAX))
     print("  R2 入度中位 %.1f · 均值 %.2f · 入度≥3 %d（%.1f%%）（目标中位 ≥3）"
           % (M["median"], M["mean"], M["ge3"], M["ge3_pct"]))
     print("  R3 新模块 %d 个 · 已接回 %d · 债务 %d 条（%s）"
-          % (len(NEW_MODULES), sum(1 for m in NEW_MODULES if deg.get(m, 0) > 0),
-             len(R3_DEBT), ", ".join("%s(→%s)" % (k, v[0]) for k, v in sorted(R3_DEBT.items()))))
+          % (len(NEW_MODULES), len(NEW_MODULES) - len(missing), len(R3_DEBT),
+             ", ".join("%s(→%s)" % (k, v[0]) for k, v in sorted(R3_DEBT.items()))))
+    for _m in NEW_MODULES:
+        print("      %-10s ← %s" % (_m, ", ".join(cons.get(_m) or ["（无消费者 · 欠债）"])))
     print("")
     if _FALS:
         print("复用度量有红色：%s" % ", ".join(_FALS))

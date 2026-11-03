@@ -1,5 +1,62 @@
 # Changelog
 
+## v0.9.368（2026-11-04 · **S6 第三步：B3 干线接对外入口 + 修掉「按定义还不掉的债」** · 净增 0 锚 · CI core **400**）
+
+### 一句话
+
+给 B3 干线（`db3_trunk`）接上**第一个非门禁消费者**——只读端点 `/api/digital_demo`；
+并修掉度量里一个「债务按定义永远还不掉」的口径缺陷（R3 只数包内入度，看不见 webui 端点）。
+
+### ① `/api/digital_demo`（`lda_webui/digital_case.py`）
+
+| 字段 | 值 |
+|---|---|
+| 对象 | ISCAS'85 c17（公开基准网表）· **6 门 / 11 网 / 5 输入 / 2 输出** |
+| 布局 | die **1.09 × 3.12 µm** · HPWL **0.45 µm** · 单元面积和 **0.88 µm²** |
+| 布线 | 27 shapes · 11 网全覆盖 · 20 段 · `claimable=False` |
+| DRC/LVS | DRC **101** 违例（**87** min_spacing + **14** via_enclosure）· LVS **183** 问题 · 均如实报 |
+| DEF | **559 字节** · 6 组件 · 11 网 · 17 terminal · 往返字节双射 ✓ · `routed_exported=False` |
+| 可复现 | `digest_sha256`（规范 JSON + round 6，**排除** `compute_ms`）· 两次调用同 digest |
+
+代价与安全：模块级缓存 + 串行锁，**首调 ~0.2 s（import 数字链 + 跑一次干线）、其后 0.04 ms**；
+免登录、不进 `HEAVY_POST_PATHS`（无每请求重算 ⇒ 无 DoS 面）。
+
+### ② 三条不粉饰
+
+1. `verdict` 恒 `FLOW_RUN_NOT_SIGNOFF`：流程跑通 ≠ 签核 ≠ 流片实测；DRC/LVS 如实报数，不写 clean。
+2. 未实现的段**显式 False**：`synthesized=False`（入口即门级网表）、`timing_included=False`、
+   `routed_exported=False`（`DetailRoute.shapes` 无按网归属 ⇒ 写 `ROUTED` 等于编造布线）。
+3. `honest_note` 七条逐条机核（非流片实测 / `claimable=False` / 非 foundry PDK / 不报 TOPS /
+   `synthesized=False` …），缺任一条关键词即判红。
+
+### ③ 修掉的口径缺陷（R3）
+
+R3 债务原先写的是「给一个**非门禁**消费者（webui 只读端点或案例卡 facts）」，
+但实现只在 `lda_l2/ecore/*.py` 内部数入度 ⇒ **webui 端点这种消费者它根本看不见**
+⇒ 该债务**按定义永远还不掉**。
+
+现改为**全仓**口径：扫 `lda_l2/**` + `lda_webui/` + `scripts/`，排除 `run_*_smoke.py`（门禁）
+与 `__init__.py`（重导出不算「用」）。**R1/R2 仍是包内口径，阈值不动**（不借换口径放宽）。
+
+- R3 已接回 **5/6**（`dliberty`→`dsta` · `dlef`→`ddef` · `dverilog`→`db3_trunk`/`digital_case` ·
+  `ddef`→`db3_trunk` · **`db3_trunk`→`digital_case`**）；债务 **2 → 1**（仅 `dxcheck`）。
+- 🔴 **R1 本版不动**：28/78 = 35.9%。`db3_trunk` 仍无 ecore **包内**消费者，
+  新消费者在 webui ⇒ **不把「换口径」说成「指标变好」**。
+
+### ④ 门禁
+
+- `run_ecore_s6_smoke` **11 → 17 判据**（S6a–S6f）：端点接线 + 不进重计算闸门 / 卡片数字 **==**
+  门禁**独立重跑**的真值 / 分规则 DRC 计数自洽 / 未实现段显式 False / 自检**两向**可判红 /
+  digest 稳定 + JSON 硬（`allow_nan=False`）。
+- `run_ecore_reuse_metrics_smoke` **15 → 18 判据**：R3 全仓消费者 + 口径自证（缩根 ⇒ 必判缺）
+  + 门禁文件不计为消费者 + `db3_trunk` 消费者必须是真代码。
+
+### 诚实边界
+
+卡片的几何/时序是**模型假设**（行式布局、贪心+有限爬山）；路由器 `claimable=False`；
+DEF 只到 placed；引脚名是 LDA 约定（输出记 `z`）、宏名为 netlist 单元名（非库真名）；
+非 foundry PDK；不报 TOPS/TOPS-W/fJ/op；**不宣称**与 OpenROAD/OpenSTA 一致。
+
 ## v0.9.367（2026-11-04 · **S6 第二步：`ddef` 接回干线，B3 补上 DEF 出口** · 净增 0 锚 · CI core **400**）
 
 ### 一句话

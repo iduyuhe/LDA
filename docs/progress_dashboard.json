@@ -30,8 +30,8 @@
   },
   "api": {
     "case_panels": 19,
-    "described": 159,
-    "endpoints": 159,
+    "described": 160,
+    "endpoints": 160,
     "needs_login": 60
   },
   "core_gates": 400,

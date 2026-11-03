@@ -15172,12 +15172,13 @@
     {
       "script": "run_ecore_s6_smoke.py",
       "budget_s": 120.0,
-      "elapsed_max_s": 0.25,
-      "margin_x": 480.0,
+      "elapsed_max_s": 0.26,
+      "margin_x": 461.538,
       "samples_s": [
-        0.25
+        0.25,
+        0.26
       ],
-      "n_rounds": 1,
+      "n_rounds": 2,
       "censored_events": 0
     },
     {
@@ -15194,10 +15195,11 @@
     {
       "script": "run_ecore_reuse_metrics_smoke.py",
       "budget_s": 120.0,
-      "elapsed_max_s": 0.29,
-      "margin_x": 413.793,
+      "elapsed_max_s": 1.19,
+      "margin_x": 100.84,
       "samples_s": [
-        0.29
+        0.29,
+        1.19
       ],
       "n_rounds": 1,
       "censored_events": 0

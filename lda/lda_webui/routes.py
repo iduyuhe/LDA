@@ -766,6 +766,35 @@ def h_ecore_demo(h, p, q, path):
                       "case_id": _ec.CASE_ID, "verdict": "ERROR"})
 
 
+def h_digital_demo(h, p, q, path):
+    """GET /api/digital_demo —— B3 数字链干线案例卡（只读 · 免登录 · 首调后微秒级）。
+
+    把 `lda_l2.ecore.db3_trunk` 的端到端结果对外可见：结构级 Verilog → 门级网表 →
+    布局 → 布线 → DRC/LVS → **DEF 写出**，每段断言吃上一段的输出。
+
+    🔴 **这是 B3 干线的第一个非门禁消费者**（此前只有它自己的 smoke 在调用它）。
+
+    🔴 **零每请求重计算**：卡片内容由 `lda_webui.digital_case` 模块级缓存一次性算好
+    （首调要 import 数字链 ~0.2s + 跑一次干线 ~10ms，其后每次仅重组字典）⇒ 免登录、
+    不进 HEAVY_POST_PATHS（公开只读验货类，与 `/api/ecore_demo` 同族）。
+
+    🔴 **不冒充签核**：`verdict` 恒为 `FLOW_RUN_NOT_SIGNOFF`；DRC 实测 101 处违规、
+    LVS 183 处问题**如实报数**；`synthesized=False` / `timing_included=False` /
+    `routed_exported=False` 三条限制都写在返回体里；不报 TOPS/TOPS-W/fJ/op。
+
+    异常不 500（返回 200 + error 字段，与 h_ecore_demo 同风格）。
+    """
+    try:
+        from . import digital_case as _dc
+    except ImportError:
+        from lda_webui import digital_case as _dc
+    try:
+        return (200, _dc.case_card())
+    except Exception as e:  # noqa: BLE001
+        return (200, {"endpoint": "/api/digital_demo", "error": str(e)[:160],
+                      "case_id": _dc.CASE_ID, "verdict": "ERROR"})
+
+
 def h_d4_demo(h, p, q, path):
     """GET /api/d4_demo —— D4 交付闭环扩面案例卡（ecore + 超导量子 · 只读 · 免登录）。
 
@@ -2524,6 +2553,8 @@ GET_ROUTES = {
     "/api/accel_demo": h_accel_demo,
     # A 档接入（E 征程收官）：电子计算芯片（模拟计算核 / MVM 交叉阵列）只读案例卡（零重计算 · 免登录）
     "/api/ecore_demo": h_ecore_demo,
+    # B3 数字链干线对外入口（S6 第三步）：Verilog→网表→布局→布线→DRC/LVS→DEF 写出（只读 · 免登录）
+    "/api/digital_demo": h_digital_demo,
     # D4 交付闭环扩面：电子 + 超导量子两域的「真 GDS + 双闸签核 + 确定性 sha256」案例卡
     "/api/d4_demo": h_d4_demo,
     # 光联接模块新征程 M0 基线：2 通道 WDM 收发器链路预算（只读 · 免登录）

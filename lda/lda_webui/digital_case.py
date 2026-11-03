@@ -142,6 +142,8 @@ def _compute() -> Dict[str, Any]:
     report = T.run_trunk(nl)
     table = X.xcheck(nl, subject="c17")
     cap = DD.drc_capacity_bound(nl, PL.place(nl))   # 🔴 容量下界（独立 layout，不改干线）
+    # 🔴 what-if：按「可布线所需」放大后 DRC 能否归零（4ms；**不是**可签核版图）
+    cap = dict(cap, zero_experiment=DD.drc_zero_experiment(nl))
     ms = (time.perf_counter() - t0) * 1000.0
 
     st = {name: payload for name, payload in report["stages"]}
@@ -336,6 +338,16 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
     # 弯角孔包围修复的回归守卫（v0.9.370）：回退就必红
     if "via_enclosure" in ((card.get("drc_lvs") or {}).get("drc_by_rule") or {}):
         bad.append("via_enclosure 重新出现 —— 弯角延伸（_LAND_CORNER）被回退")
+
+    # ── what-if 实验（放大面积换清零）：结论与数字必须互相咬住 ────────────
+    ze = cap.get("zero_experiment") or {}
+    if ze.get("verdict") == "DRC_ZERO_ACHIEVED" and ze.get("achieved_violations") != 0:
+        bad.append("what-if 声称清零却仍有违规")
+    if ze.get("verdict") == "STILL_VIOLATING" and ze.get("achieved_violations") == 0:
+        bad.append("what-if 声称仍有违规却报 0")
+    if ze.get("row_area_ratio", 0) <= ze.get("predicted_channel_ratio", 0):
+        bad.append("清零实测面积比（%.2f×）≤ 通道下界（%.2f×）—— 不可能，数字被改过"
+                   % (ze.get("row_area_ratio", 0), ze.get("predicted_channel_ratio", 0)))
 
     # 文字层面禁止签核/流片类宣称（防「披露写了一堆，结论仍吹」）
     claim = str(card.get("claim") or "")

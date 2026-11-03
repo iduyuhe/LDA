@@ -503,6 +503,149 @@ def drc_capacity_bound(nl: Netlist, p: PL.Placement, tech=DC.DEFAULT_TECH) -> di
     }
 
 
+def drc_zero_experiment(nl: Netlist, tech=DC.DEFAULT_TECH, channel_tracks: int = 0,
+                        widen: float = 1.0) -> dict:
+    """**反证实验**：按「可布线所需」放大单元宽 + 行通道，实测 DRC 能否归零。
+
+    为什么要做这个实验
+    ------------------
+    `drc_capacity_bound()` 给出的是**下界**（通道 ×1.577 / 单元宽 ×14.4 / 列 ×5.6）。
+    下界只是必要条件 —— 必须**实测**：把面积加到位，违规是否真的归零。
+    这也正好检验「1.577× 面积就能换 0 违规」这个说法是否成立。
+
+    做法（**纯构造，不改 `dplac.place` 的既有行为**）
+    ------------------------------------------------
+    ① 一行布局，单元宽按「每引脚一个 0.36µm 槽」给到 `(n_pins+1)·pitch`（`widen` 可调）；
+    ② 行上方留 `channel_tracks` 条 M3 轨道（缺省取 `clique_max`）；
+       `widen=None` = **只加通道、单元宽保持原样** —— 用来实测「只放大通道够不够」；
+    ③ 每条 MST 边：M4 竖 stub 从引脚到轨道 → M3 横段（两端各外伸 `VIA/2+ENC` 包孔）→
+       另一端 M4 stub 下到引脚；
+    ④ 轨道按 x 区间着色分配（间距要求 `S_MIN + 2·(VIA/2+ENC)`，把 landing 也算进去，
+       否则相邻两段「首尾相接」会判间距违例）；
+    ⑤ 端口引脚移到行左侧中线上（原坐标的 y 会落进新通道里，属口径迁移）。
+
+    🔴 **这是 what-if 实验，不是可签核版图**：单元内部仍是黑盒、无绕障/无拥塞求解、
+    行式单行；结论只用来判「容量是不是唯一障碍」，不外推到真实 P&R。
+    """
+    p0 = PL.place(nl, tech)
+    bound = drc_capacity_bound(nl, p0, tech)
+    pitch, land = TRACK_PITCH, _LAND_CORNER
+    s_min = _s_min_of_rules()
+    row_h = PL.H_ROW_UM
+    ct = channel_tracks if channel_tracks > 0 else max(1, bound["clique_max"])
+
+    gates = [g for g in nl.gates if g.name in p0.cell_xywh]
+    gates.sort(key=lambda g: p0.cell_xywh[g.name][0])       # 保持原左→右相对次序
+    xywh, cursor = {}, 0.0
+    for g in gates:
+        if widen is None:                     # 只加通道：单元宽沿用原布局（实测「够不够」）
+            w = p0.cell_xywh[g.name][2]
+        else:
+            w = (len(g.ins) + 1) * pitch * widen
+        xywh[g.name] = (cursor, 0.0, w, row_h)
+        cursor += w
+    row_w = cursor
+
+    # 引脚访问点：widen=None 时**故意沿用「单元中心单点」**（原口径，保留塌缩）；
+    #            否则单元内均布（step ≥ pitch ⇒ 同层竖 stub 天然不挤）
+    acc = {}
+    for g in gates:
+        x0, _y0, w, _h = xywh[g.name]
+        roles = list(g.ins) + ["__out__"]
+        step = w / len(roles)
+        for k, role in enumerate(roles):
+            px = (x0 + w / 2.0) if widen is None else (x0 + step * (k + 0.5))
+            acc[(g.name, role)] = (px, row_h / 2.0)
+
+    pins: dict = defaultdict(list)
+    for g in gates:
+        pins[g.out].append(acc[(g.name, "__out__")])
+        for nm in g.ins:
+            pins[nm].append(acc[(g.name, nm)])
+    for i, net in enumerate(sorted(p0.port_pins)):
+        pins[net].append((-pitch * (i + 1), row_h / 2.0))
+
+    # MST 边 + 轨道着色（间距把 landing 一起算）
+    edges, spans = [], []
+    for net, pts in pins.items():
+        if len(pts) < 2:
+            continue
+        for (a, b) in _mst_edges(pts):
+            ax, ay = pts[a]
+            bx, by = pts[b]
+            edges.append((net, ax, ay, bx, by))
+            spans.append((min(ax, bx) - land, max(ax, bx) + land))
+    gap = s_min + 2 * land
+    order = sorted(range(len(spans)), key=lambda i: (spans[i][0], spans[i][1]))
+    ends, assign = [], [0] * len(spans)
+    for idx in order:
+        lo, hi = spans[idx]
+        placed = False
+        for k in range(len(ends)):
+            if lo >= ends[k] + gap - 1e-9:
+                assign[idx] = k
+                ends[k] = hi
+                placed = True
+                break
+        if not placed:
+            assign[idx] = len(ends)
+            ends.append(hi)
+
+    shapes = []
+    for i, (net, ax, ay, bx, by) in enumerate(edges):
+        yt = row_h + (assign[i] + 0.5) * pitch
+        for (px, py) in ((ax, ay), (bx, by)):
+            shapes.append(_rect(L_M4, px - W_ROUTE / 2.0, min(py, yt + land),
+                                px + W_ROUTE / 2.0, max(py, yt + land),
+                                net=net, kind="metal"))
+        shapes.append(_rect(L_M3, min(ax, bx) - land, yt - W_ROUTE / 2.0,
+                            max(ax, bx) + land, yt + W_ROUTE / 2.0, net=net, kind="metal"))
+        for px in (ax, bx):
+            shapes.append(_rect(L_VIA2, px - VIA / 2.0, yt - VIA / 2.0,
+                                px + VIA / 2.0, yt + VIA / 2.0, net=net, kind="via"))
+
+    from . import ddrc_lvs as DRC          # 延迟 import：避免模块级循环依赖
+    base_shapes = detail_route(nl, p0, tech).shapes
+    base_v = len(DRC.run_drc(base_shapes)["violations"])
+    got = DRC.run_drc(shapes)
+    by_rule: dict = {}
+    for v in got["violations"]:
+        by_rule[v[0]] = by_rule.get(v[0], 0) + 1
+
+    base_area = p0.die_w_um * p0.die_h_um
+    new_area = row_w * (row_h + ct * pitch)
+    # 行面积比（更严的口径：只比「单元行 + 通道」，不掺 IO ring）
+    base_row_pitch = row_h * (1.0 + PL.CHANNEL_X)
+    base_row_w = sum(w for (_x, _y, w, _h) in p0.cell_xywh.values())
+    base_row_area = base_row_pitch * base_row_w
+    row_area_ratio = (new_area / base_row_area) if base_row_area > 0 else 0.0
+    return {
+        "verdict": "DRC_ZERO_ACHIEVED" if not got["violations"] else "STILL_VIOLATING",
+        "base_violations": base_v,
+        "achieved_violations": len(got["violations"]),
+        "achieved_by_rule": dict(sorted(by_rule.items())),
+        "widen": ("base" if widen is None else widen),
+        "channel_tracks": ct,
+        "tracks_used": len(ends),
+        "row_width_um": round(row_w, 4),
+        "row_pitch_um": round(row_h + ct * pitch, 4),
+        "area_ratio_vs_die": round(new_area / base_area, 3) if base_area else 0.0,
+        "row_area_ratio": round(row_area_ratio, 3),
+        # 与下界预测的对照（判据要能说「预测错在哪」）
+        "predicted_channel_ratio": bound["area_ratio_for_channel"],
+        "predicted_width_ratio": bound["width_ratio_for_pin_access"],
+        "pin_slot_um": round(bound["pin_slot_need_um"], 4),
+        "cell_width_um": round(row_w / max(1, len(gates)), 4),
+        "note": "what-if 构造实验：单行布局 + 均布引脚 + 轨道分配；非可签核版图",
+    }
+
+
+def _s_min_of_rules() -> float:
+    """取 DRC 的 S_MIN（单一真源在 ddrc_lvs；此处只读常量，不复制规则值）。"""
+    from . import ddrc_lvs as DRC
+    return float(DRC.S_MIN)
+
+
 def track_self_check(verbose: bool = False) -> dict:
     """E37 自检：**校验器硬化 + 拥堵不可行负结果**（只断言硬事实，不伪绿）。
 

@@ -17,6 +17,10 @@
      靠画长线蒙过 —— 中心线长仍须 == MST）；余下 87 处全是 `min_spacing`，用
      `drc_capacity_bound()` 三向下界证明是**容量不足**（通道 2<7 · 引脚槽 0.96µm>单元宽 0.067µm ·
      列 6.12µm>die 1.09µm）；卡片与门禁必须同口径，且三向伪造（容量可行/0 违规/via 回退）必红。
+  S7e–S7h **反证实验**（把下界变成实测对照）：只加通道时构造出的面积比 **1.58×** 恰好复现
+     下界预测，但**仍违规 155 处** ⇒ 「1.577× 换 0 违规」被推翻（必要非充分）；
+     单元宽给足（`(n_pins+1)·pitch` + 引脚均布 + 轨道分配）⇒ DRC **真 0**，代价行面积 **26.32×**；
+     中间档（0.5×）仍 21 处 ⇒ 存在真实阈值，不是「随便放大都行」。
   S6 **对外入口**：`/api/digital_demo` 消费干线（此前干线**只有自己的门禁在调它**）——
      卡片数字必须 == 门禁**独立重跑**的真值；未实现的段（综合/时序/ROUTED）显式 False；
      诚实性自检正向空、反向两向必报；两次调用 digest 一致且 JSON 硬。
@@ -274,6 +278,55 @@ def main() -> int:
           "f1=%r f2=%r f3=%r" % (DC.selfcheck(_f1)[:1], DC.selfcheck(_f2)[:1],
                                  DC.selfcheck(_f3)[:1]))
 
+    # ── S7e–S7h 反证实验：放大面积能不能换 0 违规（预测 vs 实测）────────────
+    _e_ch = DTL.drc_zero_experiment(nl, widen=None)          # 只加通道
+    _e_half = DTL.drc_zero_experiment(nl, widen=0.5)
+    _e_full = DTL.drc_zero_experiment(nl, widen=1.0)
+    # ① 通道这一项：构造出来的面积比必须**复现**下界预测（1.577×），证明模型没写错；
+    #    但**它仍然违规** ⇒ 预测只是必要条件，不是「1.577× 就够」
+    _pred_ok = abs(_e_ch["row_area_ratio"] - _cap["area_ratio_for_channel"]) \
+        < 0.02 * _cap["area_ratio_for_channel"]
+    check("S7e 通道项构造实测 %.2f× == 下界预测 %.2f×（模型自洽）∧ **仍违规 %d 处**"
+          " ⇒ 「1.577× 换 0 违规」被推翻（预测是必要非充分）"
+          % (_e_ch["row_area_ratio"], _cap["area_ratio_for_channel"],
+             _e_ch["achieved_violations"]),
+          _pred_ok and _e_ch["achieved_violations"] > 0,
+          "pred=%.3f got=%.3f viol=%d" % (_cap["area_ratio_for_channel"],
+                                          _e_ch["row_area_ratio"],
+                                          _e_ch["achieved_violations"]))
+
+    # ② 达标点：单元宽给够 ⇒ DRC **真的归零**（不是判据松了，是几何够了）
+    check("S7f widen=1.0（单元宽 (n_pins+1)·pitch + 引脚均布 + 轨道分配）⇒ DRC **0**"
+          " 且行面积 %.2f×（die 口径 %.2f×）"
+          % (_e_full["row_area_ratio"], _e_full["area_ratio_vs_die"]),
+          _e_full["achieved_violations"] == 0
+          and _e_full["verdict"] == "DRC_ZERO_ACHIEVED",
+          "achieved=%d by=%r" % (_e_full["achieved_violations"], _e_full["achieved_by_rule"]))
+
+    # ③ 单调性：87 → 21 → 0。中间档仍违规 ⇒ 不是「随便放大都行」，存在真实阈值
+    check("S7g 单调性：基准 %d → widen=0.5 **%d** → widen=1.0 **%d**（中间档仍违规 ⇒ 有阈值）"
+          % (_e_ch["base_violations"], _e_half["achieved_violations"],
+             _e_full["achieved_violations"]),
+          _e_half["achieved_violations"] > 0
+          and _e_half["achieved_violations"] < _e_ch["base_violations"]
+          and _e_full["achieved_violations"] == 0,
+          "half=%d" % _e_half["achieved_violations"])
+
+    # ④ 卡片承载 == 独立复算 ∧ 反向两向（伪造计数 / 伪造低于下界的面积比）必红
+    _cz = DC.case_card()["capacity"]["zero_experiment"]
+    _f4 = json.loads(json.dumps(DC.case_card()))
+    _f4["capacity"]["zero_experiment"]["achieved_violations"] = 0
+    _f4["capacity"]["zero_experiment"]["verdict"] = "STILL_VIOLATING"
+    _f5 = json.loads(json.dumps(DC.case_card()))
+    _f5["capacity"]["zero_experiment"]["row_area_ratio"] = 1.0
+    check("S7h 卡片 what-if == 独立复算（%s/%d/×%.2f）∧ 反向两向必红"
+          % (_cz["verdict"], _cz["achieved_violations"], _cz["row_area_ratio"]),
+          _cz["verdict"] == _e_full["verdict"]
+          and _cz["achieved_violations"] == _e_full["achieved_violations"]
+          and abs(_cz["row_area_ratio"] - _e_full["row_area_ratio"]) < 1e-9
+          and DC.selfcheck(_f4) and DC.selfcheck(_f5),
+          "card=%r" % (_cz,))
+
     # ── S0t 耗时红线 ──────────────────────────────────────────────────
     dt = time.time() - T0
     check("S0t 门禁耗时 %.2f s < %.0f s" % (dt, AN_ELAPSED_MAX_S),
@@ -291,6 +344,8 @@ def main() -> int:
     print("  [S5] fail-closed：空输入直接报错")
     print("  [S7a–d] DRC 收敛：via_enclosure 修至 0（不改线长）· 容量下界三向都缺 · "
           "卡片与门禁同口径 · 三向伪造必红")
+    print("  [S7e–h] 反证实验：1.58×（通道下界）仍违规 155 ⇒ 预测必要非充分；"
+          "给足单元宽 ⇒ DRC 0，代价 26.32× 行面积；0.5× 档仍 21 ⇒ 有阈值")
     print("  [S6a–f] 对外入口 /api/digital_demo：卡片 == 门禁独立重跑的真值 · "
           "未实现段显式 False · 自检两向可判红 · digest 稳定")
     print("  [边界] ddetail 路由器 claimable=False · 几何/时序为模型假设 · 非 foundry PDK")

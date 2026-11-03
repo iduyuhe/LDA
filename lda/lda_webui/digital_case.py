@@ -10,7 +10,8 @@ DEF 写出结果做成对外可看的只读卡片。
 
 🔴 **口径纪律（三条，都能被机核）**
   ① **不冒充签核**：`verdict` 恒为 `FLOW_RUN_NOT_SIGNOFF`（流程跑通 ≠ 签核 ≠ 流片实测）。
-     `ddetail` 路由器在 c17 上实测 101 处 DRC 违规 ⇒ 卡片**如实报违规数与分规则计数**，
+     `ddetail` 路由器在 c17 上实测 **87 处 min_spacing**（弯角孔包围 v0.9.370 已修至 0；
+     余下为**容量不足**，见 `capacity` 段）⇒ 卡片**如实报违规数与分规则计数**，
      绝不写「clean」「pass」「signoff」。
   ② **不报未实现的段**：`synthesized=False`（入口就是门级网表）、`timing_included=False`
      （干线未串时序段）、`routed_exported=False`（DEF 只到 placed，`ROUTED` 未导出 ——
@@ -48,8 +49,8 @@ SEGMENTS_MISSING = ("synthesis", "timing")
 #: 诚实边界（逐条都在卡片里输出，且被 selfcheck 要求非空 + 含关键词）
 HONEST_NOTES = (
     "设计期流程跑通，非签核、非流片实测。",
-    "ddetail 路由器 claimable=False：c17 实测 101 处 DRC 违规（已知诚实边界），"
-    "本卡如实报数，不伪造 clean。",
+    "ddetail 路由器 claimable=False：c17 实测 87 处 min_spacing（via_enclosure 已修至 0），"
+    "本卡如实报数，不伪造 clean；余下违规是**容量不足**（capacity 段），不是路由器写错。",
     "DEF 只到 placed（routed_exported=False）—— DetailRoute.shapes 无按网归属，"
     "写 ROUTED 等于编造布线。",
     "synthesized=False（入口即门级网表）、timing_included=False（干线未串时序段）。",
@@ -131,6 +132,8 @@ def _compute() -> Dict[str, Any]:
     import time
 
     from lda_l2.ecore import db3_trunk as T
+    from lda_l2.ecore import ddetail as DD
+    from lda_l2.ecore import dplac as PL
     from lda_l2.ecore import dverilog as V
     from lda_l2.ecore import dxcheck as X
 
@@ -138,6 +141,7 @@ def _compute() -> Dict[str, Any]:
     nl = V.parse(V.SAMPLE_VERILOG)          # 🔴 只解析一次，干线与对拍共用同一 netlist
     report = T.run_trunk(nl)
     table = X.xcheck(nl, subject="c17")
+    cap = DD.drc_capacity_bound(nl, PL.place(nl))   # 🔴 容量下界（独立 layout，不改干线）
     ms = (time.perf_counter() - t0) * 1000.0
 
     st = {name: payload for name, payload in report["stages"]}
@@ -191,6 +195,7 @@ def _compute() -> Dict[str, Any]:
         "conservation_ok": bool(report.get("conservation_ok")),
         "problems": list(report.get("problems") or []),
         "xcheck": _xcheck_facts(X, table),
+        "capacity": cap,
         "segments_covered": list(SEGMENTS_COVERED),
         "segments_missing": list(SEGMENTS_MISSING),
         "synthesized": False,
@@ -230,6 +235,7 @@ def case_card() -> Dict[str, Any]:
         "conservation_ok": f["conservation_ok"],
         "problems": f["problems"],
         "xcheck": f["xcheck"],
+        "capacity": f["capacity"],
         "segments_covered": f["segments_covered"],
         "segments_missing": f["segments_missing"],
         "synthesized": f["synthesized"],
@@ -310,6 +316,26 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
                            % (m, r.get("reference_status")))
             if r.get("evidence_level") != "SELF_CONSISTENCY_ONLY":
                 bad.append("%s: 参考未实测却把证据等级报成 %r" % (m, r.get("evidence_level")))
+
+    # ── 容量下界与实测必须自洽（「清不了零」要说得出差在哪，且不能两头都圆）──
+    cap = card.get("capacity") or {}
+    _c_ok = (cap.get("capacity_per_row", 0) >= cap.get("clique_max", 0))
+    _w_ok = (cap.get("pin_slot_need_um", 0) <= cap.get("cell_w_median_um", 0) + 1e-9)
+    _x_ok = (cap.get("cols_need_um", 0) <= cap.get("cols_have_um", 0) + 1e-9)
+    if cap.get("channel_ok") is not _c_ok or cap.get("width_ok") is not _w_ok \
+            or cap.get("cols_ok") is not _x_ok:
+        bad.append("capacity 的 *_ok 与数值不自洽（判定被手改）")
+    _feasible = _c_ok and _w_ok and _x_ok
+    if cap.get("verdict") != ("RESOURCE_SUFFICIENT" if _feasible else
+                              "ROUTING_RESOURCE_INFEASIBLE"):
+        bad.append("capacity.verdict 与三向判据不一致")
+    if _feasible and (card.get("drc_lvs") or {}).get("drc_violations"):
+        bad.append("容量判定为可行却仍有 DRC 违规 —— 检测器与几何脱节")
+    if (not _feasible) and not (card.get("drc_lvs") or {}).get("drc_violations"):
+        bad.append("容量判定为不可行却报 0 违规 —— 有一方在说谎")
+    # 弯角孔包围修复的回归守卫（v0.9.370）：回退就必红
+    if "via_enclosure" in ((card.get("drc_lvs") or {}).get("drc_by_rule") or {}):
+        bad.append("via_enclosure 重新出现 —— 弯角延伸（_LAND_CORNER）被回退")
 
     # 文字层面禁止签核/流片类宣称（防「披露写了一堆，结论仍吹」）
     claim = str(card.get("claim") or "")

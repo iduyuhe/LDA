@@ -404,7 +404,7 @@
       "app_function": null,
       "auth": "public",
       "binary": false,
-      "description": "GET /api/digital_demo —— B3 数字链干线案例卡（只读 · 免登录 · 首调后微秒级）。 把 `lda_l2.ecore.db3_trunk` 的端到端结果对外可见：结构级 Verilog → 门级网表 → 布局 → 布线 → DRC/LVS → **DEF 写出**，每段断言吃上一段的输出。 🔴 **这是 B3 干线的第一个非门禁消费者**（此前只有它自己的 smoke 在调用它）。 🔴 **零每请求重计算**：卡片内容由 `lda_webui.digital_case` 模块级缓存一次性算好 （首调要 import 数字链 ~0.2s + 跑一次干线 ~10ms，其后每次仅重组字典）⇒ 免登录、 不进 HEAVY_POST_PATHS（公开只读验货类，与 `/api/ecore_demo` 同族）。 🔴 **不冒充签核**：`verdict` 恒为 `FLOW_RUN_NOT_SIGNOFF`；DRC 实测 101 处违规、 LVS 183 处问题**如实报数**；`synthesized=False` / `timing_included=False` / `routed_exported=False` 三条限制都写在返回体里；不报 TOPS/TOPS-W/fJ/op。 异常不 500（返回 200 + error 字段，与 h_ecore_demo 同风格）。",
+      "description": "GET /api/digital_demo —— B3 数字链干线案例卡（只读 · 免登录 · 首调后微秒级）。 把 `lda_l2.ecore.db3_trunk` 的端到端结果对外可见：结构级 Verilog → 门级网表 → 布局 → 布线 → DRC/LVS → **DEF 写出**，每段断言吃上一段的输出。 🔴 **这是 B3 干线的第一个非门禁消费者**（此前只有它自己的 smoke 在调用它）。 🔴 **零每请求重计算**：卡片内容由 `lda_webui.digital_case` 模块级缓存一次性算好 （首调要 import 数字链 ~0.2s + 跑一次干线 ~10ms，其后每次仅重组字典）⇒ 免登录、 不进 HEAVY_POST_PATHS（公开只读验货类，与 `/api/ecore_demo` 同族）。 🔴 **不冒充签核**：`verdict` 恒为 `FLOW_RUN_NOT_SIGNOFF`；DRC 实测 87 处间距违规、 LVS 183 处问题**如实报数**；`synthesized=False` / `timing_included=False` / `routed_exported=False` 三条限制都写在返回体里；不报 TOPS/TOPS-W/fJ/op。 异常不 500（返回 200 + error 字段，与 h_ecore_demo 同风格）。",
       "handler": "h_digital_demo",
       "heavy": false,
       "method": "GET",

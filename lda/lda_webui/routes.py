@@ -778,7 +778,7 @@ def h_digital_demo(h, p, q, path):
     （首调要 import 数字链 ~0.2s + 跑一次干线 ~10ms，其后每次仅重组字典）⇒ 免登录、
     不进 HEAVY_POST_PATHS（公开只读验货类，与 `/api/ecore_demo` 同族）。
 
-    🔴 **不冒充签核**：`verdict` 恒为 `FLOW_RUN_NOT_SIGNOFF`；DRC 实测 101 处违规、
+    🔴 **不冒充签核**：`verdict` 恒为 `FLOW_RUN_NOT_SIGNOFF`；DRC 实测 87 处间距违规、
     LVS 183 处问题**如实报数**；`synthesized=False` / `timing_included=False` /
     `routed_exported=False` 三条限制都写在返回体里；不报 TOPS/TOPS-W/fJ/op。
 

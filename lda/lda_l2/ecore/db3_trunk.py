@@ -17,8 +17,10 @@
 ═══════════════════════════════════════════════════════════════════════════════
 诚实边界（全部 `claimable=False`，如实披露）
 ───────────────────────────────────────────────────────────────────────────────
-· **ddetail.detail_route 的 `claimable=False`**：当前主链路由器在 c17 上实测产 101 处 DRC
-  违规（87 间距 + 14 通孔包围——所有线堆到一条 track），是**已知诚实边界**，非干线缺陷。
+· **ddetail.detail_route 的 `claimable=False`**：c17 实测 **87 处 min_spacing**（v0.9.370 已把
+  弯角孔包围 14 处修到 **0**）。余下全部是**容量不足**而非代码缺陷：通道每行只有 2 条 M3 轨
+  而需要 7 条、单元宽 0.067µm（比线宽 0.24µm 还窄）放不下独立引脚槽、17 条引脚访问列需
+  6.12µm 而 die 只有 1.09µm ⇒ 见 `ddetail.drc_capacity_bound`。
   干线**如实报告** DRC/LVS 违规数，绝不伪造「clean tapeout」。
 · **几何/时序是模型假设**（见 dplac.DPLAC_DISCLOSURE / ddetail 披露）：行式布局、贪心+有限
   爬山、无电源条/阱/detail route；die 面积、IO ring 均为一阶假设。
@@ -128,8 +130,9 @@ def run_trunk(nl):
     report["drc_lvs_detail"] = {
         "drc": drc, "lvs": lvs,
         "claimable": False,
-        "note": "ddetail.detail_route 当前 claimable=False：c17 实测 101 处 DRC 违规"
-                "（87 间距 + 14 通孔包围——线堆单 track），为已知诚实边界，非干线缺陷。",
+        "note": "ddetail.detail_route 当前 claimable=False：c17 实测 87 处 min_spacing"
+                "（via_enclosure 已于 v0.9.370 修至 0；余下为容量不足，见 drc_capacity_bound）"
+                "（via_enclosure 已修至 0；余下为容量不足，见 ddetail.drc_capacity_bound）。",
     }
     return report
 

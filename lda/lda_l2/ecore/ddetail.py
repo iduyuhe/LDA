@@ -34,8 +34,11 @@
   真实晶体管(沟道/源漏/接触)根本放不下 ⇒ 有源区/引脚是「占位标记」，不是可制造单元。
 - **单元内部多端子分离是黑盒**：路由在单元中心汇成单节点；单元内部把各端子连通的
   逻辑不画（视为硬宏占位）。跨单元的布线连通性才是本模块真正验证的对象。
-- **简化 L 形路由，无拥塞求解 / 无 track 共享 / 无绕障**：当前布局下经验为 0 同层短路，
-  但这是「布局稀疏」的幸运，不是路由器的保证；真正 maze/grid 路由器是下一阶段。
+- **简化 L 形路由，无拥塞求解 / 无 track 共享 / 无绕障**：0 同层短路不代表布通 ——
+  v0.9.370 实测 c17 有 **87 处 min_spacing**（弯角孔包围已修至 0）。根因是**容量不足**，
+  且已量化为 `drc_capacity_bound()` 的三向下界（通道轨数 / 单元引脚槽宽 / die 列数）。
+  🔴 因此本路由器**不产可签核结果**（`claimable=False`）；清零需要加面积或加层，
+  不是换一版代码能解决的。真正 maze/grid 路由器是下一阶段。
 - 通孔只算 M1→M2→M3 栈与 M3↔M4 弯角孔，未计通孔电阻电容。
 """
 from __future__ import annotations
@@ -62,6 +65,8 @@ W_ROUTE = 0.24          # µm · 布线金属线宽
 VIA = 0.20             # µm · 通孔边长
 ENC = 0.02             # µm · 通孔包围（金属比通孔大出的单边量）
 PIN_R = 0.30           # µm · 单元引脚焊垫边长（> W_ROUTE，保证可连）
+#: 弯角延伸量：VIA2 半边长 + 单边包围 ⇒ 弯角两层金属都能盖住孔（v0.9.370 修）
+_LAND_CORNER = VIA / 2.0 + ENC
 
 
 @dataclass
@@ -171,14 +176,27 @@ def detail_route(nl: Netlist, p: PL.Placement, tech=DC.DEFAULT_TECH) -> DetailRo
             bx, by = pts[b]
             dx = abs(ax - bx)
             dy = abs(ay - by)
+            # 弯角在 (bx, ay)：两段各向弯角外多伸 LAND，才能**包围** VIA2（否则孔只被半个
+            # 方向盖住 ⇒ via_enclosure 必违例）。延伸是沿各自段方向外扩，不改中心线长。
+            hx0, hx1 = min(ax, bx), max(ax, bx)
+            vy0, vy1 = min(ay, by), max(ay, by)
+            if dx > 1e-9 and dy > 1e-9:
+                if bx >= ax:
+                    hx1 += _LAND_CORNER
+                else:
+                    hx0 -= _LAND_CORNER
+                if by >= ay:
+                    vy0 -= _LAND_CORNER
+                else:
+                    vy1 += _LAND_CORNER
             if dx > 1e-9:
                 # H 段：M3，y=ay，x∈[ax,bx]
-                shapes.append(_rect(L_M3, ax, ay - W_ROUTE / 2.0, bx, ay + W_ROUTE / 2.0,
+                shapes.append(_rect(L_M3, hx0, ay - W_ROUTE / 2.0, hx1, ay + W_ROUTE / 2.0,
                                     net=net, kind="metal"))
                 n_seg += 1
             if dy > 1e-9:
                 # V 段：M4，x=bx，y∈[ay,by]
-                shapes.append(_rect(L_M4, bx - W_ROUTE / 2.0, ay, bx + W_ROUTE / 2.0, by,
+                shapes.append(_rect(L_M4, bx - W_ROUTE / 2.0, vy0, bx + W_ROUTE / 2.0, vy1,
                                     net=net, kind="metal"))
                 n_seg += 1
             if dx > 1e-9 and dy > 1e-9:
@@ -419,6 +437,69 @@ def congestion_analysis(nl: Netlist, p: PL.Placement, tech=DC.DEFAULT_TECH) -> d
         "clique_max": clique_max, "need_channel_um": need_channel,
         "need_row_pitch_um": need_row_pitch, "area_to_zero_ratio": area_ratio,
         "per_row_clique": cliques, "row_pitch_um": row_pitch,
+    }
+
+
+def drc_capacity_bound(nl: Netlist, p: PL.Placement, tech=DC.DEFAULT_TECH) -> dict:
+    """**布线容量下界**：把「DRC 清不了零」从一句结论，变成可核数字。
+
+    为什么需要它
+    ------------
+    v0.9.370 把弯角孔包围修好（`via_enclosure` 14 → 0）之后，剩下的**全部**是
+    `min_spacing`。这些不是路由器写错，而是**资源不够**：
+
+      ① **通道不够**：同 y 重叠的 H 段最大团 `clique_max` 需要同样多的 M3 轨道
+         （节距 `TRACK_PITCH`），而每行只有 `channel_um = row_pitch − 行高`；
+      ② **单元太窄**：一颗单元若有 k 个引脚，要各自引出一条线且间距 ≥ S_MIN，
+         单元宽度至少要 `(k−1)·pitch + W_ROUTE`；而 E35 的单元宽是「面积/行高」
+         反推的 ~0.08 µm（**比一条线宽 0.24 µm 还窄**）⇒ 同一颗门的多个网
+         **必然从同一点出发**，几何上不可能不重叠；
+      ③ **整 die 的列数**：所有网都要有自己的 M4 列，`n_pin_access · pitch`
+         与 die 宽对比即可看出差几倍。
+
+    返回的是**下界**（best case）：真实清零还要加上绕障/通孔/引脚焊垫占位。
+    判定 `verdict`：
+      · `ROUTING_RESOURCE_INFEASIBLE` —— 至少一个维度装不下（当前 c17 即此）；
+      · `RESOURCE_SUFFICIENT` —— 三个维度都够（本仓尚无用例）。
+    """
+    cg = congestion_analysis(nl, p, tech)
+    pitch = TRACK_PITCH
+    cell_ws = [w for (_x, _y, w, _h) in p.cell_xywh.values()]
+    pins_per_cell = [len(g.ins) + 1 for g in nl.gates if g.name in p.cell_xywh]
+    n_pins_total = sum(pins_per_cell)
+    pin_slot_need = ((max(pins_per_cell) - 1) * pitch + W_ROUTE) if pins_per_cell else 0.0
+    w_min = min(cell_ws) if cell_ws else 0.0
+    w_med = sorted(cell_ws)[len(cell_ws) // 2] if cell_ws else 0.0
+    width_ratio = (pin_slot_need / w_med) if w_med > 0 else 0.0
+    cols_need = n_pins_total * pitch
+    cols_have = p.die_w_um
+    channel_ok = cg["capacity_per_row"] >= cg["clique_max"]
+    width_ok = pin_slot_need <= w_med + 1e-9
+    cols_ok = cols_need <= cols_have + 1e-9
+    return {
+        "verdict": ("RESOURCE_SUFFICIENT" if (channel_ok and width_ok and cols_ok)
+                    else "ROUTING_RESOURCE_INFEASIBLE"),
+        "track_pitch_um": pitch,
+        "route_width_um": W_ROUTE,
+        # ① 通道
+        "capacity_per_row": cg["capacity_per_row"],
+        "clique_max": cg["clique_max"],
+        "channel_um": cg["channel_um"],
+        "need_channel_um": cg["need_channel_um"],
+        "area_ratio_for_channel": cg["area_to_zero_ratio"],
+        "channel_ok": channel_ok,
+        # ② 单元宽度（引脚访问）
+        "pins_per_cell_max": max(pins_per_cell) if pins_per_cell else 0,
+        "pin_slot_need_um": pin_slot_need,
+        "cell_w_min_um": w_min,
+        "cell_w_median_um": w_med,
+        "width_ratio_for_pin_access": width_ratio,
+        "width_ok": width_ok,
+        # ③ 整 die 列数
+        "n_pin_access": n_pins_total,
+        "cols_need_um": cols_need,
+        "cols_have_um": cols_have,
+        "cols_ok": cols_ok,
     }
 
 

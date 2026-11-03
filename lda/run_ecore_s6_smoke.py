@@ -13,13 +13,18 @@
   S3 **布线段守恒**：route 的 net_pins 覆盖**每一条网**（routed_nets == 11），网一条不漏。
   S4 **DRC/LVS 如实报告**：违规数被记录且 claimable=False（不伪造 clean tapeout）。
   S5 **fail-closed**：空/None 输入 → 干线直接报错（不放行「看起来跑通了」）。
+  S7 **DRC 收敛**：弯角延伸把 `via_enclosure` 修到 **0**（孔必须被两层金属包围，且**不得**
+     靠画长线蒙过 —— 中心线长仍须 == MST）；余下 87 处全是 `min_spacing`，用
+     `drc_capacity_bound()` 三向下界证明是**容量不足**（通道 2<7 · 引脚槽 0.96µm>单元宽 0.067µm ·
+     列 6.12µm>die 1.09µm）；卡片与门禁必须同口径，且三向伪造（容量可行/0 违规/via 回退）必红。
   S6 **对外入口**：`/api/digital_demo` 消费干线（此前干线**只有自己的门禁在调它**）——
      卡片数字必须 == 门禁**独立重跑**的真值；未实现的段（综合/时序/ROUTED）显式 False；
      诚实性自检正向空、反向两向必报；两次调用 digest 一致且 JSON 硬。
 
 诚实边界
 ────────
-· ddetail.detail_route 的 claimable=False（c17 实测 101 DRC 违规）是**已知边界**，干线如实披露；
+· ddetail.detail_route 的 claimable=False（c17 实测 87 处 min_spacing；via_enclosure 已修至 0，
+  余下为**容量不足**，见 `ddetail.drc_capacity_bound`）是**已知边界**，干线如实披露；
   数字链几何/时序为模型假设（见 dplac/ddetail 披露）；非 foundry PDK；不报流片实测。
 · C 级自主：纯标准库 + 复用既有模块，LLM 不进判决路径。
 """
@@ -207,6 +212,68 @@ def main() -> int:
           and bool(json.dumps(card, allow_nan=False, ensure_ascii=False)),
           "digest=%s vs %s" % (card["digest_sha256"][:12], card2["digest_sha256"][:12]))
 
+    # ── S7a–S7d DRC 收敛（v0.9.370）：修得掉的修掉，修不掉的给出容量下界 ────
+    from lda_l2.ecore import ddetail as DTL                  # noqa: E402
+    from lda_l2.ecore import dplac as PLC                    # noqa: E402
+    from lda_l2.ecore import ddrc_lvs as DRC                 # noqa: E402
+
+    _p3 = PLC.place(nl)
+    _dr = DTL.detail_route(nl, _p3)
+    _r3 = DRC.run_drc(_dr.shapes)
+    _by = {}
+    for _v in _r3["violations"]:
+        _by[_v[0]] = _by.get(_v[0], 0) + 1
+    # ① 弯角延伸：VIA2 必须被两层金属包围（否则 via_enclosure 必违例）；
+    #    延伸只加在段端，**中心线长必须仍 == MST**（不能靠画长线把孔包住）
+    _mst_ok = all(abs(_dr.centerline_um[k] - _dr.mst_um[k]) < 1e-9 for k in _dr.centerline_um)
+    check("S7a 弯角延伸修复：via_enclosure == 0（%r）∧ 中心线长 == MST（延伸不改线长）"
+          % (_by,),
+          _by.get("via_enclosure", 0) == 0 and _mst_ok,
+          "by_rule=%r mst_ok=%s" % (_by, _mst_ok))
+
+    # ② 容量下界：三向都必须够才能清零 —— 当前三向都不够，且数字要能独立复算
+    _cap = DTL.drc_capacity_bound(nl, _p3)
+    _need = {
+        "channel": (_cap["capacity_per_row"], _cap["clique_max"]),
+        "width": (_cap["pin_slot_need_um"], _cap["cell_w_median_um"]),
+        "cols": (_cap["cols_need_um"], _cap["cols_have_um"]),
+    }
+    check("S7b 容量下界三向都缺：通道 %d<%d · 引脚槽需 %.2fµm>单元宽 %.3fµm · "
+          "列需 %.2fµm>die %.2fµm ⇒ verdict=ROUTING_RESOURCE_INFEASIBLE"
+          % (_need["channel"] + _need["width"] + _need["cols"]),
+          _cap["verdict"] == "ROUTING_RESOURCE_INFEASIBLE"
+          and _cap["capacity_per_row"] < _cap["clique_max"]
+          and _cap["pin_slot_need_um"] > _cap["cell_w_median_um"]
+          and _cap["cols_need_um"] > _cap["cols_have_um"],
+          "cap=%r" % ({k: _cap[k] for k in ("capacity_per_row", "clique_max",
+                                            "pin_slot_need_um", "cell_w_median_um",
+                                            "cols_need_um", "cols_have_um")},))
+
+    # ③ 卡片承载的容量/DRC 必须 == 独立复算（对外不许与门禁口径分叉）
+    _card3 = DC.case_card()
+    _c_cap = _card3["capacity"]
+    _same = all(abs(_c_cap[k] - _cap[k]) < 1e-9 for k in
+                ("capacity_per_row", "clique_max", "pin_slot_need_um",
+                 "cell_w_median_um", "cols_need_um", "cols_have_um"))
+    check("S7c 卡片 capacity == 独立复算 ∧ 卡片 DRC 违规数 == 门禁实测（%d）"
+          % len(_r3["violations"]),
+          _same and _c_cap["verdict"] == _cap["verdict"]
+          and _card3["drc_lvs"]["drc_violations"] == len(_r3["violations"]),
+          "card=%r gate=%r" % (_c_cap.get("verdict"), _cap.get("verdict")))
+
+    # ④ 反向三向：伪造「容量够」/「0 违规」/「via 回退」⇒ 自检必红
+    _f1 = json.loads(json.dumps(_card3))
+    _f1["capacity"]["verdict"] = "RESOURCE_SUFFICIENT"
+    _f2 = json.loads(json.dumps(_card3))
+    _f2["drc_lvs"]["drc_violations"] = 0
+    _f2["drc_lvs"]["drc_by_rule"] = {}
+    _f3 = json.loads(json.dumps(_card3))
+    _f3["drc_lvs"]["drc_by_rule"] = {"min_spacing": 73, "via_enclosure": 14}
+    check("S7d 反向三向必红：伪造容量可行 / 伪造 0 违规 / 伪造 via 回退 ⇒ 自检各报一条",
+          DC.selfcheck(_f1) and DC.selfcheck(_f2) and DC.selfcheck(_f3),
+          "f1=%r f2=%r f3=%r" % (DC.selfcheck(_f1)[:1], DC.selfcheck(_f2)[:1],
+                                 DC.selfcheck(_f3)[:1]))
+
     # ── S0t 耗时红线 ──────────────────────────────────────────────────
     dt = time.time() - T0
     check("S0t 门禁耗时 %.2f s < %.0f s" % (dt, AN_ELAPSED_MAX_S),
@@ -222,6 +289,8 @@ def main() -> int:
     print("  [D1–D4] DEF 写出段：placed DEF（落点 + 连接）· 往返字节双射 · **不写 ROUTED**")
     print("         （ddetail.shapes 无网归属 ⇒ 写布线就是编造；缺落点 ⇒ fail-closed）")
     print("  [S5] fail-closed：空输入直接报错")
+    print("  [S7a–d] DRC 收敛：via_enclosure 修至 0（不改线长）· 容量下界三向都缺 · "
+          "卡片与门禁同口径 · 三向伪造必红")
     print("  [S6a–f] 对外入口 /api/digital_demo：卡片 == 门禁独立重跑的真值 · "
           "未实现段显式 False · 自检两向可判红 · digest 稳定")
     print("  [边界] ddetail 路由器 claimable=False · 几何/时序为模型假设 · 非 foundry PDK")

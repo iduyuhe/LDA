@@ -1392,6 +1392,8 @@ CORE_SMOKES: List[str] = [
     "run_ecore_reuse_metrics_smoke.py",
     # S8 网覆盖完备门禁（v0.9.374）：每条网必须有归类（布了/端口未布/布失败）· 实测 ~0.5s
     "run_ecore_s8_smoke.py",
+    # S9 主链 LVS 适配器门禁（v0.9.375）：4 元组→2 元组、作用域随结论、三向反向 · 实测 ~0.6s
+    "run_ecore_s9_smoke.py",
     # 🔴 电子计算芯片案例卡 WebUI 门禁（E 征程收官 · D-155）：守 /api/ecore_demo 只读案例卡的诚实边界
     # （verdict 恒 DESIGN_VERIFIED / 不报 fabricated 能效 TOPS-TOPS-W / 规模按「可建模可验证容量」解读 /
     # landmark 仅背景坐标），跨源一致性（模块↔API 参考↔routes），含突变探针（破坏诚实边界/清空 landmark
@@ -3354,6 +3356,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_s7_smoke.py": 120.0,
     # S8 网覆盖完备门禁（v0.9.374）· 实测上界 <2s（@本机）
     "run_ecore_s8_smoke.py": 120.0,
+    # S9 主链 LVS 适配器门禁（v0.9.375）· 实测上界 <2s（@本机）
+    "run_ecore_s9_smoke.py": 120.0,
     # 基础复用度量门禁（S5 · R1/R2/R3 + 冻结债务表）· 实测上界 <30s（@本机）
     "run_ecore_reuse_metrics_smoke.py": 120.0,
     # E 征程收官 · 电子计算芯片案例卡 WebUI 门禁（D-155）· 实测上界 0.1s（单测）
@@ -3530,7 +3534,7 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_pm_m6_smoke.py": 120.0,
     # 光子存储征程 PM-G2 结算门禁（Γ 场求解标定 + 下游断口 PM-G11）：28 判据（含 8 探针）· 实测 ~23s
     "run_pm_g2_smoke.py": 300.0,
-    # 光子存储阵列案例卡前端门禁（取值路径 + 反向完备 + onclick）：29 判据（含 10 探针）
+    # 光子存储阵列案例卡前端门禁（取值路径 + 反向完备 + onclick）：31 判据（含 12 探针）
     # · 实测上界 ~45s（W8 逐档子进程实跑门禁；v0.9.198 起 _GATE_SMOKE 含 M6b ⇒ 增跑
     #   run_pm_g2_smoke ~23s ⇒ 宿主耗时自 ~12s 升至 ~45s ⇒ 预算 120→180 单调放宽）
     #   🔴 v0.9.223：新纳 `run_qs_m6_smoke`（41 判据）入 `_W10_EXTRA` ⇒ 全量基线（n=20）

@@ -10265,6 +10265,7 @@
     "run_ecore_s6_smoke.py": [],
     "run_ecore_s7_smoke.py": [],
     "run_ecore_s8_smoke.py": [],
+    "run_ecore_s9_smoke.py": [],
     "run_ecosystem_publish_smoke.py": [],
     "run_ecosystem_review2_smoke.py": [],
     "run_ecosystem_review3_smoke.py": [
@@ -11212,11 +11213,11 @@
       "4": 9,
       "5": 2
     },
-    "core_smokes": 401,
+    "core_smokes": 402,
     "gates_excluded": 1,
-    "gates_scanned": 400,
+    "gates_scanned": 401,
     "gates_with_anchors": 34,
-    "gates_zero_anchor": 366,
+    "gates_zero_anchor": 367,
     "l1_unified_covered": 546,
     "l2_bespoke_covered": 529,
     "l2_blind": 17,

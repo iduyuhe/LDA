@@ -1,5 +1,63 @@
 # Changelog
 
+## v0.9.375（2026-11-04 · **第 2 步：LVS 适配器（B 系列主链终于能跑既有 LVS）** · 净增 0 锚 · CI core **402**）
+
+### 一句话
+
+`dpnr` 的 `pins` 是 4 元组 `(inst, pin, x, y)`，`run_lvs` 要 `net -> [(x,y)]` ⇒
+**B 系列主链根本跑不了 LVS**（`ValueError: too many values to unpack`）。
+补一个**只做形状适配**的适配器 —— 不新写第二套 LVS，且把「作用域」与「结论」绑在一起。
+
+### ① 为什么必须排在主链切换之前
+
+切换那一刻若 LVS 还接不上，等于**用一个「0 DRC 但无 LVS」的主链，替换掉一个有
+183 条短路条目记录的旧链** —— 覆盖度反而下降，还丢掉最关键的短路证据。
+
+### ② 适配器（`dpnr.pins_for_lvs`）
+
+- **只做形状适配**：4 元组 → `(x, y)`，**点值逐位不变**（不取整、不合并、不插值）。
+  改点值等于改 LVS 结论。
+- **喂全部网**（不只已布网）：让 `run_lvs` 自己就对「多端点但无形状」的网报
+  `net_no_shapes` —— 比「只喂已布网再宣称干净」诚实。
+- **不造第二套实现**：S9h 用 AST 查 `dpnr` 内无 `def run_lvs`。两套必然漂移
+  （本仓已踩过：`ddetail` 与 `ddrc_lvs` 的短路口径分叉）。
+
+### ③ 作用域随结论同行（`dpnr.lvs_scoped`）
+
+| 字段 | c17 实测 |
+|---|---|
+| `ok` | **True** |
+| `scope` | **`ROUTED_SUBSET_ONLY`** |
+| `nets_checked` / `nets_total` | **4 / 11** |
+| `nets_uncovered` | 7（`n1/n10/n2/n22/n23/n6/n7`） |
+| `ok_is_full_chip` | **False** |
+
+🔴 `ok=True` **只是子集结论** —— 不得读成「c17 的 LVS 通过」。与 `net_coverage` 的
+`complete` / `all_routed` 是同一类纪律：**范围必须与结论同行**。
+
+### ④ 三个反向探针（都不许造出干净 LVS）
+
+| 探针 | 必报 |
+|---|---|
+| 复制一条金属、改标成异网 | `short`（+ `short_via`） |
+| 剔掉某网全部形状但保留 ≥2 个端点 | `net_no_shapes` |
+| 从某网 7 条金属里剔掉 1 条 | `net_disconnected` |
+
+### ⑤ 门禁与连带
+
+- 新门禁 `run_ecore_s9_smoke`（**10 判据**：S9a–S9i + S9t）入 CI core **401 → 402**；
+  `ecore_case` 入口数 70 → **71**；`timeout_budget_baseline` 增行（s9 0.32s）。
+- `capability_manifest` dpnr 增符号 `pins_for_lvs` / `lvs_scoped` / `LVS_ADAPTER_NOTE`
+  ⇒ **k4 台账重生**（加公共符号的连带，上次全量血案那条）。
+- 卡片 `capacity.dpnr_lvs` 对外可见；自检核：覆盖数闭合、`scope` 必须显式、
+  `ok_is_full_chip` 与 `nets_uncovered` 不得互斥、`by_rule` 求和自洽。
+
+### 诚实边界
+
+**本步不改善任何几何**：4 条已布网 LVS 干净是**既有事实**；7 条端口网**根本没被检验**
+（端口未建模，是第 3 步之后的事）。DRC 87 / LVS 183 条仍在旧链 `detail_route` 上。
+「适配器通过」≠「c17 的 LVS 通过」。
+
 ## v0.9.374（2026-11-04 · **第 1 步：网覆盖记账（11 条网只布 4 条，从此红门禁抓着）** · 净增 0 锚 · CI core **401**）
 
 ### 一句话

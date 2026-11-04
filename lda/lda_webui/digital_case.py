@@ -158,6 +158,10 @@ def _compute() -> Dict[str, Any]:
     _rt = PN.route_block(nl, PN.place_real(nl))
     cap = dict(cap, dpnr_coverage=_rt["coverage"],
                dpnr_skipped_port_nets=_rt["skipped_port_nets"])
+    # 🔴 B 系列主链的 LVS（v0.9.375 起可跑 —— 此前 pins 是 4 元组，run_lvs 直接 ValueError）。
+    #    `ok` 只对本模块**实际布了线的网**成立（c17：4/11），故 scope 必须与结论同行。
+    _lv = PN.lvs_scoped(_rt)
+    cap = dict(cap, dpnr_lvs={k: v for k, v in _lv.items() if k != "problems"})
     # 🔴 what-if：按「可布线所需」放大后 DRC 能否归零（4ms；**不是**可签核版图）
     cap = dict(cap, zero_experiment=DD.drc_zero_experiment(nl))
     ms = (time.perf_counter() - t0) * 1000.0
@@ -392,6 +396,25 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
         # complete（有归类）与 all_routed（真的全布）是两件事，卡片必须都能看到
         if "complete" not in _cov or "all_routed" not in _cov:
             bad.append("网覆盖缺 complete/all_routed 两字段 —— 两者不可合并")
+
+    # ── 主链 LVS 的作用域纪律（v0.9.375）──────────────────────────────
+    _lv = cap.get("dpnr_lvs") or {}
+    if _lv:
+        if _lv.get("nets_checked", 0) + len(_lv.get("nets_uncovered") or []) \
+                != _lv.get("nets_total", -1):
+            bad.append("LVS 覆盖数不闭合：checked %s + uncovered %s ≠ total %s"
+                       % (_lv.get("nets_checked"), len(_lv.get("nets_uncovered") or []),
+                          _lv.get("nets_total")))
+        if _lv.get("ok") and not _lv.get("ok_is_full_chip"):
+            # ok=True 是**子集**结论；只要 scope 不是 FULL_CHIP，就不许把它读成全芯片通过
+            if _lv.get("scope") != "ROUTED_SUBSET_ONLY":
+                bad.append("ok=True 且非全芯片，但 scope=%r —— 作用域必须显式"
+                           % (_lv.get("scope"),))
+        if _lv.get("ok_is_full_chip") and _lv.get("nets_uncovered"):
+            bad.append("ok_is_full_chip=True 却有 %d 条网未覆盖 —— 谎报全芯片 LVS"
+                       % len(_lv.get("nets_uncovered") or []))
+        if sum((_lv.get("by_rule") or {}).values()) != _lv.get("n_problems", -1):
+            bad.append("LVS by_rule 求和 ≠ n_problems")
 
     # ── what-if 实验（放大面积换清零）：结论与数字必须互相咬住 ────────────
     ze = cap.get("zero_experiment") or {}

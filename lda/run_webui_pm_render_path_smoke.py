@@ -222,8 +222,8 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {
 #:   （`` `run_x` **N 判据 ``）声明某门禁时，才把它加入本表；版本下线时请同批移除。
 #:   不变式（W10b 机核）：当前行里每个 `run_x` **N 判据 都必须能在 `_counts10` 内查到。
 _W10_EXTRA = (
-              # v0.9.374：S8 网覆盖完备（新门禁 8 判据，实测 ~0.3s）
-              "run_ecore_s8_smoke.py",
+              # v0.9.375：S9 主链 LVS 适配器（新门禁 10 判据，实测 ~0.3s）
+              "run_ecore_s9_smoke.py",
               )
 
 
@@ -275,6 +275,20 @@ def _readme_decl_drift(text, counts):
         if t in counts and counts[t] != n:
             bad.append((t, n, counts[t]))
     return bad
+
+
+def _dup_names(text):
+    """README「当前版本」行里**重复声明**的 `run_*` 名（同一个门禁写了两遍）。
+
+    🔴 v0.9.375 补：v0.9.369 / v0.9.374 / v0.9.375 **连续三版**都把同一门禁在顶行写了两遍
+    （`['s8','s8']` / `['s9','s9']`）。为什么三道守卫都没抓到：
+    · W10 只比**值** —— 重复声明的值相同 ⇒ 不产生漂移；
+    · W10b 只要求 **≥1 条**可对照 ⇒ 重复 2 条照样满足；
+    ⇒ 这个错**连犯三次无人管**，只能在明细里肉眼看。故补 W10c 把它变成机核。
+    """
+    names = re.findall(r"`(run_[A-Za-z0-9_]+)(?:\.py)?`\s*\*\*(\d+)\s*判据", text)
+    flat = [n for n, _c in names]
+    return sorted({n for n in flat if flat.count(n) > 1})
 
 
 #: 顶层块反向完备：`(JSON 前缀元组, 说明)`
@@ -645,6 +659,14 @@ def main() -> int:
           len(_cur_names) >= 1 and all(n + ".py" in _counts10 for n in _cur_names),
           "条目=%s" % _cur_names)
 
+    # 🔴 W10c（v0.9.375）：条目**不得重复** —— 连续三版把同一门禁在顶行写两遍却无人管，
+    #   因为 W10 只看值（重复值相同 ⇒ 无漂移）、W10b 只要求 ≥1 条（重复也满足）。
+    _dup = _dup_names(_cur)
+    check("W10c 🔴 当前版本行**不得重复声明**同一门禁（%d 条 / %d 个不同）"
+          " —— 重复声明不会产生漂移，三道旧守卫全放行"
+          % (len(_cur_names), len(set(_cur_names))),
+          bool(_cur_names) and not _dup, "重复=%s" % (_dup or "无"))
+
     # 🔴 W10-P1（v0.9.195 修）：原实现**硬编码** `run_pm_m5_smoke.py` —— 一旦当前版本行
     #   不再提及 m5（如本版改提 m6），探针第二项**恒 False**（改一个当前行里不存在的脚本
     #   当然不产生漂移）⇒ 探针自己失效。改为**动态取当前行第一个条目**做变异。
@@ -658,6 +680,13 @@ def main() -> int:
                                _counts10) != []]                        # README 旧值必红
     check("W10-P1 突变探针：原样绿 ∧ 实跑数变 / README 旧值 两改必红（动态取当前行条目）",
           all(_p10), "p10=%s t=%s" % (_p10, _t10))
+
+    # 🔴 W10c-P1 突变探针：把当前行第一条**复制一遍** ⇒ W10c 必报（检测器不许恒空）
+    _one = "`%s` **%d 判据" % (_t10.replace(".py", ""), _counts10.get(_t10, 0))
+    _dup_probe = _dup_names(_cur + " " + _one)
+    check("W10c-P1 突变探针：复制一条声明 ⇒ W10c 检测器必报（防它恒返空）",
+          (_t10.replace(".py", "") in _dup_probe) and _dup_names(_cur) == [],
+          "probe=%s 原样=%s" % (_dup_probe, _dup_names(_cur)))
 
     # ── W7 自入 CI core ─────────────────────────────────────────────────
     ci = os.path.join(_HERE, "run_ci_regression.py")

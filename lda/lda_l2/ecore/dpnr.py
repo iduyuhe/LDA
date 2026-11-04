@@ -1050,6 +1050,71 @@ def all_routing(rt: dict) -> list:
     return [s for s in rt["shapes"] if s.kind in ("metal", "via", "pin")]
 
 
+#: 🔴 LVS 适配器的**唯一职责**是形状适配（4 元组 → 2 元组）。
+#:   v0.9.375 之前 `route_block` 的 `pins` 是 `(inst, pin, x, y)`，而 `ddrc_lvs.run_lvs`
+#:   期望 `net -> [(x, y)]` ⇒ 直接喂会 `ValueError: too many values to unpack`
+#:   ⇒ **B 系列主链根本跑不了既有 LVS**。这条缺口靠适配器补，不靠「再写一套 LVS」补：
+#:   两套实现必然漂移（本仓已踩过一次：`ddetail` 与 `ddrc_lvs` 的短路口径分叉）。
+LVS_ADAPTER_NOTE = (
+    "适配器只做形状转换（4→2 元组），**不改点值**（不取整、不合并、不插值）："
+    "改点值等于改 LVS 结论。LVS 实现仍只有 `ddrc_lvs.run_lvs` 一份。"
+)
+
+
+def pins_for_lvs(rt: dict) -> dict:
+    """`dpnr` 的 pins（4 元组）→ `ddrc_lvs.run_lvs` 期望的 `{net: [(x, y), ...]}`。
+
+    用 `rt["pins"]` 的**全部**网（不只已布网）：让 `run_lvs` 自己就多端点但无形状的网
+    报 `net_no_shapes` —— 这比「只喂已布网、然后宣称 LVS 干净」诚实。
+    """
+    return {net: [(p[2], p[3]) for p in pts]
+            for net, pts in (rt.get("pins") or {}).items()}
+
+
+def _lvs_by_rule(problems) -> dict:
+    out = {}
+    for it in problems or []:
+        out[str(it[0])] = out.get(str(it[0]), 0) + 1
+    return dict(sorted(out.items()))
+
+
+def _unique_pairs(problems) -> int:
+    """LVS 去重网对数（同一条网对会被多段金属/多个通孔各报一次、双向各报一次）。"""
+    return len({frozenset((str(p[1]), str(p[2]))) for p in problems or []})
+
+
+def lvs_scoped(rt: dict) -> dict:
+    """在**本模块实际布了线的网**上跑既有 LVS，并显式报告未覆盖的网。
+
+    🔴 `ok` **只对 `nets_checked` 成立**，它不是全芯片 LVS。c17 上
+    `nets_checked=4 / nets_total=11` ⇒ 即使 `ok=True` 也**不得**写成「LVS 通过」。
+    这与 `net_coverage` 的 `complete`/`all_routed` 是同一类纪律：**范围必须与结论同行**。
+    """
+    from . import ddrc_lvs as RL
+
+    shapes = all_routing(rt)
+    pins_all = pins_for_lvs(rt)
+    checked = sorted({s.net for s in shapes if s.net is not None})
+    uncovered = sorted(set(pins_all) - set(checked))
+    res = RL.run_lvs(shapes, pins_all)
+
+    cov = rt.get("coverage") or {}
+    full = (not uncovered) and not cov.get("skipped_port") and not cov.get("failed")
+    return {
+        "ok": res["ok"],
+        "scope": "FULL_CHIP" if full else "ROUTED_SUBSET_ONLY",
+        "ok_is_full_chip": bool(full),
+        "nets_total": len(pins_all),
+        "nets_checked": len(checked),
+        "nets_uncovered": uncovered,
+        "problems": res["problems"],
+        "n_problems": len(res["problems"]),
+        "by_rule": _lvs_by_rule(res["problems"]),
+        "unique_pairs": _unique_pairs(res["problems"]),
+        "adapter_note": LVS_ADAPTER_NOTE,
+    }
+
+
 def net_components_rt(rt: dict) -> dict:
     """每网的层感知连通分量数（复用 E36 的 `net_components` 口径）。"""
     return DR.net_components([s for s in rt["shapes"] if s.net])

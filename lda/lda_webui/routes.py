@@ -783,6 +783,10 @@ def h_digital_demo(h, p, q, path):
     `synthesized=False` / `timing_included=False` /
     `routed_exported=False` 三条限制都写在返回体里；不报 TOPS/TOPS-W/fJ/op。
 
+    🔴 **主链 LVS 的作用域**（v0.9.375）：`capacity.dpnr_lvs` 给出 B 系列主链的 LVS 结果，
+    但 `ok` **只对已布网的子集成立** —— c17 实测 `nets_checked=4 / total=11`、
+    `scope=ROUTED_SUBSET_ONLY`、`ok_is_full_chip=False`。**不得**读成「c17 的 LVS 通过」。
+
     异常不 500（返回 200 + error 字段，与 h_ecore_demo 同风格）。
     """
     try:

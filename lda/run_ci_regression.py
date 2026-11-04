@@ -1398,6 +1398,10 @@ CORE_SMOKES: List[str] = [
     # 「补端口就全布通」是误判，悬空网只能改网表；端口判定只以网表为准（禁硬编码网名），
     # 旧义 `skipped_port` 不许偷改，且 claimable 不许被顺手放宽。纯标准库 · 实测 ~0.1s
     "run_ecore_s10_smoke.py",
+    # S11 pad 落点负结果门禁（v0.9.380）：加 pad 后端口网 1→4 但内部网 3→1 ⇒ 净 +1，
+    # 面积 ×1.806 ⇒ **负收益、默认不启用**；默认路径须逐位不变（回归轴），改善会红。
+    # 纯标准库 · 实测 ~0.4s
+    "run_ecore_s11_smoke.py",
     # 🔴 电子计算芯片案例卡 WebUI 门禁（E 征程收官 · D-155）：守 /api/ecore_demo 只读案例卡的诚实边界
     # （verdict 恒 DESIGN_VERIFIED / 不报 fabricated 能效 TOPS-TOPS-W / 规模按「可建模可验证容量」解读 /
     # landmark 仅背景坐标），跨源一致性（模块↔API 参考↔routes），含突变探针（破坏诚实边界/清空 landmark
@@ -3364,6 +3368,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_s9_smoke.py": 120.0,
     # S10 单端点网三分类门禁（v0.9.379）· 实测上界 <2s（@本机 · 三轮 0.31/0.31/0.32）
     "run_ecore_s10_smoke.py": 120.0,
+    # S11 pad 落点负结果门禁（v0.9.380）· 实测上界 <3s（@本机）
+    "run_ecore_s11_smoke.py": 120.0,
     # 基础复用度量门禁（S5 · R1/R2/R3 + 冻结债务表）· 实测上界 <30s（@本机）
     "run_ecore_reuse_metrics_smoke.py": 120.0,
     # E 征程收官 · 电子计算芯片案例卡 WebUI 门禁（D-155）· 实测上界 0.1s（单测）

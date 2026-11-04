@@ -197,8 +197,197 @@ def pin_points(inst: dict) -> list:
     return out
 
 
-def net_pins(pl: dict) -> dict:
-    """net → [(inst_name, pin, x, y)]，**逐引脚独立**（不塌缩到单元中心）。"""
+#: 🔴 **pad 落点模型的几何**（v0.9.380）—— 这是**示意级 I/O 落点**，
+#:   **不是 foundry pad ring**：没有 ESD、没有电源 pad、没有 I/O ring 层次、
+#:   没有真实 pad 尺寸（真实 pad 是几十 µm，这里只有 240nm = 与单元引脚同尺寸）。
+#:   带宽取 `W + 2·S_MIN` 而不是 `W + S_MIN`：pad 右端到单元左缘要留 S_MIN，
+#:   pad 自身占 W，再留一个 S_MIN 缓冲给「M4 竖段落在 pad 列上」的情况。
+PAD_BAND_UM = W + 2.0 * DL.S_MIN + DL.SPACE_EPS
+#: pad 在 band 内的半宽 = 与单元引脚同尺寸（240×240nm）
+PAD_HALF_UM = PAD_HALF
+
+
+def _pad_ys(items, pl_pins: dict, h: float, h_row: float = None,
+            row_pitch: float = None) -> dict:
+    """给同侧 pad 分配 y：**对齐到该网引脚 y，且必须落在「行内」、避开通道带**。
+
+    🔴 三条都是实测逼出来的（v0.9.380，每一条都对应一次成片违例）：
+
+    ① **不能均匀分布**：均匀摊把 `n6` 的 pad 放到 y=5.2，而它的单元引脚在 y=0.53
+       ⇒ M4 竖段跨度 4.67µm，一条网吃掉整列 ⇒ `no_column` 成片（连原本布通的内部网也被挤掉）。
+    ② **必须避开通道带**：通道里是 M3 `trunk`，而 pad 自带 `M3 pad`（VIA2 需要 M3 侧包围）
+       ⇒ pad 落进通道就与 trunk 同层相撞（实测 `min_spacing`，x 在 pad 列、y 恰在 channel_y+W/2）。
+    ③ **同侧 pad 间距** ≥ `2·pad_half + S_MIN`（M3 与 M4 两层焊盘都要留间距）。
+
+    做法：把 die 切成「行内可用带」（`[r·pitch + 余量, r·pitch + h_row − 余量]`），
+    按目标 y 就近分配，带内不够就换下一条带 —— **不跨通道**。
+    """
+    dy = 2.0 * PAD_HALF_UM + DL.S_MIN
+    lo_b = PAD_HALF_UM + DL.S_MIN
+    if h_row is None or row_pitch is None or h_row <= 2.0 * lo_b:
+        bands = [(lo_b, max(lo_b, h - lo_b))]
+    else:
+        bands, r = [], 0
+        while r * row_pitch < h - 1e-9:
+            y0 = r * row_pitch + lo_b
+            y1 = min(h - lo_b, r * row_pitch + h_row - lo_b)
+            if y1 >= y0:
+                bands.append((y0, y1))
+            r += 1
+        if not bands:
+            bands = [(lo_b, max(lo_b, h - lo_b))]
+
+    tgt = []
+    for _d, _p, _b, net in items:
+        ys = sorted(q[3] for q in (pl_pins.get(net) or []))
+        t = ys[len(ys) // 2] if ys else (bands[0][0] + bands[-1][1]) / 2.0
+        tgt.append((t, net))
+    tgt.sort(key=lambda kv: (kv[0], kv[1]))
+
+    out, prev, bi = {}, None, 0
+    for t, net in tgt:
+        placed = False
+        for j in range(bi, len(bands)):
+            b0, b1 = bands[j]
+            y = max(b0, min(b1, t))
+            if prev is not None and j == bi and y < prev + dy:
+                y = prev + dy
+            if y <= b1 + 1e-9:
+                out[net] = y
+                prev = y
+                bi = j
+                placed = True
+                break
+        if not placed:                       # 带都用完了 ⇒ 退回最后一个带的下界（并如实超界）
+            b0, b1 = bands[-1]
+            y = max(b0, min(b1, t))
+            if prev is not None:
+                y = max(y, prev + dy)
+            out[net] = y
+            prev = y
+    return out
+
+
+def build_ports(nl, pl: dict, band: float = None, extra_cols: int = 0) -> dict:
+    """给 **primary I/O 网**建示意级 pad 落点，并把单元整体右移一条 band。
+
+    🔴 **这一步解除的是「端口网根本没被检验」，不是「做出了 IO ring」**：
+
+    · 之前 6 条端口网只有 1 个端点（另一端在 primary I/O 上），布线器无从下手 ⇒
+      DRC 0 / LVS 0 **只覆盖 4/11 条网**。pad 落点让这 6 条网变成 2 端点 ⇒ 可布、可验；
+    · pad 只是 `M3 pad + VIA2 + M4 pad` 的三层小栈（240nm），**没有 ESD/电源/ring 层次**，
+      也没有真实 pad 尺寸 ⇒ 只能称「示意级 I/O 落点」；
+    · 单元整体右移 `band`，**相对几何逐位不变**（平移不变性由门禁机核：平移前后
+      布通数 / DRC 数 / LVS 数必须相同）。
+
+    🔴 **面积必须如实记账**：`die_w` 增加 `2·band`，这是「让端口网可布」的代价，
+    与 `CELL_GAP` 换 pin 可达性是**两笔不同的账**，不得混算。
+
+    返回 `{"pads": {net: {name,dir,port,bit,x,y,pad_half_um}}, band_um, die_w_um,
+    die_w_um_noport, die_h_um, area_um2, area_um2_noport, n_pads, n_in, n_out, pl}`；
+    `pl` 是**平移后**的布局（调用方直接用它去 `route_block(..., ports=ports)`）。
+    """
+    # 🔴 `band` 的含义（v0.9.380 定案）：**pad 右端到单元左缘的净距预算**。
+    #    pad 中心落在列网格的**第 0 列**（`PIN_GRID_UM`），所以 band = 2·pad_half + S_MIN
+    #    = 0.34（pad 占 [0.00, 0.24]，单元从 0.34 起 ⇒ 净距 0.10 = S_MIN）。
+    band = (2.0 * PAD_HALF_UM + DL.S_MIN) if band is None else float(band)
+    ph = PAD_HALF_UM
+    in_nets = getattr(nl, "in_nets", None) or {}
+    outs = getattr(nl, "outputs", None) or {}
+    ins = [("in", p, int(b), net) for (p, b), net in sorted(in_nets.items(),
+                                                           key=lambda kv: (kv[0][0], kv[0][1]))]
+    ous = [("out", p, int(b), net) for p, tup in outs.items()
+           for b, net in enumerate(tuple(tup))]
+
+    h = pl["die_h_um"]
+    die_w0 = pl["die_w_um"]
+    #: `extra_cols`：**为布线通额外加的列数**（每列一个 M4 轨道节距）。
+    #: 🔴 这不是装饰：E38/E50–E53 的结论是「布不通不是算法不够聪明，是资源不够」，
+    #:    端口网从「无端点」变成「有端点」后，列需求立刻上升 ⇒ 如实报「加多少面积换多少布通」。
+    extra_w = max(0, int(extra_cols)) * PITCH
+    # 🔴🔴 **每个 pad 独占一条引出列**（v0.9.380 第四修）。
+    #    前三种排法都把 pad 放在同一 x 上（band 中点 / 网格第 0 列），结果所有 pad 的
+    #    M4 竖段都在**同一列**、y 区间互相重叠 ⇒ 实测 113 处 `min_spacing` + 315 条 LVS
+    #    （其中 257 `short_via` + 57 `short`：pad 之间直接短接）。
+    #    真实 IO ring 是一列 pad，它们的引线靠**内部扇形散开**到不同列；本模型没有
+    #    M2/M3 扇形布线 ⇒ 直接把「引出列」画出来：第 i 个输入 pad 用第 i 列，
+    #    输出侧从右端往左数。**代价如实计入 band 宽度**（band_l = n_in·pitch + 余量）。
+    n_in, n_out = len(ins), len(ous)
+    band_l = n_in * PITCH + 2.0 * PAD_HALF_UM + DL.S_MIN
+    band_r = n_out * PITCH + 2.0 * PAD_HALF_UM + DL.S_MIN
+    band = band_l if band is None else float(band)
+    #: 🔴 `die_w` 必须**对齐列网格**：`die_w = W + K·PITCH` ⇒ 最后一个网格点恰为
+    #:    `die_w − pad_half`，右 pad 才能落在网格上（否则右 pad 与末列 M4 同层重叠）。
+    _k_min = int(math.ceil((die_w0 + band_l + band_r - W) / PITCH - 1e-9))
+    _k = max(1, _k_min) + max(0, int(extra_cols))
+    die_w = W + _k * PITCH
+    pads = {}
+    _pl_pins = net_pins(pl)          # 无 pad ⇒ 只有单元引脚，用来对齐 y
+
+    def _put(items, xs_seq, prefix):
+        ys = _pad_ys(items, _pl_pins, h, pl.get("h_row_um"), pl.get("row_pitch_um"))
+        for k, (d, p, b, net) in enumerate(items):
+            pads[net] = {"name": "%s_%s" % (prefix, net), "net": net, "dir": d,
+                         "port": p, "bit": b, "x": xs_seq[k], "y": ys[net],
+                         "pad_half_um": ph}
+
+    # 输入从第 0 列往右数；输出从最右列往左数 —— 每个 pad 一条独立引出列。
+    _put(ins, [PIN_GRID_UM + k * PITCH for k in range(n_in)], "PAD_IN")
+    _put(ous, [die_w - PAD_HALF_UM - k * PITCH for k in range(n_out)], "PAD_OUT")
+
+    pl2 = dict(pl)
+    pl2["insts"] = [dict(i, x0=i["x0"] + band) for i in pl["insts"]]
+    pl2["die_w_um"] = die_w
+    pl2["n_ports_shift_um"] = band
+    return {"pads": pads, "band_um": band, "pad_half_um": ph,
+            "extra_cols": max(0, int(extra_cols)), "extra_w_um": extra_w,
+            "die_w_um": die_w, "die_w_um_noport": die_w0, "die_h_um": h,
+            # 🔴 **默认不启用**的披露（必须与任何「pad 已建模」的说法同行）：
+            #    实测 c17：端口网布通 +4（n22/n23/n6/n7）但内部网布通 −3（n11/n16/…）
+            #    ⇒ 净 +1（4→5），面积 ×1.806，且 n1/n2/n3 仍 no_column。
+            #    瓶颈已从「无端点」转移到**局部列 / 层资源** ⇒ 加 pad 不是杠杆。
+            "not_enabled_reason": (
+                "加 pad 后端口网布通 +4、内部网 −3（净 +1，4→5），面积 ×1.806，"
+                "n1/n2/n3 仍 no_column ⇒ 负收益。瓶颈从「无端点」转移到「局部列/层资源」，"
+                "与 E38/E50–E53 同结论：唯一杠杆是改拓扑/加层，不是加 pad。"),
+            "area_um2": die_w * h, "area_um2_noport": die_w0 * h,
+            "n_pads": len(pads), "n_in": len(ins), "n_out": len(ous),
+            "pl": pl2}
+
+
+def _pad_fixed(ports: dict) -> dict:
+    """pad 网的列**固定为 pad 自身 x**（M2 逃逸 = 0、M4 竖段直接在 pad 正下方）。
+
+    🔴 为什么必须固定（v0.9.380 三条实测失败路径）：
+    ① 列起点右移 band ⇒ 右带里的 pad 与末列 M4 同层重叠（5 处 `min_spacing` + 2 处 `short_via`）；
+    ② 只缩列宽 ⇒ pad 被 `max_off`（M2 逃逸上限 0.72）锁死在 2 列内 ⇒ `no_column` 成片；
+    ③ 均匀摊 pad y ⇒ M4 跨度近 5µm，一条网吃掉整列 ⇒ 连原本布通的内部网也被挤掉。
+    定案：pad = 列网格的第 0 列 / 第 K 列，**它自己就是一条列**，不额外吃列资源。
+    """
+    if not ports:
+        return {}
+    return {n: v["x"] for n, v in (ports.get("pads") or {}).items()}
+
+
+def _pad_shapes(ports: dict, hv: float) -> list:
+    """pad 的三层小栈：`M3 pad → VIA2 → M4 pad`（**必须有孔**，否则 LVS 报不连通）。"""
+    out = []
+    for net, p in (ports.get("pads") or {}).items():
+        x, y = p["x"], p["y"]
+        ph = p["pad_half_um"]
+        out.append(Shape(DD.L_M3, x - ph, y - ph, x + ph, y + ph, net=net, kind="pin"))
+        out.append(Shape(DD.L_VIA2, x - hv, y - hv, x + hv, y + hv, net=net, kind="via"))
+        out.append(Shape(DD.L_M4, x - W / 2.0, y - W / 2.0,
+                         x + W / 2.0, y + W / 2.0, net=net, kind="pin"))
+    return out
+
+
+def net_pins(pl: dict, ports: dict = None) -> dict:
+    """net → [(inst_name, pin, x, y)]，**逐引脚独立**（不塌缩到单元中心）。
+
+    `ports` 给定时把 **pad 落点**也算作该网的端点（2 端点 ⇒ 才布得通）。
+    不传时行为与 v0.9.379 逐位相同（这是回归判据：加 pad 必须是**可选**的）。
+    """
     pins = defaultdict(list)
     for inst in pl["insts"]:
         g = inst["gate"]
@@ -211,6 +400,9 @@ def net_pins(pl: dict) -> dict:
                 k = idx[p["pin"]]
                 if k < len(g.ins):
                     pins[g.ins[k]].append((inst["name"], p["pin"], p["x"], p["y"]))
+    if ports:
+        for net, meta in (ports.get("pads") or {}).items():
+            pins[net].append((meta["name"], "P", meta["x"], meta["y"]))
     return dict(pins)
 
 
@@ -442,7 +634,7 @@ def _color_intervals(ivs: list, gap: float = 0.0) -> list:
 
 
 def _alloc_columns(runs: list, x0_grid: float, die_w: float,
-                   max_off: float = None) -> tuple:
+                   max_off: float = None, fixed: dict = None) -> tuple:
     """M4 列分配：离散列网格 + y 区间着色 ⇒ 不同网的 M4 在 y 上永不重叠。
 
     `runs` = [(net, y_lo, y_hi, x_desired, dir_pref)]，
@@ -467,7 +659,32 @@ def _alloc_columns(runs: list, x0_grid: float, die_w: float,
     col_ivs: list = [[] for _ in range(ncol)]     # 每列已占用的 y 区间
     xs = [0.0] * len(runs)
     fail = []
-    order = sorted(range(len(runs)), key=lambda i: (runs[i][3], runs[i][1], i))
+    # 🔴 固定列（pad 网）**先占位**：它们不走搜索，否则会被 `max_off` 判成 too_far
+    #    或被其它网抢走那一列。占位后其余网按 y 区间着色避开（这才是「同列不同网在 y 上不重叠」）。
+    _fx = dict(fixed or ())
+
+    def _is_fixed(row) -> bool:
+        """只有**引脚 x 恰等于 pad x** 的那一段才固定（v0.9.380 第五修）。
+
+        🔴 按「网」固定会出事：一个网既有 pad 点又有单元引脚（n2 = pad@0.48 + pin@3.44），
+        两段都被拽到 0.48 ⇒ 3.44 那段偏差 2.96µm，超出 M2 逃逸上限 ⇒ 退回 **M3 长跳线**
+        画在引脚 y 上（实测 6 条，与邻网 M3 焊盘成片 `min_spacing`）。这正是 E51 的老病。
+        """
+        fx = _fx.get(row[0])
+        return fx is not None and abs(row[3] - fx) <= 1e-9
+
+    for i, row in enumerate(runs):
+        if not _is_fixed(row):
+            continue
+        fx = _fx[row[0]]
+        xs[i] = fx
+        if row[2] - row[1] > 1e-9:
+            k = int(round((fx - x0_grid) / PITCH))
+            if 0 <= k < ncol:
+                col_ivs[k].append((row[1] - DL.S_MIN / 2.0, row[2] + DL.S_MIN / 2.0))
+    order = [i for i in sorted(range(len(runs)),
+                               key=lambda i: (runs[i][3], runs[i][1], i))
+             if not _is_fixed(runs[i])]
     for i in order:
         row = runs[i]
         _net, ya, yb, xd, pref = row[0], row[1], row[2], row[3], row[4]
@@ -694,7 +911,7 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
                 m2_jog_max: float = None, in_row: bool = False,
                 col_iters: int = 1, vert_layer: str = "M4",
                 in_row_m3: bool = False, in_row_exclude=None,
-                in_row_check: bool = True) -> dict:
+                in_row_check: bool = True, ports: dict = None) -> dict:
     """按通道分轨 + 列分配布内部网。返回路由结果与**容量判定**。
 
     🔴 **顺序是本模块的第二个真修复（v0.9.349）**：trunk 的实际长度是
@@ -712,7 +929,8 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
     ch_um = pl["ch_um"] if ch_um is None else ch_um
     jog_max = M2_JOG_MAX if m2_jog_max is None else float(m2_jog_max)
     t_cap = tracks_in_channel(ch_um)
-    pins = net_pins(pl)
+    # 🔴 `ports` 给定时，pad 落点也算该网端点 ⇒ 原本单端点的端口网变成 2 端点（可布）。
+    pins = net_pins(pl, ports=ports)
     n_rows = pl["rows"]
     # 🔴 单端点网（端点 < 2）⇒ 本模块**不建端口** ⇒ 无法布，但**必须记账**。
     #    此前这类网在 `len(pts) < 2` 处被静默跳过，而 `unrouted` 返回空 ⇒ 读者会以为「全布完了」。
@@ -748,6 +966,10 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
                        if n_rows > 1 else 0)
 
     # —— ② 预分配列：yt 取该通道**最高轨**（最坏情况，竖直段只长不短）——
+    # 🔴 列网格起点仍是 `PIN_GRID_UM`（v0.9.380 定案）：**pad 就落在列网格的第 0 列 /
+    #    第 K 列上**，M2 逃逸 = 0，M4 竖段直接在 pad 正下方 —— 这样 pad 不额外吃列。
+    #    （中间试过两种都不行：① 起点右移 band ⇒ 右带里的 pad 与末列相撞；
+    #     ② 只缩列宽 ⇒ pad 被 `max_off` 锁死在 2 列内 ⇒ no_column 成片。）
     x0_grid = PIN_GRID_UM
     # 同一 y 带内的引脚按 x 排序后**左右交替**逃逸：M2 逃逸条本身占 y 带（高 W），
     # 同 y 的相邻引脚若都朝同一侧走，两条必然相撞（NAND2 的 A/B 就是同 y、只差 0.36µm）。
@@ -790,7 +1012,8 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
             runs.append((net, min(y, y_worst) - EXT, max(y, y_worst) + EXT, x,
                          pt_pref.get((net, i), 0), moff))
     xs, ncol_used, col_fails = _alloc_columns(
-        runs, x0_grid, pl["die_w_um"], max_off=(jog_max if m2_jog else None))
+        runs, x0_grid, pl["die_w_um"], max_off=(jog_max if m2_jog else None),
+        fixed=_pad_fixed(ports))
     cols = defaultdict(list)
     for r, cx in zip(runs, xs):
         cols[r[0]].append(cx)
@@ -831,7 +1054,8 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
             if not _runs:
                 break
             _xs2, _nc2, _cf2 = _alloc_columns(
-                _runs, x0_grid, pl["die_w_um"], max_off=(jog_max if m2_jog else None))
+                _runs, x0_grid, pl["die_w_um"], max_off=(jog_max if m2_jog else None),
+                fixed=_pad_fixed(ports))
             _cols2 = defaultdict(list)
             for _r, _cx in zip(_runs, _xs2):
                 _cols2[_r[0]].append(_cx)
@@ -888,6 +1112,10 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
     acc: list = []      # 引脚接入栈（M1/M2/M3 pad + 孔）—— 受**单元引脚几何**限制
     shapes: list = []   # 走线金属（M3 trunk / M4 竖 / 弯角孔与 landing）
     hv = DD.VIA / 2.0
+    # 🔴 pad 形状归入**接入栈**（不是走线）：DRC 归因要能分开「路由器画的」与
+    #    「端点自带的」。pad 栈必须有 VIA2，否则 M3 pad 与 M4 竖段**不连通** ⇒ LVS 报断。
+    if ports:
+        acc += _pad_shapes(ports, hv)
     n_m2_jog = 0
     n_m3_jog = 0
     n_in_row = 0
@@ -1007,7 +1235,7 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
             return route_block(nl, pl, ch_um=ch_um, m2_jog=m2_jog, m2_jog_max=m2_jog_max,
                                in_row=in_row, col_iters=col_iters, vert_layer=vert_layer,
                                in_row_m3=True, in_row_exclude=_ex | bad,
-                               in_row_check=in_row_check)
+                               in_row_check=in_row_check, ports=ports)
     return {"shapes": shapes_all, "shapes_route": shapes, "shapes_access": acc,
             "routed": routed, "unrouted": unrouted, "n_unrouted": len(unrouted),
             "ch_info": ch_info, "t_cap": t_cap, "n_cols_used": ncol_used,
@@ -1030,6 +1258,19 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
             #    `dangling_nets` 只能改网表 —— 两者混称 `skipped_port` 会让读者误判工作量。
             "port_nets": _se["port_nets"], "n_port_nets": _se["n_port"],
             "dangling_nets": _se["dangling_nets"], "n_dangling_nets": _se["n_dangling"],
+            # 🔴 pad 落点模型的披露（None = 未启用端口建模，此路径与 v0.9.379 逐位相同）。
+            "ports": (None if not ports else {
+                "model": "示意级 I/O 落点（240nm pad 栈 · 无 ESD/电源/ring 层次）",
+                "n_pads": ports.get("n_pads"), "n_in": ports.get("n_in"),
+                "n_out": ports.get("n_out"), "band_um": ports.get("band_um"),
+                "die_w_um": ports.get("die_w_um"),
+                "die_w_um_noport": ports.get("die_w_um_noport"),
+                "area_um2": ports.get("area_um2"),
+                "area_um2_noport": ports.get("area_um2_noport"),
+                "pads": {n: {"dir": v["dir"], "port": v["port"], "bit": v["bit"],
+                             "x": v["x"], "y": v["y"]}
+                         for n, v in (ports.get("pads") or {}).items()},
+            }),
             "coverage": _coverage(routed=set(routed) | set(inrow),
                                   skipped=set(skipped_port),
                                   failed=set(unrouted) | set(inrow_fail),
@@ -1147,8 +1388,21 @@ def _lvs_by_rule(problems) -> dict:
 
 
 def _unique_pairs(problems) -> int:
-    """LVS 去重网对数（同一条网对会被多段金属/多个通孔各报一次、双向各报一次）。"""
-    return len({frozenset((str(p[1]), str(p[2]))) for p in problems or []})
+    """LVS **短路类**问题的去重**网对数**（同一网对会被多段金属/多个通孔各报一次、双向各报一次）。
+
+    🔴 只统计 `short` / `short_via`（v0.9.380 修）：`ddrc_lvs.run_lvs` 的 problems 是
+    **变长元组** —— `("net_no_shapes", net)` 只有 2 元、`("net_disconnected", net, n)` 3 元、
+    `("pin_not_reached", net, x, y)` / `("short", a, b, layer)` 4 元。旧实现无条件取
+    `p[1]`/`p[2]` ⇒ **只要出现 `net_no_shapes` 就 IndexError**。此前没暴露，是因为
+    c17 上 `problems` 恰好恒为空（4/11 子集全干净），这条路径从没被走到 ——
+    加 pad 后首次出现该形态即崩。**「只在没问题时能跑」的代码不是代码。**
+    """
+    out = set()
+    for p in problems or []:
+        if not p or len(p) < 3 or p[0] not in ("short", "short_via"):
+            continue
+        out.add(frozenset((str(p[1]), str(p[2]))))
+    return len(out)
 
 
 def lvs_scoped(rt: dict) -> dict:

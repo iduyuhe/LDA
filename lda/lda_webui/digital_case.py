@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import copy
 import threading
 from typing import Any, Dict, List
 
@@ -255,7 +256,8 @@ def _compute() -> Dict[str, Any]:
             "nets_skipped_port": routed.get("nets_skipped_port"),
             "nets_failed": routed.get("nets_failed"),
             "all_routed": bool(routed.get("all_routed")),
-            "claimable": False,
+            # 🔴 派生值（v0.9.378），不是常量 False
+            "claimable": bool((report.get("claimability") or {}).get("claimable")),
         },
         "drc_lvs": {
             "chain": dl.get("chain"),
@@ -278,8 +280,11 @@ def _compute() -> Dict[str, Any]:
             "nets_checked": dl.get("nets_checked", lvs.get("nets_checked")),
             "nets_total": dl.get("nets_total", lvs.get("nets_total")),
             "nets_uncovered": list(dl.get("nets_uncovered") or lvs.get("nets_uncovered") or []),
-            "claimable": False,
+            "claimable": bool((report.get("claimability") or {}).get("claimable")),
         },
+        # 🔴 签核资格：条件 + 阻塞项 + 清单自检，全部来自实测推导
+        "claimable": bool((report.get("claimability") or {}).get("claimable")),
+        "claimability": dict(report.get("claimability") or {}),
         "baseline": _baseline_facts(report.get("baseline")),
         "area_delta": dict(report.get("area_delta") or {}),
         "def_export": {
@@ -336,8 +341,14 @@ def clear_cache() -> None:
 
 
 def case_card() -> Dict[str, Any]:
-    """组装只读卡片（微秒级：仅重组字典 + 算 digest）。"""
-    f = facts()
+    """组装只读卡片（微秒级：仅重组字典 + 算 digest）。
+
+    🔴 **返回深拷贝**（v0.9.378）：`facts()` 是模块级缓存，早期实现里卡片的嵌套
+    dict/list 与缓存**共享同一对象** ⇒ 调用方（测试、门禁、任何消费方）就地改一张卡
+    会把缓存改坏，之后所有请求都读到被污染的数据。
+    这是实测踩到的：门禁探针「删掉一条条件」后，下一次 `case_card()` 也少了那条。
+    """
+    f = copy.deepcopy(facts())
     card: Dict[str, Any] = {
         "endpoint": ENDPOINT,
         "case_id": CASE_ID,
@@ -353,6 +364,8 @@ def case_card() -> Dict[str, Any]:
         # 🔴 双报一版（v0.9.376 主链切换）：旧链数字与面积代价必须同卡呈现
         "baseline": f["baseline"],
         "area_delta": f["area_delta"],
+        "claimable": f["claimable"],
+        "claimability": f["claimability"],
         "def_export": f["def_export"],
         "conservation_ok": f["conservation_ok"],
         "problems": f["problems"],
@@ -366,7 +379,9 @@ def case_card() -> Dict[str, Any]:
         "honest_note": list(HONEST_NOTES),
         "disclosure": {
             "pdk": "非 foundry PDK（教科书尺度 INV/NAND2）",
-            "signoff": "否 —— DRC/LVS 未 converged，路由器 claimable=False",
+            "signoff": "否 —— claimable 由六条实测条件推导（all_nets_routed / drc_zero / "
+                       "lvs_zero / lvs_scope_full_chip / timing_included / hold_checked），"
+                       "当前未满足，逐条见 claimability.blocking",
             "external_agreement": "未验证（本机无 OpenROAD/OpenSTA；不宣称一致）",
             "pin_names": "LDA 约定：输入取 dcell 引脚名，输出统一 z（非库真名）",
             "units": "DEF 1 DBU = 1 nm（UNITS DISTANCE MICRONS 1000）",
@@ -390,7 +405,10 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
     if not notes:
         bad.append("honest_note 为空 —— 诚实边界不得静默")
     blob = " ".join(notes)
-    for kw in ("非流片实测", "claimable=False", "非 foundry PDK", "TOPS", "synthesized=False"):
+    # 🔴 v0.9.378：关键词从 `claimable=False` 改为 `claimable` —— 该常量已不存在
+    #   （签核资格改为六条件派生）。仍要求提到它，只是不再钉死某个取值，
+    #   否则条件成立的那天会与「必须写 False」自相矛盾。
+    for kw in ("非流片实测", "claimable", "非 foundry PDK", "TOPS", "synthesized=False"):
         if kw not in blob:
             bad.append("honest_note 缺关键词：%s" % kw)
     if card.get("synthesized") is not False:
@@ -479,7 +497,7 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
         if _b2.get("chain") != "detail_route":
             bad.append("baseline.chain 必须是 detail_route（当前 %r）" % (_b2.get("chain"),))
         if _b2.get("claimable") is not False:
-            bad.append("baseline.claimable 必须为 False")
+            bad.append("baseline.claimable 必须为 False（旧链有 87/183 违规 ⇒ 六条件必不成立）")
     # 双报一致性：主链标识 + 面积代价字段必须齐（面积差不许只给一边）
     if card.get("chain") != "dpnr":
         bad.append("card.chain 必须是 dpnr（当前 %r）" % (card.get("chain"),))
@@ -488,6 +506,41 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
         bad.append("area_delta 缺席 —— 主链切换的面积代价不得省略")
     elif not (_ad.get("main_die_area_um2") and _ad.get("baseline_die_area_um2")):
         bad.append("area_delta 两侧面积必须都给：%r" % (_ad,))
+
+    # ── 签核资格（v0.9.378）：claimable 必须由条件推导，缺一必 False ──────────
+    _cl = card.get("claimability") or {}
+    _conds = _cl.get("conditions") or {}
+    _block = _cl.get("blocking")
+    if not _cl:
+        bad.append("claimability 缺席 —— claimable 不得再是常量")
+    else:
+        if _cl.get("condition_list_ok") is not True:
+            bad.append("条件清单被改动（condition_list_ok=False）—— 六条缺一不可")
+        # 🔴 数**实有条目**，不信自报的 `n_conditions` ——
+        #   首版这里读 self-reported 计数，删掉一条条件时它仍是旧值 6 ⇒ 探针空转（已实测）。
+        if len(_conds) != 6:
+            bad.append("实有 %d 条条件 ≠ 6 —— 有条件被删/漏算" % len(_conds))
+        if _cl.get("n_conditions") != len(_conds):
+            bad.append("n_conditions=%r 与实有 %d 条不一致 —— 计数被手改"
+                       % (_cl.get("n_conditions"), len(_conds)))
+        _derived = all(_conds.get(k) is True for k in _conds) and len(_conds) == 6
+        if card.get("claimable") is not _derived:
+            bad.append("claimable=%r 与条件推导值 %r 不一致 —— 有人手改了结论"
+                       % (card.get("claimable"), _derived))
+        if card.get("claimable") is False and not _block:
+            bad.append("claimable=False 却未给 blocking —— 不可签核必须说清卡在哪")
+        # 🔴 blocking 必须**恰好**等于条件里为 False 的那些（多列/漏列都是手改痕迹）
+        _expect_block = sorted(k for k, v in _conds.items() if v is not True)
+        if sorted(_block or []) != _expect_block:
+            bad.append("blocking=%r ≠ 实际未满足项 %r —— 阻塞清单与条件不一致"
+                       % (sorted(_block or []), _expect_block))
+        if card.get("claimable") is True and _block:
+            bad.append("claimable=True 却仍有阻塞项 %r" % (_block,))
+        # 与 drc_lvs / routing 分区必须同值（一个结论，不许出现两个）
+        if (card.get("drc_lvs") or {}).get("claimable") is not card.get("claimable"):
+            bad.append("drc_lvs.claimable 与顶层 claimable 不一致")
+        if (card.get("routing") or {}).get("claimable") is not card.get("claimable"):
+            bad.append("routing.claimable 与顶层 claimable 不一致")
 
     if card.get("conservation_ok") is not True:
         bad.append("干线守恒断言未通过 —— 不能对外声称「跑通」")

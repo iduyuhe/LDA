@@ -1,5 +1,54 @@
 # Changelog
 
+## v0.9.378（2026-11-04 · **第 5 步：签核资格条件化（M2 收口）** · 净增 0 锚 · CI core **402**）
+
+### 一句话
+
+`claimable=False` 此前是**硬编码常量**（散落 4 处）。它能挡住「冒充签核」，
+但**永远为假的判据不构成守卫** —— 任何「缺一必 False」的探针都会平凡通过。
+本版改成**六条实测条件派生**。
+
+### ① 六条条件（缺一即 False，缺数据也算不成立）
+
+| 条件 | 含义 | c17 现状 |
+|---|---|---|
+| `all_nets_routed` | 每条网都真布了 | ❌ 只布 **4/11** |
+| `drc_zero` | DRC 违规 == 0 | ✅ 0 |
+| `lvs_zero` | LVS 问题 == 0 | ✅ 0 |
+| `lvs_scope_full_chip` | 且这个 0 是**全芯片**口径 | ❌ `ROUTED_SUBSET_ONLY` |
+| `timing_included` | 时序段接入且排过拓扑序 | ✅ |
+| `hold_checked` | 保持时间**真检过** | ❌ |
+
+⇒ `claimable=False`，阻塞项恰为 **all_nets_routed / lvs_scope_full_chip / hold_checked**。
+🔴 **DRC 0 + LVS 0 并不能让它变 True** —— 这正是「子集当全集」失真的机核化拦截。
+
+### ② 判据写法（这里最容易糊过去）
+
+- 先给**正向用例**：六条全满足的合成报告 ⇒ `claimable=True`。
+  否则恒假判据会让六条「缺一必 False」**全部空转**。
+- 再逐条只翻一条 ⇒ `claimable` 必 False 且 `blocking` **恰为该条**。
+- **C3b**：时序段**整体缺失** ⇒ `timing_included` 与 `hold_checked` **同时**阻塞
+  （「没测」≠「通过」）。首版把这两种形态混成一种导致误红，已拆开。
+- 清单本身也被检：`condition_list_ok` + **数实有条目**（不信自报 `n_conditions`）。
+
+### ③ 顺带修掉一个真 bug：卡片污染缓存
+
+`case_card()` 的嵌套 dict/list 与模块级 `facts()` 缓存**共享同一对象** ⇒
+调用方就地改一张卡会**污染缓存**（探针「删一条条件」后，下一次 `case_card()` 也少了那条）。
+现返回**深拷贝**：首调 205 ms / 其后 **0.17 ms**。
+
+### ④ 门禁（`run_ecore_s6_smoke` 37 → 42）
+
+C1 清单完整 · C2 正向 True 用例 · C3 六向缺一必 False · C3b 缺段双阻塞 ·
+C4 卡片 == 独立复算 + 顶层/`drc_lvs`/`routing` 三处同值 + 三向反向必红
+（手改 True / 抹 blocking / 删一条条件）。
+
+### 诚实边界
+
+条件化 ≠ 可签核：六条**全部满足**也只是「允许 claim」，不等于流片实测；
+`hold_checked` 目前恒 False（未实现保持检查）；`all_nets_routed` 需要端口建模
+（第 3 步之后仍未做）；非 foundry PDK；不报 TOPS/TOPS-W/fJ/op。
+
 ## v0.9.377（2026-11-04 · **第 4 步：时序接入（线载进模型 + 先排拓扑序）** · 净增 0 锚 · CI core **402**）
 
 ### 一句话

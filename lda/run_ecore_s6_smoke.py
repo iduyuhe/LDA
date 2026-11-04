@@ -28,6 +28,10 @@
      卡片数字必须 == 门禁**独立重跑**的真值；未实现的段（综合/时序/ROUTED）显式 False；
      诚实性自检正向空、反向两向必报；两次调用 digest 一致且 JSON 硬。
 
+  C1–C4 **签核资格条件化**（v0.9.378）：`claimable` 不再是常量，而由六条实测条件派生
+     （all_nets_routed / drc_zero / lvs_zero / lvs_scope_full_chip / timing_included /
+     hold_checked）。判据先给一个**全满足 ⇒ True** 的用例（否则恒假判据会让六条
+     「缺一必 False」全部平凡通过），再逐条证明「只缺一条 ⇒ 必 False 且 blocking 恰为该条」。
   S8–S9 **双报一版**（v0.9.376 主链切换）：主链从 `detail_route` 换成 `dpnr`。
      风险不是「算错」而是**静默替换** —— 不并排报旧链，87 处间距 + 183 条短路条目
      就会从报表里消失，而它们正是「为什么必须换」的唯一证据。故要求：
@@ -558,6 +562,108 @@ def main() -> int:
           "1=%r 2=%r 3=%r 4=%r" % (DC.selfcheck(_t1)[:1], DC.selfcheck(_t2)[:1],
                                     DC.selfcheck(_t3)[:1], DC.selfcheck(_t4)[:1]))
 
+    # ── C1–C4 签核资格条件化（v0.9.378）：claimable 由六条实测推导 ────────────
+    #   🔴 为什么必须先给一个 **True 用例**：如果判据恒为 False（常量时代就是这样），
+    #      那么「缺一必 False」的六条探针**全部平凡通过** —— 恒假当然每条都 False。
+    #      所以先证明「六条全满足时能给 True」，再逐条证明「缺一条就 False」。
+    _full = {"stages": [
+        ("route", {"all_routed": True}),
+        ("drc_lvs", {"drc_violations": 0, "lvs_problems": 0, "lvs_scope": "FULL_CHIP"}),
+        ("timing", {"topo_sorted": True, "hold_checked": True}),
+    ]}
+    _cl_full = T.claimability(_full)
+
+    def _variant(**over):
+        """在「全满足」基底上只改**一个** measured 项。"""
+        rt = {"all_routed": True}
+        dl = {"drc_violations": 0, "lvs_problems": 0, "lvs_scope": "FULL_CHIP"}
+        tm = {"topo_sorted": True, "hold_checked": True}
+        stages = []
+        if over.get("all_nets_routed") is not None:
+            rt["all_routed"] = over["all_nets_routed"]
+        if over.get("drc_zero") is not None:
+            dl["drc_violations"] = over["drc_zero"]
+        if over.get("lvs_zero") is not None:
+            dl["lvs_problems"] = over["lvs_zero"]
+        if over.get("lvs_scope_full_chip") is not None:
+            dl["lvs_scope"] = over["lvs_scope_full_chip"]
+        if over.get("hold_checked") is not None:
+            tm["hold_checked"] = over["hold_checked"]
+        stages.append(("route", rt))
+        stages.append(("drc_lvs", dl))
+        # 🔴 `timing_included=False` 有两种形态，必须分开测（首版混成一种，判据误红）：
+        #   · 段在但没排拓扑序（`topo_sorted=False`）⇒ **只有** timing_included 不满足；
+        #   · 段整体缺失 ⇒ 连 `hold_checked` 都无从测量 ⇒ **两条同时**阻塞
+        #     （这正体现「没测 ≠ 通过」，不是判据 bug）。
+        if over.get("timing_included") is False:
+            stages.append(("timing", dict(tm, topo_sorted=False)))
+        elif over.get("timing_included") == "absent":
+            pass
+        else:
+            stages.append(("timing", tm))
+        return {"stages": stages}
+
+    _cl_cur = rep["claimability"]
+    check("C1 条件清单完整：n=%d 条 ∧ condition_list_ok=True ∧ 当前阻塞项恰为 %r"
+          % (_cl_cur["n_conditions"], _cl_cur["blocking"]),
+          _cl_cur["condition_list_ok"] is True and _cl_cur["n_conditions"] == 6
+          and set(_cl_cur["conditions"]) == set(T.CLAIMABLE_CONDITIONS)
+          and _cl_cur["claimable"] is False
+          and sorted(_cl_cur["blocking"]) == sorted(
+              k for k, v in _cl_cur["conditions"].items() if v is not True),
+          "cl=%r" % ({k: _cl_cur[k] for k in ("claimable", "blocking", "n_conditions")},))
+
+    # 正向：六条全满足 ⇒ True（证明判据不是恒假）
+    check("C2 **正向用例**：六条全部满足的合成报告 ⇒ claimable=True（blocking=%r）"
+          % (_cl_full["blocking"],),
+          _cl_full["claimable"] is True and _cl_full["blocking"] == []
+          and _cl_full["condition_list_ok"] is True,
+          "full=%r" % (_cl_full["conditions"],))
+
+    # 缺一必 False：逐条只翻一个 ⇒ claimable 必 False，且 blocking 恰为该条
+    _cases = {
+        "all_nets_routed": dict(all_nets_routed=False),
+        "drc_zero": dict(drc_zero=1),
+        "lvs_zero": dict(lvs_zero=1),
+        "lvs_scope_full_chip": dict(lvs_scope_full_chip="ROUTED_SUBSET_ONLY"),
+        "timing_included": dict(timing_included=False),
+        "hold_checked": dict(hold_checked=False),
+    }
+    _res = {}
+    for _name, _kw in _cases.items():
+        _r = T.claimability(_variant(**_kw))
+        _res[_name] = (_r["claimable"], _r["blocking"])
+    check("C3 **缺一必 False**：逐条只翻一条 ⇒ claimable 必 False 且 blocking 恰为该条（六向）",
+          all(v[0] is False and v[1] == [k] for k, v in _res.items()),
+          "res=%r" % (_res,))
+
+    # C3b 时序段**整体缺失** ⇒ timing_included 与 hold_checked **同时**阻塞
+    #   （「没测」不等于「通过」；这是与 C3 分开的一条，因为它的阻塞是两条而不是一条）
+    _absent = T.claimability(_variant(timing_included="absent"))
+    check("C3b 时序段整体缺失 ⇒ 同时阻塞 timing_included 与 hold_checked（%r）—— "
+          "「没测」不等于「通过」" % (_absent["blocking"],),
+          _absent["claimable"] is False
+          and sorted(_absent["blocking"]) == ["hold_checked", "timing_included"],
+          "absent=%r" % (_absent["blocking"],))
+
+    # 卡片同源 + 一个结论不许出现两个值 + 反向三向必红
+    _cc = DC.case_card()
+    _t1 = json.loads(json.dumps(_cc))
+    _t1["claimable"] = True
+    _t2 = json.loads(json.dumps(_cc))
+    _t2["claimability"]["blocking"] = []
+    _t3 = json.loads(json.dumps(_cc))
+    _t3["claimability"]["conditions"].pop("hold_checked", None)
+    check("C4 卡片 claimable == 独立复算（%s / 阻塞 %r）∧ 与 drc_lvs/routing 同值 ∧ "
+          "反向三向必红（手改 True / 抹 blocking / 删一条条件）"
+          % (_cc["claimable"], _cc["claimability"]["blocking"]),
+          _cc["claimable"] == _cl_cur["claimable"]
+          and _cc["claimability"]["conditions"] == _cl_cur["conditions"]
+          and _cc["drc_lvs"]["claimable"] == _cc["claimable"]
+          and _cc["routing"]["claimable"] == _cc["claimable"]
+          and DC.selfcheck(_t1) and DC.selfcheck(_t2) and DC.selfcheck(_t3),
+          "card=%r" % ({k: _cc["claimability"][k] for k in ("claimable", "blocking")},))
+
     # ── S0t 耗时红线 ──────────────────────────────────────────────────
     dt = time.time() - T0
     check("S0t 门禁耗时 %.2f s < %.0f s" % (dt, AN_ELAPSED_MAX_S),
@@ -579,6 +685,8 @@ def main() -> int:
           "披露含 short 且无旧表述 · 三向探针必红")
     print("  [S7e–h] 反证实验：1.58×（通道下界）仍违规 155 ⇒ 预测必要非充分；"
           "给足单元宽 ⇒ DRC 0，代价 26.32× 行面积；0.5× 档仍 21 ⇒ 有阈值")
+    print("  [C1–C4] 签核资格：六条条件全部由实测推导 · **先给 True 用例**（防恒假判据）· "
+          "逐条「缺一必 False」· 卡片与门禁同值 · 反向三向必红")
     print("  [T1–T5] 时序段：拓扑序是必要的（不排序即 KeyError）· 线载同源且单调 · "
           "无时钟域 fmax=None 不压扁 · 反向四向必红")
     print("  [S8–S9] 双报一版：主链 dpnr + 旧链 detail_route 并排 · 面积代价 ×%.2f 写明"

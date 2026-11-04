@@ -95,6 +95,65 @@ def _unique_net_pairs(problems) -> int:
     return len({frozenset((str(p[1]), str(p[2]))) for p in problems or []})
 
 
+#: 签核资格的**条件清单**（顺序即报告顺序）。
+#: 🔴 判据必须写成「**缺一必 False**」，不能写成「全满足才 True」——
+#:   后者用默认值就能糊过去（本仓先例：`drc_ok` 曾经的默认 True 写法）。
+#: 🔴 这份清单本身也是被检对象：`claimability()` 会报 `condition_list_ok`，
+#:   有人删条件 / 漏算时它变 False，门禁据此判红 —— 不靠人眼数条数。
+CLAIMABLE_CONDITIONS = (
+    "all_nets_routed",        # 每条网都真布了（不是「有归类」）
+    "drc_zero",               # DRC 违规 == 0
+    "lvs_zero",               # LVS 问题 == 0
+    "lvs_scope_full_chip",    # 且这个 0 是**全芯片**口径（子集 0 不算）
+    "timing_included",        # 时序段接进来了且排过拓扑序
+    "hold_checked",           # 保持时间**真检过**（当前为 False）
+)
+
+
+def claimability(report) -> dict:
+    """从**实测数据**推导签核资格（不接收调用方传进来的布尔）。
+
+    🔴 三条纪律：
+    ① 六条必须**全部**成立；任一条**缺数据**（`None` / 缺段）都按不成立处理 ——
+       「没测」不等于「通过」；
+    ② `lvs_zero` 与 `lvs_scope_full_chip` 是**两条独立条件**，虽然逻辑上相关：
+       前者防「有问题」，后者防「0 违规只是子集口径」（本仓审计抓到的头号失真）；
+    ③ `condition_list_ok` 必须为 True —— 条件被删/漏算时它立即可见。
+    """
+    st = {name: payload for name, payload in (report.get("stages") or [])}
+    rt = st.get("route") or {}
+    dl = st.get("drc_lvs") or {}
+    tm = st.get("timing") or {}
+
+    measured = {
+        "all_nets_routed": rt.get("all_routed"),
+        "drc_zero": dl.get("drc_violations"),
+        "lvs_zero": dl.get("lvs_problems"),
+        "lvs_scope_full_chip": dl.get("lvs_scope"),
+        "timing_included": (True if tm.get("topo_sorted") is True
+                            else (None if not tm else False)),
+        "hold_checked": tm.get("hold_checked"),
+    }
+    conds = {
+        "all_nets_routed": measured["all_nets_routed"] is True,
+        "drc_zero": measured["drc_zero"] == 0,
+        "lvs_zero": measured["lvs_zero"] == 0,
+        "lvs_scope_full_chip": measured["lvs_scope_full_chip"] == "FULL_CHIP",
+        "timing_included": measured["timing_included"] is True,
+        "hold_checked": measured["hold_checked"] is True,
+    }
+    blocking = [k for k in CLAIMABLE_CONDITIONS if not conds[k]]
+    return {
+        "claimable": all(conds[k] for k in CLAIMABLE_CONDITIONS),
+        "conditions": conds,
+        "blocking": blocking,
+        "measured": {k: measured[k] for k in CLAIMABLE_CONDITIONS},
+        "n_conditions": len(conds),
+        "condition_list_ok": set(conds) == set(CLAIMABLE_CONDITIONS),
+        "rule": "六条全成立才 True；任一条缺数据（None）按不成立处理",
+    }
+
+
 def _baseline_report(nl, nets_all) -> dict:
     """旧链（`detail_route`）的并排报告 —— 双报一版过渡用，**数字不得删除**。"""
     from lda_l2.ecore import ddef as DD
@@ -136,7 +195,14 @@ def _baseline_report(nl, nets_all) -> dict:
             "claimable": False,
         },
         "def_bytes": len(text0),
-        "claimable": False,
+        # 与主链**同一个函数**派生（不写第二套判据）：
+        # 旧链没有时序段、且 DRC 非零 ⇒ 必然不可 claim
+        "claimability": claimability({"stages": [
+            ("route", {"all_routed": len(r0.net_pins) == len(nets_all)}),
+            ("drc_lvs", {"drc_violations": len(drc0["violations"]),
+                         "lvs_problems": len(lvs0["problems"]),
+                         "lvs_scope": "FULL_CHIP"}),
+        ]}),
         "note": "detail_route（旧链）：DRC 87 处 min_spacing ＋ LVS 183 条短路条目"
                 "（78 short + 105 short_via，去重 43 对网）—— 连通性错误，不是余量不足；"
                 "根因是容量不足，见 ddetail.drc_capacity_bound。",
@@ -292,7 +358,8 @@ def run_trunk(nl, *, baseline: bool = True):
         "nets_checked": lvs["nets_checked"],
         "nets_total": lvs["nets_total"],
         "nets_uncovered": lvs["nets_uncovered"],
-        "claimable": False,
+        # 🔴 由 `claimability()` 派生（v0.9.378），不再是常量 False
+        "claimable": None,
         "note": "主链 dpnr：DRC %d / LVS %d，但只覆盖 %d/%d 条网"
                 "（%d 条端口网布不了）—— 0 违规**不是**全芯片结论；"
                 "旧链 detail_route 的数字见 report['baseline']。"
@@ -301,9 +368,16 @@ def run_trunk(nl, *, baseline: bool = True):
                    len(lvs["nets_uncovered"])),
     }
 
+    # ── 签核资格：由**实测数据**派生（六条条件，缺一必 False）──────────────
+    #   🔴 放在这里而不是每处写 `claimable=False`：常量 False 会让
+    #      「缺一必 False」的探针**全部平凡通过**（恒假当然每条都 False）。
+    report["claimability"] = claimability(report)
+    report["drc_lvs_detail"]["claimable"] = report["claimability"]["claimable"]
+
     # ── 段 5：baseline（旧链并排双报，防「换了主链，旧证据消失」）──────────
     if baseline:
         b = _baseline_report(nl, nets_all)
+        b["claimable"] = b["claimability"]["claimable"]
         report["baseline"] = b
         base_area = b["place"]["die_area_um2"]
         report["area_delta"] = {
@@ -358,7 +432,10 @@ def _fmt_report(rep: dict) -> str:
         lines.append("      " + a["reason"])
     d = rep["drc_lvs_detail"]
     lines.append("")
-    lines.append("诚实边界（claimable=False）：")
+    _cl = rep.get("claimability") or {}
+    lines.append("签核资格：claimable=%s（阻塞项 %s）"
+                 % (_cl.get("claimable"), ", ".join(_cl.get("blocking") or []) or "无"))
+    lines.append("诚实边界（claimable=False 的原因见上）：")
     lines.append("    " + d["note"])
     return "\n".join(lines)
 

@@ -787,6 +787,11 @@ def h_digital_demo(h, p, q, path):
     但 `ok` **只对已布网的子集成立** —— c17 实测 `nets_checked=4 / total=11`、
     `scope=ROUTED_SUBSET_ONLY`、`ok_is_full_chip=False`。**不得**读成「c17 的 LVS 通过」。
 
+    🔴 **签核资格条件化**（v0.9.378）：`claimable` / `claimability` 由**六条实测条件**派生
+    （`all_nets_routed` / `drc_zero` / `lvs_zero` / `lvs_scope_full_chip` / `timing_included` /
+    `hold_checked`），**缺一必 False**（缺数据也按不成立）。c17 当前阻塞三项：只布 4/11 条网、
+    LVS 的 0 是子集口径、hold 未检。**不许**再把它当常量读。
+
     🔴 **时序段**（v0.9.377）：`timing` 段给出 ideal / wired 组合延时
     （c17：30.953 → **57.303 ps**，线载 6.273 fF / 4 条网）。**未布的 7 条网按 0 线载**
     ⇒ 走那些网的路径**偏乐观**；无时钟域 ⇒ `t_clk_min`/`fmax` 为 **None**（不是 0）；

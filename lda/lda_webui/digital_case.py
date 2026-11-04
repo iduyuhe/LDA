@@ -152,6 +152,12 @@ def _compute() -> Dict[str, Any]:
     report = T.run_trunk(nl)
     table = X.xcheck(nl, subject="c17")
     cap = DD.drc_capacity_bound(nl, PL.place(nl))   # 🔴 容量下界（独立 layout，不改干线）
+    # 🔴 B 系列主链的**网覆盖记账**（2026-11-04 审计：此前 7 条端口网被静默跳过、
+    #    unrouted 返回空 ⇒ 「4 网 DRC 0」被误读成「11 网已清零」）。0.4ms。
+    from lda_l2.ecore import dpnr as PN
+    _rt = PN.route_block(nl, PN.place_real(nl))
+    cap = dict(cap, dpnr_coverage=_rt["coverage"],
+               dpnr_skipped_port_nets=_rt["skipped_port_nets"])
     # 🔴 what-if：按「可布线所需」放大后 DRC 能否归零（4ms；**不是**可签核版图）
     cap = dict(cap, zero_experiment=DD.drc_zero_experiment(nl))
     ms = (time.perf_counter() - t0) * 1000.0
@@ -368,6 +374,24 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
     # 弯角孔包围修复的回归守卫（v0.9.370）：回退就必红
     if "via_enclosure" in ((card.get("drc_lvs") or {}).get("drc_by_rule") or {}):
         bad.append("via_enclosure 重新出现 —— 弯角延伸（_LAND_CORNER）被回退")
+
+    # ── 网覆盖记账（B 系列主链）：没布的必须被看见，且两个布尔不许混用 ──────
+    _cov = cap.get("dpnr_coverage") or {}
+    if _cov:
+        if _cov.get("routed", 0) + _cov.get("skipped_port", 0) + _cov.get("failed", 0) \
+                != _cov.get("total", -1):
+            bad.append("网覆盖四分类不闭合：%r" % (_cov,))
+        if _cov.get("missing") or _cov.get("unknown"):
+            bad.append("网覆盖有漏记/多记：missing=%r unknown=%r"
+                       % (_cov.get("missing"), _cov.get("unknown")))
+        if _cov.get("overlap"):
+            bad.append("网覆盖有重复归类（四分类必须互斥）：%r" % (_cov.get("overlap"),))
+        if _cov.get("all_routed") and _cov.get("skipped_port"):
+            bad.append("all_routed=True 却有 %d 条端口未布 —— 谎报全布"
+                       % _cov.get("skipped_port"))
+        # complete（有归类）与 all_routed（真的全布）是两件事，卡片必须都能看到
+        if "complete" not in _cov or "all_routed" not in _cov:
+            bad.append("网覆盖缺 complete/all_routed 两字段 —— 两者不可合并")
 
     # ── what-if 实验（放大面积换清零）：结论与数字必须互相咬住 ────────────
     ze = cap.get("zero_experiment") or {}

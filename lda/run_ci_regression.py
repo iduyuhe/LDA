@@ -1390,6 +1390,8 @@ CORE_SMOKES: List[str] = [
     # 新增孤岛必红；R3 债务表精确契约（缩小须同步删表）；白名单双向完备 + 理由非空；
     # 含人造图自证度量口径 + 两条反向探针。纯标准库 · 实测上界 <30s。
     "run_ecore_reuse_metrics_smoke.py",
+    # S8 网覆盖完备门禁（v0.9.374）：每条网必须有归类（布了/端口未布/布失败）· 实测 ~0.5s
+    "run_ecore_s8_smoke.py",
     # 🔴 电子计算芯片案例卡 WebUI 门禁（E 征程收官 · D-155）：守 /api/ecore_demo 只读案例卡的诚实边界
     # （verdict 恒 DESIGN_VERIFIED / 不报 fabricated 能效 TOPS-TOPS-W / 规模按「可建模可验证容量」解读 /
     # landmark 仅背景坐标），跨源一致性（模块↔API 参考↔routes），含突变探针（破坏诚实边界/清空 landmark
@@ -3350,6 +3352,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_s6_smoke.py": 120.0,
     # B4 对拍框架门禁（S4 · 差异表 + 归因 + 跨进程可复现）· 实测上界 <30s（@本机）
     "run_ecore_s7_smoke.py": 120.0,
+    # S8 网覆盖完备门禁（v0.9.374）· 实测上界 <2s（@本机）
+    "run_ecore_s8_smoke.py": 120.0,
     # 基础复用度量门禁（S5 · R1/R2/R3 + 冻结债务表）· 实测上界 <30s（@本机）
     "run_ecore_reuse_metrics_smoke.py": 120.0,
     # E 征程收官 · 电子计算芯片案例卡 WebUI 门禁（D-155）· 实测上界 0.1s（单测）

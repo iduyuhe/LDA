@@ -222,8 +222,8 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {
 #:   （`` `run_x` **N 判据 ``）声明某门禁时，才把它加入本表；版本下线时请同批移除。
 #:   不变式（W10b 机核）：当前行里每个 `run_x` **N 判据 都必须能在 `_counts10` 内查到。
 _W10_EXTRA = (
-              # v0.9.371：S7 反证实验（s6 判据 21→25，实测 ~0.4s）
-              "run_ecore_s6_smoke.py",
+              # v0.9.374：S8 网覆盖完备（新门禁 8 判据，实测 ~0.3s）
+              "run_ecore_s8_smoke.py",
               )
 
 

@@ -7,7 +7,7 @@
   "target_x": 3.0,
   "ratchet_below_target": 0,
   "anchors_at_measurement": 546,
-  "core_smokes_at_measurement": 400,
+  "core_smokes_at_measurement": 401,
   "updated_at": "2026-11-04",
   "source_reports": [
     "lda_p1fix_ci_20261004.json",
@@ -15207,6 +15207,17 @@
         1.19
       ],
       "n_rounds": 2,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ecore_s8_smoke.py",
+      "budget_s": 120.0,
+      "elapsed_max_s": 0.3,
+      "margin_x": 400.0,
+      "samples_s": [
+        0.3
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     }
   ]

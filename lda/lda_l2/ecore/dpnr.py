@@ -674,6 +674,9 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
     t_cap = tracks_in_channel(ch_um)
     pins = net_pins(pl)
     n_rows = pl["rows"]
+    # 🔴 单端点网 = 另一端在 primary I/O 上（本模块**不建端口**）⇒ 无法布，但**必须记账**。
+    #    此前这类网在 `len(pts) < 2` 处被静默跳过，而 `unrouted` 返回空 ⇒ 读者会以为「全布完了」。
+    skipped_port = sorted(n for n, pts in pins.items() if len(pts) < 2)
 
     # —— ⓿ 行内布线预规划（v0.9.356 · E53）────────────────────────────
     # 所有引脚都在同一行的网，**不需要 trunk / 通道 / M4 列**：它可以在行内用
@@ -974,7 +977,53 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
                             "eligible": ip["eligible"], "n_tracks": ip["n_tracks"]},
             "col_iters": int(col_iters), "n_col_fail_nets": len(col_fail),
             "vert_layer": vert_layer,
-            "trunk_y": y_of, "pins": pins, "n_pins": sum(len(v) for v in pins.values())}
+            "trunk_y": y_of, "pins": pins, "n_pins": sum(len(v) for v in pins.values()),
+            "skipped_port_nets": skipped_port, "n_skipped_port": len(skipped_port),
+            "coverage": _coverage(routed=set(routed) | set(inrow),
+                                  skipped=set(skipped_port),
+                                  failed=set(unrouted) | set(inrow_fail),
+                                  total=set(pins))}
+
+
+def _coverage(routed: set, skipped: set, failed: set, total: set) -> dict:
+    """网覆盖的四分类记账（**纯函数**，便于门禁独立复算）。
+
+    · `routed`  真的画了金属的网；
+    · `skipped` 单端点网（另一端是 primary I/O，本模块不建端口 ⇒ 布不了，但**不是**「已布」）；
+    · `failed`  试图布但没成（列分配失败 / 行内规划失败）；
+    · `total`   网表里出现过的全部网。
+
+    🔴 `complete` 只表示「每条网都被归了类」，**不表示全布**；要看 `all_routed`。
+    把这两件事混成一个布尔，就是本项目最容易出的那种失真。
+    """
+    R, S, F = set(routed), set(skipped), set(failed)
+    acc = R | S | F
+    # 🔴 四分类必须**互斥**：并集相等不足以证明记账正确 ——
+    #    一条网同时出现在 routed 与 skipped（谎报「布了」但还挂着未布）时，
+    #    并集不变量完全看不出问题。审计当日的反向探针就是这么把这一漏洞戳出来的。
+    overlap = sorted((R & S) | (R & F) | (S & F))
+    return {
+        "total": len(total),
+        "routed": len(R),
+        "skipped_port": len(S),
+        "failed": len(F),
+        "accounted": len(acc),
+        "complete": acc == set(total) and not overlap,   # 每条网恰好归一类
+        "all_routed": (not S) and (not F),               # 真的全布（当前不可能为 True）
+        "missing": sorted(set(total) - acc),    # 漏记（应为空）
+        "unknown": sorted(acc - set(total)),    # 多记（应为空）
+        "overlap": overlap,                     # 重复归类（应为空）
+    }
+
+
+def net_coverage(rt: dict) -> dict:
+    """从路由结果**独立复算**覆盖度（门禁用它跟 `rt["coverage"]` 对拍）。"""
+    return _coverage(
+        routed=set(rt.get("routed") or []) | set(rt.get("in_row_assign") or {}),
+        skipped=set(rt.get("skipped_port_nets") or []),
+        failed=set(rt.get("unrouted") or []) | set(rt.get("in_row_m3_fail") or []),
+        total=set(rt.get("pins") or {}),
+    )
 
 
 def spans_to_nets(spans: dict) -> set:

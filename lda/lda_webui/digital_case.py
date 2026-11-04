@@ -10,8 +10,8 @@ DEF 写出结果做成对外可看的只读卡片。
 
 🔴 **口径纪律（三条，都能被机核）**
   ① **不冒充签核**：`verdict` 恒为 `FLOW_RUN_NOT_SIGNOFF`（流程跑通 ≠ 签核 ≠ 流片实测）。
-     `ddetail` 路由器在 c17 上实测 **87 处 min_spacing**（弯角孔包围 v0.9.370 已修至 0；
-     余下为**容量不足**，见 `capacity` 段）⇒ 卡片**如实报违规数与分规则计数**，
+     `ddetail` 路由器在 c17 上实测 **DRC 87 处 min_spacing**（弯角孔包围 v0.9.370 已修至 0）
+     ＋ **LVS 183 条短路条目**（78 `short` + 105 `short_via`，去重 **43 对网**）⇒ 卡片**如实报两类违规的分规则计数**，
      绝不写「clean」「pass」「signoff」。
   ② **不报未实现的段**：`synthesized=False`（入口就是门级网表）、`timing_included=False`
      （干线未串时序段）、`routed_exported=False`（DEF 只到 placed，`ROUTED` 未导出 ——
@@ -49,7 +49,8 @@ SEGMENTS_MISSING = ("synthesis", "timing")
 #: 诚实边界（逐条都在卡片里输出，且被 selfcheck 要求非空 + 含关键词）
 HONEST_NOTES = (
     "设计期流程跑通，非签核、非流片实测。",
-    "ddetail 路由器 claimable=False：c17 实测 87 处 min_spacing（via_enclosure 已修至 0），"
+    "ddetail 路由器 claimable=False：c17 实测 DRC 87 处 min_spacing（via_enclosure 已修至 0）"
+    "＋ **LVS 183 条短路条目**（78 同层 short + 105 通孔 short_via，去重后 **43 对网**），"
     "本卡如实报数，不伪造 clean；余下违规是**容量不足**（capacity 段），不是路由器写错。",
     "DEF 只到 placed（routed_exported=False）—— DetailRoute.shapes 无按网归属，"
     "写 ROUTED 等于编造布线。",
@@ -72,6 +73,15 @@ def _by_rule(violations: List[Any]) -> Dict[str, int]:
         rule = v[0] if isinstance(v, (list, tuple)) and v else str(v)
         out[str(rule)] = out.get(str(rule), 0) + 1
     return dict(sorted(out.items()))
+
+
+def _unique_pairs(problems) -> int:
+    """LVS 问题的**去重网对数**（`(rule, net_a, net_b, layer)` ⇒ 无序网对）。"""
+    pairs = set()
+    for it in problems or []:
+        if isinstance(it, (list, tuple)) and len(it) >= 3:
+            pairs.add(frozenset((str(it[1]), str(it[2]))))
+    return len(pairs)
 
 
 def _canonical(obj: Any) -> str:
@@ -183,6 +193,12 @@ def _compute() -> Dict[str, Any]:
             "drc_by_rule": _by_rule(drc.get("violations")),
             "lvs_ok": bool(lvs.get("ok")),
             "lvs_problems": len(lvs.get("problems") or []),
+            # 🔴 必须分类：183 全是**短路**（78 同层 short + 105 通孔 short_via），
+            #    只报总数会让读者以为「只是间距紧」—— 那是连通性错误，不是余量不足。
+            "lvs_by_rule": _by_rule(lvs.get("problems")),
+            # 🔴 183 是**条目数**（同一条网对会被多段金属/多个通孔各报一次，且双向各报一次）
+            #    ⇒ 去重后只有 **43 对网**。只报 183 会把"短路规模"夸大 4 倍。
+            "lvs_unique_pairs": _unique_pairs(lvs.get("problems")),
             "claimable": False,
         },
         "def_export": {
@@ -286,6 +302,20 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
         bad.append("drc_ok/lvs_ok 报 True —— 与 claimable=False 矛盾（不得伪造 clean）")
     if len(drc.get("drc_by_rule") or {}) == 0 and (drc.get("drc_violations") or 0) > 0:
         bad.append("有违规但分规则计数为空 —— 记账不完整")
+    # LVS 分类纪律：183 是短路，不是「余量不足」；分类必须求和自洽
+    _lv = drc.get("lvs_by_rule") or {}
+    if sum(_lv.values()) != (drc.get("lvs_problems") or 0):
+        bad.append("lvs_by_rule 求和 %d ≠ lvs_problems %d —— LVS 分类与总数不自洽"
+                   % (sum(_lv.values()), drc.get("lvs_problems") or 0))
+    if (drc.get("lvs_problems") or 0) > 0 and not (
+            _lv.get("short") or _lv.get("short_via")):
+        bad.append("有 %d 处 LVS 问题却未分类出 short/short_via —— 不得只说「有问题」"
+                   % (drc.get("lvs_problems") or 0))
+    _u = drc.get("lvs_unique_pairs")
+    if (drc.get("lvs_problems") or 0) > 0 and not _u:
+        bad.append("有 LVS 问题却报 0 对网 —— 去重计数缺失")
+    if _u is not None and _u > (drc.get("lvs_problems") or 0):
+        bad.append("去重网对 %d > 条目数 %d —— 计数逻辑错" % (_u, drc.get("lvs_problems") or 0))
     if card.get("conservation_ok") is not True:
         bad.append("干线守恒断言未通过 —— 不能对外声称「跑通」")
 

@@ -17,6 +17,9 @@
      靠画长线蒙过 —— 中心线长仍须 == MST）；余下 87 处全是 `min_spacing`，用
      `drc_capacity_bound()` 三向下界证明是**容量不足**（通道 2<7 · 引脚槽 0.96µm>单元宽 0.067µm ·
      列 6.12µm>die 1.09µm）；卡片与门禁必须同口径，且三向伪造（容量可行/0 违规/via 回退）必红。
+  S7i–S7k **口径清理**（v0.9.373）：LVS 183 条必须分类（78 `short` + 105 `short_via`）且**去重 43 对网**
+     （条目数会把规模夸大 4 倍）；`ddetail` 诚实边界必须含 `short`、**不得**再出现「同层短路为零」
+     的旧表述；三向反向探针（旧表述塞回 / 分类与总数不符 / 去重数超条目数）必红。
   S7e–S7h **反证实验**（把下界变成实测对照）：只加通道时构造出的面积比 **1.58×** 恰好复现
      下界预测，但**仍违规 155 处** ⇒ 「1.577× 换 0 违规」被推翻（必要非充分）；
      单元宽给足（`(n_pins+1)·pitch` + 引脚均布 + 轨道分配）⇒ DRC **真 0**，代价行面积 **26.32×**；
@@ -327,6 +330,50 @@ def main() -> int:
           and DC.selfcheck(_f4) and DC.selfcheck(_f5),
           "card=%r" % (_cz,))
 
+    # ── S7i–S7k 口径清理（v0.9.373）：短路必须分类 + 去重 + 披露与实测一致 ──
+    #   🔴 起因：全仓原先只写「LVS 183 问题」，读者会当成「间距紧」；实际是**连通性错误**。
+    #      而且 183 是**条目数**（同一网对被多段金属/通孔各报一次、双向各报一次），
+    #      去重后只有 43 对网 —— 只报 183 会把规模夸大 4 倍。
+    _dl = rep["drc_lvs_detail"]["lvs"]
+    _stage_lvs = dict(T.run_trunk(V.parse(V.SAMPLE_VERILOG))["stages"])["drc_lvs"]
+    _uniq_ref = len({frozenset((str(x[1]), str(x[2]))) for x in _dl["problems"]})
+    check("S7i LVS 分类与去重自洽：%r 求和=%d == problems=%d ∧ 去重 **%d 对网** ∧ "
+          "干线段同样带 by_rule"
+          % (_dl["by_rule"], sum(_dl["by_rule"].values()), len(_dl["problems"]), _uniq_ref),
+          sum(_dl["by_rule"].values()) == len(_dl["problems"])
+          and _dl.get("unique_pairs") == _uniq_ref
+          and _uniq_ref <= len(_dl["problems"])
+          and _stage_lvs.get("lvs_by_rule") == _dl["by_rule"]
+          and (_dl["by_rule"].get("short") or _dl["by_rule"].get("short_via")),
+          "by_rule=%r unique=%r ref=%r" % (_dl["by_rule"], _dl.get("unique_pairs"), _uniq_ref))
+
+    # ② 披露与实测一致：ddetail 的诚实边界必须说「短路」，且不得再出现「0 同层短路」
+    _dd_src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "lda_l2", "ecore", "ddetail.py"), encoding="utf-8").read()
+
+    def _disclosure_ok(src: str) -> bool:
+        head = src.split('"""')[1] if src.count('"""') >= 2 else src
+        return ("short" in head) and ("0 同层短路" not in head)
+
+    check("S7j 披露与实测一致：ddetail 诚实边界含 `short` ∧ **不含「0 同层短路」**"
+          "（该表述 v0.9.373 已删，与 78 处同层短路矛盾）",
+          _disclosure_ok(_dd_src),
+          "含 short=%s 含旧表述=%s" % ("short" in _dd_src, "0 同层短路" in _dd_src))
+
+    # ③ 反向两向：把旧表述塞回披露 / 把分类调成与总数不符 ⇒ 判据与自检各必红
+    _bad_src = _dd_src.replace("并且有 183 处 LVS 短路", "0 同层短路不代表布通，并且有 183 处 LVS 短路", 1)
+    _bad_card = json.loads(json.dumps(DC.case_card()))
+    _bad_card["drc_lvs"]["lvs_by_rule"] = {"short": 1}
+    _bad_card2 = json.loads(json.dumps(DC.case_card()))
+    _bad_card2["drc_lvs"]["lvs_unique_pairs"] = 999
+    check("S7k 反向三向必红：① 旧表述塞回披露 ⇒ S7j 判据假 ② lvs_by_rule 与总数不符 ⇒ "
+          "自检红 ③ 去重数 > 条目数 ⇒ 自检红",
+          (not _disclosure_ok(_bad_src)) and DC.selfcheck(_bad_card)
+          and DC.selfcheck(_bad_card2),
+          "src=%s card1=%r card2=%r" % (_disclosure_ok(_bad_src),
+                                        DC.selfcheck(_bad_card)[:1],
+                                        DC.selfcheck(_bad_card2)[:1]))
+
     # ── S0t 耗时红线 ──────────────────────────────────────────────────
     dt = time.time() - T0
     check("S0t 门禁耗时 %.2f s < %.0f s" % (dt, AN_ELAPSED_MAX_S),
@@ -344,6 +391,8 @@ def main() -> int:
     print("  [S5] fail-closed：空输入直接报错")
     print("  [S7a–d] DRC 收敛：via_enclosure 修至 0（不改线长）· 容量下界三向都缺 · "
           "卡片与门禁同口径 · 三向伪造必红")
+    print("  [S7i–k] 口径清理：LVS 183 条（78 short + 105 short_via）**去重 43 对网** · "
+          "披露含 short 且无旧表述 · 三向探针必红")
     print("  [S7e–h] 反证实验：1.58×（通道下界）仍违规 155 ⇒ 预测必要非充分；"
           "给足单元宽 ⇒ DRC 0，代价 26.32× 行面积；0.5× 档仍 21 ⇒ 有阈值")
     print("  [S6a–f] 对外入口 /api/digital_demo：卡片 == 门禁独立重跑的真值 · "

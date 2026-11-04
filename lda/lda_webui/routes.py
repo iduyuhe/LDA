@@ -779,7 +779,8 @@ def h_digital_demo(h, p, q, path):
     不进 HEAVY_POST_PATHS（公开只读验货类，与 `/api/ecore_demo` 同族）。
 
     🔴 **不冒充签核**：`verdict` 恒为 `FLOW_RUN_NOT_SIGNOFF`；DRC 实测 87 处间距违规、
-    LVS 183 处问题**如实报数**；`synthesized=False` / `timing_included=False` /
+    LVS **183 条短路条目**（78 `short` + 105 `short_via`，去重 **43 对网**）**如实报数**；
+    `synthesized=False` / `timing_included=False` /
     `routed_exported=False` 三条限制都写在返回体里；不报 TOPS/TOPS-W/fJ/op。
 
     异常不 500（返回 200 + error 字段，与 h_ecore_demo 同风格）。

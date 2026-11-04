@@ -17,8 +17,9 @@
 ═══════════════════════════════════════════════════════════════════════════════
 诚实边界（全部 `claimable=False`，如实披露）
 ───────────────────────────────────────────────────────────────────────────────
-· **ddetail.detail_route 的 `claimable=False`**：c17 实测 **87 处 min_spacing**（v0.9.370 已把
-  弯角孔包围 14 处修到 **0**）。余下全部是**容量不足**而非代码缺陷：通道每行只有 2 条 M3 轨
+· **ddetail.detail_route 的 `claimable=False`**：c17 实测 **DRC 87 处 min_spacing**（v0.9.370 已把
+  弯角孔包围 14 处修到 **0**）**＋ LVS 183 条短路条目**（78 `short` + 105 `short_via`，去重 **43 对网**，
+  🔴 是连通性错误，不是余量不足）。余下全部是**容量不足**而非代码缺陷：通道每行只有 2 条 M3 轨
   而需要 7 条、单元宽 0.067µm（比线宽 0.24µm 还窄）放不下独立引脚槽、17 条引脚访问列需
   6.12µm 而 die 只有 1.09µm ⇒ 见 `ddetail.drc_capacity_bound`。
   干线**如实报告** DRC/LVS 违规数，绝不伪造「clean tapeout」。
@@ -45,6 +46,25 @@ def _distinct_nets(nl) -> set:
         s.add(g.out)
         s.update(g.ins)
     return s
+
+
+def _count_by_rule(items) -> dict:
+    """按规则名计数（DRC violation / LVS problem 的首元素都是规则名）。
+
+    🔴 为什么必须分类：LVS 在 c17 上报 **183 处**，若只给总数，读者会当成「间距紧、余量大一点就好」；
+    实际是 **78 处同层 `short` + 105 处 `short_via`** —— **电气连通性错误**。
+    这两件事的处置方式完全不同，混成一个数就是口径失真。
+    """
+    out: dict = {}
+    for it in items or []:
+        rule = it[0] if isinstance(it, (list, tuple)) and it else str(it)
+        out[str(rule)] = out.get(str(rule), 0) + 1
+    return dict(sorted(out.items()))
+
+
+def _unique_net_pairs(problems) -> int:
+    """LVS 去重网对数（同一条网对会被多段金属/多个通孔各报一次、双向各报一次）。"""
+    return len({frozenset((str(p[1]), str(p[2]))) for p in problems or []})
 
 
 def run_trunk(nl):
@@ -99,6 +119,8 @@ def run_trunk(nl):
     report["stages"].append(("drc_lvs", {
         "drc_ok": drc["ok"], "drc_violations": len(drc["violations"]),
         "lvs_ok": lvs["ok"], "lvs_problems": len(lvs["problems"]),
+        # 🔴 183 处全是短路：必须分类，否则读者会误读成「间距紧」
+        "lvs_by_rule": _count_by_rule(lvs["problems"]),
     }))
 
     # ── 段 4：DEF 写出（输入 = 段1 的落点 + 段0 的 Netlist）──────────────
@@ -128,11 +150,14 @@ def run_trunk(nl):
     }))
 
     report["drc_lvs_detail"] = {
-        "drc": drc, "lvs": lvs,
+        "drc": drc, "lvs": dict(lvs, by_rule=_count_by_rule(lvs["problems"]),
+                                unique_pairs=_unique_net_pairs(lvs["problems"])),
         "claimable": False,
-        "note": "ddetail.detail_route 当前 claimable=False：c17 实测 87 处 min_spacing"
-                "（via_enclosure 已于 v0.9.370 修至 0；余下为容量不足，见 drc_capacity_bound）"
-                "（via_enclosure 已修至 0；余下为容量不足，见 ddetail.drc_capacity_bound）。",
+        "note": "ddetail.detail_route 当前 claimable=False：c17 实测 DRC 87 处 min_spacing"
+                "（弯角孔包围已于 v0.9.370 修至 0）＋ LVS 183 处**短路**"
+                "（78 同层 short + 105 通孔 short_via，**去重后 43 对网**；"
+                "是连通性错误，不是余量不足）；"
+                "余下的 DRC 为容量不足，见 ddetail.drc_capacity_bound。",
     }
     return report
 

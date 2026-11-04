@@ -1068,7 +1068,8 @@ ECORE_CAPABILITY_MANIFEST = [
         "guard": "run_ecore_s5_smoke.py",
     },
     {
-        "capability": "B3 数字链干线（S3→B3）：把 S3 结构级 Verilog 子集直接喂进现状数字链 dverilog.parse→dsynth.Netlist→dplac.place→ddetail.detail_route→ddrc_lvs，跑通 ISCAS-85 c17，并每段显式断言「吃的是上一段的输出」（place 覆盖每颗门 / route 覆盖每条网 / drc-lvs 如实报告 claimable=False 不伪造 clean）。fail-closed：空输入直接报错；ddetail 路由器 claimable=False 为已知诚实边界（c17 实测 **87 处间距违规** —— 弯角孔包围于 v0.9.370 修至 0，余下全是**容量不足**：通道 2 轨 < 需求 7、单元宽 0.067µm 而单引脚槽需 0.96µm、17 条引脚访问列需 6.12µm > die 1.09µm，见 `ddetail.drc_capacity_bound` 与 `/api/digital_demo` 的 `capacity` 段）；几何/时序为模型假设；非 foundry PDK；C 级自主纯标准库、LLM 不进判决路径。",
+        "capability": "B3 数字链干线（S3→B3）：把 S3 结构级 Verilog 子集直接喂进现状数字链 dverilog.parse→dsynth.Netlist→dplac.place→ddetail.detail_route→ddrc_lvs，跑通 ISCAS-85 c17，并每段显式断言「吃的是上一段的输出」（place 覆盖每颗门 / route 覆盖每条网 / drc-lvs 如实报告 claimable=False 不伪造 clean）。fail-closed：空输入直接报错；ddetail 路由器 claimable=False 为已知诚实边界（c17 实测 **DRC 87 处间距违规** "
+            "＋ **LVS 183 条短路条目（78 short + 105 short_via，去重 43 对网）** —— 弯角孔包围于 v0.9.370 修至 0，余下全是**容量不足**：通道 2 轨 < 需求 7、单元宽 0.067µm 而单引脚槽需 0.96µm、17 条引脚访问列需 6.12µm > die 1.09µm，见 `ddetail.drc_capacity_bound` 与 `/api/digital_demo` 的 `capacity` 段）；几何/时序为模型假设；非 foundry PDK；C 级自主纯标准库、LLM 不进判决路径。",
         "module": "lda_l2.ecore.db3_trunk",
         "symbols": ["run_trunk", "run_trunk_from_verilog"],
         "introduced_by": "B3 trunk",

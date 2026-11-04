@@ -10,6 +10,8 @@
   · route 输入 = (Netlist, Placement)，输出必须让**每一条网有且仅有一类归属**
     （已布 / 端口未布 / 布失败 —— 三类互斥且并集 == 全集）；
   · drc/lvs 输入 = route 的 shapes + pins，如实报告；**结论必须带作用域**；
+  · timing 输入 = 段0 的 Netlist + 段2 的**带网形状**（线长 → 负载 → 延时），
+    并断言「加线载不可能变快」；
   · def_write 输入 = 段1 的落点 + 段0 的 Netlist，往返必须字节级双射。
 
 🔴 **守恒断言是机核，不是装饰**：任何一段没真消费上一段的输出，干线直接 fail-closed，
@@ -220,7 +222,40 @@ def run_trunk(nl, *, baseline: bool = True):
         "nets_checked": lvs["nets_checked"], "nets_total": lvs["nets_total"],
     }))
 
-    # ── 段 4：DEF 写出（主链落点 + 段0 的 Netlist）─────────────────────
+    # ── 段 4：时序（输入 = 段0 Netlist + 段2 布线的**带网形状**）──────────
+    #   🔴 两个「不做就错」的前置：
+    #   ① `dsta.sta` 原先按 `nl.gates` **书写顺序**传播 —— 源文件顺序不保证拓扑序
+    #      （c17 就不是），必须 `topo_sort=True`，否则用旧到达时间静默算错；
+    #   ② 网名以 `nl.in_nets` 为准（`dverilog` 的网名是 `n1`，不是 `in_n1_0`）。
+    from lda_l2.ecore import dextract as DE, dsta as ST
+
+    lengths = DE.net_length_um(shapes)
+    wl = DE.wire_loads_from_shapes(shapes)      # 与 `dextract` 同一公式，不另写一份
+    tm_ideal = ST.sta(nl, topo_sort=True)
+    tm = ST.sta(nl, wire_load_ff=wl, topo_sort=True)
+    if tm.comb_delay_ps < tm_ideal.comb_delay_ps - 1e-9:
+        raise AssertionError("段4 守恒失败：带线载延时 %.4f < 理想 %.4f —— "
+                             "加负载不可能变快（模型或注入路径写反了）"
+                             % (tm.comb_delay_ps, tm_ideal.comb_delay_ps))
+    report["stages"].append(("timing", {
+        "chain": TRUNK_CHAIN, "topo_sorted": True,
+        "nets_with_wire": len(wl),
+        # 🔴 未布的网按 **0 线载** 处理 ⇒ 走这些网的路径**偏乐观**（必须显式说）
+        "nets_without_wire": len(nets_all) - len(wl),
+        "total_wire_um": round(sum(lengths.values()), 3),
+        "total_wire_c_fF": round(sum(wl.values()), 3),
+        "comb_delay_ideal_ps": round(tm_ideal.comb_delay_ps, 3),
+        "comb_delay_wired_ps": round(tm.comb_delay_ps, 3),
+        # 三态而非压扁：无时钟域 ⇒ None（不是 0，也不是「无违规」）
+        "t_clk_min_ps": (None if tm.t_clk_min_ps is None else round(tm.t_clk_min_ps, 3)),
+        "fmax_mhz": (None if tm.fmax_mhz is None else round(tm.fmax_mhz, 3)),
+        "n_dff": tm.n_dff,
+        "clock_domains": (0 if tm.t_clk_min_ps is None else 1),
+        "hold_checked": bool(tm.hold_checked),
+        "critical_path": list(tm.critical_path),
+    }))
+
+    # ── 段 5：DEF 写出（主链落点 + 段0 的 Netlist）─────────────────────
     #    🔴 只写 placed DEF（落点 + 连接），**不写 ROUTED**：shapes 的网归属虽然已按网打标签
     #       （`dpnr` 每根 wire 都带 net），但 DEF 的 ROUTED 需要完整几何/层/宽度语义，
     #       当前导出面未覆盖 ⇒ 写了就是编造。布线导出须先补 ROUTED 子集写出器（后续里程碑）。
@@ -228,17 +263,17 @@ def run_trunk(nl, *, baseline: bool = True):
     text = DD.serialize_def(design)
     back = DD.parse_def(text)
     if DD.serialize_def(back) != text:                 # 写出→读回→再写出 必须字节一致
-        raise AssertionError("段4 守恒失败：DEF 往返不是字节级双射")
+        raise AssertionError("段5 守恒失败：DEF 往返不是字节级双射")
     if len(back.components) != len(nl.gates):
-        raise AssertionError("段4 守恒失败：DEF 组件 %d != 门数 %d"
+        raise AssertionError("段5 守恒失败：DEF 组件 %d != 门数 %d"
                              % (len(back.components), len(nl.gates)))
     if len(back.nets) != len(nets_all):
-        raise AssertionError("段4 守恒失败：DEF 网 %d != Netlist 网 %d"
+        raise AssertionError("段5 守恒失败：DEF 网 %d != Netlist 网 %d"
                              % (len(back.nets), len(nets_all)))
     _got = {c.name: (c.macro, c.x, c.y) for c in back.components}
     for c in design.components:
         if _got.get(c.name) != (c.macro, c.x, c.y):
-            raise AssertionError("段4 守恒失败：组件 %s 的宏名/落点在往返后变了" % c.name)
+            raise AssertionError("段5 守恒失败：组件 %s 的宏名/落点在往返后变了" % c.name)
     report["stages"].append(("def_write", {
         "chain": TRUNK_CHAIN,
         "bytes": len(text), "components": len(back.components),
@@ -301,7 +336,8 @@ def _fmt_report(rep: dict) -> str:
              "对照 chain = %s" % rep.get("baseline_chain")]
     labels = {"parse": "段0 解析(Verilog→Netlist)",
               "place": "段1 布局(place)", "route": "段2 布线(route)",
-              "drc_lvs": "段3 DRC/LVS", "def_write": "段4 DEF 写出"}
+              "drc_lvs": "段3 DRC/LVS", "timing": "段4 时序(dsta + dextract 线载)",
+              "def_write": "段5 DEF 写出"}
     for stage, data in rep["stages"]:
         lines.append("%s" % labels.get(stage, stage))
         for k, v in data.items():

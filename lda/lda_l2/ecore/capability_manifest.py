@@ -463,7 +463,7 @@ ECORE_CAPABILITY_MANIFEST = [
                       "`sim_netlist` 逐单元查真值表（与引擎 A 代码路径零共享）",
         "module": "lda_l2.ecore.dsynth",
         "symbols": ["Gate", "Netlist", "synth", "sim_netlist", "netlist_authenticity",
-                    "input_net", "dsynth_self_check", "DSYNTH_DISCLOSURE"],
+                    "input_net", "dsynth_self_check", "DSYNTH_DISCLOSURE", "topo_order"],
         "introduced_by": "D-212 (E34)", "guard": "run_ecore_e34_smoke.py",
     },
     {
@@ -524,7 +524,7 @@ ECORE_CAPABILITY_MANIFEST = [
                       "线载×K 单调降 · 线载=0 逐位=理想",
         "module": "lda_l2.ecore.dextract",
         "symbols": ["WireSTA", "wire_loads", "wire_aware_sta", "extract_self_check",
-                    "DEXTRACT_DISCLOSURE", "C_WIRE_FF_PER_UM"],
+                    "DEXTRACT_DISCLOSURE", "C_WIRE_FF_PER_UM", "net_length_um", "wire_loads_from_shapes", "loads_from_lengths"],
         "introduced_by": "D-218 (E35)", "guard": "run_ecore_e35_smoke.py",
     },
     {

@@ -13,7 +13,8 @@ DEF 写出结果做成对外可看的只读卡片。
      `ddetail` 路由器在 c17 上实测 **DRC 87 处 min_spacing**（弯角孔包围 v0.9.370 已修至 0）
      ＋ **LVS 183 条短路条目**（78 `short` + 105 `short_via`，去重 **43 对网**）⇒ 卡片**如实报两类违规的分规则计数**，
      绝不写「clean」「pass」「signoff」。
-  ② **不报未实现的段**：`synthesized=False`（入口就是门级网表）、`timing_included=False`
+  ② **不报未实现的段**：`synthesized=False`（入口就是门级网表）、`timing_included=True`
+     （v0.9.377 接入，但 `hold_checked=False`、无时钟域 ⇒ `fmax=None`）
      （干线未串时序段）、`routed_exported=False`（DEF 只到 placed，`ROUTED` 未导出 ——
      `ddetail.DetailRoute.shapes` 没有按网归属，写了就是编造布线）。
   ③ **不报能效**：不报 TOPS / TOPS-W / fJ/op；不宣称与商业工具互通。
@@ -43,8 +44,8 @@ ENDPOINT = "/api/digital_demo"
 VERDICT = "FLOW_RUN_NOT_SIGNOFF"
 
 #: 声明本卡覆盖/未覆盖的段（机核用，禁止与实际行为不一致）
-SEGMENTS_COVERED = ("parse", "place", "route", "drc_lvs", "def_write")
-SEGMENTS_MISSING = ("synthesis", "timing")
+SEGMENTS_COVERED = ("parse", "place", "route", "drc_lvs", "timing", "def_write")
+SEGMENTS_MISSING = ("synthesis",)
 
 #: 诚实边界（逐条都在卡片里输出，且被 selfcheck 要求非空 + 含关键词）
 HONEST_NOTES = (
@@ -62,7 +63,9 @@ HONEST_NOTES = (
     "本卡如实报数，不伪造 clean；余下违规是**容量不足**（capacity 段），不是路由器写错。",
     "DEF 只到 placed（routed_exported=False）—— ROUTED 子集写出器未实现，"
     "写 ROUTED 等于编造布线。",
-    "synthesized=False（入口即门级网表）、timing_included=False（干线未串时序段）。",
+    "synthesized=False（入口即门级网表）；timing_included=True 但 hold_checked=False"
+    "（未做保持时间检查），且 c17 无时钟域 ⇒ t_clk_min/fmax 为 None（不是 0）；"
+    "未布的 7 条网按 **0 线载**算 ⇒ 走这些网的路径**偏乐观**。",
     "单元库为教科书尺度、非 foundry PDK；不改称任何制造/性能结论。",
     "不报 TOPS / TOPS-W / fJ/op；不宣称与 OpenROAD/OpenSTA 等外部工具一致。",
     "DEF 引脚名为 LDA 约定（输出记 z），宏名为 netlist 单元名，非库真名。",
@@ -218,6 +221,7 @@ def _compute() -> Dict[str, Any]:
     placed = st.get("place", {})
     wrote = st.get("def_write", {})
     parsed = st.get("parse", {})
+    tmg = st.get("timing", {})
 
     return {
         "compute_ms": round(ms, 3),
@@ -291,10 +295,29 @@ def _compute() -> Dict[str, Any]:
         "problems": list(report.get("problems") or []),
         "xcheck": _xcheck_facts(X, table),
         "capacity": cap,
+        # 🔴 时序段（v0.9.377）：线载来自**主链布线的带网形状**，拓扑序先排过。
+        #   无时钟域 ⇒ t_clk_min / fmax 是 **None**（三态，不压扁成 0）。
+        "timing": {
+            "chain": tmg.get("chain"),
+            "topo_sorted": bool(tmg.get("topo_sorted")),
+            "nets_with_wire": tmg.get("nets_with_wire"),
+            # 未布的网按 0 线载算 ⇒ 走这些网的路径**偏乐观**（必须显式列出）
+            "nets_without_wire": tmg.get("nets_without_wire"),
+            "total_wire_um": tmg.get("total_wire_um"),
+            "total_wire_c_fF": tmg.get("total_wire_c_fF"),
+            "comb_delay_ideal_ps": tmg.get("comb_delay_ideal_ps"),
+            "comb_delay_wired_ps": tmg.get("comb_delay_wired_ps"),
+            "t_clk_min_ps": tmg.get("t_clk_min_ps"),
+            "fmax_mhz": tmg.get("fmax_mhz"),
+            "n_dff": tmg.get("n_dff"),
+            "clock_domains": tmg.get("clock_domains"),
+            "hold_checked": bool(tmg.get("hold_checked")),
+            "critical_path": list(tmg.get("critical_path") or []),
+        },
         "segments_covered": list(SEGMENTS_COVERED),
         "segments_missing": list(SEGMENTS_MISSING),
         "synthesized": False,
-        "timing_included": False,
+        "timing_included": True,
     }
 
 
@@ -339,6 +362,7 @@ def case_card() -> Dict[str, Any]:
         "segments_missing": f["segments_missing"],
         "synthesized": f["synthesized"],
         "timing_included": f["timing_included"],
+        "timing": f["timing"],
         "honest_note": list(HONEST_NOTES),
         "disclosure": {
             "pdk": "非 foundry PDK（教科书尺度 INV/NAND2）",
@@ -371,8 +395,27 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
             bad.append("honest_note 缺关键词：%s" % kw)
     if card.get("synthesized") is not False:
         bad.append("synthesized 必须为 False（入口即门级网表，未做综合）")
-    if card.get("timing_included") is not False:
-        bad.append("timing_included 必须为 False（干线未串时序段）")
+    # 🔴 v0.9.377 重锚：旧规则「timing_included 必须为 False」是「干线未串时序段」时代的写法。
+    #   现在时序已接入，若仍禁止 True 就只能逼人把时序段删掉。新规则：允许 True，
+    #   但**四条边界缺一必红**（它们正是这份时序「能说明什么、不能说明什么」的边界）。
+    tmg = card.get("timing") or {}
+    if card.get("timing_included") is not True:
+        bad.append("timing_included 必须为 True（时序段已接入干线）")
+    if not tmg:
+        bad.append("timing 段缺席 —— 接入时序后不得省略")
+    else:
+        if tmg.get("hold_checked") is not False:
+            bad.append("hold_checked 必须显式 False（未做保持时间检查）")
+        if tmg.get("n_dff") == 0 and (tmg.get("fmax_mhz") is not None
+                                      or tmg.get("t_clk_min_ps") is not None):
+            bad.append("无时钟域（n_dff=0）却给出 Fmax/t_clk_min —— 不得凭空造时钟")
+        if (tmg.get("comb_delay_wired_ps") is not None
+                and tmg.get("comb_delay_ideal_ps") is not None
+                and tmg["comb_delay_wired_ps"] < tmg["comb_delay_ideal_ps"] - 1e-9):
+            bad.append("带线载延时 %.3f < 理想 %.3f —— 加负载不可能变快"
+                       % (tmg["comb_delay_wired_ps"], tmg["comb_delay_ideal_ps"]))
+        if tmg.get("nets_without_wire") is None:
+            bad.append("nets_without_wire 未给出 —— 未布网按 0 线载，必须显式")
     de = card.get("def_export") or {}
     if de.get("routed_exported") is not False:
         bad.append("routed_exported 必须为 False（shapes 无网归属，不得写 ROUTED）")

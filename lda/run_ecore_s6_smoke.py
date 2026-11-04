@@ -223,13 +223,18 @@ def main() -> int:
           % (card["drc_lvs"]["drc_by_rule"], _bl_dl))
 
     # ── S6d 诚实三态：未实现的段必须显式 False（不是「没说」）───────────
-    check("S6d 未实现的段显式登记：synthesized=False ∧ timing_included=False ∧ "
-          "routed_exported=False（`ROUTED` 未导出 —— shapes 无网归属）",
-          card["synthesized"] is False and card["timing_included"] is False
-          and card["def_export"]["routed_exported"] is False,
-          "synthesized=%r timing=%r routed=%r" % (card["synthesized"],
-                                                  card["timing_included"],
-                                                  card["def_export"]["routed_exported"]))
+    # 🔴 v0.9.377：`timing_included` 已由 False 变 True（时序段接入），
+    #   但**边界必须同时在场**：hold 未检、无时钟域不给 Fmax、segment 清单要如实。
+    check("S6d 未实现的段显式登记：synthesized=False ∧ timing_included=True 且 "
+          "hold_checked=False ∧ routed_exported=False ∧ segments_missing 只含 synthesis",
+          card["synthesized"] is False and card["timing_included"] is True
+          and card["timing"]["hold_checked"] is False
+          and card["def_export"]["routed_exported"] is False
+          and list(card["segments_missing"]) == ["synthesis"]
+          and "timing" in card["segments_covered"],
+          "synthesized=%r timing=%r hold=%r missing=%r"
+          % (card["synthesized"], card["timing_included"],
+             card["timing"]["hold_checked"], card["segments_missing"]))
 
     # ── S6e 卡片诚实性自检 + 两条反向探针（改坏必报）──────────────────
     _sc_ok = DC.selfcheck(card)
@@ -461,6 +466,98 @@ def main() -> int:
           "1=%r 2=%r 3=%r" % (DC.selfcheck(_cbl)[:1], DC.selfcheck(_cbl2)[:1],
                               DC.selfcheck(_cbl3)[:1]))
 
+    # ── T1–T5 时序段（v0.9.377）：拓扑序 + 线载单调 + 三态 + 反向 ─────────
+    from lda_l2.ecore import dextract as DE                   # noqa: E402
+    from lda_l2.ecore import dsta as ST                       # noqa: E402
+
+    import lda_l2.ecore.dsynth as SY                          # noqa: E402
+
+    tmg = _stage(rep, "timing")
+    shp = PN.all_routing(PN.route_block(nl, PN.place_real(nl)))
+    _ideal_comb = ST.sta(nl, topo_sort=True).comb_delay_ps
+
+    # T1 拓扑序：先证明**排序结果合法**，再用**人造反例**证明不排序会错。
+    #   🔴 首版这里写错过：我曾断言「c17 的书写顺序不是拓扑序」，实测是**错的** ——
+    #      c17 文件序本就是合法拓扑序；当初的 KeyError 来自输入网名（`_inet` 约定
+    #      vs `dverilog` 的 `n1`），与门序无关。判据改为两条都机核：
+    #      ① topo_order 的输出必须满足「每个生产者先于消费者」（对任意网表成立）；
+    #      ② 把门序**倒过来**（人造违例）⇒ 不排序必须报错，排序后必须回到同一答案。
+    _prod = {g.out: i for i, g in enumerate(nl.gates)}          # 网 → 文件序下标
+    _prod_name = {g.out: g.name for g in nl.gates}              # 网 → 生产者门名
+    _file_is_topo = all(_prod.get(n, -1) < i
+                        for i, g in enumerate(nl.gates) for n in g.ins)
+    _topo = list(SY.topo_order(nl))
+    _pos = {g.name: i for i, g in enumerate(_topo)}             # 门名 → 拓扑序下标
+    _topo_valid = all(_pos[_prod_name[n]] < _pos[g.name]
+                      for g in _topo for n in g.ins if n in _prod_name)
+    _rev = SY.Netlist(name="rev", inputs=nl.inputs, in_nets=dict(nl.in_nets),
+                      outputs=dict(nl.outputs), gates=list(reversed(nl.gates)),
+                      clocks=nl.clocks)
+    try:
+        ST.sta(_rev)                      # 不排序：人造违例必须炸（不许静默算错）
+        _rev_failed = False
+    except KeyError:
+        _rev_failed = True
+    _rev_sorted = ST.sta(_rev, topo_sort=True)
+    check("T1 拓扑序：排序结果**合法**（每个生产者先于消费者）∧ 人造反例（门序倒置）"
+          "不排序必报错、排序后回到同一答案（%.3f ps）"
+          % _rev_sorted.comb_delay_ps,
+          _topo_valid and _rev_failed
+          and abs(_rev_sorted.comb_delay_ps - _ideal_comb) < 1e-9,
+          "valid=%s rev_failed=%s rev=%.4f"
+          % (_topo_valid, _rev_failed, _rev_sorted.comb_delay_ps))
+    check("T1b 如实记录：c17 的**书写顺序本身就是合法拓扑序**（%s）⇒ `topo_sort` 是"
+          "对其他网表的防线，不是「修 c17」" % _file_is_topo,
+          _file_is_topo is True, "file_is_topo=%r" % _file_is_topo)
+
+    # T2 线载单调 + 与 dextract 同源：卡片值 == 独立复算；加负载必更慢
+    _wl = DE.wire_loads_from_shapes(shp)
+    _ideal = ST.sta(nl, topo_sort=True)      # 与 T1 的 _ideal_comb 同值，此处留作对照
+    _wired = ST.sta(nl, wire_load_ff=_wl, topo_sort=True)
+    check("T2 线载同源且单调：独立复算 ideal=%.3f / wired=%.3f ps ∧ wired > ideal "
+          "∧ 总线载 %.3f fF（%d 条网）"
+          % (_ideal.comb_delay_ps, _wired.comb_delay_ps, sum(_wl.values()), len(_wl)),
+          abs(tmg["comb_delay_ideal_ps"] - round(_ideal.comb_delay_ps, 3)) < 1e-9
+          and abs(tmg["comb_delay_wired_ps"] - round(_wired.comb_delay_ps, 3)) < 1e-9
+          and _wired.comb_delay_ps > _ideal.comb_delay_ps
+          and tmg["nets_with_wire"] == len(_wl),
+          "card=(%r,%r) gate=(%r,%r)"
+          % (tmg["comb_delay_ideal_ps"], tmg["comb_delay_wired_ps"],
+             round(_ideal.comb_delay_ps, 3), round(_wired.comb_delay_ps, 3)))
+
+    # T3 单调性探针：线载 ×100 ⇒ 必须更慢（防「线载没真进模型」）
+    _x100 = ST.sta(nl, wire_load_ff={k: v * 100 for k, v in _wl.items()}, topo_sort=True)
+    check("T3 线载 ×100 ⇒ 延时进一步上升（%.3f → %.3f ps）—— 证明线载真进了负载模型"
+          % (_wired.comb_delay_ps, _x100.comb_delay_ps),
+          _x100.comb_delay_ps > _wired.comb_delay_ps,
+          "x100=%.3f" % _x100.comb_delay_ps)
+
+    # T4 三态：无时钟域 ⇒ t_clk_min / fmax 必须是 None，且未布网数必须显式
+    check("T4 三态不压扁：n_dff=%d ⇒ t_clk_min=%r ∧ fmax=%r（**None，不是 0**）∧ "
+          "nets_without_wire=%r 显式（未布网按 0 线载 ⇒ 偏乐观）"
+          % (tmg["n_dff"], tmg["t_clk_min_ps"], tmg["fmax_mhz"], tmg["nets_without_wire"]),
+          tmg["n_dff"] == 0 and tmg["t_clk_min_ps"] is None and tmg["fmax_mhz"] is None
+          and tmg["clock_domains"] == 0 and tmg["nets_without_wire"] is not None
+          and tmg["nets_without_wire"] > 0,
+          "tmg=%r" % ({k: tmg[k] for k in ("n_dff", "t_clk_min_ps", "fmax_mhz",
+                                           "nets_without_wire")},))
+
+    # T5 反向四向必红：造时钟 / hold 声称已检 / 延时倒挂 / 抹掉未布网数
+    _t1 = json.loads(json.dumps(card))
+    _t1["timing"]["fmax_mhz"] = 1000.0
+    _t2 = json.loads(json.dumps(card))
+    _t2["timing"]["hold_checked"] = True
+    _t3 = json.loads(json.dumps(card))
+    _t3["timing"]["comb_delay_wired_ps"] = 1.0
+    _t4 = json.loads(json.dumps(card))
+    _t4["timing"]["nets_without_wire"] = None
+    check("T5 反向四向必红：无时钟域造 Fmax / hold 声称已检 / 带载延时倒挂 / "
+          "抹掉未布网数 ⇒ 自检各报一条",
+          DC.selfcheck(_t1) and DC.selfcheck(_t2) and DC.selfcheck(_t3)
+          and DC.selfcheck(_t4),
+          "1=%r 2=%r 3=%r 4=%r" % (DC.selfcheck(_t1)[:1], DC.selfcheck(_t2)[:1],
+                                    DC.selfcheck(_t3)[:1], DC.selfcheck(_t4)[:1]))
+
     # ── S0t 耗时红线 ──────────────────────────────────────────────────
     dt = time.time() - T0
     check("S0t 门禁耗时 %.2f s < %.0f s" % (dt, AN_ELAPSED_MAX_S),
@@ -482,6 +579,8 @@ def main() -> int:
           "披露含 short 且无旧表述 · 三向探针必红")
     print("  [S7e–h] 反证实验：1.58×（通道下界）仍违规 155 ⇒ 预测必要非充分；"
           "给足单元宽 ⇒ DRC 0，代价 26.32× 行面积；0.5× 档仍 21 ⇒ 有阈值")
+    print("  [T1–T5] 时序段：拓扑序是必要的（不排序即 KeyError）· 线载同源且单调 · "
+          "无时钟域 fmax=None 不压扁 · 反向四向必红")
     print("  [S8–S9] 双报一版：主链 dpnr + 旧链 detail_route 并排 · 面积代价 ×%.2f 写明"
           "「pin 可达性代价，不是工艺升级」· 反向三向（改标/抹 baseline/抹面积）必红"
           % ((rep.get("area_delta") or {}).get("ratio") or 0))

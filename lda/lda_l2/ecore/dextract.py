@@ -53,10 +53,48 @@ class WireSTA:
     t_clk_min_wire_ps: float
 
 
+def loads_from_lengths(length_um: dict,
+                       c_per_um: float = C_WIRE_FF_PER_UM) -> dict:
+    """线长表 → 每网走线电容（fF）。**唯一的公式实现**（供两条真源共用）。
+
+    🔴 为什么单拎出来（v0.9.377）：主链切到 `dpnr` 后线长不再来自 `droute.Route`，
+    而是从**带网标签的金属形状**算。若为此另写一份 `length × c`，两处必然漂移
+    （本仓已踩过：`ddetail` 与 `ddrc_lvs` 的短路口径分叉）。故**一处实现、两种输入**。
+    """
+    return {net: L * c_per_um for net, L in length_um.items() if L > 0.0}
+
+
 def wire_loads(nl: Netlist, p: PL.Placement, route: RT.Route,
                c_per_um: float = C_WIRE_FF_PER_UM) -> dict:
     """每网走线电容（fF）= 线长 × c_per_um。"""
-    return {net: L * c_per_um for net, L in route.length_um.items() if L > 0.0}
+    return loads_from_lengths(route.length_um, c_per_um)
+
+
+def net_length_um(shapes) -> dict:
+    """从**带网标签的金属段**算每网线长（µm）：`Σ max(dx, dy)` per net。
+
+    🔴 口径与偏置（必须一起读）：
+    · 只数 `kind == "metal"` 且 `net is not None` 的形状 —— via / pin 不贡献长度；
+    · 单段长度取 `max(dx, dy)`（线宽方向不算长度）；
+    · **不扣重叠**：拐角与汇合处的重叠段会被重复计入 ⇒ 线长**偏大** ⇒ 负载偏大
+      ⇒ Fmax 偏**悲观**。方向是保守的，但它仍是模型假设，不是提取。
+    """
+    out: dict = {}
+    for s in shapes or []:
+        if getattr(s, "kind", None) != "metal":
+            continue
+        net = getattr(s, "net", None)
+        if net is None:
+            continue
+        L = max(abs(s.x1 - s.x0), abs(s.y1 - s.y0))
+        if L > 0.0:
+            out[net] = out.get(net, 0.0) + L
+    return out
+
+
+def wire_loads_from_shapes(shapes, c_per_um: float = C_WIRE_FF_PER_UM) -> dict:
+    """带网标签的金属形状 → 每网走线电容（fF）。走 `loads_from_lengths` 同一公式。"""
+    return loads_from_lengths(net_length_um(shapes), c_per_um)
 
 
 def wire_aware_sta(nl: Netlist, tech=DC.DEFAULT_TECH,

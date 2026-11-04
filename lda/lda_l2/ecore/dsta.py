@@ -154,13 +154,19 @@ def _delay_from_lib(lib_tables, cell: str, load_ff: float, slew_ps: float):
 
 
 def sta(nl, tech=DC.DEFAULT_TECH, port_load_ff: float = 0.0,
-        wire_load_ff: dict = None, lib=None, slew_ps: float = None) -> Timing:
+        wire_load_ff: dict = None, lib=None, slew_ps: float = None,
+        topo_sort: bool = False) -> Timing:
     """静态时序（一阶）。`lib` 给 LibertyLibrary 时延时改查 NLDM 表，否则走闭式。
 
     🔴 **保护性约束**：`lib=None` 时走的是与历史**完全相同**的表达式
     `tin[k] + DC.cell_delay_ps(g.cell, load, tech)` ⇒ E34/E35 等既有数字逐位不变。
     `lib` 模式下：库里查不到该单元的**表** ⇒ 该单元回落闭式并记入
     `lib_fallback_cells`（不静默）；插值越界**钳位**（不外插）并计数 `lib_clamped`。
+
+    🔴 `topo_sort=False`（默认）⇒ 完全沿用历史行为（按 `nl.gates` 书写顺序传播），
+    既有调用与 E34/E35 金标**逐位不变**。`topo_sort=True` 时先用
+    `dsynth.topo_order` 排序再传播 —— 供源文件顺序不保证拓扑序的网表（如 c17）使用；
+    有组合环会直接抛错（fail-closed），不静默用旧值。
     """
     load = loads_of(nl, port_load_ff, tech, wire_load_ff)
     arr = {}
@@ -172,13 +178,22 @@ def sta(nl, tech=DC.DEFAULT_TECH, port_load_ff: float = 0.0,
 
     for (port, w) in nl.inputs:
         for i in range(w):
-            n = _inet(port, i)
+            # 🔴 网名**以 `nl.in_nets` 为准**（权威映射），`_inet` 只是 `dsynth` 的历史约定。
+            #   v0.9.377：`dverilog.parse` 的网名是源文件里的 `n1`/`n3`…，不是 `in_n1_0`
+            #   ⇒ 只认约定会让 `arr` 里根本没有这些网，随后 `arr[n]` 直接 KeyError
+            #   （c17 实测）。两种网表的 `in_nets` 与约定**逐位相同**（dsynth 恒等已验证），
+            #   故以 `in_nets` 优先对既有数字（E34/E35）无影响。
+            n = (nl.in_nets or {}).get((port, i)) or _inet(port, i)
             if port.endswith("@q"):
                 arr[n] = tech.t_clk_q_ps      # 时钟沿之后 Q 才稳定
             else:
                 arr[n] = 0.0
 
-    for g in nl.gates:
+    gates = nl.gates
+    if topo_sort:
+        from .dsynth import topo_order
+        gates = topo_order(nl)
+    for g in gates:
         if g.cell == "DFF":
             continue
         tin = [arr[n] for n in g.ins if n != "CLK"]

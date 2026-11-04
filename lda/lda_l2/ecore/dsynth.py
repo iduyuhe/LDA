@@ -93,6 +93,54 @@ class Netlist:
         return sum(DC.CELLS[g.cell].n_tr for g in self.gates)
 
 
+def topo_order(nl) -> list:
+    """把 `nl.gates` 按**拓扑序**排出（Kahn；就绪队列按原顺序取 ⇒ 结果确定）。
+
+    🔴 为什么需要（v0.9.377）：`dsta.sta` 按 `nl.gates` 的**书写顺序**传播到达时间，
+    只有网表本身就是拓扑序时才正确，而 Verilog 源文件的书写顺序**不保证**这一点。
+
+    ⚠️ **如实记录（首版写错过）**：c17 的书写顺序**本来就是合法拓扑序** ——
+    当初那个 `KeyError: n1` 的真因是 `sta` 用 `_inet` 约定名（`in_n1_0`）初始化输入网，
+    而 `dverilog` 的网名是 `n1`，与门序无关。所以 `topo_sort` 是**对其他网表的防线**，
+    不是「修 c17」。反例是人工构造的：把门序倒过来，不排序直接 `KeyError: n16`。
+
+    这里不猜也不兜底：多驱动 / 组合环 ⇒ 直接抛（fail-closed）。
+    """
+    producer = {}
+    for g in nl.gates:
+        if g.out in producer:
+            raise ValueError("topo_order：网 %r 被多个门驱动（%s / %s）"
+                             % (g.out, producer[g.out].name, g.name))
+        producer[g.out] = g
+
+    by_name = {g.name: g for g in nl.gates}
+    indeg = {}
+    users = {g.name: [] for g in nl.gates}
+    for g in nl.gates:
+        deps = set()
+        for n in g.ins:
+            p = producer.get(n)
+            if p is not None:
+                deps.add(p.name)      # 自环也算依赖 ⇒ 会被判成组合环（不放过）
+        indeg[g.name] = len(deps)
+        for d in deps:
+            users[d].append(g.name)
+
+    ready = [g.name for g in nl.gates if indeg[g.name] == 0]
+    order = []
+    while ready:
+        nm = ready.pop(0)
+        order.append(by_name[nm])
+        for u in users[nm]:
+            indeg[u] -= 1
+            if indeg[u] == 0:
+                ready.append(u)
+    if len(order) != len(nl.gates):
+        cyc = [g.name for g in nl.gates if indeg[g.name] > 0]
+        raise ValueError("topo_order：网表存在组合环，无法定序（%s）" % (cyc,))
+    return order
+
+
 # ---------------------------------------------------------------------------
 # 位展开：AST → AIG 位向量
 # ---------------------------------------------------------------------------

@@ -222,7 +222,11 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {
 #:   （`` `run_x` **N 判据 ``）声明某门禁时，才把它加入本表；版本下线时请同批移除。
 #:   不变式（W10b 机核）：当前行里每个 `run_x` **N 判据 都必须能在 `_counts10` 内查到。
 _W10_EXTRA = (
-              # v0.9.378：签核资格条件化（s6 判据 37→42，实测 ~0.6s）
+              # v0.9.379：单端点网三分类（新门禁 s10 · 13 判据 · 实测 ~0.3s）；
+              # 顺带 s8（网覆盖，coverage 新增两个拆分计数）与 s6（routing 段新增三个字段）
+              # 都被本版直接改动到 ⇒ 三者同纳对照面，令顶行声明的判据数由机器守。
+              "run_ecore_s10_smoke.py",
+              "run_ecore_s8_smoke.py",
               "run_ecore_s6_smoke.py",
               )
 

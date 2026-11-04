@@ -214,6 +214,46 @@ def net_pins(pl: dict) -> dict:
     return dict(pins)
 
 
+def classify_single_endpoint(nl, pins: dict) -> dict:
+    """把**单端点网**分成「primary I/O 端口网」与「悬空网」两类（纯函数）。
+
+    🔴 为什么必须分开（2026-11-04 c17 实测）：`skipped_port_nets` 实测 **7** 条，
+    其中只有 **6** 条是真端口（输入 `n1`/`n2`/`n6`/`n7` + 输出 `n22`/`n23`），
+    第 7 条 `n10` 是 `g10` 的输出**悬空** —— 本仓 c17 源里
+    `nand g22 (n22, n16, n19)` 的第二输入写的是 `n16`，而标准 ISCAS-85 c17 是 `n10`。
+    ⇒ **悬空网不会因为「补了端口模型」而布通**，它只能靠改网表解决；而改网表会让
+    全部既有数字（DRC 87 / LVS 183 / 时序 57.303 ps / DEF 571 B）一次性失效。
+    故本仓**只如实披露**，不动网表。把这两类混成一个 `skipped_port` 是**命名失真**：
+    读者会以为「7 条都只差一个端口模型」，实际是「6 条差端口模型 + 1 条差网表修正」。
+
+    🔴 端口判定**只以网表为准**（`nl.in_nets` / `nl.outputs`），不靠网名猜测、不硬编码。
+    任何按名字（`n1`..`n23`）写死的判据，换一份网表就失效 —— 那是「对着答案写判据」。
+
+    返回 `{"port_nets": {net: {dir, port, bit}}, "dangling_nets": [net...], n_port, n_dangling}`。
+    `port_nets ∪ dangling_nets` 必须恰等于「端点 < 2」的网集合（门禁机核）。
+    """
+    in_map = {}
+    for (port, bit), net in (getattr(nl, "in_nets", None) or {}).items():
+        in_map.setdefault(net, {"dir": "in", "port": port, "bit": int(bit)})
+    out_map = {}
+    for port, nets in (getattr(nl, "outputs", None) or {}).items():
+        for bit, net in enumerate(tuple(nets)):
+            out_map.setdefault(net, {"dir": "out", "port": port, "bit": int(bit)})
+
+    port_nets, dangling = {}, []
+    for net, pts in pins.items():
+        if len(pts) >= 2:
+            continue
+        meta = in_map.get(net) or out_map.get(net)
+        if meta is not None:
+            port_nets[net] = dict(meta)
+        else:
+            dangling.append(net)
+    return {"port_nets": dict(sorted(port_nets.items())),
+            "dangling_nets": sorted(dangling),
+            "n_port": len(port_nets), "n_dangling": len(dangling)}
+
+
 def point_off_budget(others: list, x: float, net: str, jog_max: float) -> tuple:
     """**y 邻域内**某个引脚允许的 M2 逃逸长度，**按方向分开**：`(向左, 向右)`。
 
@@ -674,9 +714,16 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
     t_cap = tracks_in_channel(ch_um)
     pins = net_pins(pl)
     n_rows = pl["rows"]
-    # 🔴 单端点网 = 另一端在 primary I/O 上（本模块**不建端口**）⇒ 无法布，但**必须记账**。
+    # 🔴 单端点网（端点 < 2）⇒ 本模块**不建端口** ⇒ 无法布，但**必须记账**。
     #    此前这类网在 `len(pts) < 2` 处被静默跳过，而 `unrouted` 返回空 ⇒ 读者会以为「全布完了」。
+    # ⚠️ **不要说成「另一端在 primary I/O 上」**（v0.9.379 订正）：c17 实测 7 条里只有 6 条
+    #    接 primary I/O，第 7 条 `n10` 是悬空网（网表缺陷）。旧措辞把两者混为一类，
+    #    读者会以为「补端口就全布通」—— 实际悬空网补端口也布不通。
     skipped_port = sorted(n for n, pts in pins.items() if len(pts) < 2)
+    # 🔴 单端点网**再分两类**（2026-11-04）：真端口 vs 悬空网。见 `classify_single_endpoint`。
+    #    `skipped_port_nets` 保留为两者并集（旧名·双报一版），新字段 `port_nets` /
+    #    `dangling_nets` 才是有区分力的口径 —— 悬空网补端口也布不通，只能改网表。
+    _se = classify_single_endpoint(nl, pins)
 
     # —— ⓿ 行内布线预规划（v0.9.356 · E53）────────────────────────────
     # 所有引脚都在同一行的网，**不需要 trunk / 通道 / M4 列**：它可以在行内用
@@ -979,33 +1026,48 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
             "vert_layer": vert_layer,
             "trunk_y": y_of, "pins": pins, "n_pins": sum(len(v) for v in pins.values()),
             "skipped_port_nets": skipped_port, "n_skipped_port": len(skipped_port),
+            # 🔴 单端点网的**有区分力口径**（v0.9.379）：`port_nets` 靠补端口模型可布通，
+            #    `dangling_nets` 只能改网表 —— 两者混称 `skipped_port` 会让读者误判工作量。
+            "port_nets": _se["port_nets"], "n_port_nets": _se["n_port"],
+            "dangling_nets": _se["dangling_nets"], "n_dangling_nets": _se["n_dangling"],
             "coverage": _coverage(routed=set(routed) | set(inrow),
                                   skipped=set(skipped_port),
                                   failed=set(unrouted) | set(inrow_fail),
-                                  total=set(pins))}
+                                  total=set(pins),
+                                  dangling=set(_se["dangling_nets"]))}
 
 
-def _coverage(routed: set, skipped: set, failed: set, total: set) -> dict:
+def _coverage(routed: set, skipped: set, failed: set, total: set,
+              dangling=None) -> dict:
     """网覆盖的四分类记账（**纯函数**，便于门禁独立复算）。
 
     · `routed`  真的画了金属的网；
-    · `skipped` 单端点网（另一端是 primary I/O，本模块不建端口 ⇒ 布不了，但**不是**「已布」）；
+    · `skipped` 单端点网（端点 < 2 ⇒ 布不了，但**不是**「已布」）；
     · `failed`  试图布但没成（列分配失败 / 行内规划失败）；
-    · `total`   网表里出现过的全部网。
+    · `total`   网表里出现过的全部网；
+    · `dangling`（可选）`skipped` 里**悬空网**那一部分 —— 用来把「补端口就能布」与
+      「只能改网表」分开报数。不传时退化为旧行为（拆分字段不出现口径变化）。
 
     🔴 `complete` 只表示「每条网都被归了类」，**不表示全布**；要看 `all_routed`。
     把这两件事混成一个布尔，就是本项目最容易出的那种失真。
     """
     R, S, F = set(routed), set(skipped), set(failed)
     acc = R | S | F
+    D = set(dangling or ())
     # 🔴 四分类必须**互斥**：并集相等不足以证明记账正确 ——
     #    一条网同时出现在 routed 与 skipped（谎报「布了」但还挂着未布）时，
     #    并集不变量完全看不出问题。审计当日的反向探针就是这么把这一漏洞戳出来的。
     overlap = sorted((R & S) | (R & F) | (S & F))
-    return {
+    out = {
         "total": len(total),
         "routed": len(R),
+        # 🔴 `skipped_port` **保持旧义**= 单端点网全集（含悬空网）—— 因为
+        #    「routed + skipped_port + failed == total」这条不变量与既有判据都锚在它上面。
+        #    改语义会让 4+6+0=10≠11 这种**假红**冒出来，而真问题被掩盖。
+        #    区分力放在下面两个**新增**字段里（恒有 skipped_port == 两者之和）。
         "skipped_port": len(S),
+        "skipped_dangling": len(S & D),   # 其中：悬空网（只能改网表）
+        "skipped_true_port": len(S - D),  # 其中：真端口网（补端口模型可望布通）
         "failed": len(F),
         "accounted": len(acc),
         "complete": acc == set(total) and not overlap,   # 每条网恰好归一类
@@ -1013,7 +1075,12 @@ def _coverage(routed: set, skipped: set, failed: set, total: set) -> dict:
         "missing": sorted(set(total) - acc),    # 漏记（应为空）
         "unknown": sorted(acc - set(total)),    # 多记（应为空）
         "overlap": overlap,                     # 重复归类（应为空）
+        # 🔴 悬空网必须**落在**单端点集内：否则「某条多端点网被标成悬空」这种
+        #    自相矛盾的记账会悄悄出现在报表里（`skipped_port + skipped_dangling`
+        #    仍等于 len(S)，光看两项之和看不出来）。
+        "dangling_outside_skipped": sorted(D - S),
     }
+    return out
 
 
 def net_coverage(rt: dict) -> dict:
@@ -1023,6 +1090,7 @@ def net_coverage(rt: dict) -> dict:
         skipped=set(rt.get("skipped_port_nets") or []),
         failed=set(rt.get("unrouted") or []) | set(rt.get("in_row_m3_fail") or []),
         total=set(rt.get("pins") or {}),
+        dangling=set(rt.get("dangling_nets") or []),
     )
 
 

@@ -270,7 +270,14 @@ def run_trunk(nl, *, baseline: bool = True):
         #    `nets_touched` = 路由过程碰过的网（含端口未布 / 布失败）。
         #    两者不可互换 —— 旧名 `nets` / `routed_nets` 曾并列出现（10 vs 11），读者必误判。
         "nets_with_segments": cov["routed"], "nets_touched": cov["total"],
-        "nets_skipped_port": cov["skipped_port"], "nets_failed": cov["failed"],
+        # 🔴 单端点网必须**再分两类**（v0.9.379）：`nets_skipped_port` 是**旧义**= 单端点全集，
+        #    其中只有 `nets_skipped_true_port` 条接 primary I/O（补端口模型可望布通），
+        #    `nets_dangling` 条是**悬空网**（c17 的 `n10`：网表里 `g22` 第二输入写成 `n16`），
+        #    它补端口也布不通、只能改网表。混成一类会让读者把工作量估小。
+        "nets_skipped_port": cov["skipped_port"],
+        "nets_skipped_true_port": cov["skipped_true_port"],
+        "nets_dangling": cov["skipped_dangling"],
+        "nets_failed": cov["failed"],
         "all_routed": cov["all_routed"],
     }))
 

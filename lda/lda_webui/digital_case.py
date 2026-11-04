@@ -254,6 +254,9 @@ def _compute() -> Dict[str, Any]:
             "nets_with_segments": routed.get("nets_with_segments"),
             "nets_touched": routed.get("nets_touched"),
             "nets_skipped_port": routed.get("nets_skipped_port"),
+            # 🔴 旧义 + 两个有区分力的拆分（v0.9.379）：真端口 vs 悬空网。
+            "nets_skipped_true_port": routed.get("nets_skipped_true_port"),
+            "nets_dangling": routed.get("nets_dangling"),
             "nets_failed": routed.get("nets_failed"),
             "all_routed": bool(routed.get("all_routed")),
             # 🔴 派生值（v0.9.378），不是常量 False

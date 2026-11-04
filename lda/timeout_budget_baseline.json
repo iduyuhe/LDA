@@ -15172,14 +15172,16 @@
     {
       "script": "run_ecore_s6_smoke.py",
       "budget_s": 120.0,
-      "elapsed_max_s": 0.29,
-      "margin_x": 413.793,
+      "elapsed_max_s": 0.32,
+      "margin_x": 375.0,
       "samples_s": [
         0.25,
         0.26,
         0.27,
         0.28,
-        0.29
+        0.29,
+        0.31,
+        0.32
       ],
       "n_rounds": 2,
       "censored_events": 0

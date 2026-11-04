@@ -49,10 +49,18 @@ SEGMENTS_MISSING = ("synthesis", "timing")
 #: 诚实边界（逐条都在卡片里输出，且被 selfcheck 要求非空 + 含关键词）
 HONEST_NOTES = (
     "设计期流程跑通，非签核、非流片实测。",
-    "ddetail 路由器 claimable=False：c17 实测 DRC 87 处 min_spacing（via_enclosure 已修至 0）"
+    # 🔴 v0.9.376 主链切换：这条必须放最前，否则「DRC 0」会被读成全芯片清零。
+    "主链 dpnr 只布 **4/11** 条网（7 条接 primary I/O 的网因端口未建模布不了）⇒ "
+    "这 4 条网的 **DRC 0 / LVS 0** 是**子集结论**（scope=ROUTED_SUBSET_ONLY），"
+    "不是全芯片清零；未检验的网逐条列在 drc_lvs.nets_uncovered。",
+    "双报一版：旧链 detail_route 的数字并排在 baseline 段（布满 11 条网，但 DRC 87 处 "
+    "min_spacing ＋ LVS 183 条短路条目 / 43 对网）—— 两条链都 claimable=False。",
+    "主链切换的面积代价：die 3.401 → 33.696 µm²（×9.909），是 CELL_GAP 换引脚可达性的代价，"
+    "**不是工艺升级**。",
+    "旧链 ddetail 路由器 claimable=False：c17 实测 DRC 87 处 min_spacing（via_enclosure 已修至 0）"
     "＋ **LVS 183 条短路条目**（78 同层 short + 105 通孔 short_via，去重后 **43 对网**），"
     "本卡如实报数，不伪造 clean；余下违规是**容量不足**（capacity 段），不是路由器写错。",
-    "DEF 只到 placed（routed_exported=False）—— DetailRoute.shapes 无按网归属，"
+    "DEF 只到 placed（routed_exported=False）—— ROUTED 子集写出器未实现，"
     "写 ROUTED 等于编造布线。",
     "synthesized=False（入口即门级网表）、timing_included=False（干线未串时序段）。",
     "单元库为教科书尺度、非 foundry PDK；不改称任何制造/性能结论。",
@@ -137,6 +145,35 @@ def _xcheck_facts(X, table: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _baseline_facts(b) -> Dict[str, Any]:
+    """旧链 `detail_route` 的并排事实（**双报一版，一个数字都不许省**）。
+
+    🔴 为什么必须留在卡片上：主链 c17 是「DRC 0 但只布 4/11 条网」，旧链是
+    「布满 11 条网但 87 处间距 + 183 条短路条目」。只报任一边都能被读成
+    「已经解决了」或「什么都没做」—— 两张一起才叫报表。
+    """
+    if not b:
+        return {}
+    dl = b.get("drc_lvs") or {}
+    return {
+        "chain": b.get("chain"),
+        "placement": dict(b.get("place") or {}),
+        "routing": dict(b.get("route") or {}),
+        "drc_lvs": {
+            "chain": dl.get("chain"),
+            "drc_ok": dl.get("drc_ok"),
+            "drc_violations": dl.get("drc_violations"),
+            "drc_by_rule": dict(dl.get("drc_by_rule") or {}),
+            "lvs_ok": dl.get("lvs_ok"),
+            "lvs_problems": dl.get("lvs_problems"),
+            "lvs_by_rule": dict(dl.get("lvs_by_rule") or {}),
+            "lvs_unique_pairs": dl.get("lvs_unique_pairs"),
+        },
+        "def_bytes": b.get("def_bytes"),
+        "claimable": bool(b.get("claimable")),
+    }
+
+
 def _compute() -> Dict[str, Any]:
     """跑一次干线 + 一次 B4 对拍，抽成纯数据事实（**只搬运真值，不做二次推断**）。"""
     import time
@@ -167,8 +204,16 @@ def _compute() -> Dict[str, Any]:
     ms = (time.perf_counter() - t0) * 1000.0
 
     st = {name: payload for name, payload in report["stages"]}
-    drc = report["drc_lvs_detail"]["drc"]
-    lvs = report["drc_lvs_detail"]["lvs"]
+    dl = report["drc_lvs_detail"]
+    drc = dl["drc"]
+    lvs = dl["lvs"]
+    # 🔴 主链的 problems **列表**在 `drc_lvs_detail["problems"]`（列表不进 stages，省体积）；
+    #    `drc_lvs_detail["lvs"]` 里带的是 `n_problems` / `by_rule` / `unique_pairs`。
+    #    两者都要读：只读一处会在「非零」时静默报 0（本仓踩过同类：有违规却分规则为空）。
+    _prob = dl.get("problems")
+    _n_lvs = lvs.get("n_problems")
+    if _n_lvs is None:
+        _n_lvs = len(_prob or lvs.get("problems") or [])
     routed = st.get("route", {})
     placed = st.get("place", {})
     wrote = st.get("def_write", {})
@@ -184,33 +229,55 @@ def _compute() -> Dict[str, Any]:
             "inputs": parsed.get("inputs"),
             "outputs": parsed.get("outputs"),
         },
+        # 🔴 v0.9.376 主链切换：placement / routing / drc_lvs 现在描述 **dpnr**（B 系列 P&R），
+        #    旧链 detail_route 的数字整体下沉到 `baseline` 块（双报一版，不得只留一边）。
+        "chain": report.get("chain"),
         "placement": {
+            "chain": placed.get("chain"),
             "cells": placed.get("cells"),
+            "rows": placed.get("rows"),
+            "cols": placed.get("cols"),
             "die_w_um": placed.get("die_w_um"),
             "die_h_um": placed.get("die_h_um"),
-            "hpwl_um": placed.get("hpwl_um"),
-            "cell_area_sum_um2": placed.get("cell_area_sum_um2"),
+            "die_area_um2": placed.get("die_area_um2"),
+            "cell_gap_um": placed.get("cell_gap_um"),
+            "hpwl_um": placed.get("hpwl_um"),          # 主链不算 HPWL ⇒ None（旧链值见 baseline）
         },
         "routing": {
+            "chain": routed.get("chain"),
             "shapes": routed.get("shapes"),
-            "routed_nets": routed.get("routed_nets"),
-            "routed_segments": routed.get("routed_segments"),
+            "nets_with_segments": routed.get("nets_with_segments"),
+            "nets_touched": routed.get("nets_touched"),
+            "nets_skipped_port": routed.get("nets_skipped_port"),
+            "nets_failed": routed.get("nets_failed"),
+            "all_routed": bool(routed.get("all_routed")),
             "claimable": False,
         },
         "drc_lvs": {
+            "chain": dl.get("chain"),
             "drc_ok": bool(drc.get("ok")),
             "drc_violations": len(drc.get("violations") or []),
             "drc_by_rule": _by_rule(drc.get("violations")),
             "lvs_ok": bool(lvs.get("ok")),
-            "lvs_problems": len(lvs.get("problems") or []),
-            # 🔴 必须分类：183 全是**短路**（78 同层 short + 105 通孔 short_via），
+            "lvs_problems": _n_lvs,
+            # 🔴 必须分类：旧链 183 全是**短路**（78 同层 short + 105 通孔 short_via），
             #    只报总数会让读者以为「只是间距紧」—— 那是连通性错误，不是余量不足。
-            "lvs_by_rule": _by_rule(lvs.get("problems")),
+            "lvs_by_rule": dict(lvs.get("by_rule") or _by_rule(_prob)),
             # 🔴 183 是**条目数**（同一条网对会被多段金属/多个通孔各报一次，且双向各报一次）
             #    ⇒ 去重后只有 **43 对网**。只报 183 会把"短路规模"夸大 4 倍。
-            "lvs_unique_pairs": _unique_pairs(lvs.get("problems")),
+            "lvs_unique_pairs": (lvs.get("unique_pairs")
+                                 if lvs.get("unique_pairs") is not None
+                                 else _unique_pairs(_prob)),
+            # 🔴 **作用域必须与结论同行**：0 违规只对 nets_checked 成立。
+            #    c17 主链只布 4/11 条网 ⇒ 这几行是「0 违规」能不能读的唯一依据。
+            "scope": dl.get("scope") or lvs.get("scope"),
+            "nets_checked": dl.get("nets_checked", lvs.get("nets_checked")),
+            "nets_total": dl.get("nets_total", lvs.get("nets_total")),
+            "nets_uncovered": list(dl.get("nets_uncovered") or lvs.get("nets_uncovered") or []),
             "claimable": False,
         },
+        "baseline": _baseline_facts(report.get("baseline")),
+        "area_delta": dict(report.get("area_delta") or {}),
         "def_export": {
             "bytes": wrote.get("bytes"),
             "components": wrote.get("components"),
@@ -255,10 +322,14 @@ def case_card() -> Dict[str, Any]:
                  "DRC/LVS → DEF 写出，**每段断言吃的是上一段的输出**（守恒失败即 fail-closed）。",
         "verdict": VERDICT,
         "verdict_label": "设计期流程跑通（非签核 · 非流片实测）",
+        "chain": f["chain"],
         "subject": f["subject"],
         "placement": f["placement"],
         "routing": f["routing"],
         "drc_lvs": f["drc_lvs"],
+        # 🔴 双报一版（v0.9.376 主链切换）：旧链数字与面积代价必须同卡呈现
+        "baseline": f["baseline"],
+        "area_delta": f["area_delta"],
         "def_export": f["def_export"],
         "conservation_ok": f["conservation_ok"],
         "problems": f["problems"],
@@ -308,8 +379,23 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
     if de.get("roundtrip_ok") is not True:
         bad.append("DEF 往返双射未通过：roundtrip_ok=%r" % (de.get("roundtrip_ok"),))
     drc = card.get("drc_lvs") or {}
+    # 🔴 v0.9.376 重锚：旧规则「drc_ok/lvs_ok 报 True 一律红」是旧主链时代的写法
+    #   （旧链 detail_route 必然有 87/183 违规）。主链切到 dpnr 后，c17 的 4 条已布网
+    #   **确实 0 违规** —— 禁止 True 会逼人报假数。
+    #   新规则不是「允许 True」，而是「**不许出现无作用域的 True**」：
+    #   · scope 必须显式（全芯片 or 子集）；
+    #   · 不是全芯片时，nets_uncovered 必须非空 —— 否则「4/11 网 0 违规」会被读成
+    #     「11 网已清零」，这正是审计当日抓到的失真。
     if drc.get("drc_ok") is True or drc.get("lvs_ok") is True:
-        bad.append("drc_ok/lvs_ok 报 True —— 与 claimable=False 矛盾（不得伪造 clean）")
+        _scope = drc.get("scope")
+        if _scope not in ("FULL_CHIP", "ROUTED_SUBSET_ONLY"):
+            bad.append("drc_ok/lvs_ok 报 True 但 scope=%r 未显式 —— 0 违规必须带作用域"
+                       % (_scope,))
+        elif _scope != "FULL_CHIP" and not (drc.get("nets_uncovered") or []):
+            bad.append("子集 0 违规（scope=%s）却未列 nets_uncovered —— "
+                       "会被读成全芯片清零" % (_scope,))
+        if drc.get("nets_checked") is None or drc.get("nets_total") is None:
+            bad.append("0 违规却未给 nets_checked/nets_total —— 作用域不完整")
     if len(drc.get("drc_by_rule") or {}) == 0 and (drc.get("drc_violations") or 0) > 0:
         bad.append("有违规但分规则计数为空 —— 记账不完整")
     # LVS 分类纪律：183 是短路，不是「余量不足」；分类必须求和自洽
@@ -326,6 +412,40 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
         bad.append("有 LVS 问题却报 0 对网 —— 去重计数缺失")
     if _u is not None and _u > (drc.get("lvs_problems") or 0):
         bad.append("去重网对 %d > 条目数 %d —— 计数逻辑错" % (_u, drc.get("lvs_problems") or 0))
+    # ── 旧链（baseline）的同类纪律：独立一套，不能只查主链 ────────────────
+    #   🔴 v0.9.376 由 S7k 反向探针逼出来：此前自检只查 `card["drc_lvs"]`（现为主链，0 问题），
+    #      于是「把旧链的 lvs_by_rule 改成 {'short': 1}」这种篡改**完全测不出来** ——
+    #      旧链 183 条短路的分类质量就此失去守卫。两条链各查一遍才算守住。
+    _b2 = card.get("baseline") or {}
+    if not _b2:
+        bad.append("baseline 缺席 —— 双报一版期间旧链数字不得静默消失")
+    else:
+        _bd = _b2.get("drc_lvs") or {}
+        _bv = _bd.get("lvs_by_rule") or {}
+        if sum(_bv.values()) != (_bd.get("lvs_problems") or 0):
+            bad.append("旧链 lvs_by_rule 求和 %d ≠ lvs_problems %d"
+                       % (sum(_bv.values()), _bd.get("lvs_problems") or 0))
+        if (_bd.get("lvs_problems") or 0) > 0 and not (_bv.get("short") or _bv.get("short_via")):
+            bad.append("旧链有 %d 处 LVS 问题却未分类出 short/short_via"
+                       % (_bd.get("lvs_problems") or 0,))
+        _bu = _bd.get("lvs_unique_pairs")
+        if _bu is not None and _bu > (_bd.get("lvs_problems") or 0):
+            bad.append("旧链去重网对 %d > 条目数 %d" % (_bu, _bd.get("lvs_problems") or 0))
+        if len(_bd.get("drc_by_rule") or {}) == 0 and (_bd.get("drc_violations") or 0) > 0:
+            bad.append("旧链有 DRC 违规但分规则为空")
+        if _b2.get("chain") != "detail_route":
+            bad.append("baseline.chain 必须是 detail_route（当前 %r）" % (_b2.get("chain"),))
+        if _b2.get("claimable") is not False:
+            bad.append("baseline.claimable 必须为 False")
+    # 双报一致性：主链标识 + 面积代价字段必须齐（面积差不许只给一边）
+    if card.get("chain") != "dpnr":
+        bad.append("card.chain 必须是 dpnr（当前 %r）" % (card.get("chain"),))
+    _ad = card.get("area_delta") or {}
+    if not _ad:
+        bad.append("area_delta 缺席 —— 主链切换的面积代价不得省略")
+    elif not (_ad.get("main_die_area_um2") and _ad.get("baseline_die_area_um2")):
+        bad.append("area_delta 两侧面积必须都给：%r" % (_ad,))
+
     if card.get("conservation_ok") is not True:
         bad.append("干线守恒断言未通过 —— 不能对外声称「跑通」")
 
@@ -371,13 +491,23 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
     if cap.get("verdict") != ("RESOURCE_SUFFICIENT" if _feasible else
                               "ROUTING_RESOURCE_INFEASIBLE"):
         bad.append("capacity.verdict 与三向判据不一致")
-    if _feasible and (card.get("drc_lvs") or {}).get("drc_violations"):
-        bad.append("容量判定为可行却仍有 DRC 违规 —— 检测器与几何脱节")
-    if (not _feasible) and not (card.get("drc_lvs") or {}).get("drc_violations"):
-        bad.append("容量判定为不可行却报 0 违规 —— 有一方在说谎")
+    # 🔴 v0.9.376 重锚：`capacity` 是用 `dplac` 落点 + `ddetail` 路由器算出来的
+    #   ⇒ 它描述的是 **baseline（旧链）** 的容量，**不是**主链 dpnr 的。
+    #   旧写法拿它去比 `drc_lvs`（现已是主链）⇒ 跨链比较，两边都会被误判。
+    #   现在显式取 baseline 的 DRC 违规数来对拍；baseline 缺席则不判（不静默通过，
+    #   由「baseline 必须存在」的另一条规则兜）。
+    _bl = card.get("baseline") or {}
+    _bl_drc = (_bl.get("drc_lvs") or {}).get("drc_violations")
+    if _bl_drc is not None:
+        if _feasible and _bl_drc:
+            bad.append("容量判定为可行却仍有 DRC 违规（旧链 %d）—— 检测器与几何脱节"
+                       % _bl_drc)
+        if (not _feasible) and not _bl_drc:
+            bad.append("容量判定为不可行却报 0 违规（旧链）—— 有一方在说谎")
     # 弯角孔包围修复的回归守卫（v0.9.370）：回退就必红
-    if "via_enclosure" in ((card.get("drc_lvs") or {}).get("drc_by_rule") or {}):
-        bad.append("via_enclosure 重新出现 —— 弯角延伸（_LAND_CORNER）被回退")
+    _bl_rule = ((_bl.get("drc_lvs") or {}).get("drc_by_rule") or {})
+    if "via_enclosure" in _bl_rule:
+        bad.append("via_enclosure 在旧链重新出现 —— 弯角延伸（_LAND_CORNER）被回退")
 
     # ── 网覆盖记账（B 系列主链）：没布的必须被看见，且两个布尔不许混用 ──────
     _cov = cap.get("dpnr_coverage") or {}

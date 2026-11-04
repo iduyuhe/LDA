@@ -336,6 +336,30 @@ DEF_DBUNIT_PER_UM = 1000
 DEF_OUT_PIN = "z"
 
 
+def _place_view(placement):
+    """把「布局结果」归一成 `(cell_xywh, die_w_um, die_h_um)`。
+
+    支持两种真源（**一处实现、两种输入**，绝不写第二套 DEF 写出 —— 两套必然漂移）：
+    · `dplac.Placement`：`.cell_xywh` / `.die_w_um` / `.die_h_um`（旧链）；
+    · `dpnr.place_real()` 的 dict：`insts[*]` 的 `x0/y0/w/h` + `die_w_um/die_h_um`（B 系列主链）。
+
+    🔴 v0.9.376：主链切到 `dpnr` 后，DEF 段**必须跟着吃主链的落点**，
+    否则「每段断言吃上一段输出」这条不变量在 DEF 段就断了（那条不变量正是本干线的立身之本）。
+    """
+    xywh = getattr(placement, "cell_xywh", None)
+    if xywh:
+        return (dict(xywh),
+                float(getattr(placement, "die_w_um", 0.0) or 0.0),
+                float(getattr(placement, "die_h_um", 0.0) or 0.0))
+    if isinstance(placement, dict) and placement.get("insts"):
+        xywh = {i["name"]: (i["x0"], i["y0"], i["w"], i["h"])
+                for i in placement["insts"]}
+        return (xywh,
+                float(placement.get("die_w_um") or 0.0),
+                float(placement.get("die_h_um") or 0.0))
+    return ({}, 0.0, 0.0)
+
+
 def from_placement(placement, nl, *, name: str = "lda_design",
                    units: int = DEF_DBUNIT_PER_UM, out_pin: str = DEF_OUT_PIN,
                    fixed: bool = False) -> DefDesign:
@@ -354,14 +378,12 @@ def from_placement(placement, nl, *, name: str = "lda_design",
     def dbu(v_um) -> int:
         return int(round(float(v_um) * units))
 
-    xywh = getattr(placement, "cell_xywh", None) or {}
+    xywh, dw, dh = _place_view(placement)
     lacking = [g.name for g in nl.gates if g.name not in xywh]
     if lacking:
         raise ValueError("from_placement：以下门没有落点，拒绝写出半个 DEF：%s" % (lacking,))
 
     d = DefDesign(name=name, units=int(units))
-    dw = float(getattr(placement, "die_w_um", 0.0) or 0.0)
-    dh = float(getattr(placement, "die_h_um", 0.0) or 0.0)
     if dw > 0.0 and dh > 0.0:
         d.diearea = [(0, 0), (dbu(dw), dbu(dh))]
 

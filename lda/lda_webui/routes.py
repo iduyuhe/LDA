@@ -787,6 +787,12 @@ def h_digital_demo(h, p, q, path):
     但 `ok` **只对已布网的子集成立** —— c17 实测 `nets_checked=4 / total=11`、
     `scope=ROUTED_SUBSET_ONLY`、`ok_is_full_chip=False`。**不得**读成「c17 的 LVS 通过」。
 
+    🔴 **双报一版**（v0.9.376 主链切换）：卡片顶层 `placement` / `routing` / `drc_lvs`
+    现在描述 **主链 `dpnr`**（c17：4/11 网已布、这几条 DRC 0 / LVS 0）；
+    旧链 `detail_route` 的全部数字（11/11 网、DRC 87、LVS 183 条 / 43 对网）下沉到
+    **`baseline`** 段。`area_delta` 给出面积代价 3.401 → **33.696 µm²（×9.909）** ——
+    是 `CELL_GAP` 换引脚可达性的代价，**不是工艺升级**。两条链都 `claimable=False`。
+
     异常不 500（返回 200 + error 字段，与 h_ecore_demo 同风格）。
     """
     try:

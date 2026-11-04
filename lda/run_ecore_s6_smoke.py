@@ -28,6 +28,13 @@
      卡片数字必须 == 门禁**独立重跑**的真值；未实现的段（综合/时序/ROUTED）显式 False；
      诚实性自检正向空、反向两向必报；两次调用 digest 一致且 JSON 硬。
 
+  S8–S9 **双报一版**（v0.9.376 主链切换）：主链从 `detail_route` 换成 `dpnr`。
+     风险不是「算错」而是**静默替换** —— 不并排报旧链，87 处间距 + 183 条短路条目
+     就会从报表里消失，而它们正是「为什么必须换」的唯一证据。故要求：
+     `rep.chain=dpnr` ∧ `baseline.chain=detail_route` ∧ 干线不 import `track_route` ∧
+     `nets_with_segments ≤ nets_touched` ∧ 面积代价两侧都给且比值可独立复算 ∧
+     反向三向（改标主链 / 抹 baseline / 抹 area_delta）必红。
+
 诚实边界
 ────────
 · ddetail.detail_route 的 claimable=False（c17 实测 87 处 min_spacing；via_enclosure 已修至 0，
@@ -81,11 +88,19 @@ def main() -> int:
           pl is not None and pl["cells"] == 6 and pl["cells"] == p["gates"],
           "place cells=%s parse gates=%s" % (pl["cells"] if pl else None, p["gates"]))
 
-    # ── S3 布线段守恒（route 覆盖每条网）──────────────────────────────
+    # ── S3 布线段守恒（v0.9.376 口径变更：从「覆盖每条网」→「每条网有且仅有一类归属」）──
+    #   🔴 为什么改：主链 dpnr 不建端口，7 条接 primary I/O 的网**布不了**。
+    #      旧口径「routed_nets == 11」现在必然为假；强行要求它等于逼人把「布不了」
+    #      报成「布了」——那正是第 1 步抓到的失真。新口径要求**三类互斥且并集 == 全集**。
     rt = _stage(rep, "route")
-    check("S3 布线段守恒：route 覆盖全部 11 条网（routed_nets == nets）",
-          rt is not None and rt["routed_nets"] == 11 and rt["routed_nets"] == p["nets"],
-          "routed_nets=%s nets=%s" % (rt["routed_nets"] if rt else None, p["nets"]))
+    _ws, _tn = (rt["nets_with_segments"], rt["nets_touched"]) if rt else (None, None)
+    _sk, _fl = (rt["nets_skipped_port"], rt["nets_failed"]) if rt else (None, None)
+    check("S3 布线段守恒：%d 已布 + %d 端口未布 + %d 布失败 == %d 网（nets_with_segments "
+          "≤ nets_touched，且 all_routed 如实为 False）"
+          % (_ws or -1, _sk or -1, _fl or -1, _tn or -1),
+          rt is not None and _ws + _sk + _fl == _tn == p["nets"]
+          and _ws <= _tn and rt["all_routed"] is False,
+          "route=%s" % (rt,))
 
     # ── S4 DRC/LVS 如实报告 ───────────────────────────────────────────
     dl = _stage(rep, "drc_lvs")
@@ -113,7 +128,11 @@ def main() -> int:
     from lda_l2.ecore import dverilog as V   # noqa: E402
 
     nl = V.parse(src)
-    _p2 = PL.place(nl)
+    from lda_l2.ecore import dpnr as PN                       # noqa: E402
+
+    # 🔴 v0.9.376：主链切到 dpnr ⇒ DEF 段吃的是 dpnr 落点（不是 dplac 的）。
+    #    这里必须用**同一个真源**复算，否则「吃上一段输出」这条不变量在 DEF 段断掉。
+    _p2 = PN.place_real(nl)
     _txt = DD.serialize_def(DD.from_placement(_p2, nl, name="lda_c17"))
     check("D3 DEF 内容独立复算：字节数一致 ∧ **不含 ROUTED**（shapes 无网归属 ⇒ 写了就是编造）"
           " ∧ UNITS DISTANCE MICRONS 1000（1 DBU = 1 nm）",
@@ -170,7 +189,9 @@ def main() -> int:
         "terms": _st2["def_write"]["terms"],
         "def_bytes": _st2["def_write"]["bytes"],
         "drc_violations": len(_rep2["drc_lvs_detail"]["drc"]["violations"]),
-        "lvs_problems": len(_rep2["drc_lvs_detail"]["lvs"]["problems"]),
+        # 🔴 v0.9.376：主链的 problems 列表在 `drc_lvs_detail["problems"]`（列表不进 lvs dict）
+        "lvs_problems": _rep2["drc_lvs_detail"]["lvs"].get("n_problems",
+                          len(_rep2["drc_lvs_detail"].get("problems") or [])),
         "gates": _st2["parse"]["gates"],
         "nets": _st2["parse"]["nets"],
     }
@@ -186,12 +207,20 @@ def main() -> int:
     }
     check("S6b 卡片数字 == 独立重跑干线的真值（%r）—— 不信卡片自述" % (_want,),
           _want == _got, "卡片=%r" % (_got,))
-    check("S6c 分规则 DRC 计数自洽（Σ 分规则 == 总数）∧ 违规/问题如实报 >0（不伪造 clean）",
+    _bl = card.get("baseline") or {}
+    _bl_dl = _bl.get("drc_lvs") or {}
+    check("S6c 两条链的数字都要自洽且都如实：主链 Σ分规则==%d（0 合规但要带作用域）· "
+          "旧链 DRC %s / LVS %s（必须仍 >0，双报不许把旧证据抹掉）"
+          % (card["drc_lvs"]["drc_violations"], _bl_dl.get("drc_violations"),
+             _bl_dl.get("lvs_problems")),
           sum(card["drc_lvs"]["drc_by_rule"].values()) == card["drc_lvs"]["drc_violations"]
-          and card["drc_lvs"]["drc_violations"] > 0
-          and card["drc_lvs"]["lvs_problems"] > 0
-          and card["drc_lvs"]["drc_ok"] is False,
-          "by_rule=%r" % (card["drc_lvs"]["drc_by_rule"],))
+          and card["drc_lvs"]["drc_violations"] >= 0
+          and card["drc_lvs"]["scope"] in ("FULL_CHIP", "ROUTED_SUBSET_ONLY")
+          and (_bl_dl.get("drc_violations") or 0) > 0
+          and (_bl_dl.get("lvs_problems") or 0) > 0
+          and sum((_bl_dl.get("lvs_by_rule") or {}).values()) == (_bl_dl.get("lvs_problems") or 0),
+          "main=%r baseline=%r"
+          % (card["drc_lvs"]["drc_by_rule"], _bl_dl))
 
     # ── S6d 诚实三态：未实现的段必须显式 False（不是「没说」）───────────
     check("S6d 未实现的段显式登记：synthesized=False ∧ timing_included=False ∧ "
@@ -262,24 +291,33 @@ def main() -> int:
     _same = all(abs(_c_cap[k] - _cap[k]) < 1e-9 for k in
                 ("capacity_per_row", "clique_max", "pin_slot_need_um",
                  "cell_w_median_um", "cols_need_um", "cols_have_um"))
-    check("S7c 卡片 capacity == 独立复算 ∧ 卡片 DRC 违规数 == 门禁实测（%d）"
+    # 🔴 v0.9.376：`capacity` 由 dplac+ddetail 算出 ⇒ 它描述 **baseline**，
+    #    因此对拍也必须取 baseline 的 DRC 违规数（此前取的是主链，跨链比较）。
+    check("S7c 卡片 capacity == 独立复算 ∧ **旧链** DRC 违规数 == 门禁实测（%d）"
           % len(_r3["violations"]),
           _same and _c_cap["verdict"] == _cap["verdict"]
-          and _card3["drc_lvs"]["drc_violations"] == len(_r3["violations"]),
-          "card=%r gate=%r" % (_c_cap.get("verdict"), _cap.get("verdict")))
+          and ((_card3.get("baseline") or {}).get("drc_lvs") or {})
+          .get("drc_violations") == len(_r3["violations"]),
+          "card=%r gate=%r bl=%r" % (_c_cap.get("verdict"), _cap.get("verdict"),
+                                     ((_card3.get("baseline") or {}).get("drc_lvs") or {})
+                                     .get("drc_violations")))
 
     # ④ 反向三向：伪造「容量够」/「0 违规」/「via 回退」⇒ 自检必红
     _f1 = json.loads(json.dumps(_card3))
     _f1["capacity"]["verdict"] = "RESOURCE_SUFFICIENT"
     _f2 = json.loads(json.dumps(_card3))
-    _f2["drc_lvs"]["drc_violations"] = 0
-    _f2["drc_lvs"]["drc_by_rule"] = {}
+    _f2["baseline"]["drc_lvs"]["drc_violations"] = 0
+    _f2["baseline"]["drc_lvs"]["drc_by_rule"] = {}
     _f3 = json.loads(json.dumps(_card3))
-    _f3["drc_lvs"]["drc_by_rule"] = {"min_spacing": 73, "via_enclosure": 14}
-    check("S7d 反向三向必红：伪造容量可行 / 伪造 0 违规 / 伪造 via 回退 ⇒ 自检各报一条",
-          DC.selfcheck(_f1) and DC.selfcheck(_f2) and DC.selfcheck(_f3),
-          "f1=%r f2=%r f3=%r" % (DC.selfcheck(_f1)[:1], DC.selfcheck(_f2)[:1],
-                                 DC.selfcheck(_f3)[:1]))
+    _f3["baseline"]["drc_lvs"]["drc_by_rule"] = {"min_spacing": 73, "via_enclosure": 14}
+    _f6 = json.loads(json.dumps(_card3))
+    _f6["drc_lvs"]["scope"] = None            # 🔴 主链 0 违规但抹掉作用域 ⇒ 必红
+    check("S7d 反向三向必红：伪造容量可行 / **旧链**伪造成 0 违规 / 旧链伪造 via 回退 ⇒ "
+          "自检各报一条",
+          DC.selfcheck(_f1) and DC.selfcheck(_f2) and DC.selfcheck(_f3)
+          and DC.selfcheck(_f6),
+          "f1=%r f2=%r f3=%r f6=%r" % (DC.selfcheck(_f1)[:1], DC.selfcheck(_f2)[:1],
+                                        DC.selfcheck(_f3)[:1], DC.selfcheck(_f6)[:1]))
 
     # ── S7e–S7h 反证实验：放大面积能不能换 0 违规（预测 vs 实测）────────────
     _e_ch = DTL.drc_zero_experiment(nl, widen=None)          # 只加通道
@@ -334,8 +372,12 @@ def main() -> int:
     #   🔴 起因：全仓原先只写「LVS 183 问题」，读者会当成「间距紧」；实际是**连通性错误**。
     #      而且 183 是**条目数**（同一网对被多段金属/通孔各报一次、双向各报一次），
     #      去重后只有 43 对网 —— 只报 183 会把规模夸大 4 倍。
-    _dl = rep["drc_lvs_detail"]["lvs"]
-    _stage_lvs = dict(T.run_trunk(V.parse(V.SAMPLE_VERILOG))["stages"])["drc_lvs"]
+    # 🔴 v0.9.376：183 条短路条目属于**旧链**（主链只有 4 条网、0 违规）
+    #   ⇒ 这条口径纪律的载体随之移到 baseline，否则它会因「主链没有问题」而空转。
+    _dl = rep["baseline"]["drc_lvs_detail"]
+    _dl = {"by_rule": _dl["by_rule"], "unique_pairs": _dl["unique_pairs"],
+           "problems": _dl["lvs"]["problems"]}
+    _stage_lvs = rep["baseline"]["drc_lvs"]
     _uniq_ref = len({frozenset((str(x[1]), str(x[2]))) for x in _dl["problems"]})
     check("S7i LVS 分类与去重自洽：%r 求和=%d == problems=%d ∧ 去重 **%d 对网** ∧ "
           "干线段同样带 by_rule"
@@ -363,9 +405,9 @@ def main() -> int:
     # ③ 反向两向：把旧表述塞回披露 / 把分类调成与总数不符 ⇒ 判据与自检各必红
     _bad_src = _dd_src.replace("并且有 183 处 LVS 短路", "0 同层短路不代表布通，并且有 183 处 LVS 短路", 1)
     _bad_card = json.loads(json.dumps(DC.case_card()))
-    _bad_card["drc_lvs"]["lvs_by_rule"] = {"short": 1}
+    _bad_card["baseline"]["drc_lvs"]["lvs_by_rule"] = {"short": 1}
     _bad_card2 = json.loads(json.dumps(DC.case_card()))
-    _bad_card2["drc_lvs"]["lvs_unique_pairs"] = 999
+    _bad_card2["baseline"]["drc_lvs"]["lvs_unique_pairs"] = 999
     check("S7k 反向三向必红：① 旧表述塞回披露 ⇒ S7j 判据假 ② lvs_by_rule 与总数不符 ⇒ "
           "自检红 ③ 去重数 > 条目数 ⇒ 自检红",
           (not _disclosure_ok(_bad_src)) and DC.selfcheck(_bad_card)
@@ -373,6 +415,51 @@ def main() -> int:
           "src=%s card1=%r card2=%r" % (_disclosure_ok(_bad_src),
                                         DC.selfcheck(_bad_card)[:1],
                                         DC.selfcheck(_bad_card2)[:1]))
+
+    # ── S8–S9 双报一版（v0.9.376 主链切换）：两条链必须同时在场 ────────────
+    #   🔴 这一步的风险不是「算错」，是**静默替换**：主链从 detail_route 换成 dpnr 后，
+    #      如果不并排报旧链，87 处间距 + 183 条短路条目就会从报表里消失 ——
+    #      而它们恰恰是「为什么必须换主链」的唯一证据。
+    _blk = rep.get("baseline") or {}
+    _trunk_src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "lda_l2", "ecore", "db3_trunk.py"), encoding="utf-8").read()
+    check("S8 双报一版：rep.chain=%r ∧ baseline.chain=%r ∧ 干线不 import track_route ∧ "
+          "nets_with_segments(%d) ≤ nets_touched(%d)"
+          % (rep.get("chain"), _blk.get("chain"), rt["nets_with_segments"],
+             rt["nets_touched"]),
+          rep.get("chain") == "dpnr" and _blk.get("chain") == "detail_route"
+          and "track_route" not in _trunk_src
+          and rt["nets_with_segments"] <= rt["nets_touched"],
+          "chain=%r baseline=%r track=%s"
+          % (rep.get("chain"), _blk.get("chain"), "track_route" in _trunk_src))
+
+    # 面积代价：必须两侧都给，且比值 == 独立复算；不许把「pin 可达性代价」说成工艺升级
+    _ad = rep.get("area_delta") or {}
+    _main_a = rep["stages"][1][1]["die_area_um2"]
+    _base_a = (_blk.get("place") or {}).get("die_area_um2")
+    # 报告里的 ratio 是 3 位小数（round 过），对拍必须用**同精度**比较：
+    # 用 1e-6 容差去比一个 round(·,3) 的值，判据必然假红（本节首跑就是这么红的）。
+    _ratio_ok = bool(_main_a and _base_a) and \
+        round(_main_a / _base_a, 3) == _ad.get("ratio")
+    check("S9 面积代价如实：主链 %.3f µm² / 旧链 %.3f µm² ⇒ ×%.3f（独立复算一致）∧ "
+          "理由写明「不是工艺升级」"
+          % (_main_a or 0, _base_a or 0, _ad.get("ratio") or 0),
+          _ratio_ok and _ad.get("ratio", 0) > 1.0
+          and "不是工艺升级" in (_ad.get("reason") or ""),
+          "area_delta=%r main=%r base=%r" % (_ad, _main_a, _base_a))
+
+    # 反向：把 chain 改标成旧链 / 把 baseline 抹掉 ⇒ 卡片自检各必红（自检认得出来）
+    _cbl = json.loads(json.dumps(card))
+    _cbl["chain"] = "detail_route"
+    _cbl2 = json.loads(json.dumps(card))
+    _cbl2["baseline"] = {}
+    _cbl3 = json.loads(json.dumps(card))
+    _cbl3["area_delta"] = {}
+    check("S9-P1 反向三向必红：主链标识改标旧链 / baseline 抹掉 / area_delta 抹掉 ⇒ "
+          "自检各报一条（防静默替换）",
+          DC.selfcheck(_cbl) and DC.selfcheck(_cbl2) and DC.selfcheck(_cbl3),
+          "1=%r 2=%r 3=%r" % (DC.selfcheck(_cbl)[:1], DC.selfcheck(_cbl2)[:1],
+                              DC.selfcheck(_cbl3)[:1]))
 
     # ── S0t 耗时红线 ──────────────────────────────────────────────────
     dt = time.time() - T0
@@ -395,6 +482,9 @@ def main() -> int:
           "披露含 short 且无旧表述 · 三向探针必红")
     print("  [S7e–h] 反证实验：1.58×（通道下界）仍违规 155 ⇒ 预测必要非充分；"
           "给足单元宽 ⇒ DRC 0，代价 26.32× 行面积；0.5× 档仍 21 ⇒ 有阈值")
+    print("  [S8–S9] 双报一版：主链 dpnr + 旧链 detail_route 并排 · 面积代价 ×%.2f 写明"
+          "「pin 可达性代价，不是工艺升级」· 反向三向（改标/抹 baseline/抹面积）必红"
+          % ((rep.get("area_delta") or {}).get("ratio") or 0))
     print("  [S6a–f] 对外入口 /api/digital_demo：卡片 == 门禁独立重跑的真值 · "
           "未实现段显式 False · 自检两向可判红 · digest 稳定")
     print("  [边界] ddetail 路由器 claimable=False · 几何/时序为模型假设 · 非 foundry PDK")

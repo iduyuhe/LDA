@@ -1335,6 +1335,87 @@ def net_coverage(rt: dict) -> dict:
     )
 
 
+#: M1 出口判据允许的「未布归因」枚举 —— **枚举外的原因一律判红**。
+M1_UNROUTED_REASONS = ("PORT_UNMODELED", "DANGLING", "COL_FAIL", "IN_ROW_FAIL")
+
+
+def attribute_unrouted(rt: dict) -> dict:
+    """把**每条未布网**归到一个枚举原因上（M1 出口判据的核心）。
+
+    🔴 为什么必须是**枚举**、不能是自由文本：「资源不足」这种话谁都能写；
+    枚举外的原因 ⇒ 判红，逼人真的去看 rc。**「不知道为什么不布」不是归因。**
+
+    · `PORT_UNMODELED` 单端点且是 primary I/O —— 补端口模型（pad）才可能布通；
+    · `DANGLING`       单端点且悬空（网表缺陷）—— 补端口也布不通，只能改网表；
+    · `COL_FAIL`       试图布但列分配失败（局部列 / 层资源不足）；
+    · `IN_ROW_FAIL`    行内布线规划失败。
+    """
+    dang = set(rt.get("dangling_nets") or [])
+    pn = rt.get("port_nets") or {}
+    out = {}
+    for n in (rt.get("skipped_port_nets") or []):
+        if n in dang:
+            out[n] = "DANGLING"
+        elif n in pn:
+            out[n] = "PORT_UNMODELED"
+        else:
+            out[n] = "COL_FAIL"     # 单端点但既非端口也非悬空 ⇒ 归因不明，按布失败算
+    for n in (rt.get("in_row_m3_fail") or []):
+        out.setdefault(n, "IN_ROW_FAIL")
+    for n in (rt.get("unrouted") or []):
+        out.setdefault(n, "COL_FAIL")
+    return dict(sorted(out.items()))
+
+
+def m1_exit_assessment(rt: dict, drc: dict = None, lvs: dict = None,
+                       reasons=M1_UNROUTED_REASONS) -> dict:
+    """**M1 阶段出口判据**（v0.9.381 改口径）：已布网干净 + 未布网显式归因 + 布通率披露。
+
+    🔴 **为什么改（这不是放松要求）**：旧判据「c17 全芯片 DRC/LVS 干净」在现有拓扑下
+    **不可达**（6 条端口网无 pad 模型 + 1 条悬空网；见 S10 三分类、S11 pad 负结果），
+    要求它等于**逼人把子集结论写成全芯片结论** —— 那才是本项目头号失真。
+    新判据把「不可达」换成「**必须归因**」：
+
+      ① 已布网 DRC 干净（违规 == 0，且作用域显式）；
+      ② 已布网 LVS 干净（问题 == 0，且作用域显式）；
+      ③ **每条未布网都有枚举归因** —— 归因不出来、或原因不在枚举里 ⇒ 判红；
+      ④ **布通率显式披露**（`routed/total`；`is_full_chip_routing` 由 `routed==total`
+         **派生**，不是手填布尔）。
+
+    🔴 **与 `claimable` 是两件不同的事**：本判据达成 = 「这个阶段的数字可信」，
+    **不等于**可签核 —— 签核仍要六条全满足（含 `all_nets_routed`）。
+    把这两个布尔混用，就是「子集当全集」换了个马甲。
+
+    🔴 **缺数据按不成立处理**：`drc`/`lvs` 传 None ⇒ 对应条件 False（「没测」≠「通过」）。
+    """
+    cov = rt.get("coverage") or {}
+    total = int(cov.get("total") or 0)
+    routed = int(cov.get("routed") or 0)
+    attr = attribute_unrouted(rt)
+    unattributed = sorted(set(rt.get("pins") or {}) - set(rt.get("routed") or [])
+                          - set(rt.get("in_row_assign") or {}) - set(attr))
+    bad_reason = sorted(n for n, r in attr.items() if r not in reasons)
+    crit = {
+        "drc_clean": (drc is not None) and (len(drc.get("violations") or []) == 0),
+        "lvs_clean": (lvs is not None) and (int(lvs.get("n_problems") or 0) == 0),
+        "all_unrouted_attributed": (not unattributed) and (not bad_reason),
+        "routed_ratio_disclosed": total > 0,
+    }
+    is_full = bool(total > 0 and routed == total)
+    return {
+        "ok": all(crit.values()), "criteria": crit, "n_criteria": len(crit),
+        "routed": routed, "total": total,
+        "routed_ratio": "%d/%d" % (routed, total),
+        "is_full_chip_routing": is_full,
+        "drc_scope": ("FULL_CHIP" if is_full else "ROUTED_SUBSET_ONLY"),
+        "lvs_scope": (lvs or {}).get("scope"),
+        "attribution": attr, "unattributed": unattributed,
+        "bad_reason": bad_reason, "allowed_reasons": list(reasons),
+        "rule": ("已布网干净 ∧ 未布网逐条枚举归因 ∧ 布通率显式披露。"
+                 "**本判据达成 ≠ 可签核**：签核仍要 claimability 六条全满足。"),
+    }
+
+
 def spans_to_nets(spans: dict) -> set:
     out = set()
     for _ch, ivs in spans.items():

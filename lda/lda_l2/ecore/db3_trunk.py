@@ -356,6 +356,14 @@ def run_trunk(nl, *, baseline: bool = True):
         "diearea_dbu": list(getattr(back, "diearea", ()) or ()),
     }))
 
+    # ── M1 阶段出口判据（v0.9.381 改口径）──────────────────────────────────
+    #   🔴 **这不是放松要求**：旧判据「c17 全芯片 DRC/LVS 干净」在现有拓扑下**不可达**
+    #      （6 条端口网无 pad 模型 + 1 条悬空网），要求它等于**逼人把子集结论写成
+    #      全芯片结论** —— 那才是本项目头号失真。新判据把「不可达」换成
+    #      「**每条未布网必须逐条枚举归因**」：归因不出来就判红。
+    #   🔴 与 `claimability` 是两件事：本判据达成 = 阶段数字可信，**不等于可签核**。
+    report["stages"].append(("m1_exit", dpnr.m1_exit_assessment(rt, drc, lvs)))
+
     report["drc_lvs_detail"] = {
         "chain": TRUNK_CHAIN,
         "drc": drc,

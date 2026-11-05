@@ -288,6 +288,11 @@ def _compute() -> Dict[str, Any]:
         # 🔴 签核资格：条件 + 阻塞项 + 清单自检，全部来自实测推导
         "claimable": bool((report.get("claimability") or {}).get("claimable")),
         "claimability": dict(report.get("claimability") or {}),
+        # 🔴 **M1 阶段出口判据**（v0.9.381 改口径）：已布网 DRC/LVS 干净 +
+        #    **未布网逐条枚举归因** + 布通率显式披露。旧判据「全芯片干净」在本拓扑下
+        #    不可达，要求它等于逼人把子集结论写成全芯片结论。
+        #    ⚠️ 与 `claimable` 是**两件事**：本项达成 ≠ 可签核。
+        "m1_exit": dict(st.get("m1_exit") or {}),
         "baseline": _baseline_facts(report.get("baseline")),
         "area_delta": dict(report.get("area_delta") or {}),
         "def_export": {
@@ -369,6 +374,7 @@ def case_card() -> Dict[str, Any]:
         "area_delta": f["area_delta"],
         "claimable": f["claimable"],
         "claimability": f["claimability"],
+        "m1_exit": f["m1_exit"],
         "def_export": f["def_export"],
         "conservation_ok": f["conservation_ok"],
         "problems": f["problems"],
@@ -422,6 +428,36 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
     tmg = card.get("timing") or {}
     if card.get("timing_included") is not True:
         bad.append("timing_included 必须为 True（时序段已接入干线）")
+
+    # 🔴 v0.9.381 新增：**M1 出口判据**的自检（改口径不许变成「少布就算过」）
+    #   ① `ok=True` 时**不许**还有未归因网（否则「不可达就跳过」会悄悄成立）；
+    #   ② 布通率必须与 `routing` 段**同源**（两处各写一份必然漂移）；
+    #   ③ 归因原因必须落在枚举里（自由文本不是归因）；
+    #   ④ **本判据达成 ≠ 可签核** ⇒ `m1_exit.ok=True` 而 `claimable` 也 True 时，
+    #      必须能由六条条件解释（即六条真的全满足），否则就是两个布尔被混用。
+    _m1 = card.get("m1_exit") or {}
+    if not _m1:
+        bad.append("m1_exit 段缺失 —— M1 出口判据不得静默消失")
+    else:
+        if _m1.get("ok") and _m1.get("unattributed"):
+            bad.append("m1_exit.ok=True 但仍有未归因网 %r —— 归因不完备不得判过"
+                       % (_m1.get("unattributed"),))
+        if _m1.get("bad_reason"):
+            bad.append("m1_exit 出现枚举外的归因原因：%r" % (_m1.get("bad_reason"),))
+        _rout = card.get("routing") or {}
+        if _m1.get("routed") != _rout.get("nets_with_segments"):
+            bad.append("m1_exit.routed(%r) 与 routing.nets_with_segments(%r) 不同源"
+                       % (_m1.get("routed"), _rout.get("nets_with_segments")))
+        _tot = _m1.get("total")
+        if _tot and _m1.get("routed") is not None and _tot > _m1["routed"] \
+                and _m1.get("is_full_chip_routing"):
+            bad.append("m1_exit.is_full_chip_routing 与 routed/total(%s/%d) 矛盾"
+                       % (_m1.get("routed"), _tot))
+        if _m1.get("ok") and card.get("claimable") is True:
+            _cl = card.get("claimability") or {}
+            if not _cl.get("claimable"):
+                bad.append("m1_exit.ok=True ∧ claimable=True 但 claimability 六条未全满足 "
+                           "—— 两个布尔被混用（阶段出口 ≠ 签核资格）")
     if not tmg:
         bad.append("timing 段缺席 —— 接入时序后不得省略")
     else:

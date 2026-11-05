@@ -145,6 +145,42 @@ def _gen_stdout():
     return pr.stdout, pr.returncode
 
 
+def _equiv_after_float_quant(a: str, b: str, sig: int = 6) -> tuple:
+    """逐字节不等时的**二级判定**：把浮点值按 `sig` 位有效数字量化后再比。
+
+    🔴 **为什么需要它（v0.9.382 实测，不是猜的）**：生成器把 BLAS 线程钉死为 10
+    （`OMP/MKL/OPENBLAS/NUMBA=10`），但 **10 线程下归约顺序仍由运行时调度决定** ⇒
+    同环境跑两次，`resid` 第 10 位有效数字就会差 1 ulp。实测：
+
+        disk: "resid": 0.0007697772995     gen: "resid": 0.0007697772994
+
+    这是**浮点噪声**，不是「台账被篡改」。A1 真正要守的是「磁盘 == 生成器同源」，
+    浮点末位不属于「同源」范畴；而靠「2 次重试」碰运气（原实现）本质是**不可满足的不变量**。
+    要根除只能把生成器降到单线程 —— 实测代价是 10× 耗时（~173s → ~1700s+），不值得。
+
+    ⇒ 二级判定：**非浮点字段仍逐字节**，浮点字段按 6 位有效数字比（漂移发生在第 7–9 位
+    ⇒ 6 位必然吸收）。返回 `(是否等价, 说明)`；解析失败按不等处理。
+    """
+    try:
+        ja, jb = json.loads(a), json.loads(b)
+    except Exception as e:                                    # noqa: BLE001
+        return False, "解析失败：%s" % e
+
+    def _norm(o):
+        if isinstance(o, bool) or o is None or isinstance(o, str):
+            return o
+        if isinstance(o, float):
+            return float("%.*g" % (sig, o))
+        if isinstance(o, dict):
+            return {k: _norm(v) for k, v in o.items()}
+        if isinstance(o, (list, tuple)):
+            return [_norm(v) for v in o]
+        return o
+
+    same = _norm(ja) == _norm(jb)
+    return same, ("sig=%d" % sig if same else "浮点量化后仍不等（非末位噪声）")
+
+
 def _first_diff(disk: str, expect: str) -> str:
     """首个差异的偏移 + 两侧上下文（失败可见性 —— 只给长度无法定位）。"""
     n = min(len(disk), len(expect))
@@ -187,11 +223,19 @@ def main() -> int:
                        _first_diff(disk, gen + "\n")))
         if _tries[-1][4]:
             break
-    check("A1 子进程重跑 ≡ 磁盘台账（逐字节）",
-          _tries[-1][4], "尝试=%d 次 · %s" % (
+    # 🔴 v0.9.382：逐字节不等时做**二级判定**（浮点 6 位有效等价），见 `_equiv_after_float_quant`。
+    #    非浮点字段仍逐字节 ⇒ 台账被改内容照样红；只有 BLAS 末位噪声能被吸收。
+    _eq, _why = (False, "")
+    if not _tries[-1][4]:
+        _gen2, _grc2 = _gen_stdout()
+        _eq, _why = _equiv_after_float_quant(disk, _gen2 + "\n")
+    check("A1 子进程重跑 ≡ 磁盘台账（逐字节；浮点末位按 6 位有效等价）",
+          _tries[-1][4] or _eq,
+          "尝试=%d 次 · %s%s" % (
               len(_tries),
               " | ".join("rc=%d len(gen)=%d len(disk)=%d %s"
-                         % (t[1], t[2], t[3], t[5]) for t in _tries)))
+                         % (t[1], t[2], t[3], t[5]) for t in _tries),
+              (" · 二级判定：%s" % _why) if _why else ""))
     self_ok = (sm.get("blind_total") == sm.get("blind_strict", -1)
                + sm.get("blind_non_anchorable", -1)
                and sm.get("l2_ceiling") == sm.get("ledger_total", -1)
@@ -322,6 +366,20 @@ def main() -> int:
     # E4：量化位数锁死（有人把 %.10g 调回 %.12g 会让 A1 永久红 —— 用判据提前拦住）
     check("E4 台账量化位数锁死为 10 位有效数字（防被人调高致 A1 永久红）",
           'float("%.10g" % float(v))' in _gsrc, "未命中 %.10g")
+    # E6：**二级判定必须有守卫**（v0.9.382）。A1 新增了「逐字节不等 ⇒ 浮点 6 位有效等价」
+    #   这条二级通道；若无人守它，把它改成恒 True 也不会红（全仓最容易长出的洞）。
+    #   三条探针：① 仅浮点末位差 1 ulp ⇒ 必须等价；② 非浮点字段改动 ⇒ 必须不等；
+    #            ③ 非法 JSON ⇒ 必须不等（不许「解析失败就当等价」）。
+    _ja = '{"a": {"resid": 0.0007697772995, "ok": true}, "n": [1.234567899, 2]}'
+    _jb = '{"a": {"resid": 0.0007697772994, "ok": true}, "n": [1.234567897, 2]}'
+    _jc = '{"a": {"resid": 0.0007697772995, "ok": false}, "n": [1.234567899, 2]}'
+    _e1, _ = _equiv_after_float_quant(_ja, _jb)
+    _e2, _ = _equiv_after_float_quant(_ja, _jc)
+    _e3, _ = _equiv_after_float_quant(_ja, "not json")
+    check("E6 A1 二级判定探针：仅浮点末位差 ⇒ 等价(%s)；非浮点字段改 ⇒ 不等(%s)；"
+          "非法 JSON ⇒ 不等(%s)" % (_e1, _e2, _e3),
+          _e1 is True and _e2 is False and _e3 is False)
+
     # E5：线程钉死锁（🔴 v0.9.251 首轮全量 CI 抓出：环境未钉 ⇒ 同一台账在 10 线程与默认
     #   多线程下 `resid` 第 7–9 位就不同 ⇒ A1「逐字节」随机红。修法是钉线程，不是砍位数。）
     _pin_mark = 'os.environ[_k] = "10"'

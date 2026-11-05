@@ -256,6 +256,11 @@ def run_trunk(nl, *, baseline: bool = True):
         "die_area_um2_noport": round(float(pl["die_w_um"]) * float(pl["die_h_um"]), 3),
         "ports": {"n_pads": ports["n_pads"], "n_in": ports["n_in"],
                   "n_out": ports["n_out"], "band_um": round(ports["band_um"], 3),
+                  # 🔴 v0.9.383：左右带分别报 + 网格对齐余量 —— 三者与无 pad 的 die 宽
+                  #    必须能**逐位复算**出 die_w（S11d 机核），否则「面积为什么这样」无法核。
+                  "band_left_um": round(ports["band_left_um"], 3),
+                  "band_right_um": round(ports["band_right_um"], 3),
+                  "grid_align_um": round(ports["grid_align_um"], 3),
                   "extra_cols": ports["extra_cols"],
                   "model": "示意级 I/O 落点（240nm pad · 无 ESD/电源/ring 层次）"},
     }))

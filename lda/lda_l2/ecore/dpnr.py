@@ -340,6 +340,11 @@ def build_ports(nl, pl: dict, band: float = None, extra_cols: int = 0) -> dict:
     pl2["die_w_um"] = die_w
     pl2["n_ports_shift_um"] = band
     return {"pads": pads, "band_um": band, "pad_half_um": ph,
+            # 🔴 v0.9.383：**左右带必须分别报**。`band_um` 只是**左带**（输入侧）宽度；
+            #    右带 = n_out·pitch + 余量，两侧通常**不等宽**（c17：左 2.14 / 右 1.06）。
+            #    只报一侧会让「die_w 为什么是 7.80」无法复算（还有网格对齐余量）。
+            "band_left_um": band_l, "band_right_um": band_r,
+            "grid_align_um": round(die_w - (band_l + die_w0 + band_r), 6),
             "extra_cols": max(0, int(extra_cols)), "extra_w_um": extra_w,
             "die_w_um": die_w, "die_w_um_noport": die_w0, "die_h_um": h,
             # 🔴 **拓扑说明**（v0.9.382 · 必须与任何「pad 已启用」的说法同行）：

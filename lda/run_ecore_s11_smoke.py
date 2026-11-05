@@ -108,10 +108,17 @@ def main() -> int:
 
     # ── S11d 面积可独立复算 ───────────────────────────────────────
     k = int(round((po["die_w_um"] - P.W) / P.PITCH))
-    check("S11d 面积可独立复算：area=%.3f == die_w(%.2f)×die_h(%.2f) ∧ die_w == W + %d×pitch"
-          % (po["area_um2"], po["die_w_um"], po["die_h_um"], k),
+    # 🔴 v0.9.383：面积不只「宽×高」可复算，**宽本身**也要能由「左带 + 无 pad 宽 + 右带
+    #    + 网格对齐余量」逐位拼回 —— 否则读者只看到 60.84 而不知道 7.80 是怎么来的。
+    _sum_w = po["band_left_um"] + po["die_w_um_noport"] + po["band_right_um"] + po["grid_align_um"]
+    check("S11d 面积可独立复算：area=%.3f == die_w(%.2f)×die_h(%.2f) ∧ die_w == W + %d×pitch "
+          "∧ die_w == 左带 %.2f + 无pad %.2f + 右带 %.2f + 对齐 %.2f"
+          % (po["area_um2"], po["die_w_um"], po["die_h_um"], k,
+             po["band_left_um"], po["die_w_um_noport"], po["band_right_um"],
+             po["grid_align_um"]),
           abs(po["area_um2"] - po["die_w_um"] * po["die_h_um"]) < 1e-9
-          and abs((P.W + k * P.PITCH) - po["die_w_um"]) < 1e-9)
+          and abs((P.W + k * P.PITCH) - po["die_w_um"]) < 1e-9
+          and abs(_sum_w - po["die_w_um"]) < 1e-6)
 
     # ── S11e 每 pad 独占一列 ∧ 落网格 ─────────────────────────────
     xs = [round(v["x"], 6) for v in po["pads"].values()]

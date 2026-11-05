@@ -342,14 +342,17 @@ def build_ports(nl, pl: dict, band: float = None, extra_cols: int = 0) -> dict:
     return {"pads": pads, "band_um": band, "pad_half_um": ph,
             "extra_cols": max(0, int(extra_cols)), "extra_w_um": extra_w,
             "die_w_um": die_w, "die_w_um_noport": die_w0, "die_h_um": h,
-            # 🔴 **默认不启用**的披露（必须与任何「pad 已建模」的说法同行）：
-            #    实测 c17：端口网布通 +4（n22/n23/n6/n7）但内部网布通 −3（n11/n16/…）
-            #    ⇒ 净 +1（4→5），面积 ×1.806，且 n1/n2/n3 仍 no_column。
-            #    瓶颈已从「无端点」转移到**局部列 / 层资源** ⇒ 加 pad 不是杠杆。
-            "not_enabled_reason": (
-                "加 pad 后端口网布通 +4、内部网 −3（净 +1，4→5），面积 ×1.806，"
-                "n1/n2/n3 仍 no_column ⇒ 负收益。瓶颈从「无端点」转移到「局部列/层资源」，"
-                "与 E38/E50–E53 同结论：唯一杠杆是改拓扑/加层，不是加 pad。"),
+            # 🔴 **拓扑说明**（v0.9.382 · 必须与任何「pad 已启用」的说法同行）：
+            #    .380 的 pad 用 **M4 引出** ⇒ pad 按固定列占位，把单元引脚附近的列吃光
+            #    ⇒ n1/n2/n3 全 `no_column`，布通只从 4 涨到 5（净 +1）、面积 ×1.806 ⇒ 当时判负。
+            #    .382 改成 **M2 竖直引出**（pad 在 band 内，M2 与单元 M2 在 x 上不相交，
+            #    **不占任何 M4 列**）⇒ 布通 **4 → 7**、DRC 0 ⇒ 翻正并启用。
+            #    剩余未布 4 条：3 条 `COL_FAIL`（n2/n11/n16，局部列/层资源）+ 1 条 `DANGLING`（n10）。
+            "topology_note": (
+                "pad 引出走 **M2 竖直**（band 内，不占 M4 列）⇒ c17 布通 **4→7**、DRC 0；"
+                "面积 33.696→60.840 µm²（×1.806）。剩余未布 4 条 = 3 COL_FAIL + 1 DANGLING。"
+                "🔴 **.380 用 M4 引出时是负收益（净 +1）**，翻正靠的是改层不是加面积 —— "
+                "加列 0→16 仍完全无效。"),
             "area_um2": die_w * h, "area_um2_noport": die_w0 * h,
             "n_pads": len(pads), "n_in": len(ins), "n_out": len(ous),
             "pl": pl2}
@@ -370,15 +373,21 @@ def _pad_fixed(ports: dict) -> dict:
 
 
 def _pad_shapes(ports: dict, hv: float) -> list:
-    """pad 的三层小栈：`M3 pad → VIA2 → M4 pad`（**必须有孔**，否则 LVS 报不连通）。"""
+    """pad 焊盘：`M3 pad + V2`（**M2 引出**由 `route_block` 生成，因为它要 trunk y）。
+
+    🔴 **v0.9.382 改层**：原来 pad 用 `VIA2 + M4 pad` 走 **M4 竖直**，而 M4 是本模型
+    **唯一的长竖直资源** ⇒ pad 按固定列占位后，把单元引脚附近的列吃光
+    ⇒ `n1`/`n2`/`n3` 全 `no_column`（实测 `n_cols_used=12` 而网格有 22 列：
+    **列没用满却说没列** —— 这就是「加列无效」的真身）。
+    改用 **M2 竖直**：M2 本来就是竖直层，且 pad 在 band 内（x < 单元左缘）
+    ⇒ 与单元 M2 在 x 上不相交 ⇒ **pad 不再占任何 M4 列**。
+    """
     out = []
     for net, p in (ports.get("pads") or {}).items():
         x, y = p["x"], p["y"]
         ph = p["pad_half_um"]
         out.append(Shape(DD.L_M3, x - ph, y - ph, x + ph, y + ph, net=net, kind="pin"))
-        out.append(Shape(DD.L_VIA2, x - hv, y - hv, x + hv, y + hv, net=net, kind="via"))
-        out.append(Shape(DD.L_M4, x - W / 2.0, y - W / 2.0,
-                         x + W / 2.0, y + W / 2.0, net=net, kind="pin"))
+        out.append(Shape(DD.L_V2, x - hv, y - hv, x + hv, y + hv, net=net, kind="via"))
     return out
 
 
@@ -1004,6 +1013,10 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
     for net in sorted(net_ch):
         y_worst = channel_y(pl, net_ch[net]) + W / 2.0 + (t_cap - 1) * PITCH
         for i, (_iname, _p, x, y) in enumerate(pins[net]):
+            # 🔴 **pad 点不参与 M4 列分配**（v0.9.382）：它走 M2 竖直引出，
+            #    若仍占列就会把单元引脚附近的列吃光（`n1/n2/n3` 全 no_column 的根因）。
+            if ports and str(_iname).startswith("PAD_"):
+                continue
             # 🔴 `m2_jog=False` 时**不给逐点额度**：这是刻意保留的「旧行为」通道，
             # 供反向探针使用（退回无上限列搜索 ⇒ M3 长跳线 ⇒ DRC 成片）。
             # 若能随便关掉而不产生违例，就说明判据 A 不是修出来的、是天生如此。
@@ -1116,6 +1129,18 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
     #    「端点自带的」。pad 栈必须有 VIA2，否则 M3 pad 与 M4 竖段**不连通** ⇒ LVS 报断。
     if ports:
         acc += _pad_shapes(ports, hv)
+        # 🔴 pad 引出走 **M2 竖直**（v0.9.382）：三层栈 = M3 pad --V2--> M2 竖段 --> V2 --> trunk(M3)。
+        #    两端都必须有 V2，否则 M3 pad 与 trunk 在几何上不连通（LVS 报断）。
+        #    M2 竖段在 **band 内**（x < 单元左缘）竖直走 ⇒ 与单元 M2 在 x 上不相交。
+        for _net, _pd in (ports.get("pads") or {}).items():
+            _px, _py = _pd["x"], _pd["y"]
+            if _net not in y_of:
+                continue                    # 该网没布（无 trunk）⇒ 只留 pad 自身
+            _yt = y_of[_net]
+            acc.append(Shape(DD.L_M2, _px - W / 2.0, min(_py, _yt) - EXT,
+                             _px + W / 2.0, max(_py, _yt) + EXT, net=_net, kind="metal"))
+            acc.append(Shape(DD.L_V2, _px - hv, _yt - hv, _px + hv, _yt + hv,
+                             net=_net, kind="via"))
     n_m2_jog = 0
     n_m3_jog = 0
     n_in_row = 0
@@ -1213,6 +1238,11 @@ def route_block(nl, pl: dict, ch_um: float = None, m2_jog: bool = True,
                 shapes.append(Shape(DD.L_VIA2, cx - hv, yt - hv, cx + hv, yt + hv,
                                     net=net, kind="via"))
         xspan = cols_net + m3_xs
+        # 🔴 pad 的 x 必须进 trunk 的跨度（v0.9.382）：否则 trunk 到不了 pad，
+        #    M2 竖段另一端就是**悬空的**（LVS 会报 net_disconnected）。
+        _pd = ((ports or {}).get("pads") or {}).get(net) if ports else None
+        if _pd is not None:
+            xspan = list(xspan) + [_pd["x"]]
         if not xspan:                       # 兜底：列分配没覆盖到该网时用引脚 x（不该发生）
             xspan = [p[2] for p in pins[net]]
         # trunk 两端各延伸 EXT：否则末端的 VIA2 没有 M3 侧包围（via_enclosure）
@@ -1395,9 +1425,17 @@ def m1_exit_assessment(rt: dict, drc: dict = None, lvs: dict = None,
     unattributed = sorted(set(rt.get("pins") or {}) - set(rt.get("routed") or [])
                           - set(rt.get("in_row_assign") or {}) - set(attr))
     bad_reason = sorted(n for n, r in attr.items() if r not in reasons)
+    # 🔴 `lvs_clean` **只认已布网**（v0.9.382 精修）：`lvs_scoped` 的 problems 里混着
+    #    「未布网」的形态（`net_no_shapes` / `pin_not_reached`）—— 拿它判「已布网干净」
+    #    会把「没布」算成「不干净」，于是判据永远不成立（实测 3 条问题全部属于布失败的网）。
+    #    未布网的账由 4c（逐条归因）负责，两者分开报，**谁也不能顶替谁**。
+    routed_set = set(rt.get("routed") or []) | set((rt.get("in_row_assign") or {}).keys())
+    probs = list((lvs or {}).get("problems") or [])
+    bad_on_routed = [q for q in probs
+                     if any(isinstance(x, str) and x in routed_set for x in q[1:])]
     crit = {
         "drc_clean": (drc is not None) and (len(drc.get("violations") or []) == 0),
-        "lvs_clean": (lvs is not None) and (int(lvs.get("n_problems") or 0) == 0),
+        "lvs_clean_on_routed": (lvs is not None) and (not bad_on_routed),
         "all_unrouted_attributed": (not unattributed) and (not bad_reason),
         "routed_ratio_disclosed": total > 0,
     }
@@ -1411,6 +1449,9 @@ def m1_exit_assessment(rt: dict, drc: dict = None, lvs: dict = None,
         "lvs_scope": (lvs or {}).get("scope"),
         "attribution": attr, "unattributed": unattributed,
         "bad_reason": bad_reason, "allowed_reasons": list(reasons),
+        # 🔴 两个数都必须给：只看干净的那部分 = 自欺
+        "lvs_problems_on_routed": len(bad_on_routed),
+        "lvs_problems_total": len(probs),
         "rule": ("已布网干净 ∧ 未布网逐条枚举归因 ∧ 布通率显式披露。"
                  "**本判据达成 ≠ 可签核**：签核仍要 claimability 六条全满足。"),
     }

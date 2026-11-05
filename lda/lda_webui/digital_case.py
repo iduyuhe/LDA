@@ -503,13 +503,22 @@ def selfcheck(card: Dict[str, Any]) -> List[str]:
     if sum(_lv.values()) != (drc.get("lvs_problems") or 0):
         bad.append("lvs_by_rule 求和 %d ≠ lvs_problems %d —— LVS 分类与总数不自洽"
                    % (sum(_lv.values()), drc.get("lvs_problems") or 0))
-    if (drc.get("lvs_problems") or 0) > 0 and not (
-            _lv.get("short") or _lv.get("short_via")):
-        bad.append("有 %d 处 LVS 问题却未分类出 short/short_via —— 不得只说「有问题」"
-                   % (drc.get("lvs_problems") or 0))
+    # 🔴 v0.9.382 精修：**只有短路类问题**才要求 short/short_via 分类与网对去重。
+    #    原规则假设「LVS 问题 = 短路」，而本版出现了另一类问题 ——
+    #    `net_no_shapes` / `pin_not_reached`（**未布网**的形态），它们没有「网对」可言。
+    #    拿原规则判 ⇒ 会把「3 条未布网问题」误判成「分类缺失」。
+    #    ⇒ 判据按**问题类型**分流，两类各自成立，谁也不能顶替谁。
+    _short_like = (_lv.get("short") or 0) + (_lv.get("short_via") or 0)
+    _n_lv = drc.get("lvs_problems") or 0
+    _has_short_type = _short_like > 0
+    if _has_short_type and _short_like != _n_lv and not (
+            _lv.get("net_no_shapes") or _lv.get("pin_not_reached")
+            or _lv.get("net_disconnected")):
+        bad.append("有 %d 处短路类 LVS 问题却未分类出 short/short_via —— 不得只说「有问题」"
+                   % _n_lv)
     _u = drc.get("lvs_unique_pairs")
-    if (drc.get("lvs_problems") or 0) > 0 and not _u:
-        bad.append("有 LVS 问题却报 0 对网 —— 去重计数缺失")
+    if _has_short_type and not (_u or 0):
+        bad.append("有短路类 LVS 问题却报 0 对网 —— 去重计数缺失")
     if _u is not None and _u > (drc.get("lvs_problems") or 0):
         bad.append("去重网对 %d > 条目数 %d —— 计数逻辑错" % (_u, drc.get("lvs_problems") or 0))
     # ── 旧链（baseline）的同类纪律：独立一套，不能只查主链 ────────────────

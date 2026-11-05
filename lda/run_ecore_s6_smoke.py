@@ -136,7 +136,9 @@ def main() -> int:
 
     # 🔴 v0.9.376：主链切到 dpnr ⇒ DEF 段吃的是 dpnr 落点（不是 dplac 的）。
     #    这里必须用**同一个真源**复算，否则「吃上一段输出」这条不变量在 DEF 段断掉。
-    _p2 = PN.place_real(nl)
+    # 🔴 v0.9.382：主链现在用**带 pad 带的布局**（单元整体右移）⇒ 独立复算必须同源，
+    #    否则字节数不一致（这是 D3 存在的意义：同一真源复算，不是抄卡片上的数）。
+    _p2 = PN.build_ports(nl, PN.place_real(nl))["pl"]
     _txt = DD.serialize_def(DD.from_placement(_p2, nl, name="lda_c17"))
     check("D3 DEF 内容独立复算：字节数一致 ∧ **不含 ROUTED**（shapes 无网归属 ⇒ 写了就是编造）"
           " ∧ UNITS DISTANCE MICRONS 1000（1 DBU = 1 nm）",
@@ -477,7 +479,11 @@ def main() -> int:
     import lda_l2.ecore.dsynth as SY                          # noqa: E402
 
     tmg = _stage(rep, "timing")
-    shp = PN.all_routing(PN.route_block(nl, PN.place_real(nl)))
+    # 🔴 v0.9.382：主链启用了 pad 落点（带 pad 带 + ports）⇒ 独立复算必须同源。
+    #    若这里仍跑「无 pad」路径，会得到 4 条网 / 57.303 ps —— 那是**上一版**的数字，
+    #    拿它跟卡片对上就说明只测了旧路径（T2 正是这样把这次改动逮住的）。
+    _po_t = PN.build_ports(nl, PN.place_real(nl))
+    shp = PN.all_routing(PN.route_block(nl, _po_t["pl"], ports=_po_t))
     _ideal_comb = ST.sta(nl, topo_sort=True).comb_delay_ps
 
     # T1 拓扑序：先证明**排序结果合法**，再用**人造反例**证明不排序会错。

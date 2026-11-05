@@ -238,18 +238,30 @@ def run_trunk(nl, *, baseline: bool = True):
         raise AssertionError(
             "段1 守恒失败：place 覆盖 %d 颗门（skipped=%r），但 Netlist 有 %d 颗"
             % (picked, pl.get("skipped_cells"), len(nl.gates)))
-    die_w = float(pl["die_w_um"])
-    die_h = float(pl["die_h_um"])
+    # 🔴 **pad 落点默认启用**（v0.9.382 · A 改拓扑第一段）：端口网从「无端点」变成可布，
+    #    且 pad 引出改走 **M2 竖直**（不占 M4 列）后，c17 布通 **4 → 7**、DRC 0。
+    #    `pl_p` 是单元整体右移后的布局（带两侧 pad 带）；面积代价在此如实计入。
+    ports = dpnr.build_ports(nl, pl)
+    pl_p = ports["pl"]
+    die_w = float(pl_p["die_w_um"])
+    die_h = float(pl_p["die_h_um"])
     report["stages"].append(("place", {
         "chain": TRUNK_CHAIN, "cells": picked,
         "rows": pl.get("rows"), "cols": pl.get("cols"),
         "die_w_um": round(die_w, 3), "die_h_um": round(die_h, 3),
         "die_area_um2": round(die_w * die_h, 3),
         "cell_gap_um": pl.get("cell_gap_um"),
+        # 🔴 面积代价必须**两侧都给**：无 pad 时 die 多大 vs 现在多大。
+        "die_w_um_noport": round(float(pl["die_w_um"]), 3),
+        "die_area_um2_noport": round(float(pl["die_w_um"]) * float(pl["die_h_um"]), 3),
+        "ports": {"n_pads": ports["n_pads"], "n_in": ports["n_in"],
+                  "n_out": ports["n_out"], "band_um": round(ports["band_um"], 3),
+                  "extra_cols": ports["extra_cols"],
+                  "model": "示意级 I/O 落点（240nm pad · 无 ESD/电源/ring 层次）"},
     }))
 
     # ── 段 2：布线（主链 dpnr.route_block，输入 = (Netlist, Placement)）───
-    rt = dpnr.route_block(nl, pl)
+    rt = dpnr.route_block(nl, pl_p, ports=ports)
     cov = rt["coverage"]
     ref = dpnr.net_coverage(rt)                    # 🔴 独立复算，不信 route 自述
     if cov != ref:
@@ -332,7 +344,7 @@ def run_trunk(nl, *, baseline: bool = True):
     #    🔴 只写 placed DEF（落点 + 连接），**不写 ROUTED**：shapes 的网归属虽然已按网打标签
     #       （`dpnr` 每根 wire 都带 net），但 DEF 的 ROUTED 需要完整几何/层/宽度语义，
     #       当前导出面未覆盖 ⇒ 写了就是编造。布线导出须先补 ROUTED 子集写出器（后续里程碑）。
-    design = DD.from_placement(pl, nl, name="lda_c17")
+    design = DD.from_placement(pl_p, nl, name="lda_c17")
     text = DD.serialize_def(design)
     back = DD.parse_def(text)
     if DD.serialize_def(back) != text:                 # 写出→读回→再写出 必须字节一致

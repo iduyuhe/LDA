@@ -102,7 +102,11 @@ def main() -> int:
 
     nl = V.parse(V.SAMPLE_VERILOG)
     pl = P.place_real(nl)
-    rt = P.route_block(nl, pl)
+    # 🔴 v0.9.382：主链已启用 pad 落点 ⇒ **同源**取带 ports 的路由结果。
+    #    此时单端点网只剩 1 条（`n10` 悬空），6 条端口网因拿到 pad 变成 2 端点 ——
+    #    三分类逻辑没变，只是「真端口」从 6 条降到 0 条（它们都已可布）。
+    _po = P.build_ports(nl, pl)
+    rt = P.route_block(nl, _po["pl"], ports=_po)
     cov = rt["coverage"]
     port = rt["port_nets"]
     dang = rt["dangling_nets"]

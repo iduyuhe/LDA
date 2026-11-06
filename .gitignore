@@ -245,3 +245,14 @@ examples/**/*.svg
 
 # ---- smoke 临时 GDS 输出（run_schip_s*_smoke.py 写入 lda/reports/schip_tmp/，重跑重建，不入库）----
 lda/reports/schip_tmp/
+
+# ---- 电子域核查方法论（内部 · 不对外 · 2026-11-06）----
+# 用户明确要求：仅对内，不得随开源发布
+LDA_电子域_核查方法论_v1.md
+LDA_电子域_三级核查模型_2026-11-06.md
+LDA_电子域_核查执行规划_v1.md
+LDA_电子域_核查速查卡_v1.md
+
+# ---- B0 产出（U3 schema 与证据基线：引用内部体系，不进公开库）----
+LDA_电子域_U3_schema_v1.md
+lda/reports/evidence_baseline.json

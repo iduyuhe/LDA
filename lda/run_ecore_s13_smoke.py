@@ -490,18 +490,38 @@ def main() -> int:
     def _imports_needle(path: str, needle: str) -> bool:
         return _imports_needle_src(open(path, encoding="utf-8").read(), needle)
 
+    def _em_claim_ok(em_text: str, uses_em: bool) -> bool:
+        """🔴 三态判定：文案必须**恰好一个**互斥措辞，且与 AST 事实一致。
+
+        只查「不含 EM 判决」是不够的：把那句话删掉（**沉默**）会被当成「含」
+        ⇒ 假通过。这正是 S19d 抓过的那类洞（判据恒真）的另一种形态，
+        所以这里把「都在 / 都不在」都判红。
+        """
+        _no = "不含 EM 判决" in em_text
+        _yes = "含 EM 诊断段" in em_text
+        if _no == _yes:          # 都在 或 都不在 ⇒ 无法判定 ⇒ 红
+            return False
+        return _yes == uses_em
+
     _a19_trunk = os.path.join(_HERE, "lda_l2", "ecore", "db3_trunk.py")
     _a19_uses_em = _imports_needle(_a19_trunk, "dsignoff")
     _a19_declares_no = "不含 EM 判决" in _a19_em
-    check("S19c 🔴 声明与 AST 事实一致：主链 `db3_trunk` import dsignoff=%s ∧ "
-          "文案声明「不含 EM 判决」=%s —— 将来若把 EM 接线进主链，本句变谎必红"
-          % (_a19_uses_em, _a19_declares_no),
-          _a19_declares_no == (not _a19_uses_em))
+    _a19_declares_yes = "含 EM 诊断段" in _a19_em
+    check("S19c 🔴 声明与 AST 事实一致（三态）：主链 `db3_trunk` import dsignoff=%s ∧ "
+          "文案「不含=%s / 含=%s」—— 接线后本句必须翻面，沉默也算红"
+          % (_a19_uses_em, _a19_declares_no, _a19_declares_yes),
+          _em_claim_ok(_a19_em, _a19_uses_em))
 
     # 反向探针：若检测器恒 False，S19c 会**永远通过**（形同虚设）
     check("S19d 反向探针：合成源码 `from ... import dsignoff` ⇒ 必须检出 True；纯 `import os` ⇒ False",
           _imports_needle_src("from lda_l2.ecore import dsignoff\n", "dsignoff") is True
           and _imports_needle_src("import os\n", "dsignoff") is False)
+    check("S19e 反向探针·三态：含/不含两种措辞各配对事实须为真，**沉默必须红**、"
+          "措辞与事实相反必须红",
+          _em_claim_ok("含 EM 诊断段", True) is True
+          and _em_claim_ok("不含 EM 判决", False) is True
+          and _em_claim_ok("", False) is False
+          and _em_claim_ok("含 EM 诊断段", False) is False)
 
     # ── S17 硬条件：产品数字逐位不变 ───────────────────────────
     _rep = B3.run_trunk(nl)
@@ -525,6 +545,103 @@ def main() -> int:
         _ck = fh.read()
     check("S17b 本门禁已登记进 CORE_SMOKES（防静默漏接）",
           "run_ecore_s13_smoke.py" in _ck)
+
+    # ── B2b（v0.9.387）：EM **接线**后的可判性、边界与反向探针 ──────────────
+    # 背景：`em_check` 一直是纯函数，主链从未给它电流 ⇒ 对外等于不存在。
+    #   接线后**判定结果一位不变**（c17 违例 0/7、最小裕量约 10²×）—— 这恰恰要求
+    #   门禁证明「换个参数它真会响」；否则本段就是一个永远为真的装饰（K1 判别力）。
+    from lda_l2.ecore import dextract as _DE                  # noqa: E402
+
+    _em = _st.get("em") or {}
+    _asm = _em.get("assumptions") or {}
+    _asm_need = ("f_hz", "vdd", "alpha", "width_um", "t_um", "t_c",
+                 "ea_ev", "n_exp", "t_ref_c", "j_max_a_m2")
+    _asm_missing = [k for k in _asm_need if _asm.get(k) is None]
+    check("S20a 主链产出 `em` 段，且 %d 个输入假设全部显式（K0 完备性）：缺=%r"
+          % (len(_asm_need), _asm_missing),
+          bool(_em) and not _asm_missing)
+
+    # 独立复算：**不用被测段输出的中间量**，从源 Netlist 重跑 P&R 拿带网形状。
+    _pl2 = P.place_real(nl)
+    _ports2 = P.build_ports(nl, _pl2)
+    _sh2 = P.all_routing(P.route_block(nl, _ports2["pl"], ports=_ports2))
+    _wl2 = _DE.wire_loads_from_shapes(_sh2)
+    _len2 = _DE.net_length_um(_sh2)
+    _pn = _em.get("per_net") or {}
+    _cm_wire = [_dn for _dn in _wl2
+                if abs(_wl2[_dn] - float((_pn.get(_dn) or {}).get("c_wire_ff", -1.0))) > 1e-12]
+    _cm_len = [_dn for _dn in _len2
+               if abs(_len2[_dn] - float((_pn.get(_dn) or {}).get("length_um", -1.0))) > 1e-3]
+    check("S20b 每网线长/线载独立复算一致：%d 条网，线载不一致 %r，线长不一致 %r"
+          % (len(_wl2), _cm_wire[:4], _cm_len[:4]),
+          not _cm_wire and not _cm_len and len(_pn) == len(_wl2))
+
+    _bad_i = []
+    for _net, _v in _pn.items():
+        _want = DS.ALPHA_DYN * (_v["c_total_ff"] * 1e-15) * _asm["vdd"] * _asm["f_hz"]
+        if not math.isclose(_want, _v["i_a"], rel_tol=1e-12, abs_tol=0.0):
+            _bad_i.append(_net)
+    check("S20c 电流公式 `I = α·C_tot·V·f` 逐网复算一致（rel_tol=1e-12）：%d 条，偏差 %r"
+          % (len(_pn), _bad_i[:4]), not _bad_i)
+
+    # 可判性必须**跨段互证**（不是本段自己说了算）
+    _und = list(_em.get("undecidable_nets") or [])
+    _rt_ok = (
+        _em.get("n_nets_total") == _st["route"]["nets_touched"]
+        and _em.get("n_nets_judged") == _st["route"]["nets_with_segments"]
+        and len(_und) == (_st["route"]["nets_failed"] + _st["route"]["nets_skipped_port"])
+        # 🔴 独立复算的网集合必须与段内 per_net **完全相同的 7 条**（对称差为空）。
+        #    不能写 `set(a) ^ set(b) or set(_und)` —— 空集会被 `or` 兜底成真，判据恒真。
+        and not (set(_len2) ^ set(_pn))
+    )
+    check("S20d 可判性跨段互证：total %s==route.nets_touched %s ∧ judged %s==route.nets_with_segments %s ∧ "
+          "不可判 %d==failed %s+skipped %s；不可判名单 %r（**不可判 ≠ 通过**）"
+          % (_em.get("n_nets_total"), _st["route"]["nets_touched"],
+             _em.get("n_nets_judged"), _st["route"]["nets_with_segments"],
+             len(_und), _st["route"]["nets_failed"], _st["route"]["nets_skipped_port"], _und),
+          bool(_rt_ok))
+
+    # ── 反向探针：证明「判据真的会响」，不是永远通过 ──────────────────
+    _wn = _em.get("min_margin_net")
+    _wv = _pn.get(_wn) or {}
+    # 🔴 倍数**按当前裕量反解**、不写死：`margin ∝ 1/J ∝ w` ⇒ 线宽除以 `2·margin`
+    #    必把裕量打到 0.5×（必 FAIL）。写死「100×」会在数字变化后变成假绿 ——
+    #    本轮实测就是这么暴露的：缩 100× 时裕量还剩 **1.0096×**，恰好没翻过 1。
+    _k_narrow = max(2.0, float(_wv.get("margin_x") or 1.0) * 2.0)
+    _narrow = DS.em_check(_wv.get("i_a", 0.0), _asm["width_um"] / _k_narrow,
+                          t_um=_asm["t_um"], t_c=_asm["t_c"])
+    check("S20e 反向探针·线宽：最紧网（%s，当前 %.3f×）线宽 ÷%.2f（按裕量反解）⇒ 必须 FAIL"
+          "（实测 %.4f×）"
+          % (_wn, _wv.get("margin_x") or 0.0, _k_narrow, _narrow["margin_x"]),
+          _narrow["ok"] is False)
+
+    _i_big = DS.net_current_a(_wv.get("c_total_ff", 0.0), _asm["f_hz"] * 1e6, _asm["vdd"])
+    _fast = DS.em_check(_i_big, _asm["width_um"], t_um=_asm["t_um"], t_c=_asm["t_c"])
+    check("S20f 反向探针·频率：同网频率 ×1e6 ⇒ 必须 FAIL（实测 %.4f×）"
+          % (_fast["margin_x"],), _fast["ok"] is False)
+
+    _zero = DS.em_net_signoff({"x": 1.0}, {"x": 1.0}, {"x": 1.0}, ["x"],
+                              0.0, _asm["vdd"], _asm["width_um"], t_um=_asm["t_um"])
+    _z_m = (_zero.get("per_net") or {}).get("x", {}).get("margin_x")
+    check("S20g 退化对照：`f=0` ⇒ `I=0` ⇒ 裕量必须落成 `None`（严格 JSON，不写裸 `Infinity`）"
+          "且不计入 FAIL：margin=%r n_fail=%s" % (_z_m, _zero.get("n_fail")),
+          _z_m is None and _zero.get("n_fail") == 0)
+
+    _cl = _rep.get("claimability") or {}
+    check("S20h A 方案承诺：`em.in_blocking` 必须为 False，且 EM 段不改变 "
+          "`claimable`(%s) 与 `m1_exit.ok`(%s)"
+          % (_cl.get("claimable"), _st["m1_exit"].get("ok")),
+          _em.get("in_blocking") is False
+          and _cl.get("claimable") is False
+          and _st["m1_exit"].get("ok") is True)
+
+    _em_lock = (round(float(_em.get("min_margin_x") or 0.0), 3) == 100.959
+                and _em.get("n_fail") == 0
+                and _em.get("min_margin_net") == "n3")
+    check("S20i 🔴 EM 对外数字逐位锁定：最小裕量 %.3f× @ %s · n_fail %s —— "
+          "口径一漂（半周期→全周期、α/VDD 变动）必须红，逼人改文档而不是悄悄变"
+          % (_em.get("min_margin_x") or 0.0, _em.get("min_margin_net"),
+             _em.get("n_fail")), bool(_em_lock))
 
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)

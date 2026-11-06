@@ -45,7 +45,7 @@ ENDPOINT = "/api/digital_demo"
 VERDICT = "FLOW_RUN_NOT_SIGNOFF"
 
 #: 声明本卡覆盖/未覆盖的段（机核用，禁止与实际行为不一致）
-SEGMENTS_COVERED = ("parse", "place", "route", "drc_lvs", "timing", "def_write")
+SEGMENTS_COVERED = ("parse", "place", "route", "drc_lvs", "timing", "em", "def_write")
 SEGMENTS_MISSING = ("synthesis",)
 
 #: 诚实边界（逐条都在卡片里输出，且被 selfcheck 要求非空 + 含关键词）
@@ -223,6 +223,7 @@ def _compute() -> Dict[str, Any]:
     wrote = st.get("def_write", {})
     parsed = st.get("parse", {})
     tmg = st.get("timing", {})
+    emd = st.get("em", {})
 
     return {
         "compute_ms": round(ms, 3),
@@ -333,6 +334,11 @@ def _compute() -> Dict[str, Any]:
             "hold_checked": bool(tmg.get("hold_checked")),
             "critical_path": list(tmg.get("critical_path") or []),
         },
+        # 🔴 EM 逐网裕量（v0.9.387 · B2b）：**诊断段，不进 blocking**。
+        #    之前 EM 只是 `dsignoff` 里的纯函数、主链从未给它电流 ⇒ 对外等于不存在。
+        #    🔴 读数纪律：`n_fail=0` **只对 `n_nets_judged` 成立**（`scope` 同行给出）；
+        #    无布线的网是**不可判**（`undecidable_nets`），不是「通过」。
+        "em": dict(emd),
         "segments_covered": list(SEGMENTS_COVERED),
         "segments_missing": list(SEGMENTS_MISSING),
         "synthesized": False,
@@ -391,6 +397,7 @@ def case_card() -> Dict[str, Any]:
         "synthesized": f["synthesized"],
         "timing_included": f["timing_included"],
         "timing": f["timing"],
+        "em": f["em"],
         "honest_note": list(HONEST_NOTES),
         "disclosure": {
             "pdk": "非 foundry PDK（教科书尺度 INV/NAND2）",
@@ -404,14 +411,24 @@ def case_card() -> Dict[str, Any]:
             "sovereignty": "C 级自主（纯标准库）；LLM 不进判决路径",
             # 🔴 v0.9.386：EM 此前**对外完全不可见** —— `dsignoff.B3_DISCLOSURE` 没有任何端点透出，
             #    于是「把隐藏假设变成明账」只发生在代码与 CHANGELOG 里，读者在 API 上读不到。
-            #    这条文案的三处事实都必须可机核（s13 的 S19a–c）：
+            #    🔴 v0.9.387（B2b）**主链接线了**：`db3_trunk` 现在 import `dsignoff` 并输出
+            #       `em` 段 ⇒ 本句从「不含 EM 判决」必须改成「含 EM 诊断段」。
+            #       这正是 S19c 存在的意义 —— 它当场会红，逼文案跟着事实走（不是靠人记得改）。
+            #    这条文案的四处事实都必须可机核（s13 的 S19a–d / S20a–h）：
             #      ① 含 T_ref / Ea / n 三个参数名（否则读者不知道「假设」指什么）
             #      ② 倍数与 `j_max_at(85)/j_max_at(125)` 实测一致（不许手填一个数）
-            #      ③ 「不含 EM 判决」必须与「主链是否 import dsignoff」这个 AST 事实一致
-            #         —— 将来若有人把 EM 接线进主链，本句会变谎，S19c 必须判红
-            "em": ("本卡片**不含 EM 判决**（EM 未接入主链，chain=dpnr）。EM 的 J_max(T) 用 "
-                   "Black 温度标度，但 T_ref=125°C / Ea=0.9 eV / n=1.1 均为假设（非工艺认证）；"
-                   "基准若为 85°C，允许值缩约 14×。"),
+            #      ③ 「含/不含 EM」两个互斥措辞**恰好出现一个**，且与主链 AST 事实一致
+            #      ④ 必须声明「不进 blocking」与「不可判≠通过」（A 方案的核心承诺）
+            "em": ("本卡片**含 EM 诊断段**（chain=dpnr，逐网裕量见 `em`），但 **EM 不进签核 "
+                   "blocking**：`claimable` 与 `m1_exit` 都不参考它。读数纪律："
+                   "`em.n_fail=0` 只对 `em.n_nets_judged` 成立（scope=JUDGED_SUBSET_ONLY），"
+                   "无布线的网是**不可判**、不是通过。假设集：J_max(T) 用 Black 温度标度，"
+                   "T_ref=125°C / Ea=0.9 eV / n=1.1 均为假设（非工艺认证；基准若为 85°C，"
+                   "允许值缩约 14×）；频率由组合延时反推（取半周期）、翻转率 α=0.1、"
+                   "VDD 取 tech 默认值，同为假设。覆盖边界：只判有金属的信号网，"
+                   "**不含电源/地网（PDN 未建模）、时钟树、via 许用电流、峰值 di/dt**；"
+                   "c17 动态电流仅 µA 级 ⇒ 本判据在该设计上**不具备判别力**"
+                   "（裕量量级见 `em.min_margin_x`，不要读成「EM 合格」）。"),
         },
         "compute_ms": f["compute_ms"],
     }

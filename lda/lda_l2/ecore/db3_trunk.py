@@ -345,6 +345,22 @@ def run_trunk(nl, *, baseline: bool = True):
         "critical_path": list(tm.critical_path),
     }))
 
+    # ── 段 4b：EM 逐网裕量（**诊断段** · v0.9.387 · B2b）────────────────
+    #   🔴 三个「不做就错」的前置：
+    #   ① c17 是**纯组合**电路 ⇒ `dsta` 给不出 `fmax`（无时钟域）⇒ EM 必须有频率输入，
+    #      只能由组合关键路径延时反推，且**「f 是假设」必须进输出**（默认半周期，保守）；
+    #   ② 电流里的 C 必须是**该网总负载**（线载 + 扇出栅电容），只算线载会低估 1.5~2.7×
+    #      （c17 实测 C_wire 1.2 fF vs C_tot 3.2 fF）；
+    #   ③ 无金属的网**不可判**（不是通过）⇒ `scope` 与 `undecidable_nets` 必须与结论同行。
+    #   🔴 本段 `in_blocking=False`：只给带量纲的裕量，**不改变 `claimable`/`m1_exit`**。
+    from lda_l2.ecore import dcell as DCell, dsignoff as DSG
+
+    em_rep = DSG.em_net_signoff(
+        lengths, wl, ST.loads_of(nl, wire_load_ff=wl), nets_all,
+        f_hz=DSG.f_from_comb_delay(tm.comb_delay_ps, half_period=True),
+        vdd=float(DCell.DEFAULT_TECH.vdd), width_um=float(dpnr.W))
+    report["stages"].append(("em", dict(em_rep, chain=TRUNK_CHAIN)))
+
     # ── 段 5：DEF 写出（主链落点 + 段0 的 Netlist）─────────────────────
     #    🔴 只写 placed DEF（落点 + 连接），**不写 ROUTED**：shapes 的网归属虽然已按网打标签
     #       （`dpnr` 每根 wire 都带 net），但 DEF 的 ROUTED 需要完整几何/层/宽度语义，

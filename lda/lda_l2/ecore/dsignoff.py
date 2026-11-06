@@ -219,6 +219,146 @@ def em_check(i_a: float, width_um: float, t_um: float = T_METAL_UM,
             "j_max_overridden": j_max is not None}
 
 
+# ---- 每网电流 → 每网 EM 的「接线层」（v0.9.387 · B2b）----------------------
+# 🔴 这一层解决的是**「EM 从来没有输入」**，不是「EM 算错了」：
+#    上面的 `em_check` 一直是纯函数，但主链从未给它电流 ⇒ 它对外等于不存在。
+#    接线后**判定结果一位也不会变**（实测 c17 违例 0/7、最小裕量 101×），
+#    因为 EM 是给 mA~A 级电流（电源网/时钟树/大扇出）用的判据，而 c17 是 6 个门、
+#    0.24 µm 线、动态电流仅 µA 级 ⇒ **该判据在这个设计上天生没有判别力**。
+#    诚实做法不是「假装它会响」，而是把它接成**带量纲的裕量 + 不可判清单**，
+#    并用反向探针证明「换个参数它真的会响」。
+ALPHA_DYN = 0.1              # 翻转率 α（假设，与 `dsta.switching_power_nw` 默认一致）
+EM_SCOPE = "JUDGED_SUBSET_ONLY"   # 🔴 与 DRC 的 ROUTED_SUBSET_ONLY 同源纪律
+
+
+def _finite_or_none(x):
+    """🔴 端点必须严格 JSON：`inf`/`nan` 会写成裸字面量（非标准 JSON，JS `JSON.parse` 直接抛）。
+
+    `I=0` 时裕量是数学上的 `inf`，语义上等于「此处不适用」⇒ 对外给 `None`，
+    绝不给 `Infinity`（那既非法又会被读成「无穷大的好」）。
+    """
+    if isinstance(x, bool):
+        return x
+    if isinstance(x, (int, float)) and math.isfinite(float(x)):
+        return x
+    return None
+
+
+def net_current_a(c_total_ff: float, f_hz: float, vdd: float,
+                  alpha: float = ALPHA_DYN) -> float:
+    """每网**平均**动态电流（A）：`I = α · C_total · VDD · f`。
+
+    `C_total` 必须是**该网总负载**（走线电容 + 扇出栅电容），不是只算线载 ——
+    只算线载会把电流低估 1.5~2.7×（c17 实测 C_wire 1.2 fF vs C_tot 3.2 fF）。
+
+    🔴 **这是平均电流，不是峰值**：EM 的 `J_max` 本身是对平均电流密度的限值，
+    用平均是自洽的；但开关瞬间的峰值电流会更高，本模型**不覆盖**（见 disclosure）。
+
+    退化性质（机核）：`C=0` 或 `f=0` ⇒ 返回**恰为 0.0** ⇒ 下游裕量 `inf`、不判 FAIL。
+    这是对的：没有电流就没有电迁移，`inf` 不是「无穷大裕量的好消息」，
+    而是「这个量在此处不适用」——与「不可判」等价，不能当通过计入覆盖率。
+    """
+    return alpha * (float(c_total_ff) * 1e-15) * float(vdd) * float(f_hz)
+
+
+def f_from_comb_delay(t_comb_ps: float, half_period: bool = True) -> float:
+    """由组合关键路径延时反推**翻转频率**（Hz）。
+
+    🔴 c17 是**纯组合**电路 ⇒ `dsta` 给不出 `fmax`（无时钟域，`fmax_mhz=None`）。
+    EM 又必须有频率输入 ⇒ 只能由延时反推，并且**必须声明这是假设**。
+
+    `half_period=True` ⇒ `f = 1/(2·t)`（默认，保守）；`False` ⇒ `1/t`（吞吐上限）。
+    这个选择**会改变裕量 2 倍**（c17 实测 101× vs 50×），所以它是显式参数、不是内部常量。
+    """
+    t = float(t_comb_ps)
+    if not (t > 0.0):
+        raise ValueError("组合延时必须为正才能反推频率（得 %r）" % (t_comb_ps,))
+    return 1.0 / ((2.0 if half_period else 1.0) * t * 1e-12)
+
+
+def em_net_signoff(length_um: dict, c_wire_ff: dict, c_total_ff: dict,
+                   nets_all, f_hz: float, vdd: float, width_um: float,
+                   t_um: float = T_METAL_UM, t_c: float = T_REF_C,
+                   alpha: float = ALPHA_DYN, ea_ev: float = EA_EV,
+                   n_exp: float = N_EXP) -> dict:
+    """逐网 EM 裕量汇总（**诊断段**：不进 `claimable` 的 blocking 列表）。
+
+    参数全部显式（K0 完备性）：每网线长 / 线载 / 总负载 · 频率 · VDD · 线宽 ·
+    金属厚度 · 结温 · 翻转率 · 激活能 · 指数。
+
+    🔴 **可判性必须与结论同行**：
+    · 只有「有金属的网」才判 —— 无布线的网**不是通过、是不可判**（`undecidable`）；
+    · `scope = JUDGED_SUBSET_ONLY`，`n_fail=0` 只对 `n_nets_judged` 成立；
+    · `in_blocking=False` 明确「本段不参与签核阻塞」，避免被读成「EM 合规」。
+
+    🔴 **不做的事**（写在这里，避免下次误以为已覆盖）：不含电源/地网（PDN 未建模）、
+    不含时钟树、不含 via 许用电流、不含峰值 di/dt、不含 AC 频率修正。
+    """
+    nets = set(nets_all or ())
+    judged = []
+    per_net = {}
+    raw_margin = {}          # 🔴 排序用原始值（可能是 inf）；对外输出走 `_finite_or_none`
+    jm = j_max_at(t_c, ea_ev=ea_ev, n_exp=n_exp)
+    for net in sorted(nets):
+        c_wire = float(c_wire_ff.get(net, 0.0))
+        if c_wire <= 0.0:
+            continue                      # 无金属 ⇒ 不可判（下面单独列名）
+        c_tot = float(c_total_ff.get(net, c_wire))
+        i_a = net_current_a(c_tot, f_hz, vdd, alpha)
+        r = em_check(i_a, width_um, t_um=t_um, t_c=t_c,
+                     ea_ev=ea_ev, n_exp=n_exp)
+        per_net[net] = {
+            "length_um": round(float(length_um.get(net, 0.0)), 3),
+            # 🔴 `c_wire_ff` / `c_total_ff` **不 round**：它们是电流公式的输入，
+            #    round 会让「独立复算 I=α·C·V·f」变成永远差一点 ⇒ 判据只能放宽容差 ⇒ 判别力下降。
+            "c_wire_ff": c_wire,
+            "c_total_ff": c_tot,
+            "i_a": i_a,
+            "j_a_m2": r["j_a_m2"],
+            # 🔴 严格 JSON：`I=0` ⇒ 裕量 `inf` ⇒ 对外 `None`（不写裸 `Infinity`）
+            #    裕量是**比值**，取 3 位与 `timing`/`area` 段同口径（判据两侧都走此口径 ⇒ 可逐位比）
+            "margin_x": (None if _finite_or_none(r["margin_x"]) is None
+                         else round(r["margin_x"], 3)),
+            "ok": bool(r["ok"]),
+        }
+        judged.append(net)
+        raw_margin[net] = r["margin_x"]
+
+    undecidable = sorted(nets - set(judged))
+    fails = [n for n in judged if not per_net[n]["ok"]]
+    best = min(judged, key=lambda n: raw_margin[n]) if judged else None
+    _min_margin = None if best is None else _finite_or_none(raw_margin[best])
+    return {
+        "chain": "dpnr",
+        "scope": EM_SCOPE,
+        # ---- 输入假设（全部显式，供外部核验；缺一项就等于回到「隐藏假设」）----
+        "assumptions": {
+            "f_hz": f_hz, "vdd": vdd, "alpha": alpha,
+            "width_um": width_um, "t_um": t_um, "t_c": t_c,
+            "ea_ev": ea_ev, "n_exp": n_exp, "t_ref_c": T_REF_C,
+            "j_max_a_m2": jm,
+        },
+        # ---- 可判性（结论必须跟着它读）----
+        "n_nets_total": len(nets),
+        "n_nets_judged": len(judged),
+        "n_nets_undecidable": len(undecidable),
+        "undecidable_nets": undecidable,
+        "undecidable_reason": "无布线金属（未布通）⇒ 不可判，不等于通过",
+        # ---- 结果 ----
+        "n_fail": len(fails),
+        "fail_nets": fails,
+        "all_pass_on_judged": (len(fails) == 0 and len(judged) > 0),
+        "min_margin_x": (None if _min_margin is None else round(_min_margin, 3)),
+        "min_margin_net": best,
+        "per_net": per_net,
+        # ---- 边界（对外必须一起给）----
+        "in_blocking": False,
+        "coverage_note": ("只判有金属的信号网；不含电源/地网（PDN 未建模）、时钟树、"
+                          "via 许用电流、峰值 di/dt 与 AC 频率修正"),
+    }
+
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # ⑥ 诚实清单（对外必须一起给）
 # ═══════════════════════════════════════════════════════════════════════════

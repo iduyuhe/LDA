@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""S13 门禁：B1 四项零风险判据（拓扑机核 / K0 完备性 / K2 独立性 / 面积交叉分段）。
+"""S13 门禁：B1 四项零风险判据 + B2a 的 EM 温度标度。
 
 ═══════════════════════════════════════════════════════════════════════════════
 这一批要证明什么
@@ -10,6 +10,8 @@
   B1.2 `S14a–c` **K0 完备性锚** —— 补「整项缺失」这一整类（此前完全空白）
   B1.3 `S15a–c` **K2 独立性机核** —— 让既有「DRC = E1」不再是虚设
   B1.4 `S16a–b` **面积交叉分段** —— 零误差量必须**换边界**切，否则共同边界错误检不出
+  B2a  `S18a–f` **EM 温度标度**（v0.9.385）—— 把「J_MAX 的标定基准温度」从隐藏假设变显式，
+       并按 Black 方程补上温度依赖；判据围绕「是否旧常数的严格推广」设计
   S17        产品数字逐位不变 + 自登记 + 耗时
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -56,6 +58,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import inspect
+import math
 import os
 import re
 import sys
@@ -209,8 +212,11 @@ EM_PARAM_MAP = {
     "ea_ev": "activation_energy", "ea": "activation_energy",
     "n_exp": "exponent", "n": "exponent",
 }
-#: 已登记的缺失项（与实测必须相等；补齐后本表要跟着改，否则红）
-DECLARED_EM_MISSING = ("temperature", "activation_energy", "exponent")
+#: 已登记的缺失项（与实测必须相等；补齐后本表要跟着改，否则红）。
+#: 🔴 v0.9.385（B2a）：EM 已补 Black 温度标度 ⇒ **缺失清零**。此前是
+#:    `("temperature", "activation_energy", "exponent")`，靠改这一行让门禁从「报缺」转「不报缺」——
+#:    这正是棘轮的设计意图：补上了却忘了改登记表，必须红。
+DECLARED_EM_MISSING: tuple = ()
 
 
 def _k0_missing(param_names) -> tuple:
@@ -389,6 +395,60 @@ def main() -> int:
           abs(_cut_b2 - _po["die_w_um"]) > 1e-9,
           "篡改后 %.3f" % _cut_b2)
 
+    # ── B2a（v0.9.385）：EM 温度标度 Black 方程 ─────────────────
+    # 目的：把「J_MAX 是某个温度下的值，但没写是哪个温度」这个隐藏假设显式化，
+    #       并补上温度依赖。判据全部围绕「是不是旧常数的严格推广」来设计。
+    j_ref = DS.j_max_at(DS.T_REF_C)
+    check("S18a 🔴 退化对照：`T = T_ref(%.0f°C)` 时 `j_max_at` **逐位等于**旧常数 %.3g"
+          "（通式必须退化为已实现的特例）"
+          % (DS.T_REF_C, DS.J_MAX_A_M2),
+          j_ref == DS.J_MAX_A_M2, "got=%r" % (j_ref,))
+
+    _j85, _j125 = DS.j_max_at(85.0), DS.j_max_at(125.0)
+    _j150 = DS.j_max_at(150.0)
+    check("S18b 单调性 `∂J_max/∂T < 0`：85°C %.4g > 125°C %.4g > 150°C %.4g（×%.1f / ×%.2f）"
+          % (_j85, _j125, _j150, _j85 / _j125, _j150 / _j125),
+          _j85 > _j125 > _j150 > 0)
+
+    # 形式验证：ln J 对 1/T 线性，斜率必须 == Ea/(n·k)
+    def _slope(t1, t2):
+        return (math.log(DS.j_max_at(t2)) - math.log(DS.j_max_at(t1))) / (
+            (1.0 / (t2 + 273.15)) - (1.0 / (t1 + 273.15)))
+    _s1, _s2 = _slope(85.0, 125.0), _slope(125.0, 150.0)
+    _want_slope = DS.EA_EV / (DS.N_EXP * DS.K_B_EV)
+    check("S18c 形式：`ln J_max` 对 `1/T` 斜率为常且 == `Ea/(n·k)`=%.4g（两段实测 %.4g / %.4g）"
+          % (_want_slope, _s1, _s2),
+          abs(_s1 - _want_slope) / _want_slope < 1e-9
+          and abs(_s2 - _want_slope) / _want_slope < 1e-9)
+
+    # 所需线宽 w_min = I/(J_max·t)，必须随电流单调增（这是「加宽/加电流」的方向性结论）
+    def _w_min(i_a, t_c):
+        return (i_a / DS.j_max_at(t_c)) / (DS.T_METAL_UM * 1e-6) * 1e6
+    _w1, _w2 = _w_min(2e-4, 125.0), _w_min(4e-4, 125.0)
+    _w_chk = _w_min(3.36e-4, 125.0)
+    check("S18d 线宽：`w_min` 随电流单调增（%.4f → %.4f µm）∧ 闭环 `w_min(336µA,125°C)=%.4f` 应 == 0.24"
+          % (_w1, _w2, _w_chk),
+          _w2 > _w1 > 0 and abs(_w_chk - 0.24) < 1e-6)
+
+    # 温度**真的进了判定**（不是只多了个形参）：同一根线在同一电流下结论随温度翻转
+    _r125 = DS.em_check(4e-4, 0.24, t_c=125.0)
+    _r85 = DS.em_check(4e-4, 0.24, t_c=85.0)
+    _r150 = DS.em_check(2e-4, 0.24, t_c=150.0)
+    check("S18e 判别力：同一根线 `4e-4A/0.24µm` 在 125°C %s、85°C %s；`2e-4` 在 150°C %s"
+          " —— 常数模型给不出这个区分"
+          % ("不通过" if not _r125["ok"] else "通过",
+             "通过" if _r85["ok"] else "不通过",
+             "不通过" if not _r150["ok"] else "通过"),
+          _r125["ok"] is False and _r85["ok"] is True and _r150["ok"] is False)
+
+    # 回归轴：T=T_ref 时对既有两点的判定必须与旧常数完全一致（不许改历史结论）
+    _e1, _e2 = DS.em_check(2e-4, 0.24), DS.em_check(4e-4, 0.24)
+    check("S18f 回归轴：`T=T_ref` 时既有两点判定与旧常数一致（2e-4 %s · 4e-4 %s）"
+          " ∧ `j_max_overridden` 均为 False"
+          % ("通过" if _e1["ok"] else "不通过", "通过" if _e2["ok"] else "不通过"),
+          _e1["ok"] is True and _e2["ok"] is False
+          and _e1["j_max_overridden"] is False and _e2["j_max_overridden"] is False)
+
     # ── S17 硬条件：产品数字逐位不变 ───────────────────────────
     _rep = B3.run_trunk(nl)
     _st = {n: p for n, p in _rep["stages"]}
@@ -422,13 +482,16 @@ def main() -> int:
           % list(missing))
     print("  [S15] DRC/LVS 双实现本地闭包交集 ∅ ⇒ 「两个实现」确有独立性（E1 不再虚设）")
     print("  [S16] 面积两条不同边界路径均拼回 %.3f µm" % _po["die_w_um"])
+    print("  [S18] EM 温度标度：T=T_ref 逐位退化 ∧ 85°C 允许 %.4g（×%.1f）∧ 判定随温度翻转"
+          % (_j85, _j85 / _j125))
     print("  [边界] 不改网表（改则推翻 DRC/面积/时序/DEF 全部既有数字）；"
           "K2 仅覆盖同文件本地调用，跨模块共享不在范围")
 
     if _FALS:
         print("S13 有红色：%s" % ", ".join(_FALS))
         return 1
-    print("S13 全绿 · B1 四项：拓扑机核（2 处已登记）+ K0 缺 3 项已声明 + K2 交集 ∅ + 面积双路径一致；"
+    print("S13 全绿 · B1 四项 + B2a：拓扑机核（2 处已登记）+ K0 覆盖 6/6（EM 已补温度）+ "
+          "K2 交集 ∅ + 面积双路径一致 + EM 温度标度（T=T_ref 逐位退化、判定随温度翻转）；"
           "产品数字逐位未变")
     return 0
 

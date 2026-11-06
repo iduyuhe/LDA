@@ -18,7 +18,7 @@ B1 给了**电阻**（`dcells.extract_r`：栅/扩散/接触/金属段），B2 �
 | 延迟 | Elmore：`R·(C_wire/2 + C_load)`；另给 N 段梯形网络的**离散解**做互证。🔴 单位 = **fs**（`Ω·fF = 1e-15 s`）|
 | 多角 | ff/ss 对 R、C 各乘一套系数，给出**延迟区间**（不是单点） |
 | IR | 均匀抽流的均匀轨：末端压降 `I·R/2`；另给离散节点方程解做互证 |
-| EM | `J = I/(w·t)` 对 `J_MAX` 判定（含裕量） |
+| EM | `J = I/(w·t)` 对 **`J_max(T)`**（Black 温度标度，`T_ref` 显式）判定 |
 
 ═══════════════════════════════════════════════════════════════════════════════
 诚实边界（必须随任何引用一起给）
@@ -33,6 +33,8 @@ B1 给了**电阻**（`dcells.extract_r`：栅/扩散/接触/金属段），B2 �
 """
 from __future__ import annotations
 
+import math
+
 # ---- 物理常数与一阶工艺假设（全部显式，便于外部替换）----
 EPS0 = 8.854e-12          # F/m
 EPSR_ILD = 4.0            # SiO₂ 相对介电常数
@@ -43,7 +45,17 @@ CPP_FRINGE = 0.02         # 边缘电容系数（每边，按 w 归一）—— 
 RSH = {"M3": 0.12, "M4": 0.10}      # Ω/□（演示量级）
 C_LOAD_FF = 1.0                     # 典型扇出负载电容（假设）
 TIME_UNIT = "fs"                    # 🔴 Ω·fF = 1e-15 s = 1 fs（延迟量的真实量纲）
-J_MAX_A_M2 = 1.0e10                 # 1e6 A/cm²（公开量级假设，非工艺认证）
+J_MAX_A_M2 = 1.0e10                 # 1e6 A/cm²（**在 T_REF_C 下**的公开量级假设，非工艺认证）
+# ---- EM 的温度标度（Black 方程 · v0.9.385）----
+# 🔴 常量 `J_MAX_A_M2` 是**某个温度下**的值，但此前没写是哪个温度 —— 这是隐藏假设。
+#    本版把它显式化为 `T_REF_C`，并按 Black 方程把温度依赖补上：
+#        MTTF = A · J^-n · exp(Ea/(k·T))
+#    同一 MTTF 目标下 ⇒  J_max(T) = J_ref · exp( (Ea/(n·k)) · (1/T − 1/T_ref) )
+#    即：温度越高，允许电流密度越低（Ea>0 ⇒ 指数递减），这是本式唯一的方向性结论。
+K_B_EV = 8.617333262e-5             # eV/K（玻尔兹曼常数）
+EA_EV = 0.9                         # Cu 互连激活能（公开量级假设，非工艺认证）
+N_EXP = 1.1                         # 电流密度指数 n（Black 方程，公开量级假设）
+T_REF_C = 125.0                     # 🔴 **假设**：`J_MAX_A_M2` 的标定基准温度（°C）
 
 #: 多角（R 缩放, C 缩放）—— 演示量级，非 PVT 数据
 CORNERS = {"ff": (0.85, 0.90), "tt": (1.00, 1.00), "ss": (1.15, 1.10)}
@@ -171,13 +183,40 @@ def ir_drop_ladder(i_total_a: float, rsh: float, length_um: float, width_um: flo
 # ═══════════════════════════════════════════════════════════════════════════
 # ⑤ EM（电流密度）
 # ═══════════════════════════════════════════════════════════════════════════
+def j_max_at(t_c: float, t_ref_c: float = T_REF_C,
+             ea_ev: float = EA_EV, n_exp: float = N_EXP) -> float:
+    """给定结温（°C）⇒ 允许电流密度（A/m²）。Black 方程的温度标度。
+
+    `J_max(T) = J_ref · exp( (Ea/(n·k)) · (1/T − 1/T_ref) )`，T 用 Kelvin。
+
+    🔴 **退化性质（机核）**：`T == T_ref` 时指数项恰为 `exp(0) == 1.0`
+    ⇒ 返回值**逐位等于** `J_MAX_A_M2`。这保证本函数是旧常数的**严格推广**，
+    不是「换了一套数」。
+    """
+    t = t_c + 273.15
+    tr = t_ref_c + 273.15
+    return J_MAX_A_M2 * math.exp(ea_ev / (n_exp * K_B_EV) * (1.0 / t - 1.0 / tr))
+
+
 def em_check(i_a: float, width_um: float, t_um: float = T_METAL_UM,
-             j_max: float = J_MAX_A_M2) -> dict:
-    """`J = I/(w·t)`（A/m²）对 `J_MAX` 判定，返回电流密度、裕量与是否通过。"""
+             t_c: float = T_REF_C, ea_ev: float = EA_EV, n_exp: float = N_EXP,
+             j_max: float | None = None) -> dict:
+    """`J = I/(w·t)`（A/m²）对 **`J_max(T)`** 判定，返回电流密度、裕量与是否通过。
+
+    参数（K0 完备性要求：EM 的 6 个物理自变量全部可为输入）
+        `i_a` 电流 · `width_um` 线宽 · `t_um` 金属厚度
+        `t_c` 结温 · `ea_ev` 激活能 · `n_exp` 电流密度指数
+
+    🔴 `j_max` 保留为**显式覆盖**（默认 `None` ⇒ 由温度算）。给值时行为与旧版一致
+    （旧测试若直接传该参数不受影响），但**正常路径不再使用常数**。
+    """
+    jm = j_max_at(t_c, ea_ev=ea_ev, n_exp=n_exp) if j_max is None else float(j_max)
     area_m2 = (width_um * 1e-6) * (t_um * 1e-6)
     j = i_a / area_m2
-    return {"j_a_m2": j, "margin_x": j_max / j if j > 0 else float("inf"),
-            "ok": j <= j_max, "j_max": j_max}
+    return {"j_a_m2": j, "margin_x": jm / j if j > 0 else float("inf"),
+            "ok": j <= jm, "j_max": jm, "t_c": t_c,
+            "t_ref_c": T_REF_C, "ea_ev": ea_ev, "n_exp": n_exp,
+            "j_max_overridden": j_max is not None}
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -194,6 +233,8 @@ B3_DISCLOSURE = {
         "完整 PVT 角 + OCV/AOCV 降额",
         "动态/封装级 IR（E44 已给**静态 DC** 全域网格解；仍缺 di/dt 动态压降、decap 电荷供给、封装与板级阻抗）",
         "EM 规则表（各层 J_max、通孔许用电流）来自工艺认证",
+        ("EM 的 `J_max(T)` 用 Black 温度标度，但 **`T_ref=125°C` 与 `Ea=0.9eV`/`n=1.1` "
+         "均为假设** —— 标定基准未由工艺给出，基准若挪到 85°C，允许值会缩约 14×"),
         "硅实测校准（本项目无流片）",
     ],
     "corner_note": "ff/ss 的 R/C 缩放是演示量级（0.85/0.90 与 1.15/1.10），非 PVT 数据",

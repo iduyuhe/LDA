@@ -222,7 +222,7 @@ _GATE_DECL_TARGETS = sorted(set(_GATE_SMOKE.values()) | {
 #:   （`` `run_x` **N 判据 ``）声明某门禁时，才把它加入本表；版本下线时请同批移除。
 #:   不变式（W10b 机核）：当前行里每个 `run_x` **N 判据 都必须能在 `_counts10` 内查到。
 _W10_EXTRA = (
-              # v0.9.384：B1 四项零风险判据（新门禁 s13 · 16 判据 · 实测 ~0.31s）。
+              # v0.9.385：s13 扩到 **22 判据**（B1 四项 + B2a 的 EM 温度标度 · 实测 ~0.33s）。
               # 本版改到 ddrc_lvs/dsignoff 的**读取面**与 dpnr 的面积账，但**未改任何几何**，
               # s11/s12 的数字逐位未变 ⇒ 只纳 s13。
               "run_ecore_s13_smoke.py",

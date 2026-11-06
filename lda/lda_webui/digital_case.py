@@ -402,6 +402,16 @@ def case_card() -> Dict[str, Any]:
             "units": "DEF 1 DBU = 1 nm（UNITS DISTANCE MICRONS 1000）",
             "energy_metrics": "不报 TOPS / TOPS-W / fJ/op",
             "sovereignty": "C 级自主（纯标准库）；LLM 不进判决路径",
+            # 🔴 v0.9.386：EM 此前**对外完全不可见** —— `dsignoff.B3_DISCLOSURE` 没有任何端点透出，
+            #    于是「把隐藏假设变成明账」只发生在代码与 CHANGELOG 里，读者在 API 上读不到。
+            #    这条文案的三处事实都必须可机核（s13 的 S19a–c）：
+            #      ① 含 T_ref / Ea / n 三个参数名（否则读者不知道「假设」指什么）
+            #      ② 倍数与 `j_max_at(85)/j_max_at(125)` 实测一致（不许手填一个数）
+            #      ③ 「不含 EM 判决」必须与「主链是否 import dsignoff」这个 AST 事实一致
+            #         —— 将来若有人把 EM 接线进主链，本句会变谎，S19c 必须判红
+            "em": ("本卡片**不含 EM 判决**（EM 未接入主链，chain=dpnr）。EM 的 J_max(T) 用 "
+                   "Black 温度标度，但 T_ref=125°C / Ea=0.9 eV / n=1.1 均为假设（非工艺认证）；"
+                   "基准若为 85°C，允许值缩约 14×。"),
         },
         "compute_ms": f["compute_ms"],
     }

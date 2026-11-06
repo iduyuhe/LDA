@@ -449,6 +449,60 @@ def main() -> int:
           _e1["ok"] is True and _e2["ok"] is False
           and _e1["j_max_overridden"] is False and _e2["j_max_overridden"] is False)
 
+    # ── A（v0.9.386）：EM 披露必须**对外可读**，且三处事实可机核 ────
+    # 背景：v0.9.385 把 EM 的隐藏假设显式化了，但 `dsignoff.B3_DISCLOSURE` 没有任何端点透出
+    #       ⇒ 对外唯一可见变化只有版本号，读者在 API 上读不到。本节把「能否读到」变成判据。
+    from lda_webui import digital_case as _DC                    # noqa: E402
+    _DC.clear_cache()
+    _a19_em = ((_DC.case_card().get("disclosure") or {}).get("em") or "")
+    _a19_params = all(k in _a19_em for k in ("T_ref", "Ea", "n=1.1"))
+    check("S19a 卡片 `disclosure.em` 存在且点名三个参数（T_ref / Ea / n=1.1）：%r"
+          % ((_a19_em[:46] + "…") if _a19_em else "(缺失)",),
+          bool(_a19_em) and _a19_params)
+
+    _a19_ratio = DS.j_max_at(85.0) / DS.j_max_at(125.0)
+    _a19_nums = [float(x) for x in re.findall(r"(\d+(?:\.\d+)?)\s*×", _a19_em)]
+    check("S19b 文案里的倍数与实测一致：`j_max_at(85)/j_max_at(125)` = %.2f，文案写 %s"
+          "（不许手填一个数）"
+          % (_a19_ratio, _a19_nums or "无"),
+          any(abs(n - _a19_ratio) <= 0.5 for n in _a19_nums))
+
+    def _imports_needle_src(src: str, needle: str) -> bool:
+        """AST 取全部 import（含函数内嵌套）⇒ 是否存在含 `needle` 的名字。
+
+        🔴 必须同时收 **模块名** 与 **导入名**：`from lda_l2.ecore import dsignoff`
+        的 `module` 只有 `lda_l2.ecore`，真正的目标是 alias `dsignoff`。
+        只收 module ⇒ 恰好漏掉「接线 EM」最可能的写法 ⇒ 判据恒假通过。
+        （这个漏洞是 S19d 反向探针当场抓出来的，不是看出来的。）
+        """
+        _names = set()
+        for _n in ast.walk(ast.parse(src)):
+            if isinstance(_n, ast.Import):
+                _names.update(_a.name for _a in _n.names)
+            elif isinstance(_n, ast.ImportFrom):
+                _mod = _n.module or ""
+                if _mod:
+                    _names.add(_mod)
+                for _a in _n.names:
+                    _names.add(("%s.%s" % (_mod, _a.name)) if _mod else _a.name)
+        return any(needle in _x for _x in _names)
+
+    def _imports_needle(path: str, needle: str) -> bool:
+        return _imports_needle_src(open(path, encoding="utf-8").read(), needle)
+
+    _a19_trunk = os.path.join(_HERE, "lda_l2", "ecore", "db3_trunk.py")
+    _a19_uses_em = _imports_needle(_a19_trunk, "dsignoff")
+    _a19_declares_no = "不含 EM 判决" in _a19_em
+    check("S19c 🔴 声明与 AST 事实一致：主链 `db3_trunk` import dsignoff=%s ∧ "
+          "文案声明「不含 EM 判决」=%s —— 将来若把 EM 接线进主链，本句变谎必红"
+          % (_a19_uses_em, _a19_declares_no),
+          _a19_declares_no == (not _a19_uses_em))
+
+    # 反向探针：若检测器恒 False，S19c 会**永远通过**（形同虚设）
+    check("S19d 反向探针：合成源码 `from ... import dsignoff` ⇒ 必须检出 True；纯 `import os` ⇒ False",
+          _imports_needle_src("from lda_l2.ecore import dsignoff\n", "dsignoff") is True
+          and _imports_needle_src("import os\n", "dsignoff") is False)
+
     # ── S17 硬条件：产品数字逐位不变 ───────────────────────────
     _rep = B3.run_trunk(nl)
     _st = {n: p for n, p in _rep["stages"]}

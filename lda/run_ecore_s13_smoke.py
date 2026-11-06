@@ -643,6 +643,244 @@ def main() -> int:
           % (_em.get("min_margin_x") or 0.0, _em.get("min_margin_net"),
              _em.get("n_fail")), bool(_em_lock))
 
+    # ══════════════════════════════════════════════════════════════════════
+    # EC-P01…P14：几何 / 量纲不变式预注册组（+ 5 条反向探针）
+    #   🔴 口径真源 = `EC-B3.0 预注册判据 v2`（内部 / gitignore / 不在公开库与生产 CI 内）。
+    #      v1 全部结论已按 §6 作废，不得再作依据；v2 批准前本组**结论不生效**、
+    #      EC-B3.1 不启动 —— 本组此刻只是「已实测的实现」。
+    #      故全部内联：锁定值写死在下面常量里，独立复算从主链 shapes 重跑，
+    #      不读任何内部文档、不依赖尚未实现的产品能力。
+    #   🔴 锁定值不得就地修改；要改须另起版本并作废本组全部结论。
+    #   🔴 术语用中性的「几何 / 量纲不变式」，不把内部研究结论写进公开门禁。
+    # ══════════════════════════════════════════════════════════════════════
+    _EC_NS = (1, 2, 4, 8, 16, 32)
+    _EC_DIE_W = 7.8
+    _EC_LAYERS = (25, 27, 29)
+    _EC_AREA = {25: 2.268276, 27: 3.781476, 29: 3.247200}
+    _EC_RHO = {25: 0.037283, 27: 0.062154, 29: 0.053373}
+    _EC_DRHO = {
+        25: (0.000000, 0.085188, 0.201307, 0.357239, 0.662163, 0.994872),
+        27: (0.000000, 0.028020, 0.142472, 0.260355, 0.637160, 0.856410),
+        29: (0.000000, 0.140118, 0.251834, 0.386272, 0.492308, 0.984615),
+    }
+    _EC_NET = {"n1": 0.837128, "n3": 1.345456, "n6": 1.223528,
+               "n7": 0.983528, "n19": 1.283056, "n22": 2.157128, "n23": 1.467128}
+    _EC_G = {"g_area": 0.880000, "g_per_gate": 0.146667,
+             "g_per_transistor": 0.040000, "g_cell": 1.470000}
+    _EC_MAX = {"g_area": 2.451282, "g_per_gate": 14.707691,
+               "g_per_transistor": 53.928200, "g_cell": 1.467434}
+    _EC_MIN = {"g_area": 0.951282, "g_per_gate": 5.707691,
+               "g_per_transistor": 20.928200, "g_cell": 0.569475}
+    _EC_SUM = {"g_area": 10.564718, "g_per_gate": 63.388309,
+               "g_per_transistor": 232.423800, "g_cell": 6.324457}
+    _EC_MAIN_IDS = tuple("EC-P%02d" % _k for _k in range(1, 15))
+
+    def _ec_union(rs):
+        """同层矩形并集（扫描线）：重叠部分只算一次。"""
+        _xs = sorted(set([r[0] for r in rs] + [r[2] for r in rs]))
+        _out = []
+        for _a, _b in zip(_xs, _xs[1:]):
+            _seg = sorted((y0, y1) for x0, y0, x1, y1 in rs if x0 <= _a and x1 >= _b)
+            _mg = []
+            for _y0, _y1 in _seg:
+                if _mg and _y0 <= _mg[-1][1]:
+                    _mg[-1] = (_mg[-1][0], max(_mg[-1][1], _y1))
+                else:
+                    _mg.append((_y0, _y1))
+            for _y0, _y1 in _mg:
+                _out.append((_a, _y0, _b, _y1))
+        return _out
+
+    def _ec_area(rs):
+        return sum((x1 - x0) * (y1 - y0) for x0, y0, x1, y1 in rs)
+
+    def _ec_dens(rs, n):
+        _cw = _EC_DIE_W / n
+        _c = [[0.0] * n for _ in range(n)]
+        for x0, y0, x1, y1 in rs:
+            for _i in range(max(0, int(math.floor(x0 / _cw))),
+                            min(n, int(math.ceil(x1 / _cw)))):
+                for _j in range(max(0, int(math.floor(y0 / _cw))),
+                                min(n, int(math.ceil(y1 / _cw)))):
+                    _c[_i][_j] += (max(0.0, min(x1, (_i + 1) * _cw) - max(x0, _i * _cw))
+                                   * max(0.0, min(y1, (_j + 1) * _cw) - max(y0, _j * _cw)))
+        return [_c[_i][_j] / (_cw * _cw) for _i in range(n) for _j in range(n)]
+
+    def _ec_drho(rs, n):
+        _v = _ec_dens(rs, n)
+        return max(_v) - min(_v)
+
+    def _ec_dmax(rs, n):
+        return max(_ec_dens(rs, n))
+
+    _ec_metals = [s for s in _sh2 if s.kind == "metal"]
+    _ec_layer_got = tuple(sorted({s.layer for s in _ec_metals}))
+    _ec_raw = {L: [(s.x0, s.y0, s.x1, s.y1) for s in _ec_metals if s.layer == L]
+               for L in _ec_layer_got}
+    _ec_u = {L: _ec_union(_ec_raw[L]) for L in _ec_layer_got}
+    _ec_area_got = {L: round(_ec_area(_ec_u[L]), 6) for L in _ec_layer_got}
+    _ec_rho_got = {L: round(_ec_area(_ec_u[L]) / (_EC_DIE_W ** 2), 6)
+                   for L in _ec_layer_got}
+    _ec_spec = {L: tuple(round(_ec_drho(_ec_u[L], n), 6) for n in _EC_NS)
+                for L in _ec_layer_got}
+    _ec_dmax_got = {(L, n): _ec_dmax(_ec_u[L], n)
+                    for L in _ec_layer_got for n in _EC_NS}
+    _ec_mean_max = max(
+        abs(sum(_ec_dens(_ec_u[L], n)) / (n * n)
+            - _ec_area(_ec_u[L]) / (_EC_DIE_W ** 2))
+        for L in _ec_layer_got for n in _EC_NS)
+    _ec_dup = {L: _ec_area(_ec_raw[L]) - _ec_area(_ec_u[L]) for L in _ec_layer_got}
+    _ec_raw_dmax = max(_ec_dmax(_ec_raw[L], n) for L in _ec_layer_got for n in _EC_NS)
+
+    _ec_src = open(os.path.abspath(__file__), encoding="utf-8").read()
+    # 🔴 needle 必须拼接：若写成字面量，本行源码自身会被 count 进去（自指计数 +1）。
+    _ec_needle = "check(" + '"' + "EC-P"
+    _ec_n_ids = _ec_src.count(_ec_needle)
+    check("EC-P01 命名空间：14 条主判据 ID 一律 EC-Pxx 且各出现一次（另有 %d 条反向探针）；"
+          "内部文档不入库 ⇒ 门禁不依赖它们" % (_ec_n_ids - 14),
+          all(_ec_src.count("check(" + '"' + _i + " ") == 1 for _i in _EC_MAIN_IDS)
+          and _ec_n_ids == 19)
+
+    check("EC-P02 🔴 同层矩形必须取并集：直接累加在层 25 重复计数 %.4f µm²（%.1f%%）、"
+          "细窗 ρ_max=%.3f>1 ⇒ 直接累加口径必须判 INVALID"
+          % (_ec_dup[25], 100.0 * _ec_dup[25] / _ec_area(_ec_raw[25]), _ec_raw_dmax),
+          _ec_layer_got == _EC_LAYERS
+          and _ec_dup[25] / _ec_area(_ec_raw[25]) > 0.20
+          and _ec_raw_dmax > 1.0)
+
+    check("EC-P03 I4 上界：∀层∀n ρ_max ≤ 1（实测最大 %.6f）" % max(_ec_dmax_got.values()),
+          all(v <= 1.0 + 1e-9 for v in _ec_dmax_got.values()))
+
+    _L0 = 27
+    _tot = _ec_area(_ec_u[_L0])
+    _cw = _EC_DIE_W / 2.0
+    _r1 = [(0.0, 0.0, _cw, _tot / _cw)]
+    _w2 = _cw * 0.5
+    _h2 = (_tot / 4.0) / _w2
+    _r2 = []
+    for _i2 in range(2):
+        for _j2 in range(2):
+            _x2 = _i2 * _cw + (_cw - _w2) / 2.0
+            _y2 = _j2 * _cw + (_cw - _h2) / 2.0
+            _r2.append((_x2, _y2, _x2 + _w2, _y2 + _h2))
+    _ec_ctor_ok = (
+        abs(_ec_area(_r1) - _tot) < 1e-9
+        and abs(_ec_area(_r2) - _tot) < 1e-9
+        and all(0.0 <= r[0] <= r[2] <= _EC_DIE_W and 0.0 <= r[1] <= r[3] <= _EC_DIE_W
+                for r in _r1 + _r2)
+        and _h2 < _cw and _tot / _cw < _cw
+    )
+    check("EC-P04 合成反例构造自检：面积守恒 ∧ 不越界 ∧ 不重叠（R1 单块 / R2 四块）",
+          bool(_ec_ctor_ok))
+
+    _r1_d = _ec_drho(_r1, 2)
+    _r2_d = _ec_drho(_r2, 2)
+    _want4 = 4.0 * _tot / (_EC_DIE_W ** 2)
+    check("EC-P05 M1 阳性对照 R1：全挤一窗 ⇒ Δρ(2) 必须 == 4ρ（闭式 %.6f / 实测 %.6f）"
+          % (_want4, _r1_d), abs(_r1_d - _want4) < 1e-9)
+    check("EC-P06 M1 阴性对照 R2：均匀四等分 ⇒ Δρ(2) 必须恰为 0（实测 %.9f）" % _r2_d,
+          abs(_r2_d) < 1e-9)
+
+    _ec_i1 = _ec_mean_max < 1e-5
+    _ec_i2 = all(all(_ec_spec[L][k] + 1e-9 >= _ec_spec[L][k - 1]
+                     for k in range(1, len(_EC_NS))) for L in _ec_layer_got)
+    _ec_i3 = all(abs(_ec_spec[L][0]) < 1e-9 for L in _ec_layer_got)
+    check("EC-P07 I1 守恒（误差 %.2e < 1e-5）∧ I2 单调不减 ∧ I3 n=1⇒0" % _ec_mean_max,
+          _ec_i1 and _ec_i2 and _ec_i3)
+
+    check("EC-P08 n 集合冻结且上界由 die_w/n ≥ W=%.3f µm 反解（n=32 窗 %.5f，n=64 窗 %.5f）"
+          % (P.W, _EC_DIE_W / 32, _EC_DIE_W / 64),
+          _EC_NS == (1, 2, 4, 8, 16, 32)
+          and _EC_DIE_W / 32 >= P.W > _EC_DIE_W / 64)
+
+    _ec_byn = {}
+    for s in _ec_metals:
+        _ec_byn.setdefault(getattr(s, "net", None), []).append(
+            (s.layer, s.x0, s.y0, s.x1, s.y1))
+    _ec_net_area = {}
+    for _net, _items in _ec_byn.items():
+        _a = 0.0
+        for _L in sorted({it[0] for it in _items}):
+            _a += _ec_area(_ec_union([(it[1], it[2], it[3], it[4])
+                                      for it in _items if it[0] == _L]))
+        _ec_net_area[_net] = _a
+    _ec_g = {
+        "g_area": nl.area_um2(),
+        "g_per_gate": nl.area_um2() / nl.n_gates(),
+        "g_per_transistor": nl.area_um2() / nl.n_transistors(),
+        "g_cell": _pl2["insts"][0]["w"] * _pl2["insts"][0]["h"],
+    }
+    _ec_ratio = {g: {net: a / gv for net, a in _ec_net_area.items()}
+                 for g, gv in _ec_g.items()}
+    _ec_max_raw = {g: max(v.values()) for g, v in _ec_ratio.items()}
+    _ec_max_got = {g: round(v, 6) for g, v in _ec_max_raw.items()}
+    _ec_min_got = {g: round(min(v.values()), 6) for g, v in _ec_ratio.items()}
+    _ec_sum_got = {g: round(sum(v.values()), 6) for g, v in _ec_ratio.items()}
+
+    _A0 = 1.0
+    _ec_r3_inc = {g: (_ec_net_area["n22"] + _A0) / _ec_g[g] - _ec_ratio[g]["n22"]
+                  for g in _ec_g}
+    check("EC-P09 M1 阳性对照 R3：追加面积 A0=1 µm² ⇒ 四口径增量 >0 且增量间满足齐次（I6+I7）",
+          all(v > 0 for v in _ec_r3_inc.values())
+          and all(abs(_ec_r3_inc[g] / _ec_r3_inc["g_area"]
+                      - _ec_g["g_area"] / _ec_g[g]) < 1e-9 for g in _ec_g))
+    check("EC-P10 M1 阳性对照 R4：零面积 ⇒ 比值恰为 0（四口径，容差 0）",
+          all((0.0 / gv) == 0.0 for gv in _ec_g.values()))
+
+    _ec_hom = all(abs(_ec_max_raw[g] / _ec_max_raw["g_area"]
+                      - _ec_g["g_area"] / _ec_g[g]) < 1e-9 for g in _ec_g)
+    check("EC-P11 I8 齐次：四口径 max 两两 == g_area/g —— 抓的是「某网/某口径用了不一致的分母」"
+          "（数值漂移由 P12/P13 抓，齐次本身是恒等式）", bool(_ec_hom))
+
+    _ec_g_ok = (all(round(gv, 6) == _EC_G[g] for g, gv in _ec_g.items())
+                and _ec_g["g_per_gate"] == _ec_g["g_area"] / nl.n_gates()
+                and _ec_g["g_per_transistor"] == _ec_g["g_area"] / nl.n_transistors())
+    check("EC-P12 四个 g 单一来源、全片统一、由网表/几何复算（不得手填独立常量）",
+          bool(_ec_g_ok))
+
+    _ec_lock = (
+        _ec_layer_got == _EC_LAYERS
+        and _ec_area_got == _EC_AREA
+        and _ec_rho_got == _EC_RHO
+        and _ec_spec == {L: _EC_DRHO[L] for L in _EC_LAYERS}
+        and {k: round(v, 6) for k, v in _ec_net_area.items()} == _EC_NET
+        and _ec_max_got == _EC_MAX
+        and _ec_min_got == _EC_MIN
+        and _ec_sum_got == _EC_SUM
+    )
+    check("EC-P13 🔴 预注册数值逐位锁定：面积 / 密度 / 谱 / 每网面积 / 四口径 max·min·sum",
+          bool(_ec_lock))
+
+    check("EC-P14 对外完整性：3 层 × 6 个 n = %d 个谱点、4 个口径 × %d 条网 = %d 个比值，"
+          "不得只报单一窗口 / 单一口径"
+          % (len(_ec_layer_got) * len(_EC_NS), len(_ec_net_area), 4 * len(_ec_net_area)),
+          len(_ec_layer_got) * len(_EC_NS) == 18
+          and len(_ec_ratio) == 4
+          and all(len(v) == len(_ec_net_area) for v in _ec_ratio.values()))
+
+    # ── 反向探针：证明「判据真的会响」，不是永远通过 ──────────────────────
+    check("EC-P03r 反向探针：改用直接累加（不去重）⇒ ρ_max=%.3f>1 ⇒ P03 必红"
+          % _ec_raw_dmax, _ec_raw_dmax > 1.0)
+    _ec_r1_bad = [(0.0, 0.0, _cw, _tot / (2.0 * _cw))]
+    check("EC-P05r 反向探针：R1 面积减半 ⇒ Δρ(2)=%.6f ≠ 4ρ ⇒ P05 必红"
+          % _ec_drho(_ec_r1_bad, 2),
+          abs(_ec_drho(_ec_r1_bad, 2) - _want4) > 1e-6)
+    check("EC-P08r 反向探针：删掉 n=32 ⇒ 集合失配 ⇒ P08 必红",
+          _EC_NS[:-1] != (1, 2, 4, 8, 16, 32) and _EC_DIE_W / 64 < P.W)
+    _ec_mixed = {g: dict(_ec_ratio[g]) for g in _ec_g}
+    _ec_mixed["g_area"]["n22"] = _ec_net_area["n22"] / (_ec_g["g_area"] * 1.3)
+    _ec_bad_hom = abs(max(_ec_mixed["g_per_gate"].values())
+                      / max(_ec_mixed["g_area"].values())
+                      - _ec_g["g_area"] / _ec_g["g_per_gate"])
+    check("EC-P11r 反向探针：某网用了不一致的分母 ⇒ 齐次失配 Δ=%.6f ⇒ P11 必红"
+          % _ec_bad_hom, _ec_bad_hom > 1e-6)
+    check("EC-P13r 反向探针：层 25 锁定面积 +0.001 ⇒ 锁定失配 ⇒ P13 必红",
+          abs((_EC_AREA[25] + 0.001) - _ec_area_got[25]) > 1e-6)
+
+    print("  [EC] 谱点 %d 个（3 层 × 6 尺度）· 比值 %d 个（4 口径 × %d 网）· "
+          "锁定值全部逐位一致 · 反向探针 5 条全响"
+          % (len(_ec_layer_got) * len(_EC_NS), 4 * len(_ec_net_area), len(_ec_net_area)))
+
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)
 

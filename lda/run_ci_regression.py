@@ -1406,6 +1406,10 @@ CORE_SMOKES: List[str] = [
     # 旧判据「全芯片干净」在本拓扑下不可达（6 端口网 + 1 悬空网）⇒ 改成「必须归因」，
     # 归因不全/原因越界即红；claimable 未放宽。纯标准库 · 实测 ~0.1s
     "run_ecore_s12_smoke.py",
+    # S13 B1 四项零风险判据（v0.9.384）：c17 拓扑机核（对照 ISCAS-85 公开定义，差异双向登记）
+    # + K0 完备性（EM 缺 T/Ea/n）+ K2 独立性（本地调用闭包交集 + 毒化探针）+ 面积交叉分段
+    # （四段算术 vs DEF DIEAREA 文本）。硬条件=产品数字逐位不变。纯标准库 · 实测 ~0.31s
+    "run_ecore_s13_smoke.py",
     # 🔴 电子计算芯片案例卡 WebUI 门禁（E 征程收官 · D-155）：守 /api/ecore_demo 只读案例卡的诚实边界
     # （verdict 恒 DESIGN_VERIFIED / 不报 fabricated 能效 TOPS-TOPS-W / 规模按「可建模可验证容量」解读 /
     # landmark 仅背景坐标），跨源一致性（模块↔API 参考↔routes），含突变探针（破坏诚实边界/清空 landmark
@@ -3376,6 +3380,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_s11_smoke.py": 120.0,
     # S12 M1 出口判据门禁（v0.9.381）· 实测上界 <3s（@本机）
     "run_ecore_s12_smoke.py": 120.0,
+    # S13 B1 四项零风险判据（v0.9.384）· 实测上界 <1s（@本机）
+    "run_ecore_s13_smoke.py": 120.0,
     # 基础复用度量门禁（S5 · R1/R2/R3 + 冻结债务表）· 实测上界 <30s（@本机）
     "run_ecore_reuse_metrics_smoke.py": 120.0,
     # E 征程收官 · 电子计算芯片案例卡 WebUI 门禁（D-155）· 实测上界 0.1s（单测）

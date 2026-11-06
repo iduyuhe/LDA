@@ -1632,7 +1632,7 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             #    常驻门禁 48 道（含 E39/E40）。
             "modules": 78,               # ecore 包内模块数（不含 __init__.py；S4 新增 dxcheck）
             "capability_modules": 80,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力条目数
-            "entrypoints": 74,           # 常驻门禁数（lda/run_ecore_*_smoke.py，含 S2–S12 + 复用度量）
+            "entrypoints": 75,           # 常驻门禁数（lda/run_ecore_*_smoke.py，含 S2–S13 + 复用度量）
                                          # 🔴 这三个数由 `run_ecore_case_smoke` B6c 与
                                          #   **文件系统 + manifest 独立对拍**（此前是硬编码对硬编码）。
             "modules_dir": "lda/lda_l2/ecore/",

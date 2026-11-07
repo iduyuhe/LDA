@@ -403,7 +403,7 @@ def case_card() -> Dict[str, Any]:
         "ec_b3": f["ec_b3"],
         "honest_note": list(HONEST_NOTES),
         "disclosure": {
-            "ec_b3": ("本卡片**含几何/量纲诊断段**（chain=dpnr，逐层密度谱与四口径比值谱见 `ec_b3`），但 **DRC 规则集仍不含密度/天线规则**：本段不进 DRC、不进签核 blocking，`in_blocking=False`、`scope=DIAGNOSTIC_ONLY`，只报带量纲的谱与不变式，**不判违规、不构成可制造性或电气签核**。窗口 `n∈{1,2,4,8,16,32}` 是离散化尺度（die 仅 7.8 µm，远小于真实工艺窗口），四个分母口径均为代理量与假设、非工艺认证；不含 PDN、时钟树、via 许用电流、栅氧厚度、峰值 di/dt。"),
+            "ec_b3": ("本卡片**含几何/量纲诊断段**，且**含天线比几何代理**（`ratio_by_g` = 每网金属同层并集面积 / 栅面积代理量 g，逐口径语义见 `ec_b3` 的 `ratio_semantics`；**不含电荷积分、Fowler-Nordheim 隧穿与栅氧退化**），但 **DRC 规则集仍不含密度/天线规则**：本段不进 DRC、不进签核 blocking，`in_blocking=False`、`scope=DIAGNOSTIC_ONLY`，只报带量纲的谱与不变式，**不判违规、不构成可制造性或电气签核**。窗口 `n∈{1,2,4,8,16,32}` 是离散化尺度（die 仅 7.8 µm，远小于真实工艺窗口），四个分母口径均为代理量与假设、非工艺认证；不含 PDN、时钟树、via 许用电流、栅氧厚度、峰值 di/dt。"),
             "pdk": "非 foundry PDK（教科书尺度 INV/NAND2）",
             "signoff": "否 —— claimable 由六条实测条件推导（all_nets_routed / drc_zero / "
                        "lvs_zero / lvs_scope_full_chip / timing_included / hold_checked），"

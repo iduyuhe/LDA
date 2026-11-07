@@ -526,6 +526,14 @@ def ec_b3_signoff(shapes, die_w_um, die_h_um, width_um, g_values,
         "net_area_um2": {k: _finite_or_none(round(v, 6))
                          for k, v in sorted(net_area.items())},
         "ratio_by_g": ratios,
+        "ratio_semantics": {
+            "meaning": ("ratio_by_g = 每网金属同层并集面积 / 栅面积代理量 g，"
+                        "即**天线比的几何代理**（无量纲面积比）"),
+            "not_physics": ("不含电荷积分 Q、Fowler-Nordheim 隧穿、等离子体充电、"
+                            "栅氧厚度与栅氧退化、via 许用电流与峰值 di/dt"),
+            "g_is_proxy": True,
+            "scope": B3_SCOPE,
+        },
         "invariants": inv,
         # I9（数值锁定）由门禁 P13 对拍 v2 §4；本段**不复制冻结值**，避免自证
         "lock_basis": "EC-B3.0 v2 §4 · gated by run_ecore_s13_smoke P13",

@@ -1029,6 +1029,151 @@ def main() -> int:
     print("  [Q] 能力上 API ✓ · K2 两条独立路径逐位一致 ✓ · 6 条不变式全成立 ✓ · "
           "不判违规/不进 blocking ✓ · 主链数字逐位未变")
 
+    # ══════════════════════════════════════════════════════════════════════
+    # EC-B3.1 验收收口批（EC-R01…R08 + 5 条真毒化反向探针）
+    #   🔴 M3 预注册见内部规格；锁定值内联，不读内部文档（生产 CI 内不存在）。
+    #   🔴 毒化对象是**产品函数** ec_b3_signoff，不是门禁内部自证。
+    # ══════════════════════════════════════════════════════════════════════
+    from types import SimpleNamespace as _NS
+    import json as _json
+
+    _r_g = {k: float(v) for k, v in
+            ((_q.get("assumptions") or {}).get("g_values") or {}).items()}
+    _R_LOCK = {"g_area": 2.451282, "g_per_gate": 14.707691,
+               "g_per_transistor": 53.928200, "g_cell": 1.467434}
+    _r_keys = sorted(_r_g)
+
+    def _r_mk(*pairs):
+        # 合成同层矩形；每对 (net, area)，不越界不重叠
+        out = []
+        for i, (net, area) in enumerate(pairs):
+            y0 = 2.0 + i * 1.0
+            out.append(_NS(kind="metal", layer=25, net=net,
+                           x0=0.0, y0=y0, x1=1.0, y1=y0 + area))
+        return out
+
+    def _r_sign(*pairs, g=None):
+        return DS.ec_b3_signoff(_r_mk(*pairs), 7.8, 7.8, 0.24, g or _r_g)
+
+    _r1 = _r_sign(("nt", 1.0))
+    _r2 = _r_sign(("nt", 2.0))
+
+    def _r_doubled(seg1, seg2, keys):
+        return all(math.isclose(float(seg2["ratio_by_g"][k]["max"]),
+                                2.0 * float(seg1["ratio_by_g"][k]["max"]),
+                                rel_tol=1e-6, abs_tol=0.0)
+                   for k in keys)
+
+    check("EC-R01 🔴 P09 判别力收口：直接毒化**产品函数** ec_b3_signoff，"
+          "合成面积 1→2 µm² ⇒ 四口径 max 恰 ×2（rel_tol=1e-6）",
+          set(_r_keys) == set(_R_LOCK) and _r_doubled(_r1, _r2, _r_keys))
+
+    _r_poison = {"ratio_by_g":
+                 {k: {"max": float(_r2["ratio_by_g"][k]["max"]) * 1.3}
+                  for k in _r_keys}}
+    check("EC-R01r 反向探针：合成段把比值 ×1.3 ⇒ 检测器必报；正常段不报",
+          _r_doubled(_r1, _r2, _r_keys) is True
+          and _r_doubled(_r1, _r_poison, _r_keys) is False)
+
+    _r_mix = _r_sign(("nz", 1.0), ("z", 0.0))
+
+    def _r_zero_ok(seg, keys, net):
+        return all(float(seg["ratio_by_g"][k]["per_net"].get(net, -1.0)) == 0.0
+                   for k in keys)
+
+    check("EC-R02 🔴 P10 判别力收口：零面积网 ⇒ 四口径比值恰 0（容差 0）",
+          _r_zero_ok(_r_mix, _r_keys, "z"))
+
+    _r_zp = {"ratio_by_g": {k: {"per_net": {"z": 0.001}} for k in _r_keys}}
+    check("EC-R02r 反向探针：零面积却给 0.001 ⇒ 检测器必报",
+          _r_zero_ok(_r_mix, _r_keys, "z") is True
+          and _r_zero_ok(_r_zp, _r_keys, "z") is False)
+
+    _r_yes = "**含天线比几何代理**" in _q_disc
+    _r_no = "**不含天线比几何代理**" in _q_disc
+    _r_fact = isinstance(_q.get("ratio_semantics"), dict) and bool(_q.get("ratio_semantics"))
+
+    def _r_tri(yes, no, fact):
+        return (yes != no) and (yes == fact)
+
+    check("EC-R03 🔴 语义标签三态：互斥措辞恰好一个 ∧ 与产品段 ratio_semantics 一致；"
+          "沉默必红（含=%s 不含=%s 事实=%s）" % (_r_yes, _r_no, _r_fact),
+          _r_tri(_r_yes, _r_no, _r_fact))
+    check("EC-R03r 反向探针：沉默 / 都在 / 事实不符三种都必须报假，正常为真",
+          _r_tri(True, False, True) is True
+          and _r_tri(False, False, True) is False
+          and _r_tri(True, True, True) is False
+          and _r_tri(False, True, True) is False)
+
+    def _r_locked(seg, lock):
+        return all(abs(float(seg["ratio_by_g"][k]["max"]) - v) < 1e-9
+                   for k, v in lock.items())
+
+    check("EC-R04 I9 数值锁定：产品段四口径 max 与 v2 §4 冻结值逐位一致",
+          _r_locked(_q, _R_LOCK))
+    _r_lp = {k: v + 0.001 for k, v in _R_LOCK.items()}
+    check("EC-R04r 反向探针：冻结值 +0.001 ⇒ 检测器必报；原值不报",
+          _r_locked(_q, _R_LOCK) is True and _r_locked(_q, _r_lp) is False)
+
+    _r_gp = dict(_r_g)
+    _r_gp["g_per_gate"] *= 1.3
+    _r3 = _r_sign(("nt", 1.0), g=_r_gp)
+    _r_src = open(os.path.abspath(__file__), encoding="utf-8").read()
+    _r_p12 = '"EC-P' + '12 '
+    _r_p13 = '"EC-P' + '13 '
+
+    def _r_r5(i8_after, max_a, max_b):
+        return i8_after is True and abs(max_a - max_b) > 1e-6
+
+    _r_m1 = float(_r1["ratio_by_g"]["g_per_gate"]["max"])
+    _r_m3 = float(_r3["ratio_by_g"]["g_per_gate"]["max"])
+    check("EC-R05 🔴 R5 机核：g_per_gate ×1.3 ⇒ I8 仍恒真而比值数值改变 "
+          "（%.6f→%.6f）∧ 门禁 P12/P13 仍在 ⇒ 数值漂移只由 P12/P13 抓"
+          % (_r_m1, _r_m3),
+          _r_r5(_r3["invariants"]["i8_homogeneity"], _r_m1, _r_m3)
+          and _r_p12 in _r_src and _r_p13 in _r_src)
+    check("EC-R05r 反向探针：若 I8 假报警或数值未变 ⇒ 检测器必报",
+          _r_r5(True, 1.0, 2.0) is True
+          and _r_r5(False, 1.0, 2.0) is False
+          and _r_r5(True, 1.0, 1.0) is False)
+
+    check("EC-R06 段形态不变：无 n_fail/ok/pass ∧ in_blocking=False ∧ "
+          "DIAGNOSTIC_ONLY ∧ 主链数字逐位未变",
+          not any(k in _q for k in ("n_fail", "ok", "pass"))
+          and _q.get("in_blocking") is False
+          and _q.get("scope") == "DIAGNOSTIC_ONLY"
+          and _q_card["placement"]["die_area_um2"] == 60.84
+          and _q_card["timing"]["comb_delay_wired_ps"] == 43.49
+          and _q_card["def_export"]["bytes"] == 575
+          and _q_card["claimable"] is False
+          and _q_card["m1_exit"]["ok"] is True)
+
+    _r_sem_txt = str(_q.get("ratio_semantics") or "")
+    _r_defs = [n.name for n in ast.walk(ast.parse(_q_prod_src))
+               if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    check("EC-R07 🔴 不扩大：语义字段同时含肯定/否定声明 ∧ dsignoff 无 FN/充电函数 "
+          "∧ 6 处旧声明仍在",
+          all(w in _r_sem_txt for w in ("几何代理", "电荷积分",
+                                        "Fowler-Nordheim", "栅氧"))
+          and not any(any(w in d.lower() for w in
+                          ("fowler", "nordheim", "plasma_charge", "charge_integral"))
+                      for d in _r_defs)
+          and not _q_missing)
+
+    _r_card_sem = (_q_card.get("ec_b3") or {}).get("ratio_semantics")
+    try:
+        _r_js = _json.dumps(_q_card, ensure_ascii=False, allow_nan=False)
+        _r_json_ok = "NaN" not in _r_js and "Infinity" not in _r_js
+    except (TypeError, ValueError):
+        _r_json_ok = False
+    check("EC-R08 对外完整：ratio_semantics 在卡片可读 ∧ segments_covered 仍 8 段 "
+          "∧ 严格 JSON（裸 NaN/Infinity 0）",
+          bool(_r_card_sem) and len(_q_card.get("segments_covered") or []) == 8
+          and _r_json_ok)
+
+    print("  [R] 验收收口批 ✓ · P09/P10 产品函数毒化 ✓ · R5 机核 ✓ · 语义三态 ✓ · "
+          "冻结值逐位锁定 ✓")
+
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)
 
